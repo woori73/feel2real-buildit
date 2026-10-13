@@ -420,22 +420,106 @@ jobs:
           distribution: 'temurin'
       - uses: gradle/actions/setup-gradle@v4
       - run: chmod +x gradlew
-      - name: Start app (isolated CI DB)
+      - name: Start app (isolated CI DB, switch ON)
         run: |
           nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
+          echo $! > app.pid
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
             [ "$code" = "200" ] && echo "app up" && exit 0
             sleep 10
           done
           echo "app did not start"; tail -50 app.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
-      - name: Seed test tutor (CI DB only)
+      - name: V1064 fresh install check (new empty DB, app boot = full Flyway)
         run: |
-          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-live', '\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di', '신규원장', '신규원장', 'TUTOR', NOW(), NOW());"
+          M="mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test"
+          $M -e "SELECT version, success FROM flyway_schema_history WHERE version='1064';" | tee v1064.txt
+          grep -q "1064	1" v1064.txt
+          $M -e "SHOW COLUMNS FROM academy_working_copy LIKE 'staged_media_json';" | tee v1064-col.txt
+          grep -q staged_media_json v1064-col.txt
+      - name: Seed test users (CI DB only)
+        run: |
+          H='\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di'
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-live', '$H', '신규원장', '신규원장', 'TUTOR', NOW(), NOW()), ('e2e-other', '$H', '다른원장', '다른원장', 'TUTOR', NOW(), NOW()), ('e2e-legacy', '$H', '기존원장', '기존원장', 'TUTOR', NOW(), NOW());"
       - name: Install E2E deps
         run: cd e2e/visual-editor && npm install --no-audit --no-fund
-      - name: Run live E2E
-        run: node e2e/assistant-live/live-flow.js
+      - name: "[1] Live flow — real AI: create, edit, preview, undo, approve"
+        id: live
+        continue-on-error: true
+        run: node e2e/assistant-live/live-flow.js 2>&1 | tee live-flow.txt; exit ${PIPESTATUS[0]}
+      - name: "[2] Photos, 5 viewports + screenshots, permissions, conflict, legacy academy"
+        id: extra
+        continue-on-error: true
+        run: node e2e/assistant-live/integrated-extra.js 2>&1 | tee integrated-extra.txt; exit ${PIPESTATUS[0]}
+      - name: "[3] AI call count and latency (from app log; no secrets)"
+        if: always()
+        run: |
+          {
+            echo "## AI 호출·응답시간 (앱 로그 집계)"
+            C=$(grep -ac "newstart meta-muse-spark call" app.log || true)
+            OK=$(grep -ac "newstart meta-muse-spark call status=200" app.log || true)
+            CH=$(grep -a "newstart meta-muse-spark call" app.log | grep -ao "requestChars=[0-9]*" | cut -d= -f2 | paste -sd+ - | bc 2>/dev/null || echo 0)
+            FB=$(grep -ac "buildit ai fallback" app.log || true)
+            echo "- Muse Spark 호출 ${C}회 (HTTP 200 ${OK}회), 폴백(Qwen) ${FB}회"
+            echo "- 요청 문자 수 합계 ${CH:-0}자 (한국어 기준 대략 1토큰≈1.5~2자로 추정, 실제 청구 토큰·금액은 로그에 없음)"
+            echo '- 호출별 httpMs:'; grep -a "newstart meta-muse-spark call" app.log | grep -ao "httpMs=[0-9]*" | cut -d= -f2 | sort -n | paste -sd' ' - | fold -w 160
+            echo '- 대화 수정 턴 엔진 분포:'; grep -a "assistant-edit engine=" app.log | grep -ao "engine=[A-Z_]*" | sort | uniq -c
+          } | tee ai-metrics.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Stop app and restart with switch OFF (isolated CI DB)
+        if: always()
+        run: |
+          kill $(cat app.pid) 2>/dev/null || true
+          for i in $(seq 1 30); do curl -s -o /dev/null http://localhost:8080/actuator/health || break; sleep 2; done
+          BUILDIT_ASSISTANT_ENABLED=false nohup ./gradlew bootRun --no-daemon > app-off.log 2>&1 &
+          echo $! > app.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up (switch OFF)" && exit 0
+            sleep 10
+          done
+          tail -30 app-off.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+      - name: "[4] Switch OFF check"
+        id: flagoff
+        continue-on-error: true
+        run: node e2e/assistant-live/flag-off.js 2>&1 | tee flag-off.txt; exit ${PIPESTATUS[0]}
+      - name: Stop app
+        if: always()
+        run: kill $(cat app.pid) 2>/dev/null || true
+      - name: "[5] V1064 + ops-history reproduction tests (isolated DB)"
+        id: v1064
+        continue-on-error: true
+        run: >-
+          ./gradlew test --no-daemon --stacktrace
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.FlywayProdHistoryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantMediaMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantEditMySqlTest"
+      - name: Upload screenshots and result logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: assistant-integrated-e2e
+          path: |
+            e2e/assistant-live/artifacts/*.png
+            live-flow.txt
+            integrated-extra.txt
+            flag-off.txt
+            ai-metrics.txt
+            v1064.txt
+            v1064-col.txt
+          if-no-files-found: ignore
+          retention-days: 7
       - name: App log tail (assistant-edit lines only; no secrets)
         if: always()
         run: grep -a "assistant-edit\|buildit ai" app.log | tail -40 | cut -c1-240 || true
+      - name: Verdict
+        if: always()
+        run: |
+          echo "live=${{ steps.live.outcome }} extra=${{ steps.extra.outcome }} flagoff=${{ steps.flagoff.outcome }} v1064=${{ steps.v1064.outcome }}"
+          {
+            echo "## 통합 E2E 결과"
+            echo "- [1] 실제 AI 연속 흐름: ${{ steps.live.outcome }}"
+            echo "- [2] 사진·화면 폭·권한·충돌·기존 학원: ${{ steps.extra.outcome }}"
+            echo "- [4] 스위치 OFF: ${{ steps.flagoff.outcome }}"
+            echo "- [5] V1064·운영 이력 재현 테스트: ${{ steps.v1064.outcome }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "${{ steps.live.outcome }}" = success ] && [ "${{ steps.extra.outcome }}" = success ] && [ "${{ steps.flagoff.outcome }}" = success ] && [ "${{ steps.v1064.outcome }}" = success ]
