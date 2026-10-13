@@ -96,6 +96,9 @@ public class AdmissionsChatService {
     static final String MSG_UNGROUNDED_NUMBER =
             "근거 자료에서 확인되지 않는 수치가 답변에 포함되어 답변을 제공하지 않습니다. 질문을 더 구체적으로 "
                     + "(대학·학과·전형·학년도) 다시 입력해 주세요.";
+    static final String MSG_TITLE_ONLY =
+            "관련 공식 모집요강 문서의 제목만 확인되고 질문에 답할 수 있는 본문·세부 자료(모집단위·전형·일정)는 아직 없습니다. "
+                    + "문서 제목만으로는 내용을 안내할 수 없으니 해당 대학 입학처의 모집요강 원문을 확인해 주세요.";
     static final String MSG_NO_EVIDENCE =
             "해당 입시 정보를 찾지 못했습니다. 2027학년도 7개 대학(서울대·연세대·고려대·성균관대·한양대·경희대·인하대)의 "
                     + "공식 모집요강 기준으로 답변할 수 있습니다. 다른 질문을 해보세요.";
@@ -154,6 +157,12 @@ public class AdmissionsChatService {
         // 5. 사실 근거가 하나도 없으면(GUIDE만 검색된 경우 포함) LLM을 호출하지 않는다.
         if (usable.isEmpty()) {
             return refuse(MSG_NO_EVIDENCE, sessionToken, question, academicYearFilter);
+        }
+
+        // 5-1. 문서 제목·발행기관만 있는 공식자료(material:)로는 내용을 알 수 없다. 사실 근거(학과·전형·일정 행 또는
+        //      FACT 지식)가 하나도 없으면 LLM이 제목만 보고 내용을 지어내지 못하도록 호출하지 않는다.
+        if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
+            return refuse(MSG_TITLE_ONLY, sessionToken, question, academicYearFilter);
         }
 
         // 6. 근거를 프롬프트에 조립

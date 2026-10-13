@@ -221,4 +221,70 @@ class AdmissionsChatServicePolicyTest {
         assertThat(answer.answer()).contains("시행계획");
         assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::id).containsExactly("type:3");
     }
+
+    @Test
+    @DisplayName("given 공식자료 제목만 검색된 질문(S15형) when 묻으면 then 본문이 없으므로 LLM을 호출하지 않는다")
+    void title_only_materials_do_not_reach_llm() {
+        // given
+        String q = "2028 수능은 통합사회·통합과학을 본다면서요? 저는 2027 수능인데?";
+        givenFacts(q, List.of(), Set.of(2028, 2027), false);
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of())
+                .officialDocHits(List.of(
+                        fact("material:1", "서울대 2027학년도 수시 모집요강", "서울대학교", 2027, "https://a"),
+                        fact("material:5", "연세대 2028학년도 시행계획", "연세대학교", 2028, "https://b")))
+                .youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_TITLE_ONLY);
+        assertThat(answer.sources()).isEmpty();
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("given 공식자료 제목과 학과 행이 함께 있는 질문 when 묻으면 then 정상 FACT 답변은 차단하지 않고 LLM에 전달한다")
+    void material_plus_fact_row_still_reaches_llm() {
+        // given
+        String q = "인하대 컴퓨터공학과 몇 명 뽑나요";
+        Evidence dept = fact("dept:7", "인하대학교 2027학년도 컴퓨터공학과 모집인원", "전형별 모집인원: 합계 101명", 2027, null);
+        givenFacts(q, List.of(dept), Set.of(2027), false);
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of())
+                .officialDocHits(List.of(fact("material:7", "인하대 2027 수시 모집요강", "인하대학교", 2027, "https://x")))
+                .youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2027학년도 기준 101명을 모집합니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).contains("101명");
+        assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::id)
+                .containsExactly("dept:7", "material:7");
+    }
+
+    @Test
+    @DisplayName("given FACT 지식 본문만 있는 질문 when 묻으면 then 사실 근거로 인정해 LLM에 전달한다")
+    void fact_knowledge_alone_reaches_llm() {
+        // given
+        String q = "연세대 2028 변화가 뭐예요";
+        Evidence k = fact("knowledge:42", "연세대 2028 시행계획 요약", "활동우수형 신설 방향", 2028, null);
+        givenFacts(q, List.of(), Set.of(2028), false);
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of(k))
+                .officialDocHits(List.of()).youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2028학년도는 계획 단계로 변경될 수 있습니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).contains("계획 단계");
+        assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::id).containsExactly("knowledge:42");
+    }
 }
