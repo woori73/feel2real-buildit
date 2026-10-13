@@ -1,0 +1,103 @@
+name: Admissions live eval (temporary, isolated)
+
+# 입시상담 Agent 실제 LLM·RAG 22건 재평가 — 임시 브랜치(eval/admissions-live) push 전용. 평가 후 파일을 삭제한다.
+# 격리 MySQL 서비스 컨테이너 + 로컬 앱만 사용. 운영 접근/배포 없음. 로그에는 판정만, 답변 전문은 3일 보관 아티팩트에만 저장.
+on:
+  push:
+    branches: [eval/admissions-live]
+
+permissions:
+  contents: read
+
+jobs:
+  admissions-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      APP_ADMISSIONS_LLM_PRIMARY: meta
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: woori73/buildit-admissions
+          path: adm-data
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: chmod +x gradlew
+      - name: Start app (isolated CI DB, V1066 via Flyway)
+        run: |
+          nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
+          echo $! > app.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up" && exit 0
+            sleep 10
+          done
+          echo "app did not start"; tail -50 app.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+      - name: Flyway V1066 check
+        run: |
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "SELECT version, description, success FROM flyway_schema_history WHERE version='1066'; SHOW TABLES LIKE 'admissions_%';"
+      - name: Seed test admin (CI DB only)
+        run: |
+          H='\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di'
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('iso-admin', '$H', 'iso', 'iso', 'ADMIN', NOW(), NOW());"
+      - name: Phase 1 - DRAFT gate (3 questions, everything DRAFT => no evidence expected)
+        env:
+          PHASE: DRAFT_GATE
+          LIMIT: '3'
+          SEED: adm-data/data/seed/ipsi_seed_univ_sample.json
+          KB: adm-data/docs/ANALYSIS/03_counseling_qa/knowledge_base.json
+        run: node e2e/admissions-live/run.js 2>&1 | tee phase1.txt
+      - name: DB state after DRAFT load (counts only)
+        run: |
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "SELECT 'knowledge' t, role, status, COUNT(*) n FROM admissions_knowledge_items GROUP BY 2,3 UNION ALL SELECT 'departments', '-', status, COUNT(*) FROM admissions_departments GROUP BY 3 UNION ALL SELECT 'types', '-', status, COUNT(*) FROM admissions_types GROUP BY 3 UNION ALL SELECT 'schedules', '-', status, COUNT(*) FROM admissions_schedules GROUP BY 3 UNION ALL SELECT 'materials', '-', status, COUNT(*) FROM admissions_official_materials GROUP BY 3;" | tee db-after-load.txt
+      - name: Promote to ACTIVE (disposable CI DB only, test mechanics)
+        run: |
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "UPDATE admissions_knowledge_items SET status='ACTIVE'; UPDATE admissions_official_materials SET status='ACTIVE'; UPDATE admissions_departments SET status='ACTIVE'; UPDATE admissions_types SET status='ACTIVE'; UPDATE admissions_schedules SET status='ACTIVE';"
+      - name: Phase 2 - 22 scenarios (real LLM)
+        env:
+          PHASE: ACTIVE_TEST
+          SKIP_LOAD: '1'
+        run: node e2e/admissions-live/run.js 2>&1 | tee phase2.txt
+      - name: LLM calls (from app log; no secrets, no answers)
+        if: always()
+        run: |
+          grep -a "admissions llm attempts\|admissions answer rejected" app.log | sed 's/\(key\|KEY\)=[^ ]*/\1=***/' | tail -80 | tee llm-calls.txt
+      - name: Stop app
+        if: always()
+        run: kill $(cat app.pid) 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admissions-live-v2
+          retention-days: 3
+          path: |
+            results-*.json
+            review-*.md
+            phase*.txt
+            llm-calls.txt
+            db-after-load.txt
