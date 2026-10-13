@@ -33,3 +33,21 @@ test('given 수정 요청 when 보내면 then revision을 함께 보내 동시 �
   assert.match(JS, /'\/turn',\s*\{\s*message:\s*text,\s*revision:\s*ctx\.revision\s*\}/);
   assert.match(JS, /'\/undo',\s*\{\s*revision:\s*ctx\.revision\s*\}/);
 });
+
+test('given v5 대화 화면 when 읽기 then Agent 이름·정식 배포 등록 버튼·공개 주소 미리보기가 있다', () => {
+  // given / when / then
+  assert.ok(HTML.includes('BuildIt 가이드'));
+  assert.equal((HTML.match(/>홈페이지 정식 배포 등록</g) || []).length >= 3, true);
+  assert.ok(HTML.includes('id="ahConfirmAddr"'));
+  assert.doesNotMatch(HTML, />게시하기</);
+});
+
+test('given v5 입력창 when 읽기 then 아바타·+·원형 전송 버튼 구조다', () => {
+  // given / when / then
+  for (const needle of ['class="ah-avatar"', 'id="ahPhotoBtn"', 'class="ah-send-round" type="submit" id="ahWorkSend"']) assert.ok(HTML.includes(needle), needle);
+});
+
+test('given 공개 직후 when 읽기 then 바로가기·주소 복사·계속 수정하기 카드를 만든다', () => {
+  // given / when / then
+  for (const label of ['홈페이지 바로가기', '주소 복사', '계속 수정하기']) assert.ok(JS.includes(label), label);
+});

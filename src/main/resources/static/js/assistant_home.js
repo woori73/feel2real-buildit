@@ -187,10 +187,10 @@
 
   function renderStatus() {
     var s = $('ahStatus'); s.textContent = '';
-    s.appendChild(el('b', null, ctx.status === 'PUBLISHED' ? '게시됨' : '비공개 초안'));
+    s.appendChild(el('b', null, ctx.status === 'PUBLISHED' ? '공개 중' : '비공개 초안'));
     if (ctx.dirty) s.appendChild(document.createTextNode(' · 수정 있음'));
     var pb = $('ahProfileBtn'); if (pb) pb.hidden = ctx.status === 'PUBLISHED';
-    var bd = $('ahCardBadge'); if (bd) bd.textContent = ctx.status === 'PUBLISHED' ? (ctx.dirty ? '게시됨 · 수정 있음' : '게시됨') : '비공개 초안';
+    var bd = $('ahCardBadge'); if (bd) bd.textContent = ctx.status === 'PUBLISHED' ? (ctx.dirty ? '공개 중 · 수정 있음' : '공개 중') : '비공개 초안';
   }
   function renderUndo() {
     $('ahUndoCount').textContent = String(ctx.undoDepth);
@@ -390,16 +390,24 @@
 
   /* 게시 — 최종 사용자 승인(확인 창) 뒤에만 공개된다 */
   var forcePublish = false;
+  function addressText(url) {
+    if (!url) return '';
+    try { var u = new URL(url, location.origin); return u.host + (u.pathname === '/' ? '' : decodeURIComponent(u.pathname)); } catch (e) { return String(url); }
+  }
   function openConfirm() {
     if (ctx.busy) return;
-    if (!ctx.dirty && ctx.status === 'PUBLISHED') { toast('게시할 변경이 없어요.'); return; }
+    if (!ctx.dirty && ctx.status === 'PUBLISHED') { toast('새로 등록할 변경이 없어요.'); return; }
     forcePublish = false;
-    $('ahConfirmTitle').textContent = ctx.status === 'PUBLISHED' ? '수정 내용을 게시할까요?' : '홈페이지를 처음 게시할까요?';
+    $('ahConfirmTitle').textContent = '홈페이지 정식 배포 등록';
     $('ahConfirmText').textContent = ctx.status === 'PUBLISHED'
-      ? '지금 미리보기의 내용이 공개 홈페이지에 반영돼요. 게시 전 공개 내용은 버전 기록에 보관돼요.'
-      : '게시하면 누구나 홈페이지를 볼 수 있어요. 미리보기에서 내용을 확인하셨나요?';
-    $('ahConfirmDetail').hidden = true; $('ahConfirmOk').textContent = '게시하기';
+      ? '지금 미리보기의 내용이 공개 홈페이지에 반영돼요. 등록 전 공개 내용은 버전 기록에 보관돼요.'
+      : '등록하면 아래 주소로 누구나 홈페이지를 볼 수 있어요. 미리보기에서 내용을 확인하셨나요?';
+    $('ahConfirmDetail').hidden = true; $('ahConfirmOk').textContent = '홈페이지 정식 배포 등록';
+    var addr = $('ahConfirmAddr'); addr.hidden = true;
     $('ahConfirm').hidden = false; $('ahConfirmOk').focus();
+    var show = function (url) { if (url) { ctx.publicUrl = url; $('ahConfirmAddrText').textContent = addressText(url); addr.hidden = false; } };
+    if (ctx.publicUrl) show(ctx.publicUrl);
+    else api('GET', '/state').then(function (s) { show(s.publicUrl); }).catch(function () { /* 주소 없이도 등록은 가능 */ });
   }
   function closeConfirm() { $('ahConfirm').hidden = true; }
   function overwriteText(d) {
@@ -410,21 +418,38 @@
     (d.changedSettings || []).forEach(function (k) { lines.push('· 설정 변경: ' + k); });
     return lines.join('\n');
   }
+  /** 공개 직후 대화 안에 보여 주는 결과 카드: 주소 · 바로가기 · 주소 복사 · 계속 수정하기. */
+  function addPublishedCard(url) {
+    var abs; try { abs = new URL(url, location.origin).href; } catch (e) { abs = url; }
+    var card = el('div', 'ah-pubcard');
+    card.appendChild(el('h3', null, '홈페이지가 공개됐어요'));
+    var field = el('div', 'ah-field'); field.appendChild(el('small', null, '공개된 주소')); field.appendChild(el('b', null, addressText(url)));
+    card.appendChild(field);
+    card.appendChild(el('p', 'ah-note', '공개된 뒤에도 대화로 계속 수정할 수 있어요. 수정한 내용은 다시 정식 배포 등록을 눌러야 공개 홈페이지에 반영돼요.'));
+    var go = el('a', 'ah-primary ah-pill', '홈페이지 바로가기'); go.href = abs; go.target = '_blank'; go.rel = 'noopener';
+    var copy = el('button', 'ah-secondary ah-pill', '주소 복사'); copy.type = 'button';
+    copy.addEventListener('click', function () {
+      var done = function () { toast('주소를 복사했어요.'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(abs).then(done, function () { toast(abs); });
+      else toast(abs);
+    });
+    var more = el('button', 'ah-link ah-center', '계속 수정하기'); more.type = 'button';
+    more.addEventListener('click', function () { $('ahWorkInput').focus(); });
+    card.appendChild(go); card.appendChild(copy); card.appendChild(more);
+    $('ahMsgs').appendChild(card); scrollThread();
+  }
   function doPublish() {
     if (ctx.busy || ctx.revision == null) return;
     ctx.busy = true; $('ahConfirmOk').disabled = true;
     api('POST', '/publish', { revision: ctx.revision, force: forcePublish }).then(function (r) {
       ctx.revision = r.revision; ctx.status = 'PUBLISHED'; ctx.dirty = false; ctx.undoDepth = 0;
       closeConfirm(); if (!$('ahFull').hidden) closeFull();
-      var msg = r.firstPublish ? '게시했어요! 이제 누구나 홈페이지를 볼 수 있어요.' : '수정한 내용을 게시했어요.';
+      var msg = r.firstPublish ? '홈페이지가 공개됐어요.' : '수정한 내용을 공개 홈페이지에 반영했어요.';
       history.push({ role: 'ASSISTANT', kind: 'PUBLISHED', content: msg });
       toast(msg); showStrip(msg, false, []);
       return api('GET', '/state').then(function (s) {
         ctx.publicUrl = s.publicUrl;
-        if (s.publicUrl) {
-          var a = el('a', 'ah-link', s.publicUrl); a.href = s.publicUrl; a.target = '_blank'; a.rel = 'noopener';
-          var last = $('ahMsgs').lastElementChild; if (last) { last.appendChild(document.createElement('br')); last.appendChild(a); }
-        }
+        if (s.publicUrl) addPublishedCard(s.publicUrl);
       });
     }).catch(function (e) {
       if (e.status === 409 && e.code === 'LIVE_CHANGED') {
@@ -432,10 +457,10 @@
         $('ahConfirmTitle').textContent = '공개 내용이 먼저 바뀌었어요';
         $('ahConfirmText').textContent = e.message;
         var d = overwriteText(e.details); $('ahConfirmDetail').textContent = d; $('ahConfirmDetail').hidden = !d;
-        $('ahConfirmOk').textContent = '그래도 게시';
+        $('ahConfirmOk').textContent = '그래도 배포 등록';
         return;
       }
-      closeConfirm(); showStrip(e.message || '게시하지 못했어요.', true, []);
+      closeConfirm(); showStrip(e.message || '배포 등록하지 못했어요.', true, []);
     }).then(function () { ctx.busy = false; $('ahConfirmOk').disabled = false; renderStatus(); renderUndo(); });
   }
 
@@ -446,7 +471,7 @@
     $('ahVersions').hidden = false;
     api('GET', '/versions').then(function (list) {
       ul.textContent = '';
-      if (!list || !list.length) { ul.appendChild(el('li', 'ah-muted', '아직 버전 기록이 없어요. 게시하면 그 전 공개본이 여기에 쌓여요.')); return; }
+      if (!list || !list.length) { ul.appendChild(el('li', 'ah-muted', '아직 버전 기록이 없어요. 정식 배포 등록을 하면 그 전 공개본이 여기에 쌓여요.')); return; }
       list.forEach(function (v) {
         var li = el('li'); li.appendChild(el('span', null, AssistantExport.versionLabel(v)));
         var b = el('button', 'ah-secondary ah-small', '불러오기'); b.type = 'button';
@@ -462,7 +487,7 @@
       ctx.revision = r.revision; ctx.undoDepth = 0; ctx.dirty = true;
       history.push({ role: 'ASSISTANT', kind: 'RESTORED', content: '이전 버전을 작업본에 불러왔어요.' });
       $('ahVersions').hidden = true;
-      showStrip('이전 버전을 작업본에 불러왔어요. 미리보기를 확인하고 마음에 들면 게시하기를 눌러 주세요.', false, []);
+      showStrip('이전 버전을 작업본에 불러왔어요. 미리보기를 확인하고 마음에 들면 홈페이지 정식 배포 등록을 눌러 주세요.', false, []);
       loadPreview(null); renderStatus();
     }).catch(function (e) {
       $('ahVersions').hidden = true;
@@ -570,6 +595,8 @@
   }
 
   function init() {
+    var pending = AssistantExport.takePendingPrompt(sessionStorage, Date.now());
+    if (pending) $('ahPrompt').value = pending.slice(0, $('ahPrompt').maxLength > 0 ? $('ahPrompt').maxLength : 2000);
     $('ahStartForm').addEventListener('submit', submitStart);
     $('ahPrompt').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); submitStart(e); }
@@ -582,7 +609,17 @@
     $('ahDownloadBtn').addEventListener('click', downloadHtml);
     $('ahComposer').addEventListener('submit', submitChat);
     $('ahChosenClear').addEventListener('click', clearSample);
-    $('ahWorkComposer').addEventListener('submit', function (ev) { ev.preventDefault(); sendEdit($('ahWorkInput').value); });
+    $('ahWorkComposer').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var text = $('ahWorkInput').value.trim();
+      if (!text || ctx.busy) return;
+      if (AssistantExport.isPublishIntent(text)) { // 공개 요청은 AI에 보내지 않고 정식 배포 등록 확인 창으로 안내한다(등록은 사용자가 직접 누른다)
+        $('ahWorkInput').value = '';
+        addBubble('user', text); addBubble('bot', '공개 전에 한 번 더 확인해 주세요. 아래 버튼을 누르면 정식으로 등록돼요.');
+        openConfirm(); return;
+      }
+      sendEdit(text);
+    });
     $('ahPhotoBtn').addEventListener('click', function () { var m = $('ahPhotoMenu'); m.hidden = !m.hidden; });
     Array.prototype.forEach.call($('ahPhotoMenu').querySelectorAll('[data-slot]'), function (b) {
       b.addEventListener('click', function () {
@@ -624,6 +661,7 @@
         return { role: m.role, kind: m.kind, content: m.content, payload: payload };
       });
       enterWork(null);
+      if (pending) { $('ahWorkInput').value = pending.slice(0, 1000); toast('입력하신 요청을 입력창에 가져왔어요. 보내기를 누르면 수정해요.'); }
     }).catch(function () { /* 비로그인 등: 시작 화면 유지 */ });
   }
   init();
