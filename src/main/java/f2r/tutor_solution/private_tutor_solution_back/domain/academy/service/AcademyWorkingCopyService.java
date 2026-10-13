@@ -234,7 +234,7 @@ public class AcademyWorkingCopyService {
           academy.getPageSettings(), withLiveRenderMode(parseSettings(wc.getPageSettingsJson()), academy.getPageSettings()));
       throw new WorkingCopyConflictException(
           "LIVE_CHANGED",
-          "작업본을 만든 뒤 공개 홈페이지가 다른 곳(예: 관리자)에서 수정되었습니다. 그대로 게시하면 아래 공개 내용이 작업본으로 바뀝니다. 바뀌기 전 공개 내용은 버전 기록에 보관돼요.",
+          "작업본을 만든 뒤 공개 홈페이지가 다른 곳(예: 관리자)에서 수정되었습니다. 그대로 공개하면 아래 공개 내용이 작업본으로 바뀝니다. 바뀌기 전 공개 내용은 버전 기록에 보관돼요.",
           overwrites);
     }
 

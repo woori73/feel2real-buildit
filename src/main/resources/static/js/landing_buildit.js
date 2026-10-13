@@ -103,7 +103,7 @@
     btn.addEventListener('click', () => {
       const input = document.querySelector('[data-buildit-prompt]');
       if (!input) return;
-      input.value = btn.textContent.trim();
+      input.value = (btn.dataset && btn.dataset.seed) || btn.textContent.trim();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       input.focus({ preventScroll: true });
     });
@@ -263,10 +263,6 @@
     });
   });
 
-  gsap.to('#hero .hero-lines', {
-    yPercent: 18, ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
-  });
   gsap.to('#hero .hero-inner', {
     yPercent: -12, opacity: 0, ease: 'none',
     scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }

@@ -375,7 +375,7 @@ public class AcademyService {
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
     authResolver.verifyOwnsAcademyForBuilder(academy);
     if (academy.getStatus() != AcademyStatus.DRAFT) {
-      throw new IllegalArgumentException("이미 게시된 홈페이지의 기본 정보는 여기서 바꿀 수 없어요. 기존 빌더에서 수정해 주세요.");
+      throw new IllegalArgumentException("이미 공개된 홈페이지의 기본 정보는 여기서 바꿀 수 없어요. 기존 빌더에서 수정해 주세요.");
     }
     String newName = isBlank(name) ? academy.getName() : name.trim();
     if (newName.length() > 100) {

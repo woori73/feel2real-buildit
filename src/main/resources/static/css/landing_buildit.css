@@ -1513,3 +1513,48 @@ body {
   }
   .bi-menu a::after, .bi-menu button::after { content: '›'; color: #8a9293; }
 }
+
+/* v5 개선: 첫 화면은 장식 없이 흰 바탕(배경 곡선·광원 제거). 모바일 입력창은 화살표 원형 버튼으로 줄여 안내 문구가 잘리지 않게 한다. */
+#hero { background: #fff; }
+@media (max-width: 520px) {
+  .ask-bar { height: 64px; padding: 0 8px 0 20px; }
+  .ask-input { font-size: 17px; }
+  .ask-go { width: 48px; padding: 0; display: grid; place-items: center; font-size: 20px; }
+  .ask-go-text { display: none; }
+}
+
+/* 첫 화면 아래 홈페이지 샘플(대화형 시작 화면의 샘플 6종 재사용) */
+.samples { padding: 56px 5vw 24px; text-align: center; background: var(--bg); }
+.samples h2 { font-size: clamp(26px, 3.4vw, 40px); font-weight: 500; letter-spacing: -.03em; }
+.samples-sub { margin-top: 12px; font-size: 16px; color: var(--ink-soft); }
+.samples-grid { max-width: 1100px; margin: 32px auto 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.sample-card {
+  display: flex; flex-direction: column; gap: 4px; padding: 0 0 18px; overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, .08); border-radius: 16px; background: #fff;
+  font: inherit; text-align: left; color: var(--ink); cursor: pointer; transition: background .15s;
+}
+.sample-card:hover { background: #f6f6f7; }
+.sample-card:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.sample-card b { padding: 0 18px; margin-top: 10px; font-size: 17px; font-weight: 550; }
+.sample-desc { padding: 0 18px; font-size: 14px; line-height: 1.5; color: var(--ink-soft); word-break: keep-all; }
+.sample-thumb { --c1: #999; --c2: #ccc; --fg: #fff; position: relative; display: block; height: 150px; background: var(--c1); }
+.sample-thumb i { position: absolute; display: block; border-radius: 6px; }
+.sample-thumb .s-bar { left: 14%; right: 14%; top: 14px; height: 10px; background: rgba(255, 255, 255, .28); }
+.sample-thumb .s-title { left: 14%; top: 52px; width: 52%; height: 16px; background: var(--fg); opacity: .92; }
+.sample-thumb .s-line { left: 14%; top: 80px; width: 36%; height: 8px; background: var(--fg); opacity: .5; }
+.sample-thumb .s-btn { left: 14%; top: 104px; width: 26%; height: 22px; border-radius: 9999px; background: var(--c2); }
+.sample-EXAM .sample-thumb { --c1: #0c238a; --c2: #4a7fd4; }
+.sample-ENGLISH .sample-thumb { --c1: #0f766e; --c2: #f59e0b; }
+.sample-DYNAMIC .sample-thumb { --c1: #e11d48; --c2: #f97316; }
+.sample-STUDY .sample-thumb { --c1: #2563eb; --c2: #16a34a; }
+.sample-DARK .sample-thumb { --c1: #111827; --c2: #d4af37; }
+.sample-MINIMAL .sample-thumb { --c1: #f3f4f6; --c2: #111827; --fg: #111827; }
+.sample-MINIMAL .sample-thumb .s-bar { background: rgba(0, 0, 0, .12); }
+@media (max-width: 860px) { .samples-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) {
+  .samples { padding-top: 40px; }
+  .samples-grid { grid-template-columns: 1fr; gap: 12px; }
+  .sample-thumb { height: 120px; }
+  .sample-thumb .s-title { top: 40px; } .sample-thumb .s-line { top: 66px; } .sample-thumb .s-btn { top: 86px; }
+}
+.samples { scroll-margin-top: 88px; }

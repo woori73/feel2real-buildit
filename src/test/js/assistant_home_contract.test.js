@@ -51,3 +51,36 @@ test('given 공개 직후 when 읽기 then 바로가기·주소 복사·계속 �
   // given / when / then
   for (const label of ['홈페이지 바로가기', '주소 복사', '계속 수정하기']) assert.ok(JS.includes(label), label);
 });
+
+test('given 더보기 메뉴 when 읽기 then 보조 기능 5개가 메뉴 안에 있고 열고 닫는 JS가 연결돼 있다', () => {
+  // given / when / then
+  for (const id of ['ahMoreBtn', 'ahMenu', 'ahUndo', 'ahProfileBtn', 'ahVersionsBtn', 'ahDownloadBtn', 'ahClassicWork']) assert.ok(HTML.includes('id="' + id + '"'), id);
+  const menu = HTML.slice(HTML.indexOf('id="ahMenu"'), HTML.indexOf('</header>', HTML.indexOf('id="ahMenu"')));
+  for (const id of ['ahUndo', 'ahProfileBtn', 'ahVersionsBtn', 'ahDownloadBtn', 'ahClassicWork']) assert.ok(menu.includes('id="' + id + '"'), id + ' 는 메뉴 안에 있어야 한다');
+  assert.match(JS, /function setMenu\(open\)/);
+  assert.match(JS, /\$\('ahMoreBtn'\)\.addEventListener\('click'/);
+  assert.match(JS, /e\.key !== 'Escape'[\s\S]*ahMenu/);
+});
+
+test('given 미리보기 카드 when 읽기 then 카드 폭에 맞춰 PC·모바일 배치로 크게 그리고 전체 화면 버튼이 주요 버튼이다', () => {
+  // given / when / then
+  assert.match(JS, /function fitCard\(\)/);
+  assert.match(JS, /desktop = w >= 560, lw = desktop \? 1280 : 390/);
+  assert.match(HTML, /class="ah-primary ah-pill-btn"[^>]*id="ahCardFull"/);
+});
+
+test('given 추천 요청 when 읽기 then 3개 이하로 줄여 화면을 단순하게 둔다', () => {
+  // given
+  const m = JS.match(/var CHIPS = \[([^\]]*)\]/);
+  // when
+  const n = m[1].split("'").filter((_, i) => i % 2 === 1).length;
+  // then
+  assert.ok(n <= 3, '추천 요청 수: ' + n);
+});
+
+test('given 미리보기 카드 when 불러오면 then 등장 애니메이션을 최종 상태로 고정해 글자가 흐리지 않다', () => {
+  // given / when / then
+  assert.match(JS, /\$\('ahCardFrame'\)\.addEventListener\('load', freezeCardMotion\)/);
+  assert.match(JS, /\[data-reveal-item\]\{opacity:1!important;transform:none!important\}/);
+  assert.match(JS, /animation-duration:0s!important/);
+});

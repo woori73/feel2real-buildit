@@ -8,7 +8,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/assistant_home.css?v=20261014-1"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261014-2"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp">
@@ -51,19 +51,19 @@
       <strong class="ah-brand ah-agent">BuildIt 가이드</strong>
       <span class="ah-status" id="ahStatus" aria-live="polite"></span>
       <div class="ah-bar-actions">
-        <button class="ah-ghost ah-undo" type="button" id="ahUndo" disabled aria-label="되돌리기">↶ 되돌리기 <b id="ahUndoCount">0</b></button>
         <button class="ah-primary ah-small ah-pubbtn" type="button" id="ahPublish">홈페이지 정식 배포 등록</button>
+        <div class="ah-more">
+          <button class="ah-more-btn" type="button" id="ahMoreBtn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false">⋯</button>
+          <div class="ah-menu" id="ahMenu" role="menu" hidden>
+            <button type="button" role="menuitem" id="ahUndo" disabled>되돌리기 <b id="ahUndoCount">0</b></button>
+            <button type="button" role="menuitem" id="ahProfileBtn">학원 정보</button>
+            <button type="button" role="menuitem" id="ahVersionsBtn">버전 기록</button>
+            <button type="button" role="menuitem" id="ahDownloadBtn">HTML 내려받기</button>
+            <a role="menuitem" href="/builder?classic=1" id="ahClassicWork">기존 빌더</a>
+          </div>
+        </div>
       </div>
     </header>
-    <div class="ah-subbar">
-      <div class="ah-tools" role="group" aria-label="작업 도구">
-        <button type="button" class="ah-tool" id="ahProfileBtn">학원 정보</button>
-        <button type="button" class="ah-tool" id="ahVersionsBtn">버전</button>
-        <button type="button" class="ah-tool" id="ahDownloadBtn">내려받기</button>
-      </div>
-      <span class="ah-draftnote">미리보기는 비공개 작업본이에요</span>
-      <a class="ah-classic" href="/builder?classic=1" id="ahClassicWork">기존 빌더</a>
-    </div>
 
     <div class="ah-thread" id="ahThread" role="log" aria-live="polite">
       <div class="ah-msgs" id="ahMsgs"></div>
@@ -74,8 +74,10 @@
         <div class="ah-thumb" id="ahThumb" role="button" tabindex="0" aria-label="전체 화면으로 보기">
           <div class="inner"><iframe id="ahCardFrame" title="홈페이지 미리보기 카드" tabindex="-1"></iframe></div>
         </div>
-        <div class="ah-resbody"><h3>홈페이지 미리보기</h3><span class="ah-badge" id="ahCardBadge">비공개 초안</span></div>
-        <div class="ah-actions"><button class="ah-secondary" type="button" id="ahCardFull">전체 화면으로 보기</button></div>
+        <div class="ah-resfoot">
+          <div class="ah-resbody"><h3>홈페이지 미리보기</h3><span class="ah-badge" id="ahCardBadge">비공개 초안</span></div>
+          <button class="ah-primary ah-pill-btn" type="button" id="ahCardFull">전체 화면으로 보기</button>
+        </div>
       </div>
     </div>
 
@@ -158,6 +160,6 @@
 </div>
 <script src="/js/assistant_wait.js?v=20261013-1"></script>
 <script src="/js/assistant_export.js?v=20261014-1"></script>
-<script src="/js/assistant_home.js?v=20261014-1"></script>
+<script src="/js/assistant_home.js?v=20261014-2"></script>
 </body>
 </html>
