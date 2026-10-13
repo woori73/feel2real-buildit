@@ -1,0 +1,51 @@
+name: Assistant AI Eval (manual, no deploy)
+
+# 대화 수정 에이전트의 실제 AI 해석 성능 실측. 수동 실행 전용이며 배포·운영 DB 접근이 없다.
+# Muse Spark 키는 저장소 Secret(META_JIPJIGI_API_KEY)을 환경변수로만 주입한다 — 로그·리포트에 출력하지 않는다.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      ASSISTANT_EVAL_LIVE: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Key configured? (값은 출력하지 않는다)
+        run: |
+          if [ -n "$META_JIPJIGI_API_KEY" ]; then echo "META_JIPJIGI_API_KEY: set (length ${#META_JIPJIGI_API_KEY})"; else echo "META_JIPJIGI_API_KEY: EMPTY"; fi
+          if [ -n "$OPENROUTER_API_KEY" ]; then echo "OPENROUTER_API_KEY: set"; else echo "OPENROUTER_API_KEY: EMPTY"; fi
+      - name: Run live eval
+        run: ./gradlew test --no-daemon --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantEditLiveEvalTest"
+      - name: Report
+        if: always()
+        run: cat build/reports/assistant-edit-eval.txt || echo "no report"
