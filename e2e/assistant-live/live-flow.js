@@ -26,12 +26,20 @@ const { launch, newCtx, BASE } = require('../visual-editor/lib');
   await page.fill('#ahName', '새봄영어학원');
   await page.fill('#ahDesc', '초등·중등 학생에게 영어회화와 내신을 소수정예로 가르치는, 따뜻하고 친근한 학원이에요');
   const tCreate = Date.now(); await page.click('#ahStartBtn');
-  for (let i = 0; i < 5 && !(await page.locator('#ahWork:not([hidden])').count()); i++) {
-    await page.waitForFunction(() => /지역|과목|대상/.test(document.getElementById('ahMessages').innerText) || !document.getElementById('ahWork').hidden, null, { timeout: 150000 });
-    if (await page.locator('#ahWork:not([hidden])').count()) break;
-    const tail = (await page.locator('#ahMessages').innerText()).split('\n').slice(-4).join(' ');
-    const ans = /지역/.test(tail) ? '서울 강남구' : (/과목/.test(tail) ? '영어' : '초등학생, 중학생');
-    await page.fill('#ahInput', ans); await page.click('#ahSend'); await wait(1500);
+  // 생성 대화: 되묻는 정보(지역·과목·대상)에 한 번씩만 답한다. 실제 AI 응답을 기다리는 동안 입력창은 잠겨 있다.
+  const answered = new Set();
+  for (let i = 0; i < 150 && !(await page.locator('#ahWork:not([hidden])').count()); i++) {
+    const sendEnabled = await page.locator('#ahSend:not([disabled])').count();
+    if (sendEnabled && await page.locator('#ahInput').isVisible().catch(() => false)) {
+      const tail = (await page.locator('#ahMessages .ah-msg.bot').last().innerText().catch(() => ''));
+      const need = /지역/.test(tail) ? 'region' : (/과목/.test(tail) ? 'subject' : (/대상|학생/.test(tail) ? 'target' : null));
+      if (need && !answered.has(need)) {
+        answered.add(need);
+        await page.fill('#ahInput', need === 'region' ? '서울 강남구' : need === 'subject' ? '영어' : '초등학생, 중학생');
+        await page.click('#ahSend');
+      }
+    }
+    await wait(2000);
   }
   await page.waitForSelector('#ahWork:not([hidden])', { timeout: 150000 }); await wait(3000);
   const createMs = Date.now() - tCreate;
