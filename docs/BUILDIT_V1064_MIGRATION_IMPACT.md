@@ -21,8 +21,8 @@ ALTER TABLE academy_working_copy
 | 기능 노출 | 사진 예약은 대화 화면(`BUILDIT_ASSISTANT_ENABLED`, 운영 OFF) 안에서만 쓰인다. OFF면 컬럼은 계속 NULL |
 
 ## 3. 호환성·롤백
-- **jar만 되돌리는 롤백(기존 `f2r_deploy_with_rollback`)은 안전하다.** 이전 jar는 새 컬럼을 매핑하지 않으며(추가 컬럼은 `validate`도 통과), 이전 코드는 `staged_media_json`을 읽지 않는다. 배포 스크립트는 DB를 되돌리지 않으므로 컬럼이 남아도 문제 없다.
-- **새 jar 기동 중 마이그레이션 실패**: Flyway가 실패 기록을 남기고 기동을 거부한다 → 스크립트가 이전 jar로 롤백. 이전 jar는 `flyway_schema_history`의 실패 행 때문에 *새 마이그레이션이 없는 상태*에서는 정상 기동한다(실패 행은 새 jar 쪽 검증에서만 문제). 원인 수정 후 같은 번호의 파일을 고치는 것은 **적용 전에만** 허용(WORKFLOW §4), 이미 실패 기록이 남았다면 새 V_파일로 보정한다. `flyway_schema_history` 직접 수정은 금지.
+- **마이그레이션이 성공한 뒤 jar만 되돌리는 롤백(기존 `f2r_deploy_with_rollback`)은 안전하다.** 이전 jar는 새 컬럼을 매핑하지 않으며(추가 컬럼은 `validate`도 통과), 이전 코드는 `staged_media_json`을 읽지 않는다. 배포 스크립트는 DB를 되돌리지 않으므로 컬럼이 남아도 문제 없다.
+- **새 jar 기동 중 마이그레이션 실패(가능성 낮음)**: MySQL DDL은 트랜잭션이 아니라 Flyway가 `success=0` 실패 행을 남길 수 있고, 그 행이 있으면 **이전 jar를 포함한 모든 jar의 기동 검증이 거부될 수 있다**(롤백 스크립트의 이전 jar도 unhealthy). 이 경우 자동 복구가 되지 않고 사람 개입이 필요하다 — 원인 확인 후 실패 행 정리(`repair` 상당)는 WORKFLOW §4상 직접 수정 금지이므로 **별도 승인된 절차**로만 하고, 이미 기록이 남았다면 새 V_파일로 보정한다. 위험을 낮추는 사실: 단일 nullable `ADD COLUMN`이고 대상 테이블이 매우 작으며 CI(MySQL 8.0)·로컬에서 적용을 검증했다. 배포 전 운영 MySQL 버전·`flyway-history`를 읽기 전용 진단으로 확인한다.
 - **컬럼 자체를 지우는 롤백은 권장하지 않는다.** 필요하면 forward 마이그레이션(`V1065__drop_staged_media_json.sql`)으로만 한다. 삭제 시 잃는 것: 게시 전 사진 예약 정보(공개 데이터는 영향 없음, 파일은 저장소에 남음).
 
 ## 4. 복구 절차(참고)
