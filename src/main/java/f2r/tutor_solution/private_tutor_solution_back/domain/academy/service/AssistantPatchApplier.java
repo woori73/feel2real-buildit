@@ -46,11 +46,19 @@ final class AssistantPatchApplier {
   }
 
   /** 현재 작업본 상태(읽기 전용 스냅샷). */
-  record Snapshot(String intro, Map<String, String> draft, Map<String, Boolean> visibility, List<String> order) {
+  record Snapshot(
+      String intro, Map<String, String> draft, Map<String, Boolean> visibility, List<String> order,
+      Set<String> imageSlots) {
     Snapshot {
       draft = draft == null ? Map.of() : Collections.unmodifiableMap(new HashMap<>(draft));
       visibility = visibility == null ? Map.of() : Collections.unmodifiableMap(new HashMap<>(visibility));
       order = order == null ? List.of() : List.copyOf(order);
+      imageSlots = imageSlots == null ? Set.of() : Set.copyOf(imageSlots);
+    }
+
+    /** 이미지 슬롯 정보 없이 만든다(이미지 연산을 쓰지 않는 호출·테스트용). */
+    Snapshot(String intro, Map<String, String> draft, Map<String, Boolean> visibility, List<String> order) {
+      this(intro, draft, visibility, order, null);
     }
   }
 
@@ -66,7 +74,13 @@ final class AssistantPatchApplier {
 
   record Applied(
       String intro, Map<String, String> draftPatch, Map<String, Boolean> visibility, List<String> order,
-      List<Change> changes, Undo undo) {
+      List<Change> changes, Undo undo, List<String> mediaClears) {
+    Applied(
+        String intro, Map<String, String> draftPatch, Map<String, Boolean> visibility, List<String> order,
+        List<Change> changes, Undo undo) {
+      this(intro, draftPatch, visibility, order, changes, undo, List.of());
+    }
+
     boolean isEmpty() {
       return changes.isEmpty();
     }
@@ -135,6 +149,14 @@ final class AssistantPatchApplier {
         String v = lower(op.value());
         if (!AssistantDesignCatalog.CARD_STYLES.contains(v)) return "알 수 없는 카드 스타일이라 건너뛰었어요: " + shorten(op.value());
         accepted.add(Op.of("setCardStyle", null, v));
+        return null;
+      }
+      case "clearImage": {
+        String slot = lower(op.value());
+        String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(slot);
+        if (meta == null) return "알 수 없는 이미지 자리라 건너뛰었어요: " + shorten(op.value());
+        if (!snap.imageSlots().contains(slot)) return meta[0] + "은(는) 이미 비어 있어요.";
+        accepted.add(Op.of("clearImage", null, slot));
         return null;
       }
       case "setText": {
@@ -216,6 +238,7 @@ final class AssistantPatchApplier {
       String k = switch (o.op()) {
         case "setColor", "setFont", "setText" -> o.op() + ":" + o.key();
         case "moveSection" -> "move:" + o.id();
+        case "clearImage" -> "clear:" + o.value();
         case "showSection", "hideSection" -> "vis:" + o.id();
         default -> o.op();
       };
@@ -236,6 +259,7 @@ final class AssistantPatchApplier {
     List<String> order = normalizedOrder(snap.order());
     String intro = snap.intro();
     List<String> moves = new ArrayList<>();
+    List<String> mediaClears = new ArrayList<>();
     Set<String> touched = new java.util.LinkedHashSet<>();
 
     for (Op o : ops) {
@@ -271,6 +295,7 @@ final class AssistantPatchApplier {
           touched.add(o.key());
         }
         case "setIntro" -> intro = o.value();
+        case "clearImage" -> mediaClears.add(o.value());
         case "showSection" -> vis.put(o.id(), true);
         case "hideSection" -> vis.put(o.id(), false);
         case "moveSection" -> {
@@ -311,6 +336,11 @@ final class AssistantPatchApplier {
       changes.add(0, c);
     }
 
+    for (String slot : mediaClears) {
+      String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(slot);
+      changes.add(new Change("사진 삭제: " + meta[0], "있음", "없음", meta[1]));
+    }
+
     boolean introChanged = !Objects.equals(intro, snap.intro());
     if (introChanged) changes.add(new Change("학원 소개 문단", shorten(snap.intro()), shorten(intro), "sec-intro"));
 
@@ -336,7 +366,7 @@ final class AssistantPatchApplier {
         orderOut == null ? null : normalizedOrder(snap.order()));
     return new Applied(
         introChanged ? intro : null, draftPatch,
-        visOut == null ? null : new HashMap<>(visOut), orderOut, changes, undo);
+        visOut == null ? null : new HashMap<>(visOut), orderOut, changes, undo, List.copyOf(mediaClears));
   }
 
   private static String lastMovedId(List<Op> ops) {

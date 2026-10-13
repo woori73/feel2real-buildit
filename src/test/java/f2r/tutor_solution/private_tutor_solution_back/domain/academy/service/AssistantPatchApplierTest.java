@@ -164,4 +164,34 @@ class AssistantPatchApplierTest {
     assertThat(AcademyService.DEFAULT_SECTION_ORDER).containsAll(AssistantDesignCatalog.SECTIONS.keySet());
     assertThat(AssistantDesignCatalog.SECTIONS).doesNotContainKey("sec-hero");
   }
+
+  @Test
+  @DisplayName("given 사진이 있는 자리 when 삭제 연산을 검증·적용하면 then 허용되고 삭제 변경이 요약에 나온다")
+  void clearImageWhenPresent() {
+    Snapshot s = new Snapshot("소개", Map.of(), Map.of(), null, java.util.Set.of("principal"));
+    Plan p = plan(s, "", Op.of("clearImage", null, "PRINCIPAL"));
+    assertThat(p.skipped()).isEmpty();
+    Applied applied = AssistantPatchApplier.apply(s, p.accepted());
+    assertThat(applied.mediaClears()).containsExactly("principal");
+    assertThat(applied.changes()).extracting(AssistantPatchApplier.Change::label).containsExactly("사진 삭제: 원장 사진");
+    assertThat(applied.changes().get(0).sectionId()).isEqualTo("sec-principal");
+    assertThat(applied.draftPatch()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("given 이미 비어 있거나 모르는 사진 자리 when 삭제 연산을 검증하면 then 건너뛰고 이유를 안내한다")
+  void clearImageRejected() {
+    Snapshot s = new Snapshot("소개", Map.of(), Map.of(), null, java.util.Set.of("principal"));
+    Plan p = plan(s, "", Op.of("clearImage", null, "schedule"), Op.of("clearImage", null, "logo"));
+    assertThat(p.accepted()).isEmpty();
+    assertThat(p.skipped()).hasSize(2);
+    assertThat(p.skipped().get(0)).contains("시간표 달력").contains("비어");
+  }
+
+  @Test
+  @DisplayName("given 사진 슬롯 정보 없는 스냅샷 when 삭제하면 then 안전하게 거부(없는 사진을 지우는 척하지 않는다)")
+  void clearImageWithoutSlotInfo() {
+    Plan p = plan(snap(Map.of()), "", Op.of("clearImage", null, "principal"));
+    assertThat(p.accepted()).isEmpty();
+  }
 }

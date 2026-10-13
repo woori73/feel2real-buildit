@@ -8,7 +8,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/assistant_home.css?v=20261012-4"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261013-1"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp">
@@ -80,7 +80,16 @@
         <div class="ah-strip-actions"><button type="button" class="ah-link" id="ahStripUndo" hidden>이 수정 되돌리기</button><button type="button" class="ah-link" id="ahShowHistory">대화 보기</button></div>
       </div>
       <div class="ah-chips" id="ahChips" role="group" aria-label="추천 요청"></div>
+      <div class="ah-photo-menu" id="ahPhotoMenu" hidden role="menu" aria-label="사진을 올릴 자리">
+        <button type="button" role="menuitem" data-slot="principal">원장 사진</button>
+        <button type="button" role="menuitem" data-slot="textbook1">교재 표지 1</button>
+        <button type="button" role="menuitem" data-slot="textbook2">교재 표지 2</button>
+        <button type="button" role="menuitem" data-slot="textbook3">교재 표지 3</button>
+        <button type="button" role="menuitem" data-slot="schedule">시간표 달력</button>
+      </div>
+      <input type="file" id="ahPhotoFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden/>
       <form class="ah-composer" id="ahWorkComposer" autocomplete="off">
+        <button class="ah-photo" type="button" id="ahPhotoBtn" aria-label="사진 올리기" title="사진 올리기">📷</button>
         <input class="ah-input" id="ahWorkInput" maxlength="1000" placeholder="예: 더 고급스러운 분위기로 바꿔 줘" aria-label="수정 요청"/>
         <button class="ah-send" type="submit" id="ahWorkSend" aria-label="보내기">보내기</button>
       </form>
@@ -105,6 +114,6 @@
     <div class="ah-toast" id="ahToast" role="status" hidden></div>
   </section>
 </div>
-<script src="/js/assistant_home.js?v=20261013-1"></script>
+<script src="/js/assistant_home.js?v=20261013-2"></script>
 </body>
 </html>

@@ -37,6 +37,17 @@ final class AssistantRuleInterpreter {
     MOODS.put(new String[] {"사진", "이미지 중심", "비주얼"}, new String[] {"PHOTO", "MODERN", "visual", "media"});
   }
 
+  /** 사진 슬롯 id → 부르는 말(공백 제거 형태). 긴 이름이 먼저 와야 "교재표지1"이 "교재표지"보다 먼저 맞는다. */
+  private static final Map<String, String[]> IMAGE_NAMES = new LinkedHashMap<>();
+
+  static {
+    IMAGE_NAMES.put("textbook1", new String[] {"교재표지1", "교재1표지", "첫번째교재표지"});
+    IMAGE_NAMES.put("textbook2", new String[] {"교재표지2", "교재2표지", "두번째교재표지"});
+    IMAGE_NAMES.put("textbook3", new String[] {"교재표지3", "교재3표지", "세번째교재표지"});
+    IMAGE_NAMES.put("principal", new String[] {"원장님사진", "원장사진", "원장대표사진", "대표사진"});
+    IMAGE_NAMES.put("schedule", new String[] {"시간표달력이미지", "시간표달력", "달력이미지", "시간표이미지"});
+  }
+
   private static final Map<String, String> COLORS = new LinkedHashMap<>();
 
   static {
@@ -59,6 +70,21 @@ final class AssistantRuleInterpreter {
     String t = text.replaceAll("\\s+", "");
     List<Op> ops = new ArrayList<>();
     List<String> said = new ArrayList<>();
+
+    // 사진 삭제 — "원장 사진 지워줘" 같은 요청. 사진 이름은 섹션 이름(원장 등)과 겹치므로 먼저 처리하고 문장에서 빼 둔다.
+    // (새 사진은 사용자가 직접 올려야 한다 — 에이전트는 사진을 만들거나 찾지 않는다.)
+    if (containsAny(t, "지워", "삭제", "빼줘", "빼주", "없애", "비워", "치워")) {
+      for (Map.Entry<String, String[]> img : IMAGE_NAMES.entrySet()) {
+        for (String name : img.getValue()) {
+          if (t.contains(name)) {
+            ops.add(Op.of("clearImage", null, img.getKey()));
+            said.add(AssistantDesignCatalog.IMAGE_SLOTS.get(img.getKey())[0] + " 삭제");
+            t = t.replace(name, "");
+            break;
+          }
+        }
+      }
+    }
 
     // 섹션 표시·순서
     for (Map.Entry<String, String> s : AssistantDesignCatalog.SECTIONS.entrySet()) {

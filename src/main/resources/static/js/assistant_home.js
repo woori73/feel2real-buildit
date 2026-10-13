@@ -42,10 +42,11 @@
     return e;
   }
   function api(method, path, body) {
+    var isForm = typeof FormData !== 'undefined' && body instanceof FormData;
     return fetch(API + path, {
       method: method, credentials: 'same-origin',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined
+      headers: body && !isForm ? { 'Content-Type': 'application/json' } : undefined,
+      body: body ? (isForm ? body : JSON.stringify(body)) : undefined
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
         if (!r.ok) {
@@ -178,7 +179,7 @@
     });
   }
   function setDockBusy(b) {
-    $('ahWorkSend').disabled = b; $('ahWorkInput').disabled = b; $('ahPublish').disabled = b;
+    $('ahWorkSend').disabled = b; $('ahWorkInput').disabled = b; $('ahPhotoBtn').disabled = b; $('ahPublish').disabled = b;
     Array.prototype.forEach.call($('ahChips').children, function (c) { c.disabled = b; });
     renderUndo();
   }
@@ -274,6 +275,35 @@
       }
       showStrip((e.message || '요청을 처리하지 못했어요.') + ' 작업본은 그대로예요.', true, []);
       $('ahWorkInput').value = text; // 입력 보존: 다시 보낼 수 있다
+    }).then(function () { ctx.busy = false; setDockBusy(false); });
+  }
+
+  /** 사진 올리기 — 작업본의 이미지 예약으로만 저장된다(공개는 게시 전까지 그대로). 되돌리기 가능. */
+  function uploadPhoto(slot, file) {
+    if (!file || ctx.busy) return;
+    ctx.busy = true; setDockBusy(true);
+    var busyBox = $('ahBusy'); busyBox.hidden = false;
+    var p = progress($('ahBusySteps'), ['사진을 확인하고 있어요', '작업본에 올리고 있어요', '미리보기에 반영하고 있어요'], 1500);
+    var form = new FormData();
+    form.append('slot', slot); form.append('revision', String(ctx.revision)); form.append('image', file);
+    api('POST', '/media', form).then(function (r) {
+      p.stop(); busyBox.hidden = true;
+      if (r.revision != null) ctx.revision = r.revision;
+      if (r.undoDepth != null) ctx.undoDepth = r.undoDepth;
+      history.push({ role: 'USER', kind: 'TEXT', content: '사진 올리기' });
+      history.push({ role: 'ASSISTANT', kind: 'EDIT', content: r.reply, payload: { changes: r.changes } });
+      ctx.dirty = true;
+      var first = (r.changes || []).filter(function (c) { return c.sectionId; })[0];
+      showStrip(r.reply, false, r.changes);
+      loadPreview(first ? first.sectionId : null);
+      renderStatus();
+    }).catch(function (e) {
+      p.stop(); busyBox.hidden = true;
+      if (e.status === 409 && e.code === 'REVISION_CONFLICT') {
+        showStrip(e.message + ' 최신 작업본을 다시 불러왔어요. 사진을 다시 올려 주세요.', true, []);
+        return refresh();
+      }
+      showStrip((e.message || '사진을 올리지 못했어요.') + ' 작업본은 그대로예요.', true, []);
     }).then(function () { ctx.busy = false; setDockBusy(false); });
   }
 
@@ -377,6 +407,16 @@
     $('ahComposer').addEventListener('submit', submitChat);
     $('ahChosenClear').addEventListener('click', clearSample);
     $('ahWorkComposer').addEventListener('submit', function (ev) { ev.preventDefault(); sendEdit($('ahWorkInput').value); });
+    $('ahPhotoBtn').addEventListener('click', function () { var m = $('ahPhotoMenu'); m.hidden = !m.hidden; });
+    Array.prototype.forEach.call($('ahPhotoMenu').querySelectorAll('[data-slot]'), function (b) {
+      b.addEventListener('click', function () {
+        ctx.photoSlot = b.getAttribute('data-slot'); $('ahPhotoMenu').hidden = true;
+        $('ahPhotoFile').value = ''; $('ahPhotoFile').click();
+      });
+    });
+    $('ahPhotoFile').addEventListener('change', function () {
+      var f = this.files && this.files[0]; if (f && ctx.photoSlot) uploadPhoto(ctx.photoSlot, f);
+    });
     $('ahUndo').addEventListener('click', undo);
     $('ahStripUndo').addEventListener('click', undo);
     $('ahPublish').addEventListener('click', openConfirm);

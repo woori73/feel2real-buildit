@@ -49,6 +49,10 @@ public class AcademyWorkingCopy {
   @Column(name = "page_settings_json", columnDefinition = "MEDIUMTEXT")
   private String pageSettingsJson;
 
+  /** 게시 전 이미지 교체/삭제 예약(JSON slot→storage key, 빈 문자열=비우기). null이면 예약 없음. */
+  @Column(name = "staged_media_json", columnDefinition = "TEXT")
+  private String stagedMediaJson;
+
   /** 작업본이 기준으로 삼은 공개 내용의 지문. 공개 내용이 바뀌었는지 게시 시 비교한다. */
   @Column(name = "base_fingerprint", nullable = false, length = 64)
   private String baseFingerprint;
@@ -81,6 +85,12 @@ public class AcademyWorkingCopy {
   public void replaceContent(String intro, String pageSettingsJson, String actor) {
     this.intro = intro;
     this.pageSettingsJson = pageSettingsJson;
+    this.updatedBy = actor;
+  }
+
+  /** 이미지 예약을 바꾼다. 값이 달라지면 Hibernate가 UPDATE하며 revision이 오른다. */
+  public void replaceStagedMedia(String stagedMediaJson, String actor) {
+    this.stagedMediaJson = stagedMediaJson;
     this.updatedBy = actor;
   }
 

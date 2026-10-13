@@ -40,6 +40,17 @@ final class AssistantDesignCatalog {
   static final Set<String> HERO_LAYOUTS = Set.of("center", "split", "visual", "gradient");
   static final Set<String> CARD_STYLES = Set.of("bordered", "rounded", "media", "minimal");
 
+  /** 이미지 슬롯 id → {이름, 섹션 id}. id는 {@code HeroMediaSlot.key()}와 같다. */
+  static final Map<String, String[]> IMAGE_SLOTS = new LinkedHashMap<>();
+
+  static {
+    IMAGE_SLOTS.put("principal", new String[] {"원장 사진", "sec-principal"});
+    IMAGE_SLOTS.put("textbook1", new String[] {"교재 표지 1", "sec-lessons"});
+    IMAGE_SLOTS.put("textbook2", new String[] {"교재 표지 2", "sec-lessons"});
+    IMAGE_SLOTS.put("textbook3", new String[] {"교재 표지 3", "sec-lessons"});
+    IMAGE_SLOTS.put("schedule", new String[] {"시간표 달력", "sec-lessons"});
+  }
+
   /** 색상 키 → 역할 설명(프롬프트용). */
   static final Map<String, String> COLOR_KEYS = new LinkedHashMap<>();
 

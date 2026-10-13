@@ -1566,7 +1566,10 @@
         return (view.heroMediaSlots || []).indexOf(slot) !== -1;
       },
       heroMediaUrl(slot) {
-        // 공개 경로는 발행된 학원만 통과한다.
+        // 작업본 비공개 미리보기: 예약(교체·삭제)된 사진을 반영하는 소유자 전용 경로. 공개 경로는 발행된 학원만 통과한다.
+        if (resolve(options.workingCopyMedia)) {
+          return `/api/tutor/academy/assistant/media/${slot}?v=${resolve(options.mediaVersion)}`;
+        }
         return `/api/academies/${encodeURIComponent(resolve(options.slug))}/hero-media/${slot}`;
       },
       // 달력 이미지가 없으면 공개 페이지에는 블록을 만들지 않는다(빈 문자열 = 블록 없음).

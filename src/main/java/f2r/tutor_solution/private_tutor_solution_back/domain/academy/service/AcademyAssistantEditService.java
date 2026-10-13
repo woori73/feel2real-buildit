@@ -86,7 +86,7 @@ public class AcademyAssistantEditService {
     // 1) 읽기
     State state = tx.execute(s -> workingCopyService.open(principal));
     requireRevision(state, expectedRevision);
-    Snapshot snap = snapshotOf(state);
+    Snapshot snap = snapshotOf(state, imageSlotsOf(academy, workingCopyService.stagedMedia(principal)));
 
     // 2) AI 해석 (트랜잭션 밖)
     Interpretation interp = interpret(text, academy, snap);
@@ -109,16 +109,27 @@ public class AcademyAssistantEditService {
       EditOutcome out = tx.execute(s -> {
         State fresh = workingCopyService.open(principal);
         requireRevision(fresh, state.revision());
-        Applied applied = AssistantPatchApplier.apply(snapshotOf(fresh), plan.accepted());
+        Map<String, String> stagedBefore = workingCopyService.stagedMedia(principal);
+        Applied applied = AssistantPatchApplier.apply(
+            snapshotOf(fresh, imageSlotsOf(academy, stagedBefore)), plan.accepted());
         if (applied.isEmpty()) {
           return null;
         }
-        State saved = workingCopyService.save(principal, fresh.revision(), applied.intro(), toPatch(applied));
+        State saved = hasContent(applied)
+            ? workingCopyService.save(principal, fresh.revision(), applied.intro(), toPatch(applied))
+            : fresh;
+        // 사진 삭제는 공개 슬롯이 아니라 작업본의 이미지 예약만 바꾼다(되돌리기용으로 이전 예약 값을 남긴다).
+        Map<String, Object> mediaUndo = new java.util.LinkedHashMap<>();
+        for (String slot : applied.mediaClears()) {
+          mediaUndo.put(slot, stagedBefore.get(slot));
+          saved = workingCopyService.stageMedia(principal, saved.revision(), slot, "");
+        }
         String reply = editReply(interp, applied.changes(), plan.skipped());
         Map<String, Object> payload = new java.util.LinkedHashMap<>();
         payload.put("changes", applied.changes());
         payload.put("skipped", plan.skipped());
         payload.put("undo", applied.undo());
+        if (!mediaUndo.isEmpty()) payload.put("mediaUndo", mediaUndo);
         payload.put("revisionAfter", saved.revision());
         payload.put("engine", interp.engine());
         payload.put("aiMs", interp.ms());
@@ -152,6 +163,44 @@ public class AcademyAssistantEditService {
     }
   }
 
+  // ───────────────────────── 사진 올리기(S3) ─────────────────────────
+
+  /**
+   * 이미 저장소에 올라간 사진(storageKey)을 작업본의 이미지 예약으로 건다. 공개 슬롯은 게시 전까지 그대로다.
+   * 사용자가 직접 올린 사진만 쓴다 — 에이전트는 이미지를 만들거나 찾아 오지 않는다. 되돌리기 대상(EDIT)으로 기록한다.
+   */
+  public EditOutcome stageUploadedMedia(
+      JwtTokenProvider.AuthenticatedPrincipal principal, String slot, String storageKey, Long expectedRevision) {
+    String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(slot);
+    if (meta == null) throw new IllegalArgumentException("올릴 수 없는 사진 자리예요: " + slot);
+    AcademyResponse academy = academyService.getMine(principal)
+        .orElseThrow(() -> new IllegalArgumentException("홈페이지를 먼저 만들어 주세요."));
+    Long academyId = academy.academyId();
+    return tx.execute(s -> {
+      State fresh = workingCopyService.open(principal);
+      requireRevision(fresh, expectedRevision);
+      Map<String, String> stagedBefore = workingCopyService.stagedMedia(principal);
+      boolean had = imageSlotsOf(academy, stagedBefore).contains(slot);
+      State saved = workingCopyService.stageMedia(principal, fresh.revision(), slot, storageKey);
+      AssistantPatchApplier.Change change = new AssistantPatchApplier.Change(
+          (had ? "사진 교체: " : "사진 추가: ") + meta[0], had ? "기존 사진" : "(없음)", "올리신 사진(미리보기에만 반영)", meta[1]);
+      String reply = meta[0] + "을(를) " + (had ? "교체" : "추가") + "했어요. 미리보기에서 확인해 보세요. 게시하기 전에는 공개되지 않아요.";
+      Map<String, Object> mediaUndo = new java.util.LinkedHashMap<>();
+      mediaUndo.put(slot, stagedBefore.get(slot));
+      Map<String, Object> payload = new java.util.LinkedHashMap<>();
+      payload.put("changes", List.of(change));
+      payload.put("skipped", List.of());
+      payload.put("undo", new Undo(false, null, Map.of(), null, null));
+      payload.put("mediaUndo", mediaUndo);
+      payload.put("revisionAfter", saved.revision());
+      payload.put("engine", "UPLOAD");
+      remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, "사진 올리기: " + meta[0], null);
+      remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_EDIT, reply, toJson(payload));
+      return new EditOutcome(reply, List.of(change), List.of(), "UPLOAD", 0, false, saved.revision(),
+          undoDepth(academyId), null);
+    });
+  }
+
   // ───────────────────────── 되돌리기 ─────────────────────────
 
   public EditOutcome undo(JwtTokenProvider.AuthenticatedPrincipal principal, Long expectedRevision) {
@@ -175,16 +224,33 @@ public class AcademyAssistantEditService {
         return new EditOutcome("되돌리기 정보를 읽을 수 없어요.", List.of(), List.of(), "NONE", 0, true,
             fresh.revision(), stack.depth, null);
       }
-      Applied inv = AssistantPatchApplier.inverse(snapshotOf(fresh), undo);
-      State saved = workingCopyService.save(principal, fresh.revision(), inv.intro(), toPatch(inv));
+      Applied inv = AssistantPatchApplier.inverse(
+          snapshotOf(fresh, imageSlotsOf(academy, workingCopyService.stagedMedia(principal))), undo);
+      State saved = hasContent(inv)
+          ? workingCopyService.save(principal, fresh.revision(), inv.intro(), toPatch(inv))
+          : fresh;
+      // 사진 예약도 되돌린다(이전 예약 값이 없었으면 예약 자체를 지워 공개본 그대로로 돌아간다).
+      List<AssistantPatchApplier.Change> changes = new ArrayList<>(inv.changes());
+      JsonNode mediaUndo = payloadOf(stack.topEdit) == null ? null : payloadOf(stack.topEdit).get("mediaUndo");
+      if (mediaUndo != null && mediaUndo.isObject()) {
+        var it = mediaUndo.fields();
+        while (it.hasNext()) {
+          var e = it.next();
+          saved = workingCopyService.stageMedia(
+              principal, saved.revision(), e.getKey(), e.getValue().isNull() ? null : e.getValue().asText());
+          String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(e.getKey());
+          changes.add(new AssistantPatchApplier.Change(
+              "사진: " + (meta == null ? e.getKey() : meta[0]), "변경됨", "이전 상태로 복원", meta == null ? null : meta[1]));
+        }
+      }
       String reply = "이전 수정을 되돌렸어요.";
       Map<String, Object> payload = new java.util.LinkedHashMap<>();
       payload.put("undoes", stack.topEdit.getMessageId());
-      payload.put("changes", inv.changes());
+      payload.put("changes", changes);
       payload.put("revisionAfter", saved.revision());
       remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, "되돌리기", null);
       remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_UNDO, reply, toJson(payload));
-      return new EditOutcome(reply, inv.changes(), List.of(), "UNDO", 0, false, saved.revision(), stack.depth - 1, null);
+      return new EditOutcome(reply, changes, List.of(), "UNDO", 0, false, saved.revision(), stack.depth - 1, null);
     });
   }
 
@@ -286,7 +352,8 @@ public class AcademyAssistantEditService {
     sb.append("  {\"op\":\"setText\",\"key\":\"introHeading\",\"value\":\"...\"},\n");
     sb.append("  {\"op\":\"setIntro\",\"value\":\"...\"},\n");
     sb.append("  {\"op\":\"showSection\",\"id\":\"sec-lessons\"}, {\"op\":\"hideSection\",\"id\":\"sec-videos\"},\n");
-    sb.append("  {\"op\":\"moveSection\",\"id\":\"sec-cta\",\"value\":\"first\"}  // value: first|last, 또는 before/after에 대상 섹션 id\n");
+    sb.append("  {\"op\":\"moveSection\",\"id\":\"sec-cta\",\"value\":\"first\"},  // value: first|last, 또는 before/after에 대상 섹션 id\n");
+    sb.append("  {\"op\":\"clearImage\",\"value\":\"principal\"}  // 이미 올라가 있는 사진 비우기만 가능\n");
     sb.append("]}\n\n");
 
     sb.append("[허용 값]\n");
@@ -301,6 +368,9 @@ public class AcademyAssistantEditService {
     AssistantDesignCatalog.COLOR_KEYS.forEach((k, v) -> sb.append(k).append("=").append(v).append("; "));
     sb.append("\nsetText key: ");
     AssistantDesignCatalog.TEXT_KEYS.forEach((k, v) -> sb.append(k).append("=").append(v[0]).append("; "));
+    sb.append("\nclearImage value: ");
+    AssistantDesignCatalog.IMAGE_SLOTS.forEach((k, v) -> sb.append(k).append("=").append(v[0]).append("; "));
+    sb.append("(사진을 새로 올리거나 만들어 주는 연산은 없다. 새 사진은 사용자가 직접 올린 것만 쓰며, 요청 시 '사진 올리기 버튼으로 올려 달라'고 안내한다)");
     sb.append("\n섹션 id: ");
     AssistantDesignCatalog.SECTIONS.forEach((k, v) -> sb.append(k).append("=").append(v).append("; "));
     sb.append("\n(sec-hero는 항상 맨 위, 바꿀 수 없음)\n\n");
@@ -367,13 +437,29 @@ public class AcademyAssistantEditService {
     return sb.toString();
   }
 
-  private static Snapshot snapshotOf(State state) {
+  /** 지금 이미지가 있는 슬롯 = 공개 슬롯 + 예약된 교체 − 예약된 비우기. */
+  private static java.util.Set<String> imageSlotsOf(AcademyResponse academy, Map<String, String> staged) {
+    java.util.Set<String> slots = new java.util.HashSet<>(
+        academy.heroMediaSlots() == null ? List.<String>of() : academy.heroMediaSlots());
+    staged.forEach((slot, key) -> {
+      if (key == null || key.isEmpty()) slots.remove(slot);
+      else slots.add(slot);
+    });
+    return slots;
+  }
+
+  private static boolean hasContent(Applied a) {
+    return a.intro() != null || !a.draftPatch().isEmpty() || a.visibility() != null || a.order() != null;
+  }
+
+  private static Snapshot snapshotOf(State state, java.util.Set<String> imageSlots) {
     AcademyPageSettings ps = state.pageSettings();
     return new Snapshot(
         state.intro(),
         ps == null ? null : ps.builderDraft(),
         ps == null ? null : ps.sectionVisibility(),
-        ps == null ? null : ps.sectionOrder());
+        ps == null ? null : ps.sectionOrder(),
+        imageSlots);
   }
 
   private static AcademyPageSettingsUpdateRequest toPatch(Applied a) {

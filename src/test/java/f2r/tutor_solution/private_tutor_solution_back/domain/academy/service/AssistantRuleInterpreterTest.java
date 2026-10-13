@@ -81,4 +81,22 @@ class AssistantRuleInterpreterTest {
   void rulesNeverWriteCopy() {
     assertThat(ops("소개 문구를 새로 써줘")).noneMatch(o -> o.op().equals("setText") || o.op().equals("setIntro"));
   }
+
+  @Test
+  @DisplayName("given 사진 삭제 요청 when 해석하면 then clearImage만 내고, 이름이 겹치는 원장 소개 섹션은 숨기지 않는다")
+  void clearsImagesWithoutHidingSections() {
+    List<Op> principal = ops("원장 사진 지워줘");
+    assertThat(has("clearImage", null, "principal").test(principal)).isTrue();
+    assertThat(principal).noneMatch(o -> "hideSection".equals(o.op()));
+    assertThat(has("clearImage", null, "textbook2").test(ops("교재 표지 2 삭제해줘"))).isTrue();
+    assertThat(has("clearImage", null, "schedule").test(ops("시간표 달력 이미지 빼줘"))).isTrue();
+  }
+
+  @Test
+  @DisplayName("given 사진 이름 없이 섹션만 삭제 요청 when 해석하면 then 기존대로 섹션 숨김(사진 연산 없음)")
+  void sectionHideUnchanged() {
+    List<Op> hide = ops("원장 소개 빼줘");
+    assertThat(hide).noneMatch(o -> "clearImage".equals(o.op()));
+    assertThat(has("hideSection", "sec-principal", null).test(hide)).isTrue();
+  }
 }
