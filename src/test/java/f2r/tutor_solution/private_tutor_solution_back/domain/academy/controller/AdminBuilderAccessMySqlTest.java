@@ -44,7 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
     "app.jwt.secret=12345678901234567890123456789012",
     "app.jwt.expiration-seconds=86400",
     "app.jwt.cookie-name=ACCESS_TOKEN",
-    "app.jwt.secure-cookie=false"
+    "app.jwt.secure-cookie=false",
+    "buildit.assistant.enabled=true"
 })
 @DisplayName("빌더 접근 권한 MySQL 통합 테스트 — ADMIN 허용, 소유권·TUTOR 전용·STUDENT 제한 유지")
 class AdminBuilderAccessMySqlTest {
