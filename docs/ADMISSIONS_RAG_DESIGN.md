@@ -66,3 +66,34 @@
 - 현재 2027/2028 하드코딩 위치: 로더 `SUPPORTED_YEARS`, 검색의 "2027 확정/2028 계획" 분기(`year_confirmed`), 프롬프트·고정 문구.
 - 한계: 2029 이후를 넣으려면 코드 수정이 3곳 필요하고, `year_confirmed`(참/거짓)로는 "확정/시행계획/기본사항(정책)" 3단계를 표현할 수 없다.
 - 권장(승인 후): `app.admissions.supported-years` 설정(연도별 상태 CONFIRMED/PLANNED)으로 외부화하고 `year_confirmed` 대신 `year_status` 열거형 도입. 2029는 전국 기본사항을 `PLANNED` + 별도 카테고리로만 허용하고 대학별 사실 질문에는 사용하지 않는다. 현재 2027/2028 한정은 현 자료 범위에서는 적절하다.
+
+## 4. 구현 범위와 DB 변경 (확정안 — 구현·적용은 별도 승인 후)
+
+> 운영 DB에는 아무것도 적용하지 않는다. 아래 변경은 격리 환경·CI에서만 검증하고, 운영 적용은 별도 승인 후 수동 배포 절차로만 진행한다.
+
+### 4.1 DB 변경 (마이그레이션)
+`V1066`은 미병합·운영 미적용이다. 다른 개발 DB에 이미 적용한 곳이 없으면 V1066을 수정하고, 있으면 `V1067`로 추가한다(적용된 V_파일 불변 원칙). 번호는 `docs/WORKFLOW.md` §4 기준으로 병합 직전에 재확인한다.
+
+| 대상 | 변경 | 이유 |
+|---|---|---|
+| `admissions_official_materials` | `status VARCHAR(20) NOT NULL DEFAULT 'DRAFT'`, `verification_status VARCHAR(30)` 추가 | 현재 상태 컬럼이 없어 DRAFT 자료 제목이 검색에 노출됨 |
+| `admissions_departments`, `admissions_types`, `admissions_schedules` | 동일한 `status`/`verification_status` + `source_material_id`(FK, schedules는 이미 있음) 추가 | 승인 게이트 + 근거 출처 인용(학과·전형은 출처 연결이 없음) |
+| 세 테이블 | `row_hash CHAR(64) NOT NULL` + `UNIQUE (row_hash)` | DB 수준 멱등성(대학+학년도+이름+수치 해시). 원본 중복행(SNU 광역 2건)은 해시에 수치를 포함해 구분 |
+| `admissions_universities` | 별칭 테이블 `admissions_university_alias(university_id, alias)` 신설, `UNIQUE(alias)` | "서울대/서울대학교/SNU" 질문 매핑(현재 DB에는 정식 이름만 있음) |
+| `admissions_knowledge_items` | `role VARCHAR(10) NOT NULL DEFAULT 'FACT'` (`FACT`/`GUIDE`) | Q1~Q9 안내문을 근거 개수에서 제외 |
+| 인덱스 | `(university_id, academic_year, status)` 복합 인덱스(세 테이블) | 의도별 조회 성능 |
+| 일정 | `start_date/end_date` 파싱은 선택 사항(1차는 `note` 원문 인용) | 날짜 계산 질문은 범위 밖 |
+
+연동 문서: `docs/DOMAIN.md`(스키마), `docs/API.md`(승인 API), Entity 동시 수정.
+
+### 4.2 코드 구현 범위 (순서)
+1. **질문 분석기** `AdmissionsQueryParser`(순수 함수): 대학(별칭), 학년도, 의도(학과/전형/일정/비교/변화/의견), 학과·전형 키워드 추출. 단위 테스트(given/when/then) 중심.
+2. **조회 서비스** `AdmissionsFactSearchService`: 의도별로 `departments/types/schedules`를 `status=APPROVED` + 학년도 필터로 조회하고 `Evidence`(테이블, 행 id, 학년도, 출처 자료, 원문 값)로 반환.
+3. **ResearchService 통합**: 기존 STEP1~5 앞에 FACT 단계 삽입. `GUIDE` 지식은 근거 개수에서 제외. 라우팅 결과 0건이면 LLM 호출 없이 고정 문구.
+4. **프롬프트·후처리**: "근거에 없는 숫자 금지" 지시 + 출력 숫자 ⊂ 근거 숫자 검증, 위반 시 답변 대신 안전 문구.
+5. **관리자 승인 API**: 행 단위 `DRAFT → REVIEW → APPROVED` 전환(감사 기록 포함). 자동 승격 없음.
+6. **재평가**: 격리 CI에서 22건 재실행(자동 기준 + 접근 제한 아티팩트 수동 검토).
+
+### 4.3 승인 필요 항목 / 하지 않는 것
+- 운영 DB 마이그레이션 적용, 운영 데이터 적재, APPROVED 승격, 병합, 배포: **별도 승인 전 금지**.
+- 학년도 허용 범위(2027/2028) 확장은 이번 범위에서 제외(§3 권고만 기록).
