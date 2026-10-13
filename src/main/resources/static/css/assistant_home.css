@@ -120,3 +120,11 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
   .ah-chips{justify-content:center}
 }
 @media(max-width:420px){.ah-draftnote{display:none}.ah-status{flex:0 1 auto}.ah-subbar{justify-content:space-between}}
+
+/* 사진 올리기(S3) */
+.ah-photo{flex:none;font:inherit;font-size:20px;background:#fff;border:1px solid var(--ah-line);border-radius:12px;min-height:48px;min-width:48px;cursor:pointer}
+.ah-photo:disabled{opacity:.5;cursor:default}
+.ah-photo-menu{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0}
+.ah-photo-menu[hidden]{display:none}
+.ah-photo-menu button{font:inherit;font-size:14px;background:#fff;border:1px solid var(--ah-line);border-radius:999px;padding:8px 14px;cursor:pointer}
+.ah-work .ah-photo-menu{max-width:880px;align-self:center;width:100%}

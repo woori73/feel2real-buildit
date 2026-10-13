@@ -44,6 +44,7 @@ public class AcademyMediaService {
   private static final String LESSON_HERO_FILENAME_HINT = "lesson-hero";
 
   private final AcademyService academyService;
+  private final AcademyWorkingCopyService workingCopyService;
   private final LessonProductRepository lessonProductRepository;
   private final ImageSanitizer imageSanitizer;
   private final FileStorage fileStorage;
@@ -55,6 +56,7 @@ public class AcademyMediaService {
 
   public AcademyMediaService(
       AcademyService academyService,
+      AcademyWorkingCopyService workingCopyService,
       LessonProductRepository lessonProductRepository,
       ImageSanitizer imageSanitizer,
       FileStorage fileStorage,
@@ -63,6 +65,7 @@ public class AcademyMediaService {
       @Value("${app.image.max-decoded-pixels:40000000}") long maxDecodedPixels,
       @Value("${app.image.max-concurrent-decodes:2}") int maxConcurrentDecodes) {
     this.academyService = academyService;
+    this.workingCopyService = workingCopyService;
     this.lessonProductRepository = lessonProductRepository;
     this.imageSanitizer = imageSanitizer;
     this.fileStorage = fileStorage;
@@ -114,6 +117,15 @@ public class AcademyMediaService {
    */
   public void uploadHeroMedia(
       JwtTokenProvider.AuthenticatedPrincipal principal, HeroMediaSlot slot, MultipartFile image) {
+    academyService.updateHeroMedia(principal, slot, storeHeroImage(principal, slot, image));
+  }
+
+  /**
+   * 이미지를 검증·정규화해 저장소에 올리고 storage key만 돌려준다. <b>DB(공개·작업본)는 바꾸지 않는다</b> —
+   * 호출자가 즉시 반영({@link #uploadHeroMedia})할지, 작업본에 예약({@code stageMedia})할지 정한다.
+   */
+  public String storeHeroImage(
+      JwtTokenProvider.AuthenticatedPrincipal principal, HeroMediaSlot slot, MultipartFile image) {
     Academy academy = academyService.requireMyAcademy(principal);
 
     if (image == null || image.isEmpty()) {
@@ -125,10 +137,9 @@ public class AcademyMediaService {
       throw new ResponseStatusException(
           HttpStatus.SERVICE_UNAVAILABLE, "이미지 처리 요청이 많습니다. 잠시 후 다시 시도해 주세요.");
     }
-    String storageKey;
     try {
       ImageSanitizer.SanitizedImage normalized = normalize(image);
-      storageKey = fileStorage.saveImage(
+      return fileStorage.saveImage(
           academy.getTutor().getUserId(), slot.filenameHint(),
           normalized.bytes(), normalized.extension());
     } catch (IOException e) {
@@ -136,7 +147,6 @@ public class AcademyMediaService {
     } finally {
       decodePermits.release();
     }
-    academyService.updateHeroMedia(principal, slot, storageKey);
   }
 
   /** 히어로 이미지 슬롯 비우기. 시안 placeholder로 되돌아간다. */
@@ -154,6 +164,27 @@ public class AcademyMediaService {
   public ServedImage readMyHeroMedia(
       JwtTokenProvider.AuthenticatedPrincipal principal, HeroMediaSlot slot) {
     return readHeroMedia(academyService.requireMyAcademy(principal), slot);
+  }
+
+  /**
+   * 작업본 미리보기용 이미지. 이 슬롯에 예약(교체)이 있으면 그 파일, 비우기 예약이면 없음, 예약이 없으면 공개 슬롯 그대로.
+   * 소유자만 읽을 수 있고 storage key는 밖으로 나가지 않는다.
+   */
+  public ServedImage readWorkingCopyMedia(
+      JwtTokenProvider.AuthenticatedPrincipal principal, HeroMediaSlot slot) {
+    java.util.Map<String, String> staged = workingCopyService.stagedMedia(principal);
+    if (staged.containsKey(slot.key())) {
+      String key = staged.get(slot.key());
+      if (key == null || key.isEmpty()) {
+        throw notFound("등록된 이미지가 없습니다.");
+      }
+      try {
+        return served(key, fileStorage.readPage(key, IMAGE_FILE_TYPE, 1));
+      } catch (IOException e) {
+        throw serverError("이미지를 읽을 수 없습니다.", e);
+      }
+    }
+    return readMyHeroMedia(principal, slot);
   }
 
   private ServedImage readHeroMedia(Academy academy, HeroMediaSlot slot) {
