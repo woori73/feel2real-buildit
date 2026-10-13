@@ -570,7 +570,7 @@
     const soundToggle = tablet.querySelector('.tablet-sound-toggle');
     const soundHint = tablet.querySelector('.tablet-sound-hint');
 
-    if (!mediaStack || !video) return;
+    if (!mediaStack || !video || !photo) return;
 
     // 사용자 음소거 선택 저장 (sessionStorage로 세션 내 유지)
     const STORAGE_KEY = 'eduholic-hero-sound-' + (root.dataset.slug || 'default');
