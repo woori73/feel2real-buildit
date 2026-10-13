@@ -52,7 +52,7 @@ permissions:
 
 jobs:
   diagnostic:
-    if: ${{ inputs.diagnostic_type != 'assistant-ai-eval' }}
+    if: ${{ inputs.diagnostic_type != 'assistant-ai-eval' && inputs.diagnostic_type != 'assistant-live-e2e' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -433,7 +433,7 @@ jobs:
         run: |
           mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-live', '\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di', '신규원장', '신규원장', 'TUTOR', NOW(), NOW());"
       - name: Install E2E deps
-        run: cd e2e/visual-editor && npm ci
+        run: cd e2e/visual-editor && npm install --no-audit --no-fund
       - name: Run live E2E
         run: node e2e/assistant-live/live-flow.js
       - name: App log tail (assistant-edit lines only; no secrets)
