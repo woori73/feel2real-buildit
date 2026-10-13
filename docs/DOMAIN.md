@@ -1706,11 +1706,11 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 입시상담 Agent 전용 테이블. NewStart 운영 DB와 완전 분리. `admissions_*` 테이블은 입시상담 전용.
 
 - `admissions_universities`: 대학 (7개교 → 전국 확대). `name` UNIQUE.
-- `admissions_official_materials`: 공식자료 (모집요강 원문). `university_id` FK, `academic_year`, `issuer`, `document_url`.
-- `admissions_departments`: 모집단위. `university_id` FK, `academic_year`, `quota_info` JSON.
-- `admissions_types`: 전형. `university_id` FK, `academic_year`, `details` TEXT.
-- `admissions_schedules`: 일정. `university_id` FK (NULL 가능), `academic_year`, `source_id` FK → official_materials.
-- `admissions_knowledge_items`: 상담 지식베이스 (핵심 RAG 원천). `academic_year` + `year_confirmed` (2027 확정/2028 계획 구분). `source_class`: OFFICIAL/YOUTUBE/SIMULATION. `status`: DRAFT/REVIEW/ACTIVE (ACTIVE만 RAG 대상). `dedup_key` UNIQUE.
+- `admissions_official_materials`: 공식자료 (모집요강 원문). `university_id` FK, `academic_year`, `issuer`, `document_url`, `status`(DRAFT/REVIEW/ACTIVE — ACTIVE만 검색).
+- `admissions_departments`: 모집단위. `university_id` FK, `academic_year`, `quota_info` JSON, `source_id` FK → official_materials(출처 인용), `status`(ACTIVE만 상담 검색 대상).
+- `admissions_types`: 전형. `university_id` FK, `academic_year`, `details` TEXT, `source_id` FK → official_materials, `status`(ACTIVE만 상담 검색 대상).
+- `admissions_schedules`: 일정. `university_id` FK (NULL 가능), `academic_year`, `source_id` FK → official_materials, `status`(ACTIVE만 상담 검색 대상).
+- `admissions_knowledge_items`: 상담 지식베이스 (핵심 RAG 원천). `academic_year` + `year_confirmed` (2027 확정/2028 계획 구분). `source_class`: OFFICIAL/YOUTUBE/SIMULATION. `status`: DRAFT/REVIEW/ACTIVE (ACTIVE만 RAG 대상). `role`: FACT(답변 근거)/GUIDE(답변 형식 안내문 — 사실 근거가 아니며 근거 개수·출처에서 제외). `dedup_key` UNIQUE.
 - `admissions_knowledge_embeddings`: 임베딩 (768차원, EmbeddingGemma 2). `knowledge_id` FK, `model_version`, `vector` LONGBLOB.
 - `admissions_conflicts`: 충돌대장. `status`: OPEN/RESOLVED/PENDING. OPEN 항목은 RAG에서 제외.
 - `admissions_youtube_analyses`: 유튜브 분석. `related_knowledge_id` FK. 확정 사실 답변에 사용 금지.

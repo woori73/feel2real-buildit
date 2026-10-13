@@ -47,6 +47,12 @@ public class AdmissionsOfficialMaterial {
     @Column(name = "file_key", length = 500)
     private String fileKey;
 
+    /** 승인 상태. 승인(ACTIVE) 전 행은 상담 검색에 쓰이지 않는다. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20, nullable = false)
+    @Builder.Default
+    private AdmissionsKnowledgeItem.KnowledgeStatus status = AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

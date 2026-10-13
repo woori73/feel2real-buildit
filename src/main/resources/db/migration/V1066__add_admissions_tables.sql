@@ -27,6 +27,7 @@ CREATE TABLE admissions_official_materials (
     publish_date        DATE,
     document_url        VARCHAR(1000),
     file_key            VARCHAR(500),
+    status              VARCHAR(20)   NOT NULL DEFAULT 'DRAFT',
     created_at          DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (material_id),
     INDEX idx_admissions_mat_univ_year (university_id, academic_year),
@@ -43,12 +44,16 @@ CREATE TABLE admissions_departments (
     name                VARCHAR(100)  NOT NULL,
     category            VARCHAR(50),
     quota_info          TEXT,
+    source_id           BIGINT,
+    status              VARCHAR(20)   NOT NULL DEFAULT 'DRAFT',
     created_at          DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (department_id),
     INDEX idx_admissions_dept_univ_year (university_id, academic_year),
     INDEX idx_admissions_dept_name (name),
     CONSTRAINT fk_admissions_dept_univ FOREIGN KEY (university_id)
-        REFERENCES admissions_universities (university_id)
+        REFERENCES admissions_universities (university_id),
+    CONSTRAINT fk_admissions_dept_source FOREIGN KEY (source_id)
+        REFERENCES admissions_official_materials (material_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. 전형
@@ -59,12 +64,16 @@ CREATE TABLE admissions_types (
     name                VARCHAR(100)  NOT NULL,
     category            VARCHAR(50),
     details             TEXT,
+    source_id           BIGINT,
+    status              VARCHAR(20)   NOT NULL DEFAULT 'DRAFT',
     created_at          DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (admission_type_id),
     INDEX idx_admissions_type_univ_year (university_id, academic_year),
     INDEX idx_admissions_type_name (name),
     CONSTRAINT fk_admissions_type_univ FOREIGN KEY (university_id)
-        REFERENCES admissions_universities (university_id)
+        REFERENCES admissions_universities (university_id),
+    CONSTRAINT fk_admissions_type_source FOREIGN KEY (source_id)
+        REFERENCES admissions_official_materials (material_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 5. 일정
@@ -77,6 +86,7 @@ CREATE TABLE admissions_schedules (
     end_date            DATE,
     note                TEXT,
     source_id           BIGINT,
+    status              VARCHAR(20)   NOT NULL DEFAULT 'DRAFT',
     created_at          DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (schedule_id),
     INDEX idx_admissions_sched_univ_year (university_id, academic_year),
@@ -100,6 +110,7 @@ CREATE TABLE admissions_knowledge_items (
     source_id           BIGINT,
     source_url          VARCHAR(1000),
     status              VARCHAR(20)   NOT NULL DEFAULT 'DRAFT',
+    role                VARCHAR(10)   NOT NULL DEFAULT 'FACT',
     verification_note   TEXT,
     dedup_key           VARCHAR(191),
     version             INT           NOT NULL DEFAULT 1,

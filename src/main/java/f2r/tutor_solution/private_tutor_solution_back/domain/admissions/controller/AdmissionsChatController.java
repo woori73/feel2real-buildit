@@ -90,7 +90,7 @@ public class AdmissionsChatController {
     }
 
     private static List<SourceDto> toSourceDtos(List<AdmissionsChatService.AnswerSource> sources) {
-        return sources.stream().map(s -> new SourceDto(s.kind(), s.title(), s.url())).toList();
+        return sources.stream().map(s -> new SourceDto(s.kind(), s.title(), s.url(), s.id())).toList();
     }
 
     /**
@@ -101,7 +101,7 @@ public class AdmissionsChatController {
     public record ChatRequest(String message, Integer academicYear, String sessionToken) {}
 
     /** 답변 근거 출처. kind는 "공식 자료 (확정)" / "공식 자료 (계획)" / "공식자료 원문". */
-    public record SourceDto(String kind, String title, String url) {}
+    public record SourceDto(String kind, String title, String url, String id) {}
 
     /**
      * @param status "ok" | "error".

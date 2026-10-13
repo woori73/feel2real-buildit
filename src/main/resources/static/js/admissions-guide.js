@@ -94,16 +94,19 @@
       title.textContent = '[관련 링크 / 출처]';
       srcDiv.appendChild(title);
       data.sources.forEach(function (s) {
-        var a = document.createElement('a');
+        // URL이 없는 근거(내부 자료 DB 행)는 링크 없이 문서 ID와 제목으로 표시한다.
+        var a = document.createElement(s.url ? 'a' : 'span');
         a.className = 'ag-source';
-        a.href = s.url;
-        a.target = '_blank';
-        a.rel = 'noopener';
+        if (s.url) {
+          a.href = s.url;
+          a.target = '_blank';
+          a.rel = 'noopener';
+        }
         var kind = document.createElement('span');
         kind.className = 'ag-source-kind';
         kind.textContent = s.kind;
         a.appendChild(kind);
-        a.appendChild(document.createTextNode(s.title));
+        a.appendChild(document.createTextNode(s.title + (s.url || !s.id ? '' : ' (' + s.id + ')')));
         srcDiv.appendChild(a);
       });
       container.appendChild(srcDiv);

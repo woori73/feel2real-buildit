@@ -4596,8 +4596,8 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 목적: 입시상담 가이드 채팅 (비회원 이용).
 - 인증/권한: 공개 (permitAll). IP 기반 rate limit (분당 10회, 시간당 60회, 초과 시 429).
 - Request: `{ message: string, academicYear: 2027|2028|null, sessionToken: string|null }`
-- Response: `{ status: "ok"|"error", answer: string, errorMessage: string|null, model: string|null, sources: [{kind, title, url}], academicYear: int|null, yearConfirmed: boolean|null }`
-- 동작: 입시 전용 DB만 검색 (NewStart 지피지기 DB 참조 금지). 공식 모집요강 우선, 학년도 명시, 2027 확정/2028 계획 구분, 유튜브 의견 분리, 충돌·보류 자료 확정 답변 금지, 근거 없으면 "모른다"고 답변.
+- Response: `{ status: "ok"|"error", answer: string, errorMessage: string|null, model: string|null, sources: [{kind, title, url|null, id}], academicYear: int|null, yearConfirmed: boolean|null }`
+- 동작: 학과·전형·일정 DB(승인된 행만)와 지식·공식자료를 검색한다. 합격 가능성·추천·경쟁률/입결/권장이수 질문과 근거 없는 2028 질문은 LLM 없이 고정 문구로 답하고, 근거(FACT)가 없거나 GUIDE만 있으면 LLM을 호출하지 않는다. 답변의 두 자리 이상 숫자가 근거에 없으면 폐기한다. 출처는 URL이 없어도 `id`(예: dept:7)와 제목으로 표시한다. 입시 전용 DB만 검색 (NewStart 지피지기 DB 참조 금지). 공식 모집요강 우선, 학년도 명시, 2027 확정/2028 계획 구분, 유튜브 의견 분리, 충돌·보류 자료 확정 답변 금지, 근거 없으면 "모른다"고 답변.
 - 화면: `/admissions/guide` (permitAll).
 
 ### ✅ /api/admin/admissions/** (ADMIN 전용)
@@ -4606,5 +4606,5 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /api/admin/admissions/knowledge/{id}/review` — 승인 (action: review|approve|archive|reject). REVIEW에서만 ACTIVE로 전환 가능 (DRAFT 직접 ACTIVE 불가).
 - `POST /api/admin/admissions/index/reload` — 벡터 인덱스 재로드.
 - `GET /api/admin/admissions/stats` — 통계.
-- `POST /api/admin/admissions/load/seed` — Qoder 시드 JSON 적재 (DRAFT로 시작, 개발·검증 환경용).
+- `POST /api/admin/admissions/load/seed` — Qoder 시드 JSON 적재 (DRAFT로 시작, 개발·검증 환경용). 재실행해도 중복되지 않음. 구조 오류(대학 목록 없음/알 수 없는 university_code)는 전체 롤백 + 422, 예외는 500. 성공 응답에 `skippedUnknownYear`, `status`(LOADED/LOADED_WITH_SKIPS).
 - `POST /api/admin/admissions/load/knowledge-base` — 상담 지식베이스 적재 (DRAFT로 시작).

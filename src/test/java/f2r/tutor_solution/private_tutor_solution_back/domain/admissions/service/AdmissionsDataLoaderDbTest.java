@@ -72,7 +72,7 @@ class AdmissionsDataLoaderDbTest {
     private static final String GOOD_SEED = """
         {"ipsi_universities":[{"name":"테스트대","university_code":"TST","region":"서울"}],
          "ipsi_documents":[{"document_key":"doc_tst_2027_susi","document_name":"테스트대 2027 수시","applicable_academic_year":2027,"institution_name":"테스트대"}],
-         "ipsi_departments":[{"university_code":"TST","academic_year":"2027","department_name":"컴퓨터공학과","counts_by_type":{"a":1}},
+         "ipsi_departments":[{"university_code":"TST","academic_year":"2027","department_name":"컴퓨터공학과","counts_by_type":{"a":1},"source_document_key":"doc_tst_2027_susi"},
                              {"university_code":"TST","academic_year":"2027","department_name":"수학과","counts_by_type":{"a":2}}],
          "ipsi_admission_types":[{"university_code":"TST","academic_year":2027,"type_name":"학생부교과","recruitment_count":10}],
          "ipsi_schedules":[{"university_code":"TST","academic_year":"2027","item":"원서접수","type_name":"수시","date":"2026-09-10","source_document_key":"doc_tst_2027_susi"}]}
@@ -92,6 +92,10 @@ class AdmissionsDataLoaderDbTest {
         assertThat(result.schedules()).isEqualTo(1);
         assertThat(result.skipped()).isZero();
         assertThat(schedules.findAll()).extracting(AdmissionsSchedule::getSource).doesNotContainNull();
+        // 학과는 출처 자료와 연결되고, 모든 행은 승인 전(DRAFT)으로 적재된다
+        assertThat(departments.findAll().stream().filter(d -> "컴퓨터공학과".equals(d.getName())).findFirst().orElseThrow().getSource()).isNotNull();
+        assertThat(departments.findAll()).allSatisfy(d -> assertThat(d.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT));
+        assertThat(materials.findAll()).allSatisfy(m -> assertThat(m.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT));
     }
 
     @Test
@@ -187,7 +191,11 @@ class AdmissionsDataLoaderDbTest {
         // then
         assertThat(first).isEqualTo(2);
         assertThat(second).isZero();
-        assertThat(knowledge.findAll()).allSatisfy(k -> assertThat(k.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT));
+        assertThat(knowledge.findAll()).allSatisfy(k -> {
+            assertThat(k.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+            // Q1~Q9는 답변 형식 안내문이지 입시 사실이 아니다
+            assertThat(k.getRole()).isEqualTo(AdmissionsKnowledgeItem.Role.GUIDE);
+        });
     }
 
     @Test

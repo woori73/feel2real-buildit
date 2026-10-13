@@ -69,6 +69,12 @@ public class AdmissionsKnowledgeItem {
     @Builder.Default
     private KnowledgeStatus status = KnowledgeStatus.DRAFT;
 
+    /** FACT=답변 근거, GUIDE=답변 형식 안내문(사실 근거가 아니며 근거 개수에 포함하지 않는다). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", length = 10, nullable = false)
+    @Builder.Default
+    private Role role = Role.FACT;
+
     @Column(name = "verification_note", columnDefinition = "TEXT")
     private String verificationNote;
 
@@ -100,6 +106,11 @@ public class AdmissionsKnowledgeItem {
         YOUTUBE,
         /** 상담 시뮬레이션 — 테스트용, RAG 직접 대상 아님 */
         SIMULATION
+    }
+
+    public enum Role {
+        FACT,
+        GUIDE
     }
 
     public enum KnowledgeStatus {

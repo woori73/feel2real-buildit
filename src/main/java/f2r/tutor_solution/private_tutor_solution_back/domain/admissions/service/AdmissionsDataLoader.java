@@ -148,6 +148,7 @@ public class AdmissionsDataLoader {
                     .academicYear(year)
                     .name(dep.path("department_name").asText())
                     .quotaInfo(dep.path("counts_by_type").toString())
+                    .source(matByKey.get(dep.path("source_document_key").asText(null)))
                     .build();
             departmentRepository.save(dept);
             deptCount++;
@@ -169,6 +170,7 @@ public class AdmissionsDataLoader {
                     .academicYear(year)
                     .name(t.path("type_name").asText())
                     .category(t.path("type_category").asText(null))
+                    .source(matByKey.get(t.path("source_document_key").asText(null)))
                     .details(details.toString())
                     .build();
             typeRepository.save(type);
@@ -234,6 +236,8 @@ public class AdmissionsDataLoader {
                     .content(content.toString().trim())
                     .category("상담지식")
                     .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                    // Q1~Q9는 질문 유형별 답변 안내문이지 입시 사실이 아니다 → GUIDE (근거 개수에서 제외)
+                    .role(AdmissionsKnowledgeItem.Role.GUIDE)
                     .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
                     .dedupKey(dedupKey)
                     .verificationNote("Qoder knowledge_base.json에서 적재. NORMALIZED 상태 — 운영자 승인 필요.")

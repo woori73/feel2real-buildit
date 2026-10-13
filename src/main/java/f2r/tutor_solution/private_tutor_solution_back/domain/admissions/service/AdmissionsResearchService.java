@@ -51,6 +51,7 @@ public class AdmissionsResearchService {
     static final int STEP_OFFICIAL_DOC = 3; // 공식자료 원문
     static final int STEP_YOUTUBE = 4;     // 유튜브 의견 (별도 분류)
     static final int STEP_CONFLICT = 5;    // 충돌대장
+    static final int STEP_GUIDE = 9;       // 답변 형식 안내문(GUIDE) — 근거 아님
 
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
     private final AdmissionsOfficialMaterialRepository materialRepository;
@@ -85,7 +86,9 @@ public class AdmissionsResearchService {
         /** 유튜브 의견 — 확정 사실 답변에 사용 금지 */
         YOUTUBE_OPINION,
         /** 충돌 중인 정보 — "확인 중" 안내 */
-        CONFLICT_INFO
+        CONFLICT_INFO,
+        /** 답변 형식 안내문(GUIDE) — 사실 근거가 아니며 출처로 표시하지 않는다 */
+        GUIDE_NOTE
     }
 
     @Getter
@@ -97,6 +100,7 @@ public class AdmissionsResearchService {
         private final List<Evidence> officialDocHits; // STEP3 원문
         private final List<Evidence> youtubeHits;    // STEP4 유튜브 (별도)
         private final List<Evidence> conflictHits;   // STEP5 충돌
+        private final List<Evidence> guideHits;      // GUIDE 안내문 (근거 아님)
         private final List<String> gapNotes;
         /** 확정 자료가 있는지 (없으면 "모른다"고 답변). */
         public boolean hasConfirmedEvidence() {
@@ -142,8 +146,11 @@ public class AdmissionsResearchService {
             gaps.add("STEP5 충돌 " + conflicts.size() + "건 — 관련 주제는 확정 답변 금지, '확인 중' 안내");
         }
 
+        List<Evidence> guides = searchGuides(keywords);
+
         return ResearchPack.builder()
                 .question(questionText)
+                .guideHits(guides)
                 .confirmedHits(confirmed)
                 .plannedHits(planned)
                 .officialDocHits(officialDocs)
@@ -242,6 +249,8 @@ public class AdmissionsResearchService {
             List<Predicate> base = new ArrayList<>();
             base.add(cb.equal(root.get("status"), AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE));
             base.add(cb.equal(root.get("sourceClass"), AdmissionsKnowledgeItem.SourceClass.OFFICIAL));
+            // GUIDE(답변 형식 안내문)는 사실 근거가 아니다 → 근거 검색에서 제외
+            base.add(cb.equal(root.get("role"), AdmissionsKnowledgeItem.Role.FACT));
             base.add(cb.equal(root.get("yearConfirmed"), confirmedOnly));
             if (yearFilter != null) {
                 base.add(cb.equal(root.get("academicYear"), yearFilter));
@@ -288,6 +297,7 @@ public class AdmissionsResearchService {
         return candidates.stream()
                 .filter(k -> k.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)
                 .filter(k -> k.getSourceClass() == AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                .filter(k -> k.getRole() == AdmissionsKnowledgeItem.Role.FACT)
                 .filter(k -> Boolean.valueOf(confirmedOnly).equals(k.getYearConfirmed()))
                 .filter(k -> yearFilter == null || yearFilter.equals(k.getAcademicYear()))
                 .sorted(Comparator.comparingDouble((AdmissionsKnowledgeItem k) -> {
@@ -325,7 +335,7 @@ public class AdmissionsResearchService {
         return Evidence.builder()
                 .stepNo(stepNo)
                 .sourceClass(cls)
-                .refId(String.valueOf(k.getKnowledgeId()))
+                .refId("knowledge:" + k.getKnowledgeId())
                 .refUrl(k.getSource() != null ? k.getSource().getDocumentUrl() : k.getSourceUrl())
                 .title(k.getTitle())
                 .excerpt(firstChars(k.getContent(), 400))
@@ -348,6 +358,8 @@ public class AdmissionsResearchService {
                         cb.like(root.get("issuer"), p)));
             }
             List<Predicate> base = new ArrayList<>();
+            // 승인(ACTIVE)된 자료만. DRAFT 자료 제목이 답변 근거로 노출되지 않게 한다.
+            base.add(cb.equal(root.get("status"), AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE));
             if (yearFilter != null) {
                 base.add(cb.equal(root.get("academicYear"), yearFilter));
             }
@@ -360,13 +372,42 @@ public class AdmissionsResearchService {
                         .stepNo(STEP_OFFICIAL_DOC)
                         .sourceClass(m.getAcademicYear() != null && m.getAcademicYear() == 2028
                                 ? SourceClass.OFFICIAL_PLANNED : SourceClass.OFFICIAL_CONFIRMED)
-                        .refId(String.valueOf(m.getMaterialId()))
+                        .refId("material:" + m.getMaterialId())
                         .refUrl(m.getDocumentUrl())
                         .title(m.getTitle())
                         .excerpt(m.getIssuer() + (m.getPublishDate() != null ? " (" + m.getPublishDate() + ")" : ""))
                         .note("공식자료 원문")
                         .academicYear(m.getAcademicYear())
                         .yearConfirmed(m.getAcademicYear() != null && m.getAcademicYear() == 2027)
+                        .build())
+                .toList();
+    }
+
+    // ── 안내문(GUIDE): 검색 참고용. 근거 개수에 포함하지 않는다 ─────────────
+
+    List<Evidence> searchGuides(List<String> keywords) {
+        if (keywords.isEmpty()) return List.of();
+        Specification<AdmissionsKnowledgeItem> spec = (root, query, cb) -> {
+            List<Predicate> kws = new ArrayList<>();
+            for (String kw : keywords) {
+                String p = "%" + kw + "%";
+                kws.add(cb.or(cb.like(root.get("title"), p), cb.like(root.get("content"), p)));
+            }
+            return cb.and(
+                    cb.equal(root.get("status"), AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE),
+                    cb.equal(root.get("role"), AdmissionsKnowledgeItem.Role.GUIDE),
+                    cb.or(kws.toArray(new Predicate[0])));
+        };
+        return knowledgeRepository.findAll(spec, PageRequest.of(0, 2)).stream()
+                .map(k -> Evidence.builder()
+                        .stepNo(STEP_GUIDE)
+                        .sourceClass(SourceClass.GUIDE_NOTE)
+                        .refId("knowledge:" + k.getKnowledgeId())
+                        .title(k.getTitle())
+                        .excerpt(firstChars(k.getContent(), 300))
+                        .note("답변 형식 안내문 — 사실 근거 아님")
+                        .academicYear(k.getAcademicYear())
+                        .yearConfirmed(k.getYearConfirmed())
                         .build())
                 .toList();
     }

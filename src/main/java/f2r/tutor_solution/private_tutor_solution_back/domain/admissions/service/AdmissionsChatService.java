@@ -69,17 +69,38 @@ public class AdmissionsChatService {
 
     private final AdmissionsLlmClient admissionsLlmClient;
     private final AdmissionsResearchService researchService;
+    private final AdmissionsFactSearchService factSearchService;
     private final AdmissionsCounselingSessionRepository sessionRepository;
 
     public AdmissionsChatService(AdmissionsLlmClient admissionsLlmClient,
                                  AdmissionsResearchService researchService,
+                                 AdmissionsFactSearchService factSearchService,
                                  AdmissionsCounselingSessionRepository sessionRepository) {
         this.admissionsLlmClient = admissionsLlmClient;
         this.researchService = researchService;
+        this.factSearchService = factSearchService;
         this.sessionRepository = sessionRepository;
     }
 
-    public record AnswerSource(String kind, String title, String url) {}
+    static final String MSG_CHANCE =
+            "합격 가능성·합격선·지원 조합 추천은 제공하지 않습니다. 입시상담 가이드는 대학이 공개한 모집요강 정보"
+                    + "(모집단위, 전형, 일정 등)만 안내합니다. 개인별 합격 판단은 학교 진학 상담과 각 대학 입학처를 이용해 주세요.";
+    static final String MSG_NOT_COLLECTED =
+            "경쟁률·전년도 입시결과·충원 현황·권장 이수 과목은 아직 수집된 공식 자료가 없어 안내할 수 없습니다. "
+                    + "해당 정보는 각 대학 입학처 발표를 확인해 주세요.";
+    static final String MSG_UNPUBLISHED_2028 =
+            "2028학년도 모집요강의 일정·수치는 대부분의 대학에서 아직 발표 전입니다. 현재 확보한 2028학년도 자료가 "
+                    + "질문에 해당하지 않아 확정된 일정이나 수치를 안내할 수 없습니다. 각 대학 입학처 발표를 확인해 주세요.";
+    static final String MSG_UNSUPPORTED_YEAR =
+            "입시상담 가이드는 2027학년도(확정)와 2028학년도(계획) 자료만 다룹니다. 다른 학년도는 안내할 수 없습니다.";
+    static final String MSG_UNGROUNDED_NUMBER =
+            "근거 자료에서 확인되지 않는 수치가 답변에 포함되어 답변을 제공하지 않습니다. 질문을 더 구체적으로 "
+                    + "(대학·학과·전형·학년도) 다시 입력해 주세요.";
+    static final String MSG_NO_EVIDENCE =
+            "해당 입시 정보를 찾지 못했습니다. 2027학년도 7개 대학(서울대·연세대·고려대·성균관대·한양대·경희대·인하대)의 "
+                    + "공식 모집요강 기준으로 답변할 수 있습니다. 다른 질문을 해보세요.";
+
+    public record AnswerSource(String kind, String title, String url, String id) {}
 
     public record AdmissionsAnswer(boolean ok, String answer, String errorMessage,
                                    String model, List<AnswerSource> sources,
@@ -101,32 +122,60 @@ public class AdmissionsChatService {
             return failure("질문이 너무 깁니다. " + MAX_QUESTION_CHARS + "자 이내로 입력해 주세요.");
         }
 
-        // 1. 조사 사다리 실행
-        ResearchPack pack = researchService.research(question, academicYearFilter);
+        // 1. 질문 분석 + 학과·전형·일정 DB 조회
+        AdmissionsFactSearchService.FactResult facts = factSearchService.search(question, academicYearFilter);
+        AdmissionsQueryParser.Parsed parsed = facts.parsed();
 
-        // 2. 근거가 전혀 없으면 모른다고 답변 (LLM 호출 없음)
-        List<Evidence> usable = usableEvidence(pack);
-        if (usable.isEmpty()) {
-            String noAnswer = "해당 입시 정보를 찾지 못했습니다. "
-                    + "2027학년도 7개 대학(서울대·연세대·고려대·성균관대·한양대·경희대·인하대)의 "
-                    + "공식 모집요강 기준으로 답변할 수 있습니다. 다른 질문을 해보세요.";
-            saveSession(sessionToken, question, noAnswer, pack, academicYearFilter);
-            return new AdmissionsAnswer(true, noAnswer, null, null, List.of(), academicYearFilter, false);
+        // 2. LLM 없이 차단하는 질문: 합격 가능성 판단/추천, 수집하지 않은 자료, 미지원 학년도
+        if (parsed.asksAdmissionChance()) {
+            return refuse(MSG_CHANCE, sessionToken, question, academicYearFilter);
+        }
+        if (parsed.asksNotCollected()) {
+            return refuse(MSG_NOT_COLLECTED, sessionToken, question, academicYearFilter);
+        }
+        if (parsed.mentionsUnsupportedYear() && parsed.years().isEmpty()) {
+            return refuse(MSG_UNSUPPORTED_YEAR, sessionToken, question, academicYearFilter);
         }
 
-        // 3. 근거를 프롬프트에 조립
-        String evidenceContext = buildEvidenceContext(usable);
-        String systemPrompt = BASE_PROMPT + "\n\n[입시 공식자료 근거]\n" + evidenceContext;
-        String userPrompt = buildUserPrompt(question, pack);
+        // 3. 조사 사다리 + 사실 근거 병합 (GUIDE는 근거가 아니다)
+        ResearchPack pack = researchService.research(question, academicYearFilter);
+        List<Evidence> usable = mergeUsable(facts.evidence(), usableEvidence(pack));
 
-        // 4. LLM 호출
+        // 4. 2028 질문은 2028 근거만 인정한다. 없으면 "미발표"로 답하고 2027 자료로 대신 답하지 않는다.
+        boolean asks2028Only = facts.searchedYears().equals(java.util.Set.of(2028));
+        if (asks2028Only) {
+            usable = usable.stream().filter(e -> Integer.valueOf(2028).equals(e.getAcademicYear())).toList();
+            if (usable.isEmpty()) {
+                return refuse(MSG_UNPUBLISHED_2028, sessionToken, question, academicYearFilter);
+            }
+        }
+
+        // 5. 사실 근거가 하나도 없으면(GUIDE만 검색된 경우 포함) LLM을 호출하지 않는다.
+        if (usable.isEmpty()) {
+            return refuse(MSG_NO_EVIDENCE, sessionToken, question, academicYearFilter);
+        }
+
+        // 6. 근거를 프롬프트에 조립
+        String evidenceContext = buildEvidenceContext(usable);
+        String systemPrompt = BASE_PROMPT + "\n\n[입시 공식자료 근거]\n" + evidenceContext
+                + buildGuideBlock(pack);
+        String userPrompt = buildUserPrompt(question, pack, parsed);
+
+        // 7. LLM 호출
         NewStartLlmCompletion completion = admissionsLlmClient.complete(systemPrompt, userPrompt, MAX_ANSWER_CHARS);
         if (!completion.ok()) {
             log.warn("admissions llm failed: {}", completion.errorMessage());
             return failure("AI 서비스 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.");
         }
 
-        // 5. 출처 조립
+        // 8. 사후 검증: 답변의 수치가 제공한 근거(또는 질문)에 없으면 폐기한다.
+        List<String> ungrounded = ungroundedNumbers(completion.text(), question, usable);
+        if (!ungrounded.isEmpty()) {
+            log.warn("admissions answer rejected: ungrounded numbers count={}", ungrounded.size());
+            return refuse(MSG_UNGROUNDED_NUMBER, sessionToken, question, academicYearFilter);
+        }
+
+        // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
         List<AnswerSource> sources = buildSources(usable);
 
         String answer = completion.text();
@@ -135,7 +184,7 @@ public class AdmissionsChatService {
         log.info("admissions chat ok questionChars={} evidenceCount={} answerChars={} model={}",
                 question.length(), usable.size(), answer.length(), completion.model());
         return new AdmissionsAnswer(true, answer, null, completion.model(), sources,
-                academicYearFilter, hasConfirmed(pack));
+                academicYearFilter, usable.stream().anyMatch(e -> Boolean.TRUE.equals(e.getYearConfirmed())));
     }
 
     /**
@@ -155,8 +204,56 @@ public class AdmissionsChatService {
                 .toList();
     }
 
-    private boolean hasConfirmed(ResearchPack pack) {
-        return pack.hasConfirmedEvidence();
+    /** 사실 테이블 근거를 앞에 두고 중복(refId) 없이 합친다. */
+    static List<Evidence> mergeUsable(List<Evidence> facts, List<Evidence> researched) {
+        java.util.LinkedHashMap<String, Evidence> byId = new java.util.LinkedHashMap<>();
+        for (Evidence e : facts) byId.putIfAbsent(e.getRefId(), e);
+        for (Evidence e : researched) byId.putIfAbsent(e.getRefId(), e);
+        return byId.values().stream()
+                .filter(e -> e.getSourceClass() != AdmissionsResearchService.SourceClass.GUIDE_NOTE)
+                .limit(MAX_CONTEXT_EVIDENCE)
+                .toList();
+    }
+
+    /** 답변 형식 안내문(GUIDE)은 사실이 아니라는 표시와 함께 형식 힌트로만 덧붙인다. */
+    private String buildGuideBlock(ResearchPack pack) {
+        if (pack.getGuideHits() == null || pack.getGuideHits().isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\n[답변 형식 안내 — 사실 근거가 아니며 이 안내에서 입시 사실을 가져오지 않는다]\n");
+        for (Evidence g : pack.getGuideHits()) {
+            sb.append("- ").append(g.getTitle()).append(": ").append(firstLine(g.getExcerpt())).append("\n");
+        }
+        return sb.toString();
+    }
+
+    private static String firstLine(String s) {
+        if (s == null) return "";
+        int nl = s.indexOf('\n');
+        return nl < 0 ? s : s.substring(0, nl);
+    }
+
+    private AdmissionsAnswer refuse(String message, String sessionToken, String question, Integer year) {
+        saveSession(sessionToken, question, message, null, year);
+        return new AdmissionsAnswer(true, message, null, null, List.of(), year, false);
+    }
+
+    /** 답변 속 두 자리 이상 숫자 중 근거·질문에 없는 것(2026~2030 연도 제외). */
+    static List<String> ungroundedNumbers(String answer, String question, List<Evidence> evidence) {
+        StringBuilder allowed = new StringBuilder(question == null ? "" : question).append(' ');
+        for (Evidence e : evidence) {
+            allowed.append(e.getTitle()).append(' ').append(e.getExcerpt()).append(' ').append(e.getNote()).append(' ');
+        }
+        java.util.Set<String> allowedNums = new java.util.HashSet<>();
+        java.util.regex.Matcher am = java.util.regex.Pattern.compile("\\d+").matcher(allowed);
+        while (am.find()) allowedNums.add(am.group());
+        List<String> bad = new ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(answer == null ? "" : answer);
+        while (m.find()) {
+            String n = m.group();
+            if (n.length() < 2 || allowedNums.contains(n)) continue;
+            if (n.length() == 4 && n.compareTo("2026") >= 0 && n.compareTo("2030") <= 0) continue;
+            bad.add(n);
+        }
+        return bad;
     }
 
     private String buildEvidenceContext(List<Evidence> evidence) {
@@ -184,10 +281,14 @@ public class AdmissionsChatService {
         return sb.toString();
     }
 
-    private String buildUserPrompt(String question, ResearchPack pack) {
+    private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed) {
         StringBuilder sb = new StringBuilder();
         sb.append("질문: ").append(question).append("\n\n");
-        sb.append("위 [입시 공식자료 근거]만을 사용해 답변하라.\n");
+        sb.append("위 [입시 공식자료 근거]만을 사용해 답변하라. 근거에 '확인되지 않음'이라고 적힌 항목은 추정하지 말고 "
+                + "확인되지 않는다고 답하라. 근거에 없는 날짜·인원·비율·등급은 절대 쓰지 마라.\n");
+        if (parsed.yearUnspecified()) {
+            sb.append("질문에 학년도가 없으므로 답변 첫머리에 '2027학년도 기준'이라고 밝혀라.\n");
+        }
         if (!pack.getYoutubeHits().isEmpty()) {
             sb.append("[참고] 유튜브 의견 ").append(pack.getYoutubeHits().size()).append("건이 있으나, "
                     + "이는 확정 사실이 아니므로 본 답변에 포함하지 말고, 필요한 경우 '일부 유튜브 분석에서는 ~라는 의견도 있다' 정도로만 언급하라.\n");
@@ -203,19 +304,19 @@ public class AdmissionsChatService {
     }
 
     private List<AnswerSource> buildSources(List<Evidence> evidence) {
-        return evidence.stream()
-                .filter(e -> e.getRefUrl() != null && !e.getRefUrl().isBlank())
-                .map(e -> {
-                    String kind = switch (e.getSourceClass()) {
-                        case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
-                        case OFFICIAL_PLANNED -> "공식 자료 (계획)";
-                        case OFFICIAL_DOCUMENT -> "공식자료 원문";
-                        default -> "참고 자료";
-                    };
-                    return new AnswerSource(kind, e.getTitle(), e.getRefUrl());
-                })
-                .limit(MAX_SOURCES)
-                .toList();
+        java.util.LinkedHashMap<String, AnswerSource> byId = new java.util.LinkedHashMap<>();
+        for (Evidence e : evidence) {
+            if (e.getSourceClass() == AdmissionsResearchService.SourceClass.GUIDE_NOTE) continue; // 사실 근거 아님
+            String kind = switch (e.getSourceClass()) {
+                case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
+                case OFFICIAL_PLANNED -> "공식 자료 (계획)";
+                case OFFICIAL_DOCUMENT -> "공식자료 원문";
+                default -> "참고 자료";
+            };
+            String url = e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl();
+            byId.putIfAbsent(e.getRefId(), new AnswerSource(kind, e.getTitle(), url, e.getRefId()));
+        }
+        return byId.values().stream().limit(MAX_SOURCES).toList();
     }
 
     private void saveSession(String sessionToken, String question, String answer,
@@ -230,8 +331,10 @@ public class AdmissionsChatService {
                 return;
             }
             StringBuilder evidenceSummary = new StringBuilder();
-            for (Evidence e : usableEvidence(pack)) {
-                evidenceSummary.append(e.getStepNo()).append(":").append(e.getRefId()).append(";");
+            if (pack != null) {
+                for (Evidence e : usableEvidence(pack)) {
+                    evidenceSummary.append(e.getStepNo()).append(":").append(e.getRefId()).append(";");
+                }
             }
             AdmissionsCounselingSession session = AdmissionsCounselingSession.builder()
                     .sessionToken(token)
