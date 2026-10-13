@@ -150,10 +150,16 @@ public class AdmissionsAdminController {
                     "materials", result.materials(),
                     "departments", result.departments(),
                     "types", result.types(),
-                    "schedules", result.schedules()));
+                    "schedules", result.schedules(),
+                    "skippedUnknownYear", result.skipped(),
+                    "status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED"));
+        } catch (AdmissionsDataLoader.SeedLoadException e) {
+            // 구조/참조 오류: 전체 롤백되었다. 성공 응답을 내지 않는다.
+            log.warn("admissions seed rejected: {}", e.getMessage());
+            return ResponseEntity.unprocessableEntity().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         } catch (Exception e) {
             log.warn("admissions seed load failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", "load failed"));
+            return ResponseEntity.internalServerError().body(Map.of("error", "load failed", "status", "FAILED"));
         }
     }
 
@@ -169,9 +175,12 @@ public class AdmissionsAdminController {
         try {
             int count = dataLoader.loadKnowledgeBase(kbJson);
             return ResponseEntity.ok(Map.of("loaded", count, "status", "DRAFT"));
+        } catch (AdmissionsDataLoader.SeedLoadException e) {
+            log.warn("admissions kb rejected: {}", e.getMessage());
+            return ResponseEntity.unprocessableEntity().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         } catch (Exception e) {
             log.warn("admissions kb load failed: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of("error", "load failed"));
+            return ResponseEntity.internalServerError().body(Map.of("error", "load failed", "status", "FAILED"));
         }
     }
 

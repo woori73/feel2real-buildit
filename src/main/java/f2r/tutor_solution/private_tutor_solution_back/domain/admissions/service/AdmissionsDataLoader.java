@@ -48,16 +48,39 @@ public class AdmissionsDataLoader {
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
 
     public record LoadResult(int universities, int materials, int departments,
-                             int types, int schedules, int knowledgeItems) {}
+                             int types, int schedules, int knowledgeItems, int skipped) {}
+
+    /** 시드 구조/참조 오류. 던지면 트랜잭션이 롤백되어 부분 적재가 남지 않는다. */
+    public static class SeedLoadException extends IllegalArgumentException {
+        public SeedLoadException(String message) { super(message); }
+    }
 
     /**
-     * 시드 JSON 전체를 적재한다. 멱등성: dedup_key·대학명으로 중복 방지.
+     * 시드 JSON 전체를 적재한다. 같은 시드를 다시 실행해도 중복되지 않는다
+     * (대학명 / 자료 제목 / 대학+학년도+학과·전형명 / 대학+학년도+일정 제목+비고 기준).
+     * 구조 오류(대학 목록 없음, 알 수 없는 대학 코드)는 {@link SeedLoadException}으로 전체 롤백한다.
+     * 학년도 미확정·미지원 행만 건너뛰며 그 건수를 {@code skipped}로 돌려준다.
      */
     @Transactional
     public LoadResult loadSeed(String seedJson) throws Exception {
         JsonNode root = objectMapper.readTree(seedJson);
+        if (!root.path("ipsi_universities").isArray() || root.path("ipsi_universities").isEmpty()) {
+            throw new SeedLoadException("ipsi_universities가 없거나 비어 있습니다.");
+        }
         Map<String, AdmissionsUniversity> univByCode = new HashMap<>();
         Map<String, AdmissionsOfficialMaterial> matByKey = new HashMap<>();
+        // 재실행 중복 방지: 적재 전에 이미 있는 행의 자연키 스냅샷(같은 파일 안의 원본 중복행은 보존한다).
+        java.util.Set<String> existingDept = new java.util.HashSet<>();
+        departmentRepository.findAll().forEach(d -> existingDept.add(
+                d.getUniversity().getUniversityId() + "|" + d.getAcademicYear() + "|" + d.getName()));
+        java.util.Set<String> existingType = new java.util.HashSet<>();
+        typeRepository.findAll().forEach(t -> existingType.add(
+                t.getUniversity().getUniversityId() + "|" + t.getAcademicYear() + "|" + t.getName()));
+        java.util.Set<String> existingSched = new java.util.HashSet<>();
+        scheduleRepository.findAll().forEach(sc -> existingSched.add(
+                sc.getUniversity().getUniversityId() + "|" + sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote()));
+        Map<String, AdmissionsOfficialMaterial> materialByTitle = new HashMap<>();
+        materialRepository.findAll().forEach(m -> materialByTitle.put(m.getTitle(), m));
 
         int univCount = 0;
         for (JsonNode u : root.path("ipsi_universities")) {
@@ -82,11 +105,13 @@ public class AdmissionsDataLoader {
         int matCount = 0;
         for (JsonNode d : root.path("ipsi_documents")) {
             String docKey = d.path("document_key").asText();
-            // 중복 방지: 같은 document_key가 이미 있으면 스킵 (제목으로 확인)
+            // 중복 방지: 같은 제목의 자료가 이미 있으면 새로 만들지 않고 출처 매핑만 연결한다.
             String title = d.path("document_name").asText();
-            boolean exists = materialRepository.findAll().stream()
-                    .anyMatch(m -> title.equals(m.getTitle()));
-            if (exists) continue;
+            AdmissionsOfficialMaterial already = materialByTitle.get(title);
+            if (already != null) {
+                matByKey.put(docKey, already);
+                continue;
+            }
 
             Integer matYear = readSupportedYear(d.path("applicable_academic_year"));
             if (matYear == null) {
@@ -108,15 +133,16 @@ public class AdmissionsDataLoader {
                     .build();
             mat = materialRepository.save(mat);
             matByKey.put(docKey, mat);
+            materialByTitle.put(title, mat);
             matCount++;
         }
 
         int deptCount = 0;
         for (JsonNode dep : root.path("ipsi_departments")) {
-            AdmissionsUniversity univ = univByCode.get(dep.path("university_code").asText());
-            if (univ == null) continue;
+            AdmissionsUniversity univ = requireUniversity(univByCode, dep.path("university_code").asText(), "ipsi_departments");
             Integer year = readSupportedYear(dep.path("academic_year"));
             if (year == null) { skipped++; continue; }
+            if (existingDept.contains(univ.getUniversityId() + "|" + year + "|" + dep.path("department_name").asText())) continue;
             AdmissionsDepartment dept = AdmissionsDepartment.builder()
                     .university(univ)
                     .academicYear(year)
@@ -129,10 +155,10 @@ public class AdmissionsDataLoader {
 
         int typeCount = 0;
         for (JsonNode t : root.path("ipsi_admission_types")) {
-            AdmissionsUniversity univ = univByCode.get(t.path("university_code").asText());
-            if (univ == null) continue;
+            AdmissionsUniversity univ = requireUniversity(univByCode, t.path("university_code").asText(), "ipsi_admission_types");
             Integer year = readSupportedYear(t.path("academic_year"));
             if (year == null) { skipped++; continue; }
+            if (existingType.contains(univ.getUniversityId() + "|" + year + "|" + t.path("type_name").asText())) continue;
             StringBuilder details = new StringBuilder();
             details.append("모집인원: ").append(t.path("recruitment_count").asText("미확인")).append("\n");
             details.append("지원자격: ").append(t.path("eligibility").asText("")).append("\n");
@@ -151,10 +177,12 @@ public class AdmissionsDataLoader {
 
         int schedCount = 0;
         for (JsonNode s : root.path("ipsi_schedules")) {
-            AdmissionsUniversity univ = univByCode.get(s.path("university_code").asText());
+            AdmissionsUniversity univ = requireUniversity(univByCode, s.path("university_code").asText(), "ipsi_schedules");
             Integer year = readSupportedYear(s.path("academic_year"));
             if (year == null) { skipped++; continue; }
             String docKey = s.path("source_document_key").asText(null);
+            String schedTitle = s.path("item").asText() + " (" + s.path("type_name").asText("") + ")";
+            if (existingSched.contains(univ.getUniversityId() + "|" + year + "|" + schedTitle + "|" + s.path("date").asText(null))) continue;
             AdmissionsSchedule sched = AdmissionsSchedule.builder()
                     .university(univ)
                     .academicYear(year)
@@ -168,7 +196,7 @@ public class AdmissionsDataLoader {
 
         log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={}",
                 univCount, matCount, deptCount, typeCount, schedCount, skipped);
-        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0);
+        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped);
     }
 
     /**
@@ -180,7 +208,11 @@ public class AdmissionsDataLoader {
         int count = 0;
 
         // question_types에서 지식 항목 생성 (객체 {key: {...}} 또는 배열 [{id: "Q1", ...}] 모두 지원)
-        for (Map.Entry<String, JsonNode> entry : questionTypeEntries(root.path("question_types"))) {
+        java.util.List<Map.Entry<String, JsonNode>> entries = questionTypeEntries(root.path("question_types"));
+        if (entries.isEmpty()) {
+            throw new SeedLoadException("question_types에서 적재할 항목을 찾지 못했습니다(형식 오류 또는 빈 목록).");
+        }
+        for (Map.Entry<String, JsonNode> entry : entries) {
             String qKey = entry.getKey();
             JsonNode qNode = entry.getValue();
             String dedupKey = "kb_" + qKey;
@@ -245,6 +277,14 @@ public class AdmissionsDataLoader {
             case "inha" -> "INHA";
             default -> parts[1].toUpperCase();
         };
+    }
+
+    private static AdmissionsUniversity requireUniversity(Map<String, AdmissionsUniversity> byCode, String code, String section) {
+        AdmissionsUniversity univ = byCode.get(code);
+        if (univ == null) {
+            throw new SeedLoadException(section + ": 알 수 없는 university_code=" + code);
+        }
+        return univ;
     }
 
     /** 상담이 다루는 학년도. 2029 등 그 밖의 연도는 섞이지 않도록 적재하지 않는다. */
