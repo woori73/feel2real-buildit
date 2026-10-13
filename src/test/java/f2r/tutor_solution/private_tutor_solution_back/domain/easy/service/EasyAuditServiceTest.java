@@ -56,6 +56,7 @@ class EasyAuditServiceTest {
   @Mock EasyImportRowRepository rowRepository;
   @Mock EasyWithholdingRecordRepository withholdingRepository;
   @Mock EasyAnnualClosingRepository closingRepository;
+  @Mock EasyImportService importService;
   @Mock EasyJournalService journalService;
   @Mock EasyCorrectionService correctionService;
   @Mock EasyCorrectionLogRepository correctionLogRepository;
@@ -69,7 +70,7 @@ class EasyAuditServiceTest {
     service = new EasyAuditService(
         reviewRepository, txnRepository, businessRepository, accountRepository,
         batchRepository, rowRepository, withholdingRepository, closingRepository,
-        journalService, correctionService, correctionLogRepository);
+        importService, journalService, correctionService, correctionLogRepository);
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     publishing = EasyBusiness.builder().code("PUBLISHING").name("출판사").active(true)
         .sortOrder(2).build();
@@ -189,6 +190,25 @@ class EasyAuditServiceTest {
     assertThat(response.status()).isEqualTo(EasyReviewStatus.OPEN.name());
     verify(reviewRepository).findByReviewIdAndBusiness_BusinessId(9L, 1L);
     verifyNoInteractions(txnRepository, journalService, correctionService);
+  }
+
+  @Test
+  @DisplayName("Workspace 가져오기 승인 — 배치 확정과 검토 종료를 함께 처리한다")
+  void workspaceResolve_importReviewConfirmsBatch() {
+    var batch = batch(21L);
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.IMPORT_UNCONFIRMED).batch(batch)
+        .title("장부 미입력").build();
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(reviewRepository.findLockedByReviewIdAndBusiness_BusinessId(9L, 1L))
+        .thenReturn(Optional.of(item));
+
+    var response = service.resolveWorkspace(
+        1L, 9L, new EasyReviewResolveRequest("관리자 확인", null, null, null, null, false),
+        "admin");
+
+    verify(importService).confirm(21L, null);
+    assertThat(response.status()).isEqualTo(EasyReviewStatus.RESOLVED.name());
   }
 
   @Test
