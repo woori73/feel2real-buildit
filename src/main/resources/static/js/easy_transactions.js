@@ -6,6 +6,7 @@
   let businesses = [];
   let accounts = [];
   let editingId = null;
+  let editingBusinessId = null;
   let presetAccountId = null;
 
   function today() {
@@ -19,7 +20,7 @@
     businesses = await Easy.loadBusinesses();
     accounts = await loadAccounts();
     fillBusinessSelect(document.getElementById('fBusiness'), false);
-    fillBusinessSelect(document.getElementById('qBusiness'), true);
+    fillBusinessSelect(document.getElementById('qBusiness'), false);
     fillBusinessSelect(document.getElementById('impBusiness'), false);
     syncAccountOptions();
     syncCategoryList();
@@ -38,6 +39,8 @@
     document.getElementById('fVat').addEventListener('input', autoTotal);
     if (businesses.length) {
       document.getElementById('fBusiness').value = String(businesses[0].businessId);
+      document.getElementById('qBusiness').value = String(businesses[0].businessId);
+      document.getElementById('impBusiness').value = String(businesses[0].businessId);
     }
     applyDrillParams();
     await search();
@@ -192,9 +195,11 @@
       Easy.showError('formError', '거래일·사업체·금액을 확인해 주세요.');
       return;
     }
+    const sourceBusinessId = editingBusinessId || document.getElementById('qBusiness').value;
     const url = editingId
-      ? '/api/admin/easy/transactions/' + encodeURIComponent(editingId)
-      : '/api/admin/easy/transactions';
+      ? '/api/admin/easy/workspace/transactions/' + encodeURIComponent(editingId)
+        + '?businessId=' + encodeURIComponent(sourceBusinessId)
+      : '/api/admin/easy/workspace/transactions';
     const res = await fetchAuth(url, {
       method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -212,6 +217,7 @@
 
   function resetForm() {
     editingId = null;
+    editingBusinessId = null;
     document.getElementById('btnSave').textContent = '등록하기';
     ['fAmount', 'fCounterparty', 'fDesc', 'fMemo', 'fSupply', 'fVat', 'fCategory'].forEach(id => {
       document.getElementById(id).value = '';
@@ -234,9 +240,18 @@
     if (dir) params.set('direction', dir);
     if (cat) params.set('category', cat);
     if (presetAccountId) params.set('accountId', presetAccountId);
-    const res = await fetchAuth('/api/admin/easy/transactions?' + params.toString());
+    if (!biz) throw new Error('사업체를 선택해 주세요.');
+    const res = await fetchAuth('/api/admin/easy/workspace/transactions?' + params.toString());
     if (!res.ok) throw new Error('목록 조회 실패');
-    render(await res.json());
+    const rows = await res.json();
+    render(rows.map(row => Object.assign({}, row.transaction, {
+      collectionStatus: row.collectionStatus,
+      importStatus: row.importStatus,
+      ledgerStatus: row.ledgerStatus,
+      journalStatus: row.journalStatus,
+      closingStatus: row.closingStatus,
+      periodClosed: row.periodClosed
+    })));
   }
 
   function render(txns) {
@@ -271,6 +286,10 @@
           + ' + 부가세 ' + Easy.fmtWon(t.vatAmount || 0));
       }
       if (t.evidenceType) bits.push(evidenceLabel(t.evidenceType));
+      bits.push(t.collectionStatus || 'NOT_COLLECTED');
+      bits.push(t.ledgerStatus || 'LEDGER_SAVED');
+      bits.push(t.journalStatus || 'NOT_POSTED');
+      bits.push('기간 ' + (t.closingStatus || 'OPEN'));
       s.textContent = bits.filter(Boolean).join(' · ');
       const badge = document.createElement('span');
       badge.className = 'badge ' + (t.direction === 'INCOME' ? 'in' : 'out');
@@ -319,6 +338,7 @@
 
   function startEdit(t) {
     editingId = t.txnId;
+    editingBusinessId = t.businessId;
     document.getElementById('fDate').value = t.occurredOn || today();
     document.getElementById('fBusiness').value = String(t.businessId);
     document.getElementById('fDirection').value = t.direction;

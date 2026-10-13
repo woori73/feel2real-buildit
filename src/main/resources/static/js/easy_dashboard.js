@@ -3,7 +3,7 @@
  */
 (function () {
   let businesses = [];
-  let businessId = null; // null = 전체
+  let businessId = null;
   let month = currentMonth();
 
   function currentMonth() {
@@ -21,6 +21,8 @@
   async function init() {
     await Easy.guardAdmin();
     businesses = await Easy.loadBusinesses();
+    if (!businesses.length) throw new Error('활성 사업체가 없습니다.');
+    businessId = businesses[0].businessId;
     renderSwitch();
     document.getElementById('prevMonth').addEventListener('click', () => shiftMonth(-1));
     document.getElementById('nextMonth').addEventListener('click', () => shiftMonth(1));
@@ -30,8 +32,7 @@
   function renderSwitch() {
     const wrap = document.getElementById('bizSwitch');
     wrap.innerHTML = '';
-    const tabs = [{ businessId: null, name: '전체' }]
-      .concat(businesses.map(b => ({ businessId: b.businessId, name: b.name })));
+    const tabs = businesses.map(b => ({ businessId: b.businessId, name: b.name }));
     tabs.forEach(t => {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -56,8 +57,8 @@
 
   async function load() {
     document.getElementById('monthLabel').textContent = Easy.fmtMonth(month);
-    let url = '/api/admin/easy/summary?month=' + encodeURIComponent(month);
-    if (businessId) url += '&businessId=' + encodeURIComponent(businessId);
+    const url = '/api/admin/easy/workspace/monthly?month=' + encodeURIComponent(month)
+      + '&businessId=' + encodeURIComponent(businessId);
     const res = await fetchAuth(url);
     if (!res.ok) throw new Error('요약을 불러오지 못했습니다.');
     const s = await res.json();
@@ -67,8 +68,40 @@
     document.getElementById('scopeLabel').textContent =
       '범위: ' + scopeName + ' · ' + Easy.fmtMonth(month);
     renderStats(s);
-    renderRecent(s.recentTxns || []);
+    renderWorkspaceStatus(s);
+    renderRecent((s.recentTransactions || []).map(item => item.transaction));
     renderOverdue(s.overdueStudents || []);
+  }
+
+  function renderWorkspaceStatus(s) {
+    const grid = document.getElementById('workspaceStatusGrid');
+    const items = [
+      ['COLLECTED', s.collectedCount],
+      ['IMPORT STAGED', s.importStagedCount],
+      ['LEDGER SAVED', s.ledgerSavedCount],
+      ['JOURNAL POSTED', s.journalPostedCount],
+      ['OPEN REVIEW', s.openReviewCount],
+      ['EVIDENCE REVIEW', s.evidenceReviewCount]
+    ];
+    grid.innerHTML = '';
+    items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'stat-card';
+      const label = document.createElement('div');
+      label.className = 'l';
+      label.textContent = item[0];
+      const count = document.createElement('div');
+      count.className = 'n';
+      count.textContent = Number(item[1] || 0).toLocaleString('ko-KR') + '건';
+      div.appendChild(label);
+      div.appendChild(count);
+      grid.appendChild(div);
+    });
+    document.getElementById('closingBadge').textContent =
+      '회계기간 ' + (s.closingStatus || 'OPEN');
+    const sources = s.sources || {};
+    document.getElementById('workspaceSources').textContent =
+      '금액: ' + (sources.amounts || '-') + ' · 상태: 기존 수집/가져오기/분개/검토/마감 테이블';
   }
 
   function renderStats(s) {
