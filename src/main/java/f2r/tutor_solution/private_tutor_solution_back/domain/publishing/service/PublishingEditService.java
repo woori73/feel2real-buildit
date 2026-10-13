@@ -283,7 +283,18 @@ public class PublishingEditService {
     int applied = 0;
     for (var block : parsed.headingBlocks()) {
       try {
-        // find.find로 제목 텍스트 위치 확인
+        // 1. 마커 제거: "# 제목" → "제목" (find.change)
+        // 원본에 마커가 있는 경우에만 수행
+        if (!block.original().equals(block.text())) {
+          cliExecutor.execute(
+              new PublishingCommand("find.change",
+                  Map.of("find", block.original(), "change", block.text(),
+                      "scope", "story")),
+              workDir);
+          log.info("마커 제거: '{}' → '{}'", block.original(), block.text());
+        }
+
+        // 2. find.find로 제목 텍스트 위치 확인
         var findResult = cliExecutor.execute(
             new PublishingCommand("find.find",
                 Map.of("find", block.text(), "scope", "story")),
