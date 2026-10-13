@@ -82,6 +82,7 @@ jobs:
         env:
           PHASE: ACTIVE_TEST
           SKIP_LOAD: '1'
+          KB: adm-data/docs/ANALYSIS/03_counseling_qa/knowledge_base.json
         run: node e2e/admissions-live/run.js 2>&1 | tee phase2.txt
       - name: LLM calls (from app log; no secrets)
         if: always()
@@ -95,6 +96,7 @@ jobs:
         if: always()
         with:
           name: admissions-live
+          retention-days: 3
           path: |
             results-*.json
             summary-*.md

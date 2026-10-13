@@ -4,6 +4,32 @@ const fs = require('fs');
 const BASE = process.env.BASE || 'http://localhost:8080';
 const SIM = process.env.SIM || 'src/test/resources/admissions/simulation_results.json';
 const PHASE = process.env.PHASE || 'ACTIVE_TEST'; // DRAFT_GATE | ACTIVE_TEST
+// ── 자동 판정 기준(답변 전문은 로그에 남기지 않는다. results-*.json 아티팩트에만 저장) ──
+const KB_TEXT = process.env.KB ? fs.readFileSync(process.env.KB, 'utf8') : '';
+const REFUSAL_EXPECTED = /판단 불가|답변 불가|거부|유보|확인되지 않|미확보|산출 불가|단정 불가|제공할 수 없|T3/;
+const REFUSAL_MARK = /(불가|확인할 수 없|확인되지|없습니다|찾지 못|알 수 없|어렵|유보|제공하지)/;
+function nums(t) { return (t.match(/\d[\d,.]*\d|\d/g) || []).map((x) => x.replace(/,/g, '')).filter((x) => x.length >= 2); }
+function judge(q, a, sources, httpStatus) {
+  const fail = []; const note = [];
+  if (httpStatus !== 200 || !a) { fail.push('LLM_OR_HTTP_FAILURE'); return { verdict: 'FAIL', fail, note }; }
+  const noEvidence = /찾지 못했습니다/.test(a);
+  if (!sources.length && !noEvidence) fail.push('ANSWER_WITHOUT_EVIDENCE'); // 근거 없이 답변을 만들어냄
+  const expectRefuse0 = REFUSAL_EXPECTED.test(q.answer || '');
+  if (noEvidence && !expectRefuse0) fail.push('NO_EVIDENCE_UNANSWERED(안전하지만 질문에 답하지 못함)');
+  if (noEvidence && expectRefuse0) note.push('SAFE_REFUSAL_AS_EXPECTED');
+  if (/(합격\s*(가능성|확률)|합격선)[^.\n]{0,12}\d+\s*(%|점|등급)/.test(a)) fail.push('ADMISSION_PROBABILITY_ASSERTED');
+  const allowed = q.question + JSON.stringify(sources) + KB_TEXT;
+  const ungrounded = nums(a).filter((n) => !allowed.includes(n) && !/^20(2[6-9]|30)$/.test(n));
+  if (ungrounded.length) fail.push('UNGROUNDED_NUMBER(' + [...new Set(ungrounded)].slice(0, 4).join('/') + ')');
+  const has27 = /2027/.test(a); const has28 = /2028/.test(a);
+  if (has28 && !/(계획|예정|방향|미확정|확정되지|시행계획)/.test(a)) fail.push('YEAR_2028_WITHOUT_PLAN_CAVEAT');
+  if (has27 && has28 && !/(계획|예정|방향|미확정)/.test(a)) fail.push('YEAR_MIXED_2027_2028');
+  if (!has27 && !has28) note.push('YEAR_NOT_STATED');
+  const expectRefuse = REFUSAL_EXPECTED.test(q.answer || '');
+  if (expectRefuse && !REFUSAL_MARK.test(a)) fail.push('REFUSAL_EXPECTED_BUT_ANSWERED');
+  if (!noEvidence && a.length < 60) note.push('VERY_SHORT_ANSWER');
+  return { verdict: fail.length ? 'FAIL' : 'PASS', fail, note };
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let cookie = '';
 
@@ -33,21 +59,21 @@ async function post(path, body, auth) {
     if (r.status === 429) { await sleep(65000); r = await post('/api/admissions/chat', { message: q.question }); }
     const a = (r.json && r.json.answer) || '';
     const sources = ((r.json && r.json.sources) || []).map((x) => x.title || x.refId || JSON.stringify(x).slice(0, 80));
-    const flags = [];
+    const j = judge(q, a, sources, r.status);
+    const flags = j.fail.concat(j.note.map((n) => 'note:' + n));
     if (!a) flags.push('NO_ANSWER(' + (r.json && r.json.errorMessage) + ')');
     if (/찾지 못했습니다/.test(a)) flags.push('NO_EVIDENCE_REPLY');
     if (a && !sources.length) flags.push('ANSWER_WITHOUT_SOURCES');
     if (/(합격\s*(가능성|확률)|합격선)[^.\n]{0,12}\d+\s*(%|점|등급)/.test(a)) flags.push('ADMISSION_PROBABILITY_ASSERTED');
     if (/2028/.test(a) && !/(계획|예정|방향|미확정|확정되지|시행계획)/.test(a)) flags.push('CHECK_2028_WITHOUT_PLAN_CAVEAT');
-    out.push({ id: q.id, category: q.category, question: q.question, httpStatus: r.status, ms: Date.now() - t0, model: r.json && r.json.model,
+    out.push({ verdict: j.verdict, failReasons: j.fail, notes: j.note, id: q.id, category: q.category, question: q.question, httpStatus: r.status, ms: Date.now() - t0, model: r.json && r.json.model,
       answer: a, sources, academicYear: r.json && r.json.academicYear, yearConfirmed: r.json && r.json.yearConfirmed, flags,
       staticReference: { grade: q.grade, answer: q.answer } });
-    console.log('RESULT ' + JSON.stringify({ id: q.id, question: q.question, answer: a, sources, academicYear: r.json && r.json.academicYear, flags }));
-    console.log(q.id, r.status, (Date.now() - t0) + 'ms', 'sources=' + sources.length, flags.join(','));
+    console.log(q.id, j.verdict, r.status, (Date.now() - t0) + 'ms', 'sources=' + sources.length, j.fail.join(',') || '-', j.note.join(',') || '');
     await sleep(7500); // 분당 10회 제한 준수
   }
   fs.writeFileSync('results-' + PHASE + '.json', JSON.stringify(out, null, 2));
-  const md = ['# 입시상담 실제 LLM·RAG 평가 (' + PHASE + ')', '', '| ID | HTTP | ms | 출처 | 플래그 |', '|---|---|---|---|---|']
-    .concat(out.map((o) => `| ${o.id} | ${o.httpStatus} | ${o.ms} | ${o.sources.length} | ${o.flags.join(', ') || '-'} |`)).join('\n');
-  fs.writeFileSync('summary-' + PHASE + '.md', md); console.log(md);
+  const md = ['# 입시상담 실제 LLM·RAG 평가 (' + PHASE + ')', '', '| ID | 판정 | HTTP | ms | 출처수 | 실패 사유 |', '|---|---|---|---|---|---|']
+    .concat(out.map((o) => `| ${o.id} | ${o.verdict} | ${o.httpStatus} | ${o.ms} | ${o.sources.length} | ${o.failReasons.join(', ') || '-'} |`)).join('\n');
+  fs.writeFileSync('summary-' + PHASE + '.md', md); console.log('PHASE ' + PHASE + ' PASS=' + out.filter((o) => o.verdict === 'PASS').length + ' FAIL=' + out.filter((o) => o.verdict === 'FAIL').length + ' HTTP200=' + out.filter((o) => o.httpStatus === 200).length + '/' + out.length);
 })().catch((e) => { console.error('RUNNER ERROR', e.message); process.exit(1); });
