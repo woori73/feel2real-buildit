@@ -32,16 +32,8 @@ public class MarkdownStyleService {
   private static final Pattern QUOTE = Pattern.compile("^>\\s?(.*)$");
   private static final Pattern LIST = Pattern.compile("^[-*]\\s+(.+)$");
 
-  /**
-   * 파싱된 블록.
-   * @param text clean text (마커 제거)
-   * @param original 마커 포함 원본 (예: "# 제목")
-   * @param style 적용할 스타일 (예: "ko-heading1")
-   * @param paragraphIndex 원본에서의 문단 인덱스 (0-based)
-   * @param markerBytes 마커의 UTF-8 바이트 길이 (예: "# "=2, "## "=3)
-   */
-  public record Block(String text, String original, String style,
-      int paragraphIndex, int markerBytes) {}
+  /** 파싱된 블록: text=clean text, original=마커 포함 원본, style=적용할 스타일 */
+  public record Block(String text, String original, String style) {}
 
   /** 파싱 결과: clean text + 스타일 매핑 */
   public record ParsedMarkdown(String cleanText, List<Block> headingBlocks) {}
@@ -55,7 +47,6 @@ public class MarkdownStyleService {
   public ParsedMarkdown parse(String markdown) {
     StringBuilder clean = new StringBuilder();
     List<Block> headings = new ArrayList<>();
-    int paraIndex = 0;
 
     for (String line : markdown.split("\\R")) {
       String trimmed = line.trim();
@@ -66,33 +57,25 @@ public class MarkdownStyleService {
       if (m1.matches()) {
         String text = m1.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, line.trim(), "ko-heading1", paraIndex, 2));
-        paraIndex++;
+        headings.add(new Block(text, line.trim(), "ko-heading1"));
       } else if (m2.matches()) {
         String text = m2.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, line.trim(), "ko-heading2", paraIndex, 3));
-        paraIndex++;
+        headings.add(new Block(text, line.trim(), "ko-heading2"));
       } else if (m3.matches()) {
         String text = m3.group(1).trim();
         clean.append(text).append("\n");
-        headings.add(new Block(text, line.trim(), "ko-heading3", paraIndex, 4));
-        paraIndex++;
+        headings.add(new Block(text, line.trim(), "ko-heading3"));
       } else if (QUOTE.matcher(trimmed).matches()) {
         String text = QUOTE.matcher(trimmed).replaceFirst("$1").trim();
         clean.append(text).append("\n");
-        int markerLen = line.trim().startsWith("> ") ? 2 : 1;
-        headings.add(new Block(text, line.trim(), "ko-quote", paraIndex, markerLen));
-        paraIndex++;
+        headings.add(new Block(text, line.trim(), "ko-quote"));
       } else if (LIST.matcher(trimmed).matches()) {
         // 목록은 본문 스타일 유지 (ko-body), 마커만 제거
         String text = LIST.matcher(trimmed).replaceFirst("$1").trim();
         clean.append("• ").append(text).append("\n");
-        paraIndex++;
       } else {
         clean.append(line).append("\n");
-        // 빈 줄도 문단으로 카운트 (CLI가 빈 줄을 문단으로 처리)
-        if (!trimmed.isEmpty() || true) paraIndex++;
       }
     }
 
