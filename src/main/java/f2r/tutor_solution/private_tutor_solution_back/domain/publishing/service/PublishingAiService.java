@@ -160,8 +160,8 @@ public class PublishingAiService {
             @SuppressWarnings("unchecked")
             Map<String, Object> params = m.get("params") instanceof Map<?, ?> pm
                 ? (Map<String, Object>) pm : Map.of();
-            String description = String.valueOf(
-                m.getOrDefault("description", command));
+            Object descObj = m.get("description");
+            String description = descObj != null ? String.valueOf(descObj) : command;
             plan.add(new PlannedCommand(command, new LinkedHashMap<>(params), description));
           }
         }
