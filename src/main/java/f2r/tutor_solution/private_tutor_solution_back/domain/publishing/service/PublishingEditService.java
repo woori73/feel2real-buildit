@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse;
-import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.PreflightIssue;
+import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.Finding;
+import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.LowPpiFinding;
+import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse.MissingGlyphFinding;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PublishingCommand;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.entity.PublishingJob;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.entity.PublishingJob.Status;
@@ -47,20 +49,24 @@ public class PublishingEditService {
   /**
    * 편집 명령을 순차 실행한다.
    *
-   * <p>실행 전 스냅샷을 생성하고, AI allowlist가 아닌 직접 호출이므로
-   * 내부 명령(file.open 등)은 허용하지 않는다 — 편집은 이미 열린 정본에 수행한다.
+   * <p>실행 전 스냅샷을 생성한다. 빈 명령 목록은 스냅샷만 생성한다 (수동 저장용).
    *
    * @return 생성된 스냅샷 ID
    */
   @Transactional
   public Long executeCommands(AuthenticatedPrincipal principal, Long jobId,
-      List<PublishingCommand> commands) {
+      List<PublishingCommand> commands, String label) {
     PublishingJob job = jobService.requireOwned(principal, jobId);
     requireReady(job);
+
+    Long snapshotId = createSnapshot(job, label != null ? label : "편집 전");
+    if (commands == null || commands.isEmpty()) {
+      log.info("빈 명령: 스냅샷만 생성 jobId={}, snapshotId={}", jobId, snapshotId);
+      return snapshotId;
+    }
     // 직접 편집 API는 AI allowlist와 동일한 제약을 적용 (내부 명령 차단)
     allowlist.validateAiPlan(commands);
 
-    Long snapshotId = createSnapshot(job, "편집 전");
     Path workDir = Path.of(job.getWorkDir());
 
     int i = 0;
@@ -77,6 +83,15 @@ public class PublishingEditService {
     }
     log.info("명령 실행 완료: jobId={}, {}건, snapshotId={}", jobId, commands.size(), snapshotId);
     return snapshotId;
+  }
+
+  /**
+   * 편집 명령을 순차 실행한다 (라벨 없음).
+   */
+  @Transactional
+  public Long executeCommands(AuthenticatedPrincipal principal, Long jobId,
+      List<PublishingCommand> commands) {
+    return executeCommands(principal, jobId, commands, null);
   }
 
   /**
@@ -164,38 +179,51 @@ public class PublishingEditService {
     return cmd;
   }
 
-  /** preflight.run JSON 출력을 파싱한다. */
+  /** preflight.run JSON 출력을 Qoder §2 스키마로 파싱한다. */
   private PreflightResponse parsePreflight(String output) {
     try {
-      // CLI 출력에서 JSON 부분 추출 (로그 prefix가 있을 수 있음)
       String json = extractJson(output);
       Map<String, Object> map = objectMapper.readValue(json,
           new TypeReference<Map<String, Object>>() {});
-      List<PreflightIssue> issues = new ArrayList<>();
-      List<PreflightIssue> warnings = new ArrayList<>();
+      List<Finding> overset = new ArrayList<>();
+      List<MissingGlyphFinding> missingGlyphs = new ArrayList<>();
+      List<LowPpiFinding> lowPpi = new ArrayList<>();
       Object issuesObj = map.get("issues");
       if (issuesObj instanceof List<?> list) {
         for (Object o : list) {
           if (o instanceof Map<?, ?> m) {
-            PreflightIssue issue = new PreflightIssue(
-                str(m.get("severity")),
-                str(m.get("kind")),
-                str(m.get("message")),
-                m.get("page") instanceof Number n ? n.intValue() : null);
-            if ("error".equalsIgnoreCase(issue.severity())) {
-              issues.add(issue);
-            } else {
-              warnings.add(issue);
+            String kind = str(m.get("kind"));
+            String severity = str(m.get("severity"));
+            String message = str(m.get("message"));
+            Integer page = m.get("page") instanceof Number n ? n.intValue() : null;
+            boolean isError = "error".equalsIgnoreCase(severity);
+            if ("missingGlyphs".equalsIgnoreCase(kind)) {
+              String glyph = str(m.get("glyph"));
+              if (glyph.isEmpty()) {
+                glyph = str(m.get("item"));
+              }
+              missingGlyphs.add(new MissingGlyphFinding(page, message, glyph));
+            } else if ("lowPpi".equalsIgnoreCase(kind) || "ppi".equalsIgnoreCase(kind)) {
+              Integer ppi = m.get("ppi") instanceof Number n ? n.intValue()
+                  : m.get("actualPpi") instanceof Number n2 ? n2.intValue() : null;
+              lowPpi.add(new LowPpiFinding(page, message, ppi));
+            } else if ("overset".equalsIgnoreCase(kind)) {
+              overset.add(new Finding(page, message));
+            } else if (isError) {
+              // 알 수 없는 error는 overset에 포함 (프론트 표시용)
+              overset.add(new Finding(page, "[" + kind + "] " + message));
             }
+            // warning은 프론트에서 표시하지 않으므로 무시
           }
         }
       }
-      return new PreflightResponse(issues.isEmpty(), issues, warnings);
+      boolean passed = overset.isEmpty() && missingGlyphs.isEmpty();
+      return new PreflightResponse(passed, overset, missingGlyphs, lowPpi);
     } catch (Exception e) {
-      log.warn("preflight 결과 파싱 실패, 원문 반환: {}", e.getMessage());
+      log.warn("preflight 결과 파싱 실패: {}", e.getMessage());
       return new PreflightResponse(false,
-          List.of(new PreflightIssue("error", "parse", "preflight 결과 파싱 실패", null)),
-          List.of());
+          List.of(new Finding(null, "preflight 결과 파싱 실패")),
+          List.of(), List.of());
     }
   }
 
