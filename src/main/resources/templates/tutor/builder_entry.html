@@ -62,7 +62,7 @@
 <body>
 <div class="nav">
   <div class="nav-logo">Build<span class="it">It</span></div>
-  <div class="nav-right"><button class="nav-btn">← 메인으로</button><button class="nav-btn primary">+ 새 홈페이지</button></div>
+  <div class="nav-right"><button class="nav-btn" onclick="window.location.href='/'">← 메인으로</button><button class="nav-btn primary" onclick="window.location.href='/builder'">+ 새 홈페이지</button></div>
 </div>
 
 <div class="hero">
@@ -84,7 +84,7 @@
     <div class="sample-card">
       <div class="sample-preview">
         <span class="sample-badge">입시·종합학원형</span>
-        <img th:src="@{/images/builder-samples/tmpl-open-school-pc.png" alt="오픈스쿨 템플릿">
+        <img th:src="@{/images/builder-samples/tmpl-open-school-pc.png}" alt="오픈스쿨 템플릿">
       </div>
       <div class="sample-info">
         <h3>오픈스쿨 — 종합학원형</h3>
@@ -100,7 +100,7 @@
     <div class="sample-card">
       <div class="sample-preview">
         <span class="sample-badge">모바일 퍼스트</span>
-        <img th:src="@{/images/builder-samples/tmpl-demo-school-pc.png" alt="데모스쿨 템플릿">
+        <img th:src="@{/images/builder-samples/tmpl-demo-school-pc.png}" alt="데모스쿨 템플릿">
       </div>
       <div class="sample-info">
         <h3>데모스쿨 — 모바일 중심형</h3>
@@ -116,7 +116,7 @@
     <div class="sample-card">
       <div class="sample-preview">
         <span class="sample-badge">미니멀</span>
-        <img th:src="@{/images/builder-samples/tmpl-minimal-landing-pc.png" alt="미니멀 랜딩">
+        <img th:src="@{/images/builder-samples/tmpl-minimal-landing-pc.png}" alt="미니멀 랜딩">
       </div>
       <div class="sample-info">
         <h3>미니멀 랜딩 — 소규모 학원형</h3>
@@ -132,7 +132,7 @@
     <div class="sample-card">
       <div class="sample-preview">
         <span class="sample-badge">섹션 조합형</span>
-        <img th:src="@{/images/builder-samples/comp-hero-hyperui-pc.png" alt="히어로 컴포넌트">
+        <img th:src="@{/images/builder-samples/comp-hero-hyperui-pc.png}" alt="히어로 컴포넌트">
       </div>
       <div class="sample-info">
         <h3>컴포넌트 조합 — 커스텀형</h3>
@@ -154,13 +154,13 @@
     <p>AI 제작 시 활용되는 개별 섹션 디자인</p>
   </div>
   <div class="comp-grid">
-    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-team-tailblocks-pc.png"><div class="info"><h4>강사진 소개</h4><p>사진+이름+과목+경력 카드 그리드</p></div></div>
-    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-testimonials-hyperui-pc.png"><div class="info"><h4>합격 후기</h4><p>인용문 그리드 · 정적 안정형</p></div></div>
-    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-hero-hyperui-pc.png"><div class="info"><h4>히어로 섹션</h4><p>좌측 텍스트+우측 이미지 2열</p></div></div>
+    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-team-tailblocks-pc.png}"><div class="info"><h4>강사진 소개</h4><p>사진+이름+과목+경력 카드 그리드</p></div></div>
+    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-testimonials-hyperui-pc.png}"><div class="info"><h4>합격 후기</h4><p>인용문 그리드 · 정적 안정형</p></div></div>
+    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-hero-hyperui-pc.png}"><div class="info"><h4>히어로 섹션</h4><p>좌측 텍스트+우측 이미지 2열</p></div></div>
   </div>
 </div></div>
 
-<div class="note">📐 시안 v2: 빌더 진입 화면<br>실제 build2 샘플 이미지 사용<br>"이 디자인으로 시작" → 제작 화면 연결</div>
+
 <script th:src="@{/js/builder_entry.js}"></script>
 </body>
 </html>
