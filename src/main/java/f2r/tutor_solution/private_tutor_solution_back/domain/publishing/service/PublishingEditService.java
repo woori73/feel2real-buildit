@@ -313,8 +313,7 @@ public class PublishingEditService {
       }
     }
 
-    // 버전 스냅샷 생성 (스타일 적용 후 상태 보존)
-    versionService.createVersion(principal, jobId, "Markdown 스타일 자동 적용 (" + applied + "개)");
+    log.info("Markdown 스타일 적용 완료: jobId={}, {}개", jobId, applied);
     return applied;
   }
 }
