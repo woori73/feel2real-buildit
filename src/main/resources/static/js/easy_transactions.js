@@ -1,6 +1,6 @@
 /**
- * /easy/transactions — 거래 등록/수정/삭제 + 필터 목록.
- * 삭제는 confirm() 확인 절차를 거친다.
+ * /easy/transactions — 거래 등록/수정 + 필터 목록.
+ * Workspace 파일럿에서는 회계 이력을 보존하기 위해 기존 물리 삭제 API를 노출하지 않는다.
  */
 (function () {
   let businesses = [];
@@ -287,6 +287,7 @@
       }
       if (t.evidenceType) bits.push(evidenceLabel(t.evidenceType));
       bits.push(t.collectionStatus || 'NOT_COLLECTED');
+      bits.push(t.importStatus || 'NOT_APPLICABLE');
       bits.push(t.ledgerStatus || 'LEDGER_SAVED');
       bits.push(t.journalStatus || 'NOT_POSTED');
       bits.push('기간 ' + (t.closingStatus || 'OPEN'));
@@ -303,18 +304,12 @@
       edit.className = 'btn-edit-link';
       edit.textContent = '수정';
       edit.addEventListener('click', () => startEdit(t));
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'btn-danger-link';
-      del.textContent = '삭제';
-      del.addEventListener('click', () => remove(t));
       const spacer = document.createElement('span');
       spacer.className = 's';
       spacer.textContent = (t.payMethod || '') + (t.memo ? ' · ' + t.memo : '');
       actions.appendChild(spacer);
       const btns = document.createElement('span');
       btns.appendChild(edit);
-      btns.appendChild(del);
       actions.appendChild(btns);
       li.appendChild(top);
       li.appendChild(sub);
@@ -356,19 +351,6 @@
     document.getElementById('btnSave').textContent = '수정 완료';
     document.getElementById('txnForm').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  async function remove(t) {
-    const label = (t.description || t.category) + ' ' + Easy.fmtWon(t.amount);
-    if (!window.confirm('정말 삭제할까요?\n' + label)) return;
-    const res = await fetchAuth('/api/admin/easy/transactions/' + encodeURIComponent(t.txnId), {
-      method: 'DELETE'
-    });
-    if (!res.ok && res.status !== 204) {
-      alert(await res.text() || '삭제에 실패했습니다.');
-      return;
-    }
-    await search();
   }
 
   document.addEventListener('DOMContentLoaded', () => {

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyReviewResolveRequest;
@@ -169,6 +170,25 @@ class EasyAuditServiceTest {
         .isInstanceOf(ResponseStatusException.class)
         .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode().value())
             .isEqualTo(409));
+  }
+
+  @Test
+  @DisplayName("Workspace 보류 — 사업체 복합 조회 후 검토·장부를 변경하지 않는다")
+  void workspaceHold_isBusinessScopedAndReadOnly() {
+    EasyTransaction stored = txn(academy, 101L, EasyTxnDirection.EXPENSE,
+        100000L, "강사료", null, null);
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.WITHHOLDING).txn(stored)
+        .title("원천징수 확인").build();
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(reviewRepository.findByReviewIdAndBusiness_BusinessId(9L, 1L))
+        .thenReturn(Optional.of(item));
+
+    var response = service.holdWorkspace(1L, 9L);
+
+    assertThat(response.status()).isEqualTo(EasyReviewStatus.OPEN.name());
+    verify(reviewRepository).findByReviewIdAndBusiness_BusinessId(9L, 1L);
+    verifyNoInteractions(txnRepository, journalService, correctionService);
   }
 
   @Test
