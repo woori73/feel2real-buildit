@@ -163,6 +163,183 @@ DB: `newstart_member_presence`(V1017) + `newstart_direct_messages`(V1017). 쪽�
 
 # API 명세
 
+## BuildIt 시각 편집기 (2026-10, prototype 브랜치)
+
+> GrapesJS 기반 홈페이지 편집기. 기존 P0/P1 데이터와 분리된 전용 테이블(`academy_visual_editor_draft`/`_published`)을 쓴다.
+> 설계·AI Agent 연결: [BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md](BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md)
+
+**인증:** 아래 `/api/tutor/academy/page-settings/visual-editor/**`는 TUTOR(본인 학원) 쿠키 JWT. 소유 학원이 없으면 `403`(500 아님).
+공개 조회 2종은 인증 없음.
+
+| 메서드·경로 | 설명 | 주요 응답 |
+|---|---|---|
+| `GET /tutor/academy/editor` (SSR) | 편집기 화면. 모델: `academyId`, `academyName`, `academySlug` | 200 / 403 |
+| `GET …/visual-editor/status` | 편집기 화면 상태(서버 사실) | `{draftExists, draftRevision, publishedAt, renderMode, hasUnpublishedChanges, publicPath, publicReachable, academyName}` |
+| `GET …/visual-editor/draft` | 초안 조회(없으면 빈 값, `revision:0`) | `{html, css, projectData, revision, updatedAt}` |
+| `PUT …/visual-editor/draft` | 초안 저장. 최초 저장은 `revision` null/0, 이후는 필수. `{html, css, projectData, revision, appliedProposalId?}` — `appliedProposalId`(선택, 양의 정수·숫자 문자열)는 AI 제안을 적용한 저장임을 알리며, 있으면 **저장과 제안 APPLIED 전이가 한 트랜잭션**이다(아래 "AI 제안 적용 저장") | 200 `{status, revision, updatedAt, message, appliedProposal?}` / 400(크기·정제 거부·revision 누락·`appliedProposalId` 형식) / 409(revision 불일치 `code:REVISION_CONFLICT`) / 404·409·422·400(제안 실패, 아래 표) |
+| `POST …/visual-editor/import` | (서버 가져오기, 기존 초안이 있으면 409) 편집기 UI는 쓰지 않고 브라우저 스냅샷 불러오기를 쓴다 | 200 / 409 |
+| `POST …/visual-editor/publish` | `{revision}` 게시. **빈 초안은 400.** 같은 revision 재게시는 멱등 200. 같은 학원의 게시·게시취소는 서버에서 직렬화 | 200 `{status, renderMode, publicPath, publicReachable, message}` / 400 / 409 |
+| `POST …/visual-editor/unpublish` | 게시 취소(P0로 복귀). 게시본·P0 설정은 보존 | 200 `{status, renderMode, publicPath, publicReachable, message}` |
+| `GET …/visual-editor/published` | 게시본 조회(본인) | `{html, css, publishedAt}` |
+| `GET /api/academies/{slug}/homepage` | **공개.** 경로형 공개 페이지(`/academies/{slug}`) 용. handle 없는 학원도 조회됨 | 200 `{html, css, renderMode:"custom"}` / 404(미게시·custom 아님·비공개 학원) |
+| `GET /api/public/academy/{handle}/homepage` | **공개.** 서브도메인 용 | 위와 동일 |
+
+#### AI 제안 적용 저장 (`appliedProposalId`) — 설계: [BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md](BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md)
+
+- `appliedProposalId`가 **없으면** 기존 동작과 완전히 같고 응답에 `appliedProposal` 키도 없다.
+- 있으면 초안 갱신·flush 뒤 같은 트랜잭션에서 `VisualEditorProposalPort`(Proposal 도메인 구현체)가 제안을 학원 조건으로 잠그고(`academy_id`는 로그인 사용자의 학원이며 요청값이 아니다) 검증한 뒤 APPLIED로 바꾼다. 어느 단계든 실패하면 **초안 갱신도 롤백**된다.
+- 성공 200 추가 필드: `appliedProposal: {proposalId, status:"APPLIED", appliedRevision}` — `appliedRevision`은 저장 후 DB의 revision이다.
+- 오류 본문은 기존 형식에 `code`(그리고 422는 `details[]`)가 더해진다. 409는 `code`로 구분한다 — `REVISION_CONFLICT`(또는 `code` 없음)는 revision 충돌, `PROPOSAL_NOT_PENDING`은 제안 상태 충돌.
+
+| HTTP | `code` | 의미 | 초안 | 제안 |
+|---|---|---|---|---|
+| 409 | `REVISION_CONFLICT` | revision 불일치 | 불변 | PENDING 유지 |
+| 404 | `PROPOSAL_NOT_FOUND` | 없음 또는 다른 학원의 제안(구분 불가) | 불변 | 변화 없음 |
+| 409 | `PROPOSAL_NOT_PENDING` | 이미 APPLIED/REJECTED/EXPIRED/STALE | 불변 | 변화 없음 |
+| 422 | `PROPOSAL_VERIFICATION_FAILED` | 제안 내용 ≠ 저장된 projectData(`details[]`에 사유) | 불변 | PENDING 유지 |
+| 400 | `PROPOSAL_NOT_AVAILABLE` | Proposal 구현체가 배포되지 않은 환경 | 불변 | — |
+
+편집기 쪽 계약: `window.__ve.applyProposal({proposalId, changes[]})`(전부 또는 전무, 저장하지 않음) · `window.__ve.undoProposal()`(적용 직전 상태로 한 번에 복원) · `window` 이벤트 `ve:saved`(`{revision, appliedProposal}`, 저장 성공마다) · `ve:proposal-failed`(`{proposalId, code, message, details}`). `window.__ve.state()`에 `pendingAppliedProposalId`가 추가되었다. 저장 revision 충돌 시 편집기는 미저장 내용을 `localStorage`(`ve:backup:{academyId}`)에 먼저 백업하고, 자동저장 충돌은 모달 없이 알리며, 수동 저장 충돌은 "내 내용 유지(기본)/최신 초안 불러오기/덮어쓰기" 중에서 고르게 한다. 백업은 상태줄의 "저장 안 된 내 변경 복원"으로 되돌릴 수 있다.
+
+#### 작업본 API (BuildIt 통합 화면 1단계, V1060)
+
+TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 홈페이지는 `POST /publish`에서만 바뀐다.**
+
+| 메서드·경로 | 설명 |
+|---|---|
+| `GET /api/tutor/academy/working-copy` | 작업본 상태 `{revision, intro, pageSettings, dirty, liveChanged}`. 없으면 현재 공개 내용으로 복제해 만든다(공개본 불변) |
+| `PUT /api/tutor/academy/working-copy` | `{revision, intro?, pageSettings?}` 부분 수정. `pageSettings`는 `AcademyPageSettingsUpdateRequest`와 같은 형태·검증 |
+| `POST /api/tutor/academy/working-copy/discard` | `{revision}` 작업본을 현재 공개 내용으로 되돌림 |
+| `POST /api/tutor/academy/working-copy/restore` | `{revision, versionId}` 기존 버전 기록을 작업본에 불러옴(공개본 불변) |
+| `POST /api/tutor/academy/working-copy/publish` | `{revision, force?}` 작업본을 공개본에 반영. 직전 공개 내용은 버전 기록(`academy_page_versions`)에 남음 |
+| `GET /api/tutor/academy/working-copy/preview` | 공개 API(`/api/academies/{slug}`)와 같은 모양의 작업본 미리보기. `X-Robots-Tag: noindex` |
+| `GET /tutor/academy/preview` (페이지) | 본인 작업본을 공개 페이지와 같은 렌더러로 표시. 방문 통계 미기록, 홈페이지가 없으면 `/builder`로 이동 |
+
+오류: `409 REVISION_CONFLICT`(작업본이 그 사이 바뀜), `409 LIVE_CHANGED`(작업본 생성 후 공개 내용이 따로 바뀜 — `force:true`로 덮어쓰기 가능), `400`(검증 실패). `homepage.renderMode`는 작업본 요청으로 바꿀 수 없다.
+
+#### 대화 API (BuildIt 통합 화면 2-A, V1061)
+
+접두 `/api/tutor/academy/assistant` (TUTOR). 모든 쓰기는 비공개 작업본에만 닿고, 공개 홈페이지는 `publish`에서만 바뀐다. 기존 AI 생성기(`AcademyAiCreateService`)와 작업본을 재사용하며 새 AI 엔진은 없다.
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `GET /samples` | 시작 화면 샘플 6종 `[{key,title,description,preset,...}]` (입시·내신 전문/초중등 영어/영어회화/종합학원/프리미엄/미니멀 → 기존 프리셋) |
+| `GET /state` | `{hasAcademy, status, messages[]}` 화면 복원용. 조회만 한다 |
+| `POST /turn` | `{message?, academyName?, sampleKey?, region?}`. 학원이 없으면 이름→(과목·대상·지역 부족 시 `needs`로 되묻기)→DRAFT 학원+작업본 생성. 이미 학원이 있으면 새로 만들지 않는다(수정 턴은 2-C). 응답 `{reply, needs[], created, academyId, revision, designPreset, notes[]}` |
+| `POST /undo` | `{revision}` 마지막 수정 1단계 되돌리기(여러 번 가능). 응답 `{reply, changes[], undoDepth, revision}`. 스택은 `academy_assistant_message`의 EDIT/UNDO/PUBLISHED로 계산하며 현재 revision이 마지막 기록의 `revisionAfter`와 다르면(다른 탭·화면에서 바뀜) `409 REVISION_CONFLICT` |
+| `POST /publish` | `{revision, force?}` '게시하기' 하나. 작업본을 공개본에 반영하고, DRAFT면 같은 트랜잭션에서 PUBLISHED로 전환. 응답 `{firstPublish, revision}`. 오류는 작업본 API와 동일(`409 REVISION_CONFLICT/LIVE_CHANGED`) |
+
+주소·전화번호·강사·수강료는 사용자가 말하기 전까지 채우지 않는다. 지역은 사용자가 직접 한 말/입력에서만 받는다.
+
+**2-C(S1) 추가 — 대화형 반복 수정**: 학원이 이미 있으면 `POST /turn`은 새로 만들지 않고 수정 턴으로 처리한다. 요청에 `revision`(화면이 보고 있는 작업본 revision)을 함께 보낸다. 응답에 `edited`, `failed`, `changes[{label,before,after,sectionId}]`, `skipped[]`, `engine`(`AI`/`RULE`), `aiMs`, `undoDepth`, `revision`, `question`이 추가된다.
+- 흐름: 작업본 읽기 → AI 해석(트랜잭션 밖; 실패 시 규칙 해석기로 대체) → 서버 검증(`AssistantPatchApplier.plan`) → 작업본 저장(`AcademyWorkingCopyService.save`, 낙관적 revision). **공개 데이터를 직접 쓰는 기존 경로(`AcademyAiApplyService`)는 쓰지 않는다.** 공개본은 `publish`에서만 바뀐다.
+- 패치 연산(`ops`, 한 턴 최대 12개): `setPreset`, `setColor`(#hex), `setTypography`, `setFont`, `setHeroLayout`, `setCardStyle`, `setText`(허용 키만, 120자/긴 문구 600자), `setIntro`, `showSection`/`hideSection`, `moveSection`(first|last|before|after). 허용 값은 `AssistantDesignCatalog`가 정의하며 목록 밖 값·알 수 없는 연산은 `skipped`로 버려진다. 전화·금액·URL·두 자리 이상 숫자는 사용자 말이나 현재 값에 없으면 거부(사실 가드).
+- **디자인 자산 연동(BuildIt2)**: 연산 `applyAsset {id}`(카탈로그 `design-assets/catalog.json`의 ACTIVE 자산 id)와 `setMotion {value: none|fade|slide}`이 추가됐다. `applyAsset`은 서버가 자산의 연산 목록(프리셋·글꼴·상단·카드·색·등장 효과)으로 펼쳐 **개별 연산과 같은 검증**을 거치며, 같은 턴의 개별 지정(예: 주색)이 자산 값보다 우선한다. 알 수 없는/NOT_CONNECTED 자산은 `skipped`로 이유와 함께 버린다. 저장은 `builderDraft.motionStyle`(등장 효과, 렌더러가 루트 `data-motion`으로 표현)과 `builderDraft.designAsset`(마지막 레시피 id, 프리셋을 바꾸면 지워짐)이며 둘 다 새 테이블·마이그레이션 없이 기존 builderDraft 허용 키로 추가했다. 변경 요약에는 "디자인 자산"이 맨 위, 색 여러 개는 "색상 조합" 한 줄로 나온다. 첫 생성(`POST /turn`, 학원 없음)도 요청의 분위기·학원 유형으로 레시피를 고른다(샘플이 정한 프리셋은 뒤집지 않음). AI 프롬프트에는 ACTIVE 자산 목록이 요청과 관련 높은 순으로 들어간다.
+- **사진 올리기·삭제(S3)**: `POST /media`(multipart: `slot`=principal|textbook1|textbook2|textbook3|schedule, `revision`, `image`)는 사용자가 올린 사진을 검증·정규화(기존 `ImageSanitizer`·크기 제한 그대로)해 저장소에 올린 뒤 **작업본의 이미지 예약**(`academy_working_copy.staged_media_json`)으로만 건다. 공개 슬롯(`academies.*_storage_key`)과 공개 이미지는 `publish` 전까지 그대로이며, 응답은 `/turn`·`/undo`와 같은 형태(`changes`는 "사진 추가/교체: …")이고 되돌리기 대상이다(`409 REVISION_CONFLICT`·`400` 포함). `GET /media/{slot}`은 작업본 미리보기용 이미지로, 예약된 교체 사진이 있으면 그것을, 비우기 예약이면 404를, 예약이 없으면 공개 사진을 돌려준다(소유자만, storage key는 노출하지 않음). 연산 `clearImage {value: slot}`(대화로 "원장 사진 지워줘")은 이미 사진이 있는 자리만 비울 수 있고 같은 예약 경로를 쓴다. 에이전트는 사진을 만들거나 검색해 오지 않으며, 새 사진은 사용자가 직접 올린 것만 쓴다. `publish`는 같은 트랜잭션에서 예약을 공개 슬롯에 승격하고 예약을 비운다(되돌리기 단계도 0). `working-copy/discard`는 예약도 버린다. 교체·삭제로 쓰이지 않게 된 파일은 캐시된 URL을 위해 즉시 삭제하지 않고 지연 정리한다(기존 `PUT /media/hero`와 같은 정책). 관리자 작업본(`academy_admin_working_copy`)의 사진 경로는 이번 범위가 아니다.
+- 오류: 해석 불가/AI 실패는 작업본을 바꾸지 않고 `failed` 또는 `question`으로 안내. 동시 수정은 `409 REVISION_CONFLICT`. `GET /state`에 `undoDepth` 추가.
+
+**2-B 추가**: `POST /turn`에 `subject`(과목 이름), `target`(대상 문구) 필드 추가. 과목·대상은 사용자가 말했거나 샘플 문구가 직접 말한 경우에만 확정하고, 아니면 `needs`로 되묻는다(종합학원·프리미엄·미니멀 샘플은 과목을 정하지 않음). `GET /state`는 `revision`, `dirty`, `publicUrl`을 함께 돌려준다.
+
+#### 대화형 화면 `/builder` 기능 스위치 (2-B)
+
+- 설정: `buildit.assistant.enabled`(기본 `false`), `buildit.assistant.tutor-login-ids`(쉼표 목록, 비우면 모든 TUTOR). 꺼져 있으면 기존 빌더만 쓴다.
+- **서버 차단**: 스위치가 꺼져 있거나 로그인 ID가 허용 목록에 없으면 `GET /state`, `POST /turn`, `POST /undo`, `POST /publish`, `POST /media`가 `403 {code:"ASSISTANT_DISABLED"}`로 막히고 AI 호출·작업본 쓰기·게시가 일어나지 않는다(화면만 숨기지 않는다). `GET /media/{slot}`(작업본 사진 미리보기)과 `GET /samples`는 AI·쓰기가 없어 가드하지 않으며, 기존 빌더의 `/working-copy/**`는 스위치와 무관하다.
+- 켜진 경우 `/builder`는 (학원이 없음) 또는 (**AI 제작 학원**)일 때 대화형 화면(`tutor/assistant_home`)을 연다. 기존 방식으로 만든 학원은 공개 데이터 보호를 위해 항상 기존 빌더로 간다.
+- **화면 모드(AI 제작 학원 판정)**: `academy_assistant_message`에 `kind='RESULT'`(대화로 최초 생성) 또는 `kind='ADOPTED'`('AI로 이어서 만들기' 명시 전환)가 있는 학원만 AI 제작 학원이다. 수정·되돌리기·게시 기록(TEXT/EDIT/UNDO/PUBLISHED)만 있다고 모드가 바뀌지 않는다. 판정은 `AssistantAcademyMode` 하나가 맡는다.
+- **한 문장 시작 `POST /turn {instant:true}`**: 학원이 없을 때 학원 이름·지역·대상이 없어도 임시 값("새 영어학원"·"지역 미정"·초·중·고)으로 바로 만든다. 과목이 문장에서 읽히지 않으면 과목만 되묻는다. 응답 `notes`에 "임시로 채운 정보" 안내가 들어간다.
+- **`POST /profile {academyName?, region?, targets?[]}`**: 게시 전(DRAFT) 학원의 이름·지역(전체 문자열을 시/도로 저장)·대상(`ELEMENTARY|MIDDLE|HIGH|UNIVERSITY|ADULT`)을 바꾼다. 게시된 학원은 `400`으로 거절한다(공개 홈페이지를 게시 없이 바꾸지 않는다).
+- **`GET /versions`**: 버전 기록 목록(`id, versionNo, createdBy, createdAt, note`). **`POST /restore {revision, versionId}`**: 선택한 버전을 비공개 작업본에 불러온다(공개본 불변, 되돌리기 스택은 비워진다 — 대화 기록에 `RESTORED`). 충돌은 `409`.
+- **기존 방식 학원에 대화 API 직접 호출**: `GET /state`, `POST /turn`, `/undo`, `/publish`, `/media`는 `409 {code:"NOT_ASSISTANT_ACADEMY"}`를 돌려주고 기록·작업본·공개 데이터·화면 모드를 바꾸지 않는다(학원이 아직 없는 신규 사용자의 `POST /turn` 최초 생성은 그대로 허용).
+- `GET /mode` → `{mode: NONE|ASSISTANT|CLASSIC, canAdopt}`. 스위치가 꺼져 있거나 허용 목록 밖이면 `403 ASSISTANT_DISABLED`(기존 빌더는 이때 버튼을 보이지 않는다). `CLASSIC`이면 `canAdopt=true`.
+- `POST /adopt` `{confirm:true}` — 기존 빌더의 'AI로 이어서 만들기'(확인 창에서 체크 후)가 호출한다. `confirm`이 없으면 `400 CONFIRM_REQUIRED`, 학원이 없으면 `400`. 전환 전 **공개 내용을 버전 기록**(`academy_page_versions`, note `AI로 이어서 만들기 전 공개본`)에 보관하고 작업본을 준비한 뒤 `ADOPTED` 기록을 남긴다. 공개 홈페이지는 바꾸지 않는다. 응답 `{adopted, versionId, revision}`(이미 AI 제작 학원이면 `adopted=false`, 변경 없음). 복구: 게시 전에는 `working-copy/discard`로 작업본을 공개본과 같게, 게시 후에는 `working-copy/restore {revision, versionId}` 후 게시. **복원은 선택한 버전과 정확히 일치**한다 — builderDraft는 버전에 있는 키만 남기고(이후 수정으로 새로 생긴 키는 제거), 버전의 페이지 설정에 기록된 항목(섹션 표시·순서, 외부 링크, 사업자 정보)은 그 값으로 되돌린다. 버전이 기록하지 않은 항목(페이지 설정이 비어 있는 옛 AI 생성 버전)은 현재 작업본 값을 유지하고, 예약한 사진은 버전에 없으므로 건드리지 않는다. 전환 안내: ADOPTED 기록의 안내 문구와 확인 창에 '기존 빌더로 언제든 돌아올 수 있다'(대화 화면 '기존 빌더' 링크, `/builder?classic=1`)를 안내한다. 전환 자체를 되돌리는 기능은 이번 범위가 아니다.
+- **AI 응답 지연(서버 한도)**: `buildit.assistant.ai-timeout-seconds`(기본 60, 0이면 제한 없음) 안에 AI가 답하지 않으면 서버가 호출을 취소하고 `POST /turn`은 **`504 {code:"AI_TIMEOUT", message, limitSeconds}`**로 끝난다. 수정이 아니므로 성공 응답 형태(`edited` 등)를 쓰지 않으며, 규칙 해석으로 대신 처리하지도 않는다. 사용자 입력·작업본·공개본·대화 기록은 바뀌지 않는다(쓰기 전에 끊는다). 취소된 호출은 Wiki Router→Qwen 폴백을 새로 시작하지 않는다(`log: buildit ai fallback skipped`). AI 호출은 요청 스레드의 로그인 정보를 넘겨받아 실행한다(폴백이 로그인 주체로 서명하기 때문). 화면(`assistant_wait.js`)은 8초부터 경과 시간·안내를 보여 주고, 504를 받으면 오류로 표시하며 입력을 되돌려 다시 보낼 수 있게 한다. 100초 안에 응답이 없으면 기다리기를 멈추고 서버 작업본을 다시 읽는다(늦게 끝난 수정은 되돌리기를 안내).
+- `/builder?classic=1`은 언제나 기존 빌더를 연다(화면의 '기존 빌더로 돌아가기'). 기존 편집기·빌더 경로는 그대로다.
+
+#### 빌더 계열 접근 권한 (ADMIN 허용)
+
+홈페이지 빌더 계열 경로는 **TUTOR와 ADMIN**이 쓸 수 있다. 소유자 검증은 그대로여서 ADMIN도 **본인이 만든 학원**만 다룬다(다른 회원 학원 관리 기능은 없음).
+
+| 허용(TUTOR, ADMIN) | 계속 TUTOR 전용 |
+|---|---|
+| `/builder`, `POST·PUT /api/tutor/academy`, `PUT /api/tutor/academy/page-settings`, `GET /api/tutor/academy/handle-available`, `/api/tutor/academy/ai/chat/**`, `/api/tutor/academy/assistant/**`, `/api/tutor/academy/working-copy/**` (`GET /me`는 기존부터 허용) | 학원 삭제(`DELETE`), 수업상품·레슨, 블로그, LMS, 영상 업로드, 레이아웃, 시각 편집기(`/page-settings/visual-editor/**`), `/api/tutor/conversations/**` 등 그 외 `/api/tutor/**` 전부 |
+
+- 구현: `AuthenticatedUserResolver.requireAcademyBuilderRole`(역할) + `verifyOwnsAcademyForBuilder`(소유자)를 빌더 경로에서만 쓴다. `requireTutor`/`verifyOwnsAcademy`는 기존 TUTOR 전용 기능이 그대로 쓴다.
+- STUDENT와 비로그인은 변함없이 거부된다(`/builder`는 `/`로 이동, API는 403/401).
+- ADMIN 시험 계정에 새 AI 화면을 켜는 방법은 기능 스위치(`buildit.assistant.enabled=true`, `buildit.assistant.tutor-login-ids=<ADMIN 로그인ID>`)로 같다. 허용 목록은 역할이 아니라 로그인 ID 기준이다.
+#### 관리자의 타인 홈페이지 관리 API (PR-B, V1062)
+
+ADMIN이 **대상 학원을 명시**해 다른 회원의 홈페이지를 조회·수정·미리보기·게시·복원한다. `/api/admin/**`는 필터 체인에서 ADMIN만 통과하고 서비스 계층이 한 번 더 확인한다(TUTOR/STUDENT는 403). 회원용 `/api/tutor/**`와 완전히 분리돼 있어 기존 TUTOR·STUDENT 권한은 그대로다.
+
+접두 `/api/admin/academies/{academyId}/builder` (academyId는 항상 경로로 명시, 세션에 "현재 관리 학원"을 두지 않는다)
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `GET ` | 관리 화면 진입: `{academy:{academyId,name,handle,slug,status,visible,ownerUserId,ownerLoginId,confirmKey}, live:{intro,builderDraft,blogUrl,naverMapUrl,heroYoutubeUrl}, memberDraftDirty, revision, intro, pageSettings, dirty, liveChanged}`. 관리자 작업본이 없으면 현재 공개 내용으로 만든다(공개본 불변). **접근이 감사 기록에 남는다** |
+| `PUT ` | `{revision, intro?, pageSettings?}` 관리자 작업본 수정. 공개본 불변. 낡은 revision은 `409 REVISION_CONFLICT` |
+| `POST /rebase` | `{revision}` **공개 변경 반영**: 작업본을 만든 뒤 공개 홈페이지가 바뀌었을 때(`liveChanged`), 관리자가 바꾼 필드만 새 공개 내용 위에 얹는다(필드 단위 3-way 병합). 응답에 `conflicts`(양쪽이 같은 필드를 다르게 바꿔 **공개 값을 유지**한 항목)·`keptMine`(관리자 값이 유지된 항목). 관리자 화면에는 강제 게시(force)가 없다 |
+| `POST /discard` | `{revision}` 되돌리기: 작업본을 현재 공개 내용으로 |
+| `POST /restore` | `{revision, versionId}` 이 학원의 버전 기록을 작업본에 불러옴(공개본 불변). 다른 학원의 버전은 `403` |
+| `POST /publish` | `{revision, force?, confirmAcademyId, confirmHandle, confirmFirstPublish?}` 게시 — 공개 홈페이지가 바뀌는 유일한 경로. 확인 값이 대상과 다르면 `409 TARGET_MISMATCH`, DRAFT 학원의 최초 공개는 `confirmFirstPublish:true`가 없으면 `409 FIRST_PUBLISH_CONFIRM_REQUIRED`. 반영 전 공개 내용은 버전 기록(`academy_page_versions`)에 남고 작업한 관리자가 `created_by`/메모에 기록된다 |
+| `GET /preview` | 관리자 작업본 기준 비공개 미리보기(공개 API와 같은 모양, noindex·no-store) |
+| `GET /versions` | 이 학원의 버전 목록(복원 후보) |
+| `GET /audit?limit=` | 이 학원의 관리자 작업 감사 기록(최근순). ADMIN 전용 |
+| `GET /admin/academies/{academyId}/builder` (페이지) | 관리자 홈페이지 관리 화면(SSR 껍데기 + `/js/admin_manage.js`). 상단 관리자 모드 배너에 학원명·핸들·상태·소유자 표시, 게시 전 대상 확인(학원 ID·핸들 입력)·변경 내용 비교·버전 복원·작업 기록. ADMIN 전용. 진입점은 `/admin/academies`의 "홈페이지 관리" 버튼 |
+| `GET /admin/academies/{academyId}/preview` (페이지) | 위 미리보기를 공개 페이지와 같은 렌더러로 표시. ADMIN 전용, 방문 통계 미기록 |
+
+- **수정은 관리자 전용 작업본(`academy_admin_working_copy`)에만 저장**한다. 회원 본인의 작업본·AI 대화(`academy_assistant_message`)와 섞이지 않고, 회원 화면과 회원의 게시에 딸려 나가지 않는다. 기존 `/ai/chat/apply`처럼 공개 데이터를 직접 쓰는 경로는 관리자 기능에서 쓰지 않는다.
+- 관리자 게시 후 회원의 작업본은 `liveChanged=true`가 되어, 회원이 다음에 게시할 때 충돌(`LIVE_CHANGED`)로 알려 준다.
+- **감사 기록**(`academy_admin_audit`): 관리 화면 진입(ACCESS), 작업본 수정(SAVE, 변경 항목의 전/후 값), 게시(PUBLISH), 복원(RESTORE), 되돌리기(DISCARD)를 작업자·대상 학원·대상 소유자·작업본 revision·게시 여부·시각과 함께 남긴다. 기록은 작업과 **같은 트랜잭션**이라 기록이 실패하면 작업도 롤백된다. 일반 학원 목록 조회는 기록하지 않는다. 회원 API로는 읽을 수 없다.
+- **충돌 보호**: 관리자 작업본은 만들 때(또는 rebase·게시·되돌리기 때) 공개 내용을 **기준 내용**(`base_intro`, `base_page_settings_json`)으로 함께 보관한다. 공개가 바뀌면 게시는 `409 LIVE_CHANGED`로 막히고, `POST /rebase`로 양쪽 변경을 필드 단위로 합친다. 관리자 게시는 회원 작업본을 건드리지 않으며(회원의 다음 게시는 `LIVE_CHANGED`), `memberDraftDirty`로 관리자 화면에 경고한다. 회원 화면의 '그래도 게시'(force)는 그대로 가능하되, 회원 게시가 `409 LIVE_CHANGED`일 때 응답 `details`(`introChanged/introBefore/introAfter`, `builderDraftChanges[{key,before,after}]`, `changedSettings`)에 **덮어쓰게 될 공개 내용**을 담아 화면이 확인 창에 보여 준다. 덮어쓰기 직전 공개 내용은 버전 기록에 보관돼 복원할 수 있다.
+- 게시 대상 확인 키(`confirmKey`)는 핸들, 핸들이 없는 기존 학원은 slug다.
+- 관리자 AI 대화(수정 턴)는 이후 단계(2-C)다. 이 화면은 AI 없이 직접 수정한다.
+
+### 강사진(sec-teachers) 데이터 계약 — `builderDraft.teachersJson` / `teachersSectionTitle`
+
+신규 엔드포인트·DB 변경 없음. 기존 작업본 API(회원 `PUT /api/tutor/academy/working-copy`, 관리자 `PUT /api/admin/academies/{id}/builder`)의 `pageSettings.builderDraft`로 저장하고, 게시는 기존 게시 API가 한다(게시 전 공개 불변, 충돌 보호·버전 보관·감사 동일).
+
+| 키 | 형식 | 제한 |
+|---|---|---|
+| `teachersJson` | JSON 배열 문자열 `[{"n":"이름","r":"역할/과목","c":["경력"],"p":"https://사진"}]` | 전체 6,000자 이하, 강사 8명 이하, `n` 필수(30자), `r` 50자, `c` 5개 이하·각 80자, `p`는 `https://` 만(300자). 허용 필드는 `n r c p`뿐. 위반 시 `400` |
+| `teachersSectionTitle` | 문자열(선택, 기본 "강사진") | 60자 이하 |
+
+- 값을 지우려면 해당 키에 `null`을 보낸다(키 삭제). `teachersJson`이 없거나 비었거나 유효한 강사가 없으면 **섹션은 렌더되지 않는다**(플레이스홀더·가짜 강사 없음). 기존 학원은 이 키가 없어 변화 없다.
+- 렌더(`academy_sections.js` `renderTeachers`, 공개·빌더 미리보기 공용)는 저장 값을 신뢰하지 않고 다시 거르며, 모든 문자열을 이스케이프하고 사진은 `https`만 `<img>`로 낸다(없으면 실제 이름의 첫 글자 아바타). 스타일은 `academy_teachers.css`(`.bi-teachers` 격리, 프리셋 `--brand-*` 변수 사용, 모바일 360/390/430·PC).
+- 섹션 ID `sec-teachers`는 `sec-principal` 바로 뒤. 서버 `DEFAULT_SECTION_ORDER`, 공개·빌더·AI 채팅 JS의 순서 목록과 동기화한다(계약 테스트가 5곳 일치를 검사). 숨김은 `sectionVisibility['sec-teachers']=false`일 때만(opt-in 아님 — 데이터가 있어야 보이므로 기존 학원 불변).
+- P0 입력 UI는 관리자 관리 화면. 회원 입력은 후속(같은 키를 회원 AI 대화가 수정 — 설계: BUILDIT_DESIGN_ASSET_INTEGRATION_DESIGN.md §10).
+
+- **향후(이번 범위 아님)**: 지금은 역할(TUTOR/ADMIN)에 BuildIt 이용 권한이 묶여 있다. 장기적으로는 역할과 분리된 '이용 권한(entitlement)'(예: 계정별 BuildIt 사용 권한 테이블 + 서버 검사)로 옮겨 STUDENT/기타 역할도 정책에 따라 부여할 수 있게 한다. 이때 소유권 검증(본인 학원만)은 그대로 유지한다.
+
+#### AI 제안·Agent API (V1058, 구현 완료)
+
+**교육자(쿠키 TUTOR, 본인 학원)** — 접두 `/api/tutor/academy/page-settings/visual-editor`
+
+| 메서드·경로 | 설명 | 응답 |
+|---|---|---|
+| `GET /proposals` | 내 학원의 PENDING·STALE 제안(조회 시 만료 정리, 대상 요소가 초안에서 사라진 제안만 STALE) | `[ProposalView]` |
+| `POST /proposals/{id}/reject` | 거절(PENDING만) | 200 / 404(없음·타 학원) / 409 |
+| `POST /ai-requests` `{instruction}` | AI에게 수정 요청 → 제안(PENDING) 생성. **초안·게시본은 바뀌지 않는다.** 기존 Academy AI 공급자(`AiProvider`, Wiki AI Router)를 쓰며 새 비밀값 없음. 대기 제안이 상한이면 AI 호출 전 409 | 201 `ProposalView` / 400(요청·초안 없음) / 409 / 503(공급자 실패) |
+| `GET /agent-tokens` | 토큰 목록(비밀 없음) | `[{tokenId,label,scopes,expiresAt,lastUsedAt,active}]` |
+| `POST /agent-tokens` `{label}` | 토큰 발급. 응답의 `token`(`vea_…`)은 **이때 한 번만** 보인다(DB에는 SHA-256 해시) | 201 / 409(활성 5개 초과) |
+| `DELETE /agent-tokens/{id}` | 폐기 | 200 / 404(타 학원) |
+
+**Agent(Bearer `vea_…`, 학원 1개에 바인딩, 접두 `/api/agent/academy/visual-editor`)** — 쿠키(TUTOR 포함)로는 403, 토큰으로는 이 3개 경로 밖(초안·게시·renderMode·토큰·거절 등)에 접근할 수 없다(`VisualEditorAgentTokenFilter` allowlist).
+
+| 메서드·경로 | scope | 설명 |
+|---|---|---|
+| `GET /context` | `ve:read` | 저장된 초안 기준 `{revision, components[{id,tag,type,text,src}], editableTypes}` |
+| `POST /proposals` `{baseRevision?, summary, changes[]}` | `ve:propose` | 제안 생성(201 `ProposalView`, PENDING). `changes[]`: `{componentId, type:"text"\|"image"\|"style", after \| styles, mediaText?}` — 1~50건, text는 HTML 태그 금지·2000자, image는 `http(s)://` 또는 `/`로 시작, style은 속성 20개·값 200자·`url()`/`expression`/`;{}` 금지·`mediaText`는 비움 또는 `(max-width: 768px)`. 위반 400. 대기 5건 초과 409 |
+| `GET /proposals/{id}` | `ve:read` | 상태 조회(타 학원 404) |
+
+`ProposalView`: `{proposalId, status(PENDING·APPLIED·REJECTED·EXPIRED·STALE), summary, createdByKind(AGENT·AI), createdAt, expiresAt(14일), baseRevision, changes[], applicable, staleReason}`.
+승인은 별도 API가 아니다 — 편집기가 제안을 적용해 `PUT …/draft`에 `appliedProposalId`를 실어 저장하는 것이 승인이다(위 표). 반영(공개)은 그다음 사용자가 게시할 때다.
+
+
+
+- **`publicReachable`**: 학원이 `PUBLISHED`이고 `visible`일 때만 `true`. `false`면 게시본은 저장됐지만 방문자에게는 보이지 않으며, 응답 `message`가 그 사실을 알린다("성공" 문구로 덮지 않는다).
+- **projectData 정제:** GrapesJS 0.23.x가 프레임마다 붙이는 `component.head`(`{"type":"head"}`)·`component.docEl`(`{"tagName":"html"}`)과 페이지 `type:"main"`은 정해진 빈 모양일 때만 보존한다. 그 밖의 `head`/`docEl` 내용, 트리 안의 `type=head`/`tagName=html`, `script`·`on*`·`javascript:`는 계속 400.
+- **상대경로 URL**(`/api/...`, `/academies/...`)은 `img src`/`a href`에서 보존된다. 스킴이 있는 위험 URL은 계속 차단.
+- **공개 렌더:** 게시본 HTML/CSS는 공개 페이지에서 Shadow DOM으로 격리해 그린다(P0 사이트 CSS와 서로 영향 없음).
+
 ## BuildIt Wiki 학교 프린트·문제 모델
 
 - `POST /problem-generator/wiki/api/questions/generate`, `.../questions/transform`: 문제 화면이 선택한 OpenRouter provider/model을 명시한다. 기본은 `google/gemini-3.7-flash`이며 명시적 선택은 실패 시 무료 모델로 fallback하지 않는다. 응답의 실제 `provider`/`model`을 UI에 표시한다.
