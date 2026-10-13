@@ -36,6 +36,7 @@ on:
           - wemade-test
           - assistant-ai-eval
           - assistant-live-e2e
+          - lovable-flow-e2e
       log_since:
         description: 'journal-errors 검색 시작 (UTC, 예: 2026-10-09 07:30:00). 비우면 기본 고정 범위 사용'
         required: false
@@ -53,7 +54,7 @@ permissions:
 
 jobs:
   diagnostic:
-    if: ${{ inputs.diagnostic_type != 'assistant-ai-eval' && inputs.diagnostic_type != 'assistant-live-e2e' }}
+    if: ${{ inputs.diagnostic_type != 'assistant-ai-eval' && inputs.diagnostic_type != 'assistant-live-e2e' && inputs.diagnostic_type != 'lovable-flow-e2e' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -567,3 +568,81 @@ jobs:
             echo "- [5] V1064·운영 이력 재현 테스트: ${{ steps.v1064.outcome }}"
           } >> "$GITHUB_STEP_SUMMARY"
           [ "${{ steps.live.outcome }}" = success ] && [ "${{ steps.extra.outcome }}" = success ] && [ "${{ steps.mode.outcome }}" = success ] && [ "${{ steps.flagoff.outcome }}" = success ] && [ "${{ steps.v1064.outcome }}" = success ]
+
+  # 사용자 흐름 하나(한 문장 생성 → 미리보기 카드 → 전체 화면 → 대화 수정 → 게시 → 버전 → 다운로드)를 실제 AI로 1회 확인.
+  # 격리 DB·로컬 앱, 운영 접근 없음. 다른 E2E·테스트 단계는 돌리지 않는다(비용 최소화).
+  lovable-flow-e2e:
+    if: ${{ inputs.diagnostic_type == 'lovable-flow-e2e' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      BUILDIT_ASSISTANT_ENABLED: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CHROMIUM_PATH: /usr/bin/google-chrome
+      SHOT_DIR: lovable-shots
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Start app (isolated CI DB, switch ON)
+        run: |
+          nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
+          echo $! > app.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up" && exit 0
+            sleep 10
+          done
+          echo "app did not start"; tail -50 app.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+      - name: Seed test user (CI DB only)
+        run: |
+          H='\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di'
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-lov', '$H', '시험원장', '시험원장', 'TUTOR', NOW(), NOW());"
+      - name: Install E2E deps
+        run: cd e2e/visual-editor && npm install --no-audit --no-fund
+      - name: Lovable-style flow (real AI, one scenario)
+        id: flow
+        run: node e2e/assistant-live/lovable-flow.js 2>&1 | tee lovable-flow.txt; exit ${PIPESTATUS[0]}
+      - name: AI calls (from app log; no secrets)
+        if: always()
+        run: |
+          {
+            echo "## AI 호출 (앱 로그 집계)"
+            echo "- Muse Spark 성공 $(grep -ac 'buildit ai muse-spark ok' app.log)회, 실패 $(grep -ac 'buildit ai muse-spark failed' app.log)회, 폴백 $(grep -ac 'buildit ai fallback' app.log)회"
+            grep -a 'buildit ai muse-spark ok' app.log | grep -o 'ms=[0-9]*' | tr '\n' ' '
+          } | tee ai-calls.txt | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Stop app
+        if: always()
+        run: kill $(cat app.pid) 2>/dev/null || true
+      - name: Upload screenshots, downloaded file and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lovable-flow
+          path: |
+            lovable-shots/*
+            lovable-flow.txt
+            ai-calls.txt
+          if-no-files-found: ignore
+          retention-days: 14

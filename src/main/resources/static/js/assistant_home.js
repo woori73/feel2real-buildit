@@ -1,6 +1,6 @@
 /**
  * BuildIt 대화형 홈페이지 화면 (2-A 생성 · 2-B 미리보기 · 2-C 대화 수정/되돌리기).
- * API: /api/tutor/academy/assistant/{samples,state,turn,undo,publish} (docs/API.md)
+ * API: /api/tutor/academy/assistant/{samples,state,turn,undo,publish,versions,restore,profile} (docs/API.md)
  *
  * 화면 흐름: 시작 화면(신규) → 생성 대화(부족한 정보 되묻기) → 작업 화면(결과물 미리보기 + 하단 대화 입력).
  * 작업 화면의 모든 수정은 비공개 작업본에만 적용되고, 공개 홈페이지는 '게시하기'에서만 바뀐다.
@@ -91,7 +91,7 @@
     ctx.sampleKey = s.key;
     Array.prototype.forEach.call($('ahSamples').children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.key === s.key)); });
     $('ahChosen').hidden = false; $('ahChosenName').textContent = s.title;
-    if (!$('ahName').value.trim()) $('ahName').focus();
+    $('ahPrompt').focus();
   }
   function clearSample() {
     ctx.sampleKey = null; $('ahChosen').hidden = true;
@@ -116,15 +116,15 @@
     $('ahMessages').appendChild(b); scrollDown();
     var p = progress(ul, CREATE_STEPS, 2200);
     api('POST', '/turn', {
-      academyName: ctx.name, sampleKey: ctx.sampleKey, message: ctx.description,
-      region: ctx.region, subject: ctx.subject, target: ctx.target
+      academyName: ctx.name || undefined, sampleKey: ctx.sampleKey, message: ctx.description,
+      region: ctx.region, subject: ctx.subject, target: ctx.target, instant: true
     }).then(function (r) {
       p.stop(); if (b.parentNode) b.parentNode.removeChild(b);
       if (r.created) {
         ctx.created = true; ctx.revision = r.revision; ctx.status = 'DRAFT'; ctx.pendingNeed = null; ctx.dirty = true; ctx.undoDepth = 0;
-        history = [{ role: 'USER', kind: 'TEXT', content: '학원 이름: ' + ctx.name + (ctx.description ? '\n' + ctx.description : '') },
+        history = [{ role: 'USER', kind: 'TEXT', content: ctx.description || '샘플로 시작' },
           { role: 'ASSISTANT', kind: 'RESULT', content: r.reply }];
-        enterWork({ reply: r.reply, notes: r.notes || [] });
+        enterWork({ notes: r.notes || [] });
       } else if (r.needs && r.needs.length) {
         ctx.pendingNeed = r.needs[0]; bubble('bot', QUESTIONS[ctx.pendingNeed] || r.reply);
       } else {
@@ -138,13 +138,12 @@
 
   function submitStart(ev) {
     ev.preventDefault();
-    ctx.name = $('ahName').value.trim(); ctx.description = $('ahDesc').value.trim();
-    if (!ctx.name) { $('ahName').focus(); return; }
+    var prompt = $('ahPrompt').value.trim();
+    if (!prompt && !ctx.sampleKey) { $('ahPrompt').focus(); return; }
+    ctx.name = ''; ctx.description = prompt;
     showChat();
-    var label = '학원 이름: ' + ctx.name + (ctx.description ? '\n' + ctx.description : '');
     var sample = samples.filter(function (s) { return s.key === ctx.sampleKey; })[0];
-    if (sample) label += '\n샘플: ' + sample.title;
-    bubble('user', label);
+    bubble('user', (prompt || '') + (sample ? (prompt ? '\n' : '') + '샘플: ' + sample.title : ''));
     sendCreateTurn();
   }
   function submitChat(ev) {
@@ -161,22 +160,41 @@
     var top = document.querySelector('.ah-top'); if (top) top.hidden = true;
     $('ahWork').hidden = false;
     renderChips(); renderStatus(); renderUndo(); setDevice(ctx.dev);
-    loadPreview(null);
-    if (opts && opts.reply) {
-      var extra = (opts.notes || []).join('\n');
-      showStrip(opts.reply + (extra ? '\n' + extra : ''), false, []);
-    }
+    renderThread();
+    $('ahCard').hidden = false; loadPreview(null);
+    if (opts && opts.notes && opts.notes.length) addBubble('bot', opts.notes.join('\n'), []);
+  }
+
+  /* ───── 대화(스레드): 말풍선 + 결과 미리보기 카드 ───── */
+  function scrollThread() { var t = $('ahThread'); if (t) t.scrollTop = t.scrollHeight; }
+  function addBubble(kind, text, changes) {
+    var b = el('div', 'ah-msg ' + kind, text);
+    if (changes && changes.length) { var ul = el('ul', 'ah-changes'); renderChanges(ul, changes); b.appendChild(ul); }
+    $('ahMsgs').appendChild(b); scrollThread(); return b;
+  }
+  function renderThread() {
+    var box = $('ahMsgs'); box.textContent = '';
+    history.forEach(function (m) {
+      var mine = m.role === 'USER';
+      addBubble(mine ? 'user' : 'bot', m.content, !mine && m.payload && m.payload.changes ? m.payload.changes : []);
+    });
+  }
+  /** 이전 호출부 호환: 결과·오류 안내를 대화 말풍선으로 남긴다. */
+  function showStrip(text, isError, changes) {
+    addBubble(isError ? 'err' : 'bot', text, changes);
+    renderUndo();
   }
 
   function renderStatus() {
     var s = $('ahStatus'); s.textContent = '';
     s.appendChild(el('b', null, ctx.status === 'PUBLISHED' ? '게시됨' : '비공개 초안'));
     if (ctx.dirty) s.appendChild(document.createTextNode(' · 수정 있음'));
+    var pb = $('ahProfileBtn'); if (pb) pb.hidden = ctx.status === 'PUBLISHED';
+    var bd = $('ahCardBadge'); if (bd) bd.textContent = ctx.status === 'PUBLISHED' ? (ctx.dirty ? '게시됨 · 수정 있음' : '게시됨') : '비공개 초안';
   }
   function renderUndo() {
     $('ahUndoCount').textContent = String(ctx.undoDepth);
     $('ahUndo').disabled = ctx.busy || ctx.undoDepth < 1;
-    $('ahStripUndo').hidden = ctx.undoDepth < 1;
   }
   function renderChips() {
     var box = $('ahChips'); box.textContent = '';
@@ -187,7 +205,7 @@
     });
   }
   function setDockBusy(b) {
-    $('ahWorkSend').disabled = b; $('ahWorkInput').disabled = b; $('ahPhotoBtn').disabled = b; $('ahPublish').disabled = b;
+    $('ahWorkSend').disabled = b; $('ahWorkInput').disabled = b; $('ahPhotoBtn').disabled = b; $('ahPublish').disabled = b; $('ahFullPublish').disabled = b;
     Array.prototype.forEach.call($('ahChips').children, function (c) { c.disabled = b; });
     renderUndo();
   }
@@ -202,22 +220,15 @@
       li.appendChild(document.createTextNode(c.after));
       if (c.sectionId) {
         var go = el('button', null, '보기'); go.type = 'button';
-        go.addEventListener('click', function () { scrollPreviewTo(c.sectionId); });
+        go.addEventListener('click', function () { openFull(c.sectionId); });
         li.appendChild(go);
       }
       ul.appendChild(li);
     });
   }
-  function showStrip(text, isError, changes) {
-    var strip = $('ahStrip'); strip.hidden = false; strip.classList.toggle('err', !!isError);
-    $('ahStripText').textContent = text;
-    renderChanges($('ahChanges'), changes);
-    renderUndo();
-  }
-
   /* 미리보기 — 같은 비공개 작업본 페이지를 기기 폭으로 맞춰 보여 준다 */
   function fit() {
-    var stage = $('ahStage'); if (!stage || $('ahWork').hidden) return;
+    var stage = $('ahStage'); if (!stage || $('ahFull').hidden) return;
     var W = DEVICES[ctx.dev] || 390;
     var availW = Math.max(200, stage.clientWidth - 24), availH = Math.max(200, stage.clientHeight - 24);
     var scale = Math.min(1, availW / W);
@@ -234,10 +245,22 @@
     fit();
   }
   var previewTimer = null;
+  /** 카드 미리보기를 새로 그리고, 전체 화면이 열려 있으면 그것도 새로 그린다. */
   function loadPreview(sectionId) {
-    var f = $('ahFrame'); f.src = PREVIEW + '?t=' + Date.now();
+    var cf = $('ahCardFrame'); if (cf) cf.src = PREVIEW + '?t=' + Date.now();
+    ctx.fullStale = true;
+    if (!$('ahFull').hidden) loadFull(sectionId);
+  }
+  function loadFull(sectionId) {
+    var f = $('ahFrame'); f.src = PREVIEW + '?t=' + Date.now(); ctx.fullStale = false;
     if (sectionId) { f.addEventListener('load', function once() { f.removeEventListener('load', once); scrollPreviewTo(sectionId); }); }
   }
+  function openFull(sectionId) {
+    $('ahFull').hidden = false; fit();
+    if (ctx.fullStale || !$('ahFrame').getAttribute('src')) loadFull(sectionId);
+    else if (sectionId) scrollPreviewTo(sectionId);
+  }
+  function closeFull() { $('ahFull').hidden = true; scrollThread(); }
   /** 공개 페이지는 로드 뒤 비동기로 그려지므로 대상 섹션이 생길 때까지 잠시 기다린 뒤 스크롤한다. */
   function scrollPreviewTo(sectionId) {
     clearInterval(previewTimer); var tries = 0;
@@ -257,7 +280,8 @@
     if (!text || ctx.busy) return;
     ctx.busy = true; setDockBusy(true);
     $('ahWorkInput').value = '';
-    var busyBox = $('ahBusy'); busyBox.hidden = false;
+    var ub = addBubble('user', text);
+    var busyBox = $('ahBusy'); $('ahThread').insertBefore(busyBox, $('ahCard')); busyBox.hidden = false; scrollThread();
     var p = progress($('ahBusySteps'), EDIT_STEPS, 1600);
     // 오래 걸리면 경과 시간과 안내를 보여 준다. 한도를 넘기면 기다리기를 멈추고 서버 작업본 상태를 다시 읽는다.
     var note = $('ahBusyNote'); var t0 = Date.now(); note.textContent = '';
@@ -280,7 +304,7 @@
       }
       renderStatus();
     }).catch(function (e) {
-      stopWait(); history.pop();
+      stopWait(); history.pop(); if (ub && ub.parentNode) ub.parentNode.removeChild(ub);
       if (e.timeout) {
         $('ahWorkInput').value = text; // 입력 보존: 다시 보낼 수 있다
         // 서버가 늦게라도 끝냈을 수 있으니 서버 작업본을 정본으로 다시 읽는다.
@@ -309,7 +333,7 @@
   function uploadPhoto(slot, file) {
     if (!file || ctx.busy) return;
     ctx.busy = true; setDockBusy(true);
-    var busyBox = $('ahBusy'); busyBox.hidden = false;
+    var busyBox = $('ahBusy'); $('ahThread').insertBefore(busyBox, $('ahCard')); busyBox.hidden = false; scrollThread();
     var p = progress($('ahBusySteps'), ['사진을 확인하고 있어요', '작업본에 올리고 있어요', '미리보기에 반영하고 있어요'], 1500);
     var form = new FormData();
     form.append('slot', slot); form.append('revision', String(ctx.revision)); form.append('image', file);
@@ -360,7 +384,7 @@
         var payload = null; try { payload = m.payloadJson ? JSON.parse(m.payloadJson) : null; } catch (e) { /* 무시 */ }
         return { role: m.role, kind: m.kind, content: m.content, payload: payload };
       });
-      renderStatus(); renderUndo(); loadPreview(null);
+      renderStatus(); renderUndo(); renderThread(); loadPreview(null);
     });
   }
 
@@ -391,7 +415,7 @@
     ctx.busy = true; $('ahConfirmOk').disabled = true;
     api('POST', '/publish', { revision: ctx.revision, force: forcePublish }).then(function (r) {
       ctx.revision = r.revision; ctx.status = 'PUBLISHED'; ctx.dirty = false; ctx.undoDepth = 0;
-      closeConfirm();
+      closeConfirm(); if (!$('ahFull').hidden) closeFull();
       var msg = r.firstPublish ? '게시했어요! 이제 누구나 홈페이지를 볼 수 있어요.' : '수정한 내용을 게시했어요.';
       history.push({ role: 'ASSISTANT', kind: 'PUBLISHED', content: msg });
       toast(msg); showStrip(msg, false, []);
@@ -399,7 +423,7 @@
         ctx.publicUrl = s.publicUrl;
         if (s.publicUrl) {
           var a = el('a', 'ah-link', s.publicUrl); a.href = s.publicUrl; a.target = '_blank'; a.rel = 'noopener';
-          $('ahStripText').appendChild(document.createElement('br')); $('ahStripText').appendChild(a);
+          var last = $('ahMsgs').lastElementChild; if (last) { last.appendChild(document.createElement('br')); last.appendChild(a); }
         }
       });
     }).catch(function (e) {
@@ -415,22 +439,147 @@
     }).then(function () { ctx.busy = false; $('ahConfirmOk').disabled = false; renderStatus(); renderUndo(); });
   }
 
-  /* 대화 기록 시트 */
-  function openHistory() {
-    var list = $('ahHistoryList'); list.textContent = '';
-    history.forEach(function (m) {
-      var mine = m.role === 'USER';
-      var b = el('div', 'ah-msg ' + (mine ? 'user' : 'bot') + (m.kind === 'EDIT' || m.kind === 'UNDO' ? ' edit' : ''), m.content);
-      if (!mine && m.payload && m.payload.changes && m.payload.changes.length) {
-        var ul = el('ul', 'ah-changes'); renderChanges(ul, m.payload.changes); b.appendChild(ul);
-      }
-      list.appendChild(b);
+  /* 버전: 이전 버전을 비공개 작업본에 불러온다(공개본 불변) */
+  function openVersions() {
+    var ul = $('ahVersionList'); ul.textContent = '';
+    ul.appendChild(el('li', 'ah-muted', '불러오는 중…'));
+    $('ahVersions').hidden = false;
+    api('GET', '/versions').then(function (list) {
+      ul.textContent = '';
+      if (!list || !list.length) { ul.appendChild(el('li', 'ah-muted', '아직 버전 기록이 없어요. 게시하면 그 전 공개본이 여기에 쌓여요.')); return; }
+      list.forEach(function (v) {
+        var li = el('li'); li.appendChild(el('span', null, AssistantExport.versionLabel(v)));
+        var b = el('button', 'ah-secondary ah-small', '불러오기'); b.type = 'button';
+        b.addEventListener('click', function () { restoreVersion(v.id); });
+        li.appendChild(b); ul.appendChild(li);
+      });
+    }).catch(function (e) { ul.textContent = ''; ul.appendChild(el('li', 'ah-muted', e.message || '버전 기록을 불러오지 못했어요.')); });
+  }
+  function restoreVersion(versionId) {
+    if (ctx.busy || ctx.revision == null) return;
+    ctx.busy = true; setDockBusy(true);
+    api('POST', '/restore', { revision: ctx.revision, versionId: versionId }).then(function (r) {
+      ctx.revision = r.revision; ctx.undoDepth = 0; ctx.dirty = true;
+      history.push({ role: 'ASSISTANT', kind: 'RESTORED', content: '이전 버전을 작업본에 불러왔어요.' });
+      $('ahVersions').hidden = true;
+      showStrip('이전 버전을 작업본에 불러왔어요. 미리보기를 확인하고 마음에 들면 게시하기를 눌러 주세요.', false, []);
+      loadPreview(null); renderStatus();
+    }).catch(function (e) {
+      $('ahVersions').hidden = true;
+      if (e.status === 409) { showStrip(e.message + ' 최신 작업본을 다시 불러왔어요.', true, []); return refresh(); }
+      showStrip((e.message || '버전을 불러오지 못했어요.') + ' 작업본은 그대로예요.', true, []);
+    }).then(function () { ctx.busy = false; setDockBusy(false); });
+  }
+
+  /* 학원 정보: 한 문장 시작에서 임시로 채운 이름·지역·대상을 게시 전에 실제 값으로 바꾼다 */
+  function getJson(url) {
+    return fetch(url, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('불러오지 못했어요.'); return r.json(); });
+  }
+  function openProfile() {
+    var box = $('ahProfTargets'); box.textContent = '';
+    AssistantExport.TARGETS.forEach(function (t) {
+      var lb = el('label', 'ah-check'); var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = t.key;
+      lb.appendChild(cb); lb.appendChild(document.createTextNode(' ' + t.label)); box.appendChild(lb);
     });
-    $('ahHistory').hidden = false; list.scrollTop = list.scrollHeight;
+    $('ahProfile').hidden = false;
+    getJson('/api/tutor/academy/working-copy/preview').then(function (a) {
+      $('ahProfName').value = a.name || '';
+      var r = (a.regions || [])[0];
+      $('ahProfRegion').value = r ? (r.city + (r.district && r.district !== 'ALL' ? ' ' + r.district : '')) : '';
+      var set = {}; (a.targetGroups || []).forEach(function (g) { set[g] = true; });
+      Array.prototype.forEach.call(box.querySelectorAll('input'), function (c) { c.checked = !!set[c.value]; });
+    }).catch(function () { /* 비워 둔 채로도 입력 가능 */ });
+  }
+  function saveProfile(ev) {
+    ev.preventDefault();
+    var targets = Array.prototype.filter.call($('ahProfTargets').querySelectorAll('input'), function (c) { return c.checked; })
+      .map(function (c) { return c.value; });
+    if (!targets.length) { toast('대상을 1개 이상 골라 주세요.'); return; }
+    $('ahProfileSave').disabled = true;
+    api('POST', '/profile', { academyName: $('ahProfName').value.trim(), region: $('ahProfRegion').value.trim(), targets: targets }).then(function () {
+      $('ahProfile').hidden = true; toast('학원 정보를 바꿨어요.'); loadPreview(null);
+    }).catch(function (e) { toast(e.message || '저장하지 못했어요.'); }).then(function () { $('ahProfileSave').disabled = false; });
+  }
+
+  /* 내려받기: 미리보기에 그려진 홈페이지를 HTML 파일 하나로 저장한다(스크립트 제거) */
+  /** 공개 페이지는 로드 뒤 비동기로 그려지므로 글자가 채워질 때까지 잠시(최대 12초) 기다린다. */
+  function waitRendered(frame, done) {
+    var tries = 0;
+    (function poll() {
+      var d = null; try { d = frame.contentDocument; } catch (e) { /* 아래에서 처리 */ }
+      var ready = d && d.body && d.body.innerText && d.body.innerText.trim().length > 80;
+      if (ready || ++tries > 60) done(ready ? d : null); else setTimeout(poll, 200);
+    })();
+  }
+  function downloadHtml() {
+    // 카드 미리보기는 변경 때마다 새로 그려지므로 항상 최신 작업본이다(전체 화면 프레임은 열 때만 갱신된다).
+    toast('파일을 만드는 중이에요…');
+    waitRendered($('ahCardFrame'), function (doc) {
+      if (!doc) { toast('미리보기가 아직 준비되지 않았어요. 잠시 후 다시 눌러 주세요.'); return; }
+      buildAndSave(doc);
+    });
+  }
+  function buildAndSave(doc) {
+    var f = $('ahCardFrame');
+    var clone = doc.documentElement.cloneNode(true);
+    var links = Array.prototype.slice.call(clone.querySelectorAll('link[rel~="stylesheet"][href]'));
+    var imgs = Array.prototype.slice.call(clone.querySelectorAll('img[src]'));
+    var inlineCss = function (l) {
+      var href = l.href;
+      return fetch(href, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('css'); return r.text(); }).then(function (css) {
+        var st = doc.createElement('style'); st.textContent = AssistantExport.absolutizeCssUrls(css, href); l.parentNode.replaceChild(st, l);
+      }).catch(function () { l.setAttribute('href', href); /* 못 합치면 절대 주소로 남긴다 */ });
+    };
+    var inlineImg = function (img) {
+      var abs; try { abs = new URL(img.getAttribute('src'), f.contentWindow.location.href); } catch (e) { return Promise.resolve(); }
+      if (abs.protocol === 'data:') return Promise.resolve();
+      if (abs.origin !== location.origin) { img.setAttribute('src', abs.href); return Promise.resolve(); }
+      return fetch(abs.href, { credentials: 'same-origin' }).then(function (r) { if (!r.ok) throw new Error('img'); return r.blob(); }).then(function (b) {
+        return new Promise(function (res) { var fr = new FileReader(); fr.onload = function () { img.setAttribute('src', fr.result); res(); }; fr.onerror = res; fr.readAsDataURL(b); });
+      }).catch(function () { img.setAttribute('src', abs.href); });
+    };
+    var academyName = doc.title;
+    getJson('/api/tutor/academy/working-copy/preview').then(function (a) { if (a && a.name) academyName = a.name; }, function () { /* 제목으로 대신 */ })
+      .then(function () { return Promise.all(links.map(inlineCss)); }).then(function () { return Promise.all(imgs.map(inlineImg)); }).then(function () {
+      var html = AssistantExport.finalizeHtml('<!DOCTYPE html>\n' + clone.outerHTML, location.origin + '/');
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+      a.download = AssistantExport.fileName(academyName, new Date());
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      toast('HTML 파일을 내려받았어요.');
+    }).catch(function () { toast('파일을 만들지 못했어요.'); });
+  }
+
+  /* 자료 첨부(시작 화면): 텍스트 파일(.txt/.md)의 내용을 설명 입력에 붙인다. PDF·Word는 아직 지원하지 않는다. */
+  function attachText(file) {
+    if (!file) return;
+    if (!/\.(txt|md)$/i.test(file.name) && file.type !== 'text/plain') { toast('텍스트 파일(.txt, .md)만 붙일 수 있어요. PDF·Word는 준비 중이에요.'); return; }
+    if (file.size > 200000) { toast('파일이 너무 커요. 200KB 이하 텍스트 파일을 올려 주세요.'); return; }
+    var fr = new FileReader();
+    fr.onload = function () {
+      var ta = $('ahPrompt'); var max = ta.maxLength > 0 ? ta.maxLength : 2000;
+      var cur = ta.value ? ta.value + '\n' : '';
+      var text = String(fr.result || '').trim();
+      var room = Math.max(0, max - cur.length);
+      ta.value = cur + text.slice(0, room);
+      toast(text.length > room ? '앞부분 ' + room + '자만 붙였어요.' : '자료를 붙였어요.');
+      ta.focus();
+    };
+    fr.readAsText(file);
   }
 
   function init() {
     $('ahStartForm').addEventListener('submit', submitStart);
+    $('ahPrompt').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); submitStart(e); }
+    });
+    $('ahVersionsBtn').addEventListener('click', openVersions);
+    $('ahVersionsClose').addEventListener('click', function () { $('ahVersions').hidden = true; });
+    $('ahProfileBtn').addEventListener('click', openProfile);
+    $('ahProfileCancel').addEventListener('click', function () { $('ahProfile').hidden = true; });
+    $('ahProfileForm').addEventListener('submit', saveProfile);
+    $('ahDownloadBtn').addEventListener('click', downloadHtml);
     $('ahComposer').addEventListener('submit', submitChat);
     $('ahChosenClear').addEventListener('click', clearSample);
     $('ahWorkComposer').addEventListener('submit', function (ev) { ev.preventDefault(); sendEdit($('ahWorkInput').value); });
@@ -445,19 +594,26 @@
       var f = this.files && this.files[0]; if (f && ctx.photoSlot) uploadPhoto(ctx.photoSlot, f);
     });
     $('ahUndo').addEventListener('click', undo);
-    $('ahStripUndo').addEventListener('click', undo);
     $('ahPublish').addEventListener('click', openConfirm);
     $('ahConfirmCancel').addEventListener('click', closeConfirm);
     $('ahConfirmOk').addEventListener('click', doPublish);
-    $('ahShowHistory').addEventListener('click', openHistory);
-    $('ahHistoryClose').addEventListener('click', function () { $('ahHistory').hidden = true; });
+    $('ahCardFull').addEventListener('click', function () { openFull(null); });
+    $('ahThumb').addEventListener('click', function () { openFull(null); });
+    $('ahThumb').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFull(null); } });
+    $('ahFullBack').addEventListener('click', closeFull);
+    $('ahFullPublish').addEventListener('click', openConfirm);
+    $('ahAttachBtn').addEventListener('click', function () { $('ahAttachFile').value = ''; $('ahAttachFile').click(); });
+    $('ahAttachFile').addEventListener('change', function () { attachText(this.files && this.files[0]); });
     Array.prototype.forEach.call(document.querySelectorAll('.ah-seg [data-dev]'), function (b) {
       b.addEventListener('click', function () { setDevice(b.dataset.dev); });
     });
     window.addEventListener('resize', fit);
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      if (!$('ahConfirm').hidden) closeConfirm(); else if (!$('ahHistory').hidden) $('ahHistory').hidden = true;
+      if (!$('ahConfirm').hidden) closeConfirm();
+      else if (!$('ahVersions').hidden) $('ahVersions').hidden = true;
+      else if (!$('ahProfile').hidden) $('ahProfile').hidden = true;
+      else if (!$('ahFull').hidden) closeFull();
     });
     api('GET', '/samples').then(function (list) { samples = list; renderSamples(); }).catch(function () { /* 샘플 없이도 시작 가능 */ });
     api('GET', '/state').then(function (s) {
@@ -468,8 +624,6 @@
         return { role: m.role, kind: m.kind, content: m.content, payload: payload };
       });
       enterWork(null);
-      var last = history.filter(function (m) { return m.role !== 'USER'; }).pop();
-      if (last) showStrip(last.content, false, last.payload && last.payload.changes ? last.payload.changes : []);
     }).catch(function () { /* 비로그인 등: 시작 화면 유지 */ });
   }
   init();

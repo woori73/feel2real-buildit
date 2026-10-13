@@ -75,4 +75,25 @@ class AcademyAssistantUnitTest {
     assertThat(academy.isVisible()).isFalse();
     assertThat(academy.publishIfDraft()).isFalse();
   }
+
+  @Test
+  @DisplayName("given 과목이 읽히거나 안 읽히는 문장, when 임시 학원 이름을 만들면, then 과목이 있으면 '새 과목학원', 없으면 '새 학원'이다")
+  void provisionalNameUsesSubjectWhenKnown() {
+    // given / when / then
+    assertThat(AcademyAssistantService.provisionalName("영어")).isEqualTo("새 영어학원");
+    assertThat(AcademyAssistantService.provisionalName(null)).isEqualTo("새 학원");
+    assertThat(AcademyAssistantService.provisionalName("  ")).isEqualTo("새 학원");
+  }
+
+  @Test
+  @DisplayName("given 문장과 과목 이름 목록, when 과목을 찾으면, then 문장에 들어 있는 가장 긴 이름을 돌려주고 없으면 null이다")
+  void infersLongestSubjectNameInText() {
+    // given
+    var names = java.util.List.of("영어", "영어회화", "수학");
+    // when / then
+    assertThat(AcademyAssistantService.inferSubjectName("영어학원 홈페이지를 만들어줘", names)).isEqualTo("영어");
+    assertThat(AcademyAssistantService.inferSubjectName("영어회화 전문 학원", names)).isEqualTo("영어회화");
+    assertThat(AcademyAssistantService.inferSubjectName("과학 학원", names)).isNull();
+    assertThat(AcademyAssistantService.inferSubjectName(null, names)).isNull();
+  }
 }

@@ -362,6 +362,49 @@ public class AcademyService {
   }
 
 
+  /**
+   * 대화형 제작 화면의 '학원 정보' 수정. 아직 게시 전(DRAFT)인 학원의 이름·지역·대상만 바꾼다.
+   * null인 값은 그대로 둔다. 공개된 학원은 거절한다(공개 홈페이지를 게시 없이 바꾸지 않는다).
+   */
+  @Transactional
+  public AcademyResponse updateDraftProfile(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      String name, String regionCity, String regionDistrict, Set<TargetGroup> targetGroups) {
+    authResolver.requireAcademyBuilderRole(principal);
+    Academy academy = academyRepository.findForUpdateByTutorUserId(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
+    authResolver.verifyOwnsAcademyForBuilder(academy);
+    if (academy.getStatus() != AcademyStatus.DRAFT) {
+      throw new IllegalArgumentException("이미 게시된 홈페이지의 기본 정보는 여기서 바꿀 수 없어요. 기존 빌더에서 수정해 주세요.");
+    }
+    String newName = isBlank(name) ? academy.getName() : name.trim();
+    if (newName.length() > 100) {
+      throw new IllegalArgumentException("학원 이름은 100자 이하로 입력해 주세요.");
+    }
+    boolean regionGiven = !isBlank(regionCity);
+    if (regionGiven && regionCity.trim().length() > 100) {
+      throw new IllegalArgumentException("지역은 100자 이하로 입력해 주세요.");
+    }
+    if (targetGroups != null && targetGroups.isEmpty()) {
+      throw new IllegalArgumentException("대상은 1개 이상 선택해 주세요.");
+    }
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      academy.updateDetails(newName, academy.getIntro(), academy.getSubjects(),
+          targetGroups == null ? academy.getTargetGroups() : new HashSet<>(targetGroups));
+      if (regionGiven) {
+        academyRegionRepository.deleteByAcademy_AcademyId(academy.getAcademyId());
+        academyRegionRepository.flush();
+        saveRegions(academy, List.of(new AcademyRegionRequest(regionCity.trim(),
+            regionDistrict == null ? "" : regionDistrict.trim())));
+      }
+      return toResponse(academy, false);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+
   /** Builder 전용 page settings 부분 업데이트. URL null은 기존 값을 유지하고 sectionVisibility만 교체할 수 있다. */
   @Transactional
   public AcademyResponse updatePageSettings(

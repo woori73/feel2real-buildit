@@ -8,7 +8,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/assistant_home.css?v=20261013-2"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261013-4"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp">
@@ -17,21 +17,20 @@
     <a class="ah-classic" href="/builder?classic=1" id="ahClassic">기존 빌더로 돌아가기</a>
   </header>
 
-  <!-- 시작 화면 -->
+  <!-- 시작 화면: 입력창 하나 + 샘플. 한 문장으로 바로 시작한다(학원 이름·지역·대상은 임시로 채우고 나중에 바꾼다). -->
   <main class="ah-start" id="ahStart">
     <h1>어떤 학원 홈페이지를 만들까요?</h1>
-    <p class="ah-sub">학원 이름만 알려 주세요. 나머지는 대화하면서 채워요.</p>
-    <form class="ah-card" id="ahStartForm" autocomplete="off">
-      <label class="ah-label" for="ahName">학원 이름</label>
-      <input class="ah-input" id="ahName" maxlength="100" placeholder="예: 새봄영어학원" required/>
-      <label class="ah-label" for="ahDesc">어떤 학원인지 알려 주세요 (선택)</label>
-      <textarea class="ah-input" id="ahDesc" rows="3" maxlength="1000"
-                placeholder="예: 중학생 영어 내신을 소수정예로 지도해요"></textarea>
-      <div class="ah-chosen" id="ahChosen" hidden>
-        <span>선택한 샘플: <b id="ahChosenName"></b></span>
-        <button type="button" id="ahChosenClear" class="ah-link">해제</button>
+    <p class="ah-sub">만들고 싶은 홈페이지를 한 문장으로 말해 주세요. 샘플을 골라 시작해도 돼요.</p>
+    <form class="ah-prompt" id="ahStartForm" autocomplete="off">
+      <textarea id="ahPrompt" rows="3" maxlength="2000" aria-label="만들고 싶은 홈페이지"
+                placeholder="예: 영어학원 홈페이지를 세련된 스타일로 만들어줘"></textarea>
+      <div class="ah-prompt-row">
+        <span class="ah-chosen" id="ahChosen" hidden>샘플: <b id="ahChosenName"></b>
+          <button type="button" id="ahChosenClear" class="ah-link">해제</button></span>
+        <button class="ah-attach" type="button" id="ahAttachBtn" aria-label="자료 첨부 (텍스트 파일)" title="자료 첨부 (텍스트 파일)">📎</button>
+        <input type="file" id="ahAttachFile" accept=".txt,.md,text/plain" hidden/>
+        <button class="ah-send-round" type="submit" id="ahStartBtn" aria-label="홈페이지 만들기">↑</button>
       </div>
-      <button class="ah-primary" type="submit" id="ahStartBtn">홈페이지 만들기</button>
     </form>
     <h2 class="ah-h2">샘플로 시작하기</h2>
     <div class="ah-samples" id="ahSamples" aria-label="디자인 샘플"></div>
@@ -46,8 +45,8 @@
     </form>
   </section>
 
-  <!-- 작업 화면: 결과물(미리보기) 중심 + 하단 대화 입력. 생성 직후와 재진입 모두 이 화면에서 수정한다. -->
-  <section class="ah-work" id="ahWork" hidden aria-label="홈페이지 작업 화면">
+  <!-- 작업 화면: 대화가 중심. 결과는 대화 속 미리보기 카드로 보이고, 누르면 전체 화면으로 확인한다. 생성과 수정은 같은 대화에서 이어간다. -->
+  <section class="ah-work" id="ahWork" hidden aria-label="홈페이지 만들기 대화">
     <header class="ah-bar">
       <strong class="ah-brand">BuildIt</strong>
       <span class="ah-status" id="ahStatus" aria-live="polite"></span>
@@ -57,28 +56,30 @@
       </div>
     </header>
     <div class="ah-subbar">
-      <div class="ah-seg" role="group" aria-label="화면 크기">
-        <button type="button" data-dev="mobile" class="on" aria-pressed="true">모바일</button>
-        <button type="button" data-dev="tablet" aria-pressed="false">태블릿</button>
-        <button type="button" data-dev="desktop" aria-pressed="false">PC</button>
+      <div class="ah-tools" role="group" aria-label="작업 도구">
+        <button type="button" class="ah-tool" id="ahProfileBtn">학원 정보</button>
+        <button type="button" class="ah-tool" id="ahVersionsBtn">버전</button>
+        <button type="button" class="ah-tool" id="ahDownloadBtn">내려받기</button>
       </div>
       <span class="ah-draftnote">미리보기는 비공개 작업본이에요</span>
       <a class="ah-classic" href="/builder?classic=1" id="ahClassicWork">기존 빌더</a>
     </div>
 
-    <div class="ah-stage" id="ahStage">
-      <div class="ah-framewrap" id="ahFrameWrap"><div class="ah-device" id="ahDevice"><iframe id="ahFrame" title="홈페이지 미리보기"></iframe></div></div>
+    <div class="ah-thread" id="ahThread" role="log" aria-live="polite">
+      <div class="ah-msgs" id="ahMsgs"></div>
       <div class="ah-busy" id="ahBusy" hidden role="status" aria-live="polite">
         <div class="ah-busy-card"><ul class="ah-steps" id="ahBusySteps"></ul><p class="ah-busy-note" id="ahBusyNote"></p></div>
+      </div>
+      <div class="ah-result" id="ahCard" hidden>
+        <div class="ah-thumb" id="ahThumb" role="button" tabindex="0" aria-label="전체 화면으로 보기">
+          <div class="inner"><iframe id="ahCardFrame" title="홈페이지 미리보기 카드" tabindex="-1"></iframe></div>
+        </div>
+        <div class="ah-resbody"><h3>홈페이지 미리보기</h3><span class="ah-badge" id="ahCardBadge">비공개 초안</span></div>
+        <div class="ah-actions"><button class="ah-secondary" type="button" id="ahCardFull">전체 화면으로 보기</button></div>
       </div>
     </div>
 
     <div class="ah-dock">
-      <div class="ah-strip" id="ahStrip" hidden>
-        <div class="ah-strip-text" id="ahStripText"></div>
-        <ul class="ah-changes" id="ahChanges"></ul>
-        <div class="ah-strip-actions"><button type="button" class="ah-link" id="ahStripUndo" hidden>이 수정 되돌리기</button><button type="button" class="ah-link" id="ahShowHistory">대화 보기</button></div>
-      </div>
       <div class="ah-chips" id="ahChips" role="group" aria-label="추천 요청"></div>
       <div class="ah-photo-menu" id="ahPhotoMenu" hidden role="menu" aria-label="사진을 올릴 자리">
         <button type="button" role="menuitem" data-slot="principal">원장 사진</button>
@@ -90,14 +91,51 @@
       <input type="file" id="ahPhotoFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden/>
       <form class="ah-composer" id="ahWorkComposer" autocomplete="off">
         <button class="ah-photo" type="button" id="ahPhotoBtn" aria-label="사진 올리기" title="사진 올리기">📷</button>
-        <input class="ah-input" id="ahWorkInput" maxlength="1000" placeholder="예: 더 고급스러운 분위기로 바꿔 줘" aria-label="수정 요청"/>
+        <input class="ah-input" id="ahWorkInput" maxlength="1000" placeholder="예: 첫 화면을 밝은 색상으로 바꾸고 상담 신청 버튼을 추가해줘" aria-label="수정 요청"/>
         <button class="ah-send" type="submit" id="ahWorkSend" aria-label="보내기">보내기</button>
       </form>
     </div>
 
-    <div class="ah-sheet" id="ahHistory" hidden role="dialog" aria-modal="true" aria-label="대화 기록">
-      <div class="ah-sheet-head"><strong>대화 기록</strong><button class="ah-ghost" type="button" id="ahHistoryClose">닫기</button></div>
-      <div class="ah-messages" id="ahHistoryList" role="log"></div>
+    <!-- 전체 화면 미리보기: 대화로 돌아가 수정을 이어갈 수 있다 -->
+    <div class="ah-full" id="ahFull" hidden role="dialog" aria-modal="true" aria-label="전체 화면 미리보기">
+      <div class="ah-fulltop">
+        <button class="ah-ghost" type="button" id="ahFullBack">← 대화로 돌아가기</button>
+        <div class="ah-seg" role="group" aria-label="화면 크기">
+          <button type="button" data-dev="mobile" class="on" aria-pressed="true">모바일</button>
+          <button type="button" data-dev="tablet" aria-pressed="false">태블릿</button>
+          <button type="button" data-dev="desktop" aria-pressed="false">PC</button>
+        </div>
+        <button class="ah-primary ah-small" type="button" id="ahFullPublish">게시하기</button>
+      </div>
+      <div class="ah-stage" id="ahStage">
+        <div class="ah-framewrap" id="ahFrameWrap"><div class="ah-device" id="ahDevice"><iframe id="ahFrame" title="홈페이지 전체 화면 미리보기"></iframe></div></div>
+      </div>
+    </div>
+
+    <div class="ah-modal" id="ahVersions" hidden role="dialog" aria-modal="true" aria-labelledby="ahVersionsTitle">
+      <div class="ah-modal-card">
+        <h2 id="ahVersionsTitle">이전 버전</h2>
+        <p>고른 버전을 작업본에 불러와요. 게시하기 전까지 공개 홈페이지는 그대로예요.</p>
+        <ul class="ah-versions" id="ahVersionList"></ul>
+        <div class="ah-modal-actions"><button class="ah-secondary" type="button" id="ahVersionsClose">닫기</button></div>
+      </div>
+    </div>
+
+    <div class="ah-modal" id="ahProfile" hidden role="dialog" aria-modal="true" aria-labelledby="ahProfileTitle">
+      <form class="ah-modal-card" id="ahProfileForm" autocomplete="off">
+        <h2 id="ahProfileTitle">학원 정보</h2>
+        <p id="ahProfileNote">게시하기 전에만 바꿀 수 있어요.</p>
+        <label class="ah-label" for="ahProfName">학원 이름</label>
+        <input class="ah-input" id="ahProfName" maxlength="100" required/>
+        <label class="ah-label" for="ahProfRegion">지역 (예: 서울 강남구)</label>
+        <input class="ah-input" id="ahProfRegion" maxlength="100"/>
+        <div class="ah-label">대상</div>
+        <div class="ah-targets" id="ahProfTargets"></div>
+        <div class="ah-modal-actions">
+          <button class="ah-secondary" type="button" id="ahProfileCancel">취소</button>
+          <button class="ah-primary" type="submit" id="ahProfileSave">저장</button>
+        </div>
+      </form>
     </div>
 
     <div class="ah-modal" id="ahConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="ahConfirmTitle">
@@ -115,6 +153,7 @@
   </section>
 </div>
 <script src="/js/assistant_wait.js?v=20261013-1"></script>
-<script src="/js/assistant_home.js?v=20261013-3"></script>
+<script src="/js/assistant_export.js?v=20261013-1"></script>
+<script src="/js/assistant_home.js?v=20261013-5"></script>
 </body>
 </html>

@@ -59,6 +59,8 @@ public class AcademyAssistantEditService {
   static final String KIND_EDIT = "EDIT";
   static final String KIND_UNDO = "UNDO";
   static final String KIND_PUBLISHED = "PUBLISHED";
+  /** 버전 복원: 이전 수정의 되돌리기 정보가 더는 맞지 않으므로 게시처럼 스택을 비운다. */
+  static final String KIND_RESTORED = "RESTORED";
   private static final int AI_MAX_OUTPUT = 3000;
   private static final int MAX_REPLY = 300;
 
@@ -626,7 +628,7 @@ public class AcademyAssistantEditService {
           long undone = p != null && p.hasNonNull("undoes") ? p.get("undoes").asLong() : -1;
           stack.removeIf(e -> e.getMessageId() == undone);
         }
-        case KIND_PUBLISHED -> stack.clear();
+        case KIND_PUBLISHED, KIND_RESTORED -> stack.clear();
         default -> { }
       }
       if (rev != null) last = rev;
