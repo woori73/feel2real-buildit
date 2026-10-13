@@ -142,6 +142,10 @@ public class AcademyAssistantApiController {
         putEdit(body, r.edit());
       }
       return noStore(HttpStatus.OK, body);
+    } catch (AcademyAssistantEditService.AiTimeoutException e) {
+      // 서버 AI 한도 초과: 수정이 아니다. 입력·작업본·공개본·대화 기록은 그대로(쓰기 전에 끊었다).
+      return noStore(HttpStatus.GATEWAY_TIMEOUT, Map.of(
+          "code", "AI_TIMEOUT", "message", e.getMessage(), "limitSeconds", e.getLimitSeconds()));
     } catch (WorkingCopyConflictException e) {
       return conflict(e);
     } catch (IllegalArgumentException e) {

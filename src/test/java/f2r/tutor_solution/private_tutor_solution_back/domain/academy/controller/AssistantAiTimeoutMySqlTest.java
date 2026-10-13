@@ -231,15 +231,23 @@ class AssistantAiTimeoutMySqlTest {
 
   private String login() { return "tmo_" + UUID.randomUUID().toString().substring(0, 8); }
 
+  private int allMessages() {
+    em.flush();
+    return jdbc.queryForObject(
+        "SELECT COUNT(*) FROM academy_assistant_message m JOIN academies a ON a.academy_id = m.academy_id WHERE a.tutor_user_id = ?",
+        Integer.class, tutor.getUserId());
+  }
+
   @Test
-  @DisplayName("given AI가 한도보다 오래 걸림·규칙으로 풀 수 없는 요청, when 수정 턴, then 한도 안에 끝나고 호출이 취소되며 작업본·기록이 그대로다")
-  void slowAiOnUnparsableRequestPreservesWorkingCopy() throws Exception {
+  @DisplayName("given AI가 한도보다 오래 걸림, when 수정 턴, then 한도 안에 504 AI_TIMEOUT으로 끝나고 호출이 취소되며 작업본·공개본·대화 기록이 그대로다(성공 표시 아님)")
+  void slowAiEndsWith504AndPreservesEverything() throws Exception {
     // given
     loginAs(login());
     assertThat(turn(CREATE).getResponse().getStatus()).isEqualTo(200);
-    String before = workingCopyJson();
+    String wcBefore = workingCopyJson();
+    String liveBefore = liveJson();
     long rev = revision();
-    int editsBefore = editMessages();
+    int messagesBefore = allMessages();
     hang.set(true);
 
     // when
@@ -248,36 +256,36 @@ class AssistantAiTimeoutMySqlTest {
     long elapsedMs = (System.nanoTime() - t0) / 1_000_000;
 
     // then
-    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    assertThat(r.getResponse().getStatus()).isEqualTo(504);
     JsonNode b = objectMapper.readTree(r.getResponse().getContentAsString());
-    assertThat(b.get("edited").asBoolean()).isFalse();
-    assertThat(b.get("reply").asText()).contains("너무 오래 걸려").contains("작업본은 그대로");
+    assertThat(b.get("code").asText()).isEqualTo("AI_TIMEOUT");
+    assertThat(b.has("edited")).as("성공/수정 응답 형태가 아니다").isFalse();
+    assertThat(b.get("message").asText()).contains("입력과 작업본은 그대로");
     assertThat(elapsedMs).isLessThan(4500);
-    assertThat(workingCopyJson()).isEqualTo(before);
-    assertThat(editMessages()).isEqualTo(editsBefore);
+    assertThat(workingCopyJson()).isEqualTo(wcBefore);
+    assertThat(liveJson()).isEqualTo(liveBefore);
+    assertThat(allMessages()).isEqualTo(messagesBefore);
     assertThat(interrupted.get()).isGreaterThanOrEqualTo(1);
   }
 
   @Test
-  @DisplayName("given AI가 한도보다 오래 걸림·규칙으로 풀 수 있는 요청, when 수정 턴, then 규칙으로 처리되고 되돌리기도 된다")
-  void slowAiFallsBackToRuleAndStaysUndoable() throws Exception {
+  @DisplayName("given AI가 한도보다 오래 걸림·규칙으로 풀 수 있는 요청, when 수정 턴, then 규칙으로 몰래 처리하지 않고 504로 끝나며 아무것도 바뀌지 않는다")
+  void slowAiDoesNotFallBackToRuleEdit() throws Exception {
     // given
     loginAs(login());
     assertThat(turn(CREATE).getResponse().getStatus()).isEqualTo(200);
+    String wcBefore = workingCopyJson();
+    int messagesBefore = allMessages();
     hang.set(true);
 
     // when
-    long t0 = System.nanoTime();
     MvcResult r = turn(Map.of("message", "주색을 진한 파란색으로 바꿔줘", "revision", revision()));
-    long elapsedMs = (System.nanoTime() - t0) / 1_000_000;
 
     // then
-    JsonNode b = objectMapper.readTree(r.getResponse().getContentAsString());
-    assertThat(b.get("edited").asBoolean()).isTrue();
-    assertThat(b.get("engine").asText()).isEqualTo("RULE");
-    assertThat(elapsedMs).isLessThan(4500);
-    MvcResult undo = postJson("/undo", "{\"revision\":" + b.get("revision").asLong() + "}");
-    assertThat(undo.getResponse().getStatus()).isEqualTo(200);
+    assertThat(r.getResponse().getStatus()).isEqualTo(504);
+    assertThat(workingCopyJson()).isEqualTo(wcBefore);
+    assertThat(allMessages()).isEqualTo(messagesBefore);
+    assertThat(editMessages()).isZero();
   }
 
   @Test

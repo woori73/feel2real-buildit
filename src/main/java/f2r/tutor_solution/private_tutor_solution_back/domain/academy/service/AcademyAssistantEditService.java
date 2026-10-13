@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.concurrent.DelegatingSecurityContextCallable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -99,6 +102,23 @@ public class AcademyAssistantEditService {
     this(academyService, workingCopyService, messages, aiProvider, objectMapper, txManager, DEFAULT_AI_TIMEOUT_SECONDS);
   }
 
+  /**
+   * AI 응답이 서버 한도를 넘겼다. 사용자 입력·작업본·공개본·대화 기록은 바뀌지 않았고(쓰기 전에 던진다),
+   * 정상 수정으로 보이지 않도록 컨트롤러가 504 {@code AI_TIMEOUT}으로 알린다. 규칙 해석으로 대신 처리하지 않는다.
+   */
+  public static class AiTimeoutException extends RuntimeException {
+    private final long limitSeconds;
+
+    public AiTimeoutException(long limitSeconds) {
+      super("AI 응답이 " + limitSeconds + "초 안에 오지 않아 이번 요청은 처리하지 못했어요. 입력과 작업본은 그대로예요. 잠시 후 다시 시도해 주세요.");
+      this.limitSeconds = limitSeconds;
+    }
+
+    public long getLimitSeconds() {
+      return limitSeconds;
+    }
+  }
+
   /** 수정/되돌리기 결과. failed=true면 작업본은 바뀌지 않았다(reply가 이유를 안내한다). */
   public record EditOutcome(
       String reply, List<Change> changes, List<String> skipped, String engine, long aiMs,
@@ -119,6 +139,9 @@ public class AcademyAssistantEditService {
 
     // 2) AI 해석 (트랜잭션 밖)
     Interpretation interp = interpret(text, academy, snap);
+    if (interp.aiTimedOut()) {
+      throw new AiTimeoutException(aiTimeoutSeconds);
+    }
 
     // 3) 검증
     Plan plan = AssistantPatchApplier.plan(interp.ops(), snap, text);
@@ -312,6 +335,8 @@ public class AcademyAssistantEditService {
       ms = (System.nanoTime() - started) / 1_000_000;
       if (timedOut) {
         log.warn("assistant-edit ai-timeout afterMs={} limitSeconds={}", ms, aiTimeoutSeconds);
+        // 시간 초과는 규칙 해석으로 대신 처리하지 않는다(성공처럼 보이는 수정 금지). 호출부가 504로 알린다.
+        return new Interpretation(List.of(), null, null, "TIMEOUT", ms, true, false, true);
       }
       if (c.ok()) {
         Parsed parsed = parse(c.text(), objectMapper);
@@ -342,7 +367,10 @@ public class AcademyAssistantEditService {
     if (aiTimeoutSeconds <= 0) {
       return aiProvider.complete(prompt, limits);
     }
-    Future<AiCompletion> future = AI_EXECUTOR.submit(() -> aiProvider.complete(prompt, limits));
+    // 요청 스레드의 인증 정보를 AI 스레드에 넘긴다. Muse Spark 실패 시 이어지는 Wiki Router 폴백이 로그인 주체로 서명하기 때문이다.
+    Callable<AiCompletion> task = () -> aiProvider.complete(prompt, limits);
+    Future<AiCompletion> future = AI_EXECUTOR.submit(
+        DelegatingSecurityContextCallable.create(task, SecurityContextHolder.getContext()));
     try {
       return future.get(aiTimeoutSeconds, TimeUnit.SECONDS);
     } catch (TimeoutException e) {
@@ -486,9 +514,6 @@ public class AcademyAssistantEditService {
 
   private String noChangeReply(Interpretation interp, Plan plan) {
     if (interp.question() != null) {
-      if (interp.aiTimedOut()) {
-        return interp.question() + "\n(AI 응답이 너무 오래 걸려 간단한 요청만 처리할 수 있었어요. 작업본은 그대로예요. 잠시 후 다시 시도해 주세요.)";
-      }
       return interp.aiFailed() && "RULE".equals(interp.engine())
           ? interp.question() + "\n(지금은 AI 해석을 쓸 수 없어 간단한 요청만 처리할 수 있어요. 작업본은 그대로예요.)"
           : interp.question();
@@ -498,9 +523,6 @@ public class AcademyAssistantEditService {
       sb.append("요청을 적용하지 못했어요. 작업본은 그대로예요.\n");
       plan.skipped().forEach(x -> sb.append("· ").append(x).append('\n'));
       return sb.toString().trim();
-    }
-    if (interp.aiTimedOut() && interp.ops().isEmpty()) {
-      return "AI 응답이 너무 오래 걸려 이번 요청은 처리하지 못했어요. 작업본은 그대로예요. 잠시 후 다시 시도해 주세요.";
     }
     if (interp.aiFailed() && interp.ops().isEmpty()) {
       return "AI가 요청을 해석하지 못했어요. 작업본은 그대로예요. 잠시 후 다시 시도하거나 "

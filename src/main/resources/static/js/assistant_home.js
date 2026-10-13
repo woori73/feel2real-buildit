@@ -289,6 +289,12 @@
           else showStrip(AssistantWait.timeoutMessage(), true, []);
         }, function () { showStrip(AssistantWait.timeoutMessage(), true, []); });
       }
+      if (e.code === 'AI_TIMEOUT') {
+        // 서버 AI 한도 초과: 수정이 아니다. 오류로 표시하고 입력을 돌려놓아 다시 보낼 수 있게 한다(작업본·공개본 그대로).
+        $('ahWorkInput').value = text;
+        showStrip(e.message, true, []);
+        return;
+      }
       if (e.status === 409 && e.code === 'REVISION_CONFLICT') {
         showStrip(e.message + ' 최신 작업본을 다시 불러왔어요. 같은 요청을 다시 보내 주세요.', true, []);
         $('ahWorkInput').value = text;

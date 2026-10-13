@@ -167,7 +167,7 @@ public class AcademyAssistantService {
     Long versionId = workingCopyService.snapshotLive(principal, "AI로 이어서 만들기 전 공개본");
     State state = workingCopyService.open(principal);
     remember(academyId, ROLE_ASSISTANT, AssistantAcademyMode.KIND_ADOPTED,
-        "AI로 이어서 만들기를 시작했어요. 지금 공개된 홈페이지는 버전 기록에 보관했고, 앞으로의 수정은 게시하기 전까지 공개에 반영되지 않아요.",
+        "AI로 이어서 만들기를 시작했어요. 지금 공개된 홈페이지는 버전 기록에 보관했고, 앞으로의 수정은 게시하기 전까지 공개에 반영되지 않아요. 기존 빌더는 화면 위쪽 '기존 빌더' 링크로 언제든 다시 열 수 있어요.",
         toJson(Map.of("versionId", versionId, "revision", state.revision())));
     return new AdoptResult(true, versionId, state.revision());
   }
