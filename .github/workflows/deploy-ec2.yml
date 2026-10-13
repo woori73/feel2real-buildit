@@ -1,20 +1,10 @@
 name: Deploy to EC2
 
-# 자동: main push로 도는 Build Check가 SUCCESS로 끝나면, 그 CI가 검증한 SHA를 그대로 배포한다.
-# 수동: workflow_dispatch를 남겨서 언제라도 특정 ref를 재배포할 수 있게 한다.
-#   (workflow_run은 발화 시점의 기본 브랜치에 이 워크플로 파일이 있어야 하므로, 자동 배포는
-#    이 변경이 main에 머지된 '다음' 머지부터 동작한다.)
+# 운영 자동 배포 일시 차단: main Build Check 완료만으로는 배포하지 않는다.
+# 기존 수동 workflow_dispatch는 유지한다. 운영 배포는 별도 승인 후에만 실행한다.
+# 영구 개선에서는 production environment 승인 게이트를 추가한 뒤 자동화 재개 여부를 결정한다.
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Build Check"]
-    types:
-      - completed
-    # PR 브랜치의 Build Check 완료 시에는 Deploy를 트리거하지 않는다.
-    # main 브랜치의 Build Check 완료 시에만 자동 배포된다.
-    # (기존 job-level if 게이트는 백업으로 유지)
-    branches:
-      - main
 
 permissions:
   id-token: write
@@ -31,17 +21,8 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    # 자동 배포 게이트: main push로 돈 Build Check가 SUCCESS일 때만 실행한다.
-    #   - conclusion이 failure/cancelled/skipped인 run → 탈락
-    #   - PR(풀 리퀘스트)이나 feature 브랜치 push에서 돈 Build Check → event/head_branch가
-    #     각각 'pull_request' / 'main'이 아니므로 탈락 (PR 브랜치 push 배포 금지)
-    # 수동 workflow_dispatch는 위 조건의 예외로 항상 허용(재배포 경로).
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      ( github.event_name == 'workflow_run'
-        && github.event.workflow_run.conclusion == 'success'
-        && github.event.workflow_run.event == 'push'
-        && github.event.workflow_run.head_branch == 'main' )
+    # workflow_dispatch 외에는 워크플로 자체가 시작되지 않는다.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
