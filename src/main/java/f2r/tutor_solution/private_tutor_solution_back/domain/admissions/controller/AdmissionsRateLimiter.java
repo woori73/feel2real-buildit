@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +52,7 @@ public class AdmissionsRateLimiter {
     private long lastSweepMs;
 
     /** Spring용 생성자. */
+    @Autowired
     public AdmissionsRateLimiter(
             @Value("${app.admissions.rate-limit.per-minute:10}") int perMinute,
             @Value("${app.admissions.rate-limit.per-hour:60}") int perHour,
