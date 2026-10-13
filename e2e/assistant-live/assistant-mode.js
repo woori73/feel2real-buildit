@@ -131,21 +131,23 @@ const PASS = 'admin1234';
   await to.screenshot({ path: __dirname + '/artifacts/progress-timeout-preserved.png' });
   await toCtx.close();
 
-  // 4-c. 응답이 늦게 도착: 서버는 이미 처리했고 화면은 한도에서 멈춘 뒤 서버 상태로 맞춘다
+  // 4-c. 화면이 한도에서 멈추기 전에 서버 작업본이 이미 바뀐 경우(다른 곳·늦게 끝난 처리): 서버 상태를 다시 읽어 알려 준다.
+  // 실제 AI 지연에 좌우되지 않도록, 화면의 요청은 서버에 닿지 않게 두고 같은 작업본을 직접 저장해 revision을 올린다.
   const lateCtx = await newCtx(b, { viewport: { width: 1280, height: 900 } }, { loginId: 'e2e-live', password: PASS });
-  await lateCtx.addInitScript(() => { window.__AH_TURN_TIMEOUT_MS__ = 5000; });
+  await lateCtx.addInitScript(() => { window.__AH_TURN_TIMEOUT_MS__ = 6000; });
   const late = await lateCtx.newPage();
-  await late.route('**/assistant/turn', async (route) => {
-    try { const resp = await route.fetch(); await sleep(9000); await route.fulfill({ response: resp }); } catch (_) { /* 클라이언트가 이미 포기함 */ }
-  });
+  await late.route('**/assistant/turn', async (route) => { await sleep(20000); await route.abort().catch(() => {}); });
   await late.goto(BASE + '/builder'); await late.waitForSelector('#ahWork:not([hidden])', { timeout: 60000 }); await late.waitForTimeout(1500);
-  const curColor = (((await api(lateCtx, 'GET', '/api/tutor/academy/working-copy')).j.pageSettings || {}).builderDraft || {}).colorPrimary || '';
-  const pick = curColor.toLowerCase() === '#16a34a' ? ['진한 파란색', '#2563eb'] : ['진한 초록색', '#16a34a'];
-  await late.fill('#ahWorkInput', `주색을 ${pick[0]}으로 바꿔줘`); await late.click('#ahWorkSend');
-  await late.waitForFunction(() => /수정이 이미 끝나 있었어요|기다리기를 멈췄어요/.test(document.getElementById('ahStrip').textContent), null, { timeout: 30000 });
-  ok('늦게 끝난 수정은 서버 상태를 다시 읽어 반영하고 되돌리기를 안내', /이미 끝나 있었어요/.test(await late.locator('#ahStrip').innerText()), await late.locator('#ahStrip').innerText());
-  ok('서버 작업본에 수정이 반영돼 있음', (((await api(lateCtx, 'GET', '/api/tutor/academy/working-copy')).j.pageSettings || {}).builderDraft || {}).colorPrimary === pick[1]);
-  await lateCtx.close();
+  await late.fill('#ahWorkInput', '주색을 진한 파란색으로 바꿔줘'); await late.click('#ahWorkSend');
+  await sleep(1500);
+  const other = await newCtx(b, {}, { loginId: 'e2e-live', password: PASS });
+  const rev = (await api(other, 'GET', '/api/tutor/academy/working-copy')).j.revision;
+  const saved = await api(other, 'PUT', '/api/tutor/academy/working-copy', { revision: rev, intro: '늦게 끝난 처리로 작업본이 바뀐 경우' });
+  ok('화면 요청이 멈춰 있는 동안 서버 작업본 revision이 올라감', saved.s === 200, saved);
+  await late.waitForFunction(() => /이미 끝나 있었어요|기다리기를 멈췄어요/.test(document.getElementById('ahStrip').textContent), null, { timeout: 30000 });
+  ok('한도 후 서버 상태를 다시 읽어 "이미 끝나 있었어요"로 알리고 되돌리기를 안내', /이미 끝나 있었어요/.test(await late.locator('#ahStrip').innerText()), await late.locator('#ahStrip').innerText());
+  ok('입력은 보존되어 다시 보낼 수 있음', (await late.inputValue('#ahWorkInput')) === '주색을 진한 파란색으로 바꿔줘' && !(await late.locator('#ahWorkInput').isDisabled()));
+  await other.close(); await lateCtx.close();
 
   ok('페이지 오류 없음', errors.length === 0, errors);
   console.log(`\n검증 항목 ${rows.filter(Boolean).length}/${rows.length} 통과`);

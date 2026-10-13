@@ -458,7 +458,7 @@ jobs:
       - name: "[3] AI call count, latency, failures (from app log; no secrets)"
         if: always()
         run: |
-          python3 - <<'PYEOF' | tee ai-metrics.txt >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PYEOF' | tee ai-metrics.txt | tee -a "$GITHUB_STEP_SUMMARY"
           import re
           lines = open('app.log', encoding='utf-8', errors='replace').read().splitlines()
           def pct(a, q):
@@ -536,7 +536,7 @@ jobs:
           retention-days: 7
       - name: App log tail (assistant-edit lines only; no secrets)
         if: always()
-        run: grep -a "assistant-edit\|buildit ai" app.log | tail -40 | cut -c1-240 || true
+        run: grep -a "assistant-edit\|buildit ai\|meta-muse-spark call" app.log | tail -150 | cut -c1-240 || true
       - name: Verdict
         if: always()
         run: |
