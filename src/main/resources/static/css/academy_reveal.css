@@ -27,3 +27,19 @@ html.js-reveal [data-reveal-item].is-revealed {
     transition: none !important;
   }
 }
+
+/* ── 등장 효과 선택(builderDraft.motionStyle → 루트 data-motion). 미설정이면 위 기본값 그대로다. ──
+   BuildIt2 자산 anim-slide-in-bottom(slide) / anim-gsap-scroll-fade(fade)를 같은 primitive의 토큰으로 표현한다. */
+[data-motion="slide"] {
+  --reveal-distance: 48px;
+  --reveal-duration: 650ms;
+}
+[data-motion="fade"] {
+  --reveal-distance: 0px;
+  --reveal-duration: 700ms;
+}
+html.js-reveal [data-motion="none"] [data-reveal-item] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
