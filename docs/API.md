@@ -927,6 +927,17 @@ LMS 주소가 성립하지 않는다(404).
   ```
 - 관련 코드: `EasyLedgerController.summary`, `EasyLedgerService.summary`.
 
+### ✅ Easy Workspace 2A·2B — `/api/admin/easy/workspace/**`
+
+- 목적: 면세 학원 관리자 파일럿의 월 대시보드·수입/비용 장부·검토함·증빙·회계장부 화면. 모든 요청은 `ROLE_ADMIN`과 `businessId`가 필수다.
+- 조회: `GET /monthly?businessId&month=YYYY-MM`, `GET /transactions?businessId&from&to&direction&category&accountId`, `GET /transactions/{txnId}?businessId`, `GET /reviews?businessId&kind&status`.
+- 쓰기: `POST /transactions`, `PUT /transactions/{txnId}?businessId`, `POST /reviews/{reviewId}/approve?businessId`, `POST /reviews/{reviewId}/hold?businessId`.
+- 상태 출처: `COLLECTED`=`easy_transactions.source_kind`/수집 원본, `IMPORT STAGED`=`easy_import_batches.status`, `LEDGER SAVED`=`easy_transactions`, `JOURNAL POSTED`=`easy_journal_entries.status`, 기간 상태=`easy_annual_closings`.
+- 승인 계약: 검토 행 `PESSIMISTIC_WRITE`, 승인·거래 수정·정정 로그·재분개·검토 종료를 단일 트랜잭션으로 처리한다. 처리 완료 재승인은 요청 동일성을 증명할 수 없어 `409`다. 사업체 이동은 원·대상 회계기간의 `CLOSED`를 모두 검사한다.
+- 보류 계약: 사업체 복합 조회로 OPEN 여부만 확인하고 검토·거래·분개를 변경하지 않는다.
+- Workspace 거래 화면은 기존 물리 삭제 API를 노출하지 않는다. 삭제 정책이나 DB/Flyway/VOID 기능 자체는 이 범위에서 변경하지 않는다.
+- 관련 코드: `EasyWorkspaceController`, `EasyWorkspaceService`, `EasyAuditService`, `docs/easy/EASY_WORKSPACE_2A_2B_IMPLEMENTATION.md`.
+
 ### ✅ GET/POST /api/admin/easy/transactions, PUT/DELETE /api/admin/easy/transactions/{txnId}
 
 - 목적: 수입·지출 등록/수정/삭제. 삭제는 화면 confirm 후 `204`.
