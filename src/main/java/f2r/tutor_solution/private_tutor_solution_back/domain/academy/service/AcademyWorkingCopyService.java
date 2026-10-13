@@ -160,6 +160,24 @@ public class AcademyWorkingCopyService {
   }
 
   /**
+   * 현재 공개 내용을 버전 기록에 남긴다(공개본·작업본은 바꾸지 않는다). 'AI로 이어서 만들기' 전환 전 보존용이며,
+   * 남긴 버전은 {@link #restoreFromVersion}으로 작업본에 불러와 게시하면 공개본을 되돌릴 수 있다.
+   *
+   * @return 버전 ID
+   */
+  @Transactional
+  public Long snapshotLive(JwtTokenProvider.AuthenticatedPrincipal principal, String note) {
+    Academy academy = ownedAcademy(principal);
+    AcademyPageSettings live = academy.getPageSettings();
+    return versionService.snapshot(
+        principal,
+        live != null && live.builderDraft() != null ? live.builderDraft() : Map.of(),
+        pageSettingsMap(live),
+        academy.getIntro(),
+        note);
+  }
+
+  /**
    * 작업본을 공개본에 반영한다 — 공개 홈페이지가 바뀌는 유일한 경로.
    *
    * <p>학원 행을 잠가 같은 학원의 동시 게시를 직렬화하고, 공개 내용이 작업본 기준 이후 따로 바뀌었으면

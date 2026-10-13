@@ -244,7 +244,12 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 
 - 설정: `buildit.assistant.enabled`(기본 `false`), `buildit.assistant.tutor-login-ids`(쉼표 목록, 비우면 모든 TUTOR). 꺼져 있으면 기존 빌더만 쓴다.
 - **서버 차단**: 스위치가 꺼져 있거나 로그인 ID가 허용 목록에 없으면 `GET /state`, `POST /turn`, `POST /undo`, `POST /publish`, `POST /media`가 `403 {code:"ASSISTANT_DISABLED"}`로 막히고 AI 호출·작업본 쓰기·게시가 일어나지 않는다(화면만 숨기지 않는다). `GET /media/{slot}`(작업본 사진 미리보기)과 `GET /samples`는 AI·쓰기가 없어 가드하지 않으며, 기존 빌더의 `/working-copy/**`는 스위치와 무관하다.
-- 켜진 경우 `/builder`는 (학원이 없음) 또는 (대화로 만든 학원: `academy_assistant_message` 기록 있음)일 때 대화형 화면(`tutor/assistant_home`)을 연다. 기존 방식으로 만든 학원은 공개 데이터 보호를 위해 항상 기존 빌더로 간다.
+- 켜진 경우 `/builder`는 (학원이 없음) 또는 (**AI 제작 학원**)일 때 대화형 화면(`tutor/assistant_home`)을 연다. 기존 방식으로 만든 학원은 공개 데이터 보호를 위해 항상 기존 빌더로 간다.
+- **화면 모드(AI 제작 학원 판정)**: `academy_assistant_message`에 `kind='RESULT'`(대화로 최초 생성) 또는 `kind='ADOPTED'`('AI로 이어서 만들기' 명시 전환)가 있는 학원만 AI 제작 학원이다. 수정·되돌리기·게시 기록(TEXT/EDIT/UNDO/PUBLISHED)만 있다고 모드가 바뀌지 않는다. 판정은 `AssistantAcademyMode` 하나가 맡는다.
+- **기존 방식 학원에 대화 API 직접 호출**: `GET /state`, `POST /turn`, `/undo`, `/publish`, `/media`는 `409 {code:"NOT_ASSISTANT_ACADEMY"}`를 돌려주고 기록·작업본·공개 데이터·화면 모드를 바꾸지 않는다(학원이 아직 없는 신규 사용자의 `POST /turn` 최초 생성은 그대로 허용).
+- `GET /mode` → `{mode: NONE|ASSISTANT|CLASSIC, canAdopt}`. 스위치가 꺼져 있거나 허용 목록 밖이면 `403 ASSISTANT_DISABLED`(기존 빌더는 이때 버튼을 보이지 않는다). `CLASSIC`이면 `canAdopt=true`.
+- `POST /adopt` `{confirm:true}` — 기존 빌더의 'AI로 이어서 만들기'(확인 창에서 체크 후)가 호출한다. `confirm`이 없으면 `400 CONFIRM_REQUIRED`, 학원이 없으면 `400`. 전환 전 **공개 내용을 버전 기록**(`academy_page_versions`, note `AI로 이어서 만들기 전 공개본`)에 보관하고 작업본을 준비한 뒤 `ADOPTED` 기록을 남긴다. 공개 홈페이지는 바꾸지 않는다. 응답 `{adopted, versionId, revision}`(이미 AI 제작 학원이면 `adopted=false`, 변경 없음). 복구: 게시 전에는 `working-copy/discard`로 작업본을 공개본과 같게, 게시 후에는 `working-copy/restore {revision, versionId}` 후 게시(기존 복원은 버전에 있는 builderDraft 키를 덮어쓰는 방식이라 수정으로 새로 생긴 키는 지우지 않는다).
+- **AI 응답 지연**: `buildit.assistant.ai-timeout-seconds`(기본 60, 0이면 제한 없음) 안에 AI가 답하지 않으면 서버가 호출을 취소하고 규칙 해석으로 넘어간다. 규칙으로도 풀 수 없으면 작업본·기록을 바꾸지 않고 "AI 응답이 너무 오래 걸려…" 안내를 돌려준다(로그 `assistant-edit ai-timeout`). 화면(`assistant_wait.js`)은 8초부터 경과 시간과 안내를 보여 주고, 100초를 넘기면 기다리기를 멈춘 뒤 서버 작업본을 다시 읽어 상태를 맞춘다(입력은 보존).
 - `/builder?classic=1`은 언제나 기존 빌더를 연다(화면의 '기존 빌더로 돌아가기'). 기존 편집기·빌더 경로는 그대로다.
 
 #### 빌더 계열 접근 권한 (ADMIN 허용)

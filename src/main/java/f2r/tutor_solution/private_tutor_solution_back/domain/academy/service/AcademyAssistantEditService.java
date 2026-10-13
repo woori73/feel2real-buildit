@@ -23,8 +23,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -51,23 +59,44 @@ public class AcademyAssistantEditService {
   private static final int AI_MAX_OUTPUT = 3000;
   private static final int MAX_REPLY = 300;
 
+  /** AI 호출을 서버가 끊는 기본 한도(초). 느린 응답이 요청 스레드를 오래 잡지 않도록 한다. 0이면 제한 없음. */
+  static final long DEFAULT_AI_TIMEOUT_SECONDS = 60;
+
+  /** AI 호출 전용 스레드(데몬). 한도를 넘기면 취소(인터럽트)한다. */
+  private static final ExecutorService AI_EXECUTOR = Executors.newCachedThreadPool(r -> {
+    Thread t = new Thread(r, "assistant-ai");
+    t.setDaemon(true);
+    return t;
+  });
+
   private final AcademyService academyService;
   private final AcademyWorkingCopyService workingCopyService;
   private final AcademyAssistantMessageRepository messages;
   private final AiProvider aiProvider;
   private final ObjectMapper objectMapper;
   private final TransactionTemplate tx;
+  private final long aiTimeoutSeconds;
 
+  @Autowired
   public AcademyAssistantEditService(
       AcademyService academyService, AcademyWorkingCopyService workingCopyService,
       AcademyAssistantMessageRepository messages, AiProvider aiProvider, ObjectMapper objectMapper,
-      PlatformTransactionManager txManager) {
+      PlatformTransactionManager txManager,
+      @Value("${buildit.assistant.ai-timeout-seconds:" + DEFAULT_AI_TIMEOUT_SECONDS + "}") long aiTimeoutSeconds) {
     this.academyService = academyService;
     this.workingCopyService = workingCopyService;
     this.messages = messages;
     this.aiProvider = aiProvider;
     this.objectMapper = objectMapper;
     this.tx = new TransactionTemplate(txManager);
+    this.aiTimeoutSeconds = aiTimeoutSeconds;
+  }
+
+  AcademyAssistantEditService(
+      AcademyService academyService, AcademyWorkingCopyService workingCopyService,
+      AcademyAssistantMessageRepository messages, AiProvider aiProvider, ObjectMapper objectMapper,
+      PlatformTransactionManager txManager) {
+    this(academyService, workingCopyService, messages, aiProvider, objectMapper, txManager, DEFAULT_AI_TIMEOUT_SECONDS);
   }
 
   /** 수정/되돌리기 결과. failed=true면 작업본은 바뀌지 않았다(reply가 이유를 안내한다). */
@@ -262,24 +291,32 @@ public class AcademyAssistantEditService {
   // ───────────────────────── 해석 ─────────────────────────
 
   record Interpretation(
-      List<Op> ops, String reply, String question, String engine, long ms, boolean aiFailed, boolean parseOk) {}
+      List<Op> ops, String reply, String question, String engine, long ms, boolean aiFailed, boolean parseOk,
+      boolean aiTimedOut) {}
 
   Interpretation interpret(String text, AcademyResponse academy, Snapshot snap) {
     boolean aiFailed = false;
+    boolean timedOut = false;
     long ms = 0;
     if (aiProvider != null && aiProvider.isReady()) {
       long started = System.nanoTime();
       AiCompletion c;
       try {
-        c = aiProvider.complete(buildPrompt(text, academy, snap), new AiTaskLimits(AI_MAX_OUTPUT));
+        c = completeWithDeadline(buildPrompt(text, academy, snap));
+      } catch (AiDeadlineExceeded e) {
+        timedOut = true;
+        c = AiCompletion.failed("timeout");
       } catch (RuntimeException e) {
         c = AiCompletion.failed("provider exception: " + e.getClass().getSimpleName());
       }
       ms = (System.nanoTime() - started) / 1_000_000;
+      if (timedOut) {
+        log.warn("assistant-edit ai-timeout afterMs={} limitSeconds={}", ms, aiTimeoutSeconds);
+      }
       if (c.ok()) {
         Parsed parsed = parse(c.text(), objectMapper);
         if (parsed != null && (!parsed.ops().isEmpty() || parsed.question() != null)) {
-          return new Interpretation(parsed.ops(), parsed.reply(), parsed.question(), "AI:" + aiProvider.name(), ms, false, true);
+          return new Interpretation(parsed.ops(), parsed.reply(), parsed.question(), "AI:" + aiProvider.name(), ms, false, true, false);
         }
         aiFailed = true; // 형식 오류 또는 빈 응답 → 규칙 폴백
       } else {
@@ -289,7 +326,35 @@ public class AcademyAssistantEditService {
       aiFailed = true;
     }
     AssistantRuleInterpreter.Result r = AssistantRuleInterpreter.interpret(text, snap.draft());
-    return new Interpretation(r.ops(), r.reply(), r.question(), "RULE", ms, aiFailed, false);
+    return new Interpretation(r.ops(), r.reply(), r.question(), "RULE", ms, aiFailed, false, timedOut);
+  }
+
+  /** AI 호출이 서버 한도를 넘겼다. 작업본은 건드리지 않고 규칙 해석으로 넘어간다. */
+  private static final class AiDeadlineExceeded extends RuntimeException {
+    AiDeadlineExceeded() {
+      super("assistant ai deadline exceeded", null, false, false);
+    }
+  }
+
+  /** 한도(초) 안에서만 AI 응답을 기다린다. 넘기면 호출을 취소(인터럽트)하고 {@link AiDeadlineExceeded}를 던진다. */
+  private AiCompletion completeWithDeadline(String prompt) {
+    AiTaskLimits limits = new AiTaskLimits(AI_MAX_OUTPUT);
+    if (aiTimeoutSeconds <= 0) {
+      return aiProvider.complete(prompt, limits);
+    }
+    Future<AiCompletion> future = AI_EXECUTOR.submit(() -> aiProvider.complete(prompt, limits));
+    try {
+      return future.get(aiTimeoutSeconds, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      future.cancel(true);
+      throw new AiDeadlineExceeded();
+    } catch (ExecutionException e) {
+      return AiCompletion.failed("provider exception: " + e.getCause().getClass().getSimpleName());
+    } catch (InterruptedException e) {
+      future.cancel(true);
+      Thread.currentThread().interrupt();
+      return AiCompletion.failed("interrupted");
+    }
   }
 
   record Parsed(List<Op> ops, String reply, String question) {}
@@ -421,6 +486,9 @@ public class AcademyAssistantEditService {
 
   private String noChangeReply(Interpretation interp, Plan plan) {
     if (interp.question() != null) {
+      if (interp.aiTimedOut()) {
+        return interp.question() + "\n(AI 응답이 너무 오래 걸려 간단한 요청만 처리할 수 있었어요. 작업본은 그대로예요. 잠시 후 다시 시도해 주세요.)";
+      }
       return interp.aiFailed() && "RULE".equals(interp.engine())
           ? interp.question() + "\n(지금은 AI 해석을 쓸 수 없어 간단한 요청만 처리할 수 있어요. 작업본은 그대로예요.)"
           : interp.question();
@@ -430,6 +498,9 @@ public class AcademyAssistantEditService {
       sb.append("요청을 적용하지 못했어요. 작업본은 그대로예요.\n");
       plan.skipped().forEach(x -> sb.append("· ").append(x).append('\n'));
       return sb.toString().trim();
+    }
+    if (interp.aiTimedOut() && interp.ops().isEmpty()) {
+      return "AI 응답이 너무 오래 걸려 이번 요청은 처리하지 못했어요. 작업본은 그대로예요. 잠시 후 다시 시도해 주세요.";
     }
     if (interp.aiFailed() && interp.ops().isEmpty()) {
       return "AI가 요청을 해석하지 못했어요. 작업본은 그대로예요. 잠시 후 다시 시도하거나 "

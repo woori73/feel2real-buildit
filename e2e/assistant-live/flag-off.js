@@ -20,6 +20,10 @@ const { launch, newCtx, BASE, PNG } = require('../visual-editor/lib');
   const media = await ctx.request.post(BASE + '/api/tutor/academy/assistant/media', {
     multipart: { slot: 'principal', revision: '0', image: { name: 'p.png', mimeType: 'image/png', buffer: PNG } } });
   ok('스위치 OFF: 사진 올리기 API도 막힘(403/404)', [403, 404].includes(media.status()), { status: media.status() });
+  const mode = await ctx.request.fetch(BASE + '/api/tutor/academy/assistant/mode');
+  ok('스위치 OFF: 모드 조회 API도 막힘(403/404) — 전환 버튼이 보이지 않음', [403, 404].includes(mode.status()), { status: mode.status() });
+  const adopt = await ctx.request.fetch(BASE + '/api/tutor/academy/assistant/adopt', { method: 'POST', data: { confirm: true } });
+  ok('스위치 OFF: AI로 이어서 만들기(전환) API도 막힘(403/404)', [403, 404].includes(adopt.status()), { status: adopt.status() });
   const classic = await ctx.request.fetch(BASE + '/api/tutor/academy/working-copy');
   ok('스위치 OFF: 기존 빌더의 작업본 API는 영향 없음(200)', classic.status() === 200, { status: classic.status() });
   console.log(`\n검증 항목 ${rows.filter(Boolean).length}/${rows.length} 통과`);

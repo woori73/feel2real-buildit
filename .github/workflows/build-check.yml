@@ -348,6 +348,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantEditMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchOffMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchAllowListMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantAcademyModeMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantAiTimeoutMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminBuilderAccessMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminAcademyManagementMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminAcademyAuditTransactionMySqlTest"

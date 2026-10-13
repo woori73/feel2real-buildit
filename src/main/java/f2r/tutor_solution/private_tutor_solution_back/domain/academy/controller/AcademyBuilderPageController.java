@@ -4,8 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
-import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAssistantMessageRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantAcademyMode;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantFeatureFlag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,7 +32,7 @@ public class AcademyBuilderPageController {
 
   private final AcademyService academyService;
   private final AssistantFeatureFlag assistantFlag;
-  private final AcademyAssistantMessageRepository assistantMessages;
+  private final AssistantAcademyMode assistantMode;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @GetMapping("/builder")
@@ -64,13 +64,14 @@ public class AcademyBuilderPageController {
   }
 
   /**
-   * 대화형 화면을 쓰는 경우: 기능이 켜져 있고 classic 요청이 아니며, 학원이 아직 없거나 대화로 만든 학원이다.
-   * 기존 방식으로 만든 학원(대화 기록 없음)은 공개 데이터 보호를 위해 항상 기존 빌더로 보낸다.
+   * 대화형 화면을 쓰는 경우: 기능이 켜져 있고 classic 요청이 아니며, 학원이 아직 없거나 AI 제작 학원
+   * (대화로 최초 생성했거나 'AI로 이어서 만들기'로 명시 전환한 학원)이다.
+   * 기존 방식으로 만든 학원은 대화 기록이 있더라도 공개 데이터 보호를 위해 기존 빌더로 보낸다.
    */
   private boolean usesAssistant(
       JwtTokenProvider.AuthenticatedPrincipal principal, AcademyResponse academy, String classic) {
     if (classic != null || !assistantFlag.isOn(principal)) return false;
-    return academy == null || assistantMessages.existsByAcademyId(academy.academyId());
+    return academy == null || assistantMode.isAssistantAcademy(academy.academyId());
   }
 
   private boolean hasBuilderRole(JwtTokenProvider.AuthenticatedPrincipal principal) {

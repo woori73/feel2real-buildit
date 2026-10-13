@@ -186,6 +186,8 @@ class AssistantSwitchOffMySqlTest {
     assertDisabled(postJson("/undo", "{\"revision\":1}"));
     assertDisabled(postJson("/publish", "{\"revision\":1}"));
     assertDisabled(upload());
+    assertDisabled(mockMvc.perform(get(API + "/mode").cookie(cookie)).andReturn());
+    assertDisabled(postJson("/adopt", "{\"confirm\":true}"));
     assertThat(academies()).isZero();
   }
 

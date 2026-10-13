@@ -440,7 +440,7 @@ jobs:
       - name: Seed test users (CI DB only)
         run: |
           H='\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di'
-          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-live', '$H', '신규원장', '신규원장', 'TUTOR', NOW(), NOW()), ('e2e-other', '$H', '다른원장', '다른원장', 'TUTOR', NOW(), NOW()), ('e2e-legacy', '$H', '기존원장', '기존원장', 'TUTOR', NOW(), NOW());"
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-live', '$H', '신규원장', '신규원장', 'TUTOR', NOW(), NOW()), ('e2e-other', '$H', '다른원장', '다른원장', 'TUTOR', NOW(), NOW()), ('e2e-legacy', '$H', '기존원장', '기존원장', 'TUTOR', NOW(), NOW()), ('e2e-adopt', '$H', '전환원장', '전환원장', 'TUTOR', NOW(), NOW());"
       - name: Install E2E deps
         run: cd e2e/visual-editor && npm install --no-audit --no-fund
       - name: "[1] Live flow — real AI: create, edit, preview, undo, approve"
@@ -451,20 +451,45 @@ jobs:
         id: extra
         continue-on-error: true
         run: node e2e/assistant-live/integrated-extra.js 2>&1 | tee integrated-extra.txt; exit ${PIPESTATUS[0]}
-      - name: "[3] AI call count and latency (from app log; no secrets)"
+      - name: "[2b] Screen mode split, explicit adoption, AI delay (progress/timeout)"
+        id: mode
+        continue-on-error: true
+        run: node e2e/assistant-live/assistant-mode.js 2>&1 | tee assistant-mode.txt; exit ${PIPESTATUS[0]}
+      - name: "[3] AI call count, latency, failures (from app log; no secrets)"
         if: always()
         run: |
-          {
-            echo "## AI 호출·응답시간 (앱 로그 집계)"
-            C=$(grep -ac "newstart meta-muse-spark call" app.log || true)
-            OK=$(grep -ac "newstart meta-muse-spark call status=200" app.log || true)
-            CH=$(grep -a "newstart meta-muse-spark call" app.log | grep -ao "requestChars=[0-9]*" | cut -d= -f2 | paste -sd+ - | bc 2>/dev/null || echo 0)
-            FB=$(grep -ac "buildit ai fallback" app.log || true)
-            echo "- Muse Spark 호출 ${C}회 (HTTP 200 ${OK}회), 폴백(Qwen) ${FB}회"
-            echo "- 요청 문자 수 합계 ${CH:-0}자 (한국어 기준 대략 1토큰≈1.5~2자로 추정, 실제 청구 토큰·금액은 로그에 없음)"
-            echo '- 호출별 httpMs:'; grep -a "newstart meta-muse-spark call" app.log | grep -ao "httpMs=[0-9]*" | cut -d= -f2 | sort -n | paste -sd' ' - | fold -w 160
-            echo '- 대화 수정 턴 엔진 분포:'; grep -a "assistant-edit engine=" app.log | grep -ao "engine=[A-Z_]*" | sort | uniq -c
-          } | tee ai-metrics.txt >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PYEOF' | tee ai-metrics.txt >> "$GITHUB_STEP_SUMMARY"
+          import re
+          lines = open('app.log', encoding='utf-8', errors='replace').read().splitlines()
+          def pct(a, q):
+              a = sorted(a)
+              return a[min(len(a) - 1, max(0, int(round(q * len(a) + 0.5)) - 1))] if a else None
+          ok_ms, ok_chars = [], []
+          for l in lines:
+              if 'buildit ai muse-spark ok' in l:
+                  m = re.search(r'ms=(\d+)', l); c = re.search(r'promptChars=(\d+)', l)
+                  if m: ok_ms.append(int(m.group(1)))
+                  if c: ok_chars.append(int(c.group(1)))
+          failed = [l for l in lines if 'buildit ai muse-spark failed' in l]
+          fallback = [l for l in lines if 'buildit ai fallback' in l]
+          timeouts = [l for l in lines if 'assistant-edit ai-timeout' in l]
+          http = [l for l in lines if 'newstart meta-muse-spark call' in l]
+          http_ms = [int(m.group(1)) for l in http for m in [re.search(r'httpMs=(\d+)', l)] if m]
+          engines = {}
+          for l in lines:
+              m = re.search(r'assistant-edit engine=(\S+)', l)
+              if m: engines[m.group(1)] = engines.get(m.group(1), 0) + 1
+          print('## AI 호출·응답시간·실패 (앱 로그 집계, 이 run 전체)')
+          print(f'- Muse Spark 성공 호출 {len(ok_ms)}회, 실패 {len(failed)}회, Qwen 폴백 {len(fallback)}회, 서버 한도(timeout) 초과 {len(timeouts)}회')
+          print('- 재시도: Muse Spark 호출에는 재시도 로직이 없다(실패 시 폴백 체인으로 1회 이동). 위 폴백 횟수가 곧 재시도성 호출 수다.')
+          if ok_ms:
+              print(f'- 성공 호출 응답시간(ms): n={len(ok_ms)} p50={pct(ok_ms, .5)} p95={pct(ok_ms, .95)} max={max(ok_ms)}')
+          if http_ms:
+              print(f'- HTTP 왕복(ms, 전송→응답): n={len(http_ms)} p50={pct(http_ms, .5)} p95={pct(http_ms, .95)} max={max(http_ms)}')
+          if ok_chars:
+              print(f'- 요청 프롬프트 문자 수 합계 {sum(ok_chars)}자 (토큰 사용량·단가는 로그에 없어 비용은 산정하지 않음)')
+          print('- 대화 수정 턴 엔진 분포: ' + (', '.join(f'{k}={v}' for k, v in sorted(engines.items())) or '없음'))
+          PYEOF
       - name: Stop app and restart with switch OFF (isolated CI DB)
         if: always()
         run: |
@@ -502,6 +527,7 @@ jobs:
             e2e/assistant-live/artifacts/*.png
             live-flow.txt
             integrated-extra.txt
+            assistant-mode.txt
             flag-off.txt
             ai-metrics.txt
             v1064.txt
@@ -514,12 +540,13 @@ jobs:
       - name: Verdict
         if: always()
         run: |
-          echo "live=${{ steps.live.outcome }} extra=${{ steps.extra.outcome }} flagoff=${{ steps.flagoff.outcome }} v1064=${{ steps.v1064.outcome }}"
+          echo "live=${{ steps.live.outcome }} extra=${{ steps.extra.outcome }} mode=${{ steps.mode.outcome }} flagoff=${{ steps.flagoff.outcome }} v1064=${{ steps.v1064.outcome }}"
           {
             echo "## 통합 E2E 결과"
             echo "- [1] 실제 AI 연속 흐름: ${{ steps.live.outcome }}"
             echo "- [2] 사진·화면 폭·권한·충돌·기존 학원: ${{ steps.extra.outcome }}"
+            echo "- [2b] 화면 모드 분리·명시 전환·AI 지연: ${{ steps.mode.outcome }}"
             echo "- [4] 스위치 OFF: ${{ steps.flagoff.outcome }}"
             echo "- [5] V1064·운영 이력 재현 테스트: ${{ steps.v1064.outcome }}"
           } >> "$GITHUB_STEP_SUMMARY"
-          [ "${{ steps.live.outcome }}" = success ] && [ "${{ steps.extra.outcome }}" = success ] && [ "${{ steps.flagoff.outcome }}" = success ] && [ "${{ steps.v1064.outcome }}" = success ]
+          [ "${{ steps.live.outcome }}" = success ] && [ "${{ steps.extra.outcome }}" = success ] && [ "${{ steps.mode.outcome }}" = success ] && [ "${{ steps.flagoff.outcome }}" = success ] && [ "${{ steps.v1064.outcome }}" = success ]
