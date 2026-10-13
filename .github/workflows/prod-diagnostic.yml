@@ -33,6 +33,8 @@ on:
           - rollback-jar
           - wiki-status
           - wemade-test
+          - assistant-ai-eval
+          - assistant-live-e2e
       log_since:
         description: 'journal-errors 검색 시작 (UTC, 예: 2026-10-09 07:30:00). 비우면 기본 고정 범위 사용'
         required: false
@@ -50,6 +52,7 @@ permissions:
 
 jobs:
   diagnostic:
+    if: ${{ inputs.diagnostic_type != 'assistant-ai-eval' && inputs.diagnostic_type != 'assistant-live-e2e' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -338,3 +341,101 @@ jobs:
             echo "::error::SSM command finished with status $FINAL"
             exit 1
           fi
+
+  # 대화 수정 에이전트 실제 AI 해석 성능 실측(운영 접근 없음, 배포 없음).
+  # Muse Spark 키는 저장소 Secret을 환경변수로만 주입하며 로그·리포트에 출력하지 않는다.
+  assistant-ai-eval:
+    if: ${{ inputs.diagnostic_type == 'assistant-ai-eval' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      ASSISTANT_EVAL_LIVE: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Key configured? (값은 출력하지 않는다)
+        run: |
+          if [ -n "$META_JIPJIGI_API_KEY" ]; then echo "META_JIPJIGI_API_KEY: set"; else echo "META_JIPJIGI_API_KEY: EMPTY"; fi
+          if [ -n "$OPENROUTER_API_KEY" ]; then echo "OPENROUTER_API_KEY: set"; else echo "OPENROUTER_API_KEY: EMPTY"; fi
+      - name: Run live eval
+        run: ./gradlew test --no-daemon --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantEditLiveEvalTest"
+      - name: Report
+        if: always()
+        run: cat build/reports/assistant-edit-eval.txt || echo "no report"
+
+  # 실제 AI(Muse Spark)로 최초 생성 → 연속 수정 → 되돌리기 → 승인 게시까지 브라우저 E2E (격리 DB·로컬 앱, 운영 접근 없음).
+  assistant-live-e2e:
+    if: ${{ inputs.diagnostic_type == 'assistant-live-e2e' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      BUILDIT_ASSISTANT_ENABLED: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Start app (isolated CI DB)
+        run: |
+          nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up" && exit 0
+            sleep 10
+          done
+          echo "app did not start"; tail -50 app.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+      - name: Seed test tutor (CI DB only)
+        run: |
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-live', '\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di', '신규원장', '신규원장', 'TUTOR', NOW(), NOW());"
+      - name: Install E2E deps
+        run: cd e2e/visual-editor && npm install --no-audit --no-fund
+      - name: Run live E2E
+        run: node e2e/assistant-live/live-flow.js
+      - name: App log tail (assistant-edit lines only; no secrets)
+        if: always()
+        run: grep -a "assistant-edit\|buildit ai" app.log | tail -40 | cut -c1-240 || true
