@@ -253,6 +253,18 @@
     th.style.height = h; inner.style.width = w + 'px'; inner.style.height = h;
     fr.style.width = lw + 'px'; fr.style.height = lh + 'px'; fr.style.transform = 'scale(' + scale + ')';
   }
+  /**
+   * 카드 속 미리보기는 스크롤하지 않는 정지 화면이다. 공개 페이지의 등장 애니메이션(반투명→불투명)이 끝나기 전·보이지 않는 구간에서
+   * 글자가 흐리게 남지 않도록, 불러온 뒤 최종 상태로 고정하는 스타일을 넣는다(애니메이션 시간 0, 등장 요소는 처음부터 보임).
+   * 내려받는 HTML에는 스크립트가 없어 등장 효과가 일어나지 않으므로 이 스타일이 그대로 남아야 모든 글자가 보인다.
+   */
+  var CARD_FREEZE_CSS = 'html.js-reveal [data-reveal-item]{opacity:1!important;transform:none!important}' +
+    '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important}';
+  function freezeCardMotion() {
+    var d = null; try { d = $('ahCardFrame').contentDocument; } catch (e) { return; }
+    if (!d || !d.head || d.getElementById('ahCardFreeze')) return;
+    var st = d.createElement('style'); st.id = 'ahCardFreeze'; st.textContent = CARD_FREEZE_CSS; d.head.appendChild(st);
+  }
   /** 더보기 메뉴(되돌리기·학원 정보·버전·내려받기·기존 빌더): 열고 닫는다. */
   function setMenu(open) {
     $('ahMenu').hidden = !open; $('ahMoreBtn').setAttribute('aria-expanded', String(open));
@@ -644,6 +656,7 @@
       var f = this.files && this.files[0]; if (f && ctx.photoSlot) uploadPhoto(ctx.photoSlot, f);
     });
     $('ahUndo').addEventListener('click', undo);
+    $('ahCardFrame').addEventListener('load', freezeCardMotion);
     $('ahMoreBtn').addEventListener('click', function (e) { e.stopPropagation(); setMenu($('ahMenu').hidden); });
     $('ahMenu').addEventListener('click', function () { setMenu(false); });
     document.addEventListener('click', function (e) { if (!$('ahMenu').hidden && !$('ahMenu').contains(e.target)) setMenu(false); });

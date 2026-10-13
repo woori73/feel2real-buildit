@@ -39,11 +39,19 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   ok('첫 화면에 4단계·기능 카드가 없다(제목·부제·입력창만)', await page.evaluate(() => { const h = document.getElementById('hero'); return !h.querySelector('.flow-h, .steps, .feature-card, .hero-video-card') && h.querySelectorAll('input,button,a').length <= 3; }));
   ok('소개 영상은 첫 화면 아래(#intro)에 있다', await page.evaluate(() => { const v = document.querySelector('.hero-video-card'); return !!v && !document.getElementById('hero').contains(v) && v.getBoundingClientRect().top > window.innerHeight * 0.9; }));
   ok('첫 화면에 배경 곡선·광원 장식이 없다', await page.evaluate(() => !document.querySelector('#hero .hero-lines, #hero .brand-glow')));
+  const sm = await page.evaluate(() => { const cards = [...document.querySelectorAll('#samples .sample-card')]; return { n: cards.length, below: document.getElementById('samples').getBoundingClientRect().top > window.innerHeight * 0.9, seeds: cards.every((c) => (c.dataset.seed || '').includes('홈페이지')), titles: cards.map((c) => c.querySelector('b').textContent) }; });
+  ok('첫 화면 아래 홈페이지 샘플 6종(같은 샘플 재사용, 첫 화면 밖)', sm.n === 6 && sm.below && sm.seeds, sm);
+  await page.click('#samples .sample-card:nth-child(2)');
+  ok('샘플을 누르면 입력창에 요청 문장이 채워진다', (await page.inputValue('[data-buildit-prompt]')).includes('초등'), await page.inputValue('[data-buildit-prompt]'));
+  await page.fill('[data-buildit-prompt]', '');
   await shot(page, '00-landing-pc');
   const mp = await b.newPage({ viewport: { width: 390, height: 844 } });
   await mp.goto(BASE + '/'); await mp.waitForSelector('[data-buildit-prompt]');
   ok('모바일 첫 화면: 가로 스크롤 없음', await mp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
   await mp.screenshot({ path: path.join(SHOTS, '00-landing-mobile.png') });
+  await mp.evaluate(() => document.getElementById('samples').scrollIntoView());
+  ok('모바일 샘플: 1열·가로 스크롤 없음', await mp.evaluate(() => { const g = getComputedStyle(document.querySelector('.samples-grid')).gridTemplateColumns.split(' ').length; return g === 1 && document.documentElement.scrollWidth <= innerWidth + 1; }));
+  await mp.screenshot({ path: path.join(SHOTS, '00-landing-mobile-samples.png') });
   await mp.close();
   await page.fill('[data-buildit-prompt]', PROMPT);
   await page.click('.ask-go');
@@ -77,6 +85,9 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   ok('대화 속 미리보기 카드가 보인다', await page.isVisible('#ahCard'));
   await page.waitForFunction(() => { const d = document.getElementById('ahCardFrame').contentDocument; return d && d.body && d.body.innerText.length > 80; }, null, { timeout: 30000 });
   ok('카드 미리보기에 홈페이지가 그려졌다', true);
+  await sleep(1500);
+  const faded = await page.evaluate(() => { const d = document.getElementById('ahCardFrame').contentDocument; const items = [...d.querySelectorAll('[data-reveal-item]')]; return { n: items.length, faded: items.filter((e) => parseFloat(getComputedStyle(e).opacity) < 0.99).length, freeze: !!d.getElementById('ahCardFreeze') }; });
+  ok('카드 미리보기: 등장 효과 요소가 모두 선명하다(흐린 요소 0)', faded.faded === 0 && faded.freeze, faded);
   const cardBox = await page.evaluate(() => { const t = document.getElementById('ahThumb').getBoundingClientRect(); return { w: t.width, h: t.height }; });
   ok('미리보기 카드가 크다(폭 600px 이상, 높이 380px 이상)', cardBox.w >= 600 && cardBox.h >= 380, cardBox);
   ok('전체 화면으로 보기가 강조된 주요 버튼(검정)이다', await page.evaluate(() => getComputedStyle(document.getElementById('ahCardFull')).backgroundColor === 'rgb(10, 10, 10)'));
@@ -190,6 +201,7 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   await page.waitForSelector('#ahVersions', { state: 'hidden', timeout: 30000 });
   await page.waitForFunction(() => /이전 버전을 작업본에 불러왔어요/.test(document.getElementById('ahMsgs').textContent), null, { timeout: 30000 });
   ok('버전을 작업본에 불러왔고 안내가 나온다', true);
+  ok('복원 안내가 "정식 배포 등록" 용어를 쓴다("게시" 없음)', await page.evaluate(() => { const t = [...document.querySelectorAll('#ahMsgs .ah-msg.bot')].map((e) => e.textContent).filter((x) => x.includes('이전 버전을 작업본에')).pop() || ''; return t.includes('정식 배포 등록') && !t.includes('게시'); }));
   await openMenu();
   ok('불러온 뒤 되돌리기 횟수는 0', (await page.textContent('#ahUndoCount')) === '0');
   await page.keyboard.press('Escape');

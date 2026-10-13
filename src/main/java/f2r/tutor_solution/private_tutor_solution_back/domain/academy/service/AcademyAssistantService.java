@@ -174,7 +174,7 @@ public class AcademyAssistantService {
     State state = workingCopyService.restoreFromVersion(principal, expectedRevision, versionId);
     academyService.getMine(principal).ifPresent(a -> remember(
         a.academyId(), ROLE_ASSISTANT, AcademyAssistantEditService.KIND_RESTORED,
-        "이전 버전을 작업본에 불러왔어요. 게시하기 전까지 공개 홈페이지는 그대로예요.",
+        "이전 버전을 작업본에 불러왔어요. 홈페이지 정식 배포 등록 전까지 공개 홈페이지는 그대로예요.",
         toJson(Map.of("versionId", versionId, "revisionAfter", state.revision()))));
     return state;
   }
@@ -213,7 +213,7 @@ public class AcademyAssistantService {
     Long versionId = workingCopyService.snapshotLive(principal, "AI로 이어서 만들기 전 공개본");
     State state = workingCopyService.open(principal);
     remember(academyId, ROLE_ASSISTANT, AssistantAcademyMode.KIND_ADOPTED,
-        "AI로 이어서 만들기를 시작했어요. 지금 공개된 홈페이지는 버전 기록에 보관했고, 앞으로의 수정은 게시하기 전까지 공개에 반영되지 않아요. 기존 빌더는 화면 위쪽 '기존 빌더' 링크로 언제든 다시 열 수 있어요.",
+        "AI로 이어서 만들기를 시작했어요. 지금 공개된 홈페이지는 버전 기록에 보관했고, 앞으로의 수정은 홈페이지 정식 배포 등록 전까지 공개에 반영되지 않아요. 기존 빌더는 화면 위쪽 '기존 빌더' 링크로 언제든 다시 열 수 있어요.",
         toJson(Map.of("versionId", versionId, "revision", state.revision())));
     return new AdoptResult(true, versionId, state.revision());
   }
@@ -232,7 +232,7 @@ public class AcademyAssistantService {
     // 게시하면 그 이전 수정은 되돌리기 대상에서 빠진다(공개된 내용은 버전 기록으로 복원한다).
     academyService.getMine(principal).ifPresent(a -> remember(
         a.academyId(), ROLE_ASSISTANT, AcademyAssistantEditService.KIND_PUBLISHED,
-        first ? "게시했어요. 이제 누구나 홈페이지를 볼 수 있어요." : "수정한 내용을 게시했어요.",
+        first ? "홈페이지가 공개됐어요. 이제 누구나 홈페이지를 볼 수 있어요." : "수정한 내용을 공개 홈페이지에 반영했어요.",
         toJson(Map.of("revisionAfter", state.revision()))));
     return new PublishResult(first, state.revision());
   }
@@ -361,7 +361,7 @@ public class AcademyAssistantService {
     if (provisionalTargets) provisional.add("대상 학생");
     if (!provisional.isEmpty()) {
       notes.add("임시로 채운 정보: " + String.join(", ", provisional)
-          + ". 화면 위쪽 '학원 정보'에서 실제 값으로 바꿀 수 있어요(게시 전까지).");
+          + ". 화면 위쪽 '학원 정보'에서 실제 값으로 바꿀 수 있어요(정식 배포 등록 전까지).");
     }
     if (recipe != null) {
       notes.add("디자인 자산 '" + recipe.label() + "'을(를) 적용했어요. 다른 느낌을 원하시면 말씀해 주세요.");

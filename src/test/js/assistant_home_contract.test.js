@@ -77,3 +77,10 @@ test('given 추천 요청 when 읽기 then 3개 이하로 줄여 화면을 단�
   // then
   assert.ok(n <= 3, '추천 요청 수: ' + n);
 });
+
+test('given 미리보기 카드 when 불러오면 then 등장 애니메이션을 최종 상태로 고정해 글자가 흐리지 않다', () => {
+  // given / when / then
+  assert.match(JS, /\$\('ahCardFrame'\)\.addEventListener\('load', freezeCardMotion\)/);
+  assert.match(JS, /\[data-reveal-item\]\{opacity:1!important;transform:none!important\}/);
+  assert.match(JS, /animation-duration:0s!important/);
+});
