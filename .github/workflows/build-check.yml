@@ -97,6 +97,10 @@ jobs:
       # @SpringBootTest(MySQL) 통합 테스트는 여기에 포함하지 않는다(로컬/전용 환경에서만).
       # 이 스텝 덕분에 Build Check 는 "컴파일 성공"이 아니라 "핵심 단위 로직 통과"까지 의미한다.
       - name: Run non-MySQL unit & contract tests
+        # 테스트 그룹: 지피지기 Agent V1 (NewStart 운영 보조) 무DB 단위/계약 테스트,
+        # V1005 답변 세션 자동 축적 + RAG 재사용 (H2 MySQL 모드 DB 테스트) 포함.
+        # 주의: run 블록 내부에 # 셸 주석을 넣으면 그 뒤의 --tests 필터가 모두
+        # 주석 처리되어 실행되지 않는다. 그룹 설명은 이 YAML 주석에만 작성할 것.
         run: >-
           ./gradlew test --no-daemon
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolServiceTest"
@@ -243,7 +247,6 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsLlmClientTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsResearchServiceLogicTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest"
-          # 지피지기 Agent V1 (NewStart 운영 보조) — 무DB 단위/계약 테스트
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiWorkflowServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiCommandServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiQuestionServiceTest"
@@ -255,7 +258,6 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.controller.NewstartIngestionAdminControllerAuthTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.controller.JipijigiAdminControllerAuthTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.JipijigiAgentMigrationTest"
-          # V1005 답변 세션 자동 축적 + RAG 재사용 (H2 MySQL 모드 DB 테스트)
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiAnswerSessionDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.JipijigiAdminPageContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.entity.LmsContentEntityTest"
