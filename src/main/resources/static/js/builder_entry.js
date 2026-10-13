@@ -7,12 +7,34 @@
 (function() {
   'use strict';
 
+  // AI 입력창: 입력 내용 자동 저장/복원 (유실 방지)
+  // 참고: 프롬프트의 /builder 자동 전달은 준비 중 (백엔드 연동은 Claude 담당)
+  var PROMPT_KEY = 'buildit_entry_prompt';
+  var promptEl = document.querySelector('#aiPrompt');
+  if (promptEl) {
+    // 페이지 로드 시 이전 입력 복원
+    try {
+      var saved = sessionStorage.getItem(PROMPT_KEY);
+      if (saved) promptEl.value = saved;
+    } catch (e) {}
+    // 입력할 때마다 자동 저장
+    promptEl.addEventListener('input', function() {
+      try {
+        sessionStorage.setItem(PROMPT_KEY, promptEl.value);
+      } catch (e) {}
+    });
+  }
+
   // AI로 만들기 버튼
-  // 참고: 입력된 프롬프트는 현재 /builder로 전달되지 않음 (백엔드 연동은 Claude 담당)
-  // 버튼 클릭 시 기존 /builder로 이동만 수행
   document.querySelectorAll('[data-action="ai-create"]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      // 기존 /builder로 이동 (TUTOR/ADMIN 권한 체크 적용)
+      // 입력 내용을 저장한 뒤 기존 /builder로 이동 (TUTOR/ADMIN 권한 체크 적용)
+      // 프롬프트 자동 전달 기능은 준비 중임을 UI에 명시
+      if (promptEl) {
+        try {
+          sessionStorage.setItem(PROMPT_KEY, promptEl.value);
+        } catch (e) {}
+      }
       window.location.href = '/builder';
     });
   });
