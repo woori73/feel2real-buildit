@@ -294,7 +294,7 @@ public class PublishingEditService {
           log.info("마커 제거: '{}' → '{}'", block.original(), block.text());
         }
 
-        // 2. find.find로 제목 텍스트 위치 확인
+        // 2. find.find로 제목 텍스트 위치 확인 (반복 제목 모두 처리)
         var findResult = cliExecutor.execute(
             new PublishingCommand("find.find",
                 Map.of("find", block.text(), "scope", "story")),
@@ -304,25 +304,28 @@ public class PublishingEditService {
           log.warn("제목 텍스트를 찾지 못함: {}", block.text());
           continue;
         }
-        JsonNode first = matches.get(0);
-        long story = first.get("story").asLong();
-        long start = first.get("start").asLong();
-        long end = first.get("end").asLong();
+        int blockApplied = 0;
+        for (JsonNode match : matches) {
+          long story = match.get("story").asLong();
+          long start = match.get("start").asLong();
+          long end = match.get("end").asLong();
 
-        // text.select로 선택
-        cliExecutor.execute(
-            new PublishingCommand("text.select",
-                Map.of("story", story, "anchor", start, "focus", end)),
-            workDir);
+          // text.select로 선택
+          cliExecutor.execute(
+              new PublishingCommand("text.select",
+                  Map.of("story", story, "anchor", start, "focus", end)),
+              workDir);
 
-        // style.paragraph.apply로 스타일 적용
-        cliExecutor.execute(
-            new PublishingCommand("style.paragraph.apply",
-                Map.of("name", block.style())),
-            workDir);
+          // style.paragraph.apply로 스타일 적용
+          cliExecutor.execute(
+              new PublishingCommand("style.paragraph.apply",
+                  Map.of("name", block.style())),
+              workDir);
+          blockApplied++;
+        }
 
-        applied++;
-        log.info("스타일 적용: '{}' → {}", block.text(), block.style());
+        applied += blockApplied;
+        log.info("스타일 적용: '{}' → {} ({}개 위치)", block.text(), block.style(), blockApplied);
       } catch (Exception e) {
         log.warn("스타일 적용 실패: '{}' - {}", block.text(), e.getMessage());
       }
