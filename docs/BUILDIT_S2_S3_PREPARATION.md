@@ -6,7 +6,10 @@ S1(대화형 반복 수정)이 만든 확장 지점만 적는다. 코드·DB는 
 - 모든 변경은 `AssistantPatchApplier`의 **패치 연산 → 서버 검증 → 작업본 저장**을 지난다. 공개본 직접 쓰기 금지.
 - 되돌리기 스택(EDIT/UNDO 메시지)은 새 연산에도 그대로 쓰인다. 연산이 `undo` 정보만 채우면 된다.
 
-## S2 — AI가 buildit2 디자인 자산을 고르고 조합
+## S2 — AI가 buildit2 디자인 자산을 고르고 조합 (**1차 구현됨**: PR `feat/assistant-design-assets`)
+구현된 것: 정적 카탈로그 `design-assets/catalog.json`(10종, ACTIVE 6·NOT_CONNECTED 4), `applyAsset`/`setMotion` 연산, `builderDraft.motionStyle`·`designAsset`, 등장 효과 CSS(`data-motion`), AI 프롬프트 후보 목록·규칙 해석기·첫 생성 선택. 아래는 설계 당시 계획이며 `setVariant`(섹션별 변형)·후기·카운트업·강사진 대화 입력은 아직 없다.
+
+
 - 새 연산: `setVariant {sectionId, variantId}`, `setMotion {motionId|none}`. `AssistantDesignCatalog`에 허용 목록을 추가.
 - 자산 목록: 새 DB 테이블 없이 **저장소 안 정적 JSON**(`variantId → 섹션, 설명, 필요 데이터 키`).
 - 저장 위치: `builderDraft`의 `sectionVariant.<sectionId>`, `motion` 키 → `AcademyService` BUILDER_DRAFT_KEYS 허용 목록에 추가.

@@ -29,3 +29,26 @@ test('given preset when creating draft then safe registry font ids are stored', 
   assert.equal(draft.bodyFont, 'PRETENDARD');
   assert.equal(draft.logoSizeMobile, '76');
 });
+
+function fakeRoot() {
+  const props = {};
+  return { dataset: {}, style: { setProperty: (k, v) => { props[k] = v; }, removeProperty: (k) => { delete props[k]; } }, props };
+}
+
+test('given motionStyle in draft when applying then data-motion is set only for registered values', () => {
+  ['none', 'fade', 'slide'].forEach((value) => {
+    const root = fakeRoot();
+    brand.apply(root, { motionStyle: value });
+    assert.equal(root.dataset.motion, value);
+  });
+  const evil = fakeRoot();
+  brand.apply(evil, { motionStyle: 'url(evil)' });
+  assert.equal(evil.dataset.motion, undefined);
+});
+
+test('given motionStyle removed from draft when applying again then data-motion is cleared (existing sites unchanged)', () => {
+  const root = fakeRoot();
+  brand.apply(root, { motionStyle: 'slide' });
+  brand.apply(root, {});
+  assert.equal(root.dataset.motion, undefined);
+});

@@ -83,6 +83,37 @@ class AssistantRuleInterpreterTest {
   }
 
   @Test
+  @DisplayName("given 자산 고유 키워드 when 해석하면 then applyAsset을 낸다(학교형·랜딩·서서히 등장)")
+  void interpretsAssetKeywords() {
+    assertThat(has("applyAsset", "tmpl-open-school", null).test(ops("학교형으로 바꿔줘"))).isTrue();
+    assertThat(has("applyAsset", "tmpl-minimal-landing", null).test(ops("한 페이지 랜딩처럼 만들어줘"))).isTrue();
+    assertThat(has("applyAsset", "tmpl-demo-school", null).test(ops("학부모가 폰으로 보는 모바일 퍼스트로"))).isTrue();
+    assertThat(has("applyAsset", "anim-gsap-scroll-fade", null).test(ops("스크롤할 때 자연스럽게 등장하게 해줘"))).isTrue();
+    assertThat(has("applyAsset", "anim-slide-in-bottom", null).test(ops("카드들이 아래에서 차례대로 올라오게 해줘"))).isTrue();
+  }
+
+  @Test
+  @DisplayName("given 등장 효과를 끄라는 요청 when 해석하면 then setMotion none")
+  void turnsMotionOff() {
+    assertThat(has("setMotion", null, "none").test(ops("스크롤 효과 꺼줘"))).isTrue();
+  }
+
+  @Test
+  @DisplayName("given 기존 분위기 단어(미니멀·고급) when 해석하면 then 자산이 끼어들지 않고 기존 해석 그대로")
+  void moodWordsKeepLegacyBehavior() {
+    List<Op> minimal = ops("미니멀하게 바꿔줘");
+    assertThat(minimal).noneMatch(o -> "applyAsset".equals(o.op()));
+    assertThat(has("setPreset", null, "MINIMAL").test(minimal)).isTrue();
+    assertThat(ops("더 고급스럽게")).noneMatch(o -> "applyAsset".equals(o.op()));
+  }
+
+  @Test
+  @DisplayName("given 연결 안 된 자산 요청(후기·강사진 카드) when 해석하면 then 자산을 만들어 내지 않는다")
+  void doesNotInventNotConnectedAssets() {
+    assertThat(ops("합격 후기 카드 추가해줘")).noneMatch(o -> "applyAsset".equals(o.op()));
+  }
+
+  @Test
   @DisplayName("given 사진 삭제 요청 when 해석하면 then clearImage만 내고, 이름이 겹치는 원장 소개 섹션은 숨기지 않는다")
   void clearsImagesWithoutHidingSections() {
     List<Op> principal = ops("원장 사진 지워줘");

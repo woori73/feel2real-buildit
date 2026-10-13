@@ -132,6 +132,8 @@ public class AcademyService {
       // ── BuildIt Builder P0: 디자인 프리셋 + 색상 테마 ──
       // designPreset 미설정 시 기존 렌더와 동일(시각 회귀 없음). 색상 키는 #RGB/#RRGGBB만 허용.
       "designPreset", "heroLayout", "cardStyle",
+      // 스크롤 등장 효과(none|fade|slide, 미설정=기존 기본)와 마지막으로 적용한 디자인 자산 id(대화 에이전트가 기록).
+      "motionStyle", "designAsset",
       "colorPrimary", "colorSecondary", "colorAccent",
       "colorBg", "colorBgAlt", "colorText",
       "colorTextLight", "colorBorder", "colorHeroBg", "colorHeroText",
@@ -1062,6 +1064,12 @@ public class AcademyService {
       if ("typographyPreset".equals(key) && !value.isBlank()
           && !Set.of("MODERN", "PREMIUM", "CLEAN", "FRIENDLY", "ACADEMIC").contains(value)) {
         throw new IllegalArgumentException("등록되지 않은 typography preset입니다.");
+      }
+      if ("motionStyle".equals(key) && !value.isBlank() && !Set.of("none", "fade", "slide").contains(value)) {
+        throw new IllegalArgumentException("등록되지 않은 등장 효과입니다.");
+      }
+      if ("designAsset".equals(key) && !value.isBlank() && !value.matches("[a-z0-9-]{1,60}")) {
+        throw new IllegalArgumentException("올바르지 않은 디자인 자산 id입니다.");
       }
       if ("designPreset".equals(key) && !value.isBlank()
           && !AcademyAiCreateService.VALID_PRESETS.contains(value)) {

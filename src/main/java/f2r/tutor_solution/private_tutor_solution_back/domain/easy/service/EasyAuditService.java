@@ -42,6 +42,8 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Easy AI 감사 기반 — "AI가 확인할 장부" 큐 + 원천징수 검토 + 연도 마감.
@@ -301,6 +303,64 @@ public class EasyAuditService {
     }
     item.resolve(resolution, resolvedBy);
     return EasyReviewItemResponse.from(item);
+  }
+
+  /**
+   * Workspace 승인 계약. review 행을 잠근 뒤 사업체 복합 조건, 처리 여부, 원·대상
+   * 회계기간을 한 트랜잭션 안에서 검증하고 거래 수정·정정 로그·재분개·검토 종료를 적용한다.
+   */
+  @Transactional
+  public EasyReviewItemResponse resolveWorkspace(Long businessId, Long reviewId,
+      EasyReviewResolveRequest request, String resolvedBy) {
+    requireActiveBusiness(businessId);
+    EasyReviewItem item = reviewRepository
+        .findLockedByReviewIdAndBusiness_BusinessId(reviewId, businessId)
+        .orElseThrow(() -> new IllegalArgumentException(
+            "해당 사업체의 검토 항목을 찾을 수 없습니다: reviewId=" + reviewId));
+    if (item.getStatus() != EasyReviewStatus.OPEN) {
+      // 현재 모델에는 동일 승인 요청을 재식별할 키가 없으므로 성공으로 간주하지 않는다.
+      throw new ResponseStatusException(HttpStatus.CONFLICT,
+          "이미 처리된 검토입니다. 동일 요청임을 증명할 수 없어 재승인할 수 없습니다.");
+    }
+    String resolution = request == null || request.resolution() == null
+        ? "" : request.resolution().trim();
+    if (request != null && Boolean.TRUE.equals(request.ignore())) {
+      item.ignore(resolution, resolvedBy);
+      return EasyReviewItemResponse.from(item);
+    }
+    if (item.getTxn() != null) {
+      EasyTransaction txn = item.getTxn();
+      requireOpenPeriod(txn.getBusiness().getBusinessId(), txn.getOccurredOn().getYear());
+      Long targetBusinessId = request == null || request.businessId() == null
+          ? txn.getBusiness().getBusinessId() : request.businessId();
+      requireActiveBusiness(targetBusinessId);
+      requireOpenPeriod(targetBusinessId, txn.getOccurredOn().getYear());
+      applyToTxn(txn, request, resolvedBy);
+    }
+    item.resolve(resolution, resolvedBy);
+    return EasyReviewItemResponse.from(item);
+  }
+
+  /** 보류는 데이터 변경 없이 현재 OPEN 항목만 반환한다. */
+  public EasyReviewItemResponse holdWorkspace(Long businessId, Long reviewId) {
+    requireActiveBusiness(businessId);
+    EasyReviewItem item = reviewRepository
+        .findByReviewIdAndBusiness_BusinessId(reviewId, businessId)
+        .orElseThrow(() -> new IllegalArgumentException(
+            "해당 사업체의 검토 항목을 찾을 수 없습니다: reviewId=" + reviewId));
+    if (item.getStatus() != EasyReviewStatus.OPEN) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 처리된 검토입니다.");
+    }
+    return EasyReviewItemResponse.from(item);
+  }
+
+  private void requireOpenPeriod(Long businessId, int fiscalYear) {
+    closingRepository.findByBusiness_BusinessIdAndFiscalYear(businessId, fiscalYear)
+        .filter(closing -> closing.getStatus() == EasyClosingStatus.CLOSED)
+        .ifPresent(closing -> {
+          throw new ResponseStatusException(HttpStatus.CONFLICT,
+              "마감된 회계기간입니다: businessId=" + businessId + ", fiscalYear=" + fiscalYear);
+        });
   }
 
   /** 사업장 확인 필요 표시 — "이 거래는 어느 사업장 거래입니까?"의 저장 기반. */

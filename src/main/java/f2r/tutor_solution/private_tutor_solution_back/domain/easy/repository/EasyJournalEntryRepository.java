@@ -10,6 +10,8 @@ public interface EasyJournalEntryRepository extends JpaRepository<EasyJournalEnt
   List<EasyJournalEntry> findByTxn_TxnIdAndStatusOrderByEntryIdDesc(
       Long txnId, EasyJournalStatus status);
 
+  List<EasyJournalEntry> findByTxn_TxnIdOrderByEntryIdDesc(Long txnId);
+
   List<EasyJournalEntry> findByBusiness_BusinessIdAndOccurredOnBetweenAndStatusOrderByEntryIdAsc(
       Long businessId, LocalDate from, LocalDate to, EasyJournalStatus status);
 

@@ -4,9 +4,18 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyRev
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyReviewKind;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyReviewStatus;
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 
 public interface EasyReviewItemRepository extends JpaRepository<EasyReviewItem, Long> {
+  Optional<EasyReviewItem> findByReviewIdAndBusiness_BusinessId(Long reviewId, Long businessId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<EasyReviewItem> findLockedByReviewIdAndBusiness_BusinessId(
+      Long reviewId, Long businessId);
+
   List<EasyReviewItem> findByBusiness_BusinessIdAndStatusOrderByReviewIdDesc(
       Long businessId, EasyReviewStatus status);
 

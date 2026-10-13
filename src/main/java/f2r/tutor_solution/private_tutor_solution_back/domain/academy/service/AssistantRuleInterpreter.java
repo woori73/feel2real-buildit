@@ -130,10 +130,24 @@ final class AssistantRuleInterpreter {
       }
     }
 
+    // 디자인 자산 — 요청에 자산의 고유 키워드("학교형", "랜딩", "서서히 등장" 등)가 직접 있으면 그 자산을 적용한다.
+    // 자산 키워드는 아래 분위기 단어와 겹치지 않게 잡혀 있어 기존 분위기 해석은 그대로다.
+    AssistantAssetCatalog.Asset asset = AssistantAssetCatalog.byKeyword(t);
+    boolean recipeHit = asset != null && asset.recipe();
+    if (asset != null) {
+      ops.add(Op.section("applyAsset", asset.id()));
+      said.add("'" + asset.label() + "'");
+    }
+    if (containsAny(t, "스크롤", "등장", "나타나", "애니메이션", "움직임", "모션")
+        && containsAny(t, "없애", "꺼", "끄", "빼", "멈춰", "움직이지", "정적")) {
+      ops.add(Op.of("setMotion", null, "none"));
+      said.add("등장 효과 끄기");
+    }
+
     // 분위기 복합 변경 — 색을 직접 지정한 요청은 프리셋을 건드리지 않는다(요청 범위를 넘지 않기 위해).
     // 섹션 표시·순서 요청은 분위기 요청과 함께 올 수 있다("더 고급스럽게, 영상은 숨겨 줘").
     boolean colorOps = ops.stream().anyMatch(o -> "setColor".equals(o.op()));
-    if (!colorOps || containsAny(t, "분위기", "느낌", "스타일", "디자인", "테마")) {
+    if (!recipeHit && (!colorOps || containsAny(t, "분위기", "느낌", "스타일", "디자인", "테마"))) {
       for (Map.Entry<String[], String[]> m : MOODS.entrySet()) {
         if (containsAny(t, m.getKey())) {
           String[] v = m.getValue();

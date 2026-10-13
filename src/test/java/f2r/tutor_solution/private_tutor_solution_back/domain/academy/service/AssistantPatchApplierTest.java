@@ -166,6 +166,57 @@ class AssistantPatchApplierTest {
   }
 
   @Test
+  @DisplayName("given 등장 효과 연산 when 검증·적용하면 then 등록된 값만 motionStyle로 저장되고 되돌리면 원래대로")
+  void motionOpAndUndo() {
+    Plan bad = plan(snap(Map.of()), "", Op.of("setMotion", null, "explode"));
+    assertThat(bad.accepted()).isEmpty();
+    assertThat(bad.skipped()).hasSize(1);
+
+    Snapshot s = snap(Map.of());
+    Plan good = plan(s, "", Op.of("setMotion", null, "FADE"));
+    Applied applied = AssistantPatchApplier.apply(s, good.accepted());
+    assertThat(applied.draftPatch()).containsEntry("motionStyle", "fade");
+    assertThat(applied.changes()).extracting(AssistantPatchApplier.Change::label).containsExactly("스크롤 등장 효과");
+
+    Snapshot after = snap(Map.of("motionStyle", "fade"));
+    Applied undone = AssistantPatchApplier.inverse(after, applied.undo());
+    assertThat(undone.draftPatch()).containsEntry("motionStyle", null);
+  }
+
+  @Test
+  @DisplayName("given 레시피 적용 when 변경 요약을 만들면 then 색 여러 개는 한 줄로 묶이고 디자인 자산 줄이 있다")
+  void recipeSummaryIsCompact() {
+    Snapshot s = snap(Map.of());
+    Plan p = plan(s, "", Op.section("applyAsset", "tmpl-demo-school"));
+    Applied applied = AssistantPatchApplier.apply(s, p.accepted());
+    assertThat(applied.changes()).extracting(AssistantPatchApplier.Change::label)
+        .contains("디자인 자산", "색상 조합", "스크롤 등장 효과")
+        .noneMatch(l -> l.startsWith("색상:"));
+    assertThat(applied.draftPatch()).containsEntry("designAsset", "tmpl-demo-school");
+    assertThat(applied.changes().get(0).label()).isEqualTo("디자인 자산");
+  }
+
+  @Test
+  @DisplayName("given 같은 턴에 프리셋을 직접 고르면 when 레시피도 있으면 then 레시피 표식(designAsset)은 남기지 않는다")
+  void explicitPresetSuppressesAssetMarker() {
+    Snapshot s = snap(Map.of());
+    Plan p = plan(s, "", Op.section("applyAsset", "tmpl-open-school"), Op.of("setPreset", null, "WARM"));
+    Applied applied = AssistantPatchApplier.apply(s, p.accepted());
+    assertThat(applied.draftPatch()).doesNotContainKey("designAsset");
+    assertThat(applied.draftPatch()).containsEntry("designPreset", "WARM");
+  }
+
+  @Test
+  @DisplayName("given 레시피가 적용된 작업본 when 다른 프리셋으로 바꾸면 then 이전 designAsset 표식은 지워진다")
+  void presetChangeClearsAssetMarker() {
+    Snapshot s = snap(Map.of("designPreset", "EXAM", "designAsset", "tmpl-open-school", "motionStyle", "slide"));
+    Plan p = plan(s, "", Op.of("setPreset", null, "DARK"));
+    Applied applied = AssistantPatchApplier.apply(s, p.accepted());
+    assertThat(applied.draftPatch()).containsEntry("designAsset", null);
+    assertThat(applied.draftPatch()).doesNotContainKey("motionStyle");
+  }
+
+  @Test
   @DisplayName("given 사진이 있는 자리 when 삭제 연산을 검증·적용하면 then 허용되고 삭제 변경이 요약에 나온다")
   void clearImageWhenPresent() {
     Snapshot s = new Snapshot("소개", Map.of(), Map.of(), null, java.util.Set.of("principal"));

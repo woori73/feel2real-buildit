@@ -183,6 +183,22 @@ public class AcademyAssistantService {
     String preset = sample != null ? sample.preset() : draft.designPreset();
     generated.put("designPreset", preset);
 
+    // BuildIt2 디자인 자산(레시피) 선택 — 요청의 분위기·학원 유형에 맞는 검증된 값 묶음을 얹는다.
+    // 샘플로 이미 정한 프리셋은 뒤집지 않고, 같은 연산 검증(AssistantPatchApplier)을 그대로 거친다.
+    AssistantAssetCatalog.Asset recipe =
+        AssistantAssetCatalog.recommendRecipe(request, name, preset, sample != null);
+    if (recipe != null) {
+      AssistantPatchApplier.Snapshot base = new AssistantPatchApplier.Snapshot("", generated, null, null);
+      AssistantPatchApplier.Plan plan = AssistantPatchApplier.plan(
+          List.of(AssistantPatchApplier.Op.section("applyAsset", recipe.id())), base, "");
+      AssistantPatchApplier.Applied applied = AssistantPatchApplier.apply(base, plan.accepted());
+      applied.draftPatch().forEach((k, v) -> {
+        if (v == null) generated.remove(k);
+        else generated.put(k, v);
+      });
+      preset = generated.get("designPreset");
+    }
+
     // 과목·대상은 사용자가 말했거나 샘플 문구가 직접 말한 경우에만 확정한다.
     // 샘플 문구에서 분석기가 뽑아낸 값은 사용자가 한 말이 아니므로 쓰지 않는다.
     Set<Integer> subjectIds = new java.util.HashSet<>();
@@ -240,6 +256,9 @@ public class AcademyAssistantService {
 
     List<String> notes = new ArrayList<>(draft.warnings());
     notes.add("주소·전화번호·강사·수강료는 알려 주시기 전까지 비워 둡니다.");
+    if (recipe != null) {
+      notes.add("디자인 자산 '" + recipe.label() + "'을(를) 적용했어요. 다른 느낌을 원하시면 말씀해 주세요.");
+    }
 
     String reply = "'" + name + "' 홈페이지 초안을 만들었어요. 아직 공개되지 않았으니 미리보기로 확인해 보세요.";
     Long academyId = created.academyId();

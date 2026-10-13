@@ -335,6 +335,7 @@ public class AcademyAssistantEditService {
     sb.append("규칙:\n");
     sb.append("- JSON 외의 글(설명·코드펜스)을 출력하지 않는다.\n");
     sb.append("- 허용된 연산과 값만 쓴다. 허용 목록에 없는 값은 쓰지 않는다.\n");
+    sb.append("- 요청이 [디자인 자산] 목록의 스타일·효과와 맞으면 코드를 새로 만들지 말고 {\"op\":\"applyAsset\",\"id\":\"자산id\"}를 우선 쓴다. 자산 적용 뒤 사용자가 따로 말한 색·문구만 개별 연산으로 덧붙인다. 목록에 없는 id는 쓰지 않는다.\n");
     sb.append("- \"더 고급스럽게\", \"밝고 친근하게\" 같은 포괄적 요청은 setPreset + setTypography + setHeroLayout + setCardStyle (+ 필요 시 setColor)을 함께 쓰는 복합 변경으로 처리한다.\n");
     sb.append("- 사용자가 말하지 않은 전화번호·주소·수강료·강사·경력·합격 실적·숫자를 절대 만들어 넣지 않는다. 모르면 question으로 되묻는다.\n");
     sb.append("- 문구 변경(setText/setIntro)은 과장 없이 자연스러운 한국어로, 짧게(항목당 120자 이하, 소개 문단 600자 이하) 쓴다.\n");
@@ -343,6 +344,8 @@ public class AcademyAssistantEditService {
 
     sb.append("[출력 형식]\n");
     sb.append("{\"reply\":\"...\",\"question\":null,\"ops\":[\n");
+    sb.append("  {\"op\":\"applyAsset\",\"id\":\"tmpl-minimal-landing\"},\n");
+    sb.append("  {\"op\":\"setMotion\",\"value\":\"fade\"},\n");
     sb.append("  {\"op\":\"setPreset\",\"value\":\"DARK\"},\n");
     sb.append("  {\"op\":\"setTypography\",\"value\":\"PREMIUM\"},\n");
     sb.append("  {\"op\":\"setHeroLayout\",\"value\":\"center\"},\n");
@@ -363,6 +366,8 @@ public class AcademyAssistantEditService {
     AssistantDesignCatalog.TYPOGRAPHY.forEach((k, v) -> sb.append(k).append("=").append(v).append("; "));
     sb.append("\nsetHeroLayout: center(가운데)|split(좌우 분할)|visual(이미지 중심)|gradient(그라데이션)");
     sb.append("\nsetCardStyle: bordered(테두리)|rounded(둥근)|media(이미지)|minimal(미니멀)");
+    sb.append("\nsetMotion: ");
+    AssistantDesignCatalog.MOTIONS.forEach((k, v) -> sb.append(k).append("=").append(v).append("; "));
     sb.append("\nsetFont key: headingFont|bodyFont, value: PRETENDARD|SUIT|NOTO_SANS_KR|NOTO_SERIF_KR");
     sb.append("\nsetColor key(값은 #RRGGBB): ");
     AssistantDesignCatalog.COLOR_KEYS.forEach((k, v) -> sb.append(k).append("=").append(v).append("; "));
@@ -375,6 +380,12 @@ public class AcademyAssistantEditService {
     AssistantDesignCatalog.SECTIONS.forEach((k, v) -> sb.append(k).append("=").append(v).append("; "));
     sb.append("\n(sec-hero는 항상 맨 위, 바꿀 수 없음)\n\n");
 
+    sb.append("[디자인 자산] (BuildIt2에서 검증한 값 묶음. 요청과 관련 높은 순)\n");
+    for (AssistantAssetCatalog.Asset a : AssistantAssetCatalog.rankedActive(userText, academy.name())) {
+      sb.append("- ").append(a.id()).append(" [").append(a.kind()).append("] ").append(a.label()).append(": ").append(a.summary()).append('\n');
+    }
+    sb.append('\n');
+
     sb.append("[현재 작업본]\n");
     sb.append("학원명: ").append(academy.name()).append('\n');
     if (academy.subjects() != null && !academy.subjects().isEmpty()) {
@@ -384,7 +395,9 @@ public class AcademyAssistantEditService {
     sb.append("디자인: ").append(d.getOrDefault("designPreset", "(미지정)"))
         .append(" / 글꼴: ").append(d.getOrDefault("typographyPreset", "(프리셋 기본)"))
         .append(" / 상단: ").append(d.getOrDefault("heroLayout", "(프리셋 기본)"))
-        .append(" / 카드: ").append(d.getOrDefault("cardStyle", "(프리셋 기본)")).append('\n');
+        .append(" / 카드: ").append(d.getOrDefault("cardStyle", "(프리셋 기본)"))
+        .append(" / 등장 효과: ").append(d.getOrDefault("motionStyle", "(기본)"))
+        .append(" / 적용한 자산: ").append(d.getOrDefault("designAsset", "(없음)")).append('\n');
     StringBuilder colors = new StringBuilder();
     AssistantDesignCatalog.COLOR_KEYS.keySet().forEach(k -> {
       if (d.get(k) != null) colors.append(k).append('=').append(d.get(k)).append(' ');

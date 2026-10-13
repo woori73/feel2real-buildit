@@ -11,8 +11,8 @@
   <th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
 
   <div class="easy-container">
-    <div class="easy-title">수입·지출</div>
-    <p class="easy-sub">모든 거래는 사업체에 연결됩니다.</p>
+    <div class="easy-title">학원 수입·비용 장부</div>
+    <p class="easy-sub">수강료·교재비·환불과 강사료·임차료·운영비를 사업체별로 확인합니다.</p>
 
     <div class="easy-card">
       <div class="section-head">
@@ -118,7 +118,7 @@
           <input type="date" id="qTo">
         </div>
         <div class="form-group">
-          <label for="qBusiness">사업체</label>
+            <label for="qBusiness" class="required">사업체</label>
           <select id="qBusiness"></select>
         </div>
         <div class="form-group">
@@ -135,6 +135,7 @@
         <input type="text" id="qCategory" placeholder="전체 (예: 수강료)">
       </div>
       <button class="btn-secondary" id="btnSearch" type="button">조회하기</button>
+      <p class="desc">표시 상태: COLLECTED → IMPORTED_TO_LEDGER → LEDGER_SAVED → JOURNAL_POSTED</p>
       <p class="desc" id="drillNote" style="display:none"></p>
       <div class="btn-row">
         <button class="btn-secondary" id="btnExport" type="button">CSV 내보내기</button>
