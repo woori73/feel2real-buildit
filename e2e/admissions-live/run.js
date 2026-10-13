@@ -42,6 +42,7 @@ async function post(path, body, auth) {
     out.push({ id: q.id, category: q.category, question: q.question, httpStatus: r.status, ms: Date.now() - t0, model: r.json && r.json.model,
       answer: a, sources, academicYear: r.json && r.json.academicYear, yearConfirmed: r.json && r.json.yearConfirmed, flags,
       staticReference: { grade: q.grade, answer: q.answer } });
+    console.log('RESULT ' + JSON.stringify({ id: q.id, question: q.question, answer: a, sources, academicYear: r.json && r.json.academicYear, flags }));
     console.log(q.id, r.status, (Date.now() - t0) + 'ms', 'sources=' + sources.length, flags.join(','));
     await sleep(7500); // 분당 10회 제한 준수
   }
