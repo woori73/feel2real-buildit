@@ -51,8 +51,17 @@ public class WikiAiRouterClient {
     this.baseUrl = baseUrl;
   }
 
-  /** 완성 요청. {@code systemPrompt}가 null/빈이면 Wiki Router 기본 동작(빈 system)으로 위임한다. */
+  /** 완성 요청. {@code systemPrompt}가 null/빈이면 Wiki Router 기본 동작(빈 system)으로 위임한다. provider는 항상 auto. */
   public Completion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    return complete(systemPrompt, prompt, maxOutputChars, null);
+  }
+
+  /**
+   * provider를 명시한 완성 요청 — Qwen(auto) vs NVIDIA Lightning(nvidia)처럼 동일 프롬프트/근거를
+   * 다른 provider로 비교(A/B)하기 위한 통로. null/빈값이면 기존과 동일한 auto 정책이다.
+   * provider/모델의 실제 해석은 Wiki Router 단일 출처(Python {@code ai_router.generate()})이 한다.
+   */
+  public Completion complete(String systemPrompt, String prompt, int maxOutputChars, String provider) {
     JwtTokenProvider.AuthenticatedPrincipal principal = authenticatedUserResolver.currentPrincipal().orElse(null);
     if (principal == null) {
       return Completion.failed("로그인이 필요합니다.");
@@ -62,7 +71,7 @@ public class WikiAiRouterClient {
       requestBody.put("system", systemPrompt);
     }
     requestBody.put("prompt", prompt);
-    requestBody.put("provider", DEFAULT_PROVIDER);
+    requestBody.put("provider", provider == null || provider.isBlank() ? DEFAULT_PROVIDER : provider);
     requestBody.put("max_output_chars", maxOutputChars);
     try {
       byte[] json = objectMapper.writeValueAsBytes(requestBody);
