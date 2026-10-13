@@ -9,17 +9,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * 입시상담 가이드 채팅 API — 비회원 이용.
  *
  * <p>SecurityConfig에서 {@code /api/admissions/chat}은 permitAll.
- * 남용 방지를 위해 IP 기반 rate limit 적용 (분당 10회, 시간당 60회).
+ * 남용 방지를 위해 IP 기반 rate limit 적용 (분당 10회, 시간당 60회) —
+ * {@link AdmissionsRateLimiter}가 X-Forwarded-For 위조 방지와 기록 상한을 담당한다.
  *
  * <p>에러 상세(provider 응답, exception, stack trace)는 브라우저로 노출하지 않는다.
  */
@@ -29,18 +26,13 @@ public class AdmissionsChatController {
 
     private static final Logger log = LoggerFactory.getLogger(AdmissionsChatController.class);
 
-    /** 분당 최대 요청. */
-    static final int RATE_LIMIT_PER_MINUTE = 10;
-    /** 시간당 최대 요청. */
-    static final int RATE_LIMIT_PER_HOUR = 60;
-
     private final AdmissionsChatService admissionsChatService;
+    private final AdmissionsRateLimiter rateLimiter;
 
-    /** IP → 요청 시각 목록 (rate limit용). */
-    private final Map<String, List<Long>> requestTimes = new ConcurrentHashMap<>();
-
-    public AdmissionsChatController(AdmissionsChatService admissionsChatService) {
+    public AdmissionsChatController(AdmissionsChatService admissionsChatService,
+                                    AdmissionsRateLimiter rateLimiter) {
         this.admissionsChatService = admissionsChatService;
+        this.rateLimiter = rateLimiter;
     }
 
     @PostMapping("/chat")
@@ -48,13 +40,13 @@ public class AdmissionsChatController {
             @RequestBody ChatRequest request,
             jakarta.servlet.http.HttpServletRequest httpRequest) {
         long t0 = System.nanoTime();
-        String clientIp = clientIp(httpRequest);
+        String clientIp = rateLimiter.resolveClientIp(httpRequest);
 
         // rate limit 검사
-        if (!checkRateLimit(clientIp)) {
+        if (!rateLimiter.tryAcquire(clientIp)) {
             log.warn("admissions chat rate limited: ip={}", maskIp(clientIp));
             return ResponseEntity.status(429).body(ChatResponse.failure(
-                    "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", List.of()));
+                    "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", List.<SourceDto>of()));
         }
 
         String message = request == null ? null : request.message();
@@ -64,7 +56,7 @@ public class AdmissionsChatController {
         // 학년도 검증 (2027/2028만 허용)
         if (year != null && year != 2027 && year != 2028) {
             return ResponseEntity.badRequest().body(ChatResponse.failure(
-                    "학년도는 2027 또는 2028만 지정할 수 있습니다.", List.of()));
+                    "학년도는 2027 또는 2028만 지정할 수 있습니다.", List.<SourceDto>of()));
         }
 
         AdmissionsChatService.AdmissionsAnswer answer =
@@ -81,33 +73,6 @@ public class AdmissionsChatController {
         return ResponseEntity.ok(ChatResponse.success(
                 answer.answer(), answer.model(), toSourceDtos(answer.sources()),
                 answer.academicYear(), answer.yearConfirmed()));
-    }
-
-    /**
-     * IP 기반 rate limit. 분당 10회, 시간당 60회 초과 시 false.
-     */
-    boolean checkRateLimit(String ip) {
-        long now = Instant.now().toEpochMilli();
-        long oneMinuteAgo = now - 60_000;
-        long oneHourAgo = now - 3_600_000;
-        List<Long> times = requestTimes.computeIfAbsent(ip, k -> new java.util.ArrayList<>());
-        synchronized (times) {
-            times.removeIf(t -> t < oneHourAgo);
-            long lastMinute = times.stream().filter(t -> t >= oneMinuteAgo).count();
-            if (lastMinute >= RATE_LIMIT_PER_MINUTE || times.size() >= RATE_LIMIT_PER_HOUR) {
-                return false;
-            }
-            times.add(now);
-            return true;
-        }
-    }
-
-    private static String clientIp(jakarta.servlet.http.HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].strip();
-        }
-        return request.getRemoteAddr();
     }
 
     /** IP 마스킹 (로그용). */
