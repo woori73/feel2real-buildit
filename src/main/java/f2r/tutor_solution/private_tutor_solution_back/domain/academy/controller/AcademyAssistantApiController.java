@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.Aca
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService.PublishResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService.StateView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService.TurnResult;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantFeatureFlag;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyWorkingCopyService.WorkingCopyConflictException;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.HeroMediaSlot;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyMediaService;
@@ -40,6 +41,7 @@ public class AcademyAssistantApiController {
   private final AcademyAssistantService service;
   private final AcademyAssistantEditService editService;
   private final AcademyMediaService mediaService;
+  private final AssistantFeatureFlag featureFlag;
 
   /** 시작 화면의 샘플 6종. */
   @GetMapping("/samples")
@@ -51,6 +53,9 @@ public class AcademyAssistantApiController {
   @GetMapping("/state")
   public ResponseEntity<Map<String, Object>> state(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
     StateView v = service.state(principal);
     Map<String, Object> body = new HashMap<>();
     body.put("hasAcademy", v.hasAcademy());
@@ -71,6 +76,9 @@ public class AcademyAssistantApiController {
   public ResponseEntity<Map<String, Object>> turn(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody TurnRequest request) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
     try {
       TurnResult r = service.turn(
           principal, request.message(), request.academyName(), request.sampleKey(), request.region(),
@@ -105,6 +113,9 @@ public class AcademyAssistantApiController {
       @RequestParam("slot") String slot,
       @RequestParam("revision") Long revision,
       @RequestPart("image") MultipartFile image) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
     try {
       HeroMediaSlot parsed = HeroMediaSlot.from(slot);
       String key = mediaService.storeHeroImage(principal, parsed, image);
@@ -137,6 +148,9 @@ public class AcademyAssistantApiController {
   public ResponseEntity<Map<String, Object>> undo(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody UndoRequest request) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
     try {
       EditOutcome out = editService.undo(principal, request == null ? null : request.revision());
       Map<String, Object> body = new HashMap<>();
@@ -149,6 +163,14 @@ public class AcademyAssistantApiController {
     } catch (IllegalArgumentException e) {
       return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
     }
+  }
+
+  /**
+   * 기능 스위치가 꺼져 있거나 허용 목록에 없는 계정이면 서버에서 막는다(화면 숨김만으로는 API가 열려 있었다).
+   * AI 호출·작업본 쓰기·게시가 모두 이 가드 뒤에 있다.
+   */
+  private static ResponseEntity<Map<String, Object>> featureOff() {
+    return noStore(HttpStatus.FORBIDDEN, Map.of("code", "ASSISTANT_DISABLED", "message", "대화형 홈페이지 제작은 아직 사용할 수 없어요."));
   }
 
   private static void putEdit(Map<String, Object> body, EditOutcome out) {
@@ -178,6 +200,9 @@ public class AcademyAssistantApiController {
   public ResponseEntity<Map<String, Object>> publish(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestBody PublishRequest request) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
     if (request == null || request.revision() == null) {
       return noStore(HttpStatus.BAD_REQUEST, Map.of("message", "revision이 필요합니다."));
     }

@@ -243,6 +243,7 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 #### 대화형 화면 `/builder` 기능 스위치 (2-B)
 
 - 설정: `buildit.assistant.enabled`(기본 `false`), `buildit.assistant.tutor-login-ids`(쉼표 목록, 비우면 모든 TUTOR). 꺼져 있으면 기존 빌더만 쓴다.
+- **서버 차단**: 스위치가 꺼져 있거나 로그인 ID가 허용 목록에 없으면 `GET /state`, `POST /turn`, `POST /undo`, `POST /publish`, `POST /media`가 `403 {code:"ASSISTANT_DISABLED"}`로 막히고 AI 호출·작업본 쓰기·게시가 일어나지 않는다(화면만 숨기지 않는다). `GET /media/{slot}`(작업본 사진 미리보기)과 `GET /samples`는 AI·쓰기가 없어 가드하지 않으며, 기존 빌더의 `/working-copy/**`는 스위치와 무관하다.
 - 켜진 경우 `/builder`는 (학원이 없음) 또는 (대화로 만든 학원: `academy_assistant_message` 기록 있음)일 때 대화형 화면(`tutor/assistant_home`)을 연다. 기존 방식으로 만든 학원은 공개 데이터 보호를 위해 항상 기존 빌더로 간다.
 - `/builder?classic=1`은 언제나 기존 빌더를 연다(화면의 '기존 빌더로 돌아가기'). 기존 편집기·빌더 경로는 그대로다.
 
