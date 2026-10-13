@@ -1668,6 +1668,8 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 학원당 AI 대화 한 줄기. **academy_assistant_message**: `message_id` PK, `academy_id` FK(ON DELETE CASCADE), `role`(USER/ASSISTANT), `kind`(TEXT/RESULT/QUESTION), `content`, `payload_json`(결과 카드의 revision·프리셋·안내), `created_at`. 인덱스 `(academy_id, message_id)`. 신규 테이블만 추가한다.
 
+**2-C(S1) 추가 kind (스키마 변경 없음)**: `EDIT`(수정 1회; payload `{revisionBefore, revisionAfter, undo{introChanged,introBefore,draftBefore,visibilityBefore,orderBefore}, changes[]}`), `UNDO`(payload `{undoes:<EDIT message_id>, revision}`), `PUBLISHED`(payload `{revisionAfter}`). 되돌리기 스택 = EDIT push, UNDO가 `undoes` 항목 pop, PUBLISHED는 스택을 비운다. 현재 작업본 revision이 마지막 기록의 revision과 다르면 되돌리기를 거부한다.
+
 **최초 게시 규칙**: 코드에 DRAFT→PUBLISHED 전환 경로가 따로 없었다(`createDraft`는 "공개는 별도 발행"이라고만 명시). 이제 `POST /api/tutor/academy/assistant/publish`가 작업본 게시와 `Academy.publishIfDraft()`를 한 트랜잭션으로 처리한다. `visible` 스위치는 건드리지 않는다.
 
 ### academy_admin_working_copy / academy_admin_audit ✅ 관리자 홈페이지 관리 (V1062)

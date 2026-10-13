@@ -42,7 +42,7 @@ import org.springframework.stereotype.Service;
 public class AcademyAiContextService {
 
   /** 사람이 읽는 섹션 이름. {@code STYLE_PANEL_SECTION_NAMES}(academy_builder.js)와 맞춘다. */
-  private static final Map<String, String> SECTION_LABELS = Map.ofEntries(
+  static final Map<String, String> SECTION_LABELS = Map.ofEntries(
       Map.entry("sec-hero", "히어로 배너"),
       Map.entry("sec-featured", "Featured · 시즌 프로그램"),
       Map.entry("sec-intro", "학원 소개"),

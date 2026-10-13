@@ -226,9 +226,15 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 | `GET /samples` | 시작 화면 샘플 6종 `[{key,title,description,preset,...}]` (입시·내신 전문/초중등 영어/영어회화/종합학원/프리미엄/미니멀 → 기존 프리셋) |
 | `GET /state` | `{hasAcademy, status, messages[]}` 화면 복원용. 조회만 한다 |
 | `POST /turn` | `{message?, academyName?, sampleKey?, region?}`. 학원이 없으면 이름→(과목·대상·지역 부족 시 `needs`로 되묻기)→DRAFT 학원+작업본 생성. 이미 학원이 있으면 새로 만들지 않는다(수정 턴은 2-C). 응답 `{reply, needs[], created, academyId, revision, designPreset, notes[]}` |
+| `POST /undo` | `{revision}` 마지막 수정 1단계 되돌리기(여러 번 가능). 응답 `{reply, changes[], undoDepth, revision}`. 스택은 `academy_assistant_message`의 EDIT/UNDO/PUBLISHED로 계산하며 현재 revision이 마지막 기록의 `revisionAfter`와 다르면(다른 탭·화면에서 바뀜) `409 REVISION_CONFLICT` |
 | `POST /publish` | `{revision, force?}` '게시하기' 하나. 작업본을 공개본에 반영하고, DRAFT면 같은 트랜잭션에서 PUBLISHED로 전환. 응답 `{firstPublish, revision}`. 오류는 작업본 API와 동일(`409 REVISION_CONFLICT/LIVE_CHANGED`) |
 
 주소·전화번호·강사·수강료는 사용자가 말하기 전까지 채우지 않는다. 지역은 사용자가 직접 한 말/입력에서만 받는다.
+
+**2-C(S1) 추가 — 대화형 반복 수정**: 학원이 이미 있으면 `POST /turn`은 새로 만들지 않고 수정 턴으로 처리한다. 요청에 `revision`(화면이 보고 있는 작업본 revision)을 함께 보낸다. 응답에 `edited`, `failed`, `changes[{label,before,after,sectionId}]`, `skipped[]`, `engine`(`AI`/`RULE`), `aiMs`, `undoDepth`, `revision`, `question`이 추가된다.
+- 흐름: 작업본 읽기 → AI 해석(트랜잭션 밖; 실패 시 규칙 해석기로 대체) → 서버 검증(`AssistantPatchApplier.plan`) → 작업본 저장(`AcademyWorkingCopyService.save`, 낙관적 revision). **공개 데이터를 직접 쓰는 기존 경로(`AcademyAiApplyService`)는 쓰지 않는다.** 공개본은 `publish`에서만 바뀐다.
+- 패치 연산(`ops`, 한 턴 최대 12개): `setPreset`, `setColor`(#hex), `setTypography`, `setFont`, `setHeroLayout`, `setCardStyle`, `setText`(허용 키만, 120자/긴 문구 600자), `setIntro`, `showSection`/`hideSection`, `moveSection`(first|last|before|after). 허용 값은 `AssistantDesignCatalog`가 정의하며 목록 밖 값·알 수 없는 연산은 `skipped`로 버려진다. 전화·금액·URL·두 자리 이상 숫자는 사용자 말이나 현재 값에 없으면 거부(사실 가드).
+- 오류: 해석 불가/AI 실패는 작업본을 바꾸지 않고 `failed` 또는 `question`으로 안내. 동시 수정은 `409 REVISION_CONFLICT`. `GET /state`에 `undoDepth` 추가.
 
 **2-B 추가**: `POST /turn`에 `subject`(과목 이름), `target`(대상 문구) 필드 추가. 과목·대상은 사용자가 말했거나 샘플 문구가 직접 말한 경우에만 확정하고, 아니면 `needs`로 되묻는다(종합학원·프리미엄·미니멀 샘플은 과목을 정하지 않음). `GET /state`는 `revision`, `dirty`, `publicUrl`을 함께 돌려준다.
 

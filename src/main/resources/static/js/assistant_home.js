@@ -1,19 +1,19 @@
 /**
- * BuildIt 대화형 홈페이지 화면 (2-B).
- * API: /api/tutor/academy/assistant/{samples,state,turn,publish} (docs/API.md)
- * 미리보기: /tutor/academy/preview (비공개 작업본). 서버가 준 문자열은 textContent로만 넣는다(XSS 방지).
+ * BuildIt 대화형 홈페이지 화면 (2-A 생성 · 2-B 미리보기 · 2-C 대화 수정/되돌리기).
+ * API: /api/tutor/academy/assistant/{samples,state,turn,undo,publish} (docs/API.md)
+ *
+ * 화면 흐름: 시작 화면(신규) → 생성 대화(부족한 정보 되묻기) → 작업 화면(결과물 미리보기 + 하단 대화 입력).
+ * 작업 화면의 모든 수정은 비공개 작업본에만 적용되고, 공개 홈페이지는 '게시하기'에서만 바뀐다.
+ * 서버가 준 문자열은 textContent로만 넣는다(XSS 방지).
  */
 (function () {
   'use strict';
   var API = '/api/tutor/academy/assistant';
   var PREVIEW = '/tutor/academy/preview';
+  var DEVICES = { mobile: 390, tablet: 820, desktop: 1280 };
   var PRESET_COLORS = {
     EXAM: ['#0c238a', '#4a7fd4'], ENGLISH: ['#0f766e', '#f59e0b'], DYNAMIC: ['#e11d48', '#f97316'],
     STUDY: ['#2563eb', '#16a34a'], DARK: ['#111827', '#d4af37'], MINIMAL: ['#ffffff', '#111827']
-  };
-  var PRESET_NAMES = {
-    EXAM: '입시학원형', ENGLISH: '영어회화형', ARTS: '예체능형', STUDY: '공부방형', ONLINE: '온라인학원형',
-    MINIMAL: '미니멀형', DARK: '다크형', WARM: '감성형', PHOTO: '포토형', DYNAMIC: '다이나믹형'
   };
   var QUESTIONS = {
     academyName: '학원 이름을 알려 주세요.',
@@ -22,15 +22,18 @@
     subject: '어떤 과목을 가르치나요? (예: 영어, 수학)',
     target: '어떤 학생을 가르치나요? (예: 초등학생, 중학생, 고등학생)'
   };
-  var FIELD_OF_NEED = {
-    academyName: 'name', description: 'description', region: 'region', subject: 'subject', target: 'target'
-  };
-  var PROGRESS = ['학원 정보 정리', '소개 문구 작성', '디자인 적용', '미리보기 준비'];
+  var FIELD_OF_NEED = { academyName: 'name', description: 'description', region: 'region', subject: 'subject', target: 'target' };
+  var CREATE_STEPS = ['학원 정보 정리', '소개 문구 작성', '디자인 적용', '미리보기 준비'];
+  var EDIT_STEPS = ['요청을 이해하는 중', '변경 계획을 세우는 중', '작업본에 적용하는 중', '미리보기를 새로 그리는 중'];
+  var CHIPS = ['더 고급스럽게 바꿔 줘', '밝고 친근한 분위기로', '깔끔하게 정리해 줘', '주색을 파란색으로', '수업 영상 섹션 숨겨 줘', '상담 신청을 맨 위로'];
 
   var $ = function (id) { return document.getElementById(id); };
-  var ctx = { name: '', description: '', region: '', subject: '', target: '', sampleKey: null,
-    pendingNeed: null, created: false, revision: null, status: null, publicUrl: null, busy: false };
+  var ctx = {
+    name: '', description: '', region: '', subject: '', target: '', sampleKey: null, pendingNeed: null,
+    created: false, revision: null, status: null, publicUrl: null, busy: false, undoDepth: 0, dirty: false, dev: 'mobile'
+  };
   var samples = [];
+  var history = [];
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -45,18 +48,24 @@
       body: body ? JSON.stringify(body) : undefined
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
-        if (!r.ok) { var err = new Error(j.message || '요청을 처리하지 못했어요.'); err.status = r.status; err.code = j.code; throw err; }
+        if (!r.ok) {
+          var err = new Error(j.message || '요청을 처리하지 못했어요.');
+          err.status = r.status; err.code = j.code; err.details = j.details; throw err;
+        }
         return j;
       });
     });
   }
+  function toast(msg) {
+    var t = $('ahToast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 3500);
+  }
 
-  /* ───── 화면 전환 ───── */
+  /* ───── 시작 화면 · 생성 대화 ───── */
   function showChat() { $('ahStart').hidden = true; $('ahChat').hidden = false; }
   function scrollDown() { var m = $('ahMessages'); m.scrollTop = m.scrollHeight; }
   function bubble(role, text) { var b = el('div', 'ah-msg ' + role, text); $('ahMessages').appendChild(b); scrollDown(); return b; }
 
-  /* ───── 샘플 ───── */
   function renderSamples() {
     var box = $('ahSamples'); box.textContent = '';
     samples.forEach(function (s) {
@@ -80,109 +89,44 @@
     Array.prototype.forEach.call($('ahSamples').children, function (b) { b.setAttribute('aria-pressed', 'false'); });
   }
 
-  /* ───── 생성 턴 ───── */
-  function progressBubble() {
-    var b = el('div', 'ah-msg bot'); var ul = el('ul', 'ah-steps');
-    var items = PROGRESS.map(function (t) { var li = el('li', null, t); ul.appendChild(li); return li; });
-    b.appendChild(ul); $('ahMessages').appendChild(b); scrollDown();
+  /** 진행 상태 표시: steps를 순서대로 'now'로 옮기고, 마지막 단계에서 응답을 기다린다. */
+  function progress(listEl, steps, intervalMs) {
+    listEl.textContent = '';
+    var items = steps.map(function (t) { var li = el('li', null, t); listEl.appendChild(li); return li; });
     var i = 0; items[0].className = 'now';
     var timer = setInterval(function () {
       if (i < items.length - 1) { items[i].className = 'done'; i++; items[i].className = 'now'; }
-    }, 2200);
-    return { stop: function () { clearInterval(timer); if (b.parentNode) b.parentNode.removeChild(b); } };
+    }, intervalMs);
+    return { stop: function () { clearInterval(timer); } };
   }
 
-  function sendTurn() {
+  function sendCreateTurn() {
     if (ctx.busy) return;
-    ctx.busy = true; setBusy(true);
-    var p = progressBubble();
+    ctx.busy = true; setCreateBusy(true);
+    var b = el('div', 'ah-msg bot'); var ul = el('ul', 'ah-steps'); b.appendChild(ul);
+    $('ahMessages').appendChild(b); scrollDown();
+    var p = progress(ul, CREATE_STEPS, 2200);
     api('POST', '/turn', {
       academyName: ctx.name, sampleKey: ctx.sampleKey, message: ctx.description,
       region: ctx.region, subject: ctx.subject, target: ctx.target
     }).then(function (r) {
-      p.stop();
+      p.stop(); if (b.parentNode) b.parentNode.removeChild(b);
       if (r.created) {
-        ctx.created = true; ctx.revision = r.revision; ctx.status = 'DRAFT'; ctx.pendingNeed = null;
-        bubble('bot', r.reply);
-        resultCard(r.designPreset, r.notes || []);
+        ctx.created = true; ctx.revision = r.revision; ctx.status = 'DRAFT'; ctx.pendingNeed = null; ctx.dirty = true; ctx.undoDepth = 0;
+        history = [{ role: 'USER', kind: 'TEXT', content: '학원 이름: ' + ctx.name + (ctx.description ? '\n' + ctx.description : '') },
+          { role: 'ASSISTANT', kind: 'RESULT', content: r.reply }];
+        enterWork({ reply: r.reply, notes: r.notes || [] });
       } else if (r.needs && r.needs.length) {
         ctx.pendingNeed = r.needs[0]; bubble('bot', QUESTIONS[ctx.pendingNeed] || r.reply);
       } else {
         ctx.pendingNeed = null; bubble('bot', r.reply);
       }
     }).catch(function (e) {
-      p.stop(); bubble('bot', e.message);
-    }).then(function () { ctx.busy = false; setBusy(false); });
+      p.stop(); if (b.parentNode) b.parentNode.removeChild(b); bubble('bot', e.message);
+    }).then(function () { ctx.busy = false; setCreateBusy(false); });
   }
-  function setBusy(b) { $('ahSend').disabled = b; $('ahStartBtn').disabled = b; }
+  function setCreateBusy(b) { $('ahSend').disabled = b; $('ahStartBtn').disabled = b; }
 
-  /* ───── 결과 카드 ───── */
-  function resultCard(preset, notes, published) {
-    var card = el('div', 'ah-result');
-    var thumb = el('div', 'ah-thumb'); var inner = el('div', 'inner'); var f = el('iframe');
-    f.src = PREVIEW + '?t=' + Date.now(); f.setAttribute('tabindex', '-1'); f.title = '미리보기 축소판';
-    inner.appendChild(f); thumb.appendChild(inner); card.appendChild(thumb);
-    var body = el('div', 'ah-resbody');
-    body.appendChild(el('h3', null, ctx.name || '내 학원 홈페이지'));
-    body.appendChild(el('span', 'ah-badge', (PRESET_NAMES[preset] || '디자인') + ' · ' + (published ? '게시됨' : '비공개 초안')));
-    if (notes.length) { var ul = el('ul', 'ah-notes'); notes.forEach(function (n) { ul.appendChild(el('li', null, n)); }); body.appendChild(ul); }
-    card.appendChild(body);
-    var act = el('div', 'ah-actions');
-    var full = el('button', 'ah-secondary', '전체 화면으로 보기'); full.type = 'button'; full.addEventListener('click', openFull);
-    var pub = el('button', 'ah-primary', '게시하기'); pub.type = 'button'; pub.addEventListener('click', publish);
-    act.appendChild(full); act.appendChild(pub); card.appendChild(act);
-    $('ahMessages').appendChild(card); scrollDown();
-  }
-
-  /* ───── 전체 화면 ───── */
-  function openFull() {
-    $('ahFrame').src = PREVIEW + '?t=' + Date.now();
-    $('ahFull').hidden = false; document.body.style.overflow = 'hidden'; $('ahBack').focus();
-  }
-  function closeFull() { $('ahFull').hidden = true; document.body.style.overflow = ''; }
-  function setDevice(mobile) {
-    $('ahFrame').className = mobile ? 'mobile' : 'desktop';
-    $('ahDevMobile').classList.toggle('on', mobile); $('ahDevMobile').setAttribute('aria-pressed', String(mobile));
-    $('ahDevDesktop').classList.toggle('on', !mobile); $('ahDevDesktop').setAttribute('aria-pressed', String(!mobile));
-  }
-  function toast(msg) {
-    var t = $('ahToast'); t.textContent = msg; t.hidden = false;
-    clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 3500);
-  }
-
-  /* 강제 게시 시 덮어쓰게 될 공개 내용(서버가 공개→작업본 차이를 계산해 409에 실어 준다) */
-  function overwriteText(d) {
-    if (!d) return '';
-    var lines = [];
-    if (d.introChanged) lines.push('· 소개 문구: "' + (d.introBefore || '') + '" → "' + (d.introAfter || '') + '"');
-    (d.builderDraftChanges || []).forEach(function (c) {
-      lines.push('· ' + (c.key === 'designPreset' ? '디자인' : c.key) + ': "' + (c.before || '') + '" → "' + (c.after || '') + '"');
-    });
-    (d.changedSettings || []).forEach(function (k) { lines.push('· 설정 변경: ' + k); });
-    return lines.length ? '\n\n덮어쓰게 될 공개 내용(현재 공개 → 게시 후):\n' + lines.join('\n') : '';
-  }
-
-  /* ───── 게시하기 (최초/수정 모두 같은 버튼) ───── */
-  function publish(force) {
-    if (ctx.busy || ctx.revision == null) return;
-    ctx.busy = true;
-    api('POST', '/publish', { revision: ctx.revision, force: force === true }).then(function (r) {
-      ctx.revision = r.revision; ctx.status = 'PUBLISHED';
-      var msg = r.firstPublish ? '게시했어요! 이제 누구나 홈페이지를 볼 수 있어요.' : '수정한 내용을 게시했어요.';
-      toast(msg); bubble('bot', msg);
-      return api('GET', '/state').then(function (s) {
-        ctx.publicUrl = s.publicUrl;
-        if (s.publicUrl) { var a = el('a', 'ah-msg bot', s.publicUrl); a.href = s.publicUrl; a.target = '_blank'; a.rel = 'noopener'; $('ahMessages').appendChild(a); scrollDown(); }
-      });
-    }).catch(function (e) {
-      if (e.status === 409 && e.code === 'LIVE_CHANGED' && window.confirm(e.message + overwriteText(e.details) + '\n\n그래도 지금 내용으로 게시할까요?')) {
-        ctx.busy = false; return publish(true);
-      }
-      toast(e.message); bubble('bot', e.message);
-    }).then(function () { ctx.busy = false; });
-  }
-
-  /* ───── 입력 처리 ───── */
   function submitStart(ev) {
     ev.preventDefault();
     ctx.name = $('ahName').value.trim(); ctx.description = $('ahDesc').value.trim();
@@ -192,47 +136,274 @@
     var sample = samples.filter(function (s) { return s.key === ctx.sampleKey; })[0];
     if (sample) label += '\n샘플: ' + sample.title;
     bubble('user', label);
-    sendTurn();
+    sendCreateTurn();
   }
   function submitChat(ev) {
     ev.preventDefault();
     var text = $('ahInput').value.trim(); if (!text || ctx.busy) return;
     $('ahInput').value = ''; bubble('user', text);
-    if (ctx.pendingNeed) { ctx[FIELD_OF_NEED[ctx.pendingNeed]] = text; sendTurn(); return; }
-    if (ctx.created) {
-      ctx.busy = true;
-      api('POST', '/turn', { message: text }).then(function (r) { bubble('bot', r.reply); })
-        .catch(function (e) { bubble('bot', e.message); }).then(function () { ctx.busy = false; });
+    if (ctx.pendingNeed) { ctx[FIELD_OF_NEED[ctx.pendingNeed]] = text; sendCreateTurn(); }
+  }
+
+  /* ───── 작업 화면 ───── */
+  function enterWork(opts) {
+    $('ahApp').classList.add('work');
+    $('ahStart').hidden = true; $('ahChat').hidden = true;
+    var top = document.querySelector('.ah-top'); if (top) top.hidden = true;
+    $('ahWork').hidden = false;
+    renderChips(); renderStatus(); renderUndo(); setDevice(ctx.dev);
+    loadPreview(null);
+    if (opts && opts.reply) {
+      var extra = (opts.notes || []).join('\n');
+      showStrip(opts.reply + (extra ? '\n' + extra : ''), false, []);
     }
   }
 
-  /* ───── 복원 ───── */
-  function restore(s) {
-    showChat(); ctx.created = true; ctx.revision = s.revision; ctx.status = s.status; ctx.publicUrl = s.publicUrl;
-    var lastResult = -1;
-    (s.messages || []).forEach(function (m, i) { if (m.kind === 'RESULT') lastResult = i; });
-    (s.messages || []).forEach(function (m, i) {
-      if (m.kind === 'RESULT' && i === lastResult) {
-        bubble('bot', m.content);
-        var payload = {}; try { payload = JSON.parse(m.payloadJson || '{}'); } catch (e) { /* 무시 */ }
-        resultCard(payload.designPreset, payload.notes || [], s.status === 'PUBLISHED' && !s.dirty);
-      } else {
-        bubble(m.role === 'USER' ? 'user' : 'bot', m.content);
-      }
+  function renderStatus() {
+    var s = $('ahStatus'); s.textContent = '';
+    s.appendChild(el('b', null, ctx.status === 'PUBLISHED' ? '게시됨' : '비공개 초안'));
+    if (ctx.dirty) s.appendChild(document.createTextNode(' · 수정 있음'));
+  }
+  function renderUndo() {
+    $('ahUndoCount').textContent = String(ctx.undoDepth);
+    $('ahUndo').disabled = ctx.busy || ctx.undoDepth < 1;
+    $('ahStripUndo').hidden = ctx.undoDepth < 1;
+  }
+  function renderChips() {
+    var box = $('ahChips'); box.textContent = '';
+    CHIPS.forEach(function (c) {
+      var b = el('button', 'ah-chip', c); b.type = 'button';
+      b.addEventListener('click', function () { sendEdit(c); });
+      box.appendChild(b);
     });
+  }
+  function setDockBusy(b) {
+    $('ahWorkSend').disabled = b; $('ahWorkInput').disabled = b; $('ahPublish').disabled = b;
+    Array.prototype.forEach.call($('ahChips').children, function (c) { c.disabled = b; });
+    renderUndo();
+  }
+
+  /** 변경 요약 목록(이전 → 이후). 섹션이 있는 변경은 '보기'로 미리보기를 그 위치로 스크롤한다. */
+  function renderChanges(ul, changes) {
+    ul.textContent = '';
+    (changes || []).forEach(function (c) {
+      var li = el('li');
+      li.appendChild(el('b', null, c.label + ': '));
+      if (c.before) { li.appendChild(el('s', null, c.before)); li.appendChild(document.createTextNode(' → ')); }
+      li.appendChild(document.createTextNode(c.after));
+      if (c.sectionId) {
+        var go = el('button', null, '보기'); go.type = 'button';
+        go.addEventListener('click', function () { scrollPreviewTo(c.sectionId); });
+        li.appendChild(go);
+      }
+      ul.appendChild(li);
+    });
+  }
+  function showStrip(text, isError, changes) {
+    var strip = $('ahStrip'); strip.hidden = false; strip.classList.toggle('err', !!isError);
+    $('ahStripText').textContent = text;
+    renderChanges($('ahChanges'), changes);
+    renderUndo();
+  }
+
+  /* 미리보기 — 같은 비공개 작업본 페이지를 기기 폭으로 맞춰 보여 준다 */
+  function fit() {
+    var stage = $('ahStage'); if (!stage || $('ahWork').hidden) return;
+    var W = DEVICES[ctx.dev] || 390;
+    var availW = Math.max(200, stage.clientWidth - 24), availH = Math.max(200, stage.clientHeight - 24);
+    var scale = Math.min(1, availW / W);
+    var wrap = $('ahFrameWrap'), dev = $('ahDevice');
+    wrap.style.width = Math.round(W * scale) + 'px'; wrap.style.height = availH + 'px';
+    dev.style.width = W + 'px'; dev.style.height = Math.round(availH / scale) + 'px';
+    dev.style.transform = 'scale(' + scale + ')';
+  }
+  function setDevice(dev) {
+    ctx.dev = dev;
+    Array.prototype.forEach.call(document.querySelectorAll('.ah-seg [data-dev]'), function (b) {
+      var on = b.dataset.dev === dev; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+    });
+    fit();
+  }
+  var previewTimer = null;
+  function loadPreview(sectionId) {
+    var f = $('ahFrame'); f.src = PREVIEW + '?t=' + Date.now();
+    if (sectionId) { f.addEventListener('load', function once() { f.removeEventListener('load', once); scrollPreviewTo(sectionId); }); }
+  }
+  /** 공개 페이지는 로드 뒤 비동기로 그려지므로 대상 섹션이 생길 때까지 잠시 기다린 뒤 스크롤한다. */
+  function scrollPreviewTo(sectionId) {
+    clearInterval(previewTimer); var tries = 0;
+    previewTimer = setInterval(function () {
+      tries++;
+      try {
+        var doc = $('ahFrame').contentDocument; var t = doc && doc.getElementById(sectionId);
+        if (t) { t.scrollIntoView({ block: 'start', behavior: 'smooth' }); clearInterval(previewTimer); }
+      } catch (e) { clearInterval(previewTimer); }
+      if (tries > 25) clearInterval(previewTimer);
+    }, 200);
+  }
+
+  /* 수정 턴 */
+  function sendEdit(text) {
+    text = String(text || '').trim();
+    if (!text || ctx.busy) return;
+    ctx.busy = true; setDockBusy(true);
+    $('ahWorkInput').value = '';
+    var busyBox = $('ahBusy'); busyBox.hidden = false;
+    var p = progress($('ahBusySteps'), EDIT_STEPS, 1600);
+    history.push({ role: 'USER', kind: 'TEXT', content: text });
+    api('POST', '/turn', { message: text, revision: ctx.revision }).then(function (r) {
+      p.stop(); busyBox.hidden = true;
+      if (r.revision != null) ctx.revision = r.revision;
+      if (r.undoDepth != null) ctx.undoDepth = r.undoDepth;
+      history.push({ role: 'ASSISTANT', kind: r.edited ? 'EDIT' : 'TEXT', content: r.reply, payload: { changes: r.changes } });
+      if (r.edited) {
+        ctx.dirty = true;
+        var first = (r.changes || []).filter(function (c) { return c.sectionId; })[0];
+        showStrip(r.reply, false, r.changes);
+        loadPreview(first ? first.sectionId : null);
+      } else {
+        showStrip(r.reply, !!r.failed, []);
+      }
+      renderStatus();
+    }).catch(function (e) {
+      p.stop(); busyBox.hidden = true; history.pop();
+      if (e.status === 409 && e.code === 'REVISION_CONFLICT') {
+        showStrip(e.message + ' 최신 작업본을 다시 불러왔어요. 같은 요청을 다시 보내 주세요.', true, []);
+        $('ahWorkInput').value = text;
+        return refresh();
+      }
+      showStrip((e.message || '요청을 처리하지 못했어요.') + ' 작업본은 그대로예요.', true, []);
+      $('ahWorkInput').value = text; // 입력 보존: 다시 보낼 수 있다
+    }).then(function () { ctx.busy = false; setDockBusy(false); });
+  }
+
+  function undo() {
+    if (ctx.busy || ctx.undoDepth < 1) return;
+    ctx.busy = true; setDockBusy(true);
+    api('POST', '/undo', { revision: ctx.revision }).then(function (r) {
+      if (r.revision != null) ctx.revision = r.revision;
+      if (r.undoDepth != null) ctx.undoDepth = r.undoDepth;
+      history.push({ role: 'USER', kind: 'TEXT', content: '되돌리기' });
+      history.push({ role: 'ASSISTANT', kind: 'UNDO', content: r.reply, payload: { changes: r.changes } });
+      if (r.failed) { showStrip(r.reply, true, []); return; }
+      ctx.dirty = true; showStrip(r.reply, false, r.changes);
+      var first = (r.changes || []).filter(function (c) { return c.sectionId; })[0];
+      loadPreview(first ? first.sectionId : null); renderStatus();
+    }).catch(function (e) {
+      if (e.status === 409) { showStrip(e.message + ' 최신 작업본을 다시 불러왔어요.', true, []); return refresh(); }
+      showStrip(e.message || '되돌리지 못했어요. 작업본은 그대로예요.', true, []);
+    }).then(function () { ctx.busy = false; setDockBusy(false); });
+  }
+
+  /** 서버 상태로 화면을 맞춘다(재진입·충돌 후). */
+  function refresh() {
+    return api('GET', '/state').then(function (s) {
+      ctx.revision = s.revision; ctx.undoDepth = s.undoDepth || 0; ctx.status = s.status; ctx.dirty = !!s.dirty; ctx.publicUrl = s.publicUrl;
+      history = (s.messages || []).map(function (m) {
+        var payload = null; try { payload = m.payloadJson ? JSON.parse(m.payloadJson) : null; } catch (e) { /* 무시 */ }
+        return { role: m.role, kind: m.kind, content: m.content, payload: payload };
+      });
+      renderStatus(); renderUndo(); loadPreview(null);
+    });
+  }
+
+  /* 게시 — 최종 사용자 승인(확인 창) 뒤에만 공개된다 */
+  var forcePublish = false;
+  function openConfirm() {
+    if (ctx.busy) return;
+    if (!ctx.dirty && ctx.status === 'PUBLISHED') { toast('게시할 변경이 없어요.'); return; }
+    forcePublish = false;
+    $('ahConfirmTitle').textContent = ctx.status === 'PUBLISHED' ? '수정 내용을 게시할까요?' : '홈페이지를 처음 게시할까요?';
+    $('ahConfirmText').textContent = ctx.status === 'PUBLISHED'
+      ? '지금 미리보기의 내용이 공개 홈페이지에 반영돼요. 게시 전 공개 내용은 버전 기록에 보관돼요.'
+      : '게시하면 누구나 홈페이지를 볼 수 있어요. 미리보기에서 내용을 확인하셨나요?';
+    $('ahConfirmDetail').hidden = true; $('ahConfirmOk').textContent = '게시하기';
+    $('ahConfirm').hidden = false; $('ahConfirmOk').focus();
+  }
+  function closeConfirm() { $('ahConfirm').hidden = true; }
+  function overwriteText(d) {
+    if (!d) return '';
+    var lines = [];
+    if (d.introChanged) lines.push('· 소개 문구: "' + (d.introBefore || '') + '" → "' + (d.introAfter || '') + '"');
+    (d.builderDraftChanges || []).forEach(function (c) { lines.push('· ' + c.key + ': "' + (c.before || '') + '" → "' + (c.after || '') + '"'); });
+    (d.changedSettings || []).forEach(function (k) { lines.push('· 설정 변경: ' + k); });
+    return lines.join('\n');
+  }
+  function doPublish() {
+    if (ctx.busy || ctx.revision == null) return;
+    ctx.busy = true; $('ahConfirmOk').disabled = true;
+    api('POST', '/publish', { revision: ctx.revision, force: forcePublish }).then(function (r) {
+      ctx.revision = r.revision; ctx.status = 'PUBLISHED'; ctx.dirty = false; ctx.undoDepth = 0;
+      closeConfirm();
+      var msg = r.firstPublish ? '게시했어요! 이제 누구나 홈페이지를 볼 수 있어요.' : '수정한 내용을 게시했어요.';
+      history.push({ role: 'ASSISTANT', kind: 'PUBLISHED', content: msg });
+      toast(msg); showStrip(msg, false, []);
+      return api('GET', '/state').then(function (s) {
+        ctx.publicUrl = s.publicUrl;
+        if (s.publicUrl) {
+          var a = el('a', 'ah-link', s.publicUrl); a.href = s.publicUrl; a.target = '_blank'; a.rel = 'noopener';
+          $('ahStripText').appendChild(document.createElement('br')); $('ahStripText').appendChild(a);
+        }
+      });
+    }).catch(function (e) {
+      if (e.status === 409 && e.code === 'LIVE_CHANGED') {
+        forcePublish = true;
+        $('ahConfirmTitle').textContent = '공개 내용이 먼저 바뀌었어요';
+        $('ahConfirmText').textContent = e.message;
+        var d = overwriteText(e.details); $('ahConfirmDetail').textContent = d; $('ahConfirmDetail').hidden = !d;
+        $('ahConfirmOk').textContent = '그래도 게시';
+        return;
+      }
+      closeConfirm(); showStrip(e.message || '게시하지 못했어요.', true, []);
+    }).then(function () { ctx.busy = false; $('ahConfirmOk').disabled = false; renderStatus(); renderUndo(); });
+  }
+
+  /* 대화 기록 시트 */
+  function openHistory() {
+    var list = $('ahHistoryList'); list.textContent = '';
+    history.forEach(function (m) {
+      var mine = m.role === 'USER';
+      var b = el('div', 'ah-msg ' + (mine ? 'user' : 'bot') + (m.kind === 'EDIT' || m.kind === 'UNDO' ? ' edit' : ''), m.content);
+      if (!mine && m.payload && m.payload.changes && m.payload.changes.length) {
+        var ul = el('ul', 'ah-changes'); renderChanges(ul, m.payload.changes); b.appendChild(ul);
+      }
+      list.appendChild(b);
+    });
+    $('ahHistory').hidden = false; list.scrollTop = list.scrollHeight;
   }
 
   function init() {
     $('ahStartForm').addEventListener('submit', submitStart);
     $('ahComposer').addEventListener('submit', submitChat);
     $('ahChosenClear').addEventListener('click', clearSample);
-    $('ahBack').addEventListener('click', closeFull);
-    $('ahDevMobile').addEventListener('click', function () { setDevice(true); });
-    $('ahDevDesktop').addEventListener('click', function () { setDevice(false); });
-    $('ahFullPublish').addEventListener('click', function () { publish(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('ahFull').hidden) closeFull(); });
+    $('ahWorkComposer').addEventListener('submit', function (ev) { ev.preventDefault(); sendEdit($('ahWorkInput').value); });
+    $('ahUndo').addEventListener('click', undo);
+    $('ahStripUndo').addEventListener('click', undo);
+    $('ahPublish').addEventListener('click', openConfirm);
+    $('ahConfirmCancel').addEventListener('click', closeConfirm);
+    $('ahConfirmOk').addEventListener('click', doPublish);
+    $('ahShowHistory').addEventListener('click', openHistory);
+    $('ahHistoryClose').addEventListener('click', function () { $('ahHistory').hidden = true; });
+    Array.prototype.forEach.call(document.querySelectorAll('.ah-seg [data-dev]'), function (b) {
+      b.addEventListener('click', function () { setDevice(b.dataset.dev); });
+    });
+    window.addEventListener('resize', fit);
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (!$('ahConfirm').hidden) closeConfirm(); else if (!$('ahHistory').hidden) $('ahHistory').hidden = true;
+    });
     api('GET', '/samples').then(function (list) { samples = list; renderSamples(); }).catch(function () { /* 샘플 없이도 시작 가능 */ });
-    api('GET', '/state').then(function (s) { if (s.hasAcademy) restore(s); }).catch(function () { /* 비로그인 등: 시작 화면 유지 */ });
+    api('GET', '/state').then(function (s) {
+      if (!s.hasAcademy) return;
+      ctx.created = true; ctx.revision = s.revision; ctx.status = s.status; ctx.publicUrl = s.publicUrl; ctx.dirty = !!s.dirty; ctx.undoDepth = s.undoDepth || 0;
+      history = (s.messages || []).map(function (m) {
+        var payload = null; try { payload = m.payloadJson ? JSON.parse(m.payloadJson) : null; } catch (e) { /* 무시 */ }
+        return { role: m.role, kind: m.kind, content: m.content, payload: payload };
+      });
+      enterWork(null);
+      var last = history.filter(function (m) { return m.role !== 'USER'; }).pop();
+      if (last) showStrip(last.content, false, last.payload && last.payload.changes ? last.payload.changes : []);
+    }).catch(function () { /* 비로그인 등: 시작 화면 유지 */ });
   }
   init();
 })();
