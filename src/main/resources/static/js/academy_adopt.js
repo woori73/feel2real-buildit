@@ -63,10 +63,15 @@
       return r.json();
     }).then(function (mode) {
       if (!canAdopt(mode)) return false;
+      // 좁은 상단 바에 끼우지 않고 바로 아래 얇은 안내 줄로 둔다(모바일에서도 보이고 눌림). 본문은 CSS로 그만큼 내려간다.
+      var bar = el(doc, 'div', 'adopt-bar');
+      var note = el(doc, 'span', 'adopt-note', '기존 방식으로 만든 홈페이지예요');
       var btn = el(doc, 'button', 'adopt-btn', 'AI로 이어서 만들기');
       btn.type = 'button'; btn.id = 'adoptBtn';
+      bar.appendChild(note); bar.appendChild(btn);
       var modal = buildModal(doc);
-      deps.mount.appendChild(btn);
+      deps.mount.appendChild(bar);
+      if (doc.body.classList) doc.body.classList.add('has-adopt-bar');
       doc.body.appendChild(modal.wrap);
       btn.addEventListener('click', function () {
         modal.check.checked = false; modal.ok.disabled = true; modal.msg.textContent = ''; modal.wrap.hidden = false;
@@ -95,8 +100,10 @@
 
   function boot() {
     if (typeof document === 'undefined') return;
-    var mount = document.querySelector('.tb-actions');
-    if (!mount) return;
+    var header = document.querySelector('.builder-topbar');
+    if (!header || !header.parentNode) return;
+    var mount = document.createElement('div');
+    header.parentNode.insertBefore(mount, header.nextSibling);
     init({ document: document, fetch: window.fetch.bind(window), navigate: function (u) { window.location.href = u; }, mount: mount });
   }
   if (typeof document !== 'undefined' && typeof window !== 'undefined') {

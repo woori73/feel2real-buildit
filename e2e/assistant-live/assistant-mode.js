@@ -75,6 +75,8 @@ const PASS = 'admin1234';
   await page.waitForSelector('#ahWork:not([hidden])', { timeout: 60000 });
   await page.screenshot({ path: __dirname + '/artifacts/mode-adopted-assistant.png' });
   ok('전환 후 /builder가 대화형 화면으로 열림', await page.locator('#ahWork').isVisible());
+  ok("전환 직후 안내에 '기존 빌더'로 돌아올 수 있다는 설명이 보임", /기존 빌더/.test(await page.locator('#ahStrip').innerText()), await page.locator('#ahStrip').innerText());
+  ok("대화 화면에 '기존 빌더' 링크가 있음(/builder?classic=1)", (await page.locator('#ahClassicWork').getAttribute('href')) === '/builder?classic=1');
   ok('전환 요청이 200으로 처리됨(확인 후에만 요청이 나감)', adoptStatus === 200, adoptStatus);
   ok('전환 직후 공개 홈페이지 그대로', (await apub()) === aBefore);
   const versions = (await api(adopt, 'GET', '/api/tutor/academy/ai/chat/versions')).j || [];
@@ -148,6 +150,23 @@ const PASS = 'admin1234';
   ok('한도 후 서버 상태를 다시 읽어 "이미 끝나 있었어요"로 알리고 되돌리기를 안내', /이미 끝나 있었어요/.test(await late.locator('#ahStrip').innerText()), await late.locator('#ahStrip').innerText());
   ok('입력은 보존되어 다시 보낼 수 있음', (await late.inputValue('#ahWorkInput')) === '주색을 진한 파란색으로 바꿔줘' && !(await late.locator('#ahWorkInput').isDisabled()));
   await other.close(); await lateCtx.close();
+
+  // 4-d. 서버가 AI 한도 초과(504 AI_TIMEOUT)를 돌려준 경우: 성공으로 표시하지 않고 오류로 알리며 입력·작업본을 보존한다.
+  const t5Ctx = await newCtx(b, { viewport: { width: 1280, height: 900 } }, { loginId: 'e2e-live', password: PASS });
+  const t5 = await t5Ctx.newPage();
+  await t5.route('**/assistant/turn', (route) => route.fulfill({ status: 504, contentType: 'application/json', body: JSON.stringify({
+    code: 'AI_TIMEOUT', limitSeconds: 60, message: 'AI 응답이 60초 안에 오지 않아 이번 요청은 처리하지 못했어요. 입력과 작업본은 그대로예요. 잠시 후 다시 시도해 주세요.' }) }));
+  await t5.goto(BASE + '/builder'); await t5.waitForSelector('#ahWork:not([hidden])', { timeout: 60000 }); await t5.waitForTimeout(1500);
+  const wc5 = await wcOf(t5Ctx);
+  const msg5 = '더 고급스럽게 바꿔 줘';
+  await t5.fill('#ahWorkInput', msg5); await t5.click('#ahWorkSend');
+  await t5.waitForFunction(() => /60초 안에 오지 않아/.test(document.getElementById('ahStrip').textContent), null, { timeout: 15000 });
+  ok('서버 한도 초과(504)는 오류로 표시(성공 표시 아님)', (await t5.locator('#ahStrip.err').count()) === 1);
+  ok('"입력과 작업본은 그대로" 안내가 보이고 변경 요약은 없음', /입력과 작업본은 그대로/.test(await t5.locator('#ahStrip').innerText()) && (await t5.locator('#ahChanges li').count()) === 0);
+  ok('입력이 보존되고 다시 보낼 수 있음', (await t5.inputValue('#ahWorkInput')) === msg5 && !(await t5.locator('#ahWorkInput').isDisabled()));
+  ok('서버 작업본이 그대로', (await wcOf(t5Ctx)) === wc5);
+  await t5.screenshot({ path: __dirname + '/artifacts/ai-timeout-504.png' });
+  await t5Ctx.close();
 
   ok('페이지 오류 없음', errors.length === 0, errors);
   console.log(`\n검증 항목 ${rows.filter(Boolean).length}/${rows.length} 통과`);

@@ -53,9 +53,12 @@
          ├─ [Canvas]     flex-1 scrollable
          └─ [RightPanel] 280px fixed, slides in on select
     ══════════════════════════════════════════ */
-    /* 'AI로 이어서 만들기'(기존 빌더 → AI 제작 명시 전환) */
-    .adopt-btn{margin-right:8px;padding:6px 12px;border-radius:8px;border:1px solid #2563eb;background:#fff;color:#2563eb;font-weight:600;font-size:.82rem;cursor:pointer}
-    .adopt-btn:hover{background:#eff6ff}
+    /* 'AI로 이어서 만들기'(기존 빌더 → AI 제작 명시 전환): 상단 바 아래 얇은 안내 줄. 좁은 화면에서도 보이고 눌리도록 상단 바에 끼우지 않는다. */
+    .adopt-bar{position:fixed;top:48px;left:0;right:0;height:44px;z-index:210;display:flex;align-items:center;gap:10px;padding:0 12px;background:#eff6ff;border-bottom:1px solid #bfdbfe;color:#1e3a8a;font-size:.8rem}
+    .adopt-note{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .adopt-btn{flex:none;white-space:nowrap;padding:8px 14px;border-radius:8px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff;font-weight:700;font-size:.82rem;line-height:1.2;cursor:pointer}
+    .adopt-btn:hover{background:#1e40af}
+    body.has-adopt-bar .builder-body{top:92px}
     .adopt-modal{position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:16px}
     .adopt-modal[hidden]{display:none}
     .adopt-card{background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25)}

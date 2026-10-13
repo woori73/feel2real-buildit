@@ -61,7 +61,8 @@ test('given canAdopt=true when 초기화하면 then "AI로 이어서 만들기" 
   // then
   assert.equal(await s.shown, true);
   assert.equal(s.mount.children.length, 1);
-  assert.equal(s.mount.children[0].textContent, 'AI로 이어서 만들기');
+  assert.equal(find(s.mount, 'adoptBtn').textContent, 'AI로 이어서 만들기');
+  assert.equal(s.mount.children[0].className, 'adopt-bar');
   assert.equal(s.calls.filter((c) => c.url.endsWith('/adopt')).length, 0);
 });
 
@@ -69,7 +70,7 @@ test('given 확인 창 when 확인 체크 없이 전환 버튼을 누르면 then
   // given
   const s = setup(res(true, { mode: 'CLASSIC', canAdopt: true }), res(true, { adopted: true }));
   await s.shown;
-  fire(s.mount.children[0], 'click');
+  fire(find(s.mount, 'adoptBtn'), 'click');
   const ok = find(s.doc.body, 'adoptOk');
   assert.equal(ok.disabled, true);
 
@@ -86,7 +87,7 @@ test('given 확인 체크 when 전환 버튼을 누르면 then confirm:true로 P
   // given
   const s = setup(res(true, { mode: 'CLASSIC', canAdopt: true }), res(true, { adopted: true, versionId: 5 }));
   await s.shown;
-  fire(s.mount.children[0], 'click');
+  fire(find(s.mount, 'adoptBtn'), 'click');
   const check = find(s.doc.body, 'adoptCheck');
   const ok = find(s.doc.body, 'adoptOk');
   check.checked = true; fire(check, 'change');
@@ -107,7 +108,7 @@ test('given 서버가 전환을 거절 when 확인하면 then 이동하지 않�
   // given
   const s = setup(res(true, { mode: 'CLASSIC', canAdopt: true }), res(false, { message: '전환할 수 없어요.' }));
   await s.shown;
-  fire(s.mount.children[0], 'click');
+  fire(find(s.mount, 'adoptBtn'), 'click');
   const check = find(s.doc.body, 'adoptCheck');
   check.checked = true; fire(check, 'change');
 
@@ -124,7 +125,7 @@ test('given 취소 when 취소를 누르면 then 창이 닫히고 요청이 없�
   // given
   const s = setup(res(true, { mode: 'CLASSIC', canAdopt: true }), null);
   await s.shown;
-  fire(s.mount.children[0], 'click');
+  fire(find(s.mount, 'adoptBtn'), 'click');
   const modal = find(s.doc.body, 'adoptCancel');
 
   // when
