@@ -43,17 +43,19 @@ public class PublishingGateService {
    */
   public GateResult checkPreflight(PreflightResponse preflight, int expectedMinPpi) {
     List<String> failures = new ArrayList<>();
-    if (!preflight.passed()) {
-      for (var issue : preflight.issues()) {
-        failures.add("[" + issue.kind() + "] " + issue.message()
-            + (issue.page() != null ? " (p." + issue.page() + ")" : ""));
-      }
+    for (var f : preflight.overset()) {
+      failures.add("[overset] " + f.detail()
+          + (f.page() != null ? " (p." + f.page() + ")" : ""));
     }
-    // missingGlyphs 명시적 확인
-    boolean hasMissingGlyphs = preflight.issues().stream()
-        .anyMatch(i -> "missingGlyphs".equalsIgnoreCase(i.kind()));
-    if (hasMissingGlyphs) {
-      failures.add("missingGlyphs > 0: 한글 폰트가 임베드되지 않았습니다.");
+    for (var g : preflight.missingGlyphs()) {
+      failures.add("[missingGlyphs] " + g.detail()
+          + (g.page() != null ? " (p." + g.page() + ")" : "")
+          + (g.glyph() != null && !g.glyph().isEmpty() ? " glyph=" + g.glyph() : ""));
+    }
+    for (var p : preflight.lowPpi()) {
+      failures.add("[lowPpi] " + p.detail()
+          + (p.page() != null ? " (p." + p.page() + ")" : "")
+          + (p.ppi() != null ? " ppi=" + p.ppi() : ""));
     }
     return new GateResult(failures.isEmpty(), failures);
   }
