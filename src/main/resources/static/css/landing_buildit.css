@@ -1513,3 +1513,12 @@ body {
   }
   .bi-menu a::after, .bi-menu button::after { content: '›'; color: #8a9293; }
 }
+
+/* v5 개선: 첫 화면은 장식 없이 흰 바탕(배경 곡선·광원 제거). 모바일 입력창은 화살표 원형 버튼으로 줄여 안내 문구가 잘리지 않게 한다. */
+#hero { background: #fff; }
+@media (max-width: 520px) {
+  .ask-bar { height: 64px; padding: 0 8px 0 20px; }
+  .ask-input { font-size: 17px; }
+  .ask-go { width: 48px; padding: 0; display: grid; place-items: center; font-size: 20px; }
+  .ask-go-text { display: none; }
+}

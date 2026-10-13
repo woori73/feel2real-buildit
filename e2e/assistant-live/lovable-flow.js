@@ -28,6 +28,7 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   };
   const lastBot = () => page.evaluate(() => { const l = document.querySelectorAll('#ahMsgs .ah-msg.bot, #ahMsgs .ah-msg.err'); const m = l[l.length - 1]; return m ? { cls: m.className, text: m.textContent } : null; });
   const fullText = () => page.evaluate(() => { const d = document.getElementById('ahFrame').contentDocument; return d && d.body ? d.body.innerText : ''; });
+  const openMenu = async () => { if (await page.isHidden('#ahMenu')) await page.click('#ahMoreBtn'); await page.waitForSelector('#ahMenu:not([hidden])'); };
   const waitFullRendered = () => page.waitForFunction(() => { const d = document.getElementById('ahFrame').contentDocument; return d && d.body && d.body.innerText.length > 80; }, null, { timeout: 30000 });
 
   // ── 0. 랜딩 첫 화면 → 제작 요청 입력 → 로그인 → 요청 복원 ──
@@ -37,6 +38,7 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   ok('첫 화면 제목·부제·입력창', (await page.textContent('#hero h1')).includes('어떤 홈페이지를 만들까요?') && (await page.textContent('.hero-ask-sub')).includes('BuildIt 가이드'));
   ok('첫 화면에 4단계·기능 카드가 없다(제목·부제·입력창만)', await page.evaluate(() => { const h = document.getElementById('hero'); return !h.querySelector('.flow-h, .steps, .feature-card, .hero-video-card') && h.querySelectorAll('input,button,a').length <= 3; }));
   ok('소개 영상은 첫 화면 아래(#intro)에 있다', await page.evaluate(() => { const v = document.querySelector('.hero-video-card'); return !!v && !document.getElementById('hero').contains(v) && v.getBoundingClientRect().top > window.innerHeight * 0.9; }));
+  ok('첫 화면에 배경 곡선·광원 장식이 없다', await page.evaluate(() => !document.querySelector('#hero .hero-lines, #hero .brand-glow')));
   await shot(page, '00-landing-pc');
   const mp = await b.newPage({ viewport: { width: 390, height: 844 } });
   await mp.goto(BASE + '/'); await mp.waitForSelector('[data-buildit-prompt]');
@@ -75,6 +77,19 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   ok('대화 속 미리보기 카드가 보인다', await page.isVisible('#ahCard'));
   await page.waitForFunction(() => { const d = document.getElementById('ahCardFrame').contentDocument; return d && d.body && d.body.innerText.length > 80; }, null, { timeout: 30000 });
   ok('카드 미리보기에 홈페이지가 그려졌다', true);
+  const cardBox = await page.evaluate(() => { const t = document.getElementById('ahThumb').getBoundingClientRect(); return { w: t.width, h: t.height }; });
+  ok('미리보기 카드가 크다(폭 600px 이상, 높이 380px 이상)', cardBox.w >= 600 && cardBox.h >= 380, cardBox);
+  ok('전체 화면으로 보기가 강조된 주요 버튼(검정)이다', await page.evaluate(() => getComputedStyle(document.getElementById('ahCardFull')).backgroundColor === 'rgb(10, 10, 10)'));
+  ok('상단: 이름·정식 배포 등록·더보기만(보조 버튼은 메뉴 안)', await page.evaluate(() => { const v = (id) => document.getElementById(id).offsetParent !== null; return v('ahPublish') && v('ahMoreBtn') && !v('ahProfileBtn') && !v('ahVersionsBtn') && !v('ahDownloadBtn'); }));
+  await page.click('#ahMoreBtn');
+  ok('더보기를 누르면 메뉴가 열리고 5개 항목이 보인다', (await page.isVisible('#ahMenu')) && (await page.$$eval('#ahMenu [role=menuitem]', (l) => l.filter((e) => e.offsetParent !== null).length)) === 5);
+  await shot(page, '02b-more-menu');
+  await page.keyboard.press('Escape');
+  ok('Esc로 메뉴가 닫힌다', await page.isHidden('#ahMenu'));
+  await page.click('#ahMoreBtn'); await page.click('#ahThread', { position: { x: 5, y: 5 } });
+  ok('바깥을 누르면 메뉴가 닫힌다', await page.isHidden('#ahMenu'));
+  await page.click('#ahMoreBtn'); await page.click('#ahMoreBtn');
+  ok('더보기를 다시 누르면 닫힌다', await page.isHidden('#ahMenu'));
   await shot(page, '02-chat-card-desktop');
 
   // ── 3. 전체 화면 → 대화로 돌아가기 ──
@@ -116,6 +131,7 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
 
   // ── 5. 학원 정보(임시 값 → 실제 값) ──
   console.log('\n[5] 학원 정보 수정');
+  await openMenu();
   await page.click('#ahProfileBtn');
   await page.waitForSelector('#ahProfile:not([hidden])');
   await sleep(500);
@@ -163,6 +179,7 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   ok('공개 요청 말은 확인 창으로 안내된다(공개는 아직 안 됨)', true);
   await page.click('#ahConfirmOk');
   await page.waitForFunction(() => /수정한 내용을 공개 홈페이지에 반영했어요/.test(document.getElementById('ahMsgs').textContent), null, { timeout: 30000 });
+  await openMenu();
   await page.click('#ahVersionsBtn');
   await page.waitForSelector('#ahVersions:not([hidden])');
   await page.waitForSelector('#ahVersionList button', { timeout: 15000 });
@@ -173,11 +190,14 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   await page.waitForSelector('#ahVersions', { state: 'hidden', timeout: 30000 });
   await page.waitForFunction(() => /이전 버전을 작업본에 불러왔어요/.test(document.getElementById('ahMsgs').textContent), null, { timeout: 30000 });
   ok('버전을 작업본에 불러왔고 안내가 나온다', true);
+  await openMenu();
   ok('불러온 뒤 되돌리기 횟수는 0', (await page.textContent('#ahUndoCount')) === '0');
+  await page.keyboard.press('Escape');
   await shot(page, '08-after-restore');
 
   // ── 8. 다운로드 ──
   console.log('\n[8] HTML 다운로드');
+  await openMenu();
   const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.click('#ahDownloadBtn')]);
   const file = path.join(SHOTS, dl.suggestedFilename());
   await dl.saveAs(file);
@@ -196,6 +216,15 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   await sleep(500);
   await shot(page, '10-mobile-fullscreen');
   ok('모바일에서 가로 스크롤 없음', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+  await page.click('#ahFullBack');
+  const mob = await page.evaluate(() => { const r = (id) => document.getElementById(id).getBoundingClientRect(); const c = r('ahThumb'); const pub = r('ahPublish'); const more = r('ahMoreBtn'); const comp = r('ahWorkComposer'); return { cardW: c.width, pubRight: pub.right, moreLeft: more.left, vw: innerWidth, compBottom: comp.bottom, vh: innerHeight, overlap: pub.right > more.left }; });
+  ok('모바일: 버튼이 겹치거나 잘리지 않는다', !mob.overlap && mob.moreLeft + 40 <= mob.vw + 1, mob);
+  ok('모바일: 입력창이 화면 안에 있다', mob.compBottom <= mob.vh + 1, mob);
+  ok('모바일: 미리보기 카드가 화면 폭을 채운다(300px 이상)', mob.cardW >= 300, mob);
+  await page.click('#ahMoreBtn'); await page.waitForSelector('#ahMenu:not([hidden])');
+  ok('모바일: 더보기 메뉴가 화면 안에 열린다', await page.evaluate(() => { const m = document.getElementById('ahMenu').getBoundingClientRect(); return m.left >= 0 && m.right <= innerWidth + 1 && m.bottom <= innerHeight; }));
+  await shot(page, '09b-mobile-menu');
+  await page.keyboard.press('Escape');
 
   ok('페이지 JS 오류 없음', errors.length === 0, errors);
   await b.close();

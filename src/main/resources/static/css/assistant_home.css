@@ -239,4 +239,37 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
 .ah-modal-card{border-radius:20px}
 .ah-seg{border-radius:9999px;background:#f1f1ef}.ah-seg button{border-radius:9999px}.ah-seg button.on{box-shadow:none}
 .ah-framewrap{box-shadow:none;border:1px solid var(--ah-line)}
-@media(max-width:480px){.ah-status{display:none}.ah-bar{padding:10px 14px}.ah-undo{font-size:0;padding:0;width:40px}.ah-undo b{display:none}.ah-undo:before{content:"↶";font-size:18px}.ah-pubbtn{font-size:13px;padding:8px 12px}}
+@media(max-width:480px){.ah-bar{padding:10px 14px}.ah-pubbtn{font-size:13px;padding:8px 12px}}
+
+/* ═════════ v5 개선: 상단은 명칭 + 정식 배포 등록 + 더보기, 미리보기 카드는 크고 또렷하게 ═════════ */
+.ah-bar{gap:10px}
+.ah-bar-actions{margin-left:auto}
+.ah-status{flex:none;margin-left:4px}
+.ah-more{position:relative}
+.ah-more-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--ah-line);background:#fff;font:inherit;font-size:20px;line-height:1;color:var(--ah-text);cursor:pointer}
+.ah-more-btn[aria-expanded="true"]{background:var(--ah-accent)}
+.ah-menu{position:absolute;right:0;top:46px;z-index:40;min-width:190px;background:#fff;border:1px solid var(--ah-line);border-radius:12px;padding:6px;display:flex;flex-direction:column}
+.ah-menu[hidden]{display:none}
+#ahMenu button,#ahMenu a{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:0 12px;border:0;border-radius:8px;background:none;font:inherit;font-size:15px;color:var(--ah-text);text-align:left;text-decoration:none;cursor:pointer}
+#ahMenu button:hover,#ahMenu a:hover{background:var(--ah-accent)}
+#ahMenu button:disabled{color:#a4abb5;cursor:default;background:none}
+#ahMenu button[hidden]{display:none}
+#ahMenu b{background:var(--ah-accent);border-radius:9999px;padding:0 8px;font-size:12px;font-weight:550}
+#ahUndo{font-size:15px;padding:0 12px;width:100%;border:0}
+#ahUndo:before{content:none}
+.ah-thumb{display:block;height:auto;border-bottom:0;background:#f6f6f7;overflow:hidden}
+.ah-thumb .inner{width:100%;height:auto;margin:0;overflow:hidden;position:relative}
+.ah-thumb iframe{position:absolute;top:0;left:0;transform-origin:0 0;border:0;background:#fff;pointer-events:none}
+.ah-result{border:1px solid var(--ah-line)}
+.ah-resfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-top:1px solid var(--ah-line)}
+.ah-resfoot .ah-resbody{padding:0;gap:4px}
+.ah-pill-btn{flex:none;min-height:44px;padding:0 22px;border-radius:9999px;font-size:15px}
+.ah-chips{padding:0}
+.ah-chip{font-size:13px;min-height:34px}
+@media(max-width:560px){
+  .ah-status{display:none}
+  .ah-resfoot{flex-direction:column;align-items:stretch}
+  .ah-pill-btn{width:100%}
+  .ah-thread{padding:12px 14px 16px}
+  .ah-dock{padding:6px 12px calc(10px + env(safe-area-inset-bottom))}
+}

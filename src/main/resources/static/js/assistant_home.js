@@ -25,7 +25,7 @@
   var FIELD_OF_NEED = { academyName: 'name', description: 'description', region: 'region', subject: 'subject', target: 'target' };
   var CREATE_STEPS = ['학원 정보 정리', '소개 문구 작성', '디자인 적용', '미리보기 준비'];
   var EDIT_STEPS = ['요청을 이해하는 중', '변경 계획을 세우는 중', '작업본에 적용하는 중', '미리보기를 새로 그리는 중'];
-  var CHIPS = ['더 고급스럽게 바꿔 줘', '밝고 친근한 분위기로', '깔끔하게 정리해 줘', '주색을 파란색으로', '수업 영상 섹션 숨겨 줘', '상담 신청을 맨 위로'];
+  var CHIPS = ['더 고급스럽게 바꿔 줘', '밝고 친근한 분위기로', '상담 신청을 맨 위로'];
 
   var $ = function (id) { return document.getElementById(id); };
   var ctx = {
@@ -161,7 +161,7 @@
     $('ahWork').hidden = false;
     renderChips(); renderStatus(); renderUndo(); setDevice(ctx.dev);
     renderThread();
-    $('ahCard').hidden = false; loadPreview(null);
+    $('ahCard').hidden = false; fitCard(); loadPreview(null);
     if (opts && opts.notes && opts.notes.length) addBubble('bot', opts.notes.join('\n'), []);
   }
 
@@ -243,6 +243,19 @@
       var on = b.dataset.dev === dev; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
     });
     fit();
+  }
+  /** 대화 속 미리보기 카드: 카드 폭에 맞춰 같은 페이지를 PC(1280) 또는 모바일(390) 배치로 그려 크고 또렷하게 보여 준다. */
+  function fitCard() {
+    var th = $('ahThumb'), fr = $('ahCardFrame'); if (!th || !fr || $('ahCard').hidden) return;
+    var inner = th.firstElementChild, w = th.clientWidth; if (!w || !inner) return;
+    var desktop = w >= 560, lw = desktop ? 1280 : 390, lh = desktop ? 800 : 420, scale = w / lw;
+    var h = Math.round(lh * scale) + 'px';
+    th.style.height = h; inner.style.width = w + 'px'; inner.style.height = h;
+    fr.style.width = lw + 'px'; fr.style.height = lh + 'px'; fr.style.transform = 'scale(' + scale + ')';
+  }
+  /** 더보기 메뉴(되돌리기·학원 정보·버전·내려받기·기존 빌더): 열고 닫는다. */
+  function setMenu(open) {
+    $('ahMenu').hidden = !open; $('ahMoreBtn').setAttribute('aria-expanded', String(open));
   }
   var previewTimer = null;
   /** 카드 미리보기를 새로 그리고, 전체 화면이 열려 있으면 그것도 새로 그린다. */
@@ -631,6 +644,9 @@
       var f = this.files && this.files[0]; if (f && ctx.photoSlot) uploadPhoto(ctx.photoSlot, f);
     });
     $('ahUndo').addEventListener('click', undo);
+    $('ahMoreBtn').addEventListener('click', function (e) { e.stopPropagation(); setMenu($('ahMenu').hidden); });
+    $('ahMenu').addEventListener('click', function () { setMenu(false); });
+    document.addEventListener('click', function (e) { if (!$('ahMenu').hidden && !$('ahMenu').contains(e.target)) setMenu(false); });
     $('ahPublish').addEventListener('click', openConfirm);
     $('ahConfirmCancel').addEventListener('click', closeConfirm);
     $('ahConfirmOk').addEventListener('click', doPublish);
@@ -644,10 +660,11 @@
     Array.prototype.forEach.call(document.querySelectorAll('.ah-seg [data-dev]'), function (b) {
       b.addEventListener('click', function () { setDevice(b.dataset.dev); });
     });
-    window.addEventListener('resize', fit);
+    window.addEventListener('resize', function () { fit(); fitCard(); });
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      if (!$('ahConfirm').hidden) closeConfirm();
+      if (!$('ahMenu').hidden) setMenu(false);
+      else if (!$('ahConfirm').hidden) closeConfirm();
       else if (!$('ahVersions').hidden) $('ahVersions').hidden = true;
       else if (!$('ahProfile').hidden) $('ahProfile').hidden = true;
       else if (!$('ahFull').hidden) closeFull();
