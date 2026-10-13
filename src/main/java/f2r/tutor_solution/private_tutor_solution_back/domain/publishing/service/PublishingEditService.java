@@ -254,8 +254,8 @@ public class PublishingEditService {
    */
   @Transactional
   public int applyMarkdownStyles(AuthenticatedPrincipal principal, Long jobId) {
-    var job = jobService.getJob(principal, jobId);
-    Path manuscriptPath = jobService.getManuscriptPath(jobId);
+    jobService.requireOwned(principal, jobId);
+    Path manuscriptPath = jobService.getManuscriptPath(principal, jobId);
     if (manuscriptPath == null || !Files.exists(manuscriptPath)) {
       throw new IllegalArgumentException("원고 파일이 없습니다. 먼저 원고를 업로드하세요.");
     }
@@ -278,7 +278,7 @@ public class PublishingEditService {
       return 0;
     }
 
-    Path docPath = jobService.getDocumentPath(jobId);
+    Path docPath = jobService.getDocumentPath(principal, jobId);
     int applied = 0;
     for (var block : parsed.headingBlocks()) {
       try {
@@ -313,8 +313,8 @@ public class PublishingEditService {
       }
     }
 
-    // 스냅샷 생성 (스타일 적용 후 상태 보존)
-    jobService.createSnapshot(principal, jobId, "Markdown 스타일 자동 적용 (" + applied + "개)");
+    // 버전 스냅샷 생성 (스타일 적용 후 상태 보존)
+    versionService.createVersion(principal, jobId, "Markdown 스타일 자동 적용 (" + applied + "개)");
     return applied;
   }
 }
