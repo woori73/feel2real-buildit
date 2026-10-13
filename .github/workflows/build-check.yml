@@ -268,16 +268,16 @@ jobs:
           test -f build/test-results/test/TEST-f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorApiTest.xml
           echo "editor tests executed: OK"
 
-      - name: Verify admissions tests executed
-        # 입시 rate limit 보완 회귀 테스트가 실제로 실행됐는지 검증 (테스트 삭제·비활성화 금지 정책).
-        # glob 기반으로 확인하여 XML 파일명 표기 차이에 강건하게 대응한다.
-        run: |
-          echo "--- admissions test XMLs found ---"
-          ls build/test-results/test/TEST-*admissions*.xml 2>/dev/null || echo "(none)"
-          found=$(ls build/test-results/test/TEST-*admissions*.xml 2>/dev/null | wc -l)
-          echo "admissions test XML count: $found"
-          test "$found" -ge 5 || { echo "::error::admissions 테스트 5종 중 일부가 실행되지 않음 (found=$found)"; exit 1; }
-          echo "admissions tests executed: OK"
+      - name: Run admissions unit tests (explicit)
+        # 입시 rate limit 보완 회귀 테스트를 명시적으로 별도 실행.
+        # XML 경로 의존 없이 Gradle이 직접 검증한다 (필터 미매칭·테스트 실패 시 실패).
+        run: >-
+          ./gradlew test --no-daemon
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsChatControllerRateLimitTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsRateLimiterTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsLlmClientTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsResearchServiceLogicTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest"
       - name: Upload build-job test report
         # 편집기 테스트가 실제로 실행됐는지 검증용 (테스트 삭제·비활성화 금지 정책).
         if: always()
