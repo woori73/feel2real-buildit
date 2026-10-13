@@ -344,6 +344,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyWorkingCopyMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantMediaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantEditMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminBuilderAccessMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AdminAcademyManagementMySqlTest"

@@ -8,6 +8,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.Aca
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService.StateView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantService.TurnResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyWorkingCopyService.WorkingCopyConflictException;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.HeroMediaSlot;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyMediaService;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +18,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +39,7 @@ public class AcademyAssistantApiController {
 
   private final AcademyAssistantService service;
   private final AcademyAssistantEditService editService;
+  private final AcademyMediaService mediaService;
 
   /** 시작 화면의 샘플 6종. */
   @GetMapping("/samples")
@@ -87,6 +95,44 @@ public class AcademyAssistantApiController {
   }
 
   /** 되돌리기: 마지막 수정(게시 이후, 아직 되돌리지 않은 것)을 작업본에서 되돌린다. body: {revision}. */
+  /**
+   * 사진 올리기(S3). 사용자가 직접 올린 사진을 작업본의 이미지 예약으로만 건다 — 공개 홈페이지는 '게시' 전까지 그대로다.
+   * slot: principal | textbook1 | textbook2 | textbook3 | schedule. 되돌리기 대상이다.
+   */
+  @PostMapping(value = "/media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<Map<String, Object>> uploadMedia(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestParam("slot") String slot,
+      @RequestParam("revision") Long revision,
+      @RequestPart("image") MultipartFile image) {
+    try {
+      HeroMediaSlot parsed = HeroMediaSlot.from(slot);
+      String key = mediaService.storeHeroImage(principal, parsed, image);
+      EditOutcome out = editService.stageUploadedMedia(principal, parsed.key(), key, revision);
+      Map<String, Object> body = new HashMap<>();
+      body.put("reply", out.reply());
+      body.put("created", false);
+      putEdit(body, out);
+      return noStore(HttpStatus.OK, body);
+    } catch (WorkingCopyConflictException e) {
+      return conflict(e);
+    } catch (IllegalArgumentException e) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
+    }
+  }
+
+  /** 작업본 미리보기용 이미지(예약된 사진이 있으면 그것, 없으면 공개 사진). 소유자만 읽는다. */
+  @GetMapping("/media/{slot}")
+  public ResponseEntity<byte[]> workingCopyMedia(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @PathVariable String slot) {
+    AcademyMediaService.ServedImage image = mediaService.readWorkingCopyMedia(principal, HeroMediaSlot.from(slot));
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(image.contentType()))
+        .cacheControl(CacheControl.noStore())
+        .body(image.bytes());
+  }
+
   @PostMapping("/undo")
   public ResponseEntity<Map<String, Object>> undo(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,

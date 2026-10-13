@@ -1670,6 +1670,8 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 **디자인 자산 연동(스키마 변경 없음)**: `builderDraft`에 `motionStyle`(`none`/`fade`/`slide`, 미설정=기존 reveal 기본값)과 `designAsset`(마지막으로 적용한 레시피 id) 키를 추가했다. 값 검증은 `AcademyService.validateBuilderDraft`. 자산 목록의 원본은 `src/main/resources/design-assets/catalog.json`(BuildIt2 `3582696` 기준, DB 없음)이다.
 
+**작업본 이미지 예약(S3, V1064)**: `academy_working_copy.staged_media_json TEXT NULL`(JSON `{slot: storageKey}`, 빈 문자열=비우기, NULL=예약 없음)을 추가했다. 새 테이블은 없고 기존 행은 NULL이라 동작이 바뀌지 않는다. 공개 슬롯은 `publish` 트랜잭션에서만 바뀌며, EDIT 메시지 payload에 `mediaUndo`(slot→이전 예약 값, null=예약 없었음)를 남겨 되돌린다. 작업본 `dirty`는 내용 차이 또는 예약이 있으면 true다.
+
 **2-C(S1) 추가 kind (스키마 변경 없음)**: `EDIT`(수정 1회; payload `{revisionBefore, revisionAfter, undo{introChanged,introBefore,draftBefore,visibilityBefore,orderBefore}, changes[]}`), `UNDO`(payload `{undoes:<EDIT message_id>, revision}`), `PUBLISHED`(payload `{revisionAfter}`). 되돌리기 스택 = EDIT push, UNDO가 `undoes` 항목 pop, PUBLISHED는 스택을 비운다. 현재 작업본 revision이 마지막 기록의 revision과 다르면 되돌리기를 거부한다.
 
 **최초 게시 규칙**: 코드에 DRAFT→PUBLISHED 전환 경로가 따로 없었다(`createDraft`는 "공개는 별도 발행"이라고만 명시). 이제 `POST /api/tutor/academy/assistant/publish`가 작업본 게시와 `Academy.publishIfDraft()`를 한 트랜잭션으로 처리한다. `visible` 스위치는 건드리지 않는다.

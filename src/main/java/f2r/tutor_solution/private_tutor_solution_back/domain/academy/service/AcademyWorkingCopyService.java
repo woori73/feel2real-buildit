@@ -126,6 +126,7 @@ public class AcademyWorkingCopyService {
     requireRevision(wc, expectedRevision);
     wc.replaceContent(academy.getIntro(), toJson(academy.getPageSettings()), principal.loginId());
     wc.rebase(fingerprint(academy.getIntro(), academy.getPageSettings()), principal.loginId());
+    wc.replaceStagedMedia(null, principal.loginId()); // 예약한 이미지 교체·삭제도 함께 버린다(파일은 지연 정리)
     flush(wc);
     return state(academy, wc);
   }
@@ -199,9 +200,14 @@ public class AcademyWorkingCopyService {
       AuditorContextHolder.set(principal.loginId());
       academy.updatePageSettings(toPublish);
       academy.updateIntro(introToPublish);
+      // 예약해 둔 이미지 교체·삭제는 여기서만 공개 슬롯에 반영된다(같은 트랜잭션). 이전 파일은 캐시된 URL을 위해 지연 정리한다.
+      stagedOf(wc).forEach((slot, key) -> academy.updateImageSlot(
+          f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.HeroMediaSlot.from(slot),
+          key.isEmpty() ? null : key));
     } finally {
       AuditorContextHolder.clear();
     }
+    wc.replaceStagedMedia(null, principal.loginId());
     wc.rebase(fingerprint(academy.getIntro(), academy.getPageSettings()), principal.loginId());
     flush(wc);
     return state(academy, wc);
@@ -214,7 +220,8 @@ public class AcademyWorkingCopyService {
     return repository.findByAcademyId(academy.getAcademyId())
         .map(wc -> academyService.toPreviewResponse(
             academy, wc.getIntro(),
-            withLiveRenderMode(parseSettings(wc.getPageSettingsJson()), academy.getPageSettings())))
+            withLiveRenderMode(parseSettings(wc.getPageSettingsJson()), academy.getPageSettings()),
+            stagedOf(wc)))
         .orElseGet(() -> academyService.toPreviewResponse(academy, null, null));
   }
 
@@ -268,7 +275,47 @@ public class AcademyWorkingCopyService {
     String wcFp = fingerprint(wc.getIntro(), settings);
     return new State(
         wc.getRevision(), wc.getIntro(), settings,
-        !wcFp.equals(liveFp), !wc.getBaseFingerprint().equals(liveFp));
+        !wcFp.equals(liveFp) || !stagedOf(wc).isEmpty(), !wc.getBaseFingerprint().equals(liveFp));
+  }
+
+  // ───────────────────────── 이미지 예약(S3) ─────────────────────────
+
+  /** 현재 이미지 예약(slot→storage key, 빈 문자열=비우기). 없으면 빈 맵. storage key는 밖으로 내보내지 않는다. */
+  @Transactional(readOnly = true)
+  public Map<String, String> stagedMedia(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Academy academy = ownedAcademy(principal);
+    return repository.findByAcademyId(academy.getAcademyId()).map(this::stagedOf).orElseGet(HashMap::new);
+  }
+
+  /**
+   * 한 슬롯의 이미지 예약을 바꾼다. {@code key}가 null이면 예약을 없애(공개본 그대로로), 빈 문자열이면 '비우기',
+   * 그 밖이면 '이 이미지로 교체'다. 공개 슬롯은 건드리지 않는다. revision이 오른다.
+   */
+  @Transactional
+  public State stageMedia(
+      JwtTokenProvider.AuthenticatedPrincipal principal, long expectedRevision, String slot, String key) {
+    Academy academy = ownedAcademy(principal);
+    AcademyWorkingCopy wc = loadOrCreate(academy, principal.loginId());
+    requireRevision(wc, expectedRevision);
+    Map<String, String> staged = stagedOf(wc);
+    if (key == null) staged.remove(slot);
+    else staged.put(slot, key);
+    wc.replaceStagedMedia(staged.isEmpty() ? null : toJson(staged), principal.loginId());
+    flush(wc);
+    return state(academy, wc);
+  }
+
+  private Map<String, String> stagedOf(AcademyWorkingCopy wc) {
+    Map<String, String> staged = new java.util.TreeMap<>();
+    String json = wc.getStagedMediaJson();
+    if (json == null || json.isBlank()) return staged;
+    try {
+      Map<String, String> parsed = objectMapper.readValue(json, new TypeReference<Map<String, String>>() {});
+      if (parsed != null) parsed.forEach((k, v) -> staged.put(k, v == null ? "" : v));
+    } catch (JsonProcessingException e) {
+      throw new IllegalStateException("이미지 예약을 읽을 수 없습니다.", e);
+    }
+    return staged;
   }
 
   /** 작업본은 시각 편집기 게시 상태(renderMode)를 바꿀 수 없다 — 항상 공개본 값을 따른다. */

@@ -25,7 +25,11 @@
   const BRAND = typeof window !== 'undefined' ? window.F2RAcademyBrand : null;
   // deps는 지연 평가한다 — slug는 이 시점에 아직 계산 전이고, 쇼케이스 모듈은 정본 모듈과
   // 다른 컨텍스트에 있을 수 있다.
+  // 작업본 미리보기의 사진 캐시 무효화용. 렌더(load/postMessage)마다 새로 매긴다.
+  let mediaVersion = String(Date.now());
   const PUBLIC_CTX = SECTIONS.createPublicContext({
+    workingCopyMedia: () => WORKING_COPY_PREVIEW,
+    mediaVersion: () => mediaVersion,
     slug: () => slug,
     showcase: () => window.F2RLessonProductShowcase,
     videos: () => academyVideos
@@ -54,6 +58,7 @@
     if (event.origin !== location.origin) return;
     const data = event.data || {};
     if (data.type !== 'F2R_BUILDER_APPLY_ACADEMY' || !data.academy) return;
+    mediaVersion = String(Date.now());
     render(data.academy, true);
     scrollToManagedSection(data.scrollToSection);
   });
@@ -63,6 +68,7 @@
   }
 
   async function load() {
+    mediaVersion = String(Date.now());
     try {
       const res = await fetch(WORKING_COPY_PREVIEW
         ? ((root && root.dataset.previewApi) || '/api/tutor/academy/working-copy/preview')

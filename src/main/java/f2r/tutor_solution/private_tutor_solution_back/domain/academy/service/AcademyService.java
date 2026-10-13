@@ -431,12 +431,29 @@ public class AcademyService {
   @Transactional(readOnly = true)
   public AcademyResponse toPreviewResponse(
       Academy academy, String previewIntro, AcademyPageSettings previewSettings) {
+    return toPreviewResponse(academy, previewIntro, previewSettings, Map.of());
+  }
+
+  /**
+   * 작업본 미리보기. {@code stagedMedia}(slot→storage key, 빈 문자열=비우기)가 있으면 그 슬롯의
+   * 이미지 유무를 작업본 기준으로 맞춘다(공개 DB는 바꾸지 않는다).
+   */
+  public AcademyResponse toPreviewResponse(
+      Academy academy, String previewIntro, AcademyPageSettings previewSettings,
+      Map<String, String> stagedMedia) {
     AcademyResponse base = toResponse(academy, false);
+    List<String> slots = new ArrayList<>(base.heroMediaSlots() == null ? List.of() : base.heroMediaSlots());
+    if (stagedMedia != null) {
+      stagedMedia.forEach((slot, key) -> {
+        if (key == null || key.isEmpty()) slots.remove(slot);
+        else if (!slots.contains(slot)) slots.add(slot);
+      });
+    }
     return new AcademyResponse(
         base.academyId(), base.slug(), base.handle(), base.name(),
         previewIntro != null ? previewIntro : base.intro(),
         base.status(), base.isVisible(), base.logoUrl(), base.coverUrl(), base.publicUrl(),
-        base.subjects(), base.targetGroups(), base.regions(), base.lessons(), base.heroMediaSlots(),
+        base.subjects(), base.targetGroups(), base.regions(), base.lessons(), slots,
         previewSettings != null ? previewSettings : base.pageSettings());
   }
 
