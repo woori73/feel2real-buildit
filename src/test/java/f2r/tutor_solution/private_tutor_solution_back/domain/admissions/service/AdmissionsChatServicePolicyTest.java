@@ -183,4 +183,42 @@ class AdmissionsChatServicePolicyTest {
         // then
         assertThat(bad).containsExactly("33");
     }
+
+    @Test
+    @DisplayName("given 2028 일정 질문 when 2028 공식자료 제목만 검색되면 then 제목만으로는 일정을 답하지 않고 미발표로 답한다")
+    void title_only_2028_material_is_not_enough_for_schedule() {
+        // given
+        String q = "2028 수시 원서접수는 몇 월인가요?";
+        givenFacts(q, List.of(), Set.of(2028), true);
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of())
+                .officialDocHits(List.of(fact("material:9", "연세대 2028학년도 수시 시행계획", "연세대학교", 2028, "https://x")))
+                .youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_UNPUBLISHED_2028);
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("given 2028 전형 행이 있는 질문 when 묻으면 then 2028 계획 근거로 LLM에 전달한다")
+    void planned_2028_type_row_reaches_llm() {
+        // given
+        String q = "연세대 2028은 뭐가 달라지나요";
+        Evidence e = fact("type:3", "연세대학교 2028학년도 활동우수형", "시행계획 방향: 변경 예정", 2028, null);
+        givenFacts(q, List.of(e), Set.of(2028), false);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2028학년도는 시행계획 단계로 변경될 수 있습니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).contains("시행계획");
+        assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::id).containsExactly("type:3");
+    }
 }

@@ -145,7 +145,8 @@ public class AdmissionsChatService {
         boolean asks2028Only = facts.searchedYears().equals(java.util.Set.of(2028));
         if (asks2028Only) {
             usable = usable.stream().filter(e -> Integer.valueOf(2028).equals(e.getAcademicYear())).toList();
-            if (usable.isEmpty()) {
+            // 문서 제목만 있는 자료(material:)로는 2028 일정·수치를 답할 수 없다. 학과·전형·일정 행 또는 사실 지식이 있어야 한다.
+            if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
                 return refuse(MSG_UNPUBLISHED_2028, sessionToken, question, academicYearFilter);
             }
         }
@@ -202,6 +203,12 @@ public class AdmissionsChatService {
                         .thenComparing(e -> e.getTitle()))
                 .limit(MAX_CONTEXT_EVIDENCE)
                 .toList();
+    }
+
+    /** 내용이 있는 사실 근거(학과·전형·일정 행, 사실 지식). 문서 제목만 있는 material은 제외. */
+    static boolean isFactRow(String refId) {
+        return refId != null && (refId.startsWith("dept:") || refId.startsWith("type:")
+                || refId.startsWith("sched:") || refId.startsWith("knowledge:"));
     }
 
     /** 사실 테이블 근거를 앞에 두고 중복(refId) 없이 합친다. */
