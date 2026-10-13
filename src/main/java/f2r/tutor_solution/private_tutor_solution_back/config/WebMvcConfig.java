@@ -103,6 +103,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/easy/students", "easy/students");
         view(registry, "/easy/payments", "easy/payments");
         view(registry, "/easy/card-review", "easy/card_review");
+        view(registry, "/easy/reviews", "easy/reviews");
+        view(registry, "/easy/evidence", "easy/reviews");
+        view(registry, "/easy/accounting", "easy/accounting");
 
         view(registry, "/tutor/lessons/{lessonId}/students", "tutor/lesson_students");
     }

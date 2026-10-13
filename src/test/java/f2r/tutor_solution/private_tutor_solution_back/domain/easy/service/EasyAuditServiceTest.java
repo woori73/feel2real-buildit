@@ -39,6 +39,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("EasyAuditService 감사 기반 테스트")
@@ -81,6 +82,55 @@ class EasyAuditServiceTest {
         .payMethod("계좌이체").account(account).evidenceType(evidence).build();
     ReflectionTestUtils.setField(txn, "txnId", txnId);
     return txn;
+  }
+
+  @Test
+  @DisplayName("Workspace 재승인 — 요청 동일성을 증명할 수 없어 409")
+  void workspaceResolve_processedReviewIsConflict() {
+    EasyTransaction stored = txn(academy, 101L, EasyTxnDirection.EXPENSE,
+        100000L, "강사료", null, null);
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.WITHHOLDING).txn(stored)
+        .title("확인").build();
+    item.resolve("처리", "admin");
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(reviewRepository.findLockedByReviewIdAndBusiness_BusinessId(9L, 1L))
+        .thenReturn(Optional.of(item));
+
+    assertThatThrownBy(() -> service.resolveWorkspace(
+        1L, 9L, new EasyReviewResolveRequest("다시", null, null, null, null, false),
+        "admin"))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode().value())
+            .isEqualTo(409));
+  }
+
+  @Test
+  @DisplayName("Workspace 사업체 이동 — 원 사업체와 대상 사업체 양쪽 마감 검증")
+  void workspaceResolve_checksTargetClosing() {
+    EasyTransaction stored = txn(academy, 101L, EasyTxnDirection.EXPENSE,
+        100000L, "강사료", null, null);
+    EasyReviewItem item = EasyReviewItem.builder()
+        .business(academy).kind(EasyReviewKind.BUSINESS).txn(stored)
+        .title("사업체 확인").build();
+    EasyAnnualClosing targetClosing = EasyAnnualClosing.builder()
+        .business(publishing).fiscalYear(2026).build();
+    targetClosing.close("{}", "완료");
+    when(businessRepository.findById(1L)).thenReturn(Optional.of(academy));
+    when(businessRepository.findById(2L)).thenReturn(Optional.of(publishing));
+    when(reviewRepository.findLockedByReviewIdAndBusiness_BusinessId(9L, 1L))
+        .thenReturn(Optional.of(item));
+    when(closingRepository.findByBusiness_BusinessIdAndFiscalYear(1L, 2026))
+        .thenReturn(Optional.empty());
+    when(closingRepository.findByBusiness_BusinessIdAndFiscalYear(2L, 2026))
+        .thenReturn(Optional.of(targetClosing));
+
+    assertThatThrownBy(() -> service.resolveWorkspace(
+        1L, 9L, new EasyReviewResolveRequest("이동", 2L, null, null, null, false),
+        "admin"))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(error -> assertThat(((ResponseStatusException) error).getStatusCode().value())
+            .isEqualTo(409));
   }
 
   @Test

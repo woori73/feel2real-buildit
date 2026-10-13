@@ -20,6 +20,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCo
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionSchedulerService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLedgerService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLocalCollectorService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyWorkspaceService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessScopeGuard;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectorTaskService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyStudentService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTuitionService;
@@ -52,7 +54,8 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyReportController.class,
     EasyCollectionController.class,
     EasyCardReviewController.class,
-    EasyCollectorAdminController.class
+    EasyCollectorAdminController.class,
+    EasyWorkspaceController.class
 })
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -83,6 +86,8 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyBusinessCardAccountingService cardAccountingService;
   @MockitoBean EasyLocalCollectorService localCollectorService;
   @MockitoBean EasyCollectorTaskService collectorTaskService;
+  @MockitoBean EasyWorkspaceService workspaceService;
+  @MockitoBean EasyBusinessScopeGuard businessScopeGuard;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -105,6 +110,7 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/corrections/logs",
       "/api/admin/easy/collections/connections?businessId=1",
       "/api/admin/easy/card-events?businessId=1",
+      "/api/admin/easy/workspace/monthly?businessId=1&month=2026-10",
       "/api/admin/easy/collector?businessId=1",
       "/api/admin/easy/collector/tasks?businessId=1");
 

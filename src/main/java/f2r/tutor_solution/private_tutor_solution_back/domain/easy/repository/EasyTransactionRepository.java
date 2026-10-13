@@ -4,9 +4,18 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTra
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 public interface EasyTransactionRepository extends JpaRepository<EasyTransaction, Long> {
+  Optional<EasyTransaction> findByTxnIdAndBusiness_BusinessId(Long txnId, Long businessId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<EasyTransaction> findLockedByTxnIdAndBusiness_BusinessId(
+      Long txnId, Long businessId);
+
   List<EasyTransaction> findByBusiness_BusinessIdAndOccurredOnBetweenOrderByOccurredOnDescTxnIdDesc(
       Long businessId, LocalDate from, LocalDate to);
 
