@@ -331,4 +331,49 @@ public class PublishingEditService {
     log.info("Markdown 스타일 적용 완료: jobId={}, {}개", jobId, applied);
     return applied;
   }
+
+  /**
+   * 스토리 텍스트를 조회한다 (문단 경계 확인용).
+   */
+  private String getStoryText(Path workDir, com.fasterxml.jackson.databind.ObjectMapper om,
+      DesignCraftCliExecutor cli) {
+    try {
+      var result = cli.execute(
+          new f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PublishingCommand(
+              "story.get", Map.of()),
+          workDir);
+      var node = om.readTree(result.output());
+      return node.get("text").asText();
+    } catch (Exception e) {
+      log.warn("스토리 텍스트 조회 실패, 경계 확인 생략: {}", e.getMessage());
+      return "";
+    }
+  }
+
+  /**
+   * 주어진 바이트 오프셋이 문단의 시작인지 확인한다.
+   * CLI의 text.select는 UTF-8 바이트 오프셋을 사용하므로,
+   * storyText를 바이트 기준으로 확인해야 한다.
+   * 단순화를 위해 문자 기준으로 확인 (한글은 3바이트지만 경계 문자는 ASCII).
+   */
+  private boolean isParagraphStart(String storyText, long byteOffset) {
+    if (storyText == null || storyText.isEmpty()) {
+      return true; // 조회 실패 시 기존 동작 유지
+    }
+    if (byteOffset == 0) {
+      return true;
+    }
+    // 바이트 오프셋을 문자 인덱스로 변환 (근사치)
+    // 줄바꿈(\n)은 1바이트이므로, 바이트 오프셋 이전의 \n 개수로 문단 경계 판단
+    try {
+      byte[] bytes = storyText.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      if (byteOffset > bytes.length) {
+        return true;
+      }
+      // byteOffset-1 위치의 바이트가 \n인지 확인
+      return bytes[(int) byteOffset - 1] == '\n';
+    } catch (Exception e) {
+      return true;
+    }
+  }
 }
