@@ -56,8 +56,9 @@ public class AdmissionsVectorIndex {
         int dim = props.getDimension();
         for (AdmissionsKnowledgeEmbedding e : embeddingRepository.findByModelVersion(model)) {
             float[] vec = bytesToFloats(e.getVector(), dim);
-            if (vec != null && e.getKnowledge() != null) {
-                fresh.put(e.getKnowledge().getKnowledgeId(), vec);
+            // knowledgeId 직접 필드 사용 (lazy 로딩 회피)
+            if (vec != null && e.getKnowledgeId() != null) {
+                fresh.put(e.getKnowledgeId(), vec);
             }
         }
         index.clear();
