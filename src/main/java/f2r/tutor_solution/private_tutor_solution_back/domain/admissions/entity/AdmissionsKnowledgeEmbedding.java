@@ -27,6 +27,10 @@ public class AdmissionsKnowledgeEmbedding {
     @JoinColumn(name = "knowledge_id", nullable = false)
     private AdmissionsKnowledgeItem knowledge;
 
+    /** knowledge_id 직접 접근용 (lazy 로딩 회피). */
+    @Column(name = "knowledge_id", insertable = false, updatable = false)
+    private Long knowledgeId;
+
     @Column(name = "model_version", length = 50, nullable = false)
     private String modelVersion;
 
