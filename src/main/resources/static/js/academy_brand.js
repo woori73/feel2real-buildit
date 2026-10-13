@@ -180,6 +180,12 @@
     var cardStyle = draft.cardStyle || (preset && preset.cardStyle);
     if (cardStyle) root.dataset.cardStyle = cardStyle;
     else delete root.dataset.cardStyle;
+    // 스크롤 등장 효과. 미설정이면 속성을 두지 않아 기존 reveal 기본값 그대로다(시각 회귀 0).
+    if (draft.motionStyle === 'none' || draft.motionStyle === 'fade' || draft.motionStyle === 'slide') {
+      root.dataset.motion = draft.motionStyle;
+    } else {
+      delete root.dataset.motion;
+    }
     BRAND_COLOR_KEYS.forEach(function (key) {
       var custom = draft[COLOR_DRAFT_KEYS[key]];
       var value = (custom == null || custom === '') ? (preset && preset.colors[key]) : custom;

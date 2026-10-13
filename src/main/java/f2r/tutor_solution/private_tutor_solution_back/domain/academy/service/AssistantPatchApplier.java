@@ -80,6 +80,8 @@ final class AssistantPatchApplier {
    */
   static Plan plan(List<Op> ops, Snapshot snap, String userMessage) {
     List<Op> accepted = new ArrayList<>();
+    List<Op> assetOps = new ArrayList<>();
+    List<Op> markers = new ArrayList<>();
     List<String> skipped = new ArrayList<>();
     if (ops == null) return new Plan(accepted, skipped);
     int index = 0;
@@ -89,10 +91,33 @@ final class AssistantPatchApplier {
         skipped.add("한 번에 바꿀 수 있는 항목은 최대 " + MAX_OPS + "개예요. 나머지는 다음 요청으로 알려 주세요.");
         break;
       }
-      String problem = check(raw, snap, userMessage, accepted);
+      String problem = "applyAsset".equals(raw.op())
+          ? expandAsset(raw, snap, userMessage, assetOps, markers)
+          : check(raw, snap, userMessage, accepted);
       if (problem != null) skipped.add(problem);
     }
-    return new Plan(dedupe(accepted), skipped);
+    // 자산이 펼친 값은 같은 턴의 개별 지정(예: "초록색으로")보다 먼저 깔려야 개별 지정이 이긴다.
+    List<Op> all = new ArrayList<>(assetOps);
+    all.addAll(accepted);
+    // 같은 턴에 다른 프리셋을 직접 고르면 레시피 표식은 맞지 않으니 남기지 않는다.
+    boolean explicitPreset = accepted.stream().anyMatch(o -> "setPreset".equals(o.op()));
+    if (!explicitPreset) all.addAll(markers);
+    return new Plan(dedupe(all), skipped);
+  }
+
+  /** applyAsset 한 개를 카탈로그의 연산으로 펼친다. 펼친 연산도 개별 연산과 같은 검증을 모두 거친다. */
+  private static String expandAsset(Op raw, Snapshot snap, String userMessage, List<Op> assetOps, List<Op> markers) {
+    AssistantAssetCatalog.Asset asset = AssistantAssetCatalog.find(raw.id());
+    if (asset == null) return "등록되지 않은 디자인 자산이라 건너뛰었어요: " + shorten(raw.id());
+    if (!asset.active()) return "'" + asset.label() + "'은(는) 아직 연결되지 않아 건너뛰었어요. " + (asset.note() == null ? "" : asset.note());
+    List<Op> expanded = new ArrayList<>();
+    for (Op e : asset.ops()) {
+      String problem = check(e, snap, userMessage, expanded);
+      if (problem != null) return "'" + asset.label() + "' 적용 중 문제가 있어 건너뛰었어요: " + problem;
+    }
+    assetOps.addAll(expanded);
+    if (asset.recipe()) markers.add(new Op("markAsset", null, asset.id(), null, null, null));
+    return null;
   }
 
   private static String check(Op op, Snapshot snap, String userMessage, List<Op> accepted) {
@@ -135,6 +160,12 @@ final class AssistantPatchApplier {
         String v = lower(op.value());
         if (!AssistantDesignCatalog.CARD_STYLES.contains(v)) return "알 수 없는 카드 스타일이라 건너뛰었어요: " + shorten(op.value());
         accepted.add(Op.of("setCardStyle", null, v));
+        return null;
+      }
+      case "setMotion": {
+        String v = lower(op.value());
+        if (!AssistantDesignCatalog.MOTIONS.containsKey(v)) return "알 수 없는 등장 효과라 건너뛰었어요: " + shorten(op.value());
+        accepted.add(Op.of("setMotion", null, v));
         return null;
       }
       case "setText": {
@@ -266,6 +297,14 @@ final class AssistantPatchApplier {
           draft.put("cardStyle", o.value());
           touched.add("cardStyle");
         }
+        case "setMotion" -> {
+          draft.put("motionStyle", o.value());
+          touched.add("motionStyle");
+        }
+        case "markAsset" -> {
+          draft.put("designAsset", o.value());
+          touched.add("designAsset");
+        }
         case "setText" -> {
           draft.put(o.key(), o.value());
           touched.add(o.key());
@@ -309,6 +348,19 @@ final class AssistantPatchApplier {
           AssistantDesignCatalog.presetLabel(draft.get("designPreset")) + (overridesReset ? " (이전 색·레이아웃 설정은 초기화)" : ""), null);
       changes.removeIf(x -> "디자인".equals(x.label()));
       changes.add(0, c);
+    }
+
+    // 디자인 자산은 그 턴의 가장 큰 변경이라 요약 맨 위에 둔다.
+    changes.stream().filter(c -> "디자인 자산".equals(c.label())).findFirst().ifPresent(c -> {
+      changes.remove(c);
+      changes.add(0, c);
+    });
+
+    // 레시피 한 번에 색이 여럿 바뀌면 한 줄로 묶어 변경 요약이 길어지지 않게 한다.
+    long colorChanges = changes.stream().filter(c -> c.label().startsWith("색상:")).count();
+    if (colorChanges >= 3) {
+      changes.removeIf(c -> c.label().startsWith("색상:"));
+      changes.add(new Change("색상 조합", "이전 색", colorChanges + "개 색 변경", null));
     }
 
     boolean introChanged = !Objects.equals(intro, snap.intro());
@@ -393,6 +445,16 @@ final class AssistantPatchApplier {
         a = after == null ? "기본" : AssistantDesignCatalog.TYPOGRAPHY.getOrDefault(after, after);
       }
       case "headingFont", "bodyFont" -> label = "headingFont".equals(key) ? "제목 글꼴" : "본문 글꼴";
+      case "designAsset" -> {
+        label = "디자인 자산";
+        b = before == null ? "(없음)" : AssistantAssetCatalog.labelOf(before);
+        a = after == null ? "(없음)" : AssistantAssetCatalog.labelOf(after);
+      }
+      case "motionStyle" -> {
+        label = "스크롤 등장 효과";
+        b = before == null ? "기본" : AssistantDesignCatalog.MOTIONS.getOrDefault(before, before);
+        a = after == null ? "기본" : AssistantDesignCatalog.MOTIONS.getOrDefault(after, after);
+      }
       case "heroLayout" -> {
         label = "상단 레이아웃";
         b = heroLabel(before);

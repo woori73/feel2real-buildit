@@ -40,6 +40,15 @@ final class AssistantDesignCatalog {
   static final Set<String> HERO_LAYOUTS = Set.of("center", "split", "visual", "gradient");
   static final Set<String> CARD_STYLES = Set.of("bordered", "rounded", "media", "minimal");
 
+  /** 스크롤 등장 효과 id → 이름. 값은 builderDraft.motionStyle에 저장되고 academy_reveal.css의 data-motion이 표현한다. */
+  static final Map<String, String> MOTIONS = new LinkedHashMap<>();
+
+  static {
+    MOTIONS.put("none", "효과 없음");
+    MOTIONS.put("fade", "서서히 등장");
+    MOTIONS.put("slide", "아래에서 올라오며 등장");
+  }
+
   /** 색상 키 → 역할 설명(프롬프트용). */
   static final Map<String, String> COLOR_KEYS = new LinkedHashMap<>();
 
@@ -60,7 +69,7 @@ final class AssistantDesignCatalog {
   static final List<String> STYLE_OVERRIDE_KEYS = List.of(
       "colorPrimary", "colorSecondary", "colorAccent", "colorBg", "colorBgAlt", "colorText", "colorTextLight",
       "colorBorder", "colorHeroBg", "colorHeroText", "heroLayout", "cardStyle", "typographyPreset",
-      "headingFont", "bodyFont");
+      "headingFont", "bodyFont", "designAsset");
 
   /** 순서·표시를 바꿀 수 있는 섹션(히어로는 항상 맨 위 고정, 준비 중 섹션은 제외). */
   static final Map<String, String> SECTIONS = new LinkedHashMap<>();

@@ -365,7 +365,8 @@ class AcademyAssistantEditMySqlTest {
     long rev = createAndPublish();
     AI.set(p -> ai(DARK_PREMIUM));
     JsonNode e = edit("고급스럽게", rev);
-    assertThat(publicBody().get("pageSettings").get("builderDraft").has("typographyPreset")).isFalse();
+    // 게시 전 공개본에는 수정(PREMIUM)이 없다. (최초 생성의 디자인 자산이 정한 글꼴은 이미 게시돼 있을 수 있다.)
+    assertThat(publicBody().get("pageSettings").get("builderDraft").path("typographyPreset").asText()).isNotEqualTo("PREMIUM");
 
     JsonNode pub = json(publish(e.get("revision").asLong()));
 
@@ -400,5 +401,68 @@ class AcademyAssistantEditMySqlTest {
       assertThat(mockMvc.perform(post(API + path).contentType(MediaType.APPLICATION_JSON)
           .content("{\"message\":\"x\",\"revision\":1}")).andReturn().getResponse().getStatus()).isIn(401, 403);
     }
+  }
+
+  @Test
+  @DisplayName("given 게시된 홈페이지, when AI가 디자인 자산(applyAsset)을 고르면, then 서버가 연산으로 펼쳐 작업본에만 저장하고 공개는 그대로이며 되돌리면 원래대로다")
+  void assetAppliesToWorkingCopyOnlyAndUndoes() throws Exception {
+    long rev = createAndPublish();
+    String liveBefore = liveColumn("page_settings");
+    JsonNode publicBefore = publicBody();
+    String wcBefore = workingCopyColumn("page_settings_json");
+    AI.set(p -> ai("{\"reply\":\"학교형 스타일로 바꿨어요.\",\"ops\":[{\"op\":\"applyAsset\",\"id\":\"tmpl-demo-school\"}]}"));
+
+    JsonNode r = edit("학부모가 휴대폰으로 보기 편하게 모바일 퍼스트 느낌으로", rev);
+
+    assertThat(r.get("edited").asBoolean()).isTrue();
+    assertThat(r.get("engine").asText()).isEqualTo("AI:scripted");
+    String wc = workingCopyColumn("page_settings_json");
+    assertThat(wc).contains("\"designAsset\":\"tmpl-demo-school\"").contains("\"motionStyle\":\"fade\"")
+        .contains("\"colorPrimary\":\"#157f5b\"").contains("\"designPreset\":\"ENGLISH\"");
+    assertThat(liveColumn("page_settings")).isEqualTo(liveBefore);
+    assertThat(publicBody()).isEqualTo(publicBefore);
+
+    JsonNode u = json(undo(r.get("revision").asLong()));
+    assertThat(u.get("failed").asBoolean()).isFalse();
+    JsonNode restored = objectMapper.readTree(workingCopyColumn("page_settings_json"));
+    assertThat(restored.get("builderDraft")).isEqualTo(objectMapper.readTree(wcBefore).get("builderDraft"));
+  }
+
+  @Test
+  @DisplayName("given AI가 없는 자산 id·연결 안 된 자산을 고르면, when 수정 턴을 하면, then 작업본은 그대로이고 이유를 안내한다")
+  void unknownOrUnconnectedAssetChangesNothing() throws Exception {
+    long rev = createAndPublish();
+    String wcBefore = workingCopyColumn("page_settings_json");
+    AI.set(p -> ai("{\"reply\":\"적용했어요.\",\"ops\":[{\"op\":\"applyAsset\",\"id\":\"comp-team-tailblocks\"},"
+        + "{\"op\":\"applyAsset\",\"id\":\"made-up-asset\"}]}"));
+
+    JsonNode r = edit("강사진을 카드로 보여줘", rev);
+
+    assertThat(r.get("edited").asBoolean()).isFalse();
+    assertThat(r.get("skipped").size()).isEqualTo(2);
+    assertThat(workingCopyColumn("page_settings_json")).isEqualTo(wcBefore);
+  }
+
+  @Test
+  @DisplayName("given 샘플 없이 분위기를 말하며 최초 생성하면, when 만들면, then 요청에 맞는 디자인 자산이 작업본에 적용되고 공개는 만들어지지 않는다")
+  void firstCreationPicksRecipeFromRequest() throws Exception {
+    JsonNode created = json(turn(Map.of("academyName", "새봄영어학원", "message", "미니멀하고 깔끔한 소수정예 영어회화 학원이에요",
+        "region", "서울 강남구", "subject", "영어", "target", "중학생")));
+
+    assertThat(created.get("created").asBoolean()).isTrue();
+    String wc = workingCopyColumn("page_settings_json");
+    assertThat(wc).contains("\"designAsset\":\"tmpl-minimal-landing\"").contains("\"designPreset\":\"MINIMAL\"")
+        .contains("\"motionStyle\":\"fade\"");
+    assertThat(created.get("designPreset").asText()).isEqualTo("MINIMAL");
+    assertThat(created.get("notes").toString()).contains("디자인 자산");
+  }
+
+  @Test
+  @DisplayName("given 샘플(입시·내신)로 최초 생성하면, when 만들면, then 샘플이 정한 프리셋은 뒤집히지 않는다")
+  void sampleKeepsItsPresetWhenRecipeApplies() throws Exception {
+    JsonNode created = json(createFromSample("exam"));
+    assertThat(created.get("created").asBoolean()).isTrue();
+    assertThat(created.get("designPreset").asText()).isEqualTo("EXAM");
+    assertThat(workingCopyColumn("page_settings_json")).contains("\"designPreset\":\"EXAM\"");
   }
 }
