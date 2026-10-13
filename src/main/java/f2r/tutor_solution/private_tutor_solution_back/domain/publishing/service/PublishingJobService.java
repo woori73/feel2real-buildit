@@ -137,4 +137,30 @@ public class PublishingJobService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
             "작업을 찾을 수 없습니다: " + jobId));
   }
+
+  /**
+   * 작업의 원고 파일 경로를 반환한다 (P4).
+   * @return 원고 파일 경로, 없으면 null
+   */
+  public Path getManuscriptPath(AuthenticatedPrincipal principal, Long jobId) {
+    PublishingJob job = requireOwned(principal, jobId);
+    Path workDir = Path.of(props.getStorageRoot(), "jobs", String.valueOf(jobId));
+    // manuscript.* 파일을 찾는다
+    try (var stream = Files.list(workDir)) {
+      return stream
+          .filter(p -> p.getFileName().toString().startsWith("manuscript."))
+          .findFirst()
+          .orElse(null);
+    } catch (IOException e) {
+      return null;
+    }
+  }
+
+  /**
+   * 작업의 문서(.designcraft) 경로를 반환한다 (P4).
+   */
+  public Path getDocumentPath(AuthenticatedPrincipal principal, Long jobId) {
+    PublishingJob job = requireOwned(principal, jobId);
+    return Path.of(props.getStorageRoot(), "jobs", String.valueOf(jobId), "job.designcraft");
+  }
 }
