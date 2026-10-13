@@ -1,7 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilter;
-import f2r.tutor_solution.private_tutor_solution_back.config.security.VisualEditorAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.NewstartAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.CookieUtil;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.EasyCollectorAgentTokenFilter;
@@ -99,11 +98,7 @@ public class SecurityConfig {
       // 다른 서비스들과 동일하게 ObjectProvider로 지연 조회한다(@WebMvcTest 슬라이스 호환).
       org.springframework.beans.factory.ObjectProvider<
               f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLocalCollectorService>
-          easyLocalCollectorServiceProvider,
-      // 시각 편집기 AI Agent 전용 Bearer 토큰 필터 의존성(JPA 레포 의존 → ObjectProvider 지연 조회, @WebMvcTest 호환).
-      org.springframework.beans.factory.ObjectProvider<
-              f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.AgentTokenService>
-          veAgentTokenServiceProvider) throws Exception {
+          easyLocalCollectorServiceProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -126,9 +121,6 @@ public class SecurityConfig {
     // (SHA-256 해시만 DB 저장)이라, ChartAgentTokenFilter와 달리 요청마다 DB 조회로 검증한다.
     EasyCollectorAgentTokenFilter easyCollectorAgentTokenFilter =
         new EasyCollectorAgentTokenFilter(easyLocalCollectorServiceProvider);
-    // 시각 편집기 AI Agent 전용 Bearer 토큰 필터. 학원 1개에 바인딩된 토큰(SHA-256 해시만 DB 저장), 좁은 allowlist.
-    VisualEditorAgentTokenFilter veAgentTokenFilter =
-        new VisualEditorAgentTokenFilter(veAgentTokenServiceProvider);
     ArchivedRouteAccessFilter archivedRouteAccessFilter =
         new ArchivedRouteAccessFilter(archivedRoutesProperties);
     OriginWhitelistFilter originWhitelistFilter =
@@ -212,8 +204,6 @@ public class SecurityConfig {
             .hasRole("TUTOR")
             // 랜딩 편집 화면은 기존 public admin view 그룹보다 먼저 차단한다.
             .requestMatchers("/admin/landing", "/admin/chart").hasRole("ADMIN")
-            // 관리자 개별 학원 미리보기 — catch-all이 permitAll이므로 ADMIN 매처를 명시한다.
-            .requestMatchers("/admin/academies/*/preview", "/admin/academies/*/builder").hasRole("ADMIN")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).
             .requestMatchers("/easy", "/easy/**").hasRole("ADMIN")
             // CHOONGGI Creator SSR — ADMIN or the scoped CHOONGGI CREATOR role only; public vlog
@@ -303,6 +293,7 @@ public class SecurityConfig {
                 "/chart",
                 "/chart/educators/**",
                 "/newstart",  // 홈만 공개. 하위 화면은 NewStartMembersOnlyInterceptor가 비회원을 로그인으로 보낸다.
+                "/admissions/guide",  // 입시상담 가이드 (비회원 이용, 2026-10-13)
                 "/wemade",  // 위메이드 개인주주 분석 (별도 도메인, 공개)
                 "/wemade/login",  // 위메이드 ID/PW 로그인 페이지 (2026-10-06, OAuth 미사용)
                 "/lessons",
@@ -342,6 +333,8 @@ public class SecurityConfig {
             // 가입 즉시 로그인 쿠키 발급. 로그인은 위 /api/auth/login 재사용. 네이버 OAuth는 사용하지 않는다.
             .requestMatchers(HttpMethod.POST, "/api/wemade/auth/signup").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()  // 빈 쿠키 덮는 건 인증 무관
+            // 입시상담 가이드 채팅 (비회원 이용, 2026-10-13). 남용 방지는 컨트롤러의 IP 기반 rate limit.
+            .requestMatchers(HttpMethod.POST, "/api/admissions/chat").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/login-id/find").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/request").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/password-reset/confirm").permitAll()
@@ -354,7 +347,6 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/academies/**").permitAll()  // 공개 Academy 조회/이미지
             .requestMatchers(HttpMethod.HEAD, "/api/academies/**").permitAll()  // 공개 영상 메타데이터
             .requestMatchers(HttpMethod.POST, "/api/academies/*/visits").permitAll()  // 공개 방문 집계
-            .requestMatchers(HttpMethod.GET, "/api/public/academy/*/homepage").permitAll()  // 시각 편집기 공개 홈페이지
             .requestMatchers(HttpMethod.GET, "/api/academy-posts").permitAll()  // 공개 Academy 블로그 포스트 모아보기
             // 일반 공개 커뮤니티 read는 유지하되 Wiki scope 목록은 회원 전용으로 먼저 닫는다.
             // Wiki 게시글 상세는 데이터의 boardType을 알아야 하므로 CommunityController가 2차 방어한다.
@@ -460,8 +452,8 @@ public class SecurityConfig {
             // never gains reach into NewStart/EASY/other global admin APIs through that catch-all.
             .requestMatchers("/api/admin/choonggi/**").hasAnyRole("ADMIN", "CREATOR")
 
-            // 시각 편집기 AI Agent: 토큰으로만 접근. 사용자 쿠키(TUTOR/ADMIN 포함)로는 이 경로를 쓸 수 없다.
-            .requestMatchers("/api/agent/academy/visual-editor/**").hasRole("VE_AGENT")
+            // 입시상담 지식 관리자 API — ADMIN 전용 (2026-10-13). 명시적 표기.
+            .requestMatchers("/api/admin/admissions/**").hasRole("ADMIN")
 
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -472,18 +464,6 @@ public class SecurityConfig {
             // 학원이 없으면 안전하게 204를 반환할 뿐 다른 tutor의 데이터를 주거나 쓰기 권한을
             // 주지 않는다. 반드시 아래 넓은 /api/tutor/** 규칙보다 먼저(좁은 것 우선).
             .requestMatchers(HttpMethod.GET, "/api/tutor/academy/me").hasAnyRole("TUTOR", "ADMIN")
-
-            // 홈페이지 빌더 계열(생성·수정·AI 채팅·작업본·게시)은 TUTOR와 ADMIN 모두 허용한다.
-            // 소유자 검증은 서비스 계층(verifyOwnsAcademyForBuilder)이 맡아 ADMIN도 본인 학원만 다룬다.
-            // 삭제·수업상품·블로그·LMS·영상·레이아웃·시각 편집기 API는 아래 TUTOR 전용 규칙을 그대로 받는다.
-            // 반드시 아래 넓은 /api/tutor/** 규칙보다 먼저(좁은 것 우선).
-            .requestMatchers(HttpMethod.GET, "/api/tutor/academy/handle-available").hasAnyRole("TUTOR", "ADMIN")
-            .requestMatchers(HttpMethod.POST, "/api/tutor/academy").hasAnyRole("TUTOR", "ADMIN")
-            .requestMatchers(HttpMethod.PUT, "/api/tutor/academy").hasAnyRole("TUTOR", "ADMIN")
-            .requestMatchers(HttpMethod.PUT, "/api/tutor/academy/page-settings").hasAnyRole("TUTOR", "ADMIN")
-            .requestMatchers("/api/tutor/academy/ai/chat/**").hasAnyRole("TUTOR", "ADMIN")
-            .requestMatchers("/api/tutor/academy/assistant/**").hasAnyRole("TUTOR", "ADMIN")
-            .requestMatchers("/api/tutor/academy/working-copy/**").hasAnyRole("TUTOR", "ADMIN")
 
             // Tutor 전용
             .requestMatchers("/api/tutor/**").hasRole("TUTOR")
@@ -501,7 +481,6 @@ public class SecurityConfig {
         .addFilterAfter(chartAgentTokenFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(newstartAgentTokenFilter, ChartAgentTokenFilter.class)
         .addFilterAfter(easyCollectorAgentTokenFilter, NewstartAgentTokenFilter.class)
-        .addFilterAfter(veAgentTokenFilter, EasyCollectorAgentTokenFilter.class)
         .addFilterAfter(archivedRouteAccessFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)
