@@ -37,6 +37,35 @@ window.WEMADE_VIEWER = /*[[${viewer}]]*/ 'GUEST';
   </section>
   <ul class="today-lines" id="today-lines" hidden><li></li></ul>
 
+  <!-- 최신 뉴스 (buildit2 public 연동, 2026-10-13) — 이후 뉴스 업데이트는 https://github.com/woori73/buildit2 의 wemade-news/news.json 만 수정하면 반영됨. private 저장소 PR·배포 불필요 -->
+  <section class="sec" aria-labelledby="t-newsfeed">
+    <h2 class="sec-title" id="t-newsfeed">최신 뉴스</h2>
+    <div id="wemade-newsfeed"><p class="muted">뉴스를 불러오는 중…</p></div>
+  </section>
+  <script>
+  (function(){
+    var el = document.getElementById('wemade-newsfeed');
+    if(!el) return;
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(x){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]; }); }
+    fetch('https://raw.githubusercontent.com/woori73/buildit2/main/wemade-news/news.json', {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+      .then(function(data){
+        var items = (data && data.items) || [];
+        if(!items.length){ el.innerHTML = '<p class="muted">등록된 뉴스가 없습니다.</p>'; return; }
+        el.innerHTML = items.map(function(it){
+          var pts = (it.points||[]).map(function(p){ return '<li>'+esc(p)+'</li>'; }).join('');
+          var meta = [it.source, it.author, it.publishedAt].filter(Boolean).map(esc).join(' · ');
+          return '<article class="cn-article">'
+            + '<h4><a href="'+esc(it.url)+'" target="_blank" rel="noopener">'+esc(it.title)+'</a></h4>'
+            + (meta ? '<div class="meta">'+meta+'</div>' : '')
+            + (pts ? '<ul>'+pts+'</ul>' : '')
+            + '</article>';
+        }).join('');
+      })
+      .catch(function(){ el.innerHTML = '<p class="muted">뉴스를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>'; });
+  })();
+  </script>
+
     <!-- 2026-10-11 중국 블록체인 뉴스 + 심층 분석 (신규 추가 — 기존 섹션·마크업·스크립트·스타일 미변경) -->
   <section class="sec" aria-labelledby="t-update1011">
     <h2 class="sec-title" id="t-update1011">10월 11일 업데이트 — 중국 '국가 블록체인 네트워크'와 위메이드</h2>
