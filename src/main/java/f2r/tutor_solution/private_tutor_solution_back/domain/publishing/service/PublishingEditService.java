@@ -244,11 +244,19 @@ public class PublishingEditService {
   }
 
   /**
-   * Markdown 원고의 제목 스타일을 자동 적용한다 (P4).
+   * Markdown 원고의 제목 스타일을 자동 적용한다 (P5).
    *
-   * <p>원고 파일을 읽어 Markdown 구조를 파싱하고, 각 제목에 대해
-   * {@code find.find} → {@code text.select} → {@code style.paragraph.apply}
-   * 시퀀스로 ko-heading 스타일을 적용한다.
+   * <p><b>문단 위치 기반 처리</b>: Markdown 파싱 시 기록한 문단 인덱스를 사용하여
+   * 정확한 문단에 스타일을 적용한다. 제목과 본문에 동일한 문구가 있어도
+   * Markdown에서 제목으로 파싱된 문단에만 스타일이 적용된다.
+   *
+   * <p>처리 순서 (역순으로 처리하여 오프셋 변동 영향 제거):
+   * <ol>
+   *   <li>{@code story.get}으로 스토리 텍스트와 ID 조회</li>
+   *   <li>문단별 UTF-8 바이트 오프셋 계산</li>
+   *   <li>각 제목 문단(역순)의 마커를 {@code text.select} + {@code edit.clear}로 제거</li>
+   *   <li>제목 텍스트에 {@code style.paragraph.apply}로 스타일 적용</li>
+   * </ol>
    *
    * @return 적용된 스타일 수
    */
@@ -280,58 +288,81 @@ public class PublishingEditService {
 
     var job = jobService.requireOwned(principal, jobId);
     Path workDir = Path.of(job.getWorkDir());
+
+    // 스토리 텍스트 조회
+    long storyId;
+    String storyText;
+    try {
+      var storyResult = cliExecutor.execute(
+          new PublishingCommand("story.get", Map.of()), workDir);
+      var storyNode = objectMapper.readTree(storyResult.output());
+      storyId = storyNode.get("id").asLong();
+      storyText = storyNode.get("text").asText();
+    } catch (Exception e) {
+      throw new IllegalStateException("스토리 조회 실패: " + e.getMessage(), e);
+    }
+
+    // 문단별 바이트 오프셋 계산
+    java.util.List<long[]> paraRanges = new java.util.ArrayList<>();
+    byte[] textBytes = storyText.getBytes(StandardCharsets.UTF_8);
+    long currentStart = 0;
+    for (int i = 0; i < textBytes.length; i++) {
+      if (textBytes[i] == '\n') {
+        paraRanges.add(new long[]{currentStart, i});
+        currentStart = i + 1;
+      }
+    }
+    // 마지막 문단 (줄바꿈으로 끝나지 않은 경우)
+    if (currentStart < textBytes.length) {
+      paraRanges.add(new long[]{currentStart, textBytes.length});
+    } else if (currentStart == textBytes.length && !paraRanges.isEmpty()) {
+      // 텍스트가 줄바꿈으로 끝나면 빈 마지막 문단 추가하지 않음
+    }
+
+    // 제목 블록을 문단 인덱스 역순으로 정렬
+    var blocks = new java.util.ArrayList<>(parsed.headingBlocks());
+    blocks.sort((a, b) -> Integer.compare(b.paragraphIndex(), a.paragraphIndex()));
+
     int applied = 0;
-    for (var block : parsed.headingBlocks()) {
+    for (var block : blocks) {
+      int paraIdx = block.paragraphIndex();
+      if (paraIdx < 0 || paraIdx >= paraRanges.size()) {
+        log.warn("문단 인덱스 범위 초과: {} (전체 {}개)", paraIdx, paraRanges.size());
+        continue;
+      }
       try {
-        // 1. 마커 제거: "# 제목" → "제목" (find.change)
-        // 원본에 마커가 있는 경우에만 수행
-        if (!block.original().equals(block.text())) {
-          cliExecutor.execute(
-              new PublishingCommand("find.change",
-                  Map.of("find", block.original(), "change", block.text(),
-                      "scope", "story")),
-              workDir);
-          log.info("마커 제거: '{}' → '{}'", block.original(), block.text());
-        }
+        long[] range = paraRanges.get(paraIdx);
+        long paraStart = range[0];
+        long paraEnd = range[1];
 
-        // 2. find.find로 제목 텍스트 위치 확인
-        var findResult = cliExecutor.execute(
-            new PublishingCommand("find.find",
-                Map.of("find", block.text(), "scope", "story")),
-            workDir);
-        JsonNode matches = objectMapper.readTree(findResult.output());
-        if (!matches.isArray() || matches.isEmpty()) {
-          log.warn("제목 텍스트를 찾지 못함: {}", block.text());
-          continue;
-        }
-        // P5: 모든 일치 항목에 대해 문단 시작 위치인지 확인 후 스타일 적용
-        // 제목과 본문에 동일한 문구가 있어도 제목 문단에만 적용됨
-        String storyTextForCheck = getStoryText(workDir);
-        int blockApplied = 0;
-        for (JsonNode match : matches) {
-          long story = match.get("story").asLong();
-          long start = match.get("start").asLong();
-          long end = match.get("end").asLong();
-
-          if (!isParagraphStart(storyTextForCheck, start)) {
-            log.debug("문단 시작이 아님, 스킵: '{}' (위치 {})", block.text(), start);
-            continue;
-          }
-
+        // 마커 제거 (문단 시작부터 markerBytes만큼)
+        if (block.markerBytes() > 0) {
           cliExecutor.execute(
               new PublishingCommand("text.select",
-                  Map.of("story", story, "anchor", start, "focus", end)),
+                  Map.of("story", storyId, "anchor", paraStart,
+                      "focus", paraStart + block.markerBytes())),
               workDir);
           cliExecutor.execute(
-              new PublishingCommand("style.paragraph.apply",
-                  Map.of("name", block.style())),
+              new PublishingCommand("edit.clear", Map.of()),
               workDir);
-          blockApplied++;
+          // 마커 제거 후 범위 조정
+          paraEnd = paraEnd - block.markerBytes();
         }
-        applied += blockApplied;
-        log.info("스타일 적용: '{}' → {}", block.text(), block.style());
+
+        // 스타일 적용
+        cliExecutor.execute(
+            new PublishingCommand("text.select",
+                Map.of("story", storyId, "anchor", paraStart, "focus", paraEnd)),
+            workDir);
+        cliExecutor.execute(
+            new PublishingCommand("style.paragraph.apply",
+                Map.of("name", block.style())),
+            workDir);
+
+        applied++;
+        log.info("스타일 적용: 문단 {} '{}' -> {}", paraIdx, block.text(), block.style());
       } catch (Exception e) {
-        log.warn("스타일 적용 실패: '{}' - {}", block.text(), e.getMessage());
+        log.warn("스타일 적용 실패: 문단 {} - {}", paraIdx, e.getMessage());
       }
     }
 
