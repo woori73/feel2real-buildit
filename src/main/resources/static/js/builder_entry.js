@@ -7,6 +7,26 @@
 (function() {
   'use strict';
 
+  // 모달 Escape 키 처리: 전역에 1회만 등록
+  // - 포커스가 부모 문서에 있을 때: keydown으로 모달 닫기
+  // - 포커스가 미리보기 iframe 내부에 있을 때: iframe 로드 시 contentDocument에도 리스너 등록
+  function closeOpenModals() {
+    var closed = false;
+    ['preparingModal', 'samplePreviewModal'].forEach(function(id) {
+      var m = document.getElementById(id);
+      if (m) {
+        m.remove();
+        closed = true;
+      }
+    });
+    return closed;
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      closeOpenModals();
+    }
+  });
+
   // AI 입력창: 입력 내용 자동 저장/복원 (유실 방지)
   // 참고: 프롬프트의 /builder 자동 전달은 준비 중 (백엔드 연동은 Claude 담당)
   var PROMPT_KEY = 'buildit_entry_prompt';
@@ -83,6 +103,9 @@
       if (e.target === modal) modal.remove();
     });
     document.body.appendChild(modal);
+    // 모달에 포커스를 주어 Escape 키가 동작하도록 함
+    modal.setAttribute('tabindex', '-1');
+    modal.focus();
   }
 
   function openPreviewModal(sampleId, previewUrl) {
@@ -104,6 +127,25 @@
       if (e.target === modal) modal.remove();
     });
     document.body.appendChild(modal);
+    // 모달에 포커스를 주어 Escape 키가 부모 문서에서 동작하도록 함
+    modal.setAttribute('tabindex', '-1');
+    modal.focus();
+    // iframe 내부에 포커스가 있을 때도 Escape가 동작하도록 same-origin iframe에 리스너 등록
+    var iframe = modal.querySelector('iframe');
+    if (iframe) {
+      iframe.addEventListener('load', function() {
+        try {
+          var doc = iframe.contentDocument || iframe.contentWindow.document;
+          doc.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' || e.keyCode === 27) {
+              closeOpenModals();
+            }
+          });
+        } catch (err) {
+          // cross-origin iframe인 경우 접근 불가 - 무시
+        }
+      });
+    }
   }
 
   function escapeHtml(str) {
