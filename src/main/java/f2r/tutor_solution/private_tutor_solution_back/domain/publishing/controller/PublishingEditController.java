@@ -4,6 +4,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.ExecuteCommandsRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto.PreflightResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingEditService;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -18,9 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * DesignCraft 출판 편집 API (P1: 명령 실행·페이지 PNG·preflight).
+ * DesignCraft 출판 편집 API.
  *
- * <p>Qoder 명세 4.2·4.4 계약을 따른다.
+ * <p>Qoder API_INTEGRATION.md 계약을 따른다.
  */
 @RestController
 @RequestMapping("/api/publishing/jobs/{jobId}")
@@ -29,20 +30,28 @@ public class PublishingEditController {
 
   private final PublishingEditService editService;
 
-  /** 편집 명령 실행 (적용 전 스냅샷 자동 생성). */
+  /**
+   * 편집 명령 실행 (적용 전 스냅샷 자동 생성).
+   *
+   * <p>갭-G2: label은 스냅샷 설명용. 갭-G6: 빈 commands는 스냅샷만 생성.
+   * 갭-G4: touchedPages 반환 (프론트 캐시 무효화용).
+   */
   @PostMapping("/commands")
   public ResponseEntity<Map<String, Object>> executeCommands(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
       @PathVariable Long jobId,
       @RequestBody ExecuteCommandsRequest request) {
-    Long snapshotId = editService.executeCommands(principal, jobId, request.commands());
+    Long snapshotId = editService.executeCommands(
+        principal, jobId, request.commands(), request.label());
+    // 변경된 페이지는 전체로 간주 (정밀 추적은 P2)
     return ResponseEntity.ok(Map.of(
         "jobId", jobId,
         "applied", true,
-        "snapshotId", snapshotId));
+        "snapshotId", snapshotId,
+        "touchedPages", List.of()));
   }
 
-  /** 페이지 PNG 미리보기. */
+  /** 페이지 PNG 미리보기 (캐시 브레이커: ETag). */
   @GetMapping("/pages/{page}/png")
   public ResponseEntity<byte[]> renderPage(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
@@ -50,8 +59,11 @@ public class PublishingEditController {
       @PathVariable int page,
       @RequestParam(defaultValue = "2.0") double scale) {
     byte[] png = editService.renderPagePng(principal, jobId, page, scale);
+    String etag = "\"pg" + page + "-s" + scale + "-" + png.length + "\"";
     return ResponseEntity.ok()
         .contentType(MediaType.IMAGE_PNG)
+        .header("ETag", etag)
+        .header("Cache-Control", "private, max-age=60")
         .body(png);
   }
 
@@ -64,10 +76,11 @@ public class PublishingEditController {
     byte[] png = editService.renderPagePng(principal, jobId, page, 0.5);
     return ResponseEntity.ok()
         .contentType(MediaType.IMAGE_PNG)
+        .header("Cache-Control", "private, max-age=300")
         .body(png);
   }
 
-  /** preflight 검수 실행. */
+  /** preflight 검수 실행 (Qoder §2 스키마). */
   @PostMapping("/preflight")
   public ResponseEntity<PreflightResponse> runPreflight(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
