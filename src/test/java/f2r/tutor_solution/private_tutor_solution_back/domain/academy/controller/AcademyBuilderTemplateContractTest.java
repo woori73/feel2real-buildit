@@ -47,11 +47,11 @@ class AcademyBuilderTemplateContractTest {
     assertThat(html)
         .containsSubsequence(
             "<script src=\"/js/academy_builder_text_utils.js\"></script>",
-            "<script src=\"/js/academy_sections.js?v=20261011-1\"></script>",
+            "<script src=\"/js/academy_sections.js?v=20261012-2\"></script>",
             "<script src=\"/js/academy_reveal.js?v=20260901-5\"></script>",
             "<script src=\"/js/academy_world.js?v=20260907-4\"></script>",
             "<script src=\"/js/academy_builder_ai_guide.js?v=20260908-1\"></script>",
-            "<script src=\"/js/academy_builder.js?v=20261011-1\"></script>");
+            "<script src=\"/js/academy_builder.js?v=20261012-2\"></script>");
   }
 
   @Test

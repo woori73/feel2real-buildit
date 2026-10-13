@@ -13,8 +13,10 @@
   <link rel="stylesheet" href="/css/academy_public.css?v=20261011-1"/>
   <link rel="stylesheet" href="/css/lesson_product_showcase.css?v=20260810-1"/>
   <link rel="stylesheet" href="/css/academy_collection.css?v=20260905-1"/>
+  <link rel="stylesheet" href="/css/academy_teachers.css?v=20261012-2"/>
   <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1"/>
   <link rel="stylesheet" href="/css/academy_builder_ai_guide.css?v=20260908-2"/>
+  <link rel="stylesheet" href="/css/academy_builder_ai_chat.css?v=20261012-1"/>
   <link rel="stylesheet" href="/css/academy_world.css?v=20260908-2"/>
   <link rel="stylesheet" href="/css/academy_brand.css?v=20261011-1"/>
 
@@ -838,6 +840,7 @@
       font-size:.72rem;font-weight:700;padding:5px 12px;border-radius:6px;
       cursor:pointer;transition:all .15s;border:none;
     }
+    a.tb-btn{text-decoration:none;display:inline-block;}
     .tb-btn-green{background:#10B981;color:#fff;}
     .tb-btn-green:hover{background:#059669;}
     /* 편집 어피던스는 캔버스에서 노란색이다. 같은 색을 써서 '발행'(초록=공개)과 역할을 가른다. */
@@ -1097,6 +1100,11 @@
     <button class="ai-guide-toggle" id="builderAiGuideToggle" type="button" aria-pressed="false" aria-controls="builderBildiStage builderAiGuidePanel">
       <i class="fa-solid fa-dove"></i> <span id="builderAiGuideToggleLabel">빌디 OFF</span>
     </button>
+    <!-- 시각 편집기(GrapesJS) 진입. 기존 홈페이지는 편집기 안의 "불러오기"로 가져온다. -->
+    <a class="tb-btn" id="builderVisualEditorLink" href="/tutor/academy/editor"
+       title="드래그·클릭으로 홈페이지를 직접 편집합니다">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> 시각 편집기
+    </a>
     <!-- LMS는 캔버스에 렌더되는 공개페이지 섹션이 아니라 별도 화면(/lms/{handle})이라
          섹션 블록이 아닌 독립 버튼+모달로 둔다(에듀홀릭 LMS Phase 1 §7). -->
     <button class="tb-btn" id="builderLmsSettingsBtn" type="button">
@@ -1324,13 +1332,18 @@
              색상·폰트·히어로/카드 레이아웃을 한 번에 적용한다. 적용 전 확인 모달을 거치고,
              이미 직접 바꾼 값(커스텀 색상·타이포)은 덮어쓰지 않는다(fill-in). -->
         <div class="block-section-label">디자인 프리셋 <span class="label-chip">P0</span></div>
-        <p class="builder-brand-help">학원 유형에 맞는 디자인 5종입니다. 색상·폰트·히어로와 카드 레이아웃이 함께 바뀝니다.</p>
+        <p class="builder-brand-help">학원 유형·분위기에 맞는 디자인 10종입니다. 색상·폰트·히어로와 카드 레이아웃이 함께 바뀝니다.</p>
         <div class="builder-brand-grid" data-design-preset-grid>
           <button class="builder-brand-option" data-design-preset="EXAM"><b>입시학원형</b><span>신뢰·실적 · 네이비×골드</span></button>
           <button class="builder-brand-option" data-design-preset="ENGLISH"><b>영어회화형</b><span>밝음·친근 · 스카이블루×오렌지</span></button>
           <button class="builder-brand-option" data-design-preset="ARTS"><b>예체능형</b><span>다크·갤러리 · 차콜×바이올렛</span></button>
           <button class="builder-brand-option" data-design-preset="STUDY"><b>공부방형</b><span>따뜻함·소규모 · 웜브라운×크림</span></button>
           <button class="builder-brand-option" data-design-preset="ONLINE"><b>온라인학원형</b><span>모던·테크 · 다크블루×시안</span></button>
+          <button class="builder-brand-option" data-design-preset="MINIMAL"><b>미니멀형</b><span>여백·타이포 · 모노크롬</span></button>
+          <button class="builder-brand-option" data-design-preset="DARK"><b>다크형</b><span>시크·모던 · 블랙×화이트</span></button>
+          <button class="builder-brand-option" data-design-preset="WARM"><b>감성형</b><span>따뜻함·스토리 · 앰버×크림</span></button>
+          <button class="builder-brand-option" data-design-preset="PHOTO"><b>포토형</b><span>사진·갤러리 · 뉴트럴×오렌지</span></button>
+          <button class="builder-brand-option" data-design-preset="DYNAMIC"><b>다이나믹형</b><span>볼드·에너지 · 바이올렛×핑크</span></button>
         </div>
         <div class="block-section-label">색상 테마 <span class="label-chip">직접 조정</span></div>
         <p class="builder-brand-help">프리셋 색상을 직접 바꿀 수 있습니다. 바꾼 값은 프리셋을 다시 골라도 유지됩니다.</p>
@@ -1471,6 +1484,91 @@
   <span id="builderBildiStage" aria-hidden="true"></span>
   <span class="bildi-launcher-label">빌디 열기</span>
 </button>
+
+<!-- ════════════════════════════════════════════════════
+  BuildIt P1 — AI 채팅 패널 (Qoder 담당)
+  자연어로 학원 정보 수정안을 받고, 승인해야만 서버에 적용된다. 적용/복원은 서버가
+  builderDraft 를 바꾸므로 성공 후 새로고침한다(AI가 Publish 를 실행하지 않는 기존 원칙 유지).
+  미리보기·PC/태블릿/모바일 뷰 토글·발행 UI 는 위 기존 구현을 그대로 쓴다(재정의 없음).
+  ai-guide-panel 과 동일하게 position:fixed 로 얹어 3-region 레이아웃을 건드리지 않는다.
+════════════════════════════════════════════════════ -->
+<button type="button" class="aichat-launcher" id="builderAiChatLauncher" aria-label="AI 채팅 열기"
+        aria-controls="builderAiChatPanel" aria-expanded="false" hidden>
+  <i class="fa-regular fa-comments" aria-hidden="true"></i>
+  <span>AI 채팅</span>
+</button>
+
+<aside class="aichat-panel" id="builderAiChatPanel" aria-hidden="true" aria-label="AI 채팅으로 학원 정보 수정">
+  <div class="aichat-head">
+    <div>
+      <strong>AI 채팅</strong>
+      <div class="aichat-sub">말하면 수정안을 만들어 드립니다</div>
+    </div>
+    <div class="aichat-head-spacer"></div>
+    <button type="button" class="aichat-icon-btn" id="builderAiChatNew" title="새 대화 시작" aria-label="새 대화 시작">↺</button>
+    <button type="button" class="aichat-icon-btn" id="builderAiChatClose" title="채팅 닫기" aria-label="채팅 닫기">✕</button>
+  </div>
+
+  <div class="aichat-tabs" role="tablist">
+    <button type="button" class="aichat-tab is-active" id="builderAiChatTabChat" role="tab" aria-selected="true"
+            aria-controls="builderAiChatView">대화</button>
+    <button type="button" class="aichat-tab" id="builderAiChatTabVersions" role="tab" aria-selected="false"
+            aria-controls="builderAiChatVersionsView">이력 · 복원</button>
+  </div>
+
+  <div class="aichat-body">
+    <div class="aichat-view" id="builderAiChatView" role="tabpanel" aria-labelledby="builderAiChatTabChat">
+      <div class="aichat-list" id="builderAiChatList" aria-live="polite">
+        <p class="aichat-empty" id="builderAiChatEmpty">
+          무엇을 고칠지 말로 알려 주세요.<br/>
+          예: "월 수강료를 15만원으로 바꿔줘"<br/>
+          <span class="aichat-empty-cap">
+            <b>채팅으로 가능</b> 원장 소개·교육철학·수강료·성적향상률·운영경력·상담 전화/카카오·소개 문구<br/>
+            <b>채팅으로 불가</b> 색상·섹션 구성/순서·발행 — Builder에서 직접 설정해 주세요
+          </span>
+          제안은 <b>적용하기</b>를 눌러야만 반영됩니다.
+        </p>
+        <p class="aichat-empty" id="builderAiChatEmptyCreate" hidden>
+          만들 홈페이지를 한 문장으로 설명해 주세요.<br/>
+          예: "중학생 대상 영어학원, 파란색 계열, 상담 신청 버튼"<br/>
+          <span class="aichat-empty-cap">
+            <b>학원 이름은 필수</b>입니다 (아래 입력칸).<br/>
+            색상·섹션 구성은 초안 생성 후 Builder에서 다듬을 수 있습니다.
+          </span>
+          초안은 <b>승인</b>해야 DRAFT로 저장됩니다.
+        </p>
+      </div>
+      <div class="aichat-foot">
+        <div class="aichat-mode" role="group" aria-label="AI 채팅 모드">
+          <button type="button" class="aichat-mode-btn is-active" id="builderAiChatModeModify">수정</button>
+          <button type="button" class="aichat-mode-btn" id="builderAiChatModeCreate">새 홈페이지</button>
+        </div>
+        <div class="aichat-name-field" id="builderAiChatNameField" hidden>
+          <label class="aichat-sr-only" for="builderAiChatName">학원 이름</label>
+          <input type="text" class="aichat-name-input" id="builderAiChatName" maxlength="60"
+            placeholder="학원 이름 (필수) — 예: 테스트학원" autocomplete="off"/>
+        </div>
+        <div class="aichat-status" id="builderAiChatStatus" role="status"></div>
+        <form class="aichat-form" id="builderAiChatForm">
+          <label class="aichat-sr-only" for="builderAiChatInput">수정 요청 입력</label>
+          <textarea class="aichat-input" id="builderAiChatInput" rows="1" maxlength="500"
+            placeholder="예: 원장 소개를 더 따뜻하게 다듬어줘"></textarea>
+          <button type="submit" class="aichat-send" id="builderAiChatSend" aria-label="전송">
+            <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="aichat-view" id="builderAiChatVersionsView" role="tabpanel" aria-labelledby="builderAiChatTabVersions" hidden>
+      <div class="aichat-versions">
+        <p class="aichat-version-empty" id="builderAiChatVersionEmpty" hidden>저장된 버전이 아직 없습니다.</p>
+        <div class="aichat-version-list" id="builderAiChatVersionList"></div>
+      </div>
+      <div class="aichat-version-status" id="builderAiChatVersionStatus" role="status"></div>
+    </div>
+  </div>
+</aside>
 
 
 <!-- ════════════════════════════════════════════════════
@@ -1980,12 +2078,16 @@ function setView(mode, btn){
 <script src="/js/academy_builder_editable_guide.js?v=20260801-1"></script>
 <script src="/js/lesson_product_showcase.js?v=20260810-1"></script>
 <!-- 섹션 마크업 정본. academy_builder.js보다 먼저 로드해야 한다. -->
-<script src="/js/academy_sections.js?v=20261011-1"></script>
+<script src="/js/academy_sections.js?v=20261012-2"></script>
 <script src="/js/academy_reveal.js?v=20260901-5"></script>
 <script src="/js/academy_world.js?v=20260907-4"></script>
 <script src="/js/academy_builder_ai_guide.js?v=20260908-1"></script>
 <script src="/js/academy_brand.js?v=20261011-1"></script>
-<script src="/js/academy_builder.js?v=20261011-1"></script>
+<script src="/js/academy_builder.js?v=20261012-2"></script>
+<!-- P1 AI 채팅: 전후 비교용 jsdiff(vendored, BSD-3-Clause) → 채팅 패널 순서로 로드한다.
+     패널은 academy_builder.js 내부를 호출하지 않는다(IIFE 라 접근 불가) — 전역은 showToast 뿐. -->
+<script src="/js/vendor/diff.min.js?v=5.2.0"></script>
+<script src="/js/academy_builder_ai_chat.js?v=20261012-1"></script>
 
 </body>
 </html>

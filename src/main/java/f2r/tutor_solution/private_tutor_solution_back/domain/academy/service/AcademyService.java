@@ -122,6 +122,10 @@ public class AcademyService {
       // JSON 배열 문자열로 이 키에 담는다([{"v":<videoId>,"t":..,"n":..,"g":..}]). 스키마 변경 없음.
       "miniLectures",
       "miniLecturesSectionTitle",
+      // ── 강사진(sec-teachers) ──
+      // 회원이 입력한 강사 목록(JSON 배열 문자열)과 섹션 제목. 값이 없으면 섹션은 렌더되지 않는다.
+      "teachersJson",
+      "teachersSectionTitle",
       // Mobile-first brand/typography tokens. Values are registry IDs or bounded pixel numbers.
       "typographyPreset", "headingFont", "bodyFont",
       "logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile",
@@ -138,7 +142,11 @@ public class AcademyService {
       // ── Eduholic LMS Phase 1: Builder "LMS 설정" (LmsBuilderSettingsService) ──
       // LMS 전용 엔드포인트가 직접 저장하므로, 일반 Builder 저장이 validateBuilderDraft에서
       // 거부하지 않도록 allowlist에 등록한다. lmsIntro(소개 문구)는 길어질 수 있어 LONG 목록에도 둔다.
-      "lmsEnabled", "lmsDisplayName", "lmsMainTitle", "lmsIntro", "lmsSectionName");
+      "lmsEnabled", "lmsDisplayName", "lmsMainTitle", "lmsIntro", "lmsSectionName",
+      // ── BuildIt 시각 편집기: 홈페이지 렌더 모드 ──
+      // "template" (P0 기본) 또는 "custom" (편집기 published HTML).
+      // publish/unpublish API가 이 키만 단독으로 갱신한다.
+      "homepage.renderMode");
   private static final Set<String> LONG_BUILDER_DRAFT_KEYS =
       Set.of(
           "introMotto",
@@ -175,6 +183,7 @@ public class AcademyService {
       "sec-featured",
       "sec-intro",
       "sec-principal",
+      "sec-teachers",
       "sec-philosophy",
       "sec-videos",
       "sec-minilectures",
@@ -215,7 +224,7 @@ public class AcademyService {
       AcademyUpsertRequest request,
       MultipartFile logo,
       MultipartFile cover) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     if (academyRepository.findByTutor_UserId(principal.userId()).isPresent()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 Academy가 존재합니다.");
     }
@@ -255,16 +264,71 @@ public class AcademyService {
     }
   }
 
+  /**
+   * AI 생성 홈페이지용 DRAFT 상태 Academy 생성 (P1).
+   *
+   * <p>기존 {@link #create}와 동일한 검증·저장 로직을 사용하되,
+   * 상태만 DRAFT로 생성한다. 공개는 기존 P0 발행 절차로 별도 처리한다.
+   *
+   * <p>멱등성: 동일한 idempotencyKey로 중복 호출 시 기존 생성 결과를 반환한다.
+   */
+  @Transactional
+  public AcademyResponse createDraft(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      AcademyUpsertRequest request,
+      String idempotencyKey) {
+    authResolver.requireAcademyBuilderRole(principal);
+    // 기존 Academy 존재 시 거부 (덮어쓰기 방지)
+    if (academyRepository.findByTutor_UserId(principal.userId()).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 Academy가 존재합니다.");
+    }
+
+    AcademyPageSettings normalizedPageSettings = normalizePageSettingsForWrite(
+        request == null ? null : request.pageSettings(), null, false);
+    validateCreateRequest(request, normalizedPageSettings);
+    String handle = resolveCreateHandle(request.handle(), principal.userId());
+
+    User tutor = userRepository.findById(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: userId=" + principal.userId()));
+    Set<Subject> subjects = loadSubjects(request.subjectIds());
+    String slug = generateUniqueSlug(request.name());
+    String logoKey = resolveLogoStorageKey(principal.userId(), null);
+
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      Academy academy = Academy.builder()
+          .tutor(tutor)
+          .slug(slug)
+          .handle(handle)
+          .name(request.name().trim())
+          .logoStorageKey(logoKey)
+          .coverStorageKey(null)
+          .intro(request.intro() != null ? request.intro().trim() : "")
+          .status(AcademyStatus.DRAFT)
+          .subjects(subjects)
+          .targetGroups(request.targetGroups() != null
+              ? new HashSet<>(request.targetGroups()) : new HashSet<>())
+          .pageSettings(normalizedPageSettings)
+          .build();
+      Academy saved = academyRepository.save(academy);
+      academyHandleHistoryService.recordCreated(saved);
+      saveRegions(saved, request.regions());
+      return toResponse(saved, false);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
   @Transactional
   public AcademyResponse update(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       AcademyUpsertRequest request,
       MultipartFile logo,
       MultipartFile cover) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
-    authResolver.verifyOwnsAcademy(academy);
+    authResolver.verifyOwnsAcademyForBuilder(academy);
     AcademyPageSettings normalizedPageSettings = normalizePageSettingsForWrite(
         request == null ? null : request.pageSettings(), academy.getPageSettings(), true);
     boolean businessInfoSupplied = request != null
@@ -301,13 +365,30 @@ public class AcademyService {
   public AcademyResponse updatePageSettings(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       AcademyPageSettingsUpdateRequest request) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     if (request == null) throw new IllegalArgumentException("페이지 설정 정보가 필요합니다.");
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
         .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
-    authResolver.verifyOwnsAcademy(academy);
+    authResolver.verifyOwnsAcademyForBuilder(academy);
 
-    AcademyPageSettings current = academy.getPageSettings();
+    AcademyPageSettings merged = mergePageSettingsForWrite(academy.getPageSettings(), request);
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      academy.updatePageSettings(merged);
+      return toResponse(academy, false);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
+   * 현재 page settings에 부분 업데이트 요청을 합쳐 검증된 새 설정을 만든다(저장은 하지 않는다).
+   *
+   * <p>공개 홈페이지에 바로 쓰는 {@link #updatePageSettings}와, 공개본을 건드리지 않는 작업본 저장이
+   * 같은 정제·검증 규칙을 쓰도록 분리했다. 동작은 분리 전과 같다.
+   */
+  public AcademyPageSettings mergePageSettingsForWrite(
+      AcademyPageSettings current, AcademyPageSettingsUpdateRequest request) {
     boolean businessInfoSupplied = request.businessInfo() != null;
     AcademyPageSettings merged = new AcademyPageSettings(
         request.blogUrl() == null && current != null ? current.blogUrl() : request.blogUrl(),
@@ -327,9 +408,141 @@ public class AcademyService {
             ? current.businessInfo()
             : normalizeBusinessInfoForWrite(request.businessInfo()));
     validatePageSettings(merged, businessInfoSupplied);
+    return merged;
+  }
+
+  /** 소개(intro) 쓰기 정규화·검증. 공개 저장과 작업본 저장이 같은 규칙을 쓴다. */
+  public String normalizeIntroForWrite(String intro) {
+    String cleanIntro = intro == null ? "" : intro.trim();
+    if (cleanIntro.isEmpty()) {
+      throw new IllegalArgumentException("소개는 비워둘 수 없습니다.");
+    }
+    if (cleanIntro.length() > MAX_INTRO_LENGTH) {
+      throw new IllegalArgumentException("Academy 소개는 1000자 이하로 입력해야 합니다.");
+    }
+    return cleanIntro;
+  }
+
+  /**
+   * 비공개 미리보기용 응답: 현재 공개 응답에 작업본의 소개·page settings를 덮어 만든다(DB 변경 없음).
+   */
+  @Transactional(readOnly = true)
+  public AcademyResponse toPreviewResponse(
+      Academy academy, String previewIntro, AcademyPageSettings previewSettings) {
+    AcademyResponse base = toResponse(academy, false);
+    return new AcademyResponse(
+        base.academyId(), base.slug(), base.handle(), base.name(),
+        previewIntro != null ? previewIntro : base.intro(),
+        base.status(), base.isVisible(), base.logoUrl(), base.coverUrl(), base.publicUrl(),
+        base.subjects(), base.targetGroups(), base.regions(), base.lessons(), base.heroMediaSlots(),
+        previewSettings != null ? previewSettings : base.pageSettings());
+  }
+
+  /**
+   * 호출자 소유 Academy 행을 비관적 쓰기 락(SELECT ... FOR UPDATE)으로 잠그고 academyId를 반환한다.
+   *
+   * <p>같은 학원에 대한 게시/게시취소를 직렬화하기 위한 용도다. 락 순서를
+   * 항상 academies → 자식 테이블(게시본) 순으로 고정해, 자식 INSERT의 FK 검사(S락)가
+   * 이후 academies UPDATE(X락)와 교착하는 S→X 업그레이드 데드락을 막는다.
+   * 호출한 트랜잭션이 끝날 때까지 락이 유지된다.
+   *
+   * @param principal 인증된 사용자 (학원 소유 강사)
+   * @return 잠긴 Academy 엔티티 (이 트랜잭션 안에서만 사용한다)
+   * @throws AccessDeniedException 소유 학원이 없을 때
+   */
+  @Transactional
+  public Academy lockMyAcademyForUpdate(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    authResolver.requireAcademyBuilderRole(principal);
+    Academy academy = academyRepository.findForUpdateByTutorUserId(principal.userId())
+        .orElseThrow(() -> new org.springframework.security.access.AccessDeniedException("학원이 없습니다."));
+    authResolver.verifyOwnsAcademyForBuilder(academy);
+    return academy;
+  }
+
+  /**
+   * 최초 게시: DRAFT 학원을 PUBLISHED로 전환한다(이미 PUBLISHED면 변경 없음). visible은 건드리지 않는다.
+   * 학원 행 잠금 아래에서 호출되며, 호출자의 트랜잭션에 합류한다.
+   *
+   * @return 이번 호출로 상태가 바뀌었는가
+   */
+  @Transactional
+  public boolean publishIfDraft(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Academy academy = lockMyAcademyForUpdate(principal);
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      return academy.publishIfDraft();
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
+   * BuildIt 시각 편집기용 홈페이지 렌더 모드 단독 업데이트.
+   *
+   * <p>builderDraft의 {@code homepage.renderMode} 키만 갱신하며, 다른 P0/P1 설정은
+   * 그대로 유지한다. publish/unpublish와 같은 트랜잭션에서 호출되어 원자성을 보장한다.
+   *
+   * @param principal 인증된 사용자 (해당 학원 소유자)
+   * @param mode "template" 또는 "custom"
+   */
+  @Transactional
+  public void setRenderMode(
+      JwtTokenProvider.AuthenticatedPrincipal principal, String mode) {
+    if (!"template".equals(mode) && !"custom".equals(mode)) {
+      throw new IllegalArgumentException(
+          "homepage.renderMode는 template 또는 custom이어야 합니다.");
+    }
+    authResolver.requireTutor(principal);
+    Academy academy = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
+    authResolver.verifyOwnsAcademy(academy);
+
+    AcademyPageSettings current = academy.getPageSettings();
+    Map<String, String> draft = new java.util.HashMap<>();
+    if (current != null && current.builderDraft() != null) {
+      draft.putAll(current.builderDraft());
+    }
+    draft.put("homepage.renderMode", mode);
+    AcademyPageSettings merged = new AcademyPageSettings(
+        current == null ? null : current.blogUrl(),
+        current == null ? null : current.storeUrl(),
+        current == null ? null : current.naverMapUrl(),
+        current == null ? null : current.heroYoutubeUrl(),
+        current == null ? null : current.sectionVisibility(),
+        current == null ? null : current.sectionOrder(),
+        draft,
+        current == null ? null : current.businessInfo());
     try {
       AuditorContextHolder.set(principal.loginId());
       academy.updatePageSettings(merged);
+    } finally {
+      AuditorContextHolder.clear();
+    }
+  }
+
+  /**
+   * BuildIt AI 채팅용 소개(intro) 단독 업데이트 (A2).
+   *
+   * <p>AI 수정 허용 필드 중 top-level 필드인 {@code intro}는 builderDraft가 아닌
+   * Academy 본문 필드로 저장한다.
+   */
+  @Transactional
+  public AcademyResponse updateIntro(
+      JwtTokenProvider.AuthenticatedPrincipal principal, String intro) {
+    authResolver.requireAcademyBuilderRole(principal);
+    Academy academy = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new IllegalArgumentException("Academy를 찾을 수 없습니다."));
+    authResolver.verifyOwnsAcademyForBuilder(academy);
+    String cleanIntro = intro == null ? "" : intro.trim();
+    if (cleanIntro.isEmpty()) {
+      throw new IllegalArgumentException("소개는 비워둘 수 없습니다.");
+    }
+    if (cleanIntro.length() > MAX_INTRO_LENGTH) {
+      throw new IllegalArgumentException("Academy 소개는 1000자 이하로 입력해야 합니다.");
+    }
+    try {
+      AuditorContextHolder.set(principal.loginId());
+      academy.updateIntro(cleanIntro);
       return toResponse(academy, false);
     } finally {
       AuditorContextHolder.clear();
@@ -337,11 +550,20 @@ public class AcademyService {
   }
 
   /**
+   * BuildIt AI 채팅용 builderDraft 사전 검증 (B2).
+   *
+   * <p>스냅샷 저장 전에 호출하여, 검증 실패 시 고아 버전이 남지 않도록 한다.
+   */
+  public void validateAiDraft(Map<String, String> builderDraft) {
+    validateBuilderDraft(builderDraft);
+  }
+
+  /**
    * handle 사용 가능 여부(형식 + 예약어 + 중복). setup 폼 실시간 체크용.
    * 형식/예약어 위반이거나 이미 사용 중이면 false.
    */
   public boolean isHandleAvailable(JwtTokenProvider.AuthenticatedPrincipal principal, String handle) {
-    authResolver.requireTutor(principal);
+    authResolver.requireAcademyBuilderRole(principal);
     String normalized = handle == null ? null : handle.trim();
     if (!HandlePolicy.isAcceptable(normalized)) {
       return false;
@@ -408,11 +630,11 @@ public class AcademyService {
     // 공개 스토어프론트(academy_public.js isOwnAcademy)가 방문자 자기소유 여부를 판별하려고
     // 호출한다. 실제 ADMIN principal은 소유 학원이 없어 Optional.empty()(→ 204)로 떨어질 뿐이며,
     // 여기서 403을 던지면 공개 페이지가 admin을 튕겨낸다(운영 회귀). 쓰기 경로는 그대로
-    // verifyOwnsAcademy(내부에서 requireTutor)로 TUTOR 본인만 통과한다.
+    // verifyOwnsAcademyForBuilder로 TUTOR/ADMIN 본인 학원만 통과한다.
     authResolver.requireTutorOrAdmin(principal);
     return academyRepository.findByTutor_UserId(principal.userId())
         .map(academy -> {
-          authResolver.verifyOwnsAcademy(academy);
+          authResolver.verifyOwnsAcademyForBuilder(academy);
           return toResponse(academy, false);
         });
   }
@@ -423,6 +645,14 @@ public class AcademyService {
    *
    * @throws ResponseStatusException 강사가 아니거나 소유 Academy가 없으면 차단
    */
+  public Academy requireMyAcademyForBuilder(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    authResolver.requireAcademyBuilderRole(principal);
+    Academy academy = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Academy를 찾을 수 없습니다."));
+    authResolver.verifyOwnsAcademyForBuilder(academy);
+    return academy;
+  }
+
   public Academy requireMyAcademy(JwtTokenProvider.AuthenticatedPrincipal principal) {
     authResolver.requireTutor(principal);
     Academy academy = academyRepository.findByTutor_UserId(principal.userId())
@@ -472,6 +702,11 @@ public class AcademyService {
    *
    * @throws ResponseStatusException 공개 Academy가 없으면 404
    */
+  public Academy getPublishedEntityBySlug(String slug) {
+    return academyRepository.findBySlugAndStatusAndVisibleTrue(slug, AcademyStatus.PUBLISHED)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 Academy를 찾을 수 없습니다."));
+  }
+
   public Academy getPublishedEntityByHandle(String handle) {
     return academyRepository.findByHandleAndStatusAndVisibleTrue(handle, AcademyStatus.PUBLISHED)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 Academy를 찾을 수 없습니다."));
@@ -793,6 +1028,14 @@ public class AcademyService {
         throw new IllegalArgumentException("올바르지 않은 Builder draft 키입니다: " + key);
       }
       if (value == null) continue;
+      if ("teachersJson".equals(key)) {
+        TeachersDraft.validate(value);
+        continue;
+      }
+      if ("teachersSectionTitle".equals(key)) {
+        TeachersDraft.validateSectionTitle(value);
+        continue;
+      }
       int maxLength = LONG_BUILDER_DRAFT_KEYS.contains(key)
           ? MAX_BUILDER_DRAFT_LONG_VALUE_LENGTH
           : MAX_BUILDER_DRAFT_VALUE_LENGTH;
@@ -804,7 +1047,7 @@ public class AcademyService {
         throw new IllegalArgumentException("등록되지 않은 typography preset입니다.");
       }
       if ("designPreset".equals(key) && !value.isBlank()
-          && !Set.of("EXAM", "ENGLISH", "ARTS", "STUDY", "ONLINE").contains(value)) {
+          && !AcademyAiCreateService.VALID_PRESETS.contains(value)) {
         throw new IllegalArgumentException("등록되지 않은 design preset입니다.");
       }
       if (Set.of("colorPrimary", "colorSecondary", "colorAccent", "colorBg", "colorBgAlt",
@@ -819,6 +1062,11 @@ public class AcademyService {
       if (("headingFont".equals(key) || "bodyFont".equals(key)) && !value.isBlank()
           && !Set.of("PRETENDARD", "SUIT", "NOTO_SANS_KR", "NOTO_SERIF_KR").contains(value)) {
         throw new IllegalArgumentException("등록되지 않은 Builder font입니다.");
+      }
+      if ("homepage.renderMode".equals(key) && !value.isBlank()
+          && !"template".equals(value) && !"custom".equals(value)) {
+        throw new IllegalArgumentException(
+            "homepage.renderMode는 template 또는 custom이어야 합니다.");
       }
       if (Set.of("logoSizeDesktop", "logoSizeMobile", "headingSizeMobile", "bodySizeMobile").contains(key)
           && !value.isBlank() && !value.matches("\\d{2,3}")) {

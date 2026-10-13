@@ -42,11 +42,12 @@ import org.springframework.stereotype.Service;
 public class AcademyAiContextService {
 
   /** 사람이 읽는 섹션 이름. {@code STYLE_PANEL_SECTION_NAMES}(academy_builder.js)와 맞춘다. */
-  private static final Map<String, String> SECTION_LABELS = Map.ofEntries(
+  static final Map<String, String> SECTION_LABELS = Map.ofEntries(
       Map.entry("sec-hero", "히어로 배너"),
       Map.entry("sec-featured", "Featured · 시즌 프로그램"),
       Map.entry("sec-intro", "학원 소개"),
       Map.entry("sec-principal", "원장 소개"),
+      Map.entry("sec-teachers", "강사진"),
       Map.entry("sec-philosophy", "학습 철학"),
       Map.entry("sec-videos", "수업 영상"),
       Map.entry("sec-minilectures", "미니 강의"),
@@ -112,7 +113,7 @@ public class AcademyAiContextService {
   }
 
   public AcademyAiContext buildContext(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    Academy academy = academyService.requireMyAcademy(principal);
+    Academy academy = academyService.requireMyAcademyForBuilder(principal);
     List<LessonProduct> lessons =
         lessonProductRepository.findByAcademy_AcademyIdOrderByCreatedAtDesc(academy.getAcademyId());
     List<AcademyVideo> videos =
@@ -251,6 +252,7 @@ public class AcademyAiContextService {
       case "sec-hero" -> true;
       case "sec-intro" -> !isBlank(academy.getIntro());
       case "sec-principal" -> !isBlank(draft.get("principalDesc")) || hasDirectorVideo;
+      case "sec-teachers" -> !isBlank(draft.get("teachersJson"));
       case "sec-philosophy" -> java.util.stream.Stream.of(
               "philosophyItem1", "philosophyItem2", "philosophyItem3", "philosophyItem4")
           .anyMatch(k -> !isBlank(draft.get(k)));

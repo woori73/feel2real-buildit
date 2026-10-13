@@ -1296,6 +1296,76 @@
     </section>`;
   }
 
+  // ── sec-teachers (강사진) ────────────────────────────────────────────────
+  // 회원이 입력한 강사만 보여 준다. 데이터 출처는 builderDraft.teachersJson(JSON 배열 문자열) 하나다:
+  //   [{"n":"이름","r":"역할/과목","c":["경력"],"p":"https://사진"}]
+  // 값이 없거나 유효한 강사가 한 명도 없으면 섹션 자체를 내지 않는다(플레이스홀더·가짜 강사 금지).
+  // 새 렌더러가 아니라 다른 sec-* 와 같은 방식의 섹션 함수 하나다. 기존 학원은 이 키가 없어 변화 없음.
+  // 서버(TeachersDraft)와 같은 한도를 쓰되, 저장 값은 신뢰하지 않고 렌더 때 다시 거른다.
+  const TEACHERS_MAX = 8;
+  const TEACHER_CAREERS_MAX = 5;
+
+  /** 사진 주소는 https만 통과(javascript:/data:/http: 차단). 서버 검증과 다층 방어. */
+  function teacherPhotoUrl(url) {
+    const u = String(url == null ? '' : url).trim();
+    return /^https:\/\/[^\s"'<>`\\]+$/i.test(u) ? u : '';
+  }
+
+  /** builderDraft.teachersJson → [{n,r,c[],p}]. 깨진 JSON·이름 없는 항목은 버린다. */
+  function teacherItems(view) {
+    const raw = draftText(view, 'teachersJson', '');
+    if (!raw) return [];
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch (_) { return []; }
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((e) => {
+        if (!e || typeof e !== 'object') return null;
+        const careers = Array.isArray(e.c)
+          ? e.c.map(textValue).filter(Boolean).slice(0, TEACHER_CAREERS_MAX)
+          : [];
+        return { n: textValue(e.n), r: textValue(e.r), c: careers, p: teacherPhotoUrl(e.p) };
+      })
+      .filter((e) => e && e.n)
+      .slice(0, TEACHERS_MAX);
+  }
+
+  /** 아바타 글자는 실제 이름의 첫 글자다(사진이 없을 때만, 가짜 사진을 만들지 않는다). */
+  function teacherInitial(name) {
+    return Array.from(String(name || '').trim())[0] || '';
+  }
+
+  function teacherCardHtml(item) {
+    const photo = item.p
+      ? `<img class="bi-teachers__img" src="${escapeAttr(item.p)}" alt="${escapeAttr(item.n)} 강사 사진" loading="lazy" decoding="async">`
+      : `<span class="bi-teachers__initial" aria-hidden="true">${escapeHtml(teacherInitial(item.n))}</span>`;
+    const role = item.r ? `<span class="bi-teachers__role">${escapeHtml(item.r)}</span>` : '';
+    const careers = item.c.length
+      ? `<ul class="bi-teachers__careers">${item.c.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul>`
+      : '';
+    return `<li class="bi-teachers__card">
+        <div class="bi-teachers__photo">${photo}</div>
+        <h3 class="bi-teachers__name">${escapeHtml(item.n)}</h3>
+        ${role}${careers}
+      </li>`;
+  }
+
+  function renderTeachers(view) {
+    if (!view.sectionVisible('sec-teachers')) return '';
+    const items = teacherItems(view);
+    if (!items.length) return ''; // 입력된 강사가 없으면 섹션을 내지 않는다
+    const title = draftText(view, 'teachersSectionTitle', '강사진');
+    return `<section id="sec-teachers" data-builder-section-key="sec-teachers" class="section-wrap bi-teachers" data-reveal data-reveal-item>
+      <div class="section-inner">
+        <div class="section-header">
+          <div class="eyebrow"><span class="stroke"></span>강사진</div>
+          <h2 class="section-title">${escapeHtml(title)}</h2>
+        </div>
+        <ul class="bi-teachers__grid">${items.map(teacherCardHtml).join('')}</ul>
+      </div>
+    </section>`;
+  }
+
   // ── sec-lessons ───────────────────────────────────────────────────────────
   /** 시간표 달력 이미지 슬롯 key. 서버 HeroMediaSlot.SCHEDULE와 같은 문자열이어야 한다. */
   const SCHEDULE_MEDIA_SLOT = 'schedule';
@@ -1842,6 +1912,8 @@
     renderPrincipal,
     renderVideos,
     renderMiniLectures,
+    teacherItems,
+    renderTeachers,
     renderExternalServices,
     renderCta,
     renderLessons,

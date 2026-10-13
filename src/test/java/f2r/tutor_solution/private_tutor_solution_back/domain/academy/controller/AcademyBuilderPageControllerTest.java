@@ -13,6 +13,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.Aca
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAssistantMessageRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantFeatureFlag;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
@@ -23,7 +25,94 @@ import org.springframework.web.servlet.view.RedirectView;
 class AcademyBuilderPageControllerTest {
 
   private final AcademyService academyService = mock(AcademyService.class);
-  private final AcademyBuilderPageController controller = new AcademyBuilderPageController(academyService);
+  private final AcademyAssistantMessageRepository assistantMessages = mock(AcademyAssistantMessageRepository.class);
+  private final AcademyBuilderPageController controller = controllerWith(false, "");
+
+  private AcademyBuilderPageController controllerWith(boolean enabled, String loginIds) {
+    return new AcademyBuilderPageController(
+        academyService, new AssistantFeatureFlag(enabled, loginIds), assistantMessages);
+  }
+
+  private static JwtTokenProvider.AuthenticatedPrincipal tutor(String loginId) {
+    return new JwtTokenProvider.AuthenticatedPrincipal(7L, loginId, "TUTOR");
+  }
+
+  private static AcademyResponse academy() {
+    return new AcademyResponse(1L, "h", "slug", "학원", "소개", AcademyStatus.DRAFT, true, null, null,
+        "/academies/slug", List.of(), Set.of(), List.of(), List.of(), List.of(),
+        new AcademyPageSettings(null, null, null, java.util.Map.of()));
+  }
+
+  @Test
+  @DisplayName("builder — given ADMIN when 스위치 꺼짐 then 기존 빌더, 켜짐+허용 계정 then 대화형 화면")
+  void builder_admin_access() {
+    JwtTokenProvider.AuthenticatedPrincipal admin =
+        new JwtTokenProvider.AuthenticatedPrincipal(1L, "admin1", "ADMIN");
+    when(academyService.getMine(admin)).thenReturn(Optional.empty());
+    assertThat(controller.builder(admin, null, new ConcurrentModel())).isEqualTo("tutor/academy_builder");
+    assertThat(controllerWith(true, "admin1").builder(admin, null, new ConcurrentModel()))
+        .isEqualTo("tutor/assistant_home");
+  }
+
+  @Test
+  @DisplayName("builder — given STUDENT when 스위치 켜짐 then 랜딩으로 리다이렉트 (권한 확대 없음)")
+  void builder_student_stillRedirected() {
+    JwtTokenProvider.AuthenticatedPrincipal student =
+        new JwtTokenProvider.AuthenticatedPrincipal(5L, "stu", "STUDENT");
+    assertThat(controllerWith(true, "").builder(student, null, new ConcurrentModel()))
+        .isInstanceOf(RedirectView.class);
+  }
+
+  @Test
+  @DisplayName("builder — given 스위치 꺼짐 when 신규 사용자 then 기존 빌더")
+  void builder_flagOff_usesClassic() {
+    when(academyService.getMine(tutor("a"))).thenReturn(Optional.empty());
+    assertThat(controller.builder(tutor("a"), null, new ConcurrentModel())).isEqualTo("tutor/academy_builder");
+  }
+
+  @Test
+  @DisplayName("builder — given 스위치 켜짐 when 신규 사용자 then 대화형 화면")
+  void builder_flagOn_newUser_usesAssistant() {
+    when(academyService.getMine(tutor("a"))).thenReturn(Optional.empty());
+    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
+        .isEqualTo("tutor/assistant_home");
+  }
+
+  @Test
+  @DisplayName("builder — given 허용 목록 when 목록 밖 계정 then 기존 빌더, 목록 안 계정 then 대화형")
+  void builder_allowlist() {
+    when(academyService.getMine(tutor("in"))).thenReturn(Optional.empty());
+    when(academyService.getMine(tutor("out"))).thenReturn(Optional.empty());
+    AcademyBuilderPageController c = controllerWith(true, "in, other");
+    assertThat(c.builder(tutor("in"), null, new ConcurrentModel())).isEqualTo("tutor/assistant_home");
+    assertThat(c.builder(tutor("out"), null, new ConcurrentModel())).isEqualTo("tutor/academy_builder");
+  }
+
+  @Test
+  @DisplayName("builder — given 스위치 켜짐 when classic=1 then 기존 빌더로 복귀")
+  void builder_classicParam_returnsToClassic() {
+    when(academyService.getMine(tutor("a"))).thenReturn(Optional.empty());
+    assertThat(controllerWith(true, "").builder(tutor("a"), "1", new ConcurrentModel()))
+        .isEqualTo("tutor/academy_builder");
+  }
+
+  @Test
+  @DisplayName("builder — given 기존 방식 학원(대화 기록 없음) when 스위치 켜짐 then 기존 빌더(공개 데이터 보호)")
+  void builder_legacyAcademy_staysClassic() {
+    when(academyService.getMine(tutor("a"))).thenReturn(Optional.of(academy()));
+    when(assistantMessages.existsByAcademyId(1L)).thenReturn(false);
+    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
+        .isEqualTo("tutor/academy_builder");
+  }
+
+  @Test
+  @DisplayName("builder — given 대화로 만든 학원 when 스위치 켜짐 then 대화형 화면")
+  void builder_assistantAcademy_usesAssistant() {
+    when(academyService.getMine(tutor("a"))).thenReturn(Optional.of(academy()));
+    when(assistantMessages.existsByAcademyId(1L)).thenReturn(true);
+    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
+        .isEqualTo("tutor/assistant_home");
+  }
 
   @Test
   @DisplayName("builder — given 보유 Academy when 렌더 then 모델에 이름·slug 기반 표시 URL·공개 경로를 채운다")
@@ -52,7 +141,7 @@ class AcademyBuilderPageControllerTest {
     Model model = new ConcurrentModel();
 
     // when
-    Object view = controller.builder(principal, model);
+    Object view = controller.builder(principal, null, model);
 
     // then
     assertThat(view).isEqualTo("tutor/academy_builder");
@@ -74,7 +163,7 @@ class AcademyBuilderPageControllerTest {
     Model model = new ConcurrentModel();
 
     // when
-    Object view = controller.builder(null, model);
+    Object view = controller.builder(null, null, model);
 
     // then
     assertThat(view).isInstanceOfSatisfying(RedirectView.class, redirect -> {
@@ -92,7 +181,7 @@ class AcademyBuilderPageControllerTest {
     Model model = new ConcurrentModel();
 
     // when
-    Object view = controller.builder(principal, model);
+    Object view = controller.builder(principal, null, model);
 
     // then
     assertThat(view).isInstanceOfSatisfying(RedirectView.class, redirect -> {

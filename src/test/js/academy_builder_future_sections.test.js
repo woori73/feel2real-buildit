@@ -18,6 +18,7 @@ const FULL_ORDER = [
   'sec-featured',
   'sec-intro',
   'sec-principal',
+  'sec-teachers',
   'sec-philosophy',
   'sec-videos',
   'sec-minilectures',
@@ -136,7 +137,8 @@ test('layout excludes future sections while orderedSectionIds retains the canoni
 
   // then
   assert.deepEqual(ordered, FULL_ORDER);
-  assert.deepEqual(layout, ['sec-hero', 'sec-intro', 'sec-philosophy', 'sec-videos', 'sec-lessons', 'sec-social', 'sec-footer']);
+  // sec-teachers는 데이터가 있을 때만 그려지는 섹션이라 레이아웃 목록에는 있으나 데이터 없으면 빈 렌더다.
+  assert.deepEqual(layout, ['sec-hero', 'sec-intro', 'sec-teachers', 'sec-philosophy', 'sec-videos', 'sec-lessons', 'sec-social', 'sec-footer']);
 });
 
 test('supported hidden section reappears in its saved slot without enabling future sections', () => {

@@ -8,6 +8,7 @@
 | 작업 | 먼저 읽을 문서 |
 |---|---|
 | **모든 BuildIt 제품·기능 설계 및 수정** | [BUILDIT_PHILOSOPHY.md](BUILDIT_PHILOSOPHY.md) |
+| BuildIt 2-C 이후(S2 디자인 자산 조합 / S3 이미지 작업본) 준비 | [BUILDIT_S2_S3_PREPARATION.md](BUILDIT_S2_S3_PREPARATION.md) |
 | **내신 예상문제 / 학교별 시험지 / 인쇄용 문제지 HTML 제작·수정** | **[exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — 작업 전 필독 + 완성 후 체크리스트 검수 필수** |
 | **학교별 Wiki Context / Digital Twin / 기출·프린트 기반 내신 문제 제작** | **[exam/WIKI_TUTOR_BROWSER_CONTEXT.md](exam/WIKI_TUTOR_BROWSER_CONTEXT.md) + [exam/내신_시험지_제작원칙.md](exam/내신_시험지_제작원칙.md) — MCP empty 시 TUTOR 브라우저 확인, Context Pack·정답 독립검증 필수** |
 | **DB 스키마 / 마이그레이션 / Entity** | [WORKFLOW.md](WORKFLOW.md) §4 번호정책 + [DOMAIN.md](DOMAIN.md) |
@@ -21,6 +22,13 @@
 | **Controller endpoint 추가/변경** | [API.md](API.md) (계약 동기화 필수) |
 | **Academy 발행 API / 미래 LLM 콘텐츠 생성** | [academy-publish-design.md](academy-publish-design.md) |
 | **Academy Builder 페이지(`/builder`) / 랜딩 발행 배선** | [academy-builder-page.md](academy-builder-page.md) |
+| **BuildIt 시각 편집기(`/tutor/academy/editor`) 계약 / E2E** | [API.md](API.md) "BuildIt 시각 편집기" + `e2e/visual-editor/README.md` |
+| **시각 편집기 AI Agent 연결 설계(구현 전)** | [BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md](BUILDIT_VISUAL_EDITOR_AI_AGENT_DESIGN.md) |
+| **시각 편집기 AI Agent Proposal 연동 최종 설계(A안, 구현 전)** | [BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md](BUILDIT_AI_AGENT_PROPOSAL_FINAL_DESIGN.md) |
+| **VisualEditorProposalPort 구현 계약(뮤즈 Proposal 구현체용)** | [BUILDIT_AI_AGENT_PROPOSAL_PORT_CONTRACT.md](BUILDIT_AI_AGENT_PROPOSAL_PORT_CONTRACT.md) |
+| **BuildIt 통합 대화형 화면 설계(공통 UI 킷·장기 확장 조건 포함, 구현 전)** | [BUILDIT_UNIFIED_CHAT_UI_DESIGN.md](BUILDIT_UNIFIED_CHAT_UI_DESIGN.md) |
+| **BuildIt 디자인 자산(buildit2) 연동 설계 + P0(강사진 1종 PoC) 범위(구현 전)** | [BUILDIT_DESIGN_ASSET_INTEGRATION_DESIGN.md](BUILDIT_DESIGN_ASSET_INTEGRATION_DESIGN.md) |
+| **시각 편집기 현재 사양(저장 구조·projectData·게시 흐름) / AI Agent(뮤즈) GrapesJS 연동 지점** | [BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md](BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md) |
 | **학원 온라인 LMS(`{handle}.../lms`) / 서브도메인 경로·권한** | [academy-lms-design.md](academy-lms-design.md) |
 | **제품 범위·사용자모델·기술스택** | [MVP.md](MVP.md) |
 | **프로젝트 전체 인수인계 / 현재 상태 빠른 파악** | [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) |

@@ -341,7 +341,7 @@ class AcademyServiceTest {
     assertJpeg(bytesCaptor.getValue());
     verify(regionRepository).saveAll(argThat(regions ->
         new ArrayList<>((Collection<?>) regions).size() == 1));
-    verify(authResolver).requireTutor(principal);
+    verify(authResolver).requireAcademyBuilderRole(principal);
   }
 
   @Test
@@ -629,6 +629,20 @@ class AcademyServiceTest {
   }
 
   @Test
+  void create_rejectsInvalidTeachersJsonAndForeignPhotoScheme() {
+    // given: 강사진은 서버가 형식·사진 주소 스킴을 검증한다(렌더러 방어와 별개의 다층 방어).
+    AcademyPageSettings bad = new AcademyPageSettings(
+        null, null, null, null,
+        Map.of("teachersJson", "[{\"n\":\"가\",\"p\":\"javascript:alert(1)\"}]"));
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.empty());
+
+    // when / then
+    assertThatThrownBy(() -> service.create(principal, validRequestWithPageSettings(bad), null, null))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("https://");
+  }
+
+  @Test
   void create_rejectsUnknownBuilderDraftKey() {
     // given: 화이트리스트에 없는 키는 저장 전에 막는다.
     AcademyPageSettings pageSettings = new AcademyPageSettings(
@@ -710,8 +724,8 @@ class AcademyServiceTest {
         .containsEntry("sec-effect", false)
         .containsEntry("sec-payment", false)
         .containsEntry("blogPostsSection", false);
-    verify(authResolver).requireTutor(principal);
-    verify(authResolver).verifyOwnsAcademy(academy);
+    verify(authResolver).requireAcademyBuilderRole(principal);
+    verify(authResolver).verifyOwnsAcademyForBuilder(academy);
   }
 
   @Test
@@ -1106,6 +1120,23 @@ class AcademyServiceTest {
     assertThat(response.pageSettings().sectionVisibility()).doesNotContainKey("sec-cta");
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"MINIMAL", "DARK", "WARM", "PHOTO", "DYNAMIC"})
+  void updatePageSettings_acceptsNewDesignPresets(String presetId) {
+    // given: 신규 5종 프리셋 (PR #609)
+    Academy academy = academy("old/logo.jpg", null);
+    when(academyRepository.findByTutor_UserId(10L)).thenReturn(Optional.of(academy));
+    when(regionRepository.findByAcademy_AcademyIdOrderByRegionIdAsc(100L)).thenReturn(List.of());
+    AcademyPageSettingsUpdateRequest request = new AcademyPageSettingsUpdateRequest(
+        null, null, null, null, null, null, null, Map.of("designPreset", presetId));
+
+    // when
+    AcademyResponse response = service.updatePageSettings(principal, request);
+
+    // then: 저장 검증을 통과해 그대로 저장된다
+    assertThat(response.pageSettings().builderDraft()).containsEntry("designPreset", presetId);
+  }
+
   @Test
   void updatePageSettings_acceptsCtaAndDesignPresetDraftKeys() {
     // given: CTA + 디자인 프리셋 draft 키를 함께 저장한다.
@@ -1341,7 +1372,7 @@ class AcademyServiceTest {
     assertThat(response.logoUrl()).isEqualTo("/api/academies/테스트-academy/logo");
     assertThat(response.handle()).isEqualTo("test-academy");
     assertThat(academy.getLogoStorageKey()).isEqualTo("old/logo.jpg");
-    verify(authResolver).verifyOwnsAcademy(academy);
+    verify(authResolver).verifyOwnsAcademyForBuilder(academy);
     verify(imageSanitizer, never()).sanitize(any(MultipartFile.class));
     verify(regionRepository).deleteByAcademy_AcademyId(100L);
   }
@@ -1578,7 +1609,7 @@ class AcademyServiceTest {
 
     // then
     assertThat(available).isTrue();
-    verify(authResolver).requireTutor(principal);
+    verify(authResolver).requireAcademyBuilderRole(principal);
   }
 
   @Test

@@ -4,12 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyResponse;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyAssistantMessageRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantFeatureFlag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
 
 /**
@@ -25,20 +28,29 @@ public class AcademyBuilderPageController {
 
   static final String VIEW = "tutor/academy_builder";
 
+  static final String ASSISTANT_VIEW = "tutor/assistant_home";
+
   private final AcademyService academyService;
+  private final AssistantFeatureFlag assistantFlag;
+  private final AcademyAssistantMessageRepository assistantMessages;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @GetMapping("/builder")
   public Object builder(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestParam(value = "classic", required = false) String classic,
       Model model) {
-    if (!hasTutorRole(principal)) {
+    if (!hasBuilderRole(principal)) {
       RedirectView redirect = new RedirectView("/");
       redirect.setExposeModelAttributes(false);
       return redirect;
     }
 
     AcademyResponse academy = academyService.getMine(principal).orElse(null);
+
+    if (usesAssistant(principal, academy, classic)) {
+      return ASSISTANT_VIEW;
+    }
 
     model.addAttribute("academy", academy);
     model.addAttribute("academyName", academy == null ? null : academy.name());
@@ -51,8 +63,19 @@ public class AcademyBuilderPageController {
     return VIEW;
   }
 
-  private boolean hasTutorRole(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    return principal != null && "TUTOR".equals(principal.role());
+  /**
+   * 대화형 화면을 쓰는 경우: 기능이 켜져 있고 classic 요청이 아니며, 학원이 아직 없거나 대화로 만든 학원이다.
+   * 기존 방식으로 만든 학원(대화 기록 없음)은 공개 데이터 보호를 위해 항상 기존 빌더로 보낸다.
+   */
+  private boolean usesAssistant(
+      JwtTokenProvider.AuthenticatedPrincipal principal, AcademyResponse academy, String classic) {
+    if (classic != null || !assistantFlag.isOn(principal)) return false;
+    return academy == null || assistantMessages.existsByAcademyId(academy.academyId());
+  }
+
+  private boolean hasBuilderRole(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return principal != null
+        && ("TUTOR".equals(principal.role()) || "ADMIN".equals(principal.role()));
   }
 
   private String academyJson(AcademyResponse academy) {

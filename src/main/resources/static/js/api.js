@@ -1,8 +1,11 @@
 /**
  * 공통 API fetch 헬퍼.
  *
- * - 보호 API 호출에서 401이 떨어지면 sessionStorage를 비우고 /home으로 redirect한다.
+ * - 보호 API 호출에서 401이 떨어지면 현재 URL을 보존하고 로그인 안내로 이동한다.
  *   (JWT 쿠키가 만료/위변조됐거나 로그아웃된 상태)
+ * - 2026-10-12 변경: 무조건 /home으로 보내지 않고, 원래 페이지로 복귀할 수 있도록
+ *   현재 URL을 sessionStorage에 저장한다. sessionStorage 전체를 비우지 않고
+ *   인증 정보(currentUser)만 정리한다.
  * - 응답 그대로 반환하므로 호출 측에서 res.ok / res.json() 등을 그대로 쓸 수 있다.
  *
  * 사용 예:
@@ -83,12 +86,24 @@
     const res = await fetch(archiveAwareUrl(url), requestOpts);
     if (res.status === 401) {
       if (!redirectOnAuthError) return res;
-      // 인증 만료/위변조 — 로그인부터 다시
-      try { sessionStorage.clear(); } catch (_) {}
+      // 인증 만료/위변조 — 현재 URL을 보존하고 로그인 안내로 이동
+      // 2026-10-12 변경: 무조건 /home으로 보내지 않음. 원래 페이지로 복귀 가능하도록 URL 저장.
+      try {
+        // 인증 정보만 정리 (전체 sessionStorage를 비우지 않음)
+        sessionStorage.removeItem('currentUser');
+        // 현재 페이지 URL 저장 (로그인 후 복귀용)
+        const currentUrl = location.pathname + location.search + location.hash;
+        if (currentUrl !== '/home' && currentUrl !== '/' && !currentUrl.startsWith('/?login=')) {
+          sessionStorage.setItem('postLoginReturnUrl', currentUrl);
+        }
+      } catch (_) {}
+      // 로그인 모달을 띄우기 위해 /?login=required&returnUrl=... 로 이동
+      // (landing_buildit.js가 처리. 이미 로그인 페이지에 있으면 중복 이동 방지)
       if (location.pathname !== '/home' && location.pathname !== '/') {
-        location.href = '/home';
+        const returnUrl = encodeURIComponent(location.pathname + location.search);
+        location.href = '/?login=required&returnUrl=' + returnUrl;
       }
-      throw new Error('Unauthorized — redirected to /home');
+      throw new Error('Unauthorized — login required, return URL preserved');
     }
     if (res.status === 403) {
       if (!redirectOnAuthError) return res;
@@ -118,6 +133,67 @@
     return res.json();
   }
 
+  /**
+   * 2026-10-12: 네이버 OAuth 로그인 시작 시 복귀 URL 쿠키 설정.
+   * NaverOAuth2LoginSuccessHandler가 이 쿠키를 읽어 로그인 후 원래 페이지로 복귀한다.
+   * 내부 URL만 저장 (open redirect 방지). 쿠키는 OAuth 완료 후 서버에서 삭제된다.
+   */
+  function setupOAuthReturnUrl() {
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('a[href="/oauth2/authorization/naver"]');
+      if (!link) return;
+      // 저장된 복귀 URL 우선, 없으면 현재 페이지
+      let returnUrl = null;
+      try {
+        returnUrl = sessionStorage.getItem('postLoginReturnUrl')
+          || sessionStorage.getItem('wikiPostLoginReturnUrl');
+      } catch (_) {}
+      if (!returnUrl) {
+        const current = location.pathname + location.search;
+        // 홈·로그인 페이지 자체에서는 복귀 URL 불필요
+        if (current !== '/' && current !== '/home' && !current.startsWith('/?login=')) {
+          returnUrl = current;
+        }
+      }
+      if (returnUrl && isSafeInternalUrl(returnUrl)) {
+        // 5분 유효, Path=/, SameSite=Lax (OAuth 리다이렉트와 호환)
+        const secure = location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = 'oauth_return_url=' + encodeURIComponent(returnUrl)
+          + '; Path=/; Max-Age=300; SameSite=Lax' + secure;
+      }
+    }, true);
+  }
+
+  /**
+   * 내부 URL 검증 (open redirect 방지).
+   * NaverOAuth2LoginSuccessHandler.isSafeInternalUrl과 동일한 규칙.
+   * 2026-10-12: /\evil.com 취약점 수정 — 백슬래시 차단 추가
+   * (브라우저가 /\를 //로 정규화하여 protocol-relative URL로 해석하는 것을 방지)
+   */
+  function isSafeInternalUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    const lower = url.toLowerCase();
+    if (lower.startsWith('http://') || lower.startsWith('https://')
+        || lower.startsWith('javascript:') || lower.startsWith('data:')) {
+      return false;
+    }
+    if (url.startsWith('//')) return false;
+    if (!url.startsWith('/')) return false;
+    if (url.includes('..')) return false;
+    // 백슬래시 차단
+    if (url.includes('\\')) return false;
+    // 제어 문자 차단
+    if (/[\x00-\x1f\x7f]/.test(url)) return false;
+    return true;
+  }
+
+  // DOM 준비 후 OAuth 복귀 URL 설정 활성화
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupOAuthReturnUrl);
+  } else {
+    setupOAuthReturnUrl();
+  }
+
   window.archiveAwareUrl = archiveAwareUrl;
   window.userDisplayName = userDisplayName;
   window.dashboardPathForRole = dashboardPathForRole;
@@ -126,4 +202,7 @@
   window.fetchAuth = fetchAuth;
   window.fetchJsonAuth = fetchJsonAuth;
   window.isAuthRedirecting = () => authRedirecting;
+  // 내부 URL 검증 (open redirect 방지) — 다른 스크립트에서 재사용
+  // 검증 실패 시 null 반환 (호출 측에서 fallback 처리)
+  window.safeInternalReturnUrl = (url) => isSafeInternalUrl(url) ? url : null;
 })();

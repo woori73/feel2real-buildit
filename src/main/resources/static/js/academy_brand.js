@@ -56,6 +56,43 @@
       colors: { primary: '#0f172a', secondary: '#06b6d4', accent: '#22d3ee', bg: '#ffffff', bgAlt: '#f1f5f9', text: '#0f172a', textLight: '#64748b', border: '#e2e8f0', heroBg: '#0f172a', heroText: '#ffffff' },
       // 강의(digitaltwin)·미니특강 중심
       sections: { 'sec-digitaltwin': true, 'sec-minilectures': true }
+    },
+    // 신규 5종 (2026-10-12): 디자인 스타일 기반 — 업종이 아닌 취향으로 선택
+    // 어떤 학원이든 원하는 분위기를 설명하면 해당 디자인으로 생성 가능
+    MINIMAL: {
+      label: '미니멀형', description: '여백과 타이포그래피로 승부하는 절제된 디자인',
+      typography: 'CLEAN', heroLayout: 'center', cardStyle: 'minimal',
+      colors: { primary: '#111111', secondary: '#666666', accent: '#111111', bg: '#ffffff', bgAlt: '#fafafa', text: '#111111', textLight: '#666666', border: '#e5e5e5', heroBg: '#ffffff', heroText: '#111111' },
+      // 최소 섹션·최대 여백: 히어로+소개+과정+CTA만
+      sections: { 'sec-lessons': true, 'sec-videos': false, 'sec-minilectures': false, 'sec-digitaltwin': false }
+    },
+    DARK: {
+      label: '다크형', description: '다크 모드 기반의 시크하고 모던한 디자인',
+      typography: 'MODERN', heroLayout: 'gradient', cardStyle: 'minimal',
+      colors: { primary: '#e5e5e5', secondary: '#a3a3a3', accent: '#ffffff', bg: '#0a0a0a', bgAlt: '#171717', text: '#fafafa', textLight: '#a3a3a3', border: '#262626', heroBg: '#0a0a0a', heroText: '#ffffff' },
+      // 다크 갤러리·강조 카드 중심
+      sections: { 'sec-videos': true, 'sec-featured': true }
+    },
+    WARM: {
+      label: '감성형', description: '따뜻하고 스토리텔링 중심의 감성 디자인',
+      typography: 'FRIENDLY', heroLayout: 'split', cardStyle: 'rounded',
+      colors: { primary: '#92400e', secondary: '#d97706', accent: '#f59e0b', bg: '#fffbeb', bgAlt: '#fef3c7', text: '#451a03', textLight: '#92400e', border: '#fde68a', heroBg: '#92400e', heroText: '#ffffff' },
+      // 스토리·후기·원장 소개 중심
+      sections: { 'sec-reviews': true, 'sec-teachers': true, 'sec-lessons': true }
+    },
+    PHOTO: {
+      label: '포토형', description: '사진과 비주얼 중심의 갤러리형 디자인',
+      typography: 'MODERN', heroLayout: 'visual', cardStyle: 'media',
+      colors: { primary: '#1c1917', secondary: '#57534e', accent: '#ea580c', bg: '#ffffff', bgAlt: '#f5f5f4', text: '#1c1917', textLight: '#78716c', border: '#e7e5e4', heroBg: '#1c1917', heroText: '#ffffff' },
+      // 풀스크린 이미지·갤러리·시설 소개 중심
+      sections: { 'sec-gallery': true, 'sec-videos': true, 'sec-featured': true }
+    },
+    DYNAMIC: {
+      label: '다이나믹형', description: '역동적이고 에너지 넘치는 볼드 디자인',
+      typography: 'MODERN', heroLayout: 'gradient', cardStyle: 'bordered',
+      colors: { primary: '#7c3aed', secondary: '#ec4899', accent: '#f59e0b', bg: '#ffffff', bgAlt: '#f5f3ff', text: '#1e1b4b', textLight: '#6d28d9', border: '#ddd6fe', heroBg: '#4c1d95', heroText: '#ffffff' },
+      // 강조 섹션·애니메이션·CTA 중심
+      sections: { 'sec-featured': true, 'sec-minilectures': true, 'sec-digitaltwin': true }
     }
   });
 

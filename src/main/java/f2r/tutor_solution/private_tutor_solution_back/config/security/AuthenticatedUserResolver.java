@@ -131,6 +131,25 @@ public class AuthenticatedUserResolver {
     }
   }
 
+  /** ADMIN만 통과. 관리자의 타인 홈페이지 관리 경로가 서비스 계층에서 한 번 더 확인한다(필터 체인과 이중 방어). */
+  public void requireAdmin(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (!isAdmin(principal)) {
+      throw new AccessDeniedException("관리자 권한이 필요합니다.");
+    }
+  }
+
+  /**
+   * 홈페이지 빌더 계열(생성·수정·AI 채팅·작업본·게시) 전용 역할 검사: TUTOR 또는 ADMIN.
+   *
+   * <p>수업상품·블로그·LMS·영상·삭제 등 기존 TUTOR 전용 기능은 계속 {@link #requireTutor}를 쓴다.
+   * 이 메서드는 역할만 본다 — 소유권은 {@link #verifyOwnsAcademyForBuilder}가 따로 확인한다.
+   */
+  public void requireAcademyBuilderRole(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (!isTutor(principal) && !isAdmin(principal)) {
+      throw new AccessDeniedException("강사 또는 관리자 권한이 필요합니다.");
+    }
+  }
+
   /** TUTOR가 넘긴 target user_id가 담당 학생(APPROVED 신청 존재)의 user인지 검증. 없으면 403. */
   private void ensureTutorTeachesUser(Long tutorUserId, Long targetUserId) {
     Student student = studentRepository.findByUser_UserId(targetUserId)
@@ -291,6 +310,20 @@ public class AuthenticatedUserResolver {
     JwtTokenProvider.AuthenticatedPrincipal p = currentPrincipal()
         .orElseThrow(() -> new AccessDeniedException("인증이 필요합니다."));
     requireTutor(p);
+    Long ownerUserId = academy.getTutor().getUserId();
+    if (!ownerUserId.equals(p.userId())) {
+      throw new AccessDeniedException("자기 Academy만 수정할 수 있습니다.");
+    }
+  }
+
+  /**
+   * 빌더 계열 경로의 소유자 검증: TUTOR 또는 ADMIN이면서 academy 소유자 본인이어야 한다.
+   * ADMIN도 다른 회원의 학원은 통과하지 못한다(소유권 보호 유지).
+   */
+  public void verifyOwnsAcademyForBuilder(Academy academy) {
+    JwtTokenProvider.AuthenticatedPrincipal p = currentPrincipal()
+        .orElseThrow(() -> new AccessDeniedException("인증이 필요합니다."));
+    requireAcademyBuilderRole(p);
     Long ownerUserId = academy.getTutor().getUserId();
     if (!ownerUserId.equals(p.userId())) {
       throw new AccessDeniedException("자기 Academy만 수정할 수 있습니다.");

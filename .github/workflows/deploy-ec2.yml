@@ -10,6 +10,11 @@ on:
     workflows: ["Build Check"]
     types:
       - completed
+    # PR 브랜치의 Build Check 완료 시에는 Deploy를 트리거하지 않는다.
+    # main 브랜치의 Build Check 완료 시에만 자동 배포된다.
+    # (기존 job-level if 게이트는 백업으로 유지)
+    branches:
+      - main
 
 permissions:
   id-token: write
@@ -250,6 +255,7 @@ jobs:
           name: deploy-gate-test-report
           path: build/reports/tests/test
           if-no-files-found: ignore
+          retention-days: 7
 
       - name: Build bootJar
         # auto deploy는 CI artifact를 재사용하므로 스킵 (수동 fallback만 빌드)

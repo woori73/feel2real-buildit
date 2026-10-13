@@ -37,6 +37,7 @@
     'sec-featured',
     'sec-intro',
     'sec-principal',
+    'sec-teachers',
     'sec-philosophy',
     'sec-videos',
     'sec-minilectures',
@@ -71,6 +72,7 @@
     'sec-featured',
     'sec-intro',
     'sec-principal',
+    'sec-teachers',
     'sec-philosophy',
     'sec-videos',
     'sec-minilectures',
@@ -122,6 +124,7 @@
     'sec-featured': 'Featured · 시즌 프로그램',
     'sec-intro': '학원 소개',
     'sec-principal': '원장 소개',
+    'sec-teachers': '강사진',
     'sec-philosophy': '학습 철학',
     'sec-videos': '수업 영상',
     'sec-minilectures': '미니 강의',
@@ -184,6 +187,20 @@
   let editableGuideActive = false;
 
   document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', function () { window.setTimeout(showAfterAiCreateHint, 600); });
+
+  /** AI 생성 직후 한 번만: 다음 단계(디자인 → 편집 → 게시)와 시각 편집기 진입을 안내한다. */
+  function showAfterAiCreateHint() {
+    let flagged = false;
+    try {
+      flagged = sessionStorage.getItem('builditAfterAiCreate') === '1';
+      if (flagged) sessionStorage.removeItem('builditAfterAiCreate');
+    } catch (_) { /* 무시 */ }
+    if (!flagged) return;
+    toast('AI가 홈페이지 초안을 만들었습니다. 디자인을 고르고 내용을 다듬은 뒤 게시하세요. 더 자유롭게 고치려면 상단 「시각 편집기」로 이어서 편집할 수 있습니다.', 'fa-wand-magic-sparkles');
+    const link = document.getElementById('builderVisualEditorLink');
+    if (link) link.classList.add('is-next-step');
+  }
 
   async function init() {
     let request = readJson(PENDING_KEY);
@@ -420,6 +437,7 @@
     if (id === 'sec-principal') return renderPrincipal(academy);
     if (id === 'sec-philosophy') return renderPhilosophy(academy);
     if (id === 'sec-videos') return renderVideos(academy);
+    if (id === 'sec-teachers') return renderTeachers(academy);
     if (id === 'sec-minilectures') return renderMiniLectures(academy);
     if (id === 'sec-digitaltwin') return renderAiProcess(academy);
     if (id === 'sec-lessons') return renderLessons(academy);
@@ -560,6 +578,10 @@
 
   function renderMiniLectures(academy) {
     return SECTIONS.renderMiniLectures(sectionView(academy), BUILDER_CTX);
+  }
+
+  function renderTeachers(academy) {
+    return SECTIONS.renderTeachers(sectionView(academy));
   }
 
   function wireVideoManagement() {
@@ -6338,6 +6360,7 @@
     renderPhilosophy,
     renderVideos,
     renderMiniLectures,
+    renderTeachers,
     renderLessons,
     renderExternalServices,
     renderCta,
