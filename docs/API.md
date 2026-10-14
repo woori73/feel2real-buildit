@@ -4589,3 +4589,35 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - GUEST: 최대 1건. MEMBER: 최대 3건.
 - AI 호출 없음. 규칙 기반 매핑 (WemadeDeltaService).
 - 변화 없으면 items 빈 배열, hasUpdate=false.
+
+
+## Easy 원장 권한 API (V1072)
+
+- `GET /api/tutor/easy/businesses`: 로그인 TUTOR의 활성 Academy에 연결된 활성 사업체 목록.
+- `GET /api/tutor/easy/workspace/{monthly,transactions,transactions/{txnId},reviews}`: 기존 Workspace 조회를 재사용한다. `businessId`는 선택자이며 권한은 principal → Academy → `academy_easy_business_links` 서버 조회로 판정한다.
+- `GET /api/tutor/easy/accounting/{general-ledger,trial-balance,balance-audit,income-statement,balance-sheet}`: 연결된 사업체의 회계 조회만 허용한다.
+- `POST /api/admin/easy/academy-links`, `DELETE /api/admin/easy/academy-links/academies/{academyId}/businesses/{businessId}`: ADMIN만 연결·해제한다.
+- 기존 `/api/admin/easy/**` 계약과 권한은 변경하지 않는다. 원장 업로드·수정·승인은 후속 PR 범위다.
+
+
+## Easy 원장 CSV 장부 API
+
+- `POST /api/tutor/easy/imports?businessId={id}` (multipart `file`): CSV 원문 행을 staging에 보존하고 기존 확정 매핑·분류 규칙으로 계정과목을 제안한다. XLSX와 빈 파일은 거부한다.
+- `GET /api/tutor/easy/imports?businessId={id}`, `GET /api/tutor/easy/imports/{batchId}?businessId={id}`: 로그인 원장의 연결 사업체 배치만 조회한다.
+- `PUT /api/tutor/easy/imports/{batchId}/rows/{rowId}/account?businessId={id}` body `{"accountId":1}`: READY 행의 추천 계정을 사용자가 확정·수정한다.
+- `POST /api/tutor/easy/imports/{batchId}/reclassify?businessId={id}`: 기존 규칙으로 선택 행을 다시 분석한다.
+- `POST /api/tutor/easy/imports/{batchId}/confirm?businessId={id}`: 선택 또는 전체 READY 행을 기존 장부·복식분개 엔진에 반영한다.
+- `DELETE /api/tutor/easy/imports/{batchId}?businessId={id}`: 미확정 STAGED 배치만 폐기한다.
+- 모든 batchId/rowId 조작은 principal → Academy → 연결 사업체 검증 뒤 `batch_id + business_id`로 재조회한다. 클라이언트 businessId는 권한 근거가 아니라 선택자다.
+- 기존 `/api/admin/easy/**` 계약은 변경하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.
+
+
+## Easy 원장 대화형 Agent API (V1073)
+
+- `POST /api/tutor/easy/agent/sessions?businessId={id}`: 로그인 TUTOR의 연결 사업체에 Easy 전용 대화 세션을 만든다.
+- `GET /api/tutor/easy/agent/sessions/{sessionId}?businessId={id}`: 본인·해당 사업체의 세션 메시지만 조회한다.
+- `POST /api/tutor/easy/agent/sessions/{sessionId}/messages?businessId={id}` body `{"message":"..."}`: MuseSpark는 허용된 의도만 해석하고, 실제 조회는 기존 Easy 서비스가 수행한다.
+- `POST /api/tutor/easy/agent/actions/{actionId}/approve?businessId={id}`: 제안 당시 대상과 현재 상태가 동일하고 만료 전일 때만 계정 변경 또는 import 확정을 기존 `EasyTutorImportService`로 적용한다.
+- `POST /api/tutor/easy/agent/actions/{actionId}/reject?businessId={id}`: 대기 제안을 거절한다.
+- 계정 변경과 장부 반영은 `PROPOSED` 감사 작업을 먼저 만들며 사용자 승인 전에는 실행하지 않는다. 명시적 승인 문구는 현재 세션의 최신 대기 제안 하나에만 적용한다.
+- 금액·거래일·원본 CSV·거래 삭제는 Agent 허용 명령이 아니다. 모든 세션·메시지·작업은 principal → Academy → 연결된 활성 EasyBusiness 검증 후 조회한다.

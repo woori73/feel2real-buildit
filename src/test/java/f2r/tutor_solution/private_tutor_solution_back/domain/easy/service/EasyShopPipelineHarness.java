@@ -120,7 +120,7 @@ class EasyShopPipelineHarness {
     auditService = new EasyAuditService(
         reviewRepository, txnRepository, businessRepository, accountRepository,
         batchRepository, rowRepository, withholdingRepository, closingRepository,
-        journalService, correctionService, correctionLogRepository);
+        importService, journalService, correctionService, correctionLogRepository);
     wire();
   }
 

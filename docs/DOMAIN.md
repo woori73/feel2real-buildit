@@ -1700,3 +1700,19 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 **academy_visual_editor_agent_token**: `token_id` PK, `academy_id` FK, `token_hash` CHAR(64) UNIQUE(SHA-256), `label`, `scopes`(`ve:read,ve:propose`), `created_by`, `expires_at`(90일), `last_used_at`, `revoked_at`. 평문은 저장하지 않는다. 학원당 활성 5개 제한.
 
 상태 전이: PENDING→APPLIED(저장 트랜잭션 안, `appliedRevision`은 DB revision), PENDING→REJECTED, PENDING→EXPIRED(조회 시 정리), PENDING→STALE(저장된 초안에 대상 요소가 없을 때만). 종결 상태는 재전이 불가.
+
+
+## academy_easy_business_links (V1072)
+
+Academy와 Easy 사업체의 권한 연결표다. `link_id` PK, `academy_id` FK → `academies`, `business_id` FK → `easy_businesses`, `(academy_id, business_id)` UNIQUE, 감사시각을 저장한다. 양쪽 FK는 삭제 시 연결 row만 CASCADE한다. 기존 Easy 사업체는 연결 row가 없어도 ADMIN API에서 그대로 동작한다. TUTOR 접근은 활성·공개 Academy의 소유자이고 활성 EasyBusiness 연결 row가 있을 때만 허용한다.
+
+
+## easy_agent_sessions / easy_agent_messages / easy_agent_actions (V1073)
+
+Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이다.
+
+- `easy_agent_sessions`: `business_id`와 `owner_user_id`로 대화 소유권을 고정한다.
+- `easy_agent_messages`: USER/ASSISTANT 원문과 서버가 생성한 결과·제안 payload를 순서대로 보존한다.
+- `easy_agent_actions`: 계정 변경(`SELECT_ACCOUNT`)과 import 확정(`CONFIRM_IMPORT`) 제안을 보존한다. 상태는 `PROPOSED → APPLIED|REJECTED|STALE|EXPIRED|FAILED` 단방향이다.
+- 승인 시 row/batch를 사업체 범위에서 다시 찾고 제안 당시 account/status 및 READY/미분개 조건을 재검증한다. 변경되거나 만료된 제안은 적용하지 않는다.
+- LLM 출력은 권한, 금액, 거래일, 원본 데이터의 source of truth가 아니며 서버 allowlist 의도와 기존 Easy 서비스 호출에만 사용한다.
