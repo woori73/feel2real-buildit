@@ -33,7 +33,6 @@ function harness({ user, sessionUser, loginModal = false, promptText = null }) {
   const docListeners = [];
   const input = { value: promptText || '', focus() {} };
   const example = startButton();
-  example.el.dataset = { seed: '초등 중등 영어 전문 학원 홈페이지를 만들어 주세요.' };
   example.el.textContent = ' 화면에 보이는 문구 ';
   form.el.querySelector = (sel) => (sel === '[data-buildit-prompt]' ? input : null);
   const windowOpts = {
@@ -206,16 +205,4 @@ test('Given a pending builder return, When a STUDENT logs in, Then they stay on 
   // then
   assert.equal(location.href, '');
   assert.equal(storage.getItem('builditPendingPrompt'), null);
-});
-
-test('Given 샘플 카드에 요청 문장(seed)이 있을 때 When 누르면 Then 입력창에 seed가 채워지고 자동 시작하지 않는다', () => {
-  // given
-  const { clickExample, input, location } = harness({ user: null });
-
-  // when
-  clickExample();
-
-  // then
-  assert.equal(input.value, '초등 중등 영어 전문 학원 홈페이지를 만들어 주세요.');
-  assert.equal(location.href, '');
 });

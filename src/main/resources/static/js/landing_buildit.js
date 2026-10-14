@@ -103,7 +103,7 @@
     btn.addEventListener('click', () => {
       const input = document.querySelector('[data-buildit-prompt]');
       if (!input) return;
-      input.value = (btn.dataset && btn.dataset.seed) || btn.textContent.trim();
+      input.value = btn.textContent.trim();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       input.focus({ preventScroll: true });
     });
