@@ -77,12 +77,24 @@ jobs:
           # test/photocraft-binary 브랜치에서 청크 다운로드 후 재조립
           mkdir -p /tmp/photocraft-real
           mkdir -p /tmp/photocraft-e2e/images
-          echo "PhotoCraft CLI 청크 다운로드 중..."
+          echo "PhotoCraft CLI 청크 가져오기 (test/photocraft-binary 브랜치)..."
+          # sparse checkout으로 청크만 가져오기
+          mkdir -p /tmp/pc-chunks
+          cd /tmp/pc-chunks
+          git init -q
+          git remote add origin https://github.com/woori73/feel2real-buildit.git
+          git config core.sparseCheckout true
+          echo "e2e-assets/" > .git/info/sparse-checkout
+          # GITHUB_TOKEN으로 인증 (workflow에서 자동 제공)
+          git -c http.extraHeader="AUTHORIZATION: basic $(echo -n "x-access-token:$GITHUB_TOKEN" | base64 -w0)" \
+            fetch --depth 1 origin test/photocraft-binary 2>&1 | head -3
+          git checkout FETCH_HEAD -- e2e-assets/ 2>&1 | head -3
+          ls -lh e2e-assets/
           for part in aa ab ac ad; do
-            curl -sfL "https://raw.githubusercontent.com/woori73/feel2real-buildit/test/photocraft-binary/e2e-assets/photocraft-cli.gz.part-$part" \
-              -o /tmp/photocraft-real/part-$part
-            echo "  part-$part 다운로드됨"
+            cp e2e-assets/photocraft-cli.gz.part-$part /tmp/photocraft-real/part-$part
+            echo "  part-$part 준비됨"
           done
+          cd - > /dev/null
           echo "청크 재조립 및 압축 해제 중..."
           cat /tmp/photocraft-real/part-* > /tmp/photocraft-real/photocraft-cli.gz
           gunzip -c /tmp/photocraft-real/photocraft-cli.gz > /tmp/photocraft-real/photocraft-cli
