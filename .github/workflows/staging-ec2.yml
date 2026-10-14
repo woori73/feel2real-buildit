@@ -314,7 +314,7 @@ jobs:
           fi
 
       - name: Upload setup output
-        if: inputs.mode == 'setup'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: staging-setup-output
