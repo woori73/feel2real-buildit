@@ -14,7 +14,8 @@ public class AcademyAiCreateDtos {
   /** 생성 요청. */
   public record CreateRequest(
       String message,
-      String academyName) {}
+      String academyName,
+      String templateId) {}
 
   /** 생성된 초안. */
   public record CreateDraft(
