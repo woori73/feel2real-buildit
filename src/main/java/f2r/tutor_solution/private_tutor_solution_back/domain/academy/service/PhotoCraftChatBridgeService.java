@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyImageDtos;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.ImageEditFlowDtos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class PhotoCraftChatBridgeService {
   private static final Pattern EXPOSURE_DOWN = Pattern.compile("(노출.*(낮|내|감소))");
 
   private final ImageEditApprovalService approvalService;
+  private final AcademyImageService academyImageService;
 
   /**
    * 채팅 메시지에서 이미지 편집 의도를 감지.
@@ -118,21 +120,112 @@ public class PhotoCraftChatBridgeService {
   /**
    * 이미지 편집 실행 (사용자 확인 후).
    *
-   * <p>PR #662의 AcademyImageService와 연동 예정.
-   * 현재는 승인 서비스에 등록하는 구조를 제공한다.
+   * <p>AcademyImageService를 통해 PhotoCraft로 실제 편집을 수행하고,
+   * 결과를 승인 플로우에 등록한다.
+   *
+   * @param principal 인증 사용자
+   * @param slotKey 이미지 슬롯 (HERO_BANNER, SECTION_BG 등)
+   * @param operations 편집 작업 목록 [{op, params}]
+   * @return 미리보기 데이터 (원본 vs 수정본)
    */
   public ImageEditFlowDtos.ImagePreviewData executeEdit(
       JwtTokenProvider.AuthenticatedPrincipal principal,
       String slotKey,
       List<Map<String, Object>> operations) {
 
-    // TODO(#662): AcademyImageService.editImage 호출
-    // 현재는 플로우 구조만 제공
-    log.info("이미지 편집 실행 요청: slot={}, operations={}", slotKey, operations.size());
+    log.info("이미지 편집 실행: slot={}, operations={}", slotKey, operations.size());
 
-    throw new UnsupportedOperationException(
-        "PR #662 병합 후 구현: PhotoCraftImageService 연동 필요. " +
-        "현재는 의도 감지(detect)까지만 동작합니다.");
+    // 1. Map 형태의 operations를 AcademyImageDtos.EditOperation으로 변환
+    List<AcademyImageDtos.EditOperation> editOps = new ArrayList<>();
+    for (Map<String, Object> opMap : operations) {
+      String op = (String) opMap.get("op");
+      @SuppressWarnings("unchecked")
+      Map<String, Object> params = (Map<String, Object>) opMap.get("params");
+      if (op == null) {
+        // 중첩 구조가 아닌 평탄 구조인 경우: {op, params} 또는 {op, value}
+        continue;
+      }
+      if (params == null) {
+        params = new HashMap<>();
+        // {op: "brightness", value: 20} 형태 지원
+        if (opMap.containsKey("value")) {
+          params.put("value", opMap.get("value"));
+        }
+      }
+      editOps.add(new AcademyImageDtos.EditOperation(op, params));
+    }
+
+    // 평탄 구조 재시도: operations가 [{op, value}] 형태인 경우
+    if (editOps.isEmpty()) {
+      for (Map<String, Object> opMap : operations) {
+        String op = (String) opMap.get("op");
+        if (op != null) {
+          Map<String, Object> params = new HashMap<>();
+          for (Map.Entry<String, Object> e : opMap.entrySet()) {
+            if (!"op".equals(e.getKey())) {
+              params.put(e.getKey(), e.getValue());
+            }
+          }
+          // value 키가 없으면 params 자체를 value로
+          if (!params.containsKey("value") && params.containsKey("params")) {
+            Object p = params.remove("params");
+            if (p instanceof Map) {
+              @SuppressWarnings("unchecked")
+              Map<String, Object> pm = (Map<String, Object>) p;
+              params.putAll(pm);
+            }
+          }
+          editOps.add(new AcademyImageDtos.EditOperation(op, params));
+        }
+      }
+    }
+
+    if (editOps.isEmpty()) {
+      throw new IllegalArgumentException("편집 작업이 비어 있습니다.");
+    }
+
+    // 2. 원본 이미지 URL 조회 (비교용)
+    String originalImageUrl = null;
+    try {
+      List<AcademyImageDtos.ImageAssetInfo> existing =
+          academyImageService.listImages(principal);
+      for (AcademyImageDtos.ImageAssetInfo info : existing) {
+        if (slotKey.equals(info.slotKey())) {
+          originalImageUrl = info.imageUrl();
+          break;
+        }
+      }
+    } catch (Exception e) {
+      log.warn("기존 이미지 조회 실패 (무시): {}", e.getMessage());
+    }
+
+    // 3. AcademyImageService를 통해 실제 편집 수행
+    AcademyImageDtos.EditImageRequest request =
+        new AcademyImageDtos.EditImageRequest(
+            null, // assetId=null: 슬롯의 최신 버전 사용
+            slotKey,
+            editOps,
+            true); // applyToPreview=true: 미리보기에 스테이징
+
+    AcademyImageDtos.EditImageResponse response =
+        academyImageService.editImage(principal, request);
+
+    log.info("이미지 편집 완료: assetId={}, version={}, desc={}",
+        response.assetId(), response.version(), response.editDescription());
+
+    // 4. 승인 플로우에 등록
+    approvalService.registerEditedImage(
+        response.assetId(), slotKey, response.imageUrl());
+
+    // 5. 미리보기 데이터 반환 (원본 vs 수정본)
+    return new ImageEditFlowDtos.ImagePreviewData(
+        response.assetId(),
+        slotKey,
+        response.version(),
+        originalImageUrl,
+        response.imageUrl(),
+        response.editDescription(),
+        response.stagedForPreview());
   }
 
   private ImageEditFlowDtos.ChatImageIntentResponse noIntent() {
