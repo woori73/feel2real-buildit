@@ -2,6 +2,9 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.ImageEditFlowDtos;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyWorkingCopy;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyWorkingCopyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ImageEditApprovalService {
 
   private final AcademyWorkingCopyService workingCopyService;
+  private final AcademyWorkingCopyRepository workingCopyRepository;
+  private final AcademyRepository academyRepository;
 
   /**
    * 승인 상태 저장소 (메모리 기반, #662 병합 후 DB로 이전 예정).
@@ -150,6 +155,40 @@ public class ImageEditApprovalService {
 
     flowStatusStore.put(assetId, "STAGED");
     log.info("WorkingCopy 스테이징 완료: assetId={}, slot={}", assetId, slotKey);
+  }
+
+  /**
+   * 현재 WorkingCopy의 revision을 조회.
+   *
+   * <p>서버 상태와 일치하는 revision을 반환하여
+   * 낙관적 락 충돌을 방지한다.
+   *
+   * @param principal 인증 사용자
+   * @return 현재 revision
+   */
+  public long getCurrentRevision(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Long academyId = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new IllegalStateException("학원을 찾을 수 없습니다."))
+        .getAcademyId();
+
+    AcademyWorkingCopy wc = workingCopyRepository.findByAcademyId(academyId)
+        .orElseThrow(() -> new IllegalStateException("WorkingCopy를 찾을 수 없습니다."));
+
+    return wc.getRevision();
+  }
+
+  /**
+   * 승인된 이미지를 WorkingCopy에 스테이징 (revision 자동 조회).
+   *
+   * @param principal 인증 사용자
+   * @param assetId 이미지 자산 ID
+   */
+  @Transactional
+  public void stageApprovedImage(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Long assetId) {
+    long revision = getCurrentRevision(principal);
+    stageApprovedImage(principal, assetId, revision);
   }
 
   /**
