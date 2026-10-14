@@ -107,8 +107,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/easy/evidence", "easy/reviews");
         view(registry, "/easy/accounting", "easy/accounting");
 
-        // 원장용 Easy 대화 장부 — 데이터/변경은 /api/tutor/easy/** 권한 검증을 거친다.
-        view(registry, "/tutor/easy", "easy/tutor_agent");
+        // 원장용 Easy 대화 장부의 운영 주소. 데이터/변경은 /api/tutor/easy/** 권한 검증을 거친다.
+        view(registry, "/ledger", "easy/tutor_agent");
+        // 기존 북마크 호환: 원장 장부의 공식 주소는 /ledger로 단일화한다.
+        registry.addRedirectViewController("/tutor/easy", "/ledger")
+                .setStatusCode(HttpStatus.MOVED_PERMANENTLY);
 
         view(registry, "/tutor/lessons/{lessonId}/students", "tutor/lesson_students");
     }
