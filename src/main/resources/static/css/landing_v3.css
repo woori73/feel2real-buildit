@@ -572,7 +572,7 @@ body { background: #f7f8fc; }
 .bi-page .bb-region select:disabled { color: #999; }
 .bi-page .bb-region button { min-height: 44px; padding: 0 18px; border: 0; background: #000; color: #00f5a0; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
 .bi-page .bb-list { display: flex; flex-direction: column; gap: 16px; }
-.bi-page .bb-row { display: grid; grid-template-columns: 72px 44px minmax(0, 1fr); align-items: center; gap: 0 16px; padding: 0 24px 0 0; min-height: 104px; border-radius: 6px; background: #fff; color: #000; text-decoration: none; overflow: hidden; }
+.bi-page .bb-row { display: grid; grid-template-columns: 72px 44px minmax(0, 1fr); align-items: center; gap: 0 16px; padding: 18px 24px 18px 0; min-height: 104px; border-radius: 6px; background: #fff; color: #000; text-decoration: none; overflow: hidden; }
 .bi-page .bb-row:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, .12); }
 .bi-page .bb-rank { display: grid; place-items: center; align-self: stretch; font-family: 'Anton', Impact, sans-serif; font-size: 30px; }
 .bi-page .bb-trend { font-size: 13px; font-weight: 800; color: #777; }

@@ -233,7 +233,7 @@ test('given 1위·지난주 2위 when bbRow then 이름·학원·교육 철학�
   const html = bbRow(entry, escHtml);
   // then
   assert.ok(html.includes('bb-first'));
-  assert.ok(html.includes('▲'));
+  assert.ok(html.includes('▲1'));
   assert.ok(html.includes('홍길동') && html.includes('가나다학원') && html.includes('문법의 기본기'));
   assert.ok(!html.includes('<img'));
   assert.ok(html.includes('/chart/educators/7'));
@@ -261,4 +261,16 @@ test('given 교육 철학과 소개가 모두 있을 때 when bbRow then 교육 
   // then
   assert.ok(first.includes('철학 문장') && !first.includes('소개 문장'));
   assert.ok(second.includes('소개 문장'));
+});
+
+test('given 순위 하락·유지 when bbRow then ▼변동폭과 —를 보여 준다', () => {
+  // given
+  const down = { rank: 3, previousRank: 2, educatorId: 1, name: 'A' };
+  const same = { rank: 1, previousRank: 1, educatorId: 1, name: 'A' };
+  // when
+  const downHtml = bbRow(down, escHtml);
+  const sameHtml = bbRow(same, escHtml);
+  // then
+  assert.ok(downHtml.includes('▼1'));
+  assert.ok(sameHtml.includes('—'));
 });

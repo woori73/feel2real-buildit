@@ -2,7 +2,7 @@
 function bbRow(e, esc) {
   var rank = Number(e.rank);
   var prev = e.previousRank == null ? null : Number(e.previousRank);
-  var arrow = prev == null ? 'NEW' : (prev > rank ? '▲' : (prev < rank ? '▼' : '→'));
+  var arrow = prev == null ? 'NEW' : (prev > rank ? '▲' + (prev - rank) : (prev < rank ? '▼' + (rank - prev) : '—'));
   var academy = e.academyName ? '<span class="bb-academy">' + esc(e.academyName) + '</span>' : '';
   var text = e.educationPhilosophy || e.identitySummary;
   var philosophy = text ? '<span class="bb-philosophy">' + esc(text) + '</span>' : '';
