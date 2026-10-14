@@ -227,6 +227,8 @@ public class SecurityConfig {
             // NewStart 운영자 화면 — ADMIN 전용. 메뉴 숨김이 아니라 서버 규칙으로 차단한다.
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
+            // DesignCraft 출판 편집기 — TUTOR 전용. API는 /api/publishing/**에서 소유자 격리.
+            .requestMatchers("/designcraft", "/designcraft/**").hasRole("TUTOR")
 
             // ── 학원 LMS SSR 화면 ──────────────────────────────────────────
             // ⚠ 이 블록은 반드시 아래 .anyRequest().permitAll()보다 위에 있어야 한다.
