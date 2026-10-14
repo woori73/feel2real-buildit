@@ -185,10 +185,11 @@ public class ImageEditApprovalService {
         .orElseThrow(() -> new IllegalStateException("학원을 찾을 수 없습니다."))
         .getAcademyId();
 
-    AcademyWorkingCopy wc = workingCopyRepository.findByAcademyId(academyId)
-        .orElseThrow(() -> new IllegalStateException("WorkingCopy를 찾을 수 없습니다."));
-
-    return wc.getRevision();
+    // WorkingCopy가 없으면 stageMedia에서 loadOrCreate로 생성되므로 0 반환
+    // (신규 WorkingCopy의 초기 revision)
+    return workingCopyRepository.findByAcademyId(academyId)
+        .map(AcademyWorkingCopy::getRevision)
+        .orElse(0L);
   }
 
   /**
