@@ -2,8 +2,6 @@ package f2r.tutor_solution.private_tutor_solution_back.template;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.LandingVideoRenderItem;
-import f2r.tutor_solution.private_tutor_solution_back.domain.landing.entity.LandingVideoSlotKey;
 import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,26 +33,15 @@ class LandingTemplateRenderTest {
     return engine;
   }
 
-  private static String render(
-      LandingVideoRenderItem academyShortsVideo,
-      LandingVideoRenderItem parentReportVideo) {
-    Context context = new Context();
-    context.setVariable("academyShortsVideo", academyShortsVideo);
-    context.setVariable("parentReportVideo", parentReportVideo);
-    return engine().process(VIEW, context);
+  private static String render() {
+    return engine().process(VIEW, new Context());
   }
 
   @Test
-  @DisplayName("given Shorts/Report 영상이 공개일 때 when 랜딩을 렌더하면 then 레이아웃·fragment·영상 source가 모두 해석된다")
-  void renders_landing_with_visible_product_videos() {
-    // given
-    LandingVideoRenderItem shorts =
-        LandingVideoRenderItem.managed(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO);
-    LandingVideoRenderItem report =
-        LandingVideoRenderItem.managed(LandingVideoSlotKey.PARENT_REPORT_DEMO);
-
-    // when
-    String html = render(shorts, report);
+  @DisplayName("given 랜딩 when 렌더하면 then 레이아웃·fragment가 해석되고 Report·Shorts·제작 중복 섹션은 없다")
+  void renders_landing_without_unprovided_sections() {
+    // given/when
+    String html = render();
 
     // then
     assertThat(html)
@@ -69,48 +56,20 @@ class LandingTemplateRenderTest {
         .contains("data-login-modal")
         .doesNotContain("th:block")
         .doesNotContain("th:replace")
-        // publicFooterBuildIt → publicFooterBranded(true) 중첩 치환이 실제로 풀렸는지.
-        // 파라미터가 안 넘어가면 조용히 F2R 브랜드가 렌더된다.
         .contains("class=\"footer-name footer-name-bi\"")
-        .contains("© 2026 Feel 2 Real. All rights reserved.")
-        .contains("상호명: 압구정에듀홀릭출판사")
-        .contains("대한민국 지역별 영어교육자 TOP 100")
+        .contains("상호명: 압구정에듀홀릭학원")
         .contains("href=\"/chart\"")
         .doesNotContain("Feel to Real (F2R)")
-        // footer는 Build It이 Feel 2 Real의 서비스처럼 보이도록 F2R 로고를 함께 노출한다.
-        .contains("/img/F2R_logo_pure.svg")
-        .contains("Feel 2 Real 서비스")
-        // Web은 매뉴얼의 가로 홈페이지 제작 영상을 쓰고, Shorts/Report는 관리형 스트림 URL이 src로 나간다.
-        .contains("/manual/videos/02_homepage_setup.mp4")
-        .contains("src=\"/api/landing/videos/ACADEMY_SHORTS_DEMO/stream\"")
-        .contains("src=\"/api/landing/videos/PARENT_REPORT_DEMO/stream\"")
-        .doesNotContain("Build It Shorts 예시 영상 준비 중")
-        .doesNotContain("Build It Report 예시 영상 준비 중")
+        // 홈페이지 제작은 히어로 한 곳에서만 소개한다.
+        .doesNotContain("id=\"web\"")
+        .doesNotContain("id=\"journey\"")
+        // 아직 제공하지 않는 서비스
+        .doesNotContain("id=\"report\"")
+        .doesNotContain("id=\"shorts\"")
+        .doesNotContain("/api/landing/videos/ACADEMY_SHORTS_DEMO/stream")
+        .doesNotContain("/api/landing/videos/PARENT_REPORT_DEMO/stream")
         // Wiki 단계 영상은 번들 정적 경로 그대로
         .contains("src=\"/video/landing/digital_twin_ex.mp4\"")
         .contains("src=\"/video/landing/how2use_digitaltwin.mp4\"");
-  }
-
-  @Test
-  @DisplayName("given Shorts/Report 영상이 비공개일 때 when 랜딩을 렌더하면 then video 태그 없이 준비 중 프레임만 남는다")
-  void renders_placeholders_when_product_videos_hidden() {
-    // given
-    LandingVideoRenderItem hidden =
-        LandingVideoRenderItem.hidden(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO);
-
-    // when
-    String html = render(hidden, LandingVideoRenderItem.hidden(LandingVideoSlotKey.PARENT_REPORT_DEMO));
-
-    // then
-    // 숨김 슬롯의 video 태그가 남으면 브라우저가 없는 리소스를 요청한다.
-    assertThat(html)
-        .doesNotContain("id=\"builderVideo\"")
-        .doesNotContain("/api/landing/videos/ACADEMY_SHORTS_DEMO/stream")
-        .doesNotContain("/api/landing/videos/PARENT_REPORT_DEMO/stream")
-        .contains("/manual/videos/02_homepage_setup.mp4")
-        .contains("Build It Shorts 예시 영상 준비 중")
-        .contains("Build It Report 예시 영상 준비 중")
-        // Wiki 영상은 이 슬롯과 무관하므로 그대로 렌더돼야 한다.
-        .contains("src=\"/video/landing/digital_twin_ex.mp4\"");
   }
 }

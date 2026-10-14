@@ -19,7 +19,7 @@ class LandingV3TemplateContractTest {
   private static final Path V3_JS = Path.of("src/main/resources/static/js/landing_v3.js");
 
   @Test
-  @DisplayName("given v3 확정 순서 when 템플릿을 읽으면 then 제작→Chart→콘텐츠 도구→준비 중 순서로 노출한다")
+  @DisplayName("given 중복 제거 when 템플릿을 읽으면 then 제작(히어로)→Chart→Wiki→준비 중 순서이고 제작 재소개·Report·Shorts 섹션은 없다")
   void sections_follow_confirmed_order() throws Exception {
     // given
     String html = Files.readString(LANDING);
@@ -27,12 +27,8 @@ class LandingV3TemplateContractTest {
     // when
     int hero = html.indexOf("id=\"hero\"");
     int intro = html.indexOf("id=\"intro\"");
-    int web = html.indexOf("id=\"web\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
-    int tools = html.indexOf("id=\"tools\"");
     int wiki = html.indexOf("id=\"wiki\"");
-    int report = html.indexOf("id=\"report\"");
-    int shorts = html.indexOf("id=\"shorts\"");
     int soon = html.indexOf("id=\"soon\"");
     int faq = html.indexOf("id=\"faq\"");
     int cta = html.indexOf("id=\"cta\"");
@@ -40,15 +36,17 @@ class LandingV3TemplateContractTest {
     // then
     assertThat(hero).isGreaterThanOrEqualTo(0);
     assertThat(intro).isGreaterThan(hero);
-    assertThat(web).isGreaterThan(intro);
-    assertThat(chart).isGreaterThan(web);
-    assertThat(tools).isGreaterThan(chart);
-    assertThat(wiki).isGreaterThan(tools);
-    assertThat(report).isGreaterThan(wiki);
-    assertThat(shorts).isGreaterThan(report);
-    assertThat(soon).isGreaterThan(shorts);
+    assertThat(chart).isGreaterThan(intro);
+    assertThat(wiki).isGreaterThan(chart);
+    assertThat(soon).isGreaterThan(wiki);
     assertThat(faq).isGreaterThan(soon);
     assertThat(cta).isGreaterThan(faq);
+    assertThat(html)
+        .doesNotContain("id=\"web\"")
+        .doesNotContain("id=\"journey\"")
+        .doesNotContain("id=\"tools\"")
+        .doesNotContain("id=\"report\"")
+        .doesNotContain("id=\"shorts\"");
   }
 
   @Test
@@ -63,7 +61,6 @@ class LandingV3TemplateContractTest {
         .contains("data-buildit-prompt")
         .contains("data-buildit-example")
         .contains("data-buildit-start")
-        .contains("href=\"/builder/entry\"")
         .contains("class=\"hero\" id=\"hero\"")
         .doesNotContain("action=\"/builder/entry\"");
   }
@@ -100,18 +97,6 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given Easy 도입 문의 when 읽으면 then 기존 문의 모달에 연결하고 불가 시 비활성 가드가 있다")
-  void easy_inquiry_uses_contact_modal() throws Exception {
-    // given
-    String html = Files.readString(LANDING);
-    String js = Files.readString(V3_JS);
-
-    // then
-    assertThat(html).contains("data-v3-inquiry onclick=\"openContactModal()\"");
-    assertThat(js).contains("openContactModal").contains("aria-disabled");
-  }
-
-  @Test
   @DisplayName("given 소개영상·슬로건 when 읽으면 then 삭제하지 않고 유지한다")
   void intro_video_and_slogan_are_kept() throws Exception {
     // given
@@ -138,20 +123,6 @@ class LandingV3TemplateContractTest {
         .contains("/js/landing_chart.js")
         .doesNotContain("교육자 A")
         .doesNotContain("교육자 B");
-  }
-
-  @Test
-  @DisplayName("given Easy 예시 화면 when 읽으면 then 실제 수치 없이 예시로 표시한다")
-  void easy_example_has_no_real_figures() throws Exception {
-    // given
-    String html = Files.readString(LANDING);
-    int start = html.indexOf("id=\"v3pane-easy\"");
-    int end = html.indexOf("</section>", start);
-    String easy = html.substring(start, end);
-
-    // then
-    assertThat(easy).contains("예시 화면").contains("실제 회계 데이터가 아닙니다");
-    assertThat(easy).doesNotContainPattern("[0-9]{1,3}(,[0-9]{3})+\\s*원");
   }
 
   @Test
