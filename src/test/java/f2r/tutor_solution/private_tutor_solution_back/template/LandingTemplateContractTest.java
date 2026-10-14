@@ -121,7 +121,9 @@ class LandingTemplateContractTest {
         .contains("href=\"https://open.kakao.com/o/sMf4ifRi\"")
         .contains("href=\"mailto:woorinaesin@naver.com\"")
         .contains("자료 보내기", "영어 문제지 제작", "카톡·이메일 전달", "수정 요청", "최종 완성")
-        .contains("학원 로고를 보내주시면 제작 문제지에 로고를 넣어드립니다");
+        .contains("학원 로고를 보내주시면 제작 문제지에 로고를 넣어드립니다")
+        .contains("압구정중2", "어떻게 나왔을까?", "100% 출제", "외부지문 2문항(5 · 9번) 제외, 28문항 전부")
+        .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
     assertThat(wiki.split("<li><span>", -1).length - 1).isEqualTo(5);
     assertThat(Path.of("src/main/resources/static/img/landing/wiki-sample.jpg")).exists();
   }
