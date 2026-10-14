@@ -32,8 +32,7 @@ class AcademyAiCreateServiceTest {
   @DisplayName("given 영어학원 요청 when 초안 생성 then ENGLISH 프리셋이 선택된다")
   void generateDraft_englishRequest_selectsEnglishPreset() {
     CreateDraft draft = service.generateDraft(
-        "중학생 대상 영어학원 홈페이지 만들어 줘. 파란색 계열이고 상담 신청 버튼을 넣어 줘.",
-        "테스트학원");
+        "중학생 대상 영어학원 홈페이지 만들어 줘. 파란색 계열이고 상담 신청 버튼을 넣어 줘.", "테스트학원", null);
 
     assertThat(draft.designPreset()).isEqualTo("ENGLISH");
     // 색상은 P0 프리셋 시스템을 경유하므로 draft에 brandPrimary가 없음
@@ -47,8 +46,7 @@ class AcademyAiCreateServiceTest {
   @DisplayName("given 입시학원 요청 when 초안 생성 then EXAM 프리셋이 선택된다")
   void generateDraft_examRequest_selectsExamPreset() {
     CreateDraft draft = service.generateDraft(
-        "고등학생 내신 대비 입시학원 홈페이지 만들어줘",
-        "입시학원");
+        "고등학생 내신 대비 입시학원 홈페이지 만들어줘", "입시학원", null);
 
     assertThat(draft.designPreset()).isEqualTo("EXAM");
   }
@@ -57,8 +55,7 @@ class AcademyAiCreateServiceTest {
   @DisplayName("given 온라인학원 요청 when 초안 생성 then ONLINE 프리셋이 선택된다")
   void generateDraft_onlineRequest_selectsOnlinePreset() {
     CreateDraft draft = service.generateDraft(
-        "온라인 인강 홈페이지 만들어줘",
-        "온라인학원");
+        "온라인 인강 홈페이지 만들어줘", "온라인학원", null);
 
     assertThat(draft.designPreset()).isEqualTo("ONLINE");
   }
@@ -66,14 +63,14 @@ class AcademyAiCreateServiceTest {
   @Test
   @DisplayName("given 빈 요청 when 초안 생성 then 예외가 발생한다")
   void generateDraft_emptyMessage_throwsException() {
-    assertThatThrownBy(() -> service.generateDraft("", "학원"))
+    assertThatThrownBy(() -> service.generateDraft("", "학원", null))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   @DisplayName("given 색상 미지정 when 초안 생성 then 기본 프리셋 색상을 사용한다")
   void generateDraft_noColor_usesDefaultPresetColor() {
-    CreateDraft draft = service.generateDraft("미술학원 홈페이지 만들어줘", "미술학원");
+    CreateDraft draft = service.generateDraft("미술학원 홈페이지 만들어줘", "미술학원", null);
 
     assertThat(draft.designPreset()).isEqualTo("ARTS");
     // 색상 미지정 시 brandPrimary 키가 없음 (프리셋 기본값 사용)
