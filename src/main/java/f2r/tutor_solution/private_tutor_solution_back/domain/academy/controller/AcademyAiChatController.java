@@ -278,7 +278,7 @@ public class AcademyAiChatController {
     // 기존 Academy가 있으면 경고 (덮어쓰기 방지)
     boolean hasExisting = academyService.getMine(principal).isPresent();
 
-    CreateDraft draft = createService.generateDraft(request.message(), request.academyName());
+    CreateDraft draft = createService.generateDraft(request.message(), request.academyName(), request.templateId());
 
     String reply = draft.summary();
     if (!draft.warnings().isEmpty()) {
