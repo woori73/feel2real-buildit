@@ -34,18 +34,6 @@ public class PublishingJobController {
   private final PublishingJobService jobService;
 
   /**
-   * 작업 목록 → { jobs: [...] } (Qoder F1 프로젝트 목록).
-   */
-  @GetMapping
-  public Map<String, List<JobResponse>> listJobs(
-      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
-    List<JobResponse> jobs = jobService.listJobs(principal);
-    Map<String, List<JobResponse>> result = new java.util.HashMap<>();
-    result.put("jobs", jobs);
-    return result;
-  }
-
-  /**
    * 작업 생성 → 202 QUEUED (JSON).
    */
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
