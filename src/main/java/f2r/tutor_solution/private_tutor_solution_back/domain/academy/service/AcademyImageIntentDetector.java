@@ -113,7 +113,7 @@ public class AcademyImageIntentDetector {
 
   private int extractIntensity(String message, int defaultValue) {
     // "밝기를 30 올려줘" 같은 숫자 추출
-    Pattern numPattern = Pattern.compile("(\d+)");
+    Pattern numPattern = Pattern.compile("(\\d+)");
     Matcher m = numPattern.matcher(message);
     if (m.find()) {
       try {
