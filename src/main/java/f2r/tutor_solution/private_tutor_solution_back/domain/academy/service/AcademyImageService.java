@@ -163,10 +163,9 @@ public class AcademyImageService {
   }
 
   private Long resolveAcademyId(AuthenticatedPrincipal principal) {
-    // principal에서 academyId 추출 (구현에 맞게 조정)
-    return academyRepository.findByOwnerUserId(principal.userId())
+    return academyRepository.findByTutor_UserId(principal.userId())
         .orElseThrow(() -> new IllegalStateException("학원을 찾을 수 없습니다."))
-        .getId();
+        .getAcademyId();
   }
 
   private PhotoCraftImageService.ImageOperation mapOperation(AcademyImageDtos.EditOperation op) {
