@@ -1,18 +1,14 @@
-/* 빌보드 형식 한 줄: 순위 · 사진 · 증감 화살표 · 이름/소개 · 지난주/지역 */
+/* 빌보드 형식 한 줄: 순위 · 증감 화살표 · 교육자 이름 · 학원 이름 · 교육 철학 (사진·지표 없음) */
 function bbRow(e, esc) {
   var rank = Number(e.rank);
   var prev = e.previousRank == null ? null : Number(e.previousRank);
   var arrow = prev == null ? 'NEW' : (prev > rank ? '▲' : (prev < rank ? '▼' : '→'));
-  var name = esc(e.name);
-  var photo = e.profileImageUrl
-    ? '<img src="' + esc(e.profileImageUrl) + '" alt="" loading="lazy" referrerpolicy="no-referrer">'
-    : '<span>' + esc(String(e.name || '').charAt(0)) + '</span>';
-  var region = e.activityRegion ? '<div><dt>지역</dt><dd>' + esc(e.activityRegion) + '</dd></div>' : '';
+  var academy = e.academyName ? '<span class="bb-academy">' + esc(e.academyName) + '</span>' : '';
+  var philosophy = e.identitySummary ? '<span class="bb-philosophy">' + esc(e.identitySummary) + '</span>' : '';
   return '<a class="bb-row' + (rank === 1 ? ' bb-first' : '') + '" href="/chart/educators/' + encodeURIComponent(e.educatorId) + '">'
-    + '<div class="bb-rank">' + esc(e.rank) + '</div><div class="bb-photo">' + photo + '</div>'
+    + '<div class="bb-rank">' + esc(e.rank) + '</div>'
     + '<div class="bb-trend" aria-hidden="true">' + arrow + '</div>'
-    + '<div class="bb-main"><strong>' + name + '</strong><span>' + esc(e.identitySummary || e.academyName || e.role) + '</span></div>'
-    + '<dl class="bb-stats"><div><dt>지난주</dt><dd>' + (prev == null ? '신규' : esc(prev)) + '</dd></div>' + region + '</dl></a>';
+    + '<div class="bb-main"><strong>' + esc(e.name) + '</strong>' + academy + philosophy + '</div></a>';
 }
 
 if (typeof document !== 'undefined') (function () {

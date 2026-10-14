@@ -222,31 +222,31 @@ test('Given 지역 4개, When 두 번째 지역을 누르면, Then 그 지역과
   assert.equal(chip.textContent, '부산');
 });
 
-// ---- landing_chart.js: 빌보드 형식 한 줄 ----
+// ---- landing_chart.js: 빌보드 형식 한 줄 (사진·지표 없음) ----
 const { bbRow } = require('../../main/resources/static/js/landing_chart.js');
 const escHtml = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-test('given 1위·지난주 2위 when bbRow then 1위 강조 클래스와 상승 화살표·지난주 값을 만든다', () => {
+test('given 1위·지난주 2위 when bbRow then 이름·학원·교육 철학과 상승 화살표를 만들고 사진은 만들지 않는다', () => {
   // given
-  const entry = { rank: 1, previousRank: 2, educatorId: 7, name: '홍길동', identitySummary: '문법 전문', activityRegion: '서울' };
+  const entry = { rank: 1, previousRank: 2, educatorId: 7, name: '홍길동', academyName: '가나다학원', identitySummary: '문법의 기본기', profileImageUrl: 'http://x/y.jpg' };
   // when
   const html = bbRow(entry, escHtml);
   // then
   assert.ok(html.includes('bb-first'));
   assert.ok(html.includes('▲'));
-  assert.ok(html.includes('<dd>2</dd>'));
+  assert.ok(html.includes('홍길동') && html.includes('가나다학원') && html.includes('문법의 기본기'));
+  assert.ok(!html.includes('<img'));
   assert.ok(html.includes('/chart/educators/7'));
 });
 
-test('given 신규 진입·사진 없음·이름에 특수문자 when bbRow then NEW·첫 글자 표시이고 이름은 이스케이프된다', () => {
+test('given 신규·학원 없음·특수문자 이름 when bbRow then NEW이고 빈 항목은 만들지 않으며 이름은 이스케이프된다', () => {
   // given
   const entry = { rank: 3, previousRank: null, educatorId: 'a b', name: '<b>김</b>' };
   // when
   const html = bbRow(entry, escHtml);
   // then
   assert.ok(html.includes('NEW'));
-  assert.ok(html.includes('신규'));
+  assert.ok(!html.includes('bb-academy') && !html.includes('bb-philosophy'));
   assert.ok(!html.includes('<b>김</b>'));
-  assert.ok(!html.includes('bb-first'));
   assert.ok(html.includes('a%20b'));
 });
