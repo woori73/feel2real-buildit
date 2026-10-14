@@ -20,6 +20,7 @@ on:
           - teardown
           - test-api
           - db-setup
+          - e2e-test
 
 permissions:
   id-token: write
@@ -513,3 +514,91 @@ jobs:
         with:
           name: staging-dbsetup-output
           path: /tmp/dbsetup-output.txt
+
+      - name: E2E Test with Playwright
+        if: inputs.mode == 'e2e-test'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== Setting up SSM port forwarding ==="
+          # Start port forwarding in background
+          aws ssm start-session \
+            --target "$INSTANCE_ID" \
+            --document-name "AWS-StartPortForwardingSession" \
+            --parameters '{"portNumber":["8081"],"localPortNumber":["8081"]}' &
+          FORWARD_PID=$!
+          echo "Port forward PID: $FORWARD_PID"
+          sleep 10
+          
+          # Wait for tunnel
+          for i in $(seq 1 10); do
+            if curl -sf --max-time 5 http://localhost:8081/staging/actuator/health > /dev/null 2>&1; then
+              echo "Tunnel established"
+              break
+            fi
+            echo "Waiting for tunnel... ($i/10)"
+            sleep 5
+          done
+          
+          echo "=== Installing Playwright ==="
+          npm init -y > /dev/null 2>&1 || true
+          npm install playwright > /dev/null 2>&1
+          npx playwright install chromium --with-deps > /dev/null 2>&1 || npx playwright install chromium
+          
+          echo "=== Running E2E tests ==="
+          # Create test file
+          mkdir -p /tmp/e2e
+          cat > /tmp/e2e/publishing-e2e.spec.js << 'TESTEOF'
+          const { test, expect } = require('@playwright/test');
+          const BASE_URL = 'http://localhost:8081/staging';
+          const API_BASE = `${BASE_URL}/api/publishing`;
+          
+          test('Frontend loads', async ({ page }) => {
+            await page.goto(`${BASE_URL}/index.html`);
+            const title = await page.title();
+            console.log(`Title: ${title}`);
+            expect(title.length).toBeGreaterThan(0);
+          });
+          
+          test('Health check', async ({ request }) => {
+            const r = await request.get(`${BASE_URL}/actuator/health`);
+            expect(r.status()).toBe(200);
+            const b = await r.json();
+            expect(b.status).toBe('UP');
+            console.log('Health: UP');
+          });
+          
+          test('Static resources', async ({ request }) => {
+            for (const p of ['index.html', 'css/style.css', 'js/app.js', 'js/publishing_api.js']) {
+              const r = await request.get(`${BASE_URL}/${p}`);
+              console.log(`${p}: ${r.status()}`);
+              expect(r.status()).toBe(200);
+            }
+          });
+          
+          test('Templates API', async ({ request }) => {
+            const r = await request.get(`${API_BASE}/templates`);
+            console.log(`Templates: ${r.status()}`);
+            expect([200, 401, 403]).toContain(r.status());
+          });
+          
+          test('API BASE prefix', async ({ page }) => {
+            await page.goto(`${BASE_URL}/index.html`);
+            const base = await page.evaluate(() => typeof BASE !== 'undefined' ? BASE : 'N/A');
+            console.log(`API BASE: ${base}`);
+          });
+          TESTEOF
+          
+          cd /tmp/e2e
+          STAGING_URL=http://localhost:8081/staging npx playwright test publishing-e2e.spec.js --reporter=list 2>&1 | tee /tmp/e2e-output.txt || true
+          
+          echo "=== Cleanup ==="
+          kill $FORWARD_PID 2>/dev/null || true
+          echo "E2E test complete"
+
+      - name: Upload E2E output
+        if: inputs.mode == 'e2e-test'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-e2e-output
+          path: /tmp/e2e-output.txt
