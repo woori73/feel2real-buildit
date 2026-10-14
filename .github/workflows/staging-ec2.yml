@@ -21,6 +21,7 @@ on:
           - test-api
           - db-setup
           - e2e-test
+          - flow-test
 
 permissions:
   id-token: write
@@ -463,6 +464,7 @@ jobs:
           echo "Creating staging DB user..."
           mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "
           CREATE USER IF NOT EXISTS 'staging_publishing'@'%' IDENTIFIED BY '$STAGING_PW';
+          ALTER USER 'staging_publishing'@'%' IDENTIFIED BY '$STAGING_PW';
           GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP, REFERENCES ON feel2real_staging.* TO 'staging_publishing'@'%';
           FLUSH PRIVILEGES;" > /tmp/dbsetup.log 2>&1
           if [ $? -eq 0 ]; then
@@ -487,6 +489,16 @@ jobs:
             echo "DB user creation failed"
             exit 1
           fi
+          echo "=== Restart staging to apply isolated DB credentials ==="
+          sudo systemctl restart buildit-staging.service
+          sleep 25
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 10 http://127.0.0.1:8081/staging/actuator/health > /dev/null 2>&1; then
+              echo "staging health OK after restart (attempt $i)"; break
+            fi
+            echo "waiting for staging... ($i/12)"; sleep 10
+          done
+          curl -fsS --max-time 10 http://127.0.0.1:8081/staging/actuator/health || echo "(staging health check failed)"
           SCRIPT_EOF
           python3 << 'PYEOF' > /tmp/ssm_dbsetup.json
           import json
@@ -515,86 +527,230 @@ jobs:
           name: staging-dbsetup-output
           path: /tmp/dbsetup-output.txt
 
+      - name: Flow test - full API verification (via SSM)
+        if: inputs.mode == 'flow-test'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'IyEvYmluL2Jhc2gKIyBQNSBmbG93LXRlc3Q6IEVDMiDsiqTthYzsnbTsp5Xsl5DshJwg7Iuk7ZaJ65CY64qUIOyghOyytCBBUEkg7Z2Q66aEIOqygOymnSDsiqTtgazrpr3tirguCiMgLSDthYzsiqTtirgg6rOE7KCVIDLqsJwg7IOd7ISxIChUVVRPUiwg7LWc7IaMIOq2jO2VnCkg4oaSIOyiheujjCDsi5wg7IKt7KCcCiMgLSDruYTrsIDrsojtmLjripQgRUMyIOuCtOu2gOyXkOyEnOunjCDsg53shLHCt+yCrOyaqSwg66Gc6re47JeQIOy2nOugpe2VmOyngCDslYrsnYwKc2V0IC1ldW8gcGlwZWZhaWwKQkFTRT0iaHR0cDovLzEyNy4wLjAuMTo4MDgxL3N0YWdpbmciCkFQST0iJEJBU0UvYXBpL3B1Ymxpc2hpbmciCldPUks9L3RtcC9wNS1mbG93dGVzdApybSAtcmYgIiRXT1JLIjsgbWtkaXIgLXAgIiRXT1JLIjsgY2QgIiRXT1JLIgpQQVNTPTA7IEZBSUw9MDsgU0tJUD0wCm9rKCkgICB7IGVjaG8gIlBBU1M6ICQxIjsgUEFTUz0kKChQQVNTKzEpKTsgfQpuZygpICAgeyBlY2hvICJGQUlMOiAkMSI7IEZBSUw9JCgoRkFJTCsxKSk7IH0Kc2tpcCgpIHsgZWNobyAiU0tJUDogJDEiOyBTS0lQPSQoKFNLSVArMSkpOyB9Cmh0dHBfY29kZSgpIHsgdGFpbCAtMSAiJDEiOyB9CgplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09IgplY2hvICIgUDUgZmxvdy10ZXN0IOyLnOyekSAo7Iqk7YWM7J207KeVIOyghOyaqSwg7Jq07JiBIERCIOuvuOygkey0iSkiCmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0iCgplY2hvICItLS0gWzEvOV0g7YWM7Iqk7Yq4IOqzhOyglSDsg53shLEgKFRVVE9SLCDstZzshowg6raM7ZWcKSAtLS0iCmxzIC1sYSAvZXRjL2Yyci9zdGFnaW5nLmVudiB8fCBlY2hvICJzdGFnaW5nLmVudiDtjIzsnbwg7JeG7J2MIgp3YyAtbCAvZXRjL2Yyci9zdGFnaW5nLmVudiB8fCB0cnVlCnNvdXJjZSAvZXRjL2Yyci9zdGFnaW5nLmVudgplY2hvICJEQl9IT1NUPSR7REJfSE9TVDotVU5TRVR9IERCX1BPUlQ9JHtEQl9QT1JUOi1VTlNFVH0gREJfTkFNRT0ke0RCX05BTUU6LVVOU0VUfSBEQl9VU0VSPSR7REJfVVNFUjotVU5TRVR9IERCX1BBU1NXT1JEPSR7REJfUEFTU1dPUkQ6K1NFVH0iClsgLW4gIiR7REJfSE9TVDotfSIgXSB8fCB7IGVjaG8gIkRCX0hPU1TsnbQg67mE7Ja0IOyeiOydjCAtIOykkeuLqCI7IGV4aXQgMTsgfQpUUz0kKGRhdGUgKyVzKQpQV19BPSQob3BlbnNzbCByYW5kIC1iYXNlNjQgMjQgfCB0ciAtZCAnLys9XG4nIHwgY3V0IC1jMS0yMCkKUFdfQj0kKG9wZW5zc2wgcmFuZCAtYmFzZTY0IDI0IHwgdHIgLWQgJy8rPVxuJyB8IGN1dCAtYzEtMjApCkxfQT0icDV0ZXN0X2FfJFRTIjsgTF9CPSJwNXRlc3RfYl8kVFMiCm1rZGlyIC1wIC90bXAvYmNyeXB0bGliCnVuemlwIC1vIC1xIC9vcHQvc3RhZ2luZy9hcHAuamFyICdCT09ULUlORi9saWIvc3ByaW5nLXNlY3VyaXR5LWNyeXB0by0qLmphcicgJ0JPT1QtSU5GL2xpYi9jb21tb25zLWxvZ2dpbmctKi5qYXInIC1kIC90bXAvYmNyeXB0bGliCkNSWVBUT19KQVI9JChscyAvdG1wL2JjcnlwdGxpYi9CT09ULUlORi9saWIvc3ByaW5nLXNlY3VyaXR5LWNyeXB0by0qLmphciB8IGhlYWQgLTEpCkxPR19KQVI9JChscyAvdG1wL2JjcnlwdGxpYi9CT09ULUlORi9saWIvY29tbW9ucy1sb2dnaW5nLSouamFyIHwgaGVhZCAtMSkKY2F0ID4gL3RtcC9IYXNoUHcuamF2YSA8PCdKRU9GJwppbXBvcnQgb3JnLnNwcmluZ2ZyYW1ld29yay5zZWN1cml0eS5jcnlwdG8uYmNyeXB0LkJDcnlwdFBhc3N3b3JkRW5jb2RlcjsKcHVibGljIGNsYXNzIEhhc2hQdyB7CiAgcHVibGljIHN0YXRpYyB2b2lkIG1haW4oU3RyaW5nW10gYSkgeyBTeXN0ZW0ub3V0LnByaW50bG4obmV3IEJDcnlwdFBhc3N3b3JkRW5jb2RlcigpLmVuY29kZShhWzBdKSk7IH0KfQpKRU9GCkhfQT0kKGphdmEgLWNwICIkQ1JZUFRPX0pBUjokTE9HX0pBUiIgL3RtcC9IYXNoUHcuamF2YSAiJFBXX0EiIDI+L3RtcC9iY3J5cHQtZXJyLmxvZykgfHwgeyBlY2hvICJCQ3J5cHQg7Iuk7YyoOiI7IGNhdCAvdG1wL2JjcnlwdC1lcnIubG9nOyBleGl0IDE7IH0KSF9CPSQoamF2YSAtY3AgIiRDUllQVE9fSkFSOiRMT0dfSkFSIiAvdG1wL0hhc2hQdy5qYXZhICIkUFdfQiIgMj4vdG1wL2JjcnlwdC1lcnIubG9nKSB8fCB7IGVjaG8gIkJDcnlwdCDsi6TtjKg6IjsgY2F0IC90bXAvYmNyeXB0LWVyci5sb2c7IGV4aXQgMTsgfQppZiBbWyAiJEhfQSIgPT0gXCQyYVwkKiAmJiAiJEhfQiIgPT0gXCQyYVwkKiBdXTsgdGhlbiBvayAiQkNyeXB0IO2VtOyLnCDsg53shLEiOyBlbHNlIG5nICJCQ3J5cHQg7ZW07IucIOyDneyEsSI7IGZpCm15c3FsIC1oICIkREJfSE9TVCIgLVAgIiREQl9QT1JUIiAtdSAiJERCX1VTRVIiIC1wIiREQl9QQVNTV09SRCIgIiREQl9OQU1FIiA8PFNRTEVPRiAyPi90bXAvbXlzcWwtZXJyLmxvZyB8fCB7IGVjaG8gIk15U1FMIElOU0VSVCDsi6TtjKg6IjsgY2F0IC90bXAvbXlzcWwtZXJyLmxvZzsgZXhpdCAxOyB9CklOU0VSVCBJTlRPIHVzZXJzIChsb2dpbl9pZCwgcGFzc3dvcmQsIG5hbWUsIG5pY2tuYW1lLCByb2xlLCBjcmVhdGVkX2J5KQpWQUxVRVMgKCckTF9BJywgJyRIX0EnLCAnUDXthYzsiqTtirhBJywgJ3A1dGEnLCAnVFVUT1InLCAncDUtZmxvd3Rlc3QnKSwKICAgICAgICgnJExfQicsICckSF9CJywgJ1A17YWM7Iqk7Yq4QicsICdwNXRiJywgJ1RVVE9SJywgJ3A1LWZsb3d0ZXN0Jyk7ClNRTEVPRgpDTlQ9JChteXNxbCAtaCAiJERCX0hPU1QiIC1QICIkREJfUE9SVCIgLXUgIiREQl9VU0VSIiAtcCIkREJfUEFTU1dPUkQiICIkREJfTkFNRSIgLU4gLWUgXAogICJTRUxFQ1QgQ09VTlQoKikgRlJPTSB1c2VycyBXSEVSRSBsb2dpbl9pZCBJTiAoJyRMX0EnLCckTF9CJykgQU5EIHJvbGU9J1RVVE9SJzsiKQpbICIkQ05UIiA9ICIyIiBdICYmIG9rICLthYzsiqTtirgg6rOE7KCVIDLqsJwg7IOd7ISxIChUVVRPUikiIHx8IG5nICLthYzsiqTtirgg6rOE7KCVIOyDneyEsSAoY291bnQ9JENOVCkiCgpjbGVhbnVwKCkgewogIHNldCArZQogIGVjaG8gIi0tLSBbOS85XSDsoJXrpqw6IO2FjOyKpO2KuCDqs4TsoJXCt+uNsOydtO2EsCDsgq3soJwgLS0tIgogIGZvciBqIGluICRKT0JfSURTOyBkbwogICAgY3VybCAtcyAtYiBqYXJfYS50eHQgLVggREVMRVRFICIkQVBJL2pvYnMvJGoiIC1vIC9kZXYvbnVsbCAtdyAiZGVsIGpvYiAkajogJXtodHRwX2NvZGV9XG4iIHx8IHRydWUKICBkb25lCiAgbXlzcWwgLWggIiREQl9IT1NUIiAtUCAiJERCX1BPUlQiIC11ICIkREJfVVNFUiIgLXAiJERCX1BBU1NXT1JEIiAiJERCX05BTUUiIFwKICAgIC1lICJERUxFVEUgRlJPTSB1c2VycyBXSEVSRSBsb2dpbl9pZCBJTiAoJyRMX0EnLCckTF9CJyk7IiAyPi9kZXYvbnVsbCB8fCB0cnVlCiAgTEVGVD0kKG15c3FsIC1oICIkREJfSE9TVCIgLVAgIiREQl9QT1JUIiAtdSAiJERCX1VTRVIiIC1wIiREQl9QQVNTV09SRCIgIiREQl9OQU1FIiAtTiAtZSBcCiAgICAiU0VMRUNUIENPVU5UKCopIEZST00gdXNlcnMgV0hFUkUgbG9naW5faWQgSU4gKCckTF9BJywnJExfQicpOyIgMj4vZGV2L251bGwgfHwgZWNobyAiPyIpCiAgWyAiJExFRlQiID0gIjAiIF0gJiYgb2sgIu2FjOyKpO2KuCDqs4TsoJUg7IKt7KCcIiB8fCBuZyAi7YWM7Iqk7Yq4IOqzhOyglSDsgq3soJwgKOyelOyXrD0kTEVGVCkiCiAgcm0gLXJmICIkV09SSyIgL3RtcC9iY3J5cHRsaWIgL3RtcC9IYXNoUHcuamF2YQogIGVjaG8gIuygleumrCDsmYTro4wiCn0KdHJhcCBjbGVhbnVwIEVYSVQKSk9CX0lEUz0iIgoKZWNobyAiLS0tIFsyLzldIOuhnOq3uOyduCAtLS0iCnByaW50ZiAneyJsb2dpbklkIjoiJXMiLCJwYXNzd29yZCI6IiVzIn0nICIkTF9BIiAiJFBXX0EiID4gYm9keV9hLmpzb247IGNobW9kIDYwMCBib2R5X2EuanNvbgpwcmludGYgJ3sibG9naW5JZCI6IiVzIiwicGFzc3dvcmQiOiIlcyJ9JyAiJExfQiIgIiRQV19CIiA+IGJvZHlfYi5qc29uOyBjaG1vZCA2MDAgYm9keV9iLmpzb24KQ19BPSQoY3VybCAtcyAtYyBqYXJfYS50eHQgLW8gL2Rldi9udWxsIC13ICIle2h0dHBfY29kZX0iIC1YIFBPU1QgIiRCQVNFL2FwaS9hdXRoL2xvZ2luIiBcCiAgLUggJ0NvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbicgLWQgQGJvZHlfYS5qc29uKQpbICIkQ19BIiA9ICIyMDAiIF0gJiYgb2sgIuuhnOq3uOyduCBBICgyMDApIiB8fCBuZyAi66Gc6re47J24IEEgKGdvdCAkQ19BKSIKZ3JlcCAtcSAiU1RBR0lOR19BQ0NFU1NfVE9LRU4iIGphcl9hLnR4dCAmJiBvayAi7L+g7YKkIFNUQUdJTkdfQUNDRVNTX1RPS0VOIOuwnOq4iSIgfHwgbmcgIuy/oO2CpCDrsJzquIkiCkNfQj0kKGN1cmwgLXMgLWMgamFyX2IudHh0IC1vIC9kZXYvbnVsbCAtdyAiJXtodHRwX2NvZGV9IiAtWCBQT1NUICIkQkFTRS9hcGkvYXV0aC9sb2dpbiIgXAogIC1IICdDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24nIC1kIEBib2R5X2IuanNvbikKWyAiJENfQiIgPSAiMjAwIiBdICYmIG9rICLroZzqt7jsnbggQiAoMjAwKSIgfHwgbmcgIuuhnOq3uOyduCBCIChnb3QgJENfQikiCgplY2hvICItLS0gWzMvOV0g7JuQ6rOgIOyXheuhnOuTnCDihpIgSm9iIOyDneyEsSAtLS0iCmNhdCA+IG1hbnVzY3JpcHQubWQgPDwnTURFT0YnCiMgUDUg6rKA7Kad7JqpIOybkOqzoAoKIyMg7KCcMeyepSDsi5zsnpHtlZjrqbAKCu2VnOq4gCDrs7jrrLjsnoXri4jri6QuIERlc2lnbkNyYWZ0IOy2nO2MkCDtjrjsp5HquLDsnZgg7KCE7LK0IO2dkOumhOydhCDqsoDspp3tlZjquLAg7JyE7ZWcIO2FjOyKpO2KuCDsm5Dqs6DsnoXri4jri6QuCuusuOuLqOydtCDsl6zrn6wg6rCcIOyeiOyWtOyVvCDri6TspJEg7Y6Y7J207KeAIOyhsO2MkOydtCDrj5nsnpHtlZjripTsp4Ag7ZmV7J247ZWgIOyImCDsnojsirXri4jri6QuCgojIyDsoJwy7J6lIOuzuOusuCDrgrTsmqkKCuuRmOynuCDsnqXsnZgg67O466y47J6F64uI64ukLiDqsIDrgpjri6Trnbzrp4jrsJTsgqzslYTsnpDssKjsubTtg4DtjIztlZguIDEyMzQ1Njc4OTAuCuyKpO2DgOydvCDsoIHsmqnqs7wg7Y647KeRIOuqheugueydtCDsoJXsg4Eg64+Z7J6R7ZWY64qU7KeAIOqygOymne2VqeuLiOuLpC4KCiMjIOygnDPsnqUg66eI66y066asCgrshYvsp7gg7J6l7J2YIOuzuOusuOyeheuLiOuLpC4gUERGIOyDneyEsSDsi5wg7ZWc6riAIO2PsO2KuOqwgCDsmKzrsJTrpbTqsowg7J6E67Kg65Sp65CY64qU7KeAIO2ZleyduO2VqeuLiOuLpC4KTURFT0YKQ19KPSQoY3VybCAtcyAtYiBqYXJfYS50eHQgLW8gam9iLmpzb24gLXcgIiV7aHR0cF9jb2RlfSIgLVggUE9TVCAiJEFQSS9qb2JzIiBcCiAgLUYgInRlbXBsYXRlPUtPX1RFWFRCT09LX0E0IiAtRiAidGl0bGU9UDUgRTJFIOqygOymnSAkVFMiIC1GICJtYW51c2NyaXB0PUBtYW51c2NyaXB0Lm1kO3R5cGU9dGV4dC9tYXJrZG93biIpCkpPQl9JRD0kKHB5dGhvbjMgLWMgImltcG9ydCBqc29uO3ByaW50KGpzb24ubG9hZChvcGVuKCdqb2IuanNvbicpKS5nZXQoJ2pvYklkJywnJykpIiAyPi9kZXYvbnVsbCB8fCBlY2hvICIiKQppZiBbICIkQ19KIiA9ICIyMDIiIF0gJiYgWyAtbiAiJEpPQl9JRCIgXTsgdGhlbiBvayAiSm9iIOyDneyEsSAoaWQ9JEpPQl9JRCkiOyBKT0JfSURTPSIkSk9CX0lEUyAkSk9CX0lEIjsgZWxzZSBuZyAiSm9iIOyDneyEsSAoaHR0cD0kQ19KKSI7IGZpCgplY2hvICItLS0gWzQvOV0gSm9iIOyDge2DnCDtj7Trp4EgLS0tIgpTVEFUVVM9IiIKZm9yIGkgaW4gJChzZXEgMSAzMCk7IGRvCiAgY3VybCAtcyAtYiBqYXJfYS50eHQgIiRBUEkvam9icy8kSk9CX0lEIiAtbyBqb2JzdGF0dXMuanNvbgogIFNUQVRVUz0kKHB5dGhvbjMgLWMgImltcG9ydCBqc29uO3ByaW50KGpzb24ubG9hZChvcGVuKCdqb2JzdGF0dXMuanNvbicpKS5nZXQoJ3N0YXR1cycsJycpKSIgMj4vZGV2L251bGwgfHwgZWNobyAiIikKICBbICIkU1RBVFVTIiA9ICJET05FIiBdIHx8IFsgIiRTVEFUVVMiID0gIkZBSUxFRCIgXSAmJiBicmVhawogIHNsZWVwIDEwCmRvbmUKWyAiJFNUQVRVUyIgPSAiRE9ORSIgXSAmJiBvayAiSm9iIOyZhOujjCAoRE9ORSkiIHx8IG5nICJKb2Ig7IOB7YOcIChnb3QgJFNUQVRVUykiCgplY2hvICItLS0gWzUvOV0g66+466as67O06riwIFBORyAtLS0iCkNfUD0kKGN1cmwgLXMgLWIgamFyX2EudHh0IC1vIHBhZ2UxLnBuZyAtdyAiJXtodHRwX2NvZGV9IiAiJEFQSS9qb2JzLyRKT0JfSUQvcGFnZXMvMS9wbmc/c2NhbGU9MSIpCmlmIFsgIiRDX1AiID0gIjIwMCIgXSAmJiBbICIkKGhlYWQgLWMgNCBwYWdlMS5wbmcpIiA9ICIkKHByaW50ZiAnXHg4OVBORycpIiBdOyB0aGVuCiAgb2sgIu2OmOydtOyngCBQTkcgKDHsqr0pIgplbHNlIG5nICLtjpjsnbTsp4AgUE5HIChodHRwPSRDX1ApIjsgZmkKCmVjaG8gIi0tLSBbNi85XSDtjrjsp5Eg4oaSIOyImOyglSDihpIg7KCA7J6lIC0tLSIKQ19DPSQoY3VybCAtcyAtYiBqYXJfYS50eHQgLW8gY21kLmpzb24gLXcgIiV7aHR0cF9jb2RlfSIgLVggUE9TVCAiJEFQSS9qb2JzLyRKT0JfSUQvY29tbWFuZHMiIFwKICAtSCAnQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uJyBcCiAgLWQgJ3siY29tbWFuZHMiOlt7ImlkIjoic3R5bGUucGFyYWdyYXBoLmFwcGx5IiwicGFyYW1zIjp7InBhZ2UiOjEsInN0eWxlIjoia28taGVhZGluZzEifX1dfScpCkFQUExJRUQ9JChweXRob24zIC1jICJpbXBvcnQganNvbjtwcmludChqc29uLmxvYWQob3BlbignY21kLmpzb24nKSkuZ2V0KCdhcHBsaWVkJywnJykiIDI+L2Rldi9udWxsIHx8IGVjaG8gIiIpClsgIiRDX0MiID0gIjIwMCIgXSAmJiBvayAi7Y647KeRIOuqheuguSDsoIHsmqkgKGh0dHA9MjAwKSIgfHwgbmcgIu2OuOynkSDrqoXroLkgKGh0dHA9JENfQykiCkNfVj0kKGN1cmwgLXMgLWIgamFyX2EudHh0IC1vIC9kZXYvbnVsbCAtdyAiJXtodHRwX2NvZGV9IiAtWCBQT1NUICIkQVBJL2pvYnMvJEpPQl9JRC92ZXJzaW9ucyIgXAogIC1IICdDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24nIC1kICd7ImxhYmVsIjoi7IiY64+ZIOyggOyepSJ9JykKWyAiJENfViIgPSAiMjAwIiBdIHx8IFsgIiRDX1YiID0gIjIwMSIgXSAmJiBvayAi67KE7KCEIOyggOyepSAoaHR0cD0kQ19WKSIgfHwgbmcgIuuyhOyghCDsoIDsnqUgKGh0dHA9JENfVikiCkNfUEY9JChjdXJsIC1zIC1iIGphcl9hLnR4dCAtbyBwcmVmbGlnaHQuanNvbiAtdyAiJXtodHRwX2NvZGV9IiAtWCBQT1NUICIkQVBJL2pvYnMvJEpPQl9JRC9wcmVmbGlnaHQiKQpbICIkQ19QRiIgPSAiMjAwIiBdICYmIG9rICJQcmVmbGlnaHQgKGh0dHA9MjAwKSIgfHwgbmcgIlByZWZsaWdodCAoaHR0cD0kQ19QRikiCgplY2hvICItLS0gWzcvOV0gUERGIOyDneyEsSDihpIg64uk7Jq066Gc65OcIC0tLSIKQ19FPSQoY3VybCAtcyAtYiBqYXJfYS50eHQgLW8gZXhwb3J0Lmpzb24gLXcgIiV7aHR0cF9jb2RlfSIgLVggUE9TVCAiJEFQSS9qb2JzLyRKT0JfSUQvZXhwb3J0IiBcCiAgLUggJ0NvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbicgLWQgJ3siZm9ybWF0IjoicGRmIiwic3RhbmRhcmQiOiJwZGZ4NCJ9JykKQVJUX0lEPSQocHl0aG9uMyAtYyAiaW1wb3J0IGpzb247ZD1qc29uLmxvYWQob3BlbignZXhwb3J0Lmpzb24nKSk7cHJpbnQoZC5nZXQoJ2FydGlmYWN0SWQnLGQuZ2V0KCdpZCcsJycpKSkiIDI+L2Rldi9udWxsIHx8IGVjaG8gIiIpCmlmIHsgWyAiJENfRSIgPSAiMjAwIiBdIHx8IFsgIiRDX0UiID0gIjIwMSIgXSB8fCBbICIkQ19FIiA9ICIyMDIiIF07IH0gJiYgWyAtbiAiJEFSVF9JRCIgXTsgdGhlbgogIG9rICJQREYgRXhwb3J0IOyalOyyrSAoYXJ0aWZhY3Q9JEFSVF9JRCkiCmVsc2UgbmcgIlBERiBFeHBvcnQgKGh0dHA9JENfRSkiOyBmaQpzbGVlcCAyMApjdXJsIC1zIC1iIGphcl9hLnR4dCAiJEFQSS9qb2JzLyRKT0JfSUQvYXJ0aWZhY3RzIiAtbyBhcnRpZmFjdHMuanNvbgpDX0Q9JChjdXJsIC1zIC1iIGphcl9hLnR4dCAtbyBvdXRwdXQucGRmIC13ICIle2h0dHBfY29kZX0iICIkQVBJL2pvYnMvJEpPQl9JRC9hcnRpZmFjdHMvJEFSVF9JRCIpCmlmIFsgIiRDX0QiID0gIjIwMCIgXSAmJiBbICIkKGhlYWQgLWMgNCBvdXRwdXQucGRmKSIgPSAiJVBERiIgXTsgdGhlbgogIG9rICJQREYg64uk7Jq066Gc65OcICglUERGIO2ZleyduCkiCmVsc2UgbmcgIlBERiDri6TsmrTroZzrk5wgKGh0dHA9JENfRCkiOyBmaQpQQUdFUz0kKGdyZXAgLW8gJy9UeXBlIC9QYWdlW15zXScgb3V0cHV0LnBkZiB8IHdjIC1sKQpbICIkUEFHRVMiIC1nZSAxIF0gJiYgb2sgIlBERiDtjpjsnbTsp4Ag7IiYICgkUEFHRVMpIiB8fCBuZyAiUERGIO2OmOydtOyngCDsiJgiCmdyZXAgLXEgJ0dUU19QREZYJyBvdXRwdXQucGRmICYmIG9rICJQREYvWCDrp4jsu6QgKEdUU19QREZYKSIgfHwgbmcgIlBERi9YIOuniOy7pCIKeyBncmVwIC1xaSAnTm90b1NhbnNLUicgb3V0cHV0LnBkZiB8fCBncmVwIC1xICcvRm9udEZpbGUyJyBvdXRwdXQucGRmOyB9IFwKICAmJiBvayAi7ZWc6riAIO2PsO2KuCDsnoTrsqDrlKkiIHx8IG5nICLtlZzquIAg7Y+w7Yq4IOyehOuyoOuUqSIKCmVjaG8gIi0tLSBbOC85XSDrhKTqsbDti7DruIwg7YWM7Iqk7Yq4IC0tLSIKcHJpbnRmICd7ImxvZ2luSWQiOiIlcyIsInBhc3N3b3JkIjoid3JvbmctcGFzc3dvcmQifScgIiRMX0EiID4gYm9keV93cm9uZy5qc29uOyBjaG1vZCA2MDAgYm9keV93cm9uZy5qc29uCkNfVz0kKGN1cmwgLXMgLW8gL2Rldi9udWxsIC13ICIle2h0dHBfY29kZX0iIC1YIFBPU1QgIiRCQVNFL2FwaS9hdXRoL2xvZ2luIiBcCiAgLUggJ0NvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbicgLWQgQGJvZHlfd3JvbmcuanNvbikKeyBbICIkQ19XIiA9ICI0MDEiIF0gfHwgWyAiJENfVyIgPSAiNDAzIiBdOyB9ICYmIG9rICLsnpjrqrvrkJwg67mE67CA67KI7Zi4IOqxsOu2gCAoJENfVykiIHx8IG5nICLsnpjrqrvrkJwg67mE67CA67KI7Zi4IChodHRwPSRDX1cpIgpDX049JChjdXJsIC1zIC1vIC9kZXYvbnVsbCAtdyAiJXtodHRwX2NvZGV9IiAiJEFQSS9qb2JzIikKeyBbICIkQ19OIiA9ICI0MDEiIF0gfHwgWyAiJENfTiIgPSAiNDAzIiBdOyB9ICYmIG9rICLrr7jsnbjspp0gQVBJIOygkeq3vCDssKjri6ggKCRDX04pIiB8fCBuZyAi66+47J247KadIOygkeq3vCAoaHR0cD0kQ19OKSIKQ19YPSQoY3VybCAtcyAtYiBqYXJfYi50eHQgLW8gL2Rldi9udWxsIC13ICIle2h0dHBfY29kZX0iICIkQVBJL2pvYnMvJEpPQl9JRCIpCnsgWyAiJENfWCIgPSAiNDAzIiBdIHx8IFsgIiRDX1giID0gIjQwNCIgXTsgfSAmJiBvayAi7YOA7J24IEpvYiDsoJHqt7wg7LCo64uoICgkQ19YKSIgfHwgbmcgIu2DgOyduCBKb2Ig7KCR6re8IChodHRwPSRDX1gpIgpoZWFkIC1jIDI1NiAvZGV2L3VyYW5kb20gPiBnYXJiYWdlLmJpbgpDX0c9JChjdXJsIC1zIC1iIGphcl9hLnR4dCAtbyAvZGV2L251bGwgLXcgIiV7aHR0cF9jb2RlfSIgLVggUE9TVCAiJEFQSS9qb2JzIiBcCiAgLUYgInRlbXBsYXRlPUtPX1RFWFRCT09LX0E0IiAtRiAidGl0bGU9Z2FyYmFnZSIgLUYgIm1hbnVzY3JpcHQ9QGdhcmJhZ2UuYmluO3R5cGU9YXBwbGljYXRpb24vb2N0ZXQtc3RyZWFtIikKZWNobyAiSU5GTzog7J6Y66q765CcIO2MjOydvCDsl4XroZzrk5wg4oaSIGh0dHA9JENfRyAoNHh466m0IOygleyDgSkiCnsgWyAiJENfRyIgPSAiNDAwIiBdIHx8IFsgIiRDX0ciID0gIjQyMiIgXSB8fCBbICIkQ19HIiA9ICI0MTUiIF07IH0gJiYgb2sgIuyemOuqu+uQnCDtjIzsnbwg6rGw67aAICgkQ19HKSIgfHwgbmcgIuyemOuqu+uQnCDtjIzsnbwgKGh0dHA9JENfRykiCkNfRDE9JChjdXJsIC1zIC1iIGphcl9hLnR4dCAtbyBkdXAxLmpzb24gLXcgIiV7aHR0cF9jb2RlfSIgLVggUE9TVCAiJEFQSS9qb2JzIiBcCiAgLUggJ0NvbnRlbnQtVHlwZTogYXBwbGljYXRpb24vanNvbicgLWQgJ3sidGl0bGUiOiLspJHrs7Ug7YWM7Iqk7Yq4IiwidGVtcGxhdGUiOiJLT19URVhUQk9PS19BNCJ9JykKQ19EMj0kKGN1cmwgLXMgLWIgamFyX2EudHh0IC1vIGR1cDIuanNvbiAtdyAiJXtodHRwX2NvZGV9IiAtWCBQT1NUICIkQVBJL2pvYnMiIFwKICAtSCAnQ29udGVudC1UeXBlOiBhcHBsaWNhdGlvbi9qc29uJyAtZCAneyJ0aXRsZSI6IuykkeuztSDthYzsiqTtirgiLCJ0ZW1wbGF0ZSI6IktPX1RFWFRCT09LX0E0In0nKQpKMT0kKHB5dGhvbjMgLWMgImltcG9ydCBqc29uO3ByaW50KGpzb24ubG9hZChvcGVuKCdkdXAxLmpzb24nKSkuZ2V0KCdqb2JJZCcsJycpKSIgMj4vZGV2L251bGwgfHwgZWNobyAiIikKSjI9JChweXRob24zIC1jICJpbXBvcnQganNvbjtwcmludChqc29uLmxvYWQob3BlbignZHVwMi5qc29uJykpLmdldCgnam9iSWQnLCcnKSkiIDI+L2Rldi9udWxsIHx8IGVjaG8gIiIpCmlmIFsgLW4gIiRKMSIgXSAmJiBbIC1uICIkSjIiIF0gJiYgWyAiJEoxIiAhPSAiJEoyIiBdOyB0aGVuCiAgb2sgIuykkeuztSDsg53shLEg4oaSIOuzhOuPhCBKb2IgKCRKMSwgJEoyKSI7IEpPQl9JRFM9IiRKT0JfSURTICRKMSAkSjIiCmVsc2UgbmcgIuykkeuztSDsg53shLEgKGh0dHA9JENfRDEvJENfRDIpIjsgZmkKCmVjaG8gIj09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0iCmVjaG8gIiDqsrDqs7w6IFBBU1M9JFBBU1MgRkFJTD0kRkFJTCBTS0lQPSRTS0lQIgplY2hvICI9PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09IgpTM0tFWT0iczM6Ly9mZWVsMnJlYWwtYnVpbGRpdC1kZXBsb3kvc3RhZ2luZy9wNS1mbG93dGVzdC9vdXRwdXQtJFRTLnBkZiIKaWYgYXdzIHMzIGNwIG91dHB1dC5wZGYgIiRTM0tFWSIgMj4vZGV2L251bGw7IHRoZW4KICBlY2hvICJQREZfUzM9JFMzS0VZIgogIG9rICJQREYgUzMg7JeF66Gc65OcIgplbHNlCiAgZWNobyAiSU5GTzogUzMg7JeF66Gc65OcIOu2iOqwgCAo6rWs7KGwIOqygOymneydgCDsnIQg7ZWt66qp7Jy866GcIOuMgOyytCkiCiAgc2tpcCAiUERGIFMzIOyXheuhnOuTnCIKZmkKbHMgLWxhIG91dHB1dC5wZGYKWyAiJEZBSUwiID0gIjAiIF0gJiYgZWNobyAiQUxMX0dSRUVOIiB8fCBlY2hvICJIQVNfRkFJTFVSRVMiCg==' | base64 -d > /tmp/flowtest.sh
+          chmod +x /tmp/flowtest.sh
+          python3 << 'PYEOF' > /tmp/ssm_flowtest.json
+          import json
+          with open('/tmp/flowtest.sh') as f:
+              script = f.read()
+          print(json.dumps({"commands": [script]}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_flowtest.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 40); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/40)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/flowtest-output.txt
+          echo "===== STDERR (tail) ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text 2>/dev/null | tee /tmp/flowtest-stderr.txt | tail -30 || true
+          S3PATH=$(grep -o 's3://[^ ]*p5-flowtest[^ ]*\.pdf' /tmp/flowtest-output.txt | head -1 || true)
+          if [ -n "$S3PATH" ]; then
+            aws s3 cp "$S3PATH" /tmp/p5-output.pdf && echo "PDF downloaded from $S3PATH" || echo "PDF S3 download failed"
+          else
+            echo "No PDF S3 path in output"
+          fi
+
+      - name: Upload flow-test output
+        if: inputs.mode == 'flow-test'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-flowtest-output
+          path: |
+            /tmp/flowtest-output.txt
+            /tmp/flowtest-stderr.txt
+            /tmp/p5-output.pdf
+
+      - name: Cache npm
+        if: inputs.mode == 'e2e-test'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-cache-p5
+          restore-keys: npm-cache-
+
+      - name: Cache Playwright browsers
+        if: inputs.mode == 'e2e-test'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-1
+          restore-keys: playwright-chromium-
+
       - name: E2E Test with Playwright
         if: inputs.mode == 'e2e-test'
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== Setting up SSM port forwarding ==="
-          # Start port forwarding in background
+          # --- 테스트 계정 생성 (비밀번호는 러너 env에만, SSM에는 BCrypt 해시만 전달) ---
+          export TEST_PW=$(openssl rand -base64 24 | tr -d '/+=\n' | cut -c1-20)
+          export LOGIN_ID="p5e2e_$(date +%s)"
+          pip install -q bcrypt 2>&1 | tail -1 || true
+          export HASH=$(python3 -c "import bcrypt,os; print(bcrypt.hashpw(os.environ['TEST_PW'].encode(), bcrypt.gensalt()).decode())")
+          python3 << 'PYEOF' > /tmp/ssm_e2e_user.json
+          import json, os
+          login_id = os.environ['LOGIN_ID']
+          h = os.environ['HASH']
+          cmd = ("source /etc/f2r/staging.env; "
+                 "mysql -h \"$DB_HOST\" -P \"$DB_PORT\" -u \"$DB_USER\" -p\"$DB_PASSWORD\" \"$DB_NAME\" "
+                 "-e \"INSERT INTO users (login_id,password,name,role,created_by) "
+                 "VALUES ('%s','%s','P5E2E','TUTOR','p5-e2e');\"" % (login_id, h))
+          print(json.dumps({"commands": [cmd]}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_e2e_user.json \
+            --query 'Command.CommandId' --output text)
+          sleep 20
+          echo "Test user created: $LOGIN_ID"
+
+          echo "=== Port forwarding ==="
           aws ssm start-session \
             --target "$INSTANCE_ID" \
             --document-name "AWS-StartPortForwardingSession" \
             --parameters '{"portNumber":["8081"],"localPortNumber":["8081"]}' &
           FORWARD_PID=$!
-          echo "Port forward PID: $FORWARD_PID"
           sleep 10
-          
-          # Wait for tunnel
           for i in $(seq 1 10); do
             if curl -sf --max-time 5 http://localhost:8081/staging/actuator/health > /dev/null 2>&1; then
-              echo "Tunnel established"
-              break
+              echo "Tunnel established"; break
             fi
-            echo "Waiting for tunnel... ($i/10)"
-            sleep 5
+            echo "Waiting for tunnel... ($i/10)"; sleep 5
           done
-          
-          echo "=== Installing Playwright ==="
+
+          echo "=== Playwright (npm 설치 실패 원인 수정) ==="
+          # 원인: 이전에는 $GITHUB_WORKSPACE에서 npm install 후 cd /tmp/e2e 에서
+          #      상대경로 ./node_modules/.bin/playwright 실행 → No such file.
+          # 수정: /tmp/e2e에서 install + 절대경로 실행 + npm/브라우저 캐시 재사용.
+          mkdir -p /tmp/e2e && cd /tmp/e2e
           npm init -y > /dev/null 2>&1 || true
-          npm install @playwright/test > /dev/null 2>&1
-          npx playwright install chromium --with-deps > /dev/null 2>&1 || npx playwright install chromium
-          
-          echo "=== Running E2E tests ==="
-          # Create test file
-          mkdir -p /tmp/e2e
+          PW=/tmp/e2e/node_modules/.bin/playwright
+          if [ ! -x "$PW" ]; then
+            npm install @playwright/test
+          else
+            echo "Reusing installed @playwright/test"
+          fi
+          if [ -z "$(ls -A ~/.cache/ms-playwright 2>/dev/null)" ]; then
+            "$PW" install chromium || "$PW" install chromium --with-deps
+          else
+            echo "Reusing cached Chromium"
+          fi
+
+          echo "=== E2E spec 작성 ==="
           cat > /tmp/e2e/publishing-e2e.spec.js << 'TESTEOF'
           const { test, expect } = require('@playwright/test');
+          const fs = require('fs');
           const BASE_URL = 'http://localhost:8081/staging';
           const API_BASE = `${BASE_URL}/api/publishing`;
-          
-          test('Frontend loads', async ({ page }) => {
-            await page.goto(`${BASE_URL}/index.html`);
-            const title = await page.title();
-            console.log(`Title: ${title}`);
-            expect(title.length).toBeGreaterThan(0);
-          });
-          
-          test('Health check', async ({ request }) => {
-            const r = await request.get(`${BASE_URL}/actuator/health`);
+          const LOGIN_ID = process.env.TEST_LOGIN_ID;
+          const LOGIN_PW = process.env.TEST_PW;
+
+          async function login(request) {
+            const r = await request.post(`${BASE_URL}/api/auth/login`, {
+              data: { loginId: LOGIN_ID, password: LOGIN_PW }
+            });
             expect(r.status()).toBe(200);
-            const b = await r.json();
-            expect(b.status).toBe('UP');
-            console.log('Health: UP');
+          }
+
+          test('1. 로그인 (API)', async ({ request }) => {
+            await login(request);
+            console.log('login OK');
           });
-          
-          test('Static resources', async ({ request }) => {
-            for (const p of ['index.html', 'css/style.css', 'js/app.js', 'js/publishing_api.js']) {
-              const r = await request.get(`${BASE_URL}/${p}`);
-              console.log(`${p}: ${r.status()}`);
-              expect(r.status()).toBe(200);
-            }
-          });
-          
-          test('Templates API', async ({ request }) => {
-            const r = await request.get(`${API_BASE}/templates`);
-            console.log(`Templates: ${r.status()}`);
-            expect([200, 401, 403]).toContain(r.status());
-          });
-          
-          test('API BASE prefix', async ({ page }) => {
+
+          test('2. 에디터 UI 로드', async ({ page, request }) => {
+            await login(request);
             await page.goto(`${BASE_URL}/index.html`);
-            const base = await page.evaluate(() => typeof BASE !== 'undefined' ? BASE : 'N/A');
-            console.log(`API BASE: ${base}`);
+            await expect(page.locator('#btn-new-project')).toBeVisible({ timeout: 15000 });
+            console.log('editor UI loaded');
+          });
+
+          test('3. UI 원고 업로드 → Job 생성 → 미리보기', async ({ page, request }) => {
+            test.setTimeout(180000);
+            await login(request);
+            fs.writeFileSync('/tmp/e2e/manuscript.md',
+              '# E2E 검증 원고\n\n## 제1장\n\n한글 본문입니다. 브라우저 E2E 테스트 원고.\n\n## 제2장\n\n둘째 장 본문입니다.\n');
+            await page.goto(`${BASE_URL}/index.html`);
+            await page.click('#btn-new-project');
+            await page.fill('#np-name', 'P5 브라우저 E2E');
+            const tpl = page.locator('input[name="np-template"]').first();
+            await expect(tpl).toBeChecked({ timeout: 5000 }).catch(() => tpl.check({ force: true }));
+            await page.setInputFiles('#np-file', '/tmp/e2e/manuscript.md');
+            await page.click('#np-create');
+            await expect(page.locator('#ed-title')).toContainText('P5 브라우저 E2E', { timeout: 30000 });
+            console.log('job created via UI');
+            let status = '', jobId = null;
+            const jobs = await (await request.get(`${API_BASE}/jobs`)).json();
+            jobId = jobs.jobs[0].jobId;
+            for (let i = 0; i < 30; i++) {
+              const j = await (await request.get(`${API_BASE}/jobs/${jobId}`)).json();
+              status = j.status;
+              if (status === 'DONE' || status === 'FAILED') break;
+              await new Promise(r => setTimeout(r, 5000));
+            }
+            console.log(`job ${jobId} status=${status}`);
+            expect(status).toBe('DONE');
+            const png = await request.get(`${API_BASE}/jobs/${jobId}/pages/1/png?scale=1`);
+            expect(png.status()).toBe(200);
+            const buf = await png.body();
+            expect(buf[1]).toBe(0x50);
+            console.log('preview PNG OK');
+          });
+
+          test('4. PDF 다운로드', async ({ request }) => {
+            test.setTimeout(180000);
+            await login(request);
+            const jobs = await (await request.get(`${API_BASE}/jobs`)).json();
+            const jobId = jobs.jobs[0].jobId;
+            const exp = await request.post(`${API_BASE}/jobs/${jobId}/export`, {
+              data: { format: 'pdf', standard: 'pdfx4' }
+            });
+            expect([200, 201, 202]).toContain(exp.status());
+            const art = await exp.json();
+            const artId = art.artifactId || art.id;
+            await new Promise(r => setTimeout(r, 20000));
+            const dl = await request.get(`${API_BASE}/jobs/${jobId}/artifacts/${artId}`);
+            expect(dl.status()).toBe(200);
+            const buf = await dl.body();
+            expect(buf.slice(0, 4).toString()).toBe('%PDF');
+            fs.writeFileSync('/tmp/e2e-output.pdf', buf);
+            console.log(`PDF downloaded: ${buf.length} bytes`);
+          });
+
+          test('5. 미인증 접근 차단', async ({ request }) => {
+            const r = await request.get(`${API_BASE}/jobs`);
+            expect([401, 403]).toContain(r.status());
+            console.log(`unauth blocked: ${r.status()}`);
           });
           TESTEOF
-          
+
           cd /tmp/e2e
-          STAGING_URL=http://localhost:8081/staging npx playwright test publishing-e2e.spec.js --reporter=list 2>&1 | tee /tmp/e2e-output.txt || true
-          
-          echo "=== Cleanup ==="
+          TEST_LOGIN_ID="$LOGIN_ID" TEST_PW="$TEST_PW" /tmp/e2e/node_modules/.bin/playwright test publishing-e2e.spec.js --reporter=list 2>&1 | tee /tmp/e2e-output.txt || true
+
+          echo "=== 정리: 테스트 계정 삭제 ==="
           kill $FORWARD_PID 2>/dev/null || true
-          echo "E2E test complete"
+          python3 << 'PYEOF' > /tmp/ssm_e2e_del.json
+          import json, os
+          login_id = os.environ['LOGIN_ID']
+          cmd = ("source /etc/f2r/staging.env; "
+                 "mysql -h \"$DB_HOST\" -P \"$DB_PORT\" -u \"$DB_USER\" -p\"$DB_PASSWORD\" \"$DB_NAME\" "
+                 "-e \"DELETE FROM users WHERE login_id='%s';\"" % login_id)
+          print(json.dumps({"commands": [cmd]}))
+          PYEOF
+          aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_e2e_del.json --query 'Command.CommandId' --output text
+          echo "E2E done"
 
       - name: Upload E2E output
         if: inputs.mode == 'e2e-test'
