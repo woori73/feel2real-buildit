@@ -34,15 +34,6 @@ public class PublishingJobController {
   private final PublishingJobService jobService;
 
   /**
-   * 작업 목록 → { jobs: [...] } (Qoder F1).
-   */
-  @GetMapping
-  public ResponseEntity<Map<String, List<JobResponse>>> listJobs(
-      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
-    return ResponseEntity.ok(Map.of("jobs", jobService.listJobs(principal)));
-  }
-
-  /**
    * 작업 생성 → 202 QUEUED (JSON).
    */
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
