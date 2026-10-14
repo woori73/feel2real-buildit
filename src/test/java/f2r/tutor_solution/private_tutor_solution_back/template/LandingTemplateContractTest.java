@@ -32,11 +32,7 @@ class LandingTemplateContractTest {
     assertThat(html)
         .contains("<title>Build It | 원장과 강사가 브랜드가 되는 시대</title>")
         .contains("<span class=\"nav-logo bi\" aria-label=\"Build It\"><b>Build</b><i>It</i></span>")
-        .contains("<span class=\"ext\">Web</span>")
-        .contains("<span class=\"ext\">Shorts</span>")
-        .contains("<span class=\"ext\">Report</span>")
-        .contains("<span class=\"ext\">Wiki</span>")
-        .contains("숨은 영어교육자를 발굴하고, 성장시키고, 투자로 연결합니다.")
+        .contains("내신 문제 제작 Agent")
         // 구 서비스명이 남으면 클라이언트가 요구한 리브랜딩이 반쯤만 적용된 상태가 된다.
         .doesNotContain("모두의 학원")
         .doesNotContain("모두의학원")
@@ -54,10 +50,7 @@ class LandingTemplateContractTest {
         .contains("class=\"bi-nav\" id=\"biNav\"")
         .contains("class=\"hero\" id=\"hero\"")
         .contains("class=\"flow-marquee\" id=\"why\"")
-        .contains("class=\"builder\" id=\"web\"")
-        .contains("class=\"product-solo\" id=\"shorts\"")
-        .contains("class=\"product-solo\" id=\"report\"")
-        .contains("class=\"wiki\" id=\"wiki\"")
+        .contains("class=\"wk\" id=\"wiki\"")
         .contains("class=\"cta-mini\" id=\"cta\"")
         // 개편으로 걷어낸 구 랜딩 기능이 되살아나면 컨트롤러 모델과 어긋난다.
         .doesNotContain("id=\"builder-try\"")
@@ -68,7 +61,7 @@ class LandingTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 서비스 소개 when 템플릿을 읽으면 then 제작(Web)→Chart→콘텐츠 도구(Wiki·Report·Shorts)→준비 중 순서로 노출한다")
+  @DisplayName("given 서비스 소개 when 템플릿을 읽으면 then 제작(히어로)→Chart→Wiki→준비 중 순서로 노출하고 중복·미제공 섹션은 없다")
   void landing_orders_services_by_product_strategy() throws Exception {
     // 2026-10-14 사용자 확정(docs/design/homepage-v3/HANDOFF.md §10-1): AI 홈페이지 제작 → Chart → Easy(서비스 탐색기 탭)
     // → 콘텐츠 도구(Wiki·Report·Shorts) → 준비 중 서비스. 이전 순서(Wiki→Web→Chart→Report→Shorts)에서 바뀌었다.
@@ -80,91 +73,74 @@ class LandingTemplateContractTest {
 
     // when
     int hero = html.indexOf("id=\"hero\"");
-    int web = html.indexOf("id=\"web\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
-    int tools = html.indexOf("id=\"tools\"");
     int wiki = html.indexOf("id=\"wiki\"");
-    int report = html.indexOf("id=\"report\"");
-    int shorts = html.indexOf("id=\"shorts\"");
     int soon = html.indexOf("id=\"soon\"");
 
     // then
+    // 2026-10-14 사용자 지시: 홈페이지 제작 소개가 초반(히어로)과 중간(서비스 탐색기·제작 과정)에 두 번 나오는 중복을 없애고,
+    // 아직 제공하지 않는 Report·Shorts는 제거한다.
     assertThat(hero).isGreaterThanOrEqualTo(0);
-    assertThat(web).isGreaterThan(hero);
-    assertThat(chart).isGreaterThan(web);
-    assertThat(tools).isGreaterThan(chart);
-    assertThat(wiki).isGreaterThan(tools);
-    assertThat(report).isGreaterThan(wiki);
-    assertThat(shorts).isGreaterThan(report);
-    assertThat(soon).isGreaterThan(shorts);
+    assertThat(chart).isGreaterThan(hero);
+    assertThat(wiki).isGreaterThan(hero);
+    assertThat(chart).isGreaterThan(wiki);
+    assertThat(soon).isGreaterThan(wiki);
     assertThat(html)
-        .contains("BuildIt TOP 5")
+        .doesNotContain("id=\"web\"")
+        .doesNotContain("id=\"journey\"")
+        .doesNotContain("id=\"tools\"")
+        .doesNotContain("id=\"report\"")
+        .doesNotContain("id=\"shorts\"");
+    assertThat(html)
         .contains("전국 TOP100 보기 →")
         .contains("id=\"landingChartTop5\"")
         .contains("href=\"/chart\"")
         .contains("href=\"/wiki\" class=\"btn outline nav-cta\">Buildit 모의고사</a>")
         .contains("href=\"/home\" class=\"btn outline nav-cta\">F2R</a>")
         .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">BUILD IT WIKI</a>")
-        .contains("class=\"chart-phone\"")
+        .contains("class=\"bb-chart\"")
         .doesNotContain("정수정영어학원 · 서울 송파구 삼전동");
     assertThat(css)
         .contains(".chart-showcase")
-        .contains(".chart-phone")
         .contains(".chart-row")
         .contains(".chart-cta");
   }
 
   @Test
-  @DisplayName("given Wiki 3단계 when 템플릿을 읽으면 then 기출 분석·변형문제 생성에 각 영상이 붙고 학교별 Wiki는 대시보드다")
-  void wiki_steps_bind_their_own_videos() throws Exception {
+  @DisplayName("given Wiki 문제지 제작 when 템플릿을 읽으면 then 가격·5단계·카톡/이메일 문의 링크가 있다")
+  void wiki_section_offers_worksheet_service_with_contact_links() throws Exception {
     // given
     String html = Files.readString(LANDING);
+    int start = html.indexOf("id=\"wiki\"");
+    int end = html.indexOf("id=\"soon\"", start);
+    String wiki = html.substring(start, end);
 
-    // when & then
-    assertThat(html)
-        .contains("<span class=\"flow-h-step\" data-step=\"0\">기출 분석</span>")
-        .contains("<span class=\"flow-h-step\" data-step=\"1\">변형문제 생성</span>")
-        .contains("<span class=\"flow-h-step\" data-step=\"2\">학교별 Wiki</span>")
-        .contains("data-screen=\"0\"")
-        .contains("/video/landing/digital_twin_ex.mp4")
-        .contains("data-screen=\"1\"")
-        .contains("/video/landing/how2use_digitaltwin.mp4")
-        // 학교별 Wiki는 아직 영상이 없다. 다른 영상을 돌려쓰면 없는 기능을 있는 것처럼 보여준다.
-        .contains("data-screen=\"2\"")
-        .contains("class=\"mock-dash-title\">학교별 Wiki<")
-        .contains("class=\"mws-new\"");
-
-    // 단계별 영상 파일이 실제로 배포 자산에 있어야 한다.
-    assertThat(LANDING_VIDEO_DIR.resolve("digital_twin_ex.mp4")).exists();
-    assertThat(LANDING_VIDEO_DIR.resolve("how2use_digitaltwin.mp4")).exists();
+    // then
+    assertThat(wiki)
+        .contains("내신 영어", "문제지 제작", "기본 1회", "20,000원")
+        .contains("href=\"https://open.kakao.com/o/sMf4ifRi\"")
+        .contains("href=\"mailto:woorinaesin@naver.com\"")
+        .contains("자료 보내기", "영어 문제지 제작", "카톡·이메일 전달", "수정 요청", "최종 완성")
+        .contains("학원 로고를 보내주시면 제작 문제지에 로고를 넣어드립니다")
+        .contains("압구정중2", "어떻게 나왔을까?", "100% 출제", "외부지문 2문항(5 · 9번) 제외, 28문항 전부")
+        .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
+    assertThat(wiki.split("<li><span>", -1).length - 1).isEqualTo(5);
+    assertThat(Path.of("src/main/resources/static/img/landing/wiki-sample.jpg")).exists();
   }
 
   @Test
-  @DisplayName("given Build It 영상 슬롯 when 템플릿을 읽으면 then Shorts/Report가 각 관리형 source를 쓴다")
-  void product_videos_use_their_managed_slots() throws Exception {
+  @DisplayName("given 미제공 서비스 when 템플릿을 읽으면 then Report·Shorts 영상 슬롯과 홈페이지 제작 영상은 더 이상 노출하지 않는다")
+  void landing_does_not_expose_unprovided_report_shorts_slots() throws Exception {
     // given
     String html = Files.readString(LANDING);
 
     // when & then
     assertThat(html)
-        // Web 섹션은 매뉴얼의 가로 홈페이지 제작 영상을 정적 경로로 쓴다.
-        .contains("/video/landing/buildit-web-builder-highlight.mp4")
-        .contains("class=\"web-video\"")
-        .contains("muted loop autoplay playsinline preload=\"metadata\"")
-        .doesNotContain("id=\"builderVideo\"")
-        // Shorts 섹션은 기존 학원 홍보 쇼츠 슬롯을 쓴다.
-        .contains("th:if=\"${academyShortsVideo.visible}\"")
-        .contains("th:src=\"${academyShortsVideo.sourceUrl}\"")
-        .contains("th:unless=\"${academyShortsVideo.visible}\"")
-        .contains("/video/landing/academy-shorts-demo.mp4")
-        // Report 섹션은 학부모 리포트 슬롯을 쓴다.
-        .contains("th:if=\"${parentReportVideo.visible}\"")
-        .contains("th:src=\"${parentReportVideo.sourceUrl}\"")
-        .contains("th:unless=\"${parentReportVideo.visible}\"")
-        .contains("/video/landing/parent-report-demo.mp4");
-    assertThat(LANDING_VIDEO_DIR.resolve("academy-shorts-demo.mp4")).exists();
-    assertThat(LANDING_VIDEO_DIR.resolve("parent-report-demo.mp4")).exists();
-    assertThat(LANDING_VIDEO_DIR.resolve("buildit-web-builder-highlight.mp4")).exists();
+        .doesNotContain("academyShortsVideo")
+        .doesNotContain("parentReportVideo")
+        .doesNotContain("/video/landing/academy-shorts-demo.mp4")
+        .doesNotContain("/video/landing/parent-report-demo.mp4")
+        .doesNotContain("class=\"web-video\"");
   }
 
   @Test
@@ -185,7 +161,7 @@ class LandingTemplateContractTest {
     assertThat(footer)
         .contains("© 2026 Feel 2 Real. All rights reserved.")
         // 사업자 정보는 브랜드와 무관하게 법적 표기로 남아야 한다.
-        .contains("상호명: 압구정에듀홀릭출판사");
+        .contains("상호명: 압구정에듀홀릭학원");
   }
 
   @Test
@@ -199,7 +175,7 @@ class LandingTemplateContractTest {
     assertThat(html)
         .contains("data-buildit-start")
         // JS가 죽어도 최소한 /builder로는 가야 한다.
-        .contains("href=\"/builder\" class=\"btn\" data-buildit-start");
+        .contains("href=\"/builder\" class=\"btn reveal\" data-fade data-buildit-start");
     assertThat(js)
         .contains("/api/auth/me")
         .contains("'/register?returnUrl=' + encodeURIComponent(BUILDER_URL)")

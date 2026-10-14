@@ -1,4 +1,18 @@
-(function () {
+/* 빌보드 형식 한 줄: 순위 · 증감 화살표 · 교육자 이름 · 학원 이름 · 교육 철학 (사진·지표 없음) */
+function bbRow(e, esc) {
+  var rank = Number(e.rank);
+  var prev = e.previousRank == null ? null : Number(e.previousRank);
+  var arrow = prev == null ? 'NEW' : (prev > rank ? '▲' + (prev - rank) : (prev < rank ? '▼' + (rank - prev) : '—'));
+  var academy = e.academyName ? '<span class="bb-academy">' + esc(e.academyName) + '</span>' : '';
+  var text = e.educationPhilosophy || e.identitySummary;
+  var philosophy = text ? '<span class="bb-philosophy">' + esc(text) + '</span>' : '';
+  return '<a class="bb-row' + (rank === 1 ? ' bb-first' : '') + '" href="/chart/educators/' + encodeURIComponent(e.educatorId) + '">'
+    + '<div class="bb-rank">' + esc(e.rank) + '</div>'
+    + '<div class="bb-trend" aria-hidden="true">' + arrow + '</div>'
+    + '<div class="bb-main"><strong>' + esc(e.name) + '</strong>' + academy + philosophy + '</div></a>';
+}
+
+if (typeof document !== 'undefined') (function () {
   var esc = function (v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -43,17 +57,13 @@
   fetch('/api/chart/publication/current').then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (data) {
     var dateEl = document.getElementById('landingChartDate');
     if (dateEl) {
-      dateEl.textContent = data.updatedAt ? '· ' + String(data.updatedAt).slice(0, 10).replace(/-/g, '.') : '';
+      dateEl.textContent = data.updatedAt ? String(data.updatedAt).slice(0, 10).replace(/-/g, '.') : '';
     }
     var rows = (data.rankedTop100 || data.entries || []).slice(0, 5);
-    root.innerHTML = rows.length ? rows.map(function (e) {
-      return '<a class="chart-row" href="/chart/educators/' + encodeURIComponent(e.educatorId) + '">'
-        + '<div class="chart-rank">' + esc(e.rank) + '</div><div class="chart-avatar"></div>'
-        + '<div><div class="chart-name">' + esc(e.name) + ' <span>' + esc(e.role) + '</span></div>'
-        + '<div class="chart-meta">' + esc(e.identitySummary || e.academyName || e.activityRegion) + '</div></div>'
-        + '<div class="chart-new">' + (e.previousRank == null ? 'NEW' : (e.previousRank > e.rank ? '▲' : (e.previousRank < e.rank ? '▼' : ''))) + '</div></a>';
-    }).join('') : '<div class="chart-row"><div class="chart-meta">전국 조사에서 선정된 교육자가 곧 공개됩니다.</div></div>';
+    root.innerHTML = rows.length ? rows.map(function (e) { return bbRow(e, esc); }).join('')
+      : '<div class="bb-empty">전국 조사에서 선정된 교육자가 곧 공개됩니다.</div>';
   }).catch(function () {
-    root.innerHTML = '<div class="chart-row"><div class="chart-meta">Chart를 불러오지 못했습니다.</div></div>';
+    root.innerHTML = '<div class="bb-empty">Chart를 불러오지 못했습니다.</div>';
   });
 })();
+if (typeof module !== 'undefined' && module.exports) module.exports = { bbRow: bbRow };

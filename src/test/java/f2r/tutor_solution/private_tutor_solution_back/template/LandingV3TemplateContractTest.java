@@ -19,36 +19,33 @@ class LandingV3TemplateContractTest {
   private static final Path V3_JS = Path.of("src/main/resources/static/js/landing_v3.js");
 
   @Test
-  @DisplayName("given v3 확정 순서 when 템플릿을 읽으면 then 제작→Chart→콘텐츠 도구→준비 중 순서로 노출한다")
+  @DisplayName("given 중복 제거 when 템플릿을 읽으면 then 제작(히어로)→Chart→Wiki→준비 중 순서이고 제작 재소개·Report·Shorts 섹션은 없다")
   void sections_follow_confirmed_order() throws Exception {
     // given
     String html = Files.readString(LANDING);
 
     // when
     int hero = html.indexOf("id=\"hero\"");
-    int intro = html.indexOf("id=\"intro\"");
-    int web = html.indexOf("id=\"web\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
-    int tools = html.indexOf("id=\"tools\"");
     int wiki = html.indexOf("id=\"wiki\"");
-    int report = html.indexOf("id=\"report\"");
-    int shorts = html.indexOf("id=\"shorts\"");
     int soon = html.indexOf("id=\"soon\"");
     int faq = html.indexOf("id=\"faq\"");
     int cta = html.indexOf("id=\"cta\"");
 
     // then
     assertThat(hero).isGreaterThanOrEqualTo(0);
-    assertThat(intro).isGreaterThan(hero);
-    assertThat(web).isGreaterThan(intro);
-    assertThat(chart).isGreaterThan(web);
-    assertThat(tools).isGreaterThan(chart);
-    assertThat(wiki).isGreaterThan(tools);
-    assertThat(report).isGreaterThan(wiki);
-    assertThat(shorts).isGreaterThan(report);
-    assertThat(soon).isGreaterThan(shorts);
+    assertThat(chart).isGreaterThan(hero);
+    assertThat(wiki).isGreaterThan(hero);
+    assertThat(chart).isGreaterThan(wiki);
+    assertThat(soon).isGreaterThan(wiki);
     assertThat(faq).isGreaterThan(soon);
     assertThat(cta).isGreaterThan(faq);
+    assertThat(html)
+        .doesNotContain("id=\"web\"")
+        .doesNotContain("id=\"journey\"")
+        .doesNotContain("id=\"tools\"")
+        .doesNotContain("id=\"report\"")
+        .doesNotContain("id=\"shorts\"");
   }
 
   @Test
@@ -61,9 +58,7 @@ class LandingV3TemplateContractTest {
     assertThat(html)
         .contains("<form class=\"v3-ask\" data-buildit-form")
         .contains("data-buildit-prompt")
-        .contains("data-buildit-example")
         .contains("data-buildit-start")
-        .contains("href=\"/builder/entry\"")
         .contains("class=\"hero\" id=\"hero\"")
         .doesNotContain("action=\"/builder/entry\"");
   }
@@ -100,27 +95,15 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given Easy 도입 문의 when 읽으면 then 기존 문의 모달에 연결하고 불가 시 비활성 가드가 있다")
-  void easy_inquiry_uses_contact_modal() throws Exception {
-    // given
-    String html = Files.readString(LANDING);
-    String js = Files.readString(V3_JS);
-
-    // then
-    assertThat(html).contains("data-v3-inquiry onclick=\"openContactModal()\"");
-    assertThat(js).contains("openContactModal").contains("aria-disabled");
-  }
-
-  @Test
-  @DisplayName("given 소개영상·슬로건 when 읽으면 then 삭제하지 않고 유지한다")
-  void intro_video_and_slogan_are_kept() throws Exception {
+  @DisplayName("given 브랜드 소개 삭제 지시 when 읽으면 then 소개 영상·슬로건 섹션은 없고 글자 흐름 띠만 남는다")
+  void brand_intro_is_removed_but_flow_marquee_stays() throws Exception {
     // given
     String html = Files.readString(LANDING);
 
     // then
     assertThat(html)
-        .contains("숨은 영어교육자를 발굴하고, 성장시키고, 투자로 연결합니다.")
-        .contains("data-youtube-id=\"fK_BdoK8O64\"")
+        .doesNotContain("id=\"intro\"")
+        .doesNotContain("data-youtube-id=\"fK_BdoK8O64\"")
         .contains("class=\"flow-marquee\" id=\"why\"");
   }
 
@@ -135,23 +118,10 @@ class LandingV3TemplateContractTest {
         .contains("id=\"landingChartTop5\"")
         .contains("id=\"landingChartDate\"")
         .contains("id=\"chartRegionPicker\"")
+        .contains("BUILDIT CHART 100")
         .contains("/js/landing_chart.js")
         .doesNotContain("교육자 A")
         .doesNotContain("교육자 B");
-  }
-
-  @Test
-  @DisplayName("given Easy 예시 화면 when 읽으면 then 실제 수치 없이 예시로 표시한다")
-  void easy_example_has_no_real_figures() throws Exception {
-    // given
-    String html = Files.readString(LANDING);
-    int start = html.indexOf("id=\"v3pane-easy\"");
-    int end = html.indexOf("</section>", start);
-    String easy = html.substring(start, end);
-
-    // then
-    assertThat(easy).contains("예시 화면").contains("실제 회계 데이터가 아닙니다");
-    assertThat(easy).doesNotContainPattern("[0-9]{1,3}(,[0-9]{3})+\\s*원");
   }
 
   @Test
@@ -164,7 +134,10 @@ class LandingV3TemplateContractTest {
     String soon = html.substring(start, end);
 
     // then
-    assertThat(soon).contains("DesignCraft").contains("입시상담 AI").contains("aria-disabled=\"true\"");
+    assertThat(soon).contains("DesignCraft", "입시상담 AI", "Easy 장부", "iBT TestPrep", "LMS").contains("aria-disabled=\"true\"");
+    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(5);
+    assertThat(soon.split("곧 준비중", -1).length - 1).isGreaterThanOrEqualTo(5);
+    assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생 관리 → 수업·과제 → 출결·성적 관리");
     assertThat(soon).doesNotContain("<a ").doesNotContain("<input").doesNotContain("<form");
   }
 
@@ -203,7 +176,64 @@ class LandingV3TemplateContractTest {
     assertThat(html).contains("id=\"landingChartTop5\"").contains("id=\"landingChartDate\"");
     assertThat(html).contains("id=\"landingChartMore\"").contains("aria-controls=\"landingChartTop5\"");
     assertThat(css).contains("@media (max-width: 720px)")
-        .contains("#landingChartTop5:not(.is-open) .chart-row:nth-child(n+4)");
+        .contains("#landingChartTop5:not(.is-open) .bb-row:nth-child(n+4)");
     assertThat(js).contains("chartMoreState").contains("initChartMore");
+  }
+
+  @Test
+  @DisplayName("given 새 첫 화면 구성 when 템플릿을 읽으면 then 전국 무대 → 디지털영어학원 Agent(홈페이지 Agent) → 제작 입력 순서이고 지역 4개·남한 지도를 쓴다")
+  void first_screen_starts_with_nation_then_agent_then_homepage_input() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // when
+    int nation = html.indexOf("id=\"nation\"");
+    int agent = html.indexOf("id=\"agent\"");
+    int hero = html.indexOf("id=\"hero\"");
+
+    // then
+    assertThat(nation).isGreaterThanOrEqualTo(0);
+    assertThat(agent).isGreaterThan(nation);
+    assertThat(hero).isGreaterThan(agent);
+    assertThat(html)
+        .contains("전국 무대로 확장하세요!")
+        .contains("디지털영어학원 Agent")
+        .contains("홈페이지 Agent");
+    assertThat(html.split("data-nation-region=", -1).length - 1).isEqualTo(4);
+    assertThat(html).contains("/img/landing/korea-dots.svg");
+  }
+
+  @Test
+  @DisplayName("given FAQ·마지막 안내 when 읽으면 then 준비 중 5종과 문제지 안내가 일치하고 금지 문구 없이 '만들기'로 시작한다")
+  void faq_and_bottom_cta_follow_confirmed_copy() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    int faq = html.indexOf("id=\"faq\"");
+    String tail = html.substring(faq);
+
+    // then
+    assertThat(tail)
+        .contains("내신 영어 문제지는 어떻게 받나요?", "기본 1회 20,000원")
+        .contains("DesignCraft, 입시상담 AI, Easy 장부, iBT TestPrep, LMS는 곧 준비중")
+        .contains("홈페이지 제작으로 디지털 영어 학원을 시작하세요!")
+        .contains("href=\"/builder\" class=\"btn reveal\" data-fade data-buildit-start")
+        .doesNotContain("AI 홈페이지 만들기")
+        .doesNotContain("관리자 전용 베타")
+        .doesNotContain("이제, 당신의 브랜드를 만들 시간입니다");
+  }
+
+  @Test
+  @DisplayName("given Agent 컨셉 when 읽으면 then 제목 옆 디지털영어학원 Agent와 섹션별 Agent 이름·병아리 캐릭터가 있고 예시 이미지 문구는 없다")
+  void agents_have_names_and_chick_characters_in_each_section() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    String css = Files.readString(V3_CSS);
+
+    // then
+    assertThat(html.indexOf("디지털영어학원 Agent")).isLessThan(html.indexOf("class=\"nation-stage\""));
+    assertThat(html).contains("홈페이지 Agent", "내신 문제 제작 Agent", "Chart Agent");
+    assertThat(html.split("<svg class=\"chick ", -1).length - 1).isGreaterThanOrEqualTo(8);
+    assertThat(html).doesNotContain("사진과 화면은 예시 이미지입니다.");
+    assertThat(css).contains("@keyframes ck-bob", "@keyframes ck-blink", "prefers-reduced-motion");
   }
 }

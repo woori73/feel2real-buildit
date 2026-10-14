@@ -175,3 +175,102 @@ test('Given TOP5 행과 더보기 버튼, When 버튼을 누르면, Then is-open
   assert.equal(button.attrs['aria-expanded'], 'true');
   assert.equal(button.textContent, '접기');
 });
+
+test('Given 문구 3개, When 다음 순번을 계산하면, Then 마지막 다음은 처음으로 돌아간다', () => {
+  // given/when/then
+  assert.equal(v3.nextWordIndex(0, 3), 1);
+  assert.equal(v3.nextWordIndex(2, 3), 0);
+  assert.equal(v3.nextWordIndex(0, 0), 0);
+});
+
+test('Given 움직임 줄이기 설정, When 문구 순환을 시작하면, Then 순환하지 않아 세 문구가 모두 보인다', () => {
+  // given
+  const title = Object.assign(el(), { querySelectorAll: () => [el(), el(), el()] });
+  const doc = { querySelector: () => title };
+  const win = { matchMedia: () => ({ matches: true }), setInterval() { throw new Error('호출되면 안 된다'); } };
+  // when
+  v3.initWords(doc, win);
+  // then
+  assert.equal(title.classList.contains('fm-rot'), false);
+});
+
+test('Given 지역 4개, When 두 번째 지역을 누르면, Then 그 지역과 사진이 켜지고 핀 위치와 이름표가 바뀐다', () => {
+  // given
+  const regions = ['서울', '부산', '대구', '광주'].map((name, i) => {
+    const r = el({ 'data-nation-region': String(i), 'data-x': String(10 * (i + 1)), 'data-y': String(20 * (i + 1)), 'aria-pressed': String(i === 0) });
+    r.textContent = name;
+    return r;
+  });
+  const photos = regions.map(() => el());
+  const pin = Object.assign(el(), { style: {} });
+  const chip = el();
+  const root = Object.assign(el(), {
+    querySelectorAll: (sel) => (sel === '[data-nation-region]' ? regions : sel === '.nation-photo' ? photos : []),
+    querySelector: (sel) => (sel === '[data-nation-pin]' ? pin : sel === '[data-nation-chip]' ? chip : null)
+  });
+  const doc = { querySelector: () => root };
+  const win = { matchMedia: () => ({ matches: true }), setInterval() {}, clearInterval() {} };
+  v3.initNation(doc, win);
+  // when
+  regions[1].fire('click');
+  // then
+  assert.equal(regions[1].attrs['aria-pressed'], 'true');
+  assert.equal(regions[0].attrs['aria-pressed'], 'false');
+  assert.equal(photos[1].classList.contains('on'), true);
+  assert.equal(pin.style.left, '20%');
+  assert.equal(pin.style.top, '40%');
+  assert.equal(chip.textContent, '부산');
+});
+
+// ---- landing_chart.js: 빌보드 형식 한 줄 (사진·지표 없음) ----
+const { bbRow } = require('../../main/resources/static/js/landing_chart.js');
+const escHtml = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+test('given 1위·지난주 2위 when bbRow then 이름·학원·교육 철학과 상승 화살표를 만들고 사진은 만들지 않는다', () => {
+  // given
+  const entry = { rank: 1, previousRank: 2, educatorId: 7, name: '홍길동', academyName: '가나다학원', identitySummary: '문법의 기본기', profileImageUrl: 'http://x/y.jpg' };
+  // when
+  const html = bbRow(entry, escHtml);
+  // then
+  assert.ok(html.includes('bb-first'));
+  assert.ok(html.includes('▲1'));
+  assert.ok(html.includes('홍길동') && html.includes('가나다학원') && html.includes('문법의 기본기'));
+  assert.ok(!html.includes('<img'));
+  assert.ok(html.includes('/chart/educators/7'));
+});
+
+test('given 신규·학원 없음·특수문자 이름 when bbRow then NEW이고 빈 항목은 만들지 않으며 이름은 이스케이프된다', () => {
+  // given
+  const entry = { rank: 3, previousRank: null, educatorId: 'a b', name: '<b>김</b>' };
+  // when
+  const html = bbRow(entry, escHtml);
+  // then
+  assert.ok(html.includes('NEW'));
+  assert.ok(!html.includes('bb-academy') && !html.includes('bb-philosophy'));
+  assert.ok(!html.includes('<b>김</b>'));
+  assert.ok(html.includes('a%20b'));
+});
+
+test('given 교육 철학과 소개가 모두 있을 때 when bbRow then 교육 철학을 우선 보여 주고 없으면 소개로 대신한다', () => {
+  // given
+  const withBoth = { rank: 2, educatorId: 1, name: 'A', educationPhilosophy: '철학 문장', identitySummary: '소개 문장' };
+  const onlySummary = { rank: 2, educatorId: 1, name: 'A', identitySummary: '소개 문장' };
+  // when
+  const first = bbRow(withBoth, escHtml);
+  const second = bbRow(onlySummary, escHtml);
+  // then
+  assert.ok(first.includes('철학 문장') && !first.includes('소개 문장'));
+  assert.ok(second.includes('소개 문장'));
+});
+
+test('given 순위 하락·유지 when bbRow then ▼변동폭과 —를 보여 준다', () => {
+  // given
+  const down = { rank: 3, previousRank: 2, educatorId: 1, name: 'A' };
+  const same = { rank: 1, previousRank: 1, educatorId: 1, name: 'A' };
+  // when
+  const downHtml = bbRow(down, escHtml);
+  const sameHtml = bbRow(same, escHtml);
+  // then
+  assert.ok(downHtml.includes('▼1'));
+  assert.ok(sameHtml.includes('—'));
+});
