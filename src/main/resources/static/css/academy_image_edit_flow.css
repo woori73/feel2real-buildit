@@ -113,6 +113,15 @@
   background: #d97706;
 }
 
+.btn-restore {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.btn-restore:hover {
+  background: #7c3aed;
+}
+
 .btn-cancel {
   background: #e5e7eb;
   color: #333;
