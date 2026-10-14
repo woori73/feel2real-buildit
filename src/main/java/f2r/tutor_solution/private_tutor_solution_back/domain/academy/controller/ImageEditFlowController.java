@@ -79,6 +79,19 @@ public class ImageEditFlowController {
   }
 
   /**
+   * WorkingCopy 현재 revision 조회.
+   *
+   * <p>승인된 이미지를 스테이징하기 전에 호출하여
+   * 서버와 일치하는 revision을 확보한다.
+   */
+  @GetMapping("/working-copy-revision")
+  public ResponseEntity<Map<String, Long>> getWorkingCopyRevision(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    long revision = approvalService.getCurrentRevision(principal);
+    return ResponseEntity.ok(Map.of("revision", revision));
+  }
+
+  /**
    * 플로우 상태 조회.
    */
   @GetMapping("/{assetId}/status")
