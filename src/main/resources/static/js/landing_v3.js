@@ -150,6 +150,7 @@
     if (!root) return;
     var regions = Array.prototype.slice.call(root.querySelectorAll('[data-nation-region]'));
     var photos = Array.prototype.slice.call(root.querySelectorAll('.nation-photo'));
+    var minis = Array.prototype.slice.call(root.querySelectorAll('.nation-mini'));
     var pin = root.querySelector('[data-nation-pin]');
     var chip = root.querySelector('[data-nation-chip]');
     if (regions.length < 2) return;
@@ -163,6 +164,7 @@
         r.setAttribute('aria-pressed', String(on));
       });
       photos.forEach(function (p, i) { p.classList.toggle('on', i === index); });
+      minis.forEach(function (m, i) { m.classList.toggle('on', i === index); });
       var region = regions[index];
       if (pin) {
         pin.style.left = region.getAttribute('data-x') + '%';
