@@ -164,13 +164,21 @@
           'tmpl-minimal-landing': '미니멀 랜딩(소규모 학원형)',
           'comp-bundle': '컴포넌트 조합(커스텀형)'
         };
+        // 프리셋 키워드 매핑: AI 분석기가 감지할 수 있는 키워드 포함
+        var samplePresetKeywords = {
+          'tmpl-open-school': '종합학원 입시',
+          'tmpl-demo-school': '비주얼 포토',
+          'tmpl-minimal-landing': '미니멀 깔끔',
+          'comp-bundle': '다이나믹'
+        };
         var sampleName = sampleNames[entrySample] || entrySample;
         openPanel();
         if (typeof switchTab === 'function') switchTab('chat');
         var modeCreate = document.getElementById('builderAiChatModeCreate');
         if (modeCreate) modeCreate.click();
         if (el.input) {
-          el.input.value = sampleName + ' 스타일로 학원 홈페이지를 만들어줘';
+          var presetKw = samplePresetKeywords[entrySample] || '';
+          el.input.value = sampleName + ' 스타일로 학원 홈페이지를 만들어줘. ' + presetKw;
           if (typeof autoGrow === 'function') autoGrow();
         }
         var nameInput = document.getElementById('builderAiChatName');
