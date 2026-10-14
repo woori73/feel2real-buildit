@@ -65,6 +65,13 @@
     el.addEventListener('click', onStartClick);
   });
 
+  // 빌더 진입 화면(/builder/entry)에서 넘어온 경우(?start=builder): 같은 시작 게이트를 이어서 실행한다.
+  // 보관된 제작 요청은 그대로 두고(빈 값은 덮어쓰지 않음), 비로그인이면 로그인 창을 연다.
+  if (new URLSearchParams(location.search).get('start') === 'builder') {
+    history.replaceState({}, '', location.pathname + location.hash);
+    document.addEventListener('DOMContentLoaded', () => { startBuilder(''); });
+  }
+
   // 로그인 창의 회원가입 링크: account_menu.js가 링크 주소를 현재 페이지(/) 기준으로 계속 다시 쓰므로,
   // 주소를 미리 바꿔 두지 않고 누르는 순간(캡처 단계)에 /builder 복귀 주소로 바꾼다.
   document.addEventListener('click', (event) => {

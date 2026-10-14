@@ -69,6 +69,7 @@ jobs:
           src/test/js/landing_buildit_start.test.js
           src/test/js/academy_public_hero_cycle.test.js
           src/test/js/landing_v3.test.js
+          src/test/js/builder_entry.test.js
 
       - name: Build BuildIt Wiki frontend (baked into bootJar)
         # deploy-ec2.yml이 하던 wiki 빌드를 여기로 이동한다. artifact JAR에 wiki 정적
