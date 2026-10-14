@@ -152,7 +152,7 @@ jobs:
           mkdir -p /tmp/staging-artifacts
           cd /tmp
           rm -rf pr677-build
-          git clone --depth 1 --branch feat/photocraft-final-integration https://github.com/woori73/feel2real-buildit.git pr677-build
+          git clone --depth 1 --branch feat/photocraft-final-integration https://x-access-token:${GH_TOKEN}@github.com/woori73/feel2real-buildit.git pr677-build
           cd pr677-build
           chmod +x gradlew
           ./gradlew clean bootJar --no-daemon -x test -q
