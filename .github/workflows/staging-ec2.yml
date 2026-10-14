@@ -105,14 +105,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "=== ALB discovery ==="
-          aws elbv2 describe-load-balancers --query 'LoadBalancers[*].{Name:LoadBalancerName,DNS:DNSName,Scheme:Scheme}' --output table || echo '(elbv2 describe failed)'
-          echo ""
-          echo "=== Listeners ==="
-          for alb_arn in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[*].LoadBalancerArn' --output text); do
-            echo "ALB: $alb_arn"
-            aws elbv2 describe-listeners --load-balancer-arn "$alb_arn" --query 'Listeners[*].{Port:Port,Protocol:Protocol,Default:DefaultActions}' --output table || true
+          echo "=== ALB discovery ===" > /tmp/alb-output.txt
+          aws elbv2 describe-load-balancers --query 'LoadBalancers[*].{Name:LoadBalancerName,DNS:DNSName,Scheme:Scheme,Arn:LoadBalancerArn}' --output table >> /tmp/alb-output.txt 2>&1 || echo '(elbv2 describe failed)' >> /tmp/alb-output.txt
+          echo "" >> /tmp/alb-output.txt
+          echo "=== Listeners and Rules ===" >> /tmp/alb-output.txt
+          for alb_arn in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[*].LoadBalancerArn' --output text 2>/dev/null); do
+            echo "ALB: $alb_arn" >> /tmp/alb-output.txt
+            for listener_arn in $(aws elbv2 describe-listeners --load-balancer-arn "$alb_arn" --query 'Listeners[*].ListenerArn' --output text 2>/dev/null); do
+              echo "  Listener: $listener_arn" >> /tmp/alb-output.txt
+              aws elbv2 describe-rules --listener-arn "$listener_arn" --query 'Rules[*].{Priority:Priority,Conditions:Conditions,Actions:Actions}' --output table >> /tmp/alb-output.txt 2>&1 || true
+            done
           done
+          echo "" >> /tmp/alb-output.txt
+          echo "=== Target Groups ===" >> /tmp/alb-output.txt
+          aws elbv2 describe-target-groups --query 'TargetGroups[*].{Name:TargetGroupName,Port:Port,Protocol:Protocol}' --output table >> /tmp/alb-output.txt 2>&1 || echo '(describe-target-groups failed)' >> /tmp/alb-output.txt
+          cat /tmp/alb-output.txt
+
+      - name: Upload ALB output
+        if: inputs.mode == 'investigate'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-alb-output
+          path: /tmp/alb-output.txt
 
       - name: Setup staging environment
         if: inputs.mode == 'setup'
