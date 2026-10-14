@@ -7,7 +7,8 @@
   "scripts": {
     "mock-site": "node mock-site/server.js",
     "start": "node src/collector.js",
-    "test:e2e-mock": "node test/e2e-mock-lifecycle.js"
+    "test:e2e-mock": "node test/e2e-mock-lifecycle.js",
+    "test:e2e-kb": "node test/e2e-kb-lifecycle.js"
   },
   "dependencies": {
     "playwright": "^1.47.0"

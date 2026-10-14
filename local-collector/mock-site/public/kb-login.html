@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Mock KB형 페이지 — 로그인</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 480px; margin: 80px auto; padding: 0 20px; }
+  .badge { background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 24px; }
+  button { font-size: 16px; padding: 12px 24px; background: #7c2d12; color: white; border: none; border-radius: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="badge">⚠ KB 수집 PoC 검증용 mock 페이지입니다. card.kbcard.com이 아닙니다. Collector는 이 버튼을 절대 대신 클릭하지 않습니다.</div>
+  <h2>KB국민카드 (mock) — 공동인증서 로그인</h2>
+  <p>실서비스에서는 사용자가 여기서 직접 인증서 선택 + 비밀번호 입력 후 My KB → 개인사업자용 이용내역으로 이동합니다.</p>
+  <button id="kb-login-btn">공동인증서로 로그인</button>
+  <script>
+    document.getElementById('kb-login-btn').addEventListener('click', () => {
+      window.location.href = '/kb-usage.html?auth=1';
+    });
+  </script>
+</body>
+</html>
