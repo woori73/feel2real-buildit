@@ -169,27 +169,21 @@ public class AcademyImageService {
   }
 
   private PhotoCraftImageService.ImageOperation mapOperation(AcademyImageDtos.EditOperation op) {
-    return switch (op.op().toLowerCase()) {
-      case "brightness" -> {
-        Object v = op.params().get("value");
-        int value = v instanceof Number n ? n.intValue() : 0;
-        yield PhotoCraftImageService.ImageOperation.brightness(value);
-      }
-      case "exposure" -> {
-        Object v = op.params().get("value");
-        double value = v instanceof Number n ? n.doubleValue() : 0.0;
-        yield PhotoCraftImageService.ImageOperation.exposure(value);
-      }
-      case "vibrance", "saturation" -> {
-        Object v = op.params().get("value");
-        int value = v instanceof Number n ? n.intValue() : 0;
-        yield PhotoCraftImageService.ImageOperation.vibrance(value);
-      }
-      default -> {
-        log.warn("지원하지 않는 이미지 작업: {}", op.op());
-        yield null;
-      }
-    };
+    String opName = op.op().toLowerCase();
+    Object v = op.params().get("value");
+    if ("brightness".equals(opName)) {
+      int value = v instanceof Number n ? n.intValue() : 0;
+      return PhotoCraftImageService.ImageOperation.brightness(value);
+    } else if ("exposure".equals(opName)) {
+      double value = v instanceof Number n ? n.doubleValue() : 0.0;
+      return PhotoCraftImageService.ImageOperation.exposure(value);
+    } else if ("vibrance".equals(opName) || "saturation".equals(opName)) {
+      int value = v instanceof Number n ? n.intValue() : 0;
+      return PhotoCraftImageService.ImageOperation.vibrance(value);
+    } else {
+      log.warn("지원하지 않는 이미지 작업: {}", op.op());
+      return null;
+    }
   }
 
   private String describeOperation(AcademyImageDtos.EditOperation op) {
