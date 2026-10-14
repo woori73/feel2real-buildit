@@ -4598,3 +4598,15 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/tutor/easy/accounting/{general-ledger,trial-balance,balance-audit,income-statement,balance-sheet}`: 연결된 사업체의 회계 조회만 허용한다.
 - `POST /api/admin/easy/academy-links`, `DELETE /api/admin/easy/academy-links/academies/{academyId}/businesses/{businessId}`: ADMIN만 연결·해제한다.
 - 기존 `/api/admin/easy/**` 계약과 권한은 변경하지 않는다. 원장 업로드·수정·승인은 후속 PR 범위다.
+
+
+## Easy 원장 CSV 장부 API
+
+- `POST /api/tutor/easy/imports?businessId={id}` (multipart `file`): CSV 원문 행을 staging에 보존하고 기존 확정 매핑·분류 규칙으로 계정과목을 제안한다. XLSX와 빈 파일은 거부한다.
+- `GET /api/tutor/easy/imports?businessId={id}`, `GET /api/tutor/easy/imports/{batchId}?businessId={id}`: 로그인 원장의 연결 사업체 배치만 조회한다.
+- `PUT /api/tutor/easy/imports/{batchId}/rows/{rowId}/account?businessId={id}` body `{"accountId":1}`: READY 행의 추천 계정을 사용자가 확정·수정한다.
+- `POST /api/tutor/easy/imports/{batchId}/reclassify?businessId={id}`: 기존 규칙으로 선택 행을 다시 분석한다.
+- `POST /api/tutor/easy/imports/{batchId}/confirm?businessId={id}`: 선택 또는 전체 READY 행을 기존 장부·복식분개 엔진에 반영한다.
+- `DELETE /api/tutor/easy/imports/{batchId}?businessId={id}`: 미확정 STAGED 배치만 폐기한다.
+- 모든 batchId/rowId 조작은 principal → Academy → 연결 사업체 검증 뒤 `batch_id + business_id`로 재조회한다. 클라이언트 businessId는 권한 근거가 아니라 선택자다.
+- 기존 `/api/admin/easy/**` 계약은 변경하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.

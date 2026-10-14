@@ -221,6 +221,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionIngestIdempotencyTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCardsalesAdapterIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyImportServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorImportServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyTutorImportSecurityWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingDomainTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardMigrationTest"
@@ -380,6 +382,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorProposalMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.VisualEditorProposalFlowMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.FlywayProdHistoryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.AcademyEasyBusinessSchemaIntegrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyTutorCsvWorkflowMySqlTest"
 
       - name: Upload MySQL test report
         if: always()
