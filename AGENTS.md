@@ -9,12 +9,14 @@
 **모든 ChatGPT/Qoder/OpenCode/Claude/Freebuck 및 후속 에이전트는 작업 지시를 작성하거나 작업을 시작하기 전에 [docs/operating-principles/MASTER_OPERATING_PRINCIPLES.md](docs/operating-principles/MASTER_OPERATING_PRINCIPLES.md)를 먼저 읽는다.** EASY 작업이면 EASY 원칙, NewStart 지피지기/RAG 작업이면 NewStart 원칙까지 반드시 읽는다. 사용자의 명시적 변경 없이 원칙을 재설계하거나 우선순위를 바꾸지 않는다.
 
 ## 작업 착수 전 (필수)
-1. **BuildIt 관련 기능을 수정하기 전에 `docs/BUILDIT_PHILOSOPHY.md`를 먼저 읽는다.**
-2. **`docs/INDEX.md`를 읽고** 해당 작업 문서를 로드한다.
-3. 현재 git 상태 / 브랜치 확인. **ChatGPT Work / Codex 세션은 [docs/WORK_GIT_WORKSPACE_WORKFLOW.md](docs/WORK_GIT_WORKSPACE_WORKFLOW.md)를 먼저 읽는다** (세션별 stale checkout·`origin/main` 오판 방지, GitHub 최신 main이 authoritative).
-4. DB/마이그레이션을 건드리면 **`docs/WORKFLOW.md` §4 번호정책**을 반드시 확인한다.
+1. **모든 Agent는 어떤 작업이든 시작하기 전에 [docs/SHARED_PC_AGENT_GRADLE_POLICY.md](docs/SHARED_PC_AGENT_GRADLE_POLICY.md)를 먼저 읽는다.** 같은 PC에서 여러 Agent가 동작하므로 heavy Gradle/JVM 작업은 PC 전체에서 동시에 1개만 허용하며, Gradle은 개발 중 반복 실행하지 않고 최종 Release Gate에서만 최소 실행한다.
+2. **BuildIt 관련 기능을 수정하기 전에 `docs/BUILDIT_PHILOSOPHY.md`를 먼저 읽는다.**
+3. **`docs/INDEX.md`를 읽고** 해당 작업 문서를 로드한다.
+4. 현재 git 상태 / 브랜치 확인. **ChatGPT Work / Codex 세션은 [docs/WORK_GIT_WORKSPACE_WORKFLOW.md](docs/WORK_GIT_WORKSPACE_WORKFLOW.md)를 먼저 읽는다** (세션별 stale checkout·`origin/main` 오판 방지, GitHub 최신 main이 authoritative).
+5. DB/마이그레이션을 건드리면 **`docs/WORKFLOW.md` §4 번호정책**을 반드시 확인한다.
 
 ## 핵심 규칙 (요약 — 상세는 docs/)
+- **Shared PC Gradle**: `compileJava`/`compileTestJava`/`test`/`bootJar`/`build`/`bootRun` 등 heavy Gradle은 동시 실행 금지. HTML/CSS/JS/docs-only 변경은 Java compile을 원칙적으로 생략. timeout 직후 같은 명령 재실행 금지. → [docs/SHARED_PC_AGENT_GRADLE_POLICY.md](docs/SHARED_PC_AGENT_GRADLE_POLICY.md)
 - **main 단일 로컬 개발**: 기본 작업은 `main`에서 수행하고 `./scripts/run-local.sh`가 로컬 MySQL(`localhost:3308/f2r_db`)을 자동 생성·재사용한다. 검증 후 PR로만 병합하고, 운영 배포는 수동 GitHub Actions로만 수행한다. → [docs/WORKFLOW.md](docs/WORKFLOW.md)
 - **마이그레이션 번호**: `db/migration`=운영 순차(다음 V909+), `db/dev-seed`=`R__` repeatable(버전번호 미사용), 운영 위치 버전 중복·번호 역행 금지(= prd 502 원인). 적용된 V_파일 불변. → [docs/WORKFLOW.md](docs/WORKFLOW.md) §4
 - **스키마 동기화**: `db/migration` V_파일 + Entity + [docs/DOMAIN.md](docs/DOMAIN.md) 셋 동시 수정.
