@@ -454,7 +454,7 @@ body { background: #f7f8fc; }
   .bi-page .v3-soon-grid { gap: 10px; }
   .bi-page .v3-soon-card { gap: 6px; padding: 16px; border-radius: 18px; }
   .bi-page .v3-soon-card h3 { font-size: 18px; }
-  .bi-page .v3-soon-card p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
+  .bi-page .v3-soon-card p { font-size: 14px; }
 
   /* FAQ: 첫 항목도 기본 접힘은 마크업에서 처리 */
   .bi-page .v3-faq .v3-sec-head { margin-bottom: 16px; }
@@ -657,3 +657,117 @@ body { background: #f7f8fc; }
   .bi-page .wk-cap { margin-top: 20px; }
   .bi-page .wk-steps { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* =====================================================================
+   Agent 병아리 캐릭터 + 하단 섹션을 상단(짙은 청록·민트)과 같은 색·움직임으로 통일
+   ===================================================================== */
+.bi-page .chick { display: block; overflow: visible; flex: none; }
+.bi-page .chick-sm { width: 64px; height: 66px; }
+.bi-page .chick-chip { width: 52px; height: 54px; margin: -10px -6px -12px -10px; }
+.bi-page .chick-md { width: 84px; height: 87px; }
+.bi-page .chick-lg { width: 120px; height: 124px; }
+.bi-page .ck-bob, .bi-page .ck-shadow, .bi-page .ck-eyes, .bi-page .ck-wing, .bi-page .ck-sprout, .bi-page .ck-type, .bi-page .ck-pen, .bi-page .ck-chart rect, .bi-page .ck-zzz text, .bi-page .ck-ask, .bi-page .ck-spark path { transform-box: fill-box; transform-origin: center; }
+.bi-page .ck-bob { animation: ck-bob 2.4s ease-in-out infinite; }
+.bi-page .ck-shadow { animation: ck-shadow 2.4s ease-in-out infinite; }
+.bi-page .ck-wing.ck-wl { transform-origin: 85% 20%; animation: ck-flap-l 1.6s ease-in-out infinite; }
+.bi-page .ck-wing.ck-wr { transform-origin: 15% 20%; animation: ck-flap-r 1.6s ease-in-out infinite; }
+.bi-page .ck-sprout { transform-origin: 50% 100%; animation: ck-sway 2.8s ease-in-out infinite; }
+.bi-page .ck-eyes { animation: ck-blink 4.2s infinite; }
+.bi-page .ck-type { animation: ck-type 1.6s ease-in-out infinite; transform-origin: left center; }
+.bi-page .ck-type.t2 { animation-delay: .5s; }
+.bi-page .ck-pen { animation: ck-write 1s ease-in-out infinite; transform-origin: 20% 90%; }
+.bi-page .ck-chart rect.b1, .bi-page .ck-chart rect.b2, .bi-page .ck-chart rect.b3 { transform-origin: 50% 100%; animation: ck-bar 1.8s ease-in-out infinite; }
+.bi-page .ck-chart rect.b2 { animation-delay: .3s; }
+.bi-page .ck-chart rect.b3 { animation-delay: .6s; }
+.bi-page .ck-zzz text { animation: ck-z 2.4s ease-in-out infinite; }
+.bi-page .ck-zzz text.z2 { animation-delay: 1.1s; }
+.bi-page .ck-ask { animation: ck-pop 2s ease-in-out infinite; }
+.bi-page .ck-spark path { animation: ck-twinkle 1.8s ease-in-out infinite; }
+.bi-page .ck-spark path.s2 { animation-delay: .9s; }
+@keyframes ck-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes ck-shadow { 0%, 100% { transform: scale(1); opacity: .22; } 50% { transform: scale(.82); opacity: .14; } }
+@keyframes ck-flap-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-16deg); } }
+@keyframes ck-flap-r { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(16deg); } }
+@keyframes ck-sway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+@keyframes ck-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+@keyframes ck-type { 0%, 100% { transform: scaleX(.35); } 50% { transform: scaleX(1); } }
+@keyframes ck-write { 0%, 100% { transform: rotate(0) translate(0, 0); } 50% { transform: rotate(-8deg) translate(-3px, 2px); } }
+@keyframes ck-bar { 0%, 100% { transform: scaleY(.55); } 50% { transform: scaleY(1.1); } }
+@keyframes ck-z { 0% { transform: translate(0, 6px); opacity: 0; } 40% { opacity: 1; } 100% { transform: translate(6px, -12px); opacity: 0; } }
+@keyframes ck-pop { 0%, 100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1.14) rotate(6deg); } }
+@keyframes ck-twinkle { 0%, 100% { transform: scale(.4); opacity: .3; } 50% { transform: scale(1.1); opacity: 1; } }
+@keyframes ck-walk { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-90px); } }
+@media (prefers-reduced-motion: reduce) { .bi-page .chick *, .bi-page .nation-chick { animation: none !important; } }
+
+/* 전국 무대: 제목 옆 Agent 이름 + 지도 위를 오가는 병아리 */
+.bi-page .nation-head { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 36px; margin-bottom: 28px; }
+.bi-page .nation-head .nation-title { margin: 0; }
+.bi-page .nation-agent { margin: 0; display: inline-flex; align-items: center; gap: 12px; padding: 8px 22px 8px 14px; border: 1px solid rgba(95, 242, 225, .35); border-radius: 999px; background: rgba(95, 242, 225, .08); font-size: clamp(18px, 2.6vw, 26px); font-weight: 800; letter-spacing: -.03em; color: #fff; }
+.bi-page .nation-agent .chick { width: 64px; height: 66px; margin: -8px 0; }
+.bi-page .nation-agent span { display: flex; flex-direction: column; line-height: 1.2; }
+.bi-page .nation-agent small { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #5ff2e1; }
+.bi-page .nation-chick { position: absolute; right: 5%; bottom: 3%; animation: ck-walk 7s ease-in-out infinite; }
+
+/* Agent 칩 (홈페이지·내신 문제 제작·Chart) */
+.bi-page .agent-service { padding: 8px 20px 8px 14px; }
+
+/* 하단 공통 짙은 청록 바탕 */
+.bi-page .ag-dark { background: #041619; color: #fff; }
+.bi-page .ag-dark .v3-eyebrow { color: #5ff2e1; }
+.bi-page .ag-dark .v3-h2 { color: #fff; }
+.bi-page .flow-marquee { background: #041619; }
+.bi-page .fm-row span { color: #8fe9de; }
+.bi-page .fm-row span.hi { color: #5ff2e1; }
+.bi-page .flow-marquee .hero-lines svg path { stroke: #2b6f73; }
+
+/* Chart: 짙은 청록 바탕 + 민트 포인트(빌보드 구성은 유지) */
+.bi-page .bb-chart { background: #041619; color: #fff; }
+.bi-page .bb-chip { margin: 0 0 18px; border-color: rgba(95, 242, 225, .35); background: rgba(95, 242, 225, .08); color: #fff; }
+.bi-page .bb-title { color: #fff; }
+.bi-page .bb-sub { color: #cfe3e3; }
+.bi-page .bb-week { border-color: #5ff2e1; background: rgba(95, 242, 225, .08); color: #5ff2e1; }
+.bi-page .bb-region select { border-color: rgba(95, 242, 225, .5); background: #0a2a2d; color: #fff; }
+.bi-page .bb-region select:disabled { color: #5d8284; }
+.bi-page .bb-region button, .bi-page .bb-foot .chart-cta { background: #5ff2e1; color: #041619; }
+.bi-page .bb-first .bb-rank { background: #5ff2e1; color: #041619; }
+.bi-page .bb-row { transition: transform .3s var(--v3-ease), box-shadow .3s; }
+.bi-page .bb-row:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(95, 242, 225, .18); }
+.bi-page .bb-foot .chart-criteria-link { color: #5ff2e1; }
+.bi-page .bb-note { color: #7fa0a0; }
+.bi-page .bb-chart .v3-chart-more { border-color: #5ff2e1; color: #5ff2e1; }
+
+/* 곧 준비중: 유리 카드 + 잠든 병아리 */
+.bi-page .v3-soon { padding-top: 88px; padding-bottom: 24px; }
+.bi-page .v3-soon-card { position: relative; border: 1px solid rgba(95, 242, 225, .25); background: rgba(255, 255, 255, .05); color: #cfe3e3; transition: transform .3s var(--v3-ease), border-color .3s; }
+.bi-page .v3-soon-card:hover { transform: translateY(-4px); border-color: rgba(95, 242, 225, .6); }
+.bi-page .v3-soon-card h3 { color: #fff; }
+.bi-page .v3-soon-card h3 small { color: #8fe9de; }
+.bi-page .v3-soon-card p { color: #b5d0d0; }
+.bi-page .v3-soon-card .v3-soon-core { border-top-color: rgba(95, 242, 225, .2); color: #fff; }
+.bi-page .v3-soon-core b { color: #5ff2e1; }
+.bi-page .v3-badge-soon { background: rgba(95, 242, 225, .14); color: #5ff2e1; }
+.bi-page .v3-soon-chick { position: absolute; top: 14px; right: 16px; }
+
+/* FAQ: 어두운 유리 목록 + 질문하는 병아리 */
+.bi-page .v3-faq { padding-top: 56px; padding-bottom: 88px; }
+.bi-page .v3-faq .v3-sec-head { position: relative; }
+.bi-page .v3-faq-chick { position: absolute; left: 260px; top: 8px; }
+.bi-page .v3-faq details { background: rgba(255, 255, 255, .05); border-color: rgba(95, 242, 225, .25); }
+.bi-page .v3-faq summary { color: #fff; }
+.bi-page .v3-faq summary::after { color: #5ff2e1; }
+.bi-page .v3-faq details p { color: #b5d0d0; }
+
+/* 마지막 안내: 짙은 청록 + 민트 버튼 + 병아리 */
+.bi-page .cta-mini { max-width: none; margin: 0; padding: 72px 24px 88px; border-radius: 0; background: radial-gradient(ellipse at 50% 0%, #0b3a3e, #041619 70%); text-align: center; }
+.bi-page .cta-mini .cta-chick { display: grid; place-items: center; margin-bottom: 8px; }
+.bi-page .cta-mini .btn { background: #5ff2e1; color: #041619; }
+.bi-page .cta-mini .btn svg path { stroke: #041619; }
+@media (max-width: 760px) {
+  .bi-page .nation-head { gap: 12px; }
+  .bi-page .nation-agent { padding-right: 16px; }
+  .bi-page .nation-chick { display: none; }
+  .bi-page .v3-faq-chick { position: static; display: block; margin-top: 8px; }
+  .bi-page .v3-soon-chick { top: 10px; right: 10px; }
+  .bi-page .v3-soon-chick .chick { width: 48px; height: 50px; }
+}
+.bi-page .v3-soon-card .v3-badge { justify-self: start; }

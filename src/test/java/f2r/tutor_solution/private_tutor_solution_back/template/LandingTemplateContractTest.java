@@ -32,7 +32,7 @@ class LandingTemplateContractTest {
     assertThat(html)
         .contains("<title>Build It | 원장과 강사가 브랜드가 되는 시대</title>")
         .contains("<span class=\"nav-logo bi\" aria-label=\"Build It\"><b>Build</b><i>It</i></span>")
-        .contains("Build It Wiki")
+        .contains("내신 문제 제작 Agent")
         // 구 서비스명이 남으면 클라이언트가 요구한 리브랜딩이 반쯤만 적용된 상태가 된다.
         .doesNotContain("모두의 학원")
         .doesNotContain("모두의학원")

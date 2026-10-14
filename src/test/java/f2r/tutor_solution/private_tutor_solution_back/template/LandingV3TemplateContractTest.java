@@ -198,8 +198,7 @@ class LandingV3TemplateContractTest {
     assertThat(html)
         .contains("전국 무대로 확장하세요!")
         .contains("디지털영어학원 Agent")
-        .contains("홈페이지 Agent")
-        .contains("사진과 화면은 예시 이미지입니다.");
+        .contains("홈페이지 Agent");
     assertThat(html.split("data-nation-region=", -1).length - 1).isEqualTo(4);
     assertThat(html).contains("/img/landing/korea-dots.svg");
   }
@@ -221,5 +220,20 @@ class LandingV3TemplateContractTest {
         .doesNotContain("AI 홈페이지 만들기")
         .doesNotContain("관리자 전용 베타")
         .doesNotContain("이제, 당신의 브랜드를 만들 시간입니다");
+  }
+
+  @Test
+  @DisplayName("given Agent 컨셉 when 읽으면 then 제목 옆 디지털영어학원 Agent와 섹션별 Agent 이름·병아리 캐릭터가 있고 예시 이미지 문구는 없다")
+  void agents_have_names_and_chick_characters_in_each_section() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    String css = Files.readString(V3_CSS);
+
+    // then
+    assertThat(html.indexOf("디지털영어학원 Agent")).isLessThan(html.indexOf("class=\"nation-stage\""));
+    assertThat(html).contains("홈페이지 Agent", "내신 문제 제작 Agent", "Chart Agent");
+    assertThat(html.split("<svg class=\"chick ", -1).length - 1).isGreaterThanOrEqualTo(8);
+    assertThat(html).doesNotContain("사진과 화면은 예시 이미지입니다.");
+    assertThat(css).contains("@keyframes ck-bob", "@keyframes ck-blink", "prefers-reduced-motion");
   }
 }
