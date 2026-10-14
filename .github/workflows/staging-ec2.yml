@@ -107,6 +107,15 @@ jobs:
         run: |
           set -euo pipefail
           echo "=== ALB discovery ===" > /tmp/alb-output.txt
+          echo "" >> /tmp/alb-output.txt
+          echo "=== Security Groups (check 8081) ===" >> /tmp/alb-output.txt
+          # EC2 인스턴스의 보안 그룹 확인
+          INSTANCE_SG=$(aws ec2 describe-instances --instance-ids i-09d7cabb5a42d1135 --query 'Reservations[0].Instances[0].SecurityGroups[*].GroupId' --output text 2>&1) || echo "(describe-instances failed: $INSTANCE_SG)" >> /tmp/alb-output.txt
+          echo "Instance SGs: $INSTANCE_SG" >> /tmp/alb-output.txt
+          for sg in $INSTANCE_SG; do
+            echo "--- SG: $sg ---" >> /tmp/alb-output.txt
+            aws ec2 describe-security-groups --group-ids "$sg" --query 'SecurityGroups[0].IpPermissions[*].{From:FromPort,To:ToPort,Proto:IpProtocol}' --output table >> /tmp/alb-output.txt 2>&1 || echo "(describe-sg failed)" >> /tmp/alb-output.txt
+          done
           aws elbv2 describe-load-balancers --query 'LoadBalancers[*].{Name:LoadBalancerName,DNS:DNSName,Scheme:Scheme,Arn:LoadBalancerArn}' --output table >> /tmp/alb-output.txt 2>&1 || echo '(elbv2 describe failed)' >> /tmp/alb-output.txt
           echo "" >> /tmp/alb-output.txt
           echo "=== Listeners and Rules ===" >> /tmp/alb-output.txt
@@ -201,9 +210,11 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/staging-fe
           cp -r qoder-fe/qoder/publishing-editor/* /tmp/staging-fe/
-          # 스테이징: mock 비활성 (API는 상대경로 /api/publishing 그대로 사용)
+          # 스테이징: mock 비활성, API 경로에 /staging prefix 추가 (context-path)
           sed -i 's/var USE_MOCK = true;/var USE_MOCK = false;/' /tmp/staging-fe/js/publishing_api.js
+          sed -i "s|var BASE = '/api/publishing';|var BASE = '/staging/api/publishing';|" /tmp/staging-fe/js/publishing_api.js
           grep -n "USE_MOCK =" /tmp/staging-fe/js/publishing_api.js
+          grep -n "var BASE" /tmp/staging-fe/js/publishing_api.js
           # S3에 업로드
           aws s3 sync --no-progress /tmp/staging-fe/ "s3://$S3_BUCKET/staging/fe/"
           echo "Frontend uploaded"
@@ -253,6 +264,8 @@ jobs:
               "DB_NAME=feel2real_staging",
               "PUBLISHING_STORAGE_ROOT=/var/lib/feel2real/publishing-staging",
               "SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/opt/staging/fe/",
+              "SERVER_SERVLET_CONTEXT_PATH=/staging",
+              "APP_JWT_COOKIE_NAME=STAGING_ACCESS_TOKEN",
               "ENV",
               "sudo chmod 600 /etc/f2r/staging.env",
               "echo 'staging.env written'",
