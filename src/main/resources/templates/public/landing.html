@@ -46,6 +46,52 @@
   </div>
 
   <!-- ============ 1. HERO — AI 홈페이지 제작 (시작하기 게이트 훅 data-buildit-* 유지) ============ -->
+  <!-- ============ 0. 전국 무대 (Shopify '글로벌 무대로 확장하세요' 구성: 지역 선택 → 카드 전환, 지도 대신 남한 지도) ============ -->
+  <section class="nation" id="nation" data-nation>
+    <div class="nation-wrap">
+      <h2 class="nation-title">전국 무대로 확장하세요!</h2>
+      <div class="nation-stage">
+        <div class="nation-mapbox" aria-hidden="true">
+          <span class="nation-pin" data-nation-pin style="left:19.75%;top:19.43%"></span>
+        </div>
+        <ul class="nation-regions" aria-label="지역 선택">
+          <li><button type="button" class="nation-region on" data-nation-region="0" data-x="19.75" data-y="19.43" aria-pressed="true"><span>서울</span></button></li>
+          <li><button type="button" class="nation-region" data-nation-region="1" data-x="62.36" data-y="63.51" aria-pressed="false"><span>부산</span></button></li>
+          <li><button type="button" class="nation-region" data-nation-region="2" data-x="52.62" data-y="50.78" aria-pressed="false"><span>대구</span></button></li>
+          <li><button type="button" class="nation-region" data-nation-region="3" data-x="17.11" data-y="63.88" aria-pressed="false"><span>광주</span></button></li>
+        </ul>
+        <div class="nation-center">
+          <div class="nation-card">
+            <img class="nation-photo on" src="/img/landing/teachers/teacher-seoul.jpg" alt="영어 선생님 예시 사진" width="447" height="597">
+            <img class="nation-photo" src="/img/landing/teachers/teacher-busan.jpg" alt="영어 선생님 예시 사진" width="447" height="597" loading="lazy">
+            <img class="nation-photo" src="/img/landing/teachers/teacher-daegu.jpg" alt="영어 선생님 예시 사진" width="447" height="597" loading="lazy">
+            <img class="nation-photo" src="/img/landing/teachers/teacher-gwangju.jpg" alt="영어 선생님 예시 사진" width="447" height="597" loading="lazy">
+            <span class="nation-card-btn">수강 상담</span>
+          </div>
+          <span class="nation-pill"><b data-nation-chip>서울</b>영어학원 홈페이지</span>
+        </div>
+        <div class="nation-panel">
+          <div class="nation-devices">
+            <img class="nation-laptop" src="/img/landing/templates/template-dark-course.jpg" alt="학원 홈페이지 화면 예시" width="1400" height="810" loading="lazy">
+            <span class="nation-phone"><img src="/img/landing/templates/template-light-academy.jpg" alt="모바일 화면 예시" width="1400" height="810" loading="lazy"></span>
+          </div>
+          <ul class="nation-courses">
+            <li><span>초등</span>파닉스 · 기초 회화</li>
+            <li><span>중등</span>내신 독해 · 문법</li>
+            <li><span>고등</span>수능 · 서술형</li>
+          </ul>
+        </div>
+      </div>
+      <p class="nation-note">사진과 화면은 예시 이미지입니다.</p>
+    </div>
+  </section>
+
+  <!-- ============ 1. 디지털영어학원 Agent → 첫 서비스: 홈페이지 Agent ============ -->
+  <section class="agent-head" id="agent">
+    <h2 class="agent-name">디지털영어학원 Agent</h2>
+    <p class="agent-service"><span aria-hidden="true"></span>홈페이지 Agent</p>
+  </section>
+
   <section class="hero" id="hero">
     <div class="fm-hero">
       <h1 class="fm-title" data-fm-words aria-label="간편하게 · 빠르게 제작 · 배포도 금방">

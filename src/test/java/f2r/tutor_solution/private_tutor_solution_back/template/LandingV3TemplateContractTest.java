@@ -176,4 +176,28 @@ class LandingV3TemplateContractTest {
         .contains("#landingChartTop5:not(.is-open) .chart-row:nth-child(n+4)");
     assertThat(js).contains("chartMoreState").contains("initChartMore");
   }
+
+  @Test
+  @DisplayName("given 새 첫 화면 구성 when 템플릿을 읽으면 then 전국 무대 → 디지털영어학원 Agent(홈페이지 Agent) → 제작 입력 순서이고 지역 4개·남한 지도를 쓴다")
+  void first_screen_starts_with_nation_then_agent_then_homepage_input() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // when
+    int nation = html.indexOf("id=\"nation\"");
+    int agent = html.indexOf("id=\"agent\"");
+    int hero = html.indexOf("id=\"hero\"");
+
+    // then
+    assertThat(nation).isGreaterThanOrEqualTo(0);
+    assertThat(agent).isGreaterThan(nation);
+    assertThat(hero).isGreaterThan(agent);
+    assertThat(html)
+        .contains("전국 무대로 확장하세요!")
+        .contains("디지털영어학원 Agent")
+        .contains("홈페이지 Agent")
+        .contains("사진과 화면은 예시 이미지입니다.");
+    assertThat(html.split("data-nation-region=", -1).length - 1).isEqualTo(4);
+    assertThat(Files.readString(V3_CSS)).contains("/img/landing/korea-dots.svg");
+  }
 }

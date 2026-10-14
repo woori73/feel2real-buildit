@@ -144,6 +144,44 @@
     }, 2200);
   }
 
+  /* 전국 무대: 지역을 자동으로 넘기고, 누르면 그 지역 사진·핀으로 바꾼다. */
+  function initNation(doc, win) {
+    var root = doc.querySelector('[data-nation]');
+    if (!root) return;
+    var regions = Array.prototype.slice.call(root.querySelectorAll('[data-nation-region]'));
+    var photos = Array.prototype.slice.call(root.querySelectorAll('.nation-photo'));
+    var pin = root.querySelector('[data-nation-pin]');
+    var chip = root.querySelector('[data-nation-chip]');
+    if (regions.length < 2) return;
+    var index = 0;
+    var timer = null;
+    function show(next) {
+      index = next;
+      regions.forEach(function (r, i) {
+        var on = i === index;
+        r.classList.toggle('on', on);
+        r.setAttribute('aria-pressed', String(on));
+      });
+      photos.forEach(function (p, i) { p.classList.toggle('on', i === index); });
+      var region = regions[index];
+      if (pin) {
+        pin.style.left = region.getAttribute('data-x') + '%';
+        pin.style.top = region.getAttribute('data-y') + '%';
+      }
+      if (chip) chip.textContent = region.textContent.trim();
+    }
+    function start() {
+      var reduced = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced || timer) return;
+      timer = win.setInterval(function () { show(nextWordIndex(index, regions.length)); }, 3200);
+    }
+    function stop() { if (timer) { win.clearInterval(timer); timer = null; } }
+    regions.forEach(function (r, i) {
+      r.addEventListener('click', function () { stop(); show(i); start(); });
+    });
+    start();
+  }
+
   function initReveal(doc, win) {
     var items = Array.prototype.slice.call(doc.querySelectorAll('.v3-rv'));
     if (!items.length || typeof win.IntersectionObserver !== 'function') return;
@@ -178,12 +216,13 @@
     initTabs(doc);
     initReveal(doc, win);
     initWords(doc, win);
+    initNation(doc, win);
     initChartMore(doc, win);
     guardInquiry(doc, win);
   }
 
   if (typeof document !== 'undefined' && typeof window !== 'undefined') init(document, window);
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, nextWordIndex: nextWordIndex, initWords: initWords, chartMoreState: chartMoreState, initChartMore: initChartMore, EXAMPLES: EXAMPLES };
+    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, nextWordIndex: nextWordIndex, initWords: initWords, initNation: initNation, chartMoreState: chartMoreState, initChartMore: initChartMore, EXAMPLES: EXAMPLES };
   }
 })(typeof window !== 'undefined' ? window : globalThis);

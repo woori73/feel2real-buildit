@@ -193,3 +193,31 @@ test('Given 움직임 줄이기 설정, When 문구 순환을 시작하면, Then
   // then
   assert.equal(title.classList.contains('fm-rot'), false);
 });
+
+test('Given 지역 4개, When 두 번째 지역을 누르면, Then 그 지역과 사진이 켜지고 핀 위치와 이름표가 바뀐다', () => {
+  // given
+  const regions = ['서울', '부산', '대구', '광주'].map((name, i) => {
+    const r = el({ 'data-nation-region': String(i), 'data-x': String(10 * (i + 1)), 'data-y': String(20 * (i + 1)), 'aria-pressed': String(i === 0) });
+    r.textContent = name;
+    return r;
+  });
+  const photos = regions.map(() => el());
+  const pin = Object.assign(el(), { style: {} });
+  const chip = el();
+  const root = Object.assign(el(), {
+    querySelectorAll: (sel) => (sel === '[data-nation-region]' ? regions : sel === '.nation-photo' ? photos : []),
+    querySelector: (sel) => (sel === '[data-nation-pin]' ? pin : sel === '[data-nation-chip]' ? chip : null)
+  });
+  const doc = { querySelector: () => root };
+  const win = { matchMedia: () => ({ matches: true }), setInterval() {}, clearInterval() {} };
+  v3.initNation(doc, win);
+  // when
+  regions[1].fire('click');
+  // then
+  assert.equal(regions[1].attrs['aria-pressed'], 'true');
+  assert.equal(regions[0].attrs['aria-pressed'], 'false');
+  assert.equal(photos[1].classList.contains('on'), true);
+  assert.equal(pin.style.left, '20%');
+  assert.equal(pin.style.top, '40%');
+  assert.equal(chip.textContent, '부산');
+});
