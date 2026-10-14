@@ -1,7 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
-import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyImageDtos;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.ImageEditFlowDtos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
