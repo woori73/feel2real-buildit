@@ -19,6 +19,7 @@ on:
           - setup
           - teardown
           - test-api
+          - db-setup
 
 permissions:
   id-token: write
