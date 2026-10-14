@@ -25,6 +25,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AcademyImageAsset extends BaseEntity {
 
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
   /** 소속 학원 ID (학원별 격리). */
   @Column(nullable = false)
   private Long academyId;
