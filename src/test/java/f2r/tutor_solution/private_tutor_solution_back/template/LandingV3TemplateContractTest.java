@@ -198,6 +198,6 @@ class LandingV3TemplateContractTest {
         .contains("홈페이지 Agent")
         .contains("사진과 화면은 예시 이미지입니다.");
     assertThat(html.split("data-nation-region=", -1).length - 1).isEqualTo(4);
-    assertThat(Files.readString(V3_CSS)).contains("/img/landing/korea-dots.svg");
+    assertThat(html).contains("/img/landing/korea-dots.svg");
   }
 }
