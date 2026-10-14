@@ -163,14 +163,18 @@ public class PhotoCraftImageService {
   }
 
   private String mapToCommandId(String op) {
-    return switch (op.toLowerCase()) {
-      case "brightness" -> "image.adjustments.brightnessContrast";
-      case "contrast" -> "image.adjustments.brightnessContrast";
-      case "exposure" -> "image.adjustments.exposure";
-      case "vibrance", "saturation" -> "image.adjustments.vibrance";
-      case "levels" -> "image.adjustments.levels";
-      default -> null;
-    };
+    String opName = op.toLowerCase();
+    if ("brightness".equals(opName) || "contrast".equals(opName)) {
+      return "image.adjustments.brightnessContrast";
+    } else if ("exposure".equals(opName)) {
+      return "image.adjustments.exposure";
+    } else if ("vibrance".equals(opName) || "saturation".equals(opName)) {
+      return "image.adjustments.vibrance";
+    } else if ("levels".equals(opName)) {
+      return "image.adjustments.levels";
+    } else {
+      return null;
+    }
   }
 
   private boolean isSafePath(String path) {
