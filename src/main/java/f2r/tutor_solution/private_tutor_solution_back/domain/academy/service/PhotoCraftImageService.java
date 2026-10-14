@@ -41,6 +41,10 @@ public class PhotoCraftImageService {
 
   private final ObjectMapper objectMapper;
 
+  /** PhotoCraft 기능 활성화 여부 (운영 환경에서는 false 권장). */
+  @Value("${artcraft.photocraft.enabled:false}")
+  private boolean enabled;
+
   /** PhotoCraft CLI 경로. */
   @Value("${artcraft.photocraft.cli-path:/opt/artcraft/photocraft/bin/photocraft-cli}")
   private String cliPath;
@@ -51,12 +55,21 @@ public class PhotoCraftImageService {
 
   /** CLI 사용 가능 여부. */
   public boolean isAvailable() {
+    if (!enabled) {
+      log.debug("PhotoCraft가 비활성화되어 있습니다 (artcraft.photocraft.enabled=false)");
+      return false;
+    }
     try {
       Path cli = Path.of(cliPath);
       return Files.exists(cli) && Files.isExecutable(cli);
     } catch (Exception e) {
       return false;
     }
+  }
+
+  /** 기능 활성화 여부. */
+  public boolean isEnabled() {
+    return enabled;
   }
 
   /**
