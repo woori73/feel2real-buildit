@@ -543,7 +543,7 @@ jobs:
           echo "=== Installing Playwright ==="
           npm init -y > /dev/null 2>&1 || true
           npm install @playwright/test > /dev/null 2>&1
-          npx playwright install chromium --with-deps > /dev/null 2>&1 || npx playwright install chromium
+          ./node_modules/.bin/playwright install chromium > /dev/null 2>&1 || ./node_modules/.bin/playwright install chromium --with-deps
           
           echo "=== Running E2E tests ==="
           # Create test file
@@ -590,7 +590,7 @@ jobs:
           TESTEOF
           
           cd /tmp/e2e
-          STAGING_URL=http://localhost:8081/staging npx playwright test publishing-e2e.spec.js --reporter=list 2>&1 | tee /tmp/e2e-output.txt || true
+          STAGING_URL=http://localhost:8081/staging ./node_modules/.bin/playwright test publishing-e2e.spec.js --reporter=list 2>&1 | tee /tmp/e2e-output.txt || true
           
           echo "=== Cleanup ==="
           kill $FORWARD_PID 2>/dev/null || true
