@@ -221,6 +221,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionIngestIdempotencyTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCardsalesAdapterIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyImportServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAuditServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.EasyTemplateContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorImportServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyTutorImportSecurityWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingDomainTest"

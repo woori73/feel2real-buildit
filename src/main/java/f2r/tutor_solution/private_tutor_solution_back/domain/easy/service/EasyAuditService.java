@@ -75,6 +75,7 @@ public class EasyAuditService {
   private final EasyImportRowRepository rowRepository;
   private final EasyWithholdingRecordRepository withholdingRepository;
   private final EasyAnnualClosingRepository closingRepository;
+  private final EasyImportService importService;
   private final EasyJournalService journalService;
   private final EasyCorrectionService correctionService;
   private final EasyCorrectionLogRepository correctionLogRepository;
@@ -298,6 +299,11 @@ public class EasyAuditService {
       item.ignore(resolution, resolvedBy);
       return EasyReviewItemResponse.from(item);
     }
+    if (item.getKind() == EasyReviewKind.IMPORT_UNCONFIRMED && item.getBatch() != null) {
+      // 검토 승인과 READY 행의 장부 확정을 같은 트랜잭션에서 처리한다.
+      // 보류는 위 holdWorkspace처럼 읽기 전용이며 이 경로에 도달하지 않는다.
+      importService.confirm(item.getBatch().getBatchId(), null);
+    }
     if (item.getTxn() != null) {
       applyToTxn(item.getTxn(), request, resolvedBy);
     }
@@ -327,6 +333,11 @@ public class EasyAuditService {
     if (request != null && Boolean.TRUE.equals(request.ignore())) {
       item.ignore(resolution, resolvedBy);
       return EasyReviewItemResponse.from(item);
+    }
+    if (item.getKind() == EasyReviewKind.IMPORT_UNCONFIRMED && item.getBatch() != null) {
+      // 검토 승인과 READY 행의 장부 확정을 같은 트랜잭션에서 처리한다.
+      // 보류는 holdWorkspace처럼 읽기 전용이며 이 경로에 도달하지 않는다.
+      importService.confirm(item.getBatch().getBatchId(), null);
     }
     if (item.getTxn() != null) {
       EasyTransaction txn = item.getTxn();
