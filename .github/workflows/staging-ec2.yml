@@ -18,6 +18,7 @@ on:
           - investigate
           - setup
           - teardown
+          - test-api
 
 permissions:
   id-token: write
@@ -368,3 +369,44 @@ jobs:
             case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
           done
           aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+
+      - name: API integration test (via SSM)
+        if: inputs.mode == 'test-api'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PYEOF' > /tmp/ssm_test.json
+          import json
+          commands = [
+              "set -euo pipefail",
+              "echo '=== API Test: Staging backend ==='",
+              "echo '--- 1. Health ---'",
+              "curl -fsS --max-time 10 http://127.0.0.1:8081/actuator/health; echo ''",
+              "echo '--- 2. Frontend static ---'",
+              "curl -fsS --max-time 10 http://127.0.0.1:8081/index.html | head -3; echo ''",
+              "echo '--- 3. API (unauthenticated - expect 401/403) ---'",
+              "curl -s --max-time 30 -w 'HTTP:%{http_code}\n' http://127.0.0.1:8081/api/publishing/templates -o /tmp/api_test.json; head -c 500 /tmp/api_test.json; echo ''",
+              "echo '=== Done ==='",
+          ]
+          print(json.dumps({"commands": commands}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_test.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 12); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/12)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/staging-test-output.txt
+
+      - name: Upload API test output
+        if: inputs.mode == 'test-api'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-test-output
+          path: /tmp/staging-test-output.txt
