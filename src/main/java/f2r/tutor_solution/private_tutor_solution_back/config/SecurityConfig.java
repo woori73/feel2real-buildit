@@ -216,6 +216,8 @@ public class SecurityConfig {
             .requestMatchers("/admin/academies/*/preview", "/admin/academies/*/builder").hasRole("ADMIN")
             // 원장용 Easy 대화 장부 SSR. API도 /api/tutor/easy/**에서 별도 TUTOR·사업체 권한을 검증한다.
             .requestMatchers("/tutor/easy", "/tutor/easy/**").hasRole("TUTOR")
+            // DesignCraft 출판 편집기 — TUTOR 전용. API는 /api/publishing/**에서 소유자 격리.
+            .requestMatchers("/designcraft", "/designcraft/**").hasRole("TUTOR")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).
             .requestMatchers("/easy", "/easy/**").hasRole("ADMIN")
             // CHOONGGI Creator SSR — ADMIN or the scoped CHOONGGI CREATOR role only; public vlog
