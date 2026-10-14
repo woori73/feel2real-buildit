@@ -1,0 +1,20 @@
+/* BuildIt Home v3 — 디자인 토큰 (시안 전용) */
+:root{
+  --bg:#F7F8FC; --surface:#fff; --surface-2:#EFF1F8; --line:#E2E6F1;
+  --ink:#0A0F26; --ink-2:#394061; --ink-3:#545C7E;
+  --brand:#2F4BFF; --brand-600:#2238D6; --brand-50:#EAEEFF;
+  --violet:#7A5CFF; --mint:#12C79B; --mint-50:#DDF7EF; --amber:#F5A524; --amber-50:#FFF2D9; --rose:#FF5C7A;
+  --night:#080D24; --night-2:#121A3F; --night-3:#1C2552; --on-night:#E6E9FF; --on-night-2:#9EA8DC;
+  --font:"Pretendard Variable",Pretendard,-apple-system,"Noto Sans KR","Noto Sans CJK KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  /* type scale */
+  --fs-display:clamp(38px,10vw,76px); --fs-h2:clamp(28px,7vw,46px); --fs-h3:20px; --fs-lead:clamp(17px,4.4vw,20px);
+  --fs-body:16px; --fs-sm:14px; --fs-xs:12px;
+  /* spacing 8pt */
+  --s1:8px;--s2:16px;--s3:24px;--s4:32px;--s5:48px;--s6:72px;--s7:112px;
+  --gutter:20px; --maxw:1200px;
+  --r-sm:10px;--r-md:16px;--r-lg:28px;--r-pill:999px;
+  --sh-1:0 1px 2px rgba(10,15,38,.05),0 10px 30px rgba(10,15,38,.06);
+  --sh-2:0 2px 6px rgba(10,15,38,.08),0 40px 80px rgba(47,75,255,.20);
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+@media(min-width:900px){:root{--gutter:40px;--fs-h3:22px}}
