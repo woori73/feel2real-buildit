@@ -488,6 +488,16 @@ jobs:
             echo "DB user creation failed"
             exit 1
           fi
+          echo "=== Restart staging to apply isolated DB credentials ==="
+          sudo systemctl restart buildit-staging.service
+          sleep 25
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 10 http://127.0.0.1:8081/staging/actuator/health > /dev/null 2>&1; then
+              echo "staging health OK after restart (attempt $i)"; break
+            fi
+            echo "waiting for staging... ($i/12)"; sleep 10
+          done
+          curl -fsS --max-time 10 http://127.0.0.1:8081/staging/actuator/health || echo "(staging health check failed)"
           SCRIPT_EOF
           python3 << 'PYEOF' > /tmp/ssm_dbsetup.json
           import json
