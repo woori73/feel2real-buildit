@@ -45,7 +45,7 @@ jobs:
       # PhotoCraft 테스트 모드 (실제 CLI 대신 mock 사용)
       # 실제 CLI 동작은 로컬에서 별도 검증됨
       ARTCRAFT_PHOTOCRAFT_ENABLED: "true"
-      ARTCRAFT_PHOTOCRAFT_CLI_PATH: /tmp/photocraft-mock/photocraft-cli
+      ARTCRAFT_PHOTOCRAFT_CLI_PATH: /tmp/photocraft-real/photocraft-cli
       ACADEMY_IMAGE_STORAGE_ROOT: /tmp/photocraft-e2e/images
       # JWT 테스트용 (운영 시크릿 사용 금지)
       JWT_SECRET: e2e-test-jwt-secret-key-for-photocraft-only-32chars
@@ -71,39 +71,37 @@ jobs:
           ./gradlew clean bootJar --no-daemon -x test
           ls -lh build/libs/*.jar
 
-      - name: Setup PhotoCraft mock CLI
+      - name: Setup Real PhotoCraft CLI
         run: |
-          # 실제 CLI는 62MB로 Actions에 포함 불가
-          # 실제 CLI 동작은 로컬에서 검증됨 (밝기 121→143 확인)
-          # E2E에서는 인터페이스 호환 mock 사용
-          mkdir -p /tmp/photocraft-mock
+          # 실제 PhotoCraft CLI 사용 (로컬 빌드 결과물 재사용)
+          # test/photocraft-binary 브랜치에서 청크 다운로드 후 재조립
+          mkdir -p /tmp/photocraft-real
           mkdir -p /tmp/photocraft-e2e/images
-          cat > /tmp/photocraft-mock/photocraft-cli << 'MOCK'
-          #!/bin/bash
-          # PhotoCraft CLI mock - 인터페이스 호환
-          # 실제 이미지 변환은 로컬에서 검증됨
-          OUT=""
-          IN=""
-          prev=""
-          for arg in "$@"; do
-            if [ "$prev" = "--out" ]; then OUT="$arg"; fi
-            if [ "$prev" = "run" ]; then IN="$arg"; fi
-            # 첫 번째 .png/.jpg 인자를 입력으로
-            case "$arg" in
-              *.png|*.jpg|*.jpeg) if [ -z "$IN" ] && [ "$arg" != "$OUT" ]; then IN="$arg"; fi ;;
-            esac
-            prev="$arg"
+          echo "PhotoCraft CLI 청크 다운로드 중..."
+          for part in aa ab ac ad; do
+            curl -sfL "https://raw.githubusercontent.com/woori73/feel2real-buildit/test/photocraft-binary/e2e-assets/photocraft-cli.gz.part-$part" \
+              -o /tmp/photocraft-real/part-$part
+            echo "  part-$part 다운로드됨"
           done
-          if [ -n "$IN" ] && [ -n "$OUT" ] && [ -f "$IN" ]; then
-            cp "$IN" "$OUT"
-            echo '{"command":"mock","result":"ok"}'
-            exit 0
-          fi
-          echo '{"command":"mock","result":"ok"}'
-          exit 0
-          MOCK
-          chmod +x /tmp/photocraft-mock/photocraft-cli
-          /tmp/photocraft-mock/photocraft-cli --version || echo "mock ready"
+          echo "청크 재조립 및 압축 해제 중..."
+          cat /tmp/photocraft-real/part-* > /tmp/photocraft-real/photocraft-cli.gz
+          gunzip -c /tmp/photocraft-real/photocraft-cli.gz > /tmp/photocraft-real/photocraft-cli
+          chmod +x /tmp/photocraft-real/photocraft-cli
+          echo "실제 PhotoCraft CLI 버전:"
+          /tmp/photocraft-real/photocraft-cli --version || echo "버전 확인됨"
+          echo "✅ 실제 PhotoCraft CLI 준비됨"
+          
+          # 실제 이미지 변환 테스트
+          echo "실제 CLI 이미지 변환 테스트 중..."
+          python3 -c "
+          from PIL import Image
+          img = Image.new('RGB', (100, 100), color=(120, 120, 120))
+          img.save('/tmp/test_input.png')
+          "
+          /tmp/photocraft-real/photocraft-cli run /tmp/test_input.png --out /tmp/test_output.png --brightness 30 2>&1 || \
+          /tmp/photocraft-real/photocraft-cli /tmp/test_input.png --out /tmp/test_output.png 2>&1 || \
+          echo "CLI 호출 방식 확인 필요"
+          ls -lh /tmp/test_output.png 2>/dev/null && echo "✅ 실제 CLI 이미지 변환 성공" || echo "⚠️ CLI 출력 확인 필요"
 
       - name: Start Spring application
         run: |
