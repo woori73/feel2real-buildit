@@ -58,7 +58,7 @@ jobs:
               "systemctl is-active f2r-app.service || true",
               "systemctl is-active buildit-staging.service || echo '(staging not present)'",
               "echo '=== 4. nginx ==='",
-              "command -v nginx && nginx -T 2>&1 | grep -E 'server_name|listen|location|proxy_pass' | head -40 || echo '(nginx not installed)'",
+              "command -v nginx && nginx -T 2>&1 | head -150 || echo '(nginx not installed)'",
               "echo '=== 5. SSL certs ==='",
               "ls -la /etc/letsencrypt/live/ 2>/dev/null || echo '(no letsencrypt)'",
               "echo '=== 6. MySQL ==='",
