@@ -203,7 +203,9 @@ public class AcademyAiCreateService {
       sb.append("- 강조점: ").append(String.join(", ", req.emphases())).append("\n");
     }
     sb.append("- 톤: ").append(req.tone()).append("\n");
-    sb.append("- 원본 요청: ").append(originalMessage).append("\n\n");
+    sb.append("- 원본 요청: ").append(originalMessage).append("\n");
+    // 선택한 템플릿의 구조를 프롬프트에 포함
+    sb.append(templateSection).append("\n");
 
     sb.append("## 절대 규칙 (허위 정보 방지)\n");
     sb.append("1. 요청에 없는 구체적 숫자는 절대 생성하지 마세요 "
