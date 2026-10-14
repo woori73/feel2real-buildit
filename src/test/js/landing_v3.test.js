@@ -250,3 +250,15 @@ test('given 신규·학원 없음·특수문자 이름 when bbRow then NEW이고
   assert.ok(!html.includes('<b>김</b>'));
   assert.ok(html.includes('a%20b'));
 });
+
+test('given 교육 철학과 소개가 모두 있을 때 when bbRow then 교육 철학을 우선 보여 주고 없으면 소개로 대신한다', () => {
+  // given
+  const withBoth = { rank: 2, educatorId: 1, name: 'A', educationPhilosophy: '철학 문장', identitySummary: '소개 문장' };
+  const onlySummary = { rank: 2, educatorId: 1, name: 'A', identitySummary: '소개 문장' };
+  // when
+  const first = bbRow(withBoth, escHtml);
+  const second = bbRow(onlySummary, escHtml);
+  // then
+  assert.ok(first.includes('철학 문장') && !first.includes('소개 문장'));
+  assert.ok(second.includes('소개 문장'));
+});

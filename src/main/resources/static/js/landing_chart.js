@@ -4,7 +4,8 @@ function bbRow(e, esc) {
   var prev = e.previousRank == null ? null : Number(e.previousRank);
   var arrow = prev == null ? 'NEW' : (prev > rank ? '▲' : (prev < rank ? '▼' : '→'));
   var academy = e.academyName ? '<span class="bb-academy">' + esc(e.academyName) + '</span>' : '';
-  var philosophy = e.identitySummary ? '<span class="bb-philosophy">' + esc(e.identitySummary) + '</span>' : '';
+  var text = e.educationPhilosophy || e.identitySummary;
+  var philosophy = text ? '<span class="bb-philosophy">' + esc(text) + '</span>' : '';
   return '<a class="bb-row' + (rank === 1 ? ' bb-first' : '') + '" href="/chart/educators/' + encodeURIComponent(e.educatorId) + '">'
     + '<div class="bb-rank">' + esc(e.rank) + '</div>'
     + '<div class="bb-trend" aria-hidden="true">' + arrow + '</div>'
