@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext.Composition;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.EducatorReference;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,11 +22,24 @@ public class AcademyAiPromptBuilder {
   public String build(
       AcademyAiTaskType task, AcademyAiContext context, String target, String currentValue,
       String instructions) {
+    return build(task, context, target, currentValue, instructions, List.of());
+  }
+
+  /**
+   * Chart 교육자 참고 사례({@link EducatorReference})가 있을 때만 쓰는 오버로드.
+   *
+   * <p>참고 사례는 GUIDE_TEXT·ACADEMY_COMPOSE 두 Task에만 주입되고, 목록이 비면 5-arg
+   * {@link #build}와 <b>바이트 단위로 동일한 프롬프트</b>를 만든다(기존 기능 회귀 방지).
+   */
+  public String build(
+      AcademyAiTaskType task, AcademyAiContext context, String target, String currentValue,
+      String instructions, List<EducatorReference> references) {
+    List<EducatorReference> refs = references == null ? List.of() : references;
     return switch (task) {
       case PRINCIPAL_INTRO -> principalIntroPrompt(context, currentValue, instructions);
       case PHILOSOPHY_ITEM -> philosophyItemPrompt(context, currentValue, instructions);
-      case ACADEMY_COMPOSE -> academyComposePrompt(context, instructions);
-      case GUIDE_TEXT -> guideTextPrompt(context, target, currentValue, instructions);
+      case ACADEMY_COMPOSE -> academyComposePrompt(context, instructions, refs);
+      case GUIDE_TEXT -> guideTextPrompt(context, target, currentValue, instructions, refs);
     };
   }
 
@@ -41,7 +55,8 @@ public class AcademyAiPromptBuilder {
    * allowlist·길이)은 {@code AcademyAiGuideService}가 한 번 더 한다.
    */
   private String guideTextPrompt(
-      AcademyAiContext context, String target, String currentValue, String instructions) {
+      AcademyAiContext context, String target, String currentValue, String instructions,
+      List<EducatorReference> references) {
     boolean isLong = GUIDE_LONG_TARGETS.contains(target);
     String lengthRule = isLong
         ? "각 후보는 2~3문장, 180자 이내의 한국어 문단."
@@ -75,7 +90,8 @@ public class AcademyAiPromptBuilder {
             blank(target),
             blank(currentValue),
             blankInstructions(instructions),
-            lengthRule);
+            lengthRule)
+        + referenceBlock(references);
   }
 
   /**
@@ -84,7 +100,8 @@ public class AcademyAiPromptBuilder {
    * 생성, 가격/연락처/원장 이름 변경, 미구현 섹션 콘텐츠 작성)은 절대 제안하지 말라고 못박는다.
    * 실제 방어는 {@code AcademyAiProposalService}가 응답 JSON을 파싱·검증하며 한 번 더 한다.
    */
-  private String academyComposePrompt(AcademyAiContext context, String instructions) {
+  private String academyComposePrompt(
+      AcademyAiContext context, String instructions, List<EducatorReference> references) {
     Composition composition = context.composition();
     String sectionLines = composition == null || composition.sections() == null
         ? "(정보 없음)"
@@ -185,7 +202,38 @@ public class AcademyAiPromptBuilder {
             sectionLines,
             blankInstructions(instructions),
             editableTargets,
-            currentOrder);
+            currentOrder)
+        + referenceBlock(references);
+  }
+
+  /**
+   * Chart 교육자 참고 사례 블록. 사례가 없으면 빈 문자열을 돌려 프롬프트가 이전과 동일하게
+   * 유지된다. 이름·학원명은 넣지 않고 id·지역·기준일만 식별로 싣고, 인용 금지 규칙으로
+   * 다른 교육자의 실적·수치·프로그램명이 의뢰 학원의 사실처럼 출력되는 것을 막는다.
+   */
+  private static String referenceBlock(List<EducatorReference> references) {
+    if (references == null || references.isEmpty()) return "";
+    StringBuilder sb = new StringBuilder()
+        .append("\n\n[참고 사례 — BuildIt Chart에 공개된 다른 교육자의 실제 카드 원문. ")
+        .append("수업 구조·설명 방식만 참고하고 그대로 옮기지 말 것. 순위 기준일은 ")
+        .append(references.get(0).rankAsOf() == null ? "(알 수 없음)" : references.get(0).rankAsOf())
+        .append("이며 현재 수치가 아님.]");
+    for (EducatorReference r : references) {
+      sb.append("\n- (id ").append(r.id())
+          .append(" · ").append(blank(r.region())).append(") ")
+          .append("철학: ").append(excerpt(r.philosophy()))
+          .append(" | 커리큘럼: ").append(excerpt(r.curriculum()))
+          .append(" | 수업 방식: ").append(excerpt(r.teaching()));
+    }
+    sb.append("\n규칙: 위 사례의 원장·학원 이름, 수치, 실적, 프로그램명, 문구를 출력에 포함하지 않는다. ")
+        .append("의뢰 학원장이 제공하거나 확인한 값만 슬롯에 채운다.");
+    return sb.toString();
+  }
+
+  private static String excerpt(String value) {
+    if (value == null || value.isBlank()) return "(원문 없음)";
+    String trimmed = value.trim();
+    return trimmed.length() <= 60 ? trimmed : trimmed.substring(0, 60) + "…";
   }
 
   private String principalIntroPrompt(AcademyAiContext context, String currentValue, String instructions) {

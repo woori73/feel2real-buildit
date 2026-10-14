@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.EducatorReference;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -131,5 +132,77 @@ class AcademyAiPromptBuilderTest {
     assertThat(shortPrompt).contains("45자 이내");
     assertThat(longPrompt).contains("180자 이내").doesNotContain("45자 이내");
     assertThat(heroPrompt).contains("180자 이내");
+  }
+
+  private static EducatorReference reference(long id, String philosophy) {
+    return new EducatorReference(
+        id, "권소정", "원장", "권소정 영어학원", "강원특별자치도 원주시", "2026-09-14",
+        philosophy, "진단 후 단계별 배치", "첨삭과 개별 관리", List.of("anti_roterism"),
+        "https://feel2real.co.kr/chart/educators/" + id);
+  }
+
+  @Test
+  @DisplayName("given 참고 사례 없음 when 6-arg build then 5-arg 프롬프트와 바이트 단위로 동일(회귀 방지)")
+  void references_empty_promptIdenticalToLegacy() {
+    for (AcademyAiTaskType task : List.of(AcademyAiTaskType.GUIDE_TEXT, AcademyAiTaskType.ACADEMY_COMPOSE)) {
+      String legacy = builder.build(task, withComposition(), "principalDesc", "현재값", "요구");
+      String withEmpty = builder.build(task, withComposition(), "principalDesc", "현재값", "요구", List.of());
+      String withNull = builder.build(task, withComposition(), "principalDesc", "현재값", "요구", null);
+      assertThat(withEmpty).isEqualTo(legacy);
+      assertThat(withNull).isEqualTo(legacy);
+    }
+  }
+
+  @Test
+  @DisplayName("given GUIDE_TEXT + 참고 사례 when 프롬프트 생성 then [참고 사례] 블록과 인용 금지 규칙이 붙는다")
+  void references_guideText_appendsBlockWithProhibitions() {
+    String prompt = builder.build(
+        AcademyAiTaskType.GUIDE_TEXT, context, "philosophyItem1", "", "강조: 암기 반대",
+        List.of(reference(75L, "정답 암기보다 논리적 문제 해결")));
+
+    assertThat(prompt).contains("[참고 사례");
+    assertThat(prompt).contains("id 75");
+    assertThat(prompt).contains("2026-09-14");
+    assertThat(prompt).contains("정답 암기보다 논리적 문제 해결");
+    // 다른 교육자의 이름·수치·실적·프로그램명을 출력에 쓰지 말라는 이중 방어.
+    assertThat(prompt).contains("포함하지 않는다").contains("의뢰 학원장이 제공");
+    // 사례 라인에는 원장/학원 이름을 넣지 않는다(유출 유인 최소화).
+    assertThat(prompt).doesNotContain("권소정");
+  }
+
+  @Test
+  @DisplayName("given ACADEMY_COMPOSE + 참고 사례 when 프롬프트 생성 then 진단 프롬프트에도 사례가 주입된다")
+  void references_academyCompose_appendsBlock() {
+    String prompt = builder.build(
+        AcademyAiTaskType.ACADEMY_COMPOSE, withComposition(), null, null, "요구",
+        List.of(reference(75L, "철학 원문")));
+    assertThat(prompt).contains("[참고 사례").contains("id 75").contains("철학 원문");
+  }
+
+  @Test
+  @DisplayName("given PRINCIPAL_INTRO/PHILOSOPHY_ITEM when 참고 사례와 함께 build then 단일 target Task는 사례를 받지 않는다")
+  void references_singleTargetTasks_ignoreBlock() {
+    List<EducatorReference> refs = List.of(reference(75L, "철학 원문"));
+    for (AcademyAiTaskType task : List.of(AcademyAiTaskType.PRINCIPAL_INTRO, AcademyAiTaskType.PHILOSOPHY_ITEM)) {
+      assertThat(builder.build(task, context, "x", "현재값", "요구", refs))
+          .isEqualTo(builder.build(task, context, "x", "현재값", "요구"));
+    }
+  }
+
+  @Test
+  @DisplayName("given 60자 초과 사례 원문 when 블록 렌더 then 60자로 잘라 인용 분량을 제한한다")
+  void references_excerptTruncated() {
+    String longText = "가".repeat(100);
+    String prompt = builder.build(
+        AcademyAiTaskType.GUIDE_TEXT, context, "philosophyItem1", "", "x",
+        List.of(reference(75L, longText)));
+    assertThat(prompt).doesNotContain("가".repeat(61));
+    assertThat(prompt).contains("가".repeat(60) + "…");
+  }
+
+  private AcademyAiContext withComposition() {
+    return new AcademyAiContext(
+        "우리학원", "소개", List.of("영어"), List.of("MIDDLE"),
+        "김원장", "대표원장", "기존 소개문", List.of("철학1", "", "", ""), List.of(), composition());
   }
 }
