@@ -1700,3 +1700,8 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 **academy_visual_editor_agent_token**: `token_id` PK, `academy_id` FK, `token_hash` CHAR(64) UNIQUE(SHA-256), `label`, `scopes`(`ve:read,ve:propose`), `created_by`, `expires_at`(90일), `last_used_at`, `revoked_at`. 평문은 저장하지 않는다. 학원당 활성 5개 제한.
 
 상태 전이: PENDING→APPLIED(저장 트랜잭션 안, `appliedRevision`은 DB revision), PENDING→REJECTED, PENDING→EXPIRED(조회 시 정리), PENDING→STALE(저장된 초안에 대상 요소가 없을 때만). 종결 상태는 재전이 불가.
+
+
+## academy_easy_business_links (V1070)
+
+Academy와 Easy 사업체의 권한 연결표다. `link_id` PK, `academy_id` FK → `academies`, `business_id` FK → `easy_businesses`, `(academy_id, business_id)` UNIQUE, 감사시각을 저장한다. 양쪽 FK는 삭제 시 연결 row만 CASCADE한다. 기존 Easy 사업체는 연결 row가 없어도 ADMIN API에서 그대로 동작한다. TUTOR 접근은 활성·공개 Academy의 소유자이고 활성 EasyBusiness 연결 row가 있을 때만 허용한다.

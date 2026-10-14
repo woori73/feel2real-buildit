@@ -4589,3 +4589,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - GUEST: 최대 1건. MEMBER: 최대 3건.
 - AI 호출 없음. 규칙 기반 매핑 (WemadeDeltaService).
 - 변화 없으면 items 빈 배열, hasUpdate=false.
+
+
+## Easy 원장 권한 API (V1070)
+
+- `GET /api/tutor/easy/businesses`: 로그인 TUTOR의 활성 Academy에 연결된 활성 사업체 목록.
+- `GET /api/tutor/easy/workspace/{monthly,transactions,transactions/{txnId},reviews}`: 기존 Workspace 조회를 재사용한다. `businessId`는 선택자이며 권한은 principal → Academy → `academy_easy_business_links` 서버 조회로 판정한다.
+- `GET /api/tutor/easy/accounting/{general-ledger,trial-balance,balance-audit,income-statement,balance-sheet}`: 연결된 사업체의 회계 조회만 허용한다.
+- `POST /api/admin/easy/academy-links`, `DELETE /api/admin/easy/academy-links/academies/{academyId}/businesses/{businessId}`: ADMIN만 연결·해제한다.
+- 기존 `/api/admin/easy/**` 계약과 권한은 변경하지 않는다. 원장 업로드·수정·승인은 후속 PR 범위다.
