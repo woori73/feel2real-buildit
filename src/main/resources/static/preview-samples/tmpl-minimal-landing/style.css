@@ -1,0 +1,147 @@
+/* ============================================================
+   tmpl-minimal-landing — 미니멀 단일 페이지 랜딩
+   여백의 프리미엄 · 100% 오리지널 코드 (MIT)
+   ============================================================ */
+
+:root {
+  --bi-paper: #fafaf7;
+  --bi-ink: #191817;
+  --bi-muted: #6f6c64;
+  --bi-gold: #a8823c;
+  --bi-line: #e8e5db;
+  --bi-font: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--bi-font);
+  color: var(--bi-ink);
+  background: var(--bi-paper);
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+/* ---------- 상단 ---------- */
+.bi-top {
+  display: flex; align-items: center; justify-content: space-between;
+  max-width: 760px; margin: 0 auto; padding: 26px 24px;
+}
+.bi-wordmark { font-weight: 900; font-size: 1.05rem; letter-spacing: .14em; }
+.bi-top-link {
+  font-size: .88rem; font-weight: 500; text-decoration: none;
+  border-bottom: 1px solid var(--bi-ink); padding-bottom: 2px;
+  transition: color .18s ease, border-color .18s ease;
+}
+.bi-top-link:hover { color: var(--bi-gold); border-color: var(--bi-gold); }
+
+/* ---------- 히어로 ---------- */
+.bi-hero {
+  max-width: 760px; margin: 0 auto; padding: 12vh 24px 10vh;
+  text-align: center;
+  min-height: 62vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.bi-eyebrow {
+  font-size: .82rem; font-weight: 500; letter-spacing: .28em;
+  color: var(--bi-gold); margin-bottom: 30px;
+}
+.bi-title {
+  font-size: clamp(2.6rem, 9vw, 4.6rem);
+  font-weight: 900; line-height: 1.22; letter-spacing: -0.035em;
+  margin-bottom: 28px;
+}
+.bi-lead { font-size: 1.08rem; color: var(--bi-muted); margin-bottom: 46px; }
+.bi-hero-cta { margin-bottom: 8vh; }
+
+/* ---------- 버튼 ---------- */
+.bi-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bi-ink); color: var(--bi-paper);
+  font-size: 1rem; font-weight: 700; text-decoration: none;
+  padding: 17px 52px; border-radius: 999px; border: 0;
+  transition: background .2s ease, transform .2s ease;
+  letter-spacing: .02em;
+}
+.bi-btn:hover { background: var(--bi-gold); transform: translateY(-2px); }
+.bi-btn-lg { padding: 19px 60px; font-size: 1.06rem; }
+.bi-btn-dark { background: var(--bi-ink); }
+
+/* ---------- 스크롤 힌트 ---------- */
+.bi-scroll-hint {
+  display: inline-flex; width: 26px; height: 44px;
+  border: 1.5px solid var(--bi-muted); border-radius: 14px;
+  justify-content: center; padding-top: 9px;
+}
+.bi-scroll-hint span {
+  width: 4px; height: 9px; border-radius: 3px; background: var(--bi-muted);
+  animation: bi-wheel 1.8s ease-in-out infinite;
+}
+@keyframes bi-wheel {
+  0% { transform: translateY(0); opacity: 1; }
+  70% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+
+/* ---------- 3개 강점 ---------- */
+.bi-why {
+  max-width: 760px; margin: 0 auto; padding: 6vh 24px 10vh;
+  border-top: 1px solid var(--bi-line);
+}
+.bi-point { padding: 54px 0; border-bottom: 1px solid var(--bi-line); }
+.bi-point:last-of-type { border-bottom: 0; }
+.bi-point-num {
+  font-size: .85rem; font-weight: 300; letter-spacing: .3em;
+  color: var(--bi-gold); margin-bottom: 14px;
+}
+.bi-point-title { font-size: 1.6rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 12px; }
+.bi-point-desc { color: var(--bi-muted); font-size: 1.02rem; max-width: 34em; }
+.bi-why-note { font-size: .78rem; color: #a5a198; margin-top: 8px; }
+
+/* ---------- CTA ---------- */
+.bi-cta {
+  max-width: 760px; margin: 0 auto; padding: 12vh 24px;
+  text-align: center; border-top: 1px solid var(--bi-line);
+}
+.bi-cta-title {
+  font-size: clamp(1.9rem, 6vw, 2.9rem);
+  font-weight: 900; line-height: 1.32; letter-spacing: -0.03em;
+  margin-bottom: 18px;
+}
+.bi-cta-sub { color: var(--bi-muted); margin-bottom: 40px; }
+.bi-cta-actions { display: flex; justify-content: center; }
+
+/* ---------- 푸터 ---------- */
+.bi-footer {
+  max-width: 760px; margin: 0 auto; padding: 44px 24px 60px;
+  border-top: 1px solid var(--bi-line);
+  text-align: center;
+}
+.bi-footer-name { font-weight: 700; letter-spacing: .14em; font-size: .92rem; margin-bottom: 10px; }
+.bi-footer-info { font-size: .82rem; color: var(--bi-muted); margin-bottom: 8px; }
+.bi-footer-copy { font-size: .75rem; color: #a5a198; }
+
+/* ---------- 등장 페이드 ---------- */
+.bi-fade { opacity: 0; transform: translateY(22px); transition: opacity .8s ease, transform .8s ease; }
+.bi-fade.bi-is-in { opacity: 1; transform: none; }
+
+/* ---------- 반응형: 360px 기준 ---------- */
+@media (max-width: 480px) {
+  .bi-hero { min-height: 58vh; padding: 8vh 20px 8vh; }
+  .bi-point { padding: 42px 0; }
+  .bi-btn { width: 100%; max-width: 340px; }
+  .bi-cta-actions .bi-btn { width: 100%; }
+}
+
+/* ---------- 모션 감소 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .bi-fade { opacity: 1; transform: none; }
+}

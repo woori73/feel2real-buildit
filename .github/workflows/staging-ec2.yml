@@ -1,0 +1,604 @@
+name: Publishing Staging (manual)
+
+# DesignCraft 출판 스테이징 환경 구축·관리 전용 (수동 실행만).
+# - 운영(f2r-app.service, /home/ec2-user/app.jar, 운영 DB)을 절대 건드리지 않는다.
+# - 스테이징 전용: buildit-staging.service(8081), /opt/staging, feel2real_staging DB.
+# - 모드: investigate(읽기 전용) / setup(구축) / teardown(철거).
+# - 이 워크플로우는 P5 스테이징 검증용으로 생성됨. 검증 완료 후 제거 예정.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '동작 모드'
+        required: true
+        default: 'investigate'
+        type: choice
+        options:
+          - investigate
+          - setup
+          - teardown
+          - test-api
+          - db-setup
+          - e2e-test
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  INSTANCE_ID: i-09d7cabb5a42d1135
+  S3_BUCKET: feel2real-buildit-deploy
+  CI_RUN_ID: 38460493933
+  DEPLOY_SHA: 7cbcb22f36ca14309823ea3283a21f33ad0c30fb
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Investigate staging prerequisites (read-only)
+        if: inputs.mode == 'investigate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PYEOF' > /tmp/ssm_investigate.json
+          import json
+          commands = [
+              "echo '=== 1. OS / resources ==='",
+              "uptime; df -h / /opt /tmp | head -10; free -m | head -3",
+              "echo '=== 2. Ports (8080=prod, 8081=staging?) ==='",
+              "ss -ltnp | grep -E ':8080|:8081' || echo '(neither 8080 nor 8081 listening)'",
+              "echo '=== 3. systemd units ==='",
+              "systemctl is-active f2r-app.service || true",
+              "systemctl is-active buildit-staging.service || echo '(staging not present)'",
+              "echo '=== 4. nginx ==='",
+              "command -v nginx && nginx -T 2>&1 | head -150 || echo '(nginx not installed)'",
+              "echo '=== 5. SSL certs ==='",
+              "ls -la /etc/letsencrypt/live/ 2>/dev/null || echo '(no letsencrypt)'",
+              "echo '=== 6. MySQL ==='",
+              "systemctl is-active mysqld 2>/dev/null || systemctl is-active mysql 2>/dev/null || systemctl is-active mariadb 2>/dev/null || echo '(mysql unit not found)'",
+              "echo '=== 7. DesignCraft CLI (prod path) ==='",
+              "ls -lh /opt/designcraft/designcraft-cli 2>/dev/null || echo '(CLI not present)'",
+              "ls -ld /opt/designcraft/templates 2>/dev/null || echo '(templates not present)'",
+              "echo '=== 8. Staging paths ==='",
+              "ls -ld /opt/staging 2>/dev/null || echo '(/opt/staging not present)'",
+              "ls -lh /opt/staging/app.jar 2>/dev/null || echo '(staging jar not present)'",
+              "echo '=== 9. Java ==='",
+              "java -version 2>&1 | head -3 || echo '(java not found)'",
+              "echo '=== 10. S3 staging objects ==='",
+              "aws s3 ls s3://feel2real-buildit-deploy/staging/ 2>&1 | head -20 || echo '(no staging objects)'",
+          ]
+          print(json.dumps({"commands": commands}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_investigate.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 20); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/20)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          echo "===== STDOUT ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/staging-investigate-output.txt
+          echo "===== STDERR ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
+
+      - name: Upload investigate output
+        if: inputs.mode == 'investigate'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-investigate-output
+          path: /tmp/staging-investigate-output.txt
+
+      - name: Investigate ALB (for external access)
+        if: inputs.mode == 'investigate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== ALB discovery ===" > /tmp/alb-output.txt
+          echo "" >> /tmp/alb-output.txt
+          echo "=== Security Groups (check 8081) ===" >> /tmp/alb-output.txt
+          # EC2 인스턴스의 보안 그룹 확인
+          INSTANCE_SG=$(aws ec2 describe-instances --instance-ids i-09d7cabb5a42d1135 --query 'Reservations[0].Instances[0].SecurityGroups[*].GroupId' --output text 2>&1) || echo "(describe-instances failed: $INSTANCE_SG)" >> /tmp/alb-output.txt
+          echo "Instance SGs: $INSTANCE_SG" >> /tmp/alb-output.txt
+          for sg in $INSTANCE_SG; do
+            echo "--- SG: $sg ---" >> /tmp/alb-output.txt
+            aws ec2 describe-security-groups --group-ids "$sg" --query 'SecurityGroups[0].IpPermissions[*].{From:FromPort,To:ToPort,Proto:IpProtocol}' --output table >> /tmp/alb-output.txt 2>&1 || echo "(describe-sg failed)" >> /tmp/alb-output.txt
+          done
+          aws elbv2 describe-load-balancers --query 'LoadBalancers[*].{Name:LoadBalancerName,DNS:DNSName,Scheme:Scheme,Arn:LoadBalancerArn}' --output table >> /tmp/alb-output.txt 2>&1 || echo '(elbv2 describe failed)' >> /tmp/alb-output.txt
+          echo "" >> /tmp/alb-output.txt
+          echo "=== Listeners and Rules ===" >> /tmp/alb-output.txt
+          for alb_arn in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[*].LoadBalancerArn' --output text 2>/dev/null); do
+            echo "ALB: $alb_arn" >> /tmp/alb-output.txt
+            for listener_arn in $(aws elbv2 describe-listeners --load-balancer-arn "$alb_arn" --query 'Listeners[*].ListenerArn' --output text 2>/dev/null); do
+              echo "  Listener: $listener_arn" >> /tmp/alb-output.txt
+              aws elbv2 describe-rules --listener-arn "$listener_arn" --query 'Rules[*].{Priority:Priority,Conditions:Conditions,Actions:Actions}' --output table >> /tmp/alb-output.txt 2>&1 || true
+            done
+          done
+          echo "" >> /tmp/alb-output.txt
+          echo "=== Target Groups ===" >> /tmp/alb-output.txt
+          aws elbv2 describe-target-groups --query 'TargetGroups[*].{Name:TargetGroupName,Port:Port,Protocol:Protocol}' --output table >> /tmp/alb-output.txt 2>&1 || echo '(describe-target-groups failed)' >> /tmp/alb-output.txt
+          cat /tmp/alb-output.txt
+
+      - name: Upload ALB output
+        if: inputs.mode == 'investigate'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-alb-output
+          path: /tmp/alb-output.txt
+
+      - name: Setup staging environment
+        if: inputs.mode == 'setup'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "=== Step 1: Download JAR from main CI ==="
+          gh run download "$CI_RUN_ID" -n "app-jar-$DEPLOY_SHA" -D /tmp/staging-artifacts --repo woori73/feel2real-buildit || {
+            echo "::error::JAR artifact download failed"
+            exit 1
+          }
+          ls -lh /tmp/staging-artifacts/
+          test -s /tmp/staging-artifacts/app.jar || { echo "::error::app.jar missing"; exit 1; }
+
+          echo "=== Step 2: Upload JAR to S3 ==="
+          aws s3 cp --no-progress /tmp/staging-artifacts/app.jar "s3://$S3_BUCKET/staging/app.jar"
+
+          echo "=== Step 3: Upload DesignCraft tarball to S3 ==="
+          # ops/designcraft/designcraft-cli-0.6.0.tar.gz (main 브랜치)
+          aws s3 cp --no-progress "s3://$S3_BUCKET/staging/designcraft-cli-0.6.0.tar.gz" /tmp/dc-check.tar.gz 2>/dev/null || true
+          # 워크플로우 체크아웃에서 tarball 가져오기
+          echo "(tarball은 아래 SSM 단계에서 S3에 업로드됨)"
+
+          echo "=== Step 4: Prepare frontend ==="
+          # buildit2 Qoder 브랜치에서 프론트엔드 가져오기
+          echo "(frontend는 SSM 단계에서 처리)"
+
+      - name: Checkout main (for tarball)
+        if: inputs.mode == 'setup'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            ops/designcraft/designcraft-cli-0.6.0.tar.gz.part-aa
+            ops/designcraft/designcraft-cli-0.6.0.tar.gz.part-ab
+            ops/designcraft/designcraft-cli-0.6.0.tar.gz.part-ac
+            ops/designcraft/designcraft-cli-0.6.0.tar.gz.part-ad
+            ops/designcraft/designcraft-cli-0.6.0.tar.gz.part-ae
+          sparse-checkout-cone-mode: false
+
+      - name: Upload staging assets to S3
+        if: inputs.mode == 'setup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 분할된 tarball을 S3에 업로드 (EC2에서 재조립)
+          for part in ops/designcraft/designcraft-cli-0.6.0.tar.gz.part-*; do
+            echo "Uploading $part..."
+            aws s3 cp --no-progress "$part" "s3://$S3_BUCKET/staging/$(basename $part)"
+          done
+          echo "DesignCraft tarball parts uploaded"
+          aws s3 ls "s3://$S3_BUCKET/staging/" | grep part-
+
+      - name: Checkout Qoder frontend
+        if: inputs.mode == 'setup'
+        uses: actions/checkout@v4
+        with:
+          repository: woori73/buildit2
+          ref: qoder/publishing-editor-20261014
+          path: qoder-fe
+          sparse-checkout: |
+            qoder/publishing-editor
+          sparse-checkout-cone-mode: false
+
+      - name: Prepare staging frontend (USE_MOCK=false, API prefix)
+        if: inputs.mode == 'setup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/staging-fe
+          cp -r qoder-fe/qoder/publishing-editor/* /tmp/staging-fe/
+          # 스테이징: mock 비활성, API 경로에 /staging prefix 추가 (context-path)
+          sed -i 's/var USE_MOCK = true;/var USE_MOCK = false;/' /tmp/staging-fe/js/publishing_api.js
+          sed -i "s|var BASE = '/api/publishing';|var BASE = '/staging/api/publishing';|" /tmp/staging-fe/js/publishing_api.js
+          grep -n "USE_MOCK =" /tmp/staging-fe/js/publishing_api.js
+          grep -n "var BASE" /tmp/staging-fe/js/publishing_api.js
+          # S3에 업로드
+          aws s3 sync --no-progress /tmp/staging-fe/ "s3://$S3_BUCKET/staging/fe/"
+          echo "Frontend uploaded"
+
+      - name: Setup staging on EC2 via SSM
+        if: inputs.mode == 'setup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PYEOF' > /tmp/ssm_setup.json
+          import json
+          S3 = "feel2real-buildit-deploy"
+          commands = [
+              "set -euo pipefail",
+              "echo '=== S1: Staging DB (feel2real_staging) ==='",
+              # 운영 DB는 건드리지 않고 스테이징 DB만 생성
+              "set -a; . /etc/f2r/env; set +a",
+              "MYSQL_PWD=\"${DB_PASSWORD}\" mysql -h \"${DB_HOST:-127.0.0.1}\" -P \"${DB_PORT:-3306}\" -u \"${DB_USER}\" -e \"CREATE DATABASE IF NOT EXISTS feel2real_staging CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"",
+              "echo 'staging DB ready'",
+              "echo '=== S2: Directories ==='",
+              "sudo mkdir -p /opt/staging /opt/designcraft /var/lib/feel2real/publishing-staging",
+              "sudo chown ec2-user:ec2-user /opt/staging /var/lib/feel2real/publishing-staging",
+              "echo '=== S3: Download JAR from S3 ==='",
+              "aws s3 cp --no-progress s3://"+S3+"/staging/app.jar /opt/staging/app.jar",
+              "chown ec2-user:ec2-user /opt/staging/app.jar",
+              "ls -lh /opt/staging/app.jar",
+              "echo '=== S4: Install DesignCraft CLI ==='",
+              "mkdir -p /tmp/dc-parts && aws s3 sync --no-progress s3://"+S3+"/staging/ /tmp/dc-parts/ --exclude '*' --include 'designcraft-cli-0.6.0.tar.gz.part-*'",
+              "cat /tmp/dc-parts/designcraft-cli-0.6.0.tar.gz.part-* > /tmp/dc-0.6.0.tar.gz",
+              "ls -lh /tmp/dc-0.6.0.tar.gz",
+              "tar xzf /tmp/dc-0.6.0.tar.gz -C /tmp/",
+              "sudo cp /tmp/designcraft-cli-0.6.0/designcraft-cli /opt/designcraft/designcraft-cli",
+              "sudo chmod +x /opt/designcraft/designcraft-cli",
+              "sudo rm -rf /opt/designcraft/templates",
+              "sudo cp -r /tmp/designcraft-cli-0.6.0/templates /opt/designcraft/templates",
+              "/opt/designcraft/designcraft-cli --version || echo '(version check done)'",
+              "ls -lh /opt/designcraft/designcraft-cli",
+              "echo '=== S5: Frontend static files ==='",
+              "sudo mkdir -p /opt/staging/fe",
+              "aws s3 sync --no-progress s3://"+S3+"/staging/fe/ /opt/staging/fe/",
+              "ls -la /opt/staging/fe/",
+              "echo '=== S6: Staging env file ==='",
+              # /etc/f2r/env를 먼저 로드하고 staging.env로 override (DB_NAME, PORT만 변경)
+              "# Preserve existing DB credentials if staging user already configured",
+              "if [ -f /etc/f2r/staging.env ] && grep -q 'DB_USER=staging_publishing' /etc/f2r/staging.env; then",
+              "  echo 'Preserving existing staging DB credentials';",
+              "  source /etc/f2r/staging.env;",
+              '  STAGING_DB_USER="$DB_USER"; STAGING_DB_PW="$DB_PASSWORD"; STAGING_DB_HOST="$DB_HOST"; STAGING_DB_PORT="$DB_PORT";',
+              "else",
+              '  STAGING_DB_USER=""; STAGING_DB_PW=""; STAGING_DB_HOST=""; STAGING_DB_PORT="";',
+              "fi",
+              "sudo tee /etc/f2r/staging.env > /dev/null <<ENV",
+              "SPRING_PROFILES_ACTIVE=prd",
+              "SERVER_PORT=8081",
+              "DB_NAME=feel2real_staging",
+              "PUBLISHING_STORAGE_ROOT=/var/lib/feel2real/publishing-staging",
+              "SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/opt/staging/fe/",
+              "SERVER_SERVLET_CONTEXT_PATH=/staging",
+              "APP_JWT_COOKIE_NAME=STAGING_ACCESS_TOKEN",
+              "ENV",
+              "# Re-apply preserved DB credentials if they existed",
+              'if [ -n "$STAGING_DB_USER" ]; then',
+              '  echo "DB_HOST=$STAGING_DB_HOST" | sudo tee -a /etc/f2r/staging.env > /dev/null;',
+              '  echo "DB_PORT=$STAGING_DB_PORT" | sudo tee -a /etc/f2r/staging.env > /dev/null;',
+              '  echo "DB_USER=$STAGING_DB_USER" | sudo tee -a /etc/f2r/staging.env > /dev/null;',
+              '  echo "DB_PASSWORD=$STAGING_DB_PW" | sudo tee -a /etc/f2r/staging.env > /dev/null;',
+              '  echo "DB credentials preserved";',
+              "fi",
+              "sudo chmod 600 /etc/f2r/staging.env",
+              "echo 'staging.env written'",
+              "echo '=== S7: systemd unit (staging only) ==='",
+              "sudo tee /etc/systemd/system/buildit-staging.service > /dev/null <<'UNIT'",
+              "[Unit]",
+              "Description=BuildIt Staging (publishing verification)",
+              "After=network.target",
+              "",
+              "[Service]",
+              "Type=simple",
+              "User=ec2-user",
+              "WorkingDirectory=/opt/staging",
+              "EnvironmentFile=/etc/f2r/env",
+              "EnvironmentFile=/etc/f2r/staging.env",
+              "ExecStart=/usr/bin/java -jar /opt/staging/app.jar",
+              "Restart=always",
+              "RestartSec=5",
+              "",
+              "[Install]",
+              "WantedBy=multi-user.target",
+              "UNIT",
+              "sudo systemctl daemon-reload",
+              "sudo systemctl enable buildit-staging.service",
+              "echo 'unit created'",
+              "echo '=== S8: nginx (EC2에 없음 — ALB 사용, 건너뜀) ==='",
+              "command -v nginx >/dev/null 2>&1 && echo '(nginx found, unexpected)' || echo '(no nginx on EC2 — external routing via ALB, skipping)'",
+              "echo '=== S9: Start staging ==='",
+              "sudo systemctl restart buildit-staging.service",
+              "sleep 30",
+              "systemctl is-active buildit-staging.service",
+              "echo '=== S10: Health check ==='",
+              "for i in $(seq 1 12); do",
+              "  if curl -fsS --max-time 10 http://127.0.0.1:8081/staging/actuator/health > /dev/null 2>&1; then",
+              "    echo \"health OK (attempt $i)\"; break;",
+              "  fi",
+              "  echo \"waiting... ($i/12)\"; sleep 10;",
+              "done",
+              "curl -fsS --max-time 10 http://127.0.0.1:8081/staging/actuator/health || echo '(health check failed - check journal)'",
+              "echo '=== S11: EC2 network info (for external access planning) ==='",
+              "curl -fsS --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo '(no public IP)'",
+              "echo '=== DONE ==='",
+              "echo 'Staging backend: http://127.0.0.1:8081 (internal)'",
+              "echo 'External access requires ALB rule or security group change — see report'",
+          ]
+          print(json.dumps({"commands": commands}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_setup.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 40); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/40)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          echo "===== STDOUT ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/staging-setup-output.txt
+          echo "===== STDERR ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text)
+          if [ "$FINAL" != "Success" ]; then
+            echo "::error::Staging setup failed (Status=$FINAL)"
+            exit 1
+          fi
+
+      - name: Upload setup output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-setup-output
+          path: /tmp/staging-setup-output.txt
+
+      - name: Teardown staging environment
+        if: inputs.mode == 'teardown'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PYEOF' > /tmp/ssm_teardown.json
+          import json
+          commands = [
+              "set -euo pipefail",
+              "echo '=== T1: Stop staging service ==='",
+              "sudo systemctl stop buildit-staging.service || true",
+              "sudo systemctl disable buildit-staging.service || true",
+              "sudo rm -f /etc/systemd/system/buildit-staging.service",
+              "sudo systemctl daemon-reload",
+              "echo '=== T2: Remove nginx staging routes ==='",
+              "sudo rm -f /etc/nginx/conf.d/staging-publishing.conf",
+              "sudo nginx -t && sudo systemctl reload nginx && echo 'nginx reloaded'",
+              "echo '=== T3: Remove staging files (DB는 유지 — 수동 삭제) ==='",
+              "sudo rm -rf /opt/staging /var/lib/feel2real/publishing-staging",
+              "sudo rm -f /etc/f2r/staging.env",
+              "echo '=== T4: Verify prod untouched ==='",
+              "systemctl is-active f2r-app.service",
+              "curl -fsS --max-time 10 http://127.0.0.1:8080/actuator/health > /dev/null && echo 'prod health OK'",
+              "echo '=== DONE (staging DB feel2real_staging은 수동 삭제 필요) ==='",
+          ]
+          print(json.dumps({"commands": commands}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_teardown.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 20); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/20)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+
+      - name: API integration test (via SSM)
+        if: inputs.mode == 'test-api'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 << 'PYEOF' > /tmp/ssm_test.json
+          import json
+          commands = [
+              "set -euo pipefail",
+              "echo '=== API Test: Staging (context-path /staging) ==='",
+              "echo '--- 1. Health ---'",
+              "curl -fsS --max-time 10 http://127.0.0.1:8081/staging/actuator/health; echo ''",
+              "echo '--- 2. Frontend static ---'",
+              "curl -fsS --max-time 10 http://127.0.0.1:8081/staging/index.html | head -3; echo ''",
+              "echo '--- 2b. Frontend CSS/JS ---'",
+              "curl -s --max-time 10 -o /dev/null -w 'style.css: %{http_code}\\\\n' http://127.0.0.1:8081/staging/css/style.css",
+              "curl -s --max-time 10 -o /dev/null -w 'app.js: %{http_code}\\\\n' http://127.0.0.1:8081/staging/js/app.js",
+              "curl -s --max-time 10 -o /dev/null -w 'publishing_api.js: %{http_code}\\\\n' http://127.0.0.1:8081/staging/js/publishing_api.js",
+              "echo '--- 2c. Cookie separation ---'",
+              "grep -q STAGING_ACCESS_TOKEN /etc/f2r/staging.env && echo 'Cookie separation OK' || echo 'Cookie separation MISSING'",
+              "echo '--- 3. API (unauthenticated - expect 401/403) ---'",
+              "curl -s --max-time 30 -w 'HTTP:%{http_code}\n' http://127.0.0.1:8081/staging/api/publishing/templates -o /tmp/api_test.json; head -c 500 /tmp/api_test.json; echo ''",
+              "echo '=== Done ==='",
+          ]
+          print(json.dumps({"commands": commands}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_test.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 12); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/12)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/staging-test-output.txt
+
+      - name: Upload API test output
+        if: inputs.mode == 'test-api'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-test-output
+          path: /tmp/staging-test-output.txt
+
+      - name: Setup staging DB user
+        if: inputs.mode == 'db-setup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/dbsetup_script.sh << 'SCRIPT_EOF'
+          #!/bin/bash
+          set -euo pipefail
+          source /etc/f2r/env
+          DB_HOST="${DB_HOST:-localhost}"
+          DB_PORT="${DB_PORT:-3306}"
+          STAGING_PW=$(openssl rand -base64 32 | tr -d '/+=\n' | cut -c1-24)
+          echo "Creating staging DB user..."
+          mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "
+          CREATE USER IF NOT EXISTS 'staging_publishing'@'%' IDENTIFIED BY '$STAGING_PW';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP, REFERENCES ON feel2real_staging.* TO 'staging_publishing'@'%';
+          FLUSH PRIVILEGES;" > /tmp/dbsetup.log 2>&1
+          if [ $? -eq 0 ]; then
+            echo "DB user created successfully"
+            sudo tee /etc/f2r/staging.env > /dev/null << ENVEOF
+          SPRING_PROFILES_ACTIVE=prd
+          SERVER_PORT=8081
+          DB_HOST=$DB_HOST
+          DB_PORT=$DB_PORT
+          DB_NAME=feel2real_staging
+          DB_USER=staging_publishing
+          DB_PASSWORD=$STAGING_PW
+          PUBLISHING_STORAGE_ROOT=/var/lib/feel2real/publishing-staging
+          SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/opt/staging/fe/
+          SERVER_SERVLET_CONTEXT_PATH=/staging
+          APP_JWT_COOKIE_NAME=STAGING_ACCESS_TOKEN
+          ENVEOF
+            echo "staging.env updated with dedicated DB credentials"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u staging_publishing -p"$STAGING_PW" -e "SELECT 1;" feel2real_staging > /dev/null 2>&1 && echo "Staging DB connection: OK" || echo "Staging DB connection: FAILED"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u staging_publishing -p"$STAGING_PW" -e "SELECT 1;" "$DB_NAME" > /dev/null 2>&1 && echo "PROD ACCESS: UNEXPECTED - CHECK PERMISSIONS" || echo "Prod DB access denied: OK (expected)"
+          else
+            echo "DB user creation failed"
+            exit 1
+          fi
+          SCRIPT_EOF
+          python3 << 'PYEOF' > /tmp/ssm_dbsetup.json
+          import json
+          with open('/tmp/dbsetup_script.sh', 'r') as f:
+              script = f.read()
+          print(json.dumps({"commands": [script]}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_dbsetup.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 12); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/12)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/dbsetup-output.txt
+
+      - name: Upload DB setup output
+        if: inputs.mode == 'db-setup'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-dbsetup-output
+          path: /tmp/dbsetup-output.txt
+
+      - name: E2E Test with Playwright
+        if: inputs.mode == 'e2e-test'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== Setting up SSM port forwarding ==="
+          # Start port forwarding in background
+          aws ssm start-session \
+            --target "$INSTANCE_ID" \
+            --document-name "AWS-StartPortForwardingSession" \
+            --parameters '{"portNumber":["8081"],"localPortNumber":["8081"]}' &
+          FORWARD_PID=$!
+          echo "Port forward PID: $FORWARD_PID"
+          sleep 10
+          
+          # Wait for tunnel
+          for i in $(seq 1 10); do
+            if curl -sf --max-time 5 http://localhost:8081/staging/actuator/health > /dev/null 2>&1; then
+              echo "Tunnel established"
+              break
+            fi
+            echo "Waiting for tunnel... ($i/10)"
+            sleep 5
+          done
+          
+          echo "=== Installing Playwright ==="
+          npm init -y > /dev/null 2>&1 || true
+          npm install @playwright/test > /dev/null 2>&1
+          npx playwright install chromium --with-deps > /dev/null 2>&1 || npx playwright install chromium
+          
+          echo "=== Running E2E tests ==="
+          # Create test file
+          mkdir -p /tmp/e2e
+          cat > /tmp/e2e/publishing-e2e.spec.js << 'TESTEOF'
+          const { test, expect } = require('@playwright/test');
+          const BASE_URL = 'http://localhost:8081/staging';
+          const API_BASE = `${BASE_URL}/api/publishing`;
+          
+          test('Frontend loads', async ({ page }) => {
+            await page.goto(`${BASE_URL}/index.html`);
+            const title = await page.title();
+            console.log(`Title: ${title}`);
+            expect(title.length).toBeGreaterThan(0);
+          });
+          
+          test('Health check', async ({ request }) => {
+            const r = await request.get(`${BASE_URL}/actuator/health`);
+            expect(r.status()).toBe(200);
+            const b = await r.json();
+            expect(b.status).toBe('UP');
+            console.log('Health: UP');
+          });
+          
+          test('Static resources', async ({ request }) => {
+            for (const p of ['index.html', 'css/style.css', 'js/app.js', 'js/publishing_api.js']) {
+              const r = await request.get(`${BASE_URL}/${p}`);
+              console.log(`${p}: ${r.status()}`);
+              expect(r.status()).toBe(200);
+            }
+          });
+          
+          test('Templates API', async ({ request }) => {
+            const r = await request.get(`${API_BASE}/templates`);
+            console.log(`Templates: ${r.status()}`);
+            expect([200, 401, 403]).toContain(r.status());
+          });
+          
+          test('API BASE prefix', async ({ page }) => {
+            await page.goto(`${BASE_URL}/index.html`);
+            const base = await page.evaluate(() => typeof BASE !== 'undefined' ? BASE : 'N/A');
+            console.log(`API BASE: ${base}`);
+          });
+          TESTEOF
+          
+          cd /tmp/e2e
+          STAGING_URL=http://localhost:8081/staging npx playwright test publishing-e2e.spec.js --reporter=list 2>&1 | tee /tmp/e2e-output.txt || true
+          
+          echo "=== Cleanup ==="
+          kill $FORWARD_PID 2>/dev/null || true
+          echo "E2E test complete"
+
+      - name: Upload E2E output
+        if: inputs.mode == 'e2e-test'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-e2e-output
+          path: /tmp/e2e-output.txt

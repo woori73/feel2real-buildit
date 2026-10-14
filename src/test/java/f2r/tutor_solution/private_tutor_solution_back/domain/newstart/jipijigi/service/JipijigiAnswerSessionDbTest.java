@@ -16,11 +16,17 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.r
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.repository.JipijigiTargetBoardRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.Evidence;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.ResearchPack;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.EmbeddingClient;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.KnowledgeVectorIndex;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service.NewstartEmbeddingProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
@@ -37,7 +43,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-@Import({JpaConfig.class, JipijigiAnswerSessionService.class, JipijigiWorkflowService.class, JipijigiResearchService.class})
+// JipijigiResearchService가 임베딩 설정·클라이언트·벡터 인덱스에 의존한다. @DataJpaTest는 컴포넌트 스캔을 하지 않으므로 직접 등록한다.
+// embedding.enabled 기본값 false → LIKE 검색만 사용하므로 외부 호출은 없다.
+@Import({JpaConfig.class, JipijigiAnswerSessionService.class, JipijigiWorkflowService.class, JipijigiResearchService.class,
+        NewstartEmbeddingProperties.class, EmbeddingClient.class, KnowledgeVectorIndex.class,
+        JipijigiAnswerSessionDbTest.JacksonTestConfig.class})
 @TestPropertySource(properties = {
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
@@ -46,6 +56,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 @DisplayName("지피지기 Agent 답변 세션 자동 축적/RAG 재사용 (V1005 DB)")
 class JipijigiAnswerSessionDbTest {
+
+    /** EmbeddingClient가 Jackson 2 ObjectMapper를 주입받는다(운영은 WemadeJacksonConfig가 제공). */
+    @TestConfiguration
+    static class JacksonTestConfig {
+        @Bean
+        ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+    }
 
     private static final String QUESTION = "자동차 담보가 있으면 새출발기금 감면을 못 받나요";
 
