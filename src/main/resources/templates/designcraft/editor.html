@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildIt · 출판 편집기 (DesignCraft)</title>
+<th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+<link rel="stylesheet" th:href="@{/css/publishing_editor.css}" href="/css/publishing_editor.css">
+</head>
+<body class="view-projects">
+
+<!-- ══════════════ F1: 프로젝트 목록 뷰 ══════════════ -->
+<section id="view-projects" class="view">
+  <header class="app-topbar">
+    <div class="brand">
+      <span class="brand-logo">BuildIt</span>
+      <span class="brand-sub">출판 편집기</span>
+    </div>
+    <span id="mock-badge-projects" class="mock-badge" hidden>Mock 데이터</span>
+  </header>
+
+  <div class="projects-body">
+    <div class="projects-head">
+      <h1>내 출판 프로젝트</h1>
+      <button id="btn-new-project" class="btn btn-primary">+ 새 프로젝트</button>
+    </div>
+    <ul id="project-list" class="project-grid" aria-label="프로젝트 목록"></ul>
+    <p id="project-empty" class="empty-note" hidden>아직 프로젝트가 없습니다. 새 프로젝트를 만들어 보세요.</p>
+  </div>
+
+  <!-- 새 프로젝트 모달 -->
+  <div id="modal-new-project" class="modal-backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="np-title">
+      <h2 id="np-title">새 프로젝트</h2>
+      <label class="field">
+        <span>프로젝트명</span>
+        <input type="text" id="np-name" placeholder="예: 중등 수학 노트 1권" maxlength="60">
+      </label>
+      <fieldset class="field">
+        <legend>템플릿 선택</legend>
+        <div class="template-options" id="np-templates"></div>
+      </fieldset>
+      <label class="field">
+        <span>원고 파일 (선택) <small class="muted">md · txt · docx · rtf</small></span>
+        <input type="file" id="np-file" accept=".md,.txt,.docx,.rtf">
+      </label>
+      <div class="modal-actions">
+        <button class="btn" data-close="modal-new-project">취소</button>
+        <button class="btn btn-primary" id="np-create">생성</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 편집기 뷰 ══════════════ -->
+<div id="view-editor" class="view" hidden>
+
+  <header class="editor-topbar">
+    <button id="btn-back" class="btn btn-ghost" title="목록으로">←</button>
+    <div class="topbar-id">
+      <strong id="ed-title">프로젝트</strong>
+      <span id="ed-template" class="chip">A4 교재</span>
+      <span id="mock-badge-editor" class="mock-badge" hidden>Mock</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="btn-preflight-top" class="btn">검수</button>
+      <button id="btn-export-top" class="btn">PDF 출력</button>
+      <button id="btn-versions" class="btn">버전</button>
+      <button id="btn-save" class="btn btn-primary">저장</button>
+    </div>
+  </header>
+
+  <div id="job-progress" class="job-progress" hidden>
+    <div class="job-progress-meta">
+      <span id="job-step">준비 중…</span>
+      <span id="job-pct">0%</span>
+    </div>
+    <div class="progress-track"><div id="job-bar" class="progress-fill"></div></div>
+    <button id="btn-cancel-job" class="btn btn-ghost btn-sm">작업 취소</button>
+  </div>
+
+  <div class="editor-grid">
+
+    <!-- 좌 패널: 썸네일 + 원고 업로드 -->
+    <aside class="panel panel-left" id="panel-left">
+      <section class="panel-section">
+        <h3 class="panel-title">페이지</h3>
+        <ul id="thumb-list" class="thumb-list" aria-label="페이지 썸네일"></ul>
+      </section>
+      <section class="panel-section">
+        <h3 class="panel-title">원고 업로드</h3>
+        <div id="upload-dropzone" class="dropzone" tabindex="0">
+          <p>여기에 원고를 끌어다 놓거나</p>
+          <button id="btn-pick-file" class="btn btn-sm">파일 선택</button>
+          <input type="file" id="upload-input" accept=".md,.txt,.docx,.rtf" hidden>
+          <p class="muted">md · txt · docx · rtf</p>
+        </div>
+        <p id="upload-last" class="upload-last" hidden></p>
+      </section>
+    </aside>
+
+    <!-- 중앙: 페이지 미리보기 -->
+    <main class="preview-area">
+      <div class="viewer-toolbar">
+        <div class="pager">
+          <button id="btn-prev-page" class="btn btn-ghost" title="이전 페이지">‹</button>
+          <input type="number" id="page-input" class="page-input" min="1" value="1">
+          <span id="page-total" class="muted">/ 1</span>
+          <button id="btn-next-page" class="btn btn-ghost" title="다음 페이지">›</button>
+        </div>
+        <div class="zoomer">
+          <button id="btn-zoom-out" class="btn btn-ghost" title="축소">−</button>
+          <span id="zoom-label">100%</span>
+          <button id="btn-zoom-in" class="btn btn-ghost" title="확대">+</button>
+        </div>
+        <label class="spread-toggle">
+          <input type="checkbox" id="chk-spread"> 대향 보기
+        </label>
+      </div>
+      <div id="preview-scroll" class="preview-scroll">
+        <div id="preview-holder" class="preview-holder">
+          <div id="page-frame" class="page-frame">
+            <img id="page-img" class="page-img" alt="페이지 미리보기">
+            <img id="page-img-r" class="page-img page-img-b" alt="맞은편 페이지" hidden>
+            <div id="preview-loading" class="preview-loading" hidden>렌더 중…</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 우 패널: 탭 4종 -->
+    <aside class="panel panel-right" id="panel-right">
+      <nav class="right-tabs" role="tablist" aria-label="편집 패널">
+        <button class="tab is-active" role="tab" data-tab="style" aria-selected="true">스타일</button>
+        <button class="tab" role="tab" data-tab="ai" aria-selected="false">AI 수정</button>
+        <button class="tab" role="tab" data-tab="preflight" aria-selected="false">검수</button>
+        <button class="tab" role="tab" data-tab="artifacts" aria-selected="false">산출물</button>
+      </nav>
+
+      <!-- F4: 스타일 -->
+      <section class="tab-panel is-active" id="tab-style" role="tabpanel">
+        <div class="style-target-note">
+          적용 대상: <strong id="style-target">1쪽 본문</strong>
+        </div>
+        <h3 class="panel-title">문단 스타일 <span class="muted">(13)</span></h3>
+        <ul id="para-style-list" class="style-list"></ul>
+        <h3 class="panel-title">글자 스타일 <span class="muted">(5)</span></h3>
+        <ul id="char-style-list" class="style-list style-list-char"></ul>
+        <p class="font-note">본문 폰트: <strong>Noto Sans KR</strong> (템플릿 고정 · 변경 불가)</p>
+      </section>
+
+      <!-- F5: AI 채팅 -->
+      <section class="tab-panel" id="tab-ai" role="tabpanel">
+        <div id="ai-log" class="ai-log" aria-live="polite"></div>
+        <form id="ai-form" class="ai-form">
+          <input type="text" id="ai-input" placeholder="예: 3쪽 제목을 ko-heading1로 바꿔줘" autocomplete="off">
+          <button type="submit" class="btn btn-primary" id="ai-send">보내기</button>
+        </form>
+        <p class="ai-hint">AI는 계획만 만듭니다. <strong>승인한 후에만</strong> 적용되며, 적용 전 자동 스냅샷이 저장됩니다.</p>
+      </section>
+
+      <!-- F6: 검수 -->
+      <section class="tab-panel" id="tab-preflight" role="tabpanel">
+        <div class="preflight-head">
+          <button id="btn-run-preflight" class="btn btn-primary btn-block">검수 실행 (preflight.run)</button>
+          <div id="preflight-scenario" class="mock-only" hidden>
+            <label>Mock 시나리오:
+              <select id="preflight-scenario-select">
+                <option value="glyph">빠짐 글리프 포함</option>
+                <option value="clean">정상 원고</option>
+                <option value="overset">넘침만</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="preflight-result" class="preflight-result">
+          <p class="muted">아직 검수를 실행하지 않았습니다.</p>
+        </div>
+      </section>
+
+      <!-- F7: 산출물 -->
+      <section class="tab-panel" id="tab-artifacts" role="tabpanel">
+        <h3 class="panel-title">내보내기</h3>
+        <p class="muted">PDF 표준을 선택해 출력하면 아래 목록에 다운로드 링크가 생깁니다.</p>
+        <h3 class="panel-title">산출물 목록</h3>
+        <ul id="artifact-list" class="artifact-list"></ul>
+        <p id="artifact-empty" class="muted">생성된 산출물이 없습니다.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- 원고 반입: 스타일 매핑 미리보기 모달 (F2) -->
+<div id="modal-mapping" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="map-title">
+    <h2 id="map-title">원고 반입 — 스타일 매핑 미리보기</h2>
+    <p id="map-file" class="muted"></p>
+    <table class="map-table">
+      <thead><tr><th>원본 요소</th><th>감지 수</th><th>DesignCraft 스타일</th></tr></thead>
+      <tbody id="map-rows"></tbody>
+    </table>
+    <p class="map-note">서버가 <code>file.place</code>(autoflow)로 반입합니다.</p>
+    <div class="modal-actions">
+      <button class="btn" data-close="modal-mapping">취소</button>
+      <button class="btn btn-primary" id="map-confirm">반입하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF 출력 모달 (F7) -->
+<div id="modal-export" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ex-title">
+    <h2 id="ex-title">PDF 출력</h2>
+    <fieldset class="field">
+      <legend>표준 선택</legend>
+      <label class="radio-row"><input type="radio" name="ex-standard" value="x4" checked> PDF/X-4 (재단선 포함 · 인쇄용)</label>
+      <label class="radio-row"><input type="radio" name="ex-standard" value="a2b"> PDF/A-2b (보존용 · veraPDF PASS)</label>
+      <label class="radio-row"><input type="radio" name="ex-standard" value="none"> 일반 PDF (화면용)</label>
+    </fieldset>
+    <p class="muted">EPUB · 중철 제본 PDF는 P2 범위입니다.</p>
+    <div class="modal-actions">
+      <button class="btn" data-close="modal-export">취소</button>
+      <button class="btn btn-primary" id="ex-start">출력 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- 버전 이력 모달 (F8) -->
+<div id="modal-versions" class="modal-backdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ver-title">
+    <h2 id="ver-title">버전 이력</h2>
+    <p class="muted">모든 편집·AI 적용 전에 스냅샷이 자동 생성됩니다. 복원 시 현재 상태도 먼저 스냅샷됩니다.</p>
+    <ul id="version-list" class="version-list"></ul>
+    <div class="modal-actions">
+      <button class="btn" data-close="modal-versions">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script th:src="@{/js/publishing_api.js}" src="/js/publishing_api.js"></script>
+<script th:src="@{/js/publishing_editor.js}" src="/js/publishing_editor.js"></script>
+</body>
+</html>
