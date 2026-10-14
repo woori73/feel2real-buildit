@@ -35,7 +35,8 @@ class LandingV3TemplateContractTest {
     // then
     assertThat(hero).isGreaterThanOrEqualTo(0);
     assertThat(chart).isGreaterThan(hero);
-    assertThat(wiki).isGreaterThan(chart);
+    assertThat(wiki).isGreaterThan(hero);
+    assertThat(chart).isGreaterThan(wiki);
     assertThat(soon).isGreaterThan(wiki);
     assertThat(faq).isGreaterThan(soon);
     assertThat(cta).isGreaterThan(faq);

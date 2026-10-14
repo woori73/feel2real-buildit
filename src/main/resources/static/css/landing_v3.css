@@ -606,35 +606,39 @@ body { background: #f7f8fc; }
     .bi-page .v3-chart-more { border-color: #000; color: #000; }
 }
 
-/* ---------- Wiki: 내신 영어 문제지 제작 (연한 파랑 바탕 · 큰 제목 · 가격 카드 · 5단계) ---------- */
-.bi-page .wk { background: #eef5ff; color: #111827; padding: 72px 20px 80px; }
-.bi-page .wk-wrap { max-width: 1160px; margin: 0 auto; }
-.bi-page .wk-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
-.bi-page .wk-eyebrow { display: inline-block; margin-bottom: 14px; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #1d4ed8; }
-.bi-page .wk-title { margin: 0; font-size: clamp(40px, 6vw, 68px); font-weight: 800; line-height: 1.18; letter-spacing: -.04em; color: #111827; }
+/* ---------- Wiki: 내신 영어 문제지 제작 (홈페이지 제작 화면과 같은 구성: 가운데 정렬 · 칩 · 큰 제목 · 둥근 바) ---------- */
+.bi-page .wk { background: #fff; color: #0d0d0d; padding: 40px 20px 72px; }
+.bi-page .wk-wrap { max-width: 1160px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+.bi-page .wk-chip { margin: 0; }
+.bi-page .wk-title { margin: 0; font-size: clamp(36px, 7vw, 64px); font-weight: 800; line-height: 1.2; letter-spacing: -.04em; color: #0d0d0d; }
 .bi-page .wk-title em { font-style: normal; color: #1d4ed8; }
-.bi-page .wk-lead { margin: 20px 0 28px; font-size: clamp(16px, 2vw, 20px); color: #4b5563; }
-.bi-page .wk-price { display: inline-flex; align-items: baseline; gap: 14px; padding: 16px 22px; border: 1px solid #dbe6f5; border-radius: 16px; background: #fff; }
-.bi-page .wk-price span { font-size: 15px; color: #4b5563; }
-.bi-page .wk-price b { font-size: 30px; font-weight: 800; color: #1d4ed8; letter-spacing: -.02em; }
-.bi-page .wk-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
-.bi-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 28px; border-radius: 12px; font-size: 17px; font-weight: 800; text-decoration: none; transition: transform .2s; }
+.bi-page .wk-lead { margin: 0; font-size: 16px; color: #8a8a8a; }
+.bi-page .wk-stage { position: relative; width: 100%; display: grid; place-items: center; margin-top: 28px; }
+.bi-page .wk-sample { margin: 0; width: min(720px, 100%); height: 360px; overflow: hidden; border: 1px solid #e5e5e5; border-radius: 14px; box-shadow: 0 14px 36px rgba(0, 0, 0, .1); }
+.bi-page .wk-sample img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.bi-page .wk-bar { position: absolute; z-index: 1; bottom: -28px; width: min(640px, calc(100% - 40px)); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 16px 14px 28px; background: #fff; border: 1px solid #d9d9d9; border-radius: 999px; box-shadow: 0 18px 44px rgba(0, 0, 0, .14); }
+.bi-page .wk-price { display: inline-flex; align-items: baseline; gap: 10px; }
+.bi-page .wk-price span { font-size: 15px; color: #6b6b6b; }
+.bi-page .wk-price b { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+.bi-page .wk-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 24px; border-radius: 999px; font-size: 15px; font-weight: 700; text-decoration: none; transition: transform .2s; }
 .bi-page .wk-btn:hover { transform: translateY(-2px); }
 .bi-page .wk-kakao { background: #fee500; color: #191919; }
-.bi-page .wk-mail { background: #1d4ed8; color: #fff; }
-.bi-page .wk-sample { margin: 0; text-align: center; }
-.bi-page .wk-sample img { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; border: 8px solid #fff; border-radius: 10px; box-shadow: 0 24px 60px rgba(29, 78, 216, .18); }
-.bi-page .wk-sample figcaption { margin-top: 16px; font-size: 13px; color: #6b7280; }
-.bi-page .wk-sample p { margin: 8px 0 0; font-size: 15px; font-weight: 800; color: #1d4ed8; }
-.bi-page .wk-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 56px 0 0; padding: 0; list-style: none; }
-.bi-page .wk-steps li { padding: 24px 18px; border-radius: 18px; background: #e3eeff; text-align: center; }
-.bi-page .wk-steps span { display: grid; place-items: center; width: 40px; height: 40px; margin: 0 auto 12px; border-radius: 50%; background: #fff; font-size: 16px; font-weight: 800; color: #1d4ed8; box-shadow: 0 4px 12px rgba(29, 78, 216, .15); }
+.bi-page .wk-mail { background: #0d0d0d; color: #fff; }
+.bi-page .wk-bar .wk-btn { flex: 0 0 auto; }
+.bi-page .wk-cap { margin: 56px 0 0; font-size: 13px; color: #8a8a8a; }
+.bi-page .wk-logo { margin: 0; font-size: 15px; font-weight: 700; color: #1d4ed8; }
+.bi-page .wk-steps { width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 36px 0 0; padding: 0; list-style: none; text-align: center; }
+.bi-page .wk-steps li { padding: 24px 18px; border: 1px solid #e5e5e5; border-radius: 14px; background: #fff; }
+.bi-page .wk-steps span { display: grid; place-items: center; width: 36px; height: 36px; margin: 0 auto 12px; border-radius: 50%; background: #0d0d0d; font-size: 15px; font-weight: 800; color: #fff; }
 .bi-page .wk-steps h3 { margin: 0 0 10px; font-size: 17px; font-weight: 800; }
-.bi-page .wk-steps p { margin: 0; font-size: 14px; line-height: 1.7; color: #4b5563; }
+.bi-page .wk-steps p { margin: 0; font-size: 14px; line-height: 1.7; color: #6b6b6b; }
 @media (max-width: 980px) { .bi-page .wk-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) {
-  .bi-page .wk { padding: 48px 16px 56px; }
-  .bi-page .wk-hero { grid-template-columns: minmax(0, 1fr); gap: 32px; }
-  .bi-page .wk-btn { flex: 1 1 140px; }
-  .bi-page .wk-steps { grid-template-columns: minmax(0, 1fr); margin-top: 36px; }
+  .bi-page .wk { padding: 24px 16px 48px; }
+  .bi-page .wk-sample { height: 260px; }
+  .bi-page .wk-bar { position: static; width: 100%; margin-top: 16px; padding: 16px; border-radius: 24px; justify-content: center; }
+  .bi-page .wk-price { width: 100%; justify-content: center; }
+  .bi-page .wk-bar .wk-btn { flex: 1 1 0; }
+  .bi-page .wk-cap { margin-top: 20px; }
+  .bi-page .wk-steps { grid-template-columns: minmax(0, 1fr); }
 }

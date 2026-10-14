@@ -82,7 +82,8 @@ class LandingTemplateContractTest {
     // 아직 제공하지 않는 Report·Shorts는 제거한다.
     assertThat(hero).isGreaterThanOrEqualTo(0);
     assertThat(chart).isGreaterThan(hero);
-    assertThat(wiki).isGreaterThan(chart);
+    assertThat(wiki).isGreaterThan(hero);
+    assertThat(chart).isGreaterThan(wiki);
     assertThat(soon).isGreaterThan(wiki);
     assertThat(html)
         .doesNotContain("id=\"web\"")
