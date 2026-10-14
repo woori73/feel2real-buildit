@@ -68,8 +68,8 @@ class LandingTemplateRenderTest {
         .doesNotContain("id=\"shorts\"")
         .doesNotContain("/api/landing/videos/ACADEMY_SHORTS_DEMO/stream")
         .doesNotContain("/api/landing/videos/PARENT_REPORT_DEMO/stream")
-        // Wiki 단계 영상은 번들 정적 경로 그대로
-        .contains("src=\"/video/landing/digital_twin_ex.mp4\"")
-        .contains("src=\"/video/landing/how2use_digitaltwin.mp4\"");
+        // Wiki는 문제지 제작 안내 + 카톡/이메일 문의 링크
+        .contains("href=\"https://open.kakao.com/o/sMf4ifRi\"")
+        .contains("href=\"mailto:woorinaesin@naver.com\"");
   }
 }

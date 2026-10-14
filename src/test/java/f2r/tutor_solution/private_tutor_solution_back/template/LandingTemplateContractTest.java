@@ -32,7 +32,7 @@ class LandingTemplateContractTest {
     assertThat(html)
         .contains("<title>Build It | 원장과 강사가 브랜드가 되는 시대</title>")
         .contains("<span class=\"nav-logo bi\" aria-label=\"Build It\"><b>Build</b><i>It</i></span>")
-        .contains("<span class=\"ext\">Wiki</span>")
+        .contains("Build It Wiki")
         // 구 서비스명이 남으면 클라이언트가 요구한 리브랜딩이 반쯤만 적용된 상태가 된다.
         .doesNotContain("모두의 학원")
         .doesNotContain("모두의학원")
@@ -50,7 +50,7 @@ class LandingTemplateContractTest {
         .contains("class=\"bi-nav\" id=\"biNav\"")
         .contains("class=\"hero\" id=\"hero\"")
         .contains("class=\"flow-marquee\" id=\"why\"")
-        .contains("class=\"wiki\" id=\"wiki\"")
+        .contains("class=\"wk\" id=\"wiki\"")
         .contains("class=\"cta-mini\" id=\"cta\"")
         // 개편으로 걷어낸 구 랜딩 기능이 되살아나면 컨트롤러 모델과 어긋난다.
         .doesNotContain("id=\"builder-try\"")
@@ -106,28 +106,23 @@ class LandingTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given Wiki 3단계 when 템플릿을 읽으면 then 기출 분석·변형문제 생성에 각 영상이 붙고 학교별 Wiki는 대시보드다")
-  void wiki_steps_bind_their_own_videos() throws Exception {
+  @DisplayName("given Wiki 문제지 제작 when 템플릿을 읽으면 then 가격·5단계·카톡/이메일 문의 링크가 있다")
+  void wiki_section_offers_worksheet_service_with_contact_links() throws Exception {
     // given
     String html = Files.readString(LANDING);
+    int start = html.indexOf("id=\"wiki\"");
+    int end = html.indexOf("id=\"soon\"", start);
+    String wiki = html.substring(start, end);
 
-    // when & then
-    assertThat(html)
-        .contains("<span class=\"flow-h-step\" data-step=\"0\">기출 분석</span>")
-        .contains("<span class=\"flow-h-step\" data-step=\"1\">변형문제 생성</span>")
-        .contains("<span class=\"flow-h-step\" data-step=\"2\">학교별 Wiki</span>")
-        .contains("data-screen=\"0\"")
-        .contains("/video/landing/digital_twin_ex.mp4")
-        .contains("data-screen=\"1\"")
-        .contains("/video/landing/how2use_digitaltwin.mp4")
-        // 학교별 Wiki는 아직 영상이 없다. 다른 영상을 돌려쓰면 없는 기능을 있는 것처럼 보여준다.
-        .contains("data-screen=\"2\"")
-        .contains("class=\"mock-dash-title\">학교별 Wiki<")
-        .contains("class=\"mws-new\"");
-
-    // 단계별 영상 파일이 실제로 배포 자산에 있어야 한다.
-    assertThat(LANDING_VIDEO_DIR.resolve("digital_twin_ex.mp4")).exists();
-    assertThat(LANDING_VIDEO_DIR.resolve("how2use_digitaltwin.mp4")).exists();
+    // then
+    assertThat(wiki)
+        .contains("내신 영어", "문제지 제작", "기본 1회", "20,000원")
+        .contains("href=\"https://open.kakao.com/o/sMf4ifRi\"")
+        .contains("href=\"mailto:woorinaesin@naver.com\"")
+        .contains("자료 보내기", "영어 문제지 제작", "카톡·이메일 전달", "수정 요청", "최종 완성")
+        .contains("학원 로고를 보내주시면 제작 문제지에 로고를 넣어드립니다");
+    assertThat(wiki.split("<li><span>", -1).length - 1).isEqualTo(5);
+    assertThat(Path.of("src/main/resources/static/img/landing/wiki-sample.jpg")).exists();
   }
 
   @Test
