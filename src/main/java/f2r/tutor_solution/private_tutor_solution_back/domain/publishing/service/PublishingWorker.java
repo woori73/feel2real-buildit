@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,11 @@ public class PublishingWorker {
   private final PublishingProperties props;
   private final TemplateService templateService;
 
+  /** self-invocation 우회를 위한 프록시 주입. */
+  @Autowired
+  @Lazy
+  private PublishingWorker self;
+
   /** 10초 간격 폴링 (fixedDelay, workerEnabled=false면 스킵). */
   @Scheduled(fixedDelayString = "${publishing.worker-poll-seconds:10}000")
   public void poll() {
@@ -49,7 +56,8 @@ public class PublishingWorker {
     // 한 번에 1건씩 처리 (동시 실행 방지)
     PublishingJob job = queued.get(0);
     try {
-      claimAndProvision(job.getId());
+      // self 프록시를 통해 호출하여 @Transactional 적용
+      self.claimAndProvision(job.getId());
     } catch (Exception e) {
       log.error("Publishing 작업 시작 실패: jobId={}", job.getId(), e);
     }
