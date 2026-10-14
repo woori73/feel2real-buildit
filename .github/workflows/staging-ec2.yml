@@ -32,8 +32,8 @@ env:
   AWS_REGION: ap-northeast-2
   INSTANCE_ID: i-09d7cabb5a42d1135
   S3_BUCKET: feel2real-buildit-deploy
-  CI_RUN_ID: 38566583247
-  DEPLOY_SHA: e6970b948a69bffc9aa0f9cc141779a705304fc9
+  CI_RUN_ID: 38460493933
+  DEPLOY_SHA: 7cbcb22f36ca14309823ea3283a21f33ad0c30fb
 
 jobs:
   staging:
