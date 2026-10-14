@@ -45,4 +45,7 @@ public class PublishingProperties {
 
   /** Worker 폴링 간격(초). */
   private long workerPollSeconds = 10;
+
+  /** 작업 최대 재시도 횟수 (무한 반복 방지). */
+  private int maxAttempts = 3;
 }
