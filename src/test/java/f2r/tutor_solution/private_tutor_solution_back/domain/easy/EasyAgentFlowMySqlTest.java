@@ -44,9 +44,9 @@ class EasyAgentFlowMySqlTest {
   assertThat(rows.findById(rowId).orElseThrow().getMatchedAccount().getAccountId()).isEqualTo(before);
   agent.approve(principal,business.getBusinessId(),proposal.pendingAction().actionId());
   assertThat(rows.findById(rowId).orElseThrow().getMatchedAccount().getAccountId()).isEqualTo(expense.getAccountId());
-  when(interpreter.interpret(eq("장부에 반영해 줘"),anyString())).thenReturn(
+  when(interpreter.interpret(eq("장부 반영을 준비해 줘"),anyString())).thenReturn(
    new EasyAgentLlmInterpreter.Parsed(EasyAgentLlmInterpreter.Intent.PROPOSE_CONFIRM,staged.batchId(),null,null,null));
-  EasyAgentDtos.ChatResponse confirmProposal=agent.chat(principal,business.getBusinessId(),session.sessionId(),"장부에 반영해 줘");
+  EasyAgentDtos.ChatResponse confirmProposal=agent.chat(principal,business.getBusinessId(),session.sessionId(),"장부 반영을 준비해 줘");
   assertThat(rows.findById(rowId).orElseThrow().getCreatedTxn()).isNull();
   agent.approve(principal,business.getBusinessId(),confirmProposal.pendingAction().actionId());
   assertThat(rows.findById(rowId).orElseThrow().getCreatedTxn()).isNotNull();
