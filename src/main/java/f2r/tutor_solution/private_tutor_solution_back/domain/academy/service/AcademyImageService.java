@@ -188,12 +188,24 @@ public class AcademyImageService {
 
   private String describeOperation(AcademyImageDtos.EditOperation op) {
     Object v = op.params().get("value");
-    return switch (op.op().toLowerCase()) {
-      case "brightness" -> "밝기 " + (v != null ? (Integer.parseInt(v.toString()) > 0 ? "+" : "") + v : "");
-      case "exposure" -> "노출 " + v;
-      case "vibrance", "saturation" -> "채도 " + v;
-      default -> op.op();
-    };
+    String opName = op.op().toLowerCase();
+    if ("brightness".equals(opName)) {
+      String sign = "";
+      if (v != null) {
+        try {
+          if (Integer.parseInt(v.toString()) > 0) sign = "+";
+        } catch (NumberFormatException e) {
+          // ignore
+        }
+      }
+      return "밝기 " + sign + v;
+    } else if ("exposure".equals(opName)) {
+      return "노출 " + v;
+    } else if ("vibrance".equals(opName) || "saturation".equals(opName)) {
+      return "채도 " + v;
+    } else {
+      return op.op();
+    }
   }
 
   private String buildOutputPath(Long academyId, String slotKey, int version) {
