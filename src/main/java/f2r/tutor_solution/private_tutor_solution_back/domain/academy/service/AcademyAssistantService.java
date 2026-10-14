@@ -264,7 +264,7 @@ public class AcademyAssistantService {
           "어떤 학원인지 한두 문장으로 알려 주세요. (예: 중학생 영어 내신 전문, 또는 아래 샘플 선택)");
     }
 
-    CreateDraft draft = createService.generateDraft(request, name, null);
+    CreateDraft draft = createService.generateDraft(request, name);
     Map<String, String> generated = new HashMap<>(draft.builderDraft());
     String preset = sample != null ? sample.preset() : draft.designPreset();
     generated.put("designPreset", preset);
