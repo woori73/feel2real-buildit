@@ -86,10 +86,17 @@ public class PublishingJob extends BaseEntity {
   @Column(columnDefinition = "TEXT")
   private String error;
 
+  @Column(name = "attempt_count", nullable = false)
+  private int attemptCount = 0;
+
   public PublishingJob(Long userId, String title, Template template) {
     this.userId = userId;
     this.title = title;
     this.template = template.getCode();
+  }
+
+  public void incrementAttempt() {
+    this.attemptCount++;
   }
 
   public void markRunning(String workDir, String designcraftFile) {
