@@ -1,0 +1,193 @@
+package f2r.tutor_solution.private_tutor_solution_back.template;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * 랜딩 v3 개편(docs/design/homepage-v3/HANDOFF.md) 계약.
+ *
+ * <p>기존 LandingTemplateContractTest는 건드리지 않고, v3에서 확정된 순서·링크·유지 동작만 별도로 고정한다.
+ */
+class LandingV3TemplateContractTest {
+
+  private static final Path LANDING = Path.of("src/main/resources/templates/public/landing.html");
+  private static final Path V3_CSS = Path.of("src/main/resources/static/css/landing_v3.css");
+  private static final Path V3_JS = Path.of("src/main/resources/static/js/landing_v3.js");
+
+  @Test
+  @DisplayName("given v3 확정 순서 when 템플릿을 읽으면 then 제작→Chart→콘텐츠 도구→준비 중 순서로 노출한다")
+  void sections_follow_confirmed_order() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // when
+    int hero = html.indexOf("id=\"hero\"");
+    int intro = html.indexOf("id=\"intro\"");
+    int web = html.indexOf("id=\"web\"");
+    int chart = html.indexOf("id=\"chart-showcase\"");
+    int tools = html.indexOf("id=\"tools\"");
+    int wiki = html.indexOf("id=\"wiki\"");
+    int report = html.indexOf("id=\"report\"");
+    int shorts = html.indexOf("id=\"shorts\"");
+    int soon = html.indexOf("id=\"soon\"");
+    int faq = html.indexOf("id=\"faq\"");
+    int cta = html.indexOf("id=\"cta\"");
+
+    // then
+    assertThat(hero).isGreaterThanOrEqualTo(0);
+    assertThat(intro).isGreaterThan(hero);
+    assertThat(web).isGreaterThan(intro);
+    assertThat(chart).isGreaterThan(web);
+    assertThat(tools).isGreaterThan(chart);
+    assertThat(wiki).isGreaterThan(tools);
+    assertThat(report).isGreaterThan(wiki);
+    assertThat(shorts).isGreaterThan(report);
+    assertThat(soon).isGreaterThan(shorts);
+    assertThat(faq).isGreaterThan(soon);
+    assertThat(cta).isGreaterThan(faq);
+  }
+
+  @Test
+  @DisplayName("given 시작하기 게이트 when 히어로를 읽으면 then 기존 data-buildit 훅과 예시 칩을 유지한다")
+  void hero_keeps_start_gate_hooks() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // then
+    assertThat(html)
+        .contains("<form class=\"v3-ask\" data-buildit-form")
+        .contains("data-buildit-prompt")
+        .contains("data-buildit-example")
+        .contains("data-buildit-start")
+        .contains("href=\"/builder/entry\"")
+        .contains("class=\"hero\" id=\"hero\"")
+        .doesNotContain("action=\"/builder/entry\"");
+  }
+
+  @Test
+  @DisplayName("given 상단 내비 when 읽으면 then 모의고사·F2R·CHART·WIKI·문의하기와 계정 메뉴를 유지한다")
+  void nav_keeps_service_links() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // then
+    assertThat(html)
+        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">Buildit 모의고사</a>")
+        .contains("href=\"/home\" class=\"btn outline nav-cta\">F2R</a>")
+        .contains("href=\"/chart\" class=\"btn outline nav-cta\">BUILD IT CHART</a>")
+        .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">BUILD IT WIKI</a>")
+        .contains("onclick=\"openContactModal()\"")
+        .contains("fragments/_account_menu :: accountMenuControls")
+        .contains("fragments/_account_menu :: loginModal");
+  }
+
+  @Test
+  @DisplayName("given 링크 정정 사항 when 읽으면 then 존재하지 않는 경로와 Easy 직접 링크를 쓰지 않는다")
+  void no_dead_links_and_no_easy_link() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // then
+    assertThat(html)
+        .doesNotContain("/report-demo")
+        .doesNotContain("/shorts-demo")
+        .doesNotContain("href=\"/login\"")
+        .doesNotContain("href=\"/easy");
+  }
+
+  @Test
+  @DisplayName("given Easy 도입 문의 when 읽으면 then 기존 문의 모달에 연결하고 불가 시 비활성 가드가 있다")
+  void easy_inquiry_uses_contact_modal() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    String js = Files.readString(V3_JS);
+
+    // then
+    assertThat(html).contains("data-v3-inquiry onclick=\"openContactModal()\"");
+    assertThat(js).contains("openContactModal").contains("aria-disabled");
+  }
+
+  @Test
+  @DisplayName("given 소개영상·슬로건 when 읽으면 then 삭제하지 않고 유지한다")
+  void intro_video_and_slogan_are_kept() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // then
+    assertThat(html)
+        .contains("숨은 영어교육자를 발굴하고, 성장시키고, 투자로 연결합니다.")
+        .contains("data-youtube-id=\"fK_BdoK8O64\"")
+        .contains("class=\"flow-marquee\" id=\"why\"");
+  }
+
+  @Test
+  @DisplayName("given Chart 실데이터 when 읽으면 then 공개 TOP5 컨테이너와 스크립트를 유지하고 가짜 교육자를 넣지 않는다")
+  void chart_keeps_real_top5_widget() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+
+    // then
+    assertThat(html)
+        .contains("id=\"landingChartTop5\"")
+        .contains("id=\"landingChartDate\"")
+        .contains("id=\"chartRegionPicker\"")
+        .contains("/js/landing_chart.js")
+        .doesNotContain("교육자 A")
+        .doesNotContain("교육자 B");
+  }
+
+  @Test
+  @DisplayName("given Easy 예시 화면 when 읽으면 then 실제 수치 없이 예시로 표시한다")
+  void easy_example_has_no_real_figures() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    int start = html.indexOf("id=\"v3pane-easy\"");
+    int end = html.indexOf("</section>", start);
+    String easy = html.substring(start, end);
+
+    // then
+    assertThat(easy).contains("예시 화면").contains("실제 회계 데이터가 아닙니다");
+    assertThat(easy).doesNotContainPattern("[0-9]{1,3}(,[0-9]{3})+\\s*원");
+  }
+
+  @Test
+  @DisplayName("given 준비 중 서비스 when 읽으면 then 링크·입력창 없이 비활성으로 표시한다")
+  void soon_services_are_not_clickable() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    int start = html.indexOf("id=\"soon\"");
+    int end = html.indexOf("id=\"faq\"", start);
+    String soon = html.substring(start, end);
+
+    // then
+    assertThat(soon).contains("DesignCraft").contains("입시상담 AI").contains("aria-disabled=\"true\"");
+    assertThat(soon).doesNotContain("<a ").doesNotContain("<input").doesNotContain("<form");
+  }
+
+  @Test
+  @DisplayName("given 폰트 when 읽으면 then Pretendard를 우선하고 대체 폰트 스택을 갖는다")
+  void font_stack_prefers_pretendard_with_fallbacks() throws Exception {
+    // given
+    String css = Files.readString(V3_CSS);
+    String html = Files.readString(LANDING);
+
+    // then
+    assertThat(css).contains("\"Pretendard Variable\", Pretendard").contains("\"Noto Sans KR\"").contains("\"Malgun Gothic\"");
+    assertThat(html).contains("pretendard").contains("/css/landing_v3.css").contains("/js/landing_v3.js");
+  }
+
+  @Test
+  @DisplayName("given v3 스타일 when 읽으면 then 전역 리셋 없이 .bi-page 안으로 한정하고 reduced-motion을 지원한다")
+  void v3_css_is_scoped_and_accessible() throws Exception {
+    // given
+    String css = Files.readString(V3_CSS);
+
+    // then
+    assertThat(css).contains(".bi-page {").contains("prefers-reduced-motion: reduce");
+    assertThat(css).doesNotContain("\n* {").doesNotContain("\n*{");
+  }
+}
