@@ -488,21 +488,21 @@ body { background: #f7f8fc; }
   .bi-page .v3-ask-input { font-size: 14px; }
   .bi-page .v3-ask .v3-btn { padding: 0 18px; }
 }
-@media (prefers-reduced-motion: reduce) { .bi-page .fm-track { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .bi-page .fm-track { animation: none; } .bi-page .nation-phone { animation: none; } .bi-page .nation-slides img { animation: none; } .bi-page .nation-slides img:first-child { opacity: 1; } }
 
 /* ---------- 전국 무대 (Shopify 구성: 지역 선택 → 카드 전환 / 남한 점 지도) ---------- */
 .bi-page .nation { background: #041619; color: #fff; padding: calc(var(--nav-h) + 40px) 20px 56px; }
 .bi-page .nation-wrap { max-width: 1240px; margin: 0 auto; }
 .bi-page .nation-title { margin: 0 0 28px; font-size: clamp(30px, 5vw, 48px); font-weight: 600; letter-spacing: -.03em; line-height: 1.2; color: #fff; }
-.bi-page .nation-stage { position: relative; display: grid; grid-template-columns: 84px 280px minmax(0, 400px) minmax(0, 1fr); gap: 28px; align-items: center; min-height: 560px; padding: 32px; border-radius: 24px; overflow: hidden; background: linear-gradient(160deg, #082a2e, #041619); }
-.bi-page .nation-mapbox { position: absolute; left: 76%; top: 50%; height: 100%; aspect-ratio: 520 / 707; transform: translate(-50%, -50%); background: url('/img/landing/korea-dots.svg') center / contain no-repeat; opacity: 1; }
+.bi-page .nation-stage { position: relative; display: grid; grid-template-columns: 84px 200px minmax(0, 300px) minmax(0, 1fr); gap: 24px; align-items: center; min-height: 560px; padding: 32px; border-radius: 24px; overflow: hidden; background: linear-gradient(160deg, #082a2e, #041619); }
+.bi-page .nation-mapbox { position: absolute; left: 80%; top: 50%; height: 104%; aspect-ratio: 520 / 707; transform: translate(-50%, -50%); background: url('/img/landing/korea-dots.svg') center / contain no-repeat; opacity: 1; }
 .bi-page .nation-pin { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #5ff2e1; box-shadow: 0 0 0 6px rgba(95, 242, 225, .25), 0 0 24px rgba(95, 242, 225, .8); transition: left .6s var(--v3-ease), top .6s var(--v3-ease); }
 .bi-page .nation-stage > :not(.nation-mapbox):not(.nation-center) { position: relative; z-index: 1; }
 .bi-page .nation-regions { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
 .bi-page .nation-region { width: 84px; height: 52px; border: 0; border-radius: 14px; background: rgba(255, 255, 255, .1); color: #cfe3e3; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .3s, color .3s, transform .3s; }
 .bi-page .nation-region.on { background: #fff; color: #062a2d; transform: scale(1.06); }
 .bi-page .nation-center { position: relative; z-index: 3; display: grid; place-items: center; }
-.bi-page .nation-card { position: relative; width: 240px; padding: 8px; border-radius: 14px; background: #fff; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+.bi-page .nation-card { position: relative; width: 200px; padding: 8px; border-radius: 14px; background: #fff; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
 .bi-page .nation-card::before, .bi-page .nation-card::after { content: ''; position: absolute; z-index: -1; top: 14px; bottom: 14px; width: 100%; border-radius: 14px; background: rgba(255, 255, 255, .22); }
 .bi-page .nation-card::before { left: -34px; }
 .bi-page .nation-card::after { right: -34px; }
@@ -514,7 +514,13 @@ body { background: #f7f8fc; }
 .bi-page .nation-pill b { padding: 5px 10px; border-radius: 999px; background: #0d2f31; color: #fff; font-size: 12px; }
 .bi-page .nation-panel { padding: 18px; border-radius: 16px; background: #fff; color: #14171f; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .bi-page .nation-devices { position: relative; padding-bottom: 96px; }
-.bi-page .nation-laptop { display: block; width: 86%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; object-position: top; border: 1px solid #e3e6ea; border-radius: 8px; }
+.bi-page .nation-laptop { position: relative; display: block; width: 86%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid #e3e6ea; border-radius: 8px; }
+.bi-page .nation-slides img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; animation: nation-slide 12s infinite; }
+.bi-page .nation-slides img:nth-child(2) { animation-delay: 4s; }
+.bi-page .nation-slides img:nth-child(3) { animation-delay: 8s; }
+@keyframes nation-slide { 0% { opacity: 0; transform: scale(1.04); } 6%, 30% { opacity: 1; } 36% { opacity: 0; } 100% { opacity: 0; transform: scale(1); } }
+.bi-page .nation-phone { animation: nation-float 5s ease-in-out infinite; }
+@keyframes nation-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 .bi-page .nation-phone { position: absolute; right: 8px; bottom: 0; width: 140px; aspect-ratio: 9 / 19; container-type: inline-size; overflow: hidden; border: 4px solid #111; border-radius: 22px; background: #f6f5ee; color: #17432f; box-shadow: 0 14px 32px rgba(0, 0, 0, .35); }
 .bi-page .np-screen { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 5cqw; padding: 6cqw; }
 .bi-page .np-top { display: flex; align-items: center; justify-content: space-between; font-size: 6cqw; }
@@ -535,13 +541,13 @@ body { background: #f7f8fc; }
 .bi-page .nation-note { margin: 14px 0 0; font-size: 12px; color: #7fa0a0; }
 @media (max-width: 1100px) {
   .bi-page .nation-stage { grid-template-columns: 84px 240px minmax(0, 1fr); }
-  .bi-page .nation-mapbox { opacity: .5; }
+  .bi-page .nation-mapbox { left: 82%; opacity: .6; }
   .bi-page .nation-pill { right: -4px; }
 }
 @media (max-width: 760px) {
   .bi-page .nation { padding-top: calc(var(--nav-h) + 24px); }
   .bi-page .nation-stage { grid-template-columns: minmax(0, 1fr); padding: 20px; gap: 22px; min-height: 0; }
-  .bi-page .nation-mapbox { height: 100%; opacity: .4; }
+  .bi-page .nation-mapbox { position: relative; left: auto; top: auto; transform: none; order: 9; height: 300px; margin: 0 auto; opacity: 1; }
   .bi-page .nation-regions { flex-direction: row; overflow-x: auto; gap: 10px; }
   .bi-page .nation-region { width: 76px; flex: 0 0 auto; }
   .bi-page .nation-card::before, .bi-page .nation-card::after { display: none; }
