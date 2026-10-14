@@ -63,12 +63,12 @@
   document.querySelectorAll('[data-action="use-sample"]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var sampleId = btn.getAttribute('data-sample-id');
-      // 샘플 정보를 sessionStorage에 저장
+      // 샘플 정보를 sessionStorage에 저장하고 /builder로 이동
+      // /builder에서 샘플 정보를 읽어 AI 채팅에 자동 입력
       try {
         sessionStorage.setItem('buildit_entry_sample', sampleId);
       } catch (e) {}
-      // 준비 중 안내 (백엔드 샘플 기반 생성 API는 Claude 담당)
-      showPreparingModal('샘플 기반 제작', '선택한 샘플을 기반으로 하는 AI 제작 기능은 준비 중입니다.\n현재는 /builder에서 직접 제작할 수 있습니다.');
+      window.location.href = '/builder';
     });
   });
 
