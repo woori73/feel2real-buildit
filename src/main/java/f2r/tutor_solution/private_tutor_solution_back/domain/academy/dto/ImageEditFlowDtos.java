@@ -50,7 +50,15 @@ public class ImageEditFlowDtos {
       /** 승인 여부 (true=승인, false=거부). */
       boolean approved,
       /** 거부/재수정 요청 시 사유. */
-      String reason) {}
+      String reason,
+      /** WorkingCopy expected revision (승인 시에만 사용). */
+      Long expectedRevision) {
+
+    /** 하위 호환 생성자 (revision 없음). */
+    public ApproveImageRequest(Long assetId, boolean approved, String reason) {
+      this(assetId, approved, reason, null);
+    }
+  }
 
   /** 승인 응답. */
   public record ApproveImageResponse(
