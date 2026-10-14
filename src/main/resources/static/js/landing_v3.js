@@ -123,6 +123,29 @@
     apply();
   }
 
+  /* 이메일 문의: 메일 앱이 없는 PC에서는 mailto가 아무 일도 하지 않는다. 클릭하면 주소를 복사하고 안내를 보여 준다. */
+  function mailNoteText(address, copied) {
+    return copied
+      ? '주소를 복사했습니다 (' + address + '). 메일 앱이 열리지 않으면 붙여넣어 보내주세요.'
+      : '이메일 주소 ' + address;
+  }
+
+  function initMailCopy(doc, win) {
+    var links = doc.querySelectorAll('[data-copy-mail]');
+    var note = doc.getElementById('wkMailNote');
+    if (!links.length) return;
+    Array.prototype.forEach.call(links, function (link) {
+      var address = link.getAttribute('data-copy-mail');
+      link.addEventListener('click', function () {
+        var nav = win.navigator;
+        if (!nav || !nav.clipboard || typeof nav.clipboard.writeText !== 'function') return;
+        nav.clipboard.writeText(address).then(function () {
+          if (note) note.textContent = mailNoteText(address, true);
+        }, function () { /* 복사 실패: 화면에 보이는 주소로 대신한다 */ });
+      });
+    });
+  }
+
   /* 첫 화면 큰 문구: 세 문구를 번갈아 보여 준다. 순환 불가(움직임 줄이기·JS 없음)면 세 문구를 모두 보여 준다. */
   function nextWordIndex(index, count) {
     return count > 0 ? (index + 1) % count : 0;
@@ -220,11 +243,12 @@
     initWords(doc, win);
     initNation(doc, win);
     initChartMore(doc, win);
+    initMailCopy(doc, win);
     guardInquiry(doc, win);
   }
 
   if (typeof document !== 'undefined' && typeof window !== 'undefined') init(document, window);
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, nextWordIndex: nextWordIndex, initWords: initWords, initNation: initNation, chartMoreState: chartMoreState, initChartMore: initChartMore, EXAMPLES: EXAMPLES };
+    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, nextWordIndex: nextWordIndex, initWords: initWords, initNation: initNation, chartMoreState: chartMoreState, initChartMore: initChartMore, mailNoteText: mailNoteText, initMailCopy: initMailCopy, EXAMPLES: EXAMPLES };
   }
 })(typeof window !== 'undefined' ? window : globalThis);

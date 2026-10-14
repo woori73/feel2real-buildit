@@ -274,3 +274,47 @@ test('given 순위 하락·유지 when bbRow then ▼변동폭과 —를 보여 
   assert.ok(downHtml.includes('▼1'));
   assert.ok(sameHtml.includes('—'));
 });
+
+// ---- 이메일 문의: 주소 복사 안내 ----
+test('given 복사 전·후 when mailNoteText then 주소만 보이다가 복사 후엔 붙여넣기 안내를 보여 준다', () => {
+  // given
+  const address = 'woorinaesin@naver.com';
+  // when
+  const before = v3.mailNoteText(address, false);
+  const after = v3.mailNoteText(address, true);
+  // then
+  assert.equal(before, '이메일 주소 woorinaesin@naver.com');
+  assert.ok(after.includes('복사했습니다') && after.includes(address) && after.includes('붙여넣어'));
+});
+
+test('given 이메일 링크와 클립보드 when 클릭하면 then 주소를 복사하고 안내 문구를 바꾼다 (링크 이동은 막지 않는다)', async () => {
+  // given
+  let copied = null;
+  let handler = null;
+  const link = { getAttribute: () => 'woorinaesin@naver.com', addEventListener: (type, fn) => { if (type === 'click') handler = fn; } };
+  const note = { textContent: '' };
+  const doc = { querySelectorAll: () => [link], getElementById: (id) => (id === 'wkMailNote' ? note : null) };
+  const win = { navigator: { clipboard: { writeText: (text) => { copied = text; return Promise.resolve(); } } } };
+  v3.initMailCopy(doc, win);
+  const event = { defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+  // when
+  handler(event);
+  await Promise.resolve();
+  // then
+  assert.equal(copied, 'woorinaesin@naver.com');
+  assert.ok(note.textContent.includes('복사했습니다'));
+  assert.equal(event.defaultPrevented, false);
+});
+
+test('given 클립보드가 없는 브라우저 when 클릭하면 then 오류 없이 화면의 주소 안내를 그대로 둔다', () => {
+  // given
+  let handler = null;
+  const link = { getAttribute: () => 'woorinaesin@naver.com', addEventListener: (type, fn) => { handler = fn; } };
+  const note = { textContent: '이메일 주소 woorinaesin@naver.com' };
+  const doc = { querySelectorAll: () => [link], getElementById: () => note };
+  v3.initMailCopy(doc, { navigator: {} });
+  // when
+  handler({});
+  // then
+  assert.equal(note.textContent, '이메일 주소 woorinaesin@naver.com');
+});

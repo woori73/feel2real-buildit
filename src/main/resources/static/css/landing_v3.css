@@ -771,3 +771,5 @@ body { background: #f7f8fc; }
   .bi-page .v3-soon-chick .chick { width: 48px; height: 50px; }
 }
 .bi-page .v3-soon-card .v3-badge { justify-self: start; }
+
+.bi-page .wk-mailnote { margin: 0; font-size: 14px; font-weight: 700; color: #0d0d0d; }
