@@ -127,6 +127,23 @@ class EasyTemplateContractTest {
   }
 
   @Test
+  @DisplayName("대시보드는 검토 항목 다시 찾기 동작을 화면에 노출한다")
+  void dashboard_exposesReviewRebuildAction() throws IOException {
+    assertThat(readTemplate("easy/dashboard")).contains("id=\"btnRebuild\"");
+    assertThat(readStatic("js/easy_insight.js"))
+        .contains("/api/admin/easy/reviews/rebuild")
+        .contains("btnRebuild");
+  }
+
+  @Test
+  @DisplayName("회계장부 화면은 시산표 API의 totalDebit/totalCredit을 표시한다")
+  void accounting_usesTrialBalanceApiAmountFields() throws IOException {
+    assertThat(readStatic("js/easy_accounting.js"))
+        .contains("row.totalDebit")
+        .contains("row.totalCredit");
+  }
+
+  @Test
   @DisplayName("거래 화면은 수집·가져오기·장부·분개 상태를 구분한다")
   void workspaceTransactionStatuses_areDistinct() throws IOException {
     String html = readTemplate("easy/transactions");

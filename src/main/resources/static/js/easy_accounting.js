@@ -22,8 +22,10 @@
     const ul = document.getElementById('trial'); ul.innerHTML = '';
     if (!rows.length) { ul.innerHTML = '<li class="empty">POSTED 분개가 없습니다.</li>'; return; }
     rows.forEach(row => { const li = document.createElement('li'); li.className = 'item';
+      const debit = row.totalDebit ?? row.debit ?? row.debitTotal ?? 0;
+      const credit = row.totalCredit ?? row.credit ?? row.creditTotal ?? 0;
       li.textContent = (row.accountName || row.name || '계정') + ' · 차변 '
-        + Easy.fmtWon(row.debit || row.debitTotal) + ' · 대변 ' + Easy.fmtWon(row.credit || row.creditTotal);
+        + Easy.fmtWon(debit) + ' · 대변 ' + Easy.fmtWon(credit);
       ul.appendChild(li); });
   }
   document.addEventListener('DOMContentLoaded', () => init().catch(console.error));
