@@ -156,6 +156,8 @@
       var entrySample = sessionStorage.getItem('buildit_entry_sample');
       if (entrySample) {
         sessionStorage.removeItem('buildit_entry_sample');
+        // 템플릿 ID를 state에 저장하여 생성 요청 시 함께 전송
+        state.pendingTemplateId = entrySample;
         var sampleNames = {
           'tmpl-open-school': '오픈스쿨 템플릿(종합학원형)',
           'tmpl-demo-school': '데모스쿨 템플릿(모바일 중심형)',
@@ -305,8 +307,9 @@
     autoGrow();
     setStatus('홈페이지 초안을 만들고 있습니다…');
 
-    postJson(API.create, { message: message, academyName: academyName })
+    postJson(API.create, { message: message, academyName: academyName, templateId: state.pendingTemplateId || null })
       .then(function (data) {
+        state.pendingTemplateId = null;
         setStatus('');
         appendMessage('ai', (data && data.reply) || '');
         var draft = data && data.draft ? data.draft : null;
@@ -461,6 +464,7 @@
       builderDraft: builderDraft
     })
       .then(function (data) {
+        state.pendingTemplateId = null;
         setStatus('');
         toast((data && data.message) || '홈페이지가 생성되었습니다.', 'fa-circle-check');
         writeCreateSession(null);
@@ -803,6 +807,7 @@
 
     postJson(API.apply, payload)
       .then(function (data) {
+        state.pendingTemplateId = null;
         setStatus('');
         state.pending = null;
         var versionId = data && data.versionId != null ? data.versionId : null;
