@@ -103,17 +103,31 @@ public class ImageEditApprovalService {
         throw new IllegalStateException("이미지 정보를 찾을 수 없습니다: " + assetId);
       }
 
-      // WorkingCopy의 현재 revision 조회가 필요하나,
-      // 여기서는 stageMedia 호출을 위한 구조를 제공한다.
-      // 실제 revision은 프론트엔드에서 전달받거나 조회한다.
-      // TODO: revision 조회 로직 추가
-      log.info("이미지 승인: assetId={}, slot={}, storageKey={}", assetId, slotKey, storageKey);
+      // expectedRevision 결정: 요청에 있으면 사용, 없으면 서버에서 조회
+      long revision;
+      if (request.expectedRevision() != null) {
+        revision = request.expectedRevision();
+        log.info("프론트엔드에서 전달된 revision 사용: {}", revision);
+      } else {
+        revision = getCurrentRevision(principal);
+        log.info("서버에서 조회한 revision 사용: {}", revision);
+      }
 
-      flowStatusStore.put(assetId, "APPROVED");
+      // WorkingCopy에 스테이징 (승인된 이미지만)
+      try {
+        workingCopyService.stageMedia(principal, revision, slotKey, storageKey);
+        log.info("이미지 승인 및 WorkingCopy 스테이징 완료: assetId={}, slot={}, revision={}",
+            assetId, slotKey, revision);
+      } catch (Exception e) {
+        log.error("WorkingCopy 스테이징 실패: assetId={}", assetId, e);
+        throw new IllegalStateException("WorkingCopy 스테이징 실패 (revision 충돌 가능): " + e.getMessage(), e);
+      }
+
+      flowStatusStore.put(assetId, "STAGED");
 
       return new ImageEditFlowDtos.ApproveImageResponse(
-          assetId, "APPROVED",
-          "승인되었습니다. 미리보기에서 확인 후 발행하세요.");
+          assetId, "STAGED",
+          "승인되어 미리보기에 반영되었습니다. 발행하면 홈페이지에 표시됩니다.");
     } else {
       // 거부: WorkingCopy에 반영하지 않음
       flowStatusStore.put(assetId, "REJECTED");
