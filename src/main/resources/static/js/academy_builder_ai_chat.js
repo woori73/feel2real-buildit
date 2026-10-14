@@ -150,6 +150,32 @@
     }
 
     restoreCreateSession();
+
+    // entry 페이지에서 샘플을 선택하고 넘어온 경우 AI 채팅에 자동 입력
+    try {
+      var entrySample = sessionStorage.getItem('buildit_entry_sample');
+      if (entrySample) {
+        sessionStorage.removeItem('buildit_entry_sample');
+        var sampleNames = {
+          'tmpl-open-school': '오픈스쿨 템플릿(종합학원형)',
+          'tmpl-demo-school': '데모스쿨 템플릿(모바일 중심형)',
+          'tmpl-minimal-landing': '미니멀 랜딩(소규모 학원형)',
+          'comp-bundle': '컴포넌트 조합(커스텀형)'
+        };
+        var sampleName = sampleNames[entrySample] || entrySample;
+        openPanel();
+        if (typeof switchTab === 'function') switchTab('chat');
+        var modeCreate = document.getElementById('builderAiChatModeCreate');
+        if (modeCreate) modeCreate.click();
+        if (el.input) {
+          el.input.value = sampleName + ' 스타일로 학원 홈페이지를 만들어줘';
+          if (typeof autoGrow === 'function') autoGrow();
+        }
+        var nameInput = document.getElementById('builderAiChatName');
+        if (nameInput) nameInput.focus();
+        setStatus('선택한 샘플이 입력되었습니다. 학원 이름을 입력하고 전송하세요.');
+      }
+    } catch (e) {}
   }
 
   /* ── 신규 홈페이지 생성 (계약 v3 §5·§6) ─────────────────────────────── */
