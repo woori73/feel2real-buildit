@@ -120,6 +120,7 @@ class LandingTemplateContractTest {
         .contains("내신 영어", "문제지 제작", "기본 1회", "20,000원")
         .contains("href=\"https://open.kakao.com/o/sMf4ifRi\"")
         .contains("href=\"mailto:woorinaesin@naver.com\"")
+        .contains("data-copy-mail=\"woorinaesin@naver.com\"", "이메일 주소 woorinaesin@naver.com")
         .contains("자료 보내기", "영어 문제지 제작", "카톡·이메일 전달", "수정 요청", "최종 완성")
         .contains("학원 로고를 보내주시면 제작 문제지에 로고를 넣어드립니다")
         .contains("압구정중2", "어떻게 나왔을까?", "100% 출제", "외부지문 2문항(5 · 9번) 제외, 28문항 전부")
