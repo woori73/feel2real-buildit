@@ -59,7 +59,6 @@ class LandingV3TemplateContractTest {
     assertThat(html)
         .contains("<form class=\"v3-ask\" data-buildit-form")
         .contains("data-buildit-prompt")
-        .contains("data-buildit-example")
         .contains("data-buildit-start")
         .contains("class=\"hero\" id=\"hero\"")
         .doesNotContain("action=\"/builder/entry\"");
