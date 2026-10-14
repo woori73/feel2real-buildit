@@ -12,7 +12,7 @@
   <!-- v3: Pretendard 우선(로딩 실패 시 landing_v3.css의 대체 폰트 스택). 자체 호스팅은 docs/design/homepage-v3/HANDOFF.md §13 참고 -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/landing_v3.css?v=20261014-1">
+  <link rel="stylesheet" href="/css/landing_v3.css?v=20261014-2">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -280,6 +280,7 @@
           </div>
           <div class="chart-list-title">BuildIt TOP 5 <span id="landingChartDate"></span></div>
           <div id="landingChartTop5"><div class="chart-row"><div class="chart-meta">전국 Chart를 불러오는 중입니다.</div></div></div>
+          <button type="button" class="v3-chart-more" id="landingChartMore" aria-controls="landingChartTop5" aria-expanded="false" hidden>나머지 2개 펼치기</button>
           <div class="chart-fade" aria-hidden="true"></div>
           <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
         </div>
@@ -430,7 +431,7 @@
     <div class="v3-wrap">
       <div class="v3-sec-head v3-rv"><span class="v3-eyebrow">자주 묻는 질문</span><h2 class="v3-h2">시작하기 전에</h2></div>
       <div class="v3-faq-list v3-rv">
-        <details open><summary>회원가입 없이도 쓸 수 있나요?</summary><p>Chart는 로그인 없이 볼 수 있습니다. Wiki 소개 화면은 공개되지만 자료와 문제는 회원 전용이고, 홈페이지 제작은 강사(원장) 계정으로 로그인해야 합니다.</p></details>
+        <details><summary>회원가입 없이도 쓸 수 있나요?</summary><p>Chart는 로그인 없이 볼 수 있습니다. Wiki 소개 화면은 공개되지만 자료와 문제는 회원 전용이고, 홈페이지 제작은 강사(원장) 계정으로 로그인해야 합니다.</p></details>
         <details><summary>만든 홈페이지가 바로 공개되나요?</summary><p>아니요. 미리보기에서 직접 확인하고 게시를 승인한 뒤에만 공개됩니다.</p></details>
         <details><summary>Easy AI 장부와 DesignCraft, 입시상담 AI는 지금 쓸 수 있나요?</summary><p>Easy AI 장부는 관리자 전용 베타라 일반 이용자에게는 열려 있지 않습니다(도입은 문의). DesignCraft는 준비 중이며, 입시상담 AI는 검증이 끝나기 전까지 공개하지 않습니다.</p></details>
         <details><summary>Chart 점수에 BuildIt 사용이 영향을 주나요?</summary><p>영향을 주지 않습니다. Chart는 공개 근거만으로 독립적으로 운영됩니다.</p></details>
@@ -459,7 +460,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="/js/landing_buildit.js?v=20261014-1"></script>
-<script src="/js/landing_v3.js?v=20261014-1"></script>
+<script src="/js/landing_v3.js?v=20261014-2"></script>
 </th:block>
 </body>
 </html>

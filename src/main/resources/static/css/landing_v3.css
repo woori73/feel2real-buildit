@@ -680,3 +680,52 @@ body { background: #f7f8fc; }
 /* 서비스 이름 표기(BuildIt Web): 제목 위에 작게 */
 .bi-page .v3-brandline { margin: 16px 0 0; font-size: 15px; }
 .bi-page .v3-brandline + h3 { margin-top: 4px; }
+
+/* ---------- 모바일 길이 압축 (<=720px) : 서비스 노출 순서는 그대로, 반복 설명만 줄인다 ---------- */
+.bi-page .v3-chart-more { display: none; }
+@media (max-width: 720px) {
+  .bi-page { --v3-sec: 48px; }
+  /* 히어로: 채팅 목업은 숨기고 미리보기만 낮게 */
+  .bi-page .v3-hero-grid { gap: 28px; }
+  .bi-page .v3-lead { margin-bottom: 20px; }
+  .bi-page .v3-chips .v3-chip:nth-child(n+3) { display: none; }
+  .bi-page .v3-assure { margin-top: 16px; }
+  .bi-page .v3-chat, .bi-page .v3-pub { display: none; }
+  .bi-page .v3-site { min-height: 0; }
+  .bi-page .v3-win { border-radius: 20px; }
+
+  /* 제작 과정: 2x2 압축, 보조 문구 제거 */
+  .bi-page .v3-journey .v3-wrap > .v3-sec-head { margin-bottom: 20px; }
+  .bi-page .v3-journey .v3-sec-lead, .bi-page .v3-step small { display: none; }
+  .bi-page .v3-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .bi-page .v3-step { grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 14px; }
+  .bi-page .v3-step-n { grid-row: auto; width: 32px; height: 32px; border-radius: 10px; font-size: 15px; }
+  .bi-page .v3-step h3 { font-size: 16px; }
+  .bi-page .v3-step p { font-size: 13px; line-height: 1.45; }
+
+  /* Chart: 3개 먼저, 나머지는 펼치기. 보조 문구는 줄인다 */
+  .bi-page #landingChartTop5:not(.is-open) .chart-row:nth-child(n+4) { display: none; }
+  .bi-page .v3-band .chart-meta { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .bi-page .v3-chart-more { display: block; width: 100%; min-height: 44px; margin-top: 8px; border: 1px solid var(--v3-night-line); border-radius: 12px; background: transparent; color: var(--v3-on-night); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .bi-page .v3-chart-more[hidden] { display: none; }
+  .bi-page .v3-principles { gap: 8px; margin-bottom: 16px; font-size: 14px; }
+  .bi-page .chart-showcase .chart-vision-foot { display: none; }
+
+  /* 콘텐츠 도구: 설명 카드 압축 */
+  .bi-page .v3-tools .v3-sec-head { margin-bottom: 20px; }
+  .bi-page .v3-tools .v3-sec-lead, .bi-page .v3-tool-meta { display: none; }
+  .bi-page .v3-tool-grid { gap: 10px; }
+  .bi-page .v3-tool { gap: 6px; padding: 16px; border-radius: 18px; }
+  .bi-page .v3-tool h3 { font-size: 18px; }
+  .bi-page .v3-tool p { font-size: 14px; }
+
+  /* 준비 중: 설명 2줄 */
+  .bi-page .v3-soon .v3-sec-head { margin-bottom: 20px; }
+  .bi-page .v3-soon-grid { gap: 10px; }
+  .bi-page .v3-soon-card { gap: 6px; padding: 16px; border-radius: 18px; }
+  .bi-page .v3-soon-card h3 { font-size: 18px; }
+  .bi-page .v3-soon-card p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
+
+  /* FAQ: 첫 항목도 기본 접힘은 마크업에서 처리 */
+  .bi-page .v3-faq .v3-sec-head { margin-bottom: 16px; }
+}

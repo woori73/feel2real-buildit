@@ -140,3 +140,38 @@ test('Given IntersectionObserver가 없을 때, When 등장 연출을 초기화�
   // then
   assert.equal(root.classList.contains('v3-js'), false);
 });
+
+test('Given 행이 3개 이하일 때, When 더보기 상태를 계산하면, Then 버튼을 숨긴다', () => {
+  // given/when
+  const state = v3.chartMoreState(3, false);
+  // then
+  assert.equal(state.hidden, true);
+  assert.equal(state.label, '');
+});
+
+test('Given 행이 5개일 때, When 접힌/펼친 상태를 계산하면, Then 남은 개수 라벨과 접기 라벨을 돌려준다', () => {
+  // given/when
+  const closed = v3.chartMoreState(5, false);
+  const open = v3.chartMoreState(5, true);
+  // then
+  assert.deepEqual([closed.hidden, closed.expanded, closed.label], [false, false, '나머지 2개 펼치기']);
+  assert.deepEqual([open.hidden, open.expanded, open.label], [false, true, '접기']);
+});
+
+test('Given TOP5 행과 더보기 버튼, When 버튼을 누르면, Then is-open과 aria-expanded가 토글된다', () => {
+  // given
+  const rows = [1, 2, 3, 4, 5].map(() => el());
+  const root = Object.assign(el({ id: 'landingChartTop5' }), { querySelectorAll: () => rows });
+  const button = el({ id: 'landingChartMore' });
+  button.hidden = true;
+  const doc = { getElementById: (id) => (id === 'landingChartTop5' ? root : id === 'landingChartMore' ? button : null) };
+  v3.initChartMore(doc, {});
+  assert.equal(button.hidden, false);
+  assert.equal(button.textContent, '나머지 2개 펼치기');
+  // when
+  button.fire('click');
+  // then
+  assert.equal(root.classList.contains('is-open'), true);
+  assert.equal(button.attrs['aria-expanded'], 'true');
+  assert.equal(button.textContent, '접기');
+});

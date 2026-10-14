@@ -190,4 +190,20 @@ class LandingV3TemplateContractTest {
     assertThat(css).contains(".bi-page {").contains("prefers-reduced-motion: reduce");
     assertThat(css).doesNotContain("\n* {").doesNotContain("\n*{");
   }
+
+  @Test
+  @DisplayName("given 모바일 압축 when 템플릿·스타일을 읽으면 then Chart 실데이터 훅을 유지하고 3개 우선+펼치기 장치를 둔다")
+  void mobile_chart_shows_three_rows_with_expander() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    String css = Files.readString(V3_CSS);
+    String js = Files.readString(V3_JS);
+
+    // then
+    assertThat(html).contains("id=\"landingChartTop5\"").contains("id=\"landingChartDate\"");
+    assertThat(html).contains("id=\"landingChartMore\"").contains("aria-controls=\"landingChartTop5\"");
+    assertThat(css).contains("@media (max-width: 720px)")
+        .contains("#landingChartTop5:not(.is-open) .chart-row:nth-child(n+4)");
+    assertThat(js).contains("chartMoreState").contains("initChartMore");
+  }
 }

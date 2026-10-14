@@ -95,6 +95,34 @@
     });
   }
 
+  /* 모바일 Chart: 3개만 먼저 보이고 나머지는 펼친다. 표시/숨김은 CSS, 여기선 버튼 상태만 계산한다. */
+  var CHART_PREVIEW_ROWS = 3;
+  function chartMoreState(rowCount, expanded) {
+    var extra = rowCount - CHART_PREVIEW_ROWS;
+    if (extra <= 0) return { hidden: true, expanded: false, label: '' };
+    return { hidden: false, expanded: !!expanded, label: expanded ? '접기' : '나머지 ' + extra + '개 펼치기' };
+  }
+
+  function initChartMore(doc, win) {
+    var root = doc.getElementById('landingChartTop5');
+    var button = doc.getElementById('landingChartMore');
+    if (!root || !button) return;
+    var expanded = false;
+    function rowCount() { return root.querySelectorAll('a.chart-row').length; }
+    function apply() {
+      var state = chartMoreState(rowCount(), expanded);
+      button.hidden = state.hidden;
+      button.setAttribute('aria-expanded', String(state.expanded));
+      button.textContent = state.label;
+      root.classList.toggle('is-open', state.expanded);
+    }
+    button.addEventListener('click', function () { expanded = !expanded; apply(); });
+    if (typeof win.MutationObserver === 'function') {
+      new win.MutationObserver(apply).observe(root, { childList: true });
+    }
+    apply();
+  }
+
   function initReveal(doc, win) {
     var items = Array.prototype.slice.call(doc.querySelectorAll('.v3-rv'));
     if (!items.length || typeof win.IntersectionObserver !== 'function') return;
@@ -128,12 +156,13 @@
   function init(doc, win) {
     initTabs(doc);
     initReveal(doc, win);
+    initChartMore(doc, win);
     initTyped(doc, win);
     guardInquiry(doc, win);
   }
 
   if (typeof document !== 'undefined' && typeof window !== 'undefined') init(document, window);
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, EXAMPLES: EXAMPLES };
+    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, chartMoreState: chartMoreState, initChartMore: initChartMore, EXAMPLES: EXAMPLES };
   }
 })(typeof window !== 'undefined' ? window : globalThis);
