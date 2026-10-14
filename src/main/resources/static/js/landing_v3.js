@@ -108,7 +108,7 @@
     var button = doc.getElementById('landingChartMore');
     if (!root || !button) return;
     var expanded = false;
-    function rowCount() { return root.querySelectorAll('a.chart-row').length; }
+    function rowCount() { return root.querySelectorAll('a.bb-row').length; }
     function apply() {
       var state = chartMoreState(rowCount(), expanded);
       button.hidden = state.hidden;

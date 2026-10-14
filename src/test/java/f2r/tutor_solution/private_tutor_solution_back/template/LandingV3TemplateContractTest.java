@@ -26,7 +26,6 @@ class LandingV3TemplateContractTest {
 
     // when
     int hero = html.indexOf("id=\"hero\"");
-    int intro = html.indexOf("id=\"intro\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
     int wiki = html.indexOf("id=\"wiki\"");
     int soon = html.indexOf("id=\"soon\"");
@@ -35,8 +34,7 @@ class LandingV3TemplateContractTest {
 
     // then
     assertThat(hero).isGreaterThanOrEqualTo(0);
-    assertThat(intro).isGreaterThan(hero);
-    assertThat(chart).isGreaterThan(intro);
+    assertThat(chart).isGreaterThan(hero);
     assertThat(wiki).isGreaterThan(chart);
     assertThat(soon).isGreaterThan(wiki);
     assertThat(faq).isGreaterThan(soon);
@@ -96,15 +94,15 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 소개영상·슬로건 when 읽으면 then 삭제하지 않고 유지한다")
-  void intro_video_and_slogan_are_kept() throws Exception {
+  @DisplayName("given 브랜드 소개 삭제 지시 when 읽으면 then 소개 영상·슬로건 섹션은 없고 글자 흐름 띠만 남는다")
+  void brand_intro_is_removed_but_flow_marquee_stays() throws Exception {
     // given
     String html = Files.readString(LANDING);
 
     // then
     assertThat(html)
-        .contains("숨은 영어교육자를 발굴하고, 성장시키고, 투자로 연결합니다.")
-        .contains("data-youtube-id=\"fK_BdoK8O64\"")
+        .doesNotContain("id=\"intro\"")
+        .doesNotContain("data-youtube-id=\"fK_BdoK8O64\"")
         .contains("class=\"flow-marquee\" id=\"why\"");
   }
 
@@ -119,6 +117,7 @@ class LandingV3TemplateContractTest {
         .contains("id=\"landingChartTop5\"")
         .contains("id=\"landingChartDate\"")
         .contains("id=\"chartRegionPicker\"")
+        .contains("BUILDIT CHART 100")
         .contains("/js/landing_chart.js")
         .doesNotContain("교육자 A")
         .doesNotContain("교육자 B");
@@ -173,7 +172,7 @@ class LandingV3TemplateContractTest {
     assertThat(html).contains("id=\"landingChartTop5\"").contains("id=\"landingChartDate\"");
     assertThat(html).contains("id=\"landingChartMore\"").contains("aria-controls=\"landingChartTop5\"");
     assertThat(css).contains("@media (max-width: 720px)")
-        .contains("#landingChartTop5:not(.is-open) .chart-row:nth-child(n+4)");
+        .contains("#landingChartTop5:not(.is-open) .bb-row:nth-child(n+4)");
     assertThat(js).contains("chartMoreState").contains("initChartMore");
   }
 

@@ -33,7 +33,6 @@ class LandingTemplateContractTest {
         .contains("<title>Build It | 원장과 강사가 브랜드가 되는 시대</title>")
         .contains("<span class=\"nav-logo bi\" aria-label=\"Build It\"><b>Build</b><i>It</i></span>")
         .contains("<span class=\"ext\">Wiki</span>")
-        .contains("숨은 영어교육자를 발굴하고, 성장시키고, 투자로 연결합니다.")
         // 구 서비스명이 남으면 클라이언트가 요구한 리브랜딩이 반쯤만 적용된 상태가 된다.
         .doesNotContain("모두의 학원")
         .doesNotContain("모두의학원")
@@ -92,18 +91,16 @@ class LandingTemplateContractTest {
         .doesNotContain("id=\"report\"")
         .doesNotContain("id=\"shorts\"");
     assertThat(html)
-        .contains("BuildIt TOP 5")
         .contains("전국 TOP100 보기 →")
         .contains("id=\"landingChartTop5\"")
         .contains("href=\"/chart\"")
         .contains("href=\"/wiki\" class=\"btn outline nav-cta\">Buildit 모의고사</a>")
         .contains("href=\"/home\" class=\"btn outline nav-cta\">F2R</a>")
         .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">BUILD IT WIKI</a>")
-        .contains("class=\"chart-phone\"")
+        .contains("class=\"bb-chart\"")
         .doesNotContain("정수정영어학원 · 서울 송파구 삼전동");
     assertThat(css)
         .contains(".chart-showcase")
-        .contains(".chart-phone")
         .contains(".chart-row")
         .contains(".chart-cta");
   }
@@ -180,7 +177,7 @@ class LandingTemplateContractTest {
     assertThat(html)
         .contains("data-buildit-start")
         // JS가 죽어도 최소한 /builder로는 가야 한다.
-        .contains("href=\"/builder\" class=\"btn\" data-buildit-start");
+        .contains("href=\"/builder\" class=\"btn reveal\" data-fade data-buildit-start");
     assertThat(js)
         .contains("/api/auth/me")
         .contains("'/register?returnUrl=' + encodeURIComponent(BUILDER_URL)")
