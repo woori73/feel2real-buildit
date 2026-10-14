@@ -75,6 +75,13 @@ class EducatorKnowledgeServiceTest {
   }
 
   @Test
+  @DisplayName("given 영어와 무관한 업종 요청 when 실데이터 검색 then 일반 어휘 겹침만으로 사례를 끌어오지 않는다")
+  void realPool_unrelatedSubject_notMatchedByGenericTokens() {
+    EducatorKnowledgeService service = new EducatorKnowledgeService();
+    assertThat(service.search("제과제빵 실습 커리큘럼", 3)).isEmpty();
+  }
+
+  @Test
   @DisplayName("given 빈/널 쿼리 when 검색 then 빈 목록 — 컨텍스트 일부만 있어도 동작")
   void blankQuery_returnsEmpty() {
     EducatorKnowledgeService service = new EducatorKnowledgeService(

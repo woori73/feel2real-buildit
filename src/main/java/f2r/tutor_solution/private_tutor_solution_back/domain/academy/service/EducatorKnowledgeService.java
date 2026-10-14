@@ -37,6 +37,11 @@ public class EducatorKnowledgeService {
   private static final Logger log = LoggerFactory.getLogger(EducatorKnowledgeService.class);
   private static final int TAG_SCORE = 3;
   private static final int MAX_TOKENS = 40;
+  /**
+   * 태그·지역 신호 없이 원문 키워드만일 때의 최저 일치 수. 영어학원 사례 풀 특성상
+   * "영어·수업·커리큘럼" 같은 일반 어휘만 겹치는 무관 업종(요리·제과 등)의 요청을 배제한다.
+   */
+  private static final int KEYWORD_ONLY_MIN_HITS = 4;
 
   /** 검색 문구에 포함된 키워드 → Chart 카드 분류 태그(수집 프로젝트의 TRIGGER 매핑과 동일). */
   private static final Map<String, String> TAG_TRIGGERS = buildTagTriggers();
@@ -140,16 +145,32 @@ public class EducatorKnowledgeService {
     Map<Long, Integer> scores = new LinkedHashMap<>();
     for (Card card : pool) {
       int score = 0;
+      int tagHits = 0;
+      boolean regionHit = false;
+      int kwHits = 0;
       for (String tag : card.tags()) {
-        if (wantTags.contains(tag)) score += TAG_SCORE;
+        if (wantTags.contains(tag)) {
+          tagHits++;
+          score += TAG_SCORE;
+        }
       }
-      if (card.province() != null && query.contains(card.province())) score += 2;
-      if (card.region() != null && query.contains(card.region())) score += 3;
+      if (card.province() != null && query.contains(card.province())) {
+        score += 2;
+        regionHit = true;
+      }
+      if (card.region() != null && query.contains(card.region())) {
+        score += 3;
+        regionHit = true;
+      }
       String text = card.searchText();
       for (String token : tokens) {
-        if (text.contains(token)) score += 1;
+        if (text.contains(token)) {
+          kwHits++;
+          score += 1;
+        }
       }
-      if (score > 0) {
+      // 일반 어휘만 겹치는 무관 업종 요청은 사례로 끌어오지 않는다(태그·지역 또는 충분한 키워드 신호 필요).
+      if (score > 0 && (tagHits > 0 || regionHit || kwHits >= KEYWORD_ONLY_MIN_HITS)) {
         ranked.add(card);
         scores.put(card.id(), score);
       }

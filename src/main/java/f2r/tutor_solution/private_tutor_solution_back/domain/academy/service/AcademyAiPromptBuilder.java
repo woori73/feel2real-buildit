@@ -221,13 +221,22 @@ public class AcademyAiPromptBuilder {
     for (EducatorReference r : references) {
       sb.append("\n- (id ").append(r.id())
           .append(" · ").append(blank(r.region())).append(") ")
-          .append("철학: ").append(excerpt(r.philosophy()))
-          .append(" | 커리큘럼: ").append(excerpt(r.curriculum()))
-          .append(" | 수업 방식: ").append(excerpt(r.teaching()));
+          .append("철학: ").append(excerpt(mask(r.philosophy(), r)))
+          .append(" | 커리큘럼: ").append(excerpt(mask(r.curriculum(), r)))
+          .append(" | 수업 방식: ").append(excerpt(mask(r.teaching(), r)));
     }
     sb.append("\n규칙: 위 사례의 원장·학원 이름, 수치, 실적, 프로그램명, 문구를 출력에 포함하지 않는다. ")
         .append("의뢰 학원장이 제공하거나 확인한 값만 슬롯에 채운다.");
     return sb.toString();
+  }
+
+  /** 카드 원문 요약이 사례 인물·학원 이름을 포함하는 경우(예: "~원장은 …") 프롬프트에서 마스킹한다. */
+  private static String mask(String value, EducatorReference r) {
+    if (value == null || value.isBlank()) return value;
+    String out = value;
+    if (r.name() != null && !r.name().isBlank()) out = out.replace(r.name(), "해당 교육자");
+    if (r.academyName() != null && !r.academyName().isBlank()) out = out.replace(r.academyName(), "다른 학원");
+    return out;
   }
 
   private static String excerpt(String value) {

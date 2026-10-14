@@ -200,6 +200,22 @@ class AcademyAiPromptBuilderTest {
     assertThat(prompt).contains("가".repeat(60) + "…");
   }
 
+  @Test
+  @DisplayName("given 카드 원문이 인물명·학원명을 포함 when 블록 렌더 then 마스킹되어 이름이 프롬프트에 남지 않는다")
+  void references_namesMasked() {
+    EducatorReference named = new EducatorReference(
+        66L, "문나경", "원장", "기지시GNB영어수학학원", "충청남도 당진시", "2026-09-14",
+        "문나경 원장은 당진 학생도 대도시 학생과 경쟁할 영어 실력을 갖춰야 한다고 본다.",
+        "기지시GNB영어수학학원은 입학 진단 후 누적 반복 과정을 운영한다.",
+        "원장 직강", List.of("habit_structure"), "https://feel2real.co.kr/chart/educators/66");
+
+    String prompt = builder.build(
+        AcademyAiTaskType.GUIDE_TEXT, context, "principalDesc", "", "강조", List.of(named));
+
+    assertThat(prompt).doesNotContain("문나경").doesNotContain("기지시GNB영어수학학원");
+    assertThat(prompt).contains("해당 교육자").contains("다른 학원");
+  }
+
   private AcademyAiContext withComposition() {
     return new AcademyAiContext(
         "우리학원", "소개", List.of("영어"), List.of("MIDDLE"),
