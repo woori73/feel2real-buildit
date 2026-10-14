@@ -48,6 +48,7 @@ class WebMvcConfigTest {
       "/lessons, public/lesson_search",
       "/stdt_dashboard, student/stdt_dashboard",
       "/tutor_dashboard, tutor/tutor_dashboard",
+      "/ledger, easy/tutor_agent",
       "/conversation/chat, student/conversation_chat",
       "/conversation/tutor-materials, student/conversation_tutor_materials",
       "/conversation/homework, student/conversation_homework",
@@ -82,6 +83,24 @@ class WebMvcConfigTest {
     }
   }
 
+
+  @org.junit.jupiter.api.Test
+  @DisplayName("기존 원장 장부 URL은 /ledger로 영구 리다이렉트한다")
+  void tutor_easy_redirects_permanently_to_ledger() throws Exception {
+    AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
+    context.setServletContext(new MockServletContext());
+    context.register(TestMvcConfig.class);
+    context.refresh();
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+
+    try {
+      mockMvc.perform(get("/tutor/easy"))
+          .andExpect(status().isMovedPermanently())
+          .andExpect(redirectedUrl("/ledger"));
+    } finally {
+      context.close();
+    }
+  }
 
   @ParameterizedTest(name = "{0} -> /home")
   @org.junit.jupiter.params.provider.ValueSource(strings = {"/login", "/login.html"})
