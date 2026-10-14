@@ -175,3 +175,21 @@ test('Given TOP5 행과 더보기 버튼, When 버튼을 누르면, Then is-open
   assert.equal(button.attrs['aria-expanded'], 'true');
   assert.equal(button.textContent, '접기');
 });
+
+test('Given 문구 3개, When 다음 순번을 계산하면, Then 마지막 다음은 처음으로 돌아간다', () => {
+  // given/when/then
+  assert.equal(v3.nextWordIndex(0, 3), 1);
+  assert.equal(v3.nextWordIndex(2, 3), 0);
+  assert.equal(v3.nextWordIndex(0, 0), 0);
+});
+
+test('Given 움직임 줄이기 설정, When 문구 순환을 시작하면, Then 순환하지 않아 세 문구가 모두 보인다', () => {
+  // given
+  const title = Object.assign(el(), { querySelectorAll: () => [el(), el(), el()] });
+  const doc = { querySelector: () => title };
+  const win = { matchMedia: () => ({ matches: true }), setInterval() { throw new Error('호출되면 안 된다'); } };
+  // when
+  v3.initWords(doc, win);
+  // then
+  assert.equal(title.classList.contains('fm-rot'), false);
+});

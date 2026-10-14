@@ -47,40 +47,30 @@
 
   <!-- ============ 1. HERO — AI 홈페이지 제작 (시작하기 게이트 훅 data-buildit-* 유지) ============ -->
   <section class="hero" id="hero">
-    <div class="v3-hero-grid">
-      <div class="v3-hero-copy">
-        <span class="v3-eyebrow">AI 홈페이지 제작 서비스</span>
-        <h1 class="v3-h1">말로 만들고,<br>말로 고치는<br><em>학원 홈페이지</em></h1>
-        <p class="v3-lead">원하는 분위기를 한 줄로 말하면 AI가 섹션을 하나씩 만듭니다. 마음에 안 드는 부분은 Agent에게 말로 고치고, 확인한 뒤에만 게시합니다.</p>
+    <div class="fm-hero">
+      <h1 class="fm-title" data-fm-words aria-label="간편하게 · 빠르게 제작 · 배포도 금방">
+        <span class="fm-word">간편하게</span><span class="fm-dot" aria-hidden="true"> · </span><span class="fm-word">빠르게 제작</span><span class="fm-dot" aria-hidden="true"> · </span><span class="fm-word">배포도 금방</span>
+      </h1>
+      <p class="fm-sub">채팅창에 간단한 명령어를 입력하면 홈페이지 제작이 시작됩니다 · 배포 무료</p>
+      <div class="fm-stage">
+        <ul class="fm-track">
+          <li><img src="/img/landing/templates/template-light-academy.jpg" alt="홈페이지 템플릿 화면" width="1400" height="694"></li>
+          <li><img src="/img/landing/templates/template-dark-course.jpg" alt="홈페이지 템플릿 화면" width="1400" height="846"></li>
+          <li><img src="/img/landing/templates/template-dark-course-list.jpg" alt="홈페이지 템플릿 화면" width="1400" height="866"></li>
+          <li><img src="/img/landing/templates/template-light-academy.jpg" width="1400" height="694" aria-hidden="true"></li>
+          <li><img src="/img/landing/templates/template-dark-course.jpg" width="1400" height="846" aria-hidden="true"></li>
+          <li><img src="/img/landing/templates/template-dark-course-list.jpg" width="1400" height="866" aria-hidden="true"></li>
+        </ul>
         <form class="v3-ask" data-buildit-form autocomplete="off">
           <input type="text" class="v3-ask-input" data-buildit-prompt maxlength="2000"
-                 placeholder="우리 영어학원 홈페이지를 만들어줘." aria-label="만들고 싶은 홈페이지">
-          <button type="submit" class="v3-btn v3-btn-primary" aria-label="시작하기">만들기</button>
+                 placeholder="어떤 홈페이지를 만들고 싶으신가요?" aria-label="만들고 싶은 홈페이지">
+          <button type="submit" class="v3-btn v3-btn-primary" aria-label="만들기">만들기</button>
         </form>
-        <div class="v3-chips" aria-label="예시 문장">
-          <button type="button" class="v3-chip" data-buildit-example>초등·중등 영어학원, 밝고 세련되게 만들어줘</button>
-          <button type="button" class="v3-chip" data-buildit-example>입시·내신 전문 학원, 신뢰감 있게 만들어줘</button>
-          <button type="button" class="v3-chip" data-buildit-example>영어회화 학원, 활기차게 만들어줘</button>
-        </div>
-        <ul class="v3-assure"><li>미리보기 먼저</li><li>대화로 수정</li><li>승인 후 게시</li></ul>
       </div>
-      <div class="v3-win" role="img" aria-label="AI 홈페이지 제작 화면 예시: 왼쪽 대화, 오른쪽 실시간 미리보기">
-        <div class="v3-win-bar" aria-hidden="true"><i></i><i></i><i></i><span>buildit.app/builder · 내 학원 홈페이지</span></div>
-        <div class="v3-split" aria-hidden="true">
-          <div class="v3-chat">
-            <div class="v3-msg v3-msg-u">초등·중등 영어학원, 밝고 세련되게 만들어줘</div>
-            <div class="v3-msg v3-msg-a">소개와 상담 신청 중심으로 만들게요.<div class="v3-pills"><b class="on">히어로</b><b class="on">커리큘럼</b><b>강사진</b><b>상담</b></div></div>
-            <div class="v3-msg v3-msg-u">커리큘럼 카드는 3개로 줄여줘</div>
-            <div class="v3-msg v3-msg-a">반영했어요. 오른쪽에서 확인해 주세요.</div>
-          </div>
-          <div class="v3-site">
-            <span class="v3-site-tag">실시간 미리보기 · 예시</span>
-            <div class="v3-site-nav"><span>우리영어학원</span></div>
-            <div class="v3-site-hero"><div><h4>아이의 영어가<br>자라는 곳</h4><p>레벨별 소수정예 수업</p><u>상담 신청</u></div><div class="v3-site-img"></div></div>
-            <div class="v3-site-grid"><div>초급<small>파닉스·기초회화</small></div><div>중급<small>독해·문법</small></div><div>심화<small>내신·토론</small></div></div>
-          </div>
-        </div>
-        <div class="v3-pub" aria-hidden="true"><span>초안 · 수정 2회</span><b>확인 후 게시</b></div>
+      <div class="v3-chips" aria-label="예시">
+        <button type="button" class="v3-chip" data-buildit-example>영어학원 홈페이지</button>
+        <button type="button" class="v3-chip" data-buildit-example>수학학원 홈페이지</button>
+        <button type="button" class="v3-chip" data-buildit-example>공부방 홈페이지</button>
       </div>
     </div>
   </section>

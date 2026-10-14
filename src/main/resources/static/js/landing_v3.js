@@ -123,6 +123,27 @@
     apply();
   }
 
+  /* 첫 화면 큰 문구: 세 문구를 번갈아 보여 준다. 순환 불가(움직임 줄이기·JS 없음)면 세 문구를 모두 보여 준다. */
+  function nextWordIndex(index, count) {
+    return count > 0 ? (index + 1) % count : 0;
+  }
+
+  function initWords(doc, win) {
+    var title = doc.querySelector('[data-fm-words]');
+    if (!title) return;
+    var words = Array.prototype.slice.call(title.querySelectorAll('.fm-word'));
+    var reduced = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (words.length < 2 || reduced) return;
+    title.classList.add('fm-rot');
+    var index = 0;
+    words[index].classList.add('on');
+    win.setInterval(function () {
+      words[index].classList.remove('on');
+      index = nextWordIndex(index, words.length);
+      words[index].classList.add('on');
+    }, 2200);
+  }
+
   function initReveal(doc, win) {
     var items = Array.prototype.slice.call(doc.querySelectorAll('.v3-rv'));
     if (!items.length || typeof win.IntersectionObserver !== 'function') return;
@@ -156,13 +177,13 @@
   function init(doc, win) {
     initTabs(doc);
     initReveal(doc, win);
+    initWords(doc, win);
     initChartMore(doc, win);
-    initTyped(doc, win);
     guardInquiry(doc, win);
   }
 
   if (typeof document !== 'undefined' && typeof window !== 'undefined') init(document, window);
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, chartMoreState: chartMoreState, initChartMore: initChartMore, EXAMPLES: EXAMPLES };
+    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, nextWordIndex: nextWordIndex, initWords: initWords, chartMoreState: chartMoreState, initChartMore: initChartMore, EXAMPLES: EXAMPLES };
   }
 })(typeof window !== 'undefined' ? window : globalThis);
