@@ -174,7 +174,15 @@ public class AcademyAiCreateService {
   private String buildContentPrompt(
       AcademyRequirementAnalyzer.AcademyRequirements req,
       String academyName,
-      String originalMessage) {
+      String originalMessage,
+      String templateGuide) {
+    // 템플릿 기반 생성: 선택한 샘플의 구조를 프롬프트에 포함
+    String templateSection = "";
+    if (templateGuide != null && !templateGuide.isBlank()) {
+      templateSection = "\n\n[선택한 템플릿 구조]\n" + templateGuide 
+          + "\n위 템플릿의 섹션 구성과 스타일을 따라 홈페이지를 생성하세요.\n";
+    }
+
     StringBuilder sb = new StringBuilder();
     sb.append("학원 홈페이지의 초기 콘텐츠를 JSON 형식으로 생성해주세요.\n\n");
     sb.append("## 학원 정보\n");
