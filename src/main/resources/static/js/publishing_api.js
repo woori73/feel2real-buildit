@@ -44,7 +44,9 @@
     /* ── 4.1 작업(Job) API ─────────────────────────────────── */
     listJobs: function () {
       if (USE_MOCK) return mockCall('listJobs', []);
-      return http('GET', '/jobs').then(function (r) { return r.jobs; });
+      /* 백엔드 목록 엔드포인트는 별도 이슈로 분리 — 일단 빈 목록 반환 */
+      return http('GET', '/jobs').then(function (r) { return r.jobs; })
+        .catch(function () { return []; });
     },
     createJob: function (template, title, manuscriptFile) {
       if (USE_MOCK) return mockCall('createJob', [template, title, manuscriptFile ? manuscriptFile.name : null]);
