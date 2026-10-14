@@ -464,6 +464,7 @@ jobs:
           echo "Creating staging DB user..."
           mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "
           CREATE USER IF NOT EXISTS 'staging_publishing'@'%' IDENTIFIED BY '$STAGING_PW';
+          ALTER USER 'staging_publishing'@'%' IDENTIFIED BY '$STAGING_PW';
           GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP, REFERENCES ON feel2real_staging.* TO 'staging_publishing'@'%';
           FLUSH PRIVILEGES;" > /tmp/dbsetup.log 2>&1
           if [ $? -eq 0 ]; then
