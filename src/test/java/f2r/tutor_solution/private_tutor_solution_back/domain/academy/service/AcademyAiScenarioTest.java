@@ -116,7 +116,7 @@ class AcademyAiScenarioTest {
             + "내신 대비에 강점을 가지고 체계적으로 지도합니다.\", "
             + "\"introHeading\": \"중학생 영어 전문\", "
             + "\"introMotto\": \"믿고 맡길 수 있는 영어학원\"}");
-    CreateDraft draft = createService.generateDraft(message, "압구정영어학원");
+    CreateDraft draft = createService.generateDraft(message, "압구정영어학원", null);
 
     // then: 프리셋 및 콘텐츠 확인
     assertThat(draft.designPreset()).isEqualTo("ENGLISH");
@@ -140,7 +140,7 @@ class AcademyAiScenarioTest {
     assertThat(req.target()).isEqualTo("고등학생");
     assertThat(req.subject()).isEqualTo("수학");
 
-    CreateDraft draft = createService.generateDraft(message, "수학학원");
+    CreateDraft draft = createService.generateDraft(message, "수학학원", null);
     assertThat(draft.designPreset()).isEqualTo("EXAM");
   }
 
@@ -155,7 +155,7 @@ class AcademyAiScenarioTest {
     assertThat(req.preset()).isEqualTo("ARTS");
     assertThat(req.target()).isEqualTo("초등학생");
 
-    CreateDraft draft = createService.generateDraft(message, "미술학원");
+    CreateDraft draft = createService.generateDraft(message, "미술학원", null);
     assertThat(draft.designPreset()).isEqualTo("ARTS");
   }
 
@@ -230,7 +230,7 @@ class AcademyAiScenarioTest {
         "{\"intro\": \"10년 경력의 원장이 지도하는 학원입니다. 95% 성적 향상!\", "
             + "\"introHeading\": \"최고의 학원\"}");
 
-    CreateDraft draft = createService.generateDraft(message, "테스트학원");
+    CreateDraft draft = createService.generateDraft(message, "테스트학원", null);
 
     // then: 허위 숫자 패턴이 포함된 콘텐츠는 제외됨
     String intro = draft.builderDraft().get("intro");
@@ -283,8 +283,8 @@ class AcademyAiScenarioTest {
     // 컴파일 타임에 보장됨. 여기서는 generateDraft가 순수 함수임을 확인.
     String message = "영어학원 홈페이지 만들어 줘.";
 
-    CreateDraft draft1 = createService.generateDraft(message, "학원1");
-    CreateDraft draft2 = createService.generateDraft(message, "학원1");
+    CreateDraft draft1 = createService.generateDraft(message, "학원1", null);
+    CreateDraft draft2 = createService.generateDraft(message, "학원1", null);
 
     // 같은 입력에 대해 일관된 출력 (DB 상태에 의존하지 않음)
     assertThat(draft1.designPreset()).isEqualTo(draft2.designPreset());
