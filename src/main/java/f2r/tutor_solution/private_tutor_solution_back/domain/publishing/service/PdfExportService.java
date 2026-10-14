@@ -117,7 +117,11 @@ public class PdfExportService {
       long size = Files.size(outPdf);
       PublishingArtifact artifact = new PublishingArtifact(
           jobId, "pdf", standard.code, outPdf.toString(), size, null);
-      return artifactRepository.save(artifact);
+      PublishingArtifact saved = artifactRepository.save(artifact);
+      // PDF 출력 성공 시 작업을 DONE으로 전환
+      job.markDone();
+      log.info("Publishing 작업 완료: jobId={}", jobId);
+      return saved;
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
           "산출물 등록 실패: " + e.getMessage(), e);
