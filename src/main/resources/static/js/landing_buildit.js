@@ -263,10 +263,13 @@
     });
   });
 
-  gsap.to('#hero .hero-inner', {
-    yPercent: -12, opacity: 0, ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
-  });
+  // v3 히어로는 .hero-inner를 쓰지 않는다(없으면 GSAP 경고만 나므로 건너뛴다).
+  if (document.querySelector('#hero .hero-inner')) {
+    gsap.to('#hero .hero-inner', {
+      yPercent: -12, opacity: 0, ease: 'none',
+      scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true }
+    });
+  }
 
 
   // --- Wiki: pin + 3단계 플로우 + 화면 슬라이드 전환 ---

@@ -68,36 +68,45 @@ class LandingTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 서비스 소개 when 템플릿을 읽으면 then Wiki·Web·Chart·Report·Shorts 순서로 노출한다")
+  @DisplayName("given 서비스 소개 when 템플릿을 읽으면 then 제작(Web)→Chart→콘텐츠 도구(Wiki·Report·Shorts)→준비 중 순서로 노출한다")
   void landing_orders_services_by_product_strategy() throws Exception {
+    // 2026-10-14 사용자 확정(docs/design/homepage-v3/HANDOFF.md §10-1): AI 홈페이지 제작 → Chart → Easy(서비스 탐색기 탭)
+    // → 콘텐츠 도구(Wiki·Report·Shorts) → 준비 중 서비스. 이전 순서(Wiki→Web→Chart→Report→Shorts)에서 바뀌었다.
+    // 낡은 단언(대한민국 지역별 TOP 100 문구, Chart 전체보기 문구, 정수정영어학원 하드코딩)은 현재 랜딩에 없고,
+    // Chart는 공개 API(landing_chart.js)로 그리므로 실제 교육자 이름을 템플릿에 고정하지 않는다.
     // given
     String html = Files.readString(LANDING);
     String css = Files.readString(LANDING_CSS);
 
     // when
     int hero = html.indexOf("id=\"hero\"");
-    int wiki = html.indexOf("id=\"wiki\"");
     int web = html.indexOf("id=\"web\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
+    int tools = html.indexOf("id=\"tools\"");
+    int wiki = html.indexOf("id=\"wiki\"");
     int report = html.indexOf("id=\"report\"");
     int shorts = html.indexOf("id=\"shorts\"");
+    int soon = html.indexOf("id=\"soon\"");
 
     // then
     assertThat(hero).isGreaterThanOrEqualTo(0);
-    assertThat(wiki).isGreaterThan(hero);
-    assertThat(web).isGreaterThan(wiki);
+    assertThat(web).isGreaterThan(hero);
     assertThat(chart).isGreaterThan(web);
-    assertThat(report).isGreaterThan(chart);
+    assertThat(tools).isGreaterThan(chart);
+    assertThat(wiki).isGreaterThan(tools);
+    assertThat(report).isGreaterThan(wiki);
     assertThat(shorts).isGreaterThan(report);
+    assertThat(soon).isGreaterThan(shorts);
     assertThat(html)
-        .contains("대한민국 지역별 영어교육자 TOP 100")
-        .contains("BuildIt Chart 전체보기 →")
+        .contains("BuildIt TOP 5")
+        .contains("전국 TOP100 보기 →")
+        .contains("id=\"landingChartTop5\"")
         .contains("href=\"/chart\"")
         .contains("href=\"/wiki\" class=\"btn outline nav-cta\">Buildit 모의고사</a>")
         .contains("href=\"/home\" class=\"btn outline nav-cta\">F2R</a>")
         .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">BUILD IT WIKI</a>")
         .contains("class=\"chart-phone\"")
-        .contains("정수정영어학원 · 서울 송파구 삼전동");
+        .doesNotContain("정수정영어학원 · 서울 송파구 삼전동");
     assertThat(css)
         .contains(".chart-showcase")
         .contains(".chart-phone")
