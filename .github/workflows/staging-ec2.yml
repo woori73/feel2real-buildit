@@ -89,9 +89,16 @@ jobs:
             case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
           done
           echo "===== STDOUT ====="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/staging-investigate-output.txt
           echo "===== STDERR ====="
           aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
+
+      - name: Upload investigate output
+        if: inputs.mode == 'investigate'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-investigate-output
+          path: /tmp/staging-investigate-output.txt
 
       - name: Setup staging environment
         if: inputs.mode == 'setup'
@@ -295,7 +302,7 @@ jobs:
             case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
           done
           echo "===== STDOUT ====="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/staging-setup-output.txt
           echo "===== STDERR ====="
           aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text || true
           FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text)
@@ -303,6 +310,13 @@ jobs:
             echo "::error::Staging setup failed (Status=$FINAL)"
             exit 1
           fi
+
+      - name: Upload setup output
+        if: inputs.mode == 'setup'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-setup-output
+          path: /tmp/staging-setup-output.txt
 
       - name: Teardown staging environment
         if: inputs.mode == 'teardown'
