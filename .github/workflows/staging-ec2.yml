@@ -103,10 +103,12 @@ jobs:
       - name: Setup staging environment
         if: inputs.mode == 'setup'
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           echo "=== Step 1: Download JAR from main CI ==="
-          gh run download "$CI_RUN_ID" -n "app-jar-$DEPLOY_SHA" -D /tmp/staging-artifacts || {
+          gh run download "$CI_RUN_ID" -n "app-jar-$DEPLOY_SHA" -D /tmp/staging-artifacts --repo woori73/feel2real-buildit || {
             echo "::error::JAR artifact download failed"
             exit 1
           }
