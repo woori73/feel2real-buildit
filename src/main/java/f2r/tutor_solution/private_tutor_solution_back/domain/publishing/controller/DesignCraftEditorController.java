@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  *
  * <p>Qoder 프론트엔드 (publishing_editor) 통합.
  * 실제 출판 API는 {@code /api/publishing/*} REST를 사용한다.
+ * TUTOR 권한 필요 (SecurityConfig).
  */
 @Controller
 @RequestMapping("/designcraft")
