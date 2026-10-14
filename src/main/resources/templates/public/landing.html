@@ -6,13 +6,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Build It | 원장과 강사가 브랜드가 되는 시대</title>
-  <meta name="description" content="당신의 이름을 브랜드로 만드는 플랫폼, Build It. Build It Wiki, Web, Chart, Report, Shorts.">
+  <meta name="description" content="당신의 이름을 브랜드로 만드는 플랫폼, Build It. Build It Wiki, Web, Chart.">
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
   <link rel="stylesheet" href="/css/landing_buildit.css?v=20260902-2">
   <!-- v3: Pretendard 우선(로딩 실패 시 landing_v3.css의 대체 폰트 스택). 자체 호스팅은 docs/design/homepage-v3/HANDOFF.md §13 참고 -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/landing_v3.css?v=20261014-2">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
+  <link rel="stylesheet" href="/css/landing_v3.css?v=20261014-3">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -46,90 +47,115 @@
   </div>
 
   <!-- ============ 1. HERO — AI 홈페이지 제작 (시작하기 게이트 훅 data-buildit-* 유지) ============ -->
+  <!-- ============ 0. 전국 무대 (Shopify '글로벌 무대로 확장하세요' 구성: 지역 선택 → 카드 전환, 지도 대신 남한 지도) ============ -->
+  <section class="nation" id="nation" data-nation>
+    <div class="nation-wrap">
+      <div class="nation-head"><h2 class="nation-title">전국 무대로 확장하세요!</h2><p class="nation-agent"><svg class="chick chick-md" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-spark"><path class="s1" d="M100 22l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#5ff2e1"/><path class="s2" d="M16 36l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff6bf"/></g></g></svg><span><small>AI Agent</small>디지털영어학원 Agent</span></p></div>
+      <div class="nation-stage">
+        <div class="nation-mapbox" aria-hidden="true">
+          <div class="nation-chick"><svg class="chick chick-md" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/></g></svg></div>
+          <div class="nation-mapfit"><img src="/img/landing/korea-dots.svg" alt="" width="520" height="707"><span class="nation-pin" data-nation-pin style="left:19.75%;top:19.43%"></span></div>
+        </div>
+        <ul class="nation-regions" aria-label="지역 선택">
+          <li><button type="button" class="nation-region on" data-nation-region="0" data-x="19.75" data-y="19.43" aria-pressed="true"><span>서울</span></button></li>
+          <li><button type="button" class="nation-region" data-nation-region="1" data-x="62.36" data-y="63.51" aria-pressed="false"><span>부산</span></button></li>
+          <li><button type="button" class="nation-region" data-nation-region="2" data-x="52.62" data-y="50.78" aria-pressed="false"><span>대구</span></button></li>
+          <li><button type="button" class="nation-region" data-nation-region="3" data-x="17.11" data-y="63.88" aria-pressed="false"><span>광주</span></button></li>
+        </ul>
+        <div class="nation-center">
+          <div class="nation-card">
+            <img class="nation-photo on" src="/img/landing/teachers/teacher-seoul.jpg" alt="영어 선생님 예시 사진" width="447" height="597">
+            <img class="nation-photo" src="/img/landing/teachers/teacher-busan.jpg" alt="영어 선생님 예시 사진" width="447" height="597" loading="lazy">
+            <img class="nation-photo" src="/img/landing/teachers/teacher-daegu.jpg" alt="영어 선생님 예시 사진" width="447" height="597" loading="lazy">
+            <img class="nation-photo" src="/img/landing/teachers/teacher-gwangju.jpg" alt="영어 선생님 예시 사진" width="447" height="597" loading="lazy">
+            <span class="nation-card-btn">수강 상담</span>
+          </div>
+          <span class="nation-pill"><b data-nation-chip>서울</b>영어학원 홈페이지</span>
+        </div>
+        <div class="nation-panel">
+          <div class="nation-devices">
+            <div class="nation-laptop nation-slides" aria-label="학원 홈페이지 화면 예시"><img src="/img/landing/templates/template-dark-course.jpg" alt="" width="1400" height="810" loading="lazy"><img src="/img/landing/templates/template-light-academy.jpg" alt="" width="1400" height="809" loading="lazy"><img src="/img/landing/templates/template-dark-course-list.jpg" alt="" width="1400" height="810" loading="lazy"></div>
+            <div class="nation-phone" aria-label="모바일 화면 예시"><div class="np-screen">
+              <div class="np-top"><b class="np-logo"><i></i>디지털영어학원</b><em>≡</em></div>
+              <div class="np-chip">온라인 영어 수업</div>
+              <div class="np-h">영어의 첫걸음,<br><u>지금 시작합니다.</u></div>
+              <div class="np-sub">레벨 테스트부터 맞춤 수업까지</div>
+              <div class="np-btn">무료 레벨 테스트</div>
+              <div class="np-teacher"><img class="nation-mini on" src="/img/landing/teachers/teacher-seoul.jpg" alt="" width="447" height="597"><img class="nation-mini" src="/img/landing/teachers/teacher-busan.jpg" alt="" width="447" height="597"><img class="nation-mini" src="/img/landing/teachers/teacher-daegu.jpg" alt="" width="447" height="597"><img class="nation-mini" src="/img/landing/teachers/teacher-gwangju.jpg" alt="" width="447" height="597"><span>담당 선생님</span></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 1. 디지털영어학원 Agent → 첫 서비스: 홈페이지 Agent ============ -->
+  <section class="agent-head" id="agent">
+    <p class="agent-service"><svg class="chick chick-chip" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-laptop"><rect x="34" y="90" width="52" height="24" rx="3" fill="#e8f1f2" stroke="#14333a" stroke-width="2.5"/><rect x="39" y="94" width="42" height="14" rx="1.5" fill="#14333a"/><rect class="ck-type t1" x="43" y="98" width="14" height="2.6" rx="1.3" fill="#5ff2e1"/><rect class="ck-type t2" x="43" y="103" width="22" height="2.6" rx="1.3" fill="#5ff2e1"/><rect x="28" y="113" width="64" height="4" rx="2" fill="#14333a"/></g></g></svg>홈페이지 Agent</p>
+  </section>
+
   <section class="hero" id="hero">
-    <div class="v3-hero-grid">
-      <div class="v3-hero-copy">
-        <span class="v3-eyebrow">AI 홈페이지 제작 서비스</span>
-        <h1 class="v3-h1">말로 만들고,<br>말로 고치는<br><em>학원 홈페이지</em></h1>
-        <p class="v3-lead">원하는 분위기를 한 줄로 말하면 AI가 섹션을 하나씩 만듭니다. 마음에 안 드는 부분은 Agent에게 말로 고치고, 확인한 뒤에만 게시합니다.</p>
+    <div class="fm-hero">
+      <h1 class="fm-title" data-fm-words aria-label="간편하게 · 빠르게 제작 · 배포도 금방">
+        <span class="fm-word">간편하게</span><span class="fm-dot" aria-hidden="true"> · </span><span class="fm-word">빠르게 제작</span><span class="fm-dot" aria-hidden="true"> · </span><span class="fm-word">배포도 금방</span>
+      </h1>
+      <p class="fm-sub">채팅창에 간단한 명령어를 입력하면 홈페이지 제작이 시작됩니다 · 배포 무료</p>
+      <div class="fm-stage">
+        <ul class="fm-track">
+          <li><img src="/img/landing/templates/template-light-academy.jpg" alt="홈페이지 템플릿 화면" width="1400" height="694"></li>
+          <li><img src="/img/landing/templates/template-dark-course.jpg" alt="홈페이지 템플릿 화면" width="1400" height="846"></li>
+          <li><img src="/img/landing/templates/template-dark-course-list.jpg" alt="홈페이지 템플릿 화면" width="1400" height="866"></li>
+          <li><img src="/img/landing/templates/template-light-academy.jpg" width="1400" height="694" aria-hidden="true"></li>
+          <li><img src="/img/landing/templates/template-dark-course.jpg" width="1400" height="846" aria-hidden="true"></li>
+          <li><img src="/img/landing/templates/template-dark-course-list.jpg" width="1400" height="866" aria-hidden="true"></li>
+        </ul>
         <form class="v3-ask" data-buildit-form autocomplete="off">
           <input type="text" class="v3-ask-input" data-buildit-prompt maxlength="2000"
-                 placeholder="우리 영어학원 홈페이지를 만들어줘." aria-label="만들고 싶은 홈페이지">
-          <button type="submit" class="v3-btn v3-btn-primary" aria-label="시작하기">만들기</button>
+                 placeholder="어떤 홈페이지를 만들고 싶으신가요?" aria-label="만들고 싶은 홈페이지">
+          <button type="submit" class="v3-btn v3-btn-primary" aria-label="만들기">만들기</button>
         </form>
-        <div class="v3-chips" aria-label="예시 문장">
-          <button type="button" class="v3-chip" data-buildit-example>초등·중등 영어학원, 밝고 세련되게 만들어줘</button>
-          <button type="button" class="v3-chip" data-buildit-example>입시·내신 전문 학원, 신뢰감 있게 만들어줘</button>
-          <button type="button" class="v3-chip" data-buildit-example>영어회화 학원, 활기차게 만들어줘</button>
-        </div>
-        <ul class="v3-assure"><li>미리보기 먼저</li><li>대화로 수정</li><li>승인 후 게시</li></ul>
-      </div>
-      <div class="v3-win" role="img" aria-label="AI 홈페이지 제작 화면 예시: 왼쪽 대화, 오른쪽 실시간 미리보기">
-        <div class="v3-win-bar" aria-hidden="true"><i></i><i></i><i></i><span>buildit.app/builder · 내 학원 홈페이지</span></div>
-        <div class="v3-split" aria-hidden="true">
-          <div class="v3-chat">
-            <div class="v3-msg v3-msg-u">초등·중등 영어학원, 밝고 세련되게 만들어줘</div>
-            <div class="v3-msg v3-msg-a">소개와 상담 신청 중심으로 만들게요.<div class="v3-pills"><b class="on">히어로</b><b class="on">커리큘럼</b><b>강사진</b><b>상담</b></div></div>
-            <div class="v3-msg v3-msg-u">커리큘럼 카드는 3개로 줄여줘</div>
-            <div class="v3-msg v3-msg-a">반영했어요. 오른쪽에서 확인해 주세요.</div>
-          </div>
-          <div class="v3-site">
-            <span class="v3-site-tag">실시간 미리보기 · 예시</span>
-            <div class="v3-site-nav"><span>우리영어학원</span></div>
-            <div class="v3-site-hero"><div><h4>아이의 영어가<br>자라는 곳</h4><p>레벨별 소수정예 수업</p><u>상담 신청</u></div><div class="v3-site-img"></div></div>
-            <div class="v3-site-grid"><div>초급<small>파닉스·기초회화</small></div><div>중급<small>독해·문법</small></div><div>심화<small>내신·토론</small></div></div>
-          </div>
-        </div>
-        <div class="v3-pub" aria-hidden="true"><span>초안 · 수정 2회</span><b>확인 후 게시</b></div>
       </div>
     </div>
   </section>
 
-  <!-- ============ 1-1. 제작 과정 ============ -->
-  <section class="v3-journey" id="journey">
-    <div class="v3-wrap">
-      <div class="v3-sec-head v3-rv">
-        <span class="v3-eyebrow">이렇게 진행됩니다</span>
-        <h2 class="v3-h2">의뢰는 한 번,<br>수정은 대화로</h2>
-        <p class="v3-sec-lead">기존 홈페이지를 베끼지 않고, 학원 정보로 섹션을 새로 쌓습니다. 모든 단계에서 직접 확인합니다.</p>
+  <!-- ============ 1-3. 내신 영어 문제지 제작 (Build It Wiki) — 홈페이지 제작 바로 다음 ============ -->
+  <section class="wk" id="wiki">
+    <div class="wk-wrap">
+      <p class="agent-service wk-chip"><svg class="chick chick-chip" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-pencil"><rect x="30" y="94" width="40" height="22" rx="2" fill="#fff" stroke="#14333a" stroke-width="2.5"/><path d="M36 101h26M36 106h18" stroke="#9fb4b8" stroke-width="2" stroke-linecap="round"/><g class="ck-pen"><path d="M84 78l10-10 6 6-10 10-9 3z" fill="#ff8a1f" stroke="#14333a" stroke-width="2.2" stroke-linejoin="round"/><path d="M85 88l-2 7 7-2z" fill="#f6d9a8" stroke="#14333a" stroke-width="2" stroke-linejoin="round"/></g></g></g></svg>내신 문제 제작 Agent</p>
+      <h2 class="wk-title">내신 영어 <em>문제지 제작</em></h2>
+      <p class="wk-lead">최근기출, 시험범위, 학교학습지를 보내주세요.</p>
+      <div class="wk-stage">
+        <figure class="wk-sample">
+          <img src="/img/landing/wiki-sample.jpg" alt="실제 제작한 내신 영어 문제지 예시" width="628" height="710" loading="lazy">
+        </figure>
+        <div class="wk-bar">
+          <div class="wk-price"><span>기본 1회</span><b>20,000원</b></div>
+          <a class="wk-btn wk-kakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카톡 문의</a>
+          <a class="wk-btn wk-mail" href="mailto:woorinaesin@naver.com" data-copy-mail="woorinaesin@naver.com">이메일 문의</a>
+        </div>
       </div>
-      <ol class="v3-steps">
-        <li class="v3-step v3-rv"><span class="v3-step-n">1</span><h3>의뢰</h3><p>학원 이름·과목·분위기를 한 문장으로 말합니다.</p><small>약 1분</small></li>
-        <li class="v3-step v3-rv"><span class="v3-step-n">2</span><h3>초안 확인</h3><p>섹션이 순서대로 만들어지고 바로 미리보기에 나타납니다.</p><small>내용 직접 확인</small></li>
-        <li class="v3-step v3-rv"><span class="v3-step-n">3</span><h3>Agent로 수정</h3><p>"사진 크게", "문구 부드럽게"처럼 말하면 해당 부분만 고칩니다.</p><small>횟수 제한 없이 반복</small></li>
-        <li class="v3-step v3-rv"><span class="v3-step-n">4</span><h3>승인 후 게시</h3><p>마음에 들 때 게시하면 공개 주소로 열립니다.</p><small>게시는 직접 승인</small></li>
+      <p class="wk-mailnote" id="wkMailNote" role="status" aria-live="polite" data-mail-note="woorinaesin@naver.com">이메일 주소 woorinaesin@naver.com</p>
+      <p class="wk-cap">실제 제작 예시 · 압구정중2 영어 2026학년도 2학기 중간고사 대비</p>
+      <p class="wk-logo">학원 로고를 보내주시면 제작 문제지에 로고를 넣어드립니다</p>
+      <article class="wk-hit">
+        <h3 class="wk-hit-title"><span>압구정중2<br>영어 시험은</span><b>어떻게 나왔을까?</b></h3>
+        <div class="wk-hit-body">
+          <div class="wk-hit-box">
+            <small>직보 수업 대조 결과</small>
+            <strong>직보 수업 자료와<br>직보 수업 때 푼 예상문제에서<br><em>100% 출제</em></strong>
+            <p>외부지문 2문항(5 · 9번) 제외, 28문항 전부</p>
+          </div>
+          <blockquote class="wk-hit-quote">“4점 문항 열 개가 모두<br>어법과 영작이었습니다.”</blockquote>
+          <a class="wk-hit-link" href="https://blog.naver.com/apgujungeduholic/224435388122" target="_blank" rel="noopener">블로그에서 자세히 보기</a>
+        </div>
+      </article>
+      <ol class="wk-steps">
+        <li><span>1</span><h3>자료 보내기</h3><p>학교 기출문제·시험범위·교과서 자료를 보내주세요. 사진이나 PDF 등 가지고 계신 자료 그대로 보내주시면 됩니다.</p></li>
+        <li><span>2</span><h3>영어 문제지 제작</h3><p>보내주신 기출과 시험범위를 분석해 학교 시험과 비슷한 유형으로 제작합니다. 문항 수·배점·문제 구성까지 실제 시험에 맞춰 구성합니다.</p></li>
+        <li><span>3</span><h3>카톡·이메일 전달</h3><p>완성된 문제지와 정답·해설을 카카오톡 또는 이메일로 보내드립니다. 받은 파일은 바로 학습하거나 출력해서 사용할 수 있습니다.</p></li>
+        <li><span>4</span><h3>수정 요청</h3><p>받아보신 뒤 고칠 부분이나 추가하고 싶은 내용을 말씀해 주세요. 문항·난이도·구성 등 필요한 부분을 확인해 수정합니다.</p></li>
+        <li><span>5</span><h3>최종 완성</h3><p>요청하신 수정사항을 반영해 최종 문제지를 완성합니다. 최종 문제지와 정답·해설 파일을 다시 전달해 드립니다.</p></li>
       </ol>
-    </div>
-  </section>
-
-  <!-- ============ 1-2. 브랜드 소개(소개 영상) — 첫 화면 아래로 이동 ============ -->
-  <section class="hero hero-intro" id="intro">
-    <div class="hero-lines" aria-hidden="true">
-      <svg class="l2" viewBox="0 0 2400 900" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,520 C 200,420 400,620 600,520 C 800,420 1000,620 1200,520 C1400,420 1600,620 1800,520 C2000,420 2200,620 2400,520" fill="none" stroke="#2563eb" stroke-width="1.4" opacity="0.28"/>
-      </svg>
-    </div>
-    <div class="hero-inner">
-      <h2><span class="hero-title-subject">원장과 강사를 브랜드로</span><br><span class="bi" aria-label="Build It"><b>Build</b><i>It</i></span>.</h2>
-      <p class="hero-slogan">숨은 영어교육자를 발굴하고, 성장시키고, 투자로 연결합니다.</p>
-      <svg class="brand-stroke" viewBox="0 0 64 8" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M2,5 C 14,2 22,7 32,4 C 42,1 50,6 62,3" fill="none" stroke="url(#strokeGrad)" stroke-width="2" stroke-linecap="round"/>
-        <defs><linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#2b3a9e"/><stop offset="100%" stop-color="#c9a13b"/>
-        </linearGradient></defs>
-      </svg>
-      <span class="phonetic">빌딧</span>
-      <div class="hero-video-card" data-youtube-id="fK_BdoK8O64">
-        <button type="button" class="hero-video-trigger" aria-label="BuildIt 소개영상 1분 44초 재생">
-          <img src="/img/landing/buildit-promo-thumbnail.png" alt="수업을 준비하고 진행하는 다양한 영어교육자들의 모습" width="1280" height="720">
-        </button>
-      </div>
-      <div class="hero-actions">
-        <a href="/builder" class="btn" data-buildit-start>
-          AI 홈페이지 만들기
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-      </div>
     </div>
   </section>
 
@@ -141,299 +167,94 @@
       </svg>
     </div>
     <div class="fm-row">
-      <span class="hi">Build Your Brand</span><span>Wiki</span><span>Web</span><span>Chart</span><span>Report</span><span>Shorts</span>
-      <span class="hi">Build Your Brand</span><span>Wiki</span><span>Web</span><span>Chart</span><span>Report</span><span>Shorts</span>
+      <span class="hi">Build Your Brand</span><span>Wiki</span><span>Web</span><span>Chart</span>
+      <span class="hi">Build Your Brand</span><span>Wiki</span><span>Web</span><span>Chart</span>
     </div>
   </section>
 
-  <!-- ============ 4. 서비스 탐색기 (AI 홈페이지 제작 · Chart · Easy). id=web·영상 마크업은 계약 테스트가 고정 ============ -->
-  <section class="builder" id="web">
-    <div class="brand-glow soft" aria-hidden="true"></div>
-    <div class="v3-wrap">
-      <div class="v3-sec-head v3-rv">
-        <span class="v3-eyebrow">서비스 안내</span>
-        <h2 class="v3-h2">무엇을 하는지,<br>어떻게 쓰는지</h2>
-        <p class="v3-sec-lead">서비스를 골라 보세요. 목적과 사용 순서를 보여드립니다. 아직 열리지 않은 서비스는 아래 "준비 중"에 따로 표시합니다.</p>
-      </div>
-      <div class="v3-rv">
-        <div class="v3-tabs" role="tablist" aria-label="서비스 선택">
-          <button type="button" class="v3-tab" role="tab" id="v3tab-web" aria-selected="true" aria-controls="v3pane-web"><span class="v3-tab-dot"></span>AI 홈페이지 제작</button>
-          <button type="button" class="v3-tab" role="tab" id="v3tab-chart" aria-selected="false" aria-controls="v3pane-chart" tabindex="-1"><span class="v3-tab-dot"></span>Chart</button>
-          <button type="button" class="v3-tab" role="tab" id="v3tab-easy" aria-selected="false" aria-controls="v3pane-easy" tabindex="-1"><span class="v3-tab-dot beta"></span>Easy AI 장부</button>
-        </div>
-
-        <div class="v3-pane on" id="v3pane-web" role="tabpanel" aria-labelledby="v3tab-web">
-          <div>
-            <span class="v3-badge v3-badge-live">운영 중</span>
-            <p class="v3-brandline"><span class="bi" aria-label="Build It Web"><b>Build</b><i>It</i><span class="ext">Web</span></span></p>
-            <h3>AI 홈페이지 제작</h3>
-            <p class="v3-purpose">학원 홈페이지를 직접 디자인하지 않아도, 말로 의뢰하고 말로 고칩니다.</p>
-            <ol class="v3-how">
-              <li><span><b>의뢰하기</b> — 학원 이름, 과목, 원하는 분위기를 입력</span></li>
-              <li><span><b>초안 확인</b> — 섹션별로 만들어지는 미리보기를 확인</span></li>
-              <li><span><b>Agent로 수정</b> — 고치고 싶은 부분을 말로 요청한 뒤 게시</span></li>
-            </ol>
-            <p class="v3-who"><b>이런 분께</b> 학원 원장·실장 · 강사(TUTOR) 계정으로 로그인해야 제작할 수 있습니다.</p>
-            <div class="v3-pane-cta">
-              <a href="/builder/entry" class="v3-btn v3-btn-primary">홈페이지 만들러 가기</a>
-              <small>게시 전에는 공개되지 않습니다</small>
-            </div>
-          </div>
-          <div class="v3-shot v3-shot-video">
-            <div class="web-video-card">
-              <div class="web-video-bar" aria-hidden="true"><span></span><span></span><span></span></div>
-              <video class="web-video"
-                     src="/video/landing/buildit-web-builder-highlight.mp4"
-                     muted loop autoplay playsinline preload="metadata"
-                     aria-label="Build It Web 홈페이지 제작 예시"></video>
-            </div>
-          </div>
-        </div>
-
-        <div class="v3-pane" id="v3pane-chart" role="tabpanel" aria-labelledby="v3tab-chart">
-          <div>
-            <span class="v3-badge v3-badge-live">운영 중</span>
-            <h3>Chart</h3>
-            <p class="v3-purpose">공개된 근거를 바탕으로 교육자를 비교하고 발견하는 독립 서비스입니다.</p>
-            <ol class="v3-how">
-              <li><span><b>둘러보기</b> — 로그인 없이 교육자 목록을 확인</span></li>
-              <li><span><b>근거 보기</b> — 점수가 어떤 자료에서 나왔는지 확인</span></li>
-              <li><span><b>비교하기</b> — 관심 있는 교육자의 상세 페이지로 이동</span></li>
-            </ol>
-            <p class="v3-who"><b>이런 분께</b> 학부모·학생·교육자 누구나 · 로그인 불필요</p>
-            <div class="v3-pane-cta">
-              <a href="/chart" class="v3-btn v3-btn-primary">Chart 열기</a>
-              <small>BuildIt 사용 여부는 점수에 영향을 주지 않습니다</small>
-            </div>
-          </div>
-          <div class="v3-shot v3-shot-note">
-            <p>실제 공개 TOP5는 바로 아래에서 확인할 수 있습니다.</p>
-            <a href="#chart-showcase">Chart 공개 TOP5 보기 ↓</a>
-          </div>
-        </div>
-
-        <div class="v3-pane" id="v3pane-easy" role="tabpanel" aria-labelledby="v3tab-easy">
-          <div>
-            <span class="v3-badge v3-badge-beta">베타 · 운영자 승인제</span>
-            <h3>Easy AI 장부</h3>
-            <p class="v3-purpose">수납·지출 내역을 자동으로 모으고, 사람이 확인한 것만 장부에 올립니다.</p>
-            <ol class="v3-how">
-              <li><span><b>모으기</b> — 카드·계좌 거래 내역을 불러오기</span></li>
-              <li><span><b>검토하기</b> — AI가 분류한 항목을 승인하거나 반려</span></li>
-              <li><span><b>마감하기</b> — 월별 수입·지출·미수금을 확인</span></li>
-            </ol>
-            <p class="v3-who"><b>현재 상태</b> 관리자 전용 베타입니다. 일반 이용자에게는 아직 열려 있지 않으며, 도입은 문의로 안내합니다.</p>
-            <div class="v3-pane-cta">
-              <button type="button" class="v3-btn v3-btn-ghost" data-v3-inquiry onclick="openContactModal()">도입 문의</button>
-              <small>문의 모달에서 전화·이메일로 연락할 수 있습니다</small>
-            </div>
-          </div>
-          <div class="v3-shot" aria-label="Easy AI 장부 화면 예시(실제 데이터 아님)">
-            <div class="v3-ex-kpis" aria-hidden="true">
-              <div class="v3-ex-kpi">이번 달 수입<b>예시</b></div>
-              <div class="v3-ex-kpi">지출<b>예시</b></div>
-              <div class="v3-ex-kpi">미수금<b>예시</b></div>
-            </div>
-            <div class="v3-ex-row" aria-hidden="true"><span>수납 · 수강료<small>AI 분류 · 신뢰도 높음</small></span><span class="v3-ex-ok">승인</span><span class="v3-ex-no">반려</span></div>
-            <div class="v3-ex-row" aria-hidden="true"><span>지출 · 교재 구입<small>AI 분류 · 확인 필요</small></span><span class="v3-ex-ok">승인</span><span class="v3-ex-no">반려</span></div>
-            <div class="v3-ex-row" aria-hidden="true"><span>미분류 거래<small>직접 분류</small></span><span class="v3-ex-ok">분류</span><span class="v3-ex-no">보류</span></div>
-            <p class="v3-ex-label"><span class="v3-badge v3-badge-example">예시 화면</span> 실제 회계 데이터가 아닙니다.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 5. Build It Chart ============ -->
-  <section class="chart-showcase" id="chart-showcase">
-    <div class="v3-band">
-      <div class="v3-band-copy">
-        <span class="v3-eyebrow v3-eyebrow-night">독립 서비스 · Chart</span>
-        <h2 class="chart-title"><span>Build</span><span class="chart-it">It</span> <span class="chart-muted">Chart</span></h2>
-        <p class="chart-headline">전국의 색깔 있는 영어교육자를 발견합니다.</p>
-        <p class="chart-sub"><strong>교육철학·커리큘럼·수업 노하우를 실제 데이터로 기록하고,<br>
-          AI가 인간 영어교육자의 지능을 배우게 합니다.</strong></p>
-        <ul class="v3-principles">
-          <li>점수마다 근거 자료를 함께 표시</li>
-          <li>AI 해석과 근거 자료를 구분해서 표시</li>
-          <li>BuildIt 사용 여부는 점수에 영향 없음</li>
-        </ul>
-
-        <p class="chart-picker-note">전국에서 발견한 교육자 보기</p>
-        <form class="chart-region-picker" id="chartRegionPicker" autocomplete="off">
+  <!-- ============ 5. Build It Chart (Billboard Hot 100 구성) ============ -->
+  <section class="bb-chart" id="chart-showcase">
+    <div class="bb-wrap">
+      <p class="agent-service bb-chip"><svg class="chick chick-chip" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-chart"><rect x="30" y="86" width="60" height="30" rx="4" fill="#e8f1f2" stroke="#14333a" stroke-width="2.5"/><rect class="b1" x="38" y="98" width="9" height="14" rx="1.5" fill="#00c389"/><rect class="b2" x="52" y="92" width="9" height="20" rx="1.5" fill="#5ff2e1"/><rect class="b3" x="66" y="95" width="9" height="17" rx="1.5" fill="#00c389"/></g></g></svg>Chart Agent</p>
+      <h2 class="bb-title">BUILDIT CHART 100</h2>
+      <p class="bb-sub">전국의 색깔 있는 영어교육자를 발견합니다.</p>
+      <div class="bb-meta">
+        <span class="bb-week">기준일 <span id="landingChartDate"></span></span>
+        <form class="bb-region" id="chartRegionPicker" autocomplete="off">
           <label class="visually-hidden" for="chartProvince">시·도</label>
           <select id="chartProvince"><option value="">시·도 선택</option></select>
           <label class="visually-hidden" for="chartDistrict">시·군·구</label>
           <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
-          <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
           <button type="submit">색깔 있는 영어쌤 보기</button>
         </form>
       </div>
-
-      <div class="chart-phone" aria-label="BuildIt Chart 공개 TOP5 미리보기">
-        <div class="chart-island" aria-hidden="true"></div>
-        <div class="chart-screen">
-          <div class="chart-hero-card">
-            <div class="chart-tiny">NATIONWIDE EDUCATOR LIVING ARCHIVE</div>
-            <div class="chart-phone-brand">BUILD<span class="chart-it">It</span> <span>CHART</span></div>
-            <div class="chart-top">전국의 지역 교육자를 <mark>지속 발굴</mark></div>
-          </div>
-          <div class="chart-list-title">BuildIt TOP 5 <span id="landingChartDate"></span></div>
-          <div id="landingChartTop5"><div class="chart-row"><div class="chart-meta">전국 Chart를 불러오는 중입니다.</div></div></div>
-          <button type="button" class="v3-chart-more" id="landingChartMore" aria-controls="landingChartTop5" aria-expanded="false" hidden>나머지 2개 펼치기</button>
-          <div class="chart-fade" aria-hidden="true"></div>
-          <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
-        </div>
+      <div class="bb-list" id="landingChartTop5" aria-label="BuildIt Chart 공개 TOP5"><div class="bb-empty">전국 Chart를 불러오는 중입니다.</div></div>
+      <button type="button" class="v3-chart-more" id="landingChartMore" aria-controls="landingChartTop5" aria-expanded="false" hidden>나머지 2개 펼치기</button>
+      <div class="bb-foot">
+        <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
+        <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
       </div>
-    </div>
-
-    <div class="chart-vision">
-      <ol class="chart-vision-flow">
-        <li><b>CHART</b><span>발견</span></li>
-        <li><b>WIKI</b><span>축적</span></li>
-        <li><b>AI</b><span>학습·연결</span></li>
-        <li><b>SUPERBRAIN</b><span>교육지능</span></li>
-      </ol>
-      <p class="chart-vision-foot">축적된 지능은 AI Agent와 Physical AI가<br>
-        교육 현장을 돕는 Brain으로 발전합니다.</p>
+      <p class="bb-note">점수마다 근거 자료를 함께 표시 · AI 해석과 근거 자료를 구분 · BuildIt 사용 여부는 점수에 영향 없음</p>
     </div>
   </section>
-  <script src="/js/landing_chart.js?v=20260828-2" defer></script>
-
-  <!-- ============ 5-1. 콘텐츠 도구 (Wiki · Report · Shorts) — 아래 세 섹션의 영상·슬롯은 기존 그대로 ============ -->
-  <section class="v3-tools" id="tools">
-    <div class="v3-wrap">
-      <div class="v3-sec-head v3-rv">
-        <span class="v3-eyebrow">Wiki · Report · Shorts</span>
-        <h2 class="v3-h2">알리고 이해시키는<br>콘텐츠 도구</h2>
-        <p class="v3-sec-lead">같은 자료에서 문서와 리포트, 짧은 영상으로 이어집니다.</p>
-      </div>
-      <ul class="v3-tool-grid">
-        <li class="v3-tool v3-rv"><h3>BUILD IT WIKI</h3><p>학교별 기출 분석과 변형문제, 학교별 Wiki를 한곳에서 만듭니다.</p><span class="v3-tool-meta">학생·강사 로그인 필요</span><a class="v3-tool-go" href="/problem-generator">BUILD IT WIKI 열기 →</a></li>
-        <li class="v3-tool v3-rv"><h3>Report</h3><p>학생 성장 리포트를 학부모가 읽기 쉽게 전달합니다.</p><span class="v3-tool-meta">예시 영상은 아래에서 볼 수 있습니다</span><a class="v3-tool-go" href="#report">Report 예시 보기 ↓</a></li>
-        <li class="v3-tool v3-rv"><h3>Shorts</h3><p>AI 홍보 쇼츠를 쉽고 빠르게 제작합니다.</p><span class="v3-tool-meta">예시 영상은 아래에서 볼 수 있습니다</span><a class="v3-tool-go" href="#shorts">Shorts 예시 보기 ↓</a></li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- ============ 3. Build It Wiki ============ -->
-  <section class="wiki" id="wiki">
-    <div class="wiki-pin">
-      <div class="wiki-top reveal" data-fade>
-        <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Wiki</span></h2>
-        <p>학교별 기출 분석부터 변형문제 생성, 학교별 Wiki까지.</p>
-        <div class="flow-h">
-          <span class="flow-h-step" data-step="0">기출 분석</span><span class="flow-h-arrow">→</span>
-          <span class="flow-h-step" data-step="1">변형문제 생성</span><span class="flow-h-arrow">→</span>
-          <span class="flow-h-step" data-step="2">학교별 Wiki</span>
-        </div>
-      </div>
-
-      <div class="wiki-laptop-wrap">
-        <div class="laptop laptop-xl">
-          <div class="laptop-top">
-            <div class="laptop-cam"></div>
-            <div class="laptop-screen">
-              <div class="scr" data-screen="0">
-                <video class="scr-video" src="/video/landing/digital_twin_ex.mp4"
-                       muted loop autoplay playsinline preload="metadata"
-                       aria-label="기출 분석 예시"></video>
-                <div class="scr-caption">기출 분석 · 출제자 디지털 트윈</div>
-              </div>
-              <div class="scr" data-screen="1">
-                <video class="scr-video" src="/video/landing/how2use_digitaltwin.mp4"
-                       muted loop autoplay playsinline preload="metadata"
-                       aria-label="변형문제 생성 예시"></video>
-                <div class="scr-caption">변형문제 생성 · Digital Twin Exam Generator</div>
-              </div>
-              <div class="scr" data-screen="2">
-                <div class="mock-dash">
-                  <div class="mock-dash-head">
-                    <span class="mock-dash-title">학교별 Wiki</span>
-                    <span class="live"><span class="dot"></span>계속 추가되는 중</span>
-                  </div>
-                  <div class="mws-grid" id="schoolGrid">
-                    <span>압구정중</span><span>신사중</span><span>청담중</span><span>압구정고</span><span>현대고</span>
-                    <span>휘문고</span><span>중동고</span><span>숙명여중</span><span>진선여중</span>
-                    <span class="mws-new">+ 새 학교 Wiki</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="laptop-base"></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 6. Build It Report ============ -->
-  <section class="product-solo" id="report" style="background:var(--bg-soft);">
-    <div class="brand-glow soft" aria-hidden="true"></div>
-    <div class="reveal" data-fade>
-      <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Report</span></h2>
-      <p>학생 성장 리포트를 학부모에게 전달합니다.</p>
-    </div>
-    <div class="phone phone-lg reveal" data-fade>
-      <div class="phone-screen">
-        <video th:if="${parentReportVideo.visible}" class="phone-video"
-               src="/video/landing/parent-report-demo.mp4" th:src="${parentReportVideo.sourceUrl}"
-               muted loop autoplay playsinline preload="metadata" aria-label="Build It Report 예시 영상"></video>
-        <div th:unless="${parentReportVideo.visible}" class="video-ready" role="img" aria-label="Build It Report 예시 영상 준비 중"><div class="vr-play"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#fff" fill-opacity=".7"/></svg></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 7. Build It Shorts ============ -->
-  <section class="product-solo" id="shorts" style="background:var(--bg);">
-    <div class="brand-glow soft" aria-hidden="true"></div>
-    <div class="reveal" data-fade>
-      <h2 class="bi bi-h2"><b>Build</b><i>It</i><span class="ext">Shorts</span></h2>
-      <p>AI 홍보 쇼츠를 쉽고 빠르게 제작합니다.</p>
-    </div>
-    <div class="phone phone-lg reveal" data-fade>
-      <div class="phone-screen">
-        <video th:if="${academyShortsVideo.visible}" class="phone-video"
-               src="/video/landing/academy-shorts-demo.mp4" th:src="${academyShortsVideo.sourceUrl}"
-               muted loop autoplay playsinline preload="metadata" aria-label="Build It Shorts 예시 영상"></video>
-        <div th:unless="${academyShortsVideo.visible}" class="video-ready" role="img" aria-label="Build It Shorts 예시 영상 준비 중"><div class="vr-play"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2L12 7L3 12V2Z" fill="#fff" fill-opacity=".7"/></svg></div></div>
-      </div>
-    </div>
-  </section>
+  <script src="/js/landing_chart.js?v=20261014-1" defer></script>
 
   <!-- ============ 7-1. 준비 중 서비스 (링크·입력창 없음) ============ -->
-  <section class="v3-soon" id="soon">
+  <section class="v3-soon ag-dark" id="soon">
     <div class="v3-wrap">
       <div class="v3-sec-head v3-rv">
-        <span class="v3-eyebrow">준비 중인 서비스</span>
+        <span class="v3-eyebrow">곧 준비중</span>
         <h2 class="v3-h2">곧 만나요</h2>
-        <p class="v3-sec-lead">아직 이용할 수 없는 서비스입니다. 준비가 끝나는 대로 이곳에서 안내합니다.</p>
       </div>
       <ul class="v3-soon-grid">
         <li class="v3-soon-card v3-rv" aria-disabled="true">
-          <span class="v3-badge v3-badge-soon">준비 중</span>
-          <h3>DesignCraft</h3>
-          <p>작성한 문서를 전문 디자인의 PDF·웹 문서로 바꿔 주는 서비스를 준비하고 있습니다. 사용자 화면이 아직 없어 이용할 수 없습니다.</p>
-          <span class="v3-soon-status">곧 공개됩니다</span>
+          <span class="v3-soon-chick" aria-hidden="true"><svg class="chick chick-sm" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><path class="ck-eye-z" d="M40 63q6 5 12 0M68 63q6 5 12 0" stroke="#14333a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-zzz"><text class="z1" x="86" y="34" font-size="15" font-weight="800" fill="#5ff2e1">z</text><text class="z2" x="96" y="22" font-size="12" font-weight="800" fill="#5ff2e1">z</text></g></g></svg></span>
+          <span class="v3-badge v3-badge-soon">곧 준비중</span>
+          <h3>DesignCraft <small>AI 문서 디자인</small></h3>
+          <p>원고만 입력하면 책자, 보고서, 학습자료 등을 보기 좋은 문서로 제작합니다. 미리보기에서 내용을 수정하고 PDF로 다운로드할 수 있습니다.</p>
+          <p class="v3-soon-core"><b>핵심</b>원고 입력 → 자동 편집 → PDF 제작</p>
         </li>
         <li class="v3-soon-card v3-rv" aria-disabled="true">
-          <span class="v3-badge v3-badge-soon">검증 중 · 비공개</span>
-          <h3>입시상담 AI</h3>
-          <p>공식 자료로 근거를 확인하며 답하는 입시 상담 도우미입니다. 답변 정확도 검증이 끝나기 전에는 상담 기능을 공개하지 않습니다.</p>
-          <span class="v3-soon-status">검증 완료 후 공개</span>
+          <span class="v3-soon-chick" aria-hidden="true"><svg class="chick chick-sm" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><path class="ck-eye-z" d="M40 63q6 5 12 0M68 63q6 5 12 0" stroke="#14333a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-zzz"><text class="z1" x="86" y="34" font-size="15" font-weight="800" fill="#5ff2e1">z</text><text class="z2" x="96" y="22" font-size="12" font-weight="800" fill="#5ff2e1">z</text></g></g></svg></span>
+          <span class="v3-badge v3-badge-soon">곧 준비중</span>
+          <h3>입시상담 AI <small>입시 정보·전략 상담</small></h3>
+          <p>공식 입시자료를 바탕으로 전형, 지원 자격, 일정, 평가 기준 등을 안내하고 지원 전략을 검토하도록 돕습니다.</p>
+          <p class="v3-soon-core"><b>핵심</b>입시정보 확인 → 질문·상담 → 지원 전략 검토</p>
+        </li>
+        <li class="v3-soon-card v3-rv" aria-disabled="true">
+          <span class="v3-soon-chick" aria-hidden="true"><svg class="chick chick-sm" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><path class="ck-eye-z" d="M40 63q6 5 12 0M68 63q6 5 12 0" stroke="#14333a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-zzz"><text class="z1" x="86" y="34" font-size="15" font-weight="800" fill="#5ff2e1">z</text><text class="z2" x="96" y="22" font-size="12" font-weight="800" fill="#5ff2e1">z</text></g></g></svg></span>
+          <span class="v3-badge v3-badge-soon">곧 준비중</span>
+          <h3>Easy 장부 <small>학원 전용 AI 회계</small></h3>
+          <p>학원 수입·지출 내역을 CSV로 입력하면 AI가 회계 계정을 추천합니다. 사용자가 확인·승인하면 복식분개, 총계정원장, 시산표까지 정리합니다.</p>
+          <p class="v3-soon-core"><b>핵심</b>거래 입력 → AI 분류 → 승인 → 장부 자동 정리</p>
+        </li>
+        <li class="v3-soon-card v3-rv" aria-disabled="true">
+          <span class="v3-soon-chick" aria-hidden="true"><svg class="chick chick-sm" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><path class="ck-eye-z" d="M40 63q6 5 12 0M68 63q6 5 12 0" stroke="#14333a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-zzz"><text class="z1" x="86" y="34" font-size="15" font-weight="800" fill="#5ff2e1">z</text><text class="z2" x="96" y="22" font-size="12" font-weight="800" fill="#5ff2e1">z</text></g></g></svg></span>
+          <span class="v3-badge v3-badge-soon">곧 준비중</span>
+          <h3>iBT TestPrep <small>TOEFL 시험 대비</small></h3>
+          <p>TOEFL iBT의 Reading, Listening, Speaking, Writing 영역을 연습하고, 어휘 학습과 모의시험 결과를 통해 학습 상태를 확인합니다.</p>
+          <p class="v3-soon-core"><b>핵심</b>영역별 연습 → 모의시험 → 채점·성적 관리</p>
+        </li>
+        <li class="v3-soon-card v3-rv" aria-disabled="true">
+          <span class="v3-soon-chick" aria-hidden="true"><svg class="chick chick-sm" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><path class="ck-eye-z" d="M40 63q6 5 12 0M68 63q6 5 12 0" stroke="#14333a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-zzz"><text class="z1" x="86" y="34" font-size="15" font-weight="800" fill="#5ff2e1">z</text><text class="z2" x="96" y="22" font-size="12" font-weight="800" fill="#5ff2e1">z</text></g></g></svg></span>
+          <span class="v3-badge v3-badge-soon">곧 준비중</span>
+          <h3>LMS <small>학원 학습관리</small></h3>
+          <p>학생 등록, 수업·과제·출결·성적을 한곳에서 관리합니다. 향후 BuildIt으로 제작한 학원 홈페이지와 연동해 학원 운영을 지원합니다.</p>
+          <p class="v3-soon-core"><b>핵심</b>학생 관리 → 수업·과제 → 출결·성적 관리</p>
         </li>
       </ul>
     </div>
   </section>
 
   <!-- ============ 7-2. FAQ ============ -->
-  <section class="v3-faq" id="faq">
+  <section class="v3-faq ag-dark" id="faq">
     <div class="v3-wrap">
-      <div class="v3-sec-head v3-rv"><span class="v3-eyebrow">자주 묻는 질문</span><h2 class="v3-h2">시작하기 전에</h2></div>
+      <div class="v3-sec-head v3-rv"><span class="v3-eyebrow">자주 묻는 질문</span><h2 class="v3-h2">시작하기 전에</h2><span class="v3-faq-chick" aria-hidden="true"><svg class="chick chick-md" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-ask"><circle cx="96" cy="26" r="13" fill="#5ff2e1" stroke="#14333a" stroke-width="2.5"/><text x="96" y="32" font-size="17" font-weight="800" text-anchor="middle" fill="#14333a">?</text></g></g></svg></span></div>
       <div class="v3-faq-list v3-rv">
-        <details><summary>회원가입 없이도 쓸 수 있나요?</summary><p>Chart는 로그인 없이 볼 수 있습니다. Wiki 소개 화면은 공개되지만 자료와 문제는 회원 전용이고, 홈페이지 제작은 강사(원장) 계정으로 로그인해야 합니다.</p></details>
+        <details><summary>회원가입 없이도 쓸 수 있나요?</summary><p>Chart는 로그인 없이 볼 수 있습니다. 내신 영어 문제지 제작은 카톡 또는 이메일로 문의하면 되고, 홈페이지 제작은 강사(원장) 계정으로 로그인해야 합니다.</p></details>
         <details><summary>만든 홈페이지가 바로 공개되나요?</summary><p>아니요. 미리보기에서 직접 확인하고 게시를 승인한 뒤에만 공개됩니다.</p></details>
-        <details><summary>Easy AI 장부와 DesignCraft, 입시상담 AI는 지금 쓸 수 있나요?</summary><p>Easy AI 장부는 관리자 전용 베타라 일반 이용자에게는 열려 있지 않습니다(도입은 문의). DesignCraft는 준비 중이며, 입시상담 AI는 검증이 끝나기 전까지 공개하지 않습니다.</p></details>
+        <details><summary>내신 영어 문제지는 어떻게 받나요?</summary><p>카톡 또는 이메일로 학교 기출문제·시험범위 자료를 보내주세요. 기본 1회 20,000원이며, 완성된 문제지와 정답·해설을 카톡 또는 이메일로 전달합니다.</p></details>
+        <details><summary>곧 준비중인 서비스는 지금 쓸 수 있나요?</summary><p>DesignCraft, 입시상담 AI, Easy 장부, iBT TestPrep, LMS는 곧 준비중이며 지금은 이용할 수 없습니다.</p></details>
         <details><summary>Chart 점수에 BuildIt 사용이 영향을 주나요?</summary><p>영향을 주지 않습니다. Chart는 공개 근거만으로 독립적으로 운영됩니다.</p></details>
       </div>
     </div>
@@ -442,9 +263,10 @@
   <!-- ============ 8. 문의 ============ -->
   <section class="cta-mini" id="cta">
     <div class="brand-glow" aria-hidden="true"></div>
-    <p class="reveal" data-fade>이제, 당신의 브랜드를 만들 시간입니다</p>
+    <div class="cta-chick" aria-hidden="true"><svg class="chick chick-lg" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-spark"><path class="s1" d="M100 22l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#5ff2e1"/><path class="s2" d="M16 36l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff6bf"/></g></g></svg></div>
+    <p class="reveal" data-fade>홈페이지 제작으로 디지털 영어 학원을 시작하세요!</p>
     <a href="/builder" class="btn reveal" data-fade data-buildit-start>
-      AI 홈페이지 만들기
+      만들기
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </a>
   </section>

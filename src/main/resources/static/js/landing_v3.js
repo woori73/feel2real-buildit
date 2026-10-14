@@ -108,7 +108,7 @@
     var button = doc.getElementById('landingChartMore');
     if (!root || !button) return;
     var expanded = false;
-    function rowCount() { return root.querySelectorAll('a.chart-row').length; }
+    function rowCount() { return root.querySelectorAll('a.bb-row').length; }
     function apply() {
       var state = chartMoreState(rowCount(), expanded);
       button.hidden = state.hidden;
@@ -121,6 +121,90 @@
       new win.MutationObserver(apply).observe(root, { childList: true });
     }
     apply();
+  }
+
+  /* 이메일 문의: 메일 앱이 없는 PC에서는 mailto가 아무 일도 하지 않는다. 클릭하면 주소를 복사하고 안내를 보여 준다. */
+  function mailNoteText(address, copied) {
+    return copied
+      ? '주소를 복사했습니다 (' + address + '). 메일 앱이 열리지 않으면 붙여넣어 보내주세요.'
+      : '이메일 주소 ' + address;
+  }
+
+  function initMailCopy(doc, win) {
+    var links = doc.querySelectorAll('[data-copy-mail]');
+    var note = doc.getElementById('wkMailNote');
+    if (!links.length) return;
+    Array.prototype.forEach.call(links, function (link) {
+      var address = link.getAttribute('data-copy-mail');
+      link.addEventListener('click', function () {
+        var nav = win.navigator;
+        if (!nav || !nav.clipboard || typeof nav.clipboard.writeText !== 'function') return;
+        nav.clipboard.writeText(address).then(function () {
+          if (note) note.textContent = mailNoteText(address, true);
+        }, function () { /* 복사 실패: 화면에 보이는 주소로 대신한다 */ });
+      });
+    });
+  }
+
+  /* 첫 화면 큰 문구: 세 문구를 번갈아 보여 준다. 순환 불가(움직임 줄이기·JS 없음)면 세 문구를 모두 보여 준다. */
+  function nextWordIndex(index, count) {
+    return count > 0 ? (index + 1) % count : 0;
+  }
+
+  function initWords(doc, win) {
+    var title = doc.querySelector('[data-fm-words]');
+    if (!title) return;
+    var words = Array.prototype.slice.call(title.querySelectorAll('.fm-word'));
+    var reduced = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (words.length < 2 || reduced) return;
+    title.classList.add('fm-rot');
+    var index = 0;
+    words[index].classList.add('on');
+    win.setInterval(function () {
+      words[index].classList.remove('on');
+      index = nextWordIndex(index, words.length);
+      words[index].classList.add('on');
+    }, 2200);
+  }
+
+  /* 전국 무대: 지역을 자동으로 넘기고, 누르면 그 지역 사진·핀으로 바꾼다. */
+  function initNation(doc, win) {
+    var root = doc.querySelector('[data-nation]');
+    if (!root) return;
+    var regions = Array.prototype.slice.call(root.querySelectorAll('[data-nation-region]'));
+    var photos = Array.prototype.slice.call(root.querySelectorAll('.nation-photo'));
+    var minis = Array.prototype.slice.call(root.querySelectorAll('.nation-mini'));
+    var pin = root.querySelector('[data-nation-pin]');
+    var chip = root.querySelector('[data-nation-chip]');
+    if (regions.length < 2) return;
+    var index = 0;
+    var timer = null;
+    function show(next) {
+      index = next;
+      regions.forEach(function (r, i) {
+        var on = i === index;
+        r.classList.toggle('on', on);
+        r.setAttribute('aria-pressed', String(on));
+      });
+      photos.forEach(function (p, i) { p.classList.toggle('on', i === index); });
+      minis.forEach(function (m, i) { m.classList.toggle('on', i === index); });
+      var region = regions[index];
+      if (pin) {
+        pin.style.left = region.getAttribute('data-x') + '%';
+        pin.style.top = region.getAttribute('data-y') + '%';
+      }
+      if (chip) chip.textContent = region.textContent.trim();
+    }
+    function start() {
+      var reduced = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced || timer) return;
+      timer = win.setInterval(function () { show(nextWordIndex(index, regions.length)); }, 3200);
+    }
+    function stop() { if (timer) { win.clearInterval(timer); timer = null; } }
+    regions.forEach(function (r, i) {
+      r.addEventListener('click', function () { stop(); show(i); start(); });
+    });
+    start();
   }
 
   function initReveal(doc, win) {
@@ -156,13 +240,15 @@
   function init(doc, win) {
     initTabs(doc);
     initReveal(doc, win);
+    initWords(doc, win);
+    initNation(doc, win);
     initChartMore(doc, win);
-    initTyped(doc, win);
+    initMailCopy(doc, win);
     guardInquiry(doc, win);
   }
 
   if (typeof document !== 'undefined' && typeof window !== 'undefined') init(document, window);
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, chartMoreState: chartMoreState, initChartMore: initChartMore, EXAMPLES: EXAMPLES };
+    module.exports = { nextTabIndex: nextTabIndex, typedStep: typedStep, inquiryAvailable: inquiryAvailable, guardInquiry: guardInquiry, initTabs: initTabs, initReveal: initReveal, nextWordIndex: nextWordIndex, initWords: initWords, initNation: initNation, chartMoreState: chartMoreState, initChartMore: initChartMore, mailNoteText: mailNoteText, initMailCopy: initMailCopy, EXAMPLES: EXAMPLES };
   }
 })(typeof window !== 'undefined' ? window : globalThis);

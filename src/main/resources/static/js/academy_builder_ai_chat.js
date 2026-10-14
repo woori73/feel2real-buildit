@@ -544,6 +544,101 @@
     var message = String(el.input.value || '').trim();
     if (!message) return;
 
+    // PhotoCraft 이미지 편집 의도 감지 (일반 채팅에 영향 없음)
+    // 이미지 의도이면 이미지 플로우로 분기, 아니면 기존 채팅 계속
+    if (window.ImageEditFlow && window.ImageEditFlow.detectImageIntent) {
+      state.busy = true;
+      if (el.send) el.send.disabled = true;
+      window.ImageEditFlow.detectImageIntent(message).then(function(detectResult) {
+        if (detectResult && detectResult.imageEditDetected) {
+          // 이미지 편집 의도: 채팅 대신 이미지 플로우 UI 표시
+          state.busy = false;
+          if (el.send) el.send.disabled = false;
+          appendMessage('mine', message);
+          el.input.value = '';
+          autoGrow();
+          handleImageEditIntent(detectResult, message);
+        } else {
+          // 일반 채팅: 기존 흐름 계속
+          state.busy = false;
+          if (el.send) el.send.disabled = false;
+          sendMessageCore(message);
+        }
+      }).catch(function(err) {
+        // 감지 실패 시 일반 채팅으로 폴백 (기존 기능 유지)
+        console.warn('[ImageFlow] 의도 감지 실패, 일반 채팅으로 진행:', err);
+        state.busy = false;
+        if (el.send) el.send.disabled = false;
+        sendMessageCore(message);
+      });
+      return;
+    }
+
+    sendMessageCore(message);
+  }
+
+
+  /**
+   * 이미지 편집 의도가 감지되었을 때의 처리.
+   * 사용자에게 편집 확인 UI를 표시하고, 확인 시 미리보기를 실행한다.
+   */
+  function handleImageEditIntent(detectResult, originalMessage) {
+    var slotKey = detectResult.slotKey;
+    var operations = detectResult.operations || [];
+    var desc = detectResult.suggestedEditDescription || '';
+
+    // 기존 이미지가 없으면 안내
+    if (!detectResult.hasExistingImage) {
+      appendMessage('ai', '이미지 편집을 위해 먼저 이미지를 업로드해주세요.\n' +
+        '업로드 후 "' + originalMessage + '"와 같이 다시 요청해주시면 밝기·색감을 조절해드립니다.');
+      return;
+    }
+
+    // 편집 확인 메시지
+    var confirmHtml = '이미지 편집을 진행할까요?\n' +
+      '▪ 슬롯: ' + slotKey + '\n' +
+      '▪ 작업: ' + desc + '\n\n' +
+      '진행하려면 아래 "미리보기"를 눌러주세요.';
+    appendMessage('ai', confirmHtml);
+
+    // 미리보기 버튼 추가 (채팅 영역에)
+    var btnContainer = document.createElement('div');
+    btnContainer.className = 'image-edit-confirm-actions';
+    btnContainer.innerHTML =
+      '<button class="btn-image-preview" data-slot="' + slotKey + '">미리보기</button>' +
+      '<button class="btn-image-cancel">취소</button>';
+
+    // 마지막 AI 메시지에 버튼 추가
+    var messages = document.querySelectorAll('.chat-message.ai');
+    if (messages.length > 0) {
+      messages[messages.length - 1].appendChild(btnContainer);
+    }
+
+    btnContainer.querySelector('.btn-image-preview').addEventListener('click', function() {
+      setStatus('이미지를 편집하고 있습니다…');
+      window.ImageEditFlow.executeEdit(slotKey, operations).then(function(previewData) {
+        setStatus('');
+        btnContainer.remove();
+        // 원본 vs 수정본 비교 모달 표시
+        window.ImageEditFlow.showCompareModal(previewData);
+        appendMessage('ai', '편집이 완료되었습니다. 위 미리보기에서 원본과 비교 후 승인/재수정/취소를 선택해주세요.');
+      }).catch(function(err) {
+        setStatus('');
+        appendMessage('ai', '이미지 편집 중 오류가 발생했습니다: ' + err.message);
+      });
+    });
+
+    btnContainer.querySelector('.btn-image-cancel').addEventListener('click', function() {
+      btnContainer.remove();
+      appendMessage('ai', '이미지 편집을 취소했습니다.');
+    });
+  }
+
+  /**
+   * 실제 채팅 전송 (이미지 의도 감지 후 호출).
+   * 기존 sendMessage의 본문을 분리하여 일반 채팅 흐름을 유지한다.
+   */
+  function sendMessageCore(message) {
     state.busy = true;
     if (el.send) el.send.disabled = true;
     appendMessage('mine', message);
