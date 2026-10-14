@@ -2,6 +2,9 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.ImageEditFlowDtos;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyWorkingCopy;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyWorkingCopyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ImageEditApprovalService {
 
   private final AcademyWorkingCopyService workingCopyService;
+  private final AcademyWorkingCopyRepository workingCopyRepository;
+  private final AcademyRepository academyRepository;
 
   /**
    * 승인 상태 저장소 (메모리 기반, #662 병합 후 DB로 이전 예정).
@@ -98,17 +103,31 @@ public class ImageEditApprovalService {
         throw new IllegalStateException("이미지 정보를 찾을 수 없습니다: " + assetId);
       }
 
-      // WorkingCopy의 현재 revision 조회가 필요하나,
-      // 여기서는 stageMedia 호출을 위한 구조를 제공한다.
-      // 실제 revision은 프론트엔드에서 전달받거나 조회한다.
-      // TODO: revision 조회 로직 추가
-      log.info("이미지 승인: assetId={}, slot={}, storageKey={}", assetId, slotKey, storageKey);
+      // expectedRevision 결정: 요청에 있으면 사용, 없으면 서버에서 조회
+      long revision;
+      if (request.expectedRevision() != null) {
+        revision = request.expectedRevision();
+        log.info("프론트엔드에서 전달된 revision 사용: {}", revision);
+      } else {
+        revision = getCurrentRevision(principal);
+        log.info("서버에서 조회한 revision 사용: {}", revision);
+      }
 
-      flowStatusStore.put(assetId, "APPROVED");
+      // WorkingCopy에 스테이징 (승인된 이미지만)
+      try {
+        workingCopyService.stageMedia(principal, revision, slotKey, storageKey);
+        log.info("이미지 승인 및 WorkingCopy 스테이징 완료: assetId={}, slot={}, revision={}",
+            assetId, slotKey, revision);
+      } catch (Exception e) {
+        log.error("WorkingCopy 스테이징 실패: assetId={}", assetId, e);
+        throw new IllegalStateException("WorkingCopy 스테이징 실패 (revision 충돌 가능): " + e.getMessage(), e);
+      }
+
+      flowStatusStore.put(assetId, "STAGED");
 
       return new ImageEditFlowDtos.ApproveImageResponse(
-          assetId, "APPROVED",
-          "승인되었습니다. 미리보기에서 확인 후 발행하세요.");
+          assetId, "STAGED",
+          "승인되어 미리보기에 반영되었습니다. 발행하면 홈페이지에 표시됩니다.");
     } else {
       // 거부: WorkingCopy에 반영하지 않음
       flowStatusStore.put(assetId, "REJECTED");
@@ -150,6 +169,41 @@ public class ImageEditApprovalService {
 
     flowStatusStore.put(assetId, "STAGED");
     log.info("WorkingCopy 스테이징 완료: assetId={}, slot={}", assetId, slotKey);
+  }
+
+  /**
+   * 현재 WorkingCopy의 revision을 조회.
+   *
+   * <p>서버 상태와 일치하는 revision을 반환하여
+   * 낙관적 락 충돌을 방지한다.
+   *
+   * @param principal 인증 사용자
+   * @return 현재 revision
+   */
+  public long getCurrentRevision(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    Long academyId = academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new IllegalStateException("학원을 찾을 수 없습니다."))
+        .getAcademyId();
+
+    // WorkingCopy가 없으면 stageMedia에서 loadOrCreate로 생성되므로 0 반환
+    // (신규 WorkingCopy의 초기 revision)
+    return workingCopyRepository.findByAcademyId(academyId)
+        .map(AcademyWorkingCopy::getRevision)
+        .orElse(0L);
+  }
+
+  /**
+   * 승인된 이미지를 WorkingCopy에 스테이징 (revision 자동 조회).
+   *
+   * @param principal 인증 사용자
+   * @param assetId 이미지 자산 ID
+   */
+  @Transactional
+  public void stageApprovedImage(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      Long assetId) {
+    long revision = getCurrentRevision(principal);
+    stageApprovedImage(principal, assetId, revision);
   }
 
   /**
