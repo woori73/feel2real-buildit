@@ -1,11 +1,41 @@
 /**
  * BuildIt 빌더 진입 화면
- * - AI 신규 제작: /builder 로 이동 (TUTOR/ADMIN 권한 필요)
- * - 샘플 선택: 선택한 샘플 정보를 담아 /builder 로 이동
+ * - AI 신규 제작: 입력한 요청을 보관하고 /builder 로 이동 (TUTOR/ADMIN). 그 외에는 홈의 시작 게이트(로그인 창)로 보낸다.
+ * - 샘플 선택: 샘플의 느낌을 AI 요청 문장에 채워 준다(참고용).
  * - 크게 보기: 샘플 상세 모달 (build2 demo.html iframe)
  */
 (function() {
   'use strict';
+
+  var PENDING_KEY = 'builditPendingPrompt'; // landing_buildit.js·assistant_export.js와 같은 값/형식
+  var MAX_PROMPT = 2000;
+  var BUILDER_URL = '/builder';
+  var GATE_URL = '/?start=builder'; // 홈의 시작 게이트(로그인 창)로 이어진다
+
+  /** 로그인한 계정이 빌더를 쓸 수 있으면 /builder, 아니면 홈의 시작 게이트로 보낸다. */
+  function entryDestination(user) {
+    var ok = !!user && (user.role === 'TUTOR' || user.role === 'ADMIN');
+    return ok ? BUILDER_URL : GATE_URL;
+  }
+
+  /** 빌더가 읽는 보관 형식({text, at}). 비어 있으면 null. */
+  function pendingPayload(text, nowMs) {
+    var value = String(text || '').trim().slice(0, MAX_PROMPT);
+    return value ? JSON.stringify({ text: value, at: nowMs }) : null;
+  }
+
+  /** 샘플 느낌을 요청 문장 뒤에 덧붙인다. 이미 쓴 내용은 지우지 않는다. */
+  function composeSamplePrompt(current, style) {
+    var base = String(current || '').trim();
+    var add = String(style || '').trim();
+    if (!add) return base;
+    return base ? base + ' ' + add : add;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { entryDestination: entryDestination, pendingPayload: pendingPayload, composeSamplePrompt: composeSamplePrompt };
+  }
+  if (typeof document === 'undefined') return;
 
   // 모달 Escape 키 처리: 전역에 1회만 등록
   // - 포커스가 부모 문서에 있을 때: keydown으로 모달 닫기
@@ -28,7 +58,6 @@
   });
 
   // AI 입력창: 입력 내용 자동 저장/복원 (유실 방지)
-  // 참고: 프롬프트의 /builder 자동 전달은 준비 중 (백엔드 연동은 Claude 담당)
   var PROMPT_KEY = 'buildit_entry_prompt';
   var promptEl = document.querySelector('#aiPrompt');
   if (promptEl) {
@@ -45,30 +74,40 @@
     });
   }
 
-  // AI로 만들기 버튼
-  document.querySelectorAll('[data-action="ai-create"]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      // 입력 내용을 저장한 뒤 기존 /builder로 이동 (TUTOR/ADMIN 권한 체크 적용)
-      // 프롬프트 자동 전달 기능은 준비 중임을 UI에 명시
-      if (promptEl) {
-        try {
-          sessionStorage.setItem(PROMPT_KEY, promptEl.value);
-        } catch (e) {}
-      }
-      window.location.href = '/builder';
+  // 로그인 계정 확인(랜딩과 같은 /api/auth/me). 실패하면 비로그인으로 본다.
+  function currentUser() {
+    try {
+      var cached = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+      if (cached && cached.role) return Promise.resolve(cached);
+    } catch (e) {}
+    return fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then(function(res) { return res.ok ? res.json() : null; })
+      .catch(function() { return null; });
+  }
+
+  function startBuilder() {
+    var payload = pendingPayload(promptEl ? promptEl.value : '', Date.now());
+    if (payload) {
+      try { sessionStorage.setItem(PENDING_KEY, payload); } catch (e) {}
+    }
+    currentUser().then(function(user) {
+      window.location.href = entryDestination(user);
     });
+  }
+
+  // 제작 시작 버튼(AI로 만들기 / + 새 홈페이지)
+  document.querySelectorAll('[data-action="ai-create"], [data-action="start-builder"]').forEach(function(btn) {
+    btn.addEventListener('click', startBuilder);
   });
 
-  // 이 디자인으로 시작 버튼
+  // 샘플 버튼: 샘플의 느낌을 요청 문장에 채우고 입력창으로 돌아간다
   document.querySelectorAll('[data-action="use-sample"]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var sampleId = btn.getAttribute('data-sample-id');
-      // 샘플 정보를 sessionStorage에 저장
-      try {
-        sessionStorage.setItem('buildit_entry_sample', sampleId);
-      } catch (e) {}
-      // 준비 중 안내 (백엔드 샘플 기반 생성 API는 Claude 담당)
-      showPreparingModal('샘플 기반 제작', '선택한 샘플을 기반으로 하는 AI 제작 기능은 준비 중입니다.\n현재는 /builder에서 직접 제작할 수 있습니다.');
+      if (!promptEl) return;
+      promptEl.value = composeSamplePrompt(promptEl.value, btn.getAttribute('data-sample-style'));
+      try { sessionStorage.setItem(PROMPT_KEY, promptEl.value); } catch (e) {}
+      promptEl.focus();
+      promptEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   });
 
