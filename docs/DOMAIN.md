@@ -1701,7 +1701,7 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 
 상태 전이: PENDING→APPLIED(저장 트랜잭션 안, `appliedRevision`은 DB revision), PENDING→REJECTED, PENDING→EXPIRED(조회 시 정리), PENDING→STALE(저장된 초안에 대상 요소가 없을 때만). 종결 상태는 재전이 불가.
 
-## 입시상담 가이드 (V1066)
+## 입시상담 가이드 (V1070)
 
 입시상담 Agent 전용 테이블. NewStart 운영 DB와 완전 분리. `admissions_*` 테이블은 입시상담 전용.
 
