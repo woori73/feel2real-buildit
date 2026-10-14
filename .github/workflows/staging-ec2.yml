@@ -172,11 +172,9 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/staging-fe
           cp -r qoder-fe/qoder/publishing-editor/* /tmp/staging-fe/
-          # 스테이징: mock 비활성, API prefix를 /staging-api로 변경 (운영 /api와 충돌 방지)
+          # 스테이징: mock 비활성 (API는 상대경로 /api/publishing 그대로 사용)
           sed -i 's/var USE_MOCK = true;/var USE_MOCK = false;/' /tmp/staging-fe/js/publishing_api.js
-          sed -i "s|var BASE = '/api/publishing';|var BASE = '/staging-api/publishing';|" /tmp/staging-fe/js/publishing_api.js
           grep -n "USE_MOCK =" /tmp/staging-fe/js/publishing_api.js
-          grep -n "var BASE" /tmp/staging-fe/js/publishing_api.js
           # S3에 업로드
           aws s3 sync --no-progress /tmp/staging-fe/ "s3://$S3_BUCKET/staging/fe/"
           echo "Frontend uploaded"
@@ -225,6 +223,7 @@ jobs:
               "SERVER_PORT=8081",
               "DB_NAME=feel2real_staging",
               "PUBLISHING_STORAGE_ROOT=/var/lib/feel2real/publishing-staging",
+              "SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/opt/staging/fe/",
               "ENV",
               "sudo chmod 600 /etc/f2r/staging.env",
               "echo 'staging.env written'",
@@ -250,27 +249,8 @@ jobs:
               "sudo systemctl daemon-reload",
               "sudo systemctl enable buildit-staging.service",
               "echo 'unit created'",
-              "echo '=== S8: nginx staging routes (additive only) ==='",
-              "sudo tee /etc/nginx/conf.d/staging-publishing.conf > /dev/null <<'NGINX'",
-              "# Staging: Qoder publishing frontend + API (P5 검증용). 운영 라우팅은 건드리지 않음.",
-              "location /staging-publishing/ {",
-              "    alias /opt/staging/fe/;",
-              "    index index.html;",
-              "    try_files $uri $uri/ /staging-publishing/index.html;",
-              "}",
-              "location /staging-api/ {",
-              "    proxy_pass http://127.0.0.1:8081/;",
-              "    proxy_set_header Host $host;",
-              "    proxy_set_header X-Real-IP $remote_addr;",
-              "    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;",
-              "    proxy_set_header X-Forwarded-Proto $scheme;",
-              "    proxy_connect_timeout 5s;",
-              "    proxy_send_timeout 290s;",
-              "    proxy_read_timeout 290s;",
-              "    client_max_body_size 205m;",
-              "}",
-              "NGINX",
-              "sudo nginx -t && echo 'nginx config OK'",
+              "echo '=== S8: nginx (EC2에 없음 — ALB 사용, 건너뜀) ==='",
+              "command -v nginx >/dev/null 2>&1 && echo '(nginx found, unexpected)' || echo '(no nginx on EC2 — external routing via ALB, skipping)'",
               "echo '=== S9: Start staging ==='",
               "sudo systemctl restart buildit-staging.service",
               "sleep 30",
@@ -283,11 +263,11 @@ jobs:
               "  echo \"waiting... ($i/12)\"; sleep 10;",
               "done",
               "curl -fsS --max-time 10 http://127.0.0.1:8081/actuator/health || echo '(health check failed - check journal)'",
-              "echo '=== S11: Reload nginx (staging routes live) ==='",
-              "sudo systemctl reload nginx && echo 'nginx reloaded'",
+              "echo '=== S11: EC2 network info (for external access planning) ==='",
+              "curl -fsS --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo '(no public IP)'",
               "echo '=== DONE ==='",
-              "echo 'Frontend: https://feel2real.co.kr/staging-publishing/index.html'",
-              "echo 'API: https://feel2real.co.kr/staging-api/publishing/*'",
+              "echo 'Staging backend: http://127.0.0.1:8081 (internal)'",
+              "echo 'External access requires ALB rule or security group change — see report'",
           ]
           print(json.dumps({"commands": commands}))
           PYEOF
