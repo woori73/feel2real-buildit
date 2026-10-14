@@ -123,6 +123,15 @@ class EasySecurityWebMvcTest {
   }
 
   @Test
+  @DisplayName("TUTOR → ADMIN Easy API 403")
+  void tutor_forbiddenFromAdminEasyApi() throws Exception {
+    Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(3L, "tutor01", "TUTOR"));
+    for (String endpoint : ENDPOINTS) {
+      mockMvc.perform(get(endpoint).cookie(tutor)).andExpect(status().isForbidden());
+    }
+  }
+
+  @Test
   @DisplayName("STUDENT → 403")
   void student_forbidden() throws Exception {
     Cookie student = new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "student01", "STUDENT"));
