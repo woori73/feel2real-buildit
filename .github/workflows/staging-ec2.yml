@@ -430,3 +430,70 @@ jobs:
         with:
           name: staging-test-output
           path: /tmp/staging-test-output.txt
+
+      - name: Setup staging DB user
+        if: inputs.mode == 'db-setup'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/dbsetup_script.sh << 'SCRIPT_EOF'
+          #!/bin/bash
+          set -euo pipefail
+          source /etc/f2r/env
+          DB_HOST="${DB_HOST:-localhost}"
+          DB_PORT="${DB_PORT:-3306}"
+          STAGING_PW=$(openssl rand -base64 32 | tr -d '/+=\n' | cut -c1-24)
+          echo "Creating staging DB user..."
+          mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" -e "
+          CREATE USER IF NOT EXISTS 'staging_publishing'@'%' IDENTIFIED BY '$STAGING_PW';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP, REFERENCES ON feel2real_staging.* TO 'staging_publishing'@'%';
+          FLUSH PRIVILEGES;" > /tmp/dbsetup.log 2>&1
+          if [ $? -eq 0 ]; then
+            echo "DB user created successfully"
+            sudo tee /etc/f2r/staging.env > /dev/null << ENVEOF
+          SPRING_PROFILES_ACTIVE=prd
+          SERVER_PORT=8081
+          DB_HOST=$DB_HOST
+          DB_PORT=$DB_PORT
+          DB_NAME=feel2real_staging
+          DB_USER=staging_publishing
+          DB_PASSWORD=$STAGING_PW
+          PUBLISHING_STORAGE_ROOT=/var/lib/feel2real/publishing-staging
+          SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/opt/staging/fe/
+          SERVER_SERVLET_CONTEXT_PATH=/staging
+          APP_JWT_COOKIE_NAME=STAGING_ACCESS_TOKEN
+          ENVEOF
+            echo "staging.env updated with dedicated DB credentials"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u staging_publishing -p"$STAGING_PW" -e "SELECT 1;" feel2real_staging > /dev/null 2>&1 && echo "Staging DB connection: OK" || echo "Staging DB connection: FAILED"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u staging_publishing -p"$STAGING_PW" -e "SELECT 1;" "$DB_NAME" > /dev/null 2>&1 && echo "PROD ACCESS: UNEXPECTED - CHECK PERMISSIONS" || echo "Prod DB access denied: OK (expected)"
+          else
+            echo "DB user creation failed"
+            exit 1
+          fi
+          SCRIPT_EOF
+          python3 << 'PYEOF' > /tmp/ssm_dbsetup.json
+          import json
+          with open('/tmp/dbsetup_script.sh', 'r') as f:
+              script = f.read()
+          print(json.dumps({"commands": [script]}))
+          PYEOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters file:///tmp/ssm_dbsetup.json \
+            --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CMD_ID"
+          for i in $(seq 1 12); do
+            sleep 15
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text 2>&1)
+            echo "status=$STATUS (attempt $i/12)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text | tee /tmp/dbsetup-output.txt
+
+      - name: Upload DB setup output
+        if: inputs.mode == 'db-setup'
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-dbsetup-output
+          path: /tmp/dbsetup-output.txt
