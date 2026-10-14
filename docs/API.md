@@ -4591,7 +4591,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 변화 없으면 items 빈 배열, hasUpdate=false.
 
 
-## Easy 원장 권한 API (V1070)
+## Easy 원장 권한 API (V1071)
 
 - `GET /api/tutor/easy/businesses`: 로그인 TUTOR의 활성 Academy에 연결된 활성 사업체 목록.
 - `GET /api/tutor/easy/workspace/{monthly,transactions,transactions/{txnId},reviews}`: 기존 Workspace 조회를 재사용한다. `businessId`는 선택자이며 권한은 principal → Academy → `academy_easy_business_links` 서버 조회로 판정한다.
