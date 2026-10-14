@@ -52,7 +52,7 @@ public class EasyAgentService {
   }
   return handle(s,p,businessId,interpreter.interpret(text,context(s)));
  }
- @Transactional
+ @Transactional(noRollbackFor=ResponseStatusException.class)
  public ActionResponse approve(JwtTokenProvider.AuthenticatedPrincipal p,Long businessId,Long actionId){
   accessService.requireAllowedBusiness(p,businessId);
   EasyAgentAction a=actions.findOwnedForUpdate(actionId,businessId,p.userId())
