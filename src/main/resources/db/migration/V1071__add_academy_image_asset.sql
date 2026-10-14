@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS academy_image_asset (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    created_by VARCHAR(50) NULL COMMENT 'BaseEntity 감사 컬럼 (생성자)',
+    updated_by VARCHAR(50) NULL COMMENT 'BaseEntity 감사 컬럼 (수정자)',
     academy_id BIGINT NOT NULL COMMENT '소속 학원 ID (학원별 격리)',
     slot_key VARCHAR(50) NOT NULL COMMENT '이미지 슬롯 (HERO_BANNER, SECTION_BG 등)',
     original_path VARCHAR(500) NOT NULL COMMENT '원본 이미지 저장 경로',
