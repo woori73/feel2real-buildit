@@ -54,7 +54,7 @@ public class AcademyAiCreateService {
    * 자연어 요청으로부터 홈페이지 초안을 생성한다.
    * DB를 수정하지 않는다.
    */
-  public CreateDraft generateDraft(String message, String academyName) {
+  public CreateDraft generateDraft(String message, String academyName, String templateId) {
     if (message == null || message.isBlank()) {
       throw new IllegalArgumentException("요청 내용을 입력해주세요.");
     }
@@ -68,6 +68,14 @@ public class AcademyAiCreateService {
 
     // 2. 프리셋 설정
     draft.put("designPreset", preset);
+    // 템플릿 기반 생성: 선택한 샘플의 구조 정보를 draft에 포함
+    if (templateId != null && !templateId.isBlank()) {
+      draft.put("templateId", templateId.trim());
+      String templateGuide = getTemplateGuide(templateId.trim());
+      if (templateGuide != null) {
+        draft.put("templateGuide", templateGuide);
+      }
+    }
 
     // 3. 학원명 설정
     if (academyName != null && !academyName.isBlank()) {
@@ -354,5 +362,33 @@ public class AcademyAiCreateService {
       result = result.trim();
     }
     return result.trim();
+  }
+
+  /**
+   * 템플릿별 구조 가이드 반환.
+   * 선택한 샘플의 실제 레이아웃·섹션 구성을 AI 생성에 반영하기 위한 설명.
+   */
+  private String getTemplateGuide(String templateId) {
+    return switch (templateId) {
+      case "tmpl-open-school" -> "오픈스쿨 템플릿 구조를 따르세요: "
+          + "1) 히어로(대입 실적 강조, 카운터), "
+          + "2) 공지사항, 3) 커리큘럼(학년별), "
+          + "4) 강사진 소개, 5) 수강 후기, 6) 상담 신청 CTA. "
+          + "종합학원 스타일, 신뢰감 있는 디자인.";
+      case "tmpl-demo-school" -> "데모스쿨 템플릿 구조를 따르세요: "
+          + "1) 히어로(성적 향상 메시지), "
+          + "2) 주간 시간표, 3) 공지사항, "
+          + "4) 오시는 길, 5) 무료 상담 신청 폼. "
+          + "모바일 중심, 부모 대상의 따뜻한 디자인.";
+      case "tmpl-minimal-landing" -> "미니멀 랜딩 템플릿 구조를 따르세요: "
+          + "1) 히어로(간결한 메시지), "
+          + "2) 세 가지 약속/특징, "
+          + "3) CTA 버튼, 4) 푸터. "
+          + "여백이 넉넉한 미니멀 디자인, 소규모 학원용.";
+      case "comp-bundle" -> "컴포넌트 조합 구조를 따르세요: "
+          + "히어로 2열, 강사진 그리드, 후기 섹션, 내비게이션+푸터를 "
+          + "자유롭게 조합한 커스텀형 레이아웃.";
+      default -> null;
+    };
   }
 }
