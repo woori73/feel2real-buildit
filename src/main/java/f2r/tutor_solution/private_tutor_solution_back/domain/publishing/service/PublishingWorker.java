@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Publishing Worker: QUEUED 작업 폴링 → 템플릿 프로비저닝 → RUNNING 전환.
  *
- * <p>설계: 10초 폴링. 실제 CLI 명령 실행은 P1의 명령 실행 서비스가 담당하고,
- * Worker는 작업 생명주기(상태 전이·작업 디렉토리 격리)만 관리한다.
- *
- * <p>작업 디렉토리는 {@code {storageRoot}/jobs/{jobId}/}로 격리되며,
- * 다른 사용자의 작업에 접근할 수 없다.
+ * <p>수정 이력 (2026-10-14):
+ * <ul>
+ *   <li>self-invocation으로 @Transactional이 무시되던 버그 수정 — self 프록시 주입</li>
+ *   <li>claim 실패 시 FAILED로 표시하여 무한 재시도 방지</li>
+ *   <li>최대 재시도 횟수 제한 및 상세 로깅</li>
+ * </ul>
  */
 @Slf4j
 @Component
@@ -31,36 +34,52 @@ public class PublishingWorker {
   private final PublishingProperties props;
   private final TemplateService templateService;
 
+  /** self-invocation 우회를 위한 프록시 주입. */
+  @Autowired
+  @Lazy
+  private PublishingWorker self;
+
   /** 10초 간격 폴링 (fixedDelay, workerEnabled=false면 스킵). */
   @Scheduled(fixedDelayString = "${publishing.worker-poll-seconds:10}000")
   public void poll() {
     if (!props.isWorkerEnabled()) {
+      log.debug("Publishing Worker 비활성화됨 (worker-enabled=false)");
       return;
     }
     List<PublishingJob> queued = jobRepository.findQueued(Status.QUEUED);
     if (queued.isEmpty()) {
+      log.trace("처리할 QUEUED 작업 없음");
       return;
     }
-    // 한 번에 1건씩 처리 (동시 실행 방지)
+    log.info("QUEUED 작업 {}건 발견, 첫 번째 처리 시작", queued.size());
     PublishingJob job = queued.get(0);
     try {
-      claimAndProvision(job.getId());
+      self.claimAndProvision(job.getId());
     } catch (Exception e) {
       log.error("Publishing 작업 시작 실패: jobId={}", job.getId(), e);
+      try {
+        self.markJobFailed(job.getId(), "작업 시작 실패: " + e.getMessage());
+      } catch (Exception ex) {
+        log.error("FAILED 표시 실패: jobId={}", job.getId(), ex);
+      }
     }
   }
 
-  /**
-   * 작업을 RUNNING으로 전환하고 템플릿을 프로비저닝한다.
-   *
-   * <p>별도 트랜잭션으로 상태를 선점한다 (동시 Worker 대비).
-   */
   @Transactional
   public void claimAndProvision(Long jobId) {
     PublishingJob job = jobRepository.findById(jobId).orElse(null);
     if (job == null || job.getStatus() != Status.QUEUED) {
-      return; // 이미 다른 Worker가 선점
+      log.debug("작업 {} 스킵 (이미 처리됨 또는 상태 변경)", jobId);
+      return;
     }
+    if (job.getAttemptCount() >= props.getMaxAttempts()) {
+      job.markFailed("최대 재시도 횟수(" + props.getMaxAttempts() + ") 초과");
+      log.warn("작업 {} 최대 재시도 초과로 FAILED 확정", jobId);
+      return;
+    }
+    job.incrementAttempt();
+    log.info("작업 {} 처리 시작 (시도 {}/{})", jobId, job.getAttemptCount(), props.getMaxAttempts());
+
     Path workDir = Path.of(props.getStorageRoot(), "jobs", String.valueOf(jobId));
     try {
       Template template = Template.fromCode(job.getTemplate());
@@ -72,5 +91,16 @@ public class PublishingWorker {
       job.markFailed("템플릿 프로비저닝 실패: " + e.getMessage());
       log.error("템플릿 프로비저닝 실패: jobId={}", jobId, e);
     }
+  }
+
+  /** 실패한 작업을 FAILED로 표시 (별도 트랜잭션). */
+  @Transactional
+  public void markJobFailed(Long jobId, String error) {
+    jobRepository.findById(jobId).ifPresent(job -> {
+      if (job.getStatus() == Status.QUEUED || job.getStatus() == Status.RUNNING) {
+        job.markFailed(error);
+        log.info("Publishing 작업 FAILED 처리: jobId={}", jobId);
+      }
+    });
   }
 }
