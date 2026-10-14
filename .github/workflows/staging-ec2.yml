@@ -148,11 +148,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          echo "=== Step 1: Download JAR from main CI ==="
-          gh run download "$CI_RUN_ID" -n "app-jar-$DEPLOY_SHA" -D /tmp/staging-artifacts --repo woori73/feel2real-buildit || {
-            echo "::error::JAR artifact download failed"
-            exit 1
-          }
+          echo "=== Step 1: Build JAR from PR #677 branch ==="
+          mkdir -p /tmp/staging-artifacts
+          cd /tmp
+          rm -rf pr677-build
+          git clone --depth 1 --branch feat/photocraft-final-integration https://github.com/woori73/feel2real-buildit.git pr677-build
+          cd pr677-build
+          chmod +x gradlew
+          ./gradlew clean bootJar --no-daemon -x test -q
+          JAR_FILE=$(ls build/libs/*.jar | head -1)
+          cp "$JAR_FILE" /tmp/staging-artifacts/app.jar
           ls -lh /tmp/staging-artifacts/
           test -s /tmp/staging-artifacts/app.jar || { echo "::error::app.jar missing"; exit 1; }
 
