@@ -334,7 +334,11 @@ body { background: #f7f8fc; }
 .bi-page .v3-soon-card h3 { margin: 0; font-size: 22px; letter-spacing: -.03em; font-weight: 800; color: var(--v3-ink-2); }
 .bi-page .v3-soon-card p { margin: 0; font-size: 15px; }
 .bi-page .v3-soon-card .v3-soon-status { font-size: 14px; font-weight: 700; }
-@media (min-width: 900px) { .bi-page .v3-soon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 700px) { .bi-page .v3-soon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .bi-page .v3-soon-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.bi-page .v3-soon-card h3 small { display: block; margin-top: 4px; font-size: 14px; font-weight: 700; letter-spacing: -.02em; color: var(--ink-soft); }
+.bi-page .v3-soon-card .v3-soon-core { display: flex; gap: 10px; padding-top: 12px; border-top: 1px solid #e3e6f2; font-size: 13px; font-weight: 700; color: var(--v3-ink-2); }
+.bi-page .v3-soon-core b { flex: none; color: #2563eb; }
 
 /* ---------- FAQ ---------- */
 .bi-page .v3-faq { padding: var(--v3-sec) var(--v3-gutter) 0; }

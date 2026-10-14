@@ -133,7 +133,9 @@ class LandingV3TemplateContractTest {
     String soon = html.substring(start, end);
 
     // then
-    assertThat(soon).contains("DesignCraft").contains("입시상담 AI").contains("aria-disabled=\"true\"");
+    assertThat(soon).contains("DesignCraft", "입시상담 AI", "Easy 장부", "iBT TestPrep", "LMS").contains("aria-disabled=\"true\"");
+    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(5);
+    assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생 관리 → 수업·과제 → 출결·성적 관리");
     assertThat(soon).doesNotContain("<a ").doesNotContain("<input").doesNotContain("<form");
   }
 
