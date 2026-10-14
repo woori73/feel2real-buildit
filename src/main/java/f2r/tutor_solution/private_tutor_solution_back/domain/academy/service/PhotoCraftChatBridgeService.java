@@ -111,10 +111,32 @@ public class PhotoCraftChatBridgeService {
 
     log.info("이미지 편집 의도 감지: slot={}, desc={}", slotKey, description);
 
+    boolean hasExistingImage = checkExistingImage(principal, slotKey);
+    String guideMessage = hasExistingImage
+        ? "편집할 이미지를 찾았습니다. 미리보기를 생성합니다."
+        : "이미지를 먼저 업로드한 후 편집할 수 있습니다.";
+
     return new ImageEditFlowDtos.ChatImageIntentResponse(
         true, slotKey, description, operations,
-        false, // hasExistingImage: #662 병합 후 실제 조회
-        "이미지를 먼저 업로드한 후 편집할 수 있습니다.");
+        hasExistingImage,
+        guideMessage);
+  }
+
+  /**
+   * 해당 슬롯에 기존 이미지가 있는지 확인한다.
+   * principal이 null이면(테스트 등) false를 반환한다.
+   */
+  private boolean checkExistingImage(JwtTokenProvider.AuthenticatedPrincipal principal, String slotKey) {
+    if (principal == null) {
+      return false;
+    }
+    try {
+      return academyImageService.listImages(principal).stream()
+          .anyMatch(img -> slotKey.equals(img.slotKey()));
+    } catch (Exception e) {
+      log.warn("기존 이미지 조회 실패: slot={}, error={}", slotKey, e.getMessage());
+      return false;
+    }
   }
 
   /**
