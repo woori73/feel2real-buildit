@@ -100,6 +100,20 @@ jobs:
           name: staging-investigate-output
           path: /tmp/staging-investigate-output.txt
 
+      - name: Investigate ALB (for external access)
+        if: inputs.mode == 'investigate'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "=== ALB discovery ==="
+          aws elbv2 describe-load-balancers --query 'LoadBalancers[*].{Name:LoadBalancerName,DNS:DNSName,Scheme:Scheme}' --output table || echo '(elbv2 describe failed)'
+          echo ""
+          echo "=== Listeners ==="
+          for alb_arn in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[*].LoadBalancerArn' --output text); do
+            echo "ALB: $alb_arn"
+            aws elbv2 describe-listeners --load-balancer-arn "$alb_arn" --query 'Listeners[*].{Port:Port,Protocol:Protocol,Default:DefaultActions}' --output table || true
+          done
+
       - name: Setup staging environment
         if: inputs.mode == 'setup'
         shell: bash
