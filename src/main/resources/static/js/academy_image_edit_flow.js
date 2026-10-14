@@ -49,12 +49,41 @@
 
   /**
    * 승인/거부.
+   *
+   * <p>승인 시 WorkingCopy revision을 조회하여 함께 전달한다.
+   * 거부 시에는 revision이 필요 없다.
    */
   function approveImage(assetId, approved, reason) {
-    return fetch(FLOW_API + '/approve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ assetId: assetId, approved: approved, reason: reason || null })
+    if (!approved) {
+      // 거부: revision 불필요
+      return fetch(FLOW_API + '/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assetId: assetId, approved: false, reason: reason || null })
+      }).then(function(res) {
+        if (!res.ok) throw new Error('거부 처리 실패: ' + res.status);
+        return res.json();
+      });
+    }
+
+    // 승인: revision 조회 후 승인 요청
+    return fetch(FLOW_API + '/working-copy-revision', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    }).then(function(res) {
+      if (!res.ok) throw new Error('revision 조회 실패: ' + res.status);
+      return res.json();
+    }).then(function(revData) {
+      return fetch(FLOW_API + '/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assetId: assetId,
+          approved: true,
+          reason: null,
+          expectedRevision: revData.revision
+        })
+      });
     }).then(function(res) {
       if (!res.ok) throw new Error('승인 처리 실패: ' + res.status);
       return res.json();
