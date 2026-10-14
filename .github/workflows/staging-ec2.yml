@@ -542,7 +542,7 @@ jobs:
           
           echo "=== Installing Playwright ==="
           npm init -y > /dev/null 2>&1 || true
-          npm install playwright > /dev/null 2>&1
+          npm install @playwright/test > /dev/null 2>&1
           npx playwright install chromium --with-deps > /dev/null 2>&1 || npx playwright install chromium
           
           echo "=== Running E2E tests ==="
