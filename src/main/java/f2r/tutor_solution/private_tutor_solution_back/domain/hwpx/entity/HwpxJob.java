@@ -85,6 +85,13 @@ public class HwpxJob {
   }
 
   public void markRunning(String workDir, String inputFile) {
+    this.status = Status.RUNNING;
+    this.workDir = workDir;
+    this.inputFile = inputFile;
+    this.progress = 5;
+    this.currentStep = "작업 시작";
+    this.updatedAt = LocalDateTime.now();
+  }
 
   /**
    * 업로드 시 입력 파일 경로를 기록한다.
@@ -92,12 +99,6 @@ public class HwpxJob {
    */
   public void setInputFile(String inputFile) {
     this.inputFile = inputFile;
-  }    this.status = Status.RUNNING;
-    this.workDir = workDir;
-    this.inputFile = inputFile;
-    this.progress = 5;
-    this.currentStep = "작업 시작";
-    this.updatedAt = LocalDateTime.now();
   }
 
   public void updateProgress(int progress, String step) {
