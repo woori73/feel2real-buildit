@@ -3,7 +3,7 @@
 -- Reading 50(30분: COMPLETE_THE_WORDS 15 · READ_DAILY_LIFE 20 · READ_PASSAGE 15) · Listening 47(29분: RESPONSE 18 · CONVERSATION 12 · ANNOUNCEMENT 9 · TALK 8) · Writing 12(23분) · Speaking 11(8분) = 90분 → time_limit_sec 5400.
 -- exam_id는 AUTO_INCREMENT에 의존하지 않고 exam_code로 회수한다; 선행: V1076(테이블) · V1077(시드).
 -- 오답 방지: choices_json은 평문 문자열 배열, answer_key는 A~D(=배열 인덱스), explanation은 정답 선지의 내용을 그대로 언급한다.
--- 본 파일 하나만 추가하며 다른 마이그레이션(V1079~V1083)의 문항과 중복되지 않도록 소재·문장을 새로 작성했다.
+-- 본 파일 하나만 추가하며 다른 마이그레이션(V1080~V1084)의 문항과 중복되지 않도록 소재·문장을 새로 작성했다.
 
 INSERT INTO tp_exams (exam_code, kind, title, subtitle, description, difficulty, time_limit_sec, status, created_by) VALUES
 ('TP-PRACTICE-2026-SET08','PRACTICE','TOEFL iBT Practice — Set 08 (Full-Length 2026 Format, Advanced)','Reading 50 · Listening 47 · Writing 12 · Speaking 11','The hardest capstone set in the TestPrep series, laid out on the January 2026 TOEFL iBT structure: 90 minutes, 120 items, denser passages on economics, epigenetics, urban engineering, geophysics and scientific publishing. Every text, dialogue and option here was originally written for TestPrep, so no scored ETS material is reproduced. Auto-scored items return a TestPrep internal band estimate, not an official ETS score.',NULL,5400,'PUBLISHED','admin');

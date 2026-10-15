@@ -2,7 +2,7 @@
 -- 출처: ETS 공개 구조(toefl-ibt-test-overview)에서 영역 순서·task type·문항 수·기준 시간만 참고했고, 지문·선택지·정답은 전부 새로 작성(ETS 미복제).
 --   Reading 50(30분) + Listening 47(29분) + Writing 12(23분) + Speaking 11(8분) = 90분 → time_limit_sec 5400.
 -- exam_code 'TP-PRACTICE-2026-SET07'. exam_id는 AUTO_INCREMENT에 의존하지 않고 exam_code로 회수한다.
--- 선행: V1076(테이블) · V1077(exam_id 시드). V1079~V1082(타 세트)와 문항 중복 없음.
+-- 선행: V1076(테이블) · V1077(exam_id 시드). V1080~V1083(타 세트)와 문항 중복 없음.
 
 INSERT INTO tp_exams (exam_code, kind, title, subtitle, description, difficulty, time_limit_sec, status, created_by) VALUES
 ('TP-PRACTICE-2026-SET07','PRACTICE','TOEFL iBT Practice — Set 07 (Full-Length 2026 Format)','Reading 50 · Listening 47 · Writing 12 · Speaking 11','A full-length practice set arranged like the January 2026 TOEFL iBT: Reading (Complete the Words, Read in Daily Life, Read an Academic Passage), Listening (Listen and Choose a Response, Conversation, Announcement, Academic Talk), Writing (Build a Sentence, Write an Email, Write for an Academic Discussion) and Speaking (Listen and Repeat, Take an Interview). Ninety minutes of base time match the published section timings. Every passage, dialogue and prompt is originally written for TestPrep; auto-scored items return a TestPrep internal band estimate, not an official ETS score.',NULL,5400,'PUBLISHED','admin');

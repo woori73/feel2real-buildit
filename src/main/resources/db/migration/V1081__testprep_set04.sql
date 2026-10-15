@@ -2,7 +2,7 @@
 -- 지문·대화·선택지·해설을 TestPrep이 직접 집필했으며 ETS 문제·해설은 일절 복제하지 않았다. 공개된 시험 구조(영역 순서·문항 유형·문항 수·기준 시간)만 참고했다.
 -- 중간 세트보다 약간 상향: 리딩 지문 130~170어휘, 리딩 토크 120~180어휘, 선지 오답 밀도 증가.
 -- Reading 50(30분) + Listening 47(29분) + Writing 12(23분) + Speaking 11(8분) = 90분 → time_limit_sec 5400.
--- exam_code는 SET04, V1078/V1079와 문항 중복 없음. exam_id는 AUTO_INCREMENT에 의존하지 않고 exam_code로 회수한다.
+-- exam_code는 SET04, V1079/V1080와 문항 중복 없음. exam_id는 AUTO_INCREMENT에 의존하지 않고 exam_code로 회수한다.
 -- 선행: V1076(테이블) · V1077(기본 시드).
 
 INSERT INTO tp_exams (exam_code, kind, title, subtitle, description, difficulty, time_limit_sec, status, created_by) VALUES

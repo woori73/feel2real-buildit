@@ -3,7 +3,7 @@
 --   Reading 50(30분) + Listening 47(29분) + Writing 12(23분) + Speaking 11(8분) = 90분 → time_limit_sec 5400.
 -- ETS 시험 지문·선택지·정답은 일체 복제하지 않았다(카탈로그 푸터의 "All practice content is originally written for TestPrep" 보증과 일치).
 -- 리딩 지문 5주제: (a) 엣두가 없는 휘발유 금지, (b) 안티키테라 기관, (c) 균근 네트워크, (d) 안전 자전거 역사, (e) 소나로 해저를 지도화.
--- exam_id는 AUTO_INCREMENT에 의존하지 않고 exam_code로 회수한다. 선행: V1076(테이블) · V1077~V1081(시드, 본 파일과 무관).
+-- exam_id는 AUTO_INCREMENT에 의존하지 않고 exam_code로 회수한다. 선행: V1076(테이블) · V1077~V1082(시드, 본 파일과 무관).
 
 INSERT INTO tp_exams (exam_code, kind, title, subtitle, description, difficulty, time_limit_sec, status, created_by) VALUES
 ('TP-PRACTICE-2026-SET06','PRACTICE','TOEFL iBT Practice — Set 06 (Full-Length 2026 Format)','Reading 50 · Listening 47 · Writing 12 · Speaking 11','A full-length practice set laid out in the January 2026 TOEFL iBT format: Reading (Complete the Words, Read in Daily Life, Read an Academic Passage), Listening (Listen and Choose a Response, Conversation, Announcement, Academic Talk), Writing (Build a Sentence, Write an Email, Write for an Academic Discussion) and Speaking (Listen and Repeat, Take an Interview). It runs 90 minutes of base time to match the published section timings. Reading passages cover five originally written topics, and every item, dialogue and passage was composed for this set; auto-scored items return a TestPrep internal band estimate, not an official ETS score.',NULL,5400,'PUBLISHED','admin');
