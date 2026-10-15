@@ -94,13 +94,25 @@ class DesignCraftCliExecutorTest {
   }
 
   @Test
-  void execute_stillUsesPlainRunCommand() throws Exception {
+  void execute_runsReadOnlyAgainstJobDocument_neverDefaultSample() throws Exception {
     // given
     var executor = executorWith("echo \"$@\" > args.txt\necho '{}'\n");
     // when
     executor.execute(new PublishingCommand("preflight.run", Map.of("minPpi", 150)), work);
-    // then
-    assertThat(Files.readString(work.resolve("args.txt"))).startsWith("run --cmd preflight.run=");
+    // then: --in 으로 작업 문서를 지정한다
+    assertThat(Files.readString(work.resolve("args.txt")))
+        .startsWith("run --in " + work.resolve("job.designcraft").toAbsolutePath() + " --cmd preflight.run=");
+  }
+
+  @Test
+  void execute_withoutJobDocument_failsInsteadOfFallingBackToSample() throws Exception {
+    // given
+    var executor = executorWith("echo ran > ran.txt\necho '{}'\n");
+    Files.delete(work.resolve("job.designcraft"));
+    // when/then
+    assertThatThrownBy(() -> executor.execute(new PublishingCommand("file.exportPdf", Map.of()), work))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("준비되지");
+    assertThat(Files.exists(work.resolve("ran.txt"))).isFalse();
   }
 
   @Test

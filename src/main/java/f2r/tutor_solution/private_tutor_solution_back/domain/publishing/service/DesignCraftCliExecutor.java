@@ -54,23 +54,49 @@ public class DesignCraftCliExecutor {
   }
 
   /**
-   * 단일 CLI 명령을 실행한다 ({@code run --cmd}).
+   * 작업 문서에 대해 명령을 실행한다 — <b>읽기 전용</b>({@code run --in FILE --cmd}, 변경은 저장되지 않는다).
    *
-   * <p>{@code --in} 없이 실행하므로 CLI의 기본 문서에 대해 동작하고 결과는 저장되지 않는다.
-   * 작업 문서를 바꾸는 편집은 {@link #executeOnDocument}를 쓴다.
+   * <p>검수·출력·조회용이다. 작업 문서({@value #DOCUMENT_FILE})가 없으면 CLI 기본 샘플 문서로 대체하지 않고
+   * 실패한다({@code 409}). 문서를 바꾸는 명령은 {@link #executeOnDocument}를 쓴다.
    *
    * @param command 실행할 명령 (allowlist 통과済み)
-   * @param workDir CLI 프로세스의 작업 디렉토리 (격리됨)
+   * @param workDir 작업 디렉토리 (정본 {@value #DOCUMENT_FILE}이 있어야 한다)
    * @return CLI 실행 결과 (exit 0 보장)
    */
   public CliResult execute(PublishingCommand command, Path workDir) {
     Path cli = cliPath();
-    List<String> cmd = new ArrayList<>();
-    cmd.add(cli.toAbsolutePath().toString());
-    cmd.add("run");
-    cmd.add("--cmd");
-    cmd.add(command.toCliArg(objectMapper));
+    Path document = requireDocument(workDir);
+    List<String> cmd = new ArrayList<>(List.of(
+        cli.toAbsolutePath().toString(),
+        "run",
+        "--in", document.toAbsolutePath().toString(),
+        "--cmd", command.toCliArg(objectMapper)));
     return runProcess(cmd, workDir, null);
+  }
+
+  /** 작업 디렉토리의 정본 문서. 없으면 기본 샘플로 대체하지 않고 409로 실패한다. */
+  private Path requireDocument(Path workDir) {
+    Path document = workDir.resolve(DOCUMENT_FILE);
+    if (!Files.isRegularFile(document)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "작업 문서가 준비되지 않았습니다.");
+    }
+    return document;
+  }
+
+  /** 문서 구조(JSON)를 조회한다 ({@code document.inspect}, 문서는 변경되지 않는다). */
+  public com.fasterxml.jackson.databind.JsonNode inspect(Path designcraftFile, Path workDir) {
+    List<String> cmd = new ArrayList<>(List.of(
+        cliPath().toAbsolutePath().toString(),
+        "run",
+        "--in", designcraftFile.toAbsolutePath().toString(),
+        "--cmd", "document.inspect"));
+    String output = runProcess(cmd, workDir, null).output();
+    try {
+      return objectMapper.readTree(output);
+    } catch (IOException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+          "문서 정보를 읽을 수 없습니다: " + e.getMessage(), e);
+    }
   }
 
   /**
@@ -93,10 +119,7 @@ public class DesignCraftCliExecutor {
    */
   public CliResult executeOnDocument(List<PublishingCommand> commands, Path workDir) {
     Path cli = cliPath();
-    Path document = workDir.resolve(DOCUMENT_FILE);
-    if (!Files.isRegularFile(document)) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "작업 문서가 준비되지 않았습니다.");
-    }
+    Path document = requireDocument(workDir);
     Path saved = workDir.resolve(DOCUMENT_FILE + ".saving");
     List<String> cmd = new ArrayList<>(List.of(
         cli.toAbsolutePath().toString(),
@@ -125,24 +148,9 @@ public class DesignCraftCliExecutor {
     }
   }
 
-  /**
-   * 문서의 페이지 수를 조회한다 ({@code run --in FILE --cmd document.inspect}, 문서는 변경되지 않는다).
-   *
-   * @return 페이지 수
-   */
+  /** 문서의 페이지 수 ({@link #inspect}의 {@code pageCount}). */
   public int pageCount(Path designcraftFile, Path workDir) {
-    List<String> cmd = new ArrayList<>(List.of(
-        cliPath().toAbsolutePath().toString(),
-        "run",
-        "--in", designcraftFile.toAbsolutePath().toString(),
-        "--cmd", "document.inspect"));
-    String output = runProcess(cmd, workDir, null).output();
-    try {
-      return objectMapper.readTree(output).path("pageCount").asInt(0);
-    } catch (IOException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-          "문서 정보를 읽을 수 없습니다: " + e.getMessage(), e);
-    }
+    return inspect(designcraftFile, workDir).path("pageCount").asInt(0);
   }
 
   /** {@code script} 출력({@code {"completed":1,"results":[X]}})에서 X만 꺼내 {@code run} 출력과 같은 모양으로 맞춘다. */

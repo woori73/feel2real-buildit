@@ -228,7 +228,7 @@
     $('page-total').textContent = '/ ' + S.pageCount;
     $('btn-prev-page').disabled = n <= 1;
     $('btn-next-page').disabled = n >= S.pageCount;
-    $('style-target').textContent = n + '쪽 본문';
+    $('style-target').textContent = n + '쪽 텍스트 프레임 (이어진 글 전체)';
     markThumbActive(n);
 
     var holder = $('preview-holder');
@@ -675,7 +675,8 @@
     toast('원고 반입 중…');
     api.importManuscript(S.jobId, file).then(function (r) {
       if (!r.applied) { toast('반입 실패', true); return; }
-      toast('원고 반입 완료 (' + r.pageCount + '쪽) · 스냅샷 ' + r.snapshotId);
+      toast('원고 반입 완료 (' + r.pageCount + '쪽) · 스냅샷 ' + r.snapshotId +
+        (r.styledHeadings ? ' · 제목/인용 스타일 ' + r.styledHeadings + '건' : ''));
       markPreflightStale();
       S.pageCount = r.pageCount || S.pageCount;
       S.thumbCache = {}; S.pageCache = {};

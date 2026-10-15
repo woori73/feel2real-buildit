@@ -78,7 +78,8 @@ public class PublishingEditController {
         "applied", true,
         "snapshotId", r.snapshotId(),
         "pageCount", r.pageCount(),
-        "fileName", r.fileName()));
+        "fileName", r.fileName(),
+        "styledHeadings", r.styledHeadings()));
   }
 
   /** 페이지 PNG 미리보기 (캐시 브레이커: ETag). */

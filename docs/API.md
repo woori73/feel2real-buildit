@@ -4627,4 +4627,6 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /info` → `{jobId, pageCount}`: 작업 문서(`job.designcraft`)의 현재 쪽수(`document.inspect`). 작업이 `RUNNING`/`DONE`일 때만(그 외 `409`). 편집기가 폴링 없이 쪽수를 알기 위한 용도.
 - `POST /manuscript` (multipart `manuscript`; md/txt/docx/rtf, 최대 10MB) → `{jobId, applied, snapshotId, pageCount, fileName}`: 원고를 첨부하고 반입 전 스냅샷을 만든 뒤 한 번의 CLI script로 `file.place(autoflow)` → 전체 선택 → `ko-body` 적용을 실행하고 정본에 저장한다.
 - `POST /commands`는 정본에 저장된다(`script - --in job.designcraft --save TMP` 후 원자적 교체, 실패 시 정본 불변). `GET /pages/{n}/png|thumb`의 `n`은 1-based이며 CLI에는 0-based로 변환해 전달한다.
-- 알려진 한계: `preflight`·`export`·Markdown 스타일 자동 적용은 아직 `run --cmd`(문서 미지정)로 실행되어 작업 문서가 아니라 CLI 기본 문서를 대상으로 한다 — 별도 결정 후 전환.
+- `preflight`·`export`·Markdown 스타일 적용·조회는 모두 **현재 작업 문서**(`job.designcraft`)를 `--in`으로 지정해 실행한다. 작업 문서가 없으면 CLI 기본 샘플로 대체하지 않고 `409`로 실패한다. 문서를 바꾸는 명령(편집·반입·Markdown 스타일)은 한 script로 실행해 저장하고 실패 시 정본을 유지한다.
+- `POST /commands`의 `style.paragraph.apply`/`style.character.apply`는 `{page, style}`(1-based 쪽)을 받으면 그 쪽의 텍스트 프레임을 `selection.set`으로 선택한 뒤 `{name}`으로 적용한다(CLI 요구 형태; 프레임에 이어진 글 전체에 적용). 텍스트 프레임이 없는 쪽은 `400`. `{name}`만 있는 형태(AI 계획)는 그대로 실행한다.
+- `POST /manuscript` 응답에 `styledHeadings`(Markdown 제목·인용 스타일 적용 건수)가 있고, 반입 후 원고 스토리를 주 텍스트 프레임(Smart Text Reflow)으로 지정해 분량 변화에도 페이지가 자동 조정된다.
