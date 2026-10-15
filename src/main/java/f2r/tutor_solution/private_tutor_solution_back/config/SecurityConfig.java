@@ -181,10 +181,16 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/problem-generator/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-            // TESTPREP 화면(/testprep/**)도 익명 브라우저 요청에 raw 401을 주지 않고 랜딩 로그인 모달로 보낸다.
+            // TESTPREP 보호 화면(/testprep/**)은 익명 브라우저 요청에 raw 401을 주지 않고, 공개 첫 페이지(/testprep)로 보내
+            // 로그인 안내를 띄운다. 로그인 후 원래 화면으로 돌아오도록 returnUrl(내부 /testprep 경로)을 함께 싣는다.
             // JSON API(/api/testprep/**)는 TEXT_HTML이 아니라 아래 AnyRequestMatcher의 401 계약을 유지한다.
             .defaultAuthenticationEntryPointFor(
-                (request, response, ex) -> response.sendRedirect("/?login=required"),
+                (request, response, ex) -> {
+                  String target = request.getRequestURI();
+                  if (request.getQueryString() != null) target += "?" + request.getQueryString();
+                  response.sendRedirect("/testprep?login=required&returnUrl="
+                      + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
+                },
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/testprep/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
@@ -283,10 +289,13 @@ public class SecurityConfig {
             // catch-all permitAll보다 위에서 닫는다. 화면은 로그인한 STUDENT/TUTOR/ADMIN 전용이다.
             .requestMatchers("/problem-generator/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
-            // TESTPREP 화면 SSR은 로그인 회원 전용(catch-all permitAll보다 위에서 닫는다).
+            // TESTPREP 첫 페이지(/testprep)는 비회원 공개(서비스 소개). ⚠ 아래 /testprep/** 규칙보다 먼저 와야 한다.
+            .requestMatchers("/testprep")
+            .permitAll()
+            // TESTPREP 하위 화면 SSR(시험·응시·성적·오답·학습)은 로그인 회원 전용(catch-all permitAll보다 위에서 닫는다).
             // JSON API는 이미 아래 /api/** 인증 규칙으로 막혀 있고, 페이지 정적 자산(/css,/js)은 별도 permitAll.
             // /home·BuildIt 페이지는 이 규칙과 무관하게 그대로 공개 유지.
-            .requestMatchers("/testprep", "/testprep/**")
+            .requestMatchers("/testprep/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
             // 위 패턴에 걸리지 않는 LMS 하위 신규 경로는 fail-closed(최소 인증).
             // 이 줄이 없으면 catch-all permitAll로 떨어진다.

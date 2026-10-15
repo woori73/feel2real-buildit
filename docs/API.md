@@ -4645,3 +4645,10 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `preflight`·`export`·Markdown 스타일 적용·조회는 모두 **현재 작업 문서**(`job.designcraft`)를 `--in`으로 지정해 실행한다. 작업 문서가 없으면 CLI 기본 샘플로 대체하지 않고 `409`로 실패한다. 문서를 바꾸는 명령(편집·반입·Markdown 스타일)은 한 script로 실행해 저장하고 실패 시 정본을 유지한다.
 - `POST /commands`의 `style.paragraph.apply`/`style.character.apply`는 `{page, style}`(1-based 쪽)을 받으면 그 쪽의 텍스트 프레임을 `selection.set`으로 선택한 뒤 `{name}`으로 적용한다(CLI 요구 형태; 프레임에 이어진 글 전체에 적용). 텍스트 프레임이 없는 쪽은 `400`. `{name}`만 있는 형태(AI 계획)는 그대로 실행한다.
 - `POST /manuscript` 응답에 `styledHeadings`(Markdown 제목·인용 스타일 적용 건수)가 있고, 반입 후 원고 스토리를 주 텍스트 프레임(Smart Text Reflow)으로 지정해 분량 변화에도 페이지가 자동 조정된다.
+
+## TESTPREP 접근 정책 (`/testprep`)
+
+- `GET /testprep`: **비회원 공개** 첫 페이지(서비스 소개). 로그인 화면으로 자동 이동하지 않는다.
+- `GET /testprep/{practice,vocab,run,review,scores,learning}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
+- `/api/testprep/**`(시험 목록·응시·답안·제출·성적·오답·학습 이력): 인증 필수, 비회원은 `401`. 화면 숨김과 무관하게 서버가 검증한다.
+- 로그인: 기존 네이버 로그인(`/oauth2/authorization/naver`) 재사용. 클릭 시 `oauth_return_url` 쿠키(내부 `/testprep` 경로만)를 저장해 로그인 후 이용하려던 화면으로 복귀한다. 네이버 자기가입 회원의 role은 STUDENT라 TESTPREP을 이용할 수 있다.

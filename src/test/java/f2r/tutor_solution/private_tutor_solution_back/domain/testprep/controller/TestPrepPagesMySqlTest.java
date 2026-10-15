@@ -21,7 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>SecurityConfig의 신규 규칙을 검증한다:
  * <ul>
- *   <li>익명 브라우저 요청은 raw 401이 아닌 랜딩 로그인 모달로 리다이렉트(302 → {@code /?login=required}).</li>
+ *   <li>{@code /testprep} 첫 페이지는 비회원 공개(200). 하위 화면 익명 요청은 raw 401이 아닌 302 → {@code /testprep?login=required&returnUrl=…}.</li>
+ *   <li>익명 JSON API는 401.</li>
  *   <li>로그인 회원(STUDENT)에게는 Thymeleaf 화면이 정상 렌더(200)된다.</li>
  *   <li>feel2real {@code /home}(BuildIt 랜딩)은 그대로 익명 접근 가능 — TESTPREP 화면 통제가 홈페이지에 영향 없음.</li>
  * </ul>
@@ -46,11 +47,35 @@ class TestPrepPagesMySqlTest {
   }
 
   @Test
-  @DisplayName("익명 /testprep 요청은 302로 랜딩 로그인 모달로 보낸다 (raw 401 아님)")
-  void anonymousTestprepRedirectsToLogin() throws Exception {
+  @DisplayName("익명 /testprep 첫 페이지는 로그인 이동 없이 200으로 공개된다")
+  void anonymousTestprepHomeIsPublic() throws Exception {
     MvcResult r = mockMvc.perform(get("/testprep").accept(MediaType.TEXT_HTML)).andReturn();
-    assertThat(r.getResponse().getStatus()).isEqualTo(302);
-    assertThat(r.getResponse().getRedirectedUrl()).startsWith("/?login=required");
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    assertThat(r.getResponse().getContentAsString()).contains("tp-nav");
+  }
+
+  @Test
+  @DisplayName("익명 하위 화면은 /testprep로 보내 로그인 안내를 띄우고 원래 경로를 returnUrl로 싣는다")
+  void anonymousSubPagesRedirectToPublicHomeWithReturnUrl() throws Exception {
+    for (String path : new String[] {
+        "/testprep/practice", "/testprep/vocab", "/testprep/run", "/testprep/scores",
+        "/testprep/review", "/testprep/learning"}) {
+      MvcResult r = mockMvc.perform(get(path).accept(MediaType.TEXT_HTML)).andReturn();
+      assertThat(r.getResponse().getStatus()).as("status " + path).isEqualTo(302);
+      assertThat(r.getResponse().getRedirectedUrl()).as("redirect " + path)
+          .isEqualTo("/testprep?login=required&returnUrl=" + java.net.URLEncoder.encode(path, java.nio.charset.StandardCharsets.UTF_8));
+    }
+  }
+
+  @Test
+  @DisplayName("익명 JSON API(시험·응시·성적·이력)는 raw 401로 차단된다")
+  void anonymousApisAreBlocked() throws Exception {
+    for (String path : new String[] {
+        "/api/testprep/exams", "/api/testprep/attempts", "/api/testprep/attempts/1",
+        "/api/testprep/attempts/1/review", "/api/testprep/learning"}) {
+      MvcResult r = mockMvc.perform(get(path).accept(MediaType.APPLICATION_JSON)).andReturn();
+      assertThat(r.getResponse().getStatus()).as("status " + path).isEqualTo(401);
+    }
   }
 
   @Test
