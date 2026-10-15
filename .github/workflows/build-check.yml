@@ -271,6 +271,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.TestPrepScoringTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ReturnUrlPolicyTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.ProblemGeneratorSecurityIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramEntryTest"
 
       - name: Verify editor tests executed
@@ -402,6 +403,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPagesMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramPublicEntryMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramBuilderEntryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramProblemGeneratorEntryMySqlTest"
 
       - name: Upload MySQL test report
         if: always()
