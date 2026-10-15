@@ -146,6 +146,25 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 홈페이지 when 템플릿을 읽으면 then 디지털영어학원과 무관한 NewStart·위메이드·충기 크리에이터는 어디에도 노출하지 않는다")
+  void landing_never_exposes_non_education_services() throws Exception {
+    // 2026-10-15 사용자 확정: 세 서비스는 상단 바로가기·오픈 서비스·출시 예정 어디에도 넣지 않는다(카드·설명·입장 버튼·링크 금지).
+    // 서비스 자체의 URL·인증·데이터는 그대로이며 홈페이지에서만 제외한다.
+    // given
+    String html = Files.readString(LANDING).toLowerCase();
+
+    // then
+    assertThat(html)
+        .doesNotContain("newstart", "뉴스타트")
+        .doesNotContain("wemade", "위메이드")
+        .doesNotContain("choonggi", "충기");
+    assertThat(html)
+        .doesNotContain("href=\"/newstart")
+        .doesNotContain("href=\"/wemade")
+        .doesNotContain("href=\"/choonggi");
+  }
+
+  @Test
   @DisplayName("given 오픈 서비스 영역 when 읽으면 then 최상단 앵커가 각 설명 섹션을 가리키고 설명마다 주요 기능·사용 방법·서비스 입장하기가 있다")
   void open_services_have_anchor_nav_and_enter_buttons() throws Exception {
     // given
