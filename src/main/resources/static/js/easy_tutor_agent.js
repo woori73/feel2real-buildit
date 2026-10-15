@@ -27,9 +27,9 @@
 
   async function guardTutor() {
     const user = await ensureCurrentUser();
-    if (!user || user.role !== 'TUTOR') {
-      location.href = user ? dashboardPathForRole(user.role) : '/?login=required&returnUrl=%2Ftutor%2Feasy';
-      throw new Error('TUTOR 로그인이 필요합니다.');
+    if (!user || !['ADMIN', 'TUTOR'].includes(user.role)) {
+      location.href = user ? dashboardPathForRole(user.role) : '/?login=required&returnUrl=%2Fledger';
+      throw new Error('ADMIN 또는 TUTOR 로그인이 필요합니다.');
     }
     return user;
   }
