@@ -47,3 +47,10 @@
 
 ## PII 정책
 - 네이버 마스킹(000) 외 닉네임/등급만. 비마스킹 계좌 등 발견 시 즉시 마스킹 후 저장(5994 선례)
+
+## 관련 패키지 (2026-10-04 추가 수집)
+- `docs/newstart/research/cafe-4boards-20261004/` — menuId 3/4/5/9 4개 게시판 고가치 tranch 110건(RAW),
+  unit 728건, `load_batches/` REVIEW 적재 대기(미실행). 상세는 해당 패키지 `HANDOFF.md`.
+- 본 정본 `article_json/`(124건, articleId 5737~6010)과 신규 110건의 articleId 중복 0건
+  (`cafe-4boards-20261004/cafe_4boards_dedup_report.json`).
+

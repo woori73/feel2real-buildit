@@ -1,0 +1,61 @@
+{
+ "articleId": 5301,
+ "boardId": 4,
+ "boardName": "부실차주 임시안부터 확정안",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "차주 임시안 받은상태 ㄹㄷㅋㅍ, 개인워크아웃 문의",
+ "author": {
+  "nickname": "둥글동굴",
+  "memberGrade": "감사멤버",
+  "memberLevel": 150
+ },
+ "createdAt": "2026-05-29T01:53:00+09:00",
+ "createdAtMs": 1779987180000,
+ "writtenAtRaw": "26.05.29. 01:53",
+ "viewCount": 102,
+ "commentCount": 1,
+ "commentsCaptured": 1,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=5301&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "현재 부실차주 임시안 까지 나왔습니다.",
+  "ㄹㄷㅋㅍ 가 1월15일부터 협약 체결되어",
+  "저는 부실차주 접수를 12월31일 접수하여 포함이 불가하다고 합니다.",
+  "기간 관련해서 민원도 넣었는데",
+  "안된다고 하네요ㅠㅠ",
+  "ㄹㄷㅋㅍ 가 현재 400만원 있고 이자만 겨우 내는 상황입니다.",
+  "이런경우 개인워크아웃신청하면 감면 받을 수 있을까요?",
+  "관련하여 도움 부탁드립니다🙏🏻"
+ ],
+ "bodyNormalized": "현재 부실차주 임시안 까지 나왔습니다.\n\nㄹㄷㅋㅍ 가 1월15일부터 협약 체결되어\n저는 부실차주 접수를 12월31일 접수하여 포함이 불가하다고 합니다.\n\n기간 관련해서 민원도 넣었는데\n안된다고 하네요ㅠㅠ\n\nㄹㄷㅋㅍ 가 현재 400만원 있고 이자만 겨우 내는 상황입니다.\n이런경우 개인워크아웃신청하면 감면 받을 수 있을까요?\n\n관련하여 도움 부탁드립니다🙏🏻",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 56220861,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-05-29T09:44:42+09:00",
+   "createdAtMs": 1780015482000,
+   "text": "신복위가셔서 개인워크아웃 접수하시면 심사역이 설명해줍니다.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": true,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": "과거 임시안~확정안 게시판: 역사 자료. 현재 시행 규정으로 사용하지 말 것"
+}

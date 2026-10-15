@@ -1,0 +1,54 @@
+{
+ "articleId": 3466,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "2026년 소상공인공단 긴급경영안정자금 (직대 1월 12일 신청 시작)",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저",
+  "memberLevel": 999
+ },
+ "createdAt": "2026-01-06T19:00:00+09:00",
+ "createdAtMs": 1767693600000,
+ "writtenAtRaw": "26.01.06. 19:00",
+ "viewCount": 97,
+ "commentCount": 1,
+ "commentsCaptured": 1,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=3466&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [],
+ "bodyNormalized": "",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54910463,
+   "parentCommentId": null,
+   "author": "독개구리",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-01-06T19:14:35+09:00",
+   "createdAtMs": 1767694475000,
+   "text": "항상 감사합니다",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "EMPTY_BODY",
+ "parseWarnings": [
+  "EMPTY_BODY"
+ ],
+ "historicalCandidate": false,
+ "operatorAuthored": true,
+ "scopeExcluded": "OPERATOR_AGENT_POST",
+ "boardNote": null
+}

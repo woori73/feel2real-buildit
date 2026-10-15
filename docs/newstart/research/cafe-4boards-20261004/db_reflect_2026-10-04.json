@@ -1,0 +1,172 @@
+{
+ "package": "cafe-4boards-20261004",
+ "executedAt": "2026-10-04T07:19:37+00:00",
+ "userDirective": "2026-10-04: DRY_RUN에서 끝내지 말고 기존 NewStart 정상 ingest/API 절차로 운영 DB에 반영 (DRAFT->REVIEW->ACTIVE), direct SQL 금지, 기존 ACTIVE 수정·삭제 금지, 중복 재등록 금지, 근거 불완전 자료 억지 ACTIVE 금지",
+ "executionChannel": {
+  "how": "기존 운영 ADMIN 세션(화면 로그인된 admin-f2r)에서 문서화된 NewStart admin wiki API만 호출",
+  "endpoints": [
+   "GET  /api/admin/newstart/wiki?page&size&sort=oldest   (read-only 전수 중복 실측)",
+   "POST /api/admin/newstart/wiki                          (14필드 계약, DRAFT 생성)",
+   "PUT  /api/admin/newstart/wiki/{id}/status?status=REVIEW(DRAFT->REVIEW)",
+   "POST /api/admin/newstart/wiki/review/{id}/approve      (reason + confirmed=true)",
+   "POST /api/admin/newstart/wiki/review/{id}/keep         (REVIEW 유지 메모)"
+  ],
+  "contractSource": "docs/newstart/research/tools/load_cafe_4boards_prod.py / review_cafe_4boards_prod.py 와 동일 필드·동일 상태 흐름",
+  "notUsed": [
+   "SQL 직접 조작",
+   "JWT 위조",
+   "UPDATE/DELETE",
+   "기존 ACTIVE 행 건드림",
+   "ChatGPT Library 업로드"
+  ],
+  "whyNotWorkflow": "newstart-cafe-4boards-load.yml 는 PR 브랜치에만 있어 GitHub 기본 브랜치 미등록 워크플로는 dispatch 할 수 없었다 (workflow_dispatch HTTP 404). 실행 창구만 다를 뿐 호출 계약은 위 스크립트와 동일하다.",
+  "payloadIntegrity": "배치 7개 파일을 브라우저 file input 으로 주입, 각 sha256 이 커밋된 로컬 파일과 일치함을 실측 확인"
+ },
+ "counts": {
+  "prodRowsBefore": 3826,
+  "prodRowsAfter": 4501,
+  "payloadRows": 675,
+  "exactMatchExistingBefore": 0,
+  "newlyCreated": 675,
+  "draftRemaining": 0,
+  "movedToReview": 675,
+  "approvedActive": 336,
+  "heldAtReview": 339,
+  "createFailures": 0,
+  "approveFailures": 0,
+  "duplicateKeepMemoCalls": 130
+ },
+ "perBoard": {
+  "m3": {
+   "boardName": "부실차주 신청",
+   "created": 197,
+   "active": 125,
+   "reviewHeld": 72,
+   "holdMedia": 0,
+   "holdPartial": 72
+  },
+  "m4": {
+   "boardName": "부실차주 임시안부터 확정안",
+   "created": 341,
+   "active": 152,
+   "reviewHeld": 189,
+   "holdMedia": 6,
+   "holdPartial": 183
+  },
+  "m5": {
+   "boardName": "재취업 재창업 감면수익+정부 지원",
+   "created": 121,
+   "active": 59,
+   "reviewHeld": 62,
+   "holdMedia": 6,
+   "holdPartial": 56
+  },
+  "m9": {
+   "boardName": "하랑랑 스페셜",
+   "created": 16,
+   "active": 0,
+   "reviewHeld": 16,
+   "holdMedia": 16,
+   "holdPartial": 0
+  }
+ },
+ "perSourceType": {
+  "CAFE_ARTICLE": {
+   "created": 71,
+   "active": 48,
+   "reviewHeld": 23
+  },
+  "CAFE_COMMENT": {
+   "created": 530,
+   "active": 252,
+   "reviewHeld": 278
+  },
+  "CASE": {
+   "created": 59,
+   "active": 36,
+   "reviewHeld": 23
+  },
+  "OPERATOR_KNOWLEDGE": {
+   "created": 15,
+   "active": 0,
+   "reviewHeld": 15
+  }
+ },
+ "holdReasons": {
+  "HOLD_MEDIA": 28,
+  "HOLD_PARTIAL": 311
+ },
+ "defectsAndDisclosures": [
+  "2026-10-04 첫 101건 적재에서 m5 행 8건이 HTTP 500 으로 실패했다. 원인은 newstart_knowledge_items.authority 컬럼(length 50) 대비 m5 게시판명 조합이 51자였기 때문. 생성 스크립트(build_cafe_4boards_units.py)에 authority_for() 상한 처리와 컬럼 상한 게이트를 추가해 재생성했고, 이후 582건은 500 없이 통과했다. 영향 행은 m5 121건의 authority 문자열뿐이며 나머지 554행은 바이트 단위로 동일하다(이미 적재된 행과 중복 재등록 없음).",
+  "보류(keep) 루프 첫 실행에서 집합 키를 문자열 첫 문자로 판정해 130건에 REVIEW 유지 메모가 중복 기록됐다. 상태 값에는 영향이 없다(전행 REVIEW 유지, 승인·반려 없음). 이력과 무관한 중복 메모 130건으로 남는다.",
+  "하랑랑 스페셜 운영자 정보글 15건(16 unit)은 본문이 이미지/링크 카드로만 구성되어 있어 지시대로 ACTIVE 로 밀지 않고 REVIEW 에 보류했다. 원문 URL·작성일 2024-11-05·provenance(하랑랑 스페셜/운영자 작성)·historicalCANDIDATE=true 는 그대로 보존된다.",
+  "하랑랑 운영자 15건은 직전 tranch 보존본에 전문이 없어 원문을 재수집했다(총 125 article 중 15건). 이 사실은 HANDOFF 와 전달파일에 명시했다.",
+  "이전 커밋에는 load_batches/batch_07.json(28행) 이 남아 manifest.totalToLoad(659) 와 디스크 총계(687) 가 어긋나 있었다. 해당 파일을 삭제하고 생성기에 stale 정리 + 총량 단언을 추가했다.",
+  "대장(db_reflect_2026-10-04_ledger.json)의 payload idx 0 행은 첫 1건 수동 검증 때 불리언으로 기록되어 reviewMoved 플래트가 false 이다. 운영 DB 실측 DRAFT 잔존 0건(675행 전부 REVIEW 도달)이 정본이며 counts.movedToReview 는 그 실측값이다."
+ ],
+ "knowledgeIdRange": [
+  3827,
+  4501
+ ],
+ "ledgerFile": "db_reflect_2026-10-04_ledger.json",
+ "nextHumanActions": [
+  "REVIEW 에 보류된 339건(이미지/링크 중심 28 + 댓글 부분수집 311)은 근거 보강 후 ADMIN 화면에서 사람이 승인",
+  "하랑랑 운영자 15건은 이미지 텍스트 OCR/대체 텍스트 보강 전까지 REVIEW 유지 권장"
+ ],
+ "liveReverification": {
+  "verifiedAt": "2026-10-04T07:38:24+00:00",
+  "channel": "read-only GET /api/admin/newstart/wiki?page&size=100&sort=knowledgeId,desc 7페이지 스캔 + status 필터 totalElements",
+  "scope": "tags에 CAFE4B: 를 포함하는 행만 집계",
+  "rowsFound": 675,
+  "statusCounts": {
+   "ACTIVE": 336,
+   "REVIEW": 339,
+   "DRAFT": 0
+  },
+  "knowledgeIdRangeObserved": [
+   3827,
+   4501
+  ],
+  "wholeDb": {
+   "totalElements": 4501,
+   "ACTIVE": 4137,
+   "REVIEW": 341,
+   "DRAFT": 0,
+   "otherStatus": 23
+  },
+  "note": "wholeDb REVIEW 341 = 이번 패키지 339 + 패키지 외 기존 2건. 스캔 중 만난 패키지 외 25건은 3827 미만 구간의 기존 ACTIVE 행으로 무변경."
+ },
+ "secondReflection": {
+  "verifiedAt": "2026-10-04T18:25:00+09:00",
+  "action": "REVIEW 339건 전수 판정 후 ADMIN review/{id}/approve로 152건 ACTIVE 전환",
+  "targetReviewRows": 339,
+  "newlyActive": 152,
+  "remainingReview": 187,
+  "holdReasonBreakdown": {
+   "noInfoGreeting": 137,
+   "unitTypeDuplicate": 21,
+   "imageOnlyOperatorPost": 13,
+   "brokenQAContext": 10,
+   "promo": 3,
+   "linkOnly": 2,
+   "commentOnImageOnly": 1
+  },
+  "approveErrors": 0,
+  "packageFinal": {
+   "ACTIVE": 488,
+   "REVIEW": 187,
+   "DRAFT": 0
+  },
+  "wholeDb": {
+   "total": 4501,
+   "ACTIVE": 4289,
+   "REVIEW": 189,
+   "DRAFT": 0,
+   "note": "REVIEW 189 = 패키지 187 + 패키지 밖 선행 보류 2"
+  },
+  "forbiddenChannelsUsed": [],
+  "previousActiveTouched": 0,
+  "inserts": 0,
+  "detail": "review_approval_2026-10-04/"
+ }
+}

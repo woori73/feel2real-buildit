@@ -1,0 +1,73 @@
+{
+ "articleId": 817,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "재창업 교육과정 질문요~",
+ "author": {
+  "nickname": "초심으로 가",
+  "memberGrade": "",
+  "memberLevel": null
+ },
+ "createdAt": "2025-03-16T21:11:00+09:00",
+ "createdAtMs": 1742127060000,
+ "writtenAtRaw": "25.03.16. 21:11",
+ "viewCount": 221,
+ "commentCount": 2,
+ "commentsCaptured": 2,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=817&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "방장님~~ 혹시 재창업교육신청해서 현재 멘토분 두번만났고..",
+  "내일 6시간 현장 교육받으러갑니다.",
+  "이후에 사업계획서 신청하고...발표해야한다고합니다.",
+  "여기서 질문이요~",
+  "감면받으려면 어디까지 해야하는건지요?",
+  "저는 건설업이라서 크게 지원받을 분야가없는것같아서요ㅜ"
+ ],
+ "bodyNormalized": "방장님~~ 혹시 재창업교육신청해서 현재 멘토분 두번만났고..\n내일 6시간 현장 교육받으러갑니다.\n이후에 사업계획서 신청하고...발표해야한다고합니다.\n\n여기서 질문이요~\n감면받으려면 어디까지 해야하는건지요?\n\n저는 건설업이라서 크게 지원받을 분야가없는것같아서요ㅜ",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 52561488,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-03-17T10:49:29+09:00",
+   "createdAtMs": 1742176169000,
+   "text": "끝까지 가야 감면 크게 받는것으로 압니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 52561782,
+   "parentCommentId": null,
+   "author": "초심으로 가",
+   "memberGrade": "",
+   "createdAt": "2025-03-17T11:27:06+09:00",
+   "createdAtMs": 1742178426000,
+   "text": "아~~그렇군요. 감사합니다~~",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": null
+}
