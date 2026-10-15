@@ -609,7 +609,7 @@
       '<button class="btn-image-cancel">취소</button>';
 
     // 마지막 AI 메시지에 버튼 추가
-    var messages = document.querySelectorAll('.chat-message.ai');
+    var messages = document.querySelectorAll('.aichat-msg-ai');
     if (messages.length > 0) {
       messages[messages.length - 1].appendChild(btnContainer);
     }

@@ -136,3 +136,45 @@
     flex-direction: column;
   }
 }
+
+/* 채팅 안 이미지 편집 확인 버튼 (미리보기 / 취소) */
+.image-edit-confirm-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.btn-image-preview,
+.btn-image-cancel {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-image-preview {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+/* 모바일: 버튼이 항상 보이도록 하단 고정, 비교 이미지는 세로 배치 */
+.image-compare-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.image-compare-state {
+  flex: 1 1 100%;
+  font-size: 13px;
+  color: #475569;
+}
+@media (max-width: 600px) {
+  .image-compare-body { flex-direction: column; padding: 16px; }
+  .image-compare-pane img { max-height: 220px; }
+  .image-compare-footer { padding: 12px 16px; gap: 8px; }
+  .image-compare-footer button { padding: 10px 14px; flex: 1 1 auto; }
+}

@@ -2305,6 +2305,20 @@ LMS 주소가 성립하지 않는다(404).
 - Response: 성공 `200 OK`, `AcademyResponse`. 공개 페이지(`/academies/{slug}`)는 `pageSettings.sectionOrder` 순서로 섹션 stack을 렌더하고, 누락/null legacy rows는 canonical default로 fallback한다. `pageSettings.sectionVisibility[id] === false`인 관리 섹션은 렌더하지 않지만 전체 순서에는 남아 다시 보이면 같은 slot에 복귀한다. `sec-featured`/`sec-digitaltwin`은 opt-in이라 `sectionVisibility[id] === true`가 아니면 렌더에서 제외된다. hero(`sec-hero`)는 항상 첫 번째/ON으로 고정하며 미래 5개 섹션은 저장값과 무관하게 공개/Builder 렌더에서 제외한다. Footer는 이 설정들과 분리된 fixed page chrome이라 숨김·삭제·이동할 수 없고 ordered sections 다음에 항상 렌더한다. 공개 홈과 `/academies/{academySlug}/posts`, `/academies/{academySlug}/posts/{postSlug}` 학원 블로그는 `pageSettings.businessInfo`를 공통 footer에 표시한다.
 - 관련 코드: `AcademyController.updatePageSettings`, `AcademyService.updatePageSettings`
 
+### ✅ PhotoCraft 이미지 편집 플로우 (`/api/tutor/academy/images/flow/**`)
+
+- 목적: 홈페이지 편집기 AI 채팅에서 슬롯 이미지(`principal`/`textbook1~3`/`schedule`, `HeroMediaSlot` 키)를 PhotoCraft로 편집 → 전후 비교 → 승인 → 게시.
+- 저장소: 기존 `FileStorage` 재사용. 편집 대상은 작업본 예약 우선(없으면 공개) 슬롯 이미지, 편집본은 새 저장 키(JPEG)로 저장하고 원본 파일은 유지한다. 저장 키는 응답에 노출하지 않는다.
+- 상태는 DB에서 계산한다(`academy_image_asset` 플래그 + `academy_working_copy.staged_media_json` + 공개 슬롯 키): `PREVIEW_STAGED`(승인 대기) → `STAGED`(승인·작업본 예약, 게시 대기) → `PUBLISHED`. 거부/취소는 `REJECTED`. 서버 재시작 후에도 유지.
+- 인증/권한: `ROLE_TUTOR`, 소유 학원 자산만(다른 학원 자산은 `403`). 중복 승인/게시된 이미지 거부는 `409`.
+- `POST /detect` body `{message}` → `{imageEditDetected, slotKey, suggestedEditDescription, operations, hasExistingImage, noImageGuidance}`.
+- `POST /edit` body `{slotKey, operations:[{op, params:{value}}]}` → `ImagePreviewData{assetId, slotKey, version, originalImageUrl, editedImageUrl, editDescription, stagedForPreview}`. 작업본/공개본은 바뀌지 않는다. 움직이는 이미지(GIF/WebP)는 `400`.
+- `GET /{assetId}/original`, `GET /{assetId}/edited`: 편집 전/후 이미지 바이트(`Cache-Control: no-store`, 인증 필요).
+- `POST /approve` body `{assetId, approved, reason?, expectedRevision?}`: 승인 시 **저장 키 기준으로** 작업본 예약에만 반영(공개본 불변). 거부 시 승인 후라면 예약 해제.
+- `GET /{assetId}/status`, `GET /working-copy-revision`.
+- 게시는 기존 `POST /api/tutor/academy/working-copy/publish`로만 이루어진다.
+- 관련 코드: `ImageEditFlowController`, `AcademyImageService`, `ImageEditApprovalService`, `PhotoCraftChatBridgeService`, `PhotoCraftImageService`
+
 ### ✅ DELETE /api/tutor/academy
 
 - 목적: TUTOR 본인 Academy 삭제. 삭제 후 같은 강사는 새 Academy를 다시 생성할 수 있다.
