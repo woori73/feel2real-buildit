@@ -68,4 +68,17 @@ class ProgramTest {
     assertThat(p.ownsReturnUrl("/problem-generators")).isFalse();
     assertThat(p.getRoles()).containsExactlyInAnyOrder("STUDENT", "TUTOR", "ADMIN");
   }
+
+  @Test
+  @DisplayName("given 이지장부·Easy 장부 when 정확한 소개 경로와 하위 경로를 조회하면 then 소개 경로만 forIntroPath, 하위는 forPath로 찾는다")
+  void ledger_and_easy_lookup_by_intro_and_sub_path() {
+    // when & then
+    assertThat(Program.forIntroPath("/ledger")).contains(Program.LEDGER);
+    assertThat(Program.forIntroPath("/easy")).contains(Program.EASY);
+    assertThat(Program.forIntroPath("/easy/students")).isEmpty();
+    assertThat(Program.forPath("/easy/students")).contains(Program.EASY);
+    assertThat(Program.forPath("/ledger/accounts")).contains(Program.LEDGER);
+    assertThat(Program.LEDGER.getRoles()).containsExactlyInAnyOrder("TUTOR", "ADMIN");
+    assertThat(Program.EASY.getRoles()).containsExactly("ADMIN");
+  }
 }

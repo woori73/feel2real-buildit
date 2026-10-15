@@ -52,7 +52,35 @@ public enum Program {
       "/problem-generator",
       "/problem-generator",
       Set.of("STUDENT", "TUTOR", "ADMIN"),
-      "문제지 제작기는 로그인한 학생·강사·관리자 계정이 이용할 수 있습니다. 현재 계정의 권한으로는 이용할 수 없습니다.");
+      "문제지 제작기는 로그인한 학생·강사·관리자 계정이 이용할 수 있습니다. 현재 계정의 권한으로는 이용할 수 없습니다."),
+
+  LEDGER(
+      "이지장부",
+      "학원 전용 AI 회계",
+      "학원 수입·지출 내역을 CSV로 입력하면 AI가 회계 계정을 추천하고, 확인·승인한 내용을 복식분개, 총계정원장, 시산표로 정리합니다.",
+      List.of(
+          "거래 내역 CSV 입력",
+          "AI 회계 계정 추천",
+          "사용자가 확인·승인한 뒤에만 장부 반영",
+          "복식분개·총계정원장·시산표 정리"),
+      "/ledger",
+      "/ledger",
+      Set.of("TUTOR", "ADMIN"),
+      "이지장부는 원장(강사, TUTOR) 또는 관리자(ADMIN) 계정 전용입니다."),
+
+  EASY(
+      "Easy 회계·학생원장",
+      "관리자 전용 운영 도구",
+      "학원 회계와 학생 원장·수납을 관리자가 한곳에서 확인하고 검토하는 관리자 전용 운영 도구입니다.",
+      List.of(
+          "대시보드와 거래 내역 관리",
+          "학생 원장과 수납 관리",
+          "카드 거래·증빙 검토",
+          "회계(분개·원장) 확인"),
+      "/easy",
+      "/easy",
+      Set.of("ADMIN"),
+      "Easy 회계·학생원장은 관리자(ADMIN) 계정 전용입니다. 원장(강사) 계정은 이지장부(/ledger)를 이용해 주세요.");
 
   private final String title;
   private final String subtitle;
@@ -97,6 +125,22 @@ public enum Program {
     int q = url.indexOf('?');
     String path = q < 0 ? url : url.substring(0, q);
     return path.equals(introPath) || path.startsWith(introPath + "/");
+  }
+
+  /** 정확히 소개 경로({@code introPath})와 같은 요청 경로의 프로그램. 하위 경로는 해당하지 않는다. */
+  public static java.util.Optional<Program> forIntroPath(String path) {
+    for (Program p : values()) {
+      if (p.introPath.equals(path)) return java.util.Optional.of(p);
+    }
+    return java.util.Optional.empty();
+  }
+
+  /** 하위 경로까지 포함해 URL이 속한 프로그램. */
+  public static java.util.Optional<Program> forPath(String path) {
+    for (Program p : values()) {
+      if (p.ownsReturnUrl(path)) return java.util.Optional.of(p);
+    }
+    return java.util.Optional.empty();
   }
 
   /** 등록된 어떤 프로그램 영역의 URL이면 true. 로그인 시작 엔드포인트가 임의 경로를 복귀 대상으로 받지 않게 한다. */

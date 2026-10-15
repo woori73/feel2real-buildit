@@ -1,7 +1,9 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
@@ -28,6 +30,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySt
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTuitionService;
 import jakarta.servlet.http.Cookie;
 import java.util.List;
+import f2r.tutor_solution.private_tutor_solution_back.program.Program;
+import f2r.tutor_solution.private_tutor_solution_back.program.ProgramIntroController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +61,8 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyCollectionController.class,
     EasyCardReviewController.class,
     EasyCollectorAdminController.class,
-    EasyWorkspaceController.class
+    EasyWorkspaceController.class,
+    ProgramIntroController.class
 })
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
@@ -117,35 +122,76 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/collector/tasks?businessId=1");
 
   @Test
-  @DisplayName("익명 브라우저 /ledger → 로그인 안내 + 복귀 URL")
-  void anonymousLedger_redirectsToLoginGuidance() throws Exception {
+  @DisplayName("익명 브라우저 /ledger → 로그인 이동 대신 공개 소개 화면(내부 forward)")
+  void anonymousLedger_showsPublicIntro() throws Exception {
     mockMvc.perform(get("/ledger").accept(MediaType.TEXT_HTML))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fledger"));
+        .andExpect(status().isOk())
+        .andExpect(forwardedUrl("/program/intro"))
+        .andExpect(request().attribute(ProgramIntroController.PROGRAM_ATTRIBUTE, Program.LEDGER));
   }
 
   @Test
-  @DisplayName("STUDENT 브라우저 /ledger → raw 403 대신 로그인 안내")
-  void nonTutorLedger_redirectsInsteadOfRawForbidden() throws Exception {
+  @DisplayName("STUDENT 브라우저 /ledger → raw 403·로그인 이동 대신 서비스 안내 화면(내부 forward)")
+  void nonTutorLedger_showsServiceNoticeInsteadOfRawForbidden() throws Exception {
     Cookie student = new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "student01", "STUDENT"));
     mockMvc.perform(get("/ledger").cookie(student).accept(MediaType.TEXT_HTML))
-        .andExpect(status().is3xxRedirection())
-        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fledger"));
+        .andExpect(forwardedUrl("/program/intro"))
+        .andExpect(request().attribute(ProgramIntroController.PROGRAM_ATTRIBUTE, Program.LEDGER));
   }
 
   @Test
-  @DisplayName("TUTOR 브라우저 /ledger → 화면 접근")
-  void tutorLedger_ok() throws Exception {
+  @DisplayName("이지장부 하위 화면 → 익명은 원래 경로를 싣고 로그인 안내, 권한 없는 로그인은 /ledger 안내로")
+  void ledgerSubPages_anonymousLoginGuidance_and_nonTutorNotice() throws Exception {
+    mockMvc.perform(get("/ledger/accounts").accept(MediaType.TEXT_HTML))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fledger%2Faccounts"));
+    Cookie student = new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "student01", "STUDENT"));
+    mockMvc.perform(get("/ledger/accounts").cookie(student).accept(MediaType.TEXT_HTML))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/ledger"));
+  }
+
+  @Test
+  @DisplayName("TUTOR·ADMIN 브라우저 /ledger → 화면 접근")
+  void tutorAndAdminLedger_ok() throws Exception {
     Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(3L, "tutor01", "TUTOR"));
     mockMvc.perform(get("/ledger").cookie(tutor).accept(MediaType.TEXT_HTML))
-        .andExpect(status().isOk());
+        .andExpect(status().isOk())
+        .andExpect(forwardedUrl(null));
+    Cookie admin = new Cookie("ACCESS_TOKEN", tokenProvider.issue(2L, "admin", "ADMIN"));
+    mockMvc.perform(get("/ledger").cookie(admin).accept(MediaType.TEXT_HTML))
+        .andExpect(status().isOk())
+        .andExpect(forwardedUrl(null));
   }
 
   @Test
-  @DisplayName("ADMIN 브라우저 /ledger → 화면 접근")
-  void adminLedger_ok() throws Exception {
+  @DisplayName("Easy 장부 /easy → 익명·TUTOR는 소개/안내 화면, ADMIN만 화면 접근")
+  void easyRoot_introForAnonymousAndTutor_adminOk() throws Exception {
+    mockMvc.perform(get("/easy").accept(MediaType.TEXT_HTML))
+        .andExpect(forwardedUrl("/program/intro"))
+        .andExpect(request().attribute(ProgramIntroController.PROGRAM_ATTRIBUTE, Program.EASY));
+    Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(3L, "tutor01", "TUTOR"));
+    mockMvc.perform(get("/easy").cookie(tutor).accept(MediaType.TEXT_HTML))
+        .andExpect(forwardedUrl("/program/intro"))
+        .andExpect(request().attribute(ProgramIntroController.PROGRAM_ATTRIBUTE, Program.EASY));
     Cookie admin = new Cookie("ACCESS_TOKEN", tokenProvider.issue(2L, "admin", "ADMIN"));
-    mockMvc.perform(get("/ledger").cookie(admin).accept(MediaType.TEXT_HTML))
+    mockMvc.perform(get("/easy").cookie(admin).accept(MediaType.TEXT_HTML))
+        .andExpect(status().isOk())
+        .andExpect(forwardedUrl(null));
+  }
+
+  @Test
+  @DisplayName("Easy 하위 화면 → 익명은 원래 경로를 싣고 로그인 안내, TUTOR는 /easy 안내로, ADMIN은 접근")
+  void easySubPages_guidanceAndAdminAccess() throws Exception {
+    mockMvc.perform(get("/easy/students").accept(MediaType.TEXT_HTML))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Feasy%2Fstudents"));
+    Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(3L, "tutor01", "TUTOR"));
+    mockMvc.perform(get("/easy/students").cookie(tutor).accept(MediaType.TEXT_HTML))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/easy"));
+    Cookie admin = new Cookie("ACCESS_TOKEN", tokenProvider.issue(2L, "admin", "ADMIN"));
+    mockMvc.perform(get("/easy/students").cookie(admin).accept(MediaType.TEXT_HTML))
         .andExpect(status().isOk());
   }
 

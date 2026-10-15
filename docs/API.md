@@ -4661,3 +4661,10 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /auth/naver/start?returnUrl=<내부 경로>`: 공개. `returnUrl`이 **등록된 프로그램 영역**(예: `/designcraft`, `/designcraft/editor`)의 내부 경로일 때만 `oauth_return_url` 쿠키(HttpOnly, 5분, SameSite=Lax, 내부 경로만)를 심고 `302 /oauth2/authorization/naver`로 보낸다. 외부 URL·`//`·`\`·`..`·미등록 경로는 쿠키 없이 기존 네이버 로그인으로만 보낸다(기본 복귀 경로 유지). 복귀 URL은 로그인 성공 시 `NaverOAuth2LoginSuccessHandler`가 다시 검증한다.
 - `GET /designcraft`, `GET /designcraft/editor`: **비회원 공개** 소개 화면(200, `Cache-Control: private, no-store`). TUTOR·ADMIN 로그인 시 `/designcraft/editor`는 실제 편집기를 렌더한다(관리자는 모든 화면을 열람한다는 정책). 출판 작업 데이터(`/api/publishing/**`)의 소유자 격리는 이 PR에서 바꾸지 않았다. TUTOR·ADMIN이 아닌 로그인 사용자(STUDENT 등)는 브라우저 기본 403 대신 서비스 안내 화면(상태 403, 본문 안내)을 받는다. 
 - `/designcraft/**` 그 외 경로(TUTOR·ADMIN)와 `/api/publishing/**`: 기존대로 인증·인가 필요(완화 없음).
+
+### 이지장부·Easy 장부 공개 소개 (`program` 패키지, PR 4)
+
+- `GET /ledger`(TUTOR·ADMIN), `GET /easy`(ADMIN): 비회원은 로그인 이동 대신 공개 소개 화면(200)을, 권한 없는 로그인 사용자는 서비스 안내 화면(상태 403, 본문 안내)을 받는다. 구현은 SecurityConfig의 인증 진입점·접근 거부 처리기가 `/program/intro`(`ProgramIntroController`)로 내부 forward한다. 허용 role은 기존 정책 그대로이며 완화하지 않는다.
+- `/ledger/**`, `/easy/**` 하위 화면: 비회원은 `302 /?login=required&returnUrl=<원래 경로>`(기존 랜딩 로그인 흐름), 권한 없는 로그인 사용자는 `302`로 해당 프로그램 소개 경로(`/ledger`, `/easy`)의 안내 화면.
+- `/api/tutor/easy/**`, `/api/admin/easy/**` 인증·인가와 사업체 권한 검증은 변경하지 않았다.
+- `GET /program/intro`: forward 전용. forward 속성이 없는 직접 요청은 `302 /`.
