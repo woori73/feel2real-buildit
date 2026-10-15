@@ -4674,3 +4674,11 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 비회원 브라우저 요청: `/lms/**`(인증 필요 화면), `/conversation/chat`, `/tutor/conversation_dashboard`, `/tutor/conversation/**`, `/tutor/conversations/**` → `302 /?login=required&returnUrl=<원래 경로>`(기존 랜딩 로그인 모달, 로그인 후 원래 화면 복귀). 이전에는 LMS는 `/`로만, 대화 화면은 빈 401이었다. JSON/API 요청은 기존대로 401.
 - 로그인했지만 권한 없는 사용자: `/lms/{handle}/manage|contents|midterm-live`(소유 강사 전용), `/tutor/conversation*`(TUTOR 전용)은 기본 403 대신 서비스 안내 화면(상태 403, `GET /program/notice`로 내부 forward). `/conversation/chat`의 학생 홈 이동은 기존 그대로.
 - 접근 허용 규칙(LMS 운영 화면은 소유 강사만, ADMIN 불가 — AC-7)과 API 인가는 변경하지 않았다.
+
+## 입시상담 공개 API (`POST /api/admissions/chat`) 제어 (2026-10)
+
+- **기본 비활성**: `app.admissions.public-api.enabled=false`(환경변수 `APP_ADMISSIONS_PUBLIC_API_ENABLED`)면 `503` + `{status:"error", errorMessage:"입시상담 AI는 아직 이용할 수 없습니다."}`. 인가 규칙(permitAll)은 변경 없음.
+- 활성 시 순서: IP 제한(분당 10·시간당 60 → 초과 `429`) → **전역 일일 상한**(`app.admissions.rate-limit.daily-limit`, 기본 500/KST 하루 → 초과 `429` "오늘 이용 가능한 상담 요청이 모두 사용되었습니다…") → 학년도·질문 검증(`400`) → 서비스.
+- 클라이언트 IP: `app.admissions.rate-limit.trusted-proxies`(CSV, IP/CIDR)에 있는 프록시가 보낸 요청만 `X-Forwarded-For`를 보며, 오른쪽부터 신뢰 프록시를 건너뛴 첫 비신뢰 IP를 쓴다. 형식 오류·과도하게 넓은 대역(IPv4 /8 미만, IPv6 /16 미만)은 무시된다.
+- 설계(미구현): LLM 호출 상한·영속 카운터·상담 이력 90일 보존/삭제 → [design/admissions-public-api-controls.md](design/admissions-public-api-controls.md).
+

@@ -39,6 +39,7 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "spring.jpa.hibernate.ddl-auto=validate",
         "spring.task.scheduling.enabled=false",
+        "app.admissions.public-api.enabled=true",
         "app.jwt.secret=12345678901234567890123456789012",
         "app.jwt.cookie-name=ACCESS_TOKEN",
         "app.jwt.secure-cookie=false"

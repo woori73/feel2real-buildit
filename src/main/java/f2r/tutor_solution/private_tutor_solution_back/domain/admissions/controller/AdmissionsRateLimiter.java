@@ -1,6 +1,8 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,6 +29,10 @@ import java.util.function.LongSupplier;
  *       퇴출하고, 1시간 이상 활동이 없는 항목은 주기적으로 정리한다 — 기록의 무한 증가 방지.</li>
  * </ul>
  *
+ * <p>전역 일일 상한({@code app.admissions.rate-limit.daily-limit}, 기본 500)은 IP와 무관하게 하루(KST) 동안
+ * 허용하는 전체 요청 수를 제한한다. IP를 바꿔가며 호출해도 AI 호출 총량이 이 값을 넘지 않는다.
+ * 카운터는 JVM 메모리에 있으므로 인스턴스별로 계산되며 재시작하면 초기화된다.
+ *
  * <p>운영 환경(ALB 등 프록시 뒤)에서는 신뢰 프록시 대역(CIDR)을 반드시 설정해야 실제
  * 클라이언트 IP 기준으로 제한이 동작한다. 미설정 시 XFF를 무시하므로 안전 측으로 동작한다.
  * (예: {@code app.admissions.rate-limit.trusted-proxies=10.0.0.0/8})
@@ -34,12 +40,18 @@ import java.util.function.LongSupplier;
 @Component
 public class AdmissionsRateLimiter {
 
+    private static final Logger log = LoggerFactory.getLogger(AdmissionsRateLimiter.class);
+
+    static final int DEFAULT_DAILY_LIMIT = 500;
+    private static final long KST_OFFSET_MS = 9L * 3_600_000L;
+    private static final long DAY_MS = 86_400_000L;
     private static final long SWEEP_INTERVAL_MS = 60_000L;
     private static final long IDLE_EVICT_MS = 3_600_000L;
 
     private final int perMinute;
     private final int perHour;
     private final int maxTrackedIps;
+    private final int dailyLimit;
     private final LongSupplier nowMs;
     private final TrustedProxyMatcher trustedProxies;
 
@@ -51,24 +63,43 @@ public class AdmissionsRateLimiter {
 
     private long lastSweepMs;
 
+    /** 전역 일일 카운터: KST 기준 일자(epoch day)와 그날 허용한 요청 수. synchronized 메서드에서만 접근. */
+    private long dailyEpochDay = Long.MIN_VALUE;
+    private int dailyCount;
+
     /** Spring용 생성자. */
     @Autowired
     public AdmissionsRateLimiter(
             @Value("${app.admissions.rate-limit.per-minute:10}") int perMinute,
             @Value("${app.admissions.rate-limit.per-hour:60}") int perHour,
             @Value("${app.admissions.rate-limit.max-tracked-ips:10000}") int maxTrackedIps,
-            @Value("${app.admissions.rate-limit.trusted-proxies:}") String trustedProxiesCsv) {
-        this(perMinute, perHour, maxTrackedIps, trustedProxiesCsv, System::currentTimeMillis);
+            @Value("${app.admissions.rate-limit.trusted-proxies:}") String trustedProxiesCsv,
+            @Value("${app.admissions.rate-limit.daily-limit:" + DEFAULT_DAILY_LIMIT + "}") int dailyLimit) {
+        this(perMinute, perHour, maxTrackedIps, trustedProxiesCsv, dailyLimit, System::currentTimeMillis);
     }
 
-    /** 테스트용 생성자 (시간 제어 가능). */
+    /** 테스트용 생성자 (시간 제어 가능, 일일 상한은 기본값). */
     AdmissionsRateLimiter(int perMinute, int perHour, int maxTrackedIps,
                           String trustedProxiesCsv, LongSupplier nowMs) {
+        this(perMinute, perHour, maxTrackedIps, trustedProxiesCsv, DEFAULT_DAILY_LIMIT, nowMs);
+    }
+
+    /** 테스트용 생성자 (시간·일일 상한 제어 가능). */
+    AdmissionsRateLimiter(int perMinute, int perHour, int maxTrackedIps,
+                          String trustedProxiesCsv, int dailyLimit, LongSupplier nowMs) {
         this.perMinute = perMinute;
         this.perHour = perHour;
         this.maxTrackedIps = Math.max(1, maxTrackedIps);
+        if (dailyLimit < 1) {
+            log.warn("admissions daily-limit={} is invalid (must be >= 1); using default {}", dailyLimit, DEFAULT_DAILY_LIMIT);
+        }
+        this.dailyLimit = dailyLimit < 1 ? DEFAULT_DAILY_LIMIT : dailyLimit;
         this.nowMs = nowMs;
         this.trustedProxies = new TrustedProxyMatcher(trustedProxiesCsv);
+        if (!trustedProxies.invalidEntries().isEmpty()) {
+            log.warn("admissions trusted-proxies has {} invalid/too-broad entries ignored: {}",
+                    trustedProxies.invalidEntries().size(), trustedProxies.invalidEntries());
+        }
         int cap = Math.max(16, this.maxTrackedIps);
         this.buckets = new LinkedHashMap<>(cap, 0.75f, true) {
             @Override
@@ -80,21 +111,40 @@ public class AdmissionsRateLimiter {
     }
 
     /**
-     * 클라이언트 IP 판별. 신뢰된 프록시에서 온 요청일 때만 X-Forwarded-For의 첫 번째
-     * 항목을 사용하고, 그 외에는 헤더 위조 가능성을 배제하기 위해 remoteAddr를 사용한다.
+     * 클라이언트 IP 판별. 요청을 직접 보낸 상대(remoteAddr)가 신뢰 프록시일 때만 X-Forwarded-For를 본다.
+     *
+     * <p>XFF의 <b>왼쪽 항목은 클라이언트가 임의로 보낸 값</b>이라(ALB 등은 실제 접속 IP를 오른쪽에 덧붙일 뿐)
+     * 그대로 쓰면 IP 제한을 우회할 수 있다. 그래서 오른쪽부터 읽으며 신뢰 프록시 항목을 건너뛰고,
+     * 처음 만나는 비신뢰 IP를 클라이언트로 본다. 해석할 수 없는 항목을 만나면 값을 믿을 수 없으므로
+     * remoteAddr로 폴백한다.
      */
     public String resolveClientIp(HttpServletRequest request) {
         String remoteAddr = request.getRemoteAddr();
-        if (remoteAddr != null && trustedProxies.isTrusted(remoteAddr)) {
-            String xff = request.getHeader("X-Forwarded-For");
-            if (xff != null && !xff.isBlank()) {
-                String first = sanitizeXffEntry(xff.split(",", -1)[0]);
-                if (!first.isEmpty() && parseIp(first) != null) {
-                    return first;
-                }
-            }
+        if (remoteAddr == null || !trustedProxies.isTrusted(remoteAddr)) {
+            return remoteAddr;
         }
-        return remoteAddr;
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff == null || xff.isBlank()) {
+            return remoteAddr;
+        }
+        String[] parts = xff.split(",", -1);
+        String candidate = null;
+        for (int i = parts.length - 1; i >= 0; i--) {
+            String entry = sanitizeXffEntry(parts[i]);
+            if (entry.isEmpty() || parseIp(entry) == null) {
+                return remoteAddr;
+            }
+            if (!trustedProxies.isTrusted(entry)) {
+                return entry;
+            }
+            candidate = entry;
+        }
+        return candidate != null ? candidate : remoteAddr;
+    }
+
+    /** 설정에서 무시된(형식 오류·과도하게 넓은) 신뢰 프록시 항목 (테스트/모니터링용). */
+    public List<String> invalidTrustedProxyEntries() {
+        return trustedProxies.invalidEntries();
     }
 
     /**
@@ -128,6 +178,29 @@ public class AdmissionsRateLimiter {
         }
         times.addLast(now);
         return true;
+    }
+
+    /**
+     * 전역 일일 상한 확인. KST 날짜가 바뀌면 카운터를 0으로 되돌린다.
+     * 허용되면 카운트를 올리고 true, 상한에 도달했으면 false(카운트는 올리지 않음).
+     */
+    public synchronized boolean tryAcquireDaily() {
+        long today = (nowMs.getAsLong() + KST_OFFSET_MS) / DAY_MS;
+        if (today != dailyEpochDay) {
+            dailyEpochDay = today;
+            dailyCount = 0;
+        }
+        if (dailyCount >= dailyLimit) {
+            return false;
+        }
+        dailyCount++;
+        return true;
+    }
+
+    /** 오늘(KST) 허용한 요청 수 (테스트/모니터링용). */
+    public synchronized int dailyUsed() {
+        long today = (nowMs.getAsLong() + KST_OFFSET_MS) / DAY_MS;
+        return today == dailyEpochDay ? dailyCount : 0;
     }
 
     /** 현재 추적 중인 IP 수 (테스트/모니터링용). */
@@ -290,6 +363,17 @@ public class AdmissionsRateLimiter {
     static final class TrustedProxyMatcher {
         private final List<byte[]> networks = new ArrayList<>();
         private final List<Integer> prefixLens = new ArrayList<>();
+        private final List<String> invalid = new ArrayList<>();
+
+        /** 형식이 틀렸거나 과도하게 넓어 무시한 항목. */
+        List<String> invalidEntries() {
+            return List.copyOf(invalid);
+        }
+
+        /** 이보다 넓은 대역(IPv4 /8 미만, IPv6 /16 미만)을 프록시로 신뢰하면 XFF 위조를 막을 수 없으므로 거부한다. */
+        private static boolean tooBroad(byte[] addr, int prefixLen) {
+            return prefixLen < (addr.length == 4 ? 8 : 16);
+        }
 
         TrustedProxyMatcher(String csv) {
             if (csv == null) {
@@ -305,6 +389,7 @@ public class AdmissionsRateLimiter {
                     if (slash < 0) {
                         byte[] addr = parseIp(t);
                         if (addr == null) {
+                            invalid.add(t);
                             continue;
                         }
                         networks.add(addr);
@@ -312,17 +397,19 @@ public class AdmissionsRateLimiter {
                     } else {
                         byte[] addr = parseIp(t.substring(0, slash).strip());
                         if (addr == null) {
+                            invalid.add(t);
                             continue;
                         }
                         int pfx = Integer.parseInt(t.substring(slash + 1).strip());
-                        if (pfx < 0 || pfx > addr.length * 8) {
+                        if (pfx < 0 || pfx > addr.length * 8 || tooBroad(addr, pfx)) {
+                            invalid.add(t);
                             continue;
                         }
                         networks.add(addr);
                         prefixLens.add(pfx);
                     }
-                } catch (NumberFormatException ignored) {
-                    // 잘못된 항목은 무시
+                } catch (NumberFormatException e) {
+                    invalid.add(t);
                 }
             }
         }

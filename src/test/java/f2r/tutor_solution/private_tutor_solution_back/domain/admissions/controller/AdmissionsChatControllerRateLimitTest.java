@@ -107,4 +107,71 @@ class AdmissionsChatControllerRateLimitTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("error", response.getBody().status());
     }
+
+    // ---------- 공개 API 스위치(기본 OFF) · 전역 일일 상한 ----------
+
+    @Test
+    @DisplayName("chat — 공개 API가 꺼져 있으면 503이고 rate limit·서비스를 거치지 않는다")
+    void chat_returns503WhenPublicApiDisabled() {
+        // given
+        var limiter = limiter("");
+        AdmissionsChatService service = mock(AdmissionsChatService.class);
+        var controller = new AdmissionsChatController(service, limiter, false);
+        var request = new AdmissionsChatController.ChatRequest("질문", 2027, null);
+
+        // when
+        var response = controller.chat(request, mockRequest("203.0.113.1", null));
+
+        // then
+        assertEquals(503, response.getStatusCode().value());
+        assertEquals("error", response.getBody().status());
+        org.mockito.Mockito.verifyNoInteractions(service);
+        assertEquals(0, limiter.trackedIpCount());
+        assertEquals(0, limiter.dailyUsed());
+    }
+
+    @Test
+    @DisplayName("chat — 전역 일일 상한을 넘으면 IP가 달라도 429")
+    void chat_returns429WhenDailyLimitReached() {
+        // given — 하루 2회, 서로 다른 IP 3개
+        var limiter = new AdmissionsRateLimiter(10, 60, 10_000, "", 2, now::get);
+        AdmissionsChatService service = mock(AdmissionsChatService.class);
+        when(service.ask(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new AdmissionsChatService.AdmissionsAnswer(false, "", "테스트", null, java.util.List.of(), null, false));
+        var controller = new AdmissionsChatController(service, limiter);
+        var request = new AdmissionsChatController.ChatRequest("질문", null, null);
+
+        // when
+        controller.chat(request, mockRequest("198.51.100.1", null));
+        controller.chat(request, mockRequest("198.51.100.2", null));
+        var third = controller.chat(request, mockRequest("198.51.100.3", null));
+
+        // then
+        assertEquals(429, third.getStatusCode().value());
+        assertEquals("error", third.getBody().status());
+        org.mockito.Mockito.verify(service, org.mockito.Mockito.times(2)).ask(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("chat — IP 제한에 걸린 요청은 전역 일일 카운트를 쓰지 않는다")
+    void chat_ipLimitedRequestDoesNotConsumeDailyQuota() {
+        // given — IP 분당 10회 소진
+        var limiter = limiter("");
+        var controller = controller(limiter);
+        String ip = "192.0.2.77";
+        for (int i = 0; i < 10; i++) {
+            assertTrue(limiter.tryAcquire(ip));
+        }
+        var request = new AdmissionsChatController.ChatRequest("질문", null, null);
+
+        // when
+        var response = controller.chat(request, mockRequest(ip, null));
+
+        // then
+        assertEquals(429, response.getStatusCode().value());
+        assertEquals(0, limiter.dailyUsed());
+    }
 }
