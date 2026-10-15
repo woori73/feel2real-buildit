@@ -136,12 +136,14 @@ class LandingV3TemplateContractTest {
     String soon = html.substring(start, end);
 
     // then
-    // iBT TestPrep은 오픈 서비스(#services)로 옮겼고, 출시 예정에는 미배포 4종만 남는다.
-    assertThat(soon).contains("출시 예정", "DesignCraft", "입시상담 AI", "Easy 장부", "LMS").contains("aria-disabled=\"true\"");
+    // iBT TestPrep은 오픈 서비스(#services)로 옮겼고, 출시 예정에는 미배포 5종만 남는다.
+    assertThat(soon).contains("출시 예정", "DesignCraft", "입시상담 AI", "Easy 장부", "AcademyCraft", "StudyCraft").contains("aria-disabled=\"true\"");
     assertThat(soon).doesNotContain("iBT TestPrep", "v3-badge-live");
-    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(4);
+    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(5);
+    // AcademyCraft(미배포)·StudyCraft(운영 접근 미확인)는 이용 링크를 두지 않고, 옛 명칭 LMS 카드는 없다.
+    assertThat(soon).doesNotContain("href=\"/lms", "href=\"/conversation", "href=\"/tutor/conversation", "<h3>LMS");
     assertThat(soon.split("곧 준비중", -1).length - 1).isGreaterThanOrEqualTo(4);
-    assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생 관리 → 수업·과제 → 출결·성적 관리");
+    assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생·강사 관리 → 출결·성적·숙제 → 상담 관리", "AI 대화형 영어학습 → 학습 콘텐츠");
     assertThat(soon).doesNotContain("<a ").doesNotContain("<input").doesNotContain("<form");
   }
 
@@ -266,7 +268,7 @@ class LandingV3TemplateContractTest {
     // then
     assertThat(tail)
         .contains("내신 영어 문제지는 어떻게 받나요?", "기본 1회 20,000원")
-        .contains("DesignCraft, 입시상담 AI, Easy 장부, LMS는 곧 준비중", "iBT TestPrep은 첫 화면을 누구나 볼 수 있고")
+        .contains("DesignCraft, 입시상담 AI, Easy 장부, AcademyCraft, StudyCraft는 곧 준비중", "iBT TestPrep은 첫 화면을 누구나 볼 수 있고")
         .contains("홈페이지 제작으로 디지털 영어 학원을 시작하세요!")
         .contains("href=\"/builder\" class=\"btn reveal\" data-fade data-buildit-start")
         .doesNotContain("AI 홈페이지 만들기")
