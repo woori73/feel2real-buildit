@@ -12,7 +12,7 @@ CREATE TABLE hwpx_jobs (
   work_dir VARCHAR(500),
   input_file VARCHAR(500),
   output_file VARCHAR(500),
-  edits_json VARCHAR(2000),
+  edits_json TEXT,
   error TEXT,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

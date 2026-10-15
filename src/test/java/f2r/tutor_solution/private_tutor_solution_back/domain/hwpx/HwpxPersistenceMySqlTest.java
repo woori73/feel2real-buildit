@@ -93,4 +93,30 @@ class HwpxPersistenceMySqlTest {
     // then
     assertThat(artifactRepository.findByJobId(job.getId())).isEmpty();
   }
+
+  @Test
+  @DisplayName("given 셀 수정 800건(약 38KB) when 저장·조회 then 잘림 없이 그대로 돌아오고 컬럼은 TEXT다")
+  void largeEditsJson_isStoredWithoutTruncation() throws Exception {
+    // given: 2000자(이전 VARCHAR 한도)를 훨씬 넘는 edits JSON
+    var edits = new java.util.ArrayList<java.util.Map<String, Object>>();
+    for (int i = 0; i < 800; i++) {
+      edits.add(java.util.Map.of("table", i % 9, "row", i % 20, "col", i % 5, "text", "수정 내용 " + i));
+    }
+    String json = new com.fasterxml.jackson.databind.ObjectMapper()
+        .writeValueAsString(java.util.Map.of("edits", edits));
+    assertThat(json.length()).isGreaterThan(30_000);
+    HwpxJob job = jobRepository.save(new HwpxJob(7L, "대량 수정", "hwpx", json));
+    em.flush();
+    em.clear();
+    // when
+    HwpxJob loaded = jobRepository.findById(job.getId()).orElseThrow();
+    // then
+    assertThat(loaded.getEditsJson()).isEqualTo(json);
+    var parsed = new com.fasterxml.jackson.databind.ObjectMapper().readTree(loaded.getEditsJson());
+    assertThat(parsed.get("edits")).hasSize(800);
+    assertThat(jdbc.queryForObject(
+        "select data_type from information_schema.columns "
+            + "where table_schema = database() and table_name = 'hwpx_jobs' and column_name = 'edits_json'",
+        String.class)).isEqualToIgnoringCase("text");
+  }
 }
