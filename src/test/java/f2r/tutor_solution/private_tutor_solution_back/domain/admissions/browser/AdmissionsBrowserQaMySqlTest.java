@@ -98,7 +98,7 @@ class AdmissionsBrowserQaMySqlTest {
             driver.findElement(By.id("ag-input"))
                     .sendKeys("서울대 2027학년도 경영학과 공식 자료를 다시 설명해줘");
             driver.findElement(By.cssSelector("#ag-form button[type=submit]")).click();
-            wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.cssSelector(".ag-msg-ai"), 1));
+            wait.until(driverState -> driverState.findElements(By.cssSelector(".ag-msg-ai")).stream()\n                    .filter(element -> element.getText().contains("서울대학교 경영학과"))\n                    .count() >= 2);
 
             Path out = Path.of("build/reports/admissions-qa", screenshotName);
             Files.createDirectories(out.getParent());
