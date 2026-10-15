@@ -51,6 +51,17 @@
     }
   };
 
+  // 비동기 작업을 호출 순서대로 하나씩 실행하고, 호출자는 "앞선 작업까지 모두 끝난 뒤"에 resolve되는 Promise를 받는다.
+  // 답안 자동저장(PUT)이 진행 중일 때 제출(POST)이 먼저 서버에 닿아 같은 (응시, 문항) 행을 동시에 INSERT하는 경쟁을 막는다.
+  TP.serialize = function (fn) {
+    let tail = Promise.resolve();
+    return function () {
+      const args = arguments;
+      tail = tail.then(() => fn.apply(null, args), () => fn.apply(null, args));
+      return tail;
+    };
+  };
+
   TP.requireLogin = function (then) {
     if (TP.user) { then(); return; }
     TP.openLoginModal();

@@ -247,7 +247,9 @@
   let flushTimer = null;
   function scheduleFlush() { clearTimeout(flushTimer); flushTimer = setTimeout(flushDirty, 600); }
 
-  async function flushDirty() {
+  // 저장 요청을 직렬화한다. 다음/제출 버튼이 flushDirty()를 await하지 않아도, 이후 submitFlow의 flushDirty()가
+  // 앞선 저장이 끝날 때까지 기다리므로 제출(POST)이 마지막 답안 저장(PUT)과 겹치지 않는다.
+  async function flushOnce() {
     if (!dirty.size || submitting) return;
     const ids = Array.from(dirty);
     for (const id of ids) {
@@ -260,6 +262,8 @@
       } catch (e) { dirty.add(id); return; }
     }
   }
+
+  const flushDirty = TP.serialize(flushOnce);
 
   async function submitFlow() {
     submitting = false;
