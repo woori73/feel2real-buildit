@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/tp_base :: head('Exam in progress')}"></head>
+<body>
+<nav th:replace="~{fragments/tp_base :: nav('practice')}"></nav>
+
+<header class="run-head">
+  <div class="wrap">
+    <strong id="exam-title">Practice test</strong>
+    <div class="sec-tabs" id="sec-tabs"></div>
+    <span class="progress-line" id="progress">0 / 0 answered</span>
+    <span class="timer" id="timer">--:--</span>
+    <button class="btn btn-primary" id="btn-submit">Submit</button>
+  </div>
+</header>
+
+<div class="wrap" id="stage">
+  <p class="lead" style="margin-top:30px">Loading your attempt…<span class="ko">응시 정보를 불러오는 중…</span></p>
+</div>
+
+<div th:replace="~{fragments/tp_base :: footer}"></div>
+<script defer src="/js/testprep_run.js"></script>
+</body>
+</html>
