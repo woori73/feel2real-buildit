@@ -4,10 +4,12 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.A
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class AdmissionsCounselingSessionHistoryDbTest {
     @Autowired AdmissionsCounselingSessionRepository repository;
 
