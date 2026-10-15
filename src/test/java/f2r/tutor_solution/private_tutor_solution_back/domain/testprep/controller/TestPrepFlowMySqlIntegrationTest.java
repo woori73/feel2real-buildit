@@ -75,7 +75,7 @@ class TestPrepFlowMySqlIntegrationTest {
     Map<Long, String> keys = new LinkedHashMap<>();
     jdbc.query(
         "SELECT question_id, answer_key FROM tp_questions WHERE exam_id = ? ORDER BY order_no",
-        rs -> { keys.put(rs.getLong(1), rs.getString(2)); return null; },
+        (java.sql.ResultSet rs) -> { keys.put(rs.getLong("question_id"), rs.getString("answer_key")); },
         examId);
     return keys;
   }
