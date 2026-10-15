@@ -75,6 +75,16 @@ public class HwpxJobService {
     jobRepository.delete(job);
   }
 
+  /**
+   * 업로드 파일 저장 후 입력 파일 경로를 작업에 기록한다.
+   * Worker가 실제 파일을 읽을 수 있도록 Controller에서 호출한다.
+   */
+  @Transactional
+  public void setInputFile(AuthenticatedPrincipal principal, Long jobId, String inputFile) {
+    HwpxJob job = getOwnedJob(principal, jobId);
+    job.setInputFile(inputFile);
+  }
+
   @Transactional(readOnly = true)
   public HwpxArtifact getArtifact(AuthenticatedPrincipal principal, Long jobId) {
     getOwnedJob(principal, jobId); // 소유자 확인
