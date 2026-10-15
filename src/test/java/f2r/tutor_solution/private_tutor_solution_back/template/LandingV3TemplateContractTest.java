@@ -19,7 +19,7 @@ class LandingV3TemplateContractTest {
   private static final Path V3_JS = Path.of("src/main/resources/static/js/landing_v3.js");
 
   @Test
-  @DisplayName("given 중복 제거 when 템플릿을 읽으면 then 제작(히어로)→Chart→Wiki→준비 중 순서이고 제작 재소개·Report·Shorts 섹션은 없다")
+  @DisplayName("given 중복 제거 when 템플릿을 읽으면 then 제작(히어로)→Wiki→오픈 서비스→출시 예정→Chart→FAQ→문의 순서이고 제작 재소개·Report·Shorts 섹션은 없다")
   void sections_follow_confirmed_order() throws Exception {
     // given
     String html = Files.readString(LANDING);
@@ -28,17 +28,19 @@ class LandingV3TemplateContractTest {
     int hero = html.indexOf("id=\"hero\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
     int wiki = html.indexOf("id=\"wiki\"");
+    int services = html.indexOf("id=\"services\"");
     int soon = html.indexOf("id=\"soon\"");
     int faq = html.indexOf("id=\"faq\"");
     int cta = html.indexOf("id=\"cta\"");
 
     // then
+    // 2026-10-15 사용자 확정: 디지털영어학원 Agent → 내신 영어 문제지 제작 → 오픈 서비스 전체 → BUILD IT CHART
     assertThat(hero).isGreaterThanOrEqualTo(0);
-    assertThat(chart).isGreaterThan(hero);
     assertThat(wiki).isGreaterThan(hero);
-    assertThat(chart).isGreaterThan(wiki);
-    assertThat(soon).isGreaterThan(wiki);
-    assertThat(faq).isGreaterThan(soon);
+    assertThat(services).isGreaterThan(wiki);
+    assertThat(soon).isGreaterThan(services);
+    assertThat(chart).isGreaterThan(soon);
+    assertThat(faq).isGreaterThan(chart);
     assertThat(cta).isGreaterThan(faq);
     assertThat(html)
         .doesNotContain("id=\"web\"")
@@ -125,23 +127,51 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 준비 중 서비스 when 읽으면 then iBT TestPrep 진입 링크 하나를 빼고 링크·입력창 없이 비활성으로 표시한다")
+  @DisplayName("given 출시 예정 서비스 when 읽으면 then 오픈 서비스와 분리되어 링크·입력창 없이 비활성으로 표시한다")
   void soon_services_are_not_clickable() throws Exception {
     // given
     String html = Files.readString(LANDING);
     int start = html.indexOf("id=\"soon\"");
-    int end = html.indexOf("id=\"faq\"", start);
+    int end = html.indexOf("id=\"chart-showcase\"", start);
     String soon = html.substring(start, end);
 
     // then
-    assertThat(soon).contains("DesignCraft", "입시상담 AI", "Easy 장부", "iBT TestPrep", "LMS").contains("aria-disabled=\"true\"");
-    // iBT TestPrep은 /testprep으로 열려 있고(v3-badge-live), 나머지 4종만 준비중이다.
+    // iBT TestPrep은 오픈 서비스(#services)로 옮겼고, 출시 예정에는 미배포 4종만 남는다.
+    assertThat(soon).contains("출시 예정", "DesignCraft", "입시상담 AI", "Easy 장부", "LMS").contains("aria-disabled=\"true\"");
+    assertThat(soon).doesNotContain("iBT TestPrep", "v3-badge-live");
     assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(4);
     assertThat(soon.split("곧 준비중", -1).length - 1).isGreaterThanOrEqualTo(4);
     assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생 관리 → 수업·과제 → 출결·성적 관리");
-    assertThat(soon.split("<a ", -1).length - 1).isEqualTo(1);
-    assertThat(soon).contains("<a class=\"v3-btn v3-btn-primary\" id=\"testprep-entry\" href=\"/testprep\">");
-    assertThat(soon).doesNotContain("<input").doesNotContain("<form");
+    assertThat(soon).doesNotContain("<a ").doesNotContain("<input").doesNotContain("<form");
+  }
+
+  @Test
+  @DisplayName("given 오픈 서비스 영역 when 읽으면 then 최상단 앵커가 각 설명 섹션을 가리키고 설명마다 주요 기능·사용 방법·서비스 입장하기가 있다")
+  void open_services_have_anchor_nav_and_enter_buttons() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    int start = html.indexOf("id=\"services\"");
+    int end = html.indexOf("id=\"soon\"", start);
+    String services = html.substring(start, end);
+    String[][] expected = {
+        {"svc-builder", "AI 홈페이지 제작", "/builder"},
+        {"svc-problem", "내신 영어 문제지 제작기", "/problem-generator"},
+        {"svc-wiki", "내신위키", "/wiki"},
+        {"svc-testprep", "iBT TestPrep", "/testprep"}};
+
+    // then
+    int navAt = services.indexOf("class=\"svc-anchors\"");
+    int listAt = services.indexOf("class=\"svc-list\"");
+    assertThat(navAt).isGreaterThan(0).isLessThan(listAt);
+    assertThat(services).contains("<a href=\"#chart-showcase\">BUILD IT CHART</a>");
+    for (String[] svc : expected) {
+      assertThat(services).as(svc[0]).contains("<a href=\"#" + svc[0] + "\">" + svc[1] + "</a>");
+      int cardAt = services.indexOf("id=\"" + svc[0] + "\"");
+      int nextAt = services.indexOf("<article", cardAt + 1);
+      String card = services.substring(cardAt, nextAt < 0 ? services.length() : nextAt);
+      assertThat(card).as(svc[0]).contains("주요 기능", "사용 방법", "서비스 입장하기", "href=\"" + svc[2] + "\"");
+    }
+    assertThat(services).doesNotContain("곧 준비중").doesNotContain("aria-disabled");
   }
 
   @Test
