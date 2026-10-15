@@ -1,0 +1,53 @@
+name: MySQL 8.4 V1085 check (isolated, temporary)
+
+# [임시·병합 금지] 운영 RDS(MySQL 8.4.8)에서 V1078~V1085가 적용되는지 격리 서비스 컨테이너(mysql:8.4)로 1회 확인한다.
+# 운영 접속정보를 쓰지 않는다. 검증 후 이 브랜치와 워크플로를 삭제한다.
+on:
+  push:
+    branches: [ci/mysql84-v1085-check]
+
+jobs:
+  mysql84:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: MySQL version
+        run: mysql -h 127.0.0.1 -uroot -pci_test_root_pw -e "SELECT VERSION();"
+      - name: Flyway V1~V1085 full + V1077-to-V1085 incremental (isolated schemas)
+        run: >-
+          ./gradlew test --no-daemon --stacktrace -i
+          --tests "f2r.tutor_solution.private_tutor_solution_back.tmpci.Mysql84IncrementalMigrationTmpTest"
+      - name: Spring context + Hibernate validate on 8.4 (V1085 full)
+        run: >-
+          ./gradlew test --no-daemon --stacktrace
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPagesMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderDbTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramPublicEntryMySqlTest"
+      - name: Flyway history on 8.4 (f2r_test)
+        if: always()
+        run: mysql -h 127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "SELECT COUNT(*) applied, MAX(CAST(version AS UNSIGNED)) max_version, SUM(success=0) failed FROM flyway_schema_history WHERE version IS NOT NULL;"
