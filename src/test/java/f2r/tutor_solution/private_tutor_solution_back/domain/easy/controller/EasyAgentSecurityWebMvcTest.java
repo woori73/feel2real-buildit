@@ -20,9 +20,9 @@ import org.springframework.test.web.servlet.MockMvc;
 class EasyAgentSecurityWebMvcTest {
  @Autowired MockMvc mvc;@Autowired JwtTokenProvider tokens;
  @MockitoBean EasyAgentService service;@MockitoBean AcademyRepository academyRepository;
- @Test void adminCannotUseTutorAgentRoute() throws Exception{
+ @Test void adminCanUseLedgerAgentRoute() throws Exception{
   Cookie admin=new Cookie("ACCESS_TOKEN",tokens.issue(1L,"admin","ADMIN"));
-  mvc.perform(post("/api/tutor/easy/agent/sessions").param("businessId","1").cookie(admin)).andExpect(status().isForbidden());
+  mvc.perform(post("/api/tutor/easy/agent/sessions").param("businessId","1").cookie(admin)).andExpect(status().isOk());
  }
  @Test void unauthenticatedCannotUseAgentRoute() throws Exception{
   mvc.perform(post("/api/tutor/easy/agent/sessions").param("businessId","1")).andExpect(status().isUnauthorized());
