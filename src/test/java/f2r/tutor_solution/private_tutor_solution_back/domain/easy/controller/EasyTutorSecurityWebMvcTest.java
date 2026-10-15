@@ -61,10 +61,10 @@ class EasyTutorSecurityWebMvcTest {
   }
 
   @Test
-  @DisplayName("ADMIN은 원장 Easy API를 사용할 수 없다")
-  void adminCannotAccessTutorEasyApi() throws Exception {
+  @DisplayName("ADMIN은 신규 Easy 장부 API를 사용할 수 있다")
+  void adminCanAccessLedgerEasyApi() throws Exception {
     Cookie admin = new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "admin", "ADMIN"));
     mockMvc.perform(get("/api/tutor/easy/businesses").cookie(admin))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isOk());
   }
 }
