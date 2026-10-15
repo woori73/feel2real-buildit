@@ -4621,3 +4621,10 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /api/tutor/easy/agent/actions/{actionId}/reject?businessId={id}`: 대기 제안을 거절한다.
 - 계정 변경과 장부 반영은 `PROPOSED` 감사 작업을 먼저 만들며 사용자 승인 전에는 실행하지 않는다. 명시적 승인 문구는 현재 세션의 최신 대기 제안 하나에만 적용한다.
 - 금액·거래일·원본 CSV·거래 삭제는 Agent 허용 명령이 아니다. 모든 세션·메시지·작업은 principal → Academy → 연결된 활성 EasyBusiness 검증 후 조회한다.
+
+## DesignCraft 출판 API 보강 (`/api/publishing/jobs/{jobId}/**`)
+
+- `GET /info` → `{jobId, pageCount}`: 작업 문서(`job.designcraft`)의 현재 쪽수(`document.inspect`). 작업이 `RUNNING`/`DONE`일 때만(그 외 `409`). 편집기가 폴링 없이 쪽수를 알기 위한 용도.
+- `POST /manuscript` (multipart `manuscript`; md/txt/docx/rtf, 최대 10MB) → `{jobId, applied, snapshotId, pageCount, fileName}`: 원고를 첨부하고 반입 전 스냅샷을 만든 뒤 한 번의 CLI script로 `file.place(autoflow)` → 전체 선택 → `ko-body` 적용을 실행하고 정본에 저장한다.
+- `POST /commands`는 정본에 저장된다(`script - --in job.designcraft --save TMP` 후 원자적 교체, 실패 시 정본 불변). `GET /pages/{n}/png|thumb`의 `n`은 1-based이며 CLI에는 0-based로 변환해 전달한다.
+- 알려진 한계: `preflight`·`export`·Markdown 스타일 자동 적용은 아직 `run --cmd`(문서 미지정)로 실행되어 작업 문서가 아니라 CLI 기본 문서를 대상으로 한다 — 별도 결정 후 전환.

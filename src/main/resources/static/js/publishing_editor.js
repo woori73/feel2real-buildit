@@ -19,7 +19,8 @@
     jobTimer: null,
     exportTimer: null,
     barMode: null,   // 'job' | 'export' | null
-    activeBarJob: null
+    activeBarJob: null,
+    pendingManuscript: null  // 새 프로젝트 생성 때 고른 원고 — 작업 문서가 준비되면 반입한다
   };
 
   var ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -38,6 +39,9 @@
     return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
   var toastTimer = null;
+  function errText(e, fallback) {
+    return (e && e.message) ? e.message : fallback;
+  }
   function toast(msg, isError) {
     var t = $('toast');
     t.textContent = msg;
@@ -136,8 +140,12 @@
     var tpl = document.querySelector('input[name="np-template"]:checked').value;
     var file = $('np-file').files[0] || null;
     $('modal-new-project').hidden = true;
+    S.pendingManuscript = file;
     api.createJob(tpl, name, file).then(function (res) {
       showEditor(res.jobId);
+    }).catch(function (e) {
+      S.pendingManuscript = null;
+      toast('프로젝트를 만들지 못했습니다. ' + errText(e, ''), true);
     });
   }
 
@@ -150,9 +158,19 @@
       $('ed-title').textContent = p.title;
       $('ed-template').textContent = templateOf(p.template).name + ' · ' + templateOf(p.template).id;
       buildStylePanels();
+      if (p.status === 'QUEUED') {
+        /* 작업 문서를 준비하는 중 — 준비되면(RUNNING) 폴링이 편집기를 다시 연다 */
+        renderThumbs();
+        $('preview-loading').hidden = false;
+        startJobBar(p.jobId);
+        return;
+      }
+      if (p.status === 'FAILED' || p.status === 'CANCELLED') {
+        toast('작업 ' + p.status + (p.error ? ': ' + p.error : ''), true);
+        return;
+      }
       renderThumbs();
       showPage(1);
-      if (p.status === 'QUEUED' || p.status === 'RUNNING') startJobBar(p.jobId);
       if (p.lastManuscript) {
         var u = $('upload-last');
         u.hidden = false;
@@ -160,7 +178,18 @@
       } else {
         $('upload-last').hidden = true;
       }
+      importPendingManuscript();
+    }).catch(function (e) {
+      toast('프로젝트를 불러오지 못했습니다. ' + errText(e, ''), true);
     });
+  }
+
+  /* 새 프로젝트에서 고른 원고를, 문서가 준비된 시점에 한 번만 반입한다. */
+  function importPendingManuscript() {
+    var file = S.pendingManuscript;
+    if (!file) return;
+    S.pendingManuscript = null;
+    runImport(file);
   }
 
   /* ═══════════ F3: 미리보기·썸네일·확대·대향 ═══════════ */
@@ -191,6 +220,7 @@
 
   function showPage(n) {
     if (!S.jobId || !S.project) return;
+    if (S.pageCount < 1) { $('preview-loading').hidden = true; return; }
     n = Math.max(1, Math.min(S.pageCount, n));
     S.page = n;
     $('page-input').value = n;
@@ -228,21 +258,31 @@
         imgR.hidden = true;
       }
       $('preview-loading').hidden = true;
+    }).catch(function (e) {
+      $('preview-loading').hidden = true;
+      toast('미리보기를 불러오지 못했습니다. ' + errText(e, ''), true);
     });
   }
 
+  /* 적용으로 바뀐 쪽: 캐시 무효화 후 재렌더. 서버가 바뀐 쪽을 알려주지 않으면(빈 목록) 전체를 새로 읽고 쪽수도 갱신한다. */
   function refreshPages(pages) {
-    /* 적용으로 바뀐 쪽: 캐시 무효화 후 재렌더 */
-    (pages || []).forEach(function (p) {
+    if (!pages || !pages.length) {
+      S.thumbCache = {}; S.pageCache = {};
+      return api.getProject(S.jobId).then(function (p) {
+        S.project = p; S.pageCount = p.pageCount;
+        renderThumbs();
+        showPage(Math.min(S.page, S.pageCount) || 1);
+      });
+    }
+    pages.forEach(function (p) {
       Object.keys(S.pageCache).forEach(function (k) {
         if (k.indexOf(S.jobId + ':' + p + ':') === 0) delete S.pageCache[k];
       });
       delete S.thumbCache[S.jobId + ':' + p];
     });
-    if (pages && pages.length) {
-      renderThumbs();
-      showPage(S.page);
-    }
+    renderThumbs();
+    showPage(S.page);
+    return Promise.resolve();
   }
 
   function renderThumbs() {
@@ -258,7 +298,8 @@
         var key = S.jobId + ':' + n;
         function set(src) { img.src = src; }
         if (S.thumbCache[key]) set(S.thumbCache[key]);
-        else api.getThumbPng(S.jobId, n).then(function (url) { S.thumbCache[key] = url; set(url); });
+        else api.getThumbPng(S.jobId, n).then(function (url) { S.thumbCache[key] = url; set(url); })
+          .catch(function () { li.classList.add('thumb-error'); });
         li.appendChild(img);
         li.appendChild(el('div', 'thumb-no', n + '쪽'));
         li.addEventListener('click', function () { showPage(n); });
@@ -296,15 +337,20 @@
   }
   function startJobBar(jobId) {
     setBar('job', jobId);
+    clearInterval(S.jobTimer);
     S.jobTimer = setInterval(function () {
       api.getJob(jobId).then(function (d) {
         updateBar(d);
-        if (d.status === 'DONE' || d.status === 'FAILED' || d.status === 'CANCELLED') {
+        /* RUNNING = 작업 문서 준비 완료(편집 가능). QUEUED가 아니면 폴링을 끝낸다. */
+        if (d.status !== 'QUEUED') {
           clearInterval(S.jobTimer); S.jobTimer = null;
           setTimeout(function () { setBar(null); }, 900);
-          if (d.status === 'DONE') { toast('조판 완료 — 미리보기 생성됨'); initEditor(); }
+          if (d.status === 'RUNNING' || d.status === 'DONE') { initEditor(); }
           else toast('작업 ' + d.status + (d.error ? ': ' + d.error : ''), true);
         }
+      }).catch(function (e) {
+        clearInterval(S.jobTimer); S.jobTimer = null; setBar(null);
+        toast('작업 상태를 확인하지 못했습니다. ' + errText(e, ''), true);
       });
     }, 2000);
   }
@@ -346,8 +392,8 @@
       if (!r.applied) { toast('적용 실패', true); return; }
       toast('적용됨 · 스냅샷 ' + r.snapshotId + ' 생성');
       markPreflightStale();
-      refreshPages(r.touchedPages || [S.page]);
-    });
+      return refreshPages(r.touchedPages);
+    }).catch(function (e) { toast('적용 실패. ' + errText(e, ''), true); });
   }
 
   /* ═══════════ F5: AI 수정 채팅 (제안→승인→적용) ═══════════ */
@@ -404,10 +450,13 @@
           aiAppend('system', '✓ 적용 완료 · 스냅샷 ' + r.snapshotId);
           toast('AI 수정 적용됨 (스냅샷 생성)');
           markPreflightStale();
-          refreshPages(r.touchedPages || []);
+          refreshPages(r.touchedPages);
         } else {
           aiAppend('system', '적용 실패');
         }
+      }).catch(function (e) {
+        card.classList.add('resolved');
+        aiAppend('system', '적용 실패: ' + errText(e, '서버 오류'));
       });
     });
     no.addEventListener('click', function () {
@@ -432,20 +481,28 @@
         r.passed ? '✓ 검수 통과' : '✕ 검수 실패 — 아래 문제를 확인하세요');
       box.appendChild(sum);
       appendFindings(box, 'sev-err', '빠짐 글리프 (missingGlyphs)', r.missingGlyphs, function (f) {
-        return '쪽 ' + f.page + ' · ' + f.detail;
+        return pageLabel(f.page) + f.detail;
       });
       appendFindings(box, 'sev-warn', '본문 넘침 (overset)', r.overset, function (f) {
-        return '쪽 ' + f.page + ' · ' + f.detail;
+        return pageLabel(f.page) + f.detail;
       });
       appendFindings(box, 'sev-warn', '저해상도 이미지 (lowPpi)', r.lowPpi, function (f) {
-        return '쪽 ' + f.page + ' · ' + f.detail;
+        return pageLabel(f.page) + f.detail;
       });
       if (r.missingGlyphs.length > 0) {
         box.appendChild(el('p', 'export-blocked-note',
           '⚠ 빠짐 글리프 ' + r.missingGlyphs.length + '건 — 안전망: PDF 출력 버튼이 비활성화됩니다. AI 채팅에 "글리프 문제 해결해줘"라고 요청해 보세요.'));
       }
       updateExportButtonState();
+    }).catch(function (e) {
+      box.innerHTML = '';
+      box.appendChild(el('p', 'export-blocked-note', '검수를 실행하지 못했습니다. ' + errText(e, '')));
     });
+  }
+
+  /* 서버가 쪽을 특정하지 못하면 page가 null이다 — "쪽 null"로 보이지 않게 한다. */
+  function pageLabel(page) {
+    return page ? '쪽 ' + page + ' · ' : '';
   }
 
   function appendFindings(box, sev, title, list, fmt) {
@@ -454,9 +511,11 @@
     g.appendChild(el('h4', null, title + ' (' + list.length + ')'));
     list.forEach(function (f) {
       var d = el('div', 'finding' + (sev === 'sev-err' ? ' sev-err' : ''));
-      var pg = el('span', 'f-page', '→ ' + f.page + '쪽 보기');
-      pg.addEventListener('click', function () { showPage(f.page); });
-      d.appendChild(pg);
+      if (f.page) {
+        var pg = el('span', 'f-page', '→ ' + f.page + '쪽 보기');
+        pg.addEventListener('click', function () { showPage(f.page); });
+        d.appendChild(pg);
+      }
       d.appendChild(document.createTextNode(' ' + fmt(f)));
       g.appendChild(d);
     });
@@ -478,27 +537,25 @@
   }
 
   /* ═══════════ F7: PDF 출력·산출물 ═══════════ */
+  /* 서버 export는 동기 응답이다(게이트 통과 후 PDF 생성까지 한 요청). 응답이 오면 곧 완료다. */
   function startExport() {
     var standard = document.querySelector('input[name="ex-standard"]:checked').value;
     $('modal-export').hidden = true;
-    api.startExport(S.jobId, 'pdf', standard).then(function (r) {
-      toast('출력 작업 시작 (' + standard.toUpperCase() + ') — 2초 간격 폴링');
-      setBar('export', S.jobId);
-      $('job-step').textContent = 'PDF 출력 대기…';
-      S.exportTimer = setInterval(function () {
-        api.getExportState(S.jobId).then(function (d) {
-          if (!d) return;
-          updateBar(d);
-          if (d.status === 'DONE') {
-            clearInterval(S.exportTimer); S.exportTimer = null;
-            setTimeout(function () { setBar(null); }, 900);
-            renderArtifacts();
-            switchTab('artifacts');
-            toast('PDF 출력 완료 — 산출물 탭에서 다운로드');
-          }
-        });
-      }, 2000);
-    });
+    toast('PDF 출력 중 (' + standard.toUpperCase() + ') — 잠시 기다려 주세요');
+    setBar('export', S.jobId);
+    updateBar({ currentStep: 'PDF 출력 중…', progress: 50 });
+    $('btn-export-top').disabled = true;
+    api.startExport(S.jobId, 'pdf', standard).then(function () {
+      updateBar({ currentStep: 'PDF 출력 완료', progress: 100 });
+      setTimeout(function () { setBar(null); }, 900);
+      renderArtifacts();
+      switchTab('artifacts');
+      toast('PDF 출력 완료 — 산출물 탭에서 다운로드');
+    }).catch(function (e) {
+      setBar(null);
+      /* 422 = 검수 게이트 차단 등 서버가 준 사유를 그대로 보여준다 */
+      toast('PDF 출력 실패. ' + errText(e, '서버 오류'), true);
+    }).then(function () { updateExportButtonState(); });
   }
 
   function renderArtifacts() {
@@ -543,7 +600,7 @@
         var li = el('li');
         var info = el('div');
         info.appendChild(el('div', 'v-label', v.label));
-        info.appendChild(el('div', 'v-meta', v.source + ' · ' + fmtTime(v.createdAt)));
+        info.appendChild(el('div', 'v-meta', (v.source ? v.source + ' · ' : '') + fmtTime(v.createdAt)));
         li.appendChild(info);
         if (idx === 0) {
           li.appendChild(el('span', 'v-current', '최신'));
@@ -555,12 +612,9 @@
               if (res.restored) {
                 toast('복원 완료 · ' + res.snapshotId);
                 $('modal-versions').hidden = true;
-                api.getProject(S.jobId).then(function (p) {
-                  S.pageCount = p.pageCount; S.thumbCache = {}; S.pageCache = {};
-                  renderThumbs(); showPage(Math.min(S.page, p.pageCount));
-                });
+                refreshPages([]);
               }
-            });
+            }).catch(function (e) { toast('복원 실패. ' + errText(e, ''), true); });
           });
           li.appendChild(btn);
         }
@@ -570,41 +624,31 @@
   }
 
   /* ═══════════ F2: 원고 업로드·매핑 미리보기 ═══════════ */
-  var pendingUpload = null; // {file, inspect}
+  var pendingUpload = null; // {file, insp}
   function handleManuscriptFile(file) {
     if (!file) return;
     if (!/\.(md|txt|docx|rtf)$/i.test(file.name)) {
       toast('md · txt · docx · rtf 파일만 반입할 수 있습니다.', true);
       return;
     }
-    var reader = new FileReader();
-    reader.onload = function () {
-      var text = typeof reader.result === 'string' ? reader.result : '';
-      api.inspectManuscript(file.name, text).then(function (insp) {
-        pendingUpload = { file: file, insp: insp };
-        $('map-file').textContent = file.name + ' · ' + Math.round(file.size / 102.4) / 10 + ' KB' +
-          (insp.binary ? ' (이진 원고 — 개수는 추정치)' : '') + ' · 예상 ' + insp.estPages + '쪽';
-        var tb = $('map-rows');
-        tb.innerHTML = '';
-        insp.rows.forEach(function (row) {
-          var tr = document.createElement('tr');
-          tr.appendChild(el('td', null, row.source));
-          tr.appendChild(el('td', null, String(row.count)));
-          tr.appendChild(el('td', null, row.target));
-          tb.appendChild(tr);
-        });
-        $('modal-mapping').hidden = false;
-      });
-    };
+    if (file.size > 10 * 1024 * 1024) {
+      toast('원고 파일이 너무 큽니다 (최대 10MB).', true);
+      return;
+    }
     if (/\.(md|txt)$/i.test(file.name)) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        api.inspectManuscript(file.name, typeof reader.result === 'string' ? reader.result : '', file.size).then(showMapping);
+      };
       reader.readAsText(file);
     } else {
-      /* 이진(docx/rtf)은 텍스트 샘플 없이 추정 매핑 */
-      api.inspectManuscript(file.name, '').then(showMapping);
+      /* 이진(docx/rtf)은 텍스트 샘플 없이 크기 기반 추정 */
+      api.inspectManuscript(file.name, '', file.size).then(showMapping);
     }
     function showMapping(insp) {
       pendingUpload = { file: file, insp: insp };
-      $('map-file').textContent = file.name + ' · ' + Math.round(file.size / 102.4) / 10 + ' KB (이진 원고 — 개수는 추정치) · 예상 ' + insp.estPages + '쪽';
+      $('map-file').textContent = file.name + ' · ' + Math.round(file.size / 102.4) / 10 + ' KB' +
+        (insp.binary ? ' (이진 원고 — 개수는 추정치)' : '') + ' · 예상 ' + insp.estPages + '쪽';
       var tb = $('map-rows');
       tb.innerHTML = '';
       insp.rows.forEach(function (row) {
@@ -621,18 +665,26 @@
   function confirmImport() {
     if (!pendingUpload) return;
     $('modal-mapping').hidden = true;
-    api.importManuscript(S.jobId, pendingUpload.file.name, pendingUpload.insp.estPages).then(function (r) {
+    var file = pendingUpload.file;
+    pendingUpload = null;
+    runImport(file);
+  }
+
+  /* 서버에 원고를 올려 문서에 반입하고(스냅샷 포함) 쪽수·미리보기를 새로 읽는다. */
+  function runImport(file) {
+    toast('원고 반입 중…');
+    api.importManuscript(S.jobId, file).then(function (r) {
       if (!r.applied) { toast('반입 실패', true); return; }
-      toast('원고 반입 완료 (autoflow) · 스냅샷 ' + r.snapshotId);
-      if (r.pageCount) S.pageCount = r.pageCount;
+      toast('원고 반입 완료 (' + r.pageCount + '쪽) · 스냅샷 ' + r.snapshotId);
+      markPreflightStale();
+      S.pageCount = r.pageCount || S.pageCount;
       S.thumbCache = {}; S.pageCache = {};
       renderThumbs();
-      showPage(S.page);
+      showPage(1);
       var u = $('upload-last');
       u.hidden = false;
-      u.textContent = '최근 반입: ' + pendingUpload.file.name + ' (' + fmtTime(Date.now()) + ')';
-      pendingUpload = null;
-    });
+      u.textContent = '최근 반입: ' + file.name + ' (' + fmtTime(Date.now()) + ')';
+    }).catch(function (e) { toast('반입 실패. ' + errText(e, ''), true); });
   }
 
   /* ═══════════ 탭·전역 바인딩 ═══════════ */
@@ -678,7 +730,8 @@
     $('btn-save').addEventListener('click', function () {
       api.saveNow(S.jobId).then(function (r) {
         if (r.saved) toast('저장됨 · 스냅샷 ' + r.snapshotId);
-      });
+        else toast('저장하지 못했습니다.', true);
+      }).catch(function (e) { toast('저장 실패. ' + errText(e, ''), true); });
     });
 
     /* 탭 */
@@ -737,6 +790,10 @@
       if (sc) sc.hidden = !mock;
       bind();
       showProjects();
+    }).catch(function (e) {
+      /* 메타 로딩 실패 시 빈 화면 대신 사유를 보여준다 */
+      var t = $('toast');
+      if (t) { t.textContent = '편집기를 초기화하지 못했습니다. ' + errText(e, ''); t.className = 'toast error'; t.hidden = false; }
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -77,7 +77,7 @@ public class PublishingEditService {
       i++;
       PublishingCommand normalized = normalizeCommand(cmd);
       try {
-        cliExecutor.execute(normalized, workDir);
+        cliExecutor.executeOnDocument(normalized, workDir);
       } catch (ResponseStatusException e) {
         throw new ResponseStatusException(e.getStatusCode(),
             "명령 " + i + "/" + commands.size() + " 실패 (" + cmd.id() + "): "
@@ -95,6 +95,46 @@ public class PublishingEditService {
   public Long executeCommands(AuthenticatedPrincipal principal, Long jobId,
       List<PublishingCommand> commands) {
     return executeCommands(principal, jobId, commands, null);
+  }
+
+  /** 원고 반입 결과. */
+  public record ManuscriptImportResult(Long snapshotId, int pageCount, String fileName) {}
+
+  /**
+   * 문서의 현재 페이지 수 (작업 전체 상태 조회용, 문서는 변경되지 않는다).
+   */
+  public int pageCount(AuthenticatedPrincipal principal, Long jobId) {
+    PublishingJob job = jobService.requireOwned(principal, jobId);
+    requireReady(job);
+    return cliExecutor.pageCount(Path.of(job.getDesigncraftFile()), Path.of(job.getWorkDir()));
+  }
+
+  /**
+   * 원고 파일을 첨부하고 문서에 반입(file.place, autoflow)한다.
+   *
+   * <p>반입 전 스냅샷이 자동 생성된다. 허용 형식·크기 검증은 {@link PublishingJobService#attachManuscript}가 한다.
+   */
+  @Transactional
+  public ManuscriptImportResult importManuscript(AuthenticatedPrincipal principal, Long jobId,
+      org.springframework.web.multipart.MultipartFile manuscript) {
+    String storedName = jobService.attachManuscript(principal, jobId, manuscript);
+    PublishingJob job = jobService.requireOwned(principal, jobId);
+    requireReady(job);
+    String original = manuscript.getOriginalFilename() == null ? storedName : manuscript.getOriginalFilename();
+    String label = "원고 반입: " + (original.length() > 60 ? original.substring(0, 60) : original);
+    Long snapshotId = createSnapshot(job, label);
+    // 서버가 만든 고정 명령이라 allowlist(AI 계획용)를 거치지 않는다. 한 script로 실행해 선택 상태를 잇는다:
+    // 반입 → 전체 선택 → 본문 스타일(ko-body, 한글 폰트)로 통일. 기본 스타일은 한글 글리프가 없다.
+    try {
+      cliExecutor.executeOnDocument(List.of(
+          new PublishingCommand("file.place", Map.of("path", storedName, "autoflow", true)),
+          new PublishingCommand("edit.selectAll", Map.of()),
+          new PublishingCommand("style.paragraph.apply", Map.of("name", "ko-body"))),
+          Path.of(job.getWorkDir()));
+    } catch (ResponseStatusException e) {
+      throw new ResponseStatusException(e.getStatusCode(), "원고 반입 실패: " + e.getReason(), e);
+    }
+    return new ManuscriptImportResult(snapshotId, pageCount(principal, jobId), original);
   }
 
   /**
