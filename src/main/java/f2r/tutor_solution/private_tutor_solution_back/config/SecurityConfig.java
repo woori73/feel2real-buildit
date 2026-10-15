@@ -203,6 +203,16 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin"),
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // 원장용 Easy 장부 SSR은 익명 브라우저나 비-TUTOR 브라우저 세션에 raw 401/403을
+            // 노출하지 않고 공통 로그인 안내로 보낸다. API(/api/tutor/easy/**)는 이 규칙의
+            // 대상이 아니므로 기존 401/403과 사업체 권한 검증을 그대로 유지한다.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> redirectToLogin(request, response),
+                new AndRequestMatcher(
+                    new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/ledger"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/ledger/**")),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), AnyRequestMatcher.INSTANCE)
@@ -223,7 +233,7 @@ public class SecurityConfig {
             .requestMatchers("/admin/academies/*/preview", "/admin/academies/*/builder").hasRole("ADMIN")
             // 원장용 Easy 대화 장부 SSR. /tutor/easy는 /ledger 호환 리다이렉트이며,
             // API도 /api/tutor/easy/**에서 별도 TUTOR·사업체 권한을 검증한다.
-            .requestMatchers("/ledger", "/ledger/**", "/tutor/easy", "/tutor/easy/**").hasRole("TUTOR")
+            .requestMatchers("/ledger", "/ledger/**", "/tutor/easy", "/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).
             .requestMatchers("/easy", "/easy/**").hasRole("ADMIN")
             // CHOONGGI Creator SSR — ADMIN or the scoped CHOONGGI CREATOR role only; public vlog
@@ -506,6 +516,7 @@ public class SecurityConfig {
             .requestMatchers("/api/tutor/academy/working-copy/**").hasAnyRole("TUTOR", "ADMIN")
 
             // Tutor 전용
+            .requestMatchers("/api/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             .requestMatchers("/api/tutor/**").hasRole("TUTOR")
 
             // 그 외 모든 /api/**는 인증 필요
@@ -562,11 +573,24 @@ public class SecurityConfig {
     return new BCryptPasswordEncoder();
   }
 
+  private void redirectToLogin(
+      jakarta.servlet.http.HttpServletRequest request,
+      jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+    String target = request.getRequestURI();
+    if (request.getQueryString() != null) target += "?" + request.getQueryString();
+    response.sendRedirect("/?login=required&returnUrl="
+        + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
+  }
+
   private AccessDeniedHandler conversationChatAccessDeniedHandler() {
     return (request, response, accessDeniedException) -> {
       String path = request.getRequestURI();
       if ("/conversation/chat".equals(path) || "/conversation/chat.html".equals(path)) {
         response.sendRedirect("/stdt_dashboard");
+        return;
+      }
+      if ("/ledger".equals(path) || path.startsWith("/ledger/")) {
+        redirectToLogin(request, response);
         return;
       }
       response.sendError(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN.getReasonPhrase());

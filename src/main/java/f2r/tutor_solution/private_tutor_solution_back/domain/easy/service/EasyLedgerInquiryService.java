@@ -141,6 +141,41 @@ public class EasyLedgerInquiryService {
         difference == 0 && mismatched.isEmpty(), mismatched);
   }
 
+  /** 날짜별 분개장 — 사용자가 거래와 차변·대변을 함께 확인하는 read-only 장부. */
+  public record JournalLineRow(String accountCode, String accountName,
+      long debit, long credit) {
+  }
+
+  public record JournalEntryRow(Long journalEntryId, Long transactionId,
+      LocalDate date, String counterparty, String description, String memo,
+      List<JournalLineRow> lines, long totalDebit, long totalCredit, boolean balanced) {
+  }
+
+  public List<JournalEntryRow> journal(Long businessId, LocalDate from, LocalDate to) {
+    LocalDate start = from == null ? LocalDate.of(2000, 1, 1) : from;
+    LocalDate end = to == null ? LocalDate.of(2100, 12, 31) : to;
+    List<JournalEntryRow> result = new ArrayList<>();
+    for (EasyJournalEntry entry : postedEntries(businessId, start, end)) {
+      List<JournalLineRow> lines = new ArrayList<>();
+      long debit = 0L;
+      long credit = 0L;
+      for (EasyJournalLine line : lineRepository
+          .findByEntry_EntryIdOrderBySortOrderAsc(entry.getEntryId())) {
+        debit += line.getDebit();
+        credit += line.getCredit();
+        lines.add(new JournalLineRow(line.getAccount().getCode(),
+            line.getAccount().getName(), line.getDebit(), line.getCredit()));
+      }
+      var txn = entry.getTxn();
+      result.add(new JournalEntryRow(entry.getEntryId(),
+          txn == null ? null : txn.getTxnId(), entry.getOccurredOn(),
+          txn == null ? null : txn.getCounterparty(),
+          txn == null ? null : txn.getDescription(), entry.getMemo(),
+          lines, debit, credit, debit == credit));
+    }
+    return result;
+  }
+
   /** 분개 균형 감사 — entry별 ΣDr/ΣCr 비교, 수정 없음. */
   public BalanceAudit auditBalance(Long businessId, LocalDate from, LocalDate to) {
     LocalDate start = from == null ? LocalDate.of(2000, 1, 1) : from;

@@ -42,9 +42,9 @@ class EasyTutorImportSecurityWebMvcTest {
   }
 
   @Test
-  void adminCannotUseTutorImportRoute() throws Exception {
+  void adminCanUseLedgerImportRoute() throws Exception {
     Cookie admin = new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "admin", "ADMIN"));
     mockMvc.perform(get("/api/tutor/easy/imports").param("businessId", "1").cookie(admin))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isOk());
   }
 }

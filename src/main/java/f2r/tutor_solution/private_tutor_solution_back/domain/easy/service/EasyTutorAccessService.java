@@ -28,6 +28,11 @@ public class EasyTutorAccessService {
 
   public List<EasyBusinessResponse> allowedBusinesses(
       JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (isAdmin(principal)) {
+      return businessRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+          .map(EasyBusinessResponse::from)
+          .toList();
+    }
     Academy academy = requireActiveOwnedAcademy(principal);
     return linkRepository
         .findAllByAcademy_AcademyIdOrderByBusiness_SortOrderAsc(academy.getAcademyId())
@@ -46,6 +51,14 @@ public class EasyTutorAccessService {
       JwtTokenProvider.AuthenticatedPrincipal principal, Long requestedBusinessId) {
     if (requestedBusinessId == null) {
       throw new IllegalArgumentException("businessId는 필수입니다.");
+    }
+    if (isAdmin(principal)) {
+      EasyBusiness business = businessRepository.findById(requestedBusinessId)
+          .orElseThrow(() -> new AccessDeniedException("사업체를 찾을 수 없습니다."));
+      if (!business.isActive()) {
+        throw new AccessDeniedException("비활성 사업체에는 접근할 수 없습니다.");
+      }
+      return business;
     }
     Academy academy = requireActiveOwnedAcademy(principal);
     AcademyEasyBusinessLink link = linkRepository
@@ -75,6 +88,10 @@ public class EasyTutorAccessService {
   @Transactional
   public void unlink(Long academyId, Long businessId) {
     linkRepository.deleteByAcademy_AcademyIdAndBusiness_BusinessId(academyId, businessId);
+  }
+
+  private boolean isAdmin(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return principal != null && "ADMIN".equals(principal.role());
   }
 
   private Academy requireActiveOwnedAcademy(
