@@ -23,7 +23,22 @@ public enum Program {
       "/designcraft",
       "/designcraft/editor",
       Set.of("TUTOR", "ADMIN"),
-      "DesignCraft는 강사(TUTOR) 또는 관리자(ADMIN) 계정 전용입니다.");
+      "DesignCraft는 강사(TUTOR) 또는 관리자(ADMIN) 계정 전용입니다."),
+
+  BUILDER(
+      "BuildIt 홈페이지 제작",
+      "AI 학원 홈페이지 제작기",
+      "한 문장으로 학원 홈페이지를 만들고, 편집기에서 문구·이미지·디자인을 다듬어 게시하는 제작기입니다.",
+      List.of(
+          "한 문장 제작 요청으로 홈페이지 초안 생성",
+          "시각 편집기로 문구·이미지·디자인·섹션 수정",
+          "미리보기로 확인한 뒤 게시",
+          "학원 공개 주소(…feel2real.co.kr) 발급",
+          "샘플 홈페이지 갤러리 둘러보기"),
+      "/builder",
+      "/builder",
+      Set.of("TUTOR", "ADMIN"),
+      "홈페이지 제작은 강사(TUTOR) 또는 관리자(ADMIN) 계정 전용입니다. 일반 회원은 공개된 학원 홈페이지와 샘플을 둘러볼 수 있습니다.");
 
   private final String title;
   private final String subtitle;

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ConcurrentModel;
 import org.springframework.ui.Model;
-import org.springframework.web.servlet.view.RedirectView;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 @DisplayName("AcademyBuilderPageController — 빌더 초기값 SSR")
 class AcademyBuilderPageControllerTest {
@@ -50,32 +50,32 @@ class AcademyBuilderPageControllerTest {
     JwtTokenProvider.AuthenticatedPrincipal admin =
         new JwtTokenProvider.AuthenticatedPrincipal(1L, "admin1", "ADMIN");
     when(academyService.getMine(admin)).thenReturn(Optional.empty());
-    assertThat(controller.builder(admin, null, new ConcurrentModel())).isEqualTo("tutor/academy_builder");
-    assertThat(controllerWith(true, "admin1").builder(admin, null, new ConcurrentModel()))
+    assertThat(controller.builder(admin, null, new ConcurrentModel(), new MockHttpServletResponse())).isEqualTo("tutor/academy_builder");
+    assertThat(controllerWith(true, "admin1").builder(admin, null, new ConcurrentModel(), new MockHttpServletResponse()))
         .isEqualTo("tutor/assistant_home");
   }
 
   @Test
-  @DisplayName("builder — given STUDENT when 스위치 켜짐 then 랜딩으로 리다이렉트 (권한 확대 없음)")
-  void builder_student_stillRedirected() {
+  @DisplayName("builder — given STUDENT when 스위치 켜짐 then 제작기가 아닌 안내 화면 (권한 확대 없음)")
+  void builder_student_getsNoticeNotBuilder() {
     JwtTokenProvider.AuthenticatedPrincipal student =
         new JwtTokenProvider.AuthenticatedPrincipal(5L, "stu", "STUDENT");
-    assertThat(controllerWith(true, "").builder(student, null, new ConcurrentModel()))
-        .isInstanceOf(RedirectView.class);
+    assertThat(controllerWith(true, "").builder(student, null, new ConcurrentModel(), new MockHttpServletResponse()))
+        .isEqualTo("program/intro");
   }
 
   @Test
   @DisplayName("builder — given 스위치 꺼짐 when 신규 사용자 then 기존 빌더")
   void builder_flagOff_usesClassic() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.empty());
-    assertThat(controller.builder(tutor("a"), null, new ConcurrentModel())).isEqualTo("tutor/academy_builder");
+    assertThat(controller.builder(tutor("a"), null, new ConcurrentModel(), new MockHttpServletResponse())).isEqualTo("tutor/academy_builder");
   }
 
   @Test
   @DisplayName("builder — given 스위치 켜짐 when 신규 사용자 then 대화형 화면")
   void builder_flagOn_newUser_usesAssistant() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.empty());
-    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
+    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel(), new MockHttpServletResponse()))
         .isEqualTo("tutor/assistant_home");
   }
 
@@ -85,15 +85,15 @@ class AcademyBuilderPageControllerTest {
     when(academyService.getMine(tutor("in"))).thenReturn(Optional.empty());
     when(academyService.getMine(tutor("out"))).thenReturn(Optional.empty());
     AcademyBuilderPageController c = controllerWith(true, "in, other");
-    assertThat(c.builder(tutor("in"), null, new ConcurrentModel())).isEqualTo("tutor/assistant_home");
-    assertThat(c.builder(tutor("out"), null, new ConcurrentModel())).isEqualTo("tutor/academy_builder");
+    assertThat(c.builder(tutor("in"), null, new ConcurrentModel(), new MockHttpServletResponse())).isEqualTo("tutor/assistant_home");
+    assertThat(c.builder(tutor("out"), null, new ConcurrentModel(), new MockHttpServletResponse())).isEqualTo("tutor/academy_builder");
   }
 
   @Test
   @DisplayName("builder — given 스위치 켜짐 when classic=1 then 기존 빌더로 복귀")
   void builder_classicParam_returnsToClassic() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.empty());
-    assertThat(controllerWith(true, "").builder(tutor("a"), "1", new ConcurrentModel()))
+    assertThat(controllerWith(true, "").builder(tutor("a"), "1", new ConcurrentModel(), new MockHttpServletResponse()))
         .isEqualTo("tutor/academy_builder");
   }
 
@@ -102,7 +102,7 @@ class AcademyBuilderPageControllerTest {
   void builder_legacyAcademy_staysClassic() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.of(academy()));
     when(assistantMessages.existsByAcademyIdAndKindIn(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.anyCollection())).thenReturn(false);
-    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
+    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel(), new MockHttpServletResponse()))
         .isEqualTo("tutor/academy_builder");
   }
 
@@ -111,7 +111,7 @@ class AcademyBuilderPageControllerTest {
   void builder_assistantAcademy_usesAssistant() {
     when(academyService.getMine(tutor("a"))).thenReturn(Optional.of(academy()));
     when(assistantMessages.existsByAcademyIdAndKindIn(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.anyCollection())).thenReturn(true);
-    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel()))
+    assertThat(controllerWith(true, "").builder(tutor("a"), null, new ConcurrentModel(), new MockHttpServletResponse()))
         .isEqualTo("tutor/assistant_home");
   }
 
@@ -142,7 +142,7 @@ class AcademyBuilderPageControllerTest {
     Model model = new ConcurrentModel();
 
     // when
-    Object view = controller.builder(principal, null, model);
+    Object view = controller.builder(principal, null, model, new MockHttpServletResponse());
 
     // then
     assertThat(view).isEqualTo("tutor/academy_builder");
@@ -158,36 +158,38 @@ class AcademyBuilderPageControllerTest {
   }
 
   @Test
-  @DisplayName("builder — given 비로그인 직접 접근 when 진입 then 서비스 조회 없이 랜딩으로 리다이렉트")
-  void builder_redirects_anonymous_user_to_landing() {
+  @DisplayName("builder — given 비로그인 직접 접근 when 진입 then 서비스 조회 없이 200 공개 소개 화면")
+  void builder_shows_public_intro_to_anonymous_user() {
     // given
     Model model = new ConcurrentModel();
+    MockHttpServletResponse response = new MockHttpServletResponse();
 
     // when
-    Object view = controller.builder(null, null, model);
+    Object view = controller.builder(null, null, model, response);
 
     // then
-    assertThat(view).isInstanceOfSatisfying(RedirectView.class, redirect -> {
-      assertThat(redirect.getUrl()).isEqualTo("/");
-    });
+    assertThat(view).isEqualTo("program/intro");
+    assertThat(model.getAttribute("state")).isEqualTo("ANON");
+    assertThat(response.getStatus()).isEqualTo(200);
     verifyNoInteractions(academyService);
   }
 
   @Test
-  @DisplayName("builder — given 비강사 로그인 when 진입 then 서비스 조회 없이 랜딩으로 리다이렉트")
-  void builder_redirects_non_tutor_to_landing() {
+  @DisplayName("builder — given 비강사 로그인 when 진입 then 서비스 조회 없이 403 안내 화면")
+  void builder_shows_notice_to_non_tutor() {
     // given
     JwtTokenProvider.AuthenticatedPrincipal principal =
         new JwtTokenProvider.AuthenticatedPrincipal(9L, "student", "STUDENT");
     Model model = new ConcurrentModel();
+    MockHttpServletResponse response = new MockHttpServletResponse();
 
     // when
-    Object view = controller.builder(principal, null, model);
+    Object view = controller.builder(principal, null, model, response);
 
     // then
-    assertThat(view).isInstanceOfSatisfying(RedirectView.class, redirect -> {
-      assertThat(redirect.getUrl()).isEqualTo("/");
-    });
+    assertThat(view).isEqualTo("program/intro");
+    assertThat(model.getAttribute("state")).isEqualTo("FORBIDDEN");
+    assertThat(response.getStatus()).isEqualTo(403);
     verifyNoInteractions(academyService);
   }
 

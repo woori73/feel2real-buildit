@@ -41,4 +41,18 @@ class ProgramTest {
     assertThat(Program.isRegisteredReturnUrl("/admin/dashboard")).isFalse();
     assertThat(Program.isRegisteredReturnUrl("/")).isFalse();
   }
+
+  @Test
+  @DisplayName("given BuildIt 제작기 when 소개·샘플 경로를 보면 then 자기 영역이고 TUTOR·ADMIN만 허용한다")
+  void builder_owns_its_paths_and_roles() {
+    // given
+    Program p = Program.BUILDER;
+
+    // when & then
+    assertThat(p.ownsReturnUrl("/builder")).isTrue();
+    assertThat(p.ownsReturnUrl("/builder/entry")).isTrue();
+    assertThat(p.ownsReturnUrl("/builders")).isFalse();
+    assertThat(p.getRoles()).containsExactlyInAnyOrder("TUTOR", "ADMIN");
+    assertThat(Program.isRegisteredReturnUrl("/builder")).isTrue();
+  }
 }
