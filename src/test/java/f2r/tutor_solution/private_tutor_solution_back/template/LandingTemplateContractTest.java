@@ -107,6 +107,25 @@ class LandingTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 준비 중 서비스 목록 when 템플릿을 읽으면 then iBT TestPrep만 /testprep 진입 버튼이 있고 나머지는 준비중으로 남는다")
+  void testprep_card_links_to_public_entry_while_others_stay_soon() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    int soon = html.indexOf("id=\"soon\"");
+    int faq = html.indexOf("id=\"faq\"", soon);
+    String soonSection = html.substring(soon, faq);
+    int tp = soonSection.indexOf("<h3>iBT TestPrep");
+    int cardStart = soonSection.lastIndexOf("<li class=\"v3-soon-card", tp);
+    String card = soonSection.substring(cardStart, soonSection.indexOf("</li>", tp));
+
+    // then
+    assertThat(card).contains("href=\"/testprep\"", "TESTPREP 시작하기", "이용 가능");
+    assertThat(card).doesNotContain("aria-disabled", "곧 준비중");
+    assertThat(soonSection.replace(card, "")).contains("DesignCraft", "입시상담 AI", "Easy 장부", "LMS");
+    assertThat(html.substring(faq)).contains("DesignCraft, 입시상담 AI, Easy 장부, LMS는 곧 준비중");
+  }
+
+  @Test
   @DisplayName("given Wiki 문제지 제작 when 템플릿을 읽으면 then 가격·5단계·카톡/이메일 문의 링크가 있다")
   void wiki_section_offers_worksheet_service_with_contact_links() throws Exception {
     // given

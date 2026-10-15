@@ -125,7 +125,7 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 준비 중 서비스 when 읽으면 then 링크·입력창 없이 비활성으로 표시한다")
+  @DisplayName("given 준비 중 서비스 when 읽으면 then iBT TestPrep 진입 링크 하나를 빼고 링크·입력창 없이 비활성으로 표시한다")
   void soon_services_are_not_clickable() throws Exception {
     // given
     String html = Files.readString(LANDING);
@@ -135,10 +135,13 @@ class LandingV3TemplateContractTest {
 
     // then
     assertThat(soon).contains("DesignCraft", "입시상담 AI", "Easy 장부", "iBT TestPrep", "LMS").contains("aria-disabled=\"true\"");
-    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(5);
-    assertThat(soon.split("곧 준비중", -1).length - 1).isGreaterThanOrEqualTo(5);
+    // iBT TestPrep은 /testprep으로 열려 있고(v3-badge-live), 나머지 4종만 준비중이다.
+    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(4);
+    assertThat(soon.split("곧 준비중", -1).length - 1).isGreaterThanOrEqualTo(4);
     assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생 관리 → 수업·과제 → 출결·성적 관리");
-    assertThat(soon).doesNotContain("<a ").doesNotContain("<input").doesNotContain("<form");
+    assertThat(soon.split("<a ", -1).length - 1).isEqualTo(1);
+    assertThat(soon).contains("<a class=\"v3-btn v3-btn-primary\" id=\"testprep-entry\" href=\"/testprep\">");
+    assertThat(soon).doesNotContain("<input").doesNotContain("<form");
   }
 
   @Test
@@ -204,7 +207,7 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given FAQ·마지막 안내 when 읽으면 then 준비 중 5종과 문제지 안내가 일치하고 금지 문구 없이 '만들기'로 시작한다")
+  @DisplayName("given FAQ·마지막 안내 when 읽으면 then 준비 중 4종·TestPrep 안내와 문제지 안내가 일치하고 금지 문구 없이 '만들기'로 시작한다")
   void faq_and_bottom_cta_follow_confirmed_copy() throws Exception {
     // given
     String html = Files.readString(LANDING);
@@ -214,7 +217,7 @@ class LandingV3TemplateContractTest {
     // then
     assertThat(tail)
         .contains("내신 영어 문제지는 어떻게 받나요?", "기본 1회 20,000원")
-        .contains("DesignCraft, 입시상담 AI, Easy 장부, iBT TestPrep, LMS는 곧 준비중")
+        .contains("DesignCraft, 입시상담 AI, Easy 장부, LMS는 곧 준비중", "iBT TestPrep은 첫 화면을 누구나 볼 수 있고")
         .contains("홈페이지 제작으로 디지털 영어 학원을 시작하세요!")
         .contains("href=\"/builder\" class=\"btn reveal\" data-fade data-buildit-start")
         .doesNotContain("AI 홈페이지 만들기")
