@@ -3,7 +3,7 @@ name: Production Diagnostic (read-only, manual)
 # READ-ONLY 운영 진단 전용 workflow.
 # - workflow_dispatch 수동 실행만 허용 (자동 실행 없음)
 # - 진단 종류는 코드에 고정. 임의 명령어/SQL 입력 불가.
-# - DB 진단: flyway-history, schema-columns, assistant-mode-count (SELECT만, 건수만 출력·개인정보 없음)
+# - DB 진단: flyway-history, schema-columns, assistant-mode-count, predeploy-check (SELECT만, 건수만 출력·개인정보 없음)
 # - 서비스 진단: service-status, journal-errors, system-resources, jar-info, health-check (DB 작업 없음)
 # - DB credential은 EC2의 /etc/f2r/env에서 로드하며 GitHub 로그에 절대 출력하지 않는다.
 # - DB 쓰기 명령(INSERT/UPDATE/DELETE 등)은 포함하지 않는다.
@@ -19,6 +19,7 @@ on:
         type: choice
         options:
           - flyway-history
+          - predeploy-check
           - schema-columns
           - assistant-mode-count
           - service-status
@@ -325,6 +326,36 @@ jobs:
           journalctl -u f2r-app.service --since "2026-10-06 00:00:00" --no-pager 2>/dev/null | grep -a -c "WEMADE KIS" || echo 0
           echo KIS_AUTH_LOG
           journalctl -u f2r-app.service --since "2026-10-05 00:00:00" --no-pager 2>/dev/null | grep -a "WEMADE KIS" | grep -a -iE "auth|token|skipped|PENDING" | tail -5 || echo NO_AUTH_LOGS
+          SSMEOF
+              )
+              ;;
+            predeploy-check)
+              DIAG_LABEL="predeploy-check (Flyway 상태·DB 버전·CLI/Worker 파일·환경변수 유무, SELECT·조회만)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          M="mysql -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER -p$DB_PASSWORD $DB_NAME"
+          echo "===== MySQL version ====="
+          $M -e "SELECT VERSION() AS mysql_version;"
+          echo "===== flyway summary (applied / max version / failed rows) ====="
+          $M -e "SELECT COUNT(*) AS applied, MAX(CAST(version AS UNSIGNED)) AS max_version, SUM(success = 0) AS failed_rows FROM flyway_schema_history WHERE version IS NOT NULL;"
+          echo "===== flyway rows V1071 and later ====="
+          $M -e "SELECT installed_rank, version, description, success, installed_on FROM flyway_schema_history WHERE CAST(version AS UNSIGNED) >= 1071 ORDER BY installed_rank;"
+          echo "===== V1075-V1077 tables present? ====="
+          $M -e "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND (table_name LIKE 'tp\\_%' OR table_name LIKE 'hwpx\\_%') ORDER BY table_name;"
+          echo "===== app.jar (size, mtime, sha256 prefix) ====="
+          ls -l --time-style=long-iso /home/ec2-user/app.jar 2>&1 || true
+          sha256sum /home/ec2-user/app.jar 2>&1 | cut -c1-16 || true
+          echo "===== CLI / worker files (existence only) ====="
+          ls -l /opt/artcraft/photocraft/bin/photocraft-cli /opt/designcraft/designcraft-cli /opt/hwpx-worker/hwpx_cli.py 2>&1 || true
+          command -v python3 || echo "python3: not found"
+          echo "===== env var presence (names only; secret values never printed) ====="
+          for k in NAVER_CLIENT_ID NAVER_CLIENT_SECRET JWT_SECRET META_JIPJIGI_API_KEY ANTHROPIC_API_KEY; do
+            if [ -n "${!k:-}" ]; then echo "$k=set"; else echo "$k=unset"; fi
+          done
+          echo "===== non-secret settings (values) ====="
+          for k in HWPX_WORKER_ENABLED HWPX_CLI_PATH PUBLISHING_CLI_PATH PHOTOCRAFT_CLI_PATH; do
+            echo "$k=${!k:-<unset>}"
+          done
           SSMEOF
               )
               ;;
