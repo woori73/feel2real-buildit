@@ -87,6 +87,18 @@ public class EasyTutorController {
     return ResponseEntity.ok(auditService.listReviews(businessId, kind, status));
   }
 
+  @GetMapping("/accounting/journal")
+  public ResponseEntity<List<EasyLedgerInquiryService.JournalEntryRow>> journal(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestParam Long businessId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+      LocalDate to) {
+    accessService.requireAllowedBusiness(principal, businessId);
+    return ResponseEntity.ok(inquiryService.journal(businessId, from, to));
+  }
+
   @GetMapping("/accounting/general-ledger")
   public ResponseEntity<EasyLedgerInquiryService.AccountLedger> generalLedger(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
