@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/tutor/easy")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('TUTOR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
 public class EasyTutorController {
 
   private final EasyTutorAccessService accessService;
