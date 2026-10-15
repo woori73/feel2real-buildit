@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>입시상담 가이드</title>
+  <meta name="description" content="2027학년도 입시 정보를 공식 자료 기반으로 안내합니다">
+  <link rel="stylesheet" href="/css/admissions-guide.css?v=20261013-1">
+</head>
+<body>
+  <div class="admissions-page">
+    <!-- 첫 화면 -->
+    <section id="ag-welcome" class="ag-welcome" aria-label="입시상담 가이드 시작">
+      <div class="ag-welcome-inner">
+        <h1 class="ag-title">입시상담 가이드</h1>
+        <p class="ag-subtitle">2027학년도 입시 정보를 공식 자료 기반으로 안내합니다</p>
+        <div class="ag-year-badge" role="status">
+          <span class="ag-badge">2027학년도 확정 기준</span>
+        </div>
+        <form id="ag-welcome-form" class="ag-input-form ag-welcome-form">
+          <input id="ag-welcome-input" class="ag-input" type="text"
+                 placeholder="질문을 입력하세요..." maxlength="2000"
+                 aria-label="질문 입력" autocomplete="off">
+          <button class="ag-send" type="submit" aria-label="전송">↑</button>
+        </form>
+        <div class="ag-examples" aria-label="예시 질문">
+          <p class="ag-examples-label">예시 질문</p>
+          <button class="ag-example" type="button" data-q="2027학년도 수시 원서접수 일정 알려줘">2027 수시 일정 알려줘</button>
+          <button class="ag-example" type="button" data-q="서울대 2027학년도 정시 전형은?">서울대 정시 전형은?</button>
+          <button class="ag-example" type="button" data-q="2027학년도 경영학과 모집인원은?">경영학과 모집인원은?</button>
+        </div>
+        <p class="ag-privacy">입력한 내용은 상담 품질 개선에만 사용됩니다. 개인정보를 입력하지 마세요.</p>
+      </div>
+    </section>
+
+    <!-- 대화 화면 -->
+    <section id="ag-chat" class="ag-chat" hidden aria-label="입시상담 대화">
+      <header class="ag-header">
+        <button id="ag-back" class="ag-back" type="button" aria-label="뒤로">←</button>
+        <span class="ag-header-title">입시상담 가이드</span>
+        <button id="ag-year-toggle" class="ag-year-toggle" type="button" aria-label="학년도 선택">
+          <span id="ag-year-label">2027 확정</span>
+        </button>
+      </header>
+      <div id="ag-messages" class="ag-messages" aria-live="polite" aria-label="대화 메시지"></div>
+      <form id="ag-form" class="ag-input-form ag-chat-form">
+        <input id="ag-input" class="ag-input" type="text"
+               placeholder="질문을 입력하세요..." maxlength="2000"
+               aria-label="질문 입력" autocomplete="off">
+        <button class="ag-send" type="submit" aria-label="전송">↑</button>
+      </form>
+    </section>
+  </div>
+  <script src="/js/admissions-guide.js?v=20261013-1" defer></script>
+</body>
+</html>
