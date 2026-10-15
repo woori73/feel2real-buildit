@@ -144,7 +144,10 @@ class LandingV3TemplateContractTest {
     assertThat(soon).doesNotContain("href=\"/lms", "href=\"/conversation", "href=\"/tutor/conversation", "<h3>LMS");
     assertThat(soon.split("곧 준비중", -1).length - 1).isGreaterThanOrEqualTo(4);
     assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생·강사 관리 → 출결·성적·숙제 → 상담 관리", "AI 대화형 영어학습 → 학습 콘텐츠");
-    assertThat(soon).doesNotContain("<a ").doesNotContain("<input").doesNotContain("<form");
+    // DesignCraft만 "곧 준비중" 뱃지를 유지하면서 공개 소개(/designcraft)로 연결한다. 나머지 4종은 링크 없음.
+    assertThat(soon.split("<a ", -1).length - 1).isEqualTo(1);
+    assertThat(soon).contains("id=\"designcraft-entry\" href=\"/designcraft\"").doesNotContain("<input").doesNotContain("<form");
+    assertThat(soon.split("aria-disabled=\"true\"", -1).length - 1).isEqualTo(4);
   }
 
   @Test
