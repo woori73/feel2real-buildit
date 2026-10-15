@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiGuideSuggestion;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.EducatorReference;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider.AiCompletion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider.AiTaskLimits;
@@ -60,15 +61,18 @@ public class AcademyAiGuideService {
   private final AcademyAiContextService contextService;
   private final AcademyAiPromptBuilder promptBuilder;
   private final AiProvider aiProvider;
+  private final EducatorKnowledgeService educatorKnowledge;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public AcademyAiGuideService(
       AcademyAiContextService contextService,
       AcademyAiPromptBuilder promptBuilder,
-      AiProvider aiProvider) {
+      AiProvider aiProvider,
+      EducatorKnowledgeService educatorKnowledge) {
     this.contextService = contextService;
     this.promptBuilder = promptBuilder;
     this.aiProvider = aiProvider;
+    this.educatorKnowledge = educatorKnowledge;
   }
 
   /**
@@ -98,8 +102,10 @@ public class AcademyAiGuideService {
     AcademyAiContext context = contextService.buildContext(principal);
     String currentValue = currentValueFor(context, safeTarget);
     String instructions = composeInstructions(safeAnswer, safeStyle);
+    // Chart 교육자 참고 사례(다른 교육자 원문 — 의뢰 학원 사실이 아님). 없으면 빈 목록 = 기존 프롬프트 그대로.
+    List<EducatorReference> references = educatorKnowledge.search(context, instructions);
     String prompt = promptBuilder.build(
-        AcademyAiTaskType.GUIDE_TEXT, context, safeTarget, currentValue, instructions);
+        AcademyAiTaskType.GUIDE_TEXT, context, safeTarget, currentValue, instructions, references);
 
     AiCompletion completion = aiProvider.complete(prompt, new AiTaskLimits(MAX_OUTPUT_CHARS));
     if (!completion.ok()) {
