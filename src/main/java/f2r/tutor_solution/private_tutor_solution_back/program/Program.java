@@ -38,7 +38,21 @@ public enum Program {
       "/builder",
       "/builder",
       Set.of("TUTOR", "ADMIN"),
-      "홈페이지 제작은 강사(TUTOR) 또는 관리자(ADMIN) 계정 전용입니다. 일반 회원은 공개된 학원 홈페이지와 샘플을 둘러볼 수 있습니다.");
+      "홈페이지 제작은 강사(TUTOR) 또는 관리자(ADMIN) 계정 전용입니다. 일반 회원은 공개된 학원 홈페이지와 샘플을 둘러볼 수 있습니다."),
+
+  PROBLEM_GENERATOR(
+      "내신 영어 문제지 제작기",
+      "BuildIt 문제지 제작",
+      "학교·교재를 고르고 문제를 모아 내신 영어 문제지를 만들고, 오답 노트로 복습하는 제작기입니다.",
+      List.of(
+          "학교·교재별 자료 선택",
+          "문제 모음에서 문항 고르기",
+          "내신 영어 문제지(시험) 제작",
+          "오답 노트로 복습"),
+      "/problem-generator",
+      "/problem-generator",
+      Set.of("STUDENT", "TUTOR", "ADMIN"),
+      "문제지 제작기는 로그인한 학생·강사·관리자 계정이 이용할 수 있습니다. 현재 계정의 권한으로는 이용할 수 없습니다.");
 
   private final String title;
   private final String subtitle;

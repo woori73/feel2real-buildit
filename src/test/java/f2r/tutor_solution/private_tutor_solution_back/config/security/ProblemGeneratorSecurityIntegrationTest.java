@@ -42,24 +42,23 @@ class ProblemGeneratorSecurityIntegrationTest {
   @MockitoBean AcademyRepository academyRepository;
 
   @Test
-  @DisplayName("비로그인 브라우저 요청은 랜딩으로 302되면서 login=required를 싣는다")
-  void anonymousHtmlRequestRedirectsToLandingWithLoginMarker() throws Exception {
+  @DisplayName("비로그인 브라우저 요청은 첫 화면(/problem-generator)에서 랜딩으로 튕기지 않고 200 공개 소개를 본다")
+  void anonymousHtmlRequestSeesPublicIntro() throws Exception {
     // given: 로그인하지 않은 사용자의 주소창 top-level GET
-    // when & then: 목적지는 "/" 그대로지만 튕긴 이유가 실려 있어야 한다
+    // when & then: 소개 화면(200)에서 네이버 로그인으로 시작한다
     mockMvc.perform(get("/problem-generator").header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE))
-        .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/?login=required"));
+        .andExpect(status().isOk());
   }
 
   @Test
-  @DisplayName("하위 메뉴도 같은 마커로 302된다")
+  @DisplayName("하위 메뉴는 login=required 마커와 원래 경로(returnUrl)를 실어 302된다")
   void anonymousHtmlRequestOnSubMenuRedirectsWithLoginMarker() throws Exception {
     // given: 7개 메뉴 중 하나로 직접 진입한 비로그인 사용자
-    // when & then: /problem-generator/** 전체가 동일 계약이어야 한다
+    // when & then: 로그인 후 원래 화면으로 돌아오도록 returnUrl이 실려야 한다
     mockMvc.perform(
             get("/problem-generator/questions").header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE))
         .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/?login=required"));
+        .andExpect(header().string("Location", "/?login=required&returnUrl=%2Fproblem-generator%2Fquestions"));
   }
 
   @Test
@@ -68,7 +67,7 @@ class ProblemGeneratorSecurityIntegrationTest {
     // given: fetch/XHR 요청 — 리다이렉트를 주면 호출부가 HTML을 파싱하게 된다
     // when & then
     mockMvc.perform(
-            get("/problem-generator").header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
+            get("/problem-generator/questions").header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE))
         .andExpect(status().isUnauthorized());
   }
 }
