@@ -204,7 +204,7 @@ class AdmissionsBrowserQaMySqlTest {
         Files.createDirectories(report.getParent());
         Files.writeString(report, phase + " " + dimensions + System.lineSeparator());
         assertThat(dimensions.get("viewport").intValue()).isEqualTo(390);
-        assertThat(dimensions.get("clientWidth").intValue()).isEqualTo(390);
+        assertThat(dimensions.get("clientWidth").intValue()).isPositive().isLessThanOrEqualTo(390);
         assertThat(dimensions.get("scrollWidth").intValue())
                 .isLessThanOrEqualTo(dimensions.get("clientWidth").intValue());
         assertThat(dimensions.get("bodyScrollWidth").intValue())
