@@ -4668,3 +4668,9 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `/ledger/**`, `/easy/**` 하위 화면: 비회원은 `302 /?login=required&returnUrl=<원래 경로>`(기존 랜딩 로그인 흐름), 권한 없는 로그인 사용자는 `302`로 해당 프로그램 소개 경로(`/ledger`, `/easy`)의 안내 화면.
 - `/api/tutor/easy/**`, `/api/admin/easy/**` 인증·인가와 사업체 권한 검증은 변경하지 않았다.
 - `GET /program/intro`: forward 전용. forward 속성이 없는 직접 요청은 `302 /`.
+
+### 학원 LMS 운영 화면·대화형 학습 강사 전용 화면 진입 (PR 5)
+
+- 비회원 브라우저 요청: `/lms/**`(인증 필요 화면), `/conversation/chat`, `/tutor/conversation_dashboard`, `/tutor/conversation/**`, `/tutor/conversations/**` → `302 /?login=required&returnUrl=<원래 경로>`(기존 랜딩 로그인 모달, 로그인 후 원래 화면 복귀). 이전에는 LMS는 `/`로만, 대화 화면은 빈 401이었다. JSON/API 요청은 기존대로 401.
+- 로그인했지만 권한 없는 사용자: `/lms/{handle}/manage|contents|midterm-live`(소유 강사 전용), `/tutor/conversation*`(TUTOR 전용)은 기본 403 대신 서비스 안내 화면(상태 403, `GET /program/notice`로 내부 forward). `/conversation/chat`의 학생 홈 이동은 기존 그대로.
+- 접근 허용 규칙(LMS 운영 화면은 소유 강사만, ADMIN 불가 — AC-7)과 API 인가는 변경하지 않았다.

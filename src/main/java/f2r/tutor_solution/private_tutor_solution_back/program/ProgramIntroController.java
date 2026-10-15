@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class ProgramIntroController {
 
   public static final String PROGRAM_ATTRIBUTE = ProgramIntroController.class.getName() + ".PROGRAM";
+  public static final String NOTICE_TITLE_ATTRIBUTE = ProgramIntroController.class.getName() + ".NOTICE_TITLE";
+  public static final String NOTICE_MESSAGE_ATTRIBUTE = ProgramIntroController.class.getName() + ".NOTICE_MESSAGE";
 
   @GetMapping("/program/intro")
   public String intro(
@@ -25,5 +27,23 @@ public class ProgramIntroController {
       return "redirect:/";
     }
     return ProgramEntry.intro(program, ProgramEntry.stateOf(program, auth), model, response);
+  }
+
+  /**
+   * 소개 화면이 없는 하위 기능(학원 운영 화면, 강사 전용 대화 화면 등)에서 권한이 없는 로그인 사용자에게 보이는
+   * 서비스 안내 화면. SecurityConfig의 접근 거부 처리기가 forward하며 상태는 403이다.
+   */
+  @GetMapping("/program/notice")
+  public String notice(HttpServletRequest request, Model model, HttpServletResponse response) {
+    Object message = request.getAttribute(NOTICE_MESSAGE_ATTRIBUTE);
+    if (!(message instanceof String text)) {
+      return "redirect:/";
+    }
+    Object title = request.getAttribute(NOTICE_TITLE_ATTRIBUTE);
+    model.addAttribute("noticeTitle", title instanceof String t ? t : "이용 권한 안내");
+    model.addAttribute("noticeMessage", text);
+    response.setHeader("Cache-Control", "private, no-store");
+    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+    return "program/notice";
   }
 }
