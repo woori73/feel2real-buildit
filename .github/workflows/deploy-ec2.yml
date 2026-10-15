@@ -20,10 +20,11 @@ on:
         required: false
         default: unchanged
         type: choice
+        # YAML 1.1은 따옴표 없는 off/on을 불리언으로 해석하므로 반드시 따옴표로 문자열을 고정한다.
         options:
           - unchanged
-          - off
-          - on
+          - 'off'
+          - 'on'
 
 permissions:
   id-token: write
