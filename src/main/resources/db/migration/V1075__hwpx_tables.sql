@@ -7,7 +7,7 @@ CREATE TABLE hwpx_jobs (
   title VARCHAR(200) NOT NULL,
   source_format VARCHAR(10) NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'QUEUED',
-  progress TINYINT NOT NULL DEFAULT 0,
+  progress INT NOT NULL DEFAULT 0,
   current_step VARCHAR(100),
   work_dir VARCHAR(500),
   input_file VARCHAR(500),
