@@ -393,6 +393,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyTutorCsvWorkflowMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAgentFlowMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepFlowMySqlIntegrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPagesMySqlTest"
 
       - name: Upload MySQL test report
         if: always()

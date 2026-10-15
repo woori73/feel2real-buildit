@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/tp_base :: head('Answer review')}"></head>
+<body>
+<nav th:replace="~{fragments/tp_base :: nav('scores')}"></nav>
+<div class="wrap section">
+  <h2 id="rv-title">Answer review</h2>
+  <p class="lead" id="rv-sub"></p>
+  <div id="rv-score"></div>
+  <div id="rv-items"><p class="lead">Loading…<span class="ko">불러오는 중…</span></p></div>
+</div>
+<div th:replace="~{fragments/tp_base :: footer}"></div>
+<script defer src="/js/testprep_review.js"></script>
+</body>
+</html>

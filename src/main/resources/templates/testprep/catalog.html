@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/tp_base :: head(${kind == 'PRACTICE'} ? 'iBT Practice' : 'Vocabulary Quiz')}"></head>
+<body>
+<nav th:replace="~{fragments/tp_base :: nav(${pageActive})}"></nav>
+<div class="wrap section">
+  <h2><span th:text="${kind == 'PRACTICE'} ? 'TOEFL iBT Practice Tests' : 'Vocabulary Quiz'">Catalog</span><span class="ko" th:text="${kind == 'PRACTICE'} ? 'TOEFL iBT 모의고사' : '어휘 퀴즈'">카탈로그</span></h2>
+  <p class="lead"><span th:text="${kind == 'PRACTICE'}
+      ? 'Take a real timed set modeled on the 2026 structure. Auto-scored items return an internal band estimate.'
+      : 'Learn TOEFL academic words: English→meaning, meaning→English, and context blanks. Wrong words can be retried.'">Catalog</span><span class="ko" th:text="${kind == 'PRACTICE'}
+      ? '2026 구조를 본뜬 실제 시간 제한 세트를 응시하세요. 자동 채점 문항은 내부 밴드 추정치를 제공합니다.'
+      : 'TOEFL 학술 어휘를 학습하세요: 영어→의미, 의미→영어, 문맥 빈칸 채우기. 틀린 어휘는 다시 풀 수 있습니다.'">한글 안내</span></p>
+  <div id="catalog"><p class="lead">Loading…<span class="ko">불러오는 중…</span></p></div>
+  <div class="disclaimer" style="margin-top:22px">Scores in TestPrep are internal estimates, not official ETS scores.<span class="ko" style="color:#7a5300">TestPrep의 점수는 공식 ETS 점수가 아닌 내부 추정치입니다.</span></div>
+</div>
+<script th:inline="javascript">
+  window.TP_KIND = /*[[${kind}]]*/ 'PRACTICE';
+</script>
+<script defer src="/js/testprep_catalog.js"></script>
+<div th:replace="~{fragments/tp_base :: footer}"></div>
+</body>
+</html>
