@@ -61,7 +61,7 @@ class LandingTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 서비스 소개 when 템플릿을 읽으면 then 제작(히어로)→Chart→Wiki→준비 중 순서로 노출하고 중복·미제공 섹션은 없다")
+  @DisplayName("given 서비스 소개 when 템플릿을 읽으면 then 제작(히어로)→Wiki→오픈 서비스→출시 예정→Chart 순서로 노출하고 중복·미제공 섹션은 없다")
   void landing_orders_services_by_product_strategy() throws Exception {
     // 2026-10-14 사용자 확정(docs/design/homepage-v3/HANDOFF.md §10-1): AI 홈페이지 제작 → Chart → Easy(서비스 탐색기 탭)
     // → 콘텐츠 도구(Wiki·Report·Shorts) → 준비 중 서비스. 이전 순서(Wiki→Web→Chart→Report→Shorts)에서 바뀌었다.
@@ -75,16 +75,18 @@ class LandingTemplateContractTest {
     int hero = html.indexOf("id=\"hero\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
     int wiki = html.indexOf("id=\"wiki\"");
+    int services = html.indexOf("id=\"services\"");
     int soon = html.indexOf("id=\"soon\"");
 
     // then
     // 2026-10-14 사용자 지시: 홈페이지 제작 소개가 초반(히어로)과 중간(서비스 탐색기·제작 과정)에 두 번 나오는 중복을 없애고,
     // 아직 제공하지 않는 Report·Shorts는 제거한다.
     assertThat(hero).isGreaterThanOrEqualTo(0);
-    assertThat(chart).isGreaterThan(hero);
+    // 2026-10-15 사용자 확정: 디지털영어학원 Agent → 내신 영어 문제지 제작 → 오픈 서비스 전체 → BUILD IT CHART
     assertThat(wiki).isGreaterThan(hero);
-    assertThat(chart).isGreaterThan(wiki);
-    assertThat(soon).isGreaterThan(wiki);
+    assertThat(services).isGreaterThan(wiki);
+    assertThat(soon).isGreaterThan(services);
+    assertThat(chart).isGreaterThan(soon);
     assertThat(html)
         .doesNotContain("id=\"web\"")
         .doesNotContain("id=\"journey\"")
@@ -107,21 +109,22 @@ class LandingTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 준비 중 서비스 목록 when 템플릿을 읽으면 then iBT TestPrep만 /testprep 진입 버튼이 있고 나머지는 준비중으로 남는다")
-  void testprep_card_links_to_public_entry_while_others_stay_soon() throws Exception {
+  @DisplayName("given 오픈 서비스 목록 when 템플릿을 읽으면 then iBT TestPrep은 오픈 서비스의 /testprep 입장 버튼이 있고 출시 예정에는 남지 않는다")
+  void testprep_card_links_to_public_entry_in_open_services() throws Exception {
     // given
     String html = Files.readString(LANDING);
-    int soon = html.indexOf("id=\"soon\"");
-    int faq = html.indexOf("id=\"faq\"", soon);
-    String soonSection = html.substring(soon, faq);
-    int tp = soonSection.indexOf("<h3>iBT TestPrep");
-    int cardStart = soonSection.lastIndexOf("<li class=\"v3-soon-card", tp);
-    String card = soonSection.substring(cardStart, soonSection.indexOf("</li>", tp));
+    int services = html.indexOf("id=\"services\"");
+    int soon = html.indexOf("id=\"soon\"", services);
+    int chart = html.indexOf("id=\"chart-showcase\"", soon);
+    int faq = html.indexOf("id=\"faq\"", chart);
+    String open = html.substring(services, soon);
+    String soonSection = html.substring(soon, chart);
+    int tp = open.indexOf("id=\"svc-testprep\"");
+    String card = open.substring(tp, open.indexOf("</article>", tp));
 
     // then
-    assertThat(card).contains("href=\"/testprep\"", "TESTPREP 시작하기", "이용 가능");
-    assertThat(card).doesNotContain("aria-disabled", "곧 준비중");
-    assertThat(soonSection.replace(card, "")).contains("DesignCraft", "입시상담 AI", "Easy 장부", "LMS");
+    assertThat(card).contains("href=\"/testprep\"", "서비스 입장하기", "이용 가능");
+    assertThat(soonSection).doesNotContain("iBT TestPrep").contains("DesignCraft", "입시상담 AI", "Easy 장부", "LMS");
     assertThat(html.substring(faq)).contains("DesignCraft, 입시상담 AI, Easy 장부, LMS는 곧 준비중");
   }
 
