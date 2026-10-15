@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
+import f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.config.HwpxProperties;
 import f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.dto.CreateHwpxJobRequest;
 import f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.dto.HwpxJobResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.entity.HwpxArtifact;
@@ -8,7 +9,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.service.HwpxJo
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
@@ -34,6 +34,14 @@ import org.springframework.web.server.ResponseStatusException;
  *
  * <p>기존 {@code /api/publishing/*}와 독립적이다.
  * 모든 엔드포인트는 JWT 인증 + tutorId 소유자 격리를 적용한다.
+ *
+ * <p>multipart 요청 형식:
+ * <ul>
+ *   <li>file: HWP/HWPX 파일 (Content-Type: application/octet-stream)</li>
+ *   <li>title: 작업 제목 (text)</li>
+ *   <li>edits: 셀 수정 JSON (Content-Type: application/json)
+ *       예: {"title":"...","edits":[{"table":0,"row":1,"col":1,"text":"..."}]}</li>
+ * </ul>
  */
 @RestController
 @RequestMapping("/api/hwpx/jobs")
@@ -41,11 +49,10 @@ import org.springframework.web.server.ResponseStatusException;
 public class HwpxJobController {
 
   private final HwpxJobService jobService;
+  private final HwpxProperties props;
 
   /**
    * HWP/HWPX 업로드 + 셀 수정 작업 생성 → 202 QUEUED.
-   *
-   * <p>multipart: file (hwp|hwpx), title, edits (JSON)
    */
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<HwpxJobResponse> createJob(
@@ -54,23 +61,26 @@ public class HwpxJobController {
       @RequestParam("title") String title,
       @RequestPart("edits") CreateHwpxJobRequest request) throws IOException {
     String originalName = file.getOriginalFilename();
-    String ext = originalName != null && originalName.toLowerCase().endsWith(".hwp")
-        ? "hwp" : "hwpx";
-    if (!originalName.toLowerCase().endsWith(".hwp")
-        && !originalName.toLowerCase().endsWith(".hwpx")) {
+    if (originalName == null
+        || (!originalName.toLowerCase().endsWith(".hwp")
+            && !originalName.toLowerCase().endsWith(".hwpx"))) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "hwp/hwpx 파일만 가능");
     }
+    String ext = originalName.toLowerCase().endsWith(".hwp") ? "hwp" : "hwpx";
 
+    // 1. 작업 생성 (ID 확보)
     HwpxJobResponse response = jobService.createJob(principal, request, ext);
 
-    // 업로드 파일을 작업 디렉터리에 저장 (Worker가 사용)
-    // 실제 경로는 HwpxWorker와 공유하는 규칙을 따른다
-    Path workDir = Paths.get("/tmp/hwpx/jobs", String.valueOf(response.getId()));
+    // 2. 업로드 파일을 작업 디렉터리에 저장 (HwpxWorker와 동일한 storage-root 사용)
+    Path workDir = Path.of(props.getStorageRoot(), "jobs", String.valueOf(response.getId()));
     Files.createDirectories(workDir);
     Path inputFile = workDir.resolve("input." + ext);
     file.transferTo(inputFile);
 
-    return ResponseEntity.accepted().body(response);
+    // 3. 작업에 입력 파일 경로 기록 (Worker가 읽을 수 있도록)
+    jobService.setInputFile(principal, response.getId(), inputFile.toString());
+
+    return ResponseEntity.accepted().body(jobService.getJob(principal, response.getId()));
   }
 
   /** 내 작업 목록. */
@@ -94,7 +104,7 @@ public class HwpxJobController {
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
       @PathVariable Long jobId) {
     HwpxArtifact artifact = jobService.getArtifact(principal, jobId);
-    Path path = Paths.get(artifact.getFilePath());
+    Path path = Path.of(artifact.getFilePath());
     if (!Files.exists(path)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "파일 없음");
     }
