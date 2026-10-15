@@ -531,6 +531,9 @@ public class SecurityConfig {
             // 시각 편집기 AI Agent: 토큰으로만 접근. 사용자 쿠키(TUTOR/ADMIN 포함)로는 이 경로를 쓸 수 없다.
             .requestMatchers("/api/agent/academy/visual-editor/**").hasRole("VE_AGENT")
 
+            // 입시상담 공개 채팅 API. 관리자 API는 아래 /api/admin/** 규칙을 유지한다.
+            .requestMatchers(HttpMethod.POST, "/api/admissions/chat").permitAll()
+
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
 

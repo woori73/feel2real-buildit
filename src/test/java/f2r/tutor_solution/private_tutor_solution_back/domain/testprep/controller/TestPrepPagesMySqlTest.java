@@ -58,7 +58,7 @@ class TestPrepPagesMySqlTest {
   @DisplayName("익명 하위 화면은 /testprep로 보내 로그인 안내를 띄우고 원래 경로를 returnUrl로 싣는다")
   void anonymousSubPagesRedirectToPublicHomeWithReturnUrl() throws Exception {
     for (String path : new String[] {
-        "/testprep/practice", "/testprep/vocab", "/testprep/run", "/testprep/scores",
+        "/testprep/practice", "/testprep/vocab", "/testprep/guide", "/testprep/run", "/testprep/scores",
         "/testprep/review", "/testprep/learning"}) {
       MvcResult r = mockMvc.perform(get(path).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("status " + path).isEqualTo(302);
@@ -82,7 +82,7 @@ class TestPrepPagesMySqlTest {
   @DisplayName("로그인 회원은 /testprep 및 서브 화면이 200으로 렌더된다")
   void authenticatedPagesRender() throws Exception {
     for (String path : new String[] {
-        "/testprep", "/testprep/practice", "/testprep/vocab",
+        "/testprep", "/testprep/practice", "/testprep/vocab", "/testprep/guide",
         "/testprep/run", "/testprep/scores", "/testprep/review", "/testprep/learning"}) {
       MvcResult r = mockMvc.perform(get(path).cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("render " + path).isEqualTo(200);

@@ -4649,7 +4649,8 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 ## TESTPREP 접근 정책 (`/testprep`)
 
 - `GET /testprep`: **비회원 공개** 첫 페이지(서비스 소개). 로그인 화면으로 자동 이동하지 않는다.
-- `GET /testprep/{practice,vocab,run,review,scores,learning}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
+- `GET /testprep/{practice,vocab,guide,run,review,scores,learning}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
+- `GET /testprep/guide`: 영역별 문제 유형과 TestPrep 채점 기준 안내(정적 화면, DB 조회 없음). 설명문은 TestPrep 자체 작성 문장이며 ETS 채점표 원문을 싣지 않는다.
 - `/api/testprep/**`(시험 목록·응시·답안·제출·성적·오답·학습 이력): 인증 필수, 비회원은 `401`. 화면 숨김과 무관하게 서버가 검증한다.
 - 로그인: 기존 네이버 로그인(`/oauth2/authorization/naver`) 재사용. 클릭 시 `oauth_return_url` 쿠키(내부 `/testprep` 경로만)를 저장해 로그인 후 이용하려던 화면으로 복귀한다. 네이버 자기가입 회원의 role은 STUDENT라 TESTPREP을 이용할 수 있다.
 
