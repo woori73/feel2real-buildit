@@ -1,5 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
+import f2r.tutor_solution.private_tutor_solution_back.program.Program;
+import f2r.tutor_solution.private_tutor_solution_back.program.ProgramIntroController;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.VisualEditorAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.NewstartAgentTokenFilter;
@@ -156,10 +158,21 @@ public class SecurityConfig {
             // (/login은 로그인 페이지가 아니다 — 로그인은 공통 모달이다, docs/API.md)
             // ⚠ 명시적 .authenticationEntryPoint(...)를 함께 두면 아래 default 매핑이 전부 무시된다.
             //   ExceptionHandlingConfigurer가 그쪽을 우선하므로 절대 되살리지 말 것.
+            // 비로그인 사용자가 로그인 후 원래 화면으로 돌아오도록 원래 경로(returnUrl)를 함께 싣는다.
             .defaultAuthenticationEntryPointFor(
-                (request, response, ex) -> response.sendRedirect("/"),
+                (request, response, ex) -> redirectToLogin(request, response),
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/lms/**"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // 대화형 학습의 강사 전용 화면도 raw 401 대신 같은 로그인 안내(원래 경로 복귀)로 보낸다. API(/api/**)는 영향 없음.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> redirectToLogin(request, response),
+                new AndRequestMatcher(
+                    new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/conversation/chat"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/tutor/conversation_dashboard"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/tutor/conversation/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/tutor/conversations/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // Wiki 랜딩(/wiki)은 공개하지만 실제 자료 화면(/wiki/**)은 회원 전용이다.
             // 원래 내부 경로를 안전하게 URL-encode해 랜딩 로그인 모달로 전달한다.
@@ -173,11 +186,10 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/wiki/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-            // Problem Generator 화면은 목적지를 "/"로 유지하되(비로그인 목적지 통일) 이유를 실어 보낸다.
-            // 마커가 없으면 사용자는 아무 안내 없이 랜딩으로 튕겨 원인을 알 수 없다.
-            // 랜딩(static/js/landing_buildit.js)이 이 값을 읽어 안내 + 공통 로그인 모달을 연다.
+            // Problem Generator 하위 화면은 목적지를 "/"로 유지하되(비로그인 목적지 통일) 이유와 원래 경로를 실어 보낸다.
+            // 랜딩(static/js/landing_buildit.js)이 이 값을 읽어 안내 + 공통 로그인 모달을 열고, 로그인 후 원래 화면으로 복귀시킨다.
             .defaultAuthenticationEntryPointFor(
-                (request, response, ex) -> response.sendRedirect("/?login=required"),
+                (request, response, ex) -> redirectToLogin(request, response),
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/problem-generator/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
@@ -209,15 +221,25 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin"),
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-            // 원장용 Easy 장부 SSR은 익명 브라우저나 비-TUTOR 브라우저 세션에 raw 401/403을
-            // 노출하지 않고 공통 로그인 안내로 보낸다. API(/api/tutor/easy/**)는 이 규칙의
-            // 대상이 아니므로 기존 401/403과 사업체 권한 검증을 그대로 유지한다.
+            // 이지장부(/ledger)·Easy 장부(/easy)의 대표 URL은 비회원에게 공개 소개 화면(200)을 보이고,
+            // 하위 화면은 원래 경로를 싣고 공통 로그인 안내로 보낸다. API(/api/tutor/easy/**, /api/admin/easy/**)는
+            // 이 규칙의 대상이 아니므로 기존 401/403과 사업체 권한 검증을 그대로 유지한다.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> forwardToProgramIntro(request, response, Program.LEDGER),
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/ledger"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> forwardToProgramIntro(request, response, Program.EASY),
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/easy"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             .defaultAuthenticationEntryPointFor(
                 (request, response, ex) -> redirectToLogin(request, response),
                 new AndRequestMatcher(
                     new OrRequestMatcher(
-                        PathPatternRequestMatcher.withDefaults().matcher("/ledger"),
-                        PathPatternRequestMatcher.withDefaults().matcher("/ledger/**")),
+                        PathPatternRequestMatcher.withDefaults().matcher("/ledger/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/easy/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
@@ -250,8 +272,15 @@ public class SecurityConfig {
             // NewStart 운영자 화면 — ADMIN 전용. 메뉴 숨김이 아니라 서버 규칙으로 차단한다.
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
-            // DesignCraft 출판 편집기 — TUTOR 전용. API는 /api/publishing/**에서 소유자 격리.
-            .requestMatchers("/designcraft", "/designcraft/**").hasRole("TUTOR")
+            // DesignCraft 첫 화면·편집기 주소는 비회원 공개(200). 실제 편집기는 DesignCraftEditorController가
+            // TUTOR 권한을 검사해 렌더하고, 권한 없는 로그인 사용자에게는 안내 화면을 준다. API는 아래에서 그대로 보호된다.
+            .requestMatchers(HttpMethod.GET, "/designcraft", "/designcraft/editor").permitAll()
+            // DesignCraft 그 외 경로 — TUTOR·ADMIN(관리자는 모든 화면 열람). API는 /api/publishing/**에서 소유자 격리.
+            .requestMatchers("/designcraft", "/designcraft/**").hasAnyRole("TUTOR", "ADMIN")
+            // 프로그램 공개 첫 화면의 공통 네이버 로그인 시작점(복귀 쿠키 설정 후 기존 네이버 로그인으로 이동).
+            .requestMatchers(HttpMethod.GET, "/auth/naver/start").permitAll()
+            // 인증 진입점·접근 거부 처리기가 forward하는 프로그램 소개/안내 화면(forward 속성이 없으면 홈으로 이동).
+            .requestMatchers(HttpMethod.GET, "/program/intro", "/program/notice").permitAll()
 
             // ── 학원 LMS SSR 화면 ──────────────────────────────────────────
             // ⚠ 이 블록은 반드시 아래 .anyRequest().permitAll()보다 위에 있어야 한다.
@@ -285,6 +314,9 @@ public class SecurityConfig {
             // 미들웨어가 전담하므로, 이 경로만 Spring 레벨에서는 permitAll로 열어둔다.
             // ⚠ 반드시 아래 넓은 /problem-generator/** 규칙보다 먼저 와야 한다(좁은 것 우선).
             .requestMatchers("/problem-generator/wiki/api/mcp/**")
+            .permitAll()
+            // 문제지 제작기 첫 화면은 비회원 공개(소개). 실제 기능(하위 화면)은 아래 규칙으로 로그인 필수.
+            .requestMatchers(HttpMethod.GET, "/problem-generator")
             .permitAll()
             // catch-all permitAll보다 위에서 닫는다. 화면은 로그인한 STUDENT/TUTOR/ADMIN 전용이다.
             .requestMatchers("/problem-generator/**")
@@ -499,6 +531,9 @@ public class SecurityConfig {
             // 시각 편집기 AI Agent: 토큰으로만 접근. 사용자 쿠키(TUTOR/ADMIN 포함)로는 이 경로를 쓸 수 없다.
             .requestMatchers("/api/agent/academy/visual-editor/**").hasRole("VE_AGENT")
 
+            // 입시상담 공개 채팅 API. 관리자 API는 아래 /api/admin/** 규칙을 유지한다.
+            .requestMatchers(HttpMethod.POST, "/api/admissions/chat").permitAll()
+
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
@@ -588,6 +623,25 @@ public class SecurityConfig {
         + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
   }
 
+  private void forwardToProgramIntro(
+      jakarta.servlet.http.HttpServletRequest request,
+      jakarta.servlet.http.HttpServletResponse response,
+      Program program) throws java.io.IOException, jakarta.servlet.ServletException {
+    request.setAttribute(ProgramIntroController.PROGRAM_ATTRIBUTE, program);
+    request.getRequestDispatcher("/program/intro").forward(request, response);
+  }
+
+  private void forwardToNotice(
+      jakarta.servlet.http.HttpServletRequest request,
+      jakarta.servlet.http.HttpServletResponse response,
+      String title,
+      String message) throws java.io.IOException, jakarta.servlet.ServletException {
+    request.setAttribute(ProgramIntroController.NOTICE_TITLE_ATTRIBUTE, title);
+    request.setAttribute(ProgramIntroController.NOTICE_MESSAGE_ATTRIBUTE, message);
+    response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+    request.getRequestDispatcher("/program/notice").forward(request, response);
+  }
+
   private AccessDeniedHandler conversationChatAccessDeniedHandler() {
     return (request, response, accessDeniedException) -> {
       String path = request.getRequestURI();
@@ -595,8 +649,32 @@ public class SecurityConfig {
         response.sendRedirect("/stdt_dashboard");
         return;
       }
-      if ("/ledger".equals(path) || path.startsWith("/ledger/")) {
-        redirectToLogin(request, response);
+      // 로그인했지만 권한이 없는 사용자: 기본 403 대신 프로그램 안내 화면(소개 경로, 상태 403)으로 보낸다.
+      if ("/ledger".equals(path)) {
+        forwardToProgramIntro(request, response, Program.LEDGER);
+        return;
+      }
+      if ("/easy".equals(path)) {
+        forwardToProgramIntro(request, response, Program.EASY);
+        return;
+      }
+      if (path.startsWith("/ledger/")) {
+        response.sendRedirect("/ledger");
+        return;
+      }
+      // 소개 화면이 없는 하위 기능: 학원 운영 화면(소유 강사 전용)·강사 전용 대화 화면은 기본 403 대신 안내 화면(상태 403).
+      if (path.matches("^/lms/[^/]+/(manage|contents|midterm-live)$")) {
+        forwardToNotice(request, response, "학원 운영 화면 이용 안내",
+            "학원 운영 화면은 해당 학원의 강사(원장) 계정 전용입니다.");
+        return;
+      }
+      if (path.equals("/tutor/conversation_dashboard") || path.startsWith("/tutor/conversation/")
+          || path.startsWith("/tutor/conversations/")) {
+        forwardToNotice(request, response, "강사 전용 화면 안내", "이 화면은 강사(TUTOR) 계정 전용입니다.");
+        return;
+      }
+      if (path.startsWith("/easy/")) {
+        response.sendRedirect("/easy");
         return;
       }
       response.sendError(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN.getReasonPhrase());

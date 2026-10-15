@@ -123,7 +123,11 @@ public class JipijigiResearchService {
         // STEP 3 — 부실차주 라이브러리 카페 과거 글+댓글 (article_json 정본 수집 사례 베이스).
         // 내부 ACTIVE 근거가 충분해도 후순위 담보·임시안·납부 같은 실경험이 컨텍스트에서
         // 완전히 사라지지 않도록 항상 조회한다(2026-09-28 LIVE QA에서 생략 경로 실측).
-        borrower = searchEmpiricalCases(keywords);
+        // 구조화 조건이 있으면 구조화 검색을 시도하고, 실패 시 기존 LIKE 검색으로 폴백한다.
+        CaseConditions conditions = CaseConditionExtractor.extract(questionText);
+        borrower = conditions.isEmpty()
+                ? searchEmpiricalCases(keywords)
+                : searchEmpiricalCases(keywords, conditions);
         if (borrower.isEmpty()) {
             gaps.add("STEP3 부실차주 카페: 키워드 일치 수집 사례 없음 — 질문게시판 원문 자체는 questions 테이블에 보관");
         }
@@ -157,7 +161,7 @@ public class JipijigiResearchService {
             "온다", "왔는데", "했나", "했는지", "됐는지", "되는지");
 
     private static final String[] PARTICLES = {
-            "으로부터", "에서는", "에게서", "이라고", "라고", "으로", "에서", "에게", "부터", "까지", "처럼", "한테", "이나", "이면", "라면",
+            "으로부터", "에서는", "에게서", "이랑", "랑", "이라고", "라고", "으로", "에서", "에게", "부터", "까지", "처럼", "한테", "이나", "이면", "라면",
             "이며", "이고", "하면", "하고", "은요", "는요", "를", "을", "은", "는", "이", "가", "의", "에", "도", "만", "로", "과", "와", "고", "며"};
 
     /** 질문 표현이 자료 본문의 용어와 달라 LIKE에 걸리지 않는 흔한 경우 — 질문 문장에 단서가 있을 때만 붙는다. */
@@ -170,7 +174,8 @@ public class JipijigiResearchService {
             {"장기연체|연체 등록|연체등록", "장기연체", "Credit4U", "신용정보원"},
             {"신복위", "신용회복위원회"},
             {"부실우려", "부실우려", "실효"},
-            {"후순위", "후순위", "담보"}};
+            {"후순위", "후순위", "담보"},
+            {"상가보증금|상가 보증금", "상가", "보증금"}};
 
     List<String> keywordsOf(String text) {
         if (text == null) return List.of();
@@ -470,26 +475,173 @@ public class JipijigiResearchService {
                         .thenComparing(NewstartEmpiricalCase::getWrittenAt,
                                 Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(PER_STEP_LIMIT)
-                .map(c -> Evidence.builder()
-                        .stepNo(STEP_BORROWER)
-                        .sourceClass(SourceClass.BORROWER_CAFE_CASE)
-                        .refType(RefType.EMPIRICAL_CASE)
-                        .refId(c.getArticleId())
-                        .refUrl(c.getSourceUrl())
-                        .title(c.getTitle())
-                        .excerpt(caseExcerpt(c.getKeyInsights(), c.getContentRaw(), keywords))
-                        .note(caseNote(c))
-                        .build())
+                .map(c -> toCaseEvidence(c, keywords))
                 .toList();
     }
 
+    /**
+     * 구조화 조건을 결합한 사례 검색.
+     *
+     * <p>Phase 1 (구조화 필터): 조건이 있는 필드만 AND로 필터링. 조건 추출 실패(null)인 필드는 무시한다.
+     * Phase 2 (LIKE 순위화): 필터된 후보에 기존 keywordHits 정렬을 그대로 적용한다.
+     *
+     * <p>구조화 필터 결과가 0건이면 기존 LIKE 검색으로 폴백한다 (gapNote에 기록).
+     * 감면율 VARCHAR 파싱 실패 시 해당 사례를 임의로 제외하지 않는다.
+     */
+    List<Evidence> searchEmpiricalCases(List<String> keywords, CaseConditions conditions) {
+        if (keywords.isEmpty()) return List.of();
+        if (conditions == null || conditions.isEmpty()) {
+            return searchEmpiricalCases(keywords);
+        }
+
+        Specification<NewstartEmpiricalCase> spec = (root, query, cb) -> {
+            List<Predicate> ands = new ArrayList<>();
+
+            // 구조화 필터 (있는 조건만)
+            if (conditions.getHouseholdType() != null) {
+                ands.add(cb.equal(root.get("householdType"), conditions.getHouseholdType()));
+            }
+            if (conditions.getDebtTotalMin() != null) {
+                ands.add(cb.greaterThanOrEqualTo(root.get("debtTotal"), conditions.getDebtTotalMin()));
+            }
+            if (conditions.getDebtTotalMax() != null) {
+                ands.add(cb.lessThanOrEqualTo(root.get("debtTotal"), conditions.getDebtTotalMax()));
+            }
+            if (conditions.getIncomeMin() != null) {
+                // income2025 또는 incomeCurrent 중 하나라도 범위 내
+                ands.add(cb.or(
+                        cb.greaterThanOrEqualTo(root.get("income2025"), conditions.getIncomeMin()),
+                        cb.greaterThanOrEqualTo(root.get("incomeCurrent"), conditions.getIncomeMin())));
+            }
+            if (conditions.getApplicationType() != null) {
+                ands.add(cb.equal(root.get("applicationType"), conditions.getApplicationType()));
+            }
+            if (conditions.getHasSecuredDebt() != null) {
+                if (conditions.getHasSecuredDebt()) {
+                    ands.add(cb.greaterThan(root.get("debtSecured"), 0L));
+                } else {
+                    ands.add(cb.or(
+                            cb.isNull(root.get("debtSecured")),
+                            cb.equal(root.get("debtSecured"), 0L)));
+                }
+            }
+            if (conditions.getAssetPropertyMin() != null) {
+                ands.add(cb.greaterThanOrEqualTo(root.get("assetProperty"), conditions.getAssetPropertyMin()));
+            }
+
+            // LIKE 조건 (기존과 동일)
+            List<Predicate> kws = new ArrayList<>();
+            for (String kw : keywords) {
+                String p = "%" + kw + "%";
+                kws.add(cb.or(
+                        cb.like(root.get("title"), p),
+                        cb.like(root.get("contentRaw"), p),
+                        cb.like(root.get("keyInsights"), p),
+                        cb.like(root.get("specialCircumstances"), p)));
+            }
+            ands.add(cb.or(kws.toArray(new Predicate[0])));
+
+            query.orderBy(cb.desc(root.get("writtenAt")));
+            return cb.and(ands.toArray(new Predicate[0]));
+        };
+
+        List<NewstartEmpiricalCase> filtered = empiricalCaseRepository
+                .findAll(spec, PageRequest.of(0, CASE_CANDIDATE_WINDOW)).getContent();
+
+        // 구조화 필터 결과가 0건이면 LIKE 전용으로 폴백
+        if (filtered.isEmpty()) {
+            return searchEmpiricalCases(keywords);
+        }
+
+        // 감면율 조건은 메모리에서 적용 (VARCHAR 파싱, 실패 시 제외하지 않음)
+        List<NewstartEmpiricalCase> rateFiltered = filtered;
+        if (conditions.getReductionRateMin() != null || conditions.getReductionRateMax() != null) {
+            rateFiltered = filtered.stream()
+                    .filter(c -> matchesReductionRate(c, conditions))
+                    .toList();
+            // 감면율 필터 후 0건이면 필터 전 결과로 폴백 (임의 제외 방지)
+            if (rateFiltered.isEmpty()) {
+                rateFiltered = filtered;
+            }
+        }
+
+        return rateFiltered.stream()
+                .sorted(Comparator.comparingInt((NewstartEmpiricalCase c) ->
+                        keywordHits(keywords, c.getTitle(), c.getContentRaw(), c.getKeyInsights(), c.getSpecialCircumstances())).reversed()
+                        .thenComparing(NewstartEmpiricalCase::getWrittenAt,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(PER_STEP_LIMIT)
+                .map(c -> toCaseEvidence(c, keywords))
+                .toList();
+    }
+
+    /**
+     * 감면율 조건 일치 여부. VARCHAR 파싱 실패 시 true를 반환 (임의 제외 금지).
+     * "75%", "75~80%" 형태에서 하한값을 추출해 비교한다.
+     */
+    private static boolean matchesReductionRate(NewstartEmpiricalCase c, CaseConditions conditions) {
+        String rateStr = c.getFinalReductionRate() != null
+                ? c.getFinalReductionRate()
+                : c.getPredictedReductionRate();
+        Integer lower = CaseConditionExtractor.parseReductionRateLower(rateStr);
+        if (lower == null) {
+            return true; // 파싱 실패 시 제외하지 않음
+        }
+        if (conditions.getReductionRateMin() != null && lower < conditions.getReductionRateMin()) {
+            return false;
+        }
+        if (conditions.getReductionRateMax() != null && lower > conditions.getReductionRateMax()) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 사례 Evidence 생성. 출처 구분 라벨과 구조화 요약을 note에 포함한다.
+     * - [운영 사례]: 부실차주 카페 실제 사례 (공식 규정이 아님)
+     */
+    private static Evidence toCaseEvidence(NewstartEmpiricalCase c, List<String> keywords) {
+        return Evidence.builder()
+                .stepNo(STEP_BORROWER)
+                .sourceClass(SourceClass.BORROWER_CAFE_CASE)
+                .refType(RefType.EMPIRICAL_CASE)
+                .refId(c.getArticleId())
+                .refUrl(c.getSourceUrl())
+                .title(c.getTitle())
+                .excerpt(caseExcerpt(c.getKeyInsights(), c.getContentRaw(), keywords))
+                .note(caseNote(c))
+                .build();
+    }
+
     private static String caseNote(NewstartEmpiricalCase c) {
-        StringBuilder sb = new StringBuilder("카페 실증 사례");
+        // 출처 구분: 운영 사례임을 명시 (공식 규정 아님)
+        StringBuilder sb = new StringBuilder("[운영 사례] 카페 실증 사례");
         if (c.getWrittenAt() != null) sb.append(", 작성 ").append(c.getWrittenAt().toLocalDate());
+
+        // 구조화 요약: 적용 조건을 한눈에
+        StringBuilder cond = new StringBuilder();
+        if (c.getHouseholdType() != null) cond.append(c.getHouseholdType()).append(", ");
+        if (c.getDebtTotal() != null) cond.append("채무 ").append(formatManwon(c.getDebtTotal())).append(", ");
+        if (c.getDebtSecured() != null && c.getDebtSecured() > 0) cond.append("담보대출 있음, ");
+        if (c.getApplicationType() != null) {
+            cond.append("INSOLVENCY_RISK".equals(c.getApplicationType()) ? "부실우려차주, " : "부실차주, ");
+        }
         if (c.getFinalReductionRate() != null || c.getPredictedReductionRate() != null) {
-            sb.append(", 감면율 예측 ").append(c.getPredictedReductionRate()).append(" / 최종 ").append(c.getFinalReductionRate());
+            cond.append("감면율 예측 ").append(c.getPredictedReductionRate())
+                .append(" / 최종 ").append(c.getFinalReductionRate()).append(", ");
+        }
+        if (!cond.isEmpty()) {
+            // 마지막 ", " 제거
+            cond.setLength(cond.length() - 2);
+            sb.append(" (").append(cond).append(")");
         }
         return sb.toString();
+    }
+
+    /** 원 단위를 "5,000만원" 형태로 포맷. */
+    private static String formatManwon(Long won) {
+        if (won == null) return null;
+        return String.format("%,d만원", won / 10_000);
     }
 
     static final int CASE_EXCERPT_CHARS = 420;

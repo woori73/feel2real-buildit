@@ -65,6 +65,8 @@ class SubdomainLmsPathSecurityIntegrationTest {
   @MockitoBean AcademyService academyService;
   @MockitoBean AuthenticatedUserResolver authResolver;
   @MockitoBean AcademyRepository academyRepository;
+  // LMS 셸 모델이 요구하는 의존성(이 슬라이스 테스트가 컨텍스트를 올리려면 필요)
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermCampaignRepository midtermCampaignRepository;
 
   @BeforeEach
   void setUp() {
@@ -81,7 +83,7 @@ class SubdomainLmsPathSecurityIntegrationTest {
     mockMvc.perform(get("/lms/my").with(host(SUBDOMAIN_HOST))
             .header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE))
         .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/"));
+        .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/?login=required&returnUrl=%2Flms%2F")));
   }
 
   @Test
@@ -91,7 +93,7 @@ class SubdomainLmsPathSecurityIntegrationTest {
     mockMvc.perform(get("/lms/cart").with(host(SUBDOMAIN_HOST))
             .header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE))
         .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/"));
+        .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/?login=required&returnUrl=%2Flms%2F")));
   }
 
   @Test
@@ -134,7 +136,7 @@ class SubdomainLmsPathSecurityIntegrationTest {
     mockMvc.perform(get("/lms/" + HANDLE + "/my").with(host(APEX_HOST))
             .header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE))
         .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/"));
+        .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/?login=required&returnUrl=%2Flms%2F")));
   }
 
   @Test

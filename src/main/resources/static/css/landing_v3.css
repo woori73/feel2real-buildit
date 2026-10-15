@@ -773,3 +773,28 @@ body { background: #f7f8fc; }
 .bi-page .v3-soon-card .v3-badge { justify-self: start; }
 
 .bi-page .wk-mailnote { margin: 0; font-size: 14px; font-weight: 700; color: #0d0d0d; }
+
+/* ---------- 현재 오픈한 서비스 (#services): 최상단 앵커 + 설명 섹션 ---------- */
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+.bi-page .v3-services { padding: 88px var(--v3-gutter) 24px; }
+.bi-page .svc-anchors { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 32px; }
+.bi-page .svc-anchors a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 18px; border: 1px solid rgba(255, 255, 255, .28); border-radius: 999px; color: #fff; font-size: 15px; font-weight: 700; text-decoration: none; transition: background .2s, border-color .2s; }
+.bi-page .svc-anchors a:hover, .bi-page .svc-anchors a:focus-visible { background: rgba(95, 242, 225, .16); border-color: #5ff2e1; outline: none; }
+.bi-page .svc-list { display: grid; gap: 20px; }
+.bi-page .svc-card, .bi-page #chart-showcase { scroll-margin-top: 88px; }
+.bi-page .svc-card { display: grid; gap: 16px; padding: 28px; border: 1px solid rgba(255, 255, 255, .14); border-radius: 28px; background: rgba(255, 255, 255, .05); color: #e6f4f3; }
+.bi-page .svc-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.bi-page .svc-card h3 { margin: 0; font-size: 24px; letter-spacing: -.03em; font-weight: 800; color: #fff; }
+.bi-page .svc-card h3 small { margin-left: 6px; font-size: 14px; font-weight: 700; color: #9fd8d2; }
+.bi-page .svc-desc { margin: 0; font-size: 16px; }
+.bi-page .svc-cols { display: grid; gap: 16px; }
+.bi-page .svc-cols h4 { margin: 0 0 8px; font-size: 14px; letter-spacing: .02em; color: #5ff2e1; }
+.bi-page .svc-cols ul, .bi-page .svc-cols ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 15px; }
+.bi-page .svc-enter { justify-self: start; }
+@media (min-width: 800px) { .bi-page .svc-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) {
+  .bi-page .v3-services { padding-top: 64px; }
+  .bi-page .svc-card { padding: 20px; border-radius: 20px; }
+  .bi-page .svc-card h3 { font-size: 20px; }
+  .bi-page .svc-enter { justify-self: stretch; text-align: center; }
+}

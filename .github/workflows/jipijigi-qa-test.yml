@@ -1,0 +1,39 @@
+
+name: 지피지기 구조화 검색 통합 테스트
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/jipijigi-structured-search]
+
+jobs:
+  structured-search-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testroot123
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: testroot123
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - run: ./gradlew test --no-daemon --stacktrace --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiStructuredSearchIntegrationTest"
+  

@@ -4649,6 +4649,28 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 ## TESTPREP 접근 정책 (`/testprep`)
 
 - `GET /testprep`: **비회원 공개** 첫 페이지(서비스 소개). 로그인 화면으로 자동 이동하지 않는다.
-- `GET /testprep/{practice,vocab,run,review,scores,learning}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
+- `GET /testprep/{practice,vocab,guide,run,review,scores,learning}`: STUDENT/TUTOR/ADMIN 전용 SSR. 비회원 브라우저 요청은 `302 /testprep?login=required&returnUrl=<원래 경로>`로 보내 첫 페이지에서 로그인 안내를 띄운다.
+- `GET /testprep/guide`: 영역별 문제 유형과 TestPrep 채점 기준 안내(정적 화면, DB 조회 없음). 설명문은 TestPrep 자체 작성 문장이며 ETS 채점표 원문을 싣지 않는다.
 - `/api/testprep/**`(시험 목록·응시·답안·제출·성적·오답·학습 이력): 인증 필수, 비회원은 `401`. 화면 숨김과 무관하게 서버가 검증한다.
 - 로그인: 기존 네이버 로그인(`/oauth2/authorization/naver`) 재사용. 클릭 시 `oauth_return_url` 쿠키(내부 `/testprep` 경로만)를 저장해 로그인 후 이용하려던 화면으로 복귀한다. 네이버 자기가입 회원의 role은 STUDENT라 TESTPREP을 이용할 수 있다.
+
+## 프로그램 공개 첫 화면 + 네이버 로그인 공통 진입 (`program` 패키지)
+
+신규 프로그램은 대표 URL을 비회원에게 공개(200)하고, 기능을 시작할 때 네이버 로그인을 요청한다. 등록은 `program/Program.java` enum 한 곳이다(현재: DesignCraft).
+
+- `GET /auth/naver/start?returnUrl=<내부 경로>`: 공개. `returnUrl`이 **등록된 프로그램 영역**(예: `/designcraft`, `/designcraft/editor`)의 내부 경로일 때만 `oauth_return_url` 쿠키(HttpOnly, 5분, SameSite=Lax, 내부 경로만)를 심고 `302 /oauth2/authorization/naver`로 보낸다. 외부 URL·`//`·`\`·`..`·미등록 경로는 쿠키 없이 기존 네이버 로그인으로만 보낸다(기본 복귀 경로 유지). 복귀 URL은 로그인 성공 시 `NaverOAuth2LoginSuccessHandler`가 다시 검증한다.
+- `GET /designcraft`, `GET /designcraft/editor`: **비회원 공개** 소개 화면(200, `Cache-Control: private, no-store`). TUTOR·ADMIN 로그인 시 `/designcraft/editor`는 실제 편집기를 렌더한다(관리자는 모든 화면을 열람한다는 정책). 출판 작업 데이터(`/api/publishing/**`)의 소유자 격리는 이 PR에서 바꾸지 않았다. TUTOR·ADMIN이 아닌 로그인 사용자(STUDENT 등)는 브라우저 기본 403 대신 서비스 안내 화면(상태 403, 본문 안내)을 받는다. 
+- `/designcraft/**` 그 외 경로(TUTOR·ADMIN)와 `/api/publishing/**`: 기존대로 인증·인가 필요(완화 없음).
+
+### 이지장부·Easy 장부 공개 소개 (`program` 패키지, PR 4)
+
+- `GET /ledger`(TUTOR·ADMIN), `GET /easy`(ADMIN): 비회원은 로그인 이동 대신 공개 소개 화면(200)을, 권한 없는 로그인 사용자는 서비스 안내 화면(상태 403, 본문 안내)을 받는다. 구현은 SecurityConfig의 인증 진입점·접근 거부 처리기가 `/program/intro`(`ProgramIntroController`)로 내부 forward한다. 허용 role은 기존 정책 그대로이며 완화하지 않는다.
+- `/ledger/**`, `/easy/**` 하위 화면: 비회원은 `302 /?login=required&returnUrl=<원래 경로>`(기존 랜딩 로그인 흐름), 권한 없는 로그인 사용자는 `302`로 해당 프로그램 소개 경로(`/ledger`, `/easy`)의 안내 화면.
+- `/api/tutor/easy/**`, `/api/admin/easy/**` 인증·인가와 사업체 권한 검증은 변경하지 않았다.
+- `GET /program/intro`: forward 전용. forward 속성이 없는 직접 요청은 `302 /`.
+
+### 학원 LMS 운영 화면·대화형 학습 강사 전용 화면 진입 (PR 5)
+
+- 비회원 브라우저 요청: `/lms/**`(인증 필요 화면), `/conversation/chat`, `/tutor/conversation_dashboard`, `/tutor/conversation/**`, `/tutor/conversations/**` → `302 /?login=required&returnUrl=<원래 경로>`(기존 랜딩 로그인 모달, 로그인 후 원래 화면 복귀). 이전에는 LMS는 `/`로만, 대화 화면은 빈 401이었다. JSON/API 요청은 기존대로 401.
+- 로그인했지만 권한 없는 사용자: `/lms/{handle}/manage|contents|midterm-live`(소유 강사 전용), `/tutor/conversation*`(TUTOR 전용)은 기본 403 대신 서비스 안내 화면(상태 403, `GET /program/notice`로 내부 forward). `/conversation/chat`의 학생 홈 이동은 기존 그대로.
+- 접근 허용 규칙(LMS 운영 화면은 소유 강사만, ADMIN 불가 — AC-7)과 API 인가는 변경하지 않았다.

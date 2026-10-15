@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title th:text="${program.title} + ' · feel2real'">프로그램 · feel2real</title>
+  <link rel="stylesheet" th:href="@{/css/program_intro.css(v=20261016)}">
+</head>
+<body>
+<header class="pi-top">
+  <a class="pi-brand" href="/">feel2real</a>
+  <nav class="pi-nav"><a href="/home">홈</a></nav>
+</header>
+
+<main class="pi-main" th:attr="data-program=${program.name()}, data-state=${state}">
+  <section class="pi-hero">
+    <p class="pi-eyebrow" th:text="${program.subtitle}">부제</p>
+    <h1 class="pi-title" th:text="${program.title}">프로그램</h1>
+    <p class="pi-summary" th:text="${program.summary}">설명</p>
+
+    <div class="pi-actions" th:if="${state == 'ANON'}">
+      <a id="program-start" class="pi-btn pi-btn-primary"
+         th:href="@{/auth/naver/start(returnUrl=${program.startPath})}">네이버 로그인하고 시작하기</a>
+      <p class="pi-hint">로그인하면 바로 <span th:text="${program.title}">프로그램</span> 화면으로 이동합니다.</p>
+      <a id="program-id-login" class="pi-link"
+         th:href="@{/(login='required',returnUrl=${program.startPath})}">아이디로 로그인하기</a>
+    </div>
+
+    <div class="pi-actions" th:if="${state == 'ALLOWED'}">
+      <a id="program-start" class="pi-btn pi-btn-primary" th:href="@{${program.startPath}}">
+        <span th:text="${program.title}">프로그램</span> 열기</a>
+    </div>
+
+    <div class="pi-notice" id="program-forbidden" role="alert" th:if="${state == 'FORBIDDEN'}">
+      <strong>현재 로그인한 계정으로는 이용할 수 없습니다.</strong>
+      <p th:text="${program.roleNotice}">권한 안내</p>
+      <p>다른 계정으로 로그인하려면 로그아웃 후 다시 시도해 주세요.</p>
+      <a class="pi-btn" href="/home">홈으로 돌아가기</a>
+    </div>
+  </section>
+
+  <section class="pi-features" aria-label="주요 기능">
+    <h2>주요 기능</h2>
+    <ul>
+      <li th:each="f : ${program.features}" th:text="${f}">기능</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="pi-foot">로그인 없이 소개를 볼 수 있고, 기능을 시작할 때 네이버 로그인이 필요합니다.</footer>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/tp_base :: head('Section Guide & Scoring')}"></head>
+<body>
+<script th:inline="javascript">window.TP_SSO_LOGIN = /*[[${ssoLoginUrl}]]*/ '/login';</script>
+<nav th:replace="~{fragments/tp_base :: nav('guide')}"></nav>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="badge">Written for TestPrep learners<span class="ko" style="color:#cfe0f5">TestPrep 학습자를 위한 안내</span></span>
+    <h1>Section Guide &amp; Scoring Criteria<span class="ko" style="color:#bcd3ec">영역별 가이드 · 채점 기준</span></h1>
+    <p class="sub">What each task type asks, how TestPrep scores it, and what a tutor looks for in the manual items.<span class="ko" style="color:#bcd3ec">각 문제 유형이 무엇을 요구하는지, TestPrep이 어떻게 채점하는지, 수동 채점 문항에서 강사가 무엇을 보는지 설명합니다.</span></p>
+    <div class="hero-btns">
+      <a class="btn btn-primary" href="/testprep/practice">Start iBT Practice</a>
+      <a class="btn btn-ghost" href="/testprep/scores">My Scores</a>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <section class="section">
+    <h2>Test shape<span class="ko">시험 구성</span></h2>
+    <p class="lead">Sections always run Reading → Listening → Writing → Speaking. The real test is multistage, so the item count you face varies; a TestPrep set is a fixed list of items.<span class="ko">영역은 항상 리딩 → 리스닝 → 라이팅 → 스피킹 순서입니다. 실제 시험은 적응형이라 문항 수가 사람마다 달라지지만, TestPrep 세트는 고정된 문항 목록입니다.</span></p>
+    <div class="table-scroll">
+      <table class="tp">
+        <thead><tr><th>Section<span class="ko">영역</span></th><th>Task types<span class="ko">문항 유형</span></th><th>Max items<span class="ko">최대 문항</span></th><th>Base time<span class="ko">기준 시간</span></th></tr></thead>
+        <tbody>
+          <tr><td>Reading<span class="ko">리딩</span></td><td>Complete the Words · Read in Daily Life · Read an Academic Passage</td><td>50</td><td>30 min</td></tr>
+          <tr><td>Listening<span class="ko">리스닝</span></td><td>Listen and Choose a Response · Conversation · Announcement · Academic Talk</td><td>47</td><td>29 min</td></tr>
+          <tr><td>Writing<span class="ko">라이팅</span></td><td>Build a Sentence · Write an Email · Write for an Academic Discussion</td><td>12</td><td>23 min</td></tr>
+          <tr><td>Speaking<span class="ko">스피킹</span></td><td>Listen and Repeat · Take an Interview</td><td>11</td><td>8 min</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Reading<span class="ko">리딩</span></h2>
+    <div class="grid">
+      <div class="card"><div class="num">R1</div><h3>Complete the Words<span class="ko">철자 완성</span></h3>
+        <p>An academic word is shown with two or three letters missing and you choose the pair that completes it. Word knowledge and spelling both count.<span class="ko">학술 단어의 철자 2~3개가 비어 있고, 알맞은 글자 조합을 고릅니다. 어휘력과 철자 지식이 함께 평가됩니다.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+      <div class="card"><div class="num">R2</div><h3>Read in Daily Life<span class="ko">생활 지문</span></h3>
+        <p>Short real-world texts — notices, chat threads, emails, signs, forms. The question asks what is true, what is required, or what happens next, not what you infer between the lines.<span class="ko">안내문, 채팅, 이메일, 표지양식 등 실제 생활 글입니다. 무엇이 참인지, 무엇이 요구되는지, 다음에 무슨 일이 벌어지는지를 묻습니다.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+      <div class="card"><div class="num">R3</div><h3>Read an Academic Passage<span class="ko">학술 지문</span></h3>
+        <p>One short expository passage with questions on the main idea, a stated detail, the sense of a word in context, and what the text implies. Prior knowledge is never required.<span class="ko">짧은 설명문 지문으로 중심 내용, 명시된 세부, 문맥 속 어휘, 함의를 묻는 문제가 붙습니다. 배경지식은 필요하지 않습니다.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Listening<span class="ko">리스닝</span></h2>
+    <p class="lead">In TestPrep practice mode the audio is spoken by your browser from the stored script, so the wording is audible but intonation is synthetic. The real test uses recorded speakers.<span class="ko">TestPrep 연습 모드에서는 저장된 대본을 브라우저 음성이 읽습니다. 표현은 들리지만 억양은 합성음이며, 실제 시험은 녹음 음성을 사용합니다.</span></p>
+    <div class="grid">
+      <div class="card"><div class="num">L1</div><h3>Listen and Choose a Response<span class="ko">짧은 응답</span></h3>
+        <p>You hear one short spoken line and pick the reply a listener would most naturally give. Distractors usually answer a different question or repeat a word from the prompt.<span class="ko">짧은 발화 하나를 듣고 가장 자연스러운 응답을 고릅니다. 오답은 보통 다른 질문에 답하거나 지문의 단어를 반복합니다.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+      <div class="card"><div class="num">L2</div><h3>Listen to a Conversation<span class="ko">대화</span></h3>
+        <p>Two speakers, usually campus life. Questions cover the point of the exchange, one stated detail, and what one speaker will do next.<span class="ko">두 화자의 대화입니다. 대화의 목적, 명시된 세부, 화자가 이어 할 일을 묻는 문제가 붙습니다.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+      <div class="card"><div class="num">L3</div><h3>Listen to an Announcement<span class="ko">공지</span></h3>
+        <p>One informational message with dates, places, limits or exceptions. Read the options before listening and mark what actually changes.<span class="ko">날짜·장소·제한·예외를 담은 안내 메시지입니다. 듣기 전에 선지를 읽고 무엇이 실제로 바뀌는지 표시하세요.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+      <div class="card"><div class="num">L4</div><h3>Listen to an Academic Talk<span class="ko">학술 강의</span></h3>
+        <p>A short lecture. Questions follow the order of the talk: the topic, a cause or example, a term used in context, and the speaker's conclusion.<span class="ko">짧은 강의입니다. 주제의식, 원인이나 예시, 문맥 속 용어, 화자의 결론 순으로 문제가 나옵니다.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Writing<span class="ko">라이팅</span></h2>
+    <div class="grid">
+      <div class="card"><div class="num">W1</div><h3>Build a Sentence<span class="ko">문장 배열</span></h3>
+        <p>Word chips are given in shuffled order; tap them to rebuild one grammatical sentence that fits the context. Structure is tested, not ideas.<span class="ko">섞인 단어 칩을 눌러 문법적으로 맞는 한 문장을 만듭니다. 내용보다 문장 구조를 평가합니다.</span></p>
+        <p><span class="tag">Auto-scored</span><span class="ko" style="color:#5b6b7d">자동 채점</span></p></div>
+      <div class="card"><div class="num">W2</div><h3>Write an Email<span class="ko">이메일 작성</span></h3>
+        <p>A short practical email, roughly 50–80 words, with a stated purpose. A tutor reads it — TestPrep does not machine-score essays and shows no AI mark.<span class="ko">목적을 밝히는 짧은 실용 이메일(약 50~80단어)입니다. 강사가 직접 읽으며 TestPrep은 에세이를 기계 채점하지 않고 AI 점수도 보여주지 않습니다.</span></p>
+        <p><span class="tag">Manual review</span><span class="ko" style="color:#5b6b7d">수동 채점</span></p></div>
+      <div class="card"><div class="num">W3</div><h3>Write for an Academic Discussion<span class="ko">토론 글</span></h3>
+        <p>You respond to a professor's question that two students have already answered. Take a position and support it with a reason or an example, about 100 words.<span class="ko">두 학생이 먼저 답한 교수자의 질문에 답합니다. 입장을 정하고 이유나 예로 약 100단어 안에서 뒷받침하세요.</span></p>
+        <p><span class="tag">Manual review</span><span class="ko" style="color:#5b6b7d">수동 채점</span></p></div>
+    </div>
+    <h3>What the tutor looks for in writing<span class="ko">강사가 보는 채점 관점</span></h3>
+    <div class="fact-grid">
+      <div class="fact"><b>Task fulfilment<span class="ko">요구 충족</span></b><span>Does the reply actually do what the prompt asked, at the right length and register?<span class="ko">문제가 요구한 일을 알맞은 분량과 문체로 수행했는가?</span></span></div>
+      <div class="fact"><b>Development<span class="ko">전개</span></b><span>Is there a reason, a detail or an example — not just a restated opinion?<span class="ko">의견을 반복하는 대신 이유·세부·예시가 있는가?</span></span></div>
+      <div class="fact"><b>Organisation<span class="ko">구성</span></b><span>Clear progression, connected sentences, no drifting between topics.<span class="ko">명확한 전개, 문장 간 연결, 주제 이탈 없음.</span></span></div>
+      <div class="fact"><b>Language use<span class="ko">언어 사용</span></b><span>Accurate grammar and punctuation, varied vocabulary, errors that do not block meaning.<span class="ko">문법·표점 정확성, 어휘의 다양성, 이해를 막지 않는 오류.</span></span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Speaking<span class="ko">스피킹</span></h2>
+    <p class="lead">You record in the browser. The clip is stored for your tutor and never auto-scored, and TestPrep shows no machine mark for it.<span class="ko">브라우저에 녹음되며, 파일은 강사 검토용으로만 저장됩니다. 자동 채점이나 기계 점수는 없습니다.</span></p>
+    <div class="grid">
+      <div class="card"><div class="num">S1</div><h3>Listen and Repeat<span class="ko">따라 말하기</span></h3>
+        <p>Hear a sentence and reproduce it. Content must be complete; rhythm and clarity matter more than accent.<span class="ko">문장을 듣고 그대로 말합니다. 내용 누락이 없어야 하고, 억양보다 리듬과 명료함이 중요합니다.</span></p>
+        <p><span class="tag">Manual review</span><span class="ko" style="color:#5b6b7d">수동 채점</span></p></div>
+      <div class="card"><div class="num">S2</div><h3>Take an Interview<span class="ko">인터뷰 답변</span></h3>
+        <p>An interviewer asks and you answer in about 30–45 seconds per turn, with a position and a reason.<span class="ko">인터뷰어 질문에 회당 약 30~45초 동안 입장을 근거와 함께 답합니다.</span></p>
+        <p><span class="tag">Manual review</span><span class="ko" style="color:#5b6b7d">수동 채점</span></p></div>
+    </div>
+    <h3>What the tutor looks for in speaking<span class="ko">스피킹 채점 관점</span></h3>
+    <div class="fact-grid">
+      <div class="fact"><b>Delivery<span class="ko">전달</span></b><span>Pace, phrasing, stress, and whether a listener can follow without effort.<span class="ko">속도, 의미 단위 끊기, 강세, 듣는 사람이 애쓰지 않고 알아듣는지.</span></span></div>
+      <div class="fact"><b>Language use<span class="ko">언어 사용</span></b><span>Grammar and word choice that sound natural in spoken English.<span class="ko">구어에서 자연스러운 문법과 어휘 선택.</span></span></div>
+      <div class="fact"><b>Topic development<span class="ko">주제 전개</span></b><span>A complete answer with enough support, not a single sentence and silence.<span class="ko">한 문장 뒤 침묵이 아니라, 뒷받침이 있는 완결된 답변.</span></span></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>How TestPrep reports a score<span class="ko">TestPrep 점수 표기</span></h2>
+    <div class="fact-grid">
+      <div class="fact"><b>Band 1–6<span class="ko">밴드 1~6</span></b><span>Half-step bands aligned to the 2026 scale.<span class="ko">2026 개편 점수표에 맞춘 0.5 단위 밴드.</span></span></div>
+      <div class="fact"><b>Source<span class="ko">산출 근거</span></b><span>Only auto-scored items (multiple choice and Build a Sentence) feed the estimate.<span class="ko">자동 채점 문항(객관식·문장 배열)만이 추정치에 반영됩니다.</span></span></div>
+      <div class="fact"><b>Manual items<span class="ko">수동 문항</span></b><span>Emails, discussions and recordings are reviewed by a tutor and are not in the number.<span class="ko">이메일·토론 글·녹음은 강사 검토 대상이며 점수 계산에 들어가지 않습니다.</span></span></div>
+    </div>
+    <div class="disclaimer">
+      The structure and score bands on this page describe the publicly documented 2026 TOEFL iBT design in TestPrep's own
+      words. <strong>No ETS test content or rubric text is reproduced here</strong>, and the band you see is a TestPrep
+      estimate, not an official score.
+      <span class="ko" style="color:#7a5300">이 페이지의 시험 구조와 밴드 설명은 공개된 2026 TOEFL iBT 설계를 TestPrep의 문장으로 기술한 것입니다. <strong>ETS의 시험 문항이나 채점표 원문을 복제하지 않았으며</strong>, 표시되는 밴드는 공식 점수가 아닌 TestPrep 추정치입니다.</span>
+    </div>
+  </section>
+
+</div>
+
+<div th:replace="~{fragments/tp_base :: footer}"></div>
+</body>
+</html>
