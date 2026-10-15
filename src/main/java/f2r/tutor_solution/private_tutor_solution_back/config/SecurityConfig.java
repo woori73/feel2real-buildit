@@ -173,11 +173,10 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/wiki/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-            // Problem Generator 화면은 목적지를 "/"로 유지하되(비로그인 목적지 통일) 이유를 실어 보낸다.
-            // 마커가 없으면 사용자는 아무 안내 없이 랜딩으로 튕겨 원인을 알 수 없다.
-            // 랜딩(static/js/landing_buildit.js)이 이 값을 읽어 안내 + 공통 로그인 모달을 연다.
+            // Problem Generator 하위 화면은 목적지를 "/"로 유지하되(비로그인 목적지 통일) 이유와 원래 경로를 실어 보낸다.
+            // 랜딩(static/js/landing_buildit.js)이 이 값을 읽어 안내 + 공통 로그인 모달을 열고, 로그인 후 원래 화면으로 복귀시킨다.
             .defaultAuthenticationEntryPointFor(
-                (request, response, ex) -> response.sendRedirect("/?login=required"),
+                (request, response, ex) -> redirectToLogin(request, response),
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/problem-generator/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
@@ -290,6 +289,9 @@ public class SecurityConfig {
             // 미들웨어가 전담하므로, 이 경로만 Spring 레벨에서는 permitAll로 열어둔다.
             // ⚠ 반드시 아래 넓은 /problem-generator/** 규칙보다 먼저 와야 한다(좁은 것 우선).
             .requestMatchers("/problem-generator/wiki/api/mcp/**")
+            .permitAll()
+            // 문제지 제작기 첫 화면은 비회원 공개(소개). 실제 기능(하위 화면)은 아래 규칙으로 로그인 필수.
+            .requestMatchers(HttpMethod.GET, "/problem-generator")
             .permitAll()
             // catch-all permitAll보다 위에서 닫는다. 화면은 로그인한 STUDENT/TUTOR/ADMIN 전용이다.
             .requestMatchers("/problem-generator/**")

@@ -60,6 +60,8 @@ class ProgramPublicEntryMySqlTest {
     String body = r.getResponse().getContentAsString();
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
     assertThat(body).contains("DesignCraft", "program-start", "/auth/naver/start?returnUrl=/designcraft/editor");
+    // 아이디 계정 회원은 기존 랜딩 로그인 모달(복귀 URL 유지)로 로그인할 수 있다.
+    assertThat(body).contains("program-id-login", "/?login=required&amp;returnUrl=/designcraft/editor");
     assertThat(body).doesNotContain("program-forbidden");
     assertThat(r.getResponse().getHeader("Cache-Control")).contains("no-store");
   }

@@ -55,4 +55,17 @@ class ProgramTest {
     assertThat(p.getRoles()).containsExactlyInAnyOrder("TUTOR", "ADMIN");
     assertThat(Program.isRegisteredReturnUrl("/builder")).isTrue();
   }
+
+  @Test
+  @DisplayName("given 문제지 제작기 when 소개·하위 경로를 보면 then 자기 영역이고 STUDENT·TUTOR·ADMIN을 허용한다")
+  void problem_generator_owns_its_paths_and_roles() {
+    // given
+    Program p = Program.PROBLEM_GENERATOR;
+
+    // when & then
+    assertThat(p.ownsReturnUrl("/problem-generator")).isTrue();
+    assertThat(p.ownsReturnUrl("/problem-generator/exam")).isTrue();
+    assertThat(p.ownsReturnUrl("/problem-generators")).isFalse();
+    assertThat(p.getRoles()).containsExactlyInAnyOrder("STUDENT", "TUTOR", "ADMIN");
+  }
 }
