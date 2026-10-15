@@ -87,7 +87,7 @@ class JipijigiStructuredSearchIntegrationTest {
                 .boardName("감면율")
                 .title(title)
                 .contentRaw(content)
-                .keyInsights(content.substring(0, Math.min(100, content.length())))
+                .keyInsights("[\"" + content.substring(0, Math.min(50, content.length())).replace("\"", "") + "\"]")
                 .householdType(household)
                 .debtTotal(debtTotal)
                 .debtSecured(secured)
