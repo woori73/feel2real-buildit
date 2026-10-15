@@ -15,6 +15,15 @@ on:
           - unchanged
           - admin-only
           - off
+      hwpx_worker:
+        description: 'HWPX Worker(HWPX_WORKER_ENABLED): unchanged=변경 없음(기본), off=끔(작업 생성 503), on=켬(변수 제거=기본 true). Muse Python Worker 연결 전까지 off'
+        required: false
+        default: unchanged
+        type: choice
+        options:
+          - unchanged
+          - off
+          - on
 
 permissions:
   id-token: write
@@ -551,6 +560,36 @@ jobs:
             echo '::warning::KIS staging files unavailable in S3; skipping KIS sync (deploy continues)'
           fi
 
+          # HWPX Worker 스위치(HWPX_WORKER_ENABLED): 배포 입력 hwpx_worker가 off/on일 때만 반영한다.
+          # 변경 전 환경파일을 백업하고, 키는 지우고 다시 쓰므로 중복되지 않는다. on은 변수를 제거해 기본값(true)으로 되돌린다.
+          # assistant 스위치보다 먼저 적용해, 배포 실패 시 가장 이른 백업 하나로 두 변경이 함께 되돌려지게 한다.
+          HWPX_ENV_BACKUP=""
+          if aws s3 cp s3://feel2real-buildit-deploy/hwpx-worker /tmp/hwpx-worker 2>/dev/null; then
+            HWPX_MODE=$(tr -d '\r\n "' < /tmp/hwpx-worker | tr 'A-Z' 'a-z')
+            rm -f /tmp/hwpx-worker
+            case "$HWPX_MODE" in
+              off|on)
+                install -d -m 755 /etc/f2r
+                touch /etc/f2r/env
+                chmod 600 /etc/f2r/env
+                HWPX_ENV_BACKUP="/etc/f2r/env.bak-hwpx-$(date +%Y%m%d%H%M%S)"
+                cp -p /etc/f2r/env "$HWPX_ENV_BACKUP"
+                chmod 600 "$HWPX_ENV_BACKUP"
+                grep -vE '^HWPX_WORKER_ENABLED=' /etc/f2r/env > /etc/f2r/env.tmp || true
+                if [ "$HWPX_MODE" = off ]; then
+                  printf 'HWPX_WORKER_ENABLED=false\n' >> /etc/f2r/env.tmp
+                fi
+                mv /etc/f2r/env.tmp /etc/f2r/env
+                chmod 600 /etc/f2r/env
+                echo "[DEPLOY] hwpx worker switch applied: mode=$HWPX_MODE (backup kept)"
+                ;;
+              *) echo '::warning::hwpx worker mode invalid; env left unchanged' ;;
+            esac
+            unset HWPX_MODE
+          else
+            echo 'hwpx worker switch not requested; env left unchanged'
+          fi
+
           # AI Builder 스위치(BUILDIT_ASSISTANT_*): 배포 입력 assistant_switch가 admin-only/off일 때만 반영한다.
           # 운영자(ADMIN 1명)의 로그인 ID는 이 EC2 안에서 DB로 읽어 환경파일에만 기록한다 — 로그·S3·GitHub에 남기지 않는다.
           # 정확히 1명이 아니면 적용하지 않는다. 변경 전 환경파일을 백업하고, 키는 지우고 다시 쓰므로 중복되지 않는다.
@@ -621,8 +660,9 @@ jobs:
           else
             DEPLOY_RC=$?
             echo "[DEPLOY] FAILED rc=${DEPLOY_RC} line=f2r_deploy_with_rollback"
-            if [ -n "${ASSIST_ENV_BACKUP:-}" ] && [ -r "$ASSIST_ENV_BACKUP" ]; then
-              cp -p "$ASSIST_ENV_BACKUP" /etc/f2r/env && echo "[DEPLOY] restored /etc/f2r/env from backup (assistant switch change reverted)"
+            ENV_RESTORE="${HWPX_ENV_BACKUP:-$ASSIST_ENV_BACKUP}"
+            if [ -n "${ENV_RESTORE:-}" ] && [ -r "$ENV_RESTORE" ]; then
+              cp -p "$ENV_RESTORE" /etc/f2r/env && echo "[DEPLOY] restored /etc/f2r/env from backup (switch changes reverted)"
               systemctl restart f2r-app.service || true
             fi
             exit "$DEPLOY_RC"
@@ -726,6 +766,26 @@ jobs:
             *)
               aws s3 rm s3://feel2real-buildit-deploy/assistant-switch 2>/dev/null || true
               echo "assistant switch unchanged"
+              ;;
+          esac
+
+      - name: Stage HWPX worker switch mode in S3 (transient)
+        shell: bash
+        env:
+          HWPX_WORKER_MODE: ${{ inputs.hwpx_worker }}
+        run: |
+          set -euo pipefail
+          # 선택값(unchanged/off/on)만 올린다. unchanged면 이전 실행이 남긴 값이 적용되지 않도록 지운다.
+          case "${HWPX_WORKER_MODE:-unchanged}" in
+            off|on)
+              printf '%s' "$HWPX_WORKER_MODE" > /tmp/hwpx-worker.staging
+              aws s3 cp /tmp/hwpx-worker.staging s3://feel2real-buildit-deploy/hwpx-worker --sse AES256 >/dev/null
+              rm -f /tmp/hwpx-worker.staging
+              echo "hwpx worker mode staged: $HWPX_WORKER_MODE"
+              ;;
+            *)
+              aws s3 rm s3://feel2real-buildit-deploy/hwpx-worker 2>/dev/null || true
+              echo "hwpx worker unchanged"
               ;;
           esac
 
@@ -907,5 +967,12 @@ jobs:
         shell: bash
         run: |
           aws s3 rm s3://feel2real-buildit-deploy/assistant-switch 2>/dev/null || true
+          echo "Staging file cleaned up"
+
+      - name: Cleanup HWPX worker switch staging file
+        if: always()
+        shell: bash
+        run: |
+          aws s3 rm s3://feel2real-buildit-deploy/hwpx-worker 2>/dev/null || true
           echo "Staging file cleaned up"
 

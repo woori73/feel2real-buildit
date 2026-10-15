@@ -145,3 +145,10 @@ EC2/systemd, IAM, S3 CORS/lifecycle, ALB 180초 inactivity gate, `/var/tmp` 용�
 - 로그인 ID는 EC2 안에서 DB로 읽어 환경파일에만 쓴다(로그·S3·GitHub에 남기지 않는다). 시크릿 등록은 필요 없다.
 - 변경 전 `/etc/f2r/env.bak-assistant-<시각>`에 백업하고, 대상 키는 지우고 다시 써서 중복을 막는다. 배포(health)가 실패하면 백업으로 되돌리고 서비스를 재시작한다.
 - 안전장치: 운영(`prd` 프로필)에서는 허용 계정이 비어 있으면 스위치가 켜져 있어도 모두에게 꺼진다(`AssistantFeatureFlag`).
+
+## HWPX Worker 운영 스위치 (Deploy to EC2 입력 `hwpx_worker`)
+
+- `unchanged`(기본): 환경파일을 건드리지 않는다. `off`: `HWPX_WORKER_ENABLED=false`를 기록한다(작업 생성 API가 503 `HWPX_UNAVAILABLE`, Worker 폴링 중지). `on`: `HWPX_WORKER_ENABLED` 줄을 제거해 기본값(true)으로 되돌린다.
+- Muse Python Worker(`/opt/hwpx-worker`)가 운영에 연결되기 전까지는 `off`로 배포한다. 연결 후에는 `on`으로 한 번 배포하면 활성화된다(코드·DB 변경 불필요).
+- 변경 전 `/etc/f2r/env.bak-hwpx-<시각>`에 백업하고, 대상 키는 지우고 다시 쓴다. assistant 스위치보다 먼저 적용하며, 배포(health)가 실패하면 가장 이른 백업 하나로 두 스위치 변경을 함께 되돌리고 서비스를 재시작한다.
+- 확인: 로그인 상태 `POST /api/hwpx/jobs` → 503, `hwpx_jobs` 건수·저장 파일 불변, 비로그인 401.
