@@ -143,16 +143,16 @@ public class AdmissionsChatService {
 
         // 2. LLM 없이 차단하는 질문: 합격 가능성 판단/추천, 수집하지 않은 자료, 미지원 학년도
         if (parsed.asksAdmissionChance()) {
-            return refuse(MSG_CHANCE, sessionToken, question, academicYearFilter);
+            return refuse(MSG_CHANCE, sessionToken, question, academicYearFilter, studentProfile);
         }
         if (parsed.asksNotCollected()) {
-            return refuse(MSG_NOT_COLLECTED, sessionToken, question, academicYearFilter);
+            return refuse(MSG_NOT_COLLECTED, sessionToken, question, academicYearFilter, studentProfile);
         }
         if (parsed.asksAggregateStats() && parsed.universities().isEmpty()) {
-            return refuse(MSG_AGGREGATE_NOT_COLLECTED, sessionToken, question, academicYearFilter);
+            return refuse(MSG_AGGREGATE_NOT_COLLECTED, sessionToken, question, academicYearFilter, studentProfile);
         }
         if (parsed.mentionsUnsupportedYear() && parsed.years().isEmpty()) {
-            return refuse(MSG_UNSUPPORTED_YEAR, sessionToken, question, academicYearFilter);
+            return refuse(MSG_UNSUPPORTED_YEAR, sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 3. 조사 사다리 + 사실 근거 병합 (GUIDE는 근거가 아니다)
@@ -165,19 +165,19 @@ public class AdmissionsChatService {
             usable = usable.stream().filter(e -> Integer.valueOf(2028).equals(e.getAcademicYear())).toList();
             // 문서 제목만 있는 자료(material:)로는 2028 일정·수치를 답할 수 없다. 학과·전형·일정 행 또는 사실 지식이 있어야 한다.
             if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
-                return refuse(MSG_UNPUBLISHED_2028, sessionToken, question, academicYearFilter);
+                return refuse(MSG_UNPUBLISHED_2028, sessionToken, question, academicYearFilter, studentProfile);
             }
         }
 
         // 5. 사실 근거가 하나도 없으면(GUIDE만 검색된 경우 포함) LLM을 호출하지 않는다.
         if (usable.isEmpty()) {
-            return refuse(MSG_NO_EVIDENCE, sessionToken, question, academicYearFilter);
+            return refuse(MSG_NO_EVIDENCE, sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 5-1. 문서 제목·발행기관만 있는 공식자료(material:)로는 내용을 알 수 없다. 사실 근거(학과·전형·일정 행 또는
         //      FACT 지식)가 하나도 없으면 LLM이 제목만 보고 내용을 지어내지 못하도록 호출하지 않는다.
         if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
-            return refuse(MSG_TITLE_ONLY, sessionToken, question, academicYearFilter);
+            return refuse(MSG_TITLE_ONLY, sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 6. 근거를 프롬프트에 조립
@@ -197,7 +197,7 @@ public class AdmissionsChatService {
         List<String> ungrounded = ungroundedNumbers(completion.text(), question, usable);
         if (!ungrounded.isEmpty()) {
             log.warn("admissions answer rejected: ungrounded numbers count={}", ungrounded.size());
-            return refuse(MSG_UNGROUNDED_NUMBER, sessionToken, question, academicYearFilter);
+            return refuse(MSG_UNGROUNDED_NUMBER, sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
@@ -262,8 +262,8 @@ public class AdmissionsChatService {
         return nl < 0 ? s : s.substring(0, nl);
     }
 
-    private AdmissionsAnswer refuse(String message, String sessionToken, String question, Integer year) {
-        saveSession(sessionToken, question, message, null, year);
+    private AdmissionsAnswer refuse(String message, String sessionToken, String question, Integer year, String studentProfile) {
+        saveSession(sessionToken, question, message, null, year, studentProfile);
         return new AdmissionsAnswer(true, message, null, null, List.of(), year, false);
     }
 
@@ -357,9 +357,9 @@ public class AdmissionsChatService {
     private void saveSession(String sessionToken, String question, String answer,
                              ResearchPack pack, Integer academicYear, String studentProfile) {
         try {
-            String token = (sessionToken == null || sessionToken.isBlank())
-                    ? UUID.randomUUID().toString().replace("-", "")
-                    : sessionToken;
+            String token = (sessionToken != null && sessionToken.matches("[A-Za-z0-9_-]{8,64}"))
+                    ? sessionToken
+                    : UUID.randomUUID().toString().replace("-", "");
             String fingerprint = sha256(question);
             StringBuilder evidenceSummary = new StringBuilder();
             if (pack != null) {

@@ -83,7 +83,7 @@
     container.appendChild(textDiv);
 
     // 2028 계획 경고
-    if (data.academicYear === 2028 || data.yearConfirmed === false) {
+    if (data.academicYear === 2028) {
       var warn = document.createElement('div');
       warn.className = 'ag-warning';
       warn.textContent = '⚠️ 2028학년도는 계획 단계로 변경될 수 있습니다.';
