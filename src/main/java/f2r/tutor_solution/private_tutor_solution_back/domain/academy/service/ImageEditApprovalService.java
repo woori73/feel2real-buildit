@@ -49,16 +49,19 @@ public class ImageEditApprovalService {
   private final Map<Long, String> flowStatusStore = new ConcurrentHashMap<>();
   private final Map<Long, String> assetSlotStore = new ConcurrentHashMap<>();
   private final Map<Long, String> assetStorageKeyStore = new ConcurrentHashMap<>();
+  private final Map<Long, Long> assetAcademyStore = new ConcurrentHashMap<>();
 
   /**
    * 편집 완료를 등록 (PhotoCraft 편집 후 호출).
    * 이 단계에서는 WorkingCopy에 반영하지 않음.
    *
    * @param assetId 이미지 자산 ID
+   * @param academyId 편집본을 만든 학원 ID (승인/조회 시 소유 검증용)
    * @param slotKey 슬롯 키
    * @param storageKey 스토리지 키
    */
-  public void registerEditedImage(Long assetId, String slotKey, String storageKey) {
+  public void registerEditedImage(Long assetId, Long academyId, String slotKey, String storageKey) {
+    assetAcademyStore.put(assetId, academyId);
     flowStatusStore.put(assetId, "PREVIEW_STAGED");
     assetSlotStore.put(assetId, slotKey);
     assetStorageKeyStore.put(assetId, storageKey);
@@ -89,6 +92,7 @@ public class ImageEditApprovalService {
     if (currentStatus == null) {
       throw new IllegalArgumentException("편집 이력을 찾을 수 없습니다: " + assetId);
     }
+    requireOwnAcademy(principal, assetId);
 
     if (!"PREVIEW_STAGED".equals(currentStatus)) {
       throw new IllegalStateException("승인 가능한 상태가 아닙니다: " + currentStatus);
@@ -181,15 +185,28 @@ public class ImageEditApprovalService {
    * @return 현재 revision
    */
   public long getCurrentRevision(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    Long academyId = academyRepository.findByTutor_UserId(principal.userId())
-        .orElseThrow(() -> new IllegalStateException("학원을 찾을 수 없습니다."))
-        .getAcademyId();
+    Long academyId = currentAcademyId(principal);
 
     // WorkingCopy가 없으면 stageMedia에서 loadOrCreate로 생성되므로 0 반환
     // (신규 WorkingCopy의 초기 revision)
     return workingCopyRepository.findByAcademyId(academyId)
         .map(AcademyWorkingCopy::getRevision)
         .orElse(0L);
+  }
+
+  /** 로그인한 튜터의 학원 ID. */
+  public Long currentAcademyId(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return academyRepository.findByTutor_UserId(principal.userId())
+        .orElseThrow(() -> new IllegalStateException("학원을 찾을 수 없습니다."))
+        .getAcademyId();
+  }
+
+  /** 편집본의 소유 학원이 호출자의 학원과 같은지 검증한다 (학원별 격리). */
+  private void requireOwnAcademy(JwtTokenProvider.AuthenticatedPrincipal principal, Long assetId) {
+    Long owner = assetAcademyStore.get(assetId);
+    if (owner == null || !owner.equals(currentAcademyId(principal))) {
+      throw new SecurityException("다른 학원의 이미지에 접근할 수 없습니다.");
+    }
   }
 
   /**
@@ -213,6 +230,9 @@ public class ImageEditApprovalService {
   public ImageEditFlowDtos.ImageEditFlowStatus getFlowStatus(
       JwtTokenProvider.AuthenticatedPrincipal principal, Long assetId) {
 
+    if (flowStatusStore.containsKey(assetId)) {
+      requireOwnAcademy(principal, assetId);
+    }
     String status = flowStatusStore.getOrDefault(assetId, "UNKNOWN");
     String slotKey = assetSlotStore.getOrDefault(assetId, "");
 

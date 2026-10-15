@@ -237,7 +237,7 @@ public class PhotoCraftChatBridgeService {
 
     // 4. 승인 플로우에 등록
     approvalService.registerEditedImage(
-        response.assetId(), slotKey, response.imageUrl());
+        response.assetId(), approvalService.currentAcademyId(principal), slotKey, response.imageUrl());
 
     // 5. 미리보기 데이터 반환 (원본 vs 수정본)
     return new ImageEditFlowDtos.ImagePreviewData(
