@@ -85,7 +85,14 @@ public class HwpxJob {
   }
 
   public void markRunning(String workDir, String inputFile) {
-    this.status = Status.RUNNING;
+
+  /**
+   * 업로드 시 입력 파일 경로를 기록한다.
+   * Worker가 실제 파일을 읽을 수 있도록 Controller에서 호출한다.
+   */
+  public void setInputFile(String inputFile) {
+    this.inputFile = inputFile;
+  }    this.status = Status.RUNNING;
     this.workDir = workDir;
     this.inputFile = inputFile;
     this.progress = 5;
