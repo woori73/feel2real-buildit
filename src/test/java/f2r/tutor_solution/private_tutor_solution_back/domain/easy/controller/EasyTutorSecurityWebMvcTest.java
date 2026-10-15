@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,6 +51,17 @@ class EasyTutorSecurityWebMvcTest {
     Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(10L, "owner-a", "TUTOR"));
     mockMvc.perform(get("/api/tutor/easy/businesses").cookie(tutor))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("TUTOR 분개장 조회에도 사업체 권한 검증을 적용한다")
+  void tutorJournalRequiresAllowedBusiness() throws Exception {
+    Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(10L, "owner-a", "TUTOR"));
+    mockMvc.perform(get("/api/tutor/easy/accounting/journal")
+            .param("businessId", "7").cookie(tutor))
+        .andExpect(status().isOk());
+    verify(accessService).requireAllowedBusiness(
+        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(7L));
   }
 
   @Test
