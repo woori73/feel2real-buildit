@@ -3,72 +3,146 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Easy AI 장부</title>
+  <title>BuildIt Easy 장부</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/easy.css">
   <link rel="stylesheet" href="/css/easy_tutor_agent.css">
 </head>
 <body>
-<header class="tutor-easy-head">
-  <a class="tutor-easy-brand" href="/tutor/academy">BuildIt Easy</a>
-  <div class="tutor-easy-head-actions">
-    <label for="businessSelect">장부</label>
+<header class="ledger-head">
+  <div>
+    <a class="ledger-brand" href="/ledger">BuildIt Easy</a>
+    <span class="ledger-subtitle">학원 장부</span>
+  </div>
+  <div class="ledger-head-actions">
+    <label for="businessSelect">사업체</label>
     <select id="businessSelect" aria-label="장부 사업체"></select>
-    <a href="/tutor/academy">내 Academy</a>
+    <a href="/tutor/academy">내 학원</a>
   </div>
 </header>
 
-<main class="tutor-easy-shell">
-  <section class="tutor-easy-main" aria-labelledby="agentTitle">
-    <div class="agent-heading">
-      <div><h1 id="agentTitle">AI 장부 도우미</h1><p>조회와 변경 제안을 도와드려요. 변경은 승인 버튼을 눌러야 반영됩니다.</p></div>
-      <span id="connectionState" class="agent-status">연결 중</span>
+<main class="ledger-shell">
+  <nav class="ledger-tabs" aria-label="장부 메뉴">
+    <button class="ledger-tab active" data-view="dashboard" type="button">이달 현황</button>
+    <button class="ledger-tab" data-view="transactions" type="button">수입·지출 장부</button>
+    <button class="ledger-tab" data-view="journal" type="button">복식부기 장부</button>
+    <button class="ledger-tab" data-view="advanced" type="button">고급 회계</button>
+  </nav>
+
+  <div class="ledger-layout">
+    <div class="ledger-content">
+      <section id="view-dashboard" class="ledger-view active" aria-labelledby="dashboardTitle">
+        <div class="view-heading">
+          <div><p class="eyebrow">이번 달 한눈에</p><h1 id="dashboardTitle">우리 학원 장부 현황</h1><p id="dashboardPeriod">불러오는 중입니다.</p></div>
+          <button class="secondary-button" data-open-view="transactions" type="button">전체 거래 보기</button>
+        </div>
+
+        <div class="summary-grid">
+          <button class="summary-card income" data-summary-filter="INCOME" type="button"><span>이번 달 매출</span><strong id="summaryIncome">0원</strong><small>수강료·교재비 등 들어온 돈</small></button>
+          <button class="summary-card purchase" data-summary-filter="PURCHASE" type="button"><span>이번 달 매입</span><strong id="summaryPurchase">0원</strong><small>교재·상품 구입</small></button>
+          <button class="summary-card expense" data-summary-filter="EXPENSE" type="button"><span>이번 달 경비</span><strong id="summaryExpense">0원</strong><small>강사료·임차료·운영비</small></button>
+          <button class="summary-card balance" data-summary-filter="ALL" type="button"><span>수지 차액</span><strong id="summaryProfit">0원</strong><small>매출에서 지출을 뺀 금액</small></button>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="panel">
+            <div class="panel-head"><div><h2>수입 내역</h2><p>어디에서 돈이 들어왔는지 보여드려요.</p></div><button data-ledger-filter="INCOME" type="button">상세 보기</button></div>
+            <div id="incomeBreakdown" class="breakdown-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>지출 내역</h2><p>이번 달 학원 운영비를 모았습니다.</p></div><button data-ledger-filter="EXPENSE" type="button">상세 보기</button></div>
+            <div id="expenseBreakdown" class="breakdown-list"></div>
+          </section>
+          <section class="panel attention-panel">
+            <div class="panel-head"><div><h2>지금 확인할 항목</h2><p>장부 반영 전 확인이 필요한 거래입니다.</p></div><span id="reviewCount" class="count-badge">0건</span></div>
+            <div id="attentionList" class="attention-list"><p class="empty-state">확인 항목을 불러오는 중입니다.</p></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>최근 거래</h2><p>금액을 누르면 거래 상세를 볼 수 있습니다.</p></div></div>
+            <div id="recentTransactions" class="recent-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-transactions" class="ledger-view" aria-labelledby="transactionsTitle">
+        <div class="view-heading">
+          <div><p class="eyebrow">날짜별 장부</p><h1 id="transactionsTitle">수입·지출 장부</h1><p>통장처럼 날짜순으로 보고, 수정이 필요하면 AI에게 요청하세요.</p></div>
+        </div>
+        <form id="ledgerFilterForm" class="filter-bar">
+          <label>시작일<input id="filterFrom" type="date"></label>
+          <label>종료일<input id="filterTo" type="date"></label>
+          <label>구분<select id="filterDirection"><option value="">전체</option><option value="INCOME">수입</option><option value="EXPENSE">지출</option></select></label>
+          <label class="search-label">검색<input id="filterSearch" type="search" placeholder="거래처·내용·계정과목"></label>
+          <button type="submit">조회</button>
+        </form>
+        <section class="panel ledger-panel">
+          <div class="ledger-table-wrap">
+            <table class="ledger-table">
+              <thead><tr><th>날짜</th><th>구분</th><th>거래처·내용</th><th>계정과목</th><th>처리 상태</th><th>금액</th><th></th></tr></thead>
+              <tbody id="transactionTableBody"></tbody>
+            </table>
+          </div>
+          <div id="transactionCards" class="transaction-cards"></div>
+          <p id="transactionEmpty" class="empty-state" hidden>해당 기간의 거래가 없습니다.</p>
+        </section>
+        <section class="panel import-panel">
+          <div class="panel-head"><div><h2>CSV 거래 가져오기</h2><p>원본 파일은 보존되고, 기존 분류 규칙으로 먼저 추천합니다.</p></div></div>
+          <form id="uploadForm" class="upload-form"><input id="csvFile" type="file" accept=".csv,text/csv" required><button id="uploadButton" type="submit">업로드</button></form>
+          <p id="uploadResult" class="helper-text"></p>
+          <div class="panel-head batch-head"><h3>가져온 파일</h3><button id="refreshBatches" type="button">새로고침</button></div>
+          <div id="batchList" class="batch-list"></div>
+        </section>
+      </section>
+
+      <section id="view-journal" class="ledger-view" aria-labelledby="journalTitle">
+        <div class="view-heading">
+          <div><p class="eyebrow">복식부기 장부</p><h1 id="journalTitle">분개장</h1><p>거래마다 어느 계정에 차변·대변으로 기록됐는지 확인합니다.</p></div>
+        </div>
+        <form id="journalFilterForm" class="filter-bar compact">
+          <label>시작일<input id="journalFrom" type="date"></label><label>종료일<input id="journalTo" type="date"></label><button type="submit">조회</button>
+        </form>
+        <div id="journalList" class="journal-list"><p class="empty-state">분개장을 불러오는 중입니다.</p></div>
+      </section>
+
+      <section id="view-advanced" class="ledger-view" aria-labelledby="advancedTitle">
+        <div class="view-heading">
+          <div><p class="eyebrow">회계 담당자용</p><h1 id="advancedTitle">고급 회계</h1><p>총계정원장과 시산표는 필요한 경우에만 확인하세요.</p></div>
+        </div>
+        <div class="advanced-grid">
+          <section class="panel"><h2>시산표</h2><p>전체 차변과 대변이 맞는지 확인합니다.</p><button id="trialBalanceButton" class="primary-button" type="button">시산표 조회</button><div id="bookResult" class="book-result"></div></section>
+          <section class="panel"><h2>총계정원장</h2><p>특정 계정과목의 움직임은 AI에게 “임차료 원장 보여줘”처럼 물어보세요.</p><button type="button" data-prompt="총계정원장 보여줘" class="secondary-button">AI에게 요청</button></section>
+        </div>
+      </section>
     </div>
 
-    <div class="quick-prompts" aria-label="빠른 질문">
-      <button type="button" data-prompt="이번 달 매출과 지출 알려줘">이번 달 요약</button>
-      <button type="button" data-prompt="아직 분류하지 않은 거래 보여줘">미분류 거래</button>
-      <button type="button" data-prompt="장부에 반영해줘">장부 반영</button>
-      <button type="button" data-prompt="시산표 확인해줘">시산표 확인</button>
-    </div>
-
-    <div id="chatMessages" class="chat-messages" role="log" aria-live="polite" aria-busy="false">
-      <div class="chat-empty">무엇을 도와드릴까요? CSV를 올리거나 장부에 관해 질문해 보세요.</div>
-    </div>
-
-    <form id="chatForm" class="chat-composer">
-      <label class="sr-only" for="chatInput">장부 요청</label>
-      <textarea id="chatInput" rows="2" maxlength="2000" placeholder="예: 23번 거래는 임차료로 분류해줘" required></textarea>
-      <button id="sendButton" type="submit">보내기</button>
-    </form>
-    <p id="chatError" class="agent-error" role="alert" hidden></p>
-  </section>
-
-  <aside class="tutor-easy-side">
-    <section class="side-card" aria-labelledby="uploadTitle">
-      <div class="side-card-head"><h2 id="uploadTitle">CSV 가져오기</h2><span>원본 보존</span></div>
-      <form id="uploadForm" class="upload-form">
-        <input id="csvFile" type="file" accept=".csv,text/csv" required>
-        <button id="uploadButton" type="submit">업로드</button>
-      </form>
-      <p id="uploadResult" class="side-note" aria-live="polite">업로드 후 기존 분류 규칙으로 추천합니다.</p>
-    </section>
-
-    <section class="side-card" aria-labelledby="batchTitle">
-      <div class="side-card-head"><h2 id="batchTitle">가져온 거래</h2><button id="refreshBatches" type="button">새로고침</button></div>
-      <div id="batchList" class="batch-list"><p class="side-note">거래를 불러오는 중입니다.</p></div>
-    </section>
-
-    <section class="side-card" aria-labelledby="bookTitle">
-      <div class="side-card-head"><h2 id="bookTitle">장부 조회</h2><span id="bookPeriod"></span></div>
-      <div class="book-actions">
-        <button type="button" data-prompt="총계정원장 보여줘">총계정원장</button>
-        <button id="trialBalanceButton" type="button">시산표</button>
+    <aside id="agentPanel" class="agent-panel" aria-labelledby="agentTitle">
+      <div class="agent-heading">
+        <div><span class="assistant-mark">AI</span><h2 id="agentTitle">장부 도우미</h2><p>지금 보고 있는 장부를 기준으로 물어보세요.</p></div>
+        <button id="agentClose" class="agent-close" type="button" aria-label="AI 장부 도우미 닫기">×</button>
       </div>
-      <div id="bookResult" class="book-result"><p class="side-note">대화 또는 버튼으로 조회하세요.</p></div>
-    </section>
-  </aside>
+      <span id="connectionState" class="agent-status">연결 중</span>
+      <div class="quick-prompts" aria-label="빠른 질문">
+        <button type="button" data-prompt="이번 달 매출이 지난달보다 얼마나 줄었어?">지난달과 비교</button>
+        <button type="button" data-prompt="아직 분류하지 않은 거래 보여줘">미분류 거래</button>
+        <button type="button" data-prompt="이번 달 경비 중 가장 큰 항목을 알려줘">가장 큰 경비</button>
+      </div>
+      <div id="chatMessages" class="chat-messages" role="log" aria-live="polite" aria-busy="false"><div class="chat-empty">거래를 보다가 궁금한 내용을 물어보세요.</div></div>
+      <form id="chatForm" class="chat-composer">
+        <label class="sr-only" for="chatInput">장부 질문</label>
+        <textarea id="chatInput" rows="2" maxlength="2000" placeholder="예: 23번 거래를 교재비로 수정해 줘" required></textarea>
+        <button id="sendButton" type="submit">보내기</button>
+      </form>
+      <p id="chatError" class="agent-error" role="alert" hidden></p>
+    </aside>
+  </div>
 </main>
+
+<button id="agentToggle" class="agent-toggle" type="button"><span>AI</span> 장부 도우미</button>
+<div id="detailBackdrop" class="detail-backdrop" hidden></div>
+<aside id="transactionDetail" class="transaction-detail" aria-labelledby="detailTitle" aria-hidden="true">
+  <div class="detail-head"><h2 id="detailTitle">거래 상세</h2><button id="detailClose" type="button" aria-label="거래 상세 닫기">×</button></div>
+  <div id="detailBody"></div>
+</aside>
 
 <script src="/js/api.js"></script>
 <script src="/js/easy_tutor_agent.js"></script>

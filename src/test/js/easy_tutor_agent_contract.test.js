@@ -7,16 +7,27 @@ const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templ
 const js = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/easy_tutor_agent.js'), 'utf8');
 const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/easy_tutor_agent.css'), 'utf8');
 
-test('tutor Easy screen exposes chat, CSV, proposal, and ledger surfaces', () => {
-  ['chatMessages', 'chatForm', 'uploadForm', 'batchList', 'bookResult', 'trialBalanceButton'].forEach(id => {
-    assert.match(html, new RegExp(`id="${id}"`));
-  });
-  assert.match(html, /이번 달 매출과 지출 알려줘/);
-  assert.match(html, /아직 분류하지 않은 거래 보여줘/);
-  assert.match(html, /장부에 반영해줘/);
+test('ledger starts with monthly dashboard and exposes practical book surfaces', () => {
+  [
+    'summaryIncome', 'summaryPurchase', 'summaryExpense', 'summaryProfit',
+    'incomeBreakdown', 'expenseBreakdown', 'attentionList', 'recentTransactions',
+    'transactionTableBody', 'transactionCards', 'journalList',
+    'trialBalanceButton', 'bookResult'
+  ].forEach(id => assert.match(html, new RegExp(`id="${id}"`)));
+
+  assert.match(html, /이달 현황/);
+  assert.match(html, /수입·지출 장부/);
+  assert.match(html, /복식부기 장부/);
+  assert.match(html, /고급 회계/);
+  assert.match(html, /수강료·교재비/);
+  assert.match(html, /강사료·임차료·운영비/);
 });
 
-test('all writes use tutor Agent approval contract and never mutate protected source fields', () => {
+test('AI helper stays contextual and all writes use explicit approval', () => {
+  ['agentPanel', 'agentToggle', 'chatMessages', 'chatForm'].forEach(id => {
+    assert.match(html, new RegExp(`id="${id}"`));
+  });
+  assert.match(html, /23번 거래를 교재비로 수정해 줘/);
   assert.match(js, /\/api\/tutor\/easy/);
   assert.match(js, /\/agent\/actions\//);
   assert.match(js, /decideAction\(card, 'approve'\)/);
@@ -27,8 +38,18 @@ test('all writes use tutor Agent approval contract and never mutate protected so
   assert.doesNotMatch(js, /amount\s*:/);
 });
 
-test('responsive layout has desktop and mobile breakpoints', () => {
-  assert.match(css, /@media \(min-width: 900px\)/);
-  assert.match(css, /@media \(max-width: 560px\)/);
-  assert.match(css, /grid-template-columns:minmax\(0,1fr\) 360px/);
+test('dashboard, transaction and journal reads remain tenant-scoped', () => {
+  assert.match(js, /\/workspace\/monthly/);
+  assert.match(js, /\/workspace\/transactions/);
+  assert.match(js, /\/workspace\/reviews/);
+  assert.match(js, /\/accounting\/journal/);
+  assert.match(js, /businessId/);
+});
+
+test('responsive layout switches from desktop table to mobile transaction cards', () => {
+  assert.match(css, /grid-template-columns:minmax\(0,1fr\) 370px/);
+  assert.match(css, /@media\(max-width:760px\)/);
+  assert.match(css, /\.ledger-table-wrap\{display:none\}/);
+  assert.match(css, /\.transaction-cards\{display:grid/);
+  assert.match(css, /@media\(max-width:390px\)/);
 });
