@@ -134,9 +134,8 @@
     // 버튼 이벤트
     modal.querySelector('[data-action="approve"]').addEventListener('click', function() {
       approveImage(previewData.assetId, true, null).then(function(result) {
-        closeModal();
-        showToast('승인되었습니다. 미리보기에서 확인 후 발행하세요.');
-        // 미리보기 새로고침 트리거
+        showToast('승인되었습니다. 게시하면 홈페이지에 표시됩니다.');
+        showPublishStep(modal, previewData, closeModal);
         if (window.dispatchEvent) {
           window.dispatchEvent(new CustomEvent('image-approved', { detail: previewData }));
         }
@@ -152,7 +151,7 @@
 
     modal.querySelector('[data-action="restore"]').addEventListener('click', function() {
       if (!confirm('수정 내용을 버리고 원본으로 되돌리시겠습니까?')) return;
-      revertToOriginal(previewData.assetId).then(function() {
+      approveImage(previewData.assetId, false, '원본 복원').then(function() {
         closeModal();
         showToast('원본으로 복원되었습니다.');
         if (window.dispatchEvent) {
@@ -179,6 +178,51 @@
     function closeModal() {
       modal.remove();
     }
+  }
+
+  /**
+   * 승인 후 단계: 승인된 수정본은 작업본에만 반영돼 있다.
+   * "게시하기"를 눌러야 기존 작업본 게시 API로 홈페이지에 올라간다.
+   */
+  function showPublishStep(modal, previewData, closeModal) {
+    var footer = modal.querySelector('.image-compare-footer');
+    footer.innerHTML =
+      '<span class="image-compare-state">승인됨 · 아직 홈페이지에는 게시되지 않았습니다</span>' +
+      '<button class="btn-approve" data-action="publish">홈페이지에 게시</button>' +
+      '<button class="btn-cancel" data-action="later">나중에</button>';
+    footer.querySelector('[data-action="later"]').addEventListener('click', closeModal);
+    footer.querySelector('[data-action="publish"]').addEventListener('click', function() {
+      publishApproved().then(function() {
+        closeModal();
+        showToast('홈페이지에 게시되었습니다.');
+        if (window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('image-published', { detail: previewData }));
+        }
+      }).catch(function(err) {
+        showToast('게시 실패: ' + err.message);
+      });
+    });
+  }
+
+  /** 승인된 작업본을 기존 작업본 게시 API로 공개한다. */
+  function publishApproved() {
+    return fetch(FLOW_API + '/working-copy-revision').then(function(res) {
+      if (!res.ok) throw new Error('revision 조회 실패: ' + res.status);
+      return res.json();
+    }).then(function(rev) {
+      return fetch('/api/tutor/academy/working-copy/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ revision: rev.revision, force: false })
+      });
+    }).then(function(res) {
+      if (!res.ok) {
+        return res.json().catch(function() { return {}; }).then(function(b) {
+          throw new Error(b.message || ('게시 실패: ' + res.status));
+        });
+      }
+      return res.json();
+    });
   }
 
   function escapeHtml(s) {
@@ -237,6 +281,7 @@
     approveImage: approveImage,
     showCompareModal: showCompareModal,
     revertToOriginal: revertToOriginal,
-    connectUpload: connectUpload
+    connectUpload: connectUpload,
+    publishApproved: publishApproved
   };
 })();

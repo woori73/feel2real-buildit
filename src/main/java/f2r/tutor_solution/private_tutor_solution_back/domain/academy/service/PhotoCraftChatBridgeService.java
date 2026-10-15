@@ -31,7 +31,7 @@ public class PhotoCraftChatBridgeService {
 
   // 이미지 대상 키워드
   private static final Pattern IMAGE_TARGET = Pattern.compile(
-      "(사진|이미지|배너|배경|메인|히어로)");
+      "(사진|이미지|배너|배경|메인|히어로|교재|시간표)");
 
   // 밝기 관련
   private static final Pattern BRIGHTEN = Pattern.compile(
@@ -47,7 +47,6 @@ public class PhotoCraftChatBridgeService {
   private static final Pattern EXPOSURE_UP = Pattern.compile("(노출.*(높|올|증가))");
   private static final Pattern EXPOSURE_DOWN = Pattern.compile("(노출.*(낮|내|감소))");
 
-  private final ImageEditApprovalService approvalService;
   private final AcademyImageService academyImageService;
 
   /**
@@ -122,17 +121,13 @@ public class PhotoCraftChatBridgeService {
         guideMessage);
   }
 
-  /**
-   * 해당 슬롯에 기존 이미지가 있는지 확인한다.
-   * principal이 null이면(테스트 등) false를 반환한다.
-   */
+  /** 해당 슬롯에 편집할 이미지가 있는지 확인한다. principal이 null이면(테스트 등) false. */
   private boolean checkExistingImage(JwtTokenProvider.AuthenticatedPrincipal principal, String slotKey) {
     if (principal == null) {
       return false;
     }
     try {
-      return academyImageService.listImages(principal).stream()
-          .anyMatch(img -> slotKey.equals(img.slotKey()));
+      return academyImageService.hasSourceImage(principal, slotKey);
     } catch (Exception e) {
       log.warn("기존 이미지 조회 실패: slot={}, error={}", slotKey, e.getMessage());
       return false;
@@ -206,21 +201,6 @@ public class PhotoCraftChatBridgeService {
       throw new IllegalArgumentException("편집 작업이 비어 있습니다.");
     }
 
-    // 2. 원본 이미지 URL 조회 (비교용)
-    String originalImageUrl = null;
-    try {
-      List<AcademyImageDtos.ImageAssetInfo> existing =
-          academyImageService.listImages(principal);
-      for (AcademyImageDtos.ImageAssetInfo info : existing) {
-        if (slotKey.equals(info.slotKey())) {
-          originalImageUrl = info.imageUrl();
-          break;
-        }
-      }
-    } catch (Exception e) {
-      log.warn("기존 이미지 조회 실패 (무시): {}", e.getMessage());
-    }
-
     // 3. AcademyImageService를 통해 실제 편집 수행
     AcademyImageDtos.EditImageRequest request =
         new AcademyImageDtos.EditImageRequest(
@@ -235,16 +215,12 @@ public class PhotoCraftChatBridgeService {
     log.info("이미지 편집 완료: assetId={}, version={}, desc={}",
         response.assetId(), response.version(), response.editDescription());
 
-    // 4. 승인 플로우에 등록
-    approvalService.registerEditedImage(
-        response.assetId(), slotKey, response.imageUrl());
-
     // 5. 미리보기 데이터 반환 (원본 vs 수정본)
     return new ImageEditFlowDtos.ImagePreviewData(
         response.assetId(),
         slotKey,
         response.version(),
-        originalImageUrl,
+        AcademyImageService.previewUrl(response.assetId(), "original"),
         response.imageUrl(),
         response.editDescription(),
         response.stagedForPreview());
@@ -283,13 +259,15 @@ public class PhotoCraftChatBridgeService {
     return defaultValue;
   }
 
+  /** 메시지에서 HeroMediaSlot 키를 추론한다 (기본: 원장 대표사진). */
   private String inferSlotKey(String message) {
-    if (message.contains("배너") || message.contains("메인") || message.contains("히어로")) {
-      return "HERO_BANNER";
+    if (message.contains("시간표")) {
+      return "schedule";
     }
-    if (message.contains("배경")) {
-      return "SECTION_BG";
+    if (message.contains("교재")) {
+      java.util.regex.Matcher m = Pattern.compile("([123])").matcher(message);
+      return "textbook" + (m.find() ? m.group(1) : "1");
     }
-    return "HERO_BANNER";
+    return "principal";
   }
 }

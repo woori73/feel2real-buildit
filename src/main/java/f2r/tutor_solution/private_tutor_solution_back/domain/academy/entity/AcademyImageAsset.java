@@ -89,6 +89,11 @@ public class AcademyImageAsset extends BaseEntity {
     this.stagedForPreview = true;
   }
 
+  /** 승인 대기(미리보기) 상태를 닫는다 — 승인 반영 후 또는 거부 시. */
+  public void clearPreviewStage() {
+    this.stagedForPreview = false;
+  }
+
   public void markPublished() {
     this.published = true;
     this.stagedForPreview = false;
