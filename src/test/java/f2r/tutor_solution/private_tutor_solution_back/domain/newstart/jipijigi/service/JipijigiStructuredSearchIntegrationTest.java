@@ -3,16 +3,22 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.Evidence;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartEmpiricalCase;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.repository.NewstartEmpiricalCaseRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 구조화 사례 검색 통합 테스트 (격리 MySQL).
@@ -208,5 +214,144 @@ class JipijigiStructuredSearchIntegrationTest {
 
         System.out.println("다중조건 필터: " + results.size() + "건, TEST-001 포함: " + contains001);
         assert contains001 : "TEST-001이 누락됨 — 필터가 너무 좁음";
+    }
+
+    // =====================================================================
+    // 실데이터 정확도 검증 (2026-10-16 QA, PR #701 후속)
+    // 데이터: 2026-10-07 1:1 실상담 운영자 검증 사례 9건 + 노이즈 2건
+    // (src/test/resources/jipijigi/real-cases.json, 개인정보 없음)
+    // 원문에 없는 구조화 필드는 null (추측 금지). 운영 DB와 완전 분리.
+    // =====================================================================
+
+    /** 골든 질문: id, 질문, Top-8에 반드시 있어야 할 사례 ID, 비고 */
+    record RealGolden(String id, String question, List<String> mustContain, String note) {}
+
+    static List<RealGolden> realGoldens() {
+        return List.of(
+            new RealGolden("G1", "주택 지분이 있는데 공시지가로 생각했어요. 재산평가는 어떻게 하나요?",
+                List.of("REAL-20261007-01"), "재산평가 실사례"),
+            new RealGolden("G2", "공동명의 아파트가 있는데 감면이 어렵다고 나왔어요",
+                List.of("REAL-20261007-02"), "공동명의 감면"),
+            new RealGolden("G3", "부실차주인데 확정안 받고 취소하고 싶어요",
+                List.of("REAL-20261007-04"), "구조화: applicationType=INSOLVENCY"),
+            new RealGolden("G4", "차량담보대출이 있는데 차량 가액이 4천만원이 넘어요",
+                List.of("REAL-20261007-07"), "구조화 0건 예상 → LIKE 폴백으로 회수"),
+            new RealGolden("G5", "임시안 받은 지 4개월 됐는데 확정안은 언제 나와요?",
+                List.of("REAL-20261007-09"), "확정안 시기"),
+            new RealGolden("G6", "상가보증금이랑 주거보증금 둘 다 공제되나요?",
+                List.of("REAL-20261007-06"), "보증금 공제"),
+            new RealGolden("G7", "무직인데 생계급여 말고 받을 수 있는 복지가 있나요?",
+                List.of("REAL-20261007-08"), "주거급여"),
+            new RealGolden("G8", "연체 중인데 집을 팔면 어떻게 돼요?",
+                List.of("REAL-20261007-05"), "사해행위 위험"),
+            new RealGolden("G9", "감면율이 궁금합니다",
+                List.of(), "조건 없음 → LIKE 폴백, 오류 없이 동작"),
+            new RealGolden("G10", "2019년식 아반떼 중고차 시세가 어떻게 돼요?",
+                List.of("NOISE-002"), "노이즈 1순위, 실사례 오염 없어야 함")
+        );
+    }
+
+    /** 실데이터 fixture 로드 (기존 synthetic setUp 이후 호출) */
+    private void loadRealFixture() throws Exception {
+        caseRepository.deleteAll();
+        ObjectMapper om = new ObjectMapper();
+        List<Map<String, Object>> rows;
+        try (var in = new ClassPathResource("jipijigi/real-cases.json").getInputStream()) {
+            rows = om.readValue(in, new TypeReference<>() {});
+        }
+        for (Map<String, Object> r : rows) {
+            caseRepository.save(NewstartEmpiricalCase.builder()
+                .articleId((String) r.get("articleId"))
+                .boardName((String) r.get("boardName"))
+                .title((String) r.get("title"))
+                .contentRaw((String) r.get("contentRaw"))
+                .keyInsights((String) r.get("keyInsights"))
+                .householdType((String) r.get("householdType"))
+                .debtTotal(toLong(r.get("debtTotal")))
+                .debtSecured(toLong(r.get("debtSecured")))
+                .debtUnsecured(toLong(r.get("debtUnsecured")))
+                .assetProperty(toLong(r.get("assetProperty")))
+                .assetVehicle(toLong(r.get("assetVehicle")))
+                .applicationType((String) r.get("applicationType"))
+                .predictedReductionRate((String) r.get("predictedReductionRate"))
+                .finalReductionRate((String) r.get("finalReductionRate"))
+                .writtenAt(LocalDateTime.parse((String) r.get("writtenAt")))
+                .createdBy("accuracy-qa")
+                .build());
+        }
+        System.out.println("### 실데이터 fixture: " + rows.size() + "건 로드");
+    }
+
+    private static Long toLong(Object o) {
+        if (o == null) return null;
+        if (o instanceof Number n) return n.longValue();
+        return null;
+    }
+
+    /** 실제 운영과 동일한 키워드 파이프라인 */
+    private List<String> realKeywords(String q) {
+        List<String> base = researchService.keywordsOf(q);
+        return researchService.withIntentKeywords(base, JipijigiQuestionIntent.analyze(q));
+    }
+
+    @Test
+    @DisplayName("실데이터 골든 10문항 Top-8 정확도 + 응답시간")
+    void realDataGoldenAccuracy() throws Exception {
+        loadRealFixture();
+        List<Long> latencies = new ArrayList<>();
+        int hit = 0, total = 0;
+
+        System.out.println("\n=== 실데이터 골든 검증 (10문항) ===");
+        System.out.printf("%-4s | %-8s | %-7s | %-40s | %s%n", "ID", "판정", "ms", "Top8", "비고");
+        System.out.println("-".repeat(110));
+
+        for (RealGolden g : realGoldens()) {
+            List<String> keywords = realKeywords(g.question());
+            CaseConditions cond = CaseConditionExtractor.extract(g.question());
+
+            long t0 = System.currentTimeMillis();
+            List<Evidence> results = cond.isEmpty()
+                ? researchService.searchEmpiricalCases(keywords)
+                : researchService.searchEmpiricalCases(keywords, cond);
+            long ms = System.currentTimeMillis() - t0;
+            latencies.add(ms);
+
+            List<String> top8 = results.stream().limit(8).map(Evidence::getRefId).toList();
+            List<String> missing = g.mustContain().stream().filter(id -> !top8.contains(id)).toList();
+            boolean noisePollution = !g.id().equals("G10")
+                && top8.stream().anyMatch(id -> id.startsWith("NOISE"));
+
+            String verdict;
+            if (g.mustContain().isEmpty()) {
+                verdict = "동작확인";
+            } else if (missing.isEmpty()) {
+                verdict = "적중";
+                hit += g.mustContain().size();
+            } else {
+                verdict = "미스:" + missing;
+            }
+            total += g.mustContain().size();
+
+            String top8str = top8.toString();
+            System.out.printf("%-4s | %-8s | %-7d | %-40s | %s%s%n",
+                g.id(), verdict, ms,
+                top8str.length() > 40 ? top8str.substring(0, 40) : top8str,
+                g.note(), noisePollution ? " [노이즈오염!]" : "");
+
+            if (!g.mustContain().isEmpty()) {
+                assertThat(top8).as(g.id() + " " + g.question() + " → " + g.mustContain())
+                    .containsAll(g.mustContain());
+            }
+            if (!g.id().equals("G10")) {
+                assertThat(top8).as(g.id() + " 노이즈 오염").noneMatch(id -> id.startsWith("NOISE"));
+            }
+        }
+
+        latencies.sort(Long::compareTo);
+        long p50 = latencies.get((int) (latencies.size() * 0.5));
+        long p95 = latencies.get(Math.min(latencies.size() - 1, (int) (latencies.size() * 0.95)));
+        System.out.println("=== 실데이터 결과: Top-8 적중 " + hit + "/" + total
+            + ", p50=" + p50 + "ms, p95=" + p95 + "ms ===");
+        System.out.println("### LATENCY_MS=" + latencies);
     }
 }
