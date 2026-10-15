@@ -36,6 +36,13 @@ public class TestPrepPageController {
     return "testprep/catalog";
   }
 
+  @GetMapping("/testprep/guide")
+  public String guide(Model model) {
+    model.addAttribute("pageActive", "guide");
+    model.addAttribute("ssoLoginUrl", SSO_LOGIN);
+    return "testprep/guide";
+  }
+
   @GetMapping("/testprep/run")
   public String run(Model model) {
     model.addAttribute("pageActive", "practice");

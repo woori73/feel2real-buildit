@@ -19,6 +19,7 @@
 | **기능 화면·API·상태 흐름 구현** | [FLOWS.md](FLOWS.md) + [API.md](API.md) |
 | **수능영어 Wiki ③④⑤ 학생 오답 입력(DAY-2)·약점 DNA 도출 규칙** | [MONDAY_DAY2_HANDOFF.md](MONDAY_DAY2_HANDOFF.md) |
 | **랜딩 통계 / 서비스 지표 / GA4 경계** | [service-statistics-design.md](service-statistics-design.md) |
+| **신규 프로그램 공개 첫 화면 / 네이버 로그인 복귀 / 권한 안내(입시상담 AI 설계 포함)** | [design/program-public-entry.md](design/program-public-entry.md) + [API.md](API.md) |
 | **Controller endpoint 추가/변경** | [API.md](API.md) (계약 동기화 필수) |
 | **Academy 발행 API / 미래 LLM 콘텐츠 생성** | [academy-publish-design.md](academy-publish-design.md) |
 | **Academy Builder 페이지(`/builder`) / 랜딩 발행 배선** | [academy-builder-page.md](academy-builder-page.md) |

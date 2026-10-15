@@ -273,6 +273,14 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ReturnUrlPolicyTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.ProblemGeneratorSecurityIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramEntryTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsChatControllerRateLimitTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsRateLimiterTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsChatServicePolicyTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderYearTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsLlmClientTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsQueryParserTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsResearchServiceLogicTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest"
 
       - name: Verify editor tests executed
         # 셸 주석(#)으로 --tests 필터가 잘리는 사고 방지: XML 리포트 존재를 강제한다.
@@ -374,6 +382,9 @@ jobs:
       - name: Ensure Gradle wrapper is executable
         run: chmod +x gradlew
 
+      - name: Install Korean font for Chromium QA
+        run: sudo apt-get update -qq && sudo apt-get install -y fonts-noto-cjk
+
       - name: Run MySQL integration tests
         run: >-
           ./gradlew test --no-daemon --stacktrace
@@ -405,6 +416,19 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramBuilderEntryMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramProblemGeneratorEntryMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramEasyLedgerEntryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderDbTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsFactSearchServiceDbTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCounselingSessionHistoryDbTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest"
+
+      - name: Upload admissions browser QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: admissions-browser-qa-${{ github.sha }}
+          path: build/reports/admissions-qa
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload MySQL test report
         if: always()
