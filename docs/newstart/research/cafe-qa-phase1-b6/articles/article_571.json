@@ -1,0 +1,37 @@
+{
+ "articleId": 571,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려에서 잘 갚고 쓰던 신용카드 같은것도 실효 후 차주로 넘어가는 순간.. 그 카드의 잔존 채무 또한 강제로 전부 다 캠코로 넘어가는거죠?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-28T01:02:58.610Z",
+ "createdAtMs": 1732755778610,
+ "viewCount": 121,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/571",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "네 카드 대출 및 잔금 모두 새출발에 포함이 됩니다",
+  "​"
+ ],
+ "bodyNormalized": "네 카드 대출 및 잔금 모두 새출발에 포함이 됩니다\n​",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-4187c793-ad24-11ef-b3f3-edf922adacbd\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-44e21630-ad24-11ef-b3f3-8f7d984374ea\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-8218b64b-ad24-11ef-b3f3-f18a56955706\">네 카드 대출 및 잔금 모두 새출발에 포함이 됩니다</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-4187c794-ad24-11ef-b3f3-5379c384a8e3\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-8218b64c-ad24-11ef-b3f3-0363c8d139ac\">​</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

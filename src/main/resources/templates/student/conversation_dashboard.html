@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R · 대시보드</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/conversation_dashboard.css">
+  <link rel="stylesheet" href="/css/conversation_upload.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- 사이드바 -->
+    <th:block th:replace="~{fragments/_sidebar :: sidebar('dashboard')}"></th:block>
+
+    <!-- 메인 -->
+    <main class="main">
+      <!-- 헤더 -->
+      <header class="main-header">
+        <div class="main-header-left">
+          <h1 class="main-title-row">
+            <span class="main-title" id="mainTitle" th:text="${mainTitle}">종합 현황판</span>
+            <button type="button" id="btnEditTitle" class="btn-edit-title" title="대화명 수정" onclick="startTitleEdit()">✎</button>
+          </h1>
+          <p class="main-subtitle" id="mainSubtitle">대화에 첨부한 자료와 분석 결과를 한눈에 확인해요.</p>
+        </div>
+        <div class="main-header-right">
+          <button type="button" class="btn-upload-header" id="btnUploadHeader" onclick="openUploadModal()">+ 파일 추가</button>
+        </div>
+      </header>
+
+      <!-- 카드 그리드 -->
+      <section class="card-grid">
+
+        <!-- 카드 1: 업로드 자료 -->
+        <article class="card card-materials">
+          <div class="card-header">
+            <h2 class="card-title">업로드 자료</h2>
+            <div class="card-header-right">
+              <span class="card-sub" id="materialsCount">0개</span>
+              <button type="button" class="btn-upload-card" id="btnUploadCard" onclick="openUploadModal()">+ 파일 추가</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="materialsList" class="materials-list">
+              <div class="empty-state">아직 첨부된 자료가 없어요.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 카드 2: 성취도 리포트 (radar) -->
+        <article class="card card-radar">
+          <div class="card-header">
+            <h2 class="card-title">AI 자동채점 성취도 리포트</h2>
+            <span class="card-sub">이 대화의 시험지 기준</span>
+          </div>
+          <div class="card-body">
+            <div id="radarEmpty" class="empty-state" style="display:none">
+              확정된 시험지 답안이 아직 없어요.
+            </div>
+            <div id="radarWrap" class="chart-wrap" style="display:none">
+              <canvas id="radarChart"></canvas>
+            </div>
+            <ul id="radarLegend" class="radar-legend"></ul>
+          </div>
+        </article>
+
+        <!-- 카드 3: 개별 상담 및 피드백 (성적 추이 위로 swap) -->
+        <article class="card card-feedback">
+          <div class="card-header">
+            <h2 class="card-title">개별 상담 및 피드백</h2>
+            <div class="card-header-right">
+              <span class="card-sub" id="consultationCount">0개</span>
+              <button type="button" class="btn-upload-card" id="btnConsultationUpload"
+                      style="display:none" onclick="openConsultationUpload()">+ 상담 자료</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="consultationList" class="consultation-list">
+              <div class="empty-state">아직 등록된 상담 자료가 없어요.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- 카드 4: 성적 변화 추이 (line) -->
+        <article class="card card-timeline">
+          <div class="card-header">
+            <h2 class="card-title">성적 변화 추이</h2>
+            <span class="card-sub" id="timelineSub">시계열 점수</span>
+          </div>
+          <div class="card-body">
+            <div id="timelineEmpty" class="empty-state" style="display:none">
+              아직 점수 이력이 없어요.
+            </div>
+            <div id="timelineWrap" class="chart-wrap" style="display:none">
+              <canvas id="timelineChart"></canvas>
+            </div>
+          </div>
+        </article>
+
+      </section>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/conversation_upload.js"></script>
+  <script src="/js/conversation_dashboard.js"></script>
+</body>
+</html>

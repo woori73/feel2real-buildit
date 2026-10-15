@@ -1,0 +1,52 @@
+{
+ "articleId": 2135,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "합의서",
+ "author": {
+  "nickname": "미소8",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-11-28T05:31:09+00:00",
+ "createdAtMs": 1764307869463,
+ "viewCount": 30,
+ "commentCount": 1,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2135",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "드디어 합의서 체결하라고 연락왓네요",
+  "매니저님과 이방분들 너무감사합니다",
+  "근데 사이버상담부로 가서 체결하라는데 그기가 어딘지 못 찾겟어요ㅜㅜ 아무리 찾아도 ㅎㅎ위치 좀 가르쳐주세요"
+ ],
+ "bodyNormalized": "드디어 합의서 체결하라고 연락왓네요\n매니저님과 이방분들 너무감사합니다\n근데 사이버상담부로 가서 체결하라는데 그기가 어딘지 못 찾겟어요ㅜㅜ 아무리 찾아도 ㅎㅎ위치 좀 가르쳐주세요",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-ab259099-14e4-4278-8985-7a9ceb22c68e\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-74389442-b267-409d-9aac-b17cc4748f1f\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-0c79e79d-01ad-49ac-a979-49e2dc0578eb\">드디어 합의서 체결하라고 연락왓네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-7230f1df-3280-403f-8562-14004ae8969e\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-be7c5871-db15-452d-a0ad-63d6182203b9\">매니저님과 이방분들 너무감사합니다 </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-f43a21f0-6052-4393-897b-fbf5cb437836\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-7938b7c1-119c-42ab-83d4-e608a78f577f\">근데 사이버상담부로 가서 체결하라는데 그기가 어딘지 못 찾겟어요ㅜㅜ 아무리 찾아도 ㅎㅎ위치 좀 가르쳐주세요</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-ab259099-14e4-4278-8985-7a9ceb22c68e\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54568086,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-28T05:34:53.000Z",
+   "createdAtMs": 1764308093000,
+   "text": "합의서 체결 연락 받으셨다면\n사이버상담부 → ‘나의 채무조정 현황’ 메뉴에서 체결 가능합니다.\n\n접속 경로는 아래와 같습니다:\n\n✔ 신용회복위원회 홈페이지 접속\n\n👉 https://www.ccrs.or.kr\n(휴대폰이면 “신복위 앱”에서도 동일합니다)\n\n✔ 로그인(공동인증서/간편인증)\n\n✔ 메뉴 → 사이버상담부\n\n→ 들어가시면\n‘채무조정 신청현황 / 합의서 체결’ 메뉴가 나옵니다.\n\n보통 위치가 다음과 같이 표시됩니다:\n\n사이버상담부 → 채무관리 → 합의서 확인/체결",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>위메이드 개인주주 분석</title>
+<link rel="stylesheet" th:href="@{/css/wemade.css}" href="/css/wemade.css">
+<script th:src="@{/js/chart.umd.min.js}" src="/js/chart.umd.min.js"></script>
+<script th:inline="javascript">
+window.WEMADE_VIEWER = /*[[${viewer}]]*/ 'GUEST';
+</script>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand"><span class="brand-name">위메이드</span><span class="brand-code">112040</span></div>
+    <div class="appbar-right">
+      <a th:if="${viewer == 'GUEST'}" th:href="@{/wemade/login}" href="/wemade/login" class="login-btn">로그인</a>
+      <span th:unless="${viewer == 'GUEST'}" class="login-badge">로그인됨</span>
+      <button th:unless="${viewer == 'GUEST'}" type="button" id="logout-btn" class="logout-btn">로그아웃</button>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- 1. 현재가 (한 줄) -->
+  <section class="price-line" aria-label="현재가">
+    <span class="price-line-brand">위메이드</span>
+    <span class="price-line-price" id="today-price">…</span>
+    <span class="price-line-chg" id="today-chg">…</span>
+    <span class="price-line-vol">거래량 <span id="today-vol">…</span></span>
+    <span class="price-line-asof muted" id="today-asof"></span>
+    <!-- ID 유지를 위한 hidden 요소 (JS 호환) -->
+    <span id="today-disc" hidden></span>
+    <span id="today-dday" hidden></span>
+  </section>
+  <ul class="today-lines" id="today-lines" hidden><li></li></ul>
+
+  <!-- 최신 뉴스 (buildit2 public 연동, 2026-10-13) — 이후 뉴스 업데이트는 https://github.com/woori73/buildit2 의 wemade-news/news.json 만 수정하면 반영됨. private 저장소 PR·배포 불필요 -->
+  <section class="sec" aria-labelledby="t-newsfeed">
+    <h2 class="sec-title" id="t-newsfeed">최신 뉴스</h2>
+    <div id="wemade-newsfeed"><p class="muted">뉴스를 불러오는 중…</p></div>
+  </section>
+  <script>
+  (function(){
+    var el = document.getElementById('wemade-newsfeed');
+    if(!el) return;
+    function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(x){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]; }); }
+    fetch('https://raw.githubusercontent.com/woori73/buildit2/main/wemade-news/news.json', {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+      .then(function(data){
+        var items = (data && data.items) || [];
+        if(!items.length){ el.innerHTML = '<p class="muted">등록된 뉴스가 없습니다.</p>'; return; }
+        el.innerHTML = items.map(function(it){
+          var pts = (it.points||[]).map(function(p){ return '<li>'+esc(p)+'</li>'; }).join('');
+          var meta = [it.source, it.author, it.publishedAt].filter(Boolean).map(esc).join(' · ');
+          return '<article class="cn-article">'
+            + '<h4><a href="'+esc(it.url)+'" target="_blank" rel="noopener">'+esc(it.title)+'</a></h4>'
+            + (meta ? '<div class="meta">'+meta+'</div>' : '')
+            + (pts ? '<ul>'+pts+'</ul>' : '')
+            + '</article>';
+        }).join('');
+      })
+      .catch(function(){ el.innerHTML = '<p class="muted">뉴스를 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>'; });
+  })();
+  </script>
+
+    <!-- 2026-10-11 중국 블록체인 뉴스 + 심층 분석 (신규 추가 — 기존 섹션·마크업·스크립트·스타일 미변경) -->
+  <section class="sec" aria-labelledby="t-update1011">
+    <h2 class="sec-title" id="t-update1011">10월 11일 업데이트 — 중국 '국가 블록체인 네트워크'와 위메이드</h2>
+    <article class="cn-article">
+      <div class="meta">2026년 10월 11일(일) · 중국 블록체인 뉴스 정리 + 연관성 심층 분석</div>
+
+      <!-- ① 한눈에 보는 핵심 -->
+      <h4>한눈에 보는 핵심</h4>
+      <p>10월 9일 중국 공산당 중앙위원회·국무원이 발표한 <strong class="hl">《신질생산력(新质生产力) 발전에 관한 의견》</strong>에 <strong class="hl">'국가 블록체인 네트워크' 건설</strong>이 명시됐습니다. <span class="claim-tag official">공식</span> 신화통신 수권 발표 원문과 대조해 내용이 일치함을 확인했습니다.</p>
+      <p>다만 중국의 '블록체인'은 암호화폐가 아니라 <strong class="hl">데이터 신뢰 인프라</strong>입니다. 당장의 직접 수혜보다, <strong class="hl">중국 자본이 위메이드를 인수하는 시점에 블록체인이 국가 인프라로 격상됐다는 점에서 장기적 가능성이 열린 뉴스</strong>로 봐야 합니다.</p>
+      <p>타이밍이 겹칩니다. <strong class="hl">10월 30일 위메이드 경영권 거래 잔금(8,280억원)</strong> 납입이 예정돼 있는데, 바로 그 직전에 중국이 블록체인을 국가 인프라로 격상한 것입니다.</p>
+
+      <!-- ② 뉴스 정리 (펼치기) -->
+      <details class="more">
+        <summary>② 뉴스 정리 — 원문·번역·검증</summary>
+        <div>
+          <p><strong>원문 제목:</strong> 《中共中央 国务院 关于发展新质生产力的意见》<br>
+          <strong>발표:</strong> 2026-10-09 신화통신(新华社) 수권 발표 / 언론 보도 2026-10-10</p>
+          <p><strong>한 줄 요약:</strong> 실물경제와 디지털경제의 융합을 위해 전국 통합 컴퓨팅(算力)망과 국가 블록체인 네트워크를 건설하고, 데이터 소유권·거래·수익 배분 제도를 정비하며 AI·양자·6G 등 미래 산업을 육성한다는 중국 국가 전략 문서.</p>
+          <h4>핵심 조항 (중국어 → 한국어)</h4>
+          <p><strong>(九) 실물경제와 디지털경제의 심층 융합</strong> — "데이터 산권(소유권)의 귀속 인정, 시장 거래, 권익 배분, 이익 보호 제도를 정비하고, <strong>전국 통합 컴퓨팅망과 국가 블록체인 네트워크를 건설</strong>한다."</p>
+          <p><strong>(八) 미래 산업의 선제적 배치</strong> — "양자과학기술, 바이오제조, 수소에너지 및 6세대 이동통신(6G) 등 미래 산업의 발전을 추진한다."</p>
+          <p><strong>(十) '인공지능+' 행동 전면 시행</strong> — "스마트 단말·응용을 확산하고 기술 공급을 강화하며, 안전·신뢰·통제 가능성을 확보한다."</p>
+          <h4>개념 정리</h4>
+          <p><strong>신질생산력(新质生产力):</strong> AI·블록체인·로봇 등 첨단기술 혁신으로 생산성을 끌어올리고 새 성장 동력을 확보하려는 중국의 국가 전략 개념.</p>
+          <p><strong>국가 블록체인 네트워크:</strong> 암호화폐/코인이 아닌, 데이터 위변조 방지·유통 추적·신뢰 기반 디지털 인프라로서의 블록체인. 중국 정책의 일관된 맥락입니다.</p>
+          <p><strong>데이터 산권(数据产权):</strong> 데이터의 소유·귀속 인정, 시장 거래, 권익(수익) 배분, 이익 보호의 제도화.</p>
+          <h4>검증 결과</h4>
+          <p>발표 주체·발표 시점·국가 블록체인 네트워크·전국 통합 컴퓨팅망·데이터 제도 정비·미래 산업 항목 모두 신화통신 수권 발표 원문과 일치 확인.</p>
+          <p class="muted">조항 번호와 문장 일부는 매체별 편집·요약본에 따라 다를 수 있어, 인용 시 신화통신 전문 원문으로 최종 확인하시길 권장합니다.</p>
+        </div>
+      </details>
+
+      <!-- ③ 심층 분석 (펼치기) -->
+      <details class="more">
+        <summary>③ 심층 분석 — 위메이드 블록체인 사업 × 중국 자본 × 10/30 인수</summary>
+        <div>
+          <h4>중국의 이중 잣대 — 기술은 육성, 코인은 금지</h4>
+          <p>이번 정책의 블록체인은 <strong>국가 주도 데이터 인프라</strong>입니다. 반면 중국은 2021년부터 인민은행 등 10개 기관 공동 규정으로 디지털자산 관련 업무를 불법 금융활동으로 규정해 왔습니다 <span class="claim-tag media">언론</span>. 같은 단어를 쓰지만 다른 사업이라는 점이 출발선입니다.</p>
+          <h4>직접 수혜는 제한적</h4>
+          <p>이 정책은 중국 내 암호화폐·P2E 합법화와 무관합니다. 위메이드식 P2E(토큰 거래소 상장·환전)는 중국에서 여전히 불법이며, 이번 정책으로 바뀌는 것은 없습니다. 당장의 주가·실적에 연결 짓는 것은 성급합니다.</p>
+          <h4>장기 가능성은 확대 — 긍정 방향</h4>
+          <p><strong>첫째, 무코인형 블록체인.</strong> 중국은 코인은 금지해도 체인 기술은 키웁니다. 토큰 거래가 없는 형태 — 게임 아이템의 디지털 수집품화, IP 라이선스 이력 관리 — 는 중국의 방향과 부합합니다. 인수 주체가 킹넷 등 중국 자본인 만큼, 위메이드가 장기적으로 이 모델로 피벗한다면 이번 정책이 제도적 토양이 됩니다.</p>
+          <p><strong>둘째, 데이터 산권 제도화와 미르 IP.</strong> 권리 귀속 확인·유통 추적·수익 배분·권익 보호의 제도화는 IP 비즈니스와 맞닿아 있습니다. 위메이드는 미르 IP로 10년간 소송을 벌였고, 중국 내 사설서버가 고질 문제입니다. 복잡한 라이선스 권리 관계(위메이드–액토즈 80:20, 킹넷 라이선스)를 블록체인 인프라에 기록·추적할 수 있게 되는 것은 실질적 의미가 있습니다.</p>
+          <p><strong>셋째, 미르 IP의 본질적 호재는 따로 있다.</strong> 2월 화해로 소송 리스크가 소멸했고, 10/30 이후 Neosphere를 통한 독점 라이선스 구조가 확정되며, 킹넷의 중국 내 운영이 본격화됩니다. 블록체인 정책은 이 세 가지를 뒤에서 받쳐주는 우호적 환경입니다.</p>
+          <h4>10/30 이후 세 갈래 시나리오</h4>
+          <p><strong>A. 사업 유지</strong> — 9월 14일 위메이드·네오펄스 공동입장문은 "현재 추진 중인 핵심 사업과 조직 운영은 차질 없이 기존 계획에 따라 지속될 것"이라고 밝혔습니다 <span class="claim-tag official">공식</span>.</p>
+          <p><strong>B. 위믹스 분리</strong> — 업계 일각에서는 "중국은 중국 기업의 해외 디지털자산 사업도 허가하지 않는다"며 "어떤 식으로든 위믹스 사업은 위메이드에서 분리될 것이라는 게 중론"이라는 관측이 나옵니다 <span class="claim-tag media">언론</span>.</p>
+          <p><strong>C. IP 중심 재편</strong> — 킹넷이 공시에서 밝힌 목적은 传奇IP의 전략적 바인딩·신작 게임 출시·중국 시장 운영으로, 블록체인 사업은 명시된 목적에 포함되지 않습니다(9/12 CNINFO 공시, 10/7 정리 ⑥ 참조). 킹넷이 노리는 것은 미르 IP의 중국 내 활용일 가능성이 큽니다.</p>
+          <h4>왜 10/30이 분기점인가</h4>
+          <p>잔금 8,280억원 납입 → 경영권 이전 → 임시주총 → 이사회 재편으로 이어지면, 새 지배구조에서 위믹스 사업의 방향이 처음 공식 결정됩니다. 위메이드 노조가 요구한 "위믹스 포함 주요 사업부의 고용승계·조직 존속 확인"(9/30)도 같은 맥락의 신호입니다 <span class="claim-tag media">언론</span>.</p>
+          <p class="fine">위 내용은 공개 자료 기반 분석으로, 장기 가능성에 대한 판단입니다. 어느 시나리오로 결정될지는 10/30 이후 새 이사회의 발표로 확인해야 하며, "10월 30일 이후 상승한다"고 미리 예측하지 않습니다.</p>
+        </div>
+      </details>
+
+      <!-- ④ 투자자가 확인할 것 -->
+      <h4>투자자가 확인할 것</h4>
+      <div class="kv"><span class="k">10/30 잔금</span><span class="v">8,280억원 정상 납입·거래 종결 여부 (DART 공시)</span></div>
+      <div class="kv"><span class="k">종결 후 이사회</span><span class="v">임시주총·이사회 재편 시 위믹스 사업 방향 공식 발표 여부</span></div>
+      <div class="kv"><span class="k">중국 승인 절차</span><span class="v">발개위·상무·외환 승인 진행 상황 (킹넷 49% 취득 선행조건)</span></div>
+      <div class="kv"><span class="k">블록체인 실적</span><span class="v">위믹스 스테이션 해외 성과, 3분기 블록체인 부문 실적</span></div>
+
+      <!-- ⑤ 근거·원문 (펼치기) -->
+      <details class="more">
+        <summary>⑤ 근거·원문</summary>
+        <div>
+          <ul>
+            <li><a href="https://www.news.cn/politics/20261009/37bc898ce93f4c0899e926039f842891/c.html" target="_blank" rel="noopener">신화통신 수권 발표 전문</a></li>
+            <li><a href="http://politics.people.com.cn/n1/2026/1009/c1001-40811515.html" target="_blank" rel="noopener">인민일보</a></li>
+            <li><a href="https://finance.sina.com.cn/jjxw/2026-10-09/doc-iniurmnf2920765.shtml" target="_blank" rel="noopener">신랑재경</a></li>
+            <li><a href="https://www.nbd.com.cn/articles/2026-10-09/4600087.html" target="_blank" rel="noopener">매경 nbd(每日经济新闻)</a></li>
+            <li><a href="https://www.thelec.kr/news/articleView.html?idxno=62232" target="_blank" rel="noopener">thelec — 위믹스 전망·중국 규제 (9/14)</a></li>
+            <li><a href="https://www.gamevu.co.kr/news/articleView.html?idxno=60790" target="_blank" rel="noopener">게임뷰 — 킹넷 합류·위믹스 사업 방향 (9/14)</a></li>
+            <li><a href="https://www.yna.co.kr/view/AKR20260914050700017" target="_blank" rel="noopener">연합뉴스 — 9/14 공동입장문</a></li>
+            <li><a href="https://blockchaintoday.co.kr/news/articleView.html?idxno=65855" target="_blank" rel="noopener">블록체인투데이 — 위믹스 스테이션·상반기 실적</a></li>
+            <li><a href="https://biz.chosun.com/it-science/ict/2026/09/30/O3PQOPOMXFA6LOV5XUWUGBRGTQ/" target="_blank" rel="noopener">조선비즈 — 위메이드 노조 출범 (9/30)</a></li>
+          </ul>
+          <p class="muted">잔금·지분율·계약 조건은 DART 「주식 양수도 계약」(2026-06-30, rcpNo 20260630900888) 기준.</p>
+        </div>
+      </details>
+
+    </article>
+  </section>
+
+    <!-- 2026-10-08 장 마감 정리 (신규 추가 — 기존 섹션·마크업·스크립트·스타일 미변경) -->
+  <section class="sec" aria-labelledby="t-update1008">
+    <details class="sec-collapsible">
+      <summary class="sec-title" id="t-update1008">10월 8일 장 마감 정리</summary>
+    <article class="cn-article">
+      <div class="meta">2026년 10월 8일(목) · 장 마감 후 정리</div>
+
+      <!-- ① 오늘 종가 -->
+      <h4>오늘 종가</h4>
+      <p><strong class="hl">위메이드 15,660원(-1.2%)</strong>, 거래량 186,308주. 시가 15,680원 · 고가 15,800원 · 저가 15,360원.</p>
+      <p><strong class="hl">위메이드맥스 4,780원(-14.18%, KIS 기준)</strong>, 거래량 725,093주. 시가 5,000원 · 고가 5,000원 · 저가 4,745원. 어제 +20.96% 급등분의 되돌림.</p>
+      <p class="muted">KIS 당일 종가·고저가·거래량은 KRX 공식 종가와 일치 확인.</p>
+
+      <!-- ② 오늘 수급 -->
+      <h4>오늘 수급 (16:30 자동수집, 첫 DB 적재)</h4>
+      <p>외국인 <strong>-55</strong> · 기관 <strong>+62</strong> · 개인 <strong>-7</strong>. 첫 자동수집이 정상 동작했습니다.</p>
+
+      <!-- ③ 내일 휴장 -->
+      <h4>내일 휴장 안내</h4>
+      <p>내일(10월 9일)은 한글날 연휴로 휴장입니다.</p>
+
+      <!-- ④ 디지털자산기본법 -->
+      <details class="more">
+        <summary>④ 디지털자산기본법(2단계) 현황 — 오늘 오전 정리</summary>
+        <div>
+          <p>1분기 처리 계획이었으나 <strong>10월 현재 정부안조차 제출되지 않았고</strong>, 9월 공청회는 무산됐습니다. 11월 법안소위가 다음 분기점이 될 전망입니다.</p>
+          <p>법안에 담길 내용: <strong>스테이블코인 제도화, 거래소 대주주 지분 제한, 공시 의무 신설, 금소법 수준의 행위 규제</strong>입니다.</p>
+          <p>위메이드와의 관련성: <strong>위믹스 사태가 2단계 입법의 직접적 배경</strong>이 됐습니다. 유통량 공시 강화와 발행기업 자금조달 규제가 위메이드에 직접 영향을 줄 수 있습니다.</p>
+          <p>주주 관점: 법 통과 시 규제 명확화는 긍정적이나, 컴플라이언스 부담과 발행 제약은 부담 요인입니다. 단기적으로는 불확실성이 이어집니다.</p>
+        </div>
+      </details>
+
+      <!-- ⑤ 중국·한국 신규 공시 조사 -->
+      <details class="more">
+        <summary>⑤ 중국·한국 신규 공시 조사 결과 (10월 5일~8일)</summary>
+        <div>
+          <p><strong>신규 공시 없음.</strong> 한국 위메이드의 최신 공시는 9월 18일 「주주명부폐쇄기간 또는 기준일 설정」이고, 중국 킹넷(002517)의 최신 공시는 9월 12일 2건입니다. 10월 30일 일정 변경, 승인 완료, 정정 공시 모두 없습니다. <strong>10월 30일 종결 예정은 그대로 유지</strong>됩니다.</p>
+          <p>킹넷 9월 12일 공시 원문(<a href="https://static.cninfo.com.cn/finalpage/2026-09-12/1225562016.pdf" target="_blank" rel="noopener">원문 PDF</a>)에서 새로 확인된 내용:</p>
+          <p>· 지분 인수 대가는 <strong>1홍콩달러(명목)</strong>. 실제 자금은 공동 유상증자로 투입됩니다 (넥스펄스 3.102억 달러 먼저 → 사이프러스 2.98억 달러).<br>
+          · 조건이 갖춰지면 <strong>5영업일 안에</strong> 주식·대금을 주고받습니다. 기한을 못 지키면 계약은 <strong>자동 종료</strong>되고 서로 배상 책임이 없습니다.<br>
+          · 승인이 안 나오면 <strong>10영업일 안에 원금을 이자 없이</strong> 돌려줍니다.<br>
+          · 분쟁 시 <strong>홍콩법 적용, 홍콩 국제중재센터</strong>에서 중재합니다.<br>
+          · 킹넷은 <strong>이사회 승인만으로 끝나고 주주총회 표결은 불필요</strong>합니다.<br>
+          · 킹넷이 갖는 건 Neosphere 지분 <strong>49%(소수지분)</strong>뿐입니다. 위메이드를 직접 지배하지 않으며, <strong>위메이드 최대주주는 네오펄스(40.25%)</strong>입니다.<br>
+          · Neosphere는 <strong>2026년 7월 28일 설립</strong>, 자본금 100홍콩달러입니다.<br>
+          · 목푸이밍의 한자 이름은 공시 전문에 없습니다. 로마자 "Mok,PuiMing"만 표기돼 있습니다.<br>
+          · 미르의 전설 IP는 <strong>소유권이 넘어가는 게 아닙니다</strong>. 독점 라이선스 계약 추진 의무 + 라이선스료 상한(기존 협력사 계약 수준 이하) + 의무 불이행 시 차액 배상 구조입니다.</p>
+        </div>
+      </details>
+
+      <!-- ⑥ 바로잡을 내용 -->
+      <details class="more">
+        <summary>⑥ 바로잡을 내용</summary>
+        <div>
+          <p>"킹넷이 위메이드 최대주주" → <strong>틀렸습니다.</strong> 최대주주는 네오펄스(40.25%)이고, 킹넷은 그 아래 Neosphere의 49% 지분만 보유합니다.</p>
+          <p>"킹넷이 미르 IP를 장악" → <strong>틀렸습니다.</strong> 공시에는 IP 소유권 이전 조항이 없습니다.</p>
+        </div>
+      </details>
+
+      <!-- ⑦ 한국 뉴스 -->
+      <details class="more">
+        <summary>⑦ 한국 뉴스 (10월 5일~8일)</summary>
+        <div>
+          <p><strong>공정위 기업결합심사 진행 중 — 대주주 적격성 심사는 없음</strong> (10월 7일, <a href="https://dealsite.co.kr/articles/170081" target="_blank" rel="noopener">딜사이트</a>)<br>
+          공정위가 위메이드 경영권 거래의 기업결합심사를 진행 중이라는 업계 보도. 공정위 공식 발표는 아직 없습니다. 게임산업에는 별도의 주주 변경 승인 절차가 없고, 심사 기준은 경쟁 제한 여부입니다. 네오펄스는 홍콩을 대표 투자국가로 하는 외국인투자기업으로 등록돼 있습니다. 문체부도 사실관계를 파악 중이나 승인·심사 권한은 없습니다.</p>
+          <p><strong>9,200억은 박관호 개인에게 — 회사로 들어오는 새 자금은 공개 안 됨</strong> (10월 5일, <a href="https://dealsite.co.kr/articles/169904" target="_blank" rel="noopener">딜사이트</a>)<br>
+          계약금 920억·잔금 8,280억은 박관호 회장 지분을 사는 돈입니다. 위메이드 회사로 직접 들어오는 신규 자금은 현재까지 공개되지 않았습니다.</p>
+          <p><strong>킹넷이 직접 최대주주가 되는 것은 아니다</strong> (10월 8일, <a href="https://dealsite.co.kr/articles/169540" target="_blank" rel="noopener">딜사이트</a>)<br>
+          넥스펄스가 Neosphere 지분 51%를 쥐고 있어 킹넷이 위메이드 최대주주가 되는 구조가 아닙니다.</p>
+          <p><strong>10월 30일 잔금·최대주주 변경 재확인, 노조 4대 요구</strong> (10월 6일, <a href="https://www.industrynews.co.kr/news/articleView.html?idxno=87080" target="_blank" rel="noopener">인더스트리뉴스</a>)<br>
+          10월 30일 지분 양수도 대금 정산·잔금 납입 후 최대주주가 박관호 의장에서 네오펄스로 변경 예정. 연기 언급 없습니다. 거래 종결 시 임시주주총회로 이사회 전면 재편 전망 (기자 서술, 회사 공식 발표 아님). 위메이드 노조(민주노총 화섬식품노조 위메이드지회)가 9월 30일 설립을 선언하고 4대 요구를 발표했습니다: 구조조정·정리해고 거부, 근로조건 개악 저지·성과급 개선, 경영 투명성, 위믹스 포함 주요 사업부 고용승계·조직 존속 확인.</p>
+        </div>
+      </details>
+
+    </article>
+    </details>
+  </section>
+
+<!-- 2026-10-07 종합 업데이트 (신규 추가 — 기존 섹션·마크업·스크립트·스타일 미변경) -->
+  <section class="sec" aria-labelledby="t-update1007">
+    <details class="day-archive">
+      <summary class="sec-title" id="t-update1007">10월 7일 종합 업데이트 (펼치기)</summary>
+      <article class="cn-article">
+      <div class="meta">2026년 10월 7일(수) · 장 마감 후 정리</div>
+
+      <!-- ① 오늘 한 줄 요약 -->
+      <h4>오늘 한 줄 요약</h4>
+      <p><strong class="hl">위메이드맥스가 KRX 종가 5,430원(+18.43%)</strong>으로 마감했습니다. 장중 고가 5,640원까지 오르며 <strong>60주선(5,480원)과 2차 고점(5,500원)을 모두 넘어섰지만</strong>, 종가는 두 선 아래에서 끝났습니다. <strong class="hl">위메이드는 KRX 종가 15,840원(+0.70%)</strong>에 그쳤고, 두 종목의 하루 등락률 격차는 <strong class="hl">약 17.7pp</strong>까지 벌어졌습니다.</p>
+
+      <!-- ② 오늘의 심층조사 -->
+      <h4>오늘의 심층조사 — 박관호 9,200억원 엑시트와 일반주주</h4>
+      <p>6월 30일 공시로 세상에 알려진 경영권 거래. 그 시작점을 1월부터 다시 추적했습니다.</p>
+      <p><strong>핵심 질문 1.</strong> 3월 27일 주총에서 박관호는 주주들에게 무엇을 말했나? 매각은 언급됐는가?</p>
+      <p><strong>핵심 질문 2.</strong> 시장가 1만원대에 왜 68,910원을 지급했나? MIR IP의 값은?</p>
+      <p class="muted">아래 ③~⑦을 펼치면 각 질문의 답과 근거를 볼 수 있습니다.</p>
+
+      <!-- ③ 1월~6월 핵심 타임라인 -->
+      <details class="more">
+        <summary>③ 1월~6월 핵심 타임라인</summary>
+        <div>
+          <p>2026년의 시작은 중국이었다. <strong>1월 13일 미르M이 중국에 정식 출시</strong>됐고(1월 4일 선행서버 오픈), 2월에는 상해킹넷과 전기아이피가 화해합의(和解协议)를 맺었다. <strong>화해금 약 1.99억 위안을 일시 지급</strong>하고 4.81억 위안의 연대청산책임을 면제받으며 <strong>8년간의 소송·중재를 전면 종결</strong>했다. 그러나 2월 11일 4분기 실적 컨콜에서 회사는 미르M에 대해 <strong>"매출 규모는 기대치에 미치지 못했다"</strong>고 밝혔다.</p>
+          <p>3월에는 조직과 주총이 이어졌다. <strong>3월 12일 위메이드맥스는 개발조직을 재편</strong>해 미르5와 프로젝트 탈(TAL)에 화력을 집중했고, <strong>3월 27일 제26기 정기주주총회</strong>가 열렸다.</p>
+          <p>4월부터 속도가 붙었다. <strong>4월 킹넷이 화해금 약 430억원을 지급</strong>하며 한국·중국·싱가포르의 중재·소송 절차를 취하했고, <strong>5월에는 위메이드–킹넷이 热血传奇 IP 로열티 전면 화해를 발표</strong>했다. 6월 亚拓士 로열티 정산이 완료되면서 传奇IP 소송 리스크는 기본적으로 소멸했다. 그리고 <strong>6월 29일, 위메이드 주가는 KRX 기준 +17.66% 급등</strong>했다. 다음 날인 <strong>6월 30일, SPA 체결·공시</strong>가 나왔다. 박관호 지분 <strong>39.33%(13,350,738주)가 주당 68,910원, 총 9,200억원에 NeoPulse로 넘어간다</strong>는 내용이었다.</p>
+        </div>
+      </details>
+
+      <!-- ④ 3/27 주총 발언 -->
+      <details class="more">
+        <summary>④ 3월 27일, 박관호는 주주들에게 무엇을 말했나</summary>
+        <div>
+          <p>아래는 <strong>디지털투데이 2026-03-27 현장 기사에 기록된 발언</strong>입니다. 같은 주총의 다른 매체 상세 보도는 추가로 확인되지 않았습니다.</p>
+          <p>"1000억에 달하던 적자를 작년에 흑자를 만들었다. <strong>올해는 영업이익이 더 커질 것이다.</strong>"</p>
+          <p>비용 효율화에 대해서는 "경영에 복귀했을 때 조직이 비대해져 있었다"며 핵심 조직·한계 조직·서비스 조직이 혼재했고, 비효율적인 부분을 2026년부터 2027년까지 단계적으로 정리 중이라고 설명했습니다.</p>
+          <p>중국 사업에 대해서는 "현지 퍼블리셔와의 일정 조율이 쉽지 않다"고 하면서도, 저작권 관련 사안에 대해 <strong>"한 달 안에 공식 커뮤니케이션 소재가 있을 것"</strong>이라고 밝혔습니다.</p>
+          <p><strong>매각 암시 발언은 확인되지 않았습니다.</strong> 오히려 당시 발언은 장기 경영 지속을 전제로 한 것들이었습니다. 2026년 영업이익 확대 자신감, 위믹스 생태계 "포기 않겠다", 대형 신작의 본격 성과는 "2027년 상반기 이후"라는 전망이 그것입니다.</p>
+          <p><strong>「당시 주주의 관찰」</strong> — 3/27 주총에 직접 참석한 주주의 기억으로는 (1) 주주 항의가 심했고 (2) 박관호가 1시간 이상 주주들에게 직접 설명했다는 것입니다. 외부 기록은 "간담회에서 주주들의 질의는 주가 부진에 집중됐다"는 수준으로, '항의·소란·반발' 같은 강도의 표현은 기사에 없습니다.</p>
+        </div>
+      </details>
+
+      <!-- ⑤ 협상 시작 시점 -->
+      <details class="more">
+        <summary>⑤ 매각 협상은 실제 언제 시작됐나</summary>
+        <div>
+          <p>먼저 전제 조건이 갖춰진 과정을 연도별로 정리하면 이렇습니다. 2016년 킹넷 2급 자회사와의 《传奇》 분쟁이 ICC 중재·다지 소송으로 확전됐고, 2023년 8월 亚拓士(액토즈)가 传奇IP 중국 대륙 독점권을 5년 합계 5,000억원에 매입했으며, 2025년에는 한국 법원이 위메이드:액토즈 传奇IP 로열티 80:20 분배를 확인했습니다. 2026년 2월 상해킹넷–전기아이피 화해합의, 3월 27일 주총의 "한 달 안에 공식 커뮤니케이션 소재" 발언, 4월 킹넷 화해금 약 430억원 지급과 절차 취하, 5월 로열티 전면화해 발표, 6월 亚拓士 로열티 정산 완료로 소송 리스크가 기본 소멸했습니다. 이어 6월 29일 주가 급등(+17.66%, KRX), 6월 30일 SPA 체결·공시, 9월 12일 킹넷 CNINFO 공시(Neosphere 49% 취득), 9월 14일 위메이드–네오펄스 공동입장문으로 이어집니다.</p>
+          <p><strong>3월 27일 이전의 매각 관련 최초 접촉·협상 개시·LOI/MOU·실사 등의 구체적 날짜나 원문 증거는 현재 공개자료에서 확인되지 않습니다</strong> <span class="claim-tag unverified">미확인</span></p>
+          <p>3/27 주총의 "한 달 안에 공식 커뮤니케이션 소재" 발언은 지분 매각이 아니라 저작권 분쟁 화해에 관한 것이었습니다. 실제로 한 달 뒤인 4월 킹넷 화해금 430억원 수령이 발표됐으므로, 3/27 시점에 화해 협상이 마무리 단계에 있었음을 시사합니다.</p>
+        </div>
+      </details>
+
+      <!-- ⑥ MIR IP -->
+      <details class="more">
+        <summary>⑥ 왜 중국 자본은 68,910원을 지급했나 — MIR IP</summary>
+        <div>
+          <p>伽马数据(감마데이터) 기준, <strong>2025년 传奇 IP 시장 규모는 약 355.5억 위안(약 7조원)</strong>이며, 2025년 말까지 누적 창출 가치는 3,700억 위안을 넘습니다. 중국 매체들이 공통으로 인용하는 수치입니다.</p>
+          <p>거래 조건에는 <strong>传奇IP 독점 라이선스 약속이 내장</strong>돼 있습니다. 新浪证券이 인용한 공시 내용의 한국어 번역입니다: "지분 양도인 Nexpulse는 위메이드 39.33% 지분이 순조롭게 교割된 후, 위메이드가 현재 기존 협력사와 약정한 대가 기준을 초과하지 않는 조건으로 Neosphere와 전기 IP 독점 라이선스 계약을 체결하도록 최대한 협조하고, Neosphere가 사이프리스 홍콩 또는 사이프리스 홍콩이 지정한 주체에 이를 재라이선스하도록 하겠다고 약속한다. 위 약속을 달성하지 못하면 Nexpulse가 배상 책임을 진다."</p>
+          <p>위메이드 관계자의 설명입니다 (서울경제 2026-06-30): <strong>"거래 금액 9200억 원은 '전기아이피' 등 위메이드 자회사를 통해 입증된 미르 IP의 중국 내 수익 창출력, 미래 성장 잠재력을 반영한 결과"</strong>.</p>
+          <p>킹넷 공시(深圳商报 인용)는 이번 거래를 <strong>"양측 협력을 심화하고 지분 차원의 장기 전략적 바인딩을 구축하는 전략적 희소성의 기회"</strong>라고 설명합니다.</p>
+          <p>위 자료들은 MIR IP가 이번 거래의 핵심 전략자산 중 하나임을 보여줍니다. 다만 킹넷 공시가 밝힌 목적은 传奇IP 전략적 바인딩 외에도 <strong>신작 게임 출시·중국 시장 운영, 한국 상장 플랫폼을 통한 해외 진출 등 복합적</strong>입니다.</p>
+          <h4>경영권 가격 vs 시장 평가</h4>
+          <div class="kv"><span class="k">경영권 거래가</span><span class="v">주당 68,910원 (DART rcpNo 20260630900888)</span></div>
+          <div class="kv"><span class="k">6/30 KRX 종가 대비</span><span class="v">19,330원의 3.56배 · 프리미엄 256.5%</span></div>
+          <div class="kv"><span class="k">애널리스트 컨센서스(2026-06)</span><span class="v">평균 목표주가 35,000원 — 거래가의 약 51%</span></div>
+          <div class="kv"><span class="k">하이투자증권 목표주가(2024-08)</span><span class="v">50,000원 — 거래가보다 약 38% 낮음</span></div>
+          <div class="kv"><span class="k">증권사 추정 중국 로열티 기여</span><span class="v">연 405억원 (미르4·미르M 중국 출시·로열티 수취 전제, 2024-05)</span></div>
+          <div class="kv"><span class="k">실제 2026-1Q 라이선스 매출</span><span class="v">305억원 (킹넷 화해금 성격 일회성분 포함)</span></div>
+          <p class="fine">위 수치들은 산술 비교용이며, 계약의 적정성·동기에 대한 판단을 포함하지 않습니다. 증권사의 405억원/년 추정은 중국 출시 전제이고, 실제 305억원은 일회성 화해금 성격이 포함돼 있어 직접 비교할 수 없습니다.</p>
+        </div>
+      </details>
+
+      <!-- ⑦ 일반주주 문제 -->
+      <details class="more">
+        <summary>⑦ 일반주주에게 남은 문제</summary>
+        <div>
+          <p><strong>2026년 7월, 위메이드 소액주주연대는 양수인인 네오펄스 측에 "공개매수 등 주주 보호 방안"을 요구했습니다.</strong> 요구의 정확한 문구와 성명서 원문은 공개자료에서 추가로 확인되지 않았습니다 <span class="claim-tag unverified">미확인</span></p>
+          <p>2026년 9월 14일 위메이드–네오펄스 공동입장문에는 이 요구에 대한 컨소시엄의 답이 포함되지 않았습니다.</p>
+          <p>관련 제도 동향입니다 (위메이드 개별 건이 아닌 전국 맥락). 의무공개매수 도입 자본시장법 개정안이 2026년 9월 17일 국회 정무위원회를 통과('50%+1주 이상')한 뒤, 9월 30일 본회의 상정이 보류됐습니다. 경제개혁연대는 잔여지분 전량 매수를 주장하고, 국내외 자산운용사 18곳은 현행안(50%+1주, 지배주주 선행매수 허용)에 반발하며 보류를 촉구했습니다.</p>
+          <p class="aux">별도 트랙 — 2026년 9월 30일 민주노총 화섬식품노조 위메이드지회가 출범했습니다(고용 보장·사업부 존속·성과급 체계 개선 요구). 이는 주주연대가 아닌 노동조합의 요구입니다.</p>
+        </div>
+      </details>
+
+      <!-- ⑧~⑭ 10/7 시장 -->
+      <h4>10월 7일 시장</h4>
+      <p><strong>오늘의 핵심은 이것입니다.</strong> 위메이드맥스는 장중 한때 주가를 눌러온 천장들을 모두 뚫었지만, <strong>종가로는 지키지 못했습니다.</strong> 추세전환이 확정된 날이 아니라, 전환 가능성이 처음으로 시험대에 오른 날입니다. 위메이드는 여전히 16,000원의 벽을 넘지 못했습니다.</p>
+      <p><strong>위메이드맥스(101730)</strong> — KRX 종가 <strong class="hl">5,430원 (+18.43%)</strong>, 거래량 약 407만주. 장중 고가 5,640원까지 오르며 <strong>주봉 구름 상단(5,380원)·60주선(5,480원)·2차 고점(5,500원)을 차례로 넘겼습니다.</strong> 이 세 가격은 그동안 상승할 때마다 주가를 눌러온 저항선입니다. 장중에 뚫었다는 것은 매수세가 그만큼 강했다는 뜻입니다. 그러나 종가가 5,430원으로 밀렸다는 것은, <strong>"이 가격에 사도 된다"는 확신이 종가까지 이어지지 않았다</strong>는 뜻이기도 합니다. 돌파 시도 1라운드에서 밀린 셈입니다.</p>
+      <p><strong>위메이드(112040)</strong> — KRX 종가 <strong class="hl">15,840원 (+0.70%)</strong>, 거래량 약 19.5만주. 장중 16,140원(+3.20%)까지 올랐으나 <strong>16,000원대 안착에는 실패</strong>했습니다. 16,000원은 최근 반복적으로 막히는 벽으로, 넘지 못하면 위쪽을 향한 추세 전환을 논하기 어렵습니다.</p>
+      <p>두 종목의 하루 등락률 격차는 <strong class="hl">약 17.7pp</strong>로 벌어졌습니다. 같은 그룹, 같은 날, 정반대의 온도입니다. 맥스는 신작 기대와 차트 개선이 가격을 밀어 올리는 중이고, 위메이드는 10월 30일 경영권 거래 종결이라는 불확실성 해소를 기다리는 중입니다.</p>
+      <p class="aux">공개 집계 참고: 네이버 외국인소진율 — 위메이드맥스 9.24%, 위메이드 7.32%.</p>
+      <p><strong>내일(10/8) 확인할 것.</strong></p>
+      <div class="kv"><span class="k">가격</span><span class="v">5,480원(60주선)·5,500원(2차 고점)의 종가 돌파 여부, 5,690원</span></div>
+      <div class="kv"><span class="k">주봉</span><span class="v">금요일 주봉이 5,000원대를 유지하는지</span></div>
+      <div class="kv"><span class="k">데이터</span><span class="v">분봉(회원 세션)·투자자별 수급 확보 시 돌파 시각·거래량 구조 재확인</span></div>
+
+      <!-- ⑮ 10/7 시장 결론 — 변화 가능성을 추적한다 -->
+      <h4>시장 결론 — 변화 가능성을 추적한다</h4>
+      <p><strong>위메이드맥스: 변화가 먼저 나타났다</strong></p>
+      <p>오늘 위메이드맥스는 <strong>거래량을 동반한 저항선 연속 돌파로 상승추세 전환 가능성이 크게 부각된 날</strong>이었습니다. <strong>상승추세 전환이 확정된 것은 아닙니다.</strong></p>
+      <p>일봉 구조는 이렇습니다. 5,000원 돌파 → 장중 고가 5,640원으로 주봉 구름 상단(5,380원)·60주선(5,480원)·2차 고점(5,500원)을 차례로 넘어섬 → <strong>KRX 종가 5,430원(+18.43%)으로 60주선·2차 고점 아래에서 마감</strong>. 거래량 약 407만주.</p>
+      <details class="more">
+        <summary>배경: 나이트크로우W (신작 공개 시즌이 임박하는 구간)</summary>
+        <div>
+          <p>나이트크로우W의 공식 출시일은 아직 발표되지 않았습니다 <span class="claim-tag unverified">미확인</span></p>
+          <p>2026-06-12 위메이드 보도자료는 "연내 글로벌 원빌드 출시 목표"라고 밝혔습니다(목표일 뿐 확정일 아님). 2026-08 2분기 실적 발표에서는 "'나이트 크로우 W' 올해 하반기 공개 목표"라고 했습니다(공개≠출시). 2026-09-18 손면석 TGS 인터뷰에서 공식 명칭 '나이트크로우: W'가 확인됐습니다(구체 출시일 언급 없음).</p>
+          <p>시장의 신작 기대감은 메가경제 6-12 보도 등으로 확인되나, 주가 상승·거래량 증가와의 직접 인과관계는 공개자료에서 확인되지 않으므로, 인과를 단정하지 않고 "신작 공개 시즌이 임박하는 구간" 수준으로만 기술합니다.</p>
+          <p><strong>추적:</strong> 5,500원·5,480원·5,380원이 저항에서 지지로 전환되는지, 7/10 고점 5,690원 돌파 여부.</p>
+        </div>
+      </details>
+      <p><strong>위메이드: 다른 종류의 변곡점</strong></p>
+      <p>KRX 종가 15,840원(+0.70%), 16,000원 미돌파. 일봉상 확실한 상승전환 신호는 확인되지 않습니다.</p>
+      <p>10/30 경영권 거래 종결은 단순 일정이 아니라 불확실성 해소의 추적 대상입니다. 경영권 이전·잔금 8,280억원 납입·중국 자본 최종 인수구조의 불확실성이 실제로 해소되는지 추적합니다. "10월 30일 이후 상승한다"고 미리 예측하지 않습니다.</p>
+      <p><strong>앞으로의 관찰 프레임</strong></p>
+      <div class="kv"><span class="k">위메이드맥스</span><span class="v">나이트크로우W 출시 기대 → 거래량 증가 → 주요 저항 돌파 → 일봉 상승추세 전환 여부</span></div>
+      <div class="kv"><span class="k">위메이드</span><span class="v">10/30 경영권 거래 종결 → 불확실성 해소 여부 → 16,000원 및 이후 주요 저항 돌파 → 외국인·기관 수급 변화 → 일봉 상승추세 전환 여부</span></div>
+      <blockquote class="aux">
+        <p>10월7일, 위메이드맥스에서는 변화가 먼저 나타났다. 나이트크로우W 출시 시점이 가까워지는 가운데 주요 저항선을 연속 돌파하며 일봉 추세전환 가능성을 보여주기 시작했다. 아직 움직이지 못한 위메이드는 10월30일 경영권 거래 종결이라는 중요한 변곡점을 앞두고 있다. 이제 확인할 것은 기대가 아니라 가격이다. 맥스의 돌파가 유지되는지, 그리고 위메이드에서도 16,000원을 시작으로 실제 추세 변화가 나타나는지를 매일 데이터로 확인한다.</p>
+      </blockquote>
+    </article>
+    </details>
+  </section>
+
+
+  <!-- 3. 10/30 거래 핵심 확인사항 -->
+  <section class="sec" aria-labelledby="t-deal">
+    <h2 class="sec-title" id="t-deal">10/30 거래 핵심 확인사항</h2>
+    <div class="deal-tracker">
+      <div class="deal-step">
+        <span>SPA 총액</span>
+        <span class="deal-amt">9,200억원</span>
+        <span class="muted">(68,910원 × 13,350,738주)</span>
+      </div>
+      <div class="deal-step">
+        <span>계약금 (6/30 지급)</span>
+        <span class="deal-amt">920억원</span>
+        <span class="muted">(10%)</span>
+      </div>
+      <div class="deal-step">
+        <span>남은 잔금</span>
+        <span class="deal-amt">8,280억원</span>
+        <span class="muted">(90%)</span>
+      </div>
+      <div class="deal-step">
+        <span>잔금 예정일</span>
+        <span class="deal-date">2026년 10월 30일</span>
+      </div>
+      <div class="deal-step">
+        <span>현재 진행상태</span>
+        <span>기업결합신고 등 선행조건 충족 대기 중</span>
+      </div>
+    </div>
+    <p class="fx-note">※ 위 금액·일정은 DART 「주식 양수도 계약」(2026-06-30, rcpNo 20260630900888) 기준입니다. 새로운 공시가 나오면 이 페이지에 우선 반영됩니다.</p>
+  </section>
+
+  <!-- 3-2. 중국 최신자료 상세: 10/4 킹넷 기사 -->
+  <section class="sec" aria-labelledby="t-cn-feature">
+    <h2 class="sec-title" id="t-cn-feature">중국 최신자료 상세</h2>
+    <article class="cn-article">
+      <div class="meta">2026년 10월 4일 · 중국 언론</div>
+      <h3 class="delta-title">彻底接管《传奇》IP！恺英20亿“拿下”娱美德最大股权</h3>
+      <p class="muted">「미르 IP 완전 접수! 카이잉 20억 위안으로 위메이드 최대지분 확보」</p>
+
+      <h4>한눈에 보는 핵심</h4>
+      <p>중국 게임사 <strong class="hl">카이잉네트워크(恺英网络, 002517.SZ)</strong>가 위메이드 경영권 거래에 약 <strong class="hl">4,000억원</strong>을 투입합니다. 다만 위메이드를 직접 사는 게 아닙니다. 중간 지주회사 <strong class="hl">Neosphere의 지분 49%</strong>를 취득하는 간접 투자입니다.</p>
+      <p>중국 언론은 "미르 IP 접수"로 보도하지만, 실제 구조는 <strong class="hl">박관호 → NeoPulse → Neosphere → 카이잉</strong>으로 이어지는 다층 구조입니다. "카이잉이 위메이드 40.25%를 인수했다"는 식의 단순화는 사실과 다릅니다.</p>
+
+      <h4>무슨 일이 있었나</h4>
+      <p><strong class="hl">2026년 9월 12일</strong>, 카이잉이 선전증권거래소에 공시했습니다. 홍콩 자회사(Cypress Technology HK)를 통해 Neosphere 지분 49%를 취득하겠다는 내용입니다. 예상 투자액은 <strong class="hl">약 2.98억 달러(약 4,000억원)</strong>입니다.</p>
+      <p>자금 흐름은 이렇습니다. 상하이 카이잉 본사 → 홍콩 자회사(Cypress HK) → Neosphere(49%) → NeoPulse → 위메이드(40.25%). 중국 자본이 위메이드에 들어오는 실제 통로입니다.</p>
+      <p>Neosphere의 나머지 지분은 <strong class="hl">Mok, Pui Ming</strong> 측이 보유합니다. 거래 완료 후 위메이드에 대한 간접 지분은 Mok 측 약 20.5%, 카이잉 측 약 19.7%로 계산됩니다.</p>
+      <p>한편 NeoPulse는 이미 <strong class="hl">2026년 6월 30일</strong> 박관호 의장의 지분 <strong class="hl">13,350,738주(39.33%)</strong>를 <strong class="hl">9,200억원(주당 68,910원)</strong>에 인수하는 계약을 체결했습니다. NeoPulse가 기존에 들고 있던 313,053주(0.92%)와 합치면 <strong class="hl">40.25%(13,663,791주)</strong>가 됩니다.</p>
+
+      <h4>왜 중요한가</h4>
+      <p>중국 언론이 "미르(传奇) IP 완전 접수"라고 표현한 이유는 카이잉 공시에 실마리가 있습니다. 거래 후 위메이드가 Neosphere에 <strong class="hl">미르 IP 라이선스</strong>를 제공하고, 이를 카이잉 쪽에 다시 허용하는 방안이 투자계약에 포함되어 있다고 공시에 기재되어 있습니다.</p>
+      <p>즉, 카이잉이 노리는 것은 위메이드 주식 자체보다 <strong class="hl">미르 IP의 중국 내 활용</strong>입니다. 미르는 중국에서 20년 넘게 서비스된 국민급 IP라 중국 게임사에게는 상징성이 큽니다.</p>
+      <p>다만 "접수"라는 표현은 언론의 해석입니다. 라이선스 제공 방안이 구체적으로 어떻게 실행될지는 아직 공시되지 않았습니다.</p>
+
+      <h4>투자자가 확인할 것</h4>
+      <p><strong class="hl">2026년 10월 30일</strong>은 NeoPulse가 박관호 의장에게 잔금 <strong class="hl">8,280억원(90%)</strong>을 지급하는 날입니다. 계약금 920억원(10%)은 6월 30일에 이미 지급됐습니다. 잔금이 정상 지급되어야 거래가 종결됩니다.</p>
+      <p>카이잉의 Neosphere 49% 취득은 <strong class="hl">중국 발개위·상무부·외환관리국의 승인/신고</strong>가 필요합니다. 중국 당국 절차가 끝나야 투자가 확정됩니다. 완료 시점은 아직 정해지지 않았습니다.</p>
+      <p>나이트 크로우 W의 중국 진출과 이번 거래의 직접 연관성은 <strong class="hl">공식 자료에서 확인되지 않았습니다</strong>. 원작 나이트 크로우가 6월 29일 중국 외자 판호(夜鸦)를 받은 것은 별개 사안으로 봐야 합니다.</p>
+
+      <p class="fx-note">※ 원화 환산액은 이해를 돕기 위한 참고값이며 적용 환율에 따라 달라질 수 있습니다. (기준: 약 200원/위안, 2026년 10월 기준)</p>
+    </article>
+  </section>
+
+  <!-- 4. 풀리지 않은 6가지 쟁점 -->
+  <section class="sec" aria-labelledby="t-issues">
+    <h2 class="sec-title" id="t-issues">풀리지 않은 6가지 쟁점</h2>
+    <div id="issue-list">
+      <article th:each="issue, issueStat : ${issues}" class="issue" th:id="'issue-' + ${issue.number}">
+        <h3 class="issue-q">
+          <span th:text="${issue.number}">1</span>.
+          <span th:text="${issue.question}">질문</span>
+        </h3>
+        <div th:if="${issue.body}" class="issue-body">
+          <p th:each="para : ${issue.body}" class="lead" th:text="${para}">본문</p>
+        </div>
+        <div th:if="${issue.nextCheck}" class="issue-next">
+          <strong>다음 확인:</strong> <span th:text="${issue.nextCheck}">확인 포인트</span>
+        </div>
+        <details th:if="${issue.sources}" class="issue-sources">
+          <summary>근거·원문 보기</summary>
+          <ul>
+            <li th:each="src : ${issue.sources}">
+              <a th:href="${src.url}" th:text="${src.label}" target="_blank" rel="noopener">출처</a>
+            </li>
+          </ul>
+        </details>
+        <hr class="issue-divider" th:unless="${issueStat.last}">
+      </article>
+    </div>
+    <!-- 비회원 안내 한 줄 -->
+    <div th:if="${viewer == 'GUEST'}" class="guest-note">
+      ③~⑥ 쟁점의 설명과 근거 원문, 주가·수급 분석은 로그인하면 이어서 볼 수 있습니다.
+      <a th:href="@{/wemade/login}" href="/wemade/login" class="btn">로그인하고 이어 읽기</a>
+    </div>
+  </section>
+
+  <!-- 4. 앞으로 확인할 일정 -->
+  <section class="sec" aria-labelledby="t-schedule">
+    <h2 class="sec-title" id="t-schedule">앞으로 확인할 일정</h2>
+    <div id="upcoming-list"><div class="state">불러오는 중…</div></div>
+  </section>
+
+  <!-- 5. 주가와 수급 (접힘) -->
+  <details class="sec-collapsible" id="sec-market">
+    <summary class="sec-title">주가와 수급</summary>
+    <div>
+      <section aria-labelledby="t-chart">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-chart">주가 차트</h3><span class="muted meta" id="chart-src"></span></div>
+        <div class="tabs" id="period-tabs" role="tablist" aria-label="차트 기간"></div>
+        <div class="chart-box"><canvas id="priceChart" aria-label="주가 차트"></canvas></div>
+        <div class="chart-box sub"><canvas id="rsiChart" aria-label="RSI 차트"></canvas></div>
+        <div class="state" id="chart-state"></div>
+        <div class="muted meta" id="chart-note"></div>
+      </section>
+
+      <section aria-labelledby="t-flow">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-flow">오늘 누가 사고팔았나</h3><span class="muted meta" id="flow-asof"></span></div>
+        <div class="tabs" id="flow-tabs" role="tablist" aria-label="수급 기간"></div>
+        <div id="flow-detail"><div class="state">불러오는 중…</div></div>
+        <h4 class="sub-title">창구 — 순매수 / 순매도 상위 <span class="muted meta" id="broker-asof"></span></h4>
+        <div id="broker-lists"><div class="state">불러오는 중…</div></div>
+        <div class="muted aux">관측된 집계 데이터입니다. 특정 세력·자본의 매집으로 단정하지 않습니다.</div>
+      </section>
+
+      <details class="more">
+        <summary>주가 자세히 보기</summary>
+        <div>
+          <section aria-labelledby="t-compare">
+            <div class="sec-head"><h3 class="sub-sec-title" id="t-compare">3종목 비교</h3></div>
+            <div class="muted meta">2026-06-30(SPA 체결일) = 100 정규화 수익률</div>
+            <div class="chart-box"><canvas id="compareChart" aria-label="3종목 정규화 수익률 비교 차트"></canvas></div>
+            <div class="legend" id="compare-legend"></div>
+          </section>
+          <div th:replace="~{wemade/fragments/who-sold :: who-sold}"></div>
+        </div>
+      </details>
+    </div>
+  </details>
+
+  <!-- 6. 자료실 (접힘) -->
+  <details class="sec-collapsible" id="sec-archive">
+    <summary class="sec-title">자료실</summary>
+    <div>
+      <!-- 거래와 가치 자세히 (deal-grid, 타임라인, 가격괴리, SOTP 이동) -->
+      <details class="more" th:if="${viewer == 'MEMBER'}">
+        <summary>거래와 가치 자세히</summary>
+        <div>
+          <div class="deal-grid" id="deal-grid">
+            <div class="deal-num"><span class="k">인수가</span><span class="v">68,910원</span></div>
+            <div class="deal-num"><span class="k">총액</span><span class="v">9,200억원</span></div>
+            <div class="deal-num"><span class="k">지분</span><span class="v">39.33%</span></div>
+            <div class="deal-num"><span class="k">현재가 대비</span><span class="v" id="deal-multiple">…</span></div>
+          </div>
+          <ol class="steps" id="deal-timeline"><li><div class="state">불러오는 중…</div></li></ol>
+          <div class="aux"><strong>승인 · 종결 리스크:</strong> 중국 발개위·상무·외환 관련 승인·신고가 필요하며(킹넷 9/12 공시), 완료 여부와 시점에 불확실성이 있습니다.</div>
+          <div class="fine">인수 후 네오펄스 총지분 40.25% = 기존 0.92% + 양수 39.33%. "넘기는 지분 40.25%"라는 표현은 부정확합니다.</div>
+          <div th:replace="~{wemade/fragments/ownership :: ownership}"></div>
+          <div th:replace="~{wemade/fragments/gap :: gap}"></div>
+          <div th:replace="~{wemade/fragments/valuation :: valuation}"></div>
+        </div>
+      </details>
+
+      <section aria-labelledby="t-dart">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-dart">DART 공시 전체</h3></div>
+        <div id="dart-list"><div class="state">불러오는 중…</div></div>
+        <button type="button" class="more-btn" id="dart-more" hidden>전체 보기</button>
+      </section>
+      <section aria-labelledby="t-chinad">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-chinad">중국 공시 · 뉴스 전체</h3></div>
+        <div class="muted aux">공시와 충돌하면 공시를 우선합니다. 한국어 요약 → 자세한 번역/해설 → 원문 순서로 제공합니다.</div>
+        <h4 class="sub-title">공식 공시 (CNINFO)</h4>
+        <div id="china-disc"><div class="state">불러오는 중…</div></div>
+        <h4 class="sub-title">중국 뉴스 (원문+번역)</h4>
+        <div id="china-news"><div class="state">불러오는 중…</div></div>
+        <button type="button" class="more-btn" id="china-more" hidden>전체 보기</button>
+      </section>
+      <section aria-labelledby="t-events">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-events">과거 주요 사건</h3></div>
+        <div id="event-cards"><div class="state">불러오는 중…</div></div>
+      </section>
+      <section aria-labelledby="t-community">
+        <div class="sec-head"><h3 class="sub-sec-title" id="t-community">주주 정보</h3></div>
+        <div class="muted aux">커뮤니티 글은 사실이 아니며 참고용으로만 활용됩니다.</div>
+        <div id="community-list"><div class="state">불러오는 중…</div></div>
+        <button type="button" class="more-btn" id="community-more" hidden>전체 보기</button>
+      </section>
+    </div>
+  </details>
+
+  <footer class="footer">
+    투자 권유·매수/매도 추천·목표주가를 제공하지 않습니다. 정보 제공 목적의 참고 자료입니다.
+  </footer>
+</main>
+
+<!-- JS 호환용 hidden 플레이스홀더 (기존 섹션 제거됨) -->
+<div hidden>
+  <div id="headline-list"></div>
+  <div id="track-tabs"></div>
+  <div id="track-body"></div>
+  <div id="fact-list"></div>
+</div>
+
+<script th:src="@{/js/wemade.js}" src="/js/wemade.js"></script>
+<script th:if="${viewer == 'MEMBER'}" th:src="@{/js/wemade-gap.js}" src="/js/wemade-gap.js"></script>
+<script th:if="${viewer == 'MEMBER'}" th:src="@{/js/wemade-valuation.js}" src="/js/wemade-valuation.js"></script>
+</body>
+</html>

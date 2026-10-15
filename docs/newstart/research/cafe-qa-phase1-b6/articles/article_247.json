@@ -1,0 +1,37 @@
+{
+ "articleId": 247,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려차주인데 혹시 카드사용내역처 심사하나요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-03T09:51:54+00:00",
+ "createdAtMs": 1730627514920,
+ "viewCount": 80,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/247",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실차주에서은 내역심사안합니다.",
+  "아마 부실우려도  내역심사 없이 잔액만 확인할 듯 합니다."
+ ],
+ "bodyNormalized": "부실차주에서은 내역심사안합니다.\n아마 부실우려도  내역심사 없이 잔액만 확인할 듯 합니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-a5822608-7e33-4b53-8e7e-3554d03737b2\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d5b4e0e8-ad38-4aa0-85c6-a0139fa35416\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ce403c4f-b5c6-4e48-983b-d2c706e4e57b\">부실차주에서은 내역심사안합니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-6abbe99b-cea9-4737-83eb-9a73d32d71ca\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-3341a096-b41d-4b42-84b5-fc8e228a2cdb\">아마 부실우려도  내역심사 없이 잔액만 확인할 듯 합니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

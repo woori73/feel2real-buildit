@@ -1,0 +1,39 @@
+{
+ "articleId": 597,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려에서 부실차주로 진행할 때 미납 4개월이면 실효 잖아요. 그럼 실효된 날로 90일 버텨야 부실차주로 되나요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-30T10:26:43.320Z",
+ "createdAtMs": 1732962403320,
+ "viewCount": 154,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/597",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "[답변]",
+  "​",
+  "아뇨.",
+  "부실우려에서 부실차주는 늦어도 실효이후 7일안에는 장기연체 등록되어 바로 차주로 가는 것으로 사례가 나옵니다."
+ ],
+ "bodyNormalized": "[답변]\n​\n아뇨.\n부실우려에서 부실차주는 늦어도 실효이후 7일안에는 장기연체 등록되어 바로 차주로 가는 것으로 사례가 나옵니다.",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-f5b50549-20e1-46a9-8fbd-1c4c1675638f\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-01c5c2c1-c3ac-46e7-b944-606ed5f688f4\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ea4fd773-cff5-40ac-b0aa-cf22bd1c9bc8\">[답변]</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-d514972b-2c4f-45ea-904e-d6dd94b715be\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-8093ba7b-af31-45fc-a5e8-e1a09fed758c\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-5dc80482-f8be-4352-9838-9302a215a3b8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-b95477db-cd6f-4e12-bfbc-9d046ac8b2dd\">아뇨. </span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-096494d0-0317-4652-ac51-64fd58ee04ec\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-40eba937-7497-4cec-af86-c3cb8c628b62\">부실우려에서 부실차주는 늦어도 실효이후 7일안에는 장기연체 등록되어 바로 차주로 가는 것으로 사례가 나옵니다.</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

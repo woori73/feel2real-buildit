@@ -1,0 +1,66 @@
+{
+ "articleId": 1732,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "내일상담받으러 갈건데요",
+ "author": {
+  "nickname": "다보리",
+  "memberGrade": "성실멤버"
+ },
+ "createdAt": "2025-11-24T01:30:07+00:00",
+ "createdAtMs": 1763947807350,
+ "viewCount": 24,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1732",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "신용회복위원회 로 예약하면되는거죠?",
+  "새출발기금 홈페이지에 한국자산관리공사랑 신용회복위원회 주소도나와있던데",
+  "​",
+  "신용회복위원회 어플깔고 상담예약하는곳이랑 주소가 달라서요..여기로가면 부실우려상담할수 있는걸까요ㅠㅠ"
+ ],
+ "bodyNormalized": "신용회복위원회 로 예약하면되는거죠?\n새출발기금 홈페이지에 한국자산관리공사랑 신용회복위원회 주소도나와있던데\n​\n신용회복위원회 어플깔고 상담예약하는곳이랑 주소가 달라서요..여기로가면 부실우려상담할수 있는걸까요ㅠㅠ",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-9942C2B1-C4F3-4CFB-AC0C-EF4513C95600\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-2E536964-9954-4023-91A1-C70EAE256E0E\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-CA7CCC23-A554-4961-AA8D-6B4082F63AD7\">신용회복위원회 로 예약하면되는거죠?</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-B7AEFC72-B8DA-4EC5-8862-A63E55B8FDAE\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-3C4C86FE-23D9-4363-8FEB-074744B4E352\">새출발기금 홈페이지에 한국자산관리공사랑 신용회복위원회 주소도나와있던데</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-BDE9EC0B-6878-443F-B9ED-0B9E086CF277\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-B3F89A4C-CDD2-4D46-89F0-59F40DAB45A4\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-43C5C93E-23F6-4341-850F-73854BB53CC4\"><span style=\"\" class=\"se-fs-fs15 se-ff-system   \" id=\"SE-2ABFDD21-4F45-45ED-8C3F-70CFFC7CF5FE\">신용회복위원회 어플깔고 상담예약하는곳이랑 주소가 달라서요..여기로가면 부실우려상담할수 있는걸까요ㅠㅠ</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-9942C2B1-C4F3-4CFB-AC0C-EF4513C95600\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54532983,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-24T02:11:32.000Z",
+   "createdAtMs": 1763950292000,
+   "text": "네. 예약하고 가시면 됩니다.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54536805,
+   "parentCommentId": 54532983,
+   "author": "다보리",
+   "memberGrade": "성실멤버",
+   "createdAt": "2025-11-24T10:09:24.000Z",
+   "createdAtMs": 1763978964000,
+   "text": "감사합니다!",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,132 @@
+/** 관리자 통합 Analytics(/admin/analytics). F2R 전체/Wiki/NewStart 방문(UV/PV) + Wiki 다운로드 통계. */
+(function () {
+  let currentUser = null;
+
+  const CATEGORY_LABELS = { ORIGINAL: '모의고사 원본', ANALYSIS: '분석 자료', LEARNING: '학습 자료' };
+  const SERVICE_LABELS = {
+    HOME: '메인/랜딩', CHART: 'BuildIt Chart', WEB: 'BuildIt Web',
+    ACADEMY: 'Academy', WIKI: 'Wiki', NEWSTART: 'NewStart', OTHER: '기타'
+  };
+
+  function fmtNumber(v) {
+    return Number(v || 0).toLocaleString('ko-KR');
+  }
+
+  function fmtDate(v) {
+    if (!v) return '';
+    const d = new Date(v);
+    if (isNaN(d)) return '';
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function fmtDateTime(v) {
+    if (!v) return '';
+    const d = new Date(v);
+    if (isNaN(d)) return '';
+    return fmtDate(v) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function categoryLabel(category) {
+    return CATEGORY_LABELS[category] || escapeHtml(category);
+  }
+
+  function roleBadge(role) {
+    const cls = role === 'GUEST' ? 'role-badge guest' : 'role-badge';
+    return `<span class="${cls}">${escapeHtml(role)}</span>`;
+  }
+
+  function renderMetrics(elId, metric) {
+    const m = metric || {};
+    document.getElementById(elId).innerHTML = [
+      ['오늘', m.today], ['7일', m.recent7], ['30일', m.recent30], ['누적', m.total]
+    ].map(([label, n]) => `<div class="analytics-metric"><div class="n">${fmtNumber(n)}</div><div class="l">${label}</div></div>`).join('');
+  }
+
+  async function loadAnalytics() {
+    try {
+      const res = await fetchAuth('/api/admin/analytics/summary');
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+
+      renderMetrics('siteVisitorsMetrics', d.siteVisitors);
+      renderMetrics('wikiVisitorsMetrics', d.wikiVisitors);
+      renderMetrics('newStartVisitorsMetrics', d.newStartVisitors);
+      renderMetrics('wikiDownloadsMetrics', d.wikiDownloads);
+      renderMetrics('sitePvMetrics', d.siteViews);
+      renderMetrics('wikiPvMetrics', d.wikiViews);
+      renderMetrics('botRequestsMetrics', d.botRequests);
+
+      document.getElementById('statsSince').textContent = d.statsSince
+        ? `통계 수집 시작일(${fmtDate(d.statsSince)}) 이후 데이터입니다. 방문자 식별 방식 개선 이전 데이터에는 세션 기준 집계와 Bot 방문이 포함될 수 있습니다.`
+        : '아직 수집된 방문 데이터가 없습니다.';
+
+      const serviceBody = document.getElementById('serviceTrafficBody');
+      const serviceTraffic = d.serviceTraffic || [];
+      serviceBody.innerHTML = serviceTraffic.length
+        ? serviceTraffic.map(v => `
+            <tr>
+              <td><span class="area-badge">${escapeHtml(SERVICE_LABELS[v.service] || v.service)}</span></td>
+              <td class="num">${fmtNumber(v.visitors?.today)}</td>
+              <td class="num">${fmtNumber(v.views?.today)}</td>
+              <td class="num">${fmtNumber(v.visitors?.recent7)}</td>
+              <td class="num">${fmtNumber(v.views?.recent7)}</td>
+              <td class="num">${fmtNumber(v.visitors?.recent30)}</td>
+              <td class="num">${fmtNumber(v.views?.recent30)}</td>
+              <td class="num">${fmtNumber(v.visitors?.total)}</td>
+              <td class="num">${fmtNumber(v.views?.total)}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="9" class="analytics-empty">아직 서비스별 방문 기록이 없습니다.</td></tr>';
+
+      const visitsBody = document.getElementById('recentVisitsBody');
+      const visits = d.recentVisits || [];
+      visitsBody.innerHTML = visits.length
+        ? visits.map(v => `
+            <tr>
+              <td>${escapeHtml(v.displayName)}</td>
+              <td>${roleBadge(v.role)}</td>
+              <td><span class="area-badge">${escapeHtml(v.area)}</span></td>
+              <td>${escapeHtml(v.path)}</td>
+              <td>${fmtDateTime(v.visitedAt)}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="5" class="analytics-empty">아직 방문 기록이 없습니다.</td></tr>';
+
+      const downloadsBody = document.getElementById('recentDownloadsBody');
+      const downloads = d.recentDownloads || [];
+      downloadsBody.innerHTML = downloads.length
+        ? downloads.map(v => `
+            <tr>
+              <td>${escapeHtml(v.displayName)}</td>
+              <td>${roleBadge(v.role)}</td>
+              <td>${escapeHtml(v.materialTitle)}</td>
+              <td>${categoryLabel(v.materialCategory)}</td>
+              <td>${fmtDateTime(v.downloadedAt)}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="5" class="analytics-empty">아직 다운로드 기록이 없습니다.</td></tr>';
+
+      const topBody = document.getElementById('topDownloadsBody');
+      const top = d.topDownloads || [];
+      topBody.innerHTML = top.length
+        ? top.map(v => `
+            <tr>
+              <td>${escapeHtml(v.materialTitle)}</td>
+              <td>${categoryLabel(v.materialCategory)}</td>
+              <td>${v.downloadCount ?? 0}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="3" class="analytics-empty">아직 다운로드 기록이 없습니다.</td></tr>';
+    } catch {
+      document.getElementById('statsSince').textContent = 'Analytics 데이터를 불러오지 못했습니다.';
+    }
+  }
+
+  (async () => {
+    currentUser = await ensureCurrentUser();
+    if (!currentUser || currentUser.role !== 'ADMIN') { location.href = '/home'; return; }
+    document.getElementById('userName').textContent = window.userDisplayName(currentUser);
+    loadAnalytics();
+  })();
+})();

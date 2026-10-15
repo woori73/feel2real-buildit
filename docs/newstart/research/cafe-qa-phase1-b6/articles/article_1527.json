@@ -1,0 +1,64 @@
+{
+ "articleId": 1527,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려신청-내용증명",
+ "author": {
+  "nickname": "향기77",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-11-10T02:30:42+00:00",
+ "createdAtMs": 1762741842977,
+ "viewCount": 187,
+ "commentCount": 2,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1527",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "10월27일날 부실우려신청했는데 사고사 은행에서 오늘 등기로 내용증명이 왔네요",
+  "그냥 무시하고 있으면 되나요?"
+ ],
+ "bodyNormalized": "10월27일날 부실우려신청했는데 사고사 은행에서 오늘 등기로 내용증명이 왔네요\n그냥 무시하고 있으면 되나요?",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-f08973f8-bddc-11f0-8746-a350db843c4b\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-f08973f9-bddc-11f0-8746-1d17a8116ee4\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-40f86d70-bddd-11f0-8746-6b9fd384fe5d\">10월27일날 부실우려신청했는데 사고사 은행에서 오늘 등기로 내용증명이 왔네요</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-2c708920-bddd-11f0-8746-5181923229d7\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-40f86d71-bddd-11f0-8746-2d15dd91b06a\">그냥 무시하고 있으면 되나요?</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-f08973f8-bddc-11f0-8746-a350db843c4b\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54435747,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-10T07:57:05.000Z",
+   "createdAtMs": 1762761425000,
+   "text": "부실우려 신청했으면 괜찮을 겁니다.\n\n문자나 전화가 오면 부실우려 신청했다고 알려주세요.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54436172,
+   "parentCommentId": 54435747,
+   "author": "향기77",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-11-10T08:41:42.000Z",
+   "createdAtMs": 1762764102000,
+   "text": "네 그래도 심장이 떨려서 확인차 글올렸는데 알려주셔서 감사합니다",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

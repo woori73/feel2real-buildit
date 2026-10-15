@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="${pageTitle}">INDIA JOURNEY — CHOONGGI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" th:content="${description}">
+  <link rel="canonical" th:href="${canonical}">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="CHOONGGI">
+  <meta property="og:title" th:content="${pageTitle}"><meta property="og:description" th:content="${description}">
+  <meta property="og:url" th:content="${canonical}">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/choonggi.css}"><link rel="stylesheet" th:href="@{/css/choonggi_travel.css}">
+</head>
+<body>
+<header><a href="/choonggi" class="brand">CHOONGGI</a><span>KOREA → INDIA / SEASON 01</span></header>
+<main>
+  <section class="travel-cockpit" aria-label="공항 실전 행동 가이드">
+    <div class="cockpit-head"><p class="now-label">MOBILE AIRPORT GUIDE</p><h2>지금 할 일</h2>
+      <nav class="jump-grid"><a href="#public-icn">인천공항</a><a href="#public-han">하노이 환승</a><a href="#public-immigration">인도 입국</a><a href="#public-customs">세관</a><a href="#public-sos">SOS</a></nav>
+    </div>
+    <article class="action-step" id="public-icn"><span class="step-no">1</span><h3>인천 T1 · 3층 출국장</h3>
+      <ol><li>공항버스에서 <b>제1여객터미널</b> 확인 후 하차.</li><li>3층 출국장 전광판에서 항공편명과 목적지를 찾아 <b>당일 체크인 카운터</b> 확인.</li>
+      <li>체크인 때 최종 목적지까지 수하물이 연결되는지 묻고, 수하물표의 <b>BOM</b> 확인.</li><li>보안검색 → 출국심사 → 전광판 게이트 확인 순서로 이동.</li></ol>
+      <div class="show-card"><small>직원에게 보여주기</small>My final destination is Mumbai via Hanoi. Is my baggage checked through to BOM?</div>
+    </article>
+    <article class="action-step" id="public-han"><span class="step-no">2</span><h3>하노이 · International Transfer</h3>
+      <ol><li><b>INTERNATIONAL TRANSFER / CONNECTING FLIGHTS</b> 표지를 따라가기.</li><li>기본적으로 International Transfer로 이동하되, 탑승권·수하물표와 항공사/transfer desk 직원 안내를 최종 기준으로 따르기.</li>
+      <li>환승 카운터 → 환승 보안검색 → 전광판에서 Mumbai 연결편 게이트 확인.</li></ol>
+      <div class="show-card"><small>직원에게 보여주기</small>I am an international transit passenger going to Mumbai. Where is the transfer counter?</div>
+    </article>
+    <article class="action-step" id="public-immigration"><span class="step-no">3</span><h3>Mumbai · Immigration</h3>
+      <p>여권, e-Visa ETA, e-Arrival 제출 확인, 숙소 예약·주소, 귀국/후속 항공권을 준비합니다. e-Arrival Card는 Indian Immigration의 <b>무료</b> 공식 서비스이며 도착 전 72시간 이내 제출 안내가 제공됩니다.</p>
+      <div class="qa"><details open><summary>Purpose of visit?</summary><p class="answer">I am here for a gaming tournament and tourism.</p></details>
+      <details><summary>Where will you stay?</summary><p class="answer">I will stay at this hotel. Here is my booking.</p></details>
+      <details><summary>Return ticket?</summary><p class="answer">Yes. Here is my return ticket.</p></details></div>
+    </article>
+    <article class="action-step" id="public-customs"><span class="step-no">4</span><h3>Baggage → Customs</h3>
+      <ol><li>전광판에서 도착편의 수하물 벨트 확인.</li><li><b>Green Channel</b>: 신고할 물품이 전혀 없을 때.</li><li><b>Red Channel</b>: 신고 대상이 있거나 확실하지 않을 때.</li></ol>
+      <p>무기·불법 약물, 고가 금·귀금속, 상업용 물품, 많은 현금/외화, 식품·식물·동물성 제품, 드론 등 허가 여부가 의심되는 물품은 Green으로 지나가기 전에 세관에 확인하세요.</p>
+      <div class="show-card"><small>확실하지 않을 때</small>I am not sure whether this item must be declared. I would like to declare it and follow the correct procedure.</div>
+    </article>
+    <article class="action-step sos-panel" id="public-sos"><span class="step-no">!</span><h3>SHOW THIS SCREEN</h3>
+      <div class="show-card">I am travelling from Incheon to Mumbai via Hanoi. I need help finding the correct transfer, immigration, baggage, or customs area.</div>
+      <div class="show-card">I do not understand English well. Please speak slowly, point to the correct place, or type the instructions on my phone.</div>
+    </article>
+  </section>
+
+  <section class="journey-page-hero">
+    <p class="kicker">2026.09.25</p>
+    <h1>INDIA<br>JOURNEY</h1>
+    <p class="route-line">INCHEON <i>→</i> HANOI <i>→</i> MUMBAI</p>
+    <div class="badge-row">
+      <span class="ready-badge">✓ e-Visa 준비 완료</span>
+      <span class="ready-badge">✓ e-Arrival Card 준비 완료</span>
+    </div>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">FLIGHT</p>
+    <h2>VIETJET<br>ONE-STOP</h2>
+    <p>인천에서 출발해 하노이를 거쳐 뭄바이로 이동합니다. 하노이에서는 약 6시간 30분 환승 대기가 있습니다. 정확한 항공편명·시각·탑승구는 본인 탑승권과 공항 전광판(FIDS)을 우선 확인하세요.</p>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">HANOI · INTERNATIONAL TRANSFER</p>
+    <h2>짐표와 탑승권<br>먼저 확인.</h2>
+    <p>인천 체크인에서 수하물표의 최종 목적지가 <b>BOM</b>인지 확인하고, 하노이→뭄바이 연결편 탑승권 발급 여부를 확인합니다. 기본적으로 <b>"International Transfer"</b> 표지판을 따르되, 탑승권이 없거나 수하물표가 BOM이 아니면 transfer desk에서 확인하고 현장 직원 안내를 최종 기준으로 따릅니다.</p>
+    <p class="source-tag source-official">OFFICIAL · VietJet Air</p>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">HANOI · LONG LAYOVER</p>
+    <h2>환승 5시간+<br>이면 바우처.</h2>
+    <p>5시간 이상 24시간 미만 환승 승객에게는 환승 카운터에서 식당·휴식 공간에서 쓸 수 있는 바우처가 제공됩니다. 받았는지 직접 확인하는 것이 좋습니다.</p>
+    <p class="source-tag source-official">OFFICIAL · VietJet Air (voucher policy page)</p>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">HANOI · WHILE WAITING</p>
+    <h2>공항 안에서<br>쉬기.</h2>
+    <p>Terminal 2 국제선 구역에는 무료 Wi-Fi, 충전 시설, 식당(로컬 음식부터 글로벌 브랜드까지), 유료 라운지가 있습니다. 첫 하노이 환승이라면 시내 관광 대신 공항 안에서 쉬는 것을 권장합니다 — 의무는 아니고, 이번 일정에 대한 보수적인 권장사항입니다.</p>
+    <p class="source-tag source-tip">TRAVEL TIP</p>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">MUMBAI · ARRIVAL</p>
+    <h2>입국심사 →<br>수하물 → 세관.</h2>
+    <p>뭄바이 도착 후에는 입국심사(Immigration) → 수하물 수취(항공편 전광판에서 벨트 확인) → 세관(신고할 물품이 없으면 Green Channel, 있으면 Red Channel) 순서로 이동합니다. 외국인 e-Visa 신규 입국자는 생체인식(biometric) 등록 절차가 포함될 수 있습니다.</p>
+    <p class="source-tag source-official">OFFICIAL · Mumbai CSMIA / Government of India e-Visa</p>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">MUMBAI · WI-FI</p>
+    <h2>인터넷<br>안 될 때.</h2>
+    <p>뭄바이 공항은 전 터미널 무료 Wi-Fi(<b>#MumbaiAirportWiFi</b>)를 제공합니다. 외국인 승객은 Information Desk 또는 Wi-Fi Kiosk에서 여권을 보여주고 인증하면 비밀번호를 받을 수 있습니다.</p>
+    <p class="source-tag source-official">OFFICIAL · Mumbai CSMIA</p>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">MUMBAI · TRANSPORT</p>
+    <h2>공식 택시만<br>이용.</h2>
+    <p>공항 밖으로 나가면 Prepaid Taxi 카운터, Uber/Ola 앱 호출이 모두 가능합니다. 도착장 안에서 미리 앱으로 차량을 부르고 차량번호를 확인한 뒤, 지정된 승차 구역에서 탑승하세요. 호객하는 사람을 따라가지 마세요.</p>
+    <p class="source-tag source-official">OFFICIAL · Mumbai CSMIA</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">MUMBAI · WALKTHROUGH</p>
+    <h2>영상으로<br>미리 보기.</h2>
+    <div class="log-yt">
+      <iframe src="https://www.youtube-nocookie.com/embed/inCk7fAgKWM" loading="lazy" allowfullscreen="allowfullscreen" title="Mumbai Airport T2 International Arrival Walkthrough" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+    <p class="source-tag source-walkthrough">WALKTHROUGH · third-party video, not official guidance</p>
+  </section>
+
+  <section class="note emergency-note">
+    <p class="eyebrow">EMERGENCY ENGLISH</p>
+    <h2>필요하면<br>화면째 보여주기.</h2>
+    <div class="emergency-card">I'm connecting to Mumbai in Hanoi. Where should I go for my connecting flight?</div><div class="emergency-card">Is my baggage checked through to Mumbai? Do I need to collect my baggage in Hanoi?</div>
+    <div class="emergency-card">Could you please speak slowly? I don't understand. Could you please say that again?</div><div class="emergency-card">Where is Immigration?</div>
+    <div class="emergency-card">Could you help me connect to the airport Wi-Fi?</div>
+    <div class="emergency-card">Where is the official taxi or app-based cab pickup area?</div>
+  </section>
+
+  <section class="note">
+    <p class="eyebrow">OFFICIAL SOURCES</p>
+    <ul class="source-list">
+      <li><a href="https://www.vietjetair.com/en/pages/connecting-flight-information-1669109430306" target="_blank" rel="noopener">VietJet — Connecting Flight Information</a></li>
+      <li><a href="https://www.vietjetair.com/en/pages/voucher-information-for-connecting-service-of-international-journeys-1682492543848" target="_blank" rel="noopener">VietJet — Connecting Voucher Policy</a></li>
+      <li><a href="https://www.noibaiairport.vn/" target="_blank" rel="noopener">Noi Bai International Airport — Official Site</a></li>
+      <li><a href="https://indianvisaonline.gov.in/evisa/" target="_blank" rel="noopener">Government of India — e-Visa</a></li>
+      <li><a href="https://indianvisaonline.gov.in/earrival/" target="_blank" rel="noopener">Government of India — e-Arrival Card</a></li>
+      <li><a href="https://csmia-mumbai.adaniairports.com/en/passenger-guide/arrival-guide" target="_blank" rel="noopener">Mumbai CSMIA — Arrival Guide</a></li>
+      <li><a href="https://csmia-mumbai.adaniairports.com/en/airport-facilities/wifi-service" target="_blank" rel="noopener">Mumbai CSMIA — Wi-Fi Service</a></li>
+    </ul>
+    <p class="fine-print">여행 정보는 변경될 수 있습니다. 확실하지 않은 부분은 현장 안내판(FIDS)이나 공항 직원에게 다시 확인하세요.</p>
+  </section>
+</main>
+<footer><strong>CHOONGGI</strong><span>Personal vlog · Gamer diary · Travel journal</span></footer>
+<nav><a href="/choonggi">HOME</a><a href="/choonggi/vlog">VLOG</a><a href="/choonggi/gamer">GAMER</a><a href="/choonggi/india">INDIA</a><a href="/choonggi/about">ABOUT</a></nav>
+<script defer th:src="@{/js/choonggi.js}"></script></body></html>

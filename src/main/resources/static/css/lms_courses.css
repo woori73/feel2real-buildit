@@ -1,0 +1,14 @@
+/* 온라인 내신특강(강좌 목록) 전용. 공통 토큰/레이아웃은 lms_shell.css. */
+
+.filters{background:#fff;border:1px solid var(--border);border-radius:var(--r-md);padding:20px;margin-bottom:28px;display:flex;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow-sm)}
+.filters input,.filters select{flex:1;min-width:180px}
+.course-card{background:#fff;border:1px solid rgba(0,0,0,.04);border-radius:var(--r-md);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease}
+.course-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg)}
+.course-thumb{aspect-ratio:16/9;background:linear-gradient(135deg,#efe9ff,#eef0fb);display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--purple)}
+.course-card-body{padding:26px;display:flex;flex-direction:column;flex:1}
+.course-card .school{font-size:14px;color:var(--purple);font-weight:700;margin-bottom:8px}
+.course-card h3{font-size:23px;margin-bottom:10px;font-weight:800;letter-spacing:-.01em}
+.course-card p{font-size:15px;color:var(--text-light);margin-bottom:18px;flex:1}
+.course-card .price{font-size:24px;font-weight:800;margin-bottom:16px}
+.course-card-actions{display:flex;gap:10px}
+.course-card-actions button{flex:1}

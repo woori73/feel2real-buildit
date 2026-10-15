@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수업 영상 관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+  <link rel="stylesheet" href="/css/tutor_academy_videos.css?v=20260918-1">
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <div class="brand">학원 영상 관리</div>
+        <p class="muted">직접 업로드 영상과 외부 링크 영상(네이버·YouTube 등)을 함께 관리합니다. 등록 시 용도를 선택해 주세요.</p>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="/tutor/academy">내 Academy</a>
+        <a class="btn btn-secondary" href="/builder">Academy 수정</a>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>영상 올리기</h2>
+      <p class="muted" id="uploadHint">
+        휴대폰에서 촬영한 MP4 또는 MOV 영상만 올려 주세요.
+        영상은 120초 이하 · 200MiB 이하이며, 학원당 최대 30개까지 보관됩니다(직접 업로드 + 외부 링크 합산).
+      </p>
+      <fieldset class="video-upload-purpose">
+        <legend class="muted">이 영상은 무엇인가요? (필수)</legend>
+        <label><input type="radio" name="videoPurpose" value="LESSON"> 수업 영상 (대표 수업·수업 영상 목록에 노출)</label>
+        <label><input type="radio" name="videoPurpose" value="DIRECTOR"> 대표 원장 소개 영상 (원장 소개 목록에만 노출)</label>
+        <label><input type="radio" name="videoPurpose" value="NONE"> 용도 지정 안 함 (영상 관리에만 보관, 홈페이지 대표 영역 미노출)</label>
+      </fieldset>
+      <div class="video-upload-row">
+        <input id="videoInput" type="file" accept=".mp4,.mov,video/mp4,video/quicktime" />
+        <button id="uploadButton" class="btn btn-primary" type="button">업로드</button>
+      </div>
+      <progress id="uploadProgress" class="video-upload-progress hidden" max="100" value="0"></progress>
+      <p id="uploadStatus" class="video-upload-status hidden"></p>
+    </section>
+
+    <section class="card">
+      <h2>영상 링크 등록</h2>
+      <p class="muted">
+        네이버·YouTube 등에 이미 올라간 학원 영상을 <b>주소(URL)</b>로 등록합니다. 영상 파일은
+        서버에 복제되지 않고 링크만 저장됩니다. 직접 업로드 영상과 같은 목록에서 관리되고 내신
+        LIVE 연결에도 그대로 쓸 수 있습니다. (https:// 주소만 등록됩니다.)
+      </p>
+      <p class="muted video-link-embed-note">
+        내신 LIVE·홈페이지 카드 <b>안에서 바로 재생</b>하려면 —
+        <b>YouTube</b>는 <code>youtu.be/…</code>·<code>youtube.com/watch?v=…</code>,
+        <b>네이버 TV</b>는 <code>tv.naver.com/v/…</code>,
+        <b>네이버 쇼츠</b>는 <b>공유 &gt; 소스코드</b>의 <code>&lt;iframe&gt;</code> 코드를 그대로 붙여넣거나
+        그 안의 <code>clip-viewer.naver.com/oembed/…</code> 주소를 넣어 주세요.
+        <code>naver.me/…</code> 단축주소는 재생 embed 주소가 아니라서 카드에는 “영상 보기” 링크로만 표시됩니다.
+      </p>
+      <fieldset class="video-upload-purpose">
+        <legend class="muted">이 영상은 무엇인가요? (필수)</legend>
+        <label><input type="radio" name="videoLinkPurpose" value="LESSON"> 수업 영상</label>
+        <label><input type="radio" name="videoLinkPurpose" value="DIRECTOR"> 대표 원장 소개 영상</label>
+        <label><input type="radio" name="videoLinkPurpose" value="NONE"> 용도 지정 안 함</label>
+      </fieldset>
+      <div class="video-link-row">
+        <label class="video-link-field">영상 URL
+          <input id="videoLinkUrl" type="text" inputmode="url" placeholder="영상 주소(https://…) 또는 공유 &gt; 소스코드의 &lt;iframe&gt; 코드" />
+        </label>
+        <label class="video-link-field">영상 제목
+          <input id="videoLinkTitle" type="text" maxlength="255" placeholder="예: 6월 공개수업 하이라이트" />
+        </label>
+        <button id="videoLinkButton" class="btn btn-primary" type="button">링크 등록</button>
+      </div>
+      <p id="videoLinkStatus" class="video-upload-status hidden"></p>
+    </section>
+
+    <section class="card">
+      <div class="topbar">
+        <h2>등록된 영상 <span id="videoCount" class="muted"></span></h2>
+      </div>
+      <p class="muted">대표 원장 소개 영상과 수업 영상을 용도별로 분리해서 관리합니다. 각 영상 카드의
+        용도를 바꾸면 즉시 공개 Academy와 Builder에 반영됩니다.</p>
+      <div id="videoGroups"></div>
+      <p id="emptyState" class="muted hidden">아직 등록된 영상이 없습니다.</p>
+    </section>
+  </main>
+
+  <script src="/js/academy_sections.js?v=20260905-4"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/tutor_academy_videos.js?v=20260918-2"></script>
+</body>
+</html>

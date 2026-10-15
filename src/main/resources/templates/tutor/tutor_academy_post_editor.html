@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academy 블로그 글 작성</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+  <link rel="stylesheet" href="/css/academy_blog.css">
+  <link rel="stylesheet" href="https://esm.sh/@tiptap/core@2.11.7/style.css">
+</head>
+<body>
+  <main class="page blog-editor-page">
+    <div class="topbar">
+      <div><div class="brand" id="editorTitle">블로그 글 작성</div><p class="muted">한글과 이미지를 지원하는 Tiptap 에디터입니다.</p></div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="/tutor/academy/posts">목록으로</a>
+        <th:block th:replace="~{fragments/_account_menu :: accountMenu('/tutor/academy', '강사 홈')}"></th:block>
+      </div>
+    </div>
+    <form id="postForm" class="card blog-editor-form">
+      <div class="grid">
+        <div class="field"><label for="title">제목 *</label><input id="title" maxlength="200" required placeholder="예: 압구정고 중간고사 영어 대비 전략"></div>
+        <div class="field"><label for="slug">URL 슬러그 *</label><input id="slug" maxlength="160" placeholder="예: apgujeong-midterm-english 또는 압구정고-중간고사"></div>
+      </div>
+      <div class="field"><label for="summary">요약</label><textarea id="summary" maxlength="500" rows="2" placeholder="검색/목록에 보일 짧은 소개"></textarea></div>
+      <div class="grid">
+        <div class="field"><label for="metaTitle">SEO 제목</label><input id="metaTitle" maxlength="200"></div>
+        <div class="field"><label for="metaDescription">SEO 설명</label><input id="metaDescription" maxlength="300"></div>
+      </div>
+      <div class="grid compact-grid">
+        <div class="field"><label for="status">상태</label><select id="status"><option value="DRAFT">임시저장</option><option value="PUBLISHED">공개 발행</option></select></div>
+        <label class="check-field"><input id="visible" type="checkbox" checked> 공개 페이지/검색 노출</label>
+      </div>
+      <div class="field">
+        <label>본문 *</label>
+        <div class="editor-toolbar">
+          <button type="button" data-command="bold" title="굵게" aria-label="굵게"><i data-lucide="bold"></i></button>
+          <button type="button" data-command="italic" title="기울임" aria-label="기울임"><i data-lucide="italic"></i></button>
+          <button type="button" data-command="strike" title="취소선" aria-label="취소선"><i data-lucide="strikethrough"></i></button>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <button type="button" data-command="h2" title="제목 2" aria-label="제목 2"><i data-lucide="heading-2"></i></button>
+          <button type="button" data-command="h3" title="제목 3" aria-label="제목 3"><i data-lucide="heading-3"></i></button>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <button type="button" data-command="bulletList" title="글머리 목록" aria-label="글머리 목록"><i data-lucide="list"></i></button>
+          <button type="button" data-command="orderedList" title="번호 목록" aria-label="번호 목록"><i data-lucide="list-ordered"></i></button>
+          <button type="button" data-command="blockquote" title="인용" aria-label="인용"><i data-lucide="text-quote"></i></button>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <button type="button" data-command="alignLeft" title="왼쪽 정렬" aria-label="왼쪽 정렬"><i data-lucide="align-left"></i></button>
+          <button type="button" data-command="alignCenter" title="가운데 정렬" aria-label="가운데 정렬"><i data-lucide="align-center"></i></button>
+          <button type="button" data-command="alignRight" title="오른쪽 정렬" aria-label="오른쪽 정렬"><i data-lucide="align-right"></i></button>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <button type="button" data-command="link" title="링크" aria-label="링크"><i data-lucide="link"></i></button>
+          <button type="button" id="imageButton" title="이미지 삽입" aria-label="이미지 삽입"><i data-lucide="image"></i></button>
+          <input id="imageInput" type="file" accept="image/*" hidden>
+          <span class="toolbar-divider" aria-hidden="true"></span>
+          <button type="button" data-command="undo" title="실행 취소" aria-label="실행 취소"><i data-lucide="undo-2"></i></button>
+          <button type="button" data-command="redo" title="다시 실행" aria-label="다시 실행"><i data-lucide="redo-2"></i></button>
+        </div>
+        <p class="muted editor-hint">이미지를 클릭하면 크기(작게/중간/크게)를 바꿀 수 있습니다.</p>
+        <div id="editor" class="tiptap-editor"></div>
+        <textarea id="fallbackContent" class="hidden" rows="14" placeholder="에디터 로딩 실패 시 HTML 본문을 입력할 수 있습니다."></textarea>
+      </div>
+      <div class="form-actions">
+        <button id="deleteButton" class="btn btn-danger hidden" type="button">삭제</button>
+        <span id="statusMsg" role="alert"></span>
+        <button class="btn btn-primary" type="submit">저장</button>
+      </div>
+    </form>
+  </main>
+  <script src="/js/api.js"></script>
+  <script type="module" src="/js/tutor_academy_post_editor.js"></script>
+
+</body>
+</html>

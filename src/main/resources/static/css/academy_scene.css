@@ -1,0 +1,49 @@
+/* ══════════════ Vertical Scene Flow ══════════════
+   academy_scene.js 가 스크롤 위치(IntersectionObserver)로 section[data-scene] = enter|active|exit
+   를 준다. 1회성 아님 — 위/아래 스크롤에 따라 다시 바뀐다.
+
+   의도: "다음 화면이 흐린 것"이 아니라 **지나간 이전 화면이 희미해지는 것**.
+     enter  = 정상 밝기(다음 섹션은 그대로 진입)
+     active = 정상 밝기
+     exit   = 약 .4 로 dim + 살짝 위로 물러남
+
+   전부 html.js-scene 스코프. 모듈/JS 미로드·reduced-motion → 섹션 정적으로 완전히 보인다.
+   빌더 캔버스는 academy_scene.js 를 로드하지 않으므로 js-scene 도 없다(정적).
+
+   compositor-only: 섹션 opacity + transition, 자식 transform 만. 레이아웃 read/write 루프 없음.
+   .section-wrap 을 물려 specificity 를 올린다 — 섹션이 스스로 [data-reveal-item].is-revealed
+   (academy_reveal.css opacity:1)인 경우도 이긴다.
+
+   ⚠ exit 자식 transform 을 받지 않는 섹션(opacity 만): #sec-digitaltwin(sticky visual 컨테이닝
+     블록) · #sec-featured(가로 학교 카드 트랙) · #sec-lessons / #sec-videos(대표수업·Actual Class 격리). */
+
+html.js-scene section.section-wrap[data-scene] {
+  transition: opacity .5s var(--reveal-ease, cubic-bezier(0, 0, .3, 1));
+  will-change: opacity;
+}
+html.js-scene section.section-wrap[data-scene="exit"]:not(#sec-digitaltwin):not(#sec-featured):not(#sec-lessons):not(#sec-videos) > * {
+  transition: transform .5s var(--reveal-ease, cubic-bezier(0, 0, .3, 1));
+  will-change: transform;
+}
+
+/* ENTER / ACTIVE — 정상 밝기. 다음 섹션은 흐리게 대기하지 않는다. */
+html.js-scene section.section-wrap[data-scene="enter"],
+html.js-scene section.section-wrap[data-scene="active"] { opacity: 1; }
+html.js-scene section.section-wrap[data-scene="enter"] > *,
+html.js-scene section.section-wrap[data-scene="active"] > * { transform: none; }
+
+/* EXIT — 위로 지나간 이전 섹션만 희미해진다(가독성 유지 위해 완전히 사라지진 않음). */
+html.js-scene section.section-wrap[data-scene="exit"] { opacity: .4; }
+html.js-scene section.section-wrap[data-scene="exit"]:not(#sec-digitaltwin):not(#sec-featured):not(#sec-lessons):not(#sec-videos) > * {
+  transform: translateY(-16px);
+}
+
+/* reduced-motion → 항상 최종(정상 밝기), 트랜지션 없음 */
+@media (prefers-reduced-motion: reduce) {
+  html.js-scene section.section-wrap[data-scene],
+  html.js-scene section.section-wrap[data-scene] > * {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

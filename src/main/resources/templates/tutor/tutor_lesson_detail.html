@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수업 관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <a class="back-link" href="/tutor/academy">← 내 Academy</a>
+        <div class="brand">수업 관리</div>
+        <p class="muted">수업 정보와 신청/수강생을 확인합니다.</p>
+      </div>
+      <div class="topbar-actions">
+        <a id="editLessonProductLink" class="btn btn-secondary"
+           href="/tutor/academy/lessons/editor">수업 수정</a>
+        <a class="btn btn-ghost" href="/my/profile">내 프로필</a>
+        <button class="btn btn-ghost" type="button" onclick="handleLogout()">로그아웃</button>
+      </div>
+    </div>
+
+    <section id="lessonDetail" class="card">
+      <p class="muted">수업 정보를 불러오는 중...</p>
+    </section>
+
+    <section class="card">
+      <div class="topbar">
+        <div>
+          <h2>신청/수강생 목록</h2>
+          <p class="muted">학생 카드를 클릭하면 해당 수업에 매핑된 학습 대화로 이동합니다.</p>
+        </div>
+      </div>
+      <div id="studentList" class="lesson-list">
+        <p class="muted">신청 목록을 불러오는 중...</p>
+      </div>
+    </section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/tutor_lesson_detail.js"></script>
+  <script>
+    async function handleLogout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+      sessionStorage.clear();
+      location.href = '/';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+ "articleId": 204,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "우려에서 차주로 가려고 하는데\n7월에 폐업했고요\n차주갈때 신용점수 보나요????",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-10-31T00:47:49.667Z",
+ "createdAtMs": 1730335669667,
+ "viewCount": 26,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/204",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "신용점수를 보지 않습니다.",
+  "​",
+  "장기연체 등록된 상태에서 신청하기때문에 이미 신용점수가 크게 하락된 상태일 겁니다.",
+  "​"
+ ],
+ "bodyNormalized": "신용점수를 보지 않습니다.\n​\n장기연체 등록된 상태에서 신청하기때문에 이미 신용점수가 크게 하락된 상태일 겁니다.\n​",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-8603b7b6-9721-11ef-ab6e-fdbbdcdb4eee\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-8603b7b7-9721-11ef-ab6e-713f72a9452b\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-c074f5aa-9721-11ef-ab6e-8d57d20157f0\">신용점수를 보지 않습니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-97895749-9721-11ef-ab6e-7f6ec5b130bb\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-c074f5ab-9721-11ef-ab6e-bd0db8d35321\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-9716bf54-9721-11ef-ab6e-4b80c41ea8da\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-c074f5ac-9721-11ef-ab6e-cdf0b362be07\">장기연체 등록된 상태에서 신청하기때문에 이미 신용점수가 크게 하락된 상태일 겁니다.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-c06e8cf4-9721-11ef-ab6e-b3c071520771\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-c074f5ad-9721-11ef-ab6e-1bd96cc1fa63\">​</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

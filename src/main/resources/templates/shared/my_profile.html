@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R - 내 정보</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/my_profile.css">
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>내 정보</h1>
+      <div class="role" id="profileRole">-</div>
+    </div>
+    <a class="back" id="dashboardLink" href="/home">대시보드로 이동</a>
+  </header>
+
+  <form id="profileForm">
+    <section>
+      <h2>기본 정보</h2>
+      <div class="grid">
+        <div>
+          <label for="loginId">아이디</label>
+          <input id="loginId" readonly>
+        </div>
+        <div>
+          <label for="name">이름</label>
+          <input id="name" maxlength="30">
+        </div>
+        <div>
+          <label for="nickname">닉네임</label>
+          <input id="nickname" maxlength="20">
+        </div>
+        <div>
+          <label for="email">이메일</label>
+          <input id="email" type="email" maxlength="100">
+        </div>
+        <div>
+          <label for="phone">연락처</label>
+          <input id="phone" type="tel" maxlength="20">
+        </div>
+      </div>
+    </section>
+
+    <section class="student-section" id="studentSection" th:if="${currentRole == null or currentRole == 'STUDENT'}" hidden>
+      <h2>학생 정보</h2>
+      <div class="grid">
+        <div>
+          <label for="schoolName">학교명</label>
+          <input id="schoolName" maxlength="100">
+        </div>
+        <div>
+          <label for="grade">학년</label>
+          <input id="grade" type="number" min="1" max="12">
+        </div>
+        <div>
+          <label for="parentName">학부모 이름</label>
+          <input id="parentName" maxlength="30">
+        </div>
+        <div>
+          <label for="parentPhone">학부모 연락처</label>
+          <input id="parentPhone" type="tel" maxlength="20">
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>비밀번호</h2>
+      <label class="toggle-row">
+        <input type="checkbox" id="passwordToggle">
+        비밀번호 변경
+      </label>
+      <div class="grid password-fields" id="passwordFields" hidden>
+        <div>
+          <label for="currentPassword">현재 비밀번호</label>
+          <input id="currentPassword" type="password" autocomplete="current-password">
+        </div>
+        <div>
+          <label for="newPassword">새 비밀번호</label>
+          <input id="newPassword" type="password" autocomplete="new-password">
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>서드파티 계정</h2>
+      <div class="oauth-grid" id="oauthGrid"></div>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="danger" id="withdrawOpen">회원탈퇴</button>
+      <button type="submit" class="primary">저장</button>
+    </div>
+  </form>
+  <p class="message" id="message"></p>
+</main>
+
+<div class="modal" id="withdrawModal" hidden>
+  <div class="modal-panel">
+    <h2>회원탈퇴</h2>
+    <p>탈퇴하면 계정과 소유 데이터가 삭제됩니다. 계속하려면 현재 비밀번호를 입력하세요.</p>
+    <label for="withdrawPassword">현재 비밀번호</label>
+    <input id="withdrawPassword" type="password" autocomplete="current-password">
+    <div class="modal-actions">
+      <button type="button" class="secondary" id="withdrawCancel">취소</button>
+      <button type="button" class="danger" id="withdrawConfirm">탈퇴</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  const fields = ['loginId', 'name', 'nickname', 'email', 'phone', 'schoolName', 'grade', 'parentName', 'parentPhone'];
+  const message = document.getElementById('message');
+  const passwordToggle = document.getElementById('passwordToggle');
+  const passwordFields = document.getElementById('passwordFields');
+  const studentSection = document.getElementById('studentSection');
+  const withdrawModal = document.getElementById('withdrawModal');
+
+  let profile = null;
+  const providerLabels = { GOOGLE: '구글', NAVER: '네이버', KAKAO: '카카오' };
+
+  function setMessage(text, type) {
+    message.textContent = text || '';
+    message.className = 'message' + (type ? ' ' + type : '');
+  }
+
+  function value(id) {
+    return document.getElementById(id).value.trim();
+  }
+
+  function fill(profileData) {
+    profile = profileData;
+    fields.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = profileData[id] ?? '';
+    });
+    document.getElementById('profileRole').textContent = profileData.role;
+    document.getElementById('dashboardLink').href = window.dashboardPathForRole(profileData.role);
+    studentSection.hidden = profileData.role !== 'STUDENT';
+  }
+
+  async function loadProfile() {
+    try {
+      fill(await window.fetchJsonAuth('/api/me'));
+      await loadOAuthAccounts();
+    } catch (err) {
+      setMessage(err.message, 'error');
+    }
+  }
+
+  async function loadOAuthAccounts() {
+    const accounts = await window.fetchJsonAuth('/api/me/oauth');
+    const canUnlink = Boolean(profile?.loginId) && !profile.loginId.includes('_');
+    document.getElementById('oauthGrid').innerHTML = accounts.map((account) => {
+      const label = providerLabels[account.provider] || account.provider;
+      const action = account.connected
+        ? `<button type="button" class="secondary" data-oauth-unlink="${account.provider}" ${canUnlink ? '' : 'disabled'}>해제</button>`
+        : `<button type="button" class="primary" data-oauth-link="${account.provider}">연결</button>`;
+      return `
+        <div class="oauth-card">
+          <strong>${label}</strong>
+          <span class="oauth-badge ${account.connected ? 'connected' : ''}">${account.connected ? '연결됨' : '연결 안됨'}</span>
+          ${action}
+        </div>`;
+    }).join('');
+  }
+
+  document.addEventListener('click', async (event) => {
+    const linkProvider = event.target?.dataset?.oauthLink;
+    const unlinkProvider = event.target?.dataset?.oauthUnlink;
+    if (linkProvider) {
+      const res = await window.fetchAuth(`/api/me/oauth/${linkProvider.toLowerCase()}`, { method: 'POST' });
+      if (res.redirected) {
+        location.href = res.url;
+        return;
+      }
+      const locationHeader = res.headers.get('Location');
+      location.href = locationHeader || `/oauth2/authorization/${linkProvider.toLowerCase()}`;
+    }
+    if (unlinkProvider) {
+      const res = await window.fetchAuth(`/api/me/oauth/${unlinkProvider.toLowerCase()}`, { method: 'DELETE' });
+      if (!res.ok) {
+        setMessage(await res.text(), 'error');
+        return;
+      }
+      await loadOAuthAccounts();
+      setMessage('연동을 해제했습니다.', 'ok');
+    }
+  });
+
+  passwordToggle.addEventListener('change', () => {
+    passwordFields.hidden = !passwordToggle.checked;
+  });
+
+  function isValidNickname(nickname) {
+    return /^[가-힣A-Za-z0-9 _-]{2,20}$/.test(nickname.trim());
+  }
+
+  document.getElementById('profileForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const nickname = value('nickname');
+    if (!isValidNickname(nickname)) {
+      setMessage('닉네임은 한글/영문/숫자/공백/_/- 조합 2~20자로 입력해 주세요.', 'error');
+      return;
+    }
+    const payload = {
+      name: value('name'),
+      nickname,
+      email: value('email') || null,
+      phone: value('phone') || null
+    };
+    if (profile?.role === 'STUDENT') {
+      payload.schoolName = value('schoolName');
+      payload.grade = value('grade') ? Number(value('grade')) : null;
+      payload.parentName = value('parentName') || null;
+      payload.parentPhone = value('parentPhone') || null;
+    }
+    if (passwordToggle.checked) {
+      payload.currentPassword = document.getElementById('currentPassword').value;
+      payload.newPassword = document.getElementById('newPassword').value;
+    }
+
+    try {
+      const res = await window.fetchAuth('/api/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      fill(await res.json());
+      setMessage('저장했습니다.', 'ok');
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      passwordToggle.checked = false;
+      passwordFields.hidden = true;
+    } catch (err) {
+      setMessage(err.message, 'error');
+    }
+  });
+
+  document.getElementById('withdrawOpen').addEventListener('click', () => {
+    withdrawModal.hidden = false;
+    document.getElementById('withdrawPassword').focus();
+  });
+  document.getElementById('withdrawCancel').addEventListener('click', () => {
+    withdrawModal.hidden = true;
+  });
+  document.getElementById('withdrawConfirm').addEventListener('click', async () => {
+    try {
+      const res = await window.fetchAuth('/api/me', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: document.getElementById('withdrawPassword').value })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      sessionStorage.clear();
+      location.replace('/home');
+    } catch (err) {
+      setMessage(err.message, 'error');
+      withdrawModal.hidden = true;
+    }
+  });
+
+  loadProfile();
+</script>
+</body>
+</html>

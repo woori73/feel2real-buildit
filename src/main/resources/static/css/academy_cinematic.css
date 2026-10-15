@@ -1,0 +1,220 @@
+/* ══════════════ Storefront Cinematic — AI Native Pipeline canvas ══════════════
+   하나의 넓은 canvas 안 오브젝트들의 "파이프라인 상 최종 위치"를 px 로 절대배치한다
+   (좌표계 660×460 고정). academy_public.js / academy_cinematic.js 의 fitCanvas 가 stage 폭에
+   맞춰 .ai-canvas 를 transform:scale 한다 → px 이동량도 함께 스케일된다.
+
+   GSAP(academy_cinematic.js, ScrollTrigger scrub)는 transform(x/y/scale/opacity)만 애니메이트해
+   왼쪽 학교 자료 → BUILD IT BRAIN → 문제 → FINAL EXAM 으로 실제 이동시킨다. GSAP 없음 /
+   reduced-motion / 데스크톱<900 이면 이 최종 배치가 그대로 파이프라인 다이어그램으로 정적 표시.
+
+   stage 컨테이너 / 데스크톱 sticky 레이아웃 / 모바일 세로 블록은 academy_public.css.
+   토큰(--ultramarine / --ink* / --line / --accent …)은 academy_public.css :root 를 쓴다. */
+
+.ai-canvas {
+  position: absolute; top: 0; left: 0;
+  width: 660px; height: 460px;
+  transform-origin: top left;
+}
+.ai-canvas > * { position: absolute; will-change: transform; }
+
+/* ── 흐름 척추(connector) ─────────────────────────────────────────────── */
+.ai-flow { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.ai-flow-path {
+  fill: none; stroke: var(--accent, #4A7FD4); stroke-width: 2; stroke-linecap: round;
+  opacity: .55; stroke-dasharray: 5 7;
+}
+html.js-cinematic .ai-flow-path { stroke-dasharray: none; }
+
+/* ── 캡션 ─────────────────────────────────────────────────────────────── */
+.ai-cap { color: var(--ink-faint); font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.ai-cap--src { left: 14px; top: 14px; }
+
+/* ── 학교 자료 4개 (왼쪽 열) ─────────────────────────────────────────── */
+.ai-src {
+  left: 18px; width: 132px; min-height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 10px; border: 1px solid #cfd5de; border-radius: 9px; background: #fff;
+  box-shadow: 0 6px 16px rgba(15,23,42,.1);
+  color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: -.01em; text-align: center;
+}
+.ai-src[data-ai-src="0"] { top: 46px; }
+.ai-src[data-ai-src="1"] { top: 112px; }
+.ai-src[data-ai-src="2"] { top: 178px; }
+.ai-src[data-ai-src="3"] { top: 244px; }
+
+/* ── BUILD IT BRAIN (중앙) ───────────────────────────────────────────── */
+.ai-brain {
+  left: 250px; top: 122px; width: 150px; height: 150px; border-radius: 30px;
+  background: linear-gradient(150deg, var(--ultramarine), var(--accent, #4A7FD4));
+  color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 22px 48px rgba(12,35,138,.34); z-index: 4;
+}
+.ai-brain b { font-size: 15px; font-weight: 900; letter-spacing: .02em; }
+.ai-brain span { font-size: 11px; font-weight: 800; letter-spacing: .2em; opacity: .9; margin-top: 2px; }
+
+/* ── 두 지능 노드 ───────────────────────────────────────────────────── */
+.ai-node {
+  width: 150px; padding: 9px 12px; border-radius: 12px; background: #fff;
+  border: 2px solid var(--ultramarine); text-align: center;
+  color: var(--ink); font-size: 12px; font-weight: 900; line-height: 1.25;
+  box-shadow: 0 8px 20px rgba(15,23,42,.12); z-index: 5;
+}
+.ai-node span { display: block; color: var(--ink-faint); font-size: 8.5px; font-weight: 900; letter-spacing: .14em; margin-bottom: 1px; }
+.ai-node--twin { left: 196px; top: 24px; }
+.ai-node--insight { left: 400px; top: 36px; border-color: var(--ink); }
+
+/* ── 생성 문제 (오른쪽) ─────────────────────────────────────────────── */
+.ai-qout {
+  left: 470px; border: 1px solid #cfd5de; border-radius: 9px; background: #fff;
+  box-shadow: 0 6px 16px rgba(15,23,42,.1); color: var(--ink); font-weight: 800; z-index: 6;
+}
+.ai-qout[data-ai-qout="0"] { top: 112px; width: 180px; padding: 10px 12px; font-size: 11px; text-align: left; }
+.ai-qout[data-ai-qout="0"] b { display: block; color: var(--ultramarine); font-size: 12px; font-weight: 900; margin-bottom: 3px; }
+.ai-qout[data-ai-qout="0"] i { font-style: normal; font-weight: 600; color: var(--ink-soft); font-size: 10.5px; line-height: 1.35; word-break: keep-all; }
+.ai-qout[data-ai-qout="1"], .ai-qout[data-ai-qout="2"], .ai-qout[data-ai-qout="3"] {
+  width: 150px; padding: 9px 10px; text-align: center; font-size: 11px;
+}
+.ai-qout[data-ai-qout="1"] { top: 198px; }
+.ai-qout[data-ai-qout="2"] { top: 250px; }
+.ai-qout[data-ai-qout="3"] { top: 302px; }
+
+/* ── FINAL EXAM (아래 조립) ──────────────────────────────────────────── */
+.ai-final {
+  left: 250px; top: 284px; width: 366px; padding: 16px 20px 18px;
+  border: 1px solid #cfd5de; border-radius: 14px; background: #fff;
+  box-shadow: 0 22px 48px rgba(10,12,20,.18); z-index: 3;
+}
+.ai-final b { display: block; color: var(--ultramarine); font-size: 13px; font-weight: 900; letter-spacing: .16em; }
+.ai-final p { margin: 4px 0 10px; color: var(--ink); font-size: 11px; font-weight: 800; word-break: keep-all; }
+.ai-final ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ai-final li { height: 7px; border-radius: 999px; background: var(--bg-soft); }
+
+/* ════════════ 모바일 — 단계별 횡스크롤 Story (5 Scene) ════════════
+   모바일(<900)에서는 데스크톱 sticky canvas(.ai-native-visual)를 숨기고, 대신 대표수업과
+   동일한 .f2r-collection 위에 5개 Scene 카드를 얹는다(academy_public.css 가 display 토글).
+   마크업 정본: academy_sections.js aiScenesMobileHtml. 배선: academy_cinematic.js wireAiNativeScenes
+   — 각 Scene 이 활성(선두) 카드가 될 때마다 그 Scene 애니메이션을 0 부터 1회 재생(양방향).
+   각 Scene canvas 는 자기 카드폭(약 78vw)을 좌표계로 삼고, 오브젝트는 % + px 로 절대배치한다. */
+/* 표시 토글 — base + @media 를 이 파일 한 곳에 둔다(academy_public.css 와 로드 순서가 갈려도 안전). */
+.ai-scenes-mobile { display: none; }
+@media (max-width: 899px) { .ai-scenes-mobile { display: block; } }
+
+.ai-scene {
+  display: flex; flex-direction: column; gap: 10px; margin: 0;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff, #fafbfe);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, .08), inset 0 0 0 1px rgba(255, 255, 255, .6);
+}
+.ai-scene-canvas {
+  position: relative; width: 100%; height: 292px;
+  border-radius: 12px; background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line, #e5e7eb);
+  overflow: hidden;
+}
+.ai-scene-canvas > * { position: absolute; will-change: transform, opacity; }
+.ai-scene-cap {
+  margin: 0; display: flex; align-items: center; gap: 7px;
+  color: var(--ink, #0b1220); font-size: 13px; font-weight: 800; letter-spacing: -.01em;
+}
+.ai-scene-cap b {
+  flex: none; width: 20px; height: 20px; border-radius: 999px;
+  background: var(--accent-soft, #eef2ff); color: var(--ultramarine, #0c238a);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900;
+}
+/* 모션 아래 한 줄 설명 — 제목(.ai-scene-cap)보다 작되 충분히 읽히는 크기. 1~2줄 중심.
+   설명 때문에 카드가 과도하게 길어지지 않도록 line-height 를 조인다. */
+.ai-scene-desc {
+  margin: -2px 0 0;
+  color: var(--ink-soft, #475569);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -.01em;
+  word-break: keep-all;
+}
+
+/* Scene 오브젝트 — 좌표계는 카드 canvas(위 .ai-scene-canvas). */
+.scn-doc {
+  width: 40%; min-height: 40px; padding: 7px 8px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  border: 1px solid #cfd5de; border-radius: 8px; background: #fff;
+  box-shadow: 0 5px 13px rgba(15, 23, 42, .1);
+  color: var(--ink, #0b1220); font-size: 11.5px; font-weight: 800; letter-spacing: -.01em;
+}
+.scn-doc[data-scn="d0"] { left: 6%; top: 14px; }
+.scn-doc[data-scn="d1"] { left: 54%; top: 14px; }
+.scn-doc[data-scn="d2"] { left: 6%; top: 70px; }
+.scn-doc[data-scn="d3"] { left: 54%; top: 70px; }
+
+.scn-brain {
+  left: calc(50% - 58px); top: 168px; width: 116px; height: 116px; border-radius: 26px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(150deg, var(--ultramarine, #0c238a), var(--accent, #4a7fd4));
+  color: #fff; box-shadow: 0 18px 40px rgba(12, 35, 138, .32); z-index: 4;
+}
+.scn-brain b { font-size: 13px; font-weight: 900; letter-spacing: .02em; }
+.scn-brain span { font-size: 10px; font-weight: 800; letter-spacing: .18em; opacity: .9; margin-top: 2px; }
+.scn-brain--lg { left: calc(50% - 66px); top: calc(50% - 66px); width: 132px; height: 132px; border-radius: 30px; }
+
+.scn-ring {
+  left: calc(50% - 66px); top: calc(50% - 66px); width: 132px; height: 132px;
+  border-radius: 999px; border: 2px solid var(--accent, #4a7fd4); opacity: 0; z-index: 2;
+}
+.scn-chip {
+  padding: 6px 10px; border-radius: 999px; background: #fff;
+  border: 1px solid var(--line, #e5e7eb); box-shadow: 0 5px 13px rgba(15, 23, 42, .1);
+  color: var(--ink-soft, #475569); font-size: 11px; font-weight: 800; z-index: 5;
+}
+.scn-chip[data-scn="c0"] { left: 4%; top: 20px; }
+.scn-chip[data-scn="c1"] { left: 52%; top: 40px; }
+.scn-chip[data-scn="c2"] { left: 22%; top: 236px; }
+
+.scn-node {
+  width: 46%; padding: 8px 10px; border-radius: 11px; background: #fff;
+  border: 2px solid var(--ultramarine, #0c238a); text-align: center;
+  color: var(--ink, #0b1220); font-size: 11.5px; font-weight: 900; line-height: 1.25;
+  box-shadow: 0 7px 18px rgba(15, 23, 42, .12); z-index: 5;
+}
+.scn-node span { display: block; color: var(--ink-faint, #94a3b8); font-size: 8px; font-weight: 900; letter-spacing: .12em; margin-bottom: 1px; }
+.scn-node--twin { left: 5%; top: 26px; }
+.scn-node--insight { left: 49%; top: 200px; border-color: var(--ink, #0b1220); }
+
+.scn-q {
+  width: 42%; padding: 8px 9px; border-radius: 8px; background: #fff;
+  border: 1px solid #cfd5de; box-shadow: 0 5px 13px rgba(15, 23, 42, .1);
+  color: var(--ink, #0b1220); font-size: 11px; font-weight: 800; text-align: center; z-index: 6;
+}
+.scn-q b { display: block; color: var(--ultramarine, #0c238a); font-size: 11.5px; font-weight: 900; }
+.scn-q[data-scn="q0"] { left: 6%; top: 120px; }
+.scn-q[data-scn="q1"] { left: 52%; top: 120px; }
+.scn-q[data-scn="q2"] { left: 6%; top: 210px; }
+.scn-q[data-scn="q3"] { left: 52%; top: 210px; }
+.scn-q--mini[data-scn="q0"] { left: 7%; top: 14px; }
+.scn-q--mini[data-scn="q1"] { left: 58%; top: 24px; }
+.scn-q--mini[data-scn="q2"] { left: 12%; top: 104px; }
+.scn-q--mini[data-scn="q3"] { left: 60%; top: 104px; }
+
+.scn-final {
+  left: 8%; top: 128px; width: 84%; padding: 12px 14px 13px;
+  border: 1px solid #cfd5de; border-radius: 12px; background: #fff;
+  box-shadow: 0 18px 40px rgba(10, 12, 20, .16); z-index: 3;
+}
+.scn-final b { display: block; color: var(--ultramarine, #0c238a); font-size: 12px; font-weight: 900; letter-spacing: .14em; }
+.scn-final p { margin: 3px 0 8px; color: var(--ink, #0b1220); font-size: 10.5px; font-weight: 800; word-break: keep-all; }
+.scn-final ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.scn-final li { height: 6px; border-radius: 999px; background: var(--bg-soft, #f1f5f9); }
+
+/* Scene 카드 폭 — 대표수업 모바일과 동일 계열(다음 카드 일부 peek). */
+@media (max-width: 760px) {
+  .f2r-collection--ai-scenes { --f2r-card-w: 78vw; }
+}
+@media (min-width: 761px) and (max-width: 899px) {
+  .f2r-collection--ai-scenes { --f2r-card-w: 320px; }
+}
+
+/* reduced-motion: wireAiNativeScenes 자체가 안 도므로 Scene 은 완성 상태로 정적. 트랜지션만 제거. */
+@media (prefers-reduced-motion: reduce) {
+  .ai-scene-canvas > * { transition: none !important; }
+}

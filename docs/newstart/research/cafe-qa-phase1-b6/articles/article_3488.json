@@ -1,0 +1,37 @@
+{
+ "articleId": 3488,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "희리패 심화교육",
+ "author": {
+  "nickname": "다보리",
+  "memberGrade": "성실멤버"
+ },
+ "createdAt": "2026-01-07T05:33:49+00:00",
+ "createdAtMs": 1767764029033,
+ "viewCount": 70,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/3488",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "​",
+  "아직 안뜬거맞죠?ㅠㅠ"
+ ],
+ "bodyNormalized": "​\n아직 안뜬거맞죠?ㅠㅠ",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-92f2731c-e512-11f0-969b-f1f7bc1a7f7e\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-92f2731d-e512-11f0-969b-493bf133aa2a\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-92f2731e-e512-11f0-969b-3984c75a9d85\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align-left \" style=\"\" id=\"SE-92f29a50-e512-11f0-969b-313f5faca246\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-92f29a51-e512-11f0-969b-e7c73c2679cb\">아직 안뜬거맞죠?ㅠㅠ</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-92f2731c-e512-11f0-969b-f1f7bc1a7f7e\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

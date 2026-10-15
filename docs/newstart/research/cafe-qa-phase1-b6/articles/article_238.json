@@ -1,0 +1,39 @@
+{
+ "articleId": 238,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "영업용 차량을 지키는 부실차주 경로",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-02T00:46:43.203Z",
+ "createdAtMs": 1730508403203,
+ "viewCount": 56,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/238",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "부실우려 미납 실효후 부실차주",
+  "​",
+  "부실차주에 포함이 안되는 차량 담보건을",
+  "다시 3개월 기다린 후 부실우려로 가서 신청예정"
+ ],
+ "bodyNormalized": "부실우려 미납 실효후 부실차주\n​\n부실차주에 포함이 안되는 차량 담보건을\n다시 3개월 기다린 후 부실우려로 가서 신청예정",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-9f65798a-98b3-11ef-904c-0b934e888a14\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-9f65798b-98b3-11ef-904c-2f621a11e1c5\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-edceb720-98b3-11ef-904c-7d53054df50e\">부실우려 미납 실효후 부실차주</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-bfba7341-98b3-11ef-904c-53e40ccc8891\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-edceb721-98b3-11ef-904c-f128dfdb0f61\">​</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-bf63046c-98b3-11ef-904c-6b3c08b4e7ec\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-edceb722-98b3-11ef-904c-df5a805954ff\">부실차주에 포함이 안되는 차량 담보건을</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-dab3d092-98b3-11ef-904c-690078383ee2\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-edceb723-98b3-11ef-904c-653bc3f08811\">다시 3개월 기다린 후 부실우려로 가서 신청예정</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

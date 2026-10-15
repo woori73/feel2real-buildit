@@ -1,0 +1,282 @@
+/* 수업 영상 관리 페이지. 레이아웃 톤은 tutor_academy.css의 card/btn을 그대로 쓰고
+   영상 목록 관련 스타일만 여기에 둔다. */
+
+.video-upload-purpose {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 10px 0 0;
+  padding: 0;
+  border: 0;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #3d4a6b;
+}
+
+.video-upload-purpose legend {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 0;
+}
+
+.video-upload-purpose label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.video-group {
+  margin-top: 20px;
+}
+
+.video-group:first-child {
+  margin-top: 12px;
+}
+
+.video-group-title {
+  margin: 0;
+  font-size: .95rem;
+  color: #1f2a4d;
+}
+
+.video-group-hint {
+  margin: 2px 0 0;
+  font-size: .74rem;
+}
+
+.video-group-empty {
+  margin: 10px 0 0;
+  font-size: .8rem;
+}
+
+.video-group-unclassified {
+  padding: 12px 14px;
+  border: 1px solid #f5c542;
+  border-radius: 12px;
+  background: rgba(245, 197, 66, .1);
+}
+
+.video-group-unclassified .video-group-title { color: #92700c; }
+
+.video-card-purpose-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 600;
+  color: #3d4a6b;
+}
+
+.video-card-purpose-select {
+  font: inherit;
+  font-weight: 700;
+  color: #0C238A;
+  background: rgba(74, 127, 212, .12);
+  border: 1px solid rgba(74, 127, 212, .3);
+  border-radius: 999px;
+  padding: 2px 8px;
+  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Phase 4e 안내문 — 카드 본문이 세로 스택이라 정상 문장으로 흐른다. */
+.video-card-purpose-note {
+  margin: 0;
+  font-weight: 500;
+  font-size: .68rem;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.video-card-usages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.video-card-usages:empty { display: none; }
+.video-card-usage {
+  display: inline-block;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: .68rem;
+  font-weight: 700;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.video-card-usage-live {
+  background: rgba(74, 127, 212, .14);
+  color: #0C238A;
+}
+
+.video-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: #667085;
+  font-weight: 600;
+}
+
+.video-card-purpose-select:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.video-upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.video-upload-row input[type="file"] {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.video-upload-status {
+  margin-top: 10px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.video-upload-status[data-tone="ok"] { color: #047857; }
+.video-upload-status[data-tone="error"] { color: #b91c1c; }
+.video-upload-status[data-tone="busy"] { color: #0C238A; }
+
+.video-grid {
+  display: grid;
+  /* Phase 4e 로 카드 본문(용도 셀렉트 + 안내문 + LIVE 배지 + 메타)이 늘어나
+     좁은 열에서는 한글이 글자 단위로 접힌다. 안내문 한 줄이 자연스럽게 흐를
+     최소 폭을 확보한다. */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.video-card {
+  position: relative;
+  border: 1px solid #e8ecf5;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* 변환에 실패해 공개 페이지에 노출되지 않는 영상은 한눈에 구분되어야 한다. */
+.video-card.is-failed {
+  border-color: #fca5a5;
+  opacity: .7;
+}
+
+.video-card-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #e8ecf5;
+}
+
+/* 근본 원인: 좁은 그리드 열(≈160px) 안에서 가로 flex(space-between) 행이었기 때문에
+   Phase 4e 가 추가한 긴 한글 안내문·LIVE 배지가 각각 min-content 로 짜부라져
+   글자 단위 세로 줄바꿈이 났다. 세로 스택으로 바꿔 각 자식이 카드 전체 폭을 쓴다. */
+.video-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 10px;
+  min-width: 0;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #3d4a6b;
+}
+
+.video-card-body > * {
+  min-width: 0;
+}
+
+.video-card-delete {
+  width: 100%;
+  border-radius: 0;
+}
+
+@media (max-width: 520px) {
+  /* 모바일은 카드 내부 열을 강제하지 않고 한 장씩 세로로 쌓는다. */
+  .video-grid { grid-template-columns: 1fr; }
+}
+.video-upload-progress{display:block;width:100%;margin-top:12px;accent-color:#3157d5;}
+.video-card-thumb-placeholder{display:grid;place-items:center;font-size:2rem;background:#eef1f7;color:#667085;}
+.video-card-ready{color:#16794b;font-weight:700;}
+.video-card-optimization{color:#667085;font-size:.82rem;}
+
+/* ── 영상 링크 등록 (외부 URL) ─────────────────────────────────── */
+.video-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+.video-link-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 220px;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #3d4a6b;
+}
+.video-link-field input {
+  padding: 8px 10px;
+  border: 1px solid #cdd5e4;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 500;
+}
+@media (max-width: 520px) {
+  .video-link-row { flex-direction: column; align-items: stretch; }
+  .video-link-row .btn { width: 100%; }
+}
+
+/* ── 카드 출처 배지 · 외부 링크 카드 ───────────────────────────── */
+.video-card-source {
+  align-self: flex-start;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.video-card-source-upload { background: #eef2fb; color: #33459e; }
+.video-card-source-external { background: #eafaf1; color: #12734a; }
+.video-card-thumb-external {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, #eef2f9, #e2e9f5);
+}
+.video-card-thumb-provider {
+  font-size: .8rem;
+  font-weight: 800;
+  color: #5a6785;
+}
+.video-card-external-link {
+  font-weight: 800;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+.video-card-external-link:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+
+.video-link-embed-note { margin-top: 6px; font-size: .78rem; line-height: 1.6; }
+.video-link-embed-note code {
+  background: #eef2fb; color: #33459e; border-radius: 4px;
+  padding: 0 4px; font-size: .92em;
+}

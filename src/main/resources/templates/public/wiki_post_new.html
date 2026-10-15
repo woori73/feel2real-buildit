@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='wiki-body')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildIt Wiki 글쓰기</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260903-3">
+</head>
+<body class="wiki-body">
+<th:block layout:fragment="content">
+
+  <header class="wiki-topbar">
+    <a class="brand" href="/wiki"><b>BuildIt</b><span>Wiki</span></a>
+    <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
+    <div class="spacer"></div>
+    <a class="wiki-home-link" href="/">BuildIt 홈</a>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="wiki-wrap compose-page">
+    <a id="backLink" class="back-link" href="/wiki">← BuildIt Wiki로 돌아가기</a>
+
+    <h1 id="writeTitle">글쓰기</h1>
+    <p class="lead" id="writeLead">BuildIt Wiki에 함께 나눌 내용을 적어주세요.</p>
+
+    <form id="postForm">
+      <div class="field">
+        <label for="title">제목<span style="color:#e03131">*</span></label>
+        <input type="text" id="title" maxlength="150" required placeholder="제목을 입력해주세요">
+      </div>
+
+      <div class="field">
+        <label>내용<span style="color:#e03131">*</span></label>
+        <div class="editor-toolbar" id="toolbar">
+          <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
+          <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
+          <button type="button" data-cmd="strike" title="취소선"><s>S</s></button>
+          <button type="button" data-cmd="h3" title="소제목">H</button>
+          <button type="button" data-cmd="bulletList" title="목록">•</button>
+          <button type="button" data-cmd="orderedList" title="번호목록">1.</button>
+          <button type="button" data-cmd="blockquote" title="인용">❝</button>
+          <button type="button" data-cmd="code" title="코드">&lt;/&gt;</button>
+          <button type="button" data-cmd="link" title="링크">🔗</button>
+          <button type="button" data-cmd="image" title="이미지">🖼</button>
+        </div>
+        <div class="editor-box"><div id="editor"></div></div>
+        <input type="file" id="imageInput" accept="image/*" hidden>
+      </div>
+
+      <div class="field" id="attachField" hidden>
+        <label for="fileInput">첨부파일</label>
+        <div class="hint">PDF · 한글(HWP/HWPX) · 오피스(DOC·XLS·PPT 등) · 압축(ZIP) · HTML · 이미지(JPG·PNG·WebP) (파일당 20MB, 최대 10개)</div>
+        <div class="file-picker-row">
+          <input type="file" id="fileInput" multiple
+                 accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm,.jpg,.jpeg,.png,.webp,text/html,image/jpeg,image/png,image/webp">
+          <div id="filePending"></div>
+        </div>
+      </div>
+
+      <div class="compose-actions">
+        <button type="submit" class="btn-primary" id="submitBtn">등록</button>
+        <a class="btn-ghost" id="cancelLink" href="/wiki">취소</a>
+      </div>
+      <p id="statusMsg" class="status-msg"></p>
+    </form>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/account_menu.js"></script>
+  <script type="module" src="/js/wiki_post_new.js?v=20260904-4"></script>
+</th:block>
+</body>
+</html>

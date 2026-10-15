@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "grade": 1,
+  "sourceFile": "2026년도 9월 1학년 2026년9월 고1모의고사(3).pdf",
+  "recordCount": 255,
+  "typeCounts": {
+    "title_topic": 42,
+    "content_match": 12,
+    "content_mismatch": 18,
+    "implication": 12,
+    "blank": 32,
+    "irrelevant_sentence": 7,
+    "grammar": 22,
+    "vocabulary": 21,
+    "summary": 22,
+    "insertion": 17,
+    "order": 19,
+    "purpose": 3,
+    "other": 1,
+    "reference": 2,
+    "comprehension": 3,
+    "claim": 2,
+    "written": 18,
+    "definition": 2
+  },
+  "validationCounts": {
+    "PASS": 255
+  },
+  "shards": [
+    {
+      "sourceQuestionNo": "20",
+      "file": "g1-q20.json.gz",
+      "recordCount": 18
+    },
+    {
+      "sourceQuestionNo": "21",
+      "file": "g1-q21.json.gz",
+      "recordCount": 14
+    },
+    {
+      "sourceQuestionNo": "22",
+      "file": "g1-q22.json.gz",
+      "recordCount": 14
+    },
+    {
+      "sourceQuestionNo": "23",
+      "file": "g1-q23.json.gz",
+      "recordCount": 12
+    },
+    {
+      "sourceQuestionNo": "24",
+      "file": "g1-q24.json.gz",
+      "recordCount": 12
+    },
+    {
+      "sourceQuestionNo": "29",
+      "file": "g1-q29.json.gz",
+      "recordCount": 14
+    },
+    {
+      "sourceQuestionNo": "30",
+      "file": "g1-q30.json.gz",
+      "recordCount": 15
+    },
+    {
+      "sourceQuestionNo": "31",
+      "file": "g1-q31.json.gz",
+      "recordCount": 12
+    },
+    {
+      "sourceQuestionNo": "32",
+      "file": "g1-q32.json.gz",
+      "recordCount": 12
+    },
+    {
+      "sourceQuestionNo": "33",
+      "file": "g1-q33.json.gz",
+      "recordCount": 17
+    },
+    {
+      "sourceQuestionNo": "34",
+      "file": "g1-q34.json.gz",
+      "recordCount": 18
+    },
+    {
+      "sourceQuestionNo": "35",
+      "file": "g1-q35.json.gz",
+      "recordCount": 16
+    },
+    {
+      "sourceQuestionNo": "36",
+      "file": "g1-q36.json.gz",
+      "recordCount": 15
+    },
+    {
+      "sourceQuestionNo": "37",
+      "file": "g1-q37.json.gz",
+      "recordCount": 15
+    },
+    {
+      "sourceQuestionNo": "38",
+      "file": "g1-q38.json.gz",
+      "recordCount": 14
+    },
+    {
+      "sourceQuestionNo": "39",
+      "file": "g1-q39.json.gz",
+      "recordCount": 13
+    },
+    {
+      "sourceQuestionNo": "40",
+      "file": "g1-q40.json.gz",
+      "recordCount": 12
+    },
+    {
+      "sourceQuestionNo": "41-42",
+      "file": "g1-q41-42.json.gz",
+      "recordCount": 12
+    }
+  ]
+}

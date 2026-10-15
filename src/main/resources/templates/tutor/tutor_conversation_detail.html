@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R · 강사 대화 대시보드</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/conversation_dashboard.css">
+  <link rel="stylesheet" href="/css/conversation_upload.css">
+  <link rel="stylesheet" href="/css/tutor_conversation_dashboard.css">
+</head>
+<body data-page="detail">
+
+  <div class="app-shell tutor-conversation-detail-shell">
+    <aside class="sidebar tutor-sidebar">
+      <div class="sidebar-head">
+        <a class="sidebar-logo" href="/tutor/conversation_dashboard">
+          <img src="/img/F2R_logo_pure.svg" alt="F2R" class="sidebar-logo-img">
+          <div class="sidebar-logo-text">
+            <div class="sidebar-logo-brand">Feel to Real</div>
+            <div class="sidebar-logo-tag">Tutor Workspace</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="강사 대화 메뉴">
+        <a class="sidebar-link active" data-menu="dashboard" href="#">
+          <span class="dot"></span><span>종합 현황판</span>
+        </a>
+        <a class="sidebar-link" data-menu="exam-materials" href="#">
+          <span class="dot"></span><span>시험지 대시보드</span>
+        </a>
+        <a class="sidebar-link" data-menu="study-materials" href="#">
+          <span class="dot"></span><span>학습자료 대시보드</span>
+        </a>
+        <a class="sidebar-link" data-menu="materials" href="#">
+          <span class="dot"></span><span>학교 자료 모음</span>
+        </a>
+        <a class="sidebar-link" data-menu="chat" href="#">
+          <span class="dot"></span><span>AI Chat</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-student tutor-sidebar-card">
+        <div class="sidebar-student-name" id="tutorName">강사 기록</div>
+        <div class="sidebar-student-meta">자료를 올리고 AI Chat에서 수업 준비·상담 메모를 이어갑니다.</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="main-header">
+        <div class="main-header-left">
+          <h1 class="main-title-row">
+            <span class="main-title" id="conversationTitle">강사 대화 대시보드</span>
+            <button type="button" id="renameButton" class="btn-edit-title" title="기록명 수정">✎</button>
+          </h1>
+          <p class="main-subtitle" id="conversationMeta">자료와 AI Chat을 한 곳에서 관리합니다.</p>
+        </div>
+        <div class="main-header-right">
+          <button type="button" class="btn-upload-header" id="btnUploadHeader">+ 파일 추가</button>
+        </div>
+      </header>
+
+      <section id="statusBanner" class="status-banner hidden" role="alert"></section>
+
+      <section class="card-grid tutor-detail-card-grid">
+        <article class="card card-materials tutor-card-materials">
+          <div class="card-header">
+            <h2 class="card-title">업로드 자료</h2>
+            <div class="card-header-right">
+              <span class="card-sub" id="materialsCount">0개</span>
+              <a class="btn-materials-link" id="btnMaterialsPage" href="#">자료 모음</a>
+              <button type="button" class="btn-upload-card" id="btnUploadCard">+ 파일 추가</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="materialsList" class="materials-list">
+              <div class="empty-state">아직 첨부된 자료가 없어요.</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card card-radar tutor-analysis-placeholder-card">
+          <div class="card-header">
+            <h2 class="card-title">AI 자동채점 성취도 리포트</h2>
+          </div>
+          <div class="card-body tutor-placeholder-body">
+            <div class="empty-state">시험지 분석 결과가 준비되면 여기에 표시됩니다.</div>
+          </div>
+        </article>
+
+        <article class="card card-feedback tutor-chat-dashboard-card">
+          <div class="card-header">
+            <h2 class="card-title">AI Chat</h2>
+            <div class="card-header-right tutor-chat-actions">
+              <a class="btn-materials-link" id="btnChatPage" href="#">AI Chat 열기</a>
+              <button id="deleteButton" class="btn-danger-soft" type="button">삭제</button>
+            </div>
+          </div>
+          <div class="card-body tutor-chat-dashboard-cta">
+            <div class="empty-state">학생 AI Chat 화면과 같은 구조의 별도 채팅 화면에서 자료 기반 대화를 이어갑니다.</div>
+            <a class="btn-upload-header" id="btnChatPageCta" href="#">AI Chat으로 이동</a>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/conversation_upload.js"></script>
+  <script src="/js/tutor_conversation_dashboard.js"></script>
+</body>
+</html>

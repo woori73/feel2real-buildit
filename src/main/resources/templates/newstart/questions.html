@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>질문요청 게시판 | 새출발기금 부실차주</title>
+  <meta name="description" content="지피지기 Agent에서 부족했던 질문과 사이트 개선·오류 요청을 남기고 검토 결과를 확인하는 회원 게시판">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/newstart.css?v=20261002-2">
+  <style>
+    /* 이 페이지의 display 규칙(.ns-card/.ns-req-list/.ns-btn)이 UA의 [hidden]보다 우선해
+       hidden 속성이 무시된다(#350류 동일 결함). JS가 hidden으로 목록·쓰기 버튼·로그인 안내를
+       전환하므로 저 우선순위 규칙 하나로 숨김을 되돌린다. */
+    [hidden]{display:none !important}
+    /* .ns-btn이 38px로 렌더되어 모바일 터치 기준(44px)에 못 미친다(390px 실측). */
+    .ns-btn{min-height:44px}
+    /* 요청 종류·제목 입력도 동일(실측 34px) — 모바일에서 손가락으로 누르는 컨트롤이다. */
+    input.ns-input,select.ns-input{min-height:44px}
+    .ns-req-main{display:grid;gap:14px}
+    .ns-req-head{display:flex;gap:10px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+    .ns-req-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 4px}
+    .ns-req-tab{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:9px 14px;font:inherit;
+      font-size:14px;font-weight:700;color:#0f172a;cursor:pointer;min-height:44px}
+    .ns-req-tab.is-on{background:#0f172a;border-color:#0f172a;color:#fff}
+    .ns-req-list{display:grid;gap:10px;list-style:none;margin:0;padding:0}
+    .ns-req-item{border:1px solid #e2e8f0;border-radius:14px;background:#fff;padding:12px}
+    .ns-req-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .ns-req-kind,.ns-req-state{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+    .ns-req-kind{background:#e0f2fe;color:#0c4a6e}
+    .ns-req-state{background:#f1f5f9;color:#334155}
+    .ns-req-state.is-open{background:#fef9c3;color:#854d0e}
+    .ns-req-state.is-done{background:#dcfce7;color:#14532d}
+    .ns-req-state.is-closed{background:#fee2e2;color:#991b1b}
+    .ns-req-title{font-size:16px;font-weight:700;color:#0f172a;margin:6px 0 2px;word-break:keep-all}
+    .ns-req-meta{font-size:12px;color:#64748b;margin:0}
+    .ns-req-open{background:none;border:none;padding:0;color:#2563eb;font:inherit;font-size:14px;
+      font-weight:700;cursor:pointer;text-align:left;min-height:44px}
+    .ns-req-detail{border:1px solid #cbd5e1;border-radius:14px;background:#f8fafc;padding:14px;margin:12px 0}
+    .ns-req-field{margin:10px 0}
+    .ns-req-label{font-size:12px;font-weight:700;color:#64748b;margin:0 0 2px}
+    .ns-req-value{font-size:15px;color:#0f172a;margin:0;white-space:pre-wrap;word-break:keep-all}
+    .ns-req-answer{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px;margin:10px 0;
+      font-size:15px;color:#0c4a6e;white-space:pre-wrap;word-break:keep-all}
+    .ns-req-log{margin:6px 0 0;padding-left:18px;font-size:13px;color:#475569}
+    .ns-req-form{display:grid;gap:10px}
+    .ns-req-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+    .ns-req-improve{display:grid;gap:10px}
+    .ns-req-note{font-size:13px;color:#64748b;margin:0}
+    .ns-req-err{color:#b91c1c;font-size:13px;margin:6px 0 0}
+    .ns-req-admin{border:1px dashed #fdba74;background:#fff7ed;border-radius:12px;padding:12px;margin:12px 0}
+    @media (max-width: 640px){
+      .ns-req-head{align-items:flex-start}
+      .ns-req-title{font-size:15px}
+    }
+  </style>
+</head>
+<body>
+  <div class="newstart-page newstart-questions-page">
+    <div class="newstart-shell ns-chat-shell">
+
+      <header class="newstart-top">
+        <a class="newstart-brand" href="/newstart" aria-label="새출발기금 부실차주 홈">새출발기금 부실차주</a>
+        <nav class="newstart-topbar" aria-label="기본 메뉴">
+          <a class="ns-btn ns-btn-ghost" href="/newstart">홈</a>
+          <th:block th:replace="~{fragments/_newstart_auth :: authControls}"></th:block>
+        </nav>
+      </header>
+
+      <a class="ns-back" href="/newstart" data-ns-back>← 뒤로</a>
+
+      <main class="ns-req-main" aria-label="질문요청 게시판">
+
+        <!-- 비로그인 방문자: 게시판 셸은 열리지만 목록·작성은 인증 뒤에 있다(API가 401로 거부). -->
+        <section id="ns-req-login" class="ns-card ns-chat-login" hidden>
+          <p class="ns-empty">질문요청 게시판은 네이버 로그인 회원이라면 누구나 읽고 쓸 수 있는 공간입니다.</p>
+          <a class="ns-btn ns-btn-primary" href="/oauth2/authorization/naver">네이버 로그인</a>
+        </section>
+
+        <section class="ns-card" aria-label="질문요청 목록">
+          <div class="ns-req-head">
+            <div>
+              <h1 class="ns-card-title">질문요청 게시판</h1>
+              <p class="ns-card-meta">지피지기 Agent 답변에서 부족했던 질문, 그리고 사이트 개선·오류 요청을 남기면 운영자가 검토하고 답변합니다.</p>
+            </div>
+            <button type="button" class="ns-btn ns-btn-primary" id="ns-req-new" hidden>요청 쓰기</button>
+          </div>
+
+          <div class="ns-req-tabs" role="tablist" aria-label="요청 종류">
+            <button type="button" class="ns-req-tab is-on" role="tab" aria-selected="true" data-ns-req-kind="">전체</button>
+            <button type="button" class="ns-req-tab" role="tab" aria-selected="false" data-ns-req-kind="QUESTION">질문·조사 요청</button>
+            <button type="button" class="ns-req-tab" role="tab" aria-selected="false" data-ns-req-kind="SITE_IMPROVEMENT">사이트 개선 요청</button>
+          </div>
+
+          <!-- 쓰기 폼: 요청 종류·제목·내용만 입력한다(2026-09-29 단순화).
+               화면/위치·STEP·개선 제안은 서버·DB에 그대로 남고 새 글에서는 기본값(빈 값)으로 저장된다. -->
+          <details id="ns-req-write" class="ns-req-detail" hidden>
+            <summary class="ns-card-title">새 요청 작성</summary>
+            <p class="ns-req-note">개인정보(주민번호·계좌·인증서 비밀번호·전화번호)는 적지 말아 주세요. 채무 내용은 기관명·금액을 최소한으로 요약해 주세요.</p>
+            <form id="ns-req-form" class="ns-req-form">
+              <div>
+                <label class="ns-req-label" for="ns-req-kind">요청 종류</label>
+                <select id="ns-req-kind" class="ns-input">
+                  <option value="QUESTION">[질문·조사 요청]</option>
+                  <option value="SITE_IMPROVEMENT">[사이트 개선 요청]</option>
+                </select>
+              </div>
+              <div>
+                <label class="ns-req-label" for="ns-req-title">제목</label>
+                <input id="ns-req-title" class="ns-input" maxlength="200" required
+                  placeholder="한 줄로 요약해 주세요">
+              </div>
+              <div>
+                <label class="ns-req-label" for="ns-req-problem">내용</label>
+                <textarea id="ns-req-problem" class="ns-input" rows="5" maxlength="4000" required
+                  placeholder="어떤 점이 궁금한지, 무엇이 문제인지 적어 주세요."></textarea>
+              </div>
+              <div class="ns-req-actions">
+                <button type="submit" class="ns-btn ns-btn-primary" id="ns-req-submit">등록</button>
+              </div>
+              <p id="ns-req-write-err" class="ns-req-err" role="alert" hidden></p>
+            </form>
+          </details>
+
+          <div id="ns-req-list" class="ns-req-list" aria-live="polite" aria-label="요청 목록"></div>
+          <p id="ns-req-empty" class="ns-empty" hidden>아직 등록된 요청이 없습니다.</p>
+          <button type="button" class="ns-btn ns-btn-ghost" id="ns-req-more" hidden>더 보기</button>
+          <p id="ns-req-status" class="ns-note" role="status"></p>
+        </section>
+
+        <!-- 상세: 목록에서 선택한 건의 전체 필드 + 운영자 답변 + 검토 이력 -->
+        <section id="ns-req-detail" class="ns-req-detail" hidden aria-label="요청 상세"></section>
+      </main>
+
+      <script src="/js/newstart-requests.js?v=20260929-1" defer></script>
+    </div>
+  </div>
+  <script src="/js/newstart-back.js?v=20260928-1" defer></script>
+</body>
+</html>

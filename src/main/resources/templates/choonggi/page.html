@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="${pageTitle}">CHOONGGI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" th:content="${description}">
+  <link rel="canonical" th:href="${canonical}">
+  <meta property="og:type" content="website"><meta property="og:site_name" content="CHOONGGI">
+  <meta property="og:title" th:content="${pageTitle}"><meta property="og:description" th:content="${description}">
+  <meta property="og:url" th:content="${canonical}">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/choonggi.css}">
+</head>
+<body>
+<header><a href="/choonggi" class="brand">CHOONGGI</a><span>KOREA → INDIA / SEASON 01</span></header>
+<a class="airport-guide-fab" href="/choonggi/journey" th:if="${page == 'home'}"><span>내일 공항에서</span><strong>공항 가이드 바로 열기 →</strong></a>
+<main>
+  <th:block th:if="${page == 'home'}">
+    <section class="team-hero"><figure class="team-photo"><img src="/img/choonggi/honor-of-kings-roster.jpg" alt="Yuvin Reckoning Honor of Kings roster announcement featuring CHOONGGI (ZhongQ) and teammates" loading="lazy"></figure><div class="team-id"><h1>CHOONGGI</h1><p>YUVIN RECKONING · HONOR OF KINGS</p></div></section>
+    <section class="why-india"><p class="eyebrow">SEP 30 · 2026</p><h2>인도에서 열리는<br>대회에 참가합니다.</h2></section>
+    <section class="journey"><p class="eyebrow">SEP 25 · 2026</p><div class="route"><span>INCHEON</span><i>→</i><span>HANOI</span><i>→</i><span>INDIA</span></div></section>
+    <section class="match"><div class="match-grid"><div class="date"><span>SEP</span><strong>30</strong><span>2026</span></div><div><b class="status" th:text="${matchStatus}">UPCOMING</b><h2>TOURNAMENT</h2></div></div></section>
+    <section class="split"><div><p class="eyebrow">INDIA JOURNEY</p><h2>AIRPORT<br>GUIDE</h2></div><div><p>인천 → 하노이 → 뭄바이 여정과 공항 기본 정보.</p><a href="/choonggi/journey">여정 가이드 보기 →</a></div></section>
+    <section class="log"><p class="eyebrow">충기의 기록</p><div class="log-feed">
+      <article class="log-entry" th:each="post:${publishedPosts}">
+        <div class="log-yt" th:if="${post.youtubeVideoId!=null}"><iframe th:src="@{'https://www.youtube-nocookie.com/embed/'+${post.youtubeVideoId}}" loading="lazy" allowfullscreen="allowfullscreen" title="CHOONGGI YouTube 영상" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        <div class="log-photos" th:if="${!#lists.isEmpty(post.media)}"><img th:each="m:${post.media}" th:if="${m.type.name()=='PHOTO' and m.deletedAt==null}" th:src="@{/api/choonggi/media/{id}(id=${m.id})}" loading="lazy" alt="CHOONGGI 기록 사진"></div>
+        <h3 th:text="${post.title}"></h3>
+        <p class="log-body" th:if="${!#strings.isEmpty(post.body)}" th:text="${post.body}"></p>
+        <time th:if="${post.publishedAt!=null}" th:text="${#temporals.format(post.publishedAt,'yyyy.MM.dd')}"></time>
+      </article>
+      <p class="log-empty" th:if="${#lists.isEmpty(publishedPosts)}">곧 첫 기록이 올라올 예정입니다.</p>
+    </div></section>
+  </th:block>
+  <th:block th:if="${page == 'vlog'}"><section class="page"><p class="kicker">SEASON 01 · KOREA → INDIA</p><h1>VLOG<br>JOURNAL</h1><p>Nine real chapters, published only when ready.</p><div class="episodes"><a th:each="post:${publishedPosts}" th:href="@{/choonggi/vlog/{slug}(slug=${post.slug})}"><span th:text="${post.episodeCode}"></span><h3 th:text="${post.title}"></h3><em>PUBLISHED</em></a><a th:each="ep:${episodes}" th:href="@{/choonggi/vlog/{slug}(slug=${ep.slug})}"><span th:text="${ep.number}"></span><h3 th:text="${ep.title}"></h3><em th:text="${ep.status}"></em></a></div></section></th:block>
+  <th:block th:if="${page == 'episode'}"><section class="page"><a href="/choonggi/vlog">← SEASON 01</a><p class="kicker" th:text="${episode.number+' · '+episode.status}"></p><h1 th:text="${episode.title}"></h1><div class="visual"><b>COMING<br>SOON</b><small>REAL FOOTAGE WILL LIVE HERE</small></div><div class="note"><p class="eyebrow">JOURNAL NOTE</p><h2>THE STORY HASN'T BEEN INVENTED.</h2><p>This page waits for real footage and first-hand notes.</p></div></section></th:block>
+  <th:block th:if="${page == 'post'}"><article class="page public-post"><a href="/choonggi/vlog">← SEASON 01</a><p class="kicker" th:text="${post.episodeCode+' · PUBLISHED'}"></p><h1 th:text="${post.title}"></h1><div class="log-yt" th:if="${post.youtubeVideoId!=null}"><iframe th:src="@{'https://www.youtube-nocookie.com/embed/'+${post.youtubeVideoId}}" loading="lazy" allowfullscreen="allowfullscreen" title="CHOONGGI YouTube 영상" referrerpolicy="strict-origin-when-cross-origin"></iframe></div><div class="post-media" th:each="m:${post.media}" th:if="${m.deletedAt==null}"><img th:if="${m.type.name()=='PHOTO'}" th:src="@{/api/choonggi/media/{id}(id=${m.id})}" loading="lazy" alt="CHOONGGI vlog photo"><video th:if="${m.type.name()=='VIDEO'}" th:src="@{/api/choonggi/media/{id}(id=${m.id})}" controls playsinline preload="metadata"></video></div><p class="post-body" th:if="${!#strings.isEmpty(post.body)}" th:text="${post.body}"></p></article></th:block>
+  <th:block th:if="${page == 'gamer'}"><section class="page"><p class="kicker">INDIA GAMER LIFE</p><h1>PRACTICE.<br>PLAY.<br>REPEAT.</h1><figure class="visual roster-visual"><img src="/img/choonggi/honor-of-kings-roster.jpg" alt="Reckoning Esports Honor of Kings roster announcement featuring SWIFTY, NOXY, ZhongQ, FENGHUAN and MAGUS" loading="lazy"><small>RECKONING ESPORTS · PLAYING AS ZHONGQ</small></figure><div class="note"><p class="eyebrow">GAME</p><h2>HONOR OF<br>KINGS</h2><p>Competing for Yuvin Reckoning.</p></div><div class="note"><p class="eyebrow">POSITION</p><h2>CLASH LANE<br>상단</h2><p>Like a midfielder in football — holds one lane of the map while shaping fights and team play across the whole game.</p></div><div class="note"><p class="eyebrow">NEXT TOURNAMENT · SEP 30</p><h2 th:text="${matchStatus}"></h2><p>Official name, team, venue, time, opponent and result are TBA.</p></div></section></th:block>
+  <th:block th:if="${page == 'india'}"><section class="page"><p class="kicker">MUMBAI · PERSONAL JOURNAL</p><h1>INDIA,<br>ONE DAY<br>AT A TIME.</h1><div class="visual"><b>FIRST<br>DAYS</b><small>EXACT LIVE LOCATION NOT SHARED</small></div><div class="note"><p class="eyebrow">WHAT I LEARNED</p><h2>PERSONAL EXPERIENCE, CLEARLY LABELLED.</h2><p>Transit, airport, SIM and transport notes will distinguish personal experience from official information.</p></div></section></th:block>
+  <th:block th:if="${page == 'about'}"><section class="page"><p class="kicker">ABOUT THIS JOURNAL</p><h1>A STORY<br>IN MOTION.</h1><p>A personal vlog about leaving Korea, arriving in India and building a gamer life.</p><div class="note"><p class="eyebrow">THE RULE</p><h2>SHARE THE STORY.<br>PROTECT THE PERSON.</h2><p>Travel documents, private identifiers, exact address or live location, contacts, financial details, teammate information and confidential strategy stay private.</p></div></section></th:block>
+</main>
+<footer><strong>CHOONGGI</strong><span>Personal vlog · Gamer diary · Travel journal</span></footer>
+<nav><a href="/choonggi" th:classappend="${page=='home'}?'on'">HOME</a><a href="/choonggi/vlog" th:classappend="${page=='vlog'||page=='episode'}?'on'">VLOG</a><a href="/choonggi/gamer" th:classappend="${page=='gamer'}?'on'">GAMER</a><a href="/choonggi/india" th:classappend="${page=='india'}?'on'">INDIA</a><a href="/choonggi/about" th:classappend="${page=='about'}?'on'">ABOUT</a></nav>
+<script defer th:src="@{/js/choonggi.js}"></script></body></html>

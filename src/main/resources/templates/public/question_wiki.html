@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='wiki-body')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>문항 · BuildIt Wiki</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260903-3">
+  <link rel="stylesheet" href="/css/question_wiki.css?v=20260906-1">
+</head>
+<body class="wiki-body">
+<th:block layout:fragment="content">
+
+  <header class="wiki-topbar">
+    <a class="brand" href="/wiki"><b>BuildIt</b><span>Wiki</span></a>
+    <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
+    <div class="spacer"></div>
+    <a class="wiki-home-link" href="/">BuildIt 홈</a>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="wiki-wrap qw-detail-page" aria-live="polite">
+    <a class="back-link" href="/wiki/questions">← 문항 목록으로</a>
+
+    <section class="qw-context">
+      <p id="qwContext" class="muted">불러오는 중...</p>
+      <h1 id="qwTitle"></h1>
+      <p id="qwPassageNote" class="qw-passage-note" hidden></p>
+    </section>
+
+    <section class="qw-section" id="qwMaterialSection">
+      <div class="qw-section-head"><h2>학습자료</h2></div>
+      <div id="qwMaterials" class="qw-materials"></div>
+      <div id="qwMaterialAdmin" class="qw-material-admin" hidden>
+        <button type="button" id="qwFindMaterialBtn" class="qw-btn-outline">Wiki 자료에서 찾기</button>
+        <button type="button" id="qwUploadMaterialBtn" class="qw-btn-outline">직접 올리기</button>
+      </div>
+    </section>
+
+    <section class="qw-section qw-ai-section" id="qwAiSection">
+      <div class="qw-section-head">
+        <div><h2>AI 문제제작</h2><p class="muted">AI 문제제작은 1인당 1시간에 최대 20회까지 이용할 수 있습니다.</p></div>
+        <button type="button" id="qwAiToggle" class="qw-btn-primary" aria-expanded="false">✨ AI 문제제작</button>
+      </div>
+      <div id="qwAiPanel" class="qw-ai-panel" hidden>
+        <p class="qw-ai-runtime">현재 문항과 해당 문항의 변형 패턴을 참고하여 새 문제를 생성합니다.</p>
+        <fieldset class="qw-ai-fieldset"><legend>문제 유형</legend><div id="qwAiPresets" class="qw-chips">
+          <button type="button" class="qw-chip active" data-ai-preset="similar">유사 변형</button><button type="button" class="qw-chip" data-ai-preset="grammar">어법</button><button type="button" class="qw-chip" data-ai-preset="vocabulary">어휘</button><button type="button" class="qw-chip" data-ai-preset="blank">빈칸</button><button type="button" class="qw-chip" data-ai-preset="order">글의 순서</button><button type="button" class="qw-chip" data-ai-preset="insertion">문장 삽입</button><button type="button" class="qw-chip" data-ai-preset="title-topic">제목/주제</button><button type="button" class="qw-chip" data-ai-preset="subjective">서술형</button>
+        </div></fieldset>
+        <label class="qw-field"><span>추가 요청 <span class="muted">(선택)</span></span><textarea id="qwAiRequest" rows="3" placeholder="예: 이 문항을 우리 학교 스타일로 더 어렵게 만들어줘"></textarea></label>
+        <label class="qw-field"><span>학교 유형 예시 <span class="muted">(선택 · PATTERN REFERENCE ONLY)</span></span><textarea id="qwAiPattern" rows="5" placeholder="학교 문제의 발문·선택지·답안 형식 예시를 붙여넣으세요. 예시 내용은 문제 소재로 사용하지 않습니다."></textarea></label>
+        <p id="qwAiStatus" class="qw-msg" role="status">AI 상태를 확인하려면 문제제작 버튼을 여세요.</p>
+        <button type="button" id="qwAiGenerate" class="qw-btn-primary" disabled>문제 생성</button>
+        <article id="qwAiPreview" class="qw-ai-preview" hidden>
+          <div class="qw-ai-preview-head"><h3>Preview</h3><span>저장 전 검수</span></div>
+          <div id="qwAiPreviewBody"></div>
+          <div class="qw-ai-actions"><button type="button" id="qwAiRegenerate" class="qw-btn-outline">다시 생성</button><button type="button" id="qwAiSave" class="qw-btn-primary" disabled>저장</button></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="qw-section" id="qwOpinionSection">
+      <div class="qw-section-head"><h2>이 문항에 대한 의견 <span class="qw-sub-tag">THREAD</span></h2><button type="button" id="qwWriteBtn" class="qw-btn-primary">+ 의견 남기기</button></div>
+      <p id="qwLoginHint" class="qw-login-hint" hidden>로그인하면 읽고, 궁금한 점을 묻고, 직접 참여할 수 있어요.</p><div id="qwOpinionList" class="qw-opinion-list"></div>
+      <details class="qw-filter"><summary>분류로 좁혀 보기</summary><div id="qwFilters" class="qw-chips" role="tablist" aria-label="의견 필터"><button class="qw-chip active" data-filter="all">전체</button><button class="qw-chip" data-filter="QUESTION">질문</button><button class="qw-chip" data-filter="SOLUTION">해설</button><button class="qw-chip" data-filter="EXAM_POINT">출제포인트</button><button class="qw-chip" data-filter="VARIANT">변형문제</button><button class="qw-chip" data-filter="EXAM_EVIDENCE">실제 기출</button></div></details>
+    </section>
+  </main>
+
+  <div class="qw-modal" id="qwComposerModal" hidden><div class="qw-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="qwComposerTitle"><div class="qw-modal-head"><h3 id="qwComposerTitle">의견 남기기</h3><button type="button" class="qw-modal-close" data-qw-close aria-label="닫기">×</button></div><form id="qwComposer"><label class="qw-field"><span>내용</span><textarea id="qwPostContent" rows="5" maxlength="5000" required placeholder="이 문항에서 궁금하거나 중요하다고 생각한 점을 자유롭게 남겨보세요."></textarea></label><label class="qw-field qw-file-field"><span>파일 첨부 <span class="muted">(선택)</span></span><input type="file" id="qwPostFiles" multiple></label><p id="qwComposerMsg" class="qw-msg"></p><div class="qw-modal-actions"><button type="button" class="qw-btn-ghost" data-qw-close>취소</button><button type="submit" id="qwComposerSubmit" class="qw-btn-primary">등록</button></div></form></div></div>
+  <div class="qw-modal" id="qwFindModal" hidden><div class="qw-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="qwFindTitle"><div class="qw-modal-head"><h3 id="qwFindTitle">Wiki 자료에서 찾기</h3><button type="button" class="qw-modal-close" data-qw-close aria-label="닫기">×</button></div><input type="search" id="qwFindInput" class="qw-search-input" placeholder="자료 제목·학교·파일명으로 검색"><div id="qwFindResults" class="qw-find-results"><p class="muted">검색어를 입력하면 자료가 표시됩니다.</p></div><div class="qw-modal-actions"><button type="button" class="qw-btn-ghost" data-qw-close>닫기</button></div></div></div>
+  <div class="qw-modal" id="qwUploadModal" hidden><div class="qw-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="qwUploadTitle"><div class="qw-modal-head"><h3 id="qwUploadTitle">학습자료 직접 올리기</h3><button type="button" class="qw-modal-close" data-qw-close aria-label="닫기">×</button></div><form id="qwUploadForm"><label class="qw-field"><span>자료 종류</span><input type="text" id="qwUpLabel" list="qwUpLabelOptions" maxlength="60" placeholder="예: 상세 해설지 / 원문 / WORKBOOK"><datalist id="qwUpLabelOptions"><option value="상세 해설지"></option><option value="원문"></option><option value="WORKBOOK"></option><option value="변형문제"></option><option value="관련 자료"></option></datalist></label><label class="qw-field"><span>제목</span><input type="text" id="qwUpTitle" maxlength="180" placeholder="비워두면 문항 정보로 자동 생성"></label><label class="qw-field"><span>설명 <span class="muted">(선택)</span></span><textarea id="qwUpDesc" rows="2" maxlength="500"></textarea></label><label class="qw-field qw-file-field"><span>파일 <span class="muted">(PDF·HWP·HWPX·DOC·DOCX·XLS·XLSX·PPT·PPTX·ZIP·HTML)</span></span><input type="file" id="qwUpFile" accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm" required></label><p id="qwUploadMsg" class="qw-msg"></p><div class="qw-modal-actions"><button type="button" class="qw-btn-ghost" data-qw-close>취소</button><button type="submit" id="qwUploadSubmit" class="qw-btn-primary">올리기</button></div></form></div></div>
+  <div class="qw-modal" id="qwHtmlPreviewModal" hidden><div class="qw-modal-dialog qw-modal-wide" role="dialog" aria-modal="true" aria-labelledby="qwHtmlPreviewTitle"><div class="qw-modal-head"><h3 id="qwHtmlPreviewTitle">학습자료 미리보기</h3><button type="button" class="qw-modal-close" data-qw-close aria-label="닫기">×</button></div><div id="qwHtmlFrameViewport"><iframe id="qwHtmlFrame" class="qw-html-frame" title="HTML 학습자료 미리보기" sandbox referrerpolicy="no-referrer" loading="lazy"></iframe></div><div class="qw-modal-actions"><a id="qwHtmlDownload" class="qw-btn-ghost" href="#" target="_blank" rel="noopener">파일 내려받기</a><button type="button" class="qw-btn-primary" data-qw-close>닫기</button></div></div></div>
+
+  <script src="/js/api.js"></script><script src="/js/account_menu.js"></script><script src="/js/chrome_built_in_ai.js?v=20260906-2"></script><script src="/js/question_wiki_ai.js?v=20260906-3"></script><script src="/js/question_wiki.js?v=20260906-1"></script><script src="/js/question_wiki_mobile_preview.js?v=20260904-1"></script>
+</th:block>
+</body>
+</html>

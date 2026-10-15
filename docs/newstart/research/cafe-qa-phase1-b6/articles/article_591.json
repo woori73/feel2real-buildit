@@ -1,0 +1,36 @@
+{
+ "articleId": 591,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려는 신청만 되면 통장압류는 없는거져?  사고사는 압류는유지가되는 건가요? 신청중에도",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저"
+ },
+ "createdAt": "2024-11-30T08:24:08.650Z",
+ "createdAtMs": 1732955048650,
+ "viewCount": 115,
+ "commentCount": 0,
+ "sourceUrl": "https://cafe.naver.com/newhopero/591",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "신청 이후에는 압류가 없을 건데 그 이전에 압류된 것은 신청 이후에 연락을 해서 풀어야 할 것입니다"
+ ],
+ "bodyNormalized": "신청 이후에는 압류가 없을 건데 그 이전에 압류된 것은 신청 이후에 연락을 해서 풀어야 할 것입니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-d948c4e0-1e60-4c2e-8e85-a36cd359958f\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-8130bb89-3c01-4a1b-8f6d-38ce61403a6e\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-82a89326-2e18-4b83-b347-bd70608a3634\">신청 이후에는 압류가 없을 건데 그 이전에 압류된 것은 신청 이후에 연락을 해서 풀어야 할 것입니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,340 @@
+/*
+ * 공개 페이지·빌더 캔버스의 수업상품 쇼케이스.
+ *
+ * 골격과 클래스 이름은 수업 관리 미리보기(lesson_product_editor.css의 .preview)와 맞춘다.
+ * 원장이 편집기에서 본 화면과 공개 페이지가 달라 보이면 안 되기 때문이다.
+ */
+.lesson-product-showcase {
+  --editor-line: #e3e8f0;
+  --theme-main: #0a1d3d;
+  --theme-secondary: #102f61;
+  --theme-glow: rgba(43, 166, 255, .4);
+  --hero-text: #f7fbff;
+  --hero-title: #ffffff;
+  --hero-description: #e7f0fb;
+  --hero-label: #cfe5fb;
+  --title-accent: #8de6eb;
+  --detail-accent: #079da4;
+  --hero-highlight-bg: linear-gradient(90deg, rgba(24, 119, 170, .74), rgba(23, 75, 130, .2));
+  --hero-highlight-border: #5dd9e0;
+  --tab-bg: #303b55;
+  --tab-bg-alt: #26334b;
+  --tab-text: #eef5ff;
+  --tab-sub: #bdcce0;
+  --tab-active-bg: linear-gradient(135deg, #2ca8b5, #24d0cf);
+  --tab-active-text: #061f27;
+  --tab-active-sub: #12383e;
+  --preview-shadow: 0 18px 46px rgba(18, 31, 58, .1);
+}
+
+.lesson-product-showcase[data-theme="TEAL"] {
+  --theme-main: #07353a; --theme-secondary: #0e4b55; --theme-glow: rgba(82, 230, 220, .27);
+  --hero-text: #f5ffff; --hero-title: #fff; --hero-description: #e1f8f6; --hero-label: #bee8e6;
+  --title-accent: #71eee4; --detail-accent: #118d91;
+  --hero-highlight-bg: linear-gradient(90deg, rgba(28, 144, 150, .72), rgba(10, 68, 75, .22));
+  --hero-highlight-border: #6ceae2; --tab-bg: #28575c; --tab-bg-alt: #214c51;
+  --tab-text: #efffff; --tab-sub: #c2e3e2; --tab-active-bg: linear-gradient(135deg, #64e1d9, #28bfc2);
+  --tab-active-text: #073337; --tab-active-sub: #174c50;
+}
+
+.lesson-product-showcase[data-theme="PURPLE"] {
+  --theme-main: #171331; --theme-secondary: #3c2359; --theme-glow: rgba(183, 137, 255, .3);
+  --hero-text: #fbf8ff; --hero-title: #fff; --hero-description: #eee8ff; --hero-label: #d9ccf4;
+  --title-accent: #d7b9ff; --detail-accent: #7a4cc7;
+  --hero-highlight-bg: linear-gradient(90deg, rgba(116, 77, 177, .72), rgba(58, 35, 89, .22));
+  --hero-highlight-border: #d2b5ff; --tab-bg: #4e4564; --tab-bg-alt: #423b56;
+  --tab-text: #f8f3ff; --tab-sub: #d7cbea; --tab-active-bg: linear-gradient(135deg, #b68cf3, #875fd4);
+  --tab-active-text: #26143b; --tab-active-sub: #4a2d68;
+}
+
+.lesson-product-showcase[data-theme="ORANGE"] {
+  --theme-main: #ffd08a; --theme-secondary: #ff8a63; --theme-glow: rgba(255, 255, 255, .46);
+  --hero-text: #43240f; --hero-title: #351707; --hero-description: #5c3219; --hero-label: #754422;
+  --title-accent: #a74412; --detail-accent: #d85d1c;
+  --hero-highlight-bg: linear-gradient(90deg, rgba(255, 250, 239, .78), rgba(255, 225, 195, .48));
+  --hero-highlight-border: #a64b18; --tab-bg: #f8d3a7; --tab-bg-alt: #efc28e;
+  --tab-text: #5e3014; --tab-sub: #7d4c2b; --tab-active-bg: linear-gradient(135deg, #ff9d48, #f27643);
+  --tab-active-text: #3c1b08; --tab-active-sub: #663116;
+}
+
+.lesson-product-showcase[data-theme="SKY"] {
+  --theme-main: #ccefff; --theme-secondary: #63b8e4; --theme-glow: rgba(255, 255, 255, .58);
+  --hero-text: #12354e; --hero-title: #0d2d43; --hero-description: #2d566e; --hero-label: #3c6881;
+  --title-accent: #086caa; --detail-accent: #167cb5;
+  --hero-highlight-bg: linear-gradient(90deg, rgba(255, 255, 255, .76), rgba(216, 243, 255, .5));
+  --hero-highlight-border: #1b6f9e; --tab-bg: #d9eff9; --tab-bg-alt: #c7e4f1;
+  --tab-text: #194861; --tab-sub: #3e6d84; --tab-active-bg: linear-gradient(135deg, #65bee9, #3a9bd0);
+  --tab-active-text: #0d334c; --tab-active-sub: #245b75;
+}
+
+.lesson-product-showcase[data-theme="PINK"] {
+  --theme-main: #ffd8e4; --theme-secondary: #e98daf; --theme-glow: rgba(255, 255, 255, .54);
+  --hero-text: #4b1c30; --hero-title: #3d1025; --hero-description: #653047; --hero-label: #7c3b56;
+  --title-accent: #9a315f; --detail-accent: #bd4c79;
+  --hero-highlight-bg: linear-gradient(90deg, rgba(255, 255, 255, .72), rgba(255, 225, 236, .48));
+  --hero-highlight-border: #9c3d65; --tab-bg: #f4d2de; --tab-bg-alt: #eac0d0;
+  --tab-text: #5d213a; --tab-sub: #7b4059; --tab-active-bg: linear-gradient(135deg, #eb91b2, #d96f99);
+  --tab-active-text: #431226; --tab-active-sub: #672a43;
+}
+
+.lesson-product-showcase[data-theme="GREEN"] {
+  --theme-main: #dff3cf; --theme-secondary: #7fc394; --theme-glow: rgba(255, 255, 255, .54);
+  --hero-text: #173c28; --hero-title: #102f1f; --hero-description: #315640; --hero-label: #477052;
+  --title-accent: #2b7750; --detail-accent: #3e9562;
+  --hero-highlight-bg: linear-gradient(90deg, rgba(255, 255, 255, .72), rgba(226, 247, 228, .48));
+  --hero-highlight-border: #327449; --tab-bg: #d9ead2; --tab-bg-alt: #c8dfc2;
+  --tab-text: #22472f; --tab-sub: #496b53; --tab-active-bg: linear-gradient(135deg, #8bd19a, #5bb77b);
+  --tab-active-text: #11331f; --tab-active-sub: #2c5d3b;
+}
+
+/* ── 탭 ─────────────────────────────────────────────────────── */
+
+/* 닫힌 탭은 클릭 가능하다는 신호가 없어 안내 문구를 위에 고정으로 둔다. */
+.lesson-product-tab-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: .84rem;
+  font-weight: 700;
+  color: #4a5872;
+}
+
+.course-nav.lesson-product-nav {
+  display: grid;
+  grid-template-columns: repeat(var(--course-tab-columns), minmax(0, 1fr));
+  gap: 0;
+  margin-top: 36px;
+  overflow: hidden;
+  /* 닫힌 상태에서는 탭 줄 자체가 카드다 — 네 모서리를 모두 둥글린다. */
+  border-radius: 24px;
+  background: #141728;
+  box-shadow: var(--preview-shadow);
+}
+
+.lesson-product-showcase.is-expanded .course-nav.lesson-product-nav {
+  border-radius: 24px 24px 0 0;
+}
+
+.course-tab.lesson-product-tab {
+  position: relative;
+  min-width: 0;
+  min-height: 118px;
+  padding: 20px 14px 16px;
+  overflow: hidden;
+  border: 0;
+  border-right: 1px solid rgba(0, 0, 0, .35);
+  border-radius: 0;
+  background: var(--tab-bg);
+  color: var(--tab-text);
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform .2s ease, filter .2s ease;
+}
+
+.course-tab.lesson-product-tab:nth-child(2n) { background: var(--tab-bg-alt); }
+.course-tab.lesson-product-tab:last-child { border-right: 0; }
+.course-tab.lesson-product-tab:hover { z-index: 1; filter: brightness(1.05); transform: translateY(-2px); }
+.course-tab.lesson-product-tab small,
+.course-tab.lesson-product-tab strong { display: block; overflow: hidden; text-overflow: ellipsis; }
+.course-tab.lesson-product-tab small { margin-bottom: 5px; color: var(--tab-sub); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.course-tab.lesson-product-tab strong { color: inherit; font-size: clamp(17px, 1.75vw, 22px); font-weight: 800; line-height: 1.2; letter-spacing: -.03em; white-space: nowrap; }
+.course-tab.lesson-product-tab.active,
+.course-tab.lesson-product-tab:nth-child(2n).active { background: var(--tab-active-bg); color: var(--tab-active-text); }
+.course-tab.lesson-product-tab.active small { color: var(--tab-active-sub); }
+.course-tab.lesson-product-tab:focus-visible { z-index: 2; outline: 3px solid #2563eb; outline-offset: -4px; }
+
+/* ── 패널 ───────────────────────────────────────────────────── */
+
+/* 0fr → 1fr grid row로 접고 편다. 애니메이션은 붙이지 않는다(열 때 내용이 밀려 보인다). */
+.lesson-product-collapse { display: grid; grid-template-rows: 0fr; }
+.lesson-product-collapse-inner { min-height: 0; overflow: hidden; }
+.lesson-product-showcase.is-expanded .lesson-product-collapse { grid-template-rows: 1fr; }
+.lesson-product-panel[hidden] { display: none; }
+
+.lesson-product-panel {
+  margin-top: 0;
+  overflow: hidden;
+  border-radius: 0 0 24px 24px;
+  background: #fff;
+  box-shadow: var(--preview-shadow);
+}
+
+.lesson-product-showcase .selected-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  min-height: 400px;
+  overflow: hidden;
+  padding: 42px 44px 34px;
+  background-color: var(--theme-main);
+  background: radial-gradient(circle at 12% 15%, var(--theme-glow), transparent 24%), radial-gradient(circle at 75% 50%, color-mix(in srgb, var(--theme-secondary) 58%, transparent), transparent 32%), linear-gradient(120deg, var(--theme-main), color-mix(in srgb, var(--theme-main) 82%, #000) 66%, var(--theme-secondary));
+  color: var(--hero-text);
+}
+
+/* 대표 미디어가 있을 때만 편집기 미리보기처럼 2단으로 벌린다(없으면 빈 칸이 남는다). */
+.lesson-product-showcase .selected-hero:has(.course-media-area) {
+  grid-template-columns: minmax(0, 1.2fr) minmax(290px, .8fr);
+  gap: 24px;
+}
+
+.lesson-product-showcase .selected-hero::after { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 20%, rgba(68, 176, 255, .08) 21%, transparent 22%), linear-gradient(72deg, transparent 62%, rgba(70, 202, 255, .08) 63%, transparent 64%); content: ""; pointer-events: none; }
+.lesson-product-showcase .hero-copy { position: relative; z-index: 2; min-width: 0; color: var(--hero-text); }
+.lesson-product-showcase .hero-kicker { margin: 0 0 10px; color: var(--hero-label); font-size: 15px; line-height: 1.5; }
+.lesson-product-showcase .hero-title { margin: 0; color: var(--hero-title); font-size: clamp(38px, 5vw, 64px); line-height: 1.08; letter-spacing: -.05em; overflow-wrap: anywhere; text-shadow: 0 0 18px rgba(51, 169, 255, .24); }
+.lesson-product-showcase .hero-title .accent { color: var(--title-accent); }
+.lesson-product-showcase .hero-summary { max-width: 700px; margin: 20px 0 0; color: var(--hero-description); font-size: 18px; line-height: 1.75; white-space: pre-wrap; }
+.lesson-product-showcase .hero-highlight { display: inline-block; margin: 18px 0 0; padding: 8px 15px; border-left: 4px solid var(--hero-highlight-border); background: var(--hero-highlight-bg); color: var(--hero-description); font-weight: 800; line-height: 1.5; white-space: pre-wrap; }
+
+.lesson-product-showcase .detail-section { padding: 34px; border-top: 1px solid var(--editor-line); background: #fff; }
+.lesson-product-showcase .detail-heading { margin-bottom: 28px; text-align: center; }
+.lesson-product-showcase .lesson-product-learner-need { margin: 0 0 6px; color: #90999a; font-size: 15px; font-weight: 800; line-height: 1.5; white-space: pre-wrap; }
+.lesson-product-showcase .detail-heading h2 { margin: 0; color: #1e293b; font-size: 34px; line-height: 1.3; letter-spacing: -.04em; }
+.lesson-product-showcase .detail-heading h2 span { color: var(--detail-accent); }
+.lesson-product-showcase .explain-list { display: grid; gap: 14px; }
+.lesson-product-showcase .explain-card { display: flex; align-items: center; min-height: 100px; padding: 20px 22px; border: 1px solid #cfd6df; border-left: 4px solid var(--detail-accent); border-radius: 8px; background: #fff; color: var(--detail-accent); font-size: 17px; font-weight: 700; line-height: 1.55; white-space: pre-wrap; }
+
+.lesson-product-ot-explain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  align-items: stretch;
+  gap: 26px;
+}
+
+.lesson-product-ot-video {
+  min-height: 360px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #05070b;
+}
+
+.lesson-product-ot-video .course-media-image {
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  object-fit: cover;
+}
+
+@media (max-width: 768px) {
+  .course-nav.lesson-product-nav { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); overflow-x: auto; border-radius: 17px; }
+  .lesson-product-showcase.is-expanded .course-nav.lesson-product-nav { border-radius: 17px 17px 0 0; }
+  .course-tab.lesson-product-tab { min-height: 96px; padding-right: 9px; padding-left: 9px; }
+  .lesson-product-panel { border-radius: 0 0 17px 17px; }
+  .lesson-product-showcase .selected-hero { grid-template-columns: minmax(0, 1fr); min-height: auto; padding: 30px 22px; }
+  .lesson-product-showcase .selected-hero:has(.course-media-area) { grid-template-columns: minmax(0, 1fr); }
+  .lesson-product-showcase .hero-title { font-size: clamp(34px, 10vw, 48px); }
+  .lesson-product-showcase .hero-summary { font-size: 16px; }
+  .lesson-product-showcase .detail-section { padding: 24px 18px; }
+  .lesson-product-showcase .detail-heading h2 { font-size: 27px; }
+  .lesson-product-ot-explain { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .course-nav.lesson-product-nav { grid-auto-columns: minmax(132px, 1fr); }
+  .course-tab.lesson-product-tab { min-height: 84px; padding: 15px 8px 13px; }
+  .course-tab.lesson-product-tab small { font-size: 12px; }
+  .course-tab.lesson-product-tab strong { font-size: 16px; }
+  .lesson-product-showcase .selected-hero { padding: 24px 18px; }
+  .lesson-product-showcase .hero-kicker { font-size: 13px; }
+  .lesson-product-showcase .hero-title { font-size: clamp(28px, 9vw, 38px); }
+  .lesson-product-showcase .hero-summary { margin-top: 14px; font-size: 15px; line-height: 1.65; }
+  .lesson-product-showcase .hero-highlight { width: 100%; margin-top: 14px; padding: 8px 11px; font-size: 14px; }
+  .lesson-product-showcase .detail-section { padding: 22px 14px; }
+  .lesson-product-showcase .detail-heading { margin-bottom: 20px; }
+  .lesson-product-showcase .detail-heading h2 { font-size: 23px; }
+  .lesson-product-showcase .lesson-product-learner-need { font-size: 13px; }
+  .lesson-product-showcase .explain-card { min-height: 0; padding: 16px; font-size: 15px; }
+}
+
+/* Builder preview는 iframe이 아니라 390/768px container 안에 같은 DOM을 렌더한다. */
+@container (max-width: 768px) {
+  .builder-public-preview .course-nav.lesson-product-nav { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); overflow-x: auto; border-radius: 17px; }
+  .builder-public-preview .lesson-product-showcase.is-expanded .course-nav.lesson-product-nav { border-radius: 17px 17px 0 0; }
+  .builder-public-preview .course-tab.lesson-product-tab { min-height: 96px; padding-right: 9px; padding-left: 9px; }
+  .builder-public-preview .lesson-product-panel { border-radius: 0 0 17px 17px; }
+  .builder-public-preview .lesson-product-showcase .selected-hero { grid-template-columns: minmax(0, 1fr); min-height: auto; padding: 30px 22px; }
+  .builder-public-preview .lesson-product-showcase .selected-hero:has(.course-media-area) { grid-template-columns: minmax(0, 1fr); }
+  .builder-public-preview .lesson-product-showcase .hero-title { font-size: clamp(34px, 10vw, 48px); }
+  .builder-public-preview .lesson-product-showcase .hero-summary { font-size: 16px; }
+  .builder-public-preview .lesson-product-showcase .detail-section { padding: 24px 18px; }
+  .builder-public-preview .lesson-product-showcase .detail-heading h2 { font-size: 27px; }
+  .builder-public-preview .lesson-product-ot-explain { grid-template-columns: 1fr; }
+}
+
+@container (max-width: 480px) {
+  .builder-public-preview .course-nav.lesson-product-nav { grid-auto-columns: minmax(132px, 1fr); }
+  .builder-public-preview .course-tab.lesson-product-tab { min-height: 84px; padding: 15px 8px 13px; }
+  .builder-public-preview .course-tab.lesson-product-tab small { font-size: 12px; }
+  .builder-public-preview .course-tab.lesson-product-tab strong { font-size: 16px; }
+  .builder-public-preview .lesson-product-showcase .selected-hero { padding: 24px 18px; }
+  .builder-public-preview .lesson-product-showcase .hero-kicker { font-size: 13px; }
+  .builder-public-preview .lesson-product-showcase .hero-title { font-size: clamp(28px, 9vw, 38px); }
+  .builder-public-preview .lesson-product-showcase .hero-summary { margin-top: 14px; font-size: 15px; line-height: 1.65; }
+  .builder-public-preview .lesson-product-showcase .hero-highlight { width: 100%; margin-top: 14px; padding: 8px 11px; font-size: 14px; }
+  .builder-public-preview .lesson-product-showcase .detail-section { padding: 22px 14px; }
+  .builder-public-preview .lesson-product-showcase .detail-heading { margin-bottom: 20px; }
+  .builder-public-preview .lesson-product-showcase .detail-heading h2 { font-size: 23px; }
+  .builder-public-preview .lesson-product-showcase .lesson-product-learner-need { font-size: 13px; }
+  .builder-public-preview .lesson-product-showcase .explain-card { min-height: 0; padding: 16px; font-size: 15px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-product-showcase *,
+  .lesson-product-showcase *::before,
+  .lesson-product-showcase *::after { transition: none !important; }
+}
+
+/* ── 대표 미디어 ─────────────────────────────────────────────── */
+
+.lesson-product-selected-hero .course-media-area {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  width: 100%;
+  min-height: 340px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.lesson-product-selected-hero .course-media-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 클릭 전까지는 썸네일만 있다. 스트림은 클릭 시점에 붙는다. */
+.course-media-video {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.course-media-video .play-circle {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 21, 38, .62);
+  color: #fff;
+  font-size: 20px;
+}
+
+.course-media-video-player {
+  width: 100%;
+  border-radius: 16px;
+  display: block;
+}

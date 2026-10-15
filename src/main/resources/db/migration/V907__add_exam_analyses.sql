@@ -1,0 +1,22 @@
+CREATE TABLE exam_analyses (
+    exam_analysis_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    school_name VARCHAR(100) NOT NULL,
+    grade INT NOT NULL,
+    semester VARCHAR(50) NOT NULL,
+    exam_type VARCHAR(50) NOT NULL,
+    subject_id INT NOT NULL,
+    original_file_name VARCHAR(255) NOT NULL,
+    storage_key VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    visible BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_exam_analyses_subject FOREIGN KEY (subject_id) REFERENCES subjects(subject_id),
+    INDEX idx_exam_analyses_public_latest (deleted, visible, created_at),
+    INDEX idx_exam_analyses_school_grade (school_name, grade),
+    INDEX idx_exam_analyses_subject (subject_id)
+);

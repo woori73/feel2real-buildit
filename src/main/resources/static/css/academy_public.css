@@ -1,0 +1,1823 @@
+/* 공개 학원 페이지(/academies/{slug}) — Build It 브랜드 시안. 자립 스타일시트.
+   섹션 마크업 정본은 academy_sections.js이고 academy_public.js(CSR)가 렌더한다.
+   기존 tutor/blog CSS 재사용 안 함(시안 덮어쓰기 방지). 섹션은 풀폭 밴드다.
+
+   토큰은 랜딩(landing_buildit.css)과 동일하게 맞춘다 — 랜딩만 Build It으로 개편되고
+   학원 페이지가 옛 에듀홀릭 시안에 남아 있던 불일치를 없애는 것이 이 작업의 목적이다. */
+
+/* ══════════════ BUILD IT 토큰 (landing_buildit.css와 동일) ══════════════ */
+:root{
+  --bg:#ffffff;
+  --bg-soft:#f6f7f9;
+  --bg-deep:#f1f3f6;
+  --ink:#0a0a0c;
+  --ink-soft:#67707c;
+  --ink-faint:#a4abb5;
+  --line:#e8eaee;
+  --accent:#2563eb;
+  --accent-soft:#eaf0fe;
+  --ultramarine:#2b3a9e;
+  --gold:#c9a13b;
+  --gold-soft:#f6ecd4;
+  --radius:24px;
+  --radius-sm:16px;
+  --shadow-sm:0 12px 32px rgba(10,12,20,.05);
+  --shadow-lg:0 30px 80px rgba(10,12,20,.09);
+  --ease:cubic-bezier(.16,.84,.44,1);
+  --font:-apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard,
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", Helvetica, Arial, sans-serif;
+  /* 스크롤 reveal / hover 토큰 — Shopify Dawn 계열(감속 이징, 작은 stagger). academy_reveal.{js,css}. */
+  --reveal-distance:28px;
+  --reveal-duration:550ms;
+  --reveal-ease:cubic-bezier(0, 0, .3, 1);
+  --reveal-stagger:80ms;
+  --hover-lift:-6px;
+  --hover-duration:180ms;
+  --hover-ease:cubic-bezier(.2, 0, .2, 1);
+  /* 모바일 디바이스형 카드 프레임 — 2학기 영어내신 / 학습철학 / 대표수업 공통 디자인 언어.
+     명확한 outer rim + 큰 radius + 얇은 inner edge/highlight + 은은한 shadow. 과한 노치/가짜 카메라 없음.
+     (academy_collection.css .f2r-program-card / academy_public.css .featured-schoolcard, .p-card 가 참조) */
+  --device-rim:#bcc3cf;
+  --device-radius:22px;
+  --device-shadow:0 0 0 1px rgba(15,23,42,.06),inset 0 0 0 1.5px rgba(255,255,255,.9),0 2px 6px rgba(15,23,42,.06),0 16px 34px rgba(10,12,20,.13);
+}
+
+/* ══════════════ BRAND THEME TOKENS (P0-2) ══════════════
+   10종 브랜드 변수. 기본값은 위 :root의 기존 색상과 1:1 동일이라 프리셋을 고르지 않은
+   학원(에듀홀릭 포함)은 렌더 결과가 한 치도 바뀌지 않는다.
+   디자인 프리셋을 고르면 academy_brand.js의 applyDesign()이 인라인으로 덮어쓰거나,
+   아래 [data-design-preset] 규칙이 레거시 토큰(--ultramarine/--gold/--accent)을 매핑한다. */
+#publicView,
+.builder-public-preview{
+  --brand-primary:#2b3a9e;
+  --brand-secondary:#c9a13b;
+  --brand-accent:#2563eb;
+  --brand-bg:#ffffff;
+  --brand-bg-alt:#f6f7f9;
+  --brand-text:#0a0a0c;
+  --brand-text-light:#67707c;
+  --brand-border:#e8eaee;
+  --brand-hero-bg:#1a2b4a;
+  --brand-hero-text:#ffffff;
+}
+
+/* ══════════════ DESIGN PRESETS (P0-1) ══════════════
+   레거시 토큰 매핑: 히어로·버튼·강조 등 기존 마크업이 쓰는 --ultramarine/--gold/--accent를
+   프리셋 팔레트로 연결한다. 에듀홀릭(data-design-preset 없음)은 이 규칙을 타지 않는다. */
+#publicView[data-design-preset="EXAM"],
+.builder-public-preview[data-design-preset="EXAM"]{
+  --ultramarine:#1a2b4a; --gold:#c9a86a; --accent:#d4a017;
+}
+#publicView[data-design-preset="ENGLISH"],
+.builder-public-preview[data-design-preset="ENGLISH"]{
+  --ultramarine:#4a90d9; --gold:#f5a623; --accent:#f5a623;
+}
+#publicView[data-design-preset="ARTS"],
+.builder-public-preview[data-design-preset="ARTS"]{
+  --ultramarine:#8b5cf6; --gold:#a78bfa; --accent:#c4b5fd;
+}
+#publicView[data-design-preset="STUDY"],
+.builder-public-preview[data-design-preset="STUDY"]{
+  --ultramarine:#8b6f47; --gold:#c2703d; --accent:#c2703d;
+}
+#publicView[data-design-preset="ONLINE"],
+.builder-public-preview[data-design-preset="ONLINE"]{
+  --ultramarine:#0f172a; --gold:#06b6d4; --accent:#22d3ee;
+}
+#publicView[data-design-preset="MINIMAL"],
+.builder-public-preview[data-design-preset="MINIMAL"]{
+  --ultramarine:#111111; --gold:#666666; --accent:#111111;
+}
+#publicView[data-design-preset="DARK"],
+.builder-public-preview[data-design-preset="DARK"]{
+  --ultramarine:#0a0a0a; --gold:#e5e5e5; --accent:#ffffff;
+}
+#publicView[data-design-preset="WARM"],
+.builder-public-preview[data-design-preset="WARM"]{
+  --ultramarine:#92400e; --gold:#d97706; --accent:#f59e0b;
+}
+#publicView[data-design-preset="PHOTO"],
+.builder-public-preview[data-design-preset="PHOTO"]{
+  --ultramarine:#1c1917; --gold:#ea580c; --accent:#ea580c;
+}
+#publicView[data-design-preset="DYNAMIC"],
+.builder-public-preview[data-design-preset="DYNAMIC"]{
+  --ultramarine:#4c1d95; --gold:#ec4899; --accent:#f59e0b;
+}
+
+/* ── 히어로 레이아웃 ── */
+#publicView[data-hero-layout="center"] .hero-grid,
+.builder-public-preview[data-hero-layout="center"] .hero-grid{
+  grid-template-columns:minmax(0,760px);
+  justify-content:center;
+  text-align:center;
+}
+#publicView[data-hero-layout="center"] .hero .tablet,
+.builder-public-preview[data-hero-layout="center"] .hero .tablet{
+  display:none;
+}
+#publicView[data-hero-layout="center"] .hero .eyebrow,
+.builder-public-preview[data-hero-layout="center"] .hero .eyebrow{
+  justify-content:center;
+}
+#publicView[data-hero-layout="center"] .hero .hero-stats,
+.builder-public-preview[data-hero-layout="center"] .hero .hero-stats{
+  justify-content:center;
+}
+#publicView[data-hero-layout="center"] .hero .hero-actions,
+.builder-public-preview[data-hero-layout="center"] .hero .hero-actions{
+  justify-content:center;
+}
+/* visual: 원장 사진 중심 — 포토 프레임을 먼저, 크게 */
+#publicView[data-hero-layout="visual"] .hero-grid,
+.builder-public-preview[data-hero-layout="visual"] .hero-grid{
+  grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+}
+#publicView[data-hero-layout="visual"] .hero .tablet,
+.builder-public-preview[data-hero-layout="visual"] .hero .tablet{
+  max-width:min(400px,52cqw);
+  order:-1;
+}
+/* gradient: 브랜드 그라데이션 배경 */
+#publicView[data-hero-layout="gradient"] .hero,
+.builder-public-preview[data-hero-layout="gradient"] .hero{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 130%);
+}
+#publicView[data-hero-layout="gradient"] .hero h1,
+.builder-public-preview[data-hero-layout="gradient"] .hero h1{
+  color:var(--brand-hero-text);
+}
+#publicView[data-hero-layout="gradient"] .hero .hero-quote,
+.builder-public-preview[data-hero-layout="gradient"] .hero .hero-quote{
+  color:var(--brand-hero-text);
+  opacity:.82;
+}
+#publicView[data-hero-layout="gradient"] .hero .eyebrow,
+.builder-public-preview[data-hero-layout="gradient"] .hero .eyebrow{
+  color:var(--brand-accent);
+}
+#publicView[data-hero-layout="gradient"] .hero .btn.outline,
+.builder-public-preview[data-hero-layout="gradient"] .hero .btn.outline{
+  border-color:rgba(255,255,255,.4);
+  color:var(--brand-hero-text);
+}
+/* 모바일(900px 이하)에서는 레이아웃 변형과 무관하게 1열로 붕괴한다.
+   (기본 .hero-grid 1열 규칙보다 specificity가 높아 별도 오버라이드가 필요) */
+@media (max-width:900px){
+  #publicView[data-hero-layout] .hero-grid,
+  .builder-public-preview[data-hero-layout] .hero-grid{
+    grid-template-columns:1fr;
+  }
+  #publicView[data-hero-layout="visual"] .hero .tablet,
+  .builder-public-preview[data-hero-layout="visual"] .hero .tablet{
+    order:-1;
+    max-width:280px;
+  }
+}
+
+/* ── P0 보완: 프리셋별 히어로 DOM ── */
+/* data-design-preset은 renderHero 분기로 출력되는 프리셋 전용 마크업에만 붙는다.
+   무프리셋(기존 테넌트)은 이 규칙을 타지 않아 렌더가 바이트 단위로 동일하다. */
+#publicView .hero[data-design-preset],
+.builder-public-preview .hero[data-design-preset]{
+  position:relative;
+  overflow:hidden;
+}
+
+/* EXAM — 중앙 정렬, 실적 prominently */
+#publicView .hero-exam .hero-exam-inner,
+.builder-public-preview .hero-exam .hero-exam-inner{
+  max-width:760px;
+  margin:0 auto;
+  text-align:center;
+  padding:56px 24px 40px;
+}
+#publicView .hero-exam .eyebrow,
+.builder-public-preview .hero-exam .eyebrow{
+  justify-content:center;
+}
+#publicView .hero-exam-stats,
+.builder-public-preview .hero-exam-stats{
+  display:flex;
+  justify-content:center;
+  gap:48px;
+  margin:32px 0;
+}
+#publicView .hero-exam-stat b,
+.builder-public-preview .hero-exam-stat b{
+  display:block;
+  font-size:2.2em;
+  font-weight:800;
+}
+#publicView .hero-exam-actions,
+.builder-public-preview .hero-exam-actions{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+}
+#publicView .hero-exam-principal,
+.builder-public-preview .hero-exam-principal{
+  display:flex;
+  justify-content:center;
+  padding-bottom:32px;
+}
+
+/* ENGLISH — 2열 (텍스트 좌측 + 이미지 우측) */
+#publicView .hero-english-grid,
+.builder-public-preview .hero-english-grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:40px;
+  align-items:center;
+  max-width:1100px;
+  margin:0 auto;
+  padding:56px 24px;
+}
+#publicView .hero-english .btn-rounded,
+.builder-public-preview .hero-english .btn-rounded{
+  border-radius:999px;
+  padding:14px 32px;
+}
+
+/* ARTS — 풀스크린 배경 + 오버레이 + 갤러리 스트립 */
+#publicView .hero-arts,
+.builder-public-preview .hero-arts{
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+#publicView .hero-arts-bg,
+.builder-public-preview .hero-arts-bg{
+  position:absolute;
+  inset:0;
+  background-size:cover;
+  background-position:center;
+}
+#publicView .hero-arts-bg-empty,
+.builder-public-preview .hero-arts-bg-empty{
+  background:linear-gradient(160deg,#1a1a22,#2d2d3a);
+}
+#publicView .hero-arts-overlay,
+.builder-public-preview .hero-arts-overlay{
+  position:relative;
+  z-index:1;
+  padding:80px 32px 24px;
+  background:linear-gradient(transparent,rgba(0,0,0,.72));
+  color:#fff;
+}
+#publicView .hero-arts-overlay h1,
+.builder-public-preview .hero-arts-overlay h1{
+  color:#fff;
+}
+#publicView .hero-arts-gallery,
+.builder-public-preview .hero-arts-gallery{
+  position:relative;
+  z-index:1;
+  display:flex;
+  gap:12px;
+  padding:0 32px 32px;
+  overflow-x:auto;
+}
+#publicView .hero-arts-gallery-item,
+.builder-public-preview .hero-arts-gallery-item{
+  flex:0 0 auto;
+  min-width:140px;
+  padding:12px 16px;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:8px;
+  color:#fff;
+  font-size:.85em;
+}
+#publicView .btn-ghost,
+.builder-public-preview .btn-ghost{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.5);
+  color:#fff;
+}
+
+/* STUDY — 원형 사진 + 소개 나란히 */
+#publicView .hero-study-wrap,
+.builder-public-preview .hero-study-wrap{
+  display:flex;
+  gap:48px;
+  align-items:center;
+  max-width:960px;
+  margin:0 auto;
+  padding:32px 24px;
+}
+#publicView .hero-study-photo,
+.builder-public-preview .hero-study-photo{
+  flex:0 0 240px;
+}
+
+/* ONLINE — 그라데이션 + 강의 카드 3개 */
+#publicView .hero-online,
+.builder-public-preview .hero-online{
+  text-align:center;
+}
+#publicView .hero-online-gradient,
+.builder-public-preview .hero-online-gradient{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 130%);
+}
+#publicView .hero-online-head,
+.builder-public-preview .hero-online-head{
+  position:relative;
+  z-index:1;
+  max-width:720px;
+  margin:0 auto;
+  padding:56px 24px 0;
+  color:var(--brand-hero-text);
+}
+#publicView .hero-online-head h1,
+.builder-public-preview .hero-online-head h1{
+  color:var(--brand-hero-text);
+}
+#publicView .hero-online-cards,
+.builder-public-preview .hero-online-cards{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:center;
+  gap:16px;
+  padding:32px 24px;
+  flex-wrap:wrap;
+}
+#publicView .hero-online-card,
+.builder-public-preview .hero-online-card{
+  width:200px;
+  padding:20px;
+  border-radius:12px;
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);
+  color:var(--brand-hero-text);
+  text-align:left;
+  cursor:pointer;
+}
+#publicView .hero-online-card-thumb,
+.builder-public-preview .hero-online-card-thumb{
+  display:block;
+  font-size:1.8em;
+  font-weight:800;
+  opacity:.6;
+}
+#publicView .hero-online-card-title,
+.builder-public-preview .hero-online-card-title{
+  display:block;
+  margin:8px 0;
+  font-weight:600;
+}
+#publicView .hero-online-actions,
+.builder-public-preview .hero-online-actions{
+  position:relative;
+  z-index:1;
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  padding-bottom:48px;
+}
+
+/* ── 원장 사진 프레임 (프리셋별) ── */
+#publicView .principal-photo,
+.builder-public-preview .principal-photo{
+  margin:0;
+  text-align:center;
+}
+#publicView .principal-photo-img,
+.builder-public-preview .principal-photo-img{
+  width:100%;
+  height:auto;
+  display:block;
+  object-fit:cover;
+}
+#publicView .principal-photo-empty,
+.builder-public-preview .principal-photo-empty{
+  aspect-ratio:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--brand-bg-alt);
+  color:var(--brand-text-light);
+}
+/* EXAM: 각진 프레임, 정장 스타일 */
+#publicView .principal-frame-angular .principal-photo-img,
+.builder-public-preview .principal-frame-angular .principal-photo-img,
+#publicView .principal-frame-angular .principal-photo-empty,
+.builder-public-preview .principal-frame-angular .principal-photo-empty{
+  border-radius:4px;
+  border:3px solid var(--brand-secondary);
+  aspect-ratio:3/4;
+}
+/* ENGLISH: 밝은 원형 프레임 */
+#publicView .principal-frame-circle-bright .principal-photo-img,
+.builder-public-preview .principal-frame-circle-bright .principal-photo-img,
+#publicView .principal-frame-circle-bright .principal-photo-empty,
+.builder-public-preview .principal-frame-circle-bright .principal-photo-empty{
+  border-radius:50%;
+  border:4px solid #fff;
+  box-shadow:0 8px 24px rgba(74,144,217,.3);
+  aspect-ratio:1;
+}
+/* ARTS: 비정형 아티스틱 마스크 */
+#publicView .principal-frame-artistic .principal-photo-img,
+.builder-public-preview .principal-frame-artistic .principal-photo-img{
+  border-radius:38% 62% 55% 45% / 45% 42% 58% 55%;
+  aspect-ratio:1;
+}
+/* STUDY: 따뜻한 원형 + 손글씨 캡션 */
+#publicView .principal-frame-circle-warm .principal-photo-img,
+.builder-public-preview .principal-frame-circle-warm .principal-photo-img,
+#publicView .principal-frame-circle-warm .principal-photo-empty,
+.builder-public-preview .principal-frame-circle-warm .principal-photo-empty{
+  border-radius:50%;
+  border:4px solid var(--brand-secondary);
+  aspect-ratio:1;
+}
+#publicView .principal-photo-cap .handwritten,
+.builder-public-preview .principal-photo-cap .handwritten{
+  font-family:'Segoe Script','Comic Sans MS',cursive;
+  font-size:1.1em;
+  color:var(--brand-primary);
+}
+/* ONLINE: 썸네일 카드 형태 */
+#publicView .principal-frame-card .principal-photo-img,
+.builder-public-preview .principal-frame-card .principal-photo-img{
+  border-radius:12px;
+  aspect-ratio:16/10;
+}
+
+/* ── P0 보완: 모바일(390px) 프리셋별 차별화 ── */
+@media (max-width:480px){
+  /* 전체: 가로 스크롤 방지 */
+  #publicView,
+  .builder-public-preview{
+    overflow-x:hidden;
+  }
+  #publicView .hero,
+  .builder-public-preview .hero{
+    overflow-x:hidden;
+  }
+  /* EXAM: 작게, 텍스트 중심 */
+  #publicView .hero-exam .hero-exam-inner,
+  .builder-public-preview .hero-exam .hero-exam-inner{
+    padding:36px 16px 24px;
+  }
+  #publicView .hero-exam-stats,
+  .builder-public-preview .hero-exam-stats{
+    gap:20px;
+    margin:20px 0;
+  }
+  #publicView .hero-exam-stat b,
+  .builder-public-preview .hero-exam-stat b{
+    font-size:1.5em;
+  }
+  #publicView .hero-exam-actions,
+  .builder-public-preview .hero-exam-actions{
+    flex-direction:row;
+  }
+  #publicView .hero-exam-principal .principal-photo,
+  .builder-public-preview .hero-exam-principal .principal-photo{
+    max-width:120px;
+  }
+  /* ENGLISH: 1열, 이미지 중간 크기 */
+  #publicView .hero-english-grid,
+  .builder-public-preview .hero-english-grid{
+    grid-template-columns:1fr;
+    gap:24px;
+    padding:36px 16px;
+  }
+  #publicView .hero-english-visual .principal-photo,
+  .builder-public-preview .hero-english-visual .principal-photo{
+    max-width:200px;
+    margin:0 auto;
+  }
+  /* ARTS: 큰 이미지, 하단 오버레이 */
+  #publicView .hero-arts,
+  .builder-public-preview .hero-arts{
+    min-height:420px;
+  }
+  #publicView .hero-arts-overlay,
+  .builder-public-preview .hero-arts-overlay{
+    padding:48px 20px 16px;
+  }
+  #publicView .hero-arts-gallery,
+  .builder-public-preview .hero-arts-gallery{
+    padding:0 20px 20px;
+  }
+  /* STUDY: 원형 작게, 사진 하단에 제목 */
+  #publicView .hero-study-wrap,
+  .builder-public-preview .hero-study-wrap{
+    flex-direction:column;
+    gap:24px;
+    padding:36px 16px;
+    text-align:center;
+  }
+  #publicView .hero-study-photo,
+  .builder-public-preview .hero-study-photo{
+    flex:none;
+    width:140px;
+  }
+  /* ONLINE: 상단 제목, 카드 세로 쌓기 */
+  #publicView .hero-online-cards,
+  .builder-public-preview .hero-online-cards{
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px;
+    max-width:100%;
+    overflow-x:hidden;
+  }
+  #publicView .hero-online-card,
+  .builder-public-preview .hero-online-card{
+    width:min(320px,100%);
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  #publicView .hero-online-actions,
+  .builder-public-preview .hero-online-actions{
+    flex-direction:column;
+    align-items:center;
+  }
+}
+
+/* ── 카드 스타일 (컬렉션 카드 공통) ── */
+#publicView[data-card-style="bordered"] .f2r-program-card,
+#publicView[data-card-style="bordered"] .featured-schoolcard,
+#publicView[data-card-style="bordered"] .p-card,
+.builder-public-preview[data-card-style="bordered"] .f2r-program-card,
+.builder-public-preview[data-card-style="bordered"] .featured-schoolcard,
+.builder-public-preview[data-card-style="bordered"] .p-card{
+  border:1px solid var(--brand-border);
+  border-radius:12px;
+  box-shadow:0 10px 28px rgba(10,12,20,.08);
+}
+#publicView[data-card-style="rounded"] .f2r-program-card,
+#publicView[data-card-style="rounded"] .featured-schoolcard,
+#publicView[data-card-style="rounded"] .p-card,
+.builder-public-preview[data-card-style="rounded"] .f2r-program-card,
+.builder-public-preview[data-card-style="rounded"] .featured-schoolcard,
+.builder-public-preview[data-card-style="rounded"] .p-card{
+  border:none;
+  border-radius:26px;
+  background:var(--brand-bg-alt);
+  box-shadow:0 14px 34px rgba(10,12,20,.07);
+}
+#publicView[data-card-style="media"] .f2r-program-card,
+#publicView[data-card-style="media"] .featured-schoolcard,
+.builder-public-preview[data-card-style="media"] .f2r-program-card,
+.builder-public-preview[data-card-style="media"] .featured-schoolcard{
+  border:none;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 24px 60px rgba(10,12,20,.22);
+}
+#publicView[data-card-style="media"] .f2r-program-card .f2r-program-card-media img,
+#publicView[data-card-style="media"] .featured-schoolcard img,
+.builder-public-preview[data-card-style="media"] .f2r-program-card .f2r-program-card-media img,
+.builder-public-preview[data-card-style="media"] .featured-schoolcard img{
+  aspect-ratio:4/3;
+  object-fit:cover;
+}
+#publicView[data-card-style="minimal"] .f2r-program-card,
+#publicView[data-card-style="minimal"] .featured-schoolcard,
+#publicView[data-card-style="minimal"] .p-card,
+.builder-public-preview[data-card-style="minimal"] .f2r-program-card,
+.builder-public-preview[data-card-style="minimal"] .featured-schoolcard,
+.builder-public-preview[data-card-style="minimal"] .p-card{
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  border-bottom:1px solid var(--brand-border);
+  padding-left:2px;
+  padding-right:2px;
+}
+
+/* ── ARTS(다크) 프리셋: 하드코딩된 밝은 섹션 배경을 다크로 ── */
+#publicView[data-design-preset="ARTS"] .section-wrap,
+.builder-public-preview[data-design-preset="ARTS"] .section-wrap{
+  background:var(--brand-bg) !important;
+}
+#publicView[data-design-preset="ARTS"] .hero,
+.builder-public-preview[data-design-preset="ARTS"] .hero{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,#23232c 100%);
+}
+#publicView[data-design-preset="ARTS"] .hero h1,
+.builder-public-preview[data-design-preset="ARTS"] .hero h1{
+  color:var(--brand-hero-text);
+}
+#publicView[data-design-preset="ARTS"] .hero .hero-quote,
+.builder-public-preview[data-design-preset="ARTS"] .hero .hero-quote{
+  color:var(--brand-hero-text);
+  opacity:.78;
+}
+#publicView[data-design-preset="ARTS"] .hero .btn.outline,
+.builder-public-preview[data-design-preset="ARTS"] .hero .btn.outline{
+  border-color:rgba(255,255,255,.35);
+  color:var(--brand-hero-text);
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb{
+  background:rgba(16,16,20,.94);
+  border-bottom-color:#2a2a33;
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb .eh-logo-title,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb .eh-logo-title{
+  color:#fff;
+}
+#publicView[data-design-preset="ARTS"] .cv-gnb .eh-logo-sub,
+.builder-public-preview[data-design-preset="ARTS"] .cv-gnb .eh-logo-sub{
+  color:rgba(255,255,255,.75);
+}
+#publicView[data-design-preset="ONLINE"] .cv-gnb,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-gnb{
+  background:rgba(15,23,42,.96);
+  border-bottom-color:#1e293b;
+}
+#publicView[data-design-preset="ONLINE"] .cv-gnb .eh-logo-title,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-gnb .eh-logo-title{
+  color:#fff;
+}
+#publicView[data-design-preset="ONLINE"] .cv-gnb .eh-logo-sub,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-gnb .eh-logo-sub{
+  color:rgba(255,255,255,.75);
+}
+#publicView[data-design-preset="ONLINE"] .cv-nav a,
+.builder-public-preview[data-design-preset="ONLINE"] .cv-nav a{
+  color:rgba(255,255,255,.85);
+}
+#publicView[data-design-preset="ARTS"] .cv-nav a,
+.builder-public-preview[data-design-preset="ARTS"] .cv-nav a{
+  color:var(--brand-text-light);
+}
+#publicView[data-design-preset="ARTS"] .cta-section,
+.builder-public-preview[data-design-preset="ARTS"] .cta-section{
+  background:linear-gradient(135deg,#171224 0%,#2b2145 130%) !important;
+}
+#publicView[data-design-preset="ARTS"] .section-title,
+.builder-public-preview[data-design-preset="ARTS"] .section-title{
+  color:var(--brand-text);
+}
+#publicView[data-design-preset="ARTS"] .section-sub,
+.builder-public-preview[data-design-preset="ARTS"] .section-sub{
+  color:var(--brand-text-light);
+}
+
+/* ══════════════ CTA SECTION (P0-3) ══════════════ */
+#publicView .cta-section,
+.builder-public-preview .cta-section{
+  background:linear-gradient(135deg,var(--brand-hero-bg) 0%,var(--brand-primary) 140%);
+}
+.cta-inner{
+  text-align:center;
+  padding:72px 20px;
+  max-width:720px;
+  margin:0 auto;
+}
+.cta-title{
+  color:var(--brand-hero-text);
+  font-size:clamp(1.6rem,4.6cqw,2.4rem);
+  font-weight:800;
+  letter-spacing:-.02em;
+  margin:0 0 12px;
+}
+.cta-sub{
+  color:var(--brand-hero-text);
+  opacity:.82;
+  font-size:1.02rem;
+  line-height:1.7;
+  margin:0 0 28px;
+  white-space:pre-line;
+}
+.cta-actions{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.cta-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:14px 28px;
+  border-radius:14px;
+  font-weight:800;
+  font-size:1.02rem;
+  text-decoration:none;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.cta-btn:hover{transform:translateY(-2px);}
+.cta-btn-phone{
+  background:var(--brand-hero-text);
+  color:var(--brand-hero-bg);
+  box-shadow:0 12px 30px rgba(0,0,0,.22);
+}
+.cta-btn-kakao{
+  background:#fee500;
+  color:#3c1e1e;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+}
+.cta-empty-note{
+  color:var(--brand-hero-text);
+  opacity:.75;
+  font-size:.92rem;
+}
+.builder-public-preview .cta-btn{cursor:pointer;}
+@media (max-width:640px){
+  .cta-actions{flex-direction:column;}
+  .cta-btn{justify-content:center;}
+}
+
+/* ══════════════ BASE ══════════════ */
+/* 세로 scroll-snap 없음(Shopify 레퍼런스 확정 — 스크롤을 가로채지 않는다).
+   스크롤 진입 reveal 은 academy_reveal.{js,css} 의 단일 primitive 가 담당한다. */
+body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);letter-spacing:-.02em;-webkit-font-smoothing:antialiased;}
+.page{max-width:none;margin:0;padding:0;}
+#publicView{min-width:0;}
+#publicView *{box-sizing:border-box;}
+/* 이 리셋은 specificity가 (1,1,1)이라 클래스 규칙을 전부 이긴다.
+   notes 제목/인용문, Storefront 설명/주석이 여기 걸리면 시안의 세로 리듬과 가운데 정렬이 사라진다
+   (margin:X auto 0의 auto가 0으로, margin-top이 0으로 덮여 카드와 겹친다). */
+#publicView :is(h1,h2,h3,h4,p):not(.notes-title,.notes-quote,.featured-desc,.ai-native-desc,.ai-native-note,.cta-title,.cta-sub){margin:0;}
+#publicView [id^="sec-"]{scroll-margin-top:74px;}
+#errorMsg{text-align:center;color:#ef4444;font-size:.98rem;padding:20px;}
+
+/* ══════════════ CSS 로고 심볼 ══════════════ */
+.eh-logo-component{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;}
+/* 로고 칸: 학원 로고는 대부분 가로형 직사각형 → 고정 높이 + 가변 폭(안 잘림).
+   정사각형 아이콘 전용 입력은 추후 별도. 이미지가 있으면 배경 gem을 숨겨 로고 원본을 살린다. */
+.eh-logo-symbol{height:40px;width:auto;min-width:40px;max-width:200px;border-radius:10px;background:linear-gradient(135deg,#0C238A,#4A7FD4);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;box-shadow:0 3px 10px rgba(12,35,138,.3);flex-shrink:0;}
+.eh-logo-symbol::before{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(145deg,rgba(255,255,255,.18) 0%,transparent 60%);}
+.eh-logo-symbol-inner{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;}
+.eh-logo-symbol img{height:100%;width:auto;max-width:200px;object-fit:contain;border-radius:inherit;display:block;position:relative;z-index:1;}
+.eh-logo-symbol:has(img){background:transparent;box-shadow:none;}
+.eh-logo-symbol:has(img)::before{display:none;}
+.eh-book{width:26px;height:18px;position:relative;display:flex;align-items:flex-end;justify-content:center;}
+.eh-book::before,.eh-book::after{content:'';position:absolute;bottom:0;width:11px;height:14px;border-radius:1px 1px 0 0;background:rgba(255,255,255,.85);}
+.eh-book::before{left:1px;transform:skewX(4deg);transform-origin:bottom left;}
+.eh-book::after{right:1px;transform:skewX(-4deg);transform-origin:bottom right;}
+.eh-letters{position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);font-size:8px;font-weight:900;color:#0C238A;letter-spacing:-.5px;line-height:1;z-index:2;font-style:italic;}
+.eh-logo-text-area{display:flex;flex-direction:column;line-height:1.2;}
+.eh-logo-title{font-size:1.05rem;font-weight:900;color:#0a0f2e;letter-spacing:-.02em;}
+.eh-logo-sub{font-size:.70rem;color:#4a5872;font-weight:500;}
+
+/* ══════════════ GNB ══════════════ */
+/* 랜딩 헤더(.nav-wrap)와 같은 3열 그리드 — 로고를 가운데 칸, 메뉴를 우측 끝에 둔다.
+   좁은 화면에서는 양쪽 1fr 칸이 0으로 줄어 자연스럽게 좌측 정렬로 되돌아간다(겹침 없음). */
+.cv-gnb{background:#fff;border-bottom:1px solid #e8ecf5;padding:0 20px;height:62px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;position:sticky;top:0;z-index:500;box-shadow:0 1px 10px rgba(12,35,138,.06);gap:10px;}
+.cv-gnb>.eh-logo-component{grid-column:2;}
+.cv-gnb>.cv-nav{grid-column:3;justify-self:end;}
+.cv-nav{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;}
+.cv-nav a{font-size:.90rem;font-weight:600;color:#333f5c;padding:5px 9px;border-radius:8px;text-decoration:none;transition:.2s;white-space:nowrap;}
+.cv-nav a:hover{background:#f0f4ff;color:#0C238A;}
+.cv-btn-primary{background:linear-gradient(135deg,#0C238A,#4A7FD4);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:.90rem;font-weight:800;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;}
+.cv-btn-owner{background:rgba(3,199,90,.1);border:1.5px solid #03C75A;color:#02936f;border-radius:10px;padding:7px 13px;font-size:.90rem;font-weight:800;text-decoration:none;white-space:nowrap;display:inline-block;}
+
+/* ══════════════ 빌더 캔버스 ══════════════
+   캔버스 폭은 뷰포트가 아니라 컨테이너라 @media 반응형이 발화하지 않는다. 아래 규칙은 @container를 쓴다. */
+.builder-public-preview{position:relative;background:transparent;}
+.builder-public-preview > *{position:relative;}
+/* 캔버스 폭은 뷰포트가 아니라 컨테이너라 @media 반응형이 발화하지 않는다(뷰포트는 넓은데
+   캔버스만 좁다). 그래서 아래 규칙은 전부 @container로 쓴다.
+   ⚠ 컨테이너는 .canvas-frame(academy_builder.html) 하나뿐이다. 여기에 container-type을
+     또 걸면 컨테이너가 중첩돼 어느 폭이 기준인지 갈린다 — 걸지 않는다.
+   ⚠ 무조건 1열로 접으면 캔버스가 넓어도 영원히 모바일 레이아웃이 된다 — 폭에 따라 바뀌어야 한다. */
+.builder-public-preview .hero{padding:72px 20px 36px;}
+.builder-public-preview .hero-grid{grid-template-columns:minmax(0,1.05fr) minmax(260px,.95fr);gap:32px;}
+.builder-public-preview .hero h1{font-size:clamp(1.9rem,5.2cqw,3rem);}
+.builder-public-preview .tablet{max-width:min(320px,42cqw);}
+.builder-public-preview .notes-title{font-size:clamp(1.8rem,4.6cqw,2.8rem);}
+.builder-public-preview .notes-quote{font-size:clamp(1rem,2.2cqw,1.25rem);}
+.builder-public-preview .intro-wrap .section-inner{padding:52px 0;}
+/* 캔버스 반응형은 발행 화면과 같은 경계를 써야 한다 — 경계가 다르면 같은 폭에서
+   캔버스와 발행이 다른 레이아웃을 보여준다(캔버스 720/900 vs 발행 980/760이 그랬다).
+   위 @media (max-width:980px)/(max-width:760px)의 컨테이너 판이다. */
+@container (max-width:980px){
+  .builder-public-preview .hero-grid{grid-template-columns:1fr;}
+  .builder-public-preview .hero .tablet{max-width:280px;order:-1;}
+}
+@container (max-width:760px){
+  .builder-public-preview .hero{padding-top:60px;}
+}
+/* 빌더 캔버스는 폭이 좁고 스크롤 컨텍스트가 발행 화면과 달라 AI Native 의 sticky/2-열
+   레이아웃을 강제하지 않는다 — 5개 세로 블록(inline 아이콘)으로 정적 프리뷰. */
+@container (max-width:900px){
+  .builder-public-preview .ai-native{display:block;}
+  .builder-public-preview .ai-native-visual{display:none;}
+  .builder-public-preview .ai-native-steps::before{display:none;}
+  .builder-public-preview .ai-native-step{grid-template-columns:28px 1fr;min-height:0;padding-bottom:24px;}
+  .builder-public-preview .ai-native-step-glyph{display:flex;}
+  .builder-public-preview .ai-native-step + .ai-native-step::before{display:block;}
+  .builder-public-preview .ai-native-step-name{font-size:15px;}
+}
+/* 히어로 이미지 슬롯 편집 어피던스 — 빌더 캔버스에서만 보인다(발행 화면 오염 방지). */
+.builder-hero-media-chip{display:none;}
+.builder-public-preview [data-hero-media-edit]{cursor:pointer;position:relative;}
+.builder-public-preview [data-hero-media-edit]:hover{outline:2px dashed rgba(250,204,21,.8);outline-offset:3px;}
+.builder-public-preview .builder-hero-media-chip{display:inline-flex;align-items:center;gap:5px;position:absolute;right:10px;bottom:10px;z-index:5;background:#0C238A;color:#fff;font-size:.68rem;font-weight:800;padding:4px 9px;border-radius:6px;box-shadow:0 2px 8px rgba(12,35,138,.35);}
+.builder-featured-lessons-chip{display:none;}
+.builder-public-preview [data-featured-lessons-edit]{cursor:pointer;position:relative;}
+.builder-public-preview [data-featured-lessons-edit]:hover{outline:2px dashed rgba(250,204,21,.8);outline-offset:3px;}
+.builder-public-preview .builder-featured-lessons-chip{display:inline-flex;align-items:center;gap:5px;background:#0C238A;color:#fff;font-size:.68rem;font-weight:800;padding:4px 9px;border-radius:6px;box-shadow:0 2px 8px rgba(12,35,138,.35);}
+
+/* ══════════════ 히어로 (시안 .hero 이식) ══════════════
+   docs/archive/archived_html/에듀홀릭_BuildIt_3.html의 .hero 블록을 그대로 옮겼다.
+   구조: 좌(eyebrow + h1 + 인용 + 버튼2 + 통계3) / 우(iPad 프레임 원장사진).
+   대표수업 패널·교재 카드·영상·배지는 시안 히어로에 없다 — 다른 섹션으로 이동한다. */
+.brand-glow{
+  position:absolute; inset:-30% -10%; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(closest-side, rgba(43,58,158,.10), transparent 70%) 20% 25%/55% 55% no-repeat,
+    radial-gradient(closest-side, rgba(201,161,59,.11), transparent 70%) 82% 75%/48% 48% no-repeat;
+  filter:blur(50px);
+}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:12.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-faint); margin-bottom:14px;
+}
+.eyebrow .stroke{ width:22px; height:2px; border-radius:2px; background:linear-gradient(90deg, var(--ultramarine), var(--gold)); }
+.hero .btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  padding:16px 28px; border-radius:100px; font-size:15px; font-weight:700;
+  background:var(--ink); color:#fff; border:0; cursor:pointer; font-family:inherit;
+  transition:transform .4s var(--ease), background .3s;
+}
+.hero .btn:hover{ background:var(--accent); transform:translateY(-2px); }
+.hero .btn.outline{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+.hero .btn.outline:hover{ border-color:var(--accent); color:var(--accent); background:transparent; transform:translateY(-2px); }
+
+.hero{ padding:130px 5vw 50px; position:relative; overflow:hidden; background:var(--bg); }
+.hero-grid{ position:relative; z-index:1; width:100%; display:grid; grid-template-columns:1.05fr .95fr; gap:56px; align-items:center; max-width:1120px; margin:0 auto; }
+.hero h1{ font-size:clamp(28px,4vw,46px); font-weight:800; line-height:1.28; letter-spacing:-.03em; margin:0; }
+.hero .hero-quote{
+  margin:18px 0 0; padding-left:16px; border-left:2px solid var(--gold);
+  font-size:14.5px; color:var(--ink-soft); font-weight:500; line-height:1.7;
+}
+.hero-actions{ margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; }
+.hero-stats{ margin-top:34px; display:flex; gap:30px; }
+.hero-stats b{ display:block; font-size:19px; font-weight:800; letter-spacing:-.02em; }
+.hero-stats b .u{ background:linear-gradient(115deg, var(--ultramarine), var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hero-stats > div > span{ display:block; margin-top:3px; font-size:11px; font-weight:700; color:var(--ink-faint); }
+
+/* iPad 프레임 — 시안 .tablet */
+.tablet{
+  width:100%; max-width:360px; aspect-ratio:3/4; background:#111214; border-radius:26px; padding:16px 12px;
+  box-shadow:var(--shadow-lg); position:relative; margin:0 auto;
+}
+.tablet .cam{ position:absolute; top:8px; left:50%; transform:translateX(-50%); width:5px; height:5px; border-radius:50%; background:#3a3b3f; z-index:3; }
+.tablet-screen{ width:100%; height:100%; border-radius:14px; overflow:hidden; position:relative; background:#000; }
+.tablet-screen img{ width:100%; height:100%; object-fit:cover; }
+.tablet-screen::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(10,10,20,.6) 100%); }
+.tablet-cap{
+  position:absolute; left:16px; bottom:16px; z-index:2; color:#fff;
+  font-size:12.5px; font-weight:700; letter-spacing:.01em;
+}
+.tablet-cap b{ display:block; font-size:16px; font-weight:800; margin-bottom:2px; }
+/* 원장 사진 미등록 — 시안엔 없는 상태라 프레임 톤에 맞춘 중립 placeholder를 둔다. */
+.tablet-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(155deg,#2a2c33,#141519); color:rgba(255,255,255,.5); font-size:13px; font-weight:700; }
+
+/* 히어로 태블릿 — 사진/영상 스택 + 사운드 토글 */
+.tablet-media-stack{ position:relative; width:100%; height:100%; }
+.tablet-photo{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:opacity 0.4s ease; z-index:2; }
+.tablet-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:opacity 0.4s ease; z-index:1; opacity:0; }
+.tablet-sound-toggle{ position:absolute; bottom:12px; right:12px; z-index:4; width:36px; height:36px; border-radius:50%; background:rgba(10,10,20,.7); border:none; color:#fff; font-size:16px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.3); transition:background 0.2s ease, transform 0.15s ease; }
+.tablet-sound-toggle:hover{ background:rgba(10,10,20,.9); transform:scale(1.05); }
+.tablet-sound-toggle:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.tablet-sound-hint{ position:absolute; bottom:44px; left:50%; transform:translateX(-50%) translateY(8px); background:rgba(10,10,20,.85); color:#fff; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:700; white-space:nowrap; opacity:0; transition:opacity 0.3s ease, transform 0.3s ease; z-index:3; pointer-events:none; }
+
+/* 대상·과목 배지는 시안 히어로에 없다. 빌더 캔버스에서만 편집 통로로 노출된다. */
+.builder-only-badges{ display:none; }
+.builder-public-preview .builder-only-badges{ display:block; margin-top:24px; }
+
+@media (max-width:900px){
+  .hero-grid{ grid-template-columns:1fr; }
+  .hero .tablet{ max-width:280px; order:-1; }
+}
+@media (max-width:520px){
+  .hero{ padding-top:110px; }
+  .hero-actions .btn{ flex:1; }
+  .hero-stats{ gap:22px; }
+}
+
+/* ══════════════ 섹션 공통 (풀폭 밴드) ══════════════ */
+.section-wrap{padding:36px 20px;border-bottom:1px solid #e8ecf5;background:#fff;}
+.section-inner{max-width:860px;margin:0 auto;}
+.section-header{text-align:center;margin-bottom:24px;}
+.section-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 13px;margin-bottom:8px;font-size:.80rem;font-weight:800;background:rgba(12,35,138,.07);border:1px solid rgba(12,35,138,.12);color:#0C238A;}
+.section-title{font-size:1.45rem;font-weight:900;color:#0a0f2e;letter-spacing:-.03em;margin-bottom:5px;}
+.section-sub{font-size:.92rem;color:#4a5872;line-height:1.7;}
+
+/* 수업 상품 카드 스타일은 #244에서 lesson_product_showcase.css 로 이관됐다.
+   .lesson-empty 스타일은 아래 "빈 상태(empty state) 공통"에서 함께 정의한다. */
+
+/* ══════════════ Education Storefront: 「2학기 영어 내신」 Coverflow (승인된 UI) ══════════════
+   eyebrow → 큰 제목 → 짧은 설명 → **커버플로우 캐러셀** (21st.dev @ruixen.ui/coverflow-carousel 스타일)
+   중앙 카드 확대(1.15x), 좌우 카드 축소(0.85x) + 3D Y축 회전 + 투명도 그라데이션
+   데스크톱: 마우스 드래그/휠 + 화살표 + 인디케이터
+   모바일: 터치 스와이프 + 인디케이터
+   배선: academy_public.js wireFeaturedCoverflow — #sec-featured 안에서만. */
+.section-wrap.featured-coverflow{background:#0a0a0c;padding:72px 20px;}
+.featured-inner{max-width:1100px;margin:0 auto;text-align:center;}
+.featured-head{max-width:720px;margin:0 auto;}
+.featured-eyebrow{justify-content:center;color:#60a5fa;}
+.featured-eyebrow .stroke{background:linear-gradient(90deg,#60a5fa,#3b82f6);}
+.featured-title{margin:0;color:#fff;font-size:clamp(28px,4.4vw,44px);font-weight:900;line-height:1.18;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
+.featured-desc{margin:16px auto 0;max-width:600px;color:rgba(255,255,255,.7);font-size:15px;font-weight:500;line-height:1.75;word-break:keep-all;}
+
+/* Coverflow Viewport & Track */
+.coverflow-viewport{position:relative;margin-top:40px;perspective:1200px;overflow:hidden;}
+.coverflow-track{
+  display:flex;align-items:center;gap:24px;
+  transform-style:preserve-3d;
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  will-change:transform;
+  padding:20px 0 40px;
+}
+
+/* Coverflow Card - 3D Transform based on position */
+.coverflow-card{
+  position:relative;flex:0 0 auto;
+  width:320px;max-width:320px;
+  min-height:420px;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.45),
+    0 1px 3px rgba(0,0,0,0.4);
+  border:1px solid rgba(255,255,255,0.14);
+  overflow:hidden;
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.5s cubic-bezier(0.16,1,0.3,1), box-shadow 0.5s cubic-bezier(0.16,1,0.3,1), filter 0.5s cubic-bezier(0.16,1,0.3,1), z-index 0s;
+  will-change:transform,opacity,box-shadow,filter,z-index;
+  transform-origin:center center;
+  cursor:grab;
+  display:flex;flex-direction:column;
+}
+.coverflow-card:active{cursor:grabbing;}
+.coverflow-card.is-center{
+  z-index:10;
+  transform:translateZ(60px) scale(1.15);
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.6),
+    0 8px 28px rgba(0,0,0,0.45),
+    0 0 70px rgba(59,130,246,0.35);
+  opacity:1;
+  filter:brightness(1);
+}
+.coverflow-card.is-side{
+  z-index:5;
+  transform:translateZ(0) scale(0.85) rotateY(12deg);
+  opacity:0.6;
+  filter:brightness(0.82) saturate(0.92);
+}
+.coverflow-card.is-side-left{transform:translateZ(0) scale(0.85) rotateY(12deg);}
+.coverflow-card.is-side-right{transform:translateZ(0) scale(0.85) rotateY(-12deg);}
+.coverflow-card.is-far{
+  z-index:1;
+  transform:translateZ(-40px) scale(0.7) rotateY(24deg);
+  opacity:0.25;
+  filter:brightness(0.62) saturate(0.85);
+}
+.coverflow-card.is-far-left{transform:translateZ(-40px) scale(0.7) rotateY(24deg);}
+.coverflow-card.is-far-right{transform:translateZ(-40px) scale(0.7) rotateY(-24deg);}
+
+.coverflow-card-visual{
+  position:relative;
+  height:200px;
+  background:linear-gradient(135deg,#1e3f9e 0%,#0f2a7a 55%,#0a1f5c 100%);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.coverflow-card-glow{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,rgba(96,165,250,0.55) 0%,transparent 70%);
+  opacity:0;transition:opacity 0.3s ease;
+}
+.coverflow-card.is-center .coverflow-card-glow{opacity:1;}
+.coverflow-card-icon{
+  position:relative;z-index:1;
+  width:80px;height:80px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;
+  filter:drop-shadow(0 8px 24px rgba(255,255,255,0.25));
+}
+.coverflow-card-icon svg{width:100%;height:100%;}
+
+.coverflow-card-content{padding:24px;display:flex;flex-direction:column;flex:1;text-align:center;}
+.coverflow-card-head{margin-bottom:16px;}
+.coverflow-card-name{display:block;font-size:18px;font-weight:900;color:var(--ink);letter-spacing:-.02em;word-break:keep-all;}
+.coverflow-card-kind{display:block;margin-top:4px;font-size:12px;font-weight:700;color:var(--ultramarine);letter-spacing:.02em;}
+.coverflow-card-body{min-height:80px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
+.coverflow-card-loading{margin:0;color:var(--ink-soft);font-size:13px;font-weight:600;line-height:1.6;word-break:keep-all;}
+.coverflow-card-rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+.coverflow-card-row{border-bottom:1px solid var(--line);padding-bottom:8px;}
+.coverflow-card-row:last-child{border-bottom:0;padding-bottom:0;}
+.coverflow-card-rowlink{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;color:var(--ink);font-size:12px;font-weight:700;letter-spacing:-.01em;word-break:keep-all;text-decoration:none;}
+.coverflow-card-rowlink.is-plain{color:var(--ink-soft);}
+.coverflow-card-rowlink:not(.is-plain):hover{color:var(--ultramarine);}
+.coverflow-card-rowgo{flex:none;color:var(--ultramarine);font-weight:900;}
+.coverflow-card-more{margin-top:16px;display:inline-flex;align-items:center;gap:6px;color:var(--ultramarine);font-size:12.5px;font-weight:800;letter-spacing:-.01em;text-decoration:none;transition:gap 0.2s ease;}
+.coverflow-card-more:hover{gap:10px;text-decoration:underline;}
+
+/* Coverflow Controls */
+.coverflow-controls{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:24px;}
+.coverflow-arrow{
+  width:48px;height:48px;border-radius:50%;
+  border:0;background:rgba(255,255,255,0.8);color:var(--ink);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background 0.2s var(--hover-ease),border-color 0.2s var(--hover-ease),transform 0.15s var(--hover-ease),opacity 0.2s;
+}
+.coverflow-arrow:hover:not(:disabled){background:#fff;transform:scale(1.05);}
+.coverflow-arrow:disabled{opacity:0.3;cursor:not-allowed;}
+.coverflow-arrow:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.coverflow-indicators{display:flex;gap:10px;}
+.coverflow-indicator{
+  width:10px;height:10px;border-radius:50%;
+  border:0;background:rgba(255,255,255,0.3);cursor:pointer;
+  transition:background 0.2s var(--hover-ease),transform 0.2s var(--hover-ease),width 0.3s var(--ease);
+}
+.coverflow-indicator:hover{background:#fff;transform:scale(1.2);}
+.coverflow-indicator.is-on{width:28px;border-radius:999px;background:#fff;}
+.coverflow-indicator:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+
+/* 데스크톱: 더 넓은 영역 활용 */
+@media (min-width:900px){
+  .coverflow-card{width:360px;max-width:360px;min-height:460px;}
+  .coverflow-track{gap:32px;padding:30px 0 50px;}
+  .coverflow-card.is-center{transform:translateZ(80px) scale(1.2);}
+  .coverflow-card.is-side{transform:translateZ(0) scale(0.8) rotateY(15deg);}
+  .coverflow-card.is-side-left{transform:translateZ(0) scale(0.8) rotateY(15deg);}
+  .coverflow-card.is-side-right{transform:translateZ(0) scale(0.8) rotateY(-15deg);}
+  .coverflow-card.is-far{transform:translateZ(-60px) scale(0.65) rotateY(30deg);}
+  .coverflow-card.is-far-left{transform:translateZ(-60px) scale(0.65) rotateY(30deg);}
+  .coverflow-card.is-far-right{transform:translateZ(-60px) scale(0.65) rotateY(-30deg);}
+}
+
+/* 모바일: 터치 최적화, 카드 폭 조정 */
+@media (max-width:640px){
+  .section-wrap.featured-coverflow{padding:56px 16px;}
+  .coverflow-card{width:260px;max-width:260px;min-height:380px;}
+  .coverflow-track{gap:16px;padding:16px 0 32px;}
+  .coverflow-card.is-center{transform:translateZ(40px) scale(1.1);}
+  .coverflow-card.is-side{transform:translateZ(0) scale(0.9) rotateY(10deg);}
+  .coverflow-card.is-side-left{transform:translateZ(0) scale(0.9) rotateY(10deg);}
+  .coverflow-card.is-side-right{transform:translateZ(0) scale(0.9) rotateY(-10deg);}
+  .coverflow-card.is-far{transform:translateZ(-30px) scale(0.75) rotateY(20deg);}
+  .coverflow-card.is-far-left{transform:translateZ(-30px) scale(0.75) rotateY(20deg);}
+  .coverflow-card.is-far-right{transform:translateZ(-30px) scale(0.75) rotateY(-20deg);}
+  .coverflow-arrow{width:40px;height:40px;}
+  .coverflow-indicator{width:8px;height:8px;}
+  .coverflow-indicator.is-on{width:24px;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .coverflow-track,.coverflow-card{transition:none !important;}
+}
+
+/* 빌더 캔버스: 세로 스택 프리뷰 */
+.builder-public-preview .coverflow-viewport{perspective:none;}
+.builder-public-preview .coverflow-track{display:flex;flex-direction:column;align-items:center;gap:20px;padding:0;}
+.builder-public-preview .coverflow-card{width:100%;max-width:500px;transform:none !important;opacity:1 !important;box-shadow:var(--shadow-sm);rotate:none;}
+.builder-public-preview .coverflow-controls{display:none;}
+
+/* ══════════════ Education Storefront: AI Native (sec-digitaltwin) - 승인된 Dynamic Process ══════════════
+   AI Native 5단계: 연결선 + 신호 애니메이션 + Digital Twin 뉴럴 브레인 + 단계별 아이콘
+   + 스크롤 트리거 스태거 + FINAL 완료 이펙트
+   데스크톱: 수평 플로우 + 데이터 파티클 (sticky visual + 우측 단계 리스트)
+   모바일: 수직 스택 + 아래 방향 플로우 + 단계별 횡스크롤 Story
+   GSAP ScrollTrigger (academy_cinematic.js) + CSS 애니메이션 폴백 */
+.section-wrap.ai-native-wrap{background:var(--bg-soft);padding:60px 20px;}
+.ai-native-inner{max-width:1000px;margin:0 auto;}
+.ai-native-head{text-align:center;max-width:640px;margin:0 auto;}
+.ai-native-eyebrow{justify-content:center;color:var(--ultramarine);}
+.ai-native-title{margin:0;}
+.ai-native-desc{margin:14px auto 0;max-width:620px;color:var(--ink-soft);font-size:14.5px;font-weight:500;line-height:1.75;word-break:keep-all;}
+.ai-native{margin-top:36px;}
+
+/* AI Native SVG 아이콘 */
+.aig-doc{fill:#fff;stroke:currentColor;stroke-width:2.2;}
+.aig-line{stroke:var(--ink-faint);stroke-width:2.4;stroke-linecap:round;}
+.aig-hl{fill:var(--gold);}
+.aig-scan{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round;}
+.aig-node{fill:none;stroke:currentColor;stroke-width:2.4;}
+.aig-merge{fill:none;stroke:var(--ink-faint);stroke-width:2;}
+.aig-core{fill:var(--accent);}
+.aig-q{fill:none;stroke:currentColor;stroke-width:2.4;}
+.aig-badge{fill:var(--accent);}
+.aig-check{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;}
+
+/* 연결선 (데스크톱 수평, 모바일 수직) */
+.ai-native-connection{
+  position:absolute;top:50%;width:100%;height:2px;pointer-events:none;
+  background:linear-gradient(90deg,var(--ultramarine),var(--gold));
+  transform-origin:left center;transform:scaleX(0);
+  transition:transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  z-index:-1;
+}
+.ai-native-step[data-ai-step-index="1"] .ai-native-connection{left:0;}
+.ai-native-step[data-ai-step-index="2"] .ai-native-connection{left:0;}
+.ai-native-step[data-ai-step-index="3"] .ai-native-connection{left:0;}
+.ai-native-step[data-ai-step-index="4"] .ai-native-connection{display:none;}
+.ai-native-step.is-active .ai-native-connection{transform:scaleX(1);}
+
+/* 신호 파티클 애니메이션 (데스크톱) */
+.ai-native-signal{
+  position:absolute;top:50%;width:8px;height:8px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 12px var(--gold);
+  transform:translateY(-50%) scale(0);opacity:0;
+  animation:ai-signal-move 2s ease-in-out infinite;
+  pointer-events:none;z-index:5;
+}
+@keyframes ai-signal-move{
+  0%{left:0;transform:translateY(-50%) scale(0);opacity:0;}
+  10%{transform:translateY(-50%) scale(1);opacity:1;}
+  90%{transform:translateY(-50%) scale(1);opacity:1;}
+  100%{left:100%;transform:translateY(-50%) scale(0);opacity:0;}
+}
+
+/* 단계 카드 기본 */
+.ai-native-step{position:relative;}
+.ai-native-step-num{
+  flex:none;width:32px;height:32px;border-radius:999px;
+  background:var(--accent-soft);color:var(--ultramarine);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;
+  transition:background 0.3s var(--ease),transform 0.3s var(--ease);
+}
+.ai-native-step-c{display:flex;align-items:flex-start;gap:16px;}
+.ai-native-step-glyph{
+  flex:none;width:56px;height:56px;border-radius:16px;
+  background:rgba(43,58,158,0.08);color:var(--ultramarine);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s var(--ease);
+}
+.ai-native-step-glyph svg{width:36px;height:36px;}
+.ai-native-step-glyph.is-twin{position:relative;}
+.ai-native-step-glyph.is-twin::before{
+  content:'';position:absolute;inset:-8px;border-radius:24px;
+  background:radial-gradient(circle at center,rgba(201,161,59,0.4) 0%,transparent 70%);
+  opacity:0;animation:twin-pulse 3s ease-in-out infinite;
+}
+@keyframes twin-pulse{0%,100%{opacity:0;transform:scale(0.8);}50%{opacity:1;transform:scale(1);}}
+.ai-native-step.is-active .ai-native-step-glyph{
+  transform:scale(1.1);
+  box-shadow:0 0 24px rgba(43,58,158,0.3);
+}
+.ai-native-step-text{display:flex;flex-direction:column;gap:6px;}
+.ai-native-step-name{color:var(--ink);font-size:16px;font-weight:900;letter-spacing:-.02em;line-height:1.35;word-break:keep-all;}
+.ai-native-step-desc{color:var(--ink-soft);font-size:13.5px;font-weight:500;line-height:1.65;word-break:keep-all;}
+
+/* FINAL 배지 */
+.ai-native-final-badge{
+  position:absolute;top:-8px;right:-8px;width:28px;height:28px;
+  border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);
+  display:flex;align-items:center;justify-content:center;
+  transform:scale(0) rotate(-180deg);opacity:0;
+  transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s var(--ease);
+}
+.ai-native-step.is-final-active .ai-native-final-badge{
+  transform:scale(1) rotate(0deg);opacity:1;
+}
+.ai-native-final-badge svg{width:16px;height:16px;color:#fff;}
+
+/* 모바일 기본 — 수직 스택 + 연결선 */
+.ai-native-visual{display:block;margin:0;}
+.ai-native-steps{list-style:none;margin:0;padding:0;display:block;}
+.ai-native-step{
+  display:flex;align-items:flex-start;gap:16px;padding-bottom:32px;
+  opacity:0;transform:translateY(30px);
+  transition:opacity 0.6s cubic-bezier(0.16,1,0.3,1),transform 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+.ai-native-step.is-visible{opacity:1;transform:translateY(0);}
+.ai-native-step + .ai-native-step::before{
+  content:"";position:absolute;left:27px;top:32px;bottom:-32px;width:2px;
+  background:linear-gradient(180deg,var(--ultramarine),var(--gold));
+  transform:scaleY(0);transform-origin:top center;
+  transition:transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.2s;
+}
+.ai-native-step.is-visible + .ai-native-step::before{transform:scaleY(1);}
+.ai-native-step-num{width:40px;height:40px;font-size:14px;flex:none;}
+.ai-native-step-c{flex:1;display:flex;gap:16px;align-items:flex-start;}
+.ai-native-step-glyph{width:56px;height:56px;}
+.ai-native-step-text{gap:6px;padding-top:2px;}
+.ai-native-step-name{font-size:18px;}
+.ai-native-step-desc{font-size:14.5px;line-height:1.7;}
+.ai-native-note{margin:32px auto 0;max-width:600px;text-align:center;color:var(--ink-faint);font-size:12.5px;font-weight:600;line-height:1.7;word-break:keep-all;}
+
+/* 데스크톱 — 수평: sticky visual + 우측 단계 리스트 */
+@media (min-width:900px){
+  .ai-native{display:grid;grid-template-columns:1fr minmax(280px,340px);gap:56px;align-items:start;}
+  .ai-native-visual{display:block;position:sticky;top:100px;align-self:start;}
+  .ai-stage{height:460px;}
+  .ai-native-steps{position:relative;display:block;padding-left:0;}
+  .ai-native-steps::before{display:none;}
+  .ai-native-step{
+    display:grid;grid-template-columns:40px 1fr;column-gap:20px;
+    min-height:40vh;align-content:center;padding-bottom:0;
+    opacity:0;transform:translateX(-40px);
+    transition:opacity 0.6s cubic-bezier(0.16,1,0.3,1),transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  }
+  .ai-native-step.is-visible{opacity:1;transform:translateX(0);}
+  .ai-native-step + .ai-native-step::before{display:none;}
+  .ai-native-step-num{width:40px;height:40px;font-size:14px;grid-row:1;}
+  .ai-native-step-c{grid-column:2;gap:16px;}
+  .ai-native-step-glyph{display:flex;}
+  .ai-native-step-text{gap:8px;padding-top:4px;}
+  .ai-native-step-name{font-size:19px;}
+  .ai-native-step-desc{font-size:15px;line-height:1.75;}
+  .ai-native-connection{
+    top:20px;left:20px;right:auto;width:auto;height:2px;
+    transform-origin:left center;transform:scaleX(0);
+    transition:transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.3s;
+  }
+  .ai-native-step.is-active .ai-native-connection{transform:scaleX(1);}
+  .ai-native-final-badge{top:-6px;right:-6px;width:32px;height:32px;}
+}
+@media (min-width:1200px){
+  .ai-native{grid-template-columns:1fr 360px;gap:72px;}
+}
+
+/* 모바일(<900): 스크롤 스토리 (.ai-scenes-mobile) */
+@media (max-width:899px){
+  .ai-native-visual{display:none;}
+}
+
+/* 빌더 캔버스: 정적 프리뷰 */
+.builder-public-preview .ai-native{display:block;}
+.builder-public-preview .ai-native-visual{display:none;}
+.builder-public-preview .ai-native-steps{display:block;}
+.builder-public-preview .ai-native-step{opacity:1;transform:none;}
+.builder-public-preview .ai-native-step + .ai-native-step::before{display:block;}
+.builder-public-preview .ai-scenes-mobile{display:none;}
+.builder-public-preview .ai-native-connection{display:none;}
+.builder-public-preview .ai-native-final-badge{display:none;}
+.builder-public-preview .ai-native-signal{display:none;}
+
+@media (prefers-reduced-motion: reduce){
+  .ai-native-step,.ai-native-step + .ai-native-step::before,
+  .ai-native-connection,.ai-native-step-glyph,.ai-native-final-badge{
+    transition:none !important;animation:none !important;
+  }
+  .ai-native-step,.ai-native-step + .ai-native-step::before{
+    opacity:1 !important;transform:none !important;
+  }
+  .ai-native-connection{transform:scaleX(1) !important;}
+  .ai-native-final-badge{transform:scale(1) rotate(0deg) !important;opacity:1 !important;}
+}
+@media (min-width:1200px){
+  .ai-native{grid-template-columns:1fr 300px;gap:56px;}
+}
+/* 모바일(<900): 데스크톱 sticky Visual Stage 를 숨긴다 — 대신 단계별 횡스크롤 Story
+   (.ai-scenes-mobile). 그 표시 토글·오브젝트 스타일·배선은 academy_cinematic.{css,js}
+   (한 파일 안에 base+@media 를 둬 로드 순서와 무관하게 동작하도록). */
+@media (max-width:899px){
+  .ai-native-visual{display:none;}
+}
+
+/* 빌더 캔버스는 Visual Stage 를 쓰지 않는다 — 항상 5개 세로 블록으로 정적 프리뷰. */
+.builder-public-preview .ai-native{display:block;}
+.builder-public-preview .ai-native-visual{display:none;}
+.builder-public-preview .ai-native-steps{display:block;}
+.builder-public-preview .ai-scenes-mobile{display:none;}
+
+@media(max-width:640px){
+  .section-wrap.featured-wrap{padding:48px 18px;}
+  .section-wrap.ai-native-wrap{padding:44px 18px;}
+}
+
+/* ══════════════ 대표 수업 / 시간표 (Build It 시안) ══════════════ */
+.section-wrap.classes-wrap{padding:0;background:#fff;border-bottom:0;}
+.classes-wrap .classes-container{width:min(1120px,90vw);max-width:none;padding:100px 0;margin:0 auto;}
+.section-head{max-width:600px;margin-bottom:0;}
+.section-head .eyebrow{display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;color:var(--ink-faint);font-size:12.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;}
+.section-head .stroke{display:inline-block;width:22px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--ultramarine),var(--gold));}
+.section-head h2{margin:0;color:var(--ink);font-size:clamp(26px,3.6vw,40px);font-weight:800;line-height:1.24;letter-spacing:-.03em;}
+.lesson-product-slot{margin-top:0;}
+.lesson-schedule-wrap{background:var(--bg-soft);}
+.lesson-schedule-inner{width:min(1120px,90vw);max-width:none;margin:0 auto;padding:100px 0;}
+.schedule-head{margin-bottom:0;}
+.toggle-row{display:flex;align-items:center;gap:12px;margin-top:22px;color:var(--ink-soft);font-size:13px;font-weight:700;}
+.toggle-row b{color:var(--ink);}
+.toggle{position:relative;display:inline-flex;width:42px;height:25px;flex:0 0 auto;border:0;border-radius:100px;background:var(--line);box-shadow:none;cursor:pointer;padding:0;}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);transition:transform .25s var(--ease);}
+.toggle.on{background:var(--ultramarine);}
+.toggle.on::after{left:3px;transform:translateX(17px);}
+.toggle:focus-visible{outline:2px solid rgba(43,58,158,.28);outline-offset:3px;}
+/* "시간표 공개"를 끄면 본문(달력)이 사라지고 머리말 + 토글만 남는다. */
+.lesson-schedule-wrap.is-schedule-hidden .schedule-calendar{display:none;}
+.schedule-calendar{position:relative;margin:20px 0 0;padding:0;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;}
+.schedule-calendar-image{display:block;width:100%;height:auto;}
+/* 빌더 전용 빈 자리. 공개 페이지는 이미지가 없으면 .schedule-calendar 자체를 렌더하지 않는다. */
+.schedule-calendar-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:180px;padding:28px 20px;text-align:center;color:var(--ink-soft);font-size:13.5px;font-weight:700;line-height:1.6;}
+.schedule-calendar-placeholder small{color:var(--ink-faint);font-size:12px;font-weight:600;}
+
+/* ══════════════ 블로그 (실데이터) ══════════════ */
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+.blog-public-card{display:block;background:#fff;border:1.5px solid #e2e8f8;border-radius:12px;padding:16px 18px;text-decoration:none;color:inherit;box-shadow:0 2px 8px rgba(12,35,138,.05);transition:box-shadow .2s;}
+.blog-public-card:hover{box-shadow:0 6px 18px rgba(12,35,138,.1);}
+.blog-public-card h3{font-size:.98rem;font-weight:800;color:#0a0f2e;margin-bottom:4px;}
+.blog-public-card .muted{font-size:.84rem;color:#4a5872;line-height:1.6;}
+
+/* ══════════════ 버튼 (모달/공용) ══════════════ */
+.btn{border:none;border-radius:9px;padding:9px 16px;font-size:.92rem;font-weight:800;cursor:pointer;font-family:inherit;}
+.btn-primary{background:linear-gradient(135deg,#0C238A,#4A7FD4);color:#fff;}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-secondary{background:#eef2ff;color:#0C238A;border:1px solid #dde6ff;}
+
+/* ══════════════ Educator Story (sec-intro) ══════════════ */
+/* editorial typography + reveal-once. 강제 viewport 높이 없음(콘텐츠 흐름). */
+.intro-wrap.notes{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  overflow:hidden;
+  padding:84px 0;
+  background:var(--bg);
+  color:var(--ink);
+  text-align:center;
+}
+.notes-head{padding:0 5vw;}
+.notes-eyebrow{justify-content:center;margin-bottom:14px;}
+.notes-keyword{display:inline-block;}
+.notes-title{
+  max-width:600px;
+  margin:0 auto;
+  color:var(--ink);
+  font-size:clamp(26px,3.6vw,40px);
+  font-weight:800;
+  line-height:1.24;
+  letter-spacing:-.03em;
+  white-space:pre-line;
+}
+.notes-quote{
+  max-width:520px;
+  margin:16px auto 0;
+  padding:0;
+  border:0;
+  color:var(--ink-soft);
+  font-size:15px;
+  font-weight:500;
+  font-style:italic;
+  line-height:1.7;
+  white-space:pre-line;
+}
+.notes-track.intro-feature-list{
+  max-width:min(800px,92vw);
+  margin:40px auto 0;
+  padding:4px 4px 10px;
+  display:flex;
+  gap:18px;
+  overflow-x:auto;
+  scroll-snap-type:x proximity;
+  scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);
+  mask-image:linear-gradient(90deg,#000 90%,transparent);
+  list-style:none;
+}
+.notes-track.intro-feature-list::-webkit-scrollbar{display:none;}
+.note-card.intro-feature-item{
+  position:relative;
+  flex:0 0 auto;
+  width:250px;
+  min-height:146px;
+  padding:24px 20px;
+  border:0;
+  border-radius:16px;
+  background:var(--bg-soft);
+  box-shadow:none;
+  color:var(--ink);
+  text-align:left;
+  scroll-snap-align:start;
+  transition:background .2s var(--ease),transform .2s var(--ease),box-shadow .2s var(--ease);
+}
+.note-card.intro-feature-item:hover{background:#fff;box-shadow:var(--shadow-sm);transform:translateY(-3px);}
+.note-card .date{color:var(--ink-faint);font-size:11px;font-weight:700;letter-spacing:.02em;}
+.note-card .intro-feature-text{display:block;margin-top:10px;color:var(--ink);font-size:15.5px;font-weight:800;line-height:1.42;letter-spacing:-.01em;word-break:keep-all;}
+.note-card p{margin-top:8px;color:var(--ink-soft);font-size:12.5px;font-weight:500;line-height:1.6;}
+.intro-feature-remove,.intro-feature-add{display:none;}
+.builder-public-preview .intro-feature-remove{
+  position:absolute;
+  top:10px;
+  right:10px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+  border:none;
+  border-radius:50%;
+  background:rgba(220,38,38,.12);
+  color:#dc2626;
+  font-size:.72rem;
+  cursor:pointer;
+}
+.builder-public-preview .intro-feature-remove:hover{background:#dc2626;color:#fff;}
+.builder-public-preview .intro-feature-add{
+  display:inline-flex;
+  align-self:center;
+  align-items:center;
+  gap:5px;
+  margin:18px auto 0;
+  padding:6px 12px;
+  border:1px dashed #4A7FD4;
+  border-radius:999px;
+  background:rgba(74,127,212,.08);
+  color:#0C238A;
+  font-size:.80rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.builder-public-preview .intro-feature-add:hover{background:rgba(74,127,212,.16);}
+.builder-public-preview [data-intro-feature-item],.builder-public-preview [data-intro-feature-body]{cursor:text;border-radius:6px;outline:2px dashed transparent;outline-offset:2px;transition:outline .15s ease,background .15s ease;}
+.builder-public-preview [data-intro-feature-item]:hover,.builder-public-preview [data-intro-feature-body]:hover{outline-color:rgba(250,204,21,.6);background:rgba(250,204,21,.1);}
+.builder-public-preview [data-intro-feature-item]:focus,.builder-public-preview [data-intro-feature-body]:focus{outline:3px solid #facc15;background:rgba(250,204,21,.16);}
+/* 본문이 비면 클릭할 면적이 사라져 편집에 들어갈 수 없다. 빌더에서만 안내 문구로 자리를 지킨다. */
+.builder-public-preview [data-intro-feature-body]:empty::before{content:'설명을 입력하세요';color:var(--ink-faint);}
+.notes-hint{margin-top:18px;color:var(--ink-faint);font-size:11.5px;font-weight:700;}
+/* ══════════════ 과목/커리큘럼 카드 (실데이터) ══════════════ */
+.subject-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+.subject-card{background:#fff;border:1.5px solid #e2e8f8;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(12,35,138,.05);display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;}
+.subject-card .subject-ico{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#0C238A,#4A7FD4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.28rem;}
+.subject-name{font-size:.95rem;font-weight:900;color:#0a0f2e;}
+.subject-meta{font-size:.78rem;color:#4a5872;}
+
+/* ══════════════ 외부 서비스 연동 (네이버 블로그/스마트스토어) ══════════════ */
+.social-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+/* 카드는 배너 링크(<a>)로도, 미연동 시 <div>로도 렌더된다. 링크일 때 기본 밑줄·색이
+   새지 않도록 명시한다. */
+.social-card{display:block;border:1.5px solid #e2e8f8;border-radius:15px;overflow:hidden;box-shadow:0 4px 14px rgba(12,35,138,.06);background:#fff;text-decoration:none;color:inherit;}
+.social-card-header{padding:13px 15px;display:flex;align-items:center;gap:9px;color:#fff;}
+.social-card-header.blog{background:linear-gradient(135deg,#03C75A,#02a84c);}
+.social-card-header.store{background:linear-gradient(135deg,#0C238A,#1a3ab0);}
+.social-card-header .sc-ico{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;}
+.social-card-header .sc-title{font-size:.90rem;font-weight:800;color:#fff;}
+.social-card-header .sc-sub{font-size:.72rem;color:rgba(255,255,255,.83);}
+.social-preview-card{transition:transform .15s ease,box-shadow .15s ease;}
+.social-preview-card:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(12,35,138,.1);}
+/* ══════════════ 빈 상태(empty state) 공통 ══════════════ */
+/* 수업 영상 / 수업 상품 두 곳의 빈 상태가 제각각이라 하나로 맞춘다.
+   .demo-placeholder 는 두 렌더러(academy_public.js, academy_builder.js)가 emit하는데
+   CSS 정의가 아예 없어 무스타일 좌측 정렬로 렌더되고 있었다.
+   외부연동(.social-empty-preview)은 카드가 배너 한 장이 되면서 빈 상태 골격을 없앴다. */
+.demo-placeholder,
+.lesson-empty{
+  min-height:132px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;
+  border:1.5px dashed #cbd5e1;border-radius:13px;
+  background:linear-gradient(135deg,#f8faff,#eef4ff);
+  text-align:center;color:#4a5872;
+}
+.demo-placeholder,.lesson-empty{padding:28px 20px;}
+/* 아이콘 아래 간격은 컨테이너 gap이 담당한다(margin-bottom 중복 제거) */
+.demo-placeholder .ph-ico{font-size:1.7rem;line-height:1;}
+.demo-placeholder p{margin:0;font-size:.84rem;font-weight:800;}
+.lesson-empty{margin:0;font-size:.92rem;font-weight:800;}
+/* 빌더 과목/대상 모달은 같은 클래스를 임시 로딩 문구로 쓴다(academy_builder.js:1246).
+   거긴 2열 그리드 셀 안이라 박스 처리가 맞지 않고 로딩 후 교체될 때 레이아웃이 튄다. */
+.builder-option-grid>.lesson-empty{
+  grid-column:1/-1;
+  min-height:0;padding:0;border:0;background:none;
+  font-weight:600;
+}
+
+/* ══════════════ 푸터 (학원 정보 자동) ══════════════ */
+.cv-footer{background:#0a0f2e;padding:28px 20px;text-align:center;}
+.cv-footer-info{font-size:.78rem;color:rgba(255,255,255,.66);line-height:1.9;margin-top:10px;}
+.cv-footer-bottom{font-size:.75rem;color:rgba(255,255,255,.59);margin-top:12px;}
+.eh-logo-component.footer-logo{justify-content:center;}
+.eh-logo-component.footer-logo .eh-logo-title{color:rgba(255,255,255,.9);}
+.eh-logo-component.footer-logo .eh-logo-sub{color:rgba(255,255,255,.67);}
+
+/* ══════════════ 데모 게이트 ══════════════ */
+.demo-badge{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:800;color:#8a6d00;background:#fff4cc;border:1px solid #f2d675;border-radius:999px;padding:2px 8px;letter-spacing:.02em;vertical-align:middle;}
+.demo-gate{position:relative;}
+.demo-gate::after{content:'데모 — 준비중';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.84rem;font-weight:800;color:#5a4a00;background:rgba(255,244,204,.5);border:1.5px dashed #e6c34d;border-radius:inherit;pointer-events:none;}
+
+.curriculum-tabs{display:flex;justify-content:center;gap:8px;margin-bottom:22px;flex-wrap:wrap;}
+.curriculum-tabs .market-tab{border:1px solid #dde6ff;background:#fff;color:#333f5c;border-radius:999px;padding:8px 14px;font-size:.86rem;font-weight:900;cursor:pointer;}
+.curriculum-tabs .market-tab.active{background:#0C238A;color:#fff;border-color:#0C238A;}
+.curriculum-hero-card{border-radius:14px;padding:24px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden;}
+.curriculum-hero-card .curriculum-label{font-size:.74rem;font-weight:800;color:rgba(255,255,255,.75);letter-spacing:.1em;margin-bottom:5px;}
+.curriculum-hero-card h3{font-size:1.22rem;font-weight:900;margin-bottom:5px;}
+.curriculum-hero-card p{font-size:.88rem;color:rgba(255,255,255,.83);}
+.flow-bar{margin:14px 0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,#0a0f2e,#0C238A);border-radius:13px;padding:13px;color:#fff;}
+.flow-item{font-size:.80rem;font-weight:900;white-space:nowrap;}
+.flow-sep{opacity:.45;}
+.flow-total{margin-left:4px;border-radius:999px;background:rgba(255,255,255,.15);padding:5px 10px;font-size:.78rem;font-weight:900;}
+.textbook-card{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #e2e8f8;border-radius:13px;padding:12px 14px;margin:12px 0;}
+.tb-img{width:38px;height:38px;border-radius:10px;background:#eef2ff;display:flex;align-items:center;justify-content:center;}
+.tb-badge{font-size:.74rem;font-weight:900;color:#0C238A;background:#eef2ff;border-radius:999px;padding:4px 8px;}
+
+.builder-multiline-text,.academy-multiline-text{white-space:pre-line;}
+
+
+/* ══════════════ 학습 철학(philosophy snap) ══════════════ */
+.philosophy{
+  padding:120px 5vw;
+  background:var(--bg-soft);
+  color:var(--ink);
+}
+.philosophy-inner{max-width:1120px;margin:0 auto;}
+.philosophy-head{margin:0;max-width:600px;text-align:left;}
+.philosophy-eyebrow{justify-content:flex-start;margin-bottom:18px;}
+.philosophy-head h2{
+  margin:0;
+  color:var(--ink);
+  font-size:clamp(26px,3.6vw,40px);
+  font-weight:800;
+  line-height:1.24;
+  letter-spacing:-.03em;
+}
+/* 빌더 캔버스 프리뷰 전용 정적 그리드(공개 페이지는 .f2r-collection--philosophy 횡스크롤). */
+.philosophy-grid{
+  margin-top:52px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+.philosophy .f2r-collection{margin-top:34px;}
+/* 학습 철학 카드 — 공통 디바이스형 프레임 + 핵심 문구 시각 위계 강화. */
+.p-card{
+  display:flex;flex-direction:column;gap:10px;
+  padding:26px 24px;
+  border:3px solid var(--device-rim);
+  border-radius:var(--device-radius);
+  background:#fff;
+  box-shadow:var(--device-shadow);
+}
+.p-card .n{align-self:flex-start;padding:4px 10px;border-radius:999px;background:var(--gold-soft);color:#8a6a1e;font-weight:900;font-size:11px;letter-spacing:.04em;}
+.p-card p{margin:0;color:var(--ink);font-size:17px;font-weight:800;line-height:1.55;letter-spacing:-.02em;word-break:keep-all;}
+#publicView .p-card p{margin:0;}
+@media (max-width:900px){
+  .philosophy{padding:88px 20px;}
+  .philosophy-grid{grid-template-columns:1fr;margin-top:34px;}
+}
+/* 데스크톱: 카드가 다 들어가면 그리드(가로 스크롤·화살표·카운터 숨김) — 기존 2열 느낌 유지. */
+@media (min-width:900px){
+  .f2r-collection--philosophy .f2r-collection-viewport{overflow:visible;}
+  .f2r-collection--philosophy .f2r-collection-track{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;overflow:visible;scroll-snap-type:none;padding-bottom:4px;}
+  .f2r-collection--philosophy .f2r-collection-card{flex:none;max-width:none;}
+  .f2r-collection--philosophy .f2r-collection-head{display:none;}
+  html.js-collection .f2r-collection--philosophy .f2r-collection-card.is-dimmed > *{transform:none;opacity:1;}
+}
+
+/* ══════════════ 학습 철학 Step Progression (승인된 UI) ══════════════ */
+.section-wrap.philosophy-step{
+  padding:100px 5vw;
+  background:var(--bg-soft);
+}
+.philosophy-step-inner{max-width:720px;margin:0 auto;text-align:center;}
+.philosophy-step-head{margin-bottom:40px;}
+.philosophy-step-title{margin:0;color:var(--ink);font-size:clamp(26px,3.6vw,40px);font-weight:800;line-height:1.24;letter-spacing:-.03em;white-space:pre-line;word-break:keep-all;}
+.philosophy-step-card{
+  position:relative;
+  padding:48px 32px;
+  background:#fff;
+  border:3px solid var(--device-rim);
+  border-radius:var(--device-radius);
+  box-shadow:var(--device-shadow);
+}
+.philosophy-step-progress{
+  position:absolute; top:0; left:0; right:0; height:4px; display:flex; background:var(--line); border-radius:var(--device-radius) var(--device-radius) 0 0; overflow:hidden;
+}
+.philosophy-step-bar{
+  flex:1; height:100%; background:linear-gradient(90deg, var(--ultramarine), var(--gold));
+  transform-origin:left center; transform:scaleX(0); transition:transform 0.4s var(--ease);
+}
+.philosophy-step-bar.is-active{transform:scaleX(1);}
+.philosophy-step-content{min-height:120px;display:flex;flex-direction:column;justify-content:center;gap:16px;}
+.philosophy-step-meta{display:flex;align-items:center;justify-content:center;gap:12px;color:var(--ink-faint);font-size:13px;font-weight:700;letter-spacing:.04em;}
+.philosophy-step-label{color:var(--ultramarine);font-weight:900;}
+.philosophy-step-counter{font-variant-numeric:tabular-nums;}
+.philosophy-step-text{color:var(--ink);font-size:clamp(18px,2.8vw,24px);font-weight:800;line-height:1.45;letter-spacing:-.02em;word-break:keep-all;transition:opacity 0.3s var(--ease), transform 0.3s var(--ease);}
+.philosophy-step-text.is-exiting{opacity:0;transform:translateY(10px);}
+.philosophy-step-text.is-entering{opacity:1;transform:translateY(0);}
+.philosophy-step-nav{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:24px;}
+.philosophy-step-indicators{display:flex;gap:8px;}
+.philosophy-step-indicator{
+  width:36px;height:36px;border-radius:50%;border:0;background:var(--line);color:var(--ink-faint);
+  font-size:13px;font-weight:900;cursor:pointer;transition:background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.philosophy-step-indicator:hover{background:var(--accent-soft);color:var(--ultramarine);transform:scale(1.1);}
+.philosophy-step-indicator.is-on{background:var(--ultramarine);color:#fff;box-shadow:0 0 0 4px var(--accent-soft);}
+.philosophy-step-indicator:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+.philosophy-step-arrows{display:flex;gap:8px;}
+.philosophy-step-arrow{
+  width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.philosophy-step-arrow:hover:not(:disabled){background:var(--accent-soft);border-color:var(--accent);transform:scale(1.05);}
+.philosophy-step-arrow:disabled{opacity:0.3;cursor:not-allowed;}
+.philosophy-step-arrow:focus-visible{outline:2px solid var(--ultramarine);outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){
+  .philosophy-step-bar,.philosophy-step-text,.philosophy-step-indicator,.philosophy-step-arrow{transition:none !important;}
+  .philosophy-step-bar.is-active{transform:scaleX(1);}
+}
+@media (max-width:640px){
+  .section-wrap.philosophy-step{padding:72px 20px;}
+  .philosophy-step-card{padding:36px 20px;}
+  .philosophy-step-text{font-size:17px;}
+}
+
+/* ══════════════ 원장 소개 (실데이터/시안 이식) ══════════════ */
+/* 좌 카드 + 우 영상 2열. align-items:stretch로 좌우 컬럼을 둘 중 큰 쪽(대개 텍스트가 긴 카드) 높이에
+   맞춰 영상 박스가 잘리거나 삐죽 나오지 않게 한다. 영상 박스는 세로(9:16)~가로(16:9) 어느 비율이든
+   iframe이 박스를 채우며 letterbox되어 orientation에 자연스럽게 적응한다(별도 방향 감지 불필요). */
+.principal-wrap{background:#fff;}
+.principal-inner{max-width:860px;margin:0 auto;}
+.principal-head{text-align:center;margin-bottom:18px;}
+.principal-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:stretch;}
+.principal-card{background:#fff;border-radius:14px;border:1.5px solid #e2e8f8;padding:22px;box-shadow:0 4px 14px rgba(12,35,138,.06);display:flex;align-items:flex-start;}
+.principal-info{flex:1;min-width:0;}
+.principal-name{font-size:1.1rem;font-weight:900;color:#0a0f2e;margin-bottom:3px;}
+.principal-role{font-size:.80rem;color:#4A7FD4;font-weight:700;background:rgba(74,127,212,.1);border-radius:999px;padding:2px 9px;display:inline-block;margin-bottom:8px;}
+.principal-desc{font-size:.90rem;color:#4a5872;line-height:1.7;margin-bottom:10px;}
+.principal-career{list-style:none;display:flex;flex-direction:column;gap:5px;margin:0;padding:0;}
+.principal-career li{display:flex;align-items:flex-start;gap:6px;font-size:.84rem;color:#333f5c;}
+.principal-career li .li-check{color:var(--ultramarine);font-size:.74rem;font-weight:900;margin-top:3px;flex-shrink:0;}
+.principal-career-text{flex:1;min-width:0;}
+.principal-career-remove,.principal-career-add{display:none;}
+.principal-bottom{margin-top:12px;padding:10px 12px;background:#f5f8ff;border-radius:8px;border-left:3px solid #0C238A;font-size:.87rem;color:#333f5c;line-height:1.6;font-style:italic;}
+/* 영상 박스는 강제 세로 대신 orientation에 맞춰 비율을 유지한다(찌그러짐 없음).
+   기본은 가로(16:9), YouTube Shorts 링크면 세로(9:16). align-self:start로 카드 높이에 늘어나지 않고
+   자기 비율을 지킨다(둘 중 큰 쪽이 행 높이를 정하고, 짧은 쪽은 여백을 둔다). */
+.principal-video-box{position:relative;align-self:start;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1.5px solid #e2e8f8;box-shadow:0 4px 14px rgba(12,35,138,.06);background:#0a0f2e;display:flex;align-items:center;justify-content:center;}
+.principal-video-box.is-portrait{aspect-ratio:9/16;max-width:250px;max-height:min(72svh,460px);margin:0 auto;}
+.principal-video-frame{position:absolute;inset:0;width:100%;height:100%;border:0;}
+/* academy_brand.css 의 광역 규칙 `#publicView video{height:auto;aspect-ratio:16/9;object-fit:cover}`
+   가 자기 비율을 관리하는 원장 소개 영상까지 덮어써(세로 영상이 16/9 로 강제되고 height:auto 로
+   position:absolute inset:0 fill 이 깨져) 박스 상단에만 영상이 뜨고 아래에 큰 빈 남색 배경이
+   생겼다. 비율은 박스(.is-portrait 9/16 · 기본 16/9)가 정하고 video 는 그 박스를 채운다. */
+#publicView .principal-video-box video.principal-video-frame{
+  position:absolute;inset:0;width:100%;height:100%;
+  aspect-ratio:auto;object-fit:cover;
+}
+.principal-video-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(10,15,46,.55);z-index:2;padding:0 14px;text-align:center;}
+.pv-play{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.15rem;}
+.pv-caption{font-size:.84rem;color:rgba(255,255,255,.78);}
+/* 빌더 전용 편집 어피던스 — 영상 박스 클릭 편집 + 약력 추가/삭제 컨트롤 노출(공개 페이지에선 숨김) */
+.builder-public-preview .principal-video-box{cursor:pointer;}
+.builder-public-preview .principal-career-item{align-items:center;}
+.builder-public-preview .principal-career-remove{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:18px;height:18px;border:none;border-radius:50%;background:rgba(220,38,38,.12);color:#dc2626;font-size:.72rem;cursor:pointer;}
+.builder-public-preview .principal-career-remove:hover{background:#dc2626;color:#fff;}
+.builder-public-preview .principal-career-add{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 11px;border:1px dashed #4A7FD4;border-radius:999px;background:rgba(74,127,212,.08);color:#0C238A;font-size:.80rem;font-weight:800;cursor:pointer;}
+.builder-public-preview .principal-career-add:hover{background:rgba(74,127,212,.16);}
+.builder-public-preview [data-principal-career-item]{cursor:text;border-radius:6px;outline:2px dashed transparent;outline-offset:2px;transition:outline .15s ease,background .15s ease;}
+.builder-public-preview [data-principal-career-item]:hover{outline-color:rgba(250,204,21,.6);background:rgba(250,204,21,.1);}
+.builder-public-preview [data-principal-career-item]:focus{outline:3px solid #facc15;background:rgba(250,204,21,.16);}
+
+/* Phase 4.1: AI 제안 트리거. 정적 마크업에 항상 렌더하되(편집 모드 진입 여부와 무관하게
+   항상 클릭 가능), 공개 페이지에서는 절대 나오면 안 된다 — ctx.aiAssistButton()이 공개
+   페이지에서는 애초에 빈 문자열을 반환하지만, career-add/intro-feature-add와 같은 이중
+   안전장치로 기본 숨김 + .builder-public-preview 안에서만 노출한다. */
+.builder-ai-assist-inline{display:none;}
+.builder-public-preview .builder-ai-assist-inline{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 11px;border:1px solid #4A7FD4;border-radius:999px;background:rgba(74,127,212,.1);color:#0C238A;font-size:.78rem;font-weight:800;cursor:pointer;}
+.builder-public-preview .builder-ai-assist-inline:hover{background:rgba(74,127,212,.2);}
+/* ── sec-videos 수업 영상 재생목록 ── 세로 숏폼 기준이라 메인 플레이어를 세로 비율로 두고,
+   오른쪽 리스트는 스크롤시킨다. 좁은 화면에서는 리스트를 아래로 내려 가로 스크롤로 바꾼다. */
+.video-playlist-layout{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px;align-items:start;}
+.video-main{background:#0b1020;border-radius:14px;overflow:hidden;}
+.video-main-player{display:block;width:100%;max-height:min(70vh,620px);background:#0b1020;}
+.video-playlist{display:flex;flex-direction:column;gap:8px;max-height:min(70vh,620px);overflow-y:auto;}
+.video-playlist-item{position:relative;display:block;width:100%;padding:0;border:2px solid transparent;border-radius:10px;background:none;cursor:pointer;overflow:hidden;transition:border-color .15s;}
+.video-playlist-item:hover{border-color:rgba(12,35,138,.35);}
+.video-playlist-item.active{border-color:#0C238A;}
+.video-playlist-thumb{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#e8ecf5;}
+.video-playlist-thumb-placeholder{display:grid;place-items:center;font-size:1.7rem;color:#667085;}
+.video-playlist-meta{position:absolute;inset:auto 0 0 0;display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 8px;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;font-size:.74rem;font-weight:800;}
+@media (max-width:720px){
+  .video-playlist-layout{grid-template-columns:1fr;}
+  .video-playlist{flex-direction:row;max-height:none;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;}
+  .video-playlist-item{flex:0 0 132px;}
+}
+
+/* 신청 모달은 #publicView 밖에 있어 공통 box-sizing reset의 적용을 받지 않는다. */
+#applyModal>div{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow-y:auto;}
+#consultModal>div{box-sizing:border-box;max-height:calc(100dvh - 32px);overflow-y:auto;}
+
+/* 상담 신청 모달의 연락 수단 행 */
+.consult-contact-option{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;margin-bottom:12px;padding:14px 16px;border:1px solid #e5e7eb;border-radius:10px;color:#1a1a2e;font-size:15px;font-weight:600;text-decoration:none;transition:border-color .15s,background .15s;}
+.consult-contact-option:hover{border-color:#0C238A;background:#f8faff;}
+.consult-contact-option:last-child{margin-bottom:20px;}
+.consult-contact-icon{font-size:22px;line-height:1;}
+.consult-contact-text{display:flex;flex-direction:column;min-width:0;text-align:left;}
+.consult-contact-value{color:#6b7280;font-size:13px;font-weight:400;overflow-wrap:anywhere;}
+
+/* ══════════════ 공개 페이지 반응형 ══════════════ */
+@media(max-width:768px){
+  .cv-gnb{height:auto;min-height:62px;grid-template-columns:minmax(0,1fr) auto;padding:9px 18px;}
+  .cv-gnb>.eh-logo-component{grid-column:1;min-width:0;overflow:hidden;}
+  .cv-gnb>.cv-nav{grid-column:2;}
+  .cv-gnb .eh-logo-text-area{min-width:0;}
+  .cv-gnb .eh-logo-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .cv-gnb .eh-logo-symbol,.cv-gnb .eh-logo-symbol img{max-width:120px;}
+  .cv-nav>a:not(.cv-btn-owner){display:none;}
+  .section-wrap{padding:32px 18px;}
+  .principal-grid,.social-grid{grid-template-columns:1fr;}
+  .principal-video-box.is-portrait{max-width:240px;}
+}
+
+@media(max-width:480px){
+  .cv-gnb{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px;gap:8px;}
+  .cv-gnb .eh-logo-component{gap:8px;}
+  .cv-gnb .eh-logo-symbol,.cv-gnb .eh-logo-symbol img{max-width:76px;}
+  .cv-gnb .eh-logo-title{font-size:.92rem;}
+  .cv-nav{min-width:0;}
+  .cv-btn-primary,.cv-btn-owner{padding:7px 10px;font-size:.78rem;border-radius:9px;}
+  .cv-hero-badges{margin-bottom:14px;}
+  .cv-hero-badges .badge{font-size:.75rem;}
+  .cv-hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;}
+  .hero-stat{min-width:0;text-align:center;}
+  .hero-stat-num{font-size:1.08rem;overflow-wrap:anywhere;}
+  .hero-stat-label{font-size:.75rem;}
+  .section-wrap{padding:28px 16px;}
+  .section-header{margin-bottom:18px;}
+  .section-title{font-size:1.28rem;}
+  .section-sub{font-size:.86rem;line-height:1.6;}
+  .principal-desc{overflow-wrap:anywhere;}
+  .principal-card{padding:18px;}
+  .principal-info{width:100%;}
+  .principal-video-box.is-portrait{max-width:220px;}
+  .subject-grid,.blog-grid{grid-template-columns:1fr;}
+  .social-card-header,.social-card-body{padding:12px;}
+  .map-thumb-label{max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;}
+  .video-playlist-item{flex-basis:116px;}
+  .demo-placeholder,.lesson-empty{padding:22px 16px;}
+  #applyModal>div{width:calc(100% - 24px)!important;padding:20px!important;max-height:calc(100dvh - 24px);}
+  #applyModal>div>div:last-child{display:grid!important;grid-template-columns:1fr 1fr;}
+  #consultModal>div{width:calc(100% - 24px)!important;padding:22px 18px!important;max-height:calc(100dvh - 24px);}
+}
+
+/* ══════════════ V8 히어로·소개 반응형 (시안 원본 브레이크포인트) ══════════════
+   이 두 섹션은 시안이 980/760이라는 자체 경계를 쓴다. 페이지 공용 768/480과 달라
+   섞으면 어느 쪽도 시안과 맞지 않는다 — 시안 수치를 그대로 옮겨 따로 둔다.
+   공용 블록보다 뒤에 와야 겹치는 구간에서 이쪽이 이긴다. */
+@media (max-width:980px){
+  .hero-grid{grid-template-columns:1fr;}
+  /* 시안은 좁아지면 원장 사진을 텍스트 위로 끌어올린다. */
+  .hero .tablet{max-width:280px;order:-1;}
+}
+@media (max-width:760px){
+  .hero{padding-top:110px;}
+  .classes-wrap .classes-container,.lesson-schedule-inner{padding-right:20px;padding-left:20px;}
+  .section-head h2{font-size:clamp(36px,10vw,48px);}
+  .lesson-product-slot{overflow:hidden;}
+  .toggle-row{align-items:flex-start;}
+}
+
+/* Builder는 iframe 없이 공개 DOM을 축소하므로 viewport media query가 동작하지 않는다.
+   canvas-frame을 inline-size container로 두고 같은 세로형 규칙을 미리보기에도 적용한다. */
+@container(max-width:768px){
+  .builder-public-preview .cv-gnb{display:grid;height:auto;min-height:62px;grid-template-columns:minmax(0,1fr) auto;padding:9px 18px;}
+  .builder-public-preview .cv-gnb>.eh-logo-component{grid-column:1;min-width:0;overflow:hidden;}
+  .builder-public-preview .cv-gnb>.cv-nav{grid-column:2;}
+  .builder-public-preview .cv-gnb .eh-logo-text-area{min-width:0;}
+  .builder-public-preview .cv-gnb .eh-logo-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .builder-public-preview .cv-gnb .eh-logo-symbol,.builder-public-preview .cv-gnb .eh-logo-symbol img{max-width:120px;}
+  .builder-public-preview .cv-nav>a:not(.cv-btn-owner){display:none;}
+  .builder-public-preview .hero{padding:60px 18px 32px;}
+  .builder-public-preview .hero-grid{grid-template-columns:1fr;}
+  .builder-public-preview .hero .tablet{max-width:280px;order:-1;}
+  .builder-public-preview .hero h1{font-size:1.7rem;}
+  .builder-public-preview .section-wrap{padding:32px 18px;}
+  .builder-public-preview .intro-grid,.builder-public-preview .principal-grid,.builder-public-preview .social-grid{grid-template-columns:1fr;}
+  .builder-public-preview .principal-video-box.is-portrait{max-width:240px;}
+}
+
+@container(max-width:720px){
+  .builder-public-preview .video-playlist-layout{grid-template-columns:1fr;}
+  .builder-public-preview .video-playlist{flex-direction:row;max-height:none;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;}
+  .builder-public-preview .video-playlist-item{flex:0 0 132px;}
+}
+
+@container(max-width:480px){
+  .builder-public-preview .cv-gnb{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px;gap:8px;}
+  .builder-public-preview .cv-gnb .eh-logo-component{gap:8px;}
+  .builder-public-preview .cv-gnb .eh-logo-symbol,.builder-public-preview .cv-gnb .eh-logo-symbol img{max-width:76px;}
+  .builder-public-preview .cv-gnb .eh-logo-title{font-size:.92rem;}
+  .builder-public-preview .cv-btn-primary,.builder-public-preview .cv-btn-owner{padding:7px 10px;font-size:.78rem;border-radius:9px;}
+  .builder-public-preview .hero{padding:52px 16px 28px;}
+  .builder-public-preview .hero h1{font-size:1.55rem;}
+  .builder-public-preview .cv-hero-badges{margin-bottom:14px;}
+  .builder-public-preview .cv-hero-badges .badge{font-size:.75rem;}
+  .builder-public-preview .cv-hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;}
+  .builder-public-preview .hero-stat{min-width:0;text-align:center;}
+  .builder-public-preview .hero-stat-num{font-size:1.08rem;overflow-wrap:anywhere;}
+  .builder-public-preview .hero-stat-label{font-size:.75rem;}
+  .builder-public-preview .section-wrap{padding:28px 16px;}
+  .builder-public-preview .section-header{margin-bottom:18px;}
+  .builder-public-preview .section-title{font-size:1.28rem;}
+  .builder-public-preview .section-sub{font-size:.86rem;line-height:1.6;}
+  .builder-public-preview .intro-grid{gap:20px;}
+  .builder-public-preview .principal-card{padding:18px;}
+  .builder-public-preview .principal-info{width:100%;}
+  .builder-public-preview .principal-video-box.is-portrait{max-width:220px;}
+  .builder-public-preview .subject-grid,.builder-public-preview .blog-grid{grid-template-columns:1fr;}
+  .builder-public-preview .map-thumb-label{max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;}
+  .builder-public-preview .video-playlist-item{flex-basis:116px;}
+  .builder-public-preview .demo-placeholder,.builder-public-preview .lesson-empty{padding:22px 16px;}
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 새출발 관리</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_students.css">
+  <style>
+    .newstart-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .newstart-link { display: block; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; text-decoration: none; box-shadow: 0 4px 20px rgba(0,0,0,0.05); transition: border-color .15s; }
+    .newstart-link:hover { border-color: #90cdf4; }
+    .newstart-link h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #2d3748; }
+    .newstart-link p { margin: 0; font-size: 13px; color: #718096; line-height: 1.5; }
+    .newstart-soon { border-style: dashed; opacity: .75; }
+    .newstart-soon h3, .newstart-soon p { color: #a0aec0; }
+    @media (max-width: 640px) { .newstart-links { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('newstart')}"></th:block>
+
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">새출발 관리</div>
+      <div class="section-subtitle">새출발기금 부실차주 서비스 운영 도구. 미구현 기능은 자리만 표시한다(가짜 데이터 없음).</div>
+    </div>
+
+    <div class="newstart-links">
+      <a class="newstart-link" href="/newstart/chat">
+        <h3>회원 채팅</h3>
+        <p>회원과의 대화 확인 및 운영자 답변. 운영자는 "관리자"로 표시되며 타인 메시지 삭제가 가능하다.</p>
+      </a>
+      <a class="newstart-link" href="/newstart">
+        <h3>서비스 화면 보기</h3>
+        <p>실제 회원이 보는 /newstart 화면 확인.</p>
+      </a>
+      <a class="newstart-link" href="/admin/newstart/thanks-exceptions">
+        <h3>감사회원 인증 예외</h3>
+        <p>회원 셀프 인증이 자동으로 끝나지 못한 건(이메일 없음·중복·충돌·반복 실패 등)만 모아 처리한다. 정상 인증은 여기 나오지 않는다.</p>
+      </a>
+      <a class="newstart-link" href="/admin/newstart/thanks-roster">
+        <h3>감사회원 명단 관리</h3>
+        <p>네이버 카페 감사멤버를 명단에 수동 등록합니다. 등록 즉시 회원가입 시 자동 매칭에 반영됩니다.</p>
+      </a>
+      <a class="newstart-link" href="/admin/newstart/consultations">
+        <h3>감사회원 1:1 상담함</h3>
+        <p>회원이 비공개로 남긴 개인 상담을 확인하고, 필요하면 지피지기 조사(익명화)로 도움을 받아 운영자 답변을 전한다. 다른 회원에게는 보이지 않는다.</p>
+      </a>
+      <a class="newstart-link" href="/admin/newstart/updates">
+        <h3>최신 업데이트 관리</h3>
+        <p>공식자료 후보를 REVIEW로 확인하고 게시·거절·보관 처리한다.</p>
+      </a>
+
+      <!-- 확장 예약 영역: 회원/상담/자료/AI 지식베이스/최신 업데이트 관리는 미구현 — 기능이 생기면 같은 그리드에 링크로 추가 -->
+      <div class="newstart-link newstart-soon" aria-disabled="true">
+        <h3>회원 관리</h3>
+        <p>준비 중</p>
+      </div>
+      <div class="newstart-link newstart-soon" aria-disabled="true">
+        <h3>AI 지식베이스</h3>
+        <p>준비 중</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

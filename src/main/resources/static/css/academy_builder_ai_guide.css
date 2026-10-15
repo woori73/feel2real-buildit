@@ -1,0 +1,321 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   AI Guided Academy Builder (Phase 5B)
+
+   Builder 화면 오른쪽에 도킹되는 진행자(Sidekick) 패널. 기존 3-region 레이아웃
+   (.builder-topbar / .left-panel / .canvas-area)을 건드리지 않도록 position:fixed로
+   얹고, 열려 있을 때만 캔버스에 오른쪽 여백을 줘 미리보기가 가려지지 않게 한다.
+   좁은 화면에서는 bottom sheet로 전환한다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ai-guide-width: 340px;
+}
+
+/* 토글 버튼 — topbar tb-actions 안에 들어간다. */
+.ai-guide-toggle {
+  font-size: .72rem; font-weight: 800; padding: 5px 12px; border-radius: 6px;
+  cursor: pointer; border: 1px solid rgba(122, 174, 240, .5);
+  background: linear-gradient(135deg, rgba(12, 35, 138, .65), rgba(74, 127, 212, .5));
+  color: #eaf1ff; display: inline-flex; align-items: center; gap: 6px;
+  transition: filter .15s;
+}
+.ai-guide-toggle:hover { filter: brightness(1.12); }
+.ai-guide-toggle[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35); }
+
+/* 패널 본체 */
+.ai-guide-panel {
+  position: fixed; top: 48px; right: 0; bottom: 0; width: var(--ai-guide-width);
+  z-index: 180; display: flex; flex-direction: column;
+  background: #0f172a; border-left: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: -18px 0 48px rgba(0, 0, 0, .38);
+  transform: translateX(100%); transition: transform .22s cubic-bezier(.4, 0, .2, 1);
+  color: rgba(255, 255, 255, .9);
+}
+.ai-guide-panel.is-open { transform: translateX(0); }
+body.ai-guide-open .canvas-area { padding-right: calc(var(--ai-guide-width) + 24px); }
+
+.ai-guide-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, .08); flex-shrink: 0;
+}
+.ai-guide-head strong { font-size: .84rem; font-weight: 900; letter-spacing: -.01em; }
+.ai-guide-head .ai-guide-sub { font-size: .62rem; color: rgba(255, 255, 255, .5); font-weight: 700; }
+.ai-guide-head-spacer { flex: 1; }
+.ai-guide-icon-btn {
+  border: 0; background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .72);
+  width: 28px; height: 28px; border-radius: 8px; cursor: pointer; font-size: .8rem;
+}
+.ai-guide-icon-btn:hover { background: rgba(255, 255, 255, .12); color: #fff; }
+
+/* 진행률 */
+.ai-guide-progress { padding: 10px 14px 4px; flex-shrink: 0; }
+.ai-guide-progress-bar {
+  height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .1); overflow: hidden;
+}
+.ai-guide-progress-fill {
+  height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4A7FD4, #7aaef0);
+  transition: width .25s ease;
+}
+.ai-guide-progress-label {
+  margin-top: 6px; font-size: .64rem; font-weight: 800; color: rgba(255, 255, 255, .55);
+  display: flex; justify-content: space-between;
+}
+
+/* 스텝 목록(칩) */
+.ai-guide-steps {
+  display: flex; gap: 5px; flex-wrap: wrap; padding: 8px 14px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .07); flex-shrink: 0;
+}
+.ai-guide-step-chip {
+  font-size: .6rem; font-weight: 800; padding: 3px 7px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .04);
+  color: rgba(255, 255, 255, .55); cursor: pointer;
+}
+.ai-guide-step-chip.is-current {
+  border-color: rgba(122, 174, 240, .8); color: #eaf1ff; background: rgba(74, 127, 212, .22);
+}
+.ai-guide-step-chip.is-done { color: #6ee7b7; border-color: rgba(110, 231, 183, .4); }
+.ai-guide-step-chip.is-skipped { color: rgba(255, 255, 255, .38); text-decoration: line-through; }
+
+/* 본문(대화/질문/추천) */
+.ai-guide-body { flex: 1; overflow-y: auto; padding: 14px; }
+.ai-guide-body::-webkit-scrollbar { width: 5px; }
+.ai-guide-body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .12); border-radius: 4px; }
+
+.ai-guide-bubble {
+  background: rgba(74, 127, 212, .14); border: 1px solid rgba(74, 127, 212, .28);
+  border-radius: 12px; padding: 11px 13px; font-size: .8rem; line-height: 1.6;
+  color: rgba(255, 255, 255, .92); margin-bottom: 12px; white-space: pre-line;
+}
+.ai-guide-step-title {
+  font-size: .66rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
+  color: #7aaef0; margin-bottom: 6px;
+}
+.ai-guide-question { font-size: .82rem; font-weight: 700; line-height: 1.55; margin-bottom: 10px; }
+
+.ai-guide-style-options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.ai-guide-style-option {
+  text-align: left; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .05);
+  color: rgba(255, 255, 255, .86); border-radius: 10px; padding: 9px 11px; font-size: .78rem;
+  font-weight: 700; cursor: pointer;
+}
+.ai-guide-style-option:hover { border-color: rgba(122, 174, 240, .7); background: rgba(74, 127, 212, .16); }
+.ai-guide-style-option.is-selected { border-color: #7aaef0; background: rgba(74, 127, 212, .24); }
+
+.ai-guide-input {
+  width: 100%; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .05);
+  color: #fff; border-radius: 10px; padding: 9px 11px; font: inherit; font-size: .8rem;
+  outline: none; resize: vertical; min-height: 56px;
+}
+.ai-guide-input:focus { border-color: #7aaef0; box-shadow: 0 0 0 3px rgba(74, 127, 212, .18); }
+
+.ai-guide-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ai-guide-btn {
+  border: 0; border-radius: 9px; padding: 8px 12px; font-size: .74rem; font-weight: 800;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+}
+.ai-guide-btn-primary { background: linear-gradient(135deg, #0C238A, #1a3ab0); color: #fff; }
+.ai-guide-btn-primary:hover { filter: brightness(1.12); }
+.ai-guide-btn-ghost {
+  background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .8);
+  border: 1px solid rgba(255, 255, 255, .14);
+}
+.ai-guide-btn-ghost:hover { background: rgba(255, 255, 255, .12); }
+.ai-guide-btn:disabled { opacity: .5; cursor: progress; }
+
+/* §2 — 추천안 캐러셀. 한 번에 1개만. 세로로 길게 쌓지 않으므로 말풍선이 뷰포트 밖으로 밀리지 않는다. */
+.ai-guide-candidates { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.ai-guide-candidate-counter {
+  font-size: .64rem; font-weight: 800; letter-spacing: .04em; color: rgba(255, 255, 255, .55);
+}
+.ai-guide-candidate {
+  border: 1px solid rgba(255, 255, 255, .14); border-radius: 11px; padding: 10px 12px;
+  background: rgba(255, 255, 255, .04);
+}
+/* 읽기 전용 추천 문구 — 일반 text block(§3). 자체 스크롤바를 만들지 않는다: 캐러셀이라 길어지지 않고,
+   그래도 길면 말풍선 단일 스크롤이 처리한다(§5). */
+.ai-guide-candidate p { font-size: .8rem; line-height: 1.55; margin: 0 0 8px; color: rgba(255, 255, 255, .92); white-space: pre-line; }
+.ai-guide-candidate .ai-guide-btn { padding: 6px 10px; font-size: .7rem; }
+.ai-guide-candidate-nav { display: flex; gap: 6px; }
+.ai-guide-candidate-nav .ai-guide-btn { flex: 1; justify-content: center; padding: 6px 8px; font-size: .68rem; }
+
+.ai-guide-loading { font-size: .76rem; color: rgba(255, 255, 255, .6); padding: 8px 0; }
+.ai-guide-error {
+  font-size: .76rem; color: #fecaca; background: rgba(239, 68, 68, .12);
+  border: 1px solid rgba(248, 113, 113, .3); border-radius: 9px; padding: 8px 10px; margin-top: 10px;
+}
+.ai-guide-note { font-size: .68rem; color: rgba(255, 255, 255, .45); margin-top: 10px; line-height: 1.5; }
+
+.ai-guide-foot {
+  display: flex; gap: 6px; padding: 10px 14px; border-top: 1px solid rgba(255, 255, 255, .08);
+  flex-shrink: 0;
+}
+.ai-guide-foot .ai-guide-btn { flex: 1; justify-content: center; }
+
+/* 미리보기 안에서 Guide가 가리키는 섹션을 잠깐 강조한다(§8). */
+.ai-guide-section-focus {
+  outline: 3px solid rgba(122, 174, 240, .9) !important; outline-offset: -3px !important;
+  box-shadow: inset 0 0 0 9999px rgba(74, 127, 212, .06) !important;
+  border-radius: 6px; transition: outline .2s ease, box-shadow .2s ease;
+}
+
+/* ── 좁은 화면: bottom sheet ── */
+@media (max-width: 980px) {
+  body.ai-guide-open .canvas-area { padding-right: 24px; }
+  .ai-guide-panel {
+    top: auto; left: 0; right: 0; bottom: 0; width: 100%;
+    height: min(72vh, 560px); border-left: 0; border-top: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 16px 16px 0 0; transform: translateY(100%);
+    box-shadow: 0 -18px 48px rgba(0, 0, 0, .45);
+  }
+  .ai-guide-panel.is-open { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-guide-panel { transition: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STEP 1 — 학원명 / 홈페이지 주소 필드 (dark 패널 기준)
+   ══════════════════════════════════════════════════════════════════════════ */
+.ai-guide-field-label {
+  display: block; font-size: .64rem; font-weight: 800; letter-spacing: .02em;
+  color: rgba(255, 255, 255, .62); margin: 10px 0 4px;
+}
+.ai-guide-field-label:first-child { margin-top: 0; }
+.ai-guide-handle-row { display: flex; align-items: center; gap: 6px; }
+.ai-guide-handle-row .ai-guide-input { flex: 1; min-width: 0; }
+.ai-guide-handle-suffix {
+  font-size: .76rem; font-weight: 700; color: rgba(255, 255, 255, .58); white-space: nowrap;
+}
+.ai-guide-handle-preview {
+  margin: 8px 0 0; font-size: .72rem; color: rgba(255, 255, 255, .55); line-height: 1.5;
+}
+.ai-guide-handle-preview b { color: #eaf1ff; font-weight: 800; }
+.ai-guide-handle-status {
+  margin: 8px 0 0; font-size: .72rem; font-weight: 700; line-height: 1.45;
+  border-radius: 8px; padding: 6px 9px;
+}
+.ai-guide-handle-status[data-tone="muted"],
+.ai-guide-handle-status[data-tone="checking"] {
+  color: rgba(255, 255, 255, .7); background: rgba(255, 255, 255, .06);
+}
+.ai-guide-handle-status[data-tone="error"] {
+  color: #fecaca; background: rgba(239, 68, 68, .14); border: 1px solid rgba(248, 113, 113, .32);
+}
+.ai-guide-handle-status[data-tone="ok"] {
+  color: #a7f3d0; background: rgba(16, 185, 129, .14); border: 1px solid rgba(52, 211, 153, .32);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   밝은 표면(빌디 말풍선) 위 재색상 — Problem 1 근본 원인 수정.
+
+   guideStepInnerHtml() 이 만드는 .ai-guide-* 마크업은 원래 오른쪽 dark 패널
+   (#0f172a)용이라 글자색이 흰색 계열이다. 같은 마크업이 흰색 .bildi-bubble 안
+   .bildi-bubble-step-inner 로 주입되면서 "흰 글씨 on 흰 배경"으로 읽을 수 없었다.
+   여기서 그 컨테이너 안에서만 어두운 잉크로 다시 칠한다(!important 없이 specificity 로).
+   normal / hover / selected / disabled 모두 대비를 확보한다.
+   ══════════════════════════════════════════════════════════════════════════ */
+.bildi-bubble-step-inner {
+  --aig-ink: #1c2742;      /* 본문 텍스트 (on #fff ≈ 13.6:1) */
+  --aig-muted: #55607a;    /* 보조 텍스트 (on #fff ≈ 6.0:1) */
+  --aig-line: rgba(20, 32, 63, .18);
+  --aig-line-strong: rgba(20, 32, 63, .34);
+  --aig-accent: #2f4fb0;
+  --aig-surface: #f4f7ff;
+  color: var(--aig-ink);
+}
+.bildi-bubble-step-inner .ai-guide-question { color: var(--aig-ink); }
+.bildi-bubble-step-inner .ai-guide-note { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-loading { color: var(--aig-muted); }
+
+.bildi-bubble-step-inner .ai-guide-field-label { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-handle-suffix { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-handle-preview { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-handle-preview b { color: var(--aig-accent); }
+
+.bildi-bubble-step-inner .ai-guide-input {
+  color: var(--aig-ink); background: #fff; border-color: var(--aig-line-strong);
+}
+.bildi-bubble-step-inner .ai-guide-input::placeholder { color: rgba(20, 32, 63, .42); }
+.bildi-bubble-step-inner .ai-guide-input:focus {
+  border-color: var(--aig-accent); box-shadow: 0 0 0 3px rgba(47, 79, 176, .16);
+}
+
+.bildi-bubble-step-inner .ai-guide-style-option {
+  color: var(--aig-ink); background: var(--aig-surface); border-color: var(--aig-line);
+}
+.bildi-bubble-step-inner .ai-guide-style-option:hover {
+  border-color: var(--aig-accent); background: #e8effc;
+}
+.bildi-bubble-step-inner .ai-guide-style-option.is-selected {
+  border-color: var(--aig-accent); background: #dfe8fb; color: var(--aig-ink);
+}
+
+.bildi-bubble-step-inner .ai-guide-btn-ghost {
+  color: var(--aig-ink); background: #eef2ff; border-color: var(--aig-line);
+}
+.bildi-bubble-step-inner .ai-guide-btn-ghost:hover { background: #e0e8ff; }
+.bildi-bubble-step-inner .ai-guide-btn:disabled { opacity: .55; }
+
+.bildi-bubble-step-inner .ai-guide-candidate {
+  border-color: var(--aig-line); background: var(--aig-surface);
+}
+.bildi-bubble-step-inner .ai-guide-candidate p { color: var(--aig-ink); }
+.bildi-bubble-step-inner .ai-guide-candidate-counter { color: var(--aig-muted); }
+.bildi-bubble-step-inner .ai-guide-candidate-nav .ai-guide-btn {
+  color: var(--aig-ink); background: #eef2ff; border-color: var(--aig-line);
+}
+.bildi-bubble-step-inner .ai-guide-candidate-nav .ai-guide-btn:disabled { opacity: .45; }
+
+.bildi-bubble-step-inner .ai-guide-error {
+  color: #b42318; background: #fef2f2; border-color: #fecaca;
+}
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="muted"],
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="checking"] {
+  color: var(--aig-muted); background: rgba(20, 32, 63, .06);
+}
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="error"] {
+  color: #b42318; background: #fef2f2; border-color: #fecaca;
+}
+.bildi-bubble-step-inner .ai-guide-handle-status[data-tone="ok"] {
+  color: #047857; background: #ecfdf5; border-color: #a7f3d0;
+}
+
+
+/* Bildi responsive workspace — Guide session과 표시 상태를 분리하고 Preview를 우선한다. */
+.ai-guide-toggle[aria-pressed="false"] { background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.68); }
+.ai-guide-toggle[aria-pressed="true"] { background:linear-gradient(135deg,rgba(12,35,138,.86),rgba(74,127,212,.72)); }
+.bildi-launcher { position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:179;width:82px;min-height:88px;padding:4px 4px 8px;border:1px solid rgba(122,174,240,.55);border-radius:22px;background:rgba(15,23,42,.92);box-shadow:0 16px 42px rgba(0,0,0,.36);color:#eaf1ff;cursor:pointer; }
+.bildi-launcher[hidden],body.ai-guide-open .bildi-launcher { display:none; }
+.bildi-launcher-label { display:block;margin-top:-4px;font-size:.65rem;line-height:1;font-weight:900;white-space:nowrap; }
+#builderBildiStage { position:relative;display:block;width:72px;height:66px;overflow:hidden;pointer-events:none; }
+#builderBildiStage.is-hidden { display:none; }
+#builderBildiStage>.bildi { left:4px!important;top:0!important;width:64px;height:64px;transform:none!important; }
+#builderBildiStage>.world-sky,#builderBildiStage>.bildi-bubble { display:none!important; }
+
+/* 충분한 desktop: 오른쪽 dock 폭만큼 workspace를 실제 확보한다. */
+@media (min-width:1281px) {
+  .ai-guide-panel { top:48px;width:clamp(300px,22vw,360px);transform:translateX(100%);box-shadow:none; }
+  .ai-guide-panel.is-open { transform:translateX(0); }
+  body.ai-guide-open .canvas-area { padding-right:calc(clamp(300px, 22vw, 360px) + 24px); }
+}
+/* Tablet / 좁은 desktop: 기본 collapsed, 요청할 때만 compact drawer. */
+@media (min-width:721px) and (max-width:1280px) {
+  body.ai-guide-open .canvas-area { padding-right:24px; }
+  .ai-guide-panel { top:48px;left:auto;right:0;bottom:0;width:min(360px, 42vw);height:auto;border-radius:16px 0 0 0;transform:translateX(100%);box-shadow:-18px 0 48px rgba(0,0,0,.42); }
+  .ai-guide-panel.is-open { transform:translateX(0); }
+}
+/* Mobile: 작은 launcher, 명시적으로 열었을 때만 bounded bottom sheet. */
+@media (max-width:720px) {
+  .ai-guide-toggle { padding-inline:9px; }
+  .bildi-launcher { right:10px;bottom:max(10px,env(safe-area-inset-bottom));width:68px;min-height:72px;border-radius:19px; }
+  #builderBildiStage { width:58px;height:53px; }
+  #builderBildiStage>.bildi { width:52px;height:52px; }
+  .bildi-launcher-label { font-size:.58rem; }
+  body.ai-guide-open .canvas-area { padding-right:12px; }
+  .ai-guide-panel { top:auto;left:0;right:0;bottom:0;width:100%;height:min(62dvh, 520px);border-radius:18px 18px 0 0;transform:translateY(100%);box-shadow:0 -18px 48px rgba(0,0,0,.44); }
+  .ai-guide-panel.is-open { transform:translateY(0); }
+  .ai-guide-head { padding-block:9px; }
+  .ai-guide-steps { flex-wrap:nowrap;overflow-x:auto; }
+}

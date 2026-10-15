@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 - 부실차주 Wiki</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_newstart_wiki.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('newstartWiki')}"></th:block>
+
+  <main class="main">
+    <!-- Header with Stats -->
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">부실차주 Wiki</h2>
+        <span class="section-hint">공식자료·전자책·감사원·카페사례·실제결과·운영자지식을 지속 축적하는 Knowledge Base</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <a class="btn btn-secondary" href="/api/admin/newstart/wiki/export/all" title="CAFE_COMMENT·CAFE_ARTICLE·OPERATOR_KNOWLEDGE·EBOOK ACTIVE 원본 일괄 다운로드 (ZIP)">⬇ RAG 원본 내보내기</a>
+        <button class="btn btn-primary" onclick="openKnowledgeModal()">+ 지식 등록</button>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid" id="statsGrid">
+      <article class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">전체 지식</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="statActive">0</div>
+        <div class="stat-label">ACTIVE</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-value" id="statReview">0</div>
+        <div class="stat-label">REVIEW 대기</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div class="stat-value" id="statDraft">0</div>
+        <div class="stat-label">DRAFT</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-value" id="statCases">0</div>
+        <div class="stat-label">실제 사례</div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-icon">🔍</div>
+        <div class="stat-value" id="statGaps">0</div>
+        <div class="stat-label">Knowledge Gap</div>
+      </article>
+    </div>
+
+    <!-- REVIEW 검토함 (ADMIN 승인 Workflow) -->
+    <section class="review-queue-section" aria-label="REVIEW 검토함">
+      <div class="section-header">
+        <div>
+          <h3 class="section-title">REVIEW 검토함 <span class="pill pill-review" id="reviewQueueCount">0</span></h3>
+          <span class="section-hint">신규 지식은 REVIEW로만 등록됩니다. 경고 확인 없이 ACTIVE 승인은 되지 않습니다.</span>
+        </div>
+        <button class="btn btn-secondary" type="button" onclick="loadReviewQueue()">새로고침</button>
+      </div>
+      <div id="reviewQueue" class="review-queue" aria-live="polite">
+        <div class="empty-card">불러오는 중...</div>
+      </div>
+    </section>
+
+    <!-- Filters & Search -->
+    <div class="filter-bar">
+      <div class="search-group">
+        <input type="text" id="searchInput" placeholder="제목/내용 검색..." onkeydown="if(event.key==='Enter') loadKnowledge()">
+        <button class="btn btn-secondary" onclick="loadKnowledge()">검색</button>
+      </div>
+      <div class="filter-group">
+        <select id="filterSourceType" onchange="loadKnowledge()">
+          <option value="">전체 출처</option>
+          <option value="OFFICIAL_CURRENT">공식(현행)</option>
+          <option value="OFFICIAL_HISTORICAL">공식(과거)</option>
+          <option value="AUDIT">감사원</option>
+          <option value="EBOOK">전자책</option>
+          <option value="CAFE_ARTICLE">카페 게시글</option>
+          <option value="CAFE_COMMENT">카페 댓글</option>
+          <option value="CASE">실제 사례</option>
+          <option value="OPERATOR_KNOWLEDGE">운영자 지식</option>
+          <option value="DERIVED_RULE">파생 규칙</option>
+          <option value="RULE">운영 규칙</option>
+        </select>
+        <select id="filterCategory" onchange="loadKnowledge()">
+          <option value="">전체 카테고리</option>
+          <option value="추심/민원샘플">추심/민원 샘플</option>
+          <option value="부실우려">부실우려</option>
+          <option value="부동산/차량등담보">부동산·차량 등 담보</option>
+          <option value="부실차주자격연체추심">부실차주 자격·연체·추심</option>
+          <option value="부실차주신청">부실차주 신청</option>
+          <option value="부실차주임시안부터확정안">부실차주 임시안부터 확정안</option>
+          <option value="재취업재창업감면수업정부지원">재취업·재창업·감면수업 + 정부지원</option>
+          <option value="감면율">감면율</option>
+        </select>
+        <select id="filterStatus" onchange="loadKnowledge()">
+          <option value="">전체 상태</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="REVIEW">REVIEW</option>
+          <option value="DRAFT">DRAFT</option>
+          <option value="ARCHIVED">ARCHIVED</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Knowledge List -->
+    <section id="knowledgeList" class="knowledge-grid" aria-live="polite">
+      <div class="empty-card">불러오는 중...</div>
+    </section>
+
+    <!-- Knowledge Modal -->
+    <div id="knowledgeModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-dialog knowledge-modal" role="dialog" aria-modal="true" aria-labelledby="knowledgeFormTitle">
+        <div class="modal-header">
+          <h2 id="knowledgeFormTitle" class="modal-title">지식 등록</h2>
+          <button class="modal-close" type="button" onclick="closeKnowledgeModal()" aria-label="닫기">×</button>
+        </div>
+        <div class="modal-body">
+          <form id="knowledgeForm">
+            <input id="knowledgeId" type="hidden">
+            <div class="form-grid">
+              <div class="field full"><label for="kTitle">제목 <span class="required">*</span></label><input id="kTitle" required placeholder="지식 제목"></div>
+              <div class="field"><label for="kSourceType">출처 유형 <span class="required">*</span></label>
+                <select id="kSourceType" required>
+                  <option value="">선택</option>
+                  <option value="OFFICIAL_CURRENT">공식(현행)</option>
+                  <option value="OFFICIAL_HISTORICAL">공식(과거)</option>
+                  <option value="AUDIT">감사원</option>
+                  <option value="EBOOK">전자책</option>
+                  <option value="CAFE_ARTICLE">카페 게시글</option>
+                  <option value="CAFE_COMMENT">카페 댓글</option>
+                  <option value="CASE">실제 사례</option>
+                  <option value="OPERATOR_KNOWLEDGE">운영자 지식</option>
+                  <option value="DERIVED_RULE">파생 규칙</option>
+          <option value="RULE">운영 규칙</option>
+                </select>
+              </div>
+              <div class="field"><label for="kCategory">카테고리 <span class="required">*</span></label>
+                <select id="kCategory" required>
+                  <option value="">선택</option>
+                  <option value="추심/민원샘플">추심/민원 샘플</option>
+                  <option value="부실우려">부실우려</option>
+                  <option value="부동산/차량등담보">부동산·차량 등 담보</option>
+                  <option value="부실차주자격연체추심">부실차주 자격·연체·추심</option>
+                  <option value="부실차주신청">부실차주 신청</option>
+                  <option value="부실차주임시안부터확정안">부실차주 임시안부터 확정안</option>
+                  <option value="재취업재창업감면수업정부지원">재취업·재창업·감면수업 + 정부지원</option>
+                  <option value="감면율">감면율</option>
+                </select>
+              </div>
+              <div class="field full"><label for="kAuthority">발행/작성 주체</label><input id="kAuthority" placeholder="캠코, 새출발기금, 금감원, 감사원, 전자책, 카페매니저, 커뮤니티회원 등"></div>
+              <div class="field"><label for="kSourceDate">원문 날짜</label><input id="kSourceDate" type="date"></div>
+              <div class="field"><label for="kEffectiveFrom">적용 시작일</label><input id="kEffectiveFrom" type="date"></div>
+              <div class="field"><label for="kEffectiveTo">적용 종료일</label><input id="kEffectiveTo" type="date"></div>
+              <div class="field full"><label for="kTags">태그 (쉼표 구분)</label><input id="kTags" placeholder="감면율, 70세이상, 4인가구, 지역공제"></div>
+              <div class="field full"><label for="kSourceUrl">원문 링크</label><input id="kSourceUrl" type="url" placeholder="https://cafe.naver.com/... 또는 공식 공문 링크"></div>
+              <div class="field full"><label for="kSummary">요약 (2~3줄, AI가 읽기 좋게)</label><textarea id="kSummary" rows="3" placeholder="AI가 답변 생성 시 참고할 핵심 요약"></textarea></div>
+              <div class="field full"><label for="kContent">전체 원문 (마크다운 가능)</label><textarea id="kContent" rows="10" placeholder="전체 정리된 원문"></textarea></div>
+              <div class="field full"><label for="kTags2">연관 사례 ID (쉼표 구분)</label><input id="kRelatedCaseIds" placeholder="예: 5700,5727"></div>
+              <div class="field"><label for="kConfidence">신뢰도</label>
+                <select id="kConfidence">
+                  <option value="HIGH">HIGH</option>
+                  <option value="MEDIUM" selected>MEDIUM</option>
+                  <option value="LOW">LOW</option>
+                </select>
+              </div>
+              <div class="field"><label for="kEffectiveFrom2">적용 시작일</label><input id="kEffectiveFrom2" type="date"></div>
+              <div class="field"><label for="kEffectiveTo2">적용 종료일</label><input id="kEffectiveTo2" type="date"></div>
+              <div class="field"><label for="kVersion">버전</label><input id="kVersion" type="number" value="1" min="1"></div>
+              <div class="field"><label for="kStatus">상태</label>
+                <select id="kStatus">
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="REVIEW">REVIEW</option>
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="ARCHIVED">ARCHIVED</option>
+                </select>
+              </div>
+              <div class="field full"><label for="kRelatedRuleIds">연관 규칙 ID (쉼표 구분)</label><input id="kRelatedRuleIds" placeholder="예: 1,2,3"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" type="button" onclick="closeKnowledgeModal()">취소</button>
+              <button class="btn btn-primary" type="submit">저장</button>
+            </div>
+            <p id="kFormMessage" class="muted" style="margin-top:12px;"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Review Detail Modal -->
+    <div id="reviewModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal-dialog knowledge-modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+        <div class="modal-header">
+          <h2 id="reviewTitle" class="modal-title">검토</h2>
+          <button class="modal-close" type="button" onclick="closeReviewModal()" aria-label="닫기">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="reviewMeta" class="review-meta"></div>
+          <div id="reviewWarnings" class="review-warnings"></div>
+          <div class="field full"><label>근거(evidence)</label><pre id="reviewEvidence" class="evidence"></pre></div>
+          <div class="field full"><label>Provenance (상태 변경 이력)</label><div id="reviewHistory"></div></div>
+          <div class="field full" id="reviewConfirmBox"><label><input id="reviewConfirmed" type="checkbox"> 위 경고를 모두 확인했습니다. 명시적으로 승인합니다.</label></div>
+          <div class="field full"><label for="reviewReason">사유 (승인/보관 필수)</label><textarea id="reviewReason" rows="2" placeholder="검토 사유를 입력하세요"></textarea></div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" type="button" onclick="keepReview()">REVIEW 유지</button>
+            <button class="btn btn-secondary" type="button" onclick="archiveReview()">ARCHIVED 처리</button>
+            <button class="btn btn-primary" type="button" onclick="approveReview()">ACTIVE 승인</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_newstart_wiki.js"></script>
+</body>
+</html>

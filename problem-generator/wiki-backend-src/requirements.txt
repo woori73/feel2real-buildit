@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-docx
+python-multipart
+olefile
+# mcp는 버전을 고정한다. 배포 venv는 python 버전이 안 바뀌면 재생성되지 않고
+# `pip install -r`는 unpinned 요구사항을 upgrade하지 않아, mcp가 오래된 버전에
+# 묶여 tool 스키마 생성 방식이 달라지면 새 MCP tool(save_generated_test)이
+# tool 목록에서 누락될 수 있다. 고정하면 pip가 해당 버전으로 재설치한다.
+mcp==2.1.1

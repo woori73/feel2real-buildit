@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${academyName} + ' | 내신 LIVE 관리'">내신 LIVE 관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/lms_shell.css">
+  <link rel="stylesheet" href="/css/lms_midterm_live.css?v=20260914">
+</head>
+<body>
+<th:block th:replace="~{fragments/_lms_shell :: header}"></th:block>
+
+<div class="lms-layout"
+     th:attr="data-handle=${academyHandle},
+              data-lms-base=${lmsBase},
+              data-lms-user=${lmsUserKey},
+              data-authenticated=${lmsAuthenticated}">
+  <th:block th:replace="~{fragments/_lms_shell :: sidebar('midterm-live')}"></th:block>
+
+  <main class="lms-content mtx" th:attr="data-handle=${academyHandle}">
+    <h1 class="page-title">내신 LIVE 관리</h1>
+    <p class="mtx-intro">
+      학부모 공개 페이지(<a th:href="'/eduholic-midterm-2026.html'" target="_blank" rel="noopener">/eduholic-midterm-2026.html</a>)와
+      홈페이지 팝업에 노출될 내용을 관리합니다. 각 항목은 <strong>공개</strong> 체크가 켜진 것만 학부모에게 보입니다.
+    </p>
+
+    <div class="mtx-status" data-mtx-status role="status"></div>
+
+    <div class="tab-bar" data-mtx-tabs>
+      <button type="button" class="active" data-tab="campaign">캠페인</button>
+      <button type="button" data-tab="schools">학교 컬렉션</button>
+      <button type="button" data-tab="materials">자료 Showcase</button>
+      <button type="button" data-tab="logs">업데이트 로그</button>
+      <button type="button" data-tab="live-videos">LIVE 수업 영상</button>
+      <button type="button" data-tab="making">Making-of</button>
+      <button type="button" data-tab="next">Next Exam</button>
+    </div>
+
+    <section class="mtx-panel" data-tab-panel="campaign" data-mtx-campaign></section>
+    <section class="mtx-panel" data-tab-panel="schools" hidden data-mtx-schools></section>
+    <section class="mtx-panel" data-tab-panel="materials" hidden data-mtx-materials></section>
+    <section class="mtx-panel" data-tab-panel="logs" hidden data-mtx-logs></section>
+    <section class="mtx-panel" data-tab-panel="live-videos" hidden data-mtx-live-videos></section>
+    <section class="mtx-panel" data-tab-panel="making" hidden data-mtx-making></section>
+    <section class="mtx-panel" data-tab-panel="next" hidden data-mtx-next></section>
+  </main>
+</div>
+
+<th:block th:replace="~{fragments/_lms_shell :: footer}"></th:block>
+
+<!-- 다른 LMS 화면과 동일한 셸 스크립트 세트(헤더/계정 메뉴 hydration). -->
+<script src="/js/api.js"></script>
+<script src="/js/lms_mock.js"></script>
+<script src="/js/lms_data.js"></script>
+<script src="/js/lms_state.js"></script>
+<script src="/js/lms_shell.js"></script>
+<script src="/js/lms_midterm_live.js?v=20260916-1"></script>
+</body>
+</html>

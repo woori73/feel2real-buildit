@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>관리자 - BUILD IT CHART</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_chart.css?v=20260809-3">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('chart')}"></th:block>
+  <main class="admin-shell chart-admin-shell">
+    <section class="admin-section chart-hero-section">
+      <div class="hero-copy">
+        <p class="eyebrow">GOOGLE EDUCATOR DISCOVERY V2</p>
+        <h1>BUILD IT CHART 관리자</h1>
+        <p>압구정·신사 검색권역에서 CONTENT → PERSON → Deep Search 순서로 후보를 발굴하고, 승인된 교육자만 공개 Chart에 반영합니다.</p>
+      </div>
+      <a class="btn small" href="/chart" target="_blank" rel="noopener">공개 Chart 보기</a>
+    </section>
+
+    <section class="admin-section">
+      <h2>ChatGPT Site tools · Living Archive <span class="muted">PUBLICATION 잠금</span></h2>
+      <p class="hint block">ChatGPT가 지역별 공개 웹을 여러 탐색 관점으로 조사하고 서버는 지역 생명주기·중복·evidence·Score·Review Inbox를 관리합니다. 승인 전에는 공개 Chart가 바뀌지 않으며, 기존 Gemini 검색은 호환·롤백용으로 유지합니다.</p>
+      <div id="siteToolContext" class="preview-box"><p class="empty-note">Site tool 기준을 불러오는 중입니다.</p></div>
+      <div id="siteToolRegions" class="preview-box"><p class="empty-note">다음 미조사 지역을 불러오는 중입니다.</p></div>
+      <div id="siteToolReviewBatches" class="preview-box"><p class="empty-note">관리자 검토 대기 batch를 불러오는 중입니다.</p></div>
+    </section>
+
+    <section class="admin-section">
+      <h2>검색 설정 <span class="muted" id="settingsState">불러오는 중</span></h2>
+      <form id="settingsForm" class="settings-grid origin-settings-grid">
+        <label>검색권역<select id="searchZone"></select></label>
+        <label>후보 수<input id="candidateLimit" type="number" min="1" max="10"></label>
+        <label class="full">포함할 활동<textarea id="includeActivities" rows="2"></textarea></label>
+        <label class="full">제외대상<textarea id="excludedTargets" rows="2"></textarea></label>
+        <label class="check"><input id="deepSearchEnabled" type="checkbox"> 후보별 Deep Search 사용</label>
+        <label class="full">추가 검색 지시<textarea id="extraInstruction" rows="3"></textarea></label>
+        <div class="action-row full">
+          <button class="btn outline small" type="button" id="resetSettings">기본값 복원</button>
+          <button class="btn small" type="submit">검색 설정 저장</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="admin-section">
+      <h2>LLM 키 <span class="muted" id="geminiKeyState">확인 중</span></h2>
+      <p class="hint block">Gemini 또는 ChatGPT(OpenAI) 키를 입력하면 서버 메모리에만 보관합니다. DB/Git에는 저장하지 않으며 서버 재시작 시 사라집니다.</p>
+      <form id="geminiKeyForm" class="key-form llm-key-form">
+        <select id="llmProvider" aria-label="LLM provider">
+          <option value="gemini">Gemini</option>
+          <option value="openai">ChatGPT / OpenAI</option>
+        </select>
+        <input id="geminiApiKey" type="password" autocomplete="off" placeholder="선택한 LLM API key 입력">
+        <button class="btn small" type="submit">키 적용</button>
+        <button class="btn outline small" type="button" id="clearGeminiKey">키 초기화</button>
+      </form>
+    </section>
+
+    <section class="admin-section">
+      <h2>
+        Google 교육자 발굴 V2 — CONTENT → PERSON (압구정·신사)
+        <span class="muted">콘텐츠 발굴 1회 + 후보별 Deep Search · 현재 실행 허용 권역은 압구정·신사뿐입니다</span>
+      </h2>
+      <div class="zone-tabs" id="zoneTabs"></div>
+      <div class="preview-box" id="zonePreviewBox"></div>
+      <div class="action-row">
+        <button class="btn small" id="runDiscovery">압구정·신사 Google 교육자 발굴 실행 (V2)</button>
+        <button class="btn outline small" type="button" disabled>V2 검색 품질 벤치마크 실행 (후속)</button>
+        <span class="hint" id="runState">대기 중</span>
+      </div>
+      <div id="runResult"></div>
+    </section>
+
+    <section class="admin-section" style="border-bottom:none">
+      <h2>
+        V2 후보 검토 &amp; 승인/제외
+        <span class="muted">Google 발견 → 관리자 승인 → Educator DB → Ranking → 공개 Chart</span>
+      </h2>
+      <div class="action-row">
+        <button class="btn outline small" id="refreshCandidates">후보 새로고침</button>
+        <span class="hint" id="candidateCountHint">후보 목록을 불러오는 중입니다.</span>
+      </div>
+      <div id="candidateList" aria-live="polite"></div>
+    </section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/admin_chart.js?v=20260809-3"></script>
+  <script src="/js/admin_chart_site_tools.js?v=20260827-1"></script>
+</body>
+</html>

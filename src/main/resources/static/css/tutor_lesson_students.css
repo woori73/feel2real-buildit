@@ -1,0 +1,89 @@
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+    .topbar {
+      background: #1a202c;
+      color: #fff;
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar h1 { font-size: 18px; font-weight: 700; }
+    .topbar .badge {
+      display: inline-block; padding: 3px 8px;
+      background: #2d3748; border-radius: 10px;
+      font-size: 11px; font-weight: 700; margin-left: 10px;
+    }
+    .topbar .user-info { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+    .btn-profile,
+    .btn-logout {
+      background: transparent; color: #fff;
+      border: 1px solid #4a5568; border-radius: 6px;
+      padding: 6px 12px; font-size: 12px; cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-profile:hover,
+    .btn-logout:hover { background: #2d3748; }
+
+    .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+    .section-header { margin-bottom: 24px; }
+    .section-title { font-size: 22px; font-weight: 700; color: #1a202c; }
+    .section-subtitle { font-size: 13px; color: #718096; margin-top: 4px; }
+
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .student-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      transition: box-shadow 0.2s, transform 0.15s;
+    }
+    .student-card:hover {
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+      border-color: #cbd5e0;
+    }
+    .student-name {
+      font-size: 16px; font-weight: 700; color: #1a202c; margin-bottom: 8px;
+    }
+    .conversation-link,
+    .community-link {
+      display: inline-block;
+      font-size: 13px; color: #3182ce;
+      text-decoration: none;
+      padding: 4px 10px;
+      border: 1px solid #bee3f8;
+      border-radius: 6px;
+      background: #ebf8ff;
+      margin-top: 8px;
+    }
+    .conversation-link:hover, .community-link:hover { background: #bee3f8; }
+    .no-conversation {
+      font-size: 12px; color: #a0aec0; margin-top: 8px;
+    }
+    .applied-at {
+      font-size: 12px; color: #a0aec0; margin-top: 10px;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 0;
+      color: #a0aec0;
+      font-size: 14px;
+    }
+
+
+    @media (max-width: 768px) {
+      body { overflow-x: hidden; }
+      .container { margin: 20px auto; padding: 0 14px; }
+      .student-grid { grid-template-columns: 1fr; }
+      .student-card { padding: 18px; }
+      .section-header { margin-bottom: 18px; }
+    }
+

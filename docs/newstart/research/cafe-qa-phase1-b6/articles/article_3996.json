@@ -1,0 +1,104 @@
+{
+ "articleId": 3996,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "임시안 나왔어요",
+ "author": {
+  "nickname": "아이소원",
+  "memberGrade": "성실멤버"
+ },
+ "createdAt": "2026-02-02T11:40:11+00:00",
+ "createdAtMs": 1770032411063,
+ "viewCount": 183,
+ "commentCount": 5,
+ "sourceUrl": "https://cafe.naver.com/newhopero/3996",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "1월5일인가? 6일인가에 신청하고",
+  "늦어질꺼란 카톡 오고 오늘 임시안 나왔네요.",
+  "75%감면이라고 떴는데 기다려보면 조금 더 감면될수도 있겠죠? 교육받아 추가감면 받고싶은데 교육받는곳이 아직 안뜨는거같네요. 언능 떠라떠라🙏"
+ ],
+ "bodyNormalized": "1월5일인가? 6일인가에 신청하고\n늦어질꺼란 카톡 오고 오늘 임시안 나왔네요.\n75%감면이라고 떴는데 기다려보면 조금 더 감면될수도 있겠죠? 교육받아 추가감면 받고싶은데 교육받는곳이 아직 안뜨는거같네요. 언능 떠라떠라🙏",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-6e65448b-002b-11f1-be44-599c076d3e46\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-6e65448c-002b-11f1-be44-757230168e9d\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ee4f8b50-002b-11f1-be44-a36229dadce1\">1월5일인가? 6일인가에 신청하고</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-80bba1be-002b-11f1-be44-6951fa07c14f\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ee4f8b51-002b-11f1-be44-4f6626ad9c19\">늦어질꺼란 카톡 오고 오늘 임시안 나왔네요.</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-8bc31f0f-002b-11f1-be44-afbf9c2fd93f\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-ee4f8b52-002b-11f1-be44-5d9b2a619cc8\">75%감면이라고 떴는데 기다려보면 조금 더 감면될수도 있겠죠? 교육받아 추가감면 받고싶은데 교육받는곳이 아직 안뜨는거같네요. 언능 떠라떠라🙏</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-6e65448b-002b-11f1-be44-599c076d3e46\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 55142634,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-02-02T12:37:49.000Z",
+   "createdAtMs": 1770035869000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 55143693,
+   "parentCommentId": null,
+   "author": "부산사나이",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-02-02T14:36:36.000Z",
+   "createdAtMs": 1770042996000,
+   "text": "임시안 축하축하드림니다\n열심히달려보입시더\n언제나 화이팅입니다.",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 55143707,
+   "parentCommentId": 55143693,
+   "author": "아이소원",
+   "memberGrade": "성실멤버",
+   "createdAt": "2026-02-02T14:37:27.000Z",
+   "createdAtMs": 1770043047000,
+   "text": "부산사나이님도 화이팅이요",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 55143720,
+   "parentCommentId": null,
+   "author": "부산사나이",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-02-02T14:39:08.000Z",
+   "createdAtMs": 1770043148000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 55262897,
+   "parentCommentId": null,
+   "author": "해바라기77",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-02-14T07:04:08.000Z",
+   "createdAtMs": 1771052648000,
+   "text": "축하드려요 ~~",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

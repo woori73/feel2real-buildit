@@ -1,0 +1,6 @@
+/* 장바구니 전용. 테이블/라디오 공통 규칙은 lms_shell.css. */
+
+.total-row{margin-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.total-row .amount{font-size:30px;font-weight:800}
+.delivery-box{margin-top:24px;padding-top:24px;border-top:1px solid var(--border)}
+.shipping-note{font-size:13px;color:var(--text-light);margin-top:6px}

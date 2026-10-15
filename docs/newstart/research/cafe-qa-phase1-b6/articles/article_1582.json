@@ -1,0 +1,128 @@
+{
+ "articleId": 1582,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려",
+ "author": {
+  "nickname": "봄을기다리며",
+  "memberGrade": "일반멤버"
+ },
+ "createdAt": "2025-11-18T06:01:42+00:00",
+ "createdAtMs": 1763445702007,
+ "viewCount": 122,
+ "commentCount": 7,
+ "sourceUrl": "https://cafe.naver.com/newhopero/1582",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "상거래간 채권이 아직 서울보증 보험으로 넘어가지 않았습니다 넘어 가기전에 부실우려 신청가능 한가요?? 부실우려 심사 하는동안 보증보험으로 넘어가면 이 채무도 포함되는건가요?? 물류회사 식자제 채무입니다"
+ ],
+ "bodyNormalized": "상거래간 채권이 아직 서울보증 보험으로 넘어가지 않았습니다 넘어 가기전에 부실우려 신청가능 한가요?? 부실우려 심사 하는동안 보증보험으로 넘어가면 이 채무도 포함되는건가요?? 물류회사 식자제 채무입니다",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-be197e6e-c443-11f0-b906-d170d4c9709e\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-be197e6f-c443-11f0-b906-1f6f372aa2d0\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-0e3f39c5-c444-11f0-b906-b1dc8212e4cd\">상거래간 채권이 아직 서울보증 보험으로 넘어가지 않았습니다 넘어 가기전에 부실우려 신청가능 한가요?? 부실우려 심사 하는동안 보증보험으로 넘어가면 이 채무도 포함되는건가요?? 물류회사 식자제 채무입니다</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-be197e6e-c443-11f0-b906-d170d4c9709e\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54491734,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-18T06:15:55.000Z",
+   "createdAtMs": 1763446555000,
+   "text": "어제 쓰신 글을 다시 보니, 카드 결제 적어놓으셨네요.\n\n신복위 상담은 받으셨는지요?\n\n카드 결제 가능하시면 카드로 결제하시고 카드 결제는 부실차주 매입 대상이 되십니다.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54492541,
+   "parentCommentId": 54491734,
+   "author": "봄을기다리며",
+   "memberGrade": "일반멤버",
+   "createdAt": "2025-11-18T07:54:11.000Z",
+   "createdAtMs": 1763452451000,
+   "text": "신복위 전화 연결 자체가 안되네요 ㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54492549,
+   "parentCommentId": 54491734,
+   "author": "봄을기다리며",
+   "memberGrade": "일반멤버",
+   "createdAt": "2025-11-18T07:55:09.000Z",
+   "createdAtMs": 1763452509000,
+   "text": "일단 부실차주 신청하고 상거래 채무 넘어가면 추가로 보증재단에 추가로 하면 안될가요",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54492613,
+   "parentCommentId": 54491734,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-18T08:06:49.000Z",
+   "createdAtMs": 1763453209000,
+   "text": "전화가 안되시면 신복위 방문을 해야 할 듯 합니다. 상거래 채권과 서울보증보험 건은 제가 확실히 알수 없습니다.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54493190,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-18T08:39:39.000Z",
+   "createdAtMs": 1763455179000,
+   "text": "신용보증보험으로 넘어가지 않더라도 다른 채권을 연체 10일 하시면 부실우려 신청은 가능하십니다.\n\n해당 채권이 부실차주에 매입되는 지는 제가 확실히 알수가 없네요.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54493319,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-18T08:45:15.000Z",
+   "createdAtMs": 1763455515000,
+   "text": "",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54493330,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-11-18T08:45:46.000Z",
+   "createdAtMs": 1763455546000,
+   "text": "다만, 대출의 특성상 코로나 피해와 무관하거나 새출발기금을 통해 채무조정하기 어려운 다음의 대출은 지원에서 제외됩니다.\n\n➀ 부동산임대·매매업 관련 대출, 주택구입 등 개인 자산형성 목적의 가계대출, 전세보증대출 등\n\n - 다만, 주택 등 부동산을 담보로 한 사업용 대출, 화물차·중장비 등 상용차 구매대출은 사업영위를 위한 대출이므로 조정 가능\n\n➁ 할인어음, 무역금융, SPC 대출, 예금담보대출, 기타 처분에 제한이 있는 대출, 법원 회생절차 진행 중인 대출 등\n\n➂ 개인간 사적채무 또는 국세·지방세·관세 등 세급체납액 등 협약미가입자에 대한 채무\n\n➃ 부실우려차주가 보유한 대출받은지 6개월이 지나지 않은 신규대출\n\n * 부실차주는 6개월 이내 신규대출이 총 채무액의 30% 초과시 지원불가",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 5,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy 회계 - 수납 관리</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
+
+  <div class="easy-container">
+    <div class="easy-title">수납 관리</div>
+    <p class="easy-sub">청구·납부 기준으로 미납/일부납/완납이 자동 계산됩니다.</p>
+
+    <div class="easy-card">
+      <div class="section-head">
+        <h2>수납 등록</h2>
+        <button class="btn-edit-link" id="toggleForm" type="button">접기 ›</button>
+      </div>
+      <div id="payForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fStudent" class="required">학생</label>
+            <select id="fStudent"></select>
+          </div>
+          <div class="form-group">
+            <label for="fBusiness" class="required">사업체</label>
+            <select id="fBusiness"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fMonth" class="required">대상 월</label>
+            <input type="month" id="fMonth">
+          </div>
+          <div class="form-group">
+            <label for="fBilled" class="required">청구 금액 (원)</label>
+            <input type="number" id="fBilled" min="0" step="1" placeholder="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fPaid">납부 금액 (원)</label>
+            <input type="number" id="fPaid" min="0" step="1" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label for="fPaidOn">납부일</label>
+            <input type="date" id="fPaidOn">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="fPayMethod">결제수단</label>
+          <input type="text" id="fPayMethod" list="payMethodList" placeholder="예: 계좌이체">
+          <datalist id="payMethodList">
+            <option value="현금"></option>
+            <option value="계좌이체"></option>
+            <option value="카드"></option>
+            <option value="기타"></option>
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label for="fMemo">메모</label>
+          <input type="text" id="fMemo">
+        </div>
+        <button class="btn-primary" id="btnSave" type="button">등록하기</button>
+        <p class="error-msg" id="formError"></p>
+        <p class="success-msg" id="formOk"></p>
+      </div>
+    </div>
+
+    <div class="easy-card">
+      <h2>수납 목록</h2>
+      <p class="desc">학생·대상월·상태로 필터링할 수 있습니다.</p>
+      <div class="filter-grid">
+        <div class="form-group">
+          <label for="qStudent">학생</label>
+          <select id="qStudent"></select>
+        </div>
+        <div class="form-group">
+          <label for="qMonth">대상 월</label>
+          <input type="month" id="qMonth">
+        </div>
+        <div class="form-group">
+          <label for="qStatus">상태</label>
+          <select id="qStatus">
+            <option value="">전체</option>
+            <option value="UNPAID">미납</option>
+            <option value="PARTIAL">일부납</option>
+            <option value="PAID">완납</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-secondary" id="btnSearch" type="button">조회하기</button>
+      <ul class="item-list" id="payList" style="margin-top:12px"></ul>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/easy_api.js"></script>
+  <script src="/js/easy_payments.js"></script>
+</body>
+</html>

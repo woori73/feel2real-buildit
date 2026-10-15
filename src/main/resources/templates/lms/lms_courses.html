@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${academyName} + ' | 온라인 LMS'">온라인 LMS</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/lms_shell.css">
+  <link rel="stylesheet" href="/css/lms_courses.css">
+</head>
+<body>
+<th:block th:replace="~{fragments/_lms_shell :: header}"></th:block>
+
+<div class="lms-layout"
+     th:attr="data-handle=${academyHandle},
+              data-lms-base=${lmsBase},
+              data-lms-user=${lmsUserKey},
+              data-authenticated=${lmsAuthenticated}">
+  <th:block th:replace="~{fragments/_lms_shell :: sidebar('list')}"></th:block>
+
+  <main class="lms-content">
+    <h1 class="page-title">온라인 내신특강</h1>
+    <div class="filters">
+      <input type="text" data-filter-search placeholder="강좌 검색">
+      <select data-filter-school>
+        <option value="">학교 전체</option>
+        <option value="압구정중">압구정중</option>
+        <option value="신구중">신구중</option>
+      </select>
+      <select data-filter-grade>
+        <option value="">학년 전체</option>
+        <option value="중1">중1</option>
+        <option value="중2">중2</option>
+      </select>
+    </div>
+    <div class="grid" data-course-grid></div>
+  </main>
+</div>
+
+<th:block th:replace="~{fragments/_lms_shell :: footer}"></th:block>
+<th:block th:replace="~{fragments/_lms_shell :: trailerModal}"></th:block>
+
+<script src="/js/lms_mock.js"></script>
+<script src="/js/lms_data.js"></script>
+<script src="/js/lms_state.js"></script>
+<script src="/js/lms_shell.js"></script>
+<script src="/js/lms_player.js"></script>
+<script src="/js/lms_courses.js"></script>
+</body>
+</html>

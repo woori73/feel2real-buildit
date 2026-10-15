@@ -1,0 +1,217 @@
+name: NewStart initial seed (manual, single phase)
+
+# NEWSTART INITIAL SEED 도구 (seed-tooling). EBOOK/OFFICIAL/EMPIRICAL 중
+# **정확히 1페이즈만** 실행한다. ALL 옵션은 존재하지 않으며, 한 실행이 두 페이즈를
+# 겸하는 경로도 없다. 기본값은 dry_run=true — 프로비저닝(다운로드+sha256 검증)만 하고
+# 그 어떤 쓰기 API도 호출하지 않는다.
+#
+# 불변식:
+#  - EMPIRICAL의 SOURCE OF TRUTH는 canonical article_json 107건(8·9월)이며 러너에서
+#    build_initial_seed.py로 재생성한다. July(5737~5754)·local 366 대상 경로 없음.
+#  - 쓰기 대상은 서버 로컬 temp 디렉터리의 sha256 검증된 파일뿐 (private S3 경유).
+#  - official_updates 테이블을 건드리는 엔드포인트는 호출하지 않는다.
+#  - REVIEW→ACTIVE 승인 엔드포인트(/review/{id}/approve)는 절대 호출하지 않는다.
+#  - 실패 시 후속 페이즈로 자동 진행하지 않는다(단일 페이즈 + set -euo pipefail).
+#  - EC2 temp 디렉터리(trap ERR)와 always() 청소 스텝, S3 오브젝트는 삭제한다.
+#
+# 사전 준비(사용자 1회): GitHub Secrets에 기존 ADMIN 계정 자격 등록 —
+#   NEWSTART_SEED_ADMIN_LOGIN_ID / NEWSTART_SEED_ADMIN_PASSWORD.
+#   새 평문 credential 생성 없음. repo/artifact/로그에 저장·노출 없음(GH secret masking,
+#   curl -sS, set +x). JwtAuthenticationFilter는 ACCESS_TOKEN 쿠키만으로 인증하므로
+#   로그인→쿠키자트(러너 /tmp 전용)로 호출한다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Seed phase (exactly one — no ALL)"
+        required: true
+        type: choice
+        options:
+          - EBOOK
+          - OFFICIAL
+          - EMPIRICAL
+      dry_run:
+        description: "true=provision+sha256 검증만(쓰기 API 호출 없음), false=실제 REVIEW 시드 쓰기"
+        required: false
+        type: boolean
+        default: true
+      target:
+        description: "실행 대상 명시 (hard gate)"
+        required: true
+        type: choice
+        options:
+          - production
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: newstart-seed
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-northeast-2
+  INSTANCE_ID: i-09d7cabb5a42d1135
+  BUCKET: feel2real-buildit-deploy
+  BASE_URL: https://feel2real.co.kr
+  API_PREFIX: /api/admin/newstart/wiki
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Require production target + single phase
+        env:
+          SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test "${{ inputs.target }}" = "production" || { echo "::error::target must be production"; exit 1; }
+          case "${{ inputs.phase }}" in EBOOK|OFFICIAL|EMPIRICAL) ;; *) echo "::error::exactly one phase required"; exit 1;; esac
+          if [ "${{ inputs.dry_run }}" = "false" ] && [ -z "$SEED_ADMIN_PASSWORD" ]; then
+            echo "::error::dry_run=false requires NEWSTART_SEED_ADMIN_LOGIN_ID/PASSWORD secrets"; exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build seed bundle (source of truth + hard gates)
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/seed
+          case "${{ inputs.phase }}" in
+            EBOOK)
+              tar -czf /tmp/seed/seed.tar.gz \
+                docs/newstart/ebook/ebook_sections.json \
+                data/newstart-cafe/gamian/articles
+              ;;
+            OFFICIAL)
+              tar -czf /tmp/seed/seed.tar.gz docs/newstart/research-official
+              ;;
+            EMPIRICAL)
+              python3 docs/newstart/research/tools/build_initial_seed.py
+              # builder가 107/107·dup=0·july=0을 exit code로 강제 — 이중 확인 게이트
+              test "$(find data/newstart-cafe/initial_seed/articles -name 'article_*.json' | wc -l)" = "107"
+              awk -F'\t' 'NR>1{print $1}' data/newstart-cafe/initial_seed/MANIFEST_initial_seed.tsv | sort | uniq -d | grep . && { echo "::error::duplicate articleId"; exit 1; } || true
+              awk -F'\t' 'NR>1 && ($5 !~ /^2026-0[89]$/ || $6 ~ /^FAIL/){print "GATE-VIOLATION", $1; bad=1} END{exit bad?1:0}' data/newstart-cafe/initial_seed/MANIFEST_initial_seed.tsv
+              tar -czf /tmp/seed/seed.tar.gz -C data/newstart-cafe/initial_seed articles
+              ;;
+          esac
+          (cd /tmp/seed && sha256sum seed.tar.gz > seed.sha256)
+          cat /tmp/seed/seed.sha256
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload bundle to private S3
+        run: |
+          set -euo pipefail
+          PREFIX="s3://${BUCKET}/newstart-seeds/${{ github.run_id }}"
+          aws s3 cp /tmp/seed/seed.tar.gz "${PREFIX}/seed.tar.gz" --no-progress
+          aws s3 cp /tmp/seed/seed.sha256 "${PREFIX}/seed.sha256" --no-progress
+
+      - name: Provision on EC2 temp dir + sha256 verify (no DB access)
+        id: provision
+        env:
+          RUN_DIR: /home/ec2-user/newstart-seed/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          export RUN_DIR
+          export PREFIX="s3://${BUCKET}/newstart-seeds/${{ github.run_id }}"
+          SEED_SHA=$(cut -d' ' -f1 /tmp/seed/seed.sha256); export SEED_SHA
+          python3 - <<'PY'
+          import json, os
+          run_dir = os.environ["RUN_DIR"]
+          sha = os.environ["SEED_SHA"]
+          prefix = os.environ["PREFIX"]
+          cmds = [
+              "set -euo pipefail",
+              f'RUN_DIR="{run_dir}"',
+              'trap \'rm -rf "$RUN_DIR"\' ERR',
+              'mkdir -p "$RUN_DIR"',
+              f'aws s3 cp --no-progress {prefix}/seed.tar.gz "$RUN_DIR/seed.tar.gz"',
+              f'echo "{sha}  $RUN_DIR/seed.tar.gz" | sha256sum -c -',
+              'tar -xzf "$RUN_DIR/seed.tar.gz" -C "$RUN_DIR"',
+              'rm -f "$RUN_DIR/seed.tar.gz"',
+              'chmod -R a+rX "$RUN_DIR"',
+              'echo "provisioned_file_count=$(find "$RUN_DIR" -type f -name \'*.json\' | wc -l)"',
+              'echo "provisioned_dir=$RUN_DIR"',
+          ]
+          with open("/tmp/provision.json", "w") as f:
+              json.dump({"commands": cmds}, f)
+          PY
+          COMMAND_ID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" --parameters file:///tmp/provision.json \
+            --comment "newstart-seed provision ${{ inputs.phase }} run ${{ github.run_id }}" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM provision Command ID: $COMMAND_ID"
+          aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID"
+          STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query 'Status' --output text)
+          echo "===== provision output ====="
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text
+          test "$STATUS" = "Success" || { echo "::error::provision $STATUS"; exit 1; }
+          echo "run_dir=$RUN_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Call ingest API (ONLY when dry_run=false — ADMIN cookie auth)
+        if: ${{ inputs.dry_run == false }}
+        env:
+          SEED_ADMIN_LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          RUN_DIR='${{ steps.provision.outputs.run_dir }}'
+          JAR=/tmp/seed-cookies.txt
+          umask 077
+          # prd OriginWhitelistFilter는 상태변경 /api/** POST에서 Origin·Referer 둘 다
+          # 없으면 인증 전에 403 거부한다. curl은 Origin을 자동 붙이지 않으므로 동일
+          # 출처 값을 명시한다. body는 jq --arg로 생성해 비밀번호의 " \ $ `가
+          # 셸/JSON에 손상되지 않게 한다. credential·body는 절대 로그에 남기지 않는다.
+          LOGIN_JSON=$(jq -n --arg loginId "$SEED_ADMIN_LOGIN_ID" --arg password "$SEED_ADMIN_PASSWORD" \
+            '{loginId:$loginId,password:$password}')
+          LOGIN_STATUS=$(printf '%s' "$LOGIN_JSON" | curl -sS -o /dev/null -w '%{http_code}' \
+            -c "$JAR" -H 'Content-Type: application/json' -H "Origin: $BASE_URL" \
+            --data-binary @- "$BASE_URL/api/auth/login")
+          if ! grep -q ACCESS_TOKEN "$JAR"; then
+            echo "::error::login failed (http=$LOGIN_STATUS, no ACCESS_TOKEN cookie; body suppressed)"
+            rm -f "$JAR"
+            exit 1
+          fi
+          case "${{ inputs.phase }}" in
+            EBOOK)
+              ENDPOINT="$API_PREFIX/ingest/curated-review?ebookSections=$RUN_DIR/docs/newstart/ebook/ebook_sections.json&gamianDir=$RUN_DIR/data/newstart-cafe/gamian/articles"
+              EXPECT='"ebookCreated"' ;;
+            OFFICIAL)
+              ENDPOINT="$API_PREFIX/ingest/official-review?officialDir=$RUN_DIR/docs/newstart/research-official&dryRun=false"
+              EXPECT='"activeCreated":0' ;;
+            EMPIRICAL)
+              ENDPOINT="$API_PREFIX/ingest/cases/repair?articlesDir=$RUN_DIR/articles"
+              EXPECT='"inserted"' ;;
+          esac
+          echo "== ${{ inputs.phase }} ingest result =="
+          RESP=$(curl -sS -b "$JAR" -X POST -H "Origin: $BASE_URL" -w '\n%{http_code}' "$BASE_URL$ENDPOINT")
+          rm -f "$JAR"
+          INGEST_STATUS=$(printf '%s' "$RESP" | tail -n1)
+          printf '%s\n' "$RESP" | sed '$d'
+          { [ "$INGEST_STATUS" = "200" ] && printf '%s' "$RESP" | grep -q "$EXPECT"; } \
+            || { echo "::error::unexpected ingest result (http=$INGEST_STATUS)"; exit 1; }
+
+      - name: Dry-run report
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "DRY RUN: 프로비저닝+sha256 검증만 완료. 쓰기 API 미호출, DB 무접촉."
+          echo "phase=${{ inputs.phase }} run_dir=${{ steps.provision.outputs.run_dir }}"
+
+      - name: Cleanup (always — EC2 temp dir + S3 bundle)
+        if: always()
+        run: |
+          set +e
+          aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["rm -rf /home/ec2-user/newstart-seed/${{ github.run_id }}"]' \
+            --query 'Command.CommandId' --output text
+          aws s3 rm --recursive "s3://${BUCKET}/newstart-seeds/${{ github.run_id }}"
+          exit 0

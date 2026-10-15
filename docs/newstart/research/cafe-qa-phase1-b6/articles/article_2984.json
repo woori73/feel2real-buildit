@@ -1,0 +1,143 @@
+{
+ "articleId": 2984,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "경기신보건",
+ "author": {
+  "nickname": "셋을위해",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2025-12-22T21:46:51+00:00",
+ "createdAtMs": 1766440011177,
+ "viewCount": 59,
+ "commentCount": 8,
+ "sourceUrl": "https://cafe.naver.com/newhopero/2984",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  "경기신보건이 2건있습니다",
+  "부실차주후에 포함시킬걸 우려에넣었는데 우려에서 부실차주가는동안 압루같은거 할까요?",
+  "어떤분이 신보는 추심은없으나 법적조치가능하다고하시고 까페장님도 금감원민원안통한다고하셨는데 걱정이되네요"
+ ],
+ "bodyNormalized": "경기신보건이 2건있습니다\n부실차주후에 포함시킬걸 우려에넣었는데 우려에서 부실차주가는동안 압루같은거 할까요?\n어떤분이 신보는 추심은없으나 법적조치가능하다고하시고 까페장님도 금감원민원안통한다고하셨는데 걱정이되네요",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-text se-l-default\" id=\"SE-5a04cd73-df7f-11f0-aca6-9b66caaf6ccc\">\n                    <div class=\"se-component-content\">\n                        <div class=\"se-section se-section-text se-l-default\">\n                            <div class=\"se-module se-module-text\">\n                                    <!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-5a04cd74-df7f-11f0-aca6-838d1e16864d\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-b939d19d-df7f-11f0-aca6-c90e91352828\">경기신보건이 2건있습니다</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-7217851b-df7f-11f0-aca6-d7a789bc79c8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-b939f8ae-df7f-11f0-aca6-21fdad47a1a8\">부실차주후에 포함시킬걸 우려에넣었는데 우려에서 부실차주가는동안 압루같은거 할까요?</span></p><!-- } SE-TEXT --><!-- SE-TEXT { --><p class=\"se-text-paragraph se-text-paragraph-align- \" style=\"\" id=\"SE-8dddcf70-df7f-11f0-aca6-cb907ce330b8\"><span style=\"\" class=\"se-fs- se-ff-   \" id=\"SE-b939f8af-df7f-11f0-aca6-f786e8ae9a81\">어떤분이 신보는 추심은없으나 법적조치가능하다고하시고 까페장님도 금감원민원안통한다고하셨는데 걱정이되네요</span></p><!-- } SE-TEXT -->\n                            </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_text\", \"id\": \"SE-5a04cd73-df7f-11f0-aca6-9b66caaf6ccc\", \"data\": {\"ctype\": \"text\"  }}'></script>\n                </div>    </div>\n</div>\n",
+ "images": [],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54777276,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-23T00:36:42.000Z",
+   "createdAtMs": 1766450202000,
+   "text": "가압류는 가능한데 기간이 짧아 가압류 힘들거에여",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54777821,
+   "parentCommentId": null,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-23T01:37:54.000Z",
+   "createdAtMs": 1766453874000,
+   "text": "아~~마음이 좀 놓이네요",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54778059,
+   "parentCommentId": null,
+   "author": "뮤dd",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-23T02:02:48.000Z",
+   "createdAtMs": 1766455368000,
+   "text": "저는 경기신보에서 가압류 걸렸습니다 전세6천이 있었는데 7월에 신청했는데 12월에 가압류 등기받았어요 회생 금지명령중이구요",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54785140,
+   "parentCommentId": 54778059,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-23T15:18:49.000Z",
+   "createdAtMs": 1766503129000,
+   "text": "7월에 부실우려신청하셨는데 12월에 등기받으셨나요?",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54785148,
+   "parentCommentId": 54778059,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-23T15:19:56.000Z",
+   "createdAtMs": 1766503196000,
+   "text": "우려인지 부실차주인지 우려라면 체결되고 서명등록하셨던건지 자세히 알려주실수있으실까요?",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54785155,
+   "parentCommentId": 54778059,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-12-23T15:20:59.000Z",
+   "createdAtMs": 1766503259000,
+   "text": "위 분은 개인회생 중이세요.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54785277,
+   "parentCommentId": 54778059,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-23T15:44:55.000Z",
+   "createdAtMs": 1766504695000,
+   "text": "아~~그러시군요~~개인회생은 수임료도내고 전문변호사가 진행하는데도 가압류가걸리네요ㅠ",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54787161,
+   "parentCommentId": 54778059,
+   "author": "뮤dd",
+   "memberGrade": "감사멤버",
+   "createdAt": "2025-12-24T01:18:33.000Z",
+   "createdAtMs": 1766539113000,
+   "text": "네 맞아요 ㅠㅠ",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 2,
+ "imageRequired": false,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": []
+}

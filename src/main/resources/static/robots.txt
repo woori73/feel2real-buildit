@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://feel2real.co.kr/sitemap.xml

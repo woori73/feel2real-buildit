@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수업상품 편집기</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+  <link rel="stylesheet" href="/css/academy_collection.css?v=20260905-1">
+  <link rel="stylesheet" href="/css/lesson_product_editor.css?v=20260831-1">
+</head>
+<body>
+  <div class="lesson-editor-app app">
+    <aside class="editor lesson-editor-panel">
+      <header class="editor-header">
+        <h1>수업상품 구성</h1>
+        <p class="lead">상단 탭에서 수업을 선택한 뒤 내용을 작성하세요. 미리보기에 반영하고 모든 수업을 한 번에 저장합니다.</p>
+      </header>
+
+      <div id="editorErrors" class="editor-message editor-message-error" role="alert"
+           aria-live="assertive" aria-atomic="true" hidden></div>
+      <div id="editorStatus" class="editor-message editor-message-status" role="status"
+           aria-live="polite" aria-atomic="true"></div>
+
+      <form id="lessonProductForm" novalidate>
+        <div class="form-summary">
+          <div>
+            <h2 id="lessonFormTitle">선택한 수업 정보</h2>
+          </div>
+          <span id="draftState" class="draft-state" aria-live="polite"></span>
+        </div>
+
+        <!--
+          기본 화면은 수업 카드를 실제로 구동하는 핵심 항목만 노출한다. 나머지 저장 필드는
+          아래 "상세 설정" <details> 안에 그대로 유지된다 — 데이터·저장계약을 바꾸지 않고
+          라벨과 노출 여부만 사용자 친화적으로 재구성한 것이다.
+        -->
+        <fieldset class="editor-group editor-group-core">
+          <legend>수업 카드 기본 정보</legend>
+          <p class="editor-group-hint">홈페이지 수업 카드에 그대로 표시되는 항목입니다. 대표 이미지·영상은 오른쪽 미리보기 카드를 눌러 등록하세요.</p>
+          <div class="field">
+            <label for="tabShortName">카드 라벨</label>
+            <input id="tabShortName" name="tabShortName" maxlength="80" placeholder="예: 개념완성">
+            <small class="field-help">카드 맨 위와 상단 탭에 표시되는 짧은 이름입니다.</small>
+          </div>
+          <div class="field">
+            <label for="name">수업명 <span class="required-mark" aria-label="필수">*</span></label>
+            <input id="name" name="name" required maxlength="100" autocomplete="off"
+                   placeholder="예: 중등 수학 개념완성 집중반">
+          </div>
+          <div class="field">
+            <label for="kicker">한 줄 설명</label>
+            <input id="kicker" name="kicker" maxlength="200" placeholder="예: 개념부터 실전까지 한 번에">
+          </div>
+          <div class="field">
+            <label for="learnerNeed">이런 학생에게</label>
+            <input id="learnerNeed" name="learnerNeed" maxlength="300" placeholder="예: 문제를 보면 어디서부터 풀어야 할지 막힐 때">
+          </div>
+          <div class="field">
+            <label for="highlight">핵심 특징</label>
+            <input id="highlight" name="highlight" maxlength="300" placeholder="예: 개념 이해와 문제 적용력을 함께 높입니다">
+          </div>
+          <div class="field">
+            <label for="gradeLabel">대상</label>
+            <input id="gradeLabel" name="gradeLabel" maxlength="50" placeholder="예: 고등학교 2학년">
+          </div>
+        </fieldset>
+
+        <details class="editor-advanced">
+          <summary>
+            <span class="editor-advanced-title">상세 설정</span>
+            <span class="editor-advanced-sub">수업 소개 페이지·강좌 관리에 쓰이는 항목 (선택)</span>
+          </summary>
+          <div class="editor-advanced-body">
+            <fieldset class="editor-group">
+              <legend class="editor-visually-hidden">상세 설정 입력</legend>
+              <div class="field">
+                <label for="theme">공통 배경 스타일 <span class="required-mark" aria-label="필수">*</span></label>
+                <select id="theme" name="theme" required>
+                  <option value="NAVY">프리미엄 남색</option>
+                  <option value="TEAL">청록 포인트</option>
+                  <option value="PURPLE">보라 포인트</option>
+                  <option value="ORANGE">밝은 오렌지</option>
+                  <option value="SKY">밝은 하늘</option>
+                  <option value="PINK">밝은 분홍</option>
+                  <option value="GREEN">밝은 그린</option>
+                </select>
+                <small class="field-help">배경을 선택하면 모든 수업상품의 제목·본문·탭·강조 색상이 함께 맞춰집니다.</small>
+              </div>
+              <div class="field">
+                <label for="tabGuidanceLabel">상단 탭 안내 문구</label>
+                <input id="tabGuidanceLabel" name="tabGuidanceLabel" maxlength="120" placeholder="예: 개념이 부족하다면">
+              </div>
+              <div class="field">
+                <label for="description">상품 설명</label>
+                <textarea id="description" name="description" maxlength="2000" rows="4"
+                          placeholder="수업의 핵심 내용과 차별점을 2~3문장으로 입력하세요."></textarea>
+              </div>
+              <div class="field">
+                <label for="schoolName">학교</label>
+                <input id="schoolName" name="schoolName" maxlength="100" placeholder="예: 현대고등학교">
+              </div>
+              <div class="editor-field-row editor-price-row">
+                <div class="field">
+                  <label for="priceAmount">가격</label>
+                  <input id="priceAmount" name="priceAmount" type="number" min="1" step="1"
+                         inputmode="numeric" placeholder="예: 300000">
+                </div>
+                <div class="field">
+                  <label for="priceUnit">가격 단위</label>
+                  <select id="priceUnit" name="priceUnit">
+                    <option value="">가격 없음</option>
+                    <option value="MONTH">월</option>
+                    <option value="COURSE">강좌</option>
+                    <option value="NEGOTIABLE">가격 협의</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="coreDetailTitle">상세 설명 제목</label>
+                <input id="coreDetailTitle" name="coreDetailTitle" maxlength="200" placeholder="예: 개념을 문제 해결로 연결하는 힘">
+              </div>
+              <div class="field">
+                <label for="explanation1">수업 설명 1</label>
+                <input id="explanation1" name="explanation1" maxlength="500">
+              </div>
+              <div class="field">
+                <label for="explanation2">수업 설명 2</label>
+                <input id="explanation2" name="explanation2" maxlength="500">
+              </div>
+              <div class="field">
+                <label for="explanation3">수업 설명 3</label>
+                <input id="explanation3" name="explanation3" maxlength="500">
+              </div>
+              <div class="field">
+                <span class="field-label">수업 OT 영상</span>
+                <button id="otVideoControl" class="btn btn-secondary editor-ot-control" type="button">OT 영상 등록 / 변경</button>
+                <small class="field-help">대표 미디어와 별도로 저장되는 OT 영상입니다. 오른쪽 미리보기에서도 등록할 수 있습니다.</small>
+              </div>
+            </fieldset>
+          </div>
+        </details>
+
+        <!-- 미디어 편집 UI는 우측 프리뷰 클릭 모달로만 제공한다. hidden 값은 저장 계약상 폼 안에 유지한다. -->
+        <input id="mediaImageKey" name="mediaImageKey" type="hidden">
+        <input id="mediaVideoId" name="mediaVideoId" type="hidden">
+        <input id="otVideoId" name="otVideoId" type="hidden">
+
+        <div class="form-actions lesson-editor-actions">
+          <button id="aiAssistButton" class="btn lesson-ai-button" type="button"
+                  disabled aria-disabled="true">AI 설명 문구 초안 생성 <span>준비 중</span></button>
+          <button id="deleteLessonButton" class="btn btn-secondary" type="button">수업 삭제</button>
+          <button id="saveLessonsButton" class="btn btn-primary" type="submit">수업상품 저장</button>
+        </div>
+      </form>
+    </aside>
+
+    <main class="preview-wrap lesson-preview-panel">
+      <div class="preview-toolbar">
+        <strong>수업상품 미리보기</strong>
+      </div>
+
+      <article class="preview" data-theme="NAVY">
+        <nav id="courseTabs" class="course-nav" aria-label="수업상품 선택">
+          <button id="addCourseTab" class="course-tab course-tab-add" type="button"
+                  data-add-course="true" aria-label="새 수업상품 추가">
+            <small>새 수업</small>
+            <strong>+ 추가하기</strong>
+          </button>
+        </nav>
+
+        <div id="lessonPreview" class="preview-content" data-theme="NAVY">
+          <section id="selectedHero" class="selected-hero">
+            <div class="hero-copy">
+              <p class="hero-kicker" data-preview-field="kicker">상단 보조 문구</p>
+              <h1 class="hero-title">
+                <span class="accent" data-preview-field="tabShortName">수업명</span><br>
+                <span data-preview-field="name">수업 상품명을 입력하세요</span>
+              </h1>
+              <p class="hero-summary" data-preview-field="description">수업 설명을 입력하세요.</p>
+              <p class="hero-highlight" data-preview-field="highlight">핵심 강조 문구를 입력하세요.</p>
+            </div>
+            <button id="courseMediaArea" class="course-media-area preview-media-trigger" type="button"
+                    aria-label="대표 교재 사진 또는 수업 쇼츠 등록">
+              <div class="course-media-placeholder">대표 교재 사진 또는<br>수업 쇼츠를 등록해 주세요.</div>
+            </button>
+          </section>
+
+          <section class="detail-section">
+            <div class="detail-heading">
+              <small data-preview-field="learnerNeed">이 수업이 필요한 상황</small>
+              <h2>
+                <span data-preview-field="coreDetailTitle">수업에서 기르는 핵심 역량</span><br>
+                <span data-preview-field="tabShortName">수업명</span>
+              </h2>
+            </div>
+
+            <div class="ot-explain">
+              <button id="otMediaArea" class="ot-panel preview-media-trigger" type="button"
+                      aria-label="수업 OT 영상 등록">
+                <div class="ot-placeholder">
+                  <div class="play-circle" aria-hidden="true">▶</div>
+                  수업 OT 영상 영역<br><small>클릭해 미디어를 등록해 주세요.</small>
+                </div>
+              </button>
+              <div class="explain-list">
+                <div class="explain-card" data-preview-field="explanation1">첫 번째 핵심 설명</div>
+                <div class="explain-card" data-preview-field="explanation2">두 번째 핵심 설명</div>
+                <div class="explain-card" data-preview-field="explanation3">세 번째 핵심 설명</div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!--
+          가로 컬렉션(Storefront V2) 학원은 이 카드가 공개 홈페이지와 같은 렌더 계약
+          (F2RAcademySections.programCardHtml)을 사용한다 — 편집기에서 본 카드와 발행된
+          카드가 구조적으로 동일하다. 그 외 학원은 위 #lessonPreview(showcase 골격)를 쓴다.
+        -->
+        <div id="lessonProgramCardPreview" class="program-card-preview" hidden>
+          <div class="program-card-preview-frame" data-program-card-slot></div>
+          <div class="program-card-preview-ot" data-program-card-ot></div>
+        </div>
+      </article>
+    </main>
+  </div>
+
+  <dialog id="mediaModal" class="media-modal">
+    <!-- form이 아니라 div다. 편집기 계약상 페이지에 form은 lessonProductForm 하나뿐이어야 한다. -->
+    <div class="media-modal-inner">
+      <h2 id="mediaModalTitle" class="media-modal-title">대표 미디어 등록</h2>
+      <p id="mediaModalHint" class="media-modal-hint">이미지 1장 또는 영상 1개만 등록됩니다. 새로 등록하면 기존 미디어는 교체됩니다.</p>
+
+      <section class="media-modal-section">
+        <h3>새로 올리기</h3>
+        <div class="media-upload-row">
+          <label id="mediaImageLabel" class="btn btn-secondary" for="mediaImageInput">이미지 선택</label>
+          <input id="mediaImageInput" type="file" accept="image/*" hidden>
+          <label class="btn btn-secondary" for="mediaVideoInput">영상 선택</label>
+          <input id="mediaVideoInput" type="file" accept="video/*" hidden>
+        </div>
+        <p class="media-modal-note">영상은 변환에 시간이 걸릴 수 있습니다. 창을 닫지 말고 기다려 주세요.</p>
+      </section>
+
+      <section class="media-modal-section">
+        <h3>내 영상에서 고르기</h3>
+        <div id="mediaVideoList" class="media-video-list">
+          <p class="media-modal-note">불러오는 중…</p>
+        </div>
+      </section>
+
+      <div id="mediaModalStatus" class="media-modal-status" role="status" aria-live="polite" hidden></div>
+      <div class="media-modal-actions">
+        <button id="clearSelectedMediaButton" class="btn btn-secondary" type="button" hidden>현재 미디어 해제</button>
+        <button id="closeMediaModal" class="btn btn-secondary" type="button">닫기</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/academy_sections.js?v=20260905-4"></script>
+  <script src="/js/lesson_product_editor_state.js"></script>
+  <script src="/js/lesson_product_editor.js?v=20260905-3"></script>
+</body>
+</html>

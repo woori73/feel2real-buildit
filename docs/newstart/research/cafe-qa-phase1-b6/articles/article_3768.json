@@ -1,0 +1,54 @@
+{
+ "articleId": 3768,
+ "boardId": 6,
+ "boardName": "부실우려",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실우려 접수했는데  이런문자가  왔어요",
+ "author": {
+  "nickname": "휴",
+  "memberGrade": "감사멤버"
+ },
+ "createdAt": "2026-01-20T00:48:57+00:00",
+ "createdAtMs": 1768870137693,
+ "viewCount": 180,
+ "commentCount": 1,
+ "sourceUrl": "https://cafe.naver.com/newhopero/3768",
+ "sourceType": "CAFE_ARTICLE",
+ "topicTags": [
+  "부실우려",
+  "board:6"
+ ],
+ "bodyRaw": [
+  ""
+ ],
+ "bodyNormalized": "",
+ "bodyHtml": "<div class=\"se-viewer se-theme-default\" lang=\"ko-KR\">\n    <!-- SE_DOC_HEADER_START -->\n    <!--@CONTENTS_HEADER-->\n    <!-- SE_DOC_HEADER_END -->\n    <div class=\"se-main-container\">\n                <div class=\"se-component se-image se-l-default\" id=\"SE-ca4f20fa-f599-11f0-b183-1d8aa1dfebff\">\n                    <div class=\"se-component-content se-component-content-extend\">\n                        <div class=\"se-section se-section-image se-l-default se-section-align-\" >\n                                <div class=\"se-module se-module-image\" style=\"\">\n                                    <a href=\"#\" class=\"se-module-image-link __se_image_link __se_link\" style=\"\" onclick=\"return false;\" data-linktype=\"img\" data-linkdata='{\"id\" : \"SE-ca4f20fa-f599-11f0-b183-1d8aa1dfebff\", \"src\" : \"https://cafeptthumb-phinf.pstatic.net/MjAyNjAxMjBfMTMy/MDAxNzY4ODcwMTM1OTQ3.Ypk7N-1b9paGh3DteeVRdPC2ugXKFbtLom458VJagfcg.38RThcTHyWxvuNzhQPe6_2421ZW0yTpysYPQEP62n0Ug.JPEG/Screenshot%EF%BC%BF20260120%EF%BC%BF094747%EF%BC%BFMessages.jpg\", \"originalWidth\" : \"1080\", \"originalHeight\" : \"2316\", \"linkUse\" : \"false\", \"link\" : \"\", \"fileSize\": \"623015\" }'>\n                                        <img src=\"https://cafeptthumb-phinf.pstatic.net/MjAyNjAxMjBfMTMy/MDAxNzY4ODcwMTM1OTQ3.Ypk7N-1b9paGh3DteeVRdPC2ugXKFbtLom458VJagfcg.38RThcTHyWxvuNzhQPe6_2421ZW0yTpysYPQEP62n0Ug.JPEG/Screenshot%EF%BC%BF20260120%EF%BC%BF094747%EF%BC%BFMessages.jpg?type=w800\" alt=\"\" class=\"se-image-resource\" />\n                                    </a>\n                                </div>\n                        </div>\n                    </div>\n                    <script type=\"text/data\" class=\"__se_module_data\" data-module-v2='{\"type\": \"v2_image\", \"id\": \"SE-ca4f20fa-f599-11f0-b183-1d8aa1dfebff\", \"data\": {\"ctype\": \"image\", \"ai\": \"false\", \"fileSize\": \"623015\" }}'></script>\n                </div>\n    </div>\n</div>\n",
+ "images": [
+  "https://cafeptthumb-phinf.pstatic.net/MjAyNjAxMjBfMTMy/MDAxNzY4ODcwMTM1OTQ3.Ypk7N-1b9paGh3DteeVRdPC2ugXKFbtLom458VJagfcg.38RThcTHyWxvuNzhQPe6_2421ZW0yTpysYPQEP62n0Ug.JPEG/Screenshot%EF%BC%BF20260120%EF%BC%BF094747%EF%BC%BFMessages.jpg?type=w800"
+ ],
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 55015179,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-01-20T00:53:09.000Z",
+   "createdAtMs": 1768870389000,
+   "text": "접수하셨으면 무시하세요",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": true,
+ "collectedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "collectionStatus": "EMPTY_BODY",
+ "parseWarnings": [
+  "EMPTY_BODY: commentCount=1 collected=1"
+ ]
+}

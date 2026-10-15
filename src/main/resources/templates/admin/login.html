@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R - 관리자 로그인</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/admin_login.css">
+</head>
+<body>
+  <div class="card">
+    <span class="badge">ADMIN</span>
+    <h1>관리자 로그인</h1>
+    <p class="subtitle">관리자 계정으로 로그인해 주세요.</p>
+
+    <div class="form-group">
+      <label for="loginId">아이디</label>
+      <input type="text" id="loginId" placeholder="아이디 입력">
+    </div>
+    <div class="form-group">
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" placeholder="비밀번호 입력">
+    </div>
+
+    <button class="btn-primary" onclick="handleAdminLogin()">로그인</button>
+    <p class="error-msg" id="errorMsg"></p>
+    <p class="success-msg" id="successMsg" style="display:none"></p>
+
+    <button class="btn-link" id="btnShowChange" onclick="toggleChangeForm(true)">비밀번호 변경</button>
+
+    <div id="changeForm" style="display:none">
+      <div class="form-group">
+        <label for="chgLoginId">운영자 ID</label>
+        <input type="text" id="chgLoginId" placeholder="운영자 ID 입력" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="chgCurrent">현재 비밀번호</label>
+        <input type="password" id="chgCurrent" placeholder="현재 비밀번호 입력" autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label for="chgNew">새 비밀번호 (16자 이상)</label>
+        <input type="password" id="chgNew" placeholder="새 비밀번호 입력" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="chgConfirm">새 비밀번호 확인</label>
+        <input type="password" id="chgConfirm" placeholder="새 비밀번호 다시 입력" autocomplete="new-password">
+      </div>
+      <button class="btn-primary" onclick="handleAdminPasswordChange()">변경하기</button>
+      <button class="btn-link" onclick="toggleChangeForm(false)">돌아가기</button>
+      <p class="error-msg" id="chgErrorMsg"></p>
+    </div>
+  </div>
+
+  <script>
+    async function handleAdminLogin() {
+      const loginId = document.getElementById('loginId').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!loginId || !password) {
+        showError('아이디와 비밀번호를 모두 입력해 주세요.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ loginId, password })
+        });
+
+        if (!res.ok) {
+          showError('아이디 또는 비밀번호가 올바르지 않습니다.');
+          return;
+        }
+
+        const user = await res.json();
+        if (user.role !== 'ADMIN') {
+          showError('관리자 계정이 아닙니다.');
+          return;
+        }
+
+        sessionStorage.setItem('currentUser', JSON.stringify(user));
+        location.href = '/admin/students';
+      } catch (e) {
+        showError('서버 연결에 실패했습니다.');
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function toggleChangeForm(show) {
+      document.getElementById('changeForm').style.display = show ? 'block' : 'none';
+      document.getElementById('btnShowChange').style.display = show ? 'none' : 'block';
+      document.getElementById('chgErrorMsg').style.display = 'none';
+      const success = document.getElementById('successMsg');
+      success.style.display = 'none';
+      success.textContent = '';
+    }
+
+    async function handleAdminPasswordChange() {
+      const loginId = document.getElementById('chgLoginId').value.trim();
+      const currentPassword = document.getElementById('chgCurrent').value;
+      const newPassword = document.getElementById('chgNew').value;
+      const confirmPassword = document.getElementById('chgConfirm').value;
+      const errEl = document.getElementById('chgErrorMsg');
+
+      function showChgError(msg) {
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+      }
+      errEl.style.display = 'none';
+
+      if (!loginId || !currentPassword || !newPassword || !confirmPassword) {
+        showChgError('모든 항목을 입력해 주세요.');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showChgError('새 비밀번호와 확인값이 일치하지 않습니다.');
+        return;
+      }
+      if (newPassword.length < 16) {
+        showChgError('새 비밀번호는 16자 이상이어야 합니다.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/admin/password-change', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ loginId, currentPassword, newPassword, confirmPassword })
+        });
+
+        if (res.status === 204) {
+          document.getElementById('chgCurrent').value = '';
+          document.getElementById('chgNew').value = '';
+          document.getElementById('chgConfirm').value = '';
+          toggleChangeForm(false);
+          const success = document.getElementById('successMsg');
+          success.textContent = '비밀번호가 변경되었습니다. 새 비밀번호로 로그인하세요.';
+          success.style.display = 'block';
+          return;
+        }
+        if (res.status === 429) {
+          showChgError('반복 실패로 잠시 차단되었습니다. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
+        const msg = await res.text();
+        showChgError(msg || '비밀번호 변경에 실패했습니다.');
+      } catch (e) {
+        showChgError('서버 연결에 실패했습니다.');
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleAdminLogin();
+    });
+  </script>
+</body>
+</html>

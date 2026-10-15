@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수업 찾기</title>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+</head>
+<body>
+<th:block layout:fragment="content">
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <div class="brand">수업 찾기</div>
+        <p class="muted">지역, 요일, 가격 조건으로 공개 Academy 수업을 찾아보세요.</p>
+      </div>
+      <div><a class="btn btn-secondary" href="/stdt_dashboard">내 대시보드</a></div>
+    </div>
+
+    <section class="card">
+      <form id="lessonSearchForm" class="grid">
+        <div class="field"><label for="subjectId">과목</label><select id="subjectId"><option value="">전체</option></select></div>
+        <div class="field"><label for="targetGroup">대상</label><select id="targetGroup"><option value="">전체</option><option value="ELEMENTARY">초등학생</option><option value="MIDDLE">중학생</option><option value="HIGH">고등학생</option><option value="UNIVERSITY">대학생</option><option value="ADULT">성인</option></select></div>
+        <div class="field"><label for="lessonType">수업 유형</label><select id="lessonType"><option value="">전체</option><option value="SUBSCRIPTION">구독형</option><option value="SHORT_TERM">단기형</option></select></div>
+        <div class="field"><label for="city">시/도</label><input id="city" placeholder="서울시"></div>
+        <div class="field"><label for="district">구/군</label><input id="district" placeholder="서초구"></div>
+        <div class="field"><label for="weekday">가능 요일</label><select id="weekday"><option value="">전체</option><option value="MONDAY">월요일</option><option value="TUESDAY">화요일</option><option value="WEDNESDAY">수요일</option><option value="THURSDAY">목요일</option><option value="FRIDAY">금요일</option><option value="SATURDAY">토요일</option><option value="SUNDAY">일요일</option></select></div>
+        <div class="field"><label for="maxPrice">최대 가격</label><input id="maxPrice" type="number" min="0" placeholder="1000000"></div>
+        <div class="field"><label for="weeklyCount">주간 횟수</label><input id="weeklyCount" type="number" min="1" placeholder="3"></div>
+        <div class="field"><label>&nbsp;</label><button class="btn btn-primary" type="submit">검색</button></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="topbar"><h2>검색 결과</h2><span id="resultCount" class="muted"></span></div>
+      <div id="lessonSearchList" class="lesson-list"><p class="muted">검색 조건을 입력해 주세요.</p></div>
+    </section>
+  </main>
+  <!-- 수업 신청 — 대화 연결 모달 -->
+  <div id="applyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:28px;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+      <h3 style="margin:0 0 12px;font-size:16px;font-weight:700;color:#1a1a2e;">수업 신청 — 학습 대화 연결</h3>
+      <p style="margin:0 0 14px;font-size:14px;color:#555;">이 수업과 연결할 학습 대화를 선택하세요.<br>선택하지 않으면 새 대화가 자동으로 생성됩니다.</p>
+      <select id="conversationSelect" style="width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;margin-bottom:20px;box-sizing:border-box;">
+        <option value="">새 대화로 시작</option>
+      </select>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeApplyModal()">취소</button>
+        <button class="btn btn-primary" id="applyConfirmBtn" onclick="confirmApply()">신청하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/lesson_search.js"></script>
+</th:block>
+</body>
+</html>

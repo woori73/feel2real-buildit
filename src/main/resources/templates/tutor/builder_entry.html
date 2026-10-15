@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildIt 홈페이지 만들기</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Pretendard', -apple-system, sans-serif; background: #fafafb; color: #111; }
+  .nav { background: #fff; border-bottom: 1px solid #eee; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .nav-logo { font-size: 20px; font-weight: 800; }
+  .nav-logo .it { background: linear-gradient(135deg, #4f7cff, #7c6cf0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .nav-right { display: flex; gap: 12px; }
+  .nav-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; border: 1px solid #e5e5e7; background: #fff; cursor: pointer; }
+  .nav-btn.primary { background: #111; color: #fff; border-color: #111; font-weight: 600; }
+  
+  .hero { max-width: 900px; margin: 0 auto; padding: 56px 24px 36px; text-align: center; }
+  .hero h1 { font-size: 38px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .hero h1 .accent { background: linear-gradient(135deg, #4f7cff, #7c6cf0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { font-size: 15px; color: #666; margin-bottom: 28px; }
+  .ai-box { background: #fff; border-radius: 20px; border: 1px solid #e5e5e7; box-shadow: 0 8px 40px rgba(0,0,0,0.06); padding: 20px 24px; max-width: 720px; margin: 0 auto; }
+  .ai-box textarea { width: 100%; border: none; outline: none; font-size: 15px; resize: none; min-height: 72px; font-family: inherit; }
+  .ai-box-footer { display: flex; justify-content: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f2; }
+  .ai-submit { background: #111; color: #fff; border: none; border-radius: 12px; padding: 12px 32px; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .flow-note { text-align: center; font-size: 12px; color: #999; margin-top: 16px; }
+  .flow-note b { color: #4f7cff; }
+  
+  .section { max-width: 1200px; margin: 0 auto; padding: 44px 24px; }
+  .section-head { margin-bottom: 24px; }
+  .section-head h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .section-head p { font-size: 13px; color: #888; }
+  
+  .sample-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+  .sample-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #e5e5e7; transition: all 0.25s; }
+  .sample-card:hover { box-shadow: 0 16px 48px rgba(0,0,0,0.12); transform: translateY(-3px); }
+  .sample-preview { position: relative; background: #f5f5f7; }
+  .sample-preview img { width: 100%; display: block; }
+  .sample-badge { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); color: #fff; font-size: 11px; padding: 5px 12px; border-radius: 999px; font-weight: 600; }
+  .sample-info { padding: 20px 24px; }
+  .sample-info h3 { font-size: 16px; margin-bottom: 6px; }
+  .sample-info .desc { font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.6; }
+  .sample-sections { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .sample-sections span { font-size: 11px; background: #f5f5f7; padding: 4px 10px; border-radius: 999px; color: #666; }
+  .sample-actions { display: flex; gap: 10px; }
+  .sample-actions .preview-btn { flex: 1; padding: 12px; border: 1px solid #e5e5e7; background: #fff; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .sample-actions .start-btn { flex: 2; padding: 12px; border: none; background: #111; color: #fff; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .sample-actions .start-btn:hover { background: #4f7cff; }
+  .sample-source { font-size: 11px; color: #aaa; margin-top: 10px; }
+  
+  .comp-section { background: #fff; border-top: 1px solid #eee; }
+  .comp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .comp-card { border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+  .comp-card img { width: 100%; display: block; }
+  .comp-card .info { padding: 14px 16px; }
+  .comp-card h4 { font-size: 13px; margin-bottom: 4px; }
+  .comp-card p { font-size: 11px; color: #888; }
+  
+  @media (max-width: 768px) { .sample-grid, .comp-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 28px; } }
+  .note { position: fixed; bottom: 16px; right: 16px; background: #111; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 12px; z-index: 200; max-width: 340px; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <div class="nav-logo">Build<span class="it">It</span></div>
+  <div class="nav-right"><button class="nav-btn" onclick="window.location.href='/'">← 메인으로</button><button class="nav-btn primary" data-action="start-builder">+ 새 홈페이지</button></div>
+</div>
+
+<div class="hero">
+  <h1>어떤 홈페이지를 <span class="accent">만들까요?</span></h1>
+  <p>원하는 분위기를 말로 적거나, 마음에 드는 디자인 느낌을 골라 시작하세요</p>
+  <div class="ai-box">
+    <textarea id="aiPrompt" placeholder="예: 중학생 영어 전문 학원. 깔끔하고 신뢰감 있는 디자인으로 만들어줘."></textarea>
+    <div class="ai-box-footer"><button class="ai-submit" data-action="ai-create">AI로 만들기 →</button></div>
+  </div>
+  <p class="flow-note">제작은 강사(원장) 계정으로 로그인한 뒤 진행됩니다. 만든 홈페이지는 미리보기에서 확인하고 <b>승인한 뒤에만</b> 게시됩니다.</p>
+</div>
+
+<div class="section">
+  <div class="section-head">
+    <h2>디자인 참고 샘플</h2>
+    <p>어떤 느낌의 홈페이지가 가능한지 보는 참고용 예시입니다. 느낌을 고르면 위 요청 문장에 채워집니다.</p>
+  </div>
+  <div class="sample-grid">
+    <div class="sample-card">
+      <div class="sample-preview">
+        <span class="sample-badge">입시·종합학원형</span>
+        <img th:src="@{/images/builder-samples/tmpl-open-school-pc.png}" alt="오픈스쿨 템플릿">
+      </div>
+      <div class="sample-info">
+        <h3>오픈스쿨 — 종합학원형</h3>
+        <p class="desc">헤더 내비게이션, 히어로, 합격 실적 카운터, 커리큘럼, 강사진까지 갖춘 멀티섹션 템플릿</p>
+        <div class="sample-sections"><span>헤더+내비</span><span>히어로</span><span>실적 카운터</span><span>커리큘럼</span><span>상담신청</span></div>
+        <div class="sample-actions">
+          <button class="preview-btn" data-action="preview-sample" data-sample-id="tmpl-open-school" data-preview-url="/preview-samples/tmpl-open-school/demo.html">🔍 크게 보기</button>
+          <button class="start-btn" data-action="use-sample" data-sample-id="tmpl-open-school" data-sample-style="입시·종합학원 느낌으로, 합격 실적과 커리큘럼, 강사진이 잘 보이게 만들어줘.">이 느낌으로 요청하기</button>
+        </div>
+        <p class="sample-source">출처: build2 tmpl-open-school (MIT 라이선스)</p>
+      </div>
+    </div>
+    <div class="sample-card">
+      <div class="sample-preview">
+        <span class="sample-badge">모바일 퍼스트</span>
+        <img th:src="@{/images/builder-samples/tmpl-demo-school-pc.png}" alt="데모스쿨 템플릿">
+      </div>
+      <div class="sample-info">
+        <h3>데모스쿨 — 모바일 중심형</h3>
+        <p class="desc">모바일 퍼스트 디자인. 시간표, 오시는 길, 전화상담 버튼까지 실용적인 구성</p>
+        <div class="sample-sections"><span>모바일 최적화</span><span>시간표</span><span>오시는 길</span><span>전화상담</span></div>
+        <div class="sample-actions">
+          <button class="preview-btn" data-action="preview-sample" data-sample-id="tmpl-demo-school" data-preview-url="/preview-samples/tmpl-demo-school/demo.html">🔍 크게 보기</button>
+          <button class="start-btn" data-action="use-sample" data-sample-id="tmpl-demo-school" data-sample-style="모바일에서 보기 편하게, 시간표와 오시는 길, 전화상담 버튼이 눈에 띄게 만들어줘.">이 느낌으로 요청하기</button>
+        </div>
+        <p class="sample-source">출처: build2 tmpl-demo-school (MIT 라이선스)</p>
+      </div>
+    </div>
+    <div class="sample-card">
+      <div class="sample-preview">
+        <span class="sample-badge">미니멀</span>
+        <img th:src="@{/images/builder-samples/tmpl-minimal-landing-pc.png}" alt="미니멀 랜딩">
+      </div>
+      <div class="sample-info">
+        <h3>미니멀 랜딩 — 소규모 학원형</h3>
+        <p class="desc">단일 페이지 미니멀 디자인. 공부방·소규모 학원에 적합한 깔끔한 구성</p>
+        <div class="sample-sections"><span>싱글 페이지</span><span>임팩트 타이포</span><span>상담 CTA</span></div>
+        <div class="sample-actions">
+          <button class="preview-btn" data-action="preview-sample" data-sample-id="tmpl-minimal-landing" data-preview-url="/preview-samples/tmpl-minimal-landing/demo.html">🔍 크게 보기</button>
+          <button class="start-btn" data-action="use-sample" data-sample-id="tmpl-minimal-landing" data-sample-style="공부방·소규모 학원 느낌으로, 한 페이지에 깔끔하고 상담 신청이 잘 보이게 만들어줘.">이 느낌으로 요청하기</button>
+        </div>
+        <p class="sample-source">출처: build2 tmpl-minimal-landing (MIT 라이선스)</p>
+      </div>
+    </div>
+    <div class="sample-card">
+        <div class="sample-info">
+        <span class="sample-badge" style="position: static; margin-bottom: 12px; display: inline-block;">섹션 조합형</span>
+        <h3>컴포넌트 조합 — 커스텀형</h3>
+        <p class="desc">히어로·강사진·후기·내비게이션 컴포넌트를 자유롭게 조합하는 방식</p>
+        <div class="sample-sections"><span>히어로 2열</span><span>강사진 그리드</span><span>후기</span><span>내비+푸터</span></div>
+        <div class="sample-actions">
+          <button class="start-btn" data-action="use-sample" data-sample-id="comp-bundle" data-sample-style="히어로, 강사진, 합격 후기를 차례로 보여 주는 구성으로 만들어줘.">이 느낌으로 요청하기</button>
+        </div>
+        <p class="sample-source">출처: build2 HyperUI·TailBlocks 컴포넌트 (MIT)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="comp-section"><div class="section">
+  <div class="section-head">
+    <h2>섹션 컴포넌트</h2>
+    <p>AI 제작 시 활용되는 개별 섹션 디자인</p>
+  </div>
+  <div class="comp-grid">
+    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-team-tailblocks-pc.png}"><div class="info"><h4>강사진 소개</h4><p>사진+이름+과목+경력 카드 그리드</p></div></div>
+    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-testimonials-hyperui-pc.png}"><div class="info"><h4>합격 후기</h4><p>인용문 그리드 · 정적 안정형</p></div></div>
+    <div class="comp-card"><img th:src="@{/images/builder-samples/comp-hero-hyperui-pc.png}"><div class="info"><h4>히어로 섹션</h4><p>좌측 텍스트+우측 이미지 2열</p></div></div>
+  </div>
+</div></div>
+
+
+<script th:src="@{/js/builder_entry.js}"></script>
+</body>
+</html>

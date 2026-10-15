@@ -1,0 +1,60 @@
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+    .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+    .section-header { margin-bottom: 24px; }
+    .section-title { font-size: 22px; font-weight: 700; color: #1a202c; }
+    .section-subtitle { font-size: 13px; color: #718096; margin-top: 4px; }
+
+    .student-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .student-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.15s;
+    }
+    .student-card:hover {
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+      border-color: #cbd5e0;
+    }
+    .student-name {
+      font-size: 16px; font-weight: 700; color: #1a202c; margin-bottom: 4px;
+    }
+    .student-info {
+      font-size: 13px; color: #718096; margin-bottom: 12px; line-height: 1.6;
+    }
+    .student-stats {
+      display: flex; gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f0f4f8;
+    }
+    .student-stat { flex: 1; }
+    .stat-label { font-size: 11px; color: #a0aec0; }
+    .stat-value { font-size: 16px; font-weight: 600; color: #2d3748; }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 0;
+      color: #a0aec0;
+      font-size: 14px;
+    }
+
+
+    @media (max-width: 768px) {
+      body { overflow-x: hidden; }
+      .container { margin: 20px auto; padding: 0 14px; }
+      .student-grid { grid-template-columns: 1fr; }
+      .student-card { padding: 18px; }
+      .section-header { margin-bottom: 18px; }
+    }
+

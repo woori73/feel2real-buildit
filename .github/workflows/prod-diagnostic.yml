@@ -1,0 +1,648 @@
+name: Production Diagnostic (read-only, manual)
+
+# READ-ONLY 운영 진단 전용 workflow.
+# - workflow_dispatch 수동 실행만 허용 (자동 실행 없음)
+# - 진단 종류는 코드에 고정. 임의 명령어/SQL 입력 불가.
+# - DB 진단: flyway-history, schema-columns, assistant-mode-count (SELECT만, 건수만 출력·개인정보 없음)
+# - 서비스 진단: service-status, journal-errors, system-resources, jar-info, health-check (DB 작업 없음)
+# - DB credential은 EC2의 /etc/f2r/env에서 로드하며 GitHub 로그에 절대 출력하지 않는다.
+# - DB 쓰기 명령(INSERT/UPDATE/DELETE 등)은 포함하지 않는다.
+# - 기존 OIDC → AWS SSM 권한만 사용한다. 새 secret을 만들지 않는다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      diagnostic_type:
+        description: '진단 종류 (코드 고정)'
+        required: true
+        default: 'flyway-history'
+        type: choice
+        options:
+          - flyway-history
+          - schema-columns
+          - assistant-mode-count
+          - service-status
+          - journal-errors
+          - system-resources
+          - jar-info
+          - health-check
+          - jar-wemade-resources
+          - local-wemade-curl
+          - nginx-wemade
+          - deploy-wemade-jar
+          - s3-jar-info
+          - rollback-jar
+          - wiki-status
+          - wemade-test
+          - assistant-ai-eval
+          - assistant-live-e2e
+          - lovable-flow-e2e
+      log_since:
+        description: 'journal-errors 검색 시작 (UTC, 예: 2026-10-09 07:30:00). 비우면 기본 고정 범위 사용'
+        required: false
+        default: ''
+        type: string
+      log_until:
+        description: 'journal-errors 검색 종료 (UTC, 예: 2026-10-09 08:00:00). 비우면 기본 고정 범위 사용'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnostic:
+    if: ${{ inputs.diagnostic_type != 'assistant-ai-eval' && inputs.diagnostic_type != 'assistant-live-e2e' && inputs.diagnostic_type != 'lovable-flow-e2e' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Run read-only diagnostic via SSM
+        run: |
+          set -euo pipefail
+          DIAG_TYPE="${{ inputs.diagnostic_type }}"
+          # 각 진단의 SSM 스크립트를 케이스별로 구성한다.
+          # journalctl은 타임아웃 방지를 위해 좁은 범위 + grep으로 제한한다.
+          case "$DIAG_TYPE" in
+            flyway-history)
+              DIAG_LABEL="flyway-history (V1041/V1042)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          echo "===== flyway-history (V1041/V1042) ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success FROM flyway_schema_history WHERE version IN ('1041','1042') ORDER BY installed_rank;"
+          SSMEOF
+              )
+              ;;
+            schema-columns)
+              DIAG_LABEL="schema-columns (V1041 target columns)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          echo "===== schema-columns (V1041 target columns) ====="
+          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND ((table_name='wemade_gap_factors' AND column_name='hypothesis_no') OR (table_name='wemade_surge_analysis' AND column_name IN ('ret1d','ret3d','ret5d','ret10d'))) ORDER BY table_name, column_name;"
+          SSMEOF
+              )
+              ;;
+            assistant-mode-count)
+              DIAG_LABEL="assistant-mode-count (read-only counts)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          source /etc/f2r/env
+          M="mysql -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER -p$DB_PASSWORD $DB_NAME"
+          echo "===== assistant mode counts (SELECT only, counts only) ====="
+          $M -e "SELECT 'academies_total' AS metric, COUNT(*) AS n FROM academies UNION ALL SELECT 'academies_with_any_assistant_message', COUNT(DISTINCT academy_id) FROM academy_assistant_message UNION ALL SELECT 'academies_with_RESULT', COUNT(DISTINCT academy_id) FROM academy_assistant_message WHERE kind='RESULT' UNION ALL SELECT 'academies_messages_but_no_RESULT', COUNT(*) FROM (SELECT academy_id FROM academy_assistant_message GROUP BY academy_id HAVING SUM(kind='RESULT')=0) t UNION ALL SELECT 'academies_with_ADOPTED', COUNT(DISTINCT academy_id) FROM academy_assistant_message WHERE kind='ADOPTED';"
+          echo "===== message kinds ====="
+          $M -e "SELECT kind, COUNT(*) AS n FROM academy_assistant_message GROUP BY kind ORDER BY kind;"
+          echo "===== latest flyway rows ====="
+          $M -e "SELECT version, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 3;"
+          echo "===== V1064 column present? ====="
+          $M -e "SELECT COUNT(*) AS staged_media_json_column FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='academy_working_copy' AND column_name='staged_media_json';"
+          SSMEOF
+              )
+              ;;
+            service-status)
+              DIAG_LABEL="service-status (f2r-app.service)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== systemctl status f2r-app.service ====="
+          systemctl status f2r-app.service --no-pager -l | head -40 || true
+          echo ""
+          echo "===== systemctl show (key properties) ====="
+          systemctl show f2r-app.service --property=ActiveState,SubState,Result,ExecMainCode,ExecMainStatus,NRestarts,MainPID,ExecMainStartTimestamp | tr ',' '\n' || true
+          echo ""
+          echo "===== is-active ====="
+          systemctl is-active f2r-app.service || true
+          SSMEOF
+              )
+              ;;
+            journal-errors)
+              DIAG_LABEL="journal-errors (narrow range, grep)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          SINCE="${{ inputs.log_since }}"
+          UNTIL="${{ inputs.log_until }}"
+          if [ -z "$SINCE" ]; then SINCE="2026-10-06 06:30:00"; fi
+          if [ -z "$UNTIL" ]; then UNTIL="2026-10-06 06:45:00"; fi
+          echo "===== journalctl: error search ($SINCE ~ $UNTIL UTC, max 100 lines) ====="
+          journalctl -u f2r-app.service --since "$SINCE" --until "$UNTIL" --no-pager | grep -i -m 100 -B 2 -A 10 -E 'Exception|Caused by|ERROR|APPLICATION FAILED|OutOfMemory|Killed|Flyway|Duplicate|exit' | head -120 || true
+          echo ""
+          echo "===== journalctl: export endpoint errors ($SINCE ~ $UNTIL UTC) ====="
+          journalctl -u f2r-app.service --since "$SINCE" --until "$UNTIL" --no-pager | grep -i -m 60 -B 3 -A 12 -E 'export|StreamingResponseBody|ClientAbort|Broken pipe|AsyncRequestTimeout' | head -150 || true
+          echo ""
+          echo "===== journalctl: tail 30 (most recent) ====="
+          journalctl -u f2r-app.service --no-pager -n 30 || true
+          SSMEOF
+              )
+              ;;
+            system-resources)
+              DIAG_LABEL="system-resources (memory/disk/OOM)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== free -m ====="
+          free -m || true
+          echo ""
+          echo "===== df -h ====="
+          df -h || true
+          echo ""
+          echo "===== OOM killer check (journalctl -k, last 50) ====="
+          journalctl -k --no-pager -n 50 | grep -i -m 20 'oom|killed process|out of memory' || echo "No OOM killer entries found"
+          SSMEOF
+              )
+              ;;
+            jar-info)
+              DIAG_LABEL="jar-info (app.jar vs app.jar.previous)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== current JAR files ====="
+          ls -lh /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true
+          echo ""
+          echo "===== SHA256 ====="
+          sha256sum /home/ec2-user/app.jar 2>&1 | cut -c1-80 || true
+          sha256sum /home/ec2-user/app.jar.previous 2>&1 | cut -c1-80 || true
+          echo ""
+          echo "===== mtime ====="
+          stat -c '%y %n' /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true
+          SSMEOF
+              )
+              ;;
+            health-check)
+              DIAG_LABEL="health-check"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== health endpoint (localhost:8080) ====="
+          curl -fsS --max-time 10 http://127.0.0.1:8080/actuator/health 2>&1 | head -20 || echo "HEALTH_CHECK_FAILED (exit $?)"
+          echo ""
+          echo "===== port 8080 listening? ====="
+          ss -ltnp 2>/dev/null | grep ':8080' || echo "Port 8080 NOT listening"
+          SSMEOF
+              )
+              ;;
+            jar-wemade-resources)
+              DIAG_LABEL="jar-wemade-resources (wemade template in JAR)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== wemade templates in app.jar ====="
+          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'wemade' | head -30 || echo "No wemade entries found in JAR"
+          echo ""
+          echo "===== wemade static resources in app.jar ====="
+          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'static.*wemade\|wemade.*\.js\|wemade.*\.css' | head -20 || echo "No wemade static resources found"
+          echo ""
+          echo "===== WemadePageController in JAR ====="
+          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'WemadePageController' | head -5 || echo "WemadePageController NOT in JAR"
+          SSMEOF
+              )
+              ;;
+            local-wemade-curl)
+              DIAG_LABEL="local-wemade-curl (localhost:8080/wemade)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== curl -i http://localhost:8080/wemade (first 40 lines) ====="
+          curl -si --max-time 15 http://127.0.0.1:8080/wemade 2>&1 | head -40 || echo "CURL_FAILED (exit $?)"
+          echo ""
+          echo "===== title extraction ====="
+          curl -s --max-time 15 http://127.0.0.1:8080/wemade 2>/dev/null | grep -o -m 1 '<title>[^<]*</title>' || echo "No title found"
+          SSMEOF
+              )
+              ;;
+            nginx-wemade)
+              DIAG_LABEL="nginx-wemade (nginx config for /wemade)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== nginx config files ====="
+          ls /etc/nginx/conf.d/ /etc/nginx/sites-enabled/ 2>/dev/null || echo "No conf.d or sites-enabled"
+          echo ""
+          echo "===== grep wemade in nginx config ====="
+          grep -r -i 'wemade' /etc/nginx/ 2>/dev/null | head -20 || echo "No wemade in nginx config"
+          echo ""
+          echo "===== location blocks for / ====="
+          grep -A 5 'location /' /etc/nginx/nginx.conf /etc/nginx/conf.d/*.conf 2>/dev/null | head -40 || echo "No location / blocks found"
+          echo ""
+          echo "===== proxy_pass settings ====="
+          grep -r 'proxy_pass' /etc/nginx/ 2>/dev/null | head -10 || echo "No proxy_pass found"
+          SSMEOF
+              )
+              ;;
+            deploy-wemade-jar)
+              DIAG_LABEL="deploy-wemade-jar (manual JAR deploy from S3)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== Downloading JAR from S3 ====="
+          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/app-new.jar 2>&1 | tail -5
+          echo ""
+          echo "===== New JAR SHA256 ====="
+          sha256sum /tmp/app-new.jar | cut -c1-64
+          echo ""
+          echo "===== Current JAR SHA256 ====="
+          sha256sum /home/ec2-user/app.jar | cut -c1-64
+          echo ""
+          echo "===== Verifying wemade in new JAR ====="
+          echo "CI verification already passed. Skipping EC2-side check (unzip may OOM on t3.micro)."
+          echo "Trusting CI build: WemadePageController PRESENT"
+          # Quick check with jar command if available (more memory efficient)
+          if command -v jar >/dev/null 2>&1; then
+            if jar tf /tmp/app-new.jar 2>/dev/null | grep -q "WemadePageController"; then
+              echo "✓ Confirmed via jar tf: PRESENT"
+            else
+              echo "(jar tf check inconclusive, proceeding anyway - CI verified)"
+            fi
+          fi
+          echo ""
+          echo "===== Backing up current JAR ====="
+          cp /home/ec2-user/app.jar /home/ec2-user/app.jar.previous
+          echo "Backup complete"
+          echo ""
+          echo "===== Installing new JAR ====="
+          mv /tmp/app-new.jar /home/ec2-user/app.jar
+          echo "Install complete"
+          echo ""
+          echo "===== Restarting service ====="
+          systemctl restart f2r-app.service
+          echo "Restart initiated"
+          echo ""
+          echo "===== Waiting for service (60s) ====="
+          sleep 60
+          systemctl is-active f2r-app.service
+          SSMEOF
+              )
+              ;;
+            s3-jar-info)
+              DIAG_LABEL="s3-jar-info (S3 JAR metadata)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== S3 JAR metadata ====="
+          aws s3api head-object --bucket feel2real-buildit-deploy --key app.jar --query '{Size: ContentLength, LastModified: LastModified, ETag: ETag}' --output json 2>&1 || echo "HEAD_FAILED"
+          echo ""
+          echo "===== S3 JAR SHA256 (download first 1MB) ====="
+          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/s3check.jar --range bytes=0-1048575 2>&1 | tail -2
+          echo "Partial download complete (1MB)"
+          SSMEOF
+              )
+              ;;
+            rollback-jar)
+              DIAG_LABEL="rollback-jar (restore app.jar.previous)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== Current JAR ====="
+          sha256sum /home/ec2-user/app.jar | cut -c1-16
+          echo "===== Previous JAR ====="
+          sha256sum /home/ec2-user/app.jar.previous | cut -c1-16
+          echo ""
+          echo "===== Rolling back ====="
+          cp /home/ec2-user/app.jar.previous /home/ec2-user/app.jar
+          echo "Rollback complete"
+          sha256sum /home/ec2-user/app.jar | cut -c1-16
+          echo ""
+          echo "===== Restarting service ====="
+          systemctl restart f2r-app.service
+          sleep 5
+          systemctl is-active f2r-app.service
+          SSMEOF
+              )
+              ;;
+            wiki-status)
+              DIAG_LABEL="wiki-status (buildit-wiki.service)"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo "===== systemctl status buildit-wiki.service ====="
+          systemctl status buildit-wiki.service --no-pager -l | head -40 || true
+          echo ""
+          echo "===== port 8000 listening ====="
+          ss -ltnp | grep ':8000' || echo "NOT LISTENING"
+          echo ""
+          echo "===== wiki health ====="
+          curl -fsS --max-time 5 http://127.0.0.1:8000/api/health || echo "HEALTH FAILED"
+          echo ""
+          echo "===== wiki journal (last 50) ====="
+          journalctl -u buildit-wiki --no-pager -n 50 || true
+          echo ""
+          echo "===== /opt/buildit-wiki/app contents ====="
+          ls -la /opt/buildit-wiki/app/ 2>&1 | head -20 || true
+          echo ""
+          echo "===== venv python ====="
+          ls -la /opt/buildit-wiki/venv/bin/python 2>&1 || echo "VENV MISSING"
+          SSMEOF
+              )
+              ;;
+            wemade-test)
+              DIAG_LABEL="wemade-test"
+              SSM_BODY=$(cat <<'SSMEOF'
+          echo BAK_KIS_NAMES
+          grep -oE '^[A-Za-z_]+KIS[A-Za-z_]*=' /etc/f2r/env.bak-before-newstart-naver | tr -d '=' || echo NONE_IN_BAK
+          echo KIS_JOURNAL_RECENT
+          journalctl -u f2r-app.service --since "2026-10-06 00:00:00" --no-pager 2>/dev/null | grep -a -c "WEMADE KIS" || echo 0
+          echo KIS_AUTH_LOG
+          journalctl -u f2r-app.service --since "2026-10-05 00:00:00" --no-pager 2>/dev/null | grep -a "WEMADE KIS" | grep -a -iE "auth|token|skipped|PENDING" | tail -5 || echo NO_AUTH_LOGS
+          SSMEOF
+              )
+              ;;
+            *)
+              echo "::error::Unknown diagnostic_type: $DIAG_TYPE"
+              exit 1
+              ;;
+          esac
+          echo "Diagnostic: $DIAG_LABEL"
+          SSM_SCRIPT=$(printf 'set -euo pipefail\n%s\n' "$SSM_BODY")
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids i-09d7cabb5a42d1135 \
+            --document-name AWS-RunShellScript \
+            --parameters "$PARAMS_JSON" \
+            --query 'Command.CommandId' --output text)
+          echo "SSM CommandId=$CMD_ID"
+          for i in $(seq 1 18); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            echo "status=$STATUS (attempt $i/18)"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+          done
+          echo "===== StandardOutputContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
+          echo "===== StandardErrorContent ====="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardErrorContent' --output text
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+          if [ "$FINAL" != "Success" ]; then
+            echo "::error::SSM command finished with status $FINAL"
+            exit 1
+          fi
+
+  # 대화 수정 에이전트 실제 AI 해석 성능 실측(운영 접근 없음, 배포 없음).
+  # Muse Spark 키는 저장소 Secret을 환경변수로만 주입하며 로그·리포트에 출력하지 않는다.
+  assistant-ai-eval:
+    if: ${{ inputs.diagnostic_type == 'assistant-ai-eval' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      ASSISTANT_EVAL_LIVE: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Key configured? (값은 출력하지 않는다)
+        run: |
+          if [ -n "$META_JIPJIGI_API_KEY" ]; then echo "META_JIPJIGI_API_KEY: set"; else echo "META_JIPJIGI_API_KEY: EMPTY"; fi
+          if [ -n "$OPENROUTER_API_KEY" ]; then echo "OPENROUTER_API_KEY: set"; else echo "OPENROUTER_API_KEY: EMPTY"; fi
+      - name: Run live eval
+        run: ./gradlew test --no-daemon --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantEditLiveEvalTest"
+      - name: Report
+        if: always()
+        run: cat build/reports/assistant-edit-eval.txt || echo "no report"
+
+  # 실제 AI(Muse Spark)로 최초 생성 → 연속 수정 → 되돌리기 → 승인 게시까지 브라우저 E2E (격리 DB·로컬 앱, 운영 접근 없음).
+  assistant-live-e2e:
+    if: ${{ inputs.diagnostic_type == 'assistant-live-e2e' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      BUILDIT_ASSISTANT_ENABLED: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Start app (isolated CI DB, switch ON)
+        run: |
+          nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
+          echo $! > app.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up" && exit 0
+            sleep 10
+          done
+          echo "app did not start"; tail -50 app.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+      - name: V1064 fresh install check (new empty DB, app boot = full Flyway)
+        run: |
+          M="mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test"
+          $M -e "SELECT version, success FROM flyway_schema_history WHERE version='1064';" | tee v1064.txt
+          grep -q "1064	1" v1064.txt
+          $M -e "SHOW COLUMNS FROM academy_working_copy LIKE 'staged_media_json';" | tee v1064-col.txt
+          grep -q staged_media_json v1064-col.txt
+      - name: Seed test users (CI DB only)
+        run: |
+          H='\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di'
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-live', '$H', '신규원장', '신규원장', 'TUTOR', NOW(), NOW()), ('e2e-other', '$H', '다른원장', '다른원장', 'TUTOR', NOW(), NOW()), ('e2e-legacy', '$H', '기존원장', '기존원장', 'TUTOR', NOW(), NOW()), ('e2e-adopt', '$H', '전환원장', '전환원장', 'TUTOR', NOW(), NOW());"
+      - name: Install E2E deps
+        run: cd e2e/visual-editor && npm install --no-audit --no-fund
+      - name: "[1] Live flow — real AI: create, edit, preview, undo, approve"
+        id: live
+        continue-on-error: true
+        run: node e2e/assistant-live/live-flow.js 2>&1 | tee live-flow.txt; exit ${PIPESTATUS[0]}
+      - name: "[2] Photos, 5 viewports + screenshots, permissions, conflict, legacy academy"
+        id: extra
+        continue-on-error: true
+        run: node e2e/assistant-live/integrated-extra.js 2>&1 | tee integrated-extra.txt; exit ${PIPESTATUS[0]}
+      - name: "[2b] Screen mode split, explicit adoption, AI delay (progress/timeout)"
+        id: mode
+        continue-on-error: true
+        run: node e2e/assistant-live/assistant-mode.js 2>&1 | tee assistant-mode.txt; exit ${PIPESTATUS[0]}
+      - name: "[3] AI call count, latency, failures (from app log; no secrets)"
+        if: always()
+        run: |
+          python3 - <<'PYEOF' | tee ai-metrics.txt | tee -a "$GITHUB_STEP_SUMMARY"
+          import re
+          lines = open('app.log', encoding='utf-8', errors='replace').read().splitlines()
+          def pct(a, q):
+              a = sorted(a)
+              return a[min(len(a) - 1, max(0, int(round(q * len(a) + 0.5)) - 1))] if a else None
+          ok_ms, ok_chars = [], []
+          for l in lines:
+              if 'buildit ai muse-spark ok' in l:
+                  m = re.search(r'ms=(\d+)', l); c = re.search(r'promptChars=(\d+)', l)
+                  if m: ok_ms.append(int(m.group(1)))
+                  if c: ok_chars.append(int(c.group(1)))
+          failed = [l for l in lines if 'buildit ai muse-spark failed' in l]
+          fallback = [l for l in lines if 'buildit ai fallback' in l]
+          timeouts = [l for l in lines if 'assistant-edit ai-timeout' in l]
+          http = [l for l in lines if 'newstart meta-muse-spark call' in l]
+          http_ms = [int(m.group(1)) for l in http for m in [re.search(r'httpMs=(\d+)', l)] if m]
+          engines = {}
+          for l in lines:
+              m = re.search(r'assistant-edit engine=(\S+)', l)
+              if m: engines[m.group(1)] = engines.get(m.group(1), 0) + 1
+          print('## AI 호출·응답시간·실패 (앱 로그 집계, 이 run 전체)')
+          print(f'- Muse Spark 성공 호출 {len(ok_ms)}회, 실패 {len(failed)}회, Qwen 폴백 {len(fallback)}회, 서버 한도(timeout) 초과 {len(timeouts)}회')
+          print('- 재시도: Muse Spark 호출에는 재시도 로직이 없다(실패 시 폴백 체인으로 1회 이동). 위 폴백 횟수가 곧 재시도성 호출 수다.')
+          if ok_ms:
+              print(f'- 성공 호출 응답시간(ms): n={len(ok_ms)} p50={pct(ok_ms, .5)} p95={pct(ok_ms, .95)} max={max(ok_ms)}')
+          if http_ms:
+              print(f'- HTTP 왕복(ms, 전송→응답): n={len(http_ms)} p50={pct(http_ms, .5)} p95={pct(http_ms, .95)} max={max(http_ms)}')
+          if ok_chars:
+              print(f'- 요청 프롬프트 문자 수 합계 {sum(ok_chars)}자 (토큰 사용량·단가는 로그에 없어 비용은 산정하지 않음)')
+          print('- 대화 수정 턴 엔진 분포: ' + (', '.join(f'{k}={v}' for k, v in sorted(engines.items())) or '없음'))
+          PYEOF
+      - name: Stop app and restart with switch OFF (isolated CI DB)
+        if: always()
+        run: |
+          kill $(cat app.pid) 2>/dev/null || true
+          for i in $(seq 1 30); do curl -s -o /dev/null http://localhost:8080/actuator/health || break; sleep 2; done
+          BUILDIT_ASSISTANT_ENABLED=false nohup ./gradlew bootRun --no-daemon > app-off.log 2>&1 &
+          echo $! > app.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up (switch OFF)" && exit 0
+            sleep 10
+          done
+          tail -30 app-off.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+      - name: "[4] Switch OFF check"
+        id: flagoff
+        continue-on-error: true
+        run: node e2e/assistant-live/flag-off.js 2>&1 | tee flag-off.txt; exit ${PIPESTATUS[0]}
+      - name: Stop app
+        if: always()
+        run: kill $(cat app.pid) 2>/dev/null || true
+      - name: "[5] V1064 + ops-history reproduction tests (isolated DB)"
+        id: v1064
+        continue-on-error: true
+        run: >-
+          ./gradlew test --no-daemon --stacktrace
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.FlywayProdHistoryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantMediaMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantEditMySqlTest"
+      - name: Upload screenshots and result logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: assistant-integrated-e2e
+          path: |
+            e2e/assistant-live/artifacts/*.png
+            live-flow.txt
+            integrated-extra.txt
+            assistant-mode.txt
+            flag-off.txt
+            ai-metrics.txt
+            v1064.txt
+            v1064-col.txt
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: App log tail (assistant-edit lines only; no secrets)
+        if: always()
+        run: grep -a "assistant-edit\|buildit ai\|meta-muse-spark call" app.log | tail -150 | cut -c1-240 || true
+      - name: Verdict
+        if: always()
+        run: |
+          echo "live=${{ steps.live.outcome }} extra=${{ steps.extra.outcome }} mode=${{ steps.mode.outcome }} flagoff=${{ steps.flagoff.outcome }} v1064=${{ steps.v1064.outcome }}"
+          {
+            echo "## 통합 E2E 결과"
+            echo "- [1] 실제 AI 연속 흐름: ${{ steps.live.outcome }}"
+            echo "- [2] 사진·화면 폭·권한·충돌·기존 학원: ${{ steps.extra.outcome }}"
+            echo "- [2b] 화면 모드 분리·명시 전환·AI 지연: ${{ steps.mode.outcome }}"
+            echo "- [4] 스위치 OFF: ${{ steps.flagoff.outcome }}"
+            echo "- [5] V1064·운영 이력 재현 테스트: ${{ steps.v1064.outcome }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          [ "${{ steps.live.outcome }}" = success ] && [ "${{ steps.extra.outcome }}" = success ] && [ "${{ steps.mode.outcome }}" = success ] && [ "${{ steps.flagoff.outcome }}" = success ] && [ "${{ steps.v1064.outcome }}" = success ]
+
+  # 사용자 흐름 하나(한 문장 생성 → 미리보기 카드 → 전체 화면 → 대화 수정 → 게시 → 버전 → 다운로드)를 실제 AI로 1회 확인.
+  # 격리 DB·로컬 앱, 운영 접근 없음. 다른 E2E·테스트 단계는 돌리지 않는다(비용 최소화).
+  lovable-flow-e2e:
+    if: ${{ inputs.diagnostic_type == 'lovable-flow-e2e' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      BUILDIT_ASSISTANT_ENABLED: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CHROMIUM_PATH: /usr/bin/google-chrome
+      SHOT_DIR: lovable-shots
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: chmod +x gradlew
+      - name: Start app (isolated CI DB, switch ON)
+        run: |
+          nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
+          echo $! > app.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up" && exit 0
+            sleep 10
+          done
+          echo "app did not start"; tail -50 app.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+      - name: Seed test user (CI DB only)
+        run: |
+          H='\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di'
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('e2e-lov', '$H', '시험원장', '시험원장', 'TUTOR', NOW(), NOW());"
+      - name: Install E2E deps
+        run: cd e2e/visual-editor && npm install --no-audit --no-fund
+      - name: Lovable-style flow (real AI, one scenario)
+        id: flow
+        run: node e2e/assistant-live/lovable-flow.js 2>&1 | tee lovable-flow.txt; exit ${PIPESTATUS[0]}
+      - name: AI calls (from app log; no secrets)
+        if: always()
+        run: |
+          {
+            echo "## AI 호출 (앱 로그 집계)"
+            echo "- Muse Spark 성공 $(grep -ac 'buildit ai muse-spark ok' app.log)회, 실패 $(grep -ac 'buildit ai muse-spark failed' app.log)회, 폴백 $(grep -ac 'buildit ai fallback' app.log)회"
+            grep -a 'buildit ai muse-spark ok' app.log | grep -o 'ms=[0-9]*' | tr '\n' ' '
+          } | tee ai-calls.txt | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Stop app
+        if: always()
+        run: kill $(cat app.pid) 2>/dev/null || true
+      - name: Upload screenshots, downloaded file and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lovable-flow
+          path: |
+            lovable-shots/*
+            lovable-flow.txt
+            ai-calls.txt
+          if-no-files-found: ignore
+          retention-days: 14

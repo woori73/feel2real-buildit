@@ -1,0 +1,2509 @@
+{
+ "board": {
+  "clubid": 31312978,
+  "cafeKey": "newhopero",
+  "menuId": 6,
+  "menuName": "부실우려"
+ },
+ "generatedAt": "2026-09-30T04:01:39+00:00",
+ "extractionMethod": "CAFE_GW_V4_JSON",
+ "sourceIdList": "work-output/board6_ids_1.json (249 unique board-6 articleIds)",
+ "total": 248,
+ "commentApiOverlay": [
+  "33",
+  "1841",
+  "1858",
+  "2051",
+  "2134",
+  "2676",
+  "3600",
+  "4050",
+  "5393"
+ ],
+ "statusCounts": {
+  "EMPTY_BODY": 2,
+  "COMPLETE": 246
+ },
+ "articles": [
+  {
+   "articleId": 20,
+   "title": "부실우려 미납 관련 질문",
+   "createdAt": "2024-10-24T10:37:53.663Z",
+   "bodyLen": 521,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 33,
+   "title": "부실우려미납실효후 부실차주신청 이렇게하는게 맞나요 선배님 ",
+   "createdAt": "2024-10-24T13:31:13.287Z",
+   "bodyLen": 335,
+   "commentCount": 12,
+   "operatorCommentCount": 0,
+   "images": 2,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 36,
+   "title": "부실우려 신청시 통장압류",
+   "createdAt": "2024-10-24T14:05:06.023Z",
+   "bodyLen": 134,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 37,
+   "title": "부실우려 실효시 동의한 채권",
+   "createdAt": "2024-10-24T14:08:34.623Z",
+   "bodyLen": 146,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 45,
+   "title": "우려신청해서 해지시키고 차주 넘어갈때까지 몇개월 걸리는데 그동안 혹시 부채이자가 붙어서 나중에 최종부채가 되나요?",
+   "createdAt": "2024-10-24T15:36:28.653Z",
+   "bodyLen": 345,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 46,
+   "title": "부실우려 실효후 부동의된 보증서대출 수정조정",
+   "createdAt": "2024-10-24T15:38:55.083Z",
+   "bodyLen": 264,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 63,
+   "title": "우려실효에서 차주넘어갈때 추가서류+무상거주확인서",
+   "createdAt": "2024-10-24T20:29:39.630Z",
+   "bodyLen": 276,
+   "commentCount": 3,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 82,
+   "title": "새출발 부실우려던 부실차주던 보증금(상가보증금) 가압류는 피할수 없는거겠죠?",
+   "createdAt": "2024-10-25T15:19:15.597Z",
+   "bodyLen": 255,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 102,
+   "title": "부실우려 연체 중 단말기 그대로 사용해도 괜찮을까요?",
+   "createdAt": "2024-10-26T13:41:31.447Z",
+   "bodyLen": 101,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 105,
+   "title": "부실차주 장기연체 전 준비할것이 궁금해요",
+   "createdAt": "2024-10-26T14:42:42.393Z",
+   "bodyLen": 206,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 106,
+   "title": "부실우려 실효 후 차주 갈 때 카드 상계처리 되나요?",
+   "createdAt": "2024-10-26T16:40:00.993Z",
+   "bodyLen": 26,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 120,
+   "title": "부실우려때 제외된 전세자금 대출 어떻게 해야 하나요?",
+   "createdAt": "2024-10-27T08:59:26.390Z",
+   "bodyLen": 540,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 134,
+   "title": "부실우려 실효 후 부실차주로 가면 영업장 카드 대금 상계처리 되나요?",
+   "createdAt": "2024-10-27T15:17:11.203Z",
+   "bodyLen": 29,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 142,
+   "title": "부실우려 신보 보증료 문제",
+   "createdAt": "2024-10-27T22:28:38.013Z",
+   "bodyLen": 782,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 148,
+   "title": "부실우려에서 부실차주로 가려는데 우려에서 부동의 동의 권중 어떤게 유리한가요?",
+   "createdAt": "2024-10-28T00:46:45.833Z",
+   "bodyLen": 59,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 150,
+   "title": "부실우려 후에 부실차주로 갈 경우 모든 이자가 부실차주에 포함이 되나요?",
+   "createdAt": "2024-10-28T06:08:05.867Z",
+   "bodyLen": 73,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 166,
+   "title": "새출발기금 부실우려 - 6개월이내 채무 30프로이내에 관한 질문",
+   "createdAt": "2024-10-29T00:41:07.520Z",
+   "bodyLen": 246,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 168,
+   "title": "새출발기금 부실우려 신청은 어떤 조건으로 신청하셨나요?",
+   "createdAt": "2024-10-29T01:01:53.147Z",
+   "bodyLen": 208,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 169,
+   "title": "새출발기금 부실우려차주 소득금액증명원 없습니다. 어떻게 할까요?",
+   "createdAt": "2024-10-29T01:11:25.880Z",
+   "bodyLen": 206,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 178,
+   "title": "부실우려 수정조정 하고 부실차주 가나요?",
+   "createdAt": "2024-10-29T15:32:26.907Z",
+   "bodyLen": 351,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 180,
+   "title": "부실우려 -> 부실차주 바뀌면 어떻게 해야 할지 궁금해요!",
+   "createdAt": "2024-10-29T21:54:58.960Z",
+   "bodyLen": 326,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 181,
+   "title": "부실우려 재난유예 상담사 케바케인가요..?",
+   "createdAt": "2024-10-29T22:15:22.670Z",
+   "bodyLen": 901,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 191,
+   "title": "부실우려 협약서 체결 전인데 경기신용보증재단 통한 농협은행 3천만원 운전자금이 새출발기금 채무조정 제외 채무인데 경기신용보증재단에서 대위 변제를 해줘야 채무 조정이 가능한 건가요?",
+   "createdAt": "2024-10-30T07:31:37.403Z",
+   "bodyLen": 54,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 195,
+   "title": "부실우려에서 부실차주가는 두 가지 방법 정리",
+   "createdAt": "2024-10-30T11:12:00.573Z",
+   "bodyLen": 335,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 204,
+   "title": "우려에서 차주로 가려고 하는데\n7월에 폐업했고요\n차주갈때 신용점수 보나요????",
+   "createdAt": "2024-10-31T00:47:49.667Z",
+   "bodyLen": 65,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 208,
+   "title": "기존에 사용하던 대출이 9프로보다 훨씬 낮은데도 부실우려에서 9프로 책정되나요?",
+   "createdAt": "2024-10-31T00:53:50.810Z",
+   "bodyLen": 28,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 210,
+   "title": "부실우려 신청 이후 신용점수 상승",
+   "createdAt": "2024-10-31T00:55:51.927Z",
+   "bodyLen": 143,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 229,
+   "title": "새출발기금 연체 2개월 중인데 신보에서 받은 보증서 대출 연체로 가압류 들어온다고 하네요. 압류 들어오면 새출발기금 접수번호 받으면 바로 풀리는 건가요 아님 몇 달 걸리나요?",
+   "createdAt": "2024-11-01T10:37:50.460Z",
+   "bodyLen": 88,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 234,
+   "title": "부실우려 신청중일때는 연체기록이 없다는 건가요?",
+   "createdAt": "2024-11-01T15:44:48.003Z",
+   "bodyLen": 222,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 238,
+   "title": "영업용 차량을 지키는 부실차주 경로",
+   "createdAt": "2024-11-02T00:46:43.203Z",
+   "bodyLen": 67,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 240,
+   "title": "부실우려 신청하면 신용점수가 많이 떨어질까요?",
+   "createdAt": "2024-11-03T05:05:22+00:00",
+   "bodyLen": 304,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 242,
+   "title": "가압류가 걱정이 되는데 부실차주는 가야 합니다. 방법이 있을런지요?",
+   "createdAt": "2024-11-03T05:12:04+00:00",
+   "bodyLen": 343,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 247,
+   "title": "부실우려차주인데 혹시 카드사용내역처 심사하나요?",
+   "createdAt": "2024-11-03T09:51:54+00:00",
+   "bodyLen": 50,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 258,
+   "title": "압류 가압류가 걱정됩니다.",
+   "createdAt": "2024-11-03T12:53:50+00:00",
+   "bodyLen": 700,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 272,
+   "title": "부실우려에서 부실차주로 질문",
+   "createdAt": "2024-11-04T04:52:57+00:00",
+   "bodyLen": 282,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 278,
+   "title": "부실우려 수정 조정 꼭 해야 하는 건가요?",
+   "createdAt": "2024-11-04T09:55:57+00:00",
+   "bodyLen": 174,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 281,
+   "title": "부실우려 신청 가능이 단기 연체 몇일부터\n가능한가요?",
+   "createdAt": "2024-11-04T15:37:01+00:00",
+   "bodyLen": 84,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 290,
+   "title": "실효전 카드사 연체시 추심이 심할까요?",
+   "createdAt": "2024-11-05T00:38:09+00:00",
+   "bodyLen": 281,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 291,
+   "title": "새출발기금 부실차주랑 부실우려 차주 둘 다 전체 대출이 아닌 재산-대출-남은 금액에 대해서만 감면 또는 이자 혜택을 주는 건가요?",
+   "createdAt": "2024-11-05T00:56:39+00:00",
+   "bodyLen": 43,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 296,
+   "title": "영업용 차량 담보 경매처리 정보",
+   "createdAt": "2024-11-05T03:51:28+00:00",
+   "bodyLen": 140,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 297,
+   "title": "부실우려차주 신청 후 모든 신용카드는 사용 할수 없나요?",
+   "createdAt": "2024-11-05T03:52:34+00:00",
+   "bodyLen": 20,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 301,
+   "title": "부실우려중인데...다음달12월중순최종실효예정인데..이번달부터 카드값 연체 될것같아요ㅜㅜ 집으로찾아올까요? ㅜㅜ",
+   "createdAt": "2024-11-05T04:01:00+00:00",
+   "bodyLen": 46,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 305,
+   "title": "부실우려 신청 후 부실차주로 넘어가기를 원하는데, 현재 통장에 입금이 잘 되지 않아 10일 이상 연체된 상황입니다.",
+   "createdAt": "2024-11-05T05:44:45+00:00",
+   "bodyLen": 186,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 307,
+   "title": "부실우려 어제 신청했는데 토스에서 문자가 왔네요.",
+   "createdAt": "2024-11-05T08:06:11+00:00",
+   "bodyLen": 90,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 312,
+   "title": "새출발기금 부실우려 실효하여 부실차주로 넘어갈 때 질문",
+   "createdAt": "2024-11-05T10:07:00+00:00",
+   "bodyLen": 415,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 313,
+   "title": "부실우려 최종 실효 후 장기 연체가 안뜨는 사례 (정보)",
+   "createdAt": "2024-11-05T10:09:35+00:00",
+   "bodyLen": 226,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 314,
+   "title": "부실차주로 가려고 하는데 부실우려 합의서 체결해야 하나요?",
+   "createdAt": "2024-11-05T10:13:42+00:00",
+   "bodyLen": 182,
+   "commentCount": 6,
+   "operatorCommentCount": 2,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 348,
+   "title": "부실우려 신청하러 지사 방문하려고 합니다.",
+   "createdAt": "2024-11-06T22:58:12+00:00",
+   "bodyLen": 368,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 349,
+   "title": "부실우려에서 부실차주로",
+   "createdAt": "2024-11-06T23:06:49+00:00",
+   "bodyLen": 186,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 360,
+   "title": "부실우려차주 신청 후 며칠이면 확정되나요?",
+   "createdAt": "2024-11-07T09:53:34+00:00",
+   "bodyLen": 18,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 361,
+   "title": "부실우려 실효 후 부실차주 신청하면 대략 기간이 얼마나 걸리나요?",
+   "createdAt": "2024-11-07T09:57:26+00:00",
+   "bodyLen": 56,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 363,
+   "title": "법인대표이면서 개인사업자가 있고 개인사업자만 부실우려차주 신청가능 한가요?",
+   "createdAt": "2024-11-07T10:05:06+00:00",
+   "bodyLen": 57,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 365,
+   "title": "부실우려를 신청하면 신청한 날부터 연체기록이 중단 되는 걸까요 아님 부실우려 체결부터 연체기록 중단일까요?",
+   "createdAt": "2024-11-07T10:08:04+00:00",
+   "bodyLen": 80,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 366,
+   "title": "법인이고 경기신보 보증대출의 원금상환(1500만원씩)이 이 달부터입니다. 지난달에 신용카드 연체가 시작됐는데 부실우려를 먼저 하는게 날지 아님 버텼다가 부실차주를 갈지 맘이 많이 힘드네요, 조언부탁드립니다.",
+   "createdAt": "2024-11-07T10:12:29+00:00",
+   "bodyLen": 44,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 368,
+   "title": "신속 ↷​ 신복위 상담 후기",
+   "createdAt": "2024-11-07T10:54:17+00:00",
+   "bodyLen": 674,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 370,
+   "title": "부실우려 > 부실차주 진행과정에 궁금한 점이 있습니다.",
+   "createdAt": "2024-11-07T11:00:32.930Z",
+   "bodyLen": 683,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 383,
+   "title": "연체는 곧 30일되고 신용점수 하위 4%입니다\n신용회복위원회는 최근 6개월내 30%이상 대출받아서 안되는데\n새출발기금은 부실우려로 가능할까요?",
+   "createdAt": "2024-11-09T21:21:59+00:00",
+   "bodyLen": 39,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 385,
+   "title": "부실우려에서 부실차주 질문",
+   "createdAt": "2024-11-09T22:03:27+00:00",
+   "bodyLen": 540,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 398,
+   "title": "부실우려 차주 신청전 대출 실행을 해도 될까요?",
+   "createdAt": "2024-11-11T05:59:02+00:00",
+   "bodyLen": 42,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 403,
+   "title": "부실우려차주 양도 자산 확정일 전 변동금리 기간 이자율 변경 되어 손해를 봤네요 (정보)",
+   "createdAt": "2024-11-11T09:29:34+00:00",
+   "bodyLen": 424,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 408,
+   "title": "버티다 버티다 못해 신용회복위원회에 신속(새출발기금) 신청(9월24일) 후 체결전입니다.",
+   "createdAt": "2024-11-11T10:04:28+00:00",
+   "bodyLen": 640,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 416,
+   "title": "새출발 부실우려 (신속) 과정 정보",
+   "createdAt": "2024-11-12T10:45:59+00:00",
+   "bodyLen": 967,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 417,
+   "title": "부실우려에서 부실차주로 넘어가려고 할 때 통신채무에 대해 알고 싶습니다.",
+   "createdAt": "2024-11-12T10:51:01+00:00",
+   "bodyLen": 285,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 426,
+   "title": "우려에서 차주로 넘어가려는 과정입니다.",
+   "createdAt": "2024-11-13T02:39:45+00:00",
+   "bodyLen": 464,
+   "commentCount": 2,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 428,
+   "title": "새출발기금 부실차주 최근대출 30프로 디딤돌 대출",
+   "createdAt": "2024-11-13T05:48:45+00:00",
+   "bodyLen": 282,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 443,
+   "title": "부실우려에서 부실차주로 가신 분들 중에 납부 한 번도 안하시고 가신 분 계실까요?",
+   "createdAt": "2024-11-14T00:24:31+00:00",
+   "bodyLen": 30,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 451,
+   "title": "부실우려차주 모두 부동의되면 부실우려차주 신청자체가 취소가 될 수도 있나요??",
+   "createdAt": "2024-11-16T22:35:35+00:00",
+   "bodyLen": 270,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 472,
+   "title": "연체 2개월후 부실우려후 장기연체 뜨고 취소 당하고",
+   "createdAt": "2024-11-18T04:30:04+00:00",
+   "bodyLen": 104,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 481,
+   "title": "현재 부실우려 신청 중 일부만 채무조정 합의 체결된 상태입니다.\n휴대폰 할부가 가능한지요?",
+   "createdAt": "2024-11-19T00:39:40.240Z",
+   "bodyLen": 138,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 485,
+   "title": "부실우려에서 부실차주로 넘어가는 기간이 얼마나 되나요? 이제 직대 연체 일주일차인데 오늘부터 운전자금3건과 담주부터 카드 ... 줄줄이 연체 시작할건데요 ...",
+   "createdAt": "2024-11-19T12:00:05+00:00",
+   "bodyLen": 222,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 486,
+   "title": "부실우려 성립전 철회하고 차주로 넘어가가는 과정이 궁금해서  질문드립니다.",
+   "createdAt": "2024-11-20T01:36:06+00:00",
+   "bodyLen": 147,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 494,
+   "title": "담주 월요일날 부실우려신청하러 가는데 신청하고나면 고객카드결제한거 상계처리 되지는 않겠죠~?",
+   "createdAt": "2024-11-20T04:35:59+00:00",
+   "bodyLen": 45,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 496,
+   "title": "신한 대구에서 받은 저금리 대환대출이\n신한은 되고 대구는 안된다 하더라고요. 신한은 보증재단 끼고 대구는 소상공인 정책자금이라고...",
+   "createdAt": "2024-11-20T21:30:42+00:00",
+   "bodyLen": 296,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 506,
+   "title": "부실우려차주이고\n새출발기금 대출계좌가 개설되었다는데 ?\n부동의건을 말하는건가여.",
+   "createdAt": "2024-11-21T00:52:49+00:00",
+   "bodyLen": 23,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 509,
+   "title": "부실우려에서 부실차주갈 때 부실차주에서 체결안되는 건 신용회복에서 하는데 3개월 후 신청가능하다고 저 안내 받았어요 (내용무)",
+   "createdAt": "2024-11-21T09:54:47+00:00",
+   "bodyLen": 11,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 519,
+   "title": "부실우려 ?? 부실차주 ?? 이런 말들은 무슨 뜻인가요 ??",
+   "createdAt": "2024-11-22T09:53:32+00:00",
+   "bodyLen": 163,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 521,
+   "title": "신보 가처분을 중기부 국민신문고로 취하한 사연",
+   "createdAt": "2024-11-22T13:47:09.330Z",
+   "bodyLen": 130,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 523,
+   "title": "부실우려 12월에 실효 예정입니다. 국취제로 학원다니면서 근로복지공단에서\n직업훈련생계비대출 받았어요...\n대출받은게 있으면.. 부실차주 못가는건지.",
+   "createdAt": "2024-11-22T19:11:35.133Z",
+   "bodyLen": 37,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 527,
+   "title": "부실우려준비중인데..모르겠네요 ",
+   "createdAt": "2024-11-23T08:18:11.010Z",
+   "bodyLen": 666,
+   "commentCount": 6,
+   "operatorCommentCount": 4,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 530,
+   "title": "카뱅 계좌가 사업자 주거래 통장이라자주쓰는데요카뱅 대출을 부실우려에 포함 안 시키면 계좌 계속 쓸수있나요?",
+   "createdAt": "2024-11-23T11:14:41.710Z",
+   "bodyLen": 25,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 535,
+   "title": "새출발 할 때 신용점수가 낮아야 하나요?글을 보니까 신용도가 바닥이어야 새출발이 가능하다고 하는데 어느정도 바닥이어야 하나요?",
+   "createdAt": "2024-11-24T03:12:59.863Z",
+   "bodyLen": 145,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 539,
+   "title": "부실우려에서 부실차주로 갈때 질문들",
+   "createdAt": "2024-11-24T23:11:44.830Z",
+   "bodyLen": 399,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 540,
+   "title": "변제금 납부개월수에 따른 미납실효",
+   "createdAt": "2024-11-24T23:16:43+00:00",
+   "bodyLen": 0,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "EMPTY_BODY"
+  },
+  {
+   "articleId": 542,
+   "title": "부실우려 미납 실효후 부실차주 신청한 사례",
+   "createdAt": "2024-11-24T23:29:47+00:00",
+   "bodyLen": 660,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 547,
+   "title": "부실우려 신청하여 진행 중으로 신복위 앱 보니깐 ...아까 아침 9시 30분까지 만해도 분명히 진행이 (동의요청) 이였구요 ~~아침 10시 30분에 다시 보니까 ... (부동의심사) 떠있네요",
+   "createdAt": "2024-11-26T05:57:22+00:00",
+   "bodyLen": 162,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 548,
+   "title": "새출발기금을 받아보고 싶은데요. 카드 사용내역과 대출금 사용내역이 사업과 관련된지 소명해야 되는지 아니면 소명없이 가능한지 궁금합니다.",
+   "createdAt": "2024-11-26T06:04:22+00:00",
+   "bodyLen": 69,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 549,
+   "title": "새출발기금 부실우려 연초에 신청했는데 이제야 정책이 변경되어 그때 신청 못했던 채무들도 수정 조정으로 포함 시킬 수 있다 들었는데요 (정보)",
+   "createdAt": "2024-11-26T06:09:47+00:00",
+   "bodyLen": 315,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 556,
+   "title": "모든채무가 연체되고 1년후에 부실차주신청해도 가능할까요. 대부로 넘어가서 불가능할까요.\n2025년도 하반기내에 신청할거구요.",
+   "createdAt": "2024-11-26T22:47:02+00:00",
+   "bodyLen": 15,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 564,
+   "title": "새출발기금 부실우려에 개인 사업자 카드도 포함되나요 ??",
+   "createdAt": "2024-11-27T11:01:17.047Z",
+   "bodyLen": 9,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 571,
+   "title": "부실우려에서 잘 갚고 쓰던 신용카드 같은것도 실효 후 차주로 넘어가는 순간.. 그 카드의 잔존 채무 또한 강제로 전부 다 캠코로 넘어가는거죠?",
+   "createdAt": "2024-11-28T01:02:58.610Z",
+   "bodyLen": 30,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 578,
+   "title": "부실우려 이번 달부터 미납하고 3~4개월뒤 부실차주.신청하려해요. 신용카드도 포함시키고 싶은데 신용카드도 미납을 3개월이상 해야 하나요?",
+   "createdAt": "2024-11-28T11:29:30.983Z",
+   "bodyLen": 136,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 591,
+   "title": "부실우려는 신청만 되면 통장압류는 없는거져?  사고사는 압류는유지가되는 건가요? 신청중에도",
+   "createdAt": "2024-11-30T08:24:08.650Z",
+   "bodyLen": 55,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 597,
+   "title": "부실우려에서 부실차주로 진행할 때 미납 4개월이면 실효 잖아요. 그럼 실효된 날로 90일 버텨야 부실차주로 되나요?",
+   "createdAt": "2024-11-30T10:26:43.320Z",
+   "bodyLen": 72,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 600,
+   "title": "부실우려 실효 후 뭘요일 부실차주 신청예정인데 서민금융에서 해주는 50 + 50만원 대출 신청해도 될까요 ?",
+   "createdAt": "2024-11-30T10:43:34.693Z",
+   "bodyLen": 211,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 603,
+   "title": "부실차주 예산 조기 소진과 부실우려",
+   "createdAt": "2024-12-02T02:38:02.890Z",
+   "bodyLen": 119,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 604,
+   "title": "부실우려 약정서 체결당시 6개월이 되지 않아서 포함시키지 못한 채무와 그 당시 포함 안시킨 카드들 추가했습니다. ",
+   "createdAt": "2024-12-02T02:39:34+00:00",
+   "bodyLen": 48,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 606,
+   "title": "부실우려 에서 부실 차주로 갈 때 질문입니다",
+   "createdAt": "2024-12-02T02:46:19+00:00",
+   "bodyLen": 178,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 607,
+   "title": "부실 우려 접수하고 왔어요. 그런데 채권자 보호라고 낼부터 돈 빼간대요. 통장 비우라고 3주동안 다비우라했는데 내일  가장 큰 거래처 입금날이예요.",
+   "createdAt": "2024-12-02T05:37:18+00:00",
+   "bodyLen": 135,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 611,
+   "title": "부실우려 신청했습니다. 국민,하나,삼성,우리 신한 카드 중에서 국민과 하나카드 만 접수했는데 ᆢ 우리카드가 정지 됐어요 ㅜㅜ나머지카드도 못쓴다면 추가 접수해야되서요~~",
+   "createdAt": "2024-12-02T09:02:41+00:00",
+   "bodyLen": 99,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 644,
+   "title": "부실우려 12월2일에 실효되고 아직도 장기연체등록이 되지않아 부실차주 신청못하고 있어요.  다른분들은 실효되고10일 정도면 완료 되시는거 같은데 혹시 장기연체등록이 늦게 되신 분도 계실까요?",
+   "createdAt": "2024-12-10T09:24:06+00:00",
+   "bodyLen": 100,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 645,
+   "title": "부실우려 체결하신 분들 중 혹시 카드사는 동의 or 부동의 기간이 어느 정도 평균 걸리셨는지대략적으로 알 수 있을까요?부동의 났을 경우에 새출발매입 기간까지도 평균적으로 알고 싶습니다",
+   "createdAt": "2024-12-10T09:29:13+00:00",
+   "bodyLen": 86,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 649,
+   "title": "부실우려신청할때 꼭 후순위 사업자 담보대출을 넣어야 부실차주로 넘어 갈 때 같이 넘어 가는거에여. (정보)",
+   "createdAt": "2024-12-12T11:09:59+00:00",
+   "bodyLen": 89,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 703,
+   "title": "부실우려부동의소진공대출",
+   "createdAt": "2025-01-16T00:59:36+00:00",
+   "bodyLen": 71,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 752,
+   "title": "우려접수후",
+   "createdAt": "2025-02-15T15:41:17+00:00",
+   "bodyLen": 151,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 776,
+   "title": "개인프리워크 진행중ᆢ개인회생으로 갈 수 없나요? ",
+   "createdAt": "2025-03-02T08:34:05+00:00",
+   "bodyLen": 59,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 777,
+   "title": "부실우려에서 부실차주 도와주세요",
+   "createdAt": "2025-03-03T15:10:02.250Z",
+   "bodyLen": 361,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 810,
+   "title": "틈금없는질문드려 미안합니다",
+   "createdAt": "2025-03-13T15:26:54.143Z",
+   "bodyLen": 179,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 822,
+   "title": "저의 경우 새출발기금 법인사업자 부실우려 부실차주 가능한지 문의 드립니다. 도움 부탁드립니다.",
+   "createdAt": "2025-03-20T01:18:29.680Z",
+   "bodyLen": 746,
+   "commentCount": 4,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 860,
+   "title": "내일부터 연체시작이고 10일연체후 부실우려",
+   "createdAt": "2025-04-13T11:21:26.927Z",
+   "bodyLen": 233,
+   "commentCount": 4,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 931,
+   "title": "안녕하세요. 궁금한게 있어서 문의드립니다",
+   "createdAt": "2025-05-25T04:52:32.827Z",
+   "bodyLen": 230,
+   "commentCount": 8,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 938,
+   "title": "현대캐피탈 질문드립니다",
+   "createdAt": "2025-05-28T09:01:02.260Z",
+   "bodyLen": 163,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 942,
+   "title": "안녕하세요 보증재단에대해서",
+   "createdAt": "2025-05-29T06:52:07.433Z",
+   "bodyLen": 204,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 950,
+   "title": "부실우려신청접수하구 부실차주",
+   "createdAt": "2025-05-30T11:53:30.300Z",
+   "bodyLen": 237,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 998,
+   "title": "부실우려 신청",
+   "createdAt": "2025-06-12T10:53:46.617Z",
+   "bodyLen": 220,
+   "commentCount": 4,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 999,
+   "title": "부실우려 협약서체결",
+   "createdAt": "2025-06-13T01:29:55.900Z",
+   "bodyLen": 159,
+   "commentCount": 5,
+   "operatorCommentCount": 2,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1024,
+   "title": "부실우려에서 차주로 가려고 하는데 출퇴근용 중고차를 구입했는데 이 차가 재산으로 반영이 되나요? ㅠㅠ",
+   "createdAt": "2025-06-19T14:18:41.530Z",
+   "bodyLen": 183,
+   "commentCount": 6,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1092,
+   "title": "부실우려차주",
+   "createdAt": "2025-07-04T10:44:12.463Z",
+   "bodyLen": 290,
+   "commentCount": 4,
+   "operatorCommentCount": 2,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1260,
+   "title": "급하게 질문드립니다. 조언 부탁드려요",
+   "createdAt": "2025-08-26T09:48:43.280Z",
+   "bodyLen": 342,
+   "commentCount": 8,
+   "operatorCommentCount": 0,
+   "images": 2,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1268,
+   "title": "부실우려신청 후기",
+   "createdAt": "2025-08-31T03:55:04+00:00",
+   "bodyLen": 285,
+   "commentCount": 3,
+   "operatorCommentCount": 0,
+   "images": 2,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1290,
+   "title": "조언부탁합니다",
+   "createdAt": "2025-09-11T02:24:50+00:00",
+   "bodyLen": 568,
+   "commentCount": 3,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1294,
+   "title": "부실우려...",
+   "createdAt": "2025-09-12T09:39:47+00:00",
+   "bodyLen": 316,
+   "commentCount": 10,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1301,
+   "title": "오늘 상담받고 사전부실우려 신청하고 왔어요",
+   "createdAt": "2025-09-16T07:56:21+00:00",
+   "bodyLen": 292,
+   "commentCount": 8,
+   "operatorCommentCount": 4,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1313,
+   "title": "부실우려 중 실효예정 이런 카톡이 왔습니다",
+   "createdAt": "2025-09-19T01:07:29+00:00",
+   "bodyLen": 99,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1314,
+   "title": "신속(새출발기금) 채무조정 진행중...",
+   "createdAt": "2025-09-19T04:14:16+00:00",
+   "bodyLen": 255,
+   "commentCount": 3,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1324,
+   "title": "부실우려 4회차 미납됬어요.. 11개월간 내다가..",
+   "createdAt": "2025-09-20T14:31:17+00:00",
+   "bodyLen": 534,
+   "commentCount": 9,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1354,
+   "title": "내일부터..연체 하나씩. 전화오겠죠",
+   "createdAt": "2025-09-28T10:42:23+00:00",
+   "bodyLen": 330,
+   "commentCount": 3,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1401,
+   "title": "우려_차주",
+   "createdAt": "2025-10-13T05:27:36+00:00",
+   "bodyLen": 115,
+   "commentCount": 9,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1415,
+   "title": "부실우려 7회차 납부 200만원이 넘어가니 너무 힘드네요",
+   "createdAt": "2025-10-15T07:24:00+00:00",
+   "bodyLen": 175,
+   "commentCount": 4,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1426,
+   "title": "차주가려면",
+   "createdAt": "2025-10-17T01:30:00+00:00",
+   "bodyLen": 101,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1427,
+   "title": "부실차주 감면이 대출건만 되나요?",
+   "createdAt": "2025-10-17T02:38:30+00:00",
+   "bodyLen": 119,
+   "commentCount": 4,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1451,
+   "title": "월요일에 부실우려 최종실효되고 오늘 연체등록떴어요ㅠ 이제 뭘 해야하죠??",
+   "createdAt": "2025-10-22T10:29:31+00:00",
+   "bodyLen": 146,
+   "commentCount": 3,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1466,
+   "title": "오늘접수",
+   "createdAt": "2025-10-27T05:09:19+00:00",
+   "bodyLen": 335,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1472,
+   "title": "부실우려접수했습니다",
+   "createdAt": "2025-10-28T06:49:05+00:00",
+   "bodyLen": 42,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1494,
+   "title": "부실우려 접수후 추심, 구상소송 열락",
+   "createdAt": "2025-10-31T10:09:25+00:00",
+   "bodyLen": 257,
+   "commentCount": 6,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1521,
+   "title": "부실우려신청시",
+   "createdAt": "2025-11-06T21:18:00+00:00",
+   "bodyLen": 96,
+   "commentCount": 3,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1527,
+   "title": "부실우려신청-내용증명",
+   "createdAt": "2025-11-10T02:30:42+00:00",
+   "bodyLen": 60,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1537,
+   "title": "안녕하세요 자영업자 새출발기금 문의드립니다",
+   "createdAt": "2025-11-11T13:06:14+00:00",
+   "bodyLen": 201,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1558,
+   "title": "힘드네요 ㅠ 조언좀 해주세요",
+   "createdAt": "2025-11-15T18:33:34+00:00",
+   "bodyLen": 196,
+   "commentCount": 5,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1582,
+   "title": "부실우려",
+   "createdAt": "2025-11-18T06:01:42+00:00",
+   "bodyLen": 112,
+   "commentCount": 7,
+   "operatorCommentCount": 5,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1683,
+   "title": "문의드립니다..10월29일 폐업 부실차주우려신청시 신용회복위원회 새출발기금 어디서 신청하는게 유리할까요...",
+   "createdAt": "2025-11-22T02:22:44+00:00",
+   "bodyLen": 407,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 2,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1732,
+   "title": "내일상담받으러 갈건데요",
+   "createdAt": "2025-11-24T01:30:07+00:00",
+   "bodyLen": 116,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1765,
+   "title": "부실우려신청시 사업자2개",
+   "createdAt": "2025-11-24T10:14:01+00:00",
+   "bodyLen": 56,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1841,
+   "title": "신복위상담다녀왔어요",
+   "createdAt": "2025-11-25T02:14:01+00:00",
+   "bodyLen": 495,
+   "commentCount": 15,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1858,
+   "title": "부실우려에서 부실차주",
+   "createdAt": "2025-11-25T05:24:54+00:00",
+   "bodyLen": 192,
+   "commentCount": 12,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1864,
+   "title": "폐업신고후",
+   "createdAt": "2025-11-25T06:03:01+00:00",
+   "bodyLen": 33,
+   "commentCount": 5,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1867,
+   "title": "부실우려 상담받고 왔어요",
+   "createdAt": "2025-11-25T07:06:42+00:00",
+   "bodyLen": 96,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1868,
+   "title": "신용회복위원회접수때 부실우려 알아야하는사실",
+   "createdAt": "2025-11-25T07:12:17+00:00",
+   "bodyLen": 324,
+   "commentCount": 9,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1871,
+   "title": "부실우려 접수했어요.. 그리고 간단한정보도 있어요",
+   "createdAt": "2025-11-25T07:49:09+00:00",
+   "bodyLen": 277,
+   "commentCount": 8,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1947,
+   "title": "힘들네요.. 궁금해서 문의 드립니다.",
+   "createdAt": "2025-11-25T17:46:05+00:00",
+   "bodyLen": 451,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1952,
+   "title": "연체하루만에",
+   "createdAt": "2025-11-26T00:08:49+00:00",
+   "bodyLen": 74,
+   "commentCount": 6,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 1991,
+   "title": "신청할때요",
+   "createdAt": "2025-11-26T06:44:41+00:00",
+   "bodyLen": 72,
+   "commentCount": 4,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2019,
+   "title": "저부실우려신청갑니다",
+   "createdAt": "2025-11-26T14:55:31+00:00",
+   "bodyLen": 307,
+   "commentCount": 9,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2051,
+   "title": "방금 우려차주 신청하고왔어요 + 내용추가",
+   "createdAt": "2025-11-27T01:24:23+00:00",
+   "bodyLen": 343,
+   "commentCount": 19,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2119,
+   "title": "부실우려신청시 못넣은 채무",
+   "createdAt": "2025-11-27T23:49:13+00:00",
+   "bodyLen": 29,
+   "commentCount": 5,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2134,
+   "title": "새출발기금(신속) 접수하고왔습니다",
+   "createdAt": "2025-11-28T04:44:57+00:00",
+   "bodyLen": 109,
+   "commentCount": 30,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2135,
+   "title": "합의서",
+   "createdAt": "2025-11-28T05:31:09+00:00",
+   "bodyLen": 98,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2139,
+   "title": "추심상황",
+   "createdAt": "2025-11-28T05:38:04+00:00",
+   "bodyLen": 410,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2442,
+   "title": "한군데체결",
+   "createdAt": "2025-12-01T17:53:31+00:00",
+   "bodyLen": 208,
+   "commentCount": 5,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2452,
+   "title": "삼성카드",
+   "createdAt": "2025-12-02T02:29:36+00:00",
+   "bodyLen": 108,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2463,
+   "title": "사업자가 배우자와 가각 있을때",
+   "createdAt": "2025-12-02T05:22:13+00:00",
+   "bodyLen": 194,
+   "commentCount": 6,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2465,
+   "title": "부실우려 실효후 차주",
+   "createdAt": "2025-12-02T05:55:37+00:00",
+   "bodyLen": 57,
+   "commentCount": 5,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2468,
+   "title": "부실우려체결",
+   "createdAt": "2025-12-02T06:50:15+00:00",
+   "bodyLen": 81,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2511,
+   "title": "재가입했습니다~",
+   "createdAt": "2025-12-03T15:23:37+00:00",
+   "bodyLen": 21,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2559,
+   "title": "부실우려신청후 채무추가",
+   "createdAt": "2025-12-05T07:09:28+00:00",
+   "bodyLen": 63,
+   "commentCount": 4,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2621,
+   "title": "합의서 체결했어요~",
+   "createdAt": "2025-12-10T04:02:20+00:00",
+   "bodyLen": 63,
+   "commentCount": 10,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2625,
+   "title": "수정조정신청(약정후 채무추가)",
+   "createdAt": "2025-12-10T05:44:41+00:00",
+   "bodyLen": 250,
+   "commentCount": 6,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2636,
+   "title": "오늘 의정부 신복위 부실 우려 접수 갔다가 못하고 왔네요 질문 드립니다",
+   "createdAt": "2025-12-11T02:37:10+00:00",
+   "bodyLen": 594,
+   "commentCount": 3,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2639,
+   "title": "11월19일부실우려차주 신청후~~",
+   "createdAt": "2025-12-11T06:06:15+00:00",
+   "bodyLen": 193,
+   "commentCount": 3,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2654,
+   "title": "사업자등록,폐업",
+   "createdAt": "2025-12-12T00:21:14+00:00",
+   "bodyLen": 76,
+   "commentCount": 5,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2676,
+   "title": "부실우려차주 신청전입니다 지혜를주세요",
+   "createdAt": "2025-12-14T03:10:59+00:00",
+   "bodyLen": 981,
+   "commentCount": 14,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2677,
+   "title": "사업자등록",
+   "createdAt": "2025-12-14T05:15:57+00:00",
+   "bodyLen": 53,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2716,
+   "title": "부실우려에서 부실차주",
+   "createdAt": "2025-12-16T02:03:38+00:00",
+   "bodyLen": 199,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2818,
+   "title": "원장초기화",
+   "createdAt": "2025-12-19T00:03:02+00:00",
+   "bodyLen": 193,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2819,
+   "title": "신용보증기관건",
+   "createdAt": "2025-12-19T00:31:44+00:00",
+   "bodyLen": 121,
+   "commentCount": 4,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2970,
+   "title": "자동이체계좌 변경 얼마나 걸릴까요?",
+   "createdAt": "2025-12-22T11:58:24+00:00",
+   "bodyLen": 233,
+   "commentCount": 8,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2981,
+   "title": "부실차주신청 후 차량매매",
+   "createdAt": "2025-12-22T20:47:15+00:00",
+   "bodyLen": 198,
+   "commentCount": 4,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2983,
+   "title": "미소금융에서 법적조치",
+   "createdAt": "2025-12-22T21:44:07+00:00",
+   "bodyLen": 160,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2984,
+   "title": "경기신보건",
+   "createdAt": "2025-12-22T21:46:51+00:00",
+   "bodyLen": 116,
+   "commentCount": 8,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 2985,
+   "title": "국민취업제도",
+   "createdAt": "2025-12-22T21:54:26+00:00",
+   "bodyLen": 54,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3034,
+   "title": "오늘 신복위 상담받고 왔습니다.",
+   "createdAt": "2025-12-23T14:18:31+00:00",
+   "bodyLen": 386,
+   "commentCount": 9,
+   "operatorCommentCount": 4,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3040,
+   "title": "알바끝나고 피곤하네요",
+   "createdAt": "2025-12-23T15:42:14+00:00",
+   "bodyLen": 182,
+   "commentCount": 3,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3058,
+   "title": "출근중 전철입니다~",
+   "createdAt": "2025-12-23T23:48:25+00:00",
+   "bodyLen": 35,
+   "commentCount": 4,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3080,
+   "title": "새출발사이트에서대출내역보다가",
+   "createdAt": "2025-12-24T08:07:06+00:00",
+   "bodyLen": 216,
+   "commentCount": 4,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3096,
+   "title": "2025년 크리스마스",
+   "createdAt": "2025-12-24T14:36:10+00:00",
+   "bodyLen": 91,
+   "commentCount": 4,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3101,
+   "title": "본인명의 휴대폰",
+   "createdAt": "2025-12-24T15:47:02+00:00",
+   "bodyLen": 124,
+   "commentCount": 3,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3118,
+   "title": "부실우려차주 신청 D-25",
+   "createdAt": "2025-12-25T07:15:00+00:00",
+   "bodyLen": 226,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3132,
+   "title": "출근중 출석체크합니다~",
+   "createdAt": "2025-12-26T00:05:22+00:00",
+   "bodyLen": 167,
+   "commentCount": 9,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3172,
+   "title": "부실우려 미납 실효 빨리 하는 방법",
+   "createdAt": "2025-12-27T10:21:31+00:00",
+   "bodyLen": 497,
+   "commentCount": 3,
+   "operatorCommentCount": 0,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3179,
+   "title": "부실우려 궁금합니다.",
+   "createdAt": "2025-12-27T13:11:26+00:00",
+   "bodyLen": 317,
+   "commentCount": 8,
+   "operatorCommentCount": 4,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3183,
+   "title": "부실우려에서 부실차주로 가기위해 문의드려요.(초보자예요)",
+   "createdAt": "2025-12-27T16:46:01+00:00",
+   "bodyLen": 821,
+   "commentCount": 4,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3196,
+   "title": "출석합니다~",
+   "createdAt": "2025-12-28T05:11:10+00:00",
+   "bodyLen": 92,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3220,
+   "title": "신속 채무조정이랑 다른건가요?",
+   "createdAt": "2025-12-29T02:45:15+00:00",
+   "bodyLen": 281,
+   "commentCount": 4,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3222,
+   "title": "사고사  카드가  국민카드이면",
+   "createdAt": "2025-12-29T02:46:59+00:00",
+   "bodyLen": 214,
+   "commentCount": 1,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3229,
+   "title": "드디어 내일 전화상담....",
+   "createdAt": "2025-12-29T05:05:22+00:00",
+   "bodyLen": 434,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3241,
+   "title": "내용증명에대해서",
+   "createdAt": "2025-12-29T08:10:55+00:00",
+   "bodyLen": 123,
+   "commentCount": 5,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3243,
+   "title": "빠른가압류",
+   "createdAt": "2025-12-29T08:14:33+00:00",
+   "bodyLen": 216,
+   "commentCount": 3,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3244,
+   "title": "온라인사업자신청",
+   "createdAt": "2025-12-29T08:15:55+00:00",
+   "bodyLen": 81,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3269,
+   "title": "차량담보 불가능이라네요.",
+   "createdAt": "2025-12-30T02:22:09+00:00",
+   "bodyLen": 155,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3276,
+   "title": "엇 드디어 상담했다고 전화왔네요",
+   "createdAt": "2025-12-30T05:41:29+00:00",
+   "bodyLen": 185,
+   "commentCount": 10,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3308,
+   "title": "🏠 [실제 사례] \"설마 했던 만기 실수가 집 경매로 이어졌습니다\"",
+   "createdAt": "2025-12-31T10:50:46+00:00",
+   "bodyLen": 878,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3352,
+   "title": "상계와 채무조정",
+   "createdAt": "2026-01-02T08:00:33+00:00",
+   "bodyLen": 998,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3367,
+   "title": "신속 새출발",
+   "createdAt": "2026-01-02T12:35:19+00:00",
+   "bodyLen": 292,
+   "commentCount": 6,
+   "operatorCommentCount": 4,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3488,
+   "title": "희리패 심화교육",
+   "createdAt": "2026-01-07T05:33:49+00:00",
+   "bodyLen": 13,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3507,
+   "title": "상담을 앞두고 있어요~~ㅠㅠ",
+   "createdAt": "2026-01-07T17:04:50+00:00",
+   "bodyLen": 1261,
+   "commentCount": 7,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3571,
+   "title": "부실우려 신청하러 신복위 방문때 가져갈 서류",
+   "createdAt": "2026-01-12T07:39:35+00:00",
+   "bodyLen": 106,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3600,
+   "title": "[최종후기] 신복위 부실우려자 신청하고 왔습니다 (감사회원 단톡방)",
+   "createdAt": "2026-01-13T08:51:41+00:00",
+   "bodyLen": 1154,
+   "commentCount": 11,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3601,
+   "title": "채권 수정 신고와 채권사 동의 여부",
+   "createdAt": "2026-01-13T09:07:06+00:00",
+   "bodyLen": 382,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3621,
+   "title": "부실우려 오늘 상담받으러갑니다",
+   "createdAt": "2026-01-13T23:45:35+00:00",
+   "bodyLen": 95,
+   "commentCount": 3,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3626,
+   "title": "신용회복위원회 방문했다가 신청안하고 그냥옵니다",
+   "createdAt": "2026-01-14T02:19:58+00:00",
+   "bodyLen": 139,
+   "commentCount": 7,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3701,
+   "title": "부실우려접수후 폐업시",
+   "createdAt": "2026-01-17T13:22:40+00:00",
+   "bodyLen": 204,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3768,
+   "title": "부실우려 접수했는데  이런문자가  왔어요",
+   "createdAt": "2026-01-20T00:48:57+00:00",
+   "bodyLen": 0,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 1,
+   "collectionStatus": "EMPTY_BODY"
+  },
+  {
+   "articleId": 3803,
+   "title": "부실우려 접수후>>>가게 매매",
+   "createdAt": "2026-01-21T06:29:01+00:00",
+   "bodyLen": 273,
+   "commentCount": 3,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 3996,
+   "title": "임시안 나왔어요",
+   "createdAt": "2026-02-02T11:40:11+00:00",
+   "bodyLen": 122,
+   "commentCount": 5,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4027,
+   "title": "기한의 이익 상실 예정 통지서가 뭘까요?",
+   "createdAt": "2026-02-04T00:01:53+00:00",
+   "bodyLen": 132,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4050,
+   "title": "부실우려 접수하고 왔습니다.",
+   "createdAt": "2026-02-05T01:29:43+00:00",
+   "bodyLen": 332,
+   "commentCount": 11,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4057,
+   "title": "선배님들!!!",
+   "createdAt": "2026-02-05T06:28:50+00:00",
+   "bodyLen": 267,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4105,
+   "title": "2월 5일 부실우려접수했는데 오늘 하나카드  카드대금 상계처리 예정 문자받았는데요.",
+   "createdAt": "2026-02-09T07:15:11+00:00",
+   "bodyLen": 350,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4112,
+   "title": "부실우려시  신복위 협약아닌 금융권",
+   "createdAt": "2026-02-09T13:25:07+00:00",
+   "bodyLen": 90,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4166,
+   "title": "원장 초기화는 미리 미리 해두시는 것이 좋습니다.",
+   "createdAt": "2026-02-13T01:36:05+00:00",
+   "bodyLen": 411,
+   "commentCount": 7,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4184,
+   "title": "02/19일 부실우려 신청하러 갑니다. 너무 궁금한게 있어요.",
+   "createdAt": "2026-02-14T17:12:24+00:00",
+   "bodyLen": 416,
+   "commentCount": 6,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4373,
+   "title": "〔①-2. 성실상환 인센티브(중개형)〕",
+   "createdAt": "2026-03-02T01:18:23+00:00",
+   "bodyLen": 629,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4392,
+   "title": "부실우려중인데 질문!",
+   "createdAt": "2026-03-03T23:57:25+00:00",
+   "bodyLen": 112,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4503,
+   "title": "16일 상담예정 입니다",
+   "createdAt": "2026-03-10T05:40:03+00:00",
+   "bodyLen": 360,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4554,
+   "title": "부실우려 문의드립니다",
+   "createdAt": "2026-03-13T08:55:49+00:00",
+   "bodyLen": 66,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4557,
+   "title": "부실우려 신청접수중",
+   "createdAt": "2026-03-13T10:02:32+00:00",
+   "bodyLen": 127,
+   "commentCount": 8,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4580,
+   "title": "신속(새출발기금)/개인사업자 채무조정 신청 이후~",
+   "createdAt": "2026-03-16T02:15:23+00:00",
+   "bodyLen": 1026,
+   "commentCount": 5,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4590,
+   "title": "부실 부결되면 다른 방법있을까요?",
+   "createdAt": "2026-03-16T14:09:58+00:00",
+   "bodyLen": 244,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4617,
+   "title": "부실우려 신청 38일째 안내장",
+   "createdAt": "2026-03-18T03:39:55+00:00",
+   "bodyLen": 168,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4634,
+   "title": "부실우려 합의서 체결중입니다. 미납 횟수 여쭤봅니다.",
+   "createdAt": "2026-03-18T23:30:05+00:00",
+   "bodyLen": 165,
+   "commentCount": 10,
+   "operatorCommentCount": 2,
+   "images": 1,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4745,
+   "title": "부실우려 대위변제",
+   "createdAt": "2026-04-01T07:48:21+00:00",
+   "bodyLen": 176,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4781,
+   "title": "오늘부실우려차주신청하고왔네요",
+   "createdAt": "2026-04-06T10:44:57+00:00",
+   "bodyLen": 138,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4827,
+   "title": "부실우려 약정체결 후 문의",
+   "createdAt": "2026-04-10T04:58:08+00:00",
+   "bodyLen": 210,
+   "commentCount": 3,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4883,
+   "title": "부실우려 심사동의넘어간지 한달지났는데도 아직도  합의서체결로 안넘어가네요.",
+   "createdAt": "2026-04-16T08:02:04+00:00",
+   "bodyLen": 340,
+   "commentCount": 5,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 4951,
+   "title": "새출발 (부실차주 문의드립니다.)",
+   "createdAt": "2026-04-23T16:06:36+00:00",
+   "bodyLen": 273,
+   "commentCount": 1,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5085,
+   "title": "70세 이상 고령층 새출발기금신청",
+   "createdAt": "2026-05-12T07:51:00+00:00",
+   "bodyLen": 479,
+   "commentCount": 7,
+   "operatorCommentCount": 4,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5091,
+   "title": "부실우려 관련 질문드립니다. 청년창업자 생초보입니다 조언 부탁드립니다 ㅜㅜ",
+   "createdAt": "2026-05-12T16:22:29+00:00",
+   "bodyLen": 466,
+   "commentCount": 2,
+   "operatorCommentCount": 2,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5320,
+   "title": "부실우려차주",
+   "createdAt": "2026-05-31T13:47:13+00:00",
+   "bodyLen": 48,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5369,
+   "title": "혹시 아임인도 새출발기금 매입되나요?",
+   "createdAt": "2026-06-04T22:41:32+00:00",
+   "bodyLen": 13,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5372,
+   "title": "어제 신복위 다녀왔습니다. 법인 신속채무조정 및 개인 채무 상담 후기 공유합니다.",
+   "createdAt": "2026-06-05T00:12:42+00:00",
+   "bodyLen": 1968,
+   "commentCount": 5,
+   "operatorCommentCount": 3,
+   "images": 2,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5374,
+   "title": "신복위 다녀왔는데, 부실우려신청했다가 부실로 신청이 안된다고 하세요ㅜ",
+   "createdAt": "2026-06-05T02:30:05+00:00",
+   "bodyLen": 88,
+   "commentCount": 4,
+   "operatorCommentCount": 3,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5388,
+   "title": "다음주에 부실우려 신청하러가요.. 신청소요시간 얼마나 걸릴까요?",
+   "createdAt": "2026-06-06T03:19:09+00:00",
+   "bodyLen": 34,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5393,
+   "title": "부실우려에서 부실차주 전환 방법 문의드립니다",
+   "createdAt": "2026-06-07T10:38:18+00:00",
+   "bodyLen": 273,
+   "commentCount": 11,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5429,
+   "title": "내일상담인데 신용등급 낮추는팁 부탁드립니다!!",
+   "createdAt": "2026-06-10T06:19:05+00:00",
+   "bodyLen": 179,
+   "commentCount": 3,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5451,
+   "title": "부실우려차주 신청 질문 드립니다 선배님들",
+   "createdAt": "2026-06-11T10:10:25+00:00",
+   "bodyLen": 135,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5582,
+   "title": "안녕하세요 보증료관련해서 다시 여쭙니다",
+   "createdAt": "2026-06-30T10:17:07+00:00",
+   "bodyLen": 698,
+   "commentCount": 2,
+   "operatorCommentCount": 1,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5671,
+   "title": "부실우려에서 부실차주로 넘어가신분 있으신가요?",
+   "createdAt": "2026-07-15T04:44:30+00:00",
+   "bodyLen": 45,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 5674,
+   "title": "부실우려 체결후, 비사고사 카드발급, 대출실행문의드립니다.",
+   "createdAt": "2026-07-15T08:51:20+00:00",
+   "bodyLen": 670,
+   "commentCount": 0,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  },
+  {
+   "articleId": 6012,
+   "title": "새출발 부실우려차주",
+   "createdAt": "2026-09-21T10:56:07+00:00",
+   "bodyLen": 224,
+   "commentCount": 2,
+   "operatorCommentCount": 0,
+   "images": 0,
+   "collectionStatus": "COMPLETE"
+  }
+ ]
+}

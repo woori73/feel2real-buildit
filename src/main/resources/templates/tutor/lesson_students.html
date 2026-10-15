@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수업 신청자 목록</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_lesson_students.css">
+</head>
+<body>
+  <div class="topbar">
+    <h1><img src='/img/F2R_logo_pure.svg' alt='F2R' style='height:32px;'><span class="badge">TUTOR</span></h1>
+    <div class="user-info">
+      <span id="userName">-</span>
+      <a class="btn-profile" href="/my/profile">내 프로필</a>
+      <button class="btn-logout" onclick="handleLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="section-header">
+      <div class="section-title">수업 신청자 목록</div>
+      <div class="section-subtitle" id="sectionSubtitle">불러오는 중...</div>
+    </div>
+
+    <div id="studentGrid" class="student-grid">
+      <div class="empty-state">불러오는 중...</div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    // 진입 가드: TUTOR만 접근 가능 (sessionStorage 비어도 JWT 쿠키로 복원 — 하단 init)
+    let currentUser = null;
+
+    // URL에서 lessonId 추출: /tutor/lessons/{lessonId}/students
+    const pathParts = location.pathname.split('/');
+    const lessonId = pathParts[pathParts.indexOf('lessons') + 1];
+
+    async function loadApplications() {
+      const grid = document.getElementById('studentGrid');
+      try {
+        const res = await fetchAuth('/api/tutor/lessons/' + lessonId + '/applications');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const applications = await res.json();
+        renderApplications(applications);
+      } catch (e) {
+        grid.innerHTML = '<div class="empty-state">신청자 목록을 불러오지 못했습니다.</div>';
+      }
+    }
+
+    function renderApplications(applications) {
+      const grid = document.getElementById('studentGrid');
+      document.getElementById('sectionSubtitle').textContent =
+        '승인된 신청자 ' + applications.length + '명.';
+
+      if (applications.length === 0) {
+        grid.innerHTML = '<div class="empty-state">아직 승인된 신청자가 없습니다.</div>';
+        return;
+      }
+
+      grid.innerHTML = applications.map(a => `
+        <div class="student-card">
+          <div class="student-name">${escapeHtml(a.studentName)}</div>
+          ${a.conversationId
+            ? `<a class="conversation-link" href="/conversation/chat?conversationId=${a.conversationId}">
+                 💬 ${escapeHtml(a.conversationTitle || '학습 대화')}
+               </a>`
+            : '<div class="no-conversation">연결된 대화 없음</div>'
+          }
+          <a class="community-link" href="/lessons/${lessonId}/community">수업 커뮤니티</a>
+          <div class="applied-at">신청일: ${formatDate(a.appliedAt)}</div>
+        </div>
+      `).join('');
+    }
+
+    async function handleLogout() {
+      try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+      sessionStorage.removeItem('currentUser');
+      location.href = '/';
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function formatDate(isoStr) {
+      if (!isoStr) return '-';
+      return new Date(isoStr).toLocaleDateString('ko-KR');
+    }
+
+    (async () => {
+      currentUser = await ensureCurrentUser();
+      if (!currentUser || currentUser.role !== 'TUTOR') { location.href = '/home'; return; }
+      document.getElementById('userName').textContent = window.userDisplayName(currentUser);
+      loadApplications();
+    })();
+  </script>
+</body>
+</html>

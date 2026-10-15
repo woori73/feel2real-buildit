@@ -1,0 +1,4 @@
+/* 결제 전용. 폼/라디오 공통 규칙은 lms_shell.css. */
+
+.pay-summary{margin:26px 0;font-size:17px}
+.pay-summary strong{display:block;font-size:32px;color:var(--purple);margin-top:6px}

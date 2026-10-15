@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='wiki-body')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>문항별 THREAD · BuildIt Wiki</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <link rel="stylesheet" href="/css/account_menu.css">
+  <link rel="stylesheet" href="/css/wiki.css?v=20260903-3">
+  <link rel="stylesheet" href="/css/question_wiki.css?v=20260904-1">
+</head>
+<body class="wiki-body">
+<th:block layout:fragment="content">
+
+  <header class="wiki-topbar">
+    <a class="brand" href="/wiki"><b>BuildIt</b><span>Wiki</span></a>
+    <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
+    <div class="spacer"></div>
+    <a class="wiki-home-link" href="/">BuildIt 홈</a>
+    <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
+  </header>
+
+  <main class="wiki-wrap qw-list-page">
+    <a class="back-link" href="/wiki">← BuildIt Wiki로 돌아가기</a>
+
+    <section class="wiki-intro">
+      <h1>문항 고르기</h1>
+      <p>2026년 9월 전국연합학력평가(영어)를 문항 하나씩 봅니다. 문항을 고르면 학습자료를 보고, 궁금한 점을 묻고, 의견을 나눌 수 있어요.</p>
+      <div id="gradeTabs" class="grade-tabs" role="tablist" aria-label="학년 선택">
+        <button class="grade-tab active" role="tab" data-grade="2">고2<small>내신 대비</small></button>
+        <button class="grade-tab" role="tab" data-grade="1">고1<small>내신 대비</small></button>
+      </div>
+    </section>
+
+    <section class="wiki-block">
+      <div class="block-head"><h2 id="qwListTitle">문항</h2></div>
+      <div id="qwGrid" class="qw-grid"><p class="muted">불러오는 중...</p></div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/account_menu.js"></script>
+  <script src="/js/question_wiki_list.js?v=20260903-1"></script>
+</th:block>
+</body>
+</html>
