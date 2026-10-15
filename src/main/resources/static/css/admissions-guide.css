@@ -299,3 +299,12 @@ body {
   .ag-welcome { padding: 48px; }
   .ag-title { font-size: 32px; }
 }
+
+
+/* 학생 정보 입력 */
+.ag-profile { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:720px; margin:18px auto; text-align:left; }
+.ag-profile label { display:flex; flex-direction:column; gap:6px; font-size:14px; font-weight:700; color:#27324a; }
+.ag-profile input,.ag-profile select,.ag-profile textarea { width:100%; box-sizing:border-box; border:1px solid #d8deea; border-radius:10px; background:#fff; padding:11px 12px; font:inherit; color:#172033; }
+.ag-profile textarea { resize:vertical; min-height:68px; }
+.ag-profile-wide { grid-column:1 / -1; }
+@media (max-width: 600px) { .ag-profile { grid-template-columns:1fr; gap:10px; margin:14px auto; } .ag-profile-wide { grid-column:auto; } .ag-profile input,.ag-profile select,.ag-profile textarea { font-size:16px; } }

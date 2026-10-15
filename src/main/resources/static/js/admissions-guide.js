@@ -12,6 +12,11 @@
   var backBtn = document.getElementById('ag-back');
   var yearToggle = document.getElementById('ag-year-toggle');
   var yearLabel = document.getElementById('ag-year-label');
+  var gradeInput = document.getElementById('ag-grade');
+  var targetUniversitiesInput = document.getElementById('ag-target-universities');
+  var targetMajorsInput = document.getElementById('ag-target-majors');
+  var admissionTrackInput = document.getElementById('ag-admission-track');
+  var academicSummaryInput = document.getElementById('ag-academic-summary');
 
   // 학년도: null=전체, 2027, 2028
   var academicYear = null;
@@ -129,7 +134,14 @@
       body: JSON.stringify({
         message: question,
         academicYear: academicYear,
-        sessionToken: sessionToken
+        sessionToken: sessionToken,
+        student: {
+          grade: gradeInput.value,
+          targetUniversities: targetUniversitiesInput.value,
+          targetMajors: targetMajorsInput.value,
+          admissionTrack: admissionTrackInput.value,
+          academicSummary: academicSummaryInput.value
+        }
       })
     })
       .then(function (res) { return res.json(); })

@@ -124,6 +124,11 @@ public class AdmissionsChatService {
      * @param sessionToken 비회원 세션 토큰 (상담 이력 저장용)
      */
     public AdmissionsAnswer ask(String rawQuestion, Integer academicYearFilter, String sessionToken) {
+        return ask(rawQuestion, academicYearFilter, sessionToken, null);
+    }
+
+    public AdmissionsAnswer ask(String rawQuestion, Integer academicYearFilter, String sessionToken,
+                                String studentProfile) {
         String question = rawQuestion == null ? "" : rawQuestion.strip();
         if (question.isEmpty()) {
             return failure("질문을 입력해 주세요.");
@@ -179,7 +184,7 @@ public class AdmissionsChatService {
         String evidenceContext = buildEvidenceContext(usable);
         String systemPrompt = BASE_PROMPT + "\n\n[입시 공식자료 근거]\n" + evidenceContext
                 + buildGuideBlock(pack);
-        String userPrompt = buildUserPrompt(question, pack, parsed);
+        String userPrompt = buildUserPrompt(question, pack, parsed, studentProfile);
 
         // 7. LLM 호출
         NewStartLlmCompletion completion = admissionsLlmClient.complete(systemPrompt, userPrompt, MAX_ANSWER_CHARS);
@@ -199,7 +204,7 @@ public class AdmissionsChatService {
         List<AnswerSource> sources = buildSources(usable);
 
         String answer = completion.text();
-        saveSession(sessionToken, question, answer, pack, academicYearFilter);
+        saveSession(sessionToken, question, answer, pack, academicYearFilter, studentProfile);
 
         log.info("admissions chat ok questionChars={} evidenceCount={} answerChars={} model={}",
                 question.length(), usable.size(), answer.length(), completion.model());
@@ -307,8 +312,12 @@ public class AdmissionsChatService {
         return sb.toString();
     }
 
-    private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed) {
+    private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed, String studentProfile) {
         StringBuilder sb = new StringBuilder();
+        if (studentProfile != null && !studentProfile.isBlank()) {
+            sb.append("[학생 정보 — 맞춤 설명에만 사용하며 합격 가능성을 추정하지 않는다]\n")
+                    .append(studentProfile).append("\n\n");
+        }
         sb.append("질문: ").append(question).append("\n\n");
         sb.append("위 [입시 공식자료 근거]만을 사용해 답변하라. 근거에 '확인되지 않음'이라고 적힌 항목은 추정하지 말고 "
                 + "확인되지 않는다고 답하라. 근거에 없는 날짜·인원·비율·등급은 절대 쓰지 마라.\n");
@@ -346,16 +355,12 @@ public class AdmissionsChatService {
     }
 
     private void saveSession(String sessionToken, String question, String answer,
-                             ResearchPack pack, Integer academicYear) {
+                             ResearchPack pack, Integer academicYear, String studentProfile) {
         try {
             String token = (sessionToken == null || sessionToken.isBlank())
                     ? UUID.randomUUID().toString().replace("-", "")
                     : sessionToken;
             String fingerprint = sha256(question);
-            // 중복 질문은 기존 세션 유지 (fingerprint unique가 아니므로 조회 후 스킵)
-            if (sessionRepository.findByQuestionFingerprint(fingerprint).isPresent()) {
-                return;
-            }
             StringBuilder evidenceSummary = new StringBuilder();
             if (pack != null) {
                 for (Evidence e : usableEvidence(pack)) {
@@ -368,6 +373,7 @@ public class AdmissionsChatService {
                     .questionFingerprint(fingerprint)
                     .answer(answer.length() > 8000 ? answer.substring(0, 8000) : answer)
                     .evidenceSummary(evidenceSummary.toString())
+                    .studentProfile(studentProfile)
                     .academicYear(academicYear)
                     .build();
             sessionRepository.save(session);

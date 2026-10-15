@@ -52,6 +52,7 @@ public class AdmissionsChatController {
         String message = request == null ? null : request.message();
         Integer year = request == null ? null : request.academicYear();
         String sessionToken = request == null ? null : request.sessionToken();
+        String studentProfile = request == null || request.student() == null ? null : request.student().summary();
 
         // 학년도 검증 (2027/2028만 허용)
         if (year != null && year != 2027 && year != 2028) {
@@ -60,7 +61,7 @@ public class AdmissionsChatController {
         }
 
         AdmissionsChatService.AdmissionsAnswer answer =
-                admissionsChatService.ask(message, year, sessionToken);
+                admissionsChatService.ask(message, year, sessionToken, studentProfile);
 
         log.info("admissions chat endpoint ip={} handlerMs={} status={} sourceCount={} answerChars={}",
                 maskIp(clientIp), ms(System.nanoTime() - t0), answer.ok() ? "ok" : "error",
@@ -98,7 +99,27 @@ public class AdmissionsChatController {
      * @param academicYear 2027 또는 2028 (null=전체).
      * @param sessionToken 비회원 세션 토큰 (상담 이력 연결용, null이면 새로 발급).
      */
-    public record ChatRequest(String message, Integer academicYear, String sessionToken) {}
+    public record ChatRequest(String message, Integer academicYear, String sessionToken, StudentProfile student) {
+        public ChatRequest(String message, Integer academicYear, String sessionToken) {
+            this(message, academicYear, sessionToken, null);
+        }
+    }
+
+    public record StudentProfile(String grade, String targetUniversities, String targetMajors,
+                                 String admissionTrack, String academicSummary) {
+        String summary() {
+            return "학년: " + clean(grade, 30)
+                    + "\n희망 대학: " + clean(targetUniversities, 200)
+                    + "\n희망 전공: " + clean(targetMajors, 200)
+                    + "\n관심 전형: " + clean(admissionTrack, 100)
+                    + "\n성적 요약: " + clean(academicSummary, 500);
+        }
+        private static String clean(String value, int max) {
+            if (value == null) return "미입력";
+            String cleaned = value.strip().replaceAll("[\\r\\n]+", " ");
+            return cleaned.isEmpty() ? "미입력" : cleaned.substring(0, Math.min(cleaned.length(), max));
+        }
+    }
 
     /** 답변 근거 출처. kind는 "공식 자료 (확정)" / "공식 자료 (계획)" / "공식자료 원문". */
     public record SourceDto(String kind, String title, String url, String id) {}

@@ -1,1 +1,0 @@
-(() => { if (!('IntersectionObserver' in window)) return; const items=document.querySelectorAll('section>*,.feature,.note'); items.forEach(x=>x.dataset.reveal=''); const o=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');o.unobserve(e.target)}}),{threshold:.07}); items.forEach(x=>o.observe(x)); })();

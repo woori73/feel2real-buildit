@@ -3,9 +3,10 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.reposit
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsCounselingSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface AdmissionsCounselingSessionRepository extends JpaRepository<AdmissionsCounselingSession, Long> {
-    Optional<AdmissionsCounselingSession> findBySessionToken(String sessionToken);
+    List<AdmissionsCounselingSession> findTop20BySessionTokenOrderByCreatedAtDesc(String sessionToken);
     Optional<AdmissionsCounselingSession> findByQuestionFingerprint(String questionFingerprint);
 }

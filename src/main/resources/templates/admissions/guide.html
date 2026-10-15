@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>입시상담 가이드</title>
   <meta name="description" content="2027학년도 입시 정보를 공식 자료 기반으로 안내합니다">
-  <link rel="stylesheet" href="/css/admissions-guide.css?v=20261013-1">
+  <link rel="stylesheet" href="/css/admissions-guide.css?v=20261015-1">
 </head>
 <body>
   <div class="admissions-page">
@@ -16,6 +16,13 @@
         <p class="ag-subtitle">2027학년도 입시 정보를 공식 자료 기반으로 안내합니다</p>
         <div class="ag-year-badge" role="status">
           <span class="ag-badge">2027학년도 확정 기준</span>
+        </div>
+        <div class="ag-profile" aria-label="학생 정보">
+          <label>학년<select id="ag-grade"><option value="">선택</option><option>고1</option><option>고2</option><option>고3</option><option>재수 이상</option></select></label>
+          <label>희망 대학<input id="ag-target-universities" type="text" maxlength="200" placeholder="예: 서울대, 연세대"></label>
+          <label>희망 전공<input id="ag-target-majors" type="text" maxlength="200" placeholder="예: 경영학과"></label>
+          <label>관심 전형<select id="ag-admission-track"><option value="">선택</option><option>학생부교과</option><option>학생부종합</option><option>논술</option><option>정시</option><option>미정</option></select></label>
+          <label class="ag-profile-wide">성적 요약<textarea id="ag-academic-summary" maxlength="500" rows="2" placeholder="개인식별정보 없이 내신·모의고사 상황을 간단히 적어주세요"></textarea></label>
         </div>
         <form id="ag-welcome-form" class="ag-input-form ag-welcome-form">
           <input id="ag-welcome-input" class="ag-input" type="text"
@@ -51,6 +58,6 @@
       </form>
     </section>
   </div>
-  <script src="/js/admissions-guide.js?v=20261013-1" defer></script>
+  <script src="/js/admissions-guide.js?v=20261015-1" defer></script>
 </body>
 </html>

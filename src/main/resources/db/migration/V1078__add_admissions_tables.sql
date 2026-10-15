@@ -182,10 +182,11 @@ CREATE TABLE admissions_counseling_sessions (
     question_fingerprint VARCHAR(64)  NOT NULL,
     answer              LONGTEXT,
     evidence_summary    TEXT,
+    student_profile     TEXT,
     academic_year       INT,
     created_at          DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (session_id),
-    UNIQUE KEY uk_admissions_session_token (session_token),
+    INDEX idx_admissions_session_token (session_token),
     INDEX idx_admissions_session_fingerprint (question_fingerprint),
     INDEX idx_admissions_session_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

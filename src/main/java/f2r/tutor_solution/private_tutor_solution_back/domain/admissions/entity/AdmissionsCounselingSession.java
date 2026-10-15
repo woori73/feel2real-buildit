@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "admissions_counseling_sessions",
         indexes = {
+                @Index(name = "idx_admissions_session_token", columnList = "session_token"),
                 @Index(name = "idx_admissions_session_fingerprint", columnList = "question_fingerprint"),
                 @Index(name = "idx_admissions_session_created", columnList = "created_at")
         })
@@ -28,7 +29,7 @@ public class AdmissionsCounselingSession {
     @Column(name = "session_id")
     private Long sessionId;
 
-    @Column(name = "session_token", length = 64, nullable = false, unique = true)
+    @Column(name = "session_token", length = 64, nullable = false)
     private String sessionToken;
 
     @Column(name = "question", columnDefinition = "TEXT", nullable = false)
@@ -42,6 +43,9 @@ public class AdmissionsCounselingSession {
 
     @Column(name = "evidence_summary", columnDefinition = "TEXT")
     private String evidenceSummary;
+
+    @Column(name = "student_profile", columnDefinition = "TEXT")
+    private String studentProfile;
 
     @Column(name = "academic_year")
     private Integer academicYear;
