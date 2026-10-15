@@ -63,7 +63,7 @@ public class HwpxJob {
   @Column(name = "output_file", length = 500)
   private String outputFile;
 
-  @Column(length = 2000)
+  @Column(name = "edits_json", length = 2000)
   private String editsJson;
 
   @Column(columnDefinition = "TEXT")
