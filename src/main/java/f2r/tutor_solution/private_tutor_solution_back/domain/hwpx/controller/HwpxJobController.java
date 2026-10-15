@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -55,11 +56,19 @@ public class HwpxJobController {
    * HWP/HWPX 업로드 + 셀 수정 작업 생성 → 202 QUEUED.
    */
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  public ResponseEntity<HwpxJobResponse> createJob(
+  public ResponseEntity<?> createJob(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
       @RequestPart("file") MultipartFile file,
       @RequestParam("title") String title,
       @RequestPart("edits") CreateHwpxJobRequest request) throws IOException {
+    // Worker가 꺼져 있으면(예: 운영에 Python Worker가 아직 배포되지 않음) 작업을 만들지 않는다.
+    // 만들면 아무도 처리하지 않아 QUEUED로 영원히 남고 업로드 파일만 서버에 쌓인다.
+    if (!props.isWorkerEnabled()) {
+      // 기본 설정에서는 ResponseStatusException의 reason이 응답 본문에 실리지 않으므로 본문을 직접 돌려준다.
+      return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+          .body(Map.of("code", "HWPX_UNAVAILABLE",
+              "message", "HWPX 편집 기능은 현재 일시적으로 제공되지 않습니다. 잠시 후 다시 시도해 주세요."));
+    }
     String originalName = file.getOriginalFilename();
     if (originalName == null
         || (!originalName.toLowerCase().endsWith(".hwp")
