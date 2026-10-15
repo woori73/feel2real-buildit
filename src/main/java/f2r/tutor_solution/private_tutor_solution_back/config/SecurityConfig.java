@@ -158,10 +158,21 @@ public class SecurityConfig {
             // (/login은 로그인 페이지가 아니다 — 로그인은 공통 모달이다, docs/API.md)
             // ⚠ 명시적 .authenticationEntryPoint(...)를 함께 두면 아래 default 매핑이 전부 무시된다.
             //   ExceptionHandlingConfigurer가 그쪽을 우선하므로 절대 되살리지 말 것.
+            // 비로그인 사용자가 로그인 후 원래 화면으로 돌아오도록 원래 경로(returnUrl)를 함께 싣는다.
             .defaultAuthenticationEntryPointFor(
-                (request, response, ex) -> response.sendRedirect("/"),
+                (request, response, ex) -> redirectToLogin(request, response),
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/lms/**"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // 대화형 학습의 강사 전용 화면도 raw 401 대신 같은 로그인 안내(원래 경로 복귀)로 보낸다. API(/api/**)는 영향 없음.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> redirectToLogin(request, response),
+                new AndRequestMatcher(
+                    new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/conversation/chat"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/tutor/conversation_dashboard"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/tutor/conversation/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/tutor/conversations/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // Wiki 랜딩(/wiki)은 공개하지만 실제 자료 화면(/wiki/**)은 회원 전용이다.
             // 원래 내부 경로를 안전하게 URL-encode해 랜딩 로그인 모달로 전달한다.
@@ -269,7 +280,7 @@ public class SecurityConfig {
             // 프로그램 공개 첫 화면의 공통 네이버 로그인 시작점(복귀 쿠키 설정 후 기존 네이버 로그인으로 이동).
             .requestMatchers(HttpMethod.GET, "/auth/naver/start").permitAll()
             // 인증 진입점·접근 거부 처리기가 forward하는 프로그램 소개/안내 화면(forward 속성이 없으면 홈으로 이동).
-            .requestMatchers(HttpMethod.GET, "/program/intro").permitAll()
+            .requestMatchers(HttpMethod.GET, "/program/intro", "/program/notice").permitAll()
 
             // ── 학원 LMS SSR 화면 ──────────────────────────────────────────
             // ⚠ 이 블록은 반드시 아래 .anyRequest().permitAll()보다 위에 있어야 한다.
@@ -617,6 +628,17 @@ public class SecurityConfig {
     request.getRequestDispatcher("/program/intro").forward(request, response);
   }
 
+  private void forwardToNotice(
+      jakarta.servlet.http.HttpServletRequest request,
+      jakarta.servlet.http.HttpServletResponse response,
+      String title,
+      String message) throws java.io.IOException, jakarta.servlet.ServletException {
+    request.setAttribute(ProgramIntroController.NOTICE_TITLE_ATTRIBUTE, title);
+    request.setAttribute(ProgramIntroController.NOTICE_MESSAGE_ATTRIBUTE, message);
+    response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+    request.getRequestDispatcher("/program/notice").forward(request, response);
+  }
+
   private AccessDeniedHandler conversationChatAccessDeniedHandler() {
     return (request, response, accessDeniedException) -> {
       String path = request.getRequestURI();
@@ -635,6 +657,17 @@ public class SecurityConfig {
       }
       if (path.startsWith("/ledger/")) {
         response.sendRedirect("/ledger");
+        return;
+      }
+      // 소개 화면이 없는 하위 기능: 학원 운영 화면(소유 강사 전용)·강사 전용 대화 화면은 기본 403 대신 안내 화면(상태 403).
+      if (path.matches("^/lms/[^/]+/(manage|contents|midterm-live)$")) {
+        forwardToNotice(request, response, "학원 운영 화면 이용 안내",
+            "학원 운영 화면은 해당 학원의 강사(원장) 계정 전용입니다.");
+        return;
+      }
+      if (path.equals("/tutor/conversation_dashboard") || path.startsWith("/tutor/conversation/")
+          || path.startsWith("/tutor/conversations/")) {
+        forwardToNotice(request, response, "강사 전용 화면 안내", "이 화면은 강사(TUTOR) 계정 전용입니다.");
         return;
       }
       if (path.startsWith("/easy/")) {

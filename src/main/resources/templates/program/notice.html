@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title th:text="${noticeTitle} + ' · feel2real'">이용 권한 안내 · feel2real</title>
+  <link rel="stylesheet" th:href="@{/css/program_intro.css(v=20261016)}">
+</head>
+<body>
+<header class="pi-top">
+  <a class="pi-brand" href="/">feel2real</a>
+  <nav class="pi-nav"><a href="/home">홈</a></nav>
+</header>
+<main class="pi-main">
+  <section class="pi-hero">
+    <div class="pi-notice" id="program-forbidden" role="alert">
+      <strong th:text="${noticeTitle}">이용 권한 안내</strong>
+      <p th:text="${noticeMessage}">권한 안내</p>
+      <p>다른 계정으로 로그인하려면 로그아웃 후 다시 시도해 주세요.</p>
+      <a class="pi-btn" href="/home">홈으로 돌아가기</a>
+    </div>
+  </section>
+</main>
+</body>
+</html>

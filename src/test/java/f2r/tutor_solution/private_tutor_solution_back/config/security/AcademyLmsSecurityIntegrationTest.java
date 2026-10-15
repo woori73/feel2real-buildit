@@ -66,6 +66,8 @@ class AcademyLmsSecurityIntegrationTest {
   @MockitoBean AcademyService academyService;
   @MockitoBean AuthenticatedUserResolver authResolver;
   @MockitoBean AcademyRepository academyRepository;
+  // LMS 셸 모델이 요구하는 의존성(이 슬라이스 테스트가 컨텍스트를 올리려면 필요)
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.midtermcampaign.repository.MidtermCampaignRepository midtermCampaignRepository;
 
   @BeforeEach
   void setUp() {
@@ -101,7 +103,7 @@ class AcademyLmsSecurityIntegrationTest {
     // when & then
     mockMvc.perform(get(BASE + "/my").header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE))
         .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/"));
+        .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/?login=required&returnUrl=%2Flms%2F")));
   }
 
   @Test
@@ -249,7 +251,7 @@ class AcademyLmsSecurityIntegrationTest {
     // when & then: 익명 브라우저 요청은 302(=인증 요구)이지 200이 아니다
     mockMvc.perform(get(BASE + "/zzz").header(HttpHeaders.ACCEPT, MediaType.TEXT_HTML_VALUE))
         .andExpect(status().isFound())
-        .andExpect(header().string("Location", "/"));
+        .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/?login=required&returnUrl=%2Flms%2F")));
   }
 
   @Test
