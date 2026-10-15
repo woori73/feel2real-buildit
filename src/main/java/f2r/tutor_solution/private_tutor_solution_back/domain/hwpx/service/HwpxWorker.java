@@ -64,14 +64,25 @@ public class HwpxWorker {
     Path workDir = Path.of(props.getStorageRoot(), "jobs", String.valueOf(jobId));
     try {
       Files.createDirectories(workDir);
-      // 입력 파일은 Controller에서 업로드 시 workDir에 배치됨
-      // 여기서는 이미 배치된 것으로 가정 (createJob 시 처리)
-      job.markRunning(workDir.toString(), job.getInputFile());
+      // 입력 파일은 Controller에서 업로드 시 workDir에 배치되고 inputFile에 기록됨
+      String inputFile = job.getInputFile();
+      if (inputFile == null || inputFile.isBlank()) {
+        job.markFailed("입력 파일 경로가 기록되지 않음 (업로드 처리 오류)");
+        log.error("HWPX 입력 파일 경로 누락: jobId={}", jobId);
+        return;
+      }
+      Path inputPath = Path.of(inputFile);
+      if (!Files.exists(inputPath)) {
+        job.markFailed("입력 파일을 찾을 수 없음: " + inputFile);
+        log.error("HWPX 입력 파일 없음: jobId={}, path={}", jobId, inputFile);
+        return;
+      }
+      job.markRunning(workDir.toString(), inputFile);
       job.updateProgress(10, "Python CLI 실행 중");
 
       List<HwpxCellEdit> edits = parseEdits(job.getEditsJson());
       String outputFileName = "output.hwpx";
-      CliResult result = cliExecutor.edit(workDir, Path.of(job.getInputFile()).getFileName().toString(),
+      CliResult result = cliExecutor.edit(workDir, inputPath.getFileName().toString(),
           edits, outputFileName);
 
       if (!result.ok()) {
