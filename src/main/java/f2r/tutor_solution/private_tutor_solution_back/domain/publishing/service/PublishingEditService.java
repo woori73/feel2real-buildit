@@ -75,9 +75,9 @@ public class PublishingEditService {
     int i = 0;
     for (PublishingCommand cmd : commands) {
       i++;
-      PublishingCommand normalized = normalizeCommand(cmd);
       try {
-        cliExecutor.execute(normalized, workDir);
+        // 한 명령이 선택 등 여러 단계로 풀릴 수 있다 — 한 script로 실행해 선택 상태를 잇는다
+        cliExecutor.executeOnDocument(expand(cmd, job, workDir), workDir);
       } catch (ResponseStatusException e) {
         throw new ResponseStatusException(e.getStatusCode(),
             "명령 " + i + "/" + commands.size() + " 실패 (" + cmd.id() + "): "
@@ -95,6 +95,76 @@ public class PublishingEditService {
   public Long executeCommands(AuthenticatedPrincipal principal, Long jobId,
       List<PublishingCommand> commands) {
     return executeCommands(principal, jobId, commands, null);
+  }
+
+  /** 원고 반입 결과. */
+  public record ManuscriptImportResult(
+      Long snapshotId, int pageCount, String fileName, int styledHeadings) {}
+
+  /**
+   * 원고 스토리의 첫 프레임을 주 텍스트 프레임으로 지정한다(Smart Text Reflow).
+   * 이후 스타일 변경으로 글 분량이 달라져도 CLI가 페이지를 늘리고 줄여 본문 넘침(overset)이 남지 않는다.
+   */
+  private void markPrimaryStory(PublishingJob job) {
+    Path workDir = Path.of(job.getWorkDir());
+    var doc = cliExecutor.inspect(Path.of(job.getDesigncraftFile()), workDir);
+    long best = -1;
+    long frameId = -1;
+    for (var st : doc.path("stories")) {
+      if (st.path("length").asLong() > best && st.path("frames").size() > 0) {
+        best = st.path("length").asLong();
+        frameId = st.path("frames").get(0).asLong();
+      }
+    }
+    if (frameId < 0) {
+      return;
+    }
+    cliExecutor.executeOnDocument(List.of(
+        new PublishingCommand("selection.set", Map.of("ids", List.of(frameId))),
+        new PublishingCommand("object.primaryTextFrame", Map.of("on", true))), workDir);
+  }
+
+  /**
+   * 문서의 현재 페이지 수 (작업 전체 상태 조회용, 문서는 변경되지 않는다).
+   */
+  public int pageCount(AuthenticatedPrincipal principal, Long jobId) {
+    PublishingJob job = jobService.requireOwned(principal, jobId);
+    requireReady(job);
+    return cliExecutor.pageCount(Path.of(job.getDesigncraftFile()), Path.of(job.getWorkDir()));
+  }
+
+  /**
+   * 원고 파일을 첨부하고 문서에 반입(file.place, autoflow)한다.
+   *
+   * <p>반입 전 스냅샷이 자동 생성된다. 허용 형식·크기 검증은 {@link PublishingJobService#attachManuscript}가 한다.
+   */
+  @Transactional
+  public ManuscriptImportResult importManuscript(AuthenticatedPrincipal principal, Long jobId,
+      org.springframework.web.multipart.MultipartFile manuscript) {
+    String storedName = jobService.attachManuscript(principal, jobId, manuscript);
+    PublishingJob job = jobService.requireOwned(principal, jobId);
+    requireReady(job);
+    String original = manuscript.getOriginalFilename() == null ? storedName : manuscript.getOriginalFilename();
+    String label = "원고 반입: " + (original.length() > 60 ? original.substring(0, 60) : original);
+    Long snapshotId = createSnapshot(job, label);
+    // 서버가 만든 고정 명령이라 allowlist(AI 계획용)를 거치지 않는다. 한 script로 실행해 선택 상태를 잇는다:
+    // 반입 → 전체 선택 → 본문 스타일(ko-body, 한글 폰트)로 통일. 기본 스타일은 한글 글리프가 없다.
+    try {
+      cliExecutor.executeOnDocument(List.of(
+          new PublishingCommand("file.place", Map.of("path", storedName, "autoflow", true)),
+          new PublishingCommand("edit.selectAll", Map.of()),
+          new PublishingCommand("style.paragraph.apply", Map.of("name", "ko-body"))),
+          Path.of(job.getWorkDir()));
+      markPrimaryStory(job);
+    } catch (ResponseStatusException e) {
+      throw new ResponseStatusException(e.getStatusCode(), "원고 반입 실패: " + e.getReason(), e);
+    }
+    // Markdown이면 제목(#, ##, ###)·인용(>)에 제목/인용 스타일을 적용한다 (작업 문서 대상, 한 script)
+    int styled = 0;
+    if (storedName.toLowerCase().endsWith(".md")) {
+      styled = applyMarkdownStyles(principal, jobId);
+    }
+    return new ManuscriptImportResult(snapshotId, pageCount(principal, jobId), original, styled);
   }
 
   /**
@@ -180,6 +250,66 @@ public class PublishingEditService {
       return new PublishingCommand(cmd.id(), normalized);
     }
     return cmd;
+  }
+
+  /**
+   * 명령을 CLI 실행 단위로 풀어 쓴다.
+   *
+   * <p>스타일 적용은 CLI가 <b>선택</b>을 요구한다({@code style.*.apply {name}}는 선택된 텍스트/프레임에 적용).
+   * 화면의 {@code {page, style}} 형태는 그 쪽(1-based)의 텍스트 프레임을 선택({@code selection.set})한 뒤
+   * {@code {name}}으로 적용하도록 바꾼다. 프레임에 이어진 글 전체(연결된 스토리)에 적용된다는 점이 CLI의 동작이다.
+   * {@code page}가 없는 {@code {name}} 형태(AI 계획 등)는 그대로 둔다.
+   */
+  List<PublishingCommand> expand(PublishingCommand cmd, PublishingJob job, Path workDir) {
+    PublishingCommand normalized = normalizeCommand(cmd);
+    Map<String, Object> params = normalized.params() == null ? Map.of() : normalized.params();
+    boolean styleApply = "style.paragraph.apply".equals(normalized.id())
+        || "style.character.apply".equals(normalized.id());
+    if (!styleApply || !params.containsKey("page")) {
+      return List.of(normalized);
+    }
+    Object styleName = params.containsKey("style") ? params.get("style") : params.get("name");
+    if (!(styleName instanceof String) || ((String) styleName).isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "적용할 스타일 이름이 없습니다.");
+    }
+    int page;
+    try {
+      page = Integer.parseInt(String.valueOf(params.get("page")));
+    } catch (NumberFormatException e) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "쪽 번호가 올바르지 않습니다.");
+    }
+    List<Long> frames = textFramesOnPage(job, workDir, page);
+    if (frames.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, page + "쪽에는 텍스트 프레임이 없습니다.");
+    }
+    return List.of(
+        new PublishingCommand("selection.set", Map.of("ids", frames)),
+        new PublishingCommand(normalized.id(), Map.of("name", styleName)));
+  }
+
+  /** 문서 구조에서 1-based 쪽에 놓인 텍스트 프레임 id. 쪽 범위(스프레드 좌표) 안에 중심이 있는 프레임을 고른다. */
+  private List<Long> textFramesOnPage(PublishingJob job, Path workDir, int page) {
+    var doc = cliExecutor.inspect(Path.of(job.getDesigncraftFile()), workDir);
+    List<Long> ids = new ArrayList<>();
+    for (var spread : doc.path("spreads")) {
+      for (var pg : spread.path("pages")) {
+        if (pg.path("index").asInt(-1) != page - 1) {
+          continue;
+        }
+        double x0 = pg.path("bounds").path(0).asDouble();
+        double x1 = pg.path("bounds").path(2).asDouble();
+        for (var item : spread.path("items")) {
+          if (!"<text frame>".equals(item.path("kind").asText())) {
+            continue;
+          }
+          double cx = (item.path("bounds").path(0).asDouble() + item.path("bounds").path(2).asDouble()) / 2;
+          if (cx >= x0 && cx <= x1) {
+            ids.add(item.path("id").asLong());
+          }
+        }
+      }
+    }
+    return ids;
   }
 
   /** preflight.run JSON 출력을 Qoder §2 스키마로 파싱한다. */
@@ -289,15 +419,24 @@ public class PublishingEditService {
     var job = jobService.requireOwned(principal, jobId);
     Path workDir = Path.of(job.getWorkDir());
 
-    // 스토리 텍스트 조회
-    long storyId;
-    String storyText;
+    // 스토리 텍스트 조회: 작업 문서에서 가장 긴 스토리가 원고다 (선택 상태에 의존하지 않는다)
+    long storyId = -1;
+    String storyText = "";
     try {
+      var doc = cliExecutor.inspect(Path.of(job.getDesigncraftFile()), workDir);
+      long bestLength = -1;
+      for (var st : doc.path("stories")) {
+        if (st.path("length").asLong() > bestLength) {
+          bestLength = st.path("length").asLong();
+          storyId = st.path("id").asLong();
+        }
+      }
+      if (storyId < 0) {
+        throw new IllegalStateException("문서에 텍스트 스토리가 없습니다.");
+      }
       var storyResult = cliExecutor.execute(
-          new PublishingCommand("story.get", Map.of()), workDir);
-      var storyNode = objectMapper.readTree(storyResult.output());
-      storyId = storyNode.get("id").asLong();
-      storyText = storyNode.get("text").asText();
+          new PublishingCommand("story.get", Map.of("story", storyId)), workDir);
+      storyText = objectMapper.readTree(storyResult.output()).get("text").asText();
     } catch (Exception e) {
       throw new IllegalStateException("스토리 조회 실패: " + e.getMessage(), e);
     }
@@ -323,6 +462,8 @@ public class PublishingEditService {
     var blocks = new java.util.ArrayList<>(parsed.headingBlocks());
     blocks.sort((a, b) -> Integer.compare(b.paragraphIndex(), a.paragraphIndex()));
 
+    // 역순(뒤 문단부터)으로 명령을 모아 한 script로 실행한다 — 선택 상태가 이어지고, 실패하면 문서는 그대로다
+    List<PublishingCommand> batch = new ArrayList<>();
     int applied = 0;
     for (var block : blocks) {
       int paraIdx = block.paragraphIndex();
@@ -330,40 +471,24 @@ public class PublishingEditService {
         log.warn("문단 인덱스 범위 초과: {} (전체 {}개)", paraIdx, paraRanges.size());
         continue;
       }
-      try {
-        long[] range = paraRanges.get(paraIdx);
-        long paraStart = range[0];
-        long paraEnd = range[1];
-
-        // 마커 제거 (문단 시작부터 markerBytes만큼)
-        if (block.markerBytes() > 0) {
-          cliExecutor.execute(
-              new PublishingCommand("text.select",
-                  Map.of("story", storyId, "anchor", paraStart,
-                      "focus", paraStart + block.markerBytes())),
-              workDir);
-          cliExecutor.execute(
-              new PublishingCommand("edit.clear", Map.of()),
-              workDir);
-          // 마커 제거 후 범위 조정
-          paraEnd = paraEnd - block.markerBytes();
-        }
-
-        // 스타일 적용
-        cliExecutor.execute(
-            new PublishingCommand("text.select",
-                Map.of("story", storyId, "anchor", paraStart, "focus", paraEnd)),
-            workDir);
-        cliExecutor.execute(
-            new PublishingCommand("style.paragraph.apply",
-                Map.of("name", block.style())),
-            workDir);
-
-        applied++;
-        log.info("스타일 적용: 문단 {} '{}' -> {}", paraIdx, block.text(), block.style());
-      } catch (Exception e) {
-        log.warn("스타일 적용 실패: 문단 {} - {}", paraIdx, e.getMessage());
+      long[] range = paraRanges.get(paraIdx);
+      long paraStart = range[0];
+      long paraEnd = range[1];
+      // 마커 제거 (문단 시작부터 markerBytes만큼)
+      if (block.markerBytes() > 0) {
+        batch.add(new PublishingCommand("text.select",
+            Map.of("story", storyId, "anchor", paraStart, "focus", paraStart + block.markerBytes())));
+        batch.add(new PublishingCommand("edit.clear", Map.of()));
+        paraEnd = paraEnd - block.markerBytes();
       }
+      batch.add(new PublishingCommand("text.select",
+          Map.of("story", storyId, "anchor", paraStart, "focus", paraEnd)));
+      batch.add(new PublishingCommand("style.paragraph.apply", Map.of("name", block.style())));
+      applied++;
+    }
+    if (!batch.isEmpty()) {
+      createSnapshot(job, "Markdown 스타일 적용 전");
+      cliExecutor.executeOnDocument(batch, workDir);
     }
 
     log.info("Markdown 스타일 적용 완료: jobId={}, {}개", jobId, applied);

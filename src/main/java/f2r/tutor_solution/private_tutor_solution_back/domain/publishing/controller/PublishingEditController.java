@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * DesignCraft 출판 편집 API.
@@ -50,6 +51,35 @@ public class PublishingEditController {
         "applied", true,
         "snapshotId", snapshotId,
         "touchedPages", List.of()));
+  }
+
+  /** 문서 정보 (현재 페이지 수). 폴링 없이 편집기 초기화에 쓴다. */
+  @GetMapping("/info")
+  public ResponseEntity<Map<String, Object>> info(
+      @AuthenticationPrincipal AuthenticatedPrincipal principal,
+      @PathVariable Long jobId) {
+    return ResponseEntity.ok(Map.of(
+        "jobId", jobId, "pageCount", editService.pageCount(principal, jobId)));
+  }
+
+  /**
+   * 원고 업로드·반입 (멀티파트 {@code manuscript}).
+   *
+   * <p>작업 생성 때 원고를 올리지 않았거나 나중에 다시 반입할 때 쓴다. 반입 전 스냅샷이 생성된다.
+   */
+  @PostMapping(value = "/manuscript", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<Map<String, Object>> importManuscript(
+      @AuthenticationPrincipal AuthenticatedPrincipal principal,
+      @PathVariable Long jobId,
+      @RequestParam("manuscript") MultipartFile manuscript) {
+    var r = editService.importManuscript(principal, jobId, manuscript);
+    return ResponseEntity.ok(Map.of(
+        "jobId", jobId,
+        "applied", true,
+        "snapshotId", r.snapshotId(),
+        "pageCount", r.pageCount(),
+        "fileName", r.fileName(),
+        "styledHeadings", r.styledHeadings()));
   }
 
   /** 페이지 PNG 미리보기 (캐시 브레이커: ETag). */

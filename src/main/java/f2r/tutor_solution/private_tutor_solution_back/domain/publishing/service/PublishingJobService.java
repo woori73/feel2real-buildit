@@ -98,8 +98,10 @@ public class PublishingJobService {
    *
    * <p>Worker가 프로비저닝 후 file.place로 반입한다.
    * 허용 확장자: md/txt/docx/rtf, 최대 10MB.
+   *
+   * @return 작업 디렉토리에 저장된 정규화 파일명 (예: manuscript.md)
    */
-  public void attachManuscript(AuthenticatedPrincipal principal, Long jobId,
+  public String attachManuscript(AuthenticatedPrincipal principal, Long jobId,
       MultipartFile manuscript) {
     PublishingJob job = requireOwned(principal, jobId);
     String originalName = manuscript.getOriginalFilename();
@@ -124,6 +126,7 @@ public class PublishingJobService {
         Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
       }
       log.info("원고 첨부: jobId={}, file={}", jobId, safeName);
+      return safeName;
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
           "원고 저장 실패: " + e.getMessage(), e);
