@@ -269,6 +269,10 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.entity.LmsContentEntityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.lmsenrollment.entity.LmsEnrollmentEntityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.TestPrepScoringTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ReturnUrlPolicyTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.ProblemGeneratorSecurityIntegrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramEntryTest"
 
       - name: Verify editor tests executed
         # 셸 주석(#)으로 --tests 필터가 잘리는 사고 방지: XML 리포트 존재를 강제한다.
@@ -397,6 +401,9 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAgentFlowMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepFlowMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPagesMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramPublicEntryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramBuilderEntryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramProblemGeneratorEntryMySqlTest"
 
       - name: Upload MySQL test report
         if: always()
