@@ -4610,6 +4610,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/tutor/easy/businesses`: 로그인 TUTOR의 활성 Academy에 연결된 활성 사업체 목록.
 - `GET /api/tutor/easy/workspace/{monthly,transactions,transactions/{txnId},reviews}`: 기존 Workspace 조회를 재사용한다. `businessId`는 선택자이며 권한은 principal → Academy → `academy_easy_business_links` 서버 조회로 판정한다.
 - `GET /api/tutor/easy/accounting/{general-ledger,trial-balance,balance-audit,income-statement,balance-sheet}`: 연결된 사업체의 회계 조회만 허용한다.
+- `GET /api/tutor/easy/accounting/journal?businessId={id}&from=&to=`: 기존 `easy_journal_entries/lines`를 재사용하는 읽기 전용 복식부기 분개장(거래별 차변·대변·일치 여부). 금액·거래일·원본 수정/삭제 API는 없다. TUTOR는 `requireAllowedBusiness`, ADMIN은 활성 사업체 전체에 접근한다.
 - `POST /api/admin/easy/academy-links`, `DELETE /api/admin/easy/academy-links/academies/{academyId}/businesses/{businessId}`: ADMIN만 연결·해제한다.
 - 기존 `/api/admin/easy/**` 계약과 권한은 변경하지 않는다. 원장 업로드·수정·승인은 후속 PR 범위다.
 

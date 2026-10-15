@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.SecurityConfig;
@@ -33,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -113,6 +115,39 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/workspace/monthly?businessId=1&month=2026-10",
       "/api/admin/easy/collector?businessId=1",
       "/api/admin/easy/collector/tasks?businessId=1");
+
+  @Test
+  @DisplayName("익명 브라우저 /ledger → 로그인 안내 + 복귀 URL")
+  void anonymousLedger_redirectsToLoginGuidance() throws Exception {
+    mockMvc.perform(get("/ledger").accept(MediaType.TEXT_HTML))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fledger"));
+  }
+
+  @Test
+  @DisplayName("STUDENT 브라우저 /ledger → raw 403 대신 로그인 안내")
+  void nonTutorLedger_redirectsInsteadOfRawForbidden() throws Exception {
+    Cookie student = new Cookie("ACCESS_TOKEN", tokenProvider.issue(1L, "student01", "STUDENT"));
+    mockMvc.perform(get("/ledger").cookie(student).accept(MediaType.TEXT_HTML))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fledger"));
+  }
+
+  @Test
+  @DisplayName("TUTOR 브라우저 /ledger → 화면 접근")
+  void tutorLedger_ok() throws Exception {
+    Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(3L, "tutor01", "TUTOR"));
+    mockMvc.perform(get("/ledger").cookie(tutor).accept(MediaType.TEXT_HTML))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("ADMIN 브라우저 /ledger → 화면 접근")
+  void adminLedger_ok() throws Exception {
+    Cookie admin = new Cookie("ACCESS_TOKEN", tokenProvider.issue(2L, "admin", "ADMIN"));
+    mockMvc.perform(get("/ledger").cookie(admin).accept(MediaType.TEXT_HTML))
+        .andExpect(status().isOk());
+  }
 
   @Test
   @DisplayName("익명 → 401")

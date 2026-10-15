@@ -26,7 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/tutor/easy/imports")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('TUTOR')")
+@PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
 public class EasyTutorImportController {
 
   private final EasyTutorImportService importService;
