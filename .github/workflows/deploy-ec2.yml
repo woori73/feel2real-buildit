@@ -11,10 +11,11 @@ on:
         required: false
         default: unchanged
         type: choice
+        # YAML 1.1은 따옴표 없는 off/on을 불리언으로 해석하므로 반드시 따옴표로 문자열을 고정한다.
         options:
           - unchanged
           - admin-only
-          - off
+          - 'off'
       hwpx_worker:
         description: 'HWPX Worker(HWPX_WORKER_ENABLED): unchanged=변경 없음(기본), off=끔(작업 생성 503), on=켬(변수 제거=기본 true). Muse Python Worker 연결 전까지 off'
         required: false
