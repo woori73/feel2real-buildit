@@ -30,8 +30,8 @@ test('AI helper stays contextual and all writes use explicit approval', () => {
   assert.match(html, /23번 거래를 교재비로 수정해 줘/);
   assert.match(js, /\/api\/tutor\/easy/);
   assert.match(js, /\/agent\/actions\//);
-  assert.match(js, /decideAction\(card, 'approve'\)/);
-  assert.match(js, /decideAction\(card, 'reject'\)/);
+  assert.match(js, /decideAction\(card,\s*'approve'\)/);
+  assert.match(js, /decideAction\(card,\s*'reject'\)/);
   assert.doesNotMatch(js, /\/api\/admin\/easy/);
   assert.doesNotMatch(js, /method:\s*['"]DELETE['"]/);
   assert.doesNotMatch(js, /occurredOn\s*:/);
