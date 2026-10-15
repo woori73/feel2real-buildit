@@ -250,8 +250,13 @@ public class SecurityConfig {
             // NewStart 운영자 화면 — ADMIN 전용. 메뉴 숨김이 아니라 서버 규칙으로 차단한다.
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
-            // DesignCraft 출판 편집기 — TUTOR 전용. API는 /api/publishing/**에서 소유자 격리.
-            .requestMatchers("/designcraft", "/designcraft/**").hasRole("TUTOR")
+            // DesignCraft 첫 화면·편집기 주소는 비회원 공개(200). 실제 편집기는 DesignCraftEditorController가
+            // TUTOR 권한을 검사해 렌더하고, 권한 없는 로그인 사용자에게는 안내 화면을 준다. API는 아래에서 그대로 보호된다.
+            .requestMatchers(HttpMethod.GET, "/designcraft", "/designcraft/editor").permitAll()
+            // DesignCraft 그 외 경로 — TUTOR·ADMIN(관리자는 모든 화면 열람). API는 /api/publishing/**에서 소유자 격리.
+            .requestMatchers("/designcraft", "/designcraft/**").hasAnyRole("TUTOR", "ADMIN")
+            // 프로그램 공개 첫 화면의 공통 네이버 로그인 시작점(복귀 쿠키 설정 후 기존 네이버 로그인으로 이동).
+            .requestMatchers(HttpMethod.GET, "/auth/naver/start").permitAll()
 
             // ── 학원 LMS SSR 화면 ──────────────────────────────────────────
             // ⚠ 이 블록은 반드시 아래 .anyRequest().permitAll()보다 위에 있어야 한다.
