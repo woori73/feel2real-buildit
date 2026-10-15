@@ -90,8 +90,10 @@ class AdmissionsBrowserQaMySqlTest {
             wait.until(ExpectedConditions.textToBePresentInElementLocated(
                     By.cssSelector(".ag-msg-ai"), "서울대학교 경영학과"));
             wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.cssSelector(".ag-source"), 0));
-            assertThat(driver.findElement(By.cssSelector(".ag-source")).getText())
-                    .contains("서울대학교 2027학년도 수시모집요강");
+            WebElement officialSource = driver.findElement(By.cssSelector(".ag-source"));
+            assertThat(officialSource.getText()).contains("경영학과");
+            assertThat(officialSource.getAttribute("href"))
+                    .isEqualTo("https://admission.snu.ac.kr/2027-guide");
 
             driver.findElement(By.id("ag-input"))
                     .sendKeys("서울대 2027학년도 경영학과 공식 자료를 다시 설명해줘");
