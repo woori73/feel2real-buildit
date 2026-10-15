@@ -9,11 +9,13 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.Ass
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantFeatureFlag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import f2r.tutor_solution.private_tutor_solution_back.program.Program;
+import f2r.tutor_solution.private_tutor_solution_back.program.ProgramEntry;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.view.RedirectView;
 
 /**
  * Academy Builder page.
@@ -50,11 +52,13 @@ public class AcademyBuilderPageController {
   public Object builder(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestParam(value = "classic", required = false) String classic,
-      Model model) {
-    if (!hasBuilderRole(principal)) {
-      RedirectView redirect = new RedirectView("/");
-      redirect.setExposeModelAttributes(false);
-      return redirect;
+      Model model,
+      HttpServletResponse response) {
+    // 비회원은 공개 소개 화면(200)에서 네이버 로그인으로 시작하고, 권한 없는 로그인 사용자는 안내 화면을 본다.
+    ProgramEntry.State entry = ProgramEntry.stateOfRole(
+        Program.BUILDER, principal == null ? null : principal.role());
+    if (entry != ProgramEntry.State.ALLOWED) {
+      return ProgramEntry.intro(Program.BUILDER, entry, model, response);
     }
 
     AcademyResponse academy = academyService.getMine(principal).orElse(null);
@@ -83,11 +87,6 @@ public class AcademyBuilderPageController {
       JwtTokenProvider.AuthenticatedPrincipal principal, AcademyResponse academy, String classic) {
     if (classic != null || !assistantFlag.isOn(principal)) return false;
     return academy == null || assistantMode.isAssistantAcademy(academy.academyId());
-  }
-
-  private boolean hasBuilderRole(JwtTokenProvider.AuthenticatedPrincipal principal) {
-    return principal != null
-        && ("TUTOR".equals(principal.role()) || "ADMIN".equals(principal.role()));
   }
 
   private String academyJson(AcademyResponse academy) {

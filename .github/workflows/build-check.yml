@@ -412,6 +412,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepFlowMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPagesMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramPublicEntryMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramBuilderEntryMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsFactSearchServiceDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCounselingSessionHistoryDbTest"

@@ -32,6 +32,12 @@ public final class ProgramEntry {
     return State.FORBIDDEN;
   }
 
+  /** 컨트롤러가 principal의 role만 갖고 있을 때 쓰는 판정. role이 null이면 비회원이다. */
+  public static State stateOfRole(Program program, String roleOrNull) {
+    if (roleOrNull == null) return State.ANON;
+    return program.getRoles().contains(roleOrNull) ? State.ALLOWED : State.FORBIDDEN;
+  }
+
   /**
    * 공개 첫 화면 렌더. 사용자별로 내용이 달라지므로 캐시하지 않는다.
    * 권한 없는 로그인 사용자는 브라우저 기본 403 대신 안내 화면을 같은 403 상태로 받는다.
