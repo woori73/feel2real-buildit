@@ -1,5 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.config;
 
+import f2r.tutor_solution.private_tutor_solution_back.program.Program;
+import f2r.tutor_solution.private_tutor_solution_back.program.ProgramIntroController;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.ChartAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.VisualEditorAgentTokenFilter;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.NewstartAgentTokenFilter;
@@ -208,15 +210,25 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin"),
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-            // 원장용 Easy 장부 SSR은 익명 브라우저나 비-TUTOR 브라우저 세션에 raw 401/403을
-            // 노출하지 않고 공통 로그인 안내로 보낸다. API(/api/tutor/easy/**)는 이 규칙의
-            // 대상이 아니므로 기존 401/403과 사업체 권한 검증을 그대로 유지한다.
+            // 이지장부(/ledger)·Easy 장부(/easy)의 대표 URL은 비회원에게 공개 소개 화면(200)을 보이고,
+            // 하위 화면은 원래 경로를 싣고 공통 로그인 안내로 보낸다. API(/api/tutor/easy/**, /api/admin/easy/**)는
+            // 이 규칙의 대상이 아니므로 기존 401/403과 사업체 권한 검증을 그대로 유지한다.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> forwardToProgramIntro(request, response, Program.LEDGER),
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/ledger"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> forwardToProgramIntro(request, response, Program.EASY),
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/easy"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             .defaultAuthenticationEntryPointFor(
                 (request, response, ex) -> redirectToLogin(request, response),
                 new AndRequestMatcher(
                     new OrRequestMatcher(
-                        PathPatternRequestMatcher.withDefaults().matcher("/ledger"),
-                        PathPatternRequestMatcher.withDefaults().matcher("/ledger/**")),
+                        PathPatternRequestMatcher.withDefaults().matcher("/ledger/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/easy/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
@@ -256,6 +268,8 @@ public class SecurityConfig {
             .requestMatchers("/designcraft", "/designcraft/**").hasAnyRole("TUTOR", "ADMIN")
             // 프로그램 공개 첫 화면의 공통 네이버 로그인 시작점(복귀 쿠키 설정 후 기존 네이버 로그인으로 이동).
             .requestMatchers(HttpMethod.GET, "/auth/naver/start").permitAll()
+            // 인증 진입점·접근 거부 처리기가 forward하는 프로그램 소개/안내 화면(forward 속성이 없으면 홈으로 이동).
+            .requestMatchers(HttpMethod.GET, "/program/intro").permitAll()
 
             // ── 학원 LMS SSR 화면 ──────────────────────────────────────────
             // ⚠ 이 블록은 반드시 아래 .anyRequest().permitAll()보다 위에 있어야 한다.
@@ -595,6 +609,14 @@ public class SecurityConfig {
         + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
   }
 
+  private void forwardToProgramIntro(
+      jakarta.servlet.http.HttpServletRequest request,
+      jakarta.servlet.http.HttpServletResponse response,
+      Program program) throws java.io.IOException, jakarta.servlet.ServletException {
+    request.setAttribute(ProgramIntroController.PROGRAM_ATTRIBUTE, program);
+    request.getRequestDispatcher("/program/intro").forward(request, response);
+  }
+
   private AccessDeniedHandler conversationChatAccessDeniedHandler() {
     return (request, response, accessDeniedException) -> {
       String path = request.getRequestURI();
@@ -602,8 +624,21 @@ public class SecurityConfig {
         response.sendRedirect("/stdt_dashboard");
         return;
       }
-      if ("/ledger".equals(path) || path.startsWith("/ledger/")) {
-        redirectToLogin(request, response);
+      // 로그인했지만 권한이 없는 사용자: 기본 403 대신 프로그램 안내 화면(소개 경로, 상태 403)으로 보낸다.
+      if ("/ledger".equals(path)) {
+        forwardToProgramIntro(request, response, Program.LEDGER);
+        return;
+      }
+      if ("/easy".equals(path)) {
+        forwardToProgramIntro(request, response, Program.EASY);
+        return;
+      }
+      if (path.startsWith("/ledger/")) {
+        response.sendRedirect("/ledger");
+        return;
+      }
+      if (path.startsWith("/easy/")) {
+        response.sendRedirect("/easy");
         return;
       }
       response.sendError(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN.getReasonPhrase());
