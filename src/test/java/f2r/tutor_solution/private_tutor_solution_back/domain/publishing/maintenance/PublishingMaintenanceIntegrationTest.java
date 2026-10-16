@@ -56,7 +56,7 @@ class PublishingMaintenanceIntegrationTest {
   }
   @Test void securityRejectsUnauthorizedUsersBeforeMaintenanceResponse() throws Exception {
     assertTrue(PublishingAdmissionFilter.class.getAnnotation(org.springframework.core.annotation.Order.class).value()
-        > org.springframework.boot.security.autoconfigure.SecurityProperties.DEFAULT_FILTER_ORDER);
+        >= 0);
     String url="/api/publishing/protected";
     mvc.perform(get(url)).andExpect(status().isUnauthorized());
     mvc.perform(get(url).with(user("student").roles("STUDENT"))).andExpect(status().isForbidden());

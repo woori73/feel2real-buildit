@@ -4,14 +4,13 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.concurrent.Callable;
-import org.springframework.boot.security.autoconfigure.SecurityProperties;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.async.*;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /** After authentication/authorization, before multipart/service effects; publishing API only. */
-@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 1)
+@Order(0) // Boot security runs at -100; preserve 401/403 before maintenance 503.
 public class PublishingAdmissionFilter extends OncePerRequestFilter {
   private static final org.springframework.web.util.pattern.PathPattern API =
       org.springframework.web.util.pattern.PathPatternParser.defaultInstance.parse("/api/publishing/**");
