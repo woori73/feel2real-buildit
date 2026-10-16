@@ -16,6 +16,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class PublishingOperationProxy {
   @Bean
+  public PublishingAdmissionFilter publishingAdmissionFilter(PublishingMaintenanceGate gate) {
+    return new PublishingAdmissionFilter(gate);
+  }
+
+  @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
   public Advisor publishingOperationAdvisor(PublishingMaintenanceGate gate) {
     var pointcut = new StaticMethodMatcherPointcut() {

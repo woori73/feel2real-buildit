@@ -6,13 +6,11 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.async.*;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /** Before multipart/service/transaction side effects; scoped ONLY to publishing API. */
-@Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public class PublishingAdmissionFilter extends OncePerRequestFilter {
   private static final org.springframework.web.util.pattern.PathPattern API =

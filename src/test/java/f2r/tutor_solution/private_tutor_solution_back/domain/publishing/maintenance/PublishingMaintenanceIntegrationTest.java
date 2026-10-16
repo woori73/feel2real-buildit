@@ -113,7 +113,7 @@ class PublishingMaintenanceIntegrationTest {
     assertTrue(gate.status().singleProcessDrained());
   }
   @Configuration @EnableWebMvc @EnableWebSecurity @EnableTransactionManagement
-  @Import({PublishingMaintenanceGate.class,PublishingOperationProxy.class,PublishingAdmissionFilter.class,PublishingMaintenanceController.class})
+  @Import({PublishingMaintenanceGate.class,PublishingOperationProxy.class,PublishingMaintenanceController.class})
   static class Config {
     @Bean SecurityFilterChain security(HttpSecurity http)throws Exception {
       return http.csrf(c->c.disable()).authorizeHttpRequests(a->a.requestMatchers("/api/admin/**").hasRole("ADMIN").anyRequest().permitAll()).httpBasic(org.springframework.security.config.Customizer.withDefaults()).build();
