@@ -1,5 +1,5 @@
 """Fixed read-only production probe. No raw env, command lines, journal or files leave EC2."""
-import json,os,stat,subprocess,re
+import json,os,stat,subprocess,re,hashlib
 from pathlib import Path
 
 def run(args):
@@ -36,7 +36,13 @@ def probe():
         st=p.stat();out['cli_mode']=oct(stat.S_IMODE(st.st_mode));out['cli_uid']=st.st_uid;out['cli_gid']=st.st_gid
     rc,_=run(['runuser','-u',user,'--','test','-x',cli]);out['service_can_execute_cli']=rc==0
     if p.is_file() and rc==0:
-        rc,v=run(['runuser','-u',user,'--',cli,'--version'])
+        result=subprocess.run(['runuser','-u',user,'--',cli,'--version'],capture_output=True,text=True,timeout=20)
+        rc,v=result.returncode,result.stdout
+        out['version_error_glibc_symbols']=sorted(set(re.findall(r'GLIBC_[0-9.]+',result.stderr)))
+        h=hashlib.sha256()
+        with p.open('rb') as f:
+            for chunk in iter(lambda:f.read(65536),b''):h.update(chunk)
+        out['cli_sha256']=h.hexdigest()
         m=re.search(r'designcraft-cli\s+[0-9]+\.[0-9]+\.[0-9]+',v)
         out['cli_version']=m.group(0) if m else 'unavailable';out['cli_version_exit']=rc
     _,glibc=run(['getconf','GNU_LIBC_VERSION']);out['glibc']=glibc.strip()
