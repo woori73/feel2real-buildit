@@ -1,0 +1,52 @@
+{
+  "ssm_status": "Success",
+  "stderr_present": false,
+  "probe": {
+    "service_running": true,
+    "service_user": "ec2-user",
+    "configuration_source": "running process env/explicit publishing args; Spring defaults if absent",
+    "cli_path": "/opt/designcraft/designcraft-cli",
+    "cli_exists": true,
+    "cli_regular": true,
+    "cli_mode": "0o751",
+    "cli_uid": 0,
+    "cli_gid": 0,
+    "service_can_execute_cli": true,
+    "version_error_glibc_symbols": [
+      "GLIBC_2.35"
+    ],
+    "cli_sha256": "64a467a06dceac46a7cca5990e46946faa1027d3b33228f1c42caaff9e33da87",
+    "cli_version": "unavailable",
+    "cli_version_exit": 1,
+    "glibc": "glibc 2.34",
+    "templates": {
+      "ko-book-46": {
+        "native_file": true,
+        "noto_regular": true,
+        "noto_bold": true
+      },
+      "ko-textbook-a4": {
+        "native_file": true,
+        "noto_regular": true,
+        "noto_bold": true
+      },
+      "ko-workbook-b5": {
+        "native_file": true,
+        "noto_regular": true,
+        "noto_bold": true
+      }
+    },
+    "storage_exists": true,
+    "service_storage_writable": true,
+    "service_tmp_writable": true,
+    "journal_matches": {
+      "designcraft_no_such_file": 0,
+      "designcraft_permission_denied": 0,
+      "designcraft_timeout": 0,
+      "designcraft_glibc_error": 3,
+      "designcraft_nonzero_exit": 3,
+      "publishing_provision_failed": 0
+    },
+    "journal_scope": "last 12000 service lines since 2026-10-14 UTC; raw lines withheld"
+  }
+}

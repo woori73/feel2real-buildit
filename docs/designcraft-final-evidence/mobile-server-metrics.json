@@ -1,0 +1,8 @@
+{
+  "counters": {
+    "muse_http_200": 1,
+    "cli_nonzero": 0,
+    "startup_failure": 0
+  },
+  "exception_classes": []
+}

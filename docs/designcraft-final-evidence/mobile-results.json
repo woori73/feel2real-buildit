@@ -1,0 +1,198 @@
+{
+  "target": "0dc3d3e49def356147f4aaf5a4bdfcfff7a3b972",
+  "rows": [
+    {
+      "width": 390,
+      "height": 844,
+      "api": [
+        {
+          "method": "GET",
+          "path": "/api/auth/me",
+          "status": 401
+        },
+        {
+          "method": "GET",
+          "path": "/api/chart/publication/current",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/chart/regions",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/auth/login",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/templates",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/styles",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/publishing/jobs",
+          "status": 202
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/info",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/1/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/2/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/3/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/1/png",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/4/thumb",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/publishing/jobs/1/manuscript",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/2/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/4/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/3/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/1/png",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/1/thumb",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/publishing/ai/plan",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/publishing/jobs/1/revisions",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/info",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/2/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/3/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/4/thumb",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/1/png",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/pages/1/thumb",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/publishing/jobs/1/preflight",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/publishing/jobs/1/export",
+          "status": 202
+        },
+        {
+          "method": "GET",
+          "path": "/api/publishing/jobs/1/artifacts",
+          "status": 200
+        }
+      ],
+      "consoleErrors": 6,
+      "pageErrors": 0,
+      "checks": [
+        "real_login_PASS",
+        "import_typeset_preview_PASS",
+        "mobile_panel_open_close_PASS",
+        "real_Muse_plan_no_mutation_PASS",
+        "approved_edit_PASS",
+        "PDF_download_reopen_PASS",
+        "version_restore_PASS"
+      ],
+      "result": "PASS"
+    }
+  ]
+}
