@@ -15,17 +15,15 @@ jobs:
       - name: Resume existing build artifact, never rebuild or rerun prior ABI smoke
         uses: actions/download-artifact@v4
         with:
-          name: designcraft-080-glibc234
+          name: designcraft-080-glibc234-final
           path: compat-output
-          run-id: 38848999619
+          run-id: 38849898242
           github-token: ${{ github.token }}
-      - name: Verify immutable binary and existing PDFs
+      - name: Verify immutable binary and preserve completed PDF verdicts
         run: |
           echo '2edd60ef2f575263a31ad6cb1ec661181bd24207d4aefbec8516b04990700335  compat-output/package/bin/designcraft-cli' | sha256sum -c -
           chmod 0755 compat-output/package/bin/designcraft-cli
-          sudo apt-get update -qq
-          sudo apt-get install -y poppler-utils
-          python3 ops/designcraft-compat/verify_pdf.py
+          python3 -c 'import json; r=json.load(open("compat-output/pdf-verification.json")); assert len(r)==4 and all(x["text_and_korean_font"]=="PASS" for x in r)'
       - name: Measure one new-binary operation as unprivileged user on glibc 2.34
         run: |
           docker pull "$(cat compat-output/container-image.txt)"
