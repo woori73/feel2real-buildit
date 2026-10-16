@@ -1,4 +1,4 @@
-name: DesignCraft residual probe v2 (read-only, page-2 header glyph check)
+name: DesignCraft residual probe v2b (read-only, page-2 header glyph check)
 on:
   push:
     branches: ['ci/dc-step1-readonly']

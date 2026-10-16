@@ -13,15 +13,16 @@ for pdf in sys.argv[1:]:
     print(f'\n######## {pdf}')
     bbox = run('pdftotext', '-bbox-layout', '-f', '2', '-l', '2', pdf, '-')
     words = re.findall(r'<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">(.*?)</word>', bbox)
-    top = sorted([w for w in words if float(w[1]) < 130], key=lambda w: (round(float(w[1])), float(w[0])))
-    print('page2 top words:')
-    for w in top[:10]:
+    top = sorted(words, key=lambda w: (round(float(w[1])), float(w[0])))
+    edge = [w for w in top if float(w[1]) < 90 or float(w[1]) > 780]
+    print('page2 words in top/bottom bands:')
+    for w in edge[:14]:
         print('  ', tuple(round(float(v), 1) for v in w[:4]), w[4])
-    body = [float(w[0]) for w in words if float(w[1]) > 130]
+    body = [float(w[0]) for w in words if 90 <= float(w[1]) <= 780]
     print('body min xMin:', round(min(body), 1) if body else None)
-    first = next((w for w in top if '글' in w[4]), None)
+    first = next((w for w in edge if '글' in w[4]), None)
     if not first:
-        print('no "글" word on page 2 header'); continue
+        print('no "글" word in the page-2 top/bottom bands'); continue
     x0, y0, x1, y1 = (float(v) for v in first[:4])
     gw = y1 - y0
     print('first header word', first[4], 'x0=%.1f h=%.1f' % (x0, gw))
