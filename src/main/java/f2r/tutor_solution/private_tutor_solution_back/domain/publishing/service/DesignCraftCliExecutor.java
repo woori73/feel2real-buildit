@@ -230,6 +230,7 @@ public class DesignCraftCliExecutor {
       log.debug("DesignCraft CLI 실행: mode={}", cmd.get(1));
 
       Process process = pb.start();
+      f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceGate.trackCurrentProcess(process);
       // Drain both streams before writing stdin: large scripts cannot deadlock on pipe buffers.
       CompletableFuture<String> outputFuture =
           CompletableFuture.supplyAsync(() -> readAll(process.getInputStream()));

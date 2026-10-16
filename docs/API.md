@@ -227,6 +227,9 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 | `GET /state` | `{hasAcademy, status, messages[]}` 화면 복원용. 조회만 한다 |
 | `POST /turn` | `{message?, academyName?, sampleKey?, region?}`. 학원이 없으면 이름→(과목·대상·지역 부족 시 `needs`로 되묻기)→DRAFT 학원+작업본 생성. 이미 학원이 있으면 새로 만들지 않는다(수정 턴은 2-C). 응답 `{reply, needs[], created, academyId, revision, designPreset, notes[]}` |
 | `POST /undo` | `{revision}` 마지막 수정 1단계 되돌리기(여러 번 가능). 응답 `{reply, changes[], undoDepth, revision}`. 스택은 `academy_assistant_message`의 EDIT/UNDO/PUBLISHED로 계산하며 현재 revision이 마지막 기록의 `revisionAfter`와 다르면(다른 탭·화면에서 바뀜) `409 REVISION_CONFLICT` |
+| `POST /redo` | `{revision}` 직전 되돌리기 1단계 다시 실행. UNDO 기록에 저장한 `redo` 정보로 적용하며 응답은 `/undo`와 같다(`redoDepth` 포함). 새 수정·게시·복원이 있으면 다시 실행 스택은 비워진다 |
+| `POST /save` | `{revision}` 현재 작업본을 저장 지점(SAVEPOINT 기록)으로 남긴다. 공개 홈페이지는 바뀌지 않는다(편집은 이미 작업본에 자동 저장됨). 응답 `{savedRevision, savedAt, ...stack}` |
+| `POST /reset` | `{revision}` 현재 작업본을 마지막 저장 지점(없으면 공개 중인 홈페이지)으로 되돌린다. **공개 홈페이지·운영 배포본·저장 기록은 삭제하지 않는다.** 변경분은 EDIT 기록이라 `POST /undo`로 취소할 수 있다. 바뀐 게 없으면 `changes=[]` |
 | `POST /publish` | `{revision, force?}` '게시하기' 하나. 작업본을 공개본에 반영하고, DRAFT면 같은 트랜잭션에서 PUBLISHED로 전환. 응답 `{firstPublish, revision}`. 오류는 작업본 API와 동일(`409 REVISION_CONFLICT/LIVE_CHANGED`) |
 
 주소·전화번호·강사·수강료는 사용자가 말하기 전까지 채우지 않는다. 지역은 사용자가 직접 한 말/입력에서만 받는다.
@@ -4694,3 +4697,21 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 표 추가·수정, DesignCraft→HWPX 변환은 이 API에서 지원하지 않는다. `/api/hwpx/jobs`는 기존 HWP/HWPX 파일 표 셀 편집 전용 별도 경로다.
 
 `style.paragraph.edit`는 기존 스타일 수정용으로 허용하며 create와 같은 한글 폰트 제한/정규화를 적용한다. create는 기존 스타일을 갱신하지 않고 새 이름을 생성하므로 기존 제목 크기 변경에 사용하지 않는다.
+
+## 내신영어 기출분석 + 출제방향 제작 (2026-10)
+
+- `GET /exam-analysis`: 비회원은 공개 소개(`ProgramEntry.EXAM_ANALYSIS`) → 로그인한 STUDENT/TUTOR/ADMIN은 도구 화면(`private, no-store`).
+- `GET /api/exam-insight/config`: `{enabled, supportedFormats[pdf,docx,hwpx,txt,md], unsupported[], maxFilesPerGroup, perUserDailyLimit, remainingToday}`.
+- `POST /api/exam-insight/analyze` (multipart): `pastFiles[]`·`scopeFiles[]`(각 최대 `app.exam-insight.max-files-per-group`=3), `pastText`, `scopeText`, `school`, `grade`, `publisher`, `examType`, `note`. 성공 `200 {status:"done", analysisId, analysisMarkdown, directionMarkdown, truncated, notices[], model, remainingToday}`. 실패 `{status:"error", code, message}` — `400`(MISSING_PAST/SCOPE·UNSUPPORTED_IMAGE·INVALID_FILE·PARSE_FAILED·EMPTY_TEXT·TOO_MANY_FILES), `429`(USER_LIMIT·GLOBAL_LIMIT), `502 INVALID_AI_OUTPUT`(두 문서 마커·맨 끝 `=====END=====` 완료 표시·문서별 소제목 `## 1.`~`## 7.` 순서·마지막 구간 본문이 모두 있어야 성공이며, 잘린 응답·부분 응답은 이 코드로 실패 처리하고 이용 횟수를 환불한다), `503`(DISABLED·LLM_UNAVAILABLE). AI 실패·형식 불량은 "완료"로 표시하지 않고 이용 횟수를 환불한다.
+- 인가: `/api/exam-insight/**`는 STUDENT/TUTOR/ADMIN만. 업로드 파일과 결과는 **서버에 저장하지 않는다**(메모리 처리 후 응답). 스키마 변경 없음.
+- 한도(메모리·KST 일 단위, 재시작하면 초기화): `app.exam-insight.per-user-daily-limit`=3, `global-daily-limit`=100. **`app.exam-insight.enabled` 기본값은 `false`**(환경변수 `APP_EXAM_INSIGHT_ENABLED=true`로 켠다 — 서버 재시작 필요). 꺼져 있으면 `503 DISABLED`이고 AI 호출·이용 횟수 차감이 없다. `max-output-chars` 기본 40000(Wiki 라우터가 이 길이로 응답을 자르는 유일한 인위적 상한. 모델·공급자의 실제 토큰 한도는 repo에서 확인되지 않았으며 `max_tokens`는 지정하지 않는다). 이미지·스캔 PDF는 OCR 미지원이라 거절하고 텍스트 붙여넣기를 안내한다.
+- 제작 의뢰(옵션 B)는 결제 기능이 없어 기존 카카오 오픈채팅/메일 상담 채널로 접수한다(분석 번호 포함). 주문 테이블 연동 설계 → [design/exam-insight-service.md](design/exam-insight-service.md).
+
+## DesignCraft 유지보수 admission/drain (별도 gate PR)
+
+- `GET /api/admin/publishing/maintenance`: ADMIN 전용. `state`, `activeOperations`, `liveCliProcesses`, `singleProcessDrained`, `fleetSafeToReplace` 반환. `fleetSafeToReplace`는 항상 false: 다른 JVM/Worker와 외부 CLI는 별도 조사 대상이다.
+- `POST /api/admin/publishing/maintenance/drain`: ADMIN + `X-DesignCraft-Maintenance: 1` + 동일 출처 검증. 신규 요청/Worker admission을 먼저 닫고 기존 operation 종료를 기다리는 DRAINING으로 전환한다. 즉시 상태를 반환하며 작업을 취소/삭제/FAILED 처리하지 않는다. 180초 내 drain 미완료 시 운영자는 교체 시도를 중단하고 차단을 유지한다(자동 resume 없음).
+- `POST /api/admin/publishing/maintenance/resume`: 동일 보호. CLOSED·활성 operation/추적 CLI=0·인스턴스 락 유효 상태에서만 OPEN으로 전환, 그 외 409. 파일 저장 실패는 FAULT/503으로 닫는다.
+- `/api/publishing`와 `/api/publishing/**`는 CLOSED/DRAINING/FAULT에서 서비스·DB 변경 전 차단한다. 보안 filter의 401/403을 먼저 적용하며, gate 차단 중 TUTOR·ADMIN 외 로그인 사용자는 403, TUTOR·ADMIN은 503 + `Retry-After: 30`이다. OPEN의 기존 인증·소유자 정책은 유지한다. 로그인/정적 DesignCraft 페이지와 다른 서비스는 이 filter 대상이 아니다. ADMIN control은 `/api/admin/...`이므로 차단 중에도 접근 가능하다.
+- `publishing.maintenance.state-dir` 기본 `/var/lib/feel2real/designcraft-maintenance`. 지속 디스크·앱 사용자 전용 쓰기 권한을 운영 적용 전에 별도 승인으로 준비해야 한다. 매 Spring 시작은 반드시 CLOSED(저장/락 실패면 FAULT)이며 ADMIN resume 전 DesignCraft API/Worker는 열리지 않는다.
+- 이 PR은 관리 API만 제공하며 관리자 UI·무인증/local 전용 우회·AWS/DB 스위치를 추가하지 않는다. 기존 JWT/ADMIN 인증과 production Origin 정책도 그대로 적용된다.

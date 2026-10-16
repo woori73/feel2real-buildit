@@ -66,6 +66,8 @@ jobs:
           src/test/js/assistant_export.test.js
           src/test/js/academy_adopt.test.js
           src/test/js/assistant_home_contract.test.js
+          src/test/js/exam_insight.test.js
+          src/test/js/home_agent_exam_contract.test.js
           src/test/js/landing_buildit_start.test.js
           src/test/js/academy_public_hero_cycle.test.js
           src/test/js/landing_v3.test.js
@@ -118,6 +120,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyDesignPresetTenTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantUnitTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantPatchApplierTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.examinsight.service.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantRuleInterpreterTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantAssetCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantEditServiceTest"

@@ -261,3 +261,26 @@ body{font-family:'Noto Sans KR',system-ui,sans-serif;background:var(--ah-bg);col
   .ah-thread{padding:12px 14px 16px}
   .ah-dock{padding:6px 12px calc(10px + env(safe-area-inset-bottom))}
 }
+
+/* ═════════ 편집 도구 모음(되돌리기·다시 실행·초기화·미리보기·저장) — 더보기 밖 독립 버튼 ═════════ */
+.ah-tools{display:flex;align-items:center;gap:6px;margin-left:auto;min-width:0}
+.ah-bar-actions{margin-left:0;padding-left:12px;border-left:1px solid var(--ah-line)}
+.ah-tool{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1px solid var(--ah-line);border-radius:9999px;background:#fff;font:inherit;font-size:14px;color:var(--ah-text);cursor:pointer;white-space:nowrap}
+.ah-tool:hover:not(:disabled){background:var(--ah-accent)}
+.ah-tool:disabled{color:#a4abb5;cursor:default;background:#fff}
+.ah-tool:focus-visible{outline:2px solid var(--ah-brand);outline-offset:2px}
+.ah-tool b{background:var(--ah-accent);border-radius:9999px;padding:0 7px;font-size:12px;font-weight:550}
+.ah-tool-ic{flex:none}
+.ah-tool[data-saved="true"]{border-color:var(--ah-brand)}
+@media(max-width:900px){.ah-tool{padding:0 10px;gap:4px;font-size:13px}.ah-bar-actions{padding-left:8px}}
+@media(max-width:760px){
+  .ah-bar{flex-wrap:wrap;row-gap:8px}
+  .ah-bar-actions{margin-left:auto;border-left:0;padding-left:0}
+  .ah-tools{order:3;flex:1 0 100%;gap:4px;margin-left:0}
+  .ah-tool{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;gap:2px;min-height:48px;padding:4px 2px;border-radius:12px;font-size:11px}
+  .ah-tool-t{display:inline-flex;align-items:center;gap:3px;line-height:1.2}
+  .ah-tool b{padding:0 5px;font-size:10px}
+}
+.ah-tool#ahUndo{width:auto;padding:0 12px;border:1px solid var(--ah-line);font-size:14px}
+@media(max-width:900px){.ah-tool#ahUndo{padding:0 10px;font-size:13px}}
+@media(max-width:760px){.ah-tool#ahUndo{flex:1 1 0;padding:4px 2px;font-size:11px}}

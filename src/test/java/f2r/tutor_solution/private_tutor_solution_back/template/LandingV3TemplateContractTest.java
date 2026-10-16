@@ -66,20 +66,102 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 상단 내비 when 읽으면 then 모의고사·F2R·CHART·WIKI·문의하기와 계정 메뉴를 유지한다")
+  @DisplayName("given 상단 내비 when 읽으면 then 모의고사위키·기출분석·CHART·TestPrep 4개가 라벨과 목적지가 일치하고 F2R은 없으며 문의하기·계정 메뉴를 유지한다")
   void nav_keeps_service_links() throws Exception {
     // given
     String html = Files.readString(LANDING);
+    String nav = html.substring(html.indexOf("<nav class=\"bi-nav\""), html.indexOf("id=\"biMenu\""));
 
     // then
-    assertThat(html)
-        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">Buildit 모의고사</a>")
-        .contains("href=\"/home\" class=\"btn outline nav-cta\">F2R</a>")
-        .contains("href=\"/chart\" class=\"btn outline nav-cta\">BUILD IT CHART</a>")
-        .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">BUILD IT WIKI</a>")
+    assertThat(nav)
+        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">모의고사위키</a>")
+        .contains("href=\"/exam-analysis\" class=\"btn outline nav-cta\">기출분석</a>")
+        .contains("href=\"/chart\" class=\"btn outline nav-cta\">CHART</a>")
+        .contains("href=\"/testprep\" class=\"btn outline nav-cta\">TestPrep</a>")
+        .doesNotContain(">F2R</a>")
+        .doesNotContain("/builder")
         .contains("onclick=\"openContactModal()\"")
-        .contains("fragments/_account_menu :: accountMenuControls")
-        .contains("fragments/_account_menu :: loginModal");
+        .contains("fragments/_account_menu :: accountMenuControls");
+    assertThat(html).contains("fragments/_account_menu :: loginModal");
+  }
+
+  @Test
+  @DisplayName("given 첫 화면 서비스 카드 when 읽으면 then 8장이 확정 순서·링크로 실제 a[href]이고 준비 중 카드 2장만 소개 보기·가이드 보기로 구분된다")
+  void first_screen_has_eight_service_tiles_with_confirmed_links() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    String tiles = html.substring(html.indexOf("id=\"svcTiles\""), html.indexOf("id=\"nation\""));
+    String[][] expected = {
+        {"builder", "/builder", "AI 홈페이지 제작", "강사·원장용", "만들어 보기"},
+        {"problem", "/exam-analysis", "내신영어 기출분석 + 출제방향 제작", "로그인 후 이용", "분석 시작"},
+        {"wiki", "/wiki", "모의고사위키", "무료 열람", "위키 열기"},
+        {"chart", "/chart", "BUILD IT CHART", "무료", "랭킹 보기"},
+        {"testprep", "/testprep", "iBT TestPrep", "응시는 로그인", "연습 시작"},
+        {"ledger", "/ledger", "이지장부", "원장용", "장부 열기"},
+        {"designcraft", "/designcraft", "DesignCraft", "준비 중", "소개 보기"},
+        {"admissions", "/admissions/guide", "입시상담", "준비 중", "가이드 보기"}};
+
+    // when
+    int count = tiles.split("data-svc-tile=", -1).length - 1;
+
+    // then
+    assertThat(count).isEqualTo(8);
+    int last = -1;
+    for (String[] t : expected) {
+      int at = tiles.indexOf("href=\"" + t[1] + "\" data-svc-tile=\"" + t[0] + "\"");
+      assertThat(at).as(t[0]).isGreaterThan(last);
+      last = at;
+      String card = tiles.substring(at, tiles.indexOf("</a></li>", at));
+      assertThat(card).as(t[0]).contains(t[2], t[3], t[4]);
+    }
+    assertThat(tiles.split("svc-tile-soon", -1).length - 1).isEqualTo(2);
+    assertThat(tiles.split("aria-describedby=\"svcSoonNote\"", -1).length - 1).isEqualTo(2);
+    assertThat(tiles).contains("id=\"svcSoonNote\"").doesNotContain("이용 가능").doesNotContain("<button");
+  }
+
+  @Test
+  @DisplayName("given 첫 화면 개편 when 읽으면 then 입력 폼은 문서에 1개이고 첫 화면(#homeTop)이 #hero보다 앞에 있으며 소식 패널은 정적 HTML이다")
+  void first_screen_owns_the_single_homepage_form_and_static_news() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    int homeTop = html.indexOf("id=\"homeTop\"");
+    int hero = html.indexOf("id=\"hero\"");
+    String news = html.substring(html.indexOf("class=\"home-news\""), html.indexOf("id=\"svcTiles\""));
+
+    // then
+    assertThat(html.split("<form class=\"v3-ask\"", -1).length - 1).isEqualTo(1);
+    assertThat(html.split("data-buildit-prompt", -1).length - 1).isEqualTo(1);
+    assertThat(homeTop).isGreaterThan(0).isLessThan(hero);
+    assertThat(html.indexOf("<form class=\"v3-ask\"")).isGreaterThan(homeTop).isLessThan(hero);
+    assertThat(news).contains("href=\"/ledger\"", "href=\"/designcraft\"", "href=\"/testprep\"", "href=\"/wiki\"", "href=\"/chart\"", "href=\"/exam\"")
+        .doesNotContain("th:each").doesNotContain("th:text").doesNotContain("/api/");
+  }
+
+  @Test
+  @DisplayName("given 모바일 드로어 when 읽으면 then 서비스 8행과 회원가입·문의하기가 있고 로그인 버튼은 중복 배치하지 않는다")
+  void mobile_drawer_lists_eight_services_without_duplicate_login_hook() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    String menu = html.substring(html.indexOf("id=\"biMenu\""), html.indexOf("id=\"homeFirst\""));
+
+    // then
+    for (String href : new String[] {"/wiki", "/exam-analysis", "/chart", "/testprep", "/builder", "/ledger", "/designcraft", "/admissions/guide"}) {
+      assertThat(menu).as(href).contains("<a href=\"" + href + "\">");
+    }
+    assertThat(menu).contains("href=\"/register?returnUrl=%2F\"", "onclick=\"openContactModal()\"")
+        .doesNotContain("data-auth-login").doesNotContain("/home\"").doesNotContain("/signin");
+    assertThat(menu.split("bi-menu-badge", -1).length - 1).isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("given 첫 화면 개편 when 읽으면 then 존재하지 않는 경로(/report·/shorts·/consult·/agent·/signin·/lms)를 링크하지 않는다")
+  void first_screen_does_not_link_unverified_paths() throws Exception {
+    // given
+    String html = Files.readString(LANDING);
+    String first = html.substring(html.indexOf("id=\"homeFirst\""), html.indexOf("id=\"nation\""));
+
+    // then
+    assertThat(first).doesNotContain("href=\"/report", "href=\"/shorts", "href=\"/consult", "href=\"/agent", "href=\"/signin", "href=\"/lms", "href=\"/easy", "href=\"/login");
   }
 
   @Test
@@ -136,18 +218,20 @@ class LandingV3TemplateContractTest {
     String soon = html.substring(start, end);
 
     // then
-    // iBT TestPrep은 오픈 서비스(#services)로 옮겼고, 출시 예정에는 미배포 5종만 남는다.
-    assertThat(soon).contains("출시 예정", "DesignCraft", "입시상담 AI", "Easy 장부", "AcademyCraft", "StudyCraft").contains("aria-disabled=\"true\"");
+    // iBT TestPrep은 오픈 서비스(#services)로 옮겼고, 출시 예정에는 미배포 4종만 남는다(이지장부는 /ledger로 제공 중).
+    assertThat(soon).contains("출시 예정", "DesignCraft", "입시상담 AI", "AcademyCraft", "StudyCraft").contains("aria-disabled=\"true\"");
     assertThat(soon).doesNotContain("iBT TestPrep", "v3-badge-live");
-    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(5);
+    assertThat(soon.split("v3-badge-soon", -1).length - 1).isEqualTo(4);
     // AcademyCraft(미배포)·StudyCraft(운영 접근 미확인)는 이용 링크를 두지 않고, 옛 명칭 LMS 카드는 없다.
     assertThat(soon).doesNotContain("href=\"/lms", "href=\"/conversation", "href=\"/tutor/conversation", "<h3>LMS");
     assertThat(soon.split("곧 준비중", -1).length - 1).isGreaterThanOrEqualTo(4);
     assertThat(soon).contains("원고 입력 → 자동 편집 → PDF 제작", "학생·강사 관리 → 출결·성적·숙제 → 상담 관리", "AI 대화형 영어학습 → 학습 콘텐츠");
-    // DesignCraft만 "곧 준비중" 뱃지를 유지하면서 공개 소개(/designcraft)로 연결한다. 나머지 4종은 링크 없음.
+    // DesignCraft만 "곧 준비중" 뱃지를 유지하면서 공개 소개(/designcraft)로 연결한다. 나머지 3종은 링크 없음.
     assertThat(soon.split("<a ", -1).length - 1).isEqualTo(1);
     assertThat(soon).contains("id=\"designcraft-entry\" href=\"/designcraft\"").doesNotContain("<input").doesNotContain("<form");
-    assertThat(soon.split("aria-disabled=\"true\"", -1).length - 1).isEqualTo(4);
+    assertThat(soon.split("aria-disabled=\"true\"", -1).length - 1).isEqualTo(3);
+    // 이지장부는 /ledger로 이미 제공 중(첫 화면 카드 6번)이라 출시 예정에 두지 않는다.
+    assertThat(soon).doesNotContain("Easy 장부", "이지장부");
   }
 
   @Test
@@ -179,8 +263,8 @@ class LandingV3TemplateContractTest {
     String services = html.substring(start, end);
     String[][] expected = {
         {"svc-builder", "AI 홈페이지 제작", "/builder"},
-        {"svc-problem", "내신 영어 문제지 제작기", "/problem-generator"},
-        {"svc-wiki", "내신위키", "/wiki"},
+        {"svc-problem", "내신영어 기출분석 + 출제방향 제작", "/exam-analysis"},
+        {"svc-wiki", "모의고사위키", "/wiki"},
         {"svc-testprep", "iBT TestPrep", "/testprep"}};
 
     // then
@@ -238,24 +322,26 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 새 첫 화면 구성 when 템플릿을 읽으면 then 전국 무대 → 디지털영어학원 Agent(홈페이지 Agent) → 제작 입력 순서이고 지역 4개·남한 지도를 쓴다")
-  void first_screen_starts_with_nation_then_agent_then_homepage_input() throws Exception {
+  @DisplayName("given 새 첫 화면 구성 when 템플릿을 읽으면 then 서비스 카드·제작 입력이 먼저 오고 전국 무대 → 디지털영어학원 Agent(홈페이지 Agent) → 제작 상세 순서이며 지역 4개·남한 지도를 유지한다")
+  void first_screen_puts_services_first_then_nation_agent_hero_detail() throws Exception {
     // given
     String html = Files.readString(LANDING);
 
     // when
+    int tiles = html.indexOf("id=\"svcTiles\"");
     int nation = html.indexOf("id=\"nation\"");
     int agent = html.indexOf("id=\"agent\"");
     int hero = html.indexOf("id=\"hero\"");
 
     // then
-    assertThat(nation).isGreaterThanOrEqualTo(0);
+    assertThat(tiles).isGreaterThan(0).isLessThan(nation);
     assertThat(agent).isGreaterThan(nation);
     assertThat(hero).isGreaterThan(agent);
     assertThat(html)
         .contains("전국 무대로 확장하세요!")
         .contains("디지털영어학원 Agent")
-        .contains("홈페이지 Agent");
+        .contains("홈페이지 Agent")
+        .contains("href=\"#svcTiles\">첫 화면 서비스 목록으로</a>");
     assertThat(html.split("data-nation-region=", -1).length - 1).isEqualTo(4);
     assertThat(html).contains("/img/landing/korea-dots.svg");
   }
@@ -271,7 +357,7 @@ class LandingV3TemplateContractTest {
     // then
     assertThat(tail)
         .contains("내신 영어 문제지는 어떻게 받나요?", "기본 1회 20,000원")
-        .contains("DesignCraft, 입시상담 AI, Easy 장부, AcademyCraft, StudyCraft는 곧 준비중", "iBT TestPrep은 첫 화면을 누구나 볼 수 있고")
+        .contains("DesignCraft, 입시상담 AI, AcademyCraft, StudyCraft는 곧 준비중", "iBT TestPrep은 첫 화면을 누구나 볼 수 있고")
         .contains("홈페이지 제작으로 디지털 영어 학원을 시작하세요!")
         .contains("href=\"/builder\" class=\"btn reveal\" data-fade data-buildit-start")
         .doesNotContain("AI 홈페이지 만들기")

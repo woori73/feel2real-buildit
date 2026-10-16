@@ -552,6 +552,66 @@ final class AssistantPatchApplier {
         undo.visibilityBefore(), undo.orderBefore(), changes, null);
   }
 
+  // ───────────────────────── 다시 실행·초기화 ─────────────────────────
+
+  /**
+   * 되돌리기 직전 상태를 '다시 실행' 정보로 만든다. 되돌리기가 건드리는 키·소개·표시·순서의 현재 값을 그대로 담아,
+   * {@link #inverse}에 넘기면 되돌리기 이전 상태로 돌아간다(없던 키는 null → 삭제).
+   */
+  static Undo redoOf(Snapshot current, Undo undo) {
+    Map<String, String> draftBefore = new LinkedHashMap<>();
+    for (String key : undo.draftBefore().keySet()) {
+      draftBefore.put(key, current.draft().get(key));
+    }
+    return new Undo(
+        undo.introChanged(), current.intro(), draftBefore,
+        undo.visibilityBefore() == null ? null : new HashMap<>(current.visibility()),
+        undo.orderBefore() == null ? null : normalizedOrder(current.order()));
+  }
+
+  /**
+   * 현재 작업본을 목표 상태(마지막 저장 상태 또는 공개본)로 맞추는 변경분. 바뀐 항목이 없으면 {@link Applied#isEmpty()}.
+   * 되돌리기 정보를 함께 담아, 초기화도 '되돌리기'로 취소할 수 있다.
+   */
+  static Applied diff(Snapshot current, Snapshot target) {
+    Map<String, String> patch = new LinkedHashMap<>();
+    Map<String, String> draftBefore = new LinkedHashMap<>();
+    List<Change> changes = new ArrayList<>();
+    java.util.TreeSet<String> keys = new java.util.TreeSet<>(current.draft().keySet());
+    keys.addAll(target.draft().keySet());
+    for (String key : keys) {
+      String now = current.draft().get(key);
+      String goal = target.draft().get(key);
+      if (!Objects.equals(now, goal)) {
+        patch.put(key, goal);
+        draftBefore.put(key, now);
+        changes.add(draftChange(key, now, goal));
+      }
+    }
+    boolean introChanged = !Objects.equals(blankToNull(current.intro()), blankToNull(target.intro()));
+    if (introChanged) {
+      changes.add(new Change("학원 소개 문단", shorten(current.intro()), shorten(target.intro()), "sec-intro"));
+    }
+    boolean visChanged = !current.visibility().equals(target.visibility());
+    if (visChanged) changes.add(new Change("섹션 표시", "현재 상태", "저장 상태로 복원", null));
+    List<String> nowOrder = normalizedOrder(current.order());
+    List<String> goalOrder = normalizedOrder(target.order());
+    boolean orderChanged = !nowOrder.equals(goalOrder);
+    if (orderChanged) changes.add(new Change("섹션 순서", "현재 순서", "저장 순서로 복원", null));
+    Undo undo = new Undo(
+        introChanged, current.intro(), Collections.unmodifiableMap(draftBefore),
+        visChanged ? new HashMap<>(current.visibility()) : null,
+        orderChanged ? nowOrder : null);
+    return new Applied(
+        introChanged ? target.intro() : null, patch,
+        visChanged ? new HashMap<>(target.visibility()) : null,
+        orderChanged ? goalOrder : null, changes, undo);
+  }
+
+  private static String blankToNull(String v) {
+    return v == null || v.isBlank() ? null : v;
+  }
+
   // ───────────────────────── 문자열 도구 ─────────────────────────
 
   private static String upper(String v) {

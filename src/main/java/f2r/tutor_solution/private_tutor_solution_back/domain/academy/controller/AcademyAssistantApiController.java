@@ -109,6 +109,7 @@ public class AcademyAssistantApiController {
     body.put("dirty", v.dirty());
     body.put("publicUrl", v.publicUrl());
     body.put("undoDepth", v.undoDepth());
+    putStack(body, principal);
     return noStore(HttpStatus.OK, body);
   }
 
@@ -141,6 +142,7 @@ public class AcademyAssistantApiController {
       if (r.edit() != null) {
         putEdit(body, r.edit());
       }
+      putStack(body, principal);
       return noStore(HttpStatus.OK, body);
     } catch (AcademyAssistantEditService.AiTimeoutException e) {
       // 서버 AI 한도 초과: 수정이 아니다. 입력·작업본·공개본·대화 기록은 그대로(쓰기 전에 끊었다).
@@ -178,6 +180,7 @@ public class AcademyAssistantApiController {
       body.put("reply", out.reply());
       body.put("created", false);
       putEdit(body, out);
+      putStack(body, principal);
       return noStore(HttpStatus.OK, body);
     } catch (WorkingCopyConflictException e) {
       return conflict(e);
@@ -214,12 +217,73 @@ public class AcademyAssistantApiController {
       body.put("reply", out.reply());
       body.put("created", false);
       putEdit(body, out);
+      putStack(body, principal);
       return noStore(HttpStatus.OK, body);
     } catch (WorkingCopyConflictException e) {
       return conflict(e);
     } catch (IllegalArgumentException e) {
       return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
     }
+  }
+
+  /** 다시 실행: 방금 되돌린 수정을 다시 적용한다(되돌린 뒤 새 수정을 하면 불가). body: {revision}. */
+  @PostMapping("/redo")
+  public ResponseEntity<Map<String, Object>> redo(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody UndoRequest request) {
+    return editAction(principal, p -> editService.redo(p, request == null ? null : request.revision()));
+  }
+
+  /** 저장: 현재 작업본을 저장점으로 기록한다(초기화 기준). 공개본·게시는 바꾸지 않는다. body: {revision}. */
+  @PostMapping("/save")
+  public ResponseEntity<Map<String, Object>> save(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody UndoRequest request) {
+    return editAction(principal, p -> editService.savepoint(p, request == null ? null : request.revision()));
+  }
+
+  /**
+   * 초기화: 작업본을 마지막 저장점(없으면 현재 공개본)으로 되돌린다. 작업본만 바뀌고 공개본·버전 기록은 그대로이며,
+   * 수정 한 건으로 기록돼 '되돌리기'로 취소할 수 있다. body: {revision}.
+   */
+  @PostMapping("/reset")
+  public ResponseEntity<Map<String, Object>> reset(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody UndoRequest request) {
+    return editAction(principal, p -> editService.reset(p, request == null ? null : request.revision()));
+  }
+
+  private ResponseEntity<Map<String, Object>> editAction(
+      JwtTokenProvider.AuthenticatedPrincipal principal,
+      java.util.function.Function<JwtTokenProvider.AuthenticatedPrincipal, EditOutcome> action) {
+    if (!featureFlag.isOn(principal)) {
+      return featureOff();
+    }
+    if (isClassic(principal)) {
+      return notAssistantAcademy();
+    }
+    try {
+      EditOutcome out = action.apply(principal);
+      Map<String, Object> body = new HashMap<>();
+      body.put("reply", out.reply());
+      body.put("created", false);
+      putEdit(body, out);
+      putStack(body, principal);
+      return noStore(HttpStatus.OK, body);
+    } catch (WorkingCopyConflictException e) {
+      return conflict(e);
+    } catch (IllegalArgumentException e) {
+      return noStore(HttpStatus.BAD_REQUEST, Map.of("message", e.getMessage()));
+    }
+  }
+
+  /** 버튼 상태용: 다시 실행 가능 단계와 마지막 저장점(revision·시각). */
+  private void putStack(Map<String, Object> body, JwtTokenProvider.AuthenticatedPrincipal principal) {
+    AcademyAssistantEditService.StackInfo info = editService.stackInfo(principal);
+    body.put("undoDepth", info.undoDepth());
+    body.put("redoDepth", info.redoDepth());
+    body.put("savedRevision", info.savedRevision());
+    body.put("savedAt", info.savedAt());
   }
 
   /**
