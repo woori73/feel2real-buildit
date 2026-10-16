@@ -1,4 +1,4 @@
-name: DesignCraft B test - precheck + ARM watchdog + persistence check (approved, one-shot; does NOT resume the gate)
+name: DesignCraft B test - precheck + ARM watchdog + persistence check (approved, one-shot; does NOT resume the gate) #3
 on:
   push:
     branches: ['ci/dc-step1-readonly']
