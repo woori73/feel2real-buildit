@@ -28,39 +28,19 @@ jobs:
           INSTANCE="i-09d7cabb5a42d1135"
           SSM_BODY=$(cat <<'SSMEOF'
           set -u
-          echo "== configured publishing paths in /etc/f2r/env (PUBLISHING_* keys only) =="
-          grep -E '^(export )?PUBLISHING_[A-Z_]+=' /etc/f2r/env 2>/dev/null | sed -E 's/^export //' || echo "(no PUBLISHING_* keys set -> application.yaml defaults apply)"
-          echo "== app default (application.yaml) cli-path=/opt/designcraft/designcraft-cli template-dir=/opt/designcraft/templates storage-root=/tmp/publishing =="
-          echo "== service user =="
-          systemctl show f2r-app -p User -p ActiveState -p NRestarts -p ExecMainStartTimestamp 2>&1 | head -6
-          echo "== /opt/designcraft listing =="
-          ls -ld /opt/designcraft 2>&1
-          ls -la /opt/designcraft 2>&1 | head -30
-          echo "== cli file =="
-          ls -l /opt/designcraft/designcraft-cli 2>&1
-          stat -c 'mode=%a owner=%U:%G size=%s mtime=%y' /opt/designcraft/designcraft-cli 2>&1
-          file /opt/designcraft/designcraft-cli 2>&1 | cut -c1-200
-          echo "== dependencies (ldd, missing only) =="
-          if [ -e /opt/designcraft/designcraft-cli ]; then
-            ldd /opt/designcraft/designcraft-cli 2>&1 | grep -i 'not found' || echo "no missing shared libs reported (or static/script)"
-          else
-            echo "SKIP (cli missing)"
-          fi
-          echo "== version (read-only, 10s cap) =="
-          if [ -x /opt/designcraft/designcraft-cli ]; then
-            timeout 10 /opt/designcraft/designcraft-cli --version 2>&1 | head -3
-          else
-            echo "SKIP (not executable or missing)"
-          fi
-          echo "== templates dir =="
-          ls -ld /opt/designcraft/templates 2>&1
-          ls /opt/designcraft/templates 2>&1 | head -10
-          echo "== storage root =="
-          ls -ld /tmp/publishing 2>&1
-          echo "== other CLI paths (existence only) =="
-          ls -l /opt/artcraft/pdfcraft-cli /opt/artcraft/photocraft/bin/photocraft-cli 2>&1 | head -4
-          echo "== recent publishing errors in app journal (counts only) =="
-          journalctl -u f2r-app --since "2026-10-16 02:00:00" --no-pager 2>/dev/null | grep -ciE 'designcraft|publishing' || true
+          echo "== os / glibc =="
+          grep -E '^(PRETTY_NAME|VERSION_ID)=' /etc/os-release
+          ldd --version 2>&1 | head -1
+          echo "== docker wrapper (non-secret script, 541 bytes) =="
+          cat /opt/designcraft/designcraft-cli-docker.sh 2>&1 | head -30
+          echo "== docker availability =="
+          command -v docker || echo "docker: not found"
+          systemctl is-active docker 2>&1 | head -1
+          echo "== can service user (ec2-user) read templates / execute cli? =="
+          runuser -u ec2-user -- ls /opt/designcraft/templates >/dev/null 2>&1 && echo "templates: readable by ec2-user" || echo "templates: NOT readable by ec2-user"
+          runuser -u ec2-user -- test -x /opt/designcraft/designcraft-cli && echo "cli: executable by ec2-user" || echo "cli: NOT executable by ec2-user"
+          echo "== recent app journal lines mentioning designcraft/publishing (max 8, truncated) =="
+          journalctl -u f2r-app --since "2026-10-16 02:00:00" --no-pager 2>/dev/null | grep -iE 'designcraft|publishing' | tail -8 | cut -c1-240
           SSMEOF
           )
           PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": [l.lstrip() for l in sys.stdin.read().splitlines()]}))' <<< "$SSM_BODY")
