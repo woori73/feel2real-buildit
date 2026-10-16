@@ -926,6 +926,10 @@ Agent/운영자 등록 → DRAFT → 운영자 FINAL 확정 → 필요 시 DRAFT
 - 보류는 OPEN 항목을 그대로 유지하며 거래·분개를 변경하지 않는다.
 - 이 파일럿 화면은 물리 삭제를 노출하지 않는다. DB 스키마, Flyway, 기존 DELETE 정책, 신규 VOID 기능은 변경하지 않는다.
 
+
+### DesignCraft 승인 편집 (0.8.0 통합)
+원고 반입 → 문서 조회(읽기 전용) → AI 계획 생성 → 원문/수정안 확인 → 사용자 승인 → 한 script로 적용 → 미리보기 갱신. 수정 전 스냅샷은 고유 파일명으로 보존하며 실행 취소는 이전 파일 버전 복원으로 처리한다. AI 계획만 생성하거나 거절하면 문서는 변경하지 않는다.
+
 ## DesignCraft operation drain
 
 Spring 시작 → CLOSED → ADMIN resume → OPEN. 신규 출판 API 요청은 부작용 전 operation을 확보하고 서비스/트랜잭션/연속 CLI 호출 종료까지 유지한다. Worker도 query/claim 전에 같은 admission을 받는다.

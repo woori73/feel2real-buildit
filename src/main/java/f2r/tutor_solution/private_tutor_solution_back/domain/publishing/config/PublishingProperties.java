@@ -11,7 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * <pre>
  * publishing:
- *   cli-path: /opt/designcraft/designcraft-cli  # designcraft-cli 0.6.0 바이너리
+ *   cli-path: /opt/designcraft/designcraft-cli  # designcraft-cli 0.8.0 바이너리
  *   storage-root: /var/lib/feel2real/publishing # 작업·산출물 저장 루트
  *   template-dir: /opt/designcraft/templates    # Document Fonts 별도 배치 경로
  *   cli-timeout-seconds: 120
@@ -27,7 +27,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "publishing")
 public class PublishingProperties {
 
-  /** designcraft-cli 0.6.0 바이너리 절대 경로. */
+  /** designcraft-cli 0.8.0 바이너리 절대 경로. */
   private String cliPath = "/opt/designcraft/designcraft-cli";
 
   /** 작업 디렉토리·산출물 저장 루트. 레이아웃: {root}/jobs/{jobId}/ */

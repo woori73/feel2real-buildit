@@ -63,12 +63,22 @@
       <span id="mock-badge-editor" class="mock-badge" hidden>Mock</span>
     </div>
     <div class="topbar-actions">
+      <button id="btn-ai-open" class="btn btn-ai" aria-controls="panel-right" aria-expanded="false">✨ AI에게 수정 요청</button>
       <button id="btn-preflight-top" class="btn">검수</button>
       <button id="btn-export-top" class="btn">PDF 출력</button>
       <button id="btn-versions" class="btn">버전</button>
       <button id="btn-save" class="btn btn-primary">저장</button>
     </div>
   </header>
+
+  <!-- 조판 엔진·불러오기 오류: 토스트처럼 사라지지 않고, 복구 방법을 함께 보여준다 -->
+  <div id="editor-error" class="editor-error" role="alert" hidden>
+    <span id="editor-error-msg"></span>
+    <span class="editor-error-actions">
+      <button id="btn-error-retry" class="btn btn-sm" hidden>다시 시도</button>
+      <button id="btn-error-back" class="btn btn-sm btn-ghost">프로젝트 목록으로</button>
+    </span>
+  </div>
 
   <div id="job-progress" class="job-progress" hidden>
     <div class="job-progress-meta">
@@ -129,16 +139,20 @@
     </main>
 
     <!-- 우 패널: 탭 4종 -->
-    <aside class="panel panel-right" id="panel-right">
+    <aside class="panel panel-right" id="panel-right" aria-label="AI 수정 및 편집 패널">
+      <div class="panel-right-head">
+        <strong>✨ AI 수정</strong>
+        <button id="btn-ai-close" class="btn btn-ghost btn-sm" aria-label="AI 수정 닫기">닫기 ✕</button>
+      </div>
       <nav class="right-tabs" role="tablist" aria-label="편집 패널">
-        <button class="tab is-active" role="tab" data-tab="style" aria-selected="true">스타일</button>
-        <button class="tab" role="tab" data-tab="ai" aria-selected="false">AI 수정</button>
+        <button class="tab is-active" role="tab" data-tab="ai" aria-selected="true">AI 수정</button>
+        <button class="tab" role="tab" data-tab="style" aria-selected="false">스타일</button>
         <button class="tab" role="tab" data-tab="preflight" aria-selected="false">검수</button>
         <button class="tab" role="tab" data-tab="artifacts" aria-selected="false">산출물</button>
       </nav>
 
       <!-- F4: 스타일 -->
-      <section class="tab-panel is-active" id="tab-style" role="tabpanel">
+      <section class="tab-panel" id="tab-style" role="tabpanel">
         <div class="style-target-note">
           적용 대상: <strong id="style-target">1쪽 본문</strong>
         </div>
@@ -150,10 +164,18 @@
       </section>
 
       <!-- F5: AI 채팅 -->
-      <section class="tab-panel" id="tab-ai" role="tabpanel">
+      <section class="tab-panel is-active" id="tab-ai" role="tabpanel">
+        <div class="ai-examples" id="ai-examples">
+          <p class="muted">이렇게 요청해 보세요 (눌러서 입력)</p>
+          <button type="button" class="chip-btn" data-ai-example="대제목 스타일을 24pt로 크게 만들어 적용해줘">제목을 크게</button>
+          <button type="button" class="chip-btn" data-ai-example="목차를 만들어줘">목차 만들기</button>
+          <button type="button" class="chip-btn" data-ai-example="방금 한 수정을 취소해줘">수정 취소</button>
+          <p class="ai-scope">현재 AI가 할 수 있는 일: 문단 스타일 만들기·적용, 목차, 마스터 페이지, 원고 반입, 문단 수정·추가·삭제, 실행 취소.
+            표 추가·수정은 <strong>준비 중</strong>입니다.</p>
+        </div>
         <div id="ai-log" class="ai-log" aria-live="polite"></div>
         <form id="ai-form" class="ai-form">
-          <input type="text" id="ai-input" placeholder="예: 3쪽 제목을 ko-heading1로 바꿔줘" autocomplete="off">
+          <input type="text" id="ai-input" placeholder="예: 대제목을 크게 해줘" autocomplete="off">
           <button type="submit" class="btn btn-primary" id="ai-send">보내기</button>
         </form>
         <p class="ai-hint">AI는 계획만 만듭니다. <strong>승인한 후에만</strong> 적용되며, 적용 전 자동 스냅샷이 저장됩니다.</p>
@@ -236,6 +258,8 @@
     </div>
   </div>
 </div>
+
+<button id="ai-fab" class="btn btn-primary ai-fab" aria-controls="panel-right" hidden>✨ AI 수정</button>
 
 <div id="toast" class="toast" hidden></div>
 
