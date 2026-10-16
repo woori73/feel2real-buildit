@@ -66,7 +66,7 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 상단 내비 when 읽으면 then 내신위키·문제지 제작기·CHART·TestPrep 4개가 라벨과 목적지가 일치하고 F2R은 없으며 문의하기·계정 메뉴를 유지한다")
+  @DisplayName("given 상단 내비 when 읽으면 then 모의고사위키·기출분석·CHART·TestPrep 4개가 라벨과 목적지가 일치하고 F2R은 없으며 문의하기·계정 메뉴를 유지한다")
   void nav_keeps_service_links() throws Exception {
     // given
     String html = Files.readString(LANDING);
@@ -74,8 +74,8 @@ class LandingV3TemplateContractTest {
 
     // then
     assertThat(nav)
-        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">내신위키</a>")
-        .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">문제지 제작기</a>")
+        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">모의고사위키</a>")
+        .contains("href=\"/exam-analysis\" class=\"btn outline nav-cta\">기출분석</a>")
         .contains("href=\"/chart\" class=\"btn outline nav-cta\">CHART</a>")
         .contains("href=\"/testprep\" class=\"btn outline nav-cta\">TestPrep</a>")
         .doesNotContain(">F2R</a>")
@@ -93,8 +93,8 @@ class LandingV3TemplateContractTest {
     String tiles = html.substring(html.indexOf("id=\"svcTiles\""), html.indexOf("id=\"nation\""));
     String[][] expected = {
         {"builder", "/builder", "AI 홈페이지 제작", "강사·원장용", "만들어 보기"},
-        {"problem", "/problem-generator", "내신 영어 문제지 제작기", "로그인 후 이용", "제작 시작"},
-        {"wiki", "/wiki", "내신위키", "무료 열람", "위키 열기"},
+        {"problem", "/exam-analysis", "내신영어 기출분석 + 출제방향 제작", "로그인 후 이용", "분석 시작"},
+        {"wiki", "/wiki", "모의고사위키", "무료 열람", "위키 열기"},
         {"chart", "/chart", "BUILD IT CHART", "무료", "랭킹 보기"},
         {"testprep", "/testprep", "iBT TestPrep", "응시는 로그인", "연습 시작"},
         {"ledger", "/ledger", "이지장부", "원장용", "장부 열기"},
@@ -145,7 +145,7 @@ class LandingV3TemplateContractTest {
     String menu = html.substring(html.indexOf("id=\"biMenu\""), html.indexOf("id=\"homeFirst\""));
 
     // then
-    for (String href : new String[] {"/wiki", "/problem-generator", "/chart", "/testprep", "/builder", "/ledger", "/designcraft", "/admissions/guide"}) {
+    for (String href : new String[] {"/wiki", "/exam-analysis", "/chart", "/testprep", "/builder", "/ledger", "/designcraft", "/admissions/guide"}) {
       assertThat(menu).as(href).contains("<a href=\"" + href + "\">");
     }
     assertThat(menu).contains("href=\"/register?returnUrl=%2F\"", "onclick=\"openContactModal()\"")
@@ -263,8 +263,8 @@ class LandingV3TemplateContractTest {
     String services = html.substring(start, end);
     String[][] expected = {
         {"svc-builder", "AI 홈페이지 제작", "/builder"},
-        {"svc-problem", "내신 영어 문제지 제작기", "/problem-generator"},
-        {"svc-wiki", "내신위키", "/wiki"},
+        {"svc-problem", "내신영어 기출분석 + 출제방향 제작", "/exam-analysis"},
+        {"svc-wiki", "모의고사위키", "/wiki"},
         {"svc-testprep", "iBT TestPrep", "/testprep"}};
 
     // then
