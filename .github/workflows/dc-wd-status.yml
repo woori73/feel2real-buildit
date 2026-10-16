@@ -1,0 +1,42 @@
+name: DesignCraft watchdog STATUS (read-only)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-wd-status.yml']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 900
+          retry-max-attempts: 1
+      - name: Install watchdog file and run a --dry-run transient unit (observes only)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          script = ("echo \"unit active? $(systemctl is-active dc-gate-watchdog 2>&1)\"\n"
+                    "journalctl -u dc-gate-watchdog --no-pager -o cat | tail -8\n"
+                    "echo \"gate state file: $(cat /var/lib/feel2real/designcraft-maintenance/state)\"\n"
+                    "echo \"f2r-app restarts: $(systemctl show f2r-app.service -p NRestarts --value), since: $(systemctl show f2r-app.service -p ActiveEnterTimestamp --value)\"\n"
+                    "echo \"now(UTC): $(date -u +%H:%M:%S)\"\n")
+          Path('wd-params.json').write_text(json.dumps({'commands': [script]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://wd-params.json --timeout-seconds 120 --query Command.CommandId --output text)
+          for i in $(seq 1 40); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query '{status:Status,out:StandardOutputContent,err:StandardErrorContent}' --output json
