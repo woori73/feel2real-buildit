@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
   <link rel="stylesheet" href="/css/landing_v3.css?v=20261014-3">
+  <link rel="stylesheet" href="/css/landing_home.css?v=20261016-1">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -26,10 +27,10 @@
     </a>
     <div class="nav-actions">
       <div class="nav-links">
-        <a href="/wiki" class="btn outline nav-cta">Buildit 모의고사</a>
-        <a href="/home" class="btn outline nav-cta">F2R</a>
-        <a href="/chart" class="btn outline nav-cta">BUILD IT CHART</a>
-        <a href="/problem-generator" class="btn outline nav-cta">BUILD IT WIKI</a>
+        <a href="/wiki" class="btn outline nav-cta">내신위키</a>
+        <a href="/problem-generator" class="btn outline nav-cta">문제지 제작기</a>
+        <a href="/chart" class="btn outline nav-cta">CHART</a>
+        <a href="/testprep" class="btn outline nav-cta">TestPrep</a>
         <button type="button" class="btn outline nav-cta" onclick="openContactModal()">문의하기</button>
       </div>
       <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
@@ -39,14 +40,133 @@
 
   <!-- 모바일 메뉴: 전체 오버레이, 큰 글자 행 + 구분선 (Sidekick 패턴) -->
   <div class="bi-menu" id="biMenu" hidden>
-    <a href="/wiki">Buildit 모의고사</a>
-    <a href="/home">F2R</a>
+    <a href="/wiki">내신위키</a>
+    <a href="/problem-generator">내신 영어 문제지 제작기</a>
     <a href="/chart">BUILD IT CHART</a>
-    <a href="/problem-generator">BUILD IT WIKI</a>
+    <a href="/testprep">iBT TestPrep</a>
+    <a href="/builder">AI 홈페이지 제작</a>
+    <a href="/ledger">이지장부</a>
+    <a href="/designcraft">DesignCraft <span class="bi-menu-badge">준비 중</span></a>
+    <a href="/admissions/guide">입시상담 <span class="bi-menu-badge">준비 중</span></a>
+    <a href="/register?returnUrl=%2F" data-auth-signup>회원가입</a>
     <button type="button" onclick="openContactModal()">문의하기</button>
   </div>
 
-  <!-- ============ 1. HERO — AI 홈페이지 제작 (시작하기 게이트 훅 data-buildit-* 유지) ============ -->
+  <!-- ============ 0. 첫 화면 개편(안 C): 서비스 칩(모바일) · AI 홈페이지 제작 입력 · 소식 · 서비스 카드 8개 ============ -->
+  <div class="home-first" id="homeFirst">
+    <nav class="svc-chips" aria-label="서비스 바로가기">
+      <ul>
+      <li><a href="/wiki" aria-label="내신위키">위키</a></li>
+      <li><a href="/problem-generator" aria-label="내신 영어 문제지 제작기">문제지</a></li>
+      <li><a href="/chart" aria-label="BUILD IT CHART">CHART</a></li>
+      <li><a href="/testprep" aria-label="iBT TestPrep">TestPrep</a></li>
+      <li><a href="/builder" aria-label="AI 홈페이지 제작">홈페이지 제작</a></li>
+      <li><a href="/ledger" aria-label="이지장부">장부</a></li>
+      <li><a href="/designcraft" aria-label="DesignCraft (준비 중)">DesignCraft</a></li>
+      <li><a href="/admissions/guide" aria-label="입시상담 (준비 중)">입시상담</a></li>
+      </ul>
+    </nav>
+
+    <section class="home-top" id="homeTop" aria-labelledby="homeTopH">
+      <div class="home-top-wrap">
+        <!-- 입력 폼은 기존 #hero에서 이관했다(문서당 1개: data-buildit-* 훅 중복 금지). 마크업·속성은 그대로. -->
+        <div class="home-top-ask">
+          <p class="v3-brandline">BuildIt Web</p>
+          <h2 class="home-top-h2" id="homeTopH">홈페이지, 한 문장으로 시작하세요</h2>
+          <form class="v3-ask" data-buildit-form autocomplete="off">
+            <input type="text" class="v3-ask-input" data-buildit-prompt maxlength="2000"
+                   placeholder="어떤 홈페이지를 만들고 싶으신가요?" aria-label="만들고 싶은 홈페이지">
+            <button type="submit" class="v3-btn v3-btn-primary" aria-label="만들기">만들기</button>
+          </form>
+          <ul class="v3-assure"><li>편집기 수정</li><li>미리보기 확인</li><li>승인 후에만 공개</li></ul>
+          <a class="home-top-more" href="/builder">빌더 소개 보기 →</a>
+        </div>
+        <!-- 소식 패널: 정적 HTML(CMS·DB·API 연동 없음). 운영에서 수동으로 편집한다. -->
+        <aside class="home-news" aria-label="주요 서비스 및 소식">
+          <h3 class="home-news-h3">소식</h3>
+          <div class="home-news-group"><span class="home-news-tag">새 서비스</span>
+            <a href="/ledger">이지장부 공개</a>
+            <a href="/designcraft">DesignCraft 소개</a></div>
+          <div class="home-news-group"><span class="home-news-tag">업데이트</span>
+            <a href="/testprep">iBT TestPrep 연습 시작</a></div>
+          <div class="home-news-group"><span class="home-news-tag">자주 찾는 기능</span>
+            <a href="/wiki">내신위키 최신 자료</a>
+            <a href="/chart">CHART 전국 TOP100</a>
+            <a href="/exam">문제지 제작</a>
+            <a href="/home">F2R 학원 찾기</a></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="svc-tiles" id="svcTiles" aria-labelledby="svcTilesH">
+      <div class="svc-tiles-head">
+        <h2 class="svc-tiles-h2" id="svcTilesH">BuildIt 서비스 8개</h2>
+        <a class="svc-tiles-more" href="#services">전체 서비스 상세 →</a>
+      </div>
+      <p id="svcSoonNote" class="v3-sr-only">준비 중 표시가 있는 서비스는 아직 정식으로 오픈되지 않았습니다.</p>
+      <ul class="svc-tiles-grid">
+        <li class="svc-tile-item"><a class="svc-tile" href="/builder" data-svc-tile="builder">
+          <span class="svc-tile-icon" aria-hidden="true">▣</span>
+          <span class="svc-tile-title">AI 홈페이지 제작</span>
+          <span class="svc-tile-desc">한 문장으로 학원 홈페이지 초안을 만들고, 편집해서 내 주소로 게시합니다.</span>
+          <span class="svc-tile-badge svc-badge-role">강사·원장용</span>
+          <span class="svc-tile-cta">만들어 보기 ▶</span>
+        </a></li>
+        <li class="svc-tile-item"><a class="svc-tile" href="/problem-generator" data-svc-tile="problem">
+          <span class="svc-tile-icon" aria-hidden="true">문</span>
+          <span class="svc-tile-title">내신 영어 문제지 제작기</span>
+          <span class="svc-tile-desc">학교·교재를 고르고 문제를 모아 내신 영어 문제지를 만들고 오답 노트로 복습합니다.</span>
+          <span class="svc-tile-badge svc-badge-login">로그인 후 이용</span>
+          <span class="svc-tile-cta">제작 시작 ▶</span>
+        </a></li>
+        <li class="svc-tile-item"><a class="svc-tile" href="/wiki" data-svc-tile="wiki">
+          <span class="svc-tile-icon" aria-hidden="true">위</span>
+          <span class="svc-tile-title">내신위키</span>
+          <span class="svc-tile-desc">고1·고2·고3 영어 기출 원본, 시험 분석, 문항 질문·답변을 모은 자료 위키입니다.</span>
+          <span class="svc-tile-badge svc-badge-free">무료 열람</span>
+          <span class="svc-tile-cta">위키 열기 ▶</span>
+        </a></li>
+        <li class="svc-tile-item"><a class="svc-tile" href="/chart" data-svc-tile="chart">
+          <span class="svc-tile-icon" aria-hidden="true">C</span>
+          <span class="svc-tile-title">BUILD IT CHART</span>
+          <span class="svc-tile-desc">BuildIt이 공개 교육활동 근거로 찾아낸 동네 실력 있는 영어 선생님 랭킹입니다.</span>
+          <span class="svc-tile-badge svc-badge-free">무료</span>
+          <span class="svc-tile-cta">랭킹 보기 ▶</span>
+        </a></li>
+        <li class="svc-tile-item"><a class="svc-tile" href="/testprep" data-svc-tile="testprep">
+          <span class="svc-tile-icon" aria-hidden="true">T</span>
+          <span class="svc-tile-title">iBT TestPrep</span>
+          <span class="svc-tile-desc">TOEFL iBT 읽기·듣기·말하기·쓰기를 연습하고 모의시험 채점·성적을 관리합니다.</span>
+          <span class="svc-tile-badge svc-badge-login">응시는 로그인</span>
+          <span class="svc-tile-cta">연습 시작 ▶</span>
+        </a></li>
+        <li class="svc-tile-item"><a class="svc-tile" href="/ledger" data-svc-tile="ledger">
+          <span class="svc-tile-icon" aria-hidden="true">장</span>
+          <span class="svc-tile-title">이지장부</span>
+          <span class="svc-tile-desc">수입·지출 CSV를 넣으면 AI가 계정을 추천하고, 승인 후 복식분개·원장·시산표까지 정리합니다.</span>
+          <span class="svc-tile-badge svc-badge-role">원장용</span>
+          <span class="svc-tile-cta">장부 열기 ▶</span>
+        </a></li>
+        <li class="svc-tile-item"><a class="svc-tile svc-tile-soon" href="/designcraft" data-svc-tile="designcraft" aria-describedby="svcSoonNote">
+          <span class="svc-tile-icon" aria-hidden="true">D</span>
+          <span class="svc-tile-title">DesignCraft</span>
+          <span class="svc-tile-desc">원고만 넣으면 책자·보고서·학습자료를 편집해 PDF로 내보냅니다.</span>
+          <span class="svc-tile-badge svc-badge-soon">준비 중</span>
+          <span class="svc-tile-cta">소개 보기 ▶</span>
+        </a></li>
+        <li class="svc-tile-item"><a class="svc-tile svc-tile-soon" href="/admissions/guide" data-svc-tile="admissions" aria-describedby="svcSoonNote">
+          <span class="svc-tile-icon" aria-hidden="true">입</span>
+          <span class="svc-tile-title">입시상담</span>
+          <span class="svc-tile-desc">전형·지원 자격·일정·평가 기준을 확인하고 지원 전략을 검토합니다.</span>
+          <span class="svc-tile-badge svc-badge-soon">준비 중</span>
+          <span class="svc-tile-cta">가이드 보기 ▶</span>
+        </a></li>
+      </ul>
+      <a class="svc-tiles-all" href="#services">전체 서비스 8개 보기 →</a>
+    </section>
+  </div>
+
+  <!-- ============ 1. HERO — AI 홈페이지 제작 상세 (입력 폼은 위 첫 화면 #homeTop으로 이관) ============ -->
   <!-- ============ 0. 전국 무대 (Shopify '글로벌 무대로 확장하세요' 구성: 지역 선택 → 카드 전환, 지도 대신 남한 지도) ============ -->
   <section class="nation" id="nation" data-nation>
     <div class="nation-wrap">
@@ -109,11 +229,6 @@
           <li><img src="/img/landing/templates/template-dark-course.jpg" width="1400" height="846" aria-hidden="true"></li>
           <li><img src="/img/landing/templates/template-dark-course-list.jpg" width="1400" height="866" aria-hidden="true"></li>
         </ul>
-        <form class="v3-ask" data-buildit-form autocomplete="off">
-          <input type="text" class="v3-ask-input" data-buildit-prompt maxlength="2000"
-                 placeholder="어떤 홈페이지를 만들고 싶으신가요?" aria-label="만들고 싶은 홈페이지">
-          <button type="submit" class="v3-btn v3-btn-primary" aria-label="만들기">만들기</button>
-        </form>
       </div>
     </div>
   </section>
@@ -180,6 +295,7 @@
         <span class="v3-eyebrow">현재 오픈한 서비스</span>
         <h2 class="v3-h2">지금 바로 이용하세요</h2>
       </div>
+      <p class="svc-top-link"><a href="#svcTiles">첫 화면 서비스 목록으로</a></p>
       <nav class="svc-anchors" aria-label="오픈 서비스 바로가기"><a href="#svc-builder">AI 홈페이지 제작</a><a href="#svc-problem">내신 영어 문제지 제작기</a><a href="#svc-wiki">내신위키</a><a href="#svc-testprep">iBT TestPrep</a><a href="#chart-showcase">BUILD IT CHART</a></nav>
       <div class="svc-list">
         <article class="svc-card" id="svc-builder">
@@ -248,13 +364,6 @@
         <li class="v3-soon-card v3-rv" aria-disabled="true">
           <span class="v3-soon-chick" aria-hidden="true"><svg class="chick chick-sm" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><path class="ck-eye-z" d="M40 63q6 5 12 0M68 63q6 5 12 0" stroke="#14333a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-zzz"><text class="z1" x="86" y="34" font-size="15" font-weight="800" fill="#5ff2e1">z</text><text class="z2" x="96" y="22" font-size="12" font-weight="800" fill="#5ff2e1">z</text></g></g></svg></span>
           <span class="v3-badge v3-badge-soon">곧 준비중</span>
-          <h3>Easy 장부 <small>학원 전용 AI 회계</small></h3>
-          <p>학원 수입·지출 내역을 CSV로 입력하면 AI가 회계 계정을 추천합니다. 사용자가 확인·승인하면 복식분개, 총계정원장, 시산표까지 정리합니다.</p>
-          <p class="v3-soon-core"><b>핵심</b>거래 입력 → AI 분류 → 승인 → 장부 자동 정리</p>
-        </li>
-        <li class="v3-soon-card v3-rv" aria-disabled="true">
-          <span class="v3-soon-chick" aria-hidden="true"><svg class="chick chick-sm" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><path class="ck-eye-z" d="M40 63q6 5 12 0M68 63q6 5 12 0" stroke="#14333a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-zzz"><text class="z1" x="86" y="34" font-size="15" font-weight="800" fill="#5ff2e1">z</text><text class="z2" x="96" y="22" font-size="12" font-weight="800" fill="#5ff2e1">z</text></g></g></svg></span>
-          <span class="v3-badge v3-badge-soon">곧 준비중</span>
           <h3>AcademyCraft <small>REA 기반 AI 학원관리 LMS</small></h3>
           <p>학생·강사·출결·성적·숙제·상담을 한곳에서 관리하는 AI 학원관리 LMS입니다. 현재 시범 운영을 준비하고 있습니다.</p>
           <p class="v3-soon-core"><b>핵심</b>학생·강사 관리 → 출결·성적·숙제 → 상담 관리</p>
@@ -305,7 +414,7 @@
         <details><summary>회원가입 없이도 쓸 수 있나요?</summary><p>Chart는 로그인 없이 볼 수 있습니다. 내신 영어 문제지 제작은 카톡 또는 이메일로 문의하면 되고, 홈페이지 제작은 강사(원장) 계정으로 로그인해야 합니다.</p></details>
         <details><summary>만든 홈페이지가 바로 공개되나요?</summary><p>아니요. 미리보기에서 직접 확인하고 게시를 승인한 뒤에만 공개됩니다.</p></details>
         <details><summary>내신 영어 문제지는 어떻게 받나요?</summary><p>카톡 또는 이메일로 학교 기출문제·시험범위 자료를 보내주세요. 기본 1회 20,000원이며, 완성된 문제지와 정답·해설을 카톡 또는 이메일로 전달합니다.</p></details>
-        <details><summary>곧 준비중인 서비스는 지금 쓸 수 있나요?</summary><p>DesignCraft, 입시상담 AI, Easy 장부, AcademyCraft, StudyCraft는 곧 준비중이며 지금은 이용할 수 없습니다. iBT TestPrep은 첫 화면을 누구나 볼 수 있고, 시험 응시와 성적 확인은 네이버 로그인 후 이용합니다.</p></details>
+        <details><summary>곧 준비중인 서비스는 지금 쓸 수 있나요?</summary><p>DesignCraft, 입시상담 AI, AcademyCraft, StudyCraft는 곧 준비중이며 지금은 이용할 수 없습니다. iBT TestPrep은 첫 화면을 누구나 볼 수 있고, 시험 응시와 성적 확인은 네이버 로그인 후 이용합니다.</p></details>
         <details><summary>Chart 점수에 BuildIt 사용이 영향을 주나요?</summary><p>영향을 주지 않습니다. Chart는 공개 근거만으로 독립적으로 운영됩니다.</p></details>
       </div>
     </div>
