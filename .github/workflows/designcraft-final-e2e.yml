@@ -1,0 +1,99 @@
+name: DesignCraft final integration (isolated)
+on:
+  push:
+    branches: ['qa/designcraft-716-final']
+    paths: ['e2e/designcraft-final/**', '.github/workflows/designcraft-final-e2e.yml']
+permissions:
+  contents: read
+concurrency:
+  group: designcraft-final-e2e
+  cancel-in-progress: false
+jobs:
+  live-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: local_ci_only
+          MYSQL_DATABASE: designcraft_final
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -plocal_ci_only"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    env:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/designcraft_final?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: local_ci_only
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      SPRING_JPA_SHOW_SQL: 'false'
+      LOGGING_LEVEL_ROOT: WARN
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      PUBLISHING_CLI_PATH: ${{ github.workspace }}/.qa-engine/bin/designcraft-cli
+      PUBLISHING_TEMPLATE_DIR: ${{ github.workspace }}/ops/designcraft/templates
+      PUBLISHING_STORAGE_ROOT: ${{ github.workspace }}/.qa-publishing
+      PUBLISHING_WORKER_POLL_SECONDS: '1'
+      HWPX_WORKER_ENABLED: 'false'
+      E2E_LOGIN_ID: designcraft-final
+      E2E_LOGIN_PW: ephemeral-local-test-only
+      CHROMIUM_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '20'}
+      - name: Verify unchanged application and authentication availability
+        run: |
+          git fetch --depth=1 origin 0dc3d3e49def356147f4aaf5a4bdfcfff7a3b972
+          git diff --exit-code FETCH_HEAD HEAD -- src build.gradle settings.gradle ops/designcraft
+          test -n "$META_JIPJIGI_API_KEY" || { echo 'MISSING_AUTH: repository secret META_JIPJIGI_API_KEY'; exit 1; }
+      - name: Prepare isolated engine and browser dependencies (no regression rerun)
+        run: |
+          bash ops/designcraft/install-engine.sh "$GITHUB_WORKSPACE/.qa-engine"
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-noto-cjk poppler-utils
+          npm install --prefix e2e/designcraft-final --no-audit --no-fund playwright-core@1.56.1
+          python -m pip install bcrypt==4.3.0 pymysql==1.1.1
+      - name: Build and start isolated Spring application
+        run: |
+          bash gradlew bootJar --no-daemon --max-workers=2 > .qa-build.log 2>&1
+          java -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --logging.level.f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.MetaMuseSparkLlmTransport=INFO > .qa-app.log 2>&1 &
+          echo $! > .qa-app.pid
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8080/actuator/health >/dev/null; then exit 0; fi
+            kill -0 $(cat .qa-app.pid) 2>/dev/null || break
+            sleep 3
+          done
+          echo 'ISOLATED_APP_START_FAILED (raw log withheld)'
+          python e2e/designcraft-final/safe_metrics.py
+          exit 1
+      - name: Create synthetic local TUTOR (isolated DB only)
+        run: |
+          python - <<'PY'
+          import os,bcrypt,pymysql
+          c=pymysql.connect(host='127.0.0.1',user='root',password='local_ci_only',database='designcraft_final')
+          with c.cursor() as q:
+              q.execute("INSERT INTO users(login_id,password,name,nickname,role,created_at,updated_at) VALUES(%s,%s,%s,%s,'TUTOR',NOW(),NOW())",(os.environ['E2E_LOGIN_ID'],bcrypt.hashpw(os.environ['E2E_LOGIN_PW'].encode(),bcrypt.gensalt()).decode(),'검증원장','검증원장'))
+          c.commit();c.close()
+          print('Synthetic local account ready; credentials withheld')
+          PY
+      - name: Real login, document import, Muse Spark approval, PDF download (1440 / 390)
+        run: node e2e/designcraft-final/live.js
+      - name: Safe server metrics only
+        if: always()
+        run: python e2e/designcraft-final/safe_metrics.py
+      - name: Stop isolated application
+        if: always()
+        run: test ! -f .qa-app.pid || kill $(cat .qa-app.pid) 2>/dev/null || true
+      - name: Upload screenshots, verdicts and downloaded PDFs (no raw logs or keys)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: designcraft-final-e2e
+          path: e2e/designcraft-final/artifacts/
+          if-no-files-found: warn
+          retention-days: 7
