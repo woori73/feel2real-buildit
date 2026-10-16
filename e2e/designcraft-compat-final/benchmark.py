@@ -2,6 +2,8 @@
 import hashlib,json,os,subprocess,tempfile,time
 from pathlib import Path
 root=Path('/w/compat-output');binary=root/'package/bin/designcraft-cli';out=root/'benchmark';out.mkdir(exist_ok=True);out.chmod(0o777)
+# A resumed artifact owns old output as the runner; create a fresh output for UID 65534.
+(out/'unprivileged.pdf').unlink(missing_ok=True)
 def drop_privileges():
     os.setgroups([]);os.setgid(65534);os.setuid(65534)
 def run(args,cwd):
