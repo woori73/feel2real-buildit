@@ -1,0 +1,15 @@
+{
+  "uid": 65534,
+  "gid": 65534,
+  "glibc": "glibc 2.34",
+  "version": "designcraft-cli 0.8.0",
+  "binary_sha256": "2edd60ef2f575263a31ad6cb1ec661181bd24207d4aefbec8516b04990700335",
+  "binary_bytes": 44959664,
+  "elapsed_seconds": 0.072,
+  "peak_cli_rss_kib": 49168,
+  "export_peak_rss_kib": 49168,
+  "measurement": "os.wait4 per CLI child; excludes inherited shell/dnf child usage",
+  "fixture": "synthetic legacy 0.6 native with Korean paragraphs/table",
+  "operation": "file.exportPdf standard=none",
+  "result": "PASS"
+}

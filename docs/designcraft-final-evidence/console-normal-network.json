@@ -1,0 +1,79 @@
+{
+  "target": "f244717581c5dce7413858407ca80fb95d833f03",
+  "rows": [
+    {
+      "policy": "normal-network",
+      "width": 1440,
+      "console": [
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": null,
+          "httpStatus": "401",
+          "source": {
+            "host": "127.0.0.1",
+            "path": "/api/auth/me"
+          }
+        }
+      ],
+      "failedRequests": [
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "type": "fetch",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "httpErrors": [
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "status": 401
+        }
+      ],
+      "pageErrors": [],
+      "checks": [
+        "authenticated-editor-rendered"
+      ]
+    },
+    {
+      "policy": "normal-network",
+      "width": 390,
+      "console": [
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": null,
+          "httpStatus": "401",
+          "source": {
+            "host": "127.0.0.1",
+            "path": "/api/auth/me"
+          }
+        }
+      ],
+      "failedRequests": [
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "type": "fetch",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "httpErrors": [
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "status": 401
+        }
+      ],
+      "pageErrors": [],
+      "checks": [
+        "authenticated-editor-rendered"
+      ]
+    }
+  ]
+}

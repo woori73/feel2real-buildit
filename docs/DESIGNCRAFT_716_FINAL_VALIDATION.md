@@ -1,5 +1,7 @@
 # DesignCraft #716 최종 통합 검증 (2026-10-16)
 
+후속 상태: [남은 장애 해결 검증](DESIGNCRAFT_716_READINESS.md)에서 콘솔 분류·호환 바이너리 준비를 완료했다. 아래 Draft 유지 판단은 당시 기록이며 최신 판정은 후속 보고서를 따른다.
+
 기존 회귀 테스트/CLI 품질 검증을 수동 재실행하지 않았다. 앱 코드와 독립된 `qa/designcraft-716-final` 브랜치에서 격리 MySQL 8.0·Spring·실제 Muse Spark·Chrome UI 통합 흐름만 실행했다. 운영은 기존 OIDC 역할/SSM 대상의 고정 읽기 전용 Python 조사만 실행했고, 추가 IAM/SSM 권한 변경은 없었다.
 
 ## 실제 통합 검증

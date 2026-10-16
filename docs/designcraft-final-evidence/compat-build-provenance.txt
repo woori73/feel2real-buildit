@@ -1,0 +1,76 @@
+NAME="Amazon Linux"
+VERSION="2023"
+ID="amzn"
+ID_LIKE="fedora"
+VERSION_ID="2023"
+PLATFORM_ID="platform:al2023"
+PRETTY_NAME="Amazon Linux 2023.12.20261014"
+ANSI_COLOR="0;33"
+CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2023"
+HOME_URL="https://aws.amazon.com/linux/amazon-linux-2023/"
+DOCUMENTATION_URL="https://docs.aws.amazon.com/linux/"
+SUPPORT_URL="https://aws.amazon.com/premiumsupport/"
+BUG_REPORT_URL="https://github.com/amazonlinux/amazon-linux-2023"
+VENDOR_NAME="AWS"
+VENDOR_URL="https://aws.amazon.com/"
+SUPPORT_END="2029-06-30"
+glibc 2.34
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-unknown-linux-gnu
+release: 1.95.0
+LLVM version: 22.1.2
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+11a51d5b665aec8d6e675bd107a8a01514f10d00
+00042a1bfbbc6462085469d8fe5953bdd9ab89a0828cbc39fc48abc7fa17cdd3  compat-source/Cargo.lock
+2edd60ef2f575263a31ad6cb1ec661181bd24207d4aefbec8516b04990700335  compat-output/package/bin/designcraft-cli
+
+Elf file type is DYN (Position-Independent Executable file)
+Entry point 0xbbb180
+There are 12 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flags  Align
+  PHDR           0x0000000000000040 0x0000000000000040 0x0000000000000040
+                 0x00000000000002a0 0x00000000000002a0  R      0x8
+  INTERP         0x00000000000002e0 0x00000000000002e0 0x00000000000002e0
+                 0x000000000000001c 0x000000000000001c  R      0x1
+      [Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]
+  LOAD           0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000bba180 0x0000000000bba180  R      0x1000
+  LOAD           0x0000000000bba180 0x0000000000bbb180 0x0000000000bbb180
+                 0x000000000168f160 0x000000000168f160  R E    0x1000
+  LOAD           0x00000000022492e0 0x000000000224b2e0 0x000000000224b2e0
+                 0x00000000001417b0 0x0000000000141d20  RW     0x1000
+  LOAD           0x000000000238aa90 0x000000000238da90 0x000000000238da90
+                 0x00000000000015c8 0x0000000000003a5c  RW     0x1000
+  TLS            0x00000000022492e0 0x000000000224b2e0 0x000000000224b2e0
+                 0x0000000000000060 0x00000000000001a0  R      0x8
+  DYNAMIC        0x000000000237d6b8 0x000000000237f6b8 0x000000000237f6b8
+                 0x00000000000001e0 0x00000000000001e0  RW     0x8
+  GNU_RELRO      0x00000000022492e0 0x000000000224b2e0 0x000000000224b2e0
+                 0x00000000001417b0 0x0000000000141d20  R      0x1
+  GNU_EH_FRAME   0x000000000097d038 0x000000000097d038 0x000000000097d038
+                 0x000000000004531c 0x000000000004531c  R      0x4
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     0x0
+  NOTE           0x00000000000002fc 0x00000000000002fc 0x00000000000002fc
+                 0x0000000000000044 0x0000000000000044  R      0x4
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     
+   01     .interp 
+   02     .interp .note.ABI-tag .note.gnu.build-id .dynsym .gnu.version .gnu.version_r .gnu.hash .dynstr .rela.dyn .rela.plt .gcc_except_table .rodata .eh_frame_hdr .eh_frame 
+   03     .text .init .fini .plt 
+   04     .tdata .data.rel.ro .fini_array .init_array .dynamic .got .got.plt .relro_padding 
+   05     .tm_clone_table .data .bss 
+   06     .tdata .tbss 
+   07     .dynamic 
+   08     .tdata .data.rel.ro .fini_array .init_array .dynamic .got .got.plt .relro_padding 
+   09     .eh_frame_hdr 
+   10     
+   11     .note.ABI-tag .note.gnu.build-id 

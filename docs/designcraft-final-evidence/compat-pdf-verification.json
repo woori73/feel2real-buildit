@@ -1,0 +1,18 @@
+[
+  {
+    "file": "compat-output/smoke-ko-book-46/result.pdf",
+    "text_and_korean_font": "PASS"
+  },
+  {
+    "file": "compat-output/smoke-ko-textbook-a4/result.pdf",
+    "text_and_korean_font": "PASS"
+  },
+  {
+    "file": "compat-output/smoke-ko-workbook-b5/result.pdf",
+    "text_and_korean_font": "PASS"
+  },
+  {
+    "file": "compat-output/smoke-ko-textbook-a4/legacy.pdf",
+    "text_and_korean_font": "PASS"
+  }
+]

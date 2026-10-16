@@ -1,0 +1,60 @@
+{
+  "glibc": "glibc 2.34",
+  "version": "designcraft-cli 0.8.0",
+  "binary_sha256": "2edd60ef2f575263a31ad6cb1ec661181bd24207d4aefbec8516b04990700335",
+  "glibc_symbols": [
+    "2.2.5",
+    "2.3",
+    "2.3.4",
+    "2.4",
+    "2.5",
+    "2.9",
+    "2.14",
+    "2.15",
+    "2.16",
+    "2.17",
+    "2.18",
+    "2.25",
+    "2.27",
+    "2.28",
+    "2.29",
+    "2.30",
+    "2.32",
+    "2.33",
+    "2.34"
+  ],
+  "runtime_dependencies": [
+    "\tlinux-vdso.so.1 (0x00007fb3d8150000)",
+    "\tlibgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007fb3d8118000)",
+    "\tlibm.so.6 => /lib64/libm.so.6 (0x00007fb3d803d000)",
+    "\tlibc.so.6 => /lib64/libc.so.6 (0x00007fb3d59f5000)",
+    "\t/lib64/ld-linux-x86-64.so.2 (0x00007fb3d8152000)"
+  ],
+  "rows": [
+    {
+      "template": "ko-book-46",
+      "import_inspect_preview_pdf": "PASS",
+      "font_files": {
+        "NotoSansKR-Bold.ttf": "e66121ce0579ec53f3eecec557b496b2bc0b62802d3641fe0471a0c54302422e",
+        "NotoSansKR-Regular.ttf": "57c923e0f2645ff3c5d4945e30562dc068282198a5184b064f692b40c6fbeea0"
+      }
+    },
+    {
+      "template": "ko-textbook-a4",
+      "import_inspect_preview_pdf": "PASS",
+      "font_files": {
+        "NotoSansKR-Bold.ttf": "e66121ce0579ec53f3eecec557b496b2bc0b62802d3641fe0471a0c54302422e",
+        "NotoSansKR-Regular.ttf": "57c923e0f2645ff3c5d4945e30562dc068282198a5184b064f692b40c6fbeea0"
+      }
+    },
+    {
+      "template": "ko-workbook-b5",
+      "import_inspect_preview_pdf": "PASS",
+      "font_files": {
+        "NotoSansKR-Bold.ttf": "e66121ce0579ec53f3eecec557b496b2bc0b62802d3641fe0471a0c54302422e",
+        "NotoSansKR-Regular.ttf": "57c923e0f2645ff3c5d4945e30562dc068282198a5184b064f692b40c6fbeea0"
+      }
+    }
+  ],
+  "legacy_fixture_sha256": "0fb0e7e3f00d993399fe80c4d786750b038ce8edcaa2323b96f8dfd751df979c"
+}

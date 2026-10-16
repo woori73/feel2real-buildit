@@ -1,0 +1,29 @@
+{
+  "ssm_status": "Success",
+  "stderr_present": false,
+  "probe": {
+    "os": {
+      "ID": "amzn",
+      "VERSION_ID": "2023",
+      "PRETTY_NAME": "Amazon Linux 2023.11.20260514"
+    },
+    "arch": "x86_64",
+    "glibc": "glibc 2.34",
+    "service_paths": {
+      "User": "ec2-user",
+      "FragmentPath": "/etc/systemd/system/f2r-app.service",
+      "DropInPaths": "/etc/systemd/system/f2r-app.service.d/override.conf",
+      "EnvironmentFiles": "/etc/f2r/env (ignore_errors=no)",
+      "WorkingDirectory": ""
+    },
+    "memory": {
+      "MemTotal": "2015060 kB",
+      "MemAvailable": "327644 kB",
+      "SwapTotal": "2097148 kB"
+    },
+    "opt_disk_bytes": {
+      "total": 21395124224,
+      "free": 10344935424
+    }
+  }
+}

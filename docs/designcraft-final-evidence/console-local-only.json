@@ -1,0 +1,247 @@
+{
+  "target": "f244717581c5dce7413858407ca80fb95d833f03",
+  "rows": [
+    {
+      "policy": "previous-local-only",
+      "width": 1440,
+      "console": [
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "cdn.jsdelivr.net",
+            "path": "/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "fonts.googleapis.com",
+            "path": "/css2"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "cdnjs.cloudflare.com",
+            "path": "/ajax/libs/gsap/3.12.5/gsap.min.js"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "cdnjs.cloudflare.com",
+            "path": "/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "www.googletagmanager.com",
+            "path": "/gtm.js"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": null,
+          "httpStatus": "401",
+          "source": {
+            "host": "127.0.0.1",
+            "path": "/api/auth/me"
+          }
+        }
+      ],
+      "failedRequests": [
+        {
+          "stage": "login",
+          "host": "cdn.jsdelivr.net",
+          "path": "/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
+          "type": "stylesheet",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "fonts.googleapis.com",
+          "path": "/css2",
+          "type": "stylesheet",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "cdnjs.cloudflare.com",
+          "path": "/ajax/libs/gsap/3.12.5/gsap.min.js",
+          "type": "script",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "cdnjs.cloudflare.com",
+          "path": "/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js",
+          "type": "script",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "www.googletagmanager.com",
+          "path": "/gtm.js",
+          "type": "script",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "type": "fetch",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "httpErrors": [
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "status": 401
+        }
+      ],
+      "pageErrors": [],
+      "checks": [
+        "authenticated-editor-rendered"
+      ]
+    },
+    {
+      "policy": "previous-local-only",
+      "width": 390,
+      "console": [
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "cdn.jsdelivr.net",
+            "path": "/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "fonts.googleapis.com",
+            "path": "/css2"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "cdnjs.cloudflare.com",
+            "path": "/ajax/libs/gsap/3.12.5/gsap.min.js"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "cdnjs.cloudflare.com",
+            "path": "/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": "net::ERR_FAILED",
+          "httpStatus": null,
+          "source": {
+            "host": "www.googletagmanager.com",
+            "path": "/gtm.js"
+          }
+        },
+        {
+          "stage": "login",
+          "category": "resource-load",
+          "networkCode": null,
+          "httpStatus": "401",
+          "source": {
+            "host": "127.0.0.1",
+            "path": "/api/auth/me"
+          }
+        }
+      ],
+      "failedRequests": [
+        {
+          "stage": "login",
+          "host": "cdn.jsdelivr.net",
+          "path": "/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css",
+          "type": "stylesheet",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "fonts.googleapis.com",
+          "path": "/css2",
+          "type": "stylesheet",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "cdnjs.cloudflare.com",
+          "path": "/ajax/libs/gsap/3.12.5/gsap.min.js",
+          "type": "script",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "cdnjs.cloudflare.com",
+          "path": "/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js",
+          "type": "script",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "www.googletagmanager.com",
+          "path": "/gtm.js",
+          "type": "script",
+          "error": "net::ERR_FAILED"
+        },
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "type": "fetch",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "httpErrors": [
+        {
+          "stage": "login",
+          "host": "127.0.0.1",
+          "path": "/api/auth/me",
+          "status": 401
+        }
+      ],
+      "pageErrors": [],
+      "checks": []
+    }
+  ]
+}
