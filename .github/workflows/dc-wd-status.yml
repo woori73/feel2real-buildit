@@ -1,4 +1,4 @@
-name: DesignCraft watchdog STATUS (read-only)
+name: DesignCraft watchdog STATUS (read-only) #2
 on:
   push:
     branches: ['ci/dc-step1-readonly']
@@ -27,7 +27,7 @@ jobs:
           from pathlib import Path
           import json
           script = ("echo \"unit active? $(systemctl is-active dc-gate-watchdog 2>&1)\"\n"
-                    "journalctl -u dc-gate-watchdog --no-pager -o cat | tail -8\n"
+                    "journalctl -u dc-gate-watchdog --no-pager -o cat | tail -14\n"
                     "echo \"gate state file: $(cat /var/lib/feel2real/designcraft-maintenance/state)\"\n"
                     "echo \"f2r-app restarts: $(systemctl show f2r-app.service -p NRestarts --value), since: $(systemctl show f2r-app.service -p ActiveEnterTimestamp --value)\"\n"
                     "echo \"now(UTC): $(date -u +%H:%M:%S)\"\n")
