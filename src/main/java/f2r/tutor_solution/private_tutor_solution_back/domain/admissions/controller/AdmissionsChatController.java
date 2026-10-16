@@ -3,6 +3,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.control
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsChatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,8 +16,9 @@ import java.util.List;
 /**
  * 입시상담 가이드 채팅 API — 비회원 이용.
  *
- * <p>SecurityConfig에서 {@code /api/admissions/chat}은 permitAll.
- * 남용 방지를 위해 IP 기반 rate limit 적용 (분당 10회, 시간당 60회) —
+ * <p>SecurityConfig에서 {@code /api/admissions/chat}은 permitAll이지만, 기본적으로 <b>비활성</b>이다
+ * ({@code app.admissions.public-api.enabled=false}). 비활성이면 rate limit·서비스·DB를 거치지 않고 503만 돌려준다.
+ * 활성화하면 IP 기반 rate limit(분당 10회, 시간당 60회)과 전역 일일 상한(기본 500회/KST 하루)을 적용한다 —
  * {@link AdmissionsRateLimiter}가 X-Forwarded-For 위조 방지와 기록 상한을 담당한다.
  *
  * <p>에러 상세(provider 응답, exception, stack trace)는 브라우저로 노출하지 않는다.
@@ -28,11 +31,20 @@ public class AdmissionsChatController {
 
     private final AdmissionsChatService admissionsChatService;
     private final AdmissionsRateLimiter rateLimiter;
+    private final boolean publicApiEnabled;
 
+    @Autowired
     public AdmissionsChatController(AdmissionsChatService admissionsChatService,
-                                    AdmissionsRateLimiter rateLimiter) {
+                                    AdmissionsRateLimiter rateLimiter,
+                                    @Value("${app.admissions.public-api.enabled:false}") boolean publicApiEnabled) {
         this.admissionsChatService = admissionsChatService;
         this.rateLimiter = rateLimiter;
+        this.publicApiEnabled = publicApiEnabled;
+    }
+
+    /** 테스트용: 공개 API가 켜진 상태. 운영 기본값(OFF)은 위 생성자의 {@code @Value} 기본값이 정한다. */
+    AdmissionsChatController(AdmissionsChatService admissionsChatService, AdmissionsRateLimiter rateLimiter) {
+        this(admissionsChatService, rateLimiter, true);
     }
 
     @PostMapping("/chat")
@@ -40,6 +52,10 @@ public class AdmissionsChatController {
             @RequestBody ChatRequest request,
             jakarta.servlet.http.HttpServletRequest httpRequest) {
         long t0 = System.nanoTime();
+        if (!publicApiEnabled) {
+            return ResponseEntity.status(503).body(ChatResponse.failure(
+                    "입시상담 AI는 아직 이용할 수 없습니다.", List.<SourceDto>of()));
+        }
         String clientIp = rateLimiter.resolveClientIp(httpRequest);
 
         // rate limit 검사
@@ -47,6 +63,12 @@ public class AdmissionsChatController {
             log.warn("admissions chat rate limited: ip={}", maskIp(clientIp));
             return ResponseEntity.status(429).body(ChatResponse.failure(
                     "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", List.<SourceDto>of()));
+        }
+        // 전역 일일 상한: IP를 바꿔가며 호출해도 하루 AI 호출 총량이 이 값을 넘지 않게 한다.
+        if (!rateLimiter.tryAcquireDaily()) {
+            log.warn("admissions chat daily limit reached: ip={}", maskIp(clientIp));
+            return ResponseEntity.status(429).body(ChatResponse.failure(
+                    "오늘 이용 가능한 상담 요청이 모두 사용되었습니다. 내일 다시 이용해 주세요.", List.<SourceDto>of()));
         }
 
         String message = request == null ? null : request.message();

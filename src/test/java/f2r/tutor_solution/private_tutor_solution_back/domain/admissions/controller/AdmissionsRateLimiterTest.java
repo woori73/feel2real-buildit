@@ -51,13 +51,13 @@ class AdmissionsRateLimiterTest {
     }
 
     @Test
-    @DisplayName("XFF — 신뢰 프록시에서 온 요청은 첫 번째 항목 신뢰")
+    @DisplayName("XFF — 신뢰 프록시에서 온 요청은 신뢰 프록시를 건너뛴 가장 오른쪽 클라이언트 IP를 사용")
     void resolveClientIp_trustsXffFromTrustedProxy() {
-        // given
+        // given — 10.0.0.5, 10.0.0.6 모두 신뢰 프록시
         now = new AtomicLong(0);
-        var limiter = limiter(10, 60, 100, "10.0.0.5");
+        var limiter = limiter(10, 60, 100, "10.0.0.5, 10.0.0.6");
 
-        // when
+        // when — 클라이언트(1.2.3.4) → 프록시(10.0.0.6) → 프록시(10.0.0.5)
         String ip = limiter.resolveClientIp(request("10.0.0.5", "1.2.3.4, 10.0.0.6"));
 
         // then
@@ -93,14 +93,14 @@ class AdmissionsRateLimiterTest {
     }
 
     @Test
-    @DisplayName("XFF — 첫 항목이 IP가 아니면 remoteAddr로 폴백")
+    @DisplayName("XFF — 신뢰 프록시 바로 앞 항목이 IP가 아니면 remoteAddr로 폴백")
     void resolveClientIp_fallsBackOnInvalidXff() {
         // given
         now = new AtomicLong(0);
         var limiter = limiter(10, 60, 100, "10.0.0.5");
 
         // when
-        String ip = limiter.resolveClientIp(request("10.0.0.5", "not-an-ip, 1.2.3.4"));
+        String ip = limiter.resolveClientIp(request("10.0.0.5", "1.2.3.4, not-an-ip"));
 
         // then
         assertEquals("10.0.0.5", ip);
@@ -295,5 +295,141 @@ class AdmissionsRateLimiterTest {
         } finally {
             pool.shutdownNow();
         }
+    }
+
+    // ---------- 안전한 IP 식별: 클라이언트가 보낸 왼쪽 XFF 항목은 믿지 않는다 ----------
+
+    @Test
+    @DisplayName("XFF — 공격자가 보낸 왼쪽 위조 항목은 무시하고 프록시가 덧붙인 실제 접속 IP를 사용")
+    void resolveClientIp_ignoresClientSuppliedLeftmostEntry() {
+        // given — 프록시(10.0.0.5) 뒤. 공격자가 'X-Forwarded-For: 9.9.9.9'를 보내면 프록시가 실제 IP(203.0.113.50)를 덧붙인다
+        now = new AtomicLong(0);
+        var limiter = limiter(10, 60, 100, "10.0.0.0/8");
+
+        // when
+        String ip = limiter.resolveClientIp(request("10.0.0.5", "9.9.9.9, 203.0.113.50"));
+
+        // then — 위조된 9.9.9.9가 아니라 실제 접속 IP
+        assertEquals("203.0.113.50", ip);
+    }
+
+    @Test
+    @DisplayName("XFF — 모든 항목이 신뢰 프록시면 가장 왼쪽 항목을 사용")
+    void resolveClientIp_usesLeftmostWhenAllEntriesTrusted() {
+        // given
+        now = new AtomicLong(0);
+        var limiter = limiter(10, 60, 100, "10.0.0.0/8");
+
+        // when
+        String ip = limiter.resolveClientIp(request("10.0.0.5", "10.1.1.1, 10.0.0.9"));
+
+        // then
+        assertEquals("10.1.1.1", ip);
+    }
+
+    // ---------- 신뢰 프록시 설정 검증 ----------
+
+    @Test
+    @DisplayName("설정 검증 — 형식 오류와 과도하게 넓은 대역은 무시하고 기록한다")
+    void trustedProxies_rejectsInvalidAndTooBroadEntries() {
+        // given
+        now = new AtomicLong(0);
+
+        // when
+        var limiter = limiter(10, 60, 100, "10.0.0.0/8, 0.0.0.0/0, 1.2.3.4/5, 999.1.1.1, abc, 10.0.0.1/33, ::/0, 192.168.0.1");
+
+        // then — 유효: 10.0.0.0/8, 192.168.0.1 / 무시: 나머지 6개
+        assertEquals(6, limiter.invalidTrustedProxyEntries().size());
+        assertTrue(limiter.invalidTrustedProxyEntries().contains("0.0.0.0/0"));
+        assertTrue(limiter.invalidTrustedProxyEntries().contains("::/0"));
+        assertEquals("1.2.3.4", limiter.resolveClientIp(request("10.0.0.5", "1.2.3.4")));
+        assertEquals("8.8.8.8", limiter.resolveClientIp(request("8.8.8.8", "1.2.3.4")));
+    }
+
+    @Test
+    @DisplayName("설정 검증 — 0.0.0.0/0을 넣어도 모든 요청을 프록시로 신뢰하지 않는다")
+    void trustedProxies_allAddressesCidrDoesNotTrustEveryone() {
+        // given
+        now = new AtomicLong(0);
+        var limiter = limiter(10, 60, 100, "0.0.0.0/0");
+
+        // when — 아무 IP에서 온 요청이 XFF를 위조
+        String ip = limiter.resolveClientIp(request("203.0.113.9", "1.2.3.4"));
+
+        // then — XFF 무시, remoteAddr 사용
+        assertEquals("203.0.113.9", ip);
+        assertEquals(1, limiter.invalidTrustedProxyEntries().size());
+    }
+
+    // ---------- 전역 일일 상한 ----------
+
+    @Test
+    @DisplayName("일일 상한 — 서로 다른 IP의 요청도 합산해 상한에서 차단")
+    void dailyLimit_countsAllIpsTogether() {
+        // given — 하루 3회
+        now = new AtomicLong(0);
+        var limiter = new AdmissionsRateLimiter(10, 60, 100, "", 3, now::get);
+
+        // when
+        boolean first = limiter.tryAcquireDaily();
+        boolean second = limiter.tryAcquireDaily();
+        boolean third = limiter.tryAcquireDaily();
+        boolean fourth = limiter.tryAcquireDaily();
+
+        // then
+        assertTrue(first && second && third);
+        assertFalse(fourth);
+        assertEquals(3, limiter.dailyUsed());
+    }
+
+    @Test
+    @DisplayName("일일 상한 — KST 자정이 지나면 카운터가 0으로 돌아온다")
+    void dailyLimit_resetsAtKstMidnight() {
+        // given — KST 2026-10-15 23:59:30 (= UTC 14:59:30) 에 상한 소진
+        long utc = java.time.OffsetDateTime.parse("2026-10-15T14:59:30Z").toInstant().toEpochMilli();
+        now = new AtomicLong(utc);
+        var limiter = new AdmissionsRateLimiter(10, 60, 100, "", 1, now::get);
+        assertTrue(limiter.tryAcquireDaily());
+        assertFalse(limiter.tryAcquireDaily());
+
+        // when — 1분 뒤 (KST 10-16 00:00:30)
+        now.addAndGet(60_000L);
+
+        // then
+        assertTrue(limiter.tryAcquireDaily());
+        assertEquals(1, limiter.dailyUsed());
+    }
+
+    @Test
+    @DisplayName("일일 상한 — 같은 KST 날짜 안에서는 시간이 흘러도 초기화되지 않는다")
+    void dailyLimit_doesNotResetWithinSameKstDay() {
+        // given — KST 00:00:10 에 상한 소진
+        long utc = java.time.OffsetDateTime.parse("2026-10-14T15:00:10Z").toInstant().toEpochMilli();
+        now = new AtomicLong(utc);
+        var limiter = new AdmissionsRateLimiter(10, 60, 100, "", 1, now::get);
+        assertTrue(limiter.tryAcquireDaily());
+
+        // when — 23시간 뒤(같은 KST 날짜, 23:00:10)
+        now.addAndGet(23L * 3_600_000L);
+
+        // then
+        assertFalse(limiter.tryAcquireDaily());
+    }
+
+    @Test
+    @DisplayName("일일 상한 — 0 이하 설정은 기본값 500으로 대체")
+    void dailyLimit_invalidConfigFallsBackToDefault() {
+        // given
+        now = new AtomicLong(0);
+        var limiter = new AdmissionsRateLimiter(10, 60, 100, "", 0, now::get);
+
+        // when
+        int allowed = 0;
+        while (limiter.tryAcquireDaily() && allowed < 1000) {
+            allowed++;
+        }
+
+        // then
+        assertEquals(AdmissionsRateLimiter.DEFAULT_DAILY_LIMIT, allowed);
     }
 }
