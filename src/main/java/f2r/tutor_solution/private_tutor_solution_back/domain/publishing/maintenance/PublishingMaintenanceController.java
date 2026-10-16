@@ -23,7 +23,7 @@ public class PublishingMaintenanceController {
     admin();
     // Cross-site forms cannot set this header; CORS is still enforced by existing security.
     if (!"1".equals(request.getHeader("X-DesignCraft-Maintenance"))
-        || !WebUtils.isSameOrigin(request)
+        || !WebUtils.isSameOrigin(new org.springframework.http.server.ServletServerHttpRequest(request))
         || (request.getHeader("Sec-Fetch-Site") != null
             && !"same-origin".equals(request.getHeader("Sec-Fetch-Site"))))
       throw new ResponseStatusException(HttpStatus.FORBIDDEN);
