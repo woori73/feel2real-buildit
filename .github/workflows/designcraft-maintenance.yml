@@ -1,0 +1,29 @@
+name: DesignCraft admission and drain (isolated)
+on:
+  push:
+    branches: ['feat/designcraft-operation-drain']
+    paths: ['src/main/java/**/publishing/**','src/test/java/**/publishing/**','.github/workflows/designcraft-maintenance.yml']
+permissions:
+  contents: read
+concurrency:
+  group: designcraft-operation-drain
+  cancel-in-progress: true
+jobs:
+  maintenance-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - uses: gradle/actions/setup-gradle@v4
+      - name: New gate and drain tests only (no DB, AWS, Muse or previous QA)
+        run: bash gradlew test --tests '*PublishingMaintenance*Test' --no-daemon --max-workers=2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: designcraft-maintenance-test-results
+          path: |
+            build/test-results/test/
+            build/reports/tests/test/
+          retention-days: 14
