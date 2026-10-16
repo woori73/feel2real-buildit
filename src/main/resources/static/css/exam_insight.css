@@ -1,0 +1,35 @@
+:root{--ink:#0f172a;--mute:#475569;--line:#e2e8f0;--brand:#0f766e;--bg:#f8fafc}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--ink);background:var(--bg)}
+.ei-top{display:flex;gap:12px;align-items:center;padding:12px 20px;background:#fff;border-bottom:1px solid var(--line)}
+.ei-brand{font-weight:800;color:var(--brand);text-decoration:none}
+.ei-top-title{color:var(--mute);font-size:14px}
+.ei-main{max-width:860px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:26px;margin:0 0 8px}h2{font-size:18px;margin:0 0 6px}
+.ei-guide{font-size:16px;line-height:1.6}.ei-note,.ei-hint,.ei-formats{color:var(--mute);font-size:13px}
+.ei-group{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.ei-group input[type=file]{display:block;width:100%;margin:8px 0}
+textarea,input:not([type=file]),select{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.ei-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ei-files{list-style:none;padding:0;margin:0 0 8px;font-size:13px}
+.ei-composer{display:flex;gap:8px;align-items:flex-end;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px}
+.ei-composer textarea{border:0;resize:vertical}
+button,.ei-modal a{font:inherit;padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;color:var(--ink);text-decoration:none}
+.ei-primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.ei-err{color:#b91c1c;font-weight:600}.ei-warn{background:#fef9c3;padding:8px 12px;border-radius:10px;font-size:13px}
+.ei-progress{text-align:center;padding:32px}
+.ei-spinner{width:32px;height:32px;margin:0 auto 12px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:ei-spin 1s linear infinite}
+@keyframes ei-spin{to{transform:rotate(360deg)}}
+.ei-doc{background:#fff;border:1px solid var(--line);border-radius:14px;margin:14px 0;overflow:hidden}
+.ei-doc header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);gap:8px;flex-wrap:wrap}
+.ei-doc h3{margin:0;font-size:15px}.ei-doc header div{display:flex;gap:6px}
+.ei-doc pre{margin:0;padding:14px;white-space:pre-wrap;word-break:break-word;font:inherit;line-height:1.7;max-height:560px;overflow:auto}
+.ei-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ei-opt{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}.ei-opt h3{margin:0 0 6px}
+.ei-modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.ei-modal[hidden]{display:none}
+.ei-modal-box{background:#fff;border-radius:16px;padding:20px;max-width:520px;width:100%;max-height:92vh;overflow:auto}
+.ei-modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:700px){.ei-meta{grid-template-columns:1fr 1fr}.ei-options{grid-template-columns:1fr}.ei-composer{flex-direction:column;align-items:stretch}h1{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.ei-spinner{animation:none}}

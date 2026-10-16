@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>내신영어 기출분석 + 출제방향 제작 | BuildIt</title>
+  <link rel="stylesheet" href="/css/exam_insight.css?v=20261016-1">
+</head>
+<body>
+<header class="ei-top">
+  <a class="ei-brand" href="/home">BuildIt</a>
+  <span class="ei-top-title">내신영어 기출분석 + 출제방향 제작</span>
+</header>
+
+<main class="ei-main" id="eiMain">
+  <section class="ei-intro">
+    <h1>내신영어 기출분석 + 출제방향 제작</h1>
+    <p class="ei-guide">최근 학교 기출문제와 이번 시험범위 자료를 올려주세요. AI가 기출문제를 분석하고 다음 시험의 출제방향을 정리해 드립니다.</p>
+    <p class="ei-note" id="eiQuota" aria-live="polite"></p>
+  </section>
+
+  <form class="ei-form" id="eiForm" novalidate>
+    <div class="ei-group">
+      <h2>① 최근 학교 기출문제</h2>
+      <p class="ei-hint">최근 1~3회분의 기출문제를 올리거나 아래에 붙여넣어 주세요.</p>
+      <input type="file" id="eiPastFiles" multiple>
+      <ul class="ei-files" id="eiPastList"></ul>
+      <textarea id="eiPastText" rows="4" maxlength="60000" placeholder="기출문제 텍스트를 붙여넣을 수도 있어요(선택)"></textarea>
+    </div>
+    <div class="ei-group">
+      <h2>② 이번 시험범위 자료</h2>
+      <p class="ei-hint">교과서·본문·학교 학습지 등 이번 시험범위 자료를 올리거나 붙여넣어 주세요.</p>
+      <input type="file" id="eiScopeFiles" multiple>
+      <ul class="ei-files" id="eiScopeList"></ul>
+      <textarea id="eiScopeText" rows="4" maxlength="60000" placeholder="시험범위 본문 텍스트를 붙여넣을 수도 있어요(선택)"></textarea>
+    </div>
+    <p class="ei-formats" id="eiFormats" role="note"></p>
+
+    <div class="ei-group">
+      <h2>③ 학교 정보(선택)</h2>
+      <div class="ei-meta">
+        <input id="eiSchool" maxlength="60" placeholder="학교명" aria-label="학교명">
+        <input id="eiGrade" maxlength="20" placeholder="학년" aria-label="학년">
+        <input id="eiPublisher" maxlength="60" placeholder="교과서 출판사" aria-label="교과서 출판사">
+        <select id="eiExamType" aria-label="시험 종류">
+          <option value="">시험 종류</option><option>중간고사</option><option>기말고사</option><option>수행평가</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ei-composer">
+      <textarea id="eiNote" rows="2" maxlength="1000" placeholder="AI에게 더 알려줄 내용이 있나요? (예: 서술형 비중이 높은 학교예요)"></textarea>
+      <button type="submit" id="eiSubmit" class="ei-primary">분석 시작</button>
+    </div>
+    <p class="ei-err" id="eiErr" role="alert" hidden></p>
+  </form>
+
+  <section class="ei-progress" id="eiProgress" hidden aria-live="polite">
+    <div class="ei-spinner" aria-hidden="true"></div>
+    <p>AI가 기출문제를 분석하고 있어요. 보통 1~2분 걸립니다. 이 화면을 닫지 말아 주세요.</p>
+  </section>
+
+  <section class="ei-result" id="eiResult" hidden>
+    <h2>분석 완료 <small id="eiId"></small></h2>
+    <p class="ei-note" id="eiNotices"></p>
+    <p class="ei-warn">※ ‘출제 예상’ 내용은 제공된 자료에서 추정한 것으로 실제 출제를 보장하지 않습니다.</p>
+    <article class="ei-doc">
+      <header><h3>문서 1 · 기출문제 분석</h3>
+        <div><button type="button" data-copy="analysis">복사</button><button type="button" data-dl="analysis">.md 다운로드</button></div></header>
+      <pre id="eiDoc1"></pre>
+    </article>
+    <article class="ei-doc">
+      <header><h3>문서 2 · 기출문제 기반 출제방향</h3>
+        <div><button type="button" data-copy="direction">복사</button><button type="button" data-dl="direction">.md 다운로드</button></div></header>
+      <pre id="eiDoc2"></pre>
+    </article>
+
+    <h2>다음 단계를 선택하세요</h2>
+    <div class="ei-options">
+      <div class="ei-opt">
+        <h3>A. 직접 문제 제작</h3>
+        <p>분석 자료를 다운로드하여 구독 중인 ChatGPT, Claude 등에서 직접 문제를 제작하세요.</p>
+        <button type="button" id="eiCopyPrompt">외부 AI용 프롬프트 복사</button>
+      </div>
+      <div class="ei-opt">
+        <h3>B. BuildIt 제작 의뢰</h3>
+        <p>영어 내신 예상문제 40문항 / 1회 <strong>20,000원</strong></p>
+        <button type="button" id="eiOrder" class="ei-primary">문제 제작 의뢰하기</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="ei-modal" id="eiOrderModal" hidden role="dialog" aria-modal="true" aria-labelledby="eiOrderTitle">
+  <div class="ei-modal-box">
+    <h3 id="eiOrderTitle">문제 제작 의뢰</h3>
+    <p>영어 내신 예상문제 40문항 / 1회 20,000원. <b>현재 온라인 결제는 지원하지 않으며</b>, 상담 채널로 의뢰하시면 안내해 드립니다.</p>
+    <p>의뢰 메시지에는 분석 번호 <b id="eiOrderId"></b>가 자동으로 포함됩니다.</p>
+    <textarea id="eiOrderMsg" rows="6" readonly></textarea>
+    <div class="ei-modal-actions">
+      <button type="button" id="eiOrderCopy">메시지 복사</button>
+      <a id="eiOrderKakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카카오톡 상담</a>
+      <a id="eiOrderMail" href="#">이메일로 의뢰</a>
+      <button type="button" id="eiOrderClose">닫기</button>
+    </div>
+  </div>
+</div>
+<script src="/js/exam_insight.js?v=20261016-1"></script>
+</body>
+</html>
