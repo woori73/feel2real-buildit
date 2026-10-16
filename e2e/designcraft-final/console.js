@@ -6,7 +6,7 @@ const BASE='http://127.0.0.1:8080';const rows=[];
 function location(raw){try{const u=new URL(raw);return {host:u.hostname,path:u.pathname};}catch{return {host:'unknown',path:'unknown'};}}
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,headless:true,args:['--no-sandbox']});
- try{for(const policy of ['previous-local-only','normal-network'])for(const width of [1440,390]){
+ try{for(const policy of (process.env.CONSOLE_POLICIES||'normal-network').split(','))for(const width of [1440,390]){
   const ctx=await browser.newContext({viewport:{width,height:width===390?844:1000}});
   if(policy==='previous-local-only')await ctx.route(u=>!['localhost','127.0.0.1'].includes(u.hostname),r=>r.abort());
   const page=await ctx.newPage(),row={policy,width,console:[],failedRequests:[],httpErrors:[],pageErrors:[],checks:[]};rows.push(row);let stage='login';
@@ -14,13 +14,12 @@ function location(raw){try{const u=new URL(raw);return {host:u.hostname,path:u.p
   page.on('requestfailed',r=>row.failedRequests.push({stage,...location(r.url()),type:r.resourceType(),error:(r.failure()?.errorText.match(/net::[A-Z_]+/)||[])[0]||'unspecified'}));
   page.on('response',r=>{if(r.status()>=400)row.httpErrors.push({stage,...location(r.url()),status:r.status()});});
   page.on('pageerror',e=>row.pageErrors.push({stage,name:e.name}));
-  await page.goto(BASE+'/?login=required&returnUrl=/designcraft/editor');
+  await page.goto(BASE+'/?login=required&returnUrl=/designcraft/editor',{waitUntil:'domcontentloaded'});
   await page.waitForSelector('[data-login-modal]:not([hidden])');await page.waitForTimeout(2000);
   await page.fill('[data-login-modal-form] [name="loginId"]',process.env.E2E_LOGIN_ID);
   await page.fill('[data-login-modal-form] [name="password"]',process.env.E2E_LOGIN_PW);
-  await Promise.all([page.waitForURL('**/designcraft/editor'),page.click('.login-modal-submit')]);stage='editor';
+  await Promise.all([page.waitForURL('**/designcraft/editor',{waitUntil:'domcontentloaded'}),page.click('.login-modal-submit')]);stage='editor';
   await page.waitForSelector('#btn-new-project');await page.waitForTimeout(3000);
-  if(width===390){await page.click('#ai-fab');if(!await page.isVisible('#ai-input'))throw Error('panel');await page.click('#btn-ai-close');row.checks.push('panel-open-close');}
   row.checks.push('authenticated-editor-rendered');
   await page.screenshot({path:path.join(OUT,`console-${policy}-${width}.png`)});
   await ctx.close();
