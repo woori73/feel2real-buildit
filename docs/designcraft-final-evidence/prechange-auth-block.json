@@ -1,0 +1,11 @@
+{
+  "run": 38871839790,
+  "url": "https://github.com/woori73/feel2real-buildit/actions/runs/38871839790",
+  "stage": "Assume existing diagnostic role (no IAM modifications)",
+  "result": "FAIL",
+  "error": "Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity",
+  "server_command_sent": false,
+  "current_cli_hash_rechecked": false,
+  "current_active_jobs_verified": false,
+  "aws_settings_modified": false
+}
