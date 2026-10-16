@@ -1,0 +1,40 @@
+name: RDS predeploy snapshot (approved one-shot, temporary)
+
+# 소유자 승인(2026-10-16)에 따른 운영 RDS 수동 스냅샷 1회 생성. 병합하지 않는 임시 브랜치용.
+# 스냅샷 생성 외의 변경(인스턴스 수정·파라미터·삭제·복원)은 하지 않는다. 엔드포인트·계정명·비밀값은 출력하지 않는다.
+# 배포 대상 SHA 69fe4bd356cf561a536ded77367f8f79bc6c7720 직전 백업.
+on:
+  push:
+    branches: [ci/rds-snapshot-predeploy]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Create manual snapshot (one-shot)
+        run: |
+          set -uo pipefail
+          SNAP=f2r-db-prd-predeploy-69fe4bd3-20261016
+          date -u +"requested_at_utc=%Y-%m-%dT%H:%M:%SZ"
+          aws rds create-db-snapshot --db-instance-identifier f2r-db-prd --db-snapshot-identifier "$SNAP" \
+            --query 'DBSnapshot.{id:DBSnapshotIdentifier,instance:DBInstanceIdentifier,status:Status,type:SnapshotType,engine:Engine,version:EngineVersion,created:SnapshotCreateTime}' --output json
+          echo "create-db-snapshot rc=$?"
+
+      - name: Wait until available and report (read-only)
+        run: |
+          set -uo pipefail
+          SNAP=f2r-db-prd-predeploy-69fe4bd3-20261016
+          aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" || echo "wait FAILED rc=$?"
+          aws rds describe-db-snapshots --db-snapshot-identifier "$SNAP" \
+            --query 'DBSnapshots[].{id:DBSnapshotIdentifier,instance:DBInstanceIdentifier,status:Status,type:SnapshotType,created:SnapshotCreateTime,encrypted:Encrypted,progress:PercentProgress}' --output json || echo "describe-db-snapshots FAILED rc=$?"
