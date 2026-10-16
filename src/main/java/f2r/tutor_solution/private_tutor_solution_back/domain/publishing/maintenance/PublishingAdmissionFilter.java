@@ -27,6 +27,14 @@ public class PublishingAdmissionFilter extends OncePerRequestFilter {
     PublishingMaintenanceGate.Scope scope;
     try { scope = previous == null ? gate.enter() : previous.bind(); }
     catch (org.springframework.web.server.ResponseStatusException e) {
+      var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+      boolean restricted = auth != null && auth.isAuthenticated()
+          && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken)
+          && auth.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_TUTOR") || a.getAuthority().equals("ROLE_ADMIN"));
+      // Do not replace an unprivileged caller's ownership/permission rejection with maintenance details.
+      if (restricted) {
+        response.setStatus(403); return;
+      }
       response.setStatus(503); response.setHeader("Retry-After", "30");
       response.setContentType("application/json;charset=UTF-8");
       response.getWriter().write("{\"message\":\"DesignCraft 유지보수 중입니다. 잠시 후 다시 시도하세요.\"}"); return;

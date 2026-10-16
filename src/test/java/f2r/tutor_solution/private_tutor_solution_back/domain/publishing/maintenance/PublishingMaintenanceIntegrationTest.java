@@ -63,6 +63,8 @@ class PublishingMaintenanceIntegrationTest {
     mvc.perform(get(url).with(user("tutor").roles("TUTOR"))).andExpect(status().isServiceUnavailable());
     assertEquals(0,context.getBean(ProbeController.class).writes);
     gate.resume();mvc.perform(get(url).with(user("tutor").roles("TUTOR"))).andExpect(status().isOk());
+    // OPEN does not add a new role policy; existing controller/service ownership rules still decide.
+    mvc.perform(get(url).with(user("student").roles("STUDENT"))).andExpect(status().isOk());
   }
   @Test void closedAdmissionStopsServiceBeforeSideEffectsAndOtherRoutesStayOpen() throws Exception {
     mvc.perform(post("/api/publishing/jobs")).andExpect(status().isServiceUnavailable()).andExpect(header().string("Retry-After","30"));
@@ -132,7 +134,7 @@ class PublishingMaintenanceIntegrationTest {
   @Import({PublishingMaintenanceGate.class,PublishingOperationProxy.class,PublishingMaintenanceController.class})
   static class Config {
     @Bean SecurityFilterChain security(HttpSecurity http)throws Exception {
-      return http.csrf(c->c.disable()).authorizeHttpRequests(a->a.requestMatchers("/api/admin/**").hasRole("ADMIN").requestMatchers("/api/publishing/protected").hasRole("TUTOR").anyRequest().permitAll()).httpBasic(org.springframework.security.config.Customizer.withDefaults()).build();
+      return http.csrf(c->c.disable()).authorizeHttpRequests(a->a.requestMatchers("/api/admin/**").hasRole("ADMIN").requestMatchers("/api/publishing/protected").authenticated().anyRequest().permitAll()).httpBasic(org.springframework.security.config.Customizer.withDefaults()).build();
     }
     @Bean ProbeController probe(DesignCraftCliExecutor cli,PublishingMaintenanceGate gate){return new ProbeController(cli,gate);}
     @Bean PublishingProperties props(org.springframework.core.env.Environment env){var p=new PublishingProperties();p.setCliPath(env.getRequiredProperty("probe.cli"));return p;}
