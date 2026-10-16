@@ -245,4 +245,36 @@ class AssistantPatchApplierTest {
     Plan p = plan(snap(Map.of()), "", Op.of("clearImage", null, "principal"));
     assertThat(p.accepted()).isEmpty();
   }
+
+  @Test
+  @DisplayName("given 현재와 저장 상태가 다름 when diff하면 then 되돌릴 수 있는 변경분을 만든다")
+  void diffBuildsUndoableChange() {
+    Snapshot current = new Snapshot("새 소개", Map.of("heroTitle", "새 제목"), Map.of(), null);
+    Snapshot saved = new Snapshot("옛 소개", Map.of("heroTitle", "옛 제목"), Map.of(), null);
+    Applied a = AssistantPatchApplier.diff(current, saved);
+    assertThat(a.isEmpty()).isFalse();
+    assertThat(a.draftPatch()).containsEntry("heroTitle", "옛 제목");
+    assertThat(a.intro()).isEqualTo("옛 소개");
+    assertThat(a.undo().draftBefore()).containsEntry("heroTitle", "새 제목");
+    assertThat(a.undo().introBefore()).isEqualTo("새 소개");
+  }
+
+  @Test
+  @DisplayName("given 현재와 저장 상태가 같음 when diff하면 then 변경 없음")
+  void diffIsEmptyWhenSame() {
+    Snapshot s = new Snapshot("소개", Map.of("heroTitle", "제목"), Map.of(), null);
+    assertThat(AssistantPatchApplier.diff(s, s).isEmpty()).isTrue();
+  }
+
+  @Test
+  @DisplayName("given 되돌리기 정보 when redoOf하면 then 되돌리기 직전 값을 담아 다시 실행할 수 있다")
+  void redoOfCapturesCurrentValues() {
+    Snapshot current = new Snapshot("되돌린 소개", Map.of("heroTitle", "되돌린 제목"), Map.of(), null);
+    AssistantPatchApplier.Undo undo = new AssistantPatchApplier.Undo(
+        true, "되돌리기 전 소개", Map.of("heroTitle", "되돌리기 전 제목"), null, null);
+    AssistantPatchApplier.Undo redo = AssistantPatchApplier.redoOf(current, undo);
+    assertThat(redo.introChanged()).isTrue();
+    assertThat(redo.introBefore()).isEqualTo("되돌린 소개");
+    assertThat(redo.draftBefore()).containsEntry("heroTitle", "되돌린 제목");
+  }
 }

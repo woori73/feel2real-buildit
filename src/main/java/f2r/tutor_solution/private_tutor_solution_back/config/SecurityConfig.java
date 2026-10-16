@@ -321,6 +321,11 @@ public class SecurityConfig {
             // catch-all permitAll보다 위에서 닫는다. 화면은 로그인한 STUDENT/TUTOR/ADMIN 전용이다.
             .requestMatchers("/problem-generator/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
+            // 기출분석: 소개 화면은 공개, 분석 API는 로그인한 STUDENT/TUTOR/ADMIN 전용.
+            .requestMatchers(HttpMethod.GET, "/exam-analysis")
+            .permitAll()
+            .requestMatchers("/api/exam-insight/**")
+            .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
             // TESTPREP 첫 페이지(/testprep)는 비회원 공개(서비스 소개). ⚠ 아래 /testprep/** 규칙보다 먼저 와야 한다.
             .requestMatchers("/testprep")
             .permitAll()

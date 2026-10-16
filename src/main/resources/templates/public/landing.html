@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
   <link rel="stylesheet" href="/css/landing_v3.css?v=20261014-3">
-  <link rel="stylesheet" href="/css/landing_home.css?v=20261016-1">
+  <link rel="stylesheet" href="/css/landing_home.css?v=20261016-2">
 </head>
 <body>
 <th:block layout:fragment="content">
@@ -27,8 +27,8 @@
     </a>
     <div class="nav-actions">
       <div class="nav-links">
-        <a href="/wiki" class="btn outline nav-cta">내신위키</a>
-        <a href="/problem-generator" class="btn outline nav-cta">문제지 제작기</a>
+        <a href="/wiki" class="btn outline nav-cta">모의고사위키</a>
+        <a href="/exam-analysis" class="btn outline nav-cta">기출분석</a>
         <a href="/chart" class="btn outline nav-cta">CHART</a>
         <a href="/testprep" class="btn outline nav-cta">TestPrep</a>
         <button type="button" class="btn outline nav-cta" onclick="openContactModal()">문의하기</button>
@@ -40,8 +40,8 @@
 
   <!-- 모바일 메뉴: 전체 오버레이, 큰 글자 행 + 구분선 (Sidekick 패턴) -->
   <div class="bi-menu" id="biMenu" hidden>
-    <a href="/wiki">내신위키</a>
-    <a href="/problem-generator">내신 영어 문제지 제작기</a>
+    <a href="/wiki">모의고사위키</a>
+    <a href="/exam-analysis">내신영어 기출분석 + 출제방향 제작</a>
     <a href="/chart">BUILD IT CHART</a>
     <a href="/testprep">iBT TestPrep</a>
     <a href="/builder">AI 홈페이지 제작</a>
@@ -52,12 +52,34 @@
     <button type="button" onclick="openContactModal()">문의하기</button>
   </div>
 
+  <!-- ============ 0-0. 브랜드 히어로: 디지털영어학원 Agent (첫 화면 최상단) ============ -->
+  <section class="agent-hero" id="agentHero" aria-labelledby="agentHeroTitle">
+    <div class="agent-hero-inner">
+      <div class="agent-hero-copy">
+        <p class="agent-hero-eyebrow">AI AGENT</p>
+        <h2 class="agent-hero-title" id="agentHeroTitle">디지털영어학원 Agent</h2>
+        <p class="agent-hero-motion" aria-label="Your AI Agent for English Academy Services">
+          <span class="ah-w" style="--i:0" aria-hidden="true">Your</span>
+          <span class="ah-w" style="--i:1" aria-hidden="true">AI</span>
+          <span class="ah-w" style="--i:2" aria-hidden="true">Agent</span>
+          <span class="ah-w" style="--i:3" aria-hidden="true">for</span>
+          <span class="ah-w" style="--i:4" aria-hidden="true">English</span>
+          <span class="ah-w" style="--i:5" aria-hidden="true">Academy</span>
+          <span class="ah-w" style="--i:6" aria-hidden="true">Services</span>
+        </p>
+        <p class="agent-hero-sub">AI-powered assistance for your English academy.</p>
+        <p class="agent-hero-role">홈페이지 제작 · 기출분석 · 모의고사위키 · 회계까지, 영어학원 운영을 돕는 BuildIt의 AI Agent입니다.</p>
+      </div>
+      <div class="agent-hero-art" aria-hidden="true"><svg class="chick chick-hero" viewBox="0 0 120 124" role="img" aria-label="디지털영어학원 Agent 병아리 캐릭터" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/></g></svg></div>
+    </div>
+  </section>
+
   <!-- ============ 0. 첫 화면 개편(안 C): 서비스 칩(모바일) · AI 홈페이지 제작 입력 · 소식 · 서비스 카드 8개 ============ -->
   <div class="home-first" id="homeFirst">
     <nav class="svc-chips" aria-label="서비스 바로가기">
       <ul>
-      <li><a href="/wiki" aria-label="내신위키">위키</a></li>
-      <li><a href="/problem-generator" aria-label="내신 영어 문제지 제작기">문제지</a></li>
+      <li><a href="/wiki" aria-label="모의고사위키">위키</a></li>
+      <li><a href="/exam-analysis" aria-label="내신영어 기출분석 + 출제방향 제작">기출분석</a></li>
       <li><a href="/chart" aria-label="BUILD IT CHART">CHART</a></li>
       <li><a href="/testprep" aria-label="iBT TestPrep">TestPrep</a></li>
       <li><a href="/builder" aria-label="AI 홈페이지 제작">홈페이지 제작</a></li>
@@ -90,7 +112,7 @@
           <div class="home-news-group"><span class="home-news-tag">업데이트</span>
             <a href="/testprep">iBT TestPrep 연습 시작</a></div>
           <div class="home-news-group"><span class="home-news-tag">자주 찾는 기능</span>
-            <a href="/wiki">내신위키 최신 자료</a>
+            <a href="/wiki">모의고사위키 최신 자료</a>
             <a href="/chart">CHART 전국 TOP100</a>
             <a href="/exam">문제지 제작</a>
             <a href="/home">F2R 학원 찾기</a></div>
@@ -112,16 +134,16 @@
           <span class="svc-tile-badge svc-badge-role">강사·원장용</span>
           <span class="svc-tile-cta">만들어 보기 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile" href="/problem-generator" data-svc-tile="problem">
-          <span class="svc-tile-icon" aria-hidden="true">문</span>
-          <span class="svc-tile-title">내신 영어 문제지 제작기</span>
-          <span class="svc-tile-desc">학교·교재를 고르고 문제를 모아 내신 영어 문제지를 만들고 오답 노트로 복습합니다.</span>
+        <li class="svc-tile-item"><a class="svc-tile" href="/exam-analysis" data-svc-tile="problem">
+          <span class="svc-tile-icon" aria-hidden="true">분</span>
+          <span class="svc-tile-title">내신영어 기출분석 + 출제방향 제작</span>
+          <span class="svc-tile-desc">최근 기출문제와 시험범위 자료를 올리면 AI가 기출을 분석하고 다음 시험의 출제방향을 정리해 드립니다.</span>
           <span class="svc-tile-badge svc-badge-login">로그인 후 이용</span>
-          <span class="svc-tile-cta">제작 시작 ▶</span>
+          <span class="svc-tile-cta">분석 시작 ▶</span>
         </a></li>
         <li class="svc-tile-item"><a class="svc-tile" href="/wiki" data-svc-tile="wiki">
           <span class="svc-tile-icon" aria-hidden="true">위</span>
-          <span class="svc-tile-title">내신위키</span>
+          <span class="svc-tile-title">모의고사위키</span>
           <span class="svc-tile-desc">고1·고2·고3 영어 기출 원본, 시험 분석, 문항 질문·답변을 모은 자료 위키입니다.</span>
           <span class="svc-tile-badge svc-badge-free">무료 열람</span>
           <span class="svc-tile-cta">위키 열기 ▶</span>
@@ -296,7 +318,7 @@
         <h2 class="v3-h2">지금 바로 이용하세요</h2>
       </div>
       <p class="svc-top-link"><a href="#svcTiles">첫 화면 서비스 목록으로</a></p>
-      <nav class="svc-anchors" aria-label="오픈 서비스 바로가기"><a href="#svc-builder">AI 홈페이지 제작</a><a href="#svc-problem">내신 영어 문제지 제작기</a><a href="#svc-wiki">내신위키</a><a href="#svc-testprep">iBT TestPrep</a><a href="#chart-showcase">BUILD IT CHART</a></nav>
+      <nav class="svc-anchors" aria-label="오픈 서비스 바로가기"><a href="#svc-builder">AI 홈페이지 제작</a><a href="#svc-problem">내신영어 기출분석 + 출제방향 제작</a><a href="#svc-wiki">모의고사위키</a><a href="#svc-testprep">iBT TestPrep</a><a href="#chart-showcase">BUILD IT CHART</a></nav>
       <div class="svc-list">
         <article class="svc-card" id="svc-builder">
           <header class="svc-card-head"><span class="v3-badge v3-badge-live">이용 가능</span><h3>AI 홈페이지 제작 <small>BuildIt Web</small></h3></header>
@@ -308,16 +330,16 @@
           <a class="v3-btn v3-btn-primary svc-enter" href="/builder">서비스 입장하기</a>
         </article>
         <article class="svc-card" id="svc-problem">
-          <header class="svc-card-head"><span class="v3-badge v3-badge-live">이용 가능</span><h3>내신 영어 문제지 제작기 <small>BuildIt 문제지</small></h3></header>
-          <p class="svc-desc">학교·교재를 고르고 문제를 모아 내신 영어 문제지를 만들고 오답 노트로 복습합니다.</p>
+          <header class="svc-card-head"><span class="v3-badge v3-badge-live">이용 가능</span><h3>내신영어 기출분석 + 출제방향 제작 <small>BuildIt 기출분석</small></h3></header>
+          <p class="svc-desc">최근 학교 기출문제와 이번 시험범위 자료를 올리면 AI가 기출문제를 분석하고 다음 시험의 출제방향을 정리해 드립니다.</p>
           <div class="svc-cols">
-            <div><h4>주요 기능</h4><ul><li>학교·교재별 자료 선택</li><li>문제 모음에서 문항 고르기</li><li>문제지 제작과 오답 노트</li></ul></div>
-            <div><h4>사용 방법</h4><ol><li>서비스 입장하기를 눌러 로그인합니다(학생·강사·관리자 계정).</li><li>학교와 교재를 선택합니다.</li><li>문제지를 만들고 확인합니다.</li></ol></div>
+            <div><h4>주요 기능</h4><ul><li>기출문제 분석 문서: 유형·비중·출제 패턴·난이도</li><li>기출 기반 출제방향 문서(추정 표시 포함)</li><li>두 문서를 Markdown으로 내려받기</li></ul></div>
+            <div><h4>사용 방법</h4><ol><li>서비스 입장하기를 눌러 로그인합니다(학생·강사·관리자 계정).</li><li>기출문제와 시험범위 자료를 올립니다(텍스트가 있는 PDF·DOCX·HWPX·TXT).</li><li>분석 문서를 확인하고 직접 문제를 만들거나 제작을 의뢰합니다.</li></ol></div>
           </div>
-          <a class="v3-btn v3-btn-primary svc-enter" href="/problem-generator">서비스 입장하기</a>
+          <a class="v3-btn v3-btn-primary svc-enter" href="/exam-analysis">서비스 입장하기</a>
         </article>
         <article class="svc-card" id="svc-wiki">
-          <header class="svc-card-head"><span class="v3-badge v3-badge-live">이용 가능</span><h3>내신위키 <small>Buildit 모의고사</small></h3></header>
+          <header class="svc-card-head"><span class="v3-badge v3-badge-live">이용 가능</span><h3>모의고사위키 <small>BuildIt Wiki</small></h3></header>
           <p class="svc-desc">내신 시험 분석, 기출 원본, 문항 질문·답변, 학습 자료와 게시판을 모아 둔 내신 자료 위키입니다.</p>
           <div class="svc-cols">
             <div><h4>주요 기능</h4><ul><li>시험 분석과 기출 원본 열람</li><li>문항별 질문·답변(Thread)</li><li>학습 자료와 후기·공유·변형 게시판</li></ul></div>
@@ -435,7 +457,7 @@
 </div>
 
 <th:block th:replace="~{fragments/_public_footer :: publicFooterBuildIt}"></th:block>
-  <th:block th:replace="~{fragments/_public_footer :: publicContactModal(false)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicContactModalFor(false, 'woorinaesin@naver.com')}"></th:block>
 <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
 <th:block th:replace="~{fragments/_account_menu :: loginModal}"></th:block>
 

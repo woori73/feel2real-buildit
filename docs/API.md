@@ -227,6 +227,9 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 | `GET /state` | `{hasAcademy, status, messages[]}` 화면 복원용. 조회만 한다 |
 | `POST /turn` | `{message?, academyName?, sampleKey?, region?}`. 학원이 없으면 이름→(과목·대상·지역 부족 시 `needs`로 되묻기)→DRAFT 학원+작업본 생성. 이미 학원이 있으면 새로 만들지 않는다(수정 턴은 2-C). 응답 `{reply, needs[], created, academyId, revision, designPreset, notes[]}` |
 | `POST /undo` | `{revision}` 마지막 수정 1단계 되돌리기(여러 번 가능). 응답 `{reply, changes[], undoDepth, revision}`. 스택은 `academy_assistant_message`의 EDIT/UNDO/PUBLISHED로 계산하며 현재 revision이 마지막 기록의 `revisionAfter`와 다르면(다른 탭·화면에서 바뀜) `409 REVISION_CONFLICT` |
+| `POST /redo` | `{revision}` 직전 되돌리기 1단계 다시 실행. UNDO 기록에 저장한 `redo` 정보로 적용하며 응답은 `/undo`와 같다(`redoDepth` 포함). 새 수정·게시·복원이 있으면 다시 실행 스택은 비워진다 |
+| `POST /save` | `{revision}` 현재 작업본을 저장 지점(SAVEPOINT 기록)으로 남긴다. 공개 홈페이지는 바뀌지 않는다(편집은 이미 작업본에 자동 저장됨). 응답 `{savedRevision, savedAt, ...stack}` |
+| `POST /reset` | `{revision}` 현재 작업본을 마지막 저장 지점(없으면 공개 중인 홈페이지)으로 되돌린다. **공개 홈페이지·운영 배포본·저장 기록은 삭제하지 않는다.** 변경분은 EDIT 기록이라 `POST /undo`로 취소할 수 있다. 바뀐 게 없으면 `changes=[]` |
 | `POST /publish` | `{revision, force?}` '게시하기' 하나. 작업본을 공개본에 반영하고, DRAFT면 같은 트랜잭션에서 PUBLISHED로 전환. 응답 `{firstPublish, revision}`. 오류는 작업본 API와 동일(`409 REVISION_CONFLICT/LIVE_CHANGED`) |
 
 주소·전화번호·강사·수강료는 사용자가 말하기 전까지 채우지 않는다. 지역은 사용자가 직접 한 말/입력에서만 받는다.
@@ -4682,3 +4685,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 클라이언트 IP: `app.admissions.rate-limit.trusted-proxies`(CSV, IP/CIDR)에 있는 프록시가 보낸 요청만 `X-Forwarded-For`를 보며, 오른쪽부터 신뢰 프록시를 건너뛴 첫 비신뢰 IP를 쓴다. 형식 오류·과도하게 넓은 대역(IPv4 /8 미만, IPv6 /16 미만)은 무시된다.
 - 설계(미구현): LLM 호출 상한·영속 카운터·상담 이력 90일 보존/삭제 → [design/admissions-public-api-controls.md](design/admissions-public-api-controls.md).
 
+
+## 내신영어 기출분석 + 출제방향 제작 (2026-10)
+
+- `GET /exam-analysis`: 비회원은 공개 소개(`ProgramEntry.EXAM_ANALYSIS`) → 로그인한 STUDENT/TUTOR/ADMIN은 도구 화면(`private, no-store`).
+- `GET /api/exam-insight/config`: `{enabled, supportedFormats[pdf,docx,hwpx,txt,md], unsupported[], maxFilesPerGroup, perUserDailyLimit, remainingToday}`.
+- `POST /api/exam-insight/analyze` (multipart): `pastFiles[]`·`scopeFiles[]`(각 최대 `app.exam-insight.max-files-per-group`=3), `pastText`, `scopeText`, `school`, `grade`, `publisher`, `examType`, `note`. 성공 `200 {status:"done", analysisId, analysisMarkdown, directionMarkdown, truncated, notices[], model, remainingToday}`. 실패 `{status:"error", code, message}` — `400`(MISSING_PAST/SCOPE·UNSUPPORTED_IMAGE·INVALID_FILE·PARSE_FAILED·EMPTY_TEXT·TOO_MANY_FILES), `429`(USER_LIMIT·GLOBAL_LIMIT), `502 INVALID_AI_OUTPUT`, `503`(DISABLED·LLM_UNAVAILABLE). AI 실패·형식 불량은 "완료"로 표시하지 않고 이용 횟수를 환불한다.
+- 인가: `/api/exam-insight/**`는 STUDENT/TUTOR/ADMIN만. 업로드 파일과 결과는 **서버에 저장하지 않는다**(메모리 처리 후 응답). 스키마 변경 없음.
+- 한도(메모리·KST 일 단위): `app.exam-insight.per-user-daily-limit`=3, `global-daily-limit`=100, `enabled`=true. 이미지·스캔 PDF는 OCR 미지원이라 거절하고 텍스트 붙여넣기를 안내한다.
+- 제작 의뢰(옵션 B)는 결제 기능이 없어 기존 카카오 오픈채팅/메일 상담 채널로 접수한다(분석 번호 포함). 주문 테이블 연동 설계 → [design/exam-insight-service.md](design/exam-insight-service.md).

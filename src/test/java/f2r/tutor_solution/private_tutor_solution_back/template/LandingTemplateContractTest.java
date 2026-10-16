@@ -97,8 +97,8 @@ class LandingTemplateContractTest {
         .contains("전국 TOP100 보기 →")
         .contains("id=\"landingChartTop5\"")
         .contains("href=\"/chart\"")
-        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">내신위키</a>")
-        .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">문제지 제작기</a>")
+        .contains("href=\"/wiki\" class=\"btn outline nav-cta\">모의고사위키</a>")
+        .contains("href=\"/exam-analysis\" class=\"btn outline nav-cta\">기출분석</a>")
         .contains("href=\"/testprep\" class=\"btn outline nav-cta\">TestPrep</a>")
         .contains("class=\"bb-chart\"")
         .doesNotContain("정수정영어학원 · 서울 송파구 삼전동");

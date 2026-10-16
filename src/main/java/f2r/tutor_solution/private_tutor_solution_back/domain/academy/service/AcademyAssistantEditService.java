@@ -61,6 +61,10 @@ public class AcademyAssistantEditService {
   static final String KIND_PUBLISHED = "PUBLISHED";
   /** 버전 복원: 이전 수정의 되돌리기 정보가 더는 맞지 않으므로 게시처럼 스택을 비운다. */
   static final String KIND_RESTORED = "RESTORED";
+  /** 다시 실행: 되돌린 수정을 다시 적용한다. 되돌리기 스택에 그 수정이 돌아온다. */
+  static final String KIND_REDO = "REDO";
+  /** 저장점: 현재 작업본 내용을 기록한다(초기화 기준). 작업본·공개본은 바꾸지 않는다. */
+  static final String KIND_SAVEPOINT = "SAVEPOINT";
   private static final int AI_MAX_OUTPUT = 3000;
   private static final int MAX_REPLY = 300;
 
@@ -273,13 +277,17 @@ public class AcademyAssistantEditService {
         return new EditOutcome("작업본이 다른 곳에서 바뀌어 안전하게 되돌릴 수 없어요. 화면을 새로고침해 주세요.", List.of(), List.of(),
             "NONE", 0, true, fresh.revision(), stack.depth, null);
       }
-      Undo undo = readUndo(stack.topEdit);
+      Undo undo = readUndo(stack.topEdit, "undo");
       if (undo == null) {
         return new EditOutcome("되돌리기 정보를 읽을 수 없어요.", List.of(), List.of(), "NONE", 0, true,
             fresh.revision(), stack.depth, null);
       }
-      Applied inv = AssistantPatchApplier.inverse(
-          snapshotOf(fresh, imageSlotsOf(academy, workingCopyService.stagedMedia(principal))), undo);
+      Map<String, String> stagedNow = workingCopyService.stagedMedia(principal);
+      Snapshot current = snapshotOf(fresh, imageSlotsOf(academy, stagedNow));
+      Applied inv = AssistantPatchApplier.inverse(current, undo);
+      // '다시 실행'이 되돌리기 이전 상태로 돌아갈 수 있도록 지금 값을 함께 남긴다.
+      Undo redoInfo = AssistantPatchApplier.redoOf(current, undo);
+      Map<String, Object> mediaRedo = new java.util.LinkedHashMap<>();
       State saved = hasContent(inv)
           ? workingCopyService.save(principal, fresh.revision(), inv.intro(), toPatch(inv))
           : fresh;
@@ -290,6 +298,7 @@ public class AcademyAssistantEditService {
         var it = mediaUndo.fields();
         while (it.hasNext()) {
           var e = it.next();
+          mediaRedo.put(e.getKey(), stagedNow.get(e.getKey()));
           saved = workingCopyService.stageMedia(
               principal, saved.revision(), e.getKey(), e.getValue().isNull() ? null : e.getValue().asText());
           String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(e.getKey());
@@ -300,6 +309,8 @@ public class AcademyAssistantEditService {
       String reply = "이전 수정을 되돌렸어요.";
       Map<String, Object> payload = new java.util.LinkedHashMap<>();
       payload.put("undoes", stack.topEdit.getMessageId());
+      payload.put("redo", redoInfo);
+      if (!mediaRedo.isEmpty()) payload.put("mediaRedo", mediaRedo);
       payload.put("changes", changes);
       payload.put("revisionAfter", saved.revision());
       remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, "되돌리기", null);
@@ -311,6 +322,188 @@ public class AcademyAssistantEditService {
   /** 되돌릴 수 있는 수정 단계 수(마지막 게시 이후, 아직 되돌리지 않은 수정). */
   public int undoDepth(Long academyId) {
     return stackOf(academyId).depth;
+  }
+
+  /** 화면 버튼 상태용: 되돌리기·다시 실행 가능 단계와 마지막 저장점. 학원이 없으면 모두 비어 있다. */
+  public record StackInfo(int undoDepth, int redoDepth, Long savedRevision, String savedAt) {}
+
+  public StackInfo stackInfo(JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return academyService.getMine(principal).map(a -> {
+      UndoStack st = stackOf(a.academyId());
+      return new StackInfo(st.depth, st.redoDepth, st.savedRevision, st.savedAt);
+    }).orElse(new StackInfo(0, 0, null, null));
+  }
+
+  // ───────────────────────── 다시 실행 ─────────────────────────
+
+  /** 되돌린 수정을 다시 적용한다(되돌리기 이후 새 수정을 하면 다시 실행할 수 없다). */
+  public EditOutcome redo(JwtTokenProvider.AuthenticatedPrincipal principal, Long expectedRevision) {
+    AcademyResponse academy = academyService.getMine(principal)
+        .orElseThrow(() -> new IllegalArgumentException("홈페이지를 먼저 만들어 주세요."));
+    Long academyId = academy.academyId();
+    return tx.execute(s -> {
+      State fresh = workingCopyService.open(principal);
+      requireRevision(fresh, expectedRevision);
+      UndoStack stack = stackOf(academyId);
+      if (stack.topRedo == null) {
+        return new EditOutcome("다시 실행할 수정이 없어요. (되돌린 직후에만 다시 실행할 수 있어요)", List.of(), List.of(),
+            "NONE", 0, true, fresh.revision(), stack.depth, null);
+      }
+      if (stack.lastRevision == null || stack.lastRevision != fresh.revision()) {
+        return new EditOutcome("작업본이 다른 곳에서 바뀌어 안전하게 다시 실행할 수 없어요. 화면을 새로고침해 주세요.", List.of(), List.of(),
+            "NONE", 0, true, fresh.revision(), stack.depth, null);
+      }
+      Undo redo = readUndo(stack.topRedo, "redo");
+      if (redo == null) {
+        return new EditOutcome("다시 실행 정보를 읽을 수 없어요.", List.of(), List.of(), "NONE", 0, true,
+            fresh.revision(), stack.depth, null);
+      }
+      Map<String, String> stagedNow = workingCopyService.stagedMedia(principal);
+      Applied inv = AssistantPatchApplier.inverse(snapshotOf(fresh, imageSlotsOf(academy, stagedNow)), redo);
+      State saved = hasContent(inv)
+          ? workingCopyService.save(principal, fresh.revision(), inv.intro(), toPatch(inv))
+          : fresh;
+      List<AssistantPatchApplier.Change> changes = new ArrayList<>(inv.changes());
+      JsonNode mediaRedo = payloadOf(stack.topRedo) == null ? null : payloadOf(stack.topRedo).get("mediaRedo");
+      if (mediaRedo != null && mediaRedo.isObject()) {
+        var it = mediaRedo.fields();
+        while (it.hasNext()) {
+          var e = it.next();
+          saved = workingCopyService.stageMedia(
+              principal, saved.revision(), e.getKey(), e.getValue().isNull() ? null : e.getValue().asText());
+          String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(e.getKey());
+          changes.add(new AssistantPatchApplier.Change(
+              "사진: " + (meta == null ? e.getKey() : meta[0]), "변경됨", "다시 적용", meta == null ? null : meta[1]));
+        }
+      }
+      String reply = "되돌렸던 수정을 다시 적용했어요.";
+      Map<String, Object> payload = new java.util.LinkedHashMap<>();
+      payload.put("redoes", stack.topRedo.getMessageId());
+      payload.put("changes", changes);
+      payload.put("revisionAfter", saved.revision());
+      remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, "다시 실행", null);
+      remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_REDO, reply, toJson(payload));
+      return new EditOutcome(reply, changes, List.of(), "REDO", 0, false, saved.revision(), stack.depth + 1, null);
+    });
+  }
+
+  // ───────────────────────── 저장·초기화 ─────────────────────────
+
+  /**
+   * 현재 작업본을 '저장점'으로 기록한다. 작업본은 수정할 때마다 이미 서버에 저장돼 있으므로 내용은 바뀌지 않고,
+   * 초기화가 돌아갈 기준만 정한다. 공개본·게시는 건드리지 않는다. 마지막 저장점과 같은 revision이면 새로 기록하지 않는다.
+   */
+  public EditOutcome savepoint(JwtTokenProvider.AuthenticatedPrincipal principal, Long expectedRevision) {
+    AcademyResponse academy = academyService.getMine(principal)
+        .orElseThrow(() -> new IllegalArgumentException("홈페이지를 먼저 만들어 주세요."));
+    Long academyId = academy.academyId();
+    return tx.execute(s -> {
+      State fresh = workingCopyService.open(principal);
+      requireRevision(fresh, expectedRevision);
+      UndoStack stack = stackOf(academyId);
+      if (stack.savedRevision != null && stack.savedRevision == fresh.revision()) {
+        return new EditOutcome("이미 이 상태로 저장되어 있어요.", List.of(), List.of(), "SAVE", 0, false,
+            fresh.revision(), stack.depth, null);
+      }
+      Map<String, String> staged = workingCopyService.stagedMedia(principal);
+      Snapshot snap = snapshotOf(fresh, imageSlotsOf(academy, staged));
+      Map<String, Object> payload = new java.util.LinkedHashMap<>();
+      payload.put("revision", fresh.revision());
+      payload.put("intro", snap.intro());
+      payload.put("draft", snap.draft());
+      payload.put("visibility", snap.visibility());
+      payload.put("order", snap.order());
+      payload.put("staged", staged);
+      String reply = "현재 작업본을 저장했어요. 초기화하면 이 저장 상태로 돌아가요. (공개 홈페이지는 그대로예요)";
+      remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, "저장", null);
+      remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_SAVEPOINT, reply, toJson(payload));
+      return new EditOutcome(reply, List.of(), List.of(), "SAVE", 0, false, fresh.revision(), stack.depth, null);
+    });
+  }
+
+  /**
+   * 작업본을 마지막 저장점(없으면 현재 공개본)으로 되돌린다. 작업본만 바꾸고 공개본·버전 기록은 지우지 않는다.
+   * 수정 한 건으로 기록해 '되돌리기'로 취소할 수 있다.
+   */
+  public EditOutcome reset(JwtTokenProvider.AuthenticatedPrincipal principal, Long expectedRevision) {
+    AcademyResponse academy = academyService.getMine(principal)
+        .orElseThrow(() -> new IllegalArgumentException("홈페이지를 먼저 만들어 주세요."));
+    Long academyId = academy.academyId();
+    return tx.execute(s -> {
+      State fresh = workingCopyService.open(principal);
+      requireRevision(fresh, expectedRevision);
+      UndoStack stack = stackOf(academyId);
+      Map<String, String> stagedNow = workingCopyService.stagedMedia(principal);
+      Snapshot current = snapshotOf(fresh, imageSlotsOf(academy, stagedNow));
+      Snapshot target;
+      Map<String, String> targetStaged;
+      String baseName;
+      if (stack.savepoint != null) {
+        JsonNode p = payloadOf(stack.savepoint);
+        target = snapshotFromPayload(p);
+        targetStaged = new java.util.TreeMap<>();
+        if (p.hasNonNull("staged") && p.get("staged").isObject()) {
+          p.get("staged").fields().forEachRemaining(e -> targetStaged.put(e.getKey(), e.getValue().asText()));
+        }
+        baseName = "마지막 저장 상태";
+      } else {
+        target = snapshotOf(
+            new State(fresh.revision(), academy.intro(), academy.pageSettings(), false, false),
+            imageSlotsOf(academy, Map.of()));
+        targetStaged = new java.util.TreeMap<>();
+        baseName = "공개 홈페이지 기준(저장점이 없어요)";
+      }
+      Applied applied = AssistantPatchApplier.diff(current, target);
+      Map<String, Object> mediaUndo = new java.util.LinkedHashMap<>();
+      java.util.TreeSet<String> slots = new java.util.TreeSet<>(stagedNow.keySet());
+      slots.addAll(targetStaged.keySet());
+      for (String slot : slots) {
+        if (!java.util.Objects.equals(stagedNow.get(slot), targetStaged.get(slot))) {
+          mediaUndo.put(slot, stagedNow.get(slot));
+        }
+      }
+      if (applied.isEmpty() && mediaUndo.isEmpty()) {
+        return new EditOutcome("이미 " + baseName + "와 같아서 초기화할 내용이 없어요.", List.of(), List.of(), "RESET", 0, false,
+            fresh.revision(), stack.depth, null);
+      }
+      State saved = hasContent(applied)
+          ? workingCopyService.save(principal, fresh.revision(), applied.intro(), toPatch(applied))
+          : fresh;
+      List<AssistantPatchApplier.Change> changes = new ArrayList<>(applied.changes());
+      for (String slot : mediaUndo.keySet()) {
+        saved = workingCopyService.stageMedia(principal, saved.revision(), slot, targetStaged.get(slot));
+        String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(slot);
+        changes.add(new AssistantPatchApplier.Change(
+            "사진: " + (meta == null ? slot : meta[0]), "현재 예약", baseName + "로 복원", meta == null ? null : meta[1]));
+      }
+      String reply = "작업본을 " + baseName + "로 초기화했어요. 공개 홈페이지와 저장된 버전은 그대로예요. 마음이 바뀌면 '되돌리기'를 눌러 주세요.";
+      Map<String, Object> payload = new java.util.LinkedHashMap<>();
+      payload.put("changes", changes);
+      payload.put("skipped", List.of());
+      payload.put("undo", applied.undo());
+      if (!mediaUndo.isEmpty()) payload.put("mediaUndo", mediaUndo);
+      payload.put("revisionAfter", saved.revision());
+      payload.put("engine", "RESET");
+      remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, "초기화", null);
+      remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_EDIT, reply, toJson(payload));
+      return new EditOutcome(reply, changes, List.of(), "RESET", 0, false, saved.revision(), stack.depth + 1, null);
+    });
+  }
+
+  private Snapshot snapshotFromPayload(JsonNode p) {
+    Map<String, String> draft = new java.util.LinkedHashMap<>();
+    if (p.hasNonNull("draft") && p.get("draft").isObject()) {
+      p.get("draft").fields().forEachRemaining(e -> draft.put(e.getKey(), e.getValue().asText()));
+    }
+    Map<String, Boolean> visibility = new java.util.LinkedHashMap<>();
+    if (p.hasNonNull("visibility") && p.get("visibility").isObject()) {
+      p.get("visibility").fields().forEachRemaining(e -> visibility.put(e.getKey(), e.getValue().asBoolean()));
+    }
+    List<String> order = new ArrayList<>();
+    if (p.hasNonNull("order") && p.get("order").isArray()) {
+      p.get("order").forEach(n -> order.add(n.asText()));
+    }
+    return new Snapshot(p.hasNonNull("intro") ? p.get("intro").asText() : null, draft, visibility, order);
   }
 
   // ───────────────────────── 해석 ─────────────────────────
@@ -595,25 +788,37 @@ public class AcademyAssistantEditService {
     }
   }
 
-  private Undo readUndo(AcademyAssistantMessage edit) {
+  private Undo readUndo(AcademyAssistantMessage edit, String key) {
     try {
-      JsonNode n = objectMapper.readTree(edit.getPayloadJson()).get("undo");
+      JsonNode n = objectMapper.readTree(edit.getPayloadJson()).get(key);
       return n == null ? null : objectMapper.treeToValue(n, Undo.class);
     } catch (JsonProcessingException | RuntimeException e) {
       return null;
     }
   }
 
-  /** 마지막 게시 이후의 수정 스택. lastRevision은 가장 최근 기록(생성·수정·되돌리기·게시)이 남긴 작업본 revision. */
+  /**
+   * 마지막 게시 이후의 수정 스택. lastRevision은 가장 최근 기록(생성·수정·되돌리기·다시 실행·저장·게시)이 남긴 작업본 revision.
+   * redo 스택은 되돌린 수정(UNDO 기록)이고, 새 수정·게시·버전 복원으로 비워진다. 저장점은 게시·버전 복원으로 무효가 된다.
+   */
   private static final class UndoStack {
     AcademyAssistantMessage topEdit;
+    AcademyAssistantMessage topRedo;
+    AcademyAssistantMessage savepoint;
     int depth;
+    int redoDepth;
     Long lastRevision;
+    Long savedRevision;
+    String savedAt;
   }
 
   private UndoStack stackOf(Long academyId) {
     List<AcademyAssistantMessage> all = messages.findByAcademyIdOrderByMessageIdAsc(academyId);
+    Map<Long, AcademyAssistantMessage> byId = new java.util.HashMap<>();
+    for (AcademyAssistantMessage m : all) byId.put(m.getMessageId(), m);
     List<AcademyAssistantMessage> stack = new ArrayList<>();
+    java.util.ArrayDeque<AcademyAssistantMessage> redo = new java.util.ArrayDeque<>();
+    AcademyAssistantMessage savepoint = null;
     Long last = null;
     for (AcademyAssistantMessage m : all) {
       JsonNode p = payloadOf(m);
@@ -623,12 +828,31 @@ public class AcademyAssistantEditService {
         else if (p.hasNonNull("revision")) rev = p.get("revision").asLong();
       }
       switch (m.getKind()) {
-        case KIND_EDIT -> stack.add(m);
+        case KIND_EDIT -> {
+          stack.add(m);
+          redo.clear();
+        }
         case KIND_UNDO -> {
           long undone = p != null && p.hasNonNull("undoes") ? p.get("undoes").asLong() : -1;
           stack.removeIf(e -> e.getMessageId() == undone);
+          if (p != null && p.hasNonNull("redo") && byId.containsKey(undone)) redo.push(m);
         }
-        case KIND_PUBLISHED, KIND_RESTORED -> stack.clear();
+        case KIND_REDO -> {
+          long redoes = p != null && p.hasNonNull("redoes") ? p.get("redoes").asLong() : -1;
+          AcademyAssistantMessage undoMsg = byId.get(redoes);
+          redo.removeIf(u -> u.getMessageId() == redoes);
+          JsonNode up = undoMsg == null ? null : payloadOf(undoMsg);
+          if (up != null && up.hasNonNull("undoes")) {
+            AcademyAssistantMessage edit = byId.get(up.get("undoes").asLong());
+            if (edit != null) stack.add(edit);
+          }
+        }
+        case KIND_SAVEPOINT -> savepoint = m;
+        case KIND_PUBLISHED, KIND_RESTORED -> {
+          stack.clear();
+          redo.clear();
+          savepoint = null;
+        }
         default -> { }
       }
       if (rev != null) last = rev;
@@ -636,6 +860,12 @@ public class AcademyAssistantEditService {
     UndoStack s = new UndoStack();
     s.depth = stack.size();
     s.topEdit = stack.isEmpty() ? null : stack.get(stack.size() - 1);
+    s.redoDepth = redo.size();
+    s.topRedo = redo.peek();
+    s.savepoint = savepoint;
+    JsonNode sp = savepoint == null ? null : payloadOf(savepoint);
+    s.savedRevision = sp != null && sp.hasNonNull("revision") ? sp.get("revision").asLong() : null;
+    s.savedAt = savepoint == null || savepoint.getCreatedAt() == null ? null : savepoint.getCreatedAt().toString();
     s.lastRevision = last;
     return s;
   }
