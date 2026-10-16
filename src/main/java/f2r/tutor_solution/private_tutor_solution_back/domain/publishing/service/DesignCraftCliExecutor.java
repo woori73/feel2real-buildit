@@ -230,6 +230,7 @@ public class DesignCraftCliExecutor {
       log.info("DesignCraft CLI 실행: {}", String.join(" ", cmd));
 
       Process process = pb.start();
+      f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceGate.trackCurrentProcess(process);
       try (var out = process.getOutputStream()) {
         if (stdin != null) {
           out.write(stdin.getBytes(StandardCharsets.UTF_8));
