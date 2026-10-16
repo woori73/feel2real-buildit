@@ -94,7 +94,7 @@ class PublishingMaintenanceIntegrationTest {
     awaitClosed();
   }
   @Test void asyncTimeoutDoesNotReleaseStillRunningOperation() throws Exception {
-    gate.resume();ProbeController controller=context.getBean(ProbeController.class);
+    gate.resume();ProbeController controller=context.getBean(ProbeController.class);controller.ignoreInterrupts=true;
     var result=mvc.perform(get("/api/publishing/async")).andExpect(request().asyncStarted()).andReturn();
     assertTrue(controller.started.await(3,TimeUnit.SECONDS));gate.drain();
     var asyncContext=(org.springframework.mock.web.MockAsyncContext)result.getRequest().getAsyncContext();
@@ -127,14 +127,19 @@ class PublishingMaintenanceIntegrationTest {
     @Bean ProbeTransactions transactionManager(PublishingMaintenanceGate g){return new ProbeTransactions(g);}
   }
   @RestController static class ProbeController {
-    final DesignCraftCliExecutor cli;int writes;
+    final DesignCraftCliExecutor cli;int writes;volatile boolean ignoreInterrupts;
     final CountDownLatch started=new CountDownLatch(1),finish=new CountDownLatch(1);
     ProbeController(DesignCraftCliExecutor cli){this.cli=cli;}
     @GetMapping("/api/publishing/error") String error(){throw new IllegalStateException("synthetic failure");}
     @PostMapping("/api/publishing/jobs") String create(){writes++;return "ok";}
     @GetMapping({"/ledger","/builder","/testprep","/photocraft","/login","/api/auth/me","/actuator/health"}) String other(){return "ok";}
     @GetMapping("/api/publishing/async") Callable<String> async(){return ()->{
-      cli.inspect(Path.of("unused"),Path.of(cliWork()));started.countDown();if(!finish.await(5,TimeUnit.SECONDS))throw new IllegalStateException("test task deadline");
+      cli.inspect(Path.of("unused"),Path.of(cliWork()));started.countDown();
+      long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
+      while(finish.getCount()>0){
+        if(System.nanoTime()>deadline)throw new IllegalStateException("test task deadline");
+        try{finish.await(50,TimeUnit.MILLISECONDS);}catch(InterruptedException interrupted){if(!ignoreInterrupts)throw interrupted;}
+      }
       cli.inspect(Path.of("unused"),Path.of(cliWork()));return "ok";
     };}
     String cliWork(){return System.getProperty("java.io.tmpdir");}
