@@ -1,8 +1,8 @@
-name: DesignCraft residual probe v2b (read-only, page-2 header glyph check)
+name: DesignCraft residual probe v2c (read-only, footer glyph chars)
 on:
   push:
     branches: ['ci/dc-step1-readonly']
-    paths: ['.github/workflows/dc-r-probe2.yml', 'ops/diagnostics/dc_r_analyze2.py']
+    paths: ['.github/workflows/dc-r-probe2.yml', 'ops/diagnostics/dc_r_analyze3.py']
 permissions:
   contents: read
   id-token: write
@@ -47,7 +47,7 @@ jobs:
           mkdir -p v && cd v
           aws s3 cp s3://feel2real-buildit-deploy/designcraft-r-probe/ . --recursive --region ap-northeast-2 >/dev/null 2>&1 || true
           sudo apt-get -qq update >/dev/null 2>&1; sudo apt-get -qq install -y poppler-utils tesseract-ocr tesseract-ocr-kor >/dev/null 2>&1 || true
-          pip install -q pillow >/dev/null 2>&1 || true
-          PNGS="cli0.png" python3 ../ops/diagnostics/dc_r_analyze2.py cli.pdf srv.pdf 2>&1 | grep -v Deprecat
+          pip install -q pillow pymupdf >/dev/null 2>&1 || true
+          python3 ../ops/diagnostics/dc_r_analyze3.py cli.pdf srv.pdf 2>&1 | grep -v Deprecat
           aws s3 rm s3://feel2real-buildit-deploy/designcraft-r-probe/ --recursive --region ap-northeast-2 >/dev/null 2>&1 || true
           echo "transient S3 objects removed"
