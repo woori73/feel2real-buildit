@@ -29,7 +29,7 @@ jobs:
           const OUT = process.env.OUT;
           const state = () => {
             const q = (sel) => document.querySelector(sel);
-            const m = document.getElementById('login-modal');
+            const m = document.querySelector('[data-login-modal]');
             const cands = [...document.querySelectorAll('[id*="login"][id*="modal"], .login-modal, [role="dialog"]')].map(e => (e.id || e.className) + ':' + getComputedStyle(e).display);
             if (!m) return { exists: false, cands };
             const cs = getComputedStyle(m); const r = m.getBoundingClientRect();
@@ -50,7 +50,7 @@ jobs:
               await p.waitForTimeout(2500);
               const before = await p.evaluate(state);
               const btns = await p.evaluate(() => [...document.querySelectorAll('[data-auth-login]')].map(e => ({ tag: e.tagName, cls: e.className, hidden: e.hidden, visible: e.offsetParent !== null, rect: (() => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; })() })));
-              await p.screenshot({ path: `${OUT}/${name}-1-before-click.png` });
+              await p.screenshot({ path: `${OUT}/${name}-1-before-click-v2.png` });
               const target = p.locator('[data-auth-login]:visible').first();
               let clickResult = 'ok';
               try { await target.click({ timeout: 5000 }); } catch (e) { clickResult = 'click error: ' + e.message.slice(0, 120); }
@@ -58,16 +58,16 @@ jobs:
               for (const ms of [500, 1500, 3000]) {
                 await p.waitForTimeout(Math.max(0, ms - (Date.now() - t0)));
                 timeline[ms + 'ms'] = await p.evaluate(state);
-                if (ms === 500) await p.screenshot({ path: `${OUT}/${name}-2-after-click-0.5s.png` });
+                if (ms === 500) await p.screenshot({ path: `${OUT}/${name}-2-after-click-0.5s-v2.png` });
               }
-              await p.screenshot({ path: `${OUT}/${name}-3-after-click-3s.png` });
-              const modalVisiblePW = await p.locator('#login-modal').isVisible().catch(() => null);
+              await p.screenshot({ path: `${OUT}/${name}-3-after-click-3s-v2.png` });
+              const modalVisiblePW = await p.locator('[data-login-modal]').isVisible().catch(() => null);
               result[name] = { loginButtons: btns, clickResult, before, timeline, playwrightIsVisible: modalVisiblePW, console: con, pageErrors: exc, requestFailed: failed, http4xx5xx: http, assets };
               console.log('=== ' + name + ' ===');
               console.log(JSON.stringify(result[name], null, 1));
               await ctx.close();
             }
-            fs.writeFileSync(`${OUT}/result.json`, JSON.stringify(result, null, 1));
+            fs.writeFileSync(`${OUT}/result-v2.json`, JSON.stringify(result, null, 1));
             await b.close();
           })();
           JS
@@ -79,5 +79,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add evidence
-          git commit -m "[CI-TEMP] 운영 로그인 모달 점검 증거(캡처·result.json)" || echo "nothing to commit"
+          git commit -m "[CI-TEMP] 운영 로그인 모달 점검 증거 v2(올바른 셀렉터 [data-login-modal])" || echo "nothing to commit"
           git push origin HEAD:ci/flyway-history-readonly || echo "push skipped"
