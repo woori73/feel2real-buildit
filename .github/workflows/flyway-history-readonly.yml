@@ -1,8 +1,9 @@
-name: Flyway history read-only check (approved one-shot, temporary)
+name: Post-deploy read-only verification (approved, temporary)
 
-# 소유자 승인(2026-10-16, 방법 B)에 따른 운영 flyway_schema_history 읽기 전용 SELECT 1회. 병합하지 않는 임시 브랜치용.
-# 기존 운영 EC2에 SSM으로 접근하되 설치·설정 변경 없음. DB에는 READ ONLY 세션으로 SELECT만 실행한다.
-# DB 접속정보·비밀번호·환경변수·개인정보는 출력하지 않는다(결과 한 줄과 성공 여부만 출력). 실패 시 우회하지 않고 중단한다.
+# 소유자 승인(2026-10-16, 배포 #989 사후 검증)에 따른 읽기 전용 검증. 병합하지 않는 임시 브랜치용.
+# (1) 공개 URL GET/POST 상태 확인(운영 사이트에 대한 일반 사용자 요청과 동일, 쓰기 없음)
+# (2) 운영 EC2에 SSM으로 접근해 flyway_schema_history 등 SELECT만 실행(READ ONLY 세션). 설치·설정 변경 없음.
+# DB 접속정보·비밀번호·환경변수·개인정보는 출력하지 않는다(집계 값만). 실패 시 우회하지 않고 중단한다.
 on:
   push:
     branches: [ ci/flyway-history-readonly ]
@@ -12,7 +13,37 @@ permissions:
   contents: read
 
 jobs:
-  flyway-history:
+  public-urls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe production public URLs (read-only)
+        run: |
+          set -uo pipefail
+          BASE=https://feel2real.co.kr
+          probe() {
+            local path="$1"
+            local code loc title size
+            code=$(curl -sS -o /tmp/body.html -D /tmp/hdr.txt -w '%{http_code}' --max-time 30 "$BASE$path" 2>/dev/null || echo CURL_FAIL)
+            loc=$(grep -i '^location:' /tmp/hdr.txt 2>/dev/null | head -1 | tr -d '\r' | sed 's/^[Ll]ocation: //' | cut -c1-140)
+            title=$(grep -o -m1 '<title>[^<]*</title>' /tmp/body.html 2>/dev/null | sed 's/<[^>]*>//g' | cut -c1-80)
+            size=$(wc -c < /tmp/body.html 2>/dev/null || echo 0)
+            echo "GET $path -> $code size=$size title=[$title] location=[$loc]"
+          }
+          for p in / /designcraft /designcraft/editor /builder /problem-generator /ledger /easy /testprep /testprep/guide /admissions/guide /actuator/health /lms/demo/manage /conversation/chat /tutor/conversation/dashboard /api/publishing/jobs; do probe "$p"; done
+          echo "---- homepage content markers ----"
+          curl -sS --max-time 30 "$BASE/" -o /tmp/home.html || true
+          for m in "곧 만나요" "AcademyCraft" "StudyCraft" "DesignCraft 열어보기" "곧 준비중"; do echo "marker [$m] count=$(grep -o "$m" /tmp/home.html | wc -l)"; done
+          echo "forbidden markers (NewStart/위메이드/충기) count=$(grep -o -E 'NewStart|뉴스타트|위메이드|충기' /tmp/home.html | wc -l)"
+          echo "section ids: $(grep -o -E '<section[^>]*id="[a-z-]+"' /tmp/home.html | sed -E 's/.*id="([a-z-]+)"/\1/' | tr '\n' '>' )"
+          echo "---- /designcraft public intro markers ----"
+          curl -sS --max-time 30 "$BASE/designcraft" -o /tmp/dc.html || true
+          echo "naver start link count=$(grep -o '/auth/naver/start' /tmp/dc.html | wc -l)"
+          echo "---- POST /api/admissions/chat (expect 503 when public API is OFF) ----"
+          code=$(curl -sS -o /tmp/adm.json -w '%{http_code}' --max-time 30 -X POST -H 'Content-Type: application/json' -d '{"message":"ping","academicYear":2027}' "$BASE/api/admissions/chat" || echo CURL_FAIL)
+          echo "POST /api/admissions/chat -> $code body=$(head -c 220 /tmp/adm.json)"
+
+  flyway-readonly:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -22,7 +53,7 @@ jobs:
           role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
 
-      - name: Read-only SELECT on flyway_schema_history via SSM (stop on any failure)
+      - name: Read-only SELECTs via SSM (stop on any failure)
         run: |
           set -uo pipefail
           INSTANCE="i-09d7cabb5a42d1135"
@@ -32,14 +63,14 @@ jobs:
             echo "RESULT=STOPPED_NO_MYSQL_CLIENT (nothing installed, nothing changed)"
             exit 0
           fi
-          ROW=$( ( set -a; . /etc/f2r/env; set +a; MYSQL_PWD="${DB_PASSWORD:-}" mysql -N -B -h "${DB_HOST:-127.0.0.1}" -P "${DB_PORT:-3306}" -u "${DB_USER:-}" "${DB_NAME:-}" -e "SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS applied, MAX(CAST(version AS UNSIGNED)) AS max_version, COALESCE(SUM(success = 0), 0) AS failed, COALESCE(SUM(CAST(version AS UNSIGNED) >= 1078), 0) AS v1078_or_later FROM flyway_schema_history WHERE version IS NOT NULL;" ) 2>/dev/null )
+          OUT=$( ( set -a; . /etc/f2r/env; set +a; MYSQL_PWD="${DB_PASSWORD:-}" mysql -N -B -h "${DB_HOST:-127.0.0.1}" -P "${DB_PORT:-3306}" -u "${DB_USER:-}" "${DB_NAME:-}" -e "SET SESSION TRANSACTION READ ONLY; SELECT 'SUMMARY(applied,max_version,failed,v1078_or_later)', COUNT(*), MAX(CAST(version AS UNSIGNED)), COALESCE(SUM(success = 0), 0), COALESCE(SUM(CAST(version AS UNSIGNED) >= 1078), 0) FROM flyway_schema_history WHERE version IS NOT NULL; SELECT 'MIGRATION(version,success,description)', version, success, description FROM flyway_schema_history WHERE version IS NOT NULL AND CAST(version AS UNSIGNED) >= 1078 ORDER BY installed_rank; SELECT 'ADMISSIONS_TABLES', COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name LIKE 'admissions%'; SELECT 'TP_PRACTICE_SETS_SET0x', COUNT(*) FROM tp_exams WHERE exam_code LIKE 'TP-PRACTICE-2026-SET0%'; SELECT 'TP_PRACTICE_QUESTIONS', COUNT(*) FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id WHERE e.exam_code LIKE 'TP-PRACTICE-2026-SET0%'; SELECT 'ADMISSIONS_COUNSELING_SESSIONS_ROWS', COUNT(*) FROM admissions_counseling_sessions;" ) 2>/dev/null )
           RC=$?
-          if [ "$RC" -ne 0 ] || [ -z "$ROW" ]; then
+          if [ "$RC" -ne 0 ] || [ -z "$OUT" ]; then
             echo "RESULT=QUERY_FAILED rc=$RC (details suppressed; stopped, nothing changed)"
             exit 0
           fi
-          echo "RESULT=OK columns=applied,max_version,failed,v1078_or_later"
-          echo "ROW=$ROW"
+          echo "RESULT=OK"
+          printf '%s\n' "$OUT"
           SSMEOF
           )
           PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": [l.lstrip() for l in sys.stdin.read().splitlines()]}))' <<< "$SSM_BODY")
@@ -49,7 +80,6 @@ jobs:
           for i in $(seq 1 24); do
             sleep 5
             STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --query 'Status' --output text 2>/dev/null || echo "UNKNOWN")
-            echo "status=$STATUS (attempt $i/24)"
             case "$STATUS" in Success|Failed|Cancelled|TimedOut) break ;; esac
           done
           echo "FINAL_STATUS=$STATUS"
