@@ -935,3 +935,7 @@ ADMIN drain과 admission은 같은 모니터에서 처리한다. drain 뒤 신�
 Servlet Callable/AsyncContext.start 및 CompletionStage 서비스 결과를 지원한다. 새 비동기 background 실행은 `PublishingMaintenanceGate.submit`으로 operation을 명시 전달해야 한다. 임의 commonPool/raw thread로 업무를 보내는 코드는 지원 범위 밖이며 도입 전 통제 확장이 필요하다. CLI stdout 수집 CompletableFuture는 업무를 시작하지 않으며 부모 CLI 실제 종료를 별도 추적한다.
 
 단일 JVM drain은 여러 Spring 인스턴스/별도 Worker/직접 OS 실행을 증명하지 않는다. 외부 실행 주체를 확인하지 못하면 운영 CLI 교체 불가다.
+
+
+### DesignCraft 승인 편집 (0.8.0 통합)
+원고 반입 → 문서 조회(읽기 전용) → AI 계획 생성 → 원문/수정안 확인 → 사용자 승인 → 한 script로 적용 → 미리보기 갱신. 수정 전 스냅샷은 고유 파일명으로 보존하며 실행 취소는 이전 파일 버전 복원으로 처리한다. AI 계획만 생성하거나 거절하면 문서는 변경하지 않는다.

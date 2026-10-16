@@ -35,19 +35,14 @@ class DocInfo:
 
 
 def _count_merged_cells(doc: HwpxDocument) -> int:
-    count = 0
-    for tbl in doc.tables:
+    merged = set()
+    for table_index, tbl in enumerate(doc.tables):
         for r in range(tbl.row_count):
             for c in range(tbl.column_count):
-                try:
-                    cell = tbl.cell(r, c)
-                    # 병합 셀은 span 정보로 판단
-                    addr = cell.address if hasattr(cell, "address") else None
-                    if addr is not None:
-                        count += 1
-                except Exception:
-                    pass
-    return count
+                cell = tbl.cell(r, c)
+                if cell.span != (1, 1):
+                    merged.add((table_index, *cell.address))
+    return len(merged)
 
 
 def _count_images(doc: HwpxDocument) -> int:
@@ -104,31 +99,9 @@ def _find_merge_origin(tbl, row: int, col: int) -> tuple[int, int]:
     python-hwpx에서 병합 영역 내 모든 셀은 동일한 span을 반환한다.
     origin은 해당 span을 가진 가장 좌상단의 셀이다.
     """
-    try:
-        span = tbl.cell(row, col).span
-    except Exception:
-        return (row, col)
-    if span == (1, 1):
-        return (row, col)
-    # 위쪽으로 스캔
-    r = row
-    while r > 0:
-        try:
-            if tbl.cell(r - 1, col).span != span:
-                break
-            r -= 1
-        except Exception:
-            break
-    # 왼쪽으로 스캔
-    c = col
-    while c > 0:
-        try:
-            if tbl.cell(r, c - 1).span != span:
-                break
-            c -= 1
-        except Exception:
-            break
-    return (r, c)
+    # 6.8.0 grid resolution returns the actual anchor cell, including its address.
+    # Comparing spans merges neighbouring, independent equal-size merged cells incorrectly.
+    return tbl.cell(row, col).address
 
 
 def apply_edits(

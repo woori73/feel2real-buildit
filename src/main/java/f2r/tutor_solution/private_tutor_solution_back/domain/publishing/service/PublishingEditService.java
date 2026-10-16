@@ -62,6 +62,9 @@ public class PublishingEditService {
     PublishingJob job = jobService.requireOwned(principal, jobId);
     requireReady(job);
 
+    if (commands != null && commands.stream().filter(c -> "document.replaceText".equals(c.id())).count() > 1) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "텍스트 수정은 한 번에 한 구간씩 승인하세요.");
+    }
     Long snapshotId = createSnapshot(job, label != null ? label : "편집 전");
     if (commands == null || commands.isEmpty()) {
       log.info("빈 명령: 스냅샷만 생성 jobId={}, snapshotId={}", jobId, snapshotId);
@@ -72,17 +75,30 @@ public class PublishingEditService {
 
     Path workDir = Path.of(job.getWorkDir());
 
-    int i = 0;
-    for (PublishingCommand cmd : commands) {
-      i++;
-      try {
-        // 한 명령이 선택 등 여러 단계로 풀릴 수 있다 — 한 script로 실행해 선택 상태를 잇는다
-        cliExecutor.executeOnDocument(expand(cmd, job, workDir), workDir);
-      } catch (ResponseStatusException e) {
-        throw new ResponseStatusException(e.getStatusCode(),
-            "명령 " + i + "/" + commands.size() + " 실패 (" + cmd.id() + "): "
-                + e.getReason(), e);
+    if (commands.stream().anyMatch(c -> "edit.undo".equals(c.id()))) {
+      if (commands.size() != 1) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "실행 취소는 단독으로 요청하세요.");
       }
+      // CLI 프로세스의 undo stack은 파일에 저장되지 않는다. 이전 파일 스냅샷으로 복원한다.
+      var previous = versionRepository.findByJobIdOrderByIdDesc(jobId).stream()
+          .filter(v -> !v.getId().equals(snapshotId)).findFirst()
+          .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "복원할 이전 버전이 없습니다."));
+      try {
+        Path source = Path.of(previous.getDesigncraftFile()).toAbsolutePath().normalize();
+        if (!source.startsWith(workDir.toAbsolutePath().normalize())) {
+          throw new ResponseStatusException(HttpStatus.FORBIDDEN, "작업 외부 버전은 복원할 수 없습니다.");
+        }
+        Files.copy(source, Path.of(job.getDesigncraftFile()), StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException e) {
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "실행 취소 실패", e);
+      }
+    } else {
+      List<PublishingCommand> batch = new ArrayList<>();
+      for (PublishingCommand cmd : commands) {
+        batch.addAll(expand(cmd, job, workDir));
+      }
+      // 선택 상태 유지 + 중간 실패 시 정본 변경 없음 (CLI script --save 후 원자 교체).
+      cliExecutor.executeOnDocument(batch, workDir);
     }
     log.info("명령 실행 완료: jobId={}, {}건, snapshotId={}", jobId, commands.size(), snapshotId);
     return snapshotId;
@@ -95,6 +111,33 @@ public class PublishingEditService {
   public Long executeCommands(AuthenticatedPrincipal principal, Long jobId,
       List<PublishingCommand> commands) {
     return executeCommands(principal, jobId, commands, null);
+  }
+
+  /** 계획 생성에만 사용하는 제한된 읽기 전용 문서 맥락. */
+  public String documentContext(PublishingJob job) {
+    requireReady(job);
+    Path workDir = Path.of(job.getWorkDir());
+    var doc = cliExecutor.inspect(Path.of(job.getDesigncraftFile()), workDir);
+    var context = objectMapper.createObjectNode();
+    context.put("pageCount", doc.path("pageCount").asInt());
+    context.set("paragraphStyles", doc.path("paragraphStyles"));
+    var stories = context.putArray("stories");
+    int budget = 12000;
+    for (var story : doc.path("stories")) {
+      if (budget <= 0) break;
+      long id = story.path("id").asLong();
+      try {
+        var result = cliExecutor.execute(new PublishingCommand("story.get", Map.of("story", id)), workDir);
+        String text = objectMapper.readTree(result.output()).path("text").asText();
+        String excerpt = text.substring(0, Math.min(text.length(), budget));
+        stories.addObject().put("story", id).put("text", excerpt)
+            .put("truncated", excerpt.length() != text.length());
+        budget -= excerpt.length();
+      } catch (IOException e) {
+        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "문서 맥락 조회 실패", e);
+      }
+    }
+    return context.toString();
   }
 
   /** 원고 반입 결과. */
@@ -220,7 +263,7 @@ public class PublishingEditService {
       String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
       Path snapshotsDir = Path.of(job.getWorkDir(), "snapshots");
       Files.createDirectories(snapshotsDir);
-      Path dest = snapshotsDir.resolve("snapshot-" + timestamp + ".designcraft");
+      Path dest = Files.createTempFile(snapshotsDir, "snapshot-" + timestamp + "-", ".designcraft");
       Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
       PublishingVersion version = new PublishingVersion(
           job.getId(), dest.toString(), label);
@@ -245,7 +288,7 @@ public class PublishingEditService {
 
   /** style.paragraph.create 파라미터 정규화. */
   private PublishingCommand normalizeCommand(PublishingCommand cmd) {
-    if ("style.paragraph.create".equals(cmd.id())) {
+    if ("style.paragraph.create".equals(cmd.id()) || "style.paragraph.edit".equals(cmd.id())) {
       Map<String, Object> normalized = normalizer.normalizeParagraph(cmd.params());
       return new PublishingCommand(cmd.id(), normalized);
     }
@@ -263,6 +306,27 @@ public class PublishingEditService {
   List<PublishingCommand> expand(PublishingCommand cmd, PublishingJob job, Path workDir) {
     PublishingCommand normalized = normalizeCommand(cmd);
     Map<String, Object> params = normalized.params() == null ? Map.of() : normalized.params();
+    if ("document.replaceText".equals(normalized.id())) {
+      long story = ((Number) params.get("story")).longValue();
+      String before = (String) params.get("before");
+      String after = (String) params.get("after");
+      try {
+        String text = objectMapper.readTree(cliExecutor.execute(
+            new PublishingCommand("story.get", Map.of("story", story)), workDir).output())
+            .path("text").asText();
+        int start = text.indexOf(before);
+        if (start < 0 || text.indexOf(before, start + 1) >= 0) {
+          throw new ResponseStatusException(HttpStatus.CONFLICT,
+              "수정할 원문이 변경됐거나 중복됩니다. 문단 전체를 지정해 다시 요청하세요.");
+        }
+        int offset = text.substring(0, start).getBytes(StandardCharsets.UTF_8).length;
+        return List.of(new PublishingCommand("story.replaceRange", Map.of(
+            "story", story, "start", offset,
+            "end", offset + before.getBytes(StandardCharsets.UTF_8).length, "text", after)));
+      } catch (IOException e) {
+        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "수정할 원문 조회 실패", e);
+      }
+    }
     boolean styleApply = "style.paragraph.apply".equals(normalized.id())
         || "style.character.apply".equals(normalized.id());
     if (!styleApply || !params.containsKey("page")) {

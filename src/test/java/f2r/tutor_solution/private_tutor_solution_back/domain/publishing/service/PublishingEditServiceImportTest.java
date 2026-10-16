@@ -130,4 +130,57 @@ class PublishingEditServiceImportTest {
     assertThatThrownBy(() -> service.expand(cmd, job, dir))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("텍스트 프레임이 없습니다");
   }
+
+  @Test
+  void replaceText_usesUtf8ByteRange_andRejectsAmbiguousOrStaleText() throws Exception {
+    // given
+    when(cli.execute(any(), any())).thenReturn(new DesignCraftCliExecutor.CliResult(0,
+        "{\"text\":\"한글 앞문장. 바꿀 문장.\"}"));
+    var cmd = new PublishingCommand("document.replaceText", Map.of("story", 20, "before", "바꿀 문장.", "after", "수정한 문장."));
+    // when
+    var result = service.expand(cmd, job, dir).get(0);
+    // then: Korean characters count as three UTF-8 bytes
+    assertThat(result.id()).isEqualTo("story.replaceRange");
+    assertThat(result.params()).containsEntry("start", "한글 앞문장. ".getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+    when(cli.execute(any(), any())).thenReturn(new DesignCraftCliExecutor.CliResult(0,
+        "{\"text\":\"바꿀 문장. 바꿀 문장.\"}"));
+    assertThatThrownBy(() -> service.expand(cmd, job, dir)).isInstanceOf(ResponseStatusException.class);
+  }
+
+  @Test
+  void snapshots_createdWithinSameSecond_haveDifferentFiles() throws Exception {
+    // given / when
+    service.createSnapshot(job, "first");
+    service.createSnapshot(job, "second");
+    // then
+    try (var files = Files.list(dir.resolve("snapshots"))) {
+      assertThat(files.count()).isEqualTo(2);
+    }
+  }
+
+  @Test
+  void approvedCommands_areSubmittedAsOneAtomicScript() {
+    // given
+    var commands = List.of(new PublishingCommand("layout.parents.new", Map.of("name", "마스터")),
+        new PublishingCommand("toc.generate", Map.of("title", "목차")));
+    // when
+    service.executeCommands(principal, 1L, commands);
+    // then
+    verify(cli).executeOnDocument(commands, dir);
+  }
+
+  @Test
+  void undo_usesPreviousSnapshotInsteadOfEmptyProcessUndoStack() throws Exception {
+    // given
+    Path previous = dir.resolve("previous.designcraft");
+    Files.writeString(previous, "PREVIOUS");
+    PublishingVersion version = new PublishingVersion(1L, previous.toString(), "편집 전");
+    ReflectionTestUtils.setField(version, "id", 7L);
+    when(versions.findByJobIdOrderByIdDesc(1L)).thenReturn(List.of(version));
+    // when
+    service.executeCommands(principal, 1L, List.of(new PublishingCommand("edit.undo", Map.of())));
+    // then
+    assertThat(Files.readString(dir.resolve("job.designcraft"))).isEqualTo("PREVIOUS");
+    verify(cli, never()).executeOnDocument(anyList(), any());
+  }
 }

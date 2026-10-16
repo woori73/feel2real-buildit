@@ -89,21 +89,21 @@ OUTPUT=$(java -cp "$JAR_PATH" org.verapdf.apps.GreenfieldCliWrapper \
 
 # 결과 파싱
 # veraPDF 출력에 "isCompliant=\"true\"" 또는 "compliant=\"1\"" 포함 시 PASS
-if echo "$OUTPUT" | grep -qi 'isCompliant="true"'; then
+if grep -qi 'isCompliant="true"' <<< "$OUTPUT"; then
     echo "[PASS] $PDF_PATH"
     echo "  - veraPDF flavour $FLAVOUR: PASS (compliant)"
     echo "  - 근거: veraPDF XML 리포트 isCompliant=\"true\""
     exit 0
-elif echo "$OUTPUT" | grep -qi 'isCompliant="false"'; then
+elif grep -qi 'isCompliant="false"' <<< "$OUTPUT"; then
     echo "[FAIL] $PDF_PATH"
     echo "  - veraPDF flavour $FLAVOUR: FAIL (non-compliant)"
     echo "  - 근거: veraPDF XML 리포트 isCompliant=\"false\""
     # 실패 상세 (처음 10줄)
-    echo "$OUTPUT" | grep -i -A2 "rule\|error" | head -20
+    grep -i -A2 "rule\|error" <<< "$OUTPUT" | sed -n '1,20p'
     exit 1
 else
     echo "[FAIL] $PDF_PATH"
     echo "  - ERROR: veraPDF 실행 실패 또는 결과 파싱 불가"
-    echo "$OUTPUT" | head -20
+    sed -n '1,20p' <<< "$OUTPUT"
     exit 1
 fi

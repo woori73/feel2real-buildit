@@ -75,6 +75,7 @@ jobs:
           src/test/js/easy_tutor_agent_contract.test.js
           src/test/js/testprep_gate.test.js
           src/test/js/testprep_flush.test.js
+          src/test/js/designcraft_editor_ai_panel_contract.test.js
 
       - name: Build BuildIt Wiki frontend (baked into bootJar)
         # deploy-ec2.yml이 하던 wiki 빌드를 여기로 이동한다. artifact JAR에 wiki 정적
@@ -110,6 +111,10 @@ jobs:
         # 주석 처리되어 실행되지 않는다. 그룹 설명은 이 YAML 주석에만 작성할 것.
         run: >-
           ./gradlew test --no-daemon
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.DesignCraftCliExecutorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingEditServiceImportTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingAiServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.CommandAllowlistTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartSiteToolServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyEditorControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyDesignPresetTenTest"

@@ -4703,3 +4703,15 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `/api/publishing`와 `/api/publishing/**`는 CLOSED/DRAINING/FAULT에서 서비스·DB 변경 전 차단한다. 보안 filter의 401/403을 먼저 적용하며, gate 차단 중 TUTOR·ADMIN 외 로그인 사용자는 403, TUTOR·ADMIN은 503 + `Retry-After: 30`이다. OPEN의 기존 인증·소유자 정책은 유지한다. 로그인/정적 DesignCraft 페이지와 다른 서비스는 이 filter 대상이 아니다. ADMIN control은 `/api/admin/...`이므로 차단 중에도 접근 가능하다.
 - `publishing.maintenance.state-dir` 기본 `/var/lib/feel2real/designcraft-maintenance`. 지속 디스크·앱 사용자 전용 쓰기 권한을 운영 적용 전에 별도 승인으로 준비해야 한다. 매 Spring 시작은 반드시 CLOSED(저장/락 실패면 FAULT)이며 ADMIN resume 전 DesignCraft API/Worker는 열리지 않는다.
 - 이 PR은 관리 API만 제공하며 관리자 UI·무인증/local 전용 우회·AWS/DB 스위치를 추가하지 않는다. 기존 JWT/ADMIN 인증과 production Origin 정책도 그대로 적용된다.
+
+
+### DesignCraft 0.8.0 승인 편집 보완 (2026-10-16)
+
+기존 `/api/publishing/ai/plan` → `/jobs/{jobId}/revisions` 계약 유지. 계획은 문서에서 최대 12000자 맥락을 읽기만 하고, 승인 API에서만 변경한다.
+- `document.replaceText`: `{story: number, before: string, after: string}`. before는 현재 스토리에서 정확히 한 번 일치해야 한다. 서버가 UTF-8 byte range로 변환해 `story.replaceRange`를 실행한다. 미일치·중복은 409. 삭제는 빈 after, 추가는 원문을 포함한 after. 한 계획당 텍스트 수정 한 구간.
+- `style.paragraph.apply`: 적용할 `page`(1-based) 필수. 페이지 프레임을 선택한 뒤 스타일 적용.
+- 승인된 명령은 한 CLI script로 실행하고 모두 성공할 때만 정본 교체.
+- `edit.undo`: 단독 계획만 허용하며 이전 스냅샷을 복원한다. 이전 버전이 없으면 409.
+- 표 추가·수정, DesignCraft→HWPX 변환은 이 API에서 지원하지 않는다. `/api/hwpx/jobs`는 기존 HWP/HWPX 파일 표 셀 편집 전용 별도 경로다.
+
+`style.paragraph.edit`는 기존 스타일 수정용으로 허용하며 create와 같은 한글 폰트 제한/정규화를 적용한다. create는 기존 스타일을 갱신하지 않고 새 이름을 생성하므로 기존 제목 크기 변경에 사용하지 않는다.
