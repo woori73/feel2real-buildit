@@ -28,9 +28,9 @@
 
 Gate 경쟁·예외·비동기 완료/실행 전 취소/실행 중 취소·실제 CLI 종료·파일 쓰기 실패·두 번째 인스턴스·재시작, Spring MVC/실제 service advisor/transaction commit/Worker skip/ADMIN/출처 보호 및 다른 경로 통과를 검증한다. 타 서비스 검증은 경로 경계 테스트이며 실제 장부/Builder/TESTPREP 업무 QA를 재실행한 것은 아니다.
 
-검증 완료: [isolated run 38879225982](https://github.com/woori73/feel2real-buildit/actions/runs/38879225982), tested source head `46e49f818cff06a7b18eb97bbeb1b6a6b6b58629`. Gate 단위 8건 + Spring MVC/service/transaction 통합 10건 = **18 PASS / failure 0 / error 0 / skipped 0**. 집계는 `test-results.json`, 원본 JUnit/HTML은 해당 실행 artifact에 보존한다.
+검증 완료: [isolated run 38880273850](https://github.com/woori73/feel2real-buildit/actions/runs/38880273850), tested source head `9b397aa1dc06cb973094bcbb8c56fe3afb1d1e37`. Gate 단위 8건 + Spring MVC/service/transaction 통합 10건 = **18 PASS / failure 0 / error 0 / skipped 0**. 집계는 `test-results.json`, 원본 JUnit/HTML은 해당 실행 artifact에 보존한다.
 
-로컬은 Java 네트워크/인증서 프록시 제약으로 Gradle 의존성 확보 단계에서 중단돼 테스트가 실행되지 않았다. TLS 검증을 끄지 않고 격리 GitHub runner에서 신규 범위만 검증했다. 초기 Spring 7 타입/Mock async 처리/timeout 하네스 문제는 수정 후 최종 실행에서 통과했다. PR 자동 CI가 발견한 인증 경계 2건(401/403보다 먼저 503 반환)은 admission filter를 보안 필터 뒤(order 0)로 이동해 수정했다. Boot 4 기본 보안 필터 order -100을 사용하며 이 설정을 바꾸면 순서 재검증이 필요하다. 신규 인증 경계 테스트를 추가했고 matrix URI는 보안 firewall의 400과 gate의 경로 매칭을 별도로 확인한다. 최종 문서·결과 집계 commit은 이 source head의 제품/테스트 코드를 바꾸지 않는다.
+로컬은 Java 네트워크/인증서 프록시 제약으로 Gradle 의존성 확보 단계에서 중단돼 테스트가 실행되지 않았다. TLS 검증을 끄지 않고 격리 GitHub runner에서 신규 범위만 검증했다. 초기 Spring 7 타입/Mock async 처리/timeout 하네스 문제는 수정 후 최종 실행에서 통과했다. PR 자동 CI가 발견한 인증 경계 2건(비회원 401 및 학생의 기존 소유자 격리 404까지 gate 503이 앞섬)을 수정했다. admission filter를 보안 필터 뒤(order 0)로 이동하고, gate 차단 중 TUTOR·ADMIN 외 로그인 사용자는 서비스 조회 없이 403으로 거부한다. OPEN의 기존 인증·소유자 정책에는 새 역할 제한을 추가하지 않는다. Boot 4 기본 보안 필터 order -100을 사용하며 이 설정을 바꾸면 순서 재검증이 필요하다. 신규 인증 경계 테스트를 추가했고 matrix URI는 보안 firewall의 400과 gate의 경로 매칭을 별도로 확인한다. 최종 문서·결과 집계 commit은 이 source head의 제품/테스트 코드를 바꾸지 않는다.
 
 최신 main `3cb035f947612b8752fb6335779fef39aca6dac3` 재확인(분기 이후 변경 없음). #715/#716은 변경/병합하지 않았다. #716과 이 PR은 `DesignCraftCliExecutor`의 프로세스 시작 부근에 접점이 있으므로 어느 쪽이 먼저 병합되면 후속 PR에서 실제 충돌과 process tracking 1줄 유지 여부를 다시 확인해야 한다.
 

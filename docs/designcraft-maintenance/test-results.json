@@ -1,6 +1,6 @@
 {
-  "run": 38879225982,
-  "tested_head": "46e49f818cff06a7b18eb97bbeb1b6a6b6b58629",
+  "run": 38880273850,
+  "tested_head": "9b397aa1dc06cb973094bcbb8c56fe3afb1d1e37",
   "suite": "new maintenance tests only",
   "rows": [
     {
@@ -9,7 +9,7 @@
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "4.724"
+      "time": "4.716"
     },
     {
       "name": "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceGateTest",
@@ -17,7 +17,7 @@
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "0.325"
+      "time": "0.327"
     }
   ]
 }
