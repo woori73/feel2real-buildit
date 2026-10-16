@@ -91,22 +91,16 @@ out['rollback_jar'] = {'current_jar': sh("stat -c '%s bytes mtime=%y' /home/ec2-
                        'previous_jar': sh("stat -c '%s bytes mtime=%y' /home/ec2-user/app.jar.previous 2>/dev/null || echo missing")}
 out['disk'] = {p: sh(f"df -BM --output=avail,pcent {p} | tail -1") for p in ('/', '/tmp', '/home/ec2-user', '/opt', '/var/lib')}
 
-# 1단계-1: 상태 디렉터리 생성 (부모 존재 확인, 존재 시 미변경)
+# 상태 디렉터리 점검 (읽기 전용: 생성·수정 없음)
 target = '/var/lib/feel2real/designcraft-maintenance'
-parent = os.path.dirname(target)
-res = {'parent_exists': os.path.isdir(parent), 'existed_before': os.path.lexists(target)}
-if not res['parent_exists']:
-    res['action'] = 'ABORT_parent_missing(no parent created)'
-elif res['existed_before']:
-    res['action'] = 'SKIP_already_exists(not modified)'
-    res['stat'] = sh(f"stat -c '%U:%G %a' {target}")
-else:
-    res['install_rc'] = subprocess.run(['install', '-d', '-o', 'ec2-user', '-g', 'ec2-user', '-m', '0700', target]).returncode
-    res['action'] = 'CREATED'
-    res['stat_after'] = sh(f"stat -c '%U:%G %a' {target}")
-    res['parent_stat_unchanged'] = sh(f"stat -c '%U:%G %a' {parent}")
-    res['ec2user_can_write'] = sh(f"runuser -u ec2-user -- test -w {target} && echo yes || echo no")
-    res['ec2user_can_enter'] = sh(f"runuser -u ec2-user -- test -x {target} && echo yes || echo no")
-    res['entries_count'] = len(os.listdir(target))
-out['state_dir'] = res
+out['state_dir'] = {'exists': os.path.isdir(target), 'stat': sh(f"stat -c '%U:%G %a' {target}"),
+                    'ec2user_can_write': sh(f"runuser -u ec2-user -- test -w {target} && echo yes || echo no"),
+                    'entries_count': len(os.listdir(target)) if os.path.isdir(target) else None}
+# 복구 수단 (메타데이터만)
+out['recovery'] = {'app_jar_previous': sh("stat -c '%s bytes mtime=%y' /home/ec2-user/app.jar.previous 2>/dev/null || echo missing"),
+                   'app_jar_sha': sh("sha256sum /home/ec2-user/app.jar | cut -c1-16", 90), 'previous_jar_sha': sh("sha256sum /home/ec2-user/app.jar.previous | cut -c1-16", 90),
+                   'wiki_unit_exists': os.path.exists('/etc/systemd/system/buildit-wiki.service'),
+                   'f2r_unit_exists': os.path.exists('/etc/systemd/system/f2r-app.service'),
+                   'wiki_unit_backups': sh("ls /etc/systemd/system | grep -c 'buildit-wiki.service.' || true"),
+                   'wiki_dir': sh("systemctl show buildit-wiki.service -p WorkingDirectory --value")}
 print(json.dumps(out, ensure_ascii=False, indent=1))
