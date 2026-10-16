@@ -1,0 +1,30 @@
+name: DesignCraft footer lab (runner only, CLI 0.8, no AWS)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-footer-lab.yml', 'ops/diagnostics/dc_footer_lab.sh']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: designcraft-080-glibc234-final
+          run-id: 38850191210
+          github-token: ${{ github.token }}
+          path: art
+      - name: Guard - archive hash must match the approved value
+        run: |
+          T=art/designcraft-0.8.0-al2023-x86_64.tar.gz
+          test "$(sha256sum $T | cut -d' ' -f1)" = "5d4a3e7b9a0569ed904ae41d777c1a02854e579fd8aaa2769a34a4c3228aee6d"
+          mkdir eng && tar xzf $T -C eng && find eng -name designcraft-cli -type f | head -2
+      - name: Run the footer experiments with CLI 0.8
+        run: |
+          pip install -q pymupdf >/dev/null 2>&1
+          CLI=$(find "$PWD/eng" -name designcraft-cli -type f | head -1); chmod +x "$CLI"
+          for t in ko-textbook-a4 ko-workbook-b5 ko-book-46; do echo "######## $t"; bash ops/diagnostics/dc_footer_lab.sh "$CLI" "$PWD/ops/designcraft/templates/$t" 2>&1 | grep -v Deprecat; done
