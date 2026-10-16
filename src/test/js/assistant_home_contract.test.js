@@ -52,14 +52,51 @@ test('given 공개 직후 when 읽기 then 바로가기·주소 복사·계속 �
   for (const label of ['홈페이지 바로가기', '주소 복사', '계속 수정하기']) assert.ok(JS.includes(label), label);
 });
 
-test('given 더보기 메뉴 when 읽기 then 보조 기능 5개가 메뉴 안에 있고 열고 닫는 JS가 연결돼 있다', () => {
-  // given / when / then
-  for (const id of ['ahMoreBtn', 'ahMenu', 'ahUndo', 'ahProfileBtn', 'ahVersionsBtn', 'ahDownloadBtn', 'ahClassicWork']) assert.ok(HTML.includes('id="' + id + '"'), id);
+test('given 더보기 메뉴 when 읽기 then 보조 기능 4개만 메뉴 안에 있고 열고 닫는 JS가 연결돼 있다', () => {
+  // given
   const menu = HTML.slice(HTML.indexOf('id="ahMenu"'), HTML.indexOf('</header>', HTML.indexOf('id="ahMenu"')));
-  for (const id of ['ahUndo', 'ahProfileBtn', 'ahVersionsBtn', 'ahDownloadBtn', 'ahClassicWork']) assert.ok(menu.includes('id="' + id + '"'), id + ' 는 메뉴 안에 있어야 한다');
+  // when / then
+  for (const id of ['ahMoreBtn', 'ahMenu', 'ahProfileBtn', 'ahVersionsBtn', 'ahDownloadBtn', 'ahClassicWork']) assert.ok(HTML.includes('id="' + id + '"'), id);
+  for (const id of ['ahProfileBtn', 'ahVersionsBtn', 'ahDownloadBtn', 'ahClassicWork']) assert.ok(menu.includes('id="' + id + '"'), id + ' 는 메뉴 안에 있어야 한다');
+  for (const id of ['ahUndo', 'ahRedo', 'ahReset', 'ahPreviewBtn', 'ahSave']) assert.ok(!menu.includes('id="' + id + '"'), id + ' 는 메뉴 밖으로 꺼내야 한다');
   assert.match(JS, /function setMenu\(open\)/);
   assert.match(JS, /\$\('ahMoreBtn'\)\.addEventListener\('click'/);
   assert.match(JS, /e\.key !== 'Escape'[\s\S]*ahMenu/);
+});
+
+test('given 편집 도구 모음 when 읽기 then 5개 독립 버튼이 정식 배포 등록 버튼 앞에 있고 이름·툴팁을 가진다', () => {
+  // given
+  const bar = HTML.slice(HTML.indexOf('<header class="ah-bar">'), HTML.indexOf('</header>', HTML.indexOf('<header class="ah-bar">')));
+  const tools = bar.slice(bar.indexOf('class="ah-tools"'), bar.indexOf('class="ah-bar-actions"'));
+  // when / then
+  const expected = [['ahUndo', '되돌리기'], ['ahRedo', '다시 실행'], ['ahReset', '초기화'], ['ahPreviewBtn', '미리보기'], ['ahSave', '저장']];
+  let last = -1;
+  for (const [id, label] of expected) {
+    const at = tools.indexOf('id="' + id + '"');
+    assert.ok(at > last, id + ' 순서');
+    last = at;
+    assert.ok(tools.slice(at, tools.indexOf('</button>', at)).includes(label), id + ' 라벨');
+  }
+  assert.equal((tools.match(/ title="/g) || []).length, 5, '툴팁 5개');
+  assert.ok(bar.indexOf('id="ahPublish"') > bar.indexOf('id="ahSave"'), '배포 버튼은 편집 버튼들과 떨어진 오른쪽에 있다');
+});
+
+test('given 초기화 when 읽기 then 확인 창 문구·범위 안내가 있고 서버 reset을 호출하며 공개본은 지우지 않는다고 밝힌다', () => {
+  // given / when / then
+  assert.ok(HTML.includes('현재 편집 중인 변경사항을 초기화하시겠습니까?'));
+  assert.ok(HTML.includes('공개 중인 홈페이지(운영 배포본)와 저장된 버전 기록은 삭제되지 않아요'));
+  assert.match(JS, /editAction\('\/reset'/);
+  assert.match(JS, /editAction\('\/redo'/);
+  assert.match(JS, /editAction\('\/save'/);
+  assert.match(JS, /\$\('ahReset'\)\.addEventListener\('click', openResetConfirm\)/);
+  assert.match(JS, /\$\('ahResetOk'\)\.addEventListener\('click', doReset\)/);
+});
+
+test('given 서버 응답 when syncStack 하면 then 되돌리기·다시 실행 단계와 저장점이 화면 상태에 반영된다', () => {
+  // given / when / then
+  assert.match(JS, /function syncStack\(j\)/);
+  assert.match(JS, /typeof j\.redoDepth === 'number'/);
+  assert.match(JS, /\$\('ahRedo'\)\.disabled = ctx\.busy \|\| ctx\.redoDepth < 1/);
 });
 
 test('given 미리보기 카드 when 읽기 then 카드 폭에 맞춰 PC·모바일 배치로 크게 그리고 전체 화면 버튼이 주요 버튼이다', () => {

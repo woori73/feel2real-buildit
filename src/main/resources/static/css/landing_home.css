@@ -119,3 +119,30 @@
   .bi-page .svc-tiles-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .bi-page .svc-tile { transition: none; } .bi-page .svc-tile:hover { transform: none; } }
+
+/* ---------- 최상단 브랜드 히어로: 디지털영어학원 Agent ---------- */
+.bi-page .agent-hero { background: #041619; color: #fff; padding: calc(var(--nav-h) + 20px) var(--v3-gutter) 28px; overflow: hidden; }
+.bi-page .agent-hero-inner { max-width: var(--v3-maxw); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px; }
+.bi-page .agent-hero-eyebrow { margin: 0 0 6px; font-size: 13px; font-weight: 800; letter-spacing: .18em; color: #5ff2e1; }
+.bi-page .agent-hero-title { margin: 0; font-size: clamp(28px, 4.6vw, 52px); font-weight: 800; letter-spacing: -.03em; line-height: 1.15; color: #fff; }
+.bi-page .agent-hero-motion { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 0 .42em; font-size: clamp(16px, 2.2vw, 26px); font-weight: 700; letter-spacing: -.01em; color: #cffaf4; }
+.bi-page .agent-hero-motion .ah-w { display: inline-block; opacity: 0; transform: translateY(10px); animation: ah-word .6s var(--v3-ease) forwards; animation-delay: calc(.25s + var(--i) * .09s); }
+.bi-page .agent-hero-sub { margin: 8px 0 0; font-size: clamp(13px, 1.5vw, 17px); color: #9ec9c4; opacity: 0; animation: ah-fade .8s ease forwards; animation-delay: 1.1s; }
+.bi-page .agent-hero-role { margin: 14px 0 0; max-width: 560px; font-size: 14px; line-height: 1.6; color: #b9d8d4; opacity: 0; animation: ah-fade .8s ease forwards; animation-delay: 1.3s; }
+.bi-page .agent-hero-art .chick-hero { width: 128px; height: 133px; }
+@keyframes ah-word { to { opacity: 1; transform: none; } }
+@keyframes ah-fade { to { opacity: 1; } }
+/* 동작 줄이기: 문구를 즉시 보여 주고 캐릭터 움직임도 멈춘다. */
+@media (prefers-reduced-motion: reduce) {
+  .bi-page .agent-hero-motion .ah-w, .bi-page .agent-hero-sub, .bi-page .agent-hero-role { opacity: 1; transform: none; animation: none; }
+}
+@media (max-width: 860px) {
+  .bi-page .agent-hero { padding-bottom: 20px; }
+  .bi-page .agent-hero-inner { grid-template-columns: minmax(0, 1fr) 84px; gap: 12px; }
+  .bi-page .agent-hero-art .chick-hero { width: 84px; height: 87px; }
+  .bi-page .agent-hero-role { display: none; }
+}
+@media (min-width: 900px) { .bi-page .agent-hero { padding-bottom: 36px; } .bi-page .agent-hero-art .chick-hero { width: 160px; height: 166px; } }
+/* 히어로가 먼저 오므로 첫 화면 래퍼의 위쪽 여백(고정 헤더 높이)은 줄인다. */
+.bi-page .agent-hero + .home-first { padding-top: 24px; }
+@media (max-width: 520px) { .bi-page .agent-hero + .home-first { padding-top: 14px; } }

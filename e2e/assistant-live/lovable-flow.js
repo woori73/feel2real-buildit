@@ -82,9 +82,9 @@ const FOLLOWUP = process.env.E2E_FOLLOWUP || '첫 화면을 밝은 색상으로 
   const cardBox = await page.evaluate(() => { const t = document.getElementById('ahThumb').getBoundingClientRect(); return { w: t.width, h: t.height }; });
   ok('미리보기 카드가 크다(폭 600px 이상, 높이 380px 이상)', cardBox.w >= 600 && cardBox.h >= 380, cardBox);
   ok('전체 화면으로 보기가 강조된 주요 버튼(검정)이다', await page.evaluate(() => getComputedStyle(document.getElementById('ahCardFull')).backgroundColor === 'rgb(10, 10, 10)'));
-  ok('상단: 이름·정식 배포 등록·더보기만(보조 버튼은 메뉴 안)', await page.evaluate(() => { const v = (id) => document.getElementById(id).offsetParent !== null; return v('ahPublish') && v('ahMoreBtn') && !v('ahProfileBtn') && !v('ahVersionsBtn') && !v('ahDownloadBtn'); }));
+  ok('상단: 편집 도구 5개·정식 배포 등록·더보기가 보이고 학원 정보·버전·내려받기는 메뉴 안', await page.evaluate(() => { const v = (id) => document.getElementById(id).offsetParent !== null; return ['ahUndo','ahRedo','ahReset','ahPreviewBtn','ahSave','ahPublish','ahMoreBtn'].every(v) && !v('ahProfileBtn') && !v('ahVersionsBtn') && !v('ahDownloadBtn'); }));
   await page.click('#ahMoreBtn');
-  ok('더보기를 누르면 메뉴가 열리고 5개 항목이 보인다', (await page.isVisible('#ahMenu')) && (await page.$$eval('#ahMenu [role=menuitem]', (l) => l.filter((e) => e.offsetParent !== null).length)) === 5);
+  ok('더보기를 누르면 메뉴가 열리고 4개 항목이 보인다', (await page.isVisible('#ahMenu')) && (await page.$$eval('#ahMenu [role=menuitem]', (l) => l.filter((e) => e.offsetParent !== null).length)) === 4);
   await shot(page, '02b-more-menu');
   await page.keyboard.press('Escape');
   ok('Esc로 메뉴가 닫힌다', await page.isHidden('#ahMenu'));
