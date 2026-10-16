@@ -66,7 +66,10 @@ class PublishingMaintenanceIntegrationTest {
   }
   @Test void closedAdmissionStopsServiceBeforeSideEffectsAndOtherRoutesStayOpen() throws Exception {
     mvc.perform(post("/api/publishing/jobs")).andExpect(status().isServiceUnavailable()).andExpect(header().string("Retry-After","30"));
-    mvc.perform(post("/api/publishing;view=preview/jobs")).andExpect(status().isServiceUnavailable());
+    // Security firewall rejects matrix parameters first; if allowed upstream the gate still matches.
+    mvc.perform(post("/api/publishing;view=preview/jobs")).andExpect(status().isBadRequest());
+    assertFalse(context.getBean(PublishingAdmissionFilter.class).shouldNotFilter(
+        new org.springframework.mock.web.MockHttpServletRequest("POST","/api/publishing;view=preview/jobs")));
     assertEquals(0,context.getBean(ProbeController.class).writes);
     for(String path:List.of("/ledger","/builder","/testprep","/photocraft","/login","/api/auth/me","/actuator/health"))
       mvc.perform(get(path)).andExpect(status().isOk());
