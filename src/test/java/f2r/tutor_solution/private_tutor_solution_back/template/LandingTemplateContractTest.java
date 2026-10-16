@@ -124,8 +124,8 @@ class LandingTemplateContractTest {
 
     // then
     assertThat(card).contains("href=\"/testprep\"", "서비스 입장하기", "이용 가능");
-    assertThat(soonSection).doesNotContain("iBT TestPrep").contains("DesignCraft", "입시상담 AI", "Easy 장부", "AcademyCraft", "StudyCraft");
-    assertThat(html.substring(faq)).contains("DesignCraft, 입시상담 AI, Easy 장부, AcademyCraft, StudyCraft는 곧 준비중");
+    assertThat(soonSection).doesNotContain("iBT TestPrep").contains("DesignCraft", "입시상담 AI", "AcademyCraft", "StudyCraft").doesNotContain("Easy 장부");
+    assertThat(html.substring(faq)).contains("DesignCraft, 입시상담 AI, AcademyCraft, StudyCraft는 곧 준비중");
   }
 
   @Test
