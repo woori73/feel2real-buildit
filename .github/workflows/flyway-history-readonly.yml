@@ -1,8 +1,8 @@
 name: Post-deploy read-only verification (approved, temporary)
 
-# 소유자 승인(2026-10-16, DesignCraft 조판 엔진 읽기 전용 조사). 병합하지 않는 임시 브랜치용.
-# 운영 EC2에 SSM으로 접근해 designcraft-cli 존재·권한·의존성·설정값 일치 여부만 조회한다.
-# 설치·설정·파일·서비스 변경 없음. 비밀값·환경변수 전체는 출력하지 않는다(PUBLISHING_* 경로 설정만). 실패 시 우회 없이 중단.
+# 소유자 승인(2026-10-16, #717 홈페이지 개편 운영 배포 전후 비교). 병합하지 않는 임시 브랜치용.
+# (1) 공개 URL GET 상태·리다이렉트·콘텐츠 마커 (일반 방문자 요청과 동일, 쓰기 없음)
+# (2) 운영 EC2에 SSM으로 서비스 상태·JAR 백업 존재 여부만 조회. 설치·설정·파일·서비스 변경 없음, 환경변수·비밀값 출력 없음.
 on:
   push:
     branches: [ ci/flyway-history-readonly ]
@@ -12,7 +12,41 @@ permissions:
   contents: read
 
 jobs:
-  designcraft-engine-readonly:
+  public-urls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe production public URLs (read-only)
+        run: |
+          set +e
+          BASE=https://feel2real.co.kr
+          echo "PROBE_TIME_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          probe() {
+            local path="$1" code loc title size
+            code=$(curl -sS -o /tmp/body.html -D /tmp/hdr.txt -w '%{http_code}' --max-time 30 "$BASE$path" 2>/dev/null || echo CURL_FAIL)
+            loc=$(grep -i '^location:' /tmp/hdr.txt 2>/dev/null | head -1 | tr -d '\r' | sed 's/^[Ll]ocation: //' | cut -c1-140)
+            title=$(grep -o -m1 '<title>[^<]*</title>' /tmp/body.html 2>/dev/null | sed 's/<[^>]*>//g' | cut -c1-80)
+            size=$(wc -c < /tmp/body.html 2>/dev/null || echo 0)
+            echo "GET $path -> $code size=$size title=[$title] location=[$loc]"
+          }
+          for p in / /designcraft /designcraft/editor /builder /builder/entry /problem-generator /ledger /easy /testprep /testprep/guide /admissions/guide /wiki /chart /exam /home /register /actuator/health /lms/demo/manage /conversation/chat /tutor/conversation/dashboard /api/publishing/jobs /css/landing_home.css /css/landing_v3.css /wemade; do probe "$p"; done
+          echo "---- homepage markers ----"
+          curl -sS --max-time 30 "$BASE/" -o /tmp/home.html || true
+          echo "home bytes=$(wc -c < /tmp/home.html) sha256=$(sha256sum /tmp/home.html | cut -c1-16)"
+          for m in 'id="homeFirst"' 'id="svcTiles"' 'data-svc-tile=' 'class="svc-chips"' '내신위키</a>' '문제지 제작기</a>' '>F2R</a>' 'Buildit 모의고사' 'BUILD IT WIKI' 'Easy 장부' 'DesignCraft, 입시상담 AI, AcademyCraft, StudyCraft는 곧 준비중' 'form class="v3-ask"' 'data-buildit-prompt' 'id="nation"' 'id="services"' 'id="soon"' 'id="faq"' '곧 준비중'; do echo "marker [$m] count=$(grep -o -F -- "$m" /tmp/home.html | wc -l)"; done
+          echo "tile hrefs: $(grep -o 'href="[^"]*" data-svc-tile="[a-z]*"' /tmp/home.html | sed -E 's/href="([^"]*)" data-svc-tile="([a-z]*)"/\2=\1/' | tr '\n' ' ')"
+          echo "forbidden NewStart/위메이드/충기 count=$(grep -o -E 'NewStart|뉴스타트|위메이드|충기' /tmp/home.html | wc -l)"
+          echo "section ids: $(grep -o -E '<section[^>]*id="[A-Za-z-]+"' /tmp/home.html | sed -E 's/.*id="([A-Za-z-]+)"/\1/' | tr '\n' '>')"
+          echo "drawer rows: $(sed -n '/id="biMenu"/,/<\/div>/p' /tmp/home.html | grep -o 'href="[^"]*"' | tr '\n' ' ')"
+          echo "---- admissions API (no Origin / allowed Origin) ----"
+          c1=$(curl -sS -o /tmp/a1.json -w '%{http_code}' --max-time 30 -X POST -H 'Content-Type: application/json' -d '{"message":"ping","academicYear":2027}' "$BASE/api/admissions/chat" || echo CURL_FAIL)
+          echo "POST /api/admissions/chat (no Origin) -> $c1"
+          c2=$(curl -sS -o /tmp/a2.json -w '%{http_code}' --max-time 30 -X POST -H 'Origin: https://feel2real.co.kr' -H 'Content-Type: application/json' -d '{"message":"ping","academicYear":2027}' "$BASE/api/admissions/chat" || echo CURL_FAIL)
+          echo "POST /api/admissions/chat (Origin feel2real.co.kr) -> $c2 body=$(head -c 160 /tmp/a2.json)"
+          echo "---- login-gated redirects keep returnUrl ----"
+          curl -sS -o /dev/null -D - --max-time 30 "$BASE/testprep/guide" | grep -i -E '^(HTTP|location)' | tr -d '\r'
+
+  host-readonly:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -21,26 +55,20 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
-
-      - name: Read-only host inspection via SSM (stop on any failure)
+      - name: Read-only host state via SSM (stop on any failure)
         run: |
           set -uo pipefail
           INSTANCE="i-09d7cabb5a42d1135"
           SSM_BODY=$(cat <<'SSMEOF'
           set -u
-          echo "== os / glibc =="
-          grep -E '^(PRETTY_NAME|VERSION_ID)=' /etc/os-release
-          ldd --version 2>&1 | head -1
-          echo "== docker wrapper (non-secret script, 541 bytes) =="
-          cat /opt/designcraft/designcraft-cli-docker.sh 2>&1 | head -30
-          echo "== docker availability =="
-          command -v docker || echo "docker: not found"
-          systemctl is-active docker 2>&1 | head -1
-          echo "== can service user (ec2-user) read templates / execute cli? =="
-          runuser -u ec2-user -- ls /opt/designcraft/templates >/dev/null 2>&1 && echo "templates: readable by ec2-user" || echo "templates: NOT readable by ec2-user"
-          runuser -u ec2-user -- test -x /opt/designcraft/designcraft-cli && echo "cli: executable by ec2-user" || echo "cli: NOT executable by ec2-user"
-          echo "== recent app journal lines mentioning designcraft/publishing (max 8, truncated) =="
-          journalctl -u f2r-app --since "2026-10-16 02:00:00" --no-pager 2>/dev/null | grep -iE 'designcraft|publishing' | tail -8 | cut -c1-240
+          echo "TIME_UTC=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          systemctl show f2r-app -p ActiveState -p SubState -p NRestarts -p ExecMainStartTimestamp -p MainPID 2>&1 | head -6
+          echo "health: $(curl -s -m 5 http://127.0.0.1:8080/actuator/health | head -c 120)"
+          echo "== jar files =="
+          ls -l --time-style=long-iso /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1
+          echo "app.jar sha256=$(sha256sum /home/ec2-user/app.jar 2>/dev/null | cut -c1-64)"
+          echo "app.jar.previous sha256=$(sha256sum /home/ec2-user/app.jar.previous 2>/dev/null | cut -c1-64)"
+          echo "disk free (/home): $(df -h /home | tail -1 | awk '{print $4" free, "$5" used"}')"
           SSMEOF
           )
           PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": [l.lstrip() for l in sys.stdin.read().splitlines()]}))' <<< "$SSM_BODY")
