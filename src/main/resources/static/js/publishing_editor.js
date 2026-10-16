@@ -65,10 +65,13 @@
   }
 
   /* AI 패널: PC는 항상 보이는 우측 패널, 모바일은 하단 시트(body.ai-open)로 열고 닫는다. */
-  function openAi() {
+  function openPanel(name) {
     document.body.classList.add('ai-open');
     $('btn-ai-open').setAttribute('aria-expanded', 'true');
-    switchTab('ai');
+    switchTab(name);
+  }
+  function openAi() {
+    openPanel('ai');
     $('ai-input').focus();
   }
   function closeAi() {
@@ -520,7 +523,7 @@
   function runPreflight() {
     var box = $('preflight-result');
     box.innerHTML = '<p class="muted">검수 실행 중…</p>';
-    switchTab('preflight');
+    openPanel('preflight');
     api.runPreflight(S.jobId).then(function (r) {
       S.preflight = r;
       box.innerHTML = '';
@@ -596,7 +599,7 @@
       updateBar({ currentStep: 'PDF 출력 완료', progress: 100 });
       setTimeout(function () { setBar(null); }, 900);
       renderArtifacts();
-      switchTab('artifacts');
+      openPanel('artifacts');
       toast('PDF 출력 완료 — 산출물 탭에서 다운로드');
     }).catch(function (e) {
       setBar(null);
