@@ -1,0 +1,78 @@
+name: DesignCraft B test - POST verification (read-only server check + Korean rendering check on the runner)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-b-post.yml', 'ops/diagnostics/dc_b_post.py']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 900
+          retry-max-attempts: 1
+      - name: Server-side read-only check; stage the synthetic PDF/PNG in S3 (transient) if present
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          post = Path('ops/diagnostics/dc_b_post.py').read_text()
+          script = ("echo '--- watchdog journal ---'; journalctl -u dc-gate-watchdog --no-pager -o cat | tail -14\n"
+                    "echo \"watchdog unit active? $(systemctl is-active dc-gate-watchdog 2>&1)\"\n"
+                    "echo \"now UTC/KST: $(date -u +%H:%M:%S) / $(TZ=Asia/Seoul date +%H:%M:%S)\"\n"
+                    "rm -f /var/tmp/dc_b_verify_pdf_path.txt /var/tmp/dc_b_verify_png_path.txt\n"
+                    "python3 - <<'POSTEOF'\n" + post + "\nPOSTEOF\n"
+                    "if [ -s /var/tmp/dc_b_verify_pdf_path.txt ]; then aws s3 cp \"$(cat /var/tmp/dc_b_verify_pdf_path.txt)\" s3://feel2real-buildit-deploy/designcraft-b-verify/synth.pdf --sse AES256 --region ap-northeast-2 2>&1 | tail -2; else echo 'no synthetic pdf found on disk'; fi\n"
+                    "if [ -s /var/tmp/dc_b_verify_png_path.txt ]; then aws s3 cp \"$(cat /var/tmp/dc_b_verify_png_path.txt)\" s3://feel2real-buildit-deploy/designcraft-b-verify/synth.png --sse AES256 --region ap-northeast-2 2>&1 | tail -2; fi\n")
+          Path('post-params.json').write_text(json.dumps({'commands': [script]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://post-params.json --timeout-seconds 180 --query Command.CommandId --output text)
+          for i in $(seq 1 50); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 4
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query '{status:Status,out:StandardOutputContent,err:StandardErrorContent}' --output json
+      - name: Korean rendering check on the runner (poppler), then remove the transient S3 objects
+        run: |
+          mkdir -p v && cd v
+          if ! aws s3 cp s3://feel2real-buildit-deploy/designcraft-b-verify/synth.pdf synth.pdf --region ap-northeast-2 >/dev/null 2>&1; then echo "NO_PDF_IN_S3 (instance upload failed or no PDF)"; exit 0; fi
+          aws s3 cp s3://feel2real-buildit-deploy/designcraft-b-verify/synth.png synth.png --region ap-northeast-2 >/dev/null 2>&1 || true
+          sudo apt-get -qq update >/dev/null 2>&1; sudo apt-get -qq install -y poppler-utils >/dev/null 2>&1 || true
+          pip install -q pillow >/dev/null 2>&1 || true
+          echo "== pdfinfo =="; pdfinfo synth.pdf 2>&1 | head -14
+          echo "== pdffonts =="; pdffonts synth.pdf 2>&1 | head -12
+          echo "== pdftotext (first lines) =="; pdftotext -layout synth.pdf - 2>&1 | head -30
+          python3 - <<'PY'
+          import re, subprocess
+          t = subprocess.run(['pdftotext', 'synth.pdf', '-'], capture_output=True, text=True).stdout
+          print('hangul_chars_extracted =', len(re.findall('[가-힣]', t)))
+          for phrase in ('합성 테스트', '한글과', '두 번째 문단'):
+              print('phrase', repr(phrase), 'found =', phrase in t)
+          print('replacement_char_count(�) =', t.count('�'))
+          PY
+          pdftoppm -r 60 -png -f 1 -l 1 synth.pdf pg >/dev/null 2>&1
+          python3 - <<'PY'
+          import glob
+          try:
+              from PIL import Image
+          except Exception as e:
+              print('PIL unavailable', e); raise SystemExit
+          for f in sorted(glob.glob('pg*.png')) + sorted(glob.glob('synth.png')):
+              im = Image.open(f).convert('L'); w, h = im.size; px = im.getdata()
+              dark = sum(1 for p in px if p < 200)
+              print(f, (w, h), 'non-white ratio = %.4f' % (dark / (w * h)))
+          PY
+          aws s3 rm s3://feel2real-buildit-deploy/designcraft-b-verify/synth.pdf --region ap-northeast-2 >/dev/null 2>&1 || true
+          aws s3 rm s3://feel2real-buildit-deploy/designcraft-b-verify/synth.png --region ap-northeast-2 >/dev/null 2>&1 || true
+          echo "transient S3 objects removed"
