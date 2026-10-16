@@ -86,7 +86,7 @@ for mode, u, g, ty, nl, p in rows:
     elif ty == 'f' and (mode != '640' or nl != 1): exceptions.append(f'file mode/links={mode}/{nl}:{p}')
     elif ty == 'd' and mode != '750': exceptions.append(f'dir mode={mode}:{p}')
 acl = str(sh(f"getfacl -R -s -p {T} 2>/dev/null").count('# file:')) if shutil.which('getfacl') else 'n/a'
-attr = str(sum(1 for l in sh(f"lsattr -R {T} 2>/dev/null").splitlines() if l.split() and len(l.split()[0]) > 4 and 'i' in l.split()[0])) if shutil.which('lsattr') else 'n/a'
+attr = str(sum(1 for l in sh(f"lsattr -R {T} 2>/dev/null").splitlines() if l.split() and re.fullmatch(r'[-a-zA-Z]{15,}', l.split()[0]) and 'i' in l.split()[0])) if shutil.which('lsattr') else 'n/a'
 tmpl.update({'entries': len(rows), 'exceptions': exceptions[:20], 'extra_acl_entries': acl, 'immutable_flag_entries': attr,
              'mount_ro': sh(f"findmnt -n -o OPTIONS --target {T} | tr ',' '\\n' | grep -c '^ro$' || true")})
 out['stages'].append({'templates_scan': tmpl})
