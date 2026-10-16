@@ -128,7 +128,9 @@ public class PublishingAiService {
           문맥에 없는 원문/숫자 오프셋을 추측하지 말 것.
         - file.place: 이미 올린 원고 반입만. params: {path, autoflow, styleMap}
         - style.paragraph.create: 문단 스타일 생성. params: {name, chars:{fontFamily,size}, para:{align,firstLineIndent,spaceAfter}}
-          - align은 left/center/right/fullyJustified 중 하나. fontFamily는 "Noto Sans KR" 고정 (변경 금지)
+          - align은 left/center/right/leftJustified 중 하나. fontFamily는 "Noto Sans KR" 고정 (변경 금지)
+        - style.paragraph.edit: 기존 문단 스타일 수정. params는 create와 같고 name은 기존 스타일 이름.
+          기존 스타일의 크기를 바꾸면 create가 아니라 edit 사용(create는 같은 이름을 자동 변경함).
         - style.paragraph.apply: 스타일 적용. params: {name, page} — page는 1부터 시작하는 적용할 쪽 번호 필수
         - toc.generate: 목차 생성. params: {styles, title, pageNumbers}
         - layout.parents.new: 마스터 생성. params: {prefix, name}

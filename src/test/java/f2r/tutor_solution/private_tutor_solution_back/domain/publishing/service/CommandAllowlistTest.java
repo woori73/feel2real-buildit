@@ -100,4 +100,12 @@ class CommandAllowlistTest {
     assertThrows(ResponseStatusException.class,
         () -> allowlist.validateAiPlan(List.of()));
   }
+
+  @Test
+  void editExistingStyle_acceptsNotoButRejectsFontSubstitution() {
+    assertDoesNotThrow(() -> allowlist.validateAiPlan(List.of(new PublishingCommand(
+        "style.paragraph.edit", Map.of("name", "ko-heading1", "chars", Map.of("fontFamily", "Noto Sans KR", "size", 24))))));
+    assertThrows(ResponseStatusException.class, () -> allowlist.validateAiPlan(List.of(new PublishingCommand(
+        "style.paragraph.edit", Map.of("name", "ko-heading1", "chars", Map.of("fontFamily", "Arial"))))));
+  }
 }

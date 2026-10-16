@@ -4692,3 +4692,5 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 승인된 명령은 한 CLI script로 실행하고 모두 성공할 때만 정본 교체.
 - `edit.undo`: 단독 계획만 허용하며 이전 스냅샷을 복원한다. 이전 버전이 없으면 409.
 - 표 추가·수정, DesignCraft→HWPX 변환은 이 API에서 지원하지 않는다. `/api/hwpx/jobs`는 기존 HWP/HWPX 파일 표 셀 편집 전용 별도 경로다.
+
+`style.paragraph.edit`는 기존 스타일 수정용으로 허용하며 create와 같은 한글 폰트 제한/정규화를 적용한다. create는 기존 스타일을 갱신하지 않고 새 이름을 생성하므로 기존 제목 크기 변경에 사용하지 않는다.

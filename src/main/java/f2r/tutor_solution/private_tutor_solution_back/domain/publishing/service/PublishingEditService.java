@@ -120,6 +120,7 @@ public class PublishingEditService {
     var doc = cliExecutor.inspect(Path.of(job.getDesigncraftFile()), workDir);
     var context = objectMapper.createObjectNode();
     context.put("pageCount", doc.path("pageCount").asInt());
+    context.set("paragraphStyles", doc.path("paragraphStyles"));
     var stories = context.putArray("stories");
     int budget = 12000;
     for (var story : doc.path("stories")) {
@@ -287,7 +288,7 @@ public class PublishingEditService {
 
   /** style.paragraph.create 파라미터 정규화. */
   private PublishingCommand normalizeCommand(PublishingCommand cmd) {
-    if ("style.paragraph.create".equals(cmd.id())) {
+    if ("style.paragraph.create".equals(cmd.id()) || "style.paragraph.edit".equals(cmd.id())) {
       Map<String, Object> normalized = normalizer.normalizeParagraph(cmd.params());
       return new PublishingCommand(cmd.id(), normalized);
     }

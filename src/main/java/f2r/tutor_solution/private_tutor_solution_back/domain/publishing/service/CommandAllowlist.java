@@ -33,6 +33,7 @@ public class CommandAllowlist {
       "document.replaceText",
       "file.place",
       "style.paragraph.create",
+      "style.paragraph.edit",
       "style.paragraph.apply",
       "toc.generate",
       "layout.parents.new",
@@ -105,7 +106,7 @@ public class CommandAllowlist {
     if (params == null) {
       return;
     }
-    if ("style.paragraph.create".equals(id) || "style.paragraph.apply".equals(id)) {
+    if ("style.paragraph.create".equals(id) || "style.paragraph.edit".equals(id) || "style.paragraph.apply".equals(id)) {
       Object chars = params.get("chars");
       if (chars instanceof Map<?, ?> charsMap) {
         Object font = charsMap.get("fontFamily");

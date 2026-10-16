@@ -29,6 +29,7 @@ Python HWPX Worker(`python-hwpx==6.8.0`)는 별도 HwpxWorker/HwpxCliExecutor �
 |---|---|
 | 짧은 한글 문장의 과도한 자간 | 기존 ko-body의 fullyJustified가 마지막 줄까지 양끝 정렬. 기본 템플릿을 leftJustified로 수정 |
 | DOCX 표의 한글이 PDF에서 빠짐 | 셀의 Basic Paragraph에 한글 폰트가 없음. 기본 문단 스타일에 Noto Sans KR 지정 |
+| 기존 제목 크기 수정이 새 스타일 복제만 생성 | CLI create는 기존 이름에 2를 붙임. 기존 스타일용 style.paragraph.edit를 허용·정규화하고 계획에 스타일 목록/사용 구분을 제공 |
 | AI가 문서를 모르고 계획 | 제목·템플릿만 보냈음. 읽기 전용 story.get 맥락을 총 12000자로 제한해 포함 |
 | AI 명령 계획에 홈페이지 카피라이터 system prompt 사용 | 공유 transport는 유지하되 PublishingAiService에서 문서 명령 계획용 system prompt를 지정. 다른 서비스 변경 없음 |
 | 문단/문장 직접 수정 미구현 | document.replaceText를 서버에서 고유 원문 일치 검사 후 story.replaceRange UTF-8 범위로 변환. 추가/삭제 가능, 한 계획당 한 구간 |
@@ -67,7 +68,7 @@ python -m venv /ABS/qa-venv
 
 ## 6. AI·브라우저·테스트
 
-- Java 28건 PASS: 실제 shell 프로세스 실패/JSON 분리/원자 저장, 스냅샷 충돌, 승인 전 미적용, 승인 후 호출, UTF-8 원문 교체·중복 거부, 명령 batch, 이전 버전 undo 포함.
+- Java 29건 PASS: 실제 shell 프로세스 실패/JSON 분리/원자 저장, 스냅샷 충돌, 승인 전 미적용, 승인 후 호출, UTF-8 원문 교체·중복 거부, 명령 batch, 이전 버전 undo 포함.
 - JS 계약 15건 PASS: #715 패널과 실제 API 어댑터. UI DOM 수동/브라우저 결과를 대신하지 않는다.
 - Python HWPX 회귀 3건 PASS.
 - AI 테스트는 mock transport로 계획/승인 계약을 검증. 실제 Muse Spark 응답은 API 키/인증이 없어 미검증. API 키·비밀번호 수집 또는 로그인 우회 없음.
@@ -90,6 +91,10 @@ python -m venv /ABS/qa-venv
 환경변수/JAR 전환 후 Spring 재시작 필요. CLI는 요청별 프로세스이므로 별도 daemon 없음. 0.6→0.8 파일 열기는 샘플에서 성공했지만 0.8 저장본을 0.6에서 역호환한다고 보장하지 않는다. 롤백은 구 JAR·구 CLI 경로·구 템플릿·전환 전 프로젝트 파일 사본을 함께 복원하고 서비스를 재시작한다. DB/Flyway 변경 없음.
 
 디스크: 공식 아카이브 약 68.2MiB, 전체 설치본 약 144MiB. 기존 버전과 신규 버전/압축본/백업을 함께 둘 여유 필요. 한국어 글꼴은 템플릿당 약 12MiB이며 현재 구조는 작업마다 복사한다. 스냅샷/PNG/PDF 저장량은 문서 수에 비례하며 정리정책은 별도 필요. 작은 4페이지 DOCX PDF 프로세스 실측 약 0.038초/최대 RSS 44MiB이나 대문서·동시성 부하 결과는 아니다.
+
+## CI 과정에서 추가 재현한 QA 결함
+
+첫 DesignCraft QA #26에서 veraPDF 비규격 PDF 판정 후 `grep | head`의 SIGPIPE가 pipefail에 걸려 기대한 exit 1 대신 exit 2로 처리됐다. grep -q 앞 echo 파이프도 같은 조기 종료 위험이 있어 here-string으로 바꾸고, 상세 출력은 끝까지 소비하는 sed로 변경했다. 규격 기준을 낮추거나 검사 건너뛰기 없음. 큰 실패 리포트 mock으로 wrapper 종료코드 1 회귀 확인 후 실제 CI를 재확인한다.
 
 ## 8. 남은 필수 작업·승인
 
