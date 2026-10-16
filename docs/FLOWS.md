@@ -925,3 +925,13 @@ Agent/운영자 등록 → DRAFT → 운영자 FINAL 확정 → 필요 시 DRAFT
 - 이미 처리된 검토는 동일 요청임을 증명할 키가 없으므로 재승인하지 않고 `409`다.
 - 보류는 OPEN 항목을 그대로 유지하며 거래·분개를 변경하지 않는다.
 - 이 파일럿 화면은 물리 삭제를 노출하지 않는다. DB 스키마, Flyway, 기존 DELETE 정책, 신규 VOID 기능은 변경하지 않는다.
+
+## DesignCraft operation drain
+
+Spring 시작 → CLOSED → ADMIN resume → OPEN. 신규 출판 API 요청은 부작용 전 operation을 확보하고 서비스/트랜잭션/연속 CLI 호출 종료까지 유지한다. Worker도 query/claim 전에 같은 admission을 받는다.
+
+ADMIN drain과 admission은 같은 모니터에서 처리한다. drain 뒤 신규 요청은 503, Worker는 저장소 조회 없이 skip한다. 기존 lease는 DRAINING에서도 하위 CLI를 마치며 예외/취소/비동기 실제 완료와 실제 CLI 종료 후 회수된다. active/추적 CLI=0이면 CLOSED. 자동 재개하지 않는다.
+
+Servlet Callable/AsyncContext.start 및 CompletionStage 서비스 결과를 지원한다. 새 비동기 background 실행은 `PublishingMaintenanceGate.submit`으로 operation을 명시 전달해야 한다. 임의 commonPool/raw thread로 업무를 보내는 코드는 지원 범위 밖이며 도입 전 통제 확장이 필요하다. CLI stdout 수집 CompletableFuture는 업무를 시작하지 않으며 부모 CLI 실제 종료를 별도 추적한다.
+
+단일 JVM drain은 여러 Spring 인스턴스/별도 Worker/직접 OS 실행을 증명하지 않는다. 외부 실행 주체를 확인하지 못하면 운영 CLI 교체 불가다.
