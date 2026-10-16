@@ -1,0 +1,44 @@
+name: DesignCraft B test - READ-ONLY recheck (previous watchdog final state + preconditions). Does not arm, does not resume.
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-b-recheck.yml']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  recheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 900
+          retry-max-attempts: 1
+      - name: Read-only recheck
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          pre = Path('ops/diagnostics/dc_b_precheck.py').read_text()
+          script = ("echo '--- watchdog final state (journal tail) ---'; journalctl -u dc-gate-watchdog --no-pager -o cat | tail -4\n"
+                    "echo \"watchdog unit active? $(systemctl is-active dc-gate-watchdog 2>&1)\"\n"
+                    "echo \"now UTC/KST: $(date -u +%H:%M:%S) / $(TZ=Asia/Seoul date +%H:%M:%S)\"\n"
+                    "python3 - <<'PREEOF'\n" + pre + "\nPREEOF\n"
+                    "echo \"precheck exit code: $? (0 = all conditions met)\"\n"
+                    "echo \"f2r-app restarts: $(systemctl show f2r-app.service -p NRestarts --value), since: $(systemctl show f2r-app.service -p ActiveEnterTimestamp --value)\"\n")
+          Path('rc-params.json').write_text(json.dumps({'commands': [script]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://rc-params.json --timeout-seconds 120 --query Command.CommandId --output text)
+          for i in $(seq 1 40); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query '{status:Status,out:StandardOutputContent,err:StandardErrorContent}' --output json
