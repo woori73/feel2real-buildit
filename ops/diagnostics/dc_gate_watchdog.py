@@ -98,8 +98,10 @@ def observe(cfg, since_epoch):
     oom = _sh(f"journalctl -k --since '@{int(since_epoch)}' --no-pager 2>/dev/null | grep -ci 'out of memory\\|oom-kill' || true", 20)
     spring = _sh("curl -s -m 5 http://127.0.0.1:8080/actuator/health | head -c 100")
     wiki = _sh("curl -s -o /dev/null -m 5 -w '%{http_code}' http://127.0.0.1:8000/api/health")
+    cli = _sh("ps -eo args | grep -iE 'designcraft-cli|verapdf' | grep -v grep | grep -v dc_gate_watchdog | wc -l")
     return {'now': time.time(), 'state_file': state, 'mem_avail_mib': m['MemAvailable'], 'swap_used_mib': m['SwapTotal'] - m['SwapFree'],
-            'swapout_pages': _vm('pswpout'), 'oom_count': int(oom or 0), 'spring_ok': '"status":"UP"' in spring, 'wiki_ok': wiki == '200'}
+            'swapout_pages': _vm('pswpout'), 'oom_count': int(oom or 0), 'spring_ok': '"status":"UP"' in spring, 'wiki_ok': wiki == '200',
+            'cli_procs': int(cli or 0)}
 
 
 def log(event, **kw):
@@ -134,8 +136,13 @@ def main(argv=None):
     cfg = {k: getattr(a, k) for k in DEFAULTS}
     st = {'started_at': time.time()}
     log('START', cfg=cfg, dry_run=a.dry_run)
+    stats = {'min_mem_mib': 10 ** 9, 'max_swap_mib': 0, 'max_cli_procs': 0}
     while True:
         obs = observe(cfg, st['started_at'])
+        if st.get('opened_at') is not None or obs['state_file'] == 'OPEN':
+            stats['min_mem_mib'] = min(stats['min_mem_mib'], obs['mem_avail_mib'])
+            stats['max_swap_mib'] = max(stats['max_swap_mib'], obs['swap_used_mib'])
+            stats['max_cli_procs'] = max(stats['max_cli_procs'], obs.get('cli_procs', 0))
         action, why = evaluate(obs, cfg, st)
         if action == 'WAIT':
             if why == 'monitoring' and int(obs['now']) % 15 < cfg['poll_s']:
@@ -143,8 +150,9 @@ def main(argv=None):
             time.sleep(cfg['poll_s'])
             continue
         if action == 'DONE':
-            log('DONE', reason=why, state=obs['state_file'])
+            log('DONE', reason=why, state=obs['state_file'], opened_for_s=(int(obs['now'] - st['opened_at']) if st.get('opened_at') else None), **stats)
             return 0
+        log('STATS_AT_TRIGGER', **stats)
         trigger(why, cfg, a.dry_run)
         return 2
 
