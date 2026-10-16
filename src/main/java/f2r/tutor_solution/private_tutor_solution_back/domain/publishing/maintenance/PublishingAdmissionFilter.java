@@ -4,14 +4,14 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.concurrent.Callable;
-import org.springframework.core.Ordered;
+import org.springframework.boot.security.autoconfigure.SecurityProperties;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.context.request.async.*;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Before multipart/service/transaction side effects; scoped ONLY to publishing API. */
-@Order(Ordered.HIGHEST_PRECEDENCE + 20)
+/** After authentication/authorization, before multipart/service effects; publishing API only. */
+@Order(SecurityProperties.DEFAULT_FILTER_ORDER + 1)
 public class PublishingAdmissionFilter extends OncePerRequestFilter {
   private static final org.springframework.web.util.pattern.PathPattern API =
       org.springframework.web.util.pattern.PathPatternParser.defaultInstance.parse("/api/publishing/**");

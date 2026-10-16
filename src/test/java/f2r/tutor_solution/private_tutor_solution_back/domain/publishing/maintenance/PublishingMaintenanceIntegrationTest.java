@@ -42,7 +42,7 @@ class PublishingMaintenanceIntegrationTest {
     TestPropertySourceUtils.addInlinedPropertiesToEnvironment(context,
         "publishing.maintenance.state-dir="+dir.resolve("maintenance"),"probe.cli="+cli);
     context.register(Config.class);context.refresh();gate=context.getBean(PublishingMaintenanceGate.class);
-    mvc=MockMvcBuilders.webAppContextSetup(context).addFilters(context.getBean(PublishingAdmissionFilter.class)).apply(springSecurity()).build();
+    mvc=MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).addFilters(context.getBean(PublishingAdmissionFilter.class)).build();
   }
   @AfterEach void close(){context.close();}
   @Test void onlyAdminCanReadOrControlAndCrossSitePostsAreDenied() throws Exception {
@@ -53,6 +53,16 @@ class PublishingMaintenanceIntegrationTest {
     mvc.perform(post(url+"/resume").with(user("admin").roles("ADMIN")).header("X-DesignCraft-Maintenance","1").header("Origin","https://evil.example")).andExpect(status().isForbidden());
     mvc.perform(post(url+"/resume").with(user("admin").roles("ADMIN")).header("X-DesignCraft-Maintenance","1").header("Origin","http://localhost")).andExpect(status().isOk());
     mvc.perform(post(url+"/drain").with(user("tutor").roles("TUTOR")).header("X-DesignCraft-Maintenance","1")).andExpect(status().isForbidden());
+  }
+  @Test void securityRejectsUnauthorizedUsersBeforeMaintenanceResponse() throws Exception {
+    assertTrue(PublishingAdmissionFilter.class.getAnnotation(org.springframework.core.annotation.Order.class).value()
+        > org.springframework.boot.security.autoconfigure.SecurityProperties.DEFAULT_FILTER_ORDER);
+    String url="/api/publishing/protected";
+    mvc.perform(get(url)).andExpect(status().isUnauthorized());
+    mvc.perform(get(url).with(user("student").roles("STUDENT"))).andExpect(status().isForbidden());
+    mvc.perform(get(url).with(user("tutor").roles("TUTOR"))).andExpect(status().isServiceUnavailable());
+    assertEquals(0,context.getBean(ProbeController.class).writes);
+    gate.resume();mvc.perform(get(url).with(user("tutor").roles("TUTOR"))).andExpect(status().isOk());
   }
   @Test void closedAdmissionStopsServiceBeforeSideEffectsAndOtherRoutesStayOpen() throws Exception {
     mvc.perform(post("/api/publishing/jobs")).andExpect(status().isServiceUnavailable()).andExpect(header().string("Retry-After","30"));
@@ -119,7 +129,7 @@ class PublishingMaintenanceIntegrationTest {
   @Import({PublishingMaintenanceGate.class,PublishingOperationProxy.class,PublishingMaintenanceController.class})
   static class Config {
     @Bean SecurityFilterChain security(HttpSecurity http)throws Exception {
-      return http.csrf(c->c.disable()).authorizeHttpRequests(a->a.requestMatchers("/api/admin/**").hasRole("ADMIN").anyRequest().permitAll()).httpBasic(org.springframework.security.config.Customizer.withDefaults()).build();
+      return http.csrf(c->c.disable()).authorizeHttpRequests(a->a.requestMatchers("/api/admin/**").hasRole("ADMIN").requestMatchers("/api/publishing/protected").hasRole("TUTOR").anyRequest().permitAll()).httpBasic(org.springframework.security.config.Customizer.withDefaults()).build();
     }
     @Bean ProbeController probe(DesignCraftCliExecutor cli,PublishingMaintenanceGate gate){return new ProbeController(cli,gate);}
     @Bean PublishingProperties props(org.springframework.core.env.Environment env){var p=new PublishingProperties();p.setCliPath(env.getRequiredProperty("probe.cli"));return p;}
@@ -138,6 +148,7 @@ class PublishingMaintenanceIntegrationTest {
       async.start(()->{try{gate.drain();cli.inspect(Path.of("unused"),Path.of(cliWork()));}finally{async.complete();}});
     }
     @GetMapping("/api/publishing/error") String error(){throw new IllegalStateException("synthetic failure");}
+    @GetMapping("/api/publishing/protected") String authorized(){writes++;return "ok";}
     @PostMapping("/api/publishing/jobs") String create(){writes++;return "ok";}
     @GetMapping({"/ledger","/builder","/testprep","/photocraft","/login","/api/auth/me","/actuator/health"}) String other(){return "ok";}
     @GetMapping("/api/publishing/async") Callable<String> async(){return ()->{
