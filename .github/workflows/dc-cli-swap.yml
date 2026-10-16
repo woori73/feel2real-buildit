@@ -1,0 +1,77 @@
+name: DesignCraft CLI 0.8 swap (approved, one-shot)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-cli-swap.yml', 'ops/diagnostics/dc_cli_swap.py']
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  swap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: designcraft-080-glibc234-final
+          run-id: 38850191210
+          github-token: ${{ github.token }}
+          path: art
+      - name: Guard - archive hash must match the approved value
+        run: |
+          T=art/designcraft-0.8.0-al2023-x86_64.tar.gz
+          test "$(sha256sum $T | cut -d' ' -f1)" = "5d4a3e7b9a0569ed904ae41d777c1a02854e579fd8aaa2769a34a4c3228aee6d"
+          echo "archive hash OK"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 1800
+          retry-max-attempts: 1
+      - name: Stage archive in S3 (transient, new key only)
+        run: |
+          K=designcraft-cli-0.8.0-al2023-x86_64.tar.gz
+          if aws s3api head-object --bucket feel2real-buildit-deploy --key $K >/dev/null 2>&1; then echo "::error::staging key already exists; refusing to overwrite"; exit 1; fi
+          aws s3 cp --no-progress art/designcraft-0.8.0-al2023-x86_64.tar.gz s3://feel2real-buildit-deploy/$K --sse AES256 >/dev/null
+          echo staged
+      - name: Run fixed swap script on EC2 via SSM (aborts before any change on failed checks; auto-rollback after)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          script="python3 - <<'DC_SWAP_PY'\n"+Path('ops/diagnostics/dc_cli_swap.py').read_text()+"\nDC_SWAP_PY"
+          Path('swap-params.json').write_text(json.dumps({'commands':[script]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://swap-params.json --timeout-seconds 600 --query Command.CommandId --output text)
+          for i in $(seq 1 90); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --output json > invocation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          v=json.loads(Path('invocation.json').read_text());out={'ssm_status':v['Status'],'stderr_present':bool(v.get('StandardErrorContent'))}
+          try:out['result']=json.loads(v.get('StandardOutputContent',''))
+          except ValueError:out['raw_output_head']=v.get('StandardOutputContent','')[:1500]
+          if v.get('StandardErrorContent'):out['stderr_head']=v['StandardErrorContent'][:600]
+          Path('dc-cli-swap-result.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          print(json.dumps(out,ensure_ascii=False,indent=2))
+          if v['Status']!='Success':raise SystemExit(1)
+          PY
+      - name: Remove transient S3 object
+        if: always()
+        run: aws s3 rm s3://feel2real-buildit-deploy/designcraft-cli-0.8.0-al2023-x86_64.tar.gz || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dc-cli-swap-result
+          path: dc-cli-swap-result.json
+          if-no-files-found: warn
+          retention-days: 14
