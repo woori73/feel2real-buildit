@@ -1,0 +1,53 @@
+name: DesignCraft residual probe v2 (read-only: page-2 header glyph check)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-r-probe2.yml', 'ops/diagnostics/dc_r_analyze2.py']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 900
+          retry-max-attempts: 1
+      - name: Copy the two PDFs and the CLI PNG to S3 transiently (read-only on the server)
+        run: |
+          cat > r2.sh <<'SH'
+          set -e
+          B=s3://feel2real-buildit-deploy/designcraft-r-probe
+          aws s3 cp "$(ls /tmp/publishing/jobs/2/export-*.pdf | tail -1)" $B/srv.pdf --sse AES256 --region ap-northeast-2 | tail -1
+          aws s3 cp /var/tmp/dc-synth-test-20261016-154353/synthetic-x4.pdf $B/cli.pdf --sse AES256 --region ap-northeast-2 | tail -1
+          aws s3 cp /var/tmp/dc-synth-test-20261016-154353/page-001.png $B/cli0.png --sse AES256 --region ap-northeast-2 | tail -1
+          SH
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          Path('r2-params.json').write_text(json.dumps({'commands': [Path('r2.sh').read_text()]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://r2-params.json --timeout-seconds 120 --query Command.CommandId --output text)
+          for i in $(seq 1 40); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 3
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query '{status:Status,err:StandardErrorContent}' --output json
+      - name: Page-2 header glyph analysis on the runner; remove transient S3 objects
+        run: |
+          mkdir -p v && cd v
+          aws s3 cp s3://feel2real-buildit-deploy/designcraft-r-probe/ . --recursive --region ap-northeast-2 >/dev/null 2>&1 || true
+          sudo apt-get -qq update >/dev/null 2>&1; sudo apt-get -qq install -y poppler-utils tesseract-ocr tesseract-ocr-kor >/dev/null 2>&1 || true
+          pip install -q pillow >/dev/null 2>&1 || true
+          PNGS="cli0.png" python3 ../ops/diagnostics/dc_r_analyze2.py cli.pdf srv.pdf 2>&1 | grep -v Deprecat
+          aws s3 rm s3://feel2real-buildit-deploy/designcraft-r-probe/ --recursive --region ap-northeast-2 >/dev/null 2>&1 || true
+          echo "transient S3 objects removed"
