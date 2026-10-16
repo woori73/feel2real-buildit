@@ -1,0 +1,53 @@
+name: DesignCraft CLI recovery preflight (read-only)
+on:
+  push:
+    branches: ['qa/designcraft-716-final']
+    paths: ['ops/diagnostics/designcraft_preflight.py', '.github/workflows/designcraft-cli-preflight.yml']
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assume existing diagnostic role (no IAM modifications)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 900
+          retry-max-attempts: 1
+      - name: Read-only fixed probe on existing SSM target
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          script="python3 - <<'DESIGNCRAFT_PREFLIGHT_PY'\n"+Path('ops/diagnostics/designcraft_preflight.py').read_text()+"\nDESIGNCRAFT_PREFLIGHT_PY"
+          Path('preflight-params.json').write_text(json.dumps({'commands':[script]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://preflight-params.json --query Command.CommandId --output text)
+          for i in $(seq 1 30); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --output json > invocation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          v=json.loads(Path('invocation.json').read_text());out={'ssm_status':v['Status'],'stderr_present':bool(v.get('StandardErrorContent'))}
+          try:out['probe']=json.loads(v.get('StandardOutputContent',''))
+          except ValueError:out['probe_output_not_json']=True
+          Path('designcraft-cli-preflight.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          print(json.dumps(out,ensure_ascii=False,indent=2))
+          if v['Status']!='Success':raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: designcraft-cli-preflight
+          path: designcraft-cli-preflight.json
+          if-no-files-found: warn
+          retention-days: 7
