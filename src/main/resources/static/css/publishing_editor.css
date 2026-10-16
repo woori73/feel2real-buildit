@@ -402,3 +402,7 @@ body.has-jobbar .editor-grid { height: calc(100vh - 100px); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+.plan-before, .plan-after { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+.plan-before { color: #8f3945; }
+.plan-after { color: #266b45; }

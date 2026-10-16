@@ -24,7 +24,7 @@ class CommandAllowlistTest {
   @DisplayName("AI 허용 명령은 통과한다")
   void aiAllowedCommandsPass() {
     List<PublishingCommand> commands = List.of(
-        new PublishingCommand("style.paragraph.apply", Map.of("name", "ko-heading1")),
+        new PublishingCommand("style.paragraph.apply", Map.of("name", "ko-heading1", "page", 1)),
         new PublishingCommand("toc.generate", Map.of("title", "목차")),
         new PublishingCommand("edit.undo", Map.of())
     );

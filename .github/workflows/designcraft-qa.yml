@@ -73,6 +73,11 @@ jobs:
           chmod +x ops/designcraft/qa/install_verapdf.sh
           echo "[PASS] QA 도구 설치 완료"
 
+      - name: HWPX Worker regression tests
+        run: |
+          pip install -r ops/designcraft/hwpx-worker/requirements.txt
+          python -m unittest discover -s ops/designcraft/hwpx-worker -p 'test_*.py' -v
+
       - name: Check test font exists (FAIL if missing)
         run: |
           set -euo pipefail

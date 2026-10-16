@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * designcraft-cli 0.6.0 실행 래퍼.
+ * designcraft-cli 0.8.0 실행 래퍼.
  *
  * <p>실측 검증된 호출 패턴만 사용한다 ({@code backend-verification.md}):
  * <ul>
@@ -169,7 +169,7 @@ public class DesignCraftCliExecutor {
   /**
    * 페이지를 PNG로 렌더링한다.
    *
-   * <p>{@code render_page}가 0.6.0에 없으므로
+   * <p>{@code render_page}가 0.8.0에 없으므로
    * {@code run --in FILE --page N --scale S --export OUT.png}를 사용한다 (실측 성공).
    *
    * @param designcraftFile 정본 파일
@@ -216,7 +216,7 @@ public class DesignCraftCliExecutor {
     if (!Files.isExecutable(cli)) {
       throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
           "DesignCraft CLI를 찾을 수 없습니다: " + props.getCliPath()
-              + " — 관리자가 designcraft-cli 0.6.0 바이너리를 배치해야 합니다.");
+              + " — 관리자가 designcraft-cli 0.8.0 바이너리를 배치해야 합니다.");
     }
     return cli;
   }
@@ -226,32 +226,48 @@ public class DesignCraftCliExecutor {
       Files.createDirectories(workDir);
       ProcessBuilder pb = new ProcessBuilder(cmd);
       pb.directory(workDir.toFile());
-      pb.redirectErrorStream(true);
-      log.info("DesignCraft CLI 실행: {}", String.join(" ", cmd));
+      pb.redirectErrorStream(false);
+      log.debug("DesignCraft CLI 실행: mode={}", cmd.get(1));
 
       Process process = pb.start();
-      try (var out = process.getOutputStream()) {
-        if (stdin != null) {
-          out.write(stdin.getBytes(StandardCharsets.UTF_8));
-        }
-      }
+      // Drain both streams before writing stdin: large scripts cannot deadlock on pipe buffers.
       CompletableFuture<String> outputFuture =
           CompletableFuture.supplyAsync(() -> readAll(process.getInputStream()));
-      boolean finished = process.waitFor(props.getCliTimeoutSeconds(), TimeUnit.SECONDS);
+      CompletableFuture<String> errorFuture =
+          CompletableFuture.supplyAsync(() -> readAll(process.getErrorStream()));
+      CompletableFuture<Void> inputFuture = CompletableFuture.runAsync(() -> {
+        try (var out = process.getOutputStream()) {
+          if (stdin != null) out.write(stdin.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+          throw new java.io.UncheckedIOException(e);
+        }
+      });
+      boolean finished;
+      try {
+        finished = process.waitFor(props.getCliTimeoutSeconds(), TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        process.destroyForcibly();
+        Thread.currentThread().interrupt();
+        throw e;
+      }
       if (!finished) {
+        process.descendants().forEach(ProcessHandle::destroyForcibly);
         process.destroyForcibly();
         throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT,
             "DesignCraft CLI 실행 시간 초과 (" + props.getCliTimeoutSeconds() + "초)");
       }
-      String output = truncate(outputFuture.get(5, TimeUnit.SECONDS));
+      String output = outputFuture.get(5, TimeUnit.SECONDS);
+      String diagnostic = errorFuture.get(5, TimeUnit.SECONDS);
       int exitCode = process.exitValue();
       if (exitCode != 0) {
-        log.warn("DesignCraft CLI 비정상 종료: exit={}, output={}", exitCode, output);
+        log.warn("DesignCraft CLI 비정상 종료: exit={}", exitCode);
         throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-            "DesignCraft CLI 실행 실패 (exit=" + exitCode + "): " + output);
+            "DesignCraft CLI 실행 실패 (exit=" + exitCode + "): " + truncate(diagnostic.isBlank() ? output : diagnostic));
       }
-      if (output.contains(CLI_ERROR_PREFIX)) {
-        log.warn("DesignCraft CLI 에러 prefix 감지: {}", output);
+      inputFuture.get(5, TimeUnit.SECONDS);
+      if (diagnostic.contains(CLI_ERROR_PREFIX)) {
+        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+            "DesignCraft CLI 오류: " + truncate(diagnostic));
       }
       return new CliResult(exitCode, output);
     } catch (ResponseStatusException e) {
@@ -264,7 +280,15 @@ public class DesignCraftCliExecutor {
 
   private static String readAll(InputStream in) {
     try {
-      return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+      // Retain a bounded result but always drain the stream so the child cannot block.
+      var buffer = new java.io.ByteArrayOutputStream();
+      byte[] chunk = new byte[8192];
+      int count;
+      while ((count = in.read(chunk)) != -1) {
+        int remaining = 2 * 1024 * 1024 - buffer.size();
+        if (remaining > 0) buffer.write(chunk, 0, Math.min(count, remaining));
+      }
+      return buffer.toString(StandardCharsets.UTF_8);
     } catch (IOException e) {
       return "";
     }

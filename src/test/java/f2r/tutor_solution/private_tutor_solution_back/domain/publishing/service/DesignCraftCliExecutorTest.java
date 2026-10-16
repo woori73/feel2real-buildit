@@ -143,4 +143,23 @@ class DesignCraftCliExecutorTest {
     assertThat(lines.get(1)).startsWith("edit.selectAll");
     assertThat(lines.get(2)).startsWith("style.paragraph.apply=");
   }
+
+  @Test
+  void inspect_keepsStderrWarningsOutOfJson() throws Exception {
+    // given
+    var executor = executorWith("echo 'font warning' >&2\necho '{\"pageCount\":2}'\n");
+    // when / then
+    assertThat(executor.pageCount(work.resolve("job.designcraft"), work)).isEqualTo(2);
+  }
+
+  @Test
+  void script_failureAfterWritingStagedFile_neverChangesOriginal() throws Exception {
+    // given
+    var executor = executorWith("cat >/dev/null\nwhile [ $# -gt 0 ]; do [ \"$1\" = \"--save\" ] && OUT=\"$2\"; shift; done\necho BROKEN > \"$OUT\"\nexit 7\n");
+    // when / then
+    assertThatThrownBy(() -> executor.executeOnDocument(new PublishingCommand("toc.generate", Map.of()), work))
+        .isInstanceOf(ResponseStatusException.class);
+    assertThat(Files.readString(work.resolve("job.designcraft"))).isEqualTo("ORIGINAL");
+    assertThat(work.resolve("job.designcraft.saving")).doesNotExist();
+  }
 }

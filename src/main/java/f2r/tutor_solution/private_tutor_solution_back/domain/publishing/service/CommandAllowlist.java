@@ -18,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
  *       AI plan에 포함되면 거부한다
  * </ul>
  *
- * <p>실측 검증된 CLI 0.6.0 명령 id만 사용한다 ({@code backend-verification.md}).
+ * <p>실측 검증된 CLI 0.8.0 명령 id만 사용한다 ({@code backend-verification.md}).
  */
 @Component
 public class CommandAllowlist {
@@ -30,6 +30,7 @@ public class CommandAllowlist {
    * 시스템 전용이므로 AI가 요청해도 거부된다.
    */
   private static final Set<String> AI_ALLOWED = Set.of(
+      "document.replaceText",
       "file.place",
       "style.paragraph.create",
       "style.paragraph.apply",
@@ -88,6 +89,19 @@ public class CommandAllowlist {
    * (한글 폰트는 Noto Sans KR 고정 정책).
    */
   private void validateAiParams(String id, Map<String, Object> params) {
+    if ("style.paragraph.apply".equals(id)
+        && (params == null || !(params.get("page") instanceof Number page) || page.intValue() < 1)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "스타일을 적용할 쪽 번호(page)가 필요합니다.");
+    }
+    if ("document.replaceText".equals(id)) {
+      if (params == null || !(params.get("story") instanceof Number)
+          || !(params.get("before") instanceof String before) || before.isEmpty()
+          || before.length() > 12000 || !(params.get("after") instanceof String after)
+          || after.length() > 12000) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            "텍스트 수정에는 story, 비어 있지 않은 before, after가 필요합니다 (각 12000자 이하).");
+      }
+    }
     if (params == null) {
       return;
     }

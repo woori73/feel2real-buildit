@@ -4682,3 +4682,13 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 클라이언트 IP: `app.admissions.rate-limit.trusted-proxies`(CSV, IP/CIDR)에 있는 프록시가 보낸 요청만 `X-Forwarded-For`를 보며, 오른쪽부터 신뢰 프록시를 건너뛴 첫 비신뢰 IP를 쓴다. 형식 오류·과도하게 넓은 대역(IPv4 /8 미만, IPv6 /16 미만)은 무시된다.
 - 설계(미구현): LLM 호출 상한·영속 카운터·상담 이력 90일 보존/삭제 → [design/admissions-public-api-controls.md](design/admissions-public-api-controls.md).
 
+
+
+### DesignCraft 0.8.0 승인 편집 보완 (2026-10-16)
+
+기존 `/api/publishing/ai/plan` → `/jobs/{jobId}/revisions` 계약 유지. 계획은 문서에서 최대 12000자 맥락을 읽기만 하고, 승인 API에서만 변경한다.
+- `document.replaceText`: `{story: number, before: string, after: string}`. before는 현재 스토리에서 정확히 한 번 일치해야 한다. 서버가 UTF-8 byte range로 변환해 `story.replaceRange`를 실행한다. 미일치·중복은 409. 삭제는 빈 after, 추가는 원문을 포함한 after. 한 계획당 텍스트 수정 한 구간.
+- `style.paragraph.apply`: 적용할 `page`(1-based) 필수. 페이지 프레임을 선택한 뒤 스타일 적용.
+- 승인된 명령은 한 CLI script로 실행하고 모두 성공할 때만 정본 교체.
+- `edit.undo`: 단독 계획만 허용하며 이전 스냅샷을 복원한다. 이전 버전이 없으면 409.
+- 표 추가·수정, DesignCraft→HWPX 변환은 이 API에서 지원하지 않는다. `/api/hwpx/jobs`는 기존 HWP/HWPX 파일 표 셀 편집 전용 별도 경로다.

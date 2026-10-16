@@ -1,0 +1,66 @@
+[
+  {
+    "version": "0.6.0",
+    "format": "txt",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": false,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.6.0-txt/result.pdf"
+  },
+  {
+    "version": "0.6.0",
+    "format": "md",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": false,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.6.0-md/result.pdf"
+  },
+  {
+    "version": "0.6.0",
+    "format": "rtf",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": false,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.6.0-rtf/result.pdf"
+  },
+  {
+    "version": "0.6.0",
+    "format": "docx",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": true,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.6.0-docx/result.pdf"
+  },
+  {
+    "version": "0.8.0",
+    "format": "txt",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": false,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.8.0-txt/result.pdf"
+  },
+  {
+    "version": "0.8.0",
+    "format": "md",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": false,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.8.0-md/result.pdf"
+  },
+  {
+    "version": "0.8.0",
+    "format": "rtf",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": false,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.8.0-rtf/result.pdf"
+  },
+  {
+    "version": "0.8.0",
+    "format": "docx",
+    "result": "PASS",
+    "pages": 4,
+    "tableTextPreserved": true,
+    "pdf": "/workspace/scratch/fc903b20d259/native-results/0.8.0-docx/result.pdf"
+  }
+]

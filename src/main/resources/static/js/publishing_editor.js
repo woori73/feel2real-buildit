@@ -476,7 +476,12 @@
     plan.forEach(function (p) {
       var li = el('li');
       li.appendChild(document.createTextNode(p.description + ' — '));
-      li.appendChild(el('code', null, p.command + ' ' + JSON.stringify(p.params)));
+      if (p.command === 'document.replaceText' && p.params) {
+        li.appendChild(el('p', 'plan-before', '변경 전: ' + p.params.before));
+        li.appendChild(el('p', 'plan-after', '변경 후: ' + (p.params.after || '(삭제)')));
+      } else {
+        li.appendChild(el('code', null, p.command + ' ' + JSON.stringify(p.params)));
+      }
       ol.appendChild(li);
     });
     card.appendChild(ol);
@@ -714,6 +719,7 @@
 
   /* 서버에 원고를 올려 문서에 반입하고(스냅샷 포함) 쪽수·미리보기를 새로 읽는다. */
   function runImport(file) {
+    hideEditorError();
     toast('원고 반입 중…');
     api.importManuscript(S.jobId, file).then(function (r) {
       if (!r.applied) { toast('반입 실패', true); return; }
@@ -727,7 +733,9 @@
       var u = $('upload-last');
       u.hidden = false;
       u.textContent = '최근 반입: ' + file.name + ' (' + fmtTime(Date.now()) + ')';
-    }).catch(function (e) { toast('반입 실패. ' + errText(e, ''), true); });
+    }).catch(function (e) {
+      showEditorError('원고 반입 실패. ' + errText(e, ''), function () { runImport(file); });
+    });
   }
 
   /* ═══════════ 탭·전역 바인딩 ═══════════ */
