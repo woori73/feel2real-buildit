@@ -1,0 +1,43 @@
+name: DesignCraft compatible artifact PDF verification and packaging
+on:
+  push:
+    branches: ['qa/designcraft-716-final']
+    paths: ['e2e/designcraft-compat-final/**', '.github/workflows/designcraft-compat-finalize.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  finalize-existing-binary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resume existing build artifact, never rebuild or rerun prior ABI smoke
+        uses: actions/download-artifact@v4
+        with:
+          name: designcraft-080-glibc234
+          path: compat-output
+          run-id: 38848999619
+          github-token: ${{ github.token }}
+      - name: Verify immutable binary and existing PDFs
+        run: |
+          echo '2edd60ef2f575263a31ad6cb1ec661181bd24207d4aefbec8516b04990700335  compat-output/package/bin/designcraft-cli' | sha256sum -c -
+          chmod 0755 compat-output/package/bin/designcraft-cli
+          sudo apt-get update -qq
+          sudo apt-get install -y poppler-utils
+          python3 ops/designcraft-compat/verify_pdf.py
+      - name: Measure one new-binary operation as unprivileged user on glibc 2.34
+        run: |
+          docker pull "$(cat compat-output/container-image.txt)"
+          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w "$(cat compat-output/container-image.txt)" bash -c 'dnf install -y python3 >/dev/null && python3 e2e/designcraft-compat-final/benchmark.py'
+      - name: Package pinned binary and license notices
+        run: |
+          cp compat-output/{compat-results.json,build-provenance.txt,runtime-ldd.txt,benchmark.json,pdf-verification.json} compat-output/package/
+          tar --sort=name --mtime='UTC 2026-10-16' --owner=0 --group=0 --numeric-owner -czf compat-output/designcraft-0.8.0-al2023-x86_64.tar.gz -C compat-output/package .
+          sha256sum compat-output/designcraft-0.8.0-al2023-x86_64.tar.gz > compat-output/archive.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: designcraft-080-glibc234-final
+          path: compat-output/
+          retention-days: 30

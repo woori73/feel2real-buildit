@@ -2,7 +2,7 @@ name: DesignCraft 0.8.0 glibc 2.34 isolated build
 on:
   push:
     branches: ['qa/designcraft-716-final']
-    paths: ['ops/designcraft-compat/**', '.github/workflows/designcraft-glibc234.yml']
+    paths: ['ops/designcraft-compat/**']
 permissions:
   contents: read
 jobs:
@@ -24,7 +24,7 @@ jobs:
           docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w "$(cat compat-output/container-image.txt)" bash -c 'dnf install -y python3 >/dev/null && python3 ops/designcraft-compat/smoke.py'
           sudo apt-get update -qq
           sudo apt-get install -y poppler-utils
-          python3 ops/designcraft-compat/verify_pdf.py
+          sudo python3 ops/designcraft-compat/verify_pdf.py
           tar -czf compat-output/designcraft-0.8.0-al2023-x86_64.tar.gz -C compat-output/package .
           sha256sum compat-output/designcraft-0.8.0-al2023-x86_64.tar.gz > compat-output/archive.sha256
       - name: Preserve binary, licenses, provenance and new-build-only smoke evidence
