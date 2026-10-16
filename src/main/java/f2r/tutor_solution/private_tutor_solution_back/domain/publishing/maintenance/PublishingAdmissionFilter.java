@@ -15,12 +15,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public class PublishingAdmissionFilter extends OncePerRequestFilter {
+  private static final org.springframework.web.util.pattern.PathPattern API =
+      org.springframework.web.util.pattern.PathPatternParser.defaultInstance.parse("/api/publishing/**");
   private static final String HOLD = PublishingAdmissionFilter.class.getName();
   private final PublishingMaintenanceGate gate;
   public PublishingAdmissionFilter(PublishingMaintenanceGate gate) { this.gate = gate; }
   @Override protected boolean shouldNotFilter(HttpServletRequest request) {
-    String path = request.getRequestURI().substring(request.getContextPath().length());
-    return !(path.equals("/api/publishing") || path.startsWith("/api/publishing/"));
+    return !API.matches(org.springframework.web.util.ServletRequestPathUtils.parse(request).pathWithinApplication());
   }
   @Override protected boolean shouldNotFilterAsyncDispatch() { return false; }
   @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,

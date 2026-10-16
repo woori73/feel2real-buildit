@@ -56,6 +56,7 @@ class PublishingMaintenanceIntegrationTest {
   }
   @Test void closedAdmissionStopsServiceBeforeSideEffectsAndOtherRoutesStayOpen() throws Exception {
     mvc.perform(post("/api/publishing/jobs")).andExpect(status().isServiceUnavailable()).andExpect(header().string("Retry-After","30"));
+    mvc.perform(post("/api/publishing;view=preview/jobs")).andExpect(status().isServiceUnavailable());
     assertEquals(0,context.getBean(ProbeController.class).writes);
     for(String path:List.of("/ledger","/builder","/testprep","/photocraft","/login","/api/auth/me","/actuator/health"))
       mvc.perform(get(path)).andExpect(status().isOk());
@@ -133,7 +134,7 @@ class PublishingMaintenanceIntegrationTest {
     @PostMapping("/api/publishing/jobs") String create(){writes++;return "ok";}
     @GetMapping({"/ledger","/builder","/testprep","/photocraft","/login","/api/auth/me","/actuator/health"}) String other(){return "ok";}
     @GetMapping("/api/publishing/async") Callable<String> async(){return ()->{
-      cli.inspect(Path.of("unused"),Path.of(cliWork()));started.countDown();finish.await();
+      cli.inspect(Path.of("unused"),Path.of(cliWork()));started.countDown();if(!finish.await(5,TimeUnit.SECONDS))throw new IllegalStateException("test task deadline");
       cli.inspect(Path.of("unused"),Path.of(cliWork()));return "ok";
     };}
     String cliWork(){return System.getProperty("java.io.tmpdir");}
