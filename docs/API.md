@@ -4694,3 +4694,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 인가: `/api/exam-insight/**`는 STUDENT/TUTOR/ADMIN만. 업로드 파일과 결과는 **서버에 저장하지 않는다**(메모리 처리 후 응답). 스키마 변경 없음.
 - 한도(메모리·KST 일 단위): `app.exam-insight.per-user-daily-limit`=3, `global-daily-limit`=100, `enabled`=true. 이미지·스캔 PDF는 OCR 미지원이라 거절하고 텍스트 붙여넣기를 안내한다.
 - 제작 의뢰(옵션 B)는 결제 기능이 없어 기존 카카오 오픈채팅/메일 상담 채널로 접수한다(분석 번호 포함). 주문 테이블 연동 설계 → [design/exam-insight-service.md](design/exam-insight-service.md).
+
+## DesignCraft 유지보수 admission/drain (별도 gate PR)
+
+- `GET /api/admin/publishing/maintenance`: ADMIN 전용. `state`, `activeOperations`, `liveCliProcesses`, `singleProcessDrained`, `fleetSafeToReplace` 반환. `fleetSafeToReplace`는 항상 false: 다른 JVM/Worker와 외부 CLI는 별도 조사 대상이다.
+- `POST /api/admin/publishing/maintenance/drain`: ADMIN + `X-DesignCraft-Maintenance: 1` + 동일 출처 검증. 신규 요청/Worker admission을 먼저 닫고 기존 operation 종료를 기다리는 DRAINING으로 전환한다. 즉시 상태를 반환하며 작업을 취소/삭제/FAILED 처리하지 않는다. 180초 내 drain 미완료 시 운영자는 교체 시도를 중단하고 차단을 유지한다(자동 resume 없음).
+- `POST /api/admin/publishing/maintenance/resume`: 동일 보호. CLOSED·활성 operation/추적 CLI=0·인스턴스 락 유효 상태에서만 OPEN으로 전환, 그 외 409. 파일 저장 실패는 FAULT/503으로 닫는다.
+- `/api/publishing`와 `/api/publishing/**`는 CLOSED/DRAINING/FAULT에서 서비스·DB 변경 전 503 + `Retry-After: 30`. 로그인/정적 DesignCraft 페이지와 다른 서비스는 이 filter 대상이 아니다. ADMIN control은 `/api/admin/...`이므로 차단 중에도 접근 가능하다.
+- `publishing.maintenance.state-dir` 기본 `/var/lib/feel2real/designcraft-maintenance`. 지속 디스크·앱 사용자 전용 쓰기 권한을 운영 적용 전에 별도 승인으로 준비해야 한다. 매 Spring 시작은 반드시 CLOSED(저장/락 실패면 FAULT)이며 ADMIN resume 전 DesignCraft API/Worker는 열리지 않는다.
+- 이 PR은 관리 API만 제공하며 관리자 UI·무인증/local 전용 우회·AWS/DB 스위치를 추가하지 않는다. 기존 JWT/ADMIN 인증과 production Origin 정책도 그대로 적용된다.

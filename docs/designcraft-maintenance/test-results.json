@@ -1,0 +1,23 @@
+{
+  "run": 38877801898,
+  "tested_head": "a886cae6a5bb236afafdd0508afed23564abfc62",
+  "suite": "new maintenance tests only",
+  "rows": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceGateTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.408"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceIntegrationTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "3.604"
+    }
+  ]
+}
