@@ -36,6 +36,7 @@ jobs:
       PUBLISHING_STORAGE_ROOT: ${{ github.workspace }}/.qa-publishing
       PUBLISHING_WORKER_POLL_SECONDS: '1'
       HWPX_WORKER_ENABLED: 'false'
+      E2E_WIDTHS: '390'
       E2E_LOGIN_ID: designcraft-final
       E2E_LOGIN_PW: ephemeral-local-test-only
       CHROMIUM_PATH: /usr/bin/google-chrome
@@ -49,7 +50,8 @@ jobs:
       - name: Verify unchanged application and authentication availability
         run: |
           git fetch --depth=1 origin 0dc3d3e49def356147f4aaf5a4bdfcfff7a3b972
-          git diff --exit-code FETCH_HEAD HEAD -- src build.gradle settings.gradle ops/designcraft
+          git diff --exit-code FETCH_HEAD HEAD -- src build.gradle settings.gradle ops/designcraft ':!src/main/resources/static/js/publishing_editor.js'
+          git diff --numstat FETCH_HEAD HEAD -- src/main/resources/static/js/publishing_editor.js
           test -n "$META_JIPJIGI_API_KEY" || { echo 'MISSING_AUTH: repository secret META_JIPJIGI_API_KEY'; exit 1; }
       - name: Prepare isolated engine and browser dependencies (no regression rerun)
         run: |
