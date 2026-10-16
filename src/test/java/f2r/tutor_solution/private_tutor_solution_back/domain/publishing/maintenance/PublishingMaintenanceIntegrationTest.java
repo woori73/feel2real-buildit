@@ -92,6 +92,20 @@ class PublishingMaintenanceIntegrationTest {
     assertEquals(1,gate.status().activeOperations());stage.completeExceptionally(new IllegalStateException());
     awaitClosed();
   }
+  @Test void asyncTimeoutDoesNotReleaseStillRunningOperation() throws Exception {
+    gate.resume();ProbeController controller=context.getBean(ProbeController.class);
+    var result=mvc.perform(get("/api/publishing/async")).andExpect(request().asyncStarted()).andReturn();
+    assertTrue(controller.started.await(3,TimeUnit.SECONDS));gate.drain();
+    var asyncContext=(org.springframework.mock.web.MockAsyncContext)result.getRequest().getAsyncContext();
+    for(var listener:asyncContext.getListeners())listener.onTimeout(new jakarta.servlet.AsyncEvent(asyncContext));
+    asyncContext.complete();
+    assertEquals(1,gate.status().activeOperations());
+    controller.finish.countDown();awaitClosed();
+  }
+  @Test void requestExceptionReleasesAdmission() throws Exception {
+    gate.resume();assertThrows(jakarta.servlet.ServletException.class,()->mvc.perform(get("/api/publishing/error")));
+    assertEquals(0,gate.status().activeOperations());assertTrue(gate.drain().singleProcessDrained());
+  }
   void awaitClosed() throws Exception {
     long end=System.nanoTime()+TimeUnit.SECONDS.toNanos(3);
     while(!gate.status().singleProcessDrained()&&System.nanoTime()<end)Thread.sleep(10);
@@ -115,6 +129,7 @@ class PublishingMaintenanceIntegrationTest {
     final DesignCraftCliExecutor cli;int writes;
     final CountDownLatch started=new CountDownLatch(1),finish=new CountDownLatch(1);
     ProbeController(DesignCraftCliExecutor cli){this.cli=cli;}
+    @GetMapping("/api/publishing/error") String error(){throw new IllegalStateException("synthetic failure");}
     @PostMapping("/api/publishing/jobs") String create(){writes++;return "ok";}
     @GetMapping({"/ledger","/builder","/testprep","/photocraft","/login","/api/auth/me","/actuator/health"}) String other(){return "ok";}
     @GetMapping("/api/publishing/async") Callable<String> async(){return ()->{

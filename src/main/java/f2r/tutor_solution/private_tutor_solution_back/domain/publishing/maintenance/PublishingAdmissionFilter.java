@@ -45,6 +45,7 @@ public class PublishingAdmissionFilter extends OncePerRequestFilter {
       });
       HttpServletRequest wrapped = new HttpServletRequestWrapper(request) {
         private AsyncContext tracked(AsyncContext delegate) {
+          if (delegate == null) return null;
           return (AsyncContext) java.lang.reflect.Proxy.newProxyInstance(AsyncContext.class.getClassLoader(),
               new Class<?>[]{AsyncContext.class}, (proxy, method, args) -> {
                 if (method.getName().equals("start") && args != null && args.length == 1) {
