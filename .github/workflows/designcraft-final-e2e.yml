@@ -1,4 +1,4 @@
-name: DesignCraft final integration (isolated)
+name: DesignCraft console-only investigation (isolated)
 on:
   push:
     branches: ['qa/designcraft-716-final']
@@ -30,13 +30,11 @@ jobs:
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration
       SPRING_JPA_SHOW_SQL: 'false'
       LOGGING_LEVEL_ROOT: WARN
-      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
       PUBLISHING_CLI_PATH: ${{ github.workspace }}/.qa-engine/bin/designcraft-cli
       PUBLISHING_TEMPLATE_DIR: ${{ github.workspace }}/ops/designcraft/templates
       PUBLISHING_STORAGE_ROOT: ${{ github.workspace }}/.qa-publishing
       PUBLISHING_WORKER_POLL_SECONDS: '1'
       HWPX_WORKER_ENABLED: 'false'
-      E2E_WIDTHS: '390'
       E2E_LOGIN_ID: designcraft-final
       E2E_LOGIN_PW: ephemeral-local-test-only
       CHROMIUM_PATH: /usr/bin/google-chrome
@@ -47,17 +45,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - uses: actions/setup-node@v4
         with: {node-version: '20'}
-      - name: Verify unchanged application and authentication availability
+      - name: Verify exact application and prepare console dependencies
         run: |
-          git fetch --depth=1 origin 0dc3d3e49def356147f4aaf5a4bdfcfff7a3b972
-          git diff --exit-code FETCH_HEAD HEAD -- src build.gradle settings.gradle ops/designcraft ':!src/main/resources/static/js/publishing_editor.js'
-          git diff --numstat FETCH_HEAD HEAD -- src/main/resources/static/js/publishing_editor.js
-          test -n "$META_JIPJIGI_API_KEY" || { echo 'MISSING_AUTH: repository secret META_JIPJIGI_API_KEY'; exit 1; }
-      - name: Prepare isolated engine and browser dependencies (no regression rerun)
-        run: |
-          bash ops/designcraft/install-engine.sh "$GITHUB_WORKSPACE/.qa-engine"
-          sudo apt-get update -qq
-          sudo apt-get install -y fonts-noto-cjk poppler-utils
+          git fetch --depth=1 origin f244717581c5dce7413858407ca80fb95d833f03
+          git diff --exit-code FETCH_HEAD HEAD -- src build.gradle settings.gradle ops/designcraft
           npm install --prefix e2e/designcraft-final --no-audit --no-fund playwright-core@1.56.1
           python -m pip install bcrypt==4.3.0 pymysql==1.1.1
       - name: Build and start isolated Spring application
@@ -83,8 +74,8 @@ jobs:
           c.commit();c.close()
           print('Synthetic local account ready; credentials withheld')
           PY
-      - name: Real login, document import, Muse Spark approval, PDF download (1440 / 390)
-        run: node e2e/designcraft-final/live.js
+      - name: Collect PC and mobile console only (no AI or document flow)
+        run: node e2e/designcraft-final/console.js
       - name: Safe server metrics only
         if: always()
         run: python e2e/designcraft-final/safe_metrics.py

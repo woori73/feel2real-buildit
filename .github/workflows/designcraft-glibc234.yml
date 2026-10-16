@@ -1,0 +1,36 @@
+name: DesignCraft 0.8.0 glibc 2.34 isolated build
+on:
+  push:
+    branches: ['qa/designcraft-716-final']
+    paths: ['ops/designcraft-compat/**', '.github/workflows/designcraft-glibc234.yml']
+permissions:
+  contents: read
+jobs:
+  compatible-cli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record and use isolated Amazon Linux 2023 image
+        run: |
+          mkdir -p compat-output
+          docker pull public.ecr.aws/amazonlinux/amazonlinux:2023
+          docker image inspect public.ecr.aws/amazonlinux/amazonlinux:2023 --format '{{index .RepoDigests 0}}' > compat-output/container-image.txt
+      - name: Build exact upstream source on glibc 2.34 (no production access)
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w "$(cat compat-output/container-image.txt)" bash ops/designcraft-compat/build.sh
+      - name: Validate in fresh runtime container with no compiler or new glibc
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/w" -w /w "$(cat compat-output/container-image.txt)" bash -c 'dnf install -y python3 >/dev/null && python3 ops/designcraft-compat/smoke.py'
+          sudo apt-get update -qq
+          sudo apt-get install -y poppler-utils
+          python3 ops/designcraft-compat/verify_pdf.py
+          tar -czf compat-output/designcraft-0.8.0-al2023-x86_64.tar.gz -C compat-output/package .
+          sha256sum compat-output/designcraft-0.8.0-al2023-x86_64.tar.gz > compat-output/archive.sha256
+      - name: Preserve binary, licenses, provenance and new-build-only smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: designcraft-080-glibc234
+          path: compat-output/
+          retention-days: 30
