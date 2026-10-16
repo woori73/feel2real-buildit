@@ -103,6 +103,9 @@ class PublishingMaintenanceIntegrationTest {
     assertEquals(1,gate.status().activeOperations());
     controller.finish.countDown();awaitClosed();
   }
+  @Test void servletAsyncStartPropagatesTheAdmittedOperation() throws Exception {
+    gate.resume();mvc.perform(get("/api/publishing/raw-async")).andExpect(status().isOk());awaitClosed();
+  }
   @Test void requestExceptionReleasesAdmission() throws Exception {
     gate.resume();assertThrows(jakarta.servlet.ServletException.class,()->mvc.perform(get("/api/publishing/error")));
     assertEquals(0,gate.status().activeOperations());assertTrue(gate.drain().singleProcessDrained());
@@ -118,7 +121,7 @@ class PublishingMaintenanceIntegrationTest {
     @Bean SecurityFilterChain security(HttpSecurity http)throws Exception {
       return http.csrf(c->c.disable()).authorizeHttpRequests(a->a.requestMatchers("/api/admin/**").hasRole("ADMIN").anyRequest().permitAll()).httpBasic(org.springframework.security.config.Customizer.withDefaults()).build();
     }
-    @Bean ProbeController probe(DesignCraftCliExecutor cli){return new ProbeController(cli);}
+    @Bean ProbeController probe(DesignCraftCliExecutor cli,PublishingMaintenanceGate gate){return new ProbeController(cli,gate);}
     @Bean PublishingProperties props(org.springframework.core.env.Environment env){var p=new PublishingProperties();p.setCliPath(env.getRequiredProperty("probe.cli"));return p;}
     @Bean DesignCraftCliExecutor cli(PublishingProperties p){return new DesignCraftCliExecutor(p,new ObjectMapper());}
     @Bean PublishingJobRepository repo(){return mock(PublishingJobRepository.class);}
@@ -127,9 +130,13 @@ class PublishingMaintenanceIntegrationTest {
     @Bean ProbeTransactions transactionManager(PublishingMaintenanceGate g){return new ProbeTransactions(g);}
   }
   @RestController static class ProbeController {
-    final DesignCraftCliExecutor cli;int writes;volatile boolean ignoreInterrupts;
+    final DesignCraftCliExecutor cli;final PublishingMaintenanceGate gate;int writes;volatile boolean ignoreInterrupts;
     final CountDownLatch started=new CountDownLatch(1),finish=new CountDownLatch(1);
-    ProbeController(DesignCraftCliExecutor cli){this.cli=cli;}
+    ProbeController(DesignCraftCliExecutor cli,PublishingMaintenanceGate gate){this.cli=cli;this.gate=gate;}
+    @GetMapping("/api/publishing/raw-async") void raw(jakarta.servlet.http.HttpServletRequest request){
+      var async=request.startAsync();
+      async.start(()->{try{gate.drain();cli.inspect(Path.of("unused"),Path.of(cliWork()));}finally{async.complete();}});
+    }
     @GetMapping("/api/publishing/error") String error(){throw new IllegalStateException("synthetic failure");}
     @PostMapping("/api/publishing/jobs") String create(){writes++;return "ok";}
     @GetMapping({"/ledger","/builder","/testprep","/photocraft","/login","/api/auth/me","/actuator/health"}) String other(){return "ok";}
