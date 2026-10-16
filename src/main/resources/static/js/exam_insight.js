@@ -20,7 +20,7 @@
       + '. 이미지·스캔본은 글자를 읽지 못하므로 텍스트로 붙여넣어 주세요.';
   }
 
-  function slug(id, kind) { return (kind === 'analysis' ? '기출문제_분석' : '기출문제_기반_출제방향') + '_' + id + '.md'; }
+  function slug(id, kind) { return (kind === 'analysis' ? 'exam-analysis' : 'exam-direction') + '_' + id + '.md'; }
 
   function buildOrderMessage(id, meta) {
     return ['[BuildIt 영어 내신 예상문제 제작 의뢰]', '- 상품: 영어 내신 예상문제 40문항 / 1회 20,000원',

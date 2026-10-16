@@ -53,6 +53,6 @@ test('externalPrompt: 두 문서를 모두 담고 추정 표기를 요구한다'
 
 test('slug: 문서 종류별 파일명을 만든다', () => {
   // given/when/then
-  assert.strictEqual(ei.slug('X1', 'direction'), '기출문제_기반_출제방향_X1.md');
-  assert.strictEqual(ei.slug('X1', 'analysis'), '기출문제_분석_X1.md');
+  assert.strictEqual(ei.slug('X1', 'direction'), 'exam-direction_X1.md');
+  assert.strictEqual(ei.slug('X1', 'analysis'), 'exam-analysis_X1.md');
 });
