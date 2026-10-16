@@ -1,0 +1,83 @@
+name: Prod login modal check (approved, temporary)
+
+# 소유자 승인(2026-10-16, #717 배포 후속): 운영 홈(feel2real.co.kr)을 비로그인으로 열고 로그인 버튼 클릭만 한다.
+# 실제 로그인·입력·제출·데이터 변경 없음. 클릭 후 0.5/1.5/3초 모달 상태, 콘솔 오류·예외, PC 1440/모바일 390 캡처를 남긴다.
+# 결과는 로그와 이 브랜치의 evidence/ 폴더에 저장한다. 병합하지 않는다. AWS 인증 사용 안 함.
+on:
+  push:
+    branches: [ ci/flyway-history-readonly ]
+    paths: [ '.github/workflows/login-modal-check.yml' ]
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Measure login modal (click only)
+        run: |
+          set +e
+          mkdir -p /tmp/rc evidence/login-modal && cd /tmp/rc && npm init -y >/dev/null 2>&1 && npm i playwright-core@1.49.1 >/dev/null 2>&1
+          CHROME=$(command -v google-chrome || command -v chromium-browser || command -v chromium)
+          echo "chrome=$CHROME run_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          cat > rc.js <<'JS'
+          const { chromium } = require('playwright-core');
+          const fs = require('fs');
+          const OUT = process.env.OUT;
+          const state = () => {
+            const q = (sel) => document.querySelector(sel);
+            const m = document.getElementById('login-modal');
+            const cands = [...document.querySelectorAll('[id*="login"][id*="modal"], .login-modal, [role="dialog"]')].map(e => (e.id || e.className) + ':' + getComputedStyle(e).display);
+            if (!m) return { exists: false, cands };
+            const cs = getComputedStyle(m); const r = m.getBoundingClientRect();
+            return { exists: true, display: cs.display, visibility: cs.visibility, opacity: cs.opacity, hiddenAttr: m.hidden, ariaHidden: m.getAttribute('aria-hidden'), className: m.className, inlineStyle: (m.getAttribute('style') || '').slice(0, 80), rect: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)], offsetParentNull: m.offsetParent === null, inViewport: r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight, bodyClass: document.body.className.slice(0, 80), bodyOverflow: getComputedStyle(document.body).overflow, activeEl: document.activeElement ? document.activeElement.tagName + '#' + (document.activeElement.id || '') : null, cands };
+          };
+          (async () => {
+            const b = await chromium.launch({ executablePath: process.env.CHROME, args: ['--no-sandbox'] });
+            const result = {};
+            for (const [name, vp] of [['pc1440', { width: 1440, height: 900 }], ['mb390', { width: 390, height: 844 }]]) {
+              const ctx = await b.newContext({ viewport: vp, locale: 'ko-KR' });
+              const p = await ctx.newPage();
+              const con = [], exc = [], failed = [], http = [], assets = [];
+              p.on('console', m => { if (['error', 'warning'].includes(m.type())) con.push(m.type() + ': ' + m.text().slice(0, 160)); });
+              p.on('pageerror', e => exc.push(String(e.message).slice(0, 200)));
+              p.on('requestfailed', r => failed.push(r.url().replace('https://feel2real.co.kr', '').slice(0, 100) + ' ' + (r.failure() && r.failure().errorText)));
+              p.on('response', r => { const u = r.url().replace('https://feel2real.co.kr', ''); if (r.status() >= 400) http.push(r.status() + ' ' + u.slice(0, 100)); if (/\/js\/(account_menu|landing_buildit|landing_v3)\.js|landing_home\.css/.test(u)) assets.push(r.status() + ' ' + u); });
+              await p.goto('https://feel2real.co.kr/', { waitUntil: 'load' });
+              await p.waitForTimeout(2500);
+              const before = await p.evaluate(state);
+              const btns = await p.evaluate(() => [...document.querySelectorAll('[data-auth-login]')].map(e => ({ tag: e.tagName, cls: e.className, hidden: e.hidden, visible: e.offsetParent !== null, rect: (() => { const r = e.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)]; })() })));
+              await p.screenshot({ path: `${OUT}/${name}-1-before-click.png` });
+              const target = p.locator('[data-auth-login]:visible').first();
+              let clickResult = 'ok';
+              try { await target.click({ timeout: 5000 }); } catch (e) { clickResult = 'click error: ' + e.message.slice(0, 120); }
+              const t0 = Date.now(); const timeline = {};
+              for (const ms of [500, 1500, 3000]) {
+                await p.waitForTimeout(Math.max(0, ms - (Date.now() - t0)));
+                timeline[ms + 'ms'] = await p.evaluate(state);
+                if (ms === 500) await p.screenshot({ path: `${OUT}/${name}-2-after-click-0.5s.png` });
+              }
+              await p.screenshot({ path: `${OUT}/${name}-3-after-click-3s.png` });
+              const modalVisiblePW = await p.locator('#login-modal').isVisible().catch(() => null);
+              result[name] = { loginButtons: btns, clickResult, before, timeline, playwrightIsVisible: modalVisiblePW, console: con, pageErrors: exc, requestFailed: failed, http4xx5xx: http, assets };
+              console.log('=== ' + name + ' ===');
+              console.log(JSON.stringify(result[name], null, 1));
+              await ctx.close();
+            }
+            fs.writeFileSync(`${OUT}/result.json`, JSON.stringify(result, null, 1));
+            await b.close();
+          })();
+          JS
+          cd - >/dev/null
+          OUT="$PWD/evidence/login-modal" CHROME="$CHROME" NODE_PATH=/tmp/rc/node_modules node /tmp/rc/rc.js
+          ls -la evidence/login-modal
+      - name: Preserve captures and result on this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evidence
+          git commit -m "[CI-TEMP] 운영 로그인 모달 점검 증거(캡처·result.json)" || echo "nothing to commit"
+          git push origin HEAD:ci/flyway-history-readonly || echo "push skipped"
