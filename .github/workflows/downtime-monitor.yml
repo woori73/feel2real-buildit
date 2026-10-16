@@ -1,0 +1,28 @@
+name: Deploy downtime monitor (approved, temporary)
+
+# 소유자 승인(2026-10-16, #717 운영 배포) 범위: 공개 /actuator/health와 / 를 2초 간격으로 GET만 해서 실제 중단 시간을 측정한다. 병합하지 않는다.
+on:
+  push:
+    branches: [ ci/flyway-history-readonly ]
+    paths: [ '.github/workflows/downtime-monitor.yml' ]
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Poll health (GET only)
+        run: |
+          set +e
+          BASE=https://feel2real-buildit-placeholder
+          BASE=https://feel2real.co.kr
+          start=$(date +%s); last=""; bad_start=""; total_bad=0
+          while [ $(( $(date +%s) - start )) -lt 780 ]; do
+            now=$(date -u +%H:%M:%S)
+            h=$(curl -s -o /dev/null -m 4 -w '%{http_code}' "$BASE/actuator/health" || echo ERR)
+            r=$(curl -s -o /dev/null -m 4 -w '%{http_code}' "$BASE/" || echo ERR)
+            cur="health=$h root=$r"
+            if [ "$cur" != "$last" ]; then echo "$now $cur"; last="$cur"; fi
+            sleep 2
+          done
+          echo "MONITOR_END $(date -u +%H:%M:%S)"
