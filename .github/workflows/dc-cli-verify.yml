@@ -1,0 +1,40 @@
+name: DesignCraft CLI 0.8 artifact verify (read-only, no AWS)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-cli-verify.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: designcraft-080-glibc234-final
+          run-id: 38850191210
+          github-token: ${{ github.token }}
+          path: art
+      - name: Verify hashes and GLIBC requirements
+        run: |
+          set -u
+          echo "== files =="; find art -type f -printf '%P %s bytes\n' | sort
+          echo "== sha256 of every file =="; find art -type f -exec sha256sum {} \; | sed 's#art/##'
+          T=$(find art -type f -name '*.tar.gz' | head -1)
+          echo "tarball: $T"
+          WANT_TAR=5d4a3e7b9a0569ed904ae41d777c1a02854e579fd8aaa2769a34a4c3228aee6d
+          WANT_BIN=2edd60ef2f575263a31ad6cb1ec661181bd24207d4aefbec8516b04990700335
+          GOT_TAR=$(sha256sum "$T" | cut -d' ' -f1)
+          echo "tar.gz expected=$WANT_TAR"; echo "tar.gz actual  =$GOT_TAR"; [ "$GOT_TAR" = "$WANT_TAR" ] && echo TAR_MATCH || echo TAR_MISMATCH
+          mkdir x && tar --no-same-owner -xzf "$T" -C x
+          B=$(find x -type f -name designcraft-cli | head -1)
+          echo "binary path in tar: $B"
+          GOT_BIN=$(sha256sum "$B" | cut -d' ' -f1)
+          echo "binary expected=$WANT_BIN"; echo "binary actual  =$GOT_BIN"; [ "$GOT_BIN" = "$WANT_BIN" ] && echo BIN_MATCH || echo BIN_MISMATCH
+          echo "== tar listing (top) =="; tar -tzf "$T" | head -30
+          echo "== file/NEEDED =="; file "$B"; readelf -d "$B" | grep NEEDED
+          echo "== max GLIBC symbol versions required =="; objdump -T "$B" | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -5
+          echo "== max GCC/GLIBCXX =="; objdump -T "$B" | grep -oE '(GCC|GLIBCXX|CXXABI)_[0-9.]+' | sort -uV | tail -5
+          echo "== mode =="; stat -c '%a %U:%G' "$B"
