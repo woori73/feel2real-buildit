@@ -51,9 +51,45 @@
     toastTimer = setTimeout(function () { t.hidden = true; }, 3200);
   }
 
+  /* 지속 오류 배너: 토스트는 3초 만에 사라지므로, 복구가 필요한 오류는 배너로 남긴다. */
+  function showEditorError(msg, retry) {
+    $('editor-error-msg').textContent = msg;
+    var r = $('btn-error-retry');
+    r.hidden = !retry;
+    S.errorRetry = retry || null;
+    $('editor-error').hidden = false;
+  }
+  function hideEditorError() {
+    $('editor-error').hidden = true;
+    S.errorRetry = null;
+  }
+
+  /* AI 패널: PC는 항상 보이는 우측 패널, 모바일은 하단 시트(body.ai-open)로 열고 닫는다. */
+  function openAi() {
+    document.body.classList.add('ai-open');
+    $('btn-ai-open').setAttribute('aria-expanded', 'true');
+    switchTab('ai');
+    $('ai-input').focus();
+  }
+  function closeAi() {
+    document.body.classList.remove('ai-open');
+    $('btn-ai-open').setAttribute('aria-expanded', 'false');
+  }
+
+  /* AI 계획 실패 사유(HTTP 상태)를 사용자 안내 문장으로 바꾼다. */
+  function aiErrorMessage(status) {
+    if (status === 503) return 'AI 기능을 지금 사용할 수 없습니다. 조판 엔진/AI 설정을 관리자에게 문의해 주세요. 직접 편집(스타일 탭)은 계속 사용할 수 있습니다.';
+    if (status === 502) return 'AI 수정 계획을 만드는 중 서버 오류가 났습니다. 잠시 후 다시 시도해 주세요.';
+    if (status === 401 || status === 403) return '로그인이 만료되었거나 권한이 없습니다. 다시 로그인해 주세요.';
+    return '네트워크/서버 오류로 계획을 만들지 못했습니다. 잠시 후 다시 시도해 주세요.';
+  }
+
   /* ═══════════ 뷰 전환 ═══════════ */
   function showProjects() {
     stopTimers();
+    hideEditorError();
+    closeAi();
+    $('ai-fab').hidden = true;
     document.body.classList.remove('view-editor', 'has-jobbar');
     document.body.classList.add('view-projects');
     $('view-projects').hidden = false;
@@ -69,6 +105,8 @@
     $('view-projects').hidden = true;
     $('view-editor').hidden = false;
     $('chk-spread').checked = false;
+    hideEditorError();
+    $('ai-fab').hidden = false;
     initEditor();
   }
   function stopTimers() {
@@ -166,7 +204,9 @@
         return;
       }
       if (p.status === 'FAILED' || p.status === 'CANCELLED') {
-        toast('작업 ' + p.status + (p.error ? ': ' + p.error : ''), true);
+        showEditorError('문서 작업이 ' + p.status + ' 상태입니다.' + (p.error ? ' (' + p.error + ')' : '') +
+          ' 조판 엔진 실행에 문제가 있을 수 있습니다. 다시 시도하거나 프로젝트 목록으로 돌아가세요.', initEditor);
+        $('preview-loading').hidden = true;
         return;
       }
       renderThumbs();
@@ -180,7 +220,8 @@
       }
       importPendingManuscript();
     }).catch(function (e) {
-      toast('프로젝트를 불러오지 못했습니다. ' + errText(e, ''), true);
+      showEditorError('프로젝트를 불러오지 못했습니다. ' + errText(e, ''), initEditor);
+      $('preview-loading').hidden = true;
     });
   }
 
@@ -260,7 +301,8 @@
       $('preview-loading').hidden = true;
     }).catch(function (e) {
       $('preview-loading').hidden = true;
-      toast('미리보기를 불러오지 못했습니다. ' + errText(e, ''), true);
+      showEditorError('미리보기를 불러오지 못했습니다. ' + errText(e, '') +
+        ' AI 수정 요청과 스타일 설정은 계속 사용할 수 있습니다.', function () { showPage(S.page); });
     });
   }
 
@@ -420,9 +462,9 @@
         return;
       }
       renderPlanCard(res.plan);
-    }).catch(function () {
+    }).catch(function (e) {
       $('ai-send').disabled = false;
-      aiAppend('agent', '네트워크/서버 오류로 계획을 만들지 못했습니다.');
+      aiAppend('agent', aiErrorMessage(e && e.status));
     });
   }
 
@@ -701,6 +743,21 @@
   }
 
   function bind() {
+    $('btn-ai-open').addEventListener('click', openAi);
+    $('ai-fab').addEventListener('click', openAi);
+    $('btn-ai-close').addEventListener('click', closeAi);
+    $('btn-error-back').addEventListener('click', showProjects);
+    $('btn-error-retry').addEventListener('click', function () {
+      var f = S.errorRetry;
+      hideEditorError();
+      if (f) f();
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ai-example]'), function (b) {
+      b.addEventListener('click', function () {
+        $('ai-input').value = b.dataset.aiExample;
+        $('ai-input').focus();
+      });
+    });
     $('btn-new-project').addEventListener('click', openNewProjectModal);
     $('np-create').addEventListener('click', createProject);
     $('btn-back').addEventListener('click', showProjects);
@@ -800,5 +857,6 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
+  S.aiErrorMessage = aiErrorMessage;
   global.PublishingEditor = S; // 디버그용
 })(window);
