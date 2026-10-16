@@ -1,0 +1,122 @@
+{
+ "pc1440": {
+  "loginButtons": [
+   {
+    "tag": "BUTTON",
+    "cls": "auth-action auth-action-login btn-login",
+    "hidden": false,
+    "visible": true,
+    "rect": [
+     1259,
+     14,
+     59,
+     38
+    ]
+   }
+  ],
+  "clickResult": "ok",
+  "before": {
+   "exists": false,
+   "cands": [
+    "login-modal:none"
+   ]
+  },
+  "timeline": {
+   "500ms": {
+    "exists": false,
+    "cands": [
+     "login-modal:flex"
+    ]
+   },
+   "1500ms": {
+    "exists": false,
+    "cands": [
+     "login-modal:flex"
+    ]
+   },
+   "3000ms": {
+    "exists": false,
+    "cands": [
+     "login-modal:flex"
+    ]
+   }
+  },
+  "playwrightIsVisible": false,
+  "console": [
+   "error: Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "requestFailed": [
+   "/api/auth/me net::ERR_ABORTED"
+  ],
+  "http4xx5xx": [
+   "401 /api/auth/me"
+  ],
+  "assets": [
+   "200 /css/landing_home.css?v=20261016-1",
+   "200 /js/landing_buildit.js?v=20261014-1",
+   "200 /js/account_menu.js?v=20260629-2",
+   "200 /js/landing_v3.js?v=20261014-2"
+  ]
+ },
+ "mb390": {
+  "loginButtons": [
+   {
+    "tag": "BUTTON",
+    "cls": "auth-action auth-action-login btn-login",
+    "hidden": false,
+    "visible": true,
+    "rect": [
+     177,
+     14,
+     59,
+     38
+    ]
+   }
+  ],
+  "clickResult": "ok",
+  "before": {
+   "exists": false,
+   "cands": [
+    "login-modal:none"
+   ]
+  },
+  "timeline": {
+   "500ms": {
+    "exists": false,
+    "cands": [
+     "login-modal:flex"
+    ]
+   },
+   "1500ms": {
+    "exists": false,
+    "cands": [
+     "login-modal:flex"
+    ]
+   },
+   "3000ms": {
+    "exists": false,
+    "cands": [
+     "login-modal:flex"
+    ]
+   }
+  },
+  "playwrightIsVisible": false,
+  "console": [
+   "error: Failed to load resource: the server responded with a status of 401 ()"
+  ],
+  "pageErrors": [],
+  "requestFailed": [
+   "/api/auth/me net::ERR_ABORTED"
+  ],
+  "http4xx5xx": [
+   "401 /api/auth/me"
+  ],
+  "assets": [
+   "200 /css/landing_home.css?v=20261016-1",
+   "200 /js/landing_v3.js?v=20261014-2",
+   "200 /js/landing_buildit.js?v=20261014-1",
+   "200 /js/account_menu.js?v=20260629-2"
+  ]
+ }
+}
