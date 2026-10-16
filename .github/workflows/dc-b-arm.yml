@@ -1,4 +1,4 @@
-name: DesignCraft B test - precheck + ARM watchdog (approved, one-shot; does NOT resume the gate)
+name: DesignCraft B test - precheck + ARM watchdog + persistence check (approved, one-shot; does NOT resume the gate)
 on:
   push:
     branches: ['ci/dc-step1-readonly']
@@ -21,24 +21,29 @@ jobs:
           aws-region: ap-northeast-2
           role-duration-seconds: 900
           retry-max-attempts: 1
-      - name: Precheck (read-only) then arm the watchdog only if every condition passes
+      - name: Previous watchdog status, precheck, then ARM only if every condition passes
         run: |
           python - <<'PY'
           from pathlib import Path
           import json
           wd = Path('ops/diagnostics/dc_gate_watchdog.py').read_text()
           pre = Path('ops/diagnostics/dc_b_precheck.py').read_text()
-          script = ("cat > /var/tmp/dc_gate_watchdog.py <<'WDEOF'\n" + wd + "\nWDEOF\n"
+          script = ("echo '--- previous watchdog (journal tail) ---'; journalctl -u dc-gate-watchdog --no-pager -o cat | tail -4\n"
+                    "echo \"previous unit active? $(systemctl is-active dc-gate-watchdog 2>&1)\"\n"
+                    "echo \"gate state file now: $(cat /var/lib/feel2real/designcraft-maintenance/state)\"\n"
+                    "cat > /var/tmp/dc_gate_watchdog.py <<'WDEOF'\n" + wd + "\nWDEOF\n"
                     "chmod 0700 /var/tmp/dc_gate_watchdog.py\n"
                     "python3 - <<'PREEOF'\n" + pre + "\nPREEOF\n"
                     "rc=$?\n"
                     "if [ $rc -ne 0 ]; then echo 'RESULT: NOT_ARMED (precheck failed, nothing changed)'; exit 0; fi\n"
                     "cd /var/tmp\n"
                     "systemd-run --quiet --unit=dc-gate-watchdog --collect python3 /var/tmp/dc_gate_watchdog.py\n"
-                    "sleep 9\n"
+                    "A=$(date -u +%s)\n"
+                    "sleep 6\n"
                     "echo \"watchdog unit active? $(systemctl is-active dc-gate-watchdog 2>&1)\"\n"
-                    "echo '--- watchdog journal ---'; journalctl -u dc-gate-watchdog --no-pager -o cat | tail -6\n"
-                    "echo \"gate state file: $(cat /var/lib/feel2real/designcraft-maintenance/state)\"\n"
+                    "journalctl -u dc-gate-watchdog --no-pager -o cat | tail -3\n"
+                    "echo \"ARMED_AT_UTC=$(date -u -d @$A +%H:%M:%S)  ARMED_AT_KST=$(TZ=Asia/Seoul date -d @$A +%H:%M:%S)\"\n"
+                    "echo \"RESUME_DEADLINE_UTC=$(date -u -d @$((A+900)) +%H:%M:%S)  RESUME_DEADLINE_KST=$(TZ=Asia/Seoul date -d @$((A+900)) +%H:%M:%S)\"\n"
                     "echo 'RESULT: ARMED'\n")
           Path('arm-params.json').write_text(json.dumps({'commands': [script]}))
           PY
@@ -47,5 +52,27 @@ jobs:
             status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
             case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
             sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query '{status:Status,out:StandardOutputContent,err:StandardErrorContent}' --output json | tee arm-result.json
+      - name: Persistence check in a NEW SSM command (watchdog must still be active after the arming command ended)
+        run: |
+          grep -q 'RESULT: ARMED' arm-result.json || { echo 'not armed - skipping persistence check'; exit 0; }
+          sleep 15
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          script = ("echo \"unit active? $(systemctl is-active dc-gate-watchdog 2>&1)\"\n"
+                    "echo \"unit main PID: $(systemctl show dc-gate-watchdog -p MainPID --value)  uptime_s: $(( $(date +%s) - $(date -d \"$(systemctl show dc-gate-watchdog -p ActiveEnterTimestamp --value)\" +%s) ))\"\n"
+                    "journalctl -u dc-gate-watchdog --no-pager -o cat | tail -3\n"
+                    "echo \"gate state file: $(cat /var/lib/feel2real/designcraft-maintenance/state)\"\n"
+                    "echo \"now UTC/KST: $(date -u +%H:%M:%S) / $(TZ=Asia/Seoul date +%H:%M:%S)\"\n"
+                    "echo \"f2r-app restarts: $(systemctl show f2r-app.service -p NRestarts --value)\"\n")
+          Path('p-params.json').write_text(json.dumps({'commands': [script]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://p-params.json --timeout-seconds 60 --query Command.CommandId --output text)
+          for i in $(seq 1 20); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 3
           done
           aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query '{status:Status,out:StandardOutputContent,err:StandardErrorContent}' --output json
