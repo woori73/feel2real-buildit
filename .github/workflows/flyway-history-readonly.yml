@@ -1,0 +1,57 @@
+name: Flyway history read-only check (approved one-shot, temporary)
+
+# 소유자 승인(2026-10-16, 방법 B)에 따른 운영 flyway_schema_history 읽기 전용 SELECT 1회. 병합하지 않는 임시 브랜치용.
+# 기존 운영 EC2에 SSM으로 접근하되 설치·설정 변경 없음. DB에는 READ ONLY 세션으로 SELECT만 실행한다.
+# DB 접속정보·비밀번호·환경변수·개인정보는 출력하지 않는다(결과 한 줄과 성공 여부만 출력). 실패 시 우회하지 않고 중단한다.
+on:
+  push:
+    branches: [ ci/flyway-history-readonly ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  flyway-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Read-only SELECT on flyway_schema_history via SSM (stop on any failure)
+        run: |
+          set -uo pipefail
+          INSTANCE="i-09d7cabb5a42d1135"
+          SSM_BODY=$(cat <<'SSMEOF'
+          set -u
+          if ! command -v mysql >/dev/null 2>&1; then
+            echo "RESULT=STOPPED_NO_MYSQL_CLIENT (nothing installed, nothing changed)"
+            exit 0
+          fi
+          ROW=$( ( set -a; . /etc/f2r/env; set +a; MYSQL_PWD="${DB_PASSWORD:-}" mysql -N -B -h "${DB_HOST:-127.0.0.1}" -P "${DB_PORT:-3306}" -u "${DB_USER:-}" "${DB_NAME:-}" -e "SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS applied, MAX(CAST(version AS UNSIGNED)) AS max_version, COALESCE(SUM(success = 0), 0) AS failed, COALESCE(SUM(CAST(version AS UNSIGNED) >= 1078), 0) AS v1078_or_later FROM flyway_schema_history WHERE version IS NOT NULL;" ) 2>/dev/null )
+          RC=$?
+          if [ "$RC" -ne 0 ] || [ -z "$ROW" ]; then
+            echo "RESULT=QUERY_FAILED rc=$RC (details suppressed; stopped, nothing changed)"
+            exit 0
+          fi
+          echo "RESULT=OK columns=applied,max_version,failed,v1078_or_later"
+          echo "ROW=$ROW"
+          SSMEOF
+          )
+          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": [l.lstrip() for l in sys.stdin.read().splitlines()]}))' <<< "$SSM_BODY")
+          CMD_ID=$(aws ssm send-command --instance-ids "$INSTANCE" --document-name AWS-RunShellScript --parameters "$PARAMS_JSON" --query 'Command.CommandId' --output text) || { echo "SEND_COMMAND_FAILED (stopped; no workaround attempted)"; exit 1; }
+          echo "SSM CommandId=$CMD_ID"
+          STATUS=""
+          for i in $(seq 1 24); do
+            sleep 5
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --query 'Status' --output text 2>/dev/null || echo "UNKNOWN")
+            echo "status=$STATUS (attempt $i/24)"
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break ;; esac
+          done
+          echo "FINAL_STATUS=$STATUS"
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE" --query '{responseCode:ResponseCode,stdout:StandardOutputContent}' --output json || true
+          [ "$STATUS" = "Success" ] || { echo "SSM did not succeed (stopped)"; exit 1; }
