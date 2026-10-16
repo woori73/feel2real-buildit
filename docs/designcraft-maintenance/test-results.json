@@ -1,23 +1,23 @@
 {
-  "run": 38877801898,
-  "tested_head": "a886cae6a5bb236afafdd0508afed23564abfc62",
+  "run": 38879225982,
+  "tested_head": "46e49f818cff06a7b18eb97bbeb1b6a6b6b58629",
   "suite": "new maintenance tests only",
   "rows": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceIntegrationTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "4.724"
+    },
     {
       "name": "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceGateTest",
       "tests": "8",
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "time": "0.408"
-    },
-    {
-      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.maintenance.PublishingMaintenanceIntegrationTest",
-      "tests": "9",
-      "failures": "0",
-      "errors": "0",
-      "skipped": "0",
-      "time": "3.604"
+      "time": "0.325"
     }
   ]
 }
