@@ -130,4 +130,51 @@ class ExamInsightServiceTest {
     assertThat(ExamInsightService.analysisId(a)).isEqualTo(ExamInsightService.analysisId(a));
     assertThat(ExamInsightService.analysisId(a)).isNotEqualTo(ExamInsightService.analysisId(b));
   }
+
+  @Test
+  void 응답이_잘렸으면_성공으로_처리하지_않고_횟수를_환불한다() {
+    // given a synthetic response cut off inside document 2 (no end marker)
+    String cut = ExamInsightPromptBuilder.DOC1_MARKER + "\n" + ExamInsightPromptBuilderTest.doc("# 기출문제 분석", 7)
+        + ExamInsightPromptBuilder.DOC2_MARKER + "\n" + ExamInsightPromptBuilderTest.doc("# 기출문제 기반 출제방향", 4);
+    when(llm.complete(anyString(), anyString(), anyInt())).thenReturn(NewStartLlmCompletion.success(cut, "p", "m"));
+    // when / then
+    assertThatThrownBy(() -> service.analyze(1L, input("q", "s")))
+        .isInstanceOfSatisfying(ExamInsightException.class, e -> assertThat(e.getCode()).isEqualTo("INVALID_AI_OUTPUT"));
+    assertThat(limiter.remaining(1L)).isEqualTo(2);
+  }
+
+  @Test
+  void 시간초과_실패는_횟수를_환불한다() {
+    // given the router reports a timeout-like technical failure on both primary and fallback
+    when(llm.complete(anyString(), anyString(), anyInt()))
+        .thenReturn(NewStartLlmCompletion.failed("AI 응답 시간이 초과되었습니다.", true));
+    // when / then
+    assertThatThrownBy(() -> service.analyze(1L, input("q", "s")))
+        .isInstanceOfSatisfying(ExamInsightException.class, e -> assertThat(e.getCode()).isEqualTo("LLM_UNAVAILABLE"));
+    assertThat(limiter.remaining(1L)).isEqualTo(2);
+  }
+
+  @Test
+  void 비활성화_상태에서는_AI를_호출하지_않고_횟수도_쓰지_않는다() {
+    // given
+    ExamInsightService off = new ExamInsightService(extractor, limiter, llm, false, 3, 40000, 40000);
+    // when
+    assertThatThrownBy(() -> off.analyze(1L, input("q", "s"))).isInstanceOf(ExamInsightException.class);
+    // then
+    verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    assertThat(limiter.remaining(1L)).isEqualTo(2);
+  }
+
+  @Test
+  void 코드_기본값은_비활성화이고_출력_상한은_40000자다() throws Exception {
+    // given the annotated defaults on the Spring constructor
+    java.lang.reflect.Constructor<?> ctor = java.util.Arrays.stream(ExamInsightService.class.getConstructors())
+        .filter(c -> c.isAnnotationPresent(org.springframework.beans.factory.annotation.Autowired.class)).findFirst().orElseThrow();
+    // when
+    String enabled = ctor.getParameters()[3].getAnnotation(org.springframework.beans.factory.annotation.Value.class).value();
+    String maxOut = ctor.getParameters()[6].getAnnotation(org.springframework.beans.factory.annotation.Value.class).value();
+    // then
+    assertThat(enabled).isEqualTo("${app.exam-insight.enabled:false}");
+    assertThat(maxOut).isEqualTo("${app.exam-insight.max-output-chars:40000}");
+  }
 }

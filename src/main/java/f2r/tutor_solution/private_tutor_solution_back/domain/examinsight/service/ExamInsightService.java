@@ -44,10 +44,10 @@ public class ExamInsightService {
   @Autowired
   public ExamInsightService(
       ExamInsightTextExtractor extractor, ExamInsightRateLimiter limiter, ExamInsightLlmClient llm,
-      @Value("${app.exam-insight.enabled:true}") boolean enabled,
+      @Value("${app.exam-insight.enabled:false}") boolean enabled,
       @Value("${app.exam-insight.max-files-per-group:3}") int maxFilesPerGroup,
       @Value("${app.exam-insight.max-chars-per-group:40000}") int maxCharsPerGroup,
-      @Value("${app.exam-insight.max-output-chars:16000}") int maxOutputChars) {
+      @Value("${app.exam-insight.max-output-chars:40000}") int maxOutputChars) {
     this.extractor = extractor;
     this.limiter = limiter;
     this.llm = llm;
