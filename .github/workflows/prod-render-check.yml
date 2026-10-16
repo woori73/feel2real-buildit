@@ -1,0 +1,46 @@
+name: Prod render check (approved, temporary)
+
+# 소유자 승인(2026-10-16, #717 운영 배포 후 점검): 공개 홈을 실제 브라우저로 열어 PC 1440/모바일 390 표시 지표만 측정한다. GET만, 로그인·제출 없음. 병합하지 않는다.
+on:
+  push:
+    branches: [ ci/flyway-history-readonly ]
+    paths: [ '.github/workflows/prod-render-check.yml' ]
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Measure public home rendering
+        run: |
+          set +e
+          mkdir -p /tmp/rc && cd /tmp/rc && npm init -y >/dev/null 2>&1 && npm i playwright-core@1.49.1 >/dev/null 2>&1
+          CHROME=$(command -v google-chrome || command -v chromium-browser || command -v chromium)
+          echo "chrome=$CHROME"
+          cat > rc.js <<'JS'
+          const { chromium } = require('playwright-core');
+          (async () => {
+            const b = await chromium.launch({ executablePath: process.env.CHROME, args: ['--no-sandbox'] });
+            for (const [name, vp] of [['pc1440', {width:1440,height:900}], ['mb390', {width:390,height:844}]]) {
+              const ctx = await b.newContext({ viewport: vp, locale: 'ko-KR' });
+              const p = await ctx.newPage(); const errs = [];
+              p.on('pageerror', e => errs.push(e.message));
+              p.on('response', r => { if (r.status() >= 400 && /feel2real\.co\.kr/.test(r.url())) errs.push('HTTP ' + r.status() + ' ' + r.url().replace('https://feel2real.co.kr','')); });
+              await p.goto('https://feel2real.co.kr/', { waitUntil: 'load' }); await p.waitForTimeout(1500);
+              const m = await p.evaluate(() => {
+                const tiles = [...document.querySelectorAll('.svc-tile')].map(e => { const r = e.getBoundingClientRect(); const vis = !!e.offsetParent; return vis ? e.dataset.svcTile + ':' + Math.round(r.top) + '-' + Math.round(r.bottom) : e.dataset.svcTile + ':hidden'; });
+                const chips = document.querySelector('.svc-chips'); const cs = chips ? getComputedStyle(chips).display : 'none';
+                const faq = [...document.querySelectorAll('#faq summary')].map(s => s.textContent.trim());
+                const faqSoon = [...document.querySelectorAll('#faq p')].map(x => x.textContent).find(t => t.includes('곧 준비중')) || '';
+                const soon = [...document.querySelectorAll('#soon h3')].map(h => h.textContent.trim().split(' ')[0]);
+                return { tiles, chipsDisplay: cs, burger: getComputedStyle(document.getElementById('biBurger')).display, navLinks: getComputedStyle(document.querySelector('.nav-links')).display, hOverflow: document.documentElement.scrollWidth > innerWidth, docH: document.documentElement.scrollHeight, formCount: document.querySelectorAll('form.v3-ask').length, loginBtn: !!document.querySelector('.btn-login') && !!document.querySelector('.btn-login').offsetParent, signup: !!document.querySelector('.btn-signup') && !!document.querySelector('.btn-signup').offsetParent, soonCards: soon, faqSoon, navLabels: [...document.querySelectorAll('.nav-links a')].map(a => a.textContent.trim() + '>' + a.getAttribute('href')) };
+              });
+              console.log(name, JSON.stringify(m)); console.log(name, 'errors', JSON.stringify(errs));
+              if (name === 'mb390') { await p.click('#biBurger'); await p.waitForTimeout(400); console.log(name, 'drawer rows', JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('#biMenu a, #biMenu button')].map(e => e.textContent.trim().replace(/\s+/g,' '))))); }
+              if (name === 'pc1440') { await p.click('.btn-login'); await p.waitForTimeout(500); console.log(name, 'login modal display', await p.evaluate(() => { const m = document.getElementById('login-modal'); return m ? getComputedStyle(m).display : 'none'; })); }
+              await ctx.close();
+            }
+            await b.close();
+          })();
+          JS
+          CHROME="$CHROME" node rc.js
