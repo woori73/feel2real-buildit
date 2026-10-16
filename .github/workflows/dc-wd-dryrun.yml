@@ -1,0 +1,49 @@
+name: DesignCraft gate watchdog DRY-RUN (no restart, no gate change)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-wd-dryrun.yml', 'ops/diagnostics/dc_gate_watchdog.py']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  dryrun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 900
+          retry-max-attempts: 1
+      - name: Install watchdog file and run a --dry-run transient unit (observes only)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          body = Path('ops/diagnostics/dc_gate_watchdog.py').read_text()
+          script = ("cat > /var/tmp/dc_gate_watchdog.py <<'WDEOF'\n" + body + "\nWDEOF\n"
+                    "chmod 0700 /var/tmp/dc_gate_watchdog.py\n"
+                    "cd /var/tmp\n"
+                    "python3 -c \"import time,json,dc_gate_watchdog as w; print('OBS', json.dumps(w.observe(w.DEFAULTS, time.time())))\"\n"
+                    "systemd-run --quiet --unit=dc-gate-watchdog-dryrun --collect python3 /var/tmp/dc_gate_watchdog.py --dry-run --start-wait-s 12 --poll-s 3\n"
+                    "sleep 22\n"
+                    "echo '--- journal of the dry-run unit ---'\n"
+                    "journalctl -u dc-gate-watchdog-dryrun --no-pager -o cat | tail -15\n"
+                    "echo \"unit active? $(systemctl is-active dc-gate-watchdog-dryrun 2>&1)\"\n"
+                    "echo \"gate state file: $(cat /var/lib/feel2real/designcraft-maintenance/state)\"\n"
+                    "echo \"f2r-app restarts: $(systemctl show f2r-app.service -p NRestarts --value), since: $(systemctl show f2r-app.service -p ActiveEnterTimestamp --value)\"\n")
+          Path('wd-params.json').write_text(json.dumps({'commands': [script]}))
+          PY
+          command_id=$(aws ssm send-command --instance-ids i-09d7cabb5a42d1135 --document-name AWS-RunShellScript --parameters file://wd-params.json --timeout-seconds 120 --query Command.CommandId --output text)
+          for i in $(seq 1 40); do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query Status --output text 2>/dev/null || true)
+            case "$status" in Success|Failed|TimedOut|Cancelled) break;; esac
+            sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id i-09d7cabb5a42d1135 --query '{status:Status,out:StandardOutputContent,err:StandardErrorContent}' --output json
