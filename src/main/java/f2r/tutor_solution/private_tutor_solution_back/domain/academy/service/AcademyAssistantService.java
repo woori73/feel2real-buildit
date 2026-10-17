@@ -270,20 +270,8 @@ public class AcademyAssistantService {
     generated.put("designPreset", preset);
 
     // BuildIt2 디자인 자산(레시피) 선택 — 요청의 분위기·학원 유형에 맞는 검증된 값 묶음을 얹는다.
-    // 샘플로 이미 정한 프리셋은 뒤집지 않고, 같은 연산 검증(AssistantPatchApplier)을 그대로 거친다.
-    AssistantAssetCatalog.Asset recipe =
-        AssistantAssetCatalog.recommendRecipe(request, name, preset, sample != null);
-    if (recipe != null) {
-      AssistantPatchApplier.Snapshot base = new AssistantPatchApplier.Snapshot("", generated, null, null);
-      AssistantPatchApplier.Plan plan = AssistantPatchApplier.plan(
-          List.of(AssistantPatchApplier.Op.section("applyAsset", recipe.id())), base, "");
-      AssistantPatchApplier.Applied applied = AssistantPatchApplier.apply(base, plan.accepted());
-      applied.draftPatch().forEach((k, v) -> {
-        if (v == null) generated.remove(k);
-        else generated.put(k, v);
-      });
-      preset = generated.get("designPreset");
-    }
+    AssistantAssetCatalog.Asset recipe = applyRecipe(generated, request, name, preset, sample != null);
+    preset = generated.get("designPreset");
 
     // 과목·대상은 사용자가 말했거나 샘플 문구가 직접 말한 경우에만 확정한다.
     // 샘플 문구에서 분석기가 뽑아낸 값은 사용자가 한 말이 아니므로 쓰지 않는다.
@@ -373,6 +361,57 @@ public class AcademyAssistantService {
     remember(academyId, ROLE_ASSISTANT, KIND_RESULT, reply, toJson(Map.of(
         "revision", saved.revision(), "designPreset", preset, "notes", notes)));
     return new TurnResult(reply, List.of(), true, academyId, saved.revision(), preset, notes, null);
+  }
+
+  /**
+   * 요청에 맞는 디자인 레시피를 고르고 생성 결과(generated)에 덮어쓴다. 샘플로 이미 정한 프리셋(presetLocked)은 뒤집지 않으며,
+   * 같은 연산 검증({@link AssistantPatchApplier})을 그대로 거친다. 고른 레시피가 없으면 null.
+   */
+  private static AssistantAssetCatalog.Asset applyRecipe(
+      Map<String, String> generated, String request, String name, String preset, boolean presetLocked) {
+    AssistantAssetCatalog.Asset recipe = AssistantAssetCatalog.recommendRecipe(request, name, preset, presetLocked);
+    if (recipe == null) return null;
+    AssistantPatchApplier.Snapshot base = new AssistantPatchApplier.Snapshot("", generated, null, null);
+    AssistantPatchApplier.Plan plan = AssistantPatchApplier.plan(
+        List.of(AssistantPatchApplier.Op.section("applyAsset", recipe.id())), base, "");
+    AssistantPatchApplier.Applied applied = AssistantPatchApplier.apply(base, plan.accepted());
+    applied.draftPatch().forEach((k, v) -> {
+      if (v == null) generated.remove(k);
+      else generated.put(k, v);
+    });
+    return recipe;
+  }
+
+  /**
+   * 새 홈페이지 만들기(수정 턴과 구분): 학원 정보는 그대로 두고, 요청에서 새 초안(디자인+문구)을 만들어 비공개 작업본에
+   * 한 번의 수정으로 적용한다. 공개 홈페이지·버전 기록은 바뀌지 않고 '되돌리기'로 직전 작업본으로 돌아갈 수 있다.
+   */
+  public AcademyAssistantEditService.EditOutcome restart(
+      JwtTokenProvider.AuthenticatedPrincipal principal, String message, Long revision) {
+    String text = message == null ? "" : message.trim();
+    if (text.isEmpty()) {
+      throw new IllegalArgumentException("어떤 홈페이지를 만들지 알려 주세요. 학원 이름, 과목, 원하는 분위기를 적어 주세요.");
+    }
+    if (text.length() > MAX_MESSAGE_LENGTH) {
+      throw new IllegalArgumentException("메시지는 " + MAX_MESSAGE_LENGTH + "자 이하로 입력해 주세요.");
+    }
+    if (isDangerous(text)) {
+      throw new IllegalArgumentException("허용되지 않은 내용이 포함되어 있습니다.");
+    }
+    AcademyResponse academy = academyService.getMine(principal)
+        .orElseThrow(() -> new IllegalArgumentException("홈페이지를 먼저 만들어 주세요."));
+    String name = academy.name();
+    CreateDraft draft = createService.generateDraft(text, name);
+    Map<String, String> generated = new HashMap<>(draft.builderDraft());
+    generated.put("designPreset", draft.designPreset());
+    applyRecipe(generated, text, name, draft.designPreset(), false);
+    String intro = generated.getOrDefault("intro", name);
+    Map<String, String> builderDraft = new LinkedHashMap<>();
+    generated.forEach((k, v) -> {
+      if (!NON_DRAFT_KEYS.contains(k) && v != null) builderDraft.put(k, v);
+    });
+    String reply = "'" + name + "' 홈페이지 새 초안을 만들었어요. 공개 홈페이지는 그대로예요. 마음에 들지 않으면 '되돌리기'로 이전 작업본으로 돌아갈 수 있어요.";
+    return editService.restart(principal, revision, text, builderDraft, intro, reply);
   }
 
   private static String label(String need) {

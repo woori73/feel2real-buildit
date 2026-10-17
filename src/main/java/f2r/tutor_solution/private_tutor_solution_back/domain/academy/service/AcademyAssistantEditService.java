@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -65,6 +66,8 @@ public class AcademyAssistantEditService {
   static final String KIND_REDO = "REDO";
   /** 저장점: 현재 작업본 내용을 기록한다(초기화 기준). 작업본·공개본은 바꾸지 않는다. */
   static final String KIND_SAVEPOINT = "SAVEPOINT";
+  /** 새 홈페이지 만들기 시작 표시: 화면은 이 표시 이후의 대화만 '현재 제작 대화'로 보여 준다. 스택에는 영향이 없다. */
+  static final String KIND_RESTART = "RESTART";
   private static final int AI_MAX_OUTPUT = 3000;
   private static final int MAX_REPLY = 300;
 
@@ -487,6 +490,60 @@ public class AcademyAssistantEditService {
       remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, "초기화", null);
       remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_EDIT, reply, toJson(payload));
       return new EditOutcome(reply, changes, List.of(), "RESET", 0, false, saved.revision(), stack.depth + 1, null);
+    });
+  }
+
+  /** '새 홈페이지 만들기'가 지우는 디자인 키. 이 밖의 값(사업자 정보·연락처 등)은 그대로 둔다. */
+  private static final Set<String> RESTART_DESIGN_KEYS = Set.of(
+      "designPreset", "designAsset", "typographyPreset", "heroLayout", "cardStyle", "motionStyle", "headingFont", "bodyFont");
+
+  /**
+   * 새 홈페이지 만들기의 목표 상태: 현재 작업본에서 디자인 키를 비우고 생성 결과를 덮어쓴다.
+   * 섹션 표시·순서와 사업자 정보 같은 비디자인 값은 현재 값을 유지한다.
+   */
+  static Snapshot restartTarget(Snapshot current, Map<String, String> generated, String intro) {
+    Map<String, String> draft = new java.util.LinkedHashMap<>(current.draft());
+    draft.keySet().removeIf(k -> RESTART_DESIGN_KEYS.contains(k) || AssistantDesignCatalog.COLOR_KEYS.containsKey(k));
+    draft.putAll(generated);
+    return new Snapshot(intro, draft, current.visibility(), current.order(), current.imageSlots());
+  }
+
+  /**
+   * 새 홈페이지 만들기: 생성기가 만든 초안을 작업본에 한 번의 수정으로 적용한다. 공개본·버전 기록·저장점은 지우지 않으며,
+   * '되돌리기'로 직전 작업본으로 돌아갈 수 있다. 대화에는 RESTART 표시를 남겨 새 제작 대화의 시작점을 만든다.
+   */
+  public EditOutcome restart(
+      JwtTokenProvider.AuthenticatedPrincipal principal, Long expectedRevision, String userText,
+      Map<String, String> generated, String intro, String reply) {
+    AcademyResponse academy = academyService.getMine(principal)
+        .orElseThrow(() -> new IllegalArgumentException("홈페이지를 먼저 만들어 주세요."));
+    Long academyId = academy.academyId();
+    return tx.execute(s -> {
+      State fresh = workingCopyService.open(principal);
+      requireRevision(fresh, expectedRevision);
+      Snapshot current = snapshotOf(fresh, imageSlotsOf(academy, workingCopyService.stagedMedia(principal)));
+      Applied applied = AssistantPatchApplier.diff(current, restartTarget(current, generated, intro));
+      if (applied.isEmpty()) {
+        remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_RESTART, "새 홈페이지 만들기", null);
+        remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, userText, null);
+        String same = "요청하신 내용이 지금 작업본과 같아서 바꿀 내용이 없어요.";
+        remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, AcademyAssistantService.KIND_TEXT, same, null);
+        return new EditOutcome(same, List.of(), List.of(), "RESTART", 0, false, fresh.revision(), stackOf(academyId).depth, null);
+      }
+      State saved = hasContent(applied)
+          ? workingCopyService.save(principal, fresh.revision(), applied.intro(), toPatch(applied))
+          : fresh;
+      Map<String, Object> payload = new java.util.LinkedHashMap<>();
+      payload.put("changes", applied.changes());
+      payload.put("skipped", List.of());
+      payload.put("undo", applied.undo());
+      payload.put("revisionAfter", saved.revision());
+      payload.put("engine", "RESTART");
+      remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_RESTART, "새 홈페이지 만들기", null);
+      remember(academyId, AcademyAssistantService.ROLE_USER, AcademyAssistantService.KIND_TEXT, userText, null);
+      remember(academyId, AcademyAssistantService.ROLE_ASSISTANT, KIND_EDIT, reply, toJson(payload));
+      return new EditOutcome(reply, applied.changes(), List.of(), "RESTART", 0, false, saved.revision(),
+          stackOf(academyId).depth, null);
     });
   }
 

@@ -77,7 +77,20 @@
     return /(공개|배포|게시|올려)/.test(t) && /(하고\s*싶|할래|할게|해\s*(줘|주세요|줄래)|하자|하겠|해요|싶어)/.test(t);
   }
 
+  /**
+   * 대화 기록을 '현재 제작 대화'와 '이전 대화'로 나눈다. 가장 마지막 RESTART(새 홈페이지 만들기) 표시부터가 현재 대화이고,
+   * 그 앞은 이전 대화다. 표시가 없으면 전부 현재 대화다. RESTART 표시 자체는 화면에 그리지 않는다.
+   */
+  function splitThread(messages) {
+    var list = Array.isArray(messages) ? messages : [];
+    var cut = -1;
+    for (var i = 0; i < list.length; i++) if (list[i] && list[i].kind === 'RESTART') cut = i;
+    if (cut < 0) return { earlier: [], current: list.slice() };
+    return { earlier: list.slice(0, cut), current: list.slice(cut + 1) };
+  }
+
   return {
+    splitThread: splitThread,
     takePendingPrompt: takePendingPrompt, isPublishIntent: isPublishIntent, PENDING_KEY: PENDING_KEY,
     fileName: fileName, finalizeHtml: finalizeHtml, versionLabel: versionLabel,
     absolutizeCssUrls: absolutizeCssUrls, TARGETS: TARGETS

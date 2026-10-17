@@ -91,3 +91,19 @@ test('given 디자인 수정 요청 when 판단하면 then false (AI 수정으�
   // given / when / then
   for (const t of ['공개 상담 신청 버튼 추가해줘', '수업 영상 섹션 숨겨줘', '비공개로 바꿔줘', '파란색을 조금 더 밝게 바꿔줘', '', '홈페이지를 공개하고 싶은데 학원 소개 문구도 더 길게 풀어서 써 주고 강사진 소개도 추가해 줘 부탁해']) assert.equal(E.isPublishIntent(t), false, t);
 });
+
+test('given RESTART 표시가 있는 기록 when splitThread 하면 then 마지막 표시 이후만 현재 대화다', () => {
+  // given
+  const msgs = [{ kind: 'TEXT', content: 'a' }, { kind: 'RESTART' }, { kind: 'TEXT', content: 'b' }, { kind: 'RESTART' }, { kind: 'EDIT', content: 'c' }];
+  // when
+  const r = E.splitThread(msgs);
+  // then
+  assert.deepEqual(r.current.map((m) => m.content), ['c']);
+  assert.equal(r.earlier.length, 3);
+});
+
+test('given RESTART 표시가 없거나 잘못된 입력 when splitThread 하면 then 전부 현재 대화이거나 빈 목록이다', () => {
+  // given / when / then
+  assert.equal(E.splitThread([{ kind: 'TEXT' }]).current.length, 1);
+  assert.deepEqual(E.splitThread(null), { earlier: [], current: [] });
+});
