@@ -1,0 +1,31 @@
+name: Assume-role negative check (one-time, manual)
+# 신뢰 정책이 "environment + job_workflow_ref(main)"으로 실제 잠겨 있는지 AWS 쪽에서 확인한다.
+# 역할 생성(승인 A) 직후, 승인된 단일 비-main 브랜치(ci/assume-negative)에서만 1회 실행한다. docs 아래 파일이며 활성 워크플로가 아니다.
+# 기대 결과: 아래 가정(assume)은 반드시 AccessDenied(NotAuthorized)로 실패해야 한다. 성공하면 신뢰 정책이 열려 있다는 뜻이므로
+# 즉시 중단하고 사용자에게 보고한다(역할 신뢰 정책 수정은 별도 승인).
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Try to assume infra-builder from a non-main ref without environment (must fail)
+        id: assume
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/f2r-infra-builder
+          aws-region: ap-northeast-2
+          role-session-name: f2r-negative-check
+      - name: Judge
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.assume.outcome }}
+        run: |
+          echo "assume outcome=${OUTCOME} ref=${GITHUB_REF}"
+          if [ "${OUTCOME}" = "success" ]; then echo "UNEXPECTED: 비-main·environment 없음인데 역할 가정 성공 — 신뢰 정책이 열려 있다"; exit 1; fi
+          echo "EXPECTED: 가정 거부됨"

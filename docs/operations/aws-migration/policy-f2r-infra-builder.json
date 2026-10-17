@@ -95,7 +95,7 @@
       "Resource": "arn:aws:ec2:ap-northeast-2:425805163960:instance/*",
       "Condition": {
         "StringEquals": {
-          "ec2:InstanceType": "t3.small",
+          "ec2:InstanceType": "t3.medium",
           "ec2:MetadataHttpTokens": "required",
           "ec2:InstanceProfile": "arn:aws:iam::425805163960:instance-profile/f2r-ec2-profile",
           "aws:RequestTag/Project": "f2r-migration"

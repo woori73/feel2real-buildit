@@ -231,7 +231,7 @@ jobs:
               # 인스턴스 프로파일 전파 지연에 대비해 재시도. client-token 으로 같은 요청의 중복 생성도 막는다.
               TOKEN="f2r-app-$(date -u +%Y%m%d)"
               for TRY in 1 2 3 4 5 6; do
-                if OUT=$(aws ec2 run-instances --image-id "$AMI" --instance-type t3.small \
+                if OUT=$(aws ec2 run-instances --image-id "$AMI" --instance-type t3.medium \
                     --subnet-id "$PUB1" --security-group-ids "$EC2SG" --associate-public-ip-address \
                     --iam-instance-profile Name="$PROFILE" \
                     --metadata-options HttpTokens=required,HttpEndpoint=enabled,HttpPutResponseHopLimit=1 \
