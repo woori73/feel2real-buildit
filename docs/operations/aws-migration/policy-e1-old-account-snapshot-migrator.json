@@ -1,0 +1,107 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CreateMigrationKeyOnlyWithProjectTag",
+      "Effect": "Allow",
+      "Action": [
+        "kms:CreateKey",
+        "kms:TagResource"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Project": "f2r-migration",
+          "aws:RequestedRegion": "ap-northeast-2"
+        }
+      }
+    },
+    {
+      "Sid": "CreateMigrationAliasOnly",
+      "Effect": "Allow",
+      "Action": "kms:CreateAlias",
+      "Resource": "arn:aws:kms:ap-northeast-2:067573916809:alias/f2r-migration"
+    },
+    {
+      "Sid": "ManageOnlyProjectTaggedKey",
+      "Effect": "Allow",
+      "Action": [
+        "kms:CreateAlias",
+        "kms:DescribeKey",
+        "kms:GetKeyPolicy",
+        "kms:PutKeyPolicy",
+        "kms:ListResourceTags"
+      ],
+      "Resource": "arn:aws:kms:ap-northeast-2:067573916809:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "f2r-migration"
+        }
+      }
+    },
+    {
+      "Sid": "UseProjectKeyThroughRdsForCopy",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Decrypt",
+        "kms:ReEncryptFrom",
+        "kms:ReEncryptTo",
+        "kms:GenerateDataKey",
+        "kms:CreateGrant",
+        "kms:DescribeKey"
+      ],
+      "Resource": "arn:aws:kms:ap-northeast-2:067573916809:key/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "f2r-migration",
+          "kms:ViaService": "rds.ap-northeast-2.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "ReadSnapshotsAndAliases",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBSnapshots",
+        "rds:DescribeDBSnapshotAttributes",
+        "kms:ListAliases"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CopySnapshotsSourceAndTargetArnBothRequired",
+      "Effect": "Allow",
+      "Action": "rds:CopyDBSnapshot",
+      "Resource": "arn:aws:rds:ap-northeast-2:067573916809:snapshot:*"
+    },
+    {
+      "Sid": "ShareAndTagMigrationSnapshotsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "rds:ModifyDBSnapshotAttribute",
+        "rds:AddTagsToResource"
+      ],
+      "Resource": "arn:aws:rds:ap-northeast-2:067573916809:snapshot:f2r-mig-*"
+    },
+    {
+      "Sid": "DenyDestructiveAndRestore",
+      "Effect": "Deny",
+      "Action": [
+        "rds:DeleteDBSnapshot",
+        "rds:DeleteDBInstance",
+        "rds:ModifyDBInstance",
+        "rds:StopDBInstance",
+        "rds:RebootDBInstance",
+        "rds:RestoreDBInstanceFromDBSnapshot",
+        "rds:RestoreDBInstanceToPointInTime",
+        "rds:CreateDBInstance",
+        "rds:CreateDBSnapshot",
+        "kms:ScheduleKeyDeletion",
+        "kms:DisableKey",
+        "kms:DeleteAlias",
+        "kms:RevokeGrant"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

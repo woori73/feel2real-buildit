@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CreateFinalMigrationSnapshotOnly",
+      "Effect": "Allow",
+      "Action": ["rds:CreateDBSnapshot", "rds:AddTagsToResource"],
+      "Resource": [
+        "arn:aws:rds:ap-northeast-2:067573916809:snapshot:f2r-mig-*",
+        "arn:aws:rds:ap-northeast-2:067573916809:db:*"
+      ]
+    }
+  ]
+}

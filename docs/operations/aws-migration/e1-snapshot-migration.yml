@@ -1,0 +1,147 @@
+name: E1 snapshot migration (old -> new account, manual, no restore)
+# 스냅샷 복사·공유 준비 자동화(비활성 초안: docs 아래). 구 계정 CMK 재암호화 복사 → 신규 계정 공유 → 신규 계정 내 복사까지만 한다.
+# DB 복원·운영 전환·DNS는 이 워크플로의 범위가 아니다. 역할(OIDC)·Environment 생성과 실행은 각각 별도 승인 후에만 가능하다.
+# 공개 저장소의 Actions 로그는 공개다: 키 ID·ARN 전체·계정 메타데이터를 출력하지 않고 단계 결과(상태)만 출력한다.
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: '실행 단계(하나씩, 승인 필요)'
+        required: true
+        type: choice
+        options: [old-kms, old-copy, old-share, new-copy, status]
+      source_snapshot:
+        description: '복사할 구 계정 수동 스냅샷 식별자(old-copy 전용)'
+        required: false
+        default: ''
+      stamp:
+        description: '복사본 이름 날짜(예: 20261018)'
+        required: true
+        default: ''
+permissions:
+  id-token: write
+  contents: read
+concurrency:
+  group: f2r-e1-snapshot
+  cancel-in-progress: false
+env:
+  AWS_REGION: ap-northeast-2
+  OLD_ROLE_ARN: arn:aws:iam::067573916809:role/f2r-e1-snapshot-migrator
+  NEW_ROLE_ARN: arn:aws:iam::425805163960:role/f2r-e1-snapshot-receiver
+  NEW_ACCOUNT: '425805163960'
+  OLD_ACCOUNT: '067573916809'
+jobs:
+  old-account:
+    if: inputs.step == 'old-kms' || inputs.step == 'old-copy' || inputs.step == 'old-share' || inputs.step == 'status'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: f2r-aws-e1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.OLD_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-e1-old
+      - name: Run old-account step
+        shell: bash
+        env:
+          STEP: ${{ inputs.step }}
+          SRC: ${{ inputs.source_snapshot }}
+          STAMP: ${{ inputs.stamp }}
+        run: |
+          set -euo pipefail
+          [[ "$STAMP" =~ ^[0-9]{8}$ ]] || { echo "stamp 형식 오류(YYYYMMDD)"; exit 1; }
+          TARGET="f2r-mig-$STAMP"
+          key_id() { aws kms describe-key --key-id alias/f2r-migration --query 'KeyMetadata.KeyId' --output text 2>/dev/null || true; }
+          wait_available() { # $1=snapshot id, 최대 55분
+            for _ in $(seq 1 110); do
+              S=$(aws rds describe-db-snapshots --db-snapshot-identifier "$1" --query 'DBSnapshots[0].Status' --output text 2>/dev/null || echo missing)
+              echo "snapshot status=$S"; [ "$S" = available ] && return 0
+              [ "$S" = failed ] && { echo "복사 실패"; return 1; }
+              sleep 30
+            done; echo "대기 시간 초과"; return 1
+          }
+          case "$STEP" in
+            old-kms)
+              KID=$(key_id)
+              if [ -z "$KID" ] || [ "$KID" = None ]; then
+                KID=$(aws kms create-key --description "f2r RDS snapshot migration (E1)" \
+                  --tags TagKey=Project,TagValue=f2r-migration --query 'KeyMetadata.KeyId' --output text)
+                aws kms create-alias --alias-name alias/f2r-migration --target-key-id "$KID"
+                echo "CMK created"
+              else echo "CMK already exists"; fi
+              # 기존 정책에 신규 계정 문장을 '추가'(루트 문장 유지). 이미 같은 Sid가 있으면 중복 추가하지 않는다.
+              aws kms get-key-policy --key-id "$KID" --policy-name default --query Policy --output text > /tmp/kp.json
+              python3 - <<'PY'
+          import json
+          cur=json.load(open('/tmp/kp.json'))
+          add=json.load(open('docs/operations/aws-migration/e1-old-kms-key-policy-statements.json'))['Statement']
+          have={s.get('Sid') for s in cur['Statement']}
+          root=[s for s in cur['Statement'] if s.get('Principal')=={'AWS':'arn:aws:iam::067573916809:root'} and s.get('Action')=='kms:*']
+          assert root, '계정 루트 kms:* 문장이 없다 — 중단(잠금 위험)'
+          cur['Statement']+= [s for s in add if s['Sid'] not in have]
+          json.dump(cur,open('/tmp/kp.new.json','w'))
+          PY
+              aws kms put-key-policy --key-id "$KID" --policy-name default --policy file:///tmp/kp.new.json
+              echo "key policy updated (신규 계정 한정 문장 2개)"
+              ;;
+            old-copy)
+              KID=$(key_id); [ -n "$KID" ] && [ "$KID" != None ] || { echo "CMK 없음 — old-kms 먼저"; exit 1; }
+              [ -n "$SRC" ] || { echo "source_snapshot 필요"; exit 1; }
+              ENC=$(aws rds describe-db-snapshots --db-snapshot-identifier "$SRC" --query 'DBSnapshots[0].Encrypted' --output text)
+              TYPE=$(aws rds describe-db-snapshots --db-snapshot-identifier "$SRC" --query 'DBSnapshots[0].SnapshotType' --output text)
+              [ "$TYPE" = manual ] || { echo "수동 스냅샷만 복사 대상(type=$TYPE)"; exit 1; }
+              echo "source: type=$TYPE encrypted=$ENC"
+              if aws rds describe-db-snapshots --db-snapshot-identifier "$TARGET" >/dev/null 2>&1; then echo "target exists — 재사용"; else
+                aws rds copy-db-snapshot --source-db-snapshot-identifier "$SRC" --target-db-snapshot-identifier "$TARGET" \
+                  --kms-key-id "alias/f2r-migration" --copy-tags >/dev/null
+              fi
+              wait_available "$TARGET"
+              aws rds describe-db-snapshots --db-snapshot-identifier "$TARGET" \
+                --query 'DBSnapshots[0].{Status:Status,Engine:EngineVersion,Encrypted:Encrypted,GB:AllocatedStorage,Created:SnapshotCreateTime}' --output table
+              ;;
+            old-share)
+              wait_available "$TARGET"
+              aws rds modify-db-snapshot-attribute --db-snapshot-identifier "$TARGET" --attribute-name restore --values-to-add "$NEW_ACCOUNT"
+              aws rds describe-db-snapshot-attributes --db-snapshot-identifier "$TARGET" \
+                --query 'DBSnapshotAttributesResult.DBSnapshotAttributes[?AttributeName==`restore`].AttributeValues' --output text | sed 's/[0-9]\{12\}/<ACCT>/g'
+              echo "shared with new account"
+              ;;
+            status)
+              aws rds describe-db-snapshots --db-snapshot-type manual \
+                --query 'DBSnapshots[?starts_with(DBSnapshotIdentifier, `f2r-mig-`)].{Id:DBSnapshotIdentifier,Status:Status,Created:SnapshotCreateTime}' --output table
+              ;;
+          esac
+  new-account:
+    if: inputs.step == 'new-copy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: f2r-aws-e1
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.NEW_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-e1-new
+      - name: Copy shared snapshot into the new account
+        shell: bash
+        env:
+          STAMP: ${{ inputs.stamp }}
+        run: |
+          set -euo pipefail
+          [[ "$STAMP" =~ ^[0-9]{8}$ ]] || { echo "stamp 형식 오류(YYYYMMDD)"; exit 1; }
+          SRC_ARN="arn:aws:rds:ap-northeast-2:${OLD_ACCOUNT}:snapshot:f2r-mig-$STAMP"
+          DST="f2r-shared-$STAMP"
+          if aws rds describe-db-snapshots --db-snapshot-identifier "$DST" >/dev/null 2>&1; then echo "target exists — 재사용"; else
+            aws rds copy-db-snapshot --source-db-snapshot-identifier "$SRC_ARN" --target-db-snapshot-identifier "$DST" \
+              --kms-key-id alias/aws/rds --copy-tags >/dev/null
+          fi
+          for _ in $(seq 1 110); do
+            S=$(aws rds describe-db-snapshots --db-snapshot-identifier "$DST" --query 'DBSnapshots[0].Status' --output text 2>/dev/null || echo missing)
+            echo "snapshot status=$S"; [ "$S" = available ] && break
+            [ "$S" = failed ] && { echo "복사 실패"; exit 1; }
+            sleep 30
+          done
+          aws rds describe-db-snapshots --db-snapshot-identifier "$DST" \
+            --query 'DBSnapshots[0].{Status:Status,Engine:EngineVersion,Encrypted:Encrypted,GB:AllocatedStorage}' --output table
