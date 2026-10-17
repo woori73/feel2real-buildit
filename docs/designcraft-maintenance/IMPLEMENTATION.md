@@ -45,3 +45,12 @@ Gate 경쟁·예외·비동기 완료/실행 전 취소/실행 중 취소·실�
 8. 성공 후 ADMIN resume. 실패하면 차단 유지, 별도 승인된 binary 복구와 검증 후 resume 여부 결정. 기존 0.6 CLI는 glibc 비호환이므로 단순 롤백이 정상화를 보장하지 않는다.
 
 Gate 코드 자체 롤백은 이전 JAR 복원과 Spring 재시작이므로 별도 운영 승인 필요. 이전 앱에는 gate가 없으므로 롤백하면 차단 통제도 사라진다. 바이너리 전환 도중 앱을 무심코 롤백하지 말고, 기존 경로/파일 상태 복구 및 신규 호출 통제까지 포함한 순서로 승인받아야 한다. 유지보수 상태파일을 삭제해 강제로 재개하지 않는다.
+
+## OPEN TTL (시간 제한) — 영구 보호
+`resume()` 후 gate가 스스로 닫히는 경로가 없어 B안 테스트는 서버 측 watchdog(임시)에 의존했다. 이를 코드로 대체한다.
+- `publishing.maintenance.open-ttl-seconds`(env `PUBLISHING_MAINTENANCE_OPEN_TTL_SECONDS`) 기본 **1800초**. `0`(무제한)은 명시 설정 시에만 허용하고 빈 값·음수·비숫자는 1800.
+- 만료 = ADMIN `drain`과 같은 경로(`startDrain`): 신규 admission 즉시 503, 진행 중 operation/추적 CLI는 끝까지 수행 후 CLOSED. 취소·삭제·FAILED 처리 없음.
+- 판정 위치: `enter()`·`status()`(지연 판정, 요청 시점에 항상 반영) + `@Scheduled tick()` 5초(요청이 없어도 상태 파일이 CLOSED). 모두 gate 모니터 안에서 직렬화.
+- deadline은 메모리 전용(`System.nanoTime`). 재시작은 항상 CLOSED이므로 저장하지 않는다. 수동 drain은 deadline을 지우고 resume은 새로 계산한다.
+- `Status.openRemainingSeconds`(올림, OPEN+TTL일 때만, 아니면 null)를 ADMIN 상태 응답에 노출.
+- 테스트: `PublishingMaintenanceGateTtlTest`(가짜 시계 단위 12건 + 경쟁 2건: 만료와 동시 진입 8스레드, tick/drain/enter/status 동시 호출) 및 `PublishingMaintenanceIntegrationTest`(ADMIN 응답, 설정값 해석).

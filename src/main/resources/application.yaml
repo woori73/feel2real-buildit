@@ -238,3 +238,6 @@ publishing:
   worker-enabled: ${PUBLISHING_WORKER_ENABLED:true}
   worker-poll-seconds: ${PUBLISHING_WORKER_POLL_SECONDS:10}
   max-attempts: ${PUBLISHING_MAX_ATTEMPTS:3}
+  maintenance:
+    # gate OPEN 최대 시간(초). 만료되면 ADMIN drain과 동일하게 닫힌다. 0=무제한은 명시 설정 시에만(빈 값·음수·비숫자는 1800).
+    open-ttl-seconds: ${PUBLISHING_MAINTENANCE_OPEN_TTL_SECONDS:1800}
