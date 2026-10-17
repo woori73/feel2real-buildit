@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -131,27 +132,42 @@ class EasyDashboardWidgetCacheTest {
   }
 
   @Test
-  @DisplayName("여러 스레드가 동시에 넣어도 상한을 지키고 예외가 없다")
-  void put_concurrent_staysBounded() throws Exception {
+  @DisplayName("기본 설정(최대 200개)에서 여러 스레드가 서로 다른 키를 동시에 넣어도 실행 중 어느 순간에도 200개를 넘지 않는다")
+  void put_concurrentDefaultCache_neverExceeds200AtAnyObservedMoment() throws Exception {
     // given
-    var bounded = new EasyDashboardWidgetCache(50, TTL, now::get);
-    ExecutorService pool = Executors.newFixedThreadPool(8);
+    var shared = new EasyDashboardWidgetCache();
+    int threads = 8;
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    AtomicInteger maxObserved = new AtomicInteger();
+    java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
 
-    // when
-    for (int t = 0; t < 8; t++) {
-      final int base = t * 10_000;
+    // when: 모두 동시에 시작해 각자 다른 키 5,000개를 넣으면서 매번 크기를 관측한다
+    for (int t = 0; t < threads; t++) {
+      final int base = t * 100_000;
       pool.submit(() -> {
-        for (int i = 0; i < 2_000; i++) {
-          bounded.put("k" + (base + i), response("x"));
-          bounded.get("k" + (base + i / 2));
+        start.await();
+        for (int i = 0; i < 5_000; i++) {
+          shared.put("biz-" + (base + i) + ":2026-10", response("x"));
+          shared.get("biz-" + (base + i / 2) + ":2026-10");
+          maxObserved.accumulateAndGet(shared.size(), Math::max);
         }
+        return null;
       });
     }
+    start.countDown();
     pool.shutdown();
 
     // then
-    assertThat(pool.awaitTermination(30, TimeUnit.SECONDS)).isTrue();
-    assertThat(bounded.size()).isLessThanOrEqualTo(50);
+    assertThat(pool.awaitTermination(60, TimeUnit.SECONDS)).isTrue();
+    assertThat(maxObserved.get()).isLessThanOrEqualTo(EasyDashboardWidgetCache.DEFAULT_MAX_ENTRIES);
+    assertThat(shared.size()).isEqualTo(EasyDashboardWidgetCache.DEFAULT_MAX_ENTRIES);
+  }
+
+  @Test
+  @DisplayName("기본 상한은 200개, 수명은 5분이다")
+  void defaults_are200EntriesAnd5Minutes() {
+    assertThat(EasyDashboardWidgetCache.DEFAULT_MAX_ENTRIES).isEqualTo(200);
+    assertThat(EasyDashboardWidgetCache.DEFAULT_TTL_MILLIS).isEqualTo(5 * 60 * 1000L);
   }
 
   @Test
