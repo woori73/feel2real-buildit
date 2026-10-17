@@ -392,6 +392,7 @@ public class SecurityConfig {
                 "/exam_review",
                 "/admin/login",
                 "/admin/dashboard",
+                "/admin/hub",
                 "/admin/students",
                 "/admin/members",
                 "/admin/academies",
