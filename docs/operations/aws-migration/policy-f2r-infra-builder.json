@@ -152,32 +152,6 @@
       "Resource": "arn:aws:ssm:ap-northeast-2::parameter/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
     },
     {
-      "Sid": "CreateEc2SsmRoleAndProfileOnlyByName",
-      "Effect": "Allow",
-      "Action": [
-        "iam:CreateRole",
-        "iam:TagRole",
-        "iam:CreateInstanceProfile",
-        "iam:TagInstanceProfile",
-        "iam:AddRoleToInstanceProfile"
-      ],
-      "Resource": [
-        "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role",
-        "arn:aws:iam::425805163960:instance-profile/f2r-ec2-profile"
-      ]
-    },
-    {
-      "Sid": "AttachSsmCoreToEc2RoleOnly",
-      "Effect": "Allow",
-      "Action": "iam:AttachRolePolicy",
-      "Resource": "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role",
-      "Condition": {
-        "StringEquals": {
-          "iam:PolicyARN": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-        }
-      }
-    },
-    {
       "Sid": "PassOnlyEc2SsmRoleToEc2",
       "Effect": "Allow",
       "Action": "iam:PassRole",
