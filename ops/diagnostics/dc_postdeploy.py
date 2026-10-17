@@ -46,6 +46,10 @@ q = subprocess.run(['mysql', '--connect-timeout=10', '-h', env['DB_HOST'], '-P',
 out['db_publishing_jobs_rows'] = q.stdout.strip().splitlines()
 out['memory'] = sh('free -m | sed -n 2,3p').splitlines()
 out['oom_since_boot_recent_60min'] = sh("journalctl -k --since '-60 min' --no-pager 2>/dev/null | grep -ci 'out of memory\\|oom-kill'")
+out['oom_24h'] = sh("journalctl -k --since '-24 hours' --no-pager 2>/dev/null | grep -ci 'out of memory\\|oom-kill'")
+out['service_starts_24h'] = {'f2r-app': sh("journalctl -u f2r-app.service --since '-24 hours' --no-pager 2>/dev/null | grep -c 'Started f2r-app\\|Starting f2r-app'"), 'wiki': sh("journalctl -u buildit-wiki.service --since '-24 hours' --no-pager 2>/dev/null | grep -c 'Started buildit-wiki\\|Starting BuildIt Wiki'"), 'boot_time': sh('uptime -s')}
+out['swap_in_use_detail'] = sh("grep -E 'SwapTotal|SwapFree|MemAvailable' /proc/meminfo | tr -s ' ' | tr '\\n' ';'")
+out['backup_listing'] = {'dc-deploy-pre': sh('ls -la /var/backups/dc-deploy-pre-bbbd9222 | tail -n +2 | awk \'{print $1,$3,$9}\''), 'env-backups': sh('ls -1 /var/backups/f2r-deploy-env 2>/dev/null | tr \'\\n\' \' \''), 'designcraft': sh('ls -1 /var/backups/designcraft | tr \'\\n\' \' \''), 'app_jar_previous_sha16': sha('/home/ec2-user/app.jar.previous')[:16]}
 start = sh("systemctl show f2r-app.service -p ActiveEnterTimestamp --value")
 out['spring_active_since'] = start
 out['spring_log_since_start'] = {'ERROR_lines': sh(f"journalctl -u f2r-app.service --since '{start}' --no-pager 2>/dev/null | grep -c ' ERROR '"),
@@ -75,3 +79,5 @@ out['preexisting_backups_intact'] = {'dir': sh("ls /var/backups/dc-deploy-pre-bb
 out['tmp_publishing'] = sh("find /tmp/publishing -type f | wc -l")
 print(json.dumps(out, indent=1, ensure_ascii=False))
 # recheck 2026-10-17T03:29:41Z
+
+# preflight 2b6d5fd2 2026-10-17T04:41:24Z
