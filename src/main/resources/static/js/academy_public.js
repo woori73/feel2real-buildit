@@ -1256,18 +1256,58 @@
 
 
 
-  // 상담 신청 — 학원이 footer 사업자 정보에 입력한 전화/이메일로 바로 연결한다.
-  // 상담 접수 폼(백엔드 저장)은 여전히 미구현이라, 연락처가 하나도 없으면 기존 데모 안내를 유지한다.
+  // 상담 신청 — 접수 폼(서버 저장)을 열고, 학원이 footer 사업자 정보에 입력한 전화/이메일이 있으면 함께 보여 준다.
   window.requestConsult = function () {
-    if (!consultChannels.length) {
-      alert('상담 신청 기능은 준비 중입니다. (데모)');
-      return;
-    }
     const options = document.getElementById('consultOptions');
     const modal = document.getElementById('consultModal');
     if (!options || !modal) return;
     options.innerHTML = consultChannels.map(consultOption).join('');
+    setConsultStatus('', false);
+    const submit = document.getElementById('consultSubmit');
+    if (submit) submit.disabled = false;
     modal.style.display = 'flex';
+  };
+
+  function setConsultStatus(text, isError) {
+    const box = document.getElementById('consultStatus');
+    if (!box) return;
+    box.textContent = text;
+    box.style.color = isError ? '#b91c1c' : '#047857';
+  }
+
+  /** 상담 접수. 서버가 보낸 문구는 textContent로만 보여 주고, 입력값은 콘솔·로그에 남기지 않는다. */
+  window.submitConsult = async function (event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const val = (id) => { const e = document.getElementById(id); return e ? e.value : ''; };
+    const consent = document.getElementById('consultConsent');
+    const submit = document.getElementById('consultSubmit');
+    if (!consent || !consent.checked) { setConsultStatus('개인정보 수집·이용에 동의해 주세요.', true); return; }
+    if (submit) submit.disabled = true;
+    setConsultStatus('보내는 중이에요…', false);
+    try {
+      const res = await fetch(`/api/academies/${encodeURIComponent(slug)}/inquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: val('consultName'), phone: val('consultPhone'), message: val('consultMessage'),
+          consent: true, website: val('consultWebsite')
+        })
+      });
+      if (res.ok) {
+        setConsultStatus('상담 신청이 접수됐어요. 확인 후 연락드릴게요.', false);
+        ['consultName', 'consultPhone', 'consultMessage'].forEach((id) => { const e = document.getElementById(id); if (e) e.value = ''; });
+        if (consent) consent.checked = false;
+        return;
+      }
+      let message = '접수하지 못했어요. 잠시 후 다시 시도해 주세요.';
+      try { const j = await res.json(); if (j && j.message) message = j.message; } catch (e) { /* 기본 문구 */ }
+      if (res.status === 404) message = '아직 공개되지 않은 홈페이지라 접수할 수 없어요.';
+      setConsultStatus(message, true);
+    } catch (e) {
+      setConsultStatus('네트워크 오류로 접수하지 못했어요. 잠시 후 다시 시도해 주세요.', true);
+    } finally {
+      if (submit) submit.disabled = false;
+    }
   };
 
   function consultOption(channel) {

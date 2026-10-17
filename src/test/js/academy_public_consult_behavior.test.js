@@ -112,7 +112,7 @@ test('given 이메일만 입력한 발행 페이지 when 상담 신청을 누르
   assert.doesNotMatch(page.elements.options.innerHTML, /tel:/);
 });
 
-test('given 연락처가 없는 발행 페이지 when 상담 신청을 누르면 then 모달 대신 데모 안내를 띄운다', async () => {
+test('given 연락처가 없는 발행 페이지 when 상담 신청을 누르면 then 데모 안내 없이 접수 폼 모달이 열린다', async () => {
   // given — pageSettings 자체가 null인 legacy Academy
   const page = runPublicPage({ slug: 'legacy-academy', name: '레거시 학원', intro: '', subjects: [], regions: [], lessons: [] });
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -121,8 +121,9 @@ test('given 연락처가 없는 발행 페이지 when 상담 신청을 누르면
   page.context.window.requestConsult();
 
   // then
-  assert.notEqual(page.elements.modal.style.display, 'flex');
-  assert.deepEqual(page.alerts, ['상담 신청 기능은 준비 중입니다. (데모)']);
+  assert.equal(page.elements.modal.style.display, 'flex');
+  assert.deepEqual(page.alerts, []);
+  assert.equal(page.elements.options.innerHTML, '');
 });
 
 test('given 마스킹 dummy만 표시되는 발행 페이지 when 상담 신청을 누르면 then dummy 번호로 전화 링크를 만들지 않는다', async () => {
@@ -133,8 +134,9 @@ test('given 마스킹 dummy만 표시되는 발행 페이지 when 상담 신청�
   // when
   page.context.window.requestConsult();
 
-  // then
-  assert.deepEqual(page.alerts, ['상담 신청 기능은 준비 중입니다. (데모)']);
+  // then — 접수 폼은 열리지만 dummy 번호의 전화 링크는 만들지 않는다
+  assert.equal(page.elements.modal.style.display, 'flex');
+  assert.deepEqual(page.alerts, []);
   assert.equal(page.elements.options.innerHTML, '');
 });
 

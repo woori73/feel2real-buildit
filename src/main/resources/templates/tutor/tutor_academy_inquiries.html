@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>상담 문의 관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/tutor_academy.css">
+  <link rel="stylesheet" href="/css/tutor_academy_inquiries.css?v=20261017-1">
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <div class="brand">상담 문의</div>
+        <p class="muted">공개 홈페이지의 '상담 신청'으로 들어온 문의입니다. 본인 학원의 문의만 보여요. 개인정보이므로 외부에 공유하지 마세요.</p>
+      </div>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="/builder">홈페이지 만들기</a>
+      </div>
+    </div>
+    <section class="card">
+      <div class="inq-filter" role="group" aria-label="상태 필터">
+        <button type="button" class="inq-chip on" data-status="">전체</button>
+        <button type="button" class="inq-chip" data-status="NEW">신규 <b id="inqNewCount">0</b></button>
+        <button type="button" class="inq-chip" data-status="IN_PROGRESS">처리중</button>
+        <button type="button" class="inq-chip" data-status="DONE">완료</button>
+      </div>
+      <p class="muted" id="inqState" role="status" aria-live="polite">불러오는 중…</p>
+      <ul class="inq-list" id="inqList"></ul>
+      <div class="inq-more"><button type="button" class="btn btn-secondary" id="inqMore" hidden>더 보기</button></div>
+      <p class="muted inq-policy">보관: 접수일로부터 1년 후 파기 대상입니다. 삭제를 요청받으면 운영자에게 문의해 주세요.</p>
+    </section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/tutor_academy_inquiries.js?v=20261017-1"></script>
+</body>
+</html>

@@ -258,6 +258,18 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 - **AI 응답 지연(서버 한도)**: `buildit.assistant.ai-timeout-seconds`(기본 60, 0이면 제한 없음) 안에 AI가 답하지 않으면 서버가 호출을 취소하고 `POST /turn`은 **`504 {code:"AI_TIMEOUT", message, limitSeconds}`**로 끝난다. 수정이 아니므로 성공 응답 형태(`edited` 등)를 쓰지 않으며, 규칙 해석으로 대신 처리하지도 않는다. 사용자 입력·작업본·공개본·대화 기록은 바뀌지 않는다(쓰기 전에 끊는다). 취소된 호출은 Wiki Router→Qwen 폴백을 새로 시작하지 않는다(`log: buildit ai fallback skipped`). AI 호출은 요청 스레드의 로그인 정보를 넘겨받아 실행한다(폴백이 로그인 주체로 서명하기 때문). 화면(`assistant_wait.js`)은 8초부터 경과 시간·안내를 보여 주고, 504를 받으면 오류로 표시하며 입력을 되돌려 다시 보낼 수 있게 한다. 100초 안에 응답이 없으면 기다리기를 멈추고 서버 작업본을 다시 읽는다(늦게 끝난 수정은 되돌리기를 안내).
 - `/builder?classic=1`은 언제나 기존 빌더를 연다(화면의 '기존 빌더로 돌아가기'). 기존 편집기·빌더 경로는 그대로다.
 
+#### 상담신청 접수 (academy_inquiries, V1086)
+| 엔드포인트 | 설명 |
+|---|---|
+| `POST /api/academies/{slug}/inquiries` (공개, 로그인 불필요) | `{name, phone, message, consent:true, website:""}`. 공개된(PUBLISHED·visible) 학원만 받는다(아니면 `404`). `consent`가 true가 아니면 `400`. 이름 ≤50자(꺾쇠 불가), 연락처 숫자 8~15자리(저장은 숫자만, 앞 `+` 유지), 문의 ≤1000자·링크 ≤1개. 성공은 `202 {received:true}`. **스팸 방어**: ① 함정 입력칸 `website`가 채워지면 저장하지 않고 같은 `202` ② 같은 학원·같은 연락처 10분 내 재접수는 저장하지 않고 `202` ③ IP별 분당 3·시간당 10회 + 전역 일일 300건(초과 `429`+`Retry-After`) ④ 학원별 하루 50건(초과 `429`). IP는 입시상담과 같은 신뢰 프록시 규칙으로 판별(`app.admissions.rate-limit.trusted-proxies`). 설정: `app.academy-inquiry.rate-limit.per-minute/per-hour/daily-limit` |
+| `GET /api/tutor/academy/inquiries?status=&page=&size=` (TUTOR/ADMIN) | **본인 학원** 접수 목록(최신순, size ≤50). 응답 `{items[{id,name,phone,message,status,createdAt,handledAt,anonymized}], total, page, size, newCount}`. `Cache-Control: no-store`. 학원이 없으면 `403` |
+| `PATCH /api/tutor/academy/inquiries/{id}/status` (TUTOR/ADMIN) | `{status: NEW|IN_PROGRESS|DONE}`. **본인 학원 접수만** — 다른 학원 id는 `404`(존재 여부도 숨김). 잘못된 상태 `400` |
+| `GET /api/admin/academies/{academyId}/inquiries` (ADMIN 전용) | 지정 학원 접수 조회만(상태 변경 없음). 조회한 관리자·학원 id만 로그에 남긴다 |
+
+- 화면: 공개 학원 페이지 '상담 신청' 모달(접수 폼+학원 연락처 바로 연결), 원장 `/tutor/academy/inquiries`(빌더 더보기 메뉴 '상담 문의').
+- 삭제 API 없음(이번 버전). 보관·삭제 정책은 `docs/design/academy-inquiry.md`.
+- 로그: 접수 id·학원 id·결과만. 이름·연락처·문의 본문은 로그·예외 메시지에 싣지 않는다.
+
 #### 빌더 계열 접근 권한 (ADMIN 허용)
 
 홈페이지 빌더 계열 경로는 **TUTOR와 ADMIN**이 쓸 수 있다. 소유자 검증은 그대로여서 ADMIN도 **본인이 만든 학원**만 다룬다(다른 회원 학원 관리 기능은 없음).

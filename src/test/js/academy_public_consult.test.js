@@ -42,9 +42,21 @@ test('given render when businessInfo를 읽으면 then 상담 연락 수단은 �
   assert.doesNotMatch(publicJs, /resolveDisplay/);
 });
 
-test('given 학원이 연락처를 입력하지 않은 경우 when 상담 신청을 누르면 then 기존 데모 안내를 유지한다', () => {
-  // given / when / then — 상담 접수 백엔드는 아직 없으므로 빈 모달 대신 안내로 떨어뜨린다
-  assert.match(publicJs, /if \(!consultChannels\.length\) \{\s*alert\('상담 신청 기능은 준비 중입니다\. \(데모\)'\);/);
+test('given 학원이 연락처를 입력하지 않은 경우 when 상담 신청을 누르면 then 데모 안내 없이 접수 폼 모달이 열린다', () => {
+  // given / when / then — 접수 백엔드(POST /api/academies/{slug}/inquiries)가 있으므로 '준비 중' 안내는 없다
+  assert.doesNotMatch(publicJs, /상담 신청 기능은 준비 중/);
+  assert.match(publicJs, /window\.submitConsult = async function/);
+  assert.match(publicJs, /\/api\/academies\/\$\{encodeURIComponent\(slug\)\}\/inquiries/);
+  assert.match(publicJs, /consent: true/);
+});
+
+test('given 접수 응답 when 화면에 보이면 then 서버 문구는 textContent로만 넣고 입력값을 콘솔에 남기지 않는다', () => {
+  // given
+  const body = publicJs.slice(publicJs.indexOf('window.submitConsult = async function'), publicJs.indexOf('function consultOption'));
+  // when / then
+  assert.match(publicJs, /function setConsultStatus[\s\S]*box\.textContent = text/);
+  assert.doesNotMatch(body, /console\./);
+  assert.doesNotMatch(body, /innerHTML/);
 });
 
 test('given 모달 옵션 렌더 when 학원 입력값을 넣으면 then escape된 tel/mailto 링크로 노출된다', () => {
