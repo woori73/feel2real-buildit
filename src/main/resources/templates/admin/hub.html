@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R - 통합 대시보드 (Hub)</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <style>
+    .hub-container { max-width: 1280px; margin: 0 auto; padding: 20px; }
+    .hub-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .hub-header h1 { font-size: 24px; font-weight: 800; color: #1a202c; margin: 0; }
+    .hub-header .data-asof { font-size: 12px; color: #718096; }
+    .hub-service-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .hub-service-tab { padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 20px; background: #fff; cursor: pointer; font-size: 14px; color: #4a5568; }
+    .hub-service-tab.active { background: #2d3748; color: #fff; border-color: #2d3748; }
+    .hub-widgets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .hub-widget { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
+    .hub-widget.full-width { grid-column: 1 / -1; }
+    .hub-widget h3 { font-size: 15px; font-weight: 700; color: #2d3748; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; }
+    .hub-widget h3 a { font-size: 12px; color: #4299e1; text-decoration: none; font-weight: 400; }
+    .hub-widget h3 a:hover { text-decoration: underline; }
+    .hub-stat-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .hub-stat-card { background: #f7fafc; border-radius: 8px; padding: 12px; text-align: center; }
+    .hub-stat-card .v { font-size: 20px; font-weight: 800; color: #1a202c; }
+    .hub-stat-card .l { font-size: 12px; color: #718096; margin-top: 4px; }
+    .hub-stat-card .t { font-size: 11px; margin-top: 2px; }
+    .hub-stat-card .t.up { color: #38a169; }
+    .hub-stat-card .t.down { color: #e53e3e; }
+    .hub-list { list-style: none; padding: 0; margin: 0; }
+    .hub-list li { padding: 10px 0; border-bottom: 1px solid #edf2f7; font-size: 13px; }
+    .hub-list li:last-child { border-bottom: none; }
+    .hub-list .t { font-weight: 600; color: #2d3748; }
+    .hub-list .s { color: #4a5568; margin-top: 2px; }
+    .hub-list .m { color: #a0aec0; font-size: 12px; margin-top: 2px; }
+    .hub-empty { text-align: center; color: #a0aec0; padding: 20px; font-size: 13px; }
+    .hub-loading { text-align: center; color: #718096; padding: 20px; font-size: 13px; }
+    .hub-error { text-align: center; color: #e53e3e; padding: 20px; font-size: 13px; background: #fff5f5; border-radius: 8px; }
+    .hub-error button { margin-top: 8px; padding: 6px 12px; border: 1px solid #e53e3e; border-radius: 6px; background: #fff; color: #e53e3e; cursor: pointer; font-size: 12px; }
+    @media (max-width: 768px) {
+      .hub-widgets { grid-template-columns: 1fr; }
+      .hub-stat-cards { grid-template-columns: repeat(2, 1fr); }
+      .hub-container { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('hub')}"></th:block>
+
+  <div class="hub-container">
+    <div class="hub-header">
+      <h1>통합 대시보드</h1>
+      <span class="data-asof" id="dataAsof"></span>
+    </div>
+
+    <div class="hub-service-tabs" id="serviceTabs">
+      <button class="hub-service-tab active" data-service="all">전체</button>
+      <button class="hub-service-tab" data-service="easy">이지재무</button>
+      <!-- 2차: 홈페이지, 아카데미크래프트 탭 추가 예정 -->
+    </div>
+
+    <div class="hub-widgets" id="widgetContainer">
+      <div class="hub-loading">위젯을 불러오는 중...</div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/hub_dashboard.js"></script>
+</body>
+</html>
