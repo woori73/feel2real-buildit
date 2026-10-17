@@ -42,6 +42,11 @@
 ## 4. 이 PR과 무관한 기존 문제(참고, 수정 안 함)
 - `DashboardWidgetControllerTest`(#740, Muse) 3건 실패: 단독 실행에서도 재현(`NullPointerException`·`UnfinishedStubbingException`). CI 허용 목록에 없어 CI에서는 드러나지 않았다. 별도 확인 필요.
 
+## 4-1. CI에서 드러난 별개 문제 — MySQL 연결 한도(기존 취약점)
+- 이 PR의 첫 CI에서 `mysql-integration-test`가 `ADMIN ID·비밀번호 교체` 테스트 9건 실패(`Flyway`가 DB에 연결 불가). **신규 테스트가 컨텍스트 1개를 더 만들면서** 이미 한계에 있던 연결 수를 넘긴 것이다: 테스트 JVM이 Spring 컨텍스트를 캐시하고 컨텍스트마다 Hikari 풀(기본 10)을 유지하는데, CI 목록이 컨텍스트 15개(≈150 연결)에서 MySQL 기본 `max_connections`(151)에 걸려 있었다.
+- 근거: CI 로그 실패 시점 `SQLNonTransientConnectionException`(마지막에 뜨는 컨텍스트), 로컬에서 CI 목록 그대로 실행 시 `Max_used_connections`=152·`Connection_errors_max_connections`=10(우연히 통과), `max_connections=500`으로 올리면 사용량 최대 160으로 한도 내.
+- 조치: CI 테스트 직전에 `SET GLOBAL max_connections=500` 단계 추가, 신규 테스트 풀 크기 4. (테스트 인프라 변경이며 제품 코드 영향 없음.) 기존 테스트가 늘 때마다 같은 문제가 재발할 수 있었다.
+
 ## 5. 미검증·한계
 - **PC·모바일 승인 화면: 확인하지 못함.** `/api/admin/easy/collection-approvals`를 호출하는 화면(템플릿·JS)이 저장소에 없다(검색 결과 0건). 기존 승인 UI는 카드 이벤트 검토(`/easy/card-review`)와 에이전트의 제안 카드뿐이며 이 승인 테이블과 연결되지 않는다. 캡처할 화면이 없어 제출하지 않는다 → **승인 화면은 별도 구현 항목.**
 - HTTP 계층(컨트롤러 응답 코드·직렬화) 시험 없음: 서비스 계층까지만 검증. 컨트롤러가 `IllegalStateException`을 어떤 상태 코드로 변환하는지는 미확인.

@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
@@ -50,6 +51,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
  * 실제 금융기관 로그인·Muse Spark 호출은 사용하지 않는다(CSV 파일 입력만).
  */
 @SpringBootTest
+@TestPropertySource(properties = "spring.datasource.hikari.maximum-pool-size=4")
 class EasyCollectionApprovalP4StagingTest {
 
   private static final String HEADER = "거래일,구분,금액,거래처,적요,결제수단,승인번호";
