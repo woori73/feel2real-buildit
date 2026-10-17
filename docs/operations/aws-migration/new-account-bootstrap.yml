@@ -1,0 +1,55 @@
+name: New account IAM bootstrap (one-time, manual)
+# 신규 계정의 프로젝트 역할 4개와 EC2 인스턴스 프로파일을 저장소의 JSON 그대로 만든다(멱등: 있으면 신뢰·권한을 갱신).
+# 사용자가 콘솔에서 만드는 것은 OIDC 공급자 1개와 부트스트랩 역할 1개뿐이고, 나머지는 이 워크플로가 처리한다.
+# 모든 실행은 Environment(f2r-aws-bootstrap) 승인이 필요하다. 사용 후 부트스트랩 역할은 삭제한다(콘솔에서 역할 삭제 1회).
+# docs 아래 초안이며 활성 워크플로가 아니다. 출력에는 역할 이름과 결과만 있다(계정 메타데이터 없음).
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+concurrency:
+  group: f2r-bootstrap
+  cancel-in-progress: false
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: f2r-aws-bootstrap
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/f2r-bootstrap
+          aws-region: ap-northeast-2
+          role-session-name: f2r-bootstrap
+      - name: Create or update project roles
+        shell: bash
+        run: |
+          set -euo pipefail
+          D=docs/operations/aws-migration
+          upsert() { # $1=role $2=trust file $3=inline policy name(or -) $4=inline policy file(or -)
+            if aws iam get-role --role-name "$1" >/dev/null 2>&1; then
+              aws iam update-assume-role-policy --role-name "$1" --policy-document "file://$D/$2"; echo "updated trust: $1"
+            else
+              aws iam create-role --role-name "$1" --assume-role-policy-document "file://$D/$2" --max-session-duration 3600 \
+                --tags Key=Project,Value=f2r-migration >/dev/null; echo "created: $1"
+            fi
+            if [ "$3" != "-" ]; then
+              aws iam put-role-policy --role-name "$1" --policy-name "$3" --policy-document "file://$D/$4"; echo "policy set: $1/$3"
+            fi
+          }
+          upsert f2r-infra-builder trust-f2r-infra-builder.json f2r-infra-builder-inline policy-f2r-infra-builder.json
+          upsert github-actions-f2r-deploy trust-github-actions-f2r-deploy.json f2r-deploy-smoke-ssm policy-f2r-deploy-smoke-ssm.json
+          upsert f2r-e1-snapshot-receiver trust-e1-new-account.json f2r-e1-snapshot-receiver-inline policy-e1-new-account-snapshot-receiver.json
+          upsert f2r-ec2-ssm-role trust-f2r-ec2-ssm-role.json - -
+          if [ -z "$(aws iam list-attached-role-policies --role-name f2r-ec2-ssm-role --query 'AttachedPolicies[?PolicyName==`AmazonSSMManagedInstanceCore`].PolicyName' --output text)" ]; then
+            aws iam attach-role-policy --role-name f2r-ec2-ssm-role --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore; echo "attached SSM core"
+          fi
+          if ! aws iam get-instance-profile --instance-profile-name f2r-ec2-profile >/dev/null 2>&1; then
+            aws iam create-instance-profile --instance-profile-name f2r-ec2-profile --tags Key=Project,Value=f2r-migration >/dev/null; echo "created profile"
+          fi
+          if [ -z "$(aws iam get-instance-profile --instance-profile-name f2r-ec2-profile --query 'InstanceProfile.Roles[].RoleName' --output text)" ]; then
+            aws iam add-role-to-instance-profile --instance-profile-name f2r-ec2-profile --role-name f2r-ec2-ssm-role; echo "added role to profile"
+          fi
+          echo "bootstrap done"

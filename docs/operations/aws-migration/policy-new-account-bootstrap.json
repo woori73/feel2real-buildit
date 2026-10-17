@@ -1,0 +1,46 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CreateAndUpdateOnlyNamedProjectRoles",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole", "iam:TagRole", "iam:UpdateAssumeRolePolicy", "iam:PutRolePolicy", "iam:GetRole", "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": [
+        "arn:aws:iam::425805163960:role/f2r-infra-builder",
+        "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role",
+        "arn:aws:iam::425805163960:role/github-actions-f2r-deploy",
+        "arn:aws:iam::425805163960:role/f2r-e1-snapshot-receiver"
+      ]
+    },
+    {
+      "Sid": "AttachOnlySsmCoreToEc2Role",
+      "Effect": "Allow",
+      "Action": "iam:AttachRolePolicy",
+      "Resource": "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role",
+      "Condition": { "StringEquals": { "iam:PolicyARN": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" } }
+    },
+    {
+      "Sid": "InstanceProfileForEc2RoleOnly",
+      "Effect": "Allow",
+      "Action": ["iam:CreateInstanceProfile", "iam:TagInstanceProfile", "iam:AddRoleToInstanceProfile", "iam:GetInstanceProfile"],
+      "Resource": [
+        "arn:aws:iam::425805163960:instance-profile/f2r-ec2-profile",
+        "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role"
+      ]
+    },
+    {
+      "Sid": "DenyEverythingElseInIam",
+      "Effect": "Deny",
+      "Action": [
+        "iam:Delete*", "iam:CreateUser", "iam:CreateAccessKey", "iam:CreateLoginProfile", "iam:UpdateLoginProfile",
+        "iam:CreatePolicy", "iam:CreatePolicyVersion", "iam:AttachUserPolicy", "iam:PutUserPolicy", "iam:AttachGroupPolicy",
+        "iam:CreateOpenIDConnectProvider", "iam:UpdateOpenIDConnectProviderThumbprint", "iam:AddClientIDToOpenIDConnectProvider",
+        "iam:RemoveClientIDFromOpenIDConnectProvider", "iam:PutRolePermissionsBoundary", "iam:PassRole"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
