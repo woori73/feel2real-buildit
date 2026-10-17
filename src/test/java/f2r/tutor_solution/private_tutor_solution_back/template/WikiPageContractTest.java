@@ -88,7 +88,7 @@ class WikiPageContractTest {
     assertThat(admin)
         .contains("<!DOCTYPE html>")
         .contains("admin-nav")
-        .contains("href=\"/admin/wiki-analysis\"")
+        // 상단 메뉴 노출은 제거했지만(AdminTopnavMenuContractTest) 화면 자체와 URL은 그대로 렌더된다.
         .contains("id=\"materialForm\"", "id=\"materialModal\"")
         .doesNotContain("th:block", "th:replace");
   }
