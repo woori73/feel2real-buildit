@@ -1,0 +1,62 @@
+name: DesignCraft PDF/X-4 structural equivalence check for #722 (runner only, CLI 0.8, no AWS)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-x4-equiv.yml', 'ops/diagnostics/dc_x4_equiv.py']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  equiv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: bbbd922214533cb75d1e3d923fe19a80ac11e0b6
+          path: main
+      - uses: actions/checkout@v4
+        with:
+          path: ci
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: actions/download-artifact@v4
+        with:
+          name: designcraft-080-glibc234-final
+          run-id: 38850191210
+          github-token: ${{ github.token }}
+          path: art
+      - name: Guard - archive hash
+        run: |
+          T=art/designcraft-0.8.0-al2023-x86_64.tar.gz
+          test "$(sha256sum $T | cut -d' ' -f1)" = "5d4a3e7b9a0569ed904ae41d777c1a02854e579fd8aaa2769a34a4c3228aee6d"
+          mkdir eng && tar xzf $T -C eng
+      - name: Restored PDFs from the merged main code (real CLI test) + engine originals
+        run: |
+          CLI=$(find "$PWD/eng" -name designcraft-cli -type f | head -1); chmod +x "$CLI"
+          git -C main log -1 --format='main HEAD = %H'
+          (cd main && DESIGNCRAFT_CLI="$CLI" DC_PDF_OUT="$GITHUB_WORKSPACE/restored" bash ./gradlew test --no-daemon -q --tests '*PdfMarkTitle*' 2>&1 | grep -E "FAILED|BUILD" || true)
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          for f in glob.glob('main/build/test-results/test/*PdfMarkTitle*.xml'):
+              r = ET.parse(f).getroot(); print(r.get('name').split('.')[-1], *(f"{k}={r.get(k)}" for k in ('tests','failures','errors','skipped')))
+          PY
+          declare -A ASCII=( [ko-textbook-a4]="Korean Textbook Template (A4)" [ko-workbook-b5]="Korean Workbook Template (B5)" [ko-book-46]="Korean Book Template (46)" )
+          mkdir -p orig pre
+          for t in ko-textbook-a4 ko-workbook-b5 ko-book-46; do
+            for v in orig pre; do
+              W=$(mktemp -d); T=main/ops/designcraft/templates/$t
+              cp "$T/template.designcraft" $W/job.designcraft; cp "$T/sample-manuscript.md" $W/m.md; cp -r "$T/Document Fonts" $W/
+              if [ $v = pre ]; then O="{\"standard\":\"x4\",\"tagged\":true,\"title\":\"${ASCII[$t]}\",\"marks\":{\"crop\":true,\"bleed\":true,\"pageInfo\":true}}"; else O='{"standard":"x4","tagged":true,"marks":{"crop":true,"bleed":true,"pageInfo":true}}'; fi
+              (cd $W && "$CLI" run --in job.designcraft --cmd 'file.place={"path":"m.md","autoflow":true}' --cmd 'edit.selectAll' --cmd 'style.paragraph.apply={"name":"ko-body"}' --pdf-options "$O" --export out.pdf >/dev/null)
+              cp $W/out.pdf $v/$t.pdf
+            done
+          done
+          ls -la orig pre restored
+      - name: Structural equivalence (engine original vs PDFBox-restored)
+        run: |
+          sudo apt-get -qq update >/dev/null 2>&1; sudo apt-get -qq install -y qpdf >/dev/null 2>&1 || true
+          pip install -q pymupdf >/dev/null 2>&1
+          for t in ko-textbook-a4 ko-workbook-b5 ko-book-46; do python3 ci/ops/diagnostics/dc_x4_equiv.py $t orig/$t.pdf pre/$t.pdf restored/$t.pdf 2>&1 | grep -v Deprecat; done
