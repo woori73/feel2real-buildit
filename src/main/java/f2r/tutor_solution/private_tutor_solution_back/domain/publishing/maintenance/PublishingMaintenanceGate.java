@@ -7,17 +7,32 @@ import java.nio.channels.FileLock;
 import java.nio.file.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.LongSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-/** One JVM's operation admission. It never claims to drain external workers/instances. */
+/**
+ * One JVM's operation admission. It never claims to drain external workers/instances.
+ *
+ * <p>OPEN has a time limit (TTL, default 1800 s): when it expires the gate drains exactly like an
+ * ADMIN drain (new admissions are refused, running operations/CLI finish, then CLOSED). A TTL of 0
+ * means "no limit" and is only honoured when the property is set explicitly; blank or invalid
+ * values fall back to the default so a bad setting can never leave the gate open forever.
+ */
 @Component
 public class PublishingMaintenanceGate {
   public enum State { OPEN, DRAINING, CLOSED, FAULT }
+  public static final long DEFAULT_OPEN_TTL_SECONDS = 1800;
+  private static final Logger log = LoggerFactory.getLogger(PublishingMaintenanceGate.class);
+  /** {@code openRemainingSeconds} is null unless the gate is OPEN with a TTL. */
   public record Status(State state, int activeOperations, int liveCliProcesses,
-      boolean singleProcessDrained, boolean fleetSafeToReplace) {}
+      boolean singleProcessDrained, boolean fleetSafeToReplace, Long openRemainingSeconds) {}
   private static final ThreadLocal<Operation> CURRENT = new ThreadLocal<>();
   private final Path directory;
   private FileChannel instanceChannel;
@@ -25,8 +40,25 @@ public class PublishingMaintenanceGate {
   private State state = State.CLOSED;
   private int active;
   private int processes;
+  private final long ttlNanos; // 0 = unlimited
+  private final LongSupplier clock;
+  private boolean hasDeadline;
+  private long deadlineNanos;
 
-  public PublishingMaintenanceGate(@Value("${publishing.maintenance.state-dir:/var/lib/feel2real/designcraft-maintenance}") String directory) {
+  @Autowired
+  public PublishingMaintenanceGate(
+      @Value("${publishing.maintenance.state-dir:/var/lib/feel2real/designcraft-maintenance}") String directory,
+      @Value("${publishing.maintenance.open-ttl-seconds:1800}") String openTtlSeconds) {
+    this(directory, parseTtlSeconds(openTtlSeconds), System::nanoTime);
+  }
+
+  public PublishingMaintenanceGate(String directory) {
+    this(directory, DEFAULT_OPEN_TTL_SECONDS, System::nanoTime);
+  }
+
+  PublishingMaintenanceGate(String directory, long ttlSeconds, LongSupplier nanoClock) {
+    this.ttlNanos = TimeUnit.SECONDS.toNanos(Math.max(0, ttlSeconds));
+    this.clock = nanoClock;
     this.directory = Path.of(directory);
     try {
       Files.createDirectories(this.directory);
@@ -38,6 +70,16 @@ public class PublishingMaintenanceGate {
       persist(State.CLOSED);
     } catch (Exception e) {
       state = State.FAULT; // Only DesignCraft is unavailable; do not fail shared Spring startup.
+    }
+  }
+
+  /** Blank, non-numeric or negative values use the default; only an explicit 0 disables the limit. */
+  static long parseTtlSeconds(String raw) {
+    try {
+      long value = Long.parseLong(raw == null ? "" : raw.trim());
+      return value < 0 ? DEFAULT_OPEN_TTL_SECONDS : value;
+    } catch (NumberFormatException e) {
+      return DEFAULT_OPEN_TTL_SECONDS;
     }
   }
 
@@ -53,6 +95,7 @@ public class PublishingMaintenanceGate {
   }
 
   public synchronized Scope enter() {
+    expireIfDue();
     Operation previous = CURRENT.get();
     if (previous != null && previous.gate == this && !previous.finished) {
       previous.references++;
@@ -66,8 +109,14 @@ public class PublishingMaintenanceGate {
   }
 
   public synchronized Status drain() {
+    hasDeadline = false;
+    return startDrain();
+  }
+
+  /** Same monitor as enter(): no admission/check/increment race. */
+  private Status startDrain() {
     if (instanceLock == null || !instanceLock.isValid()) { state = State.FAULT; return status(); }
-    state = State.DRAINING; // Same monitor as enter(): no admission/check/increment race.
+    state = State.DRAINING;
     try { persist(state); } catch (IOException e) { state = State.FAULT; }
     settle();
     return status();
@@ -80,12 +129,35 @@ public class PublishingMaintenanceGate {
     }
     try { persist(State.OPEN); state = State.OPEN; }
     catch (IOException e) { state = State.FAULT; throw unavailable(); }
+    hasDeadline = ttlNanos > 0;
+    if (hasDeadline) deadlineNanos = clock.getAsLong() + ttlNanos;
     return status();
   }
 
   public synchronized Status status() {
+    expireIfDue();
+    Long remaining = null;
+    if (state == State.OPEN && hasDeadline) {
+      long left = deadlineNanos - clock.getAsLong();
+      remaining = left <= 0 ? 0 : TimeUnit.NANOSECONDS.toSeconds(left + TimeUnit.SECONDS.toNanos(1) - 1);
+    }
     return new Status(state, active, processes,
-        state == State.CLOSED && active == 0 && processes == 0, false);
+        state == State.CLOSED && active == 0 && processes == 0, false, remaining);
+  }
+
+  /** Expired OPEN drains like an ADMIN drain: running work finishes, nothing new is admitted. */
+  private void expireIfDue() {
+    if (state == State.OPEN && hasDeadline && clock.getAsLong() - deadlineNanos >= 0) {
+      hasDeadline = false;
+      log.warn("DesignCraft gate OPEN TTL expired; draining");
+      startDrain();
+    }
+  }
+
+  /** Closes an idle expired gate even when no request arrives. */
+  @Scheduled(fixedDelayString = "${publishing.maintenance.tick-millis:5000}")
+  public synchronized void tick() {
+    expireIfDue();
   }
 
   private void settle() {
@@ -197,6 +269,7 @@ public class PublishingMaintenanceGate {
     }
   }
   @PreDestroy public synchronized void close() {
+    hasDeadline = false;
     // Shutdown does not resume admission. Every subsequent instance starts CLOSED.
     state = State.CLOSED;
     try { if (instanceLock != null) instanceLock.close(); } catch (IOException ignored) {}
