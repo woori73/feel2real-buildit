@@ -1821,3 +1821,13 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
   .builder-public-preview .video-playlist-item{flex-basis:116px;}
   .builder-public-preview .demo-placeholder,.builder-public-preview .lesson-empty{padding:22px 16px;}
 }
+
+/* 상담 접수 폼 */
+.consult-form{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left}
+.consult-form label{font-size:13px;font-weight:700;color:#374151}
+.consult-form input[type=text],.consult-form input:not([type=checkbox]),.consult-form textarea{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font:inherit;font-size:15px}
+.consult-form .consult-consent{display:flex;gap:8px;align-items:flex-start;font-size:12px;font-weight:500;color:#4b5563;margin-top:6px}
+.consult-form .consult-consent input{margin-top:2px}
+.consult-status{min-height:18px;font-size:13px}
+.consult-submit{width:100%;padding:12px;border:none;border-radius:8px;background:#0C238A;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.consult-submit:disabled{opacity:.6;cursor:default}

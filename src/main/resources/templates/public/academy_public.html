@@ -39,11 +39,24 @@
     </div>
   </div>
 
-  <!-- 상담 신청 — 학원이 입력한 전화/이메일로 연결. 옵션은 academy_public.js가 채운다.
-       (랜딩 '문의하기' 모달과 같은 형태지만 연락처는 학원별 businessInfo에서 온다) -->
+  <!-- 상담 신청 — 접수 폼(서버 저장 → 원장이 목록에서 확인) + 학원이 입력한 전화/이메일 바로 연결.
+       폼 동작과 연락 수단 옵션은 academy_public.js가 채운다. 개인정보 수집·이용 동의가 있어야만 접수된다. -->
   <div id="consultModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;" onclick="closeConsultModal(event)">
-    <div style="background:#fff;border-radius:16px;padding:32px 28px;width:90%;max-width:340px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" onclick="event.stopPropagation()">
-      <div style="font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:24px;">상담 신청하기</div>
+    <div style="background:#fff;border-radius:16px;padding:28px 24px;width:90%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,0.18);" onclick="event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="consultTitle">
+      <div id="consultTitle" style="font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:16px;text-align:center;">상담 신청하기</div>
+      <form id="consultForm" class="consult-form" autocomplete="off" onsubmit="submitConsult(event)">
+        <label for="consultName">이름</label>
+        <input id="consultName" name="name" maxlength="50" required autocomplete="name"/>
+        <label for="consultPhone">연락처</label>
+        <input id="consultPhone" name="phone" type="tel" inputmode="tel" maxlength="20" required autocomplete="tel" placeholder="010-0000-0000"/>
+        <label for="consultMessage">문의 내용</label>
+        <textarea id="consultMessage" name="message" rows="4" maxlength="1000" required></textarea>
+        <!-- 봇 함정: 사람에게는 보이지 않는다. 값이 있으면 서버가 저장하지 않는다. -->
+        <input id="consultWebsite" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;"/>
+        <label class="consult-consent"><input id="consultConsent" type="checkbox" required/> <span>개인정보 수집·이용에 동의합니다. (수집 항목: 이름·연락처·문의 내용 / 목적: 상담 안내 / 보관: 접수일로부터 1년)</span></label>
+        <div id="consultStatus" class="consult-status" role="status" aria-live="polite"></div>
+        <button type="submit" id="consultSubmit" class="consult-submit">상담 신청 보내기</button>
+      </form>
       <div id="consultOptions"></div>
       <button type="button" onclick="closeConsultModal()" style="width:100%;padding:12px;border:none;border-radius:8px;background:#f3f4f6;color:#6b7280;font-size:15px;cursor:pointer;">닫기</button>
     </div>
