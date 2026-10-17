@@ -86,6 +86,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/admin/login", "admin/login");
         view(registry, "/admin/dashboard", "admin/dashboard");
         view(registry, "/admin/hub", "admin/hub");
+        view(registry, "/dashboard", "dashboard");
         view(registry, "/admin/students", "admin/students");
         view(registry, "/admin/members", "admin/members");
         view(registry, "/admin/analytics", "admin/analytics");
