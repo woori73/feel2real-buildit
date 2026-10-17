@@ -133,6 +133,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantAssetCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantEditServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AnalyticsCatalogTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.AdminTopnavMenuContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.controller.AdminAnalyticsControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.inquiry.InquiryInputTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.inquiry.AcademyInquiryServiceTest"
