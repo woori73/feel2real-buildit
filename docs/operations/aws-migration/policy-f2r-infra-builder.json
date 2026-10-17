@@ -1,0 +1,283 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyDescribe",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*",
+        "elasticloadbalancing:Describe*",
+        "rds:DescribeDBSubnetGroups",
+        "rds:DescribeDBParameterGroups",
+        "rds:DescribeDBEngineVersions",
+        "rds:DescribeDBInstances",
+        "rds:ListTagsForResource",
+        "acm:DescribeCertificate",
+        "acm:ListCertificates",
+        "ssm:DescribeInstanceInformation",
+        "iam:GetRole",
+        "iam:GetInstanceProfile",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEqualsIfExists": {
+          "aws:RequestedRegion": "ap-northeast-2"
+        }
+      }
+    },
+    {
+      "Sid": "CreateNetworkOnlyWithProjectTag",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVpc",
+        "ec2:CreateSubnet",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateRouteTable",
+        "ec2:CreateSecurityGroup"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "aws:RequestTag/Project": "f2r-migration"
+        }
+      }
+    },
+    {
+      "Sid": "TagOnlyAtCreation",
+      "Effect": "Allow",
+      "Action": "ec2:CreateTags",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "aws:RequestTag/Project": "f2r-migration",
+          "ec2:CreateAction": [
+            "CreateVpc",
+            "CreateSubnet",
+            "CreateInternetGateway",
+            "CreateRouteTable",
+            "CreateSecurityGroup",
+            "RunInstances"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ChangeOnlyProjectTaggedNetwork",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:ModifyVpcAttribute",
+        "ec2:ModifySubnetAttribute",
+        "ec2:AttachInternetGateway",
+        "ec2:CreateRoute",
+        "ec2:AssociateRouteTable",
+        "ec2:AuthorizeSecurityGroupIngress"
+      ],
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:425805163960:vpc/*",
+        "arn:aws:ec2:ap-northeast-2:425805163960:subnet/*",
+        "arn:aws:ec2:ap-northeast-2:425805163960:internet-gateway/*",
+        "arn:aws:ec2:ap-northeast-2:425805163960:route-table/*",
+        "arn:aws:ec2:ap-northeast-2:425805163960:security-group/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "f2r-migration"
+        }
+      }
+    },
+    {
+      "Sid": "RunInstanceOnlyThisShape",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:ap-northeast-2:425805163960:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:InstanceType": "t3.small",
+          "ec2:MetadataHttpTokens": "required",
+          "ec2:InstanceProfile": "arn:aws:iam::425805163960:instance-profile/f2r-ec2-profile",
+          "aws:RequestTag/Project": "f2r-migration"
+        }
+      }
+    },
+    {
+      "Sid": "RunInstanceVolumeEncryptedAndTagged",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:ap-northeast-2:425805163960:volume/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Encrypted": "true",
+          "aws:RequestTag/Project": "f2r-migration"
+        }
+      }
+    },
+    {
+      "Sid": "RunInstanceUsesProjectNetworkAndAmazonImage",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:425805163960:subnet/*",
+        "arn:aws:ec2:ap-northeast-2:425805163960:security-group/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Project": "f2r-migration"
+        }
+      }
+    },
+    {
+      "Sid": "RunInstanceNetworkInterfaceAndImage",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:ap-northeast-2:425805163960:network-interface/*"
+    },
+    {
+      "Sid": "RunInstanceAmazonOwnedImageOnly",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:ap-northeast-2::image/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Owner": "amazon"
+        }
+      }
+    },
+    {
+      "Sid": "ReadPublicAmiParameterOnly",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameter",
+      "Resource": "arn:aws:ssm:ap-northeast-2::parameter/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+    },
+    {
+      "Sid": "CreateEc2SsmRoleAndProfileOnlyByName",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:TagRole",
+        "iam:CreateInstanceProfile",
+        "iam:TagInstanceProfile",
+        "iam:AddRoleToInstanceProfile"
+      ],
+      "Resource": [
+        "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role",
+        "arn:aws:iam::425805163960:instance-profile/f2r-ec2-profile"
+      ]
+    },
+    {
+      "Sid": "AttachSsmCoreToEc2RoleOnly",
+      "Effect": "Allow",
+      "Action": "iam:AttachRolePolicy",
+      "Resource": "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role",
+      "Condition": {
+        "StringEquals": {
+          "iam:PolicyARN": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        }
+      }
+    },
+    {
+      "Sid": "PassOnlyEc2SsmRoleToEc2",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role",
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": "ec2.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "ElbServiceLinkedRoleFirstUse",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::425805163960:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": "elasticloadbalancing.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "RdsShellGroupsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "rds:CreateDBSubnetGroup",
+        "rds:CreateDBParameterGroup",
+        "rds:AddTagsToResource"
+      ],
+      "Resource": [
+        "arn:aws:rds:ap-northeast-2:425805163960:subgrp:f2r-*",
+        "arn:aws:rds:ap-northeast-2:425805163960:pg:f2r-*"
+      ]
+    },
+    {
+      "Sid": "ElbCreateAndConfigureF2rOnly",
+      "Effect": "Allow",
+      "Action": [
+        "elasticloadbalancing:CreateLoadBalancer",
+        "elasticloadbalancing:CreateTargetGroup",
+        "elasticloadbalancing:CreateListener",
+        "elasticloadbalancing:ModifyLoadBalancerAttributes",
+        "elasticloadbalancing:ModifyTargetGroupAttributes",
+        "elasticloadbalancing:RegisterTargets",
+        "elasticloadbalancing:AddTags"
+      ],
+      "Resource": [
+        "arn:aws:elasticloadbalancing:ap-northeast-2:425805163960:loadbalancer/app/f2r-*/*",
+        "arn:aws:elasticloadbalancing:ap-northeast-2:425805163960:targetgroup/f2r-*/*",
+        "arn:aws:elasticloadbalancing:ap-northeast-2:425805163960:listener/app/f2r-*/*/*"
+      ]
+    },
+    {
+      "Sid": "AcmRequestOnlyForServiceDomains",
+      "Effect": "Allow",
+      "Action": "acm:RequestCertificate",
+      "Resource": "*",
+      "Condition": {
+        "ForAllValues:StringEquals": {
+          "acm:DomainNames": [
+            "feel2real.co.kr",
+            "*.feel2real.co.kr"
+          ]
+        },
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2"
+        }
+      }
+    },
+    {
+      "Sid": "AcmTagOwnCertificates",
+      "Effect": "Allow",
+      "Action": "acm:AddTagsToCertificate",
+      "Resource": "arn:aws:acm:ap-northeast-2:425805163960:certificate/*"
+    },
+    {
+      "Sid": "SsmRunShellOnlyOnTheNewAppInstance",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": "arn:aws:ec2:ap-northeast-2:425805163960:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "ssm:resourceTag/Project": "f2r-migration",
+          "ssm:resourceTag/Name": "f2r-app"
+        }
+      }
+    },
+    {
+      "Sid": "SsmRunShellDocumentOnly",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": "arn:aws:ssm:ap-northeast-2::document/AWS-RunShellScript"
+    },
+    {
+      "Sid": "SsmReadCommandResult",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetCommandInvocation"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

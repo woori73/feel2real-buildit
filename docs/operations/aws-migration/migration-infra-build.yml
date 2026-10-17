@@ -1,0 +1,421 @@
+name: Migration infra build (manual)
+
+# 신규 AWS 계정(425805163960) 인프라 구축 전용 (수정본: Muse 초안 기반).
+# - 읽기 전용 validate 를 제외한 각 단계는 "리소스별로" 존재 여부를 확인하고 없는 부분만 만든다
+#   (중간 실패 후 재실행해도 라우트·IGW 연결·서브넷 속성·IAM 연결이 빠지지 않도록 매번 보정한다).
+# - RDS 는 서브넷 그룹 + 파라미터 그룹(껍데기)만. 스냅샷 복원·DNS 변경은 이 워크플로에서 하지 않는다(별도 승인).
+# - 삭제·종료 권한은 이 역할에 없다. 정리는 소유자(MFA 관리자)가 콘솔에서 한다.
+# - 역할 ARN·환경 보호는 입력값이 아니라 워크플로에 고정한다(입력으로 다른 역할을 지정할 수 없다).
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: '실행 단계'
+        required: true
+        default: 'validate'
+        type: choice
+        options:
+          - validate
+          - vpc
+          - ec2
+          - rds-shell
+          - alb
+          - acm
+          - alb-https
+          - smoke
+      db_param_family:
+        description: 'RDS 파라미터 그룹 패밀리 (구 RDS 엔진 버전과 같아야 함 — 구 RDS 확인 후 선택)'
+        required: false
+        default: 'mysql8.4'
+        type: choice
+        options:
+          - mysql8.4
+          - mysql8.0
+      health_check_path:
+        description: 'ALB 헬스체크 경로 (정본: /actuator/health)'
+        required: false
+        default: '/actuator/health'
+
+permissions:
+  id-token: write
+  contents: read
+
+# 동시 실행 금지: Name 태그 확인-생성 사이 경합으로 VPC·ALB 등이 중복 생성·과금되는 것을 막는다.
+concurrency:
+  group: f2r-infra-build
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-northeast-2
+  AWS_DEFAULT_REGION: ap-northeast-2
+  BUILDER_ROLE_ARN: arn:aws:iam::425805163960:role/f2r-infra-builder
+  DEPLOY_ROLE_ARN: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # 소유자 승인(required reviewers) + main 브랜치 한정으로 보호된 GitHub Environment.
+    # 신뢰 정책의 sub 가 이 environment 로 고정되어, 승인 없이는 역할을 가정할 수 없다.
+    environment: f2r-infra-build
+    outputs:
+      instance_id: ${{ steps.run.outputs.instance_id }}
+    steps:
+      - name: Configure AWS credentials (infra-builder)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BUILDER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-infra-build
+
+      - name: Run build step
+        id: run
+        shell: bash
+        env:
+          STEP: ${{ inputs.step }}
+          DB_PARAM_FAMILY: ${{ inputs.db_param_family }}
+          HEALTH_PATH: ${{ inputs.health_check_path }}
+        run: |
+          set -euo pipefail
+          P=f2r-migration
+
+          none() { [ -z "${1:-}" ] || [ "$1" = "None" ]; }
+          need() { if none "${2:-}"; then echo "필요한 리소스 없음: $1 (앞 단계를 먼저 실행)" >&2; exit 1; fi; }
+          tags() { printf 'ResourceType=%s,Tags=[{Key=Name,Value=%s},{Key=Project,Value=%s}]' "$1" "$2" "$P"; }
+
+          get_vpc() {
+            aws ec2 describe-vpcs --filters Name=tag:Name,Values=f2r-vpc Name=tag:Project,Values=$P \
+              --query 'Vpcs[0].VpcId' --output text
+          }
+          get_subnet() {
+            aws ec2 describe-subnets --filters Name=tag:Name,Values="$1" Name=tag:Project,Values=$P \
+              --query 'Subnets[0].SubnetId' --output text
+          }
+          get_sg() {
+            aws ec2 describe-security-groups --filters Name=group-name,Values="$1" Name=tag:Project,Values=$P \
+              --query 'SecurityGroups[0].GroupId' --output text
+          }
+          get_instance() {
+            aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=$P \
+              'Name=instance-state-name,Values=pending,running,stopping,stopped' \
+              --query 'Reservations[].Instances[].InstanceId' --output text
+          }
+          # 같은 규칙이 이미 있을 때만 성공으로 보고, 그 밖의 오류(권한·잘못된 값)는 그대로 실패시킨다.
+          add_rule() {
+            local out
+            if out=$(aws ec2 authorize-security-group-ingress "$@" 2>&1); then echo "  rule added"
+            elif grep -q 'InvalidPermission.Duplicate' <<<"$out"; then echo "  rule exists"
+            else echo "$out" >&2; return 1; fi
+          }
+
+          step_validate() {
+            echo "### caller"; aws sts get-caller-identity --query '{Account:Account,Arn:Arn}' --output table
+            echo "### f2r VPC"; aws ec2 describe-vpcs --filters Name=tag:Project,Values=$P --query 'Vpcs[*].VpcId' --output text
+            echo "### f2r subnets"; aws ec2 describe-subnets --filters Name=tag:Project,Values=$P --query 'Subnets[*].{Id:SubnetId,Az:AvailabilityZone,Cidr:CidrBlock,Public:MapPublicIpOnLaunch}' --output table
+            echo "### f2r instances"; aws ec2 describe-instances --filters Name=tag:Project,Values=$P --query 'Reservations[*].Instances[*].{Id:InstanceId,Type:InstanceType,State:State.Name}' --output table
+            echo "### f2r RDS"; aws rds describe-db-instances --query "DBInstances[?starts_with(DBInstanceIdentifier,'f2r-')].{Id:DBInstanceIdentifier,Class:DBInstanceClass,Engine:Engine}" --output table
+            echo "### f2r ALB"; aws elbv2 describe-load-balancers --query "LoadBalancers[?starts_with(LoadBalancerName,'f2r-')].{Name:LoadBalancerName,DNS:DNSName}" --output table
+            echo "### ACM certs"; aws acm list-certificates --certificate-statuses PENDING_VALIDATION ISSUED --query "CertificateSummaryList[?starts_with(DomainName,'feel2real')].{Domain:DomainName,Status:Status}" --output table
+          }
+
+          step_vpc() {
+            local VPC PUB1 PUB2 PRI1 PRI2 IGW RT ALBSG EC2SG RDSSG
+            VPC=$(get_vpc)
+            if none "$VPC"; then
+              VPC=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications "$(tags vpc f2r-vpc)" \
+                --query 'Vpc.VpcId' --output text)
+              echo "created VPC $VPC"
+            else echo "exists VPC $VPC"; fi
+            # 중간 실패 후 재실행해도 속성이 빠지지 않도록 항상 적용(멱등).
+            aws ec2 modify-vpc-attribute --vpc-id "$VPC" --enable-dns-support '{"Value":true}'
+            aws ec2 modify-vpc-attribute --vpc-id "$VPC" --enable-dns-hostnames '{"Value":true}'
+
+            ensure_subnet() { # name cidr az public(yes|no)
+              local id
+              id=$(get_subnet "$1")
+              if none "$id"; then
+                id=$(aws ec2 create-subnet --vpc-id "$VPC" --cidr-block "$2" --availability-zone "$3" \
+                  --tag-specifications "$(tags subnet "$1")" --query 'Subnet.SubnetId' --output text)
+                echo "created subnet $1=$id" >&2
+              fi
+              if [ "$4" = "yes" ]; then
+                aws ec2 modify-subnet-attribute --subnet-id "$id" --map-public-ip-on-launch
+              fi
+              printf '%s' "$id"
+            }
+            PUB1=$(ensure_subnet f2r-public-2a 10.0.1.0/24 ap-northeast-2a yes)
+            PUB2=$(ensure_subnet f2r-public-2c 10.0.2.0/24 ap-northeast-2c yes)
+            PRI1=$(ensure_subnet f2r-private-2a 10.0.11.0/24 ap-northeast-2a no)
+            PRI2=$(ensure_subnet f2r-private-2c 10.0.12.0/24 ap-northeast-2c no)
+
+            IGW=$(aws ec2 describe-internet-gateways --filters Name=tag:Name,Values=f2r-igw Name=tag:Project,Values=$P \
+              --query 'InternetGateways[0].InternetGatewayId' --output text)
+            if none "$IGW"; then
+              IGW=$(aws ec2 create-internet-gateway --tag-specifications "$(tags internet-gateway f2r-igw)" \
+                --query 'InternetGateway.InternetGatewayId' --output text)
+              echo "created IGW $IGW"
+            else echo "exists IGW $IGW"; fi
+            ATT=$(aws ec2 describe-internet-gateways --internet-gateway-ids "$IGW" \
+              --query "InternetGateways[0].Attachments[?VpcId=='$VPC'].VpcId" --output text)
+            if none "$ATT"; then aws ec2 attach-internet-gateway --vpc-id "$VPC" --internet-gateway-id "$IGW"; echo "attached IGW"; fi
+
+            RT=$(aws ec2 describe-route-tables --filters Name=tag:Name,Values=f2r-public-rt Name=tag:Project,Values=$P \
+              --query 'RouteTables[0].RouteTableId' --output text)
+            if none "$RT"; then
+              RT=$(aws ec2 create-route-table --vpc-id "$VPC" --tag-specifications "$(tags route-table f2r-public-rt)" \
+                --query 'RouteTable.RouteTableId' --output text)
+              echo "created public RT $RT"
+            else echo "exists public RT $RT"; fi
+            DEF=$(aws ec2 describe-route-tables --route-table-ids "$RT" \
+              --query "RouteTables[0].Routes[?DestinationCidrBlock=='0.0.0.0/0'].GatewayId" --output text)
+            if none "$DEF"; then aws ec2 create-route --route-table-id "$RT" --destination-cidr-block 0.0.0.0/0 --gateway-id "$IGW" >/dev/null; echo "created default route"; fi
+            for S in "$PUB1" "$PUB2"; do
+              ASSOC=$(aws ec2 describe-route-tables --route-table-ids "$RT" \
+                --query "RouteTables[0].Associations[?SubnetId=='$S'].SubnetId" --output text)
+              if none "$ASSOC"; then aws ec2 associate-route-table --route-table-id "$RT" --subnet-id "$S" >/dev/null; echo "associated $S"; fi
+            done
+
+            ensure_sg() { # name desc
+              local id
+              id=$(aws ec2 describe-security-groups --filters Name=group-name,Values="$1" Name=vpc-id,Values="$VPC" \
+                --query 'SecurityGroups[0].GroupId' --output text)
+              if none "$id"; then
+                id=$(aws ec2 create-security-group --group-name "$1" --description "$2" --vpc-id "$VPC" \
+                  --tag-specifications "$(tags security-group "$1")" --query 'GroupId' --output text)
+                echo "created SG $1=$id" >&2
+              fi
+              printf '%s' "$id"
+            }
+            ALBSG=$(ensure_sg f2r-alb-sg "ALB public")
+            EC2SG=$(ensure_sg f2r-ec2-sg "App EC2")
+            RDSSG=$(ensure_sg f2r-rds-sg "RDS MySQL")
+            add_rule --group-id "$ALBSG" --protocol tcp --port 80 --cidr 0.0.0.0/0
+            add_rule --group-id "$ALBSG" --protocol tcp --port 443 --cidr 0.0.0.0/0
+            add_rule --group-id "$EC2SG" --protocol tcp --port 8080 --source-group "$ALBSG"
+            add_rule --group-id "$RDSSG" --protocol tcp --port 3306 --source-group "$EC2SG"
+            echo "VPC=$VPC PUB1=$PUB1 PUB2=$PUB2 PRI1=$PRI1 PRI2=$PRI2 ALBSG=$ALBSG EC2SG=$EC2SG RDSSG=$RDSSG"
+          }
+
+          step_ec2() {
+            local VPC PUB1 EC2SG AMI IID COUNT ROLE=f2r-ec2-ssm-role PROFILE=f2r-ec2-profile
+            local SSM_POLICY=arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+            VPC=$(get_vpc); need VPC "$VPC"
+            PUB1=$(get_subnet f2r-public-2a); need public-subnet "$PUB1"
+            EC2SG=$(get_sg f2r-ec2-sg); need ec2-sg "$EC2SG"
+
+            # IAM: 역할·정책 연결·인스턴스 프로파일·프로파일 내 역할을 각각 확인한다(부분 실패 후 재실행 안전).
+            if ! aws iam get-role --role-name "$ROLE" >/dev/null 2>&1; then
+              aws iam create-role --role-name "$ROLE" \
+                --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}' \
+                --tags Key=Project,Value=$P >/dev/null
+              echo "created role"
+            else echo "exists role"; fi
+            ATTACHED=$(aws iam list-attached-role-policies --role-name "$ROLE" \
+              --query "AttachedPolicies[?PolicyArn=='$SSM_POLICY'].PolicyArn" --output text)
+            if none "$ATTACHED"; then aws iam attach-role-policy --role-name "$ROLE" --policy-arn "$SSM_POLICY"; echo "attached SSM core"; fi
+            if ! aws iam get-instance-profile --instance-profile-name "$PROFILE" >/dev/null 2>&1; then
+              aws iam create-instance-profile --instance-profile-name "$PROFILE" --tags Key=Project,Value=$P >/dev/null
+              echo "created instance profile"
+            else echo "exists instance profile"; fi
+            INPROF=$(aws iam get-instance-profile --instance-profile-name "$PROFILE" \
+              --query "InstanceProfile.Roles[?RoleName=='$ROLE'].RoleName" --output text)
+            if none "$INPROF"; then aws iam add-role-to-instance-profile --instance-profile-name "$PROFILE" --role-name "$ROLE"; echo "added role to profile"; fi
+
+            COUNT=$(get_instance | wc -w)
+            if [ "$COUNT" -gt 1 ]; then echo "f2r-app 인스턴스가 $COUNT 개 — 중복 생성 의심, 중단(콘솔에서 정리 후 재실행)" >&2; exit 1; fi
+            IID=$(get_instance)
+            if none "$IID"; then
+              AMI=$(aws ssm get-parameter --name /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64 \
+                --query 'Parameter.Value' --output text)
+              # 인스턴스 프로파일 전파 지연에 대비해 재시도. client-token 으로 같은 요청의 중복 생성도 막는다.
+              TOKEN="f2r-app-$(date -u +%Y%m%d)"
+              for TRY in 1 2 3 4 5 6; do
+                if OUT=$(aws ec2 run-instances --image-id "$AMI" --instance-type t3.small \
+                    --subnet-id "$PUB1" --security-group-ids "$EC2SG" --associate-public-ip-address \
+                    --iam-instance-profile Name="$PROFILE" \
+                    --metadata-options HttpTokens=required,HttpEndpoint=enabled,HttpPutResponseHopLimit=1 \
+                    --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"VolumeSize":20,"VolumeType":"gp3","Encrypted":true,"DeleteOnTermination":true}}]' \
+                    --tag-specifications "$(tags instance f2r-app)" "$(tags volume f2r-app-root)" \
+                    --client-token "$TOKEN" --query 'Instances[0].InstanceId' --output text 2>&1); then
+                  IID="$OUT"; echo "created EC2 $IID"; break
+                elif grep -q -i 'Invalid IAM Instance Profile' <<<"$OUT" && [ "$TRY" -lt 6 ]; then
+                  echo "instance profile 전파 대기($TRY/6)"; sleep 10
+                else echo "$OUT" >&2; exit 1; fi
+              done
+            else echo "exists EC2 $IID"; fi
+            aws ec2 wait instance-running --instance-ids "$IID"
+            aws ec2 wait instance-status-ok --instance-ids "$IID"
+            # SSM 에이전트 등록(아웃바운드 443 + 프로파일 + 공인 IP 경로)까지 실제로 확인한다.
+            for TRY in $(seq 1 40); do
+              PING=$(aws ssm describe-instance-information --filters Key=InstanceIds,Values="$IID" \
+                --query 'InstanceInformationList[0].PingStatus' --output text 2>/dev/null || echo None)
+              [ "$PING" = "Online" ] && break
+              echo "SSM 등록 대기($TRY/40): $PING"; sleep 15
+            done
+            if [ "$PING" != "Online" ]; then
+              echo "SSM Online 아님 — 점검: IGW 기본 라우트, 공인 IP, SG egress 443, 프로파일의 AmazonSSMManagedInstanceCore" >&2; exit 1
+            fi
+            echo "instance_id=$IID" >> "$GITHUB_OUTPUT"
+            echo "EC2 $IID SSM Online"
+          }
+
+          step_rds_shell() {
+            # 데이터 없는 껍데기만 (서브넷 그룹 + 파라미터 그룹). 복원은 별도 승인.
+            local PRI1 PRI2 PGNAME VER
+            PRI1=$(get_subnet f2r-private-2a); need private-2a "$PRI1"
+            PRI2=$(get_subnet f2r-private-2c); need private-2c "$PRI2"
+            PGNAME="f2r-${DB_PARAM_FAMILY//./}-params"
+            if ! aws rds describe-db-subnet-groups --db-subnet-group-name f2r-db-subnets >/dev/null 2>&1; then
+              aws rds create-db-subnet-group --db-subnet-group-name f2r-db-subnets \
+                --db-subnet-group-description "f2r migration private subnets" --subnet-ids "$PRI1" "$PRI2" \
+                --tags Key=Project,Value=$P >/dev/null
+              echo "created subnet group"
+            else echo "exists subnet group"; fi
+            if ! aws rds describe-db-parameter-groups --db-parameter-group-name "$PGNAME" >/dev/null 2>&1; then
+              aws rds create-db-parameter-group --db-parameter-group-name "$PGNAME" \
+                --db-parameter-group-family "$DB_PARAM_FAMILY" --description "f2r migration $DB_PARAM_FAMILY params" \
+                --tags Key=Project,Value=$P >/dev/null
+              echo "created parameter group $PGNAME ($DB_PARAM_FAMILY)"
+            else echo "exists parameter group $PGNAME"; fi
+            VER=$(aws rds describe-db-engine-versions --engine mysql \
+              --query "DBEngineVersions[?starts_with(EngineVersion,'${DB_PARAM_FAMILY#mysql}')].EngineVersion" --output text | tr '\t' '\n' | sort -V | tail -1)
+            echo "latest MySQL ${DB_PARAM_FAMILY#mysql} engine version: ${VER:-none} (복원은 스냅샷 버전과 같은 패밀리여야 함)"
+          }
+
+          step_alb() {
+            local VPC PUB1 PUB2 ALBSG ALB TG IID
+            VPC=$(get_vpc); need VPC "$VPC"
+            PUB1=$(get_subnet f2r-public-2a); need public-2a "$PUB1"
+            PUB2=$(get_subnet f2r-public-2c); need public-2c "$PUB2"
+            ALBSG=$(get_sg f2r-alb-sg); need alb-sg "$ALBSG"
+            ALB=$(aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || echo None)
+            if none "$ALB"; then
+              ALB=$(aws elbv2 create-load-balancer --name f2r-alb --scheme internet-facing --type application \
+                --subnets "$PUB1" "$PUB2" --security-groups "$ALBSG" \
+                --tags Key=Project,Value=$P Key=Name,Value=f2r-alb \
+                --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+              echo "created ALB $ALB"
+            else echo "exists ALB $ALB"; fi
+            # 속성은 매번 보정: 유휴 180초(정본 요구 ≥180), 잘못된 헤더 폐기, 삭제 방지.
+            aws elbv2 modify-load-balancer-attributes --load-balancer-arn "$ALB" --attributes \
+              Key=idle_timeout.timeout_seconds,Value=180 \
+              Key=routing.http.drop_invalid_header_fields.enabled,Value=true \
+              Key=deletion_protection.enabled,Value=true >/dev/null
+            TG=$(aws elbv2 describe-target-groups --names f2r-app-tg --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo None)
+            if none "$TG"; then
+              TG=$(aws elbv2 create-target-group --name f2r-app-tg --protocol HTTP --port 8080 --vpc-id "$VPC" \
+                --target-type instance --health-check-path "$HEALTH_PATH" --health-check-interval-seconds 30 \
+                --healthy-threshold-count 2 --unhealthy-threshold-count 3 \
+                --tags Key=Project,Value=$P \
+                --query 'TargetGroups[0].TargetGroupArn' --output text)
+              echo "created TG $TG"
+            else echo "exists TG $TG"; fi
+            aws elbv2 modify-target-group-attributes --target-group-arn "$TG" \
+              --attributes Key=deregistration_delay.timeout_seconds,Value=60 >/dev/null
+            IID=$(get_instance)
+            if none "$IID"; then echo "f2r-app 없음 — ec2 단계 먼저(대상 등록 건너뜀)" >&2; exit 1; fi
+            aws elbv2 register-targets --target-group-arn "$TG" --targets Id="$IID",Port=8080   # 멱등
+            echo "registered $IID -> TG (헬스: $HEALTH_PATH)"
+            L80=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB" --query "Listeners[?Port==\`80\`].ListenerArn" --output text)
+            if none "$L80"; then
+              aws elbv2 create-listener --load-balancer-arn "$ALB" --protocol HTTP --port 80 \
+                --default-actions '[{"Type":"redirect","RedirectConfig":{"Protocol":"HTTPS","Port":"443","StatusCode":"HTTP_301"}}]' >/dev/null
+              echo "created HTTP->HTTPS redirect listener"
+            else echo "exists HTTP listener"; fi
+            echo "ALB DNS: $(aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].DNSName' --output text)"
+            echo "※ 443 리스너는 ACM 인증서가 ISSUED 가 된 뒤 alb-https 단계에서 추가"
+          }
+
+          step_acm() {
+            local CERT TRY
+            CERT=$(aws acm list-certificates --certificate-statuses PENDING_VALIDATION ISSUED \
+              --query "CertificateSummaryList[?DomainName=='feel2real.co.kr'].CertificateArn | [0]" --output text)
+            if none "$CERT"; then
+              CERT=$(aws acm request-certificate --domain-name feel2real.co.kr \
+                --subject-alternative-names '*.feel2real.co.kr' --validation-method DNS \
+                --idempotency-token f2rmigration --tags Key=Project,Value=$P \
+                --query 'CertificateArn' --output text)
+              echo "requested $CERT"
+            else echo "exists $CERT"; fi
+            for TRY in $(seq 1 12); do
+              N=$(aws acm describe-certificate --certificate-arn "$CERT" \
+                --query 'length(Certificate.DomainValidationOptions[?ResourceRecord!=null])' --output text)
+              [ "${N:-0}" -ge 1 ] && break
+              sleep 5
+            done
+            echo "### DNS 검증용 CNAME — 권한 DNS(구 Route53 또는 가비아)에 추가하는 레코드(추가만, 기존 레코드 변경 없음). 등록은 사용자 승인 후 클로드가 수행"
+            aws acm describe-certificate --certificate-arn "$CERT" \
+              --query 'Certificate.DomainValidationOptions[*].{Domain:DomainName,Name:ResourceRecord.Name,Value:ResourceRecord.Value}' --output table
+          }
+
+          step_alb_https() {
+            local ALB TG CERT L443
+            ALB=$(aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text); need ALB "$ALB"
+            TG=$(aws elbv2 describe-target-groups --names f2r-app-tg --query 'TargetGroups[0].TargetGroupArn' --output text); need TG "$TG"
+            CERT=$(aws acm list-certificates --certificate-statuses ISSUED \
+              --query "CertificateSummaryList[?DomainName=='feel2real.co.kr'].CertificateArn | [0]" --output text)
+            if none "$CERT"; then echo "ISSUED 인증서 없음 — DNS 검증 CNAME 등록 후 재실행" >&2; exit 1; fi
+            L443=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB" --query "Listeners[?Port==\`443\`].ListenerArn" --output text)
+            if none "$L443"; then
+              aws elbv2 create-listener --load-balancer-arn "$ALB" --protocol HTTPS --port 443 \
+                --ssl-policy ELBSecurityPolicy-TLS13-1-2-2021-06 --certificates CertificateArn="$CERT" \
+                --default-actions Type=forward,TargetGroupArn="$TG" >/dev/null
+              echo "created HTTPS 443 listener (forward -> f2r-app-tg)"
+            else echo "exists HTTPS listener"; fi
+            aws elbv2 describe-target-health --target-group-arn "$TG" \
+              --query 'TargetHealthDescriptions[*].{Id:Target.Id,State:TargetHealth.State,Reason:TargetHealth.Reason}' --output table
+          }
+
+          step_smoke() {
+            local IID CID
+            IID=$(get_instance); need f2r-app "$IID"
+            CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript \
+              --parameters '{"commands":["echo smoke-ok-builder","uptime","free -m | head -2"]}' \
+              --query 'Command.CommandId' --output text)
+            aws ssm wait command-executed --command-id "$CID" --instance-id "$IID"
+            aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" \
+              --query 'StandardOutputContent' --output text
+            echo "instance_id=$IID" >> "$GITHUB_OUTPUT"
+          }
+
+          case "$STEP" in
+            validate) step_validate ;;
+            vpc) step_vpc ;;
+            ec2) step_ec2 ;;
+            rds-shell) step_rds_shell ;;
+            alb) step_alb ;;
+            acm) step_acm ;;
+            alb-https) step_alb_https ;;
+            smoke) step_smoke ;;
+            *) echo "unknown step"; exit 1 ;;
+          esac
+
+  # 배포 역할(github-actions-f2r-deploy)로도 같은 SSM 경로가 열리는지 확인한다.
+  # environment 없이 main 의 이 워크플로(job_workflow_ref)로만 가정 가능(배포 역할 신뢰 정책 참고).
+  smoke-deploy-role:
+    if: inputs.step == 'smoke'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials (deploy role)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: deploy-smoke
+
+      - name: Deploy-role SSM check
+        shell: bash
+        env:
+          IID: ${{ needs.build.outputs.instance_id }}
+        run: |
+          set -euo pipefail
+          [ -n "$IID" ] || { echo "INSTANCE_ID 없음"; exit 1; }
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript \
+            --parameters '{"commands":["echo smoke-ok-deploy-role"]}' --query 'Command.CommandId' --output text)
+          aws ssm wait command-executed --command-id "$CID" --instance-id "$IID"
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" \
+            --query 'StandardOutputContent' --output text
+          echo "배포 역할 SSM 경로 정상"
