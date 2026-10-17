@@ -73,4 +73,74 @@ class EasyCollectionApprovalTest {
     assertThat(approval.getStatus()).isEqualTo(EasyCollectionApproval.ApprovalStatus.PENDING);
     assertThat(approval.getDecidedAt()).isNull();
   }
+
+  @Test
+  @DisplayName("given APPROVED when markCommitted then COMMITTED로 전이된다")
+  void markCommitted_fromApproved_transitionsToCommitted() {
+    EasyCollectionApproval approval = pendingApproval();
+    approval.approve("admin", "승인");
+
+    approval.markCommitted();
+
+    assertThat(approval.getStatus()).isEqualTo(EasyCollectionApproval.ApprovalStatus.COMMITTED);
+    assertThat(approval.getCommittedAt()).isNotNull();
+    assertThat(approval.isCommitted()).isTrue();
+  }
+
+  @Test
+  @DisplayName("given COMMITTED when markCommitted then 재반영하지 않고 그대로 둔다 (멱등성)")
+  void markCommitted_alreadyCommitted_idempotent() {
+    EasyCollectionApproval approval = pendingApproval();
+    approval.approve("admin", "승인");
+    approval.markCommitted();
+
+    approval.markCommitted(); // 두 번째 호출 — 예외 없이 무시
+
+    assertThat(approval.getStatus()).isEqualTo(EasyCollectionApproval.ApprovalStatus.COMMITTED);
+  }
+
+  @Test
+  @DisplayName("given APPROVED when markCommitFailed then COMMIT_FAILED로 전이되고 오류가 기록된다")
+  void markCommitFailed_recordsError() {
+    EasyCollectionApproval approval = pendingApproval();
+    approval.approve("admin", "승인");
+
+    approval.markCommitFailed("DB 연결 실패");
+
+    assertThat(approval.getStatus()).isEqualTo(EasyCollectionApproval.ApprovalStatus.COMMIT_FAILED);
+    assertThat(approval.getCommitError()).isEqualTo("DB 연결 실패");
+    assertThat(approval.isCommitted()).isFalse();
+  }
+
+  @Test
+  @DisplayName("given COMMIT_FAILED when markCommitted then 재시도 성공 시 COMMITTED로 전이된다")
+  void markCommitted_fromCommitFailed_retrySucceeds() {
+    EasyCollectionApproval approval = pendingApproval();
+    approval.approve("admin", "승인");
+    approval.markCommitFailed("일시적 오류");
+
+    approval.markCommitted();
+
+    assertThat(approval.getStatus()).isEqualTo(EasyCollectionApproval.ApprovalStatus.COMMITTED);
+    assertThat(approval.getCommitError()).isNull();
+  }
+
+  @Test
+  @DisplayName("given PENDING when markCommitted then 예외가 발생한다 (승인 전 반영 금지)")
+  void markCommitted_fromPending_throws() {
+    EasyCollectionApproval approval = pendingApproval();
+
+    assertThatThrownBy(approval::markCommitted)
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  @DisplayName("given REJECTED when markCommitted then 예외가 발생한다 (반려 건 반영 차단)")
+  void markCommitted_fromRejected_throws() {
+    EasyCollectionApproval approval = pendingApproval();
+    approval.reject("admin", "반려");
+
+    assertThatThrownBy(approval::markCommitted)
+        .isInstanceOf(IllegalStateException.class);
+  }
 }
