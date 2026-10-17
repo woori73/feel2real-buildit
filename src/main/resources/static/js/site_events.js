@@ -89,9 +89,10 @@
     }
 
     tracker.elements = {};
+    var idByElement = typeof Map === 'function' ? new Map() : null;
     tracker.onIntersect = function (entries) {
       entries.forEach(function (entry) {
-        var id = entry.target.getAttribute('data-track-section');
+        var id = idByElement && idByElement.has(entry.target) ? idByElement.get(entry.target) : entry.target.getAttribute('data-track-section');
         if (!id || seenSection[id]) return;
         visibleNow[id] = qualifies(entry, win.innerHeight || 0);
         if (visibleNow[id]) armSection(id); else disarmSection(id);
@@ -101,8 +102,13 @@
     if (env.IntersectionObserver) {
       tracker.observer = new env.IntersectionObserver(tracker.onIntersect, { threshold: [0, 0.25, 0.5, 0.75, 1] });
       Array.prototype.forEach.call(doc.querySelectorAll('[data-track-section]'), function (el) {
-        tracker.elements[el.getAttribute('data-track-section')] = el;
-        tracker.observer.observe(el);
+        var id = el.getAttribute('data-track-section');
+        // display:contents 섹션은 박스가 없어 IntersectionObserver가 동작하지 않는다 → 지정한 하위 요소를 관찰한다.
+        var sel = el.getAttribute('data-track-observe');
+        var target = (sel && el.querySelector && el.querySelector(sel)) || el;
+        tracker.elements[id] = target;
+        if (idByElement) idByElement.set(target, id);
+        tracker.observer.observe(target);
       });
     }
 

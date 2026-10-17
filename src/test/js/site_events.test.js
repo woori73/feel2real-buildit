@@ -156,3 +156,21 @@ test('given 전송 본문 when 확인하면 then 허용된 필드(page·viewId·
   assert.deepEqual(Object.keys(body).sort(), ['events', 'page', 'viewId']);
   assert.deepEqual(Object.keys(body.events[0]).sort(), ['seq', 'target', 'type']);
 });
+
+test('given 박스 없는(display:contents) 섹션 when data-track-observe 하위 요소가 보이면 then 그 섹션의 노출로 센다', () => {
+  // given: 섹션 요소는 관찰 대상이 아니고, 지정한 하위 요소가 관찰 대상이 된다.
+  const h = makeEnv({ sections: [] });
+  const child = { getAttribute: () => null };
+  const section = {
+    getAttribute: (n) => (n === 'data-track-section' ? 'homeTop' : n === 'data-track-observe' ? '.home-top-ask' : null),
+    querySelector: (sel) => (sel === '.home-top-ask' ? child : null),
+  };
+  h.doc.querySelectorAll = () => [section];
+  const t = createTracker(h.env);
+  // when
+  h.fire([h.entry(child, 0.9)]);
+  h.advance(1000);
+  t.flush();
+  // then
+  assert.deepEqual(h.sent[0].body.events, [{ type: 'SECTION_VIEW', target: 'homeTop', seq: 0 }]);
+});
