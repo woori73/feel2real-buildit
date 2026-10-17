@@ -1,0 +1,1 @@
+{"dependencies":{"playwright":"^1.49.0"},"description":"EASY 자동수집 Playwright Worker — BuildIt과 분리된 프로세스로 실행","engines":{"node":">=18"},"main":"src/index.js","name":"easy-collection-worker","scripts":{"start":"node src/index.js","test":"node test/verify.js"},"version":"1.0.0"}
