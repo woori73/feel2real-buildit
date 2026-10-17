@@ -13,8 +13,6 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -45,14 +43,16 @@ public class EasyDashboardWidgetController {
   private static final String WIDGET_VERSION = "1.0";
   private static final String SERVICE_ID = "easy";
   private static final int REFRESH_INTERVAL_SEC = 300;
-  private static final long CACHE_TTL_MILLIS = 5 * 60 * 1000L;
 
   private final EasyWorkspaceService workspaceService;
 
-  /** 캐시 키: businessId + month. 값: (생성시각, 응답). */
-  private final Map<String, CachedWidgets> cache = new ConcurrentHashMap<>();
+  /** 캐시 키: businessId + month. 항목 수·수명 상한과 만료 제거는 {@link EasyDashboardWidgetCache}가 맡는다. */
+  private final EasyDashboardWidgetCache cache = new EasyDashboardWidgetCache();
 
-  private record CachedWidgets(long createdAt, EasyDashboardWidgetResponse response) {}
+  /** 테스트용 — 캐시를 비운다. */
+  void clearCache() {
+    cache.clear();
+  }
 
   @GetMapping("/widgets")
   public ResponseEntity<EasyDashboardWidgetResponse> widgets(
@@ -62,10 +62,9 @@ public class EasyDashboardWidgetController {
     YearMonth target = month == null ? YearMonth.now() : month;
     String cacheKey = businessId + ":" + target;
 
-    CachedWidgets cached = cache.get(cacheKey);
-    if (cached != null
-        && System.currentTimeMillis() - cached.createdAt() < CACHE_TTL_MILLIS) {
-      return ResponseEntity.ok(cached.response());
+    var cached = cache.get(cacheKey);
+    if (cached.isPresent()) {
+      return ResponseEntity.ok(cached.get());
     }
 
     List<Widget> widgets = new ArrayList<>();
@@ -94,7 +93,11 @@ public class EasyDashboardWidgetController {
 
     EasyDashboardWidgetResponse response = new EasyDashboardWidgetResponse(
         WIDGET_VERSION, SERVICE_ID, dataAsOf, widgets);
-    cache.put(cacheKey, new CachedWidgets(System.currentTimeMillis(), response));
+    // 오류 위젯이 섞인 응답은 캐시하지 않는다 — 존재하지 않는/비활성 businessId로 키가 쌓이거나
+    // 일시 장애 응답이 5분간 고정되는 것을 막는다.
+    if (widgets.stream().noneMatch(w -> w.error() != null)) {
+      cache.put(cacheKey, response);
+    }
     return ResponseEntity.ok(response);
   }
 
