@@ -66,7 +66,7 @@ class LandingV3TemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 상단 내비 when 읽으면 then 모의고사위키·기출분석·CHART·TestPrep 4개가 라벨과 목적지가 일치하고 F2R은 없으며 문의하기·계정 메뉴를 유지한다")
+  @DisplayName("given 상단 내비 when 읽으면 then 내신위키·모의고사위키·기출분석·CHART·TestPrep 5개가 라벨과 목적지가 일치하고 F2R은 없으며 문의하기·계정 메뉴를 유지한다")
   void nav_keeps_service_links() throws Exception {
     // given
     String html = Files.readString(LANDING);
@@ -74,6 +74,7 @@ class LandingV3TemplateContractTest {
 
     // then
     assertThat(nav)
+        .contains("href=\"/problem-generator\" class=\"btn outline nav-cta\">내신위키</a>")
         .contains("href=\"/wiki\" class=\"btn outline nav-cta\">모의고사위키</a>")
         .contains("href=\"/exam-analysis\" class=\"btn outline nav-cta\">기출분석</a>")
         .contains("href=\"/chart\" class=\"btn outline nav-cta\">CHART</a>")
@@ -145,7 +146,7 @@ class LandingV3TemplateContractTest {
     String menu = html.substring(html.indexOf("id=\"biMenu\""), html.indexOf("id=\"homeFirst\""));
 
     // then
-    for (String href : new String[] {"/wiki", "/exam-analysis", "/chart", "/testprep", "/builder", "/ledger", "/designcraft", "/admissions/guide"}) {
+    for (String href : new String[] {"/problem-generator", "/wiki", "/exam-analysis", "/chart", "/testprep", "/builder", "/ledger", "/designcraft", "/admissions/guide"}) {
       assertThat(menu).as(href).contains("<a href=\"" + href + "\">");
     }
     assertThat(menu).contains("href=\"/register?returnUrl=%2F\"", "onclick=\"openContactModal()\"")

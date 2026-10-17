@@ -45,7 +45,7 @@ class ProgramProblemGeneratorEntryMySqlTest {
 
     String body = r.getResponse().getContentAsString();
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
-    assertThat(body).contains("내신 영어 문제지 제작기", "/auth/naver/start?returnUrl=/problem-generator", "program-id-login");
+    assertThat(body).contains("내신위키", "/auth/naver/start?returnUrl=/problem-generator", "program-id-login");
   }
 
   @Test
