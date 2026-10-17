@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS easy_collection_approvals (
   idempotency_key VARCHAR(100),
   created_at DATETIME,
   updated_at DATETIME,
+  created_by VARCHAR(50),
+  updated_by VARCHAR(50),
   PRIMARY KEY (approval_id),
   UNIQUE KEY uk_approval_run (run_id),
   UNIQUE KEY uk_approval_idempotency (idempotency_key),
