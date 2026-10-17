@@ -9,6 +9,7 @@ h1{font-size:26px;margin:0 0 8px}h2{font-size:18px;margin:0 0 6px}
 .ei-guide{font-size:16px;line-height:1.6}.ei-note,.ei-hint,.ei-formats{color:var(--mute);font-size:13px}
 .ei-group{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
 .ei-group input[type=file]{display:block;width:100%;margin:8px 0}
+.ei-group input.ei-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;margin:0;pointer-events:none}
 textarea,input:not([type=file]),select{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
 .ei-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .ei-files{list-style:none;padding:0;margin:0 0 8px;font-size:13px}
@@ -33,3 +34,21 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .ei-modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 @media(max-width:700px){.ei-meta{grid-template-columns:1fr 1fr}.ei-options{grid-template-columns:1fr}.ei-composer{flex-direction:column;align-items:stretch}h1{font-size:22px}}
 @media(prefers-reduced-motion:reduce){.ei-spinner{animation:none}}
+.ei-pick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;position:relative}
+.ei-btn{display:inline-block;padding:10px 16px;border:1px solid var(--brand);border-radius:10px;background:var(--brand);color:#fff;cursor:pointer;font-weight:600;min-height:44px;line-height:1.4}
+.ei-btn.ei-cam{background:#fff;color:var(--brand)}
+.ei-btn[hidden]{display:none}
+.ei-file:focus-visible+.ei-btn,.ei-btn:focus-within{outline:3px solid #99f6e4}
+.ei-items{list-style:none;padding:0;margin:0 0 8px}
+.ei-item{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0;background:#fff}
+.ei-item[data-status=error]{border-color:#fca5a5;background:#fef2f2}
+.ei-item-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ei-item-name{flex:1 1 160px;min-width:0;word-break:break-all;font-size:14px}
+.ei-badge{font-size:11px;padding:2px 8px;border-radius:99px;background:#e0f2fe;color:#075985}
+.ei-status{font-size:12px;color:var(--mute)}
+.ei-status.is-ok{color:#047857}.ei-status.is-error{color:#b91c1c;font-weight:600}
+.ei-item button{padding:6px 10px;font-size:12px;min-height:32px}
+.ei-item textarea{margin-top:8px;font-size:13px;line-height:1.6;min-height:140px}
+.ei-uncertain{background:#fef9c3;padding:6px 10px;border-radius:8px;font-size:12px;margin-top:6px}
+.ei-dragover{outline:2px dashed var(--brand);outline-offset:-6px}
+@media(max-width:700px){.ei-btn{flex:1 1 100%;text-align:center}}

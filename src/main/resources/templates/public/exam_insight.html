@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <title>내신영어 기출분석 + 출제방향 제작 | BuildIt</title>
-  <link rel="stylesheet" href="/css/exam_insight.css?v=20261016-1">
+  <link rel="stylesheet" href="/css/exam_insight.css?v=20261017-1">
 </head>
 <body>
 <header class="ei-top">
@@ -21,18 +21,28 @@
   </section>
 
   <form class="ei-form" id="eiForm" novalidate>
-    <div class="ei-group">
+    <div class="ei-group" data-group="past">
       <h2>① 최근 학교 기출문제</h2>
-      <p class="ei-hint">최근 1~3회분의 기출문제를 올리거나 아래에 붙여넣어 주세요.</p>
-      <input type="file" id="eiPastFiles" multiple>
-      <ul class="ei-files" id="eiPastList"></ul>
+      <p class="ei-hint">최근 1~3회분의 기출문제를 문서·HTML·사진으로 올리거나 아래에 붙여넣어 주세요. 사진은 여러 장을 순서대로 올릴 수 있어요.</p>
+      <div class="ei-pick">
+        <label class="ei-btn ei-add" for="eiPastFiles">파일·사진 추가</label>
+        <input type="file" id="eiPastFiles" class="ei-file" multiple>
+        <label class="ei-btn ei-cam" for="eiPastCam" id="eiPastCamLabel" hidden>사진 촬영</label>
+        <input type="file" id="eiPastCam" class="ei-file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      </div>
+      <ul class="ei-items" id="eiPastList"></ul>
       <textarea id="eiPastText" rows="4" maxlength="60000" placeholder="기출문제 텍스트를 붙여넣을 수도 있어요(선택)"></textarea>
     </div>
-    <div class="ei-group">
+    <div class="ei-group" data-group="scope">
       <h2>② 이번 시험범위 자료</h2>
-      <p class="ei-hint">교과서·본문·학교 학습지 등 이번 시험범위 자료를 올리거나 붙여넣어 주세요.</p>
-      <input type="file" id="eiScopeFiles" multiple>
-      <ul class="ei-files" id="eiScopeList"></ul>
+      <p class="ei-hint">교과서·본문·학교 학습지 등 이번 시험범위 자료를 문서·HTML·사진으로 올리거나 붙여넣어 주세요. 형식을 섞어 올려도 한 번에 함께 분석해요.</p>
+      <div class="ei-pick">
+        <label class="ei-btn ei-add" for="eiScopeFiles">파일·사진 추가</label>
+        <input type="file" id="eiScopeFiles" class="ei-file" multiple>
+        <label class="ei-btn ei-cam" for="eiScopeCam" id="eiScopeCamLabel" hidden>사진 촬영</label>
+        <input type="file" id="eiScopeCam" class="ei-file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      </div>
+      <ul class="ei-items" id="eiScopeList"></ul>
       <textarea id="eiScopeText" rows="4" maxlength="60000" placeholder="시험범위 본문 텍스트를 붙여넣을 수도 있어요(선택)"></textarea>
     </div>
     <p class="ei-formats" id="eiFormats" role="note"></p>
@@ -106,6 +116,6 @@
     </div>
   </div>
 </div>
-<script src="/js/exam_insight.js?v=20261016-2"></script>
+<script src="/js/exam_insight.js?v=20261017-1"></script>
 </body>
 </html>

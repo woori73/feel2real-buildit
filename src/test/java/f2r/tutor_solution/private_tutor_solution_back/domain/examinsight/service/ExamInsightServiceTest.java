@@ -26,7 +26,13 @@ class ExamInsightServiceTest {
   @BeforeEach
   void setUp() {
     limiter = new ExamInsightRateLimiter(2, 10);
-    service = new ExamInsightService(extractor, limiter, llm, true, 3, 40000, 16000);
+    service = newService(true, 3, 40000, 16000);
+  }
+
+  ExamInsightService newService(boolean enabled, int maxFiles, int maxChars, int maxOut) {
+    return new ExamInsightService(extractor, limiter, llm, mock(ExamInsightImagePreprocessor.class),
+        mock(ExamInsightVisionClient.class), new ExamInsightImageBudget(60, 600), enabled, maxFiles, 20, 10_485_760L,
+        maxChars, maxOut);
   }
 
   ExamInsightService.Input input(String past, String scope) {
@@ -102,7 +108,7 @@ class ExamInsightServiceTest {
   @Test
   void 비활성화되면_503() {
     // given
-    ExamInsightService off = new ExamInsightService(extractor, limiter, llm, false, 3, 40000, 16000);
+    ExamInsightService off = newService(false, 3, 40000, 16000);
     // when / then
     assertThatThrownBy(() -> off.analyze(1L, input("q", "s")))
         .isInstanceOfSatisfying(ExamInsightException.class, e -> assertThat(e.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE));
@@ -111,7 +117,7 @@ class ExamInsightServiceTest {
   @Test
   void 긴_자료는_잘라서_분석하고_알려준다() {
     // given tiny cap
-    ExamInsightService small = new ExamInsightService(extractor, limiter, llm, true, 3, 10, 16000);
+    ExamInsightService small = newService(true, 3, 10, 16000);
     when(llm.complete(anyString(), anyString(), anyInt()))
         .thenReturn(NewStartLlmCompletion.success(ExamInsightPromptBuilderTest.valid(), "p", "m"));
     // when
@@ -157,7 +163,7 @@ class ExamInsightServiceTest {
   @Test
   void 비활성화_상태에서는_AI를_호출하지_않고_횟수도_쓰지_않는다() {
     // given
-    ExamInsightService off = new ExamInsightService(extractor, limiter, llm, false, 3, 40000, 40000);
+    ExamInsightService off = newService(false, 3, 40000, 40000);
     // when
     assertThatThrownBy(() -> off.analyze(1L, input("q", "s"))).isInstanceOf(ExamInsightException.class);
     // then
@@ -171,8 +177,8 @@ class ExamInsightServiceTest {
     java.lang.reflect.Constructor<?> ctor = java.util.Arrays.stream(ExamInsightService.class.getConstructors())
         .filter(c -> c.isAnnotationPresent(org.springframework.beans.factory.annotation.Autowired.class)).findFirst().orElseThrow();
     // when
-    String enabled = ctor.getParameters()[3].getAnnotation(org.springframework.beans.factory.annotation.Value.class).value();
-    String maxOut = ctor.getParameters()[6].getAnnotation(org.springframework.beans.factory.annotation.Value.class).value();
+    String enabled = ctor.getParameters()[6].getAnnotation(org.springframework.beans.factory.annotation.Value.class).value();
+    String maxOut = ctor.getParameters()[11].getAnnotation(org.springframework.beans.factory.annotation.Value.class).value();
     // then
     assertThat(enabled).isEqualTo("${app.exam-insight.enabled:false}");
     assertThat(maxOut).isEqualTo("${app.exam-insight.max-output-chars:40000}");

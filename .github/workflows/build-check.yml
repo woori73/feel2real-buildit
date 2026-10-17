@@ -125,6 +125,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantUnitTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantPatchApplierTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.examinsight.service.*"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.examinsight.controller.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantRuleInterpreterTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AssistantAssetCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantEditServiceTest"

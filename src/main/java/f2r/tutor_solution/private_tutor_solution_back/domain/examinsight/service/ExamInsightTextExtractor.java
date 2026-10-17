@@ -31,17 +31,25 @@ import org.springframework.web.server.ResponseStatusException;
 /**
  * 업로드 파일에서 분석용 텍스트를 뽑는다. 파일은 메모리에서만 처리하고 저장하지 않는다.
  *
- * <p>실제로 읽을 수 있는 형식만 받는다: 텍스트가 들어 있는 PDF, DOCX, HWPX, TXT, MD.
- * 이미지와 스캔 PDF는 OCR이 없어 읽을 수 없으므로 거절하고 이유를 안내한다(읽은 척하지 않는다).
- * 확장자·시그니처 검증은 기존 {@link DocumentUploadValidator}를 그대로 쓴다.
+ * <p>글자로 읽을 수 있는 형식만 다룬다: 텍스트가 들어 있는 PDF, DOCX, HWPX, TXT, MD, HTML.
+ * HTML은 {@link ExamInsightHtmlExtractor}가 안전하게 파싱한다. 사진(JPG·PNG·WebP)은 글자가 아니라 그림이므로 여기서
+ * 읽지 않고 서비스가 {@link ExamInsightVisionClient}로 보낸다. 스캔 PDF와 그 밖의 이미지 형식은 거절하고 이유를 안내한다
+ * (읽은 척하지 않는다). 확장자·시그니처 검증은 기존 {@link DocumentUploadValidator}를 그대로 쓴다.
  */
 @Component
 public class ExamInsightTextExtractor {
 
   /** 화면에 그대로 안내하는 지원 형식(확장자). */
-  public static final List<String> SUPPORTED_EXTENSIONS = List.of("pdf", "docx", "hwpx", "txt", "md");
+  public static final List<String> DOCUMENT_EXTENSIONS = List.of("pdf", "docx", "hwpx", "txt", "md");
+  public static final List<String> WEB_EXTENSIONS = List.of("html", "htm");
+  /** 사진 형식. HEIC는 이 서버에서 변환할 수 없어 포함하지 않는다. */
+  public static final List<String> IMAGE_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp");
+  /** 글자로 읽는 형식(문서 + 웹 문서). */
+  public static final List<String> SUPPORTED_EXTENSIONS =
+      java.util.stream.Stream.concat(DOCUMENT_EXTENSIONS.stream(), WEB_EXTENSIONS.stream()).toList();
 
   private static final Set<String> SUPPORTED = Set.copyOf(SUPPORTED_EXTENSIONS);
+  private static final Set<String> IMAGE_SET = Set.copyOf(IMAGE_EXTENSIONS);
   private static final int PDF_MAX_PAGES = 60;
   private static final int MIN_PDF_TEXT_CHARS = 40;
   /** ZIP 폭탄 방지: 문서 XML 한 개의 압축 해제 상한. */
@@ -49,20 +57,61 @@ public class ExamInsightTextExtractor {
   private static final int MAX_ZIP_ENTRIES = 2000;
 
   private final DocumentUploadValidator validator;
+  private final ExamInsightHtmlExtractor html;
 
-  public ExamInsightTextExtractor(DocumentUploadValidator validator) {
+  @org.springframework.beans.factory.annotation.Autowired
+  public ExamInsightTextExtractor(
+      DocumentUploadValidator validator,
+      @org.springframework.beans.factory.annotation.Value("${app.exam-insight.max-embedded-images-per-html:10}")
+          int maxEmbeddedImages) {
     this.validator = validator;
+    this.html = new ExamInsightHtmlExtractor(maxEmbeddedImages);
   }
 
-  /** 추출 결과. {@code text}는 정리된 본문이다. */
-  public record Extracted(String filename, String format, String text) {}
+  public ExamInsightTextExtractor(DocumentUploadValidator validator) {
+    this(validator, 10);
+  }
+
+  /**
+   * 추출 결과. {@code text}는 정리된 본문이다. HTML이면 문서에 내장된 이미지와, 가져오지 않은 이미지 수가 함께 온다
+   * (본문에는 {@code {{IMG:n}}} 자리표시자가 남는다).
+   */
+  public record Extracted(
+      String filename, String format, String text, List<ExamInsightHtmlExtractor.EmbeddedImage> images,
+      int skippedExternalImages, int skippedEmbeddedImages) {
+    public Extracted(String filename, String format, String text) {
+      this(filename, format, text, List.of(), 0, 0);
+    }
+  }
+
+  /** 사진으로 읽어야 하는 확장자인지. */
+  public static boolean isReadableImage(String filename) {
+    String ext = extensionOf(filename);
+    return ext != null && IMAGE_SET.contains(ext);
+  }
+
+  /** 확장자·시그니처·용량 검증을 통과한 파일의 바이트. 사진처럼 글자 추출 없이 바로 쓰는 파일용. */
+  public byte[] validatedBytes(MultipartFile file, List<String> allowedExtensions) {
+    try {
+      validator.validate(file, Set.copyOf(allowedExtensions));
+    } catch (ResponseStatusException e) {
+      throw new ExamInsightException(HttpStatus.BAD_REQUEST, "INVALID_FILE", e.getReason() == null ? "올릴 수 없는 파일이에요." : e.getReason());
+    }
+    try {
+      return file.getBytes();
+    } catch (IOException e) {
+      throw ExamInsightException.badRequest("READ_FAILED", "파일을 읽지 못했어요: " + safe(file.getOriginalFilename()));
+    }
+  }
 
   public Extracted extract(MultipartFile file) {
     String name = file == null ? null : file.getOriginalFilename();
     String ext = extensionOf(name);
     if (ext != null && isImage(ext)) {
       throw ExamInsightException.badRequest("UNSUPPORTED_IMAGE",
-          "이미지 파일은 아직 분석할 수 없어요. 텍스트가 들어 있는 PDF·DOCX·HWPX·TXT 파일을 올리거나 본문을 붙여 넣어 주세요: " + safe(name));
+          "heic".equals(ext) || "heif".equals(ext)
+              ? "HEIC 사진은 이 서버에서 변환할 수 없어요. 사진 앱에서 JPG로 저장하거나, 휴대폰 설정에서 '호환성 우선'으로 촬영해 올려 주세요: " + safe(name)
+              : "이 이미지 형식은 지원하지 않아요. JPG·PNG·WebP 사진을 올려 주세요: " + safe(name));
     }
     try {
       validator.validate(file, SUPPORTED);
@@ -76,13 +125,19 @@ public class ExamInsightTextExtractor {
       throw ExamInsightException.badRequest("READ_FAILED", "파일을 읽지 못했어요: " + safe(name));
     }
     String text;
+    ExamInsightHtmlExtractor.Result htmlResult = null;
     try {
-      text = switch (ext) {
-        case "pdf" -> pdfText(bytes, name);
-        case "docx" -> xmlText(bytes, "word/document.xml", "p", "t", name);
-        case "hwpx" -> hwpxText(bytes, name);
-        default -> plainText(bytes);
-      };
+      if (ext.equals("html") || ext.equals("htm")) {
+        htmlResult = html.extract(bytes);
+        text = htmlResult.text();
+      } else {
+        text = switch (ext) {
+          case "pdf" -> pdfText(bytes, name);
+          case "docx" -> xmlText(bytes, "word/document.xml", "p", "t", name);
+          case "hwpx" -> hwpxText(bytes, name);
+          default -> plainText(bytes);
+        };
+      }
     } catch (ExamInsightException e) {
       throw e;
     } catch (RuntimeException | IOException | XMLStreamException e) {
@@ -90,8 +145,12 @@ public class ExamInsightTextExtractor {
           "파일 내용을 읽지 못했어요. 손상되었거나 암호가 걸린 파일일 수 있어요: " + safe(name));
     }
     String cleaned = clean(text);
-    if (cleaned.isBlank()) {
+    if (cleaned.isBlank() && (htmlResult == null || htmlResult.images().isEmpty())) {
       throw ExamInsightException.badRequest("EMPTY_TEXT", "파일에서 읽을 수 있는 글자를 찾지 못했어요: " + safe(name));
+    }
+    if (htmlResult != null) {
+      return new Extracted(safe(name), ext, cleaned, htmlResult.images(),
+          htmlResult.skippedExternalImages(), htmlResult.skippedEmbeddedImages());
     }
     return new Extracted(safe(name), ext, cleaned);
   }
@@ -240,7 +299,7 @@ public class ExamInsightTextExtractor {
     return s.trim();
   }
 
-  private static String extensionOf(String filename) {
+  static String extensionOf(String filename) {
     if (filename == null) return null;
     int dot = filename.lastIndexOf('.');
     if (dot < 0 || dot == filename.length() - 1) return null;
@@ -248,7 +307,7 @@ public class ExamInsightTextExtractor {
   }
 
   private static boolean isImage(String ext) {
-    return Set.of("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic").contains(ext);
+    return Set.of("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif", "tif", "tiff").contains(ext);
   }
 
   /** 파일명은 경로·제어 문자를 지우고 길이를 줄여 응답·로그에 싣는다. */
