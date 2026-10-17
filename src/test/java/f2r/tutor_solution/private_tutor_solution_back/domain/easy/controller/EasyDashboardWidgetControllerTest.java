@@ -2,6 +2,8 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -18,6 +20,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyWo
 import jakarta.servlet.http.Cookie;
 import java.time.YearMonth;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +48,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 @Import({SecurityConfig.class, JwtTokenProvider.class, CookieUtil.class})
 @TestPropertySource(properties = {
-    "app.jwt.secret=<redacted>",
+    "app.jwt.secret=12345678901234567890123456789012",
     "app.jwt.expiration-seconds=86400",
     "app.jwt.cookie-name=ACCESS_TOKEN",
     "app.jwt.secure-cookie=false"
@@ -54,10 +57,17 @@ class EasyDashboardWidgetControllerTest {
 
   @Autowired MockMvc mockMvc;
   @Autowired JwtTokenProvider tokenProvider;
+  @Autowired EasyDashboardWidgetController controller;
 
   @MockitoBean EasyWorkspaceService workspaceService;
   @MockitoBean EasyAuditService auditService;
   @MockitoBean EasyBusinessScopeGuard scopeGuard;
+
+  /** 컨트롤러는 컨텍스트 안의 싱글턴이라 캐시가 테스트 사이에 남는다 — 실행 순서와 무관하게 비운다. */
+  @BeforeEach
+  void clearWidgetCache() {
+    controller.clearCache();
+  }
 
   private Cookie adminCookie() {
     String token = tokenProvider.issue(1L, "admin1", "ADMIN");
@@ -154,5 +164,52 @@ class EasyDashboardWidgetControllerTest {
         .andExpect(jsonPath("$.widgets[0].error").value("일시적으로 표시할 수 없습니다."))
         .andExpect(jsonPath("$.widgets[1].error").value("일시적으로 표시할 수 없습니다."))
         .andExpect(jsonPath("$.widgets[2].error").value("일시적으로 표시할 수 없습니다."));
+  }
+
+  @Test
+  @DisplayName("성공 응답은 캐시되어 같은 businessId·월의 두 번째 요청은 서비스를 다시 호출하지 않는다")
+  void successfulResponse_isCached() throws Exception {
+    when(workspaceService.monthly(eq(1L), any(YearMonth.class)))
+        .thenReturn(monthlyFixture(1L));
+
+    for (int i = 0; i < 2; i++) {
+      mockMvc.perform(get("/api/admin/easy/dashboard/widgets")
+              .param("businessId", "1")
+              .param("month", "2026-10")
+              .cookie(adminCookie())
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk());
+    }
+
+    // 위젯 3개가 요청당 monthly()를 한 번씩 부른다 — 두 번째 요청은 캐시 적중이라 합계 3회
+    verify(workspaceService, times(3)).monthly(eq(1L), any(YearMonth.class));
+  }
+
+  @Test
+  @DisplayName("오류 위젯이 섞인 응답은 캐시되지 않아 다음 요청에서 다시 계산된다")
+  void errorResponse_isNotCached() throws Exception {
+    // given: 첫 요청은 장애
+    when(workspaceService.monthly(eq(1L), any(YearMonth.class)))
+        .thenThrow(new RuntimeException("일시 장애"));
+    mockMvc.perform(get("/api/admin/easy/dashboard/widgets")
+            .param("businessId", "1")
+            .param("month", "2026-10")
+            .cookie(adminCookie())
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.widgets[0].error").value("일시적으로 표시할 수 없습니다."));
+
+    // when: 복구된 뒤 같은 요청
+    when(workspaceService.monthly(eq(1L), any(YearMonth.class)))
+        .thenReturn(monthlyFixture(1L));
+
+    // then: 5분 동안 오류가 고정되지 않고 정상 응답
+    mockMvc.perform(get("/api/admin/easy/dashboard/widgets")
+            .param("businessId", "1")
+            .param("month", "2026-10")
+            .cookie(adminCookie())
+            .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.widgets[0].error").doesNotExist())
+        .andExpect(jsonPath("$.widgets[0].data.cards[0].value").value(12_450_000));
   }
 }
