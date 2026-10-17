@@ -1,0 +1,57 @@
+name: DesignCraft mark title verify v1 (runner only, CLI 0.8, no AWS)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-marktitle-verify.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/designcraft-pdf-mark-title
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: actions/download-artifact@v4
+        with:
+          name: designcraft-080-glibc234-final
+          run-id: 38850191210
+          github-token: ${{ github.token }}
+          path: art
+      - name: Guard - archive hash must match the approved value
+        run: |
+          T=art/designcraft-0.8.0-al2023-x86_64.tar.gz
+          test "$(sha256sum $T | cut -d' ' -f1)" = "5d4a3e7b9a0569ed904ae41d777c1a02854e579fd8aaa2769a34a4c3228aee6d"
+          mkdir eng && tar xzf $T -C eng
+      - name: Real-CLI test (A4, B5, 46) with CLI 0.8
+        run: |
+          CLI=$(find "$PWD/eng" -name designcraft-cli -type f | head -1); chmod +x "$CLI"; "$CLI" --version
+          DESIGNCRAFT_CLI="$CLI" DC_PDF_OUT="$PWD/out" bash ./gradlew test --no-daemon -q --tests '*PdfMarkTitle*' 2>&1 | grep -E "FAILED|BUILD|tests completed" || true
+          python3 - <<'PY'
+          import glob, xml.etree.ElementTree as ET
+          for f in glob.glob('build/test-results/test/*PdfMarkTitle*.xml'):
+              r = ET.parse(f).getroot(); print(r.get('name').split('.')[-1], *(f"{k}={r.get(k)}" for k in ('tests','failures','errors','skipped')))
+              for tc in r.findall('testcase'):
+                  for x in tc.findall('failure'): print(' FAIL', tc.get('name'), (x.get('message') or '')[:400])
+          PY
+      - name: Footer OCR at 600 dpi (should read the ASCII title and the right page number)
+        run: |
+          sudo apt-get -qq update >/dev/null 2>&1; sudo apt-get -qq install -y poppler-utils tesseract-ocr >/dev/null 2>&1 || true
+          pip install -q pymupdf >/dev/null 2>&1
+          for f in out/*.pdf; do
+            echo "######## $f"; pdfinfo "$f" | grep -E "^(Title|Pages)"
+            python3 - "$f" <<'PY'
+          import sys, subprocess, pymupdf
+          d = pymupdf.open(sys.argv[1]); p = d[1]; H = p.rect.height
+          x0, x1 = 20, 260
+          pix = p.get_pixmap(dpi=600, clip=pymupdf.Rect(x0, H - 30, x1, H - 6)); pix.save('foot.png')
+          print('OCR footer (page 2):', subprocess.run(['tesseract', 'foot.png', '-', '--psm', '7'], capture_output=True, text=True).stdout.strip())
+          print('metadata title:', d.metadata['title'])
+          PY
+          done
