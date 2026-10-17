@@ -416,6 +416,14 @@ jobs:
       - name: Install Korean font for Chromium QA
         run: sudo apt-get update -qq && sudo apt-get install -y fonts-noto-cjk
 
+      - name: Raise MySQL max_connections for cached Spring test contexts
+        # 테스트 JVM이 Spring 컨텍스트를 캐시하고 컨텍스트마다 Hikari 풀(기본 10)을 유지한다.
+        # 컨텍스트 15개 이상이 되면 MySQL 기본 max_connections(151)에 닿아, 마지막에 뜨는 컨텍스트가
+        # "Too many connections"로 실패한다(관측: 컨텍스트가 1개 늘자 ADMIN 교체 테스트 9건 실패).
+        run: |
+          command -v mysql >/dev/null || sudo apt-get install -y -qq mysql-client
+          mysql -h 127.0.0.1 -P 3306 -uroot -pci_test_root_pw -e "SET GLOBAL max_connections=500"
+          mysql -h 127.0.0.1 -P 3306 -uroot -pci_test_root_pw -e "SHOW VARIABLES LIKE 'max_connections'"
       - name: Run MySQL integration tests
         run: >-
           ./gradlew test --no-daemon --stacktrace
@@ -447,6 +455,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyTutorCsvWorkflowMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAgentFlowMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyDashboardWidgetMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionApprovalP4StagingTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepFlowMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPagesMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramPublicEntryMySqlTest"
