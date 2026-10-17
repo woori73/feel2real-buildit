@@ -45,6 +45,15 @@
 3. 출력 `sub`가 `repo:woori73@299170593/feel2real-buildit@1340651018:environment:f2r-infra-build`와 같으면 `trust-f2r-infra-builder.json`을 **그대로 확정**. 다르면 **출력된 실제 값으로만** 교체한다(불변 ID 형식 유지, 와일드카드·`StringLike` 완화 금지).
 4. 확정 후 사용자 승인 아래 IAM 역할 생성 → `validate` 단계로 가정 확인. AccessDenied가 나면 원인을 조사한다(`job_workflow_ref` 지원은 AWS 공식 문서로 확인됨 — 사용자 확인). 신뢰 정책을 임의로 완화하지 않는다.
 
+
+### 3-1. 확정 결과 (2026-10-17, 일회성 무-AWS 실행 run 39030186213)
+- 실측 `sub` = `repo:woori73@299170593/feel2real-buildit@1340651018:environment:f2r-infra-build`, `environment` = `f2r-infra-build`, `aud` = `sts.amazonaws.com` → **`trust-f2r-infra-builder.json`의 `sub` 값과 정확히 일치. 신뢰 정책은 수정 없이 확정**(불변 ID 형식 유지, 완화 없음).
+- **보호 규칙은 아직 적용되지 않았다**(같은 실행이 승인 대기 없이 9초 만에 완료, Required reviewers 미설정). 또한 **비-main 브랜치(`ci/oidc-claims-env`)에서도 Environment를 사용할 수 있었으므로 Deployment branches 제한도 미적용**이다. 이 상태로 IAM 역할을 만들면 승인 게이트가 없다 → 아래 2개를 적용한 뒤 역할 생성 승인을 요청한다:
+  1. Required reviewers: `woori73`
+  2. Deployment branches and tags → Selected branches → `main`
+  3. (권고) **Allow administrators to bypass configured protection rules: 끔** — 에이전트 토큰이 admin이라 켜져 있으면 승인 규칙을 우회할 수 있다
+- 신뢰 정책은 `job_workflow_ref`(main)로도 비-main 브랜치를 막으므로 현재도 역할 가정은 거부되지만(방어 1겹), 위 설정이 있어야 방어가 2겹이 된다.
+
 ## 4. 뮤즈 인계 (신규 인프라 구축 담당)
 - 전달물(main에 병합됨, PR #741): `docs/operations/aws-migration/` — `trust-f2r-infra-builder.json`, `policy-f2r-infra-builder.json`, `trust-github-actions-f2r-deploy.json`, `policy-f2r-deploy-smoke-ssm.json`, `migration-infra-build.yml`, 검토서 `AWS_INFRA_REVIEW_20261017.md`.
 - 뮤즈가 할 일(승인 후): ① 정책·워크플로를 **수정본 기준**으로 사용(원안 사용 금지: `sub` 형식·SSM 권한·ALB 단계) ② 사용자가 Environment를 만든 뒤 `.github/workflows/migration-infra-build.yml`로 배치하는 PR 작성 ③ 단계 순서 `validate → vpc → ec2 → rds-shell → alb → acm → (DNS 검증 레코드 등록은 클로드/사용자) → alb-https → smoke` ④ 실행마다 사용자 Environment 승인 ⑤ 구축 결과·설정 문서를 클로드에게 인계.
