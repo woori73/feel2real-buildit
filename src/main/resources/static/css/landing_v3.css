@@ -798,3 +798,9 @@ body { background: #f7f8fc; }
   .bi-page .svc-card h3 { font-size: 20px; }
   .bi-page .svc-enter { justify-self: stretch; text-align: center; }
 }
+
+/* AI 비서 마스코트 (GIF) - 기존 병아리 SVG 교체 */
+.bi-page img.chick {
+  object-fit: cover;
+  border-radius: 50%;
+}
