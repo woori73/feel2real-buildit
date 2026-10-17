@@ -243,6 +243,17 @@ public class AcademyAssistantApiController {
   }
 
   /**
+   * 새 홈페이지 만들기: 학원 정보는 두고 요청에서 새 초안을 만들어 작업본에 적용한다(되돌리기 가능, 공개본 불변).
+   * body: {message, revision}. 수정 턴(/turn)과 구분된다.
+   */
+  @PostMapping("/restart")
+  public ResponseEntity<Map<String, Object>> restart(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+      @RequestBody RestartRequest request) {
+    return editAction(principal, p -> service.restart(p, request == null ? null : request.message(), request == null ? null : request.revision()));
+  }
+
+  /**
    * 초기화: 작업본을 마지막 저장점(없으면 현재 공개본)으로 되돌린다. 작업본만 바뀌고 공개본·버전 기록은 그대로이며,
    * 수정 한 건으로 기록돼 '되돌리기'로 취소할 수 있다. body: {revision}.
    */
@@ -437,6 +448,8 @@ public class AcademyAssistantApiController {
   record ProfileRequest(String academyName, String region, java.util.List<String> targets) {}
 
   record UndoRequest(Long revision) {}
+
+  record RestartRequest(String message, Long revision) {}
 
   record AdoptRequest(Boolean confirm) {}
 

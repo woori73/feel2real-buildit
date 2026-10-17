@@ -134,19 +134,34 @@
     renderChips(); renderStatus(); renderUndo(); setDevice(ctx.dev);
     renderThread();
     $('ahCard').hidden = false; fitCard(); loadPreview(null);
-    if (opts && opts.notes && opts.notes.length) addBubble('bot', opts.notes.join('\n'), []);
+    if (opts && opts.notes && opts.notes.length) {
+      var nb = el('div', 'ah-msg bot'); var nd = el('details', 'ah-log');
+      nd.appendChild(el('summary', null, '생성 안내 ' + opts.notes.length + '건')); nd.appendChild(el('div', 'ah-lognote', opts.notes.join('\n')));
+      nb.appendChild(nd); $('ahMsgs').appendChild(nb); scrollThread();
+    }
   }
 
   /* ───── 대화(스레드): 말풍선 + 결과 미리보기 카드 ───── */
   function scrollThread() { var t = $('ahThread'); if (t) t.scrollTop = t.scrollHeight; }
   function addBubble(kind, text, changes) {
     var b = el('div', 'ah-msg ' + kind, text);
-    if (changes && changes.length) { var ul = el('ul', 'ah-changes'); renderChanges(ul, changes); b.appendChild(ul); }
+    if (changes && changes.length) {
+      // 변경 내역은 대화를 길게 만들지 않도록 접어 둔다. 필요할 때 '변경 기록'을 펼쳐 확인한다.
+      var det = el('details', 'ah-log'); det.appendChild(el('summary', null, '변경 기록 ' + changes.length + '건'));
+      var ul = el('ul', 'ah-changes'); renderChanges(ul, changes); det.appendChild(ul); b.appendChild(det);
+    }
     $('ahMsgs').appendChild(b); scrollThread(); return b;
   }
   function renderThread() {
     var box = $('ahMsgs'); box.textContent = '';
-    history.forEach(function (m) {
+    // 새 홈페이지 만들기 이전 대화는 접어 두고, 현재 제작 대화만 보여 준다(새로고침 후에도 같다).
+    var parts = AssistantExport.splitThread(history);
+    if (parts.earlier.length) {
+      var old = el('details', 'ah-log ah-earlier'); old.appendChild(el('summary', null, '이전 제작 대화 ' + parts.earlier.length + '건'));
+      parts.earlier.forEach(function (m) { old.appendChild(el('div', 'ah-msg ' + (m.role === 'USER' ? 'user' : 'bot'), m.content)); });
+      box.appendChild(old);
+    }
+    parts.current.forEach(function (m) {
       var mine = m.role === 'USER';
       addBubble(mine ? 'user' : 'bot', m.content, !mine && m.payload && m.payload.changes ? m.payload.changes : []);
     });
@@ -160,8 +175,8 @@
   function renderStatus() {
     var s = $('ahStatus'); s.textContent = '';
     s.appendChild(el('b', null, ctx.status === 'PUBLISHED' ? '공개 중' : '비공개 초안'));
-    if (ctx.dirty) s.appendChild(document.createTextNode(' · 수정 있음'));
-    if (isSaved()) s.appendChild(document.createTextNode(' · 저장됨'));
+    if (ctx.dirty) s.appendChild(document.createTextNode(' · 공개본과 다름'));
+    s.appendChild(document.createTextNode(isSaved() ? ' · 저장됨' : ' · 저장 안 됨'));
     var pb = $('ahProfileBtn'); if (pb) pb.hidden = ctx.status === 'PUBLISHED';
     var bd = $('ahCardBadge'); if (bd) bd.textContent = ctx.status === 'PUBLISHED' ? (ctx.dirty ? '공개 중 · 수정 있음' : '공개 중') : '비공개 초안';
   }
@@ -178,6 +193,7 @@
     $('ahUndo').disabled = ctx.busy || ctx.undoDepth < 1;
     $('ahRedo').disabled = ctx.busy || ctx.redoDepth < 1;
     $('ahReset').disabled = ctx.busy || !ctx.created;
+    $('ahNew').disabled = ctx.busy || !ctx.created;
     $('ahSave').disabled = ctx.busy || !ctx.created;
     $('ahPreviewBtn').disabled = ctx.busy || !ctx.created;
     $('ahSave').setAttribute('data-saved', isSaved() ? 'true' : 'false');
@@ -416,13 +432,44 @@
     if (ctx.busy) return;
     $('ahResetScope').textContent = ctx.savedRevision != null
       ? '작업본의 문구·디자인·섹션·예약한 사진이 마지막 저장 상태로 돌아가요.'
-      : '아직 저장한 적이 없어서, 작업본이 현재 공개된 홈페이지(또는 처음 만든 상태) 기준으로 돌아가요.';
+      : '아직 저장한 적이 없어서, 저장하지 않은 변경이 현재 공개된 홈페이지(또는 처음 만든 상태) 기준으로 취소돼요. 새 홈페이지 만들기가 아니에요.';
     $('ahResetConfirm').hidden = false; $('ahResetCancel').focus();
   }
   function closeResetConfirm() { $('ahResetConfirm').hidden = true; }
   function doReset() {
     closeResetConfirm();
     editAction('/reset', '초기화', '초기화하지 못했어요. 작업본은 그대로예요.');
+  }
+
+  /* 새 홈페이지 만들기 — 수정 내용 초기화·되돌리기와 별개다. 열기만 해서는 서버 상태가 바뀌지 않는다. */
+  var NEW_STEPS = ['요청을 분석하는 중', '어울리는 디자인을 고르는 중', '새 초안을 작업본에 만드는 중', '미리보기를 새로 그리는 중'];
+  function openNew() {
+    if (ctx.busy) return;
+    $('ahNewPane').hidden = false; $('ahThread').hidden = true; document.querySelector('.ah-dock').hidden = true;
+    $('ahNewInput').value = ''; $('ahNewInput').focus();
+  }
+  function closeNew() {
+    $('ahNewPane').hidden = true; $('ahThread').hidden = false; document.querySelector('.ah-dock').hidden = false;
+  }
+  function submitNew(ev) {
+    ev.preventDefault();
+    var text = $('ahNewInput').value.trim();
+    if (!text) { $('ahNewInput').focus(); return; }
+    if (ctx.busy) return;
+    ctx.busy = true; setDockBusy(true); $('ahNewOk').disabled = true; $('ahNewCancel').disabled = true;
+    var box = $('ahNewBusy'); box.hidden = false;
+    var p = progress($('ahNewSteps'), NEW_STEPS, 1800);
+    api('POST', '/restart', { message: text, revision: ctx.revision }, { timeoutMs: AssistantWait.timeoutMs(window.__AH_TURN_TIMEOUT_MS__) }).then(function (r) {
+      p.stop(); box.hidden = true;
+      return refresh().then(function () { // 서버 기록(RESTART 표시 이후)이 정본이다
+        closeNew();
+        if (r.failed) showStrip(r.reply, true, []);
+        renderStatus();
+      });
+    }).catch(function (e) {
+      p.stop(); box.hidden = true;
+      toast((e.message || '새 홈페이지를 만들지 못했어요.') + ' 기존 작업본은 그대로예요.');
+    }).then(function () { ctx.busy = false; setDockBusy(false); $('ahNewOk').disabled = false; $('ahNewCancel').disabled = false; });
   }
 
   /** 서버 상태로 화면을 맞춘다(재진입·충돌 후). */
@@ -682,6 +729,9 @@
     $('ahRedo').addEventListener('click', redo);
     $('ahSave').addEventListener('click', saveWork);
     $('ahReset').addEventListener('click', openResetConfirm);
+    $('ahNew').addEventListener('click', openNew);
+    $('ahNewCancel').addEventListener('click', closeNew);
+    $('ahNewForm').addEventListener('submit', submitNew);
     $('ahResetCancel').addEventListener('click', closeResetConfirm);
     $('ahResetOk').addEventListener('click', doReset);
     $('ahPreviewBtn').addEventListener('click', function () { openFull(null); });
@@ -707,6 +757,7 @@
       if (e.key !== 'Escape') return;
       if (!$('ahMenu').hidden) setMenu(false);
       else if (!$('ahResetConfirm').hidden) closeResetConfirm();
+      else if (!$('ahNewPane').hidden && !ctx.busy) closeNew();
       else if (!$('ahConfirm').hidden) closeConfirm();
       else if (!$('ahVersions').hidden) $('ahVersions').hidden = true;
       else if (!$('ahProfile').hidden) $('ahProfile').hidden = true;

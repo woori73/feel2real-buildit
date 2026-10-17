@@ -123,4 +123,37 @@ class AcademyAssistantEditServiceTest {
     assertThat(prompt.indexOf("\"\"\"")).isLessThan(prompt.lastIndexOf("\"\"\""));
     assertThat(prompt.split("\"\"\"", -1).length - 1).isEqualTo(2); // 사용자 입력 안의 ""\"는 단일 따옴표로 바뀐다
   }
+
+  @Test
+  @DisplayName("given 연락처·색이 있는 작업본 when 새 홈페이지 목표를 만들면 then 디자인 키만 새 값으로 바뀌고 비디자인 값·표시·순서는 유지된다")
+  void restartTargetReplacesDesignOnly() {
+    // given
+    Snapshot current = new Snapshot("옛 소개",
+        Map.of("designPreset", "EXAM", "colorPrimary", "#1b3a6b", "heroLayout", "gradient", "businessPhone", "02-000-0000"),
+        Map.of("sec-videos", false), List.of("sec-intro", "sec-cta"));
+    Map<String, String> generated = Map.of("designPreset", "ARTS", "introHeading", "갤러리 같은 미술학원");
+    // when
+    Snapshot target = AcademyAssistantEditService.restartTarget(current, generated, "새 소개");
+    // then
+    assertThat(target.draft()).containsEntry("designPreset", "ARTS").containsEntry("introHeading", "갤러리 같은 미술학원")
+        .containsEntry("businessPhone", "02-000-0000")
+        .doesNotContainKeys("colorPrimary", "heroLayout");
+    assertThat(target.intro()).isEqualTo("새 소개");
+    assertThat(target.visibility()).isEqualTo(current.visibility());
+    assertThat(target.order()).isEqualTo(current.order());
+  }
+
+  @Test
+  @DisplayName("given 새 홈페이지 목표 when 현재와 diff하면 then 되돌리기 정보가 옛 값을 담는다")
+  void restartDiffKeepsUndoInfo() {
+    // given
+    Snapshot current = new Snapshot("옛 소개", Map.of("designPreset", "EXAM", "colorPrimary", "#1b3a6b"), null, null);
+    Snapshot target = AcademyAssistantEditService.restartTarget(current, Map.of("designPreset", "ARTS"), "새 소개");
+    // when
+    AssistantPatchApplier.Applied applied = AssistantPatchApplier.diff(current, target);
+    // then
+    assertThat(applied.isEmpty()).isFalse();
+    assertThat(applied.undo().draftBefore()).containsEntry("designPreset", "EXAM").containsEntry("colorPrimary", "#1b3a6b");
+    assertThat(applied.draftPatch()).containsEntry("designPreset", "ARTS");
+  }
 }
