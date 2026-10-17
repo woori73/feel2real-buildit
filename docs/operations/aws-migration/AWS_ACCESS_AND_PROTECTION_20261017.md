@@ -60,7 +60,7 @@
 | main(`a267a75b`)에서 Environment job | **`waiting` 유지(30초 이상)**, 대조군은 완료 | run 39034932819 — 승인 대기(사용자 승인 필요) |
 - 해석: 승인자만 설정된 경우의 결과는 "무기한 waiting"이므로, 비-main의 **즉시 실패**는 배포 브랜치 제한에 의한 거부로 판단한다(설정 전 통과 → 설정 후 실패의 차분 + 대조군). **단, GitHub 화면의 거부 문구(annotation)는 이 도구로 읽지 못했다** — 확정 증거가 필요하면 해당 run 페이지의 job 주석을 사용자가 확인한다.
 - 정정: 비-main 실행 직후 한 번 `waiting`으로 관측되었으나 1~2초 후 실패로 바뀐 일시 상태였다(재조회로 확인). 판정 근거는 최종 상태만 쓴다.
-- **미완료(승인 필요)**: main 실행 승인 후 정상 실행 여부(`ENV-PROTECTION-CHECK-REACHED`와 environment `sub` 출력) — 사용자가 승인한 뒤 기록한다.
+- **완료(승인 후 실행)**: main run 39034932819(head `a267a75b`)는 생성(13:02:30 UTC) 후 `check` job이 승인 대기 상태였고, 사용자(woori73)가 승인한 13:16 UTC 이후에야 `Reached (only after environment protection rules pass)` 단계가 성공했다. `control` job(environment 없음)은 13:02:35에 즉시 성공. → main은 승인 대기 후 실행, 비-main은 1~2초 내 차단이라는 두 방향이 모두 확인됨. (environment `sub` 값 출력은 별도 확인 대상으로 남김.)
 
 ### 3-3. 일회성 검증 워크플로 제거 계획
 - 검증 완료 후 PR로 `.github/workflows/env-protection-check.yml` 제거(이 파일은 main push·dispatch로 Environment를 호출하므로 오래 두지 않는다). 같은 파일을 건드리는 push는 다시 승인 요청을 만들 수 있다.
