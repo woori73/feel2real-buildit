@@ -80,3 +80,4 @@ out['backups'] = bk
 out['uptime_spring_s'] = sh("ps -o etimes= -p $(systemctl show f2r-app.service -p MainPID --value)")
 out['kill_script'] = {'staged': os.path.exists('/var/tmp/kill_deploy_tree.sh'), 'sha16': sha('/var/tmp/kill_deploy_tree.sh')[:16] if os.path.exists('/var/tmp/kill_deploy_tree.sh') else None}
 print(json.dumps(out, indent=1, ensure_ascii=False))
+# recheck 2026-10-17T02:52:23Z

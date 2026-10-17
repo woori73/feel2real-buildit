@@ -19,11 +19,11 @@ sample() {
   echo "PROBE_TIMEOUT"
 }
 cancel_deploy() {
-  # ssm:CancelCommand/ListCommands 권한이 없으므로(드라이런 확인), 허용된 SendCommand로 서버의 배포 스크립트·pip를 직접 종료한다.
-  # 서버 쪽에서 app.jar가 아직 교체 전일 때만 실행한다(교체 후에는 중단하지 않고 자동 롤백에 맡긴다).
-  echo "!! STOP CRITERIA MET: terminating deploy-buildit.sh/pip on the server (only if app.jar is still the baseline)"
+  # ssm:CancelCommand/ListCommands 권한이 없으므로 허용된 SendCommand로 서버의 검증된 kill_deploy_tree.sh(미끼 시험 통과)를 실행한다.
+  # 이 스크립트는 배포 스크립트(/tmp/deploy-buildit.sh)와 그 자손만 종료하고, app.jar 교체 후에는 아무것도 종료하지 않는다.
+  echo "!! STOP CRITERIA MET: running verified kill_deploy_tree.sh (deploy tree only; no-op once app.jar was replaced)"
   local kp; kp=$(mktemp)
-  python3 -c 'import json; print(json.dumps({"commands":["J=$(stat -c \"%Y %s\" /home/ec2-user/app.jar); if [ \"$J\" = \"'"$BASE_JAR_MTIME $BASE_JAR_SIZE"'\" ]; then pkill -TERM -f /tmp/deploy-buildit.sh; pkill -TERM -f \"pip install\"; echo STOPPED; else echo JAR_ALREADY_REPLACED_NO_STOP; fi"]}))' > "$kp"
+  python3 -c 'import json,sys; print(json.dumps({"commands":["bash /var/tmp/kill_deploy_tree.sh /tmp/deploy-buildit.sh \"" + sys.argv[1] + "\""]}))' "$BASE_JAR_MTIME $BASE_JAR_SIZE" > "$kp"
   aws ssm send-command --instance-ids "$INST" --document-name AWS-RunShellScript --parameters "file://$kp" --query Command.CommandId --output text
 }
 echo "== monitoring ${DURATION_MIN} min, mode=$MODE, arm_cancel=$ARM_CANCEL, thresholds: MemAvailable<${MEM_MIN} x2, any OOM, swap +${SWAP_JUMP} MiB"
