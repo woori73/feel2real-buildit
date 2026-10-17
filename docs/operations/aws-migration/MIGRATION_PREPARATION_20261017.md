@@ -305,3 +305,48 @@ EC2 t2.small(2GB), RDS MySQL 8.4.8 `db.t4g.micro` 20GB gp2·자동 백업 2일·
 | OIDC 신뢰 조건 | `aud`·`sub`(environment, 불변 ID)·`job_workflow_ref`(main) AND, `sub` 실측과 일치(앞선 검증) |
 | 공개 Actions 로그 | 조사용 워크플로 삭제(#751). 구축 워크플로 출력에 키·ARN·계정 메타데이터 출력 없음(정적 grep). 단 **액션이 태그 `@v4`로 고정**되어 있어 태그 이동 시 공급망 위험 → 승격(B) 전에 **커밋 SHA 고정** 권고(이 세션에서 SHA를 조회하지 못해 값은 미기재, Muse가 확인) |
 | #751 | CI(build, mysql-integration-test) 성공, 최신 main(`6b1a7118`)과 충돌 없음, docs·비활성 초안만 |
+
+## 13. 최종 확정 반영 (2026-10-17, #751 병합 후속, 미실행)
+> 문서·비활성 초안만. 신규 IAM 생성, EC2·ALB·RDS 생성, 운영 DB 이전·Flyway 적용, DNS 변경, 운영 배포, 기존 AWS 종료는 하지 않았다.
+
+### 13-1. 확정 사항
+EC2 t3.medium(4GB) · 루트 EBS 암호화 gp3 30GB · **ALB 유지** · **빌더 IAM 정책은 no-iam-write 변형 채택**(`policy-f2r-infra-builder.json`이 이제 변형 내용이다. §1·§11-3에서 말한 "IAM 쓰기 4개 문장"은 제거된 상태) · 24시간 이전 목표 유지하되 **검증 미완료 시 일정 연기** · 11월 1일 에네이 이전 유지. 신규 RDS 사양은 **실측 지표 수령 전까지 확정하지 않는다**(§12-4는 잠정안). 에네이의 외부 DB 연결 방식·고정 IP 제공 여부는 **미확인 유지**.
+
+**no-iam-write 적용 범위(확인):** 남은 IAM 권한은 `GetRole`·`GetInstanceProfile`·`ListAttachedRolePolicies`(읽기), `PassRole`(`f2r-ec2-ssm-role` 1개를 EC2에만), `CreateServiceLinkedRole`(ELB 서비스 연결 역할 ARN 1개 고정, 최초 1회 — 다른 IAM 생성·수정·삭제·정책 연결 권한 없음). **전제:** EC2용 역할 `f2r-ec2-ssm-role`과 인스턴스 프로파일 `f2r-ec2-profile`이 먼저 있어야 한다(§13-3). 없으면 워크플로가 `create-role`에서 AccessDenied로 안전하게 중단된다.
+
+### 13-2. 조회 스크립트 수정 (`discovery-readonly-cloudshell.sh`, 쓰기 호출 0건)
+| 문제 | 수정 |
+|---|---|
+| 실패가 "리소스 없음/권한 없음"으로 오해될 수 있음 | 모든 호출을 `run`으로 감싸 **`FAILED: <호출> (exit=… code=<AWS 오류 코드>)`**를 출력. 오류 코드 해석표는 스크립트 머리에 있음 |
+| CloudWatch RDS 지표 | `--statistics Average Maximum`(공백 구분 단일 인자)·14일·일 단위·`CPUCreditBalance` 추가. 인자 해석은 AWS CLI 1.46에서 시험(통과). 실제 계정·CLI v2 결과는 사용자가 실행해야 확인됨 |
+| Cost Explorer 서비스별 | `--group-by Type=DIMENSION,Key=SERVICE`로 지난 달 서비스별 합계 추가, 전역 엔드포인트라 `--region` 미지정, 미활성 시 `FAILED` 코드 그대로 표시(활성 후 최대 24시간) |
+| IAM 인라인 정책 | 관리형 정책 이름 + **인라인 `PolicyDocument` JSON 출력**, 12자리 계정 ID·액세스 키 ID는 `<ACCT>`/`<AKID>`로 치환. 키 값은 API로 조회 불가. 사용자명·버킷명은 번호(`user#N`, `bucket#N`)로 대체 |
+| 비용 근거 | **과금 IPv4**: Elastic IP 수 + 공인 IP가 붙은 네트워크 인터페이스 수(EC2·ALB 노드 포함) + ALB AZ 수. **ALB LCU**: `ConsumedLCUs`(평균/최대) + 신규 연결·동시 연결·처리 바이트·요청 수(LCU 4개 차원 재계산 근거) |
+| RDS 호환성 | 파라미터 그룹의 비기본값(`--source user`)과 KMS 키 종류(`aws/rds` 기본 키 vs 고객 관리형)를 출력 |
+- 검증: `bash -n` 통과, 더미 자격 증명·로컬 엔드포인트로 실행해 **모든 호출이 인자 오류 없이 연결 단계까지 도달**(사용법·알 수 없는 옵션 오류 0건), 쓰기 계열 호출 0건. **실제 AWS 응답 형식(특히 `ConsumedLCUs` 지표 제공 여부, CloudTrail `userName`에 `sub` 기록)은 미확인.**
+
+### 13-3. 신규 계정 IAM 역할·프로파일 생성 절차 (사용자 콘솔, 승인 A 이후에만, 지금은 실행하지 않음)
+1. IAM → 역할 → 역할 생성 → 신뢰할 수 있는 엔터티 유형 "AWS 서비스" → EC2. (또는 사용자 지정 신뢰 정책에 `trust-f2r-ec2-ssm-role.json` 내용)
+2. 권한 추가: **`AmazonSSMManagedInstanceCore` 한 개만.** 다른 정책(S3 등)은 지금 붙이지 않는다(컷오버 단계에서 별도 승인으로 추가).
+3. 역할 이름 **`f2r-ec2-ssm-role`**(정확히 이 이름, 워크플로·정책에 고정). 태그 `Project=f2r-migration`.
+4. 콘솔에서 EC2용 역할을 만들면 같은 이름의 **인스턴스 프로파일이 자동 생성**된다. 워크플로가 요구하는 프로파일 이름은 **`f2r-ec2-profile`**이므로, 자동 생성된 프로파일 이름이 `f2r-ec2-ssm-role`이면 → CloudShell(신규 계정)에서 `aws iam create-instance-profile --instance-profile-name f2r-ec2-profile` → `aws iam add-role-to-instance-profile --instance-profile-name f2r-ec2-profile --role-name f2r-ec2-ssm-role` 로 새로 만든다(콘솔 자동 생성 프로파일은 쓰지 않고 이름 일치를 확인).
+5. 확인: 역할 상세에서 신뢰 정책이 `ec2.amazonaws.com`뿐이고 연결 정책이 위 1개뿐인지, 프로파일 `f2r-ec2-profile`에 역할이 1개 들어 있는지.
+6. **EC2 역할에 아직 붙이지 않을 것:** S3, KMS, RDS 접근(배포 버킷 읽기·업로드 저장소 접근은 컷오버 승인에서 최소 범위로 추가).
+7. 이 절차는 A의 일부이며 빌더 역할·OIDC 공급자 생성(§2 A-1, A-2)과 함께 승인받는다. 빌더 인라인 정책 입력은 이제 `policy-f2r-infra-builder.json`(19개 문장, no-iam-write)이다.
+
+### 13-4. 비용 재계산 — 과금 IPv4와 ALB LCU 반영 (서울 공개 가격, 월 730시간)
+- **공인 IPv4($0.005/시간 = $3.65/개·월):** 과금 대상은 사용 중이든 유휴든 모든 공인 IPv4다. 신규 설계 기준 개수 = EC2 1개 + ALB 노드(2 AZ × 1) 2개 = **3개 = $10.95**. 구 환경의 **실제 개수는 스크립트가 출력**(EIP 수 + 공인 IP 인터페이스 수)하므로 그 값으로 구 환경 비용을 재계산한다(현 구 추정치는 3개 가정).
+- **ALB LCU($0.008/LCU-시간):** 시간당 **네 차원 중 최대값**으로 과금된다. 기존 가정 1 LCU는 월 $5.84. 실제 평균이 0.3 LCU라면 월 약 $1.75, 3 LCU면 $17.5. **스크립트의 `ConsumedLCUs` 평균/최대 값으로 월 비용 = 평균 LCU × $0.008 × 730**으로 산정한다. 에네이 이전 후에는 ALB가 없어진다.
+- 고정 부분(실측 불필요): t3.medium $37.96 + EBS 30GB $2.74 + ALB 고정 $16.43 + IPv4 3개 $10.95 = **$68.08** + LCU(평균 LCU×$5.84) + RDS(미확정: t4g.micro $18.25+스토리지 $2.62=$20.87 / t4g.small $37.23+$2.62=$39.85) + S3·송신·스냅샷. → **LCU 0.3~1.0, RDS micro 기준 합계 약 $91~96**, small 기준 약 $110~115. 확정은 실측 후.
+
+### 13-5. AWS Budgets · Cost Anomaly Detection 최종 점검 (사용자 콘솔, 승인 C 전 사전 조건 — 실행 안 함)
+| 점검 | 내용 |
+|---|---|
+| 예산 금액 | 신규 월 예상 약 $91~115(§13-4)이므로 **$100 단일 예산은 정상 운영에서도 100%에 근접**한다. 크레딧 한도 관리용으로 $100, 월 운영 한도 관리용으로 **$120**을 따로 두는 것을 권장(최종 금액은 사용자 결정) |
+| 알림 | 실제 50%·80%·100% + **예상 100%**. 수신 이메일은 사용자가 지정한 주소(저장소에 기재 금지) + 가능하면 보조 1명. 구독 확인 이메일 수락 필수(수락 전에는 알림이 오지 않음) |
+| Cost Explorer | 활성화 후 데이터 반영까지 최대 24시간 → **구축 전날 활성화**. 서비스별 조회(`ce get-cost-and-usage --group-by SERVICE`)가 이 활성화에 의존 |
+| 비용 할당 태그 | `Project` 태그를 결제 콘솔에서 활성화(적용 반영 최대 24시간) — 태그별 비용 확인 |
+| Cost Anomaly Detection | AWS 서비스 모니터 1개, 구독 임계값 $10 절대값, 빈도 즉시/일일, 이메일. 새 계정은 학습 기간이 필요해 초기 1~2주는 Budgets가 1차 방어선 |
+| 크레딧·계정 플랜 | 크레딧 잔액·만료일·**대상 서비스(EC2, RDS, ELB, ACM, S3, CloudWatch, 데이터 전송)**·신규 계정 적용 여부 확인. 신규 계정이 무료 플랜이면 서비스·기간 제한과 유료 전환 조건을 확인(기억 기반, 미확인) |
+| 한계 | Budgets·Anomaly는 **알림만 하며 리소스를 정지하지 않는다.** 알림 수신 후 사용자가 콘솔에서 조치해야 한다 |
+| 검증 | 테스트 알림 기능이 없으므로 구성 화면, 구독 확인, 이메일 수신 여부로 확인 |
