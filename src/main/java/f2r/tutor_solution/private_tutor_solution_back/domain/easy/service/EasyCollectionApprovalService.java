@@ -160,10 +160,56 @@ public class EasyCollectionApprovalService {
   /**
    * 승인된 건의 장부 반영을 수행한다.
    *
-   * <p>별도 트랜잭션으로 실행되며, 실패 시 COMMIT_FAILED + 오류 기록을 남긴다.
+   * <p>트랜잭션 분리 설계 (실패 시 상태 기록 보존):
+   * <ol>
+   *   <li>검증 (읽기): 테넌트·상태·batchId 확인</li>
+   *   <li>commit 시도: {@code importService.confirm()} 자체 트랜잭션</li>
+   *   <li>성공 → COMMITTED 기록 (별도 트랜잭션)</li>
+   *   <li>실패 → COMMIT_FAILED + 오류 기록 (별도 트랜잭션, 롤백되지 않음)</li>
+   * </ol>
+   *
+   * <p>중복 방지 3중 장치:
+   * <ol>
+   *   <li>승인 상태: COMMITTED면 재실행하지 않음</li>
+   *   <li>행 수준: {@code createdTxn != null}인 행은 {@code confirm()}이 건너뜀</li>
+   *   <li>장부 수준: {@code postRow()}의 fingerprint 중복 검사</li>
+   * </ol>
+   * commit 성공 직후 상태 저장에 실패해도, 재시도 시 2·3번 장치로 중복 거래가
+   * 생성되지 않는다.
    */
-  @Transactional
   public EasyCollectionApproval commitApproved(Long businessId, Long approvalId,
+      JwtTokenProvider.AuthenticatedPrincipal principal) {
+    // 1단계: 검증 (읽기 전용)
+    CommitTarget target = validateCommitTarget(businessId, approvalId, principal);
+
+    // 이미 반영 완료 — 멱등성
+    if (target.approval().isCommitted()) {
+      log.info("collection approval already committed approvalId={}", approvalId);
+      return target.approval();
+    }
+
+    // 2단계: 장부 commit 시도 (자체 트랜잭션)
+    try {
+      importService.confirm(target.batchId(), null);
+    } catch (Exception e) {
+      // 4단계: 실패 기록 (별도 트랜잭션 — 롤백되지 않음)
+      String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+      markCommitFailedTx(approvalId, errorMsg);
+      log.info("collection approval commit failed approvalId={} batchId={}",
+          approvalId, target.batchId());
+      return approvalRepository.findById(approvalId).orElseThrow();
+    }
+
+    // 3단계: 성공 기록 (별도 트랜잭션)
+    markCommittedTx(approvalId);
+    log.info("collection approval committed businessId={} approvalId={} batchId={}",
+        businessId, approvalId, target.batchId());
+    return approvalRepository.findById(approvalId).orElseThrow();
+  }
+
+  /** 검증용 읽기 — 테넌트·상태·batchId를 확인하고 반환한다. */
+  @Transactional(readOnly = true)
+  public CommitTarget validateCommitTarget(Long businessId, Long approvalId,
       JwtTokenProvider.AuthenticatedPrincipal principal) {
     EasyBusiness business = tutorAccessService.requireAllowedBusiness(principal, businessId);
 
@@ -174,37 +220,39 @@ public class EasyCollectionApprovalService {
       throw new SecurityException("다른 사업체의 승인 요청입니다.");
     }
 
-    // 이미 반영 완료 — 멱등성: 재반영하지 않는다
-    if (approval.isCommitted()) {
-      log.info("collection approval already committed approvalId={}", approvalId);
-      return approval;
-    }
-
     if (approval.getStatus() != EasyCollectionApproval.ApprovalStatus.APPROVED
-        && approval.getStatus() != EasyCollectionApproval.ApprovalStatus.COMMIT_FAILED) {
+        && approval.getStatus() != EasyCollectionApproval.ApprovalStatus.COMMIT_FAILED
+        && approval.getStatus() != EasyCollectionApproval.ApprovalStatus.COMMITTED) {
       throw new IllegalStateException("장부 반영할 수 없는 상태입니다: " + approval.getStatus());
     }
 
     Long batchId = approval.getRun().getImportBatchId();
-    if (batchId == null) {
-      approval.markCommitFailed("연결된 import 배치가 없습니다.");
-      log.info("collection approval commit failed approvalId={} reason=no-batch", approvalId);
-      return approval;
+    if (batchId == null
+        && approval.getStatus() != EasyCollectionApproval.ApprovalStatus.COMMITTED) {
+      throw new IllegalStateException("연결된 import 배치가 없습니다.");
     }
 
-    try {
-      // 기존 장부 반영 서비스 재사용 — 행 단위 멱등성 가드 포함
-      importService.confirm(batchId, null);
-      approval.markCommitted();
-      log.info("collection approval committed businessId={} approvalId={} batchId={}",
-          businessId, approvalId, batchId);
-    } catch (Exception e) {
-      // 실패를 정상 완료로 표시하지 않는다 — COMMIT_FAILED + 오류 기록 유지
-      String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-      approval.markCommitFailed(errorMsg);
-      log.info("collection approval commit failed approvalId={} batchId={}", approvalId, batchId);
-    }
-    return approval;
+    return new CommitTarget(approval, batchId);
+  }
+
+  /** COMMITTED 기록 — 독립 트랜잭션, 비관적 락으로 동시 실행 직렬화. */
+  @Transactional
+  public void markCommittedTx(Long approvalId) {
+    EasyCollectionApproval approval = approvalRepository.findWithLockByApprovalId(approvalId)
+        .orElseThrow(() -> new IllegalArgumentException("승인 요청을 찾을 수 없습니다: " + approvalId));
+    approval.markCommitted();
+  }
+
+  /** COMMIT_FAILED 기록 — 독립 트랜잭션 (commit 실패 시에도 보존됨). */
+  @Transactional
+  public void markCommitFailedTx(Long approvalId, String error) {
+    EasyCollectionApproval approval = approvalRepository.findWithLockByApprovalId(approvalId)
+        .orElseThrow(() -> new IllegalArgumentException("승인 요청을 찾을 수 없습니다: " + approvalId));
+    approval.markCommitFailed(error);
+  }
+
+  /** 검증 결과 홀더. */
+  public record CommitTarget(EasyCollectionApproval approval, Long batchId) {
   }
 
   /** 사용자 식별자 마스킹 (로그용). */
