@@ -1,4 +1,4 @@
-name: DesignCraft mark title verify v1 (runner only, CLI 0.8, no AWS)
+name: DesignCraft mark title verify v2 (runner only, CLI 0.8, no AWS)
 on:
   push:
     branches: ['ci/dc-step1-readonly']
@@ -55,3 +55,17 @@ jobs:
           print('metadata title:', d.metadata['title'])
           PY
           done
+      - name: Is the poppler "Suspects" warning pre-existing? Compare engine PDF (no PDFBox) with the restored one
+        run: |
+          CLI=$(find "$PWD/eng" -name designcraft-cli -type f | head -1)
+          W=$(mktemp -d); T=ops/designcraft/templates/ko-textbook-a4
+          cp "$T/template.designcraft" $W/job.designcraft; cp "$T/sample-manuscript.md" $W/m.md; cp -r "$T/Document Fonts" $W/
+          (cd $W && "$CLI" run --in job.designcraft --cmd 'file.place={"path":"m.md","autoflow":true}' --cmd 'edit.selectAll' --cmd 'style.paragraph.apply={"name":"ko-body"}' --pdf-options '{"standard":"x4","tagged":true,"marks":{"crop":true,"bleed":true,"pageInfo":true}}' --export engine.pdf >/dev/null)
+          echo "== engine PDF (untouched by PDFBox)"; pdfinfo $W/engine.pdf 2>&1 | grep -E "Suspects|Syntax|Tagged|PDF version|Title"
+          echo "== restored PDF"; pdfinfo out/ko-textbook-a4.pdf 2>&1 | grep -E "Suspects|Syntax|Tagged|PDF version|Title"
+          python3 - $W/engine.pdf out/ko-textbook-a4.pdf <<'PY'
+          import sys, pymupdf
+          for f in sys.argv[1:]:
+              d = pymupdf.open(f); c = d.pdf_catalog()
+              print(f.split('/')[-1], 'MarkInfo:', d.xref_get_key(c, 'MarkInfo'), '| OutputIntents:', d.xref_get_key(c, 'OutputIntents')[0], '| ID:', d.xref_get_key(-1, 'ID')[0], '| Info keys:', d.xref_get_keys(int(d.xref_get_key(-1,'Info')[1].split()[0])))
+          PY
