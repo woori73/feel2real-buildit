@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminAccountController {
 
   public record CredentialRotationRequest(
-      String currentPassword, String newLoginId, String newPassword, String confirmPassword) {}
+      String currentPassword, String newLoginId, String confirmLoginId, String newPassword, String confirmPassword) {}
 
   private final AdminCredentialService service;
   private final CookieUtil cookieUtil;
@@ -29,7 +29,7 @@ public class AdminAccountController {
       @RequestBody CredentialRotationRequest request,
       HttpServletResponse response) {
     service.rotate(principal.userId(), request.currentPassword(), request.newLoginId(),
-        request.newPassword(), request.confirmPassword());
+        request.confirmLoginId(), request.newPassword(), request.confirmPassword());
     cookieUtil.clearAccessToken(response);
     return ResponseEntity.noContent().build();
   }

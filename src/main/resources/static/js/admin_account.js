@@ -4,8 +4,9 @@
 
   /** 서버 규칙과 같은 사전 검증. 통과하면 null, 아니면 사용자에게 보여 줄 문구. */
   function validate(f) {
-    if (!f.currentPassword || !f.newLoginId || !f.newPassword || !f.confirmPassword) return '모든 항목을 입력해 주세요.';
+    if (!f.currentPassword || !f.newLoginId || !f.confirmLoginId || !f.newPassword || !f.confirmPassword) return '모든 항목을 입력해 주세요.';
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{5,49}$/.test(f.newLoginId.trim())) return '새 로그인 ID는 영문·숫자로 시작하는 6~50자(영문·숫자·. _ - 사용)여야 합니다.';
+    if (f.newLoginId.trim() !== f.confirmLoginId.trim()) return '새 로그인 ID와 확인값이 일치하지 않습니다.';
     if (f.newPassword !== f.confirmPassword) return '새 비밀번호와 확인값이 일치하지 않습니다.';
     if (f.newPassword.length < 16) return '새 비밀번호는 16자 이상이어야 합니다.';
     if (f.newPassword.toLowerCase().indexOf(f.newLoginId.trim().toLowerCase()) >= 0) return '새 비밀번호에 새 로그인 ID를 포함할 수 없습니다.';
@@ -25,7 +26,7 @@
     if (!me || me.role !== 'ADMIN') { root.location.href = '/home'; return; }
     $('acForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      var f = { currentPassword: $('acCurrent').value, newLoginId: $('acLoginId').value,
+      var f = { currentPassword: $('acCurrent').value, newLoginId: $('acLoginId').value, confirmLoginId: $('acLoginId2').value,
         newPassword: $('acNew').value, confirmPassword: $('acConfirm').value };
       var problem = validate(f);
       if (problem) { show(problem, false); return; }
@@ -34,7 +35,7 @@
       try {
         var res = await root.fetch('/api/admin/account/credentials', {
           method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) });
-        ['acCurrent', 'acLoginId', 'acNew', 'acConfirm'].forEach(function (id) { $(id).value = ''; });
+        ['acCurrent', 'acLoginId', 'acLoginId2', 'acNew', 'acConfirm'].forEach(function (id) { $(id).value = ''; });
         if (res.status === 204) {
           show('변경되었습니다. 새 ID·비밀번호로 다시 로그인해 주세요. 잠시 후 로그인 화면으로 이동합니다.', true);
           root.setTimeout(function () { root.location.href = '/admin/login'; }, 2500);

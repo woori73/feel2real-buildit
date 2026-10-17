@@ -844,8 +844,8 @@ LMS 주소가 성립하지 않는다(404).
 - 목적: 로그인한 ADMIN이 본인 계정의 **로그인 ID와 비밀번호를 함께 교체**한다(`/admin/account` 화면). 대상은 요청 본문이 아니라 인증된 세션의 userId이며, 같은 users 행을 갱신하므로 권한·user_id·운영 데이터는 유지된다.
 - 현재 사용처: `templates/admin/account.html`, `static/js/admin_account.js`
 - 인증/권한: ADMIN 전용(`/api/admin/**`). 현재 비밀번호를 다시 확인한다.
-- Request: JSON `{ "currentPassword", "newLoginId", "newPassword", "confirmPassword" }`
-  - 새 ID: 영문·숫자로 시작하는 6~50자(영문·숫자·`.`·`_`·`-`), 현재 ID와 달라야 하며 중복 불가
+- Request: JSON `{ "currentPassword", "newLoginId", "confirmLoginId", "newPassword", "confirmPassword" }` (ID도 두 번 입력 — 오타로 접근을 잃지 않게)
+  - 새 ID: 영문·숫자로 시작하는 6~50자(영문·숫자·`.`·`_`·`-`), 현재 ID와 달라야 하며 중복·예약 ID(`ReservedLoginIds`, 폐기된 최초 관리자 ID) 불가
   - 새 비밀번호: 16자 이상·72바이트 이하, 확인값 일치, 현재 비밀번호와 달라야 하며 새 ID를 포함할 수 없음
 - Response:
   - 성공 `204` + `ACCESS_TOKEN` 쿠키 삭제. 이전 ID·비밀번호와 기존 모든 ADMIN 세션은 즉시 무효.

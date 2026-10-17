@@ -75,13 +75,22 @@ class AdminCredentialRotationMySqlTest {
         .content(json.writeValueAsString(Map.of("loginId", id, "password", pw)))).andReturn().getResponse().getStatus();
   }
 
+  /** 관리자 API 전체가 같은 필터를 쓰는지 확인하기 위한 대표 엔드포인트 묶음. */
+  private static final String[] ADMIN_APIS = {
+      "/api/admin/analytics/summary", "/api/admin/analytics/breakdown", "/api/admin/members",
+      "/api/admin/lesson-communities", "/api/admin/analyzes", "/api/admin/wiki/originals", "/api/admin/wiki/ops-overview"};
+
+  private int adminApiAt(String path, Cookie c) throws Exception {
+    return mockMvc.perform(get(path).cookie(c)).andReturn().getResponse().getStatus();
+  }
+
   private int adminApi(Cookie c) throws Exception {
     return mockMvc.perform(get("/api/admin/analytics/summary").cookie(c)).andReturn().getResponse().getStatus();
   }
 
   private MvcResult rotate(Cookie c, String current, String id, String pw, String confirm) throws Exception {
     return mockMvc.perform(post("/api/admin/account/credentials").cookie(c).contentType(MediaType.APPLICATION_JSON)
-        .content(json.writeValueAsString(Map.of("currentPassword", current, "newLoginId", id, "newPassword", pw,
+        .content(json.writeValueAsString(Map.of("currentPassword", current, "newLoginId", id, "confirmLoginId", id, "newPassword", pw,
             "confirmPassword", confirm)))).andReturn();
   }
 
@@ -157,5 +166,66 @@ class AdminCredentialRotationMySqlTest {
     assertThat(rotate(session, oldPw, studentId, newPw, newPw).getResponse().getStatus()).isEqualTo(409);
     assertThat(users.findByLoginId(adminId)).isPresent();
     assertThat(adminApi(session)).isEqualTo(200);
+  }
+
+  @Test
+  @DisplayName("given 교체 이전에 발급된 ADMIN JWT(구 stamp·stamp 없음) when 관리자 API 전체를 호출하면 then 모두 401이고, 새 세션은 같은 API가 401이 아니다")
+  void oldAdminJwt_rejectedOnAllAdminApis() throws Exception {
+    // given: 교체 전 세션 2개(기기 A·B) + 기능 이전 방식 토큰
+    Cookie deviceA = login(adminId, oldPw);
+    Cookie deviceB = login(adminId, oldPw);
+    Cookie legacy = new Cookie("ACCESS_TOKEN", tokens.issue(adminUserId, adminId, "ADMIN"));
+    for (String api : ADMIN_APIS) {
+      assertThat(adminApiAt(api, deviceA)).as("before " + api).isNotIn(401, 403);
+    }
+    // when
+    assertThat(rotate(deviceA, oldPw, newId, newPw, newPw).getResponse().getStatus()).isEqualTo(204);
+    Cookie fresh = login(newId, newPw);
+    // then
+    for (String api : ADMIN_APIS) {
+      assertThat(adminApiAt(api, deviceA)).as("deviceA " + api).isEqualTo(401);
+      assertThat(adminApiAt(api, deviceB)).as("deviceB " + api).isEqualTo(401);
+      assertThat(adminApiAt(api, legacy)).as("legacy " + api).isEqualTo(401);
+      assertThat(adminApiAt(api, fresh)).as("fresh " + api).isNotIn(401, 403);
+    }
+  }
+
+  @Test
+  @DisplayName("given 교체 후 when 이전 비밀번호를 이전·새 ID 어느 쪽으로 써도 then 로그인되지 않고, 새 비밀번호는 이전 ID로 로그인되지 않는다")
+  void oldPasswordNeverAuthenticatesAgain() throws Exception {
+    Cookie s = login(adminId, oldPw);
+    assertThat(rotate(s, oldPw, newId, newPw, newPw).getResponse().getStatus()).isEqualTo(204);
+    assertThat(loginStatus(adminId, oldPw)).isGreaterThanOrEqualTo(400);
+    assertThat(loginStatus(newId, oldPw)).isGreaterThanOrEqualTo(400);
+    assertThat(loginStatus(adminId, newPw)).isGreaterThanOrEqualTo(400);
+    assertThat(loginStatus(newId, newPw)).isEqualTo(200);
+  }
+
+  @Test
+  @DisplayName("given 새 ID 확인값이 다르거나 예약된 폐기 ID일 때 when 교체하면 then 400이고 계정은 그대로라 접근을 잃지 않는다")
+  void mistypedOrReservedId_noLockout() throws Exception {
+    Cookie s = login(adminId, oldPw);
+    MvcResult mismatch = mockMvc.perform(post("/api/admin/account/credentials").cookie(s).contentType(MediaType.APPLICATION_JSON)
+        .content(json.writeValueAsString(Map.of("currentPassword", oldPw, "newLoginId", newId, "confirmLoginId", newId + "x",
+            "newPassword", newPw, "confirmPassword", newPw)))).andReturn();
+    assertThat(mismatch.getResponse().getStatus()).isEqualTo(400);
+    assertThat(rotate(s, oldPw, "admin-f2r", newPw, newPw).getResponse().getStatus()).isEqualTo(400);
+    assertThat(adminApi(s)).isEqualTo(200);
+    assertThat(loginStatus(adminId, oldPw)).isEqualTo(200);
+  }
+
+  @Test
+  @DisplayName("given 폐기된 최초 관리자 ID when 일반 회원 신규 가입(가입 가능 여부·학생·튜터)을 시도하면 then 모두 막힌다")
+  void reservedAdminId_cannotBeClaimedBySignup() throws Exception {
+    mockMvc.perform(get("/api/users/check-login-id").param("loginId", "ADMIN-F2R"))
+        .andExpect(status().isOk()).andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.available").value(false));
+    for (String path : new String[] {"/api/users/students", "/api/users/tutors"}) {
+      int st = mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON)
+          .content(json.writeValueAsString(Map.of("loginId", "admin-f2r", "password", "signup-" + UUID.randomUUID(),
+              "name", "가입시도", "nickname", "가입시도", "email", "x@example.com", "phone", "01000000000"))))
+          .andReturn().getResponse().getStatus();
+      assertThat(st).as(path).isNotEqualTo(200).isNotEqualTo(201);
+    }
+    assertThat(users.findByLoginId("admin-f2r").map(u -> u.getRole()).orElse(null)).isNotEqualTo(Role.STUDENT).isNotEqualTo(Role.TUTOR);
   }
 }

@@ -63,7 +63,8 @@ public class AdminCredentialService {
   }
 
   @Transactional
-  public void rotate(Long userId, String currentPassword, String newLoginId, String newPassword, String confirmPassword) {
+  public void rotate(Long userId, String currentPassword, String newLoginId, String confirmLoginId,
+      String newPassword, String confirmPassword) {
     enforceRateLimit(userId);
     User admin = userRepository.findById(userId)
         .filter(u -> u.getRole() == Role.ADMIN)
@@ -78,8 +79,15 @@ public class AdminCredentialService {
     if (!LOGIN_ID.matcher(loginId).matches()) {
       throw bad("새 로그인 ID는 영문·숫자로 시작하는 6~50자(영문·숫자·. _ - 사용)여야 합니다.");
     }
+    // 로그인 ID 오타로 관리자 접근을 잃지 않도록 ID도 두 번 입력받는다.
+    if (!loginId.equals(confirmLoginId == null ? null : confirmLoginId.trim())) {
+      throw bad("새 로그인 ID와 확인값이 일치하지 않습니다.");
+    }
     if (loginId.equalsIgnoreCase(admin.getLoginId())) {
       throw bad("새 로그인 ID는 현재 ID와 달라야 합니다.");
+    }
+    if (ReservedLoginIds.isReserved(loginId)) {
+      throw bad("사용할 수 없는 로그인 ID입니다.");
     }
     if (userRepository.existsByLoginId(loginId)) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 로그인 ID입니다.");

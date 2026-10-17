@@ -62,6 +62,10 @@ public class WemadeAuthController {
             return ResponseEntity.badRequest()
                     .body(new SignupResponse(false, "비밀번호는 " + MIN_PASSWORD + "자 이상으로 직접 정해 주세요."));
         }
+        if (f2r.tutor_solution.private_tutor_solution_back.domain.user.service.ReservedLoginIds.isReserved(loginId)) {
+            return ResponseEntity.badRequest()
+                    .body(new SignupResponse(false, "사용할 수 없는 아이디입니다."));
+        }
         if (userRepository.existsByLoginId(loginId)) {
             return ResponseEntity.status(409)
                     .body(new SignupResponse(false, "이미 가입된 아이디입니다. 로그인해 주세요."));
