@@ -1289,6 +1289,40 @@
 
   let _pendingLessonId = null;
 
+  /**
+   * 작업본 미리보기(iframe)에서 링크를 눌렀을 때의 처리. 로고 같은 링크가 공개 주소(/academies/{slug})로 이동하면
+   * 비공개 초안은 "공개 Academy를 찾을 수 없습니다"만 보이고, 공개 중이어도 미리보기가 아니라 옛 공개본으로 바뀐다.
+   *  - 같은 페이지로 가는 링크(공개 주소·'/')는 이동하지 않고 맨 위로 스크롤한다.
+   *  - 같은 사이트의 다른 경로는 미리보기가 사라지지 않게 막는다.
+   *  - 외부 주소는 새 탭에서 연다. 해시(#)·tel·mailto는 그대로 둔다.
+   */
+  function previewLinkAction(href, slug, origin) {
+    if (!href) return 'allow';
+    const raw = String(href).trim();
+    if (raw.startsWith('#') || /^(tel|mailto):/i.test(raw)) return 'allow';
+    let url;
+    try { url = new URL(raw, origin + '/'); } catch (e) { return 'block'; }
+    if (!/^https?:$/.test(url.protocol)) return 'block';
+    if (url.origin !== origin) return 'newtab';
+    const path = decodeURIComponent(url.pathname).replace(/\/+$/, '');
+    if (path === '' || path === '/academies/' + slug) return 'scrollTop';
+    return 'block';
+  }
+
+  if (WORKING_COPY_PREVIEW) {
+    document.addEventListener('click', function (event) {
+      const a = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+      if (!a) return;
+      const action = previewLinkAction(a.getAttribute('href'), slug, location.origin);
+      if (action === 'allow') return;
+      event.preventDefault();
+      if (action === 'scrollTop') window.scrollTo({ top: 0, behavior: 'smooth' });
+      else if (action === 'newtab') window.open(a.href, '_blank', 'noopener');
+    }, true);
+  }
+
+  window.F2RPreviewLinkTestHooks = Object.freeze({ previewLinkAction });
+
   window.F2RAcademySectionOrderTestHooks = Object.freeze({
     orderedSectionIds,
     visibleSectionIds(academy) {

@@ -432,7 +432,7 @@
     if (ctx.busy) return;
     $('ahResetScope').textContent = ctx.savedRevision != null
       ? '작업본의 문구·디자인·섹션·예약한 사진이 마지막 저장 상태로 돌아가요.'
-      : '아직 저장한 적이 없어서, 저장하지 않은 변경이 현재 공개된 홈페이지(또는 처음 만든 상태) 기준으로 취소돼요. 새 홈페이지 만들기가 아니에요.';
+      : '아직 저장한 적이 없어요. 공개 중인 홈페이지는 그 공개 내용으로 돌아가고, 공개 전 초안은 아무것도 바뀌지 않아요(먼저 저장해 두면 그 상태로 돌아갈 수 있어요). 새 홈페이지 만들기가 아니에요.';
     $('ahResetConfirm').hidden = false; $('ahResetCancel').focus();
   }
   function closeResetConfirm() { $('ahResetConfirm').hidden = true; }

@@ -70,6 +70,7 @@ jobs:
           src/test/js/assistant_export.test.js
           src/test/js/academy_adopt.test.js
           src/test/js/assistant_home_contract.test.js
+          src/test/js/academy_preview_link.test.js
           src/test/js/exam_insight.test.js
           src/test/js/home_agent_exam_contract.test.js
           src/test/js/landing_buildit_start.test.js
@@ -411,6 +412,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantMediaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantEditMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantResetRestartMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchOffMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchAllowListMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantAcademyModeMySqlTest"

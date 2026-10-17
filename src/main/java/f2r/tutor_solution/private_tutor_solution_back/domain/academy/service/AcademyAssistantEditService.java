@@ -441,6 +441,7 @@ public class AcademyAssistantEditService {
       Snapshot target;
       Map<String, String> targetStaged;
       String baseName;
+      String savedNote;
       if (stack.savepoint != null) {
         JsonNode p = payloadOf(stack.savepoint);
         target = snapshotFromPayload(p);
@@ -449,12 +450,19 @@ public class AcademyAssistantEditService {
           p.get("staged").fields().forEachRemaining(e -> targetStaged.put(e.getKey(), e.getValue().asText()));
         }
         baseName = "마지막 저장 상태";
+        savedNote = "";
       } else {
         target = snapshotOf(
             new State(fresh.revision(), academy.intro(), academy.pageSettings(), false, false),
             imageSlotsOf(academy, Map.of()));
         targetStaged = new java.util.TreeMap<>();
-        baseName = "공개 홈페이지 기준(저장점이 없어요)";
+        if (academy.status() != f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyStatus.PUBLISHED) {
+          // 아직 공개한 적 없는 초안의 '공개본'은 비어 있다. 거기로 돌리면 만든 디자인이 통째로 사라지므로 하지 않는다.
+          return new EditOutcome("저장한 적이 없어서 되돌아갈 기준이 없어요. 먼저 '저장'을 누르면 그 상태로 돌아갈 수 있어요. 방금 한 수정은 '되돌리기'로 취소해 주세요. 작업본은 그대로예요.",
+              List.of(), List.of(), "RESET", 0, false, fresh.revision(), stack.depth, null);
+        }
+        baseName = "공개 중인 홈페이지 내용";
+        savedNote = " 저장한 적이 없어서 공개 중인 내용을 기준으로 했어요.";
       }
       Applied applied = AssistantPatchApplier.diff(current, target);
       Map<String, Object> mediaUndo = new java.util.LinkedHashMap<>();
@@ -466,7 +474,7 @@ public class AcademyAssistantEditService {
         }
       }
       if (applied.isEmpty() && mediaUndo.isEmpty()) {
-        return new EditOutcome("이미 " + baseName + "와 같아서 초기화할 내용이 없어요.", List.of(), List.of(), "RESET", 0, false,
+        return new EditOutcome("지금 작업본이 " + baseName + " 그대로라서 취소할 변경이 없어요.", List.of(), List.of(), "RESET", 0, false,
             fresh.revision(), stack.depth, null);
       }
       State saved = hasContent(applied)
@@ -477,9 +485,9 @@ public class AcademyAssistantEditService {
         saved = workingCopyService.stageMedia(principal, saved.revision(), slot, targetStaged.get(slot));
         String[] meta = AssistantDesignCatalog.IMAGE_SLOTS.get(slot);
         changes.add(new AssistantPatchApplier.Change(
-            "사진: " + (meta == null ? slot : meta[0]), "현재 예약", baseName + "로 복원", meta == null ? null : meta[1]));
+            "사진: " + (meta == null ? slot : meta[0]), "현재 예약", baseName + " 기준으로 복원", meta == null ? null : meta[1]));
       }
-      String reply = "작업본을 " + baseName + "로 초기화했어요. 공개 홈페이지와 저장된 버전은 그대로예요. 마음이 바뀌면 '되돌리기'를 눌러 주세요.";
+      String reply = "저장하지 않은 변경을 취소하고 " + baseName + " 기준으로 되돌렸어요." + savedNote + " 공개 홈페이지와 저장된 버전은 그대로예요. 마음이 바뀌면 '되돌리기'를 눌러 주세요.";
       Map<String, Object> payload = new java.util.LinkedHashMap<>();
       payload.put("changes", changes);
       payload.put("skipped", List.of());
