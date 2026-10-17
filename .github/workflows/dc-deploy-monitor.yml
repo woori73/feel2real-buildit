@@ -1,0 +1,27 @@
+name: DesignCraft deploy monitor (read-only SSM sampling; dry-run now, live during the approved deploy)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-deploy-monitor.yml', 'ops/diagnostics/dc_deploy_monitor.sh', 'ops/diagnostics/monitor_mode.txt']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: dc-deploy-monitor
+  cancel-in-progress: false
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-duration-seconds: 3600
+          retry-max-attempts: 1
+      - name: Monitor (parameters from ops/diagnostics/monitor_mode.txt)
+        run: |
+          read DUR ARM MODE < ops/diagnostics/monitor_mode.txt
+          bash ops/diagnostics/dc_deploy_monitor.sh "$DUR" "$ARM" "$MODE"
