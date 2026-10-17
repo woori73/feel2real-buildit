@@ -7,9 +7,10 @@ INST=i-09d7cabb5a42d1135
 BASE_JAR_MTIME=1792160225; BASE_JAR_SIZE=215609526   # 배포 전 app.jar (a6c409cc…)
 MEM_MIN=300; SWAP_JUMP=300
 PROBE='A=$(awk "/MemAvailable/{print int(\$2/1024)}" /proc/meminfo); S=$(awk "/SwapTotal/{t=\$2}/SwapFree/{f=\$2}END{print int((t-f)/1024)}" /proc/meminfo); O=$(journalctl -k --since "-2 min" --no-pager 2>/dev/null | grep -ci "out of memory\|oom-kill"); C=$(pgrep -fc designcraft-cli); P=$(pgrep -fc "pip install"); J=$(stat -c "%Y %s" /home/ec2-user/app.jar); echo "MEM=$A SWAP=$S OOM=$O CLI=$C PIP=$P JAR=$J APP=$(systemctl is-active f2r-app) WIKI=$(systemctl is-active buildit-wiki) GATE=$(cat /var/lib/feel2real/designcraft-maintenance/state)"'
+PARAMS=$(mktemp); python3 -c 'import json,sys; print(json.dumps({"commands":[sys.argv[1]]}))' "$PROBE" > "$PARAMS"
 sample() {
   local cid st i
-  cid=$(aws ssm send-command --instance-ids "$INST" --document-name AWS-RunShellScript --parameters "commands=[\"$PROBE\"]" --timeout-seconds 30 --query Command.CommandId --output text 2>/dev/null) || { echo "SEND_FAIL"; return; }
+  cid=$(aws ssm send-command --instance-ids "$INST" --document-name AWS-RunShellScript --parameters "file://$PARAMS" --timeout-seconds 30 --query Command.CommandId --output text 2>/dev/null) || { echo "SEND_FAIL"; return; }
   for i in 1 2 3 4 5 6 7 8; do
     st=$(aws ssm get-command-invocation --command-id "$cid" --instance-id "$INST" --query Status --output text 2>/dev/null || true)
     case "$st" in Success) aws ssm get-command-invocation --command-id "$cid" --instance-id "$INST" --query StandardOutputContent --output text | tr -d '\n'; echo " CID=$cid"; return;; Failed|Cancelled|TimedOut) echo "PROBE_$st"; return;; esac
