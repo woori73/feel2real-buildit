@@ -1,8 +1,8 @@
-name: DesignCraft PDF/X-4 structural equivalence check for #722 (runner only, CLI 0.8, no AWS)
+name: DesignCraft PDF/X-4 structural equivalence v2 for 722 (runner only, CLI 0.8, no AWS)
 on:
   push:
     branches: ['ci/dc-step1-readonly']
-    paths: ['.github/workflows/dc-x4-equiv.yml', 'ops/diagnostics/dc_x4_equiv.py']
+    paths: ['.github/workflows/dc-x4-equiv.yml', 'ops/diagnostics/dc_x4_equiv.py', 'ops/diagnostics/x4_lab/**']
 permissions:
   contents: read
   actions: read
@@ -55,8 +55,16 @@ jobs:
             done
           done
           ls -la orig pre restored
-      - name: Structural equivalence (engine original vs PDFBox-restored)
+      - name: Apply the merged PdfMarkTitle.restoreTitle to the SAME engine PDF, then compare before/after
         run: |
           sudo apt-get -qq update >/dev/null 2>&1; sudo apt-get -qq install -y qpdf >/dev/null 2>&1 || true
           pip install -q pymupdf >/dev/null 2>&1
-          for t in ko-textbook-a4 ko-workbook-b5 ko-book-46; do python3 ci/ops/diagnostics/dc_x4_equiv.py $t orig/$t.pdf pre/$t.pdf restored/$t.pdf 2>&1 | grep -v Deprecat; done
+          CP="main/build/classes/java/main:$(find ~/.gradle/caches/modules-2 -name 'pdfbox-3*.jar' -o -name 'pdfbox-io-3*.jar' -o -name 'fontbox-3*.jar' -o -name 'commons-logging-1*.jar' -o -name 'jackson-databind-*.jar' -o -name 'jackson-core-*.jar' -o -name 'jackson-annotations-*.jar' | grep -v sources | tr '\n' ':')"
+          mkdir -p rcls && javac -cp "$CP" -d rcls ci/ops/diagnostics/x4_lab/RestoreMain.java
+          declare -A KO=( [ko-textbook-a4]="한글 교재 템플릿 (A4)" [ko-workbook-b5]="한글 문제집 템플릿 (B5)" [ko-book-46]="한글 단행본 템플릿 (46판)" )
+          mkdir -p same
+          for t in ko-textbook-a4 ko-workbook-b5 ko-book-46; do
+            cp pre/$t.pdf same/$t.pdf
+            java -cp "rcls:$CP" f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.RestoreMain "same/$t.pdf" "${KO[$t]}"
+            python3 ci/ops/diagnostics/dc_x4_equiv.py $t orig/$t.pdf pre/$t.pdf same/$t.pdf 2>&1 | grep -v Deprecat
+          done
