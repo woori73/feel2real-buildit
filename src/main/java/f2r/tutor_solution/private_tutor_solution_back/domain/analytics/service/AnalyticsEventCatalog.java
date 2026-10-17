@@ -53,7 +53,6 @@ public final class AnalyticsEventCatalog {
         {"designcraft", "DesignCraft", "svcTiles"}, {"admissions", "입시상담", "svcTiles"}}) {
       add(Type.SERVICE_MOVE, s[0], "home", s[2], s[1] + " 이동");
     }
-    add(Type.SERVICE_MOVE, "naesin_wiki", "home", null, "내신위키 이동(상단 메뉴)");
 
     // ── 흐름 시작(상담신청 완료는 클라이언트 이벤트가 아니라 academy_inquiries에서 센다) ──
     add(Type.FLOW_START, "consult_contact", "home", null, "문의하기 시작(홈 모달)");

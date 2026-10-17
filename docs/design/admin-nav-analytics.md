@@ -36,7 +36,7 @@
 - 방문자 식별은 기존 PV와 동일(`AnalyticsVisitorIdentity`). Bot은 BOT, ADMIN은 internal로 저장하고 집계에서 제외.
 - 서버는 허용 목록(`AnalyticsEventCatalog`)의 이벤트·페이지·대상만 받고 URL·사용자 식별값은 신뢰하지 않는다. 속도 제한·20개/요청·4KB 본문 제한.
 - 보관 395일, 매일 새벽 자동 삭제. 상담신청 완료는 `academy_inquiries` 건수로 센다.
-- 모바일 드로어 안의 링크는 추적하지 않는다(상단 메뉴·카드·본문 버튼만).
+- 모바일 드로어·상단 메뉴 링크(내신위키 포함)는 추적하지 않는다(서비스 카드·본문 버튼만).
 
 ## 7. 뮤즈와의 분리
 뮤즈: `/dashboard`·`/admin/hub`·Canva·EASY/상담 위젯. 이 작업: `_admin_topnav`(서비스 링크 추가)·`admin_topnav.css`(줄바꿈 1블록)·`/admin/analytics`·`analytics` 패키지. 공통 nav/CSS 변경은 최신 main 기준으로 병합했다.
