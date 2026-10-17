@@ -15,7 +15,7 @@
 | 직전 jar | sha256 앞 16자 `a6c409cceb78eb98` → 서버 `app.jar.previous` (+ 사전 백업 `/var/backups/dc-deploy-pre-bbbd9222/`) |
 | 롤백 여부 | 없음 (health 첫 세대 통과, 재시작 0회) |
 
-포함된 변경 (직전 운영 기준 `0ac6fe7b` 이후):
+포함된 변경 (직전 운영 jar `a6c409cc` 이후. 그 배포 SHA는 `0ac6fe7b`로 추정 — 이전 배포 브랜치 이름 기준이며 확인하지 못함):
 
 - #721 DesignCraft gate OPEN TTL(기본 1800초) · #722 PDF 인쇄 마크 제목 ASCII
 - #723 EASY 대시보드 위젯 API v1 (`GET /api/admin/easy/dashboard/widgets`, ADMIN 전용)
@@ -32,4 +32,4 @@
 | SHA | 시각 (UTC) | 비고 |
 |---|---|---|
 | `e034492f` | 2026-10-17 02:57 | 위 표 |
-| `0ac6fe7b` | 2026-10-16 | 직전 운영 기준 (DesignCraft CLI 0.8, gate 도입 이후) |
+| `0ac6fe7b`(추정) | 확인 못 함 | 직전 운영 jar `a6c409cc`의 배포 SHA로 추정 (미확인) |
