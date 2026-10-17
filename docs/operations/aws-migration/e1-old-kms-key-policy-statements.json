@@ -1,0 +1,38 @@
+{
+  "Comment": "구 계정 CMK의 기본 키 정책(계정 루트 kms:*)을 지우지 말고 아래 두 문장을 '추가'만 한다. put-key-policy는 정책 전체를 교체한다.",
+  "Statement": [
+    {
+      "Sid": "AllowNewAccountUseViaRdsOnly",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::425805163960:root" },
+      "Action": [
+        "kms:DescribeKey",
+        "kms:Decrypt",
+        "kms:ReEncryptFrom",
+        "kms:ReEncryptTo",
+        "kms:GenerateDataKey"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "rds.ap-northeast-2.amazonaws.com",
+          "kms:CallerAccount": "425805163960"
+        }
+      }
+    },
+    {
+      "Sid": "AllowNewAccountGrantForAwsResourceOnly",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::425805163960:root" },
+      "Action": "kms:CreateGrant",
+      "Resource": "*",
+      "Condition": {
+        "Bool": { "kms:GrantIsForAWSResource": "true" },
+        "StringEquals": {
+          "kms:ViaService": "rds.ap-northeast-2.amazonaws.com",
+          "kms:CallerAccount": "425805163960"
+        }
+      }
+    }
+  ]
+}
