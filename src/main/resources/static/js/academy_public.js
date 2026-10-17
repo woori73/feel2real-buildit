@@ -1258,6 +1258,7 @@
 
   // 상담 신청 — 접수 폼(서버 저장)을 열고, 학원이 footer 사업자 정보에 입력한 전화/이메일이 있으면 함께 보여 준다.
   window.requestConsult = function () {
+    if (window.F2RSiteEvents && window.F2RSiteEvents.flow) window.F2RSiteEvents.flow('consult_academy');
     const options = document.getElementById('consultOptions');
     const modal = document.getElementById('consultModal');
     if (!options || !modal) return;

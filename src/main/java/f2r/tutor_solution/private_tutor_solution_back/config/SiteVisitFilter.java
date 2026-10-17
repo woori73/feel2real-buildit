@@ -2,19 +2,17 @@ package f2r.tutor_solution.private_tutor_solution_back.config;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.AnalyticsTrafficKind;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AnalyticsVisitorIdentity;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteVisitRecordingService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.Cookie;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpHeaders;
@@ -46,12 +44,8 @@ public class SiteVisitFilter extends OncePerRequestFilter {
   private static final Set<String> EXCLUDED_EXACT = Set.of(
       "/favicon.ico", "/robots.txt", "/sitemap.xml");
 
-  static final String VISITOR_COOKIE_NAME = "F2R_VISITOR";
+  static final String VISITOR_COOKIE_NAME = AnalyticsVisitorIdentity.VISITOR_COOKIE_NAME;
   private static final Duration VISITOR_COOKIE_MAX_AGE = Duration.ofDays(90);
-  private static final Pattern BOT_USER_AGENT = Pattern.compile(
-      "(?i)(?:bot|crawler|spider|googlebot|bingbot|yandexbot|duckduckbot|"
-          + "facebookexternalhit|twitterbot|slackbot|discordbot|bytespider|gptbot|claudebot)");
-
   // ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포/서비스 없음)가 SecurityConfig를
   // import해도 컨텍스트가 뜨도록(SubdomainAcademyFilter와 동일 패턴).
   private final ObjectProvider<SiteVisitRecordingService> recordingService;
@@ -118,26 +112,11 @@ public class SiteVisitFilter extends OncePerRequestFilter {
   }
 
   private boolean isBot(String userAgent) {
-    return userAgent != null && BOT_USER_AGENT.matcher(userAgent).find();
+    return AnalyticsVisitorIdentity.isBot(userAgent);
   }
 
   private String validVisitorId(HttpServletRequest request) {
-    Cookie[] cookies = request.getCookies();
-    if (cookies == null) return null;
-    return Arrays.stream(cookies)
-        .filter(cookie -> VISITOR_COOKIE_NAME.equals(cookie.getName()))
-        .map(Cookie::getValue)
-        .filter(this::isUuid)
-        .findFirst()
-        .orElse(null);
-  }
-
-  private boolean isUuid(String value) {
-    try {
-      return value != null && UUID.fromString(value).toString().equalsIgnoreCase(value);
-    } catch (IllegalArgumentException ignored) {
-      return false;
-    }
+    return AnalyticsVisitorIdentity.validVisitorId(request);
   }
 
   private ResponseCookie visitorCookie(String visitorId) {

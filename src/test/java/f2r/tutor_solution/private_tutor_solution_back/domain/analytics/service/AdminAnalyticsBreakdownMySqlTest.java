@@ -123,13 +123,12 @@ class AdminAnalyticsBreakdownMySqlTest {
   }
 
   @Test
-  @DisplayName("given 수집하지 않는 전환 지표 when 조회하면 then 미수집으로 표시하고 숫자를 넣지 않는다")
-  void uncollectedMetricsHaveNoNumbers() {
+  @DisplayName("given 전환 지표 when 조회하면 then 접수된 상담신청만 담고 이벤트 지표는 별도 API로 분리된다")
+  void conversionsContainOnlyInquiries() {
     // given / when
     var conv = service().breakdown(null).conversions();
     // then
-    assertThat(conv).filteredOn(c -> c.collected()).extracting(c -> c.key()).containsExactly("ACADEMY_INQUIRY");
-    assertThat(conv).filteredOn(c -> !c.collected()).allSatisfy(c -> assertThat(c.metric()).isNull());
-    assertThat(conv).extracting(c -> c.key()).contains("CONSULT_START", "EXAM_START", "SERVICE_MOVE", "SECTION_VIEW");
+    assertThat(conv).extracting(c -> c.key()).containsExactly("ACADEMY_INQUIRY");
+    assertThat(conv).allSatisfy(c -> assertThat(c.collected()).isTrue());
   }
 }

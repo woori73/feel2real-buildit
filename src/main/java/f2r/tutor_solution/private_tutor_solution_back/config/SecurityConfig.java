@@ -430,6 +430,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/academies").permitAll()  // 공개 Academy 목록
             .requestMatchers(HttpMethod.GET, "/api/academies/**").permitAll()  // 공개 Academy 조회/이미지
             .requestMatchers(HttpMethod.HEAD, "/api/academies/**").permitAll()  // 공개 영상 메타데이터
+            .requestMatchers(HttpMethod.POST, "/api/analytics/events").permitAll()  // 공개 이벤트 수집(허용 목록·속도 제한·쿠키 필요)
             .requestMatchers(HttpMethod.POST, "/api/academies/*/visits").permitAll()  // 공개 방문 집계
             .requestMatchers(HttpMethod.POST, "/api/academies/*/inquiries").permitAll()  // 공개 상담신청 접수(속도 제한·동의 필수)
             .requestMatchers(HttpMethod.GET, "/api/public/academy/*/homepage").permitAll()  // 시각 편집기 공개 홈페이지

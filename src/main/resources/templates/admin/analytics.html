@@ -141,7 +141,43 @@
     <div class="analytics-section">
       <h2>주요 전환 지표</h2>
       <div class="an-conv" id="anConversions"></div>
-      <p class="an-note">섹션 노출·버튼 클릭 같은 사용자 행동은 페이지 조회(PV)와 별개로 집계해야 하며, 아직 수집하지 않아 숫자를 표시하지 않습니다.</p>
+      <p class="an-note">상담신청 완료는 접수된 문의 건수입니다. 시작·이동 같은 사용자 행동은 아래 이벤트 통계(페이지 조회와 별개 지표)에서 확인합니다.</p>
+    </div>
+
+    <details class="an-def" id="anEventDefinitions">
+      <summary>이벤트(섹션 노출·클릭) 집계 기준</summary>
+      <p id="anEvExposure"></p><p id="anEvClick"></p><p id="anEvCtr"></p><p id="anEvSep"></p><p id="anEvRetention"></p>
+    </details>
+
+    <div class="analytics-section">
+      <h2>홈페이지 섹션 노출</h2>
+      <div class="table-scroll">
+        <table class="analytics-table">
+          <thead><tr><th>섹션</th><th class="num">오늘 UV</th><th class="num">오늘 노출</th><th class="num">7일 UV</th><th class="num">7일 노출</th><th class="num">30일 UV</th><th class="num">30일 노출</th><th class="num">누적 UV</th><th class="num">누적 노출</th></tr></thead>
+          <tbody id="anSectionsBody"><tr><td colspan="9" class="analytics-empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+      <p class="an-note" id="anEventsSince"></p>
+    </div>
+
+    <div class="analytics-section">
+      <h2>버튼 클릭·클릭률</h2>
+      <div class="table-scroll">
+        <table class="analytics-table">
+          <thead><tr><th>버튼</th><th>소속 섹션</th><th class="num">오늘 클릭</th><th class="num">7일 클릭</th><th class="num">30일 클릭</th><th class="num">누적 클릭</th><th class="num">30일 클릭 UV</th><th>클릭률 (오늘 · 7일 · 30일 · 누적)</th></tr></thead>
+          <tbody id="anClicksBody"><tr><td colspan="8" class="analytics-empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="analytics-section">
+      <h2>서비스 이동·시작 행동</h2>
+      <div class="table-scroll">
+        <table class="analytics-table">
+          <thead><tr><th>행동</th><th class="num">오늘 UV</th><th class="num">오늘 횟수</th><th class="num">7일 UV</th><th class="num">7일 횟수</th><th class="num">30일 UV</th><th class="num">30일 횟수</th><th class="num">누적 UV</th><th class="num">누적 횟수</th></tr></thead>
+          <tbody id="anActionsBody"><tr><td colspan="9" class="analytics-empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="analytics-section">

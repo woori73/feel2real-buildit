@@ -14,6 +14,7 @@ public class AdminAnalyticsController {
 
   private final AdminAnalyticsService service;
   private final f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownService breakdownService;
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsEventsService eventsService;
 
   @GetMapping("/api/admin/analytics/summary")
   public ResponseEntity<AdminAnalyticsResponse> summary() {
@@ -25,5 +26,11 @@ public class AdminAnalyticsController {
   public ResponseEntity<f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsBreakdownResponse> breakdown(
       @org.springframework.web.bind.annotation.RequestParam(required = false) String service) {
     return ResponseEntity.ok(breakdownService.breakdown(service));
+  }
+
+  /** 섹션 노출·클릭·클릭률·서비스 이동·흐름 시작(이벤트 수집, PV와 별개 지표). */
+  @GetMapping("/api/admin/analytics/events")
+  public ResponseEntity<f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsEventsResponse> events() {
+    return ResponseEntity.ok(eventsService.events());
   }
 }

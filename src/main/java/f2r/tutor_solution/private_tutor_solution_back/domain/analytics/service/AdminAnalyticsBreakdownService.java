@@ -102,14 +102,9 @@ public class AdminAnalyticsBreakdownService {
   private List<Conversion> conversions(LocalDate today, LocalDate from7, LocalDate from30) {
     Period inquiries = new Period(
         inquiryCount(today), inquiryCount(from7), inquiryCount(from30), inquiryCount(null));
-    String notCollected = "클라이언트 이벤트(버튼 클릭·섹션 노출) 수집이 아직 없습니다. 수집 테이블 도입 승인 후 집계됩니다.";
     return List.of(
         new Conversion("ACADEMY_INQUIRY", "학원 상담신청 접수(완료)", true, inquiries,
-            "공개 학원 홈페이지에서 접수 완료된 건수(academy_inquiries). 방문 지표와 다른 기준이며 합산하지 않습니다."),
-        new Conversion("CONSULT_START", "상담신청 시작(버튼 클릭)", false, null, notCollected),
-        new Conversion("EXAM_START", "예상문제 제작 시작", false, null, notCollected),
-        new Conversion("SERVICE_MOVE", "서비스 이동 클릭", false, null, notCollected),
-        new Conversion("SECTION_VIEW", "홈페이지 섹션 노출", false, null, notCollected));
+            "공개 학원 홈페이지에서 접수 완료된 건수(academy_inquiries). 방문 지표와 다른 기준이며 합산하지 않습니다."));
   }
 
   private long inquiryCount(LocalDate from) {

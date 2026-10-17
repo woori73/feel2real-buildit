@@ -28,11 +28,15 @@
 ## 5. API
 `GET /api/admin/analytics/breakdown[?service=EASY]` (ADMIN 전용): 서비스·페이지 그룹 표(오늘/7일/30일/누적 UV·PV), 많이 본 페이지 Top15(30일), 30일 일별 추세(서비스 선택), 전환 지표(실제 수집된 것만, 미수집은 `collected=false`·숫자 없음), 집계 기준 문구. 기존 `/summary`는 변경 없음.
 
-## 6. 아직 수집하지 않는 지표 (DB 변경 승인 요청)
-**섹션 노출·버튼 클릭·상담신청 시작·예상문제 제작 시작·서비스 이동**은 서버가 볼 수 없는 브라우저 행동이라 현재 수집 수단이 없다(숫자를 지어내지 않고 "미수집" 표시).
-제안: 신규 테이블 `site_events`(V1087, 신규 테이블만) — `event_id`, `event_date`, `occurred_at`, `event_type`(SECTION_VIEW|CLICK|FLOW_START|FLOW_COMPLETE), `target`(섹션 id·버튼 key·서비스 key, 화이트리스트), `page_path`, `visitor_key`(기존 쿠키 재사용), `traffic_kind`, 인덱스 (event_date,event_type,target).
-수집: 홈 섹션(`agentHero, homeTop, svcTiles, nation, hero, wiki, services, soon, chart-showcase, faq, cta`)에 IntersectionObserver로 세션당 1회 노출 전송 + `data-track` 클릭 위임, `POST /api/analytics/events`(공개, 화이트리스트 검증·IP/방문자별 속도 제한·Bot UA 제외·본문 개인정보 없음). 노출·조회·클릭은 서로 다른 event_type으로 분리 집계. 상담신청 완료는 기존 `academy_inquiries`를 그대로 사용.
-승인 시 별도 PR로 진행(운영 DB 적용은 배포 승인과 함께).
+## 6. 이벤트 수집 (V1087 `site_events`, 구현됨 — 운영 적용은 별도 승인)
+섹션 노출·버튼 클릭·서비스 이동·상담/제작 시작은 서버가 볼 수 없는 브라우저 행동이라 `site_events`(신규 테이블)로 따로 수집한다. **PV와 다른 정의의 별도 지표이며 합산하지 않는다.**
+- 테이블·컬럼·보관·개인정보 원칙: `docs/DOMAIN.md` §4.48-1. API: `docs/API.md`(`POST /api/analytics/events`, `GET /api/admin/analytics/events`).
+- 노출 기준: IntersectionObserver로 **50% 이상(또는 화면 높이 50% 이상)이 1초 이상** 보일 때 페이지 방문당 1번. 스쳐 지나간 영역·탭이 숨겨진 시간은 세지 않는다.
+- 중복 방지: 방문마다 새 `view_id`(무작위), 서버 유니크 키 + `INSERT IGNORE`. 같은 방문자의 새 방문은 노출 횟수 +1, UV는 그대로.
+- 방문자 식별은 기존 PV와 동일(`AnalyticsVisitorIdentity`). Bot은 BOT, ADMIN은 internal로 저장하고 집계에서 제외.
+- 서버는 허용 목록(`AnalyticsEventCatalog`)의 이벤트·페이지·대상만 받고 URL·사용자 식별값은 신뢰하지 않는다. 속도 제한·20개/요청·4KB 본문 제한.
+- 보관 395일, 매일 새벽 자동 삭제. 상담신청 완료는 `academy_inquiries` 건수로 센다.
+- 모바일 드로어·상단 메뉴 링크(내신위키 포함)는 추적하지 않는다(서비스 카드·본문 버튼만).
 
 ## 7. 뮤즈와의 분리
 뮤즈: `/dashboard`·`/admin/hub`·Canva·EASY/상담 위젯. 이 작업: `_admin_topnav`(서비스 링크 추가)·`admin_topnav.css`(줄바꿈 1블록)·`/admin/analytics`·`analytics` 패키지. 공통 nav/CSS 변경은 최신 main 기준으로 병합했다.
