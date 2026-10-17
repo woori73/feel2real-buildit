@@ -46,6 +46,11 @@ public class EasyDashboardWidgetController {
   private static final String SERVICE_ID = "easy";
   private static final int REFRESH_INTERVAL_SEC = 300;
   private static final long CACHE_TTL_MILLIS = 5 * 60 * 1000L;
+  /**
+   * 캐시 최대 항목 수. 사업체 수 × 조회 월 수를 고려한 상한.
+   * 상한 도달 시 만료 항목 우선 제거, 그래도 초과하면 가장 오래된 항목 제거.
+   */
+  private static final int MAX_CACHE_SIZE = 100;
 
   private final EasyWorkspaceService workspaceService;
 
@@ -94,8 +99,36 @@ public class EasyDashboardWidgetController {
 
     EasyDashboardWidgetResponse response = new EasyDashboardWidgetResponse(
         WIDGET_VERSION, SERVICE_ID, dataAsOf, widgets);
-    cache.put(cacheKey, new CachedWidgets(System.currentTimeMillis(), response));
+    putWithEviction(cacheKey, new CachedWidgets(System.currentTimeMillis(), response));
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * 캐시 저장 + 제거 정책.
+   * 1) 만료된 항목을 먼저 제거한다.
+   * 2) 그래도 상한을 초과하면 가장 오래된 항목을 제거한다.
+   * 사업자별 격리(businessId 포함 키)와 5분 TTL은 유지된다.
+   */
+  private void putWithEviction(String key, CachedWidgets value) {
+    long now = System.currentTimeMillis();
+    // 1) 만료 항목 제거
+    cache.entrySet().removeIf(e -> now - e.getValue().createdAt() >= CACHE_TTL_MILLIS);
+    // 2) 상한 초과 시 가장 오래된 항목 제거
+    while (cache.size() >= MAX_CACHE_SIZE) {
+      String oldestKey = null;
+      long oldestTime = Long.MAX_VALUE;
+      for (Map.Entry<String, CachedWidgets> e : cache.entrySet()) {
+        if (e.getValue().createdAt() < oldestTime) {
+          oldestTime = e.getValue().createdAt();
+          oldestKey = e.getKey();
+        }
+      }
+      if (oldestKey == null || oldestKey.equals(key)) {
+        break;
+      }
+      cache.remove(oldestKey);
+    }
+    cache.put(key, value);
   }
 
   /**

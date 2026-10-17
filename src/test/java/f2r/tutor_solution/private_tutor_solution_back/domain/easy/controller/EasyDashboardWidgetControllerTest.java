@@ -54,6 +54,7 @@ class EasyDashboardWidgetControllerTest {
 
   @Autowired MockMvc mockMvc;
   @Autowired JwtTokenProvider tokenProvider;
+  @Autowired EasyDashboardWidgetController widgetController;
 
   @MockitoBean EasyWorkspaceService workspaceService;
   @MockitoBean EasyAuditService auditService;
@@ -155,4 +156,29 @@ class EasyDashboardWidgetControllerTest {
         .andExpect(jsonPath("$.widgets[1].error").value("일시적으로 표시할 수 없습니다."))
         .andExpect(jsonPath("$.widgets[2].error").value("일시적으로 표시할 수 없습니다."));
   }
-}
+
+  @Test
+  @DisplayName("캐시 상한: 100개 초과 시 가장 오래된 항목 제거 (무제한 증가 방지)")
+  void cacheEviction_boundedSize() throws Exception {
+    // 105개의 서로 다른 businessId로 요청 → 캐시는 100개 이하로 유지되어야 함
+    for (long bid = 100; bid < 205; bid++) {
+      final long businessId = bid;
+      when(workspaceService.monthly(eq(businessId), any(YearMonth.class)))
+          .thenReturn(monthlyFixture(businessId));
+      mockMvc.perform(get("/api/admin/easy/dashboard/widgets")
+              .param("businessId", String.valueOf(businessId))
+              .cookie(adminCookie())
+              .accept(MediaType.APPLICATION_JSON))
+          .andExpect(status().isOk());
+    }
+    // 리플렉션으로 캐시 크기 확인 (상한 100 이하)
+    java.lang.reflect.Field cacheField =
+        widgetController.getClass().getDeclaredField("cache");
+    cacheField.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    java.util.Map<String, ?> cache =
+        (java.util.Map<String, ?>) cacheField.get(widgetController);
+    org.junit.jupiter.api.Assertions.assertTrue(
+        cache.size() <= 100,
+        "캐시 크기는 100 이하여야 함, 실제: " + cache.size());
+  }
