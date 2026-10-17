@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BuildIt - 통합 대시보드</title>
+  <style>
+    /* ===== BuildIt 통합 대시보드 (ADMIN·TUTOR 공용) — 시안 B 반영 ===== */
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --border: #e5e9f0;
+      --text: #1a202c;
+      --text-2: #4a5568;
+      --text-3: #8a94a6;
+      --accent: #2b6cb0;
+      --accent-soft: #ebf4ff;
+      --danger: #e53e3e;
+      --danger-soft: #fff5f5;
+      --ok: #38a169;
+      --radius: 14px;
+      --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 1px 2px rgba(16, 24, 40, .04);
+    }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif; }
+    .dash-wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 48px; }
+
+    /* ---- 헤더 ---- */
+    .dash-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .dash-brand { display: flex; align-items: center; gap: 12px; }
+    .dash-logo {
+      display: inline-flex; align-items: center; text-decoration: none;
+      font-size: 20px; letter-spacing: -.02em; line-height: 1;
+    }
+    .dash-logo b { font-weight: 800; color: var(--text); font-style: normal; }
+    .dash-logo i { font-weight: 400; color: var(--accent); font-style: normal; margin-left: 1px; }
+    .dash-title { font-size: 22px; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -.01em; }
+    .dash-title-sep { color: var(--border); font-weight: 300; }
+    .dash-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .dash-biz-select {
+      appearance: none; -webkit-appearance: none;
+      padding: 9px 34px 9px 14px; font-size: 14px; font-weight: 600; color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a5568' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      cursor: pointer; max-width: 260px; box-shadow: var(--shadow);
+    }
+    .dash-refresh {
+      padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--accent);
+      border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+      cursor: pointer; box-shadow: var(--shadow);
+    }
+    .dash-refresh:hover { background: var(--accent-soft); }
+    .dash-asof { font-size: 12px; color: var(--text-3); margin-bottom: 14px; }
+
+    /* ---- 홍보 스트립 (슬림형) ---- */
+    .dash-promo-strip {
+      display: flex; align-items: center; gap: 14px;
+      background: linear-gradient(135deg, #ebf4ff 0%, #f7fafc 100%);
+      border: 1px solid #bee3f8; border-radius: var(--radius);
+      padding: 14px 18px; margin-bottom: 18px; box-shadow: var(--shadow);
+    }
+    .dash-promo-strip .p-icon { font-size: 24px; }
+    .dash-promo-strip .p-body { flex: 1; min-width: 0; }
+    .dash-promo-strip .p-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .dash-promo-strip .p-price { font-size: 16px; font-weight: 800; color: var(--accent); }
+    .dash-promo-strip .p-btn {
+      padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 8px;
+      background: var(--accent); color: #fff; text-decoration: none; white-space: nowrap;
+    }
+    .dash-promo-strip .p-btn:hover { background: #2c5282; }
+
+    /* ---- KPI 히어로 ---- */
+    .dash-kpis {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      margin-bottom: 18px;
+    }
+    .dash-kpi {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .dash-kpi::before {
+      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: var(--kpi-accent, var(--accent));
+    }
+    .dash-kpi .k-label { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
+    .dash-kpi .k-value { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+    .dash-kpi .k-value .unit { font-size: 14px; font-weight: 600; color: var(--text-3); margin-left: 2px; }
+    .dash-kpi.kpi-income { --kpi-accent: #38a169; }
+    .dash-kpi.kpi-expense { --kpi-accent: #dd6b20; }
+    .dash-kpi.kpi-receivable { --kpi-accent: #e53e3e; }
+    .dash-kpi.kpi-students { --kpi-accent: #2b6cb0; }
+
+    /* ---- 섹션 타이틀 ---- */
+    .dash-section-title {
+      font-size: 15px; font-weight: 700; color: var(--text);
+      margin: 6px 0 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .dash-section-title .count {
+      font-size: 12px; font-weight: 600; color: var(--text-3);
+      background: #edf2f7; border-radius: 999px; padding: 2px 10px;
+    }
+
+    /* ---- 위젯 그리드 ---- */
+    .dash-widgets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+    .dash-widget {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; box-shadow: var(--shadow); min-width: 0;
+    }
+    .dash-widget-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px; gap: 8px;
+    }
+    .dash-widget-head h3 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
+    .dash-widget-head a {
+      font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap;
+    }
+
+    /* ---- 리스트 ---- */
+    .dash-list { list-style: none; padding: 0; margin: 0; }
+    .dash-list li {
+      padding: 11px 0; border-bottom: 1px solid #eef1f6;
+      display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+    }
+    .dash-list li:last-child { border-bottom: none; }
+    .dash-list .t { font-weight: 600; color: var(--text); font-size: 13.5px; }
+    .dash-list .s { color: var(--text-2); font-size: 12.5px; margin-top: 3px; }
+    .dash-list .amt { font-weight: 700; color: var(--text); font-size: 13.5px; white-space: nowrap; }
+
+    /* ---- 서비스 바로가기 ---- */
+    .dash-shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .dash-shortcut {
+      display: flex; align-items: center; gap: 12px; padding: 16px;
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: var(--shadow); text-decoration: none; color: var(--text);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .dash-shortcut:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,24,40,.1); }
+    .dash-shortcut .ic {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+      background: var(--accent-soft);
+    }
+    .dash-shortcut .tx .n { font-size: 14px; font-weight: 700; }
+    .dash-shortcut .tx .d { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .dash-shortcut.preparing { opacity: .6; }
+    .dash-shortcut.preparing .tx .d { color: var(--text-3); }
+
+    /* ---- AI 비서 플로팅 ---- */
+    .dash-ai-fab {
+      position: fixed; right: 24px; bottom: 24px; z-index: 100;
+      width: 64px; height: 64px; border-radius: 50%;
+      box-shadow: 0 4px 16px rgba(0,0,0,.15); cursor: pointer;
+      border: 3px solid #fff; overflow: hidden; background: #fff;
+      padding: 0;
+    }
+    .dash-ai-fab img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ---- 상태 ---- */
+    .dash-skeleton { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .dash-skel {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; min-height: 150px;
+    }
+    .dash-skel .bar {
+      height: 14px; border-radius: 7px; margin-bottom: 10px;
+      background: linear-gradient(90deg, #edf2f7 25%, #e2e8f0 50%, #edf2f7 75%);
+      background-size: 200% 100%; animation: dash-shimmer 1.2s infinite;
+    }
+    @keyframes dash-shimmer { to { background-position: -200% 0; } }
+    .dash-state {
+      text-align: center; padding: 36px 20px; font-size: 14px; color: var(--text-3);
+      background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius);
+    }
+    .dash-state .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+    .dash-state .msg { font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
+    .dash-state.error { border-color: #feb2b2; background: var(--danger-soft); }
+    .dash-state.error .msg { color: var(--danger); }
+    .dash-retry {
+      margin-top: 12px; padding: 8px 18px; font-size: 13px; font-weight: 600;
+      border: 1px solid var(--danger); border-radius: 8px; background: #fff;
+      color: var(--danger); cursor: pointer;
+    }
+
+    /* ---- 반응형 ---- */
+    @media (max-width: 1024px) {
+      .dash-kpis { grid-template-columns: repeat(2, 1fr); }
+      .dash-widgets { grid-template-columns: repeat(2, 1fr); }
+      .dash-shortcuts { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .dash-wrap { padding: 16px 12px 40px; }
+      .dash-topbar { flex-direction: column; align-items: stretch; }
+      .dash-title { font-size: 19px; }
+      .dash-kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .dash-kpi { padding: 14px; }
+      .dash-kpi .k-value { font-size: 20px; }
+      .dash-widgets { grid-template-columns: 1fr; }
+      .dash-skeleton { grid-template-columns: 1fr; }
+      .dash-promo-strip { flex-wrap: wrap; }
+      .dash-ai-fab { right: 16px; bottom: 16px; width: 56px; height: 56px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dash-wrap">
+    <div class="dash-topbar">
+      <div class="dash-brand">
+        <a class="dash-logo" href="/home" aria-label="BuildIt 홈"><b>Build</b><i>It</i></a>
+        <span class="dash-title-sep">|</span>
+        <h1 class="dash-title">통합 대시보드</h1>
+      </div>
+      <div class="dash-controls">
+        <select class="dash-biz-select" id="bizSelect" aria-label="사업체 선택">
+          <option value="">사업체 불러오는 중...</option>
+        </select>
+        <button class="dash-refresh" id="refreshBtn" type="button">↻ 새로고침</button>
+      </div>
+    </div>
+    <div class="dash-asof" id="dataAsof"></div>
+
+    <!-- 내신 예상문제 홍보 스트립 (슬림형) -->
+    <div class="dash-promo-strip">
+      <div class="p-icon">📝</div>
+      <div class="p-body">
+        <div class="p-title">내신 예상문제 제작</div>
+        <div class="p-price">1회 2만원 <a class="p-btn" href="/exam-analysis" style="margin-left:8px;">의뢰하기</a></div>
+      </div>
+    </div>
+
+    <!-- KPI 히어로 -->
+    <div class="dash-section-title">이번달 핵심 지표</div>
+    <div class="dash-kpis" id="kpiRow"></div>
+
+    <!-- 위젯 -->
+    <div class="dash-section-title">상세 위젯 <span class="count" id="widgetCount"></span></div>
+    <div class="dash-widgets" id="widgetContainer"></div>
+
+    <!-- 서비스 바로가기 -->
+    <div class="dash-section-title">서비스 바로가기</div>
+    <div class="dash-shortcuts" id="shortcutRow"></div>
+  </div>
+
+  <!-- AI 비서 플로팅 버튼 -->
+  <button class="dash-ai-fab" id="aiFab" aria-label="AI 비서 열기">
+    <img src="/images/ai-assistant.gif" alt="AI 비서" />
+  </button>
+
+  <script src="/js/api.js"></script>
+  <script>
+  /**
+   * BuildIt 통합 대시보드 (ADMIN·TUTOR 공용) — 위젯 렌더러.
+   * 공용 API (/api/dashboard/widgets)를 사용한다.
+   */
+  (function() {
+    'use strict';
+
+    var API_WIDGETS = '/api/dashboard/widgets';
+    var API_BUSINESSES = '/api/dashboard/businesses';
+    var STORAGE_KEY = 'dashboard.businessId';
+
+    var bizSelect = document.getElementById('bizSelect');
+    var refreshBtn = document.getElementById('refreshBtn');
+    var kpiRow = document.getElementById('kpiRow');
+    var widgetContainer = document.getElementById('widgetContainer');
+    var widgetCount = document.getElementById('widgetCount');
+    var dataAsof = document.getElementById('dataAsof');
+    var shortcutRow = document.getElementById('shortcutRow');
+
+    // 서비스 바로가기 (실제 구현된 서비스만)
+    var SHORTCUTS = [
+      { name: 'EASY 장부', desc: '복식부기·수납 관리', icon: '📒', href: '/easy' },
+      { name: '원장 장부', desc: 'TUTOR용 장부', icon: '📓', href: '/ledger' },
+      { name: '홈페이지 빌더', desc: '학원 홈페이지 제작', icon: '🏠', href: '/tutor/academy' },
+      { name: '내신위키', desc: '문제 제작·관리', icon: '📚', href: '/problem-generator' },
+      { name: 'TESTPREP', desc: '모의고사', icon: '📝', href: '/testprep' },
+      { name: 'DesignCraft', desc: '출판 편집', icon: '🎨', href: '/designcraft' },
+      { name: '기출분석', desc: '내신 기출 분석', icon: '📊', href: '/exam-analysis' },
+      { name: '상담신청', desc: '홈페이지 상담 관리', icon: '💬', href: '/admin/academies' },
+    ];
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function fmt(n) { return Number(n || 0).toLocaleString('ko-KR'); }
+
+    function showSkeleton() {
+      kpiRow.innerHTML = '';
+      widgetContainer.innerHTML =
+        '<div class="dash-skeleton">' +
+        '<div class="dash-skel"><div class="bar" style="width:60%"></div><div class="bar"></div><div class="bar" style="width:40%"></div></div>' +
+        '<div class="dash-skel"><div class="bar" style="width:60%"></div><div class="bar"></div><div class="bar" style="width:40%"></div></div>' +
+        '<div class="dash-skel"><div class="bar" style="width:60%"></div><div class="bar"></div><div class="bar" style="width:40%"></div></div>' +
+        '</div>';
+    }
+
+    function showError(msg) {
+      widgetContainer.innerHTML =
+        '<div class="dash-state error"><span class="icon">⚠️</span>' +
+        '<div class="msg">' + esc(msg || '데이터를 불러오지 못했습니다.') + '</div>' +
+        '<button class="dash-retry" onclick="location.reload()">다시 시도</button></div>';
+    }
+
+    function showEmpty() {
+      widgetContainer.innerHTML =
+        '<div class="dash-state"><span class="icon">📭</span>' +
+        '<div class="msg">연결된 사업체가 없습니다.</div>' +
+        '<div class="hint">관리자에게 사업체 연결을 요청하세요.</div></div>';
+      kpiRow.innerHTML = '';
+    }
+
+    function renderKpis(widget) {
+      if (!widget || widget.type !== 'stat-cards' || !widget.data || !widget.data.cards) return;
+      var cards = widget.data.cards;
+      var cls = ['kpi-income', 'kpi-expense', 'kpi-receivable', 'kpi-students'];
+      kpiRow.innerHTML = cards.map(function(c, i) {
+        return '<div class="dash-kpi ' + (cls[i] || '') + '">' +
+          '<div class="k-label">' + esc(c.label) + '</div>' +
+          '<div class="k-value">' + fmt(c.value) + '<span class="unit">' + esc(c.unit || '') + '</span></div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderWidgets(widgets) {
+      var listWidgets = widgets.filter(function(w) { return w.type === 'list'; });
+      widgetCount.textContent = listWidgets.length + '개';
+      if (listWidgets.length === 0) {
+        widgetContainer.innerHTML =
+          '<div class="dash-state"><span class="icon">📭</span><div class="msg">표시할 위젯이 없습니다.</div></div>';
+        return;
+      }
+      widgetContainer.innerHTML = listWidgets.map(function(w) {
+        var items = (w.data && w.data.items || []).map(function(it) {
+          return '<li><div><div class="t">' + esc(it.title) + '</div>' +
+            (it.subtitle ? '<div class="s">' + esc(it.subtitle) + '</div>' : '') +
+            (it.meta ? '<div class="m">' + esc(it.meta) + '</div>' : '') + '</div>' +
+            '<div class="amt">' + esc(it.amount || '') + '</div></li>';
+        }).join('');
+        if (!items) {
+          items = '<li><div class="t">' + esc((w.data && w.data.emptyMessage) || '데이터가 없습니다.') + '</div></li>';
+        }
+        return '<div class="dash-widget"><div class="dash-widget-head"><h3>' + esc(w.title) + '</h3>' +
+          (w.linkUrl ? '<a href="' + esc(w.linkUrl) + '">더보기 →</a>' : '') + '</div>' +
+          '<ul class="dash-list">' + items + '</ul></div>';
+      }).join('');
+    }
+
+    function renderShortcuts() {
+      shortcutRow.innerHTML = SHORTCUTS.map(function(s) {
+        return '<a class="dash-shortcut" href="' + esc(s.href) + '">' +
+          '<div class="ic">' + s.icon + '</div>' +
+          '<div class="tx"><div class="n">' + esc(s.name) + '</div><div class="d">' + esc(s.desc) + '</div></div></a>';
+      }).join('');
+    }
+
+    function loadWidgets(businessId) {
+      showSkeleton();
+      fetchAuth(API_WIDGETS + '?businessId=' + businessId)
+        .then(function(res) {
+          if (res.status === 403) throw new Error('FORBIDDEN');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function(data) {
+          var widgets = data.widgets || [];
+          var finance = widgets.find(function(w) { return w.id === 'easy-finance-summary'; });
+          renderKpis(finance);
+          renderWidgets(widgets);
+          if (data.dataAsOf) {
+            var d = new Date(data.dataAsOf);
+            dataAsof.textContent = '마지막 갱신: ' + d.toLocaleString('ko-KR');
+          }
+        })
+        .catch(function(e) {
+          if (e.message === 'FORBIDDEN') {
+            showError('이 사업체에 접근할 권한이 없습니다.');
+          } else {
+            showError();
+          }
+        });
+    }
+
+    function loadBusinesses() {
+      return fetchAuth(API_BUSINESSES)
+        .then(function(res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function(list) {
+          bizSelect.innerHTML = '';
+          if (!list || list.length === 0) {
+            bizSelect.innerHTML = '<option value="">연결된 사업체 없음</option>';
+            showEmpty();
+            return null;
+          }
+          list.forEach(function(b) {
+            var opt = document.createElement('option');
+            opt.value = b.businessId;
+            opt.textContent = b.name;
+            bizSelect.appendChild(opt);
+          });
+          var saved = localStorage.getItem(STORAGE_KEY);
+          var selected = null;
+          if (saved && list.some(function(b) { return String(b.businessId) === saved; })) {
+            selected = saved;
+          } else {
+            selected = String(list[0].businessId);
+          }
+          bizSelect.value = selected;
+          localStorage.setItem(STORAGE_KEY, selected);
+          return selected;
+        });
+    }
+
+    function init() {
+      renderShortcuts();
+      // 로그인 확인
+      ensureCurrentUser().then(function(user) {
+        if (!user || (user.role !== 'ADMIN' && user.role !== 'TUTOR')) {
+          location.href = '/admin/login?returnUrl=' + encodeURIComponent('/dashboard');
+          return;
+        }
+        loadBusinesses().then(function(businessId) {
+          if (businessId) loadWidgets(businessId);
+        }).catch(function() {
+          showError();
+        });
+      }).catch(function() {
+        location.href = '/admin/login?returnUrl=' + encodeURIComponent('/dashboard');
+      });
+
+      bizSelect.addEventListener('change', function() {
+        var v = bizSelect.value;
+        if (v) {
+          localStorage.setItem(STORAGE_KEY, v);
+          loadWidgets(v);
+        }
+      });
+      refreshBtn.addEventListener('click', function() {
+        var v = bizSelect.value;
+        if (v) loadWidgets(v);
+      });
+      document.getElementById('aiFab').addEventListener('click', function() {
+        alert('AI 비서 채팅은 준비 중입니다.');
+      });
+    }
+
+    // api.js 로드 대기
+    if (typeof fetchAuth === 'undefined' || typeof ensureCurrentUser === 'undefined') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
