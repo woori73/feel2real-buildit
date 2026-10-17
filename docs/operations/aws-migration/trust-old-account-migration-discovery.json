@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GitHubOidcMigrationDiscoveryReadOnly",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::067573916809:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": "repo:woori73@299170593/feel2real-buildit@1340651018:environment:f2r-aws-discovery",
+          "token.actions.githubusercontent.com:job_workflow_ref": "woori73/feel2real-buildit/.github/workflows/migration-discovery-readonly.yml@refs/heads/main"
+        }
+      }
+    }
+  ]
+}
