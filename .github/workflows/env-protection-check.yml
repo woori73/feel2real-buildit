@@ -11,6 +11,13 @@ permissions:
   id-token: write
   contents: read
 jobs:
+  # 대조군: Environment 없이 같은 ref 에서 같은 실행(run) 안에 돈다. 이 job 이 실행되면 브랜치·러너·워크플로 자체는 정상이다.
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Control ran (no environment)
+        run: echo "CONTROL-RAN ref=${GITHUB_REF}"
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 5
