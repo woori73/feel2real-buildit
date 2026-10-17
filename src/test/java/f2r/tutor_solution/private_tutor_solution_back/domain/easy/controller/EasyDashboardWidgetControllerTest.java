@@ -182,3 +182,4 @@ class EasyDashboardWidgetControllerTest {
         cache.size() <= 100,
         "캐시 크기는 100 이하여야 함, 실제: " + cache.size());
   }
+}
