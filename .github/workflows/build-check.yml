@@ -52,6 +52,10 @@ jobs:
       - name: Ensure Gradle wrapper is executable
         run: chmod +x gradlew
 
+      - name: Deploy guard shell tests (jar rollback + env backup/restore)
+        # deploy-ec2.yml이 EC2 배포 스크립트에 그대로 이어 붙이는 가드를 같은 소스로 검증한다.
+        run: bash scripts/deploy/f2r_app_guard.test.sh
+
       - name: Set up Node 20
         uses: actions/setup-node@v4
         with:

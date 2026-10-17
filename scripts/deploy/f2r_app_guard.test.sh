@@ -32,8 +32,11 @@ sleep() { :; }
 # f2r_deploy_with_rollback의 순서(백업 → 교체 → 재시작 → health)를 있는 그대로 검증한다.
 CURRENT_JAR_PATH=""
 FORCE_ALL_UNHEALTHY=0
+REQUIRE_ENV_FILE=""
 curl() {
   if [ "$FORCE_ALL_UNHEALTHY" = "1" ]; then return 1; fi
+  # ENV 케이스용: 이 파일 내용이 GOODENV 가 아니면 서비스는 unhealthy (잘못된 env로는 기동 못 함).
+  if [ -n "$REQUIRE_ENV_FILE" ] && [ "$(cat "$REQUIRE_ENV_FILE" 2>/dev/null)" != "GOODENV" ]; then return 1; fi
   local content=""
   [ -f "$CURRENT_JAR_PATH" ] && content=$(cat "$CURRENT_JAR_PATH")
   if [ "$content" = "GOOD" ]; then
@@ -193,8 +196,11 @@ case6_bounded_generations_no_infinite_restart_acceptance
 
 # CASE 5/6 가 남겨 둔 curl/f2r__service_main_pid 오버라이드를 CASE 1~4 기본값으로 되돌린다
 # (이 파일 안에서 순서를 바꿔도 서로 오염되지 않게).
+REQUIRE_ENV_FILE=""
 curl() {
   if [ "$FORCE_ALL_UNHEALTHY" = "1" ]; then return 1; fi
+  # ENV 케이스용: 이 파일 내용이 GOODENV 가 아니면 서비스는 unhealthy (잘못된 env로는 기동 못 함).
+  if [ -n "$REQUIRE_ENV_FILE" ] && [ "$(cat "$REQUIRE_ENV_FILE" 2>/dev/null)" != "GOODENV" ]; then return 1; fi
   local content=""
   [ -f "$CURRENT_JAR_PATH" ] && content=$(cat "$CURRENT_JAR_PATH")
   if [ "$content" = "GOOD" ]; then
@@ -204,6 +210,232 @@ curl() {
   return 1
 }
 f2r__service_main_pid() { echo "1000"; }
+
+# ═══ ENV 백업/복원 케이스 (E1~E10) ═══════════════════════════════════════════
+# 서비스 재시작이 일어난 "그 시점의 env 내용"을 EVENTS 에 남겨 순서(복원 → 재시작 → 헬스)를 검증한다.
+SECRET_MARK="SECRETVALUE-9f3a"
+EVENTS_FILE=$(mktemp)
+f2r__service_restart() { RESTART_CALLS=$((RESTART_CALLS + 1)); echo "restart:$1:env=$(cat "$ENV_UNDER_TEST" 2>/dev/null | head -c 40)" >> "$EVENTS_FILE"; }
+if [ "$(id -u)" = "0" ]; then ORIG_OWNER="12345:12345"; else ORIG_OWNER="$(id -u):$(id -g)"; fi
+
+# given: env 두 개(+선택적으로 identity 부재)를 가진 가짜 서버 디렉터리
+env_fixture() {
+  ENV_DIR=$(mktemp -d)
+  ENV_UNDER_TEST="$ENV_DIR/env"; IDENT="$ENV_DIR/identity.env"
+  printf 'GOODENV' > "$ENV_UNDER_TEST"
+  printf 'WIKI_IDENTITY_SECRET=%s\n' "$SECRET_MARK" > "$IDENT"
+  chmod 600 "$ENV_UNDER_TEST" "$IDENT"; chown "$ORIG_OWNER" "$ENV_UNDER_TEST" "$IDENT"
+  BK="$ENV_DIR/backup"; : > "$EVENTS_FILE"
+  RESTART_CALLS=0; FORCE_ALL_UNHEALTHY=0; REQUIRE_ENV_FILE=""
+}
+# 서비스 매핑(복원된 파일 → 재시작할 서비스)은 운영 경로 이름(/etc/f2r/env 등)으로 판단한다.
+# 그래서 E4/E6/E7 은 임시 경로로 복원 자체(내용·소유자·권한)를 검증하고, E5/E8 은 복원 결과를
+# 스텁으로 주입해 재시작 순서·서비스 매핑만 검증한다.
+
+e1_snapshot_saves_verified_copies() {
+  env_fixture; rm -f "$IDENT"   # identity 는 부재 상태
+  # when
+  f2r_env_snapshot "$BK" "$ENV_UNDER_TEST" "$IDENT" >/dev/null; local rc=$?
+  # then
+  assert_eq "0" "$rc" "E1: snapshot succeeds"
+  assert_eq "700" "$(stat -c %a "$BK")" "E1: backup dir is root-only (0700)"
+  assert_eq "$(sha256sum < "$ENV_UNDER_TEST")" "$(sha256sum < "$BK/env")" "E1: backup content identical"
+  assert_eq "1" "$(grep -c -P "identity.env\tabsent" "$BK/MANIFEST.tsv")" "E1: absent file recorded as absent"
+  assert_eq "$ORIG_OWNER 600" "$(stat -c '%u:%g %a' "$BK/env")" "E1: backup keeps owner and mode"
+  rm -rf "$ENV_DIR"
+}
+echo "--- E1: env snapshot saves verified copies, records absent files ---"
+e1_snapshot_saves_verified_copies
+
+e2_snapshot_failure_is_not_success() {
+  env_fixture
+  # given: 읽을 수 없는/일반 파일이 아닌 대상 (디렉터리)
+  mkdir "$ENV_DIR/notafile"
+  # when
+  local out; out=$(f2r_env_snapshot "$BK" "$ENV_UNDER_TEST" "$ENV_DIR/notafile" 2>&1); local rc=$?
+  # then
+  assert_eq "1" "$rc" "E2: snapshot of a non-regular file fails (deploy must abort)"
+  assert_eq "1" "$(echo "$out" | grep -c 'not a readable regular file')" "E2: failure is reported"
+  # given: 백업 위치를 만들 수 없음 (경로 중간이 일반 파일)
+  : > "$ENV_DIR/blocker"
+  f2r_env_snapshot "$ENV_DIR/blocker/sub" "$ENV_UNDER_TEST" >/dev/null 2>&1; rc=$?
+  assert_eq "1" "$rc" "E2: cannot create backup dir -> failure"
+  rm -rf "$ENV_DIR"
+}
+echo "--- E2: backup failure is never treated as success ---"
+e2_snapshot_failure_is_not_success
+
+e3_normal_deploy_does_not_touch_unchanged_env() {
+  env_fixture
+  f2r_env_snapshot "$BK" "$ENV_UNDER_TEST" "$IDENT" >/dev/null
+  local ino_before; ino_before=$(stat -c %i "$ENV_UNDER_TEST")
+  # when: env 변경 없이(정상 배포 가정) 복원 판정
+  f2r_env_restore_changed "$BK" >/dev/null; local rc=$?
+  # then
+  assert_eq "0" "$rc" "E3: restore check succeeds"
+  assert_eq "0" "${#F2R_ENV_RESTORED_FILES[@]}" "E3: nothing restored when env is unchanged"
+  assert_eq "$ino_before" "$(stat -c %i "$ENV_UNDER_TEST")" "E3: unchanged env file was not overwritten (same inode)"
+  : > "$EVENTS_FILE"; RESTART_CALLS=0
+  f2r_env_rollback_after_failed_deploy "$BK" f2r-app.service "http://x/health" 1 0 1 >/dev/null; rc=$?
+  assert_eq "0" "$rc" "E3: rollback helper is a no-op success when env unchanged"
+  assert_eq "0" "$RESTART_CALLS" "E3: no extra service restart when env unchanged"
+  rm -rf "$ENV_DIR"
+}
+echo "--- E3: unchanged env is not overwritten, no extra restart ---"
+e3_normal_deploy_does_not_touch_unchanged_env
+
+e4_failed_deploy_restores_env_then_restarts_then_checks_health() {
+  env_fixture
+  # given: 현재 jar 정상, 새 jar 비정상, 배포 도중 env 가 키 동기화로 바뀜 (+ 소유자/권한도 변경됨)
+  echo GOOD > "$ENV_DIR/current.jar"; echo BAD > "$ENV_DIR/new.jar"; CURRENT_JAR_PATH="$ENV_DIR/current.jar"
+  REQUIRE_ENV_FILE=""
+  f2r_env_snapshot "$BK" "$ENV_UNDER_TEST" "$IDENT" >/dev/null
+  local before_sha; before_sha=$(sha256sum < "$ENV_UNDER_TEST")
+  printf 'GOODENV\nMETA_KEY=%s\n' "$SECRET_MARK" > "$ENV_UNDER_TEST"; chmod 644 "$ENV_UNDER_TEST"
+  # when: 배포 실패(jar 롤백 rc=1) 후 env 롤백
+  f2r_deploy_with_rollback "$ENV_DIR/current.jar" "$ENV_DIR/new.jar" "$ENV_DIR/current.jar.previous" f2r-app.service "http://x/health" 2 0 >/dev/null 2>&1
+  local jar_rc=$?
+  : > "$EVENTS_FILE"; RESTART_CALLS=0; REQUIRE_ENV_FILE="$ENV_UNDER_TEST"
+  local out; out=$(f2r_env_rollback_after_failed_deploy "$BK" f2r-app.service "http://x/health" 2 0 1 2>&1); local rc=$?
+  # then
+  assert_eq "1" "$jar_rc" "E4: jar rollback behaviour preserved (rc=1, previous jar restored)"
+  assert_eq "GOOD" "$(cat "$ENV_DIR/current.jar")" "E4: jar rolled back as before"
+  assert_eq "$before_sha" "$(sha256sum < "$ENV_UNDER_TEST")" "E4: env content restored byte-identical"
+  assert_eq "$ORIG_OWNER 600" "$(stat -c '%u:%g %a' "$ENV_UNDER_TEST")" "E4: env owner and mode restored"
+  assert_eq "0" "$([ -e "$ENV_UNDER_TEST".f2r-restore.* ] 2>/dev/null && echo 1 || echo 0)" "E4: no temp file left behind"
+  assert_eq "0" "$(echo "$out" | grep -c "$SECRET_MARK")" "E4: no secret value in log output"
+  rm -rf "$ENV_DIR"
+}
+echo "--- E4: failed deploy -> jar rollback kept, env restored byte/owner/mode-identical ---"
+e4_failed_deploy_restores_env_then_restarts_then_checks_health
+
+e5_order_restore_then_restart_then_health() {
+  env_fixture
+  : > "$EVENTS_FILE"; RESTART_CALLS=0
+  echo GOOD > "$ENV_DIR/current.jar"; CURRENT_JAR_PATH="$ENV_DIR/current.jar"
+  f2r_env_restore_changed() {
+    echo "restore" >> "$EVENTS_FILE"
+    printf 'GOODENV' > "$ENV_UNDER_TEST"      # 복원 결과 = 정상 env
+    F2R_ENV_RESTORED_FILES=(/etc/f2r/env)
+    return 0
+  }
+  REQUIRE_ENV_FILE="$ENV_UNDER_TEST"
+  printf 'BADENV' > "$ENV_UNDER_TEST"           # 복원 전에는 unhealthy (롤백 후에도 실패하던 상황 = rc 2 재현)
+  # when
+  f2r_env_rollback_after_failed_deploy "$BK" f2r-app.service "http://x/health" 2 0 1 >/dev/null; local rc=$?
+  # then
+  assert_eq "0" "$rc" "E5: becomes healthy after env restore (env was the cause of the failed rollback)"
+  assert_eq "restore" "$(sed -n 1p "$EVENTS_FILE")" "E5: step 1 is env restore"
+  assert_eq "restart:f2r-app.service:env=GOODENV" "$(sed -n 2p "$EVENTS_FILE")" "E5: step 2 restart happens AFTER restore (sees restored env)"
+  assert_eq "1" "$RESTART_CALLS" "E5: exactly one restart"
+  # given: 복원은 됐지만 그래도 unhealthy
+  FORCE_ALL_UNHEALTHY=1; DIAG_DUMPS=0
+  f2r_env_rollback_after_failed_deploy "$BK" f2r-app.service "http://x/health" 2 0 1 >/dev/null 2>&1; rc=$?
+  assert_eq "2" "$rc" "E5: still unhealthy after env restore -> failure (rc 2), not success"
+  assert_eq "1" "$([ "$DIAG_DUMPS" -ge 1 ] && echo 1 || echo 0)" "E5: diagnostics dumped"
+  unset -f f2r_env_restore_changed
+  source "$SCRIPT_DIR/f2r_app_guard.sh"        # 스텁 제거: 실제 함수 재로드 (스텁 오버라이드 복구는 아래에서 다시)
+  restub_services
+  rm -rf "$ENV_DIR"
+}
+# source 로 가드를 다시 읽으면 서비스 스텁이 덮이므로 복구 함수를 둔다.
+restub_services() {
+  f2r__service_restart() { RESTART_CALLS=$((RESTART_CALLS + 1)); echo "restart:$1:env=$(cat "$ENV_UNDER_TEST" 2>/dev/null | head -c 40)" >> "$EVENTS_FILE"; }
+  f2r__service_status_dump() { DIAG_DUMPS=$((DIAG_DUMPS + 1)); }
+  f2r__service_journal_dump() { :; }
+  f2r__service_main_pid() { echo "1000"; }
+}
+echo "--- E5: order is restore -> restart -> health; unhealthy after restore is a failure ---"
+e5_order_restore_then_restart_then_health
+
+e6_restore_failure_is_reported_and_blocks_restart() {
+  env_fixture
+  f2r_env_snapshot "$BK" "$ENV_UNDER_TEST" "$IDENT" >/dev/null
+  printf 'CHANGED' > "$ENV_UNDER_TEST"
+  : > "$EVENTS_FILE"; RESTART_CALLS=0
+  # given: 백업 사본이 손상됨
+  printf 'corrupted' > "$BK/env"
+  # when
+  local out; out=$(f2r_env_rollback_after_failed_deploy "$BK" f2r-app.service "http://x/health" 1 0 1 2>&1); local rc=$?
+  # then
+  assert_eq "2" "$rc" "E6: corrupted backup -> restore failure reported as rc 2"
+  assert_eq "1" "$(echo "$out" | grep -c 'ENV RESTORE FAILED')" "E6: explicit ENV RESTORE FAILED error"
+  assert_eq "0" "$RESTART_CALLS" "E6: service NOT restarted after a failed restore"
+  assert_eq "CHANGED" "$(cat "$ENV_UNDER_TEST")" "E6: live env left as-is (no half-written file)"
+  # given: 매니페스트 없음
+  rm -f "$BK/MANIFEST.tsv"
+  f2r_env_rollback_after_failed_deploy "$BK" f2r-app.service "http://x/health" 1 0 1 >/dev/null 2>&1; rc=$?
+  assert_eq "2" "$rc" "E6: missing manifest -> failure, not success"
+  rm -rf "$ENV_DIR"
+}
+echo "--- E6: restore failure (corrupt backup / missing manifest) is never success, no restart ---"
+e6_restore_failure_is_reported_and_blocks_restart
+
+e7_file_created_by_deploy_is_removed_and_service_mapping() {
+  env_fixture; rm -f "$IDENT"
+  f2r_env_snapshot "$BK" "$ENV_UNDER_TEST" "$IDENT" >/dev/null
+  # given: 배포가 identity env 를 새로 만들고 env 도 바꿈
+  printf 'WIKI_IDENTITY_SECRET=%s\n' "$SECRET_MARK" > "$IDENT"; printf 'X' > "$ENV_UNDER_TEST"
+  # when
+  f2r_env_restore_changed "$BK" > "$ENV_DIR/restore.log" 2>&1; local rc=$?
+  local out; out=$(cat "$ENV_DIR/restore.log")
+  # then
+  assert_eq "0" "$rc" "E7: restore succeeds"
+  assert_eq "0" "$([ -e "$IDENT" ] && echo 1 || echo 0)" "E7: file that did not exist before the deploy is removed"
+  assert_eq "2" "${#F2R_ENV_RESTORED_FILES[@]}" "E7: both changed files reported restored"
+  assert_eq "0" "$(echo "$out" | grep -c "$SECRET_MARK")" "E7: no secret value in log output"
+  rm -rf "$ENV_DIR"
+}
+echo "--- E7: file created during deploy is removed on restore ---"
+e7_file_created_by_deploy_is_removed_and_service_mapping
+
+e8_service_mapping_restarts_only_affected_services() {
+  env_fixture
+  : > "$EVENTS_FILE"; RESTART_CALLS=0
+  # given: identity env 만 복원된 상황
+  f2r_env_restore_changed() { F2R_ENV_RESTORED_FILES=(/etc/buildit-wiki-identity.env); return 0; }
+  # when
+  f2r_env_rollback_after_failed_deploy "$BK" f2r-app.service "http://x/health" 1 0 1 >/dev/null; local rc=$?
+  # then
+  assert_eq "0" "$rc" "E8: success"
+  assert_eq "1" "$(grep -c '^restart:buildit-wiki.service' "$EVENTS_FILE")" "E8: only buildit-wiki restarted"
+  assert_eq "0" "$(grep -c '^restart:f2r-app.service' "$EVENTS_FILE")" "E8: Spring not restarted when /etc/f2r/env is unchanged"
+  unset -f f2r_env_restore_changed; source "$SCRIPT_DIR/f2r_app_guard.sh"; restub_services
+  rm -rf "$ENV_DIR"
+}
+echo "--- E8: only the services whose env was restored are restarted ---"
+e8_service_mapping_restarts_only_affected_services
+
+e9_prune_keeps_latest_n() {
+  local root; root=$(mktemp -d)
+  mkdir "$root/20260101-000000-1" "$root/20260102-000000-1" "$root/20260103-000000-1" "$root/20260104-000000-1"
+  f2r_env_prune_backups "$root" 2
+  assert_eq "2" "$(find "$root" -mindepth 1 -maxdepth 1 -type d | wc -l)" "E9: only the latest N backups kept"
+  assert_eq "1" "$([ -d "$root/20260104-000000-1" ] && echo 1 || echo 0)" "E9: newest backup kept"
+  assert_eq "0" "$([ -d "$root/20260101-000000-1" ] && echo 1 || echo 0)" "E9: oldest backup pruned"
+  f2r_env_prune_backups "$root/does-not-exist" 2; assert_eq "0" "$?" "E9: missing root is harmless"
+  rm -rf "$root"
+}
+echo "--- E9: old env backups are pruned (secret copies do not accumulate) ---"
+e9_prune_keeps_latest_n
+
+# E10: 워크플로 계약 — 실제 배포 스크립트 안에서 호출 순서가 지켜지는지 정적 확인.
+e10_workflow_contract() {
+  local wf="$SCRIPT_DIR/../../.github/workflows/deploy-ec2.yml"
+  local snap guard ident rollback
+  guard=$(grep -n 'cat scripts/deploy/f2r_app_guard.sh >> /tmp/deploy-buildit.sh' "$wf" | head -1 | cut -d: -f1)
+  snap=$(grep -n 'f2r_env_snapshot "\$F2R_ENV_BACKUP_DIR"' "$wf" | head -1 | cut -d: -f1)
+  ident=$(grep -n "install -m 600 -o root -g root /dev/null /etc/buildit-wiki-identity.env" "$wf" | head -1 | cut -d: -f1)
+  rollback=$(grep -n 'f2r_env_rollback_after_failed_deploy "\$F2R_ENV_BACKUP_DIR"' "$wf" | head -1 | cut -d: -f1)
+  assert_eq "1" "$([ -n "$guard" ] && [ -n "$snap" ] && [ "$guard" -lt "$snap" ] && echo 1 || echo 0)" "E10: guard functions are defined before the snapshot call"
+  assert_eq "1" "$([ -n "$snap" ] && [ -n "$ident" ] && [ "$snap" -lt "$ident" ] && echo 1 || echo 0)" "E10: snapshot runs before any env modification (identity rewrite)"
+  assert_eq "1" "$([ -n "$rollback" ] && echo 1 || echo 0)" "E10: failure path calls the env rollback"
+  assert_eq "1" "$(grep -c 'ABORT env_backup_failed' "$wf")" "E10: backup failure aborts the deploy"
+  local first_edit; first_edit=$(grep -n "grep -vE '\^META_VISION_API_KEY=' /etc/f2r/env" "$wf" | head -1 | cut -d: -f1)
+  assert_eq "1" "$([ "$snap" -lt "$first_edit" ] && echo 1 || echo 0)" "E10: snapshot runs before the key syncs"
+}
+echo "--- E10: workflow call order contract ---"
+e10_workflow_contract
 
 echo
 if [ "$FAILURES" -eq 0 ]; then

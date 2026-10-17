@@ -339,6 +339,17 @@ APP_VIDEO_FFPROBE_PATH=/usr/local/bin/ffprobe
   바꿔 CASE 1(정상)/2(첫 배포 실패, 백업 없음)/3(실패 후 롤백 성공)/4(롤백까지 실패)를 로컬에서
   검증한다. `.github/workflows/deploy-ec2.yml`은 이 파일을 그대로 잘라 넣어(cat) EC2에서 실행되는
   스크립트를 만들므로, 테스트한 코드와 실제 배포되는 코드가 갈라질 위험이 없다.
+- **env 백업·자동 복원** (jar 롤백과 별개로 추가): 배포 스크립트 맨 앞(Wiki identity env 재작성·키 동기화·
+  스위치 처리보다 먼저)에서 `/etc/f2r/env`와 `/etc/buildit-wiki-identity.env`를
+  `/var/backups/f2r-deploy-env/<시각>-<pid>/`(0700)에 소유자·권한 포함으로 복사하고 sha256으로 검증한다.
+  **백업이 하나라도 실패하면 아무것도 바꾸기 전에 배포를 중단**한다(`[DEPLOY] ABORT env_backup_failed`, exit 3).
+  배포가 실패하면(jar 롤백 이후) 스냅샷과 내용·소유자·권한이 **달라진 파일만** 임시 파일 → 검증 → `mv`로 복원하고
+  다시 검증한다(변경 없는 파일은 건드리지 않는다. 배포 중 새로 생긴 파일은 제거). 복원된 파일이 있을 때만
+  `f2r-app`(identity env는 `buildit-wiki`) 재시작 → PID-aware health 확인 순서로 진행한다. 복원 실패·손상된
+  백업·복원 후 unhealthy는 성공으로 처리하지 않고 rc 2("사람 개입 필요")로 끝낸다. 성공한 배포 후 최신 5개만 남긴다.
+  로그에는 파일 이름과 상태 단어만 남기고 값·해시는 출력하지 않는다. HWPX/ASSIST 스위치의 기존
+  `env.bak-*` 백업은 그대로 만들지만 복원은 이 스냅샷 하나로 통일했다.
+  한계: systemd unit 파일·Wiki 앱 파일은 복원 대상이 아니다(env 두 개만).
 - **동시 배포 방지**: `deploy-ec2.yml`에 `concurrency: { group: production-deploy, cancel-in-progress:
   false }`를 걸어, 두 번째 실행(자동이든 수동이든)이 첫 번째를 취소하지 않고 순서를 기다리게 한다.
 - **배포 전 테스트 게이트**: `deploy-ec2.yml`이 `build-check.yml`과 같은(MySQL 불필요) 테스트 목록을

@@ -214,3 +214,151 @@ f2r_deploy_with_rollback() {
   f2r_dump_diagnostics "$service_name"
   return 2
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# env 파일 백업·자동 복원 (jar 롤백은 위 f2r_deploy_with_rollback 이 그대로 담당한다)
+#
+# 왜 있는가: jar 롤백만으로는 배포 도중 바뀐 /etc/f2r/env(키 동기화, HWPX/ASSIST 스위치,
+# OPENROUTER 동기화)가 되돌려지지 않는다. 배포 시작 전에 env를 스냅샷하고, 배포가 실패했을 때만
+# "배포 도중 실제로 바뀐 파일"을 스냅샷 상태로 되돌린 뒤 서비스를 재시작·헬스 확인한다.
+# 비밀값은 절대 출력하지 않는다(파일 이름·상태 단어만 출력, 내용·해시는 출력 안 함).
+# ─────────────────────────────────────────────────────────────────────────────
+
+F2R_ENV_BACKUP_KEEP=5
+F2R_ENV_RESTORED_FILES=()
+
+f2r__sha256() { sha256sum "$1" 2>/dev/null | cut -d' ' -f1; }
+f2r__meta() { stat -c '%u:%g %a' "$1" 2>/dev/null; }
+
+# f2r_env_snapshot <backup_dir> <file>...
+# 각 파일을 소유자·권한까지 보존해 복사하고 sha256으로 복사본을 검증한다. 존재하지 않는 파일은
+# "absent"로 기록한다(= 배포 중 새로 생기면 복원 때 제거). 하나라도 실패하면 1 — 호출자는 배포를 중단한다.
+f2r_env_snapshot() {
+  local dir="$1"; shift
+  local manifest="$dir/MANIFEST.tsv" f name src_sha bak_sha meta
+  install -d -m 700 "$dir" || { echo "::error::env backup: cannot create backup dir"; return 1; }
+  : > "$manifest" && chmod 600 "$manifest" || { echo "::error::env backup: cannot create manifest"; return 1; }
+  for f in "$@"; do
+    name=$(basename "$f")
+    if [ ! -e "$f" ]; then
+      printf '%s\tabsent\t-\t-\t-\n' "$f" >> "$manifest" || return 1
+      echo "env backup: ${name} absent (recorded)"
+      continue
+    fi
+    if [ ! -f "$f" ] || [ ! -r "$f" ]; then
+      echo "::error::env backup: ${name} is not a readable regular file"
+      return 1
+    fi
+    cp -p "$f" "$dir/$name" || { echo "::error::env backup: copy of ${name} failed"; return 1; }
+    src_sha=$(f2r__sha256 "$f"); bak_sha=$(f2r__sha256 "$dir/$name")
+    if [ -z "$src_sha" ] || [ "$src_sha" != "$bak_sha" ]; then
+      echo "::error::env backup: ${name} copy failed verification (changed during backup or unreadable)"
+      return 1
+    fi
+    meta=$(f2r__meta "$f") || { echo "::error::env backup: stat of ${name} failed"; return 1; }
+    printf '%s\tpresent\t%s\t%s\t%s\n' "$f" "${meta% *}" "${meta#* }" "$src_sha" >> "$manifest" || return 1
+    echo "env backup: ${name} saved and verified"
+  done
+  return 0
+}
+
+# f2r_env_restore_changed <backup_dir>
+# 스냅샷과 내용·소유자·권한이 모두 같은 파일은 건드리지 않는다. 다른 파일만 임시 파일 → 검증 →
+# mv(원자적)로 복원하고 다시 검증한다. 복원된 파일은 F2R_ENV_RESTORED_FILES 에 담는다.
+# 하나라도 실패하면 1 (성공으로 취급하지 않는다).
+f2r_env_restore_changed() {
+  local dir="$1" manifest="$1/MANIFEST.tsv" f state own mode sha name tmp rc=0
+  F2R_ENV_RESTORED_FILES=()
+  if [ ! -r "$manifest" ]; then
+    echo "::error::env restore: backup manifest missing/unreadable"
+    return 1
+  fi
+  while IFS=$'\t' read -r f state own mode sha; do
+    [ -n "$f" ] || continue
+    name=$(basename "$f")
+    if [ "$state" = absent ]; then
+      if [ -e "$f" ]; then
+        if rm -f -- "$f" && [ ! -e "$f" ]; then
+          echo "env restore: ${name} did not exist before the deploy — removed"
+          F2R_ENV_RESTORED_FILES+=("$f")
+        else
+          echo "::error::env restore: could not remove ${name}"; rc=1
+        fi
+      else
+        echo "env restore: ${name} unchanged (still absent)"
+      fi
+      continue
+    fi
+    if [ -f "$f" ] && [ "$(f2r__sha256 "$f")" = "$sha" ] && [ "$(f2r__meta "$f")" = "$own $mode" ]; then
+      echo "env restore: ${name} unchanged — not touched"
+      continue
+    fi
+    if [ ! -f "$dir/$name" ] || [ "$(f2r__sha256 "$dir/$name")" != "$sha" ]; then
+      echo "::error::env restore: backup of ${name} missing or corrupted — NOT restoring"
+      rc=1; continue
+    fi
+    tmp="${f}.f2r-restore.$$"
+    if cp "$dir/$name" "$tmp" && chown "$own" "$tmp" && chmod "$mode" "$tmp" \
+       && [ "$(f2r__sha256 "$tmp")" = "$sha" ] && mv -f "$tmp" "$f" \
+       && [ "$(f2r__sha256 "$f")" = "$sha" ] && [ "$(f2r__meta "$f")" = "$own $mode" ]; then
+      echo "env restore: ${name} restored to the pre-deploy state (content, owner, mode verified)"
+      F2R_ENV_RESTORED_FILES+=("$f")
+    else
+      rm -f -- "$tmp"
+      echo "::error::env restore: ${name} restore FAILED"
+      rc=1
+    fi
+  done < "$manifest"
+  return $rc
+}
+
+# f2r_env_rollback_after_failed_deploy <backup_dir> <service> <health_url> [attempts sleep max_gen]
+# 배포 실패 후 호출: env 복원 → (복원된 파일이 있을 때만) 서비스 재시작 → 헬스 확인 순서.
+#   0  env 변경 없음 또는 복원·재시작·헬스 모두 성공
+#   2  env 복원 실패 또는 복원 후 헬스 실패 — 사람 개입 필요
+# Wiki identity env가 복원되면 buildit-wiki 만 재시작한다(실패해도 Spring 판정에는 영향 없음).
+f2r_env_rollback_after_failed_deploy() {
+  local dir="$1" service="$2" url="$3"
+  local attempts="${4:-$F2R_HEALTH_DEFAULT_ATTEMPTS}" sleep_secs="${5:-$F2R_HEALTH_DEFAULT_SLEEP_SECS}"
+  local max_generations="${6:-$F2R_MAX_PID_GENERATIONS}"
+  local spring=0 wiki=0 f
+
+  if ! f2r_env_restore_changed "$dir"; then
+    echo "::error::ENV RESTORE FAILED — env files may be in a mixed state. Manual recovery from ${dir} required."
+    return 2
+  fi
+  if [ "${#F2R_ENV_RESTORED_FILES[@]}" -eq 0 ]; then
+    echo "env files unchanged by this deploy — no env restore needed"
+    return 0
+  fi
+  for f in "${F2R_ENV_RESTORED_FILES[@]}"; do
+    case "$f" in
+      /etc/f2r/env) spring=1 ;;
+      /etc/buildit-wiki-identity.env) wiki=1 ;;
+    esac
+  done
+  if [ "$wiki" -eq 1 ]; then
+    f2r__service_restart buildit-wiki.service || echo "::warning::buildit-wiki restart after env restore failed (non-fatal)"
+  fi
+  if [ "$spring" -eq 1 ]; then
+    echo "Restarting ${service} with the restored env..."
+    f2r__service_restart "$service"
+    if ! f2r_wait_for_health_pid_aware "$service" "$url" "$attempts" "$sleep_secs" "$max_generations"; then
+      echo "::error::${service} unhealthy even after env restore — Production may be down. Manual EC2 recovery required."
+      f2r_dump_diagnostics "$service"
+      return 2
+    fi
+    echo "${service} healthy after env restore."
+  fi
+  return 0
+}
+
+# 성공한 배포 뒤 오래된 env 백업 디렉터리를 정리한다(비밀 사본이 쌓이지 않게). 최신 N개 유지.
+f2r_env_prune_backups() {
+  local root="$1" keep="${2:-$F2R_ENV_BACKUP_KEEP}" d
+  [ -d "$root" ] || return 0
+  find "$root" -mindepth 1 -maxdepth 1 -type d | sort | head -n "-${keep}" | while IFS= read -r d; do
+    rm -rf -- "$d"
+  done
+  return 0
+}
