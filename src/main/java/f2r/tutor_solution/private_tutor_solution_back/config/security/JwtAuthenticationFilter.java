@@ -30,10 +30,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtTokenProvider tokenProvider;
   private final CookieUtil cookieUtil;
+  // ADMIN 세션의 서버 측 유효성 확인(JPA 의존 → ObjectProvider 지연 조회, @WebMvcTest 슬라이스 호환).
+  private final org.springframework.beans.factory.ObjectProvider<
+      f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidator> adminSessionValidator;
 
   public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CookieUtil cookieUtil) {
+    this(tokenProvider, cookieUtil, null);
+  }
+
+  public JwtAuthenticationFilter(
+      JwtTokenProvider tokenProvider,
+      CookieUtil cookieUtil,
+      org.springframework.beans.factory.ObjectProvider<
+          f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidator> adminSessionValidator) {
     this.tokenProvider = tokenProvider;
     this.cookieUtil = cookieUtil;
+    this.adminSessionValidator = adminSessionValidator;
   }
 
   @Override
@@ -48,6 +60,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       if (token.isPresent()) {
         try {
           JwtTokenProvider.AuthenticatedPrincipal principal = tokenProvider.parse(token.get());
+          var validator = adminSessionValidator == null ? null : adminSessionValidator.getIfAvailable();
+          if (validator != null && !validator.isValid(principal)) {
+            // ID·비밀번호가 바뀌었거나 stamp 없는 이전 ADMIN 세션 — 인증 미설정으로 통과(보호 경로는 401).
+            log.debug("ADMIN 세션 무효(자격 증명 변경)");
+            chain.doFilter(request, response);
+            return;
+          }
           var authority = new SimpleGrantedAuthority("ROLE_" + principal.role());
           var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of(authority));
           SecurityContextHolder.getContext().setAuthentication(auth);

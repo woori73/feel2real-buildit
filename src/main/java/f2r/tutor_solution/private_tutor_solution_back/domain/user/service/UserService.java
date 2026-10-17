@@ -60,11 +60,14 @@ public class UserService {
     if (loginId == null || loginId.isBlank()) {
       return false;
     }
-    return !userRepository.existsByLoginId(loginId.trim());
+    return !ReservedLoginIds.isReserved(loginId) && !userRepository.existsByLoginId(loginId.trim());
   }
 
   @Transactional
   public UserResponse createStudent(CreateStudentRequest request) {
+    if (ReservedLoginIds.isReserved(request.loginId())) {
+      throw new IllegalArgumentException("사용할 수 없는 아이디입니다.");
+    }
     if (userRepository.existsByLoginId(request.loginId())) {
       throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
     }
@@ -100,6 +103,9 @@ public class UserService {
 
   @Transactional
   public UserResponse createTutor(CreateTutorRequest request) {
+    if (ReservedLoginIds.isReserved(request.loginId())) {
+      throw new IllegalArgumentException("사용할 수 없는 아이디입니다.");
+    }
     if (userRepository.existsByLoginId(request.loginId())) {
       throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
     }

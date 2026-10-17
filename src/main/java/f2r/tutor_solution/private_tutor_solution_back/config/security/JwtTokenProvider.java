@@ -27,6 +27,7 @@ public class JwtTokenProvider {
 
   private static final String CLAIM_LOGIN_ID = "loginId";
   private static final String CLAIM_ROLE = "role";
+  private static final String CLAIM_CREDENTIAL_STAMP = "cv";
 
   private final SecretKey signingKey;
   private final long expirationSeconds;
@@ -43,8 +44,18 @@ public class JwtTokenProvider {
 
   /** 사용자 정보를 담아 새 토큰을 발급한다. */
   public String issue(Long userId, String loginId, String role) {
+    return issue(userId, loginId, role, null);
+  }
+
+  /**
+   * credentialStamp가 있으면 claim으로 담는다. ADMIN 토큰은 이 값으로 "발급 이후 ID·비밀번호가 바뀌지 않았는지"를
+   * 매 요청 확인한다({@code AdminSessionValidator}). 일반 회원·TUTOR 토큰은 stamp 없이 기존과 동일하다.
+   */
+  public String issue(Long userId, String loginId, String role, String credentialStamp) {
     Instant now = Instant.now();
-    return Jwts.builder()
+    var builder = Jwts.builder();
+    if (credentialStamp != null) builder.claim(CLAIM_CREDENTIAL_STAMP, credentialStamp);
+    return builder
         .subject(String.valueOf(userId))
         .claim(CLAIM_LOGIN_ID, loginId)
         .claim(CLAIM_ROLE, role)
@@ -68,7 +79,7 @@ public class JwtTokenProvider {
     Long userId = Long.parseLong(claims.getSubject());
     String loginId = claims.get(CLAIM_LOGIN_ID, String.class);
     String role = claims.get(CLAIM_ROLE, String.class);
-    return new AuthenticatedPrincipal(userId, loginId, role);
+    return new AuthenticatedPrincipal(userId, loginId, role, claims.get(CLAIM_CREDENTIAL_STAMP, String.class));
   }
 
   /** 만료 시각 — 쿠키 Max-Age 동기화용. */
@@ -77,6 +88,9 @@ public class JwtTokenProvider {
   }
 
   /** 필터/컨트롤러가 공유하는 인증 주체. SecurityContext의 principal로 들어간다. */
-  public record AuthenticatedPrincipal(Long userId, String loginId, String role) {
+  public record AuthenticatedPrincipal(Long userId, String loginId, String role, String credentialStamp) {
+    public AuthenticatedPrincipal(Long userId, String loginId, String role) {
+      this(userId, loginId, role, null);
+    }
   }
 }
