@@ -1,0 +1,31 @@
+name: dc public nav links probe (anonymous GET only, read-only)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-public-links.yml']
+permissions:
+  contents: read
+concurrency:
+  group: dc-public-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Public home navigation as served in production
+        run: |
+          H=https://feel2real.co.kr
+          for p in / /home /wiki /wiki/ /exam-analysis; do
+            echo "=== $p"
+            curl -s -m 30 -o /tmp/p.html -w 'code=%{http_code} redirect=%{redirect_url} size=%{size_download}\n' "$H$p"
+            grep -o -m1 '<title>[^<]*</title>' /tmp/p.html || echo NO_TITLE
+            echo "label counts: 내신위키=$(grep -o '내신위키' /tmp/p.html | wc -l) 모의고사위키=$(grep -o '모의고사위키' /tmp/p.html | wc -l)"
+            grep -o '<a [^>]*href="/wiki[^"]*"[^>]*>[^<]*' /tmp/p.html | head -8
+          done
+          echo "=== nav-links block on /"
+          curl -s -m 30 "$H/" | sed -n '/class="nav-links"/,/<\/div>/p' | head -12
+          echo "=== mobile menu block on /"
+          curl -s -m 30 "$H/" | sed -n '/id="biMenu"/,/<\/div>/p' | head -14
+          echo "=== wiki page nav/title words"
+          curl -s -m 30 "$H/wiki" | grep -o -E '내신위키|모의고사위키|BuildIt Wiki' | sort | uniq -c
