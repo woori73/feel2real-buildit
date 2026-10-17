@@ -72,6 +72,7 @@ jobs:
           src/test/js/assistant_home_contract.test.js
           src/test/js/academy_preview_link.test.js
           src/test/js/academy_public_consult.test.js
+          src/test/js/admin_account.test.js
           src/test/js/tutor_academy_inquiries.test.js
           src/test/js/exam_insight.test.js
           src/test/js/home_agent_exam_contract.test.js
@@ -134,6 +135,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAssistantEditServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AnalyticsCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.AdminTopnavMenuContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminCredentialServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidatorTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.controller.AdminAnalyticsControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.inquiry.InquiryInputTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.inquiry.AcademyInquiryServiceTest"
@@ -422,6 +425,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantEditMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantResetRestartMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.AdminCredentialRotationMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchOffMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchAllowListMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantAcademyModeMySqlTest"

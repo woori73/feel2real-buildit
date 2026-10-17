@@ -71,6 +71,9 @@ public class NewStartIdPwSignupService {
     if (nickname.length() < 2 || nickname.length() > 50) {
       return Result.fail("카페 닉네임을 정확히 입력해 주세요.");
     }
+    if (f2r.tutor_solution.private_tutor_solution_back.domain.user.service.ReservedLoginIds.isReserved(loginId)) {
+      return Result.fail("사용할 수 없는 아이디입니다.");
+    }
     if (userRepository.existsByLoginId(loginId)) {
       return Result.fail("이미 가입된 아이디입니다. 로그인해 주세요.");
     }

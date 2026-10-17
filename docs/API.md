@@ -839,8 +839,23 @@ LMS 주소가 성립하지 않는다(404).
   - `AuthController.confirmPasswordReset`
   - `PasswordResetService.confirmReset`
 
+### ✅ POST /api/admin/account/credentials
+
+- 목적: 로그인한 ADMIN이 본인 계정의 **로그인 ID와 비밀번호를 함께 교체**한다(`/admin/account` 화면). 대상은 요청 본문이 아니라 인증된 세션의 userId이며, 같은 users 행을 갱신하므로 권한·user_id·운영 데이터는 유지된다.
+- 현재 사용처: `templates/admin/account.html`, `static/js/admin_account.js`
+- 인증/권한: ADMIN 전용(`/api/admin/**`). 현재 비밀번호를 다시 확인한다.
+- Request: JSON `{ "currentPassword", "newLoginId", "confirmLoginId", "newPassword", "confirmPassword" }` (ID도 두 번 입력 — 오타로 접근을 잃지 않게)
+  - 새 ID: 영문·숫자로 시작하는 6~50자(영문·숫자·`.`·`_`·`-`), 현재 ID와 달라야 하며 중복·예약 ID(`ReservedLoginIds`, 폐기된 최초 관리자 ID) 불가
+  - 새 비밀번호: 16자 이상·72바이트 이하, 확인값 일치, 현재 비밀번호와 달라야 하며 새 ID를 포함할 수 없음
+- Response:
+  - 성공 `204` + `ACCESS_TOKEN` 쿠키 삭제. 이전 ID·비밀번호와 기존 모든 ADMIN 세션은 즉시 무효.
+  - `401` 현재 비밀번호 불일치 / `403` ADMIN 아님 / `400` 입력 규칙 위반 / `409` ID 중복 / `429` 현재 비밀번호 반복 오류(userId별 10분 내 5회)
+- 세션 무효화 방식: ADMIN 토큰에만 자격 증명 stamp(`cv`)를 담고 매 요청 DB의 현재 계정과 비교한다(`AdminSessionValidator`). 일반 회원·TUTOR 토큰은 검사 대상이 아니다. 스위치: `app.security.admin-session-binding.enabled`(기본 true).
+- 관련 코드: `AdminAccountController`, `AdminCredentialService`, `AdminSessionValidator`, `JwtAuthenticationFilter`
+
 ### ✅ POST /api/auth/admin/password-change
 
+- ⚠ 최초 ID(admin-f2r)에 고정된 구 경로다. 로그인 ID를 교체한 뒤에는 대상이 없어 403을 반환하며, 이후 변경은 `POST /api/admin/account/credentials`를 쓴다.
 - 목적: 운영 ADMIN(admin-f2r) 비밀번호를 `/admin/login` 화면에서 변경한다. 대상은 서버가 고정하므로 요청에 userId/role이 없고, 기존 비밀번호를 모르면 변경할 수 없다.
 - 현재 사용처:
   - `templates/admin/login.html`의 비밀번호 변경 폼

@@ -78,6 +78,8 @@ public class SecurityConfig {
       org.springframework.beans.factory.ObjectProvider<
           f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository> academyRepository,
       org.springframework.beans.factory.ObjectProvider<SiteVisitRecordingService> siteVisitRecordingService,
+      org.springframework.beans.factory.ObjectProvider<
+          f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidator> adminSessionValidator,
       PublicSiteProperties publicSiteProperties,
       WebSecurityProperties webSecurityProperties,
       ArchivedRoutesProperties archivedRoutesProperties,
@@ -114,7 +116,7 @@ public class SecurityConfig {
     ArchivedRouteAliasFilter archivedRouteAliasFilter =
         new ArchivedRouteAliasFilter(archivedRoutesProperties);
     JwtAuthenticationFilter jwtAuthenticationFilter =
-        new JwtAuthenticationFilter(tokenProvider, cookieUtil);
+        new JwtAuthenticationFilter(tokenProvider, cookieUtil, adminSessionValidator);
     // Chart Research Agent 전용 Bearer 토큰 필터. CHART_AGENT_TOKEN 미설정 시 비활성화.
     // 서블릿 자동 등록 이중 실행 방지 + @WebMvcTest 슬라이스 호환을 위해 여기서 직접 생성한다.
     // 테스트에서는 TestPropertySource의 CHART_AGENT_TOKEN 으로 주입된다.

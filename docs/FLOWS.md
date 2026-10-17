@@ -127,7 +127,7 @@ GET  /api/users/students/me       → 학생 본인 프로필 (인증 필요). A
 
 | login_id | password | role | 비고 |
 |---|---|---|---|
-| `admin-f2r` | `admin-mochi-96` (BCrypt) | ADMIN | EC2 첫 배포 시 자동 INSERT. 비밀번호 회전 시 새 V_파일로 보정 (예: `V3__rotate_admin_password.sql`) + `AdminPasswordHashTest` 동시 갱신. |
+| `admin-f2r` (최초 ID) | (평문은 문서에 두지 않는다 — BCrypt 해시만 DB에 저장) | ADMIN | EC2 첫 배포 시 자동 INSERT. ID·비밀번호 교체는 로그인한 ADMIN이 `/admin/account`에서 직접 수행 → [docs/operations/ADMIN_CREDENTIAL_ROTATION.md](operations/ADMIN_CREDENTIAL_ROTATION.md). 교체 후에는 이 행의 ID가 더 이상 유효하지 않다. |
 
 **로컬 dev-seed (`db/dev-seed/V900__dev_seed.sql` — 로컬 profile만 적용)**
 

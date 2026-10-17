@@ -31,6 +31,8 @@ public class AuthController {
     private final AdminPasswordChangeService adminPasswordChangeService;
     private final JwtTokenProvider tokenProvider;
     private final CookieUtil cookieUtil;
+    private final org.springframework.beans.factory.ObjectProvider<
+            f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidator> adminSessionValidator;
 
     /**
      * 로그인 — 비번 검증 성공 시 JWT를 HTTP-only Cookie로 발급한다.
@@ -41,7 +43,10 @@ public class AuthController {
             @RequestBody LoginRequest request,
             HttpServletResponse response) {
         LoginResponse user = userService.login(request);
-        String token = tokenProvider.issue(user.userId(), user.loginId(), user.role());
+        // ADMIN 토큰에만 자격 증명 stamp를 넣는다(ID·비밀번호 교체 시 기존 ADMIN 세션 무효화). 다른 역할은 기존과 동일.
+        var validator = "ADMIN".equals(user.role()) ? adminSessionValidator.getIfAvailable() : null;
+        String stamp = validator == null ? null : validator.stampFor(user.userId());
+        String token = tokenProvider.issue(user.userId(), user.loginId(), user.role(), stamp);
         cookieUtil.writeAccessToken(response, token);
         return ResponseEntity.ok(user);
     }
