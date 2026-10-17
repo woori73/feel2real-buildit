@@ -74,3 +74,4 @@ if bd:
 out['preexisting_backups_intact'] = {'dir': sh("ls /var/backups/dc-deploy-pre-bbbd9222"), 'jar_backup_sha16': sha('/var/backups/dc-deploy-pre-bbbd9222/20261017-012537/app.jar')[:16]}
 out['tmp_publishing'] = sh("find /tmp/publishing -type f | wc -l")
 print(json.dumps(out, indent=1, ensure_ascii=False))
+# recheck 2026-10-17T03:29:41Z

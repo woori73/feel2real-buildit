@@ -1,0 +1,29 @@
+name: dc public domain probe (anonymous GET only, read-only)
+on:
+  push:
+    branches: ['ci/dc-step1-readonly']
+    paths: ['.github/workflows/dc-public-probe.yml']
+permissions:
+  contents: read
+concurrency:
+  group: dc-public-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Anonymous GET of public pages (no redirects followed, no credentials)
+        run: |
+          H=feel2real.co.kr
+          echo "== DNS"; getent hosts $H | head -2
+          echo "== TLS"; echo | openssl s_client -servername $H -connect $H:443 2>/dev/null | openssl x509 -noout -subject -issuer -enddate 2>&1 | head -4
+          echo "== pages (code, redirect target, time)"
+          for p in / /ledger /builder /testprep /login /designcraft /problem-generator /wemade /easy /api/admin/easy/dashboard/widgets?businessId=1 /actuator/health; do
+            printf '%-52s ' "$p"
+            curl -s -o /dev/null -m 30 -w '%{http_code} %{redirect_url} %{time_total}s\n' "https://$H$p" || echo "CURL_FAIL"
+          done
+          echo "== www and http"
+          curl -s -o /dev/null -m 20 -w 'http://%{url_effective} -> %{http_code} %{redirect_url}\n' "http://$H/" || echo CURL_FAIL
+          curl -s -o /dev/null -m 20 -w 'https://www -> %{http_code} %{redirect_url}\n' "https://www.$H/" || echo CURL_FAIL
+          echo "== / body title"; curl -s -m 20 "https://$H/" | grep -o -m1 '<title>[^<]*</title>' || echo NO_TITLE
