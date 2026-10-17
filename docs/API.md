@@ -839,6 +839,24 @@ LMS 주소가 성립하지 않는다(404).
   - `AuthController.confirmPasswordReset`
   - `PasswordResetService.confirmReset`
 
+### ✅ POST /api/analytics/events
+
+- 목적: 홈페이지(`home`)·학원 공개 페이지(`academy_public`)의 섹션 노출·버튼 클릭·서비스 이동·흐름 시작을 수집한다(PV와 별개 지표).
+- 현재 사용처: `static/js/site_events.js`(`navigator.sendBeacon`/`fetch keepalive`)
+- 인증/권한: public(익명 허용). 서버가 방문자를 쿠키(`F2R_VISITOR`)/JWT로 직접 판별 — **본문의 URL·사용자 식별값은 쓰지 않는다.** 유효한 방문 쿠키가 없으면 `204`만 돌려주고 저장하지 않는다.
+- Request: `{ "page": "home", "viewId": "<UUID>", "events": [ { "type": "SECTION_VIEW|CLICK|SERVICE_MOVE|FLOW_START", "target": "wiki", "seq": 0 } ] }` (최대 20개, 본문 4KB)
+  - 허용 목록(`AnalyticsEventCatalog`)에 없는 type·page·target은 조용히 버린다. `seq` 범위 밖(클릭 0~4)도 버린다.
+- Response: `204 No Content`(수집 결과를 알려주지 않음) / `400` 한 요청 21개 이상 / `413` 본문 과대 / `429` 속도 제한(IP별 분당 60·시간당 600, 전체 일 200,000)
+- 중복: 같은 `viewId`에서 같은 (type,target,seq)는 1번만 저장. Bot UA는 BOT으로, ADMIN 로그인은 internal로 저장되어 통계에서 제외.
+- 관련 코드: `SiteEventController`, `SiteEventRecordingService`, `SiteEventRateLimiter`, `AnalyticsEventCatalog`, `AnalyticsVisitorIdentity`
+
+### ✅ GET /api/admin/analytics/events
+
+- 목적: `/admin/analytics`의 섹션 노출(UV·노출 수)·클릭(횟수·UV·클릭률)·서비스 이동·시작 행동 통계(오늘·7일·30일·누적, Asia/Seoul).
+- 인증/권한: ADMIN 전용(`/api/admin/**`). Bot·internal 제외, 사람 이벤트만.
+- Response: `{ eventsSince, retentionDays, sections[], clicks[], serviceMoves[], flowStarts[], consultCompleted, definitions }` — 각 행은 `visitors`/`exposures`·`clicks`·`counts`가 `{today, recent7, recent30, total}`, 클릭률은 `ctrToday/ctr7/ctr30/ctrTotal`(노출 없으면 null).
+- 관련 코드: `AdminAnalyticsController.events`, `AdminAnalyticsEventsService`
+
 ### ✅ POST /api/auth/admin/password-change
 
 - 목적: 운영 ADMIN(admin-f2r) 비밀번호를 `/admin/login` 화면에서 변경한다. 대상은 서버가 고정하므로 요청에 userId/role이 없고, 기존 비밀번호를 모르면 변경할 수 없다.

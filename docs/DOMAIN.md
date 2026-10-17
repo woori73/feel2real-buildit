@@ -1235,6 +1235,30 @@ open-community 게시글의 원본 문서·이미지 첨부. BuildIt Wiki 변형
 
 인덱스: `site_page_visits`는 기존 인덱스에 `(service_area, traffic_kind, visit_date)`, `(traffic_kind, visit_date)`가 추가된다. `wiki_download_logs`는 `(download_date)`, `(material_category, material_id)`, `(user_id)` — 관리자 화면 집계 쿼리가 기존 페이지 응답을 늦추지 않도록.
 
+### 4.48-1 site_events ✅ 홈페이지 섹션 노출·클릭·서비스 이동·시작 이벤트 (V1087, 신규 테이블)
+
+`site_page_visits`(PV)와 **별개 지표**이며 서로 합산하지 않는다. 브라우저 행동을 `site_events.js`가 허용된 항목만 `POST /api/analytics/events`로 보낸다.
+
+| 컬럼 | 설명 |
+|---|---|
+| event_id | PK |
+| event_date / occurred_at | Asia/Seoul 날짜·시각 |
+| event_type | `SECTION_VIEW`·`CLICK`·`SERVICE_MOVE`·`FLOW_START` (서버 카탈로그 `AnalyticsEventCatalog`에 있는 것만) |
+| target | 섹션 id·버튼 key·서비스 key (카탈로그) |
+| section | 버튼이 속한 섹션(카탈로그가 정한 값, 클라이언트 값 아님) |
+| page_key | `home` / `academy_public` (URL을 받지 않음) |
+| view_id | 페이지를 열 때마다 만드는 무작위 UUID — **같은 방문 내 중복 방지** 전용(신원 아님) |
+| seq | 클릭·서비스 이동 방문당 0~4, 노출·시작은 0 고정 |
+| visitor_key | `site_page_visits`와 같은 규칙(`AnalyticsVisitorIdentity`): 로그인 `U:{id}`, 비로그인 `V:{쿠키 UUID}`, Bot `B:BOT`. 쿠키 없으면 저장 안 함 |
+| traffic_kind | HUMAN / BOT (Bot 제외 집계) |
+| is_internal | ADMIN 계정 트래픽 1 (집계 제외) |
+
+- 유니크 `(view_id, event_type, target, seq)` + `INSERT IGNORE` → 중복 저장 불가. 인덱스 `(event_date, event_type, target)`, `(event_date, visitor_key)`.
+- **개인정보 없음**: 이름·연락처·입력값·문의 내용·URL·IP를 저장하지 않는다(컬럼 자체가 없고 테스트로 고정).
+- **보관**: `app.analytics.events.retention-days`(기본 395일) 초과분을 매일 04:20(KST) `SiteEventRetentionJob`이 5,000건 배치로 삭제.
+- 상담신청 **완료**는 이벤트가 아니라 `academy_inquiries` 건수로 센다(`AdminAnalyticsEventsService`).
+- 클릭률 = (같은 방문에서 해당 섹션을 본 뒤 클릭한 방문 수) ÷ (섹션이 노출된 방문 수). 섹션 밖 버튼은 계산하지 않음.
+
 ### 4.49 easy_* ✅ Easy 회계·학생원장 v1 (V973)
 
 ADMIN 전용(`/easy` 화면 + `/api/admin/easy/**`). Wiki `users`와 연결하지 않는 독립 원장이다. 금액은 전부 BIGINT(원) — 부동소수점 금지. 수납 상태(미납/일부납/완납)는 저장하지 않고 청구/납부 기준 앱에서 자동 계산한다.
