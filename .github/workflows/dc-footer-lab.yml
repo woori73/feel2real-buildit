@@ -1,8 +1,8 @@
-name: DesignCraft footer lab (runner only, CLI 0.8, no AWS)
+name: DesignCraft footer lab v2 (runner only, CLI 0.8 master-page frame, no AWS)
 on:
   push:
     branches: ['ci/dc-step1-readonly']
-    paths: ['.github/workflows/dc-footer-lab.yml', 'ops/diagnostics/dc_footer_lab.sh']
+    paths: ['.github/workflows/dc-footer-lab.yml', 'ops/diagnostics/dc_footer_lab.sh', 'ops/diagnostics/footer_lab/**']
 permissions:
   contents: read
   actions: read
@@ -27,4 +27,5 @@ jobs:
         run: |
           pip install -q pymupdf >/dev/null 2>&1
           CLI=$(find "$PWD/eng" -name designcraft-cli -type f | head -1); chmod +x "$CLI"
-          for t in ko-textbook-a4 ko-workbook-b5 ko-book-46; do echo "######## $t"; bash ops/diagnostics/dc_footer_lab.sh "$CLI" "$PWD/ops/designcraft/templates/$t" 2>&1 | grep -v Deprecat; done
+          sudo apt-get -qq install -y poppler-utils >/dev/null 2>&1 || true
+          for t in ko-textbook-a4 ko-workbook-b5 ko-book-46; do echo "######## $t"; bash ops/diagnostics/footer_lab/run08.sh "$CLI" "$PWD/ops/designcraft/templates/$t" 2>&1 | grep -v Deprecat; done
