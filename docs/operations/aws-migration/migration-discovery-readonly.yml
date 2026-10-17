@@ -1,0 +1,49 @@
+name: Migration discovery (old AWS account, read-only, manual)
+# 구 AWS 계정(067573916809) 이전 조사 전용 — 읽기 전용. 스냅샷 생성·공유·삭제·DNS 변경·S3 객체 읽기 없음.
+# 역할은 아직 생성되지 않았다(사용자 콘솔 생성 + 최종 승인 후). docs 아래 파일이며 활성 워크플로가 아니다.
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+concurrency:
+  group: f2r-aws-discovery
+  cancel-in-progress: false
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: f2r-aws-discovery
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-discovery
+          aws-region: ap-northeast-2
+          role-session-name: f2r-discovery
+      - name: Inventory (read-only)
+        shell: bash
+        run: |
+          set -uo pipefail
+          aws sts get-caller-identity --query '{Account:Account,Arn:Arn}' --output table
+          echo "### RDS (엔진·클래스·암호화·KMS·백업·다중AZ·서브넷그룹)"
+          aws rds describe-db-instances --query 'DBInstances[].{Id:DBInstanceIdentifier,Engine:Engine,Ver:EngineVersion,Class:DBInstanceClass,Storage:AllocatedStorage,Encrypted:StorageEncrypted,Kms:KmsKeyId,MultiAZ:MultiAZ,Backup:BackupRetentionPeriod,Public:PubliclyAccessible,PG:DBParameterGroups[0].DBParameterGroupName}' --output table
+          echo "### RDS snapshots (유형·암호화·KMS — 공유 가능 여부 판단)"
+          aws rds describe-db-snapshots --query 'DBSnapshots[].{Id:DBSnapshotIdentifier,Type:SnapshotType,Engine:Engine,Ver:EngineVersion,Encrypted:Encrypted,Kms:KmsKeyId,Created:SnapshotCreateTime}' --output table
+          echo "### KMS 키 (고객 관리형 여부)"
+          aws kms list-aliases --query 'Aliases[].{Alias:AliasName,Key:TargetKeyId}' --output table
+          echo "### S3 버킷 (이름·리전·암호화·버전·퍼블릭 차단)"
+          for B in $(aws s3api list-buckets --query 'Buckets[].Name' --output text); do
+            echo "- $B region=$(aws s3api get-bucket-location --bucket "$B" --query LocationConstraint --output text 2>/dev/null) enc=$(aws s3api get-bucket-encryption --bucket "$B" --query 'ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault.SSEAlgorithm' --output text 2>/dev/null || echo none) ver=$(aws s3api get-bucket-versioning --bucket "$B" --query Status --output text 2>/dev/null || echo none)"
+          done
+          echo "### Route53 호스팅 영역"
+          aws route53 list-hosted-zones --query 'HostedZones[].{Name:Name,Id:Id,Records:ResourceRecordSetCount,Private:Config.PrivateZone}' --output table
+          echo "### EC2·ALB"
+          aws ec2 describe-instances --query 'Reservations[].Instances[].{Id:InstanceId,Type:InstanceType,State:State.Name,Profile:IamInstanceProfile.Arn,Public:PublicIpAddress}' --output table
+          aws elbv2 describe-load-balancers --query 'LoadBalancers[].{Name:LoadBalancerName,DNS:DNSName,Scheme:Scheme}' --output table
+          echo "### IAM (장기 액세스 키 현황 — 키 값은 조회되지 않음)"
+          aws iam list-users --query 'Users[].UserName' --output text | tr '\t' '\n' | while read -r U; do [ -n "$U" ] && echo "- $U keys: $(aws iam list-access-keys --user-name "$U" --query 'AccessKeyMetadata[].{Id:AccessKeyId,Status:Status}' --output json)"; done
+          echo "### OIDC 공급자·배포 역할 신뢰 정책(sub 형식 확인)"
+          aws iam list-open-id-connect-providers --output text
+          aws iam get-role --role-name github-actions-f2r-deploy --query 'Role.AssumeRolePolicyDocument' --output json
+          echo "### 최근 비용"
+          aws ce get-cost-and-usage --time-period "Start=$(date -u -d '-60 day' +%F),End=$(date -u +%F)" --granularity MONTHLY --metrics UnblendedCost --query 'ResultsByTime[].{Start:TimePeriod.Start,Cost:Total.UnblendedCost.Amount}' --output table
