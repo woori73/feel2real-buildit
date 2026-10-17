@@ -48,11 +48,24 @@
 
 ### 3-1. 확정 결과 (2026-10-17, 일회성 무-AWS 실행 run 39030186213)
 - 실측 `sub` = `repo:woori73@299170593/feel2real-buildit@1340651018:environment:f2r-infra-build`, `environment` = `f2r-infra-build`, `aud` = `sts.amazonaws.com` → **`trust-f2r-infra-builder.json`의 `sub` 값과 정확히 일치. 신뢰 정책은 수정 없이 확정**(불변 ID 형식 유지, 완화 없음).
-- **보호 규칙은 아직 적용되지 않았다**(같은 실행이 승인 대기 없이 9초 만에 완료, Required reviewers 미설정). 또한 **비-main 브랜치(`ci/oidc-claims-env`)에서도 Environment를 사용할 수 있었으므로 Deployment branches 제한도 미적용**이다. 이 상태로 IAM 역할을 만들면 승인 게이트가 없다 → 아래 2개를 적용한 뒤 역할 생성 승인을 요청한다:
-  1. Required reviewers: `woori73`
-  2. Deployment branches and tags → Selected branches → `main`
-  3. (권고) **Allow administrators to bypass configured protection rules: 끔** — 에이전트 토큰이 admin이라 켜져 있으면 승인 규칙을 우회할 수 있다
-- 신뢰 정책은 `job_workflow_ref`(main)로도 비-main 브랜치를 막으므로 현재도 역할 가정은 거부되지만(방어 1겹), 위 설정이 있어야 방어가 2겹이 된다.
+- (보호 설정 전 상태) 같은 실행이 승인 대기 없이 9초 만에 완료되고 비-main 브랜치에서도 Environment를 쓸 수 있었다 → 사용자가 아래 설정을 적용했다.
+
+### 3-2. 보호 설정 적용 후 검증 결과 (2026-10-17, AWS 접근 없는 일회성 워크플로 `env-protection-check.yml`)
+적용된 설정(사용자 보고): Required reviewers `woori73`, Prevent self-review 끔, 관리자 우회 끔, Deployment branches `main`만.
+| 시나리오 | 결과 | 근거 |
+|---|---|---|
+| 비-main 브랜치(`ci/env-protection-check`)에서 Environment job | **step이 한 번도 실행되지 않고 1~2초 만에 실패**(3회 일관: run 39034117340 attempt 1·2, run 39034460705) | job에 `steps`·로그 없음(러너 미할당) |
+| 같은 실행 안의 대조군 job(Environment 없음) | **정상 실행**(step 3개 완료) | 브랜치·러너·워크플로 자체는 정상 |
+| 보호 설정 전 같은 방식의 비-main 실행 | 통과(run 39030186213) | 바뀐 것은 Environment 설정뿐 |
+| main(`a267a75b`)에서 Environment job | **`waiting` 유지(30초 이상)**, 대조군은 완료 | run 39034932819 — 승인 대기(사용자 승인 필요) |
+- 해석: 승인자만 설정된 경우의 결과는 "무기한 waiting"이므로, 비-main의 **즉시 실패**는 배포 브랜치 제한에 의한 거부로 판단한다(설정 전 통과 → 설정 후 실패의 차분 + 대조군). **단, GitHub 화면의 거부 문구(annotation)는 이 도구로 읽지 못했다** — 확정 증거가 필요하면 해당 run 페이지의 job 주석을 사용자가 확인한다.
+- 정정: 비-main 실행 직후 한 번 `waiting`으로 관측되었으나 1~2초 후 실패로 바뀐 일시 상태였다(재조회로 확인). 판정 근거는 최종 상태만 쓴다.
+- **미완료(승인 필요)**: main 실행 승인 후 정상 실행 여부(`ENV-PROTECTION-CHECK-REACHED`와 environment `sub` 출력) — 사용자가 승인한 뒤 기록한다.
+
+### 3-3. 일회성 검증 워크플로 제거 계획
+- 검증 완료 후 PR로 `.github/workflows/env-protection-check.yml` 제거(이 파일은 main push·dispatch로 Environment를 호출하므로 오래 두지 않는다). 같은 파일을 건드리는 push는 다시 승인 요청을 만들 수 있다.
+- 일회성 브랜치 `ci/oidc-claims-jwr`, `ci/oidc-claims-env`, `ci/env-protection-check`는 삭제하지 않고 보관(삭제는 별도 승인). 기존 `ci/oidc-claims-once`도 동일.
+- 기존 운영 배포용 OIDC 신뢰 정책(구 계정)은 이 작업에서 변경하지 않았다.
 
 ## 4. 뮤즈 인계 (신규 인프라 구축 담당)
 - 전달물(main에 병합됨, PR #741): `docs/operations/aws-migration/` — `trust-f2r-infra-builder.json`, `policy-f2r-infra-builder.json`, `trust-github-actions-f2r-deploy.json`, `policy-f2r-deploy-smoke-ssm.json`, `migration-infra-build.yml`, 검토서 `AWS_INFRA_REVIEW_20261017.md`.
