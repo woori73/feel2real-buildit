@@ -26,7 +26,10 @@
   </style>
 
   <header class="state-head">
-    <div><p class="kicker">BUILDIT STATE</p><h2>오늘 무엇을 준비하고 계세요?</h2></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <th:block th:insert="~{fragments/_ai_assistant_mascot :: mascot}" />
+      <div><p class="kicker">BUILDIT STATE</p><h2>오늘 무엇을 준비하고 계세요?</h2></div>
+    </div>
     <button type="button" data-action="mock">새 대화</button>
   </header>
 

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!--
+  BuildIt AI 비서 마스코트 공통 프래그먼트
+  
+  사용법: AI 채팅 화면에서 아래처럼 포함
+  <div th:replace="~{fragments/_ai_assistant_mascot :: mascot}"></div>
+  
+  또는 직접 삽입:
+  <th:block th:insert="~{fragments/_ai_assistant_mascot :: mascot}" />
+-->
+<div th:fragment="mascot" class="ai-assistant-mascot">
+  <img src="/images/ai-assistant.gif"
+       alt="AI 비서"
+       class="ai-assistant-mascot-img"
+       loading="lazy" />
+</div>
+
+<style>
+  .ai-assistant-mascot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ai-assistant-mascot-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+  /* 큰 버전이 필요하면 .ai-assistant-mascot-lg 추가 */
+  .ai-assistant-mascot-lg .ai-assistant-mascot-img {
+    width: 96px;
+    height: 96px;
+  }
+</style>

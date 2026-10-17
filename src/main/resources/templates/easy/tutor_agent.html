@@ -117,6 +117,7 @@
 
     <aside id="agentPanel" class="agent-panel" aria-labelledby="agentTitle">
       <div class="agent-heading">
+        <th:block th:insert="~{fragments/_ai_assistant_mascot :: mascot}" />
         <div><span class="assistant-mark">AI</span><h2 id="agentTitle">장부 도우미</h2><p>지금 보고 있는 장부를 기준으로 물어보세요.</p></div>
         <button id="agentClose" class="agent-close" type="button" aria-label="AI 장부 도우미 닫기">×</button>
       </div>
