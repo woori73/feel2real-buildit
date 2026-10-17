@@ -235,7 +235,7 @@ jobs:
                     --subnet-id "$PUB1" --security-group-ids "$EC2SG" --associate-public-ip-address \
                     --iam-instance-profile Name="$PROFILE" \
                     --metadata-options HttpTokens=required,HttpEndpoint=enabled,HttpPutResponseHopLimit=1 \
-                    --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"VolumeSize":20,"VolumeType":"gp3","Encrypted":true,"DeleteOnTermination":true}}]' \
+                    --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"VolumeSize":30,"VolumeType":"gp3","Encrypted":true,"DeleteOnTermination":true}}]' \
                     --tag-specifications "$(tags instance f2r-app)" "$(tags volume f2r-app-root)" \
                     --client-token "$TOKEN" --query 'Instances[0].InstanceId' --output text 2>&1); then
                   IID="$OUT"; echo "created EC2 $IID"; break

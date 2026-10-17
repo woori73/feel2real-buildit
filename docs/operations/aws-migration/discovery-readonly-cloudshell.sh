@@ -10,6 +10,15 @@ echo "### RDS (엔진·클래스·암호화·KMS·백업·다중AZ·서브넷그
 aws rds describe-db-instances --region $R --query 'DBInstances[].{Id:DBInstanceIdentifier,Engine:Engine,Ver:EngineVersion,Class:DBInstanceClass,GB:AllocatedStorage,Enc:StorageEncrypted,Kms:KmsKeyId,Backup:BackupRetentionPeriod,MultiAZ:MultiAZ,Param:DBParameterGroups[0].DBParameterGroupName}' --output table
 echo "### RDS 스냅샷 (유형·암호화·KMS — 계정 간 공유 가능 여부: 기본 AWS 관리형 키로 암호화된 스냅샷은 공유 불가)"
 aws rds describe-db-snapshots --region $R --query 'DBSnapshots[].{Id:DBSnapshotIdentifier,Type:SnapshotType,Ver:EngineVersion,Enc:Encrypted,Kms:KmsKeyId,Created:SnapshotCreateTime}' --output table
+echo "### RDS 사용량 (CloudWatch, 최근 14일 일 단위 평균/최대) — 인스턴스 크기·송신량 산정 근거"
+for DB in $(aws rds describe-db-instances --region $R --query 'DBInstances[].DBInstanceIdentifier' --output text); do
+  for M in CPUUtilization FreeableMemory DatabaseConnections FreeStorageSpace ReadIOPS WriteIOPS NetworkTransmitThroughput NetworkReceiveThroughput; do
+    echo "- $DB $M (일자 평균 최대)"
+    aws cloudwatch get-metric-statistics --region $R --namespace AWS/RDS --metric-name "$M" --dimensions Name=DBInstanceIdentifier,Value="$DB" \
+      --start-time "$(date -u -d '-14 day' +%FT%TZ)" --end-time "$(date -u +%FT%TZ)" --period 86400 --statistics Average Maximum \
+      --query 'sort_by(Datapoints,&Timestamp)[].[Timestamp,Average,Maximum]' --output text
+  done
+done
 echo "### KMS 별칭"
 aws kms list-aliases --region $R --query 'Aliases[].{Alias:AliasName,Key:TargetKeyId}' --output table
 echo "### S3 버킷 (이름·리전·암호화·퍼블릭 차단) — 객체 목록·내용은 읽지 않는다"
