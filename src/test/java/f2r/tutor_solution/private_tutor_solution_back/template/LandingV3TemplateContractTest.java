@@ -376,8 +376,8 @@ class LandingV3TemplateContractTest {
     // then
     assertThat(html.indexOf("디지털영어학원 Agent")).isLessThan(html.indexOf("class=\"nation-stage\""));
     assertThat(html).contains("홈페이지 Agent", "내신 문제 제작 Agent", "Chart Agent");
-    assertThat(html.split("<svg class=\"chick ", -1).length - 1).isGreaterThanOrEqualTo(8);
+    assertThat(html.split("<img class=\"chick ", -1).length - 1).isGreaterThanOrEqualTo(8);
     assertThat(html).doesNotContain("사진과 화면은 예시 이미지입니다.");
-    assertThat(css).contains("@keyframes ck-bob", "@keyframes ck-blink", "prefers-reduced-motion");
+    assertThat(css).contains("prefers-reduced-motion");
   }
 }
