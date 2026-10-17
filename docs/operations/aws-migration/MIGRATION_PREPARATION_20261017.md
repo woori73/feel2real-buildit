@@ -81,7 +81,7 @@
 | 데이터 | 신 환경에서 쓰기가 발생한 뒤 롤백하면 신규 데이터 유실 | 컷오버 시점에 쓰기 동결(점검 모드) → 최종 스냅샷 복원 → 전환. 되돌릴 때는 신 환경 쓰기분을 별도 덤프로 보존 후 판단 |
 
 ## 8. 운영 DB 스냅샷으로 V1085→V1089 Flyway 검증 계획 (작업 8, 미실행)
-**현재 사실:** 운영은 V1085. 새 마이그레이션 3개는 모두 **신규 테이블 생성만**(`IF NOT EXISTS`): V1086 `academy_inquiries`, V1087 `site_events`, V1088 `easy_collection_approvals`(FK → 이미 있는 `easy_collection_runs`(V983)·`easy_businesses`(V973) 참조 — 순서 문제 없음). 기존 테이블 변경·데이터 이동 없음. V1086→V1087은 로컬 DB에서 검증됨, **V1088 포함 전체는 운영 데이터로 시험한 적 없음.**
+**현재 사실:** 운영은 V1085. 새 마이그레이션은 4개: V1086 `academy_inquiries`·V1087 `site_events`·V1088 `easy_collection_approvals`는 **신규 테이블 생성만**(`IF NOT EXISTS`, V1088은 이미 있는 `easy_collection_runs`(V983)·`easy_businesses`(V973)를 FK 참조 — 순서 문제 없음), **V1089 `alter_easy_collection_approvals_commit`은 V1088로 만든 테이블에 `committed_at`·`commit_error` 컬럼을 ADD하는 ALTER**(기존 데이터 있는 테이블 변경 아님). 기존 운영 테이블 변경·데이터 이동 없음. 로컬·격리 DB에서 V1~V1089 적용은 확인됐고 **운영 데이터·MySQL 8.4.8 검증은 없다.**
 
 | # | 절차 | 확인 | 승인 |
 |---|---|---|---|
