@@ -19,14 +19,13 @@ sample() {
   echo "PROBE_TIMEOUT"
 }
 cancel_deploy() {
-  echo "!! STOP CRITERIA MET: cancelling in-progress deploy SSM command(s) (safe point: app.jar not yet replaced)"
-  for c in $(aws ssm list-commands --instance-id "$INST" --filters key=Status,value=InProgress --query "Commands[?DocumentName=='AWS-RunShellScript' && contains(to_string(Parameters.commands), 'deploy-buildit.sh')].CommandId" --output text); do
-    aws ssm cancel-command --command-id "$c" --instance-ids "$INST" && echo "cancel requested: $c"
-  done
+  # ssm:CancelCommand/ListCommands 권한이 없으므로(드라이런 확인), 허용된 SendCommand로 서버의 배포 스크립트·pip를 직접 종료한다.
+  # 서버 쪽에서 app.jar가 아직 교체 전일 때만 실행한다(교체 후에는 중단하지 않고 자동 롤백에 맡긴다).
+  echo "!! STOP CRITERIA MET: terminating deploy-buildit.sh/pip on the server (only if app.jar is still the baseline)"
+  local kp; kp=$(mktemp)
+  python3 -c 'import json; print(json.dumps({"commands":["J=$(stat -c \"%Y %s\" /home/ec2-user/app.jar); if [ \"$J\" = \"'"$BASE_JAR_MTIME $BASE_JAR_SIZE"'\" ]; then pkill -TERM -f /tmp/deploy-buildit.sh; pkill -TERM -f \"pip install\"; echo STOPPED; else echo JAR_ALREADY_REPLACED_NO_STOP; fi"]}))' > "$kp"
+  aws ssm send-command --instance-ids "$INST" --document-name AWS-RunShellScript --parameters "file://$kp" --query Command.CommandId --output text
 }
-echo "== permission dry check (no side effects): cancel/list with a bogus id"
-aws ssm cancel-command --command-id 00000000-0000-0000-0000-000000000000 --instance-ids "$INST" 2>&1 | head -2
-aws ssm list-commands --instance-id "$INST" --filters key=Status,value=InProgress --query 'length(Commands)' --output text 2>&1 | head -2
 echo "== monitoring ${DURATION_MIN} min, mode=$MODE, arm_cancel=$ARM_CANCEL, thresholds: MemAvailable<${MEM_MIN} x2, any OOM, swap +${SWAP_JUMP} MiB"
 end=$(( $(date +%s) + DURATION_MIN*60 )); low=0; base_swap=""
 while [ "$(date +%s)" -lt "$end" ]; do
