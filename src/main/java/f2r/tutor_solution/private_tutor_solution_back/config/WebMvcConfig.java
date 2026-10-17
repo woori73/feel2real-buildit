@@ -50,6 +50,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/tutor/academy/setup", "tutor/tutor_academy_setup");
         view(registry, "/tutor/academy/lessons/editor", "tutor/lesson_product_editor");
         view(registry, "/tutor/academy/videos", "tutor/tutor_academy_videos");
+        view(registry, "/tutor/academy/inquiries", "tutor/tutor_academy_inquiries");
         view(registry, "/tutor/lesson/{lessonId}", "tutor/tutor_lesson_detail");
         view(registry, "/tutor/academy/posts", "tutor/tutor_academy_posts");
         view(registry, "/tutor/academy/posts/new", "tutor/tutor_academy_post_editor");

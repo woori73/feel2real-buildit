@@ -1656,6 +1656,9 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 - **상태 전이(§2, 결정적·AI 없음)**: 회원 첫 질문→NEW. 운영자가 열면→AWAITING_ANSWER. 운영자 답변→OPERATOR_ANSWERED. 답변 뒤 회원 추가 질문→MEMBER_FOLLOWUP. 회원 목록/배지는 아직 못 본 OPERATOR 답변 수(`member_last_seen_message_id` 커서 기준)로 "새 답변 N건" 표시.
 - 관련 화면: 회원 `/newstart/consultations`(공개 셸 + `window.refreshAccountArea` 인증, 감사회원만 API 통과), 운영자 `/admin/newstart/consultations`(ROLE_ADMIN). 홈 `ns-service-consult` 카드 + `newstart-consult-unread.js` 배지.
 
+### academy_inquiries ✅ 학원 상담신청 접수 (V1086)
+공개 홈페이지 '상담 신청'으로 들어온 문의. `inquiry_id` PK, `academy_id` FK(ON DELETE CASCADE, 학원별 격리 키), `name`/`phone`/`message`(NULL 허용 — 향후 개인정보 삭제 요청 시 행을 지우지 않고 값만 비우는 익명화용), `status`(NEW|IN_PROGRESS|DONE), `consent_version`/`consented_at`(개인정보 수집·이용 동의 증빙), `retention_until`(접수일+365일), `anonymized_at`, `handled_by_user_id`/`handled_at`, 감사 컬럼. 인덱스: `(academy_id,status,created_at)`, `retention_until`. 엔티티 `AcademyInquiry`. 조회·변경은 항상 academy_id 조건으로만 한다.
+
 ### academy_working_copy ✅ BuildIt 통합 화면 작업본 (V1060)
 
 공개 홈페이지(`academies.intro`, `academies.page_settings`)와 분리된 **편집용 복사본**. 대화 수정은 여기에만 쓰이고, 공개본은 게시(`POST /api/tutor/academy/working-copy/publish`)에서만 바뀐다. 설계: [BUILDIT_UNIFIED_CHAT_UI_DESIGN.md](BUILDIT_UNIFIED_CHAT_UI_DESIGN.md).

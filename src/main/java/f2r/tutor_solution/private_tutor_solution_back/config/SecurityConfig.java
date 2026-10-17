@@ -356,6 +356,7 @@ public class SecurityConfig {
                 // 뷰 자체에는 SSR 데이터가 없다. 영상 목록/업로드/삭제는 전부 /api/tutor/** (TUTOR role)라
                 // 비인증 접근은 빈 셸만 보고 API에서 막힌다. 기존 tutor 뷰 경로들과 동일한 취급.
                 "/tutor/academy/videos",
+                "/tutor/academy/inquiries",  // 빈 셸. 접수 목록·상태 변경은 /api/tutor/academy/inquiries (TUTOR/ADMIN)
                 "/tutor/academy/posts",
                 "/tutor/academy/posts/**",
                 // JWT principal + TUTOR role redirect guard는 AcademyBuilderPageController가 담당한다.
@@ -428,6 +429,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/academies/**").permitAll()  // 공개 Academy 조회/이미지
             .requestMatchers(HttpMethod.HEAD, "/api/academies/**").permitAll()  // 공개 영상 메타데이터
             .requestMatchers(HttpMethod.POST, "/api/academies/*/visits").permitAll()  // 공개 방문 집계
+            .requestMatchers(HttpMethod.POST, "/api/academies/*/inquiries").permitAll()  // 공개 상담신청 접수(속도 제한·동의 필수)
             .requestMatchers(HttpMethod.GET, "/api/public/academy/*/homepage").permitAll()  // 시각 편집기 공개 홈페이지
             .requestMatchers(HttpMethod.GET, "/api/academy-posts").permitAll()  // 공개 Academy 블로그 포스트 모아보기
             // 일반 공개 커뮤니티 read는 유지하되 Wiki scope 목록은 회원 전용으로 먼저 닫는다.
@@ -560,6 +562,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.PUT, "/api/tutor/academy/page-settings").hasAnyRole("TUTOR", "ADMIN")
             .requestMatchers("/api/tutor/academy/ai/chat/**").hasAnyRole("TUTOR", "ADMIN")
             .requestMatchers("/api/tutor/academy/assistant/**").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers("/api/tutor/academy/inquiries/**", "/api/tutor/academy/inquiries").hasAnyRole("TUTOR", "ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/admin/academies/*/inquiries").hasRole("ADMIN")
             .requestMatchers("/api/tutor/academy/working-copy/**").hasAnyRole("TUTOR", "ADMIN")
 
             // Tutor 전용
