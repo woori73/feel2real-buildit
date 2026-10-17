@@ -18,6 +18,13 @@
     <div class="admin-nav-wrap">
       <nav class="admin-nav" aria-label="관리자 메뉴">
         <a class="admin-nav-link" th:classappend="${activeMenu == 'hub'} ? ' active' : ''" href="/admin/hub">통합 대시보드</a>
+        <!-- 서비스 바로가기: 각 서비스의 실제 경로와 권한(ADMIN 접근 가능 여부)을 확인해 연결했다. AcademyCraft는 단독 진입 경로가 아직 없어 넣지 않았다. -->
+        <a class="admin-nav-link admin-nav-service" th:classappend="${activeMenu == 'easy'} ? ' active' : ''" href="/easy">EASY 장부</a>
+        <a class="admin-nav-link admin-nav-service" th:classappend="${activeMenu == 'wemade'} ? ' active' : ''" href="/wemade">위메이드</a>
+        <a class="admin-nav-link admin-nav-service" th:classappend="${activeMenu == 'choonggi'} ? ' active' : ''" href="/choonggi/admin">충기</a>
+        <a class="admin-nav-link admin-nav-service" th:classappend="${activeMenu == 'builder'} ? ' active' : ''" href="/builder">홈페이지 빌더</a>
+        <a class="admin-nav-link admin-nav-service" th:classappend="${activeMenu == 'naesinWiki'} ? ' active' : ''" href="/problem-generator">내신위키</a>
+        <a class="admin-nav-link admin-nav-service" th:classappend="${activeMenu == 'testprep'} ? ' active' : ''" href="/testprep">TESTPREP</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'students'} ? ' active' : ''" href="/admin/students">학생 목록</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'members'} ? ' active' : ''" href="/admin/members">회원 전체</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'analytics'} ? ' active' : ''" href="/admin/analytics">통합 Analytics</a>
@@ -30,7 +37,6 @@
         <a class="admin-nav-link" th:classappend="${activeMenu == 'jipijigiAgent'} ? ' active' : ''" href="/admin/newstart/jipijigi">지피지기 Agent</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'lessonCommunities'} ? ' active' : ''" href="/admin/lesson-communities">커뮤니티 검색</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'landing'} ? ' active' : ''" href="/admin/landing">랜딩 페이지 관리</a>
-        <a class="admin-nav-link" th:classappend="${activeMenu == 'easy'} ? ' active' : ''" href="/easy">회계 Easy</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'newstart'} ? ' active' : ''" href="/admin/newstart">새출발</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'newstartUpdates'} ? ' active' : ''" href="/admin/newstart/updates">새출발 업데이트</a>
       </nav>

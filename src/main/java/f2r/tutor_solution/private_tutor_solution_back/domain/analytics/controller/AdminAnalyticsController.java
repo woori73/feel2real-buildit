@@ -13,9 +13,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminAnalyticsController {
 
   private final AdminAnalyticsService service;
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownService breakdownService;
 
   @GetMapping("/api/admin/analytics/summary")
   public ResponseEntity<AdminAnalyticsResponse> summary() {
     return ResponseEntity.ok(service.summary());
+  }
+
+  /** 서비스·페이지 그룹별 UV/PV, 30일 추세(서비스 선택 가능), 실제 수집된 전환 지표. */
+  @GetMapping("/api/admin/analytics/breakdown")
+  public ResponseEntity<f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsBreakdownResponse> breakdown(
+      @org.springframework.web.bind.annotation.RequestParam(required = false) String service) {
+    return ResponseEntity.ok(breakdownService.breakdown(service));
   }
 }
