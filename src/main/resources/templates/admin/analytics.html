@@ -28,6 +28,23 @@
     .role-badge.guest { background: #fff5f5; color: #c53030; }
     .area-badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #ebf8ff; color: #2b6cb0; }
     .table-scroll { overflow-x: auto; }
+    .analytics-table { min-width: 640px; }
+    .analytics-table td:first-child, .analytics-table th:first-child { white-space: nowrap; }
+    .an-def { margin: 0 0 20px; font-size: 13px; color: #4a5568; background: #fff; border: 1px solid #edf2f7; border-radius: 12px; padding: 10px 16px; }
+    .an-def summary { cursor: pointer; font-weight: 700; color: #2d3748; }
+    .an-def p { margin: 8px 0 0; line-height: 1.6; }
+    .an-note { font-size: 12px; color: #718096; margin: 6px 0 0; line-height: 1.5; }
+    .an-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; font-size: 13px; }
+    .an-controls select { padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 13px; }
+    .an-chart { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 12px 14px; }
+    .an-chart svg { width: 100%; height: auto; display: block; }
+    .an-legend { display: flex; gap: 16px; font-size: 12px; color: #4a5568; margin-top: 6px; }
+    .an-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+    .an-conv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .an-conv .analytics-card.off { background: #f7fafc; }
+    .an-off { font-size: 13px; font-weight: 700; color: #a0aec0; }
+    .an-total-row td { font-weight: 700; background: #f7fafc; }
+    @media (max-width: 900px) { .an-conv { grid-template-columns: 1fr; } }
     @media (max-width: 900px) { .analytics-cards { grid-template-columns: 1fr; } .analytics-metrics { grid-template-columns: repeat(2, 1fr); } }
   </style>
 </head>
@@ -72,8 +89,63 @@
       </div>
     </div>
 
+    <details class="an-def" id="anDefinitions">
+      <summary>집계 기준 보기 (UV·PV·Bot·기간)</summary>
+      <p id="anDefUv"></p><p id="anDefPv"></p><p id="anDefBot"></p><p id="anDefAdd"></p><p id="anDefPeriods"></p>
+    </details>
+
     <div class="analytics-section">
-      <h2>서비스별 방문</h2>
+      <h2>서비스별 상세 통계</h2>
+      <div class="table-scroll">
+        <table class="analytics-table">
+          <thead><tr><th>서비스</th><th class="num">오늘 UV</th><th class="num">오늘 PV</th><th class="num">7일 UV</th><th class="num">7일 PV</th><th class="num">30일 UV</th><th class="num">30일 PV</th><th class="num">누적 UV</th><th class="num">누적 PV</th></tr></thead>
+          <tbody id="anServicesBody"><tr><td colspan="9" class="analytics-empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+      <p class="an-note">서비스별 UV를 더한 값은 전체 UV가 아닙니다(한 방문자가 여러 서비스를 쓰면 각각 1명). 관리자 화면 방문은 제외합니다. 아래 "서비스 영역별(기존 분류)"은 예전 분류 기준이라 서로 합치지 않습니다.</p>
+    </div>
+
+    <div class="analytics-section">
+      <h2>페이지별 통계</h2>
+      <div class="table-scroll">
+        <table class="analytics-table">
+          <thead><tr><th>페이지 구분</th><th class="num">오늘 UV</th><th class="num">오늘 PV</th><th class="num">7일 UV</th><th class="num">7일 PV</th><th class="num">30일 UV</th><th class="num">30일 PV</th><th class="num">누적 UV</th><th class="num">누적 PV</th></tr></thead>
+          <tbody id="anPagesBody"><tr><td colspan="9" class="analytics-empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+      <p class="an-note" id="anPagesNote"></p>
+    </div>
+
+    <div class="analytics-section">
+      <h2>많이 본 페이지 (최근 30일)</h2>
+      <div class="table-scroll">
+        <table class="analytics-table">
+          <thead><tr><th>경로</th><th>서비스</th><th class="num">PV</th><th class="num">UV</th></tr></thead>
+          <tbody id="anTopPathsBody"><tr><td colspan="4" class="analytics-empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="analytics-section">
+      <h2>기간별 추세 (최근 30일)</h2>
+      <div class="an-controls">
+        <label for="anTrendService">서비스</label>
+        <select id="anTrendService"><option value="">전체(관리자 화면 제외)</option></select>
+      </div>
+      <div class="an-chart">
+        <div id="anTrend"></div>
+        <div class="an-legend"><span><i style="background:#3b5bdb"></i>PV</span><span><i style="background:#2f9e44"></i>UV</span></div>
+      </div>
+    </div>
+
+    <div class="analytics-section">
+      <h2>주요 전환 지표</h2>
+      <div class="an-conv" id="anConversions"></div>
+      <p class="an-note">섹션 노출·버튼 클릭 같은 사용자 행동은 페이지 조회(PV)와 별개로 집계해야 하며, 아직 수집하지 않아 숫자를 표시하지 않습니다.</p>
+    </div>
+
+    <div class="analytics-section">
+      <h2>서비스 영역별 방문 (기존 분류)</h2>
       <div class="table-scroll">
         <table class="analytics-table">
           <thead><tr><th>서비스</th><th class="num">오늘 UV</th><th class="num">오늘 PV</th><th class="num">7일 UV</th><th class="num">7일 PV</th><th class="num">30일 UV</th><th class="num">30일 PV</th><th class="num">누적 UV</th><th class="num">누적 PV</th></tr></thead>

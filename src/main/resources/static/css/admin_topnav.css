@@ -74,6 +74,12 @@
       text-decoration: none;
       white-space: nowrap;
     }
+    /* 서비스 바로가기 */
+    .admin-nav-link.admin-nav-service { background: #f7fafc; }
+    /* 데스크톱: 메뉴가 많아도 가로 스크롤에 숨지 않도록 줄바꿈한다(모바일은 기존처럼 가로 스크롤). */
+    @media (min-width: 769px) {
+      .admin-nav { flex-wrap: wrap; overflow-x: visible; }
+    }
     .admin-nav-link.active,
     .admin-nav-link:hover { background: #ebf2ff; border-color: #c3cdf3; color: #2b4acb; }
 

@@ -10,6 +10,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse.PeriodMetric;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsService;
 import jakarta.servlet.http.Cookie;
 import java.util.List;
@@ -40,6 +41,7 @@ class AdminAnalyticsControllerWebMvcTest {
   @Autowired JwtTokenProvider tokenProvider;
 
   @MockitoBean AdminAnalyticsService service;
+  @MockitoBean AdminAnalyticsBreakdownService breakdownService;
   @MockitoBean AcademyRepository academyRepository;
 
   @BeforeEach
@@ -70,6 +72,15 @@ class AdminAnalyticsControllerWebMvcTest {
   void summary_admin_ok() throws Exception {
     mockMvc.perform(get("/api/admin/analytics/summary").cookie(token("ADMIN")))
         .andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("given 익명·STUDENT·TUTOR when 세분화 통계를 조회하면 then 401/403, ADMIN만 200")
+  void breakdown_adminOnly() throws Exception {
+    mockMvc.perform(get("/api/admin/analytics/breakdown")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/admin/analytics/breakdown").cookie(token("STUDENT"))).andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/admin/analytics/breakdown").cookie(token("TUTOR"))).andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/admin/analytics/breakdown").cookie(token("ADMIN"))).andExpect(status().isOk());
   }
 
   private Cookie token(String role) {
