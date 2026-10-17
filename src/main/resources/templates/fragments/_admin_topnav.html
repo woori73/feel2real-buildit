@@ -17,6 +17,7 @@
 
     <div class="admin-nav-wrap">
       <nav class="admin-nav" aria-label="관리자 메뉴">
+        <a class="admin-nav-link" th:classappend="${activeMenu == 'hub'} ? ' active' : ''" href="/admin/hub">통합 대시보드</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'students'} ? ' active' : ''" href="/admin/students">학생 목록</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'members'} ? ' active' : ''" href="/admin/members">회원 전체</a>
         <a class="admin-nav-link" th:classappend="${activeMenu == 'analytics'} ? ' active' : ''" href="/admin/analytics">통합 Analytics</a>
