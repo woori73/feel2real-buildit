@@ -60,12 +60,12 @@ class EasyDashboardWidgetControllerTest {
   @MockitoBean EasyBusinessScopeGuard scopeGuard;
 
   private Cookie adminCookie() {
-    String token = tokenProvider.createAccessToken("admin1", "ADMIN", 1L);
+    String token = tokenProvider.issue(1L, "admin1", "ADMIN");
     return new Cookie("ACCESS_TOKEN", token);
   }
 
   private Cookie tutorCookie() {
-    String token = tokenProvider.createAccessToken("tutor1", "TUTOR", 1L);
+    String token = tokenProvider.issue(2L, "tutor1", "TUTOR");
     return new Cookie("ACCESS_TOKEN", token);
   }
 
