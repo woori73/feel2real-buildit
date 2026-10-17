@@ -301,6 +301,14 @@ describe('내신 Wiki V1.1 시나리오 홈', () => {
     expect(within(section2).getAllByText(`신구중 · 중2 · ${year}년 · 1학기 · 전체`).length).toBeGreaterThanOrEqual(2)
     expect(within(section2).getByText(/학생 · 월수 반 · 수업 · 3회차 문항 6/)).toBeInTheDocument()
     expect(within(section2).queryByPlaceholderText('이번 시험에 재사용할 관찰과 힌트')).not.toBeInTheDocument()
+    // 각 기록은 독립 카드이고, 순서는 유형·일시 → 시험 Context(1회) → 본문이다(본문이 meta와 flex 형제가 아니다).
+    const cards=section2.querySelectorAll('article.insight-card')
+    expect(cards).toHaveLength(2)
+    const first=cards[0] as HTMLElement
+    expect(Array.from(first.children).map(c=>c.className)).toEqual(['insight-card-head','insight-card-exam','insight-card-student','insight-card-body'])
+    expect(first.querySelector('time')?.textContent).toMatch(/^\d{4}\. 9\. 20\. 오전 10:00$/)
+    expect(first.querySelector('.insight-card-body')?.textContent).toBe('INSIGHT LIST TOKEN B')
+    expect((cards[1] as HTMLElement).querySelector('.insight-card-student')).toBeNull()
     // 버튼 숫자는 목록과 같은 source(insights)에서 나온다.
     expect(screen.getByRole('button',{name:/^수업 인사이트 기록\s*2/})).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button',{name:/^수업 인사이트 기록\s*2/}))
