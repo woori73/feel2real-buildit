@@ -64,12 +64,12 @@ test('given 더보기 메뉴 when 읽기 then 보조 기능 4개만 메뉴 안�
   assert.match(JS, /e\.key !== 'Escape'[\s\S]*ahMenu/);
 });
 
-test('given 편집 도구 모음 when 읽기 then 5개 독립 버튼이 정식 배포 등록 버튼 앞에 있고 이름·툴팁을 가진다', () => {
+test('given 편집 도구 모음 when 읽기 then 6개 독립 버튼이 정식 배포 등록 버튼 앞에 있고 이름·툴팁을 가진다', () => {
   // given
   const bar = HTML.slice(HTML.indexOf('<header class="ah-bar">'), HTML.indexOf('</header>', HTML.indexOf('<header class="ah-bar">')));
   const tools = bar.slice(bar.indexOf('class="ah-tools"'), bar.indexOf('class="ah-bar-actions"'));
   // when / then
-  const expected = [['ahUndo', '되돌리기'], ['ahRedo', '다시 실행'], ['ahReset', '초기화'], ['ahPreviewBtn', '미리보기'], ['ahSave', '저장']];
+  const expected = [['ahNew', '새 홈페이지'], ['ahUndo', '되돌리기'], ['ahRedo', '다시 실행'], ['ahReset', '수정 초기화'], ['ahPreviewBtn', '미리보기'], ['ahSave', '저장']];
   let last = -1;
   for (const [id, label] of expected) {
     const at = tools.indexOf('id="' + id + '"');
@@ -77,7 +77,7 @@ test('given 편집 도구 모음 when 읽기 then 5개 독립 버튼이 정식 �
     last = at;
     assert.ok(tools.slice(at, tools.indexOf('</button>', at)).includes(label), id + ' 라벨');
   }
-  assert.equal((tools.match(/ title="/g) || []).length, 5, '툴팁 5개');
+  assert.equal((tools.match(/ title="/g) || []).length, 6, '툴팁 6개');
   assert.ok(bar.indexOf('id="ahPublish"') > bar.indexOf('id="ahSave"'), '배포 버튼은 편집 버튼들과 떨어진 오른쪽에 있다');
 });
 
@@ -120,4 +120,28 @@ test('given 미리보기 카드 when 불러오면 then 등장 애니메이션을
   assert.match(JS, /\$\('ahCardFrame'\)\.addEventListener\('load', freezeCardMotion\)/);
   assert.match(JS, /\[data-reveal-item\]\{opacity:1!important;transform:none!important\}/);
   assert.match(JS, /animation-duration:0s!important/);
+});
+
+test('given 새 홈페이지 만들기 when 읽기 then 수정 초기화와 분리된 /restart 호출이고 입력 안내 문구가 있다', () => {
+  // given / when / then
+  assert.ok(HTML.includes('어떤 홈페이지를 만들까요? 학원 이름, 과목, 원하는 분위기를 알려주세요.'));
+  assert.match(JS, /api\('POST', '\/restart'/);
+  assert.doesNotMatch(JS, /editAction\('\/restart'/);
+  assert.match(JS, /\$\('ahNew'\)\.addEventListener\('click', openNew\)/);
+  assert.ok(HTML.includes('저장하지 않은 변경만') || HTML.includes('수정 내용 초기화'));
+});
+
+test('given 새 홈페이지 패널 열기 when openNew 읽기 then 서버 호출 없이 기존 대화·미리보기를 가린다', () => {
+  // given
+  const open = JS.slice(JS.indexOf('function openNew()'), JS.indexOf('function closeNew()'));
+  // when / then
+  assert.doesNotMatch(open, /api\(/);
+  assert.match(open, /\$\('ahThread'\)\.hidden = true/);
+});
+
+test('given 변경 내역 when 읽기 then 대화 위에 쌓지 않고 접이식 details로 둔다', () => {
+  // given / when / then
+  assert.match(JS, /el\('details', 'ah-log'\)/);
+  assert.match(JS, /변경 기록 /);
+  assert.doesNotMatch(JS, /b\.appendChild\(ul\);\s*\}\s*\$\('ahMsgs'\)/);
 });

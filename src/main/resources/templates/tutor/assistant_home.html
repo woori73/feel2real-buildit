@@ -8,7 +8,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="/css/assistant_home.css?v=20261016-1"/>
+  <link rel="stylesheet" href="/css/assistant_home.css?v=20261017-1"/>
 </head>
 <body>
 <div class="ah-app" id="ahApp">
@@ -48,6 +48,10 @@
       <span class="ah-status" id="ahStatus" aria-live="polite"></span>
       <!-- 주요 편집 기능: 더보기 안에 숨기지 않고 독립 버튼으로 둔다. 정식 배포 등록(오른쪽)과 구분선으로 떨어뜨린다. -->
       <div class="ah-tools" role="toolbar" aria-label="편집 도구">
+        <button class="ah-tool" type="button" id="ahNew" title="새 홈페이지 만들기: 새 요청으로 새 초안을 만들어요(공개 홈페이지와 저장된 버전은 그대로)" aria-label="새 홈페이지 만들기">
+          <svg class="ah-tool-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          <span class="ah-tool-t">새 홈페이지</span>
+        </button>
         <button class="ah-tool" type="button" id="ahUndo" disabled title="되돌리기: 마지막 수정을 취소해요" aria-label="되돌리기">
           <svg class="ah-tool-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
           <span class="ah-tool-t">되돌리기 <b id="ahUndoCount">0</b></span>
@@ -56,9 +60,9 @@
           <svg class="ah-tool-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>
           <span class="ah-tool-t">다시 실행</span>
         </button>
-        <button class="ah-tool" type="button" id="ahReset" title="초기화: 작업본을 마지막 저장 상태로 되돌려요(공개 홈페이지는 그대로)" aria-label="초기화">
+        <button class="ah-tool" type="button" id="ahReset" title="수정 내용 초기화: 저장하지 않은 변경만 취소하고 마지막 저장 상태로 복원해요(공개 홈페이지는 그대로)" aria-label="수정 내용 초기화">
           <svg class="ah-tool-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
-          <span class="ah-tool-t">초기화</span>
+          <span class="ah-tool-t">수정 초기화</span>
         </button>
         <button class="ah-tool" type="button" id="ahPreviewBtn" title="미리보기: 전체 화면으로 확인해요" aria-label="미리보기">
           <svg class="ah-tool-ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -83,6 +87,21 @@
         </div>
       </div>
     </header>
+
+    <!-- 새 홈페이지 만들기: 기존 홈페이지(미리보기·대화)를 가리고 새 요청만 받는다. 만들기 전에는 서버에 아무것도 바뀌지 않는다. -->
+    <section class="ah-newpane" id="ahNewPane" hidden aria-label="새 홈페이지 만들기">
+      <h2>새 홈페이지 만들기</h2>
+      <p class="ah-sub">지금 공개된 홈페이지와 저장된 버전은 그대로예요. 새 초안은 비공개 작업본에 만들어지고, '되돌리기'로 이전 작업본으로 돌아갈 수 있어요.</p>
+      <form id="ahNewForm" autocomplete="off">
+        <textarea id="ahNewInput" rows="4" maxlength="2000" aria-label="새 홈페이지 요청"
+                  placeholder="어떤 홈페이지를 만들까요? 학원 이름, 과목, 원하는 분위기를 알려주세요."></textarea>
+        <div class="ah-modal-actions">
+          <button class="ah-secondary" type="button" id="ahNewCancel">취소</button>
+          <button class="ah-primary" type="submit" id="ahNewOk">새 홈페이지 만들기</button>
+        </div>
+      </form>
+      <div class="ah-busy" id="ahNewBusy" hidden role="status" aria-live="polite"><div class="ah-busy-card"><ul class="ah-steps" id="ahNewSteps"></ul></div></div>
+    </section>
 
     <div class="ah-thread" id="ahThread" role="log" aria-live="polite">
       <div class="ah-msgs" id="ahMsgs"></div>
@@ -176,13 +195,13 @@
     </div>
     <div class="ah-modal" id="ahResetConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="ahResetTitle">
       <div class="ah-modal-card">
-        <h2 id="ahResetTitle">작업본 초기화</h2>
+        <h2 id="ahResetTitle">수정 내용 초기화</h2>
         <p>현재 편집 중인 변경사항을 초기화하시겠습니까?</p>
         <p class="ah-note" id="ahResetScope">작업본의 문구·디자인·섹션·예약한 사진이 마지막 저장 상태로 돌아가요.</p>
         <p class="ah-note">공개 중인 홈페이지(운영 배포본)와 저장된 버전 기록은 삭제되지 않아요. 초기화 직후에는 '되돌리기'로 취소할 수 있어요.</p>
         <div class="ah-modal-actions">
           <button class="ah-secondary" type="button" id="ahResetCancel">취소</button>
-          <button class="ah-primary" type="button" id="ahResetOk">초기화</button>
+          <button class="ah-primary" type="button" id="ahResetOk">수정 내용 초기화</button>
         </div>
       </div>
     </div>
@@ -190,7 +209,7 @@
   </section>
 </div>
 <script src="/js/assistant_wait.js?v=20261013-1"></script>
-<script src="/js/assistant_export.js?v=20261014-1"></script>
-<script src="/js/assistant_home.js?v=20261016-1"></script>
+<script src="/js/assistant_export.js?v=20261017-1"></script>
+<script src="/js/assistant_home.js?v=20261017-1"></script>
 </body>
 </html>

@@ -230,6 +230,7 @@ TUTOR(쿠키 JWT, 본인 학원). 응답은 `Cache-Control: no-store`. **공개 
 | `POST /redo` | `{revision}` 직전 되돌리기 1단계 다시 실행. UNDO 기록에 저장한 `redo` 정보로 적용하며 응답은 `/undo`와 같다(`redoDepth` 포함). 새 수정·게시·복원이 있으면 다시 실행 스택은 비워진다 |
 | `POST /save` | `{revision}` 현재 작업본을 저장 지점(SAVEPOINT 기록)으로 남긴다. 공개 홈페이지는 바뀌지 않는다(편집은 이미 작업본에 자동 저장됨). 응답 `{savedRevision, savedAt, ...stack}` |
 | `POST /reset` | `{revision}` 현재 작업본을 마지막 저장 지점(없으면 공개 중인 홈페이지)으로 되돌린다. **공개 홈페이지·운영 배포본·저장 기록은 삭제하지 않는다.** 변경분은 EDIT 기록이라 `POST /undo`로 취소할 수 있다. 바뀐 게 없으면 `changes=[]` |
+| `POST /restart` | `{message, revision}` **새 홈페이지 만들기**(수정 턴·초기화와 별개). 학원 정보(이름·과목·대상·지역)는 두고 요청에서 새 초안(`AcademyAiCreateService.generateDraft` + 디자인 레시피)을 만들어 비공개 작업본에 **한 번의 수정(EDIT)** 으로 적용한다. 디자인 키(프리셋·색·글꼴·히어로·카드·효과·자산)만 새 값으로 바뀌고 사업자 정보 등 비디자인 값·섹션 표시/순서는 유지한다. 공개 홈페이지·버전 기록·저장점은 바뀌지 않고 `POST /undo`로 직전 작업본으로 돌아간다. 대화에 `RESTART` 표시를 남겨 화면이 이후 대화만 '현재 제작 대화'로 보이고 이전 대화는 접는다. 응답은 `/reset`과 같은 형식(`reply, changes[], undoDepth, revision`). 빈 요청·위험 문자열은 `400` |
 | `POST /publish` | `{revision, force?}` '게시하기' 하나. 작업본을 공개본에 반영하고, DRAFT면 같은 트랜잭션에서 PUBLISHED로 전환. 응답 `{firstPublish, revision}`. 오류는 작업본 API와 동일(`409 REVISION_CONFLICT/LIVE_CHANGED`) |
 
 주소·전화번호·강사·수강료는 사용자가 말하기 전까지 채우지 않는다. 지역은 사용자가 직접 한 말/입력에서만 받는다.
