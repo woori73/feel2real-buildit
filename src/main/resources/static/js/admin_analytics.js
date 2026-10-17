@@ -198,12 +198,53 @@
     }
   }
 
+  // ───────── 이벤트(섹션 노출·클릭·서비스 이동·시작): /api/admin/analytics/events ─────────
+  function pct(v) {
+    return v === null || v === undefined ? '-' : (v * 100).toFixed(1) + '%';
+  }
+
+  function renderEventRows(bodyId, rows, prefix) {
+    document.getElementById(bodyId).innerHTML = rows.length
+      ? rows.map(r => `<tr><td>${escapeHtml(r.label)}</td>${periodCells({ visitors: r.visitors, views: r[prefix] })}</tr>`).join('')
+      : '<tr><td colspan="9" class="analytics-empty">표시할 데이터가 없습니다.</td></tr>';
+  }
+
+  async function loadEvents() {
+    try {
+      const res = await fetchAuth('/api/admin/analytics/events');
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      renderEventRows('anSectionsBody', d.sections || [], 'exposures');
+      document.getElementById('anClicksBody').innerHTML = (d.clicks || []).map(c =>
+        `<tr><td>${escapeHtml(c.label)}</td><td>${escapeHtml(c.sectionLabel || '-')}</td>`
+        + `<td class="num">${fmtNumber(c.clicks?.today)}</td><td class="num">${fmtNumber(c.clicks?.recent7)}</td>`
+        + `<td class="num">${fmtNumber(c.clicks?.recent30)}</td><td class="num">${fmtNumber(c.clicks?.total)}</td>`
+        + `<td class="num">${fmtNumber(c.visitors?.recent30)}</td>`
+        + `<td>${c.sectionKey ? [c.ctrToday, c.ctr7, c.ctr30, c.ctrTotal].map(pct).join(' · ') : '섹션 밖 버튼(계산 안 함)'}</td></tr>`).join('');
+      const actions = [...(d.serviceMoves || []), ...(d.flowStarts || [])];
+      renderEventRows('anActionsBody', actions, 'counts');
+      document.getElementById('anEventsSince').textContent = d.eventsSince
+        ? '이벤트 수집 시작일: ' + fmtDate(d.eventsSince) + ' (그 이전 기간은 수집하지 않아 0으로 보입니다)'
+        : '아직 수집된 이벤트가 없습니다. 홈페이지에 방문자가 들어오면 집계됩니다.';
+      const defs = d.definitions || {};
+      document.getElementById('anEvExposure').textContent = defs.exposure || '';
+      document.getElementById('anEvClick').textContent = defs.click || '';
+      document.getElementById('anEvCtr').textContent = defs.ctr || '';
+      document.getElementById('anEvSep').textContent = defs.separation || '';
+      document.getElementById('anEvRetention').textContent = defs.retention || '';
+    } catch {
+      ['anSectionsBody', 'anActionsBody'].forEach(id => { document.getElementById(id).innerHTML = '<tr><td colspan="9" class="analytics-empty">이벤트 통계를 불러오지 못했습니다.</td></tr>'; });
+      document.getElementById('anClicksBody').innerHTML = '<tr><td colspan="8" class="analytics-empty">이벤트 통계를 불러오지 못했습니다.</td></tr>';
+    }
+  }
+
   (async () => {
     currentUser = await ensureCurrentUser();
     if (!currentUser || currentUser.role !== 'ADMIN') { location.href = '/home'; return; }
     document.getElementById('userName').textContent = window.userDisplayName(currentUser);
     loadAnalytics();
     loadBreakdown('');
+    loadEvents();
     document.getElementById('anTrendService').addEventListener('change', e => loadBreakdown(e.target.value));
   })();
 })();

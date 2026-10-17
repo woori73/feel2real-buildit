@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="/css/landing_v3.css?v=20261014-3">
   <link rel="stylesheet" href="/css/landing_home.css?v=20261016-2">
 </head>
-<body>
+<body data-track-page="home">
 <th:block layout:fragment="content">
 <div class="bi-page">
 
@@ -27,12 +27,12 @@
     </a>
     <div class="nav-actions">
       <div class="nav-links">
-        <a href="/problem-generator" class="btn outline nav-cta">내신위키</a>
+        <a data-track-move="naesin_wiki" href="/problem-generator" class="btn outline nav-cta">내신위키</a>
         <a href="/wiki" class="btn outline nav-cta">모의고사위키</a>
         <a href="/exam-analysis" class="btn outline nav-cta">기출분석</a>
         <a href="/chart" class="btn outline nav-cta">CHART</a>
         <a href="/testprep" class="btn outline nav-cta">TestPrep</a>
-        <button type="button" class="btn outline nav-cta" onclick="openContactModal()">문의하기</button>
+        <button type="button" class="btn outline nav-cta" onclick="openContactModal()" data-track-click="nav_contact" data-track-flow="consult_contact">문의하기</button>
       </div>
       <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
       <button type="button" class="nav-burger" id="biBurger" aria-label="메뉴 열기" aria-expanded="false" aria-controls="biMenu"><span></span><span></span></button>
@@ -51,11 +51,11 @@
     <a href="/designcraft">DesignCraft <span class="bi-menu-badge">준비 중</span></a>
     <a href="/admissions/guide">입시상담 <span class="bi-menu-badge">준비 중</span></a>
     <a href="/register?returnUrl=%2F" data-auth-signup>회원가입</a>
-    <button type="button" onclick="openContactModal()">문의하기</button>
+    <button type="button" onclick="openContactModal()" data-track-click="nav_contact" data-track-flow="consult_contact">문의하기</button>
   </div>
 
   <!-- ============ 0-0. 브랜드 히어로: 디지털영어학원 Agent (첫 화면 최상단) ============ -->
-  <section class="agent-hero" id="agentHero" aria-labelledby="agentHeroTitle">
+  <section class="agent-hero" id="agentHero" data-track-section="agentHero" aria-labelledby="agentHeroTitle">
     <div class="agent-hero-inner">
       <div class="agent-hero-copy">
         <p class="agent-hero-eyebrow">AI AGENT</p>
@@ -80,7 +80,7 @@
   <div class="home-first" id="homeFirst">
     <nav class="svc-chips" aria-label="서비스 바로가기">
       <ul>
-      <li><a href="/problem-generator" aria-label="내신위키">내신위키</a></li>
+      <li><a data-track-move="naesin_wiki" href="/problem-generator" aria-label="내신위키">내신위키</a></li>
       <li><a href="/wiki" aria-label="모의고사위키">위키</a></li>
       <li><a href="/exam-analysis" aria-label="내신영어 기출분석 + 출제방향 제작">기출분석</a></li>
       <li><a href="/chart" aria-label="BUILD IT CHART">CHART</a></li>
@@ -92,7 +92,7 @@
       </ul>
     </nav>
 
-    <section class="home-top" id="homeTop" aria-labelledby="homeTopH">
+    <section class="home-top" id="homeTop" data-track-section="homeTop" aria-labelledby="homeTopH">
       <div class="home-top-wrap">
         <!-- 입력 폼은 기존 #hero에서 이관했다(문서당 1개: data-buildit-* 훅 중복 금지). 마크업·속성은 그대로. -->
         <div class="home-top-ask">
@@ -101,7 +101,7 @@
           <form class="v3-ask" data-buildit-form autocomplete="off">
             <input type="text" class="v3-ask-input" data-buildit-prompt maxlength="2000"
                    placeholder="어떤 홈페이지를 만들고 싶으신가요?" aria-label="만들고 싶은 홈페이지">
-            <button type="submit" class="v3-btn v3-btn-primary" aria-label="만들기">만들기</button>
+            <button type="submit" class="v3-btn v3-btn-primary" aria-label="만들기" data-track-click="home_start" data-track-flow="home_builder">만들기</button>
           </form>
           <ul class="v3-assure"><li>편집기 수정</li><li>미리보기 확인</li><li>승인 후에만 공개</li></ul>
           <a class="home-top-more" href="/builder">빌더 소개 보기 →</a>
@@ -123,63 +123,63 @@
       </div>
     </section>
 
-    <section class="svc-tiles" id="svcTiles" aria-labelledby="svcTilesH">
+    <section class="svc-tiles" id="svcTiles" data-track-section="svcTiles" aria-labelledby="svcTilesH">
       <div class="svc-tiles-head">
         <h2 class="svc-tiles-h2" id="svcTilesH">BuildIt 서비스 8개</h2>
         <a class="svc-tiles-more" href="#services">전체 서비스 상세 →</a>
       </div>
       <p id="svcSoonNote" class="v3-sr-only">준비 중 표시가 있는 서비스는 아직 정식으로 오픈되지 않았습니다.</p>
       <ul class="svc-tiles-grid">
-        <li class="svc-tile-item"><a class="svc-tile" href="/builder" data-svc-tile="builder">
+        <li class="svc-tile-item"><a class="svc-tile" href="/builder" data-svc-tile="builder" data-track-move="builder">
           <span class="svc-tile-icon" aria-hidden="true">▣</span>
           <span class="svc-tile-title">AI 홈페이지 제작</span>
           <span class="svc-tile-desc">한 문장으로 학원 홈페이지 초안을 만들고, 편집해서 내 주소로 게시합니다.</span>
           <span class="svc-tile-badge svc-badge-role">강사·원장용</span>
           <span class="svc-tile-cta">만들어 보기 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile" href="/exam-analysis" data-svc-tile="problem">
+        <li class="svc-tile-item"><a class="svc-tile" href="/exam-analysis" data-svc-tile="problem" data-track-move="exam_analysis">
           <span class="svc-tile-icon" aria-hidden="true">분</span>
           <span class="svc-tile-title">내신영어 기출분석 + 출제방향 제작</span>
           <span class="svc-tile-desc">최근 기출문제와 시험범위 자료를 올리면 AI가 기출을 분석하고 다음 시험의 출제방향을 정리해 드립니다.</span>
           <span class="svc-tile-badge svc-badge-login">로그인 후 이용</span>
           <span class="svc-tile-cta">분석 시작 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile" href="/wiki" data-svc-tile="wiki">
+        <li class="svc-tile-item"><a class="svc-tile" href="/wiki" data-svc-tile="wiki" data-track-move="wiki">
           <span class="svc-tile-icon" aria-hidden="true">위</span>
           <span class="svc-tile-title">모의고사위키</span>
           <span class="svc-tile-desc">고1·고2·고3 영어 기출 원본, 시험 분석, 문항 질문·답변을 모은 자료 위키입니다.</span>
           <span class="svc-tile-badge svc-badge-free">무료 열람</span>
           <span class="svc-tile-cta">위키 열기 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile" href="/chart" data-svc-tile="chart">
+        <li class="svc-tile-item"><a class="svc-tile" href="/chart" data-svc-tile="chart" data-track-move="chart">
           <span class="svc-tile-icon" aria-hidden="true">C</span>
           <span class="svc-tile-title">BUILD IT CHART</span>
           <span class="svc-tile-desc">BuildIt이 공개 교육활동 근거로 찾아낸 동네 실력 있는 영어 선생님 랭킹입니다.</span>
           <span class="svc-tile-badge svc-badge-free">무료</span>
           <span class="svc-tile-cta">랭킹 보기 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile" href="/testprep" data-svc-tile="testprep">
+        <li class="svc-tile-item"><a class="svc-tile" href="/testprep" data-svc-tile="testprep" data-track-move="testprep">
           <span class="svc-tile-icon" aria-hidden="true">T</span>
           <span class="svc-tile-title">iBT TestPrep</span>
           <span class="svc-tile-desc">TOEFL iBT 읽기·듣기·말하기·쓰기를 연습하고 모의시험 채점·성적을 관리합니다.</span>
           <span class="svc-tile-badge svc-badge-login">응시는 로그인</span>
           <span class="svc-tile-cta">연습 시작 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile" href="/ledger" data-svc-tile="ledger">
+        <li class="svc-tile-item"><a class="svc-tile" href="/ledger" data-svc-tile="ledger" data-track-move="ledger">
           <span class="svc-tile-icon" aria-hidden="true">장</span>
           <span class="svc-tile-title">이지장부</span>
           <span class="svc-tile-desc">수입·지출 CSV를 넣으면 AI가 계정을 추천하고, 승인 후 복식분개·원장·시산표까지 정리합니다.</span>
           <span class="svc-tile-badge svc-badge-role">원장용</span>
           <span class="svc-tile-cta">장부 열기 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile svc-tile-soon" href="/designcraft" data-svc-tile="designcraft" aria-describedby="svcSoonNote">
+        <li class="svc-tile-item"><a class="svc-tile svc-tile-soon" href="/designcraft" data-svc-tile="designcraft" data-track-move="designcraft" aria-describedby="svcSoonNote">
           <span class="svc-tile-icon" aria-hidden="true">D</span>
           <span class="svc-tile-title">DesignCraft</span>
           <span class="svc-tile-desc">원고만 넣으면 책자·보고서·학습자료를 편집해 PDF로 내보냅니다.</span>
           <span class="svc-tile-badge svc-badge-soon">준비 중</span>
           <span class="svc-tile-cta">소개 보기 ▶</span>
         </a></li>
-        <li class="svc-tile-item"><a class="svc-tile svc-tile-soon" href="/admissions/guide" data-svc-tile="admissions" aria-describedby="svcSoonNote">
+        <li class="svc-tile-item"><a class="svc-tile svc-tile-soon" href="/admissions/guide" data-svc-tile="admissions" data-track-move="admissions" aria-describedby="svcSoonNote">
           <span class="svc-tile-icon" aria-hidden="true">입</span>
           <span class="svc-tile-title">입시상담</span>
           <span class="svc-tile-desc">전형·지원 자격·일정·평가 기준을 확인하고 지원 전략을 검토합니다.</span>
@@ -193,7 +193,7 @@
 
   <!-- ============ 1. HERO — AI 홈페이지 제작 상세 (입력 폼은 위 첫 화면 #homeTop으로 이관) ============ -->
   <!-- ============ 0. 전국 무대 (Shopify '글로벌 무대로 확장하세요' 구성: 지역 선택 → 카드 전환, 지도 대신 남한 지도) ============ -->
-  <section class="nation" id="nation" data-nation>
+  <section class="nation" id="nation" data-track-section="nation" data-nation>
     <div class="nation-wrap">
       <div class="nation-head"><h2 class="nation-title">전국 무대로 확장하세요!</h2><p class="nation-agent"><svg class="chick chick-md" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-spark"><path class="s1" d="M100 22l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#5ff2e1"/><path class="s2" d="M16 36l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff6bf"/></g></g></svg><span><small>AI Agent</small>디지털영어학원 Agent</span></p></div>
       <div class="nation-stage">
@@ -239,7 +239,7 @@
     <p class="agent-service"><svg class="chick chick-chip" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-laptop"><rect x="34" y="90" width="52" height="24" rx="3" fill="#e8f1f2" stroke="#14333a" stroke-width="2.5"/><rect x="39" y="94" width="42" height="14" rx="1.5" fill="#14333a"/><rect class="ck-type t1" x="43" y="98" width="14" height="2.6" rx="1.3" fill="#5ff2e1"/><rect class="ck-type t2" x="43" y="103" width="22" height="2.6" rx="1.3" fill="#5ff2e1"/><rect x="28" y="113" width="64" height="4" rx="2" fill="#14333a"/></g></g></svg>홈페이지 Agent</p>
   </section>
 
-  <section class="hero" id="hero">
+  <section class="hero" id="hero" data-track-section="hero">
     <div class="fm-hero">
       <h1 class="fm-title" data-fm-words aria-label="간편하게 · 빠르게 제작 · 배포도 금방">
         <span class="fm-word">간편하게</span><span class="fm-dot" aria-hidden="true"> · </span><span class="fm-word">빠르게 제작</span><span class="fm-dot" aria-hidden="true"> · </span><span class="fm-word">배포도 금방</span>
@@ -259,7 +259,7 @@
   </section>
 
   <!-- ============ 1-3. 내신 영어 문제지 제작 (Build It Wiki) — 홈페이지 제작 바로 다음 ============ -->
-  <section class="wk" id="wiki">
+  <section class="wk" id="wiki" data-track-section="wiki">
     <div class="wk-wrap">
       <p class="agent-service wk-chip"><svg class="chick chick-chip" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-pencil"><rect x="30" y="94" width="40" height="22" rx="2" fill="#fff" stroke="#14333a" stroke-width="2.5"/><path d="M36 101h26M36 106h18" stroke="#9fb4b8" stroke-width="2" stroke-linecap="round"/><g class="ck-pen"><path d="M84 78l10-10 6 6-10 10-9 3z" fill="#ff8a1f" stroke="#14333a" stroke-width="2.2" stroke-linejoin="round"/><path d="M85 88l-2 7 7-2z" fill="#f6d9a8" stroke="#14333a" stroke-width="2" stroke-linejoin="round"/></g></g></g></svg>내신 문제 제작 Agent</p>
       <h2 class="wk-title">내신 영어 <em>문제지 제작</em></h2>
@@ -270,8 +270,8 @@
         </figure>
         <div class="wk-bar">
           <div class="wk-price"><span>기본 1회</span><b>20,000원</b></div>
-          <a class="wk-btn wk-kakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카톡 문의</a>
-          <a class="wk-btn wk-mail" href="mailto:woorinaesin@naver.com" data-copy-mail="woorinaesin@naver.com">이메일 문의</a>
+          <a class="wk-btn wk-kakao" data-track-click="wiki_kakao" data-track-flow="exam_request" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카톡 문의</a>
+          <a class="wk-btn wk-mail" data-track-click="wiki_mail" data-track-flow="exam_request" href="mailto:woorinaesin@naver.com" data-copy-mail="woorinaesin@naver.com">이메일 문의</a>
         </div>
       </div>
       <p class="wk-mailnote" id="wkMailNote" role="status" aria-live="polite" data-mail-note="woorinaesin@naver.com">이메일 주소 woorinaesin@naver.com</p>
@@ -314,7 +314,7 @@
 
 
   <!-- ============ 3-1. 현재 오픈한 서비스 — 최상단에 서비스 이름 앵커, 아래에 설명 섹션(주요 기능·사용 방법·서비스 입장하기) ============ -->
-  <section class="v3-services ag-dark" id="services">
+  <section class="v3-services ag-dark" id="services" data-track-section="services">
     <div class="v3-wrap">
       <div class="v3-sec-head">
         <span class="v3-eyebrow">현재 오픈한 서비스</span>
@@ -364,7 +364,7 @@
   </section>
 
   <!-- ============ 3-2. 출시 예정 서비스 (미배포 — 오픈 목록과 분리, 링크·입력창 없음) ============ -->
-  <section class="v3-soon ag-dark" id="soon">
+  <section class="v3-soon ag-dark" id="soon" data-track-section="soon">
     <div class="v3-wrap">
       <div class="v3-sec-head v3-rv">
         <span class="v3-eyebrow">출시 예정</span>
@@ -405,7 +405,7 @@
   </section>
 
   <!-- ============ 4. BUILD IT CHART — 오픈 서비스 전체 뒤, 홈페이지 마지막 주요 섹션 (Billboard Hot 100 구성) ============ -->
-  <section class="bb-chart" id="chart-showcase">
+  <section class="bb-chart" id="chart-showcase" data-track-section="chart-showcase">
     <div class="bb-wrap">
       <p class="agent-service bb-chip"><svg class="chick chick-chip" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-chart"><rect x="30" y="86" width="60" height="30" rx="4" fill="#e8f1f2" stroke="#14333a" stroke-width="2.5"/><rect class="b1" x="38" y="98" width="9" height="14" rx="1.5" fill="#00c389"/><rect class="b2" x="52" y="92" width="9" height="20" rx="1.5" fill="#5ff2e1"/><rect class="b3" x="66" y="95" width="9" height="17" rx="1.5" fill="#00c389"/></g></g></svg>Chart Agent</p>
       <h2 class="bb-title">BUILDIT CHART 100</h2>
@@ -430,9 +430,10 @@
     </div>
   </section>
   <script src="/js/landing_chart.js?v=20261014-1" defer></script>
+  <script src="/js/site_events.js?v=20261017-1" defer></script>
 
   <!-- ============ 7-2. FAQ ============ -->
-  <section class="v3-faq ag-dark" id="faq">
+  <section class="v3-faq ag-dark" id="faq" data-track-section="faq">
     <div class="v3-wrap">
       <div class="v3-sec-head v3-rv"><span class="v3-eyebrow">자주 묻는 질문</span><h2 class="v3-h2">시작하기 전에</h2><span class="v3-faq-chick" aria-hidden="true"><svg class="chick chick-md" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-ask"><circle cx="96" cy="26" r="13" fill="#5ff2e1" stroke="#14333a" stroke-width="2.5"/><text x="96" y="32" font-size="17" font-weight="800" text-anchor="middle" fill="#14333a">?</text></g></g></svg></span></div>
       <div class="v3-faq-list v3-rv">
@@ -446,11 +447,11 @@
   </section>
 
   <!-- ============ 8. 문의 ============ -->
-  <section class="cta-mini" id="cta">
+  <section class="cta-mini" id="cta" data-track-section="cta">
     <div class="brand-glow" aria-hidden="true"></div>
     <div class="cta-chick" aria-hidden="true"><svg class="chick chick-lg" viewBox="0 0 120 124" role="img" aria-label="병아리 Agent" focusable="false"><ellipse class="ck-shadow" cx="60" cy="118" rx="28" ry="4.5" fill="#000" opacity=".22"/><g class="ck-bob"><ellipse cx="44" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><ellipse cx="76" cy="108" rx="8" ry="3.5" fill="#ff8a1f"/><g class="ck-wing ck-wl"><ellipse cx="22" cy="76" rx="10" ry="17" transform="rotate(-18 22 76)" fill="#f5c22b"/></g><g class="ck-wing ck-wr"><ellipse cx="98" cy="76" rx="10" ry="17" transform="rotate(18 98 76)" fill="#f5c22b"/></g><ellipse cx="60" cy="72" rx="40" ry="38" fill="#ffd43b"/><ellipse cx="60" cy="82" rx="27" ry="22" fill="#ffe98a"/><g class="ck-sprout"><path d="M60 36C60 29 60 24 60 19" stroke="#3a9d4a" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="52" cy="17" rx="9" ry="5" transform="rotate(-28 52 17)" fill="#5fd068"/><ellipse cx="69" cy="15" rx="9" ry="5" transform="rotate(26 69 15)" fill="#4cbd5a"/></g><path d="M24 64C24 26 96 26 96 64" stroke="#14333a" stroke-width="5.5" fill="none" stroke-linecap="round"/><ellipse cx="23" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><ellipse cx="97" cy="66" rx="7.5" ry="12" fill="#5ff2e1" stroke="#14333a" stroke-width="3"/><g class="ck-eyes"><circle cx="46" cy="63" r="5.5" fill="#14333a"/><circle cx="74" cy="63" r="5.5" fill="#14333a"/><circle cx="48" cy="61" r="1.8" fill="#fff"/><circle cx="76" cy="61" r="1.8" fill="#fff"/></g><ellipse cx="36" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><ellipse cx="84" cy="75" rx="6" ry="4" fill="#ff9e8a" opacity=".75"/><path d="M54 70h12l-6 9z" fill="#ff8a1f" stroke="#e57300" stroke-width="1" stroke-linejoin="round"/><g class="ck-acc ck-spark"><path class="s1" d="M100 22l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#5ff2e1"/><path class="s2" d="M16 36l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#fff6bf"/></g></g></svg></div>
     <p class="reveal" data-fade>홈페이지 제작으로 디지털 영어 학원을 시작하세요!</p>
-    <a href="/builder" class="btn reveal" data-fade data-buildit-start>
+    <a href="/builder" class="btn reveal" data-fade data-buildit-start data-track-click="cta_start">
       만들기
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8H13M13 8L9 4M13 8L9 12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </a>

@@ -11,6 +11,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsResponse.PeriodMetric;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsEventsService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsService;
 import jakarta.servlet.http.Cookie;
 import java.util.List;
@@ -42,6 +43,7 @@ class AdminAnalyticsControllerWebMvcTest {
 
   @MockitoBean AdminAnalyticsService service;
   @MockitoBean AdminAnalyticsBreakdownService breakdownService;
+  @MockitoBean AdminAnalyticsEventsService eventsService;
   @MockitoBean AcademyRepository academyRepository;
 
   @BeforeEach
@@ -81,6 +83,15 @@ class AdminAnalyticsControllerWebMvcTest {
     mockMvc.perform(get("/api/admin/analytics/breakdown").cookie(token("STUDENT"))).andExpect(status().isForbidden());
     mockMvc.perform(get("/api/admin/analytics/breakdown").cookie(token("TUTOR"))).andExpect(status().isForbidden());
     mockMvc.perform(get("/api/admin/analytics/breakdown").cookie(token("ADMIN"))).andExpect(status().isOk());
+  }
+
+  @Test
+  @DisplayName("given 익명·STUDENT·TUTOR when 이벤트 통계를 조회하면 then 401/403, ADMIN만 200")
+  void events_adminOnly() throws Exception {
+    mockMvc.perform(get("/api/admin/analytics/events")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/api/admin/analytics/events").cookie(token("STUDENT"))).andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/admin/analytics/events").cookie(token("TUTOR"))).andExpect(status().isForbidden());
+    mockMvc.perform(get("/api/admin/analytics/events").cookie(token("ADMIN"))).andExpect(status().isOk());
   }
 
   private Cookie token(String role) {
