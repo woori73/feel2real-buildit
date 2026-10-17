@@ -54,6 +54,40 @@ class PublishingMaintenanceIntegrationTest {
     mvc.perform(post(url+"/resume").with(user("admin").roles("ADMIN")).header("X-DesignCraft-Maintenance","1").header("Origin","http://localhost")).andExpect(status().isOk());
     mvc.perform(post(url+"/drain").with(user("tutor").roles("TUTOR")).header("X-DesignCraft-Maintenance","1")).andExpect(status().isForbidden());
   }
+  @Test void adminStatusShowsRemainingTtlOnlyWhileOpen() throws Exception {
+    // given: 재시작 직후 CLOSED
+    String url="/api/admin/publishing/maintenance";
+    var admin=user("admin").roles("ADMIN");
+    var closed=new ObjectMapper().readTree(mvc.perform(get(url).with(admin)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    assertEquals("CLOSED",closed.get("state").asText());
+    assertTrue(closed.get("openRemainingSeconds").isNull());
+    // when: ADMIN resume
+    mvc.perform(post(url+"/resume").with(admin).header("X-DesignCraft-Maintenance","1").header("Origin","http://localhost")).andExpect(status().isOk());
+    // then: 기본 TTL 1800초가 응답에 표시된다
+    var open=new ObjectMapper().readTree(mvc.perform(get(url).with(admin)).andReturn().getResponse().getContentAsString());
+    assertEquals("OPEN",open.get("state").asText());
+    long remaining=open.get("openRemainingSeconds").asLong();
+    assertTrue(remaining>=1790&&remaining<=1800,"remaining="+remaining);
+  }
+  @Test void ttlPropertyOnlyZeroDisablesAndInvalidValuesUseTheDefault() throws Exception {
+    // given/when/then: 명시적 0만 무제한, 빈 값·잘못된 값·음수는 기본 1800초
+    assertNull(statusAfterResumeWithTtl("0").openRemainingSeconds());
+    for(String bad:List.of("","abc","-1")){
+      long remaining=statusAfterResumeWithTtl(bad).openRemainingSeconds();
+      assertTrue(remaining>=1790&&remaining<=1800,bad+" -> "+remaining);
+    }
+    assertEquals(PublishingMaintenanceGate.State.OPEN,statusAfterResumeWithTtl("0").state());
+  }
+  private PublishingMaintenanceGate.Status statusAfterResumeWithTtl(String ttl) throws Exception {
+    var other=new AnnotationConfigWebApplicationContext();other.setServletContext(new MockServletContext());
+    Path cli=dir.resolve("fake-cli");
+    TestPropertySourceUtils.addInlinedPropertiesToEnvironment(other,
+        "publishing.maintenance.state-dir="+dir.resolve("ttl-"+System.nanoTime()),
+        "publishing.maintenance.open-ttl-seconds="+ttl,"probe.cli="+cli);
+    other.register(Config.class);other.refresh();
+    try{var g=other.getBean(PublishingMaintenanceGate.class);g.resume();return g.status();}
+    finally{other.close();}
+  }
   @Test void securityRejectsUnauthorizedUsersBeforeMaintenanceResponse() throws Exception {
     assertTrue(PublishingAdmissionFilter.class.getAnnotation(org.springframework.core.annotation.Order.class).value()
         >= 0);
