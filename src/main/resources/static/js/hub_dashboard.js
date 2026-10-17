@@ -23,6 +23,12 @@
   }
 
   async function init() {
+    // 페이지 진입 가드: ADMIN이 아니면 로그인 페이지로 (dashboard.html과 동일 패턴)
+    const currentUser = await ensureCurrentUser();
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      location.href = '/admin/login';
+      return;
+    }
     bindTabs();
     await loadBusinesses();
     await loadWidgets();
