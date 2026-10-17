@@ -94,11 +94,25 @@ public class PdfExportService {
     params.put("standard", standard.code);
     params.put("marks", Map.of("crop", true, "bleed", true, "pageInfo", true));
     params.put("tagged", true);
+    // 인쇄 마크(페이지 정보)는 한글 글리프가 없어 □로 나오므로 마크 문구만 ASCII로 바꾸고 메타데이터 제목은 되돌린다.
+    String documentTitle = PdfMarkTitle.readDocumentTitle(Path.of(job.getDesigncraftFile()), objectMapper);
+    String markTitle = PdfMarkTitle.markTitleFor(job.getTemplate(), documentTitle);
+    if (markTitle != null) {
+      params.put("title", markTitle);
+    }
     if (pages != null && !pages.isBlank()) {
       params.put("pages", pages);
     }
     cliExecutor.execute(new PublishingCommand("file.exportPdf", params), workDir);
     log.info("PDF 출력 완료: jobId={}, standard={}, file={}", jobId, standard.code, outPdf);
+    if (markTitle != null) {
+      try {
+        PdfMarkTitle.restoreTitle(outPdf, documentTitle);
+      } catch (IOException e) {
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+            "PDF 메타데이터 제목 복원 실패: " + e.getMessage(), e);
+      }
+    }
 
     // 3. 출력 게이트 (X-4만 엄격 검사)
     if (standard == PdfStandard.X4) {
