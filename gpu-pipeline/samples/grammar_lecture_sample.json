@@ -1,0 +1,15 @@
+{
+  "title": "현재완료 맛보기 (샘플 대본, 교재 원문 아님)",
+  "lang": "ko",
+  "characters": [
+    {"id": "teacher", "name": "선생님", "voice": "TBD", "look": "reference/teacher_*.png"},
+    {"id": "student_a", "name": "학생A", "voice": "TBD", "look": "reference/student_a_*.png"}
+  ],
+  "scenes": [
+    {"setting": "교실, 오후",
+     "lines": [
+       {"speaker": "teacher", "text": "오늘은 현재완료를 배워요. 과거에 시작해서 지금까지 이어지는 일이에요.", "visual": "칠판 앞 중간 샷"},
+       {"speaker": "student_a", "text": "선생님, 그냥 과거형이랑 뭐가 달라요?", "visual": "손을 든 학생 클로즈업"}
+     ]}
+  ]
+}
