@@ -29,6 +29,19 @@
         "ec2:DescribeInstances"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "DeployBucketReadWrite",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::f2r-deploy-425805163960",
+        "arn:aws:s3:::f2r-deploy-425805163960/*"
+      ]
     }
   ]
 }

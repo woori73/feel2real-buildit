@@ -16,7 +16,11 @@ on:
         default: 'validate'
         type: choice
         options:
+          - all-infra
           - validate
+          - s3
+          - provision
+          - restore-rds
           - vpc
           - ec2
           - rds-shell
@@ -24,6 +28,10 @@ on:
           - acm
           - alb-https
           - smoke
+      db_snapshot:
+        description: 'restore-rds 전용: 신규 계정 내 복사 스냅샷 식별자(f2r-shared-*)'
+        required: false
+        default: ''
       db_param_family:
         description: 'RDS 파라미터 그룹 패밀리 (구 RDS 엔진 버전과 같아야 함 — 구 RDS 확인 후 선택)'
         required: false
@@ -62,6 +70,7 @@ jobs:
     outputs:
       instance_id: ${{ steps.run.outputs.instance_id }}
     steps:
+      - uses: actions/checkout@v4
       - name: Configure AWS credentials (infra-builder)
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -76,6 +85,7 @@ jobs:
           STEP: ${{ inputs.step }}
           DB_PARAM_FAMILY: ${{ inputs.db_param_family }}
           HEALTH_PATH: ${{ inputs.health_check_path }}
+          DB_SNAPSHOT: ${{ inputs.db_snapshot }}
         run: |
           set -euo pipefail
           P=f2r-migration
@@ -379,7 +389,64 @@ jobs:
             echo "instance_id=$IID" >> "$GITHUB_OUTPUT"
           }
 
+          step_s3() {
+            local B=f2r-deploy-425805163960
+            if ! aws s3api head-bucket --bucket "$B" 2>/dev/null; then
+              aws s3api create-bucket --bucket "$B" --region ap-northeast-2 \
+                --create-bucket-configuration LocationConstraint=ap-northeast-2
+              echo "created bucket"
+            else echo "exists bucket"; fi
+            aws s3api put-public-access-block --bucket "$B" --public-access-block-configuration \
+              BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+            aws s3api put-bucket-encryption --bucket "$B" --server-side-encryption-configuration \
+              '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+            aws s3api put-bucket-tagging --bucket "$B" --tagging "TagSet=[{Key=Project,Value=$P}]"
+          }
+
+          step_provision() {
+            local IID CID ST
+            IID=$(get_instance); need f2r-app "$IID"
+            B64=$(base64 -w0 scripts/deploy/provision-new-host.sh)
+            CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript \
+              --timeout-seconds 1500 \
+              --parameters "{\"commands\":[\"echo $B64 | base64 -d > /tmp/provision.sh\",\"bash /tmp/provision.sh\"]}" \
+              --query 'Command.CommandId' --output text)
+            for _ in $(seq 1 100); do
+              ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+              case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 15
+            done
+            aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" \
+              --query '{out:StandardOutputContent,err:StandardErrorContent}' --output text | tail -c 6000
+            [ "$ST" = Success ] || { echo "provision status=$ST" >&2; exit 1; }
+          }
+
+          step_restore_rds() {
+            local RDSSG DBID=f2r-db PGN
+            [ -n "$DB_SNAPSHOT" ] || { echo "db_snapshot 필요" >&2; exit 1; }
+            RDSSG=$(get_sg f2r-rds-sg); need rds-sg "$RDSSG"
+            PGN="f2r-${DB_PARAM_FAMILY//./}-params"
+            if aws rds describe-db-instances --db-instance-identifier $DBID >/dev/null 2>&1; then echo "exists $DBID"; return 0; fi
+            aws rds restore-db-instance-from-db-snapshot --db-instance-identifier $DBID \
+              --db-snapshot-identifier "$DB_SNAPSHOT" --db-instance-class db.t4g.micro \
+              --db-subnet-group-name f2r-db-subnets --vpc-security-group-ids "$RDSSG" \
+              --no-publicly-accessible --no-multi-az --db-parameter-group-name "$PGN" \
+              --tags Key=Project,Value=$P >/dev/null
+            aws rds wait db-instance-available --db-instance-identifier $DBID
+            aws rds modify-db-instance --db-instance-identifier $DBID --storage-type gp3 \
+              --backup-retention-period 7 --apply-immediately >/dev/null
+            echo "restored $DBID (endpoint는 공개 로그에 출력하지 않음)"
+          }
+
+          step_all_infra() {
+            step_validate; step_vpc; step_rds_shell; step_s3; step_ec2; step_alb; step_acm
+            step_provision
+          }
+
           case "$STEP" in
+            all-infra) step_all_infra ;;
+            s3) step_s3 ;;
+            provision) step_provision ;;
+            restore-rds) step_restore_rds ;;
             validate) step_validate ;;
             vpc) step_vpc ;;
             ec2) step_ec2 ;;

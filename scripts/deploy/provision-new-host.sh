@@ -41,14 +41,18 @@ render_env() {
 }
 
 install_packages() {
-  dnf install -y java-21-amazon-corretto-headless python3.11 python3.11-pip \
-    fontconfig google-noto-sans-cjk-ttc-fonts tar xz git
+  dnf install -y java-21-amazon-corretto-headless python3.11 python3.11-pip fontconfig tar xz git
+  # 한글 폰트: 패키지명이 배포판 버전에 따라 달라 실패해도 중단하지 않고 아래에서 검증한다.
+  dnf install -y google-noto-sans-cjk-ttc-fonts || dnf install -y google-noto-sans-cjk-fonts || true
+  fc-cache -f
+  fc-list :lang=ko | grep -q . || echo "WARN: 한글 폰트 미설치 — /opt/artcraft/fonts 이전 필요"
 }
 
 install_ffmpeg_static() {
   [ -x /usr/local/bin/ffmpeg ] && return 0
-  curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz -o /tmp/ffmpeg.tar.xz || \
-  curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz -o /tmp/ffmpeg.tar.xz
+  local arch=amd64
+  [ "$(uname -m)" = aarch64 ] && arch=arm64
+  curl -fsSL "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-${arch}-static.tar.xz" -o /tmp/ffmpeg.tar.xz
   tar -xJf /tmp/ffmpeg.tar.xz -C /tmp
   install -m 755 /tmp/ffmpeg-*-static/ffmpeg /usr/local/bin/ffmpeg
   install -m 755 /tmp/ffmpeg-*-static/ffprobe /usr/local/bin/ffprobe
@@ -61,6 +65,7 @@ fetch_env_from_ssm() {
   aws ssm get-parameters-by-path --region "$region" --path /f2r/app/ --with-decryption \
     --query 'Parameters[].[Name,Value]' --output text | render_env > /etc/f2r/env.new
   chmod 600 /etc/f2r/env.new && mv /etc/f2r/env.new /etc/f2r/env
+  [ -s /etc/f2r/env ] || echo "WARN: /f2r/app/* 파라미터 없음 — 비밀값 이전 후 다시 실행"
 }
 
 main() {
@@ -68,7 +73,7 @@ main() {
   install_ffmpeg_static
   install -d -o ec2-user -g ec2-user /opt/designcraft /opt/artcraft/fonts /opt/buildit-wiki
   fc-cache -f
-  fetch_env_from_ssm
+  fetch_env_from_ssm || echo "WARN: env 생성 건너뜀"
   render_app_unit "${HEAP_MB:-$HEAP_MB_DEFAULT}" > /etc/systemd/system/f2r-app.service
   systemctl daemon-reload
   systemctl enable f2r-app.service
