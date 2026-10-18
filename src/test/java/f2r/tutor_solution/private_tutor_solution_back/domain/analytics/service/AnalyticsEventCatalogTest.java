@@ -27,15 +27,13 @@ class AnalyticsEventCatalogTest {
   }
 
   @Test
-  @DisplayName("given 카탈로그의 홈 섹션 when 랜딩 마크업과 비교하면 then 모두 실제 섹션(id·data-track-section)으로 존재한다")
-  void homeSections_existInLanding() throws Exception {
+  @DisplayName("given Feel2Real|EDUNOVA 홈 when 추적 훅을 찾으면 then 카탈로그에 없는 옛 홈 섹션 훅을 심지 않는다(새 홈 계측은 후속)")
+  void newHome_hasNoStaleSectionHooks() throws Exception {
     // given
     String html = landing();
     // when / then
-    for (var def : AnalyticsEventCatalog.all(Type.SECTION_VIEW)) {
-      if (!def.page().equals("home")) continue;
-      assertThat(html).as("section " + def.target()).contains("data-track-section=\"" + def.target() + "\"");
-      assertThat(html).as("id of " + def.target()).contains("id=\"" + def.target() + "\"");
+    for (String id : attrValues(html, "data-track-section")) {
+      assertThat(AnalyticsEventCatalog.find("SECTION_VIEW", "home", id)).as("section " + id).isPresent();
     }
   }
 

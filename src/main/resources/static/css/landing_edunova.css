@@ -1,0 +1,99 @@
+/* Feel2Real | EDUNOVA 홈 — 청색·남색·흰색. 시안 레이아웃 참고, 확정된 내용만 표시한다. */
+:root { --en-navy:#0b1b3b; --en-blue:#1560ff; --en-blue-d:#0f49c9; --en-bg:#f4f7fd; --en-line:#e3e9f5; --en-ink:#1a2540; --en-sub:#5a6785; }
+* { box-sizing:border-box; }
+body { margin:0; background:#fff; color:var(--en-ink); font-family:"Pretendard Variable",Pretendard,-apple-system,"Segoe UI","Noto Sans KR",sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; }
+a { color:inherit; text-decoration:none; }
+.en-page { min-height:60vh; }
+
+/* NAV */
+.en-nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:28px; padding:0 max(16px, calc((100vw - 1240px)/2)); height:64px; background:#fff; border-bottom:1px solid var(--en-line); }
+.en-logo { display:flex; align-items:center; gap:12px; flex:0 0 auto; }
+.en-logo-main { font-size:26px; font-weight:800; letter-spacing:-.5px; color:var(--en-navy); }
+.en-logo-sep { width:1px; height:22px; background:#b9c4dc; }
+.en-logo-sub { font-size:13px; letter-spacing:.32em; font-weight:600; color:var(--en-blue); }
+.en-menu { display:flex; gap:26px; margin-left:auto; font-size:15px; font-weight:600; color:var(--en-navy); }
+.en-menu a { padding:8px 2px; border-bottom:2px solid transparent; white-space:nowrap; }
+.en-menu a:hover { color:var(--en-blue); border-bottom-color:var(--en-blue); }
+.en-actions { display:flex; align-items:center; gap:10px; }
+.en-burger { display:none; width:40px; height:40px; border:0; background:none; padding:9px; cursor:pointer; flex-direction:column; justify-content:center; gap:5px; }
+.en-burger span { display:block; height:2px; background:var(--en-navy); border-radius:2px; }
+.en-drawer { position:fixed; top:64px; left:0; right:0; z-index:49; background:#fff; border-bottom:1px solid var(--en-line); box-shadow:0 12px 24px rgba(11,27,59,.12); display:flex; flex-direction:column; }
+.en-drawer[hidden] { display:none; }
+.en-drawer a { padding:16px 20px; font-size:17px; font-weight:600; border-top:1px solid var(--en-line); }
+
+/* HERO */
+.en-hero { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr); gap:0; background:var(--en-navy); }
+.en-hero-art { position:relative; margin:0; background:#050a18; }
+.en-hero-art img { display:block; width:100%; height:100%; object-fit:cover; aspect-ratio:966/484; }
+.en-hero-badge { position:absolute; left:16px; bottom:14px; padding:6px 12px; border-radius:999px; background:rgba(5,10,24,.72); color:#cfe0ff; font-size:13px; font-weight:600; letter-spacing:.02em; border:1px solid rgba(160,190,255,.35); }
+.en-offer { background:linear-gradient(180deg,#f7faff 0%,#eaf1ff 100%); padding:36px 36px 30px; display:flex; flex-direction:column; justify-content:center; }
+.en-offer-eyebrow { margin:0 0 6px; color:var(--en-blue); font-weight:700; font-size:14px; }
+.en-offer-title { margin:0; font-size:clamp(30px,3.2vw,42px); line-height:1.15; font-weight:800; color:var(--en-navy); letter-spacing:-.8px; }
+.en-offer-price { margin:14px 0 6px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.en-offer-price strong { font-size:clamp(34px,3.6vw,48px); font-weight:800; color:var(--en-navy); letter-spacing:-1px; }
+.en-offer-price span { font-size:18px; font-weight:700; color:var(--en-blue); }
+.en-offer-points { list-style:none; margin:10px 0 20px; padding:0; display:grid; gap:8px; }
+.en-offer-points li { position:relative; padding-left:26px; font-size:16px; font-weight:600; color:var(--en-ink); }
+.en-offer-points li::before { content:""; position:absolute; left:0; top:.45em; width:14px; height:14px; border-radius:50%; background:var(--en-blue); box-shadow:inset 0 0 0 4px #dce8ff; }
+.en-offer-note { margin:12px 0 0; font-size:13px; color:var(--en-sub); }
+.en-btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 26px; border-radius:999px; font-size:16px; font-weight:700; border:2px solid transparent; cursor:pointer; transition:background .15s,color .15s; }
+.en-btn-primary { background:var(--en-blue); color:#fff; }
+.en-btn-primary:hover { background:var(--en-blue-d); }
+.en-btn-outline { border-color:var(--en-blue); color:var(--en-blue); background:#fff; }
+.en-btn-outline:hover { background:var(--en-blue); color:#fff; }
+.en-btn-ghost { border-color:rgba(190,210,255,.6); color:#e5eeff; }
+.en-btn-ghost:hover { background:rgba(255,255,255,.12); }
+
+/* NOTICE */
+.en-notice { display:flex; align-items:center; gap:14px; max-width:1240px; margin:20px auto; padding:14px 20px; border:1px solid var(--en-line); border-radius:14px; background:#f8faff; }
+.en-notice:hover { border-color:var(--en-blue); }
+.en-notice-tag { flex:0 0 auto; padding:4px 12px; border-radius:999px; background:var(--en-blue); color:#fff; font-size:13px; font-weight:700; }
+.en-notice-text { font-size:16px; font-weight:600; color:var(--en-navy); }
+
+/* INTRO */
+.en-intro { max-width:880px; margin:56px auto 24px; padding:0 20px; text-align:center; }
+.en-eyebrow { margin:0 0 8px; font-size:13px; letter-spacing:.3em; color:var(--en-blue); font-weight:700; }
+.en-intro h2 { margin:0 0 18px; font-size:clamp(26px,3.4vw,38px); line-height:1.25; color:var(--en-navy); letter-spacing:-.6px; font-weight:800; }
+.en-intro p { margin:0 0 8px; font-size:17px; color:var(--en-sub); }
+
+/* SERVICES */
+.en-services { max-width:1240px; margin:44px auto 72px; padding:0 20px; }
+.en-section-title { margin:0 0 20px; font-size:28px; font-weight:800; color:var(--en-navy); padding-left:14px; border-left:5px solid var(--en-blue); line-height:1.2; }
+.en-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+.en-card { display:flex; flex-direction:column; gap:10px; padding:26px 24px; border:1px solid var(--en-line); border-radius:18px; background:#fff; box-shadow:0 6px 18px rgba(11,27,59,.06); }
+.en-card-no { font-size:13px; font-weight:700; color:var(--en-sub); letter-spacing:.1em; }
+.en-card h3 { margin:0; font-size:24px; color:var(--en-navy); font-weight:800; letter-spacing:-.4px; }
+.en-card p { margin:0; color:var(--en-sub); font-size:15.5px; }
+.en-card-price { color:var(--en-navy) !important; font-size:18px !important; }
+.en-card-price strong { font-size:26px; color:var(--en-blue); }
+.en-card-links, .en-card-points { list-style:none; margin:2px 0 6px; padding:0; display:grid; gap:6px; }
+.en-card-links a { color:var(--en-blue); font-weight:600; }
+.en-card-links a:hover { text-decoration:underline; }
+.en-card-points li { position:relative; padding-left:18px; color:#dbe6ff; font-size:15.5px; }
+.en-card-points li::before { content:""; position:absolute; left:0; top:.6em; width:7px; height:7px; border-radius:50%; background:#7fa6ff; }
+.en-card .en-btn { margin-top:auto; align-self:flex-start; min-height:44px; font-size:15px; }
+.en-card-dark { background:linear-gradient(160deg,#0b1b3b,#14307a); border-color:#14307a; }
+.en-card-dark .en-card-no, .en-card-dark h3 { color:#fff; }
+.en-card-status { color:#9fc0ff !important; font-weight:700; }
+
+/* 반응형 */
+@media (max-width:1100px) { .en-menu { gap:16px; font-size:14px; } }
+@media (max-width:960px) {
+  .en-menu { display:none; }
+  .en-burger { display:flex; }
+  .en-actions { margin-left:auto; }
+  .en-hero { grid-template-columns:1fr; }
+  .en-hero-art img { aspect-ratio:966/484; }
+  .en-offer { padding:26px 20px 24px; }
+  .en-cards { grid-template-columns:1fr; }
+  .en-logo-main { font-size:22px; }
+  .en-logo-sub { font-size:11px; }
+}
+@media (max-width:520px) {
+  .en-nav { gap:12px; }
+  .en-logo-sep, .en-logo-sub { display:none; }
+  .en-notice { margin:14px 16px; padding:12px 14px; align-items:flex-start; flex-direction:column; gap:6px; }
+  .en-notice-text { font-size:15px; }
+  .en-btn-primary { width:100%; }
+  .en-intro { margin-top:40px; }
+}

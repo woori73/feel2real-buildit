@@ -119,18 +119,19 @@ class TemplateBrandingTest {
         String footerFragment = Files.readString(TEMPLATE_ROOT.resolve("fragments/_public_footer.html"));
 
         // then
-        // 랜딩은 Build It 서비스 화면이다. F2R 로고를 헤더/푸터 어디에도 쓰지 않는다.
+        // 랜딩은 Feel2Real | EDUNOVA 화면이다. F2R 학생 플랫폼 로고 이미지를 헤더에 쓰지 않는다.
         assertThat(landing)
                 .doesNotContain(F2R_LOGO_PATH)
-                .contains("fragments/_public_footer :: publicFooterBuildIt")
-                .contains("<b>Build</b><i>It</i>");
+                .contains("fragments/_public_footer :: publicFooterBranded(false, false, false)")
+                .contains("Feel2Real")
+                .contains("EDUNOVA");
         // /home은 F2R 학생용 플랫폼이라 리브랜딩 대상이 아니다.
         assertThat(home)
                 .contains(F2R_LOGO_PATH)
                 .contains("fragments/_public_footer :: publicFooter}");
         // 두 브랜드가 같은 fragment 본문(=같은 사업자 정보)을 공유해야 한다.
         assertThat(footerFragment)
-                .contains("th:fragment=\"publicFooterBranded(buildIt)\"")
+                .contains("th:fragment=\"publicFooterBranded(\"")
                 .contains("class=\"footer-name footer-name-bi\"")
                 .contains(F2R_LOGO_PATH);
     }
