@@ -23,6 +23,9 @@ on:
           - ssm-last-output
           - app-diag
           - acm-dns
+          - p2-inventory
+          - p2-s3-copy
+          - p2-designcraft
           - validate
           - s3
           - provision
@@ -68,7 +71,7 @@ env:
 
 jobs:
   build:
-    if: inputs.step != 'secrets-transfer' && inputs.step != 'db-migrate' && inputs.step != 'acm-dns'
+    if: inputs.step != 'secrets-transfer' && inputs.step != 'db-migrate' && inputs.step != 'acm-dns' && !startsWith(inputs.step, 'p2-')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     # 소유자 승인(required reviewers) + main 브랜치 한정으로 보호된 GitHub Environment.
@@ -879,3 +882,46 @@ jobs:
             echo "created 443 listener"
           fi
           aws elbv2 describe-target-health --target-group-arn "$TG" --query 'TargetHealthDescriptions[*].{State:TargetHealth.State,Reason:TargetHealth.Reason}' --output text
+
+  # ---- P2 조사(읽기 전용): 구 호스트 DesignCraft/폰트/S3 환경값 이름 + 구 S3 버킷 속성·규모 ----
+  p2-inventory:
+    if: inputs.step == 'p2-inventory'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-p2-inventory
+      - name: Old host + old S3 inventory (read-only, no secrets, no user file names)
+        shell: bash
+        run: |
+          set -uo pipefail
+          IID=i-09d7cabb5a42d1135
+          mask() { sed -E 's/[0-9]{12}/<acct>/g'; }
+          seg() {
+            local title="$1" cmd="$2" params cid st
+            echo; echo "===== $title ====="
+            params=$(jq -cn --arg c "$cmd" '{commands:[$c]}')
+            cid=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$params" --query Command.CommandId --output text)
+            for _ in $(seq 1 40); do
+              st=$(aws ssm get-command-invocation --command-id "$cid" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+              case "$st" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 3
+            done
+            aws ssm get-command-invocation --command-id "$cid" --instance-id "$IID" --query StandardOutputContent --output text | mask | head -80
+          }
+          seg "S3 env (selected non-secret values)" 'grep -E "^(S3_BUCKET|S3_REGION|S3_KEY_PREFIX|ALB_ACCESS_LOG_BUCKET|ALB_ACCESS_STATISTICS_ENABLED|PUBLISHING_[A-Z_]*|APP_VIDEO_[A-Z_]*|ACADEMY_VIDEO_[A-Z_]*|SPRING_PROFILES_ACTIVE)=" /etc/f2r/env | sed -E "s/^((.*(KEY|SECRET|TOKEN|PASSWORD).*)=).*/\1<masked>/"'
+          seg "DESIGNCRAFT /opt/designcraft" 'set +e; du -sh /opt/designcraft; ls -la /opt/designcraft | head -30; echo "--- depth2 dirs+sizes"; du -h --max-depth=2 /opt/designcraft | sort -h | tail -15; echo "--- cli"; file /opt/designcraft/designcraft-cli 2>&1 | cut -c1-160; /opt/designcraft/designcraft-cli --version 2>&1 | head -3; echo "--- ldd missing"; ldd /opt/designcraft/designcraft-cli 2>&1 | grep -i "not found" | head; echo "--- owner"; stat -c "%U:%G %a" /opt/designcraft /opt/designcraft/designcraft-cli'
+          seg "DESIGNCRAFT deps (python/node/libs/fonts)" 'set +e; ls /opt/designcraft/templates | head -20; ls /opt/designcraft/releases 2>/dev/null | head; find /opt/designcraft -maxdepth 2 -name "*.py" -o -maxdepth 2 -name "requirements*.txt" -o -maxdepth 2 -name "package.json" | head; echo "--- fonts"; du -sh /opt/artcraft/fonts; ls /opt/artcraft/fonts | head -30; ls /opt/artcraft/fonts | wc -l; fc-list | wc -l; echo "--- rpm libs"; rpm -qa | grep -Ei "cairo|pango|harfbuzz|freetype|fontconfig|poppler|ghostscript|libreoffice|chrom|webp|libjpeg|libpng|tiff|lcms|glib2|skia" | sort | head -30'
+          seg "DESIGNCRAFT systemd/env refs" 'set +e; grep -rl -i designcraft /etc/systemd/system /etc/f2r 2>/dev/null | head; systemctl list-units --type=service --all --no-pager 2>/dev/null | grep -i -E "design|publish|worker" | head'
+          echo; echo "===== S3 old bucket ====="
+          BKT=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters '{"commands":["grep -E \"^S3_BUCKET=\" /etc/f2r/env | cut -d= -f2- | tr -d \"\\\"\""]}' --query Command.CommandId --output text)
+          sleep 6
+          BKT=$(aws ssm get-command-invocation --command-id "$BKT" --instance-id "$IID" --query StandardOutputContent --output text | tr -d '[:space:]')
+          echo "bucket=$BKT"
+          [ -n "$BKT" ] || { echo "no bucket"; exit 0; }
+          for q in get-bucket-versioning get-bucket-encryption get-bucket-cors get-bucket-lifecycle-configuration get-public-access-block get-bucket-location; do echo "--- $q"; aws s3api $q --bucket "$BKT" 2>&1 | mask | head -25; done
+          echo "--- top-level prefixes"; aws s3api list-objects-v2 --bucket "$BKT" --delimiter / --query 'CommonPrefixes[].Prefix' --output text 2>&1 | head -5
+          echo "--- size/count (all)"; aws s3 ls "s3://$BKT" --recursive --summarize 2>/dev/null | tail -2
+          echo "--- size/count per prefix"; for P in $(aws s3api list-objects-v2 --bucket "$BKT" --delimiter / --query 'CommonPrefixes[].Prefix' --output text 2>/dev/null); do echo "$P: $(aws s3 ls "s3://$BKT/$P" --recursive --summarize 2>/dev/null | tail -2 | tr '\n' ' ')"; done
