@@ -6,6 +6,7 @@
   <title th:text="${title} + ' · TestPrep'">TestPrep</title>
   <link rel="stylesheet" href="/css/testprep.css">
   <script defer src="/js/testprep.js"></script>
+  <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body>
 
@@ -13,7 +14,7 @@
   <div class="wrap">
     <a class="tp-brand" href="/testprep"><span class="mark">TP</span> TestPrep</a>
     <div class="tp-menu">
-      <a href="/">홈으로</a>
+      <a data-f2r-home href="/">홈으로</a>
       <a href="/testprep" th:classappend="${active == 'home'} ? 'active'">Home<span class="ko">홈</span></a>
       <a href="/testprep/practice" th:classappend="${active == 'practice'} ? 'active'">iBT Practice<span class="ko">iBT 모의고사</span></a>
       <a href="/testprep/vocab" th:classappend="${active == 'vocab'} ? 'active'">Vocabulary Quiz<span class="ko">어휘 퀴즈</span></a>

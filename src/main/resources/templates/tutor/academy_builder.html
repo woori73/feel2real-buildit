@@ -1078,6 +1078,7 @@
     @keyframes fadeInDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
     .animate-in{animation:fadeInDown .3s ease forwards;}
   </style>
+  <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body>
 
@@ -1087,7 +1088,7 @@
 <header class="builder-topbar">
 
   <!-- 로고 -->
-  <a class="tb-logo" href="/" title="Feel2Real 메인 홈페이지" style="text-decoration:none;color:inherit;">
+  <a class="tb-logo" data-f2r-home href="/" title="Feel2Real 메인 홈페이지" style="text-decoration:none;color:inherit;">
     <div class="tb-logo-gem"><i class="fa-solid fa-diamond"></i></div>
     학원빌더
   </a>
@@ -1119,7 +1120,7 @@
       <i class="fa-solid fa-dove"></i> <span id="builderAiGuideToggleLabel">빌디 OFF</span>
     </button>
     <!-- 시각 편집기(GrapesJS) 진입. 기존 홈페이지는 편집기 안의 "불러오기"로 가져온다. -->
-    <a class="tb-btn" id="builderHomeLink" href="/" title="메인 홈페이지로 이동">
+    <a class="tb-btn" id="builderHomeLink" data-f2r-home href="/" title="메인 홈페이지로 이동">
       <i class="fa-solid fa-house"></i> 홈으로
     </a>
     <a class="tb-btn" id="builderVisualEditorLink" href="/tutor/academy/editor"

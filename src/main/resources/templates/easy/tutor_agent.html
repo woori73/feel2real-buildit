@@ -7,6 +7,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/easy.css">
   <link rel="stylesheet" href="/css/easy_tutor_agent.css?v=20261018-3">
+  <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body>
 <header class="ledger-head">
@@ -17,7 +18,7 @@
   <div class="ledger-head-actions">
     <label for="businessSelect">사업체</label>
     <select id="businessSelect" aria-label="장부 사업체"></select>
-    <a href="/">홈으로</a>
+    <a data-f2r-home href="/">홈으로</a>
     <a href="/tutor/academy">내 학원</a>
   </div>
 </header>

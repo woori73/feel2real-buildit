@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="stylesheet" href="/css/wiki.css?v=20260906-1">
+  <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body class="wiki-body">
 <th:block layout:fragment="content">
@@ -19,7 +20,7 @@
     </a>
     <p class="brand-tag">함께 나누고, AI와 함께 발전시킵니다.</p>
     <div class="spacer"></div>
-    <a class="wiki-home-link" href="/">BuildIt 홈</a>
+    <a class="wiki-home-link" data-f2r-home href="/">BuildIt 홈</a>
     <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
   </header>
 
