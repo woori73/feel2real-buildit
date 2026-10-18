@@ -1131,7 +1131,7 @@ jobs:
           KEY=migration-tmp/wiki-$STAMP.tgz
           URL=$(python3 -c "import boto3;print(boto3.client('s3',region_name='ap-northeast-2').generate_presigned_url('put_object',Params={'Bucket':'feel2real-buildit-deploy','Key':'$KEY'},ExpiresIn=1200))")
           echo "::add-mask::$URL"
-          OUT=$(runhost "$OLDI" "set -e; tar -czf /tmp/wiki-mig.tgz -C /opt/buildit-wiki/data .; curl -sf -T /tmp/wiki-mig.tgz '$URL'; sha256sum /tmp/wiki-mig.tgz | cut -d' ' -f1; rm -f /tmp/wiki-mig.tgz" | grep -v "$URL" | tail -1)
+          OUT=$(runhost "$OLDI" "set -e; tar -czf /tmp/wiki-mig.tgz -C /opt/buildit-wiki/data .; curl -sf -T /tmp/wiki-mig.tgz '$URL'; sha256sum /tmp/wiki-mig.tgz | cut -d' ' -f1; rm -f /tmp/wiki-mig.tgz" | grep -E '^[0-9a-f]{64}$' | tail -1)
           aws s3 cp "s3://feel2real-buildit-deploy/$KEY" /tmp/wiki.tgz --no-progress
           RSHA=$(sha256sum /tmp/wiki.tgz | cut -d' ' -f1); echo "wiki sha host=$OUT runner=$RSHA"; [ "$OUT" = "$RSHA" ]
           echo "### final RDS snapshot"
