@@ -258,7 +258,9 @@ public class SecurityConfig {
             .requestMatchers("/tutor/conversation_dashboard", "/tutor/conversation/dashboard", "/tutor/conversation/chat", "/tutor/conversation/chat.html", "/tutor/conversation/materials", "/tutor/conversation/materials.html", "/tutor/conversations/**")
             .hasRole("TUTOR")
             // 랜딩 편집 화면은 기존 public admin view 그룹보다 먼저 차단한다.
-            .requestMatchers("/admin/landing", "/admin/chart").hasRole("ADMIN")
+            .requestMatchers("/admin/landing", "/admin/chart", "/admin/exam-requests").hasRole("ADMIN")
+            // 예상문제 의뢰 접수 화면 — 로그인한 사용자만(미로그인은 로그인 후 returnUrl로 복귀).
+            .requestMatchers("/exam-request").authenticated()
             // 관리자 개별 학원 미리보기 — catch-all이 permitAll이므로 ADMIN 매처를 명시한다.
             .requestMatchers("/admin/academies/*/preview", "/admin/academies/*/builder").hasRole("ADMIN")
             // 원장용 Easy 대화 장부 SSR. /tutor/easy는 /ledger 호환 리다이렉트이며,

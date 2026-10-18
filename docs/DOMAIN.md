@@ -1743,3 +1743,8 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - `easy_agent_actions`: 계정 변경(`SELECT_ACCOUNT`)과 import 확정(`CONFIRM_IMPORT`) 제안을 보존한다. 상태는 `PROPOSED → APPLIED|REJECTED|STALE|EXPIRED|FAILED` 단방향이다.
 - 승인 시 row/batch를 사업체 범위에서 다시 찾고 제안 당시 account/status 및 READY/미분개 조건을 재검증한다. 변경되거나 만료된 제안은 적용하지 않는다.
 - LLM 출력은 권한, 금액, 거래일, 원본 데이터의 source of truth가 아니며 서버 allowlist 의도와 기존 Easy 서비스 호출에만 사용한다.
+
+
+## exam_requests (V1090)
+
+내신 영어 예상문제 의뢰 접수. `id` PK, `user_id` FK → `users(user_id)` ON DELETE CASCADE, `school_name`(60)·`grade`(20)·`exam_round`(40)·`exam_scope`(1000)·`contact`(60)·`memo`(500, NULL), `question_count`(기본 40)·`price_krw`(기본 20000), `status`(`RECEIVED|IN_PROGRESS|DONE|CANCELED`, 기본 RECEIVED), 감사 컬럼. 인덱스 `(user_id, created_at)`, `(status, created_at)`. 삭제 정책: 앱에서 삭제 API 없음(기록 보존), 사용자 삭제 시에만 CASCADE.

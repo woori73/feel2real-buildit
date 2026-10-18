@@ -57,6 +57,9 @@
     .btn-preview { background: #6b7280; color: #fff; }
     .btn-publish { background: #f59e0b; color: #fff; }
     .btn-unpublish { background: transparent; color: #fbbf24; border: 1px solid #b45309 !important; }
+    .btn-reset { background: transparent; color: #f87171; border: 1px solid #b91c1c !important; }
+    .btn-home { background: transparent; color: #93c5fd; border: 1px solid #1d4ed8 !important; text-decoration: none; display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 6px; font-size: 14px; font-weight: 600; min-height: 38px; white-space: nowrap; flex-shrink: 0; }
+    .editor-toolbar .title a { color: inherit; text-decoration: none; }
     .btn-back { background: transparent; color: #9ca3af; border: 1px solid #4b5563 !important; }
     .device-group { display: flex; gap: 4px; }
 
@@ -211,7 +214,7 @@
     <button class="btn-back" onclick="history.back()" title="돌아가기" aria-label="돌아가기">← <span class="btn-label">돌아가기</span></button>
     <button class="btn-device" id="toggleLeftPanel" title="블록 패널" aria-label="블록 패널">📦</button>
     <button class="btn-device" id="toggleRightPanel" title="스타일 패널" aria-label="스타일 패널">🎨</button>
-    <span class="title" th:text="${academyName ?: '홈페이지 편집'}">홈페이지 편집</span>
+    <span class="title"><a href="/" title="Feel2Real 메인 홈페이지" th:text="${academyName ?: '홈페이지 편집'}">홈페이지 편집</a></span>
     <span class="spacer-title"></span>
 
     <!-- 디바이스 전환 (캔버스 폭이 실제 375/768px로 바뀐다) -->
@@ -224,6 +227,8 @@
     <button class="btn-import" id="aiBtn" title="AI 수정 제안 보기·요청" aria-label="AI 제안">🤖 <span class="btn-label">AI 제안</span> <span id="aiBadge" class="ai-badge" hidden>0</span></button>
     <button class="btn-import" id="importBtn" title="빌더에서 만든 홈페이지를 편집기로 불러오기" aria-label="불러오기">📥 <span class="btn-label">불러오기</span></button>
     <button class="btn-preview" id="previewBtn" title="미리보기" aria-label="미리보기">👁 <span class="btn-label">미리보기</span></button>
+    <button class="btn-reset" id="resetBtn" title="지금 작업 중인 초안을 비웁니다(게시된 홈페이지는 그대로)" aria-label="초기화">🗑 <span class="btn-label">초기화</span></button>
+    <a class="btn-home" id="homeBtn" href="/" title="메인 홈페이지로 이동" aria-label="홈으로">🏠 <span class="btn-label">홈으로</span></a>
     <button class="btn-save" id="saveBtn" title="저장 (Ctrl+S)" aria-label="저장">💾 <span class="btn-label">저장</span></button>
     <button class="btn-publish" id="publishBtn" title="공개 홈페이지에 게시" aria-label="게시">🚀 <span class="btn-label">게시</span></button>
     <button class="btn-unpublish" id="unpublishBtn" title="게시 취소(기존 홈페이지로 되돌리기)" aria-label="게시 취소" hidden>↩ <span class="btn-label">게시 취소</span></button>
@@ -657,6 +662,19 @@ const CSRF_HEADER = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
     toast('저장되지 않았던 내 편집 내용을 복원했습니다. 확인 후 저장하세요.');
   }
   $('restoreBackupBtn').addEventListener('click', restoreBackup);
+
+  // ===== 초기화: 현재 작업 중인 초안만 비운다(게시된 홈페이지·다른 데이터는 건드리지 않는다) =====
+  async function resetWork() {
+    if (!confirm('지금 작업 중인 초안을 모두 비웁니다.\n(이미 게시된 홈페이지와 다른 학원 데이터는 그대로 유지됩니다) 계속할까요?')) return;
+    editor.setComponents('');
+    editor.setStyle('');
+    pendingAppliedProposalId = null;
+    clearBackup();
+    updateEmptyState();
+    const ok = await saveContent({ silent: true });
+    toast(ok ? '작업 초안을 초기화했습니다. 게시된 홈페이지는 그대로입니다.' : '화면은 비웠지만 저장에 실패했습니다. 다시 저장해 주세요.', ok ? undefined : 'error');
+  }
+  $('resetBtn').addEventListener('click', resetWork);
 
   // 3지선다 모달: 'keep'(기본) | 'load' | 'overwrite'. 바깥 클릭·ESC는 keep.
   function askConflictChoice(message) {
