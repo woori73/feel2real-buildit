@@ -28,6 +28,7 @@ on:
           - p2-designcraft
           - p2-dc-verify
           - p2-disable-designcraft
+          - p2-cutover-inventory
           - validate
           - s3
           - provision
@@ -1045,6 +1046,46 @@ jobs:
           done
           aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{s:Status,o:StandardOutputContent,e:StandardErrorContent}' --output text | tail -c 5000
           [ "$ST" = Success ]
+
+  # ---- 전환 전 조사(읽기 전용): 구 호스트 위키 데이터·서비스, Route 53 레코드, 구 ALB, 구 RDS ----
+  p2-cutover-inventory:
+    if: inputs.step == 'p2-cutover-inventory'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-cutover-inv
+      - name: Read-only inventory
+        shell: bash
+        run: |
+          set +e
+          IID=i-09d7cabb5a42d1135
+          mask() { sed -E 's/[0-9]{12}/<acct>/g'; }
+          seg() {
+            local title="$1" cmd="$2" params cid st
+            echo; echo "===== $title ====="
+            params=$(jq -cn --arg c "$cmd" '{commands:[$c]}')
+            cid=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$params" --query Command.CommandId --output text)
+            for _ in $(seq 1 40); do
+              st=$(aws ssm get-command-invocation --command-id "$cid" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+              case "$st" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 3
+            done
+            aws ssm get-command-invocation --command-id "$cid" --instance-id "$IID" --query StandardOutputContent --output text | mask | head -60
+          }
+          seg "WIKI data + services" 'set +e; ls -la /opt/buildit-wiki /opt/buildit-wiki/data 2>&1 | head -20; du -sh /opt/buildit-wiki/data; /opt/buildit-wiki/venv/bin/python -c "import sqlite3;c=sqlite3.connect(\"file:/opt/buildit-wiki/data/app.db?mode=ro\",uri=True);print(\"integrity\",c.execute(\"pragma integrity_check\").fetchone()[0]);print(\"tables\",len(c.execute(\"select name from sqlite_master where type=\x27table\x27\").fetchall()))" 2>&1 | tail -3; systemctl is-active f2r-app buildit-wiki buildit-staging 2>&1; ss -ltn | awk "NR>1{print \$4}" | sort -u | tr "\n" " "'
+          seg "EMBEDDING / other data dirs / timers" 'set +e; grep -l -i embeddinggemma /etc/systemd/system/*.service /etc/f2r/env /etc/buildit-wiki.env 2>/dev/null; grep -rl -i embeddinggemma /opt/buildit-wiki/app 2>/dev/null | head -3; grep -oE "^[A-Z0-9_]*(EMBED|WIKI|RAG)[A-Z0-9_]*" /etc/f2r/env /etc/buildit-wiki.env 2>/dev/null | sort -u; echo "--- big dirs"; du -sh /home/ec2-user /var/lib/f2r* /var/tmp/f2r /opt/staging 2>/dev/null; systemctl list-timers --no-pager 2>/dev/null | head -6; crontab -l 2>/dev/null | head -3; ls /etc/cron.d 2>/dev/null'
+          echo; echo "===== Route 53 records (A/AAAA/CNAME only) ====="
+          ZID=$(aws route53 list-hosted-zones-by-name --dns-name feel2real.co.kr --query "HostedZones[?Name=='feel2real.co.kr.'].Id | [0]" --output text)
+          aws route53 list-resource-record-sets --hosted-zone-id "$ZID" --query "ResourceRecordSets[?Type=='A' || Type=='AAAA' || Type=='CNAME'].[Name,Type,TTL,AliasTarget.DNSName,AliasTarget.HostedZoneId,ResourceRecords[0].Value]" --output text | mask
+          echo; echo "===== Old ALBs ====="
+          aws elbv2 describe-load-balancers --query "LoadBalancers[].[LoadBalancerName,Scheme,DNSName,State.Code]" --output text | mask
+          for TG in $(aws elbv2 describe-target-groups --query "TargetGroups[].TargetGroupArn" --output text); do aws elbv2 describe-target-health --target-group-arn "$TG" --query "TargetHealthDescriptions[].[Target.Id,TargetHealth.State]" --output text; done
+          echo; echo "===== Old RDS ====="
+          aws rds describe-db-instances --query "DBInstances[].[DBInstanceIdentifier,DBInstanceClass,EngineVersion,DBInstanceStatus,BackupRetentionPeriod,AllocatedStorage]" --output text | mask
+          aws rds describe-db-snapshots --snapshot-type automated --query "reverse(sort_by(DBSnapshots,&SnapshotCreateTime))[0].[DBSnapshotIdentifier,SnapshotCreateTime]" --output text | mask
 
   # ---- DesignCraft 폐기 결정(2026-10-18): 신규 환경에서 전용 Worker만 비활성화한다 ----
   # 엔진·템플릿 파일, DB, 백업, 공개 URL은 그대로 둔다(영구 삭제·URL 차단은 별도 승인).
