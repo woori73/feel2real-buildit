@@ -1,0 +1,30 @@
+name: Old account probe (read-only, manual)
+# 이전 실행 경로 조사용: 구 계정에서 배포 역할이 할 수 있는 조회(Route 53·RDS 스냅샷·KMS·역할 정책)를 확인한다.
+# 조회 전용. 비밀값 없음. 실패는 FAILED 로 표시하고 계속한다.
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-session-name: f2r-old-probe
+      - name: Probe
+        shell: bash
+        run: |
+          run() { echo; echo "== $1"; shift; "$@" 2>&1 | sed -E 's/[0-9]{12}/<acct>/g' | head -60 || true; }
+          run caller aws sts get-caller-identity --query Arn --output text
+          run role-inline aws iam list-role-policies --role-name github-actions-f2r-deploy
+          run role-attached aws iam list-attached-role-policies --role-name github-actions-f2r-deploy
+          run route53-zones aws route53 list-hosted-zones --query 'HostedZones[].{Name:Name,Id:Id,Private:Config.PrivateZone}' --output text
+          run rds-snapshots aws rds describe-db-snapshots --snapshot-type manual --query 'DBSnapshots[].{Id:DBSnapshotIdentifier,Status:Status,Enc:Encrypted,Key:KmsKeyId,Time:SnapshotCreateTime,Engine:EngineVersion}' --output text
+          run rds-instances aws rds describe-db-instances --query 'DBInstances[].{Id:DBInstanceIdentifier,Class:DBInstanceClass,Eng:EngineVersion,Stor:AllocatedStorage}' --output text
+          run kms-aliases aws kms list-aliases --query 'Aliases[?starts_with(AliasName,`alias/f2r`)]' --output text
+          run s3-buckets aws s3api list-buckets --query 'Buckets[].Name' --output text
