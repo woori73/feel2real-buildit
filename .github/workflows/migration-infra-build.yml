@@ -19,6 +19,7 @@ on:
           - all-infra
           - secrets-transfer
           - db-migrate
+          - fix-deploy-role
           - validate
           - s3
           - provision
@@ -440,6 +441,15 @@ jobs:
             echo "restored $DBID (endpoint는 공개 로그에 출력하지 않음)"
           }
 
+          # 신규 계정 배포 역할(github-actions-f2r-deploy)의 신뢰·권한을 저장소 JSON(승인된 설계)과 일치시킨다.
+          # 기존 추가 인라인 정책은 삭제하지 않는다(조사 전 보존).
+          step_fix_deploy_role() {
+            local D=docs/operations/aws-migration
+            aws iam update-assume-role-policy --role-name github-actions-f2r-deploy --policy-document "file://$D/trust-github-actions-f2r-deploy.json"
+            aws iam put-role-policy --role-name github-actions-f2r-deploy --policy-name f2r-deploy-smoke-ssm --policy-document "file://$D/policy-f2r-deploy-smoke-ssm.json"
+            echo "deploy role trust/policy synced from repo JSON"
+          }
+
           step_all_infra() {
             # s3 는 마지막: IAM 정책 반영(부트스트랩 apply) 순서와 무관하게 나머지 구축이 막히지 않게 한다.
             step_validate; step_vpc; step_rds_shell; step_ec2; step_alb; step_acm
@@ -448,6 +458,7 @@ jobs:
 
           case "$STEP" in
             all-infra) step_all_infra ;;
+            fix-deploy-role) step_fix_deploy_role ;;
             s3) step_s3 ;;
             provision) step_provision ;;
             restore-rds) step_restore_rds ;;
