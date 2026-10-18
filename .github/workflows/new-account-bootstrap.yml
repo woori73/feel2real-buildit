@@ -63,24 +63,34 @@ jobs:
           import json,subprocess,sys
           d=sys.argv[1]
           # (role, trust file, inline policy name, inline policy file or None)
-          items=[("f2r-infra-builder","trust-f2r-infra-builder.json","f2r-infra-builder-inline","policy-f2r-infra-builder.json"),
-                 ("github-actions-f2r-deploy","trust-github-actions-f2r-deploy.json","f2r-deploy-smoke-ssm","policy-f2r-deploy-smoke-ssm.json"),
-                 ("f2r-e1-snapshot-receiver","trust-e1-new-account.json","f2r-e1-snapshot-receiver-inline","policy-e1-new-account-snapshot-receiver.json"),
-                 ("f2r-ec2-ssm-role","trust-f2r-ec2-ssm-role.json","f2r-ec2-secrets-read","policy-f2r-ec2-secrets-read.json")]
+          # (role, trust file, inline policy name, inline policy file, expected attached managed policies)
+          SSM=["AmazonSSMManagedInstanceCore"]
+          items=[("f2r-infra-builder","trust-f2r-infra-builder.json","f2r-infra-builder-inline","policy-f2r-infra-builder.json",[]),
+                 ("github-actions-f2r-deploy","trust-github-actions-f2r-deploy.json","f2r-deploy-smoke-ssm","policy-f2r-deploy-smoke-ssm.json",[]),
+                 ("f2r-e1-snapshot-receiver","trust-e1-new-account.json","f2r-e1-snapshot-receiver-inline","policy-e1-new-account-snapshot-receiver.json",[]),
+                 ("f2r-ec2-ssm-role","trust-f2r-ec2-ssm-role.json","f2r-ec2-secrets-read","policy-f2r-ec2-secrets-read.json",SSM)]
           def aws(*a): return json.loads(subprocess.check_output(["aws",*a,"--output","json"]))
           canon=lambda o: json.dumps(o,sort_keys=True)
           ok=True
-          for role,tf,pn,pf in items:
+          for role,tf,pn,pf,want_att in items:
               trust=aws("iam","get-role","--role-name",role)["Role"]["AssumeRolePolicyDocument"]
               want_t=json.load(open(f"{d}/{tf}"))
-              names=aws("iam","list-role-policies","--role-name",role)["PolicyNames"]
-              att=[x["PolicyName"] for x in aws("iam","list-attached-role-policies","--role-name",role)["AttachedPolicies"]]
+              names=sorted(aws("iam","list-role-policies","--role-name",role)["PolicyNames"])
+              att=sorted(x["PolicyName"] for x in aws("iam","list-attached-role-policies","--role-name",role)["AttachedPolicies"])
               pol=aws("iam","get-role-policy","--role-name",role,"--policy-name",pn)["PolicyDocument"]
               want_p=json.load(open(f"{d}/{pf}"))
               t_ok=canon(trust)==canon(want_t); p_ok=canon(pol)==canon(want_p)
-              ok&=t_ok and p_ok
-              print(f"{role}: trust={'MATCH' if t_ok else 'MISMATCH'} inline={'MATCH' if p_ok else 'MISMATCH'} inline_names={names} attached={att}")
+              inl_ok=names==[pn]; att_ok=att==sorted(want_att)
+              role_ok=t_ok and p_ok and inl_ok and att_ok
+              ok&=role_ok
+              # 예상 밖 정책은 이름만 출력한다(내용·ARN 전체는 출력하지 않음).
+              extra_inl=[n for n in names if n!=pn]; extra_att=[n for n in att if n not in want_att]
+              print(f"{role}: trust={'MATCH' if t_ok else 'MISMATCH'} inline_doc={'MATCH' if p_ok else 'MISMATCH'} "
+                    f"unexpected_inline={extra_inl} unexpected_attached={extra_att} -> {'OK' if role_ok else 'FAIL'}")
           prof=aws("iam","get-instance-profile","--instance-profile-name","f2r-ec2-profile")["InstanceProfile"]
-          print("f2r-ec2-profile roles:",[r["RoleName"] for r in prof["Roles"]])
+          roles=[r["RoleName"] for r in prof["Roles"]]
+          prof_ok=roles==["f2r-ec2-ssm-role"]
+          ok&=prof_ok
+          print("f2r-ec2-profile roles:",roles,"->","OK" if prof_ok else "FAIL")
           sys.exit(0 if ok else 1)
           PY

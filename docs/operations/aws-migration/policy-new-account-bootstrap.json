@@ -9,7 +9,8 @@
         "iam:TagRole",
         "iam:GetRole",
         "iam:GetRolePolicy",
-        "iam:ListAttachedRolePolicies"
+        "iam:ListAttachedRolePolicies",
+        "iam:ListRolePolicies"
       ],
       "Resource": [
         "arn:aws:iam::425805163960:role/f2r-infra-builder",
