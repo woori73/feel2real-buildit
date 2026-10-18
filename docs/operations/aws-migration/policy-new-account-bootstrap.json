@@ -19,13 +19,14 @@
       ]
     },
     {
-      "Sid": "SetInlinePolicyOnCiRolesOnly",
+      "Sid": "SetInlinePolicyOnProjectRolesOnly",
       "Effect": "Allow",
       "Action": "iam:PutRolePolicy",
       "Resource": [
         "arn:aws:iam::425805163960:role/f2r-infra-builder",
         "arn:aws:iam::425805163960:role/github-actions-f2r-deploy",
-        "arn:aws:iam::425805163960:role/f2r-e1-snapshot-receiver"
+        "arn:aws:iam::425805163960:role/f2r-e1-snapshot-receiver",
+        "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role"
       ]
     },
     {

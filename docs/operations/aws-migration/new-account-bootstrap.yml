@@ -43,7 +43,7 @@ jobs:
           upsert f2r-infra-builder trust-f2r-infra-builder.json f2r-infra-builder-inline policy-f2r-infra-builder.json
           upsert github-actions-f2r-deploy trust-github-actions-f2r-deploy.json f2r-deploy-smoke-ssm policy-f2r-deploy-smoke-ssm.json
           upsert f2r-e1-snapshot-receiver trust-e1-new-account.json f2r-e1-snapshot-receiver-inline policy-e1-new-account-snapshot-receiver.json
-          upsert f2r-ec2-ssm-role trust-f2r-ec2-ssm-role.json - -
+          upsert f2r-ec2-ssm-role trust-f2r-ec2-ssm-role.json f2r-ec2-secrets-read policy-f2r-ec2-secrets-read.json
           if [ -z "$(aws iam list-attached-role-policies --role-name f2r-ec2-ssm-role --query 'AttachedPolicies[?PolicyName==`AmazonSSMManagedInstanceCore`].PolicyName' --output text)" ]; then
             aws iam attach-role-policy --role-name f2r-ec2-ssm-role --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore; echo "attached SSM core"
           fi

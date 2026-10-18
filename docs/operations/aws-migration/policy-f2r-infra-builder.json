@@ -252,6 +252,17 @@
         "ssm:GetCommandInvocation"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "SecretsTransferParametersOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:PutParameter",
+        "ssm:GetParameter",
+        "ssm:DeleteParameter",
+        "ssm:AddTagsToResource"
+      ],
+      "Resource": "arn:aws:ssm:ap-northeast-2:425805163960:parameter/f2r/*"
     }
   ]
 }
