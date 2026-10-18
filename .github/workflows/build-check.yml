@@ -467,6 +467,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsFactSearchServiceDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCounselingSessionHistoryDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.browser.EasyLedgerBrowserQaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsPublicApiDefaultOffMySqlTest"
 
       - name: Upload admissions browser QA screenshots
@@ -475,6 +476,15 @@ jobs:
         with:
           name: admissions-browser-qa-${{ github.sha }}
           path: build/reports/admissions-qa
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload ledger browser QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledger-browser-qa-${{ github.sha }}
+          path: build/reports/ledger-qa
           if-no-files-found: warn
           retention-days: 7
 
