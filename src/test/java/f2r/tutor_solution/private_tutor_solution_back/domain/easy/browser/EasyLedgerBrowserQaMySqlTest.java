@@ -227,11 +227,13 @@ class EasyLedgerBrowserQaMySqlTest {
             // 수입·지출 장부 탭 — 실제 거래 내용 검증 (김학생·이강사)
             driver.findElement(By.cssSelector("[data-view='transactions']")).click();
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("view-transactions")));
+            // 760px 이하에서는 표(.ledger-table-wrap)가 display:none이고 카드 목록이 보이므로, 화면에 보이는 쪽을 읽는다.
+            String listId = width <= 760 ? "transactionCards" : "transactionTableBody";
             wait.until(d -> {
-                String bodyText = d.findElement(By.id("transactionTableBody")).getText();
+                String bodyText = d.findElement(By.id(listId)).getText();
                 return bodyText.contains("김학생") && bodyText.contains("이강사");
             });
-            String txBody = driver.findElement(By.id("transactionTableBody")).getText();
+            String txBody = driver.findElement(By.id(listId)).getText();
             assertThat(txBody).contains("김학생").contains("1,000,000");
             assertThat(txBody).contains("이강사").contains("300,000");
 
