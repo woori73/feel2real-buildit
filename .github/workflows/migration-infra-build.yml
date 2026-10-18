@@ -717,7 +717,7 @@ jobs:
           set -euo pipefail
           STAMP=$(date -u +%Y%m%d); C=f2r-shared-$STAMP
           if ! aws rds describe-db-snapshots --db-snapshot-identifier "$C" >/dev/null 2>&1; then
-            aws rds copy-db-snapshot --source-db-snapshot-identifier "$SNAP_ARN" --target-db-snapshot-identifier "$C" --kms-key-id alias/aws/rds --copy-tags >/dev/null
+            aws rds copy-db-snapshot --source-db-snapshot-identifier "$SNAP_ARN" --target-db-snapshot-identifier "$C" --kms-key-id alias/aws/rds >/dev/null
           fi
           aws rds wait db-snapshot-available --db-snapshot-identifier "$C"
           RDSSG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=f2r-rds-sg Name=tag:Project,Values=f2r-migration --query 'SecurityGroups[0].GroupId' --output text)
