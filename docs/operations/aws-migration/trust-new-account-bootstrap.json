@@ -4,13 +4,18 @@
     {
       "Sid": "GitHubOidcBootstrapOnly",
       "Effect": "Allow",
-      "Principal": { "Federated": "arn:aws:iam::425805163960:oidc-provider/token.actions.githubusercontent.com" },
+      "Principal": {
+        "Federated": "arn:aws:iam::425805163960:oidc-provider/token.actions.githubusercontent.com"
+      },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
           "token.actions.githubusercontent.com:sub": "repo:woori73@299170593/feel2real-buildit@1340651018:environment:f2r-aws-bootstrap",
           "token.actions.githubusercontent.com:job_workflow_ref": "woori73/feel2real-buildit/.github/workflows/new-account-bootstrap.yml@refs/heads/main"
+        },
+        "DateLessThan": {
+          "aws:CurrentTime": "2026-10-25T00:00:00Z"
         }
       }
     }
