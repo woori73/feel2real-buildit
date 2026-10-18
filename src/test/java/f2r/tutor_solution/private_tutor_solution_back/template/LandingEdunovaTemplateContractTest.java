@@ -2,8 +2,6 @@ package f2r.tutor_solution.private_tutor_solution_back.template;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +38,9 @@ class LandingEdunovaTemplateContractTest {
         .contains("제작 예정")
         .contains("1회 20,000원")
         .contains("40문항")
-        .contains("href=\"/exam-request\"")
+        .contains("https://open.kakao.com/o/sMf4ifRi")
+        .contains("mailto:woorinaesin@naver.com")
+        .doesNotContain("/exam-request")
         .contains("예상문제 의뢰하기");
   }
 
@@ -102,16 +102,5 @@ class LandingEdunovaTemplateContractTest {
     assertThat(dash).isGreaterThan(exam);
     assertThat(ai).isGreaterThan(dash);
     assertThat(html).contains("2026년 11월 1일").contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
-  }
-
-  @Test
-  @DisplayName("given 의뢰 화면·관리 화면 템플릿 when 읽으면 then 실제 API를 호출하고 결제 완료를 주장하지 않는다")
-  void examRequestPages_callRealApi() throws Exception {
-    // given
-    String form = Files.readString(Path.of("src/main/resources/templates/public/exam_request.html"));
-    String admin = Files.readString(Path.of("src/main/resources/templates/admin/exam_requests.html"));
-    // then
-    assertThat(form).contains("/api/exam-requests").contains("20,000원").contains("결제가 진행되지 않습니다");
-    assertThat(admin).contains("/api/admin/exam-requests").contains("PATCH");
   }
 }
