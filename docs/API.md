@@ -3745,6 +3745,25 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - 목적: 저장 문제 묶음을 삭제한다. 연결된 GENERATED `questions`와 이 묶음에서 만든 `passages`도 함께 정리한다.
 - 권한: 소유자 또는 ADMIN.
 
+### ✅ 영어 문법 문제은행 API (`/api/problem-generator/grammar-bank`)
+
+내신위키 SPA의 '문법 문제은행'(`/problem-generator/wiki` → 메뉴 '문법 문제은행')과 AI·MCP가 사용하는 Spring API. 화면 주소는 `/problem-generator` 내부 SPA 라우트이며 별도 SSR 경로가 아니다.
+
+- `GET /tags` — 문법 유형 사전(시드 14종).
+- `GET /stats` — 대시보드: 전체/검수 필요/승인/반려, 학년별·유형별 집계.
+- `GET /questions` — 검색. Query: `schoolLevel(M1..H3|COMMON|UNKNOWN)`, `tagIds(반복, OR)`, `questionFormat`, `difficulty`, `reviewStatus`, `rightsStatus`, `minConfidence`, `maxConfidence`, `search`(발문·키워드 LIKE), page/size. REJECTED는 기본 제외.
+- `GET /questions/{questionId}` — 상세: 발문·선택지·정답·해설·지문·원본 파일(material)·위치·자동 분류 근거·변형본 이력.
+- `PATCH /questions/{questionId}` — 본문/정답/해설/배점 수정(ADMIN·TUTOR·등록자).
+- `PATCH /questions/{questionId}/profile` — 학년/형식/난이도/키워드/권한/태그 수정. tagIds 전달 시 수동 태그 교체→APPROVED.
+- `POST /questions/{questionId}/review` — 검수 판정 `{status: APPROVED|REJECTED, tagIds?, primaryTagId?}` (TUTOR/ADMIN).
+- `POST /questions/{questionId}/variants` — AI 수정본을 원본과 별도 GENERATED 문항으로 등록(변경 이력·PENDING).
+- `POST /variants/{variantId}/review` — 변형본 승인/반려 `{status, reviewNote}`.
+- `POST /import` — JSON 문항 대량 수입 `{materialId?, defaultRightsStatus?, records:[{stem,choices,answer,explanation,grammar_tags,school_level,format,difficulty,confidence,external_ref,page,question_number,passage}]}`. 본문 해시·(material,external_ref)·(material,source_position) 중복 건너뜀, 저신뢰/용어 무매칭은 NEEDS_REVIEW 보류. TUTOR/ADMIN 전용.
+- `POST /import/csv` — CSV 파일(multipart `file`) 또는 `text/plain` 본문 동일 파이프라인.
+- `POST /ai/find` — `{request:"중2 수동태 객관식 문제 30개 찾아줘"}` → 필터(AI 또는 키워드 매핑)로 **실제 DB 검색 결과만** 반환 `{usedAi, extractedFilters, totalFound, questions[], answer}`.
+- 선택함/문제집: `GET|POST /collections`, `GET|PATCH|DELETE /collections/{id}`, `POST /collections/{id}/items`, `DELETE /collections/{id}/items`, `POST /collections/{id}/reorder`, `POST /collections/{id}/book`(BASKET→BOOK 복제). 소유자 격리.
+- `POST /collections/{id}/designcraft` — 선택 문항을 조판한 markdown 원고(`## 번호`, 선택지, 목차, 정답·해설 분리 섹션)를 기존 `POST /api/publishing/jobs` 파이프라인에 반입. `{template: ko-textbook-a4|ko-workbook-b5, splitAnswerSheet}`. Response: `{job, collection, editorUrl:"/designcraft/editor?jobId=…"}`. TUTOR/ADMIN 편집기 권한 유지.
+
 ### ✅ POST /api/problem-generator/gemini/chat
 
 - 목적: 우측 `박원장 AI` assistant가 브라우저에 임시 저장된 BYO Gemini 키로 작업 컨텍스트 기반 대화를 수행한다.

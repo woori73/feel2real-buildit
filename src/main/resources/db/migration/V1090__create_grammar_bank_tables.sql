@@ -1,0 +1,75 @@
+CREATE TABLE grammar_tags (
+    tag_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name_ko VARCHAR(60) NOT NULL,
+    name_en VARCHAR(60) NULL,
+    aliases VARCHAR(255) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    UNIQUE KEY uk_grammar_tag_name (name_ko),
+    INDEX idx_grammar_tag_sort (sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO grammar_tags (name_ko, name_en, aliases, sort_order) VALUES
+    ('시제', 'tense', 'tense,현재시제,과거시제,미래시제,현재완료,시제 일치', 1),
+    ('조동사', 'auxiliary', '조동사,modal,can,may,must,will', 2),
+    ('수동태', 'passive', '수동태,passive,by', 3),
+    ('부정사', 'infinitive', '부정사,to부정사,infinitive', 4),
+    ('동명사', 'gerund', '동명사,gerund', 5),
+    ('분사·분사구문', 'participle', '분사,분사구문,participle,현재분사,과거분사', 6),
+    ('관계대명사·관계부사', 'relative', '관계대명사,관계부사,relative,who,which,that,where', 7),
+    ('접속사', 'conjunction', '접속사,conjunction,and,but,because,when', 8),
+    ('가정법', 'subjunctive', '가정법,if,wish,as if,subjunctive', 9),
+    ('비교구문', 'comparison', '비교,최상급,as~as,comparative,superlative', 10),
+    ('일치·화법', 'agreement', '일치,주술일치,화법,agreement', 11),
+    ('의문문·간접의문문', 'question', '의문문,간접의문문,질문문,wh-', 12),
+    ('문장 구조·형식', 'structure', '문장구조,형식주어,가주어,가목적어,분열문,cleft', 13),
+    ('기타 문법', 'etc', '', 99);
+
+CREATE TABLE grammar_question_profiles (
+    profile_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    question_id BIGINT NOT NULL,
+    school_level ENUM('M1','M2','M3','H1','H2','H3','COMMON','UNKNOWN') NOT NULL DEFAULT 'UNKNOWN',
+    question_format ENUM('MULTIPLE_CHOICE','CORRECT_SENTENCE','INCORRECT_SENTENCE','UNDERLINE','BLANK_FILL','SENTENCE_ORDER','WRITING','SENTENCE_TRANSFORM','ERROR_CORRECTION','OTHER') NULL,
+    difficulty ENUM('EASY','MEDIUM','HARD') NULL,
+    keywords TEXT NULL,
+    auto_classification JSON NULL,
+    classification_confidence DECIMAL(3,2) NULL,
+    review_status ENUM('AUTO','NEEDS_REVIEW','APPROVED','REJECTED') NOT NULL DEFAULT 'AUTO',
+    rights_status ENUM('UNKNOWN','OWNED','LICENSED','RESTRICTED') NOT NULL DEFAULT 'UNKNOWN',
+    content_hash CHAR(64) NULL,
+    material_id BIGINT NULL,
+    source_position VARCHAR(80) NULL,
+    external_ref VARCHAR(120) NULL,
+    owner_user_id BIGINT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_grammar_profile_question FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE,
+    CONSTRAINT fk_grammar_profile_material FOREIGN KEY (material_id) REFERENCES problem_generator_materials(material_id) ON DELETE SET NULL,
+    CONSTRAINT fk_grammar_profile_owner FOREIGN KEY (owner_user_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    UNIQUE KEY uk_grammar_profile_question (question_id),
+    UNIQUE KEY uk_grammar_profile_content_hash (content_hash),
+    UNIQUE KEY uk_grammar_profile_external (material_id, external_ref),
+    INDEX idx_grammar_profile_level_review (school_level, review_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE question_grammar_tags (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    question_id BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_auto BOOLEAN NOT NULL DEFAULT TRUE,
+    confidence DECIMAL(3,2) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_question_grammar_tag_question FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE,
+    CONSTRAINT fk_question_grammar_tag_tag FOREIGN KEY (tag_id) REFERENCES grammar_tags(tag_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_question_grammar_tag (question_id, tag_id),
+    INDEX idx_question_grammar_tag_tag (tag_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

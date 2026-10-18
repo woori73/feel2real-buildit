@@ -223,6 +223,17 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 - Delete는 업로더 본인 또는 ADMIN만 가능하며, DB row 삭제 후 storage 객체를 best-effort 삭제한다.
 - 1단계는 자료 업로드/조회, BYO Gemini 키 기반 문제 생성, 생성 문제의 사용자별 저장/조회/수정/삭제까지 실동작한다.
 
+### 4.5.3 grammar_tags / grammar_question_profiles / question_grammar_tags / grammar_collections / grammar_collection_items / grammar_question_variants ⭐ 영어 문법 문제은행
+
+`/problem-generator`(내신위키)의 '문법 문제은행' 화면이 쓰는 확장 테이블. 문제 본문은 기존 `questions`(subject=영어, category=문법)를 그대로 재사용하고, 학년·문법 유형·형식·검수 상태는 별도 프로필/태그로 관리한다. 마이그레이션 V1090~V1092.
+
+- `grammar_tags`: 문법 유형 사전(시제/조동사/수동태…기타 14종 시드). `aliases`는 용어 등장 기반 1차 자동 분류 키워드.
+- `grammar_question_profiles`: `questions` 1:1 확장. `school_level`(M1~H3/COMMON/UNKNOWN), `question_format`(객관식·어법상 옳은/틀린·밑줄·빈칸·배열·영작·전환·오류수정), `difficulty`, `review_status`(AUTO/NEEDS_REVIEW/APPROVED/REJECTED), `rights_status`, 자동 분류 JSON·신뢰도, 원본 추적(`material_id` FK→problem_generator_materials, `source_position`, `external_ref`), 중복 방지용 `content_hash`(UNIQUE)·(material_id, external_ref) UNIQUE.
+- `question_grammar_tags`: 문제-문법 유형 N:M 다중 태그(`is_primary`, `is_auto`, `confidence`).
+- `grammar_collections` / `grammar_collection_items`: 문제 선택함(BASKET)·문제집 제작 목록(BOOK)과 순서(`order_num`), DesignCraft 전달 시 `designcraft_job_id`·`publish_options` 저장. 소유자 격리.
+- `grammar_question_variants`: AI/강사 수정 문항을 원본과 별도 `questions` 행(GENERATED)으로 두고 base↔variant와 승인상태(PENDING/APPROVED/REJECTED)를 연결. 승인 전 원본은 변경하지 않는다.
+- REJECTED는 기본 검색에서 제외(검수 화면은 `reviewStatus=REJECTED`로 조회). 수입 파이프라인은 `GrammarBankImportService`(CSV/JSON, 저신뢰·용어무매칭은 NEEDS_REVIEW 보류함).
+
 ### 4.6 conversations ⭐ LLM 대화 세션 (신규)
 학생 또는 강사의 Claude 대화 세션. 창(탭) 1개 = 대화 1개. 기존 대화는 이어서 사용 가능.
 
