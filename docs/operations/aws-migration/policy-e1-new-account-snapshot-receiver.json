@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CopySharedSnapshotIntoThisAccount",
+      "Effect": "Allow",
+      "Action": ["rds:CopyDBSnapshot", "rds:AddTagsToResource"],
+      "Resource": [
+        "arn:aws:rds:ap-northeast-2:067573916809:snapshot:f2r-mig-*",
+        "arn:aws:rds:ap-northeast-2:425805163960:snapshot:f2r-shared-*"
+      ]
+    },
+    {
+      "Sid": "ReadSnapshotStatus",
+      "Effect": "Allow",
+      "Action": "rds:DescribeDBSnapshots",
+      "Resource": "*"
+    },
+    {
+      "Sid": "UseOldAccountKeyThroughRdsOnly",
+      "Effect": "Allow",
+      "Action": ["kms:DescribeKey", "kms:Decrypt", "kms:ReEncryptFrom", "kms:CreateGrant"],
+      "Resource": "arn:aws:kms:ap-northeast-2:067573916809:key/*",
+      "Condition": { "StringEquals": { "kms:ViaService": "rds.ap-northeast-2.amazonaws.com" } }
+    },
+    {
+      "Sid": "UseThisAccountRdsManagedKeyThroughRds",
+      "Effect": "Allow",
+      "Action": ["kms:DescribeKey", "kms:Encrypt", "kms:GenerateDataKey", "kms:ReEncryptTo", "kms:CreateGrant"],
+      "Resource": "arn:aws:kms:ap-northeast-2:425805163960:key/*",
+      "Condition": { "StringEquals": { "kms:ViaService": "rds.ap-northeast-2.amazonaws.com" } }
+    },
+    {
+      "Sid": "DenyDeleteAndRestoreInE1",
+      "Effect": "Deny",
+      "Action": ["rds:DeleteDBSnapshot", "rds:DeleteDBInstance", "rds:RestoreDBInstanceFromDBSnapshot", "rds:CreateDBInstance"],
+      "Resource": "*"
+    }
+  ]
+}
