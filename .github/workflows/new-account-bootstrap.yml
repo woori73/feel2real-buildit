@@ -5,6 +5,12 @@ name: New account IAM bootstrap (one-time, manual)
 # 활성 워크플로(workflow_dispatch 전용, 실행은 Environment 승인 필요). 출력에는 역할 이름과 결과만 있다(계정 메타데이터 없음).
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'apply = 역할 생성·정책 설정·검증(기본), inspect = 읽기 전용 조사(아무것도 만들거나 바꾸지 않음)'
+        type: choice
+        default: apply
+        options: [apply, inspect]
 permissions:
   id-token: write
   contents: read
@@ -24,6 +30,7 @@ jobs:
           aws-region: ap-northeast-2
           role-session-name: f2r-bootstrap
       - name: Create or update project roles
+        if: inputs.mode != 'inspect'
         shell: bash
         run: |
           set -euo pipefail
@@ -55,6 +62,7 @@ jobs:
           fi
           echo "bootstrap done"
       - name: Verify roles match repository JSON (read-only)
+        if: inputs.mode != 'inspect'
         shell: bash
         run: |
           set -euo pipefail
@@ -93,4 +101,30 @@ jobs:
           ok&=prof_ok
           print("f2r-ec2-profile roles:",roles,"->","OK" if prof_ok else "FAIL")
           sys.exit(0 if ok else 1)
+          PY
+      - name: Inspect existing deploy role (read-only, sanitized)
+        if: inputs.mode == 'inspect'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re,subprocess
+          def aws(*a): return json.loads(subprocess.check_output(["aws",*a,"--output","json"]))
+          def mask(o):
+              t=json.dumps(o,ensure_ascii=False,indent=2,sort_keys=True)
+              t=re.sub(r'\b\d{12}\b','<ACCT>',t)                      # 계정 ID
+              t=re.sub(r'arn:aws:s3:::[^/"*]+','arn:aws:s3:::<BUCKET>',t)  # 버킷 이름
+              t=re.sub(r'\bi-[0-9a-f]{8,}\b','<INSTANCE>',t)           # 인스턴스 ID
+              return t
+          R="github-actions-f2r-deploy"
+          role=aws("iam","get-role","--role-name",R)["Role"]
+          print("RoleLastUsed:",json.dumps(role.get("RoleLastUsed",{}),default=str),"CreateDate:",role.get("CreateDate"))
+          print("--- actual trust policy (masked)"); print(mask(role["AssumeRolePolicyDocument"]))
+          want=json.load(open("docs/operations/aws-migration/trust-github-actions-f2r-deploy.json"))
+          print("--- approved trust policy (masked)"); print(mask(want))
+          print("--- inline policy names:",aws("iam","list-role-policies","--role-name",R)["PolicyNames"])
+          print("--- attached managed policies:",[x["PolicyName"] for x in aws("iam","list-attached-role-policies","--role-name",R)["AttachedPolicies"]])
+          for n in aws("iam","list-role-policies","--role-name",R)["PolicyNames"]:
+              print("--- inline policy document:",n,"(masked)")
+              print(mask(aws("iam","get-role-policy","--role-name",R,"--policy-name",n)["PolicyDocument"]))
           PY
