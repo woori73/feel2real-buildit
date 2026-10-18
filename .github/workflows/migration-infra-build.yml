@@ -449,6 +449,9 @@ jobs:
             aws iam update-assume-role-policy --role-name github-actions-f2r-deploy --policy-document "file://$D/trust-github-actions-f2r-deploy.json"
             aws iam put-role-policy --role-name github-actions-f2r-deploy --policy-name f2r-deploy-smoke-ssm --policy-document "file://$D/policy-f2r-deploy-smoke-ssm.json"
             echo "deploy role trust/policy synced from repo JSON"
+            # EC2 인스턴스 역할: SSM 파라미터 읽기 + 배포 버킷 읽기(저장소 JSON). 신뢰 정책은 변경하지 않는다.
+            aws iam put-role-policy --role-name f2r-ec2-ssm-role --policy-name f2r-ec2-secrets-read --policy-document "file://$D/policy-f2r-ec2-secrets-read.json"
+            echo "ec2 role policy synced from repo JSON"
           }
 
           # 진단: 신규 호스트의 가장 최근 SSM 명령(배포 스크립트) 출력 끝부분을 마스킹해서 보여준다(읽기 전용).
