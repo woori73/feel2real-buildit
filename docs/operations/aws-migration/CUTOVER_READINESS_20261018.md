@@ -4,7 +4,7 @@
 
 ## 0. 범위 변경 (대표 결정 2026-10-18)
 
-DesignCraft와 기존 기출분석 서비스는 폐기한다. 이전·추가 검증 대상에서 제외한다. 신규 환경에서는 DesignCraft 전용 Worker(`PUBLISHING_WORKER_ENABLED=false`)만 비활성화했다(`p2-disable-designcraft`). 엔진·템플릿 파일, DB, 백업, 공개 URL은 유지하며 영구 삭제·URL 차단은 운영 영향 확인 후 별도 승인으로 진행한다. 기출분석은 내신위키·`source`·`examanalysis` 모듈과 코드가 섞여 있어, 폐기 범위 확정 전에는 비활성화하지 않았다(후속 정리 대상). 아래 DesignCraft 관련 항목은 폐기 결정 이전의 기록이다.
+DesignCraft와 기존 기출분석 서비스는 폐기한다. 이전·추가 검증 대상에서 제외한다. 신규 환경에서는 DesignCraft 전용 Worker(`PUBLISHING_WORKER_ENABLED=false`)만 비활성화했다(`p2-disable-designcraft`). 엔진·템플릿 파일, DB, 백업, 공개 URL은 유지하며 영구 삭제·URL 차단은 운영 영향 확인 후 별도 승인으로 진행한다. 기출분석("내신영어 기출분석 + 출제방향 제작", `/exam-analysis`, `examinsight` 모듈)은 신규 환경에서 `APP_EXAM_INSIGHT_ENABLED=false`로 비활성화한다. 홈·대시보드 카드/메뉴 제거와 전용 코드 정리는 후속 작업이다(랜딩 계약 테스트 수정 동반). 대시보드·관리자 허브의 "내신 예상문제 제작 1회 2만원 의뢰하기"가 같은 `/exam-analysis`로 연결되어 있어, 유료 서비스 진입 경로를 새로 정해야 한다. 아래 DesignCraft 관련 항목은 폐기 결정 이전의 기록이다.
 
 ## 1. 신규 환경 현황 (계정 425805163960, ap-northeast-2)
 
