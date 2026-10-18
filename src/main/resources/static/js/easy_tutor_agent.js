@@ -216,6 +216,14 @@
   function scrollChat(){const log=el('chatMessages');log.scrollTop=log.scrollHeight;}
   function openAgent(prompt){el('agentPanel').classList.add('open');if(prompt)el('chatInput').value=prompt;setTimeout(()=>el('chatInput').focus(),0);}
   function closeAgent(){el('agentPanel').classList.remove('open');}
+  // 모바일 키보드: Android Chrome은 키보드가 visual viewport만 줄이므로 패널 높이·하단 위치를 직접 맞춘다.
+  function fitAgentToViewport(){
+    const vv=window.visualViewport; const root=document.documentElement.style;
+    if(!vv){return;}
+    root.setProperty('--vvh',vv.height+'px');
+    root.setProperty('--vv-bottom',Math.max(0,window.innerHeight-vv.height-vv.offsetTop)+'px');
+  }
+  if(window.visualViewport){window.visualViewport.addEventListener('resize',fitAgentToViewport);window.visualViewport.addEventListener('scroll',fitAgentToViewport);fitAgentToViewport();}
 
   async function upload(event){event.preventDefault();const file=el('csvFile').files[0];if(!file)return;const data=new FormData();data.append('file',file);el('uploadButton').disabled=true;el('uploadResult').textContent='원본을 보존하고 분류 규칙을 적용하는 중…';try{const batch=await json(api('/imports?businessId='+state.businessId),{method:'POST',body:data});el('uploadResult').textContent=batch.totalRows+'건 업로드 완료 · 승인 전';el('csvFile').value='';await loadBatches();openAgent('배치 '+batch.batchId+'에서 아직 분류하지 않은 거래 보여줘');await send(el('chatInput').value);}catch(error){el('uploadResult').textContent='업로드 실패: '+error.message;}finally{el('uploadButton').disabled=false;}}
   async function loadBatches(){const batches=await json(api('/imports?businessId='+state.businessId));const target=el('batchList');if(!batches.length){target.innerHTML='<p class="empty-state">업로드된 CSV가 없습니다.</p>';return;}target.innerHTML=batches.slice(0,8).map(batch=>'<article class="batch-card"><div class="batch-title"><span>'+esc(batch.sourceName||'CSV')+'</span><span>'+esc(batch.status)+'</span></div><div class="batch-meta">배치 '+esc(batch.batchId)+' · '+esc(batch.totalRows)+'건 · 반영 '+esc(batch.confirmedRows)+'건</div></article>').join('');}
