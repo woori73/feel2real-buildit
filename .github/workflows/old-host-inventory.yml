@@ -1,0 +1,40 @@
+name: Old host inventory (read-only, manual)
+# 이전 계획용: 구 EC2의 실제 구성을 읽기 전용으로 수집한다(설치된 런타임·서비스·폰트·디스크·메모리).
+# 비밀값 보호: /etc/f2r/env 는 '키 이름'만, systemd 유닛의 Environment= 값은 마스킹, 프로세스는 이름·메모리만(명령줄 인자 미출력).
+# 변경 없음: 모든 명령은 조회 전용이며 서비스·파일·설정을 바꾸지 않는다. 공개 저장소 로그에 남으므로 값·토큰을 출력하지 않는다.
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-session-name: f2r-old-host-inventory
+      - name: Collect read-only inventory through SSM
+        shell: bash
+        run: |
+          set -euo pipefail
+          INSTANCE_ID="i-09d7cabb5a42d1135"
+          seg() {
+            local title="$1" command="$2" params cid
+            echo; echo "===== ${title} ====="
+            params=$(jq -cn --arg command "$command" '{commands:[$command]}')
+            cid=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript --parameters "$params" --query 'Command.CommandId' --output text)
+            set +e; aws ssm wait command-executed --command-id "$cid" --instance-id "$INSTANCE_ID"; set -e
+            aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query '{Status:Status,ResponseCode:ResponseCode}' --output text || true
+            aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query 'StandardOutputContent' --output text || true
+            aws ssm get-command-invocation --command-id "$cid" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text | head -5 || true
+          }
+          seg "1 SYSTEM" 'set +e; . /etc/os-release; echo "$PRETTY_NAME"; uname -r; echo "cpus=$(nproc)"; free -m | sed -n 1,3p; df -h / /var/tmp 2>/dev/null; lsblk -o NAME,SIZE,TYPE,MOUNTPOINT; T=$(curl -s -m 3 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60"); echo "instance-type=$(curl -s -m 3 -H "X-aws-ec2-metadata-token: $T" http://169.254.169.254/latest/meta-data/instance-type)"; echo "imds-hop/tokens: $(curl -s -m 3 -o /dev/null -w "%{http_code}" http://169.254.169.254/latest/meta-data/ )"'
+          seg "2 RUNTIMES" 'set +e; java -version 2>&1 | head -3; python3 --version 2>&1; python3.11 --version 2>&1; node -v 2>&1 | head -1; ffmpeg -version 2>&1 | head -1; ffprobe -version 2>&1 | head -1; nginx -v 2>&1; rpm -qa --qf "%{NAME}-%{VERSION}\n" 2>/dev/null | grep -Ei "java|corretto|python3|nginx|ffmpeg|font|noto|nanum|libreoffice|chrom|poppler|tesseract|nodejs|amazon-ssm|cloudwatch|docker|git-" | sort | head -80'
+          seg "3 SERVICES" 'set +e; systemctl list-unit-files --type=service --state=enabled --no-pager 2>/dev/null | grep -Ev "^(systemd|getty|serial|user|dbus|auditd|chrony|sshd|rsyslog|NetworkManager|cloud|amazon-ssm|irqbalance|libstoragemgmt|lvm2|mdmonitor|multipathd|nm-|rpcbind|sysstat|dracut|udev|plymouth|rc-|dnf|restorecond|selinux)" | head -40; echo "--- running f2r/buildit/worker related"; systemctl list-units --type=service --state=running --no-pager 2>/dev/null | grep -Ei "f2r|buildit|hwpx|designcraft|worker|nginx|java" | head -20; echo "--- timers"; systemctl list-timers --no-pager 2>/dev/null | head -12; echo "--- cron"; ls /etc/cron.d 2>/dev/null; crontab -l 2>/dev/null | sed "s/[A-Za-z_]*\(KEY\|SECRET\|TOKEN\|PASSWORD\)[A-Za-z_]*=[^ ]*/<masked>/g" | head -20'
+          seg "4 UNITS (Environment values masked)" 'set +e; for u in f2r-app buildit-wiki; do echo "### $u"; systemctl cat $u.service 2>/dev/null | sed -E "s/^(Environment=[^=]+=).*/\1<masked>/; s/(password|secret|token|key)=[^ ]+/\1=<masked>/Ig"; done; echo "### other f2r/buildit/hwpx units"; ls /etc/systemd/system 2>/dev/null | grep -Ei "f2r|buildit|hwpx|designcraft|worker"; echo "### drop-ins"; ls /etc/systemd/system/*.d 2>/dev/null | head -20; echo "### JVM flags"; P=$(systemctl show -p MainPID --value f2r-app.service); [ -n "$P" ] && [ "$P" != 0 ] && tr "\0" "\n" </proc/$P/cmdline | grep -E "^-X|^-XX|^-Djava\.io|^-Dfile\.encoding" | head -20'
+          seg "5 ENV KEY NAMES ONLY" 'set +e; for f in /etc/f2r/env /etc/buildit-wiki.env /etc/buildit-wiki-identity.env; do if [ -r "$f" ]; then echo "### $f (names only, values never printed)"; grep -E "^[A-Za-z_][A-Za-z0-9_]*=" "$f" | cut -d= -f1 | sort | tr "\n" " "; echo; else echo "### $f absent"; fi; done'
+          seg "6 PROCESSES, FONTS, DESIGNCRAFT ENGINE, FILES" 'set +e; echo "--- top by RSS (name only)"; ps -eo pid,rss,etimes,comm --sort=-rss | head -12; echo "--- listeners"; ss -ltn | awk "NR>1{print \$4}" | sort -u; echo "--- opt dirs"; find /opt -maxdepth 2 -type d 2>/dev/null | head -30; du -sh /opt/* 2>/dev/null | head -15; echo "--- fonts total/ko"; fc-list 2>/dev/null | wc -l; fc-list :lang=ko family 2>/dev/null | sort -u | head -20; echo "--- designcraft/typesetting engine paths"; ls -d /opt/*design* /opt/*typeset* /opt/*dcli* /usr/local/bin/*design* /usr/local/bin/*dc* 2>/dev/null | head; echo "--- app dirs"; ls -d /var/tmp/f2r /var/lib/f2r* /home/*/ 2>/dev/null | head; du -sh /var/tmp/f2r 2>/dev/null; echo "--- swap"; swapon --show'
