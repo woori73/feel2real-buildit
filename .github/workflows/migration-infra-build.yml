@@ -26,6 +26,7 @@ on:
           - p2-inventory
           - p2-s3-copy
           - p2-designcraft
+          - p2-dc-verify
           - validate
           - s3
           - provision
@@ -1042,6 +1043,31 @@ jobs:
             case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5
           done
           aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{s:Status,o:StandardOutputContent,e:StandardErrorContent}' --output text | tail -c 5000
+          [ "$ST" = Success ]
+
+  # ---- P2 DesignCraft 검증: 신규 호스트에서 샘플 문서로 PNG·PDF 출력(앱 사용자 ec2-user, 임시 파일은 /var/tmp/f2r) ----
+  p2-dc-verify:
+    if: inputs.step == 'p2-dc-verify'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-session-name: f2r-p2-dc-verify
+      - name: Render sample PNG and PDF on the new host
+        shell: bash
+        run: |
+          set -euo pipefail
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          CMD="cd /var/tmp/f2r; rm -f dc-test.png dc-test.pdf; echo --- png; sudo -u ec2-user bash -c '/opt/designcraft/designcraft-cli run --sample --page 0 --scale 1 --export /var/tmp/f2r/dc-test.png' 2>&1 | tail -3; file dc-test.png | cut -c1-110; ls -l dc-test.png | awk '{print \$5}'; echo --- pdf; sudo -u ec2-user bash -c '/opt/designcraft/designcraft-cli run --sample --export /var/tmp/f2r/dc-test.pdf' 2>&1 | tail -3; file dc-test.pdf | cut -c1-110; ls -l dc-test.pdf | awk '{print \$5}'; pdffonts dc-test.pdf 2>/dev/null | head -6 || true; echo --- all-pages; mkdir -p /var/tmp/f2r/dc-pages; sudo -u ec2-user bash -c '/opt/designcraft/designcraft-cli run --sample --all-pages /var/tmp/f2r/dc-pages --scale 0.5' 2>&1 | tail -2; ls /var/tmp/f2r/dc-pages | wc -l; rm -rf /var/tmp/f2r/dc-pages dc-test.png dc-test.pdf"
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "$CMD" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 60); do
+            ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{s:Status,o:StandardOutputContent,e:StandardErrorContent}' --output text | tail -c 3500
           [ "$ST" = Success ]
 
   # ---- P2 조사(읽기 전용): 구 호스트 DesignCraft/폰트/S3 환경값 이름 + 구 S3 버킷 속성·규모 ----
