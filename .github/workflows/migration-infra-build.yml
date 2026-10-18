@@ -29,6 +29,7 @@ on:
           - p2-dc-verify
           - p2-disable-designcraft
           - p2-cutover-inventory
+          - p2-cutover
           - validate
           - s3
           - provision
@@ -40,6 +41,10 @@ on:
           - acm
           - alb-https
           - smoke
+      confirm:
+        description: 'p2-cutover 전용: 최종 전환 실행 확인 문자열(CUTOVER-20261018)'
+        required: false
+        default: ''
       db_snapshot:
         description: 'restore-rds 전용: 신규 계정 내 복사 스냅샷 식별자(f2r-shared-*)'
         required: false
@@ -1046,6 +1051,248 @@ jobs:
           done
           aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{s:Status,o:StandardOutputContent,e:StandardErrorContent}' --output text | tail -c 5000
           [ "$ST" = Success ]
+
+  # ======== 최종 전환(p2-cutover) — 사용자 조건부 승인(2026-10-18) ========
+  # 순서: 사전 점검 -> 구 쓰기 중지(앱·위키 서비스 stop) -> 위키 데이터 팩 -> 최종 스냅샷(KMS 재암호화·공유) -> S3 전체 동기화·검증
+  #       -> 위키 데이터 신규 설치 -> 신규 RDS 복원·엔드포인트 교체 -> 테이블별 행 수 비교(구 vs 신규) -> DNS 별칭 3건 신규 ALB로 전환
+  # 실패 시 cut-rollback: DNS를 구 ALB로 되돌리고 구 앱·위키를 다시 기동한다. 구 서버·DB·S3는 삭제·수정하지 않는다.
+  cut-precheck:
+    if: inputs.step == 'p2-cutover' && inputs.confirm == 'CUTOVER-20261018'
+    runs-on: ubuntu-latest
+    environment: f2r-infra-build
+    outputs:
+      stamp: ${{ steps.s.outputs.stamp }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BUILDER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-cut-precheck
+      - id: s
+        name: Pre-checks on the new environment (abort before any change on failure)
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "stamp=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          [ -n "$IID" ] && [ "$IID" != None ] || { echo "신규 EC2 없음" >&2; exit 1; }
+          PING=$(aws ssm describe-instance-information --filters Key=InstanceIds,Values="$IID" --query 'InstanceInformationList[0].PingStatus' --output text)
+          echo "ssm=$PING"; [ "$PING" = Online ]
+          DBS=$(aws rds describe-db-instances --db-instance-identifier f2r-db --query 'DBInstances[0].DBInstanceStatus' --output text); echo "rehearsal rds=$DBS"; [ "$DBS" = available ]
+          TG=$(aws elbv2 describe-target-groups --names f2r-app-tg --query 'TargetGroups[0].TargetGroupArn' --output text)
+          TH=$(aws elbv2 describe-target-health --target-group-arn "$TG" --query 'TargetHealthDescriptions[0].TargetHealth.State' --output text); echo "target=$TH"; [ "$TH" = healthy ]
+          ALB=$(aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+          L=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB" --query "Listeners[?Port==\`443\`].ListenerArn" --output text); [ -n "$L" ] && echo "https listener ok"
+          CODE=$(curl -sk -m 20 -o /dev/null -w '%{http_code}' -H 'Host: feel2real.co.kr' https://f2r-alb-2551937.ap-northeast-2.elb.amazonaws.com/actuator/health); echo "new alb health=$CODE"; [ "$CODE" = 200 ]
+          B=$(aws s3api head-bucket --bucket f2r-uploads-425805163960 2>&1 && echo ok); echo "uploads bucket $B"
+
+  cut-old:
+    if: inputs.step == 'p2-cutover' && inputs.confirm == 'CUTOVER-20261018'
+    needs: cut-precheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    outputs:
+      old_counts_b64: ${{ steps.frz.outputs.old_counts_b64 }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-cut-old
+      - id: frz
+        name: FREEZE old writes, record row counts, pack wiki data, final snapshot (KMS copy + share), full S3 read
+        shell: bash
+        env:
+          STAMP: ${{ needs.cut-precheck.outputs.stamp }}
+        run: |
+          set -euo pipefail
+          OLDI=i-09d7cabb5a42d1135
+          runhost() {
+            local b64 params cid st
+            b64=$(printf '%s' "$2" | base64 -w0)
+            params=$(jq -cn --arg c "echo $b64 | base64 -d | bash" '{commands:[$c]}')
+            cid=$(aws ssm send-command --instance-ids "$1" --document-name AWS-RunShellScript --timeout-seconds 1800 --parameters "$params" --query Command.CommandId --output text)
+            for _ in $(seq 1 360); do st=$(aws ssm get-command-invocation --command-id "$cid" --instance-id "$1" --query Status --output text 2>/dev/null || echo Pending); case "$st" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5; done
+            aws ssm get-command-invocation --command-id "$cid" --instance-id "$1" --query StandardOutputContent --output text | tail -c 3000
+            [ "$st" = Success ]
+          }
+          echo "### freeze old app + wiki (writes stopped)"
+          runhost "$OLDI" 'systemctl stop f2r-app; systemctl stop buildit-wiki; sleep 3; echo f2r-app=$(systemctl is-active f2r-app); echo wiki=$(systemctl is-active buildit-wiki)'
+          echo "### row counts per table on the frozen OLD database (compared later against the restored copy)"
+          CNT='set -a; . /etc/f2r/env; set +a; export MYSQL_PWD="$DB_PASSWORD"; M="mysql -N -B -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER $DB_NAME"; $M -e "select table_name from information_schema.tables where table_schema=database() and table_type=\"BASE TABLE\" order by 1" | while read t; do echo "$t $($M -e "select count(*) from \`$t\`")"; done'
+          B64=$(printf '%s' "$CNT" | base64 -w0)
+          CID=$(aws ssm send-command --instance-ids "$OLDI" --document-name AWS-RunShellScript --timeout-seconds 900 --parameters "$(jq -cn --arg c "echo $B64 | base64 -d | bash" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 180); do ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$OLDI" --query Status --output text 2>/dev/null || echo Pending); case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5; done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$OLDI" --query StandardOutputContent --output text > /tmp/old.counts
+          echo "old tables=$(wc -l < /tmp/old.counts)"; [ "$ST" = Success ] && [ "$(wc -l < /tmp/old.counts)" -ge 20 ]
+          echo "old_counts_b64=$(base64 -w0 /tmp/old.counts)" >> "$GITHUB_OUTPUT"
+          echo "### pack wiki data through presigned URL"
+          pip install -q boto3
+          KEY=migration-tmp/wiki-$STAMP.tgz
+          URL=$(python3 -c "import boto3;print(boto3.client('s3',region_name='ap-northeast-2').generate_presigned_url('put_object',Params={'Bucket':'feel2real-buildit-deploy','Key':'$KEY'},ExpiresIn=1200))")
+          echo "::add-mask::$URL"
+          OUT=$(runhost "$OLDI" "set -e; tar -czf /tmp/wiki-mig.tgz -C /opt/buildit-wiki/data .; curl -sf -T /tmp/wiki-mig.tgz '$URL'; sha256sum /tmp/wiki-mig.tgz | cut -d' ' -f1; rm -f /tmp/wiki-mig.tgz" | grep -v "$URL" | tail -1)
+          aws s3 cp "s3://feel2real-buildit-deploy/$KEY" /tmp/wiki.tgz --no-progress
+          RSHA=$(sha256sum /tmp/wiki.tgz | cut -d' ' -f1); echo "wiki sha host=$OUT runner=$RSHA"; [ "$OUT" = "$RSHA" ]
+          echo "### final RDS snapshot"
+          aws rds create-db-snapshot --db-instance-identifier f2r-db-prd --db-snapshot-identifier "f2r-final-$STAMP" >/dev/null
+          aws rds wait db-snapshot-available --db-snapshot-identifier "f2r-final-$STAMP"
+          aws rds copy-db-snapshot --source-db-snapshot-identifier "f2r-final-$STAMP" --target-db-snapshot-identifier "f2r-mig-final-$STAMP" --kms-key-id alias/f2r-migration >/dev/null
+          aws rds wait db-snapshot-available --db-snapshot-identifier "f2r-mig-final-$STAMP"
+          aws rds modify-db-snapshot-attribute --db-snapshot-identifier "f2r-mig-final-$STAMP" --attribute-name restore --values-to-add 425805163960 >/dev/null
+          echo "final snapshot shared"
+          echo "### S3 full read (old bucket is only read)"
+          OLD=f2r-tutor-uploads-prd-067573916809-ap-northeast-2-an
+          aws s3api list-objects-v2 --bucket "$OLD" --query 'Contents[].[Key,Size]' --output text | grep -v '^None$' | sort > /tmp/old.list || true
+          mkdir -p /tmp/s3data; aws s3 sync "s3://$OLD" /tmp/s3data --only-show-errors
+          echo "old objects=$(wc -l < /tmp/old.list)"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-session-name: f2r-cut-new-write
+          unset-current-credentials: true
+      - name: Upload S3 delta + verify, install wiki data on the new host
+        shell: bash
+        env:
+          STAMP: ${{ needs.cut-precheck.outputs.stamp }}
+        run: |
+          set -euo pipefail
+          UP=f2r-uploads-425805163960; DEP=f2r-deploy-425805163960
+          aws s3 sync /tmp/s3data "s3://$UP" --only-show-errors --sse AES256
+          aws s3api list-objects-v2 --bucket "$UP" --query 'Contents[].[Key,Size]' --output text | grep -v '^None$' | sort > /tmp/new.list || true
+          MISSING=$(comm -23 /tmp/old.list /tmp/new.list | wc -l)
+          echo "S3 old=$(wc -l < /tmp/old.list) new=$(wc -l < /tmp/new.list) missing(key+size)=$MISSING"; [ "$MISSING" = 0 ]
+          aws s3 cp /tmp/wiki.tgz "s3://$DEP/migration/wiki-data.tgz" --no-progress --sse AES256
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          SCRIPT="set -e; systemctl stop buildit-wiki; mv /opt/buildit-wiki/data /opt/buildit-wiki/data.pre-cutover.$STAMP; mkdir -p /opt/buildit-wiki/data; aws s3 cp s3://$DEP/migration/wiki-data.tgz /tmp/w.tgz --no-progress; tar -xzf /tmp/w.tgz -C /opt/buildit-wiki/data; rm -f /tmp/w.tgz; systemctl start buildit-wiki; for i in \$(seq 1 20); do c=\$(curl -s -o /dev/null -w '%{http_code}' 127.0.0.1:8000/api/health); [ \"\$c\" = 200 ] && break; sleep 3; done; echo wiki-health=\$c; ls /opt/buildit-wiki/data | wc -l"
+          B64=$(printf '%s' "$SCRIPT" | base64 -w0)
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "echo $B64 | base64 -d | bash" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 60); do ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending); case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5; done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text
+          [ "$ST" = Success ]
+
+  cut-new-db:
+    if: inputs.step == 'p2-cutover' && inputs.confirm == 'CUTOVER-20261018'
+    needs: [cut-precheck, cut-old]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: f2r-infra-build
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BUILDER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-cut-newdb
+      - name: Copy shared final snapshot, restore new RDS, switch the new app to it
+        shell: bash
+        env:
+          STAMP: ${{ needs.cut-precheck.outputs.stamp }}
+          OLD_COUNTS_B64: ${{ needs.cut-old.outputs.old_counts_b64 }}
+        run: |
+          set -euo pipefail
+          SRC="arn:aws:rds:ap-northeast-2:067573916809:snapshot:f2r-mig-final-$STAMP"; C="f2r-shared-final-$STAMP"; DB="f2r-db-$STAMP"
+          IID0=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          CID0=$(aws ssm send-command --instance-ids "$IID0" --document-name AWS-RunShellScript --parameters '{"commands":["systemctl stop f2r-app; echo new-app-stopped"]}' --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$CID0" --instance-id "$IID0" || true
+          aws rds copy-db-snapshot --source-db-snapshot-identifier "$SRC" --target-db-snapshot-identifier "$C" --kms-key-id alias/aws/rds >/dev/null
+          aws rds wait db-snapshot-available --db-snapshot-identifier "$C"
+          RDSSG=$(aws ec2 describe-security-groups --filters Name=group-name,Values=f2r-rds-sg Name=tag:Project,Values=f2r-migration --query 'SecurityGroups[0].GroupId' --output text)
+          aws rds restore-db-instance-from-db-snapshot --db-instance-identifier "$DB" --db-snapshot-identifier "$C" --db-instance-class db.t4g.micro --db-subnet-group-name f2r-db-subnets --vpc-security-group-ids "$RDSSG" --no-publicly-accessible --no-multi-az --db-parameter-group-name f2r-mysql84-params --tags Key=Project,Value=f2r-migration >/dev/null
+          aws rds wait db-instance-available --db-instance-identifier "$DB"
+          aws rds modify-db-instance --db-instance-identifier "$DB" --storage-type gp3 --backup-retention-period 7 --apply-immediately >/dev/null || true
+          aws rds wait db-instance-available --db-instance-identifier "$DB"
+          NEWEP=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].Endpoint.Address' --output text)
+          echo "::add-mask::$NEWEP"; export NEWEP
+          python3 - <<'PY'
+          import json,os,re,subprocess
+          new=os.environ["NEWEP"]
+          names=json.loads(subprocess.check_output(["aws","ssm","get-parameters-by-path","--path","/f2r/app/","--query","Parameters[].Name","--output","json"]))
+          for n in names:
+              v=subprocess.check_output(["aws","ssm","get-parameter","--name",n,"--with-decryption","--query","Parameter.Value","--output","text"]).decode().rstrip("\n")
+              nv=re.sub(r"[A-Za-z0-9.-]+\.rds\.amazonaws\.com",new,v)
+              if nv!=v: subprocess.check_call(["aws","ssm","put-parameter","--name",n,"--type","SecureString","--overwrite","--value",nv],stdout=subprocess.DEVNULL)
+          PY
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          # 신규 앱은 정지한 채로(스케줄러 쓰기 방지) 행 수를 비교하고, 일치할 때만 기동한다.
+          CNT='set -a; . /etc/f2r/env; set +a; export MYSQL_PWD="$DB_PASSWORD"; M="mysql -N -B -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER $DB_NAME"; $M -e "select table_name from information_schema.tables where table_schema=database() and table_type=\"BASE TABLE\" order by 1" | while read t; do echo "$t $($M -e "select count(*) from \`$t\`")"; done'
+          SCRIPT="set -e; sed -i -E 's/[A-Za-z0-9.-]+\.rds\.amazonaws\.com/$NEWEP/g' /etc/f2r/env; dnf install -y mariadb105 >/dev/null 2>&1 || true; ( $CNT ) > /tmp/new.counts; echo '$OLD_COUNTS_B64' | base64 -d > /tmp/old.counts; DIFF=\$(diff /tmp/old.counts /tmp/new.counts | grep -c '^[<>]' || true); echo tables=\$(wc -l < /tmp/new.counts) table-diff=\$DIFF; if [ \"\$DIFF\" != 0 ] || [ \$(wc -l < /tmp/new.counts) -lt 20 ]; then echo COUNT-MISMATCH; exit 3; fi; systemctl restart f2r-app; for i in \$(seq 1 50); do curl -sf localhost:8080/actuator/health >/dev/null && echo app-healthy && break; sleep 5; done"
+          B64=$(printf '%s' "$SCRIPT" | base64 -w0)
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "echo $B64 | base64 -d | bash" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 80); do ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending); case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5; done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text | sed -E 's/[A-Za-z0-9.-]+\.rds\.amazonaws\.com/<rds>/g'
+          [ "$ST" = Success ]
+
+  cut-verify:
+    if: inputs.step == 'p2-cutover' && inputs.confirm == 'CUTOVER-20261018'
+    needs: [cut-precheck, cut-old, cut-new-db]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Final gate before DNS (new ALB serves the restored data; counts were already matched in cut-new-db)
+        shell: bash
+        run: |
+          set -euo pipefail
+          A=https://f2r-alb-2551937.ap-northeast-2.elb.amazonaws.com
+          for p in /actuator/health / /login /ledger /easy /testprep; do
+            CODE=$(curl -sk -m 20 -o /dev/null -w '%{http_code}' -H 'Host: feel2real.co.kr' "$A$p"); echo "$p $CODE"; [ "$CODE" = 200 ]
+          done
+          for p in /api/me /api/builder/pages; do
+            CODE=$(curl -sk -m 20 -o /dev/null -w '%{http_code}' -H 'Host: feel2real.co.kr' "$A$p"); echo "$p $CODE (expect 401)"; [ "$CODE" = 401 ]
+          done
+
+  cut-dns:
+    if: inputs.step == 'p2-cutover' && inputs.confirm == 'CUTOVER-20261018'
+    needs: [cut-precheck, cut-old, cut-new-db, cut-verify]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-cut-dns
+      - name: Switch DNS alias records (root, wildcard, app) to the new ALB
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZID=$(aws route53 list-hosted-zones-by-name --dns-name feel2real.co.kr --query "HostedZones[?Name=='feel2real.co.kr.' && Config.PrivateZone==\`false\`].Id | [0]" --output text)
+          NEW=dualstack.f2r-alb-2551937.ap-northeast-2.elb.amazonaws.com.
+          jq -n --arg t "$NEW" '{Changes:[ "feel2real.co.kr.","*.feel2real.co.kr.","app.feel2real.co.kr." | {Action:"UPSERT",ResourceRecordSet:{Name:.,Type:"A",AliasTarget:{HostedZoneId:"ZWKZPGTI48KDX",DNSName:$t,EvaluateTargetHealth:false}}} ]}' > /tmp/chg.json
+          aws route53 change-resource-record-sets --hosted-zone-id "$ZID" --change-batch file:///tmp/chg.json --query ChangeInfo.Status --output text
+          sleep 90
+          for i in $(seq 1 10); do
+            CODE=$(curl -s -m 20 -o /dev/null -w '%{http_code}' https://feel2real.co.kr/actuator/health || echo 000); echo "public health=$CODE"
+            [ "$CODE" = 200 ] && break; sleep 15
+          done
+          [ "$CODE" = 200 ]
+          R1=$(getent ahostsv4 feel2real.co.kr | awk '{print $1}' | sort -u | tr '\n' ' '); R2=$(getent ahostsv4 f2r-alb-2551937.ap-northeast-2.elb.amazonaws.com | awk '{print $1}' | sort -u | tr '\n' ' ')
+          echo "domain ips=$R1"; echo "new alb ips=$R2"
+          for ip in $R1; do case " $R2 " in *" $ip "*) echo "domain resolves to NEW ALB"; exit 0;; esac; done
+          echo "도메인이 신규 ALB로 해석되지 않음" >&2; exit 1
+
+  cut-rollback:
+    if: always() && inputs.step == 'p2-cutover' && inputs.confirm == 'CUTOVER-20261018' && (contains(fromJSON('["failure","cancelled"]'), needs.cut-old.result) || contains(fromJSON('["failure","cancelled"]'), needs.cut-new-db.result) || contains(fromJSON('["failure","cancelled"]'), needs.cut-verify.result) || contains(fromJSON('["failure","cancelled"]'), needs.cut-dns.result))
+    needs: [cut-old, cut-new-db, cut-verify, cut-dns]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-cut-rollback
+      - name: ROLLBACK — DNS back to the old ALB, restart old app and wiki
+        shell: bash
+        run: |
+          set -uo pipefail
+          ZID=$(aws route53 list-hosted-zones-by-name --dns-name feel2real.co.kr --query "HostedZones[?Name=='feel2real.co.kr.' && Config.PrivateZone==\`false\`].Id | [0]" --output text)
+          OLD=dualstack.f2r-alb-1102199627.ap-northeast-2.elb.amazonaws.com.
+          jq -n --arg t "$OLD" '{Changes:[ "feel2real.co.kr.","*.feel2real.co.kr.","app.feel2real.co.kr." | {Action:"UPSERT",ResourceRecordSet:{Name:.,Type:"A",AliasTarget:{HostedZoneId:"ZWKZPGTI48KDX",DNSName:$t,EvaluateTargetHealth:false}}} ]}' > /tmp/chg.json
+          aws route53 change-resource-record-sets --hosted-zone-id "$ZID" --change-batch file:///tmp/chg.json --query ChangeInfo.Status --output text
+          IID=i-09d7cabb5a42d1135
+          CMD='systemctl start buildit-wiki; systemctl start f2r-app; for i in $(seq 1 50); do curl -sf localhost:8080/actuator/health >/dev/null && echo old-app-healthy && break; sleep 5; done'
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "$CMD" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 60); do ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending); case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5; done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text
+          echo "ROLLBACK DONE — 구 환경 복구됨. 전환 실패 원인은 위 잡 로그 확인"
 
   # ---- 전환 전 조사(읽기 전용): 구 호스트 위키 데이터·서비스, Route 53 레코드, 구 ALB, 구 RDS ----
   p2-cutover-inventory:
