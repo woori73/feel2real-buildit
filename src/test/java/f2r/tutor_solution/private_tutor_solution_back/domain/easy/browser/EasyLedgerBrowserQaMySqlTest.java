@@ -1,6 +1,10 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.browser;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.AcademyEasyBusinessLink;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.AcademyEasyBusinessLinkRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
@@ -69,6 +73,8 @@ class EasyLedgerBrowserQaMySqlTest {
     @Autowired EasyBusinessRepository businesses;
     @Autowired EasyTransactionRepository transactions;
     @Autowired UserRepository users;
+    @Autowired AcademyRepository academies;
+    @Autowired AcademyEasyBusinessLinkRepository links;
     @Autowired JwtTokenProvider tokenProvider;
     @Autowired MockMvc mvc;
 
@@ -78,6 +84,10 @@ class EasyLedgerBrowserQaMySqlTest {
     private final List<Long> businessIds = new ArrayList<>();
     private final List<Long> txnIds = new ArrayList<>();
     private final List<Long> userIds = new ArrayList<>();
+    private final List<Long> academyIds = new ArrayList<>();
+    private final List<Long> linkIds = new ArrayList<>();
+    private String qaBusinessCode;
+    private Long qaBusinessId;
 
     @BeforeEach
     void setUpCommittedTestData() {
@@ -87,9 +97,12 @@ class EasyLedgerBrowserQaMySqlTest {
                 .code(CODE_PREFIX + suffix)
                 .name("장부 QA 학원")
                 .active(true)
-                .sortOrder(0)
+                // 공유 DB의 다른 사업체보다 먼저 정렬되어 /ledger가 첫 항목으로 QA 사업체를 고르게 한다.
+                .sortOrder(-1_000)
                 .build());
         businessIds.add(business.getBusinessId());
+        qaBusinessId = business.getBusinessId();
+        qaBusinessCode = business.getCode();
 
         LocalDate today = LocalDate.now();
         txnIds.add(transactions.save(EasyTransaction.builder()
@@ -107,6 +120,10 @@ class EasyLedgerBrowserQaMySqlTest {
     @AfterEach
     void cleanUpCommittedTestData() {
         // FK 역순으로 정리 (거래 → 사업체 → 사용자)
+        linkIds.forEach(id -> links.deleteById(id));
+        linkIds.clear();
+        academyIds.forEach(id -> academies.deleteById(id));
+        academyIds.clear();
         txnIds.forEach(id -> transactions.deleteById(id));
         txnIds.clear();
         businessIds.forEach(id -> businesses.deleteById(id));
@@ -125,29 +142,49 @@ class EasyLedgerBrowserQaMySqlTest {
 
     @Test
     void tutorTenantIsolationViaApi() throws Exception {
-        // given: 연결되지 않은 TUTOR
-        Cookie tutorCookie = signedCookie(Role.TUTOR);
+        // given: 공개 Academy를 가진 TUTOR가 '자기 사업체'에만 연결되어 있고, QA 사업체는 연결되지 않았다
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        User tutor = saveUser(Role.TUTOR);
+        EasyBusiness own = businesses.save(EasyBusiness.builder()
+                .code("LEDGER_OWN_" + suffix).name("장부 QA 소유 사업체").active(true).sortOrder(0).build());
+        businessIds.add(own.getBusinessId());
+        Academy academy = academies.save(Academy.builder().tutor(tutor).slug("ledger-qa-" + suffix)
+                .name("장부 QA 학원").logoStorageKey("logo").intro("intro").build());
+        academyIds.add(academy.getAcademyId());
+        linkIds.add(links.save(new AcademyEasyBusinessLink(academy, own)).getLinkId());
+        Cookie tutorCookie = cookieFor(tutor);
 
-        // when: TUTOR가 사업체 목록 API 호출
-        // then: 연결된 사업체만 반환 (연결 없으면 빈 목록, 403 아님)
-        var result = mvc.perform(get("/api/tutor/easy/businesses")
-                        .cookie(tutorCookie)
+        // when/then: 연결된 사업체만 보이고 QA 사업체는 보이지 않는다
+        String tutorList = mvc.perform(get("/api/tutor/easy/businesses").cookie(tutorCookie)
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
-        String body = result.getResponse().getContentAsString();
-        // 연결되지 않은 QA 사업체 코드는 목록에 없어야 함
-        assertThat(body).doesNotContain(CODE_PREFIX);
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(tutorList).contains(own.getCode()).doesNotContain(qaBusinessCode);
 
-        // ADMIN은 전체 사업체 조회 가능
-        Cookie adminCookie = signedCookie(Role.ADMIN);
-        var adminResult = mvc.perform(get("/api/tutor/easy/businesses")
-                        .cookie(adminCookie)
+        // 미연결 사업체의 데이터 API는 403이다(요청한 businessId는 선택자일 뿐 권한이 아니다)
+        mvc.perform(get("/api/tutor/easy/workspace/monthly").param("businessId", String.valueOf(qaBusinessId))
+                        .cookie(tutorCookie).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/tutor/easy/workspace/transactions").param("businessId", String.valueOf(qaBusinessId))
+                        .cookie(tutorCookie).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+
+        // 자기 사업체는 접근 가능(200)하고 QA 사업체의 거래 내용은 응답에 없다
+        String ownMonthly = mvc.perform(get("/api/tutor/easy/workspace/monthly")
+                        .param("businessId", String.valueOf(own.getBusinessId()))
+                        .cookie(tutorCookie).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(ownMonthly).doesNotContain("김학생").doesNotContain("이강사");
+
+        // Academy가 없는 TUTOR는 목록 API가 403이다(빈 목록이 아니다)
+        mvc.perform(get("/api/tutor/easy/businesses").cookie(signedCookie(Role.TUTOR))
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andReturn();
-        // ADMIN은 QA 사업체를 볼 수 있음 (테넌트 격리: TUTOR와 다름)
-        assertThat(adminResult.getResponse().getContentAsString()).contains(CODE_PREFIX);
+                .andExpect(status().isForbidden());
+
+        // ADMIN은 QA 사업체를 목록에서 볼 수 있다
+        String adminList = mvc.perform(get("/api/tutor/easy/businesses").cookie(signedCookie(Role.ADMIN))
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(adminList).contains(qaBusinessCode);
     }
 
     private void runScenario(int width, int height, String screenshotName,
@@ -231,11 +268,19 @@ class EasyLedgerBrowserQaMySqlTest {
                 .isLessThanOrEqualTo(dimensions.get("clientWidth").intValue());
     }
 
-    private Cookie signedCookie(Role role) {
+    private User saveUser(Role role) {
         User user = users.save(new User("ledger_qa_" + UUID.randomUUID().toString().substring(0, 8),
                 "unused-test-password", "장부 QA", "장부 QA", null, null, role));
         userIds.add(user.getUserId());
+        return user;
+    }
+
+    private Cookie cookieFor(User user) {
         return new Cookie("ACCESS_TOKEN",
-                tokenProvider.issue(user.getUserId(), user.getLoginId(), role.name()));
+                tokenProvider.issue(user.getUserId(), user.getLoginId(), user.getRole().name()));
+    }
+
+    private Cookie signedCookie(Role role) {
+        return cookieFor(saveUser(role));
     }
 }
