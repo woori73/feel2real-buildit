@@ -239,6 +239,7 @@
         <h1 class="dash-title">학원 운영 대시보드</h1>
       </div>
       <div class="dash-controls">
+        <a class="dash-refresh" href="/">홈으로</a>
         <select class="dash-biz-select" id="bizSelect" aria-label="사업체 선택">
           <option value="">사업체 불러오는 중...</option>
         </select>
@@ -479,9 +480,6 @@
         var v = bizSelect.value;
         if (v) loadWidgets(v);
       });
-      document.getElementById('aiFab').addEventListener('click', function() {
-        alert('AI 비서 채팅은 준비 중입니다.');
-      });
     }
 
     // api.js 로드 대기
@@ -512,6 +510,7 @@
       document.getElementById('aiClose').addEventListener('click', function () { toggle(false); });
       function add(cls, text) { var d = document.createElement('div'); d.className = 'ai-msg ' + cls; d.textContent = text; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; }
       function ask(text) {
+        if (send.disabled) return;
         var biz = document.getElementById('bizSelect').value;
         if (!biz) { add('err', '사업체를 먼저 선택해 주세요.'); return; }
         add('user', text); var wait = add('bot', '답변을 만드는 중입니다...'); send.disabled = true;
