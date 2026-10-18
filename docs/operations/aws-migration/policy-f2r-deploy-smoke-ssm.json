@@ -42,6 +42,20 @@
         "arn:aws:s3:::f2r-deploy-425805163960",
         "arn:aws:s3:::f2r-deploy-425805163960/*"
       ]
+    },
+    {
+      "Sid": "UploadsBucketCopyTarget",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": [
+        "arn:aws:s3:::f2r-uploads-425805163960",
+        "arn:aws:s3:::f2r-uploads-425805163960/*"
+      ]
     }
   ]
 }
