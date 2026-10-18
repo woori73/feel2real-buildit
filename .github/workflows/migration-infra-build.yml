@@ -22,6 +22,7 @@ on:
           - fix-deploy-role
           - ssm-last-output
           - app-diag
+          - acm-dns
           - validate
           - s3
           - provision
@@ -67,7 +68,7 @@ env:
 
 jobs:
   build:
-    if: inputs.step != 'secrets-transfer' && inputs.step != 'db-migrate'
+    if: inputs.step != 'secrets-transfer' && inputs.step != 'db-migrate' && inputs.step != 'acm-dns'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     # 소유자 승인(required reviewers) + main 브랜치 한정으로 보호된 GitHub Environment.
@@ -647,7 +648,7 @@ jobs:
   # ---- DB 이전 일괄: ACM 검증 CNAME(구 Route53) + RDS 스냅샷 KMS 재암호화·공유(구) -> 신규 복사·복원·엔드포인트 치환·HTTPS ----
   # 구 계정은 읽기·복사·공유만 한다(운영 DB·원본 스냅샷 불변, 삭제 없음). 운영 DB 최종 전환·DNS 전환은 별도 승인.
   mig-acm-info:
-    if: inputs.step == 'db-migrate'
+    if: inputs.step == 'db-migrate' || inputs.step == 'acm-dns'
     runs-on: ubuntu-latest
     environment: f2r-infra-build
     outputs:
@@ -821,3 +822,60 @@ jobs:
               --certificates CertificateArn="$CERT" --default-actions Type=forward,TargetGroupArn="$TG" >/dev/null
             echo "created 443 listener"
           fi
+
+  # ---- ACM DNS 검증: 구 계정 Route 53에 검증 CNAME 1건 UPSERT(사용자 명시 승인) 후 신규 ALB 443 리스너 ----
+  # 기존 레코드는 건드리지 않고, 해당 검증 레코드 이름만 UPSERT 한다.
+  acm-dns-write:
+    if: inputs.step == 'acm-dns'
+    needs: mig-acm-info
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-acm-dns
+      - name: UPSERT ACM validation CNAME into old Route 53
+        shell: bash
+        env:
+          REC_NAME: ${{ needs.mig-acm-info.outputs.rec_name }}
+          REC_VALUE: ${{ needs.mig-acm-info.outputs.rec_value }}
+        run: |
+          set -euo pipefail
+          ZID=$(aws route53 list-hosted-zones-by-name --dns-name feel2real.co.kr --query "HostedZones[?Name=='feel2real.co.kr.' && Config.PrivateZone==\`false\`].Id | [0]" --output text)
+          [ -n "$ZID" ] && [ "$ZID" != None ] || { echo "호스티드 존 없음" >&2; exit 1; }
+          case "$REC_NAME" in _*.feel2real.co.kr.) ;; *) echo "예상하지 못한 레코드 이름" >&2; exit 1;; esac
+          jq -n --arg n "$REC_NAME" --arg v "$REC_VALUE" '{Changes:[{Action:"UPSERT",ResourceRecordSet:{Name:$n,Type:"CNAME",TTL:300,ResourceRecords:[{Value:$v}]}}]}' > /tmp/chg.json
+          aws route53 change-resource-record-sets --hosted-zone-id "$ZID" --change-batch file:///tmp/chg.json --query ChangeInfo.Status --output text
+
+  acm-dns-https:
+    if: inputs.step == 'acm-dns'
+    needs: acm-dns-write
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: f2r-infra-build
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BUILDER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-acm-https
+      - name: Wait for ACM ISSUED, create 443 listener, show target health
+        shell: bash
+        run: |
+          set -euo pipefail
+          CERT=""
+          for _ in $(seq 1 70); do
+            CERT=$(aws acm list-certificates --certificate-statuses ISSUED --query "CertificateSummaryList[?DomainName=='feel2real.co.kr'].CertificateArn | [0]" --output text)
+            [ -n "$CERT" ] && [ "$CERT" != None ] && break; sleep 30
+          done
+          [ -n "$CERT" ] && [ "$CERT" != None ] || { echo "ACM 미발급" >&2; exit 1; }
+          ALB=$(aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+          TG=$(aws elbv2 describe-target-groups --names f2r-app-tg --query 'TargetGroups[0].TargetGroupArn' --output text)
+          L=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB" --query "Listeners[?Port==\`443\`].ListenerArn" --output text)
+          if [ -z "$L" ]; then
+            aws elbv2 create-listener --load-balancer-arn "$ALB" --protocol HTTPS --port 443 --ssl-policy ELBSecurityPolicy-TLS13-1-2-2021-06 \
+              --certificates CertificateArn="$CERT" --default-actions Type=forward,TargetGroupArn="$TG" >/dev/null
+            echo "created 443 listener"
+          fi
+          aws elbv2 describe-target-health --target-group-arn "$TG" --query 'TargetHealthDescriptions[*].{State:TargetHealth.State,Reason:TargetHealth.Reason}' --output text
