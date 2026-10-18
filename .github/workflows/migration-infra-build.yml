@@ -20,6 +20,7 @@ on:
           - secrets-transfer
           - db-migrate
           - fix-deploy-role
+          - ssm-last-output
           - validate
           - s3
           - provision
@@ -450,6 +451,15 @@ jobs:
             echo "deploy role trust/policy synced from repo JSON"
           }
 
+          # 진단: 신규 호스트의 가장 최근 SSM 명령(배포 스크립트) 출력 끝부분을 마스킹해서 보여준다(읽기 전용).
+          step_ssm_last_output() {
+            local IID
+            IID=$(get_instance); need f2r-app "$IID"
+            aws ssm list-command-invocations --instance-id "$IID" --details --max-items 1 \
+              --query 'CommandInvocations[0].CommandPlugins[0].[Status,Output]' --output text \
+              | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig' | tail -c 5000
+          }
+
           step_all_infra() {
             # s3 는 마지막: IAM 정책 반영(부트스트랩 apply) 순서와 무관하게 나머지 구축이 막히지 않게 한다.
             step_validate; step_vpc; step_rds_shell; step_ec2; step_alb; step_acm
@@ -459,6 +469,7 @@ jobs:
           case "$STEP" in
             all-infra) step_all_infra ;;
             fix-deploy-role) step_fix_deploy_role ;;
+            ssm-last-output) step_ssm_last_output ;;
             s3) step_s3 ;;
             provision) step_provision ;;
             restore-rds) step_restore_rds ;;
