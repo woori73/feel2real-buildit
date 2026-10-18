@@ -263,6 +263,71 @@
         "ssm:AddTagsToResource"
       ],
       "Resource": "arn:aws:ssm:ap-northeast-2:425805163960:parameter/f2r/*"
+    },
+    {
+      "Sid": "DeployBucketCreateAndConfigureOnly",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:PutBucketTagging",
+        "s3:PutBucketVersioning",
+        "s3:PutEncryptionConfiguration",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutLifecycleConfiguration",
+        "s3:GetBucketLocation",
+        "s3:ListBucket",
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::f2r-deploy-425805163960",
+        "arn:aws:s3:::f2r-deploy-425805163960/*"
+      ]
+    },
+    {
+      "Sid": "RestoreAndTuneRdsF2rOnly",
+      "Effect": "Allow",
+      "Action": [
+        "rds:RestoreDBInstanceFromDBSnapshot",
+        "rds:ModifyDBInstance",
+        "rds:RebootDBInstance",
+        "rds:CopyDBSnapshot",
+        "rds:AddTagsToResource"
+      ],
+      "Resource": [
+        "arn:aws:rds:ap-northeast-2:425805163960:db:f2r-*",
+        "arn:aws:rds:ap-northeast-2:425805163960:snapshot:f2r-*",
+        "arn:aws:rds:ap-northeast-2:425805163960:subgrp:f2r-*",
+        "arn:aws:rds:ap-northeast-2:425805163960:pg:f2r-*",
+        "arn:aws:rds:ap-northeast-2:425805163960:og:*",
+        "arn:aws:rds:ap-northeast-2:425805163960:snapshot:*"
+      ]
+    },
+    {
+      "Sid": "RdsDescribeSnapshots",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBSnapshots",
+        "rds:DescribeDBInstances"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RdsKeyViaRdsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "kms:DescribeKey",
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:GenerateDataKey",
+        "kms:CreateGrant"
+      ],
+      "Resource": "arn:aws:kms:ap-northeast-2:425805163960:key/*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": "rds.ap-northeast-2.amazonaws.com"
+        }
+      }
     }
   ]
 }
