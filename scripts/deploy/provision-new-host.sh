@@ -68,10 +68,16 @@ fetch_env_from_ssm() {
   [ -s /etc/f2r/env ] || echo "WARN: /f2r/app/* 파라미터 없음 — 비밀값 이전 후 다시 실행"
 }
 
+# 앱이 기동 시 존재를 요구하는 디렉터리(application-prd.yaml: 영상 검증·최적화 임시 경로, 부모 /var/tmp/f2r 필수).
+required_dirs() {
+  printf '%s\n' /opt/designcraft /opt/artcraft/fonts /opt/buildit-wiki \
+    /var/tmp/f2r /var/tmp/f2r/academy-video-validation /var/tmp/f2r/academy-video-optimization
+}
+
 main() {
   install_packages
   install_ffmpeg_static
-  install -d -o ec2-user -g ec2-user /opt/designcraft /opt/artcraft/fonts /opt/buildit-wiki
+  required_dirs | xargs install -d -o ec2-user -g ec2-user
   fc-cache -f
   fetch_env_from_ssm || echo "WARN: env 생성 건너뜀"
   render_app_unit "${HEAP_MB:-$HEAP_MB_DEFAULT}" > /etc/systemd/system/f2r-app.service

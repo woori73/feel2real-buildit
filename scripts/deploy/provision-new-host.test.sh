@@ -25,5 +25,13 @@ assert_contains "$out" "DB_HOST=db.example" "접두어 제거"
 if printf '/f2r/app/X\ta\\nb\n' | render_env >/dev/null 2>&1; then :; fi
 printf '' | render_env && echo "ok: 빈 입력은 성공"
 
+# given 앱 기동 요구 경로 / when required_dirs / then 영상 검증 임시 경로의 부모(/var/tmp/f2r)가 먼저 포함
+out="$(required_dirs)"
+assert_contains "$out" "/var/tmp/f2r/academy-video-validation" "영상 검증 임시 디렉터리 포함"
+assert_contains "$out" "/var/tmp/f2r/academy-video-optimization" "영상 최적화 임시 디렉터리 포함"
+first_f2r="$(grep -n '^/var/tmp/f2r$' <<<"$out" | cut -d: -f1)"
+child="$(grep -n 'academy-video-validation' <<<"$out" | cut -d: -f1)"
+if [ -n "$first_f2r" ] && [ "$first_f2r" -lt "$child" ]; then echo "ok: 부모 디렉터리가 자식보다 먼저"; else echo "FAIL: 부모 순서"; FAILURES=$((FAILURES+1)); fi
+
 if [ "$FAILURES" -ne 0 ]; then echo "$FAILURES failure(s)"; exit 1; fi
 echo "all passed"
