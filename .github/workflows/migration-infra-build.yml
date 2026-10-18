@@ -22,6 +22,7 @@ on:
           - fix-deploy-role
           - ssm-last-output
           - app-diag
+          - academycraft-preflight
           - acm-dns
           - p2-inventory
           - p2-s3-copy
@@ -489,6 +490,27 @@ jobs:
               | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig; s/jdbc:mysql:\/\/[^ \/]+/jdbc:mysql:\/\/<host>/g' | tail -c 7000
           }
 
+          # AcademyCraft 신규 계정 운영 준비 상태만 조회한다. 생성·수정·재시작 없음.
+          step_academycraft_preflight() {
+            local ACCOUNT IID B64 CID ALB LISTENER
+            ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+            [ "$ACCOUNT" = "425805163960" ] || { echo wrong-account; exit 1; }
+            IID=$(get_instance); need f2r-app "$IID"
+            [[ "$IID" != *$'\t'* && "$IID" != *' '* ]] || { echo ambiguous-instance; exit 1; }
+            aws ec2 describe-instances --instance-ids "$IID" --query 'Reservations[].Instances[].{Id:InstanceId,Type:InstanceType,State:State.Name}' --output table
+            aws rds describe-db-instances --query 'DBInstances[].{Id:DBInstanceIdentifier,Engine:Engine,Version:EngineVersion,BackupDays:BackupRetentionPeriod,LatestRestore:LatestRestorableTime,Storage:AllocatedStorage}' --output table
+            aws rds describe-db-snapshots --query 'DBSnapshots[].{Id:DBSnapshotIdentifier,Created:SnapshotCreateTime,Status:Status}' --output table
+            if aws iam get-role --role-name github-actions-academycraft-deploy --query 'Role.{Arn:Arn,Trust:AssumeRolePolicyDocument}' --output json; then :; else echo academycraft-deploy-role-unavailable; fi
+            ALB=$(aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text)
+            LISTENER=$(aws elbv2 describe-listeners --load-balancer-arn "$ALB" --query 'Listeners[?Port==`443`].ListenerArn' --output text)
+            aws elbv2 describe-rules --listener-arn "$LISTENER" --query 'Rules[].{Priority:Priority,Conditions:Conditions,Actions:Actions}' --output json
+            B64=$(base64 -w0 scripts/operations/academycraft-preflight.sh)
+            CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "echo $B64 | base64 -d | bash" '{commands:[$c]}')" --query Command.CommandId --output text)
+            aws ssm wait command-executed --command-id "$CID" --instance-id "$IID" || true
+            aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' --output json
+            [ "$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text)" = Success ]
+          }
+
           step_all_infra() {
             # s3 는 마지막: IAM 정책 반영(부트스트랩 apply) 순서와 무관하게 나머지 구축이 막히지 않게 한다.
             step_validate; step_vpc; step_rds_shell; step_ec2; step_alb; step_acm
@@ -500,6 +522,7 @@ jobs:
             fix-deploy-role) step_fix_deploy_role ;;
             ssm-last-output) step_ssm_last_output ;;
             app-diag) step_app_diag ;;
+            academycraft-preflight) step_academycraft_preflight ;;
             s3) step_s3 ;;
             provision) step_provision ;;
             restore-rds) step_restore_rds ;;
