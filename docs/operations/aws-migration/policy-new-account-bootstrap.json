@@ -9,7 +9,8 @@
         "iam:TagRole",
         "iam:GetRole",
         "iam:GetRolePolicy",
-        "iam:ListAttachedRolePolicies"
+        "iam:ListAttachedRolePolicies",
+        "iam:ListRolePolicies"
       ],
       "Resource": [
         "arn:aws:iam::425805163960:role/f2r-infra-builder",
@@ -55,6 +56,12 @@
       ]
     },
     {
+      "Sid": "PassOnlyEc2RoleForInstanceProfile",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role"
+    },
+    {
       "Sid": "DenyEverythingElseInIam",
       "Effect": "Deny",
       "Action": [
@@ -73,10 +80,15 @@
         "iam:AddClientIDToOpenIDConnectProvider",
         "iam:RemoveClientIDFromOpenIDConnectProvider",
         "iam:PutRolePermissionsBoundary",
-        "iam:PassRole",
         "iam:UpdateAssumeRolePolicy"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "DenyPassRoleToAnyOtherRole",
+      "Effect": "Deny",
+      "Action": "iam:PassRole",
+      "NotResource": "arn:aws:iam::425805163960:role/f2r-ec2-ssm-role"
     }
   ]
 }
