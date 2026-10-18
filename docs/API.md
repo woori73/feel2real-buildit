@@ -4764,3 +4764,9 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - **OPEN TTL**: `publishing.maintenance.open-ttl-seconds`(환경변수 `PUBLISHING_MAINTENANCE_OPEN_TTL_SECONDS`) 기본 **1800초**. `resume` 시점부터 계산하며 만료되면 ADMIN `drain`과 동일하게 동작한다: 신규 요청/Worker admission 즉시 차단(503), 진행 중 operation·추적 CLI는 끝까지 수행한 뒤 CLOSED. 요청이 없어도 5초 주기 점검(`publishing.maintenance.tick-millis`)으로 상태 파일이 CLOSED가 된다. 수동 `drain`은 TTL을 해제하고 다시 `resume`하면 새로 계산한다. **`0`(무제한)은 명시적으로 설정한 경우에만 허용**되며 빈 값·음수·숫자가 아닌 값은 1800으로 처리한다. 재시작은 TTL과 무관하게 항상 CLOSED(TTL은 메모리에만 있고 저장하지 않는다).
 - `publishing.maintenance.state-dir` 기본 `/var/lib/feel2real/designcraft-maintenance`. 지속 디스크·앱 사용자 전용 쓰기 권한을 운영 적용 전에 별도 승인으로 준비해야 한다. 매 Spring 시작은 반드시 CLOSED(저장/락 실패면 FAULT)이며 ADMIN resume 전 DesignCraft API/Worker는 열리지 않는다.
 - 이 PR은 관리 API만 제공하며 관리자 UI·무인증/local 전용 우회·AWS/DB 스위치를 추가하지 않는다. 기존 JWT/ADMIN 인증과 production Origin 정책도 그대로 적용된다.
+
+## 대시보드 AI 비서 (읽기 전용)
+
+- `POST /api/dashboard/assistant` (ADMIN·TUTOR): body `{businessId, month?(yyyy-MM), message(≤1000자)}`. 사업체 접근 권한은 `EasyTutorAccessService.requireAllowedBusiness`가 서버에서 검증한다(타 학원 businessId → 403).
+- 모델은 Muse Spark 1.3 Contributor(`app.newstart.llm.meta.*`, 키 `META_JIPJIGI_API_KEY`)만 사용하며 실패 시 다른 모델로 대체하지 않는다(503 `{error}`). 성공 시 `{answer, model}`.
+- 문맥은 월 요약(수입·지출·수지·미수금·원생 수)·최근 거래 10건·미납 원생 10명만 전달한다. 쓰기 도구 없음. 출결 데이터는 BuildIt에 없다(AcademyCraft 별도 앱).

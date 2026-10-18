@@ -28,6 +28,7 @@ on:
           - p2-designcraft
           - p2-dc-verify
           - p2-disable-designcraft
+          - muse-check
           - p2-cutover-inventory
           - p2-cutover
           - validate
@@ -1359,6 +1360,31 @@ jobs:
             case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5
           done
           aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text
+          [ "$ST" = Success ]
+
+  # ---- 대시보드 AI(Muse Spark 1.3 Contributor) 실제 호출 확인: 신규 호스트의 서버 키로 짧은 질문 1회(키·내부 사고 미출력) ----
+  muse-check:
+    if: inputs.step == 'muse-check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-session-name: f2r-muse-check
+      - name: Call Muse Spark from the new host with the server-side key
+        shell: bash
+        run: |
+          set -euo pipefail
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          CMD='set +e; set -a; . /etc/f2r/env 2>/dev/null; set +a; echo "key_present=$([ -n "$META_JIPJIGI_API_KEY" ] && echo yes || echo no) model=${META_JIPJIGI_MODEL:-muse-spark-1.3-contributor} base=${META_JIPJIGI_BASE_URL:-https://api.meta.ai/v1}"; [ -n "$META_JIPJIGI_API_KEY" ] || exit 0; B=${META_JIPJIGI_BASE_URL:-https://api.meta.ai/v1}; M=${META_JIPJIGI_MODEL:-muse-spark-1.3-contributor}; curl -sS -m 110 -o /tmp/muse.json -w "http=%{http_code} time=%{time_total}s\n" "$B/chat/completions" -H "Authorization: Bearer $META_JIPJIGI_API_KEY" -H "Content-Type: application/json" -d "{\"model\":\"$M\",\"messages\":[{\"role\":\"user\",\"content\":\"한 문장으로 인사해 주세요.\"}],\"max_tokens\":8000}"; python3 -c "import json;d=json.load(open(\"/tmp/muse.json\"));c=d.get(\"choices\",[{}])[0];m=(c.get(\"message\") or {}).get(\"content\") or \"\";print(\"model=\"+str(d.get(\"model\")),\"finish=\"+str(c.get(\"finish_reason\")),\"content_len=\"+str(len(m)));print(m[:200])" 2>&1 | head -5; rm -f /tmp/muse.json'
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "$CMD" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 60); do
+            ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{s:Status,o:StandardOutputContent,e:StandardErrorContent}' --output text | tail -c 2500
           [ "$ST" = Success ]
 
   # ---- P2 DesignCraft 검증: 신규 호스트에서 샘플 문서로 PNG·PDF 출력(앱 사용자 ec2-user, 임시 파일은 /var/tmp/f2r) ----

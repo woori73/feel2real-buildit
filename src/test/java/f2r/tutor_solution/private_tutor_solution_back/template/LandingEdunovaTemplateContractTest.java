@@ -51,7 +51,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
     // then
-    String[] labels = {"예상문제", "대시보드", "EASY 장부", "모의고사위키", "학원 홈페이지 제작", "AI 콘텐츠 소개"};
+    String[] labels = {"예상문제", "대시보드", "이지장부", "모의고사위키", "학원 홈페이지 제작", "AI 콘텐츠 소개"};
     int prev = -1;
     for (String l : labels) {
       int at = nav.indexOf(">" + l + "<");
@@ -101,6 +101,8 @@ class LandingEdunovaTemplateContractTest {
     assertThat(exam).isPositive();
     assertThat(dash).isGreaterThan(exam);
     assertThat(ai).isGreaterThan(dash);
+    assertThat(html).contains("EduNova").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
+    assertThat(html).contains("class=\"en-coming-soon\"").contains("COMING SOON").doesNotContain("href=\"#top\"").doesNotContain("href=\"#\"");
     assertThat(html).contains("2026년 11월 1일").contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
   }
 }
