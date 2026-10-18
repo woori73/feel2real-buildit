@@ -33,3 +33,8 @@
 - AcademyCraft: 별도 앱(`woori73/academycraft`, 인증키 로그인), BuildIt/신규 AWS에 미배포 → 대시보드엔 비링크 "준비 중". 연결하려면 별도 배포+인증 연동 필요(임의 링크 금지).
 - 테스트: DashboardAssistantServiceTest 4, LandingEdunovaTemplateContractTest, AdminTopnav 통과. 모바일 하네스(360/390/430, 키보드 330px 모사) 통과. 기존 실패(main 동일): TemplateBrandingTest 2, JS 39, DB 필요 테스트.
 - 신규 AWS 배포 절차: 병합 후 Actions `deploy-ec2.yml` ref=main, input `target=new` → 완료 확인 → ALB `https://f2r-alb-2551937.ap-northeast-2.elb.amazonaws.com`(샌드박스는 feel2real.co.kr 차단)에서 확인. 구 AWS 변경·종료, 운영 DB 삭제 금지.
+
+## 2026-10-18 최종: #796 병합·운영 배포 완료
+- **신규 AWS 운영 배포 SHA `81da6216`** (deploy-ec2 run 39147945791, target=new, 성공). 홈 EduNova 카드·COMING SOON(비링크) 신규 ALB 확인 완료.
+- **Muse Spark 1.3 Contributor 실제 호출 확인**(muse-check run 39148508849): 신규 호스트 서버 키 `key_present=yes`, HTTP 200, 8.9초, model=muse-spark-1.3-contributor, 응답 정상. (같은 run의 `build` 잡 실패는 muse-check 단계가 build 케이스에 없어서 난 무관한 실패.)
+- 남은 것: 로그인 상태에서 `/dashboard`(카드 6개·AI 패널)·`/ledger` AI 모바일 실기기(Android) 확인, 대시보드 AI 비서의 실제 답변 확인(로그인 필요), AcademyCraft 연결(별도 배포+인증 연동 결정), 구 AWS 정리(사용자 "정상" 확인 후).
