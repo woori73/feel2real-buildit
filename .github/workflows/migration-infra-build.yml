@@ -883,6 +883,167 @@ jobs:
           fi
           aws elbv2 describe-target-health --target-group-arn "$TG" --query 'TargetHealthDescriptions[*].{State:TargetHealth.State,Reason:TargetHealth.Reason}' --output text
 
+  # ---- P2 S3 이전: 신규 버킷 생성·권한 -> 구 버킷 읽기 전용 복사(검증) -> 신규 앱 S3_BUCKET 교체 ----
+  # 구 버킷은 읽기만 한다(삭제·변경 없음). 사용자 파일명은 로그에 출력하지 않는다.
+  p2-s3-bucket:
+    if: inputs.step == 'p2-s3-copy'
+    runs-on: ubuntu-latest
+    environment: f2r-infra-build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BUILDER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-p2-s3-bucket
+      - name: Create uploads bucket and sync role policies from repo JSON
+        shell: bash
+        run: |
+          set -euo pipefail
+          UP=f2r-uploads-425805163960
+          if ! aws s3api head-bucket --bucket "$UP" 2>/dev/null; then
+            aws s3api create-bucket --bucket "$UP" --region ap-northeast-2 --create-bucket-configuration LocationConstraint=ap-northeast-2
+            echo "created bucket"
+          else echo "exists bucket"; fi
+          aws s3api put-public-access-block --bucket "$UP" --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+          aws s3api put-bucket-encryption --bucket "$UP" --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"},"BucketKeyEnabled":true}]}'
+          aws s3api put-bucket-tagging --bucket "$UP" --tagging 'TagSet=[{Key=Project,Value=f2r-migration}]'
+          D=docs/operations/aws-migration
+          aws iam put-role-policy --role-name f2r-ec2-ssm-role --policy-name f2r-ec2-secrets-read --policy-document "file://$D/policy-f2r-ec2-secrets-read.json"
+          aws iam put-role-policy --role-name github-actions-f2r-deploy --policy-name f2r-deploy-smoke-ssm --policy-document "file://$D/policy-f2r-deploy-smoke-ssm.json"
+          echo "policies synced"
+
+  p2-s3-copy-data:
+    if: inputs.step == 'p2-s3-copy'
+    needs: p2-s3-bucket
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-p2-s3-read
+      - name: Read old bucket into runner (read-only) and record listing
+        shell: bash
+        run: |
+          set -euo pipefail
+          OLD=f2r-tutor-uploads-prd-067573916809-ap-northeast-2-an
+          aws s3api list-objects-v2 --bucket "$OLD" --query 'Contents[].[Key,Size]' --output text | grep -v '^None$' | sort > /tmp/old.list || true
+          N=$(wc -l < /tmp/old.list); B=$(awk -F'\t' '{s+=$NF} END{print s+0}' /tmp/old.list)
+          echo "old objects=$N bytes=$B"
+          [ "$B" -lt 10000000000 ] || { echo "10GB 초과 — 러너 경유 복사 중단(다른 방식 필요)" >&2; exit 1; }
+          mkdir -p /tmp/s3data
+          aws s3 sync "s3://$OLD" /tmp/s3data --only-show-errors
+          echo "downloaded files=$(find /tmp/s3data -type f | wc -l)"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-session-name: f2r-p2-s3-write
+          unset-current-credentials: true
+      - name: Upload to new bucket and verify (count, bytes, key+size diff, sha256 sample)
+        shell: bash
+        run: |
+          set -euo pipefail
+          UP=f2r-uploads-425805163960
+          aws s3 sync /tmp/s3data "s3://$UP" --only-show-errors --sse AES256
+          aws s3api list-objects-v2 --bucket "$UP" --query 'Contents[].[Key,Size]' --output text | grep -v '^None$' | sort > /tmp/new.list || true
+          ON=$(wc -l < /tmp/old.list); NN=$(wc -l < /tmp/new.list)
+          OB=$(awk -F'\t' '{s+=$NF} END{print s+0}' /tmp/old.list); NB=$(awk -F'\t' '{s+=$NF} END{print s+0}' /tmp/new.list)
+          MISSING=$(comm -23 /tmp/old.list /tmp/new.list | wc -l); EXTRA=$(comm -13 /tmp/old.list /tmp/new.list | wc -l)
+          echo "old: objects=$ON bytes=$OB | new: objects=$NN bytes=$NB | key+size missing=$MISSING extra=$EXTRA"
+          BAD=0; CHECKED=0
+          while IFS=$'\t' read -r K _; do
+            [ -n "$K" ] || continue
+            A=$(sha256sum "/tmp/s3data/$K" | cut -d' ' -f1); B=$(aws s3 cp "s3://$UP/$K" - 2>/dev/null | sha256sum | cut -d' ' -f1)
+            CHECKED=$((CHECKED+1)); [ "$A" = "$B" ] || BAD=$((BAD+1))
+          done < <(shuf -n 25 /tmp/old.list)
+          echo "sha256 sample checked=$CHECKED mismatches=$BAD"
+          [ "$ON" = "$NN" ] && [ "$OB" = "$NB" ] && [ "$MISSING" = 0 ] && [ "$BAD" = 0 ]
+
+  p2-s3-switch:
+    if: inputs.step == 'p2-s3-copy'
+    needs: p2-s3-copy-data
+    runs-on: ubuntu-latest
+    environment: f2r-infra-build
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.BUILDER_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: f2r-p2-s3-switch
+      - name: Point new app at the new bucket (SSM param + in-place env edit) and restart
+        shell: bash
+        run: |
+          set -euo pipefail
+          UP=f2r-uploads-425805163960
+          aws ssm put-parameter --name /f2r/app/S3_BUCKET --type SecureString --overwrite --value "$UP" >/dev/null
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          CMD="set -e; sed -i 's/^S3_BUCKET=.*/S3_BUCKET=$UP/' /etc/f2r/env; systemctl restart f2r-app; for i in \$(seq 1 40); do curl -sf localhost:8080/actuator/health >/dev/null && echo healthy && break; sleep 5; done; sleep 20; echo s3-list-failed-since-restart=\$(journalctl -u f2r-app --since '-2min' --no-pager | grep -c S3_LIST_FAILED || true)"
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "$CMD" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 60); do
+            ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text
+          [ "$ST" = Success ]
+
+  # ---- P2 DesignCraft 이전: 구 호스트 /opt/designcraft + 폰트 읽기 전용 패키징 -> 신규 호스트 설치·PNG/PDF 검증 ----
+  # 구 호스트는 tar 생성(/tmp 임시 파일)과 사전서명 URL 업로드만 한다. 구 엔진·설정은 수정/삭제하지 않는다.
+  p2-designcraft:
+    if: inputs.step == 'p2-designcraft'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+          aws-region: ap-northeast-2
+          role-session-name: f2r-p2-dc-read
+      - name: Pack on old host (read-only), transfer through a short-lived presigned URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          pip install -q boto3
+          IID=i-09d7cabb5a42d1135
+          KEY=migration-tmp/designcraft-$(date +%Y%m%d%H%M%S).tgz
+          URL=$(python3 -c "import boto3;print(boto3.client('s3',region_name='ap-northeast-2').generate_presigned_url('put_object',Params={'Bucket':'feel2real-buildit-deploy','Key':'$KEY'},ExpiresIn=900))")
+          echo "::add-mask::$URL"
+          CMD="set -e; tar -czf /tmp/dc-mig.tgz -C /opt designcraft artcraft/fonts/NotoSansKR-Variable.ttf; curl -sf -T /tmp/dc-mig.tgz '$URL'; sha256sum /tmp/dc-mig.tgz | cut -d' ' -f1; ls -l /tmp/dc-mig.tgz | awk '{print \$5}'; rm -f /tmp/dc-mig.tgz"
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "$CMD" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 120); do
+            ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5
+          done
+          OUT=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text | grep -v "$URL" || true)
+          [ "$ST" = Success ] || { echo "old pack status=$ST" >&2; exit 1; }
+          HSHA=$(echo "$OUT" | sed -n 1p); echo "old host sha256=$HSHA size=$(echo "$OUT" | sed -n 2p)"
+          aws s3 cp "s3://feel2real-buildit-deploy/$KEY" /tmp/dc.tgz --no-progress
+          RSHA=$(sha256sum /tmp/dc.tgz | cut -d' ' -f1)
+          echo "runner sha256=$RSHA"; [ "$HSHA" = "$RSHA" ]
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-session-name: f2r-p2-dc-write
+          unset-current-credentials: true
+      - name: Install on new host and verify (version, PNG render, fonts)
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEP=f2r-deploy-425805163960
+          aws s3 cp /tmp/dc.tgz "s3://$DEP/migration/designcraft.tgz" --no-progress --sse AES256
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          CMD="set -e; aws s3 cp s3://$DEP/migration/designcraft.tgz /tmp/dc.tgz --no-progress; echo new-host-sha256=\$(sha256sum /tmp/dc.tgz | cut -d' ' -f1); tar -xzf /tmp/dc.tgz -C /opt; rm -f /tmp/dc.tgz; fc-cache -f; ls -ld /opt/designcraft /opt/designcraft/templates; echo --- version; sudo -u ec2-user /opt/designcraft/designcraft-cli --version; echo --- ldd-missing; ldd /opt/designcraft/releases/*/bin/designcraft-cli 2>&1 | grep -ci 'not found' || true; echo --- png; rm -f /var/tmp/f2r/dc-test.png; sudo -u ec2-user bash -c 'cd /var/tmp/f2r && /opt/designcraft/designcraft-cli run --page 0 --scale 1 --export /var/tmp/f2r/dc-test.png' 2>&1 | tail -3; file /var/tmp/f2r/dc-test.png | cut -c1-120; ls -l /var/tmp/f2r/dc-test.png | awk '{print \$5}'; echo --- fonts; fc-list :lang=ko family | sort -u | head -5; fc-list | grep -ci NotoSansKR || true; echo --- help; sudo -u ec2-user /opt/designcraft/designcraft-cli --help 2>&1 | head -30"
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "$CMD" '{commands:[$c]}')" --query Command.CommandId --output text)
+          for _ in $(seq 1 60); do
+            ST=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$ST" in Success|Failed|Cancelled|TimedOut) break;; esac; sleep 5
+          done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{s:Status,o:StandardOutputContent,e:StandardErrorContent}' --output text | tail -c 5000
+          [ "$ST" = Success ]
+
   # ---- P2 조사(읽기 전용): 구 호스트 DesignCraft/폰트/S3 환경값 이름 + 구 S3 버킷 속성·규모 ----
   p2-inventory:
     if: inputs.step == 'p2-inventory'
@@ -897,7 +1058,7 @@ jobs:
       - name: Old host + old S3 inventory (read-only, no secrets, no user file names)
         shell: bash
         run: |
-          set -uo pipefail
+          set +e
           IID=i-09d7cabb5a42d1135
           mask() { sed -E 's/[0-9]{12}/<acct>/g'; }
           seg() {
