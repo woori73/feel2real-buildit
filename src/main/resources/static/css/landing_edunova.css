@@ -318,3 +318,11 @@ footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); pa
 .en-logo-sub { letter-spacing:.08em; font-size:14px; font-weight:700; }
 @media (max-width:960px) { .en-logo-sub { font-size:12px; } }
 @media (max-width:520px) { .en-logo-sub { font-size:11px; letter-spacing:.06em; } }
+
+/* 상단 로고 옆 이름: 푸터와 같은 "Feel to Real (F2R)" 표기, 배경(웜 화이트)에 맞춰 차콜 */
+.en-logo { gap:10px; }
+.en-logo-main { font-family:'Montserrat','Noto Sans KR',sans-serif; font-size:17px; font-weight:800; letter-spacing:-.01em; color:var(--ed-ink); white-space:nowrap; }
+@media (max-width:520px) { .en-logo { flex-direction:row; align-items:center; gap:8px; } .en-logo-main { font-size:14px; } .en-logo-sep, .en-logo-sub { display:none; } }
+.auth-action { white-space:nowrap; }
+@media (max-width:1280px) { .en-logo-sep, .en-logo-sub { display:none; } }
+@media (max-width:520px) { .en-nav { gap:8px; } .auth-actions { gap:6px; } .auth-action { min-height:36px; padding:8px 10px; font-size:12px; } .en-logo-mark { width:30px; height:30px; } .en-logo-main { font-size:13px; } .en-burger { width:34px; flex:0 0 34px; padding:6px; } }
