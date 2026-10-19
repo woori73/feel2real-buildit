@@ -34,7 +34,10 @@ class LandingEdunovaTemplateContractTest {
     assertThat(html)
         .doesNotContain("th:block")
         .doesNotContain("th:replace")
-        .contains("/images/ai-agent-hero.jpg")
+        .contains("/images/ai-agent-banner.png")
+        .contains("/images/ai-agent-banner.webp")
+        .contains("/images/ai-agent-banner-m.webp")
+        .doesNotContain("/images/ai-agent-hero.jpg")
         .contains("제작 예정")
         .contains("1회 20,000원")
         .contains("40문항")
@@ -101,7 +104,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(exam).isPositive();
     assertThat(dash).isGreaterThan(exam);
     assertThat(ai).isGreaterThan(dash);
-    assertThat(html).contains("EduNova").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
+    assertThat(html).contains("AI 콘텐츠 제작").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
     assertThat(html).contains("class=\"en-coming-soon\"").contains("COMING SOON").doesNotContain("href=\"#top\"").doesNotContain("href=\"#\"");
     assertThat(html).contains("2026년 11월 1일").contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
   }

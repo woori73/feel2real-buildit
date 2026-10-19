@@ -25,9 +25,10 @@ a { color:inherit; text-decoration:none; }
 
 /* HERO */
 .en-hero { display:grid; grid-template-columns:minmax(0,2fr) minmax(340px,1fr); gap:0; background:var(--en-navy); }
-.en-hero-art { position:relative; margin:0; background:#050a18; }
-.en-hero-art img { display:block; width:100%; height:100%; object-fit:cover; aspect-ratio:966/484; }
-.en-hero-badge { position:absolute; left:16px; bottom:14px; padding:6px 12px; border-radius:999px; background:rgba(5,10,24,.72); color:#cfe0ff; font-size:13px; font-weight:600; letter-spacing:.02em; border:1px solid rgba(160,190,255,.35); }
+.en-hero-art { position:relative; margin:0; background:#050a18; display:flex; flex-direction:column; justify-content:center; }
+.en-hero-art picture { display:block; }
+.en-hero-art img { display:block; width:100%; height:auto; aspect-ratio:1942/809; object-fit:contain; }
+.en-hero-badge { align-self:flex-start; margin:12px 16px 14px; padding:6px 12px; border-radius:999px; background:rgba(5,10,24,.72); color:#cfe0ff; font-size:13px; font-weight:600; letter-spacing:.02em; border:1px solid rgba(160,190,255,.35); }
 .en-offer { background:linear-gradient(180deg,#f7faff 0%,#eaf1ff 100%); padding:36px 36px 30px; display:flex; flex-direction:column; justify-content:center; }
 .en-offer-eyebrow { margin:0 0 6px; color:var(--en-blue); font-weight:700; font-size:14px; }
 .en-offer-title { margin:0; font-size:clamp(30px,3.2vw,42px); line-height:1.15; font-weight:800; color:var(--en-navy); letter-spacing:-.8px; }
@@ -87,7 +88,7 @@ a { color:inherit; text-decoration:none; }
   .en-burger { display:flex; }
   .en-actions { margin-left:auto; }
   .en-hero { grid-template-columns:1fr; }
-  .en-hero-art img { aspect-ratio:966/484; }
+  .en-hero-art img { aspect-ratio:1942/809; }
   .en-offer { padding:26px 20px 24px; }
   .en-cards { grid-template-columns:1fr; }
   .en-logo-main { font-size:22px; }
@@ -164,6 +165,168 @@ a { color:inherit; text-decoration:none; }
 .en-offer-proof { display:inline-block; margin-top:12px; padding:9px 14px; border-radius:10px; background:#fff; border:1px solid var(--en-blue); color:var(--en-blue); font-size:14px; font-weight:800; text-align:center; }
 .en-offer-proof:hover { background:var(--en-blue); color:#fff; }
 
+/* ===== Cinematic Editorial(승인 2026-10-20): 웜 화이트·스톤 / 차콜·스틸 블루 / 명조는 큰 제목·주요 숫자에만 ===== */
+:root { --ed-paper:#faf8f4; --ed-stone:#efebe4; --ed-stone2:#e7e2d9; --ed-line:#ddd7cc; --ed-ink:#1f2328; --ed-sub:#5d6068; --ed-steel:#3f5b78; --ed-steel-d:#2f465f; --ed-serif:"Noto Serif KR","Nanum Myeongjo",Georgia,"Times New Roman",serif;
+  --en-navy:var(--ed-ink); --en-blue:var(--ed-steel); --en-blue-d:var(--ed-steel-d); --en-bg:var(--ed-stone); --en-line:var(--ed-line); --en-ink:var(--ed-ink); --en-sub:var(--ed-sub); }
+body { background:var(--ed-paper); color:var(--ed-ink); }
+.en-nav { background:var(--ed-paper); border-bottom:1px solid var(--ed-line); }
+.en-logo-main { color:var(--ed-ink); letter-spacing:-.02em; }
+.en-logo-sep { background:var(--ed-line); }
+.en-logo-sub { color:var(--ed-sub); font-weight:500; }
+.en-menu { color:var(--ed-ink); font-weight:500; }
+.en-menu a:hover { color:var(--ed-steel); border-bottom-color:var(--ed-steel); }
+.en-burger span { background:var(--ed-ink); }
+.en-drawer { background:var(--ed-paper); box-shadow:0 12px 24px rgba(31,35,40,.08); }
+.en-mobile-services { background:var(--ed-stone); border-bottom-color:var(--ed-line); }
+.en-mobile-services a { background:var(--ed-paper); border-radius:8px; color:var(--ed-ink); font-weight:600; }
+
+/* 버튼: 각진 편집 톤, 차콜 단색 */
+.en-btn { border-radius:8px; font-weight:600; letter-spacing:.01em; }
+.en-btn-primary { background:var(--ed-ink); color:#fff; }
+.en-btn-primary:hover { background:var(--ed-steel-d); }
+.en-btn-outline { background:transparent; border:1px solid var(--ed-ink); color:var(--ed-ink); }
+.en-btn-outline:hover { background:var(--ed-ink); color:#fff; }
+
+/* 히어로: 화보는 그대로, 주변은 스톤 */
+.en-hero { background:var(--ed-stone); }
+.en-hero-art { background:#080b12; }
+.en-hero-badge { background:transparent; border:0; border-left:2px solid var(--ed-steel); border-radius:0; padding:2px 10px; margin:14px 16px 16px; color:#b9c4d2; font-weight:500; letter-spacing:.06em; }
+.en-offer { background:var(--ed-stone); padding:40px 40px 34px; }
+.en-offer-eyebrow { color:var(--ed-steel); letter-spacing:.14em; font-weight:600; }
+.en-offer-title { font-family:var(--ed-serif); font-weight:700; letter-spacing:-.03em; color:var(--ed-ink); }
+.en-offer-price strong { font-family:var(--ed-serif); color:var(--ed-ink); }
+.en-offer-price span { color:var(--ed-sub); font-weight:600; }
+.en-offer-points li { color:var(--ed-ink); font-weight:500; }
+.en-offer-points li::before { width:8px; height:8px; top:.6em; border-radius:0; background:var(--ed-steel); box-shadow:none; }
+.en-offer-note { color:var(--ed-sub); }
+.en-offer-proof { background:transparent; border:1px solid var(--ed-steel); border-radius:8px; color:var(--ed-steel); font-weight:600; }
+.en-offer-proof:hover { background:var(--ed-steel); color:#fff; }
+
+/* 공지: 얇은 구분선만 */
+.en-notice { background:transparent; border:0; border-top:1px solid var(--ed-line); border-bottom:1px solid var(--ed-line); border-radius:0; padding:16px 4px; margin:28px auto; }
+.en-notice:hover { border-color:var(--ed-steel); }
+.en-notice-tag { background:transparent; border:1px solid var(--ed-steel); border-radius:3px; color:var(--ed-steel); font-weight:600; letter-spacing:.06em; }
+.en-notice-text { color:var(--ed-ink); font-weight:500; }
+
+/* 적중 성과: 얇은 테두리 카드, 넉넉한 여백, 상태창 모서리 장식만 미세하게 */
+.en-hit { background:#fff; border:1px solid var(--ed-line); border-radius:8px; box-shadow:none; padding:44px 44px 46px; margin-top:36px; }
+.en-hit-badge { background:transparent; border:1px solid var(--ed-steel); border-radius:3px; color:var(--ed-steel); font-weight:600; letter-spacing:.1em; }
+.en-hit-title { font-family:var(--ed-serif); color:var(--ed-ink); font-weight:700; letter-spacing:-.03em; }
+.en-hit-title span { color:var(--ed-ink); }
+.en-hit-title b { color:var(--ed-steel); }
+.en-hit-lead { color:var(--ed-sub); font-weight:500; }
+.en-hit-box { position:relative; background:var(--ed-ink); border-radius:6px; padding:30px 32px; }
+.en-hit-box::before,.en-hit-box::after { content:""; position:absolute; width:14px; height:14px; border:1px solid #8fa6bf; }
+.en-hit-box::before { top:10px; left:10px; border-right:0; border-bottom:0; }
+.en-hit-box::after { bottom:10px; right:10px; border-left:0; border-top:0; }
+.en-hit-box small { color:#9aa8b8; letter-spacing:.06em; }
+.en-hit-box em { font-family:var(--ed-serif); color:#b9cde4; }
+.en-hit-box p,.en-hit-box .en-hit-cap { color:#aab4c0; }
+.en-hit-quote { border-left:2px solid var(--ed-steel); color:var(--ed-ink); font-weight:700; }
+
+/* 소개 / 섹션 제목 */
+.en-eyebrow { color:var(--ed-steel); letter-spacing:.34em; font-weight:600; }
+.en-intro { margin-top:80px; }
+.en-intro h2 { font-family:var(--ed-serif); color:var(--ed-ink); font-weight:700; }
+.en-intro p { color:var(--ed-sub); }
+.en-services { margin-top:56px; }
+.en-section-title { font-family:var(--ed-serif); color:var(--ed-ink); border-left:0; padding:0 0 14px; border-bottom:1px solid var(--ed-ink); margin-bottom:28px; }
+
+/* 카드: 얇은 테두리, 그림자 없음, 넓은 여백 */
+.en-cards { gap:28px; }
+.en-card { background:#fff; border:1px solid var(--ed-line); border-radius:8px; box-shadow:none; padding:34px 30px; gap:12px; }
+.en-card-no { color:var(--ed-steel); font-weight:600; letter-spacing:.2em; }
+.en-card h3 { color:var(--ed-ink); font-weight:700; }
+.en-card p { color:var(--ed-sub); }
+.en-card-price { color:var(--ed-ink) !important; }
+.en-card-price strong { color:var(--ed-ink); font-family:var(--ed-serif); }
+.en-card-links a { color:var(--ed-steel); font-weight:600; }
+.en-card-points li { color:var(--ed-ink); }
+.en-card-points li::before { border-radius:0; background:var(--ed-steel); }
+.en-card-dark { background:var(--ed-stone); border-color:var(--ed-line); }
+.en-card-dark .en-card-no { color:var(--ed-steel); }
+.en-card-dark h3 { color:var(--ed-ink); }
+.en-card-status { color:var(--ed-steel) !important; font-weight:600; }
+.en-coming-soon { border:1px dashed var(--ed-steel); border-radius:6px; color:var(--ed-steel); }
+
+/* BUILD IT CHART */
+.en-chart { background:var(--ed-stone); margin-top:48px; padding:64px 20px 68px; }
+.en-chart .bb-title { font-family:var(--ed-serif); color:var(--ed-ink); font-weight:700; }
+.en-chart .bb-sub { color:var(--ed-sub); }
+.en-chart .bb-week { background:transparent; border-color:var(--ed-steel); border-radius:3px; color:var(--ed-steel); font-weight:600; }
+.en-chart .bb-region select { border-color:var(--ed-line); border-radius:6px; background:#fff; color:var(--ed-ink); }
+.en-chart .bb-region button { background:var(--ed-ink); border-radius:6px; font-weight:600; }
+.en-chart .bb-row { border-radius:8px; border-color:var(--ed-line); background:#fff; }
+.en-chart .bb-row:hover { box-shadow:none; border-color:var(--ed-steel); }
+.en-chart .bb-rank { color:var(--ed-ink); font-family:var(--ed-serif); }
+.en-chart .bb-first .bb-rank { background:var(--ed-ink); color:#fff; border-radius:6px 0 0 2px; }
+.en-chart .bb-main strong { color:var(--ed-ink); }
+.en-chart .bb-main span { color:var(--ed-sub); }
+.en-chart .bb-academy { color:var(--ed-ink); }
+.en-chart .bb-empty { border-radius:3px; border-color:var(--ed-line); }
+.en-chart .chart-criteria-link { color:var(--ed-steel); font-weight:600; }
+.en-chart .chart-cta { background:var(--ed-ink); border-radius:6px; font-weight:600; }
+.en-chart .bb-note { color:#8a8a8a; }
+body .en-mail-toast { background:var(--ed-stone); color:var(--ed-ink); border:1px solid var(--ed-line); border-radius:6px; }
+@media (max-width:960px) { .en-offer { padding:28px 20px 26px; } .en-hit { padding:28px 20px 30px; } .en-intro { margin-top:56px; } }
+
+/* 계정 버튼 · 로그인 창 · 문의 창 · 푸터 — 같은 체계(이 CSS는 홈에서만 로드된다) */
+.auth-action { border-radius:8px; font-weight:700; }
+.auth-action-login { border:1px solid var(--ed-ink); background:transparent; color:var(--ed-ink); }
+.auth-action-signup { border:1px solid var(--ed-ink); background:var(--ed-ink); color:#fff; }
+.auth-action:hover { transform:none; }
+.account-menu-trigger { border-color:var(--ed-line); background:var(--ed-paper); color:var(--ed-ink); box-shadow:none; border-radius:8px; }
+.account-menu-trigger:hover, .account-menu-trigger[aria-expanded="true"] { border-color:var(--ed-steel); background:#fff; }
+.account-menu-panel { border-color:var(--ed-line); border-radius:8px; background:var(--ed-paper); box-shadow:0 8px 20px rgba(31,35,40,.10); }
+.account-menu-item { border-radius:6px; color:var(--ed-ink); font-weight:600; }
+.account-menu-item:hover { background:var(--ed-stone); color:var(--ed-steel-d); }
+.login-modal { background:rgba(31,35,40,.55); }
+.login-modal-card { border-radius:8px; background:var(--ed-paper); box-shadow:0 12px 32px rgba(31,35,40,.18); border:1px solid var(--ed-line); }
+.login-modal-card h2 { color:var(--ed-ink); font-family:var(--ed-serif); font-weight:700; }
+.login-modal-subtitle, .login-modal-close { color:var(--ed-sub); }
+.login-modal-card label { color:var(--ed-ink); font-weight:600; }
+.login-modal-card input { border:1px solid var(--ed-line); border-radius:6px; background:#fff; color:var(--ed-ink); }
+.login-modal-card input:focus { outline:2px solid var(--ed-steel); outline-offset:1px; border-color:var(--ed-steel); }
+.login-modal-message { color:var(--ed-ink); }
+.login-modal-reset { color:var(--ed-sub); font-weight:600; }
+.login-modal-reset:hover { color:var(--ed-steel-d); }
+.login-modal-submit { border-radius:8px; background:var(--ed-ink); font-weight:700; }
+.login-modal-submit:hover:not(:disabled) { background:var(--ed-steel-d); }
+.login-modal-signup { border:1px solid var(--ed-ink); border-radius:8px; background:transparent; color:var(--ed-ink); font-weight:700; }
+.login-modal-divider { color:var(--ed-sub); }
+.login-modal-divider::before, .login-modal-divider::after { background:var(--ed-line); }
+.login-modal-social-placeholder { border-color:var(--ed-line); border-radius:8px; background:var(--ed-stone); }
+.login-modal-social-placeholder::before { background:var(--ed-line); }
+.public-contact-option { border:1px solid var(--ed-line); border-radius:8px; color:var(--ed-ink); background:#fff; }
+.public-contact-option:hover { background:var(--ed-stone); }
+footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); padding:48px max(20px, calc((100vw - 1240px)/2)) 32px; }
+.public-footer .footer-name-bi i { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#b9cde4; }
+.public-footer .footer-links a { color:rgba(250,248,244,.62); }
+.public-footer .footer-links a:hover { color:#fff; }
+.public-footer .footer-biz, .public-footer .footer-biz a { color:rgba(250,248,244,.58); }
+.public-footer .footer-copyright { color:rgba(250,248,244,.42); }
+.public-footer .footer-divider { border-top-color:rgba(250,248,244,.14); }
 /* 이메일 주소 표시·복사 안내 */
 .en-mail-addr { color:var(--en-navy); user-select:all; -webkit-user-select:all; }
 .en-mail-toast { flex:1 1 100%; margin:6px 0 0; padding:10px 12px; border-radius:10px; background:#eaf1ff; color:var(--en-navy); font-size:14px; font-weight:700; line-height:1.5; word-break:break-all; }
+
+/* 상단 로고: 푸터와 같은 F2R 로고 이미지 사용 */
+.en-logo-mark { display:block; width:40px; height:40px; object-fit:contain; }
+@media (max-width:520px) { .en-logo-mark { width:34px; height:34px; } }
+
+/* 브랜드 보조 표기 BuildIt: 대문자 전용 자간을 줄여 읽기 좋게 */
+.en-logo-sub { letter-spacing:.08em; font-size:14px; font-weight:700; }
+@media (max-width:960px) { .en-logo-sub { font-size:12px; } }
+@media (max-width:520px) { .en-logo-sub { font-size:11px; letter-spacing:.06em; } }
+
+/* 상단 로고 옆 이름: 푸터와 같은 "Feel to Real (F2R)" 표기, 배경(웜 화이트)에 맞춰 차콜 */
+.en-logo { gap:10px; }
+.en-logo-main { font-family:'Montserrat','Noto Sans KR',sans-serif; font-size:17px; font-weight:800; letter-spacing:-.01em; color:var(--ed-ink); white-space:nowrap; }
+@media (max-width:520px) { .en-logo { flex-direction:row; align-items:center; gap:8px; } .en-logo-main { font-size:14px; } .en-logo-sep, .en-logo-sub { display:none; } }
+.auth-action { white-space:nowrap; }
+@media (max-width:1280px) { .en-logo-sep, .en-logo-sub { display:none; } }
+@media (max-width:520px) { .en-nav { gap:8px; } .auth-actions { gap:6px; } .auth-action { min-height:36px; padding:8px 10px; font-size:12px; } .en-logo-mark { width:30px; height:30px; } .en-logo-main { font-size:13px; } .en-burger { width:34px; flex:0 0 34px; padding:6px; } }
+
+/* 상단 이름: 화보 "AI AGENT" 타이틀처럼 굵고 넓은 각진 산세리프(Russo One) */
+.en-logo-main { font-family:'Russo One','Montserrat','Noto Sans KR',sans-serif; font-weight:400; font-size:21px; letter-spacing:.06em; text-transform:uppercase; }
+@media (max-width:520px) { .en-logo-main { font-size:16px; letter-spacing:.04em; } }
