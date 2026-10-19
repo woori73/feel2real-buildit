@@ -49,11 +49,13 @@ class AdmissionsFactSearchServiceDbTest {
 
     private static final String SEED = """
         {"ipsi_universities":[{"name":"테스트대학교","university_code":"TST"},{"name":"예시대학교","university_code":"EXA"}],
-         "ipsi_documents":[{"document_key":"doc_tst_2027_susi","document_name":"테스트대 2027 수시 모집요강","applicable_academic_year":2027,"institution_name":"테스트대","source_url":"https://example.test/tst"}],
+         "ipsi_documents":[{"document_key":"doc_tst_2027_susi","document_name":"테스트대 2027 수시 모집요강","applicable_academic_year":2027,"institution_name":"테스트대","source_url":"https://example.test/tst"},
+                           {"document_key":"doc_exa_2027","document_name":"예시대 2027 모집요강","applicable_academic_year":2027,"institution_name":"예시대","source_url":"https://example.test/exa"},
+                           {"document_key":"doc_tst_2028","document_name":"테스트대 2028 시행계획","applicable_academic_year":2028,"institution_name":"테스트대","source_url":"https://example.test/tst2028"}],
          "ipsi_departments":[{"university_code":"TST","academic_year":"2027","department_name":"컴퓨터공학과","counts_by_type":{"학생부교과":19,"논술":11,"합계":30},"source_document_key":"doc_tst_2027_susi"},
-                             {"university_code":"EXA","academic_year":"2027","department_name":"컴퓨터공학과","counts_by_type":{"합계":5}}],
+                             {"university_code":"EXA","academic_year":"2027","department_name":"컴퓨터공학과","counts_by_type":{"합계":5},"source_document_key":"doc_exa_2027"}],
          "ipsi_admission_types":[{"university_code":"TST","academic_year":2027,"type_name":"학생부교과(지역균형)","recruitment_count":10,"eligibility":"학교장 추천","min_academic_standard":"","source_document_key":"doc_tst_2027_susi"},
-                                 {"university_code":"TST","academic_year":2028,"type_name":"학생부교과(지역균형)","recruitment_count":12,"eligibility":"시행계획 방향"}],
+                                 {"university_code":"TST","academic_year":2028,"type_name":"학생부교과(지역균형)","recruitment_count":12,"eligibility":"시행계획 방향","source_document_key":"doc_tst_2028"}],
          "ipsi_schedules":[{"university_code":"TST","academic_year":2027,"item":"학교장추천 대상자 입력","type_name":"지역균형","date":"2026.9.14.~9.18.","source_document_key":"doc_tst_2027_susi"}]}
         """;
 
@@ -260,4 +262,11 @@ class AdmissionsFactSearchServiceDbTest {
         // then
         assertThat(result.evidence()).isEmpty();
     }
+    @Test
+    void approvedRowWithoutLinkedOfficialSourceIsNotEvidence() {
+        approveAll();
+        departments.findAll().forEach(d -> { d.setSource(null); departments.save(d); });
+        assertThat(search.search("컴퓨터공학과 모집인원",2027).evidence()).isEmpty();
+    }
+
 }

@@ -220,7 +220,7 @@ class AdmissionsBrowserQaMySqlTest {
         User user=users.save(new User("member_"+suffix,"unused-test-password","상담 QA","상담 QA",null,null,role));
         if(role==Role.TUTOR) academies.save(
                 f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy.builder()
-                    .tutor(user).slug("admissions-qa-"+suffix).name("격리 QA 학원").logoStorageKey("qa").build());
+                    .tutor(user).slug("admissions-qa-"+suffix).name("격리 QA 학원").logoStorageKey("qa").intro("격리 상담 검증용 학원").build());
         return new Cookie("ACCESS_TOKEN",tokenProvider.issue(user.getUserId(),user.getLoginId(),role.name()));
     }
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder memberAsk(Cookie cookie) {
