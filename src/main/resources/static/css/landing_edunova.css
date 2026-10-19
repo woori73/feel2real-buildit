@@ -309,3 +309,7 @@ footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); pa
 /* 이메일 주소 표시·복사 안내 */
 .en-mail-addr { color:var(--en-navy); user-select:all; -webkit-user-select:all; }
 .en-mail-toast { flex:1 1 100%; margin:6px 0 0; padding:10px 12px; border-radius:10px; background:#eaf1ff; color:var(--en-navy); font-size:14px; font-weight:700; line-height:1.5; word-break:break-all; }
+
+/* 상단 로고: 푸터와 같은 F2R 로고 이미지 사용 */
+.en-logo-mark { display:block; width:40px; height:40px; object-fit:contain; }
+@media (max-width:520px) { .en-logo-mark { width:34px; height:34px; } }
