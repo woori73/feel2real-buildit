@@ -125,11 +125,14 @@ class LandingEdunovaTemplateContractTest {
     int hitBlog = html.indexOf("id=\"enHitBlog\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
     int notice = html.indexOf("class=\"en-notice\"");
+    int services = html.indexOf("id=\"svc-exam\"");
+    // 공지는 상단(히어로 직후), 적중 성과가 그 다음, BUILD IT CHART는 맨 마지막
     assertThat(hero).isPositive();
-    assertThat(hit).isGreaterThan(hero);
+    assertThat(notice).isGreaterThan(hero);
+    assertThat(hit).isGreaterThan(notice);
     assertThat(hitBlog).isGreaterThan(hit);
-    assertThat(chart).isGreaterThan(hitBlog);
-    assertThat(notice).isGreaterThan(chart);
+    assertThat(services).isGreaterThan(hitBlog);
+    assertThat(chart).isGreaterThan(services);
   }
 
   @Test
