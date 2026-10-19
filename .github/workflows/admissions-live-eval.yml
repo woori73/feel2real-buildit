@@ -34,12 +34,6 @@ jobs:
       SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
-      APP_ADMISSIONS_LLM_PRIMARY: meta
-      # 격리 컨테이너 내부에서만 채팅 API를 열어 22건을 실행한다(외부 노출 없음).
-      # 운영 기본값(OFF)은 아래 공개 API 기본 OFF 테스트가 검증한다.
-      APP_ADMISSIONS_PUBLIC_API_ENABLED: 'true'
-      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -77,6 +71,15 @@ jobs:
           wc -c merged-seed.json
 
       - name: Start app (isolated CI DB, V1078 via Flyway)
+        # 채팅 API·LLM 설정은 앱 프로세스에만 주입한다. job 수준 env로 두면
+        # "설정 없음 = 공개 API OFF" 계약을 검증하는 테스트까지 새어 실패한다.
+        env:
+          APP_ADMISSIONS_LLM_PRIMARY: meta
+          # 격리 컨테이너 내부에서만 채팅 API를 열어 22건을 실행한다(외부 노출 없음).
+          # 운영 기본값(OFF)은 위 공개 API 기본 OFF 테스트가 검증한다.
+          APP_ADMISSIONS_PUBLIC_API_ENABLED: 'true'
+          META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
           echo $! > app.pid
