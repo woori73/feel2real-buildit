@@ -138,6 +138,12 @@ jobs:
         if: always()
         run: kill $(cat app.pid) 2>/dev/null || true
 
+      - name: Verdicts summary (IDs and verdicts only)
+        if: always()
+        run: |
+          grep -aE '^S[0-9][0-9] ' phase2.txt 2>/dev/null | tee verdicts.txt || true
+          grep -a "autoPASS=" phase2.txt 2>/dev/null | tee -a verdicts.txt || true
+
       - name: Encrypt human-review bundle (답변 전문 공개 방지)
         if: always()
         env:
@@ -147,12 +153,6 @@ jobs:
           tar czf review-bundle.tgz results-*.json review-*.md phase*.txt db-after-load.txt llm-calls.txt 2>/dev/null || true
           openssl enc -aes-256-cbc -pbkdf2 -salt -in review-bundle.tgz -out review-bundle.tgz.enc -pass env:ARTIFACT_KEY
           rm -f review-bundle.tgz results-*.json review-*.md phase*.txt
-
-      - name: Verdicts summary (IDs and verdicts only)
-        if: always()
-        run: |
-          grep -aE '^S[0-9][0-9] ' phase2.txt 2>/dev/null | tee verdicts.txt || true
-          grep -a "autoPASS=" phase2.txt 2>/dev/null | tee -a verdicts.txt || true
 
       - uses: actions/upload-artifact@v4
         if: always()
