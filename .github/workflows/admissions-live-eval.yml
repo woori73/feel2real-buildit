@@ -63,11 +63,19 @@ jobs:
           import json
           d = json.load(open('draft-seed-2027.json', encoding='utf-8'))
           assert d.get('ipsi_universities') and d.get('ipsi_documents'), 'seed shape error'
-          print('seed ok: univ=%d docs=%d' % (len(d['ipsi_universities']), len(d['ipsi_documents'])))
-          PY
+          print('draft-seed ok: univ=%d docs=%d' % (len(d['ipsi_universities']), len(d['ipsi_documents'])))
           # 뮤즈 2027 시드 + 기존 검증된 univ_sample 시드(학과·전형·일정 상세행)를 같은 loadSeed 형식으로 합친다.
-          jq -s 'reduce .[] as $x ({}; reduce ($x|to_entries[]) as $e (. ; .[$e.key] = ((.[$e.key] // []) + $e.value)))' \
-            draft-seed-2027.json adm-data/data/seed/ipsi_seed_univ_sample.json > merged-seed.json
+          b = json.load(open('adm-data/data/seed/ipsi_seed_univ_sample.json', encoding='utf-8'))
+          merged = {}
+          for src in (d, b):
+              for k, v in src.items():
+                  if isinstance(v, list):
+                      merged[k] = merged[k] + v if isinstance(merged.get(k), list) else list(v)
+                  elif k not in merged:
+                      merged[k] = v
+          json.dump(merged, open('merged-seed.json', 'w', encoding='utf-8'), ensure_ascii=False)
+          print('merged:', {k: (len(v) if isinstance(v, list) else type(v).__name__) for k, v in merged.items()})
+          PY
           wc -c merged-seed.json
 
       - name: Start app (isolated CI DB, V1078 via Flyway)
