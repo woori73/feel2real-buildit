@@ -108,8 +108,10 @@ public class AcademyCraftGateway {
   public static boolean allowedPath(String path) {
     if (path.contains("..") || path.contains("%") || path.contains("\\") || path.contains(";")) return false;
     if (path.matches("/components/[A-Za-z0-9_-]+\\.(js|css)")) return true;
-    if (path.matches("/screens/[A-Za-z0-9_-]+\\.html"))
-      return !path.matches(".*(AUTH-|login|ADM-|PAY-).*");
+    if (path.startsWith("/screens/")) return Set.of(
+        "MBR-01-student-list.html", "CLS-01-class-list.html", "CLS-02-class-form.html", "CLS-03-class-detail.html",
+        "ATT-01-attendance-keypad.html", "ATT-02-attendance-monthly.html", "ATT-03-attendance-roster.html",
+        "ATT-04-attendance-settings.html", "OPS-02-dashboard.html", "SELF-01-student.html").contains(path.substring(9));
     return (path.equals("/api/rea/integration/context") || path.equals("/api/rea/integration/teachers"))
         || path.matches("/api/rea/[1-9][0-9]*/(students|classes|attendance|dashboard/stats|timetable)(/.*)?");
   }
