@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>자주 묻는 질문 | Feel2Real</title>
+  <meta name="description" content="Feel2Real 자주 묻는 질문. 내신 영어 예상문제 의뢰 방법과 가격, 학원 운영 대시보드, NewStart 1:1 상담, 입시상담 AI 안내.">
+  <th:block th:replace="~{fragments/_seo :: seo (
+    keywords='Feel2Real 자주 묻는 질문, 내신 영어 예상문제 가격, 학원 운영 대시보드, 새출발기금 상담',
+    canonical='https://feel2real.co.kr/faq',
+    ogTitle='자주 묻는 질문 | Feel2Real',
+    ogDescription='Feel2Real 자주 묻는 질문. 내신 영어 예상문제 의뢰 방법과 가격, 학원 운영 대시보드, NewStart 1:1 상담, 입시상담 AI 안내.',
+    ogImage=null)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+  <style>
+    .faq-page { max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }
+    .faq-page h1 { font-size: 28px; margin-bottom: 8px; }
+    .faq-page .faq-lead { color: #555; margin-bottom: 32px; }
+    .faq-item { border: 1px solid #e5e5e5; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+    .faq-item summary { padding: 18px 20px; font-weight: 700; cursor: pointer; list-style: none; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after { content: '+'; float: right; color: #888; }
+    .faq-item[open] summary::after { content: '–'; }
+    .faq-item .faq-answer { padding: 0 20px 18px; color: #333; line-height: 1.7; }
+    .faq-item .faq-answer p { margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="faq-page">
+  <h1>자주 묻는 질문</h1>
+  <p class="faq-lead">Feel2Real 서비스에 대해 자주 묻는 질문과 답변입니다.</p>
+
+  <details class="faq-item" open>
+    <summary>Feel2Real은 어떤 회사인가요?</summary>
+    <div class="faq-answer">
+      <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다. 내신 영어 예상문제 제작, 학원 운영 대시보드, NewStart 1:1 상담 서비스를 운영하고 있습니다.</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>내신 영어 예상문제는 어떻게 의뢰하나요?</summary>
+    <div class="faq-answer">
+      <p>학교별 시험 범위와 출제 특성을 반영해 40문항 예상문제와 정답·해설을 제작합니다. 1회 20,000원이며, 홈페이지의 '예상문제 의뢰하기'에서 카카오톡 채널로 의뢰할 수 있습니다.</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>학원 운영 대시보드는 무엇인가요?</summary>
+    <div class="faq-answer">
+      <p>학생·출결·상담 관리, 장부, 학원 홈페이지를 한곳에서 운영하는 학원용 대시보드입니다. 원장과 강사가 함께 사용할 수 있습니다.</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>NewStart 1:1 상담은 어떻게 신청하나요?</summary>
+    <div class="faq-answer">
+      <p>NewStart는 새출발기금 부실차주를 위한 1:1 비대면 상담 서비스입니다. 홈페이지에서 채무 상황을 정리하면 운영자가 1:1로 답변합니다. 상담 내용은 비공개로 처리됩니다.</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>입시상담 AI는 무엇인가요?</summary>
+    <div class="faq-answer">
+      <p>학생 맞춤형 대학·전형 상담을 제공하는 AI 서비스입니다. 현재 준비 중이며, 공식 모집요강 자료를 근거로 답변합니다.</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>모의고사위키는 무엇인가요?</summary>
+    <div class="faq-answer">
+      <p>고1·고2·고3 영어 모의고사 자료를 함께 만드는 위키입니다. 기출 분석과 예상문제를 확인할 수 있습니다.</p>
+    </div>
+  </details>
+
+  <details class="faq-item">
+    <summary>문의는 어디로 하나요?</summary>
+    <div class="faq-answer">
+      <p>전화 02-6324-1453, 이메일 woorinaesin@naver.com으로 문의해 주세요.</p>
+    </div>
+  </details>
+</div>
+</th:block>
+</body>
+</html>

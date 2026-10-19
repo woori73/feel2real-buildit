@@ -14,4 +14,9 @@ public class PublicLegalController {
   public String privacy() {
     return "public/privacy";
   }
+
+  @GetMapping("/faq")
+  public String faq() {
+    return "public/faq";
+  }
 }
