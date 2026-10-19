@@ -128,6 +128,7 @@ jobs:
         # 주석 처리되어 실행되지 않는다. 그룹 설명은 이 YAML 주석에만 작성할 것.
         run: >-
           ./gradlew test --no-daemon
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.DesignCraftCliExecutorTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingEditServiceImportTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingAiServiceTest"

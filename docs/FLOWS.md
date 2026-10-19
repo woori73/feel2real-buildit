@@ -950,3 +950,8 @@ ADMIN drain과 admission은 같은 모니터에서 처리한다. drain 뒤 신�
 Servlet Callable/AsyncContext.start 및 CompletionStage 서비스 결과를 지원한다. 새 비동기 background 실행은 `PublishingMaintenanceGate.submit`으로 operation을 명시 전달해야 한다. 임의 commonPool/raw thread로 업무를 보내는 코드는 지원 범위 밖이며 도입 전 통제 확장이 필요하다. CLI stdout 수집 CompletableFuture는 업무를 시작하지 않으며 부모 CLI 실제 종료를 별도 추적한다.
 
 단일 JVM drain은 여러 Spring 인스턴스/별도 Worker/직접 OS 실행을 증명하지 않는다. 외부 실행 주체를 확인하지 못하면 운영 CLI 교체 불가다.
+
+
+### AcademyCraft 기존 회원 연결
+`/dashboard` → `/academycraft` → 기존 BuildIt 인증 검증 → 로컬 전용 서명 게이트웨이 → AcademyCraft 명시적 소속 연결·기존 역할·학원 격리 검사 → 기존 업무 화면/API. 미연결·비활성·타 학원·변경된 역할은 차단. 기존 서비스 세션·DB·권한은 보존.
+AcademyCraft 공통 진입은 ADMIN·TUTOR 전용이다. ADMIN은 보호된 승인 소속 목록에서 학원 선택 후 학생·반·출결·상담·공지의 기존 화면을 이용한다. 미연결 TUTOR 자동 가입·학원 생성은 수행하지 않는다. 운영 DB 무변경 조건으로 신규 TUTOR 소속 준비는 운영 적용 전 별도 확정이 필요하다.
