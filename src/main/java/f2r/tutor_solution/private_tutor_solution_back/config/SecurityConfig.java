@@ -252,6 +252,15 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/ledger/**"),
                         PathPatternRequestMatcher.withDefaults().matcher("/easy/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // BuildIt 대시보드(/dashboard)·입시상담 작업 화면은 비회원 브라우저에 raw 401을 주지 않고
+            // 원래 경로를 싣고 로그인 안내로 보낸다. JSON API(/api/dashboard/**)는 TEXT_HTML이 아니므로 401 계약 유지.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> redirectToLogin(request, response),
+                new AndRequestMatcher(
+                    new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/dashboard"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace")),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), AnyRequestMatcher.INSTANCE)
