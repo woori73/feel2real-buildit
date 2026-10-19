@@ -87,6 +87,7 @@ public class AdmissionsFactSearchService {
         List<AdmissionsDepartment> candidates = new ArrayList<>();
         for (AdmissionsDepartment d : departmentRepository.findAll()) {
             if (d.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(d.getAcademicYear())) continue;
+            if (!approvedSource(d.getSource(), d.getAcademicYear())) continue;
             if (!univSelected(p, d.getUniversity())) continue;
             candidates.add(d);
         }
@@ -114,6 +115,7 @@ public class AdmissionsFactSearchService {
         List<AdmissionsType> candidates = new ArrayList<>();
         for (AdmissionsType t : typeRepository.findAll()) {
             if (t.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(t.getAcademicYear())) continue;
+            if (!approvedSource(t.getSource(), t.getAcademicYear())) continue;
             if (!univSelected(p, t.getUniversity())) continue;
             candidates.add(t);
         }
@@ -138,6 +140,7 @@ public class AdmissionsFactSearchService {
         List<Evidence> out = new ArrayList<>();
         for (AdmissionsSchedule s : scheduleRepository.findAll()) {
             if (s.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(s.getAcademicYear())) continue;
+            if (!approvedSource(s.getSource(), s.getAcademicYear())) continue;
             if (s.getUniversity() == null || !univSelected(p, s.getUniversity())) continue;
             if (!scheduleMatches(question, s.getTitle())) continue;
             out.add(evidence("sched", s.getScheduleId(), s.getAcademicYear(),
@@ -162,6 +165,11 @@ public class AdmissionsFactSearchService {
 
     private static boolean univSelected(AdmissionsQueryParser.Parsed p, AdmissionsUniversity u) {
         return p.universities().isEmpty() || (u != null && p.universities().contains(u.getName()));
+    }
+
+    private static boolean approvedSource(AdmissionsOfficialMaterial source, Integer year) {
+        return source != null && source.getStatus()==KnowledgeStatus.ACTIVE
+                && java.util.Objects.equals(source.getAcademicYear(),year);
     }
 
     private static Evidence evidence(String kind, Long id, Integer year, String title, String excerpt,

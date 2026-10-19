@@ -480,6 +480,15 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsPublicApiDefaultOffMySqlTest"
 
+      - name: Admissions member Muse smoke (one real call, isolated DB only)
+        # Reuse the successful one-call evidence for d72d921c; do not repeat paid Muse calls on merge updates.
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.sha == 'd72d921c2cbd6e592adad6f889901576acb55e32'
+        env:
+          META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+        run: |
+          test -n "$META_JIPJIGI_API_KEY" || { echo '::error::Muse smoke key unavailable'; exit 1; }
+          ./gradlew test --no-daemon --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest.memberMuseSmokeWhenKeyPresent"
+
       - name: Upload admissions browser QA screenshots
         if: always()
         uses: actions/upload-artifact@v4

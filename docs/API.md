@@ -4794,6 +4794,16 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 문맥은 월 요약(수입·지출·수지·미수금·원생 수)·최근 거래 10건·미납 원생 10명만 전달한다. 쓰기 도구 없음. 출결 데이터는 BuildIt에 없다(AcademyCraft 별도 앱).
 
 
+## 회원 입시상담 대시보드 연결 (2026-10-19)
+- `GET /admissions/workspace`: ADMIN·TUTOR 기존 JWT 로그인, 공용 `/dashboard` 및 `/admin/hub` 카드에서 진입. 공개 `/admissions/guide`와 공개 API 기본 OFF 정책은 유지한다.
+- `POST /api/dashboard/admissions/chat`: 기존 ChatRequest/ChatResponse 재사용. 2027 또는 2028 선택 필수, 질문의 다른 학년도 명시 시 400. 기존 검색·수치 검증·안전 거절·Muse Spark transport 재사용(primary 기본 meta), 사용자별 제한 및 기존 전역 일일 상한 공유. 자료가 없으면 안전 안내만 반환한다.
+- `GET /api/dashboard/admissions/history`: 현재 계정·현재 소유 학원에 한정한 최근 20건. userId/academyId/sessionToken은 선택자로 받지 않는다. 현재 DB role과 소유 학원 연결을 재확인하며 ADMIN도 자기 이력만 조회한다. 응답 no-store. 기존 session_token 컬럼에 서버 HMAC namespace를 사용하므로 스키마 변경 없음; 공개 API는 member_ namespace 입력을 차단한다.
+- `GET /api/admin/admissions/materials?academicYear=2027&status=DRAFT&page=0`: ADMIN 전용 공식 원문 자료 목록(페이지 20건).
+- `POST /api/admin/admissions/materials/{id}/review`: 기존 지식 검수와 동일하게 action=review/approve/reject/archive. DRAFT→REVIEW→ACTIVE 순서, 화면은 ACTIVE를 APPROVED(승인)로 표시한다. 연관 세부 행 자동 승인 없음.
+- 기존 `/api/admin/admissions/knowledge`에 academicYear 선택 필터와 검수용 content 필드 추가. ADMIN만 열람·검수 가능.
+- 학과·전형·일정의 연결 원문 및 연결된 지식 원문도 ACTIVE·동일 학년도여야 답변 근거로 검색한다. DRAFT·REVIEW 제외, 테스트 시드 자동 적재 없음.
+- 배포 후 운영 계정 검증 및 운영 자료 승인/적재는 별도 승인 범위. 개발·CI는 격리 DB만 사용한다.
+
 ### AcademyCraft 공통 인증 게이트웨이 (병합·운영 활성화 별도 승인)
 - `GET /academycraft`: 기존 BuildIt 로그인으로 진입. ADMIN/TUTOR 전용 학원 대시보드(다른 역할 차단).
 - `/academycraft/screens/**`, `/academycraft/components/**`, `/academycraft/api/rea/**`: 로컬 8082의 허용된 정적 화면·학생·반·출결·상담·공지·통계 API만 중계. 원래 서비스 URL과 로그인 정책은 변경하지 않음.

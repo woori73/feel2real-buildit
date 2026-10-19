@@ -131,6 +131,11 @@ public class AdmissionsChatService {
 
     public AdmissionsAnswer ask(String rawQuestion, Integer academicYearFilter, String sessionToken,
                                 String studentProfile) {
+        return ask(rawQuestion,academicYearFilter,sessionToken,studentProfile,null);
+    }
+
+    public AdmissionsAnswer ask(String rawQuestion, Integer academicYearFilter, String sessionToken,
+                                String studentProfile, String retrievalContext) {
         String question = rawQuestion == null ? "" : rawQuestion.strip();
         if (question.isEmpty()) {
             return failure("질문을 입력해 주세요.");
@@ -139,8 +144,11 @@ public class AdmissionsChatService {
             return failure("질문이 너무 깁니다. " + MAX_QUESTION_CHARS + "자 이내로 입력해 주세요.");
         }
 
+        String searchQuestion=question;
+        if (retrievalContext!=null && !retrievalContext.isBlank())
+            searchQuestion += "\n상담 문맥: "+retrievalContext.substring(0,Math.min(retrievalContext.length(),2400));
         // 1. 질문 분석 + 학과·전형·일정 DB 조회
-        AdmissionsFactSearchService.FactResult facts = factSearchService.search(question, academicYearFilter);
+        AdmissionsFactSearchService.FactResult facts = factSearchService.search(searchQuestion, academicYearFilter);
         AdmissionsQueryParser.Parsed parsed = facts.parsed();
 
         // 2. LLM 없이 차단하는 질문: 합격 가능성 판단/추천, 수집하지 않은 자료, 미지원 학년도
@@ -158,7 +166,7 @@ public class AdmissionsChatService {
         }
 
         // 3. 조사 사다리 + 사실 근거 병합 (GUIDE는 근거가 아니다)
-        ResearchPack pack = researchService.research(question, academicYearFilter);
+        ResearchPack pack = researchService.research(searchQuestion, academicYearFilter);
         List<Evidence> usable = mergeUsable(facts.evidence(), usableEvidence(pack));
 
         // 4. 2028 질문은 2028 근거만 인정한다. 없으면 "미발표"로 답하고 2027 자료로 대신 답하지 않는다.
@@ -186,7 +194,7 @@ public class AdmissionsChatService {
         String evidenceContext = buildEvidenceContext(usable);
         String systemPrompt = BASE_PROMPT + "\n\n[입시 공식자료 근거]\n" + evidenceContext
                 + buildGuideBlock(pack);
-        String userPrompt = buildUserPrompt(question, pack, parsed, studentProfile);
+        String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile);
 
         // 7. LLM 호출
         NewStartLlmCompletion completion = admissionsLlmClient.complete(systemPrompt, userPrompt, MAX_ANSWER_CHARS);
@@ -206,7 +214,7 @@ public class AdmissionsChatService {
         List<AnswerSource> sources = buildSources(usable);
 
         String answer = completion.text();
-        saveSession(sessionToken, question, answer, pack, academicYearFilter, studentProfile);
+        saveSession(sessionToken, question, answer, pack, academicYearFilter, studentProfile, sources);
 
         log.info("admissions chat ok questionChars={} evidenceCount={} answerChars={} model={}",
                 question.length(), usable.size(), answer.length(), completion.model());
@@ -358,6 +366,11 @@ public class AdmissionsChatService {
 
     private void saveSession(String sessionToken, String question, String answer,
                              ResearchPack pack, Integer academicYear, String studentProfile) {
+        saveSession(sessionToken,question,answer,pack,academicYear,studentProfile,List.of());
+    }
+
+    private void saveSession(String sessionToken,String question,String answer,ResearchPack pack,
+                             Integer academicYear,String studentProfile,List<AnswerSource> sources) {
         try {
             String token = (sessionToken != null && sessionToken.matches("[A-Za-z0-9_-]{8,64}"))
                     ? sessionToken
@@ -374,14 +387,14 @@ public class AdmissionsChatService {
                     .question(question.length() > 2000 ? question.substring(0, 2000) : question)
                     .questionFingerprint(fingerprint)
                     .answer(answer.length() > 8000 ? answer.substring(0, 8000) : answer)
-                    .evidenceSummary(evidenceSummary.toString())
+                    .evidenceSummary(sources.isEmpty()?evidenceSummary.toString():new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(sources))
                     .studentProfile(studentProfile)
                     .academicYear(academicYear)
                     .build();
             sessionRepository.save(session);
         } catch (Exception e) {
             // 세션 저장 실패는 답변에 영향 없음
-            log.warn("admissions session save failed: {}", e.getMessage());
+            log.warn("admissions session save failed");
         }
     }
 
