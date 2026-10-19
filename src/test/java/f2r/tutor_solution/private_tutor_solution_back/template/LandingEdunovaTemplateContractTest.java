@@ -113,7 +113,10 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("압구정중2 영어 시험은")
+        .contains("40문항 직보 예상문제,")
+        .contains("실제 적중률 100%")
+        .contains("압구정중2 영어 시험은 어떻게 나왔을까?")
+        .contains("href=\"#exam-hit\"")
         .contains("100% 출제")
         .contains("외부지문 2문항(5 · 9번) 제외, 28문항 전부")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
