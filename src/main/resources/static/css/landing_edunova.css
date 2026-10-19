@@ -326,3 +326,7 @@ footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); pa
 .auth-action { white-space:nowrap; }
 @media (max-width:1280px) { .en-logo-sep, .en-logo-sub { display:none; } }
 @media (max-width:520px) { .en-nav { gap:8px; } .auth-actions { gap:6px; } .auth-action { min-height:36px; padding:8px 10px; font-size:12px; } .en-logo-mark { width:30px; height:30px; } .en-logo-main { font-size:13px; } .en-burger { width:34px; flex:0 0 34px; padding:6px; } }
+
+/* 상단 이름: 화보 "AI AGENT" 타이틀처럼 굵고 넓은 각진 산세리프(Russo One) */
+.en-logo-main { font-family:'Russo One','Montserrat','Noto Sans KR',sans-serif; font-weight:400; font-size:21px; letter-spacing:.06em; text-transform:uppercase; }
+@media (max-width:520px) { .en-logo-main { font-size:16px; letter-spacing:.04em; } }
