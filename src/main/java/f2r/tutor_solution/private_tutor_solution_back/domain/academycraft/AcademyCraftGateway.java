@@ -52,7 +52,8 @@ public class AcademyCraftGateway {
   @GetMapping({"/academycraft", "/academycraft/"})
   public String entry(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
     if (principal == null) return "redirect:/?login=required&returnUrl=%2Facademycraft";
-    return "redirect:/academycraft/screens/" + ("STUDENT".equals(principal.role()) ? "SELF-01-student.html" : "OPS-02-dashboard.html");
+    if (!Set.of("ADMIN", "TUTOR").contains(principal.role())) throw new AccessDeniedException("ADMIN·TUTOR 전용 서비스입니다.");
+    return "redirect:/academycraft/screens/OPS-02-dashboard.html";
   }
 
   @RequestMapping(value="/academycraft/**", method={RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE})
@@ -65,7 +66,7 @@ public class AcademyCraftGateway {
       throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AcademyCraft 연결 설정이 준비되지 않았습니다.");
     var user = users.findById(principal.userId()).orElseThrow(() -> new AccessDeniedException("회원 연결 없음"));
     String role = user.getRole().name(); // Revalidate current role; never trust browser-supplied identity.
-    if (!Set.of("ADMIN", "TUTOR", "STUDENT").contains(role)) throw new AccessDeniedException("허용되지 않은 역할");
+    if (!Set.of("ADMIN", "TUTOR").contains(role)) throw new AccessDeniedException("허용되지 않은 역할");
     String path = request.getRequestURI().substring("/academycraft".length());
     if (!allowedPath(path)) throw new AccessDeniedException("허용되지 않은 AcademyCraft 경로");
     boolean api = path.startsWith("/api/rea/");
@@ -99,7 +100,7 @@ public class AcademyCraftGateway {
     headers.set("X-Content-Type-Options", "nosniff");
     if (type.contains("text/html")) {
       String html = new String(result, StandardCharsets.UTF_8);
-      html = html.replace("<head>", "<head><script>window.ACADEMYCRAFT_COMMON_AUTH=true;</script>");
+      html = html.replace("<head>", "<head><script>window.ACADEMYCRAFT_COMMON_AUTH=true;</script><script defer src=\"/academycraft/components/common-service.js\"></script>");
       result = html.getBytes(StandardCharsets.UTF_8);
     }
     return new ResponseEntity<>(result, headers, HttpStatusCode.valueOf(response.statusCode()));
@@ -111,9 +112,11 @@ public class AcademyCraftGateway {
     if (path.startsWith("/screens/")) return Set.of(
         "MBR-01-student-list.html", "CLS-01-class-list.html", "CLS-02-class-form.html", "CLS-03-class-detail.html",
         "ATT-01-attendance-keypad.html", "ATT-02-attendance-monthly.html", "ATT-03-attendance-roster.html",
-        "ATT-04-attendance-settings.html", "OPS-02-dashboard.html", "SELF-01-student.html").contains(path.substring(9));
+        "ATT-04-attendance-settings.html", "OPS-02-dashboard.html", "CNS-01-consultation-list.html", "CNS-03-inquiry-inbox.html",
+        "CNS-04-news-send.html", "CNS-05-consultation-detail.html", "NTC-01-notice-list.html",
+        "NTC-02-class-news.html", "NTC-03-notice-form.html", "NTC-04-notice-detail.html").contains(path.substring(9));
     return (path.equals("/api/rea/integration/context") || path.equals("/api/rea/integration/teachers"))
-        || path.matches("/api/rea/[1-9][0-9]*/(students|classes|attendance|dashboard/stats|timetable)(/.*)?");
+        || path.matches("/api/rea/[1-9][0-9]*/(students|classes|attendance|dashboard/stats|timetable|consultations|notices)(/.*)?");
   }
 
   public static String sign(String secret, String method, String target, String assertion, byte[] body) throws Exception {

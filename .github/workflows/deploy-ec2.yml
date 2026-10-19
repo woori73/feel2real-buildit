@@ -17,9 +17,9 @@ on:
           - admin-only
           - 'off'
       target:
-        description: '배포 대상: old=기존 운영 계정(기본), new=신규 계정(이전용)'
-        required: false
-        default: old
+        description: '배포 대상: new=신규 운영 계정(기본), old=구 계정(긴급 복구 전용)'
+        required: true
+        default: new
         type: choice
         options:
           - old

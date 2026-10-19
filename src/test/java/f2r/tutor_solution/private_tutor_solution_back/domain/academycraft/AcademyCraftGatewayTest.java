@@ -14,6 +14,10 @@ class AcademyCraftGatewayTest {
     assertTrue(AcademyCraftGateway.allowedPath("/screens/MBR-01-student-list.html"));
     assertTrue(AcademyCraftGateway.allowedPath("/components/auth.js"));
     assertTrue(AcademyCraftGateway.allowedPath("/api/rea/7/students"));
+    assertTrue(AcademyCraftGateway.allowedPath("/api/rea/7/notices"));
+    assertTrue(AcademyCraftGateway.allowedPath("/api/rea/7/consultations/1/messages"));
+    assertTrue(AcademyCraftGateway.allowedPath("/screens/NTC-01-notice-list.html"));
+    assertFalse(AcademyCraftGateway.allowedPath("/screens/SELF-01-student.html"));
     for(String path:new String[]{"/api/rea/auth/login","/api/rea/7/members","/actuator/env","/../grammar-items","/screens/AUTH-01-login.html","/screens/ADM-01-academy-settings.html","/api/rea/7/students%2f..","//evil.example"})
       assertFalse(AcademyCraftGateway.allowedPath(path),path);
   }

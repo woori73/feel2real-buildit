@@ -34,6 +34,8 @@ public record GrammarQuestionDetailResponse(
     String materialFileName,
     String sourcePosition,
     String externalRef,
-    List<GrammarVariantResponse> variants
+    List<GrammarVariantResponse> variants,
+    SchoolLevel recommendedGrade,
+    java.util.Map<String, Object> reviewMetadata
 ) {
 }

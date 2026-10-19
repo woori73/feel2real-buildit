@@ -468,10 +468,14 @@
 
   function renderLogoSymbol(academy, context) {
     const logoUrl = cacheBustedLogoUrl(academy.logoUrl);
+    const fallback = `<span class="eh-logo-symbol-inner"><span class="eh-book"><span class="eh-letters">${escapeHtml(initials(academy.name))}</span></span></span>`;
+    // 이미지 로드 실패 시 깨진 아이콘 대신 기본 로고(학원명 이니셜)로 폴백
     const body = logoUrl
-      ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(academy.name)} 로고">`
-      : `<span class="eh-logo-symbol-inner"><span class="eh-book"><span class="eh-letters">${escapeHtml(initials(academy.name))}</span></span></span>`;
-    return `<span class="eh-logo-symbol" data-builder-logo="${context}" tabindex="0" title="클릭하여 로고 이미지 수정">${body}<span class="builder-logo-edit-chip"><i class="fa-solid fa-image"></i> 로고</span></span>`;
+      ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(academy.name)} 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='';">` + `<span class="eh-logo-symbol-inner" style="display:none;"><span class="eh-book"><span class="eh-letters">${escapeHtml(initials(academy.name))}</span></span></span>`
+      : fallback;
+    // 게시 페이지와 동일한 학원 홈 URL 규칙 사용 (/academies/{slug})
+    const homeUrl = academy.slug ? '/academies/' + encodeURIComponent(academy.slug) : '/';
+    return `<span class="eh-logo-symbol" data-builder-logo="${context}" tabindex="0"><a href="${homeUrl}" data-builder-logo-home title="홈으로 이동" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit;">${body}</a><button type="button" class="builder-logo-edit-chip" data-builder-logo-edit title="로고 이미지 수정"><i class="fa-solid fa-image"></i> 로고</button></span>`;
   }
 
   function cacheBustedLogoUrl(url) {
@@ -1563,19 +1567,21 @@
   function wireLogoEditing(preview) {
     const pageContent = document.getElementById('pageContent');
     if (pageContent) {
+      // 편집 모드: 편집 칩 클릭 시에만 로고 수정 모달 열기 (홈 이동과 명확히 구분)
       pageContent.addEventListener('click', (event) => {
-        const target = event.target && event.target.closest ? event.target.closest('[data-builder-logo]') : null;
-        if (!target) return;
+        const editBtn = event.target && event.target.closest ? event.target.closest('[data-builder-logo-edit]') : null;
+        if (!editBtn) return;
         event.preventDefault();
         event.stopPropagation();
         openLogoModal();
       });
       pageContent.addEventListener('keydown', (event) => {
-        const target = event.target && event.target.closest ? event.target.closest('[data-builder-logo]') : null;
-        if (!target || (event.key !== 'Enter' && event.key !== ' ')) return;
+        const editBtn = event.target && event.target.closest ? event.target.closest('[data-builder-logo-edit]') : null;
+        if (!editBtn || (event.key !== 'Enter' && event.key !== ' ')) return;
         event.preventDefault();
         openLogoModal();
       });
+      // 로고 홈 링크는 기본 동작 유지 (홈 이동) — preventDefault 하지 않음
     }
     wireLogoModal();
   }

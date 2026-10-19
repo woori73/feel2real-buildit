@@ -11,7 +11,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.question.entity.Pas
 import f2r.tutor_solution.private_tutor_solution_back.domain.question.entity.Question;
 import f2r.tutor_solution.private_tutor_solution_back.domain.question.entity.QuestionType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.question.repository.QuestionRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Subquery;
@@ -43,6 +42,7 @@ public class GrammarBankService {
   private final QuestionGrammarTagRepository questionTagRepository;
   private final GrammarQuestionVariantRepository variantRepository;
   private final QuestionRepository questionRepository;
+  private final GrammarBankAccessGuard accessGuard;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public record SearchFilters(
@@ -54,8 +54,15 @@ public class GrammarBankService {
       BigDecimal minConfidence,
       BigDecimal maxConfidence,
       String search,
-      List<Long> tagIds
+      List<Long> tagIds,
+      SchoolLevel recommendedGrade
   ) {
+    public SearchFilters(SchoolLevel schoolLevel, GrammarQuestionFormat format,
+        GrammarDifficulty difficulty, GrammarReviewStatus reviewStatus, GrammarRightsStatus rightsStatus,
+        BigDecimal minConfidence, BigDecimal maxConfidence, String search, List<Long> tagIds) {
+      this(schoolLevel, format, difficulty, reviewStatus, rightsStatus, minConfidence, maxConfidence,
+          search, tagIds, null);
+    }
   }
 
   public Page<GrammarQuestionItemResponse> search(SearchFilters filters, Pageable pageable) {
@@ -98,7 +105,9 @@ public class GrammarBankService {
         profile.getSourcePosition(),
         profile.getExternalRef(),
         variantRepository.findByBaseQuestion_QuestionId(questionId).stream()
-            .map(GrammarBankService::toVariantResponse).toList());
+            .map(GrammarBankService::toVariantResponse).toList(),
+        GrammarReviewMetadata.recommendedGrade(profile.getAutoClassification()),
+        GrammarReviewMetadata.snapshot(profile.getAutoClassification()));
   }
 
   public List<GrammarTag> tags() {
@@ -132,6 +141,14 @@ public class GrammarBankService {
     String correctAnswer = request.correctAnswer() != null ? request.correctAnswer() : q.getCorrectAnswer();
     String explanation = request.explanation() != null ? request.explanation() : q.getExplanation();
     Integer point = request.point() != null ? request.point() : q.getPoint();
+    GrammarQuestionProfile profile = requireProfile(questionId);
+    String hash = GrammarBankImportService.sha256(GrammarBankImportService.normalizeForHash(questionText));
+    if (profileRepository.findByContentHash(hash)
+        .filter(p -> !p.getQuestion().getQuestionId().equals(questionId)).isPresent()) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "동일 발문의 다른 문항이 있습니다.");
+    }
+    profile.updateContentHash(hash);
+    profile.updateReviewStatus(GrammarReviewStatus.NEEDS_REVIEW);
     q.updateProblemGeneratorFields(q.getQuestionType(), questionText, choicesJson,
         correctAnswer, explanation, q.getQuestionLabel(), point);
     return detail(questionId);
@@ -144,12 +161,20 @@ public class GrammarBankService {
     GrammarQuestionProfile profile = profileRepository.findByQuestion_QuestionId(questionId).orElseThrow();
     profile.updateClassification(request.schoolLevel(), request.questionFormat(),
         request.difficulty(), request.keywords());
+    if (request.recommendedGrade() == SchoolLevel.COMMON) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "권장 학년은 중1~고3 또는 미확정입니다.");
+    }
+    if (request.recommendedGrade() != null) {
+      profile.updateReviewMetadata(GrammarReviewMetadata.updateGrade(profile.getAutoClassification(),
+          request.recommendedGrade(), principal.userId()));
+      profile.updateReviewStatus(GrammarReviewStatus.NEEDS_REVIEW);
+    }
     if (request.rightsStatus() != null) {
       profile.updateRightsStatus(request.rightsStatus());
     }
-    if (request.tagIds() != null && !request.tagIds().isEmpty()) {
+    if (request.tagIds() != null) {
       replaceTags(q, request.tagIds(), request.primaryTagId(), false);
-      profile.updateReviewStatus(GrammarReviewStatus.APPROVED);
+      profile.updateReviewStatus(GrammarReviewStatus.NEEDS_REVIEW);
     }
     profileRepository.save(profile);
     return detail(questionId);
@@ -228,18 +253,12 @@ public class GrammarBankService {
   }
 
   private Question requireEditableQuestion(AuthenticatedPrincipal principal, Long questionId) {
-    GrammarQuestionProfile profile = requireProfile(questionId);
-    boolean privileged = Role.ADMIN.name().equals(principal.role()) || Role.TUTOR.name().equals(principal.role());
-    if (!privileged && !principal.userId().equals(profile.getOwnerUserId())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 문제를 편집할 권한이 없습니다.");
-    }
-    return profile.getQuestion();
+    accessGuard.require(principal);
+    return requireProfile(questionId).getQuestion();
   }
 
   private void requireReviewer(AuthenticatedPrincipal principal) {
-    if (!Role.ADMIN.name().equals(principal.role()) && !Role.TUTOR.name().equals(principal.role())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "검수 권한이 없습니다.");
-    }
+    accessGuard.require(principal);
   }
 
   void replaceTags(Question question, List<Long> tagIds, Long primaryTagId, boolean auto) {
@@ -279,7 +298,8 @@ public class GrammarBankService {
         p.getReviewStatus(), p.getRightsStatus(), p.getClassificationConfidence(), tags,
         excerpt(q.getQuestionText()), q.getCorrectAnswer(),
         p.getMaterial() != null ? p.getMaterial().getMaterialId() : null,
-        p.getSourcePosition(), p.getExternalRef());
+        p.getSourcePosition(), p.getExternalRef(),
+        GrammarReviewMetadata.recommendedGrade(p.getAutoClassification()));
   }
 
   static String excerpt(String text) {
@@ -322,6 +342,16 @@ public class GrammarBankService {
       var questionJoin = root.join("question", JoinType.INNER);
       if (f.schoolLevel() != null) {
         ps.add(cb.equal(root.get("schoolLevel"), f.schoolLevel()));
+      }
+      if (f.recommendedGrade() != null) {
+        var value = cb.function("JSON_UNQUOTE", String.class,
+            cb.function("JSON_EXTRACT", String.class, root.get("autoClassification"),
+                cb.literal("$.recommended_grade")));
+        if (f.recommendedGrade() == SchoolLevel.UNKNOWN) {
+          ps.add(cb.or(cb.isNull(value), cb.equal(value, "null"), cb.equal(value, "UNKNOWN")));
+        } else {
+          ps.add(cb.equal(value, f.recommendedGrade().name()));
+        }
       }
       if (f.format() != null) {
         ps.add(cb.equal(root.get("questionFormat"), f.format()));

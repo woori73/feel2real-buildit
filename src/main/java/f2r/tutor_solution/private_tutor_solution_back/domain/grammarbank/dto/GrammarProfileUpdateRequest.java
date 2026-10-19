@@ -14,6 +14,7 @@ public record GrammarProfileUpdateRequest(
     String keywords,
     GrammarRightsStatus rightsStatus,
     List<Long> tagIds,
-    Long primaryTagId
+    Long primaryTagId,
+    SchoolLevel recommendedGrade
 ) {
 }

@@ -229,6 +229,7 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 
 - `grammar_tags`: 문법 유형 사전(시제/조동사/수동태…기타 14종 시드). `aliases`는 용어 등장 기반 1차 자동 분류 키워드.
 - `grammar_question_profiles`: `questions` 1:1 확장. `school_level`(M1~H3/COMMON/UNKNOWN), `question_format`(객관식·어법상 옳은/틀린·밑줄·빈칸·배열·영작·전환·오류수정), `difficulty`, `review_status`(AUTO/NEEDS_REVIEW/APPROVED/REJECTED), `rights_status`, 자동 분류 JSON·신뢰도, 원본 추적(`material_id` FK→problem_generator_materials, `source_position`, `external_ref`), 중복 방지용 `content_hash`(UNIQUE)·(material_id, external_ref) UNIQUE.
+- 검토본 메타데이터는 기존 `auto_classification` JSON에 저장한다(새 DDL 없음). `review_metadata`는 전체 수입본을 불변 스냅샷으로 보관하며 원본 grade·concept_code·원본 ID·보기별 해설·검수 근거 등을 유지한다. 루트 `recommended_grade`(M1~H3/null/UNKNOWN)는 현재 권장 학습 학년이고 `school_level`과 별개다. `review_history`에 권장 학년 변경 전후·사용자·시각을 누적한다. 기존 JSON은 권장 학년 미분류로 취급한다. 권장 학년 필터는 MySQL JSON_EXTRACT를 사용한다. 검토본 import는 영어 subject 행 잠금으로 동일 경로 동시 수입을 직렬화하고 external_ref 전역 대조 후 충돌을 차단한다(기존 UNIQUE 제약은 유지).
 - `question_grammar_tags`: 문제-문법 유형 N:M 다중 태그(`is_primary`, `is_auto`, `confidence`).
 - `grammar_collections` / `grammar_collection_items`: 문제 선택함(BASKET)·문제집 제작 목록(BOOK)과 순서(`order_num`), DesignCraft 전달 시 `designcraft_job_id`·`publish_options` 저장. 소유자 격리.
 - `grammar_question_variants`: AI/강사 수정 문항을 원본과 별도 `questions` 행(GENERATED)으로 두고 base↔variant와 승인상태(PENDING/APPROVED/REJECTED)를 연결. 승인 전 원본은 변경하지 않는다.

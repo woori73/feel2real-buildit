@@ -19,7 +19,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.subject.entity.Ques
 import f2r.tutor_solution.private_tutor_solution_back.domain.subject.entity.Subject;
 import f2r.tutor_solution.private_tutor_solution_back.domain.subject.repository.QuestionCategoryRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.subject.repository.SubjectRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -57,6 +56,8 @@ public class GrammarBankImportService {
   private final SubjectRepository subjectRepository;
   private final QuestionCategoryRepository categoryRepository;
   private final ProblemGeneratorMaterialRepository materialRepository;
+  private final GrammarBankAccessGuard accessGuard;
+  private final jakarta.persistence.EntityManager entityManager;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public GrammarImportResultResponse importJson(AuthenticatedPrincipal principal,
@@ -90,6 +91,11 @@ public class GrammarBankImportService {
 
     Subject subject = subjectRepository.findById(ENGLISH_SUBJECT_ID)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "영어 subject가 없습니다."));
+    // Serialize reviewed imports on the stable English subject row, including material-less batches.
+    // The lock covers external-id lookup and inserts in this transaction; no production data is edited.
+    if (records.stream().anyMatch(r -> r.containsKey("review_metadata"))) {
+      entityManager.lock(subject, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+    }
     QuestionCategory grammarCategory = categoryRepository.findByCategoryNameKo("문법").orElse(null);
     List<GrammarTag> allTags = tagRepository.findAllByOrderBySortOrderAsc();
 
@@ -133,10 +139,23 @@ public class GrammarBankImportService {
     }
     String externalRef = firstText(record, "external_ref", "externalRef", "ref");
     String sourcePosition = resolvePosition(record);
+    Map<String, Object> reviewMetadata = reviewSnapshot(record);
+    if (reviewMetadata != null) {
+      GrammarReviewMetadata.imported(null, reviewMetadata, externalRef); // validate before persistence
+      var existing = profileRepository.findFirstByExternalRef(externalRef);
+      if (existing.isPresent()) {
+        Map<String, Object> stored = GrammarReviewMetadata.snapshot(existing.get().getAutoClassification());
+        if (!stored.equals(reviewMetadata))
+          throw new IllegalArgumentException("기존 external_ref의 검토본이 다릅니다. 덮어쓰기 없이 수동 대조하세요: " + externalRef);
+        return Outcome.DUPLICATE;
+      }
+    }
     String contentHash = sha256(normalizeForHash(stem));
 
     // 중복 방지 1: 정규화 본문 해시 (동일 문항)
     if (profileRepository.findByContentHash(contentHash).isPresent()) {
+      if (reviewMetadata != null)
+        throw new IllegalArgumentException("동일 발문이 다른 ID 또는 기존 원고에 있습니다. 메타데이터를 버리지 않고 수동 대조하세요.");
       return Outcome.DUPLICATE;
     }
     // 중복 방지 2: 같은 파일 재등록 (external_ref / source_position)
@@ -154,6 +173,17 @@ public class GrammarBankImportService {
     List<String> choices = firstList(record, "choices", "options");
     String answer = firstText(record, "answer", "correct_answer", "correctAnswer", "정답");
     String explanation = firstText(record, "explanation", "commentary", "solution", "해설");
+    if (reviewMetadata != null) {
+      Object rawChoices = reviewMetadata.get("choices");
+      List<String> snapshotChoices = rawChoices instanceof List<?> list ? list.stream()
+          .map(v -> v instanceof Map<?, ?> map ? String.valueOf(map.get("text")) : "")
+          .toList() : List.of();
+      if (!java.util.Objects.equals(stem, reviewMetadata.get("new_question"))
+          || !java.util.Objects.equals(answer, reviewMetadata.get("answer"))
+          || !choices.equals(snapshotChoices) || choices.size() != 5)
+        throw new IllegalArgumentException("검토 스냅샷과 발문·정답·선택지가 일치해야 합니다.");
+    }
+
 
     // 자동 분류: 외부 분류 우선, 없으면 문법 용어 등장 매칭(용어 등장≠실제 평가 유형이므로 신뢰도 깎기)
     Classification cls = classify(record, stem, choices, allTags);
@@ -194,7 +224,7 @@ public class GrammarBankImportService {
         .questionFormat(format)
         .difficulty(difficulty)
         .keywords(keywords != null ? keywords : String.join(" ", cls.matchedNames()))
-        .autoClassification(cls.raw() == null ? null : toJson(cls.raw()))
+        .autoClassification(GrammarReviewMetadata.imported(cls.raw(), reviewMetadata, externalRef))
         .classificationConfidence(confidence)
         .reviewStatus(reviewStatus)
         .rightsStatus(rights != null ? rights : GrammarRightsStatus.UNKNOWN)
@@ -590,9 +620,15 @@ public class GrammarBankImportService {
     return out;
   }
 
+  @SuppressWarnings("unchecked")
+  private static Map<String, Object> reviewSnapshot(Map<String, Object> record) {
+    Object value = record.get("review_metadata");
+    if (value == null) return null;
+    if (!(value instanceof Map<?, ?>)) throw new IllegalArgumentException("review_metadata는 JSON 객체여야 합니다.");
+    return (Map<String, Object>) value;
+  }
+
   private void requireImporter(AuthenticatedPrincipal principal) {
-    if (!Role.ADMIN.name().equals(principal.role()) && !Role.TUTOR.name().equals(principal.role())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "문제은행 수입은 TUTOR/ADMIN만 가능합니다.");
-    }
+    accessGuard.require(principal);
   }
 }

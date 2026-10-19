@@ -62,6 +62,7 @@ public class GrammarBankController {
       @RequestParam(required = false) BigDecimal maxConfidence,
       @RequestParam(required = false) String search,
       @RequestParam(required = false) List<Long> tagIds,
+      @RequestParam(required = false) String recommendedGrade,
       @PageableDefault(size = 20) Pageable pageable) {
     requirePrincipal(principal);
     GrammarBankService.SearchFilters filters = new GrammarBankService.SearchFilters(
@@ -70,7 +71,7 @@ public class GrammarBankController {
         enumOrNull(GrammarDifficulty.class, difficulty),
         enumOrNull(GrammarReviewStatus.class, reviewStatus),
         enumOrNull(GrammarRightsStatus.class, rightsStatus),
-        minConfidence, maxConfidence, search, tagIds);
+        minConfidence, maxConfidence, search, tagIds, enumOrNull(SchoolLevel.class, recommendedGrade));
     return ResponseEntity.ok(bankService.search(filters, pageable));
   }
 
