@@ -266,6 +266,12 @@
     <div class="dash-section-title">상세 위젯 <span class="count" id="widgetCount"></span></div>
     <div class="dash-widgets" id="widgetContainer"></div>
 
+    <section aria-label="AcademyCraft 학원 현황" style="margin:18px 0;padding:16px;background:white;border-radius:12px">
+      <h2 style="font-size:17px"><a href="/academycraft">AcademyCraft 학원 현황</a></h2>
+      <p id="academycraft-status" role="status">권한 및 현황 확인 중…</p>
+      <div id="academycraft-metrics" style="display:flex;gap:16px;flex-wrap:wrap"></div>
+    </section>
+    <script defer src="/js/academycraft-dashboard.js"></script>
     <!-- 서비스 바로가기 -->
     <div class="dash-section-title">서비스 바로가기</div>
     <div class="dash-shortcuts" id="shortcutRow"></div>
@@ -309,8 +315,7 @@
     var SHORTCUTS = [
       { name: '에듀홀릭 장부<운영자용>', desc: '압구정에듀홀릭학원 전용 · 복식부기·수납', icon: '📒', href: '/easy' },
       { name: '이지장부', desc: '원장용 범용 장부 · AI 장부 도우미', icon: '📓', href: '/ledger' },
-      // AcademyCraft(REA 학원관리)는 별도 앱이며 이 서버에 배포되어 있지 않아 링크 없이 상태만 표시한다.
-      { name: 'AcademyCraft 출결·학원관리', desc: '준비 중', icon: '🧑‍🏫', href: '', disabled: true },
+      { name: 'AcademyCraft 출결·학원관리', desc: '학생·반·출결 관리', icon: '🧑‍🏫', href: '/academycraft' },
       { name: '홈페이지 빌더', desc: '학원 홈페이지 제작', icon: '🏠', href: '/builder' },
       { name: '내신위키', desc: '문제 제작·관리', icon: '📚', href: '/problem-generator' },
       { name: 'TESTPREP', desc: '모의고사', icon: '📝', href: '/testprep' },

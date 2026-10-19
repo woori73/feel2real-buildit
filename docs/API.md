@@ -4803,3 +4803,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 기존 `/api/admin/admissions/knowledge`에 academicYear 선택 필터와 검수용 content 필드 추가. ADMIN만 열람·검수 가능.
 - 학과·전형·일정의 연결 원문 및 연결된 지식 원문도 ACTIVE·동일 학년도여야 답변 근거로 검색한다. DRAFT·REVIEW 제외, 테스트 시드 자동 적재 없음.
 - 배포 후 운영 계정 검증 및 운영 자료 승인/적재는 별도 승인 범위. 개발·CI는 격리 DB만 사용한다.
+
+### AcademyCraft 공통 인증 게이트웨이 (병합·운영 활성화 별도 승인)
+- `GET /academycraft`: 기존 BuildIt 로그인으로 진입. ADMIN/TUTOR 전용 학원 대시보드(다른 역할 차단).
+- `/academycraft/screens/**`, `/academycraft/components/**`, `/academycraft/api/rea/**`: 로컬 8082의 허용된 정적 화면·학생·반·출결·상담·공지·통계 API만 중계. 원래 서비스 URL과 로그인 정책은 변경하지 않음.
+- 현재 BuildIt 회원 역할을 DB에서 재확인하고 매 요청 사용자·소유 학원·본문·경로를 30초 HMAC 서명. 브라우저에는 별도 인증 정보나 서명키를 전달하지 않음. 외부 Origin 쓰기 차단.
+- `ACADEMYCRAFT_GATEWAY_SECRET`은 두 프로세스의 별도 보호된 환경 설정에 같은 32바이트 이상 랜덤 값으로 설정해야 함. 기본 비활성(미설정 503). 기존 JWT 비밀키 재사용 금지.
+- AcademyCraft의 `ACADEMYCRAFT_BUILDIT_BINDINGS`는 명시 승인된 BuildIt userId/role/builditAcademyId와 기존 AcademyCraft academyId/memberId 또는 studentId의 연결 목록. 이름이나 동일 ID 추정 매핑, 자동 회원·학원 생성 없음. 비밀번호·권한 변경 없음.
+- 운영 데이터·환경 변경 및 배포는 PR 승인 범위 밖. 초기 AcademyCraft 학원·회원이 비어 있으면 로그인 자격이 없는 내부 소속 레코드 준비 범위를 별도로 승인받아야 하며, 이번 코드가 생성하지 않음.
+ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값은 권한 근거가 아니며 AcademyCraft가 매 요청 실제 활성 소속·역할·학원 범위를 검증한다. 권한 변경은 보호된 소속 설정 검토로만 수행하고 기존 회원 역할을 변경하지 않는다.

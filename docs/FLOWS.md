@@ -955,3 +955,7 @@ Servlet Callable/AsyncContext.start 및 CompletionStage 서비스 결과를 지�
 ## 입시상담 회원 대시보드 흐름 (2026-10-19)
 기존 ADMIN·TUTOR 로그인 → `/dashboard` 또는 ADMIN `/admin/hub`의 입시상담 AI → `/admissions/workspace` → 학년도·대학·학과·전형 입력 → 회원 전용 상담 API → 기존 공식자료 검색·Muse Spark·근거 검증 → 답변·출처·현재 회원/학원 이력. 같은 학년도 직전 질문과 선택 조건만 후속 검색 문맥으로 사용하며 과거 답변은 근거로 사용하지 않는다.
 ADMIN은 같은 화면에서 공식 원문과 근거 지식의 DRAFT→REVIEW→APPROVED(내부 ACTIVE)를 검수한다. TUTOR에게는 검수 메뉴/API를 허용하지 않는다. 다른 사용자·학원의 이력은 ADMIN에게도 자동 공개하지 않는다.
+
+### AcademyCraft 기존 회원 연결
+`/dashboard` → `/academycraft` → 기존 BuildIt 인증 검증 → 로컬 전용 서명 게이트웨이 → AcademyCraft 명시적 소속 연결·기존 역할·학원 격리 검사 → 기존 업무 화면/API. 미연결·비활성·타 학원·변경된 역할은 차단. 기존 서비스 세션·DB·권한은 보존.
+AcademyCraft 공통 진입은 ADMIN·TUTOR 전용이다. ADMIN은 보호된 승인 소속 목록에서 학원 선택 후 학생·반·출결·상담·공지의 기존 화면을 이용한다. 미연결 TUTOR 자동 가입·학원 생성은 수행하지 않는다. 운영 DB 무변경 조건으로 신규 TUTOR 소속 준비는 운영 적용 전 별도 확정이 필요하다.
