@@ -1722,12 +1722,12 @@ body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);lett
 }
 
 @media(max-width:480px){
-  .cv-gnb{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px;gap:8px;}
-  .cv-gnb .eh-logo-component{gap:8px;}
-  .cv-gnb .eh-logo-symbol,.cv-gnb .eh-logo-symbol img{max-width:76px;}
-  .cv-gnb .eh-logo-title{font-size:.92rem;}
-  .cv-nav{min-width:0;}
-  .cv-btn-primary,.cv-btn-owner{padding:7px 10px;font-size:.78rem;border-radius:9px;}
+  .cv-gnb{grid-template-columns:minmax(0,1fr) auto;padding:8px 14px;gap:8px;min-height:56px;}
+  .cv-gnb .eh-logo-component{gap:8px;min-width:0;overflow:hidden;}
+  .cv-gnb .eh-logo-symbol,.cv-gnb .eh-logo-symbol img{max-width:76px;flex-shrink:0;}
+  .cv-gnb .eh-logo-title{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+  .cv-nav{min-width:0;display:flex;align-items:center;}
+  .cv-btn-primary,.cv-btn-owner{padding:10px 14px;font-size:.78rem;border-radius:9px;min-height:44px;}
   .cv-hero-badges{margin-bottom:14px;}
   .cv-hero-badges .badge{font-size:.75rem;}
   .cv-hero-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;padding-top:14px;}

@@ -1063,7 +1063,9 @@
 
   function renderLogoSymbol(academy) {
     if (academy.logoUrl) {
-      return `<span class="eh-logo-symbol"><img src="${escapeHtml(academy.logoUrl)}" alt="${escapeHtml(academy.name)} 로고"></span>`;
+      // 이미지 로드 실패 시 깨진 아이콘 대신 학원명 이니셜로 폴백
+      const fallback = `<span class="eh-logo-symbol-inner" style="display:none;"><span class="eh-book"><span class="eh-letters">${escapeHtml(initials(academy.name))}</span></span></span>`;
+      return `<span class="eh-logo-symbol"><img src="${escapeHtml(academy.logoUrl)}" alt="${escapeHtml(academy.name)} 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='';">${fallback}</span>`;
     }
     return `<span class="eh-logo-symbol"><span class="eh-logo-symbol-inner"><span class="eh-book"><span class="eh-letters">${escapeHtml(initials(academy.name))}</span></span></span></span>`;
   }
