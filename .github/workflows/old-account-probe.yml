@@ -13,9 +13,9 @@ jobs:
       matrix:
         include:
           - account: '067573916809'
-            role: arn:aws:iam::067573916809:role/f2r-migration-admin-temp
+            role: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
           - account: '425805163960'
-            role: arn:aws:iam::425805163960:role/f2r-infra-builder
+            role: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
