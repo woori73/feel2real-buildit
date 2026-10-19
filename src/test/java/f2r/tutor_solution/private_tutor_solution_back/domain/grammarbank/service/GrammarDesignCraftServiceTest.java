@@ -47,7 +47,10 @@ class GrammarDesignCraftServiceTest {
     GrammarCollectionItem item2 = GrammarCollectionItem.builder().collection(collection)
         .question(q2).orderNum(2).build();
     when(bankService.requireProfile(anyLong())).thenReturn(
-        GrammarQuestionProfile.builder().schoolLevel(SchoolLevel.M2).build());
+        GrammarQuestionProfile.builder().schoolLevel(SchoolLevel.M2)
+            .difficulty(GrammarQuestionProfile.GrammarDifficulty.HARD)
+            .autoClassification(GrammarReviewMetadata.imported(null,
+                java.util.Map.of("external_id", "WG-0459", "recommended_grade", "고1", "grade", "중2"), "WG-0459")).build());
     when(questionTagRepository.findByQuestion_QuestionId(101L)).thenReturn(
         List.of(QuestionGrammarTag.builder().question(q1).tag(tag).build()));
     when(questionTagRepository.findByQuestion_QuestionId(102L)).thenReturn(List.of());
@@ -56,9 +59,31 @@ class GrammarDesignCraftServiceTest {
     String md = service.buildManuscript(collection, List.of(item1, item2), "ko-textbook-a4", true);
 
     assertThat(md).contains("박정민 문법 문제집 1장").contains("규격: A4").contains("문항 수: 2");
-    assertThat(md).contains("## 1. 중2").contains("## 2. 중2");
+    assertThat(md).contains("## 1. 권장 고1 · 심화 (기존 중2)").contains("## 2. 권장 고1 · 심화 (기존 중2)");
     assertThat(md).contains("(1) a").contains("(2) b");
-    assertThat(md).contains("## 목차").contains("- 1. 중2 수동태");
+    assertThat(md).contains("## 목차").contains("- 1. 권장 고1 · 심화 (기존 중2) 수동태");
     assertThat(md).contains("# 정답 및 해설").contains("정답: It was done.");
+  }
+  @Test
+  void jsonExportKeepsRecommendedAndOriginalClassificationsAndCompleteSnapshot() throws Exception {
+    var principal = new f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal(42L, "modu", "STUDENT");
+    var collection = GrammarCollection.builder().ownerUserId(42L).kind(GrammarCollection.CollectionKind.BOOK).title("고1 분사").build();
+    var q = Question.builder().questionType(QuestionType.MULTIPLE_CHOICE).questionText("Test.").correctAnswer("1").build();
+    ReflectionTestUtils.setField(q, "questionId", 459L);
+    var item = GrammarCollectionItem.builder().collection(collection).question(q).orderNum(1).build();
+    var snapshot = java.util.Map.<String, Object>of("external_id", "WG-0459", "grade", "중3", "recommended_grade", "고1", "original_ids", List.of("source-459"));
+    var profile = GrammarQuestionProfile.builder().question(q).schoolLevel(SchoolLevel.M3)
+        .difficulty(GrammarQuestionProfile.GrammarDifficulty.HARD).externalRef("WG-0459")
+        .autoClassification(GrammarReviewMetadata.imported(null, snapshot, "WG-0459")).build();
+    when(collectionService.loadOwned(principal, 1L)).thenReturn(collection);
+    when(itemRepository.findByCollection_CollectionIdOrderByOrderNumAsc(1L)).thenReturn(List.of(item));
+    when(bankService.requireProfile(459L)).thenReturn(profile);
+    var exported = service.exportJson(principal, 1L);
+    var row = new com.fasterxml.jackson.databind.ObjectMapper().readTree(exported.content()).get("questions").get(0);
+    assertThat(row.get("schoolLevel").asText()).isEqualTo("M3");
+    assertThat(row.get("recommendedGrade").asText()).isEqualTo("H1");
+    assertThat(row.get("difficulty").asText()).isEqualTo("HARD");
+    assertThat(row.get("reviewMetadata").get("original_ids").get(0).asText()).isEqualTo("source-459");
+    assertThat(row.get("reviewMetadata").get("grade").asText()).isEqualTo("중3");
   }
 }

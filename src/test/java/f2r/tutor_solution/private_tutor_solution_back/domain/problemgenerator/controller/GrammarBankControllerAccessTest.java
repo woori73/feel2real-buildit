@@ -58,7 +58,7 @@ class GrammarBankControllerAccessTest {
   @Test
   @DisplayName("비로그인 검색·AI·tags·stats 요청은 401이고 서비스 계층까지 가지 않는다")
   void anonymousBlocked() {
-    assertThatThrownBy(() -> controller.search(null, null, null, null, null, null, null, null, null, null, null))
+    assertThatThrownBy(() -> controller.search(null, null, null, null, null, null, null, null, null, null, null, null))
         .isInstanceOfSatisfying(ResponseStatusException.class, e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
     assertThatThrownBy(() -> controller.stats(null))
         .isInstanceOfSatisfying(ResponseStatusException.class, e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
@@ -71,7 +71,7 @@ class GrammarBankControllerAccessTest {
   @DisplayName("TUTOR·STUDENT는 403 차단되고 데이터 조회가 일어나지 않는다")
   void nonAdminForbidden() {
     when(userRepository.findByLoginId("modu")).thenReturn(Optional.empty());
-    assertThatThrownBy(() -> controller.search(tutor(), null, null, null, null, null, null, null, null, null, null))
+    assertThatThrownBy(() -> controller.search(tutor(), null, null, null, null, null, null, null, null, null, null, null))
         .isInstanceOfSatisfying(ResponseStatusException.class, e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
     verify(bankService, never()).search(any(), any());
   }

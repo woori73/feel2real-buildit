@@ -113,6 +113,10 @@ public class GrammarQuestionProfile extends BaseEntity {
     }
   }
 
+  public void updateContentHash(String hash) { this.contentHash = hash; }
+
+  public void updateReviewMetadata(String json) { this.autoClassification = json; }
+
   public void updateReviewStatus(GrammarReviewStatus reviewStatus) {
     this.reviewStatus = reviewStatus;
   }

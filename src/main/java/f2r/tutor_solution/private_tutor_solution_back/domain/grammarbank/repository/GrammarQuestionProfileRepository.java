@@ -20,6 +20,10 @@ public interface GrammarQuestionProfileRepository
 
   Optional<GrammarQuestionProfile> findByMaterial_MaterialIdAndSourcePosition(Long materialId, String sourcePosition);
 
+  // A current read also sees commits made while the subject lock was awaited under MySQL RR.
+  @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+  Optional<GrammarQuestionProfile> findFirstByExternalRef(String externalRef);
+
   long countByReviewStatus(f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.entity.GrammarReviewStatus reviewStatus);
 
   long countByMaterial_MaterialId(Long materialId);

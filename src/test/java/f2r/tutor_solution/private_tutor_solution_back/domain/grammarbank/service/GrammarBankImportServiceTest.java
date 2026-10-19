@@ -42,6 +42,8 @@ class GrammarBankImportServiceTest {
   @Mock SubjectRepository subjectRepository;
   @Mock QuestionCategoryRepository categoryRepository;
   @Mock ProblemGeneratorMaterialRepository materialRepository;
+  @Mock GrammarBankAccessGuard accessGuard;
+  @Mock jakarta.persistence.EntityManager entityManager;
 
   @InjectMocks GrammarBankImportService service;
 
@@ -155,5 +157,50 @@ class GrammarBankImportServiceTest {
     assertThat(c.matchedNames()).containsExactly("관계대명사");
     assertThat(c.confidence()).isBetween(new BigDecimal("0.40"), new BigDecimal("0.90"));
     assertThat(c.raw()).containsEntry("method", "term-appearance");
+  }
+  @Test
+  void reviewedIdReplayIsSkippedButChangedSnapshotIsHeldWithoutOverwrite() {
+    when(subjectRepository.findById(1)).thenReturn(Optional.of(english()));
+    when(tagRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of());
+    Map<String, Object> snapshot = Map.of("external_id", "WG-0459", "grade", "중3", "recommended_grade", "고1");
+    var stored = GrammarQuestionProfile.builder().externalRef("WG-0459")
+        .autoClassification(GrammarReviewMetadata.imported(null, snapshot, "WG-0459")).build();
+    when(profileRepository.findFirstByExternalRef("WG-0459")).thenReturn(Optional.of(stored));
+    var replay = Map.<String, Object>of("external_ref", "WG-0459", "stem", "Test stem.", "review_metadata", snapshot);
+    var changed = new java.util.HashMap<String, Object>(snapshot);
+    changed.put("recommended_grade", "고2");
+    var conflict = Map.<String, Object>of("external_ref", "WG-0459", "stem", "Changed stem.", "review_metadata", changed);
+    var modu = new AuthenticatedPrincipal(42L, "modu", Role.STUDENT.name());
+    var result = service.importJson(modu, new GrammarImportRequest(null, null, List.of(replay, conflict)));
+    org.mockito.Mockito.verify(accessGuard).require(modu);
+    assertThat(result.duplicatesSkipped()).isEqualTo(1);
+    assertThat(result.failed()).isEqualTo(1);
+    assertThat(result.created()).isZero();
+    assertThat(result.errors().getFirst()).contains("덮어쓰기 없이");
+    org.mockito.Mockito.verifyNoInteractions(questionRepository);
+    org.mockito.Mockito.verify(entityManager).lock(any(Subject.class), org.mockito.ArgumentMatchers.eq(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE));
+  }
+  @Test
+  void reviewedImportPreservesCompleteSnapshotAndRejectsBodyMismatch() {
+    when(subjectRepository.findById(1)).thenReturn(Optional.of(english()));
+    when(tagRepository.findAllByOrderBySortOrderAsc()).thenReturn(List.of());
+    when(questionRepository.save(any(Question.class))).thenAnswer(inv -> inv.getArgument(0));
+    var options = List.of("being", "is", "was", "be", "been");
+    var snapshot = Map.<String, Object>of("external_id", "WG-0459", "grade", "중3",
+        "recommended_grade", "고1", "new_question", "The weather ___ fine, we went out.",
+        "answer", "1", "choices", options.stream().map(v -> Map.of("text", v)).toList(),
+        "original_ids", List.of("source-459"), "concept_code", "absolute");
+    var record = Map.<String, Object>of("external_ref", "WG-0459", "stem", snapshot.get("new_question"),
+        "choices", options, "answer", "1", "school_level", "M3", "review_metadata", snapshot);
+    var mismatch = new java.util.HashMap<String, Object>(record);
+    mismatch.put("stem", "Mismatched question.");
+    var result = service.importJson(tutor(), new GrammarImportRequest(null, null, List.of(record, mismatch)));
+    assertThat(result.created()).isEqualTo(1);
+    assertThat(result.failed()).isEqualTo(1);
+    var captured = org.mockito.ArgumentCaptor.forClass(GrammarQuestionProfile.class);
+    org.mockito.Mockito.verify(profileRepository).save(captured.capture());
+    assertThat(captured.getValue().getSchoolLevel()).isEqualTo(SchoolLevel.M3);
+    assertThat(GrammarReviewMetadata.recommendedGrade(captured.getValue().getAutoClassification())).isEqualTo(SchoolLevel.H1);
+    assertThat(GrammarReviewMetadata.snapshot(captured.getValue().getAutoClassification())).isEqualTo(snapshot);
   }
 }
