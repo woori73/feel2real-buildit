@@ -164,3 +164,97 @@ a { color:inherit; text-decoration:none; }
 .en-hit-box em { font-size:1.6em; }
 .en-offer-proof { display:inline-block; margin-top:12px; padding:9px 14px; border-radius:10px; background:#fff; border:1px solid var(--en-blue); color:var(--en-blue); font-size:14px; font-weight:800; text-align:center; }
 .en-offer-proof:hover { background:var(--en-blue); color:#fff; }
+
+/* ===== 화보 테마(2026-10-20): AI AGENT 배너(어두운 SF 도시·푸른 빛)와 어울리게 문구색·배경을 어둡게 통일 =====
+   색: 배경 #060b1a 계열, 패널 #0c1630, 글자 #eaf1ff, 보조 #a9b9d9, 포인트 푸른 빛 #4da3ff. 글자 대비는 모두 4.5:1 이상. */
+:root { --pz-bg:#060b1a; --pz-panel:#0c1630; --pz-panel2:#101d40; --pz-line:rgba(120,165,255,.24); --pz-text:#eaf1ff; --pz-sub:#a9b9d9; --pz-accent:#4da3ff; --pz-accent-d:#2b7bff; --pz-glow:rgba(77,163,255,.35); }
+body { background:radial-gradient(1200px 520px at 50% -120px, rgba(43,123,255,.22), transparent 70%), var(--pz-bg); background-attachment:scroll; color:var(--pz-text); }
+.en-page { background:transparent; }
+
+/* NAV */
+.en-nav { background:rgba(6,11,26,.92); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid var(--pz-line); }
+.en-logo-main { color:#fff; }
+.en-logo-sep { background:rgba(160,190,255,.4); }
+.en-logo-sub { color:var(--pz-accent); }
+.en-menu { color:var(--pz-text); }
+.en-menu a:hover { color:var(--pz-accent); border-bottom-color:var(--pz-accent); }
+.en-burger span { background:#fff; }
+.en-drawer { background:var(--pz-panel); border-bottom:1px solid var(--pz-line); box-shadow:0 14px 30px rgba(0,0,0,.5); }
+.en-drawer a { color:var(--pz-text); border-top:1px solid var(--pz-line); }
+.en-nav .btn-login, .en-nav [data-auth-login] { background:transparent; color:var(--pz-text); border-color:rgba(160,190,255,.5); }
+.en-nav .btn-login:hover, .en-nav [data-auth-login]:hover { background:rgba(77,163,255,.16); }
+.en-nav .btn-signup, .en-nav [data-auth-signup] { background:var(--pz-accent-d); color:#fff; }
+.en-mobile-services { background:var(--pz-bg); border-bottom:1px solid var(--pz-line); }
+.en-mobile-services a { background:var(--pz-panel); color:var(--pz-accent); border-color:var(--pz-line); }
+
+/* HERO */
+.en-hero { background:#050a18; }
+.en-offer { background:linear-gradient(180deg,#0c1632 0%,#09112a 100%); border-left:1px solid var(--pz-line); }
+.en-offer-eyebrow { color:var(--pz-accent); }
+.en-offer-title { color:#fff; }
+.en-offer-price strong { color:#fff; text-shadow:0 0 24px var(--pz-glow); }
+.en-offer-price span { color:var(--pz-accent); }
+.en-offer-points li { color:var(--pz-text); }
+.en-offer-points li::before { background:var(--pz-accent); box-shadow:0 0 10px var(--pz-glow), inset 0 0 0 4px #0c1632; }
+.en-offer-note { color:var(--pz-sub); }
+.en-mail-addr { color:#fff; }
+.en-btn-primary { background:linear-gradient(135deg,#2b7bff,#4da3ff); color:#fff; box-shadow:0 8px 24px rgba(43,123,255,.35); }
+.en-btn-primary:hover { background:linear-gradient(135deg,#1f66e0,#3b92f0); }
+.en-btn-outline { background:transparent; border-color:var(--pz-accent); color:#cfe3ff; }
+.en-btn-outline:hover { background:var(--pz-accent-d); color:#fff; border-color:var(--pz-accent-d); }
+.en-offer-proof { background:rgba(77,163,255,.1); border:1px solid var(--pz-accent); color:#cfe3ff; }
+.en-offer-proof:hover { background:var(--pz-accent-d); color:#fff; }
+.en-mail-toast { background:rgba(77,163,255,.14); color:var(--pz-text); border:1px solid var(--pz-line); }
+
+/* NOTICE */
+.en-notice { background:var(--pz-panel); border-color:var(--pz-line); }
+.en-notice:hover { border-color:var(--pz-accent); box-shadow:0 0 0 1px var(--pz-accent), 0 8px 24px rgba(43,123,255,.2); }
+.en-notice-tag { background:var(--pz-accent-d); }
+.en-notice-text { color:var(--pz-text); }
+
+/* HIT */
+.en-hit { background:linear-gradient(180deg,var(--pz-panel2),var(--pz-panel)); border:1px solid var(--pz-accent); box-shadow:0 0 0 1px rgba(77,163,255,.25), 0 14px 40px rgba(43,123,255,.18); }
+.en-hit-badge { background:var(--pz-accent-d); }
+.en-hit-title span { color:#fff; }
+.en-hit-title b { color:var(--pz-accent); text-shadow:0 0 22px var(--pz-glow); }
+.en-hit-lead { color:var(--pz-sub); }
+.en-hit-box { background:linear-gradient(160deg,#07122e,#0e2a68); border:1px solid var(--pz-line); }
+.en-hit-box em { color:#8cc2ff; }
+.en-hit-quote { color:var(--pz-text); border-left-color:var(--pz-accent); }
+
+/* INTRO / SERVICES */
+.en-eyebrow { color:var(--pz-accent); }
+.en-intro h2 { color:#fff; }
+.en-intro p { color:var(--pz-sub); }
+.en-section-title { color:#fff; border-left-color:var(--pz-accent); }
+.en-card { background:linear-gradient(180deg,var(--pz-panel2),var(--pz-panel)); border-color:var(--pz-line); box-shadow:0 10px 30px rgba(0,0,0,.35); }
+.en-card-no { color:var(--pz-sub); }
+.en-card h3 { color:#fff; }
+.en-card p { color:var(--pz-sub); }
+.en-card-price { color:var(--pz-text) !important; }
+.en-card-price strong { color:var(--pz-accent); }
+.en-card-links a { color:var(--pz-accent); }
+.en-card-dark { background:linear-gradient(160deg,#07122e,#102a66); border-color:var(--pz-accent); box-shadow:0 0 0 1px rgba(77,163,255,.3), 0 14px 40px rgba(43,123,255,.2); }
+.en-card-status { color:#8cc2ff !important; }
+.en-coming-soon { border-color:rgba(160,190,255,.55); color:#dbe9ff; }
+
+/* CHART */
+.en-chart { background:linear-gradient(180deg,#07102a,#050a18); border-top:1px solid var(--pz-line); }
+.en-chart .bb-title { color:#fff; }
+.en-chart .bb-sub { color:var(--pz-sub); }
+.en-chart .bb-week { background:var(--pz-panel); border-color:var(--pz-line); color:#cfe3ff; }
+.en-chart .bb-region select { background:var(--pz-panel); color:var(--pz-text); border-color:var(--pz-line); }
+.en-chart .bb-region select:disabled { color:#6f82a8; }
+.en-chart .bb-region button { background:linear-gradient(135deg,#2b7bff,#4da3ff); }
+.en-chart .bb-row { background:var(--pz-panel); border-color:var(--pz-line); color:var(--pz-text); }
+.en-chart .bb-row:hover { box-shadow:0 10px 28px rgba(43,123,255,.25); border-color:var(--pz-accent); }
+.en-chart .bb-rank { color:#fff; }
+.en-chart .bb-first .bb-rank { background:var(--pz-accent-d); }
+.en-chart .bb-trend { color:#8ea3cc; }
+.en-chart .bb-main strong { color:#fff; }
+.en-chart .bb-main span { color:var(--pz-sub); }
+.en-chart .bb-academy { color:var(--pz-text); }
+.en-chart .bb-empty { background:var(--pz-panel); border-color:var(--pz-line); color:var(--pz-sub); }
+.en-chart .chart-criteria-link { color:var(--pz-accent); }
+.en-chart .chart-cta { background:var(--pz-accent-d); color:#fff; }
+.en-chart .bb-note { color:#8ea3cc; }
