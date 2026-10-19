@@ -3753,19 +3753,19 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 - `GET /tags` — 문법 유형 사전(시드 14종).
 - `GET /stats` — 대시보드: 전체/검수 필요/승인/반려, 학년별·유형별 집계.
-- `GET /questions` — 검색. Query: `schoolLevel(M1..H3|COMMON|UNKNOWN)`, `tagIds(반복, OR)`, `questionFormat`, `difficulty`, `reviewStatus`, `rightsStatus`, `minConfidence`, `maxConfidence`, `search`(발문·키워드 LIKE), page/size. REJECTED는 기본 제외.
-- `GET /questions/{questionId}` — 상세: 발문·선택지·정답·해설·지문·원본 파일(material)·위치·자동 분류 근거·변형본 이력.
-- `PATCH /questions/{questionId}` — 본문/정답/해설/배점 수정(ADMIN·TUTOR·등록자).
-- `PATCH /questions/{questionId}/profile` — 학년/형식/난이도/키워드/권한/태그 수정. tagIds 전달 시 수동 태그 교체→APPROVED.
-- `POST /questions/{questionId}/review` — 검수 판정 `{status: APPROVED|REJECTED, tagIds?, primaryTagId?}` (TUTOR/ADMIN).
+- `GET /questions` — 검색. Query: `recommendedGrade(M1..H3|UNKNOWN)`(권장 학습 학년), `schoolLevel(M1..H3|COMMON|UNKNOWN)`(기존 학년), `tagIds(반복, OR)`, `questionFormat`, `difficulty`, `reviewStatus`, `rightsStatus`, `minConfidence`, `maxConfidence`, `search`(발문·키워드 LIKE), page/size. REJECTED는 기본 제외.
+- `GET /questions/{questionId}` — 목록·상세는 `recommendedGrade`를 기존 `schoolLevel`과 별도로 반환하고 상세는 `reviewMetadata`(수입본 전체 스냅샷)를 추가한다. 상세: 발문·선택지·정답·해설·지문·원본 파일(material)·위치·자동 분류 근거·변형본 이력.
+- `PATCH /questions/{questionId}` — 본문/정답/해설/배점 수정(ADMIN·modu), 수정 시 NEEDS_REVIEW.
+- `PATCH /questions/{questionId}/profile` — 기존 학년/형식/난이도/키워드/권한/태그 수정. `recommendedGrade`(M1..H3, UNKNOWN=분류 해제)를 별도 수정할 수 있다. 권장 학년·태그 수정은 NEEDS_REVIEW로 전환한다. 권장 학년 변경 이력(이전/이후/사용자/시각)은 JSON에 추가되며 수입 스냅샷과 기존 학년은 유지한다.
+- `POST /questions/{questionId}/review` — 검수 판정 `{status: APPROVED|REJECTED, tagIds?, primaryTagId?}` (ADMIN·modu).
 - `POST /questions/{questionId}/variants` — AI 수정본을 원본과 별도 GENERATED 문항으로 등록(변경 이력·PENDING).
 - `POST /variants/{variantId}/review` — 변형본 승인/반려 `{status, reviewNote}`.
-- `POST /import` — JSON 문항 대량 수입 `{materialId?, defaultRightsStatus?, records:[{stem,choices,answer,explanation,grammar_tags,school_level,format,difficulty,confidence,external_ref,page,question_number,passage}]}`. 본문 해시·(material,external_ref)·(material,source_position) 중복 건너뜀, 저신뢰/용어 무매칭은 NEEDS_REVIEW 보류. TUTOR/ADMIN 전용.
+- `POST /import` — JSON 문항 대량 수입 `{materialId?, defaultRightsStatus?, records:[{stem,choices,answer,explanation,grammar_tags,school_level,format,difficulty,confidence,external_ref,page,question_number,passage}]}`. 선택 필드 `review_metadata`로 검토본 전체를 보존하고 외부 ID 일치를 검증한다. 검토본 수입은 영어 subject 행 잠금 후 전체 자료에서 external_ref를 대조한다. 동일 스냅샷 재수입은 skip, 같은 ID의 다른 스냅샷 또는 같은 본문의 다른 ID는 실패로 보고하며 덮어쓰지 않는다. 기존 JSON/CSV는 본문 해시·(material,external_ref)·(material,source_position) 중복 건너뜀을 유지한다. 저신뢰/용어 무매칭은 NEEDS_REVIEW 보류. ADMIN·modu 전용.
 - `POST /import/csv` — CSV 파일(multipart `file`) 또는 `text/plain` 본문 동일 파이프라인.
 - `POST /ai/find` — `{request:"중2 수동태 객관식 문제 30개 찾아줘"}` → 필터(AI 또는 키워드 매핑)로 **실제 DB 검색 결과만** 반환 `{usedAi, extractedFilters, totalFound, questions[], answer}`.
 - 선택함/문제집: `GET|POST /collections`, `GET|PATCH|DELETE /collections/{id}`, `POST /collections/{id}/items`, `DELETE /collections/{id}/items`, `POST /collections/{id}/reorder`, `POST /collections/{id}/book`(BASKET→BOOK 복제). 소유자 격리.
 - `POST /collections/{id}/designcraft` — (코드 보존) 선택 문항을 조판한 markdown 원고를 기존 `POST /api/publishing/jobs` 파이프라인에 반입. DesignCraft는 당분간 로컬 PC에서 쓰므로 운영에서는 실행되지 않고, 화면에서 이 웹 전달 버튼은 노출하지 않는다.
-- 원고 다운로드(로컬 DesignCraft 입력용, 웹 편집기 실행 없음): `GET /collections/{id}/manuscript.md`(text/markdown), `GET /collections/{id}/manuscript.html`(text/html), `GET /collections/{id}/manuscript.json`(application/json, `{title,kind,questionCount,questions:[{number,questionId,schoolLevel,grammarTags,passage,questionText,choices,correctAnswer,explanation}]}`). `Content-Disposition: attachment`. 같은 `buildManuscript` 로직을 재사용하며 ADMIN·modu 가드를 적용한다.
+- 원고 다운로드(로컬 DesignCraft 입력용, 웹 편집기 실행 없음): `GET /collections/{id}/manuscript.md`(text/markdown), `GET /collections/{id}/manuscript.html`(text/html), `GET /collections/{id}/manuscript.json`(application/json, `{title,kind,questionCount,questions:[{number,questionId,schoolLevel,recommendedGrade,difficulty,externalRef,reviewMetadata,grammarTags,passage,questionText,choices,correctAnswer,explanation}]}`). `Content-Disposition: attachment`. 같은 `buildManuscript` 로직을 재사용하며 ADMIN·modu 가드를 적용한다.
 
 ### ✅ POST /api/problem-generator/gemini/chat
 

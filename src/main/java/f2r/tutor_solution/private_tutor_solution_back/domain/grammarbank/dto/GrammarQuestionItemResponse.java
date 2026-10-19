@@ -22,6 +22,7 @@ public record GrammarQuestionItemResponse(
     String correctAnswer,
     Long materialId,
     String sourcePosition,
-    String externalRef
+    String externalRef,
+    SchoolLevel recommendedGrade
 ) {
 }

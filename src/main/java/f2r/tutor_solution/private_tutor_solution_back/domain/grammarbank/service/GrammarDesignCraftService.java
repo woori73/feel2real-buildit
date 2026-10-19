@@ -85,6 +85,10 @@ public class GrammarDesignCraftService {
       row.put("questionId", q.getQuestionId());
       row.put("schoolLevel", profile.getSchoolLevel().name());
       row.put("schoolLevelLabelKo", profile.getSchoolLevel().labelKo());
+      row.put("recommendedGrade", GrammarReviewMetadata.recommendedGrade(profile.getAutoClassification()));
+      row.put("difficulty", profile.getDifficulty());
+      row.put("externalRef", profile.getExternalRef());
+      row.put("reviewMetadata", GrammarReviewMetadata.snapshot(profile.getAutoClassification()));
       row.put("grammarTags", tags);
       row.put("passage", q.getPassage() != null ? q.getPassage().getContent() : null);
       row.put("questionText", q.getQuestionText());
@@ -215,7 +219,7 @@ public class GrammarDesignCraftService {
       Question q = item.getQuestion();
       GrammarQuestionProfile profile = bankService.requireProfile(q.getQuestionId());
       md.append("## ").append(number++).append(". ")
-          .append(profile.getSchoolLevel().labelKo()).append(" · ")
+          .append(classificationLabel(profile)).append(" · ")
           .append(String.join(", ", tagNamesByQuestion.get(q.getQuestionId()))).append("\n\n");
       if (q.getPassage() != null && q.getPassage().getContent() != null) {
         md.append(q.getPassage().getContent().strip()).append("\n\n");
@@ -236,7 +240,7 @@ public class GrammarDesignCraftService {
     int tocNumber = 1;
     for (GrammarCollectionItem item : items) {
       GrammarQuestionProfile profile = bankService.requireProfile(item.getQuestion().getQuestionId());
-      md.append("- ").append(tocNumber++).append(". ").append(profile.getSchoolLevel().labelKo())
+      md.append("- ").append(tocNumber++).append(". ").append(classificationLabel(profile))
           .append(" ").append(String.join(", ", tagNamesByQuestion.get(item.getQuestion().getQuestionId())))
           .append("\n");
     }
@@ -255,6 +259,17 @@ public class GrammarDesignCraftService {
       }
     }
     return md.toString();
+  }
+
+  static String classificationLabel(GrammarQuestionProfile profile) {
+    var grade = GrammarReviewMetadata.recommendedGrade(profile.getAutoClassification());
+    String difficulty = profile.getDifficulty() == null ? "미분류" : switch (profile.getDifficulty()) {
+      case EASY -> "기본";
+      case MEDIUM -> "응용";
+      case HARD -> "심화";
+    };
+    return "권장 " + (grade == null ? "미분류" : grade.labelKo()) + " · " + difficulty
+        + " (기존 " + profile.getSchoolLevel().labelKo() + ")";
   }
 
   /** 메모리 원고를 PublishingJobService의 multipart 계약에 맞추는 어댑터. */
