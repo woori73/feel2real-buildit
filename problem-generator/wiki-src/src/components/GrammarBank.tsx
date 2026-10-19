@@ -31,6 +31,7 @@ type ImportResult = { total: number; created: number; duplicatesSkipped: number;
 
 const LEVELS = ['', 'M1', 'M2', 'M3', 'H1', 'H2', 'H3', 'COMMON', 'UNKNOWN']
 const LEVEL_LABELS: Record<string, string> = { '': '학년 전체', M1: '중1', M2: '중2', M3: '중3', H1: '고1', H2: '고2', H3: '고3', COMMON: '공통', UNKNOWN: '미확정' }
+const DIFFICULTY_LABELS: Record<string, string> = { '': '난이도 전체', EASY: '기본', MEDIUM: '응용', HARD: '심화' }
 const FORMATS = ['', 'MULTIPLE_CHOICE', 'CORRECT_SENTENCE', 'INCORRECT_SENTENCE', 'UNDERLINE', 'BLANK_FILL', 'SENTENCE_ORDER', 'WRITING', 'SENTENCE_TRANSFORM', 'ERROR_CORRECTION']
 const FORMAT_LABELS: Record<string, string> = { '': '형식 전체', MULTIPLE_CHOICE: '객관식', CORRECT_SENTENCE: '어법상 옳은', INCORRECT_SENTENCE: '어법상 틀린', UNDERLINE: '밑줄 어법', BLANK_FILL: '빈칸 완성', SENTENCE_ORDER: '문장 배열', WRITING: '영작·서술형', SENTENCE_TRANSFORM: '문장 전환', ERROR_CORRECTION: '오류 수정' }
 const REVIEW_LABELS: Record<string, string> = { AUTO: '자동 분류', NEEDS_REVIEW: '검수 필요', APPROVED: '승인됨', REJECTED: '반려' }
@@ -55,6 +56,7 @@ export default function GrammarBank() {
 
   const [level, setLevel] = useState('')
   const [tagId, setTagId] = useState('')
+  const [difficulty, setDifficulty] = useState('')
   const [format, setFormat] = useState('')
   const [keyword, setKeyword] = useState('')
   const [onlyReview, setOnlyReview] = useState(false)
@@ -80,13 +82,14 @@ export default function GrammarBank() {
     const params = new URLSearchParams()
     if (level) params.set('schoolLevel', level)
     if (tagId) params.set('tagIds', tagId)
+    if (difficulty) params.set('difficulty', difficulty)
     if (format) params.set('questionFormat', format)
     if (keyword) params.set('search', keyword)
     if (onlyReview) params.set('reviewStatus', 'NEEDS_REVIEW')
     params.set('size', '50')
     const page = await req<{ content: Item[]; totalElements: number }>(`/questions?${params}`)
     setResults(page.content); setTotal(page.totalElements)
-  }, [level, tagId, format, keyword, onlyReview])
+  }, [level, tagId, difficulty, format, keyword, onlyReview])
 
   useEffect(() => {
     req<Tag[]>('/tags').then(setTags).catch(fail)
@@ -187,6 +190,7 @@ export default function GrammarBank() {
       <div className="exam-settings" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <label>학년<select value={level} onChange={e => setLevel(e.target.value)}>{LEVELS.map(v => <option key={v} value={v}>{LEVEL_LABELS[v]}</option>)}</select></label>
         <label>문법 유형<select value={tagId} onChange={e => setTagId(e.target.value)}><option value="">유형 전체</option>{tags.map(t => <option key={t.tagId} value={t.tagId}>{t.nameKo}</option>)}</select></label>
+        <label>난이도<select value={difficulty} onChange={e => setDifficulty(e.target.value)}>{Object.entries(DIFFICULTY_LABELS).map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select></label>
         <label>형식<select value={format} onChange={e => setFormat(e.target.value)}>{FORMATS.map(v => <option key={v} value={v}>{FORMAT_LABELS[v]}</option>)}</select></label>
         <label>키워드<input value={keyword} onChange={e => setKeyword(e.target.value)} placeholder="발문·키워드" /></label>
         {tab === 'search' && <label className="checkbox"><input type="checkbox" checked={onlyReview} onChange={e => setOnlyReview(e.target.checked)} />검수 필요만</label>}
@@ -195,7 +199,7 @@ export default function GrammarBank() {
       <p>검색 결과 {total}건 · 선택 {selected.length}개</p>
       <div className="db-list">{results.map(item => <article key={item.questionId} style={{ flexWrap: 'wrap' }}>
         <input type="checkbox" aria-label={`${item.questionId} 선택`} checked={selected.includes(item.questionId)} onChange={() => toggleSelected(item.questionId)} />
-        <div><b>{LEVEL_LABELS[item.schoolLevel] || item.schoolLevel} · {item.tags.map(t => t.nameKo).join(', ')} · {FORMAT_LABELS[item.questionFormat || ''] || item.questionFormat || '형식 미분류'}</b>
+        <div><b>{LEVEL_LABELS[item.schoolLevel] || item.schoolLevel} · {DIFFICULTY_LABELS[item.difficulty || ''] || '난이도 미분류'} · {item.tags.map(t => t.nameKo).join(', ')} · {FORMAT_LABELS[item.questionFormat || ''] || item.questionFormat || '형식 미분류'}</b>
           <p>{REVIEW_LABELS[item.reviewStatus]} · 신뢰도 {item.classificationConfidence ?? '-'} · 원본 {item.materialId ? `파일 #${item.materialId}${item.sourcePosition ? ` (${item.sourcePosition})` : ''}` : '직접 등록'}</p>
           <small>{item.stemExcerpt}</small></div>
         <button onClick={() => void openDetail(item.questionId).catch(fail)}>상세·원본</button>
@@ -205,6 +209,7 @@ export default function GrammarBank() {
       {selected.length > 0 && <button className="primary-action" onClick={() => void createBasket().catch(fail)}>선택함으로 보내기 ({selected.length})</button>}
 
       {detail && <div className="work-panel" style={{ border: '1px solid #dfe9f7', borderRadius: 14, padding: 12 }}>
+        <p>난이도: {DIFFICULTY_LABELS[detail.difficulty || ''] || '미분류'} · 학년: {LEVEL_LABELS[detail.schoolLevel] || detail.schoolLevel}</p>
         <h3>QID {detail.questionId} · {REVIEW_LABELS[detail.reviewStatus]} {detail.rightsStatus && `· 권한 ${detail.rightsStatus}`}</h3>
         {detail.passageContent && <p><b>지문{detail.passageTitle ? ` · ${detail.passageTitle}` : ''}:</b> {detail.passageContent.slice(0, 400)}{detail.passageContent.length > 400 ? '…' : ''}</p>}
         {detail.materialFileName && <p>원본 파일: {detail.materialFileName} {detail.sourcePosition ? `· 위치 ${detail.sourcePosition}` : ''}</p>}
@@ -274,3 +279,4 @@ export default function GrammarBank() {
     </div>}
   </section>
 }
+
