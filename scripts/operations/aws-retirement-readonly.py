@@ -13,8 +13,9 @@ caller=aws('sts','get-caller-identity')
 if caller.get('Account')!=EXPECTED:raise SystemExit('WRONG ACCOUNT; NO FURTHER ACTION')
 emit('caller',{'account':caller['Account'],'role':caller['Arn'].split('assumed-role/')[-1].split('/')[0]})
 regions=aws('ec2','describe-regions')
-if 'Regions' not in regions: emit('regions',regions);raise SystemExit(1)
-regions=[r['RegionName'] for r in regions['Regions']]
+if 'Regions' not in regions:
+    emit('regions',regions); regions=['ap-northeast-2']; emit('regionCoverage','LIMITED: Seoul only; all-region inventory unavailable')
+else: regions=[r['RegionName'] for r in regions['Regions']]
 # Identifiers/capacities only; no credentials, object keys, user records, tags or actual billing are emitted.
 ops=[
 ('ec2','ec2','describe-instances',['--query','Reservations[].Instances[].{id:InstanceId,type:InstanceType,state:State.Name,volumes:BlockDeviceMappings[].Ebs.VolumeId,publicIp:PublicIpAddress,vpc:VpcId}']),
@@ -30,6 +31,7 @@ ops=[
 ('rdsSnapshots','rds','describe-db-snapshots',['--query','DBSnapshots[].{id:DBSnapshotIdentifier,arn:DBSnapshotArn,source:DBInstanceIdentifier,state:Status,type:SnapshotType,time:SnapshotCreateTime,sizeGiB:AllocatedStorage,encrypted:Encrypted,key:KmsKeyId}']),
 ('efs','efs','describe-file-systems',['--query','FileSystems[].{id:FileSystemId,state:LifeCycleState,size:SizeInBytes.Value}']),
 ('elasticache','elasticache','describe-cache-clusters',['--query','CacheClusters[].{id:CacheClusterId,type:CacheNodeType,state:CacheClusterStatus,nodes:NumCacheNodes}']),
+('logStorage','logs','describe-log-groups',['--query','logGroups[].{name:logGroupName,storedBytes:storedBytes,retentionDays:retentionInDays}']),
 ('vpcEndpoints','ec2','describe-vpc-endpoints',['--query','VpcEndpoints[].{id:VpcEndpointId,type:VpcEndpointType,service:ServiceName,state:State}'])]
 def inspect(region):
     out={}
@@ -51,6 +53,7 @@ if isinstance(zones,list):
         if zone['name']=='feel2real.co.kr.':
             records=aws('route53','list-resource-record-sets',args=['--hosted-zone-id',zone['id'],'--query',"ResourceRecordSets[?Type=='A' || Type=='AAAA' || Type=='CNAME' || Type=='NS'].{name:Name,type:Type,alias:AliasTarget.DNSName,values:ResourceRecords[].Value}"])
             emit('feel2realDNS',records)
+emit('registeredDomains',aws('route53domains','list-domains','us-east-1',args=['--query','Domains[].{name:DomainName,autoRenew:AutoRenew,expiry:Expiry}']))
 emit('cloudfront',aws('cloudfront','list-distributions',args=['--query','DistributionList.Items[].{id:Id,enabled:Enabled,aliases:Aliases.Items,origins:Origins.Items[].DomainName}']))
 if EXPECTED=='425805163960':
     for bucket in ['f2r-deploy-425805163960','f2r-uploads-425805163960']:
@@ -89,4 +92,8 @@ for host in ['feel2real.co.kr','academy.feel2real.co.kr','f2r-alb-2551937.ap-nor
 for host,path in [('feel2real.co.kr','/'),('feel2real.co.kr','/grammar-items'),('feel2real.co.kr','/ledger'),('feel2real.co.kr','/dashboard'),('feel2real.co.kr','/testprep'),('academy.feel2real.co.kr','/actuator/health')]:
     p=subprocess.run(['curl','--silent','--show-error','--max-time','20','--output','/dev/null','--write-out','%{http_code} %{ssl_verify_result}','https://'+host+path],capture_output=True,text=True)
     emit('anonymousHTTPS:'+host+path,{'result':p.stdout.strip(),'exit':p.returncode})
+# Actual billing is deliberately private-only: NEVER enabled in a public GitHub workflow.
+if os.environ.get('PRIVATE_BILLING')=='1':
+    today=datetime.date.today(); start=today.replace(day=1)
+    emit('PRIVATE_MONTH_TO_DATE_COST',aws('ce','get-cost-and-usage','us-east-1',args=['--time-period','Start='+start.isoformat()+',End='+today.isoformat(),'--granularity','MONTHLY','--metrics','UnblendedCost','--group-by','Type=DIMENSION,Key=SERVICE','Type=DIMENSION,Key=REGION']))
 emit('safety','READ ONLY; no stop/start/restart/create/modify/delete; billing and secrets not printed')
