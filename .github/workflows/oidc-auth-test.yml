@@ -1,0 +1,17 @@
+name: OIDC Auth Test (v2)
+on:
+  workflow_dispatch:
+jobs:
+  auth-test:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS credentials (v2)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy-v2
+          aws-region: ap-northeast-2
+      - name: Verify identity
+        run: aws sts get-caller-identity
