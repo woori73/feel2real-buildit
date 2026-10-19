@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 입시상담 가이드 LLM 설정. {@code app.admissions.llm.primary}로 primary를 고른다:
- * {@code wiki-router}(기본), {@code meta}(Meta Muse Spark DIRECT), {@code nvidia}(NVIDIA NIM, 보존).
+ * {@code wiki-router}(보존), {@code meta}(기본, Meta Muse Spark DIRECT), {@code nvidia}(NVIDIA NIM, 보존).
  *
  * <p>transport 빈은 NewStart 지피지기와 공유한다 (인프라 재사용).
  * primary 선택만 입시상담 전용 설정으로 분리한다.
@@ -16,11 +16,11 @@ import org.springframework.stereotype.Component;
 public class AdmissionsLlmProperties {
 
     /**
-     * 입시상담 LLM primary. {@code wiki-router}(기본),
-     * {@code meta}(Meta Muse Spark DIRECT),
+     * 입시상담 LLM primary. {@code wiki-router}(보존),
+     * {@code meta}(기본, Meta Muse Spark DIRECT),
      * {@code nvidia}(NVIDIA NIM Nemotron, 보존).
      */
-    private String primary = "wiki-router";
+    private String primary = "meta";
 
     public String getPrimary() {
         return primary;

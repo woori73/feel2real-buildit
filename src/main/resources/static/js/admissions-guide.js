@@ -19,7 +19,8 @@
   var academicSummaryInput = document.getElementById('ag-academic-summary');
 
   // 학년도: null=전체, 2027, 2028
-  var academicYear = null;
+  var academicYear = 2027;
+  var memberMode = document.body.dataset.member === 'true';
   var sessionToken = null;
   var sending = false;
 
@@ -103,6 +104,7 @@
         var a = document.createElement(s.url ? 'a' : 'span');
         a.className = 'ag-source';
         if (s.url) {
+          if (!/^https?:\/\//i.test(s.url)) return;
           a.href = s.url;
           a.target = '_blank';
           a.rel = 'noopener';
@@ -128,7 +130,8 @@
     addMessage(question, true);
     var typingEl = addTyping();
 
-    fetch('/api/admissions/chat', {
+    document.querySelectorAll('.ag-send').forEach(function(b){ b.disabled=true; });
+    (memberMode ? fetchAuth : fetch)(memberMode ? '/api/dashboard/admissions/chat' : '/api/admissions/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -159,6 +162,7 @@
       })
       .finally(function () {
         sending = false;
+        document.querySelectorAll('.ag-send').forEach(function(b){ b.disabled=false; });
         chatInput.value = '';
         chatInput.focus();
       });
@@ -187,19 +191,20 @@
   // 뒤로
   backBtn.addEventListener('click', showWelcome);
 
-  // 학년도 토글: 전체 → 2027 → 2028 → 전체
+  // 학년도 토글: 2027 ↔ 2028 (상담 중에도 학년도를 명시)
   yearToggle.addEventListener('click', function () {
-    if (academicYear === null) {
-      academicYear = 2027;
-      yearLabel.textContent = '2027 확정';
-    } else if (academicYear === 2027) {
+    if (academicYear === 2027) {
       academicYear = 2028;
       yearLabel.textContent = '2028 계획';
     } else {
-      academicYear = null;
-      yearLabel.textContent = '전체';
+      academicYear = 2027;
+      yearLabel.textContent = '2027 확정';
     }
   });
 
+  document.getElementById('ag-year-select').addEventListener('change',function(e){
+    academicYear=Number(e.target.value);yearLabel.textContent=academicYear===2028?'2028 계획':'2027 확정';
+  });
+  yearToggle.addEventListener('click',function(){document.getElementById('ag-year-select').value=String(academicYear);});
   welcomeInput.focus();
 })();

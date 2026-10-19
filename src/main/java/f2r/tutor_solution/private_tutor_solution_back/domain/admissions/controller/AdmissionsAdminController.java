@@ -40,13 +40,16 @@ public class AdmissionsAdminController {
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
     private final AdmissionsVectorIndex vectorIndex;
     private final AdmissionsDataLoader dataLoader;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials;
 
     public AdmissionsAdminController(AdmissionsKnowledgeItemRepository knowledgeRepository,
                                      AdmissionsVectorIndex vectorIndex,
-                                     AdmissionsDataLoader dataLoader) {
+                                     AdmissionsDataLoader dataLoader,
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials) {
         this.knowledgeRepository = knowledgeRepository;
         this.vectorIndex = vectorIndex;
         this.dataLoader = dataLoader;
+        this.materials = materials;
     }
 
     /** 지식 목록 (상태별 필터). */
@@ -54,19 +57,20 @@ public class AdmissionsAdminController {
     public ResponseEntity<Page<KnowledgeDto>> listKnowledge(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer academicYear) {
         Page<AdmissionsKnowledgeItem> result;
-        var pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
+        var pageable = PageRequest.of(Math.max(0,page), Math.max(1,Math.min(size, 100)), Sort.by(Sort.Direction.DESC, "createdAt"));
         if (status != null && !status.isBlank()) {
             try {
                 var st = AdmissionsKnowledgeItem.KnowledgeStatus.valueOf(status.toUpperCase());
                 result = knowledgeRepository.findAll(
-                        (root, query, cb) -> cb.equal(root.get("status"), st), pageable);
+                        (root, query, cb) -> cb.and(cb.equal(root.get("status"), st), academicYear==null?cb.conjunction():cb.equal(root.get("academicYear"),academicYear)), pageable);
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().build();
             }
         } else {
-            result = knowledgeRepository.findAll(pageable);
+            result = knowledgeRepository.findAll((root, query, cb) -> academicYear==null?cb.conjunction():cb.equal(root.get("academicYear"),academicYear),pageable);
         }
         return ResponseEntity.ok(result.map(this::toDto));
     }
@@ -92,7 +96,7 @@ public class AdmissionsAdminController {
         if (item == null) {
             return ResponseEntity.notFound().build();
         }
-        String action = request == null ? "" : request.action();
+        String action = request == null || request.action()==null ? "" : request.action();
         var current = item.getStatus();
         var next = switch (action.toLowerCase()) {
             case "review" -> {
@@ -184,6 +188,39 @@ public class AdmissionsAdminController {
         }
     }
 
+    @GetMapping("/materials")
+    public ResponseEntity<Page<MaterialDto>> listMaterials(@RequestParam(defaultValue="0") int page,
+            @RequestParam(required=false) Integer academicYear,@RequestParam(required=false) String status) {
+        AdmissionsKnowledgeItem.KnowledgeStatus st;
+        try { st=status==null || status.isBlank()?null:AdmissionsKnowledgeItem.KnowledgeStatus.valueOf(status); }
+        catch (IllegalArgumentException e) { return ResponseEntity.badRequest().build(); }
+        var rows=materials.findAll((root,q,cb) -> cb.and(
+                academicYear==null?cb.conjunction():cb.equal(root.get("academicYear"),academicYear),
+                st==null?cb.conjunction():cb.equal(root.get("status"),st)),PageRequest.of(Math.max(0,page),20));
+        return ResponseEntity.ok(rows.map(this::materialDto));
+    }
+    @PostMapping("/materials/{id}/review")
+    public ResponseEntity<MaterialDto> reviewMaterial(@PathVariable Long id,@RequestBody ReviewActionRequest request) {
+        var item=materials.findById(id).orElse(null);
+        if (item==null) return ResponseEntity.notFound().build();
+        String action=request==null || request.action()==null?"":request.action();
+        var current=item.getStatus();
+        var next=switch(action) {
+            case "review" -> current==AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT?AdmissionsKnowledgeItem.KnowledgeStatus.REVIEW:null;
+            case "approve" -> current==AdmissionsKnowledgeItem.KnowledgeStatus.REVIEW?AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE:null;
+            case "reject" -> AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT;
+            case "archive" -> AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED;
+            default -> null;
+        };
+        if(next==null) return ResponseEntity.badRequest().build();
+        item.setStatus(next);
+        return ResponseEntity.ok(materialDto(materials.save(item)));
+    }
+    private MaterialDto materialDto(f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial m) {
+        return new MaterialDto(m.getMaterialId(),m.getAcademicYear(),m.getTitle(),m.getIssuer(),m.getDocumentUrl(),m.getStatus().name());
+    }
+    public record MaterialDto(Long id,Integer academicYear,String title,String issuer,String documentUrl,String status) {}
+
     /** 통계. */
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats() {
@@ -219,13 +256,13 @@ public class AdmissionsAdminController {
                 k.getSource() != null ? k.getSource().getTitle() : null,
                 k.getVerificationNote(),
                 k.getVersion(),
-                k.getCreatedAt() != null ? k.getCreatedAt().toString() : null);
+                k.getCreatedAt() != null ? k.getCreatedAt().toString() : null, k.getContent());
     }
 
     public record KnowledgeDto(Long id, Integer academicYear, Boolean yearConfirmed,
                                String title, String category, String sourceClass,
                                String status, String sourceUrl, String sourceTitle,
-                               String verificationNote, Integer version, String createdAt) {}
+                               String verificationNote, Integer version, String createdAt, String content) {}
 
     /** @param action review | approve | archive | reject. @param note 검증 메모. */
     public record ReviewActionRequest(String action, String note) {}

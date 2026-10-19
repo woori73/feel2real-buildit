@@ -80,6 +80,7 @@ class AdmissionsFactSearchServiceDbTest {
     }
 
     private void approveAll() {
+        materials.findAll().forEach(m -> { m.setStatus(KnowledgeStatus.ACTIVE); materials.save(m); });
         departments.findAll().forEach(d -> { d.setStatus(KnowledgeStatus.ACTIVE); departments.save(d); });
         types.findAll().forEach(t -> { t.setStatus(KnowledgeStatus.ACTIVE); types.save(t); });
         schedules.findAll().forEach(s -> { s.setStatus(KnowledgeStatus.ACTIVE); schedules.save(s); });

@@ -309,3 +309,16 @@ body {
 .ag-profile textarea { resize:vertical; min-height:68px; }
 .ag-profile-wide { grid-column:1 / -1; }
 @media (max-width: 600px) { .ag-profile { grid-template-columns:1fr; gap:10px; margin:14px auto; } .ag-profile-wide { grid-column:auto; } .ag-profile input,.ag-profile select,.ag-profile textarea { font-size:16px; } }
+
+/* 공용 대시보드에서 진입하는 회원 상담·검수 */
+.ag-nav { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:16px; border-bottom:1px solid var(--ag-border); background:#fff; }
+.ag-nav a,.ag-nav button,.ag-tools button { font:inherit; font-size:14px; color:var(--ag-primary); background:#fff; border:1px solid var(--ag-border); border-radius:8px; padding:9px 12px; cursor:pointer; text-decoration:none; }
+.ag-tools { padding:20px; border-bottom:1px solid var(--ag-border); }
+.ag-tools h2 {font-size:20px;} .ag-tools p {font-size:13px;line-height:1.7;color:var(--ag-muted);}
+.ag-tools article {padding:16px 0;border-bottom:1px solid var(--ag-border);overflow-wrap:anywhere;}
+.ag-tools pre {white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:13px;line-height:1.7;}
+.ag-admin-filters {display:flex;flex-wrap:wrap;gap:12px;align-items:end;} .ag-admin-filters label {display:grid;gap:6px;font-size:13px;}
+.ag-tools select,.ag-year-badge select {padding:9px;border:1px solid var(--ag-border);border-radius:8px;background:white;font:inherit;max-width:100%;}
+.ag-input {min-width:0;} .ag-source {white-space:normal;overflow-wrap:anywhere;}
+body[data-member="true"] .ag-welcome {padding:24px;} body[data-member="true"] .ag-chat {min-height:75dvh;}
+@media(max-width:600px) {.ag-tools{padding:14px;} .ag-header{flex-wrap:wrap;} .ag-input{font-size:16px;} .ag-nav {gap:8px;}}

@@ -950,3 +950,8 @@ ADMIN drain과 admission은 같은 모니터에서 처리한다. drain 뒤 신�
 Servlet Callable/AsyncContext.start 및 CompletionStage 서비스 결과를 지원한다. 새 비동기 background 실행은 `PublishingMaintenanceGate.submit`으로 operation을 명시 전달해야 한다. 임의 commonPool/raw thread로 업무를 보내는 코드는 지원 범위 밖이며 도입 전 통제 확장이 필요하다. CLI stdout 수집 CompletableFuture는 업무를 시작하지 않으며 부모 CLI 실제 종료를 별도 추적한다.
 
 단일 JVM drain은 여러 Spring 인스턴스/별도 Worker/직접 OS 실행을 증명하지 않는다. 외부 실행 주체를 확인하지 못하면 운영 CLI 교체 불가다.
+
+
+## 입시상담 회원 대시보드 흐름 (2026-10-19)
+기존 ADMIN·TUTOR 로그인 → `/dashboard` 또는 ADMIN `/admin/hub`의 입시상담 AI → `/admissions/workspace` → 학년도·대학·학과·전형 입력 → 회원 전용 상담 API → 기존 공식자료 검색·Muse Spark·근거 검증 → 답변·출처·현재 회원/학원 이력. 같은 학년도 직전 질문과 선택 조건만 후속 검색 문맥으로 사용하며 과거 답변은 근거로 사용하지 않는다.
+ADMIN은 같은 화면에서 공식 원문과 근거 지식의 DRAFT→REVIEW→APPROVED(내부 ACTIVE)를 검수한다. TUTOR에게는 검수 메뉴/API를 허용하지 않는다. 다른 사용자·학원의 이력은 ADMIN에게도 자동 공개하지 않는다.

@@ -56,6 +56,9 @@ public class AdmissionsChatController {
             return ResponseEntity.status(503).body(ChatResponse.failure(
                     "입시상담 AI는 아직 이용할 수 없습니다.", List.<SourceDto>of()));
         }
+        // 회원 이력 namespace는 공개 호출에서 사용할 수 없다.
+        if (request!=null && request.sessionToken()!=null && request.sessionToken().startsWith("member_"))
+            return ResponseEntity.badRequest().body(ChatResponse.failure("유효하지 않은 상담 세션입니다.",List.of()));
         String clientIp = rateLimiter.resolveClientIp(httpRequest);
 
         // rate limit 검사

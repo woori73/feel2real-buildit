@@ -479,6 +479,14 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsPublicApiDefaultOffMySqlTest"
 
+      - name: Admissions member Muse smoke (one real call, isolated DB only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'feat/admissions-dashboard-integration-20261019'
+        env:
+          META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+        run: |
+          test -n "$META_JIPJIGI_API_KEY" || { echo '::error::Muse smoke key unavailable'; exit 1; }
+          ./gradlew test --no-daemon --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest.memberMuseSmokeWhenKeyPresent"
+
       - name: Upload admissions browser QA screenshots
         if: always()
         uses: actions/upload-artifact@v4

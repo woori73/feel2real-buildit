@@ -222,6 +222,11 @@ public class AdmissionsResearchService {
         return token;
     }
 
+    private static boolean approvedLinkedSource(AdmissionsKnowledgeItem k) {
+        return k.getSource()==null || (k.getSource().getStatus()==AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE
+                && java.util.Objects.equals(k.getSource().getAcademicYear(),k.getAcademicYear()));
+    }
+
     // ── STEP1: 2027 확정 공식자료 ────────────────────────────────────
 
     List<AdmissionsKnowledgeItem> searchConfirmedKnowledgeItems(String questionText, List<String> keywords,
@@ -260,6 +265,7 @@ public class AdmissionsResearchService {
             return cb.and(base.toArray(new Predicate[0]));
         };
         return knowledgeRepository.findAll(spec, PageRequest.of(0, CASE_CANDIDATE_WINDOW)).getContent().stream()
+                .filter(AdmissionsResearchService::approvedLinkedSource)
                 .sorted(Comparator.comparingInt((AdmissionsKnowledgeItem k) ->
                         keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2
                                 + keywordHits(keywords, k.getContent())).reversed())
@@ -295,6 +301,7 @@ public class AdmissionsResearchService {
         double vecW = embeddingProps.getVectorWeight();
         double officialBonus = embeddingProps.getOfficialBonus();
         return candidates.stream()
+                .filter(AdmissionsResearchService::approvedLinkedSource)
                 .filter(k -> k.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)
                 .filter(k -> k.getSourceClass() == AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
                 .filter(k -> k.getRole() == AdmissionsKnowledgeItem.Role.FACT)

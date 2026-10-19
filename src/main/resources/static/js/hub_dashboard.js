@@ -349,6 +349,7 @@
     row.innerHTML = '';
     // 실제 존재하는 관리자 페이지로만 연결 (템플릿 실측 기준)
     var links = [
+      { icon: '🎓', name: '입시상담 AI', desc: '공식자료 검수·승인 및 상담', href: '/admissions/workspace' },
       { icon: '💰', name: '에듀홀릭 장부<운영자용>', desc: '수납·지출·미수금 관리', href: '/easy' },
       { icon: '📒', name: '이지장부', desc: '원장용 범용 장부', href: '/ledger' },
       { icon: '🏠', name: '홈페이지 빌더', desc: '학원 홈페이지 관리', href: '/builder' },
