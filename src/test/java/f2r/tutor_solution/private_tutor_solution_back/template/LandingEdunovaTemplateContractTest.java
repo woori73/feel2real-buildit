@@ -105,4 +105,42 @@ class LandingEdunovaTemplateContractTest {
     assertThat(html).contains("class=\"en-coming-soon\"").contains("COMING SOON").doesNotContain("href=\"#top\"").doesNotContain("href=\"#\"");
     assertThat(html).contains("2026년 11월 1일").contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
   }
+
+  @Test
+  @DisplayName("given 홈 when 읽으면 then 복구한 적중 성과가 근거 문구·에듀홀릭 블로그 원문 링크와 함께 의뢰 버튼 앞에 있다")
+  void restoredHitProof_linksToBlog() {
+    // given / when
+    String html = render();
+    // then
+    assertThat(html)
+        .contains("압구정중2 영어 시험은")
+        .contains("100% 출제")
+        .contains("외부지문 2문항(5 · 9번) 제외, 28문항 전부")
+        .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
+    int hero = html.indexOf("id=\"enExamCta\"");
+    int hit = html.indexOf("id=\"exam-hit\"");
+    int hitBlog = html.indexOf("id=\"enHitBlog\"");
+    int chart = html.indexOf("id=\"chart-showcase\"");
+    int notice = html.indexOf("class=\"en-notice\"");
+    assertThat(hero).isPositive();
+    assertThat(hit).isGreaterThan(hero);
+    assertThat(hitBlog).isGreaterThan(hit);
+    assertThat(chart).isGreaterThan(hitBlog);
+    assertThat(notice).isGreaterThan(chart);
+  }
+
+  @Test
+  @DisplayName("given 홈 when 읽으면 then BUILD IT CHART 공개 영역이 기존 스크립트 훅과 /chart 링크로 복구돼 있고 이름 검색·관리자 경로는 없다")
+  void restoredChart_usesPublicHooks() {
+    // given / when
+    String html = render();
+    // then
+    assertThat(html)
+        .contains("BUILD IT CHART")
+        .contains("id=\"chartRegionPicker\"", "id=\"chartProvince\"", "id=\"chartDistrict\"", "id=\"landingChartTop5\"")
+        .contains("/js/landing_chart.js")
+        .contains("href=\"/chart\"", "/chart#criteria")
+        .doesNotContain("id=\"chartNameSearch\"")
+        .doesNotContain("/admin/chart");
+  }
 }

@@ -105,3 +105,50 @@ a { color:inherit; text-decoration:none; }
 }
 
 .en-coming-soon { display:inline-flex; align-items:center; justify-content:center; padding:12px 22px; border:1px dashed rgba(255,255,255,.45); border-radius:10px; color:#cfe0ff; font-weight:800; letter-spacing:.22em; font-size:14px; cursor:default; user-select:none; }
+
+/* ===== 복구: 적중 성과(.en-hit) — 직보 수업 대조 결과 + 에듀홀릭 블로그 링크 ===== */
+.en-hit { max-width:1240px; margin:28px auto 0; padding:28px 28px 30px; background:#fff; border:1px solid var(--en-line); border-radius:16px; }
+.en-hit-title { margin:0 0 18px; font-size:clamp(24px,3.2vw,36px); font-weight:800; letter-spacing:-.03em; line-height:1.3; color:var(--en-navy); }
+.en-hit-title b { display:block; color:var(--en-blue); }
+.en-hit-grid { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:22px; align-items:stretch; }
+.en-hit-box { padding:24px 26px; border-radius:12px; background:var(--en-navy); color:#fff; }
+.en-hit-box small { display:block; font-size:14px; color:#9fc0ff; }
+.en-hit-box strong { display:block; margin-top:8px; font-size:clamp(19px,2.2vw,24px); line-height:1.5; font-weight:700; }
+.en-hit-box em { font-style:normal; color:#7fb0ff; font-size:1.25em; font-weight:800; }
+.en-hit-box p { margin:12px 0 0; font-size:14px; color:#c9d6f0; }
+.en-hit-box .en-hit-cap { font-size:13px; color:#9fb3d9; }
+.en-hit-side { display:flex; flex-direction:column; gap:14px; justify-content:center; }
+.en-hit-quote { margin:0; padding-left:16px; border-left:4px solid var(--en-blue); font-size:clamp(17px,2vw,21px); font-weight:700; line-height:1.5; color:var(--en-ink); }
+.en-hit-cta { display:flex; flex-wrap:wrap; gap:10px; }
+.en-hit-cta .en-btn { flex:1 1 180px; }
+@media (max-width:760px) { .en-hit { margin:16px 12px 0; padding:20px 16px 22px; } .en-hit-grid { grid-template-columns:minmax(0,1fr); gap:16px; } }
+
+/* ===== 복구: BUILD IT CHART(.en-chart) — 공개 TOP5, landing_chart.js가 .bb-* 행을 채운다 ===== */
+.en-chart { margin-top:28px; background:var(--en-bg); padding:44px 20px 48px; }
+.en-chart .bb-wrap { max-width:1100px; margin:0 auto; }
+.en-chart .bb-title { margin:0; font-size:clamp(30px,5vw,48px); font-weight:800; letter-spacing:-.03em; color:var(--en-navy); }
+.en-chart .bb-sub { margin:10px 0 0; font-size:15px; font-weight:600; color:var(--en-sub); }
+.en-chart .bb-meta { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin:20px 0 20px; }
+.en-chart .bb-week { display:inline-block; padding:8px 14px; border:1px solid var(--en-line); border-radius:999px; background:#fff; font-size:13px; font-weight:700; color:var(--en-navy); }
+.en-chart .bb-region { display:flex; flex-wrap:wrap; gap:8px; }
+.en-chart .bb-region select { min-height:44px; padding:0 14px; border:1px solid #c9d4ea; border-radius:10px; background:#fff; font:inherit; font-size:14px; }
+.en-chart .bb-region select:disabled { color:#9aa7c2; }
+.en-chart .bb-region button { min-height:44px; padding:0 18px; border:0; border-radius:10px; background:var(--en-blue); color:#fff; font:inherit; font-size:14px; font-weight:800; cursor:pointer; }
+.en-chart .bb-list { display:flex; flex-direction:column; gap:10px; }
+.en-chart .bb-row { display:grid; grid-template-columns:64px 40px minmax(0,1fr); align-items:center; gap:0 14px; padding:14px 20px 14px 0; min-height:84px; border-radius:12px; background:#fff; border:1px solid var(--en-line); color:var(--en-ink); text-decoration:none; overflow:hidden; }
+.en-chart .bb-row:hover { box-shadow:0 8px 22px rgba(11,27,59,.12); }
+.en-chart .bb-rank { display:grid; place-items:center; align-self:stretch; font-size:26px; font-weight:800; color:var(--en-navy); }
+.en-chart .bb-first .bb-rank { background:var(--en-blue); color:#fff; border-radius:12px 0 0 12px; }
+.en-chart .bb-trend { font-size:12px; font-weight:800; color:#7c89a6; }
+.en-chart .bb-main { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.en-chart .bb-main strong { font-size:17px; font-weight:800; color:var(--en-navy); }
+.en-chart .bb-main span { font-size:13px; color:var(--en-sub); }
+.en-chart .bb-academy { font-weight:700; color:var(--en-ink); }
+.en-chart .bb-philosophy { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.5; }
+.en-chart .bb-empty { padding:24px; border-radius:12px; background:#fff; border:1px solid var(--en-line); font-size:15px; color:var(--en-sub); }
+.en-chart .bb-foot { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-top:18px; }
+.en-chart .chart-criteria-link { display:inline-flex; align-items:center; min-height:44px; color:var(--en-blue); font-size:14px; font-weight:700; }
+.en-chart .chart-cta { display:inline-flex; align-items:center; min-height:44px; padding:0 20px; border-radius:10px; background:var(--en-navy); color:#fff; font-weight:800; font-size:14px; }
+.en-chart .bb-note { margin:14px 0 0; font-size:12px; color:#7c89a6; }
+.en-chart .visually-hidden { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+@media (max-width:640px) { .en-chart { padding:32px 14px 36px; margin-top:16px; } .en-chart .bb-row { grid-template-columns:44px minmax(0,1fr); padding:10px 12px 10px 0; gap:0 10px; } .en-chart .bb-trend { display:none; } .en-chart .bb-rank { font-size:20px; } .en-chart .bb-region { width:100%; } .en-chart .bb-region select, .en-chart .bb-region button { flex:1 1 100%; } }
