@@ -149,4 +149,17 @@ class LandingEdunovaTemplateContractTest {
         .doesNotContain("id=\"chartNameSearch\"")
         .doesNotContain("/admin/chart");
   }
+
+  @Test
+  @DisplayName("given 홈 when 읽으면 then 이메일 주소가 화면에 보이고 복사 안내가 있으며 로그인 안내 복귀 스크립트가 있다")
+  void emailAddressVisible_andLoginGuidance() {
+    // given / when
+    String html = render();
+    // then
+    assertThat(html)
+        .contains("class=\"en-mail-addr\">woorinaesin@naver.com</b>")
+        .contains("data-copy-mail=\"woorinaesin@naver.com\"")
+        .contains("params.get('login') !== 'required'")
+        .contains("f2r:login");
+  }
 }

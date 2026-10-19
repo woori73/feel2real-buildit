@@ -152,6 +152,23 @@ class EasySecurityWebMvcTest {
   }
 
   @Test
+  @DisplayName("given 비회원 브라우저 when /dashboard를 열면 then raw 401 대신 원래 경로를 싣고 로그인 안내로 이동한다")
+  void dashboard_anonymousBrowser_redirectsToLoginGuidance() throws Exception {
+    // given / when / then
+    mockMvc.perform(get("/dashboard").accept(MediaType.TEXT_HTML))
+        .andExpect(status().is3xxRedirection())
+        .andExpect(redirectedUrl("/?login=required&returnUrl=%2Fdashboard"));
+  }
+
+  @Test
+  @DisplayName("given 비회원 JSON 요청 when /api/dashboard/widgets를 호출하면 then 기존 401 계약을 유지한다")
+  void dashboardApi_anonymous_stays401() throws Exception {
+    // given / when / then
+    mockMvc.perform(get("/api/dashboard/widgets").param("businessId", "1").accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   @DisplayName("TUTOR·ADMIN 브라우저 /ledger → 화면 접근")
   void tutorAndAdminLedger_ok() throws Exception {
     Cookie tutor = new Cookie("ACCESS_TOKEN", tokenProvider.issue(3L, "tutor01", "TUTOR"));
