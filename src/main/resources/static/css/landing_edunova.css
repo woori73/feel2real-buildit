@@ -313,3 +313,8 @@ footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); pa
 /* 상단 로고: 푸터와 같은 F2R 로고 이미지 사용 */
 .en-logo-mark { display:block; width:40px; height:40px; object-fit:contain; }
 @media (max-width:520px) { .en-logo-mark { width:34px; height:34px; } }
+
+/* 브랜드 보조 표기 BuildIt: 대문자 전용 자간을 줄여 읽기 좋게 */
+.en-logo-sub { letter-spacing:.08em; font-size:14px; font-weight:700; }
+@media (max-width:960px) { .en-logo-sub { font-size:12px; } }
+@media (max-width:520px) { .en-logo-sub { font-size:11px; letter-spacing:.06em; } }
