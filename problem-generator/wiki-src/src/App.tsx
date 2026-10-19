@@ -17,6 +17,7 @@ import AssistantComposer, { AssistantMessage } from './components/AssistantCompo
 import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
 import CsatWikiV1 from './components/CsatWikiV1'
 import NaesinWikiV1 from './components/NaesinWikiV1'
+import GrammarBank from './components/GrammarBank'
 import GeneratedTestBrowser from './components/GeneratedTestBrowser'
 import ManualQuestionSave from './components/ManualQuestionSave'
 import ChromeQuestionWorkbench from './components/ChromeQuestionWorkbench'
@@ -29,7 +30,7 @@ import { storageKey } from './lib/workspaceStorage'
 import './styles/generator.css'
 import './styles/chrome-workbench.css'
 
-export type Page = 'state' | 'csatwiki' | 'create' | 'student' | 'intelligence' | 'home' | 'chrometransform' | 'twin' | 'database' | 'exam' | 'wrongextract' | 'wrongnote' | 'wrongrestore' | 'wronghub' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
+export type Page = 'state' | 'csatwiki' | 'create' | 'student' | 'intelligence' | 'home' | 'chrometransform' | 'twin' | 'database' | 'grammabank' | 'exam' | 'wrongextract' | 'wrongnote' | 'wrongrestore' | 'wronghub' | 'passagememory' | 'passageanalysis' | 'csat' | 'textbook' | 'school' | 'brain' | 'gentests'
 
 // role=ADMIN 같은 query parameter는 권한 컨텍스트일 뿐 Wiki의 초기 화면을 바꾸지 않는다.
 const initialPage = (): Page => 'state'
@@ -37,6 +38,7 @@ const initialPage = (): Page => 'state'
 const menu: { id: Page; label: string; icon: string }[] = [
   { id: 'state', label: '오늘의 상태', icon: '◌' },
   { id: 'home', label: '내신·수능 문제 제작', icon: '✦' },
+  { id: 'grammabank', label: '문법 문제은행', icon: '▣' },
   { id: 'chrometransform', label: '크롬 문제 변형', icon: '◫' },
   { id: 'twin', label: 'Digital Twin 관리', icon: '◈' },
   { id: 'database', label: '강사 문제 DB', icon: '▤' },
@@ -63,6 +65,7 @@ const descriptions: Record<Page, string> = {
   chrometransform: '참고자료와 기존 문제를 한 화면에서 보며 Chrome AI와 문제를 공동 편집합니다.',
   twin: '강사가 만든 Digital Twin HTML을 업로드하면 학교·학년·시험 계층이 자동으로 생성됩니다.',
   database: '생성하거나 변형한 문항을 SQLite DB에서 확인하고 관리합니다.',
+  grammabank: '중1~고3 영어 문법 문제를 학년·문법 유형·형식으로 검색하고, 검수·선택함·DesignCraft 문제집 제작까지 이어갑니다.',
   gentests: '학습자료별로 MCP가 생성·저장한 시험을 학생용 문제·정답/해설·출제 정보로 다시 확인합니다.',
   exam: '선택한 문항으로 실전 시험지를 구성합니다.',
   wrongnote: '학생별 오답을 누적하고 맞춤 복습 자료를 준비합니다.',
@@ -170,6 +173,7 @@ export default function App() {
       {page === 'passageanalysis' && <PassageWorkspace mode="analysis" apiSettings={apiSettings} />}
       {page === 'csat' && <CsatEnglishWorkspace />}
       {page === 'textbook' && <TextbookDatabase />}
+      {page === 'grammabank' && <GrammarBank />}
       {page === 'gentests' && <GeneratedTestBrowser />}
       {page === 'school' && <SchoolDatabase onAnalyze={() => setPage('twin')} apiSettings={apiSettings} />}
       {page === 'database' && <section className="work-panel"><div className="panel-heading"><div><p className="kicker">TEACHER QUESTION DATABASE</p><h2>강사 문제 DB</h2><p>신규 생성·변형한 문항이 SQLite DB에 영구 저장됩니다.</p></div><div className="twin-actions"><button className="primary-action" style={{ marginTop: 0 }} onClick={() => setManualSaveOpen(true)}>+ 문제 저장하기</button><button className="secondary-button" onClick={refreshQuestions}>새로고침</button><button className="primary-action" style={{ marginTop: 0 }} disabled={!selectedExamIds.length} onClick={sendSelectedToExam}>선택 문항으로 실전 제작 ({selectedExamIds.length})</button></div></div>{manualSaveOpen && <ManualQuestionSave onSaved={refreshQuestions} onClose={() => setManualSaveOpen(false)} />}{questions.length === 0 ? <div className="empty-state"><b>저장된 문항이 없습니다.</b><p>문제 생성기에서 만든 문항을 저장하면 이곳에서 관리할 수 있어요.</p><button className="primary-action" onClick={() => setPage('home')}>문제 생성으로 이동</button></div> : <div className="db-list">{questions.map(item => <article key={item.id} style={{ flexWrap: 'wrap' }}><input type="checkbox" aria-label={`${item.id} 선택`} checked={selectedExamIds.includes(item.id)} onChange={() => toggleExamSelection(item.id)} /><div><b>{item.question_type || '문항'} · {item.mode === 'transform' ? '변형' : item.mode === 'mcp' ? 'MCP 저장' : item.mode === 'manual' ? '수동 저장' : '신규'} · {item.score}점</b><p>{item.school} · {item.grade} · {item.exam} · {new Date(item.created_at).toLocaleString('ko-KR')}</p><small>{item.stem.slice(0, 80)}</small></div><button onClick={() => toggleExpanded(item.id)}>{expandedIds.has(item.id) ? '간단히' : '전체보기'}</button><button onClick={() => setEditingQuestion(item)}>수정</button><button onClick={() => sendToExam(item.id)}>실전 제작</button><button onClick={() => deleteQuestion(item.id)}>삭제</button>{expandedIds.has(item.id) && <div style={{ flexBasis: '100%', marginTop: 12 }}><div className="f2r-gen embedded-question-view"><div className="exam-sheet show-answers"><div className="question-list"><QuestionCard q={item} index={1} /></div></div></div></div>}</article>)}</div>}</section>}

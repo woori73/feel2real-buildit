@@ -312,6 +312,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsQueryParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsResearchServiceLogicTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarBankImportServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarDesignCraftServiceTest"
 
       - name: Verify editor tests executed
         # 셸 주석(#)으로 --tests 필터가 잘리는 사고 방지: XML 리포트 존재를 강제한다.

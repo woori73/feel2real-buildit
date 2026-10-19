@@ -11,6 +11,8 @@ public interface QuestionCategoryRepository extends JpaRepository<QuestionCatego
 
   List<QuestionCategory> findBySubject(Subject subject);
 
+  Optional<QuestionCategory> findByCategoryNameKo(String categoryNameKo);
+
   List<QuestionCategory> findBySubject_SubjectId(Integer subjectId);
 
   /**

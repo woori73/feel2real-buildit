@@ -823,6 +823,17 @@ Wiki 홈
 - 모든 Wiki API는 `/problem-generator/wiki/api/** → Spring Proxy → FastAPI`를 유지한다.
 - `학생` 허브는 `오답 기록·추출`, `학생별 오답노트`에 집중한다. 외부지문의 `지문 암기`, `지문 정리 + 내용일치 문제`는 `만들기` 허브에서 연다. 오답 기록 화면은 학생 선택·OCR·저장에 집중하고, 오답노트 화면은 누적 기록 조회·수정·선택 통합·DOCX 내보내기에 집중한다.
 - 지문 암기는 붙여넣기 또는 PDF·이미지·TXT의 브라우저 추출 결과를 받아 문장별 영어/자연스러운 한국어 쌍을 만든다. 지문 분석은 원문·해석·제목·주제·요지·요약, 모든 문장의 구조·해석·가이드·핵심 문법, 도입-전개-마무리, 한국어 5개+영어 5개의 T/F 문제와 정답을 생성한다. 두 결과는 인쇄와 HTML 다운로드를 지원하며 DB에는 자동 저장하지 않는다.
+# 문법 문제은행(내신위키 SPA `문법 문제은행` 탭)
+
+```text
+내신위키(/problem-generator) → 문법 문제은행 → 문제 검색/검수 → 선택함 → 문제집(BOOK)
+  → POST /collections/{id}/designcraft(기존 /api/publishing/jobs 재사용) → DesignCraft 편집기(/designcraft/editor)
+```
+
+- 화면은 내신위키 React SPA의 `grammabank` 라우트이며, 데이터는 Spring MySQL `/api/problem-generator/grammar-bank/**`를 직접 호출한다(FastAPI 경유 안 함). 기존 `questions`·`problem_generator_materials`를 재사용하고 프로필/태그/컬렉션만 신규 테이블(V1090~V1092).
+- 수입은 2,824개 파일 추출 결과(JSON/CSV)를 그대로 받는다: 본문 해시·(material, external_ref)·(material, source_position) 3중 중복 건너뜀, 신뢰도 0.60 미만·용어 무매칭은 NEEDS_REVIEW 보류함. REJECTED는 기본 검색에서 제외.
+- `POST /ai/find`는 AI(Wiki Router) 필터 추출 실패 시 결정적 키워드 매핑으로 대체하며, 응답 문항은 항상 실제 DB 조회 결과만 포함한다. AI 수정본은 variant로 원본과 분리 저장하고 승인 전 문제집에 자동 반영하지 않는다.
+
 # Wiki 외부지문·고3 수능 영어
 
 - `만들기`의 외부지문은 `지문 암기`와 `지문 정리 + 내용일치 문제`로 제한한다. 지문 정리는 문장별 슬래시 영어 원문 1회, 직독직해, 정식 해석, 문법/구문 가이드 순으로 출력한다. 다운로드 HTML은 브라우저에서 편집·인쇄·재저장할 수 있다.
