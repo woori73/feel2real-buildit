@@ -5,6 +5,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.entity.GrammarQuestionProfile.GrammarDifficulty;
 import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarAiFindService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarBankAccessGuard;
 import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarBankImportService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarBankService;
 import java.math.BigDecimal;
@@ -31,16 +32,21 @@ public class GrammarBankController {
   private final GrammarBankService bankService;
   private final GrammarBankImportService importService;
   private final GrammarAiFindService aiFindService;
+  private final GrammarBankAccessGuard accessGuard;
 
   @GetMapping("/tags")
-  public ResponseEntity<List<GrammarTagResponse>> tags() {
+  public ResponseEntity<List<GrammarTagResponse>> tags(
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    requirePrincipal(principal);
     return ResponseEntity.ok(bankService.tags().stream()
         .map(t -> new GrammarTagResponse(t.getTagId(), t.getNameKo(), t.getNameEn(), t.getAliases(),
             t.getSortOrder())).toList());
   }
 
   @GetMapping("/stats")
-  public ResponseEntity<GrammarStatsResponse> stats() {
+  public ResponseEntity<GrammarStatsResponse> stats(
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    requirePrincipal(principal);
     return ResponseEntity.ok(bankService.stats());
   }
 
@@ -157,10 +163,7 @@ public class GrammarBankController {
   }
 
   private void requirePrincipal(AuthenticatedPrincipal principal) {
-    if (principal == null) {
-      throw new org.springframework.web.server.ResponseStatusException(
-          org.springframework.http.HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
-    }
+    accessGuard.require(principal);
   }
 
   static <E extends Enum<E>> E enumOrNull(Class<E> type, String raw) {

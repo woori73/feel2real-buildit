@@ -192,6 +192,14 @@ jobs:
           rm -rf src/main/resources/static/problem-generator/wiki
           mkdir -p src/main/resources/static/problem-generator/wiki
           cp -R problem-generator/wiki-src/dist/. src/main/resources/static/problem-generator/wiki/
+          # 문법 문제은행 독립 페이지(/grammar-items) 전용 번들 (build-check.yml과 동일).
+          cd "$GITHUB_WORKSPACE/problem-generator/wiki-src"
+          npm run build:grammar-items
+          cd "$GITHUB_WORKSPACE"
+          rm -rf src/main/resources/static/grammar-items
+          mkdir -p src/main/resources/static/grammar-items
+          cp -R problem-generator/wiki-src/dist-grammar-items/. src/main/resources/static/grammar-items/
+          mv src/main/resources/static/grammar-items/grammar-items.html src/main/resources/static/grammar-items/index.html
           tar -czf /tmp/buildit-wiki-backend.tgz -C /tmp/buildit-wiki-backend-src backend requirements.txt
 
       - name: Set up JDK 21

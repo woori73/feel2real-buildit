@@ -195,6 +195,15 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/problem-generator/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // 문법 문제은행 독립 화면(/grammar-items)도 비회원 브라우저 요청을 raw 401 대신
+            // 공통 로그인 안내로 보낸다. 로그인 후 returnUrl=/grammar-items로 복귀한다(landing_buildit.js 처리).
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> redirectToLogin(request, response),
+                new AndRequestMatcher(
+                    new OrRequestMatcher(
+                        PathPatternRequestMatcher.withDefaults().matcher("/grammar-items"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/grammar-items/**")),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // TESTPREP 보호 화면(/testprep/**)은 익명 브라우저 요청에 raw 401을 주지 않고, 공개 첫 페이지(/testprep)로 보내
             // 로그인 안내를 띄운다. 로그인 후 원래 화면으로 돌아오도록 returnUrl(내부 /testprep 경로)을 함께 싣는다.
             // JSON API(/api/testprep/**)는 TEXT_HTML이 아니라 아래 AnyRequestMatcher의 401 계약을 유지한다.
@@ -325,6 +334,11 @@ public class SecurityConfig {
             // catch-all permitAll보다 위에서 닫는다. 화면은 로그인한 STUDENT/TUTOR/ADMIN 전용이다.
             .requestMatchers("/problem-generator/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
+            // 문법 문제은행 독립 페이지 /grammar-items — 정적 자산(JS/CSS)만 공개하고, 페이지 진입은 로그인 필수로 둔다.
+            // 어떤 역할이 접근 가능한지는 SecurityConfig의 role 매처로 표현할 수 없다(ADMIN + 특정 운영 계정 modu).
+            // 실제 인가는 GrammarItemsPageController·GrammarBankAccessGuard가 서버에서 판정해 권한 없으면 403, API도 동일 가드.
+            .requestMatchers("/grammar-items/assets/**").permitAll()
+            .requestMatchers("/grammar-items", "/grammar-items/", "/grammar-items/**").authenticated()
             // 기출분석: 소개 화면은 공개, 분석 API는 로그인한 STUDENT/TUTOR/ADMIN 전용.
             .requestMatchers(HttpMethod.GET, "/exam-analysis")
             .permitAll()
