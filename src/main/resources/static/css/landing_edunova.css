@@ -25,9 +25,10 @@ a { color:inherit; text-decoration:none; }
 
 /* HERO */
 .en-hero { display:grid; grid-template-columns:minmax(0,2fr) minmax(340px,1fr); gap:0; background:var(--en-navy); }
-.en-hero-art { position:relative; margin:0; background:#050a18; }
-.en-hero-art img { display:block; width:100%; height:100%; object-fit:cover; aspect-ratio:966/484; }
-.en-hero-badge { position:absolute; left:16px; bottom:14px; padding:6px 12px; border-radius:999px; background:rgba(5,10,24,.72); color:#cfe0ff; font-size:13px; font-weight:600; letter-spacing:.02em; border:1px solid rgba(160,190,255,.35); }
+.en-hero-art { position:relative; margin:0; background:#050a18; display:flex; flex-direction:column; justify-content:center; }
+.en-hero-art picture { display:block; }
+.en-hero-art img { display:block; width:100%; height:auto; aspect-ratio:1942/809; object-fit:contain; }
+.en-hero-badge { align-self:flex-start; margin:12px 16px 14px; padding:6px 12px; border-radius:999px; background:rgba(5,10,24,.72); color:#cfe0ff; font-size:13px; font-weight:600; letter-spacing:.02em; border:1px solid rgba(160,190,255,.35); }
 .en-offer { background:linear-gradient(180deg,#f7faff 0%,#eaf1ff 100%); padding:36px 36px 30px; display:flex; flex-direction:column; justify-content:center; }
 .en-offer-eyebrow { margin:0 0 6px; color:var(--en-blue); font-weight:700; font-size:14px; }
 .en-offer-title { margin:0; font-size:clamp(30px,3.2vw,42px); line-height:1.15; font-weight:800; color:var(--en-navy); letter-spacing:-.8px; }
@@ -87,7 +88,7 @@ a { color:inherit; text-decoration:none; }
   .en-burger { display:flex; }
   .en-actions { margin-left:auto; }
   .en-hero { grid-template-columns:1fr; }
-  .en-hero-art img { aspect-ratio:966/484; }
+  .en-hero-art img { aspect-ratio:1942/809; }
   .en-offer { padding:26px 20px 24px; }
   .en-cards { grid-template-columns:1fr; }
   .en-logo-main { font-size:22px; }

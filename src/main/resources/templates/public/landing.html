@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261019-3">
+  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261020-1">
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
@@ -63,8 +63,12 @@
     <!-- ============ HERO: AI AGENT 이미지 + 2만원 상품 ============ -->
     <section class="en-hero" id="top" aria-label="Feel2Real 대표 소개">
       <figure class="en-hero-art">
-        <!-- 대표 이미지는 교체 가능: /images/ai-agent-hero.jpg 파일만 바꾸면 된다. -->
-        <img src="/images/ai-agent-hero.jpg" alt="AI AGENT — 서수니와 AI Agent" width="966" height="484" fetchpriority="high">
+        <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
+        <picture>
+          <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
+          <source type="image/webp" srcset="/images/ai-agent-banner.webp">
+          <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" fetchpriority="high">
+        </picture>
         <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정</figcaption>
       </figure>
       <aside class="en-offer" aria-labelledby="enOfferTitle">
