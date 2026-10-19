@@ -83,6 +83,52 @@
     </section>
 
     <!-- ============ 공지 ============ -->
+    <!-- 실제 제작 성과(복구): 직보 수업 자료·예상문제 대조 결과. 근거와 원문은 에듀홀릭 블로그. -->
+    <section class="en-hit" id="exam-hit" aria-labelledby="enHitTitle">
+      <h2 class="en-hit-title" id="enHitTitle"><span>압구정중2 영어 시험은</span><b>어떻게 나왔을까?</b></h2>
+      <div class="en-hit-grid">
+        <div class="en-hit-box">
+          <small>직보 수업 대조 결과</small>
+          <strong>직보 수업 자료와 직보 수업 때 푼 예상문제에서 <em>100% 출제</em></strong>
+          <p>외부지문 2문항(5 · 9번) 제외, 28문항 전부</p>
+          <p class="en-hit-cap">압구정중2 영어 2026학년도 2학기 중간고사 대비</p>
+        </div>
+        <div class="en-hit-side">
+          <blockquote class="en-hit-quote">“4점 문항 열 개가 모두 어법과 영작이었습니다.”</blockquote>
+          <a class="en-btn en-btn-outline" id="enHitBlog" href="https://blog.naver.com/apgujungeduholic/224435388122" target="_blank" rel="noopener">에듀홀릭 블로그에서 자세히 보기</a>
+          <div class="en-hit-cta">
+            <a class="en-btn en-btn-primary" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">예상문제 의뢰하기 (카톡)</a>
+            <a class="en-btn en-btn-outline" href="mailto:woorinaesin@naver.com">이메일 문의</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BUILD IT CHART(복구): 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
+    <section class="en-chart bb-chart" id="chart-showcase" aria-labelledby="enChartTitle">
+      <div class="bb-wrap">
+        <h2 class="bb-title" id="enChartTitle">BUILD IT CHART</h2>
+        <p class="bb-sub">전국의 색깔 있는 영어교육자를 발견합니다.</p>
+        <div class="bb-meta">
+          <span class="bb-week">기준일 <span id="landingChartDate"></span></span>
+          <form class="bb-region" id="chartRegionPicker" autocomplete="off">
+            <label class="visually-hidden" for="chartProvince">시·도</label>
+            <select id="chartProvince"><option value="">시·도 선택</option></select>
+            <label class="visually-hidden" for="chartDistrict">시·군·구</label>
+            <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
+            <button type="submit">색깔 있는 영어쌤 보기</button>
+          </form>
+        </div>
+        <div class="bb-list" id="landingChartTop5" aria-label="BuildIt Chart 공개 TOP5"><div class="bb-empty">전국 Chart를 불러오는 중입니다.</div></div>
+        <div class="bb-foot">
+          <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
+          <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
+        </div>
+        <p class="bb-note">점수마다 근거 자료를 함께 표시 · AI 해석과 근거 자료를 구분 · BuildIt 사용 여부는 점수에 영향 없음</p>
+      </div>
+    </section>
+    <script src="/js/landing_chart.js?v=20261014-1" defer></script>
+
     <a class="en-notice" href="/wiki" aria-label="공지사항: 10월 20일 모의고사 해설지, 10월 21일 탑재 예정">
       <span class="en-notice-tag">공지사항</span>
       <span class="en-notice-text">10월 20일 모의고사 해설지, 10월 21일 탑재 예정</span>
