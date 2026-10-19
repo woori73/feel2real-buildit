@@ -3747,7 +3747,9 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### ✅ 영어 문법 문제은행 API (`/api/problem-generator/grammar-bank`)
 
-내신위키 SPA의 '문법 문제은행'(`/problem-generator/wiki` → 메뉴 '문법 문제은행')과 AI·MCP가 사용하는 Spring API. 화면 주소는 `/problem-generator` 내부 SPA 라우트이며 별도 SSR 경로가 아니다.
+내신위키 SPA의 '문법 문제은행' 메뉴와 **독립 페이지 `/grammar-items`**, 그리고 AI·MCP가 사용하는 Spring API다. 독립 화면 주소는 `https://feel2real.co.kr/grammar-items`(내신위키와 분리된 전용 SPA 엔트리, 정적 자산은 `/grammar-items/assets/**`). 비회원은 로그인 안내로 이동하고 로그인 후 `/grammar-items`로 복귀한다.
+
+- **접근 권한(서버 강제)**: `GrammarBankAccessGuard`가 모든 `grammar-bank` API·화면에서 **ADMIN 역할 또는 운영 계정 `modu`**만 허용한다. `modu`는 문자열 loginId가 아니라 인증된 주체의 고유 식별자(`users.user_id`)로 판정하며(loginId는 저장소에서 실제 id를 조회하는 데만 사용), `modu`에 ADMIN 권한을 부여하지 않는다. 미로그인은 401, 로그인했으나 권한이 없으면 403. 프론트 메뉴 숨김에 의존하지 않는다. 다른 서비스 권한·계정 데이터는 변경하지 않는다.
 
 - `GET /tags` — 문법 유형 사전(시드 14종).
 - `GET /stats` — 대시보드: 전체/검수 필요/승인/반려, 학년별·유형별 집계.
@@ -3762,7 +3764,8 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `POST /import/csv` — CSV 파일(multipart `file`) 또는 `text/plain` 본문 동일 파이프라인.
 - `POST /ai/find` — `{request:"중2 수동태 객관식 문제 30개 찾아줘"}` → 필터(AI 또는 키워드 매핑)로 **실제 DB 검색 결과만** 반환 `{usedAi, extractedFilters, totalFound, questions[], answer}`.
 - 선택함/문제집: `GET|POST /collections`, `GET|PATCH|DELETE /collections/{id}`, `POST /collections/{id}/items`, `DELETE /collections/{id}/items`, `POST /collections/{id}/reorder`, `POST /collections/{id}/book`(BASKET→BOOK 복제). 소유자 격리.
-- `POST /collections/{id}/designcraft` — 선택 문항을 조판한 markdown 원고(`## 번호`, 선택지, 목차, 정답·해설 분리 섹션)를 기존 `POST /api/publishing/jobs` 파이프라인에 반입. `{template: ko-textbook-a4|ko-workbook-b5, splitAnswerSheet}`. Response: `{job, collection, editorUrl:"/designcraft/editor?jobId=…"}`. TUTOR/ADMIN 편집기 권한 유지.
+- `POST /collections/{id}/designcraft` — (코드 보존) 선택 문항을 조판한 markdown 원고를 기존 `POST /api/publishing/jobs` 파이프라인에 반입. DesignCraft는 당분간 로컬 PC에서 쓰므로 운영에서는 실행되지 않고, 화면에서 이 웹 전달 버튼은 노출하지 않는다.
+- 원고 다운로드(로컬 DesignCraft 입력용, 웹 편집기 실행 없음): `GET /collections/{id}/manuscript.md`(text/markdown), `GET /collections/{id}/manuscript.html`(text/html), `GET /collections/{id}/manuscript.json`(application/json, `{title,kind,questionCount,questions:[{number,questionId,schoolLevel,grammarTags,passage,questionText,choices,correctAnswer,explanation}]}`). `Content-Disposition: attachment`. 같은 `buildManuscript` 로직을 재사용하며 ADMIN·modu 가드를 적용한다.
 
 ### ✅ POST /api/problem-generator/gemini/chat
 

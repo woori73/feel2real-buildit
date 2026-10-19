@@ -65,7 +65,7 @@ const descriptions: Record<Page, string> = {
   chrometransform: '참고자료와 기존 문제를 한 화면에서 보며 Chrome AI와 문제를 공동 편집합니다.',
   twin: '강사가 만든 Digital Twin HTML을 업로드하면 학교·학년·시험 계층이 자동으로 생성됩니다.',
   database: '생성하거나 변형한 문항을 SQLite DB에서 확인하고 관리합니다.',
-  grammabank: '중1~고3 영어 문법 문제를 학년·문법 유형·형식으로 검색하고, 검수·선택함·DesignCraft 문제집 제작까지 이어갑니다.',
+  grammabank: '중1~고3 영어 문법 문제를 학년·문법 유형·형식으로 검색하고, 검수·선택함·문제집 원고(HTML·JSON·Markdown) 내려받기까지 이어갑니다.',
   gentests: '학습자료별로 MCP가 생성·저장한 시험을 학생용 문제·정답/해설·출제 정보로 다시 확인합니다.',
   exam: '선택한 문항으로 실전 시험지를 구성합니다.',
   wrongnote: '학생별 오답을 누적하고 맞춤 복습 자료를 준비합니다.',

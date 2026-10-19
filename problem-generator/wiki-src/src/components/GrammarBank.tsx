@@ -72,7 +72,6 @@ export default function GrammarBank() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [aiRequest, setAiRequest] = useState('')
   const [aiResult, setAiResult] = useState<{ usedAi: boolean; totalFound: number; answer: string; questions: Item[] } | null>(null)
-  const [dcTemplate, setDcTemplate] = useState('ko-textbook-a4')
 
   const notify = (message: string) => { setNotice(message); setError('') }
   const fail = (e: unknown) => { setError(e instanceof Error ? e.message : '요청에 실패했습니다.'); setNotice('') }
@@ -134,11 +133,6 @@ export default function GrammarBank() {
   const promoteBook = async (collectionId: number) => {
     const book = await req<Collection>(`/collections/${collectionId}/book`, { method: 'POST', body: JSON.stringify({ title: `${basketTitle} 문제집` }) })
     notify(`문제집 #${book.collectionId}을(를) 만들었습니다.`); setCollections(await req<Collection[]>('/collections'))
-  }
-  const toDesignCraft = async (collectionId: number) => {
-    const handoff = await req<{ job: { jobId: number; status: string }; editorUrl: string }>(`/collections/${collectionId}/designcraft`, { method: 'POST', body: JSON.stringify({ template: dcTemplate, splitAnswerSheet: true }) })
-    notify(`DesignCraft 작업 #${handoff.job.jobId} 생성 — 편집기에서 확인하세요.`)
-    setCollections(await req<Collection[]>('/collections'))
   }
   const runImport = async () => {
     if (!importFile) { fail(new Error('CSV/JSON 파일을 선택해 주세요.')); return }
@@ -242,12 +236,12 @@ export default function GrammarBank() {
     </div>}
 
     {tab === 'books' && <div>
-      <label>교재 규격<select value={dcTemplate} onChange={e => setDcTemplate(e.target.value)}>
-        <option value="ko-textbook-a4">A4 (ko-textbook-a4)</option><option value="ko-workbook-b5">B5 (ko-workbook-b5)</option></select></label>
+      <p>문제집 원고를 내려받아 로컬 DesignCraft에서 조판하세요. (웹 DesignCraft 편집기는 현재 동작하지 않습니다.)</p>
       <div className="material-list">{collections.filter(c => c.kind === 'BOOK').map(c => <article key={c.collectionId}>
-        <div><b>{c.title}</b><p>문제집 #{c.collectionId} · {c.itemCount}문제 {c.designcraftJobId ? `· DesignCraft 작업 #${c.designcraftJobId}` : ''}</p></div>
-        <button className="primary-action" style={{ marginTop: 0 }} onClick={() => void toDesignCraft(c.collectionId).catch(fail)}>DesignCraft로 전달</button>
-        <a className="secondary-button" href="/designcraft/editor" style={{ marginTop: 0 }}>편집기 열기</a>
+        <div><b>{c.title}</b><p>문제집 #{c.collectionId} · {c.itemCount}문제</p></div>
+        <a className="primary-action" style={{ marginTop: 0 }} href={`${BASE}/collections/${c.collectionId}/manuscript.html`}>원고 HTML 내려받기</a>
+        <a className="secondary-button" style={{ marginTop: 0 }} href={`${BASE}/collections/${c.collectionId}/manuscript.json`}>원고 JSON</a>
+        <a className="secondary-button" style={{ marginTop: 0 }} href={`${BASE}/collections/${c.collectionId}/manuscript.md`}>원고 Markdown</a>
       </article>)}{collections.filter(c => c.kind === 'BOOK').length === 0 && <div className="empty-state"><b>문제집이 없습니다.</b><p>선택함에서 '문제집으로 승격'하세요.</p></div>}</div>
     </div>}
 
