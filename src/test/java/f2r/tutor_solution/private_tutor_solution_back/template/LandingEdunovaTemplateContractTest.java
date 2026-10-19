@@ -113,7 +113,10 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("압구정중2 영어 시험은")
+        .contains("40문항 직보 예상문제,")
+        .contains("실제 적중률 100%")
+        .contains("압구정중2 영어 시험은 어떻게 나왔을까?")
+        .contains("href=\"#exam-hit\"")
         .contains("100% 출제")
         .contains("외부지문 2문항(5 · 9번) 제외, 28문항 전부")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
@@ -122,11 +125,14 @@ class LandingEdunovaTemplateContractTest {
     int hitBlog = html.indexOf("id=\"enHitBlog\"");
     int chart = html.indexOf("id=\"chart-showcase\"");
     int notice = html.indexOf("class=\"en-notice\"");
+    int services = html.indexOf("id=\"svc-exam\"");
+    // 공지는 상단(히어로 직후), 적중 성과가 그 다음, BUILD IT CHART는 맨 마지막
     assertThat(hero).isPositive();
-    assertThat(hit).isGreaterThan(hero);
+    assertThat(notice).isGreaterThan(hero);
+    assertThat(hit).isGreaterThan(notice);
     assertThat(hitBlog).isGreaterThan(hit);
-    assertThat(chart).isGreaterThan(hitBlog);
-    assertThat(notice).isGreaterThan(chart);
+    assertThat(services).isGreaterThan(hitBlog);
+    assertThat(chart).isGreaterThan(services);
   }
 
   @Test
