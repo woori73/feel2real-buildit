@@ -1,0 +1,153 @@
+name: Admissions live eval (temporary, isolated)
+
+# 2027 입시상담 AI 22건 실제 Muse Spark 평가 (임시, 격리).
+# - 격리 MySQL 서비스 컨테이너(f2r_test) + 로컬 앱만 사용한다. 운영 DB·배포·AWS 접근 없음.
+# - 미검증 입시자료는 공개 저장소에 커밋하지 않고 저장소 시크릿으로만 전달한다(이 저장소는 공개 저장소).
+# - 로그에는 질문 ID·판정·사유만 남긴다. 답변 전문·근거 원문은 암호화 아티팩트로만 저장한다.
+# - 격리 CI DB는 job이 끝나면 소멸한다. APPROVED 승격·운영 반영은 없다.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/admissions-22test-llm-20261019]
+
+permissions:
+  contents: read
+
+jobs:
+  admissions-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_root_pw
+          MYSQL_DATABASE: f2r_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/f2r_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ci_test_root_pw
+      APP_ADMISSIONS_LLM_PRIMARY: meta
+      # 격리 컨테이너 내부에서만 채팅 API를 열어 22건을 실행한다(외부 노출 없음).
+      # 운영 기본값(OFF)은 아래 공개 API 기본 OFF 테스트가 검증한다.
+      APP_ADMISSIONS_PUBLIC_API_ENABLED: 'true'
+      META_JIPJIGI_API_KEY: ${{ secrets.META_JIPJIGI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: woori73/buildit-admissions
+          path: adm-data
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: chmod +x gradlew
+
+      - name: Public API default-OFF check (미검증 자료 공개 차단 1)
+        run: ./gradlew test --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsPublicApiDefaultOffMySqlTest"
+
+      - name: DRAFT seed from repo secret (미검증 자료는 커밋하지 않는다)
+        env:
+          SEED_B64: ${{ secrets.ADMISSIONS_DRAFT_SEED_2027_B64 }}
+        run: |
+          test -n "$SEED_B64" || { echo '::error::ADMISSIONS_DRAFT_SEED_2027_B64 secret missing'; exit 1; }
+          printf '%s' "$SEED_B64" | base64 -d > draft-seed-2027.json
+          python3 - <<'PY'
+          import json
+          d = json.load(open('draft-seed-2027.json', encoding='utf-8'))
+          assert d.get('ipsi_universities') and d.get('ipsi_documents'), 'seed shape error'
+          print('seed ok: univ=%d docs=%d' % (len(d['ipsi_universities']), len(d['ipsi_documents'])))
+          PY
+          # 뮤즈 2027 시드 + 기존 검증된 univ_sample 시드(학과·전형·일정 상세행)를 같은 loadSeed 형식으로 합친다.
+          jq -s 'reduce .[] as $x ({}; reduce ($x|to_entries[]) as $e (. ; .[$e.key] = ((.[$e.key] // []) + $e.value)))' \
+            draft-seed-2027.json adm-data/data/seed/ipsi_seed_univ_sample.json > merged-seed.json
+          wc -c merged-seed.json
+
+      - name: Start app (isolated CI DB, V1078 via Flyway)
+        run: |
+          nohup ./gradlew bootRun --no-daemon > app.log 2>&1 &
+          echo $! > app.pid
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            [ "$code" = "200" ] && echo "app up" && exit 0
+            sleep 10
+          done
+          echo "app did not start"; tail -50 app.log | sed 's/META_[A-Z_]*=[^ ]*/META_***/'; exit 1
+
+      - name: Flyway V1078 check
+        run: |
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "SELECT version, description, success FROM flyway_schema_history WHERE version='1078'; SHOW TABLES LIKE 'admissions_%';"
+
+      - name: Seed test admin (CI DB only)
+        run: |
+          H='\$2a\$10\$b1zH0Y4x2dC7YMdGjrWCzuSF4gRpiVnnt2B1s3jA2HPBP3xrvc9Di'
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "INSERT INTO users (login_id, password, name, nickname, role, created_at, updated_at) VALUES ('iso-admin', '$H', 'iso', 'iso', 'ADMIN', NOW(), NOW());"
+
+      - name: Phase 1 - DRAFT gate (전부 DRAFT => 근거로 노출되면 안 됨, 미검증 자료 공개 차단 2)
+        env:
+          PHASE: DRAFT_GATE
+          LIMIT: '2'
+          SEED: merged-seed.json
+          KB: adm-data/docs/ANALYSIS/03_counseling_qa/knowledge_base.json
+        run: node e2e/admissions-live/run.js 2>&1 | tee phase1.txt
+
+      - name: DB state after load (counts only — 전부 DRAFT 유지 확인)
+        run: |
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "SELECT 'knowledge' t, role, status, COUNT(*) n FROM admissions_knowledge_items GROUP BY 2,3 UNION ALL SELECT 'departments', '-', status, COUNT(*) FROM admissions_departments GROUP BY 3 UNION ALL SELECT 'types', '-', status, COUNT(*) FROM admissions_types GROUP BY 3 UNION ALL SELECT 'schedules', '-', status, COUNT(*) FROM admissions_schedules GROUP BY 3 UNION ALL SELECT 'materials', '-', status, COUNT(*) FROM admissions_official_materials GROUP BY 3;" | tee db-after-load.txt
+
+      - name: Promote to ACTIVE (소멸되는 격리 CI DB 전용 테스트 절차 — 운영·영속 DB 없음)
+        run: |
+          mysql -h127.0.0.1 -uroot -pci_test_root_pw f2r_test -e "UPDATE admissions_knowledge_items SET status='ACTIVE'; UPDATE admissions_official_materials SET status='ACTIVE'; UPDATE admissions_departments SET status='ACTIVE'; UPDATE admissions_types SET status='ACTIVE'; UPDATE admissions_schedules SET status='ACTIVE';"
+
+      - name: Phase 2 - 22 scenarios (real Muse Spark LLM)
+        env:
+          PHASE: ACTIVE_TEST
+          SKIP_LOAD: '1'
+        run: node e2e/admissions-live/run.js 2>&1 | tee phase2.txt
+
+      - name: LLM calls (from app log; no secrets, no answers)
+        if: always()
+        run: |
+          grep -a "admissions llm \|admissions answer rejected\|admissions chat ok\|admissions chat rate\|admissions chat endpoint" app.log | sed 's/\(key\|KEY\)=[^ ]*/\1=***/' | tail -120 | tee llm-calls.txt || true
+
+      - name: Stop app
+        if: always()
+        run: kill $(cat app.pid) 2>/dev/null || true
+
+      - name: Encrypt human-review bundle (답변 전문 공개 방지)
+        if: always()
+        env:
+          ARTIFACT_KEY: ${{ secrets.ADMISSIONS_22TEST_ARTIFACT_KEY }}
+        run: |
+          test -n "$ARTIFACT_KEY" || { echo '::error::ADMISSIONS_22TEST_ARTIFACT_KEY secret missing'; exit 1; }
+          tar czf review-bundle.tgz results-*.json review-*.md phase*.txt db-after-load.txt llm-calls.txt 2>/dev/null || true
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in review-bundle.tgz -out review-bundle.tgz.enc -pass env:ARTIFACT_KEY
+          rm -f review-bundle.tgz results-*.json review-*.md phase*.txt
+
+      - name: Verdicts summary (IDs and verdicts only)
+        if: always()
+        run: |
+          grep -aE '^S[0-9][0-9] ' phase2.txt 2>/dev/null | tee verdicts.txt || true
+          grep -a "autoPASS=" phase2.txt 2>/dev/null | tee -a verdicts.txt || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admissions-22-encrypted
+          retention-days: 30
+          path: |
+            review-bundle.tgz.enc
+            verdicts.txt
