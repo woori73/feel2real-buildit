@@ -267,7 +267,7 @@ body { background:var(--ed-paper); color:var(--ed-ink); }
 .en-chart .chart-criteria-link { color:var(--ed-steel); font-weight:600; }
 .en-chart .chart-cta { background:var(--ed-ink); border-radius:6px; font-weight:600; }
 .en-chart .bb-note { color:#8a8a8a; }
-.en-mail-toast { background:var(--ed-ink); }
+body .en-mail-toast { background:var(--ed-stone); color:var(--ed-ink); border:1px solid var(--ed-line); border-radius:6px; }
 @media (max-width:960px) { .en-offer { padding:28px 20px 26px; } .en-hit { padding:28px 20px 30px; } .en-intro { margin-top:56px; } }
 
 /* 계정 버튼 · 로그인 창 · 문의 창 · 푸터 — 같은 체계(이 CSS는 홈에서만 로드된다) */
