@@ -473,8 +473,8 @@
     const body = logoUrl
       ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(academy.name)} 로고" onerror="this.style.display='none';this.nextElementSibling.style.display='';">` + `<span class="eh-logo-symbol-inner" style="display:none;"><span class="eh-book"><span class="eh-letters">${escapeHtml(initials(academy.name))}</span></span></span>`
       : fallback;
-    // 로고 클릭 = 홈 이동, 편집 칩 클릭 = 로고 수정 (기능 명확히 구분)
-    const homeUrl = '/';
+    // 게시 페이지와 동일한 학원 홈 URL 규칙 사용 (/academies/{slug})
+    const homeUrl = academy.slug ? '/academies/' + encodeURIComponent(academy.slug) : '/';
     return `<span class="eh-logo-symbol" data-builder-logo="${context}" tabindex="0"><a href="${homeUrl}" data-builder-logo-home title="홈으로 이동" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit;">${body}</a><button type="button" class="builder-logo-edit-chip" data-builder-logo-edit title="로고 이미지 수정"><i class="fa-solid fa-image"></i> 로고</button></span>`;
   }
 
