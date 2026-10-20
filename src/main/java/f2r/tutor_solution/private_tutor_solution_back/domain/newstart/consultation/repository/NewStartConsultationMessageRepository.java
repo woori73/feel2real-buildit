@@ -37,4 +37,8 @@ public interface NewStartConsultationMessageRepository extends JpaRepository<New
 
   /** 테스트 데이터 정리용 — 해당 상담의 메시지 전체 삭제. 반환값은 삭제된 행 수. */
   long deleteByConsultationId(Long consultationId);
+
+  /** 전체 스레드에서 특정 작성자의 가장 마지막 메시지 (Muse ping 알림용 — 회원 후속 질문 감지). */
+  Optional<NewStartConsultationMessage> findTopByAuthorRoleOrderByMessageIdDesc(
+      MessageAuthorRole authorRole);
 }
