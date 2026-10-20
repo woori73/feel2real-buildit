@@ -1,0 +1,32 @@
+.ach { max-width: 1080px; margin: 0 auto; padding: 24px 16px 80px; color: #222; line-height: 1.7; font-family: inherit; }
+.ach a { color: #1a56db; }
+.ach-head h1 { font-size: 26px; margin: 0 0 6px; }
+.ach-lead { color: #555; margin: 0 0 20px; }
+.ach-layout { display: grid; grid-template-columns: 240px 1fr; gap: 28px; }
+.ach-nav { border: 1px solid #e5e5e5; border-radius: 12px; padding: 8px; align-self: start; }
+.ach-nav a { display: block; padding: 8px 12px; border-radius: 8px; color: #222; text-decoration: none; font-size: 15px; }
+.ach-nav a[aria-current="page"] { background: #eef3ff; font-weight: 700; }
+.ach-main h2 { font-size: 19px; margin: 28px 0 8px; }
+.ach-main p.note { background: #fff7e6; border-left: 4px solid #f5a623; padding: 10px 14px; border-radius: 6px; }
+.ach-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 20px; font-size: 13px; }
+.ach-badge { background: #f1f1f1; border-radius: 999px; padding: 3px 10px; }
+.ach-badge.state-OPERATING { background: #e6f6ec; color: #11683a; }
+.ach-badge.state-DEV_DONE_UNDEPLOYED, .ach-badge.state-IN_DEVELOPMENT { background: #fff1d6; color: #8a5200; }
+.ach-badge.state-NOT_IMPLEMENTED { background: #fde8e8; color: #9b1c1c; }
+.ach-related { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; }
+.ach-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.ach-card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 16px; text-decoration: none; color: #222; display: block; }
+.ach-card strong { display: block; margin-bottom: 4px; }
+.ach-ask { border: 1px solid #e5e5e5; border-radius: 12px; padding: 16px; margin: 0 0 24px; }
+.ach-ask form { display: flex; gap: 8px; }
+.ach-ask input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+.ach-ask button { padding: 10px 16px; border: 0; border-radius: 8px; background: #1a56db; color: #fff; font-size: 15px; cursor: pointer; }
+.ach-answer { white-space: pre-wrap; margin-top: 12px; }
+.ach-answer.ungrounded { color: #8a5200; }
+.ach-sources { font-size: 13px; color: #555; margin-top: 8px; }
+@media (max-width: 760px) {
+  .ach-layout { grid-template-columns: 1fr; }
+  .ach-nav { display: flex; overflow-x: auto; gap: 4px; }
+  .ach-nav a { white-space: nowrap; }
+  .ach-ask form { flex-direction: column; }
+}

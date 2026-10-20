@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AcademyCraft 사용 도움말 | Feel2Real</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" th:href="@{/css/academycraft-help.css}">
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="ach">
+  <header class="ach-head">
+    <h1>AcademyCraft 사용 도움말</h1>
+    <p class="ach-lead">원장(ADMIN)·강사(TUTOR)를 위한 사용법입니다. 각 문서에 운영 상태와 검증일이 표시됩니다.</p>
+  </header>
+  <th:block th:replace="~{help/academycraft/_ask :: ask}"></th:block>
+  <div class="ach-cards">
+    <a class="ach-card" th:each="d : ${docs}" th:href="@{/help/academycraft/{s}(s=${d.slug})}">
+      <strong th:text="${d.order} + '. ' + ${d.title}">제목</strong>
+      <span class="ach-badge" th:classappend="'state-' + ${d.featureState}" th:text="${d.featureStateLabel}">운영 중</span>
+    </a>
+  </div>
+</div>
+<script th:src="@{/js/academycraft-help.js}"></script>
+</th:block>
+</body>
+</html>
