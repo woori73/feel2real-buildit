@@ -4813,3 +4813,9 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - AcademyCraft의 `ACADEMYCRAFT_BUILDIT_BINDINGS`는 명시 승인된 BuildIt userId/role/builditAcademyId와 기존 AcademyCraft academyId/memberId 또는 studentId의 연결 목록. 이름이나 동일 ID 추정 매핑, 자동 회원·학원 생성 없음. 비밀번호·권한 변경 없음.
 - 운영 데이터·환경 변경 및 배포는 PR 승인 범위 밖. 초기 AcademyCraft 학원·회원이 비어 있으면 로그인 자격이 없는 내부 소속 레코드 준비 범위를 별도로 승인받아야 하며, 이번 코드가 생성하지 않음.
 ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값은 권한 근거가 아니며 AcademyCraft가 매 요청 실제 활성 소속·역할·학원 범위를 검증한다. 권한 변경은 보호된 소속 설정 검토로만 수행하고 기존 회원 역할을 변경하지 않는다.
+
+## AcademyCraft 도움말 (2026-10, Draft)
+| Method | Path | 권한 | 설명 |
+|---|---|---|---|
+| GET | `/help/academycraft`, `/help/academycraft/{slug}` | ADMIN·TUTOR (비로그인 HTML은 로그인 안내 302) | 도움말 SSR. 역할 전용 문서는 타 역할 404 |
+| POST | `/api/help/academycraft/ask` | ADMIN·TUTOR | body `{question}`(≤300자). 읽기 전용 검색·안내, 사용자당 분당 20회(429). 응답 `{intent,text,sources[],grounded,writeBlocked}` |

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title th:text="${doc.title} + ' | AcademyCraft 도움말'">도움말</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" th:href="@{/css/academycraft-help.css}">
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="ach">
+  <header class="ach-head">
+    <p><a th:href="@{/help/academycraft}">← AcademyCraft 도움말</a></p>
+    <h1 th:text="${doc.title}">제목</h1>
+    <div class="ach-meta">
+      <span class="ach-badge" th:classappend="'state-' + ${doc.featureState}" th:text="${doc.featureStateLabel}">운영 중</span>
+      <span class="ach-badge" th:text="'이용 권한: ' + (${doc.audience} == 'ALL' ? 'ADMIN·TUTOR' : ${doc.audience})">권한</span>
+      <span class="ach-badge" th:text="'적용 버전: ' + ${doc.appliesTo}">버전</span>
+      <span class="ach-badge" th:text="'최종 검증일: ' + ${doc.lastVerified}">검증일</span>
+      <span class="ach-badge" th:text="'문서 상태: ' + ${doc.status}">상태</span>
+    </div>
+  </header>
+  <div class="ach-layout">
+    <nav class="ach-nav" aria-label="도움말 목차">
+      <a th:each="d : ${docs}" th:href="@{/help/academycraft/{s}(s=${d.slug})}"
+         th:text="${d.order} + '. ' + ${d.title}" th:attr="aria-current=${d.slug == doc.slug} ? 'page' : null">메뉴</a>
+    </nav>
+    <main class="ach-main">
+      <th:block th:replace="~{help/academycraft/_ask :: ask}"></th:block>
+      <div th:utext="${html}"></div>
+      <p class="ach-lead" th:text="'출처: ' + ${doc.source}">출처</p>
+      <div class="ach-related" th:if="${!related.isEmpty()}">
+        <strong>관련 도움말</strong>
+        <ul><li th:each="r : ${related}"><a th:href="@{/help/academycraft/{s}(s=${r.slug})}" th:text="${r.title}">관련</a></li></ul>
+      </div>
+    </main>
+  </div>
+</div>
+<script th:src="@{/js/academycraft-help.js}"></script>
+</th:block>
+</body>
+</html>

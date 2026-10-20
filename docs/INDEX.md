@@ -55,3 +55,5 @@
 4. 학교별 Wiki Context/Digital Twin/기출·프린트 기반 문제 제작이면 [exam/WIKI_TUTOR_BROWSER_CONTEXT.md](exam/WIKI_TUTOR_BROWSER_CONTEXT.md)를 추가로 읽고, MCP empty 시 TUTOR 브라우저 확인 후 실제 Context를 확보할 것
 5. 현재 git 상태 / 브랜치 확인
 6. DB/마이그레이션 건드리면 [WORKFLOW.md](WORKFLOW.md) §4 번호정책 **반드시** 확인
+
+- AcademyCraft 사용 도움말·도움말 AI 비서(Draft, 검토 단계): [academycraft-help/README.md](academycraft-help/README.md)

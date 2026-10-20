@@ -1,0 +1,10 @@
+<section class="ach-ask" th:fragment="ask" aria-label="도움말 AI 비서">
+  <strong>도움말 AI 비서에게 물어보기</strong>
+  <p class="ach-lead" style="margin:4px 0 10px">검증된 도움말에서만 답하며 데이터를 직접 바꾸지 않습니다.</p>
+  <form id="ach-ask-form">
+    <input type="text" maxlength="300" placeholder="예: 학생은 어떻게 등록하나요?" aria-label="질문">
+    <button type="submit">질문</button>
+  </form>
+  <div id="ach-answer" class="ach-answer" aria-live="polite"></div>
+  <div id="ach-sources" class="ach-sources"></div>
+</section>

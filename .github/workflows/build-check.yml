@@ -129,6 +129,7 @@ jobs:
         run: >-
           ./gradlew test --no-daemon
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycrafthelp.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.DesignCraftCliExecutorTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingEditServiceImportTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingAiServiceTest"

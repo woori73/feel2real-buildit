@@ -259,7 +259,9 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     new OrRequestMatcher(
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard"),
-                        PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace")),
+                        PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft/**"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
@@ -284,6 +286,8 @@ public class SecurityConfig {
             .requestMatchers("/ledger", "/ledger/**", "/tutor/easy", "/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             // BuildIt 통합 대시보드 — ADMIN·TUTOR 공용. 데이터는 /api/dashboard/** 에서 역할별 권한 검증.
             .requestMatchers("/dashboard", "/admissions/workspace", "/api/dashboard/admissions/**").hasAnyRole("ADMIN", "TUTOR")
+            // AcademyCraft 도움말(SSR)·도움말 AI 비서(읽기 전용) — ADMIN·TUTOR 전용.
+            .requestMatchers("/help/academycraft", "/help/academycraft/**", "/api/help/academycraft/**").hasAnyRole("ADMIN", "TUTOR")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).
             .requestMatchers("/easy", "/easy/**").hasRole("ADMIN")
             // CHOONGGI Creator SSR — ADMIN or the scoped CHOONGGI CREATOR role only; public vlog
