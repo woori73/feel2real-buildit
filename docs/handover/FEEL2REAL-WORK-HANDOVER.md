@@ -1,10 +1,12 @@
-# FEEL2REAL 작업 인계 (2026-10-20 갱신)
+# FEEL2REAL 작업 인계 (2026-10-20 갱신 2)
 
 > 이미 끝난 작업은 반복하지 않는다. 아래 "미검증·미해결"만 이어서 처리한다.
 
 ## 현재 운영 상태 (신규 AWS 계정 425805163960)
-- **운영 배포 SHA: `3f07c144`** — Deploy to EC2 run 39323583313, `target=new`, 성공. main = `3f07c144`, main Build Check 성공.
-- 배포 이력(홈 관련, 모두 신규 계정): #793·#794 `3fe2aea7` → #796 `81da6216` → #812 `d1f09245` → #813 `bbfb647d` → #814·#815 `3f07c144`.
+- **현재 운영 SHA: `5343d785`** — Deploy to EC2 run 39344173037(2026-10-19 23:51 UTC 시작, `target=new`, 성공). **PR #816(구글 서치콘솔 소유확인 메타태그 추가, 커밋 `2cd93021`, 병합 `5343d785`)의 배포와 연결된 변경**이다. 변경은 `templates/layouts/public.html` 2줄(주석+메타태그)뿐이며(`3f07c144..5343d785` diff 확인), 운영 홈에서 `google-site-verification` 메타태그가 확인됨(값은 문서에 적지 않음).
+- 직전 운영 SHA는 `3f07c144`(run 39323583313, #814·#815 배포). 같은 SHA의 재배포 run 39341504078(23:25 UTC)도 있었다. 이 두 배포(run 39341504078, 39344173037)는 이 Claude 세션이 실행하지 않았다. 워크플로 실행 계정이 Claude 작업과 같아 실행 주체는 구분할 수 없다.
+- main 최신(`9c570df3`)은 운영보다 앞서 있으나 앞선 변경은 문서(#817 `1c2ec1ff`)와 읽기 전용 진단 CI 단계(#818 `9c570df3`)뿐이라 **앱 재배포는 하지 않았다.** 운영 앱 코드 = `5343d785`.
+- 배포 이력(홈 관련, 모두 신규 계정): #793·#794 `3fe2aea7` → #796 `81da6216` → #812 `d1f09245` → #813 `bbfb647d` → #814·#815 `3f07c144` → #816 `5343d785`.
 - 포함된 PR: #814(비회원 `/dashboard` → 로그인 안내 `/?login=required&returnUrl=…`, 이메일 주소 표시·복사 안내) 병합 `00f8f644`, #815(AI AGENT 확정 배너 + Cinematic Editorial 디자인 + 상단 로고) 병합 `3f07c144`.
 - 신규 ALB: `https://f2r-alb-2551937.ap-northeast-2.elb.amazonaws.com` (공식 도메인은 샌드박스 프록시가 막음 — 아래 참고).
 
@@ -18,12 +20,22 @@
 - 기존 실패(main에서도 동일): `TemplateBrandingTest` 2건, JS 39건, MySQL 필요 테스트.
 
 ## 운영 검증 결과 (2026-10-19, `3f07c144`, ALB 기준)
+- 이후 `5343d785`(#816) 배포는 메타태그만 추가했다. 2026-10-20 ALB 확인: 홈 200, CSS `v=20261020-8`·`FEEL2REAL` 로고 유지(배너·디자인 유지). 아래 검증 항목은 `3f07c144` 기준이며 #816 이후 전체를 다시 돌리지는 않았다.
 - 통과: PC 1440·모바일 390·360 — 확정 배너(모바일은 `-m.webp`), Editorial 배경·버튼·카드, 로고·로그인·회원가입 버튼 겹침/줄바꿈 없음, 가로 스크롤 없음, 의뢰 버튼 높이 48px, 이메일 주소 표시, CHART 실제 5건, 로그인 창 열림, 푸터, EDUNOVA 표기 없음. 비로그인 `/dashboard` → 302 로그인 안내, `/api/dashboard/widgets`·`/api/easy/workspace` → 401.
 - 계정 메뉴: **로그인 상태를 시뮬레이션**(브라우저에서 `/api/auth/me` 응답만 대체, 서버 영향 없음)해 메뉴 열림·항목(강사 홈/프로필/로그아웃)만 확인. **실제 로그인 검증 아님.**
 - 폰트 차단(Google Fonts 요청 abort) 상태에서도 로고 글자 표시·겹침 없음(대체 폰트 렌더 확인).
 
+## ALB 진단 결과 (신규 계정, `alb-diag` run 42, 구간 2026-10-19 20:30~21:30 UTC, 읽기 전용)
+- 실행: `migration-infra-build.yml` step=`alb-diag`(#818, `scripts/operations/alb-diag-lib.sh`). 조회만 수행, 구 계정(`067573916809`) 진단 워크플로는 사용하지 않았다.
+- **ALB 503: 0건.** **ALB 5xx: 2건**(21:00·21:01 UTC 각 1건, TargetConnectionError도 같은 분에 각 1건 — 제 배포로 `f2r-app`이 중지(21:00:31)→기동(21:01:13)되던 시간과 일치. 단일 대상이라 배포 때마다 약 40초 연결 오류 가능). 대상 5xx 0, 거부 연결 0.
+- **두 대상 그룹(`f2r-app-tg` 8080, `f2r-academycraft-tg` 8082) healthy**: 구간 내 HealthyHostCount 최소 1, UnHealthyHostCount 최대 0.
+- EC2 `i-0414de33d2803c723`(t3.medium, CPU 크레딧 `unlimited`): CPU 평균 약 3%·5분 최대 51.6%(21:05 구간 순간 상승), **CPU 크레딧 소진 없음**(잔액 576 고정, 추가 크레딧 청구 0), 상태 점검 실패 0.
+- 호스트(SSM, 현재 값): **메모리 여유(available) 약 1.7GB/3.8GB**, 로드 0.27, 디스크 13%, 구간 내 커널 OOM 없음, TCP listen overflow 누적 85회(서버 부팅 이후 합계 — 발생 시각 불명, 원인 미확인).
+- ALB 설정: idle timeout 180초, 접근 로그 꺼짐, 삭제 방지 켜짐. 대상 그룹 헬스체크 `/actuator/health` 30초 간격·타임아웃 5초(app-tg: 정상 2회/비정상 3회, deregistration delay 60초).
+- 한계: 분 단위 RequestCount 목록은 출력 상한으로 21:07~21:09를 확인하지 못했다. 메모리는 과거 지표가 없다(CloudWatch 에이전트 없음).
+
 ## 미검증·미해결
-1. **ALB 일시 503 — 원인 미확인.** 2026-10-19 ~21:08 UTC(배포 완료 약 5분 뒤) 운영 검증 중 연속 11개 요청(정적·API·화면 혼합, 본문 98바이트)이 모두 503이었고 곧 정상화. 재현 시도(2회, 62건, 최대 14 동시) 503 없음. 신규 호스트 `app-diag`(읽기 전용, run 41): 서비스 active, 앱 재시작은 배포 시점뿐(PID 114913 21:01 시작 후 유지), OOM·Killed·APPLICATION FAILED 없음, 메모리 가용 약 1.8GB/3.8GB. **ALB 대상 상태 이력·CloudWatch(HTTPCode_ELB_503_Count, UnHealthyHostCount, TargetResponseTime, EC2 CPU/CPU 크레딧)·ALB 액세스 로그는 미조사** — 기존 워크플로에 해당 단계가 없고 구 계정을 가리키는 진단 워크플로(`diagnose-*`, `prod-diagnostic`, `ec2-diagnose`: role `067573916809`)는 사용 금지. 샌드박스 egress 게이트웨이가 만든 503일 가능성도 배제하지 못함(미확인). 정상 현상이라고 단정하지 말 것.
+1. **ALB 일시 503 — 원인 미확인(유지).** 2026-10-19 ~21:08 UTC(앱 로그 시각으로 추정) 운영 검증 중 연속 11개 요청(정적·API·화면 혼합, 본문 98바이트)이 모두 503이었고 곧 정상화. 재현 시도(2회, 62건, 최대 14 동시) 503 없음. 아래 "ALB 진단 결과"에서 같은 구간에 **ALB 503 0건·대상 5xx 0건**이어서 ALB·앱이 만든 503으로 기록되지 않았다. 작업 환경 프록시(egress 게이트웨이)가 만든 503일 가능성이 있으나 **증거 없는 추정**이다. 요청별 원인을 볼 ALB 접근 로그는 꺼져 있다(**사용자 승인 없이 켜지 말 것**). 정상 현상이라고 단정하지 말 것.
 2. **실제 로그인(기존 인증 세션) 검증 미수행** — 환경에 테스트 계정 정보가 없어 ADMIN·TUTOR 로그인 후 메뉴·권한(`/dashboard`, `/ledger`, `/easy`, `/admin/*`, AcademyCraft 링크, 입시상담 AI)을 확인하지 못함. 코드 수준(MockMvc `EasySecurityWebMvcTest`)에서는 TUTOR/ADMIN/STUDENT/익명 매트릭스 통과. 사용자가 세션 확인 또는 검증 전용 계정 제공 필요.
 3. **공식 도메인 `feel2real.co.kr` 접근:** 샌드박스에서는 CONNECT 403 — 프록시 상태 기록에 `example.com`·`www.naver.com`도 같은 방식(게이트웨이 403)으로 거절됨 → 작업 환경의 egress 허용 목록 제한으로 판단. 서비스 장애 증거는 없음(ALB는 정상 응답, 사용자가 휴대폰 화면으로 문제를 보고했으나 접속 주소는 확인하지 않음). 그러나 도메인→신규 ALB 경로를 외부에서 직접 확인한 것은 아님 → 사용자 PC/휴대폰에서 최종 확인.
 4. 실기기(Android) 확인, 카톡·메일 버튼 실제 클릭 동작, 네이버 블로그 실제 열림(샌드박스에서 네이버 차단) 미검증.
@@ -31,4 +43,4 @@
 6. GPU: 11/1 개통 후 `docs/gpu-pipeline/GPU_PIPELINE_PLAN.md` 순서. AcademyCraft 연결은 별도 배포+인증 연동 결정 필요(임의 링크 금지).
 
 ## 신규 AWS 배포 절차
-병합 후 Actions `deploy-ec2.yml` ref=main, input `target=new`(나머지 `unchanged`) → 완료 확인 → ALB 주소에서 확인(샌드박스는 `feel2real.co.kr` 차단, ALB는 인증서 호스트 불일치라 `curl -k`/`ignoreHTTPSErrors`). 읽기 전용 신규 계정 점검: `migration-infra-build.yml` step=`app-diag`·`validate`·`muse-check`. 구 AWS 변경·종료, 운영 DB 삭제·변경 금지. 요청을 짧은 시간에 연달아 보내면 503이 섞일 수 있으니(위 1번) 검증은 간격을 두고 한다.
+병합 후 Actions `deploy-ec2.yml` ref=main, input `target=new`(나머지 `unchanged`) → 완료 확인 → ALB 주소에서 확인(샌드박스는 `feel2real.co.kr` 차단, ALB는 인증서 호스트 불일치라 `curl -k`/`ignoreHTTPSErrors`). 읽기 전용 신규 계정 점검: `migration-infra-build.yml` step=`app-diag`·`alb-diag`·`validate`·`muse-check`(`alb-diag`는 입력 `diag_start`/`diag_end`로 구간 지정, UTC·24시간 이내). 구 AWS 변경·종료, 운영 DB 삭제·변경 금지. 단일 대상이라 배포 때마다 약 40초 연결 오류가 날 수 있다(ALB 진단 결과 참고). 요청을 짧은 시간에 연달아 보내면 503이 섞인 적이 있으니(미해결 1번) 검증은 간격을 두고 한다.
