@@ -241,6 +241,42 @@ class WikiExamOriginalServiceTest {
   }
 
   @Test
+  @DisplayName("given 전역 문서 상한보다 큰 해설 HTML when 등록 then 위키 전용 상한으로 허용된다")
+  void createUsesWikiOriginalLimitNotGlobalDocumentLimit() throws Exception {
+    // given — 전역 상한은 10바이트로 막혀 있어도 위키 원본 경로는 전용 상한을 쓴다
+    WikiExamOriginalService bigLimitService = new WikiExamOriginalService(repository, fileStorage,
+        new DocumentUploadValidator(new UploadSizeGuard(10L)), 50L * 1024 * 1024);
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(), anyLong())).thenReturn("key-big");
+    when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    MockMultipartFile html = new MockMultipartFile("file", "해설.html",
+        "text/html", "<html><body>해설</body></html>".getBytes(StandardCharsets.UTF_8));
+
+    // when
+    WikiExamOriginalResponse res = bigLimitService.create(
+        "2026년 10월 고3 영어 모의고사 문제풀이 해설", 3, null, "EXPLANATION", true, html, 2026, 10);
+
+    // then
+    assertThat(res.docType()).isEqualTo("EXPLANATION");
+    assertThat(res.examYear()).isEqualTo(2026);
+  }
+
+  @Test
+  @DisplayName("given 위키 전용 상한을 넘는 파일 when 등록 then 400")
+  void createRejectsOverWikiOriginalLimit() {
+    // given — 전용 상한 10바이트
+    WikiExamOriginalService tinyLimitService = new WikiExamOriginalService(repository, fileStorage,
+        new DocumentUploadValidator(new UploadSizeGuard(20L * 1024 * 1024)), 10L);
+    MockMultipartFile html = new MockMultipartFile("file", "해설.html",
+        "text/html", "<html><body>해설 본문은 10바이트보다 길다</body></html>".getBytes(StandardCharsets.UTF_8));
+
+    // when / then
+    assertThatThrownBy(() -> tinyLimitService.create(
+        "제목", 3, null, "EXPLANATION", true, html, 2026, 10))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("파일 용량은");
+  }
+
+  @Test
   @DisplayName("given PDF when 열람 조회 then 400 — 열람은 HTML/이미지만")
   void getPublicView_rejectsPdf() {
     when(repository.findPublicById(7L)).thenReturn(Optional.of(original("k")));

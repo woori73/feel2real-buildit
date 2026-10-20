@@ -150,7 +150,7 @@ class WikiExamOriginalControllerWebMvcTest {
         .andExpect(status().isOk())
         .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
             org.hamcrest.Matchers.containsString("inline")))
-        .andExpect(header().string("Content-Security-Policy", "sandbox"));
+        .andExpect(header().string("Content-Security-Policy", "sandbox allow-scripts"));
   }
 
   @Test

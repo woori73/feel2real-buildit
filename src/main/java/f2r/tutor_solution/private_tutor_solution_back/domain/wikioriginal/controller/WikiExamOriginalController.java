@@ -72,7 +72,10 @@ public class WikiExamOriginalController {
         org.springframework.http.ContentDisposition.inline()
             .filename(file.fileName(), java.nio.charset.StandardCharsets.UTF_8)
             .build());
-    headers.set("Content-Security-Policy", "sandbox");
+    // sandbox + allow-scripts: 해설 HTML의 문항 이동·글자 크기 조절 스크립트는 실행되게 하되,
+    // allow-same-origin이 없어 불투명 출처(opaque origin)로 격리된다 — 사이트 쿠키·스토리지·
+    // DOM에 접근할 수 없고 폼 제출·팝업·상위 이동도 계속 차단된다.
+    headers.set("Content-Security-Policy", "sandbox allow-scripts");
     headers.set("X-Content-Type-Options", "nosniff");
     headers.setCacheControl("private, no-store");
     return new ResponseEntity<>(file.bytes(), headers, HttpStatus.OK);

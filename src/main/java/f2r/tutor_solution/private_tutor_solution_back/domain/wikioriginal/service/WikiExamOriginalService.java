@@ -37,15 +37,16 @@ public class WikiExamOriginalService {
   private final WikiExamOriginalRepository repository;
   private final FileStorage fileStorage;
   private final DocumentUploadValidator documentUploadValidator;
-  private final long maxDocumentBytes;
+  /** 모의고사 자료 전용 상한 — 해설 HTML은 내장 폰트·이미지 때문에 문서 기본 상한(20MB)보다 크다. */
+  private final long maxOriginalBytes;
 
   public WikiExamOriginalService(WikiExamOriginalRepository repository, FileStorage fileStorage,
       DocumentUploadValidator documentUploadValidator,
-      @Value("${app.upload.max-document-bytes:20971520}") long maxDocumentBytes) {
+      @Value("${app.upload.max-wiki-original-bytes:52428800}") long maxOriginalBytes) {
     this.repository = repository;
     this.fileStorage = fileStorage;
     this.documentUploadValidator = documentUploadValidator;
-    this.maxDocumentBytes = maxDocumentBytes;
+    this.maxOriginalBytes = maxOriginalBytes;
   }
 
   public record DownloadFile(byte[] bytes, String fileName, String title) {
@@ -78,7 +79,7 @@ public class WikiExamOriginalService {
     WikiExamOriginal original = repository.findPublicById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공개 원본 자료를 찾을 수 없습니다."));
     try {
-      byte[] bytes = fileStorage.readSingleLimited(original.getStorageKey(), RAW_FILE_TYPE, maxDocumentBytes);
+      byte[] bytes = fileStorage.readSingleLimited(original.getStorageKey(), RAW_FILE_TYPE, maxOriginalBytes);
       return new DownloadFile(bytes, original.getOriginalFileName(), original.getTitle());
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "원본 파일을 찾을 수 없습니다.", e);
@@ -103,7 +104,7 @@ public class WikiExamOriginalService {
   @Transactional
   public WikiExamOriginalResponse create(String title, Integer grade, String examLabel, String docType,
       boolean visible, MultipartFile file, Integer examYear, Integer examMonth) {
-    documentUploadValidator.validate(file, ORIGINAL_EXTENSIONS);
+    documentUploadValidator.validate(file, ORIGINAL_EXTENSIONS, maxOriginalBytes);
     String storageKey = saveFile(file);
     WikiExamOriginal original = WikiExamOriginal.builder()
         .title(required(title, "제목"))
@@ -142,7 +143,7 @@ public class WikiExamOriginalService {
         keepYear,
         keepMonth);
     if (file != null && !file.isEmpty()) {
-      documentUploadValidator.validate(file, ORIGINAL_EXTENSIONS);
+      documentUploadValidator.validate(file, ORIGINAL_EXTENSIONS, maxOriginalBytes);
       String newStorageKey = saveFile(file);
       String oldStorageKey = original.replaceFile(originalFileName(file), newStorageKey, file.getSize());
       fileStorage.delete(oldStorageKey, RAW_FILE_TYPE);
@@ -198,7 +199,7 @@ public class WikiExamOriginalService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이 형식은 열람을 지원하지 않습니다. 다운로드해 주세요.");
     }
     try {
-      byte[] bytes = fileStorage.readSingleLimited(original.getStorageKey(), RAW_FILE_TYPE, maxDocumentBytes);
+      byte[] bytes = fileStorage.readSingleLimited(original.getStorageKey(), RAW_FILE_TYPE, maxOriginalBytes);
       return new DownloadFile(bytes, original.getOriginalFileName(), original.getTitle());
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "자료 파일을 찾을 수 없습니다.", e);

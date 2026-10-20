@@ -3395,7 +3395,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 ### 로그인 회원
 - `GET /api/wiki/originals?grade=&year=&month=&docType=` — deleted=false·visible=true, 학년/회차/종류 필터(미지정 시 무필터와 동일). → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examYear, examMonth, examLabel, docType, docTypeLabel, originalFileName, fileExtension, fileSize, isVisible, createdAt, updatedAt, downloadUrl, viewUrl).
 - `GET /api/wiki/originals/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 `Content-Disposition: attachment` + 확장자로 추론한 content-type + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
-- `GET /api/wiki/originals/{id}/view` — 로그인 회원만. HTML/이미지(html·htm·png·jpg·jpeg·webp)만 인라인 열람 허용, 그 외 400. `Content-Disposition: inline` + `Content-Security-Policy: sandbox` + `nosniff`로 업로드 HTML 스크립트를 격리한다.
+- `GET /api/wiki/originals/{id}/view` — 로그인 회원만. HTML/이미지(html·htm·png·jpg·jpeg·webp)만 인라인 열람 허용, 그 외 400. `Content-Disposition: inline` + `Content-Security-Policy: sandbox allow-scripts` + `nosniff`. 해설 HTML의 문항 이동·글자 크기 조절 스크립트는 실행되지만 allow-same-origin이 없어 불투명 출처로 격리된다(사이트 쿠키·스토리지·DOM 접근 불가, 폼·팝업 차단 유지).
 
 ### 회차 (공개 메타 + ADMIN 관리)
 - `GET /api/wiki/rounds` — 공개 회차 목록(최신순, 아카이브 선택용). permitAll.
@@ -3409,7 +3409,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 관리 (ADMIN)
 - `GET /api/admin/wiki/originals` — deleted=false 전체(비공개 포함).
-- `POST /api/admin/wiki/originals` (multipart) — params `title, grade(1~3), docType(QUESTION|ANSWER|EXPLANATION|SYNTAX), visible(기본 true), examYear?, examMonth?, examLabel?`, part `file`(`.pdf/.hwp/.hwpx/.html/.htm/.png/.jpg/.jpeg/.webp` + 매직바이트 교차검증, `app.upload.max-document-bytes`(기본 20MB) 이내). `examYear`+`examMonth`가 있으면 `exam_label`은 서버가 `"{year} {month}월 모의고사"`로 합성한다(둘 다 없으면 기존처럼 examLabel 필수). 검증 실패 400.
+- `POST /api/admin/wiki/originals` (multipart) — params `title, grade(1~3), docType(QUESTION|ANSWER|EXPLANATION|SYNTAX), visible(기본 true), examYear?, examMonth?, examLabel?`, part `file`(`.pdf/.hwp/.hwpx/.html/.htm/.png/.jpg/.jpeg/.webp` + 매직바이트 교차검증, `app.upload.max-wiki-original-bytes`(기본 50MB) 이내 — 내장 폰트·이미지 해설 HTML 대응 전용 상한, 다른 문서 경로는 `max-document-bytes` 20MB 유지). `examYear`+`examMonth`가 있으면 `exam_label`은 서버가 `"{year} {month}월 모의고사"`로 합성한다(둘 다 없으면 기존처럼 examLabel 필수). 검증 실패 400.
 - `PUT /api/admin/wiki/originals/{id}` (multipart) — 위와 동일, `file` 선택(있으면 교체 + 이전 파일 삭제). 연도·월을 모두 비우면 기존 회차 값을 유지한다.
 - `PATCH /api/admin/wiki/originals/{id}/visibility` — body `{isVisible}`. 임시저장(비공개) ↔ 공개 전환.
 - `DELETE /api/admin/wiki/originals/{id}` — soft delete(deleted=true, visible=false), 204.
