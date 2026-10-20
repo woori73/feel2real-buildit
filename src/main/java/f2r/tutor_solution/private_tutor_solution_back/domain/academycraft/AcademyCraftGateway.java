@@ -68,7 +68,11 @@ public class AcademyCraftGateway {
     String role = user.getRole().name(); // Revalidate current role; never trust browser-supplied identity.
     if (!Set.of("ADMIN", "TUTOR").contains(role)) throw new AccessDeniedException("허용되지 않은 역할");
     String path = request.getRequestURI().substring("/academycraft".length());
-    if (!allowedPath(path)) throw new AccessDeniedException("허용되지 않은 AcademyCraft 경로");
+    if (!allowedPath(path)) {
+      // 화면 이동(GET)은 빈 오류 대신 안내 페이지를 보여 준다. 권한은 그대로 거부(403)한다.
+      if ("GET".equals(request.getMethod()) && path.startsWith("/screens/")) return blockedScreenPage();
+      throw new AccessDeniedException("허용되지 않은 AcademyCraft 경로");
+    }
     boolean api = path.startsWith("/api/rea/");
     if (!api && !"GET".equals(request.getMethod())) throw new AccessDeniedException("정적 화면은 읽기 전용");
     if (!Set.of("GET", "HEAD").contains(request.getMethod())) {
@@ -106,13 +110,34 @@ public class AcademyCraftGateway {
     return new ResponseEntity<>(result, headers, HttpStatusCode.valueOf(response.statusCode()));
   }
 
+  static final String BLOCKED_SCREEN_HTML = "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">"
+      + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>이용할 수 없는 화면</title>"
+      + "<style>body{font:16px/1.6 system-ui,sans-serif;margin:0;padding:24px;color:#1a1a1a}"
+      + "a,button{display:block;box-sizing:border-box;width:100%;min-height:52px;margin-top:12px;padding:14px;border-radius:12px;"
+      + "font:600 16px system-ui,sans-serif;text-align:center;text-decoration:none;border:2px solid #1a56db;background:#fff;color:#1a56db}"
+      + "a.primary{background:#1a56db;color:#fff}</style></head><body><main><h1>아직 이용할 수 없는 화면입니다</h1>"
+      + "<p>이 화면은 아직 연결되지 않았습니다. 학생·반·출결·상담·공지 화면은 그대로 사용할 수 있습니다.</p>"
+      + "<a class=\"primary\" href=\"/academycraft/screens/OPS-02-dashboard.html\">학원 현황으로 돌아가기</a>"
+      + "<button type=\"button\" onclick=\"history.back()\">이전 화면</button>"
+      + "<button type=\"button\" onclick=\"location.reload()\">다시 시도</button></main></body></html>";
+
+  static ResponseEntity<byte[]> blockedScreenPageForTest() { return blockedScreenPage(); }
+
+  private static ResponseEntity<byte[]> blockedScreenPage() {
+    var headers = new HttpHeaders();
+    headers.set(HttpHeaders.CACHE_CONTROL, "no-store");
+    headers.set(HttpHeaders.CONTENT_TYPE, "text/html;charset=UTF-8");
+    headers.set("X-Content-Type-Options", "nosniff");
+    return new ResponseEntity<>(BLOCKED_SCREEN_HTML.getBytes(StandardCharsets.UTF_8), headers, HttpStatus.FORBIDDEN);
+  }
+
   public static boolean allowedPath(String path) {
     if (path.contains("..") || path.contains("%") || path.contains("\\") || path.contains(";")) return false;
     if (path.matches("/components/[A-Za-z0-9_-]+\\.(js|css)")) return true;
     if (path.startsWith("/screens/")) return Set.of(
         "MBR-01-student-list.html", "CLS-01-class-list.html", "CLS-02-class-form.html", "CLS-03-class-detail.html",
         "ATT-01-attendance-keypad.html", "ATT-02-attendance-monthly.html", "ATT-03-attendance-roster.html",
-        "ATT-04-attendance-settings.html", "OPS-02-dashboard.html", "CNS-01-consultation-list.html", "CNS-03-inquiry-inbox.html",
+        "ATT-04-attendance-settings.html", "OPS-02-dashboard.html", "timetable-weekly.html", "CNS-01-consultation-list.html", "CNS-03-inquiry-inbox.html",
         "CNS-04-news-send.html", "CNS-05-consultation-detail.html", "NTC-01-notice-list.html",
         "NTC-02-class-news.html", "NTC-03-notice-form.html", "NTC-04-notice-detail.html").contains(path.substring(9));
     return (path.equals("/api/rea/integration/context") || path.equals("/api/rea/integration/teachers"))
