@@ -41,6 +41,10 @@ import org.springframework.web.client.RestTemplate;
     classes = BuildItWikiProxyControllerMultipartForwardingTest.MinimalProxyApp.class)
 class BuildItWikiProxyControllerMultipartForwardingTest {
 
+  static final f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.repository.QuestionWikiRepository
+      QUESTION_WIKI_REPOSITORY = mock(
+          f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.repository.QuestionWikiRepository.class);
+
   @Configuration
   @EnableAutoConfiguration(exclude = {
       DataSourceAutoConfiguration.class,
@@ -59,7 +63,8 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
           new JwtTokenProvider.AuthenticatedPrincipal(1L, "test-user", "STUDENT")));
       return new BuildItWikiProxyController(
           resolver,
-          new WikiIdentitySigner("wiki-proxy-test-identity-secret-32-bytes-minimum"));
+          new WikiIdentitySigner("wiki-proxy-test-identity-secret-32-bytes-minimum"),
+          QUESTION_WIKI_REPOSITORY);
     }
 
     @Bean
@@ -95,6 +100,15 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
     fakeFastApi.createContext("/api/mcp", exchange -> {
       capturedAuthorization = exchange.getRequestHeaders().getFirst("Authorization");
       capturedApiKeyHeader = exchange.getRequestHeaders().getFirst("X-Api-Key");
+      capturedBody = exchange.getRequestBody().readAllBytes();
+      byte[] response = "{}".getBytes(StandardCharsets.UTF_8);
+      exchange.getResponseHeaders().add("Content-Type", "application/json");
+      exchange.sendResponseHeaders(200, response.length);
+      try (var os = exchange.getResponseBody()) {
+        os.write(response);
+      }
+    });
+    fakeFastApi.createContext("/api/ai/complete", exchange -> {
       capturedBody = exchange.getRequestBody().readAllBytes();
       byte[] response = "{}".getBytes(StandardCharsets.UTF_8);
       exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -206,6 +220,60 @@ class BuildItWikiProxyControllerMultipartForwardingTest {
     restTemplate.postForEntity(
         "http://127.0.0.1:" + port + "/problem-generator/wiki" + targetPath,
         new HttpEntity<>("{}", headers),
+        String.class);
+  }
+
+  @Test
+  void september2026QuestionAiGenerationIsBlockedBeforeForwarding() {
+    // given — 2026년 9월 모의고사 문항을 가리키는 Reference 마커
+    stubQuestion(42L, 2026, "9월 모의고사");
+    capturedBody = null;
+
+    // when
+    org.springframework.web.client.HttpStatusCodeException error =
+        org.assertj.core.api.Assertions.catchThrowableOfType(
+            () -> postAiComplete(42L), org.springframework.web.client.HttpStatusCodeException.class);
+
+    // then — 403이고 라우터(FastAPI)까지 전달되지 않는다
+    assertThat(error.getStatusCode().value()).isEqualTo(403);
+    assertThat(error.getResponseBodyAsString()).contains("AI 문제제작을 제공하지 않습니다");
+    assertThat(capturedBody).isNull();
+  }
+
+  @Test
+  void october2026QuestionAiGenerationStillForwards() {
+    // given — 2026년 10월 문항은 기존대로 허용
+    stubQuestion(43L, 2026, "10월 모의고사");
+    capturedBody = null;
+
+    // when
+    ResponseEntity<String> response = postAiComplete(43L);
+
+    // then
+    assertThat(response.getStatusCode().value()).isEqualTo(200);
+    assertThat(capturedBody).isNotEmpty();
+  }
+
+  private void stubQuestion(Long id, int examYear, String examLabel) {
+    var question = f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.entity.QuestionWiki.builder()
+        .subject("ENGLISH").grade(3).examYear(examYear).examLabel(examLabel)
+        .questionNumber(18).title("문항").visible(true)
+        .build();
+    org.springframework.test.util.ReflectionTestUtils.setField(question, "questionWikiId", id);
+    when(QUESTION_WIKI_REPOSITORY.findById(id)).thenReturn(Optional.of(question));
+  }
+
+  private ResponseEntity<String> postAiComplete(long questionWikiId) {
+    String prompt = "QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST: {\"questionWiki\":true,\"questionWikiId\":"
+        + questionWikiId + ",\"grade\":3,\"examYear\":2026,\"questionNo\":18,\"type\":\"similar\"}";
+    String body = "{\"provider\":\"openrouter-free\",\"prompt\":"
+        + new com.fasterxml.jackson.databind.ObjectMapper().valueToTree(prompt).toString()
+        + ",\"max_output_chars\":16000}";
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return new RestTemplate().postForEntity(
+        "http://127.0.0.1:" + port + "/problem-generator/wiki/api/ai/complete",
+        new HttpEntity<>(body, headers),
         String.class);
   }
 }

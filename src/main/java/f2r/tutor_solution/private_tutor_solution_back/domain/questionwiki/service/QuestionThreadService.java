@@ -6,6 +6,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.dto.Qu
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.dto.QuestionWikiContextResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.repository.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.support.QuestionAiGenerationPolicy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
@@ -76,6 +77,15 @@ public class QuestionThreadService {
     QuestionThreadPostRequest.ExamEvidence evidence =
         parent == null && dataKind == QuestionThreadDataKind.EXAM_EVIDENCE
             ? requireEvidence(request) : null;
+
+    // 2026년 9월 모의고사 문항은 AI 문제제작을 제공하지 않는다 — 형식 검증을 통과한 AI 생성
+    // 저장(GENERATED_PRACTICE)만 403으로 막는다. 사람이 쓰는 의견·토론(DISCUSSION)과 기존에
+    // 저장된 생성 데이터에는 영향을 주지 않는다.
+    if (parent == null && dataKind == QuestionThreadDataKind.GENERATED_PRACTICE
+        && QuestionAiGenerationPolicy.isAiGenerationDisabled(questionWiki)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+          "2026년 9월 모의고사 문항은 AI 문제제작을 제공하지 않습니다.");
+    }
 
     try {
       AuditorContextHolder.set(principal.loginId());

@@ -3443,6 +3443,8 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 **보안 경계**: `GET /api/wiki/questions`·`/questions/**` 만 permitAll(목록/상세/Context/첨부 다운로드). write(글/답글/수정/삭제/첨부)는 `/api/**` catch-all → 인증(STUDENT/TUTOR/ADMIN 누구나). 자료 링크는 `/api/admin/wiki/questions/**` → ROLE_ADMIN. 작성자만 수정, 작성자·ADMIN 만 숨김. `@AuthenticationPrincipal` 기준 — request body user id 불신뢰.
 
+**AI 문제제작 비제공 회차 (2026-10-20 운영 결정)**: 2026년 9월 모의고사 문항은 AI 문제제작을 제공하지 않는다. 판정은 `QuestionAiGenerationPolicy`(examYear=2026 + examLabel에 "9월" 포함) 한 곳에서 하고, 상세 화면 섹션 제거(question_wiki_ai.js)·AI 프록시(`POST /problem-generator/wiki/api/ai/complete`의 Reference 마커가 해당 문항이면 403)·`GENERATED_PRACTICE` 저장 403이 같은 정책을 따른다. 다른 회차·서비스의 AI 기능과 기존 생성 데이터는 영향 없음.
+
 ### 공개 (read)
 - `GET /api/wiki/questions?subject=&grade=&examYear=&examLabel=` — visible 문항, `(grade, questionNumber)` 순. → `QuestionWikiSummaryResponse[]`(questionWikiId, subject, grade, examYear, examLabel, questionNumber, passageGroupKey, title, displayContext, threadCount).
 - `GET /api/wiki/questions/{id}` — 단건 요약.
@@ -3454,7 +3456,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `GET /api/wiki/questions/materials/{linkId}/preview` — HTML 학습자료 격리 미리보기(공개). `Content-Type: text/html; charset=UTF-8` + `Content-Disposition: inline` + **`Content-Security-Policy: sandbox; default-src 'none'; img-src data: https:; style-src 'unsafe-inline' https:; font-src https: data:; frame-ancestors 'self'`** + `nosniff`. 프런트는 이 URL 을 `<iframe sandbox>` 로만 연다(부모 DOM 삽입 X, 스크립트 차단, CSS/이미지 유지). HTML 링크가 아니면 404. 파일 다운로드는 여전히 `viewUrl`(attachment 강제)이 담당한다.
 
 ### write (인증)
-- `POST /api/wiki/questions/{id}/posts` (JSON) — `QuestionThreadPostRequest`{category?, dataKind?, title?, content, parentPostId?, variant?, examEvidence?}. **단순화된 UI 는 `{content}` 만 보낸다** → 서버가 `category=ETC`(미분류) + `dataKind=DISCUSSION` 기본값으로 저장(향후 Browser AI 가 이 값을 갱신). `dataKind=GENERATED_PRACTICE`(API 직접 호출 시) → `variant.questionText` 필수, `EXAM_EVIDENCE` → `examEvidence.schoolName` 필수. → 갱신된 Context.
+- `POST /api/wiki/questions/{id}/posts` (JSON) — `QuestionThreadPostRequest`{category?, dataKind?, title?, content, parentPostId?, variant?, examEvidence?}. **단순화된 UI 는 `{content}` 만 보낸다** → 서버가 `category=ETC`(미분류) + `dataKind=DISCUSSION` 기본값으로 저장(향후 Browser AI 가 이 값을 갱신). `dataKind=GENERATED_PRACTICE`(API 직접 호출 시) → `variant.questionText` 필수, `EXAM_EVIDENCE` → `examEvidence.schoolName` 필수. → 갱신된 Context. **단, 2026년 9월 모의고사 문항은 AI 문제제작 비제공 회차라 `GENERATED_PRACTICE` 저장이 403**(`QuestionAiGenerationPolicy` — 상세 화면 섹션 제거 + AI 프록시 차단과 동일 정책). 기존 생성 데이터·DISCUSSION 글쓰기는 영향 없음.
 - `POST /api/wiki/questions/{id}/posts/{parentPostId}/replies` (JSON) — 1단계 답글(답글의 답글 400, 답글은 항상 DISCUSSION). → Context.
 - `PUT /api/wiki/questions/posts/{postId}` (JSON) — 작성자만. **`variant`/`examEvidence` 가 요청에 실제로 들어온 경우에만** 상세를 갱신한다 → 단순화 UI(내용만)로 기존 GENERATED_PRACTICE/EXAM_EVIDENCE 글을 수정해도 원문·상세가 보존된다. → Context.
 - `DELETE /api/wiki/questions/posts/{postId}` — 작성자·ADMIN soft-hide. → Context.

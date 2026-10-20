@@ -128,6 +128,42 @@ class QuestionThreadServiceTest {
   }
 
   @Test
+  @DisplayName("given 2026년 9월 문항에 형식까지 갖춘 AI 생성 저장 when 작성 then 403 — AI 문제제작 비제공 회차")
+  void generatedPracticeBlockedForSeptember2026() {
+    // fixture 문항은 2026년 "9월 전국연합학력평가"다.
+    QuestionThreadPostRequest req = new QuestionThreadPostRequest(
+        QuestionThreadCategory.VARIANT, QuestionThreadDataKind.GENERATED_PRACTICE,
+        "AI 변형문제", "AI 생성", null,
+        new QuestionThreadPostRequest.Variant("지문", "similar", "②", "해설", "", "21번", ""),
+        null);
+
+    assertThatThrownBy(() -> service.createPost(studentP, 100L, req))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("AI 문제제작을 제공하지 않습니다");
+    verify(postRepository, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("given 2026년 10월 문항에 AI 생성 저장 when 작성 then 허용된다")
+  void generatedPracticeAllowedForOctober2026() {
+    QuestionWiki october = QuestionWiki.builder().subject("ENGLISH").grade(2).examYear(2026)
+        .examLabel("10월 모의고사").questionNumber(21).visible(true).build();
+    ReflectionTestUtils.setField(october, "questionWikiId", 101L);
+    when(questionWikiService.loadVisible(101L)).thenReturn(october);
+    when(questionWikiService.getContext(anyLong(), any())).thenReturn(emptyContext());
+
+    QuestionThreadPostRequest req = new QuestionThreadPostRequest(
+        QuestionThreadCategory.VARIANT, QuestionThreadDataKind.GENERATED_PRACTICE,
+        "AI 변형문제", "AI 생성", null,
+        new QuestionThreadPostRequest.Variant("지문", "similar", "②", "해설", "", "21번", ""),
+        null);
+
+    service.createPost(studentP, 101L, req);
+
+    verify(postRepository).save(any());
+  }
+
+  @Test
   @DisplayName("given 답글의 답글 when 작성 then 400 (1 depth)")
   void replyToReplyRejected() {
     QuestionThreadPost root = post(1L, student, null);

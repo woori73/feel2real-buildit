@@ -13,7 +13,17 @@
   if(!els.toggle||!els.panel)return;
   els.toggle.addEventListener('click',togglePanel);els.generate.addEventListener('click',generate);els.regenerate.addEventListener('click',generate);els.save.addEventListener('click',save);
   els.presets.addEventListener('click',function(e){var b=e.target.closest('[data-ai-preset]');if(!b)return;els.presets.querySelectorAll('[data-ai-preset]').forEach(function(x){x.classList.toggle('active',x===b);});});
-  window.addEventListener('questionwiki:context',function(e){questionWikiId=String(e.detail.questionWikiId);contextPack=ai&&ai.buildCanonicalContext?ai.buildCanonicalContext(e.detail.context,questionWikiId):null;preview=null;generationMode=null;els.preview.hidden=true;els.save.disabled=true;renderRuntime();});
+  window.addEventListener('questionwiki:context',function(e){
+    // 2026년 9월 모의고사 문항은 AI 문제제작을 제공하지 않는다 — 섹션 자체를 제거하고 어떤
+    // 생성·저장도 시작할 수 없게 한다. 다른 회차 문항의 동작은 기존과 동일하다.
+    var q=e.detail&&e.detail.context?e.detail.context.question:null;
+    if(q&&Number(q.examYear)===2026&&String(q.examLabel||'').indexOf('9월')>=0){
+      var section=document.getElementById('qwAiSection');
+      if(section)section.remove();
+      questionWikiId=null;contextPack=null;preview=null;generationMode=null;
+      return;
+    }
+    questionWikiId=String(e.detail.questionWikiId);contextPack=ai&&ai.buildCanonicalContext?ai.buildCanonicalContext(e.detail.context,questionWikiId):null;preview=null;generationMode=null;els.preview.hidden=true;els.save.disabled=true;renderRuntime();});
   async function togglePanel(){els.panel.hidden=!els.panel.hidden;els.toggle.setAttribute('aria-expanded',String(!els.panel.hidden));if(els.panel.hidden)return;renderRuntime();setStatus('현재 문항과 해당 문항의 변형 패턴을 참고하여 새 문제를 생성합니다.');}
   function renderRuntime(){if(els.promptStatus)els.promptStatus.textContent=runtime.prompt;if(els.koEnStatus)els.koEnStatus.textContent=runtime.koToEn;if(els.enKoStatus)els.enKoStatus.textContent=runtime.enToKo;els.generate.disabled=!contextPack;}
   function selectedPreset(){var s=els.presets.querySelector('[data-ai-preset].active');return s?s.dataset.aiPreset:'similar';}
