@@ -25,6 +25,19 @@
 - 계정 메뉴: **로그인 상태를 시뮬레이션**(브라우저에서 `/api/auth/me` 응답만 대체, 서버 영향 없음)해 메뉴 열림·항목(강사 홈/프로필/로그아웃)만 확인. **실제 로그인 검증 아님.**
 - 폰트 차단(Google Fonts 요청 abort) 상태에서도 로고 글자 표시·겹침 없음(대체 폰트 렌더 확인).
 
+## #796 운영 배포·Muse Spark 호출 기록 (2026-10-18, PR #797에서 이관)
+> 낡은 PR #797의 유효한 내용을 **실행 로그와 대조해** 옮겼다. 당시의 "운영 SHA" 등 과거 상태는 되살리지 않았다(현재 운영 SHA는 위 "현재 운영 상태").
+
+**실행 로그에서 확인된 사실**
+- #796 배포: Deploy to EC2 [run 39147945791](https://github.com/woori73/feel2real-buildit/actions/runs/39147945791)(run #1000, workflow_dispatch, head `81da6216`, 2026-10-18 17:05~17:10 UTC) **성공**. `target` 입력값은 이번에 로그로 재확인하지 못했다(#797 기록은 `target=new`).
+- Muse Spark 호출 점검: Migration infra build (manual) [run 39148508849](https://github.com/woori73/feel2real-buildit/actions/runs/39148508849)(run #31, step=`muse-check`, head `81da6216`, 2026-10-18 17:12~17:13 UTC). **`muse-check` 잡 성공** — 신규 계정(425805163960) 배포 역할로 신규 호스트에서 SSM 실행: `key_present=yes`(키 값은 출력하지 않음), `model=muse-spark-1.3-contributor`, `http=200 time=8.86s`(약 8.9초), `finish=stop`, 응답 29자 "안녕하세요, 만나서 반가운 Muse Spark입니다."(SSM Success).
+- **같은 실행의 전체 결과는 failure.** 원인은 별도 `build` 잡이 `STEP: muse-check`를 처리하지 못해 `unknown step`(exit 1)으로 끝난 것이다 — 그 시점 `build` 잡의 case에 `muse-check`가 없었다. **`muse-check` 잡의 호출 결과와 무관한 실패**이므로 "호출 실패"로 읽지 말 것.
+
+**검증 범위의 한계 (미검증)**
+- 위 호출은 서버 호스트에서 Meta API를 한 문장 인사 프롬프트로 **직접** 부른 것이다. API 도달·서버 키·모델·응답까지만 증명한다.
+- **로그인 후 대시보드 AI 비서(`POST /api/dashboard/assistant`)의 실제 답변은 미검증이다.** 월 요약 문맥을 담은 답변과 사업체 권한 격리는 ADMIN·TUTOR 세션이 있어야 확인할 수 있다. 코드 수준에서는 `DashboardAssistantServiceTest` 4건(허용된 사업체 질문·Muse 실패 시 대체 없음·접근 거부 시 호출 안 함·빈/과장 질문 거부)만 통과한 상태다.
+- #797의 나머지 "남은 것"(로그인 후 `/dashboard` 카드 6개·AI 패널, `/ledger` Android 실기기, AcademyCraft, 구 AWS 정리)은 아래 "미검증·미해결" 2·4·5·6번에 이미 있다.
+
 ## ALB 진단 결과 (신규 계정, `alb-diag` run 42, 구간 2026-10-19 20:30~21:30 UTC, 읽기 전용)
 - 실행: `migration-infra-build.yml` step=`alb-diag`(#818, `scripts/operations/alb-diag-lib.sh`). 조회만 수행, 구 계정(`067573916809`) 진단 워크플로는 사용하지 않았다.
 - **ALB 503: 0건.** **ALB 5xx: 2건**(21:00·21:01 UTC 각 1건, TargetConnectionError도 같은 분에 각 1건 — 제 배포로 `f2r-app`이 중지(21:00:31)→기동(21:01:13)되던 시간과 일치. 단일 대상이라 배포 때마다 약 40초 연결 오류 가능). 대상 5xx 0, 거부 연결 0.
@@ -36,7 +49,7 @@
 
 ## 미검증·미해결
 1. **ALB 일시 503 — 원인 미확인(유지).** 2026-10-19 ~21:08 UTC(앱 로그 시각으로 추정) 운영 검증 중 연속 11개 요청(정적·API·화면 혼합, 본문 98바이트)이 모두 503이었고 곧 정상화. 재현 시도(2회, 62건, 최대 14 동시) 503 없음. 아래 "ALB 진단 결과"에서 같은 구간에 **ALB 503 0건·대상 5xx 0건**이어서 ALB·앱이 만든 503으로 기록되지 않았다. 작업 환경 프록시(egress 게이트웨이)가 만든 503일 가능성이 있으나 **증거 없는 추정**이다. 요청별 원인을 볼 ALB 접근 로그는 꺼져 있다(**사용자 승인 없이 켜지 말 것**). 정상 현상이라고 단정하지 말 것.
-2. **실제 로그인(기존 인증 세션) 검증 미수행** — 환경에 테스트 계정 정보가 없어 ADMIN·TUTOR 로그인 후 메뉴·권한(`/dashboard`, `/ledger`, `/easy`, `/admin/*`, AcademyCraft 링크, 입시상담 AI)을 확인하지 못함. 코드 수준(MockMvc `EasySecurityWebMvcTest`)에서는 TUTOR/ADMIN/STUDENT/익명 매트릭스 통과. 사용자가 세션 확인 또는 검증 전용 계정 제공 필요.
+2. **실제 로그인(기존 인증 세션) 검증 미수행** — 환경에 테스트 계정 정보가 없어 ADMIN·TUTOR 로그인 후 메뉴·권한(`/dashboard`, `/ledger`, `/easy`, `/admin/*`, AcademyCraft 링크, 입시상담 AI, **대시보드 AI 비서 실제 답변** — 위 "#796 …Muse Spark 호출 기록" 참고)을 확인하지 못함. 코드 수준(MockMvc `EasySecurityWebMvcTest`)에서는 TUTOR/ADMIN/STUDENT/익명 매트릭스 통과. 사용자가 세션 확인 또는 검증 전용 계정 제공 필요.
 3. **공식 도메인 `feel2real.co.kr` 접근:** 샌드박스에서는 CONNECT 403 — 프록시 상태 기록에 `example.com`·`www.naver.com`도 같은 방식(게이트웨이 403)으로 거절됨 → 작업 환경의 egress 허용 목록 제한으로 판단. 서비스 장애 증거는 없음(ALB는 정상 응답, 사용자가 휴대폰 화면으로 문제를 보고했으나 접속 주소는 확인하지 않음). 그러나 도메인→신규 ALB 경로를 외부에서 직접 확인한 것은 아님 → 사용자 PC/휴대폰에서 최종 확인.
 4. 실기기(Android) 확인, 카톡·메일 버튼 실제 클릭 동작, 네이버 블로그 실제 열림(샌드박스에서 네이버 차단) 미검증.
 5. 사용자 "정상" 확인 후 구 AWS 과금 리소스 종료, 신규 RDS gp3/백업 7일, 임시 RDS·스냅샷·관리자 역할 정리(명시 허가 전 금지).
