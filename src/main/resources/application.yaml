@@ -23,6 +23,18 @@ spring:
       # 다운로드가 중간에 끊기지 않도록 280s로 설정한다.
       # 앞단 nginx outer deadline(290s)보다 짧게 유지한다.
       request-timeout: 280s
+  lifecycle:
+    # graceful shutdown 대기 상한. SIGTERM 후 새 요청은 받지 않고 진행 중 요청만 이 시간까지 기다린다.
+    # systemd 기본 TimeoutStopSec(90s)보다 충분히 짧아야 SIGKILL 전에 정상 종료된다 — 90s를 넘기지 말 것.
+    # 280s까지 가는 스트리밍(RAG 내보내기 등)은 이 시간 안에 끝나지 않으면 끊긴다(배포 중 알려진 한계).
+    # Spring Boot 4.0.6 기본값도 30s이지만 기본값 변경에 휘둘리지 않도록 명시해 고정한다(GracefulShutdownTest).
+    timeout-per-shutdown-phase: 30s
+
+# 종료 방식을 명시해 고정한다. Spring Boot 4.0.6은 기본값이 이미 graceful이므로 현재 동작은 바뀌지 않는다
+# (옛 jar에서도 "Commencing graceful shutdown" 확인). 기본값이 바뀌어도 진행 중 요청을 끊지 않게 하는 보험이다.
+# 효과 범위: "종료 구간"의 요청 유실만 줄인다. 새 JVM이 뜨는 동안의 공백(기동 시간)은 줄이지 못한다.
+server:
+  shutdown: graceful
 
 # Swagger UI 설정 (Springdoc)
 springdoc:

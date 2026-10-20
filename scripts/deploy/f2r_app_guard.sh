@@ -362,3 +362,35 @@ f2r_env_prune_backups() {
   done
   return 0
 }
+
+# ── 서비스 공백 측정(읽기 전용) ───────────────────────────────────────────────
+# 배포 한 번에서 "종료 신호 → 새 프로세스가 포트를 열 때까지"가 실제로 몇 초였는지 journald에서
+# 계산해 [DEPLOY] 로그로 남긴다. 판정(성공/실패)·재시작·롤백에는 어떤 영향도 주지 않는다 —
+# 호출 지점은 health gate 통과 이후이며, 이 함수는 항상 0을 반환한다.
+#
+# 측정 기준: 마지막 "Stopping <unit>" 줄 시각 → 그 뒤 첫 "Tomcat started on port" 줄 시각.
+# Stopping은 graceful 대기 시작 시점이므로 종료 구간(진행 중 요청 대기)도 포함한 상한값이다.
+# 롤백이 일어났다면 마지막 재시작 기준이다.
+f2r__journal_unix() {
+  journalctl -u "$1" --since "${F2R_GAP_JOURNAL_WINDOW:-1 hour ago}" -o short-unix --no-pager 2>/dev/null
+}
+
+# stdout: 정수 초. 계산할 수 없으면(줄이 없음/순서 어긋남) 아무것도 출력하지 않고 1 반환.
+f2r_service_gap_seconds() {
+  local unit="$1"
+  f2r__journal_unix "$unit" | awk -v u="$unit" '
+    index($0, "Stopping " u) { stop = $1; up = "" }
+    stop != "" && up == "" && index($0, "Tomcat started on port") { up = $1 }
+    END { if (stop != "" && up != "" && up + 0 >= stop + 0) { printf "%.0f\n", up - stop } else { exit 1 } }
+  '
+}
+
+f2r_report_service_gap() {
+  local unit="$1" secs
+  if secs=$(f2r_service_gap_seconds "$unit") && [ -n "$secs" ]; then
+    echo "[DEPLOY] service_gap_seconds=${secs} (journald: Stopping ${unit} -> Tomcat started)"
+  else
+    echo "[DEPLOY] service_gap_seconds=unavailable (journald에서 Stopping/Tomcat started 줄을 찾지 못함)"
+  fi
+  return 0
+}

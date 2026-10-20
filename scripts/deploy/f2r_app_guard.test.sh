@@ -437,6 +437,70 @@ e10_workflow_contract() {
 echo "--- E10: workflow call order contract ---"
 e10_workflow_contract
 
+# ── GAP: 서비스 공백 측정 함수(읽기 전용) ───────────────────────────────────
+gap_cases() {
+  local unit="f2r-app.service"
+  # given Stopping 후 41초 뒤 Tomcat started → when 계산 → then 41
+  f2r__journal_unix() {
+    cat <<'JOURNAL'
+1760918400.100000 host systemd[1]: Started f2r-app.service - old
+1760918431.000000 host systemd[1]: Stopping f2r-app.service - f2r BuildIt Spring Boot app...
+1760918432.000000 host systemd[1]: Stopped f2r-app.service - f2r BuildIt Spring Boot app.
+1760918432.500000 host systemd[1]: Started f2r-app.service - f2r BuildIt Spring Boot app.
+1760918472.000000 host java[114913]: 2026 INFO TomcatWebServer: Tomcat started on port 8080 (http)
+JOURNAL
+  }
+  assert_eq "41" "$(f2r_service_gap_seconds "$unit")" "GAP: Stopping -> Tomcat started seconds"
+  assert_eq "[DEPLOY] service_gap_seconds=41 (journald: Stopping f2r-app.service -> Tomcat started)" \
+    "$(f2r_report_service_gap "$unit")" "GAP: report line"
+
+  # given 롤백으로 재시작이 두 번 → when 계산 → then 마지막 재시작 기준(12초)
+  f2r__journal_unix() {
+    cat <<'JOURNAL'
+1760918431.000000 host systemd[1]: Stopping f2r-app.service - x
+1760918472.000000 host java[1]: Tomcat started on port 8080 (http)
+1760918500.000000 host systemd[1]: Stopping f2r-app.service - x
+1760918512.000000 host java[2]: Tomcat started on port 8080 (http)
+JOURNAL
+  }
+  assert_eq "12" "$(f2r_service_gap_seconds "$unit")" "GAP: uses the last restart cycle"
+
+  # given Stopping만 있고 Tomcat started가 없음(기동 실패) → when → then 계산 불가, 리포트는 unavailable
+  f2r__journal_unix() { echo "1760918431.000000 host systemd[1]: Stopping f2r-app.service - x"; }
+  f2r_service_gap_seconds "$unit" >/dev/null
+  assert_eq "1" "$?" "GAP: no Tomcat started line -> not computable (rc 1)"
+  assert_eq "1" "$(f2r_report_service_gap "$unit" | grep -c 'service_gap_seconds=unavailable')" "GAP: unavailable is reported"
+
+  # given 빈 journal → when 리포트 → then 항상 성공(0) — 배포 판정에 영향 없음
+  f2r__journal_unix() { :; }
+  f2r_report_service_gap "$unit" >/dev/null
+  assert_eq "0" "$?" "GAP: report never fails the deploy (rc 0)"
+
+  # given Tomcat started가 Stopping보다 앞선 줄만 있음 → then 계산 불가
+  f2r__journal_unix() {
+    cat <<'JOURNAL'
+1760918400.000000 host java[1]: Tomcat started on port 8080 (http)
+1760918431.000000 host systemd[1]: Stopping f2r-app.service - x
+JOURNAL
+  }
+  f2r_service_gap_seconds "$unit" >/dev/null
+  assert_eq "1" "$?" "GAP: Tomcat started before Stopping is ignored"
+}
+echo "--- GAP: service gap measurement (read-only) ---"
+gap_cases
+
+# ── E11: 공백 측정 호출 위치 계약 ─────────────────────────────────────────
+e11_workflow_contract() {
+  local wf="$SCRIPT_DIR/../../.github/workflows/deploy-ec2.yml"
+  local gate report
+  gate=$(grep -n 'echo "\[DEPLOY\] spring health OK"' "$wf" | head -1 | cut -d: -f1)
+  report=$(grep -n 'f2r_report_service_gap f2r-app.service' "$wf" | head -1 | cut -d: -f1)
+  assert_eq "1" "$([ -n "$gate" ] && [ -n "$report" ] && [ "$gate" -lt "$report" ] && echo 1 || echo 0)" "E11: gap report runs after the health gate passes"
+  assert_eq "1" "$(grep -c 'f2r_report_service_gap f2r-app.service || true' "$wf")" "E11: gap report is non-fatal (|| true)"
+}
+echo "--- E11: gap report call-order contract ---"
+e11_workflow_contract
+
 echo
 if [ "$FAILURES" -eq 0 ]; then
   echo "All f2r_app_guard checks passed."

@@ -680,6 +680,8 @@ jobs:
             /home/ec2-user/app.jar /tmp/app-new.jar /home/ec2-user/app.jar.previous \
             f2r-app.service http://127.0.0.1:8080/actuator/health 24 5 3; then
             echo "[DEPLOY] spring health OK"
+            # 서비스 공백(종료 신호→포트 오픈) 실측 로그. 읽기 전용·비차단 — 판정/롤백에 영향 없음.
+            f2r_report_service_gap f2r-app.service || true
             f2r_env_prune_backups /var/backups/f2r-deploy-env || true
           else
             DEPLOY_RC=$?
