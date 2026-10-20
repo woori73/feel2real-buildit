@@ -10,7 +10,8 @@ public final class HelpSearch {
 
   public record Section(HelpDoc doc, String heading, String text) {}
 
-  public record Hit(Section section, double score) {}
+  /** matched/total: 서로 다른 질문 2-gram 중 이 섹션에 실제로 있는 개수/전체 개수. 우연한 한 글자 일치로 답하지 않기 위한 근거 지표. */
+  public record Hit(Section section, double score, int matched, int total) {}
 
   private static final double K1 = 1.2;
   private static final double B = 0.75;
@@ -47,19 +48,22 @@ public final class HelpSearch {
 
   public List<Hit> search(String query, int limit) {
     List<String> qg = grams(query);
+    int distinct = (int) qg.stream().distinct().count();
     List<Hit> hits = new ArrayList<>();
     int n = sections.size();
     for (int i = 0; i < n; i++) {
       Map<String, Integer> tf = tfs.get(i);
       double len = tf.values().stream().mapToInt(Integer::intValue).sum();
       double score = 0;
+      int matched = 0;
       for (String g : qg) {
         Integer f = tf.get(g);
         if (f == null) continue;
+        matched++;
         double idf = Math.log(1 + (n - df.get(g) + 0.5) / (df.get(g) + 0.5));
         score += idf * f * (K1 + 1) / (f + K1 * (1 - B + B * len / avgLen));
       }
-      if (score > 0) hits.add(new Hit(sections.get(i), score));
+      if (score > 0) hits.add(new Hit(sections.get(i), score, matched, distinct));
     }
     hits.sort((a, b) -> Double.compare(b.score(), a.score()));
     return hits.subList(0, Math.min(limit, hits.size()));
@@ -67,7 +71,7 @@ public final class HelpSearch {
 
   private static final String[] SUFFIXES = {"하나요", "하세요", "합니다", "하는", "하기", "하려면", "하면"};
   private static final java.util.Set<String> STOP_GRAMS =
-      java.util.Set.of("어떻", "떻게", "하나", "나요", "하세", "세요", "니다", "있나", "있는", "수 ", "하면", "려면");
+      java.util.Set.of("어떻", "떻게", "하나", "나요", "하세", "세요", "니다", "있나", "있는", "수 ", "하면", "려면", "알려", "려줘", "어요", "싶어", "줘요", "주세");
 
   /** 공백·기호를 제거한 글자열의 2-gram. 흔한 어미 2-gram과 단어 끝 어미(하기·하나요 등)·조사 1자는 제외하고, 한 글자 단어는 1-gram으로 둔다. */
   static List<String> grams(String text) {

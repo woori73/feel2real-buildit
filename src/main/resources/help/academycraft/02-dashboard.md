@@ -6,7 +6,7 @@ category: 대시보드
 order: 2
 audience: ALL
 visibility: PUBLIC
-status: REVIEW
+status: REVIEWED
 featureState: OPERATING
 appliesTo: 운영 2026-10-20 기준 (543cdfc8)
 lastModified: 2026-10-20
@@ -33,4 +33,4 @@ ADMIN은 위쪽의 [관리 학원] 선택에서 승인된 학원을 고릅니다
 ## 알아둘 점
 - 공용 대시보드에 보이는 '연결된 사업체 없음' 같은 문구는 AcademyCraft 학원 연결과 별개입니다. AcademyCraft로 진입한 결과를 기준으로 확인하세요.
 - 현재 운영 화면에는 도움말 메뉴가 없습니다. 이 도움말은 홈페이지에서 따로 열어 봅니다.
-- PC 1440px·모바일 390px의 실제 서비스 화면 검증은 아직 완료되지 않았습니다. (검증 필요)
+- PC 1440px·모바일 390px에서 AcademyCraft 화면이 가로로 넘치지 않는 것을 로컬에서 확인했습니다. 운영 서버 화면은 접근할 수 없어 대조하지 못했습니다. (로컬 실행 확인 2026-10-20)

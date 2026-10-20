@@ -39,7 +39,7 @@ class HelpCatalogTest {
   @Test
   void realCatalog_loadsTwelveDocsWithUniqueIdsAndResolvableRelatedLinks() throws Exception {
     // given / when
-    HelpCatalog c = new HelpCatalog(List.of("REVIEW", "REVIEWED"));
+    HelpCatalog c = new HelpCatalog(List.of("REVIEWED"));
     List<HelpDoc> all = c.viewable("ADMIN");
     // then
     assertThat(all).hasSize(12);
@@ -51,7 +51,7 @@ class HelpCatalogTest {
   @Test
   void realCatalog_tutorCannotSeeAdminOnlyDoc_adminSeesAll() throws Exception {
     // given
-    HelpCatalog c = new HelpCatalog(List.of("REVIEW"));
+    HelpCatalog c = new HelpCatalog(List.of("REVIEWED"));
     // when / then
     assertThat(c.find("admin-guide", "TUTOR")).isEmpty();
     assertThat(c.find("tutor-guide", "TUTOR")).isPresent();
@@ -62,19 +62,31 @@ class HelpCatalogTest {
   @Test
   void realCatalog_unreleasedFeatureNeverMarkedOperating() throws Exception {
     // given / when
-    HelpDoc ai = new HelpCatalog(List.of("REVIEW")).find("ai-assistant", "ADMIN").orElseThrow();
+    HelpDoc ai = new HelpCatalog(List.of("REVIEWED")).find("ai-assistant", "ADMIN").orElseThrow();
     // then
     assertThat(ai.featureState()).isEqualTo("DEV_DONE_UNDEPLOYED");
     assertThat(ai.featureStateLabel()).isEqualTo("개발 완료·미배포");
   }
 
   @Test
-  void defaultCatalog_reviewDocsAreNotAiSources() throws Exception {
+  void realCatalog_allTwelveDocsAreReviewedAndUsableAsAiSources() throws Exception {
     // given / when
     HelpCatalog c = new HelpCatalog(List.of("REVIEWED"));
     // then
-    assertThat(c.aiSources("ADMIN")).isEmpty();
-    assertThat(c.viewable("ADMIN")).isNotEmpty();
+    assertThat(c.viewable("ADMIN")).allMatch(d -> d.status().equals("REVIEWED"));
+    assertThat(c.aiSources("ADMIN")).hasSize(12);
+    assertThat(c.aiSources("TUTOR")).hasSize(11);
+  }
+
+  @Test
+  void aiSources_reviewAndDraftDocsAreExcluded() {
+    // given
+    HelpDoc ok = HelpDocParser.parse(VALID);
+    HelpDoc review = HelpDocParser.parse(VALID.replace("id: X-1", "id: X-2").replace("REVIEWED", "REVIEW"));
+    HelpDoc draft = HelpDocParser.parse(VALID.replace("id: X-1", "id: X-3").replace("REVIEWED", "DRAFT"));
+    HelpCatalog c = new HelpCatalog(List.of(ok, review, draft), new HelpAccessPolicy(Set.of("REVIEWED")));
+    // when / then
+    assertThat(c.aiSources("ADMIN")).extracting(HelpDoc::id).containsExactly("X-1");
   }
 
   @Test

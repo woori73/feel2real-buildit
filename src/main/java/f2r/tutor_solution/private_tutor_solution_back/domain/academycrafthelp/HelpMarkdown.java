@@ -42,6 +42,8 @@ public final class HelpMarkdown {
   }
 
   private static String inline(String s) {
-    return escape(s).replaceAll("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>");
+    return escape(s)
+        .replaceAll("\\[([^\\]]+)\\]\\((/help/academycraft(?:/[a-z0-9-]+)?)\\)", "<a href=\"$2\">$1</a>")
+        .replaceAll("\\*\\*(.+?)\\*\\*", "<strong>$1</strong>");
   }
 }

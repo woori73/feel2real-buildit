@@ -26,4 +26,15 @@ class HelpMarkdownTest {
     assertThat(html).contains("<h2>제목</h2>", "<ol><li>하나</li><li>둘</li></ol>", "<ul><li>점</li></ul>",
         "<p class=\"note\">주의 <strong>중요</strong></p>");
   }
+
+  @Test
+  void toHtml_rendersOnlyInternalHelpLinks() {
+    // given
+    String md = "[반](/help/academycraft/classes) [밖](https://evil.example) [js](javascript:alert(1))";
+    // when
+    String html = HelpMarkdown.toHtml(md);
+    // then
+    assertThat(html).contains("<a href=\"/help/academycraft/classes\">반</a>");
+    assertThat(html).doesNotContain("href=\"https://evil").doesNotContain("href=\"javascript");
+  }
 }

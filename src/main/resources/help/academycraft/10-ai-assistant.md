@@ -6,7 +6,7 @@ category: AI
 order: 10
 audience: ALL
 visibility: STAFF
-status: REVIEW
+status: REVIEWED
 featureState: DEV_DONE_UNDEPLOYED
 appliesTo: 개발 완료·미배포 (AcademyCraft PR #20 병합, PR #21·BuildIt #827 검토 중)
 lastModified: 2026-10-20

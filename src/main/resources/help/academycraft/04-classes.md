@@ -6,7 +6,7 @@ category: 반
 order: 4
 audience: ALL
 visibility: PUBLIC
-status: REVIEW
+status: REVIEWED
 featureState: OPERATING
 appliesTo: 운영 2026-10-20 기준 (543cdfc8)
 lastModified: 2026-10-20
