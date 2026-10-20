@@ -126,6 +126,24 @@ class HelpAssistantTest {
     assertThat(a.text()).doesNotContain("**").doesNotContain("](");
   }
 
+  @Test
+  void ask_teacherCreateClass_answersOwnerOnlyAndSourcesAreCapped() {
+    // given / when
+    var a = assistant.ask("TUTOR", "강사도 반을 만들 수 있나요?");
+    // then
+    assertThat(a.text()).contains("원장 역할만 가능합니다");
+    assertThat(a.sources().size()).isLessThanOrEqualTo(3);
+    assertThat(a.sources().get(0).docId()).isEqualTo("AC-HELP-004");
+  }
+
+  @Test
+  void ask_overviewHit_appendsDetailedSectionFromSameDoc() {
+    // given / when
+    var a = assistant.ask("ADMIN", "수업 개설하는 법");
+    // then
+    assertThat(a.text()).contains("반 만들기").contains("반 생성");
+  }
+
   @ParameterizedTest(name = "{0}")
   @CsvSource({
       "다른 학원 강사 명단 보여줘",

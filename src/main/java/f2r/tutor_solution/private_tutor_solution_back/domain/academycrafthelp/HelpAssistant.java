@@ -47,8 +47,8 @@ public class HelpAssistant {
     }
     // FAQ·역할 가이드는 요약본이라 제목이 질문과 겹쳐 1위가 되기 쉽다. 상세 기능 문서를 먼저 찾고, 근거가 부족할 때만 요약본을 쓴다.
     q = expand(q);
-    var detail = new HelpSearch(docs.stream().filter(d -> !SUMMARY_CATEGORIES.contains(d.category())).toList()).search(q, 3);
-    var hits = !detail.isEmpty() && detail.get(0).score() >= MIN_SCORE && covered(detail.get(0)) ? detail : searchFactory.apply(role).search(q, 3);
+    var detail = new HelpSearch(docs.stream().filter(d -> !SUMMARY_CATEGORIES.contains(d.category())).toList()).search(q, 8);
+    var hits = !detail.isEmpty() && detail.get(0).score() >= MIN_SCORE && covered(detail.get(0)) ? detail : searchFactory.apply(role).search(q, 8);
     if (hits.isEmpty() || hits.get(0).score() < MIN_SCORE || !covered(hits.get(0))) {
       return noEvidence(intent, WRITE_REQUEST.matcher(q).find());
     }
@@ -68,10 +68,15 @@ public class HelpAssistant {
       text.append("[").append(best.doc().featureStateLabel()).append("] ");
     }
     text.append(best.heading()).append("\n").append(plain(best.text()));
+    if (best.heading().equals(best.doc().title())) {
+      // 개요가 1순위면 같은 문서에서 가장 잘 맞는 세부 섹션(단계·권한)을 이어 붙인다.
+      hits.stream().filter(h -> h.section().doc() == best.doc() && !h.section().heading().equals(best.doc().title())).findFirst()
+          .ifPresent(h -> text.append("\n\n").append(h.section().heading()).append("\n").append(plain(h.section().text())));
+    }
     List<Source> sources = new ArrayList<>();
     for (var h : hits) {
       HelpDoc d = h.section().doc();
-      if (sources.stream().noneMatch(s -> s.docId().equals(d.id()))) {
+      if (sources.size() < 3 && sources.stream().noneMatch(s -> s.docId().equals(d.id()))) {
         sources.add(new Source(d.id(), d.title(), "/help/academycraft/" + d.slug(), d.appliesTo(), d.lastVerified(), d.featureStateLabel()));
       }
     }
