@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/css/academy_public.css?v=20261011-1"/>
   <link rel="stylesheet" href="/css/lesson_product_showcase.css?v=20260810-1"/>
   <link rel="stylesheet" href="/css/academy_collection.css?v=20260905-1"/>
+  <link rel="stylesheet" href="/css/academy_motion.css?v=20261020-1"/>
   <link rel="stylesheet" href="/css/academy_teachers.css?v=20261012-2"/>
   <link rel="stylesheet" href="/css/academy_business_footer.css?v=20260809-1"/>
   <link rel="stylesheet" href="/css/academy_builder_ai_guide.css?v=20260908-2"/>
@@ -942,6 +943,13 @@
       cursor:pointer;transition:all .15s;background:none;border:none;
     }
     .tb-view-btn.active{background:rgba(255,255,255,.15);color:#fff;}
+    /* 모션 설정 셀렉트 — 툴바 다크 테마 */
+    .tb-motion-sel{
+      background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.18);
+      border-radius:6px;padding:4px 6px;font-size:.72rem;cursor:pointer;
+    }
+    .tb-motion-sel option{color:#111;}
+    .tb-motion-sel:focus-visible{outline:2px solid #facc15;outline-offset:1px;}
 
     /* ══════════════════════════════════════════
        BREADCRUMB & CANVAS TOOLBAR
@@ -1106,6 +1114,23 @@
     <button class="tb-view-btn active" onclick="setView('desktop',this)" title="PC 1440px"><i class="fa-solid fa-desktop"></i></button>
     <button class="tb-view-btn" onclick="setView('tablet',this)" title="태블릿 768px"><i class="fa-solid fa-tablet-screen-button"></i></button>
     <button class="tb-view-btn" onclick="setView('mobile',this)" title="모바일 390px"><i class="fa-solid fa-mobile-screen"></i></button>
+  </div>
+
+  <!-- 모션 설정 — 공개 홈페이지의 등장 효과·속도. builderDraft["motion.effect"|"motion.speed"]에 저장.
+       미리보기에 즉시 반영되며, 공개 페이지와 동일한 academy_motion.js가 적용한다. -->
+  <div class="tb-motion" style="margin-left:12px;display:inline-flex;align-items:center;gap:6px;">
+    <label for="motionEffectSel" style="font-size:12px;color:rgba(255,255,255,.65);font-weight:600;">효과</label>
+    <select id="motionEffectSel" class="tb-motion-sel" title="스크롤 등장 효과">
+      <option value="">기본(슬라이드)</option>
+      <option value="fade">페이드</option>
+      <option value="none">없음(정적)</option>
+    </select>
+    <label for="motionSpeedSel" style="font-size:12px;color:rgba(255,255,255,.65);font-weight:600;">속도</label>
+    <select id="motionSpeedSel" class="tb-motion-sel" title="애니메이션 속도">
+      <option value="">보통</option>
+      <option value="slow">느리게</option>
+      <option value="fast">빠르게</option>
+    </select>
   </div>
 
   <!-- 우측 액션 버튼들 -->
@@ -2103,6 +2128,8 @@ function setView(mode, btn){
 <!-- 섹션 마크업 정본. academy_builder.js보다 먼저 로드해야 한다. -->
 <script src="/js/academy_sections.js?v=20261013-1"></script>
 <script src="/js/academy_reveal.js?v=20260901-5"></script>
+<!-- Academy Motion — 공개 페이지와 동일한 카운트업·펼치기/접기를 미리보기에도 적용 -->
+<script src="/js/academy_motion.js?v=20261020-1"></script>
 <script src="/js/academy_world.js?v=20260907-4"></script>
 <script src="/js/academy_builder_ai_guide.js?v=20260908-1"></script>
 <script src="/js/academy_brand.js?v=20261013-1"></script>

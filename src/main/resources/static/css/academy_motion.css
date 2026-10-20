@@ -1,0 +1,88 @@
+/* ══════════════ Academy Motion (academy_motion.js) ══════════════
+   공개 홈페이지 동적 인터랙션의 표현 레이어.
+   이 CSS가 없어도 콘텐츠는 정적으로 완전히 보인다(점진적 향상).
+   data-motion / data-motion-speed 는 <html> 에 붙는다. */
+
+/* ── 속도 선택: reveal 토큰 오버라이드 ── */
+[data-motion-speed="slow"] {
+  --reveal-duration: 900ms;
+  --reveal-stagger: 130ms;
+}
+[data-motion-speed="fast"] {
+  --reveal-duration: 320ms;
+  --reveal-stagger: 40ms;
+}
+
+/* ── 숫자 카운트업: 자릿수 흔들림 방지 ── */
+[data-countup] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 섹션 펼치기/접기: grid-rows 트릭으로 높이 측정 없이 애니메이션 ── */
+[data-motion-collapse-region] {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition:
+    grid-template-rows .38s cubic-bezier(.22, .8, .3, 1),
+    opacity .3s ease;
+}
+[data-motion-collapse-region].is-collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+[data-motion-collapse-region] > .motion-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── 펼치기/접기 토글 버튼 ── */
+.motion-collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 9px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, transform .15s ease;
+}
+.motion-collapse-toggle:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+.motion-collapse-toggle:active {
+  transform: scale(.97);
+}
+.motion-collapse-toggle::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform .25s ease;
+}
+.motion-collapse-toggle[aria-expanded="false"]::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+.motion-collapse-toggle:focus-visible {
+  outline: 2px solid #facc15;
+  outline-offset: 2px;
+}
+
+/* ── reduced-motion: 모든 모션 즉시 최종 상태 ── */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion-collapse-region] {
+    transition: none;
+  }
+  .motion-collapse-toggle,
+  .motion-collapse-toggle::after {
+    transition: none;
+  }
+}
