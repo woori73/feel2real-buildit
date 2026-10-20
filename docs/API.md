@@ -3395,7 +3395,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 ### 로그인 회원
 - `GET /api/wiki/originals?grade=&year=&month=&docType=` — deleted=false·visible=true, 학년/회차/종류 필터(미지정 시 무필터와 동일). → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examYear, examMonth, examLabel, docType, docTypeLabel, originalFileName, fileExtension, fileSize, isVisible, createdAt, updatedAt, downloadUrl, viewUrl).
 - `GET /api/wiki/originals/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 `Content-Disposition: attachment` + 확장자로 추론한 content-type + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
-- `GET /api/wiki/originals/{id}/view` — 로그인 회원만. HTML/이미지(html·htm·png·jpg·jpeg·webp)만 인라인 열람 허용, 그 외 400. `Content-Disposition: inline` + `Content-Security-Policy: sandbox allow-scripts` + `nosniff`. 해설 HTML의 문항 이동·글자 크기 조절 스크립트는 실행되지만 allow-same-origin이 없어 불투명 출처로 격리된다(사이트 쿠키·스토리지·DOM 접근 불가, 폼·팝업 차단 유지).
+- `GET /api/wiki/originals/{id}/view` — 로그인 회원만. HTML/이미지(html·htm·png·jpg·jpeg·webp)만 인라인 열람 허용, 그 외 400. `Content-Disposition: inline` + `Content-Security-Policy: sandbox allow-scripts allow-modals` + `nosniff`. 해설 HTML의 문항 이동·글자 크기 조절 스크립트와 인쇄가 동작하지만 allow-same-origin이 없어 불투명 출처로 격리된다(사이트 쿠키·스토리지·DOM 접근 불가, 폼 제출·팝업·상위 이동 차단 유지).
 
 ### 회차 (공개 메타 + ADMIN 관리)
 - `GET /api/wiki/rounds` — 공개 회차 목록(최신순, 아카이브 선택용). permitAll.
