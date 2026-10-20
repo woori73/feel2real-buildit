@@ -317,6 +317,15 @@
     .section-toggle-btn:hover{background:rgba(255,255,255,.1);transform:translateY(-1px);}
     .section-toggle-btn.is-hidden{background:rgba(239,68,68,.14);border-color:rgba(248,113,113,.32);color:#fecaca;}
     .section-toggle-btn.is-saving{opacity:.65;pointer-events:none;}
+    .section-toggle-btn:focus-visible{outline:2px solid #facc15;outline-offset:2px;}
+    /* frontend-design 스킬: 장식 모션 절제 — reduced-motion에서 에디터 크롬 트랜지션 중단 */
+    @media (prefers-reduced-motion: reduce){
+      .section-toggle-btn,.builder-public-preview .builder-hero-video-edit,
+      .builder-public-preview [data-builder-logo],.builder-public-preview [data-builder-text],
+      .builder-public-preview [data-builder-basic]{transition:none !important;}
+      .builder-public-preview .builder-hero-video-edit:hover{transform:none;}
+      .builder-public-preview [data-builder-basic]:hover{transform:none;}
+    }
     .section-toggle-state{font-size:.62rem;padding:2px 6px;border-radius:999px;background:rgba(16,185,129,.16);color:#86efac;}
     .section-toggle-btn.is-hidden .section-toggle-state{background:rgba(248,113,113,.18);color:#fecaca;}
 

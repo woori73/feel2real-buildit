@@ -20,6 +20,9 @@
       --ok: #38a169;
       --radius: 14px;
       --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 1px 2px rgba(16, 24, 40, .04);
+      /* 타입 스케일 (frontend-design 스킬: 의도적 타입 시스템) */
+      --fs-2xl: 26px; --fs-xl: 22px; --fs-lg: 16px; --fs-md: 15px;
+      --fs-sm: 14px; --fs-xs: 13px; --fs-2xs: 12px;
     }
     * { box-sizing: border-box; }
     body { background: var(--bg); margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif; }
@@ -87,9 +90,9 @@
       content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
       background: var(--kpi-accent, var(--accent));
     }
-    .dash-kpi .k-label { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
-    .dash-kpi .k-value { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
-    .dash-kpi .k-value .unit { font-size: 14px; font-weight: 600; color: var(--text-3); margin-left: 2px; }
+    .dash-kpi .k-label { font-size: var(--fs-xs); font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
+    .dash-kpi .k-value { font-size: var(--fs-2xl); font-weight: 800; color: var(--text); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .dash-kpi .k-value .unit { font-size: var(--fs-sm); font-weight: 600; color: var(--text-3); margin-left: 2px; }
     .dash-kpi.kpi-income { --kpi-accent: #38a169; }
     .dash-kpi.kpi-expense { --kpi-accent: #dd6b20; }
     .dash-kpi.kpi-receivable { --kpi-accent: #e53e3e; }
@@ -128,8 +131,8 @@
     }
     .dash-list li:last-child { border-bottom: none; }
     .dash-list .t { font-weight: 600; color: var(--text); font-size: 13.5px; }
-    .dash-list .s { color: var(--text-2); font-size: 12.5px; margin-top: 3px; }
-    .dash-list .amt { font-weight: 700; color: var(--text); font-size: 13.5px; white-space: nowrap; }
+    .dash-list .s { color: var(--text-2); font-size: var(--fs-2xs); margin-top: 3px; }
+    .dash-list .amt { font-weight: 700; color: var(--text); font-size: var(--fs-xs); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
     /* ---- 서비스 바로가기 ---- */
     .dash-shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -203,6 +206,18 @@
       .dash-skeleton { grid-template-columns: 1fr; }
       .dash-promo-strip { flex-wrap: wrap; }
       .dash-ai-fab { right: 16px; bottom: 16px; width: 56px; height: 56px; }
+    }
+
+    /* ---- 키보드 포커스 (frontend-design 스킬: 모션·장식은 행동에 응답할 때만) ---- */
+    .dash-shortcut:focus-visible, .dash-refresh:focus-visible,
+    .dash-biz-select:focus-visible, .p-btn:focus-visible, .dash-retry:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+    /* ---- 모션 절제: 사용자 동작이 아닌 장식 모션은 reduced-motion에서 중단 ---- */
+    @media (prefers-reduced-motion: reduce) {
+      .dash-shortcut { transition: none; }
+      .dash-shortcut:hover { transform: none; }
+      .dash-skel .bar { animation: none; }
     }
 
     /* ===== AI 비서(읽기 전용, Muse Spark) — 모바일은 하단 전체 시트, 메시지 영역만 스크롤 ===== */

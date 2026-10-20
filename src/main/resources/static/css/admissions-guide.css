@@ -221,6 +221,19 @@ body {
   background: var(--ag-card);
   border: 1px solid var(--ag-border);
   border-bottom-left-radius: 4px;
+  /* frontend-design 스킬: 근거가 긴 답변의 가독성 — 본문 행간 완화 */
+  line-height: 1.75;
+}
+
+/* frontend-design 스킬: 키보드 포커스를 시각 구조의 일부로 */
+.ag-example:focus-visible, .ag-send:focus-visible, .ag-back:focus-visible,
+.ag-year-toggle:focus-visible, .ag-nav a:focus-visible, .ag-nav button:focus-visible {
+  outline: 2px solid var(--ag-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-example, .ag-send { transition: none; }
 }
 
 .ag-msg-typing {
