@@ -31,6 +31,12 @@ public class WikiPageController {
     return noStore(response, "public/wiki_originals");
   }
 
+  /** 회차 아카이브 — year/month 쿼리로 과거 회차 자료를 열람한다(자료 데이터는 API가 제공). */
+  @GetMapping("/wiki/archive")
+  public String archive(HttpServletResponse response) {
+    return noStore(response, "public/wiki_archive");
+  }
+
   @GetMapping("/wiki/analysis")
   public String analysis(HttpServletResponse response) {
     return noStore(response, "public/wiki_analysis");

@@ -29,8 +29,14 @@ public class WikiExamOriginalController {
 
   @GetMapping("/api/wiki/originals")
   public ResponseEntity<List<WikiExamOriginalResponse>> listPublic(
-      @RequestParam(required = false) Integer grade) {
-    return ResponseEntity.ok(service.searchPublic(grade));
+      @RequestParam(required = false) Integer grade,
+      @RequestParam(required = false) Integer year,
+      @RequestParam(required = false) Integer month,
+      @RequestParam(required = false) String docType) {
+    if (year == null && month == null && docType == null) {
+      return ResponseEntity.ok(service.searchPublic(grade));
+    }
+    return ResponseEntity.ok(service.searchPublicFiltered(grade, year, month, docType));
   }
 
   @GetMapping("/api/wiki/originals/{id}/download")
@@ -47,6 +53,31 @@ public class WikiExamOriginalController {
         file.bytes(), DocumentUploadValidator.contentType(file.fileName()), file.fileName());
   }
 
+  /**
+   * 인라인 열람 (HTML 해설지·이미지). 다운로드는 항상 attachment지만, 열람은 브라우저 표시용이다.
+   * 업로드된 HTML의 스크립트가 본 사이트 세션에서 실행되지 않도록 CSP sandbox로 격리하고,
+   * nosniff로 콘텐츠 타입 위장을 막는다. 파일 응답은 회원 전용 정책(다운로드와 동일)을 유지한다.
+   */
+  @GetMapping("/api/wiki/originals/{id}/view")
+  public ResponseEntity<byte[]> view(
+      @PathVariable Long id, @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+    }
+    DownloadFile file = service.getPublicView(id);
+    String contentType = DocumentUploadValidator.contentType(file.fileName());
+    org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+    headers.setContentType(org.springframework.http.MediaType.parseMediaType(contentType));
+    headers.setContentDisposition(
+        org.springframework.http.ContentDisposition.inline()
+            .filename(file.fileName(), java.nio.charset.StandardCharsets.UTF_8)
+            .build());
+    headers.set("Content-Security-Policy", "sandbox");
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.setCacheControl("private, no-store");
+    return new ResponseEntity<>(file.bytes(), headers, HttpStatus.OK);
+  }
+
   @GetMapping("/api/admin/wiki/originals")
   public ResponseEntity<List<WikiExamOriginalResponse>> listAdmin() {
     return ResponseEntity.ok(service.listAdmin());
@@ -56,11 +87,14 @@ public class WikiExamOriginalController {
   public ResponseEntity<WikiExamOriginalResponse> createAdmin(
       @RequestParam String title,
       @RequestParam Integer grade,
-      @RequestParam String examLabel,
+      @RequestParam(required = false) String examLabel,
       @RequestParam String docType,
       @RequestParam(defaultValue = "true") boolean visible,
+      @RequestParam(required = false) Integer examYear,
+      @RequestParam(required = false) Integer examMonth,
       @RequestPart("file") MultipartFile file) {
-    return ResponseEntity.ok(service.create(title, grade, examLabel, docType, visible, file));
+    return ResponseEntity.ok(
+        service.create(title, grade, examLabel, docType, visible, file, examYear, examMonth));
   }
 
   @PutMapping(value = "/api/admin/wiki/originals/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -68,11 +102,14 @@ public class WikiExamOriginalController {
       @PathVariable Long id,
       @RequestParam String title,
       @RequestParam Integer grade,
-      @RequestParam String examLabel,
+      @RequestParam(required = false) String examLabel,
       @RequestParam String docType,
       @RequestParam(defaultValue = "true") boolean visible,
+      @RequestParam(required = false) Integer examYear,
+      @RequestParam(required = false) Integer examMonth,
       @RequestPart(value = "file", required = false) MultipartFile file) {
-    return ResponseEntity.ok(service.update(id, title, grade, examLabel, docType, visible, file));
+    return ResponseEntity.ok(
+        service.update(id, title, grade, examLabel, docType, visible, file, examYear, examMonth));
   }
 
   @PatchMapping("/api/admin/wiki/originals/{id}/visibility")

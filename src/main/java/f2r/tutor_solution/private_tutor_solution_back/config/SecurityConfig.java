@@ -485,6 +485,8 @@ public class SecurityConfig {
             // home-feed는 controller에서 익명 응답의 Thread/LIVE/회원 활동을 제거한다.
             .requestMatchers(HttpMethod.GET, "/api/wiki/home-feed").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/wiki/popular-downloads").permitAll()
+            // 모의고사 회차(연도·월) 메타 — 제목·배너 경로만이라 익명 허용한다(자료 자체는 기존대로 회원 전용).
+            .requestMatchers(HttpMethod.GET, "/api/wiki/rounds", "/api/wiki/rounds/current").permitAll()
             // NewStart 최신 정보·금감원 Agent 안내 API는 회원 전용이다(2026-10-02 정책: 홈만 공개).
             // 별도 permitAll을 두지 않으므로 아래 /api/** catch-all이 비회원 요청을 401로 거부한다.
             .requestMatchers(HttpMethod.GET, "/api/choonggi/media/**").permitAll()  // published vlog media

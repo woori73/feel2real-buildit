@@ -13,11 +13,36 @@
   <main class="main">
     <div class="section-header">
       <div>
-        <h2 class="section-title">모의고사 원본 자료</h2>
-        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 원본 문제지/정답지(PDF·HWP·HWPX·HTML)를 관리합니다.</span>
+        <h2 class="section-title">모의고사 자료·회차 관리</h2>
+        <span class="section-hint">공개 BuildIt Wiki(/wiki)에 노출되는 모의고사 자료(문제지·정답지·문제풀이 해설·구문독해)와 월별 회차를 관리합니다. 메인 회차로 지정한 회차가 /wiki 메인이 되고, 나머지는 아카이브에서 열람됩니다.</span>
       </div>
-      <button class="btn btn-primary" onclick="openCreateModal()">+ 새 원본</button>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ 새 자료</button>
     </div>
+
+    <section aria-label="회차 관리">
+      <h3 class="section-title" style="font-size:17px;">회차(연도·월)</h3>
+      <div id="roundList" class="analysis-grid" aria-live="polite">
+        <div class="empty-card">불러오는 중...</div>
+      </div>
+      <form id="roundForm" class="form-grid" style="margin:10px 0 26px;max-width:860px;">
+        <div class="field"><label for="roundYear">연도</label><input id="roundYear" type="number" min="2000" max="2100" value="2026" required></div>
+        <div class="field"><label for="roundMonth">월</label>
+          <select id="roundMonth">
+            <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+            <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+            <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+            <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+          </select>
+        </div>
+        <div class="field full"><label for="roundTitle">회차 제목</label><input id="roundTitle" required placeholder="2026년 11월 모의고사 해설 자료"></div>
+        <div class="field full"><label for="roundSubtitle">부제 (선택)</label><input id="roundSubtitle" placeholder="고1 · 고2 · 고3 영어 모의고사 문제풀이 · 구문독해 · 핵심 정리"></div>
+        <div class="field full"><label for="roundBanner">배너 이미지 경로 (선택)</label><input id="roundBanner" placeholder="/images/wiki/banner-2026-11.png"></div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">회차 추가</button>
+        </div>
+        <p id="roundMessage" class="muted"></p>
+      </form>
+    </section>
 
     <section id="originalList" class="analysis-grid" aria-live="polite">
       <div class="empty-card">불러오는 중...</div>
@@ -27,19 +52,27 @@
   <div id="originalModal" class="modal-backdrop" aria-hidden="true">
     <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="formTitle">
       <div class="modal-header">
-        <h2 id="formTitle" class="modal-title">원본 자료 등록</h2>
+        <h2 id="formTitle" class="modal-title">자료 등록</h2>
         <button class="modal-close" type="button" onclick="closeModal()" aria-label="닫기">×</button>
       </div>
       <div class="modal-body">
         <form id="originalForm">
           <input id="originalId" type="hidden">
           <div class="form-grid">
-            <div class="field full"><label for="title">제목</label><input id="title" required placeholder="고3 2026 9월 모의고사 영어 문제지"></div>
+            <div class="field full"><label for="title">제목</label><input id="title" required placeholder="고1 2026 10월 모의고사 문제풀이 해설"></div>
             <div class="field"><label for="grade">학년</label><select id="grade"><option value="3">고3</option><option value="2">고2</option><option value="1">고1</option></select></div>
-            <div class="field"><label for="docType">구분</label><select id="docType"><option value="QUESTION">문제지</option><option value="ANSWER">정답지</option></select></div>
-            <div class="field full"><label for="examLabel">시험 이름</label><input id="examLabel" required value="2026 9월 모의고사"></div>
-            <div class="field full"><label for="file">파일 (PDF·HWP·HWPX·HTML) <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf,.hwp,.hwpx,.html,.htm,text/html"></div>
-            <label class="check-row"><input id="visible" type="checkbox" checked> 공개</label>
+            <div class="field"><label for="docType">자료 종류</label><select id="docType"><option value="EXPLANATION">문제풀이 해설</option><option value="SYNTAX">구문독해</option><option value="QUESTION">문제지</option><option value="ANSWER">정답지</option></select></div>
+            <div class="field"><label for="examYear">시험 연도</label><input id="examYear" type="number" min="2000" max="2100" value="2026" required></div>
+            <div class="field"><label for="examMonth">시행 월</label>
+              <select id="examMonth">
+                <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+                <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+                <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+                <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+              </select>
+            </div>
+            <div class="field full"><label for="file">파일 (PDF·HWP·HWPX·HTML·PNG·JPG) <span id="fileHint" class="muted"></span></label><input id="file" type="file" accept=".pdf,.hwp,.hwpx,.html,.htm,.png,.jpg,.jpeg,.webp,text/html,image/png,image/jpeg,image/webp"></div>
+            <label class="check-row"><input id="visible" type="checkbox" checked> 공개 (끄면 임시저장)</label>
           </div>
           <div class="form-actions">
             <button class="btn btn-secondary" type="button" onclick="closeModal()">취소</button>

@@ -204,6 +204,51 @@ class WikiExamOriginalServiceTest {
     verify(repository).findPublicByGrade(3);
   }
 
+  @Test
+  @DisplayName("given 연도·월 + PNG 해설 when 등록 then 라벨 합성 + 회차 저장 + PNG 허용")
+  void create_withYearMonth_composesLabelAndStoresPng() throws Exception {
+    // given — PNG 매직 바이트(89 50 4E 47)
+    MockMultipartFile file = new MockMultipartFile("file", "해설.png", "image/png",
+        new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), eq(file.getSize())))
+        .thenReturn("stored/해설.png");
+    when(repository.save(any(WikiExamOriginal.class))).thenAnswer(inv -> {
+      WikiExamOriginal saved = inv.getArgument(0);
+      ReflectionTestUtils.setField(saved, "wikiExamOriginalId", 9L);
+      return saved;
+    });
+
+    // when
+    WikiExamOriginalResponse res = service.create(
+        "고1 10월 문제풀이 해설", 1, null, "EXPLANATION", false, file, 2026, 10);
+
+    // then
+    assertThat(res.examLabel()).isEqualTo("2026 10월 모의고사");
+    assertThat(res.examYear()).isEqualTo(2026);
+    assertThat(res.examMonth()).isEqualTo(10);
+    assertThat(res.docType()).isEqualTo("EXPLANATION");
+    assertThat(res.docTypeLabel()).isEqualTo("문제풀이 해설");
+    assertThat(res.fileExtension()).isEqualTo("png");
+    assertThat(res.isVisible()).isFalse();
+  }
+
+  @Test
+  @DisplayName("given 잘못된 월(13) when 등록 then 400")
+  void create_rejectsBadMonth() {
+    assertThatThrownBy(() -> service.create("t", 1, null, "EXPLANATION", true, pdf("a.pdf"), 2026, 13))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("월");
+  }
+
+  @Test
+  @DisplayName("given PDF when 열람 조회 then 400 — 열람은 HTML/이미지만")
+  void getPublicView_rejectsPdf() {
+    when(repository.findPublicById(7L)).thenReturn(Optional.of(original("k")));
+    assertThatThrownBy(() -> service.getPublicView(7L))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("열람");
+  }
+
   private MockMultipartFile pdf(String name) {
     return new MockMultipartFile("file", name, "application/pdf", "%PDF-1.4".getBytes());
   }

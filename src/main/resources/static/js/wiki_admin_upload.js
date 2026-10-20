@@ -31,6 +31,29 @@
   if (forms.original) forms.original.addEventListener('submit', function (e) { submit(e, 'original'); });
   if (forms.analysis) forms.analysis.addEventListener('submit', function (e) { submit(e, 'analysis'); });
 
+  // 업로드 전 미리보기 — 이미지 파일은 썸네일, 그 외는 이름·크기만 보여준다(서버 전송 없음).
+  Object.keys(forms).forEach(function (k) {
+    var form = forms[k];
+    if (!form) return;
+    var input = form.querySelector('[name="file"]');
+    var box = form.querySelector('[data-file-preview]');
+    if (!input || !box) return;
+    input.addEventListener('change', function () {
+      var file = input.files[0];
+      if (!file) { box.hidden = true; box.innerHTML = ''; return; }
+      var kb = Math.max(1, Math.round(file.size / 1024));
+      if (file.type.indexOf('image/') === 0) {
+        var url = URL.createObjectURL(file);
+        box.innerHTML = '<img alt="업로드 미리보기" style="max-width:100%;max-height:220px;border-radius:8px;display:block;margin:8px 0;">'
+          + '<span class="muted">' + file.name + ' · ' + kb + 'KB</span>';
+        box.querySelector('img').src = url;
+      } else {
+        box.innerHTML = '<span class="muted">미리보기: ' + file.name + ' · ' + kb + 'KB</span>';
+      }
+      box.hidden = false;
+    });
+  });
+
   function bindOpen(btnId, kind) {
     var btn = document.getElementById(btnId);
     if (!btn) return;
@@ -129,16 +152,16 @@
   }
 
   function originalPayload(form) {
-    var year = val(form, 'year');
-    var exam = val(form, 'exam');
     var fd = new FormData();
     fd.set('title', val(form, 'title'));
     fd.set('grade', val(form, 'grade'));
     fd.set('docType', val(form, 'docType'));
-    fd.set('examLabel', [year, exam].filter(Boolean).join(' '));
-    fd.set('visible', 'true');
+    // 회차는 연도·월로 보낸다 — exam_label은 서버가 "{연도} {월}월 모의고사"로 합성한다.
+    fd.set('examYear', val(form, 'year'));
+    fd.set('examMonth', val(form, 'examMonth'));
+    fd.set('visible', val(form, 'visible') || 'true');
     var file = form.querySelector('[name="file"]').files[0];
-    if (!file) { msg(form, '파일(PDF·HWP·HWPX)을 선택해주세요.', true); return null; }
+    if (!file) { msg(form, '파일(PDF·HWP·HWPX·HTML·이미지)을 선택해주세요.', true); return null; }
     fd.set('file', file);
     return fd;
   }
