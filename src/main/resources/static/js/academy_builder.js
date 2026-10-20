@@ -249,6 +249,7 @@
     wireBrandDesign(preview);
     wireAiGuide(preview);
     wireHeaderSectionApply();
+    wireMotionControls();
     if (preview && preview.name) toast(`👋 ${preview.name} 빌더에 오신 걸 환영합니다!`, 'fa-graduation-cap');
     wirePublish(request);
   }
@@ -401,6 +402,15 @@
     // 3초 failsafe이므로 편집을 방해하지 않는다. 모듈 미로드 시 no-op(콘텐츠는 정적으로 완전 노출).
     if (window.F2RReveal && typeof window.F2RReveal.wire === 'function') {
       try { window.F2RReveal.wire(pageContent); } catch (_) { /* 콘텐츠 노출에 영향 없음 */ }
+    }
+    // Academy Motion(숫자 카운트업 + 섹션 펼치기/접기)도 공개 페이지와 동일하게 배선한다.
+    // 모듈 미로드 시 no-op(콘텐츠는 정적으로 완전 노출).
+    if (window.AcademyMotion && typeof window.AcademyMotion.wire === 'function') {
+      try {
+        var motionDraft = (currentPreview.pageSettings && currentPreview.pageSettings.builderDraft) || {};
+        window.AcademyMotion.applyPrefs({ effect: motionDraft['motion.effect'], speed: motionDraft['motion.speed'] });
+        window.AcademyMotion.wire(pageContent);
+      } catch (_) { /* 콘텐츠 노출에 영향 없음 */ }
     }
     if (highlightField || activeTextField) highlightTextTargets(highlightField || activeTextField);
     if (scrollToSection) scrollPreviewToSection(scrollToSection);
@@ -5597,6 +5607,7 @@
     );
     currentPreview.sectionOrder = sectionOrderFrom(currentPreview);
     populatePreview(currentPreview);
+    syncMotionControls();
   }
 
   function textHighlightSelectors(field) {
@@ -5749,6 +5760,92 @@
     button.classList.toggle('is-saving', saving);
     if ('disabled' in button) button.disabled = saving;
     button.setAttribute('aria-busy', String(saving));
+  }
+
+  /* ── 모션 설정(효과·속도) ──────────────────────────────────────────────
+     builderDraft["motion.effect"|"motion.speed"] 에 저장. DB 스키마 변경 없음.
+     미리보기에는 AcademyMotion.applyPrefs 로 즉시 반영하고,
+     공개 페이지는 academy_public.js 가 같은 draft 키를 읽는다. */
+
+  function motionDraftOf(preview) {
+    return (preview && preview.pageSettings && preview.pageSettings.builderDraft) || {};
+  }
+
+  function syncMotionControls() {
+    const draft = motionDraftOf(currentPreview);
+    const effectSel = document.getElementById('motionEffectSel');
+    const speedSel = document.getElementById('motionSpeedSel');
+    if (effectSel) effectSel.value = draft['motion.effect'] || '';
+    if (speedSel) speedSel.value = draft['motion.speed'] || '';
+  }
+
+  function applyMotionPrefsToPreview() {
+    if (!window.AcademyMotion || typeof window.AcademyMotion.applyPrefs !== 'function') return;
+    const draft = motionDraftOf(currentPreview);
+    try {
+      window.AcademyMotion.applyPrefs({ effect: draft['motion.effect'], speed: draft['motion.speed'] });
+    } catch (_) { /* 미리보기 노출에 영향 없음 */ }
+  }
+
+  async function saveMotionPrefs(effect, speed) {
+    if (!currentPreview) return;
+    const pageSettings = Object.assign({}, currentPreview.pageSettings || {});
+    const previousDraft = Object.assign({}, pageSettings.builderDraft || {});
+    const nextDraft = Object.assign({}, previousDraft);
+    if (effect) nextDraft['motion.effect'] = effect; else delete nextDraft['motion.effect'];
+    if (speed) nextDraft['motion.speed'] = speed; else delete nextDraft['motion.speed'];
+    pageSettings.builderDraft = nextDraft;
+    currentPreview.pageSettings = pageSettings;
+    applyMotionPrefsToPreview();
+    syncMotionControls();
+
+    if (!currentPreview.publicPathUrl) {
+      // 미발행(작업본) — 미리보기만 갱신하고 저장은 다음 저장 시점에 포함된다.
+      toast('모션 설정을 미리보기에 반영했습니다.', 'fa-wand-magic-sparkles');
+      return;
+    }
+    const request = academyUpdateRequest(currentPreview);
+    if (!request) {
+      currentPreview.pageSettings = Object.assign({}, currentPreview.pageSettings || {}, { builderDraft: previousDraft });
+      toast('모션 설정 저장에 실패했습니다.', 'fa-triangle-exclamation');
+      return;
+    }
+    try {
+      const res = await fetch('/api/tutor/academy', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(request)
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const academy = await res.json();
+      syncPreviewFromAcademy(academy);
+      toast('모션 설정을 저장했습니다.', 'fa-check');
+    } catch (_) {
+      currentPreview.pageSettings = Object.assign({}, currentPreview.pageSettings || {}, { builderDraft: previousDraft });
+      applyMotionPrefsToPreview();
+      syncMotionControls();
+      toast('모션 설정 저장에 실패했습니다.', 'fa-triangle-exclamation');
+    }
+  }
+
+  function wireMotionControls() {
+    const effectSel = document.getElementById('motionEffectSel');
+    const speedSel = document.getElementById('motionSpeedSel');
+    const onChange = () => {
+      const effect = effectSel ? effectSel.value : '';
+      const speed = speedSel ? speedSel.value : '';
+      saveMotionPrefs(effect, speed);
+    };
+    if (effectSel && !effectSel.dataset.motionWired) {
+      effectSel.dataset.motionWired = 'true';
+      effectSel.addEventListener('change', onChange);
+    }
+    if (speedSel && !speedSel.dataset.motionWired) {
+      speedSel.dataset.motionWired = 'true';
+      speedSel.addEventListener('change', onChange);
+    }
+    syncMotionControls();
   }
 
   function applyAcademyToLivePreview(academy, sectionId) {

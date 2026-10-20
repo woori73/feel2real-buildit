@@ -186,6 +186,7 @@
       + renderFooter(academy);
     SECTIONS.applyImageMediaAspect(root);
     wireReveal();
+    wireMotion(academy);
     wireSceneFlow();
     wireCinematic();
     wireContentCollections();
@@ -237,6 +238,19 @@
     const REVEAL = window.F2RReveal;
     if (!REVEAL || !root) return;
     REVEAL.wire(root);
+  }
+
+  /**
+   * Academy Motion(academy_motion.js) — 숫자 카운트업 + 섹션 펼치기/접기.
+   * builderDraft["motion.effect"|"motion.speed"] 를 읽어 루트 data-motion 속성에 반영한다.
+   * 모듈이 없으면(로드 실패) 아무것도 하지 않고 콘텐츠는 정적으로 완전히 보인다.
+   */
+  function wireMotion(academy) {
+    const MOTION = window.AcademyMotion;
+    if (!MOTION || !root) return;
+    const draft = (academy && academy.pageSettings && academy.pageSettings.builderDraft) || {};
+    MOTION.applyPrefs({ effect: draft['motion.effect'], speed: draft['motion.speed'] });
+    MOTION.wire(root);
   }
 
   /**

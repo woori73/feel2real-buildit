@@ -790,7 +790,7 @@
 
   function heroStatsHtml(view, ctx, itemClass) {
     const stats = HERO_STATS.map((stat) =>
-      `<div class="${itemClass || ''}"><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
+      `<div class="${itemClass || ''}"><b data-countup>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
     ).join('');
     return `<div class="hero-stats" data-reveal-item>${stats}</div>`;
   }
@@ -801,7 +801,7 @@
     const examStats = HERO_STATS.map((stat) => {
       const val = draftText(view, stat.draftKey, '');
       if (!val || val === '—') return '';
-      return `<div class="hero-exam-stat"><b>${ctx.heroStatValue(stat.draftKey, escapeHtml(val))}</b><span>${stat.label}</span></div>`;
+      return `<div class="hero-exam-stat"><b data-countup>${ctx.heroStatValue(stat.draftKey, escapeHtml(val))}</b><span>${stat.label}</span></div>`;
     }).join('');
     const statsHtml = examStats
       ? `<div class="hero-exam-stats" data-reveal-item>${examStats}</div>`
@@ -918,7 +918,7 @@
   function renderHeroDefault(view, ctx) {
     const eyebrow = draftText(view, 'principalName', '');
     const stats = HERO_STATS.map((stat) =>
-      `<div><b>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
+      `<div><b data-countup>${ctx.heroStatValue(stat.draftKey, draftText(view, stat.draftKey, '—'))}</b><span>${stat.label}</span></div>`
     ).join('');
     return `<section class="hero" id="sec-hero" data-builder-section-key="sec-hero" data-reveal>
         <div class="brand-glow" aria-hidden="true"></div>
@@ -1205,7 +1205,7 @@
       ? ctx.videoCollection(videos)
       : (videos.length ? videoPlaylist(videos, ctx) : VIDEO_EMPTY_PLACEHOLDER);
     const title = draftText(view, 'videosSectionTitle', videosTitleDefault(view));
-    return `<section id="sec-videos" data-builder-section-key="sec-videos" class="section-wrap">
+    return `<section id="sec-videos" data-builder-section-key="sec-videos" class="section-wrap" data-reveal>
       <div class="section-inner">
         <div class="section-header">
           ${ctx.editableText({ tag: 'h2', className: 'section-title', draftKey: 'videosSectionTitle', value: title, omitWhenEmpty: true })}
@@ -1284,7 +1284,7 @@
       : ctx.miniLecturesEmpty();
     if (!body) return ''; // 공개 + 콘텐츠 없음 → 섹션 자체를 내지 않는다
     const title = draftText(view, 'miniLecturesSectionTitle', miniLecturesTitleDefault(view));
-    return `<section id="sec-minilectures" data-builder-section-key="sec-minilectures" class="section-wrap">
+    return `<section id="sec-minilectures" data-builder-section-key="sec-minilectures" class="section-wrap" data-reveal>
       <div class="section-inner">
         <div class="section-header">
           <div class="eyebrow"><span class="stroke"></span>미니 강의</div>
@@ -1382,13 +1382,20 @@
     const slot = isHorizontalCollection(view, 'lessonsLayout')
       ? ctx.lessonCollection(view.lessons || [])
       : ctx.renderLessonShowcase(view.lessons || []);
-    return `<section id="sec-lessons" data-builder-section-key="sec-lessons" class="section-wrap classes-wrap">
+    return `<section id="sec-lessons" data-builder-section-key="sec-lessons" class="section-wrap classes-wrap" data-reveal>
         <div class="section-inner classes-container">
           <div class="section-head classes-head">
             <div class="eyebrow"><span class="stroke"></span>대표 수업</div>
             ${ctx.editableText({ tag: 'h2', className: 'classes-title', draftKey: 'curriculumTitle', value: title, builderClass: 'builder-multiline-text', omitWhenEmpty: true })}
           </div>
-          <div class="lesson-product-slot">${slot}</div>
+          <div data-motion-collapse data-motion-collapse-label="수업 목록">
+            <div data-motion-collapse-region id="motion-collapse-lessons">
+              <div class="motion-collapse-inner">
+                <div class="lesson-product-slot">${slot}</div>
+              </div>
+            </div>
+            <button type="button" class="motion-collapse-toggle" data-motion-collapse-toggle aria-expanded="true" aria-controls="motion-collapse-lessons">수업 목록 접기</button>
+          </div>
           ${ctx.lessonsFooter(view)}
         </div>
         ${renderLessonSchedule(view, ctx)}
