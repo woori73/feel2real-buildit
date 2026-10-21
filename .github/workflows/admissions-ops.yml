@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'status=상태/메모리 보고, resize-check=EC2 증설 사전 점검(읽기 전용: 권한 dry-run·EIP·볼륨·부팅 자동기동), install=서버 설치·보정, enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
+        description: 'status=상태/메모리 보고, verify=증설 후 점검(상태검사·내부 엔드포인트·RDS·부팅/502 단서), resize-check=EC2 증설 사전 점검(읽기 전용: 권한 dry-run·EIP·볼륨·부팅 자동기동), install=서버 설치·보정, enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
         required: true
         default: status
         type: choice
-        options: [status, resize-check, install, enable, disable]
+        options: [status, verify, resize-check, install, enable, disable]
       min_similarity:
         description: 'enable 시 유사도 하한. 비우면 설치 때 보정한 제안값(없으면 기본 0.5)'
         required: false
@@ -38,6 +38,16 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
+      - name: EC2 status checks (read-only)
+        if: inputs.action == 'verify'
+        shell: bash
+        run: |
+          set +e
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration \
+            Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          aws ec2 describe-instances --instance-ids "$IID" --query 'Reservations[0].Instances[0].{Id:InstanceId,Type:InstanceType,State:State.Name,LaunchTime:LaunchTime,PrivateIp:PrivateIpAddress,PublicIp:PublicIpAddress}' --output json
+          aws ec2 describe-instance-status --instance-ids "$IID" --query 'InstanceStatuses[0].{System:SystemStatus.Status,Instance:InstanceStatus.Status}' --output json 2>&1 | head -8
+          exit 0
       - name: Resize preflight (read-only, dry-run only)
         if: inputs.action == 'resize-check'
         shell: bash
