@@ -308,6 +308,56 @@ class AdmissionsFactSearchServiceDbTest {
         assertThat(result.scheduleCoverage()).isNull();
     }
 
+    private static final String TRACK_SEED = """
+        {"ipsi_universities":[{"name":"가대학교","university_code":"GA"}],
+         "ipsi_documents":[{"document_key":"doc_ga_2027_susi","document_name":"가대학교 2027학년도 수시모집요강","applicable_academic_year":2027,"institution_name":"가대","source_url":"https://example.test/susi"},
+                           {"document_key":"doc_ga_2027_jungsi","document_name":"가대학교 2027학년도 정시모집요강","applicable_academic_year":2027,"institution_name":"가대","source_url":"https://example.test/jungsi"}],
+         "ipsi_departments":[],
+         "ipsi_admission_types":[{"university_code":"GA","academic_year":2027,"type_name":"학생부교과(수시전형)","source_document_key":"doc_ga_2027_susi"},
+                                 {"university_code":"GA","academic_year":2027,"type_name":"수능위주(정시전형)","source_document_key":"doc_ga_2027_jungsi"}],
+         "ipsi_schedules":[{"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"수시","date":"2026.9.8.","source_document_key":"doc_ga_2027_susi"},
+                           {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"정시","date":"2026.12.29.","source_document_key":"doc_ga_2027_jungsi"}]}
+        """;
+
+    @Test
+    @DisplayName("given 수시·정시 자료가 함께 있을 때 when 수시만 물으면 then 정시 출처의 전형·일정은 근거에 섞이지 않는다")
+    void susi_question_excludes_jeongsi_sources() throws Exception {
+        // given
+        clean();
+        loader.loadSeed(TRACK_SEED);
+        approveAll();
+
+        // when
+        var types = search.search("가대학교 수시 전형 알려줘", null);
+        var sched = search.search("가대학교 수시 원서접수 일정", null);
+
+        // then
+        assertThat(types.evidence()).extracting(e -> e.getTitle()).allSatisfy(t -> assertThat(t).contains("수시전형"));
+        var schedRows = sched.evidence().stream().filter(e -> e.getRefId().startsWith("sched:")).toList();
+        assertThat(schedRows).hasSize(1);
+        assertThat(schedRows.get(0).getExcerpt()).contains("2026.9.8.");
+    }
+
+    @Test
+    @DisplayName("given 수시·정시 자료 when 정시만 물으면 정시만, 둘 다 물으면 둘 다 나온다")
+    void track_filter_boundaries() throws Exception {
+        // given
+        clean();
+        loader.loadSeed(TRACK_SEED);
+        approveAll();
+
+        // when
+        var both = search.search("가대학교 수시와 정시 원서접수 일정 차이", null);
+        var jeongsiOnly = search.search("가대학교 정시 원서접수 일정", null);
+
+        // then
+        assertThat(both.evidence().stream().filter(e -> e.getRefId().startsWith("sched:"))).hasSize(2);
+        var jeongsiSched = jeongsiOnly.evidence().stream().filter(e -> e.getRefId().startsWith("sched:")).toList();
+        assertThat(jeongsiSched).hasSize(1);
+        assertThat(jeongsiSched.get(0).getExcerpt()).contains("2026.12.29.");
+        assertThat(jeongsiOnly.evidence()).extracting(e -> e.getTitle()).noneSatisfy(t -> assertThat(t).contains("수시전형"));
+    }
+
     private static String deptJson(String name, int total) {
         return "{\"university_code\":\"TST\",\"academic_year\":\"2027\",\"department_name\":\"" + name
                 + "\",\"counts_by_type\":{\"학생부종합\":" + total + ",\"합계\":" + total + "},\"source_document_key\":\"doc_tst_2027_susi\"}";
