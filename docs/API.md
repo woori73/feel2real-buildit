@@ -3437,6 +3437,22 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 - 관련 코드: `WikiAnalysisMaterialController`/`Service`/`Repository`, `domain/wikianalysis/*`. 마이그레이션 **`V957`**. 공용: `infrastructure/storage/DocumentUploadValidator`, `infrastructure/web/FileDownloadResponses`.
 
+## 15-2-1. 학습 자료 API (`/api/wiki/learning-materials`) — 공개 BuildIt Wiki
+
+회원이 올리는 모의고사 학습 자료(어휘/Workbook/변형문제/WEEKLY/기타). 별도 테이블(`wiki_learning_materials`)·도메인(`domain/wikilearning/*`). 목록·상세는 공개, 파일 다운로드·미리보기는 로그인 회원, 업로드는 로그인 회원(업로더는 principal 로만 기록). 관리(수정·삭제)는 `/api/admin/**` → ROLE_ADMIN.
+
+- `GET /api/wiki/learning-materials?grade=` — deleted=false, 최신순. → `WikiLearningMaterialResponse[]`.
+- `GET /api/wiki/learning-materials/{id}` — 단건 상세.
+- `GET /api/wiki/learning-materials/{id}/preview` — PDF·검증된 HTML만 인라인 미리보기(CSP 격리), 그 외 415.
+- `GET /api/wiki/learning-materials/{id}/download` — 로그인 회원만(비회원 401).
+- `POST /api/wiki/learning-materials` (multipart, 로그인 회원) — params `dataType(VOCAB|WORKBOOK|VARIANT|WEEKLY|ETC), grade(1~3), title?`, part `file`. 제목이 비면 파일명에서 자동 생성.
+- `POST /api/wiki/learning-materials/batch` (multipart, 로그인 회원) — 다중 업로드, 파일별 부분 성공 허용.
+- `GET /api/admin/wiki/learning-materials` — 전체(삭제 제외).
+- `PUT /api/admin/wiki/learning-materials/{id}` (multipart, ADMIN) — params `dataType, grade, title?`(비우면 기존 제목 유지), part `file` 선택(있으면 교체 + 기존 파일 삭제, content_type 갱신).
+- `DELETE /api/admin/wiki/learning-materials/{id}` — 물리 삭제 + storage 파일 삭제, 204.
+
+공개 화면 관리: `/wiki`·`/wiki/originals`·`/wiki/analysis` 목록 카드에 ADMIN 전용 수정/숨김 삭제/완전 삭제 버튼(`wiki_admin_manage.js`), 원본·분석 수정은 공용 업로드 모달의 수정 모드(`wiki_admin_upload.js`)를 재사용한다. 학습 자료 수정은 상세(`/wiki/learning/{id}`)의 수정 폼에서 처리한다.
+
 ## 15-3. 문항별 Question Wiki + THREAD API (`/api/wiki/questions`) — 공개 BuildIt Wiki (V959)
 
 한 모의고사 문항을 중심으로 질문·해설·토론·변형문제·기출을 축적한다. 하위 데이터는 안정적 `questionWikiId` 로 연결되고, 향후 AI 는 `GET /api/wiki/questions/{id}/context` 한 번으로 문항 전체 맥락을 읽는다(MCP `get_question_wiki_context(questionWikiId)` 가 그대로 감쌀 수 있게).

@@ -247,6 +247,59 @@ class WikiLearningMaterialServiceTest {
         .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(415));
   }
 
+  @Test
+  @DisplayName("given 자료 when ADMIN 메타만 수정(제목 비움) then 종류·학년 변경 + 제목·파일 유지 + storage 미호출")
+  void adminUpdate_metadataOnly_keepsTitleAndFile() {
+    WikiLearningMaterial m = material("key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+
+    WikiLearningMaterialResponse res = service.adminUpdate(4L, "WORKBOOK", 3, "  ", null);
+
+    assertThat(res.dataType()).isEqualTo("WORKBOOK");
+    assertThat(res.grade()).isEqualTo(3);
+    assertThat(res.title()).isEqualTo("t");
+    assertThat(res.originalFileName()).isEqualTo("a.pdf");
+    verify(fileStorage, never()).saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong());
+    verify(fileStorage, never()).delete(anyString(), anyString());
+  }
+
+  @Test
+  @DisplayName("given 자료 + 새 파일 when ADMIN 교체 then 새 파일 저장 + 기존 파일 삭제")
+  void adminUpdate_withFile_replacesAndDeletesOld() throws Exception {
+    WikiLearningMaterial m = material("old-key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+    MockMultipartFile pdf = new MockMultipartFile("file", "b.pdf", "application/pdf", "%PDF".getBytes());
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("new-key");
+
+    WikiLearningMaterialResponse res = service.adminUpdate(4L, "VOCAB", 2, "새 제목", pdf);
+
+    assertThat(res.title()).isEqualTo("새 제목");
+    assertThat(res.originalFileName()).isEqualTo("b.pdf");
+    verify(fileStorage).delete("old-key", "UNKNOWN");
+  }
+
+  @Test
+  @DisplayName("given 없는 자료 when ADMIN 수정 then 404")
+  void adminUpdate_notFound() {
+    when(repository.findById(9L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.adminUpdate(9L, "VOCAB", 2, "t", null))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(404));
+  }
+
+  @Test
+  @DisplayName("given 잘못된 학년 when ADMIN 수정 then 400 + 파일 미저장")
+  void adminUpdate_invalidGrade() {
+    WikiLearningMaterial m = material("key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+
+    assertThatThrownBy(() -> service.adminUpdate(4L, "VOCAB", 9, "t", null))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(400));
+    verify(fileStorage, never()).delete(anyString(), anyString());
+  }
+
   private WikiLearningMaterial material(String storageKey, String contentType) {
     WikiLearningMaterial m = WikiLearningMaterial.builder()
         .dataType(f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.entity.WikiLearningMaterialType.VOCAB)

@@ -3,6 +3,7 @@
   var grade = '3';
   var tabs = document.getElementById('gradeTabs');
   var list = document.getElementById('list');
+  var itemsById = {};
 
   tabs.addEventListener('click', function (e) {
     var b = e.target.closest('.grade-tab');
@@ -36,16 +37,31 @@
       if (!res.ok) throw new Error();
       var items = await res.json();
       if (!items.length) { list.innerHTML = '<p class="list-empty">등록된 원본이 없습니다.</p>'; return; }
+      var admin = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin() : false;
+      itemsById = {};
       list.innerHTML = items.map(function (it) {
-        return '<a class="file-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
+        itemsById[it.wikiExamOriginalId] = it;
+        var card = '<a class="file-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
           + '<span class="file-badge">' + escapeHtml(it.docTypeLabel) + '</span>'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="file-meta">' + escapeHtml(it.examLabel) + ' · 고' + it.grade + ' · ' + meta(it) + '</span>'
           + '<span class="file-dl">내려받기 ↓</span></a>';
+        if (!admin) return card;
+        return '<div class="file-card-wrap">' + card + window.WikiAdminManage.buttonsHtml('original', it.wikiExamOriginalId) + '</div>';
       }).join('');
     } catch (_) {
       list.innerHTML = '<p class="error">목록을 불러오지 못했습니다.</p>';
     }
+  }
+
+  if (window.WikiAdminManage) {
+    window.WikiAdminManage.bind(list, {
+      onEdit: function (kind, id) {
+        var item = itemsById[id];
+        if (item && window.wikiAdminUpload) window.wikiAdminUpload.edit('original', item);
+      },
+      reload: load,
+    });
   }
 
   function meta(it) {

@@ -99,6 +99,31 @@ public class WikiLearningMaterialService {
     return WikiLearningMaterialResponse.of(repository.save(material));
   }
 
+  /**
+   * ADMIN 수정/교체 — 제목·학년·자료 종류를 바꾸고, 파일이 있으면 교체한다.
+   * 제목을 비우면 기존 제목을 유지한다(업로드와 달리 파일명 자동생성은 하지 않는다).
+   * 파일 교체 시 새 파일을 먼저 저장하고 기존 파일은 마지막에 지운다.
+   */
+  @Transactional
+  public WikiLearningMaterialResponse adminUpdate(Long id, String dataType, Integer grade,
+      String title, MultipartFile file) {
+    WikiLearningMaterial material = repository.findById(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "학습 자료를 찾을 수 없습니다."));
+    WikiLearningMaterialType type = WikiLearningMaterialType.parse(dataType);
+    Integer validGrade = validGrade(grade);
+    String resolvedTitle = (title == null || title.isBlank()) ? material.getTitle() : resolveTitle(title, material.getOriginalFileName());
+    material.updateMetadata(type, validGrade, resolvedTitle);
+    if (file != null && !file.isEmpty()) {
+      documentUploadValidator.validate(file);
+      String fileName = originalFileName(file);
+      String newStorageKey = saveFile(file, fileName);
+      String oldStorageKey = material.replaceFile(
+          DocumentUploadValidator.contentType(fileName), fileName, newStorageKey, file.getSize());
+      fileStorage.delete(oldStorageKey, RAW_FILE_TYPE);
+    }
+    return WikiLearningMaterialResponse.of(material);
+  }
+
   @Transactional
   public void adminHardDelete(Long id) {
     WikiLearningMaterial material = repository.findById(id)
