@@ -6,7 +6,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.A
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsUniversity;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
-import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,8 @@ import java.util.Objects;
 
 /**
  * 구조화 입시 자료(전형·일정·공식자료)를 검색용 지식 항목으로 변환한다.
+ *
+ * <p>공식자료(제목·URL만 있는 행)는 항목으로 만들지 않는다 — 내용 없는 FACT가 "제목만 있음" 방어를 우회하지 못하게 한다.
  *
  * <p>지금까지 지식 항목은 상담 지식베이스({@code loadKnowledgeBase})로만 만들어졌고,
  * 적재된 전형·일정·공식자료 행은 {@code AdmissionsResearchService}의 근거가 되지 못했다.
@@ -43,7 +44,6 @@ public class AdmissionsKnowledgeBuildService {
 
     private final AdmissionsTypeRepository typeRepository;
     private final AdmissionsScheduleRepository scheduleRepository;
-    private final AdmissionsOfficialMaterialRepository materialRepository;
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
 
     /**
@@ -54,7 +54,7 @@ public class AdmissionsKnowledgeBuildService {
      */
     public record BuildResult(int created, int updated, int unchanged, List<Long> changedKnowledgeIds) {}
 
-    /** 전형·일정·공식자료 전체 행을 지식 항목으로 변환·저장한다. */
+    /** 전형·일정 전체 행을 지식 항목으로 변환·저장한다. */
     @Transactional
     public BuildResult buildAll() {
         Counters counters = new Counters();
@@ -65,9 +65,6 @@ public class AdmissionsKnowledgeBuildService {
         }
         for (AdmissionsSchedule s : scheduleRepository.findAll()) {
             apply(fromSchedule(s), counters, changedIds);
-        }
-        for (AdmissionsOfficialMaterial m : materialRepository.findAll()) {
-            apply(fromMaterial(m), counters, changedIds);
         }
 
         log.info("admissions knowledge build: created={} updated={} unchanged={}",
@@ -81,9 +78,7 @@ public class AdmissionsKnowledgeBuildService {
         String univName = universityName(t.getUniversity());
         String title = univName + " " + t.getAcademicYear() + "학년도 " + t.getName();
         StringBuilder content = new StringBuilder(title);
-        if (t.getDetails() != null && !t.getDetails().isBlank()) {
-            content.append("\n").append(t.getDetails());
-        }
+        content.append("\n").append(AdmissionsFactSearchService.cleanDetails(t.getDetails()));
         appendSourceLine(content, t.getSource());
         String tags = "전형";
         if (t.getName() != null && t.getName().contains("세종캠퍼스")) {
@@ -116,24 +111,6 @@ public class AdmissionsKnowledgeBuildService {
         return baseItem(s.getAcademicYear(), title, content.toString(), "일정",
                 tags, s.getSource(),
                 "schedule:" + universityId(s.getUniversity()) + ":" + s.getAcademicYear() + ":" + s.getScheduleId());
-    }
-
-    private AdmissionsKnowledgeItem fromMaterial(AdmissionsOfficialMaterial m) {
-        String univName = universityName(m.getUniversity());
-        String title = univName + " " + m.getAcademicYear() + "학년도 공식자료: " + m.getTitle();
-        StringBuilder content = new StringBuilder(title);
-        content.append("\n자료명: ").append(m.getTitle());
-        if (m.getIssuer() != null && !m.getIssuer().isBlank()) {
-            content.append("\n발행처: ").append(m.getIssuer());
-        }
-        if (m.getPublishDate() != null) {
-            content.append("\n발행일: ").append(m.getPublishDate());
-        }
-        if (m.getDocumentUrl() != null && !m.getDocumentUrl().isBlank()) {
-            content.append("\n원문 URL: ").append(m.getDocumentUrl());
-        }
-        return baseItem(m.getAcademicYear(), title, content.toString(), "공식자료",
-                "공식자료", m, "material:" + m.getMaterialId());
     }
 
     private AdmissionsKnowledgeItem baseItem(Integer academicYear, String title, String content,

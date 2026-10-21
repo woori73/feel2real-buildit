@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +40,8 @@ import static org.mockito.Mockito.when;
  *
  * <p>fixture: PR #836의 {@code seed-v3.2-ops.json}에서 연세·고려·서강·경희 4개 대학의
  * 실제 행(대학 4·자료 8·전형 9·일정 3)을 그대로 발췌한
- * {@code src/test/resources/admissions/golden-seed-v32-excerpt.json}.
+ * {@code src/test/resources/admissions/golden-seed-v33-excerpt.json}
+ * (v3.3: 제출서류 원문 포함, 이전 v3.2 발췌본은 같은 폴더에 보존).
  * 흐름: 시드 적재 → 구조화 행 승인 → 지식 항목 생성({@link AdmissionsKnowledgeBuildService})
  * → 항목 승인 → 임베딩 저장({@link AdmissionsEmbeddingService}) → 하이브리드 검색 검증.
  *
@@ -94,11 +96,17 @@ class AdmissionsGoldenSearchTest {
             return new AdmissionsEmbeddingClient(props, objectMapper) {
                 @Override
                 public float[] embed(String text) {
+                    if (serverDown || (failWhenContains != null && text != null && text.contains(failWhenContains))) {
+                        return null;
+                    }
                     return hashEmbed(text);
                 }
             };
         }
     }
+
+    static volatile boolean serverDown = false;
+    static volatile String failWhenContains = null;
 
     /** 토큰 + 문자 바이그램을 768차원에 해시한 결정적 임베딩 (L2 정규화). */
     static float[] hashEmbed(String text) {
@@ -135,12 +143,13 @@ class AdmissionsGoldenSearchTest {
     @Autowired AdmissionsKnowledgeItemRepository knowledgeItems;
     @Autowired AdmissionsKnowledgeEmbeddingRepository embeddings;
     @Autowired AdmissionsConflictRepository conflicts;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
 
     @BeforeEach
     void setUp() throws Exception {
         // given: 실제 시드 발췌본 적재 → 구조화 행 승인 → 항목 생성 → 항목 승인 → 임베딩
         String seedJson;
-        try (InputStream in = getClass().getResourceAsStream("/admissions/golden-seed-v32-excerpt.json")) {
+        try (InputStream in = getClass().getResourceAsStream("/admissions/golden-seed-v33-excerpt.json")) {
             assertThat(in).as("golden fixture 리소스").isNotNull();
             seedJson = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
@@ -148,7 +157,7 @@ class AdmissionsGoldenSearchTest {
         approveStructuredRows();
 
         var built = buildService.buildAll();
-        assertThat(built.created()).as("전형 9 + 일정 3 + 자료 8 = 지식 항목 20건 생성").isEqualTo(20);
+        assertThat(built.created()).as("전형 9 + 일정 3 = 지식 항목 12건 생성(자료 행은 항목이 되지 않는다)").isEqualTo(12);
 
         knowledgeItems.findAll().forEach(k -> {
             k.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
@@ -157,13 +166,15 @@ class AdmissionsGoldenSearchTest {
 
         var reindexed = embeddingService.reindexAll();
         assertThat(reindexed.failed()).as("임베딩 실패 없음: %s", reindexed.failures()).isZero();
-        assertThat(reindexed.embedded()).isEqualTo(20);
+        assertThat(reindexed.embedded()).isEqualTo(12);
         assertThat(vectorIndex.isReady()).isTrue();
-        assertThat(vectorIndex.size()).isEqualTo(20);
+        assertThat(vectorIndex.size()).isEqualTo(12);
     }
 
     @AfterEach
     void clean() {
+        serverDown = false;
+        failWhenContains = null;
         embeddings.deleteAll();
         knowledgeItems.deleteAll();
         schedules.deleteAll();
@@ -280,11 +291,216 @@ class AdmissionsGoldenSearchTest {
         AdmissionsVectorIndex emptyIndex = mock(AdmissionsVectorIndex.class);
         when(emptyIndex.isReady()).thenReturn(false);
         var likeOnlyResearch = new AdmissionsResearchService(
-                knowledgeItems, materials, conflicts, disabled, embeddingClient, emptyIndex);
-        var pack = likeOnlyResearch.research("하버드대학교 장학금 제도 알려주세요");
+                knowledgeItems, materials, conflicts, disabled, embeddingClient, emptyIndex, types, schedules);
+        var pack = new org.springframework.transaction.support.TransactionTemplate(txManager)
+                .execute(st -> likeOnlyResearch.research("하버드대학교 장학금 제도 알려주세요"));
 
         // then
         assertThat(pack.getConfirmedHits()).isEmpty();
         assertThat(pack.hasConfirmedEvidence()).isFalse();
+    }
+
+    // ── PR #840 결함 수정 검증 ────────────────────────────────────────────
+
+    private java.util.List<String> confirmedTitles(String question) {
+        return researchService.research(question).getConfirmedHits().stream()
+                .map(e -> e.getTitle() == null ? "" : e.getTitle()).toList();
+    }
+
+    private String sourceTitleOf(AdmissionsResearchService.Evidence e) {
+        return e.getNote() == null ? "" : e.getNote();
+    }
+
+    @Test
+    @DisplayName("⑧ 고려대 서울 질문에는 세종 항목이 없고, 세종 질문에는 세종 항목만 나온다 (지식 검색 경로)")
+    void knowledgePath_separatesCampuses() {
+        // when
+        var seoul = researchService.research("고려대 서울캠퍼스 수시 전형").getConfirmedHits();
+        var sejong = researchService.research("고려대 세종캠퍼스 수시 전형").getConfirmedHits();
+
+        // then
+        assertThat(seoul).noneMatch(e -> e.getTitle().contains("세종캠퍼스") || sourceTitleOf(e).contains("세종캠퍼스"));
+        assertThat(sejong).isNotEmpty().allMatch(e -> e.getTitle().contains("세종캠퍼스"));
+    }
+
+    @Test
+    @DisplayName("⑨ 수시 질문에 정시 항목이, 정시 질문에 수시 항목이 섞이지 않는다")
+    void knowledgePath_separatesSusiAndJungsi() {
+        // when
+        var jungsi = researchService.research("경희대 정시 수능최저").getConfirmedHits();
+        var susi = researchService.research("경희대 수시 전형").getConfirmedHits();
+
+        // then
+        assertThat(jungsi).isNotEmpty().allMatch(e -> sourceTitleOf(e).contains("정시") && !sourceTitleOf(e).contains("수시모집"));
+        assertThat(susi).isNotEmpty().allMatch(e -> sourceTitleOf(e).contains("수시") && !sourceTitleOf(e).contains("정시모집"));
+    }
+
+    @Test
+    @DisplayName("⑩ 입시와 무관한 질문에는 확정 근거가 붙지 않는다")
+    void irrelevantQuestions_haveNoEvidence() {
+        // when / then
+        assertThat(confirmedTitles("오늘 점심 뭐 먹을까요")).isEmpty();
+        assertThat(confirmedTitles("태양계 행성 순서를 알려줘")).isEmpty();
+        assertThat(researchService.research("오늘 점심 뭐 먹을까요").getPlannedHits()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("⑩-2 유사도 하한 보정 세트 — 무관한 질문 10개는 하한(0.5)에서 모두 근거 없음 (실측 최대 유사도 0.224)")
+    void similarityFloor_rejectsAllMeasuredIrrelevantQuestions() {
+        // given: 해시 임베더 기준 실측 — 무관 질문의 최근접 유사도는 0.02~0.22. 실제 모델 값은 운영 전 같은 세트로 다시 보정한다.
+        String[] irrelevant = {"오늘 점심 뭐 먹을까요", "태양계 행성 순서를 알려줘", "주말에 볼만한 영화 추천해줘", "서울 날씨 어때요",
+                "파이썬 반복문 문법", "축구 월드컵 우승국", "비트코인 시세", "김치찌개 레시피", "강아지 훈련 방법", "여행 갈 때 준비물"};
+
+        // when / then
+        for (String q : irrelevant) {
+            assertThat(confirmedTitles(q)).as(q).isEmpty();
+            double top = vectorIndex.search(embeddingClient.embed(q), 1).get(0).getSimilarity();
+            assertThat(top).as("최근접 유사도 " + q).isLessThan(new AdmissionsEmbeddingProperties().getMinSimilarity());
+        }
+    }
+
+    @Test
+    @DisplayName("⑪ 제목·URL뿐인 공식자료는 지식 항목(사실 근거)이 되지 않는다")
+    void materials_neverBecomeFactItems() {
+        // then
+        assertThat(knowledgeItems.findAll()).hasSize(12)
+                .noneMatch(k -> k.getDedupKey().startsWith("material:"))
+                .allMatch(k -> k.getDedupKey().startsWith("type:") || k.getDedupKey().startsWith("schedule:"));
+    }
+
+    @Test
+    @DisplayName("⑫ 원본 전형 행이 ARCHIVED되면 그 지식 항목은 검색에서 빠진다")
+    void archivedSourceRow_isExcludedFromKnowledgeSearch() {
+        // given
+        var before = confirmedTitles("연세대학교 논술전형");
+        assertThat(before).anyMatch(t -> t.contains("논술전형"));
+        var row = types.findAll().stream().filter(t -> t.getName().equals("논술전형")).findFirst().orElseThrow();
+        row.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+        types.save(row);
+
+        // when
+        var after = confirmedTitles("연세대학교 논술전형");
+
+        // then (항목은 ACTIVE로 남아 있어도 원본이 비활성이면 근거가 아니다)
+        assertThat(after).noneMatch(t -> t.contains("논술전형"));
+    }
+
+    @Test
+    @DisplayName("⑬ 출처 자료가 ARCHIVED되면 그 자료에서 나온 항목은 모두 검색에서 빠진다")
+    void archivedMaterial_excludesItsItems() {
+        // given
+        var material = materials.findAll().stream().filter(m -> m.getTitle().contains("연세대학교 2027학년도 수시")).findFirst().orElseThrow();
+        material.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+        materials.save(material);
+
+        // when
+        var hits = researchService.research("연세대학교 수시 전형").getConfirmedHits();
+
+        // then
+        assertThat(hits).noneMatch(e -> sourceTitleOf(e).contains("연세대학교 2027학년도 수시"));
+    }
+
+    @Test
+    @DisplayName("⑭ 재색인 직후 수동 reload 없이 검색 인덱스에 반영된다")
+    void reindex_updatesIndexWithoutManualReload() {
+        // given: 항목 하나의 임베딩을 지우고 인덱스를 다시 읽어 11건으로 만든다
+        var victim = embeddings.findAll().get(0);
+        embeddings.delete(victim);
+        vectorIndex.reload();
+        assertThat(vectorIndex.size()).isEqualTo(11);
+
+        // when
+        var result = embeddingService.reindexMissing();
+
+        // then
+        assertThat(result.embedded()).isEqualTo(1);
+        assertThat(vectorIndex.size()).as("커밋 직후 자동 reload").isEqualTo(12);
+    }
+
+    @Test
+    @DisplayName("⑮ 임베딩 서버 장애 시 키워드 검색으로 전환되고 근거가 유지된다")
+    void serverDown_fallsBackToKeywordSearch() {
+        // given
+        serverDown = true;
+
+        // when
+        var pack = researchService.research("연세대학교 학생부교과전형 추천형 알려주세요");
+
+        // then
+        assertThat(pack.getConfirmedHits()).anyMatch(e -> e.getTitle().contains("학생부교과전형[추천형]"));
+    }
+
+    @Test
+    @DisplayName("⑯ 부분 실패: 일부 항목만 실패하면 실패 사유를 보고하고, 복구 후 미적재분만 다시 임베딩한다")
+    void partialFailure_isReportedAndRecoverable() {
+        // given: 서강대 논술 항목 임베딩을 지우고, 그 항목 텍스트에서만 서버가 실패하게 한다
+        java.util.Set<Long> sogangIds = knowledgeItems.findAll().stream()
+                .filter(k -> k.getTitle().contains("서강대학교 2027학년도 논술"))
+                .map(AdmissionsKnowledgeItem::getKnowledgeId).collect(java.util.stream.Collectors.toSet());
+        embeddings.findAll().stream().filter(e -> sogangIds.contains(e.getKnowledgeId()))
+                .toList().forEach(embeddings::delete);
+        vectorIndex.reload();
+        failWhenContains = "서강대학교 2027학년도 논술";
+
+        // when
+        var failed = embeddingService.reindexMissing();
+
+        // then
+        assertThat(failed.failed()).isEqualTo(1);
+        assertThat(failed.failures().get(0)).contains("응답 없음");
+        assertThat(vectorIndex.size()).isEqualTo(11);
+
+        // when: 서버 복구 후 재실행
+        failWhenContains = null;
+        var recovered = embeddingService.reindexMissing();
+
+        // then
+        assertThat(recovered.embedded()).isEqualTo(1);
+        assertThat(recovered.failed()).isZero();
+        assertThat(vectorIndex.size()).isEqualTo(12);
+        assertThat(embeddings.count()).as("행 중복 없음").isEqualTo(12);
+    }
+
+    @Test
+    @DisplayName("⑰ 재실행·중복 생성: build를 다시 실행해도 항목·임베딩이 늘지 않는다")
+    void rerunDoesNotDuplicate() {
+        // when
+        var again = buildService.buildAll();
+        var reindex = embeddingService.reindexMissing();
+
+        // then
+        assertThat(again.created()).isZero();
+        assertThat(again.updated()).isZero();
+        assertThat(again.unchanged()).isEqualTo(12);
+        assertThat(reindex.embedded()).isZero();
+        assertThat(knowledgeItems.count()).isEqualTo(12);
+        assertThat(embeddings.count()).isEqualTo(12);
+    }
+
+    @Test
+    @DisplayName("⑱ 제출서류 원문 일치: 시드의 제출서류가 전형 상세에 그대로 들어가고, 제출서류를 물으면 맨 앞에 나온다")
+    void submissionDocuments_matchSourceVerbatim() throws Exception {
+        // given: 픽스처(v3.3 실제 행)의 제출서류 원문
+        com.fasterxml.jackson.databind.JsonNode seed;
+        try (InputStream in = getClass().getResourceAsStream("/admissions/golden-seed-v33-excerpt.json")) {
+            seed = new ObjectMapper().readTree(in);
+        }
+        var khuRow = java.util.stream.StreamSupport.stream(seed.path("ipsi_admission_types").spliterator(), false)
+                .filter(n -> n.path("university_code").asText().equals("KHU") && n.path("type_name").asText().equals("학생부교과(지역균형전형)"))
+                .findFirst().orElseThrow();
+        java.util.List<String> docs = new java.util.ArrayList<>();
+        khuRow.path("submission_documents").forEach(n -> docs.add(n.asText()));
+        assertThat(docs).hasSize(6);
+
+        // when
+        var fact = factSearchService.search("경희대학교 수시 지역균형전형 제출서류 알려주세요", null);
+
+        // then
+        var evidence = fact.evidence().stream().filter(e -> e.getTitle().contains("학생부교과(지역균형전형)")).findFirst().orElseThrow();
+        assertThat(evidence.getExcerpt()).startsWith("제출서류: " + String.join(" | ", docs));
+        // 제출서류가 없는 전형은 임의로 채우지 않고 '확인되지 않음'
+        var sogang = factSearchService.search("서강대학교 논술전형 제출서류", null).evidence().stream()
+                .filter(e -> e.getTitle().contains("논술(일반)전형")).findFirst().orElseThrow();
+        assertThat(sogang.getExcerpt()).contains("제출서류: 확인되지 않음");
     }
 }

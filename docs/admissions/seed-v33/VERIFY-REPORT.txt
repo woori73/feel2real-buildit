@@ -1,0 +1,3 @@
+types 116 checked rows 116 rows with documents 115
+without documents: ['doc_sogang_2027_susi']
+PASS

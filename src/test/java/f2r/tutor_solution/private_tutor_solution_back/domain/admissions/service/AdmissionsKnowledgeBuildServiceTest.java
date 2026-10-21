@@ -33,7 +33,6 @@ class AdmissionsKnowledgeBuildServiceTest {
 
     private AdmissionsTypeRepository typeRepository;
     private AdmissionsScheduleRepository scheduleRepository;
-    private AdmissionsOfficialMaterialRepository materialRepository;
     private AdmissionsKnowledgeItemRepository knowledgeRepository;
     private AdmissionsKnowledgeBuildService service;
 
@@ -49,10 +48,9 @@ class AdmissionsKnowledgeBuildServiceTest {
     void setUp() {
         typeRepository = mock(AdmissionsTypeRepository.class);
         scheduleRepository = mock(AdmissionsScheduleRepository.class);
-        materialRepository = mock(AdmissionsOfficialMaterialRepository.class);
         knowledgeRepository = mock(AdmissionsKnowledgeItemRepository.class);
         service = new AdmissionsKnowledgeBuildService(
-                typeRepository, scheduleRepository, materialRepository, knowledgeRepository);
+                typeRepository, scheduleRepository, knowledgeRepository);
 
         korea = AdmissionsUniversity.builder().universityId(10L).name("고려대학교").build();
         sejongMaterial = AdmissionsOfficialMaterial.builder()
@@ -83,7 +81,6 @@ class AdmissionsKnowledgeBuildServiceTest {
 
         when(typeRepository.findAll()).thenReturn(List.of(sejongType));
         when(scheduleRepository.findAll()).thenReturn(List.of(schedule));
-        when(materialRepository.findAll()).thenReturn(List.of(sejongMaterial));
         when(knowledgeRepository.findByDedupKey(anyString()))
                 .thenAnswer(inv -> Optional.ofNullable(store.get(inv.getArgument(0))));
         when(knowledgeRepository.save(any(AdmissionsKnowledgeItem.class))).thenAnswer(inv -> {
@@ -97,16 +94,16 @@ class AdmissionsKnowledgeBuildServiceTest {
     }
 
     @Test
-    @DisplayName("항목 생성 — 전형·일정·자료 각 1건, dedupKey·근거 줄·캠퍼스 태그·확정 구분")
+    @DisplayName("항목 생성 — 전형·일정 각 1건(자료 항목은 만들지 않음), dedupKey·근거 줄·캠퍼스 태그·확정 구분")
     void build_createsItemsFromStructuredRows() {
         // when
         var result = service.buildAll();
 
         // then
-        assertEquals(3, result.created());
+        assertEquals(2, result.created());
         assertEquals(0, result.updated());
         assertEquals(0, result.unchanged());
-        assertEquals(3, result.changedKnowledgeIds().size());
+        assertEquals(2, result.changedKnowledgeIds().size());
 
         AdmissionsKnowledgeItem typeItem = store.get("type:10:2027:1000");
         assertNotNull(typeItem, "전형 항목 dedupKey");
@@ -131,12 +128,9 @@ class AdmissionsKnowledgeBuildServiceTest {
                 "일정 원문(note) 포함: " + schedItem.getContent());
         assertEquals("일정", schedItem.getCategory());
 
-        AdmissionsKnowledgeItem matItem = store.get("material:100");
-        assertNotNull(matItem, "자료 개요 항목 dedupKey");
-        assertEquals("고려대학교 2027학년도 공식자료: 고려대학교(세종캠퍼스) 2027학년도 수시모집요강", matItem.getTitle());
-        assertTrue(matItem.getContent().contains("발행처: 고려대학교 입학처"));
-        assertTrue(matItem.getContent().contains("원문 URL: https://example.test/korea-susi"));
-        assertEquals("공식자료", matItem.getCategory());
+        // 제목·URL뿐인 공식자료는 사실 근거로 쓰이지 않도록 항목을 만들지 않는다.
+        assertNull(store.get("material:100"), "자료 행은 지식 항목이 되지 않는다");
+        assertTrue(store.keySet().stream().noneMatch(k -> k.startsWith("material:")));
     }
 
     @Test
@@ -151,7 +145,7 @@ class AdmissionsKnowledgeBuildServiceTest {
         // then
         assertEquals(0, second.created());
         assertEquals(0, second.updated());
-        assertEquals(3, second.unchanged());
+        assertEquals(2, second.unchanged());
         assertTrue(second.changedKnowledgeIds().isEmpty());
         assertEquals(1, store.get("type:10:2027:1000").getVersion(), "버전 그대로");
     }
@@ -171,7 +165,7 @@ class AdmissionsKnowledgeBuildServiceTest {
         // then
         assertEquals(0, result.created());
         assertEquals(1, result.updated());
-        assertEquals(2, result.unchanged());
+        assertEquals(1, result.unchanged());
         assertEquals(List.of(typeItem.getKnowledgeId()), result.changedKnowledgeIds());
         assertEquals(2, typeItem.getVersion());
         assertTrue(typeItem.getContent().contains("변경된 기준"), "새 본문 반영");
