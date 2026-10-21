@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.academy.service;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiGuideSuggestion;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.EducatorReference;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,10 +37,11 @@ class AcademyAiGuideServiceTest {
     contextService = mock(AcademyAiContextService.class);
     promptBuilder = mock(AcademyAiPromptBuilder.class);
     provider = new FakeAiProvider();
-    service = new AcademyAiGuideService(contextService, promptBuilder, provider);
+    service = new AcademyAiGuideService(
+        contextService, promptBuilder, provider, new EducatorKnowledgeService(List.of()));
     principal = mock(JwtTokenProvider.AuthenticatedPrincipal.class);
     when(contextService.buildContext(principal)).thenReturn(fixtureContext);
-    when(promptBuilder.build(any(), any(), any(), any(), any())).thenReturn("PROMPT");
+    when(promptBuilder.build(any(), any(), any(), any(), any(), any())).thenReturn("PROMPT");
   }
 
   @Test
@@ -73,7 +75,7 @@ class AcademyAiGuideServiceTest {
 
     org.mockito.ArgumentCaptor<String> current = org.mockito.ArgumentCaptor.forClass(String.class);
     org.mockito.Mockito.verify(promptBuilder)
-        .build(any(), any(), org.mockito.ArgumentMatchers.eq("intro"), current.capture(), any());
+        .build(any(), any(), org.mockito.ArgumentMatchers.eq("intro"), current.capture(), any(), any());
     assertThat(current.getValue()).isEqualTo("히어로 소개");
   }
 
@@ -160,7 +162,25 @@ class AcademyAiGuideServiceTest {
     service.generate(principal, "principalDesc", "학교별 내신 분석", "전문적이지만 친근하게");
 
     org.mockito.ArgumentCaptor<String> captor = org.mockito.ArgumentCaptor.forClass(String.class);
-    org.mockito.Mockito.verify(promptBuilder).build(any(), any(), any(), any(), captor.capture());
+    org.mockito.Mockito.verify(promptBuilder).build(any(), any(), any(), any(), captor.capture(), any());
     assertThat(captor.getValue()).contains("학교별 내신 분석").contains("전문적이지만 친근하게");
+  }
+
+  @Test
+  @DisplayName("given 배포된 Chart 지식(59건) when 생성 then 검색된 참고 사례가 promptBuilder에 전달된다")
+  @SuppressWarnings("unchecked")
+  void generate_passes_searched_educator_references() {
+    service = new AcademyAiGuideService(
+        contextService, promptBuilder, provider, new EducatorKnowledgeService());
+    provider.respondWith("[\"후보1\"]");
+
+    service.generate(principal, "philosophyItem1", "암기 반대, 말하기 중심 수업", "");
+
+    org.mockito.ArgumentCaptor<List<EducatorReference>> refs =
+        org.mockito.ArgumentCaptor.forClass(List.class);
+    org.mockito.Mockito.verify(promptBuilder)
+        .build(any(), any(), any(), any(), any(), refs.capture());
+    assertThat(refs.getValue()).isNotEmpty().hasSizeLessThanOrEqualTo(3);
+    assertThat(refs.getValue()).extracting(EducatorReference::id).doesNotContain(81L);
   }
 }

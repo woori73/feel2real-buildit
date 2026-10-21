@@ -1,0 +1,2088 @@
+{
+ "meta": {
+  "purpose": "홈페이지 제작 Agent 검색 전용 계층. 원본 아님(educators.json/raw가 원본).",
+  "qualityRules": [
+   "본문 없는 카드 제외",
+   "researchPending 제외",
+   "중복 id 80/81 중 80만 포함",
+   "인용 시 name/card 내용만 참조, 순위·수치는 의뢰 학원장 정보로 치환",
+   "rankAsOf는 참조 시점 — 현재 순위 아님"
+  ],
+  "source": "chart-educators/educators.json",
+  "generatedAt": "2026-10-14",
+  "included": 59,
+  "excluded": {
+   "empty_card": 40,
+   "research_pending": 17,
+   "duplicate": 1
+  }
+ },
+ "educators": [
+  {
+   "id": 75,
+   "name": "권소정",
+   "role": "원장",
+   "academyName": "권소정 영어학원",
+   "region": "강원특별자치도 원주시",
+   "province": "강원특별자치도",
+   "cityDistrict": "원주시",
+   "overallRank": 33,
+   "regionRank": 1,
+   "buildItScore": 68,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "regional_mission",
+    "diagnose_placement",
+    "stage_pathway",
+    "individual_custom",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "연세대학교 영어영문학 석·박사와 20년 이상 대학·토익·토플 강의 경험을 바탕으로 원주 무실동에서 중·고등 영어를 지도하는 원장",
+    "educationPhilosophy": "영어를 정답 암기보다 논리적으로 문제를 해결하는 과정으로 가르치며, 학생의 현재 실력을 먼저 진단한 뒤 개별 솔루션을 설계한다. 강의 전달만으로 끝내지 않고 첨삭과 관리로 사고 과정을 교정하는 데 초점을 둔다.",
+    "curriculum": "정확한 진단평가로 현재 실력을 분석한 뒤 중등부는 논리적 사고와 문제 해결 능력을 강화하고, 고등부는 내신과 수능을 통합 관리한다. 특목고·자사고 대비 과정과 조교 첨삭을 결합해 개인별 약점을 보완한다.",
+    "distinctiveTeaching": "영어영문학 연구와 대학 강의 경험을 중·고등 입시 현장에 적용해 진단→논리적 분석→맞춤 해결→첨삭 관리로 이어지는 구조를 운영한다.",
+    "recentActivity": "2026년 1월 학부모 이용 기록과 2026년 7월 원주시 지역 가맹점 등록을 통해 무실동 오프라인 학원의 현재 운영이 확인된다.",
+    "strengths": [
+     "영어영문학 석·박사 기반의 전문성",
+     "진단평가와 논리적 문제 해결 중심 수업",
+     "중·고등 내신·수능 및 특목·자사고 연계",
+     "첨삭을 통한 개별 피드백"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/75",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 74,
+   "name": "박윤지",
+   "role": "강사",
+   "academyName": "알파인영어학원",
+   "region": "강원특별자치도 강릉시",
+   "province": "강원특별자치도",
+   "cityDistrict": "강릉시",
+   "overallRank": 35,
+   "regionRank": 1,
+   "buildItScore": 66,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "student_agency",
+    "stage_pathway",
+    "own_materials"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "강릉 알파인영어학원에서 중·고등 입시영어를 지도하고 대학 영어 특강과 수능 영어 교재 집필에 참여한 현장 강사",
+    "educationPhilosophy": "단순 문제풀이보다 학생별 학습 흐름을 분석하고 중등부터 어법·독해·서술형·내신을 연결해 입시 영어를 완성하는 방향을 실천한다. 교실 수업을 대학생 영어 역량 강화 과정과 교재 집필로 확장하고 있다.",
+    "curriculum": "중등 단계에서 어법·독해·서술형·내신을 체계적으로 쌓고, 학교별·수준별 반편성과 자체 자료 및 자기주도 관리로 고등 수능 과정까지 연결한다. 2026년에는 대학 전공생을 대상으로 TOEIC·TOEFL 집중 강의를 진행했다.",
+    "distinctiveTeaching": "중·고등 입시 수업, 대학 영어 집중 과정, 수능 교재 집필을 연결해 학습 단계와 대상에 맞게 영어 교육 콘텐츠를 확장한다.",
+    "recentActivity": "2026년 여름 강원대학교 전자반도체공학부 공식 의뢰 영어 특강에 박윤지 강사가 출강했고, 알파인영어학원의 최근 교동 오프라인 수업 운영도 확인됨.",
+    "strengths": [
+     "2026년 대학 현장 TOEIC·TOEFL 특강 출강",
+     "중·고등 입시 수업의 단계별 구조",
+     "수능 영어 교재 집필 참여"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/74",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 73,
+   "name": "임유선",
+   "role": "원장",
+   "academyName": "에모리잉글리시",
+   "region": "강원특별자치도 춘천시",
+   "province": "강원특별자치도",
+   "cityDistrict": "춘천시",
+   "overallRank": 32,
+   "regionRank": 1,
+   "buildItScore": 68,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "communication_first",
+    "mind_growth",
+    "student_agency",
+    "regional_mission",
+    "diagnose_placement",
+    "stage_pathway",
+    "own_materials",
+    "input_output_loop",
+    "named_programs",
+    "parent_communication",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "춘천 퇴계동에서 IB 철학을 기반으로 유아·초등 원서와 프로젝트 영어를 직접 설계·운영하는 원장.",
+    "educationPhilosophy": "영어는 점수를 얻는 기술보다 가치 있는 생각을 표현하는 언어여야 하며, 아이가 교육에 끌려가는 대상이 아니라 스스로 질문하고 변화를 만드는 주체가 되어야 한다고 본다. 정답과 경쟁보다 사고의 깊이, 성장 과정, 실수를 허용하는 태도를 중시한다.",
+    "curriculum": "한글 문해가 준비되면 파닉스와 사이트워드로 읽기 유창성을 만들고, IB 프로젝트에서 아이가 재료를 선택해 2주·4회차 동안 학습 결과물을 제작한 뒤 부모에게 영어로 가르치고 발표한다. 원서 수업에는 원장이 직접 만든 IB 워크시트와 워크북을 사용하며 질문·탐구·토론·표현 활동으로 연결한다.",
+    "distinctiveTeaching": "파닉스와 원서 리딩을 학생 주도 IB 탐구 프로젝트 및 가족 대상 영어 발표로 확장하고, 자체 워크시트로 사고와 표현을 함께 훈련하는 구조.",
+    "recentActivity": "2025년 12월 현장 인터뷰 이후 2026년 현재 춘천시 가맹점과 지역 학원 목록에서 퇴계동 오프라인 영어 공부방 운영이 계속 확인됨.",
+    "strengths": [
+     "IB의 질문·탐구·토론 철학을 초등 영어 수업에 구체적으로 적용한다.",
+     "파닉스 학습을 결과물 제작과 부모 대상 발표 프로젝트로 확장한다.",
+     "직접 제작한 IB 워크시트와 원서 워크북을 사용한다.",
+     "정답과 점수보다 생각의 깊이와 표현의 가치를 강조한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/73",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 94,
+   "name": "장한",
+   "role": "원장",
+   "academyName": "ITC영어 하남미사점",
+   "region": "경기도 하남시",
+   "province": "경기도",
+   "cityDistrict": "하남시",
+   "overallRank": 34,
+   "regionRank": 2,
+   "buildItScore": 67,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "communication_first",
+    "student_agency",
+    "stage_pathway",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "하남시 풍산동 ITC영어 하남미사점 원장. 2026년 공개수업을 직접 안내한 영어교육자.",
+    "educationPhilosophy": "아이들에게 필요한 것은 문제풀이 실력이 아니라 언어를 직접 사용해보는 경험이라는 교육관을 2026년 공개수업 안내에서 밝혔다.",
+    "curriculum": "12단계 커리큘럼으로 운영하며 한 단계는 4~5개월의 학습 기간으로 채운다. 단계가 끝나면 시험이 아니라 배운 내용을 부모님 앞에서 직접 보여주고 스스로의 성장을 자랑하는 공개수업을 연다. 정규 수업은 프리토킹 중심으로 아이가 직접 말하는 영어에 초점을 두며, 하루에 입을 여는 횟수를 수업 기준으로 삼는다. 3월 신학기에는 지점 설명회를 열어 학습 방향과 단계별 성취를 학부모에게 공개했다.",
+    "recentActivity": "2026년 2월 공개수업(영어 대화·설명·발표) 안내로 현재 오프라인 수업 확인. 본사 특허 교수법 기반 수업을 운영한다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/94",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 96,
+   "name": "홍세미",
+   "role": "원장",
+   "academyName": "HLS어학원",
+   "region": "경기도 성남시 중원구",
+   "province": "경기도",
+   "cityDistrict": "성남시 중원구",
+   "overallRank": 40,
+   "regionRank": 2,
+   "buildItScore": 65,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "habit_structure",
+    "own_materials",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "성남시 중원구 금광동 HLS어학원 대표원장. 영어 강사진을 이끄는 영어교육자.",
+    "educationPhilosophy": "HLS는 결과만 칭찬하지 않고 한 달 동안 수업을 빠지지 않고 지킨 성실함 자체를 실력으로 인정한다. 출석이 습관이 되고 습관이 실력이 되어 결과가 나온다는 학습관을 블로그 글에 밝히며, 작은 성공 경험이 다음 달의 동기가 되도록 개근 보상을 운영한다. 영어는 오래 배우는 과목이 아니라 제대로 배우면 빨리 끝나는 과목이라는 전제로 성적 상승과 함께 학생의 마음가짐과 태도 변화를 목표로 삼는다.",
+    "curriculum": "확인일 2026-09-18(KST). 학원소개 원문에 초등 파닉스 이후 sentence build-up 중심 4영역 과정과 중등~수능·고등 내신 1등급 목표 체계가 안내되어 있다.",
+    "recentActivity": "2026년 9월 개근 리워드, 8월 단어의 제왕·내신반 개강 등 현재 수업 기록이 블로그에 지속 공개된다. 개인의 교육철학·커리큘럼 서술 근거는 확보하지 못했다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/96",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 91,
+   "name": "신희진",
+   "role": "원장",
+   "academyName": "과천보듬교육학원",
+   "region": "경기도 과천시",
+   "province": "경기도",
+   "cityDistrict": "과천시",
+   "overallRank": 39,
+   "regionRank": 1,
+   "buildItScore": 65,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "habit_structure",
+    "student_agency",
+    "own_materials"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "과천시 중앙동 과천보듬교육학원 원장. 영어 강사진을 총괄하고 2026 대비 영어 워크북을 공저한 영어교육자.",
+    "educationPhilosophy": "암기한 문법 지식으로 문제만 푸는 대신 문장이 어떻게 만들어졌는지를 먼저 보는 연습을 강조한다. 학생이 품사와 문장 성분을 직접 찾고, 그 문장이 왜 해당 형식인지 스스로 설명할 수 있어야 한다고 본다. 영어를 감으로 풀지 않고 원리로 읽는 것을 수업의 기본 기준으로 삼으며, 시중 문제집을 많이 푸는 것보다 자체 교재로 문장 구조 분석을 반복하게 한다.",
+    "curriculum": "확인일 2026-09-18(KST). 공식 홈페이지 원문에 초등 5·6, 중1~3(학교별 내신), 고1~3(과천고·중앙고·과천여고 출제 특성 반영), 과천외고 과정이 안내되어 있다.",
+    "recentActivity": "2026년 대비 영어 워크북 공저와 현재 학원 운영이 공개 자료로 확인된다. 개인의 교육철학·커리큘럼 서술 근거는 확보하지 못했다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/91",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 97,
+   "name": "신승철",
+   "role": "원장",
+   "academyName": "일탄영어학원",
+   "region": "경기도 성남시 수정구",
+   "province": "경기도",
+   "cityDistrict": "성남시 수정구",
+   "overallRank": 6,
+   "regionRank": 1,
+   "buildItScore": 84,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "own_materials",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "성남시 수정구 창곡동 위례 일탄영어학원 원장. 대치동 강의 경력으로 고등 수능·내신을 원장 직강하는 영어교육자.",
+    "educationPhilosophy": "100점을 광고할 때 합격증을 만든다는 원칙으로, 시험 자료를 기다리는 학원이 아니라 수업이 끝난 학원을 지향한다. 내신과 모의고사는 요구하는 바가 다르므로 내신에 맞게 글을 자세히 학습하는 연습이 필요하다고 본다.",
+    "curriculum": "학교별 시험 범위와 출제 경향을 분석해 변형 대비 자료를 교재팀이 직접 제작하고, 이해 중심 훈련으로 내신·모의고사를 구분 지도한다. 위례고·한빛고·덕수고·복정고 등 학교별 적중 분석과 모의평가를 운영한다.",
+    "distinctiveTeaching": "교재팀 직접 제작 변형 자료와 학교별 적중 분석, 합격증 중심 결과주의.",
+    "recentActivity": "2026년 8월 여름방학 운영, 7월 1학기 성적 결산과 기말 채점 보고 등 현재 수업 기록을 블로그에 지속 공개.",
+    "strengths": [
+     "학교별 적중 분석·변형 자료 직접 제작",
+     "이해 중심 내신·모의고사 구분 지도",
+     "2026년 현재 수업 기록 지속 공개",
+     "위례고 등 다수교 1등급 배출"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/97",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 95,
+   "name": "정소연",
+   "role": "원장",
+   "academyName": "정소연 영어학원",
+   "region": "경기도 성남시 중원구",
+   "province": "경기도",
+   "cityDistrict": "성남시 중원구",
+   "overallRank": 5,
+   "regionRank": 1,
+   "buildItScore": 84,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "habit_structure",
+    "stage_pathway",
+    "named_programs"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "성남시 중원구 도촌동·여수동 정소연 영어학원 원장. 버지니아공대 출신, 25년 경력의 인터벌 트레이닝 수업 설계자.",
+    "educationPhilosophy": "노력이 부족한 게 아니라 방법이 달라야 하며, 20분 유닛의 인터벌 트레이닝으로 몰입·집중·마무리를 설계한다. 시험 전 과정보다 과정을 중시하고, 점수보다 성장을 먼저 보는 수업을 지향한다.",
+    "curriculum": "영역별 20분 유닛스터디와 실시간 구두체크, 누적 단어 암기, 문장 패턴·상황별 대화 스피킹으로 초등 과정을 운영한다. 중등은 긴장감·집중력·완벽 마무리의 3조건으로 내신을 대비하고, 해법독서논술로 읽기·구조화·표현을 병행한다.",
+    "distinctiveTeaching": "20분 단위 유닛스터디 인터벌 트레이닝과 실시간 구두체크, NELT 인증평가 운영.",
+    "recentActivity": "2026년 9월 도촌중 내신 전략, 8월 주입식 교육 칼럼, 1월 NELT 인증평가 등 현재 수업 기록을 블로그에 지속 공개.",
+    "strengths": [
+     "20분 유닛 인터벌 트레이닝 시스템",
+     "초등·중등 단계 커리큘럼과 독서논술 병행",
+     "2026년 현재 수업 기록 지속 공개",
+     "NELT 인증평가 운영"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/95",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 92,
+   "name": "현미정",
+   "role": "원장",
+   "academyName": "플에이스영어 감일학원",
+   "region": "경기도 하남시",
+   "province": "경기도",
+   "cityDistrict": "하남시",
+   "overallRank": 4,
+   "regionRank": 1,
+   "buildItScore": 84,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "diagnose_placement",
+    "stage_pathway",
+    "individual_custom",
+    "input_output_loop",
+    "named_programs"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "하남시 감일동 플에이스영어 감일학원 원장(소피아). 입력-출력 영어 두뇌 시스템을 운영하는 영어교육자.",
+    "educationPhilosophy": "말하거나 쓰기 전에 충분한 인풋이 먼저 들어가야 하며, 입력부터 출력까지 복습의 매일 반복으로 영어를 외우는 과목이 아닌 이해되는 언어로 바꾼다. 초등 때 제대로 배우면 고등까지 수월해지며, 아이가 학원 오는 걸 좋아하게 만드는 것을 가장 큰 보람으로 여긴다.",
+    "curriculum": "매일 30분 개별 PT 입력 수업과 그룹 GT 출력 수업(말하기·뮤지컬·발표)을 결합한다. PLA(파닉스)부터 LA(미국교과서와 뮤지컬)까지 CE(구문·심화) 단계에 Syntax·Play Phonics·복불보카·Grammar Tetris·리드365 확장 프로그램을 운영한다.",
+    "distinctiveTeaching": "개별 PT 입력룸과 그룹 GT 출력룸의 이원 공간 수업, 노래·뮤지컬·발표 중심 출력 활동.",
+    "recentActivity": "2026년 9월 2학기 중간고사 대비 수업, 8월 다독·정독과 영어뇌 글 등 현재 수업 기록을 블로그에 지속 공개. 2026년 5월 언론 인터뷰에서 수업 철학 공개.",
+    "strengths": [
+     "입력-출력 매일 반복 시스템",
+     "PLA부터 CE까지 단계 커리큘럼과 확장 프로그램",
+     "2026년 현재 수업 기록 지속 공개",
+     "언론 인터뷰로 공개된 수업 철학"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/92",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 89,
+   "name": "송노경",
+   "role": "원장",
+   "academyName": "에이미영어수학학원",
+   "region": "경기도 구리시",
+   "province": "경기도",
+   "cityDistrict": "구리시",
+   "overallRank": 1,
+   "regionRank": 1,
+   "buildItScore": 95,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "communication_first",
+    "mind_growth",
+    "student_agency",
+    "regional_mission",
+    "own_materials",
+    "named_programs",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "구리시 인창동 에이미영어수학학원 원장. 구리시학원연합회 총무이사로 활동하며 초중등 영어·수학을 직접 지도하는 교육자.",
+    "educationPhilosophy": "정답 맞히는 기술이 아닌 진짜 실력을 키우는 교육을 지향하며 아이의 자기주도와 자존감을 세우는 데 초점을 둔다. 어른의 잔소리가 아닌 공감 대화로 아이를 이끈다는 훈육관을 공개 칼럼으로 밝혀 왔다.",
+    "curriculum": "TPR·스토리텔링 기반 활동 수업과 rent는 lend에 borrow를 더한 값 같은 직관 공식 정리, 학교별 내신 대비와 수능 풀이 자료를 병행하는 초중등 지도다. 종이 한 장으로 진행하는 Paper Action Relay와 대통령 연설문 말하기 대회 같은 발표 훈련을 운영한다.",
+    "distinctiveTeaching": "몸으로 움직이는 체험형 영어와 말하기 중심 발표 훈련을 결합한 활동 수업. 단어 암기 대신 TPR·액션 릴레이로 어휘 감각을 깨운다.",
+    "recentActivity": "2026년 8월 2학기 설계 가이드, 7월 TPR 줄다리기 수업 현장, 6월 기말고사 평균 90.1점 보고 등 현재 수업 기록을 블로그에 지속 공개.",
+    "strengths": [
+     "체험형·말하기 중심 수업 연구 지속",
+     "교육철학 공개 칼럼 집필",
+     "학교별 내신 대비 자료 제작",
+     "지역 교육 연합회 공적 활동"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/89",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 88,
+   "name": "임희재",
+   "role": "원장",
+   "academyName": "블루티쳐 영어학원",
+   "region": "경기도 구리시",
+   "province": "경기도",
+   "cityDistrict": "구리시",
+   "overallRank": 3,
+   "regionRank": 2,
+   "buildItScore": 89,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "student_agency",
+    "individual_custom",
+    "own_materials",
+    "ai_edsuptech",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "구리시 인창동 블루티쳐 영어학원 원장. 한국외대 출신으로 중고등 수능·내신 영어를 직접 지도하며 전 교재를 직접 집필하는 영어교육자.",
+    "educationPhilosophy": "스스로 만들지 않은 교재로는 가르치지 않고 흉내가 아닌 진짜 교육을 하겠다는 2026년 선언을 공개했다. 많은 학생보다 맡겨진 학생을 잘 가르치는 데 성취를 느끼며, 없는 이야기로 홍보하지 않는다는 원칙을 밝혔다.",
+    "curriculum": "번호문장부터 해석·어구·어법·글의 전개 순서로 통일한 단권화 해설지와 1만 개 어법코드를 활용한 AI 변형문제 출제, 구문독해 중심 지도로 수업을 설계한다. 인창고·수택고·삼육고 등 학교별 적중 리포트와 변형문제를 제작해 내신과 수능을 병행 대비한다.",
+    "distinctiveTeaching": "문장 구조 단위 이해를 강조하는 구문독해 집착과 직접 집필 교재·AI 어법 문제 생성기를 결합한 1:1 맞춤 지도.",
+    "recentActivity": "2026년 9월 평가원 모의고사 1등급 30% 달성 보고, 7월 1학기 기말고사 인창고·수택고·삼육중 1등급 다수 보고 등 현재 수업 성과를 블로그에 지속 공개.",
+    "strengths": [
+     "전 교재 직접 집필과 단권화 해설지 제작",
+     "학교별 적중 리포트·변형문제 제작",
+     "2026년 현재 수업 성과 지속 공개",
+     "어법 AI 문제 생성 등 수업 연구 지속"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/88",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 85,
+   "name": "이수정",
+   "role": "원장",
+   "academyName": "닥터수밀크잉글리쉬어학원",
+   "region": "경기도 용인시",
+   "province": "경기도",
+   "cityDistrict": "용인시",
+   "overallRank": 37,
+   "regionRank": 1,
+   "buildItScore": 65,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "named_programs",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "이수정 — 닥터수밀크잉글리쉬어학원 원장, IGSE 겸임교수, 용인 기흥구 보정동 오프라인 운영.",
+    "educationPhilosophy": "유창하고 창의적인 글로벌 인재를 기르는 것을 목표. 자연스럽고 편안한 영어환경 안에서 학생들이 중심되어 의미를 만들어 내고 언어를 경험하게 한다.",
+    "curriculum": "MILK(유치~초등저: 파닉스·스토리읽기·트로피나인·말하기·글쓰기·기초문법·토플프라이머리·융합영어). LIME(초등고~중등: 픽션·논픽션·토플주니어·중등문법·고등문법·수능·독해·어휘·글쓰기·말하기·프레젠테이션·융합영어). 특별: 영어글쓰기·영어뮤지컬·개인코칭.",
+    "distinctiveTeaching": "놀이·연극·미술·움직임 등 예술활동과 창의 프로젝트 기반 학습(PBL). 원어민 토론·프로젝트로 쓰기·말하기 훈련.",
+    "recentActivity": "2026-07-09 여름특강·07-14 가을학기 설명회·07-24 파닉스 체험수업 게시.",
+    "strengths": [
+     "MILK/LIME 자가 프로그램",
+     "IGSE 겸임교수·조기영어교육 전문가"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/85",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 5,
+   "name": "Anny",
+   "role": "원장",
+   "academyName": "링키영어 틴즈 수내3동 푸른마을점",
+   "region": "경기도 성남시 분당구",
+   "province": "경기도",
+   "cityDistrict": "성남시 분당구",
+   "overallRank": 56,
+   "regionRank": 4,
+   "buildItScore": 47,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "habit_structure",
+    "stage_pathway"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "19년 영어교육 경력을 바탕으로 분당 수내동에서 5~9세 유아·초등 영어를 직접 지도하는 원장",
+    "educationPhilosophy": "유아기 영어를 단기 암기가 아니라 반복과 구조 이해, 독서와 자연스러운 습득 과정으로 연결한다.",
+    "curriculum": "파닉스·리딩 교재, 반복 학습, 영어 구조 학습, 콘테스트와 연령별 시간표를 결합한 유아·초등 과정이다.",
+    "distinctiveTeaching": "영어 구조를 장기적으로 유지하도록 반복하고, 파닉스·리딩 교재와 학생 참여형 콘테스트를 활용한다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/5",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 4,
+   "name": "Violet",
+   "role": "원장",
+   "academyName": "VEL영어학원",
+   "region": "경기도 성남시 분당구",
+   "province": "경기도",
+   "cityDistrict": "성남시 분당구",
+   "overallRank": 59,
+   "regionRank": 5,
+   "buildItScore": 42,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "individual_custom",
+    "input_output_loop",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "Violet's English Lab이라는 교육 정체성으로 분당 수내동에서 초·중등 소수정예 영어교육을 운영하는 원장",
+    "educationPhilosophy": "학생을 수익 대상으로 보지 않고 한 명씩 성장시키며, 국제학교형 사고력과 쓰기·토론 중심 영어교육을 지향한다.",
+    "curriculum": "영어원서·논픽션·TED Talk·Writing·Academic Writing·TOEFL·문법·토론을 학생 수준별로 결합한다.",
+    "distinctiveTeaching": "4~8명 소수정예로 Writing의 브레인스토밍부터 최종 원고까지 피드백하고 영어 과학·뮤지컬·북클럽 활동을 운영한다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/4",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 3,
+   "name": "김성수",
+   "role": "대표",
+   "academyName": "클랭에듀러닝센터",
+   "region": "경기도 성남시 분당구",
+   "province": "경기도",
+   "cityDistrict": "성남시 분당구",
+   "overallRank": 51,
+   "regionRank": 2,
+   "buildItScore": 56,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "stage_pathway",
+    "individual_custom",
+    "input_output_loop"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "분당 서현동에서 성인 영어회화 학원을 운영하며 말하기 환경과 학습 습관 형성을 중심으로 교육하는 대표",
+    "educationPhilosophy": "영어 지식 부족보다 실제로 말할 환경과 습관의 부재를 문제로 보고, 수강생을 존중하며 지속 가능한 영어 사용 습관을 만드는 것을 목표로 한다.",
+    "curriculum": "평균 4~5명 소수정예, 주 9회 원어민 프리클래스, 수업 녹음·판서·쉐도잉·주간 영작 첨삭을 연결한다.",
+    "distinctiveTeaching": "배운 문장을 수업 중 직접 말하게 하고 학원 밖에서도 녹음·쉐도잉·첨삭으로 학습이 이어지도록 설계한다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/3",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 2,
+   "name": "조민정",
+   "role": "원장",
+   "academyName": "원파인데이학원",
+   "region": "경기도 성남시 분당구",
+   "province": "경기도",
+   "cityDistrict": "성남시 분당구",
+   "overallRank": 50,
+   "regionRank": 1,
+   "buildItScore": 56,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "stage_pathway",
+    "input_output_loop",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "분당 수내동에서 초·중·고 영어 수업과 원서 문해력·내신·수능 연계 교육과정을 운영하는 원파인데이학원 대표 원장",
+    "educationPhilosophy": "교육의 끝을 성적만이 아니라 학생 한 사람의 마음과 성장에 두는 교육을 표방한다.",
+    "curriculum": "초등 원서 문해력에서 중등 내신·고등 수능 1등급까지 이어지는 단계형 교육과정과 문법·독해·독서감상문 활동을 운영한다.",
+    "distinctiveTeaching": "원장 독해 수업, 문법 정리, 학교별 시험 범위 프린트와 배경지식 자료를 결합해 지도한다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/2",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 1,
+   "name": "재클린",
+   "role": "원장",
+   "academyName": "이음영어 분당점",
+   "region": "경기도 성남시 분당구",
+   "province": "경기도",
+   "cityDistrict": "성남시 분당구",
+   "overallRank": 53,
+   "regionRank": 3,
+   "buildItScore": 49,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "communication_first",
+    "habit_structure",
+    "diagnose_placement",
+    "stage_pathway",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "글로벌 B2B 해외사업 경험과 MBA 배경을 바탕으로 분당 미금역에서 성인 영어회화를 직접 강의하는 원장 Jacky",
+    "educationPhilosophy": "배운 영어가 아니라 실제로 말하는 영어를 가르치며, 수강생의 목적과 약점에 맞춘 발화와 피드백을 중시한다.",
+    "curriculum": "소그룹·일대일 회화, 개인별 억양·발음 진단, 충분한 발화 시간, 수업 후 예습·복습 자료를 연결한다.",
+    "distinctiveTeaching": "수강생별 발음과 억양을 진단하고 실제 비즈니스·생활 상황에서 말하도록 반복 피드백한다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/1",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 99,
+   "name": "손성하",
+   "role": "원장",
+   "academyName": "샤인영어교습소",
+   "region": "경상남도 창원시",
+   "province": "경상남도",
+   "cityDistrict": "창원시",
+   "overallRank": 21,
+   "regionRank": 2,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "diagnose_placement",
+    "individual_custom",
+    "named_programs"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "창원시 샤인영어교습소 대표. 유아·초등 영어를 직접 지도하는 영어교육자.",
+    "educationPhilosophy": "정서적 안정 속에서 태도와 결과가 함께 성장하도록 하며, 1:1 맞춤 수업으로 아이의 태도와 결과를 함께 본다. 영어를 즐겁게 배우는 환경을 만드는 것을 핵심으로 한다.",
+    "curriculum": "Talk for Writing 창작·글쓰기, 미라클 잉글리시, 채근담 독서, 더빙 영어, 리딩스타 챌린지, Seasoned English 프로그램으로 읽·말·쓰를 병행한다.",
+    "distinctiveTeaching": "정서 기반 1:1 맞춤 수업과 Talk for Writing·더빙 등 표현 프로그램.",
+    "recentActivity": "2026년 4월 언론 인터뷰에서 현재 수업 철학과 프로그램 운영을 밝혔다.",
+    "strengths": [
+     "정서 기반 1:1 맞춤 수업",
+     "Talk for Writing·더빙 등 표현 프로그램",
+     "2026년 언론 인터뷰 공개"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/99",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 117,
+   "name": "김지환",
+   "role": "원장",
+   "academyName": "에이닷영어학원 양산지점",
+   "region": "경상남도 양산시",
+   "province": "경상남도",
+   "cityDistrict": "양산시",
+   "overallRank": 52,
+   "regionRank": 3,
+   "buildItScore": 56,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "stage_pathway",
+    "individual_custom",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "경상남도 양산시 물금읍 범어로 72 701호 에이닷영어학원 양산지점 원장. 학원 블로그 글에서 본인 이름을 직접 밝혀 소개한다.",
+    "educationPhilosophy": "시험을 점수를 매기는 도구가 아니라 학생의 약점을 찾아내는 분석 도구로 본다. 시험 결과가 나오면 피드백을 통해 다시 성장의 출발점으로 삼는다는 입장을 블로그 글에 직접 서술했다.",
+    "curriculum": "강의 수강, 개념 확인, 암기 및 이해 점검, 구두 TEST의 네 단계로 수업을 구성한다. 마지막 단계에서 담당 선생님이 학생과 1:1로 암기 및 이해 여부를 최종 점검한다.",
+    "distinctiveTeaching": "매 수업마다 담당 선생님이 지문 이해도, 문장 구조 파악, 주요 어법 적용력을 직접 묻고 확인하는 1:1 구두 점검을 운영한다. 학생마다 다른 약점에 맞춰 2주 단위의 개인 맞춤 플랜을 제시한다.",
+    "recentActivity": "2026년 4월 원장 명의 인사 글과 8월 수업 절차 안내 글을 학원 블로그에 잇달아 올렸다. 두 글 모두 오프라인 지점 운영과 수업 진행을 다루고 있다.",
+    "strengths": [
+     "원장이 블로그 글에서 이름을 직접 밝히고 운영 메시지를 서술했다",
+     "수업 단계를 4단계로 구체적으로 공개했다",
+     "매 수업 1:1 구두 점검이라는 확인 절차를 운영한다"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/117",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 115,
+   "name": "박송미",
+   "role": "원장",
+   "academyName": "리드앤톡 영어학원 밀양삼문센터",
+   "region": "경상남도 밀양시",
+   "province": "경상남도",
+   "cityDistrict": "밀양시",
+   "overallRank": 42,
+   "regionRank": 1,
+   "buildItScore": 63,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "habit_structure",
+    "regional_mission",
+    "stage_pathway",
+    "input_output_loop"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "밀양시 미리벌중앙로1길 23-1 2층 리드앤톡 영어도서관 밀양삼문센터의 원장이 박송미다. 2024년 9월 1일 공지 제목이 원장 박송미를 소개합니다 로 실명과 직함을 밝히고 있고, 같은 블로그에 2026년 8월까지 센터 운영 글이 계속 올라온다.",
+    "educationPhilosophy": "영어 학원의 본질을 실력 향상, 성적 향상, 바른 학습 태도 형성으로 정의한다. 점수를 잘 받는 것보다 오래 남는 능력은 혼자서 읽고 이해하고 생각할 수 있는 영어실력이라고 본다. 그래서 영어원서를 서브 수업이 아니라 아이의 영어실력을 만드는 메인 커리큘럼으로 위치시키며, 8년 전 센터를 시작할 때부터 같은 방향으로 아이들을 가르쳐 왔다고 설명한다.",
+    "curriculum": "리드앤톡 영어도서관의 영어원서 구문 독해 프로그램을 중심에 두고 내신과 수능 대비 과정을 별도로 마련했다. 원서를 읽다가 긴 문장이 나오면 피하지 않고 주어와 동사를 찾고 목적어와 보어를 확인하며 수식 관계를 파악해 절과 구를 구분하는 작업을 수십 권, 수백 권의 원서에서 반복해 구문독해력을 만든다. 수업은 월 20회 기준으로 운영하고 시험 기간에는 학교별 교과서에 맞춘 특별 프로그램과 주말 보강을 편성한다.",
+    "distinctiveTeaching": "초등부터 원서 다독과 구문독해를 누적하고, 밀양·세종 지역 중·고교의 2학기 시험 일정에 초3·중2·고등부 시간대를 나눠 배치한 시험 대비 보강으로 연결한다.",
+    "recentActivity": "2026년 8월 14일 8월 29일 시작 시험 대비 보강 시간표와 광복절 대체휴일 휴원, 월 20회 수업 기준을 안내했고, 2026년 8월 27일에는 초등 시기에 만들어야 할 영어실력과 원서 읽기의 역할을 설명하는 글을 올렸다.",
+    "strengths": [
+     "원장 실명·직함이 공지 제목에 공개됨",
+     "2026년 8월까지 센터 운영 기록이 연속됨",
+     "수업 횟수 기준과 학교별 시험 보강 등 운영 규칙이 구체적"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/115",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 114,
+   "name": "백승일",
+   "role": "원장",
+   "academyName": "조슈아영어 통영학원",
+   "region": "경상남도 통영시",
+   "province": "경상남도",
+   "cityDistrict": "통영시",
+   "overallRank": 57,
+   "regionRank": 1,
+   "buildItScore": 44,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "student_agency",
+    "regional_mission",
+    "stage_pathway",
+    "ai_edsuptech"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "통영시 광도면 죽림의 조슈아영어 통영학원에서 백승일 원장이 본인 실명으로 블로그를 운영한다. 2026년 게시글에서 통영영어학원 조슈아영어 백승일 원장임을 직접 밝히고 23년 운영 경력을 소개한다.",
+    "educationPhilosophy": "영어 실력은 개인의 재능이 아니라 반복 가능한 구조와 지속 가능한 습관에서 결정된다고 본다. 강사가 바뀌어도 학습이 끊기지 않도록 사람이 아니라 구조가 성적을 만드는 학원을 지향하며, 최적의 몰입 환경을 유지하는 것을 타협 없는 교육 철학으로 제시한다.",
+    "curriculum": "초등부는 주 5회 1시간 30분 수업을 원칙으로 하고 유치부~초2부터 Hooked on Phonics로 소리·글자 규칙을 체화시킨다. 개인별 컴퓨터와 이어폰을 써서 그날 배운 단어를 단어장에 직접 쓰며 내재화하는 자기주도 보카 학습, 70점 커트라인을 통과해야 다음 레벨로 전진하고 부족한 부분은 AI가 계산한 최적의 시점에 복습 루틴을 다시 설계하는 엄격한 테스트, 리스닝·리딩·문법을 통합하는 코어 수업을 하나의 경로로 연결한다.",
+    "distinctiveTeaching": "레벨 통과 기준과 AI 복습 주기 설계로 강사 개인기에 의존하지 않는 학습 구조를 만들고, 중·고등 내신과 고등 과정까지 초등부터 이어지는 단일 경로로 설계한다.",
+    "recentActivity": "2026년 4월 15일 2만 명 데이터 기반 몰입 시스템과 초등부 수업 구조를 설명하는 글을, 2026년 4월 20일에는 죽림 지역에서 영어학원 선택 기준 4가지를 원장 본인名义로 설명하는 글을 게시했다.",
+    "strengths": [
+     "원장 실명과 경력 학원 운영 정보가 블로그에 직접 공개됨",
+     "2026년 두 건의 교육 구조 설명 게시글",
+     "레벨 테스트 커트라인·복습 주기 등 수업 운영 기준이 구체적"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/114",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 113,
+   "name": "남경채",
+   "role": "원장",
+   "academyName": "이지스어학원",
+   "region": "경상남도 양산시",
+   "province": "경상남도",
+   "cityDistrict": "양산시",
+   "overallRank": 47,
+   "regionRank": 2,
+   "buildItScore": 61,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "양산 이지스어학원을 운영하는 남경채 원장. 프라임헤럴드 인터뷰 기사에서 실명과 원장 직함이 확인되고, 학원 공식 블로그에서도 남경채 원장 명의로 2026년 게시글이 올라온다.",
+    "educationPhilosophy": "논어의 지지자불여호지자, 호지자불여락지자 말씀을 교육 철학으로 삼는다. 도를 아는 것은 좋아하는 것만 못하고 좋아하는 것은 즐기는 것만 못하다는 뜻처럼, 영어를 좋아하고 즐기며 자유롭게 구사하는 아이를 기르는 것을 설립 취지로 둔다.",
+    "curriculum": "영어 공부를 어휘 확장으로 시작해 생각과 의사를 표현하는 스피킹, 이어 리스닝과 리딩, 라이팅 순으로 실력이 올라가는 원스톱 과정을 운영한다. 초등 저학년에서 출발해 고학년에서는 읽기·어휘·독해·청취·문법·말하기 영역별 전문 강사 체제로 학습하고, 중학생은 세분화한 수준별 수업으로 내신과 입시를 함께 다루는 교차 수업을 핵심으로 둔다.",
+    "distinctiveTeaching": "선행이 아니라 흔들리지 않는 기본기를 만드는 커리큘럼을 내세우며, 초3·4·5 시기의 학습 과정이 바인더로 축적되어 중학교 성적 격차로 이어진다는 내용을 학부모 설명회에서 실제 자료로 공개한다.",
+    "recentActivity": "2026년 2월 13일 새로 문을 연 신관에서 개최된 2026 신학기 설명회 후기를 직접 게시했고, 같은 글에서 3월 추가 설명회(강연자 남경채 원장)와 2월 파닉스 체험 수업 일정을 안내했다.",
+    "strengths": [
+     "기사 블로그 두 곳에서 실명 원장으로 동일 확인",
+     "2026년 개최된 설명회 후기라는 오프라인 근거",
+     "영역별 전문 강사와 수준별 교차수업 등 구조 서술이 구체적"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/113",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 112,
+   "name": "윤혜은",
+   "role": "원장",
+   "academyName": "윤혜은영어학원",
+   "region": "경상남도 양산시",
+   "province": "경상남도",
+   "cityDistrict": "양산시",
+   "overallRank": 46,
+   "regionRank": 1,
+   "buildItScore": 61,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "regional_mission",
+    "stage_pathway",
+    "own_materials"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "양산시 물금읍(증산 나래메트로시티 D동) 윤혜은영어학원을 본인 실명으로 운영하는 원장. 학원명·블로그 운영자·주소가 학원官方博客 본문 하단 위치 정보에 함께 노출된다.",
+    "educationPhilosophy": "고등 영어 대비와 중학교 영어 시험 대비가 서로 이어져 있다고 본다. 고등 영어 내신 서술형을 쓰기 위한 기반이 중학교 시기에 만들어진다고 보기 때문이다. 그래서 내신 대비 기간의 길이보다는 밀도에 집중해 기간을 설계한다.",
+    "curriculum": "내신 대비 기간을 보통 6주로 잡고, 시험 범위와 관련된 가능한 넓은 범위의 문제 자료를 풀게 한다. 시험 직전 기출문을 풀 때도 양산 지역에 한정하지 않고 서울·경기권의 난이도 있는 기출까지 풀어보게 하며, 고등학생이 되었을 때 경쟁자가 전국 단위라는 전제로 수업을 설계한다.",
+    "distinctiveTeaching": "중학교 내신 단계에서 고등 서술형 기반을 만든다는 목표로, 6주 밀도 중심 내신 대비와 전국 단위 기출 변별 문항 선별을 결합한다.",
+    "recentActivity": "2026년 5월 23일 내신 대비 기간과 밀도 중심 수업을 설명하는 글을 올렸고, 2025년 12월 30일에는 12월 29일 개강으로 2026년 새학기가 시작되었음을 재원생·신입생 수업 장면과 함께 공지했다.",
+    "strengths": [
+     "학원명·블로그·주소가 모두 본인 실명으로 공개됨",
+     "수업 설계 근거를 질문응답 형식으로 구체적으로 설명",
+     "오프라인 개강·수업 활동 기록이継続적"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/112",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 111,
+   "name": "이상민",
+   "role": "원장",
+   "academyName": "솔민학원",
+   "region": "경상남도 함안군",
+   "province": "경상남도",
+   "cityDistrict": "함안군",
+   "overallRank": 55,
+   "regionRank": 1,
+   "buildItScore": 49,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "student_agency",
+    "regional_mission",
+    "stage_pathway",
+    "individual_custom",
+    "input_output_loop",
+    "parent_communication",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "솔민학원(1호점 창원 내서 / 2호점 함안 호암) 이상민 대표원장. 학원 공식 네이버 블로그에 원장 실명으로 학부모설명회 진행 주체가 직접 기록되어 있다.",
+    "educationPhilosophy": "완전학습 방법을 교육의 핵심으로 삼는다. 학생이 자신이 아는 것과 모르는 것을 구분하고, 이해하지 못한 부분을 다시 확인한 뒤 스스로 설명하고 적용할 수 있을 때까지 학습을 완성해야 배움이 끝났다고 본다. 2026년 8월에는 초등학교 5학년 이상 학생과 학부모를 대상으로 이상민 원장의 완전학습 방법 학부모설명회를 직접 열었다.",
+    "curriculum": "예습·수업·복습을 하나로 연결하는 완전학습 흐름을 과목 커리큘럼으로 편성한다. 영어는 알파 영어 논술과 알파 영어 리딩 수업을 강화하고 맥그로힐(McGraw-Hill) 원서를 정규 과정으로 넣어, 온라인으로 원서를 읽고 9단계 학습을 마친 뒤 프랙티스 북과 워크북으로 오프라인에서 확인하는 on+off 구조로 운영한다. 무학년제 개별 맞춤학습으로 진행하며 함안 지역(전안초·광려초·호암초·광려중·호암중) 진학 학생들을 기준으로 2026년 개편안을 안내했다.",
+    "distinctiveTeaching": "온라인 원서 읽기에서 9단계 학습, 프랙티스 북·워크북 확인으로 이어지는 영어 학습 루프를 원장 직강 완전학습 설명회와 연결해 운영한다.",
+    "recentActivity": "2026년 1월 5일 신학기 운영상 변화와 영어 리딩·맥그로힐 원서 수업 신설을 공지했고, 2026년 8월 7일 이상민 원장의 완전학습 방법 학부모설명회 개최를 공지했다.",
+    "strengths": [
+     "원장 실명과 교육철학이 학원官方博客에 직접 기술됨",
+     "2026년 연중 두 건 이상의 공개 활동 근거",
+     "온·오프라인을 결합한 영어 원서 커리큘럼이 구체적"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/111",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 110,
+   "name": "조유진",
+   "role": "원장",
+   "academyName": "리딩온어학원",
+   "region": "경상남도 진주시",
+   "province": "경상남도",
+   "cityDistrict": "진주시",
+   "overallRank": 49,
+   "regionRank": 1,
+   "buildItScore": 58,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "communication_first",
+    "student_agency",
+    "diagnose_placement",
+    "stage_pathway",
+    "individual_custom",
+    "parent_communication",
+    "solo_direct_teaching",
+    "ai_edsuptech"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "경남 진주시 평거동 소재 초등 영어 전문 리딩온어학원(READ and LEAD) 원장. 본인이 직접 네이버 블로그를 운영하며 6·7세~초등 대상 오프라인 수업을 진행한다.",
+    "educationPhilosophy": "조유진 원장은 암기식 영어의 시대는 끝나가고 사고력과 표현력 중심의 영어가 그 자리를 대신하고 있다고 본다. 점수가 아니라 역량을 키우는 것이 목표이며, 영어는 과목이 아니라 언어라는 관점으로 아이들이 스스로 생각하고 표현하는 수업을 지향한다.",
+    "curriculum": "학생 1인당 발화량이 일반 어학원 대비 6~8배까지 나오는 발화 중심 수업 구조를 운영하며, 초등 공교육 커리큘럼과 어휘·표현이 95% 이상 매칭되는 단계별 학습 로드맵을 제공한다. 영어권 경험 또는 영어유치원 출신은 영재 말하기반으로, 그 외 학생은 체험·진단 테스트 후 레벨별 반편성하고, 학년마다 반드시 다져야 할 영역을 나눠 지도한다.",
+    "recentActivity": "2026년 8월에도 학년별 초등 영어 로드맵과 AI 시대 영어 공부 방향을 주제로 블로그 글을 작성하고 학부모 대상 설명회·1:1 대면 컨설팅을 운영했다.",
+    "strengths": [
+     "본인 명의로 교육 콘텐츠를 직접 발행한다",
+     "오프라인 설명회·대면 컨설팅 등 학부모 접점이 있다"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/110",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 100,
+   "name": "강수민",
+   "role": "원장",
+   "academyName": "링키영어 대원포레나점",
+   "region": "경상남도 창원시",
+   "province": "경상남도",
+   "cityDistrict": "창원시",
+   "overallRank": 45,
+   "regionRank": 3,
+   "buildItScore": 61,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "communication_first",
+    "mind_growth",
+    "habit_structure",
+    "student_agency",
+    "diagnose_placement",
+    "stage_pathway"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "창원시 대원동 링키영어 대원포레나점 원장. 2026년 언론 인터뷰에서 수업 철학을 밝힌 영어교육자.",
+    "educationPhilosophy": "확인일 2026-09-18(KST). 창업뉴스 원문 인터뷰에서 강수민 원장이 잘하는 아이보다 좋아하는 아이, 긍정적 영어 정서·자기주도성 철학을 직접 발언했다.",
+    "curriculum": "확인일 2026-09-18(KST). 인터뷰 원문에 유치부~초등 고학년 대상 놀이·반복노출→읽기·쓰기·사고확장 연결 과정과 문장 맥락 평가가 확인된다.",
+    "distinctiveTeaching": "확인일 2026-09-18(KST). 인터뷰 원문에 교구·역할놀이·발화 중심 수업과 암기 지양·자기선택 숙제 방식이 확인된다.",
+    "recentActivity": "2026년 5월 언론 인터뷰에서 수업 철학 공개. 개인 커리큘럼 근거 미확보."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/100",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 107,
+   "name": "류경화",
+   "role": "원장",
+   "academyName": "엘프어학원",
+   "region": "경상남도 김해시",
+   "province": "경상남도",
+   "cityDistrict": "김해시",
+   "overallRank": 9,
+   "regionRank": 3,
+   "buildItScore": 84,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "diagnose_placement",
+    "stage_pathway",
+    "individual_custom",
+    "named_programs",
+    "parent_communication",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "김해시 율하동 엘프어학원 대표원장. 25년 경력으로 초등부터 고등 입시까지 직접 설계하는 영어교육자.",
+    "educationPhilosophy": "초등을 잘 가르쳐서 고등에 결과를 내기 위해 만든 학원으로, 꿈을 가진 아이는 공부를 포기하지 않는다는 믿음 아래 방향과 꿈을 먼저 세운다. 점수가 아닌 성장과 꿈을 중심에 둔다.",
+    "curriculum": "파닉스부터 정규반 성장 로드맵, 타노스 예비중 특강, 보카킹·스피치 콘테스트, NELT 인증과 분기 성장 기록으로 초등부터 고등까지 연결한다. 11~15단계 레벨과 입학 테스트·1:1 인터뷰·단어 즉석 테스트로 진단한다.",
+    "distinctiveTeaching": "꿈·진로 프로젝트(타노스·고려대 콘서트)와 DREAM TOGETHER 부모 동반 프로그램.",
+    "recentActivity": "2026년 9월의 편지, 8월 DREAM TOGETHER, 5월 멜버른 의대 합격 소식 등 현재 수업 기록을 블로그에 지속 공개.",
+    "strengths": [
+     "초등부터 고등 연결 성장 로드맵",
+     "타노스·진로 프로젝트 운영",
+     "2026년 현재 수업 기록 지속 공개",
+     "율하 18개교·멜버른 의대 등 입시 실적"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/107",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 105,
+   "name": "박병준",
+   "role": "원장",
+   "academyName": "유니온에듀학원",
+   "region": "경상남도 김해시",
+   "province": "경상남도",
+   "cityDistrict": "김해시",
+   "overallRank": 22,
+   "regionRank": 4,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "diagnose_placement",
+    "stage_pathway",
+    "input_output_loop",
+    "named_programs",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "김해시 진영읍 유니온에듀학원 윌그로우 진영캠퍼스 원장. 25년 경력으로 핵심 수업을 직접 맡는 영어교육자 (2026년 팩트리포트 기준).",
+    "educationPhilosophy": "영어를 훈련으로 보아 설명 한 번으로 지나가지 않고 학생이 자기 것으로 만들도록 도우며, 가르치는 것과 배우는 것의 간극을 메우는 교육을 지향한다.",
+    "curriculum": "Power Check 7단계 반복 체크(단어·라이팅·발음 구두 테스트), 누적 테스트와 무작위 구두 확인, 매일 녹음 과제와 NELT 외부 레벨테스트·텀테스트·분기 리포트로 관리한다.",
+    "distinctiveTeaching": "훈련 관점 수업과 Power Check 반복 체크, 녹음 과제 아카이빙.",
+    "recentActivity": "2026년 7월 여름방학 운영, 5월 진영고 분석 등 현재 수업 기록을 블로그에 지속 공개. 2026년 6월 팩트리포트에서 원장·시스템 확인.",
+    "strengths": [
+     "25년 경력과 핵심 수업 직강",
+     "Power Check 반복 체크 시스템",
+     "2026년 현재 수업 기록 공개"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/105",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 104,
+   "name": "황은영",
+   "role": "원장",
+   "academyName": "에이블어학원",
+   "region": "경상남도 김해시",
+   "province": "경상남도",
+   "cityDistrict": "김해시",
+   "overallRank": 8,
+   "regionRank": 2,
+   "buildItScore": 84,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "communication_first",
+    "mind_growth",
+    "individual_custom",
+    "own_materials",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "김해시 지내동 에이블어학원 원장. 한국외대 TESOL, 20년 경력의 학습스토커.",
+    "educationPhilosophy": "매일 완전학습으로 끝까지 책임지며, 아이의 태도와 성장을 먼저 보는 교육을 한다. 공부의 시작은 지식이 아니라 마음의 힘을 세우는 일이라고 본다.",
+    "curriculum": "1일 완전학습과 학년별 차등 설계로 초 그룹부터 고 1:1까지 운영하고, 발화 중심·당일 완결 단어·학교별 기출 분석·자체 변형 문제집·1등급 시크릿 노트로 내신을 대비한다.",
+    "distinctiveTeaching": "매일 완전학습과 끝까지 책임지는 학습스토커 관리.",
+    "recentActivity": "2026년 9월 공부그릇·고등 전환 칼럼, 7월 성장일기 등 현재 수업 기록을 블로그에 지속 공개.",
+    "strengths": [
+     "매일 완전학습 책임 관리",
+     "학년별 차등 설계 커리큘럼",
+     "2026년 현재 수업 기록 지속 공개",
+     "중등 전교 1등 4년 연속"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/104",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 103,
+   "name": "윤수경",
+   "role": "원장",
+   "academyName": "이유영어학원",
+   "region": "경상남도 김해시",
+   "province": "경상남도",
+   "cityDistrict": "김해시",
+   "overallRank": 7,
+   "regionRank": 1,
+   "buildItScore": 84,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "individual_custom",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "김해시 내외동 이유영어학원 원장. 17년 경력으로 모든 수업을 직접 지도하는 스캐닝 교육자.",
+    "educationPhilosophy": "정답이든 오답이든 왜 그런지를 따지는 이유 영어를 지향하며, 아이가 어디서 막히는지를 그 자리에서 읽어 채운다. 시험 점수를 기다리지 않고 막히는 바로 그 순간에 알아채고 채운다.",
+    "curriculum": "근거 찾기 학습과 영역별 개별 진도, 문법 뼈대 정립을 축으로 무학년·무레벨 1:1 개별 커리큘럼을 운영한다. 오답을 자기 언어로 다시 쓰는 오답노트를 원장이 재점검하고 시험지를 분석해 누적 기록한다.",
+    "distinctiveTeaching": "설명 표정·집중력·머뭇거림을 그 자리에서 읽어내는 스캐닝과 오답 근거 찾기.",
+    "recentActivity": "2026년 7월 내신 예방주사 모의고사, 5월 시험지 지도 칼럼, 2월 확장 이전 등 현재 수업 기록을 블로그에 지속 공개.",
+    "strengths": [
+     "그 자리에서 읽어내는 스캐닝 지도",
+     "근거 찾기·개별진도·문법뼈대 커리큘럼",
+     "2026년 현재 수업 기록 지속 공개",
+     "17년 경력 전수업 직강"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/103",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 98,
+   "name": "김태영",
+   "role": "원장",
+   "academyName": "위너스위더스영어학원",
+   "region": "경상남도 창원시",
+   "province": "경상남도",
+   "cityDistrict": "창원시",
+   "overallRank": 12,
+   "regionRank": 1,
+   "buildItScore": 79,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "habit_structure",
+    "stage_pathway",
+    "own_materials",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "창원시 의창구 북면 감계 위너스위더스영어학원 원장. 15년 티칭 경력으로 입시 영어 전략 시스템을 직접 설계한 영어교육자.",
+    "educationPhilosophy": "영어를 학생이 활용할 줄 아는 전략 과목과 무기로 만드는 것이 목표이며, 실력과 입시 전략의 간극을 중학교 과정부터 바로잡는다. 성실함·정직함·탁월함·강인함을 운영 가치로 두고 사람을 중심에 둔 교육을 한다.",
+    "curriculum": "핵심 개념을 한 권에 집약하는 단권화를 중심으로 개념 이해부터 정리·응용·실전 풀이 흐름의 워크북·실전문제·자체 동형 모의고사를 연결한다. 프랜차이즈가 아닌 직접 기획한 교재·커리큘럼·학사 시스템으로 감계중·창북중·북면고 내신을 대비한다.",
+    "distinctiveTeaching": "단권화 교재 시스템과 시험지 탐색 3분·오답 패턴 원칙 등 실전 시험 기술 지도.",
+    "recentActivity": "2026년 9월 시험 전략·오답 원칙 연재, 8월 영어뇌·단어암기 골든타임 등 현재 수업 기록을 블로그에 지속 공개.",
+    "strengths": [
+     "단권화 교재·자체 동형 모의고사 제작",
+     "학교별 적중 분석과 실전 기술 지도",
+     "2026년 현재 수업 기록 매일 연재",
+     "독립 브랜드 직접 기획 운영"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/98",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 84,
+   "name": "박명숙",
+   "role": "원장",
+   "academyName": "벨영어교습소",
+   "region": "경상북도 상주시",
+   "province": "경상북도",
+   "cityDistrict": "상주시",
+   "overallRank": 28,
+   "regionRank": 1,
+   "buildItScore": 70,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "student_agency",
+    "own_materials",
+    "input_output_loop"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "상주시에서 벨영어교습소를 운영하는 영어교육자",
+    "educationPhilosophy": "시험 점수 자체보다 그 점수까지 이르는 과정과 아이가 가고 있는 방향을 본다. 한 번 잘 보는 아이보다 꾸준히 잘 보는 아이가 되어가는 변화를 더 반긴다고 블로그에 적었다. 기대한 결과를 만들지 못한 학생을 결과 발표 앞에 세우는 대신, 빠지지 않고 오는 것, 해야 할 것을 해오는 것, 배운 것 하나를 자기 것으로 만드는 기본부터 다시 손 잡아준다고 밝혔다.",
+    "curriculum": "초등 저학년은 회화와 스토리 읽기로 영어에 흥미를 붙이는 데서 시작하고, 초등 고학년이 되면 문법으로 넘어간다. 문법은 개념을 먼저 정의하고 예문을 주는 책 대신 열 안팎의 영어 문장을 먼저 주고 스스로 규칙을 찾게 하는 교재를 택해 유추하는 힘을 기른다. 워크북과 다양한 유형 문제를 병행해 배운 규칙을 문장에 반복 적용하고, 원서 입문반에서 파닉스를 시작한 학생이 문장을 직접 해석하고 풀어보게 한다.",
+    "recentActivity": "2026년 3월 기준 상주시 영어교육 사업체 영업 중으로 확인됨."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/84",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 80,
+   "name": "토마스",
+   "role": "원장",
+   "academyName": "중앙K 영어",
+   "region": "경상북도 경주시",
+   "province": "경상북도",
+   "cityDistrict": "경주시",
+   "overallRank": 2,
+   "regionRank": 1,
+   "buildItScore": 94,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "habit_structure",
+    "individual_custom",
+    "own_materials",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "경주 용강동 중앙K 영어를 운영하며 중·고등 내신·수능 영어와 공개 교육 콘텐츠를 제공하는 토마스 원장.",
+    "educationPhilosophy": "문법과 단어를 단순 암기하는 데서 멈추지 않고 문맥 속 쓰임과 논리적으로 답을 찾는 과정을 이해하도록 지도한다. 학생의 수준과 성향을 기준으로 필요한 부분을 개별화하고, 질문과 피드백을 수업 밖까지 이어가는 방향을 공개하고 있다.",
+    "curriculum": "최대 4명 소수 수업에서 학생이 단어·예문·해석을 직접 구성하는 개인 단어장을 반복 학습한다. 내신 기간에는 교과서·모의고사·부교재·외부지문을 학교별로 분석하고 직접 제작한 예상문제로 적용과 오답을 점검한다.",
+    "distinctiveTeaching": "문맥 기반 개인 단어장, 학교별 직접 제작 예상문제, 수업 외 상시 질문 피드백을 결합한다.",
+    "recentActivity": "2026년 4월 문맥 기반 영어 학습 콘텐츠와 5월 월성중 2학년 중간고사 분석을 공개했고 현재 경주 용강동에서 오프라인 수업을 운영한다.",
+    "strengths": [
+     "문맥과 쓰임 중심 어휘 지도",
+     "학교별 시험 분석과 직접 제작 예상문제",
+     "최대 4명 개별 피드백",
+     "공개 교육 콘텐츠의 지속성"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/80",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 82,
+   "name": "정희수",
+   "role": "원장",
+   "academyName": "정희수 영어수학학원",
+   "region": "경상북도 경산시",
+   "province": "경상북도",
+   "cityDistrict": "경산시",
+   "overallRank": 20,
+   "regionRank": 1,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "regional_mission",
+    "stage_pathway",
+    "individual_custom",
+    "own_materials",
+    "input_output_loop",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "경산시 사동에서 초·중·고 영어·수학 교육을 운영하는 실명형 학원 책임 교육자",
+    "educationPhilosophy": "영어 실력은 특별한 재능이 아니라 꾸준한 학습 습관에서 나온다고 본다. 하루 10분이라도 매일 영어를 접하는 학생과 시험 기간에만 몰아 공부하는 학생의 차이는 시간이 지날수록 크게 벌어진다. 소리 내어 읽기와 쉐도잉, 오답을 다시 확인하는 과정을 언어 학습의 기본으로 삼는다.",
+    "curriculum": "초등부는 파닉스에서 원서 읽기까지, 중등부는 문법 체계 완성 지역 내신 기출 분석, 고등부는 EBS 연계 교재 분석과 수능형 논리 독해로 학년군별로 단계를 나눈다. 수학은 개념 이해, 유형 반복, 심화 응용의 단계별 학습으로 서술형에 대비한다. 레벨 테스트로 반을 편성하고 주간 테스트와 학교별 기출 유형 반영 자료를 운영한다.",
+    "distinctiveTeaching": "원장이 직접 수업하며 소수 정예로 학생별 취약점을 파악해 밀착 지도한다. 오답률이 높은 고난도 문항을 별도 분석하고, 구문을 세부 분석해 의미를 스토리텔링으로 파악하게 한다. 모의고사 등급별 수준에 맞는 개별 teaching을 적용해 모든 원생에게 내신 대비 자료를 제공한다.",
+    "recentActivity": "2026년 2월 신학기 안내 글에서 학년군별 커리큘럼을 공개했고, 4월에는 중간고사 출제 유형과 구문분석 대비 자료를, 5월에는 영어 습관 형성 학습법을 정리한 글을 블로그에 올렸다.",
+    "strengths": [
+     "2026년에만 수십 건의 교육 콘텐츠를 블로그에 꾸준히 게시했다",
+     "구문분석과 듣기·독해 학습법을 직접 정리해 공개한다",
+     "초중고 학년군별 영어 커리큘럼을 명시했다"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/82",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 76,
+   "name": "권엘리사",
+   "role": "원장",
+   "academyName": "가온영어학원",
+   "region": "경상북도 안동시",
+   "province": "경상북도",
+   "cityDistrict": "안동시",
+   "overallRank": 25,
+   "regionRank": 1,
+   "buildItScore": 73,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "regional_mission",
+    "diagnose_placement",
+    "stage_pathway"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "안동 가온영어학원에서 초·중·고 영어 수업 체계를 운영하며 영어 교재의 해설 감수에도 참여한 교육자",
+    "educationPhilosophy": "학생 한 명의 변화를 만드는 과정에서 교육의 보람을 찾고, 학생의 성장과 교사의 성장이 함께 이루어져야 한다고 본다. 경력이나 스펙보다 교육 태도와 책임감을 중시하고 더 나은 수업을 함께 고민하는 문화를 지향한다.",
+    "curriculum": "초·중등 문법·독해·읽기·듣기를 기본 축으로 학생을 관리하고, 고등부까지 연결 가능한 수업 체계를 운영한다. 수준별·학교별 반 편성, 내신·수능 대비와 레벨테스트를 병행하며 체계적인 수업 자료와 업무 매뉴얼을 활용한다.",
+    "distinctiveTeaching": "지역 현장 수업 운영과 전국 단위 영어 듣기·독해 교재 해설 감수를 연결해 수업 자료의 정확성과 현장 적용성을 함께 높이는 방식",
+    "recentActivity": "2026년 6월 가온영어학원이 초·중등 영어 수업과 학생 관리를 맡을 강사를 채용하며 현재 오프라인 운영과 수업 체계를 공개했고, 권엘리사는 2025년 발행 영어 교재의 감수진에 안동 가온영어학원 소속으로 이름이 확인된다.",
+    "strengths": [
+     "학생과 교사의 동반 성장을 명시한 교육 운영 철학",
+     "문법·독해·읽기·듣기를 아우르는 초중등 수업 체계",
+     "전국 영어 교재 해설 감수를 통한 교육 콘텐츠 전문성"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/76",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 70,
+   "name": "이광헌",
+   "role": "원장",
+   "academyName": "시습영어학원",
+   "region": "대구광역시 수성구",
+   "province": "대구광역시",
+   "cityDistrict": "수성구",
+   "overallRank": 18,
+   "regionRank": 1,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "student_agency",
+    "stage_pathway",
+    "individual_custom",
+    "parent_communication",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "대구 수성동에서 중·고등 영어 내신과 수능을 원장 직강·개별 관리 방식으로 지도하는 시습영어학원 대표.",
+    "educationPhilosophy": "단순 암기나 강의 수강에 머물지 않고 학생이 영어를 스스로 분석하고 적용하는 힘을 갖추게 하는 것을 목표로 한다. 학생마다 학습 과정 전체를 살펴 부족한 부분을 개별 피드백과 보충으로 책임 관리한다.",
+    "curriculum": "학교별 출제 유형을 지속 분석해 중·고등 내신 수업을 맞춤 구성하고, 영어 문해력·문법·독해·서술형 훈련을 진행한다. 수업 후 과제 수행→오답 점검→이해도 확인→부족 영역 개별 보충으로 이어지는 관리 루프를 운영하며 방학에는 개인 단어장·오답 단어·시험지를 연결한 어휘 복습을 안내한다.",
+    "distinctiveTeaching": "학교별 내신 분석과 원장 직강을 기반으로 강의 이후 과제·오답·이해도까지 추적하고 개별 보충으로 닫는 학습 관리 구조.",
+    "recentActivity": "2026년 6~7월 학원 프로필과 수업 정보가 갱신되었고, 여름방학 특강·중간고사 대비·수능 집중반 운영이 공개됨.",
+    "strengths": [
+     "학교별 출제 유형 분석을 실제 반 편성과 수업에 반영한다.",
+     "수업 후 과제와 오답, 이해도를 확인해 개별 보충으로 연결한다.",
+     "문법·독해를 서술형과 문해력 적용 능력으로 확장한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/70",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 69,
+   "name": "남보민",
+   "role": "원장",
+   "academyName": "썬키즈리딩",
+   "region": "대구광역시 동구",
+   "province": "대구광역시",
+   "cityDistrict": "동구",
+   "overallRank": 27,
+   "regionRank": 1,
+   "buildItScore": 70,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "habit_structure",
+    "student_agency",
+    "stage_pathway",
+    "input_output_loop",
+    "solo_direct_teaching",
+    "ai_edsuptech"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "영어교육 석사·정교사 자격과 20년 현장 경험을 바탕으로 신암동에서 초등 중심 다청다독 영어공부방을 직접 운영하는 원장.",
+    "educationPhilosophy": "영어를 시험 과목보다 살아 있는 언어로 습득하게 하고, 학습 속도가 느린 아이도 흥미와 자신감을 잃지 않도록 하는 것을 우선한다. 획일적 진도나 단기 점수보다 충분한 소리·원서 노출과 자발적 몰입을 통해 장기적인 영어 자산을 쌓는 방향을 택한다.",
+    "curriculum": "등원 후 단어 확인→원서 집중듣기→스스로 읽기→영어 영상 노출→게임형 스피킹→독해 적용으로 이어지는 7단계 루틴을 매일 운영한다. 집중듣기는 학생 수준보다 조금 높은 원서, 소리내어 읽기는 조금 낮은 원서를 배치하며, 늦게 시작한 학생에게는 매일 10분 파닉스와 원서 필사, 고학년 문법 정리를 보완한다.",
+    "distinctiveTeaching": "다청다독의 풍부한 인풋을 중심에 두되 i+1 원서 밀당, 10분 지름길 파닉스, 매일 원서 필사, 에듀테크 스피킹·독해를 학생별로 결합하는 하이브리드 구조.",
+    "recentActivity": "2026년 6월 공개된 현장 리포트에서 신암동 공부방의 평일 운영시간, 재원 학교, 현재 수업 루틴과 원장 직강 운영이 확인됨.",
+    "strengths": [
+     "듣기·읽기·말하기·독해를 매일의 연속 루틴으로 구조화한다.",
+     "학생 수준에 따라 듣기와 직접 읽기의 원서 난이도를 다르게 배치한다.",
+     "늦게 시작한 학생의 자신감을 위해 짧은 파닉스와 문법 보완을 유연하게 넣는다.",
+     "분기별 레벨 테스트와 월별 상담으로 성장 과정을 추적한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/69",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 68,
+   "name": "정효실",
+   "role": "원장",
+   "academyName": "STC 입시영어학원 대구칠곡센터",
+   "region": "대구광역시 북구",
+   "province": "대구광역시",
+   "cityDistrict": "북구",
+   "overallRank": 26,
+   "regionRank": 1,
+   "buildItScore": 72,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "student_agency",
+    "regional_mission",
+    "diagnose_placement",
+    "stage_pathway",
+    "individual_custom",
+    "own_materials"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "대구 북구 동천동에서 12년 이상의 입시영어 경험을 바탕으로 학생별 영역·속도 진단, 자기분석형 내신 피드백과 공부 습관 지도를 결합하는 원장.",
+    "educationPhilosophy": "정효실 원장은 영어 성적 향상 자체를 넘어 영어에서 얻은 성취감이 학생의 꿈을 만들고 키우도록 돕는 것을 보람으로 설명한다. 입시 과정에서 누구도 포기와 좌절에 머물지 않도록 공부 방법과 습관, 끝까지 해내는 힘을 함께 길러야 한다고 강조한다.",
+    "curriculum": "학생별 영역 실력과 학습 속도를 진단해 맞춤 수업을 배치하고, 내신 기간에는 개념 숙지 여부·실수·취약점을 학생 스스로 분석하게 한다. 분석 결과는 다음 내신 사이의 집중 트레이닝과 학습 습관 관리로 연결하며, 단계별 입시영어 과정으로 노베이스에서 상위권까지 성장하도록 설계한다.",
+    "distinctiveTeaching": "강의 전달만이 아니라 자기 취약점 분석→보완 파트 설정→내신 사이 집중 훈련을 반복하고, 원장이 공부법과 습관까지 관리하는 개별 맞춤 구조를 운영한다.",
+    "recentActivity": "2026년 현재 대구 북구 학정로의 등록 학원으로 운영 중이며 공식 홈페이지의 교육시스템·내신대비·커리큘럼과 사업자·원장 정보가 최근 갱신되어 있다.",
+    "strengths": [
+     "성취감과 꿈의 확장을 영어교육의 목표로 연결하는 개인 철학이 명확하다.",
+     "학생이 자신의 실수와 취약점을 스스로 분석하도록 지도한다.",
+     "진단 결과를 내신 사이 집중 트레이닝과 습관 관리로 환류한다.",
+     "12년 이상의 입시영어 현장 경험을 현재 지역 수업에 적용한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/68",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 72,
+   "name": "김유현",
+   "role": "원장",
+   "academyName": "지인학원",
+   "region": "대전광역시 유성구",
+   "province": "대전광역시",
+   "cityDistrict": "유성구",
+   "overallRank": 13,
+   "regionRank": 1,
+   "buildItScore": 77,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "mind_growth",
+    "habit_structure",
+    "diagnose_placement",
+    "stage_pathway",
+    "individual_custom",
+    "own_materials",
+    "named_programs",
+    "parent_communication",
+    "ai_edsuptech"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "대전 유성구 장대동에서 초·중·고 영어를 개별화해 지도하고 AI 기반 독해·작문 및 월간 진단 시스템을 직접 개발·운영하는 원장.",
+    "educationPhilosophy": "같은 교재와 숙제를 일괄 제공하기보다 학생마다 다른 이해 속도와 취약점을 반영한 개별 학습을 지향한다. 영어를 암기 과목으로 다루지 않고 학생이 직접 읽고 생각하고 말하고 쓰면서 자신감과 공부 습관까지 함께 성장하도록 한다.",
+    "curriculum": "설명과 학생 수행을 약 4:6으로 구성하고, 직접 읽기·말하기·쓰기·문제 해결을 중심으로 수업한다. 수업 후 이해도와 취약점을 확인해 학생별 복습자료와 숙제에 반영하며, 자체 ECHO 월간 테스트로 어휘·문법·독해·서술형 단계를 진단하고 구체적인 다음 훈련을 제시한다.",
+    "distinctiveTeaching": "교사 설명보다 학생 수행을 더 크게 배치하고, 개별 수업 기록을 자체 AI 독해·작문 및 월간 성취 리포트와 연결하는 사용자 반응형 영어교육 구조.",
+    "recentActivity": "2026년 6~8월 여름학기 모집, 유성고 내신 자료, 영자신문 읽기, ECHO 월간 테스트 결과가 공개되어 현재 학원 운영과 교육 콘텐츠 활동이 확인됨.",
+    "strengths": [
+     "학생별 이해 속도와 취약점을 복습자료와 숙제에 반영한다.",
+     "설명보다 학생이 직접 읽고 말하고 쓰는 수행 시간을 더 크게 둔다.",
+     "자체 AI 독해·작문 프로그램과 단계별 월간 진단을 실제 수업에 연결한다.",
+     "진단 결과마다 구체적인 다음 훈련을 제시한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/72",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 71,
+   "name": "박신영",
+   "role": "원장",
+   "academyName": "영어종결센터 송촌학원",
+   "region": "대전광역시 대덕구",
+   "province": "대전광역시",
+   "cityDistrict": "대덕구",
+   "overallRank": 19,
+   "regionRank": 1,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "stage_pathway",
+    "individual_custom",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "동시통역사 출신으로 25년간 영어를 가르치며 대전 송촌동에서 중하위권 학생을 중심으로 초등부터 고등까지 직접 지도하는 원장.",
+    "educationPhilosophy": "이미 잘하는 학생을 선발하기보다 영어에 어려움을 겪는 중하위권 학생이 단계적으로 실력을 회복하도록 돕는 데 교육의 중심을 둔다. 한 번의 시험 결과보다 반복 확인과 개별 밀착 지도를 통해 학생이 배운 것을 실제 자기 실력으로 만들도록 책임진다.",
+    "curriculum": "8명 이하 소수 그룹 수업 뒤 1:1 마스터 시간을 두고 학생별 단어·문법·듣기 미션을 설정한다. 매 수업 확인과 누적 테스트로 이전 학습까지 반복 점검하고, 내신 기간에는 학교 맞춤 대비, 평소에는 레벨 향상 학습을 진행하며 부족한 학생에게 주말 무료 보충을 제공한다.",
+    "distinctiveTeaching": "중하위권 전문이라는 선명한 대상 설정 아래 소수 그룹→1:1 마스터→누적 테스트→주말 무료 보충으로 학습 결손을 반복적으로 메우는 구조.",
+    "recentActivity": "2026년 3~7월 공개된 학원 소개와 후기, 최근 소식에서 송촌동 오프라인 수업과 원장 직강, 누적 테스트·무료 보충 운영이 확인됨.",
+    "strengths": [
+     "중하위권 학생의 기초 회복을 학원의 핵심 교육 대상으로 명확히 설정한다.",
+     "소수 그룹 수업 후 학생별 1:1 마스터 시간을 운영한다.",
+     "단어·문법·듣기를 매 수업과 누적 테스트로 반복 확인한다.",
+     "부족한 학습을 주말 무료 보충으로 연결한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/71",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 57,
+   "name": "김지나",
+   "role": "원장",
+   "academyName": "세렌디피티어학원",
+   "region": "부산광역시 연제구",
+   "province": "부산광역시",
+   "cityDistrict": "연제구",
+   "overallRank": 44,
+   "regionRank": 2,
+   "buildItScore": 61,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "communication_first",
+    "mind_growth",
+    "habit_structure",
+    "stage_pathway",
+    "individual_custom",
+    "own_materials",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "부산 연제구 연산동 세렌디피티어학원 원장으로 초·중·고 영어교육을 설계하고 고등부를 직강하는 교육자.",
+    "educationPhilosophy": "영어를 의무적으로 외우는 과목보다 외국어를 통해 즐거움과 배움의 기쁨을 발견하는 활동으로 보며, 자발적으로 꾸준히 공부할 때 영어 능력과 자존감이 함께 자란다고 설명한다. 교육자 자신도 지속적으로 공부하고 연구해야 양질의 수업을 제공할 수 있다고 본다.",
+    "curriculum": "초등은 내국인과 원어민 교사가 영역을 분담해 문법·리딩·리스닝·말하기·쓰기·디베이트를 균형 있게 다루고 사립초 시험과 공인시험 과정을 운영한다. 중등은 어휘·문법·독해·듣기 맞춤 관리와 특목고 대비, 원어민 디베이트·리딩을 결합하며, 고등은 원장·부원장 직강으로 기출 분석·내신·모의고사·외부 지문·수능을 지도한다.",
+    "distinctiveTeaching": "내국인·원어민의 역할을 영역별로 나누고 학년이 올라갈수록 의사소통 중심 과정에서 입시·기출 분석으로 전환하는 단계 구조가 특징이다.",
+    "recentActivity": "2026-08-07 갱신된 학원 정보와 최근 졸업생·문화교육 캠프 콘텐츠, 2025 수강료 등록으로 현재 연산동 오프라인 운영을 확인했다.",
+    "strengths": [
+     "외국어의 즐거움과 지속 학습이라는 철학이 분명하다.",
+     "내국인·원어민 역할 분담과 학년별 과정이 구체적이다.",
+     "고등부 원장 직강과 기출 분석 기반 입시 지도가 확인된다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/57",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 56,
+   "name": "정유진",
+   "role": "원장",
+   "academyName": "에이블영어학원",
+   "region": "부산광역시 연제구",
+   "province": "부산광역시",
+   "cityDistrict": "연제구",
+   "overallRank": 10,
+   "regionRank": 1,
+   "buildItScore": 80,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "diagnose_placement",
+    "stage_pathway",
+    "own_materials"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "부산 연제구 연산동 에이블영어학원 대표 원장으로 초·중·고 입시 영어교육과 교육 콘텐츠 제작에 참여하는 교육자.",
+    "educationPhilosophy": "단어 뜻이나 본문 암기에 머물지 않고 문장의 구조와 의미를 끝까지 정확히 읽어야 낯선 문제에 적용할 수 있다고 본다. 시험 결과 자체보다 학생이 시험에서 드러난 약점을 파악하고 다음 학습으로 연결하는 과정을 중시한다.",
+    "curriculum": "초등은 문법 교구와 영역별 담당 교사를 통해 기초를 쌓고, 중등은 꼼꼼한 관리와 내신 분석으로 심화 과정의 기반을 만든다. 고등은 학교별 지문과 시험을 분석해 구문 해석과 적용력을 강화하며 방학 학습으로 약점을 보완한다.",
+    "distinctiveTeaching": "문장 완전 해석을 핵심 진단 기준으로 삼고 학년별 전문 수업과 학교별 시험 분석을 연결하며, 교재 집필·감수 활동도 병행한다.",
+    "recentActivity": "2026-07-23과 07-28 공식 채널의 문장 해석·시험 분석 콘텐츠, 2026년 학원 수업 정보와 2026-03 강사 채용으로 현재 오프라인 활동을 확인했다.",
+    "strengths": [
+     "문장 해석을 중심으로 한 학습 관점이 구체적이다.",
+     "초등 교구 수업부터 고등 입시까지 학년별 과정이 구분되어 있다.",
+     "교재 집필·감수 활동을 통해 교육 콘텐츠 제작 참여가 확인된다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/56",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 54,
+   "name": "안자연",
+   "role": "원장",
+   "academyName": "차일드유 남천어학원",
+   "region": "부산광역시 수영구",
+   "province": "부산광역시",
+   "cityDistrict": "수영구",
+   "overallRank": 14,
+   "regionRank": 1,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "communication_first",
+    "habit_structure",
+    "stage_pathway",
+    "input_output_loop"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "부산 수영구 남천동 차일드유 남천어학원(구 남천ESL어학원)의 안자연 원장으로, 초·중·고 영어교육을 운영하는 교육자.",
+    "educationPhilosophy": "영어를 단순한 시험 과목이 아니라 학교 학습과 세계 소통을 가능하게 하는 언어로 가르쳐야 한다고 설명한다. 언어 환경과 문화 이해를 함께 바꾸어야 실제 영어 사용 능력이 자란다는 관점을 수업 설계에 반영한다.",
+    "curriculum": "초등 과정은 미국 공교육 프로그램을 바탕으로 다독 코칭과 원서 수업을 진행한 뒤 디베이팅과 발표로 산출 활동을 연결한다. 중·고등 과정은 어법·영작과 내신·수능을 균형 있게 다루고, 레벨에 따라 한국인·원어민·교포 강사의 비중을 달리하며 온라인 미국학교 과정과 공인시험 과정도 지원한다.",
+    "distinctiveTeaching": "미국 교과 기반 입력을 원서 다독·토론·발표로 이어가고, 국내 내신·수능과 언어 사용 환경을 병행하는 이중 구조가 특징이다.",
+    "recentActivity": "2026년 학원 정보와 2026-05·07 강사 소개 게시물, 현재 운영시간·수업 정보가 공개되어 남천동 오프라인 운영의 현재성을 확인했다.",
+    "strengths": [
+     "언어 습득과 문화 이해를 연결한 철학이 분명하다.",
+     "원서 읽기 이후 토론·발표로 이어지는 산출 구조가 구체적이다.",
+     "초등 언어교육과 중고등 내신·수능을 분리하면서 연결한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/54",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 50,
+   "name": "최연순",
+   "role": "원장",
+   "academyName": "영어쑥쑥어학원",
+   "region": "부산광역시 금정구",
+   "province": "부산광역시",
+   "cityDistrict": "금정구",
+   "overallRank": 30,
+   "regionRank": 1,
+   "buildItScore": 68,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "habit_structure",
+    "stage_pathway",
+    "input_output_loop"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "영어를 거부하던 자녀의 경험에서 출발해 파닉스의 읽기 자신감과 원서 다독을 연결하는 장전동 영어쑥쑥어학원 원장.",
+    "educationPhilosophy": "영어를 시험 과목으로 먼저 압박하기보다, 아이가 읽을 수 있다는 자신감을 얻고 원서를 즐기는 독자로 성장하도록 만드는 것을 출발점으로 삼는다. 원서로 언어 감각을 충분히 쌓은 뒤 문법·쓰기·내신 정확성을 더해 실력과 성적이 분리되지 않도록 설계한다.",
+    "curriculum": "초기에는 파닉스로 읽기 기반을 만들고 원서 다독으로 자연스러운 언어 감각을 확장한다. 초등 5학년부터 문법 정리 노트와 라이팅·리딩 스킬을 결합하며, 중등 단계에서는 내신 적응까지 연결하는 장기 단계형 과정이다.",
+    "distinctiveTeaching": "영어 거부감을 낮추는 정서적 접근을 파닉스 읽기 성공 경험과 연결하고, 이후 원서 다독과 문법 정리 노트로 정확성을 보완하는 누적형 수업 구조.",
+    "recentActivity": "2026년 4월 공개된 현장 리포트에서 금정구 장전동 본원 운영, 22개 학교 재원생, 현행 수업 시간·과정과 원장의 커리큘럼 설명이 확인된다.",
+    "strengths": [
+     "파닉스에서 원서 다독으로 이어지는 단계적 읽기 기반이 명확하다.",
+     "초등 고학년부터 문법 정리 노트와 라이팅을 결합해 감각과 정확성을 연결한다.",
+     "영어 거부감이 있는 학생의 정서적 진입 장벽을 낮추는 교육 목적이 구체적이다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/50",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 49,
+   "name": "양진섭",
+   "role": "원장",
+   "academyName": "플래너스어학원 부산화명",
+   "region": "부산광역시 북구",
+   "province": "부산광역시",
+   "cityDistrict": "북구",
+   "overallRank": 54,
+   "regionRank": 1,
+   "buildItScore": 49,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "communication_first",
+    "diagnose_placement",
+    "stage_pathway",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "부산 북구 화명동에서 영어를 시험 과목을 넘어 세상과 소통하는 도구로 가르치는 플래너스어학원 원장",
+    "educationPhilosophy": "영어를 시험 점수만을 위한 도구가 아니라 세상을 이해하고 소통하는 수단으로 본다. 학생별 수준과 필요를 먼저 진단하고, 영어 학습의 즐거움과 참여를 통해 각자의 꿈을 이루도록 돕는 학생 중심 교육을 강조한다.",
+    "curriculum": "진단 테스트로 학생의 수준을 파악한 뒤 EL·PL·PM·M·K·Y 등 단계별 과정에 배치한다. 초등 영어 전반에서 중등 통합영어, 특목 대비 TEPS·TOEFL·수능, 고등 내신과 모의고사·EBS 분석까지 이어지는 연속 구조이며 학기별 강의 설문으로 학생 피드백을 수집한다.",
+    "distinctiveTeaching": "영어 유창성과 정확성을 함께 기르면서 학생별 관리, 학부모 실시간 소통, 문화 경험과 세계 소통을 교육 목표에 연결한다.",
+    "recentActivity": "2026년 7~8월 내신 결과, Chant Time, 파닉스 기초반 등 현재 오프라인 수업 활동이 연속적으로 공개되었다.",
+    "strengths": [
+     "학생 수준 진단을 기반으로 초등부터 고등까지 단계별 과정을 연결한다.",
+     "시험 영어와 세계 소통 능력을 함께 교육 목표로 제시한다.",
+     "학생 설문과 학부모 소통을 수업 운영에 포함한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/49",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 45,
+   "name": "박정민",
+   "role": "원장",
+   "academyName": "압구정에듀홀릭학원",
+   "region": "강남구 압구정",
+   "province": "서울특별시",
+   "cityDistrict": "강남구",
+   "overallRank": 41,
+   "regionRank": 1,
+   "buildItScore": 63,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "habit_structure",
+    "stage_pathway",
+    "individual_custom",
+    "own_materials",
+    "named_programs",
+    "ai_edsuptech"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "박정민 대표원장의 공개 프로필에서는 미국 샌프란시스코 주립대학교 TESOL 석사 학위와 국내 여러 대학교 영어 교수법 강사 출강 이력이 확인됩니다. 또한 과천정부청사 중앙공무원교육원 5급 공무원 영어교육 20년 경력이 소개되어 있어, 일반 학생 대상 영어지도뿐 아니라 성인·공무원 영어교육 경험까지 함께 보유한 교육자로 볼 수 있어요. 압구정에듀홀릭학원 경력의 핵심은 단순히 오래 가르쳤다는 점보다, 영어 교수법과 실제 적용 가능한 영어 능력을 함께 강조한다는 데 있습니다. 학원 소개 글에서도 체계적",
+    "educationPhilosophy": "확인일 2026-09-18(KST). 공식 홈페이지 원문에 각 학생의 수준·속도 맞춤 효율 학습 설계, 성적보다 마음·성장 우선, 1:1 마음 코칭 철학이 명시되어 있다.",
+    "curriculum": "확인일 2026-09-18(KST). 공식 홈페이지 원문에 F2R STARTER(초등~중1 기초)·BOOSTER(중1~2 중급)·MASTER(중3~고1 고급) 3단계와 압구정중·신구중·신사중·언북중 내신 대비 과정이 안내되어 있다.",
+    "distinctiveTeaching": "확인일 2026-09-18(KST). 공식 홈페이지 원문에 AI NATIVE 내신(출제자 Digital Twin·학교별 예상문제·정답·해설 제작, wiki내신 시스템)과 1:1 마음 코칭이 교수 방식으로 소개되어 있다.",
+    "recentActivity": "확인일 2026-09-18(KST). 공식 내신 LIVE 페이지에서 2026 2학기 중간고사 대비 학교별 자료 업데이트와 신구중 2학년 70문항 제작 완료(09.11~09.16) 현황을 확인했다.",
+    "strengths": [
+     "20년 학원 운영 경력",
+     "TESOL 석사·응용언어학 박사 수료",
+     "학교별 내신 예상문제 직접 제작"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/45",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 46,
+   "name": "김주경",
+   "role": "원장",
+   "academyName": "김주경 영어교습소",
+   "region": "도곡동",
+   "province": "서울특별시",
+   "cityDistrict": "강남구",
+   "overallRank": 60,
+   "regionRank": 2,
+   "buildItScore": 39,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "individual_custom",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "김주경 영어교습소는 당근 로컬 프로필에서 대형학원 노하우를 소수정예로 전달한다는 설명과 함께, 모든 수업 원장 직강을 내세웁니다. 대형학원에서의 20년 강의 노하우를 소수정예 학습으로 전달한다고 소개되어 있고, 예비 중1부터 고3까지를 대상으로 한 콘텐츠가 확인됩니다. 당근 대표 수업이나 직접 제작 콘텐츠의 구체적 명칭은 출처에 충분히 나오지 않습니다. 하지만 “원장 직강”, “소수정예”, “20년 강의 노하우”, “예비 중1~고3 대상”이라는 공개 문구가 확인되므로, 개인 교육자 후보로서 검토",
+    "curriculum": "확인일 2026-09-18(KST). 공식 당근 업체 프로필 원문에 대형학원(함영원·족보닷컴) 20년 강의 노하우의 소수정예 과정, 원장 직강·오답노트·재테스트, 문법 특화(IPTV 영문법 특강 경력)가 안내되어 있다.",
+    "distinctiveTeaching": "확인일 2026-09-18(KST). 공식 프로필 원문에 개별 부족분 케어, 동일한 커리큘럼 일괄 적용 지양, 원장 직접 관리가 distinctive 방식으로 소개되어 있다."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/46",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 41,
+   "name": "김시훈",
+   "role": "원장",
+   "academyName": "시은영어학원",
+   "region": "서울 금천구 시흥동",
+   "province": "서울특별시",
+   "cityDistrict": "금천구",
+   "overallRank": 58,
+   "regionRank": 1,
+   "buildItScore": 43,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "금천구 시흥동에서 시은영어학원을 운영하며 문일고, 금천고, 동일여고 등 지역 학교들의 영어 내신 분석 및 공부법 칼럼을 직접 작성하여 학생들을 지도하고 있습니다.",
+    "curriculum": "확인일 2026-09-18(KST). 공식 블로그 원문(수업 커리큘럼 안내)에 초등~고등 과정과 영어 자존감 향상 지향이 안내되어 있다. 초·중·고등 과정 운영(2019~2021 교육청 과정 정보와 일치)."
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/41",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 116,
+   "name": "김서애",
+   "role": "원장",
+   "academyName": "제이+ 영어교습소",
+   "region": "인천광역시 부평구",
+   "province": "인천광역시",
+   "cityDistrict": "부평구",
+   "overallRank": 43,
+   "regionRank": 1,
+   "buildItScore": 63,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "student_agency",
+    "regional_mission",
+    "diagnose_placement"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "부평구 산곡동에서 고등영어 소그룹 교습소 제이+ 를 6년째 혼자 운영 중인 원장 김서애. 2026년 7월 공지 본문 첫머리에 제이 김서애입니다 로 본인 실명을 밝히고 있으며 블로그 이름 자체가 제이 김서애 다.",
+    "educationPhilosophy": "배우고자 하는 아이를 가르치는 것이 학원이지 잘하는 아이만 받는 것이 무슨 학원이냐는 질문에서 출발한다. 그래서 레벨테스트를 보지 않는다. 고등 과정은 대학을 가기 위한 하나의 코스가 아니라 어려웠지만 노력한 경험, 무언가를 이뤄낸 경험을 쌓는 일이라고 본다. 사업가보다는 수업하는 사람답게, 원장보다는 강사답게 학생이 세운 계획을 스스로 지키도록 돕는 것을 운영 원칙으로 삼는다.",
+    "curriculum": "한 반은 최대 3명, 한 학교 학생만으로 편성하는 소그룹 구조를 유지한다. 고2부터는 신규생을 받지 않아 재학생 위주로 수업하고, 기본적으로 퇴원이 없어 결원이 잘 발생하지 않는다. 수업은 학교 진도에 맞춘 설명에 그치지 않고 모의고사를 시간에 맞춰 풀리고 단어 시험을 보는 실전 관리 중심이며, 중3·예비고1 신규반을 열 때 한 반 3명을 동시에 모집하는 방식으로 개강한다.",
+    "distinctiveTeaching": "레벨테스트 없는 전원을 대상, 학생이 세운 학습 계획과 실천 여부를 중심에 두고 자기 관리가 될 때까지 기다리는 소그룹 운영을 한다.",
+    "recentActivity": "2026년 7월 7일 2026년 1학기 마무리 글에서 고3 재원생의 1-2등급 유지와 최상위 단어 학습 상황을 전했고, 2026년 7월 14일에는 6명 모집 정원에 두 배 넘는 대기가 발생한 신규 모집 경험과 운영 원칙을 다시 정리했다.",
+    "strengths": [
+     "실명·직함·지역이 본인 블로그에 연속 공개됨",
+     "레벨테스트 없음·정원 3명·단일 학교 편성 등 원칙이 구체적",
+     "전단지 광고 없이 6년 운영이라는 지속성 근거"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/116",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 87,
+   "name": "박현기",
+   "role": "원장",
+   "academyName": "원키영어학원",
+   "region": "전라남도 순천시",
+   "province": "전라남도",
+   "cityDistrict": "순천시",
+   "overallRank": 38,
+   "regionRank": 1,
+   "buildItScore": 65,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "diagnose_placement",
+    "stage_pathway",
+    "own_materials",
+    "results_public"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "박현기 — 원키영어학원 대표 겸 원장 (블로그 원장 Ki쌤), 순천 해룡면 오프라인 운영.",
+    "educationPhilosophy": "이번 시험 점수보다 더 중요한 건, 이번 시험을 준비하며 만든 공부 습관이다. 공부는 머리가 아니라 엉덩이로 하는 것이며, 지식을 담아낼 공부 그릇을 빚는 것이 입시 영어의 본질이다.",
+    "curriculum": "어휘·문법·독해·쓰기 4개 영역을 세분화 분석하는 정밀 진단 레벨 테스트와 15단계 초정밀 레벨링으로 반을 편성한다. 학교별 3개년 기출 분석 기반 내신 대비와 3감각 학습법·스터디카페 관리형 자습으로 운영한다.",
+    "distinctiveTeaching": "정밀 진단 리포트와 15단계 레벨링, 학교별 기출 변형 적중 내신 대비, 3감각 학습법과 관리형 스터디카페 자습을 결합한 순천 신대지구 입시영어 시스템.",
+    "recentActivity": "2026-05-18 레벨테스트 상담 안내, 2026-05-20 원장 칼럼, 2026-05-29 중등 기말고사 내신대비 시작안내 게시.",
+    "strengths": [
+     "15단계 초정밀 레벨링·정밀 진단 시스템",
+     "학교별 기출 분석 내신 대비와 관리형 자습"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/87",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 86,
+   "name": "이중하",
+   "role": "원장",
+   "academyName": "메가스타잉글리쉬어학원",
+   "region": "전라남도 목포시",
+   "province": "전라남도",
+   "cityDistrict": "목포시",
+   "overallRank": 29,
+   "regionRank": 1,
+   "buildItScore": 70,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "regional_mission",
+    "stage_pathway",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "이중하 — 메가스타잉글리쉬어학원 원장, 목포 옥암동 오프라인 운영.",
+    "educationPhilosophy": "유명세를 얻거나 돈을 버는 것이 목표였다면 목포로 내려오지 않았을 것이다. 목포의 우수한 인재들이 더 높이 성장할 수 있도록 보탬이 되는 것이 목표이며, 시험점수 지향의 획일적 교육이 아닌 균형 있는 학습습관과 환경을 제시한다.",
+    "curriculum": "초등부·중등부·고등부·성인토익 과정의 종합 영어학원으로, 독해·문법·듣기·말하기·쓰기를 균형 있게 구성하고 기초입문부터 실전고급까지 단계별 체계로 운영한다. 원장 직강의 방학특강과 학기 정규반을 병행한다.",
+    "distinctiveTeaching": "원장 직강 중심의 단계별 수업과 5영역 균형 커리큘럼. 수도권 수준의 교육환경을 목포에 구현하는 것을 운영 방침으로 한다.",
+    "recentActivity": "2026-05-27 여름방학 24기 토익특강 안내, 2026-08-27 가을학기 개강 안내 게시.",
+    "strengths": [
+     "2014년 개원 후 목포 상주 오프라인 운영",
+     "원장 직강·단계별 커리큘럼"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/86",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 66,
+   "name": "문나경",
+   "role": "원장",
+   "academyName": "기지시GNB영어수학학원",
+   "region": "충청남도 당진시",
+   "province": "충청남도",
+   "cityDistrict": "당진시",
+   "overallRank": 11,
+   "regionRank": 1,
+   "buildItScore": 79,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "regional_mission",
+    "diagnose_placement",
+    "stage_pathway",
+    "individual_custom",
+    "own_materials",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "당진 송악권에서 초등부터 고등까지 직접 영어수업을 맡고, 지역 학교 10년치 기출과 누적반복 학습을 결합해 장기 성장 경로를 설계하는 원장.",
+    "educationPhilosophy": "문나경 원장은 당진 학생도 대도시 학생과 경쟁할 영어 실력을 갖춰야 한다는 문제의식에서 교육을 시작했다. 단기 처방보다 초등부터 중·고등까지 시간과 반복을 축적해 영어 기반을 만들고, 지역의 한계를 학습의 한계로 두지 않는 방향을 강조한다.",
+    "curriculum": "입학 때 독해·문법·어휘 지필검사, 1:1 인터뷰, 학습이력을 함께 진단하고 초등 4~6단계 및 중고등 1:1 개별 과정으로 연결한다. 단어·문장·소리·문법을 1·7·30일 주기로 누적 반복하며, 그래머 개념헌터스와 구문 분석·직독직해, 학교별 10년 기출 변형문제를 결합한다.",
+    "distinctiveTeaching": "원장이 모든 핵심 영어수업을 직접 맡고, 누적 테스트 미통과 시 재학습, 학생별 학습일지, 풀이 과정 전수 검토를 한 기준으로 운영한다. 자체 문법 시스템과 송악중·송악고·신평고 기출 DB를 장기 누적 학습에 연결한다.",
+    "recentActivity": "2026년 4월 공개된 현장 리포트에서 당진 송악읍의 현재 운영시간, 초중고 재원 학교, 원장 직강 및 2025년 수업 성과와 공식 블로그 활동이 확인된다.",
+    "strengths": [
+     "초등에서 고등까지 이어지는 누적반복 성장 트랙을 구체적으로 운영한다.",
+     "원장 직강과 학생별 학습일지·풀이 과정 검토로 수업 기준을 일관되게 유지한다.",
+     "지역 학교 10년치 기출 DB와 자체 변형문제를 실제 내신 수업에 연결한다.",
+     "자체 문법·구문 콘텐츠를 반복 주기와 결합한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/66",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 67,
+   "name": "임진주",
+   "role": "원장",
+   "academyName": "원더아이·원더크라운 영어학원",
+   "region": "충청남도 공주시",
+   "province": "충청남도",
+   "cityDistrict": "공주시",
+   "overallRank": 17,
+   "regionRank": 1,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "mind_growth",
+    "student_agency",
+    "stage_pathway",
+    "individual_custom"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "공주에서 유아·초등의 영어 기초부터 중·고등 입시 심화까지 이어지는 두 교육 브랜드를 운영하며, 소수정예 1:1 티코칭과 단계별 과정을 설계한 대표원장.",
+    "educationPhilosophy": "임진주 원장이 운영하는 원더아이의 공개 소개는 학생 스스로가 학습의 주체가 되어 영어에 대한 자신감과 놀라운 성장을 경험하는 것을 지향한다. 이를 위해 일률적 대형 강의보다 소수정예와 개인별 코칭, 지속적인 교재·수업자료 연구를 교육 운영의 중심에 둔다.",
+    "curriculum": "유아·초등은 영어 기초와 수준별 A·B 과정, 중·고등은 예비중등·중등·고등·고등심화 단계로 이어진다. 4명 내외 소수 그룹에서 1:1 티코칭으로 개인 수준과 속도를 점검하고, 중고등 과정은 내신·수능과 심화 훈련, 개별 상담 공간을 연결한다.",
+    "distinctiveTeaching": "유아·초등 원더아이와 중·고등 원더크라운을 분리하면서도 한 성장 경로로 연결하고, 4명 소수정예 안에서 개인별 티코칭과 교재·수업자료 연구를 결합한다.",
+    "recentActivity": "2026년 8월 공주 소재 두 학원의 운영시간, 수강 과정과 현재 리뷰·수강 정보가 갱신되어 오프라인 운영이 확인된다.",
+    "strengths": [
+     "유아·초등 기초에서 중·고등 심화까지 연속적인 성장 경로를 갖췄다.",
+     "4명 소수정예와 1:1 티코칭으로 개인 수준과 속도를 반영한다.",
+     "교재 연구·개발과 수업자료 제작을 공개적으로 강조한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/67",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 65,
+   "name": "윤성훈",
+   "role": "원장",
+   "academyName": "닥터윤영어학원",
+   "region": "충청남도 천안시",
+   "province": "충청남도",
+   "cityDistrict": "천안시",
+   "overallRank": 16,
+   "regionRank": 1,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "habit_structure",
+    "regional_mission",
+    "diagnose_placement",
+    "stage_pathway",
+    "own_materials"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "천안 불당권에서 초·중·고 학생을 대상으로 유창성과 정확성을 함께 기르는 영어교육을 설계하고, 학교별 내신 분석과 자체 교재를 수업에 연결하는 원장.",
+    "educationPhilosophy": "윤성훈 원장은 영어 실력은 말하기·쓰기에서의 유창성과 읽기·문장 구조 이해에서의 정확성이 균형을 이뤄야 한다고 설명한다. 단순 암기보다 문장의 기능과 세부 독해를 이해하도록 지도하는 방향을 강조한다.",
+    "curriculum": "초등부터 고등까지 레벨 진단과 학교별 반 편성을 바탕으로 자체 교재, 내신·수능 과정을 운영한다. 최근 학교별 시험을 직접 분석해 출제 유형과 문장 구조·세부 독해 포인트를 수업과 오답 지도에 반영하는 구조가 공개되어 있다.",
+    "distinctiveTeaching": "학교별 시험 분석을 정기적으로 공개하고 그 결과를 자체 교재·문장 구조 이해·세부 독해 중심의 수업에 연결하며, 유창성과 정확성의 균형을 학년별 과정에 일관되게 적용한다.",
+    "recentActivity": "2026년 7~8월에도 천안 지역 학원 운영 정보와 학교별 영어 시험 분석 콘텐츠가 갱신되어 현재 오프라인 수업 활동이 확인된다.",
+    "strengths": [
+     "영어 유창성과 정확성을 함께 기르는 명확한 교육철학을 공개했다.",
+     "학교별 내신 시험을 분석해 수업 설계와 학습 포인트로 환류한다.",
+     "자체 교재와 레벨·학교별 반 구성을 통해 학년별 과정을 구체화한다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/65",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 64,
+   "name": "한동희",
+   "role": "원장",
+   "academyName": "한동희영어학원",
+   "region": "충청남도 보령시",
+   "province": "충청남도",
+   "cityDistrict": "보령시",
+   "overallRank": 24,
+   "regionRank": 1,
+   "buildItScore": 73,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "regional_mission",
+    "stage_pathway"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "보령시 명천동에서 초3부터 고3까지 어휘·문법·독해·영작과 내신·수능을 단계별로 지도하는 영어교육 전공 원장",
+    "educationPhilosophy": "영어의 어휘·문법·독해·영작을 분절된 문제풀이가 아니라 학년별 다음 단계로 이어지는 기초 체계로 지도한다. 초등 기초 완성에서 중등 내신과 고등 선행, 이후 수능까지 연결해 학생이 지역 안에서도 장기적인 입시 영어 경로를 밟도록 돕는 것을 중시한다.",
+    "curriculum": "초등 3학년부터 기초를 완성하고 중등 과정을 선행한다. 중등은 학교 내신과 고등 선행을 병행하며, 고등은 내신·모의고사·수능 대비에 집중하고 어휘·문법·독해·영작 전 영역을 학년별 목표에 맞춰 지도한다.",
+    "distinctiveTeaching": "초3부터 고3까지 한 교육 경로 안에서 기초→중등 내신·고등 선행→고등 내신·수능을 연결하며 영어 전 영역을 단계적으로 지도한다.",
+    "recentActivity": "2026년 보령시 명천동 오프라인 학원 정보가 업데이트됐고, 현재 영어 보조강사 채용에서 실제 단어·해석 확인, 채점·교재 제본 등 수업 운영이 확인된다.",
+    "strengths": [
+     "영어교육 전공과 TESOL 과정 기반 전문성",
+     "초3부터 고3까지 이어지는 장기 학년별 로드맵",
+     "어휘·문법·독해·영작 전 영역 통합 지도",
+     "지역 고등학교 진학과 내신을 다루는 공개 교육 콘텐츠"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/64",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 63,
+   "name": "이유진",
+   "role": "원장",
+   "academyName": "탕정역 유창한 영어학원",
+   "region": "충청남도 아산시",
+   "province": "충청남도",
+   "cityDistrict": "아산시",
+   "overallRank": 15,
+   "regionRank": 1,
+   "buildItScore": 75,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "communication_first",
+    "mind_growth",
+    "student_agency",
+    "stage_pathway",
+    "individual_custom"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "아산시 탕정에서 교육심리학과 언어습득 경험을 결합한 초·중·고 영어 개별지도 시스템을 운영하는 원장",
+    "educationPhilosophy": "영어를 단기간 시험 암기로 소비하기보다 가장 쉽게 배우고 평생 사용할 수 있는 언어로 장기기억화하는 것을 목표로 한다. 학생별 성취 속도와 심리적 특성을 존중하는 개별지도를 통해 자신감, 실제 의사소통, 입시 성취가 함께 성장해야 한다고 본다.",
+    "curriculum": "초등은 수준별 교재와 원어민 1:1을 통해 듣기·말하기·읽기·쓰기를 개별 지도하고 PSI 성취 기반 학습으로 자기주도성을 기른다. 중·고등은 메타인지 문법, 단계별 문법 완성, 실전 문제풀이를 연결하며 테스트→원어민 수업→문법→복습의 4단계 순환 수업을 운영한다.",
+    "distinctiveTeaching": "교육심리학을 접목한 PSI 개별지도와 4단계 30분 순환 수업으로 실제 영어와 내신·수능 준비를 동시에 설계한다.",
+    "recentActivity": "2026년 교습비와 운영시간, 탕정면 오프라인 주소가 공개되어 있고 2026년 재원생 후기에서도 개별지도 운영이 확인된다.",
+    "strengths": [
+     "교육심리학과 언어습득 경험을 결합한 개별지도 설계",
+     "원어민 1:1과 한국식 문법·입시 학습의 통합",
+     "테스트·원어민 수업·문법·복습의 명확한 순환 구조",
+     "초등 말하기부터 중고등 메타인지·수능까지 이어지는 장기 과정"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/63",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 61,
+   "name": "박권호",
+   "role": "원장",
+   "academyName": "센텀영어학원",
+   "region": "충청북도 증평군",
+   "province": "충청북도",
+   "cityDistrict": "증평군",
+   "overallRank": 23,
+   "regionRank": 1,
+   "buildItScore": 73,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "regional_mission",
+    "stage_pathway",
+    "parent_communication",
+    "solo_direct_teaching"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "증평군 송산리에서 초·중·고 내신과 수능 영어를 직접 지도하는 한국교원대 대학원 영어교육 전공 원장",
+    "educationPhilosophy": "변화하는 국가 교육과정과 학교별 평가를 학부모와 학생이 이해할 수 있도록 해석하고, 이를 실제 학습 준비로 연결하는 것을 중시한다. 초등부터 고등까지 장기적인 입시 영어 흐름을 한 기관에서 이어가되 직접 강의와 소규모 학습 환경을 통해 현장 밀착도를 유지한다.",
+    "curriculum": "초등부터 고3까지 내신·수능 중심의 단계별 입시 영어 과정을 운영하며 원장이 직접 수업한다. 중·고등부 현장 경력을 바탕으로 학교 시험과 개정 교육과정을 분석하고, 중등 시험기간에는 학교 내신 준비와 학생 관리를 병행한다.",
+    "distinctiveTeaching": "영어교육 대학원 전문성, 국가 교육과정 설명, 학교별 시험 분석을 원장 직강의 지역 입시 수업으로 연결한다.",
+    "recentActivity": "2026년 초·중등 영어 강사 채용과 2026년 교습과목·운영 정보가 확인되며 증평군 송산리 오프라인 학원이 현재 운영 중이다.",
+    "strengths": [
+     "한국교원대 대학원 영어교육 전공을 현장 수업에 연결",
+     "초등부터 고3까지 이어지는 내신·수능 학습 체계",
+     "개정 교육과정 설명과 학교 시험 분석 활동",
+     "원장 직강과 소규모 강의실 기반 지도"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/61",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 60,
+   "name": "조은아",
+   "role": "원장",
+   "academyName": "조은아영어교습소",
+   "region": "충청북도 충주시",
+   "province": "충청북도",
+   "cityDistrict": "충주시",
+   "overallRank": 48,
+   "regionRank": 1,
+   "buildItScore": 58,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "anti_roterism",
+    "stage_pathway",
+    "input_output_loop"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "충주시 연수동에서 중·고등 영어 내신과 수능을 지도하는 1인 영어교습소 대표 교육자",
+    "educationPhilosophy": "문법 지식을 분리된 암기로 두지 않고 문장 구조 이해를 거쳐 독해로 연결하는 기초 체계를 중시한다. 중학생에게는 교과 내신 기반을, 고등학생에게는 그 기반을 수능 유형 독해까지 확장하는 연속적인 학습 흐름을 지향한다.",
+    "curriculum": "중등부는 학교 교과 과정에 맞춘 내신 지도와 Grammar·Structure 중심의 기초 형성으로 시작한다. 고등부는 Grammar에서 Reading까지 단계적으로 연결하고 내신과 수능 유형 독해·문제풀이를 함께 운영한다.",
+    "distinctiveTeaching": "중·고등 과정을 문법→구조→독해의 한 흐름으로 연결하고, 소규모 환경에서 사전·문법 교재·영어 원서를 함께 활용한다.",
+    "recentActivity": "현재 운영시간과 충주시 오프라인 주소가 공개되어 있으며, 국세청 기반 사업자 정보에서 계속사업자 상태와 대표자 조은아가 확인된다.",
+    "strengths": [
+     "문법과 문장 구조를 독해로 연결하는 명확한 단계형 커리큘럼",
+     "중등 내신에서 고등 수능까지 이어지는 연속 지도",
+     "소규모 교습 환경과 다양한 영어 학습 자료 활용"
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/60",
+   "collectedAt": "2026-10-14"
+  },
+  {
+   "id": 58,
+   "name": "이금연",
+   "role": "원장",
+   "academyName": "제니퍼영어닷컴어학원",
+   "region": "충청북도 청주시",
+   "province": "충청북도",
+   "cityDistrict": "청주시",
+   "overallRank": 31,
+   "regionRank": 1,
+   "buildItScore": 68,
+   "rankAsOf": "2026-09-14",
+   "tags": [
+    "habit_structure",
+    "diagnose_placement",
+    "stage_pathway",
+    "own_materials",
+    "input_output_loop",
+    "parent_communication"
+   ],
+   "usableReference": true,
+   "card": {
+    "identitySummary": "청주시 오창읍 제니퍼영어닷컴어학원과 제니퍼키즈를 운영하며 유아부터 고등까지 지도하는 제니퍼 원장(대표자 이금연).",
+    "educationPhilosophy": "영어는 문제를 푸는 지식에 머물지 않고 실제로 말할 수 있어야 하며, 즐겁게 배운 영어가 평생 지속된다고 본다. 매일 균형 잡힌 입력과 출력에 노출시키되 학생의 레벨과 성향에 맞춰 영어·한국어 비중을 조절하는 것을 중시한다.",
+    "curriculum": "입학 시 지필·구두·파닉스 블렌딩을 함께 진단하고 7~10단계로 배치한다. 매일 영어책 한 권과 자체 워크북으로 입력을 누적하고 모든 반에 주 1~2회 원어민 수업을 배치하며, 단어는 영영 풀이·예문·유의어 누적 테스트로 확인하고 AR·Lexile·음소인식·영어 지시 반응으로 성장을 측정한다.",
+    "distinctiveTeaching": "매일 원서 한 권과 자체 워크북을 완결하는 입력 루틴, 원어민 출력 수업, 다중 지표 진단과 매일·월간 피드백을 결합한 운영 구조가 특징이다.",
+    "recentActivity": "2026-05-19 현장 팩트리포트, 2026-06-15·24 리딩 챌린지와 장학카드 콘텐츠, 2026년 오프라인 운영 정보가 확인된다.",
+    "strengths": [
+     "입력과 출력을 매일 결합한 수업 루틴이 구체적이다.",
+     "자체 워크북과 여러 진단 지표를 활용한다.",
+     "학부모에게 매일 피드백·수업영상·월간 보고를 제공한다.",
+     "교육 세미나 강사와 TOSEL Lab 자문 활동 신호가 있다."
+    ]
+   },
+   "sourceCardUrl": "https://feel2real.co.kr/chart/educators/58",
+   "collectedAt": "2026-10-14"
+  }
+ ],
+ "excluded": {
+  "empty_card": [
+   48,
+   47,
+   39,
+   38,
+   37,
+   34,
+   33,
+   30,
+   29,
+   27,
+   21,
+   20,
+   16,
+   12,
+   11,
+   7,
+   6,
+   44,
+   43,
+   42,
+   40,
+   36,
+   35,
+   32,
+   31,
+   28,
+   26,
+   25,
+   24,
+   23,
+   22,
+   19,
+   18,
+   17,
+   15,
+   14,
+   13,
+   10,
+   9,
+   8
+  ],
+  "research_pending": [
+   93,
+   90,
+   109,
+   108,
+   102,
+   101,
+   106,
+   83,
+   79,
+   78,
+   77,
+   55,
+   53,
+   52,
+   51,
+   62,
+   59
+  ],
+  "duplicate": [
+   {
+    "id": 81,
+    "reason": "id 80 동일인(토마스|중앙K 영어), 상위 순위 80만 유지"
+   }
+  ]
+ }
+}

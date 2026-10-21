@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.Academy
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal.Item;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal.Type;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.EducatorReference;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider.AiCompletion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AiProvider.AiTaskLimits;
@@ -57,15 +58,18 @@ public class AcademyAiProposalService {
   private final AcademyAiContextService contextService;
   private final AcademyAiPromptBuilder promptBuilder;
   private final AiProvider aiProvider;
+  private final EducatorKnowledgeService educatorKnowledge;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public AcademyAiProposalService(
       AcademyAiContextService contextService,
       AcademyAiPromptBuilder promptBuilder,
-      AiProvider aiProvider) {
+      AiProvider aiProvider,
+      EducatorKnowledgeService educatorKnowledge) {
     this.contextService = contextService;
     this.promptBuilder = promptBuilder;
     this.aiProvider = aiProvider;
+    this.educatorKnowledge = educatorKnowledge;
   }
 
   public AcademyAiProposal generate(
@@ -77,8 +81,10 @@ public class AcademyAiProposalService {
     }
 
     AcademyAiContext context = contextService.buildContext(principal);
+    // Chart 교육자 참고 사례(다른 교육자 원문 — 의뢰 학원 사실이 아님). 없으면 빈 목록 = 기존 프롬프트 그대로.
+    List<EducatorReference> references = educatorKnowledge.search(context, safeInstructions);
     String prompt = promptBuilder.build(
-        AcademyAiTaskType.ACADEMY_COMPOSE, context, null, null, safeInstructions);
+        AcademyAiTaskType.ACADEMY_COMPOSE, context, null, null, safeInstructions, references);
 
     AiCompletion completion = aiProvider.complete(prompt, new AiTaskLimits(MAX_OUTPUT_CHARS));
     if (!completion.ok()) {
