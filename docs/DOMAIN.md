@@ -1774,3 +1774,14 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - `easy_agent_actions`: 계정 변경(`SELECT_ACCOUNT`)과 import 확정(`CONFIRM_IMPORT`) 제안을 보존한다. 상태는 `PROPOSED → APPLIED|REJECTED|STALE|EXPIRED|FAILED` 단방향이다.
 - 승인 시 row/batch를 사업체 범위에서 다시 찾고 제안 당시 account/status 및 READY/미분개 조건을 재검증한다. 변경되거나 만료된 제안은 적용하지 않는다.
 - LLM 출력은 권한, 금액, 거래일, 원본 데이터의 source of truth가 아니며 서버 allowlist 의도와 기존 Easy 서비스 호출에만 사용한다.
+
+
+## 입시자료 전체 승격 제외 규칙 (admissions activate-all)
+
+입시 공식자료·학과·전형·일정의 학년도 전체 ACTIVE 승격(`AdmissionsActivationService.activateAll`)에는 자료 단위 제외 규칙이 있다.
+
+- 제외 키는 공식자료의 `file_key`(= 적재 시드의 `document_key`)다. 제외된 자료는 상태가 DRAFT/REVIEW여도 승격되지 않고 그대로 남는다.
+- 제외는 출처를 따라 전파된다: 제외 자료를 `source`로 삼는 학과·전형·일정도 함께 승격에서 제외된다. 출처가 없는 행은 제외 근거가 없어 승격 대상에 남는다.
+- 제외는 승격 단계에서 원천 적용한다. "전체 승격 후 특정 자료만 비활성화"하는 방식은 쓰지 않는다(승인 이력·검색 근거 일관성 때문).
+- 제외 건수는 자료 수와 하위 행 수를 구분해 결과·응답·감사 로그에 남긴다. 제외를 지정하지 않으면 기존 정책(해당 학년도 전체 ACTIVE)이 그대로 적용된다.
+- 대표 용도: 공식 원본이 확보되지 않은 미러본 자료(예: 중앙대 수시 `doc_cau_2027_susi`)를 검증 완료 전까지 ACTIVE로 올리지 않는 것.

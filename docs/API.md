@@ -4829,7 +4829,8 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/dashboard/admissions/history`: 현재 계정·현재 소유 학원에 한정한 최근 20건. userId/academyId/sessionToken은 선택자로 받지 않는다. 현재 DB role과 소유 학원 연결을 재확인하며 ADMIN도 자기 이력만 조회한다. 응답 no-store. 기존 session_token 컬럼에 서버 HMAC namespace를 사용하므로 스키마 변경 없음; 공개 API는 member_ namespace 입력을 차단한다.
 - `GET /api/admin/admissions/materials?academicYear=2027&status=DRAFT&page=0`: ADMIN 전용 공식 원문 자료 목록(페이지 20건).
 - `POST /api/admin/admissions/materials/{id}/review`: 기존 지식 검수와 동일하게 action=review/approve/reject/archive. DRAFT→REVIEW→ACTIVE 순서, 화면은 ACTIVE를 APPROVED(승인)로 표시한다. 연관 세부 행 자동 승인 없음.
-- `POST /api/admin/admissions/activate-all`: ADMIN 전용. body `{academicYear:2027|2028, confirm:"ACTIVATE-ALL-<학년도>", note?}`. 해당 학년도의 공식자료·학과·전형·일정 중 DRAFT·REVIEW를 한 트랜잭션으로 ACTIVE 승격(ARCHIVED·다른 학년도 제외, 멱등). 학과·전형·일정에는 개별 승인 API가 없어 이 경로가 유일하다. 확인 문자열 불일치·미지원 학년도는 400. 실행 관리자·건수를 로그로 남긴다. 정책: 신규 입시자료는 전체 ACTIVE가 기본이며 오류는 수정·기록한다.
+- `POST /api/admin/admissions/activate-all`: ADMIN 전용. body `{academicYear:2027|2028, confirm:"ACTIVATE-ALL-<학년도>", note?, excludeFileKeys?:[자료 fileKey...]}`. 해당 학년도의 공식자료·학과·전형·일정 중 DRAFT·REVIEW를 한 트랜잭션으로 ACTIVE 승격(ARCHIVED·다른 학년도 제외, 멱등). 학과·전형·일정에는 개별 승인 API가 없어 이 경로가 유일하다. 확인 문자열 불일치·미지원 학년도는 400. 실행 관리자·건수를 로그로 남긴다. 정책: 신규 입시자료는 전체 ACTIVE가 기본이며 오류는 수정·기록한다.
+  - 제외 옵션 `excludeFileKeys`: 지정한 fileKey(= 시드 document_key)의 공식자료는 승격 단계에서 원천 제외되고, 그 자료를 출처로 삼는 학과·전형·일정도 함께 제외된다(승격 후 비활성화 방식 아님). 응답에 `excludedMaterials`(제외된 자료 수)·`excludedChildren`(제외된 하위 행 수)을 구분해 포함하며, 제외 건수는 해당 학년도·DRAFT/REVIEW인 승격 대상 행만 센다. 미지정·빈 목록이면 기존과 동일하게 전체 승격된다. 용도: 공식 원본이 아닌 자료(예: 중앙대 수시 미러본 `doc_cau_2027_susi`)를 ACTIVE로 올리지 않기 위함.
 - 기존 `/api/admin/admissions/knowledge`에 academicYear 선택 필터와 검수용 content 필드 추가. ADMIN만 열람·검수 가능.
 - 학과·전형·일정의 연결 원문 및 연결된 지식 원문도 ACTIVE·동일 학년도여야 답변 근거로 검색한다. DRAFT·REVIEW 제외, 테스트 시드 자동 적재 없음.
 - 배포 후 운영 계정 검증 및 운영 자료 승인/적재는 별도 승인 범위. 개발·CI는 격리 DB만 사용한다.

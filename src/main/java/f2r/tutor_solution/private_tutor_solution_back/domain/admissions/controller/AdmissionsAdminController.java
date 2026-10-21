@@ -136,6 +136,10 @@ public class AdmissionsAdminController {
     /**
      * 한 학년도의 공식자료·학과·전형·일정을 전체 ACTIVE로 승격한다(DRAFT·REVIEW만 대상, ARCHIVED 제외).
      * 확인 문자열 {@code ACTIVATE-ALL-<학년도>}가 필요하다. 실행 관리자와 건수를 로그로 남긴다.
+     *
+     * <p>선택 필드 {@code excludeFileKeys}(자료 fileKey 목록)를 주면 해당 자료와 그 자료를 출처로 삼는
+     * 학과·전형·일정을 승격에서 원천 제외한다. 응답의 {@code excludedMaterials}·{@code excludedChildren}에
+     * 제외 건수를 구분해 돌려준다.
      */
     @PostMapping("/activate-all")
     public ResponseEntity<Map<String, Object>> activateAll(@RequestBody ActivateAllRequest request,
@@ -144,15 +148,31 @@ public class AdmissionsAdminController {
             return ResponseEntity.badRequest().body(Map.of("error", "academicYear required"));
         }
         try {
-            var r = activationService.activateAll(request.academicYear(), request.confirm());
-            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} note={}",
+            var excludeFileKeys = normalizeExcludeFileKeys(request.excludeFileKeys());
+            var r = activationService.activateAll(request.academicYear(), request.confirm(), excludeFileKeys);
+            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} excludedMaterials={} excludedChildren={} excludedKeys={} note={}",
                     actorOf(authentication), r.academicYear(), r.materials(),
-                    r.departments(), r.types(), r.schedules(), request.note());
+                    r.departments(), r.types(), r.schedules(), r.excludedMaterials(), r.excludedChildren(),
+                    excludeFileKeys, request.note());
             return ResponseEntity.ok(Map.of("academicYear", r.academicYear(), "materials", r.materials(),
-                    "departments", r.departments(), "types", r.types(), "schedules", r.schedules(), "status", "ACTIVATED"));
+                    "departments", r.departments(), "types", r.types(), "schedules", r.schedules(),
+                    "excludedMaterials", r.excludedMaterials(), "excludedChildren", r.excludedChildren(),
+                    "status", "ACTIVATED"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         }
+    }
+
+    /** 제외 fileKey 정규화: null·공백 항목 제거, 앞뒤 공백 제거, 중복 제거. */
+    private static java.util.Set<String> normalizeExcludeFileKeys(java.util.List<String> keys) {
+        if (keys == null) return java.util.Set.of();
+        var out = new java.util.LinkedHashSet<String>();
+        for (String key : keys) {
+            if (key == null) continue;
+            String trimmed = key.trim();
+            if (!trimmed.isEmpty()) out.add(trimmed);
+        }
+        return out;
     }
 
     /** 감사 로그용 실행자 표기. 토큰 검증용 값(credentialStamp)은 남기지 않는다. */
@@ -165,7 +185,8 @@ public class AdmissionsAdminController {
         return String.valueOf(authentication.getName());
     }
 
-    public record ActivateAllRequest(Integer academicYear, String confirm, String note) {}
+    public record ActivateAllRequest(Integer academicYear, String confirm, String note,
+                                     java.util.List<String> excludeFileKeys) {}
 
     /** 벡터 인덱스 재로드. */
     @PostMapping("/index/reload")

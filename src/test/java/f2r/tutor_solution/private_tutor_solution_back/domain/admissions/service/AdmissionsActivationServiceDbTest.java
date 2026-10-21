@@ -22,6 +22,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -149,6 +151,53 @@ class AdmissionsActivationServiceDbTest {
 
         // then
         assertThat(again.materials() + again.departments() + again.types() + again.schedules()).isZero();
+    }
+
+    @Test
+    @DisplayName("given 제외 fileKey 지정 when 전체 승격하면 then 그 자료와 하위 학과·전형·일정만 DRAFT로 남고 제외 건수가 구분된다")
+    void activateAll_excludesMaterialAndItsChildren() {
+        // when
+        var r = activation.activateAll(2027, "ACTIVATE-ALL-2027", Set.of("doc_tst_2027_susi"));
+
+        // then — 승격 건수에서 제외분만 빠지고, 제외 건수가 따로 잡힌다
+        assertThat(r.materials()).isEqualTo(1);
+        assertThat(r.departments()).isEqualTo(1);
+        assertThat(r.types()).isZero();
+        assertThat(r.schedules()).isZero();
+        assertThat(r.excludedMaterials()).isEqualTo(1);
+        assertThat(r.excludedChildren()).isEqualTo(3);
+
+        // then — 제외 자료와 그 하위 행은 DRAFT 유지, 나머지는 ACTIVE
+        assertThat(materials.findAll().stream().filter(m -> "doc_tst_2027_susi".equals(m.getFileKey())))
+                .allSatisfy(m -> assertThat(m.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+        assertThat(materials.findAll().stream().filter(m -> "doc_exa_2027".equals(m.getFileKey())))
+                .allSatisfy(m -> assertThat(m.getStatus()).isEqualTo(KnowledgeStatus.ACTIVE));
+        assertThat(departments.findAll().stream().filter(d -> "doc_tst_2027_susi".equals(d.getSource().getFileKey())))
+                .allSatisfy(d -> assertThat(d.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+        assertThat(departments.findAll().stream().filter(d -> "doc_exa_2027".equals(d.getSource().getFileKey())))
+                .allSatisfy(d -> assertThat(d.getStatus()).isEqualTo(KnowledgeStatus.ACTIVE));
+        assertThat(types.findAll().stream().filter(t -> t.getAcademicYear() == 2027))
+                .allSatisfy(t -> assertThat(t.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+        assertThat(schedules.findAll())
+                .allSatisfy(s -> assertThat(s.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+
+        // then — 제외된 일정은 검색 근거로 쓰이지 않는다
+        assertThat(search.search("테스트대 학교장추천 입력이 언제까지였죠?", null).evidence()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("given 제외를 지정하지 않음(빈 집합) when 전체 승격하면 then 기존과 동일하게 전부 승격되고 제외 건수는 0이다")
+    void activateAll_withEmptyExclusionsPromotesEverything() {
+        // when
+        var r = activation.activateAll(2027, "ACTIVATE-ALL-2027", Set.of());
+
+        // then
+        assertThat(r.materials()).isEqualTo(2);
+        assertThat(r.departments()).isEqualTo(2);
+        assertThat(r.types()).isEqualTo(1);
+        assertThat(r.schedules()).isEqualTo(1);
+        assertThat(r.excludedMaterials()).isZero();
+        assertThat(r.excludedChildren()).isZero();
     }
 
     @Test

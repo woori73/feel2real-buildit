@@ -62,3 +62,15 @@ test('given a year when building the confirmation then it matches the server rul
   assert.equal(load.confirmationFor(2027), 'ACTIVATE-ALL-2027');
   assert.equal(load.confirmationFor(2028), 'ACTIVATE-ALL-2028');
 });
+
+test('given blank exclude input when parsing then no keys are sent', () => {
+  assert.deepEqual(load.parseExcludeKeys(''), []);
+  assert.deepEqual(load.parseExcludeKeys('   '), []);
+  assert.deepEqual(load.parseExcludeKeys(null), []);
+  assert.deepEqual(load.parseExcludeKeys(undefined), []);
+});
+
+test('given comma-separated exclude keys when parsing then they are trimmed and deduplicated', () => {
+  assert.deepEqual(load.parseExcludeKeys('doc_cau_2027_susi'), ['doc_cau_2027_susi']);
+  assert.deepEqual(load.parseExcludeKeys(' doc_a , doc_b,,doc_a , '), ['doc_a', 'doc_b']);
+});
