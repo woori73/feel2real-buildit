@@ -13,7 +13,7 @@ from tokenizers import Tokenizer
 
 import embed_core
 
-MAX_TOKENS = int(os.getenv("EMBED_MAX_TOKENS", "512"))
+MAX_TOKENS = int(os.getenv("EMBED_MAX_TOKENS", "256"))
 MAX_BATCH = int(os.getenv("EMBED_MAX_BATCH", "8"))
 MAX_CHARS = int(os.getenv("EMBED_MAX_CHARS", "4000"))
 DIM = int(os.getenv("EMBED_DIM", "768"))
@@ -24,6 +24,8 @@ opts.intra_op_num_threads = int(os.getenv("EMBED_THREADS", "1"))
 opts.inter_op_num_threads = 1
 opts.enable_cpu_mem_arena = False  # 상주 메모리 증가 방지
 opts.enable_mem_pattern = False
+opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC  # 로드 시 메모리 급증 방지
+opts.add_session_config_entry("session.disable_prepacking", "1")  # 가중치 사본 방지
 session = ort.InferenceSession(os.environ["EMBED_MODEL_PATH"], opts, providers=["CPUExecutionProvider"])
 INPUTS = {i.name for i in session.get_inputs()}
 OUTPUTS = [o.name for o in session.get_outputs()]

@@ -1,6 +1,7 @@
 """실제 임베딩 서버로 라벨 질문셋을 돌려 유사도 하한을 제안한다. 질문별 '최고 유사도'가 앱이 보는 값이다."""
 import json
 import sys
+import time
 import urllib.request
 
 import embed_core
@@ -25,11 +26,20 @@ IRRELEVANT = ["오늘 점심 뭐 먹을까요", "강아지 훈련 방법 알려�
 
 
 def embed(texts, task):
+    t0 = time.time()
+    try:
+        return _embed(texts, task)
+    finally:
+        print("  embed %d texts (%s): %.2fs" % (len(texts), task, time.time() - t0), flush=True)
+
+
+def _embed(texts, task):
     req = urllib.request.Request(URL, json.dumps({"texts": texts, "task": task}).encode(),
                                  {"Content-Type": "application/json"})
-    return json.load(urllib.request.urlopen(req, timeout=30))["embeddings"]
+    return json.load(urllib.request.urlopen(req, timeout=180))["embeddings"]
 
 
+embed(["워밍업"], "document")
 docs = embed(DOCS, "document")
 
 

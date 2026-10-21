@@ -58,7 +58,7 @@ install)
   echo "model file: $PICK"
   for f in "$PICK" "${PICK}_data" tokenizer.json; do
     if [ "$f" = "${PICK}_data" ] && ! echo "$LIST" | grep -qx "$f"; then continue; fi
-    curl -fL --retry 3 -o "$BASE/model/$(basename "$f")" "https://huggingface.co/$HF_REPO/resolve/main/$f"
+    [ -s "$BASE/model/$(basename "$f")" ] || curl -fL --retry 3 -o "$BASE/model/$(basename "$f")" "https://huggingface.co/$HF_REPO/resolve/main/$f"
   done
   ( cd "$BASE/model" && ls -l && sha256sum "$(basename "$PICK")" tokenizer.json ) | tee "$BASE/MODEL_INFO"
   install -m 644 "$SRC/server.py" "$SRC/embed_core.py" "$SRC/calibrate.py" "$BASE/"
@@ -83,8 +83,8 @@ WorkingDirectory=$BASE
 Environment=EMBED_MODEL_PATH=$BASE/model/$(basename "$PICK")
 Environment=EMBED_TOKENIZER_PATH=$BASE/model/tokenizer.json
 Environment=EMBED_THREADS=1
+Environment=MALLOC_ARENA_MAX=2
 ExecStart=$BASE/venv/bin/python $BASE/server.py
-MemoryHigh=800M
 MemoryMax=900M
 MemorySwapMax=0
 CPUQuota=100%
@@ -120,11 +120,11 @@ U
   if ! curl -fsS --max-time 3 http://127.0.0.1:8081/health; then
     echo; echo "FAIL: 임베딩 서버 기동 실패"; journalctl -u f2r-embed -n 30 --no-pager; stop_embed; exit 5
   fi
-  echo; echo "== 보정(calibrate) =="
+  echo; echo "== 보정(calibrate) =="; echo "embed MemoryCurrent_MB(before)=$(( $(systemctl show f2r-embed -p MemoryCurrent --value) / 1048576 ))"
   CAL=0; "$PY" "$BASE/calibrate.py" | tee "$BASE/CALIBRATION" || CAL=1
   sleep 5; report
   if [ "$(avail_mb)" -lt 400 ] || ! app_ok || [ "$CAL" = 1 ]; then
-    echo "FAIL: 설치 후 안전 기준 미달 — 임베딩 중지"; stop_embed; systemctl disable f2r-embed >/dev/null 2>&1 || true; exit 6
+    echo "FAIL: 설치 후 안전 기준 미달 — 임베딩 중지"; journalctl -u f2r-embed -n 25 --no-pager; stop_embed; systemctl disable f2r-embed >/dev/null 2>&1 || true; exit 6
   fi
   echo "INSTALL_OK" ;;
 
