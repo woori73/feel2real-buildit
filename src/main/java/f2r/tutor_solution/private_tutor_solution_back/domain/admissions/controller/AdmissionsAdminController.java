@@ -160,12 +160,12 @@ public class AdmissionsAdminController {
             var r = activationService.activateAll(request.academicYear(), request.confirm(), excludeFileKeys);
             log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} excludedMaterials={} excludedChildren={} knowledgeItems={} excludedKeys={} note={}",
                     actorOf(authentication), r.academicYear(), r.materials(),
-                    r.departments(), r.types(), r.schedules(), r.excludedMaterials(), r.excludedChildren(),
+                    r.departments(), r.types(), r.schedules(), r.excludedMaterials(), r.excludedChildren(), r.knowledgeItems(),
                     excludeFileKeys, request.note());
             return ResponseEntity.ok(Map.of("academicYear", r.academicYear(), "materials", r.materials(),
                     "departments", r.departments(), "types", r.types(), "schedules", r.schedules(),
                     "excludedMaterials", r.excludedMaterials(), "excludedChildren", r.excludedChildren(),
-                    "status", "ACTIVATED"));
+                    "knowledgeItems", r.knowledgeItems(), "status", "ACTIVATED"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         }
