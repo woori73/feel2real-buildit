@@ -59,6 +59,8 @@ public class AdmissionsResearchService {
     private final AdmissionsEmbeddingProperties embeddingProps;
     private final AdmissionsEmbeddingClient embeddingClient;
     private final AdmissionsVectorIndex vectorIndex;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository typeRepository;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository scheduleRepository;
 
     @Getter
     @Builder
@@ -118,15 +120,17 @@ public class AdmissionsResearchService {
     public ResearchPack research(String questionText, Integer academicYearFilter) {
         List<String> keywords = keywordsOf(questionText);
         List<String> gaps = new ArrayList<>();
+        // 질문 임베딩은 한 번만 만든다. 서버가 느리거나 죽어 있어도 지연은 한 번(타임아웃)로 끝나고 키워드 검색으로 전환된다.
+        float[] queryVec = embedQuestion(questionText);
 
         // STEP1 — 2027 확정 공식자료 (ACTIVE + OFFICIAL + year_confirmed=TRUE)
-        List<Evidence> confirmed = searchConfirmedKnowledge(questionText, keywords, academicYearFilter);
+        List<Evidence> confirmed = searchKnowledgeEvidence(questionText, keywords, true, academicYearFilter, queryVec, STEP_CONFIRMED, SourceClass.OFFICIAL_CONFIRMED);
         if (confirmed.isEmpty()) {
             gaps.add("STEP1 2027 확정 공식자료: 키워드 일치 ACTIVE 자료 없음");
         }
 
         // STEP2 — 2028 계획 공식자료 (ACTIVE + OFFICIAL + year_confirmed=FALSE)
-        List<Evidence> planned = searchPlannedKnowledge(questionText, keywords, academicYearFilter);
+        List<Evidence> planned = searchKnowledgeEvidence(questionText, keywords, false, academicYearFilter, queryVec, STEP_PLANNED, SourceClass.OFFICIAL_PLANNED);
         if (!planned.isEmpty()) {
             gaps.add("STEP2 2028 계획자료 " + planned.size() + "건 — 답변 시 '계획 단계' 명시 필수");
         }
@@ -227,112 +231,137 @@ public class AdmissionsResearchService {
                 && java.util.Objects.equals(k.getSource().getAcademicYear(),k.getAcademicYear()));
     }
 
-    // ── STEP1: 2027 확정 공식자료 ────────────────────────────────────
+    // ── STEP1/2: 지식 항목 검색 — 구조화 필터 → 키워드 → (벡터 재정렬·관련성 하한) ──────────
 
-    List<AdmissionsKnowledgeItem> searchConfirmedKnowledgeItems(String questionText, List<String> keywords,
-                                                               Integer yearFilter) {
-        if (embeddingProps.isEnabled() && vectorIndex.isReady()) {
-            List<AdmissionsKnowledgeItem> hybrid = searchHybrid(questionText, keywords, true, yearFilter);
-            if (!hybrid.isEmpty()) return hybrid;
-        }
-        return searchLike(keywords, true, yearFilter);
+    private float[] embedQuestion(String questionText) {
+        if (!embeddingProps.isEnabled() || !vectorIndex.isReady()) return null;
+        return embeddingClient.embed(questionText);
     }
 
-    /** LIKE 검색 — ACTIVE + OFFICIAL + 확정/계획 구분 + 학년도 필터. */
-    List<AdmissionsKnowledgeItem> searchLike(List<String> keywords, boolean confirmedOnly, Integer yearFilter) {
-        if (keywords.isEmpty()) return List.of();
-        Specification<AdmissionsKnowledgeItem> spec = (root, query, cb) -> {
-            List<Predicate> kws = new ArrayList<>();
-            for (String kw : keywords) {
-                String p = "%" + kw + "%";
-                kws.add(cb.or(
-                        cb.like(root.get("title"), p),
-                        cb.like(root.get("content"), p),
-                        cb.like(root.get("tags"), p),
-                        cb.like(root.get("category"), p)));
-            }
-            List<Predicate> base = new ArrayList<>();
-            base.add(cb.equal(root.get("status"), AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE));
-            base.add(cb.equal(root.get("sourceClass"), AdmissionsKnowledgeItem.SourceClass.OFFICIAL));
-            // GUIDE(답변 형식 안내문)는 사실 근거가 아니다 → 근거 검색에서 제외
-            base.add(cb.equal(root.get("role"), AdmissionsKnowledgeItem.Role.FACT));
-            base.add(cb.equal(root.get("yearConfirmed"), confirmedOnly));
-            if (yearFilter != null) {
-                base.add(cb.equal(root.get("academicYear"), yearFilter));
-            }
-            base.add(cb.or(kws.toArray(new Predicate[0])));
-            query.orderBy(cb.desc(root.get("createdAt")));
-            return cb.and(base.toArray(new Predicate[0]));
-        };
-        return knowledgeRepository.findAll(spec, PageRequest.of(0, CASE_CANDIDATE_WINDOW)).getContent().stream()
-                .filter(AdmissionsResearchService::approvedLinkedSource)
-                .sorted(Comparator.comparingInt((AdmissionsKnowledgeItem k) ->
-                        keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2
-                                + keywordHits(keywords, k.getContent())).reversed())
-                .limit(PER_STEP_LIMIT)
+    private List<Evidence> searchKnowledgeEvidence(String questionText, List<String> keywords, boolean confirmedOnly,
+                                                   Integer yearFilter, float[] queryVec, int stepNo, SourceClass cls) {
+        return searchKnowledgeItems(questionText, keywords, confirmedOnly, yearFilter, queryVec).stream()
+                .map(k -> toEvidence(k, stepNo, cls))
                 .toList();
     }
 
-    /** 하이브리드 검색 (LIKE + 벡터). */
-    List<AdmissionsKnowledgeItem> searchHybrid(String questionText, List<String> keywords,
-                                              boolean confirmedOnly, Integer yearFilter) {
-        float[] queryVec = embeddingClient.embed(questionText);
-        if (queryVec == null) return List.of();
-        List<AdmissionsKnowledgeItem> likeCandidates = searchLike(keywords, confirmedOnly, yearFilter);
+    /**
+     * 벡터는 후보를 찾아오지 않고, 구조화 필터를 통과한 후보의 순서만 정한다.
+     * 키워드 일치가 없는 후보는 코사인 유사도가 하한({@code minSimilarity}) 이상일 때만 근거가 된다.
+     */
+    List<AdmissionsKnowledgeItem> searchKnowledgeItems(String questionText, List<String> keywords,
+                                                       boolean confirmedOnly, Integer yearFilter, float[] queryVec) {
+        List<AdmissionsKnowledgeItem> eligible = eligibleItems(questionText, confirmedOnly, yearFilter);
+        if (eligible.isEmpty()) return List.of();
+
+        java.util.Map<Long, Double> sims = new java.util.HashMap<>();
+        if (queryVec != null) {
+            int limit = Math.max(embeddingProps.getVectorLimit(), vectorIndex.size());
+            for (AdmissionsVectorIndex.VectorHit h : vectorIndex.search(queryVec, limit)) {
+                sims.put(h.getKnowledgeId(), h.getSimilarity());
+            }
+        }
+        double minSim = embeddingProps.getMinSimilarity();
         java.util.Map<Long, Double> likeScores = new java.util.HashMap<>();
-        double maxLikeTmp = 1.0;
-        for (AdmissionsKnowledgeItem k : likeCandidates) {
-            double s = keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2.0
-                    + keywordHits(keywords, k.getContent());
-            likeScores.put(k.getKnowledgeId(), s);
-            if (s > maxLikeTmp) maxLikeTmp = s;
+        double maxLike = 1.0;
+        for (AdmissionsKnowledgeItem k : eligible) {
+            double like = keywordHits(keywords, k.getTitle(), k.getTags(), k.getCategory()) * 2.0
+                    + keywordHits(keywords, stripFieldLabels(k.getContent()));
+            likeScores.put(k.getKnowledgeId(), like);
+            maxLike = Math.max(maxLike, like);
         }
-        final double maxLike = maxLikeTmp;
-        List<AdmissionsVectorIndex.VectorHit> vecHits = vectorIndex.search(queryVec, embeddingProps.getVectorLimit());
-        java.util.Map<Long, Double> vecScores = new java.util.HashMap<>();
-        for (AdmissionsVectorIndex.VectorHit h : vecHits) {
-            vecScores.put(h.getKnowledgeId(), h.getSimilarity());
-        }
-        java.util.Set<Long> ids = new java.util.HashSet<>(likeScores.keySet());
-        ids.addAll(vecScores.keySet());
-        if (ids.isEmpty()) return List.of();
-        List<AdmissionsKnowledgeItem> candidates = knowledgeRepository.findAllById(ids);
+        final double maxLikeF = maxLike;
         double likeW = embeddingProps.getLikeWeight();
         double vecW = embeddingProps.getVectorWeight();
-        double officialBonus = embeddingProps.getOfficialBonus();
-        return candidates.stream()
-                .filter(AdmissionsResearchService::approvedLinkedSource)
-                .filter(k -> k.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)
-                .filter(k -> k.getSourceClass() == AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
-                .filter(k -> k.getRole() == AdmissionsKnowledgeItem.Role.FACT)
-                .filter(k -> Boolean.valueOf(confirmedOnly).equals(k.getYearConfirmed()))
-                .filter(k -> yearFilter == null || yearFilter.equals(k.getAcademicYear()))
+        return eligible.stream()
+                .filter(k -> likeScores.get(k.getKnowledgeId()) > 0
+                        || (queryVec != null && sims.getOrDefault(k.getKnowledgeId(), -1.0) >= minSim))
                 .sorted(Comparator.comparingDouble((AdmissionsKnowledgeItem k) -> {
-                    double likeNorm = likeScores.getOrDefault(k.getKnowledgeId(), 0.0) / maxLike;
-                    double vecNorm = (vecScores.getOrDefault(k.getKnowledgeId(), 0.0) + 1.0) / 2.0;
-                    return likeW * likeNorm + vecW * vecNorm + officialBonus;
+                    double likeNorm = likeScores.get(k.getKnowledgeId()) / maxLikeF;
+                    if (queryVec == null) return likeNorm;
+                    double vecNorm = (sims.getOrDefault(k.getKnowledgeId(), 0.0) + 1.0) / 2.0;
+                    return likeW * likeNorm + vecW * vecNorm;
                 }).reversed())
                 .limit(PER_STEP_LIMIT)
                 .toList();
     }
 
-    private List<Evidence> searchConfirmedKnowledge(String questionText, List<String> keywords, Integer yearFilter) {
-        return searchConfirmedKnowledgeItems(questionText, keywords, yearFilter).stream()
-                .map(k -> toEvidence(k, STEP_CONFIRMED, SourceClass.OFFICIAL_CONFIRMED))
+    private static final java.util.regex.Pattern FIELD_LABELS = java.util.regex.Pattern.compile(
+            "(모집인원|지원자격|전형방법|수능최저|제출서류|근거 자료|일정 원문|기간):");
+
+    /**
+     * 본문의 항목 이름("전형방법:" 등)은 모든 항목에 있는 틀이라 키워드 일치로 세지 않는다.
+     * (예: "강아지 훈련 방법" 질문이 모든 전형 항목의 "전형방법:" 줄에 걸려 근거가 붙는 문제 방지)
+     */
+    static String stripFieldLabels(String content) {
+        return content == null ? "" : FIELD_LABELS.matcher(content).replaceAll(" ");
+    }
+
+    /** 구조화 필터를 통과한 ACTIVE 지식 항목 (상태·출처·원본 행·학년도·수시/정시·캠퍼스·대학). */
+    private List<AdmissionsKnowledgeItem> eligibleItems(String questionText, boolean confirmedOnly, Integer yearFilter) {
+        Specification<AdmissionsKnowledgeItem> spec = (root, query, cb) -> {
+            List<Predicate> base = new ArrayList<>();
+            base.add(cb.equal(root.get("status"), AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE));
+            base.add(cb.equal(root.get("sourceClass"), AdmissionsKnowledgeItem.SourceClass.OFFICIAL));
+            // GUIDE(답변 형식 안내문)는 사실 근거가 아니다
+            base.add(cb.equal(root.get("role"), AdmissionsKnowledgeItem.Role.FACT));
+            base.add(cb.equal(root.get("yearConfirmed"), confirmedOnly));
+            if (yearFilter != null) {
+                base.add(cb.equal(root.get("academicYear"), yearFilter));
+            }
+            return cb.and(base.toArray(new Predicate[0]));
+        };
+        java.util.Set<Long> activeTypes = new java.util.HashSet<>();
+        typeRepository.findAll().forEach(t -> {
+            if (t.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE) activeTypes.add(t.getAdmissionTypeId());
+        });
+        java.util.Set<Long> activeSchedules = new java.util.HashSet<>();
+        scheduleRepository.findAll().forEach(sc -> {
+            if (sc.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE) activeSchedules.add(sc.getScheduleId());
+        });
+        List<AdmissionsKnowledgeItem> approved = knowledgeRepository.findAll(spec).stream()
+                .filter(AdmissionsResearchService::approvedLinkedSource)
+                .filter(k -> backingRowActive(k, activeTypes, activeSchedules))
+                .toList();
+
+        // 질문이 대학을 말했으면 그 대학의 항목만 남긴다 (대학명 유사성으로 인한 오검색 방지).
+        // 대학 판별은 수시/정시·캠퍼스 필터 이전에 한다 — 그 대학에 해당 캠퍼스·전형 자료가 없을 때
+        // 다른 대학 자료로 대신 답하지 않고 근거 없음이 되게 하기 위해서다.
+        java.util.Set<Long> mentioned = new java.util.HashSet<>();
+        for (AdmissionsKnowledgeItem k : approved) {
+            var univ = k.getSource() == null ? null : k.getSource().getUniversity();
+            if (univ != null && AdmissionsQueryParser.aliasesOf(univ.getName()).stream().anyMatch(questionText::contains)) {
+                mentioned.add(univ.getUniversityId());
+            }
+        }
+        return approved.stream()
+                .filter(k -> mentioned.isEmpty() || (k.getSource() != null && k.getSource().getUniversity() != null
+                        && mentioned.contains(k.getSource().getUniversity().getUniversityId())))
+                .filter(k -> AdmissionsFactSearchService.trackAllowed(questionText, k.getSource()))
+                .filter(k -> AdmissionsFactSearchService.campusAllowed(questionText, k.getSource(), k.getTitle()))
                 .toList();
     }
 
-    private List<Evidence> searchPlannedKnowledge(String questionText, List<String> keywords, Integer yearFilter) {
-        List<AdmissionsKnowledgeItem> items;
-        if (embeddingProps.isEnabled() && vectorIndex.isReady()) {
-            items = searchHybrid(questionText, keywords, false, yearFilter);
-            if (items.isEmpty()) items = searchLike(keywords, false, yearFilter);
-        } else {
-            items = searchLike(keywords, false, yearFilter);
+    /**
+     * 전형·일정 행에서 만든 항목은 원본 행이 아직 ACTIVE일 때만 근거가 된다(원본 ARCHIVED·삭제 시 차단).
+     * 자료(제목·URL) 행에서 만든 항목은 내용 없는 사실로 쓰이지 않도록 항상 제외한다.
+     */
+    private static boolean backingRowActive(AdmissionsKnowledgeItem k, java.util.Set<Long> activeTypes,
+                                            java.util.Set<Long> activeSchedules) {
+        String key = k.getDedupKey();
+        if (key == null) return true;
+        if (key.startsWith("material:")) return false;
+        if (key.startsWith("type:")) return activeTypes.contains(lastId(key));
+        if (key.startsWith("schedule:")) return activeSchedules.contains(lastId(key));
+        return true;
+    }
+
+    private static Long lastId(String dedupKey) {
+        try {
+            return Long.valueOf(dedupKey.substring(dedupKey.lastIndexOf(':') + 1));
+        } catch (NumberFormatException e) {
+            return -1L;
         }
-        return items.stream()
-                .map(k -> toEvidence(k, STEP_PLANNED, SourceClass.OFFICIAL_PLANNED))
-                .toList();
     }
 
     private Evidence toEvidence(AdmissionsKnowledgeItem k, int stepNo, SourceClass cls) {

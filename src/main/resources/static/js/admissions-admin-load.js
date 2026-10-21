@@ -120,8 +120,24 @@
         var r = await post('/api/admin/admissions/activate-all', body);
         show('승격 결과 — 공식자료 ' + r.materials + ' · 학과 ' + r.departments + ' · 전형 ' + r.types + ' · 일정 ' + r.schedules +
              (typeof r.excludedMaterials === 'number' ? ' · 제외 자료 ' + r.excludedMaterials + ' · 제외 하위 행 ' + r.excludedChildren : '') +
-             ' · ' + r.status, false);
+             (typeof r.knowledgeItems === 'number' ? ' · 지식항목 ' + r.knowledgeItems : '') + ' · ' + r.status, false);
       } catch (e) { show('승격 실패: ' + e.message, true); }
+    });
+
+    byId('ag-knowledge-build').addEventListener('click', async function () {
+      if (!window.confirm('전형·일정 행을 검색용 지식 항목으로 변환합니다(DRAFT로 생성, 기존 항목은 내용이 바뀐 것만 갱신). 계속할까요?')) return;
+      try {
+        var r = await post('/api/admin/admissions/knowledge/build', {});
+        show('지식 항목 생성 — 새로 ' + r.created + ' · 갱신 ' + r.updated + ' · 변경 없음 ' + r.unchanged + ' · ' + r.status, false);
+      } catch (e) { show('생성 실패: ' + e.message, true); }
+    });
+
+    byId('ag-knowledge-reindex').addEventListener('click', async function () {
+      try {
+        var r = await post('/api/admin/admissions/knowledge/reindex', { mode: 'MISSING' });
+        show('재색인 — 대상 ' + r.requested + ' · 성공 ' + r.embedded + ' · 건너뜀 ' + r.skipped + ' · 실패 ' + r.failed + ' · 인덱스 ' + r.vectorIndexSize + ' · ' + r.status +
+             (r.failures && r.failures.length ? '\n' + r.failures.slice(0, 5).join('\n') : ''), r.failed > 0);
+      } catch (e) { show('재색인 실패: ' + e.message, true); }
     });
 
     byId('ag-index-reload').addEventListener('click', async function () {

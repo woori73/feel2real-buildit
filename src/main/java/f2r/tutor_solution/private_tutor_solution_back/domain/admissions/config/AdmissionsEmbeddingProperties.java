@@ -15,8 +15,14 @@ public class AdmissionsEmbeddingProperties {
     private String serviceUrl = "";
     private String modelVersion = "embeddinggemma-2";
     private int dimension = 768;
-    private int timeoutMs = 10000;
+    private int timeoutMs = 1500;
     private int vectorLimit = 20;
+    /** 키워드 일치가 없는 항목이 근거가 되려면 필요한 최소 코사인 유사도. 실제 모델 값은 운영 전 보정한다. */
+    private double minSimilarity = 0.5;
+    /** 연속 실패 횟수가 이 값에 이르면 서킷을 연다(임베딩 호출을 건너뛰고 키워드 검색으로 전환). */
+    private int circuitFailureThreshold = 2;
+    /** 서킷이 열려 있는 시간(ms). */
+    private long circuitOpenMs = 30000;
     private double likeWeight = 0.4;
     private double vectorWeight = 0.6;
     private double officialBonus = 0.1;
@@ -31,6 +37,12 @@ public class AdmissionsEmbeddingProperties {
     public void setDimension(int value) { dimension = value; }
     public int getTimeoutMs() { return timeoutMs; }
     public void setTimeoutMs(int value) { timeoutMs = value; }
+    public double getMinSimilarity() { return minSimilarity; }
+    public void setMinSimilarity(double value) { minSimilarity = value; }
+    public int getCircuitFailureThreshold() { return circuitFailureThreshold; }
+    public void setCircuitFailureThreshold(int value) { circuitFailureThreshold = value; }
+    public long getCircuitOpenMs() { return circuitOpenMs; }
+    public void setCircuitOpenMs(long value) { circuitOpenMs = value; }
     public int getVectorLimit() { return vectorLimit; }
     public void setVectorLimit(int value) { vectorLimit = value; }
     public double getLikeWeight() { return likeWeight; }

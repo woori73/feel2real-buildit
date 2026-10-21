@@ -49,7 +49,7 @@ public class AdmissionsChatService {
     /** 답변에 붙이는 출처 상한. */
     static final int MAX_SOURCES = 14;
     /** 근거 1건 요약 상한. */
-    static final int MAX_EVIDENCE_CHARS = 400;
+    static final int MAX_EVIDENCE_CHARS = 1500;
 
     /** 입시상담 가이드 공통 규칙. */
     private static final String BASE_PROMPT =

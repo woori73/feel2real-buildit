@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DataJpaTest
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
-@Import({JpaConfig.class, AdmissionsDataLoader.class, AdmissionsFactSearchService.class, AdmissionsActivationService.class,
+@Import({JpaConfig.class, AdmissionsDataLoader.class, AdmissionsFactSearchService.class, AdmissionsActivationService.class, AdmissionsKnowledgeBuildService.class,
         AdmissionsActivationServiceDbTest.JacksonTestConfig.class})
 @TestPropertySource(properties = {
         "spring.flyway.enabled=false",
@@ -65,6 +65,8 @@ class AdmissionsActivationServiceDbTest {
     @Autowired AdmissionsDataLoader loader;
     @Autowired AdmissionsFactSearchService search;
     @Autowired AdmissionsActivationService activation;
+    @Autowired AdmissionsKnowledgeBuildService knowledgeBuild;
+    @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository knowledgeItems;
     @Autowired AdmissionsUniversityRepository universities;
     @Autowired AdmissionsOfficialMaterialRepository materials;
     @Autowired AdmissionsDepartmentRepository departments;
@@ -79,6 +81,7 @@ class AdmissionsActivationServiceDbTest {
 
     @AfterEach
     void clean() {
+        knowledgeItems.deleteAll();
         schedules.deleteAll();
         types.deleteAll();
         departments.deleteAll();
@@ -211,5 +214,46 @@ class AdmissionsActivationServiceDbTest {
         assertThatThrownBy(() -> activation.activateAll(2027, "yes")).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> activation.activateAll(2026, "ACTIVATE-ALL-2026")).isInstanceOf(IllegalArgumentException.class);
         assertThat(materials.findAll()).allSatisfy(m -> assertThat(m.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+    }
+
+    @Test
+    @DisplayName("given 지식 항목 생성 후 when 다시 전체 승격하면 then 원본 행이 ACTIVE인 항목만 ACTIVE가 된다 (자동 생성된 DRAFT 항목의 안전한 일괄 승격)")
+    void activateAll_promotesKnowledgeItemsBackedByActiveRows() {
+        // given: 행 승격 → 항목 생성(DRAFT)
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        var built = knowledgeBuild.buildAll();
+        assertThat(built.created()).isEqualTo(3);   // 전형 2(2027·2028) + 일정 1
+        assertThat(knowledgeItems.findAll()).allSatisfy(k -> assertThat(k.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+
+        // when: 2027 항목 승격
+        var r = activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // then: 2027 전형 1 + 일정 1 = 2건만. 2028 항목(원본 행이 DRAFT)은 그대로
+        assertThat(r.knowledgeItems()).isEqualTo(2);
+        assertThat(knowledgeItems.findAll().stream().filter(k -> k.getStatus() == KnowledgeStatus.ACTIVE)
+                .map(k -> k.getAcademicYear()).toList()).containsOnly(2027).hasSize(2);
+        assertThat(knowledgeItems.findAll().stream().filter(k -> k.getAcademicYear() == 2028).toList())
+                .allSatisfy(k -> assertThat(k.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+    }
+
+    @Test
+    @DisplayName("given 원본 행이 ARCHIVED when 항목을 승격하면 then 그 항목은 올리지 않고, 반복 실행은 0건이다")
+    void activateAll_doesNotPromoteItemsOfArchivedRows_andIsIdempotent() {
+        // given
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        knowledgeBuild.buildAll();
+        var sched = schedules.findAll().get(0);
+        sched.setStatus(KnowledgeStatus.ARCHIVED);
+        schedules.save(sched);
+
+        // when
+        var r = activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        var again = activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // then
+        assertThat(r.knowledgeItems()).as("전형 항목 1건만").isEqualTo(1);
+        assertThat(knowledgeItems.findAll().stream().filter(k -> k.getDedupKey().startsWith("schedule:")).toList())
+                .allSatisfy(k -> assertThat(k.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+        assertThat(again.knowledgeItems()).isZero();
     }
 }

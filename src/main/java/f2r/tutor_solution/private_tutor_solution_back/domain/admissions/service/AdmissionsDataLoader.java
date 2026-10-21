@@ -165,6 +165,7 @@ public class AdmissionsDataLoader {
             details.append("지원자격: ").append(t.path("eligibility").asText("")).append("\n");
             details.append("전형방법: ").append(t.path("student_record_method").asText("")).append("\n");
             details.append("수능최저: ").append(t.path("min_academic_standard").asText(""));
+            details.append("\n제출서류: ").append(submissionDocuments(t.path("submission_documents")));
             AdmissionsType type = AdmissionsType.builder()
                     .university(univ)
                     .academicYear(year)
@@ -264,6 +265,22 @@ public class AdmissionsDataLoader {
             }
         }
         return out;
+    }
+
+    /**
+     * 제출서류 원문을 한 줄로 합친다(항목 구분 " | "). 값이 없으면 빈 문자열이라 검색 단계에서 "확인되지 않음"으로 표기된다.
+     * 문자열 하나 또는 문자열 배열을 받는다. 원문을 고치거나 보충하지 않는다.
+     */
+    static String submissionDocuments(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) return "";
+        if (node.isTextual()) return node.asText().strip();
+        if (!node.isArray()) return "";
+        java.util.List<String> items = new java.util.ArrayList<>();
+        for (JsonNode n : node) {
+            String v = n.asText("").strip();
+            if (!v.isEmpty()) items.add(v);
+        }
+        return String.join(" | ", items);
     }
 
     private static String extractUnivCode(String docKey) {

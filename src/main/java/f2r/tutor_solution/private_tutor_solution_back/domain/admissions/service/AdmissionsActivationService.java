@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.KnowledgeStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsDepartmentRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository;
@@ -23,6 +24,9 @@ import java.util.Set;
  * 승격 단계에서 원천 제외되고, 그 자료를 출처로 삼는 학과·전형·일정도 함께 제외된다.
  * (예: 공식 원본이 아닌 미러본 자료를 ACTIVE로 올리지 않기 위한 용도. 승격 후 비활성화 방식은 쓰지 않는다.)
  * 제외 건수는 승격 대상(해당 학년도·DRAFT/REVIEW)이었으나 제외된 행만 센다.
+ * <p>구조화 행에서 만든 검색용 지식 항목({@code knowledge-build}가 만든 type/schedule 항목)도 함께 승격한다.
+ * 단, 원본 행이 ACTIVE일 때만이다(원본이 ARCHIVED·DRAFT면 항목도 올리지 않는다). 항목을 만들기 전이면 0건이고,
+ * 만든 뒤 다시 실행하면 항목만 올라간다(멱등).
  */
 @Service
 @RequiredArgsConstructor
@@ -32,9 +36,10 @@ public class AdmissionsActivationService {
     private final AdmissionsDepartmentRepository departments;
     private final AdmissionsTypeRepository types;
     private final AdmissionsScheduleRepository schedules;
+    private final AdmissionsKnowledgeItemRepository knowledgeItems;
 
     public record ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
-                                   int excludedMaterials, int excludedChildren) {}
+                                   int excludedMaterials, int excludedChildren, int knowledgeItems) {}
 
     public static String confirmationFor(int academicYear) {
         return "ACTIVATE-ALL-" + academicYear;
@@ -79,12 +84,35 @@ public class AdmissionsActivationService {
                 row.setStatus(KnowledgeStatus.ACTIVE); s++;
             }
         }
-        return new ActivationResult(academicYear, m, d, t, s, exM, exC);
+        int k = 0;
+        java.util.Set<Long> activeTypes = new java.util.HashSet<>();
+        types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
+        java.util.Set<Long> activeSchedules = new java.util.HashSet<>();
+        schedules.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeSchedules.add(row.getScheduleId()); });
+        for (var item : knowledgeItems.findAll()) {
+            if (item.getAcademicYear() != academicYear || !promotable(item.getStatus())) continue;
+            if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
+            String key = item.getDedupKey() == null ? "" : item.getDedupKey();
+            boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
+                    || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)));
+            if (!backed) continue;
+            item.setStatus(KnowledgeStatus.ACTIVE);
+            k++;
+        }
+        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k);
     }
 
     /** 출처 자료가 제외 대상이면 true. 출처가 없는 행은 제외할 근거가 없어 승격 대상에 남는다. */
     private static boolean excludedBySource(AdmissionsOfficialMaterial source, Set<String> excluded) {
         return source != null && excluded.contains(source.getFileKey());
+    }
+
+    private static long idOf(String dedupKey) {
+        try {
+            return Long.parseLong(dedupKey.substring(dedupKey.lastIndexOf(':') + 1));
+        } catch (NumberFormatException e) {
+            return -1L;
+        }
     }
 
     private static boolean promotable(KnowledgeStatus status) {
