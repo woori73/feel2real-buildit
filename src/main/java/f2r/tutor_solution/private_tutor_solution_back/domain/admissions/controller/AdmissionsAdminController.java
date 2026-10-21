@@ -4,6 +4,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.A
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsActivationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoader;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsVectorIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,17 +45,23 @@ public class AdmissionsAdminController {
     private final AdmissionsDataLoader dataLoader;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials;
     private final AdmissionsActivationService activationService;
+    private final AdmissionsKnowledgeBuildService knowledgeBuildService;
+    private final AdmissionsEmbeddingService embeddingService;
 
     public AdmissionsAdminController(AdmissionsKnowledgeItemRepository knowledgeRepository,
                                      AdmissionsVectorIndex vectorIndex,
                                      AdmissionsDataLoader dataLoader,
                                      f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials,
-                                     AdmissionsActivationService activationService) {
+                                     AdmissionsActivationService activationService,
+                                     AdmissionsKnowledgeBuildService knowledgeBuildService,
+                                     AdmissionsEmbeddingService embeddingService) {
         this.knowledgeRepository = knowledgeRepository;
         this.vectorIndex = vectorIndex;
         this.dataLoader = dataLoader;
         this.materials = materials;
         this.activationService = activationService;
+        this.knowledgeBuildService = knowledgeBuildService;
+        this.embeddingService = embeddingService;
     }
 
     /** 지식 목록 (상태별 필터). */
@@ -145,11 +153,12 @@ public class AdmissionsAdminController {
         }
         try {
             var r = activationService.activateAll(request.academicYear(), request.confirm());
-            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} note={}",
+            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} knowledgeItems={} note={}",
                     actorOf(authentication), r.academicYear(), r.materials(),
-                    r.departments(), r.types(), r.schedules(), request.note());
+                    r.departments(), r.types(), r.schedules(), r.knowledgeItems(), request.note());
             return ResponseEntity.ok(Map.of("academicYear", r.academicYear(), "materials", r.materials(),
-                    "departments", r.departments(), "types", r.types(), "schedules", r.schedules(), "status", "ACTIVATED"));
+                    "departments", r.departments(), "types", r.types(), "schedules", r.schedules(),
+                    "knowledgeItems", r.knowledgeItems(), "status", "ACTIVATED"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         }
@@ -172,6 +181,67 @@ public class AdmissionsAdminController {
     public ResponseEntity<Map<String, Object>> reloadIndex() {
         vectorIndex.reload();
         return ResponseEntity.ok(Map.of("size", vectorIndex.size(), "ready", vectorIndex.isReady()));
+    }
+
+    /**
+     * 구조화 자료(전형·일정·공식자료) 전체를 지식 항목으로 변환한다.
+     * 새 항목은 DRAFT로 시작하며 자동 승격은 없다. 본문이 바뀐 항목만 갱신하고 version을 올린다(멱등).
+     */
+    @PostMapping("/knowledge/build")
+    public ResponseEntity<Map<String, Object>> buildKnowledge() {
+        var r = knowledgeBuildService.buildAll();
+        log.info("admissions knowledge build by admin: created={} updated={} unchanged={}",
+                r.created(), r.updated(), r.unchanged());
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("created", r.created());
+        out.put("updated", r.updated());
+        out.put("unchanged", r.unchanged());
+        out.put("changedKnowledgeIds", r.changedKnowledgeIds());
+        out.put("status", "BUILT");
+        return ResponseEntity.ok(out);
+    }
+
+    /**
+     * 지식 항목 임베딩 재색인. body: {@code {mode: "MISSING"|"ALL"|"ITEM", knowledgeId: <ITEM일 때 필수>}}.
+     * 기본값은 MISSING(ACTIVE 중 임베딩이 없는 항목만). 실패 항목은 사유와 함께 돌려준다.
+     */
+    @PostMapping("/knowledge/reindex")
+    public ResponseEntity<Map<String, Object>> reindexKnowledge(
+            @RequestBody(required = false) Map<String, Object> body) {
+        String mode = body == null || body.get("mode") == null
+                ? "MISSING" : String.valueOf(body.get("mode")).toUpperCase();
+        AdmissionsEmbeddingService.ReindexResult r;
+        switch (mode) {
+            case "ALL" -> r = embeddingService.reindexAll();
+            case "ITEM" -> {
+                Object idValue = body.get("knowledgeId");
+                if (idValue == null) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "knowledgeId required for ITEM mode", "status", "REJECTED"));
+                }
+                long id;
+                try {
+                    id = idValue instanceof Number n ? n.longValue() : Long.parseLong(String.valueOf(idValue));
+                } catch (NumberFormatException e) {
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "knowledgeId must be a number", "status", "REJECTED"));
+                }
+                r = embeddingService.reindexItem(id);
+            }
+            default -> r = embeddingService.reindexMissing();
+        }
+        log.info("admissions knowledge reindex by admin: mode={} requested={} embedded={} skipped={} failed={}",
+                mode, r.requested(), r.embedded(), r.skipped(), r.failed());
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("mode", mode);
+        out.put("requested", r.requested());
+        out.put("embedded", r.embedded());
+        out.put("skipped", r.skipped());
+        out.put("failed", r.failed());
+        out.put("failures", r.failures());
+        out.put("vectorIndexSize", vectorIndex.size());
+        out.put("status", r.failed() == 0 ? "REINDEXED" : "PARTIAL");
+        return ResponseEntity.ok(out);
     }
 
     /**

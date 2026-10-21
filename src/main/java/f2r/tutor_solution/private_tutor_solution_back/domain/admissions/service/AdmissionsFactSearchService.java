@@ -151,7 +151,7 @@ public class AdmissionsFactSearchService {
         for (AdmissionsType t : chosen) {
             out.add(evidence("type", t.getAdmissionTypeId(), t.getAcademicYear(),
                     t.getUniversity().getName() + " " + t.getAcademicYear() + "학년도 " + t.getName(),
-                    cleanDetails(t.getDetails()), t.getSource()));
+                    detailsFor(question, cleanDetails(t.getDetails())), t.getSource()));
             if (out.size() >= MAX_TYPES) break;
         }
         return out;
@@ -312,6 +312,22 @@ public class AdmissionsFactSearchService {
         } catch (Exception e) {
             return "확인되지 않음";
         }
+    }
+
+    /**
+     * 질문이 제출서류를 묻는 경우(서류·제출) 증거 본문 길이 제한에 잘리지 않도록 제출서류 줄을 맨 앞에 둔다.
+     * 줄 내용은 바꾸지 않고 순서만 바꾼다.
+     */
+    static String detailsFor(String question, String details) {
+        if (question == null || details == null || !(question.contains("서류") || question.contains("제출"))) {
+            return details;
+        }
+        StringBuilder first = new StringBuilder();
+        StringBuilder rest = new StringBuilder();
+        for (String line : details.split("\n")) {
+            (line.startsWith("제출서류") ? first : rest).append(line).append("\n");
+        }
+        return (first.toString() + rest).trim();
     }
 
     /** 비어 있는 항목("수능최저: ")은 "확인되지 않음"으로 바꿔 LLM이 추정하지 않게 한다. */

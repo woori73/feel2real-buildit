@@ -9,6 +9,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.reposito
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsActivationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoader;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsVectorIndex;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
@@ -57,6 +59,8 @@ class AdmissionsActivateAllSecurityTest {
   @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean AuthenticatedUserResolver authResolver;
   @MockitoBean AdmissionsActivationService activationService;
+  @MockitoBean AdmissionsKnowledgeBuildService knowledgeBuildService;
+  @MockitoBean AdmissionsEmbeddingService embeddingService;
   @MockitoBean AdmissionsKnowledgeItemRepository knowledgeRepository;
   @MockitoBean AdmissionsVectorIndex vectorIndex;
   @MockitoBean AdmissionsDataLoader dataLoader;
@@ -109,7 +113,7 @@ class AdmissionsActivateAllSecurityTest {
   void adminSucceedsAndLogsAudit() throws Exception {
     // given
     when(activationService.activateAll(eq(2027), eq("ACTIVATE-ALL-2027")))
-        .thenReturn(new AdmissionsActivationService.ActivationResult(2027, 20, 0, 116, 72));
+        .thenReturn(new AdmissionsActivationService.ActivationResult(2027, 20, 0, 116, 72, 188));
 
     // when / then
     mockMvc.perform(post(URL).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content(BODY))

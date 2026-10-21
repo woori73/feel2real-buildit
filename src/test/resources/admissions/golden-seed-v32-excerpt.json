@@ -1,0 +1,233 @@
+{
+ "ipsi_universities": [
+  {
+   "name": "연세대학교",
+   "university_code": "YON",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://admission.yonsei.ac.kr"
+  },
+  {
+   "name": "고려대학교",
+   "university_code": "KOREA",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://oku.korea.ac.kr"
+  },
+  {
+   "name": "서강대학교",
+   "university_code": "SOGANG",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://admission.sogang.ac.kr"
+  },
+  {
+   "name": "경희대학교",
+   "university_code": "KHU",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://www.khu.ac.kr"
+  }
+ ],
+ "ipsi_documents": [
+  {
+   "document_key": "doc_yon_2027_susi",
+   "document_name": "연세대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "연세대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.yonsei.ac.kr/seoul/admission/html/rolling/guide.asp",
+   "verification_note": "[2026-10-21 확보·추출 완료] 공식 배포 페이지의 PDF 다운로드로 원본 확보 (2027학년도 서울캠퍼스 학부 신입학 수시모집요강, 101쪽, ZIP 배포본의 PDF가 정본). 정원내 2,075명(추천형 487·활동우수 714·국제형 254·국제인재 120·기회균형 190·논술 272·체육인재 38). 수능최저: 추천형·활동우수형·국제형(국내고) 적용, 그 외 미적용. 원서접수 2026.9.7~9.9 (종료).",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_yon_2027_jungsi",
+   "document_name": "연세대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "연세대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.yonsei.ac.kr/seoul/upload/guide/20260901184445WSGU8N.PDF",
+   "verification_note": "[2026-10-21 확보·추출 완료] 공식 PDF(70쪽). 가군 수능위주 정원내 1,363명(일반계열 1,264·체능 51·국제 48)+정원외 195, 나군 실기 예능 120. 의예과·국제계열은 2단계 면접. 원서접수 2027.1.4~1.6, 발표 2.5 14:00.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_korea_2027_susi",
+   "document_name": "고려대학교(세종캠퍼스) 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "고려대학교 입학처",
+   "published_at": null,
+   "source_url": "https://www.adiga.kr/cmm/com/file/fileDown.do?fileId=00000000000000257700&fileSn=1&menuId=PCUVTINF2000&downLogYn=Y&unvCd=0000070&searchSyr=2027",
+   "verification_note": "대입정보포털(어디가) 공식 등록 요강. 미러: sanedu.com 고려대서울 2027 수시 PDF. 수시 1,867명(서울캠퍼스 기준).",
+   "source_type": "official_portal"
+  },
+  {
+   "document_key": "doc_korea_2027_jungsi",
+   "document_name": "고려대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "고려대학교 입학처",
+   "published_at": null,
+   "source_url": "https://oku.korea.ac.kr/attach/202609/1790733929908_0.pdf",
+   "verification_note": "[2026-10-21 신규 추출] 공식 PDF(서울캠퍼스 정시모집요강, 38쪽)에서 추출 완료. 합계 1,875명(일반 1,030·교과우수 595·농어촌 120·사회배려 69·특수교육 36·특성화고 25). 일반전형 수능 100, 교과우수 수능 80+학생부 20, 수능최저는 사이버국방학과만 별도 조건. 원서접수 2027.1.4~1.6, 최초 발표 2.5. 세종캠퍼스 요강은 별도 문서.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_sogang_2027_susi",
+   "document_name": "서강대학교 2027학년도 수시 논술가이드북 (모집요강 전체 아님)",
+   "applicable_academic_year": 2027,
+   "institution_name": "서강대학교 입학처",
+   "published_at": null,
+   "source_url": "http://admission3.sogang.ac.kr/upload/BBS0014/202607031541342K5UMZ.PDF",
+   "verification_note": "공식 입학처 PDF. 수시 1,044명 (지역균형 180/일반I 494/일반II 74/기회균형 85/서강가치 34/특성화고 6/논술 171). 미러: sanedu.com 서강대 2027 수시 PDF.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_sogang_2027_jungsi",
+   "document_name": "서강대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "서강대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.sogang.ac.kr/upload/GUIDES/20260901173417S24UKF.pdf",
+   "verification_note": "[2026-10-21 완전 추출] 공식 PDF(49쪽, 2026.9.1 표기). 수능(일반) 나/다군 623명, 수능 100%, 최저 적용하지 않음. 정원외 전형은 4개 영역 중 3개 등급합 9 이내+한국사 4등급 이내. 원서접수 마감 2027.1.7, 최초 발표 2.5.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_khu_2027_susi",
+   "document_name": "경희대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "경희대학교 입학처",
+   "published_at": null,
+   "source_url": "https://iphak.khu.ac.kr/file/download.do?sfn=20260826010106889_2027학년도+경희대학교+수시+모집요강-최종_20260826.pdf",
+   "verification_note": "[2026-10-21 공식 원본 확보·대조 완료] 입학처 공식 PDF(136쪽, 2027 경희대학교 수시 신입생 모집요강) 확보. 기존 미러 추출본(112쪽)과 판본 구성이 달라 핵심 수치를 공식본과 직접 대조 — 전형별 모집인원 총계 행이 완전 일치(지역균형 604·재직자 263·네오르네상스 1,076·기회균형Ⅰ 150·장애인 15·기회균형Ⅱ 90·논술 471·실기 337). 원서접수는 공식본 전형일정표 기준 2026.9.8 10:00~9.11 18:00.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_khu_2027_jungsi",
+   "document_name": "경희대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "경희대학교 입학처",
+   "published_at": null,
+   "source_url": "https://iphak.khu.ac.kr",
+   "verification_note": "[2026-10-21 확보·추출 완료] 공식 PDF(72쪽). 정시 총계 2,427명(서울·국제 합산, 총괄표 합계 행). 수능위주(일반) 수능 100%, 실기위주 수능 40+실기 60. 과탐 과목당 4점 가산. 수능최저 값은 원문 전형요약표 대조로 확정 필요 (추출 텍스트로 확정 못 함).",
+   "source_type": "official_pdf"
+  }
+ ],
+ "ipsi_departments": [],
+ "ipsi_admission_types": [
+  {
+   "university_code": "KOREA",
+   "academic_year": 2027,
+   "type_name": "[세종캠퍼스] 학생부교과(일반전형)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "일괄, 학생부(교과) 100%",
+   "min_academic_standard": "적용 전형: 논술(일반·지역인재전형), 학생부교과(일반전형), 학생부종합 지역인재전형·지역인재-사회배려자전형(단, 이 2개 전형은 약학과만 적용). 미적용: 학생부종합(크림슨인재·기회균형·다문화·특성화고교졸업자전형), 실기/실적 전 전형. 기준: 전 모집단위(자유전공학부·약학과 제외) — 국어, 수학, 영어, 탐구(상위 1과목) 중 2개 영역 등급 합 6등급 이내; 자유전공학부(과학기술·글로벌비즈니스·공공정책·문화스포츠) — 국어, 수학, 영어, 탐구(상위 1과목) 중 1개 영역 3등급 이내; 약학과 — 국어, 수학, 영어, 탐구(2과목 평균) 중 3개 영역 등급 합 5등급 이내. 수능 지정응시영역(적용 시): 국어·수학(확률과통계/미적분/기하 중 택1)·영어·탐구(사회/과학 2과목)·한국사 (약학과: 수학 미적분/기하 중 택1, 과학탐구 2과목).",
+   "source_document_key": "doc_korea_2027_susi"
+  },
+  {
+   "university_code": "SOGANG",
+   "academic_year": 2027,
+   "type_name": "논술(일반)전형",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "일괄 합산, 논술 100% (학교폭력조치사항에 따라 감점 또는 과락 처리)",
+   "min_academic_standard": "논술(일반)전형: 전 계열 — 국어, 수학, 영어, 탐구(사회/과학/직업-1과목) 4개 영역 중 3개 영역 등급 합 7 이내이고 한국사 4등급 이내 (지원 계열에 따른 응시영역 내 선택 과목 간 구분 없음).",
+   "source_document_key": "doc_sogang_2027_susi"
+  },
+  {
+   "university_code": "KHU",
+   "academic_year": 2027,
+   "type_name": "학생부교과(지역균형전형)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "일괄합산 — 학생부 교과 및 비교과(출결·봉사) 성적 70% + 교과종합평가 30%",
+   "min_academic_standard": "지역균형전형·논술우수자전형: 있음 — 인문/자연(의약학 제외): 국어·수학·영어·사회/과학탐구(2과목) 중 2개 영역 등급 합 5 이내, 한국사 5등급 이내 / 의예과·한의예과(인문·자연)·치의예과·약학과: 3개 영역 등급 합 4 이내, 한국사 5등급 이내 / 예술·체육: 1개 영역 이상 3등급 이내 (한국사 미반영). 네오르네상스전형: 의예과·한의예과(인문·자연)·치의예과·약학과에만 적용 (3개 영역 등급 합 4 이내, 한국사 5등급 이내), 그 외 학과 없음. 기회균형전형Ⅰ·Ⅱ, 실기우수자전형: 없음.",
+   "source_document_key": "doc_khu_2027_susi"
+  },
+  {
+   "university_code": "KOREA",
+   "academic_year": 2027,
+   "type_name": "일반전형 (인문·자연계열, 의과대학·사이버국방 제외)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "수능 100",
+   "min_academic_standard": "미적용 (대학 전체 기준: 일반전형·교과우수전형·농어촌·사회배려·특수교육·특성화고: 별도 수능 등급 최저 없음 — 모집단위별 수능 지정 응시 영역 충족이 지원자격. 사이버국방학과만 별도 조건: 수학 1등급, 과학탐구 2과목 모두 1등급, 국어·수학·영어·탐구(상위 1과목) 4개 영역 등급 합 8 이내 중 하나 이상 충족 (전형요약표·세부 안내 확인).)",
+   "source_document_key": "doc_korea_2027_jungsi"
+  },
+  {
+   "university_code": "KOREA",
+   "academic_year": 2027,
+   "type_name": "교과우수전형 (인문·자연계열)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "수능 80 + 학생부 20 (일괄합산)",
+   "min_academic_standard": "미적용 (대학 전체 기준: 일반전형·교과우수전형·농어촌·사회배려·특수교육·특성화고: 별도 수능 등급 최저 없음 — 모집단위별 수능 지정 응시 영역 충족이 지원자격. 사이버국방학과만 별도 조건: 수학 1등급, 과학탐구 2과목 모두 1등급, 국어·수학·영어·탐구(상위 1과목) 4개 영역 등급 합 8 이내 중 하나 이상 충족 (전형요약표·세부 안내 확인).)",
+   "source_document_key": "doc_korea_2027_jungsi"
+  },
+  {
+   "university_code": "YON",
+   "academic_year": 2027,
+   "type_name": "학생부교과전형[추천형]",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "단계별 전형 — 1단계 교과 중심 선발(5배수), 2단계 1단계 성적 80 + 면접 20 계열 구조 (요약표 기준, 세부 원문 참조)",
+   "min_academic_standard": "적용 (대학 전체 기준: 적용: 학생부교과[추천형], 학생부종합[활동우수형], 학생부종합[국제형(국내고)]. 미적용: 국제형(해외고/검정고시), 국제인재, 기회균형, 논술전형, 특기자[체육인재], 특수교육대상자 (전형별 수능최저학력기준 적용 여부 표, 요강 I장). 세부 등급 기준은 전형별 안내 참조. ※ 요강 내 주요사항에 '2028학년도부터 논술전형 전 모집단위 수능최저 적용' 예고가 포함돼 있으나 이는 2028 변경사항이며 2027 논술은 미적용이 정본.)",
+   "source_document_key": "doc_yon_2027_susi"
+  },
+  {
+   "university_code": "YON",
+   "academic_year": 2027,
+   "type_name": "논술전형",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "논술 100 (요약표 기준)",
+   "min_academic_standard": "미적용 (대학 전체 기준: 적용: 학생부교과[추천형], 학생부종합[활동우수형], 학생부종합[국제형(국내고)]. 미적용: 국제형(해외고/검정고시), 국제인재, 기회균형, 논술전형, 특기자[체육인재], 특수교육대상자 (전형별 수능최저학력기준 적용 여부 표, 요강 I장). 세부 등급 기준은 전형별 안내 참조. ※ 요강 내 주요사항에 '2028학년도부터 논술전형 전 모집단위 수능최저 적용' 예고가 포함돼 있으나 이는 2028 변경사항이며 2027 논술은 미적용이 정본.)",
+   "source_document_key": "doc_yon_2027_susi"
+  },
+  {
+   "university_code": "KHU",
+   "academic_year": 2027,
+   "type_name": "수능위주(일반) 인문/사회/자연 (가·나군)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "수능 100% 일괄합산 (전형총점 600점)",
+   "min_academic_standard": "확인되지 않음 (원문 전형요약표 p.12 대조 필요 — 최저학력기준 값을 근거로 답하지 않는다)",
+   "source_document_key": "doc_khu_2027_jungsi"
+  },
+  {
+   "university_code": "SOGANG",
+   "academic_year": 2027,
+   "type_name": "수능(일반) 나군·다군",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "대학수학능력시험 성적 100%",
+   "min_academic_standard": "미적용 (대학 전체 기준: 수능(일반): 적용하지 않음 (원문 전형별 최저학력기준 표). 정원외 전형(농어촌·기초생활·장애인·특성화고): 국어·수학·영어·탐구 4개 영역 중 3개 영역 등급 합 9 이내이고 한국사 4등급 이내 (탐구는 응시 2과목 중 상위 1과목 반영). 필수응시영역: 국어·수학·영어·탐구(2과목)·한국사.)",
+   "source_document_key": "doc_sogang_2027_jungsi"
+  }
+ ],
+ "ipsi_schedules": [
+  {
+   "university_code": "YON",
+   "academic_year": 2027,
+   "item": "원서접수",
+   "type_name": "수시",
+   "date": "2026. 9. 7.(월) 10:00 ~ 9. 9.(수) (인터넷 원서접수 마감 9.9)",
+   "source_document_key": "doc_yon_2027_susi"
+  },
+  {
+   "university_code": "YON",
+   "academic_year": 2027,
+   "item": "서류 제출",
+   "type_name": "수시",
+   "date": "2026. 9. 10.(목) 17:00 (온라인 업로드)",
+   "source_document_key": "doc_yon_2027_susi"
+  },
+  {
+   "university_code": "YON",
+   "academic_year": 2027,
+   "item": "원서접수",
+   "type_name": "정시",
+   "date": "2027. 1. 4.(월) 10:00 ~ 1. 6.(수) 17:00",
+   "source_document_key": "doc_yon_2027_jungsi"
+  }
+ ]
+}
