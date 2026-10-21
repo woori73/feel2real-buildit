@@ -64,7 +64,7 @@ class WikiExamOriginalControllerWebMvcTest {
   void stubs() {
     when(service.searchPublic(any())).thenReturn(List.of(sample()));
     when(service.getPublicDownload(1L)).thenReturn(new DownloadFile("%PDF".getBytes(), "9월-원본.pdf"));
-    when(service.create(anyString(), anyInt(), anyString(), anyString(), anyBoolean(), any()))
+    when(service.create(anyString(), anyInt(), any(), anyString(), anyBoolean(), any(), any(), any()))
         .thenReturn(sample());
   }
 
@@ -128,6 +128,39 @@ class WikiExamOriginalControllerWebMvcTest {
   }
 
   @Test
+  @DisplayName("given ADMIN when 연도·월로 해설 등록 then 200 + 서비스에 회차가 전달된다")
+  void adminCreate_withYearMonth_ok() throws Exception {
+    mockMvc.perform(multipart("/api/admin/wiki/originals")
+            .file("file", "<html></html>".getBytes())
+            .param("title", "고1 10월 문제풀이 해설").param("grade", "1")
+            .param("docType", "EXPLANATION").param("examYear", "2026").param("examMonth", "10")
+            .param("visible", "false")
+            .cookie(token("ADMIN")))
+        .andExpect(status().isOk());
+    verify(service).create(eq("고1 10월 문제풀이 해설"), eq(1), eq(null), eq("EXPLANATION"),
+        eq(false), any(), eq(2026), eq(10));
+  }
+
+  @Test
+  @DisplayName("given 회원 when HTML 열람 then 200 + inline + CSP sandbox")
+  void view_member_html_okSandboxed() throws Exception {
+    when(service.getPublicView(1L)).thenReturn(
+        new DownloadFile("<html>해설</html>".getBytes(), "해설.html"));
+    mockMvc.perform(get("/api/wiki/originals/1/view").cookie(token("STUDENT")))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+            org.hamcrest.Matchers.containsString("inline")))
+        .andExpect(header().string("Content-Security-Policy", "sandbox allow-scripts allow-modals"));
+  }
+
+  @Test
+  @DisplayName("given 익명 when 열람 then 401")
+  void view_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(get("/api/wiki/originals/1/view")).andExpect(status().isUnauthorized());
+    verify(service, never()).getPublicView(anyLong());
+  }
+
+  @Test
   @DisplayName("given STUDENT when 관리 목록/삭제/공개전환 then 403")
   void adminReadWrite_student_forbidden() throws Exception {
     mockMvc.perform(get("/api/admin/wiki/originals").cookie(token("STUDENT")))
@@ -166,8 +199,9 @@ class WikiExamOriginalControllerWebMvcTest {
   }
 
   private WikiExamOriginalResponse sample() {
-    return new WikiExamOriginalResponse(1L, "고3 9월 문제지", 3, "2026 9월 모의고사",
-        "QUESTION", "문제지", "original.pdf", 100L, true,
-        LocalDateTime.now(), LocalDateTime.now(), "/api/wiki/originals/1/download");
+    return new WikiExamOriginalResponse(1L, "고3 9월 문제지", 3, 2026, 9, "2026 9월 모의고사",
+        "QUESTION", "문제지", "original.pdf", "pdf", 100L, true,
+        LocalDateTime.now(), LocalDateTime.now(), "/api/wiki/originals/1/download",
+        "/api/wiki/originals/1/view");
   }
 }

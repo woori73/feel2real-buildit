@@ -18,18 +18,37 @@
 
       <form id="originalUploadForm" class="wiki-upload-form" data-upload-form="original">
         <div class="uf-grid">
-          <label class="uf">제목<input type="text" name="title" required placeholder="고3 2026 9월 모의고사 영어 문제지"></label>
+          <label class="uf">제목<input type="text" name="title" required placeholder="고1 2026 10월 모의고사 문제풀이 해설"></label>
           <label class="uf">학년
             <select name="grade"><option value="3">고3</option><option value="2">고2</option><option value="1">고1</option></select>
           </label>
-          <label class="uf">문서 종류
-            <select name="docType"><option value="QUESTION">문제지</option><option value="ANSWER">정답지</option></select>
+          <label class="uf">자료 종류
+            <select name="docType">
+              <option value="EXPLANATION">문제풀이 해설</option>
+              <option value="SYNTAX">구문독해</option>
+              <option value="QUESTION">문제지</option>
+              <option value="ANSWER">정답지</option>
+            </select>
           </label>
-          <label class="uf">연도<input type="number" name="year" min="2000" max="2100" value="2026" required></label>
-          <label class="uf">시행월/회차<input type="text" name="exam" value="9월 모의고사" required></label>
-          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · HTML)</span><input type="file" name="file"
-                 accept=".pdf,.hwp,.hwpx,.html,.htm,application/pdf,text/html" required></label>
+          <label class="uf">시험 연도<input type="number" name="year" min="2000" max="2100" value="2026" required></label>
+          <label class="uf">시행 월
+            <select name="examMonth">
+              <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+              <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+              <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+              <option value="10" selected>10월</option><option value="11">11월</option><option value="12">12월</option>
+            </select>
+          </label>
+          <label class="uf">공개 상태
+            <select name="visible">
+              <option value="true">바로 공개</option>
+              <option value="false">임시저장 (비공개)</option>
+            </select>
+          </label>
+          <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · HTML · PNG · JPG)</span><input type="file" name="file"
+                 accept=".pdf,.hwp,.hwpx,.html,.htm,.png,.jpg,.jpeg,.webp,application/pdf,text/html,image/png,image/jpeg,image/webp" required></label>
         </div>
+        <div class="uf-preview" data-file-preview hidden></div>
         <p class="uf-msg" data-upload-msg></p>
         <div class="uf-actions">
           <button type="button" class="btn-ghost" data-upload-close>취소</button>
@@ -60,7 +79,7 @@
       </form>
     </div>
   </div>
-  <script src="/js/wiki_admin_upload.js?v=20260904-5"></script>
+  <script src="/js/wiki_admin_upload.js?v=20261020-1"></script>
 </th:block>
 </body>
 </html>

@@ -17,11 +17,14 @@
 
   var LEARNING_TYPE_LABEL = { VOCAB: '어휘', WORKBOOK: 'Workbook', VARIANT: '변형문제', WEEKLY: 'WEEKLY', ETC: '기타' };
   var UPDATE_KIND_LABEL = { ORIGINAL: '모의고사 원본', ANALYSIS: '분석 자료', LEARNING: '학습 자료' };
+  // 학년 안내 문구 — 회차를 특정하지 않는 기본 문구. 현재 회차가 로드되면 월 표기를 앞에 붙인다.
   var GRADE_NOTE = {
-    1: '9월 모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.',
-    2: '9월 모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.',
-    3: '9월 모의평가 현장 분석과 함께, 11월 수능까지 매주 유사 패턴의 새 문제를 무료로 제공합니다.'
+    1: '모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.',
+    2: '모의고사를 내신 대비 자료로 활용합니다. 지문 분석·어휘·구문·어법·내신형 변형문제를 무료로 공유합니다.',
+    3: '모의평가 현장 분석과 함께, 11월 수능까지 매주 유사 패턴의 새 문제를 무료로 제공합니다.'
   };
+  var currentRound = null;
+  var VIEWABLE_EXTS = { html: 1, htm: 1, png: 1, jpg: 1, jpeg: 1, webp: 1 };
 
   // ── 학년 탭 ──────────────────────────────────────────────
   gradeTabs.addEventListener('click', function (e) {
@@ -32,14 +35,18 @@
     renderGradeLists();
   });
 
-  // ── 회원 전용 다운로드 게이트 (문서 전역에 한 번만) ────────
+  // ── 회원 전용 다운로드/열람 게이트 (문서 전역에 한 번만) ────
   document.addEventListener('click', async function (e) {
     var link = e.target.closest('[data-member-download]');
     if (!link) return;
     e.preventDefault();
     try {
       var me = await fetch('/api/auth/me', { credentials: 'same-origin' });
-      if (me.ok) { window.location.href = link.href; return; }
+      if (me.ok) {
+        if (link.dataset.newtab) { window.open(link.href, '_blank', 'noopener'); }
+        else { window.location.href = link.href; }
+        return;
+      }
     } catch (_) {}
     alert('자료 다운로드는 로그인 회원만 이용할 수 있습니다.');
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
@@ -104,12 +111,17 @@
   renderGradeLists();
   loadBoards();
   loadHomeFeed();
+  loadRounds();
   recordVisit();
   setInterval(pollLive, LIVE_POLL_MS);
   setInterval(loadPopularDownloads, POPULAR_POLL_MS);
 
   function renderGradeLists() {
-    gradeNote.textContent = GRADE_NOTE[grade] || '';
+    var note = GRADE_NOTE[grade] || '';
+    if (currentRound && grade !== 3) {
+      note = currentRound.examMonth + '월 ' + note;
+    }
+    gradeNote.textContent = note;
     loadOriginals();
     loadAnalyses();
     loadLearningMaterials();
@@ -175,6 +187,111 @@
     box.innerHTML = items.map(function (m) {
       return '<span class="member-chip">' + escapeHtml(m.displayName) + '</span>';
     }).join('');
+  }
+
+  // ── 회차(연도·월) — 히어로·해설 자료·아카이브 ─────────────
+  async function loadRounds() {
+    try {
+      var res = await fetch('/api/wiki/rounds/current');
+      if (!res.ok) return;
+      currentRound = await res.json();
+      renderHero(currentRound);
+      var block = document.getElementById('roundBlock');
+      if (block) block.hidden = false;
+      renderGradeLists();
+      loadRoundMaterials(currentRound);
+      var listRes = await fetch('/api/wiki/rounds');
+      if (listRes.ok) renderArchiveOptions(await listRes.json(), currentRound);
+    } catch (_) { /* 회차 메타 실패 시 기존 허브만 표시 */ }
+  }
+
+  function renderHero(round) {
+    var hero = document.getElementById('examHero');
+    if (!hero || !round) return;
+    document.getElementById('examHeroTitle').textContent = round.title || '';
+    document.title = (round.title || '모의고사위키') + ' · BuildIt Wiki';
+    var img = document.getElementById('examHeroImg');
+    var text = document.getElementById('examHeroText');
+    if (round.bannerPath) {
+      // 배너 안에 문구가 이미 들어 있어 텍스트를 겹치지 않는다. alt로만 제공한다.
+      img.src = round.bannerPath;
+      img.alt = (round.title || '') + (round.subtitle ? ' — ' + round.subtitle : '');
+      img.hidden = false;
+      text.hidden = true;
+    } else {
+      img.hidden = true;
+      document.getElementById('examHeroTextTitle').textContent = round.title || '';
+      document.getElementById('examHeroSubtitle').textContent = round.subtitle || '';
+      text.hidden = false;
+    }
+    hero.hidden = false;
+  }
+
+  function renderArchiveOptions(rounds, current) {
+    var block = document.getElementById('roundBlock');
+    var select = document.getElementById('archiveSelect');
+    if (!block || !select) return;
+    var past = (rounds || []).filter(function (r) {
+      return !(current && r.examYear === current.examYear && r.examMonth === current.examMonth);
+    });
+    select.innerHTML = past.map(function (r) {
+      return '<option value="' + r.examYear + '-' + r.examMonth + '">' + escapeHtml(r.title) + '</option>';
+    }).join('');
+    select.disabled = !past.length;
+    document.getElementById('archiveGo').disabled = !past.length;
+    block.hidden = false;
+  }
+
+  document.getElementById('archiveGo') && document.getElementById('archiveGo').addEventListener('click', function () {
+    var v = document.getElementById('archiveSelect').value;
+    if (!v) return;
+    var parts = v.split('-');
+    location.href = '/wiki/archive?year=' + encodeURIComponent(parts[0]) + '&month=' + encodeURIComponent(parts[1]);
+  });
+
+  async function loadRoundMaterials(round) {
+    var box = document.getElementById('roundMaterials');
+    var title = document.getElementById('roundTitle');
+    if (!box || !round) return;
+    if (title) title.textContent = round.title;
+    try {
+      var res = await fetch('/api/wiki/originals?year=' + round.examYear + '&month=' + round.examMonth);
+      if (res.status === 401) {
+        box.innerHTML = '<p class="muted">해설 자료는 로그인 후 학년별로 볼 수 있습니다.</p>';
+        return;
+      }
+      if (!res.ok) throw new Error();
+      var items = await res.json();
+      // 이번 회차 섹션은 해설(문제풀이 해설·구문독해) 중심이다. 문제지·정답지는 아래 원본 섹션과 아카이브에서 본다.
+      var guides = items.filter(function (it) { return it.docType === 'EXPLANATION' || it.docType === 'SYNTAX'; });
+      if (!guides.length) {
+        box.innerHTML = '<p class="muted">이번 회차 해설 자료가 준비 중입니다. 업로드되는 대로 학년별로 이곳에 표시됩니다.</p>';
+        return;
+      }
+      box.innerHTML = [1, 2, 3].map(function (g) {
+        var rows = guides.filter(function (it) { return it.grade === g; });
+        if (!rows.length) return '';
+        return '<div class="round-grade-group"><h3>고' + g + '</h3><div class="round-mat-list">'
+          + rows.map(roundMaterialCard).join('') + '</div></div>';
+      }).join('');
+    } catch (_) {
+      box.innerHTML = '<p class="error">해설 자료를 불러오지 못했습니다.</p>';
+    }
+  }
+
+  function roundMaterialCard(it) {
+    var ext = (it.fileExtension || (it.originalFileName || '').split('.').pop() || '').toLowerCase();
+    var canView = !!VIEWABLE_EXTS[ext];
+    var view = canView
+      ? '<a class="mat-act" data-member-download data-newtab="1" href="' + escapeAttr(it.viewUrl) + '">열람</a>'
+      : '';
+    return '<div class="mat-card">'
+      + '<span class="file-badge">' + escapeHtml(it.docTypeLabel) + '</span>'
+      + '<b>' + escapeHtml(it.title) + '</b>'
+      + '<span class="file-meta">' + escapeHtml((ext || '').toUpperCase()) + ' · ' + fmtDay(it.createdAt) + ' 등록</span>'
+      + '<span class="mat-actions">' + view
+      + '<a class="mat-act primary" data-member-download href="' + escapeAttr(it.downloadUrl) + '">내려받기 ↓</a></span>'
+      + '</div>';
   }
 
   // ── WIKI LIVE ───────────────────────────────────────────

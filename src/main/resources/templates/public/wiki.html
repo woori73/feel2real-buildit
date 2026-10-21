@@ -15,7 +15,7 @@
     ogImage=null)}"></th:block>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
-  <link rel="stylesheet" href="/css/wiki.css?v=20260906-1">
+  <link rel="stylesheet" href="/css/wiki.css?v=20261020-1">
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body class="wiki-body">
@@ -33,6 +33,17 @@
 
   <main class="wiki-wrap">
 
+    <!-- 1-1. 현재 회차 히어로 — 배너 이미지가 있으면 이미지(문구가 이미지에 포함되어 있어 텍스트를 겹치지 않음),
+         없으면 텍스트 히어로. 제목은 접근성·검색용으로 항상 DOM에 둔다. -->
+    <section class="exam-hero" id="examHero" hidden>
+      <h2 class="sr-only" id="examHeroTitle"></h2>
+      <img id="examHeroImg" class="exam-hero-img" alt="" hidden>
+      <div class="exam-hero-text" id="examHeroText" hidden>
+        <p class="exam-hero-title" id="examHeroTextTitle"></p>
+        <p class="exam-hero-subtitle" id="examHeroSubtitle"></p>
+      </div>
+    </section>
+
     <!-- 2. Hero -->
     <section class="wiki-intro">
       <h1>시험이 끝난 후, 새로운 공부가 시작됩니다.</h1>
@@ -48,6 +59,20 @@
         <button class="grade-tab" role="tab" data-grade="3">고3<small>수능 · 모의고사</small></button>
       </div>
       <p id="gradeNote" class="grade-note"></p>
+    </section>
+
+    <!-- 4-1. 현재 회차 해설 자료 (학년별) + 지난 회차 아카이브 -->
+    <section class="wiki-block" id="roundBlock" hidden>
+      <div class="block-head">
+        <h2 id="roundTitle">모의고사 해설 자료</h2>
+        <a class="more-link" href="/wiki/archive">지난 회차 아카이브 →</a>
+      </div>
+      <div id="roundMaterials"><p class="muted">불러오는 중...</p></div>
+      <div class="round-archive-bar">
+        <label for="archiveSelect">지난 회차 자료 보기</label>
+        <select id="archiveSelect" aria-label="지난 회차 선택"></select>
+        <button type="button" id="archiveGo" class="btn-ghost">아카이브 열기</button>
+      </div>
     </section>
 
     <!-- 4. NEW 최신 업데이트 -->
@@ -203,7 +228,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script src="/js/wiki.js?v=20260906-1"></script>
+  <script src="/js/wiki.js?v=20261020-1"></script>
 </th:block>
 </body>
 </html>

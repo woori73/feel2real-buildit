@@ -74,10 +74,23 @@ public class DocumentUploadValidator {
 
   /** 확장자 화이트리스트를 좁혀서 검증한다. */
   public void validate(MultipartFile file, Set<String> allowedExtensions) {
+    validateInternal(file, allowedExtensions, null);
+  }
+
+  /** 경로 전용 용량 상한을 적용하는 검증. 그 외 검증(확장자·매직바이트·실행파일 차단)은 동일하다. */
+  public void validate(MultipartFile file, Set<String> allowedExtensions, long maxBytes) {
+    validateInternal(file, allowedExtensions, maxBytes);
+  }
+
+  private void validateInternal(MultipartFile file, Set<String> allowedExtensions, Long maxBytes) {
     if (file == null || file.isEmpty()) {
       throw badRequest("파일을 업로드해주세요.");
     }
-    uploadSizeGuard.requireWithinDocumentLimit(file);
+    if (maxBytes == null) {
+      uploadSizeGuard.requireWithinDocumentLimit(file);
+    } else {
+      uploadSizeGuard.requireWithinLimit(file, maxBytes);
+    }
 
     String extension = extensionOf(file.getOriginalFilename());
     if (extension == null) {

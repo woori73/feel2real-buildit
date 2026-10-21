@@ -3,6 +3,10 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.c
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.WikiIdentitySigner;
+import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.repository.QuestionWikiRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.support.QuestionAiGenerationPolicy;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -33,16 +37,21 @@ public class BuildItWikiProxyController {
       "Authorization", "X-Api-Key", "Accept", "Mcp-Session-Id", "Mcp-Protocol-Version", "Last-Event-ID"
   };
   private static final String WIKI_WORKSPACE_HEADER = "X-BuildIt-Wiki-Workspace";
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final String QUESTION_WIKI_REFERENCE_MARKER = "QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST:";
   private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
   private final AuthenticatedUserResolver authenticatedUserResolver;
   private final WikiIdentitySigner identitySigner;
+  private final QuestionWikiRepository questionWikiRepository;
   private final ConcurrentMap<Long, Deque<Instant>> questionWikiAiSuccesses = new ConcurrentHashMap<>();
 
   public BuildItWikiProxyController(
       AuthenticatedUserResolver authenticatedUserResolver,
-      WikiIdentitySigner identitySigner) {
+      WikiIdentitySigner identitySigner,
+      QuestionWikiRepository questionWikiRepository) {
     this.authenticatedUserResolver = authenticatedUserResolver;
     this.identitySigner = identitySigner;
+    this.questionWikiRepository = questionWikiRepository;
   }
 
   @RequestMapping("/problem-generator/wiki/api/**")
@@ -64,6 +73,12 @@ public class BuildItWikiProxyController {
     String query = request.getQueryString();
     URI uri = URI.create("http://127.0.0.1:8000" + targetPath + (query == null ? "" : "?" + query));
     byte[] body = request.getInputStream().readAllBytes();
+    // 2026년 9월 모의고사 문항은 AI 문제제작 대상이 아니다 — Reference 마커가 가리키는 문항이
+    // 해당 회차면 라우터로 넘기지 않고 차단한다. 마커가 없는 다른 AI 호출에는 영향을 주지 않는다.
+    if (questionWikiAi && isAiGenerationDisabledQuestion(body)) {
+      return normalizedGatewayError(HttpStatus.FORBIDDEN.value(),
+          "2026년 9월 모의고사 문항은 AI 문제제작을 제공하지 않습니다.");
+    }
     HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
         .timeout(questionWikiAi ? QUESTION_WIKI_AI_TIMEOUT : WIKI_REQUEST_TIMEOUT)
         .method(request.getMethod(), body.length == 0 ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofByteArray(body));
@@ -126,6 +141,44 @@ public class BuildItWikiProxyController {
 
   private boolean isQuestionWikiAi(String targetPath) {
     return targetPath.equals("/api/ai/complete");
+  }
+
+  /** 요청 본문의 Question Wiki Reference 마커가 AI 문제제작 비제공 회차 문항을 가리키는지 판정한다. */
+  private boolean isAiGenerationDisabledQuestion(byte[] body) {
+    Long questionWikiId = extractQuestionWikiId(body);
+    if (questionWikiId == null) {
+      return false;
+    }
+    return questionWikiRepository.findById(questionWikiId)
+        .map(QuestionAiGenerationPolicy::isAiGenerationDisabled)
+        .orElse(false);
+  }
+
+  /**
+   * 본문 JSON의 prompt에서 {@code QUESTION_WIKI_PRIVATE_REFERENCE_REQUEST: {...}} 마커의
+   * questionWikiId를 꺼낸다. 마커가 없거나 해석할 수 없으면 null(차단하지 않음).
+   */
+  static Long extractQuestionWikiId(byte[] body) {
+    try {
+      JsonNode root = OBJECT_MAPPER.readTree(body);
+      String prompt = root.path("prompt").asText(null);
+      if (prompt == null) {
+        return null;
+      }
+      int marker = prompt.indexOf(QUESTION_WIKI_REFERENCE_MARKER);
+      if (marker < 0) {
+        return null;
+      }
+      int start = prompt.indexOf('{', marker);
+      int end = start < 0 ? -1 : prompt.indexOf('}', start);
+      if (start < 0 || end < 0) {
+        return null;
+      }
+      long id = OBJECT_MAPPER.readTree(prompt.substring(start, end + 1)).path("questionWikiId").asLong(0);
+      return id > 0 ? id : null;
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   private boolean isMcpPath(String targetPath) {

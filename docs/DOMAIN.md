@@ -1138,25 +1138,44 @@ BuildIt Score `buildit-chart-v1`은 최대 100점이다: 교육자 고유성 35,
 
 Legacy V3는 현행 도메인 테이블이 아니다. read-only exporter가 VERIFIED 43명을 `PENDING_CURRENT_RESEARCH` 전송 형식으로 만들 뿐이며 `chart_candidates`, `chart_educators`, Score snapshot 또는 publication에 직접 넣지 않는다. 전화·이메일·상세주소는 전송 형식에 없고, Legacy Score는 `legacy_score_is_current_score=false`인 역사 메타데이터로만 보존한다.
 
-### 4.44 wiki_exam_originals ✅ 공개 BuildIt Wiki 모의고사 원본 PDF (V956)
+### 4.44 wiki_exam_originals ✅ 공개 BuildIt Wiki 모의고사 자료 (V956, 회차 구조 V1093)
 
-공개 `/wiki` 의 모의고사 원본(문제지/정답지) PDF 저장소. `exam_analyses`(HTML 분석 리포트, sandbox iframe 렌더)와 목적이 달라 별도 테이블. 파일은 `FileStorage.saveRaw` 로 원본 그대로 저장하고 `/api/wiki/originals/{id}/download` 로 첨부 다운로드만 제공한다. CRUD는 ADMIN, 공개 조회는 grade(1~3) 필터.
+공개 `/wiki` 의 모의고사 자료(문제지/정답지/문제풀이 해설/구문독해) 저장소. `exam_analyses`(HTML 분석 리포트, sandbox iframe 렌더)와 목적이 달라 별도 테이블. 파일은 `FileStorage.saveRaw` 로 원본 그대로 저장하고 `/api/wiki/originals/{id}/download`(attachment) + `/api/wiki/originals/{id}/view`(HTML·이미지 인라인, CSP sandbox)로 제공한다. CRUD는 ADMIN, 공개 조회는 grade/회차(연도·월)/종류 필터.
 
 | column | type | note |
 |---|---|---|
 | wiki_exam_original_id | BIGINT PK AUTO_INCREMENT | |
 | title | VARCHAR(200) NOT NULL | |
 | grade | INT NOT NULL | 1\|2\|3 (고1/고2/고3) |
-| exam_label | VARCHAR(100) NOT NULL | 예: "2026 9월 모의고사" |
-| doc_type | VARCHAR(20) NOT NULL | enum name(): `QUESTION`(문제지) / `ANSWER`(정답지) |
+| exam_year | INT NULL | 회차 연도 (V1093, 기존 행은 exam_label에서 백필) |
+| exam_month | INT NULL | 회차 월 1~12 (V1093) |
+| exam_label | VARCHAR(100) NOT NULL | 예: "2026 9월 모의고사". 연도·월 입력 시 서버가 합성 |
+| doc_type | VARCHAR(20) NOT NULL | enum name(): `QUESTION`(문제지) / `ANSWER`(정답지) / `EXPLANATION`(문제풀이 해설) / `SYNTAX`(구문독해) |
 | original_file_name | VARCHAR(255) NOT NULL | 업로드 원본 파일명(다운로드 시 사용) |
 | storage_key | VARCHAR(500) NOT NULL | FileStorage 불투명 키 |
 | file_size | BIGINT NOT NULL | |
-| is_visible | BIT(1) NOT NULL | 공개 여부 |
+| is_visible | BIT(1) NOT NULL | 공개 여부 (false = 임시저장/비공개) |
 | is_deleted | BIT(1) NOT NULL DEFAULT b'0' | soft delete(삭제 시 visible=false 동반) |
 | (BaseEntity) | created_at/updated_at/created_by/updated_by | |
 
-인덱스: `idx_wiki_exam_originals_public(is_deleted, is_visible, grade, created_at, wiki_exam_original_id)`.
+인덱스: `idx_wiki_exam_originals_public(is_deleted, is_visible, grade, created_at, wiki_exam_original_id)`, `idx_wiki_exam_originals_round(exam_year, exam_month, is_deleted, is_visible)` (V1093).
+
+### 4.44-1 wiki_exam_rounds ✅ 모의고사 위키 회차(연도·월) 메타 (V1093)
+
+월별 회차를 코드 수정 없이 운영하기 위한 메타 테이블. 관리자가 메인 회차(is_current)를 지정하면 그 회차가 `/wiki` 메인이 되고 나머지 공개 회차는 `/wiki/archive` 아카이브에서 열람한다. 자료는 `wiki_exam_originals.exam_year/exam_month`로 회차에 속한다. 시드: 2026년 9월(아카이브)·10월(메인, 배너 `/images/wiki/banner-2026-10.png`).
+
+| column | type | note |
+|---|---|---|
+| wiki_exam_round_id | BIGINT PK AUTO_INCREMENT | |
+| exam_year | INT NOT NULL | UNIQUE(exam_year, exam_month) |
+| exam_month | INT NOT NULL | 1~12 |
+| title | VARCHAR(200) NOT NULL | 예: "2026년 10월 모의고사 해설 자료" |
+| subtitle | VARCHAR(300) NULL | |
+| banner_path | VARCHAR(500) NULL | 정적 경로 또는 서빙 경로. 비면 텍스트 히어로 |
+| is_current | BIT(1) NOT NULL DEFAULT b'0' | 메인 회차 (서비스가 단일성 유지) |
+| is_published | BIT(1) NOT NULL DEFAULT b'1' | 공개 여부 |
+| is_deleted | BIT(1) NOT NULL DEFAULT b'0' | soft delete |
+| (BaseEntity) | created_at/updated_at/created_by/updated_by | |
 
 ### 4.45 wiki_analysis_materials ✅ 공개 BuildIt Wiki 분석 자료 문서 (V957)
 

@@ -19,6 +19,7 @@ import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.Doc
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.FileStorage;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.UploadSizeGuard;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -202,6 +203,87 @@ class WikiExamOriginalServiceTest {
     // then
     assertThat(res).hasSize(1);
     verify(repository).findPublicByGrade(3);
+  }
+
+  @Test
+  @DisplayName("given 연도·월 + PNG 해설 when 등록 then 라벨 합성 + 회차 저장 + PNG 허용")
+  void create_withYearMonth_composesLabelAndStoresPng() throws Exception {
+    // given — PNG 매직 바이트(89 50 4E 47)
+    MockMultipartFile file = new MockMultipartFile("file", "해설.png", "image/png",
+        new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A});
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), eq(file.getSize())))
+        .thenReturn("stored/해설.png");
+    when(repository.save(any(WikiExamOriginal.class))).thenAnswer(inv -> {
+      WikiExamOriginal saved = inv.getArgument(0);
+      ReflectionTestUtils.setField(saved, "wikiExamOriginalId", 9L);
+      return saved;
+    });
+
+    // when
+    WikiExamOriginalResponse res = service.create(
+        "고1 10월 문제풀이 해설", 1, null, "EXPLANATION", false, file, 2026, 10);
+
+    // then
+    assertThat(res.examLabel()).isEqualTo("2026 10월 모의고사");
+    assertThat(res.examYear()).isEqualTo(2026);
+    assertThat(res.examMonth()).isEqualTo(10);
+    assertThat(res.docType()).isEqualTo("EXPLANATION");
+    assertThat(res.docTypeLabel()).isEqualTo("문제풀이 해설");
+    assertThat(res.fileExtension()).isEqualTo("png");
+    assertThat(res.isVisible()).isFalse();
+  }
+
+  @Test
+  @DisplayName("given 잘못된 월(13) when 등록 then 400")
+  void create_rejectsBadMonth() {
+    assertThatThrownBy(() -> service.create("t", 1, null, "EXPLANATION", true, pdf("a.pdf"), 2026, 13))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("월");
+  }
+
+  @Test
+  @DisplayName("given 전역 문서 상한보다 큰 해설 HTML when 등록 then 위키 전용 상한으로 허용된다")
+  void createUsesWikiOriginalLimitNotGlobalDocumentLimit() throws Exception {
+    // given — 전역 상한은 10바이트로 막혀 있어도 위키 원본 경로는 전용 상한을 쓴다
+    WikiExamOriginalService bigLimitService = new WikiExamOriginalService(repository, fileStorage,
+        new DocumentUploadValidator(new UploadSizeGuard(10L)), 50L * 1024 * 1024);
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(), anyLong())).thenReturn("key-big");
+    when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    MockMultipartFile html = new MockMultipartFile("file", "해설.html",
+        "text/html", "<html><body>해설</body></html>".getBytes(StandardCharsets.UTF_8));
+
+    // when
+    WikiExamOriginalResponse res = bigLimitService.create(
+        "2026년 10월 고3 영어 모의고사 문제풀이 해설", 3, null, "EXPLANATION", true, html, 2026, 10);
+
+    // then
+    assertThat(res.docType()).isEqualTo("EXPLANATION");
+    assertThat(res.examYear()).isEqualTo(2026);
+  }
+
+  @Test
+  @DisplayName("given 위키 전용 상한을 넘는 파일 when 등록 then 400")
+  void createRejectsOverWikiOriginalLimit() {
+    // given — 전용 상한 10바이트
+    WikiExamOriginalService tinyLimitService = new WikiExamOriginalService(repository, fileStorage,
+        new DocumentUploadValidator(new UploadSizeGuard(20L * 1024 * 1024)), 10L);
+    MockMultipartFile html = new MockMultipartFile("file", "해설.html",
+        "text/html", "<html><body>해설 본문은 10바이트보다 길다</body></html>".getBytes(StandardCharsets.UTF_8));
+
+    // when / then
+    assertThatThrownBy(() -> tinyLimitService.create(
+        "제목", 3, null, "EXPLANATION", true, html, 2026, 10))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("파일 용량은");
+  }
+
+  @Test
+  @DisplayName("given PDF when 열람 조회 then 400 — 열람은 HTML/이미지만")
+  void getPublicView_rejectsPdf() {
+    when(repository.findPublicById(7L)).thenReturn(Optional.of(original("k")));
+    assertThatThrownBy(() -> service.getPublicView(7L))
+        .isInstanceOf(ResponseStatusException.class)
+        .hasMessageContaining("열람");
   }
 
   private MockMultipartFile pdf(String name) {

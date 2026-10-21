@@ -24,10 +24,20 @@ public class UploadSizeGuard {
 
   /** @throws ResponseStatusException 상한 초과 시 400 */
   public void requireWithinDocumentLimit(MultipartFile file) {
-    if (file != null && file.getSize() > maxDocumentBytes) {
+    requireWithinLimit(file, maxDocumentBytes);
+  }
+
+  /**
+   * 경로 전용 상한으로 판정한다. 기본 문서 상한과 다른 상한이 필요한 경로
+   * (예: 내장 폰트·이미지로 큰 모의고사 해설 HTML)만 명시적으로 사용한다.
+   *
+   * @throws ResponseStatusException 상한 초과 시 400
+   */
+  public void requireWithinLimit(MultipartFile file, long maxBytes) {
+    if (file != null && file.getSize() > maxBytes) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST,
-          "파일 용량은 " + (maxDocumentBytes / (1024 * 1024)) + "MB를 넘을 수 없습니다: "
+          "파일 용량은 " + (maxBytes / (1024 * 1024)) + "MB를 넘을 수 없습니다: "
               + file.getOriginalFilename());
     }
   }

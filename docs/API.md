@@ -618,11 +618,11 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 | `/community` | `public/community` | ✅ 전체 공개 커뮤니티 목록(읽기 anyopen, 글쓰기/추천 로그인). 목록은 `scope=community`(기본) — F2R 게시판(FREE/QNA/SUBJECT)만 |
 | `/community/posts/{postId}` | `public/community_post` | ✅ 공개 커뮤니티 글 상세 + 댓글. wiki 게시판 글 상세도 이 화면 재사용 |
 | `/community/posts/new` | `public/community_new` | ✅ F2R 커뮤니티(`/community`) 글 작성/수정. (구 `?board=`/`?return=` wiki 진입은 폐기 — Wiki는 전용 화면 사용) |
-| `/wiki`, `/wiki/originals`, `/wiki/analysis` | `public/wiki`, `public/wiki_originals`, `public/wiki_analysis` | ✅ **`WikiPageController`**(`@Controller` — `Cache-Control: private, no-store` 목적만, role 로직 없음). 자료 업로드 진입점(`＋ 원본 업로드`/`＋ 분석 자료 업로드` 버튼 + `#wikiUploadModal` 모달 + `wiki_admin_upload.js`)은 **`fragments/_wiki_admin_upload :: modal` 로 principal 무관하게 항상 렌더** — "UI 표시 ≠ 권한 부여". 버튼 클릭 시 `wiki_admin_upload.js` 가 `GET /api/auth/me` 로 상태 확인(비로그인→로그인 안내, 비ADMIN→"관리자만" 안내, ADMIN→모달). 현재 학년 탭 기본값, 성공 시 새로고침 없이 해당 목록만 재조회(`window.wikiHub` / `window.wikiListReload`). **최종 권한은 `POST /api/admin/wiki/{originals,analysis-materials}` 의 `/api/admin/**` → ROLE_ADMIN** (frontend 판단 아님). 기존 wikioriginal/wikianalysis 도메인만 사용(analyzes 미사용, 새 저장소 없음). 상단 헤더 `BuildIt 홈`(→ `/`, Wiki 내부 `← BuildIt Wiki로 돌아가기`→`/wiki` 와 별개). 목록 데이터는 JS. 게시판 화면(/wiki/board/**, /wiki/posts/**)은 view-controller 유지 |
+| `/wiki`, `/wiki/originals`, `/wiki/analysis`, `/wiki/archive` | `public/wiki`, `public/wiki_originals`, `public/wiki_analysis`, `public/wiki_archive` | ✅ **`WikiPageController`**(`@Controller` — `Cache-Control: private, no-store` 목적만, role 로직 없음). 자료 업로드 진입점(`＋ 원본 업로드`/`＋ 분석 자료 업로드` 버튼 + `#wikiUploadModal` 모달 + `wiki_admin_upload.js`)은 **`fragments/_wiki_admin_upload :: modal` 로 principal 무관하게 항상 렌더** — "UI 표시 ≠ 권한 부여". 버튼 클릭 시 `wiki_admin_upload.js` 가 `GET /api/auth/me` 로 상태 확인(비로그인→로그인 안내, 비ADMIN→"관리자만" 안내, ADMIN→모달). 현재 학년 탭 기본값, 성공 시 새로고침 없이 해당 목록만 재조회(`window.wikiHub` / `window.wikiListReload`). **최종 권한은 `POST /api/admin/wiki/{originals,analysis-materials}` 의 `/api/admin/**` → ROLE_ADMIN** (frontend 판단 아님). 기존 wikioriginal/wikianalysis 도메인만 사용(analyzes 미사용, 새 저장소 없음). 상단 헤더 `BuildIt 홈`(→ `/`, Wiki 내부 `← BuildIt Wiki로 돌아가기`→`/wiki` 와 별개). 목록 데이터는 JS. 게시판 화면(/wiki/board/**, /wiki/posts/**)은 view-controller 유지 |
 | `/wiki/board/{boardKey}` | `public/wiki_board` | ✅ Wiki 게시판별 목록. `boardKey` = `review`(시험 후기) / `variant`(변형문제) / `share`(자료 공유·요청). `/api/open-community/posts?scope=wiki` 재사용 |
 | `/wiki/board/{boardKey}/new` | `public/wiki_post_new` | ✅ Wiki 전용 글 작성/수정(`?edit={id}`). 게시판은 URL로 고정, variant/share만 문서 첨부. 저장 후 `/wiki/posts/{id}`. `/home`·`/community`로 이동하지 않음 |
 | `/wiki/posts/{postId}` | `public/wiki_post` | ✅ Wiki 전용 글 상세. 본문 + 첨부 다운로드/추가/삭제 + 답변. "← BuildIt Wiki로 돌아가기" → `/wiki`. 비-wiki 게시판 글이면 `/community/posts/{id}` 안내 |
-| `/admin/wiki-originals` | `admin/wiki_originals` | ✅ (ADMIN) 모의고사 원본 PDF 등록/수정/공개전환/삭제. 셸은 permitAll, `/api/admin/wiki/originals*` 가 ADMIN 게이트 |
+| `/admin/wiki-originals` | `admin/wiki_originals` | ✅ (ADMIN) 모의고사 자료(문제지·정답지·해설·구문독해) 등록/수정/공개전환/삭제 + 회차(연도·월) 관리(메인 지정·공개 전환). 셸은 permitAll, `/api/admin/wiki/{originals,rounds}*` 가 ADMIN 게이트 |
 | `/admin/wiki-analysis` | `admin/wiki_analysis` | ✅ (ADMIN) 분석 자료 문서(PDF/HWP/HWPX/DOCX 등) 관리. `/api/admin/wiki/analysis-materials*` ADMIN 게이트 |
 | `/lessons` | `lesson_search` | ✅ 학생용 수업 검색 페이지 |
 | `/tutor/lessons/{lessonId}/students` | `tutor/lesson_students` | ✅ 강사용 수업별 신청자 목록 |
@@ -3386,25 +3386,36 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 - 관련 코드: `CommunityController`, `CommunityService`/`CommunityImageService`, `domain/community/*`(CommunityPost=질문/Answer/CommunityImage, BoardType), `CommunityProperties`(`app.community.*`). 마이그레이션: **`V914`(원본, 불변) + `V915`(Q&A 전환) + `V916`(board_type+subject_id) + `V917`(community_comments DROP — 댓글 폐기)**, 모두 in-place 업그레이드. ※ 적용된 V_파일 재작성 금지, 신규 번호로 추가.
 
-## 15-1. 모의고사 원본 API (`/api/wiki/originals`) — 로그인 회원 BuildIt Wiki
+## 15-1. 모의고사 자료·회차 API (`/api/wiki/originals`, `/api/wiki/rounds`) — 로그인 회원 BuildIt Wiki
 
-공개 `/wiki` 의 모의고사 원본 PDF(문제지/정답지). `exam_analyses`(HTML 분석 리포트)와 목적이 달라 별도 테이블(`wiki_exam_originals`, V956)·도메인(`domain/wikioriginal/*`). 파일은 `FileStorage.saveRaw` 원본 저장, 다운로드로만 제공.
+공개 `/wiki` 의 모의고사 자료(문제지/정답지/**문제풀이 해설/구문독해**). `exam_analyses`(HTML 분석 리포트)와 목적이 달라 별도 테이블(`wiki_exam_originals`, V956)·도메인(`domain/wikioriginal/*`). 파일은 `FileStorage.saveRaw` 원본 저장. **V1093**부터 자료에 회차(연도·월) 구조(`exam_year`/`exam_month`, 기존 행은 `exam_label`에서 백필)가 생겼고, 회차 메타는 `wiki_exam_rounds`가 담당한다 — 메인 회차 지정 시 그 회차가 `/wiki` 메인이 되고 나머지는 `/wiki/archive?year=&month=` 아카이브에서 열람한다(기존 URL·자료·다운로드 경로는 그대로).
 
-**보안 경계**: `GET /api/wiki/originals`·`/originals/**` 만 permitAll. `/api/admin/wiki/originals*` 는 `/api/admin/**` → ROLE_ADMIN.
+**보안 경계**: `GET /api/wiki/rounds`·`/api/wiki/rounds/current`만 permitAll(메타데이터). 자료 목록·다운로드·열람은 로그인 회원, `/api/admin/wiki/**` 는 `/api/admin/**` → ROLE_ADMIN.
 
 ### 로그인 회원
-- `GET /api/wiki/originals?grade=` — deleted=false·visible=true, grade(1~3, null=전체) 필터, 최신순. → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examLabel, docType, docTypeLabel, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
-- `GET /api/wiki/originals/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 `Content-Disposition: attachment` + 확장자로 추론한 content-type(pdf/hwp/hwpx) + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
+- `GET /api/wiki/originals?grade=&year=&month=&docType=` — deleted=false·visible=true, 학년/회차/종류 필터(미지정 시 무필터와 동일). → `WikiExamOriginalResponse[]`(wikiExamOriginalId, title, grade, examYear, examMonth, examLabel, docType, docTypeLabel, originalFileName, fileExtension, fileSize, isVisible, createdAt, updatedAt, downloadUrl, viewUrl).
+- `GET /api/wiki/originals/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 `Content-Disposition: attachment` + 확장자로 추론한 content-type + RFC5987 파일명 + `nosniff` (`FileDownloadResponses.attachment`). 미존재/비공개 404.
+- `GET /api/wiki/originals/{id}/view` — 로그인 회원만. HTML/이미지(html·htm·png·jpg·jpeg·webp)만 인라인 열람 허용, 그 외 400. `Content-Disposition: inline` + `Content-Security-Policy: sandbox allow-scripts allow-modals` + `nosniff`. 해설 HTML의 문항 이동·글자 크기 조절 스크립트와 인쇄가 동작하지만 allow-same-origin이 없어 불투명 출처로 격리된다(사이트 쿠키·스토리지·DOM 접근 불가, 폼 제출·팝업·상위 이동 차단 유지).
+
+### 회차 (공개 메타 + ADMIN 관리)
+- `GET /api/wiki/rounds` — 공개 회차 목록(최신순, 아카이브 선택용). permitAll.
+- `GET /api/wiki/rounds/current` — 현재 메인 회차. `is_current` 지정이 없으면 최신 공개 회차로 폴백, 공개 회차가 없으면 404. permitAll.
+- `GET /api/admin/wiki/rounds` — 전체 회차(비공개·메인 여부 포함).
+- `POST /api/admin/wiki/rounds` — params `examYear, examMonth, title, subtitle?, bannerPath?, published(기본 true), current(기본 false)`. 같은 연도·월 중복 시 409. `current=true`면 기존 메인은 해제되고 이 회차만 메인이 된다(공개도 강제).
+- `PUT /api/admin/wiki/rounds/{id}` — 제목·부제·배너·공개 여부 수정(bannerPath가 비면 기존 배너 유지).
+- `PATCH /api/admin/wiki/rounds/{id}/current` — 메인 지정(단일성 유지).
+- `PATCH /api/admin/wiki/rounds/{id}/published` — body `{isVisible}`.
+- `DELETE /api/admin/wiki/rounds/{id}` — soft delete(메인 지정도 해제), 204.
 
 ### 관리 (ADMIN)
 - `GET /api/admin/wiki/originals` — deleted=false 전체(비공개 포함).
-- `POST /api/admin/wiki/originals` (multipart) — params `title, grade(1~3), examLabel, docType(QUESTION|ANSWER), visible(기본 true)`, part `file`(`.pdf/.hwp/.hwpx` + 매직바이트 교차검증, `app.upload.max-document-bytes` 이내). 검증 실패 400.
-- `PUT /api/admin/wiki/originals/{id}` (multipart) — 위와 동일, `file` 선택(있으면 교체 + 이전 파일 삭제).
-- `PATCH /api/admin/wiki/originals/{id}/visibility` — body `{isVisible}`.
+- `POST /api/admin/wiki/originals` (multipart) — params `title, grade(1~3), docType(QUESTION|ANSWER|EXPLANATION|SYNTAX), visible(기본 true), examYear?, examMonth?, examLabel?`, part `file`(`.pdf/.hwp/.hwpx/.html/.htm/.png/.jpg/.jpeg/.webp` + 매직바이트 교차검증, `app.upload.max-wiki-original-bytes`(기본 50MB) 이내 — 내장 폰트·이미지 해설 HTML 대응 전용 상한, 다른 문서 경로는 `max-document-bytes` 20MB 유지). `examYear`+`examMonth`가 있으면 `exam_label`은 서버가 `"{year} {month}월 모의고사"`로 합성한다(둘 다 없으면 기존처럼 examLabel 필수). 검증 실패 400.
+- `PUT /api/admin/wiki/originals/{id}` (multipart) — 위와 동일, `file` 선택(있으면 교체 + 이전 파일 삭제). 연도·월을 모두 비우면 기존 회차 값을 유지한다.
+- `PATCH /api/admin/wiki/originals/{id}/visibility` — body `{isVisible}`. 임시저장(비공개) ↔ 공개 전환.
 - `DELETE /api/admin/wiki/originals/{id}` — soft delete(deleted=true, visible=false), 204.
 - `DELETE /api/admin/wiki/originals/{id}/hard` — 물리 삭제 + storage 파일 삭제, 204.
 
-- 관련 코드: `WikiExamOriginalController`/`WikiExamOriginalService`/`WikiExamOriginalRepository`, `domain/wikioriginal/*`(WikiExamOriginal, WikiExamOriginalDocType). 마이그레이션 **`V956`**(신규 테이블). 업로드 검증은 공용 `DocumentUploadValidator`(원본은 `.pdf`로 좁혀 사용).
+- 관련 코드: `WikiExamOriginalController`/`WikiExamRoundController`/`WikiExamOriginalService`/`WikiExamRoundService`, `domain/wikioriginal/*`(WikiExamOriginal, WikiExamOriginalDocType, WikiExamRound). 마이그레이션 **`V956`**(원본 테이블), **`V1093`**(회차 열 백필 + `wiki_exam_rounds` + 2026년 9·10월 시드). 업로드 검증은 공용 `DocumentUploadValidator`.
 
 ## 15-2. 분석 자료 API (`/api/wiki/analysis-materials`) — 공개 BuildIt Wiki
 
@@ -3432,6 +3443,8 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 **보안 경계**: `GET /api/wiki/questions`·`/questions/**` 만 permitAll(목록/상세/Context/첨부 다운로드). write(글/답글/수정/삭제/첨부)는 `/api/**` catch-all → 인증(STUDENT/TUTOR/ADMIN 누구나). 자료 링크는 `/api/admin/wiki/questions/**` → ROLE_ADMIN. 작성자만 수정, 작성자·ADMIN 만 숨김. `@AuthenticationPrincipal` 기준 — request body user id 불신뢰.
 
+**AI 문제제작 비제공 회차 (2026-10-20 운영 결정)**: 2026년 9월 모의고사 문항은 AI 문제제작을 제공하지 않는다. 판정은 `QuestionAiGenerationPolicy`(examYear=2026 + examLabel에 "9월" 포함) 한 곳에서 하고, 상세 화면 섹션 제거(question_wiki_ai.js)·AI 프록시(`POST /problem-generator/wiki/api/ai/complete`의 Reference 마커가 해당 문항이면 403)·`GENERATED_PRACTICE` 저장 403이 같은 정책을 따른다. 다른 회차·서비스의 AI 기능과 기존 생성 데이터는 영향 없음.
+
 ### 공개 (read)
 - `GET /api/wiki/questions?subject=&grade=&examYear=&examLabel=` — visible 문항, `(grade, questionNumber)` 순. → `QuestionWikiSummaryResponse[]`(questionWikiId, subject, grade, examYear, examLabel, questionNumber, passageGroupKey, title, displayContext, threadCount).
 - `GET /api/wiki/questions/{id}` — 단건 요약.
@@ -3443,7 +3456,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `GET /api/wiki/questions/materials/{linkId}/preview` — HTML 학습자료 격리 미리보기(공개). `Content-Type: text/html; charset=UTF-8` + `Content-Disposition: inline` + **`Content-Security-Policy: sandbox; default-src 'none'; img-src data: https:; style-src 'unsafe-inline' https:; font-src https: data:; frame-ancestors 'self'`** + `nosniff`. 프런트는 이 URL 을 `<iframe sandbox>` 로만 연다(부모 DOM 삽입 X, 스크립트 차단, CSS/이미지 유지). HTML 링크가 아니면 404. 파일 다운로드는 여전히 `viewUrl`(attachment 강제)이 담당한다.
 
 ### write (인증)
-- `POST /api/wiki/questions/{id}/posts` (JSON) — `QuestionThreadPostRequest`{category?, dataKind?, title?, content, parentPostId?, variant?, examEvidence?}. **단순화된 UI 는 `{content}` 만 보낸다** → 서버가 `category=ETC`(미분류) + `dataKind=DISCUSSION` 기본값으로 저장(향후 Browser AI 가 이 값을 갱신). `dataKind=GENERATED_PRACTICE`(API 직접 호출 시) → `variant.questionText` 필수, `EXAM_EVIDENCE` → `examEvidence.schoolName` 필수. → 갱신된 Context.
+- `POST /api/wiki/questions/{id}/posts` (JSON) — `QuestionThreadPostRequest`{category?, dataKind?, title?, content, parentPostId?, variant?, examEvidence?}. **단순화된 UI 는 `{content}` 만 보낸다** → 서버가 `category=ETC`(미분류) + `dataKind=DISCUSSION` 기본값으로 저장(향후 Browser AI 가 이 값을 갱신). `dataKind=GENERATED_PRACTICE`(API 직접 호출 시) → `variant.questionText` 필수, `EXAM_EVIDENCE` → `examEvidence.schoolName` 필수. → 갱신된 Context. **단, 2026년 9월 모의고사 문항은 AI 문제제작 비제공 회차라 `GENERATED_PRACTICE` 저장이 403**(`QuestionAiGenerationPolicy` — 상세 화면 섹션 제거 + AI 프록시 차단과 동일 정책). 기존 생성 데이터·DISCUSSION 글쓰기는 영향 없음.
 - `POST /api/wiki/questions/{id}/posts/{parentPostId}/replies` (JSON) — 1단계 답글(답글의 답글 400, 답글은 항상 DISCUSSION). → Context.
 - `PUT /api/wiki/questions/posts/{postId}` (JSON) — 작성자만. **`variant`/`examEvidence` 가 요청에 실제로 들어온 경우에만** 상세를 갱신한다 → 단순화 UI(내용만)로 기존 GENERATED_PRACTICE/EXAM_EVIDENCE 글을 수정해도 원문·상세가 보존된다. → Context.
 - `DELETE /api/wiki/questions/posts/{postId}` — 작성자·ADMIN soft-hide. → Context.

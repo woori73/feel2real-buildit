@@ -30,6 +30,13 @@ public class WikiExamOriginal extends BaseEntity {
   @Column(nullable = false)
   private Integer grade;
 
+  /** 회차 구조화 (V1093). 기존 행은 exam_label 백필, 신규 행은 관리자 입력값. */
+  @Column(name = "exam_year")
+  private Integer examYear;
+
+  @Column(name = "exam_month")
+  private Integer examMonth;
+
   @Column(name = "exam_label", nullable = false, length = 100)
   private String examLabel;
 
@@ -54,7 +61,8 @@ public class WikiExamOriginal extends BaseEntity {
 
   @Builder
   public WikiExamOriginal(String title, Integer grade, String examLabel, WikiExamOriginalDocType docType,
-      String originalFileName, String storageKey, Long fileSize, boolean visible) {
+      String originalFileName, String storageKey, Long fileSize, boolean visible,
+      Integer examYear, Integer examMonth) {
     this.title = title;
     this.grade = grade;
     this.examLabel = examLabel;
@@ -64,15 +72,19 @@ public class WikiExamOriginal extends BaseEntity {
     this.fileSize = fileSize;
     this.visible = visible;
     this.deleted = false;
+    this.examYear = examYear;
+    this.examMonth = examMonth;
   }
 
   public void updateMetadata(String title, Integer grade, String examLabel,
-      WikiExamOriginalDocType docType, boolean visible) {
+      WikiExamOriginalDocType docType, boolean visible, Integer examYear, Integer examMonth) {
     this.title = title;
     this.grade = grade;
     this.examLabel = examLabel;
     this.docType = docType;
     this.visible = visible;
+    this.examYear = examYear;
+    this.examMonth = examMonth;
   }
 
   public String replaceFile(String originalFileName, String storageKey, Long fileSize) {
