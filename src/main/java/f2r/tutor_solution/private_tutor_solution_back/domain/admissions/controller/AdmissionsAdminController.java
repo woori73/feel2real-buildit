@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.control
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsActivationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoader;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsVectorIndex;
 import org.slf4j.Logger;
@@ -41,15 +42,18 @@ public class AdmissionsAdminController {
     private final AdmissionsVectorIndex vectorIndex;
     private final AdmissionsDataLoader dataLoader;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials;
+    private final AdmissionsActivationService activationService;
 
     public AdmissionsAdminController(AdmissionsKnowledgeItemRepository knowledgeRepository,
                                      AdmissionsVectorIndex vectorIndex,
                                      AdmissionsDataLoader dataLoader,
-                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials) {
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials,
+                                     AdmissionsActivationService activationService) {
         this.knowledgeRepository = knowledgeRepository;
         this.vectorIndex = vectorIndex;
         this.dataLoader = dataLoader;
         this.materials = materials;
+        this.activationService = activationService;
     }
 
     /** 지식 목록 (상태별 필터). */
@@ -128,6 +132,30 @@ public class AdmissionsAdminController {
         log.info("admissions knowledge {} status {} -> {} by admin", id, current, next);
         return ResponseEntity.ok(toDto(saved));
     }
+
+    /**
+     * 한 학년도의 공식자료·학과·전형·일정을 전체 ACTIVE로 승격한다(DRAFT·REVIEW만 대상, ARCHIVED 제외).
+     * 확인 문자열 {@code ACTIVATE-ALL-<학년도>}가 필요하다. 실행 관리자와 건수를 로그로 남긴다.
+     */
+    @PostMapping("/activate-all")
+    public ResponseEntity<Map<String, Object>> activateAll(@RequestBody ActivateAllRequest request,
+                                                           java.security.Principal principal) {
+        if (request == null || request.academicYear() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "academicYear required"));
+        }
+        try {
+            var r = activationService.activateAll(request.academicYear(), request.confirm());
+            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} note={}",
+                    principal == null ? "unknown" : principal.getName(), r.academicYear(), r.materials(),
+                    r.departments(), r.types(), r.schedules(), request.note());
+            return ResponseEntity.ok(Map.of("academicYear", r.academicYear(), "materials", r.materials(),
+                    "departments", r.departments(), "types", r.types(), "schedules", r.schedules(), "status", "ACTIVATED"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
+        }
+    }
+
+    public record ActivateAllRequest(Integer academicYear, String confirm, String note) {}
 
     /** 벡터 인덱스 재로드. */
     @PostMapping("/index/reload")
