@@ -24,6 +24,7 @@ on:
           - app-diag
           - alb-diag
           - academycraft-preflight
+          - admissions-diag
           - acm-dns
           - p2-inventory
           - p2-s3-copy
@@ -522,6 +523,22 @@ jobs:
             [ "$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text)" = Success ]
           }
 
+          # 입시상담 읽기 전용 진단: 2027·2028 자료 상태별 건수, 대학별 일정, 출처·승인 상태, 검색 인덱스, 앱 상태.
+          # 쓰기 SQL 없음(READ ONLY 트랜잭션). 신규 계정(425805163960) 확인 후에만 실행한다.
+          step_admissions_diag() {
+            local ACCOUNT IID B64 CID
+            ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+            [ "$ACCOUNT" = "425805163960" ] || { echo wrong-account; exit 1; }
+            IID=$(get_instance); need f2r-app "$IID"
+            [[ "$IID" != *$'\t'* && "$IID" != *' '* ]] || { echo ambiguous-instance; exit 1; }
+            B64=$(base64 -w0 scripts/operations/admissions-diag.sh)
+            CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$(jq -cn --arg c "echo $B64 | base64 -d | bash" '{commands:[$c]}')" --query Command.CommandId --output text)
+            aws ssm wait command-executed --command-id "$CID" --instance-id "$IID" || true
+            aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' --output json \
+              | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig'
+            [ "$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text)" = Success ]
+          }
+
           # 신규 계정 ALB·CloudWatch·호스트 읽기 전용 진단(생성·수정·재시작 없음). 일시 503 원인 조사용.
           # 구간은 입력(diag_start/diag_end, UTC, 24시간 이내)이며 비우면 2026-10-19 20:30~21:30Z.
           step_alb_diag() {
@@ -618,6 +635,7 @@ jobs:
             app-diag) step_app_diag ;;
             alb-diag) step_alb_diag ;;
             academycraft-preflight) step_academycraft_preflight ;;
+            admissions-diag) step_admissions_diag ;;
             s3) step_s3 ;;
             provision) step_provision ;;
             restore-rds) step_restore_rds ;;
