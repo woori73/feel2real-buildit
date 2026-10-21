@@ -175,6 +175,27 @@ enable)
     cp -p "$(ls -t "$ENV_FILE".bak-embed-* | head -1)" "$ENV_FILE"; restart_app || true; stop_embed; exit 7
   fi ;;
 
+prepare-enable)
+  # 환경설정만 넣고 앱은 재시작하지 않는다. 다음 배포(재시작 1회)에서 함께 적용된다.
+  systemctl is-active --quiet f2r-embed || { echo "ABORT: f2r-embed가 실행 중이 아님"; exit 3; }
+  curl -fsS -m 5 http://127.0.0.1:8081/health >/dev/null || { echo "ABORT: 임베딩 서버 health 실패"; exit 3; }
+  if [ -z "${MIN_SIMILARITY:-}" ] && [ -f "$BASE/CALIBRATION" ]; then
+    S=$(sed -n 's/^SUGGESTED_FLOOR=//p' "$BASE/CALIBRATION")
+    if [ -n "$S" ] && [ "$S" != None ]; then MIN_SIMILARITY=$S; fi
+  fi
+  echo "min_similarity=${MIN_SIMILARITY:-default(0.5)}"
+  cp -p "$ENV_FILE" "$ENV_FILE.bak-embed-$(date +%s)"
+  set_env APP_ADMISSIONS_EMBEDDING_ENABLED true
+  set_env APP_ADMISSIONS_EMBEDDING_SERVICE_URL http://127.0.0.1:8081
+  set_env APP_ADMISSIONS_EMBEDDING_MODEL_VERSION "$MODEL_VERSION"
+  [ -z "${MIN_SIMILARITY:-}" ] || set_env APP_ADMISSIONS_EMBEDDING_MIN_SIMILARITY "$MIN_SIMILARITY"
+  echo "PREPARE_OK (앱 재시작 없음 — 다음 배포 때 적용)"; grep -E '^APP_ADMISSIONS_EMBEDDING' "$ENV_FILE" ;;
+
+embed-stop)
+  # 비상 차단: 재시작 없이 임베딩 서버만 중지. 앱은 서킷 브레이커로 키워드·구조화 검색으로 즉시 돌아간다.
+  systemctl stop f2r-embed && systemctl disable f2r-embed >/dev/null 2>&1 || true
+  echo "EMBED_STOPPED (앱 재시작 없음)"; report ;;
+
 disable)
   for k in ENABLED SERVICE_URL MODEL_VERSION MIN_SIMILARITY; do unset_env "APP_ADMISSIONS_EMBEDDING_$k"; done
   set_env APP_ADMISSIONS_EMBEDDING_ENABLED false
