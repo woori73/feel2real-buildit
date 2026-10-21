@@ -15,7 +15,9 @@ report() {
   echo "== memory =="; free -m
   echo "MemAvailable_MB=$(avail_mb)"
   echo "== services =="
-  for s in f2r-app f2r-embed; do echo "$s: $(systemctl is-active $s 2>/dev/null || true)"; done
+  for s in f2r-app buildit-wiki f2r-embed; do echo "$s: $(systemctl is-active $s 2>/dev/null || true) enabled=$(systemctl is-enabled $s 2>/dev/null || true)"; done
+  echo "MemTotal_MB=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)"
+  echo "instance_type=$(curl -fsS -m 2 -H "X-aws-ec2-metadata-token: $(curl -fsS -m 2 -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null)" http://169.254.169.254/latest/meta-data/instance-type 2>/dev/null || echo unknown)"
   echo "app_health_up=$(app_ok && echo yes || echo no)"
   echo "== top rss (MB) =="; ps -eo rss,comm --sort=-rss | head -6 | awk '{printf "%d %s\n",$1/1024,$2}'
   if systemctl is-active --quiet f2r-embed; then
@@ -42,8 +44,10 @@ case "$ACTION" in
 status) report ;;
 
 install)
-  A=$(avail_mb); echo "MemAvailable_MB(before)=$A"
-  [ "$A" -ge 1100 ] || { echo "ABORT: 여유 메모리 부족(<1100MB) — 설치하지 않음. t3.large 증설 검토 대상"; exit 3; }
+  TOTAL=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)
+  [ "$TOTAL" -ge 7000 ] || { echo "ABORT: 총 메모리 ${TOTAL}MB — 4GB 환경 설치는 실측(OOM 2회)으로 금지. t3.large(8GB) 이상에서만 설치"; exit 3; }
+  A=$(avail_mb); echo "MemTotal_MB=$TOTAL MemAvailable_MB(before)=$A"
+  [ "$A" -ge 2500 ] || { echo "ABORT: 여유 메모리 부족(<2500MB) — 설치하지 않음"; exit 3; }
   app_ok || { echo "ABORT: 앱이 정상이 아님 — 설치하지 않음"; exit 3; }
   [ "$(df -m / | awk 'NR==2{print $4}')" -ge 2500 ] || { echo "ABORT: 디스크 여유 부족(<2.5GB)"; exit 3; }
   PY=$(command -v python3.11 || command -v python3.12 || command -v python3)
@@ -62,12 +66,14 @@ install)
   done
   ( cd "$BASE/model" && ls -l && sha256sum "$(basename "$PICK")" tokenizer.json ) | tee "$BASE/MODEL_INFO"
   install -m 644 "$SRC/server.py" "$SRC/embed_core.py" "$SRC/calibrate.py" "$BASE/"
+  echo "MIN_AVAIL_MB=600" > "$BASE/guard.conf"
   cat > "$BASE/guard.sh" <<'G'
 #!/bin/bash
-# 앱 보호: 여유 메모리가 300MB 미만이거나 앱이 죽어 있으면 임베딩부터 중지한다(재시작은 사람이 한다).
+# 앱 보호: 여유 메모리가 임계값 미만이거나 앱이 죽어 있으면 임베딩부터 중지한다(재시작은 사람이 한다).
+. /opt/f2r-embed/guard.conf
 A=$(awk '/MemAvailable/{print int($2/1024)}' /proc/meminfo)
 if systemctl is-active --quiet f2r-embed; then
-  if [ "$A" -lt 300 ] || ! systemctl is-active --quiet f2r-app; then
+  if [ "$A" -lt "$MIN_AVAIL_MB" ] || ! systemctl is-active --quiet f2r-app; then
     systemctl stop f2r-embed; logger -t f2r-embed-guard "stopped embedding: MemAvailable=${A}MB"
   fi
 fi
@@ -77,24 +83,25 @@ G
 [Unit]
 Description=F2R admissions embedding server (EmbeddingGemma ONNX, CPU)
 After=network.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
 [Service]
 User=f2r-embed
 WorkingDirectory=$BASE
 Environment=EMBED_MODEL_PATH=$BASE/model/$(basename "$PICK")
 Environment=EMBED_TOKENIZER_PATH=$BASE/model/tokenizer.json
-Environment=EMBED_THREADS=1
+Environment=EMBED_THREADS=2
+Environment=EMBED_MAX_TOKENS=512
 Environment=MALLOC_ARENA_MAX=2
 ExecStart=$BASE/venv/bin/python $BASE/server.py
-MemoryMax=900M
+MemoryMax=2000M
 MemorySwapMax=0
-CPUQuota=100%
+CPUQuota=150%
 Nice=15
 OOMScoreAdjust=900
 TasksMax=64
 Restart=on-failure
 RestartSec=10
-StartLimitIntervalSec=300
-StartLimitBurst=3
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
@@ -123,7 +130,7 @@ U
   echo; echo "== 보정(calibrate) =="; echo "embed MemoryCurrent_MB(before)=$(( $(systemctl show f2r-embed -p MemoryCurrent --value) / 1048576 ))"
   CAL=0; "$PY" "$BASE/calibrate.py" | tee "$BASE/CALIBRATION" || CAL=1
   sleep 5; report
-  if [ "$(avail_mb)" -lt 400 ] || ! app_ok || [ "$CAL" = 1 ]; then
+  if [ "$(avail_mb)" -lt 1500 ] || ! app_ok || [ "$CAL" = 1 ]; then
     echo "FAIL: 설치 후 안전 기준 미달 — 임베딩 중지"; journalctl -u f2r-embed -n 25 --no-pager; stop_embed; systemctl disable f2r-embed >/dev/null 2>&1 || true; exit 6
   fi
   echo "INSTALL_OK" ;;

@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'status=상태/메모리 보고, install=서버 설치·보정, enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
+        description: 'status=상태/메모리 보고, resize-check=EC2 증설 사전 점검(읽기 전용: 권한 dry-run·EIP·볼륨·부팅 자동기동), install=서버 설치·보정, enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
         required: true
         default: status
         type: choice
-        options: [status, install, enable, disable]
+        options: [status, resize-check, install, enable, disable]
       min_similarity:
         description: 'enable 시 유사도 하한. 비우면 설치 때 보정한 제안값(없으면 기본 0.5)'
         required: false
@@ -38,10 +38,30 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
           aws-region: ap-northeast-2
+      - name: Resize preflight (read-only, dry-run only)
+        if: inputs.action == 'resize-check'
+        shell: bash
+        run: |
+          set +e
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration \
+            Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          echo "== instance =="; aws ec2 describe-instances --instance-ids "$IID" --query 'Reservations[0].Instances[0].{Id:InstanceId,Type:InstanceType,State:State.Name,PrivateIp:PrivateIpAddress,PublicIp:PublicIpAddress,EbsOptimized:EbsOptimized,Volumes:BlockDeviceMappings[].Ebs.VolumeId}' --output json
+          echo "== elastic ip =="; aws ec2 describe-addresses --filters Name=instance-id,Values="$IID" --query 'Addresses[].{Ip:PublicIp,Alloc:AllocationId}' --output json 2>&1 | head -5
+          echo "== root volume =="; aws ec2 describe-volumes --filters Name=attachment.instance-id,Values="$IID" --query 'Volumes[].{Id:VolumeId,GiB:Size,Type:VolumeType}' --output json 2>&1 | head -10
+          echo "== target health =="; aws elbv2 describe-target-groups --query 'TargetGroups[].TargetGroupArn' --output text 2>&1 | tr '\t' '\n' | head -3 | while read -r tg; do [ -n "$tg" ] && aws elbv2 describe-target-health --target-group-arn "$tg" --query 'TargetHealthDescriptions[].{Target:Target.Id,State:TargetHealth.State}' --output json 2>&1 | head -8; done
+          VOL=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values="$IID" --query 'Volumes[0].VolumeId' --output text)
+          echo "== permission dry-runs (DryRunOperation=허용, UnauthorizedOperation=권한 없음) =="
+          for c in "stop-instances --instance-ids $IID" "start-instances --instance-ids $IID" \
+                   "modify-instance-attribute --instance-id $IID --instance-type {\"Value\":\"t3.large\"}" \
+                   "create-snapshot --volume-id $VOL --description f2r-pre-resize"; do
+            OUT=$(aws ec2 $c --dry-run 2>&1); R=$(echo "$OUT" | grep -oE 'DryRunOperation|UnauthorizedOperation' | head -1)
+            echo "${c%% *}: ${R:-unknown: $(echo "$OUT" | tail -1 | cut -c1-120)}"
+          done
+          exit 0
       - name: Run on f2r-app via SSM
         shell: bash
         env:
-          ACTION: ${{ inputs.action }}
+          ACTION: ${{ inputs.action == 'resize-check' && 'status' || inputs.action }}
           MIN_SIMILARITY: ${{ inputs.min_similarity }}
         run: |
           set -euo pipefail
