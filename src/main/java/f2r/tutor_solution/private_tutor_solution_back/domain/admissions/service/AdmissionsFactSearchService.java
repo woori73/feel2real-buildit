@@ -109,6 +109,7 @@ public class AdmissionsFactSearchService {
             if (d.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(d.getAcademicYear())) continue;
             if (!approvedSource(d.getSource(), d.getAcademicYear())) continue;
             if (!trackAllowed(question, d.getSource())) continue;
+            if (!campusAllowed(question, d.getSource(), d.getName())) continue;
             if (!univSelected(p, d.getUniversity())) continue;
             candidates.add(d);
         }
@@ -138,6 +139,7 @@ public class AdmissionsFactSearchService {
             if (t.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(t.getAcademicYear())) continue;
             if (!approvedSource(t.getSource(), t.getAcademicYear())) continue;
             if (!trackAllowed(question, t.getSource())) continue;
+            if (!campusAllowed(question, t.getSource(), t.getName())) continue;
             if (!univSelected(p, t.getUniversity())) continue;
             candidates.add(t);
         }
@@ -164,6 +166,7 @@ public class AdmissionsFactSearchService {
             if (s.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(s.getAcademicYear())) continue;
             if (!approvedSource(s.getSource(), s.getAcademicYear())) continue;
             if (!trackAllowed(question, s.getSource())) continue;
+            if (!campusAllowed(question, s.getSource(), s.getTitle())) continue;
             if (s.getUniversity() == null || !univSelected(p, s.getUniversity())) continue;
             if (!scheduleMatches(question, s.getTitle())) continue;
             out.add(evidence("sched", s.getScheduleId(), s.getAcademicYear(),
@@ -188,6 +191,7 @@ public class AdmissionsFactSearchService {
             if (s.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(s.getAcademicYear())) continue;
             if (!approvedSource(s.getSource(), s.getAcademicYear())) continue;
             if (s.getUniversity() == null) continue;
+            if (!campusAllowed(question, s.getSource(), s.getTitle())) continue;
             String title = s.getTitle();
             boolean relevant = genericQuestion ? (title.contains("접수") || title.contains("원서")) : scheduleMatches(question, title);
             if (!relevant) continue;
@@ -245,6 +249,28 @@ public class AdmissionsFactSearchService {
         boolean titleJeongsi = title.contains("정시");
         if (titleSusi == titleJeongsi) return true;
         return susi ? titleSusi : titleJeongsi;
+    }
+
+    /** 텍스트에 표기된 캠퍼스("서울캠퍼스"/"세종캠퍼스", 공백 무시). 표기가 없으면 null. */
+    static String campusOf(String text) {
+        if (text == null) return null;
+        String t = text.replace(" ", "");
+        if (t.contains("세종캠퍼스")) return "세종";
+        if (t.contains("서울캠퍼스")) return "서울";
+        return null;
+    }
+
+    /**
+     * 질문이 캠퍼스를 말했을 때 다른 캠퍼스로 표기된 근거를 제외한다(KI-1: 서울캠퍼스 질문에 세종캠퍼스 자료가 섞이던 문제).
+     * 질문이 서울캠퍼스를 말하면 세종 표기 행만 제외하고, 세종캠퍼스를 말하면 세종 표기 행만 남긴다.
+     * 질문에 캠퍼스가 없으면 거르지 않는다(근거 제목의 캠퍼스 표기는 그대로 노출된다).
+     */
+    static boolean campusAllowed(String question, AdmissionsOfficialMaterial source, String rowName) {
+        String asked = campusOf(question);
+        if (asked == null) return true;
+        String rowCampus = campusOf((source == null ? "" : source.getTitle()) + " " + (rowName == null ? "" : rowName));
+        if (rowCampus == null) return "서울".equals(asked);
+        return asked.equals(rowCampus);
     }
 
     private static boolean approvedSource(AdmissionsOfficialMaterial source, Integer year) {

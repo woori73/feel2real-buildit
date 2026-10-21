@@ -358,6 +358,83 @@ class AdmissionsFactSearchServiceDbTest {
         assertThat(jeongsiOnly.evidence()).extracting(e -> e.getTitle()).noneSatisfy(t -> assertThat(t).contains("수시전형"));
     }
 
+    private static final String CAMPUS_SEED = """
+        {"ipsi_universities":[{"name":"가대학교","university_code":"GA"}],
+         "ipsi_documents":[{"document_key":"doc_ga_2027_susi","document_name":"가대학교(세종캠퍼스) 2027학년도 수시모집요강","applicable_academic_year":2027,"institution_name":"가대","source_url":"https://example.test/sejong"},
+                           {"document_key":"doc_ga_2027_susi_seoul","document_name":"가대학교 2027학년도 수시모집요강","applicable_academic_year":2027,"institution_name":"가대","source_url":"https://example.test/seoul"}],
+         "ipsi_departments":[],
+         "ipsi_admission_types":[{"university_code":"GA","academic_year":2027,"type_name":"[세종캠퍼스] 학생부교과","source_document_key":"doc_ga_2027_susi"},
+                                 {"university_code":"GA","academic_year":2027,"type_name":"학생부종합(서울)","source_document_key":"doc_ga_2027_susi_seoul"}],
+         "ipsi_schedules":[{"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"수시(세종캠퍼스)","date":"2026.9.7.","source_document_key":"doc_ga_2027_susi"},
+                           {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"수시","date":"2026.9.8.","source_document_key":"doc_ga_2027_susi_seoul"}]}
+        """;
+
+    @Test
+    @DisplayName("given 세종·서울 자료 when 서울캠퍼스를 물으면 then 세종 표기 근거는 제외된다 (KI-1)")
+    void seoul_campus_question_excludes_sejong_rows() throws Exception {
+        // given
+        clean();
+        loader.loadSeed(CAMPUS_SEED);
+        approveAll();
+
+        // when
+        var r = search.search("가대학교 서울캠퍼스 수시 전형과 원서접수 일정", null);
+
+        // then
+        assertThat(r.evidence()).isNotEmpty();
+        assertThat(r.evidence()).allSatisfy(e -> {
+            assertThat(e.getTitle()).doesNotContain("세종캠퍼스");
+            assertThat(e.getNote()).doesNotContain("세종캠퍼스");
+        });
+    }
+
+    @Test
+    @DisplayName("given 세종·서울 자료 when 세종캠퍼스를 물으면 then 세종 표기 근거만 나온다")
+    void sejong_campus_question_returns_only_sejong_rows() throws Exception {
+        // given
+        clean();
+        loader.loadSeed(CAMPUS_SEED);
+        approveAll();
+
+        // when
+        var r = search.search("가대학교 세종캠퍼스 수시 전형과 원서접수 일정", null);
+
+        // then
+        assertThat(r.evidence()).isNotEmpty();
+        assertThat(r.evidence()).allSatisfy(e ->
+                assertThat(e.getTitle() + e.getNote()).contains("세종캠퍼스"));
+    }
+
+    @Test
+    @DisplayName("given 세종캠퍼스 자료만 있는 대학 when 서울캠퍼스를 물으면 then 근거가 없다")
+    void seoul_question_without_seoul_data_has_no_evidence() throws Exception {
+        // given
+        clean();
+        loader.loadSeed(CAMPUS_SEED.replace("\"source_document_key\":\"doc_ga_2027_susi_seoul\"", "\"source_document_key\":\"doc_ga_2027_susi\""));
+        approveAll();
+
+        // when
+        var r = search.search("가대학교 서울캠퍼스 수시 전형", null);
+
+        // then
+        assertThat(r.evidence()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("given 캠퍼스를 말하지 않은 질문 when 물으면 then 거르지 않고 표기된 근거를 그대로 낸다")
+    void question_without_campus_is_not_filtered() throws Exception {
+        // given
+        clean();
+        loader.loadSeed(CAMPUS_SEED);
+        approveAll();
+
+        // when
+        var r = search.search("가대학교 수시 원서접수 일정", null);
+
+        // then
+        assertThat(r.evidence().stream().filter(e -> e.getRefId().startsWith("sched:"))).hasSize(2);
+    }
+
     private static String deptJson(String name, int total) {
         return "{\"university_code\":\"TST\",\"academic_year\":\"2027\",\"department_name\":\"" + name
                 + "\",\"counts_by_type\":{\"학생부종합\":" + total + ",\"합계\":" + total + "},\"source_document_key\":\"doc_tst_2027_susi\"}";
