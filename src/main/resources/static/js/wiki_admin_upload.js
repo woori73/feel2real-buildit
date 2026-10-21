@@ -18,6 +18,8 @@
     analysis: modal.querySelector('[data-upload-form="analysis"]'),
   };
   var TITLES = { original: '원본 업로드', analysis: '분석 자료 업로드' };
+  /** 수정 모드 상태. null 이면 신규 업로드, 값이 있으면 해당 자료를 PUT 으로 수정한다. */
+  var editing = null;
 
   bindOpen('btnUploadOriginal', 'original');
   bindOpen('btnUploadAnalysis', 'analysis');
@@ -86,12 +88,14 @@
   }
 
   function openModal(kind) {
+    editing = null;
     Object.keys(forms).forEach(function (k) {
       if (!forms[k]) return;
       forms[k].hidden = k !== kind;
       forms[k].reset();
       msg(forms[k], '', false);
     });
+    setFormMode(forms[kind], false);
     var gradeSel = forms[kind].querySelector('[name="grade"]');
     if (gradeSel) gradeSel.value = String(currentGrade());
     titleEl.textContent = TITLES[kind];
@@ -101,7 +105,55 @@
     if (first) setTimeout(function () { first.focus(); }, 0);
   }
 
+  /** 수정 모드 — 목록의 [수정] 버튼이 호출한다. 기존 값을 채우고 파일은 선택 사항으로 바꾼다. */
+  function openEdit(kind, item) {
+    if (!forms[kind] || !item) return;
+    var id = kind === 'original' ? item.wikiExamOriginalId : item.wikiAnalysisMaterialId;
+    openModal(kind);
+    editing = { kind: kind, id: id, item: item };
+    var form = forms[kind];
+    if (kind === 'original') fillOriginal(form, item); else fillAnalysis(form, item);
+    setFormMode(form, true);
+    titleEl.textContent = kind === 'original' ? '원본 수정' : '분석 자료 수정';
+    msg(form, '파일은 교체할 때만 선택하세요. 선택하지 않으면 기존 파일이 유지됩니다.', false);
+  }
+
+  function setFormMode(form, isEdit) {
+    var fileInput = form.querySelector('[name="file"]');
+    if (fileInput) fileInput.required = !isEdit;
+    var submitBtn = form.querySelector('[data-upload-submit]');
+    if (submitBtn) submitBtn.textContent = isEdit ? '수정 저장' : '업로드';
+  }
+
+  function setVal(form, name, v) {
+    var el = form.querySelector('[name="' + name + '"]');
+    if (el) el.value = v == null ? '' : String(v);
+  }
+
+  function fillOriginal(form, it) {
+    setVal(form, 'title', it.title);
+    setVal(form, 'grade', it.grade);
+    setVal(form, 'docType', it.docType);
+    setVal(form, 'year', it.examYear);
+    setVal(form, 'examMonth', it.examMonth);
+    setVal(form, 'visible', String(it.isVisible));
+  }
+
+  function fillAnalysis(form, it) {
+    setVal(form, 'title', it.title);
+    setVal(form, 'description', it.description);
+    setVal(form, 'schoolName', it.schoolName);
+    setVal(form, 'grade', it.grade);
+    setVal(form, 'year', it.year);
+    setVal(form, 'semester', it.semester);
+    setVal(form, 'examType', it.examType);
+    setVal(form, 'subject', it.subject);
+  }
+
+  window.wikiAdminUpload = { edit: openEdit };
+
   function closeModal() {
+    editing = null;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
   }
@@ -121,21 +173,23 @@
     e.preventDefault();
     var form = forms[kind];
     var submitBtn = form.querySelector('[data-upload-submit]');
-    var fd = kind === 'original' ? originalPayload(form) : analysisPayload(form);
+    var isEdit = !!editing && editing.kind === kind;
+    var fd = kind === 'original' ? originalPayload(form, isEdit) : analysisPayload(form, isEdit);
     if (!fd) return;
 
     submitBtn.disabled = true;
-    msg(form, '업로드 중...', false);
+    msg(form, isEdit ? '수정 중...' : '업로드 중...', false);
     try {
       var url = kind === 'original' ? '/api/admin/wiki/originals' : '/api/admin/wiki/analysis-materials';
-      var res = await fetchAuth(url, { method: 'POST', body: fd, redirectOnAuthError: false });
+      if (isEdit) url += '/' + editing.id;
+      var res = await fetchAuth(url, { method: isEdit ? 'PUT' : 'POST', body: fd, redirectOnAuthError: false });
       if (res.status === 401) { msg(form, '로그인이 만료되었습니다. 새로고침 후 다시 로그인해주세요.', true); return; }
-      if (res.status === 403) { msg(form, '관리자만 자료를 업로드할 수 있습니다.', true); return; }
-      if (!res.ok) { msg(form, '업로드 실패: ' + ((await res.text()) || res.status), true); return; }
+      if (res.status === 403) { msg(form, '관리자만 자료를 ' + (isEdit ? '수정' : '업로드') + '할 수 있습니다.', true); return; }
+      if (!res.ok) { msg(form, (isEdit ? '수정' : '업로드') + ' 실패: ' + ((await res.text()) || res.status), true); return; }
       closeModal();
       reloadList(kind);
     } catch (_) {
-      msg(form, '업로드 중 오류가 발생했습니다.', true);
+      msg(form, (isEdit ? '수정' : '업로드') + ' 중 오류가 발생했습니다.', true);
     } finally {
       submitBtn.disabled = false;
     }
@@ -151,7 +205,7 @@
     location.reload();
   }
 
-  function originalPayload(form) {
+  function originalPayload(form, isEdit) {
     var fd = new FormData();
     fd.set('title', val(form, 'title'));
     fd.set('grade', val(form, 'grade'));
@@ -161,19 +215,26 @@
     fd.set('examMonth', val(form, 'examMonth'));
     fd.set('visible', val(form, 'visible') || 'true');
     var file = form.querySelector('[name="file"]').files[0];
-    if (!file) { msg(form, '파일(PDF·HWP·HWPX·HTML·이미지)을 선택해주세요.', true); return null; }
+    if (!file) {
+      if (!isEdit) { msg(form, '파일(PDF·HWP·HWPX·HTML·이미지)을 선택해주세요.', true); return null; }
+      return fd;
+    }
     fd.set('file', file);
     return fd;
   }
 
-  function analysisPayload(form) {
+  function analysisPayload(form, isEdit) {
     var fd = new FormData();
     ['title', 'description', 'schoolName', 'grade', 'year', 'semester', 'examType', 'subject'].forEach(function (name) {
       fd.set(name, val(form, name));
     });
-    fd.set('visible', 'true');
+    // 수정 API는 visible 기본값이 true 라서, 비공개 자료를 수정할 때 현재 상태를 그대로 보낸다.
+    fd.set('visible', isEdit && editing && editing.item ? String(editing.item.isVisible) : 'true');
     var file = form.querySelector('[name="file"]').files[0];
-    if (!file) { msg(form, '파일을 선택해주세요.', true); return null; }
+    if (!file) {
+      if (!isEdit) { msg(form, '파일을 선택해주세요.', true); return null; }
+      return fd;
+    }
     fd.set('file', file);
     return fd;
   }

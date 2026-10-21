@@ -27,6 +27,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
 @DisplayName("WikiLearningMaterialService — 회원 학습 자료 저장/검증/삭제 + uploader 스냅샷")
@@ -245,6 +247,127 @@ class WikiLearningMaterialServiceTest {
     assertThatThrownBy(() -> service.getPreview(5L))
         .isInstanceOf(ResponseStatusException.class)
         .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(415));
+  }
+
+  @Test
+  @DisplayName("given 자료 when ADMIN 메타만 수정(제목 비움) then 종류·학년 변경 + 제목·파일 유지 + storage 미호출")
+  void adminUpdate_metadataOnly_keepsTitleAndFile() throws Exception {
+    WikiLearningMaterial m = material("key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+
+    WikiLearningMaterialResponse res = service.adminUpdate(4L, "WORKBOOK", 3, "  ", null);
+
+    assertThat(res.dataType()).isEqualTo("WORKBOOK");
+    assertThat(res.grade()).isEqualTo(3);
+    assertThat(res.title()).isEqualTo("t");
+    assertThat(res.originalFileName()).isEqualTo("a.pdf");
+    verify(fileStorage, never()).saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong());
+    verify(fileStorage, never()).delete(anyString(), anyString());
+  }
+
+  @Test
+  @DisplayName("given 자료 + 새 파일 when ADMIN 교체 then 새 파일 저장 + 기존 파일 삭제")
+  void adminUpdate_withFile_replacesAndDeletesOld() throws Exception {
+    WikiLearningMaterial m = material("old-key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+    MockMultipartFile pdf = new MockMultipartFile("file", "b.pdf", "application/pdf", "%PDF".getBytes());
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("new-key");
+
+    WikiLearningMaterialResponse res = service.adminUpdate(4L, "VOCAB", 2, "새 제목", pdf);
+
+    assertThat(res.title()).isEqualTo("새 제목");
+    assertThat(res.originalFileName()).isEqualTo("b.pdf");
+    verify(fileStorage).delete("old-key", "UNKNOWN");
+  }
+
+  @Test
+  @DisplayName("given 없는 자료 when ADMIN 수정 then 404")
+  void adminUpdate_notFound() {
+    when(repository.findById(9L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.adminUpdate(9L, "VOCAB", 2, "t", null))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(404));
+  }
+
+  @Test
+  @DisplayName("given 잘못된 학년 when ADMIN 수정 then 400 + 파일 미저장")
+  void adminUpdate_invalidGrade() {
+    WikiLearningMaterial m = material("key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+
+    assertThatThrownBy(() -> service.adminUpdate(4L, "VOCAB", 9, "t", null))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode().value()).isEqualTo(400));
+    verify(fileStorage, never()).delete(anyString(), anyString());
+  }
+
+  @Test
+  @DisplayName("given 교체 중 트랜잭션 롤백 when afterCompletion(ROLLED_BACK) then 기존 파일 유지 + 새 파일 정리")
+  void adminUpdate_rollback_keepsOld_deletesNew() throws Exception {
+    WikiLearningMaterial m = material("old-key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+    MockMultipartFile pdf = new MockMultipartFile("file", "b.pdf", "application/pdf", "%PDF".getBytes());
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("new-key");
+
+    TransactionSynchronizationManager.initSynchronization();
+    try {
+      service.adminUpdate(4L, "VOCAB", 2, "새 제목", pdf);
+      // 트랜잭션이 끝나기 전에는 어떤 파일도 지우지 않는다
+      verify(fileStorage, never()).delete(anyString(), anyString());
+      for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
+        sync.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK);
+      }
+    } finally {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
+
+    verify(fileStorage).delete("new-key", "UNKNOWN");
+    verify(fileStorage, never()).delete("old-key", "UNKNOWN");
+  }
+
+  @Test
+  @DisplayName("given 교체 후 트랜잭션 커밋 when afterCompletion(COMMITTED) then 기존 파일만 삭제")
+  void adminUpdate_commit_deletesOldOnly() throws Exception {
+    WikiLearningMaterial m = material("old-key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+    MockMultipartFile pdf = new MockMultipartFile("file", "b.pdf", "application/pdf", "%PDF".getBytes());
+    when(fileStorage.saveRaw(anyLong(), anyString(), any(InputStream.class), anyLong())).thenReturn("new-key");
+
+    TransactionSynchronizationManager.initSynchronization();
+    try {
+      service.adminUpdate(4L, "VOCAB", 2, "새 제목", pdf);
+      verify(fileStorage, never()).delete(anyString(), anyString());
+      for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
+        sync.afterCompletion(TransactionSynchronization.STATUS_COMMITTED);
+      }
+    } finally {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
+
+    verify(fileStorage).delete("old-key", "UNKNOWN");
+    verify(fileStorage, never()).delete("new-key", "UNKNOWN");
+  }
+
+  @Test
+  @DisplayName("given 완전 삭제 when 트랜잭션 진행 중 then 파일 삭제 보류, 커밋 후에만 삭제")
+  void adminHardDelete_deletesFileOnlyAfterCommit() {
+    WikiLearningMaterial m = material("key", "application/pdf");
+    when(repository.findById(4L)).thenReturn(Optional.of(m));
+
+    TransactionSynchronizationManager.initSynchronization();
+    try {
+      service.adminHardDelete(4L);
+      verify(repository).delete(m);
+      verify(fileStorage, never()).delete(anyString(), anyString());
+      for (TransactionSynchronization sync : TransactionSynchronizationManager.getSynchronizations()) {
+        sync.afterCommit();
+      }
+    } finally {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
+
+    verify(fileStorage).delete("key", "UNKNOWN");
   }
 
   private WikiLearningMaterial material(String storageKey, String contentType) {

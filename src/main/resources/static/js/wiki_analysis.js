@@ -3,6 +3,7 @@
   var grade = '3';
   var tabs = document.getElementById('gradeTabs');
   var list = document.getElementById('list');
+  var itemsById = {};
 
   tabs.addEventListener('click', function (e) {
     var b = e.target.closest('.grade-tab');
@@ -36,17 +37,32 @@
       if (!res.ok) throw new Error();
       var items = await res.json();
       if (!items.length) { list.innerHTML = '<p class="list-empty">등록된 분석 자료가 없습니다.</p>'; return; }
+      var admin = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin() : false;
+      itemsById = {};
       list.innerHTML = items.map(function (it) {
+        itemsById[it.wikiAnalysisMaterialId] = it;
         var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
-        return '<a class="analysis-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
+        var card = '<a class="analysis-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + (it.description ? '<span class="analysis-meta">' + escapeHtml(it.description) + '</span>' : '')
           + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'
           + '<span class="analysis-badge">' + escapeHtml(it.subject || '영어') + ' · ' + meta(it) + '</span></a>';
+        if (!admin) return card;
+        return '<div class="analysis-card-wrap">' + card + window.WikiAdminManage.buttonsHtml('analysis', it.wikiAnalysisMaterialId) + '</div>';
       }).join('');
     } catch (_) {
       list.innerHTML = '<p class="error">목록을 불러오지 못했습니다.</p>';
     }
+  }
+
+  if (window.WikiAdminManage) {
+    window.WikiAdminManage.bind(list, {
+      onEdit: function (kind, id) {
+        var item = itemsById[id];
+        if (item && window.wikiAdminUpload) window.wikiAdminUpload.edit('analysis', item);
+      },
+      reload: load,
+    });
   }
 
   function meta(it) {

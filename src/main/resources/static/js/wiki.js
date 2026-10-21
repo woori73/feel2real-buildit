@@ -107,6 +107,24 @@
     reloadLearning: loadLearningMaterials,
   };
 
+  // 관리자 자료 관리(수정/삭제) — 원본·분석 목록 공용 모듈에 위임.
+  if (window.WikiAdminManage) {
+    window.WikiAdminManage.bind(document.getElementById('originalList'), {
+      onEdit: function (kind, id) {
+        var item = hubOriginalsById[id];
+        if (item && window.wikiAdminUpload) window.wikiAdminUpload.edit('original', item);
+      },
+      reload: loadOriginals,
+    });
+    window.WikiAdminManage.bind(document.getElementById('analysisList'), {
+      onEdit: function (kind, id) {
+        var item = hubAnalysesById[id];
+        if (item && window.wikiAdminUpload) window.wikiAdminUpload.edit('analysis', item);
+      },
+      reload: loadAnalyses,
+    });
+  }
+
   // ── 부팅 ────────────────────────────────────────────────
   renderGradeLists();
   loadBoards();
@@ -412,6 +430,9 @@
     }
   }
 
+  var hubOriginalsById = {};
+  var hubAnalysesById = {};
+
   async function loadOriginals() {
     var box = document.getElementById('originalList');
     box.innerHTML = '<p class="muted">불러오는 중...</p>';
@@ -423,13 +444,18 @@
         box.innerHTML = '<p class="muted">아직 등록된 원본이 없습니다. 준비되는 대로 이곳에 올라옵니다.</p>';
         return;
       }
+      var admin = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin() : false;
+      hubOriginalsById = {};
       box.innerHTML = items.map(function (it) {
-        return '<a class="file-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
+        hubOriginalsById[it.wikiExamOriginalId] = it;
+        var card = '<a class="file-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
           + '<span class="file-badge">' + escapeHtml(it.docTypeLabel) + '</span>'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="file-meta">' + escapeHtml(it.examLabel) + ' · 고' + it.grade + ' · ' + fileMeta(it) + '</span>'
           + '<span class="file-dl">내려받기 ↓</span>'
           + '</a>';
+        if (!admin) return card;
+        return '<div class="file-card-wrap">' + card + window.WikiAdminManage.buttonsHtml('original', it.wikiExamOriginalId) + '</div>';
       }).join('');
     } catch (_) {
       box.innerHTML = '<p class="error">원본 목록을 불러오지 못했습니다.</p>';
@@ -447,13 +473,18 @@
         box.innerHTML = '<p class="muted">해당 학년의 공개 분석 자료가 아직 없습니다.</p>';
         return;
       }
+      var adminA = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin() : false;
+      hubAnalysesById = {};
       box.innerHTML = items.map(function (it) {
+        hubAnalysesById[it.wikiAnalysisMaterialId] = it;
         var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
-        return '<a class="analysis-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
+        var card = '<a class="analysis-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'
           + '<span class="analysis-badge">' + escapeHtml(it.subject || '영어') + ' · ' + fileMeta(it) + '</span>'
           + '</a>';
+        if (!adminA) return card;
+        return '<div class="analysis-card-wrap">' + card + window.WikiAdminManage.buttonsHtml('analysis', it.wikiAnalysisMaterialId) + '</div>';
       }).join('');
     } catch (_) {
       box.innerHTML = '<p class="error">분석 자료를 불러오지 못했습니다.</p>';

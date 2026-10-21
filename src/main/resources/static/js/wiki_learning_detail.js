@@ -24,16 +24,65 @@
     root.innerHTML = '<div class="wl-detail-head"><span class="learning-badge">' + escapeHtml(label) + '</span><h1>' + escapeHtml(item.title)
       + '</h1><p class="wl-detail-meta">고' + item.grade + ' · ' + escapeHtml(item.uploaderName || '회원') + ' · ' + fmtDate(item.createdAt) + ' · ' + meta(item)
       + '</p></div><div class="wl-preview-wrap">' + previewHtml + '</div><div class="wl-detail-actions"><button type="button" class="btn-primary" id="wlDownload">다운로드</button>'
-      + (isAdmin ? '<button type="button" class="btn-ghost" id="wlDelete">삭제</button>' : '') + '</div>'
+      + (isAdmin ? '<button type="button" class="btn-ghost" id="wlEdit">수정</button><button type="button" class="btn-ghost" id="wlDelete">삭제</button>' : '') + '</div>'
+      + '<div id="wlEditBox"></div>'
       + (me ? '' : '<p class="wl-detail-hint">다운로드는 회원 가입 후 이용할 수 있습니다.</p>');
     document.getElementById('wlDownload').addEventListener('click', function () { download(item, me); });
-    if (isAdmin) document.getElementById('wlDelete').addEventListener('click', function () { remove(item); });
+    if (isAdmin) {
+      document.getElementById('wlDelete').addEventListener('click', function () { remove(item); });
+      document.getElementById('wlEdit').addEventListener('click', function () { toggleEdit(item); });
+    }
   }
   async function download(item, me) {
     var current = me;
     if (!current) { try { var res = await fetch('/api/auth/me', { credentials: 'same-origin' }); if (res.ok) current = await res.json(); } catch (_) {} }
     if (!current) { alert('자료 다운로드는 회원 가입 후 이용할 수 있습니다.'); if (typeof window.openLoginModal === 'function') window.openLoginModal(); return; }
     window.location.href = item.downloadUrl;
+  }
+  function toggleEdit(item) {
+    var box = document.getElementById('wlEditBox');
+    if (box.innerHTML) { box.innerHTML = ''; return; }
+    var typeOptions = Object.keys(TYPE_LABEL).map(function (k) {
+      return '<option value="' + k + '"' + (item.dataType === k ? ' selected' : '') + '>' + TYPE_LABEL[k] + '</option>';
+    }).join('');
+    var gradeOptions = [1, 2, 3].map(function (g) {
+      return '<option value="' + g + '"' + (item.grade === g ? ' selected' : '') + '>고' + g + '</option>';
+    }).join('');
+    box.innerHTML = '<form class="wl-edit-form" id="wlEditForm">'
+      + '<label>제목<input type="text" name="title" value="' + escapeAttr(item.title) + '"></label>'
+      + '<label>학년<select name="grade">' + gradeOptions + '</select></label>'
+      + '<label>자료 종류<select name="dataType">' + typeOptions + '</select></label>'
+      + '<label>파일 교체 <span class="muted">(교체할 때만 선택 — 현재: ' + escapeHtml(item.originalFileName || '') + ')</span>'
+      + '<input type="file" name="file"></label>'
+      + '<div class="wl-edit-actions"><button type="submit" class="btn-primary">수정 저장</button>'
+      + '<button type="button" class="btn-ghost" id="wlEditCancel">취소</button></div>'
+      + '<p class="uf-msg" id="wlEditMsg"></p></form>';
+    document.getElementById('wlEditCancel').addEventListener('click', function () { box.innerHTML = ''; });
+    document.getElementById('wlEditForm').addEventListener('submit', function (e) { saveEdit(e, item); });
+  }
+  async function saveEdit(e, item) {
+    e.preventDefault();
+    var form = e.target;
+    var msg = document.getElementById('wlEditMsg');
+    var fd = new FormData();
+    fd.set('dataType', form.querySelector('[name="dataType"]').value);
+    fd.set('grade', form.querySelector('[name="grade"]').value);
+    fd.set('title', form.querySelector('[name="title"]').value.trim());
+    var file = form.querySelector('[name="file"]').files[0];
+    if (file) fd.set('file', file);
+    var btn = form.querySelector('[type="submit"]');
+    btn.disabled = true;
+    msg.textContent = '수정 중...';
+    try {
+      var res = await fetchAuth('/api/admin/wiki/learning-materials/' + item.wikiLearningMaterialId, { method: 'PUT', body: fd, redirectOnAuthError: false });
+      if (res.status === 401 || res.status === 403) { msg.textContent = '관리자만 수정할 수 있습니다.'; return; }
+      if (!res.ok) { msg.textContent = '수정 실패: ' + ((await res.text()) || res.status); return; }
+      render();
+    } catch (_) {
+      msg.textContent = '수정 중 오류가 발생했습니다.';
+    } finally {
+      btn.disabled = false;
+    }
   }
   async function remove(item) {
     if (!confirm('"' + item.title + '" 자료를 삭제할까요? 되돌릴 수 없습니다.')) return;

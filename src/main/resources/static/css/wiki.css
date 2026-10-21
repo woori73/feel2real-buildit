@@ -488,3 +488,25 @@ body.wiki-body {
   .exam-hero-title { font-size: 22px; }
   .round-mat-list { grid-template-columns: 1fr; }
 }
+
+/* ── material manage (admin 전용 수정/삭제 버튼) ── */
+.file-card-wrap, .analysis-card-wrap { display: flex; flex-direction: column; }
+.file-card-wrap > .file-card, .analysis-card-wrap > .analysis-card { flex: 1; }
+.card-manage { display: flex; gap: 6px; margin-top: 8px; }
+.card-manage button {
+  font-size: 12px; padding: 4px 10px; border: 1px solid var(--w-line); border-radius: 8px;
+  background: var(--w-card); color: var(--w-sub); cursor: pointer;
+}
+.card-manage button:hover { border-color: var(--w-accent); color: var(--w-accent-ink); }
+.card-manage button.danger { color: #c53030; }
+.card-manage button.danger:hover { border-color: #c53030; }
+.wl-edit-form {
+  display: grid; gap: 10px; margin-top: 14px; padding: 16px;
+  border: 1px solid var(--w-line); border-radius: 14px; background: var(--w-card);
+}
+.wl-edit-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+.wl-edit-form input, .wl-edit-form select {
+  font: inherit; font-weight: 400; padding: 8px 10px;
+  border: 1px solid var(--w-line); border-radius: 8px;
+}
+.wl-edit-actions { display: flex; gap: 8px; }

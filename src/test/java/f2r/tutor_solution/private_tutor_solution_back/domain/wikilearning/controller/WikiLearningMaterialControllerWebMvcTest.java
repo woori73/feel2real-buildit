@@ -65,6 +65,7 @@ class WikiLearningMaterialControllerWebMvcTest {
     when(service.getPreview(1L)).thenReturn(new DownloadFile("%PDF-1.4".getBytes(), "어휘.pdf", "application/pdf"));
     when(service.getDownload(1L)).thenReturn(new DownloadFile("PDF".getBytes(), "어휘.pdf", "application/pdf"));
     when(service.upload(anyLong(), anyString(), any(), any(), any())).thenReturn(sample());
+    when(service.adminUpdate(anyLong(), anyString(), any(), any(), any())).thenReturn(sample());
   }
 
   @Test
@@ -131,6 +132,19 @@ class WikiLearningMaterialControllerWebMvcTest {
         .andExpect(status().isOk());
     mockMvc.perform(delete("/api/admin/wiki/learning-materials/1").cookie(token("ADMIN")))
         .andExpect(status().isNoContent());
+  }
+
+  @Test
+  @DisplayName("given ADMIN when 자료 수정(PUT) then 200 / given 회원 when 수정 then 403")
+  void adminUpdate_admin_ok_member_forbidden() throws Exception {
+    mockMvc.perform(multipart(org.springframework.http.HttpMethod.PUT, "/api/admin/wiki/learning-materials/1")
+            .param("dataType", "VOCAB").param("grade", "2").param("title", "고2 어휘")
+            .cookie(token("ADMIN")))
+        .andExpect(status().isOk());
+    mockMvc.perform(multipart(org.springframework.http.HttpMethod.PUT, "/api/admin/wiki/learning-materials/1")
+            .param("dataType", "VOCAB").param("grade", "2").param("title", "고2 어휘")
+            .cookie(token("STUDENT")))
+        .andExpect(status().isForbidden());
   }
 
   private Cookie token(String role) {

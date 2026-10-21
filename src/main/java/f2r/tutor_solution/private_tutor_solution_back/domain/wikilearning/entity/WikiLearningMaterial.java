@@ -76,4 +76,21 @@ public class WikiLearningMaterial extends BaseEntity {
   public void softDelete() {
     this.deleted = true;
   }
+
+  /** ADMIN 수정 — 제목·학년·자료 종류만 바꾼다. 파일 교체는 {@link #replaceFile}가 담당. */
+  public void updateMetadata(WikiLearningMaterialType dataType, Integer grade, String title) {
+    this.dataType = dataType;
+    this.grade = grade;
+    this.title = title;
+  }
+
+  /** ADMIN 파일 교체 — 새 파일 정보를 반영하고 기존 storage key 를 반환한다(서비스가 구 파일 삭제). */
+  public String replaceFile(String contentType, String originalFileName, String storageKey, Long fileSize) {
+    String oldStorageKey = this.storageKey;
+    this.contentType = contentType;
+    this.originalFileName = originalFileName;
+    this.storageKey = storageKey;
+    this.fileSize = fileSize;
+    return oldStorageKey;
+  }
 }

@@ -87,6 +87,17 @@ public class WikiLearningMaterialController {
   }
   @GetMapping("/api/admin/wiki/learning-materials")
   public ResponseEntity<List<WikiLearningMaterialResponse>> listAdmin() { return ResponseEntity.ok(service.listAdmin()); }
+
+  /** ADMIN 수정/교체 — 파일은 교체할 때만 보낸다. 권한은 /api/admin/** 규칙(ROLE_ADMIN)이 결정한다. */
+  @PutMapping(value = "/api/admin/wiki/learning-materials/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<WikiLearningMaterialResponse> adminUpdate(
+      @PathVariable Long id,
+      @RequestParam String dataType, @RequestParam Integer grade,
+      @RequestParam(required = false) String title,
+      @RequestPart(value = "file", required = false) MultipartFile file) {
+    return ResponseEntity.ok(service.adminUpdate(id, dataType, grade, title, file));
+  }
+
   @DeleteMapping("/api/admin/wiki/learning-materials/{id}")
   public ResponseEntity<Void> adminDelete(@PathVariable Long id) { service.adminHardDelete(id); return ResponseEntity.noContent().build(); }
 }
