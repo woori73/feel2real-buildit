@@ -43,6 +43,28 @@ stop_embed() { systemctl stop f2r-embed 2>/dev/null || true; }
 case "$ACTION" in
 status) report ;;
 
+verify)
+  report
+  T=$(curl -fsS -m 2 -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null || true)
+  imds() { curl -fsS -m 2 -H "X-aws-ec2-metadata-token: $T" "http://169.254.169.254/latest/meta-data/$1" 2>/dev/null || echo unknown; }
+  echo "== instance =="; echo "id=$(imds instance-id) type=$(imds instance-type) private=$(imds local-ipv4) public=$(imds public-ipv4)"
+  echo "egress_ip=$(curl -fsS -m 5 https://checkip.amazonaws.com 2>/dev/null || echo unknown)"
+  echo "== boot =="; echo "boot_time=$(uptime -s)"; uptime -p
+  echo "== f2r-app startup =="; journalctl -u f2r-app -b --no-pager 2>/dev/null | grep -E "Started .* in [0-9.]+ seconds|Application run failed" | tail -3 | cut -c1-200
+  echo "== app health =="; curl -fsS -m 5 http://127.0.0.1:8080/actuator/health | head -c 400; echo
+  echo "== rds connections (3306 established) =="; ss -tn state established '( dport = :3306 )' 2>/dev/null | tail -n +2 | wc -l
+  echo "== local endpoints (HTTP code) =="
+  for u in http://127.0.0.1:8080/ http://127.0.0.1:8080/wiki http://127.0.0.1:8080/academycraft http://127.0.0.1:8080/wemade http://127.0.0.1/; do
+    echo "$u -> $(curl -s -o /dev/null -m 10 -w '%{http_code}' "$u" || echo fail)"
+  done
+  echo "== 502 원인 단서 =="
+  echo "nginx: $(systemctl is-active nginx 2>/dev/null || echo none)"
+  if [ -f /var/log/nginx/error.log ]; then
+    echo "nginx error.log (since boot) 상위 메시지:"; awk -v b="$(date -d "$(uptime -s)" '+%Y/%m/%d %H:%M:%S')" '$1" "$2>=b' /var/log/nginx/error.log | sed -E 's/^[0-9/]+ [0-9:]+ //; s/client: [0-9.]+/client: x/; s/request: .*//' | cut -c1-120 | sort | uniq -c | sort -rn | head -5
+  fi
+  echo "OOM kills since boot: $(journalctl -k -b --no-pager 2>/dev/null | grep -ci 'out of memory\|oom-kill' || true)"
+  echo "== embed 상태 =="; echo "f2r-embed: $(systemctl is-active f2r-embed 2>/dev/null || true) / $(systemctl is-enabled f2r-embed 2>/dev/null || true)" ;;
+
 install)
   TOTAL=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo)
   [ "$TOTAL" -ge 7000 ] || { echo "ABORT: 총 메모리 ${TOTAL}MB — 4GB 환경 설치는 실측(OOM 2회)으로 금지. t3.large(8GB) 이상에서만 설치"; exit 3; }
