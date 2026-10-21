@@ -315,6 +315,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ReturnUrlPolicyTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.AcademyLmsSecurityIntegrationTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.AdmissionsActivateAllSecurityTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.SubdomainLmsPathSecurityIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.ProblemGeneratorSecurityIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramEntryTest"

@@ -424,4 +424,24 @@ class AdmissionsChatServicePolicyTest {
         assertThat(answer.errorMessage()).isEqualTo(AdmissionsChatService.MSG_SEARCH_FAILED);
         verify(llm, never()).complete(anyString(), anyString(), anyInt());
     }
+
+    @Test
+    @DisplayName("given 캠퍼스가 표기된 근거 when 묻으면 then 시스템 프롬프트가 다른 캠퍼스 질문에 그 자료를 쓰지 말라고 지시한다")
+    void campus_rule_is_in_system_prompt() {
+        // given
+        String q = "고려대 서울캠퍼스 수시 원서접수 일정";
+        givenFacts(q, List.of(fact("sched:1", "고려대학교 2027학년도 원서접수 (수시(세종캠퍼스))", "일정 원문: 9.7.", 2027, "https://x")),
+                Set.of(2027), false);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("서울캠퍼스 자료는 없습니다.", "t", "m"));
+
+        // when
+        service.ask(q, null, null);
+
+        // then
+        var system = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(system.capture(), anyString(), anyInt());
+        assertThat(system.getValue()).contains("[세종캠퍼스]").contains("다른 캠퍼스");
+    }
 }

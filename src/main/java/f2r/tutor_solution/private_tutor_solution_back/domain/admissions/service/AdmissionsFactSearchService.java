@@ -108,6 +108,7 @@ public class AdmissionsFactSearchService {
         for (AdmissionsDepartment d : departmentRepository.findAll()) {
             if (d.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(d.getAcademicYear())) continue;
             if (!approvedSource(d.getSource(), d.getAcademicYear())) continue;
+            if (!trackAllowed(question, d.getSource())) continue;
             if (!univSelected(p, d.getUniversity())) continue;
             candidates.add(d);
         }
@@ -136,6 +137,7 @@ public class AdmissionsFactSearchService {
         for (AdmissionsType t : typeRepository.findAll()) {
             if (t.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(t.getAcademicYear())) continue;
             if (!approvedSource(t.getSource(), t.getAcademicYear())) continue;
+            if (!trackAllowed(question, t.getSource())) continue;
             if (!univSelected(p, t.getUniversity())) continue;
             candidates.add(t);
         }
@@ -161,6 +163,7 @@ public class AdmissionsFactSearchService {
         for (AdmissionsSchedule s : scheduleRepository.findAll()) {
             if (s.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(s.getAcademicYear())) continue;
             if (!approvedSource(s.getSource(), s.getAcademicYear())) continue;
+            if (!trackAllowed(question, s.getSource())) continue;
             if (s.getUniversity() == null || !univSelected(p, s.getUniversity())) continue;
             if (!scheduleMatches(question, s.getTitle())) continue;
             out.add(evidence("sched", s.getScheduleId(), s.getAcademicYear(),
@@ -226,6 +229,22 @@ public class AdmissionsFactSearchService {
 
     private static boolean univSelected(AdmissionsQueryParser.Parsed p, AdmissionsUniversity u) {
         return p.universities().isEmpty() || (u != null && p.universities().contains(u.getName()));
+    }
+
+    /**
+     * 질문이 수시 또는 정시 한쪽만 말하면, 출처 자료 제목이 반대쪽(예: 정시모집요강)인 행은 제외한다.
+     * 중앙대 수시처럼 수시 내용 행이 없는 대학에 정시 행이 수시 답변처럼 섞이는 것을 막는다.
+     * 둘 다 말했거나 둘 다 없거나, 출처 제목에 수시·정시 표기가 없으면 거르지 않는다.
+     */
+    static boolean trackAllowed(String question, AdmissionsOfficialMaterial source) {
+        boolean susi = question.contains("수시");
+        boolean jeongsi = question.contains("정시");
+        if (susi == jeongsi || source == null || source.getTitle() == null) return true;
+        String title = source.getTitle();
+        boolean titleSusi = title.contains("수시");
+        boolean titleJeongsi = title.contains("정시");
+        if (titleSusi == titleJeongsi) return true;
+        return susi ? titleSusi : titleJeongsi;
     }
 
     private static boolean approvedSource(AdmissionsOfficialMaterial source, Integer year) {

@@ -139,20 +139,30 @@ public class AdmissionsAdminController {
      */
     @PostMapping("/activate-all")
     public ResponseEntity<Map<String, Object>> activateAll(@RequestBody ActivateAllRequest request,
-                                                           java.security.Principal principal) {
+                                                           org.springframework.security.core.Authentication authentication) {
         if (request == null || request.academicYear() == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "academicYear required"));
         }
         try {
             var r = activationService.activateAll(request.academicYear(), request.confirm());
             log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} note={}",
-                    principal == null ? "unknown" : principal.getName(), r.academicYear(), r.materials(),
+                    actorOf(authentication), r.academicYear(), r.materials(),
                     r.departments(), r.types(), r.schedules(), request.note());
             return ResponseEntity.ok(Map.of("academicYear", r.academicYear(), "materials", r.materials(),
                     "departments", r.departments(), "types", r.types(), "schedules", r.schedules(), "status", "ACTIVATED"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         }
+    }
+
+    /** 감사 로그용 실행자 표기. 토큰 검증용 값(credentialStamp)은 남기지 않는다. */
+    private static String actorOf(org.springframework.security.core.Authentication authentication) {
+        if (authentication == null) return "unknown";
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal p) {
+            return p.loginId() + "(userId=" + p.userId() + ")";
+        }
+        return String.valueOf(authentication.getName());
     }
 
     public record ActivateAllRequest(Integer academicYear, String confirm, String note) {}
