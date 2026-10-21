@@ -207,6 +207,107 @@ class AdmissionsFactSearchServiceDbTest {
         assertThat(result.evidence()).allSatisfy(e -> assertThat(e.getAcademicYear()).isEqualTo(2027));
     }
 
+    private static final String ALL_UNIV_SEED = """
+        {"ipsi_universities":[{"name":"가대학교","university_code":"GA"},{"name":"나대학교","university_code":"NA"},{"name":"다대학교","university_code":"DA"}],
+         "ipsi_documents":[{"document_key":"doc_ga","document_name":"가대 2027 수시 모집요강","applicable_academic_year":2027,"institution_name":"가대","source_url":"https://example.test/ga"},
+                           {"document_key":"doc_na","document_name":"나대 2027 수시 모집요강","applicable_academic_year":2027,"institution_name":"나대","source_url":"https://example.test/na"},
+                           {"document_key":"doc_ga_2028","document_name":"가대 2028 시행계획","applicable_academic_year":2028,"institution_name":"가대","source_url":"https://example.test/ga28"}],
+         "ipsi_departments":[],"ipsi_admission_types":[],
+         "ipsi_schedules":[
+           {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"수시","date":"2026.9.8.~9.11.","source_document_key":"doc_ga"},
+           {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"정시","date":"2026.12.29.~12.31.","source_document_key":"doc_ga"},
+           {"university_code":"NA","academic_year":2027,"item":"원서접수","type_name":"수시","date":"2026.9.9.~9.12.","source_document_key":"doc_na"},
+           {"university_code":"GA","academic_year":2028,"item":"원서접수","type_name":"수시","date":"2027.9.1.~9.4.","source_document_key":"doc_ga_2028"}]}
+        """;
+
+    private void reloadAllUniv(boolean approve) throws Exception {
+        clean();
+        loader.loadSeed(ALL_UNIV_SEED);
+        if (approve) approveAll();
+    }
+
+    @Test
+    @DisplayName("given 대학명 없는 수시 원서접수 질문 when 일부 대학만 자료가 있으면 then 있는 대학 일정을 대학별로 반환하고 없는 대학은 missing으로 표시한다")
+    void all_university_schedule_question_returns_per_university_rows() throws Exception {
+        // given
+        reloadAllUniv(true);
+
+        // when
+        var result = search.search("2027학년도 수시 원서접수 일정 알려줘", null);
+
+        // then
+        assertThat(result.evidence()).hasSize(2);
+        assertThat(result.evidence()).allSatisfy(e -> {
+            assertThat(e.getRefId()).startsWith("sched:");
+            assertThat(e.getAcademicYear()).isEqualTo(2027);
+            assertThat(e.getTitle()).doesNotContain("정시");
+            assertThat(e.getRefUrl()).startsWith("https://example.test/");
+        });
+        assertThat(result.evidence().get(0).getTitle()).startsWith("가대학교 2027학년도");
+        assertThat(result.evidence().get(1).getTitle()).startsWith("나대학교 2027학년도");
+        assertThat(result.scheduleCoverage().covered()).containsExactly("가대학교", "나대학교");
+        assertThat(result.scheduleCoverage().missing()).containsExactly("다대학교");
+    }
+
+    @Test
+    @DisplayName("given 승인 전(DRAFT) 일정 when 전체 일정을 물으면 then 근거가 없고 전 대학이 missing이다")
+    void all_university_schedule_ignores_draft_rows() throws Exception {
+        // given
+        reloadAllUniv(false);
+
+        // when
+        var result = search.search("2027학년도 수시 원서접수 일정 알려줘", null);
+
+        // then
+        assertThat(result.evidence()).isEmpty();
+        assertThat(result.scheduleCoverage().covered()).isEmpty();
+        assertThat(result.scheduleCoverage().missing()).containsExactly("가대학교", "나대학교", "다대학교");
+    }
+
+    @Test
+    @DisplayName("given 정시 질문 when 대학명 없이 접수 일정을 물으면 then 정시 행만 나온다")
+    void all_university_schedule_separates_jeongsi() throws Exception {
+        // given
+        reloadAllUniv(true);
+
+        // when
+        var result = search.search("2027학년도 정시 원서접수 일정 알려줘", null);
+
+        // then
+        assertThat(result.evidence()).hasSize(1);
+        assertThat(result.evidence().get(0).getExcerpt()).contains("2026.12.29.~12.31.");
+    }
+
+    @Test
+    @DisplayName("given 2028 질문 when 대학명 없이 접수 일정을 물으면 then 2028 계획 근거만 나오고 확정이 아니다")
+    void all_university_schedule_2028_is_planned_only() throws Exception {
+        // given
+        reloadAllUniv(true);
+
+        // when
+        var result = search.search("2028학년도 수시 원서접수 일정 알려줘", null);
+
+        // then
+        assertThat(result.evidence()).hasSize(1);
+        assertThat(result.evidence().get(0).getYearConfirmed()).isFalse();
+        assertThat(result.evidence().get(0).getAcademicYear()).isEqualTo(2028);
+    }
+
+    @Test
+    @DisplayName("given 대학을 지정한 일정 질문 when 물으면 then 기존처럼 그 대학만 나온다 (회귀)")
+    void university_specific_schedule_question_is_unchanged() throws Exception {
+        // given
+        reloadAllUniv(true);
+
+        // when
+        var result = search.search("나대학교 2027학년도 수시 원서접수 일정 알려줘", null);
+
+        // then
+        assertThat(result.evidence()).hasSize(1);
+        assertThat(result.evidence().get(0).getTitle()).startsWith("나대학교");
+        assertThat(result.scheduleCoverage()).isNull();
+    }
+
     private static String deptJson(String name, int total) {
         return "{\"university_code\":\"TST\",\"academic_year\":\"2027\",\"department_name\":\"" + name
                 + "\",\"counts_by_type\":{\"학생부종합\":" + total + ",\"합계\":" + total + "},\"source_document_key\":\"doc_tst_2027_susi\"}";

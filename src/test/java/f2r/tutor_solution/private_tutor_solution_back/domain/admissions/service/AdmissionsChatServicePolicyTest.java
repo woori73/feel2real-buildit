@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.mockito.ArgumentCaptor;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -338,5 +340,88 @@ class AdmissionsChatServicePolicyTest {
         // then
         assertThat(answer.answer()).contains("414명");
         verify(llm).complete(anyString(), anyString(), anyInt());
+    }
+
+    private void givenScheduleFacts(String q, List<Evidence> evidence, List<String> covered, List<String> missing) {
+        var parsed = AdmissionsQueryParser.parse(q, UNIVS);
+        when(facts.search(eq(q), any())).thenReturn(new AdmissionsFactSearchService.FactResult(
+                evidence, parsed, Set.of(2027), false, new AdmissionsFactSearchService.ScheduleCoverage(covered, missing)));
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+    }
+
+    @Test
+    @DisplayName("given 일부 대학 일정만 있는 전체 일정 질문 when 묻으면 then 답변을 포기하지 않고 LLM에 대학별 범위·미확인 대학을 전달하며 출처를 붙인다")
+    void all_university_schedule_answers_with_partial_coverage() {
+        // given
+        String q = "2027학년도 수시 원서접수 일정 알려줘";
+        givenScheduleFacts(q, List.of(
+                fact("sched:1", "서울대학교 2027학년도 원서접수 (수시)", "일정 원문: 2026.9.8.~9.11.", 2027, "https://snu.test/a"),
+                fact("sched:2", "연세대학교 2027학년도 원서접수 (수시)", "일정 원문: 2026.9.9.~9.12.", 2027, "https://yonsei.test/b")),
+                List.of("서울대학교", "연세대학교"), List.of("인하대학교"));
+        when(llm.complete(anyString(), anyString(), anyInt())).thenReturn(NewStartLlmCompletion.success(
+                "2027학년도 기준입니다. 서울대학교 2026.9.8.~9.11., 연세대학교 2026.9.9.~9.12. 인하대학교는 확인된 자료가 없습니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.ok()).isTrue();
+        assertThat(answer.answer()).contains("2027학년도").contains("서울대학교").contains("인하대학교");
+        assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::url)
+                .containsExactly("https://snu.test/a", "https://yonsei.test/b");
+        var user = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(anyString(), user.capture(), anyInt());
+        assertThat(user.getValue()).contains("서울대학교, 연세대학교").contains("일정이 확인되지 않은 대학: 인하대학교");
+    }
+
+    @Test
+    @DisplayName("given 승인된 일정이 하나도 없는 전체 일정 질문 when 묻으면 then 자료 부족 문구로 답하고 LLM을 호출하지 않는다")
+    void all_university_schedule_without_data_is_data_shortage_not_ai_failure() {
+        // given
+        String q = "2027학년도 수시 원서접수 일정 알려줘";
+        givenScheduleFacts(q, List.of(), List.of(), UNIVS);
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.ok()).isTrue();
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_NO_EVIDENCE);
+        assertThat(answer.answer()).doesNotContain("7개 대학");
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("given 근거는 있으나 LLM 호출이 실패 when 묻으면 then 자료 부족과 다른 AI 연결 실패(ok=false)로 구분한다")
+    void llm_failure_is_distinguished_from_data_shortage() {
+        // given
+        String q = "2027학년도 수시 원서접수 일정 알려줘";
+        givenScheduleFacts(q, List.of(fact("sched:1", "서울대학교 2027학년도 원서접수", "일정 원문: 2026.9.8.", 2027, null)),
+                List.of("서울대학교"), List.of("연세대학교", "인하대학교"));
+        when(llm.complete(anyString(), anyString(), anyInt())).thenReturn(NewStartLlmCompletion.failed("timeout", true));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.ok()).isFalse();
+        assertThat(answer.errorMessage()).contains("AI 서비스 연결에 실패");
+        assertThat(answer.errorMessage()).isNotEqualTo(AdmissionsChatService.MSG_NO_EVIDENCE);
+    }
+
+    @Test
+    @DisplayName("given 검색 단계 예외 when 묻으면 then 검색 오류(ok=false)로 구분하고 LLM을 호출하지 않는다")
+    void search_failure_is_distinguished() {
+        // given
+        String q = "2027학년도 수시 원서접수 일정 알려줘";
+        when(facts.search(eq(q), any())).thenThrow(new IllegalStateException("db down"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.ok()).isFalse();
+        assertThat(answer.errorMessage()).isEqualTo(AdmissionsChatService.MSG_SEARCH_FAILED);
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
     }
 }
