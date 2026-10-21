@@ -1,0 +1,73 @@
+# AcademyCraft 도움말 운영 적용 계획 (계획만 — 실행하지 않음)
+
+> 작성일 2026-10-20 · 기준 BuildIt main `4cdc95a0`(#828 병합) · 운영 BuildIt `739be7a3`(배포 이력 기준, 호스트 미확인) · 운영 AcademyCraft `543cdfc8`.
+> 이 문서는 계획이다. 홈페이지 게시, 운영 DB 지식 등록, 운영 배포, AWS 변경은 별도 승인 후에만 실행한다.
+
+## 1. "/help/academycraft" 게시 준비
+- 코드는 main에 있으나 **운영에는 없다**(BuildIt 운영 배포 전). 게시 = BuildIt 운영 배포 1회.
+- 접근: ADMIN·TUTOR 로그인 필수, 비로그인은 로그인 안내. 공개(비로그인) 게시가 필요하면 SecurityConfig·문서 `visibility` 정책을 따로 정해야 한다(현재는 의도적으로 비공개).
+- 진입 링크: 대시보드/AcademyCraft 화면에는 도움말 링크가 아직 없다. 게시 후 링크 추가는 별도 작은 PR(화면 변경)로 승인받는다.
+- 게시 전 체크: ① 운영 화면과 12개 문서 재대조(라벨·권한) ② AI Agent·주간 시간표 배포 여부에 맞춰 문서 상태/적용버전 갱신 ③ noindex 유지 확인.
+
+## 2. AI 비서 API 연결 상태
+- `POST /api/help/academycraft/ask`: main 반영 완료, 운영 미배포.
+- 외부 의존 없음: LLM·DB·AcademyCraft 호출이 없고 jar 안 `help/academycraft/*.md`만 읽는다 → **환경변수·키·DB 변경 불필요**. `buildit.help.academycraft.ai-official-statuses` 기본 `REVIEWED`(12개 모두 해당).
+- 이 비서는 사용법 안내용이다. 업무 실행·조회를 하지 않는다(AI Agent 쓰기 승인과 무관, 별도 기능).
+
+## 3. ADMIN/TUTOR 권한 검증 계획 (배포 후, 읽기 전용 확인 위주)
+| 확인 | 기대 |
+|---|---|
+| 비로그인 `/help/academycraft` | 302 로그인 안내 |
+| 비로그인·STUDENT `POST /ask` | 401 |
+| ADMIN 12개 문서 | 200 |
+| TUTOR `admin-guide` | 404, 나머지 200 |
+| 질문 3종(학생 등록, 다른 학원 명단, 삭제해줘) | 근거 답변 / 조회 거절 / 실행 안 함 |
+- 실제 운영 ADMIN·TUTOR 계정으로 사용자가 직접 확인하거나, 승인 하에 점검 계정을 쓴다. 운영 데이터 변경 없음(질문은 읽기).
+
+## 4. 운영 배포 및 롤백
+- 배포: 기존 수동 `Deploy to EC2`(신규 계정 425805163960) 1회. 이 변경은 신규 jar 리소스·컨트롤러·정적 파일뿐이며 DB 마이그레이션 없음.
+- 같은 배포에 main의 P0(#825)·P1-b(#827)도 포함된다 → AcademyCraft #21/#20(AI Agent)은 AcademyCraft를 먼저 배포하는 순서 계획(`AcademyCraft/docs/agent-p1b-e2e-and-deploy.md`)을 따른다. **도움말만 따로 배포할 수는 없다**(단일 jar).
+- 롤백: 기존 배포 워크플로의 이전 SHA(`739be7a3`) 재배포(배포 실패 시 jar·env 자동 복원 기능 포함, #724). 도움말은 DB를 쓰지 않아 데이터 롤백 없음. 롤백 시 도움말 URL은 404가 되고 다른 기능은 이전 상태로 돌아간다.
+- 배포 후 확인: `/actuator/health` 등 기존 헬스 게이트 + 3장 표.
+
+## 5. 운영 DB 변경 필요 여부
+- 도움말·AI 비서: **없음**(Flyway 신규 없음, 지식 데이터는 jar 내 파일이라 "운영 DB 지식 등록"도 불필요).
+- 별도: AcademyCraft V6(`rea_agent_plans`)는 AI Agent 배포 시에만 필요(백업 후 별도 승인, 위 배포 계획 참조). 공지 소유권 개선(§별도 PR)은 스키마 변경 없이 가능하도록 제안했다.
+
+## 6. 출결 한국 시간대 검증 방법
+- 사실: AcademyCraft 출결은 `LocalDateTime.now()`(JVM 기본 시간대)로 시각을 저장한다. 운영 DB URL은 `serverTimezone=Asia/Seoul` 예시가 있으나 **JVM 기본 시간대가 UTC면 저장 시각이 9시간 어긋날 수 있다.** 현재 운영 값은 미확인.
+- 읽기 전용 점검(승인 후): ① 호스트 `timedatectl`/`date`, 서비스 환경의 `TZ`·JVM `-Duser.timezone` 확인(SSM 읽기 전용 명령) ② DB `SELECT NOW(), @@session.time_zone`.
+- 기능 점검(승인 후): 점검용 학원·학생에서 출결 1건 기록 → 화면 시각과 한국 시각을 대조 → 점검 데이터는 정정 이력과 함께 정리 방침을 사전 합의.
+- 어긋나면: 코드 수정(`Clock`을 Asia/Seoul로 고정)을 별도 PR로 제안한다. 이 계획서 범위 밖.
+
+## 7. 배포 준비 확인 결과 (2026-10-20, 배포 명령 실행 안 함)
+| 항목 | 확인 |
+|---|---|
+| 현재 운영 SHA | BuildIt `739be7a3`(#822, Deploy to EC2 run 39358030658, 2026-10-20 02:22 성공 — **이전 문서의 5343d785는 더 이전 값이었음**). AcademyCraft `543cdfc8`(Deploy run 39361394298, 02:56 성공). 호스트 jar 정보는 직접 확인하지 못함 |
+| 배포 대상 main SHA | BuildIt `4cdc95a0`(#828) — 이후 병합이 생기면 재확인 |
+| 포함 변경(739be7a3→4cdc95a0, 67파일) | #820 화면 디자인 3종, #823 Academy Motion(공개 홈페이지), #824 인계 문서, **#825**(주간 시간표 허용·차단 안내 페이지), **#827**(AI 에이전트 경로 5개·agentProtocol), **#828**(도움말·AI 비서). Java 변경은 `SecurityConfig`·`AcademyCraftGateway`·도움말 패키지뿐 |
+| AcademyCraft 호환 | 운영 AcademyCraft(543cdfc8) + 새 BuildIt: 서명 신원의 새 필드는 무시되고 에이전트 경로만 403으로 안전 실패, 기존 업무 경로 정상(로컬 E2E 112건 중 버전 불일치 시나리오). 주간 시간표(#825)는 AcademyCraft 변경 없이 동작 |
+| 기존 서비스·로그인 영향 | 인증 로직 변경 없음. SecurityConfig는 `/help/academycraft*` matcher와 로그인 안내 대상 경로 추가뿐. #820·#823은 별도 PR로 CI 통과한 화면 변경이라 **같은 배포에 함께 나간다**(범위 확인 필요) |
+| DB 마이그레이션 | **없음**(739be7a3 이후 `db/migration` 변경 0, 최신 V1092) |
+| 롤백 | 이전 SHA 재배포. 마이그레이션이 없어 스키마 롤백 불필요. 도움말·게이트웨이 변경은 DB 상태가 없다 |
+| ADMIN/TUTOR 운영 검증 | §3 표 + 주간 시간표 진입(안내 페이지 대신 화면), AcademyCraft 학생·반·출결 화면 정상, 대시보드 로그인 흐름. 읽기 위주, 운영 데이터 변경 없음 |
+| 판단 | 코드·CI·호환 기준 **배포 가능**. 단 승인 필요: ① #820·#823 동반 배포 수용 ② 운영 호스트 SHA 확인(읽기 전용) ③ AI Agent는 AcademyCraft 배포 전까지 비활성(경로 403) 유지 |
+
+## 8. 배포 결과와 계획 대조 (2026-10-20 배포, 2026-10-21 기록)
+| 계획 항목 | 실제 결과 |
+|---|---|
+| AcademyCraft 먼저 → BuildIt | 그대로 수행. AcademyCraft `115477f7`(run 39460415297 성공), BuildIt `4cdc95a0`(run 39465859077 성공) |
+| 백업 | 서버 `/backup/academycraft/shared-session-20261020T171714-156974`(jar·env 2종·DB 덤프, S3 해시 검증 통과). 직전 RDS 복구 시점 확인 통과 |
+| DB 마이그레이션 | AcademyCraft V6(추가 전용) 적용, Flyway 이력 1~6 성공. BuildIt 변경 없음 |
+| 연결(bindings) | 3건 유지(TUTOR 54/학원12, ADMIN 4/학원12·20), BuildIt 재시작 없음(스크립트 기록) |
+| BuildIt 게이트 | 배포 게이트 단위·계약 테스트 성공, SSM 배포 성공, 배포 후 `/wemade` 스모크 성공 |
+| 운영 검증(ADMIN/TUTOR) | **미실시**: 샌드박스에서 운영 도메인 접근 불가, 운영 계정 없음 |
+| 출결 시간대 | 운영 UTC 확인(호스트·JVM·DB). 수정은 AcademyCraft PR #27(미병합·미배포) |
+
+### 계획과 달라진 점 (갱신 필요했던 서술)
+- §2 "AI Agent는 AcademyCraft 배포 전까지 비활성(경로 403)" → **AcademyCraft 배포로 에이전트 API 5개 경로가 열렸다**(양쪽 `agentProtocol=1` 일치). 다만 BuildIt 게이트웨이 화면 허용 목록에 `CHAT-01-ai-chat.html`이 없고 대시보드에 연결이 없어 **AI 화면은 노출되지 않는다**. API는 로그인한 원장·강사(쓰기·승인은 원장 전용, 서버 검증형 2단계)가 직접 호출할 때만 도달한다.
+- 승인 스위치 `rea.agent.approval.enabled` 기본값이 켜짐이고 운영 env에 값이 없다. 완전 비활성이 필요하면 운영 env `REA_AGENT_APPROVAL_ENABLED=false`(쓰기 도구 일시 중지 안내만 반환, 읽기 도구 영향 없음) + 재시작이 필요하며, 이는 운영 설정 변경이라 승인 대상이다.
+- 도움말 문서의 `개발 완료·미배포`(주간 시간표·AI Agent) 표기는 배포 후 실계정 확인 뒤 갱신한다.
+
+### #829 병합 필요성
+- 내용 중 §1~§7은 배포 전 계획이고 위 대조표로 사실과 달라진 부분을 바로잡았다. **이 문서를 병합하면** 운영 SHA·절차·롤백(이전 SHA 재배포)·시간대 점검 방법이 저장소에 남는다. 코드 변경이 없어 배포가 필요 없고(BuildIt은 문서 변경만으로 push CI 없음), 병합을 권장한다(승인 대기).
