@@ -113,7 +113,7 @@ class AdmissionsActivateAllSecurityTest {
   void adminSucceedsAndLogsAudit() throws Exception {
     // given
     when(activationService.activateAll(eq(2027), eq("ACTIVATE-ALL-2027")))
-        .thenReturn(new AdmissionsActivationService.ActivationResult(2027, 20, 0, 116, 72));
+        .thenReturn(new AdmissionsActivationService.ActivationResult(2027, 20, 0, 116, 72, 188));
 
     // when / then
     mockMvc.perform(post(URL).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content(BODY))

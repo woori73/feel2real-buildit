@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AdmissionsResearchServiceLogicTest {
 
     private final AdmissionsResearchService service = new AdmissionsResearchService(
-            null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null);
 
     @Test
     @DisplayName("키워드 추출 — 조사 제거 및 불용어 필터")

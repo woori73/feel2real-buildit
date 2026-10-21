@@ -49,7 +49,10 @@
 | `app.admissions.embedding.service-url` | (빈 값) | EmbeddingGemma 서버 주소. 비어 있으면 임베딩 불가(폴백) |
 | `app.admissions.embedding.model-version` | `embeddinggemma-2` | 임베딩 세대 식별자. 바꾸면 전체 재색인 필요 |
 | `app.admissions.embedding.dimension` | 768 | 벡터 차원 |
-| `app.admissions.embedding.timeout-ms` | 10000 | 임베딩 서버 호출 타임아웃 |
+| `app.admissions.embedding.timeout-ms` | 1500 | 임베딩 서버 호출 타임아웃 (초과 시 LIKE 폴백) |
+| `app.admissions.embedding.min-similarity` | 0.5 | 벡터 단독 관련성 하한. 실제 EmbeddingGemma 라벨 질문셋으로 보정 후 확정 |
+| `app.admissions.embedding.circuit-failure-threshold` | 2 | 연속 실패 이 횟수에 서킷 오픈 |
+| `app.admissions.embedding.circuit-open-ms` | 30000 | 서킷 오픈 유지 시간 (이후 재시도) |
 | `app.admissions.embedding.vector-limit` | 20 | 벡터 후보 수 |
 | `app.admissions.embedding.like-weight` | 0.4 | 하이브리드 LIKE 가중치 |
 | `app.admissions.embedding.vector-weight` | 0.6 | 하이브리드 벡터 가중치 |
@@ -59,3 +62,10 @@
 참고 (지피지기 측, 본 PR과 무관): `newstart.embedding.*` (enabled 기본 false, model-version `embeddinggemma-2`, dimension 768, timeout-ms 5000).
 
 운영 환경의 실제 설정값은 저장소에 없으며, 이 문서에 운영값을 기록하지 않는다.
+
+## 4. 운영 적용 순서 (v3.3 시드, 관리자 UI 기준)
+
+1. 시드 v3.3(`docs/admissions/seed-v33/seed-v3.3-ops.json`) 적재 → 2. 행 전체 ACTIVE 승격(activate-all) →
+3. 지식 항목 생성(knowledge/build) → 4. activate-all 한 번 더(항목 승격, 근거 행이 ACTIVE인 항목만) →
+5. 재색인(knowledge/reindex MISSING) → 6. 인덱스 reload 확인.
+`enabled`/`service-url`은 실제 모델로 `min-similarity`를 보정하기 전까지 비워 둔다(LIKE+구조화 검색만 동작).

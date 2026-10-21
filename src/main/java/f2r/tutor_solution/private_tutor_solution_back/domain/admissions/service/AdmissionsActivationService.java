@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.KnowledgeStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsDepartmentRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository;
@@ -15,6 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>학과·전형·일정에는 개별 승인 API가 없어서 이 서비스가 유일한 승격 경로다. 호출은 ADMIN 전용
  * ({@code /api/admin/admissions/**})이고 확인 문자열이 맞아야 하며, 한 트랜잭션이라 중간 실패 시 되돌려진다.
  * ARCHIVED 행과 다른 학년도 행은 건드리지 않는다.
+ *
+ * <p>구조화 행에서 만든 검색용 지식 항목({@code knowledge-build}가 만든 type/schedule 항목)도 함께 승격한다.
+ * 단, 원본 행이 ACTIVE일 때만이다(원본이 ARCHIVED·DRAFT면 항목도 올리지 않는다). 항목을 만들기 전이면 0건이고,
+ * 만든 뒤 다시 실행하면 항목만 올라간다(멱등).
  */
 @Service
 @RequiredArgsConstructor
@@ -24,8 +29,10 @@ public class AdmissionsActivationService {
     private final AdmissionsDepartmentRepository departments;
     private final AdmissionsTypeRepository types;
     private final AdmissionsScheduleRepository schedules;
+    private final AdmissionsKnowledgeItemRepository knowledgeItems;
 
-    public record ActivationResult(int academicYear, int materials, int departments, int types, int schedules) {}
+    public record ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
+                                   int knowledgeItems) {}
 
     public static String confirmationFor(int academicYear) {
         return "ACTIVATE-ALL-" + academicYear;
@@ -52,7 +59,30 @@ public class AdmissionsActivationService {
         for (var row : schedules.findAll()) {
             if (row.getAcademicYear() == academicYear && promotable(row.getStatus())) { row.setStatus(KnowledgeStatus.ACTIVE); s++; }
         }
-        return new ActivationResult(academicYear, m, d, t, s);
+        int k = 0;
+        java.util.Set<Long> activeTypes = new java.util.HashSet<>();
+        types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
+        java.util.Set<Long> activeSchedules = new java.util.HashSet<>();
+        schedules.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeSchedules.add(row.getScheduleId()); });
+        for (var item : knowledgeItems.findAll()) {
+            if (item.getAcademicYear() != academicYear || !promotable(item.getStatus())) continue;
+            if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
+            String key = item.getDedupKey() == null ? "" : item.getDedupKey();
+            boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
+                    || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)));
+            if (!backed) continue;
+            item.setStatus(KnowledgeStatus.ACTIVE);
+            k++;
+        }
+        return new ActivationResult(academicYear, m, d, t, s, k);
+    }
+
+    private static long idOf(String dedupKey) {
+        try {
+            return Long.parseLong(dedupKey.substring(dedupKey.lastIndexOf(':') + 1));
+        } catch (NumberFormatException e) {
+            return -1L;
+        }
     }
 
     private static boolean promotable(KnowledgeStatus status) {
