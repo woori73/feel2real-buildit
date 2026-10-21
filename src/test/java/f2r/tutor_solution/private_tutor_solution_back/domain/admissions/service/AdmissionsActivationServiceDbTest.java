@@ -70,6 +70,7 @@ class AdmissionsActivationServiceDbTest {
     @Autowired AdmissionsDepartmentRepository departments;
     @Autowired AdmissionsTypeRepository types;
     @Autowired AdmissionsScheduleRepository schedules;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
 
     @BeforeEach
     void load() throws Exception {
@@ -172,10 +173,13 @@ class AdmissionsActivationServiceDbTest {
                 .allSatisfy(m -> assertThat(m.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
         assertThat(materials.findAll().stream().filter(m -> "doc_exa_2027".equals(m.getFileKey())))
                 .allSatisfy(m -> assertThat(m.getStatus()).isEqualTo(KnowledgeStatus.ACTIVE));
-        assertThat(departments.findAll().stream().filter(d -> "doc_tst_2027_susi".equals(d.getSource().getFileKey())))
-                .allSatisfy(d -> assertThat(d.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
-        assertThat(departments.findAll().stream().filter(d -> "doc_exa_2027".equals(d.getSource().getFileKey())))
-                .allSatisfy(d -> assertThat(d.getStatus()).isEqualTo(KnowledgeStatus.ACTIVE));
+        // 학과의 출처(source)는 지연 로딩이라 트랜잭션 안에서 확인한다 (클래스가 NOT_SUPPORTED라 본문에서는 세션이 없다)
+        new org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult(tx -> {
+            assertThat(departments.findAll().stream().filter(d -> "doc_tst_2027_susi".equals(d.getSource().getFileKey())))
+                    .allSatisfy(d -> assertThat(d.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
+            assertThat(departments.findAll().stream().filter(d -> "doc_exa_2027".equals(d.getSource().getFileKey())))
+                    .allSatisfy(d -> assertThat(d.getStatus()).isEqualTo(KnowledgeStatus.ACTIVE));
+        });
         assertThat(types.findAll().stream().filter(t -> t.getAcademicYear() == 2027))
                 .allSatisfy(t -> assertThat(t.getStatus()).isEqualTo(KnowledgeStatus.DRAFT));
         assertThat(schedules.findAll())
