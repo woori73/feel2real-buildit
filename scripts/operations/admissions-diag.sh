@@ -51,6 +51,7 @@ SELECT 'flyway V1078' AS section, COUNT(*) AS value FROM flyway_schema_history W
 SELECT 'materials by year/status' AS section, academic_year, status, COUNT(*) AS n FROM admissions_official_materials GROUP BY academic_year, status ORDER BY academic_year, status;
 SELECT 'departments by year/status' AS section, academic_year, status, COUNT(*) AS n FROM admissions_departments GROUP BY academic_year, status ORDER BY academic_year, status;
 SELECT 'types by year/status' AS section, academic_year, status, COUNT(*) AS n FROM admissions_types GROUP BY academic_year, status ORDER BY academic_year, status;
+SELECT 'types with 제출서류 in details (count only)' AS section, academic_year, SUM(details LIKE '%제출서류:%') AS with_docs, SUM(details IS NULL OR details NOT LIKE '%제출서류:%') AS without_docs FROM admissions_types GROUP BY academic_year;
 SELECT 'schedules by year/status' AS section, academic_year, status, COUNT(*) AS n FROM admissions_schedules GROUP BY academic_year, status ORDER BY academic_year, status;
 SELECT 'knowledge by year/status' AS section, academic_year, status, COUNT(*) AS n FROM admissions_knowledge_items GROUP BY academic_year, status ORDER BY academic_year, status;
 SELECT 'schedules by university/year/track/status (track from title)' AS section, u.name AS university, s.academic_year, CASE WHEN s.title LIKE '%정시%' THEN '정시' WHEN s.title LIKE '%수시%' THEN '수시' ELSE '구분없음' END AS track, s.status, COUNT(*) AS n
