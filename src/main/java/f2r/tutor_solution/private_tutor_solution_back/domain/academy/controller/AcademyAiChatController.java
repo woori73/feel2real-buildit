@@ -330,6 +330,17 @@ public class AcademyAiChatController {
             HttpStatus.CONFLICT,
             "이미 처리된 요청입니다. 생성된 홈페이지 ID: " + rec.getAcademyId());
       }
+      // 자가 복구: markCompleted 전에 장애가 나면 레코드는 PROCESSING이지만
+      // Academy는 이미 생성됐을 수 있다. 이 경우 완료로 정정하고 academyId를 알려준다.
+      if (rec.isProcessing()) {
+        java.util.Optional<AcademyResponse> mine = academyService.getMine(principal);
+        if (mine.isPresent()) {
+          idempotencyService.markCompleted(rec.getId(), mine.get().academyId());
+          throw new ResponseStatusException(
+              HttpStatus.CONFLICT,
+              "이미 처리된 요청입니다. 생성된 홈페이지 ID: " + mine.get().academyId());
+        }
+      }
       throw new ResponseStatusException(
           HttpStatus.CONFLICT, "이미 처리 중인 요청입니다: " + idempotencyKey);
     }
