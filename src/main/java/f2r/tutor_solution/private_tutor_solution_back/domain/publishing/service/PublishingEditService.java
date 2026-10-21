@@ -113,6 +113,11 @@ public class PublishingEditService {
     return executeCommands(principal, jobId, commands, null);
   }
 
+  /** 소유자 검증 후 작업을 반환한다. */
+  public PublishingJob getJob(AuthenticatedPrincipal principal, Long jobId) {
+    return jobService.requireOwned(principal, jobId);
+  }
+
   /** 계획 생성에만 사용하는 제한된 읽기 전용 문서 맥락. */
   public String documentContext(PublishingJob job) {
     requireReady(job);
@@ -140,6 +145,12 @@ public class PublishingEditService {
     return context.toString();
   }
 
+  /**
+   * 영어 지문 원문 보호 마커 (원고의 지문 섹션 시작 부분에 배치).
+   * 이 마커를 포함한 스토리는 AI 수정으로부터 잠긴다.
+   */
+  public static final String PASSAGE_LOCK_MARKER = "<!-- worksheet:passage-lock -->";
+
   /** 원고 반입 결과. */
   public record ManuscriptImportResult(
       Long snapshotId, int pageCount, String fileName, int styledHeadings) {}
@@ -165,6 +176,37 @@ public class PublishingEditService {
     cliExecutor.executeOnDocument(List.of(
         new PublishingCommand("selection.set", Map.of("ids", List.of(frameId))),
         new PublishingCommand("object.primaryTextFrame", Map.of("on", true))), workDir);
+  }
+
+  /**
+   * 지문 원문 보호: {@link #PASSAGE_LOCK_MARKER}를 포함한 스토리를 찾아 잠금 목록에 기록한다.
+   *
+   * <p>잠긴 스토리는 AI 계획({@code PublishingAiService.plan})과 실행({@code expand})에서
+   * 수정이 차단된다. 사용자의 명시적 수정(userConfirmed=true)은 허용된다.
+   */
+  void lockPassageStory(PublishingJob job) {
+    Path workDir = Path.of(job.getWorkDir());
+    var doc = cliExecutor.inspect(Path.of(job.getDesigncraftFile()), workDir);
+    List<Long> locked = new ArrayList<>();
+    for (var story : doc.path("stories")) {
+      long id = story.path("id").asLong();
+      try {
+        var result = cliExecutor.execute(
+            new PublishingCommand("story.get", Map.of("story", id)), workDir);
+        String text = objectMapper.readTree(result.output()).path("text").asText();
+        if (text.contains(PASSAGE_LOCK_MARKER)) {
+          locked.add(id);
+        }
+      } catch (IOException e) {
+        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "지문 스토리 조회 실패", e);
+      }
+    }
+    if (!locked.isEmpty()) {
+      String json = locked.stream().map(String::valueOf).collect(
+          java.util.stream.Collectors.joining(",", "[", "]"));
+      job.setLockedStories(json);
+      log.info("원문 보호 잠금: jobId={}, stories={}", job.getId(), json);
+    }
   }
 
   /**
@@ -199,6 +241,10 @@ public class PublishingEditService {
           new PublishingCommand("style.paragraph.apply", Map.of("name", "ko-body"))),
           Path.of(job.getWorkDir()));
       markPrimaryStory(job);
+      // 영어 학습지 템플릿이면 지문 원문 스토리를 잠근다 (AI 수정 차단)
+      if (PublishingJob.Template.EN_WORKSHEET_A4.getCode().equals(job.getTemplate())) {
+        lockPassageStory(job);
+      }
     } catch (ResponseStatusException e) {
       throw new ResponseStatusException(e.getStatusCode(), "원고 반입 실패: " + e.getReason(), e);
     }
@@ -308,6 +354,13 @@ public class PublishingEditService {
     Map<String, Object> params = normalized.params() == null ? Map.of() : normalized.params();
     if ("document.replaceText".equals(normalized.id())) {
       long story = ((Number) params.get("story")).longValue();
+      // 원문 보호: 잠금 스토리는 사용자 명시 확인(userConfirmed=true) 없이 수정 불가.
+      // AI 계획 경로는 applyPlan에서 userConfirmed을 제거하므로 이 검사를 통과할 수 없다.
+      if (job.isStoryLocked(story) && !Boolean.TRUE.equals(params.get("userConfirmed"))) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+            "원문 보호 영역입니다. 영어 지문 원문은 AI가 임의로 수정할 수 없습니다. "
+                + "직접 수정하려면 원문 보호 해제를 확인한 뒤 다시 요청하세요.");
+      }
       String before = (String) params.get("before");
       String after = (String) params.get("after");
       try {

@@ -4738,7 +4738,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ## DesignCraft 출판 API 보강 (`/api/publishing/jobs/{jobId}/**`)
 
-- `GET /info` → `{jobId, pageCount}`: 작업 문서(`job.designcraft`)의 현재 쪽수(`document.inspect`). 작업이 `RUNNING`/`DONE`일 때만(그 외 `409`). 편집기가 폴링 없이 쪽수를 알기 위한 용도.
+- `GET /info` → `{jobId, pageCount, lockedStories}`: 작업 문서(`job.designcraft`)의 현재 쪽수(`document.inspect`)와 원문 보호 스토리 ID 목록. 작업이 `RUNNING`/`DONE`일 때만(그 외 `409`). 편집기가 폴링 없이 쪽수를 알기 위한 용도.
 - `POST /manuscript` (multipart `manuscript`; md/txt/docx/rtf, 최대 10MB) → `{jobId, applied, snapshotId, pageCount, fileName}`: 원고를 첨부하고 반입 전 스냅샷을 만든 뒤 한 번의 CLI script로 `file.place(autoflow)` → 전체 선택 → `ko-body` 적용을 실행하고 정본에 저장한다.
 - `POST /commands`는 정본에 저장된다(`script - --in job.designcraft --save TMP` 후 원자적 교체, 실패 시 정본 불변). `GET /pages/{n}/png|thumb`의 `n`은 1-based이며 CLI에는 0-based로 변환해 전달한다.
 - `preflight`·`export`·Markdown 스타일 적용·조회는 모두 **현재 작업 문서**(`job.designcraft`)를 `--in`으로 지정해 실행한다. 작업 문서가 없으면 CLI 기본 샘플로 대체하지 않고 `409`로 실패한다. 문서를 바꾸는 명령(편집·반입·Markdown 스타일)은 한 script로 실행해 저장하고 실패 시 정본을 유지한다.
@@ -4787,6 +4787,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 기존 `/api/publishing/ai/plan` → `/jobs/{jobId}/revisions` 계약 유지. 계획은 문서에서 최대 12000자 맥락을 읽기만 하고, 승인 API에서만 변경한다.
 - `document.replaceText`: `{story: number, before: string, after: string}`. before는 현재 스토리에서 정확히 한 번 일치해야 한다. 서버가 UTF-8 byte range로 변환해 `story.replaceRange`를 실행한다. 미일치·중복은 409. 삭제는 빈 after, 추가는 원문을 포함한 after. 한 계획당 텍스트 수정 한 구간.
+- **원문 보호 (영어 학습지)**: `en-worksheet-a4` 템플릿 작업은 원고 반입 시 `<!-- worksheet:passage-lock -->` 마커가 있는 스토리를 잠근다(`publishing_jobs.locked_stories`). AI 계획이 잠금 스토리를 대상으로 하면 `warning`과 함께 반환되고, 편집기에 확인 체크박스가 표시된다. `POST /jobs/{jobId}/revisions`에 `userConfirmed: true`를 함께 보내야 적용된다 (사용자 명시 승인). AI는 `userConfirmed`을 설정할 수 없다 (서버에서 강제 제거). 직접 `/commands` 호출도 `params.userConfirmed: true` 없이 잠금 스토리를 수정하면 403.
 - `style.paragraph.apply`: 적용할 `page`(1-based) 필수. 페이지 프레임을 선택한 뒤 스타일 적용.
 - 승인된 명령은 한 CLI script로 실행하고 모두 성공할 때만 정본 교체.
 - `edit.undo`: 단독 계획만 허용하며 이전 스냅샷을 복원한다. 이전 버전이 없으면 409.

@@ -32,7 +32,8 @@ public class PublishingJob extends BaseEntity {
   public enum Template {
     KO_TEXTBOOK_A4("ko-textbook-a4"),
     KO_WORKBOOK_B5("ko-workbook-b5"),
-    KO_BOOK_46("ko-book-46");
+    KO_BOOK_46("ko-book-46"),
+    EN_WORKSHEET_A4("en-worksheet-a4");
 
     private final String code;
 
@@ -86,6 +87,9 @@ public class PublishingJob extends BaseEntity {
   @Column(columnDefinition = "TEXT")
   private String error;
 
+  @Column(name = "locked_stories", columnDefinition = "TEXT")
+  private String lockedStories;
+
   @Column(name = "attempt_count", nullable = false)
   private int attemptCount = 0;
 
@@ -130,5 +134,43 @@ public class PublishingJob extends BaseEntity {
 
   public void rename(String title) {
     this.title = title;
+  }
+
+  /**
+   * 원문 보호 스토리 ID 목록을 JSON 배열로 저장한다 (예: "[20]").
+   */
+  public void setLockedStories(String lockedStoriesJson) {
+    this.lockedStories = lockedStoriesJson;
+  }
+
+  /**
+   * 원문 보호 스토리 ID 집합을 반환한다. 저장값이 없거나 파싱 실패 시 빈 집합.
+   */
+  public java.util.Set<Long> getLockedStoryIds() {
+    if (lockedStories == null || lockedStories.isBlank()) {
+      return java.util.Set.of();
+    }
+    try {
+      java.util.Set<Long> ids = new java.util.HashSet<>();
+      String t = lockedStories.trim();
+      if (t.startsWith("[") && t.endsWith("]")) {
+        for (String part : t.substring(1, t.length() - 1).split(",")) {
+          String p = part.trim();
+          if (!p.isEmpty()) {
+            ids.add(Long.parseLong(p));
+          }
+        }
+      }
+      return java.util.Set.copyOf(ids);
+    } catch (NumberFormatException e) {
+      return java.util.Set.of();
+    }
+  }
+
+  /**
+   * 해당 스토리가 원문 보호 대상인지 반환한다.
+   */
+  public boolean isStoryLocked(long storyId) {
+    return getLockedStoryIds().contains(storyId);
   }
 }

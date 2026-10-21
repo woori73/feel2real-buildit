@@ -186,9 +186,10 @@
       if (USE_MOCK) return mockCall('aiPlan', [jobId, message]);
       return http('POST', '/ai/plan', { jobId: jobId, message: message });
     },
-    applyRevision: function (jobId, plan) {
+    applyRevision: function (jobId, plan, userConfirmed) {
       if (USE_MOCK) return mockCall('applyRevision', [jobId, plan]);
-      return http('POST', '/jobs/' + encodeURIComponent(jobId) + '/revisions', { plan: plan });
+      return http('POST', '/jobs/' + encodeURIComponent(jobId) + '/revisions',
+        { plan: plan, userConfirmed: !!userConfirmed });
     },
 
     /* ── 4.4 검수·산출물 ───────────────────────────────────── */
