@@ -444,4 +444,54 @@ class AdmissionsChatServicePolicyTest {
         verify(llm).complete(system.capture(), anyString(), anyInt());
         assertThat(system.getValue()).contains("[세종캠퍼스]").contains("다른 캠퍼스");
     }
+
+    @Test
+    @DisplayName("given 사실 근거와 사설 미러본이 함께 있는 질문 when 묻으면 then 미러본은 공식 자료로 표시되지 않고 프롬프트가 확정 답변을 금지한다")
+    void mirror_material_is_not_presented_as_official() {
+        // given
+        String q = "중앙대 수시 정시 모집 알려줘";
+        Evidence mirror = Evidence.builder().stepNo(3).sourceClass(SourceClass.UNVERIFIED_MIRROR)
+                .refId("material:13").refUrl("https://mirror.test/13")
+                .title("중앙대학교 2027학년도 수시모집요강 (사설 미러본 · 공식 원본 미확보)")
+                .excerpt("공식 원본이 아닌 사설 미러본이며 내용이 검증되지 않았다.").note("사설 미러본 (공식 원본 아님)")
+                .academicYear(2027).yearConfirmed(true).build();
+        givenFacts(q, List.of(fact("sched:9", "중앙대학교 2027학년도 정시 원서접수", "일정 원문: 1.4.", 2027, "https://cau.test/jungsi"), mirror),
+                Set.of(2027), false);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2027학년도 정시 원서접수는 1.4.입니다. 수시는 공식 원본이 아니라 확인이 필요합니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.ok()).isTrue();
+        assertThat(answer.sources()).filteredOn(s -> "material:13".equals(s.id()))
+                .extracting(AdmissionsChatService.AnswerSource::kind)
+                .containsExactly("사설 미러본 (공식 원본 아님)");
+        var system = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(system.capture(), anyString(), anyInt());
+        assertThat(system.getValue()).contains("사설 미러본").contains("확정적으로 말하지 않는다");
+    }
+
+    @Test
+    @DisplayName("given 사설 미러본만 근거인 질문 when 묻으면 then 제목만 있는 자료로 보고 LLM을 호출하지 않는다")
+    void mirror_only_question_is_title_only_refusal() {
+        // given
+        String q = "중앙대 수시 전형 알려줘";
+        Evidence mirror = Evidence.builder().stepNo(3).sourceClass(SourceClass.UNVERIFIED_MIRROR)
+                .refId("material:13").title("중앙대학교 2027학년도 수시모집요강 (사설 미러본 · 공식 원본 미확보)")
+                .excerpt("사설 미러본").note("사설 미러본 (공식 원본 아님)").academicYear(2027).yearConfirmed(true).build();
+        givenFacts(q, List.of(), Set.of(2027), false);
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of()).officialDocHits(List.of(mirror))
+                .youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_TITLE_ONLY);
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
 }

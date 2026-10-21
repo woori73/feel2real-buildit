@@ -63,6 +63,8 @@ public class AdmissionsChatService {
                     + " 답변에는 반드시 적용 학년도를 명시한다 (예: '2027학년도 기준')."
                     + " 2028학년도 자료는 '계획 단계로 변경될 수 있다'는 점을 함께 밝힌다."
                     + " 근거에 없는 대학명·전형명·날짜·인원·비율을 만들어내지 않는다."
+                    + " 근거의 출처가 '사설 미러본'이면 공식 모집요강이라고 말하지 말고, 공식 원본이 아니라 확인이 필요한 자료라고 밝히며,"
+                    + " 그 자료만으로 모집인원·일정·자격·전형방법을 확정적으로 말하지 않는다."
                     + " 근거 제목에 [세종캠퍼스]처럼 캠퍼스가 표기되어 있으면 그 캠퍼스 자료로만 말하고,"
                     + " 질문이 다른 캠퍼스(예: 서울캠퍼스)를 묻는데 해당 캠퍼스 자료가 없으면 없다고 답한다."
                     + " 답변 본문에는 '[1]', '[출처1]' 같은 대괄호 번호 인용표를 쓰지 말고,"
@@ -383,6 +385,7 @@ public class AdmissionsChatService {
                 case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
                 case OFFICIAL_PLANNED -> "공식 자료 (계획)";
                 case OFFICIAL_DOCUMENT -> "공식자료 원문";
+                case UNVERIFIED_MIRROR -> "사설 미러본 (공식 원본 아님)";
                 default -> "참고 자료";
             };
             String url = e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl();
