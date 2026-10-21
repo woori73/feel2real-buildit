@@ -59,6 +59,8 @@
       if (!confirm(hard
         ? '이 자료를 완전히 삭제할까요? 파일까지 지워져 되돌릴 수 없습니다.'
         : '이 자료를 숨김 삭제할까요? 공개 목록에서 제외됩니다.')) return;
+      // 완전 삭제는 관리자 재확인을 한 번 더 거친다.
+      if (hard && !confirm('완전 삭제는 되돌릴 수 없습니다. 정말 삭제하시겠습니까?')) return;
       try {
         var res = await fetchAuth(BASE[kind] + '/' + id + (hard ? '/hard' : ''), { method: 'DELETE', redirectOnAuthError: false });
         if (res.status === 401 || res.status === 403) { alert('관리자만 삭제할 수 있습니다.'); return; }

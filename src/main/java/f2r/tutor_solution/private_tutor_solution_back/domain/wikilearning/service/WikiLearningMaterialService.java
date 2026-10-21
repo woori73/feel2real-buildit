@@ -8,6 +8,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.entity
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.repository.WikiLearningMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.DocumentUploadValidator;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.FileStorage;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.TransactionalFileDeletion;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -119,7 +120,10 @@ public class WikiLearningMaterialService {
       String newStorageKey = saveFile(file, fileName);
       String oldStorageKey = material.replaceFile(
           DocumentUploadValidator.contentType(fileName), fileName, newStorageKey, file.getSize());
-      fileStorage.delete(oldStorageKey, RAW_FILE_TYPE);
+      // 파일 삭제는 트랜잭션 결과에 묶는다 — 롤백되면 DB가 가리키는 기존 파일이 사라지면 안 된다.
+      TransactionalFileDeletion.onReplace(
+          () -> fileStorage.delete(oldStorageKey, RAW_FILE_TYPE),
+          () -> fileStorage.delete(newStorageKey, RAW_FILE_TYPE));
     }
     return WikiLearningMaterialResponse.of(material);
   }
@@ -128,7 +132,10 @@ public class WikiLearningMaterialService {
   public void adminHardDelete(Long id) {
     WikiLearningMaterial material = repository.findById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "학습 자료를 찾을 수 없습니다."));
-    String storageKey = material.getStorageKey(); repository.delete(material); fileStorage.delete(storageKey, RAW_FILE_TYPE);
+    String storageKey = material.getStorageKey();
+    repository.delete(material);
+    // 커밋된 뒤에만 파일을 지운다 — 삭제가 롤백되면 파일이 남아 DB와 어긋나지 않는다.
+    TransactionalFileDeletion.afterCommit(() -> fileStorage.delete(storageKey, RAW_FILE_TYPE));
   }
   private String saveFile(MultipartFile file, String name) {
     try { return fileStorage.saveRaw(STORAGE_OWNER_ID, name, file.getInputStream(), file.getSize()); }
