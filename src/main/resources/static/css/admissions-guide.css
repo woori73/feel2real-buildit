@@ -335,3 +335,8 @@ body {
 .ag-input {min-width:0;} .ag-source {white-space:normal;overflow-wrap:anywhere;}
 body[data-member="true"] .ag-welcome {padding:24px;} body[data-member="true"] .ag-chat {min-height:75dvh;}
 @media(max-width:600px) {.ag-tools{padding:14px;} .ag-header{flex-wrap:wrap;} .ag-input{font-size:16px;} .ag-nav {gap:8px;}}
+.ag-load { margin-top:24px; padding-top:16px; border-top:1px solid var(--ag-border); display:grid; gap:12px; }
+.ag-load label { display:grid; gap:4px; font-size:13px; } .ag-load input[type=text],.ag-load select { font-size:16px; min-height:44px; padding:8px; }
+.ag-load-row { display:grid; gap:12px; } .ag-load-error { color:#c5221f; }
+#ag-load-result { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:13px; line-height:1.7; margin:0; }
+@media (min-width:601px) { .ag-load-row { grid-template-columns:120px 1fr auto; align-items:end; } }

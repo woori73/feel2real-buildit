@@ -22,6 +22,17 @@
       <label>검수 상태<select id="ag-review-status"><option value="DRAFT">DRAFT</option><option value="REVIEW">REVIEW</option><option value="ACTIVE">APPROVED(승인)</option><option value="ARCHIVED">ARCHIVED</option></select></label>
       <button id="ag-review-refresh" type="button">조회</button></div>
       <div id="ag-review-list" aria-live="polite"></div><button id="ag-review-prev" type="button">이전</button><button id="ag-review-next" type="button">다음</button>
+      <div id="ag-load" class="ag-load" aria-label="입시자료 적재">
+        <h2>자료 적재 · 전체 승격</h2>
+        <p>① 시드 JSON 선택 → 미리보기 → 적재(DRAFT) ② 학년도 전체 ACTIVE 승격 ③ 검색 인덱스 갱신. 적재 전에 DB 백업을 확인하세요.</p>
+        <label>시드 파일(.json) <input id="ag-load-file" type="file" accept="application/json,.json"></label>
+        <button id="ag-load-run" type="button" disabled>미리보기 확인 후 DRAFT로 적재</button>
+        <div class="ag-load-row"><label>학년도<select id="ag-activate-year"><option value="2027">2027</option><option value="2028">2028</option></select></label>
+        <label>확인 문자열 <input id="ag-activate-confirm" type="text" placeholder="ACTIVATE-ALL-2027" autocomplete="off"></label>
+        <button id="ag-activate-run" type="button">학년도 전체 ACTIVE 승격</button></div>
+        <button id="ag-index-reload" type="button">검색 인덱스 갱신</button>
+        <pre id="ag-load-result" aria-live="polite"></pre>
+      </div>
     </section>
     <!-- 첫 화면 -->
     <section id="ag-welcome" class="ag-welcome" aria-label="입시상담 AI 시작">
@@ -73,5 +84,6 @@
   <script src="/js/api.js"></script>
   <script src="/js/admissions-guide.js?v=20261019-2" defer></script>
   <script src="/js/admissions-member.js?v=20261019-2" defer></script>
+  <script src="/js/admissions-admin-load.js?v=20261021" defer></script>
 </body>
 </html>

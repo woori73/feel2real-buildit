@@ -70,6 +70,7 @@ jobs:
         run: >-
           node --test
           src/test/js/assistant_wait.test.js
+          src/test/js/admissions_admin_load.test.js
           src/test/js/assistant_export.test.js
           src/test/js/academy_adopt.test.js
           src/test/js/assistant_home_contract.test.js
