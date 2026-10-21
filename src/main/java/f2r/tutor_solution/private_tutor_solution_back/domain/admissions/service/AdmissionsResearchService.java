@@ -90,7 +90,9 @@ public class AdmissionsResearchService {
         /** 충돌 중인 정보 — "확인 중" 안내 */
         CONFLICT_INFO,
         /** 답변 형식 안내문(GUIDE) — 사실 근거가 아니며 출처로 표시하지 않는다 */
-        GUIDE_NOTE
+        GUIDE_NOTE,
+        /** 사설 미러본(공식 원본 미확보) — 공식 자료로 표시하거나 확정 근거로 쓰지 않는다 */
+        UNVERIFIED_MIRROR
     }
 
     @Getter
@@ -404,19 +406,34 @@ public class AdmissionsResearchService {
             return cb.and(base.toArray(new Predicate[0]));
         };
         return materialRepository.findAll(spec, PageRequest.of(0, PER_STEP_LIMIT)).stream()
-                .map(m -> Evidence.builder()
-                        .stepNo(STEP_OFFICIAL_DOC)
-                        .sourceClass(m.getAcademicYear() != null && m.getAcademicYear() == 2028
-                                ? SourceClass.OFFICIAL_PLANNED : SourceClass.OFFICIAL_CONFIRMED)
-                        .refId("material:" + m.getMaterialId())
-                        .refUrl(m.getDocumentUrl())
-                        .title(m.getTitle())
-                        .excerpt(m.getIssuer() + (m.getPublishDate() != null ? " (" + m.getPublishDate() + ")" : ""))
-                        .note("공식자료 원문")
-                        .academicYear(m.getAcademicYear())
-                        .yearConfirmed(m.getAcademicYear() != null && m.getAcademicYear() == 2027)
-                        .build())
+                .map(AdmissionsResearchService::materialEvidence)
                 .toList();
+    }
+
+    /** 제목·발행처만 있는 공식자료 근거. 사설 미러본은 공식 자료로 표시하지 않는다. */
+    static Evidence materialEvidence(AdmissionsOfficialMaterial m) {
+        boolean mirror = isUnverifiedMirror(m);
+        return Evidence.builder()
+                .stepNo(STEP_OFFICIAL_DOC)
+                .sourceClass(mirror ? SourceClass.UNVERIFIED_MIRROR
+                        : m.getAcademicYear() != null && m.getAcademicYear() == 2028
+                        ? SourceClass.OFFICIAL_PLANNED : SourceClass.OFFICIAL_CONFIRMED)
+                .refId("material:" + m.getMaterialId())
+                .refUrl(m.getDocumentUrl())
+                .title(m.getTitle())
+                .excerpt(mirror
+                        ? "공식 원본이 아닌 사설 미러본이며 내용이 검증되지 않았다."
+                        : m.getIssuer() + (m.getPublishDate() != null ? " (" + m.getPublishDate() + ")" : ""))
+                .note(mirror ? "사설 미러본 (공식 원본 아님)" : "공식자료 원문")
+                .academicYear(m.getAcademicYear())
+                .yearConfirmed(m.getAcademicYear() != null && m.getAcademicYear() == 2027)
+                .build();
+    }
+
+    /** 제목에 사설 미러본·공식 원본 미확보 표기가 있는 자료. */
+    static boolean isUnverifiedMirror(AdmissionsOfficialMaterial m) {
+        String t = m == null ? null : m.getTitle();
+        return t != null && (t.contains("사설 미러본") || t.contains("공식 원본 미확보"));
     }
 
     // ── 안내문(GUIDE): 검색 참고용. 근거 개수에 포함하지 않는다 ─────────────

@@ -87,4 +87,51 @@ class AdmissionsResearchServiceLogicTest {
         assertEquals("abc", AdmissionsResearchService.firstChars("abc", 10));
         assertEquals("abcde…", AdmissionsResearchService.firstChars("abcdefghij", 5));
     }
+
+    private static f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial material(
+            long id, String title) {
+        return f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial.builder()
+                .materialId(id).academicYear(2027).title(title).issuer("중앙대학교 입학처")
+                .documentUrl("https://mirror.test/" + id).build();
+    }
+
+    @Test
+    @DisplayName("given 사설 미러본 자료 when 근거로 만들면 then 공식 자료가 아닌 미러본으로 표시하고 발행처를 공식처럼 내세우지 않는다")
+    void materialEvidence_marksUnverifiedMirror() {
+        // given
+        var mirror = material(13, "중앙대학교 2027학년도 수시모집요강 (사설 미러본 · 공식 원본 미확보)");
+
+        // when
+        var e = AdmissionsResearchService.materialEvidence(mirror);
+
+        // then
+        assertEquals(AdmissionsResearchService.SourceClass.UNVERIFIED_MIRROR, e.getSourceClass());
+        assertEquals("사설 미러본 (공식 원본 아님)", e.getNote());
+        assertFalse(e.getExcerpt().contains("입학처"), "미러본에 공식 발행처를 표기하지 않는다");
+        assertEquals("material:13", e.getRefId());
+    }
+
+    @Test
+    @DisplayName("given 공식 원본 자료 when 근거로 만들면 then 기존과 같이 공식자료 원문으로 표시한다")
+    void materialEvidence_keepsOfficialLabelForOfficialMaterial() {
+        // given
+        var official = material(14, "중앙대학교 2027학년도 정시모집요강");
+
+        // when
+        var e = AdmissionsResearchService.materialEvidence(official);
+
+        // then
+        assertEquals(AdmissionsResearchService.SourceClass.OFFICIAL_CONFIRMED, e.getSourceClass());
+        assertEquals("공식자료 원문", e.getNote());
+        assertTrue(e.getExcerpt().contains("중앙대학교 입학처"));
+    }
+
+    @Test
+    @DisplayName("given 제목 표기 변형 when 미러본 판별하면 then 사설 미러본·공식 원본 미확보 표기를 모두 잡고 null은 아니다로 본다")
+    void isUnverifiedMirror_detectsMarkers() {
+        assertTrue(AdmissionsResearchService.isUnverifiedMirror(material(1, "X (사설 미러본)")));
+        assertTrue(AdmissionsResearchService.isUnverifiedMirror(material(2, "X 공식 원본 미확보")));
+        assertFalse(AdmissionsResearchService.isUnverifiedMirror(material(3, "X 수시모집요강")));
+        assertFalse(AdmissionsResearchService.isUnverifiedMirror(null));
+    }
 }
