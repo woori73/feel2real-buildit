@@ -1774,3 +1774,14 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - `easy_agent_actions`: 계정 변경(`SELECT_ACCOUNT`)과 import 확정(`CONFIRM_IMPORT`) 제안을 보존한다. 상태는 `PROPOSED → APPLIED|REJECTED|STALE|EXPIRED|FAILED` 단방향이다.
 - 승인 시 row/batch를 사업체 범위에서 다시 찾고 제안 당시 account/status 및 READY/미분개 조건을 재검증한다. 변경되거나 만료된 제안은 적용하지 않는다.
 - LLM 출력은 권한, 금액, 거래일, 원본 데이터의 source of truth가 아니며 서버 allowlist 의도와 기존 Easy 서비스 호출에만 사용한다.
+
+
+## 입시 지식 항목 생성·임베딩 파이프라인 (admissions_knowledge_items / admissions_knowledge_embeddings)
+
+적재된 구조화 입시 자료를 상담 검색(RAG)의 근거로 연결하는 변환·색인 계층이다. 새 테이블은 만들지 않고 기존 `admissions_knowledge_items`·`admissions_knowledge_embeddings`를 그대로 쓴다.
+
+- **항목 생성** (`AdmissionsKnowledgeBuildService.buildAll`): 전형(`admissions_types`)·일정(`admissions_schedules`)·공식자료(`admissions_official_materials`) 행 1건 → 지식 항목 1건. 제목은 "{대학명} {학년도}학년도 {전형명}", 일정은 "… 일정: {제목}", 자료는 "… 공식자료: {제목}" 형식. 본문 첫 줄은 제목, 이어서 전형 details(모집인원·지원자격·전형방법·수능최저)·일정 원문(note)·자료 메타(발행처·발행일·원문 URL)를 싣고, 출처가 있으면 "근거 자료: {자료 제목}" 줄로 provenance를 남긴다. `source_class=OFFICIAL`, `role=FACT`, `source` FK는 출처 공식자료, `source_url`은 그 원문 URL.
+- **멱등·버전**: `dedup_key`가 자연키다 — `type:{university_id}:{academic_year}:{admission_type_id}`, `schedule:{university_id}:{academic_year}:{schedule_id}`, `material:{material_id}`. 재실행 시 본문이 같으면 건드리지 않고, 다르면 제목·본문·분류·태그·출처만 갱신하고 `version`을 1 올린다. **승격 상태(status)는 갱신 대상이 아니다** — 이미 ACTIVE인 항목이 DRAFT로 되돌아가지 않는다.
+- **상태 전이**: 생성 항목은 DRAFT로 시작한다. ACTIVE 승격은 기존 경로(지식 검수 API·전체 승격)만 사용하며 이 파이프라인은 자동 승격을 하지 않는다. 학년도는 2027=확정(`year_confirmed=true`), 2028=계획(false)으로 구분해 검색 STEP1/STEP2가 섞지 않는다. 전형명에 캠퍼스 표기(예: `[세종캠퍼스]`)가 있으면 태그에 보존한다.
+- **임베딩 쓰기** (`AdmissionsEmbeddingService`): 제목+본문을 임베딩 서비스(`app.admissions.embedding.service-url`, 모델 `embeddinggemma-2`, 768차원)로 보내고, L2 정규화한 벡터를 float32 little-endian 바이트로 `admissions_knowledge_embeddings`에 저장한다. `(knowledge_id, model_version)` 기준 upsert — 재색인해도 행이 중복되지 않고 모델 버전이 바뀌면 새 세대가 쌓인다. 모드는 MISSING(ACTIVE 중 임베딩 없는 항목만)·ALL·ITEM(단건). 실패(비활성·무응답·차원 불일치·항목 없음)는 항목별 사유로 반환하며 성공으로 위장하지 않는다.
+- **인덱스 반영**: 저장이 끝나면 `AdmissionsVectorIndex.reload()`로 인메모리 인덱스를 다시 읽는다. reload는 트랜잭션 커밋 이후에 실행한다 — 커밋 전에 읽으면 방금 저장한 행의 `knowledge_id`(insertable=false 컬럼)가 비어 인덱스에서 누락되기 때문이다. 인덱스가 비어 있으면 검색은 기존처럼 LIKE로 폴백한다.

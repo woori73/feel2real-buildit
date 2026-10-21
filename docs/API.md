@@ -4831,6 +4831,8 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /api/admin/admissions/materials/{id}/review`: 기존 지식 검수와 동일하게 action=review/approve/reject/archive. DRAFT→REVIEW→ACTIVE 순서, 화면은 ACTIVE를 APPROVED(승인)로 표시한다. 연관 세부 행 자동 승인 없음.
 - `POST /api/admin/admissions/activate-all`: ADMIN 전용. body `{academicYear:2027|2028, confirm:"ACTIVATE-ALL-<학년도>", note?}`. 해당 학년도의 공식자료·학과·전형·일정 중 DRAFT·REVIEW를 한 트랜잭션으로 ACTIVE 승격(ARCHIVED·다른 학년도 제외, 멱등). 학과·전형·일정에는 개별 승인 API가 없어 이 경로가 유일하다. 확인 문자열 불일치·미지원 학년도는 400. 실행 관리자·건수를 로그로 남긴다. 정책: 신규 입시자료는 전체 ACTIVE가 기본이며 오류는 수정·기록한다.
 - 기존 `/api/admin/admissions/knowledge`에 academicYear 선택 필터와 검수용 content 필드 추가. ADMIN만 열람·검수 가능.
+- `POST /api/admin/admissions/knowledge/build`: ADMIN 전용. 구조화 자료(전형·일정·공식자료) 전체 행을 지식 항목으로 변환한다. body 없음. 행 1건→항목 1건, dedupKey(`type:{대학ID}:{학년도}:{전형ID}`·`schedule:{대학ID}:{학년도}:{일정ID}`·`material:{자료ID}`) 기준 멱등 — 새 항목은 DRAFT(자동 승격 없음), 본문이 바뀐 항목만 내용 갱신+version 증가(승격 상태 보존), 같으면 그대로 둔다. 응답 `{created, updated, unchanged, changedKnowledgeIds, status:"BUILT"}`.
+- `POST /api/admin/admissions/knowledge/reindex`: ADMIN 전용. 지식 항목 임베딩(embeddinggemma-2, 768차원, L2 정규화 후 저장)을 만들고 인메모리 벡터 인덱스를 커밋 후 다시 읽는다. body `{mode?:"MISSING"|"ALL"|"ITEM", knowledgeId?}` — 기본 MISSING(ACTIVE 중 현재 모델 버전 임베딩이 없는 항목만), ALL은 전체 항목, ITEM은 `knowledgeId` 필수(아니면 `400`). `(knowledge_id, model_version)` upsert라 재실행해도 중복 행이 생기지 않는다. 응답 `{mode, requested, embedded, skipped, failed, failures[], vectorIndexSize, status:"REINDEXED"|"PARTIAL"}`. 임베딩 비활성(`app.admissions.embedding.enabled=false`)·서비스 무응답·차원 불일치는 항목별 실패 사유로 보고한다(조용히 성공 처리하지 않음).
 - 학과·전형·일정의 연결 원문 및 연결된 지식 원문도 ACTIVE·동일 학년도여야 답변 근거로 검색한다. DRAFT·REVIEW 제외, 테스트 시드 자동 적재 없음.
 - 배포 후 운영 계정 검증 및 운영 자료 승인/적재는 별도 승인 범위. 개발·CI는 격리 DB만 사용한다.
 
