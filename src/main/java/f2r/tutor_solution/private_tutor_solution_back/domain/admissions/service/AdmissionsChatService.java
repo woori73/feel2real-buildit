@@ -45,9 +45,9 @@ public class AdmissionsChatService {
     /** 답변 출력 상한. */
     static final int MAX_ANSWER_CHARS = 4000;
     /** 컨텍스트에 실리는 근거 총량 상한. */
-    static final int MAX_CONTEXT_EVIDENCE = 12;
+    static final int MAX_CONTEXT_EVIDENCE = 16;
     /** 답변에 붙이는 출처 상한. */
-    static final int MAX_SOURCES = 8;
+    static final int MAX_SOURCES = 14;
     /** 근거 1건 요약 상한. */
     static final int MAX_EVIDENCE_CHARS = 400;
 
@@ -109,8 +109,11 @@ public class AdmissionsChatService {
                     + "수능 출제 과목·대입 제도 등 대학 외 정책은 교육부·한국교육과정평가원 발표 자료를 확인해 주세요. "
                     + "2027학년도(확정)와 2028학년도(계획) 자료는 구분되어 있으니 확인하실 때 학년도도 함께 확인해 주세요.";
     static final String MSG_NO_EVIDENCE =
-            "해당 입시 정보를 찾지 못했습니다. 2027학년도 7개 대학(서울대·연세대·고려대·성균관대·한양대·경희대·인하대)의 "
-                    + "공식 모집요강 기준으로 답변할 수 있습니다. 다른 질문을 해보세요.";
+            "승인된 공식 입시 자료에서 질문에 해당하는 정보를 찾지 못했습니다. 대학명·학년도·전형·학과를 구체적으로 "
+                    + "넣어 다시 질문하시거나, 해당 대학 입학처의 모집요강 원문을 확인해 주세요.";
+    /** 검색 단계 오류: 자료 부족(MSG_NO_EVIDENCE)·AI 호출 실패와 구분한다. */
+    static final String MSG_SEARCH_FAILED =
+            "입시 자료를 검색하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
 
     public record AnswerSource(String kind, String title, String url, String id) {}
 
@@ -148,7 +151,13 @@ public class AdmissionsChatService {
         if (retrievalContext!=null && !retrievalContext.isBlank())
             searchQuestion += "\n상담 문맥: "+retrievalContext.substring(0,Math.min(retrievalContext.length(),2400));
         // 1. 질문 분석 + 학과·전형·일정 DB 조회
-        AdmissionsFactSearchService.FactResult facts = factSearchService.search(searchQuestion, academicYearFilter);
+        AdmissionsFactSearchService.FactResult facts;
+        try {
+            facts = factSearchService.search(searchQuestion, academicYearFilter);
+        } catch (RuntimeException e) {
+            log.error("admissions fact search failed", e);
+            return failure(MSG_SEARCH_FAILED);
+        }
         AdmissionsQueryParser.Parsed parsed = facts.parsed();
 
         // 2. LLM 없이 차단하는 질문: 합격 가능성 판단/추천, 수집하지 않은 자료, 미지원 학년도
@@ -166,7 +175,13 @@ public class AdmissionsChatService {
         }
 
         // 3. 조사 사다리 + 사실 근거 병합 (GUIDE는 근거가 아니다)
-        ResearchPack pack = researchService.research(searchQuestion, academicYearFilter);
+        ResearchPack pack;
+        try {
+            pack = researchService.research(searchQuestion, academicYearFilter);
+        } catch (RuntimeException e) {
+            log.error("admissions research failed", e);
+            return failure(MSG_SEARCH_FAILED);
+        }
         List<Evidence> usable = mergeUsable(facts.evidence(), usableEvidence(pack));
 
         // 4. 2028 질문은 2028 근거만 인정한다. 없으면 "미발표"로 답하고 2027 자료로 대신 답하지 않는다.
@@ -194,7 +209,7 @@ public class AdmissionsChatService {
         String evidenceContext = buildEvidenceContext(usable);
         String systemPrompt = BASE_PROMPT + "\n\n[입시 공식자료 근거]\n" + evidenceContext
                 + buildGuideBlock(pack);
-        String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile);
+        String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile, facts.scheduleCoverage());
 
         // 7. LLM 호출
         NewStartLlmCompletion completion = admissionsLlmClient.complete(systemPrompt, userPrompt, MAX_ANSWER_CHARS);
@@ -322,7 +337,8 @@ public class AdmissionsChatService {
         return sb.toString();
     }
 
-    private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed, String studentProfile) {
+    private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed, String studentProfile,
+                                   AdmissionsFactSearchService.ScheduleCoverage coverage) {
         StringBuilder sb = new StringBuilder();
         if (studentProfile != null && !studentProfile.isBlank()) {
             sb.append("[학생 정보 — 맞춤 설명에만 사용하며 합격 가능성을 추정하지 않는다]\n")
@@ -333,6 +349,15 @@ public class AdmissionsChatService {
                 + "확인되지 않는다고 답하라. 근거에 없는 날짜·인원·비율·등급은 절대 쓰지 마라.\n");
         if (parsed.yearUnspecified()) {
             sb.append("질문에 학년도가 없으므로 답변 첫머리에 '2027학년도 기준'이라고 밝혀라.\n");
+        }
+        if (coverage != null && !coverage.covered().isEmpty()) {
+            sb.append("[전체 일정 질문] 대학별로 대학명을 구분해 나열하고 각 일정의 원문 날짜를 그대로 써라. 일정이 확인된 대학: ")
+                    .append(String.join(", ", coverage.covered())).append(".");
+            if (!coverage.missing().isEmpty()) {
+                sb.append(" 일정이 확인되지 않은 대학: ").append(String.join(", ", coverage.missing()))
+                        .append(" — 이 대학들은 '확인된 일정 자료가 없다'고 밝히고 각 대학 입학처 확인을 안내하라.");
+            }
+            sb.append(" 답변 첫머리에 기준 학년도를 밝혀라.\n");
         }
         if (!pack.getYoutubeHits().isEmpty()) {
             sb.append("[참고] 유튜브 의견 ").append(pack.getYoutubeHits().size()).append("건이 있으나, "

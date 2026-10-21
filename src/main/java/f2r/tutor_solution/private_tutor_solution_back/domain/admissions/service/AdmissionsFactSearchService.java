@@ -46,6 +46,9 @@ public class AdmissionsFactSearchService {
     static final int MAX_DEPARTMENTS = 10;
     static final int MAX_TYPES = 8;
     static final int MAX_SCHEDULES = 8;
+    /** 대학을 지정하지 않은 전체 일정 질문: 대학당 근거 수와 전체 상한. */
+    static final int MAX_SCHEDULES_PER_UNIVERSITY = 2;
+    static final int MAX_ALL_UNIVERSITY_SCHEDULES = 14;
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final AdmissionsUniversityRepository universityRepository;
@@ -58,9 +61,19 @@ public class AdmissionsFactSearchService {
      * @param parsed 질문 분석 결과
      * @param searchedYears 실제로 조회한 학년도
      * @param unpublished 2028처럼 아직 발표 자료가 없는 학년도를 물었고 근거가 하나도 없는 경우
+     * @param scheduleCoverage 대학을 지정하지 않은 일정 질문에서 일정 근거가 있는 대학/없는 대학 (해당 없으면 null)
      */
     public record FactResult(List<Evidence> evidence, AdmissionsQueryParser.Parsed parsed,
-                             Set<Integer> searchedYears, boolean unpublished) {}
+                             Set<Integer> searchedYears, boolean unpublished, ScheduleCoverage scheduleCoverage) {
+
+        public FactResult(List<Evidence> evidence, AdmissionsQueryParser.Parsed parsed,
+                          Set<Integer> searchedYears, boolean unpublished) {
+            this(evidence, parsed, searchedYears, unpublished, null);
+        }
+    }
+
+    /** 전체 일정 질문의 대학별 근거 현황. */
+    public record ScheduleCoverage(List<String> covered, List<String> missing) {}
 
     public FactResult search(String question, Integer yearOverride) {
         List<String> univNames = universityRepository.findAll().stream()
@@ -75,10 +88,17 @@ public class AdmissionsFactSearchService {
         List<Evidence> out = new ArrayList<>();
         out.addAll(searchDepartments(question, parsed, years));
         out.addAll(searchTypes(question, parsed, years));
-        out.addAll(searchSchedules(question, parsed, years));
+        ScheduleCoverage coverage = null;
+        if (parsed.universities().isEmpty() && parsed.wantsSchedule()) {
+            List<Evidence> all = searchAllUniversitySchedules(question, parsed, years);
+            out.addAll(all);
+            coverage = coverageOf(all, univNames);
+        } else {
+            out.addAll(searchSchedules(question, parsed, years));
+        }
 
         boolean askedUnpublished = years.contains(2028) && !years.contains(2027);
-        return new FactResult(out, parsed, years, askedUnpublished && out.isEmpty());
+        return new FactResult(out, parsed, years, askedUnpublished && out.isEmpty(), coverage);
     }
 
     // ── 모집단위(학과) ───────────────────────────────────────────────
@@ -150,6 +170,47 @@ public class AdmissionsFactSearchService {
             if (out.size() >= MAX_SCHEDULES) break;
         }
         return out;
+    }
+
+    /**
+     * 대학명 없이 "수시 원서접수 일정 알려줘"처럼 전체 일정을 물은 경우: 승인된 일정 행을 대학별로 모은다.
+     * 자료가 없는 대학이 있어도 있는 대학의 근거는 그대로 쓴다(전체 질문을 포기하지 않는다).
+     */
+    private List<Evidence> searchAllUniversitySchedules(String question, AdmissionsQueryParser.Parsed p, Set<Integer> years) {
+        boolean genericQuestion = AdmissionsQueryParser.SCHEDULE_TERMS.stream().noneMatch(question::contains);
+        boolean asksSusi = question.contains("수시");
+        boolean asksJeongsi = question.contains("정시");
+        java.util.Map<Long, List<Evidence>> byUniversity = new java.util.LinkedHashMap<>();
+        for (AdmissionsSchedule s : scheduleRepository.findAll()) {
+            if (s.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(s.getAcademicYear())) continue;
+            if (!approvedSource(s.getSource(), s.getAcademicYear())) continue;
+            if (s.getUniversity() == null) continue;
+            String title = s.getTitle();
+            boolean relevant = genericQuestion ? (title.contains("접수") || title.contains("원서")) : scheduleMatches(question, title);
+            if (!relevant) continue;
+            if (asksSusi && !asksJeongsi && title.contains("정시")) continue;
+            if (asksJeongsi && !asksSusi && title.contains("수시")) continue;
+            List<Evidence> rows = byUniversity.computeIfAbsent(s.getUniversity().getUniversityId(), k -> new ArrayList<>());
+            if (rows.size() >= MAX_SCHEDULES_PER_UNIVERSITY) continue;
+            rows.add(evidence("sched", s.getScheduleId(), s.getAcademicYear(),
+                    s.getUniversity().getName() + " " + s.getAcademicYear() + "학년도 " + title,
+                    "일정 원문: " + (s.getNote() == null || s.getNote().isBlank() ? "확인되지 않음" : s.getNote()),
+                    s.getSource()));
+        }
+        List<Evidence> out = new ArrayList<>();
+        for (List<Evidence> rows : byUniversity.values()) out.addAll(rows);
+        return out.size() > MAX_ALL_UNIVERSITY_SCHEDULES ? out.subList(0, MAX_ALL_UNIVERSITY_SCHEDULES) : out;
+    }
+
+    /** 근거 제목이 "{대학명} {학년도}학년도 ..." 형태이므로 대학명 접두로 대학별 현황을 계산한다. */
+    static ScheduleCoverage coverageOf(List<Evidence> schedules, List<String> universityNames) {
+        List<String> covered = new ArrayList<>();
+        List<String> missing = new ArrayList<>();
+        for (String name : universityNames) {
+            boolean has = schedules.stream().anyMatch(e -> e.getTitle() != null && e.getTitle().startsWith(name + " "));
+            (has ? covered : missing).add(name);
+        }
+        return new ScheduleCoverage(covered, missing);
     }
 
     static boolean scheduleMatches(String question, String title) {
