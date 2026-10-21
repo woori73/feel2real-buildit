@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,7 +95,7 @@ class AdmissionsActivateAllSecurityTest {
     mockMvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content(BODY)
             .header("Accept", MediaType.APPLICATION_JSON_VALUE))
         .andExpect(status().isUnauthorized());
-    verify(activationService, never()).activateAll(anyInt(), any());
+    verify(activationService, never()).activateAll(anyInt(), any(), any());
   }
 
   @Test
@@ -105,15 +106,15 @@ class AdmissionsActivateAllSecurityTest {
       mockMvc.perform(post(URL).cookie(token(role)).contentType(MediaType.APPLICATION_JSON).content(BODY))
           .andExpect(status().isForbidden());
     }
-    verify(activationService, never()).activateAll(anyInt(), any());
+    verify(activationService, never()).activateAll(anyInt(), any(), any());
   }
 
   @Test
   @DisplayName("given ADMIN when 호출하면 then 200과 건수를 돌려주고 실행 관리자·건수를 감사 로그로 남긴다")
   void adminSucceedsAndLogsAudit() throws Exception {
     // given
-    when(activationService.activateAll(eq(2027), eq("ACTIVATE-ALL-2027")))
-        .thenReturn(new AdmissionsActivationService.ActivationResult(2027, 20, 0, 116, 72, 188));
+    when(activationService.activateAll(eq(2027), eq("ACTIVATE-ALL-2027"), eq(Set.of())))
+        .thenReturn(new AdmissionsActivationService.ActivationResult(2027, 20, 0, 116, 72, 0, 0, 188));
 
     // when / then
     mockMvc.perform(post(URL).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content(BODY))
@@ -127,10 +128,29 @@ class AdmissionsActivateAllSecurityTest {
   }
 
   @Test
+  @DisplayName("given ADMIN이 excludeFileKeys를 지정 when 호출하면 then 제외 키가 서비스로 전달되고 제외 건수가 응답·로그에 남는다")
+  void adminPassesExcludeFileKeysAndReturnsExcludedCounts() throws Exception {
+    // given
+    when(activationService.activateAll(eq(2027), eq("ACTIVATE-ALL-2027"), eq(Set.of("doc_cau_2027_susi"))))
+        .thenReturn(new AdmissionsActivationService.ActivationResult(2027, 19, 0, 116, 72, 1, 0, 0));
+
+    // when / then
+    mockMvc.perform(post(URL).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"academicYear\":2027,\"confirm\":\"ACTIVATE-ALL-2027\",\"excludeFileKeys\":[\"doc_cau_2027_susi\"]}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.materials").value(19))
+        .andExpect(jsonPath("$.excludedMaterials").value(1))
+        .andExpect(jsonPath("$.excludedChildren").value(0))
+        .andExpect(jsonPath("$.status").value("ACTIVATED"));
+    assertThat(logs.list).anySatisfy(e -> assertThat(e.getFormattedMessage())
+        .contains("excludedMaterials=1").contains("excludedKeys=[doc_cau_2027_susi]"));
+  }
+
+  @Test
   @DisplayName("given ADMIN이 잘못된 확인 문자열 when 호출하면 then 400이고 성공 감사 로그를 남기지 않는다")
   void badConfirmationIsRejectedWithoutAuditSuccess() throws Exception {
     // given
-    when(activationService.activateAll(anyInt(), any())).thenThrow(new IllegalArgumentException("확인 문자열이 맞지 않습니다."));
+    when(activationService.activateAll(anyInt(), any(), any())).thenThrow(new IllegalArgumentException("확인 문자열이 맞지 않습니다."));
 
     // when / then
     mockMvc.perform(post(URL).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON)

@@ -41,7 +41,18 @@
   /** 승격 확인 문자열. 서버 규칙(AdmissionsActivationService)과 같아야 한다. */
   function confirmationFor(year) { return 'ACTIVATE-ALL-' + year; }
 
-  var api = { summarizeSeed: summarizeSeed, confirmationFor: confirmationFor };
+  /** 승격 제외 자료 키 입력 파싱: 쉼표 구분, 공백 제거, 빈 항목·중복 제거. */
+  function parseExcludeKeys(text) {
+    if (!text) return [];
+    var seen = {}, out = [];
+    String(text).split(',').forEach(function (part) {
+      var key = part.trim();
+      if (key && !seen[key]) { seen[key] = true; out.push(key); }
+    });
+    return out;
+  }
+
+  var api = { summarizeSeed: summarizeSeed, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   root.AdmissionsAdminLoad = api;
 
@@ -100,10 +111,16 @@
       var year = Number(byId('ag-activate-year').value);
       var typed = byId('ag-activate-confirm').value.trim();
       if (typed !== confirmationFor(year)) { show('확인 문자열이 맞지 않습니다. ' + confirmationFor(year) + ' 를 입력하세요.', true); return; }
-      if (!window.confirm(year + '학년도 공식자료·학과·전형·일정(DRAFT·REVIEW)을 전체 ACTIVE로 승격합니다. 계속할까요?')) return;
+      var excludeKeys = parseExcludeKeys(byId('ag-activate-exclude').value);
+      var excludeNote = excludeKeys.length ? '\n단, 다음 자료와 그 하위 행은 승격에서 제외합니다: ' + excludeKeys.join(', ') : '';
+      if (!window.confirm(year + '학년도 공식자료·학과·전형·일정(DRAFT·REVIEW)을 전체 ACTIVE로 승격합니다.' + excludeNote + ' 계속할까요?')) return;
       try {
-        var r = await post('/api/admin/admissions/activate-all', { academicYear: year, confirm: typed, note: '관리자 화면 전체 승격' });
-        show('승격 결과 — 공식자료 ' + r.materials + ' · 학과 ' + r.departments + ' · 전형 ' + r.types + ' · 일정 ' + r.schedules + ' · 지식항목 ' + r.knowledgeItems + ' · ' + r.status, false);
+        var body = { academicYear: year, confirm: typed, note: '관리자 화면 전체 승격' };
+        if (excludeKeys.length) body.excludeFileKeys = excludeKeys;
+        var r = await post('/api/admin/admissions/activate-all', body);
+        show('승격 결과 — 공식자료 ' + r.materials + ' · 학과 ' + r.departments + ' · 전형 ' + r.types + ' · 일정 ' + r.schedules +
+             (typeof r.excludedMaterials === 'number' ? ' · 제외 자료 ' + r.excludedMaterials + ' · 제외 하위 행 ' + r.excludedChildren : '') +
+             (typeof r.knowledgeItems === 'number' ? ' · 지식항목 ' + r.knowledgeItems : '') + ' · ' + r.status, false);
       } catch (e) { show('승격 실패: ' + e.message, true); }
     });
 
