@@ -108,17 +108,17 @@
 | `/wiki/learning/{id}` | wiki | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/wiki/posts/{postId}` | wiki | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 
-## 수동 검토 결과 (후보 15건)
+## 수동 검토 결과 (후보 12건, 2026-10-22 Claude)
 
 | 경로 | 판정 | 근거 |
 |---|---|---|
-| `/api/newstart/consultations/{id}`, `/api/admin/newstart/consultations/{id}` | **실제 쓰기 있음(읽음 표시 save)** | `NewStartConsultationService.thread/adminThread`가 GET에서 `consultationRepository.save`. MCP 경유 시 읽기 전용 트랜잭션+강제 rollback으로 DB 반영이 차단된다(= 외부 AI 조회는 '읽음' 처리하지 않음). 정책 유지, 통합 테스트로 회귀 확인 권장 |
-| `/api/admin/newstart/jipijigi/inventory` | 오탐 | 'embedding' 문자열은 안내 문구. count 조회만 수행 |
-| `/api/wemade/**` 6건 | 오탐 | `sourceUrl` 필드 문자열. 외부 HTTP 호출 없음(저장 분석 자료) |
-| `/api/admin/easy/summary`, `/api/chart/regions` | 오탐(키워드 우연 일치) | 집계 조회 |
+| `/api/academies/{handle}/midterm-campaign/live-videos` | 오탐 | `MidtermLiveVideoService.listPublic`은 DB 조회만 수행(외부 HTTP 없음) |
+| `/api/admin/newstart/jipijigi/inventory` | 오탐 | 'embedding' 문자열은 안내 문구, count 조회만 수행 |
+| `/api/wemade/**` 7건 | 오탐 | `sourceUrl` 필드 문자열. 외부 HTTP 호출 없음(저장 분석 자료) |
+| `/api/chart/regions` | 오탐 | 집계 조회(키워드 우연 일치) |
 | `/api/studio/files/{id}/text` | 무해 | ZIP 목록 미리보기용 임시 파일 생성 후 삭제(압축 해제 없음) |
 | `/sitemap.xml` | 오탐 | URL 문자열 조립 |
-| `/api/academies/{handle}/midterm-campaign/live-videos` | 확인 필요 | `MidtermLiveVideoService.listPublic`의 외부 HTTP 후보. 저장 목록 조회인지 운영 전 확인 |
 
-외부 AI 비용(LLM·임베딩 호출)을 일으키는 GET 정책은 발견되지 않았다. 한계: 정적 해석 불가 108건(프록시·뷰)은 이 조사에 포함되지 않았으며, 프록시 대상(AcademyCraft·Wiki Python)은 업스트림 코드를 별도로 확인해야 한다.
+이 조사 초기 판(정책 484건)은 NewStart 상담 열람 GET 2건(`/api/newstart/consultations/{id}`, `/api/admin/newstart/consultations/{id}`)에서 **GET이 읽음 상태를 save**하는 실제 쓰기를 찾았다. 이후 [GET_SAFETY_AUDIT.md](GET_SAFETY_AUDIT.md)의 별도 감사가 이 2건을 비롯해 쓰기·외부 호출 GET을 MCP 정책에서 제거했고, 현재 정책(문서 상단 재생성 건수 기준)에서는 후보에 나타나지 않는다.
+외부 AI 비용(LLM·임베딩 호출)을 일으키는 GET 정책은 발견되지 않았다. 한계: 정적 해석 불가(프록시·뷰)는 이 조사에 포함되지 않았으며, 프록시 대상(AcademyCraft·Wiki Python)은 업스트림 코드를 별도로 확인해야 한다.
 

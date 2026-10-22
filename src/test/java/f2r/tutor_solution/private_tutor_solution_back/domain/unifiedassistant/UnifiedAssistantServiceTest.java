@@ -43,6 +43,23 @@ class UnifiedAssistantServiceTest {
     assertThatThrownBy(()->service.draft(p,7L,null,"STUDENT_CREATE",AssistantJson.read("{\"name\":\"하늘\",\"approved\":true}"))).hasMessageContaining("허용되지 않은");
     verifyNoInteractions(academy,drafts);
   }
+  @Test void givenBatchNotCreatedByAssistant_whenDraftingAccountChange_thenForbiddenWithoutReadingBatch() {
+    // given: 금융자료 수집 등 다른 경로가 만든 승인 전 배치
+    when(drafts.existsByOwnerIdAndBusinessIdAndOperationAndPayload(1L,3L,"LEDGER_IMPORT","{\"batchId\":99}")).thenReturn(false);
+    // when / then
+    assertThatThrownBy(()->service.draft(p,null,3L,"LEDGER_ACCOUNT",AssistantJson.read("{\"batchId\":99,\"rowId\":1,\"accountId\":2}")))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("이 비서가 만든");
+    verify(imports,never()).detail(any(),any(),any());
+    verify(imports,never()).selectAccount(any(),any(),any(),any(),any());
+  }
+  @Test void givenBatchFromOwnAssistantImport_whenDraftingAccountChange_thenGuardPassesAndBatchIsRead() {
+    // given
+    when(drafts.existsByOwnerIdAndBusinessIdAndOperationAndPayload(1L,3L,"LEDGER_IMPORT","{\"batchId\":99}")).thenReturn(true);
+    when(imports.detail(any(),eq(3L),eq(99L))).thenThrow(new IllegalStateException("sentinel"));
+    // when / then: 가드를 지나 실제 배치 조회까지 도달
+    assertThatThrownBy(()->service.draft(p,null,3L,"LEDGER_ACCOUNT",AssistantJson.read("{\"batchId\":99,\"rowId\":1,\"accountId\":2}")))
+        .isInstanceOf(IllegalStateException.class).hasMessage("sentinel");
+  }
   private AssistantDraft givenClaimedDraft() {
     var snapshot=AssistantJson.read("{\"context\":{\"memberId\":10}}");
     var d=new AssistantDraft(1L,"TUTOR",7L,null,"STUDENT_CREATE","{\"name\":\"하늘\"}","{}",AssistantJson.hash(AssistantJson.write(snapshot)));
