@@ -3,11 +3,11 @@ name: Production Diagnostic (read-only, manual)
 # READ-ONLY 운영 진단 전용 workflow.
 # - workflow_dispatch 수동 실행만 허용 (자동 실행 없음)
 # - 진단 종류는 코드에 고정. 임의 명령어/SQL 입력 불가.
-# - DB 진단: flyway-history, schema-columns, assistant-mode-count, predeploy-check (SELECT만, 건수만 출력·개인정보 없음)
-# - 서비스 진단: service-status, journal-errors, system-resources, jar-info, health-check (DB 작업 없음)
+# - 신규 운영 계정(425805163960)의 태그 인스턴스에서 고정 SSM 문서 F2R-ReadOnlyStatus만 실행한다.
+#   지원: service-status, jar-info, health-check, system-resources, flyway-history(SELECT·READ ONLY 세션), predeploy-check(플래그 이름만)
+# - 구 계정 전용 진단과 쓰기 작업(deploy-wemade-jar, rollback-jar 등)은 계정 이전 후 제거했다. 배포·롤백은 Deploy to EC2.
 # - DB credential은 EC2의 /etc/f2r/env에서 로드하며 GitHub 로그에 절대 출력하지 않는다.
-# - DB 쓰기 명령(INSERT/UPDATE/DELETE 등)은 포함하지 않는다.
-# - 기존 OIDC → AWS SSM 권한만 사용한다. 새 secret을 만들지 않는다.
+# - 역할: github-actions-f2r-readonly(Describe + 고정 문서 SendCommand만). 생성은 별도 승인.
 
 on:
   workflow_dispatch:
@@ -20,34 +20,13 @@ on:
         options:
           - flyway-history
           - predeploy-check
-          - schema-columns
-          - assistant-mode-count
           - service-status
-          - journal-errors
           - system-resources
           - jar-info
           - health-check
-          - jar-wemade-resources
-          - local-wemade-curl
-          - nginx-wemade
-          - deploy-wemade-jar
-          - s3-jar-info
-          - rollback-jar
-          - wiki-status
-          - wemade-test
           - assistant-ai-eval
           - assistant-live-e2e
           - lovable-flow-e2e
-      log_since:
-        description: 'journal-errors 검색 시작 (UTC, 예: 2026-10-09 07:30:00). 비우면 기본 고정 범위 사용'
-        required: false
-        default: ''
-        type: string
-      log_until:
-        description: 'journal-errors 검색 종료 (UTC, 예: 2026-10-09 08:00:00). 비우면 기본 고정 범위 사용'
-        required: false
-        default: ''
-        type: string
 
 permissions:
   id-token: write
@@ -59,333 +38,55 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::067573916809:role/github-actions-f2r-deploy
-          aws-region: ap-northeast-2
-
-      - name: Run read-only diagnostic via SSM
+      # 구 계정(067573916809)·구 인스턴스는 이전 후 종료되어 진단 대상이 아니다. 고정 ID를 쓰지 않는다.
+      # 신규 계정의 운영 인스턴스는 태그(Name=f2r-app, Project=f2r-migration)로 찾고,
+      # 호스트에서는 고정 읽기 전용 SSM 문서 F2R-ReadOnlyStatus만 실행한다(임의 셸·쓰기 없음).
+      - name: Map diagnostic type to a read-only section
+        id: map
+        shell: bash
+        env:
+          DIAG_TYPE: ${{ inputs.diagnostic_type }}
         run: |
           set -euo pipefail
-          DIAG_TYPE="${{ inputs.diagnostic_type }}"
-          # 각 진단의 SSM 스크립트를 케이스별로 구성한다.
-          # journalctl은 타임아웃 방지를 위해 좁은 범위 + grep으로 제한한다.
           case "$DIAG_TYPE" in
-            flyway-history)
-              DIAG_LABEL="flyway-history (V1041/V1042)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          source /etc/f2r/env
-          echo "===== flyway-history (V1041/V1042) ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT installed_rank, version, description, type, script, checksum, installed_by, installed_on, execution_time, success FROM flyway_schema_history WHERE version IN ('1041','1042') ORDER BY installed_rank;"
-          SSMEOF
-              )
-              ;;
-            schema-columns)
-              DIAG_LABEL="schema-columns (V1041 target columns)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          source /etc/f2r/env
-          echo "===== schema-columns (V1041 target columns) ====="
-          mysql -h "$DB_HOST" -P "${DB_PORT:-3306}" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" -e "SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = DATABASE() AND ((table_name='wemade_gap_factors' AND column_name='hypothesis_no') OR (table_name='wemade_surge_analysis' AND column_name IN ('ret1d','ret3d','ret5d','ret10d'))) ORDER BY table_name, column_name;"
-          SSMEOF
-              )
-              ;;
-            assistant-mode-count)
-              DIAG_LABEL="assistant-mode-count (read-only counts)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          source /etc/f2r/env
-          M="mysql -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER -p$DB_PASSWORD $DB_NAME"
-          echo "===== assistant mode counts (SELECT only, counts only) ====="
-          $M -e "SELECT 'academies_total' AS metric, COUNT(*) AS n FROM academies UNION ALL SELECT 'academies_with_any_assistant_message', COUNT(DISTINCT academy_id) FROM academy_assistant_message UNION ALL SELECT 'academies_with_RESULT', COUNT(DISTINCT academy_id) FROM academy_assistant_message WHERE kind='RESULT' UNION ALL SELECT 'academies_messages_but_no_RESULT', COUNT(*) FROM (SELECT academy_id FROM academy_assistant_message GROUP BY academy_id HAVING SUM(kind='RESULT')=0) t UNION ALL SELECT 'academies_with_ADOPTED', COUNT(DISTINCT academy_id) FROM academy_assistant_message WHERE kind='ADOPTED';"
-          echo "===== message kinds ====="
-          $M -e "SELECT kind, COUNT(*) AS n FROM academy_assistant_message GROUP BY kind ORDER BY kind;"
-          echo "===== latest flyway rows ====="
-          $M -e "SELECT version, success FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 3;"
-          echo "===== V1064 column present? ====="
-          $M -e "SELECT COUNT(*) AS staged_media_json_column FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='academy_working_copy' AND column_name='staged_media_json';"
-          SSMEOF
-              )
-              ;;
-            service-status)
-              DIAG_LABEL="service-status (f2r-app.service)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== systemctl status f2r-app.service ====="
-          systemctl status f2r-app.service --no-pager -l | head -40 || true
-          echo ""
-          echo "===== systemctl show (key properties) ====="
-          systemctl show f2r-app.service --property=ActiveState,SubState,Result,ExecMainCode,ExecMainStatus,NRestarts,MainPID,ExecMainStartTimestamp | tr ',' '\n' || true
-          echo ""
-          echo "===== is-active ====="
-          systemctl is-active f2r-app.service || true
-          SSMEOF
-              )
-              ;;
-            journal-errors)
-              DIAG_LABEL="journal-errors (narrow range, grep)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          SINCE="${{ inputs.log_since }}"
-          UNTIL="${{ inputs.log_until }}"
-          if [ -z "$SINCE" ]; then SINCE="2026-10-06 06:30:00"; fi
-          if [ -z "$UNTIL" ]; then UNTIL="2026-10-06 06:45:00"; fi
-          echo "===== journalctl: error search ($SINCE ~ $UNTIL UTC, max 100 lines) ====="
-          journalctl -u f2r-app.service --since "$SINCE" --until "$UNTIL" --no-pager | grep -i -m 100 -B 2 -A 10 -E 'Exception|Caused by|ERROR|APPLICATION FAILED|OutOfMemory|Killed|Flyway|Duplicate|exit' | head -120 || true
-          echo ""
-          echo "===== journalctl: export endpoint errors ($SINCE ~ $UNTIL UTC) ====="
-          journalctl -u f2r-app.service --since "$SINCE" --until "$UNTIL" --no-pager | grep -i -m 60 -B 3 -A 12 -E 'export|StreamingResponseBody|ClientAbort|Broken pipe|AsyncRequestTimeout' | head -150 || true
-          echo ""
-          echo "===== journalctl: tail 30 (most recent) ====="
-          journalctl -u f2r-app.service --no-pager -n 30 || true
-          SSMEOF
-              )
-              ;;
-            system-resources)
-              DIAG_LABEL="system-resources (memory/disk/OOM)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== free -m ====="
-          free -m || true
-          echo ""
-          echo "===== df -h ====="
-          df -h || true
-          echo ""
-          echo "===== OOM killer check (journalctl -k, last 50) ====="
-          journalctl -k --no-pager -n 50 | grep -i -m 20 'oom|killed process|out of memory' || echo "No OOM killer entries found"
-          SSMEOF
-              )
-              ;;
-            jar-info)
-              DIAG_LABEL="jar-info (app.jar vs app.jar.previous)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== current JAR files ====="
-          ls -lh /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true
-          echo ""
-          echo "===== SHA256 ====="
-          sha256sum /home/ec2-user/app.jar 2>&1 | cut -c1-80 || true
-          sha256sum /home/ec2-user/app.jar.previous 2>&1 | cut -c1-80 || true
-          echo ""
-          echo "===== mtime ====="
-          stat -c '%y %n' /home/ec2-user/app.jar /home/ec2-user/app.jar.previous 2>&1 || true
-          SSMEOF
-              )
-              ;;
-            health-check)
-              DIAG_LABEL="health-check"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== health endpoint (localhost:8080) ====="
-          curl -fsS --max-time 10 http://127.0.0.1:8080/actuator/health 2>&1 | head -20 || echo "HEALTH_CHECK_FAILED (exit $?)"
-          echo ""
-          echo "===== port 8080 listening? ====="
-          ss -ltnp 2>/dev/null | grep ':8080' || echo "Port 8080 NOT listening"
-          SSMEOF
-              )
-              ;;
-            jar-wemade-resources)
-              DIAG_LABEL="jar-wemade-resources (wemade template in JAR)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== wemade templates in app.jar ====="
-          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'wemade' | head -30 || echo "No wemade entries found in JAR"
-          echo ""
-          echo "===== wemade static resources in app.jar ====="
-          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'static.*wemade\|wemade.*\.js\|wemade.*\.css' | head -20 || echo "No wemade static resources found"
-          echo ""
-          echo "===== WemadePageController in JAR ====="
-          unzip -l /home/ec2-user/app.jar 2>/dev/null | grep -i 'WemadePageController' | head -5 || echo "WemadePageController NOT in JAR"
-          SSMEOF
-              )
-              ;;
-            local-wemade-curl)
-              DIAG_LABEL="local-wemade-curl (localhost:8080/wemade)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== curl -i http://localhost:8080/wemade (first 40 lines) ====="
-          curl -si --max-time 15 http://127.0.0.1:8080/wemade 2>&1 | head -40 || echo "CURL_FAILED (exit $?)"
-          echo ""
-          echo "===== title extraction ====="
-          curl -s --max-time 15 http://127.0.0.1:8080/wemade 2>/dev/null | grep -o -m 1 '<title>[^<]*</title>' || echo "No title found"
-          SSMEOF
-              )
-              ;;
-            nginx-wemade)
-              DIAG_LABEL="nginx-wemade (nginx config for /wemade)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== nginx config files ====="
-          ls /etc/nginx/conf.d/ /etc/nginx/sites-enabled/ 2>/dev/null || echo "No conf.d or sites-enabled"
-          echo ""
-          echo "===== grep wemade in nginx config ====="
-          grep -r -i 'wemade' /etc/nginx/ 2>/dev/null | head -20 || echo "No wemade in nginx config"
-          echo ""
-          echo "===== location blocks for / ====="
-          grep -A 5 'location /' /etc/nginx/nginx.conf /etc/nginx/conf.d/*.conf 2>/dev/null | head -40 || echo "No location / blocks found"
-          echo ""
-          echo "===== proxy_pass settings ====="
-          grep -r 'proxy_pass' /etc/nginx/ 2>/dev/null | head -10 || echo "No proxy_pass found"
-          SSMEOF
-              )
-              ;;
-            deploy-wemade-jar)
-              DIAG_LABEL="deploy-wemade-jar (manual JAR deploy from S3)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== Downloading JAR from S3 ====="
-          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/app-new.jar 2>&1 | tail -5
-          echo ""
-          echo "===== New JAR SHA256 ====="
-          sha256sum /tmp/app-new.jar | cut -c1-64
-          echo ""
-          echo "===== Current JAR SHA256 ====="
-          sha256sum /home/ec2-user/app.jar | cut -c1-64
-          echo ""
-          echo "===== Verifying wemade in new JAR ====="
-          echo "CI verification already passed. Skipping EC2-side check (unzip may OOM on t3.micro)."
-          echo "Trusting CI build: WemadePageController PRESENT"
-          # Quick check with jar command if available (more memory efficient)
-          if command -v jar >/dev/null 2>&1; then
-            if jar tf /tmp/app-new.jar 2>/dev/null | grep -q "WemadePageController"; then
-              echo "✓ Confirmed via jar tf: PRESENT"
-            else
-              echo "(jar tf check inconclusive, proceeding anyway - CI verified)"
-            fi
-          fi
-          echo ""
-          echo "===== Backing up current JAR ====="
-          cp /home/ec2-user/app.jar /home/ec2-user/app.jar.previous
-          echo "Backup complete"
-          echo ""
-          echo "===== Installing new JAR ====="
-          mv /tmp/app-new.jar /home/ec2-user/app.jar
-          echo "Install complete"
-          echo ""
-          echo "===== Restarting service ====="
-          systemctl restart f2r-app.service
-          echo "Restart initiated"
-          echo ""
-          echo "===== Waiting for service (60s) ====="
-          sleep 60
-          systemctl is-active f2r-app.service
-          SSMEOF
-              )
-              ;;
-            s3-jar-info)
-              DIAG_LABEL="s3-jar-info (S3 JAR metadata)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== S3 JAR metadata ====="
-          aws s3api head-object --bucket feel2real-buildit-deploy --key app.jar --query '{Size: ContentLength, LastModified: LastModified, ETag: ETag}' --output json 2>&1 || echo "HEAD_FAILED"
-          echo ""
-          echo "===== S3 JAR SHA256 (download first 1MB) ====="
-          aws s3 cp --no-progress s3://feel2real-buildit-deploy/app.jar /tmp/s3check.jar --range bytes=0-1048575 2>&1 | tail -2
-          echo "Partial download complete (1MB)"
-          SSMEOF
-              )
-              ;;
-            rollback-jar)
-              DIAG_LABEL="rollback-jar (restore app.jar.previous)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== Current JAR ====="
-          sha256sum /home/ec2-user/app.jar | cut -c1-16
-          echo "===== Previous JAR ====="
-          sha256sum /home/ec2-user/app.jar.previous | cut -c1-16
-          echo ""
-          echo "===== Rolling back ====="
-          cp /home/ec2-user/app.jar.previous /home/ec2-user/app.jar
-          echo "Rollback complete"
-          sha256sum /home/ec2-user/app.jar | cut -c1-16
-          echo ""
-          echo "===== Restarting service ====="
-          systemctl restart f2r-app.service
-          sleep 5
-          systemctl is-active f2r-app.service
-          SSMEOF
-              )
-              ;;
-            wiki-status)
-              DIAG_LABEL="wiki-status (buildit-wiki.service)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo "===== systemctl status buildit-wiki.service ====="
-          systemctl status buildit-wiki.service --no-pager -l | head -40 || true
-          echo ""
-          echo "===== port 8000 listening ====="
-          ss -ltnp | grep ':8000' || echo "NOT LISTENING"
-          echo ""
-          echo "===== wiki health ====="
-          curl -fsS --max-time 5 http://127.0.0.1:8000/api/health || echo "HEALTH FAILED"
-          echo ""
-          echo "===== wiki journal (last 50) ====="
-          journalctl -u buildit-wiki --no-pager -n 50 || true
-          echo ""
-          echo "===== /opt/buildit-wiki/app contents ====="
-          ls -la /opt/buildit-wiki/app/ 2>&1 | head -20 || true
-          echo ""
-          echo "===== venv python ====="
-          ls -la /opt/buildit-wiki/venv/bin/python 2>&1 || echo "VENV MISSING"
-          SSMEOF
-              )
-              ;;
-            wemade-test)
-              DIAG_LABEL="wemade-test"
-              SSM_BODY=$(cat <<'SSMEOF'
-          echo BAK_KIS_NAMES
-          grep -oE '^[A-Za-z_]+KIS[A-Za-z_]*=' /etc/f2r/env.bak-before-newstart-naver | tr -d '=' || echo NONE_IN_BAK
-          echo KIS_JOURNAL_RECENT
-          journalctl -u f2r-app.service --since "2026-10-06 00:00:00" --no-pager 2>/dev/null | grep -a -c "WEMADE KIS" || echo 0
-          echo KIS_AUTH_LOG
-          journalctl -u f2r-app.service --since "2026-10-05 00:00:00" --no-pager 2>/dev/null | grep -a "WEMADE KIS" | grep -a -iE "auth|token|skipped|PENDING" | tail -5 || echo NO_AUTH_LOGS
-          SSMEOF
-              )
-              ;;
-            predeploy-check)
-              DIAG_LABEL="predeploy-check (Flyway 상태·DB 버전·CLI/Worker 파일·환경변수 유무, SELECT·조회만)"
-              SSM_BODY=$(cat <<'SSMEOF'
-          source /etc/f2r/env
-          M="mysql -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER -p$DB_PASSWORD $DB_NAME"
-          echo "===== MySQL version ====="
-          $M -e "SELECT VERSION() AS mysql_version;"
-          echo "===== flyway summary (applied / max version / failed rows) ====="
-          $M -e "SELECT COUNT(*) AS applied, MAX(CAST(version AS UNSIGNED)) AS max_version, SUM(success = 0) AS failed_rows FROM flyway_schema_history WHERE version IS NOT NULL;"
-          echo "===== flyway rows V1071 and later ====="
-          $M -e "SELECT installed_rank, version, description, success, installed_on FROM flyway_schema_history WHERE CAST(version AS UNSIGNED) >= 1071 ORDER BY installed_rank;"
-          echo "===== V1075-V1077 tables present? ====="
-          $M -e "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() AND (table_name LIKE 'tp\\_%' OR table_name LIKE 'hwpx\\_%') ORDER BY table_name;"
-          echo "===== app.jar (size, mtime, sha256 prefix) ====="
-          ls -l --time-style=long-iso /home/ec2-user/app.jar 2>&1 || true
-          sha256sum /home/ec2-user/app.jar 2>&1 | cut -c1-16 || true
-          echo "===== CLI / worker files (existence only) ====="
-          ls -l /opt/artcraft/photocraft/bin/photocraft-cli /opt/designcraft/designcraft-cli /opt/hwpx-worker/hwpx_cli.py 2>&1 || true
-          command -v python3 || echo "python3: not found"
-          echo "===== env var presence (names only; secret values never printed) ====="
-          for k in NAVER_CLIENT_ID NAVER_CLIENT_SECRET JWT_SECRET META_JIPJIGI_API_KEY ANTHROPIC_API_KEY; do
-            if [ -n "${!k:-}" ]; then echo "$k=set"; else echo "$k=unset"; fi
-          done
-          echo "===== non-secret settings (values) ====="
-          for k in HWPX_WORKER_ENABLED HWPX_CLI_PATH PUBLISHING_CLI_PATH PHOTOCRAFT_CLI_PATH; do
-            echo "$k=${!k:-<unset>}"
-          done
-          SSMEOF
-              )
-              ;;
+            service-status|jar-info|health-check|system-resources|flyway-history|predeploy-check) SECTION="$DIAG_TYPE" ;;
             *)
-              echo "::error::Unknown diagnostic_type: $DIAG_TYPE"
-              exit 1
-              ;;
+              echo "::error::'$DIAG_TYPE' is not available after the account migration (old-host only or a write operation). Use 'Deploy to EC2' for deploy/rollback and 'Prod read-only status' for status."
+              exit 1 ;;
           esac
-          echo "Diagnostic: $DIAG_LABEL"
-          SSM_SCRIPT=$(printf 'set -euo pipefail\n%s\n' "$SSM_BODY")
-          PARAMS_JSON=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' <<< "$SSM_SCRIPT")
-          CMD_ID=$(aws ssm send-command \
-            --instance-ids i-09d7cabb5a42d1135 \
-            --document-name AWS-RunShellScript \
-            --parameters "$PARAMS_JSON" \
-            --query 'Command.CommandId' --output text)
+          echo "section=$SECTION" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (read-only role)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-readonly
+          aws-region: ap-northeast-2
+          role-session-name: f2r-prod-diagnostic
+
+      - name: Run fixed read-only SSM document
+        shell: bash
+        env:
+          SECTION: ${{ steps.map.outputs.section }}
+        run: |
+          set -euo pipefail
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running \
+            --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          [ -n "$IID" ] && [ "$IID" != "None" ] || { echo "::error::running f2r-app instance not found"; exit 1; }
+          CMD_ID=$(aws ssm send-command --instance-ids "$IID" --document-name F2R-ReadOnlyStatus \
+            --parameters "Section=$SECTION" --query 'Command.CommandId' --output text)
           echo "SSM CommandId=$CMD_ID"
           for i in $(seq 1 18); do
             sleep 10
-            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$IID" --query 'Status' --output text)
             echo "status=$STATUS (attempt $i/18)"
             case "$STATUS" in
               Success|Failed|Cancelled|TimedOut) break ;;
             esac
           done
           echo "===== StandardOutputContent ====="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardOutputContent' --output text
-          echo "===== StandardErrorContent ====="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'StandardErrorContent' --output text
-          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id i-09d7cabb5a42d1135 --query 'Status' --output text)
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$IID" --query 'StandardOutputContent' --output text \
+            | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig; s/[A-Za-z0-9.-]+\.rds\.amazonaws\.com/<rds-host>/g'
+          FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$IID" --query 'Status' --output text)
           if [ "$FINAL" != "Success" ]; then
             echo "::error::SSM command finished with status $FINAL"
             exit 1
