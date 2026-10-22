@@ -11,4 +11,4 @@ exec java -Xmx1024m -jar "$jar_path" \
  --spring.flyway.locations=classpath:db/migration --spring.jpa.show-sql=false \
  --app.file.upload-dir=/tmp/f2r-studio-test-files \
  --app.mcp.redirect-uris=https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector/oauth/isolated-test-callback \
- --app.mcp.enabled=true --app.mcp.public-base-url=http://127.0.0.1:18088 --app.mcp.internal-base-url=http://127.0.0.1:18088
+ --app.mcp.enabled=true --app.mcp.public-base-url=http://127.0.0.1:18088 --app.mcp.internal-base-url=http://127.0.0.1:18088 "$@"

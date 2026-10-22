@@ -6,6 +6,8 @@ on:
       - 'src/main/java/**/mcp/**'
       - 'src/main/java/**/config/security/McpReadOnlyTransactionFilter.java'
       - 'src/main/resources/mcp/**'
+      - 'src/main/resources/studio/**'
+      - 'scripts/ai-agent-studio/import-production.py'
       - 'src/main/resources/db/migration/*studio*'
       - 'src/test/java/**/studio/**'
       - 'src/test/java/**/mcp/**'
@@ -34,6 +36,7 @@ jobs:
           --health-interval=5s --health-timeout=3s --health-retries=20
     env:
       F2R_STUDIO_MYSQL_TEST: 'true'
+      F2R_PRODUCTION_SOURCE: /tmp/f2r-production-source
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -41,7 +44,11 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
-      - run: bash gradlew test --no-daemon --tests '*StudioServiceTest' --tests '*StudioPreviewTest' --tests '*StudioUploadRollbackMySqlTest' --tests '*FlywayStackUpgradeMySqlTest' --tests '*Mcp*Test' --tests '*JwtTokenProviderTest' --tests '*SiteVisitFilterTest' --tests '*WikiMemberOnlySecurityIntegrationTest' bootJar
+      - name: Prepare pinned production originals for isolated importer regression
+        run: |
+          git fetch origin 09d62dee982e2e89e3653c90b1ee42f05bff4f9d
+          python scripts/ai-agent-studio/import-production.py --extract-to /tmp/f2r-production-source --receipt /tmp/f2r-source-dry-run.json
+      - run: bash gradlew test --no-daemon --tests '*StudioServiceTest' --tests '*StudioPreviewTest' --tests '*StudioProductionImportMySqlTest' --tests '*StudioUploadRollbackMySqlTest' --tests '*FlywayStackUpgradeMySqlTest' --tests '*Mcp*Test' --tests '*JwtTokenProviderTest' --tests '*SiteVisitFilterTest' --tests '*WikiMemberOnlySecurityIntegrationTest' bootJar
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

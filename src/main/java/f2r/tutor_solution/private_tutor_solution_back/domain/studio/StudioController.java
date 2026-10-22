@@ -17,6 +17,7 @@ public class StudioController {
   private final StudioService service;
   private final StudioBulkImport bulk;
   private final StudioPreview previews;
+  private final StudioProductionImporter importer;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -143,8 +144,11 @@ public class StudioController {
 
   @GetMapping("/api/studio/files")
   @ResponseBody
-  public Object files(@AuthenticationPrincipal AuthenticatedPrincipal p) {
-    return service.files(p);
+  public Object files(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(defaultValue = "200") int limit,
+      @RequestParam(defaultValue = "0") int offset) {
+    return service.files(p, limit, offset);
   }
 
   @PostMapping("/api/studio/files")
@@ -283,6 +287,21 @@ public class StudioController {
         .header("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
         .header("Content-Disposition", "inline")
         .body(view.bytes());
+  }
+
+  @GetMapping("/api/studio/source-import")
+  @ResponseBody
+  public Object sourceStatus(@AuthenticationPrincipal AuthenticatedPrincipal p) throws IOException {
+    return importer.status(p);
+  }
+
+  @PostMapping("/api/studio/source-import")
+  @ResponseBody
+  public Object sourceImport(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestBody StudioProductionImporter.Request request)
+      throws IOException {
+    return importer.register(p, request);
   }
 
   @GetMapping("/api/studio/events")
