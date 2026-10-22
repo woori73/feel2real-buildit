@@ -101,6 +101,14 @@ class AdmissionsGoldenSearchTest {
                     }
                     return hashEmbed(text);
                 }
+
+                @Override
+                public DocResult embedDocument(String text) {
+                    if (serverDown || (failWhenContains != null && text != null && text.contains(failWhenContains))) {
+                        return DocResult.fail("임베딩 서비스 응답 없음", false);
+                    }
+                    return DocResult.ok(hashEmbed(text));
+                }
             };
         }
     }

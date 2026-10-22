@@ -101,14 +101,28 @@ public class AcademyCraftGateway {
     String target = path + (query == null ? "" : "?" + query);
     byte[] payload = body == null ? new byte[0] : body;
     if (payload.length > (agent ? AGENT_MAX_BODY : 1_048_576)) throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE);
+    return exchange(principal, request.getMethod(), target, payload);
+  }
+
+  /** Internal assistant adapter uses the same signed identity and upstream authorization. */
+  public ResponseEntity<byte[]> exchange(JwtTokenProvider.AuthenticatedPrincipal principal,
+      String method, String target, byte[] payload) throws Exception {
+    if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    var user = users.findById(principal.userId()).orElseThrow(() -> new AccessDeniedException("회원 연결 없음"));
+    String role=user.getRole().name();
+    if (!Set.of("ADMIN", "TUTOR").contains(role) || !role.equals(principal.role())) throw new AccessDeniedException("허용되지 않은 역할");
+    if (secret.getBytes(StandardCharsets.UTF_8).length < 32) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "AcademyCraft 연결 설정이 준비되지 않았습니다.");
+    String path=target.split("\\?",2)[0];
+    if (!allowedPath(path,method) || payload.length>1_048_576) throw new AccessDeniedException("허용되지 않은 AcademyCraft 경로");
+    boolean api=path.startsWith("/api/rea/");
     Long ownerAcademy = academies.findByTutor_UserId(user.getUserId()).map(a -> a.getAcademyId()).orElse(null);
     String assertion = Base64.getUrlEncoder().withoutPadding().encodeToString(json.writeValueAsBytes(
         newIdentity(user.getUserId(), role, ownerAcademy)));
-    String signature = sign(secret, request.getMethod(), target, assertion, payload);
+    String signature = sign(secret, method, target, assertion, payload);
     var builder = HttpRequest.newBuilder(upstream.resolve(target)).timeout(Duration.ofSeconds(20))
         .header("X-BuildIt-Assertion", assertion).header("X-BuildIt-Signature", signature)
-        .method(request.getMethod(), HttpRequest.BodyPublishers.ofByteArray(payload));
-    if (api && request.getContentType() != null) builder.header("Content-Type", request.getContentType());
+        .method(method, HttpRequest.BodyPublishers.ofByteArray(payload));
+    if (api) builder.header("Content-Type", "application/json");
     // No incoming Cookie, Authorization, X-Auth-Key, Host or identity headers are forwarded.
     HttpResponse<byte[]> response;
     try { response = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray()); }

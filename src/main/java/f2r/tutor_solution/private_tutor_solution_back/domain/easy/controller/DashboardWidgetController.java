@@ -65,6 +65,7 @@ public class DashboardWidgetController {
   public ResponseEntity<EasyDashboardWidgetResponse> widgets(
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
       @RequestParam Long businessId,
+      @RequestParam(defaultValue = "false") boolean refresh,
       @RequestParam(required = false)
       @DateTimeFormat(pattern = "yyyy-MM") YearMonth month) {
     // 서버에서 접근 권한 검증 — 다른 학원의 businessId면 403
@@ -73,7 +74,8 @@ public class DashboardWidgetController {
     YearMonth target = month == null ? YearMonth.now() : month;
     String cacheKey = business.getBusinessId() + ":" + target;
 
-    var cached = cache.get(cacheKey);
+    // Approval/manual refresh must read committed ledger state rather than the five-minute cache.
+    var cached = refresh ? java.util.Optional.<EasyDashboardWidgetResponse>empty() : cache.get(cacheKey);
     if (cached.isPresent()) {
       return ResponseEntity.ok(cached.get());
     }

@@ -66,6 +66,7 @@ class AdmissionsEmbeddingServiceTest {
         vectorIndex = mock(AdmissionsVectorIndex.class);
         props = new AdmissionsEmbeddingProperties();
         props.setEnabled(true);
+        props.setIndexRetryBackoffMs(0);
         service = new AdmissionsEmbeddingService(
                 knowledgeRepository, embeddingRepository, embeddingClient, props, vectorIndex);
 
@@ -84,7 +85,8 @@ class AdmissionsEmbeddingServiceTest {
     void reindexItem_storesNormalizedVector() {
         // given
         when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)));
-        when(embeddingClient.embed(anyString())).thenReturn(rawVector(3f, 4f)); // norm = 5
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.ok(rawVector(3f, 4f))); // norm = 5
 
         // when
         var result = service.reindexItem(1L);
@@ -113,9 +115,9 @@ class AdmissionsEmbeddingServiceTest {
     void reindexItem_secondRunReplacesRow() {
         // given
         when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)));
-        when(embeddingClient.embed(anyString()))
-                .thenReturn(rawVector(3f, 4f))
-                .thenReturn(rawVector(1f, 0f));
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.ok(rawVector(3f, 4f)))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.ok(rawVector(1f, 0f)));
 
         // when
         service.reindexItem(1L);
@@ -134,7 +136,8 @@ class AdmissionsEmbeddingServiceTest {
     void reindexItem_clientReturnsNull_fails() {
         // given
         when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)));
-        when(embeddingClient.embed(anyString())).thenReturn(null);
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.fail("임베딩 서비스 응답 없음", false));
 
         // when
         var result = service.reindexItem(1L);
@@ -162,7 +165,7 @@ class AdmissionsEmbeddingServiceTest {
         // then
         assertEquals(1, result.failed());
         assertTrue(result.failures().get(0).contains("disabled"), "사유: " + result.failures());
-        verify(embeddingClient, never()).embed(anyString());
+        verify(embeddingClient, never()).embedDocument(anyString());
         assertTrue(embeddingStore.isEmpty());
     }
 
@@ -171,7 +174,8 @@ class AdmissionsEmbeddingServiceTest {
     void reindexItem_dimensionMismatch_fails() {
         // given
         when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)));
-        when(embeddingClient.embed(anyString())).thenReturn(new float[384]);
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.ok(new float[384]));
 
         // when
         var result = service.reindexItem(1L);
@@ -196,7 +200,8 @@ class AdmissionsEmbeddingServiceTest {
                 .knowledge(activeWithEmb).modelVersion("embeddinggemma-2")
                 .dimension(768).vector(new byte[3072]).build(), 2L);
         when(embeddingRepository.findByModelVersion("embeddinggemma-2")).thenReturn(List.of(existing));
-        when(embeddingClient.embed(anyString())).thenReturn(rawVector(0f, 2f));
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.ok(rawVector(0f, 2f)));
 
         // when
         var result = service.reindexMissing();
@@ -220,5 +225,57 @@ class AdmissionsEmbeddingServiceTest {
         } catch (ReflectiveOperationException ex) {
             throw new IllegalStateException(ex);
         }
+    }
+
+    @Test
+    @DisplayName("재시도 — 일시 장애(retryable)는 재시도해 성공하면 저장하고, 시도 횟수는 1+indexRetries를 넘지 않는다")
+    void embedItem_retriesTransientFailureThenSucceeds() {
+        // given: 두 번 503 → 세 번째 성공
+        when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)));
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.fail("503", true))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.fail("503", true))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.ok(rawVector(3f, 4f)));
+
+        // when
+        String reason = service.embedItem(1L);
+
+        // then
+        assertEquals(null, reason);
+        assertEquals(1, embeddingStore.size());
+        verify(embeddingClient, org.mockito.Mockito.times(3)).embedDocument(anyString());
+    }
+
+    @Test
+    @DisplayName("재시도 — 계속 실패하면 1+indexRetries회 후 마지막 사유로 실패하고 저장하지 않는다")
+    void embedItem_givesUpAfterRetries() {
+        // given
+        when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)));
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.fail("타임아웃", true));
+
+        // when
+        String reason = service.embedItem(1L);
+
+        // then
+        assertEquals("타임아웃", reason);
+        assertEquals(0, embeddingStore.size());
+        verify(embeddingClient, org.mockito.Mockito.times(1 + props.getIndexRetries())).embedDocument(anyString());
+    }
+
+    @Test
+    @DisplayName("재시도 — 재시도 불가 실패(4xx 등)는 한 번만 시도한다")
+    void embedItem_nonRetryableFailsImmediately() {
+        // given
+        when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)));
+        when(embeddingClient.embedDocument(anyString()))
+                .thenReturn(AdmissionsEmbeddingClient.DocResult.fail("status=400", false));
+
+        // when
+        String reason = service.embedItem(1L);
+
+        // then
+        assertEquals("status=400", reason);
+        verify(embeddingClient, org.mockito.Mockito.times(1)).embedDocument(anyString());
     }
 }

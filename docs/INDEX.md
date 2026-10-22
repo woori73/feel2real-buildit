@@ -57,3 +57,5 @@
 6. DB/마이그레이션 건드리면 [WORKFLOW.md](WORKFLOW.md) §4 번호정책 **반드시** 확인
 
 - AcademyCraft 사용 도움말·도움말 AI 비서(Draft, 검토 단계): [academycraft-help/README.md](academycraft-help/README.md)
+
+- 통합 대시보드·AI 업무 비서(작업 A, 로컬 프로토타입): [분석·설계](unified-ai-assistant/README.md), [검증 결과](unified-ai-assistant/verification.md)

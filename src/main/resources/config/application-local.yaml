@@ -64,3 +64,9 @@ anthropic:
   classification:
     batch-size: 20         # Claude Vision 한 호출당 이미지 수 (1~20). 줄일 수는 있으나 늘리지 않음
     max-tokens: 2048       # 분류 응답이 짧으니 작게 충분
+
+# Isolated local prototype only; production defaults to disabled.
+buildit:
+  unified-assistant:
+    write-enabled: true
+    model-analysis-enabled: true

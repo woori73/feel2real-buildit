@@ -1,0 +1,227 @@
+{
+  "date": "2026-10-22",
+  "mainBase": "07d9316a293a30a84e13a09c42957bd64be71bd8",
+  "database": "task-local Docker MySQL 8.4.13; f2r_unified_test + ac_unified_test",
+  "junit": {
+    "tests": 122,
+    "failures": 0,
+    "suites": [
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantSecurityTest",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.636"
+      },
+      {
+        "name": "통합 대시보드 공용 위젯 API",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "10.727"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantIntentAnalyzerTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.017"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AcademyAssistantAdapterTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.111"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantServiceTest",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.322"
+      },
+      {
+        "name": "EASY 위젯 응답 캐시 — 항목 수 상한·만료 제거",
+        "tests": "10",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.605"
+      },
+      {
+        "name": "Academy Builder 템플릿 계약",
+        "tests": "28",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "8.692"
+      },
+      {
+        "name": "EASY 대시보드 위젯 API",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.713"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantConversationServiceTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.151"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantDraftTransactionsTest",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.219"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantMaterialAnalyzerTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.024"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest",
+        "tests": "13",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.652"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyAgentSecurityWebMvcTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "2.57"
+      },
+      {
+        "name": "대시보드 AI 비서(읽기 전용, Muse Spark)",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.236"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantCommandParserTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.023"
+      },
+      {
+        "name": "ADMIN 상단 메뉴 — 노출만 정리하고 기능·URL은 유지",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.004"
+      }
+    ]
+  },
+  "e2e": {
+    "timezone": "Asia/Seoul",
+    "stats": {
+      "startTime": "2026-10-22T02:54:40.338Z",
+      "duration": 26048.421000000002,
+      "expected": 11,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "scenarios": [
+      {
+        "name": "anonymous, student and cross-origin calls cannot use assistant writes",
+        "status": "expected",
+        "durationMs": 493
+      },
+      {
+        "name": "first visit, pause/resume, stale version and completion persist per user",
+        "status": "expected",
+        "durationMs": 241
+      },
+      {
+        "name": "student draft does not write; forged hash, concurrent approval, replay and ownership are safe",
+        "status": "expected",
+        "durationMs": 1368
+      },
+      {
+        "name": "class creation, assignment, updates and stale target checks reuse actual APIs",
+        "status": "expected",
+        "durationMs": 1335
+      },
+      {
+        "name": "attendance and consultation create/message verify persisted records",
+        "status": "expected",
+        "durationMs": 690
+      },
+      {
+        "name": "expiry, cancellation, live permission revocation and unknown outcome never replay writes",
+        "status": "expected",
+        "durationMs": 966
+      },
+      {
+        "name": "CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access",
+        "status": "expected",
+        "durationMs": 1102
+      },
+      {
+        "name": "definite upstream rejection reports failure, audits it and cannot replay",
+        "status": "expected",
+        "durationMs": 400
+      },
+      {
+        "name": "material text, missing identifiers and unsupported attachments require explicit review",
+        "status": "expected",
+        "durationMs": 381
+      },
+      {
+        "name": "natural command and desktop/mobile workbench render, highlight, persist and approve through UI",
+        "status": "expected",
+        "durationMs": 11591
+      },
+      {
+        "name": "login surfaces welcome link without moving the current service",
+        "status": "expected",
+        "durationMs": 3641
+      }
+    ]
+  },
+  "javascriptBaseline": {
+    "tests": 855,
+    "pass": 815,
+    "fail": 40,
+    "newFailures": []
+  },
+  "modelVerification": {
+    "liveMuseResponse": "not tested: no model credentials",
+    "intentValidation": "mock transport tests",
+    "operationalExecution": "actual existing APIs and isolated DB"
+  },
+  "screenshots": [
+    "admin-390.png",
+    "admin-desktop-draft-1440.png",
+    "admin-desktop-result-1440.png",
+    "admin-desktop-unified-chat-1440.png",
+    "admin-mobile-chat-390.png",
+    "tutor-1440.png",
+    "tutor-390.png"
+  ]
+}

@@ -1797,3 +1797,17 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **인덱스 반영**: 저장이 끝나면 `AdmissionsVectorIndex.reload()`로 인메모리 인덱스를 다시 읽는다. reload는 트랜잭션 커밋 이후에 실행한다 — 커밋 전에 읽으면 방금 저장한 행의 `knowledge_id`(insertable=false 컬럼)가 비어 인덱스에서 누락되기 때문이다. 인덱스가 비어 있으면 검색은 기존처럼 LIKE로 폴백한다.
 
 > 정정(v3.3 수정 PR): 공식자료(material)는 지식 항목으로 변환하지 않는다. 항목은 근거 전형·일정 행이 ACTIVE일 때만 검색 대상이며, 검색은 대학·캠퍼스·수시/정시·학년도 필터 후 키워드/벡터 관련성 하한을 통과한 항목만 근거로 반환한다.
+
+## 통합 AI 업무 비서 (작업 A, 로컬 프로토타입)
+
+`V1094__unified_assistant.sql`과 `domain/unifiedassistant/`의 엔티티를 함께 추가했다.
+
+| 테이블 / 엔티티 | 범위 |
+|---|---|
+| `unified_assistant_progress` / `AssistantProgress` | `user_id` PK, 역할, 안내 단계 0~5, 완료 여부, 낙관적 `version`. 사용자별 안내 재개 |
+| `unified_assistant_drafts` / `AssistantDraft` | UUID PK, 사용자·역할, 학원 또는 사업체, 업무 종류, 입력/미리보기 JSON, 계획 해시·대상 지문, 상태·결과·생성/만료 시각. 최신 30개 조회 |
+| `unified_assistant_audit` / `AssistantAudit` | 자동증가 PK, 사용자·초안 ID, 이벤트, 시각. 앱에서 추가·조회만 제공하며 수정/삭제 API 없음 |
+
+기존 학원·학생·반·출결·상담·사업체·거래 테이블의 권한/생성 정책은 그대로다. 학원 데이터는 서명 게이트웨이/기존 업무 API, 거래·증빙은 기존 Easy import와 장부 서비스를 통해 처리한다. 새 감사행에는 이름·연락처·인증키·원본 파일 내용을 넣지 않는다. 상태 전이와 격리 정책은 [작업 A 분석 보고서](unified-ai-assistant/README.md)를 참고한다.
+
+통합 초안 상태는 PENDING/EXECUTING/VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN/CANCELLED/EXPIRED/INVALIDATED다. FAILED는 원격 쓰기 요청의 명확한 거절이며, 성공 후 조회 실패는 UNKNOWN으로 보존한다. 대화·파일 분석은 기존 초안 저장소를 사용하고 별도 학생/거래 복제 테이블을 만들지 않는다. 대화 입력 원문은 영속화하지 않으며 새로고침 시 승인 기록만 현재 권한으로 복원한다.

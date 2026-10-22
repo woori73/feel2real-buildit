@@ -10,6 +10,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.reposito
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsActivationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoader;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsVectorIndex;
 import jakarta.servlet.http.Cookie;
@@ -62,6 +63,7 @@ class AdmissionsActivateAllSecurityTest {
   @MockitoBean AdmissionsActivationService activationService;
   @MockitoBean AdmissionsKnowledgeBuildService knowledgeBuildService;
   @MockitoBean AdmissionsEmbeddingService embeddingService;
+  @MockitoBean AdmissionsReindexJob reindexJob;
   @MockitoBean AdmissionsKnowledgeItemRepository knowledgeRepository;
   @MockitoBean AdmissionsVectorIndex vectorIndex;
   @MockitoBean AdmissionsDataLoader dataLoader;
@@ -158,5 +160,42 @@ class AdmissionsActivateAllSecurityTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value("REJECTED"));
     assertThat(logs.list).noneSatisfy(e -> assertThat(e.getFormattedMessage()).contains("admissions activate-all by="));
+  }
+
+  private static final String REINDEX = "/api/admin/admissions/knowledge/reindex";
+
+  @Test
+  @DisplayName("given TUTOR·STUDENT when 재색인 시작·상태·중단을 호출하면 then 모두 403이고 잡은 건드리지 않는다")
+  void reindexEndpointsRejectNonAdmin() throws Exception {
+    // when / then
+    for (String role : new String[] {"TUTOR", "STUDENT"}) {
+      mockMvc.perform(post(REINDEX).cookie(token(role)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+          .andExpect(status().isForbidden());
+      mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(REINDEX + "/status").cookie(token(role)))
+          .andExpect(status().isForbidden());
+      mockMvc.perform(post(REINDEX + "/cancel").cookie(token(role)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+          .andExpect(status().isForbidden());
+    }
+    verify(reindexJob, never()).start(any());
+    verify(reindexJob, never()).cancel();
+  }
+
+  @Test
+  @DisplayName("given ADMIN when 재색인을 시작하면 then 접수는 202, 이미 실행 중이면 409")
+  void adminReindexStartsThenConflicts() throws Exception {
+    // given
+    when(reindexJob.status()).thenReturn(java.util.Map.of("total", 188, "done", 0, "missing", 188, "running", true));
+    when(reindexJob.start(AdmissionsReindexJob.Mode.MISSING))
+        .thenReturn(AdmissionsReindexJob.StartOutcome.STARTED)
+        .thenReturn(AdmissionsReindexJob.StartOutcome.ALREADY_RUNNING);
+
+    // when / then
+    mockMvc.perform(post(REINDEX).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{\"mode\":\"MISSING\"}"))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.status").value("STARTED"))
+        .andExpect(jsonPath("$.total").value(188));
+    mockMvc.perform(post(REINDEX).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.status").value("ALREADY_RUNNING"));
   }
 }

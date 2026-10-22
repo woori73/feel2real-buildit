@@ -69,3 +69,12 @@
 3. 지식 항목 생성(knowledge/build) → 4. activate-all 한 번 더(항목 승격, 근거 행이 ACTIVE인 항목만) →
 5. 재색인(knowledge/reindex MISSING) → 6. 인덱스 reload 확인.
 `enabled`/`service-url`은 실제 모델로 `min-similarity`를 보정하기 전까지 비워 둔다(LIKE+구조화 검색만 동작).
+
+## 재색인 안정화(백그라운드 잡) 운영 메모
+
+- 재색인은 `POST /api/admin/admissions/knowledge/reindex`(MISSING)가 **백그라운드 잡**을 시작하고 즉시 202를 돌려준다. 관리자 화면에서 진행률(전체/완료/미완료/실패 사유)을 보고, 필요하면 "재색인 중단"을 누른다. 진행 상태 API: `GET .../knowledge/reindex/status`.
+- 실측(EC2 t3.large, `admissions-ops.yml` action=bench, 합성 문서·읽기 전용): 일정형 117자 ≈1.3s, 전형형 1900자 ≈2.9s(최대 3.0s), 임베딩 서버 피크 메모리 ≈1.15GB(상한 2GB), load1 피크 0.5, 앱 health 평균 8ms. 재색인 타임아웃은 20s(`app.admissions.embedding.index-timeout-ms`), 질문 타임아웃 1.5s·서킷브레이커와 분리.
+- 예상 소요: 188건 ≈ 전형 116×2.9s + 일정 72×1.3s + 항목 간 0.2s ≈ **8분 이내**(실제 전형 본문은 대부분 더 짧아 더 빠름).
+- 재색인 중에는 임베딩 서버가 동시성 1이라 사용자 질문의 벡터 검색이 일시적으로 503→키워드 검색으로 폴백한다(답변은 유지, 벡터 가산점만 일시 없음).
+- 실패 시 재시도: 같은 버튼(MISSING) 재실행 — 이미 성공한 항목은 대상에서 빠진다. 앱이 재시작돼도 완료분은 DB에 남고 진행률은 DB 기준으로 이어서 보인다(실패 사유 메모리분은 로그 `admissions reindex item failed`에서 확인).
+- 롤백: 배포 롤백은 이전 JAR로 되돌리기(스키마 변경 없음). 이미 만든 임베딩 행은 무해하며 `app.admissions.embedding.enabled=false`로 벡터 검색을 끌 수 있다(키워드 검색 유지).
