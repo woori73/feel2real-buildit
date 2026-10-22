@@ -4968,3 +4968,9 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - OAuth `originals:read`: 서비스 읽기 권한과 별도인 원본 바이너리 제공 권한. 기본 선택 해제. 모든 역할에서 `sensitiveAcknowledged=true`를 사용자 동의 화면에서 확인해야 발급하며 `SENSITIVE_ACK`를 남긴다. 원본 bytes/SHA를 바꾸지 않으므로 민감정보가 마스킹 없이 외부로 제공될 수 있다는 경고를 표시한다. 도구 인자로 권한을 올릴 수 없다. 기존 원본 scope 없는 grant의 바이너리 조회는 403 `originals_scope_required`; 텍스트·요약 조회는 기존 범위를 유지한다. 원래 서비스의 역할·학원·사업체 권한도 항상 검사한다.
 - MCP 주소 판별은 framework 전달 헤더 wrapper를 벗긴 원래 socket peer 및 원래 XFF를 기존 신뢰 프록시 resolver로 검증한다. `server.forward-headers-strategy=framework`에서 신뢰 CIDR 누락·잘못된 CIDR은 MCP 요청에 503 `MCP_TRUSTED_PROXIES_REQUIRED`. 운영 CIDR·ALB 보안그룹은 이번 작업에서 조회·변경하지 않았다.
 - JSON/텍스트의 +82 휴대·지역전화, 연속 10~19자리 번호, 분리된 카드번호, 숫자형 계좌/카드 필드를 마스킹한다. 숫자형 금액·일반 ID는 유지한다. 자유 텍스트의 긴 숫자는 계좌와 주문번호 등을 구분할 수 없어 보수적으로 마스킹하며 완전한 개인정보 탐지로 간주하지 않는다.
+
+### 제작실 사람 중심 열람 (협업실 1단계)
+
+- `GET /api/studio/files/{id}/preview?entry=`: 기존 제작실·파일 권한을 먼저 검사. 원본 20 MiB 이하 PNG 화면용 파생본(최대 1024px/입력 4천만 화소), PDF, MP4, JSON, 안전 HTML/Markdown을 반환한다. `page=1`은 PDF 페이지 PNG와 `X-PDF-Pages` 헤더를 반환하며 브라우저의 이전/다음 페이지 뷰어에 사용한다(처음 100쪽). HTML은 CommonMark→Jsoup 태그 허용 목록·sandbox/CSP로 스크립트·폼·외부 리소스를 차단한다. 승인·원본·SHA·버전을 변경하지 않는다. 미리보기 결과의 SHA는 원본 SHA가 아니다.
+- `GET /api/studio/files/{id}/entries`: ZIP 중앙 디렉터리 목록과 `previewable`. 최대 1000항목, 중복 경로 거부. `preview?entry=<정확한 이름>`은 안전 경로·지원 확장자·8 MiB·압축비 1000 이하를 검사하고 선택 항목만 메모리에서 읽어 CRC 검증한다. 중첩 ZIP·실행 파일·경로 탈출은 미지원. 임시 ZIP은 finally 삭제하며 저장소에 압축 해제하지 않는다.
+- 두 경로는 사이트 로그인 조회 전용이며 이 단계에서는 MCP 허용 목록에 추가하지 않는다. 원본 attachment 경로와 기존 MCP 정책은 유지한다. 동시 미리보기 2건, 초과 429. 각 문서 20만 자 상한, 초과 413.

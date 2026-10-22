@@ -7,6 +7,8 @@
     selected: null,
     permission: "VIEWER",
     preview: null,
+    cuts: [],
+    boardEpoch: 0,
   };
   const origins = {
     ORIGINAL: "원작 정본",
@@ -82,9 +84,136 @@
     );
     return box;
   }
+  const previewUrl = (id, entry) => "/api/studio/files/" + encodeURIComponent(id) + "/preview" + (entry == null ? "" : "?" + new URLSearchParams({entry}));
+  const imageQueue = [];
+  let imageReads = 0;
+  function pumpImages() {
+    while (imageReads < 2 && imageQueue.length) {
+      const {image, id} = imageQueue.shift();
+      if (!image.isConnected) continue;
+      imageReads++;
+      fetch(previewUrl(id), {credentials:"same-origin"}).then(async response => {
+        if (!response.ok) throw Error("이미지 열람 실패 ("+response.status+")");
+        const bytes = await response.blob();
+        if (!image.isConnected) return;
+        const url = URL.createObjectURL(bytes);
+        image.onload = image.onerror = () => URL.revokeObjectURL(url);
+        image.src = url;
+      }).catch(error => { image.replaceWith(el("p", error.message, "hint")); })
+        .finally(() => {imageReads--;pumpImages();});
+    }
+  }
+  function imageFor(r) {
+    const f = state.files.find(f => f.id === r.file_id);
+    if (!f && r.file_id) {
+      const slot=el("div");slot.append(el("p","연결 파일 확인 중","hint"));
+      api("files/"+encodeURIComponent(r.file_id)).then(metadata=>{state.files.push(metadata);slot.replaceChildren(imageFor(r));}).catch(error=>slot.replaceChildren(el("p",error.message,"hint")));
+      return slot;
+    }
+    if (!f || f.extension !== "png") return el("p", r.file_id ? "연결 문서 · 아래에서 열람하세요" : "이미지 업로드 대기", "empty-art");
+    const button = el("button", undefined, "image-open");
+    button.setAttribute("aria-label", r.title + " 이미지 확대");
+    const img = el("img"); img.alt = r.title + " · " + r.label; img.decoding="async";
+    button.append(img);
+    button.onclick = () => { $("zoom-title").textContent = r.title + " · " + r.label; $("zoom-image").src = previewUrl(r.file_id); $("zoom-image").alt=img.alt; $("image-zoom").showModal(); };
+    imageQueue.push({image:img,id:r.file_id});
+    setTimeout(pumpImages,0);
+    return button;
+  }
+  let previewEpoch=0;
+  async function previewFile(file, target, entry) {
+    const epoch=String(++previewEpoch);target.dataset.previewEpoch=epoch;
+    const currentView=()=>target.dataset.previewEpoch===epoch;
+    target.replaceChildren(el("h3", entry || file.filename));
+    if (file.extension === "zip" && entry == null) {
+      const data = await api("files/" + file.id + "/entries");
+      if(!currentView())return;
+      target.append(el("p",data.note));
+      const list = el("ul",undefined,"zip-list");
+      for (const row of data.entries) {
+        const item = el("li");
+        const name = el(row.previewable?"button":"span", row.name + " · " + row.size + " bytes");
+        if (row.previewable) name.onclick=run(()=>previewFile(file,$("zip-preview"),row.name));
+        item.append(name);list.append(item);
+      }
+      const view=el("div");view.id="zip-preview";target.append(list,view);return;
+    }
+    const ext = entry == null ? file.extension : entry.split(".").pop().toLowerCase();
+    if(ext==="pdf") {
+      const toolbar=el("div",undefined,"cut-navigation"),previous=el("button","이전 페이지"),next=el("button","다음 페이지"),label=el("span");
+      const image=el("img");image.alt=(entry||file.filename)+" PDF 페이지";image.className="pdf-page";
+      toolbar.append(previous,label,next);target.append(toolbar,image);
+      let current=1,total=1,url;
+      const show=async n=>{
+        previous.disabled=next.disabled=true;
+        try {
+          const query=new URLSearchParams({page:n});if(entry!=null)query.set("entry",entry);
+          const response=await fetch(previewUrl(file.id)+"?"+query);
+          if(!response.ok)throw Error("PDF 페이지를 표시할 수 없습니다 ("+response.status+")");
+          if(!currentView())return;
+          total=Number(response.headers.get("X-PDF-Pages"));current=n;
+          if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(await response.blob());image.src=url;
+          label.textContent=current+" / "+total+"페이지"+(total>100?" · 처음 100페이지 열람":"");
+        }finally{previous.disabled=current<=1;next.disabled=current>=Math.min(100,total);}
+      };
+      previous.onclick=run(()=>show(current-1));next.onclick=run(()=>show(current+1));await show(1);
+      return;
+    }
+    const response = await fetch(previewUrl(file.id, entry));
+    if(!currentView())return;
+    if (!response.ok) {const error=await response.json().catch(()=>({}));throw Error(error.message || "미리보기를 열 수 없습니다 ("+response.status+")");}
+    if (["html","md"].includes(ext)) {
+      const frame=el("iframe");frame.title=(entry || file.filename)+" 안전 문서";
+      const source=await response.text();if(!currentView())return;
+      frame.setAttribute("sandbox","");frame.srcdoc=source;frame.className="document-view";target.append(frame);
+    } else if (ext==="json") {
+      target.append(el("pre",JSON.stringify(JSON.parse(await response.text()),null,2)));
+    } else {
+      if(state.preview) URL.revokeObjectURL(state.preview);
+      state.preview=URL.createObjectURL(await response.blob());
+      const media=el(ext==="png"?"img":ext==="mp4"?"video":"iframe");
+      if(ext==="png")media.alt=entry||file.filename;
+      if(ext==="mp4")media.controls=true;
+      if(ext==="pdf") {media.title=(entry||file.filename)+" PDF 뷰어";media.className="document-view";media.setAttribute("sandbox","allow-same-origin");}
+      media.src=state.preview;target.append(media);
+    }
+  }
+  async function showRevisionFile(r,target) {
+    const file = state.files.find(f=>f.id===r.file_id) || await api("files/"+r.file_id);
+    await previewFile(file,target);
+    target.scrollIntoView({block:"nearest"});
+  }
+  function renderBoard(cuts) {
+    state.cuts=cuts;
+    const board=$("storyboard"); board.replaceChildren();
+    const numbers=$('episode').value==="1"?Array.from({length:68},(_,i)=>i+1):cuts.map(r=>r.cut_number);
+    $("board-heading").textContent="콘티 보드 · 등록 "+cuts.length+" / "+numbers.length+"컷";
+    for (const n of numbers) {
+      const r=cuts.find(row=>row.cut_number===n);
+      const card=el("article",undefined,"story-card");
+      card.dataset.cut=n;
+      if (r) {
+        card.append(imageFor(r),el("h3",String(n).padStart(2,"0")+" · "+r.title),badges(r),el("p",r.content||"설명 미등록"));
+        if(r.dialogue)card.append(el("p","대사 · "+r.dialogue));
+        if(r.direction)card.append(el("p","연출 · "+r.direction,"hint"));
+        const open=el("button","컷 상세·검수");open.onclick=()=>detail(r);card.append(open);
+      } else card.append(el("p",n+"컷 · 이미지·설명 업로드 대기","empty-art"));
+      board.append(card);
+    }
+  }
+  async function gallery() {
+    const rows=[];let page;
+    do {page=await api("revisions?kind=CHARACTER&limit=200&offset="+rows.length);rows.push(...page);}while(page.length===200);
+    $("character-gallery").replaceChildren();
+    for(const r of rows.filter(r=>r.id===r.head_id)) {
+      const c=el("article",undefined,"story-card");c.append(imageFor(r),display(r));$("character-gallery").append(c);
+    }
+    if(!$("character-gallery").children.length)$("character-gallery").append(el("p","등록된 캐릭터 자료가 없습니다. 이미지·설정 업로드 대기입니다."));
+  }
   function display(r) {
     const box = el("div");
     box.append(
+      imageFor(r),
       el("h3", r.title),
       badges(r),
       el(
@@ -102,13 +231,28 @@
       const a = el("a", "원본 다운로드");
       a.href =
         "/api/studio/files/" + encodeURIComponent(r.file_id) + "/content";
-      box.append(a);
+      const read=el("button","연결 자료 열람");
+      const view=el("div",undefined,"revision-file-view");
+      read.onclick=run(()=>showRevisionFile(r,view));
+      box.append(a,read,view);
     } else box.append(el("p", "파일 업로드 대기", "hint"));
     return box;
   }
   function detail(r) {
     state.selected = r;
     $("detail").replaceChildren(display(r));
+    if(r.kind==="STORYBOARD") {
+      const navigation=el("div",undefined,"cut-navigation");
+      for(const [delta,label] of [[-1,"이전 컷"],[1,"다음 컷"]]) {
+        const row=state.cuts.find(c=>c.cut_number===r.cut_number+delta);
+        const b=el("button",label);b.disabled=!row;b.onclick=()=>detail(row);navigation.append(b);
+      }
+      if(r.approved_id && r.approved_id!==r.id) {
+        const b=el("button","승인본과 수정 후보 비교");
+        b.onclick=run(async()=>{const approved=await api("revisions/"+r.approved_id);$("cut-comparison").replaceChildren(display(approved),display(r));$("cut-compare-dialog").showModal();});navigation.append(b);
+      }
+      $("detail").prepend(navigation);
+    }
     if (state.permission !== "VIEWER") {
       const b = el("button", "이 자료의 다음 버전 작성");
       b.onclick = () => edit(r);
@@ -169,6 +313,7 @@
     const page=await api("revisions?"+qs);state.revisions=append?[...state.revisions,...page]:page;
     $("load-more").hidden=page.length<200;
     const cuts=await api("cuts?episode="+($('episode').value||1));
+    renderBoard(cuts);
     $("revision-list").replaceChildren();
     for (const r of state.revisions) {
       const c = el("div", undefined, "card");
@@ -226,39 +371,7 @@
         ["pdf", "zip", "png", "mp4", "md", "json", "html"].includes(f.extension)
       ) {
         const b = el("button", "자료 열람");
-        b.onclick = run(async () => {
-          if (state.preview) URL.revokeObjectURL(state.preview);
-          if (["pdf", "zip"].includes(f.extension)) {
-            const data = await api("files/" + f.id + "/text");
-            $("file-preview").replaceChildren(
-              el("h3", f.filename),
-              el("p", data.note),
-              el("pre", data.text || JSON.stringify(data.entries, null, 2)),
-            );
-            return;
-          }
-          const response = await fetch(
-            "/api/studio/files/" + f.id + "/content",
-          );
-          if (!response.ok) throw Error("파일 열람 권한을 확인하세요.");
-          const blob = await response.blob();
-          $("file-preview").replaceChildren(el("h3", f.filename));
-          if (["png", "mp4"].includes(f.extension)) {
-            state.preview = URL.createObjectURL(
-              new Blob([blob], {
-                type: f.extension === "png" ? "image/png" : "video/mp4",
-              }),
-            );
-            const media = el(f.extension === "png" ? "img" : "video");
-            if (f.extension === "png") media.alt = f.filename;
-            else media.controls = true;
-            media.src = state.preview;
-            $("file-preview").append(media);
-          } else
-            $("file-preview").append(
-              el("pre", (await blob.text()).slice(0, 200000)),
-            );
-        });
+        b.onclick = run(() => previewFile(f, $("file-preview")));
         c.append(b);
       }
       $("file-list").append(c);
@@ -300,6 +413,7 @@
           .forEach((t) => t.removeAttribute("aria-current"));
         b.setAttribute("aria-current", "page");
         if (b.dataset.tab === "files") await fileList();
+        if (b.dataset.tab === "characters") await gallery();
         if (b.dataset.tab === "compare") await compareOptions();
         if (b.dataset.tab === "history") {
           const rows = await api("events");
@@ -321,6 +435,14 @@
         }
       })),
   );
+  $("close-zoom").onclick=()=>$("image-zoom").close();
+  $("close-cut-compare").onclick=()=>$("cut-compare-dialog").close();
+  document.addEventListener("keydown",event=>{
+    if(document.querySelector("dialog[open]") || ["INPUT","TEXTAREA","SELECT"].includes(event.target.tagName) || event.target.isContentEditable || $("materials").hidden || !state.selected || state.selected.kind!=="STORYBOARD")return;
+    const delta=event.key==="ArrowRight"?1:event.key==="ArrowLeft"?-1:0;
+    const row=state.cuts.find(r=>r.cut_number===state.selected.cut_number+delta);
+    if(delta&&row){event.preventDefault();detail(row);}
+  });
   $("load-more").onclick=run(()=>load(true));
   $("bulk-form").onsubmit=run(async()=>{
     if(!$("bulk-file").value)throw Error("보관한 JSON 또는 ZIP 원본을 선택하세요.");
@@ -448,6 +570,7 @@
       $("upload-form").hidden = true;$("bulk-form").hidden=true;
     }
     $("episode").value = "1";
-    await Promise.all([load(), fileList()]);
+    await fileList();
+    await load();
   })();
 })();

@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class StudioController {
   private final StudioService service;
   private final StudioBulkImport bulk;
+  private final StudioPreview previews;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -249,6 +250,39 @@ public class StudioController {
       }
     }
     throw StudioService.error(400, "이미지·영상은 미디어 열람을 이용하세요.");
+  }
+
+  @GetMapping("/api/studio/files/{id}/entries")
+  @ResponseBody
+  public Object entries(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id)
+      throws IOException {
+    return previews.entries(p, id);
+  }
+
+  @GetMapping("/api/studio/files/{id}/preview")
+  public ResponseEntity<byte[]> preview(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestParam(required = false) String entry,
+      @RequestParam(required = false) Integer page)
+      throws IOException {
+    if (page != null) {
+      var pdf = previews.pdfPage(p, id, entry, page);
+      return ResponseEntity.ok()
+          .contentType(MediaType.IMAGE_PNG)
+          .header("Cache-Control", "private, no-store")
+          .header("X-Content-Type-Options", "nosniff")
+          .header("X-PDF-Pages", Integer.toString(pdf.pages()))
+          .body(pdf.bytes());
+    }
+    var view = previews.view(p, id, entry);
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(view.mime()))
+        .header("Cache-Control", "private, no-store")
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+        .header("Content-Disposition", "inline")
+        .body(view.bytes());
   }
 
   @GetMapping("/api/studio/events")
