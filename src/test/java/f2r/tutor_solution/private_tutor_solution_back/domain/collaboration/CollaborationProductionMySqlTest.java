@@ -52,7 +52,7 @@ class CollaborationProductionMySqlTest {
   @Autowired JdbcTemplate db;
   @Autowired JwtTokenProvider jwt;
   AuthenticatedPrincipal owner;
-  String workspace, batch;
+  String workspace, batch, reviewWorkspace, reviewedCut, reviewedReference;
   Path source;
   final Path evidence = Path.of("docs/collaboration/production-results");
   final com.fasterxml.jackson.databind.ObjectMapper json =
@@ -277,6 +277,49 @@ class CollaborationProductionMySqlTest {
     var recovered = importer.apply(owner, failed, source);
     assertEquals(536, recovered.get("registered"));
     assertEquals("APPROVED", files.metadata(owner, protectedId).get("status"));
+    reviewWorkspace = failed;
+    reviewedCut =
+        db.queryForObject(
+            "SELECT panel_file_id FROM ai_collaboration_storyboard_cuts WHERE import_id=? AND"
+                + " cut_number=1",
+            String.class,
+            recovered.get("importId"));
+    reviewedReference =
+        db.queryForObject(
+            "SELECT s.file_id FROM ai_collaboration_sources s JOIN ai_collaboration_files f ON"
+                + " f.id=s.file_id WHERE f.workspace_id=? AND"
+                + " s.source_approval='APPROVED_REFERENCE' ORDER BY s.source_path LIMIT 1",
+            String.class,
+            failed);
+    files.review(owner, reviewedCut, "APPROVED");
+    files.review(owner, reviewedReference, "APPROVED");
+    importer.apply(owner, failed, source);
+    assertEquals("APPROVED", files.metadata(owner, reviewedCut).get("status"));
+    assertEquals("APPROVED", files.metadata(owner, reviewedReference).get("status"));
+    var reviewedCuts = (List<Map<String, Object>>) sources.production(owner, failed).get("cuts");
+    assertEquals("APPROVED", reviewedCuts.getFirst().get("status"));
+    assertEquals(0, sources.production(owner, failed).get("passConfirmed"));
+    assertEquals(
+        536,
+        db.queryForObject(
+            "SELECT COUNT(*) FROM ai_collaboration_files WHERE workspace_id=? AND status='DRAFT'",
+            Integer.class,
+            workspace));
+    write(
+        "human-approval-display.json",
+        Map.of(
+            "separateIsolatedReviewWorkspace",
+            true,
+            "humanReviewPath",
+            "CollaborationFiles.review",
+            "reviewedPanelAndReference",
+            2,
+            "approvalPreservedOnReplay",
+            true,
+            "productionImportWorkspaceDraftsUnchanged",
+            536,
+            "canonicalPass",
+            0));
     write(
         "rollback.json",
         Map.of(
@@ -336,6 +379,12 @@ class CollaborationProductionMySqlTest {
                 jwt.issue(owner.userId(), owner.loginId(), owner.role(), owner.credentialStamp()),
                 "workspace",
                 workspace,
+                "reviewWorkspace",
+                reviewWorkspace,
+                "reviewedCut",
+                reviewedCut,
+                "reviewedReference",
+                reviewedReference,
                 "importId",
                 batch)));
     try {

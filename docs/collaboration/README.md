@@ -49,6 +49,7 @@ DRAFT → WAITING_AGENT → WAITING_APPROVAL → APPROVED. PAUSED/CANCELLED/BLOC
 
 - 실제 격리 MySQL8.4 + Spring HTTP: 협업실13건 + 실자료 배치5건 PASS. 기존 studio/MCP/OAuth/원본 롤백/마이그레이션/메뉴를 포함한 [회귀 검증77건](java-results.json)도 전부 PASS. OAuth/PKCE·scope·별도 binding·프로젝트/AI 격리·폐기·동시 중복 제출·중단/상한·인간 검수·SHA/원본 보존·실패 롤백·청크 재시도·본문 제한을 확인했다.
 - 실제 Chromium10항목 PASS: 새 작업·공동 기억/검색·인간 업로드/열람·두 OAuth 연결 동일 원문/SHA·MCP 이미지 전송·검수 인계·인간 승인·이력 export·1440/390px axe WCAG 위반0/가로 넘침0.
+- 별도 실자료 Chromium12항목 PASS: 536개 전수 조회·68컷 보드·실제 문서/이미지와 함께 인간 검수 후 현재 승인 상태 표시 및 재임포트 보존도 확인했다. [실자료 보고서](PRODUCTION_IMPORT.md)를 따른다.
 - **공식 Python MCP SDK 2.1.1의 별도 OAuth 연결2개**가 같은 문서 원문/SHA를 읽었다. 로컬 파일을 자동으로 청크 전송해 DRAFT 등록하고 두 번째 연결에서 같은 byte/SHA를 확인했다. 사람이 앱 사이에서 파일을 다시 내려받아 옮기지 않는 프로토콜 전송 경로다.
 - 기존 협업실 기본 QA 파일·제안·역할 응답은 합성 테스트 입력이다. 별도 실자료 검증은 #863의 실제536개와68컷을 사용했다. 합성 QA 입력을 실제 ChatGPT/Claude 모델의 결과나 EP01 원본으로 등록하지 않았다. 실제 모델 호출0.
 - **실제 ChatGPT/Claude 계정 로그인·도구 스캔·문서 등록·생성 이미지 첨부는 미실행**이다. 이 세션에는 제품 계정 세션과 승인된 공개 HTTPS 격리 endpoint가 없다. SDK 성공을 제품 연결 성공으로 바꾸어 보고하지 않는다. [제품별 연결/검증 절차](CONNECTORS.md)를 따른다.

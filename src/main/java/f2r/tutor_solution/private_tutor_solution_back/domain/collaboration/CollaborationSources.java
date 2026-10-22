@@ -83,7 +83,7 @@ public class CollaborationSources {
     var cuts =
         db.queryForList(
             "SELECT"
-                + " c.cut_number,c.panel_file_id,c.record_json,c.comparison_status,c.pass_confirmed,f.sha256,s.source_path,s.version_label"
+                + " c.cut_number,c.panel_file_id,c.record_json,c.comparison_status,c.pass_confirmed,f.sha256,f.status,s.source_path,s.version_label,s.source_approval"
                 + " FROM ai_collaboration_storyboard_cuts c JOIN ai_collaboration_files f ON"
                 + " f.id=c.panel_file_id LEFT JOIN ai_collaboration_sources s ON s.file_id=f.id"
                 + " WHERE c.import_id=? ORDER BY c.cut_number",

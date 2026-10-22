@@ -1,4 +1,7 @@
 {
+  "mismatches" : 0,
+  "compared" : 536,
+  "sourceRef" : "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
   "files" : [ {
     "source_path" : "01_r14_handoff_source/AI_AGENT_EP01_68컷_전체콘티_r14.html",
     "version_label" : "r14",
@@ -4287,8 +4290,5 @@
     "sha256" : "2202c349fc40e2f6ec37ac3376180718a058d77422b7c15ab71b873d690127e8",
     "size_bytes" : 1643,
     "status" : "DRAFT"
-  } ],
-  "mismatches" : 0,
-  "compared" : 536,
-  "sourceRef" : "09d62dee982e2e89e3653c90b1ee42f05bff4f9d"
+  } ]
 }

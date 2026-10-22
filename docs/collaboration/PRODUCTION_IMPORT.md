@@ -47,6 +47,9 @@ r14/r1/r2~r9 rev 이력과 승인5종은 **출처 정보**다. 앱의 신규 상
 - 사람용 더 보기로 536개 전수 조회, 파일명/원본 경로 검색.
 - CURRENT_STATE/APPROVAL_HISTORY/MISSING_FILES 원문을 공동 기억·결정·진행에 출처 파일ID와 함께 표시. 다음 작업은 인계 문서의 미해결 기본안 확인으로 기록. 참여 AI를 임의 배정하지 않음.
 - 모든 미리보기/확대/비교 뒤 실제 원문 SHA를 재대조. 원본 파일은 불변.
+- 별도 격리 검증 프로젝트에서 인간 검수 경로로 패널/승인 참조 후보를 승인한 뒤 재임포트해도 APPROVED가 보존되고, 보드 확대·참조 상세에 현재 상태가 표시됨을 확인했다. 출처 승인과 현재 협업 후보 승인, 정본 확정을 구분한다. 본 적재 프로젝트536개는 DRAFT 그대로다.
+
+실자료 브라우저12항목 PASS. 인간 검수 상태 회귀 근거는 [별도 프로젝트 결과](production-results/human-approval-display.json)다.
 
 [브라우저 결과](production-results/browser-results.json) · [PC 콘티](production-results/screens/real-storyboard-1440.png) · [모바일 콘티](production-results/screens/real-storyboard-390.png) · [PC 비교](production-results/screens/real-version-compare-1440.png) · [모바일 비교](production-results/screens/real-version-compare-390.png).
 

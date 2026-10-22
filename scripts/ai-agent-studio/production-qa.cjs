@@ -197,11 +197,9 @@ const fs = require("node:fs"),
       .waitFor();
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 1000 });
-      await page
-        .locator("#document-dialog")
-        .screenshot({
-          path: `${out}/screens/real-markdown-viewer-${width}.png`,
-        });
+      await page.locator("#document-dialog").screenshot({
+        path: `${out}/screens/real-markdown-viewer-${width}.png`,
+      });
     }
     await page.locator("#document-dialog .dialog-close").click();
     const html = all.find(
@@ -289,6 +287,40 @@ const fs = require("node:fs"),
     assert.equal(await page.locator(".file-card").count(), 536);
     results.push(
       "Human load-more screen reaches all536 files, exceeding old200 limit",
+    );
+    // Separate review fixture: the primary imported workspace remains entirely DRAFT.
+    await page.selectOption("#workspace", fixture.reviewWorkspace);
+    await page.waitForFunction(
+      (cutId) =>
+        document.querySelector("#status")?.textContent === "저장했습니다." &&
+        document
+          .querySelector('.cut-card[data-cut="1"] img')
+          ?.src.includes(cutId),
+      fixture.reviewedCut,
+    );
+    await page
+      .locator('.cut-card[data-cut="1"]')
+      .getByRole("button", { name: "컷 확대" })
+      .click();
+    assert(
+      (await page.locator("#image-details").textContent()).includes("APPROVED"),
+    );
+    assert(
+      !(await page.locator("#image-details").textContent()).includes("DRAFT"),
+    );
+    await page.locator("#image-dialog .dialog-close").click();
+    const reviewed = await api(`files/${fixture.reviewedReference}`);
+    await search(reviewed.filename);
+    await page
+      .locator(`.file-card[data-file-id="${fixture.reviewedReference}"]`)
+      .getByRole("button", { name: "이미지 확대" })
+      .click();
+    const details = await page.locator("#image-details").textContent();
+    assert(details.includes("APPROVED") && details.includes("기존 승인 참조"));
+    assert(!details.includes("DRAFT"));
+    await page.locator("#image-dialog .dialog-close").click();
+    results.push(
+      "Human-approved panel and approved-source reference display current APPROVED state after importer replay; primary536 files stay DRAFT and canonical PASS0",
     );
     fs.writeFileSync(
       out + "/browser-results.json",

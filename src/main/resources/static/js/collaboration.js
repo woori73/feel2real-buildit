@@ -267,7 +267,7 @@
     renderFiles();
   }
   function imageDetails(file) {
-    return `${file.source_path || file.filename} · ${file.version_label || "신규"} · SHA256 ${file.sha256} · ${file.source_approval === "APPROVED_REFERENCE" ? "기존 승인 참조(출처) · 신규 등록 DRAFT" : file.status || "DRAFT"}`;
+    return `${file.source_path || file.filename} · ${file.version_label || "신규"} · SHA256 ${file.sha256} · ${file.status || "DRAFT"}${file.source_approval === "APPROVED_REFERENCE" ? " · 기존 승인 참조(출처) · 정본 포인터 불변" : ""}`;
   }
   function showImage(file) {
     $("#image-title").textContent = file.filename;
@@ -482,7 +482,8 @@
           sha256: cut.sha256,
           source_path: cut.source_path,
           version_label: cut.version_label,
-          status: "DRAFT",
+          status: cut.status,
+          source_approval: cut.source_approval,
         };
       card.className = "cut-card";
       card.dataset.cut = String(cut.cut_number);

@@ -4981,7 +4981,7 @@ POST 계약: `/workspaces` `{title}`, `/workspaces/{id}/memory` `{kind:NOTE|DECI
 
 ### 실제 제작 자료·원문 뷰어 (V1098)
 
-`GET /api/collaboration/workspaces/{id}/files?beforeId=&limit=100&query=`는 원본 경로/버전/분류/출처 승인 상태를 포함한 keyset 페이지 `{items,nextBeforeId,totalCount}`를 반환한다. limit1~200, cursor는 같은 프로젝트의 파일ID만 허용한다. 536개 전수 조회가 가능하다. `/workspaces/{id}/production`은 배치 출처·68컷 원문JSON/패널참조·정식 대조/확정 상태를 조회한다. 기존 제작실 권한+프로젝트 ACL을 검사한다.
+`GET /api/collaboration/workspaces/{id}/files?beforeId=&limit=100&query=`는 원본 경로/버전/분류/출처 승인 상태를 포함한 keyset 페이지 `{items,nextBeforeId,totalCount}`를 반환한다. limit1~200, cursor는 같은 프로젝트의 파일ID만 허용한다. 536개 전수 조회가 가능하다. `/workspaces/{id}/production`은 배치 출처·68컷 원문JSON/패널참조·정식 대조/확정 상태를 조회한다. 컷의 `status`는 현재 협업 후보 검수 상태이며 `source_approval`(과거 출처 승인) 및 정본 대조/확정과 별개다. 기존 제작실 권한+프로젝트 ACL을 검사한다.
 
 `GET /files/{id}/preview`는 HTML을 sandbox/CSP와 이벤트/외부 리소스 제거 후 표시하고, `/files/{id}/pdf-info`·`/files/{id}/pdf-page?page=1`은 PDF 페이지수·임시 PNG를 반환한다. 모두 인증/파일 ACL/no-store, 원문 불변이다. MD5는 UTF-8 검증 메타자료로 업로드/원문 열람 가능하며 이미지로 분류하지 않는다. MCP `collaboration_read`의 `filesBeforeId`(첫 페이지는 빈 문자열)/`filesQuery`로 같은 프로젝트 전체 파일을 페이지 조회할 수 있다. 원문 제공은 기존 originals:read를 요구한다.
 

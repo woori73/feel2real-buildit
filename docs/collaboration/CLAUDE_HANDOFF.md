@@ -31,6 +31,8 @@ F2R_COLLAB_MYSQL_TEST=true F2R_COLLAB_BROWSER_TEST=true F2R_COLLAB_SDK_TEST=true
 
 HTML/MD/PDF·확대·S5/S6 후보/승인 참조 비교를 실제 자료로 PC1440/모바일390에서 재검증한다. 원본은 고치지 않는다. 인계3문서의 공동 기억·결정·미해결/다음 작업도 확인한다. local importer는 명시적 flag/loopback 테스트 DB/LocalFileStorage 밖에서 동작하지 않아야 한다. 이 검수 뒤 #862/#863의 병합 순서는 사용자와 결정하며 Codex가 병합하지 않는다.
 
+인간 검수 후 이미지 상세/보드에 DRAFT가 고정 표시되던 오류도 수정했다. 별도 검증 프로젝트에서 패널과 출처 승인 참조를 인간 검수 경로로 승인하고 재임포트/화면 열람해 APPROVED 보존·현재 상태 표시를 확인한다. 본 자료 프로젝트536개 DRAFT 및 정본 대조0/PASS0은 그대로 유지해야 한다.
+
 ## 실제 제품 연결은 별도
 
 공식 SDK 두 연결 테스트는 실제 OAuth/HTTP/파일 전송의 증거다. 실제 ChatGPT/Claude 계정 연결·파일 첨부·모델 실행의 증거가 아니다. 공개 HTTPS 격리 주소와 본인 계정으로 [CONNECTORS](CONNECTORS.md) 비교표를 채운다. 실제 생성 바이너리가 전달되지 않으면 미지원/미검증으로 기록한다. 과금을 허용하지 않았으므로 유료 API로 대체하지 않는다.
