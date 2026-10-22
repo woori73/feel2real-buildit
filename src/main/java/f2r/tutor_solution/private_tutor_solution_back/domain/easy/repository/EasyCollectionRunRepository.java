@@ -12,6 +12,8 @@ import jakarta.persistence.LockModeType;
 
 public interface EasyCollectionRunRepository extends JpaRepository<EasyCollectionRun, Long> {
 
+  boolean existsByImportBatchId(Long batchId);
+
   List<EasyCollectionRun> findAllByBusiness_BusinessIdOrderByRunIdDesc(Long businessId);
 
   List<EasyCollectionRun> findAllByOrderByRunIdDesc();
