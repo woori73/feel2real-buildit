@@ -1,0 +1,22 @@
+name: Production readiness isolated checks
+on:
+  pull_request:
+    paths:
+      - 'scripts/operations/**'
+      - 'scripts/ai-agent-studio/import-production.py'
+      - '.github/workflows/prod-diagnostic.yml'
+      - '.github/workflows/diagnose-ec2-readonly.yml'
+      - '.github/workflows/production-readiness-check.yml'
+permissions:
+  contents: read
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s scripts/operations/tests -v
+      - name: Verify production dry-run without credentials or network
+        run: python scripts/ai-agent-studio/import-production.py --source docs/ai-agent-production --production --receipt /tmp/f2r-production-dry-run.json

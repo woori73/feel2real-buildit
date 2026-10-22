@@ -7,6 +7,13 @@ plugins {
 group = 'f2r.tutor_solution'
 version = '0.0.1-SNAPSHOT'
 
+// Read-only diagnostics can identify a future deployed artifact without guessing from main.
+def artifactCommit = providers.exec { commandLine 'git', 'rev-parse', 'HEAD' }.standardOutput.asText.get().trim()
+def artifactDirty = providers.exec { commandLine 'git', 'status', '--porcelain', '--untracked-files=no' }.standardOutput.asText.get().trim()
+tasks.named('bootJar') {
+	manifest.attributes('Build-Commit': artifactCommit, 'Build-Working-Tree': artifactDirty ? 'dirty' : 'clean')
+}
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)
