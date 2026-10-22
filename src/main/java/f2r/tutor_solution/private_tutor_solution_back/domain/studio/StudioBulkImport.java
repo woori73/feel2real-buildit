@@ -46,10 +46,11 @@ public class StudioBulkImport {
               || name.contains(":")
               || Arrays.asList(name.split("/", -1)).contains(".."))
             throw StudioService.error(400, "ZIP 경로가 올바르지 않습니다.");
-          if (entry.isDirectory()) continue;
           byte[] value = zip.readNBytes(EXPANDED_LIMIT - total + 1);
           total += value.length;
           if (total > EXPANDED_LIMIT) throw StudioService.error(413, "ZIP 해제 크기는 총 20 MiB 이하입니다.");
+          // Even a directory entry can carry compressed bytes. Count them before skipping it.
+          if (entry.isDirectory()) continue;
           if (assets.putIfAbsent(name, value) != null)
             throw StudioService.error(400, "ZIP에 같은 이름이 중복되었습니다.");
           if (name.equals("manifest.json")) manifest = value;

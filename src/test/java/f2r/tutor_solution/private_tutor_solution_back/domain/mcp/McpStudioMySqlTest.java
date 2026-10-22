@@ -713,6 +713,23 @@ class McpStudioMySqlTest {
         Exception.class,
         () -> bulk.importEp01(editor, (String) ((Map<?, ?>) unsafe.get("file")).get("id")));
     assertEquals(count, db.queryForObject("SELECT COUNT(*) FROM studio_revisions", Long.class));
+    buffer.reset();
+    try (var zip = new java.util.zip.ZipOutputStream(buffer)) {
+      zip.putNextEntry(new java.util.zip.ZipEntry("oversized-directory/"));
+      zip.write(new byte[21 * 1024 * 1024]);
+      zip.closeEntry();
+    }
+    var oversized =
+        studio.upload(
+            editor,
+            new MockMultipartFile(
+                "file", "directory-payload.zip", "application/zip", buffer.toByteArray()));
+    var limit =
+        assertThrows(
+            org.springframework.web.server.ResponseStatusException.class,
+            () -> bulk.importEp01(editor, (String) ((Map<?, ?>) oversized.get("file")).get("id")));
+    assertEquals(413, limit.getStatusCode().value());
+    assertEquals(count, db.queryForObject("SELECT COUNT(*) FROM studio_revisions", Long.class));
   }
 
   @Test

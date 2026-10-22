@@ -193,7 +193,7 @@
     "skipped": 0
   },
   "finalAffected": {
-    "run": "Final affected studio/MCP test rerun after ZIP bytes assertion, UUID labels and formatting",
+    "run": "Final rerun after directory-entry ZIP expanded-byte limit regression, in addition to linked asset bytes and UUID label checks",
     "tests": 24,
     "failures": 0,
     "errors": 0,
