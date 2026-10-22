@@ -123,7 +123,7 @@ public class EasyFinancialCollectorService {
       EasyCollectionApproval result;
       if (approval.getStatus() == EasyCollectionApproval.ApprovalStatus.PENDING) {
         result = approvalService.approveAndCommit(businessId, approval.getApprovalId(), actor(principal),
-            "financial-collector reviewed batch " + reviewHash, principal);
+            EasyImportReviewHash.NOTE_PREFIX + reviewHash, principal);
       } else {
         result = approvalService.commitApproved(businessId, approval.getApprovalId(), principal);
       }
@@ -148,12 +148,8 @@ public class EasyFinancialCollectorService {
     long saved = batch == null ? 0 : batch.confirmedRows();
     var approval = run == null ? null : approvals.findByRun_RunId(run.runId()).orElse(null);
     String reviewHash = null;
-    if (batch != null) {
-      try {
-        reviewHash = sha256(new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules()
-            .writeValueAsBytes(batch));
-      } catch (java.io.IOException e) { throw new IllegalStateException("BATCH_REVIEW_HASH_FAILED"); }
-    }
+    if (batch != null) reviewHash = EasyImportReviewHash.of(batch);
+
     String next = approval != null && approval.isCommitted() ? "LEDGER_COMMITTED_CHECK_REMAINING_REVIEW"
         : snapshot.report().valid() == 0 ? "MANUAL_REVIEW_OR_REUPLOAD"
         : run != null && run.importBatchId() == null ? "NO_NEW_DRAFTS_CHECK_DUPLICATES_AND_ERRORS"
