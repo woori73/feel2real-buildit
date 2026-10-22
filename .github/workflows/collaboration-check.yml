@@ -10,6 +10,8 @@ on:
       - 'src/test/java/**/collaboration/**'
       - 'scripts/ai-agent-studio/collaboration-qa.cjs'
       - 'scripts/ai-agent-studio/collaboration-*.py'
+      - 'scripts/ai-agent-studio/production-qa.cjs'
+      - 'scripts/ai-agent-studio/materialize-production-source.py'
       - 'e2e/collaboration/**'
       - '.github/workflows/collaboration-check.yml'
   workflow_dispatch:
@@ -39,6 +41,8 @@ jobs:
       F2R_COLLAB_MYSQL_TEST: 'true'
       F2R_COLLAB_BROWSER_TEST: 'true'
       F2R_COLLAB_SDK_TEST: 'true'
+      F2R_COLLAB_PRODUCTION_TEST: 'true'
+      F2R_COLLAB_PRODUCTION_SOURCE: /tmp/f2r-production-source
       NODE_PATH: ${{ github.workspace }}/e2e/collaboration/node_modules
     steps:
       - uses: actions/checkout@v4
@@ -57,8 +61,12 @@ jobs:
       - run: npm ci --prefix e2e/collaboration --ignore-scripts
       - run: cd e2e/collaboration && npx playwright install --with-deps chromium
       - run: sudo apt-get update -qq && sudo apt-get install -y fonts-noto-cjk
+      - name: Materialize pinned real production documents (read-only Git objects, no PR merge)
+        run: |
+          git fetch --depth=1 --no-tags origin 09d62dee982e2e89e3653c90b1ee42f05bff4f9d
+          python3 scripts/ai-agent-studio/materialize-production-source.py /tmp/f2r-production-source
       - name: MySQL, OAuth/PKCE, MCP draft append and real browser (no paid calls)
-        run: bash gradlew test --no-daemon --tests '*CollaborationMySqlTest'
+        run: bash gradlew test --no-daemon --tests '*CollaborationMySqlTest' --tests '*CollaborationProductionMySqlTest'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -69,4 +77,5 @@ jobs:
             docs/collaboration/sdk-results.json
             docs/collaboration/performance-results.json
             docs/collaboration/screens
+            docs/collaboration/production-results
           retention-days: 7

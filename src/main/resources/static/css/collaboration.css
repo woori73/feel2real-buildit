@@ -324,3 +324,126 @@ section section {
     padding: 1rem;
   }
 }
+
+.cut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+  max-height: 75vh;
+  overflow: auto;
+  padding: 0.4rem;
+}
+.cut-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  background: #fff;
+}
+.cut-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cut-card p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cut-card small {
+  display: block;
+  margin: 0.7rem 0;
+}
+.cut-card button {
+  margin: 0.3rem 0.3rem 0 0;
+}
+#production-summary {
+  overflow-wrap: anywhere;
+}
+.file-card small,
+.file-card p {
+  overflow-wrap: anywhere;
+}
+.actions {
+  flex-wrap: wrap;
+}
+dialog {
+  width: min(1200px, 94vw);
+  max-height: 92vh;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.3rem;
+  color: var(--ink);
+}
+dialog::backdrop {
+  background: #10231dbb;
+}
+dialog img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+#image-large {
+  max-height: 72vh;
+  margin: auto;
+}
+#document-view iframe {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid var(--line);
+  background: white;
+}
+.document-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.compare-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.compare-images figure {
+  margin: 0;
+}
+.compare-images figcaption,
+#image-details,
+#document-details {
+  overflow-wrap: anywhere;
+}
+.dialog-close {
+  float: right;
+}
+#file-search {
+  margin-top: 1rem;
+}
+#file-count {
+  font-weight: 600;
+}
+@media (max-width: 650px) {
+  .cut-grid,
+  .compare-images {
+    grid-template-columns: 1fr;
+  }
+  dialog {
+    padding: 0.8rem;
+  }
+  .cut-grid {
+    max-height: 72vh;
+  }
+}
+
+.document-text table {
+  border-collapse: collapse;
+  max-width: 100%;
+  display: block;
+  overflow: auto;
+  white-space: normal;
+}
+.document-text th,
+.document-text td {
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+.document-text p {
+  margin: 0.4rem 0;
+}

@@ -6,6 +6,11 @@
       space: null,
       task: null,
       busy: false,
+      fileItems: [],
+      filesBefore: "",
+      compare: [],
+      cuts: [],
+      cutPage: 0,
     };
   const labels = {
     GPT: "GPT · 기획·조정",
@@ -99,6 +104,8 @@
     await taskList();
     renderMemory();
     await connections();
+    await loadFiles(false);
+    await loadProduction();
   }
   async function taskList() {
     const list = $("#tasks");
@@ -247,42 +254,177 @@
     for (const id of ["memory-form", "file-upload"])
       for (const input of $("#" + id).elements)
         input.disabled = space.permission === "VIEWER";
+  }
+  async function loadFiles(append = false) {
+    const page = await api(
+      `workspaces/${encodeURIComponent(state.workspace)}/files?limit=100&beforeId=${encodeURIComponent(append ? state.filesBefore : "")}&query=${encodeURIComponent($("#file-query").value)}`,
+    );
+    state.fileItems = append ? [...state.fileItems, ...page.items] : page.items;
+    state.filesBefore = page.nextBeforeId;
+    $("#file-count").textContent =
+      `${state.fileItems.length} / ${page.totalCount}개 열람 · 새 등록은 DRAFT`;
+    $("#files-more").hidden = !page.nextBeforeId;
+    renderFiles();
+  }
+  function imageDetails(file) {
+    return `${file.source_path || file.filename} · ${file.version_label || "신규"} · SHA256 ${file.sha256} · ${file.source_approval === "APPROVED_REFERENCE" ? "기존 승인 참조(출처) · 신규 등록 DRAFT" : file.status || "DRAFT"}`;
+  }
+  function showImage(file) {
+    $("#image-title").textContent = file.filename;
+    $("#image-large").src =
+      `/api/collaboration/files/${encodeURIComponent(file.id)}/content?inline=true`;
+    $("#image-large").alt = file.filename;
+    $("#image-details").textContent = imageDetails(file);
+    $("#image-dialog").showModal();
+  }
+  function selectCompare(file) {
+    const index = state.compare.findIndex((x) => x.id === file.id);
+    if (index >= 0) state.compare.splice(index, 1);
+    else {
+      if (state.compare.length === 2) state.compare.shift();
+      state.compare.push(file);
+    }
+    $("#compare-count").textContent = `${state.compare.length}/2 선택`;
+    $("#compare-open").disabled = state.compare.length !== 2;
+  }
+  async function showDocument(file) {
+    $("#document-title").textContent = file.filename;
+    $("#document-details").textContent = imageDetails(file);
+    const view = $("#document-view");
+    view.replaceChildren();
+    if (file.extension === "html") {
+      const frame = node("iframe");
+      frame.title = file.filename;
+      frame.setAttribute("sandbox", "");
+      frame.src = `/api/collaboration/files/${encodeURIComponent(file.id)}/preview`;
+      view.append(frame);
+    } else if (file.extension === "pdf") {
+      const info = await api(`files/${encodeURIComponent(file.id)}/pdf-info`);
+      let page = 1;
+      const label = node("p"),
+        controls = node("div"),
+        prev = node("button", "이전 페이지"),
+        next = node("button", "다음 페이지"),
+        image = node("img");
+      image.alt = file.filename + " PDF 페이지";
+      const update = () => {
+        label.textContent = `${page} / ${info.pages}쪽 · 원본 SHA 보존`;
+        image.src = `/api/collaboration/files/${encodeURIComponent(file.id)}/pdf-page?page=${page}`;
+        prev.disabled = page === 1;
+        next.disabled = page === info.pages;
+      };
+      prev.onclick = () => {
+        page--;
+        update();
+      };
+      next.onclick = () => {
+        page++;
+        update();
+      };
+      controls.className = "actions";
+      controls.append(prev, label, next);
+      view.append(controls, image);
+      update();
+    } else {
+      const result = await api(`files/${encodeURIComponent(file.id)}/text`),
+        content = node("article");
+      content.className = "document-text";
+      let table = null,
+        body = null;
+      for (const line of (result.text || result.note || "").split("\n")) {
+        if (line.startsWith("|") && line.endsWith("|")) {
+          if (/^\|[\s:|\-]+\|$/.test(line)) continue;
+          const cells = line
+              .split("|")
+              .slice(1, -1)
+              .map((c) => c.trim()),
+            row = node("tr");
+          if (!table) {
+            table = node("table");
+            const head = node("thead");
+            for (const cell of cells) row.append(node("th", cell));
+            head.append(row);
+            body = node("tbody");
+            table.append(head, body);
+            content.append(table);
+          } else {
+            for (const cell of cells) row.append(node("td", cell));
+            body.append(row);
+          }
+          continue;
+        }
+        table = null;
+        const heading = /^(#{1,6}) (.*)$/.exec(line);
+        content.append(
+          node(
+            heading ? "h" + Math.min(heading[1].length + 1, 6) : "p",
+            heading ? heading[2] : line || " ",
+          ),
+        );
+      }
+      view.append(content);
+    }
+    $("#document-dialog").showModal();
+  }
+  function renderFiles() {
     const list = $("#shared-files");
     list.replaceChildren();
-    for (const file of space.files) {
+    for (const file of state.fileItems) {
       const card = node("article");
       card.className = "file-card";
+      card.dataset.fileId = file.id;
       card.append(
         node("h3", file.filename),
         node(
           "p",
-          `${file.status} · ${file.registered_agent || "인간 팀원"} · 사용자 ${file.registered_by} · ${file.created_at}`,
+          `${file.status} · 등록 ${file.registered_agent || "인간 팀원"} · 사용자 ${file.registered_by} · ${file.created_at}`,
         ),
         node("p", `SHA256 ${file.sha256}`),
       );
+      if (file.source_path)
+        card.append(
+          node("small", file.source_path),
+          node(
+            "p",
+            `${file.version_label} · ${file.category} · ${file.source_approval === "APPROVED_REFERENCE" ? "기존 승인 참조(출처) · 정본 포인터 불변" : "출처 보존·정본 미검수"}`,
+          ),
+        );
+      if (file.extension === "md5")
+        card.append(
+          node("p", "검증용 메타자료 · 이미지 아님 · 원본 byte 보존"),
+        );
       if (file.parent_id)
         card.append(node("p", "수정 제안 원본 ID: " + file.parent_id));
       const link = node("a", "원본 내려받기");
       link.href = `/api/collaboration/files/${encodeURIComponent(file.id)}/content`;
       card.append(link, node("small", "파일 ID: " + file.id));
       if (file.extension === "png") {
-        const img = document.createElement("img");
+        const img = node("img");
         img.src = `/api/collaboration/files/${encodeURIComponent(file.id)}/content?inline=true`;
         img.alt = file.filename;
         img.loading = "lazy";
         card.append(img);
-      } else if (["md", "json", "html", "pdf"].includes(file.extension)) {
-        const button = node("button", "텍스트 열람");
-        button.onclick = () =>
+        const zoom = node("button", "이미지 확대"),
+          compare = node("button", "비교에 추가");
+        zoom.onclick = () => showImage(file);
+        compare.onclick = () => selectCompare(file);
+        card.append(zoom, compare);
+      } else if (
+        ["md", "md5", "json", "html", "pdf"].includes(file.extension)
+      ) {
+        const text = node("button", "텍스트 열람"),
+          viewer = node("button", "문서 보기");
+        text.onclick = () =>
           action(async () => {
             const data = await api(`files/${encodeURIComponent(file.id)}/text`),
               pre = $("#file-preview");
             pre.hidden = false;
             pre.textContent = data.text || data.note;
           });
-        card.append(button);
+        viewer.onclick = () => action(() => showDocument(file));
+        card.append(text, viewer);
       }
-      if (file.status === "DRAFT" && space.permission === "MANAGER")
+      if (file.status === "DRAFT" && state.space.permission === "MANAGER")
         for (const decision of ["APPROVED", "REJECTED"]) {
           const b = node(
             "button",
@@ -298,6 +440,84 @@
           card.append(b);
         }
       list.append(card);
+    }
+  }
+  async function loadProduction() {
+    const result = await api(
+      `workspaces/${encodeURIComponent(state.workspace)}/production`,
+    );
+    state.cuts = result.cuts;
+    state.cutPage = 0;
+    $("#production-board").hidden = !state.cuts.length;
+    const select = $("#cut-page");
+    select.replaceChildren();
+    for (let i = 0; i < state.cuts.length; i += 12) {
+      const option = node(
+        "option",
+        `${i + 1}–${Math.min(i + 12, state.cuts.length)}컷`,
+      );
+      option.value = String(i / 12);
+      select.append(option);
+    }
+    $("#production-summary").textContent = result.batches.length
+      ? `등록 ${result.batches[0].registered_files}개 · 출처 ${result.batches[0].source_ref} · 이미지 원본/설명/버전 이력 보존`
+      : "";
+    renderCuts();
+  }
+  function renderCuts() {
+    const grid = $("#cut-grid");
+    grid.replaceChildren();
+    $("#cut-page").value = String(state.cutPage);
+    $("#cuts-prev").disabled = state.cutPage === 0;
+    $("#cuts-next").disabled = (state.cutPage + 1) * 12 >= state.cuts.length;
+    for (const cut of state.cuts.slice(
+      state.cutPage * 12,
+      state.cutPage * 12 + 12,
+    )) {
+      const record = JSON.parse(cut.record_json),
+        card = node("article"),
+        file = {
+          id: cut.panel_file_id,
+          filename: `컷 ${cut.cut_number}`,
+          sha256: cut.sha256,
+          source_path: cut.source_path,
+          version_label: cut.version_label,
+          status: "DRAFT",
+        };
+      card.className = "cut-card";
+      card.dataset.cut = String(cut.cut_number);
+      const img = node("img");
+      img.src = `/api/collaboration/files/${encodeURIComponent(cut.panel_file_id)}/content?inline=true`;
+      img.alt = `EP01 컷 ${cut.cut_number} 러프 콘티`;
+      img.loading = "lazy";
+      card.append(
+        node(
+          "h3",
+          `컷 ${String(cut.cut_number).padStart(2, "0")} · ${record.beat || ""} · ${record.tc_start || ""}–${record.tc_end || ""}`,
+        ),
+        img,
+        node("p", record.composition_v3_screen_text || ""),
+        node(
+          "p",
+          "연출: " +
+            (record.action_expression_r5 || record.action_expression_r14 || ""),
+        ),
+        node(
+          "p",
+          "대사: " +
+            JSON.stringify(record.dialogue_r5 || record.dialogue || []),
+        ),
+        node(
+          "small",
+          "출처 r5 설명 + 보존 러프 / 정식 원작 미대조 / PASS 미확정",
+        ),
+      );
+      const zoom = node("button", "컷 확대"),
+        compare = node("button", "비교에 추가");
+      zoom.onclick = () => showImage(file);
+      compare.onclick = () => selectCompare(file);
+      card.append(zoom, compare);
+      grid.append(card);
     }
   }
   async function connections() {
@@ -334,6 +554,8 @@
     action(async () => {
       state.workspace = $("#workspace").value;
       state.task = null;
+      state.compare = [];
+      $("#file-query").value = "";
       $("#task-panel").replaceChildren(
         node("h2", "프로젝트 작업을 선택하세요"),
       );
@@ -432,6 +654,38 @@
       await refresh();
     });
   };
+  $("#files-more").onclick = () => action(() => loadFiles(true));
+  $("#file-search").onsubmit = (e) => {
+    e.preventDefault();
+    action(() => loadFiles(false));
+  };
+  $("#cut-page").onchange = () => {
+    state.cutPage = Number($("#cut-page").value);
+    renderCuts();
+  };
+  $("#cuts-prev").onclick = () => {
+    state.cutPage--;
+    renderCuts();
+  };
+  $("#cuts-next").onclick = () => {
+    state.cutPage++;
+    renderCuts();
+  };
+  $("#compare-open").onclick = () => {
+    const list = $("#compare-images");
+    list.replaceChildren();
+    for (const file of state.compare) {
+      const figure = node("figure"),
+        img = node("img");
+      img.src = `/api/collaboration/files/${encodeURIComponent(file.id)}/content?inline=true`;
+      img.alt = file.filename;
+      figure.append(img, node("figcaption", imageDetails(file)));
+      list.append(figure);
+    }
+    $("#compare-dialog").showModal();
+  };
+  for (const b of document.querySelectorAll(".dialog-close"))
+    b.onclick = () => b.closest("dialog").close();
   $("#refresh").onclick = () =>
     action(async () => {
       await refresh();

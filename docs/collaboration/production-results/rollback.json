@@ -1,0 +1,8 @@
+{
+  "existingApprovedStatusUnchanged" : true,
+  "injectedActualMySqlFailure" : true,
+  "partialBatchRows" : 0,
+  "existingApprovedBytesUnchanged" : true,
+  "orphanNewBlobs" : 0,
+  "retryRegisteredFiles" : 536
+}

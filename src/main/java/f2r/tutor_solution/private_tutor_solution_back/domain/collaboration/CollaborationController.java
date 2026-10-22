@@ -14,6 +14,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Controller
 public class CollaborationController {
   private final CollaborationService service;
+  private final CollaborationSources sources;
+  private final CollaborationPreview preview;
   private final CollaborationWorkspaces spaces;
   private final CollaborationFiles files;
   private final CollaborationMcp connector;
@@ -23,6 +25,8 @@ public class CollaborationController {
 
   public CollaborationController(
       CollaborationService service,
+      CollaborationSources sources,
+      CollaborationPreview preview,
       CollaborationWorkspaces spaces,
       CollaborationFiles files,
       CollaborationMcp connector,
@@ -30,6 +34,8 @@ public class CollaborationController {
       StudioService studio,
       @Value("${app.collaboration.public-base-url:https://feel2real.co.kr}") String origin) {
     this.service = service;
+    this.sources = sources;
+    this.preview = preview;
     this.spaces = spaces;
     this.files = files;
     this.connector = connector;
@@ -210,6 +216,57 @@ public class CollaborationController {
   Object workspaceDetail(
       @AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
     return spaces.snapshot(p, id);
+  }
+
+  @GetMapping("/api/collaboration/workspaces/{id}/files")
+  @ResponseBody
+  Object filePage(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestParam(defaultValue = "") String beforeId,
+      @RequestParam(defaultValue = "100") int limit,
+      @RequestParam(defaultValue = "") String query) {
+    return sources.files(p, id, beforeId, limit, query);
+  }
+
+  @GetMapping("/api/collaboration/workspaces/{id}/production")
+  @ResponseBody
+  Object production(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
+    return sources.production(p, id);
+  }
+
+  @GetMapping("/api/collaboration/files/{id}/preview")
+  @ResponseBody
+  ResponseEntity<String> htmlPreview(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
+    return ResponseEntity.ok()
+        .header("X-Content-Type-Options", "nosniff")
+        .header(
+            "Content-Security-Policy",
+            "sandbox; default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri"
+                + " 'none'; form-action 'none'; frame-ancestors 'self'")
+        .contentType(
+            new org.springframework.http.MediaType(
+                "text", "html", java.nio.charset.StandardCharsets.UTF_8))
+        .body(preview.html(p, id));
+  }
+
+  @GetMapping("/api/collaboration/files/{id}/pdf-info")
+  @ResponseBody
+  Object pdfInfo(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
+    return preview.pdfInfo(p, id);
+  }
+
+  @GetMapping("/api/collaboration/files/{id}/pdf-page")
+  @ResponseBody
+  ResponseEntity<byte[]> pdfPage(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestParam(defaultValue = "1") int page) {
+    return ResponseEntity.ok()
+        .header("X-Content-Type-Options", "nosniff")
+        .contentType(org.springframework.http.MediaType.IMAGE_PNG)
+        .body(preview.pdf(p, id, page));
   }
 
   record Memory(String kind, String body) {}

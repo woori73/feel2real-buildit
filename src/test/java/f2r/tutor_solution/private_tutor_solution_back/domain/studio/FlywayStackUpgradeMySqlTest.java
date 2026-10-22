@@ -8,7 +8,7 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-/** Isolated MySQL only: V1093 -> V1094 -> V1095 -> V1097 and fresh schema, no repair/clean. */
+/** Isolated MySQL only: V1093 -> V1094 -> V1095 -> V1098 and fresh schema, no repair/clean. */
 @EnabledIfEnvironmentVariable(named = "F2R_STUDIO_MYSQL_TEST", matches = "true")
 class FlywayStackUpgradeMySqlTest {
   private static final String URL = "jdbc:mysql://127.0.0.1:" + testPort() + "/";
@@ -67,9 +67,9 @@ class FlywayStackUpgradeMySqlTest {
     stepC.validate();
     assertThat(stepC.info().current().getVersion().toString()).isEqualTo("1095");
     var collaboration = flyway(upgrade, null);
-    assertThat(collaboration.migrate().migrationsExecuted).isEqualTo(2);
+    assertThat(collaboration.migrate().migrationsExecuted).isEqualTo(3);
     collaboration.validate();
-    assertThat(collaboration.info().current().getVersion().toString()).isEqualTo("1097");
+    assertThat(collaboration.info().current().getVersion().toString()).isEqualTo("1098");
     var all = flyway(fresh, null);
     assertThat(all.migrate().migrationsExecuted).isGreaterThanOrEqualTo(190);
     all.validate();

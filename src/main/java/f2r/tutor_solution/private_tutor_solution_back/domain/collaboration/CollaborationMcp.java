@@ -18,6 +18,7 @@ public class CollaborationMcp {
   private final CollaborationWorkspaces spaces;
   private final CollaborationService tasks;
   private final CollaborationFiles files;
+  private final CollaborationSources sources;
 
   @Value("${app.collaboration.connector-append-enabled:false}")
   private boolean appendEnabled;
@@ -26,11 +27,13 @@ public class CollaborationMcp {
       JdbcTemplate db,
       CollaborationWorkspaces spaces,
       CollaborationService tasks,
-      CollaborationFiles files) {
+      CollaborationFiles files,
+      CollaborationSources sources) {
     this.db = db;
     this.spaces = spaces;
     this.tasks = tasks;
     this.files = files;
+    this.sources = sources;
   }
 
   public record Content(List<Map<String, Object>> blocks) {}
@@ -184,6 +187,10 @@ public class CollaborationMcp {
                   string(),
                   "query",
                   string(),
+                  "filesBeforeId",
+                  string(),
+                  "filesQuery",
+                  string(),
                   "beforeId",
                   integer(),
                   "offset",
@@ -317,7 +324,7 @@ public class CollaborationMcp {
         var meta = files.metadata(p, id);
         if (!meta.get("workspace_id").equals(workspace)) throw error(403, "연결 프로젝트의 파일만 열람하세요.");
         String ext = meta.get("extension").toString();
-        if (Set.of("md", "json", "html", "pdf").contains(ext)) return files.text(p, id);
+        if (Set.of("md", "json", "html", "pdf", "md5").contains(ext)) return files.text(p, id);
         byte[] bytes = files.bytes(p, id);
         if (ext.equals("png") && bytes.length <= 524288)
           return new Content(
@@ -354,6 +361,13 @@ public class CollaborationMcp {
         return task;
       }
       if (args.has("query")) return spaces.search(p, workspace, arg(args, "query", 200));
+      if (args.has("filesBeforeId") || args.has("filesQuery"))
+        return sources.files(
+            p,
+            workspace,
+            args.path("filesBeforeId").asText(""),
+            100,
+            args.path("filesQuery").asText(""));
       return Map.of(
           "workspace",
           workspacePage(p, workspace, args.path("beforeId").asLong(0)),

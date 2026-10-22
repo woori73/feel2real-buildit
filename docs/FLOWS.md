@@ -1012,3 +1012,5 @@ MCP의 원본 바이너리는 서비스 scope + 기존 사용자 권한 + 별도
 사용자 프로젝트/팀원 선택→작업 등록+참여 AI 직접 선택→자료/기억 공유→사용자 OAuth 범위 동의+연결의 AI/프로젝트 별도 지정→인계 시작 확인→WAITING_AGENT. 선택된 구독 앱/공식 실행 환경이 자신의 대기열과 공동 이력을 읽고 신규 문서/파일/수정 제안을 DRAFT로 추가→동일 요청 중복 차단→다음 선택 역할의 대기열/공동 이력 자동 갱신. 서버가 앱의 대화 또는 유료 모델 API를 실행하지 않는다.
 
 Claude CHANGES_REQUESTED→선택된 Codex→Claude 재검수. Codex 미선택/인계 상한이면 BLOCKED. 인간 프로젝트 EDITOR는 공동 검수/기억을 남기고 작업 소유자/ADMIN은 version 확인 후 중단·재개·작업 결과 승인을 수행한다. 파일은 MANAGER가 후보 검수하며 승인 정본 포인터·원본 byte는 보존한다. AI 도구는 사용자 승인·삭제·정본 교체·배포 권한이 없다. [구현 보고서](collaboration/README.md), [실제 제품 연결 검증표](collaboration/CONNECTORS.md).
+
+실제 제작 자료 등록은 고정 #863 blob 추출→읽기 전용 dry-run(SHA/건수/참조/68컷)→local-only 원자 배치→536개 DRAFT와 원본 경로/버전/출처 승인 기록→68컷 러프·설명 보드→인계3문서를 공동 기억에 표시 순서다. 같은 workspace 재실행은 새 자료/이력을 추가하지 않고, 실패는 신규 blob과 DB 배치를 함께 rollback한다. 기존 승인 원본/포인터를 유지한다. [실자료 적재 결과](collaboration/PRODUCTION_IMPORT.md).

@@ -2,6 +2,13 @@
   "environment": "Fresh isolated MySQL8.4 on loopback3320 for legacy studio/MCP, isolated3319 for collaboration; actual Spring/OAuth/HTTP, no inference clients",
   "suites": [
     {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.collaboration.CollaborationProductionMySqlTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
       "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.collaboration.CollaborationMySqlTest",
       "tests": 13,
       "failures": 0,
@@ -80,5 +87,11 @@
     }
   ],
   "actualExternalModelCalls": 0,
-  "actualChatGptClaudeProductLogin": false
+  "actualChatGptClaudeProductLogin": false,
+  "totals": {
+    "tests": 77,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
 }

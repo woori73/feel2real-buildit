@@ -1840,3 +1840,11 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - `ai_collaboration_submissions` / `CollaborationSubmissionEntity`: 복합키(grant,requestId), task FK/본문 SHA/결과JSON. 동시·동일 재시도는1회, 내용 변경은409.
 
 원본/정본/승인 이력 물리 삭제 API와 cascade delete를 만들지 않는다. 신규 DB 구조는 migration+immutable ORM 계약+이 문서를 함께 갱신한다. 적용된 V1096을 수정하지 않고 V1097로 확장했다. 운영 DB에는 적용하지 않았다. [구현/검증](collaboration/README.md).
+
+### 실제 제작 자료 출처 (V1098)
+
+- `ai_collaboration_imports` / `CollaborationImportEntity`: workspace FK, source_ref/manifest_sha/inventory_sha, 예상/실제 등록 수, 등록자/시각/상태. `(workspace,source_ref,inventory_sha)` 유일키로 동일 배치 재실행을 식별한다.
+- `ai_collaboration_sources` / `CollaborationSourceEntity`: import/file FK, 원본 경로(배치 내 유일), 버전/분류/기존 출처 승인 상태. 동일 SHA의 여러 원본 경로/버전을 별도 등록하고 blob만 재사용한다. source_approval은 앱 DRAFT/APPROVED 상태 및 기존 studio 정본 포인터와 별개다.
+- `ai_collaboration_storyboard_cuts` / `CollaborationCutEntity`: `(import_id,cut_number)` 복합키, 보존 패널 FK, 원문JSON, `NOT_COMPARED`/`pass_confirmed=false`. 원문 qa_status를 정식 PASS로 승격하지 않는다. 신규536개는 DRAFT, 정식 대조0/68·PASS0을 유지한다.
+
+기존 V1094~1097 파일은 수정하지 않았다. nullable/새 테이블만 추가하고 원본/승인 포인터/복원 이력을 바꾸지 않는다. 임포터는 local+명시적 flag+지정 loopback 격리 DB+LocalFileStorage로 제한되며 운영 HTTP/MCP 쓰기 경로는 없다. [무결성/검증](collaboration/PRODUCTION_IMPORT.md).

@@ -102,6 +102,28 @@
           <p>지시·후보·검수·다음 담당자·사용자 승인 이력을 보존합니다.</p>
         </section>
       </section>
+      <section id="production-board" class="panel" hidden>
+        <p class="eyebrow">EP01 · PRESERVED SOURCE</p>
+        <h2>68컷 콘티 · 실제 제작 자료</h2>
+        <p id="production-summary"></p>
+        <p class="notice">
+          러프 콘티와 제작 산출물입니다. 정식 원작 대조 0/68 · PASS 확정 0컷.
+          인계본의 내부 정합 표시는 정본 승인이 아닙니다.
+        </p>
+        <div class="actions">
+          <button id="cuts-prev" type="button">이전 컷</button
+          ><label for="cut-page">컷 구간</label
+          ><select id="cut-page"></select
+          ><button id="cuts-next" type="button">다음 컷</button>
+        </div>
+        <div
+          id="cut-grid"
+          class="cut-grid"
+          role="region"
+          tabindex="0"
+          aria-label="이미지와 대사·연출 콘티 보드"
+        ></div>
+      </section>
       <section class="panel memory-panel">
         <h2>프로젝트 기억 · 결정 · 진행</h2>
         <form id="memory-form">
@@ -142,18 +164,30 @@
         </p>
         <form id="file-upload">
           <label for="upload-file"
-            >새 첨부 (PDF·HTML·JSON·MD·ZIP·PNG·MP4, 최대32MiB)</label
+            >새 첨부 (PDF·HTML·JSON·MD·ZIP·PNG·MP4·MD5 메타자료,
+            최대32MiB)</label
           ><input
             id="upload-file"
             type="file"
-            accept=".pdf,.html,.json,.md,.zip,.png,.mp4"
+            accept=".pdf,.html,.json,.md,.zip,.png,.mp4,.md5"
             required
           /><label for="parent-file">수정 제안의 부모 파일 ID (선택)</label
           ><input id="parent-file" maxlength="36" /><button>
             새 DRAFT 첨부
           </button>
         </form>
+        <form id="file-search">
+          <label for="file-query">파일 이름·원본 경로·버전 검색</label
+          ><input id="file-query" maxlength="200" /><button>자료 찾기</button>
+        </form>
+        <p id="file-count" role="status"></p>
+        <div class="actions">
+          <button id="compare-open" type="button" disabled>
+            선택 이미지 비교</button
+          ><span id="compare-count" aria-live="polite">0/2 선택</span>
+        </div>
         <div id="shared-files" class="shared-files"></div>
+        <button id="files-more" type="button" hidden>다음 자료 더 보기</button>
         <pre id="file-preview" class="instruction" hidden></pre>
       </section>
       <section class="panel">
@@ -202,6 +236,23 @@
         <div id="members"></div>
       </section>
     </main>
+    <dialog id="image-dialog" aria-labelledby="image-title">
+      <button type="button" class="dialog-close">닫기</button>
+      <h2 id="image-title"></h2>
+      <img id="image-large" alt="" />
+      <p id="image-details"></p>
+    </dialog>
+    <dialog id="compare-dialog" aria-labelledby="compare-title">
+      <button type="button" class="dialog-close">닫기</button>
+      <h2 id="compare-title">원본 이미지 비교</h2>
+      <div id="compare-images" class="compare-images"></div>
+    </dialog>
+    <dialog id="document-dialog" aria-labelledby="document-title">
+      <button type="button" class="dialog-close">닫기</button>
+      <h2 id="document-title"></h2>
+      <p id="document-details"></p>
+      <div id="document-view"></div>
+    </dialog>
     <template id="detail-template"
       ><article>
         <p class="eyebrow">SHARED HANDOFF</p>

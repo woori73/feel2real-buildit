@@ -55,8 +55,8 @@ public class CollaborationFiles {
   static String extension(String name) {
     int dot = name.lastIndexOf('.');
     String ext = dot < 0 ? "" : name.substring(dot + 1).toLowerCase(Locale.ROOT);
-    if (!Set.of("pdf", "html", "json", "md", "zip", "png", "mp4").contains(ext))
-      throw error(400, "PDF·HTML·JSON·MD·ZIP·PNG·MP4만 가능합니다.");
+    if (!Set.of("pdf", "html", "json", "md", "zip", "png", "mp4", "md5").contains(ext))
+      throw error(400, "PDF·HTML·JSON·MD·ZIP·PNG·MP4·MD5만 가능합니다. MD5는 검증 메타자료입니다.");
     return ext;
   }
 
@@ -72,6 +72,13 @@ public class CollaborationFiles {
     var safe = new LinkedHashMap<>(file);
     safe.remove("storage_key");
     safe.remove("source_grant_id");
+    var provenance =
+        db.queryForList(
+            "SELECT s.source_path,s.version_label,s.category,s.source_approval,i.source_ref FROM"
+                + " ai_collaboration_sources s JOIN ai_collaboration_imports i ON i.id=s.import_id"
+                + " WHERE s.file_id=?",
+            id);
+    if (!provenance.isEmpty()) safe.putAll(provenance.getFirst());
     return safe;
   }
 
@@ -108,7 +115,7 @@ public class CollaborationFiles {
     try {
       temp = Files.createTempFile("f2r-collab-validate-", "." + ext);
       Files.write(temp, bytes);
-      StudioService.validateType(temp, ext);
+      StudioService.validateType(temp, ext.equals("md5") ? "md" : ext);
     } catch (IOException e) {
       throw error(422, "첨부 형식 검사 실패");
     } finally {
@@ -409,7 +416,7 @@ public class CollaborationFiles {
           extractor.setEndPage(Math.min(pdf.getNumberOfPages(), 100));
           content = extractor.getText(pdf);
         }
-      } else if (Set.of("md", "json", "html").contains(ext))
+      } else if (Set.of("md", "json", "html", "md5").contains(ext))
         content = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
       else return Map.of("metadata", file, "note", "이미지·영상·ZIP 원본은 파일 열람으로 확인하세요.");
     } catch (IOException e) {
