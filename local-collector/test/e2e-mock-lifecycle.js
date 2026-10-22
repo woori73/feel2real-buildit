@@ -9,6 +9,7 @@
 // click is stood in for (see testHooks.onWaitingForAuth in collector.js), both clearly marked.
 import path from 'node:path';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { createFakeBackend, VALID_TOKEN } from './fakeBackend.js';
@@ -49,6 +50,7 @@ async function main() {
 
   // 2) real task, real visible browser, real lifecycle.
   config.collectorToken = VALID_TOKEN;
+  config.fileKeyBase64 = crypto.randomBytes(32).toString('base64');
   const mockSite = await startMockSite();
   const taskId = queueTask({
     sourceCode: 'CARD_COMPANY_TEST',
@@ -66,6 +68,7 @@ async function main() {
     once: true,
     targetBaseUrl: `http://localhost:${MOCK_SITE_PORT}`,
     testHooks: {
+      async onCollectionConsent() { return true; },
       async onWaitingForAuth(page) {
         sawWaitingForAuth = getTask(taskId).status === 'WAITING_FOR_USER_AUTH';
         console.log(`[e2e] server-observed status at handoff: ${getTask(taskId).status}`);
@@ -78,6 +81,22 @@ async function main() {
     },
   });
 
+  // A second freshly opened session may authenticate, but refusal must stop before downloading.
+  const refusedId = queueTask({ sourceCode: 'CARD_COMPANY_TEST', requestedFrom: '2026-10-01', requestedTo: '2026-10-22' });
+  let freshLogin = false;
+  let externalBlocked = false;
+  await pollAndRun({ once: true, targetBaseUrl: `http://localhost:${MOCK_SITE_PORT}`, testHooks: {
+    async onWaitingForAuth(page) {
+      freshLogin = await page.locator('#loginBtn').isVisible();
+      try { await page.goto('http://example.invalid/blocked'); }
+      catch { externalBlocked = true; }
+      await page.goto(`http://localhost:${MOCK_SITE_PORT}/`);
+      await page.click('#loginBtn');
+    },
+    async onCollectionConsent() { return false; },
+  } });
+  const refusalStopped = getTask(refusedId).status === 'FAILED'
+      && getTask(refusedId).downloadedFilename === null;
   mockSite.kill();
 
   const finalTask = getTask(taskId);
@@ -85,12 +104,26 @@ async function main() {
 
   const files = fs.existsSync(downloadDir) ? fs.readdirSync(downloadDir) : [];
   const savedFile = files[0] ? path.join(downloadDir, files[0]) : null;
+  const envelope = savedFile ? fs.readFileSync(savedFile) : Buffer.alloc(0);
+  let decrypted = Buffer.alloc(0);
+  if (savedFile) {
+    const decipher = crypto.createDecipheriv('aes-256-gcm',
+      Buffer.from(config.fileKeyBase64, 'base64'), envelope.subarray(1, 13));
+    decipher.setAAD(Buffer.from(path.basename(savedFile)));
+    decipher.setAuthTag(envelope.subarray(13, 29));
+    decrypted = Buffer.concat([decipher.update(envelope.subarray(29)), decipher.final()]);
+  }
 
   const results = {
     unauthorizedRejected,
     sawWaitingForAuth,
     resumedSameSession: finalTask.status === 'COMPLETED',
     downloadSavedLocally: !!savedFile && fs.existsSync(savedFile),
+    encryptedOriginalVerified: decrypted.length === finalTask.downloadedSize
+        && crypto.createHash('sha256').update(decrypted).digest('hex') === finalTask.downloadedSha256
+        && !envelope.includes(Buffer.from('거래일')),
+    freshSessionAndConsentRefusal: freshLogin && refusalStopped && files.length === 1,
+    externalNavigationBlocked: externalBlocked,
     metadataOnlyReported: !!finalTask.downloadedSha256 && !!finalTask.downloadedFilename
         && typeof finalTask.downloadedSize === 'number',
     finalStatus: finalTask.status,
@@ -104,7 +137,9 @@ async function main() {
   console.log(JSON.stringify(results, null, 2));
 
   const allPass = results.unauthorizedRejected && results.sawWaitingForAuth
-      && results.resumedSameSession && results.downloadSavedLocally && results.metadataOnlyReported;
+      && results.resumedSameSession && results.downloadSavedLocally && results.metadataOnlyReported
+      && results.encryptedOriginalVerified && results.freshSessionAndConsentRefusal
+      && results.externalNavigationBlocked;
   console.log(allPass ? '\nE2E LIFECYCLE: PASS' : '\nE2E LIFECYCLE: FAIL');
   process.exit(allPass ? 0 : 1);
 }

@@ -90,6 +90,6 @@ export function createFakeBackend({ port }) {
   });
 
   return new Promise((resolve) => {
-    server.listen(port, () => resolve({ server, queueTask, getTask }));
+    server.listen(port, '127.0.0.1', () => resolve({ server, queueTask, getTask }));
   });
 }

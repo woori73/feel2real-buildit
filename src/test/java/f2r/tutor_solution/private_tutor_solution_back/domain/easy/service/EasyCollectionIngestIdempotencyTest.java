@@ -292,4 +292,48 @@ class EasyCollectionIngestIdempotencyTest {
     assertThat(connections).hasSize(1); // 동일 business+label은 연결 재사용
     assertThat(connections.values().iterator().next().getLastSuccessAt()).isNotNull();
   }
+
+  @Test
+  void givenFinancialArchive_whenHandoffRetried_thenSameRunAndNoLedgerUntilConfirm() {
+    // given
+    var rows = new EasyCsvFileAdapter().parse(csv(ROW_A, ROW_B), "sample.csv");
+    String archive = java.util.UUID.randomUUID().toString();
+    String scope = "FIN_0123456789abcdef01234567";
+    // when
+    var first = service.ingestFinancialDraft(BIZ, archive, scope, rows);
+    var retry = service.ingestFinancialDraft(BIZ, archive, scope, rows);
+    // then
+    assertThat(first.run().acceptedCount()).isEqualTo(2);
+    assertThat(retry.run().runId()).isEqualTo(first.run().runId());
+    assertThat(runs).hasSize(1);
+    assertThat(pipeline.txnCount()).isZero();
+    pipeline.importService.confirm(first.run().importBatchId(), null);
+    assertThat(pipeline.txnCount()).isEqualTo(2);
+    org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+        pipeline.importService.confirm(first.run().importBatchId(), null))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("확정할 행이 없습니다");
+    assertThat(pipeline.txnCount()).isEqualTo(2);
+  }
+
+  @Test
+  void givenIdenticalNoIdTransactionsInDifferentAccounts_whenCollected_thenDoNotCollapseRawRows() {
+    var rows = new EasyCsvFileAdapter().parse(csv("2026-10-01,지출,12000,SAMPLE,SAMPLE,계좌이체,"), "sample.csv");
+    service.ingestFinancialDraft(BIZ, java.util.UUID.randomUUID().toString(), "FIN_0123456789abcdef01234567", rows);
+    service.ingestFinancialDraft(BIZ, java.util.UUID.randomUUID().toString(), "FIN_abcdef0123456789abcdef01", rows);
+    assertThat(raws).hasSize(2);
+    assertThat(pipeline.rows).hasSize(2);
+    assertThat(pipeline.txnCount()).isZero();
+  }
+
+  @Test
+  void givenLegacyCsvNamedLikeArchive_whenFinancialHandoffRuns_thenNeverAdoptUnrelatedRun() {
+    String archive = java.util.UUID.randomUUID().toString();
+    var legacy = service.ingestCsv(BIZ, "default", "financial-" + archive, csv(ROW_A));
+    var rows = new EasyCsvFileAdapter().parse(csv(ROW_B), "sample.csv");
+    var financial = service.ingestFinancialDraft(BIZ, archive, "FIN_0123456789abcdef01234567", rows);
+    assertThat(financial.run().runId()).isNotEqualTo(legacy.run().runId());
+    assertThat(financial.run().adapterCode()).isEqualTo("FINANCIAL_FILE");
+    assertThat(financial.run().acceptedCount()).isEqualTo(1);
+    assertThat(pipeline.txnCount()).isZero();
+  }
 }
