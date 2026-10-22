@@ -88,7 +88,10 @@ class EasyV979CommunicationAccountTest {
         mock(EasyTransactionRepository.class),
         accountService,
         mappingRepository,
-        mock(EasyJournalService.class));
+        mock(EasyJournalService.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRunRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionApprovalRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService.class));
     
     // V978 기존 계정 seed
     seedAccount("EXPENSE_RENT", "임차료", 12);

@@ -4723,7 +4723,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /api/tutor/easy/imports/{batchId}/confirm?businessId={id}`: 선택 또는 전체 READY 행을 기존 장부·복식분개 엔진에 반영한다.
 - `DELETE /api/tutor/easy/imports/{batchId}?businessId={id}`: 미확정 STAGED 배치만 폐기한다.
 - 모든 batchId/rowId 조작은 principal → Academy → 연결 사업체 검증 뒤 `batch_id + business_id`로 재조회한다. 클라이언트 businessId는 권한 근거가 아니라 선택자다.
-- 기존 `/api/admin/easy/**` 계약은 변경하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.
+- 일반 CSV·이지샵 등록은 기존 경로를 유지한다. `easy_collection_runs.import_batch_id`로 연결된 수집 배치는 일반 ADMIN/TUTOR 확정·계정 변경·재분류·준비·폐기 경로에서 403이다. 수집 승인 전용 서비스만 서버 승인 행 잠금 아래 APPROVED/COMMIT_FAILED 상태, 요청자 사업체 권한, 승인·실행·연결·배치 사업체 일치를 재검증하여 확정한다. 원문 사업체 마커로 수집 승인 범위 밖 장부에 기록하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.
 
 
 ## Easy 원장 대화형 Agent API (V1073)
@@ -4866,3 +4866,47 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 |---|---|---|---|
 | GET | `/help/academycraft`, `/help/academycraft/{slug}` | ADMIN·TUTOR (비로그인 HTML은 로그인 안내 302) | 도움말 SSR. 역할 전용 문서는 타 역할 404 |
 | POST | `/api/help/academycraft/ask` | ADMIN·TUTOR | body `{question}`(≤300자). 읽기 전용 검색·안내, 사용자당 분당 20회(429). 응답 `{intent,text,sources[],grounded,writeBlocked}` |
+
+## 통합 AI 업무 비서 v1 (작업 A, 로컬 프로토타입)
+
+접두 `/api/dashboard/assistant/v1`, ADMIN·TUTOR만. 서비스에서 현재 DB 역할·학원/사업체·초안 생성자를 재확인한다. 모든 응답 `no-store`. 변경 요청은 Origin `http://localhost:8080` 또는 `https://feel2real.co.kr`만 허용한다.
+
+| 메서드 / 경로 | 계약 |
+|---|---|
+| `GET /progress` | 사용자 진행을 생성/조회. `{step,completed,firstVisit,version,role}` |
+| `PUT /progress` | `{step:0..5,completed,version}`. 완료는 step=5만. 오래된 버전 409 |
+| `GET /overview?academyId=&businessId=` | 선택한 허용 학원의 context/stats와 선택한 허용 사업체의 월 요약. 학원 연결 실패는 `academyUnavailable:true`, 재무 권한 실패는 403 |
+| `GET /catalog/{kind}?academyId=` | `students/classes/consultations/teachers`만. 기존 학원 API 조회 |
+| `POST /conversation` | `{academyId?,businessId?,message}`. 기존 Muse Spark(설정 시) 또는 명시적으로 표시된 규칙 분석 → 필수 값이 충분하면 서버 초안 생성, 부족하면 보완 제안. `{message,analysis,suggestion,drafts,issues,overview}`. 실제 업무 실행 없음 |
+| `POST /materials?academyId=&businessId=` | multipart `file` CSV/TXT 1~256KB. 학생 명단 CSV/업무 지시 TXT 최대 20행, 거래 CSV는 기존 import 분석. 초안 배열·행별 확인 사항 반환. 자료 내 ID/권한/승인 지시는 권한 근거가 아님. 모든 업무 범위 권한을 먼저 확인하고 각 초안을 개별 저장·승인 |
+| `POST /command` | `{message}` 1~2000자. `{operation,input,message}`의 수정 가능한 업무 제안만 반환. 실행 없음 |
+| `POST /drafts` | `{academyId?,businessId?,operation,input:{...}}`. 허용 필드만 받고 서버 초안 저장. 기본 쓰기 스위치 OFF면 503 |
+| `POST /imports?businessId=` | multipart `file` CSV ≤256KB. 기존 import 원본 행 보관 후 장부 반영 초안 생성 |
+| `GET /drafts` | 본인 최신 30개 중 현재 권한을 가진 범위. `{id,operation,academyId,businessId,preview,planHash,status,createdAt,expiresAt,result}` |
+| `POST /drafts/{uuid}/approve` | `{planHash}`. 본인·역할·소속/권한·해시·10분 만료·대상 지문을 재확인하고 DB 조건부 선점 후 기존 API 실행. 종료 성공 상태는 저장 결과만 재생 |
+| `POST /drafts/{uuid}/cancel` | `{planHash}`. 대기 초안 취소. 이미 승인/종료한 작업을 되돌리지 않음 |
+| `GET /audit` | 본인 최신 50개 이벤트. 입력 원문 없음 |
+
+업무: `STUDENT_CREATE/UPDATE`, `CLASS_CREATE/UPDATE/ASSIGN`, `ATTENDANCE_RECORD`, `CONSULT_CREATE/MESSAGE`, `LEDGER_ENTRY/IMPORT/ACCOUNT`. 거래 직접 입력은 기존 CSV import 초안으로 정규화한다. 실제 입력 필드는 서버의 allowlist와 화면 폼을 따른다. 사용자당 미처리 초안 최대 20개. 요청 범위 밖 필드·모호한 입력 400, 비로그인 401, 권한/출처 403, 타인 초안 404, 해시·상태·대상 변경 409 또는 종료 상태, 초안 한도 429다.
+
+학원 쓰기는 기존 AcademyCraft 원장 역할만 허용하고 기존 REST API·서비스의 소속 검사를 유지한다. 기존 AcademyCraft `/agent` 계획을 변경하거나 승인하지 않는다. 실행 후 재조회 결과에 따라 `VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN`을 기록하며, 불명확한 실행은 자동 재시도하지 않는다. 상세 입력 예시·상태·제한은 [분석 보고서](unified-ai-assistant/README.md).
+
+기존 `POST /api/dashboard/assistant`는 선택한 사업체의 **재무 해설 전용** Muse Spark 경로로 유지한다. 이 경로의 LLM 문맥에는 학원 출결 데이터가 없으며 새 통합 현황 조회와 구분한다.
+
+통합 비서의 초안 생성/만료 시각과 감사 시각은 UTC ISO-8601(`Z`)로 응답하고, 화면은 사용자의 시간대로 표시한다. 출결 입력 시각은 기존 AcademyCraft 계약대로 한국 현지 시각이다.
+
+통합 대화의 `buildit.unified-assistant.model-analysis-enabled` 기본값은 false이며 local에서만 true다. 기존 Muse Spark 전송 계층만 재사용한다. 모델 출력은 업무·필드 allowlist/타입/명시 ID 검증 후에도 승인 권한이 없으며, 실행은 기존 초안 승인 경로만 사용한다. 모델 미연결·잘못된 응답은 규칙 분석으로 처리했음을 알린다. 대화 입력 문장은 현재 브라우저에서만 표시하며 새로고침 시 현재 권한 범위의 서버 초안·결과 최신 30개를 복원한다.
+
+`GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.
+
+**검수 반영(2026-10-22, Claude).**
+- `POST /conversation`·`/materials` 응답에 `data`(nullable)가 추가됐다. 읽기 전용 업무의 결과만 담는다: 공지 초안 `{notice}`(저장·발송 없음), 출결 조회 `{studentId,events:[{id,eventType,occurredAt}],limit:20}`. 초안·승인 없이 응답하며 메모·연락처 등 다른 필드는 반환하지 않는다.
+- 조회 의도(조회·확인·보여·알려·현황·요약·내역)와 쓰기 동사(등록·기록·추가·만들·생성·수정·배정·처리·남겨)가 함께 없을 때만 읽기 전용으로 분기한다. "출결 조회"는 더 이상 출결 기록 초안이 되지 않는다.
+- 출결 **정정**은 비서가 처리하지 않는다. AcademyCraft 정정 API의 경로·본문 규격이 이 저장소에 근거(코드·계약서)로 없어 추측 호출하지 않으며, 새 출결 이벤트로 대체하는 오분류를 막고 기존 출결 화면으로 안내한다(조사 근거는 docs/unified-ai-assistant/README.md §8).
+- Muse 호출 상한(설정, 인스턴스 단위): `buildit.unified-assistant.model-calls-per-minute`(기본 6)·`model-calls-per-day`(60)·`model-calls-per-upload`(3). 초과·자료당 횟수 소진·연락처(전화·이메일) 포함 텍스트·읽기 전용/정정 의도는 모델을 호출하지 않고 규칙 분석으로 폴백하며 `analysis`에 이유를 표시한다.
+- `GET /audit`의 각 행에 `operation`, `academyId`, `businessId`가 추가됐다.
+- 쓰기 Origin 허용 목록은 `buildit.unified-assistant.allowed-origins`(쉼표 구분, 기본 `http://localhost:8080,https://feel2real.co.kr`)다.
+- `GET /drafts`는 만료 후 5분이 지나도 `EXECUTING`인 본인 초안을 `UNKNOWN`(감사 `RECOVERED_UNKNOWN`)으로 전환한다. 자동 재실행은 하지 않는다.
+- `LEDGER_ACCOUNT`(계정 변경) 초안은 이 비서가 본인의 `LEDGER_IMPORT` 초안으로 만든 가져오기 배치만 대상으로 한다. 금융자료 수집(#853) 등 다른 경로가 만든 승인 전 배치는 403이며 기존 이지장부 화면에서 처리한다(수집 승인 해시·배치 상태가 외부에서 바뀌는 것을 막기 위함).
+
+- `FINANCIAL_FILE` 수집 승인은 기존 서버 승인 기록의 `financial-collector reviewed batch <SHA-256>`과 현재 배치 DTO 해시를 승인 시점과 장부 확정 직전(승인 행 잠금 안) 다시 비교한다. 누락·변경 시 거부하며 승인 전 상태는 유지한다. 일반 수집 CSV의 기존 명시적 승인 흐름은 유지한다.

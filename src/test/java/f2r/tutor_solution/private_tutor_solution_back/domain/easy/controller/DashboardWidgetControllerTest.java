@@ -83,9 +83,8 @@ class DashboardWidgetControllerTest {
   }
 
   private EasyBusiness businessFixture(Long id) {
-    EasyBusiness b = Mockito.mock(EasyBusiness.class);
-    when(b.getBusinessId()).thenReturn(id);
-    when(b.isActive()).thenReturn(true);
+    EasyBusiness b = EasyBusiness.builder().code("test-"+id).name("테스트학원").active(true).build();
+    org.springframework.test.util.ReflectionTestUtils.setField(b,"businessId",id);
     return b;
   }
 
@@ -178,5 +177,26 @@ class DashboardWidgetControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$.length()").value(0));
+  }
+  @Test
+  void givenCachedWidgets_whenExplicitlyRefreshed_thenReadsLedgerAgain() throws Exception {
+    when(tutorAccessService.requireAllowedBusiness(any(), eq(1L))).thenReturn(businessFixture(1L));
+    when(workspaceService.monthly(eq(1L), any(YearMonth.class))).thenReturn(monthlyFixture(1L));
+    mockMvc.perform(get("/api/dashboard/widgets").param("businessId","1").cookie(tutorCookie())).andExpect(status().isOk());
+    Mockito.clearInvocations(workspaceService);
+    mockMvc.perform(get("/api/dashboard/widgets").param("businessId","1").cookie(tutorCookie())).andExpect(status().isOk());
+    Mockito.verifyNoInteractions(workspaceService);
+    mockMvc.perform(get("/api/dashboard/widgets").param("businessId","1").param("refresh","true").cookie(tutorCookie())).andExpect(status().isOk());
+    Mockito.verify(workspaceService,Mockito.atLeastOnce()).monthly(eq(1L),any(YearMonth.class));
+  }
+  @Test
+  void givenRevokedAccessAndCachedWidgets_whenRefreshed_thenForbiddenBeforeLedgerRead() throws Exception {
+    when(tutorAccessService.requireAllowedBusiness(any(),eq(1L))).thenReturn(businessFixture(1L));
+    when(workspaceService.monthly(eq(1L),any(YearMonth.class))).thenReturn(monthlyFixture(1L));
+    mockMvc.perform(get("/api/dashboard/widgets").param("businessId","1").cookie(tutorCookie())).andExpect(status().isOk());
+    Mockito.clearInvocations(workspaceService);
+    when(tutorAccessService.requireAllowedBusiness(any(),eq(1L))).thenThrow(new AccessDeniedException("권한 회수"));
+    mockMvc.perform(get("/api/dashboard/widgets").param("businessId","1").param("refresh","true").cookie(tutorCookie())).andExpect(status().isForbidden());
+    Mockito.verifyNoInteractions(workspaceService);
   }
 }

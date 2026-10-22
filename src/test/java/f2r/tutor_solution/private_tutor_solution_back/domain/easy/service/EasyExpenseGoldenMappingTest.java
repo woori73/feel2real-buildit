@@ -80,7 +80,10 @@ class EasyExpenseGoldenMappingTest {
         mock(EasyTransactionRepository.class),
         mock(EasyAccountService.class),
         mappingRepository,
-        mock(EasyJournalService.class));
+        mock(EasyJournalService.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRunRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionApprovalRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService.class));
     seedAccount("EXPENSE_RENT", "임차료", 12);
     seedAccount("EXPENSE_ADMIN", "관리비", 13);
     seedAccount("EXPENSE_PRINT", "교재·인쇄", 14);

@@ -108,6 +108,7 @@ public class EasyCollectionApprovalService {
       throw new SecurityException("다른 사업체의 승인 요청입니다.");
     }
 
+    importService.requireCollectionReview(approval.getRun().getImportBatchId(), note);
     approval.approve(decidedBy, note);
     log.info("collection approval approved businessId={} approvalId={} decidedBy={}",
         businessId, approvalId, maskUser(decidedBy));
@@ -205,7 +206,7 @@ public class EasyCollectionApprovalService {
 
     // 2단계: 잠금 아래 장부 commit + COMMITTED 기록 (한 트랜잭션)
     try {
-      writeTx().executeWithoutResult(status -> commitLocked(approvalId));
+      writeTx().executeWithoutResult(status -> commitLocked(businessId, approvalId, principal));
     } catch (RuntimeException e) {
       // 3단계: 실패 기록 (별도 트랜잭션 — 위 트랜잭션의 롤백과 무관하게 남는다)
       String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
@@ -228,13 +229,14 @@ public class EasyCollectionApprovalService {
     if (!approval.getBusiness().getBusinessId().equals(business.getBusinessId())) {
       throw new SecurityException("다른 사업체의 승인 요청입니다.");
     }
+    importService.requireCollectionReview(approval.getRun().getImportBatchId(), note);
     approval.approve(decidedBy, note);
     log.info("collection approval approved businessId={} approvalId={} decidedBy={}",
         businessId, approvalId, maskUser(decidedBy));
   }
 
   /** 반영 단계 — 호출한 쓰기 트랜잭션 안에서 잠금 → 장부 commit → COMMITTED 기록. */
-  private void commitLocked(Long approvalId) {
+  private void commitLocked(Long businessId, Long approvalId, JwtTokenProvider.AuthenticatedPrincipal principal) {
     EasyCollectionApproval approval = approvalRepository.findWithLockByApprovalId(approvalId)
         .orElseThrow(() -> new IllegalArgumentException("승인 요청을 찾을 수 없습니다: " + approvalId));
     if (approval.isCommitted()) {
@@ -248,7 +250,7 @@ public class EasyCollectionApprovalService {
     if (batchId == null) {
       throw new IllegalStateException("연결된 import 배치가 없습니다.");
     }
-    importService.confirm(batchId, null);
+    importService.confirmApprovedCollection(businessId, approvalId, principal);
     approval.markCommitted();
   }
 
