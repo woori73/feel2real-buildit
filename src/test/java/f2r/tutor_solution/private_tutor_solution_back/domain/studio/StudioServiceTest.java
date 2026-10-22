@@ -67,4 +67,36 @@ class StudioServiceTest {
     StudioService.validateType(p, "html");
     assertArrayEquals(b, Files.readAllBytes(p));
   }
+
+  @Test
+  void givenValidJson_whenValidated_thenAcceptedAndBytesUnchanged() throws Exception {
+    // given
+    Path p = dir.resolve("manifest.json");
+    byte[] b = "{\"episode\":1,\"cuts\":[]}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    Files.write(p, b);
+    // when
+    StudioService.validateType(p, "json");
+    // then
+    assertArrayEquals(b, Files.readAllBytes(p));
+  }
+
+  @Test
+  void givenBrokenJson_whenValidated_thenRejected() throws Exception {
+    // given
+    Path p = dir.resolve("broken.json");
+    Files.write(p, "{\"episode\":1,".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    // when / then
+    var e = assertThrows(ResponseStatusException.class, () -> StudioService.validateType(p, "json"));
+    assertTrue(e.getReason().contains("JSON"));
+  }
+
+  @Test
+  void givenVersionLabelsR14ToR8_whenValidated_thenAllAccepted() {
+    // given
+    for (String label : java.util.List.of("r14", "r13", "r12", "r11", "r10", "r9", "r8", "r7", "r7.final-2")) {
+      var r = new StudioService.Revision("ep01-script", null, label, "SCRIPT", 1, null, "ORIGINAL", "각본", "본문", "", "", "REVIEW", null);
+      // when / then
+      assertDoesNotThrow(() -> StudioService.validate(r), label);
+    }
+  }
 }

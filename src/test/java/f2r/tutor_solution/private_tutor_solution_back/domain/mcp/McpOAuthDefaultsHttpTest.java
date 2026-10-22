@@ -18,7 +18,7 @@ import org.springframework.test.context.TestPropertySource;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * 앱의 기본 redirect URI 허용 목록(오버라이드 없음)으로 실제 HTTP OAuth 동의 흐름을 검증한다.
+ * 공식 문서의 콜백 형태(ChatGPT 커넥터별 URL, Claude claude.ai/claude.com)를 등록 목록에 넣었을 때의 실제 HTTP OAuth 동의 흐름을 검증한다.
  * 실제 ChatGPT·Claude 접속이 아니라, 공식 문서의 콜백 형태가 서버 정책을 통과하는지의 시험이다.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -28,6 +28,7 @@ import tools.jackson.databind.ObjectMapper;
       "app.mcp.enabled=true",
       "app.mcp.public-base-url=http://127.0.0.1:18089",
       "app.mcp.internal-base-url=http://127.0.0.1:18089",
+      "app.mcp.redirect-uris=https://claude.ai/api/mcp/auth_callback,https://claude.com/api/mcp/auth_callback,https://chatgpt.com/connector/oauth/Zx12_ab-9",
       "spring.datasource.url=jdbc:mysql://127.0.0.1:3318/f2r_studio_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci",
       "spring.datasource.username=f2r_test",
       "spring.datasource.password=isolated_test_password",
@@ -110,7 +111,7 @@ class McpOAuthDefaultsHttpTest {
   HttpResponse<String> consent(String cookie, String nonce, String scopes, boolean ack)
       throws Exception {
     String form =
-        "nonce=" + McpOAuth.encode(nonce) + scopes + (ack ? "&adminAck=true" : "");
+        "nonce=" + McpOAuth.encode(nonce) + scopes + (ack ? "&sensitiveAcknowledged=true" : "");
     return http.send(
         HttpRequest.newBuilder(URI.create(base + "/mcp/oauth/authorize"))
             .header("Content-Type", "application/x-www-form-urlencoded")
@@ -129,7 +130,8 @@ class McpOAuthDefaultsHttpTest {
   void givenOfficialCallbackShapes_whenRegistering_thenAcceptedAndOthersRejected() throws Exception {
     // given / when / then
     assertEquals(200, register(CHATGPT).statusCode());
-    assertEquals(200, register("https://chatgpt.com/connector_platform_oauth_redirect").statusCode());
+    assertEquals(400, register("https://chatgpt.com/connector/oauth/NotRegistered1").statusCode());
+    assertEquals(400, register("https://chatgpt.com/connector_platform_oauth_redirect").statusCode());
     assertEquals(200, register("https://claude.ai/api/mcp/auth_callback").statusCode());
     assertEquals(200, register("https://claude.com/api/mcp/auth_callback").statusCode());
     assertEquals(400, register("https://evil.example/connector/oauth/abc").statusCode());
@@ -146,13 +148,13 @@ class McpOAuthDefaultsHttpTest {
     String admin = cookie("oauth-defaults-admin", Role.ADMIN);
     var page = authorizePage(query(client, CHATGPT), admin);
     assertEquals(200, page.statusCode());
-    assertTrue(page.body().contains("관리자 계정 경고"));
+    assertTrue(page.body().contains("관리자 자료의 외부 제공 주의"));
     String scopes = "&scopes=catalog%3Aread&scopes=easy%3Aread";
     // when
     var denied = consent(admin, nonce(page), scopes, false);
     // then
     assertEquals(400, denied.statusCode());
-    assertTrue(denied.body().contains("admin_consent_required"));
+    assertTrue(denied.body().contains("sensitive_data_acknowledgement_required"));
     // when: 같은 동의 화면을 새로 열어 확인란을 체크
     var again = authorizePage(query(client, CHATGPT), admin);
     var allowed = consent(admin, nonce(again), scopes, true);
