@@ -43,6 +43,7 @@ import tools.jackson.databind.ObjectMapper;
 class IndependentStudioProbeMySqlTest {
   static final Path DIR = Paths.get("/tmp/claude-0/probe-files");
   @MockitoSpyBean StudioService studio;
+  @MockitoSpyBean f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.FileStorage fileStorage;
   @Autowired StudioBulkImport bulk;
   @Autowired JdbcTemplate db;
   @Autowired UserRepository users;
@@ -176,7 +177,7 @@ class IndependentStudioProbeMySqlTest {
     assertEquals(fileRowsBefore, fileRowsAfter, "DB는 전부 롤백되어야 함");
     assertEquals(revRowsBefore, revRowsAfter);
     for (var e : hashesBefore.entrySet()) assertEquals(e.getValue(), fileHashes().get(e.getKey()), "기존 객체는 보존");
-    assertTrue(orphans > 0, "고아 파일이 생기지 않았다면(보정 구현됨) 이 단언은 실패해야 함 — 현재 동작 기록용");
+    assertEquals(0L, orphans, "롤백 후 신규 객체 정리 기대: 남은 고아=" + orphans);
 
     // 재시도: 성공하지만, 롤백된 파일은 SHA 중복 검사에 걸리지 않아 새 객체가 또 쌓인다
     long beforeRetry = fileCount();
@@ -185,6 +186,33 @@ class IndependentStudioProbeMySqlTest {
     System.out.println("PROBE orphan retry registered=" + ok.get("registered") + " storageObjects " + beforeRetry + "->" + afterRetry + " (added=" + (afterRetry - beforeRetry) + ", linked rows=" + db.queryForObject("SELECT COUNT(DISTINCT file_id) FROM studio_revisions WHERE label LIKE 'import-%'", Long.class) + ")");
     assertEquals(68, ok.get("registered"));
     long referenced = db.queryForObject("SELECT COUNT(*) FROM studio_files", Long.class);
+    assertEquals(referenced, fileCount(), "재시도 후 미참조 객체 존재");
     System.out.println("PROBE orphan totalObjects=" + fileCount() + " referencedRows=" + referenced + " unreferenced=" + (fileCount() - referenced));
+  }
+
+  @Test
+  @Order(3)
+  void whenStorageDeleteFailsDuringRollback_thenOriginalErrorSurfacesAndOnlyNewObjectsRemain() throws Exception {
+    byte[] z = zip68("C");
+    var up = studio.upload(editor, new MockMultipartFile("file", "ep01-c.zip", "application/zip", z));
+    String src = (String) ((Map<?, ?>) up.get("file")).get("id");
+    long rowsBefore = db.queryForObject("SELECT COUNT(*) FROM studio_files", Long.class);
+    var hashesBefore = fileHashes();
+    long objectsBefore = fileCount();
+    doAnswer(inv -> { throw new RuntimeException("injected storage outage"); }).when(fileStorage).deleteReported(any(), any());
+    saveCalls.set(0);
+    failAt = 30;
+    Throwable thrown = null;
+    try { bulk.importEp01(editor, src); } catch (Throwable t) { thrown = t; } finally { failAt = -1; }
+    org.mockito.Mockito.reset(fileStorage);
+    assertNotNull(thrown);
+    System.out.println("PROBE deletefail thrown=" + thrown.getClass().getSimpleName() + ": " + thrown.getMessage());
+    assertTrue(String.valueOf(thrown.getMessage()).contains("injected DB failure"), "삭제 실패가 원래 DB 오류를 가리면 안 됨: " + thrown);
+    long rowsAfter = db.queryForObject("SELECT COUNT(*) FROM studio_files", Long.class);
+    long orphans = fileCount() - objectsBefore;
+    System.out.println("PROBE deletefail dbFiles " + rowsBefore + "->" + rowsAfter + " orphans(left because delete failed)=" + orphans);
+    assertEquals(rowsBefore, rowsAfter, "DB는 롤백");
+    assertTrue(orphans > 0 && orphans <= 67, "삭제 실패 시 새 객체만 남아야 함");
+    for (var e : hashesBefore.entrySet()) assertEquals(e.getValue(), fileHashes().get(e.getKey()), "기존 객체는 보존: " + e.getKey());
   }
 }
