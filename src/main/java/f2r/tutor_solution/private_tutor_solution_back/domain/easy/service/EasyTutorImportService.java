@@ -74,6 +74,7 @@ public class EasyTutorImportService {
       Long rowId,
       Long accountId) {
     EasyImportBatch batch = requireOwnedBatch(principal, businessId, batchId);
+    importService.requireOrdinaryBatch(batchId);
     EasyImportRow row = rowRepository.findByBatch_BatchIdAndRowIdIn(batchId, List.of(rowId))
         .stream().findFirst()
         .orElseThrow(() -> new IllegalArgumentException("행을 찾을 수 없습니다."));

@@ -4734,7 +4734,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /api/tutor/easy/imports/{batchId}/confirm?businessId={id}`: 선택 또는 전체 READY 행을 기존 장부·복식분개 엔진에 반영한다.
 - `DELETE /api/tutor/easy/imports/{batchId}?businessId={id}`: 미확정 STAGED 배치만 폐기한다.
 - 모든 batchId/rowId 조작은 principal → Academy → 연결 사업체 검증 뒤 `batch_id + business_id`로 재조회한다. 클라이언트 businessId는 권한 근거가 아니라 선택자다.
-- 기존 `/api/admin/easy/**` 계약은 변경하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.
+- 일반 CSV·이지샵 등록은 기존 경로를 유지한다. `easy_collection_runs.import_batch_id`로 연결된 수집 배치는 일반 ADMIN/TUTOR 확정·계정 변경·재분류·준비·폐기 경로에서 403이다. 수집 승인 전용 서비스만 서버 승인 행 잠금 아래 APPROVED/COMMIT_FAILED 상태, 요청자 사업체 권한, 승인·실행·연결·배치 사업체 일치를 재검증하여 확정한다. 원문 사업체 마커로 수집 승인 범위 밖 장부에 기록하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.
 
 
 ## Easy 원장 대화형 Agent API (V1073)

@@ -64,7 +64,10 @@ class EasyImportRecoveryTest {
   void setUp() {
     service = new EasyImportService(
         batchRepository, rowRepository, businessRepository, txnRepository, accountService,
-        mappingRepository, journalService);
+        mappingRepository, journalService,
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRunRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionApprovalRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService.class));
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     ReflectionTestUtils.setField(academy, "businessId", 1L);
     publishing = EasyBusiness.builder().code("PUBLISHING").name("출판사").active(true).sortOrder(2).build();
