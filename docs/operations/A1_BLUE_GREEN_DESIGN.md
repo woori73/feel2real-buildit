@@ -55,7 +55,7 @@
 3. 환경: `PUBLISHING_WORKER_ENABLED=false`, `HWPX_WORKER_ENABLED=false`, `EASY_COLLECTION_CRON=-`, `CHART_RE_RESEARCH_CRON=-`, KIS 키 미주입(또는 코드 스위치), `SERVER_PORT=8083`.
 4. 시각: 평일 장중(09:00~15:40 KST)·16:20~16:50·02:20~04:30 회피.
 5. 흐름: 기동 → 로컬 `/actuator/health` UP → 종료. ALB·SG·DB 변경 없음, 소요 ≤3분.
-6. 알려진 잔여 위험: 기동 시 DB 연결 약 10개 추가, 시드 `@PostConstruct`(Wemade 시드 서비스)가 같은 데이터를 멱등 삽입하는지 코드 확인 필요 → 확인 전 리허설 보류.
+6. 기동 시 `ApplicationReadyEvent` 시드(`WemadeSeedService`, `ChartInitialPublicationRunner` 등)는 데이터 존재 확인 후 건너뛰는 멱등 구조이고 운영 앱이 재시작할 때마다 이미 같은 방식으로 실행된다(`WemadeSeedService.loadPrices`·차트 publication은 확인, 나머지 시드의 멱등성은 리허설 전 재확인). 알려진 잔여 위험: 기동 중 DB 연결 약 10개 추가, 2~4항 스위치를 놓치면 중복 실행.
 
 ## 6. 비용
 A1: 추가 EC2 없음, 타깃 그룹·리스너 변경 무료, 헬스체크 증가분 무시 가능 → 월 약 $0. 서버 2대 롤링(C안)은 별도 승인.
