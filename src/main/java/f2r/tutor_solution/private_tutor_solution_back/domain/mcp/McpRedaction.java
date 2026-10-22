@@ -36,6 +36,10 @@ final class McpRedaction {
   /** 자유 텍스트 안의 전화번호·이메일·주민번호·계좌번호 형태를 가린다. */
   static String text(String value) {
     if (value == null || value.isEmpty()) return value;
+    // Canonical file hashes/UUIDs must remain usable for original-byte verification and links.
+    // Explicit PII field names still fall through value()'s whole-value masking below.
+    if (value.matches("(?i)[a-f0-9]{64}")
+        || value.matches("(?i)[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}")) return value;
     String out = RRN.matcher(value).replaceAll("$1-*******");
     out = INTERNATIONAL_PHONE.matcher(out).replaceAll("+82-$1-****-$3");
     out = PHONE.matcher(out).replaceAll("$1-****-$3");

@@ -21,6 +21,6 @@
 
 1. 본인 ChatGPT 웹 계정에서 조직 정책과 MCP 생성 권한을 확인하고 `Plugins → Add custom MCP server` 또는 계정의 `Apps → Create` 화면을 연다. UI·요금제·관리자 권한은 실제 계정과 [공식 연결 안내](https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt)를 따른다.
 2. 격리 HTTPS MCP URL과 OAuth를 선택한다. 관리 화면의 정확한 redirect URI를 설정 담당자에게 전달한다. 다른 사용자의 client ID·공유 관리자 token을 재사용하지 않는다.
-3. Feel2Real **본인 계정으로 직접 로그인**하고 필요한 scope만 동의한다. 기본은 catalog/studio이다. 관리자 민감 범위를 선택할 때는 별도 외부 제공 경고 확인이 필요하다. 금융 범위도 사업체별 월 합계만 제공하며 원문·증빙·거래처·학생 목록은 제공하지 않는다.
+3. Feel2Real **본인 계정으로 직접 로그인**하고 필요한 scope만 동의한다. 기본은 catalog/studio이다. 원본 byte/SHA 대조가 필요한 경우에만 기본 해제된 `originals:read`를 별도로 선택하고 원본이 마스킹 없이 외부로 제공된다는 경고를 확인한다(전 역할 공통). 미선택 상태에서는 바이너리 원본이 403이며 metadata/마스킹 텍스트 조회는 유지한다. 관리자 민감 범위를 선택할 때는 별도 외부 제공 경고 확인이 필요하다. 금융 범위도 사업체별 월 합계만 제공하며 원문·증빙·거래처·학생 목록은 제공하지 않는다.
 4. Scan Tools/연결을 완료하고 `read_studio`, `search`, `fetch`로 실제 등록 자료를 확인한다. 다른 학원/사업체 접근·승인/확정 요청이 거부되는지 확인하고 Claude와 같은 ID/SHA를 비교한다.
 5. 만료·refresh·연결 폐기까지 시험한다. 본인 로그인·동의·제품 계정 시험은 자동화된 합성 OAuth 시험과 구분한다.
