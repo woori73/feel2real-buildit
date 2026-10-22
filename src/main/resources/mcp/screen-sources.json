@@ -1,0 +1,5406 @@
+{
+  "/": [
+    {
+      "template": "src/main/resources/templates/public/landing.html",
+      "scripts": [
+        "/js/landing_chart.js?v=20261014-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/.well-known/oauth-authorization-server": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/.well-known/oauth-protected-resource": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/.well-known/oauth-protected-resource/mcp": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/academies": [
+    {
+      "template": "src/main/resources/templates/public/academies.html",
+      "scripts": [
+        "/js/academies.js"
+      ],
+      "clientApiLiterals": [
+        "/api/academies?${params.toString()}",
+        "/api/subjects"
+      ]
+    }
+  ],
+  "/academies/{slug}": [
+    {
+      "template": "src/main/resources/templates/public/academy_public.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/site_events.js?v=20261017-1",
+        "/js/academy_business_info.js",
+        "/js/lesson_product_showcase.js?v=20260810-1",
+        "/js/academy_reveal.js?v=20260901-5",
+        "/js/academy_motion.js?v=20261020-1",
+        "/js/academy_scene.js?v=20260901-5",
+        "/js/academy_collection.js?v=20260908-1",
+        "/js/academy_cinematic.js?v=20260901-7",
+        "/js/academy_brand.js?v=20261013-1",
+        "/js/academy_sections.js?v=20261013-1",
+        "/js/eduholic_actual_class_video_filter.js?v=20260909-4",
+        "/js/visual_editor_render.js?v=20261012-1",
+        "/js/academy_public.js?v=20261013-2",
+        "/js/eduholic_midterm_popup.js?v=20260914",
+        "/js/eduholic_featured_cta.js?v=20260908-1",
+        "/js/eduholic_midterm_home_live.js?v=20260929-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/academies/{slug}/posts": [
+    {
+      "template": "src/main/resources/templates/public/academy_blog_posts.html",
+      "scripts": [
+        "/js/academy_business_info.js",
+        "/js/academy_blog_public.js"
+      ],
+      "clientApiLiterals": [
+        "/api/academies/",
+        "/api/academy-posts/"
+      ]
+    }
+  ],
+  "/academies/{slug}/posts/{postSlug}": [
+    {
+      "template": "src/main/resources/templates/public/academy_blog_post.html",
+      "scripts": [
+        "/js/academy_business_info.js",
+        "/js/academy_blog_public.js"
+      ],
+      "clientApiLiterals": [
+        "/api/academies/",
+        "/api/academy-posts/"
+      ]
+    }
+  ],
+  "/academy-posts": [
+    {
+      "template": "src/main/resources/templates/public/academy_posts.html",
+      "scripts": [
+        "/js/academy_posts.js"
+      ],
+      "clientApiLiterals": [
+        "/api/academy-posts/",
+        "/api/academy-posts?"
+      ]
+    }
+  ],
+  "/admin/academies": [
+    {
+      "template": "src/main/resources/templates/admin/academies.html",
+      "scripts": [
+        "/js/api.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/academies",
+        "/api/admin/academies/${academyId}/visibility",
+        "/api/admin/lessons/${lessonId}/visibility",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/academies/{academyId}/preview": [
+    {
+      "template": "src/main/resources/templates/public/academy_public.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/site_events.js?v=20261017-1",
+        "/js/academy_business_info.js",
+        "/js/lesson_product_showcase.js?v=20260810-1",
+        "/js/academy_reveal.js?v=20260901-5",
+        "/js/academy_motion.js?v=20261020-1",
+        "/js/academy_scene.js?v=20260901-5",
+        "/js/academy_collection.js?v=20260908-1",
+        "/js/academy_cinematic.js?v=20260901-7",
+        "/js/academy_brand.js?v=20261013-1",
+        "/js/academy_sections.js?v=20261013-1",
+        "/js/eduholic_actual_class_video_filter.js?v=20260909-4",
+        "/js/visual_editor_render.js?v=20261012-1",
+        "/js/academy_public.js?v=20261013-2",
+        "/js/eduholic_midterm_popup.js?v=20260914",
+        "/js/eduholic_featured_cta.js?v=20260908-1",
+        "/js/eduholic_midterm_home_live.js?v=20260929-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/account": [
+    {
+      "template": "src/main/resources/templates/admin/account.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_account.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/account/credentials",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/analytics": [
+    {
+      "template": "src/main/resources/templates/admin/analytics.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_analytics.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/analytics/breakdown",
+        "/api/admin/analytics/events",
+        "/api/admin/analytics/summary",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/analyzes": [
+    {
+      "template": "src/main/resources/templates/admin/analyzes.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_analyzes.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/analyzes",
+        "/api/admin/analyzes/${id}",
+        "/api/admin/analyzes/${id}/hard",
+        "/api/admin/analyzes/${id}/visibility",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/subjects"
+      ]
+    }
+  ],
+  "/admin/chart": [
+    {
+      "template": "src/main/resources/templates/admin/chart.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_chart.js?v=20260809-3",
+        "/js/admin_chart_site_tools.js?v=20260827-1"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/public/chart.html",
+      "scripts": [
+        "/js/chart_public.js?v=20260828-2"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/public/chart_educator.html",
+      "scripts": [
+        "/js/chart_educator.js?v=20260828-2"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/admin/dashboard": [
+    {
+      "template": "src/main/resources/templates/admin/dashboard.html",
+      "scripts": [
+        "/js/api.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/wiki/ops-overview",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/questions/import-vision",
+        "/api/subjects"
+      ]
+    }
+  ],
+  "/admin/hub": [
+    {
+      "template": "src/main/resources/templates/admin/hub.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/hub_dashboard.js?v=20261019-admissions"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/landing": [
+    {
+      "template": "src/main/resources/templates/admin/landing.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_landing.js",
+        "/js/admin_beta_comments.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/beta-comments",
+        "/api/admin/landing/videos",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/lesson-communities": [
+    {
+      "template": "src/main/resources/templates/admin/lesson_communities.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_lesson_communities.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/lesson-communities${query}",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/login": [
+    {
+      "template": "src/main/resources/templates/admin/login.html",
+      "scripts": [],
+      "clientApiLiterals": [
+        "/api/auth/admin/password-change",
+        "/api/auth/login"
+      ]
+    }
+  ],
+  "/admin/members": [
+    {
+      "template": "src/main/resources/templates/admin/members.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_members.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/members",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/newstart": [
+    {
+      "template": "src/main/resources/templates/admin/newstart.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_consultations.html",
+      "scripts": [
+        "/js/admin_newstart_consultations.js?v=20261002-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_exceptions.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_exceptions.js?v=20261001-2"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_roster.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_roster.js?v=20261013-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/admin/newstart/consultations": [
+    {
+      "template": "src/main/resources/templates/admin/newstart.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_consultations.html",
+      "scripts": [
+        "/js/admin_newstart_consultations.js?v=20261002-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_exceptions.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_exceptions.js?v=20261001-2"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_roster.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_roster.js?v=20261013-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/admin/newstart/jipijigi": [
+    {
+      "template": "src/main/resources/templates/admin/newstart_jipijigi.html",
+      "scripts": [
+        "/js/admin_newstart_jipijigi.js?v=20260923-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/admin/newstart/thanks-exceptions": [
+    {
+      "template": "src/main/resources/templates/admin/newstart.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_consultations.html",
+      "scripts": [
+        "/js/admin_newstart_consultations.js?v=20261002-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_exceptions.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_exceptions.js?v=20261001-2"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_roster.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_roster.js?v=20261013-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/admin/newstart/thanks-roster": [
+    {
+      "template": "src/main/resources/templates/admin/newstart.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_consultations.html",
+      "scripts": [
+        "/js/admin_newstart_consultations.js?v=20261002-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_exceptions.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_exceptions.js?v=20261001-2"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/admin/newstart_thanks_roster.html",
+      "scripts": [
+        "/js/admin_newstart_thanks_roster.js?v=20261013-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/admin/newstart/updates": [
+    {
+      "template": "src/main/resources/templates/admin/newstart_updates.html",
+      "scripts": [
+        "/js/admin_newstart_updates.js?v=20260922-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/update_detail.html",
+      "scripts": [
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/updates.html",
+      "scripts": [
+        "/js/newstart-updates.js?v=20260923-1",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/admin/newstart/wiki": [
+    {
+      "template": "src/main/resources/templates/admin/newstart_wiki.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_newstart_wiki.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/newstart/wiki",
+        "/api/admin/newstart/wiki/${id}",
+        "/api/admin/newstart/wiki/${id}/status?${params.toString()}",
+        "/api/admin/newstart/wiki/export/all",
+        "/api/admin/newstart/wiki/review/${id}",
+        "/api/admin/newstart/wiki/review/${id}/${action}",
+        "/api/admin/newstart/wiki/review?page=0&size=20",
+        "/api/admin/newstart/wiki/stats",
+        "/api/admin/newstart/wiki?${params.toString()}",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/students": [
+    {
+      "template": "src/main/resources/templates/admin/students.html",
+      "scripts": [
+        "/js/api.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/students",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/wiki-analysis": [
+    {
+      "template": "src/main/resources/templates/admin/wiki_analysis.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_wiki_analysis.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/wiki/analysis-materials",
+        "/api/admin/wiki/analysis-materials/${id}",
+        "/api/admin/wiki/analysis-materials/${id}/hard",
+        "/api/admin/wiki/analysis-materials/${id}/visibility",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admin/wiki-originals": [
+    {
+      "template": "src/main/resources/templates/admin/wiki_originals.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_wiki_originals.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/wiki/originals",
+        "/api/admin/wiki/originals/${id}",
+        "/api/admin/wiki/originals/${id}/hard",
+        "/api/admin/wiki/originals/${id}/visibility",
+        "/api/admin/wiki/rounds",
+        "/api/admin/wiki/rounds/${id}/current",
+        "/api/admin/wiki/rounds/${id}/published",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admissions/guide": [
+    {
+      "template": "src/main/resources/templates/admissions/guide.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admissions-guide.js?v=20261019-2",
+        "/js/admissions-member.js?v=20261019-2",
+        "/js/admissions-admin-load.js?v=20261021-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/admissions/workspace": [
+    {
+      "template": "src/main/resources/templates/admissions/guide.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admissions-guide.js?v=20261019-2",
+        "/js/admissions-member.js?v=20261019-2",
+        "/js/admissions-admin-load.js?v=20261021-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/ai-agent-studio": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/analyzes": [
+    {
+      "template": "src/main/resources/templates/public/analyzes.html",
+      "scripts": [
+        "/js/analyzes.js"
+      ],
+      "clientApiLiterals": [
+        "/api/analyzes?${params.toString()}",
+        "/api/subjects"
+      ]
+    }
+  ],
+  "/analyzes/{id}": [
+    {
+      "template": "src/main/resources/templates/public/analyze_detail.html",
+      "scripts": [
+        "/js/analyze_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/analyzes/${encodeURIComponent(id)}"
+      ]
+    }
+  ],
+  "/api/admin/lesson-communities": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/community/attachments/{attachmentId}/file": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/community/comments/{commentId}": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/community/posts/{postId}": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/community/posts/{postId}/comments": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/exam-insight/analyze": [
+    {
+      "template": "src/main/resources/templates/public/exam_insight.html",
+      "scripts": [
+        "/js/exam_insight.js?v=20261017-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/api/exam-insight/config": [
+    {
+      "template": "src/main/resources/templates/public/exam_insight.html",
+      "scripts": [
+        "/js/exam_insight.js?v=20261017-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/api/exam-insight/extract": [
+    {
+      "template": "src/main/resources/templates/public/exam_insight.html",
+      "scripts": [
+        "/js/exam_insight.js?v=20261017-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/api/lessons/{lessonId}/community/categories": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/lessons/{lessonId}/community/categories/{categoryId}": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/lessons/{lessonId}/community/context": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/lessons/{lessonId}/community/posts": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/api/mcp/connections": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/api/mcp/connections/{id}/revoke": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/api/studio/compare": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/events": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/files": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/files/{id}": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/files/{id}/content": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/files/{id}/text": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/members": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/project": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/revisions": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/revisions/{id}": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/api/studio/revisions/{id}/review": [
+    {
+      "template": "src/main/resources/templates/studio/index.html",
+      "scripts": [
+        "/js/agent_studio.js"
+      ],
+      "clientApiLiterals": [
+        "/api/studio/",
+        "/api/studio/files/"
+      ]
+    }
+  ],
+  "/builder": [
+    {
+      "template": "src/main/resources/templates/tutor/academy_builder.html",
+      "scripts": [
+        "/js/service_home_navigation.js?v=20261019-1",
+        "/js/academy_builder_text_utils.js",
+        "/js/lms_builder_settings.js",
+        "/js/academy_business_info.js",
+        "/js/academy_business_info_editor.js",
+        "/js/academy_builder_editable_guide.js?v=20260801-1",
+        "/js/lesson_product_showcase.js?v=20260810-1",
+        "/js/academy_sections.js?v=20261013-1",
+        "/js/academy_reveal.js?v=20260901-5",
+        "/js/academy_motion.js?v=20261020-1",
+        "/js/academy_world.js?v=20260907-4",
+        "/js/academy_builder_ai_guide.js?v=20260908-1",
+        "/js/academy_brand.js?v=20261013-1",
+        "/js/academy_builder.js?v=20261012-2",
+        "/js/academy_adopt.js?v=20261013-1",
+        "/js/vendor/diff.min.js?v=5.2.0",
+        "/js/academy_image_edit_flow.js?v=20261015-1",
+        "/js/academy_builder_ai_chat.js?v=20261015-1"
+      ],
+      "clientApiLiterals": [
+        "/api/tutor/academy/lms-settings"
+      ]
+    }
+  ],
+  "/chart": [
+    {
+      "template": "src/main/resources/templates/admin/chart.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_chart.js?v=20260809-3",
+        "/js/admin_chart_site_tools.js?v=20260827-1"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/public/chart.html",
+      "scripts": [
+        "/js/chart_public.js?v=20260828-2"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/public/chart_educator.html",
+      "scripts": [
+        "/js/chart_educator.js?v=20260828-2"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/chart/educators/{id:\\d+}": [
+    {
+      "template": "src/main/resources/templates/admin/chart.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/admin_chart.js?v=20260809-3",
+        "/js/admin_chart_site_tools.js?v=20260827-1"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/public/chart.html",
+      "scripts": [
+        "/js/chart_public.js?v=20260828-2"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/public/chart_educator.html",
+      "scripts": [
+        "/js/chart_educator.js?v=20260828-2"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi": [
+    {
+      "template": "src/main/resources/templates/choonggi/journey.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/admin": [
+    {
+      "template": "src/main/resources/templates/choonggi/admin.html",
+      "scripts": [
+        "/js/choonggi_admin.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts/${id}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/editor.html",
+      "scripts": [
+        "/js/choonggi_creator.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts",
+        "/api/admin/choonggi/posts/${id}",
+        "/api/admin/choonggi/posts/${id}/cover/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-down",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-up",
+        "/api/admin/choonggi/posts/${id}/publish",
+        "/api/admin/choonggi/posts/${id}/unpublish"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/journey-private.html",
+      "scripts": [
+        "/js/choonggi_journey.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/admin/journey": [
+    {
+      "template": "src/main/resources/templates/choonggi/admin.html",
+      "scripts": [
+        "/js/choonggi_admin.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts/${id}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/editor.html",
+      "scripts": [
+        "/js/choonggi_creator.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts",
+        "/api/admin/choonggi/posts/${id}",
+        "/api/admin/choonggi/posts/${id}/cover/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-down",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-up",
+        "/api/admin/choonggi/posts/${id}/publish",
+        "/api/admin/choonggi/posts/${id}/unpublish"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/journey-private.html",
+      "scripts": [
+        "/js/choonggi_journey.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/admin/posts": [
+    {
+      "template": "src/main/resources/templates/choonggi/admin.html",
+      "scripts": [
+        "/js/choonggi_admin.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts/${id}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/editor.html",
+      "scripts": [
+        "/js/choonggi_creator.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts",
+        "/api/admin/choonggi/posts/${id}",
+        "/api/admin/choonggi/posts/${id}/cover/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-down",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-up",
+        "/api/admin/choonggi/posts/${id}/publish",
+        "/api/admin/choonggi/posts/${id}/unpublish"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/journey-private.html",
+      "scripts": [
+        "/js/choonggi_journey.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/admin/posts/new": [
+    {
+      "template": "src/main/resources/templates/choonggi/admin.html",
+      "scripts": [
+        "/js/choonggi_admin.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts/${id}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/editor.html",
+      "scripts": [
+        "/js/choonggi_creator.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts",
+        "/api/admin/choonggi/posts/${id}",
+        "/api/admin/choonggi/posts/${id}/cover/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-down",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-up",
+        "/api/admin/choonggi/posts/${id}/publish",
+        "/api/admin/choonggi/posts/${id}/unpublish"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/journey-private.html",
+      "scripts": [
+        "/js/choonggi_journey.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/admin/posts/{id}/edit": [
+    {
+      "template": "src/main/resources/templates/choonggi/admin.html",
+      "scripts": [
+        "/js/choonggi_admin.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts/${id}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/editor.html",
+      "scripts": [
+        "/js/choonggi_creator.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts",
+        "/api/admin/choonggi/posts/${id}",
+        "/api/admin/choonggi/posts/${id}/cover/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-down",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-up",
+        "/api/admin/choonggi/posts/${id}/publish",
+        "/api/admin/choonggi/posts/${id}/unpublish"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/journey-private.html",
+      "scripts": [
+        "/js/choonggi_journey.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/admin/posts/{id}/preview": [
+    {
+      "template": "src/main/resources/templates/choonggi/admin.html",
+      "scripts": [
+        "/js/choonggi_admin.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts/${id}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/editor.html",
+      "scripts": [
+        "/js/choonggi_creator.js"
+      ],
+      "clientApiLiterals": [
+        "/api/admin/choonggi/posts",
+        "/api/admin/choonggi/posts/${id}",
+        "/api/admin/choonggi/posts/${id}/cover/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-down",
+        "/api/admin/choonggi/posts/${id}/media/${mediaId}/move-up",
+        "/api/admin/choonggi/posts/${id}/publish",
+        "/api/admin/choonggi/posts/${id}/unpublish"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/journey-private.html",
+      "scripts": [
+        "/js/choonggi_journey.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/journey": [
+    {
+      "template": "src/main/resources/templates/choonggi/journey.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/vlog/{slug}": [
+    {
+      "template": "src/main/resources/templates/choonggi/journey.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/choonggi/{section:vlog|gamer|india|about}": [
+    {
+      "template": "src/main/resources/templates/choonggi/journey.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/choonggi/page.html",
+      "scripts": [
+        "/js/choonggi.js"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/community": [
+    {
+      "template": "src/main/resources/templates/public/community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/open-community/posts?",
+        "/api/subjects"
+      ]
+    }
+  ],
+  "/community/posts/new": [
+    {
+      "template": "src/main/resources/templates/public/community_new.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/community_new.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/open-community/images",
+        "/api/open-community/posts",
+        "/api/open-community/posts/",
+        "/api/subjects"
+      ]
+    }
+  ],
+  "/community/posts/{postId}": [
+    {
+      "template": "src/main/resources/templates/public/community_post.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/community_post.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/open-community/answers/",
+        "/api/open-community/images",
+        "/api/open-community/posts/"
+      ]
+    }
+  ],
+  "/conversation/chat": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/chat.html": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/dashboard": [
+    {
+      "template": "src/main/resources/templates/student/conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/consultation-materials",
+        "/api/conversations/${conversationId}/consultation-materials/${sourceId}",
+        "/api/conversations/${conversationId}/score-timeline",
+        "/api/conversations/${conversationId}/sources",
+        "/api/conversations/${conversationId}/weakness",
+        "/api/sources/${sid}",
+        "/api/sources/${source.sourceId}/download?page=1",
+        "/api/sources/${source.sourceId}/file?page=1"
+      ]
+    }
+  ],
+  "/conversation/dashboard.html": [
+    {
+      "template": "src/main/resources/templates/student/conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/consultation-materials",
+        "/api/conversations/${conversationId}/consultation-materials/${sourceId}",
+        "/api/conversations/${conversationId}/score-timeline",
+        "/api/conversations/${conversationId}/sources",
+        "/api/conversations/${conversationId}/weakness",
+        "/api/sources/${sid}",
+        "/api/sources/${source.sourceId}/download?page=1",
+        "/api/sources/${source.sourceId}/file?page=1"
+      ]
+    }
+  ],
+  "/conversation/homework": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/homework.html": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/report": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/report.html": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/review": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/review.html": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/tutor-materials": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/conversation/tutor-materials.html": [
+    {
+      "template": "src/main/resources/templates/student/conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_homework.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_homework.js?v=homework-image-uploads"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_report.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_report.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/wrong-answers",
+        "/api/conversations/${conversationId}/wrong-note-entries",
+        "/api/conversations/${conversationId}/wrong-note-entries/${entryId}",
+        "/api/sources/${sourceId}/file?page=${page}"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/student/conversation_tutor_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_tutor_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/tutor-materials",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}"
+      ]
+    }
+  ],
+  "/dashboard": [
+    {
+      "template": "src/main/resources/templates/dashboard.html",
+      "scripts": [
+        "/js/service_home_navigation.js?v=20261019-1",
+        "/js/academycraft-dashboard.js",
+        "/js/api.js"
+      ],
+      "clientApiLiterals": [
+        "/academycraft/api/rea/",
+        "/academycraft/api/rea/integration/context",
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/dashboard/assistant",
+        "/api/dashboard/businesses",
+        "/api/dashboard/widgets"
+      ]
+    }
+  ],
+  "/designcraft": [
+    {
+      "template": "src/main/resources/templates/designcraft/editor.html",
+      "scripts": [
+        "/js/publishing_api.js",
+        "/js/publishing_api.js",
+        "/js/publishing_editor.js",
+        "/js/publishing_editor.js"
+      ],
+      "clientApiLiterals": [
+        "/api/publishing"
+      ]
+    }
+  ],
+  "/designcraft/editor": [
+    {
+      "template": "src/main/resources/templates/designcraft/editor.html",
+      "scripts": [
+        "/js/publishing_api.js",
+        "/js/publishing_api.js",
+        "/js/publishing_editor.js",
+        "/js/publishing_editor.js"
+      ],
+      "clientApiLiterals": [
+        "/api/publishing"
+      ]
+    }
+  ],
+  "/easy": [
+    {
+      "template": "src/main/resources/templates/easy/dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_dashboard.js",
+        "/js/easy_insight.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/businesses",
+        "/api/admin/easy/executive-summary",
+        "/api/admin/easy/pl",
+        "/api/admin/easy/reviews/rebuild",
+        "/api/admin/easy/reviews/summary",
+        "/api/admin/easy/workspace/monthly?month=",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/easy/accounting": [
+    {
+      "template": "src/main/resources/templates/easy/accounting.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_accounting.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/accounting/balance-audit?",
+        "/api/admin/easy/accounting/trial-balance?",
+        "/api/admin/easy/businesses",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/easy/card-review": [
+    {
+      "template": "src/main/resources/templates/easy/card_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_card_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/accounts",
+        "/api/admin/easy/businesses",
+        "/api/admin/easy/card-events/",
+        "/api/admin/easy/card-events?businessId=",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/easy/evidence": [
+    {
+      "template": "src/main/resources/templates/easy/reviews.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_reviews.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/businesses",
+        "/api/admin/easy/workspace/reviews/",
+        "/api/admin/easy/workspace/reviews?",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/easy/payments": [
+    {
+      "template": "src/main/resources/templates/easy/payments.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_payments.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/businesses",
+        "/api/admin/easy/payments",
+        "/api/admin/easy/payments/",
+        "/api/admin/easy/payments?",
+        "/api/admin/easy/students",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/easy/reviews": [
+    {
+      "template": "src/main/resources/templates/easy/reviews.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_reviews.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/businesses",
+        "/api/admin/easy/workspace/reviews/",
+        "/api/admin/easy/workspace/reviews?",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/easy/students": [
+    {
+      "template": "src/main/resources/templates/easy/students.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_students.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/businesses",
+        "/api/admin/easy/students",
+        "/api/admin/easy/students/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/easy/transactions": [
+    {
+      "template": "src/main/resources/templates/easy/transactions.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/easy_api.js",
+        "/js/easy_transactions.js",
+        "/js/easy_import.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/admin/easy/accounts",
+        "/api/admin/easy/businesses",
+        "/api/admin/easy/imports",
+        "/api/admin/easy/imports/",
+        "/api/admin/easy/transactions/export?",
+        "/api/admin/easy/workspace/transactions",
+        "/api/admin/easy/workspace/transactions/",
+        "/api/admin/easy/workspace/transactions?",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/exam": [
+    {
+      "template": "src/main/resources/templates/public/exam.html",
+      "scripts": [
+        "/js/return_url.js",
+        "/js/account_menu.js"
+      ],
+      "clientApiLiterals": [
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me"
+      ]
+    }
+  ],
+  "/exam-analysis": [
+    {
+      "template": "src/main/resources/templates/public/exam_insight.html",
+      "scripts": [
+        "/js/exam_insight.js?v=20261017-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/exam_review": [
+    {
+      "template": "src/main/resources/templates/student/exam_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/exam_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}/exam-confirm",
+        "/api/sources/${sourceId}/exam-review"
+      ]
+    }
+  ],
+  "/faq": [
+    {
+      "template": "src/main/resources/templates/public/faq.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/public/privacy.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/help/academycraft": [
+    {
+      "template": "src/main/resources/templates/help/academycraft/index.html",
+      "scripts": [
+        "/js/academycraft-help.js"
+      ],
+      "clientApiLiterals": [
+        "/api/help/academycraft/ask"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/help/academycraft/page.html",
+      "scripts": [
+        "/js/academycraft-help.js"
+      ],
+      "clientApiLiterals": [
+        "/api/help/academycraft/ask"
+      ]
+    }
+  ],
+  "/help/academycraft/{slug}": [
+    {
+      "template": "src/main/resources/templates/help/academycraft/index.html",
+      "scripts": [
+        "/js/academycraft-help.js"
+      ],
+      "clientApiLiterals": [
+        "/api/help/academycraft/ask"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/help/academycraft/page.html",
+      "scripts": [
+        "/js/academycraft-help.js"
+      ],
+      "clientApiLiterals": [
+        "/api/help/academycraft/ask"
+      ]
+    }
+  ],
+  "/home": [
+    {
+      "template": "src/main/resources/templates/public/home.html",
+      "scripts": [
+        "/js/api.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/analyzes/latest?limit=3",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/ledger": [
+    {
+      "template": "src/main/resources/templates/easy/tutor_agent.html",
+      "scripts": [
+        "/js/service_home_navigation.js?v=20261019-1",
+        "/js/api.js",
+        "/js/easy_tutor_agent.js?v=20261018-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/lessons": [
+    {
+      "template": "src/main/resources/templates/public/lesson_search.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lesson_search.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lesson-applications",
+        "/api/lessons/search?${params.toString()}",
+        "/api/subjects"
+      ]
+    }
+  ],
+  "/lessons/{lessonId}/community": [
+    {
+      "template": "src/main/resources/templates/lesson_community.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/lesson_community.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/community/comments/${commentId}",
+        "/api/community/posts/${editing}",
+        "/api/community/posts/${postId}",
+        "/api/community/posts/${postId}/comments",
+        "/api/conversations",
+        "/api/lessons/${lessonId}/community/categories",
+        "/api/lessons/${lessonId}/community/categories/${tab.categoryId}",
+        "/api/lessons/${lessonId}/community/context",
+        "/api/lessons/${lessonId}/community/posts",
+        "/api/lessons/${lessonId}/community/posts?${params}"
+      ]
+    }
+  ],
+  "/lms/{handle}": [
+    {
+      "template": "src/main/resources/templates/lms/lms_cart.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_cart.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_checkout.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_checkout.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_course_detail.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_course_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_courses.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_courses.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_lecture.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_lecture.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_my.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_my.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/cart": [
+    {
+      "template": "src/main/resources/templates/lms/lms_cart.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_cart.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_checkout.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_checkout.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_course_detail.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_course_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_courses.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_courses.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_lecture.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_lecture.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_my.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_my.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/checkout": [
+    {
+      "template": "src/main/resources/templates/lms/lms_cart.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_cart.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_checkout.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_checkout.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_course_detail.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_course_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_courses.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_courses.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_lecture.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_lecture.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_my.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_my.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/contents": [
+    {
+      "template": "src/main/resources/templates/lms/lms_contents.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_contents.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_manage.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_manage.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/courses/{courseId}": [
+    {
+      "template": "src/main/resources/templates/lms/lms_cart.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_cart.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_checkout.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_checkout.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_course_detail.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_course_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_courses.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_courses.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_lecture.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_lecture.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_my.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_my.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/lecture/{courseId}": [
+    {
+      "template": "src/main/resources/templates/lms/lms_cart.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_cart.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_checkout.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_checkout.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_course_detail.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_course_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_courses.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_courses.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_lecture.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_lecture.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_my.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_my.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/manage": [
+    {
+      "template": "src/main/resources/templates/lms/lms_contents.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_contents.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_manage.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_manage.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/midterm-live": [
+    {
+      "template": "src/main/resources/templates/lms/lms_midterm_live.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_midterm_live.js?v=20260916-1"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/my": [
+    {
+      "template": "src/main/resources/templates/lms/lms_cart.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_cart.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_checkout.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_checkout.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_course_detail.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_course_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_courses.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_courses.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_lecture.html",
+      "scripts": [
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_lecture.js"
+      ],
+      "clientApiLiterals": [
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/lms/lms_my.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_my.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/lms/{handle}/review/{lessonId}": [
+    {
+      "template": "src/main/resources/templates/lms/lms_review.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/lms_mock.js",
+        "/js/lms_data.js",
+        "/js/lms_state.js",
+        "/js/lms_shell.js",
+        "/js/lms_player.js",
+        "/js/lms_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/lms/",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lms/"
+      ]
+    }
+  ],
+  "/mcp/connections": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/mcp/oauth/authorize": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/mcp/oauth/register": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/mcp/oauth/revoke": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/mcp/oauth/token": [
+    {
+      "template": "src/main/resources/templates/studio/mcp-connections.html",
+      "scripts": [
+        "/js/mcp_connections.js"
+      ],
+      "clientApiLiterals": [
+        "/api/mcp/connections/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/studio/mcp-consent.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/my/profile": [
+    {
+      "template": "src/main/resources/templates/shared/my_profile.html",
+      "scripts": [
+        "/js/api.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/me",
+        "/api/me/oauth",
+        "/api/me/oauth/${linkProvider.toLowerCase()}",
+        "/api/me/oauth/${unlinkProvider.toLowerCase()}"
+      ]
+    }
+  ],
+  "/newstart": [
+    {
+      "template": "src/main/resources/templates/newstart/index.html",
+      "scripts": [
+        "/js/newstart-motion.js?v=20260927-2",
+        "/js/newstart-gate.js?v=20261002-1",
+        "/js/newstart-debt-upload.js?v=20261005-3",
+        "/js/newstart.js?v=20261003-1",
+        "/js/newstart-profile.js?v=20260921-1",
+        "/js/newstart-presence.js?v=20261001-1",
+        "/js/newstart-consult-unread.js?v=20261003-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/a-to-z": [
+    {
+      "template": "src/main/resources/templates/newstart/a-to-z.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/practical-tool.html",
+      "scripts": [
+        "/js/newstart-motion.js?v=20260927-2",
+        "/js/newstart-court-helper.js?v=20260923-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/chat": [
+    {
+      "template": "src/main/resources/templates/newstart/chat.html",
+      "scripts": [
+        "/js/newstart-chat.js?v=20260921-1",
+        "/js/newstart-profile.js?v=20260921-1",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/consultations": [
+    {
+      "template": "src/main/resources/templates/newstart/consultations.html",
+      "scripts": [
+        "/js/newstart-consultations.js?v=20261003-1",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/fss-helper": [
+    {
+      "template": "src/main/resources/templates/newstart/fss-helper.html",
+      "scripts": [
+        "/js/newstart-motion.js?v=20260927-2",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": [
+        "/api/newstart/fss/agent/advance",
+        "/api/newstart/fss/agent/back",
+        "/api/newstart/fss/agent/restart",
+        "/api/newstart/fss/agent/session",
+        "/api/newstart/fss/agent/workflow",
+        "/api/newstart/fss/companion",
+        "/api/newstart/fss/compose"
+      ]
+    }
+  ],
+  "/newstart/galmuri": [
+    {
+      "template": "src/main/resources/templates/newstart/galmuri.html",
+      "scripts": [
+        "/js/newstart-galmuri.js?v=20260929-1",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/login": [
+    {
+      "template": "src/main/resources/templates/newstart/login.html",
+      "scripts": [
+        "/js/newstart-login.js?v=20261002-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/questions": [
+    {
+      "template": "src/main/resources/templates/newstart/questions.html",
+      "scripts": [
+        "/js/newstart-requests.js?v=20260929-1",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/thanks-guide": [
+    {
+      "template": "src/main/resources/templates/newstart/thanks-guide.html",
+      "scripts": [
+        "/js/newstart-back.js?v=20260928-1",
+        "/js/newstart-thanks-verify.js?v=20261001-2"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/tools/{tool}": [
+    {
+      "template": "src/main/resources/templates/newstart/a-to-z.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/practical-tool.html",
+      "scripts": [
+        "/js/newstart-motion.js?v=20260927-2",
+        "/js/newstart-court-helper.js?v=20260923-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/updates": [
+    {
+      "template": "src/main/resources/templates/admin/newstart_updates.html",
+      "scripts": [
+        "/js/admin_newstart_updates.js?v=20260922-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/update_detail.html",
+      "scripts": [
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/updates.html",
+      "scripts": [
+        "/js/newstart-updates.js?v=20260923-1",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/newstart/updates/{id:\\d+}": [
+    {
+      "template": "src/main/resources/templates/admin/newstart_updates.html",
+      "scripts": [
+        "/js/admin_newstart_updates.js?v=20260922-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/update_detail.html",
+      "scripts": [
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/newstart/updates.html",
+      "scripts": [
+        "/js/newstart-updates.js?v=20260923-1",
+        "/js/newstart-back.js?v=20260928-1"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/privacy": [
+    {
+      "template": "src/main/resources/templates/public/faq.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/public/privacy.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/program/intro": [
+    {
+      "template": "src/main/resources/templates/program/notice.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/program/notice": [
+    {
+      "template": "src/main/resources/templates/program/notice.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    }
+  ],
+  "/register": [
+    {
+      "template": "src/main/resources/templates/auth/register.html",
+      "scripts": [],
+      "clientApiLiterals": [
+        "/api/auth/login",
+        "/api/users/check-login-id?loginId=${encodeURIComponent(loginId)}",
+        "/api/users/students",
+        "/api/users/tutors"
+      ]
+    }
+  ],
+  "/signin/reset/password": [
+    {
+      "template": "src/main/resources/templates/auth/password_reset_request.html",
+      "scripts": [
+        "/js/password_reset_request.js?v=20260712"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/signin/reset/password/confirm": [
+    {
+      "template": "src/main/resources/templates/auth/password_reset_confirm.html",
+      "scripts": [
+        "/js/password_reset_confirm.js?v=20260629"
+      ],
+      "clientApiLiterals": []
+    }
+  ],
+  "/stdt_dashboard": [
+    {
+      "template": "src/main/resources/templates/student/stdt_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/stdt_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations${q",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${editingConversationId}",
+        "/api/learning-materials${q",
+        "/api/learning-materials/${item.materialId}/answers/${a.answerId}/file",
+        "/api/learning-materials/${materialId}/download",
+        "/api/learning-materials/${pendingCompleteMaterialId}/complete",
+        "/api/lesson-applications/${applicationId}",
+        "/api/lesson-applications/me",
+        "/api/sources/pending-review${q",
+        "/api/users/students/me"
+      ]
+    }
+  ],
+  "/subdomain-home": [
+    {
+      "template": "src/main/resources/templates/public/academy_public.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/site_events.js?v=20261017-1",
+        "/js/academy_business_info.js",
+        "/js/lesson_product_showcase.js?v=20260810-1",
+        "/js/academy_reveal.js?v=20260901-5",
+        "/js/academy_motion.js?v=20261020-1",
+        "/js/academy_scene.js?v=20260901-5",
+        "/js/academy_collection.js?v=20260908-1",
+        "/js/academy_cinematic.js?v=20260901-7",
+        "/js/academy_brand.js?v=20261013-1",
+        "/js/academy_sections.js?v=20261013-1",
+        "/js/eduholic_actual_class_video_filter.js?v=20260909-4",
+        "/js/visual_editor_render.js?v=20261012-1",
+        "/js/academy_public.js?v=20261013-2",
+        "/js/eduholic_midterm_popup.js?v=20260914",
+        "/js/eduholic_featured_cta.js?v=20260908-1",
+        "/js/eduholic_midterm_home_live.js?v=20260929-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/testprep": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/testprep/guide": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/testprep/learning": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/testprep/practice": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/testprep/review": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/testprep/run": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/testprep/scores": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/testprep/vocab": [
+    {
+      "template": "src/main/resources/templates/testprep/catalog.html",
+      "scripts": [
+        "/js/testprep_catalog.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/exams?kind="
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/guide.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/home.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/testprep/learning.html",
+      "scripts": [
+        "/js/testprep_learning.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts",
+        "/api/testprep/learning"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/review.html",
+      "scripts": [
+        "/js/testprep_review.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/run.html",
+      "scripts": [
+        "/js/testprep_run.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts/"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/testprep/scores.html",
+      "scripts": [
+        "/js/testprep_scores.js"
+      ],
+      "clientApiLiterals": [
+        "/api/testprep/attempts"
+      ]
+    }
+  ],
+  "/tutor/academy": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_academy.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_academy.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/tutor/academy",
+        "/api/tutor/academy/me"
+      ]
+    }
+  ],
+  "/tutor/academy/editor": [
+    {
+      "template": "src/main/resources/templates/tutor/academy_editor.html",
+      "scripts": [
+        "/js/visual_editor_render.js?v=20261012-1",
+        "/js/visual_editor_import.js?v=20261012-1",
+        "/js/visual_editor_i18n_ko.js?v=20261012-1"
+      ],
+      "clientApiLiterals": [
+        "/api/tutor/academy/ai/chat/create",
+        "/api/tutor/academy/page-settings/visual-editor"
+      ]
+    }
+  ],
+  "/tutor/academy/inquiries": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_academy_inquiries.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_academy_inquiries.js?v=20261017-1"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/tutor/academy/lessons/editor": [
+    {
+      "template": "src/main/resources/templates/tutor/lesson_product_editor.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/academy_sections.js?v=20260905-4",
+        "/js/lesson_product_editor_state.js",
+        "/js/lesson_product_editor.js?v=20260905-3"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/tutor/academy/posts": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_academy_posts.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_academy_posts.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/tutor/academy/blog-posts"
+      ]
+    }
+  ],
+  "/tutor/academy/posts/new": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_academy_post_editor.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_academy_post_editor.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/tutor/academy/blog-posts",
+        "/api/tutor/academy/blog-posts/",
+        "/api/tutor/academy/blog-sources/images"
+      ]
+    }
+  ],
+  "/tutor/academy/posts/{postId}": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_academy_post_editor.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_academy_post_editor.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/tutor/academy/blog-posts",
+        "/api/tutor/academy/blog-posts/",
+        "/api/tutor/academy/blog-sources/images"
+      ]
+    }
+  ],
+  "/tutor/academy/preview": [
+    {
+      "template": "src/main/resources/templates/public/academy_public.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/site_events.js?v=20261017-1",
+        "/js/academy_business_info.js",
+        "/js/lesson_product_showcase.js?v=20260810-1",
+        "/js/academy_reveal.js?v=20260901-5",
+        "/js/academy_motion.js?v=20261020-1",
+        "/js/academy_scene.js?v=20260901-5",
+        "/js/academy_collection.js?v=20260908-1",
+        "/js/academy_cinematic.js?v=20260901-7",
+        "/js/academy_brand.js?v=20261013-1",
+        "/js/academy_sections.js?v=20261013-1",
+        "/js/eduholic_actual_class_video_filter.js?v=20260909-4",
+        "/js/visual_editor_render.js?v=20261012-1",
+        "/js/academy_public.js?v=20261013-2",
+        "/js/eduholic_midterm_popup.js?v=20260914",
+        "/js/eduholic_featured_cta.js?v=20260908-1",
+        "/js/eduholic_midterm_home_live.js?v=20260929-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/tutor/academy/setup": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_academy_setup.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_academy_setup.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/subjects",
+        "/api/tutor/academy",
+        "/api/tutor/academy/handle-available?handle=",
+        "/api/tutor/academy/me"
+      ]
+    }
+  ],
+  "/tutor/academy/videos": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_academy_videos.html",
+      "scripts": [
+        "/js/academy_sections.js?v=20260905-4",
+        "/js/api.js",
+        "/js/tutor_academy_videos.js?v=20260918-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/tutor/conversation/chat": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/sources/${sid}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    }
+  ],
+  "/tutor/conversation/chat.html": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/sources/${sid}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    }
+  ],
+  "/tutor/conversation/dashboard": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/sources/${sid}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    }
+  ],
+  "/tutor/conversation/materials": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/sources/${sid}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    }
+  ],
+  "/tutor/conversation/materials.html": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/sources/${sid}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    }
+  ],
+  "/tutor/conversation_dashboard": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/sources/${sid}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    }
+  ],
+  "/tutor/conversations/{id}": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_chat.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/messages${adminTarget}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/messages",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_dashboard.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/tutor_conversation_dashboard.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${sourceId}",
+        "/api/tutor/conversations",
+        "/api/tutor/conversations/${id}",
+        "/api/tutor/conversations/${selectedId}",
+        "/api/tutor/conversations/${selectedId}/messages",
+        "/api/tutor/conversations/${selectedId}/sources"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/tutor/tutor_conversation_materials.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/conversation_upload.js",
+        "/js/conversation_materials.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/conversations/${conversationId}",
+        "/api/conversations/${conversationId}/sources",
+        "/api/sources/${item.sourceId}/download?page=${item.page}",
+        "/api/sources/${item.sourceId}/file?page=${item.page}",
+        "/api/sources/${sid}",
+        "/api/tutor/conversations/${conversationId}",
+        "/api/tutor/conversations/${conversationId}/sources"
+      ]
+    }
+  ],
+  "/tutor/lesson/{lessonId}": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_lesson_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/tutor_lesson_detail.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/tutor/academy/lessons/",
+        "/api/tutor/lessons/"
+      ]
+    }
+  ],
+  "/tutor/lessons/{lessonId}/students": [
+    {
+      "template": "src/main/resources/templates/tutor/lesson_students.html",
+      "scripts": [
+        "/js/api.js"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations",
+        "/api/tutor/lessons/"
+      ]
+    }
+  ],
+  "/tutor_dashboard": [
+    {
+      "template": "src/main/resources/templates/tutor/tutor_dashboard.html",
+      "scripts": [],
+      "clientApiLiterals": [
+        "/api/auth/logout",
+        "/api/subjects",
+        "/api/users/students",
+        "/api/users/tutors/${currentUser.userId}/students"
+      ]
+    }
+  ],
+  "/wemade": [
+    {
+      "template": "src/main/resources/templates/wemade/china-detail.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/wemade/index.html",
+      "scripts": [
+        "/js/chart.umd.min.js",
+        "/js/chart.umd.min.js",
+        "/js/wemade.js",
+        "/js/wemade.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-valuation.js",
+        "/js/wemade-valuation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/auth/logout",
+        "/api/wemade/anomaly/members",
+        "/api/wemade/catalyst/events",
+        "/api/wemade/china/disclosures",
+        "/api/wemade/china/latest",
+        "/api/wemade/china/news",
+        "/api/wemade/community",
+        "/api/wemade/compare",
+        "/api/wemade/deal",
+        "/api/wemade/delta",
+        "/api/wemade/disclosures",
+        "/api/wemade/events",
+        "/api/wemade/fact-checks",
+        "/api/wemade/flows",
+        "/api/wemade/game-tracking",
+        "/api/wemade/gap",
+        "/api/wemade/prices",
+        "/api/wemade/prices/minute",
+        "/api/wemade/today",
+        "/api/wemade/valuation"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/wemade/login.html",
+      "scripts": [],
+      "clientApiLiterals": [
+        "/api/auth/login",
+        "/api/wemade/auth/signup"
+      ]
+    }
+  ],
+  "/wemade/china/disclosures/{id}": [
+    {
+      "template": "src/main/resources/templates/wemade/china-detail.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/wemade/index.html",
+      "scripts": [
+        "/js/chart.umd.min.js",
+        "/js/chart.umd.min.js",
+        "/js/wemade.js",
+        "/js/wemade.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-valuation.js",
+        "/js/wemade-valuation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/auth/logout",
+        "/api/wemade/anomaly/members",
+        "/api/wemade/catalyst/events",
+        "/api/wemade/china/disclosures",
+        "/api/wemade/china/latest",
+        "/api/wemade/china/news",
+        "/api/wemade/community",
+        "/api/wemade/compare",
+        "/api/wemade/deal",
+        "/api/wemade/delta",
+        "/api/wemade/disclosures",
+        "/api/wemade/events",
+        "/api/wemade/fact-checks",
+        "/api/wemade/flows",
+        "/api/wemade/game-tracking",
+        "/api/wemade/gap",
+        "/api/wemade/prices",
+        "/api/wemade/prices/minute",
+        "/api/wemade/today",
+        "/api/wemade/valuation"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/wemade/login.html",
+      "scripts": [],
+      "clientApiLiterals": [
+        "/api/auth/login",
+        "/api/wemade/auth/signup"
+      ]
+    }
+  ],
+  "/wemade/china/news/{id}": [
+    {
+      "template": "src/main/resources/templates/wemade/china-detail.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/wemade/index.html",
+      "scripts": [
+        "/js/chart.umd.min.js",
+        "/js/chart.umd.min.js",
+        "/js/wemade.js",
+        "/js/wemade.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-valuation.js",
+        "/js/wemade-valuation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/auth/logout",
+        "/api/wemade/anomaly/members",
+        "/api/wemade/catalyst/events",
+        "/api/wemade/china/disclosures",
+        "/api/wemade/china/latest",
+        "/api/wemade/china/news",
+        "/api/wemade/community",
+        "/api/wemade/compare",
+        "/api/wemade/deal",
+        "/api/wemade/delta",
+        "/api/wemade/disclosures",
+        "/api/wemade/events",
+        "/api/wemade/fact-checks",
+        "/api/wemade/flows",
+        "/api/wemade/game-tracking",
+        "/api/wemade/gap",
+        "/api/wemade/prices",
+        "/api/wemade/prices/minute",
+        "/api/wemade/today",
+        "/api/wemade/valuation"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/wemade/login.html",
+      "scripts": [],
+      "clientApiLiterals": [
+        "/api/auth/login",
+        "/api/wemade/auth/signup"
+      ]
+    }
+  ],
+  "/wemade/login": [
+    {
+      "template": "src/main/resources/templates/wemade/china-detail.html",
+      "scripts": [],
+      "clientApiLiterals": []
+    },
+    {
+      "template": "src/main/resources/templates/wemade/index.html",
+      "scripts": [
+        "/js/chart.umd.min.js",
+        "/js/chart.umd.min.js",
+        "/js/wemade.js",
+        "/js/wemade.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-gap.js",
+        "/js/wemade-valuation.js",
+        "/js/wemade-valuation.js"
+      ],
+      "clientApiLiterals": [
+        "/api/auth/logout",
+        "/api/wemade/anomaly/members",
+        "/api/wemade/catalyst/events",
+        "/api/wemade/china/disclosures",
+        "/api/wemade/china/latest",
+        "/api/wemade/china/news",
+        "/api/wemade/community",
+        "/api/wemade/compare",
+        "/api/wemade/deal",
+        "/api/wemade/delta",
+        "/api/wemade/disclosures",
+        "/api/wemade/events",
+        "/api/wemade/fact-checks",
+        "/api/wemade/flows",
+        "/api/wemade/game-tracking",
+        "/api/wemade/gap",
+        "/api/wemade/prices",
+        "/api/wemade/prices/minute",
+        "/api/wemade/today",
+        "/api/wemade/valuation"
+      ]
+    },
+    {
+      "template": "src/main/resources/templates/wemade/login.html",
+      "scripts": [],
+      "clientApiLiterals": [
+        "/api/auth/login",
+        "/api/wemade/auth/signup"
+      ]
+    }
+  ],
+  "/wiki/board/{boardKey}": [
+    {
+      "template": "src/main/resources/templates/public/wiki_board.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/wiki_board.js?v=20260903-3"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/wiki/board/{boardKey}/new": [
+    {
+      "template": "src/main/resources/templates/public/wiki_post_new.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/wiki_post_new.js?v=20260904-4"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/wiki/learning": [
+    {
+      "template": "src/main/resources/templates/public/wiki_learning.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/wiki_learning.js?v=20260904-2"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/wiki/learning/{id}": [
+    {
+      "template": "src/main/resources/templates/public/wiki_learning_detail.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/wiki_learning_detail.js?v=20261021-1"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ],
+  "/wiki/posts/{postId}": [
+    {
+      "template": "src/main/resources/templates/public/wiki_post.html",
+      "scripts": [
+        "/js/api.js",
+        "/js/account_menu.js",
+        "/js/wiki_post.js?v=20260903-3"
+      ],
+      "clientApiLiterals": [
+        "/api/",
+        "/api/auth/login",
+        "/api/auth/logout",
+        "/api/auth/me",
+        "/api/conversations"
+      ]
+    }
+  ]
+}

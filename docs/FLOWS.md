@@ -960,3 +960,9 @@ ADMIN은 같은 화면에서 공식 원문과 근거 지식의 DRAFT→REVIEW→
 `/dashboard` → `/academycraft` → 기존 BuildIt 인증 검증 → 로컬 전용 서명 게이트웨이 → AcademyCraft 명시적 소속 연결·기존 역할·학원 격리 검사 → 기존 업무 화면/API. 미연결·비활성·타 학원·변경된 역할은 차단. 기존 서비스 세션·DB·권한은 보존.
 AI 비서 경로(P1-b): `/academycraft/api/rea/{id}/agent/{tools|execute|plans/{uuid}[/approve|/cancel]}` 5개 정확 경로만 중계한다. 쓰기 도구는 요청만으로 실행되지 않고 AcademyCraft 가 서버에 보관한 계획(변경 미리보기 포함)을 돌려주며, 원장 권한 회원이 계획 해시로 승인해야 단 한 번 실행된다(강사는 초안만, 10분 만료, `writeApproved` 불리언은 400). 서명된 신원의 `agentProtocol` 이 다르면 에이전트 경로만 403 이다.
 AcademyCraft 공통 진입은 ADMIN·TUTOR 전용이다. ADMIN은 보호된 승인 소속 목록에서 학원 선택 후 학생·반·출결·상담·공지의 기존 화면을 이용한다. 미연결 TUTOR 자동 가입·학원 생성은 수행하지 않는다. 운영 DB 무변경 조건으로 신규 TUTOR 소속 준비는 운영 적용 전 별도 확정이 필요하다.
+
+## AI AGENT 제작·MCP 읽기 연결 (미배포)
+
+ADMIN이 `/ai-agent-studio`에서 프로젝트 개설 → 기존 회원에게 제작 권한 부여 → 원본 업로드(SHA-256 중복 확인) → 각본/컷/캐릭터/영상/작업/검수 자료에 연결 → 새 버전 추가 → 버전 비교 → APPROVER가 명시적으로 승인본 지정. 원작 정본 출처와 사용자 승인 상태는 별개이며 AI 제안 저장은 approved 포인터를 바꾸지 않는다. 실제 EP01 파일은 제공되지 않아 업로드 대기로 남긴다.
+
+AI 클라이언트가 `/mcp` resource metadata 확인 → public client 등록(허용 callback만) → 기존 Feel2Real 사용자 로그인 → 서비스별 읽기 범위 동의 → S256 PKCE code 교환 → 사용자 권한 재검증 → 서비스 API의 동일 사용자 GET 조회. 페이지 shell과 실제 동적 데이터 API는 별도로 반환한다. `/mcp/connections`에서 폐기하면 access·refresh token 모두 즉시 무효화된다. 연결·검수 인계 절차는 [보고서](ai-agent-studio/REPORT.md).

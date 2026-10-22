@@ -263,3 +263,44 @@ def migrate_owned_tables(conn: sqlite3.Connection, workspace_id: str) -> dict[st
             raise RuntimeError(f"workspace migration changed row count for {table}: {before} -> {after}")
         result[table] = (before, after)
     return result
+
+
+# MCP reads must not provision membership, files, schema or content.
+_read_only_context = contextvars.ContextVar("wiki_read_only", default=False)
+
+
+def is_read_only() -> bool:
+    return _read_only_context.get()
+
+
+def verify_read_only(headers, identity: WikiIdentity, method: str, target: str) -> bool:
+    supplied = headers.get("x-buildit-readonly-signature", "")
+    if not supplied:
+        return False
+    timestamp = headers.get("x-buildit-readonly-time", "")
+    try:
+        if method != "GET" or abs(int(time.time()) - int(timestamp)) > 15:
+            raise ValueError("expired read-only delegation")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid read-only delegation") from exc
+    payload = f"mcp-read-only\n{identity.user_id}\nGET\n{target}\n{timestamp}".encode()
+    expected = hmac.new(identity_secret().encode(), payload, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, supplied):
+        raise ValueError("invalid read-only signature")
+    return True
+
+
+def existing_workspace(identity: WikiIdentity, legacy_database_path: str) -> WikiWorkspace | None:
+    """Resolve only an already provisioned, authorized DB, with zero catalog writes."""
+    if is_legacy_member(identity):
+        return legacy_workspace(legacy_database_path) if Path(legacy_database_path).is_file() else None
+    catalog = Path(catalog_path(legacy_database_path))
+    if not catalog.is_file():
+        return None
+    with sqlite3.connect(catalog.resolve().as_uri() + "?mode=ro", uri=True) as conn:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute("""SELECT w.* FROM wiki_workspace_members m
+            JOIN wiki_workspaces w USING(workspace_id) WHERE m.user_id=?""", (identity.user_id,)).fetchone()
+    if not row or not Path(row["database_path"]).is_file():
+        return None
+    return WikiWorkspace(row["workspace_id"], row["database_path"], bool(row["is_legacy"]))

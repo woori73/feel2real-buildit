@@ -60,7 +60,8 @@ public class SiteVisitFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     String uri = request.getRequestURI();
-    boolean candidate = "GET".equalsIgnoreCase(request.getMethod())
+    boolean candidate = !Boolean.TRUE.equals(request.getAttribute("f2r.mcp.readOnly"))
+        && "GET".equalsIgnoreCase(request.getMethod())
         && !EXCLUDED_EXACT.contains(uri)
         && EXCLUDED_PREFIXES.stream().noneMatch(uri::startsWith);
 

@@ -43,8 +43,11 @@ EXPORT_PATH = WORKSPACE / 'feel-to-real-project-export.zip'
 def get_db():
     active = wiki_workspace.current_workspace()
     database_path = active.database_path if active else DB_PATH
-    os.makedirs(os.path.dirname(database_path), exist_ok=True)
-    conn = sqlite3.connect(database_path)
+    if not wiki_workspace.is_read_only():
+        os.makedirs(os.path.dirname(database_path), exist_ok=True)
+    conn = sqlite3.connect(Path(database_path).resolve().as_uri() + "?mode=ro", uri=True) if wiki_workspace.is_read_only() else sqlite3.connect(database_path)
+    if wiki_workspace.is_read_only():
+        conn.execute("PRAGMA query_only=ON")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -884,6 +887,26 @@ async def authenticated_workspace(request: Request, call_next):
             identity = wiki_workspace.WikiIdentity('test-legacy', 'admin', 'ADMIN')
         else:
             return Response(content=json.dumps({'detail': str(exc)}), status_code=401, media_type='application/json')
+    try:
+        readonly = wiki_workspace.verify_read_only(request.headers, identity, request.method,
+            request.url.path + ("?" + request.url.query if request.url.query else ""))
+    except ValueError:
+        return Response(content='{"detail":"invalid read-only delegation"}', status_code=403, media_type='application/json')
+    if readonly:
+        resolved = wiki_workspace.existing_workspace(identity, DB_PATH)
+        if resolved is None:
+            return Response(content='{"detail":"workspace_not_provisioned"}', status_code=409, media_type='application/json')
+        token = wiki_workspace.set_current_workspace(resolved)
+        identity_token = wiki_workspace.set_current_identity(identity)
+        readonly_token = wiki_workspace._read_only_context.set(True)
+        request.state.wiki_identity = identity
+        request.state.wiki_workspace = resolved
+        try:
+            return await call_next(request)
+        finally:
+            wiki_workspace._read_only_context.reset(readonly_token)
+            wiki_workspace.reset_current_identity(identity_token)
+            wiki_workspace.reset_current_workspace(token)
     requested_workspace_id = request.headers.get(wiki_workspace.WORKSPACE_OVERRIDE_HEADER, '').strip()
     if requested_workspace_id:
         if not wiki_workspace.is_workspace_admin(identity):

@@ -1797,3 +1797,14 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **인덱스 반영**: 저장이 끝나면 `AdmissionsVectorIndex.reload()`로 인메모리 인덱스를 다시 읽는다. reload는 트랜잭션 커밋 이후에 실행한다 — 커밋 전에 읽으면 방금 저장한 행의 `knowledge_id`(insertable=false 컬럼)가 비어 인덱스에서 누락되기 때문이다. 인덱스가 비어 있으면 검색은 기존처럼 LIKE로 폴백한다.
 
 > 정정(v3.3 수정 PR): 공식자료(material)는 지식 항목으로 변환하지 않는다. 항목은 근거 전형·일정 행이 ACTIVE일 때만 검색 대상이며, 검색은 대학·캠퍼스·수시/정시·학년도 필터 후 키워드/벡터 관련성 하한을 통과한 항목만 근거로 반환한다.
+
+## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)
+
+- `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.
+- `studio_files`: 원본 불변 메타데이터. project+SHA-256 유일성, 기존 FileStorage local/S3 재사용. 공개 storage key·공유 다운로드 URL 없음. `StudioFile` immutable Entity가 스키마를 검증한다.
+- `studio_items` / `studio_revisions`: 자료별 head·approved 포인터와 append-only 버전. `StudioRevision` immutable Entity 및 `StudioService.Revision` 명령 DTO. 프로젝트 행 잠금과 parentId 비교로 경합 차단. SCRIPT/STORYBOARD/CHARACTER/VIDEO/JOB/REVIEW, ORIGINAL/AI_PROPOSAL/USER_EDIT를 구분한다.
+- `studio_events`: 업로드·새 버전·승인·반려·권한 변경 감사 이력. 원본/버전 삭제·덮어쓰기 API를 제공하지 않는다.
+- `mcp_clients`, `mcp_pending`, `mcp_grants`, `mcp_codes`, `mcp_tokens`: 사용자 OAuth 동의, S256 PKCE, 일회용 코드, hash-only opaque token, 15분 access·최대 30일 갱신·refresh 재사용 시 연결 폐기. 사용자 role·자격 증명 stamp를 매 호출 재검사한다. OAuth 행은 제한된 JDBC 명령으로 관리하며 외부 DTO에 비밀값을 넣지 않는다.
+- `mcp_audit`, `mcp_rate_limits`: 원문/토큰/검색문을 제외한 감사 이력과 DB 기반 호출 상한. 새 RDS·서버·유료 AI/임베딩 API 없음.
+
+설계·실측·실제 연결 미검증 범위: [통합 보고서](ai-agent-studio/REPORT.md). 운영 DB에 이 마이그레이션을 적용하지 않았다. 병합 직전 최신 main과 V번호 충돌을 재확인한다.

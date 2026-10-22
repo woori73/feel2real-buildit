@@ -4852,3 +4852,32 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 |---|---|---|---|
 | GET | `/help/academycraft`, `/help/academycraft/{slug}` | ADMIN·TUTOR (비로그인 HTML은 로그인 안내 302) | 도움말 SSR. 역할 전용 문서는 타 역할 404 |
 | POST | `/api/help/academycraft/ask` | ADMIN·TUTOR | body `{question}`(≤300자). 읽기 전용 검색·안내, 사용자당 분당 20회(429). 응답 `{intent,text,sources[],grounded,writeBlocked}` |
+
+## AI AGENT 제작 스튜디오 및 통합 MCP (미배포)
+
+`GET /ai-agent-studio`는 로그인과 프로젝트 제작 권한이 필요하다. ADMIN은 프로젝트 개설·멤버 권한을 관리한다. 상태 변경은 정확한 same-origin을 요구하며 MCP bearer token으로 사용할 수 없다.
+
+| 경로 | 메서드 | 계약 |
+|---|---|---|
+| `/api/studio/project` | GET / POST | 현황 / ADMIN 개설, 14화·EP01 68컷 업로드 대기 구조 |
+| `/api/studio/revisions` | GET / POST | episode·kind·q 검색 / parentId 기반 append-only 버전 |
+| `/api/studio/revisions/{id}` | GET | 권한 있는 버전 원문·승인 포인터 |
+| `/api/studio/revisions/{id}/review` | POST | APPROVER의 APPROVE/REJECT와 메모, AI 자동 승인 없음 |
+| `/api/studio/compare?left=&right=` | GET | 두 실제 버전 비교 |
+| `/api/studio/files` | GET / POST | 보관 목록 / multipart PDF·HTML·JSON·MD·ZIP·PNG·MP4, 100 MiB, SHA-256 중복 검사 |
+| `/api/studio/files/{id}` | GET | storage key 제외 파일 메타데이터 |
+| `/api/studio/files/{id}/content` | GET | 원본 bytes, attachment·no-store·nosniff·CSP sandbox |
+| `/api/studio/files/{id}/text` | GET | 20 MiB 이하 PDF/텍스트·ZIP 목록 열람, ZIP 해제·스크립트 실행 없음 |
+| `/api/studio/events` | GET | 작업·검수·승인 이력 |
+| `/api/studio/members` | GET / POST | ADMIN 전용 명시적 제작 담당자 권한·폐기 |
+| `/mcp` | POST | stateless Streamable HTTP JSON-RPC, bearer 전용, 읽기 도구만 제공 |
+| `/.well-known/oauth-protected-resource/mcp` | GET | RFC 9728 resource metadata |
+| `/.well-known/oauth-authorization-server` | GET | OAuth metadata, S256 PKCE·DCR 지원 |
+| `/mcp/oauth/register` | POST JSON | 정확한 redirect URI 허용 목록의 public client 등록 |
+| `/mcp/oauth/authorize` | GET / POST form | 기존 홈페이지 로그인·일회용 동의 nonce·서비스 범위 승인 |
+| `/mcp/oauth/token` | POST form | code 교환·resource audience 검사·refresh 교체 |
+| `/mcp/oauth/revoke` | POST form | 해당 token의 연결 폐기 |
+| `/mcp/connections` | GET | 본인 연결·범위·만료·폐기 화면 |
+| `/api/mcp/connections/{id}/revoke` | POST | 기존 사용자 세션의 본인 연결 폐기 |
+
+MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·연결 안내와 검증 결과는 [통합 보고서](ai-agent-studio/REPORT.md), 전체 실제 페이지·API는 [서비스 조사](ai-agent-studio/SERVICE_INVENTORY.md)를 참조한다. 동적 페이지의 SSR 본문과 클라이언트 API 원천은 구분한다. 기존 서비스 권한/tenant 검사, 정확한 GET 경로에 15초로 묶은 내부 위임, 읽기 전용/rollback 트랜잭션을 거치며 사용자 role을 ADMIN으로 바꾸지 않는다. Wiki는 기존 workspace SQLite를 읽기 전용으로 열며 공유 관리자 MCP API key를 사용하지 않는다.

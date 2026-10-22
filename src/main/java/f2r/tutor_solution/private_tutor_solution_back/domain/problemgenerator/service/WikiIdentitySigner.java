@@ -43,4 +43,16 @@ public class WikiIdentitySigner {
       throw new IllegalStateException("Wiki identity 서명 생성 실패", exception);
     }
   }
+  /** An additional signature, only attached to validated path-bound MCP GET delegations. */
+  public void signReadOnly(HttpRequest.Builder builder, JwtTokenProvider.AuthenticatedPrincipal principal, String target) {
+    try {
+      String timestamp = Long.toString(Instant.now().getEpochSecond());
+      Mac mac = Mac.getInstance("HmacSHA256");
+      mac.init(new SecretKeySpec(identitySecret, "HmacSHA256"));
+      String payload = "mcp-read-only\n" + principal.userId() + "\nGET\n" + target + "\n" + timestamp;
+      builder.header("X-BuildIt-ReadOnly-Time", timestamp);
+      builder.header("X-BuildIt-ReadOnly-Signature", java.util.HexFormat.of().formatHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8))));
+    } catch (java.security.GeneralSecurityException e) { throw new IllegalStateException(e); }
+  }
+
 }
