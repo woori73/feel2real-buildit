@@ -69,3 +69,4 @@ anthropic:
 buildit:
   unified-assistant:
     write-enabled: true
+    model-analysis-enabled: true

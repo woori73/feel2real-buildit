@@ -283,6 +283,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAgentServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyAgentSecurityWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyDashboardWidgetControllerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.DashboardWidgetControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyDashboardWidgetCacheTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingDomainTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingServiceTest"

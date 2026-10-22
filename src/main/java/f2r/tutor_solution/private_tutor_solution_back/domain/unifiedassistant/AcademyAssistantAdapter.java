@@ -12,11 +12,18 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Component @RequiredArgsConstructor
 public class AcademyAssistantAdapter {
+  /** Only a definite rejection of the write request qualifies; failed readback remains UNKNOWN. */
+  static class WriteRejected extends ResponseStatusException {
+    WriteRejected(org.springframework.http.HttpStatusCode status) {super(status,"학원 API가 저장 요청을 거부했습니다.");}
+  }
   private final AcademyCraftGateway gateway;
   public JsonNode request(AuthenticatedPrincipal p,String method,String path,JsonNode body) {
     try {
       var response=gateway.exchange(p,method,path,body==null?new byte[0]:AssistantJson.write(body).getBytes(StandardCharsets.UTF_8));
-      if (!response.getStatusCode().is2xxSuccessful()) throw new ResponseStatusException(response.getStatusCode(),"학원 API가 요청을 거부했습니다 ("+response.getStatusCode().value()+"). 기존 화면에서 권한·입력값을 확인하세요.");
+      if (!response.getStatusCode().is2xxSuccessful()) {
+        if(!method.equals("GET")&&Set.of(400,401,403,404,405,409,422).contains(response.getStatusCode().value())) throw new WriteRejected(response.getStatusCode());
+        throw new ResponseStatusException(response.getStatusCode(),"학원 API가 요청을 거부했습니다 ("+response.getStatusCode().value()+"). 기존 화면에서 권한·입력값을 확인하세요.");
+      }
       return AssistantJson.read(new String(response.getBody(),StandardCharsets.UTF_8));
     } catch(ResponseStatusException e) { throw e; }
     catch(Exception e) { throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,"학원 API 연결 결과를 확인할 수 없습니다."); }

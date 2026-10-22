@@ -60,4 +60,9 @@ class UnifiedAssistantServiceTest {
     when(academy.execute(p,d)).thenThrow(new RuntimeException("timeout"));
     assertThat(service.decide(p,d.getId(),d.getPlanHash(),false).getStatus()).isEqualTo("UNKNOWN");verify(academy,times(1)).execute(p,d);
   }
+  @Test void givenDefiniteWriteRejection_whenApproved_thenFailedAndNoAutomaticRetry() {
+    var d=givenClaimedDraft();when(academy.snapshot(eq(p),eq(7L),eq("STUDENT_CREATE"),any())).thenReturn(AssistantJson.read("{\"context\":{\"memberId\":10}}"));
+    when(academy.execute(p,d)).thenThrow(new AcademyAssistantAdapter.WriteRejected(org.springframework.http.HttpStatus.CONFLICT));
+    assertThat(service.decide(p,d.getId(),d.getPlanHash(),false).getStatus()).isEqualTo("FAILED");verify(academy,times(1)).execute(p,d);
+  }
 }

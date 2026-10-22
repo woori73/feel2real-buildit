@@ -285,7 +285,7 @@ public class SecurityConfig {
             // API도 /api/tutor/easy/**에서 별도 TUTOR·사업체 권한을 검증한다.
             .requestMatchers("/ledger", "/ledger/**", "/tutor/easy", "/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             // BuildIt 통합 대시보드 — ADMIN·TUTOR 공용. 데이터는 /api/dashboard/** 에서 역할별 권한 검증.
-            .requestMatchers("/dashboard", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**").hasAnyRole("ADMIN", "TUTOR")
+            .requestMatchers("/dashboard", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
             // AcademyCraft 도움말(SSR)·도움말 AI 비서(읽기 전용) — ADMIN·TUTOR 전용.
             .requestMatchers("/help/academycraft", "/help/academycraft/**", "/api/help/academycraft/**").hasAnyRole("ADMIN", "TUTOR")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).

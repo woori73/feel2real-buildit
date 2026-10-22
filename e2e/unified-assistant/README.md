@@ -47,3 +47,5 @@ npm test
 `CHROMIUM_PATH=/path/to/chromium npm test`로 브라우저 경로를 지정할 수 있다. 기본은 `/usr/bin/chromium`이다. 테스트 계정 비밀번호는 `admin1234`다. 테스트는 사용자 5/7의 안내 진행을 초기화하고 이전 대기 초안을 만료시키며 실제 테스트 학생·반·출결·상담·거래를 추가한다. 재실행 시 작업 이름에 고유 접미사를 붙인다.
 
 결과 JSON과 실패 trace는 로컬 ignored 파일이다. 제출할 캡처는 `docs/unified-ai-assistant/screenshots/`에 생성한다. 저장소에 로그인 쿠키·브라우저 storageState·실제 파일은 저장하지 않는다.
+
+추가 검증: 같은 PC 대화창에 학생 명단 CSV와 혼합 거래 CSV를 연달아 올려 승인 전 불변·승인 후 재조회·행별 실패를 검사한다. 모바일은 자연어 학생 등록을 승인하고 결과 카드가 뷰포트에 보이는지 검사한다. `model-analysis-enabled`는 local에서 true지만 자격증명 없이는 명시적으로 표시된 규칙 분석을 사용한다. 실제 모델 응답을 E2E로 검증한 것은 아니다.

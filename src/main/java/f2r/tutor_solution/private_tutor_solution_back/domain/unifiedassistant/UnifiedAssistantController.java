@@ -19,10 +19,12 @@ import org.springframework.web.server.ResponseStatusException;
 public class UnifiedAssistantController {
   private final UnifiedAssistantService service;
   private final AssistantCommandParser parser;
+  private final AssistantConversationService conversation;
   public record ProgressRequest(int step,boolean completed,long version) {}
   public record DraftRequest(Long academyId,Long businessId,String operation,Map<String,Object> input) {}
   public record DecisionRequest(String planHash) {}
   public record CommandRequest(String message) {}
+  public record ConversationRequest(Long academyId,Long businessId,String message) {}
   @ModelAttribute
   void headers(HttpServletRequest req,org.springframework.web.context.request.NativeWebRequest web) {
     var response=web.getNativeResponse(jakarta.servlet.http.HttpServletResponse.class);
@@ -38,6 +40,14 @@ public class UnifiedAssistantController {
   @GetMapping("/overview") public Object overview(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestParam(required=false) Long businessId,@RequestParam(required=false) Long academyId) {return AssistantJson.plain(service.overview(p,businessId,academyId));}
   @GetMapping("/catalog/{kind}") public Object catalog(@AuthenticationPrincipal AuthenticatedPrincipal p,@PathVariable String kind,@RequestParam(required=false) Long academyId) {return AssistantJson.plain(service.catalog(p,kind,academyId));}
   @PostMapping("/command") public Object command(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestBody CommandRequest r) {service.actor(p);return parser.parse(r.message());}
+  @PostMapping("/conversation") public Object conversation(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestBody ConversationRequest r) {
+    return turn(conversation.send(p,r.academyId(),r.businessId(),r.message()));
+  }
+  @PostMapping(value="/materials",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+  public Object material(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestParam(required=false) Long academyId,@RequestParam(required=false) Long businessId,@RequestPart("file") MultipartFile file) throws IOException {
+    service.actor(p); if(file.getSize()>262144)throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,"자료는 256KB 이하로 올려주세요.");
+    return turn(conversation.upload(p,academyId,businessId,file.getOriginalFilename(),file.getBytes()));
+  }
   @PostMapping("/drafts") public Object draft(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestBody DraftRequest r) {return view(service.draft(p,r.academyId(),r.businessId(),r.operation(),AssistantJson.read(AssistantJson.write(r.input()))));}
   @PostMapping(value="/imports",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
   public Object upload(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestParam Long businessId,@RequestPart("file") MultipartFile file) throws IOException {
@@ -50,6 +60,10 @@ public class UnifiedAssistantController {
   public record AuditView(Long id,Long ownerId,String draftId,String event,String createdAt) {}
   @GetMapping("/audit") public Object audit(@AuthenticationPrincipal AuthenticatedPrincipal p) {
     return service.audit(p).stream().map(row->new AuditView(row.getId(),row.getOwnerId(),row.getDraftId(),row.getEvent(),row.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toString())).toList();
+  }
+  private Map<String,Object> turn(AssistantConversationService.Turn t) {
+    var out=new LinkedHashMap<String,Object>();out.put("message",t.message());out.put("analysis",t.analysis());out.put("suggestion",t.suggestion());
+    out.put("drafts",t.drafts().stream().map(this::view).toList());out.put("issues",t.issues());out.put("overview",t.overview()==null?null:AssistantJson.plain(t.overview()));return out;
   }
   private Map<String,Object> view(AssistantDraft d) {
     var v=new LinkedHashMap<String,Object>(); v.put("id",d.getId());v.put("operation",d.getOperation());v.put("academyId",d.getAcademyId());v.put("businessId",d.getBusinessId());

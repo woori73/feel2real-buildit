@@ -4863,6 +4863,8 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | `PUT /progress` | `{step:0..5,completed,version}`. 완료는 step=5만. 오래된 버전 409 |
 | `GET /overview?academyId=&businessId=` | 선택한 허용 학원의 context/stats와 선택한 허용 사업체의 월 요약. 학원 연결 실패는 `academyUnavailable:true`, 재무 권한 실패는 403 |
 | `GET /catalog/{kind}?academyId=` | `students/classes/consultations/teachers`만. 기존 학원 API 조회 |
+| `POST /conversation` | `{academyId?,businessId?,message}`. 기존 Muse Spark(설정 시) 또는 명시적으로 표시된 규칙 분석 → 필수 값이 충분하면 서버 초안 생성, 부족하면 보완 제안. `{message,analysis,suggestion,drafts,issues,overview}`. 실제 업무 실행 없음 |
+| `POST /materials?academyId=&businessId=` | multipart `file` CSV/TXT 1~256KB. 학생 명단 CSV/업무 지시 TXT 최대 20행, 거래 CSV는 기존 import 분석. 초안 배열·행별 확인 사항 반환. 자료 내 ID/권한/승인 지시는 권한 근거가 아님. 모든 업무 범위 권한을 먼저 확인하고 각 초안을 개별 저장·승인 |
 | `POST /command` | `{message}` 1~2000자. `{operation,input,message}`의 수정 가능한 업무 제안만 반환. 실행 없음 |
 | `POST /drafts` | `{academyId?,businessId?,operation,input:{...}}`. 허용 필드만 받고 서버 초안 저장. 기본 쓰기 스위치 OFF면 503 |
 | `POST /imports?businessId=` | multipart `file` CSV ≤256KB. 기존 import 원본 행 보관 후 장부 반영 초안 생성 |
@@ -4873,8 +4875,12 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 
 업무: `STUDENT_CREATE/UPDATE`, `CLASS_CREATE/UPDATE/ASSIGN`, `ATTENDANCE_RECORD`, `CONSULT_CREATE/MESSAGE`, `LEDGER_ENTRY/IMPORT/ACCOUNT`. 거래 직접 입력은 기존 CSV import 초안으로 정규화한다. 실제 입력 필드는 서버의 allowlist와 화면 폼을 따른다. 사용자당 미처리 초안 최대 20개. 요청 범위 밖 필드·모호한 입력 400, 비로그인 401, 권한/출처 403, 타인 초안 404, 해시·상태·대상 변경 409 또는 종료 상태, 초안 한도 429다.
 
-학원 쓰기는 기존 AcademyCraft 원장 역할만 허용하고 기존 REST API·서비스의 소속 검사를 유지한다. 기존 AcademyCraft `/agent` 계획을 변경하거나 승인하지 않는다. 실행 후 재조회 결과에 따라 `VERIFIED/REVIEW_REQUIRED/UNKNOWN`을 기록하며, 불명확한 실행은 자동 재시도하지 않는다. 상세 입력 예시·상태·제한은 [분석 보고서](unified-ai-assistant/README.md).
+학원 쓰기는 기존 AcademyCraft 원장 역할만 허용하고 기존 REST API·서비스의 소속 검사를 유지한다. 기존 AcademyCraft `/agent` 계획을 변경하거나 승인하지 않는다. 실행 후 재조회 결과에 따라 `VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN`을 기록하며, 불명확한 실행은 자동 재시도하지 않는다. 상세 입력 예시·상태·제한은 [분석 보고서](unified-ai-assistant/README.md).
 
 기존 `POST /api/dashboard/assistant`는 선택한 사업체의 **재무 해설 전용** Muse Spark 경로로 유지한다. 이 경로의 LLM 문맥에는 학원 출결 데이터가 없으며 새 통합 현황 조회와 구분한다.
 
 통합 비서의 초안 생성/만료 시각과 감사 시각은 UTC ISO-8601(`Z`)로 응답하고, 화면은 사용자의 시간대로 표시한다. 출결 입력 시각은 기존 AcademyCraft 계약대로 한국 현지 시각이다.
+
+통합 대화의 `buildit.unified-assistant.model-analysis-enabled` 기본값은 false이며 local에서만 true다. 기존 Muse Spark 전송 계층만 재사용한다. 모델 출력은 업무·필드 allowlist/타입/명시 ID 검증 후에도 승인 권한이 없으며, 실행은 기존 초안 승인 경로만 사용한다. 모델 미연결·잘못된 응답은 규칙 분석으로 처리했음을 알린다. 대화 입력 문장은 현재 브라우저에서만 표시하며 새로고침 시 현재 권한 범위의 서버 초안·결과 최신 30개를 복원한다.
+
+`GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.

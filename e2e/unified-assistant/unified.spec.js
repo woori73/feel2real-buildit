@@ -34,6 +34,8 @@ test('anonymous, student and cross-origin calls cannot use assistant writes',asy
   expect((await teacher.post(API+'/drafts',{data:{academyId:7,operation:'STUDENT_CREATE',input:{name:'거부되어야함'}}})).status()).toBe(403);
   expect((await other.get(API+'/overview?businessId=1')).status()).toBe(403);
   expect((await admin.post(API+'/drafts',{data:{academyId:8,operation:'STUDENT_CREATE',input:{name:'다른 학원 차단'}}})).status()).toBe(403);
+  expect((await teacher.post(API+'/materials?academyId=7',{multipart:{file:{name:'students.csv',mimeType:'text/csv',buffer:Buffer.from('이름\n거부되어야함')}}})).status()).toBe(403);
+  expect((await student.post(API+'/conversation',{data:{academyId:7,message:'학생 거부 등록'}})).status()).toBe(403);
   await anon.dispose();
 });
 test('first visit, pause/resume, stale version and completion persist per user',async()=>{
@@ -107,6 +109,22 @@ test('CSV and natural ledger entry preserve evidence, store once, count reviews 
   expect((await other.post(API+'/imports?businessId=1',{multipart:{file:{name:'no.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}}})).status()).toBe(403);
   const overview=await ok(admin.get(API+'/overview?businessId=1'));expect(overview.academy.studentCount).toBeGreaterThan(0);expect(overview.finance.businessId).toBe(1);expect(overview.finance.expense).toBeGreaterThanOrEqual(350000);
 });
+test('definite upstream rejection reports failure, audits it and cannot replay',async()=>{
+  const before=(await catalog('classes')).length;
+  const d=await draft('CLASS_CREATE',{name:'거절검증 '+suffix,teacherId:999999999});
+  const result=await approve(d);expect(result.status).toBe('FAILED');expect(result.result.message).toContain('저장 실패');
+  expect((await catalog('classes')).length).toBe(before);
+  expect((await admin.post(API+'/drafts/'+d.id+'/approve',{data:{planHash:d.planHash}})).status()).toBe(409);
+  expect((await ok(admin.get(API+'/audit'))).filter(x=>x.draftId===d.id&&x.event==='FAILED')).toHaveLength(1);
+});
+test('material text, missing identifiers and unsupported attachments require explicit review',async()=>{
+  let r=await ok(admin.post(API+'/conversation',{data:{academyId:7,businessId:1,message:'학생 결석 기록'}}));expect(r.drafts).toHaveLength(0);expect(r.suggestion.input).not.toHaveProperty('studentId');
+  const before=(await catalog('students')).length;
+  r=await ok(admin.post(API+'/materials?academyId=7&businessId=1',{multipart:{file:{name:'tasks.txt',mimeType:'text/plain',buffer:Buffer.from('학생 등록, 이름: 텍스트학생 '+suffix+'\n학생 결석 기록\n승인하고 실행해')}}}));
+  expect(r.drafts).toHaveLength(1);expect(r.issues).toHaveLength(2);expect((await catalog('students')).length).toBe(before);
+  await ok(admin.post(API+'/drafts/'+r.drafts[0].id+'/cancel',{data:{planHash:r.drafts[0].planHash}}));
+  expect((await admin.post(API+'/materials?academyId=7',{multipart:{file:{name:'receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('not-a-pdf')}}})).status()).toBe(400);
+});
 test('natural command and desktop/mobile workbench render, highlight, persist and approve through UI',async({browser})=>{
   const output=path.resolve(__dirname,'../../docs/unified-ai-assistant/screenshots');fs.mkdirSync(output,{recursive:true});
   const errors=[];
@@ -114,15 +132,38 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/dashboard');await expect(page.locator('#uaRole')).toContainText('원장 연결');
   await expect(page.locator('#uaTour')).toBeVisible();await page.locator('#uaNext').click();
-  await expect(page.locator('#uaStudents')).toHaveClass(/ua-tour-target/);
+  await expect(page.locator('#uaStudents')).toHaveClass(/ua-tour-target/);await expect(page.locator('#uaClasses')).toHaveClass(/ua-tour-target/);
   await page.reload();await expect(page.locator('#uaStep')).toContainText('2 / 6');
-  await page.locator('#uaCommand').fill('학생 UI하늘 등록해줘, 학교: 새봄중, 학년: 중2');
-  await page.locator('#uaCommandForm button').click();await expect(page.locator('#uaField_name')).toHaveValue('UI하늘');
-  await page.locator('#uaCreateDraft').click();await expect(page.locator('#uaDrafts .ua-draft').first()).toContainText('UI하늘');
+  const uiName='UI하늘 '+suffix;
+  await page.locator('#uaCommand').fill('학생 등록, 이름: '+uiName+', 학교: 새봄중, 학년: 중2');
+  await page.locator('#uaCommandForm button').click();
+  const uiDraft=page.locator('#uaDrafts .ua-draft').filter({hasText:uiName});
+  await expect(uiDraft).toContainText('승인 대기');
   await page.screenshot({path:path.join(output,'admin-desktop-draft-1440.png'),fullPage:true});
-  await page.locator('#uaDrafts .ua-draft').first().getByRole('button',{name:'승인하고 실행'}).click();
-  await expect(page.locator('#uaDrafts .ua-draft').first()).toContainText('저장 검증 완료');
+  await uiDraft.getByRole('button',{name:'승인하고 실행'}).click();
+  await expect(uiDraft).toContainText('저장 검증 완료');
   await page.screenshot({path:path.join(output,'admin-desktop-result-1440.png'),fullPage:true});
+  // Academic and financial material are sent and approved in this SAME browser conversation.
+  const rosterName='자료하늘 '+suffix;
+  await page.locator('#uaFile').setInputFiles({name:'student-roster.csv',mimeType:'text/csv',buffer:Buffer.from('이름,학년,학교\n'+rosterName+',중2,새봄중\n,중1,빈이름학교\n')});
+  await page.locator('#uaUploadForm button').click();
+  await expect(page.locator('#uaDrafts')).toContainText('학생 이름이 없어 초안을 만들지 않았습니다');
+  const rosterDraft=page.locator('#uaDrafts .ua-draft').filter({hasText:rosterName});await expect(rosterDraft).toContainText('승인 대기');
+  expect((await catalog('students')).filter(x=>x.name===rosterName)).toHaveLength(0);
+  await rosterDraft.getByRole('button',{name:'승인하고 실행'}).click();await expect(rosterDraft).toContainText('저장 검증 완료');
+  expect((await catalog('students')).filter(x=>x.name===rosterName)).toHaveLength(1);
+  const today=new Date().toISOString().slice(0,10);
+  await page.locator('#uaFile').setInputFiles({name:'chat-ledger-'+suffix+'.csv',mimeType:'text/csv',buffer:Buffer.from('거래일,구분,금액,거래처,적요,원본계정,증빙유형\n'+today+',지출,8400,대화거래 '+suffix+',전화요금,전화/휴대폰/인터넷,INVOICE\n잘못된날짜,지출,1000,오류행 '+suffix+',검토,,NONE\n')});
+  await page.locator('#uaUploadForm button').click();
+  const ledgerDraft=page.locator('#uaDrafts .ua-draft').filter({hasText:'chat-ledger-'+suffix+'.csv'});
+  await expect(ledgerDraft).toContainText('승인 대기');
+  await ledgerDraft.getByRole('button',{name:'승인하고 실행'}).click();
+  await expect(ledgerDraft).toContainText('장부 저장 1');await expect(ledgerDraft).toContainText('실패 1');await expect(ledgerDraft).toContainText('검토 필요');
+  await expect(page.locator('#uaDrafts .ua-user')).toHaveCount(3);
+  const refreshed=await ok(admin.get(API+'/overview?businessId=1&academyId=7'));
+  await expect(page.locator('.kpi-expense .k-value')).toContainText(refreshed.finance.expense.toLocaleString('ko-KR'));
+  await ledgerDraft.scrollIntoViewIfNeeded();
+  await page.screenshot({path:path.join(output,'admin-desktop-unified-chat-1440.png'),fullPage:true});
   await context.close();
   for(const [role,ctx,width,height] of [['admin',admin,390,844],['tutor',teacher,390,844],['tutor',teacher,1440,1050]]) {
     const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await ctx.storageState(),viewport:{width,height},isMobile:width<500,hasTouch:width<500});
@@ -130,7 +171,12 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
     await expect(p.locator('#uaRole')).toContainText(role==='admin'?'원장 연결':'강사 연결');
     await expect(p.locator('#uaSummary')).not.toContainText('불러오는 중');
     await expect(p.locator('#uaDrafts')).not.toContainText('불러오는 중');
-    if(role==='admin')await expect(p.locator('#uaDrafts .ua-draft').first()).toBeVisible();
+    if(role==='admin') {
+      const mobileName='모바일하늘 '+suffix;
+      await p.locator('#uaCommand').fill('학생 등록, 이름: '+mobileName+', 학년: 중1');await p.locator('#uaCommandForm button').click();
+      const mobileDraft=p.locator('#uaDrafts .ua-draft').filter({hasText:mobileName});await expect(mobileDraft).toContainText('승인 대기');
+      await mobileDraft.getByRole('button',{name:'승인하고 실행'}).click();await expect(mobileDraft).toContainText('저장 검증 완료');await mobileDraft.scrollIntoViewIfNeeded();await expect(mobileDraft).toBeInViewport();await p.screenshot({path:path.join(output,'admin-mobile-chat-390.png'),fullPage:false});
+    }
     expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await p.screenshot({path:path.join(output,role+'-'+width+'.png'),fullPage:true});await c.close();
   }

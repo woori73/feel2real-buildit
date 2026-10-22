@@ -59,3 +59,15 @@
 @media(max-width:760px) { #uaDrafts { max-height:620px; } }
 
 .ua-academy { display:flex; align-items:center; gap:12px; padding:16px 24px 0; }.ua-academy label { margin:0; white-space:nowrap; }.ua-academy select { width:min(320px,100%); }
+
+/* A single conversation owns both academic and financial result/approval cards. */
+.ua-grid { grid-template-columns:1fr; }
+.ua-work { width:100%; max-width:900px; margin:0 auto; box-sizing:border-box; }
+#uaDrafts.ua-chat-stream { min-height:220px; max-height:540px; margin:16px 0; padding:12px; background:#f7faf8; border:1px solid var(--ua-line); border-radius:12px; scroll-behavior:auto; }
+.ua-bubble { max-width:90%; padding:12px 16px; margin:10px 0; border-radius:12px; background:#fff; border:1px solid #dce7e2; overflow-wrap:anywhere; white-space:pre-wrap; }
+.ua-bubble strong { font-size:11px; color:#52746b; }.ua-bubble p { font-size:14px; margin-top:4px; }
+.ua-bubble.ua-user { margin-left:auto; background:#e5f2eb; border-color:#c3ddcf; }
+.ua-composer { padding:0 16px 12px; border:1px solid var(--ua-line); border-radius:12px; }
+.ua-composer input[type=file] { font-size:13px; }
+@media(max-width:760px) { #uaDrafts.ua-chat-stream { max-height:500px; padding:8px; }.ua-bubble { max-width:94%; padding:10px 12px; }.ua-composer { padding:0 10px 10px; }.ua-composer .ua-actions a { min-height:35px; }.ua-section-head { flex-wrap:wrap; } }
+@media(prefers-reduced-motion:reduce) { #uaDrafts.ua-chat-stream { scroll-behavior:auto; } }

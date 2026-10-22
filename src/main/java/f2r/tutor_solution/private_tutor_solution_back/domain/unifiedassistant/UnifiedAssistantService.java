@@ -31,7 +31,7 @@ public class UnifiedAssistantService {
   private final EasyTutorImportService imports;
   private final EasyWorkspaceService workspace;
 
-  private static final Map<String,Set<String>> FIELDS=Map.ofEntries(
+  static final Map<String,Set<String>> FIELDS=Map.ofEntries(
       Map.entry("STUDENT_CREATE",Set.of("name","grade","schoolName","parentName","parentPhone")),
       Map.entry("STUDENT_UPDATE",Set.of("studentId","name","grade","schoolName","parentName","parentPhone")),
       Map.entry("CLASS_CREATE",Set.of("name","teacherId","description")),
@@ -46,6 +46,11 @@ public class UnifiedAssistantService {
     if(p==null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     var user=users.findById(p.userId()).orElseThrow(()->new ResponseStatusException(HttpStatus.FORBIDDEN));
     if(!Set.of("ADMIN","TUTOR").contains(p.role()) || !user.getRole().name().equals(p.role())) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+  }
+  public void checkDraftScope(AuthenticatedPrincipal p,Long academyId,Long businessId,String operation) {
+    actor(p); requireWrites();
+    if(operation.startsWith("LEDGER_")) access.requireAllowedBusiness(p,businessId);
+    else academy.owner(p,academyId);
   }
   public record ProgressView(int step,boolean completed,boolean firstVisit,long version,String role) {}
   @Transactional
@@ -153,6 +158,8 @@ public class UnifiedAssistantService {
       } else result=academy.execute(p,d);
       String status=result.path("verified").asBoolean() && result.path("review").asLong()==0?"VERIFIED":"REVIEW_REQUIRED";
       return transactions.finish(p.userId(),id,status,AssistantJson.write(result));
+    } catch(AcademyAssistantAdapter.WriteRejected e) {
+      return transactions.finish(p.userId(),id,"FAILED",AssistantJson.write(Map.of("verified",false,"message","저장 실패: 학원 API가 요청을 거부했습니다 ("+e.getStatusCode().value()+"). 기존 화면에서 입력·권한을 확인하고 새 초안을 작성하세요.")));
     } catch(Exception e) {
       // An upstream timeout may have committed. Preserve UNKNOWN and do not retry the write.
       return transactions.finish(p.userId(),id,"UNKNOWN",AssistantJson.write(Map.of("message","실행 결과를 확정할 수 없습니다. 기존 업무 화면과 감사로그를 확인하세요. 자동 재실행하지 않습니다.")));

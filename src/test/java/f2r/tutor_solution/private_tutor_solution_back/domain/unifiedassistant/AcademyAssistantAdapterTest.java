@@ -31,6 +31,14 @@ class AcademyAssistantAdapterTest {
     var d=new AssistantDraft(1L,"TUTOR",7L,null,"STUDENT_CREATE","{\"name\":\"하늘\"}","{}","x");
     assertThat(adapter.execute(p,d).path("verified").asBoolean()).isFalse();
   }
+  @Test void givenRejectedWriteVersusFailedReadback_whenExecuted_thenOnlyWriteIsDefiniteFailure() throws Exception {
+    var d=new AssistantDraft(1L,"TUTOR",7L,null,"STUDENT_CREATE","{\"name\":\"하늘\"}","{}","x");
+    when(gateway.exchange(eq(p),eq("POST"),eq("/api/rea/7/students"),any())).thenReturn(ResponseEntity.badRequest().body(new byte[0]));
+    assertThatThrownBy(()->adapter.execute(p,d)).isInstanceOf(AcademyAssistantAdapter.WriteRejected.class);
+    response("POST","/api/rea/7/students","{\"id\":3}");
+    when(gateway.exchange(eq(p),eq("GET"),eq("/api/rea/7/students/3"),any())).thenReturn(ResponseEntity.notFound().build());
+    assertThatThrownBy(()->adapter.execute(p,d)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class).isNotInstanceOf(AcademyAssistantAdapter.WriteRejected.class);
+  }
   @Test void givenConsultationEnvelope_whenExecuted_thenReadsActualConsultationId() throws Exception {
     response("POST","/api/rea/7/consultations","{\"consultation\":{\"id\":8},\"firstMessageId\":9}");
     response("GET","/api/rea/7/consultations/8","{\"id\":8,\"title\":\"상담\",\"messages\":[{\"id\":9,\"content\":\"기록\"}]}");

@@ -1809,3 +1809,5 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 | `unified_assistant_audit` / `AssistantAudit` | 자동증가 PK, 사용자·초안 ID, 이벤트, 시각. 앱에서 추가·조회만 제공하며 수정/삭제 API 없음 |
 
 기존 학원·학생·반·출결·상담·사업체·거래 테이블의 권한/생성 정책은 그대로다. 학원 데이터는 서명 게이트웨이/기존 업무 API, 거래·증빙은 기존 Easy import와 장부 서비스를 통해 처리한다. 새 감사행에는 이름·연락처·인증키·원본 파일 내용을 넣지 않는다. 상태 전이와 격리 정책은 [작업 A 분석 보고서](unified-ai-assistant/README.md)를 참고한다.
+
+통합 초안 상태는 PENDING/EXECUTING/VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN/CANCELLED/EXPIRED/INVALIDATED다. FAILED는 원격 쓰기 요청의 명확한 거절이며, 성공 후 조회 실패는 UNKNOWN으로 보존한다. 대화·파일 분석은 기존 초안 저장소를 사용하고 별도 학생/거래 복제 테이블을 만들지 않는다. 대화 입력 원문은 영속화하지 않으며 새로고침 시 승인 기록만 현재 권한으로 복원한다.
