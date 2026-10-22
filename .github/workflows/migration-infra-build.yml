@@ -25,6 +25,7 @@ on:
           - alb-diag
           - academycraft-preflight
           - admissions-diag
+          - a1-precheck
           - acm-dns
           - p2-inventory
           - p2-s3-copy
@@ -622,6 +623,74 @@ jobs:
             aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardErrorContent --output text | tail -c 1000
           }
 
+          # A1(블루·그린) 사전 점검 — 읽기 전용(describe/get/list·SELECT·free/ps/ss). 생성·수정·재시작·포트 점유 없음.
+          # AWS: SG 인바운드(8083 외부 노출 여부), ALB 리스너·타깃 그룹 설정, RDS 3종 인벤토리·14일 연결/CPU, 배포 역할 권한 시뮬레이션.
+          # 호스트: 메모리·JVM·cgroup·포트·DB 연결·Flyway 상태(scripts/operations/a1-precheck.sh).
+          step_a1_precheck() {
+            local ACCOUNT IID B64 LIBB64 CID LB_ARN LISTENER SGS DBI S E
+            ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+            [ "$ACCOUNT" = "425805163960" ] || { echo wrong-account; exit 1; }
+            IID=$(get_instance); need f2r-app "$IID"
+            [[ "$IID" != *$'\t'* && "$IID" != *' '* ]] || { echo ambiguous-instance; exit 1; }
+            echo "### EC2"; aws ec2 describe-instances --instance-ids "$IID" \
+              --query 'Reservations[0].Instances[0].{Type:InstanceType,AZ:Placement.AvailabilityZone,PrivateIp:PrivateIpAddress,SGs:SecurityGroups[].GroupId,IamProfile:IamInstanceProfile.Arn}' --output json
+            SGS=$(aws ec2 describe-instances --instance-ids "$IID" --query 'Reservations[0].Instances[0].SecurityGroups[].GroupId' --output text)
+            echo "### 인스턴스 SG 인바운드(8083·0.0.0.0/0 노출 확인)"
+            # shellcheck disable=SC2086
+            aws ec2 describe-security-groups --group-ids $SGS \
+              --query 'SecurityGroups[].{Id:GroupId,Name:GroupName,Ingress:IpPermissions[].{From:FromPort,To:ToPort,Proto:IpProtocol,Cidr:IpRanges[].CidrIp,FromSG:UserIdGroupPairs[].GroupId}}' --output json
+            LB_ARN=$(aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].LoadBalancerArn' --output text); need f2r-alb "$LB_ARN"
+            echo "### ALB SG / 리스너 / 규칙 / 타깃 그룹(헬스체크·deregistration)"
+            aws elbv2 describe-load-balancers --names f2r-alb --query 'LoadBalancers[0].SecurityGroups' --output json
+            aws elbv2 describe-listeners --load-balancer-arn "$LB_ARN" --query 'Listeners[].{Port:Port,Protocol:Protocol,Default:DefaultActions[].{Type:Type,TG:TargetGroupArn}}' --output json
+            LISTENER=$(aws elbv2 describe-listeners --load-balancer-arn "$LB_ARN" --query 'Listeners[?Port==`443`].ListenerArn' --output text)
+            aws elbv2 describe-rules --listener-arn "$LISTENER" --query 'Rules[].{Priority:Priority,Conditions:Conditions[].Values,Actions:Actions[].TargetGroupArn}' --output json
+            aws elbv2 describe-target-groups --load-balancer-arn "$LB_ARN" \
+              --query 'TargetGroups[].{Name:TargetGroupName,Port:Port,HC:HealthCheckPath,Interval:HealthCheckIntervalSeconds,Timeout:HealthCheckTimeoutSeconds,Healthy:HealthyThresholdCount,Unhealthy:UnhealthyThresholdCount,Matcher:Matcher.HttpCode}' --output table
+            for TG in $(aws elbv2 describe-target-groups --load-balancer-arn "$LB_ARN" --query 'TargetGroups[].TargetGroupArn' --output text); do
+              echo "-- ${TG##*:}"; aws elbv2 describe-target-group-attributes --target-group-arn "$TG" \
+                --query "Attributes[?Key=='deregistration_delay.timeout_seconds'||Key=='slow_start.duration_seconds'||Key=='stickiness.enabled'].{K:Key,V:Value}" --output text
+            done
+            aws elbv2 describe-load-balancer-attributes --load-balancer-arn "$LB_ARN" \
+              --query "Attributes[?Key=='idle_timeout.timeout_seconds'].{K:Key,V:Value}" --output text
+
+            echo "### RDS 인벤토리"
+            aws rds describe-db-instances --query 'DBInstances[].{Id:DBInstanceIdentifier,Class:DBInstanceClass,Engine:Engine,Version:EngineVersion,Status:DBInstanceStatus,StorageGB:AllocatedStorage,Type:StorageType,Iops:Iops,MultiAZ:MultiAZ,Public:PubliclyAccessible,BackupDays:BackupRetentionPeriod,DelProtect:DeletionProtection,Created:InstanceCreateTime,SGs:VpcSecurityGroups[].VpcSecurityGroupId,AZ:AvailabilityZone,Replica:ReadReplicaSourceDBInstanceIdentifier}' --output json
+            echo "### RDS 태그(Name/Project/Purpose 등)"
+            for DBI in $(aws rds describe-db-instances --query 'DBInstances[].DBInstanceIdentifier' --output text); do
+              echo "-- $DBI"; aws rds list-tags-for-resource --resource-name "$(aws rds describe-db-instances --db-instance-identifier "$DBI" --query 'DBInstances[0].DBInstanceArn' --output text)" --query 'TagList[].[Key,Value]' --output text || true
+            done
+            echo "### RDS 스냅샷"
+            aws rds describe-db-snapshots --query 'DBSnapshots[].{Id:DBSnapshotIdentifier,Db:DBInstanceIdentifier,Type:SnapshotType,Created:SnapshotCreateTime,GB:AllocatedStorage}' --output table || true
+            S=$(date -u -d '14 days ago' +%Y-%m-%dT%H:%M:%SZ); E=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            echo "### RDS CloudWatch 14일(일 단위): DatabaseConnections Max/Avg, CPUUtilization Avg, Read+Write IOPS Avg  [$S ~ $E]"
+            for DBI in $(aws rds describe-db-instances --query 'DBInstances[].DBInstanceIdentifier' --output text); do
+              echo "-- $DBI"
+              for spec in "DatabaseConnections Maximum" "DatabaseConnections Average" "CPUUtilization Average" "ReadIOPS Average" "WriteIOPS Average" "FreeableMemory Minimum"; do
+                set -- $spec
+                printf '%s/%s: ' "$1" "$2"
+                aws cloudwatch get-metric-statistics --namespace AWS/RDS --metric-name "$1" --dimensions Name=DBInstanceIdentifier,Value="$DBI" \
+                  --start-time "$S" --end-time "$E" --period 86400 --statistics "$2" \
+                  --query "sort_by(Datapoints,&Timestamp)[].$2" --output text 2>&1 | tr '\t' ' ' | cut -c1-260
+              done
+            done
+            echo "### 배포 역할 권한 시뮬레이션(실제 변경 아님)"
+            aws iam simulate-principal-policy \
+              --policy-source-arn "arn:aws:iam::${ACCOUNT}:role/github-actions-f2r-deploy" \
+              --action-names elasticloadbalancing:ModifyListener elasticloadbalancing:CreateTargetGroup elasticloadbalancing:RegisterTargets \
+                elasticloadbalancing:DeregisterTargets elasticloadbalancing:ModifyRule elasticloadbalancing:DescribeTargetHealth ec2:AuthorizeSecurityGroupIngress \
+              --query 'EvaluationResults[].[EvalActionName,EvalDecision]' --output text 2>&1 | head -12 || true
+
+            echo "### 호스트(SSM, 읽기 전용): scripts/operations/a1-precheck.sh"
+            B64=$(base64 -w0 scripts/operations/a1-precheck.sh); LIBB64=$(base64 -w0 scripts/operations/a1-gates-lib.sh)
+            CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --timeout-seconds 120 \
+              --parameters "$(jq -cn --arg c "export A1_LIB_B64=$LIBB64; echo $B64 | base64 -d | bash" '{commands:[$c]}')" --query Command.CommandId --output text)
+            aws ssm wait command-executed --command-id "$CID" --instance-id "$IID" || true
+            aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{Status:Status,Output:StandardOutputContent,Error:StandardErrorContent}' --output json \
+              | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig'
+            [ "$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text)" = Success ]
+          }
+
           step_all_infra() {
             # s3 는 마지막: IAM 정책 반영(부트스트랩 apply) 순서와 무관하게 나머지 구축이 막히지 않게 한다.
             step_validate; step_vpc; step_rds_shell; step_ec2; step_alb; step_acm
@@ -636,6 +705,7 @@ jobs:
             alb-diag) step_alb_diag ;;
             academycraft-preflight) step_academycraft_preflight ;;
             admissions-diag) step_admissions_diag ;;
+            a1-precheck) step_a1_precheck ;;
             s3) step_s3 ;;
             provision) step_provision ;;
             restore-rds) step_restore_rds ;;
