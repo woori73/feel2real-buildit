@@ -19,8 +19,17 @@
 ## 최소 권한 근거
 
 - 호스트 명령은 문서에 고정되어 있어 역할을 탈취해도 임의 셸을 실행할 수 없다(`AWS-RunShellScript` 미허용).
-- DB 비밀번호는 `MYSQL_PWD` 환경변수로만 전달해 프로세스 목록·로그에 남지 않는다. DB 세션은 `SET SESSION TRANSACTION READ ONLY`.
+- `/etc/f2r/env`를 `source`하지 않는다. `DB_HOST/PORT/USER/NAME/PASSWORD` 다섯 키만 한 줄씩 읽고, 형식(호스트·포트·사용자·DB 이름 정규식)이 맞지 않으면 조회하지 않는다. 그래서 env 파일 안의 다른 비밀값(API 키·JWT 등)이 export되지 않고, 파일 내용이 명령으로 실행되지도 않는다.
+- DB 비밀번호는 mysql 한 프로세스의 `MYSQL_PWD`로만 전달한다(인자·로그에 없음). `--no-defaults`, 연결 5초 제한, 모든 조회에 `SET SESSION TRANSACTION READ ONLY`.
+- mysql 오류(사용자@호스트가 담김)는 버리고 `query_failed (detail suppressed)`만 출력한다. workflow도 `StandardErrorContent`를 출력하지 않는다.
+- `app.jar.meta`는 `git_sha/jar_sha256/deployed_at` 키 줄만 출력한다.
 - 출력은 계정 번호·RDS 호스트명·`*KEY/SECRET/TOKEN/PASSWORD=` 값을 가린다(저장소가 공개라 Actions 로그도 공개).
+
+## 검증 (운영 접근 없음)
+
+- `scripts/operations/test_readonly_diagnostics.py`(12건): 문서의 셸을 가짜 env(비밀번호·API 키·JWT 포함)와 가짜 mysql/systemctl/curl로 실행해 출력에 비밀값·RDS 호스트명·DB 사용자가 없는지, mysql에 다른 비밀값 변수가 전달되지 않는지, env 파일의 `$(...)`가 실행되지 않는지, 오류 상세가 숨겨지는지 확인. 정적 검사: 입력은 `Section`(allowedValues) 하나, 쓰기 SQL·재시작·`source` 없음, 정책 액션은 Describe/Get/List + 고정 문서 SendCommand뿐(와일드카드 액션·`AWS-RunShellScript` 없음), 신뢰는 main의 지정 workflow·승인 환경으로 고정, workflow `run`에 입력값 직접 삽입 없음.
+- 보강 전 문서로 같은 시험을 돌리면 5건 실패(다른 비밀값 export, 오류 상세 노출, env 내용 실행, 메타 파일 전체 출력, `set -a`) → 보강이 실제 누출 경로를 막는다.
+- `ops-readonly-check.yml`: 위 파일이 바뀌는 PR에서 actionlint 1.7.12·JSON 파싱·문서 셸 `bash -n`·시험을 실행한다(AWS 자격 증명 없음). `build-check`의 경로 필터로 기존 CI가 돌지 않던 문제를 메운다.
 
 ## 적용 절차 (승인 후, 소유자가 콘솔/관리 역할로)
 
@@ -37,5 +46,6 @@
 
 - `rds-predeploy-snapshot.yml`(이 폴더, `.github/workflows` 밖): 승인 환경 `f2r-production-snapshot` + 확인 문자열 `SNAPSHOT-<sha8>` + 스냅샷 1개 생성·대기만. 삭제·복원 없음.
 - 전용 역할 `github-actions-f2r-snapshot`: 신뢰는 main의 이 workflow·환경만(`trust-github-actions-f2r-snapshot.json`), 권한은 `f2r-db*` 인스턴스에서 `f2r-predeploy-*` 이름의 스냅샷 생성과 Describe만(`policy-f2r-predeploy-snapshot.json`). 배포·읽기 전용 역할과 분리.
-- 2026-10-22 `validate` 조회에서 RDS가 `f2r-db`, `f2r-db-202610181240`, `f2r-db-202610181331` 3개다. 어느 것이 운영인지 확정하기 전에는 스냅샷을 찍지 않는다 — `Prod read-only status`의 `db_instance_identifier`로 확인한다. 나머지 2개가 이전 리허설 잔여물이면 비용 정리 대상이다(삭제는 소유자 판단).
+- RDS는 `f2r-db`, `f2r-db-202610181240`, `f2r-db-202610181331` 3개다. 기존 실행 기록으로 운영 DB는 **`f2r-db-202610181331`** 이다: 최종 전환 run [39131938382](https://github.com/woori73/feel2real-buildit/actions/runs/39131938382) `cut-new-db`(STAMP=202610181331)가 이 이름으로 복원하고 앱 env의 RDS 호스트를 바꾼 뒤 행 수 216표 일치·`app-healthy`, 이어 `cut-dns` 성공. `202610181240`은 run 39128226823의 실패한 전환(행 수 불일치 → `cut-rollback`)의 잔여, `f2r-db`는 10-18 오전 `db-migrate` 리허설 복원본이다. 이후 env의 DB 호스트를 바꾸는 단계는 확인 문자열이 필요한 `p2-cutover`뿐이고 다시 실행되지 않았다. 바이트 수준 최종 확인은 `Prod read-only status`의 `db_instance_identifier` 출력으로 한다. 나머지 2개는 비용 정리 대상이다(삭제는 소유자 판단, 이 PR은 아무것도 지우지 않는다).
+- 스냅샷 대상 입력의 기본값은 비워 두고, 실행자가 `f2r-db-202610181331`을 직접 입력한다(정규식 `^f2r-db(-[0-9]{12})?$`).
 - 활성화하려면 이 파일을 `.github/workflows/`로 옮기는 PR, 환경 생성, 역할 생성이 각각 승인되어야 한다.

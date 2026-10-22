@@ -1,0 +1,41 @@
+name: Ops read-only diagnostics checks
+# 읽기 전용 운영 진단(workflow·SSM 문서·IAM 정의) 정적 검사와 비밀값 누출 시험. 운영 접근 없음(AWS 자격 증명 미사용).
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/prod-readonly-status.yml'
+      - '.github/workflows/prod-diagnostic.yml'
+      - '.github/workflows/ops-readonly-check.yml'
+      - 'docs/operations/aws-migration/ssm-document-F2R-ReadOnlyStatus.json'
+      - 'docs/operations/aws-migration/policy-f2r-readonly-status.json'
+      - 'docs/operations/aws-migration/trust-github-actions-f2r-readonly.json'
+      - 'docs/operations/aws-migration/policy-f2r-predeploy-snapshot.json'
+      - 'docs/operations/aws-migration/trust-github-actions-f2r-snapshot.json'
+      - 'docs/operations/aws-migration/rds-predeploy-snapshot.yml'
+      - 'scripts/operations/test_readonly_diagnostics.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned linters
+        run: python -m pip install --disable-pip-version-check actionlint-py==1.7.12.25 pyyaml==6.0.3
+      - name: actionlint (workflows and the snapshot draft)
+        run: |
+          actionlint .github/workflows/prod-readonly-status.yml .github/workflows/prod-diagnostic.yml .github/workflows/ops-readonly-check.yml
+          actionlint docs/operations/aws-migration/rds-predeploy-snapshot.yml
+      - name: JSON definitions parse
+        run: for f in docs/operations/aws-migration/*.json; do python -m json.tool "$f" > /dev/null && echo "ok $f"; done
+      - name: SSM document shell syntax
+        run: |
+          python -c "import json;print('\n'.join(json.load(open('docs/operations/aws-migration/ssm-document-F2R-ReadOnlyStatus.json'))['mainSteps'][0]['inputs']['runCommand']))" > /tmp/ssm.sh
+          bash -n /tmp/ssm.sh
+      - name: Leak and least-privilege tests
+        run: python -m unittest scripts/operations/test_readonly_diagnostics.py -v
