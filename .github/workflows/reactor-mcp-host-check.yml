@@ -1,0 +1,98 @@
+name: Reactor MCP host check (read-only, manual)
+
+# 신규 계정 f2r-app EC2에 Reactor MCP를 별도 프로세스로 올릴 수 있는지 판단하기 위한 READ ONLY 점검.
+# 하는 것: EC2/SG/ALB 설정 조회(Describe*), SSM으로 읽기 전용 셸 명령(자원 현황, 서비스 상태).
+# 하지 않는 것: 배포, 서비스 restart/stop, 파일 쓰기·삭제, 패키지 설치, 설정 변경,
+#   비밀값·환경변수·DB 내용 출력, Reactor API 호출, 영상 생성.
+# 권한이 없는 조회(AccessDenied)는 건너뛰고 계속 진행하며, 결과와 무관하게 성공으로 끝난다.
+# 주의: github-actions-f2r-deploy 역할의 신뢰 정책이 이 workflow(job_workflow_ref)를 허용해야 실행된다.
+#   허용되지 않으면 'Configure AWS credentials' 단계에서 거부된다(변경은 별도 승인 사항).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Configure AWS credentials (new account, OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+
+      - name: Identity and instance (read-only)
+        shell: bash
+        run: |
+          set +e
+          aws sts get-caller-identity --query '{Account:Account}' --output text
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration \
+            Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          echo "INSTANCE_ID=$IID"
+          echo "$IID" > /tmp/iid
+          echo "=== instance ==="
+          aws ec2 describe-instances --instance-ids "$IID" --query 'Reservations[0].Instances[0].{Type:InstanceType,State:State.Name,AZ:Placement.AvailabilityZone,PrivateIp:PrivateIpAddress,PublicIp:PublicIpAddress,SG:SecurityGroups[].GroupId,Profile:IamInstanceProfile.Arn,Imds:MetadataOptions,EbsOptimized:EbsOptimized,Subnet:SubnetId,Vpc:VpcId}' --output json
+          echo "=== volumes ==="
+          aws ec2 describe-volumes --filters Name=attachment.instance-id,Values="$IID" --query 'Volumes[].{Size:Size,Type:VolumeType,Enc:Encrypted}' --output json
+          echo "=== security groups ==="
+          SGS=$(aws ec2 describe-instances --instance-ids "$IID" --query 'Reservations[0].Instances[0].SecurityGroups[].GroupId' --output text)
+          aws ec2 describe-security-groups --group-ids $SGS --query 'SecurityGroups[].{Id:GroupId,Name:GroupName,Ingress:IpPermissions[].{P:IpProtocol,From:FromPort,To:ToPort,Cidr:IpRanges[].CidrIp,Sg:UserIdGroupPairs[].GroupId},Egress:IpPermissionsEgress[].{P:IpProtocol,From:FromPort,To:ToPort,Cidr:IpRanges[].CidrIp}}' --output json
+          echo "=== SSM agent ==="
+          aws ssm describe-instance-information --filters Key=InstanceIds,Values="$IID" --query 'InstanceInformationList[].{Ping:PingStatus,Agent:AgentVersion,Platform:PlatformName}' --output json
+          exit 0
+
+      - name: ALB listeners, rules, target groups (read-only; AccessDenied is expected if not granted)
+        shell: bash
+        run: |
+          set +e
+          LB=$(aws elbv2 describe-load-balancers --query 'LoadBalancers[].{Arn:LoadBalancerArn,Name:LoadBalancerName,Scheme:Scheme,Sg:SecurityGroups}' --output json 2>&1)
+          echo "$LB"
+          for ARN in $(aws elbv2 describe-load-balancers --query 'LoadBalancers[].LoadBalancerArn' --output text 2>/dev/null); do
+            echo "=== attributes $ARN ==="
+            aws elbv2 describe-load-balancer-attributes --load-balancer-arn "$ARN" --query "Attributes[?Key=='idle_timeout.timeout_seconds' || Key=='access_logs.s3.enabled']" --output json 2>&1
+            echo "=== listeners ==="
+            aws elbv2 describe-listeners --load-balancer-arn "$ARN" --query 'Listeners[].{Arn:ListenerArn,Port:Port,Proto:Protocol,Default:DefaultActions[].{T:Type,Tg:TargetGroupArn}}' --output json 2>&1
+            for L in $(aws elbv2 describe-listeners --load-balancer-arn "$ARN" --query 'Listeners[].ListenerArn' --output text 2>/dev/null); do
+              echo "=== rules $L ==="
+              aws elbv2 describe-rules --listener-arn "$L" --query 'Rules[].{Prio:Priority,Cond:Conditions[].{F:Field,V:Values,P:PathPatternConfig.Values,H:HostHeaderConfig.Values},Act:Actions[].{T:Type,Tg:TargetGroupArn}}' --output json 2>&1
+            done
+          done
+          echo "=== target groups ==="
+          aws elbv2 describe-target-groups --query 'TargetGroups[].{Arn:TargetGroupArn,Name:TargetGroupName,Port:Port,Proto:Protocol,Health:HealthCheckPath}' --output json 2>&1
+          exit 0
+
+      - name: Host resources and service state through SSM (read-only shell)
+        shell: bash
+        run: |
+          set +e
+          IID=$(cat /tmp/iid)
+          cat > /tmp/readonly.sh <<'SCRIPT'
+          echo "--- os/cpu ---"; uname -r; nproc; grep -m1 'model name' /proc/cpuinfo
+          echo "--- memory ---"; free -m; swapon --show
+          echo "--- disk ---"; df -h / /var/tmp /tmp 2>/dev/null
+          echo "--- load/uptime ---"; uptime
+          echo "--- f2r-app ---"; systemctl is-active f2r-app.service; systemctl show f2r-app.service -p MemoryMax -p MemoryCurrent -p NRestarts -p ActiveEnterTimestamp -p User
+          echo "--- jvm heap flags (flags only) ---"; ps -o rss=,args= -C java | grep -o -E '(^ *[0-9]+)|-Xm[sx][0-9]+[mMgG]' | tr '\n' ' '; echo
+          echo "--- top memory processes (name, rss KB) ---"; ps -eo rss,comm --sort=-rss | head -8
+          echo "--- listening ports ---"; ss -ltn | awk 'NR==1 || /:(80|443|8080|8765|8000)\b/'
+          echo "--- local health ---"; curl -s -m 5 -o /dev/null -w 'actuator_health_http=%{http_code}\n' http://127.0.0.1:8080/actuator/health
+          echo "--- runtime/tools ---"; python3 --version 2>&1; command -v ffmpeg ffprobe python3.11 pip3 | tr '\n' ' '; echo
+          echo "--- reactor user / unit / 8765 ---"; id reactor 2>&1 | head -1; systemctl list-unit-files 'reactor-mcp*' --no-legend 2>&1 | head -2; ss -ltn | grep -c ':8765 ' 
+          echo "--- OOM history (kernel, 7d) ---"; journalctl -k --since '7 days ago' --no-pager 2>/dev/null | grep -ciE 'out of memory|oom-kill'
+          echo "--- /etc/f2r permissions (names/modes only) ---"; stat -c '%A %U:%G %n' /etc/f2r /etc/f2r/* 2>&1 | sed 's#/etc/f2r/.*#/etc/f2r/<file>#' | sort -u
+          SCRIPT
+          PARAMS=$(jq -cn --rawfile s /tmp/readonly.sh '{commands:[$s]}')
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$PARAMS" --query 'Command.CommandId' --output text)
+          echo "SSM Command ID: $CID"
+          aws ssm wait command-executed --command-id "$CID" --instance-id "$IID"
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query '{Status:Status,Code:ResponseCode}' --output text
+          echo "--- stdout ---"
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text
+          echo "--- stderr ---"
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardErrorContent --output text
+          exit 0
