@@ -4982,3 +4982,9 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - 재실행은 `(project,item_key,label)`에 존재하는 출처를 재검증하고 새 이력·승인 이벤트를 만들지 않는다. 동일 SHA 파일은 공유하지만 경로별 버전·출처 참조는 보존한다. 사용자 편집본·다른 승인 정본을 자동 덮어쓰지 않는다. 실패 시 등록 트랜잭션을 롤백한다. 선행 업로드는 별도 커밋된 보관 파일로 남아 재시도에 재사용한다(일괄 파일+DB 분산 트랜잭션 아님).
 - 파일 목록은 `GET /api/studio/files?limit=200&offset=0` 페이지 조회. MD5 인계 파일은 엄격한 UTF-8 텍스트로 보관·열람하며 체크섬 검증은 SHA-256으로 별도 수행한다. 기존 형식은 유지한다.
 - 로컬 임포터 `scripts/ai-agent-studio/import-production.py`: 기본 dry-run. 실제 적용은 격리 loopback 포트18090만 허용하며 운영 주소를 받지 않는다. 사용자가 파일을 다운로드·업로드하지 않고 Git 커밋에서 직접 확보한다. MCP POST 허용 목록에 추가하지 않는다.
+
+### MCP 제작 문서·이미지 콘텐츠
+
+- `GET /api/studio/files/{id}/document?offset=0&limit=20000`: 실제 파일 권한 → 최대20 MiB 문서 로컬 파싱 → 파일명/원본SHA/본문/페이지 메타데이터. HTML 내장 이미지·스크립트 제외, PDF 처음100페이지. 총20만 자·한 번2만 자. 조회만 수행한다.
+- `GET /api/studio/files/{id}/mcp-image`: 실제 파일 권한 → PNG의 일시적인 JPEG 파생본(100 KiB 이하, 최대1024px). `X-Studio-Source-Sha256`, `X-Studio-Derivative-Sha256`. 입력4천만화소/20 MiB·동시2. 원본/버전/승인·저장소 객체 변경 없음.
+- MCP `studio_document`/`studio_image`는 위 GET을 기존 loopback 위임·현재 DB 역할·프로젝트 검사·읽기 전용 트랜잭션으로 호출한다. 문서는 기존 마스킹, 이미지는 별도 originals:read 동의 필수. text 메타데이터와 image/jpeg 콘텐츠 블록을 분리한다. 기존 원본 청크·MCP read-only scope는 유지한다. 총 도구21개. 실제 ChatGPT/Claude 판독은 NOT TESTED.

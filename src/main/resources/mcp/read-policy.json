@@ -3585,5 +3585,23 @@
     "service": "studio",
     "roles": [],
     "reason": "현재 컷 head 전체의 프로젝트 권한 검증 후 SQL 조회. 초기화·승인·파일 변경 없음"
+  },
+  {
+    "path": "/api/studio/files/{id}/document",
+    "service": "studio",
+    "roles": [],
+    "reason": "문서 본문 페이지. 기존 제작 권한·크기 제한, PDF/HTML 로컬 파싱. 쓰기·외부 모델/OCR 없음."
+  },
+  {
+    "path": "/api/studio/files/{id}/mcp-image",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 제작 파일 권한·별도 originals:read 동의. 최대100KiB JPEG 파생본, 원본/SHA 불변. 저장소 읽기 비용은 기존과 동일."
+  },
+  {
+    "path": "/api/studio/source-import",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 권한으로 고정 원본 적재 현황·출처 조회만. 승인·업로드·초기화 없음."
   }
 ]

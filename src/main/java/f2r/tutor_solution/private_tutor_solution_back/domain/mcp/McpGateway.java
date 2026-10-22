@@ -81,6 +81,19 @@ public class McpGateway {
             List.of("id")));
     out.add(
         tool(
+            "studio_image",
+            "허가된 제작실 PNG를 MCP image 블록(100 KiB 이하 JPEG 파생본)으로 조회. studio:read와 originals:read의 별도"
+                + " 사용자 동의가 필요합니다. 실제 제품의 시각 판독 성공을 보장하지 않습니다.",
+            Map.of("fileId", string()),
+            List.of("fileId")));
+    out.add(
+        tool(
+            "studio_document",
+            "허가된 문서 본문을 읽습니다. HTML 내장 이미지/스크립트 제외·전화번호 등 마스킹·PDF 처음100페이지. 파일명/SHA는 메타데이터와 대조하세요.",
+            Map.of("fileId", string(), "offset", integer(0, 200000), "limit", integer(1, 20000)),
+            List.of("fileId")));
+    out.add(
+        tool(
             "activity_history",
             "본인 MCP 호출 감사 이력. 서비스별 변경 이력은 read_studio(events), read_buildit(audit),"
                 + " read_newstart(history)를 사용합니다. 재무는 read_easy의 허용 사업체 월 요약만 제공합니다.",
@@ -171,6 +184,21 @@ public class McpGateway {
           "note",
           "URL은 템플릿입니다. 실제 콘텐츠는 각 read_<service> 도구가 기존 API를 조회합니다.");
     }
+    if (name.equals("studio_image") || name.equals("studio_document")) {
+      var target =
+          json.createObjectNode()
+              .put(
+                  "endpointId",
+                  "GET /api/studio/files/{id}/"
+                      + (name.equals("studio_image") ? "mcp-image" : "document"));
+      target.putObject("pathParams").put("id", args.path("fileId").asText());
+      if (name.equals("studio_document"))
+        target
+            .putObject("query")
+            .put("offset", Integer.toString(number(args, "offset", 0, 0, 200000)))
+            .put("limit", Integer.toString(number(args, "limit", 20000, 1, 20000)));
+      return read(identity, "studio", target);
+    }
     if (name.equals("activity_history")) return oauth.history(identity);
     if (name.equals("search")) return search(identity, args);
     if (name.equals("fetch")) {
@@ -192,6 +220,9 @@ public class McpGateway {
         return read(identity, "studio", a);
       }
       var p = catalog.policy(id);
+      if (id.equals("GET /api/studio/files/{id}/mcp-image")
+          && !identity.scopes().contains("originals:read"))
+        throw McpOAuth.error(403, "originals_scope_required");
       a.put("endpointId", id);
       return read(identity, p.service(), a);
     }
@@ -282,6 +313,36 @@ public class McpGateway {
         // Consent is stored on the OAuth grant; a tool argument cannot turn this permission on.
         if (!identity.scopes().contains("originals:read"))
           throw McpOAuth.error(403, "originals_scope_required");
+        if (id.equals("GET /api/studio/files/{id}/mcp-image")) {
+          if (args.has("offset") || args.has("limit"))
+            throw McpOAuth.error(400, "image_blocks_are_not_chunks");
+          byte[] image = body.readNBytes(100 * 1024 + 1);
+          if (!type.startsWith("image/jpeg") || image.length > 100 * 1024)
+            throw McpOAuth.error(413, "image_derivative_limit");
+          String sourceSha = response.headers().firstValue("X-Studio-Source-Sha256").orElse("");
+          String derivativeSha =
+              HexFormat.of()
+                  .formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(image));
+          if (!sourceSha.matches("[a-f0-9]{64}")
+              || !derivativeSha.equals(
+                  response.headers().firstValue("X-Studio-Derivative-Sha256").orElse("")))
+            throw McpOAuth.error(502, "image_integrity_failure");
+          return new ImageBlocks(
+              Map.of(
+                  "source",
+                  id,
+                  "url",
+                  url,
+                  "sourceSha256",
+                  sourceSha,
+                  "derivativeSha256",
+                  derivativeSha,
+                  "bytes",
+                  image.length,
+                  "note",
+                  "화면용 JPEG 파생본. 원본 SHA와 파생본 SHA를 구분하세요. 실제 제품 이미지 판독은 별도 검증 필요."),
+              image);
+        }
         int offset = number(args, "offset", 0, 0, 104857600),
             limit = number(args, "limit", 65536, 1, 65536);
         body.skipNBytes(offset);
@@ -311,6 +372,20 @@ public class McpGateway {
       }
     } finally {
       permit.close();
+    }
+  }
+
+  /** Internal tagged result; arbitrary API JSON can never opt itself into an image block. */
+  public static final class ImageBlocks extends LinkedHashMap<String, Object> {
+    private final byte[] image;
+
+    ImageBlocks(Map<String, Object> metadata, byte[] image) {
+      super(metadata);
+      this.image = image.clone();
+    }
+
+    public byte[] image() {
+      return image.clone();
     }
   }
 

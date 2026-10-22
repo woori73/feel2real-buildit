@@ -98,7 +98,17 @@ public class McpController {
             result =
                 Map.of(
                     "content",
-                    List.of(Map.of("type", "text", "text", json.writeValueAsString(value))),
+                    value instanceof McpGateway.ImageBlocks image
+                        ? List.of(
+                            Map.of("type", "text", "text", json.writeValueAsString(value)),
+                            Map.of(
+                                "type",
+                                "image",
+                                "mimeType",
+                                "image/jpeg",
+                                "data",
+                                java.util.Base64.getEncoder().encodeToString(image.image())))
+                        : List.of(Map.of("type", "text", "text", json.writeValueAsString(value))),
                     "isError",
                     false);
           } catch (Exception e) {
