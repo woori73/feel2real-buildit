@@ -1,0 +1,130 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.collaboration;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
+import f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
+
+/** Claude independent probe: ACL on the real 536 materials, sanitizer, importer kill switch. */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@ActiveProfiles("local")
+@TestPropertySource(
+    properties = {
+      "server.port=19091",
+      "spring.datasource.url=jdbc:mysql://127.0.0.1:3319/f2r_cluster_test",
+      "spring.datasource.username=root",
+      "spring.datasource.password=isolated_cluster_root",
+      "spring.flyway.locations=classpath:db/migration,classpath:db/dev-seed",
+      "app.file.storage-type=local",
+      "app.file.upload-dir=/tmp/f2r-claude-probe-files",
+      "app.collaboration.public-base-url=http://127.0.0.1:19091",
+      "app.collaboration.production-import.enabled=true",
+      "app.mcp.enabled=false"
+    })
+@EnabledIfEnvironmentVariable(named = "F2R_COLLAB_PRODUCTION_TEST", matches = "true")
+class ClaudeIndependentCollabProbeMySqlTest {
+  @Autowired CollaborationProductionImport importer;
+  @Autowired CollaborationWorkspaces spaces;
+  @Autowired CollaborationSources sources;
+  @Autowired CollaborationFiles files;
+  @Autowired CollaborationPreview preview;
+  @Autowired StudioService studio;
+  @Autowired UserRepository users;
+  @Autowired JdbcTemplate db;
+
+  AuthenticatedPrincipal user(Role role) {
+    String login = "claude-probe-" + UUID.randomUUID().toString().substring(0, 10);
+    var u = users.saveAndFlush(new User(login, "pw-isolated", "probe", login, null, null, role));
+    return new AuthenticatedPrincipal(u.getUserId(), login, role.name());
+  }
+
+  static void forbidden(org.junit.jupiter.api.function.Executable e) {
+    var ex = assertThrows(ResponseStatusException.class, e);
+    assertEquals(403, ex.getStatusCode().value(), ex.getReason());
+  }
+
+  @Test
+  void aclSanitizerAndKillSwitchOnReal536() throws Exception {
+    Path source = Path.of(System.getenv("F2R_COLLAB_PRODUCTION_SOURCE"));
+    var owner = user(Role.ADMIN);
+    studio.initialize(owner);
+    String w = spaces.create(owner, "claude-independent-probe").get("id").toString();
+    var pointers = db.queryForList("SELECT item_key,head_id,approved_id FROM studio_items ORDER BY item_key");
+    var result = importer.apply(owner, w, source);
+    assertEquals(536, result.get("registered"));
+    var ids = db.queryForList("SELECT id,sha256 FROM ai_collaboration_files WHERE workspace_id=?", w);
+    assertEquals(536, ids.size());
+    String any = ids.getFirst().get("id").toString();
+
+    // (1) user without any studio membership
+    var stranger = user(Role.TUTOR);
+    forbidden(() -> sources.files(stranger, w, "", 100, ""));
+    forbidden(() -> sources.production(stranger, w));
+    forbidden(() -> files.bytes(stranger, any));
+    forbidden(() -> files.metadata(stranger, any));
+
+    // (2) studio VIEWER who is NOT a workspace member
+    var studioViewer = user(Role.TUTOR);
+    studio.member(owner, studioViewer.userId(), "VIEWER");
+    forbidden(() -> sources.files(studioViewer, w, "", 100, ""));
+    forbidden(() -> files.bytes(studioViewer, any));
+    forbidden(() -> preview.pdfInfo(studioViewer, any));
+
+    // (3) workspace VIEWER: read yes, write/review no
+    spaces.member(owner, w, studioViewer.userId(), "VIEWER");
+    assertEquals(100, ((List<?>) sources.files(studioViewer, w, "", 100, "").get("items")).size());
+    assertEquals(files.metadata(owner, any).get("sha256"), CollaborationFiles.sha(files.bytes(studioViewer, any)));
+    forbidden(() -> files.review(studioViewer, any, "APPROVED"));
+    forbidden(() -> spaces.memory(studioViewer, w, "NOTE", "x", null));
+    forbidden(() -> files.store(studioViewer, w, "x.md", "x".getBytes(), null, null, null));
+    forbidden(() -> spaces.member(studioViewer, w, studioViewer.userId(), "MANAGER"));
+
+    // (4) other workspace must not see these files
+    String other = spaces.create(owner, "other").get("id").toString();
+    var ownerOnlyOther = user(Role.TUTOR);
+    studio.member(owner, ownerOnlyOther.userId(), "EDITOR");
+    spaces.member(owner, other, ownerOnlyOther.userId(), "EDITOR");
+    forbidden(() -> files.bytes(ownerOnlyOther, any));
+    forbidden(() -> sources.files(ownerOnlyOther, w, "", 100, ""));
+
+    // (5) hostile HTML preview
+    String evil =
+        "<html onload=alert(1)><head><meta http-equiv=refresh content='0;url=//evil'>"
+            + "<link rel=stylesheet href=//evil/x.css><style>@import url(//evil/y.css)</style><base href=//evil/></head>"
+            + "<body ONLOAD=alert(1)><script>alert(1)</script><img src=x onerror=alert(1)>"
+            + "<img src='data:image/svg+xml;base64,PHN2Zz48c2NyaXB0Pg=='><a href='javascript:alert(1)'>a</a>"
+            + "<a href=' JaVaScRiPt:alert(1)'>b</a><iframe srcdoc='<script>1</script>'></iframe>"
+            + "<svg onload=alert(1)></svg><form action=//evil><input></form><video src=//evil/v.mp4></video>"
+            + "<img srcset='//evil/a 1x' src='data:image/png;base64,AAAA'></body></html>";
+    var stored = files.store(owner, w, "evil.html", evil.getBytes(StandardCharsets.UTF_8), null, "CODEX", null);
+    String html = preview.html(owner, stored.get("id").toString()).toLowerCase(Locale.ROOT);
+    for (String bad : List.of("<script", "onerror", "onload", "javascript:", "<iframe", "srcdoc", "<svg",
+        "<form", "<input", "<link", "<base", "<meta", "srcset", "//evil/a", "image/svg"))
+      assertFalse(html.contains(bad), "survived: " + bad + "\n" + html);
+    assertTrue(html.contains("data:image/png;base64,aaaa"));
+
+    // (6) kill switch fails closed; originals/pointers unchanged
+    ReflectionTestUtils.setField(importer, "enabled", false);
+    forbidden(() -> importer.dryRun(source));
+    forbidden(() -> importer.apply(owner, w, source));
+    ReflectionTestUtils.setField(importer, "enabled", true);
+    for (var row : ids)
+      assertEquals(row.get("sha256"), CollaborationFiles.sha(files.bytes(owner, row.get("id").toString())));
+    assertEquals(pointers, db.queryForList("SELECT item_key,head_id,approved_id FROM studio_items ORDER BY item_key"));
+    assertEquals(0, db.queryForObject("SELECT COUNT(*) FROM ai_collaboration_files WHERE workspace_id=? AND status<>'DRAFT' AND filename<>'evil.html'", Integer.class, w));
+  }
+}
