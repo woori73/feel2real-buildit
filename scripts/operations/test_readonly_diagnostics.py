@@ -248,6 +248,18 @@ class StaticPolicyTest(unittest.TestCase):
         options = re.findall(r"^\s+- ([a-z-]+)$", WORKFLOWS[0].read_text(), re.M)
         self.assertEqual(set(options), allowed)
 
+    def test_setup_step_applies_only_repo_definitions_and_not_the_deploy_role(self):
+        # given: migration-infra-build의 readonly-setup 단계 본문
+        text = (ROOT / ".github/workflows/migration-infra-build.yml").read_text()
+        body = text[text.index("step_readonly_setup() {"):text.index("step_all_infra() {")]
+        # then: 저장소 JSON만 적용하고, 배포 역할·관리형 정책·임의 셸은 쓰지 않는다
+        self.assertIn("file://$D/ssm-document-F2R-ReadOnlyStatus.json", body)
+        self.assertIn("file://$D/trust-github-actions-f2r-readonly.json", body)
+        self.assertIn("file://$D/policy-f2r-readonly-status.json", body)
+        for bad in ("github-actions-f2r-deploy", "attach-role-policy", "AWS-RunShellScript", "send-command", "--with-decryption"):
+            self.assertNotIn(bad, body)
+        self.assertIn("readonly-setup) step_readonly_setup ;;", text)
+
 
 if __name__ == "__main__":
     unittest.main()

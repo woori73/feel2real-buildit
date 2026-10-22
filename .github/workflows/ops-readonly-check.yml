@@ -13,6 +13,7 @@ on:
       - 'docs/operations/aws-migration/trust-github-actions-f2r-snapshot.json'
       - 'docs/operations/aws-migration/rds-predeploy-snapshot.yml'
       - 'scripts/operations/test_readonly_diagnostics.py'
+      - '.github/workflows/migration-infra-build.yml'
   workflow_dispatch:
 permissions:
   contents: read

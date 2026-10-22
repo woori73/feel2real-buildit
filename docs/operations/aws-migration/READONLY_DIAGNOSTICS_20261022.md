@@ -33,9 +33,10 @@
 
 ## 적용 절차 (승인 후, 소유자가 콘솔/관리 역할로)
 
-1. SSM 문서 생성: 이름 `F2R-ReadOnlyStatus`, 유형 Command, 내용 = `ssm-document-F2R-ReadOnlyStatus.json`.
-2. IAM 역할 `github-actions-f2r-readonly` 생성: 신뢰 정책 = `trust-github-actions-f2r-readonly.json`, 인라인 정책 = `policy-f2r-readonly-status.json`.
-3. 이 PR 병합 후 `Prod read-only status`를 `section=all`로 실행.
+1. 이 PR 병합.
+2. `Migration infra build`를 `step=readonly-setup`으로 실행(소유자 승인 환경 `f2r-infra-build`). 저장소 JSON 그대로 SSM 문서 `F2R-ReadOnlyStatus`(Command)를 만들거나 새 버전으로 갱신하고, 역할 `github-actions-f2r-readonly`를 만들거나 신뢰를 맞춘 뒤 인라인 정책 `f2r-readonly-status`를 넣는다. 배포 역할은 건드리지 않고 관리형 정책도 붙이지 않는다. 다시 실행해도 결과가 같다(멱등).
+   - 빌더 역할에 `iam:CreateRole`·`ssm:CreateDocument` 권한이 없으면 이 단계가 AccessDenied로 멈춘다. 그때는 소유자가 CloudShell에서 같은 명령(위 단계 본문)을 실행한다.
+3. `Prod read-only status`를 `section=all`로 실행.
 4. 결과로 확인: RDS 엔진·버전, 자동 백업 보존 일수·최근 복원 가능 시점, 수동 스냅샷 목록, Flyway 최대 버전과 V1094/V1095 적용 여부, jar SHA-256·수정 시각.
 
 ## 남은 정리 (이번 범위 아님)
