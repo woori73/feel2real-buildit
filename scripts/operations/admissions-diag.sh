@@ -65,6 +65,8 @@ SELECT 'universities' AS section, COUNT(*) AS n FROM admissions_universities;
 SELECT 'official materials (public titles/URLs)' AS section, m.material_id, u.name AS university, m.academic_year, m.status, m.title, m.issuer, m.document_url
  FROM admissions_official_materials m LEFT JOIN admissions_universities u ON u.university_id=m.university_id ORDER BY m.academic_year, u.name, m.material_id LIMIT 300;
 SELECT 'embeddings by model' AS section, model_version, COUNT(*) AS n FROM admissions_knowledge_embeddings GROUP BY model_version;
+SELECT 'embedding rows by model/dim/bytes' AS section, model_version, dimension, LENGTH(vector) AS bytes, COUNT(*) AS n FROM admissions_knowledge_embeddings GROUP BY model_version, dimension, LENGTH(vector);
+SELECT 'knowledge by kind/year/status' AS section, SUBSTRING_INDEX(dedup_key,':',1) AS kind, academic_year, status, COUNT(*) AS n FROM admissions_knowledge_items GROUP BY SUBSTRING_INDEX(dedup_key,':',1), academic_year, status;
 SELECT 'ACTIVE knowledge without embedding (any model)' AS section, COUNT(*) AS n FROM admissions_knowledge_items k
  WHERE k.status='ACTIVE' AND NOT EXISTS (SELECT 1 FROM admissions_knowledge_embeddings e WHERE e.knowledge_id=k.knowledge_id);
 SELECT 'open conflicts' AS section, COUNT(*) AS n FROM admissions_conflicts WHERE status='OPEN';
@@ -85,3 +87,23 @@ try:
 finally:
     f.close(); os.unlink(f.name)
 PY
+printf '=== embedding server (read only) ===\n'
+printf 'f2r-embed: '; systemctl is-active f2r-embed 2>/dev/null || true
+printf 'health: '; curl -fsS --max-time 3 http://127.0.0.1:8081/health 2>/dev/null || printf 'unreachable'
+printf '\n'
+python3 - <<'PY'
+import json,math,time,urllib.request
+try:
+    t=time.time()
+    req=urllib.request.Request('http://127.0.0.1:8081/embed',json.dumps({'texts':['서울대학교 수시 전형'],'task':'query'}).encode(),{'Content-Type':'application/json'})
+    v=json.load(urllib.request.urlopen(req,timeout=10))['embeddings'][0]
+    print('embed probe: dim=%d norm=%.4f elapsed=%.2fs' % (len(v), math.sqrt(sum(x*x for x in v)), time.time()-t))
+except Exception as e:
+    print('embed probe failed:', type(e).__name__)
+PY
+printf '=== admissions index/reindex log (app journal since last start; message text only) ===\n'
+SINCE=$(systemctl show f2r-app -p ActiveEnterTimestamp --value 2>/dev/null)
+journalctl -u f2r-app --since "${SINCE:-1 hour ago}" --no-pager 2>/dev/null \
+  | grep -E '입시 벡터 인덱스 로드|admissions knowledge (build|reindex)|AdmissionsEmbedding|admissions embedding|index/reload' \
+  | sed -E 's/^.*java\[[0-9]+\]: //' | cut -c1-260 | tail -40
+printf '(end of log section)\n'
