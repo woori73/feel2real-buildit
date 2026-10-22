@@ -18,6 +18,7 @@ public class StudioController {
   private final StudioBulkImport bulk;
   private final StudioPreview previews;
   private final StudioProductionImporter importer;
+  private final StudioCollaborationService collaboration;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -330,6 +331,47 @@ public class StudioController {
       @RequestBody StudioProductionImporter.Request request)
       throws IOException {
     return importer.register(p, request);
+  }
+
+  @GetMapping("/api/studio/memory")
+  @ResponseBody
+  public Object readMemory(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return collaboration.memory(p);
+  }
+
+  @PostMapping("/api/studio/memory")
+  @ResponseBody
+  public Object saveMemory(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestBody StudioCollaborationService.Memory memory) {
+    return collaboration.saveMemory(p, memory);
+  }
+
+  @GetMapping("/api/studio/revisions/{id}/comments")
+  @ResponseBody
+  public Object comments(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestParam(required = false) Long beforeId) {
+    return collaboration.comments(p, id, beforeId);
+  }
+
+  @PostMapping("/api/studio/revisions/{id}/comments")
+  @ResponseBody
+  public void comment(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestBody StudioCollaborationService.Comment comment) {
+    collaboration.comment(p, id, comment);
+  }
+
+  @GetMapping("/api/studio/pending")
+  @ResponseBody
+  public Object pending(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(defaultValue = "100") int limit,
+      @RequestParam(defaultValue = "0") int offset) {
+    return collaboration.pending(p, limit, offset);
   }
 
   @GetMapping("/api/studio/events")

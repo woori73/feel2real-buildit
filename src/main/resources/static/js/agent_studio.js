@@ -280,7 +280,59 @@
       };
       $("detail").append(b);
     }
+    $("detail").append(commentThread(r));
     $("detail").scrollIntoView({ block: "nearest" });
+  }
+  let memoryRevision="",pendingOffset=0;
+  async function loadMemory() {
+    const record=await api("memory");memoryRevision=record.revisionId;
+    const memory=record.memory||{},box=$("memory-record");box.replaceChildren();
+    for(const [key,label] of [["lastDecision","마지막 결정"],["currentAi","현재 담당"],["openIssues","미해결 문제"],["nextWork","다음 작업"]])box.append(el("h3",label),el("p",memory[key]||"아직 기록이 없습니다.","memory-text"));
+    if(memory.pr){const link=el("a","관련 PR #"+memory.pr);link.href="https://github.com/woori73/feel2real-buildit/pull/"+encodeURIComponent(memory.pr);link.target="_blank";link.rel="noopener noreferrer";box.append(link);}
+    if(memory.commitSha)box.append(el("p","최신 SHA · "+memory.commitSha,"memory-sha"));
+    if(record.updatedAt)box.append(el("p","기록 시각 · "+record.updatedAt+" / 기록자 "+record.updatedBy,"hint"));
+    $("memory-evidence").replaceChildren();
+    for(const file of record.files||[]) {
+      const c=el("div",undefined,"card");c.append(el("h3",file.filename),el("p","SHA-256 "+file.sha256));
+      const b=el("button","인계 자료 열람"),view=el("div");b.onclick=run(()=>previewFile(file,view));c.append(b,view);$("memory-evidence").append(c);
+    }
+    for(const field of ["lastDecision","currentAi","openIssues","nextWork","pr","commitSha"])$("memory-form").elements[field].value=memory[field]||"";
+    $("memory-files").replaceChildren();
+    for(const file of state.files){const option=new Option(file.filename+" · "+file.sha256.slice(0,12),file.id);option.selected=(memory.sourceFileIds||[]).includes(file.id);$("memory-files").add(option);}
+    $("memory-edit").hidden=state.permission==="VIEWER";
+  }
+  async function pending(append=false) {
+    if(!append){pendingOffset=0;$("pending-list").replaceChildren();}
+    const rows=await api("pending?limit=100&offset="+pendingOffset);pendingOffset+=rows.length;$("pending-more").hidden=rows.length<100;
+    for(const row of rows) {
+      const c=el("article",undefined,"card");c.append(el("h3",row.title),badges(row),el("p",row.last_review==="REQUEST_CHANGES"?"수정 요청됨 · 기존 승인본 유지":"사용자 검수 대기"));
+      const open=el("button","상세·검수 열기");open.onclick=()=>{document.querySelector('[data-tab="materials"]').click();detail(row);};c.append(open);$("pending-list").append(c);
+    }
+    if(!pendingOffset)$("pending-list").append(el("p","승인 대기 자료가 없습니다."));
+  }
+  function commentThread(r) {
+    const section=el("section",undefined,"comment-thread");section.append(el("h3","컷·자료별 댓글과 검수 이력"));
+    const list=el("div"),more=el("button","이전 댓글 더 불러오기");let cursor=null;
+    const read=async(reset=false)=>{
+      if(reset){cursor=null;list.replaceChildren();}
+      const rows=await api("revisions/"+r.id+"/comments"+(cursor?"?beforeId="+cursor:""));more.hidden=rows.length<100;
+      for(const event of rows) {
+        const c=el("article",undefined,"card");let note=event.note,origin="사람 댓글";
+        if(event.action==="COMMENT")try{const data=JSON.parse(note);note=data.body;origin=data.authorType==="HUMAN_SHARED_AI_MATERIAL"?"사람이 공유한 "+data.sharedAi+" 자료":"사람 댓글";if(data.sourceFileId){const file=state.files.find(f=>f.id===data.sourceFileId);const button=el("button","근거 파일 열람"),view=el("div");button.onclick=run(async()=>previewFile(file||await api("files/"+data.sourceFileId),view));c.append(button,view);}}catch(_){}
+        else origin={APPROVE:"사용자 승인",REJECT:"반려",REQUEST_CHANGES:"수정 요청"}[event.action]||event.action;
+        c.prepend(el("strong",origin+" · "+event.actor_name+" · "+event.label),el("p",note,"memory-text"),el("small",event.created_at));list.append(c);cursor=event.id;
+      }
+      if(!list.children.length)list.append(el("p","아직 댓글·검수 기록이 없습니다."));
+    };
+    more.onclick=run(()=>read());section.append(list,more);
+    if(state.permission!=="VIEWER") {
+      const form=el("form"),label=el("label","댓글·수정 의견"),body=el("textarea");body.required=true;body.maxLength=1200;body.rows=3;label.append(body);
+      const aiLabel=el("label","AI 산출물 공유 (선택)"),ai=el("select");ai.add(new Option("사람 댓글",""));for(const name of ["Claude","Codex","Muse","ChatGPT"])ai.add(new Option(name+" 자료를 사람이 공유",name));aiLabel.append(ai);
+      const sourceLabel=el("label","근거 자료"),source=el("select");source.add(new Option("근거 자료 없음",""));for(const file of state.files)source.add(new Option(file.filename,file.id));sourceLabel.append(source);
+      const submit=el("button","댓글 기록");form.append(label,aiLabel,sourceLabel,el("p","AI 직접 인증 댓글과 구분하며, 실제 기록자는 로그인한 사용자입니다.","hint"),submit);
+      form.onsubmit=run(async()=>{submit.disabled=true;try{await api("revisions/"+r.id+"/comments",json({body:body.value,sharedAi:ai.value||null,sourceFileId:source.value||null}));body.value="";await read(true);message("댓글을 저장하고 다시 확인했습니다. 원본·승인본은 유지합니다.");}finally{submit.disabled=false;}});section.append(form);
+    }
+    read(true).catch(error=>message(error.message));return section;
   }
   function edit(r) {
     const f = $("revision-form");
@@ -424,6 +476,8 @@
         b.setAttribute("aria-current", "page");
         if (b.dataset.tab === "files") await fileList();
         if (b.dataset.tab === "characters") await gallery();
+        if (b.dataset.tab === "memory") await loadMemory();
+        if (b.dataset.tab === "inbox") await pending();
         if (b.dataset.tab === "compare") await compareOptions();
         if (b.dataset.tab === "history") {
           const rows = await api("events");
@@ -452,6 +506,13 @@
     const delta=event.key==="ArrowRight"?1:event.key==="ArrowLeft"?-1:0;
     const row=state.cuts.find(r=>r.cut_number===state.selected.cut_number+delta);
     if(delta&&row){event.preventDefault();detail(row);}
+  });
+  $("memory-reload").onclick=run(()=>loadMemory());
+  $("pending-more").onclick=run(()=>pending(true));
+  $("memory-form").onsubmit=run(async()=>{
+    const data=Object.fromEntries(new FormData($("memory-form")));data.expectedRevisionId=memoryRevision||null;data.pr=data.pr?Number(data.pr):null;data.sourceFileIds=[...$("memory-files").selectedOptions].map(o=>o.value);
+    const button=$("memory-form").querySelector("button");button.disabled=true;
+    try{const saved=await api("memory",json(data));await loadMemory();if(memoryRevision!==saved.revisionId)throw Error("동시에 다른 기록이 저장됐습니다. 최신 상태를 확인하세요.");message("새 작업 기억을 저장하고 실제 저장 결과를 다시 불러왔습니다.");}finally{button.disabled=false;}
   });
   $("load-more").onclick=run(()=>load(true));
   $("bulk-form").onsubmit=run(async()=>{

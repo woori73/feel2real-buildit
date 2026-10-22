@@ -24,7 +24,7 @@
       <p id="message" role="status" aria-live="polite"></p>
       <nav class="tabs" aria-label="제작 영역">
         <button data-tab="materials" aria-current="page">제작 자료</button
-        ><button data-tab="characters">캐릭터 갤러리</button><button data-tab="files">원본 파일</button
+        ><button data-tab="memory">공동 작업 기억</button><button data-tab="inbox">승인 대기함</button><button data-tab="characters">캐릭터 갤러리</button><button data-tab="files">원본 파일</button
         ><button data-tab="compare">버전 비교</button
         ><button data-tab="chat">작품 자료 검색·채팅</button
         ><button data-tab="history">작업 이력</button
@@ -73,6 +73,22 @@
           </article>
         </div>
       </section>
+      <section id="memory" class="panel" hidden>
+        <h2>프로젝트 공동 작업 기억</h2>
+        <p>사람과 AI가 같은 결정·자료·다음 작업을 확인합니다. 새 세션에서도 서버에 기록한 최신 상태를 불러옵니다. 이 기록은 자동 실행 지시가 아닙니다.</p>
+        <div id="memory-record"></div><div id="memory-evidence"></div>
+        <details id="memory-edit"><summary>작업 기억 갱신</summary>
+          <form id="memory-form"><label>마지막 결정<textarea name="lastDecision" maxlength="4000" required rows="4"></textarea></label>
+          <label>현재 담당 AI·사람 (작업 메모)<input name="currentAi" maxlength="100" /></label>
+          <label>미해결 문제<textarea name="openIssues" maxlength="8000" rows="5"></textarea></label>
+          <label>다음 작업<textarea name="nextWork" maxlength="4000" rows="4"></textarea></label>
+          <div class="form-grid"><label>관련 PR 번호<input name="pr" type="number" min="1" max="1000000" /></label><label>최신 커밋 SHA<input name="commitSha" maxlength="64" pattern="[a-f0-9]{40}|[a-f0-9]{64}" /></label></div>
+          <label>연결할 최신 자료 (50개까지)<select id="memory-files" multiple size="6"></select></label>
+          <p class="hint">저장하면 기존 결정을 보존한 새 버전을 만듭니다. 다른 사람이 먼저 갱신했으면 최신 상태를 다시 불러오세요.</p>
+          <button>작업 기억 새 버전 저장</button><button id="memory-reload" type="button">최신 상태 다시 불러오기</button></form>
+        </details>
+      </section>
+      <section id="inbox" class="panel" hidden><h2>사용자 승인 대기함</h2><p>보관용 출처 목록은 제외하고 최신 수정 후보를 보여줍니다. 실제 승인은 상세 화면에서 사람이 결정합니다. 반려본과 이전 이력은 자료 탭에 보존합니다.</p><div id="pending-list"></div><button id="pending-more" hidden>대기 자료 더 불러오기</button></section>
       <section id="characters" class="panel" hidden><h2>캐릭터 갤러리</h2><div id="character-gallery" class="storyboard"></div></section>
       <section id="files" class="panel" hidden>
         <h2>원본 보관함</h2>
@@ -244,7 +260,7 @@
           <label
             >결정<select name="action">
               <option value="APPROVE">이 버전을 사용자 승인본으로 지정</option>
-              <option value="REJECT">이 버전 반려</option>
+              <option value="REJECT">이 버전 반려</option><option value="REQUEST_CHANGES">수정 요청 (기존 승인본 유지)</option>
             </select></label
           ><label
             >검수 메모<textarea

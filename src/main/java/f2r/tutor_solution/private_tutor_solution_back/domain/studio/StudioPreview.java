@@ -280,9 +280,14 @@ public class StudioPreview {
     if (ext.equals("md"))
       html =
           org.commonmark.renderer.html.HtmlRenderer.builder()
+              .extensions(List.of(org.commonmark.ext.gfm.tables.TablesExtension.create()))
               .escapeHtml(true)
               .build()
-              .render(org.commonmark.parser.Parser.builder().build().parse(source));
+              .render(
+                  org.commonmark.parser.Parser.builder()
+                      .extensions(List.of(org.commonmark.ext.gfm.tables.TablesExtension.create()))
+                      .build()
+                      .parse(source));
     // No links, images, styles, embeds, form controls or remote resources survive sanitization.
     String clean =
         Jsoup.clean(

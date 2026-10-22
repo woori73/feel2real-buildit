@@ -48,7 +48,7 @@ jobs:
         run: |
           git fetch origin 09d62dee982e2e89e3653c90b1ee42f05bff4f9d
           python scripts/ai-agent-studio/import-production.py --extract-to /tmp/f2r-production-source --receipt /tmp/f2r-source-dry-run.json
-      - run: bash gradlew test --no-daemon --tests '*StudioServiceTest' --tests '*StudioPreviewTest' --tests '*StudioProductionImportMySqlTest' --tests '*StudioUploadRollbackMySqlTest' --tests '*FlywayStackUpgradeMySqlTest' --tests '*Mcp*Test' --tests '*JwtTokenProviderTest' --tests '*SiteVisitFilterTest' --tests '*WikiMemberOnlySecurityIntegrationTest' bootJar
+      - run: bash gradlew test --no-daemon --tests '*StudioServiceTest' --tests '*StudioPreviewTest' --tests '*StudioCollaborationMySqlTest' --tests '*StudioProductionImportMySqlTest' --tests '*StudioUploadRollbackMySqlTest' --tests '*FlywayStackUpgradeMySqlTest' --tests '*Mcp*Test' --tests '*JwtTokenProviderTest' --tests '*SiteVisitFilterTest' --tests '*WikiMemberOnlySecurityIntegrationTest' bootJar
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

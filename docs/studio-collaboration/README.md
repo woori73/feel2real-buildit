@@ -41,3 +41,9 @@ r14 콘티 68개와 r5 콘티 68개를 서로 다른 버전으로 보관한다. 
 [전달 규격·보안·실접속 조건](MCP_MEDIA.md), [Java 32건 PASS](media-java-results.json), [공식 SDK 결과](media-protocol-results.json). 실제 #863 CURRENT_STATE.md와 승인 기준 시트를 독립 OAuth grant 2개로 읽어 같은 문서 digest와 같은 JPEG 파생본 SHA를 확인했다. 결과는 text 메타데이터 + image/jpeg 콘텐츠 블록이며 파생본 70,577 bytes다. 별도 원본 동의 없는 세 번째 grant는 문서만 읽고 이미지 블록은 거부됐다. POST 등록도 거부됐다. 3개 grant는 로컬 공식 SDK 시험 클라이언트이고 실제 ChatGPT·Claude 계정이 아니다. 실제 모델 시각 판독은 NOT TESTED이며 외부 유료 호출 0이다.
 
 로컬 실제 원본 서버 재개는 `run-production-local.py`(격리 테스트가 만든 3318/f2r_assets_* 및 /tmp 저장소만 허용, loopback18090에만 바인딩), 프로토콜 검증은 `media-protocol-qa.py`다. 이 스크립트는 운영 주소·DB를 받지 않는다.
+
+## 공동 작업 기억·컷별 검수 (4단계 별도 PR)
+
+새 테이블 없이 기존 revision/event에 결정과 댓글을 보존한다. 마지막 결정·현재 담당·열린 문제·다음 작업·최신 PR/SHA·연결 파일은 서버의 새 버전으로 저장하고 실제 재조회한다. 오래된 expectedRevisionId는 409, 이전 결정은 불변이다. 컷 댓글은 전 버전을 묶고 각 버전/실제 사람 작성자를 표시한다. 사람이 공유한 Claude/Codex/Muse/ChatGPT 자료는 근거 파일이 필요하며 AI 직접 인증 작성으로 표시하지 않는다. AI 직접 쓰기 연결은 별도 설계 대상이다. 수정 요청은 승인 정본을 바꾸지 않는다. 승인 대기함은 100개씩 페이지 조회하며 보관용 출처536개를 제외한다.
+
+MySQL 회귀36건 PASS(공동 기억6·기존 Studio8·MCP22), Markdown 표/안전 렌더9건 PASS. [브라우저11개 PASS](memory-browser-results.json): [PC 기억](screens/memory-1440.png), [모바일 새 세션 복원](screens/memory-390.png), [승인 이력 표](screens/memory-approval-history-1440.png), [댓글·수정 요청](screens/comments-1440.png), [승인 대기함](screens/inbox-390.png). 실제 작품에서 새 세션·다른 사용자가 동일 기억/파일4개를 복원했고, 오래된 저장 거부·수정 요청 후 컷 미승인 유지·무권한403을 확인했다. [공식 SDK 새 세션 인계](memory-protocol-results.json)도 같은 revisionId/digest를 읽고 POST를 거부했다. 이는 외부 제품 계정 검증을 대신하지 않는다.

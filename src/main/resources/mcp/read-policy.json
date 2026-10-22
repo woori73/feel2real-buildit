@@ -3603,5 +3603,23 @@
     "service": "studio",
     "roles": [],
     "reason": "기존 권한으로 고정 원본 적재 현황·출처 조회만. 승인·업로드·초기화 없음."
+  },
+  {
+    "path": "/api/studio/memory",
+    "service": "studio",
+    "roles": [],
+    "reason": "프로젝트 권한을 검사한 공동 기억·댓글/검수·승인대기 SQL 조회만. 쓰기·AI 실행·자동 승인 없음."
+  },
+  {
+    "path": "/api/studio/revisions/{id}/comments",
+    "service": "studio",
+    "roles": [],
+    "reason": "프로젝트 권한을 검사한 공동 기억·댓글/검수·승인대기 SQL 조회만. 쓰기·AI 실행·자동 승인 없음."
+  },
+  {
+    "path": "/api/studio/pending",
+    "service": "studio",
+    "roles": [],
+    "reason": "프로젝트 권한을 검사한 공동 기억·댓글/검수·승인대기 SQL 조회만. 쓰기·AI 실행·자동 승인 없음."
   }
 ]

@@ -38,6 +38,10 @@ public class StudioService {
       String workStatus,
       String fileId) {}
 
+  public String projectId() {
+    return PROJECT;
+  }
+
   public String permission(AuthenticatedPrincipal p) {
     if (p == null) throw error(401, "로그인이 필요합니다.");
     if ("ADMIN".equals(p.role())) return "APPROVER";
@@ -449,8 +453,8 @@ public class StudioService {
   @Transactional
   public void review(AuthenticatedPrincipal p, String id, String action, String note) {
     require(p, false, true);
-    if (!Set.of("APPROVE", "REJECT").contains(text(action)) || text(note).length() > 2000)
-      throw error(400, "검수 값 오류");
+    if (!Set.of("APPROVE", "REJECT", "REQUEST_CHANGES").contains(text(action))
+        || text(note).length() > 2000) throw error(400, "검수 값 오류");
     var revision = revision(p, id);
     db.queryForList(
         "SELECT item_key FROM studio_items WHERE project_id=? AND item_key=? FOR UPDATE",
@@ -462,7 +466,7 @@ public class StudioService {
           id,
           PROJECT,
           revision.get("item_key"));
-    else
+    else if (action.equals("REJECT"))
       db.update(
           "UPDATE studio_items SET approved_id=NULL WHERE project_id=? AND item_key=? AND"
               + " approved_id=?",
