@@ -2867,6 +2867,7 @@
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/unifiedassistant/UnifiedAssistantController.java",
       "allowed": false,
       "flags": [
+        "DB_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/unifiedassistant/AssistantDraftTransactions.java:34 AssistantDraftTransactions.recoverStale",
         "REMOTE_OR_ASYNC:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/academycraft/AcademyCraftGateway.java:108 AcademyCraftGateway.exchange"
       ],
       "unresolvedExternalTypes": [

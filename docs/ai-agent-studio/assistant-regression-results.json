@@ -1,9 +1,9 @@
 {
-  "environment": "Actual loopback BuildIt + AcademyCraft with isolated MySQL; includes post-review context loading guard",
+  "environment": "Actual loopback BuildIt + AcademyCraft on newly created isolated MySQL; latest #854 4553d10b included",
   "stats": {
-    "startTime": "2026-10-22T05:25:29.863Z",
-    "duration": 24098.908,
-    "expected": 11,
+    "startTime": "2026-10-22T05:54:11.294Z",
+    "duration": 44660.081,
+    "expected": 12,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
@@ -11,6 +11,7 @@
   "checks": [
     {
       "name": "anonymous, student and cross-origin calls cannot use assistant writes",
+      "sourceTitle": "anonymous, student and cross-origin calls cannot use assistant writes",
       "status": "expected",
       "results": [
         "passed"
@@ -18,6 +19,7 @@
     },
     {
       "name": "first visit, pause/resume, stale version and completion persist per user",
+      "sourceTitle": "first visit, pause/resume, stale version and completion persist per user",
       "status": "expected",
       "results": [
         "passed"
@@ -25,6 +27,7 @@
     },
     {
       "name": "student draft does not write; forged hash, concurrent approval, replay and ownership are safe",
+      "sourceTitle": "student draft does not write; forged hash, concurrent approval, replay and ownership are safe",
       "status": "expected",
       "results": [
         "passed"
@@ -32,6 +35,7 @@
     },
     {
       "name": "class creation, assignment, updates and stale target checks reuse actual APIs",
+      "sourceTitle": "class creation, assignment, updates and stale target checks reuse actual APIs",
       "status": "expected",
       "results": [
         "passed"
@@ -39,6 +43,7 @@
     },
     {
       "name": "attendance and consultation create/message verify persisted records",
+      "sourceTitle": "attendance and consultation create/message verify persisted records",
       "status": "expected",
       "results": [
         "passed"
@@ -46,6 +51,7 @@
     },
     {
       "name": "expiry, cancellation, live permission revocation and unknown outcome never replay writes",
+      "sourceTitle": "expiry, cancellation, live permission revocation and unknown outcome never replay writes",
       "status": "expected",
       "results": [
         "passed"
@@ -53,6 +59,7 @@
     },
     {
       "name": "CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access",
+      "sourceTitle": "CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access",
       "status": "expected",
       "results": [
         "passed"
@@ -60,6 +67,7 @@
     },
     {
       "name": "definite upstream rejection reports failure, audits it and cannot replay",
+      "sourceTitle": "definite upstream rejection reports failure, audits it and cannot replay",
       "status": "expected",
       "results": [
         "passed"
@@ -67,6 +75,15 @@
     },
     {
       "name": "material text, missing identifiers and unsupported attachments require explicit review",
+      "sourceTitle": "material text, missing identifiers and unsupported attachments require explicit review",
+      "status": "expected",
+      "results": [
+        "passed"
+      ]
+    },
+    {
+      "name": "read-only inquiries, correction guidance and notice draft never create write drafts",
+      "sourceTitle": "read-only inquiries, correction guidance and notice draft never create write drafts (NOT RUN in review env)",
       "status": "expected",
       "results": [
         "passed"
@@ -74,6 +91,7 @@
     },
     {
       "name": "natural command and desktop/mobile workbench render, highlight, persist and approve through UI",
+      "sourceTitle": "natural command and desktop/mobile workbench render, highlight, persist and approve through UI",
       "status": "expected",
       "results": [
         "passed"
@@ -81,6 +99,7 @@
     },
     {
       "name": "login surfaces welcome link without moving the current service",
+      "sourceTitle": "login surfaces welcome link without moving the current service",
       "status": "expected",
       "results": [
         "passed"

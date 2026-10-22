@@ -25,6 +25,8 @@ MCP 실행 허용 경로는 406개다. 목록에 보이는 서비스 경로와 �
 | `/api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` | 외부 wiki HTTP 호출 |
 | `/api/tutor/lms/{handle}/midterm-campaign/wiki-candidates` | 외부 wiki HTTP 호출 |
 
+최종 #854의 `/api/dashboard/assistant/v1/drafts` GET도 stale EXECUTING을 UNKNOWN으로 저장하는 부수효과가 있으므로 기존 MCP 미허용을 유지한다. 실제 MCP 요청 거부를 통합 경계 시험에 포함했다.
+
 기존 서비스 API는 유지했다. MCP 정책만 제외했으며, 운영 사이트에서 위 API를 실호출하지 않았다. GET이라는 이름만으로 비용·부수효과가 없다고 판단하지 않는다.
 
 재무의 기존 66개 정책은 제거하고 `/api/mcp/finance/summary` 하나만 허용한다. 명시한 허용 사업체의 월 합계 8개 필드만 제공한다. #853의 수집 상태/원문/증빙/계좌, 거래·미수 학생 상세, 확정 API는 제공하지 않는다. 입시 자료는 관리자 지식·재색인·통계·SSR을 제외하고 사용자 본인의 상담 history만 유지한다.

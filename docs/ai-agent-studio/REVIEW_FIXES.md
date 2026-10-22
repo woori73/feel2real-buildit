@@ -4,11 +4,11 @@
 
 ## 병합 전 구조
 
-검토 순서 **#854 → #853 → #855**. 기능 브랜치끼리 최신 내용을 통합했으며 세 PR은 모두 main 대상으로 Draft를 유지한다. #855에 두 선행 PR 내용이 포함되어 있으므로 선행 PR 병합 후 변경 범위를 다시 확인한다. main 병합·운영 배포·운영 DB 변경·운영 MCP 활성화·실제 금융기관 접속은 수행하지 않았다.
+검토 순서 **#854 → #853 → #855**. 최종 #854 `4553d10b`의 출결 조회/정정 구분·모델 호출 제한·감사 범위·EXECUTING 복구·투어 연동도 포함한다. 기능 브랜치끼리 최신 내용을 통합했으며 세 PR은 모두 main 대상으로 Draft를 유지한다. #855에 두 선행 PR 내용이 포함되어 있으므로 선행 PR 병합 후 변경 범위를 다시 확인한다. main 병합·운영 배포·운영 DB 변경·운영 MCP 활성화·실제 금융기관 접속은 수행하지 않았다.
 
 | 항목 | 수정·검증 |
 |---|---|
-| Flyway 충돌 | #854의 V1094 유지, 미배포 #855만 V1095로 변경. 신규 MySQL 8.4에서 전체 190개 성공, 실패 0, V1094/1095 각각 한 번. 기존 checksum repair 또는 운영 이력 변경 없음 |
+| Flyway 충돌 | #854의 V1094 유지, 미배포 #855만 V1095로 변경. 신규 MySQL 8.4에서 전체 190개 성공, 실패 0, V1094/1095 각각 한 번. 최종 #854의 미병합 V1094 감사 범위 컬럼 3개를 포함한 새 격리 DB로 다시 검증. 이전 테스트 컨테이너는 보관, checksum repair 또는 운영 이력 변경 없음 |
 | 문서 충돌 | `docs/API.md`, `docs/DOMAIN.md`, `docs/FLOWS.md`의 세 기능 섹션과 최신 main #856 내용을 모두 보존. 추가 API·권한·승인 경계를 명시 |
 | ChatGPT OAuth | 관리 화면의 실제 `https://chatgpt.com/connector/oauth/{callback_id}`를 정확히 등록. 기존 잘못된 두 callback 제거. 공식 URI 형태와 명시한 전체 URI의 이중 검사. query/fragment/사용자 정보/가짜 host/임의 suffix/미등록 callback 거부 |
 | 표준 고정 callback | `https://chatgpt.com/connector_platform_oauth_redirect`는 실제 관리 화면에서 발급/제시한 URI만 명시 등록. 이 서버는 RFC9207 issuer 응답·CIMD를 광고하지 않으므로 신규 연결에 고정 callback이 발급된다고 가정하지 않음 |
@@ -28,13 +28,13 @@
 
 ## 실행 증거
 
-- 통합 Java **224건, 실패/오류/skip 0**. 스튜디오·MCP·JWT·Wiki 경계·통합 비서·회계/수집 회귀. 최종 ZIP asset bytes/SHA·디렉터리 항목 압축 데이터 20MiB 한도·UUID label 보강 후 영향 범위 **25건 재통과**. [Java 결과](review-java-results.json)
+- 최종 #854 반영 후 영향 범위 Java **98건, 실패/오류/skip 0** 및 bootJar 통과. 새 DB의 V1094 감사 컬럼도 확인. 투어 JS **5건** 통과. 이전 통합 Java **224건, 실패/오류/skip 0** 증거도 보존. 스튜디오·MCP·JWT·Wiki 경계·통합 비서·회계/수집 회귀. 최종 ZIP asset bytes/SHA·디렉터리 항목 압축 데이터 20MiB 한도·UUID label 보강 후 영향 범위 **25건 재통과**. [Java 결과](review-java-results.json)
 - 스튜디오 Chromium **22개 검사**, PC 6개 탭과 모바일 axe 위반 0. 7종 업로드·SHA/download 동일·HTML 스크립트 차단·승인·비교·모바일 복원·미허가자 403. [결과](browser-results.json), [PC](screens/studio-pc-1440.png), [모바일 승인](screens/approve-mobile-390.png), [모바일 복원](screens/restore-mobile-390.png)
 - 공식 MCP SDK 2.1.1의 독립 OAuth A/B, PKCE·도구 19개·동일 원문 SHA·쓰기 거부 성공. [결과](protocol-results.json). 합성 ChatGPT callback은 로컬 실행 옵션에만 등록하며 실제 callback 발급 증거가 아님.
 - 실제 localhost BuildIt/AcademyCraft와 격리 MySQL의 경계 검사 **6건**: 다른 학원/사업체 거부, 8필드 재무 요약, 금융 원문/수집 preview·승인 POST 거부, #853 승인 없는 확정 시 장부 불변. [결과](integration-results.json)
 - local-collector Node 단위 시험 **4건 통과**. 금융기관 접속 없이 기존 mocked adapter 시험만 수행.
 - 기존 Python Wiki 격리/read-only 34건 성공 증거는 원본 보고서에 보존. 이번 변경은 Python 원본을 수정하지 않았으며 최신 CI가 해당 시험을 다시 실행한다.
-- #854 실제 backend+Chromium **11개 시나리오 전부 통과 (24.1초)**. 빠른 새로고침 후 초안 제출, 같은 대화창 학생·금융 자료 승인, 모바일 실제 승인·메뉴 강조·결과 재조회 포함. [결과](assistant-regression-results.json), [PC](screens/integration-assistant-pc-1440.png), [모바일](screens/integration-assistant-mobile-390.png). CI 전체 PASS는 최신 HEAD checks로 별도 확인한다.
+- #854 실제 backend+Chromium **12개 시나리오 전부 통과 (44.7초)**. 빠른 새로고침 후 초안 제출, 같은 대화창 학생·금융 자료 승인, 모바일 실제 승인·메뉴 강조·결과 재조회 및 새 조회/정정 안내/공지 초안의 무쓰기 확인 포함. [결과](assistant-regression-results.json), [PC](screens/integration-assistant-pc-1440.png), [모바일](screens/integration-assistant-mobile-390.png). CI 전체 PASS는 최신 HEAD checks로 별도 확인한다.
 
 ## 남은 위험과 Claude 재검수 요청
 

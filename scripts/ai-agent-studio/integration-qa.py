@@ -62,7 +62,7 @@ try:
     passed('Each permitted business exposes only eight summary fields')
     assert read(b, 'easy', 'GET /api/mcp/finance/summary', query={'businessId': '1', 'month': '2026-10'})['isError']
     passed('Foreign business summary denied')
-    for service, endpoint in [('easy','GET /api/admin/easy/transactions'), ('easy','GET /api/admin/easy/financial-collector/previews/{id}'), ('easy','POST /api/admin/easy/financial-collector/previews/{id}/approve-and-commit'), ('easy','POST /api/dashboard/assistant/v1/drafts/{id}/approve')]:
+    for service, endpoint in [('easy','GET /api/admin/easy/transactions'), ('easy','GET /api/admin/easy/financial-collector/previews/{id}'), ('easy','GET /api/dashboard/assistant/v1/drafts'), ('easy','POST /api/admin/easy/financial-collector/previews/{id}/approve-and-commit'), ('easy','POST /api/dashboard/assistant/v1/drafts/{id}/approve')]:
         assert read(a, service, endpoint, {'id': 'synthetic'})['isError'], endpoint
     passed('Even ADMIN MCP cannot read raw finance/collector previews or invoke either approval POST')
     prefix = '/api/admin/easy/financial-collector/previews'

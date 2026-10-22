@@ -200,13 +200,26 @@
     "skipped": 0
   },
   "database": {
-    "engine": "MySQL 8.4 fresh isolated f2r_studio_test",
+    "engine": "MySQL 8.4 fresh studio-final-mysql/f2r_studio_test; previous test container preserved, no repair",
     "flywayHistoryRows": 190,
     "failedMigrations": 0,
     "latestVersion": "1095",
     "versions": {
       "1094": "unified assistant",
       "1095": "studio and mcp"
-    }
+    },
+    "V1094AuditColumns": [
+      "operation",
+      "academy_id",
+      "business_id"
+    ]
+  },
+  "latest854Integration": {
+    "upstream": "4553d10b4a460f09cf4f5b60cf309a23cfd9a1aa",
+    "run": "All unifiedassistant tests + studio/MCP against a newly created isolated MySQL, including latest V1094 audit columns; bootJar succeeded",
+    "tests": 98,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
   }
 }
