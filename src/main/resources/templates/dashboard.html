@@ -244,6 +244,8 @@
       .ai-fab { right: 12px; bottom: 12px; }
     }
   </style>
+  <link rel="stylesheet" href="/css/unified_assistant.css">
+  <script defer src="/js/unified_assistant.js"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body>
@@ -264,6 +266,34 @@
     </div>
     <div class="dash-asof" id="dataAsof"></div>
 
+<section id="unifiedAssistant" class="ua" aria-label="통합 AI 업무 비서">
+  <header class="ua-heading"><div><span class="ua-eyebrow">BUILDIT · AI WORKSPACE</span><h2>오늘의 업무, 함께 정리해요</h2><p id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</p></div><button id="uaResume" type="button">사용법 안내</button></header>
+  <div id="uaTour" class="ua-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
+  <div class="ua-academy"><label for="uaAcademy">업무 학원</label><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></div>
+  <nav id="uaMenus" class="ua-menus" aria-label="학원 업무 메뉴">
+    <a id="uaStudents" href="/academycraft/screens/MBR-01-student-list.html">학생 <span>등록·정보 관리</span></a>
+    <a id="uaClasses" href="/academycraft/screens/CLS-01-class-list.html">반·수업 <span>반 편성·학생 배정</span></a>
+    <a id="uaAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결 <span>기록·정정·월별 조회</span></a>
+    <a id="uaConsult" href="/academycraft/screens/CNS-01-consultation-list.html">상담 <span>상담 작성·후속 메시지</span></a>
+    <a id="uaLedger" href="/ledger">이지장부 <span>거래·분류·증빙 확인</span></a>
+  </nav>
+  <div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div>
+  <div class="ua-grid">
+    <section class="ua-work"><div class="ua-section-head"><h3>무엇을 도와드릴까요?</h3><div><button id="uaExplain" type="button">AI 재무 해설</button> <button id="uaRefresh" type="button">현황 새로고침</button></div></div>
+      <form id="uaCommandForm"><label for="uaCommand">자연어 업무 지시</label><textarea id="uaCommand" rows="2" maxlength="2000" placeholder="예: 학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea><button class="ua-primary" type="submit">업무 정리하기</button></form>
+      <div class="ua-chips"><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button></div>
+      <p id="uaMessage" role="status">업무를 정리한 뒤 초안을 확인하고 승인할 수 있습니다.</p>
+      <form id="uaDraftForm"><label for="uaOperation">업무 종류</label><select id="uaOperation">
+        <option value="STUDENT_CREATE">학생 등록</option><option value="STUDENT_UPDATE">학생 정보 수정</option><option value="CLASS_CREATE">반 생성</option><option value="CLASS_UPDATE">반 정보 수정</option><option value="CLASS_ASSIGN">반에 학생 배정</option><option value="ATTENDANCE_RECORD">출결 기록</option><option value="CONSULT_CREATE">상담 작성</option><option value="CONSULT_MESSAGE">상담 후속 메시지</option><option value="LEDGER_ENTRY">거래·증빙 등록</option><option value="LEDGER_IMPORT">거래·증빙 CSV 가져오기</option><option value="LEDGER_ACCOUNT">가져온 거래 계정과목 수정</option></select>
+        <div id="uaFields" class="ua-fields"></div><p id="uaScope" class="ua-hint"></p><button id="uaCreateDraft" class="ua-primary" type="submit">초안 만들기</button>
+      </form>
+      <form id="uaUploadForm" hidden><label for="uaFile">거래·증빙 CSV (256KB 이하)</label><input id="uaFile" type="file" accept=".csv,text/csv" required><p class="ua-hint">거래일, 구분, 금액, 거래처, 적요, 증빙유형 열을 사용하세요. 이미지·PDF 자동 인식은 지원하지 않습니다. 원본 행은 초안으로 보관되며 장부 반영은 승인 후 진행됩니다.</p><a href="/data/unified-assistant-sample.csv" download>CSV 양식 다운로드</a><button class="ua-primary" type="submit">파일로 초안 만들기</button></form>
+      <div class="ua-actions"><button type="button" data-ua-list="students">학생 목록</button><button type="button" data-ua-list="classes">반 목록</button><button type="button" data-ua-list="consultations">상담 목록</button><button type="button" data-ua-list="teachers">강사 목록</button></div><div id="uaCatalog" class="ua-catalog" aria-live="polite"></div>
+      <a href="/help/academycraft">자세한 사용법 보기 →</a>
+    </section>
+    <section class="ua-review" id="uaReview" aria-label="업무 초안과 처리 결과"><div class="ua-section-head"><h3>초안 · 승인 · 결과</h3><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div><p class="ua-hint">초안은 10분 동안 유효합니다. 대상·변경 내용과 사업체를 확인한 뒤 승인하세요. 상담 작성은 기존 알림 정책에 따라 학부모에게 전달될 수 있습니다.</p><div id="uaDrafts" aria-live="polite"><p class="ua-hint">초안을 불러오는 중…</p></div><details><summary>나의 감사로그</summary><div id="uaAudit"></div></details></section>
+  </div><p id="uaError" class="ua-error" role="alert" hidden></p>
+</section>
     <!-- 내신 예상문제 홍보 스트립 (슬림형) -->
     <div class="dash-promo-strip">
       <div class="p-icon">📝</div>
@@ -281,30 +311,12 @@
     <div class="dash-section-title">상세 위젯 <span class="count" id="widgetCount"></span></div>
     <div class="dash-widgets" id="widgetContainer"></div>
 
-    <section aria-label="AcademyCraft 학원 현황" style="margin:18px 0;padding:16px;background:white;border-radius:12px">
-      <h2 style="font-size:17px"><a href="/academycraft">AcademyCraft 학원 현황</a></h2>
-      <p id="academycraft-status" role="status">권한 및 현황 확인 중…</p>
-      <div id="academycraft-metrics" style="display:flex;gap:16px;flex-wrap:wrap"></div>
-    </section>
-    <script defer src="/js/academycraft-dashboard.js"></script>
     <!-- 서비스 바로가기 -->
     <div class="dash-section-title">서비스 바로가기</div>
     <div class="dash-shortcuts" id="shortcutRow"></div>
   </div>
 
-  <!-- AI 비서 플로팅 버튼 -->
-  <button class="dash-ai-fab" id="aiFab" aria-label="AI 비서 열기">
-    <img src="/images/ai-assistant.gif" alt="AI 비서" />
-  </button>
-
-
-  <button class="ai-fab" id="aiFab" type="button" aria-controls="aiPanel" aria-expanded="false">AI 비서</button>
-  <section class="ai-panel" id="aiPanel" role="dialog" aria-label="BuildIt AI 비서" aria-modal="false">
-    <div class="ai-head"><div><strong>BuildIt AI 비서</strong><small>조회·설명 전용 · Muse Spark 1.3 Contributor</small></div><button class="ai-close" id="aiClose" type="button" aria-label="AI 비서 닫기">×</button></div>
-    <div class="ai-msgs" id="aiMsgs" role="log" aria-live="polite"><div class="ai-msg bot">선택한 사업체의 이번 달 수입·지출, 최근 거래, 미납 원생을 바탕으로 답해 드립니다. 장부 수정은 하지 않습니다.</div></div>
-    <div class="ai-chips" id="aiChips"><button type="button">이번 달 수입·지출 알려줘</button><button type="button">최근 거래 보여줘</button><button type="button">미납 원생은?</button><button type="button">출결 현황은?</button></div>
-    <form class="ai-form" id="aiForm"><label class="sr-only" for="aiInput" style="position:absolute;left:-9999px">질문</label><textarea id="aiInput" rows="1" maxlength="1000" placeholder="질문을 입력하세요" required></textarea><button id="aiSend" type="submit">보내기</button></form>
-  </section>
+  <button class="ai-fab" id="aiFab" type="button" aria-controls="unifiedAssistant">AI 업무 비서</button>
   <script src="/js/api.js"></script>
   <script>
   /**
@@ -512,39 +524,6 @@
     }
   })();
 
-    /* ---------- AI 비서(읽기 전용) ---------- */
-    (function () {
-      var panel = document.getElementById('aiPanel'), fab = document.getElementById('aiFab');
-      var msgs = document.getElementById('aiMsgs'), input = document.getElementById('aiInput'), send = document.getElementById('aiSend');
-      function fit() {
-        var vv = window.visualViewport; if (!vv) return;
-        var r = document.documentElement.style;
-        r.setProperty('--vvh', vv.height + 'px');
-        r.setProperty('--vv-bottom', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px');
-      }
-      if (window.visualViewport) { window.visualViewport.addEventListener('resize', fit); window.visualViewport.addEventListener('scroll', fit); fit(); }
-      function toggle(open) {
-        panel.classList.toggle('open', open); fab.setAttribute('aria-expanded', open ? 'true' : 'false');
-        fab.style.display = open && window.innerWidth <= 640 ? 'none' : '';
-        if (open) setTimeout(function () { input.focus(); }, 0);
-      }
-      fab.addEventListener('click', function () { toggle(true); });
-      document.getElementById('aiClose').addEventListener('click', function () { toggle(false); });
-      function add(cls, text) { var d = document.createElement('div'); d.className = 'ai-msg ' + cls; d.textContent = text; msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight; return d; }
-      function ask(text) {
-        if (send.disabled) return;
-        var biz = document.getElementById('bizSelect').value;
-        if (!biz) { add('err', '사업체를 먼저 선택해 주세요.'); return; }
-        add('user', text); var wait = add('bot', '답변을 만드는 중입니다...'); send.disabled = true;
-        fetchAuth('/api/dashboard/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessId: Number(biz), message: text }) })
-          .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return { ok: res.ok, j: j }; }); })
-          .then(function (r) { wait.remove(); if (r.ok && r.j.answer) add('bot', r.j.answer); else add('err', r.j.error || r.j.message || 'AI 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.'); })
-          .catch(function () { wait.remove(); add('err', '네트워크 오류입니다. 다시 시도해 주세요.'); })
-          .then(function () { send.disabled = false; });
-      }
-      document.getElementById('aiForm').addEventListener('submit', function (e) { e.preventDefault(); var t = input.value.trim(); if (!t) return; input.value = ''; ask(t); });
-      document.getElementById('aiChips').addEventListener('click', function (e) { if (e.target.tagName === 'BUTTON') ask(e.target.textContent); });
-    })();
   </script>
 </body>
 </html>

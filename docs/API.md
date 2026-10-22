@@ -4852,3 +4852,27 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 |---|---|---|---|
 | GET | `/help/academycraft`, `/help/academycraft/{slug}` | ADMIN·TUTOR (비로그인 HTML은 로그인 안내 302) | 도움말 SSR. 역할 전용 문서는 타 역할 404 |
 | POST | `/api/help/academycraft/ask` | ADMIN·TUTOR | body `{question}`(≤300자). 읽기 전용 검색·안내, 사용자당 분당 20회(429). 응답 `{intent,text,sources[],grounded,writeBlocked}` |
+
+## 통합 AI 업무 비서 v1 (작업 A, 로컬 프로토타입)
+
+접두 `/api/dashboard/assistant/v1`, ADMIN·TUTOR만. 서비스에서 현재 DB 역할·학원/사업체·초안 생성자를 재확인한다. 모든 응답 `no-store`. 변경 요청은 Origin `http://localhost:8080` 또는 `https://feel2real.co.kr`만 허용한다.
+
+| 메서드 / 경로 | 계약 |
+|---|---|
+| `GET /progress` | 사용자 진행을 생성/조회. `{step,completed,firstVisit,version,role}` |
+| `PUT /progress` | `{step:0..5,completed,version}`. 완료는 step=5만. 오래된 버전 409 |
+| `GET /overview?academyId=&businessId=` | 선택한 허용 학원의 context/stats와 선택한 허용 사업체의 월 요약. 학원 연결 실패는 `academyUnavailable:true`, 재무 권한 실패는 403 |
+| `GET /catalog/{kind}?academyId=` | `students/classes/consultations/teachers`만. 기존 학원 API 조회 |
+| `POST /command` | `{message}` 1~2000자. `{operation,input,message}`의 수정 가능한 업무 제안만 반환. 실행 없음 |
+| `POST /drafts` | `{academyId?,businessId?,operation,input:{...}}`. 허용 필드만 받고 서버 초안 저장. 기본 쓰기 스위치 OFF면 503 |
+| `POST /imports?businessId=` | multipart `file` CSV ≤256KB. 기존 import 원본 행 보관 후 장부 반영 초안 생성 |
+| `GET /drafts` | 본인 최신 30개 중 현재 권한을 가진 범위. `{id,operation,academyId,businessId,preview,planHash,status,createdAt,expiresAt,result}` |
+| `POST /drafts/{uuid}/approve` | `{planHash}`. 본인·역할·소속/권한·해시·10분 만료·대상 지문을 재확인하고 DB 조건부 선점 후 기존 API 실행. 종료 성공 상태는 저장 결과만 재생 |
+| `POST /drafts/{uuid}/cancel` | `{planHash}`. 대기 초안 취소. 이미 승인/종료한 작업을 되돌리지 않음 |
+| `GET /audit` | 본인 최신 50개 이벤트. 입력 원문 없음 |
+
+업무: `STUDENT_CREATE/UPDATE`, `CLASS_CREATE/UPDATE/ASSIGN`, `ATTENDANCE_RECORD`, `CONSULT_CREATE/MESSAGE`, `LEDGER_ENTRY/IMPORT/ACCOUNT`. 거래 직접 입력은 기존 CSV import 초안으로 정규화한다. 실제 입력 필드는 서버의 allowlist와 화면 폼을 따른다. 사용자당 미처리 초안 최대 20개. 요청 범위 밖 필드·모호한 입력 400, 비로그인 401, 권한/출처 403, 타인 초안 404, 해시·상태·대상 변경 409 또는 종료 상태, 초안 한도 429다.
+
+학원 쓰기는 기존 AcademyCraft 원장 역할만 허용하고 기존 REST API·서비스의 소속 검사를 유지한다. 기존 AcademyCraft `/agent` 계획을 변경하거나 승인하지 않는다. 실행 후 재조회 결과에 따라 `VERIFIED/REVIEW_REQUIRED/UNKNOWN`을 기록하며, 불명확한 실행은 자동 재시도하지 않는다. 상세 입력 예시·상태·제한은 [분석 보고서](unified-ai-assistant/README.md).
+
+기존 `POST /api/dashboard/assistant`는 선택한 사업체의 **재무 해설 전용** Muse Spark 경로로 유지한다. 이 경로의 LLM 문맥에는 학원 출결 데이터가 없으며 새 통합 현황 조회와 구분한다.
