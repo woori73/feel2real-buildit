@@ -61,6 +61,10 @@ jobs:
 
       - name: Admissions embedding server core tests
         run: python3 -m unittest discover -s ops/admissions-embedding -q
+        # guard 판단 로직(셸) 테스트
+
+      - name: Admissions embedding guard test
+        run: bash ops/admissions-embedding/guard.test.sh
 
       - name: Set up Node 20
         uses: actions/setup-node@v4
