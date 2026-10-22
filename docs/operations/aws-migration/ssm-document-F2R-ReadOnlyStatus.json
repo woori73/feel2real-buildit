@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "2.2",
+  "description": "Feel2Real fixed read-only status (no writes, no restarts, no secret values). Section is restricted by allowedValues.",
+  "parameters": {
+    "Section": {
+      "type": "String",
+      "default": "all",
+      "allowedValues": [
+        "all",
+        "service-status",
+        "jar-info",
+        "health-check",
+        "system-resources",
+        "flyway-history",
+        "predeploy-check"
+      ]
+    }
+  },
+  "mainSteps": [
+    {
+      "action": "aws:runShellScript",
+      "name": "readonlyStatus",
+      "inputs": {
+        "timeoutSeconds": "120",
+        "runCommand": [
+          "set +e",
+          "SECTION=\"{{ Section }}\"",
+          "want() { [ \"$SECTION\" = all ] || [ \"$SECTION\" = \"$1\" ]; }",
+          "if want service-status; then",
+          "  echo \"===== service-status =====\"",
+          "  systemctl show f2r-app.service -p ActiveState -p SubState -p Result -p NRestarts -p ExecMainStartTimestamp -p MemoryCurrent",
+          "fi",
+          "if want jar-info; then",
+          "  echo \"===== jar-info =====\"",
+          "  for f in /home/ec2-user/app.jar /home/ec2-user/app.jar.previous; do",
+          "    [ -f \"$f\" ] && echo \"$(stat -c '%y %s' \"$f\") $(sha256sum \"$f\" | cut -d' ' -f1) $f\" || echo \"missing $f\"",
+          "  done",
+          "  [ -r /home/ec2-user/app.jar.meta ] && head -c 1024 /home/ec2-user/app.jar.meta | grep -E '^(git_sha|jar_sha256|deployed_at)=[A-Za-z0-9:.+-]{1,80}$' || echo \"deploy marker app.jar.meta not present\"",
+          "fi",
+          "if want health-check; then",
+          "  echo \"===== health-check =====\"",
+          "  curl -s -m 10 -o /dev/null -w 'actuator_health_http=%{http_code}\\n' http://127.0.0.1:8080/actuator/health",
+          "  ss -ltn | awk 'NR==1 || /:8080 /'",
+          "fi",
+          "if want system-resources; then",
+          "  echo \"===== system-resources =====\"",
+          "  nproc; free -m; df -h / /tmp 2>/dev/null; uptime",
+          "  echo \"oom_events_7d=$(journalctl -k --since '7 days ago' --no-pager 2>/dev/null | grep -ciE 'out of memory|oom-kill')\"",
+          "fi",
+          "if want flyway-history; then",
+          "  echo \"===== flyway-history (SELECT only, READ ONLY session) =====\"",
+          "  if command -v mysql >/dev/null 2>&1 && [ -r /etc/f2r/env ]; then",
+          "    # env 파일을 source하지 않는다(다른 비밀값을 export하거나 파일 내용을 실행하지 않도록 DB_* 다섯 키만 읽는다).",
+          "    DBH=; DBP=3306; DBU=; DBN=; DBW=",
+          "    while IFS= read -r line || [ -n \"$line\" ]; do",
+          "      line=\"${line#export }\"; k=\"${line%%=*}\"; v=\"${line#*=}\"",
+          "      v=\"${v%\\\"}\"; v=\"${v#\\\"}\"; v=\"${v%\\'}\"; v=\"${v#\\'}\"",
+          "      case \"$k\" in DB_HOST) DBH=\"$v\";; DB_PORT) DBP=\"$v\";; DB_USER) DBU=\"$v\";; DB_NAME) DBN=\"$v\";; DB_PASSWORD) DBW=\"$v\";; esac",
+          "    done < /etc/f2r/env",
+          "    if [[ \"$DBH\" =~ ^[a-z0-9.-]{1,253}$ && \"$DBP\" =~ ^[0-9]{1,5}$ && \"$DBU\" =~ ^[A-Za-z0-9_]{1,32}$ && \"$DBN\" =~ ^[A-Za-z0-9_]{1,64}$ ]]; then",
+          "      echo \"db_instance_identifier=${DBH%%.*}\"",
+          "      M=(mysql --no-defaults -B --connect-timeout=5 -h \"$DBH\" -P \"$DBP\" -u \"$DBU\" \"$DBN\")",
+          "      q() { MYSQL_PWD=\"$DBW\" \"${M[@]}\" -e \"SET SESSION TRANSACTION READ ONLY; $1\" 2>/dev/null || echo \"query_failed (detail suppressed)\"; }",
+          "      q \"SELECT VERSION() AS mysql_version;\"",
+          "      q \"SELECT COUNT(*) AS applied, MAX(CAST(version AS UNSIGNED)) AS max_version, SUM(success=0) AS failed FROM flyway_schema_history WHERE version IS NOT NULL;\"",
+          "      q \"SELECT version, checksum, success, installed_on FROM flyway_schema_history WHERE CAST(version AS UNSIGNED) >= 1090 ORDER BY installed_rank;\"",
+          "      q \"SELECT COUNT(*) AS studio_or_mcp_tables FROM information_schema.tables WHERE table_schema=DATABASE() AND (table_name LIKE 'studio\\\\_%' OR table_name LIKE 'mcp\\\\_%');\"",
+          "    else",
+          "      echo \"db settings missing or unexpected format (values not printed)\"",
+          "    fi",
+          "    unset DBW DBH DBU DBN DBP M",
+          "  else",
+          "    echo \"mysql client or /etc/f2r/env not available\"",
+          "  fi",
+          "fi",
+          "if want predeploy-check; then",
+          "  echo \"===== predeploy-check (flag names only, never values) =====\"",
+          "  for k in APP_MCP_ENABLED ANTHROPIC_ENABLED APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES BUILDIT_UNIFIED_ASSISTANT_WRITE_ENABLED; do",
+          "    grep -q \"^$k=\" /etc/f2r/env 2>/dev/null && echo \"$k=present\" || echo \"$k=absent\"",
+          "  done",
+          "fi",
+          "exit 0"
+        ]
+      }
+    }
+  ]
+}

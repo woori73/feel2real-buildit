@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "GitHubOidcReadOnlyDiagnosticsOnly",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::425805163960:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": "repo:woori73@299170593/feel2real-buildit@1340651018:ref:refs/heads/main"
+        },
+        "ForAnyValue:StringEquals": {
+          "token.actions.githubusercontent.com:job_workflow_ref": [
+            "woori73/feel2real-buildit/.github/workflows/prod-readonly-status.yml@refs/heads/main",
+            "woori73/feel2real-buildit/.github/workflows/prod-diagnostic.yml@refs/heads/main"
+          ]
+        }
+      }
+    }
+  ]
+}
