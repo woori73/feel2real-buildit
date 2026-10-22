@@ -316,7 +316,11 @@ public class McpCatalog {
                   throw McpOAuth.error(400, "invalid_query_parameter");
                 if (Set.of("size", "limit").contains(k)) {
                   try {
-                    if (Integer.parseInt(v) > 100 || Integer.parseInt(v) < 1)
+                    int maximum =
+                        p.path().equals("/api/studio/files/{id}/document") && k.equals("limit")
+                            ? 20000
+                            : 100;
+                    if (Integer.parseInt(v) > maximum || Integer.parseInt(v) < 1)
                       throw McpOAuth.error(400, "query_limit");
                   } catch (NumberFormatException ex) {
                     throw McpOAuth.error(400, "query_limit");

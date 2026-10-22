@@ -106,6 +106,54 @@ class StudioPreviewTest {
   }
 
   @Test
+  void givenNoisyPng_whenAiDerivativeMade_thenJpegWithin100KiBAndOriginalPreserved()
+      throws Exception {
+    var image =
+        new java.awt.image.BufferedImage(1200, 900, java.awt.image.BufferedImage.TYPE_INT_RGB);
+    var random = new Random(42);
+    for (int y = 0; y < 900; y++)
+      for (int x = 0; x < 1200; x++) image.setRGB(x, y, random.nextInt());
+    var source = new ByteArrayOutputStream();
+    javax.imageio.ImageIO.write(image, "png", source);
+    byte[] original = source.toByteArray(), copy = original.clone();
+    var jpeg = StudioPreview.jpegDerivative(original);
+    assertTrue(jpeg.length <= 100 * 1024);
+    var decoded = javax.imageio.ImageIO.read(new ByteArrayInputStream(jpeg));
+    assertNotNull(decoded);
+    assertTrue(decoded.getWidth() <= 1024);
+    assertArrayEquals(copy, original);
+  }
+
+  @Test
+  void givenLargeEmbeddedHtml_whenDocumentRead_thenTextChunksExcludeScriptsImagesAndKeepSha()
+      throws Exception {
+    var studio = mock(StudioService.class);
+    var preview = new StudioPreview(studio);
+    String source =
+        "<h1>실제 문서</h1><img src='data:image/png;base64,"
+            + "a".repeat(300000)
+            + "'><script>evil()</script><p>둘째 문단</p>";
+    when(studio.file(null, "file"))
+        .thenReturn(
+            Map.of(
+                "extension",
+                "html",
+                "size_bytes",
+                source.getBytes(StandardCharsets.UTF_8).length,
+                "filename",
+                "original.html",
+                "sha256",
+                "a".repeat(64)));
+    when(studio.bytes(null, "file")).thenReturn(source.getBytes(StandardCharsets.UTF_8));
+    var document = (Map<?, ?>) preview.document(null, "file", 0, 20000);
+    assertTrue(document.get("text").toString().contains("실제 문서"));
+    assertFalse(document.get("text").toString().contains("evil"));
+    assertFalse(document.get("text").toString().contains("base64"));
+    assertEquals("a".repeat(64), document.get("sourceSha256"));
+    assertThrows(ResponseStatusException.class, () -> preview.document(null, "file", 200000, 1));
+  }
+
+  @Test
   void givenUnauthorizedUser_whenPreviewRequested_thenNoStorageRead() throws Exception {
     var studio = mock(StudioService.class);
     when(studio.file(null, "foreign")).thenThrow(StudioService.error(403, "denied"));

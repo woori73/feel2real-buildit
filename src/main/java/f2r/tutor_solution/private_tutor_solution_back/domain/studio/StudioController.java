@@ -289,6 +289,34 @@ public class StudioController {
         .body(view.bytes());
   }
 
+  @GetMapping("/api/studio/files/{id}/document")
+  @ResponseBody
+  public Object document(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestParam(defaultValue = "0") int offset,
+      @RequestParam(defaultValue = "20000") int limit)
+      throws IOException {
+    return previews.document(p, id, offset, limit);
+  }
+
+  @GetMapping("/api/studio/files/{id}/mcp-image")
+  public ResponseEntity<byte[]> mcpImage(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id)
+      throws IOException {
+    var source = service.file(p, id);
+    var bytes = previews.aiImage(p, id);
+    return ResponseEntity.ok()
+        .contentType(MediaType.IMAGE_JPEG)
+        .header("Cache-Control", "private, no-store")
+        .header("X-Content-Type-Options", "nosniff")
+        .header("X-Studio-Source-Sha256", (String) source.get("sha256"))
+        .header(
+            "X-Studio-Derivative-Sha256",
+            HexFormat.of().formatHex(StudioService.digest().digest(bytes)))
+        .body(bytes);
+  }
+
   @GetMapping("/api/studio/source-import")
   @ResponseBody
   public Object sourceStatus(@AuthenticationPrincipal AuthenticatedPrincipal p) throws IOException {

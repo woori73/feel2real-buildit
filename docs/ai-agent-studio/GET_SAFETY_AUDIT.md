@@ -1,13 +1,13 @@
 # GET 비용·부수효과 감사 (2026-10-22)
 
-범위: 최신 main `2bed3918`와 #853·#854·#855를 합친 코드. 격리 앱의 Spring/proxy 매핑 1098개를 수집하고, 비활성 profile/feature의 Java GET 선언도 추가했다. **627개 GET 경로**를 Java AST 호출 그래프로 조사했다. 재현 가능한 전체 경로·근거·판정은 [get-safety-audit.json](get-safety-audit.json)에 있다. 외부 서비스나 금융기관을 호출하는 감사가 아니다.
+범위: 최신 main `ae5d1760`와 제작실 열람·#863 적재·MCP 문서/이미지 확장 코드. 격리 앱의 Spring/proxy 매핑 1104개를 수집하고, 비활성 profile/feature의 Java GET 선언도 추가했다. **632개 GET 경로**를 Java AST 호출 그래프로 조사했다. 재현 가능한 전체 경로·근거·판정은 [get-safety-audit.json](get-safety-audit.json)에 있다. 외부 서비스나 금융기관을 호출하는 감사가 아니다.
 
-MCP 실행 허용 경로는 405개다. 목록에 보이는 서비스 경로와 실행 허용 여부를 구분하며, 새 endpoint는 자동 허용하지 않는다.
+MCP 실행 허용 경로는 408개다. 목록에 보이는 서비스 경로와 실행 허용 여부를 구분하며, 새 endpoint는 자동 허용하지 않는다.
 
 | 허용 경로 분류 | 수 | 근거와 한계 |
 |---|---:|---|
-| 로컬 코드 정적 위험 표지 없음 | 282 | Repository/JDBC DML, 파일 쓰기, HTTP/async 호출 그래프 검사. 동적 dispatch의 안전성을 증명하지는 않음 |
-| 기존 S3 읽기 | 47 | `S3Client.getObject/listObjectsV2`. 읽기 요청·전송료와 CPU 비용 존재. 실제 S3는 접속하지 않음 |
+| 로컬 코드 정적 위험 표지 없음 | 283 | Repository/JDBC DML, 파일 쓰기, HTTP/async 호출 그래프 검사. 동적 dispatch의 안전성을 증명하지는 않음 |
+| 기존 S3 읽기 | 49 | `S3Client.getObject/listObjectsV2`. 읽기 요청·전송료와 CPU 비용 존재. 실제 S3는 접속하지 않음 |
 | ZIP 목록 임시 파일 | 1 | 20 MiB 이하 UUID 임시 파일만 생성·읽기·finally 삭제. 원본/사업 데이터 변경 없음. 저장소가 S3면 읽기 비용도 존재 |
 | MVC 화면 등록 | 35 | SSR 본문과 화면의 기존 권한 검사. 클라이언트가 채우는 데이터는 별도 API 조회 필요 |
 | Wiki 서명 프록시 | 27 | 사용자별 기존 workspace만 SQLite mode=ro/query_only. 별도 Python 격리/쓰기 거부 시험 |
@@ -46,7 +46,7 @@ python scripts/ai-agent-studio/audit-get-safety.py /tmp/f2r-route-inventory.json
 
 ## 병행 키워드 조사 12개 후보의 수동 대조
 
-[별도 키워드 조사](GET_SIDE_EFFECT_SURVEY.md)는 AST 호출 그래프와 방식이 달라 문자열·다른 메서드까지 후보로 잡는다. 현재 정책 405개로 재생성했고 다음과 같이 코드 본문을 대조했다. 외부 API를 호출하는 검증은 하지 않았다.
+[별도 키워드 조사](GET_SIDE_EFFECT_SURVEY.md)는 AST 호출 그래프와 방식이 달라 문자열·다른 메서드까지 후보로 잡는다. 기존 #855 정책 405개에서 생성했고 다음과 같이 코드 본문을 대조했다. 외부 API를 호출하는 검증은 하지 않았다.
 
 | 후보 | 실제 조회 경로의 동작 |
 |---|---|
@@ -58,3 +58,5 @@ python scripts/ai-agent-studio/audit-get-safety.py /tmp/f2r-route-inventory.json
 | sitemap.xml | 공개 학원/글 Repository 조회와 XML/URL 문자열 작성. 링크를 서버에서 요청하지 않음 |
 
 이 대조는 정적 코드 근거이며 모든 동적 실행을 증명하지 않는다. 기존 API 수정 때 다시 조사하고, 확인된 유지보수 파일 저장 GET은 현재 정책에서 제외했다.
+
+제작실 확장 추가 감사: source-import GET은 고정 카탈로그와 SQL 집계만 수행한다. document는 입력20 MiB/처음100페이지/출력20만 자, mcp-image는 입력20 MiB/4천만 화소/출력100 KiB/동시2건으로 제한한다. 둘 다 로컬 파싱·메모리 파생본이며 저장소 읽기 외 외부 AI/OCR 비용·DB 쓰기·파생본 저장은 없다. 이미지 외부 제공은 별도 originals:read 동의를 검사한다. 원본/승인/업로드 POST는 허용하지 않는다.

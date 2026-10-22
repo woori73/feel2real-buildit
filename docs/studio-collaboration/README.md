@@ -35,3 +35,9 @@ r14 콘티 68개와 r5 콘티 68개를 서로 다른 버전으로 보관한다. 
 실제 적재·검증 결과: `import-local-receipt.json`은 API로 저장 원본 316개를 다시 읽어 SHA를 검증하고 536경로 매핑을 재조회한 영수증이다. 최초 등록은 678개 append-only 버전(출처536+컷136+승인캐릭터5+초기기억1), 610개 자료 키다. 재실행은 createdRevisions=0이다. `import-java-results.json` 20건 PASS 중 실제 작품 MySQL 회귀 5건은 536경로/SHA·30번째 컷 실패 2회 전체 롤백·재시도·승인5종·무권한/잘못된 매핑 거부를 확인했다. 테스트마다 새 격리 schema를 만들고 사용한 DB/파일 저장소는 로컬에서 보존한다. 운영 DB와 무관하다.
 
 실제 작품 Chromium 16개 검사 PASS: [결과](actual-browser-results.json), [PC 콘티](screens/actual-board-1440.png), [모바일 콘티](screens/actual-board-390.png), [승인 캐릭터](screens/actual-characters-1440.png), [모바일 캐릭터](screens/actual-characters-390.png), [대본](screens/actual-script-1440.png), [PDF](screens/actual-pdf-1440.png), [ZIP](screens/actual-zip-1440.png). 68개 이미지를 실제 디코딩했고 이미지·설명·확대·이전/다음·문서/ZIP을 열람했다. 실제 작품을 수정하거나 새 승인하지 않았고 감사 이력도 그대로다. 사용자에게 중간 파일 전달/수동 업로드를 요구하지 않았다. 외부 ChatGPT·Claude 연결은 이 결과에 포함하지 않는다.
+
+## MCP 문서·이미지 읽기 (별도 PR)
+
+[전달 규격·보안·실접속 조건](MCP_MEDIA.md), [Java 32건 PASS](media-java-results.json), [공식 SDK 결과](media-protocol-results.json). 실제 #863 CURRENT_STATE.md와 승인 기준 시트를 독립 OAuth grant 2개로 읽어 같은 문서 digest와 같은 JPEG 파생본 SHA를 확인했다. 결과는 text 메타데이터 + image/jpeg 콘텐츠 블록이며 파생본 70,577 bytes다. 별도 원본 동의 없는 세 번째 grant는 문서만 읽고 이미지 블록은 거부됐다. POST 등록도 거부됐다. 3개 grant는 로컬 공식 SDK 시험 클라이언트이고 실제 ChatGPT·Claude 계정이 아니다. 실제 모델 시각 판독은 NOT TESTED이며 외부 유료 호출 0이다.
+
+로컬 실제 원본 서버 재개는 `run-production-local.py`(격리 테스트가 만든 3318/f2r_assets_* 및 /tmp 저장소만 허용, loopback18090에만 바인딩), 프로토콜 검증은 `media-protocol-qa.py`다. 이 스크립트는 운영 주소·DB를 받지 않는다.
