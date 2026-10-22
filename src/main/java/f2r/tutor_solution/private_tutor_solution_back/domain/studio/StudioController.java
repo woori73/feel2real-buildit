@@ -19,6 +19,7 @@ public class StudioController {
   private final StudioPreview previews;
   private final StudioProductionImporter importer;
   private final StudioCollaborationService collaboration;
+  private final StudioProjectService projects;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -55,6 +56,88 @@ public class StudioController {
   public String page(@AuthenticationPrincipal AuthenticatedPrincipal p) {
     service.require(p, false, false);
     return "studio/index";
+  }
+
+  @GetMapping("/studio-projects")
+  public String projectsPage(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    projects.capabilities(p);
+    return "studio/projects";
+  }
+
+  @GetMapping("/api/studio/projects")
+  @ResponseBody
+  public Object listProjects(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return projects.projects(p);
+  }
+
+  @GetMapping("/api/studio/project-capabilities")
+  @ResponseBody
+  public Object projectCapabilities(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return projects.capabilities(p);
+  }
+
+  public record NewProject(String title) {}
+
+  @PostMapping("/api/studio/projects")
+  @ResponseBody
+  public Object createProject(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody NewProject r) {
+    return projects.create(p, r.title());
+  }
+
+  public record ProjectChange(String action, String title) {}
+
+  @PostMapping("/api/studio/project-state")
+  @ResponseBody
+  public Object projectState(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody ProjectChange r) {
+    return projects.change(p, r.action(), r.title());
+  }
+
+  @GetMapping("/api/studio/users")
+  @ResponseBody
+  public Object findUsers(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestParam String q) {
+    return projects.searchUsers(p, q);
+  }
+
+  @GetMapping("/api/studio/invitations")
+  @ResponseBody
+  public Object ownInvitations(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return projects.invitations(p);
+  }
+
+  @PostMapping("/api/studio/invitations")
+  @ResponseBody
+  public Object inviteMember(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody Member r) {
+    return projects.invite(p, r.userId(), r.permission());
+  }
+
+  public record InvitationAnswer(boolean accept) {}
+
+  @PostMapping("/api/studio/invitations/answer")
+  @ResponseBody
+  public Object answerInvitation(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody InvitationAnswer r) {
+    return projects.answerInvitation(p, r.accept());
+  }
+
+  @GetMapping("/api/studio/notifications")
+  @ResponseBody
+  public Object readNotifications(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(required = false) Long beforeId) {
+    return projects.notifications(p, beforeId);
+  }
+
+  public record NotificationRead(long throughId) {}
+
+  @PostMapping("/api/studio/notifications/read")
+  @ResponseBody
+  public Object readNotificationMark(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody NotificationRead r) {
+    return projects.markNotifications(p, r.throughId());
   }
 
   @GetMapping("/api/studio/project")

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioCollaborationMySqlTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpStudioMySqlTest",
+    "tests": "22",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioProjectsMySqlTest",
+    "tests": "8",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

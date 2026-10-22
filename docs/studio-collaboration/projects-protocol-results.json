@@ -1,0 +1,16 @@
+{
+  "testType": "Official MCP SDK on isolated loopback; not product account/vision test",
+  "sourceEditor": {
+    "sameProjectDocumentAndImageBlock": true,
+    "foreignProjectDenied": true,
+    "invalidProjectDenied": true
+  },
+  "invitationRecipient": {
+    "onlyAcceptedProjectsVisible": true,
+    "ownProjectMemoryReadable": true,
+    "foreignDocumentAndImageDenied": true,
+    "lifecycleInvitationAndNotificationWritesDenied": true
+  },
+  "externalAiCalls": 0,
+  "actualChatGptClaude": "NOT TESTED"
+}

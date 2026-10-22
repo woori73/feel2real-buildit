@@ -1,6 +1,8 @@
 "use strict";
 (() => {
   const $ = (id) => document.getElementById(id);
+  const projectId=new URLSearchParams(location.search).get("projectId")||"ai-agent-part1";
+  const scoped=url=>{const u=new URL(url,location.origin);u.searchParams.set("projectId",projectId);return u.pathname+u.search;};
   const state = {
     revisions: [],
     files: [],
@@ -33,7 +35,7 @@
     $("message").textContent = s;
   }
   async function api(path, options = {}) {
-    const r = await fetch("/api/studio/" + path, {
+    const r = await fetch(scoped("/api/studio/" + path), {
       credentials: "same-origin",
       ...options,
     });
@@ -84,7 +86,7 @@
     );
     return box;
   }
-  const previewUrl = (id, entry) => "/api/studio/files/" + encodeURIComponent(id) + "/preview" + (entry == null ? "" : "?" + new URLSearchParams({entry}));
+  const previewUrl = (id, entry) => scoped("/api/studio/files/" + encodeURIComponent(id) + "/preview" + (entry == null ? "" : "?" + new URLSearchParams({entry})));
   const imageQueue = [];
   let imageReads = 0;
   function pumpImages() {
@@ -148,7 +150,8 @@
         previous.disabled=next.disabled=true;
         try {
           const query=new URLSearchParams({page:n});if(entry!=null)query.set("entry",entry);
-          const response=await fetch(previewUrl(file.id)+"?"+query);
+          const pdfUrl=new URL(previewUrl(file.id),location.origin);for(const [k,v]of query)pdfUrl.searchParams.set(k,v);
+          const response=await fetch(pdfUrl);
           if(!response.ok)throw Error("PDF 페이지를 표시할 수 없습니다 ("+response.status+")");
           if(!currentView())return;
           total=Number(response.headers.get("X-PDF-Pages"));current=n;
@@ -238,7 +241,7 @@
     if (r.file_id) {
       const a = el("a", "원본 다운로드");
       a.href =
-        "/api/studio/files/" + encodeURIComponent(r.file_id) + "/content";
+        scoped("/api/studio/files/" + encodeURIComponent(r.file_id) + "/content");
       const read=el("button","연결 자료 열람");
       const view=el("div",undefined,"revision-file-view");
       read.onclick=run(()=>showRevisionFile(r,view));
@@ -427,7 +430,7 @@
         el("p", `${f.size_bytes.toLocaleString()} bytes · SHA-256 ${f.sha256}`),
       );
       const a = el("a", "원본 다운로드");
-      a.href = "/api/studio/files/" + f.id + "/content";
+      a.href = scoped("/api/studio/files/" + f.id + "/content");
       c.append(a);
       if (
         ["pdf", "zip", "png", "mp4", "md", "md5", "json", "html"].includes(f.extension)
@@ -492,6 +495,7 @@
             $("event-list").append(c);
           }
         }
+        if (b.dataset.tab === "notifications") await notifications(true);
         if (b.dataset.tab === "members") {
           $("member-list").replaceChildren();
           for (const m of await api("members"))
@@ -609,6 +613,16 @@
     $("chat-log").append(entry);
     entry.scrollIntoView({ block: "nearest" });
   });
+  let notificationCursor=null,notificationThrough=0;
+  async function notifications(reset=false){
+    if(reset){notificationCursor=null;notificationThrough=0;$("notification-list").replaceChildren();}
+    const data=await api("notifications"+(notificationCursor?"?beforeId="+notificationCursor:""));
+    for(const row of data.items){notificationThrough=Math.max(notificationThrough,row.id);const card=el("article",undefined,"card");card.append(el("strong",({APPROVE:"승인",REJECT:"반려",REQUEST_CHANGES:"수정 요청",COMMENT:"댓글"}[row.action]||row.action)+" · "+row.actor_name),el("h3",row.title||"프로젝트 알림"),el("p",row.id>data.readThrough?"새 알림":"확인한 알림"),el("small",row.created_at));if(row.revision_id){const b=el("button","관련 자료 열기");b.onclick=run(async()=>{document.querySelector('[data-tab="materials"]').click();detail(await api("revisions/"+row.revision_id));});card.append(b);}$("notification-list").append(card);}
+    notificationCursor=data.nextBeforeId||null;$("notifications-more").hidden=!notificationCursor;$("notifications-read").hidden=!notificationThrough;
+    if(!$("notification-list").children.length)$("notification-list").append(el("p","아직 다른 팀원의 검수·댓글 알림이 없습니다."));
+  }
+  $("notifications-more").onclick=run(()=>notifications());$("notifications-read").onclick=run(async()=>{await api("notifications/read",json({throughId:notificationThrough}));await notifications(true);message("알림 확인 상태를 저장하고 다시 조회했습니다.");});
+  $("invite-search-form").onsubmit=run(async()=>{const users=await api("users?"+new URLSearchParams({q:$("invite-query").value}));$("invite-search-results").replaceChildren();for(const user of users){const c=el("div",undefined,"card"),role=el("select");role.setAttribute("aria-label",user.name+" 초대 권한");for(const [value,label]of [["VIEWER","열람"],["EDITOR","제작·수정"],["APPROVER","검수·승인"]])role.add(new Option(label,value));const b=el("button","팀원 초대");c.append(el("strong",user.name+" · "+user.nickname),role,b);b.onclick=run(async()=>{await api("invitations",json({userId:user.user_id,permission:role.value}));b.disabled=true;message("초대를 기록했습니다. 상대방이 프로젝트 목록에서 수락해야 자료를 볼 수 있습니다.");});$("invite-search-results").append(c);}if(!users.length)$("invite-search-results").append(el("p","검색 결과가 없습니다."));});
   $("member-form").onsubmit = run(async () => {
     const m = Object.fromEntries(new FormData($("member-form")));
     m.userId = Number(m.userId);
@@ -631,7 +645,10 @@
       $("episodes").append(b);
     }
     const project = await api("project");
-    state.permission = project.permission;
+    state.permission = project.archived?"VIEWER":project.permission;
+    $("project-title").textContent=project.title;
+    document.querySelector('[data-tab="members"]').hidden=!project.canManage;
+    if(project.archived)message("보관된 프로젝트 · 모든 자료와 이력을 열람할 수 있습니다. 수정은 프로젝트 목록에서 재개 후 가능합니다.");
     try {
       const imported=await api("source-import");
       if(imported.registeredSourcePaths>0){
@@ -639,7 +656,7 @@
       }
     }catch(error){message(error.message);}
     $("project-info").textContent =
-      `1부 14화 · EP01 68컷 · 보관 파일 ${project.files}개 · ${{ VIEWER: "열람", EDITOR: "제작·수정", APPROVER: "검수·승인" }[project.permission]}`;
+      `${project.archived?"보관됨 · ":""}보관 파일 ${project.files}개 · ${{ VIEWER: "열람", EDITOR: "제작·수정", APPROVER: "검수·승인" }[project.permission]}`;
     $("initialize").hidden =
       project.initialized || project.permission !== "APPROVER";
     if (state.permission === "VIEWER") {

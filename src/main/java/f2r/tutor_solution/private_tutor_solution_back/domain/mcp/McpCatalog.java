@@ -83,6 +83,7 @@ public class McpCatalog {
                     params.add(name);
                   }
                 }
+                if (path.startsWith("/api/studio/")) params.add("projectId");
                 Map<String, Object> row = new LinkedHashMap<>();
                 row.put(
                     "id",
@@ -303,7 +304,8 @@ public class McpCatalog {
               e -> {
                 if (!used.contains(e.getKey())) throw McpOAuth.error(400, "unknown_path_parameter");
               });
-    List<String> allowed = params(p);
+    List<String> allowed = new ArrayList<>(params(p));
+
     List<String> values = new ArrayList<>();
     if (query.isObject())
       query
@@ -314,6 +316,8 @@ public class McpCatalog {
                 if (!e.getValue().isTextual()) throw McpOAuth.error(400, "invalid_query_parameter");
                 if (!allowed.contains(k) || v.length() > 500 || v.chars().anyMatch(c -> c < 32))
                   throw McpOAuth.error(400, "invalid_query_parameter");
+                if (k.equals("projectId") && !v.matches("[A-Za-z0-9_-]{1,64}"))
+                  throw McpOAuth.error(400, "invalid_project_id");
                 if (Set.of("size", "limit").contains(k)) {
                   try {
                     int maximum =
