@@ -10,7 +10,7 @@
 gh workflow run prod-diagnostic.yml --repo woori73/feel2real-buildit --ref fix/aws-production-readiness
 ```
 
-고정된 SSM payload만 사용하며 임의 명령/SQL 입력은 없다. SSM 실행 기록은 생성되지만 서비스·설정·DB를 변경하지 않는다. 메모리, systemd 필드, 현재/이전 JAR SHA256·내장 Git SHA·POI 라이브러리를 읽는다. env 파일을 실행하거나 출력하지 않는다. DB_HOST가 신규 계정 RDS Describe 결과와 같을 때만 TLS MySQL READ ONLY 트랜잭션으로 Flyway 최근12행을 SELECT한다. 패스워드는 자식 환경으로만 전달하고 로그/오류/프로세스 인자를 출력하지 않는다.
+고정된 SSM payload만 사용하며 임의 명령/SQL 입력은 없다. SSM 실행 기록은 생성되지만 서비스·설정·DB를 변경하지 않는다. 메모리, systemd 필드, 현재/이전 JAR SHA256·내장 Git SHA·POI 라이브러리를 읽는다. env 파일을 실행하거나 출력하지 않는다. 검증된 신규 EC2 앱의 기존 RDS 접속 설정으로 TLS READ ONLY 트랜잭션에서 Flyway 최근12행만 조회한다. TLS cipher를 확인하며 RDS 제어면 조회 권한과 DB의 SELECT 권한을 구분한다. RDS 계정/인스턴스는 접속 주소의 SHA256를 Describe 결과와 대조한 경우에만 MATCHED로 표시한다. RDS가 여러 개이므로 f2r-db를 활성 DB로 가정하지 않는다. 패스워드는 자식 환경으로만 전달하고 로그/오류/프로세스 인자를 출력하지 않는다.
 
 JAR에 Git 정보가 없으면 실행 SHA는 UNKNOWN이다. main 또는 성공한 배포 run SHA를 그대로 운영 SHA로 단정하지 않는다. 이후 bootJar에 clean/dirty 및 Build-Commit을 기록하며 진단은 프로세스 시작·JAR 시각을 교차 확인한다. 과거 JAR은 배포 로그의 전체 SHA256 대조가 별도로 필요하다.
 
@@ -43,9 +43,19 @@ python scripts/ai-agent-studio/import-production.py --production \
 
 HTTP redirect는 거부하며 production proxy/TLS 검증을 유지한다. 실패 시 종료2와 마지막 확인 stage/fileMapping을 남긴다. 업로드와 등록은 분산 트랜잭션이 아니므로 등록 실패 시 신규 파일이 남을 수 있다. 재시도는 SHA로 재사용하며 자동 삭제/정본 롤백을 하지 않는다.
 
-## 결과
+## 최초 실제 운영 조회 (UTC 2026-10-22 23:04~23:08)
 
-- 정책12 및 production dry-run536 SHA: PASS.
+[새 읽기 전용 진단39869389181](https://github.com/woori73/feel2real-buildit/actions/runs/39869389181): 계정425805163960, EC2 i-0414de33d2803c723/t3.large, MemAvailable 5,561,420KiB(약5.30GiB), 앱active/running·재시작0. 현재 JAR SHA256 `177f622215a98c54d5a12837975679ef2d7f06850646eb57a8064c2e5b6e9dd8`는 [기존 배포39733429342](https://github.com/woori73/feel2real-buildit/actions/runs/39733429342)의 `2bed39181c584d8c150e3ed005592c41120319c3` artifact SHA256와 일치한다. 내장 Git 정보가 없으므로 프로세스 자체 attestation은 UNVERIFIED로 구분한다. 운영 POI는5.3.0이며 main의5.5.1은 아직 배포되지 않았다.
+
+Deploy 역할의 RDS 조회/스냅샷 조회/quota/시뮬레이션은 AccessDenied. [기존 main 인프라 워크플로의 읽기 전용 academycraft-preflight39869694839](https://github.com/woori73/feel2real-buildit/actions/runs/39869694839)로 기존 infra-builder 권한에서 메타데이터 조회에 성공했다. RDS3개 모두MySQL8.4.8, 백업7/7/2일, 복구가능시각23:03:41/23:05:40/23:06:55UTC. 기존 available 스냅샷을 확인했으나 DB별 활성 접속 관계를 확인하기 전에는 특정 스냅샷을 운영 복구점으로 확정하지 않는다. 스냅샷은 새로 만들지 않았다.
+
+배포 역할용 최소 읽기 권한의 **미적용 제안**은 [proposed-diagnostic-read-policy.json](proposed-diagnostic-read-policy.json). IAM 변경 승인이 아니다. RDS 목록/백업 조회와 해당 기존 역할의 권한 시뮬레이션만 제안하며 생성/수정/삭제 권한은 추가하지 않는다.
+
+## 격리 결과
+
+- 정책14 및 production dry-run536 SHA: PASS.
 - 배포 JAR/env 복구 가드: PASS(격리 파일/fake systemd).
-- POI/MySQL/로컬 API/CI/운영 진단: 확인 후 갱신.
+- POI 파서6·정규화4·장부서비스10·기존자료 MySQL5=25건 PASS. runtimeClasspath poi/poi-ooxml/poi-ooxml-lite 모두5.5.1 확인.
+- 실제 로컬 HTTP/MySQL에서 production 분기(테스트만 origin을 loopback으로 고정)2회 완료. 각316개 저장 바이트 SHA 재조회·536경로·승인5종·기존정본 불변, createdRevisions0. 실제 운영 연결 아님.
+- 새 빈 스키마의 첫 적재/재시도 및 최종 CI/운영 Flyway: 확인 후 갱신.
 - 운영 배포/적재/IAM/스냅샷/MCP/유료 호출: 실행 안 함.

@@ -1,7 +1,9 @@
 import importlib.util
+import hashlib
 import json
 import pathlib
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -44,7 +46,8 @@ class ReadinessTest(unittest.TestCase):
             return {'Command': {'CommandId': 'isolated-command'}}
         if pair == ('ssm', 'get-command-invocation'):
             return {'Status': 'Success', 'ResponseCode': 0,
-                    'StandardOutputContent': json.dumps({'memory': {'MemAvailableKiB': 600000}})}
+                    'StandardOutputContent': json.dumps({'memory': {'MemAvailableKiB': 600000},
+                        'databaseEndpointSha256': hashlib.sha256(b'new-account.example.rds.amazonaws.com').hexdigest()})}
         raise AssertionError(args)
 
     def setUp(self):
@@ -87,6 +90,47 @@ class ReadinessTest(unittest.TestCase):
             values = host.env_values(path)
         self.assertEqual('value with spaces', values['DB_PASSWORD'])
         self.assertNotIn('API_SECRET', values)
+
+    def test_service_flyway_metadata_is_read_only_even_when_rds_describe_is_denied(self):
+        # The new-account EC2's configured service DB can be read independently of control-plane IAM.
+        values = dict(DB_HOST='f2r-db.example.ap-northeast-2.rds.amazonaws.com', DB_NAME='f2r_db',
+                      DB_USERNAME='app_user', DB_PASSWORD='NEVER_PRINT_THIS_SECRET')
+        mysql_calls = []
+        original = pathlib.Path.read_text
+        def read(path, *args, **kwargs):
+            if str(path) == '/proc/meminfo':
+                return 'MemAvailable: 600000 kB\n'
+            return original(path, *args, **kwargs)
+        def command(argv, **kwargs):
+            if argv[0] == 'systemctl':
+                return subprocess.CompletedProcess(argv, 0, 'MainPID=0\nActiveState=active', '')
+            if '--version' in argv:
+                return subprocess.CompletedProcess(argv, 0, 'mysql Ver 8.4', '')
+            mysql_calls.append((argv, kwargs))
+            return subprocess.CompletedProcess(argv, 0, 'Ssl_cipher\tTLS_AES_256_GCM_SHA384\n{"version":"1093","success":1}\n', '')
+        with patch.object(host, 'env_values', return_value=values), patch.object(host, 'jar_info', return_value={}), \
+             patch.object(pathlib.Path, 'read_text', read), patch.object(host.shutil, 'which', return_value='/usr/bin/mysql'), \
+             patch.object(host, 'command', command):
+            result = host.collect('')
+        self.assertEqual('OBSERVED', result['flyway']['status'])
+        self.assertEqual('UNVERIFIED', result['databaseAccountVerification'])
+        argv, kwargs = mysql_calls[0]
+        self.assertIn('START TRANSACTION READ ONLY', argv[-1])
+        self.assertNotIn(values['DB_PASSWORD'], ' '.join(argv))
+        self.assertEqual(values['DB_PASSWORD'], kwargs['env']['MYSQL_PWD'])
+        self.assertNotIn(values['DB_PASSWORD'], json.dumps(result))
+
+    def test_rds_matching_uses_actual_service_endpoint_instead_of_fixed_database_name(self):
+        def multiple(*args):
+            result = self.fake_aws(*args)
+            if args[:2] == ('rds', 'describe-db-instances'):
+                result['DBInstances'].insert(0, dict(result['DBInstances'][0],
+                    Endpoint={'Address': 'wrong.example.rds.amazonaws.com'}, DBInstanceIdentifier='f2r-old-clone'))
+            return result
+        with patch.object(diag, 'aws', multiple):
+            result = diag.collect()
+        self.assertEqual('f2r-db', result['rds']['data']['DBInstanceIdentifier'])
+        self.assertEqual('MATCHED_NEW_ACCOUNT_RDS', result['host']['data']['databaseAccountVerification'])
 
     def test_old_or_dirty_jar_never_claims_main_sha(self):
         with tempfile.TemporaryDirectory() as temp:

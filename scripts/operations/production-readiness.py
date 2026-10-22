@@ -2,6 +2,7 @@
 """New-account diagnostic controller. No deployment, snapshot creation, IAM or DB mutation."""
 import argparse
 import datetime
+import hashlib
 import json
 import pathlib
 import re
@@ -56,29 +57,23 @@ def collect():
         raise DiagnosticError('expected_exactly_one_new_account_instance')
     instance = found[0]
     report['ec2'] = {k: instance[k] for k in ('InstanceId', 'InstanceType', 'State', 'Architecture')}
-    db = probe(report, 'rds', lambda: aws('rds', 'describe-db-instances', '--db-instance-identifier', 'f2r-db')['DBInstances'][0])
-    expected_host = None
-    if db:
-        if not db['DBInstanceArn'].startswith(f'arn:aws:rds:{REGION}:{ACCOUNT}:db:'):
-            raise DiagnosticError('wrong_rds_account_refused')
-        expected_host = db['Endpoint']['Address']
-        # Drop endpoint, username and network metadata from the published report.
-        report['rds']['data'] = {k: db.get(k) for k in ('DBInstanceIdentifier', 'DBInstanceStatus', 'Engine',
-            'EngineVersion', 'StorageEncrypted', 'BackupRetentionPeriod', 'LatestRestorableTime',
-            'DeletionProtection', 'PendingModifiedValues', 'DBInstanceClass')}
+    databases = probe(report, 'rds', lambda: aws('rds', 'describe-db-instances')['DBInstances'])
+    if databases:
+        for db in databases:
+            if not db['DBInstanceArn'].startswith(f'arn:aws:rds:{REGION}:{ACCOUNT}:db:'):
+                raise DiagnosticError('wrong_rds_account_refused')
+        report['rds'] = {'status': 'UNVERIFIED', 'reason': 'active_service_database_not_yet_matched'}
     probe(report, 'snapshots', lambda: [
-        {k: s.get(k) for k in ('DBSnapshotIdentifier', 'Status', 'SnapshotCreateTime', 'Encrypted', 'SnapshotType')}
-        for s in aws('rds', 'describe-db-snapshots', '--db-instance-identifier', 'f2r-db')['DBSnapshots']])
+        {k: s.get(k) for k in ('DBInstanceIdentifier', 'DBSnapshotIdentifier', 'Status', 'SnapshotCreateTime', 'Encrypted', 'SnapshotType')}
+        for s in aws('rds', 'describe-db-snapshots')['DBSnapshots'] if s.get('DBInstanceIdentifier', '').startswith('f2r-')])
     probe(report, 'snapshotQuota', lambda: aws('rds', 'describe-account-attributes')['AccountQuotas'])
     snapshot_arn = f'arn:aws:rds:{REGION}:{ACCOUNT}:snapshot:f2r-predeploy-permission-probe'
-    simulation = probe(report, 'snapshotPermissionSimulation', lambda: aws('iam', 'simulate-principal-policy',
-          '--policy-source-arn', ROLE, '--action-names', 'rds:CreateDBSnapshot', '--resource-arns',
-          f'arn:aws:rds:{REGION}:{ACCOUNT}:db:f2r-db', snapshot_arn)['EvaluationResults'])
+    report['snapshotPermissionSimulation'] = {'status': 'UNVERIFIED', 'reason': 'active_rds_not_verified'}
     report['snapshotCreation'] = {'status': 'NOT_EXECUTED', 'reason':
         'RDS has no CreateDBSnapshot dry-run; IAM simulation does not prove SCP/KMS/quota/runtime success',
-        'simulationAvailable': simulation is not None}
+        'simulationAvailable': False}
     payload = pathlib.Path(__file__).with_name('ec2-readiness.py').read_text()
-    command = "python3 - " + __import__('shlex').quote(expected_host or '') + " <<'F2R_READONLY_PY'\n" + payload + '\nF2R_READONLY_PY'
+    command = "python3 - <<'F2R_READONLY_PY'\n" + payload + '\nF2R_READONLY_PY'
     sent = aws('ssm', 'send-command', '--instance-ids', instance['InstanceId'],
                '--document-name', 'AWS-RunShellScript', '--parameters', json.dumps({'commands': [command]}),
                '--timeout-seconds', '180')
@@ -98,6 +93,20 @@ def collect():
             report['host'] = {'status': 'UNVERIFIED', 'reason': 'ssm_payload_failed'}
         else:
             report['host'] = {'status': 'OBSERVED', 'data': json.loads(invocation['StandardOutputContent'])}
+            fingerprint = report['host']['data'].get('databaseEndpointSha256')
+            matches = [db for db in databases or [] if hashlib.sha256(db['Endpoint']['Address'].encode()).hexdigest() == fingerprint]
+            if len(matches) == 1:
+                db = matches[0]
+                report['rds'] = {'status': 'OBSERVED', 'data': {k: db.get(k) for k in
+                    ('DBInstanceIdentifier', 'DBInstanceStatus', 'Engine', 'EngineVersion', 'StorageEncrypted',
+                     'BackupRetentionPeriod', 'LatestRestorableTime', 'DeletionProtection', 'DBInstanceClass')}}
+                report['host']['data']['databaseAccountVerification'] = 'MATCHED_NEW_ACCOUNT_RDS'
+                simulation = probe(report, 'snapshotPermissionSimulation', lambda: aws('iam', 'simulate-principal-policy',
+                    '--policy-source-arn', ROLE, '--action-names', 'rds:CreateDBSnapshot', '--resource-arns',
+                    db['DBInstanceArn'], snapshot_arn)['EvaluationResults'])
+                report['snapshotCreation']['simulationAvailable'] = simulation is not None
+                if report['snapshots']['status'] == 'OBSERVED':
+                    report['snapshots']['data'] = [s for s in report['snapshots']['data'] if s['DBInstanceIdentifier'] == db['DBInstanceIdentifier']]
         return report
     report['host'] = {'status': 'UNVERIFIED', 'reason': 'ssm_poll_timeout'}
     return report
@@ -109,6 +118,12 @@ def main():
     args = parser.parse_args()
     try:
         report = collect()
+        missing = [k for k in ('rds', 'snapshots', 'snapshotPermissionSimulation')
+                   if report.get(k, {}).get('status') != 'OBSERVED']
+        host = report.get('host', {}).get('data', {})
+        missing += [k for k in ('flyway', 'runningSha') if host.get(k, {}).get('status') != 'OBSERVED']
+        report['diagnosticCoverage'] = 'PARTIAL' if missing else 'COMPLETE'
+        report['unverifiedChecks'] = missing
     except (DiagnosticError, subprocess.TimeoutExpired) as error:
         report = {'account': ACCOUNT, 'status': 'UNVERIFIED', 'reason': str(error) if isinstance(error, DiagnosticError)
                   else 'diagnostic_timeout', 'productionWrites': False, 'snapshotCreated': False}

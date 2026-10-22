@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import zipfile
@@ -18,7 +19,7 @@ def command(argv, **kwargs):
 def env_values(path):
     values = {}
     for line in path.read_text().splitlines():
-        match = re.match(r"^(?:export\s+)?(DB_HOST|DB_PORT|DB_USER|DB_PASSWORD|DB_NAME)=(.*)$", line)
+        match = re.match(r"^(?:export\s+)?(DB_HOST|DB_PORT|DB_USER|DB_USERNAME|DB_PASSWORD|DB_NAME)=(.*)$", line.strip())
         if match:
             parts = shlex.split(match[2], comments=True)
             if len(parts) == 1:
@@ -80,22 +81,40 @@ def collect(expected_db_host):
             pass
     try:
         values = env_values(pathlib.Path('/etc/f2r/env'))
-        if not expected_db_host or values.get('DB_HOST') != expected_db_host:
-            report['flyway']['reason'] = 'new_account_rds_endpoint_not_verified'
-            return report
+        configured_host = values.get('DB_HOST', '')
+        # This is the database already used by the verified new-account EC2 service. Reading
+        # Flyway metadata is authorized independently of RDS control-plane Describe permission.
+        # Never claim that its AWS account is verified until the controller matches its digest.
+        if not re.fullmatch(r'[A-Za-z0-9.-]+\.ap-northeast-2\.rds\.amazonaws\.com', configured_host):
+            raise ValueError('not a regional RDS endpoint')
+        if expected_db_host and configured_host != expected_db_host:
+            raise ValueError('endpoint mismatch')
+        report['databaseEndpointSha256'] = hashlib.sha256(configured_host.encode()).hexdigest()
+        report['databaseAccountVerification'] = 'UNVERIFIED'
+        report['databaseConfigPresent'] = {k: bool(values.get(k)) for k in ('DB_HOST', 'DB_USER', 'DB_USERNAME', 'DB_NAME', 'DB_PASSWORD')}
         if not re.fullmatch(r'[A-Za-z0-9_]+', values.get('DB_NAME', '')):
             raise ValueError('database name')
         sql = ("SET SESSION TRANSACTION READ ONLY; START TRANSACTION READ ONLY; "
+               "SHOW SESSION STATUS LIKE 'Ssl_cipher'; "
                "SELECT JSON_OBJECT('version',version,'checksum',checksum,'success',success) "
                "FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 12; COMMIT;")
         child_env = os.environ.copy()
         child_env['MYSQL_PWD'] = values['DB_PASSWORD']
-        result = command(['mysql', '--connect-timeout=8', '--ssl-mode=REQUIRED', '--batch', '--raw',
-                          '--skip-column-names', '-h', expected_db_host, '-P', values.get('DB_PORT', '3306'),
-                          '-u', values['DB_USER'], values['DB_NAME'], '-e', sql], env=child_env)
+        client = shutil.which('mysql') or shutil.which('mariadb')
+        if not client:
+            raise ValueError('mysql client unavailable')
+        version = command([client, '--version']).stdout
+        tls = ['--ssl'] if 'mariadb' in version.lower() else ['--ssl-mode=REQUIRED']
+        result = command([client, '--connect-timeout=8', *tls, '--batch', '--raw',
+                          '--skip-column-names', '-h', configured_host, '-P', values.get('DB_PORT', '3306'),
+                          '-u', values.get('DB_USER') or values['DB_USERNAME'], values['DB_NAME'], '-e', sql], env=child_env)
         if result.returncode:
             raise ValueError('mysql read failed')
-        report['flyway'] = {'status': 'OBSERVED', 'recent': [json.loads(s) for s in result.stdout.splitlines()]}
+        lines = result.stdout.splitlines()
+        cipher = lines.pop(0).split('\t', 1)
+        if len(cipher) != 2 or cipher[0] != 'Ssl_cipher' or not cipher[1]:
+            raise ValueError('TLS not negotiated')
+        report['flyway'] = {'status': 'OBSERVED', 'tlsCipher': cipher[1], 'recent': [json.loads(s) for s in lines]}
     except Exception:
         report['flyway'] = {'status': 'UNVERIFIED', 'reason': 'mysql_client_or_read_access_unavailable'}
     return report
