@@ -57,7 +57,9 @@ jobs:
         run: bash scripts/deploy/f2r_app_guard.test.sh
 
       - name: A1 blue-green gate tests
-        run: bash scripts/operations/a1-gates-lib.test.sh
+        run: |
+          bash scripts/operations/a1-gates-lib.test.sh
+          python3 -m unittest discover -s scripts/operations -p "a1*_test.py" -v
 
       - name: Admissions diagnostic safety test (read-only guard)
         run: bash scripts/operations/admissions-diag.test.sh
