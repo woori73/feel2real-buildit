@@ -255,6 +255,8 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
     passed("모바일 390px·68컷·가로 넘침 없음·axe 위반 0");
     await m.screenshot({path:path.join(out,"screens/studio-mobile-390.png"),fullPage:false});
     await m.locator('#cut-grid button').first().click();
+    const detailBounds = await m.locator('#detail h3').first().boundingBox();
+    assert.ok(detailBounds && detailBounds.y >= 0 && detailBounds.y < 844, '컷 선택 후 모바일 상세가 자동으로 보여야 합니다.');
     await m.locator('#detail').getByRole('button',{name:'검수·사용자 승인',exact:true}).click();
     await m.locator('#review-dialog').waitFor({state:'visible'});
     await m.locator('#review-form [name=note]').fill('합성 68컷 모바일 승인 검증');

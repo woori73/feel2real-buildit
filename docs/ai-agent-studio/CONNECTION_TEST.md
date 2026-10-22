@@ -32,7 +32,7 @@ JUnit은 실제 HTTP OAuth 동의·PKCE 오류·일회용 code·token 만료·�
 | 실제 Claude 구독 계정 | NOT RUN |
 | 사용자 요금제·조직 권한 메뉴 | 문서 조사 완료, 계정 내 확인 미실행 |
 | 운영 모든 서비스의 실제 자료 대조 | NOT RUN (운영 접근·변경 금지 준수) |
-| 별도 AcademyCraft backend·DB | Gateway 계약 구현, 외부 서비스 실연결 미실행 |
-| Claude 독립 검수 | NOT RUN, CLAUDE_HANDOFF.md에 인계 |
+| 별도 AcademyCraft backend·DB | localhost 별도 backend·실제 MySQL로 학원 격리·authKey 제거 통과. 운영 외부 서비스는 미접속 |
+| Claude 독립 검수 | 최초 검수 항목 반영, 이번 수정의 독립 재검수 대기; CLAUDE_HANDOFF.md 참조 |
 
 실제 연결 미실행 사유는 공개 테스트 endpoint와 두 제품의 로그인 계정 세션이 제공되지 않았기 때문이다. 운영 배포·main 병합을 실행해 이를 우회하지 않았다. 따라서 사용자가 제시한 두 완료 조건을 모두 충족했다고 선언하지 않는다.

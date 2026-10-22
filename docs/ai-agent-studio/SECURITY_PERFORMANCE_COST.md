@@ -18,7 +18,7 @@
 | 항목 | 현재 상한 |
 |---|---|
 | 사용자 MCP 호출 | 60/분 (RDS 기반, 재시작/replica 공유) |
-| transport IP | 300/분, 공개 DCR 5/분 |
+| transport | 유효 bearer는 사용자별 300/분, 익명은 신뢰 proxy resolver의 IP별 300/분, 공개 DCR은 IP별 5/분 |
 | 요청 본문 | 64 KiB, chunked에도 적용 |
 | 실행 중 내부 읽기 | 2개, 초과 시 즉시 429 |
 | 전체 JSON-RPC | JVM당 8개, 초과 시 429·완료/오류 시 반환 |
@@ -31,13 +31,13 @@
 
 원본 전송은 기존 FileStorage의 제한 읽기를 사용하므로 byte array를 가진다. 동시 2개에서 스튜디오 원본 payload만 최대 약 200 MiB이며 전체 JVM 힙과 동일한 값이 아니다. 기존 서비스의 원래 응답 생성 비용까지 없어지는 것은 아니다. PDF 처리/큰 파일은 실제 EC2 부하를 확인하기 전 대량 사용하지 않는다. 운영 CPU/RAM·RDS 여유·S3 저장량·트래픽은 이 환경에서 조회하지 않았으므로 생산 용량을 보장하지 않는다.
 
-## 실행 결과
+## 최초 실행 결과 (현재 결과는 REVIEW_FIXES.md)
 
 - Java 106건 통과: 신규 스튜디오·실제 HTTP OAuth·MySQL 보안 시험, 기존 JWT·Origin·Wiki 회원 경계·Gateway·홈페이지 회귀 포함. 전체 저장소 테스트 스위트 전수 실행은 아니다.
 - Python 34건 통과: 기존 Wiki 격리와 MCP read-only 시험. 상속한 기존 케이스가 포함된 실행 수이며 고유 시나리오 34개라는 뜻은 아니다.
-- 공식 Python MCP SDK 2.1.1: protocol 2025-11-25 협상, 도구 19개, OAuth client A·B 동일 자료 응답. 최종 로컬 GET 20회 평균 43.39 ms, 중앙값 42.13 ms, 최대 58.75 ms였다. `protocol-results.json`의 각 10회 값이며 운영 지연·동시 부하 시험이 아니다.
+- 공식 Python MCP SDK 2.1.1: protocol 2025-11-25 협상, 도구 19개, OAuth client A·B 동일 자료 응답. 최초 로컬 GET 20회 평균 43.39 ms, 중앙값 42.13 ms, 최대 58.75 ms였다. 최신 재실행의 원시 지연값은 갱신된 JSON에 있다. `protocol-results.json`의 각 10회 값이며 운영 지연·동시 부하 시험이 아니다.
 - 실제 Chromium PC 1440 / 모바일 390, 7종 업로드·원본 SHA·수정·승인·버전 비교·검색·권한 검증은 `browser-results.json`과 `screens/`에 기록한다. 실제 사용자 EP01 자료·운영 계정·S3 업로드 시험은 아니다.
-- 실제 ChatGPT/Claude 구독 계정·독립 Claude·별도 AcademyCraft backend 실연결은 미실행이다. `CONNECTION_TEST.md` 참조.
+- 실제 ChatGPT/Claude 구독 계정과 이번 수정의 독립 Claude 재검수는 미실행이다. 별도 localhost AcademyCraft backend 격리 시험은 후속 검수에서 통과했다. `CONNECTION_TEST.md` 참조.
 
 ## 비용
 

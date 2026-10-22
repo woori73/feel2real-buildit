@@ -1,8 +1,8 @@
 # AI AGENT 제작 스튜디오 + 통합 MCP 개발 보고서
 
-상태: **구현 및 격리 시험 완료, 실제 구독 계정 연결·Claude 독립 검수 대기. 승인 전 병합·운영 배포 금지.**
+현재 검수 반영·통합 결과는 [REVIEW_FIXES.md](REVIEW_FIXES.md)가 기준이다. 아래 최초 개발 수치·실행 기록은 이전 성공 증거로 보존한다. 실제 계정 연결과 Claude 재검수는 미완료이며 병합·운영 배포 금지다.
 
-Codex 단일 에이전트, 단일 개발 브랜치 `feat/ai-agent-studio-unified-mcp`. 기준 main `07d9316a293a30a84e13a09c42957bd64be71bd8`. 운영 DB/S3·원본 자료를 읽거나 변경하지 않았다. PR #850의 홈·3D 파일과 기존 금융 수집 PR #853의 구현 파일은 수정하지 않았다.
+최초 개발 기록: Codex 단일 에이전트, 단일 개발 브랜치 `feat/ai-agent-studio-unified-mcp`. 기준 main `07d9316a293a30a84e13a09c42957bd64be71bd8`. 운영 DB/S3·원본 자료를 읽거나 변경하지 않았다. PR #850의 홈·3D 파일과 기존 금융 수집 PR #853의 구현 파일은 수정하지 않았다.
 
 ## 실제 구현
 
@@ -15,7 +15,7 @@ Codex 단일 에이전트, 단일 개발 브랜치 `feat/ai-agent-studio-unified
 | 자료 열람 | PDF 텍스트/HTML·JSON·MD 원문/ZIP 목록/PNG·MP4 미디어/원본 다운로드. PDF OCR·영상 생성 API를 호출하지 않음 |
 | 권한 | ADMIN 개설·멤버 관리, VIEWER·EDITOR·APPROVER 명시적 부여, 원래 서비스 권한 재사용 |
 | 작품 검색·채팅 | 등록 제목·본문·대사·연출의 키워드 검색과 근거 링크. 외부 생성형 AI 답변은 연결한 구독 클라이언트에서 수행 |
-| 전체 서비스 조사 | 실제 런타임 매핑 1079개, 읽기 어댑터 483개, Wiki Python 선언 161개(미mount 구분). [전체 목록](SERVICE_INVENTORY.md) |
+| 전체 서비스 조사 | 현재 통합 런타임 매핑 1098개, 읽기 허용 경로 406개 (최초 1079/483에서 축소·갱신), Wiki Python 선언 161개(미mount 구분). [전체 목록](SERVICE_INVENTORY.md) |
 | `/mcp` | 원격 stateless Streamable HTTP, 도구 19개, OAuth·PKCE·scope·만료/폐기·감사·속도 제한, 기본 OFF |
 | 기존 서비스 조회 | URL 목록 외 실제 기존 GET API 호출. 같은 사용자·원래 필터·소유권·tenant 검사 및 읽기 전용/rollback. 별도 Wiki 서명·SQLite mode=ro |
 | 설명서 | [ChatGPT](CHATGPT_CONNECTION.md), [Claude](CLAUDE_CONNECTION.md), [실제 연결 비교 절차](CONNECTION_TEST.md) |
@@ -27,7 +27,7 @@ Codex 단일 에이전트, 단일 개발 브랜치 `feat/ai-agent-studio-unified
 
 - Java 106건·Python 34건 통과. Java는 실제 MySQL 신규 스키마 부팅 및 HTTP OAuth 흐름과 기존 보안·Gateway·홈 회귀 포함. 전체 저장소 스위트는 아니다.
 - 공식 Python MCP SDK 2.1.1: 두 개별 OAuth client의 같은 자료 응답 SHA 동일, 도구 탐색·검색·쓰기 거부 성공. `protocol-results.json` 참조.
-- Chromium PC 1440/모바일 390: 20개 검사 통과, PC 6개 탭·모바일 axe 위반 0. `browser-results.json`, `screens/` 참조. 모든 검증 파일·회원·자료는 **격리 환경의 합성 테스트 자료**다. 실제 EP01 정본을 만든 것으로 간주하지 않는다.
+- 최초 Chromium PC 1440/모바일 390: 20개 검사 통과 (검수 보강 후 22개, 최신 REVIEW_FIXES 참조), PC 6개 탭·모바일 axe 위반 0. `browser-results.json`, `screens/` 참조. 모든 검증 파일·회원·자료는 **격리 환경의 합성 테스트 자료**다. 실제 EP01 정본을 만든 것으로 간주하지 않는다.
 - 실제 ChatGPT·Claude 구독 계정과 운영 외부 서비스 대조·Claude 독립 검수는 아직 실행하지 않았다. 이것이 완료 조건의 남은 부분이며 테스트 성공으로 대체하지 않는다.
 
 ## 재현 (격리 환경만)

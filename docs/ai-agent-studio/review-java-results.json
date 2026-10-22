@@ -1,0 +1,212 @@
+{
+  "combined": {
+    "run": "combined #853+#854+#855 at latest main, before final ZIP asset assertion",
+    "suites": [
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionIngestIdempotencyTest",
+        "tests": "13",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.597"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardExcelParserTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.033"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyFinancialCollectorSecurityTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.708"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardImportServiceTest",
+        "tests": "10",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.075"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantIntentAnalyzerTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.008"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantConversationServiceTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.264"
+      },
+      {
+        "name": "EasyJournalService 복식엔진 테스트",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.03"
+      },
+      {
+        "name": "Wiki 실제 콘텐츠 회원 전용 보안 경계",
+        "tests": "38",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "5.953"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantMaterialAnalyzerTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.007"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyFinancialCollectorTest",
+        "tests": "21",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "2.684"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantSecurityTest",
+        "tests": "8",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.997"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantServiceTest",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.66"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.017"
+      },
+      {
+        "name": "SiteVisitFilter — 실제 HTML 페이지 응답에서만 방문을 기록한다",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "2.14"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AcademyAssistantAdapterTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.211"
+      },
+      {
+        "name": "JwtTokenProvider 단위 테스트",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.519"
+      },
+      {
+        "name": "Easy API — ADMIN 전용",
+        "tests": "12",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "3.152"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantCommandParserTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.013"
+      },
+      {
+        "name": "EasyCollectionApproval — 승인 상태 전이",
+        "tests": "11",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.014"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpStudioMySqlTest",
+        "tests": "19",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "24.808"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.ShinhanCardNormalizerTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.004"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantDraftTransactionsTest",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.3"
+      },
+      {
+        "name": "EasyLedgerService 장부 테스트",
+        "tests": "17",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.171"
+      }
+    ],
+    "tests": 224,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "finalAffected": {
+    "run": "Final affected studio/MCP test rerun after ZIP bytes assertion, UUID labels and formatting",
+    "tests": 24,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "database": {
+    "engine": "MySQL 8.4 fresh isolated f2r_studio_test",
+    "flywayHistoryRows": 190,
+    "failedMigrations": 0,
+    "latestVersion": "1095",
+    "versions": {
+      "1094": "unified assistant",
+      "1095": "studio and mcp"
+    }
+  }
+}

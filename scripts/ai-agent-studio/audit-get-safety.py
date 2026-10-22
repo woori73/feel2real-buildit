@@ -69,7 +69,7 @@ source=Path(sys.argv[1]) if len(sys.argv)>1 else ROOT/'docs/ai-agent-studio/serv
 data=json.loads(source.read_text());routes=data.get('routes',[]) if isinstance(data,dict) else data
 policy=json.loads((ROOT/'src/main/resources/mcp/read-policy.json').read_text());allowed={p['path'] for p in policy}
 # Include source-declared GETs that are absent because a profile/feature switch is OFF.
-seen_paths={r['path'] for r in routes if 'GET' in r.get('methods',[])}
+seen_paths={re.sub(r'\{([^}:]+):[^}]+\}',r'{\1}',r['path']) for r in routes if 'GET' in r.get('methods',[])}
 for owner,(path,b) in classes.items():
  tree=parser.parse(b);trees.append(tree)
  declarations=[n for n in walk(tree.root_node) if n.type=='class_declaration' and text(n.child_by_field_name('name'),b)==owner]
@@ -84,9 +84,13 @@ for owner,(path,b) in classes.items():
    a=text(mods,b)
    match=re.search(r'@GetMapping(?:\s*\(([^)]*)\))?',a)
    if not match:continue
-   literals=re.findall(r'"([^"\n]*)"',match.group(1) or '') or ['']
+   args=match.group(1) or ''
+   # Only path/value literals, never produces/consumes media types.
+   paths=re.search(r'(?:^|,)\s*(?:value|path)\s*=\s*(\{[^}]*\}|"[^"\n]*")',args)
+   if not paths:paths=re.match(r'\s*(\{[^}]*\}|"[^"\n]*")',args)
+   literals=re.findall(r'"([^"\n]*)"',paths.group(1)) if paths else ['']
    for suffix in literals:
-    value=prefix+suffix
+    value=re.sub(r'\{([^}:]+):[^}]+\}',r'{\1}',prefix+suffix)
     if value and value.startswith('/') and value not in seen_paths:
      routes.append({'path':value,'methods':['GET'],'controller':owner,'handler':name,'source':path,'sourceOnly':True});seen_paths.add(value)
 rows=[]

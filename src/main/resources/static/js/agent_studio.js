@@ -128,6 +128,7 @@
       };
       $("detail").append(b);
     }
+    $("detail").scrollIntoView({ block: "nearest" });
   }
   function edit(r) {
     const f = $("revision-form");

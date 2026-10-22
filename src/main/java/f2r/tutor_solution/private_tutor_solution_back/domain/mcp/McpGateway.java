@@ -83,7 +83,7 @@ public class McpGateway {
         tool(
             "activity_history",
             "본인 MCP 호출 감사 이력. 서비스별 변경 이력은 read_studio(events), read_buildit(audit),"
-                + " read_newstart(history), read_easy(corrections/logs)를 사용합니다.",
+                + " read_newstart(history)를 사용합니다. 재무는 read_easy의 허용 사업체 월 요약만 제공합니다.",
             Map.of(),
             List.of()));
     return out;

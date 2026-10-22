@@ -1,7 +1,7 @@
 {
   "mainBase": "7472d91e0857db8cb245e1231ba24c161b8e95cf",
   "method": "Java AST method-call traversal, repository/JDBC writes, file writes, remote/async calls; no live requests",
-  "getRoutes": 634,
+  "getRoutes": 627,
   "rows": [
     {
       "path": "/",
@@ -7717,66 +7717,6 @@
       "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
     },
     {
-      "path": "/chart/educators/{id:\\\\d+}",
-      "controller": "ChartPageController",
-      "handler": "publicChartEducator",
-      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/chart/controller/ChartPageController.java",
-      "allowed": false,
-      "flags": [],
-      "unresolvedExternalTypes": [],
-      "sourceOnly": true,
-      "assessment": "NO_STATIC_FLAG",
-      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
-    },
-    {
-      "path": "/api/chart/educators/{id:\\\\d+}",
-      "controller": "ChartPublicController",
-      "handler": "educatorDetail",
-      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/chart/controller/ChartPublicController.java",
-      "allowed": false,
-      "flags": [],
-      "unresolvedExternalTypes": [],
-      "sourceOnly": true,
-      "assessment": "NO_STATIC_FLAG",
-      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
-    },
-    {
-      "path": "/api/chart/rankings/{id:\\\\d+}",
-      "controller": "ChartPublicController",
-      "handler": "educatorRanking",
-      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/chart/controller/ChartPublicController.java",
-      "allowed": false,
-      "flags": [],
-      "unresolvedExternalTypes": [],
-      "sourceOnly": true,
-      "assessment": "NO_STATIC_FLAG",
-      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
-    },
-    {
-      "path": "/newstart/updates/{id:\\\\d+}",
-      "controller": "NewStartOfficialUpdatesPageController",
-      "handler": "updateDetail",
-      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/newstart/controller/NewStartOfficialUpdatesPageController.java",
-      "allowed": false,
-      "flags": [],
-      "unresolvedExternalTypes": [],
-      "sourceOnly": true,
-      "assessment": "NO_STATIC_FLAG",
-      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
-    },
-    {
-      "path": "/api/admin/easytext/csv;charset=UTF-8",
-      "controller": "EasyLedgerController",
-      "handler": "exportTxns",
-      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/easy/controller/EasyLedgerController.java",
-      "allowed": false,
-      "flags": [],
-      "unresolvedExternalTypes": [],
-      "sourceOnly": true,
-      "assessment": "NO_STATIC_FLAG",
-      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
-    },
-    {
       "path": "/api/admin/easy/financial-collector/capabilities",
       "controller": "EasyFinancialCollectorController",
       "handler": "capabilities",
@@ -7798,34 +7738,6 @@
       "unresolvedExternalTypes": [],
       "sourceOnly": true,
       "assessment": "NO_STATIC_FLAG",
-      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
-    },
-    {
-      "path": "/api/landing/videosvideo/mp4",
-      "controller": "LandingVideoPublicController",
-      "handler": "stream",
-      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/landing/controller/LandingVideoPublicController.java",
-      "allowed": false,
-      "flags": [],
-      "unresolvedExternalTypes": [
-        "S3Client.getObject"
-      ],
-      "sourceOnly": true,
-      "assessment": "KNOWN_STORAGE_IO",
-      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
-    },
-    {
-      "path": "/api/admin/landing/videosvideo/mp4",
-      "controller": "LandingVideoAdminController",
-      "handler": "stream",
-      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/landing/controller/LandingVideoAdminController.java",
-      "allowed": false,
-      "flags": [],
-      "unresolvedExternalTypes": [
-        "S3Client.getObject"
-      ],
-      "sourceOnly": true,
-      "assessment": "KNOWN_STORAGE_IO",
       "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
     }
   ]
