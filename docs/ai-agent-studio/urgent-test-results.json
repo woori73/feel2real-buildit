@@ -214,5 +214,55 @@
   "flywayChecksum": {
     "1094": -1031052192,
     "1095": -1470147673
-  }
+  },
+  "latestMainAndCanonicalIdentifier37": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSourceSelectorTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.341"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpClientAddressTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.671"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpConsentTemplateTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.128"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpUserLimiterTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.049"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpRedactionTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.479"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.054"
+    }
+  ]
 }

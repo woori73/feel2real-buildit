@@ -87,4 +87,13 @@ class McpRedactionTest {
     assertEquals(12345, masked.path("accountId").asInt());
     assertFalse(masked.path("notes").get(0).asText().contains("1234"));
   }
+
+  @Test
+  void canonicalHashesAndUuidsWithLongDigitRunsRemainVerifiable() {
+    String sha = ("deadbeef1234567890123" + "abcdef".repeat(8)).substring(0, 64);
+    String uuid = "12345678-1234-4123-8123-123456789012";
+    assertEquals(sha, McpRedaction.value("sha256", sha));
+    assertEquals(uuid, McpRedaction.value("fileId", uuid));
+    assertNotEquals(sha, McpRedaction.value("accountNumber", sha));
+  }
 }
