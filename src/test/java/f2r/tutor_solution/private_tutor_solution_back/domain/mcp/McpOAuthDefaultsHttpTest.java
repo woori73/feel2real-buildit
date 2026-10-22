@@ -44,8 +44,15 @@ class McpOAuthDefaultsHttpTest {
   @Autowired JwtTokenProvider jwt;
   @Autowired AdminSessionValidator stamps;
   @Autowired ObjectMapper json;
+  @Autowired org.springframework.jdbc.core.JdbcTemplate db;
   final HttpClient http = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
   final String base = "http://127.0.0.1:18089";
+
+  /** 공개 등록은 분당 5회로 제한되므로, 시험 사이에 제한 카운터를 비운다. */
+  @BeforeEach
+  void resetRateLimits() {
+    db.update("DELETE FROM mcp_rate_limits");
+  }
 
   String cookie(String login, Role role) {
     var u =
@@ -134,6 +141,7 @@ class McpOAuthDefaultsHttpTest {
     assertEquals(400, register("https://chatgpt.com/connector_platform_oauth_redirect").statusCode());
     assertEquals(200, register("https://claude.ai/api/mcp/auth_callback").statusCode());
     assertEquals(200, register("https://claude.com/api/mcp/auth_callback").statusCode());
+    db.update("DELETE FROM mcp_rate_limits");
     assertEquals(400, register("https://evil.example/connector/oauth/abc").statusCode());
     assertEquals(400, register("https://chatgpt.com/connector/oauth/a/b").statusCode());
     assertEquals(400, register("https://chatgpt.com/connector/oauth/abc?x=1").statusCode());

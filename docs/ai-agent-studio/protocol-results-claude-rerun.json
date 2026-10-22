@@ -1,0 +1,45 @@
+{
+  "testType": "Official Python MCP SDK 2.3.0 (mcp, installed in the review environment) with two independently authorized OAuth clients against the PR build (JAR from head 588d35d + local MySQL 8.0.46); NOT actual ChatGPT/Claude account connections",
+  "sameContent": true,
+  "responseSha256": "61bc09ddafef3dd75a5a1baa01e7213e7bf1d707a5c824de9495609eb79c9863",
+  "clientA": {
+    "protocolVersion": "2025-11-25",
+    "toolCount": 19,
+    "catalogRows": 1098,
+    "readLatencyMs": [
+      39.2,
+      33.15,
+      42.21,
+      45.41,
+      47.59,
+      42.1,
+      37.96,
+      43.79,
+      45.4,
+      42.13
+    ],
+    "search": true,
+    "writeDenied": true
+  },
+  "clientB": {
+    "protocolVersion": "2025-11-25",
+    "toolCount": 19,
+    "catalogRows": 1098,
+    "readLatencyMs": [
+      49.46,
+      45.04,
+      35.02,
+      42.74,
+      50.22,
+      36.68,
+      40.5,
+      43.47,
+      45.58,
+      49.8
+    ],
+    "search": true,
+    "writeDenied": true
+  },
+  "actualAccountTests": "NOT RUN: no public staging endpoint or authenticated subscription sessions were supplied; no production deployment authorized.",
+  "rerunBy": "Claude independent review, 2026-10-22"
+}
