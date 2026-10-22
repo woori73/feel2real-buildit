@@ -4,12 +4,11 @@
 // certificate, password, OTP, CVC, or full card number — the human enters those directly into
 // the visible browser during WAITING_FOR_USER_AUTH, and this process never touches that page.
 import { chromium } from 'playwright';
-import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
+import { createInterface } from 'node:readline/promises';
 import { config } from './config.js';
 import { backendClient } from './backendClient.js';
 import { resolveWorkflow } from './workflows/index.js';
+import { encryptionKey, mockOrigin, saveEncryptedDownload } from './downloadSafety.js';
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -26,65 +25,83 @@ async function runStep(page, step) {
 }
 
 async function runTask(browser, task, workflow, targetBaseUrl, testHooks) {
-  const context = await browser.newContext();
-  const page = await context.newPage();
+  const allowedOrigin = mockOrigin(targetBaseUrl);
+  const key = encryptionKey(config.fileKeyBase64);
+  const context = await browser.newContext({ acceptDownloads: true, serviceWorkers: 'block' });
+  // All requests, including redirects and subresources, stay inside the approved mock origin.
+  await context.route('**/*', route => new URL(route.request().url()).origin === allowedOrigin
+    ? route.continue() : route.abort('blockedbyclient'));
+  await context.routeWebSocket('**/*', socket => socket.close());
+  let download;
+  try {
+    const page = await context.newPage();
 
-  console.log(`[collector] task ${task.taskId}: opening ${workflow.loginUrl(targetBaseUrl)}`);
-  await page.goto(workflow.loginUrl(targetBaseUrl));
+    console.log(`[collector] task ${task.taskId}: opening ${workflow.loginUrl(targetBaseUrl)}`);
+    await page.goto(workflow.loginUrl(targetBaseUrl));
 
-  await backendClient.waitingForAuth(task.taskId);
-  console.log(`[collector] task ${task.taskId}: WAITING_FOR_USER_AUTH — 열린 브라우저에서 직접 인증해 주세요.`);
+    await backendClient.waitingForAuth(task.taskId);
+    console.log(`[collector] task ${task.taskId}: WAITING_FOR_USER_AUTH — 열린 브라우저에서 직접 인증해 주세요.`);
 
-  // TEST-ONLY seam: an unattended E2E verification run has no live human to click the real
-  // login button, so it may pass onWaitingForAuth(page) to act on the SAME page/context/browser
-  // a real human would use (never a second/new browser). In production this hook is never
-  // supplied, and this process always blocks for a real human — it never fills in or guesses
-  // the auth UI itself (Section 3/14).
-  if (testHooks && typeof testHooks.onWaitingForAuth === 'function') {
-    await testHooks.onWaitingForAuth(page);
+    // TEST-ONLY seam: an unattended E2E verification run has no live human to click the real
+    // login button, so it may pass onWaitingForAuth(page) to act on the SAME page/context/browser
+    // a real human would use (never a second/new browser). In production this hook is never
+    // supplied, and this process always blocks for a real human — it never fills in or guesses
+    // the auth UI itself (Section 3/14).
+    if (testHooks && typeof testHooks.onWaitingForAuth === 'function') {
+      await testHooks.onWaitingForAuth(page);
+    }
+
+    if (workflow.authDetect.type === 'selector') {
+      await page.waitForSelector(workflow.authDetect.selector, { timeout: config.authWaitTimeoutMs });
+    } else if (workflow.authDetect.type === 'urlPattern') {
+      await page.waitForURL(workflow.authDetect.pattern, { timeout: config.authWaitTimeoutMs });
+    } else {
+      throw new Error(`Unknown authDetect.type: ${workflow.authDetect.type}`);
+    }
+
+    // Login success is not consent to collect. No automated credential/challenge handling.
+    const consent = testHooks?.onCollectionConsent
+      ? await testHooks.onCollectionConsent(task)
+      : await askCollectionConsent(task);
+    if (consent !== true) throw new Error('USER_COLLECTION_CONSENT_REQUIRED');
+    await backendClient.resume(task.taskId);
+    console.log(`[collector] task ${task.taskId}: AUTHENTICATED — same browser session resumed.`);
+
+    await backendClient.collecting(task.taskId);
+    for (const step of workflow.collectSteps(task)) {
+      await runStep(page, step);
+    }
+    console.log(`[collector] task ${task.taskId}: COLLECTING steps done.`);
+
+    await backendClient.downloading(task.taskId);
+    [download] = await Promise.all([
+      page.waitForEvent('download'),
+      runStep(page, workflow.downloadTrigger),
+    ]);
+
+    const metadata = await saveEncryptedDownload(download, config.downloadDir, key);
+    await backendClient.completed(task.taskId, metadata);
+    console.log(`[collector] task ${task.taskId}: COMPLETED.`);
+
+  } finally {
+    await download?.delete().catch(() => {});
+    await context.close(); // deletes Chromium-managed temporary download and session cookies
   }
+}
 
-  if (workflow.authDetect.type === 'selector') {
-    await page.waitForSelector(workflow.authDetect.selector, { timeout: config.authWaitTimeoutMs });
-  } else if (workflow.authDetect.type === 'urlPattern') {
-    await page.waitForURL(workflow.authDetect.pattern, { timeout: config.authWaitTimeoutMs });
-  } else {
-    throw new Error(`Unknown authDetect.type: ${workflow.authDetect.type}`);
-  }
-
-  await backendClient.resume(task.taskId);
-  console.log(`[collector] task ${task.taskId}: AUTHENTICATED — same browser session resumed.`);
-
-  await backendClient.collecting(task.taskId);
-  for (const step of workflow.collectSteps(task)) {
-    await runStep(page, step);
-  }
-  console.log(`[collector] task ${task.taskId}: COLLECTING steps done.`);
-
-  await backendClient.downloading(task.taskId);
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    runStep(page, workflow.downloadTrigger),
-  ]);
-
-  fs.mkdirSync(config.downloadDir, { recursive: true });
-  const suggested = download.suggestedFilename();
-  const destPath = path.join(config.downloadDir, `task-${task.taskId}-${suggested}`);
-  await download.saveAs(destPath);
-
-  const buffer = fs.readFileSync(destPath);
-  const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
-  const size = buffer.length;
-  console.log(`[collector] task ${task.taskId}: downloaded ${destPath} (${size} bytes, sha256=${sha256})`);
-
-  await backendClient.completed(task.taskId, { filename: path.basename(destPath), size, sha256 });
-  console.log(`[collector] task ${task.taskId}: COMPLETED.`);
-
-  await context.close();
+async function askCollectionConsent(task) {
+  if (!process.stdin.isTTY) return false;
+  const terminal = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await terminal.question(
+      `수집 승인: ${task.sourceCode}, ${task.requestedFrom} ~ ${task.requestedTo}. 계속하려면 y 입력: `);
+    return answer.trim().toLowerCase() === 'y';
+  } finally { terminal.close(); }
 }
 
 export async function pollAndRun(
     { once = false, targetBaseUrl = config.easyBaseUrl, testHooks = undefined } = {}) {
+  mockOrigin(targetBaseUrl); // test hooks cannot enable real-site authentication or network access
   for (;;) {
     await backendClient.heartbeat().catch((err) => console.warn('[collector] heartbeat failed:', err.message));
     const task = await backendClient.nextTask();
@@ -97,15 +114,17 @@ export async function pollAndRun(
       continue;
     }
     console.log(`[collector] claimed task ${task.taskId} sourceCode=${task.sourceCode} status=${task.status}`);
-    const workflow = resolveWorkflow(task.sourceCode);
-    const browser = await chromium.launch({ headless: false }); // VISIBLE — Section 4 requirement
+    let browser;
     try {
+      const workflow = resolveWorkflow(task.sourceCode);
+      encryptionKey(config.fileKeyBase64);
+      browser = await chromium.launch({ headless: false }); // VISIBLE — Section 4 requirement
       await runTask(browser, task, workflow, targetBaseUrl, testHooks);
     } catch (err) {
-      console.error(`[collector] task ${task.taskId} failed:`, err);
-      await backendClient.failed(task.taskId, String(err.message || err)).catch(() => {});
+      console.error(`[collector] task ${task.taskId}: collection failed; use manual upload`);
+      await backendClient.failed(task.taskId, 'COLLECTION_FAILED_USE_MANUAL_UPLOAD').catch(() => {});
     } finally {
-      await browser.close();
+      await browser?.close();
     }
     if (once) return;
   }

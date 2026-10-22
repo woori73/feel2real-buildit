@@ -954,6 +954,17 @@ LMS 주소가 성립하지 않는다(404).
 - 인증/권한: 전부 `/api/admin/**` → ROLE_ADMIN. SSR `/easy/**`도 `hasRole("ADMIN")`. Wiki `users`와 연결하지 않는다.
 - 금액: 전부 long(원). 상태(미납/일부납/완납)는 저장 없이 청구/납부 기준 자동 계산.
 
+### 작업 B — 금융자료 수집 프로토타입 (기본 OFF, local 전용)
+
+- Prefix: `/api/admin/easy/financial-collector`. `local & !prd` + `app.easy.financial-collector.enabled=true`에서만 생성. 기존 ADMIN 로그인·활성 사업체 접근 확인을 사용한다.
+- `GET /capabilities`: 기관·dataset·파일형식·지원 판정. 실제 기관 다운로드는 모두 OFF.
+- `POST /previews`: multipart `businessId,dataset,accountRef,from,to,file,userApprovedUpload=true` + 선택 `expectedCount,expectedTotal`. CSV/XLS/XLSX/텍스트 PDF 템플릿 → 암호화 원본·초안·누락 보고만 생성(201). 파싱 불가는 암호화 보존 후 FAILED 보고.
+- `GET /previews/{collectionId}?businessId`: 원본 UUID의 보고, 실제 run/batch/approval, `ledgerSaved`, `reviewHash` 조회.
+- `POST /previews/{collectionId}/stage?businessId`, JSON `{"reviewed":true}`: BANK_ACCOUNT만 기존 raw/import staging에 인계. archive ID 재시도는 같은 run. confirm 호출 없음.
+- `POST /previews/{collectionId}/approve-and-commit?businessId`, JSON `{"userApprovedLedgerCommit":true,"reviewHash":"현재 검토 해시"}`: 기존 승인 서비스를 통한 명시 반영. 실패는 COMMIT_FAILED로 추적·재시도, COMMITTED는 재반영하지 않는다.
+- 다른 dataset은 카드 구매/매출/정산/증빙 전용 경로를 표시하고 일반 반영을 거부한다. 통합 AI 자율 도구에 stage/commit을 노출하지 않는다.
+- [상세 계약·샘플·실행](easy/financial-collector/API_AND_PROTOTYPE.md), [기관 조사](easy/financial-collector/INSTITUTION_SUPPORT_2026-10-22.md), [보안·격리 검증 및 한계](easy/financial-collector/SECURITY_AND_VERIFICATION_2026-10-22.md).
+
 ### ✅ GET /api/admin/easy/businesses
 
 - 목적: 활성 사업체 목록 (이름 하드코딩 없이 code/name으로 참조).

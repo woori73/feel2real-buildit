@@ -24,6 +24,7 @@ public record CollectionParsedRow(
     String externalId,
     String error
 ) {
+  @com.fasterxml.jackson.annotation.JsonIgnore
   public boolean isValid() {
     return error == null;
   }

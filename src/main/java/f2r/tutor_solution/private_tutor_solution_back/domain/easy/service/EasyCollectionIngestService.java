@@ -352,6 +352,31 @@ public class EasyCollectionIngestService {
         .toList();
   }
 
+  /** Local financial prototype seam: immutable archive ID makes DB handoff retries recoverable. */
+  @Transactional
+  public EasyCollectionIngestResponse ingestFinancialDraft(Long businessId, String collectionId,
+      String scopeCode, List<CollectionParsedRow> parsed) {
+    requireActiveBusiness(businessId);
+    String filename = "financial-" + java.util.UUID.fromString(collectionId);
+    var prior = runRepository.findAllByBusiness_BusinessIdOrderByRunIdDesc(businessId).stream()
+        .filter(run -> filename.equals(run.getSourceFilename())).findFirst();
+    if (prior.isPresent()) {
+      return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(prior.get()), List.of());
+    }
+    if (scopeCode == null || !scopeCode.matches("FIN_[a-f0-9]{24}") || parsed.size() > MAX_ACCEPTED_ROWS) {
+      throw new IllegalArgumentException("FINANCIAL_SCOPE_OR_ROW_LIMIT_INVALID");
+    }
+    EasyBusiness business = requireActiveBusiness(businessId);
+    EasyCollectionSource source = sourceRepository.findByCode(SOURCE_CODE)
+        .orElseThrow(() -> new IllegalArgumentException("파일 수집원이 없습니다."));
+    EasyCollectionConnection connection = findOrCreateConnection(business, source, scopeCode);
+    EasyCollectionRun run = runRepository.save(EasyCollectionRun.builder()
+        .business(business).connection(connection).triggerType("MANUAL")
+        .sourceFilename(filename).adapterCode("FINANCIAL_FILE").adapterVersion("v1").build());
+    // scopeCode includes dataset + account reference, including tuple fallback keys.
+    return ingestParsedRows(run, connection, business, scopeCode, "FINANCIAL_FILE", filename, parsed);
+  }
+
   public EasyCollectionRunResponse getRun(Long runId) {
     return EasyCollectionRunResponse.from(runRepository.findById(runId)
         .orElseThrow(() -> new IllegalArgumentException("수집 실행을 찾을 수 없습니다: " + runId)));
