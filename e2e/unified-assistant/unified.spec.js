@@ -93,7 +93,8 @@ test('expiry, cancellation, live permission revocation and unknown outcome never
   expect((await admin.post(API+'/drafts/'+d.id+'/approve',{data:{planHash:d.planHash}})).status()).toBe(409);
 });
 test('CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access',async()=>{
-  const csv='거래일,구분,금액,거래처,적요,결제수단,원본계정,증빙유형\n2099-10-14,지출,350000,KT '+suffix+',전화요금,계좌이체,전화/휴대폰/인터넷,INVOICE\n';
+  const occurredOn=new Date().toISOString().slice(0,10);
+  const csv='거래일,구분,금액,거래처,적요,결제수단,원본계정,증빙유형\n'+occurredOn+',지출,350000,KT '+suffix+',전화요금,계좌이체,전화/휴대폰/인터넷,INVOICE\n';
   const d=await ok(admin.post(API+'/imports?businessId=1',{multipart:{file:{name:'test-'+suffix+'.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}}}));
   expect(d.preview.rows[0].createdTxnId).toBeNull();expect(d.preview.rows[0].evidenceType).toBe('INVOICE');
   let result=await approve(d);expect(result.result.saved).toBe(1);expect(result.result.verified).toBe(true);
@@ -101,10 +102,10 @@ test('CSV and natural ledger entry preserve evidence, store once, count reviews 
   expect((await other.post(API+'/drafts/'+d.id+'/approve',{data:{planHash:d.planHash}})).status()).toBe(404);
   const duplicate=await ok(admin.post(API+'/imports?businessId=1',{multipart:{file:{name:'copy.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}}}));
   result=await approve(duplicate);expect(result.result.duplicates).toBe(1);expect(result.result.saved).toBe(0);
-  const manual=await draft('LEDGER_ENTRY',{occurredOn:'2099-10-15',direction:'EXPENSE',amount:7123,counterparty:'미분류 검증 '+suffix,description:'검토 필요 거래',evidenceType:'NONE'},null,1);
+  const manual=await draft('LEDGER_ENTRY',{occurredOn,direction:'EXPENSE',amount:7123,counterparty:'미분류 검증 '+suffix,description:'검토 필요 거래',evidenceType:'NONE'},null,1);
   result=await approve(manual);expect(result.result.saved).toBe(1);expect(result.result.review).toBeGreaterThan(0);expect(result.status).toBe('REVIEW_REQUIRED');
   expect((await other.post(API+'/imports?businessId=1',{multipart:{file:{name:'no.csv',mimeType:'text/csv',buffer:Buffer.from(csv)}}})).status()).toBe(403);
-  const overview=await ok(admin.get(API+'/overview?businessId=1'));expect(overview.academy.studentCount).toBeGreaterThan(0);expect(overview.finance.businessId).toBe(1);
+  const overview=await ok(admin.get(API+'/overview?businessId=1'));expect(overview.academy.studentCount).toBeGreaterThan(0);expect(overview.finance.businessId).toBe(1);expect(overview.finance.expense).toBeGreaterThanOrEqual(350000);
 });
 test('natural command and desktop/mobile workbench render, highlight, persist and approve through UI',async({browser})=>{
   const output=path.resolve(__dirname,'../../docs/unified-ai-assistant/screenshots');fs.mkdirSync(output,{recursive:true});

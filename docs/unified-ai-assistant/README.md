@@ -3,6 +3,7 @@
 상태: 로컬 프로토타입. 운영 배포·운영 DB 변경·main 병합 없음. 금융기관 접속·수집기·작업 B 변경 없음.
 
 - 분석 기준: GitHub `main` / PR #851 / `e7247e831c3b82a67e880621d041759067125360` (2026-10-22). fetch 후 GitHub API·최근 병합 SHA·Build Check 성공과 교차 확인했다.
+- 최종 main 동기화: `07d9316a293a30a84e13a09c42957bd64be71bd8` / PR #852. 변경은 읽기 전용 운영 진단 셸 22행이며 feature 브랜치에 병합했다.
 - 작업 브랜치: `feat/unified-ai-assistant`.
 - AcademyCraft 참조/실행 코드: `woori73/academycraft` / `115477f7ea0afa27dd69d9ae12318261c47a5a82`. 해당 저장소 코드는 변경하지 않았다.
 - 실행 화면: 로그인 후 `/dashboard`. 공통 로그인 계정 메뉴에서는 미완료 사용자에게 환영 안내 링크가 나오고, 기존 ADMIN·TUTOR 화면에도 진입 링크가 있다. 로그인한 원래 화면은 유지한다.

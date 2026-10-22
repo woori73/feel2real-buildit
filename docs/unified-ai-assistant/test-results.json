@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-22",
+  "mainBase": "07d9316a293a30a84e13a09c42957bd64be71bd8",
+  "database": "task-local Docker MySQL 8.4.13; f2r_unified_test + ac_unified_test",
+  "junit": {
+    "tests": 78,
+    "failures": 0,
+    "suites": [
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantSecurityTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.631"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AcademyAssistantAdapterTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.096"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantServiceTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.307"
+      },
+      {
+        "name": "Academy Builder 템플릿 계약",
+        "tests": "28",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "7.749"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantDraftTransactionsTest",
+        "tests": "7",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.164"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest",
+        "tests": "13",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "1.727"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyAgentSecurityWebMvcTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "4.424"
+      },
+      {
+        "name": "대시보드 AI 비서(읽기 전용, Muse Spark)",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.379"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantCommandParserTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.015"
+      },
+      {
+        "name": "ADMIN 상단 메뉴 — 노출만 정리하고 기능·URL은 유지",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.005"
+      }
+    ]
+  },
+  "e2e": {
+    "stats": {
+      "startTime": "2026-10-22T02:13:10.824Z",
+      "duration": 22599.6,
+      "expected": 9,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "scenarios": [
+      {
+        "name": "anonymous, student and cross-origin calls cannot use assistant writes",
+        "status": "expected",
+        "durationMs": 293
+      },
+      {
+        "name": "first visit, pause/resume, stale version and completion persist per user",
+        "status": "expected",
+        "durationMs": 302
+      },
+      {
+        "name": "student draft does not write; forged hash, concurrent approval, replay and ownership are safe",
+        "status": "expected",
+        "durationMs": 1390
+      },
+      {
+        "name": "class creation, assignment, updates and stale target checks reuse actual APIs",
+        "status": "expected",
+        "durationMs": 1346
+      },
+      {
+        "name": "attendance and consultation create/message verify persisted records",
+        "status": "expected",
+        "durationMs": 747
+      },
+      {
+        "name": "expiry, cancellation, live permission revocation and unknown outcome never replay writes",
+        "status": "expected",
+        "durationMs": 955
+      },
+      {
+        "name": "CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access",
+        "status": "expected",
+        "durationMs": 1217
+      },
+      {
+        "name": "natural command and desktop/mobile workbench render, highlight, persist and approve through UI",
+        "status": "expected",
+        "durationMs": 9145
+      },
+      {
+        "name": "login surfaces welcome link without moving the current service",
+        "status": "expected",
+        "durationMs": 3777
+      }
+    ]
+  },
+  "javascriptBaseline": {
+    "tests": 855,
+    "pass": 815,
+    "fail": 40,
+    "newFailures": []
+  },
+  "screenshots": [
+    "admin-desktop-draft-1440.png",
+    "admin-desktop-result-1440.png",
+    "admin-390.png",
+    "tutor-1440.png",
+    "tutor-390.png"
+  ]
+}

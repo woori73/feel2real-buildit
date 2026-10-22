@@ -1,6 +1,6 @@
 # 작업 A 검증 결과
 
-검증일: 2026-10-22 UTC. 운영 배포·운영 DB·main 병합·금융기관 접속 없음.
+검증일: 2026-10-22 UTC. [실행 결과 요약 JSON](test-results.json). 운영 배포·운영 DB·main 병합·금융기관 접속 없음.
 
 ## 환경
 
@@ -19,7 +19,7 @@
 | 검사 | 결과 |
 |---|---|
 | `compileJava`, `bootJar` | 통과 |
-| 관련 JUnit 47건 | 실패 0. 아래 실행 필터와 항목 참고 |
+| 관련 JUnit 78건 | 실패 0. 아래 실행 필터와 항목 참고 |
 | 실제 두 앱 + MySQL E2E 9개 시나리오 | 전부 통과, skip/flaky 0 |
 | 공통 로그인 후 환영 링크 | 현재 `/home` 유지, 안내 링크 표시·닫기 통과 |
 | PC/모바일 ADMIN·TUTOR | 화면 JS 오류 0, 가로 넘침 0, 안내 하이라이트·재개·UI 승인 통과 |
@@ -33,8 +33,12 @@ bash gradlew test \
   --tests '*unifiedassistant.*' \
   --tests '*AcademyCraftGatewayTest' \
   --tests '*EasyAgentSecurityWebMvcTest' \
-  --tests '*DashboardAssistantServiceTest' bootJar --max-workers=4
+  --tests '*DashboardAssistantServiceTest' \
+  --tests '*AdminTopnavMenuContractTest' \
+  --tests '*AcademyBuilderTemplateContractTest' bootJar --max-workers=4
 ```
+
+최신 main `07d9316a`를 feature 브랜치에 병합한 뒤 템플릿 회귀를 포함한 78건과 bootJar를 다시 실행해 통과했다. 추가된 진단 셸은 `bash -n`도 통과했다.
 
 신규 테스트는 PR Build Check의 기존 무DB 테스트 목록에도 추가했다. E2E는 별도 AcademyCraft와 전용 DB를 요구하므로 로컬 검증 스위트로 제출한다. 전체 Java 테스트 스위트를 통과했다고 주장하지 않는다.
 
