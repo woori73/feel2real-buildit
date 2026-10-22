@@ -112,7 +112,7 @@ public class StudioService {
         "SELECT user_id,permission FROM studio_members WHERE project_id=?", PROJECT);
   }
 
-  @Transactional
+  @Transactional(rollbackFor = Exception.class)
   public Map<String, Object> upload(AuthenticatedPrincipal p, MultipartFile file)
       throws IOException {
     require(p, true, false);
@@ -130,6 +130,8 @@ public class StudioService {
     if (!Set.of("pdf", "html", "json", "md", "zip", "png", "mp4").contains(ext))
       throw error(400, "지원하지 않는 파일 형식입니다.");
     Path tmp = Files.createTempFile("f2r-studio-", ".upload");
+    String createdKey = null;
+    String createdId = null;
     try {
       MessageDigest digest = digest();
       long count = 0;
@@ -158,6 +160,12 @@ public class StudioService {
       String id = UUID.randomUUID().toString(), key;
       try (InputStream in = Files.newInputStream(tmp)) {
         key = storage.saveRaw(p.userId(), "studio-" + id + "." + ext, in, count);
+        createdKey = key;
+        createdId = id;
+        // Register before any SQL write (and before stream close can fail). Duplicate SHA paths
+        // return above and never register an existing original for deletion.
+        f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage
+            .TransactionalFileDeletion.onRollback(() -> cleanupNewUpload(id, key));
       }
       db.update(
           "INSERT INTO"
@@ -177,9 +185,25 @@ public class StudioService {
           Map.of("id", id, "sha256", sha, "filename", name, "size_bytes", count),
           "duplicate",
           false);
+    } catch (IOException | RuntimeException failure) {
+      // Direct, non-proxied unit calls have no transaction callback. Production uses the hook.
+      if (createdKey != null
+          && !org.springframework.transaction.support.TransactionSynchronizationManager
+              .isSynchronizationActive()) cleanupNewUpload(createdId, createdKey);
+      throw failure;
     } finally {
       Files.deleteIfExists(tmp);
     }
+  }
+
+  private void cleanupNewUpload(String id, String key) {
+    try {
+      if (storage.deleteReported(key, "UNKNOWN")) return;
+    } catch (RuntimeException ignored) {
+      // Cleanup failure must not hide the DB error or prevent other rollback hooks from running.
+    }
+    org.slf4j.LoggerFactory.getLogger(StudioService.class)
+        .warn("Studio new-upload rollback cleanup failed; fileId={}", id);
   }
 
   static MessageDigest digest() {

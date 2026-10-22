@@ -28,7 +28,7 @@ def connect(callback,name):
         q={'client_id':cid,'redirect_uri':callback,'response_type':'code','state':'sdk-state','code_challenge_method':'S256','code_challenge':challenge,'resource':BASE+'/mcp'}
         page=client.get('/mcp/oauth/authorize',params=q,headers={'Cookie':fixture['adminCookie']});page.raise_for_status()
         nonce=re.search(r'name="nonce" value="([^"]+)"',page.text).group(1)
-        form=urlencode({'nonce':nonce})+'&scopes=catalog%3Aread&scopes=studio%3Aread'
+        form=urlencode({'nonce':nonce})+'&scopes=catalog%3Aread&scopes=studio%3Aread&scopes=originals%3Aread&sensitiveAcknowledged=true'
         consent=client.post('/mcp/oauth/authorize',content=form,headers={'Cookie':fixture['adminCookie'],'Origin':BASE,'Content-Type':'application/x-www-form-urlencoded'})
         assert consent.status_code==303,consent.text
         code=parse_qs(urlparse(consent.headers['location']).query)['code'][0]

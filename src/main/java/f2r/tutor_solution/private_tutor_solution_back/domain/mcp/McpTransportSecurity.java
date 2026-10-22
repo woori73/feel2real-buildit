@@ -20,6 +20,11 @@ public class McpTransportSecurity {
       HttpSecurity http,
       McpOAuth oauth,
       McpRateLimit rate,
+      @org.springframework.beans.factory.annotation.Value("${server.forward-headers-strategy:none}")
+          String forwarding,
+      @org.springframework.beans.factory.annotation.Value(
+              "${app.admissions.rate-limit.trusted-proxies:}")
+          String trustedProxies,
       f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller
               .AdmissionsRateLimiter
           addresses)
@@ -45,6 +50,8 @@ public class McpTransportSecurity {
                 res.setHeader("X-Content-Type-Options", "nosniff");
                 try {
                   oauth.enabled();
+                  requireProxyConfiguration(
+                      forwarding, trustedProxies, addresses.invalidTrustedProxyEntries());
                   String origin = req.getHeader("Origin");
                   if (origin != null
                       && !Set.of(
@@ -69,7 +76,7 @@ public class McpTransportSecurity {
                   if (req.getContentLengthLong() > 65536)
                     throw McpOAuth.error(413, "body_too_large");
                   String auth = req.getHeader("Authorization");
-                  String clientAddress = addresses.resolveClientIp(req);
+                  String clientAddress = McpClientAddress.resolve(req, addresses);
                   if ("/mcp".equals(req.getRequestURI()) && auth != null) {
                     try {
                       var identity = oauth.authenticate(auth);
@@ -140,5 +147,12 @@ public class McpTransportSecurity {
             },
             UsernamePasswordAuthenticationFilter.class);
     return http.build();
+  }
+
+  static void requireProxyConfiguration(
+      String forwarding, String trustedProxies, java.util.List<String> invalid) {
+    if ("framework".equalsIgnoreCase(forwarding)
+        && (trustedProxies.isBlank() || !invalid.isEmpty()))
+      throw McpOAuth.error(503, "MCP_TRUSTED_PROXIES_REQUIRED");
   }
 }

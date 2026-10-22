@@ -50,4 +50,41 @@ class McpRedactionTest {
     // given / when / then
     assertEquals("수학 보강", McpRedaction.value("title", "수학 보강"));
   }
+
+  @Test
+  void internationalKoreanMobileAndLandlineNumbersAreMasked() {
+    for (String value :
+        java.util.List.of(
+            "+82-10-1234-5678",
+            "+82 10 1234 5678",
+            "+821012345678",
+            "+82 (0)10-1234-5678",
+            "+82-2-123-4567",
+            "+82-31-1234-5678")) {
+      String masked = McpRedaction.text(value);
+      assertNotEquals(value, masked, value);
+      assertTrue(masked.contains("****"), masked);
+    }
+  }
+
+  @Test
+  void unseparatedAccountAndCardNumbersAreMaskedWithoutChangingNumericAmounts() {
+    assertEquals("******7890", McpRedaction.text("1234567890"));
+    assertEquals("************1111", McpRedaction.text("4111111111111111"));
+    assertEquals("****-****-****-1111", McpRedaction.text("4111-1111-1111-1111"));
+    var json = new tools.jackson.databind.ObjectMapper();
+    var gateway = new McpGateway(null, null, null, null, json, null);
+    var source =
+        json.readTree(
+            "{\"accountNumber\":12345678901,\"cardNumber\":4111111111111111,\"amount\":1234567890,\"accountId\":12345,\"notes\":[\"+821012345678\"]}");
+    tools.jackson.databind.JsonNode masked =
+        org.springframework.test.util.ReflectionTestUtils.invokeMethod(gateway, "redact", source);
+    assertTrue(masked.path("accountNumber").isTextual());
+    assertFalse(masked.path("accountNumber").asText().contains("12345"));
+    assertTrue(masked.path("cardNumber").asText().endsWith("1111"));
+    assertTrue(masked.path("amount").isNumber());
+    assertEquals(1234567890L, masked.path("amount").asLong());
+    assertEquals(12345, masked.path("accountId").asInt());
+    assertFalse(masked.path("notes").get(0).asText().contains("1234"));
+  }
 }

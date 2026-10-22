@@ -4961,3 +4961,9 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - `LEDGER_ACCOUNT`(계정 변경) 초안은 이 비서가 본인의 `LEDGER_IMPORT` 초안으로 만든 가져오기 배치만 대상으로 한다. 금융자료 수집(#853) 등 다른 경로가 만든 승인 전 배치는 403이며 기존 이지장부 화면에서 처리한다(수집 승인 해시·배치 상태가 외부에서 바뀌는 것을 막기 위함).
 
 - `FINANCIAL_FILE` 수집 승인은 기존 서버 승인 기록의 `financial-collector reviewed batch <SHA-256>`과 현재 배치 DTO 해시를 승인 시점과 장부 확정 직전(승인 행 잠금 안) 다시 비교한다. 누락·변경 시 거부하며 승인 전 상태는 유지한다. 일반 수집 CSV의 기존 명시적 승인 흐름은 유지한다.
+
+### MCP 긴급 보완 (2026-10-22)
+
+- OAuth `originals:read`: 서비스 읽기 권한과 별도인 원본 바이너리 제공 권한. 기본 선택 해제. 모든 역할에서 `sensitiveAcknowledged=true`를 사용자 동의 화면에서 확인해야 발급하며 `SENSITIVE_ACK`를 남긴다. 원본 bytes/SHA를 바꾸지 않으므로 민감정보가 마스킹 없이 외부로 제공될 수 있다는 경고를 표시한다. 도구 인자로 권한을 올릴 수 없다. 기존 원본 scope 없는 grant의 바이너리 조회는 403 `originals_scope_required`; 텍스트·요약 조회는 기존 범위를 유지한다. 원래 서비스의 역할·학원·사업체 권한도 항상 검사한다.
+- MCP 주소 판별은 framework 전달 헤더 wrapper를 벗긴 원래 socket peer 및 원래 XFF를 기존 신뢰 프록시 resolver로 검증한다. `server.forward-headers-strategy=framework`에서 신뢰 CIDR 누락·잘못된 CIDR은 MCP 요청에 503 `MCP_TRUSTED_PROXIES_REQUIRED`. 운영 CIDR·ALB 보안그룹은 이번 작업에서 조회·변경하지 않았다.
+- JSON/텍스트의 +82 휴대·지역전화, 연속 10~19자리 번호, 분리된 카드번호, 숫자형 계좌/카드 필드를 마스킹한다. 숫자형 금액·일반 ID는 유지한다. 자유 텍스트의 긴 숫자는 계좌와 주문번호 등을 구분할 수 없어 보수적으로 마스킹하며 완전한 개인정보 탐지로 간주하지 않는다.

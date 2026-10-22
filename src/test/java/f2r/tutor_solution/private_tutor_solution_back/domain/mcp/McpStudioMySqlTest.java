@@ -929,6 +929,73 @@ class McpStudioMySqlTest {
   }
 
   @Test
+  @Order(19)
+  void
+      givenSensitiveBinary_whenNoExplicitOriginalConsent_thenDeniedButOptInPreservesBytesAndRights()
+          throws Exception {
+    byte[] raw =
+        "%PDF-1.4 SYNTHETIC +821012345678 account 1234567890".getBytes(StandardCharsets.UTF_8);
+    var uploaded =
+        studio.upload(
+            editor,
+            new MockMultipartFile("file", "sensitive-synthetic.pdf", "application/pdf", raw));
+    String id = (String) ((Map<?, ?>) uploaded.get("file")).get("id");
+    var args =
+        Map.<String, Object>of(
+            "endpointId", "GET /api/studio/files/{id}/content", "pathParams", Map.of("id", id));
+    String defaultToken =
+        connect("https://claude.ai/api/mcp/auth_callback", editor, Set.of("studio:read"));
+    var denied = rpc(defaultToken, "read_studio", args);
+    assertTrue(denied.path("isError").asBoolean(), denied.toString());
+    assertTrue(denied.toString().contains("originals_scope_required"));
+    assertFalse(denied.toString().contains("base64"));
+
+    var client =
+        oauth.register(Map.of("redirect_uris", List.of("https://claude.ai/api/mcp/auth_callback")));
+    var q =
+        Map.of(
+            "client_id",
+            (String) client.get("client_id"),
+            "redirect_uri",
+            "https://claude.ai/api/mcp/auth_callback",
+            "response_type",
+            "code",
+            "state",
+            "binary-warning",
+            "code_challenge_method",
+            "S256",
+            "code_challenge",
+            McpOAuth.challenge("x".repeat(43)),
+            "resource",
+            base + "/mcp");
+    String nonce = oauth.pending(editor, q);
+    assertThrows(
+        Exception.class,
+        () -> oauth.authorize(editor, nonce, Set.of("studio:read", "originals:read"), false));
+    String token =
+        connect(
+            "https://claude.ai/api/mcp/auth_callback",
+            editor,
+            Set.of("studio:read", "originals:read"));
+    var allowed = rpc(token, "read_studio", args);
+    assertFalse(allowed.path("isError").asBoolean(), allowed.toString());
+    var payload = json.readTree(allowed.path("content").get(0).path("text").asText());
+    assertArrayEquals(raw, Base64.getDecoder().decode(payload.path("base64").asText()));
+    String foreign =
+        connect(
+            "https://claude.ai/api/mcp/auth_callback",
+            stranger,
+            Set.of("studio:read", "originals:read"));
+    assertTrue(rpc(foreign, "read_studio", args).path("isError").asBoolean());
+    assertTrue(
+        db.queryForObject(
+                "SELECT COUNT(*) FROM mcp_audit WHERE user_id=? AND outcome='SENSITIVE_ACK'",
+                Long.class,
+                editor.userId())
+            > 0);
+  }
+
+  @Test
   @Order(99)
   void givenSameProxyAndExhaustedUser_whenAnotherUserCalls_thenNoSharedUserQuota()
       throws Exception {

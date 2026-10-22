@@ -121,6 +121,7 @@ public class McpOAuth {
   public List<String> scopes() {
     var all = new ArrayList<>(SCOPES);
     all.add("offline_access");
+    all.add("originals:read");
     return all;
   }
 
@@ -228,17 +229,18 @@ public class McpOAuth {
     enabled();
     if (p == null) throw error(401, "login_required");
     boolean sensitive =
-        "ADMIN".equals(p.role())
-            && selected.stream()
-                .anyMatch(
-                    s ->
-                        !Set.of(
-                                "catalog:read",
-                                "studio:read",
-                                "chart:read",
-                                "grammar:read",
-                                "offline_access")
-                            .contains(s));
+        selected.contains("originals:read")
+            || "ADMIN".equals(p.role())
+                && selected.stream()
+                    .anyMatch(
+                        s ->
+                            !Set.of(
+                                    "catalog:read",
+                                    "studio:read",
+                                    "chart:read",
+                                    "grammar:read",
+                                    "offline_access")
+                                .contains(s));
     if (sensitive && !sensitiveAcknowledged)
       throw error(400, "sensitive_data_acknowledgement_required");
     var rows =
