@@ -4873,7 +4873,10 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | 경로 | 메서드 | 계약 |
 |---|---|---|
 | `/api/studio/project` | GET / POST | 현황 / ADMIN 개설, 14화·EP01 68컷 업로드 대기 구조 |
-| `/api/studio/revisions` | GET / POST | episode·kind·q 검색 / parentId 기반 append-only 버전 |
+| `/api/studio/revisions` | GET / POST | episode·kind·q·offset·limit(1~200) 검색 / parentId 기반 append-only 버전 |
+| `/api/studio/cuts?episode=1` | GET | 전체 컷별 최신 head. 버전 목록 200건 제한과 분리 |
+| `/api/studio/revisions/{id}/restore` | POST | EDITOR/APPROVER, `{expectedHead,label}` CAS 검사 후 이전 원문·파일을 참조하는 새 USER_EDIT 버전. 기존 승인 포인터·원본 불변 |
+| `/api/studio/imports/ep01` | POST | `{fileId}` 보관한 JSON/ZIP source. 1~68컷 필수·중복/누락/잘못된 ZIP 거부, 전체 검증 후 한 DB 트랜잭션으로 새 버전 68개. 자동 승인 없음 |
 | `/api/studio/revisions/{id}` | GET | 권한 있는 버전 원문·승인 포인터 |
 | `/api/studio/revisions/{id}/review` | POST | APPROVER의 APPROVE/REJECT와 메모, AI 자동 승인 없음 |
 | `/api/studio/compare?left=&right=` | GET | 두 실제 버전 비교 |
@@ -4926,3 +4929,12 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 통합 대화의 `buildit.unified-assistant.model-analysis-enabled` 기본값은 false이며 local에서만 true다. 기존 Muse Spark 전송 계층만 재사용한다. 모델 출력은 업무·필드 allowlist/타입/명시 ID 검증 후에도 승인 권한이 없으며, 실행은 기존 초안 승인 경로만 사용한다. 모델 미연결·잘못된 응답은 규칙 분석으로 처리했음을 알린다. 대화 입력 문장은 현재 브라우저에서만 표시하며 새로고침 시 현재 권한 범위의 서버 초안·결과 최신 30개를 복원한다.
 
 `GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.
+
+### 독립 검수 반영: MCP 외부 제공 경계
+
+- ChatGPT redirect는 관리 화면의 `https://chatgpt.com/connector/oauth/{callback_id}` 전체를 `app.mcp.redirect-uris`에 정확히 등록한다. 안정형 `/connector_platform_oauth_redirect`는 해당 공식 조건/관리 화면 URI인 경우에만 명시 설정한다. 기본은 Claude hosted callback만이며 과거 잘못된 callback·임의 URI·wildcard는 거부한다. DCR·PKCE·resource 검증은 유지한다.
+- ADMIN의 studio/catalog/chart/grammar/offline_access 외 scope 동의는 `sensitiveAcknowledged=true`가 추가로 필요하다. 동의 화면에 외부 민감정보 제공 경고를 표시하고 SENSITIVE_ACK 감사 기록을 남긴다. 기존 scope나 계정 권한을 확대하지 않는다.
+- `read_easy`는 `GET /api/mcp/finance/summary?businessId=&month=`만 실행한다. 현재 DB 역할과 기존 학원/사업체 링크 검사 후 월 수입·지출·수지·미수·건수만 반환한다. 원문·거래처·증빙·계좌·학생 목록·collector preview/status/raw는 제외한다. ADMIN도 정책을 우회하지 않는다.
+- `read_admissions`는 본인 상담 이력 API만 제공한다. 관리자 지식/원자료/통계는 제외했다. 상담 읽음 상태 변경·설정 자동 생성·외부 위키 실시간 호출이 있는 GET 8개를 MCP 실행 정책에서 제외했다. 기존 서비스의 원래 API 동작은 유지한다.
+- 유효 MCP 요청은 프록시 IP 대신 인증된 사용자 ID로 호출 한도를 검사한다. 익명 경로는 기존 AdmissionsRateLimiter의 신뢰 프록시 주소 판별을 재사용(`app.admissions.rate-limit.trusted-proxies`), 비신뢰 XFF는 무시한다. 사용자당 60/분, 모든 JSON-RPC 전체 최대 8개 동시(`app.mcp.max-concurrent-calls`, JVM별), 내부 읽기 2개. 상한 시 429/Retry-After이며 DB 기반 분당 한도는 replica에도 공유된다.
+- #853 수집·장부 확정과 #854 초안 승인 POST를 MCP에 노출하지 않는다. 자연어 승인·MCP Bearer·GET 전용 위임 JWT로 장부 확정을 호출할 수 없다. 실제 제품 계정 연결은 별도 사용자 로그인/동의 시험 전까지 미검증이다.

@@ -8,10 +8,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class McpConcurrency {
   private final Semaphore permits;
+
   public McpConcurrency(@Value("${app.mcp.max-concurrent-calls:8}") int maximum) {
-    if(maximum<1||maximum>64)throw new IllegalArgumentException("MCP concurrency must be 1..64");
-    permits=new Semaphore(maximum,true);
+    if (maximum < 1 || maximum > 64)
+      throw new IllegalArgumentException("MCP concurrency must be 1..64");
+    permits = new Semaphore(maximum, true);
   }
-  public boolean tryAcquire(){return permits.tryAcquire();}
-  public void release(){permits.release();}
+
+  public boolean tryAcquire() {
+    return permits.tryAcquire();
+  }
+
+  public void release() {
+    permits.release();
+  }
 }

@@ -43,9 +43,18 @@ import tools.jackson.databind.ObjectMapper;
 class McpStudioMySqlTest {
   @Autowired StudioService studio;
   @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioBulkImport bulk;
-  @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository academies;
-  @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository businesses;
-  @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService access;
+
+  @Autowired
+  f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository
+      academies;
+
+  @Autowired
+  f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository
+      businesses;
+
+  @Autowired
+  f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService access;
+
   @Autowired McpOAuth oauth;
   @Autowired McpCatalog catalog;
   @Autowired McpGateway gateway;
@@ -213,7 +222,7 @@ class McpStudioMySqlTest {
             "resource",
             base + "/mcp");
     String nonce = oauth.pending(p, q);
-    String redirect = oauth.authorize(p, nonce, scopes,true);
+    String redirect = oauth.authorize(p, nonce, scopes, true);
     String code = redirect.substring(redirect.indexOf("code=") + 5, redirect.indexOf("&state="));
     var tokenArgs =
         Map.of(
@@ -573,105 +582,330 @@ class McpStudioMySqlTest {
     assertThrows(Exception.class, () -> limit.check("test-limit", 2));
   }
 
-  @Test @Order(10)
+  @Test
+  @Order(10)
   void givenOldFileVersion_whenRestored_thenAppendsAndPreservesOriginalApproval() throws Exception {
-    var before=studio.revision(editor,originalId);byte[] original=studio.bytes(editor,fileId);
-    var restored=studio.restore(editor,originalId,proposalId,"restored-original");
-    assertNotEquals(originalId,restored.get("id"));assertEquals("USER_EDIT",restored.get("origin"));
-    assertEquals(originalId,restored.get("approved_id"));assertEquals(fileId,restored.get("file_id"));
-    var after=studio.revision(editor,originalId);for(String key:List.of("content","file_id","origin","parent_id","created_at"))assertEquals(before.get(key),after.get(key));
-    assertArrayEquals(original,studio.bytes(editor,fileId));
-    assertThrows(Exception.class,()->studio.restore(viewer,originalId,(String)restored.get("id"),"denied"));
-    assertThrows(Exception.class,()->studio.restore(editor,originalId,proposalId,"stale"));
-    assertEquals(1L,db.queryForObject("SELECT COUNT(*) FROM studio_events WHERE action='RESTORE' AND revision_id=?",Long.class,restored.get("id")));
+    var before = studio.revision(editor, originalId);
+    byte[] original = studio.bytes(editor, fileId);
+    var restored = studio.restore(editor, originalId, proposalId, "restored-original");
+    assertNotEquals(originalId, restored.get("id"));
+    assertEquals("USER_EDIT", restored.get("origin"));
+    assertEquals(originalId, restored.get("approved_id"));
+    assertEquals(fileId, restored.get("file_id"));
+    var after = studio.revision(editor, originalId);
+    for (String key : List.of("content", "file_id", "origin", "parent_id", "created_at"))
+      assertEquals(before.get(key), after.get(key));
+    assertArrayEquals(original, studio.bytes(editor, fileId));
+    assertThrows(
+        Exception.class,
+        () -> studio.restore(viewer, originalId, (String) restored.get("id"), "denied"));
+    assertThrows(Exception.class, () -> studio.restore(editor, originalId, proposalId, "stale"));
+    assertEquals(
+        1L,
+        db.queryForObject(
+            "SELECT COUNT(*) FROM studio_events WHERE action='RESTORE' AND revision_id=?",
+            Long.class,
+            restored.get("id")));
   }
 
   byte[] manifest(String marker) {
-    var cuts=new ArrayList<Object>();for(int i=1;i<=68;i++)cuts.add(Map.of("cutNumber",i,"title","SYNTHETIC "+marker+" "+i,"content","실제 EP01 원작이 아닌 격리 시험용 "+i,"dialogue","합성 대사 "+i));
-    return json.writeValueAsBytes(Map.of("episode",1,"cuts",cuts));
-  }
-  @Test @Order(11)
-  void given68CutJsonAndMoreThan200History_whenImported_thenNoCutsDisappearAndNoAutoApproval() throws Exception {
-    var upload=studio.upload(editor,new MockMultipartFile("file","synthetic-68.json","application/json",manifest("JSON")));
-    String source=(String)((Map<?,?>)upload.get("file")).get("id");
-    var imported=(Map<?,?>)bulk.importEp01(editor,source);assertEquals(68,imported.get("registered"));
-    var cuts=studio.cuts(editor,1);assertEquals(68,cuts.size());assertTrue(cuts.stream().allMatch(c->c.get("approved_id")==null));
-    var first=cuts.getFirst();String parent=(String)first.get("id");
-    for(int i=0;i<205;i++)parent=(String)studio.save(editor,new StudioService.Revision((String)first.get("item_key"),parent,"history-"+i,"STORYBOARD",1,1,"USER_EDIT","버전 시험", "합성", "","","REVIEW",source)).get("id");
-    assertEquals(200,studio.revisions(editor,1,"STORYBOARD",null).size());
-    assertTrue(studio.revisions(editor,1,"STORYBOARD",null,200,200).size()>0);assertEquals(68,studio.cuts(editor,1).size());
-    assertThrows(Exception.class,()->bulk.importEp01(editor,source));assertEquals(68,studio.cuts(editor,1).size());
-    assertArrayEquals(manifest("JSON"),studio.bytes(editor,source));
-  }
-  @Test @Order(12)
-  void given68CutZipAndTraversal_whenImported_thenVersionsAppendAndUnsafeZipDenied() throws Exception {
-    var buffer=new java.io.ByteArrayOutputStream();
-    try(var zip=new java.util.zip.ZipOutputStream(buffer)){zip.putNextEntry(new java.util.zip.ZipEntry("manifest.json"));zip.write(manifest("ZIP"));zip.closeEntry();}
-    var upload=studio.upload(editor,new MockMultipartFile("file","synthetic-68.zip","application/zip",buffer.toByteArray()));
-    String source=(String)((Map<?,?>)upload.get("file")).get("id");assertEquals(68,((Map<?,?>)bulk.importEp01(editor,source)).get("registered"));
-    buffer.reset();try(var zip=new java.util.zip.ZipOutputStream(buffer)){zip.putNextEntry(new java.util.zip.ZipEntry("../escape.md"));zip.write("unsafe".getBytes());zip.closeEntry();}
-    var unsafe=studio.upload(editor,new MockMultipartFile("file","traversal.zip","application/zip",buffer.toByteArray()));
-    long count=db.queryForObject("SELECT COUNT(*) FROM studio_revisions",Long.class);
-    assertThrows(Exception.class,()->bulk.importEp01(editor,(String)((Map<?,?>)unsafe.get("file")).get("id")));
-    assertEquals(count,db.queryForObject("SELECT COUNT(*) FROM studio_revisions",Long.class));
-  }
-  @Test @Order(13)
-  void givenOfficialCallbackAndSpoofs_whenRegistering_thenOnlyExactConfiguredRedirectAllowed() {
-    for(String uri:List.of("https://chatgpt.com/connector_platform/oauth/callback","https://chat.openai.com/connector_platform/oauth/callback","https://chatgpt.com.evil.example/connector/oauth/isolated-test-callback","https://chatgpt.com/connector/oauth/unregistered","https://chatgpt.com/connector/oauth/isolated-test-callback?next=evil","https://chatgpt.com/connector/oauth/isolated-test-callback#fragment","http://chatgpt.com/connector/oauth/isolated-test-callback"))
-      assertThrows(Exception.class,()->oauth.register(Map.of("redirect_uris",List.of(uri))));
-    assertNotNull(oauth.register(Map.of("redirect_uris",List.of("https://chatgpt.com/connector/oauth/isolated-test-callback"))));
-  }
-  @Test @Order(14)
-  void givenProxyAndUsers_whenLimited_thenIndependentUserBudgetsAndBoundedServerCalls() {
-    var rates=new McpRateLimit(db);for(int i=0;i<60;i++)rates.check("user-proxy-test:A",60);
-    assertThrows(Exception.class,()->rates.check("user-proxy-test:A",60));assertDoesNotThrow(()->rates.check("user-proxy-test:B",60));
-    var resolver=new f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsRateLimiter(10,60,100,"10.0.0.0/8",500);
-    var request=new org.springframework.mock.web.MockHttpServletRequest();request.setRemoteAddr("10.1.1.1");request.addHeader("X-Forwarded-For","203.0.113.99,198.51.100.2");
-    assertEquals("198.51.100.2",resolver.resolveClientIp(request));request.setRemoteAddr("198.51.100.3");assertEquals("198.51.100.3",resolver.resolveClientIp(request));
-    var calls=new McpConcurrency(1);assertTrue(calls.tryAcquire());assertFalse(calls.tryAcquire());calls.release();assertTrue(calls.tryAcquire());calls.release();
-  }
-  @Test @Order(15)
-  void givenFinanceScope_whenReading_thenOnlyOwnedBusinessSummaryAndNoRawOrCommitTools() throws Exception {
-    var owner=users.findById(editor.userId()).orElseThrow();
-    var academy=academies.findByTutor_UserId(editor.userId()).orElseGet(()->academies.save(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy.builder().tutor(owner).slug("studio-finance-test").name("합성 학원").logoStorageKey("test").intro("synthetic").build()));
-    var biz=businesses.findAll().stream().filter(b->"mcp-owned-test".equals(b.getCode())).findFirst().orElseGet(()->businesses.save(f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness.builder().code("mcp-owned-test").name("합성 사업체").active(true).build()));
-    access.link(academy.getAcademyId(),biz.getBusinessId());
-    String token=connect("https://claude.ai/api/mcp/auth_callback",editor,Set.of("easy:read"));
-    var r=rpc(token,"read_easy",Map.of("endpointId","GET /api/mcp/finance/summary","query",Map.of("businessId",biz.getBusinessId().toString())));
-    assertFalse(r.path("isError").asBoolean(),r.toString());String value=r.path("content").get(0).path("text").asText();
-    assertFalse(value.contains("recentTransactions"));assertFalse(value.contains("overdueStudents"));assertFalse(value.contains("rawJson"));
-    String foreign=connect("https://claude.ai/api/mcp/auth_callback",stranger,Set.of("easy:read"));
-    assertTrue(rpc(foreign,"read_easy",Map.of("endpointId","GET /api/mcp/finance/summary","query",Map.of("businessId",biz.getBusinessId().toString()))).path("isError").asBoolean());
-    for(String endpoint:List.of("GET /api/admin/easy/transactions","GET /api/tutor/easy/imports/{batchId}","POST /api/dashboard/assistant/v1/drafts/x/approve","POST /api/admin/easy/financial-collector/commit")) assertThrows(Exception.class,()->catalog.policy(endpoint));
+    var cuts = new ArrayList<Object>();
+    for (int i = 1; i <= 68; i++)
+      cuts.add(
+          Map.of(
+              "cutNumber",
+              i,
+              "title",
+              "SYNTHETIC " + marker + " " + i,
+              "content",
+              "실제 EP01 원작이 아닌 격리 시험용 " + i,
+              "dialogue",
+              "합성 대사 " + i));
+    return json.writeValueAsBytes(Map.of("episode", 1, "cuts", cuts));
   }
 
-  @Test @Order(16)
+  @Test
+  @Order(11)
+  void given68CutJsonAndMoreThan200History_whenImported_thenNoCutsDisappearAndNoAutoApproval()
+      throws Exception {
+    var upload =
+        studio.upload(
+            editor,
+            new MockMultipartFile(
+                "file", "synthetic-68.json", "application/json", manifest("JSON")));
+    String source = (String) ((Map<?, ?>) upload.get("file")).get("id");
+    var imported = (Map<?, ?>) bulk.importEp01(editor, source);
+    assertEquals(68, imported.get("registered"));
+    var cuts = studio.cuts(editor, 1);
+    assertEquals(68, cuts.size());
+    assertTrue(cuts.stream().allMatch(c -> c.get("approved_id") == null));
+    var first = cuts.getFirst();
+    String parent = (String) first.get("id");
+    for (int i = 0; i < 205; i++)
+      parent =
+          (String)
+              studio
+                  .save(
+                      editor,
+                      new StudioService.Revision(
+                          (String) first.get("item_key"),
+                          parent,
+                          "history-" + i,
+                          "STORYBOARD",
+                          1,
+                          1,
+                          "USER_EDIT",
+                          "버전 시험",
+                          "합성",
+                          "",
+                          "",
+                          "REVIEW",
+                          source))
+                  .get("id");
+    assertEquals(200, studio.revisions(editor, 1, "STORYBOARD", null).size());
+    assertTrue(studio.revisions(editor, 1, "STORYBOARD", null, 200, 200).size() > 0);
+    assertEquals(68, studio.cuts(editor, 1).size());
+    assertThrows(Exception.class, () -> bulk.importEp01(editor, source));
+    assertEquals(68, studio.cuts(editor, 1).size());
+    assertArrayEquals(manifest("JSON"), studio.bytes(editor, source));
+  }
+
+  @Test
+  @Order(12)
+  void given68CutZipAndTraversal_whenImported_thenVersionsAppendAndUnsafeZipDenied()
+      throws Exception {
+    var buffer = new java.io.ByteArrayOutputStream();
+    var zipManifest = (tools.jackson.databind.node.ObjectNode) json.readTree(manifest("ZIP"));
+    ((tools.jackson.databind.node.ObjectNode) zipManifest.path("cuts").get(0))
+        .put("file", "assets/cut01.md");
+    byte[] asset = "SYNTHETIC ZIP ASSET".getBytes(StandardCharsets.UTF_8);
+    try (var zip = new java.util.zip.ZipOutputStream(buffer)) {
+      zip.putNextEntry(new java.util.zip.ZipEntry("manifest.json"));
+      zip.write(json.writeValueAsBytes(zipManifest));
+      zip.closeEntry();
+      zip.putNextEntry(new java.util.zip.ZipEntry("assets/cut01.md"));
+      zip.write(asset);
+      zip.closeEntry();
+    }
+    var upload =
+        studio.upload(
+            editor,
+            new MockMultipartFile(
+                "file", "synthetic-68.zip", "application/zip", buffer.toByteArray()));
+    String source = (String) ((Map<?, ?>) upload.get("file")).get("id");
+    assertEquals(68, ((Map<?, ?>) bulk.importEp01(editor, source)).get("registered"));
+    assertArrayEquals(
+        asset, studio.bytes(editor, (String) studio.cuts(editor, 1).getFirst().get("file_id")));
+    assertArrayEquals(buffer.toByteArray(), studio.bytes(editor, source));
+    buffer.reset();
+    try (var zip = new java.util.zip.ZipOutputStream(buffer)) {
+      zip.putNextEntry(new java.util.zip.ZipEntry("../escape.md"));
+      zip.write("unsafe".getBytes());
+      zip.closeEntry();
+    }
+    var unsafe =
+        studio.upload(
+            editor,
+            new MockMultipartFile(
+                "file", "traversal.zip", "application/zip", buffer.toByteArray()));
+    long count = db.queryForObject("SELECT COUNT(*) FROM studio_revisions", Long.class);
+    assertThrows(
+        Exception.class,
+        () -> bulk.importEp01(editor, (String) ((Map<?, ?>) unsafe.get("file")).get("id")));
+    assertEquals(count, db.queryForObject("SELECT COUNT(*) FROM studio_revisions", Long.class));
+  }
+
+  @Test
+  @Order(13)
+  void givenOfficialCallbackAndSpoofs_whenRegistering_thenOnlyExactConfiguredRedirectAllowed() {
+    for (String uri :
+        List.of(
+            "https://chatgpt.com/connector_platform/oauth/callback",
+            "https://chat.openai.com/connector_platform/oauth/callback",
+            "https://chatgpt.com.evil.example/connector/oauth/isolated-test-callback",
+            "https://chatgpt.com/connector/oauth/unregistered",
+            "https://chatgpt.com/connector/oauth/isolated-test-callback?next=evil",
+            "https://chatgpt.com/connector/oauth/isolated-test-callback#fragment",
+            "http://chatgpt.com/connector/oauth/isolated-test-callback"))
+      assertThrows(Exception.class, () -> oauth.register(Map.of("redirect_uris", List.of(uri))));
+    assertNotNull(
+        oauth.register(
+            Map.of(
+                "redirect_uris",
+                List.of("https://chatgpt.com/connector/oauth/isolated-test-callback"))));
+  }
+
+  @Test
+  @Order(14)
+  void givenProxyAndUsers_whenLimited_thenIndependentUserBudgetsAndBoundedServerCalls() {
+    var rates = new McpRateLimit(db);
+    for (int i = 0; i < 60; i++) rates.check("user-proxy-test:A", 60);
+    assertThrows(Exception.class, () -> rates.check("user-proxy-test:A", 60));
+    assertDoesNotThrow(() -> rates.check("user-proxy-test:B", 60));
+    var resolver =
+        new f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller
+            .AdmissionsRateLimiter(10, 60, 100, "10.0.0.0/8", 500);
+    var request = new org.springframework.mock.web.MockHttpServletRequest();
+    request.setRemoteAddr("10.1.1.1");
+    request.addHeader("X-Forwarded-For", "203.0.113.99,198.51.100.2");
+    assertEquals("198.51.100.2", resolver.resolveClientIp(request));
+    request.setRemoteAddr("198.51.100.3");
+    assertEquals("198.51.100.3", resolver.resolveClientIp(request));
+    var calls = new McpConcurrency(1);
+    assertTrue(calls.tryAcquire());
+    assertFalse(calls.tryAcquire());
+    calls.release();
+    assertTrue(calls.tryAcquire());
+    calls.release();
+  }
+
+  @Test
+  @Order(15)
+  void givenFinanceScope_whenReading_thenOnlyOwnedBusinessSummaryAndNoRawOrCommitTools()
+      throws Exception {
+    var owner = users.findById(editor.userId()).orElseThrow();
+    var academy =
+        academies
+            .findByTutor_UserId(editor.userId())
+            .orElseGet(
+                () ->
+                    academies.save(
+                        f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy
+                            .builder()
+                            .tutor(owner)
+                            .slug("studio-finance-test")
+                            .name("합성 학원")
+                            .logoStorageKey("test")
+                            .intro("synthetic")
+                            .build()));
+    var biz =
+        businesses.findAll().stream()
+            .filter(b -> "mcp-owned-test".equals(b.getCode()))
+            .findFirst()
+            .orElseGet(
+                () ->
+                    businesses.save(
+                        f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity
+                            .EasyBusiness.builder()
+                            .code("mcp-owned-test")
+                            .name("합성 사업체")
+                            .active(true)
+                            .build()));
+    access.link(academy.getAcademyId(), biz.getBusinessId());
+    String token = connect("https://claude.ai/api/mcp/auth_callback", editor, Set.of("easy:read"));
+    var r =
+        rpc(
+            token,
+            "read_easy",
+            Map.of(
+                "endpointId",
+                "GET /api/mcp/finance/summary",
+                "query",
+                Map.of("businessId", biz.getBusinessId().toString())));
+    assertFalse(r.path("isError").asBoolean(), r.toString());
+    String value = r.path("content").get(0).path("text").asText();
+    assertFalse(value.contains("recentTransactions"));
+    assertFalse(value.contains("overdueStudents"));
+    assertFalse(value.contains("rawJson"));
+    String foreign =
+        connect("https://claude.ai/api/mcp/auth_callback", stranger, Set.of("easy:read"));
+    assertTrue(
+        rpc(
+                foreign,
+                "read_easy",
+                Map.of(
+                    "endpointId",
+                    "GET /api/mcp/finance/summary",
+                    "query",
+                    Map.of("businessId", biz.getBusinessId().toString())))
+            .path("isError")
+            .asBoolean());
+    for (String endpoint :
+        List.of(
+            "GET /api/admin/easy/transactions",
+            "GET /api/tutor/easy/imports/{batchId}",
+            "POST /api/dashboard/assistant/v1/drafts/x/approve",
+            "POST /api/admin/easy/financial-collector/commit"))
+      assertThrows(Exception.class, () -> catalog.policy(endpoint));
+  }
+
+  @Test
+  @Order(16)
   void givenAdminSensitiveScopes_whenNoSeparateAcknowledgement_thenDenied() {
-    var client=oauth.register(Map.of("redirect_uris",List.of("https://claude.ai/api/mcp/auth_callback")));
-    var q=Map.of("client_id",(String)client.get("client_id"),"redirect_uri","https://claude.ai/api/mcp/auth_callback","response_type","code","state","sensitive-test","code_challenge_method","S256","code_challenge",McpOAuth.challenge("z".repeat(43)),"resource",base+"/mcp","scope","easy:read");
-    String nonce=oauth.pending(admin,q);
-    assertThrows(Exception.class,()->oauth.authorize(admin,nonce,Set.of("easy:read")));
-    assertNotNull(oauth.authorize(admin,nonce,Set.of("easy:read"),true));
-    assertTrue(db.queryForObject("SELECT COUNT(*) FROM mcp_audit WHERE tool='oauth_consent' AND outcome='SENSITIVE_ACK'",Long.class)>0);
+    var client =
+        oauth.register(Map.of("redirect_uris", List.of("https://claude.ai/api/mcp/auth_callback")));
+    var q =
+        Map.of(
+            "client_id",
+            (String) client.get("client_id"),
+            "redirect_uri",
+            "https://claude.ai/api/mcp/auth_callback",
+            "response_type",
+            "code",
+            "state",
+            "sensitive-test",
+            "code_challenge_method",
+            "S256",
+            "code_challenge",
+            McpOAuth.challenge("z".repeat(43)),
+            "resource",
+            base + "/mcp",
+            "scope",
+            "easy:read");
+    String nonce = oauth.pending(admin, q);
+    assertThrows(Exception.class, () -> oauth.authorize(admin, nonce, Set.of("easy:read")));
+    assertNotNull(oauth.authorize(admin, nonce, Set.of("easy:read"), true));
+    assertTrue(
+        db.queryForObject(
+                "SELECT COUNT(*) FROM mcp_audit WHERE tool='oauth_consent' AND"
+                    + " outcome='SENSITIVE_ACK'",
+                Long.class)
+            > 0);
   }
-  @Test @Order(17)
-  void givenAllServerPermitsHeld_whenCatalogRequested_then429AndRecoversAfterRelease() throws Exception {
-    String token=connect("https://claude.ai/api/mcp/auth_callback",admin,Set.of("catalog:read"));int held=0;
+
+  @Test
+  @Order(17)
+  void givenAllServerPermitsHeld_whenCatalogRequested_then429AndRecoversAfterRelease()
+      throws Exception {
+    String token =
+        connect("https://claude.ai/api/mcp/auth_callback", admin, Set.of("catalog:read"));
+    int held = 0;
     try {
-      while(concurrency.tryAcquire())held++;
-      var response=post("/mcp","{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}","application/json",token);
-      assertEquals(429,response.statusCode());assertTrue(response.body().contains("server_concurrency_limit"));
-    }finally{for(int i=0;i<held;i++)concurrency.release();}
-    assertEquals(200,post("/mcp","{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}","application/json",token).statusCode());
+      while (concurrency.tryAcquire()) held++;
+      var response =
+          post(
+              "/mcp",
+              "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}",
+              "application/json",
+              token);
+      assertEquals(429, response.statusCode());
+      assertTrue(response.body().contains("server_concurrency_limit"));
+    } finally {
+      for (int i = 0; i < held; i++) concurrency.release();
+    }
+    assertEquals(
+        200,
+        post(
+                "/mcp",
+                "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}",
+                "application/json",
+                token)
+            .statusCode());
   }
-  @Test @Order(99)
-  void givenSameProxyAndExhaustedUser_whenAnotherUserCalls_thenNoSharedUserQuota() throws Exception {
-    String a=connect("https://claude.ai/api/mcp/auth_callback",editor,Set.of("studio:read"));
-    String b=connect("https://claude.ai/api/mcp/auth_callback",stranger,Set.of("studio:read"));
-    db.update("DELETE FROM mcp_rate_limits WHERE bucket_key=?",McpOAuth.hash("user:"+editor.userId()));
-    var rates=new McpRateLimit(db);for(int i=0;i<60;i++)rates.check("user:"+editor.userId(),60);
-    String ping="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}";
-    assertEquals(429,post("/mcp",ping,"application/json",a).statusCode());assertEquals(200,post("/mcp",ping,"application/json",b).statusCode());
+
+  @Test
+  @Order(99)
+  void givenSameProxyAndExhaustedUser_whenAnotherUserCalls_thenNoSharedUserQuota()
+      throws Exception {
+    String a = connect("https://claude.ai/api/mcp/auth_callback", editor, Set.of("studio:read"));
+    String b = connect("https://claude.ai/api/mcp/auth_callback", stranger, Set.of("studio:read"));
+    db.update(
+        "DELETE FROM mcp_rate_limits WHERE bucket_key=?", McpOAuth.hash("user:" + editor.userId()));
+    var rates = new McpRateLimit(db);
+    for (int i = 0; i < 60; i++) rates.check("user:" + editor.userId(), 60);
+    String ping = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}";
+    assertEquals(429, post("/mcp", ping, "application/json", a).statusCode());
+    assertEquals(200, post("/mcp", ping, "application/json", b).statusCode());
   }
 
   @Test

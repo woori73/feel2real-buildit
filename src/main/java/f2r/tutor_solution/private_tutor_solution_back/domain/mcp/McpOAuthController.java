@@ -114,7 +114,7 @@ public class McpOAuthController {
       @AuthenticationPrincipal AuthenticatedPrincipal p,
       @RequestParam String nonce,
       @RequestParam Set<String> scopes,
-      @RequestParam(defaultValue="false") boolean sensitiveAcknowledged,
+      @RequestParam(defaultValue = "false") boolean sensitiveAcknowledged,
       HttpServletRequest req) {
     sameOrigin(req);
     return ResponseEntity.status(303)

@@ -37,8 +37,9 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
     await page.waitForFunction(() =>
       document.getElementById("project-info").textContent.includes("14화"),
     );
+    await page.waitForFunction(() => document.querySelectorAll("#cut-grid button").length === 68);
     assert.equal(await page.locator("#cut-grid button").count(), 68);
-    passed("EP01 68컷 대기 현황");
+    passed("EP01 68컷 현재 head 전체 조회");
     assert.equal(
       await page.evaluate(
         () => document.documentElement.scrollWidth > innerWidth,
@@ -48,7 +49,7 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
     passed("PC 가로 넘침 없음");
     await page.screenshot({
       path: path.join(out, "screens/studio-pc-1440.png"),
-      fullPage: true,
+      fullPage: false,
     });
     const accessibility = [];
     for (const tab of [
@@ -146,7 +147,7 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
     passed("HTML 원문 스크립트 실행 차단");
     await page.screenshot({
       path: path.join(out, "screens/files-pc-1440.png"),
-      fullPage: true,
+      fullPage: false,
     });
     await page.locator('[data-tab="materials"]').click();
     await page.locator("#new-revision").click();
@@ -192,9 +193,10 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
       document.querySelector("#detail").textContent.includes("사용자 승인본"),
     );
     passed("명시적 사용자 검수 후 승인본 지정");
+    await page.locator("#detail").scrollIntoViewIfNeeded();
     await page.screenshot({
       path: path.join(out, "screens/character-review-pc-1440.png"),
-      fullPage: true,
+      fullPage: false,
     });
     await page.locator('[data-tab="compare"]').click();
     await page.waitForFunction(
@@ -211,7 +213,7 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
     passed("r14·r2 버전 실제 비교");
     await page.screenshot({
       path: path.join(out, "screens/compare-pc-1440.png"),
-      fullPage: true,
+      fullPage: false,
     });
     await page.locator('[data-tab="chat"]').click();
     await page.locator("#chat-query").fill("제안 테스트");
@@ -237,6 +239,10 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
     await m.waitForFunction(() =>
       document.getElementById("project-info").textContent.includes("14화"),
     );
+    await m.waitForFunction(() => document.querySelectorAll("#cut-grid button").length === 68);
+    // #854 첫 방문 환영창은 실제 닫기 버튼으로 닫고 스튜디오 승인 동작을 검증한다.
+    const welcome = m.locator('#assistantWelcome');
+    if (await welcome.isVisible()) await welcome.getByRole('button').click();
     assert.equal(
       await m.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,
@@ -247,6 +253,7 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
       .analyze();
     assert.equal(ma.violations.length, 0, JSON.stringify(ma.violations));
     passed("모바일 390px·68컷·가로 넘침 없음·axe 위반 0");
+    await m.screenshot({path:path.join(out,"screens/studio-mobile-390.png"),fullPage:false});
     await m.locator('#cut-grid button').first().click();
     await m.locator('#detail').getByRole('button',{name:'검수·사용자 승인',exact:true}).click();
     await m.locator('#review-dialog').waitFor({state:'visible'});
@@ -255,19 +262,18 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
     await m.locator('#review-dialog').waitFor({state:'hidden'});
     await m.waitForFunction(()=>document.querySelector('#detail').textContent.includes('사용자 승인본'));
     passed('모바일 실제 승인 및 저장 재조회');
+    await m.locator('#detail').scrollIntoViewIfNeeded();
+    await m.screenshot({path:path.join(out,'screens/approve-mobile-390.png'),fullPage:false});
     await m.locator('#detail').getByRole('button',{name:'이 버전으로 복원 초안 만들기'}).click();
     await m.waitForFunction(()=>document.querySelector('#message').textContent.includes('새 버전을 만들었습니다'));
     assert.match(await m.locator('#detail').innerText(),/미승인/);
     passed('모바일 복원은 미승인 새 버전·기존 승인 이력 유지');
-    await m.screenshot({path:path.join(out,'screens/restore-mobile-390.png'),fullPage:true});
-    await m.screenshot({
-      path: path.join(out, "screens/studio-mobile-390.png"),
-      fullPage: true,
-    });
+    await m.locator('#detail').scrollIntoViewIfNeeded();
+    await m.screenshot({path:path.join(out,'screens/restore-mobile-390.png'),fullPage:false});
     await m.locator('[data-tab="files"]').click();
     await m.screenshot({
       path: path.join(out, "screens/files-mobile-390.png"),
-      fullPage: true,
+      fullPage: false,
     });
     const stranger = await browser.newContext();
     const sc = fixture.strangerCookie.split("=");

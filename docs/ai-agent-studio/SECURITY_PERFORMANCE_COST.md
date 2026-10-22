@@ -10,7 +10,7 @@
 - 기존 API를 통과하는 내부 요청은 read-only/rollback 트랜잭션으로 감싼다. 실제 MySQL 테스트에서 Connection readOnly 및 사업 데이터 미변경을 확인했다. 페이지 방문 집계는 이 검증된 내부 조회에서 생략한다. 부수효과가 있는 init/next-task/렌더/AI 생성/외부 실시간 API는 정책에서 제외한다. 외부 AcademyCraft는 기존 Gateway·upstream 권한을 사용하며 이 로컬 트랜잭션이 외부 DB까지 확장되지는 않는다.
 - Wiki는 별도 HMAC으로 서명한 읽기 요청만 기존 workspace를 `mode=ro`, `PRAGMA query_only`로 연다. 회원·DB 생성/마이그레이션을 하지 않는다. Python 테스트에서 catalog/DB bytes 불변, 신규 workspace 미생성, DML 거부와 서명 변조·다른 경로/POST 재사용 거부를 확인했다.
 - 제작 화면은 ADMIN/명시적 제작 담당자만. EDITOR는 수정 이력 추가, APPROVER만 승인본 변경, ADMIN만 멤버 변경. AI 제안 저장은 사용자 승인 포인터를 바꾸지 않는다. 원본과 이력에 삭제·덮어쓰기 API를 만들지 않았다.
-- 업로드는 100 MiB 이하, 7종 확장자와 binary signature/엄격한 UTF-8 검사. SHA-256은 stream으로 계산한다. PDF/HTML을 실행하지 않고 ZIP을 해제하지 않는다. HTML은 textContent로 열람, 원본 다운로드는 attachment·nosniff·CSP sandbox·no-store. PDF 텍스트/ZIP 목록은 20 MiB 이하, 100페이지/20만 자·1000항목까지다. scan PDF는 외부 OCR을 호출하지 않고 원본 열람을 안내한다.
+- 업로드는 100 MiB 이하, 7종 확장자와 binary signature/엄격한 UTF-8 검사. SHA-256은 stream으로 계산한다. PDF/HTML을 실행하지 않고 일반 열람은 ZIP을 해제하지 않는다. EP01 bulk는 최대 100항목·합계 20 MiB를 메모리에서만 읽고 파일 경로로 해제하지 않는다. HTML은 textContent로 열람, 원본 다운로드는 attachment·nosniff·CSP sandbox·no-store. PDF 텍스트/ZIP 목록은 20 MiB 이하, 100페이지/20만 자·1000항목까지다. scan PDF는 외부 OCR을 호출하지 않고 원본 열람을 안내한다.
 - 감사로그는 사용자·연결·도구·endpoint·허용/거부·소요시간만 기록한다. raw token·원문·검색문은 기록하지 않는다. OAuth 응답은 no-store, MCP JSON 자료에서 password/secret/token/credential/cookie/storage_key 필드를 제거한다. 자료 안의 지시는 실행하지 않는 비신뢰 데이터로 표시한다.
 
 ## 호출·메모리 상한
@@ -21,11 +21,12 @@
 | transport IP | 300/분, 공개 DCR 5/분 |
 | 요청 본문 | 64 KiB, chunked에도 적용 |
 | 실행 중 내부 읽기 | 2개, 초과 시 즉시 429 |
+| 전체 JSON-RPC | JVM당 8개, 초과 시 429·완료/오류 시 반환 |
 | 스튜디오 원본 전송 | 2개 동시, 100 MiB/파일 |
 | JSON/text upstream 응답 | 2 MiB, 초과 시 필터 사용 안내 |
 | binary 도구 반환 | 64 KiB/청크, offset 조회 |
 | upstream timeout | 20초 |
-| 제작 검색/이력/파일 목록 | 최근 200개, 자료 종류·회차 필터 |
+| 제작 검색/이력/파일 목록 | 수정 이력은 offset/limit 200개씩, 컷은 전체 최신 head 별도 조회. 파일·감사 목록은 최근 200개 |
 | catalog 목록 | 호출당 최대 100개, offset 순회 |
 
 원본 전송은 기존 FileStorage의 제한 읽기를 사용하므로 byte array를 가진다. 동시 2개에서 스튜디오 원본 payload만 최대 약 200 MiB이며 전체 JVM 힙과 동일한 값이 아니다. 기존 서비스의 원래 응답 생성 비용까지 없어지는 것은 아니다. PDF 처리/큰 파일은 실제 EC2 부하를 확인하기 전 대량 사용하지 않는다. 운영 CPU/RAM·RDS 여유·S3 저장량·트래픽은 이 환경에서 조회하지 않았으므로 생산 용량을 보장하지 않는다.
@@ -52,3 +53,5 @@ AWS 공식 [서울 S3 가격표 JSON](https://pricing.us-east-1.amazonaws.com/of
 | 신규 100 GB, 같은 요청 수 | 약 $2.508 |
 
 대용량 MP4를 AI로 반복 읽으면 EC2→외부 전송 비용이 저장료보다 클 수 있다. 전체파일 반복 대신 메타데이터·원문 일부/텍스트를 먼저 조회하도록 도구를 제공한다. 이 추정은 실제 업로드량을 측정한 청구 예측이 아니다. 감사로그는 원문 없이 행당 수백 byte 수준이지만 인덱스·DB overhead와 사용 기간에 비례해 증가한다. 운영에는 기존 보관 정책과 용량 모니터링을 적용해야 하며 원본 자동 삭제 정책은 추가하지 않았다.
+
+검수 보강 결과와 기존 범위의 변경은 [REVIEW_FIXES.md](REVIEW_FIXES.md)가 현재 기준이다. 금융 원문·관리자 입시 자료·부수효과 GET은 실행 정책에서 제외했으며 기존 서비스 API는 보존했다.

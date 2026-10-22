@@ -1,0 +1,31 @@
+{
+  "environment": "loopback BuildIt + actual AcademyCraft + isolated MySQL; synthetic financial CSV; no financial institution access",
+  "checks": [
+    {
+      "name": "AcademyCraft actual signed GET succeeds; authKey redacted",
+      "pass": true
+    },
+    {
+      "name": "Different academy user cannot read AcademyCraft academy 7",
+      "pass": true
+    },
+    {
+      "name": "Each permitted business exposes only eight summary fields",
+      "pass": true
+    },
+    {
+      "name": "Foreign business summary denied",
+      "pass": true
+    },
+    {
+      "name": "Even ADMIN MCP cannot read raw finance/collector previews or invoke either approval POST",
+      "pass": true
+    },
+    {
+      "name": "Actual #853 endpoint rejects absent approval and external MCP bearer; ledger count unchanged",
+      "pass": true
+    }
+  ],
+  "passed": 6,
+  "actualChatGPTClaudeAccounts": "NOT VERIFIED"
+}

@@ -2,7 +2,7 @@
   "testData": "SYNTHETIC ONLY; real EP01 assets were not created or registered",
   "checks": [
     {
-      "name": "EP01 68컷 대기 현황",
+      "name": "EP01 68컷 현재 head 전체 조회",
       "pass": true
     },
     {
@@ -97,6 +97,14 @@
     },
     {
       "name": "모바일 390px·68컷·가로 넘침 없음·axe 위반 0",
+      "pass": true
+    },
+    {
+      "name": "모바일 실제 승인 및 저장 재조회",
+      "pass": true
+    },
+    {
+      "name": "모바일 복원은 미승인 새 버전·기존 승인 이력 유지",
       "pass": true
     },
     {

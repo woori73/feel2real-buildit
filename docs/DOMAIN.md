@@ -1822,3 +1822,5 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 기존 학원·학생·반·출결·상담·사업체·거래 테이블의 권한/생성 정책은 그대로다. 학원 데이터는 서명 게이트웨이/기존 업무 API, 거래·증빙은 기존 Easy import와 장부 서비스를 통해 처리한다. 새 감사행에는 이름·연락처·인증키·원본 파일 내용을 넣지 않는다. 상태 전이와 격리 정책은 [작업 A 분석 보고서](unified-ai-assistant/README.md)를 참고한다.
 
 통합 초안 상태는 PENDING/EXECUTING/VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN/CANCELLED/EXPIRED/INVALIDATED다. FAILED는 원격 쓰기 요청의 명확한 거절이며, 성공 후 조회 실패는 UNKNOWN으로 보존한다. 대화·파일 분석은 기존 초안 저장소를 사용하고 별도 학생/거래 복제 테이블을 만들지 않는다. 대화 입력 원문은 영속화하지 않으며 새로고침 시 승인 기록만 현재 권한으로 복원한다.
+
+스튜디오 복원은 기존 revision/file 행을 수정하지 않고 새 revision 및 RESTORE 이벤트를 추가한다. `approved_id`는 별도 명시 검수 전 유지한다. JSON/ZIP 일괄 등록도 원본 sourceFileId/SHA를 보존하고 68개 revision과 BULK_IMPORT 이력을 추가한다. 별도 데이터/권한 테이블을 복제하지 않는다. #854는 V1094, #855는 V1095이며 신규 운영 스키마 적용은 하지 않았다. 관리자 외부 제공 위험 확인은 기존 mcp_audit의 SENSITIVE_ACK로 기록한다.

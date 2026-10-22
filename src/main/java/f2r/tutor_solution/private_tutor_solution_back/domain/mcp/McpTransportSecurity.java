@@ -16,7 +16,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class McpTransportSecurity {
   @Bean
   @Order(0)
-  SecurityFilterChain mcpTransport(HttpSecurity http, McpOAuth oauth, McpRateLimit rate, f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsRateLimiter addresses)
+  SecurityFilterChain mcpTransport(
+      HttpSecurity http,
+      McpOAuth oauth,
+      McpRateLimit rate,
+      f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller
+              .AdmissionsRateLimiter
+          addresses)
       throws Exception {
     http.securityMatcher(
             "/mcp",
@@ -63,12 +69,16 @@ public class McpTransportSecurity {
                   if (req.getContentLengthLong() > 65536)
                     throw McpOAuth.error(413, "body_too_large");
                   String auth = req.getHeader("Authorization");
-                  String clientAddress=addresses.resolveClientIp(req);
-                  if("/mcp".equals(req.getRequestURI()) && auth!=null) {
+                  String clientAddress = addresses.resolveClientIp(req);
+                  if ("/mcp".equals(req.getRequestURI()) && auth != null) {
                     try {
-                      var identity=oauth.authenticate(auth);rate.check("transport-user:"+identity.principal().userId(),300);
-                    } catch(org.springframework.web.server.ResponseStatusException e) {rate.check("transport:"+clientAddress,300);throw e;}
-                  } else rate.check("transport:"+clientAddress,300);
+                      var identity = oauth.authenticate(auth);
+                      rate.check("transport-user:" + identity.principal().userId(), 300);
+                    } catch (org.springframework.web.server.ResponseStatusException e) {
+                      rate.check("transport:" + clientAddress, 300);
+                      throw e;
+                    }
+                  } else rate.check("transport:" + clientAddress, 300);
                   rate.check(
                       req.getRequestURI()
                           + ":"
@@ -114,7 +124,12 @@ public class McpTransportSecurity {
                   chain.doFilter(wrapped, res);
                 } catch (org.springframework.web.server.ResponseStatusException e) {
                   res.setStatus(e.getStatusCode().value());
-                  if(e.getStatusCode().value()==401)res.setHeader("WWW-Authenticate","Bearer resource_metadata=\""+oauth.base()+"/.well-known/oauth-protected-resource/mcp\"");
+                  if (e.getStatusCode().value() == 401)
+                    res.setHeader(
+                        "WWW-Authenticate",
+                        "Bearer resource_metadata=\""
+                            + oauth.base()
+                            + "/.well-known/oauth-protected-resource/mcp\"");
                   res.setContentType("application/json");
                   if (e.getStatusCode().value() == 429) res.setHeader("Retry-After", "60");
                   res.getWriter().write("{\"error\":\"" + e.getReason() + "\"}");
