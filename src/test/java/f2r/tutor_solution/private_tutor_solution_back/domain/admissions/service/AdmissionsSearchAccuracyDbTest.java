@@ -40,8 +40,9 @@ import static org.mockito.Mockito.when;
  * 상담 서비스 전체 흐름을 돌린다. LLM은 목(유료 API 호출 없음)이며, 어떤 근거가 프롬프트·출처로 전달되는지와
  * LLM 호출 여부를 본다.
  */
-// 골든 검색 테스트와 같은 설정(같은 H2 URL·같은 Import)이라 Spring 컨텍스트를 공유한다 — 컨텍스트를 하나 더 만들면
-// MySQL 통합 테스트 JVM 힙이 부족해진다(CI OOM 경험). 두 테스트 모두 @AfterEach에서 테이블을 비운다.
+// 이 클래스가 끝나면 Spring 컨텍스트를 캐시에서 내린다. MySQL 통합 테스트는 한 JVM(힙 1.5GB)에서 수많은 컨텍스트를
+// 캐시하는데, 컨텍스트를 하나 더 남기면 힙이 부족해진다(CI OOM 경험). 전용 H2 DB 이름을 써서 다른 테스트와 섞이지 않는다.
+@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
 @DataJpaTest
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
@@ -52,7 +53,7 @@ import static org.mockito.Mockito.when;
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-        "spring.datasource.url=jdbc:h2:mem:adm_golden;MODE=MySQL;DB_CLOSE_DELAY=-1"
+        "spring.datasource.url=jdbc:h2:mem:adm_accuracy;MODE=MySQL;DB_CLOSE_DELAY=-1"
 })
 @DisplayName("입시 검색 정확도 회귀 — 대학 별칭·학년도·미등록 대학·사설 미러본")
 class AdmissionsSearchAccuracyDbTest {
