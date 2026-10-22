@@ -32,3 +32,10 @@
 ## 남은 정리 (이번 범위 아님)
 
 구 계정 역할 또는 구 인스턴스를 고정한 workflow가 더 있다: `artcraft-setup`, `diagnose-*`(6개), `easy-ledger-census*`, `easy-provenance-check`, `ec2-diagnose`, `newstart-prod-census-readonly`, `newstart-seed`, `old-account-probe`, `old-host-inventory`, `staging-ec2`. `deploy-ec2`와 `migration-infra-build`는 `old` 대상을 긴급 복구용으로 의도적으로 유지한다. 나머지는 사용 여부를 확인한 뒤 신규 계정으로 옮기거나 삭제한다.
+
+## 배포 직전 RDS 스냅샷 (초안, 비활성)
+
+- `rds-predeploy-snapshot.yml`(이 폴더, `.github/workflows` 밖): 승인 환경 `f2r-production-snapshot` + 확인 문자열 `SNAPSHOT-<sha8>` + 스냅샷 1개 생성·대기만. 삭제·복원 없음.
+- 전용 역할 `github-actions-f2r-snapshot`: 신뢰는 main의 이 workflow·환경만(`trust-github-actions-f2r-snapshot.json`), 권한은 `f2r-db*` 인스턴스에서 `f2r-predeploy-*` 이름의 스냅샷 생성과 Describe만(`policy-f2r-predeploy-snapshot.json`). 배포·읽기 전용 역할과 분리.
+- 2026-10-22 `validate` 조회에서 RDS가 `f2r-db`, `f2r-db-202610181240`, `f2r-db-202610181331` 3개다. 어느 것이 운영인지 확정하기 전에는 스냅샷을 찍지 않는다 — `Prod read-only status`의 `db_instance_identifier`로 확인한다. 나머지 2개가 이전 리허설 잔여물이면 비용 정리 대상이다(삭제는 소유자 판단).
+- 활성화하려면 이 파일을 `.github/workflows/`로 옮기는 PR, 환경 생성, 역할 생성이 각각 승인되어야 한다.

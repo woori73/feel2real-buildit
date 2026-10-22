@@ -85,7 +85,7 @@ jobs:
           done
           echo "===== StandardOutputContent ====="
           aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$IID" --query 'StandardOutputContent' --output text \
-            | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig; s/[A-Za-z0-9.-]+\.rds\.amazonaws\.com/<rds-host>/g'
+            | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig; s/\.[a-z0-9]+\.ap-northeast-2\.rds\.amazonaws\.com/.<rds-suffix>/g'
           FINAL=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$IID" --query 'Status' --output text)
           if [ "$FINAL" != "Success" ]; then
             echo "::error::SSM command finished with status $FINAL"

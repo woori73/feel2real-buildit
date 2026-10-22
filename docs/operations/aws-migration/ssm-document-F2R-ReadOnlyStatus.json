@@ -53,6 +53,7 @@
           "    set -a; . /etc/f2r/env; set +a",
           "    export MYSQL_PWD=\"$DB_PASSWORD\"",
           "    M=\"mysql -B -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER $DB_NAME\"",
+          "    echo \"db_instance_identifier=${DB_HOST%%.*}\"",
           "    unset DB_PASSWORD",
           "    $M -e \"SET SESSION TRANSACTION READ ONLY; SELECT VERSION() AS mysql_version;\"",
           "    $M -e \"SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) AS applied, MAX(CAST(version AS UNSIGNED)) AS max_version, SUM(success=0) AS failed FROM flyway_schema_history WHERE version IS NOT NULL;\"",
