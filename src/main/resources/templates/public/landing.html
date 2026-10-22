@@ -21,6 +21,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap">
   <link rel="stylesheet" href="/css/landing_edunova.css?v=20261020-8">
+  <link rel="stylesheet" href="/css/landing_3d.css?v=20261022-1">
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
@@ -65,17 +66,52 @@
 
   <main>
     <!-- ============ HERO: AI AGENT 이미지 + 2만원 상품 ============ -->
-    <section class="en-hero" id="top" aria-label="Feel2Real 대표 소개">
-      <figure class="en-hero-art">
-        <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
-        <picture>
+    <section class="en-hero f3d-hero" id="top" aria-label="Feel2Real 대표 소개" data-f3d-stage>
+      <div class="f3d-bg" aria-hidden="true"><span class="f3d-grid"></span></div>
+      <div class="f3d-hero-inner">
+        <div class="f3d-copy">
+          <p class="f3d-kicker">FEEL2REAL · AI × EDUCATION</p>
+          <p class="f3d-headline">AI로, 더 현실적인<br><em>교육의 미래</em>를 만듭니다.</p>
+          <p class="f3d-sub">내신 예상문제부터 학원 운영 도구, 모의고사 자료, 입시상담 AI까지. Feel2Real의 서비스를 한곳에서 시작하세요.</p>
+          <nav class="f3d-quick" aria-label="주요 서비스 바로가기">
+            <a class="f3d-chip" href="/builder">BuildIt 빌더<i aria-hidden="true">→</i></a>
+            <a class="f3d-chip" href="/academycraft">AcademyCraft<i aria-hidden="true">→</i></a>
+            <a class="f3d-chip" href="/admissions/guide">입시상담 AI<i aria-hidden="true">→</i></a>
+            <a class="f3d-chip" href="/wiki">모의고사위키<i aria-hidden="true">→</i></a>
+          </nav>
+        </div>
+        <div class="f3d-visual">
+          <!-- 3D 보석: 지원·성능 조건이 맞을 때만 WebGL로 그린다. 그렇지 않으면 아래 SVG가 그대로 남는다(장식이라 스크린리더에서 제외). -->
+          <div class="f3d-core" id="f3dCore" aria-hidden="true">
+            <div class="f3d-core-fallback">
+              <svg viewBox="0 0 200 200" focusable="false">
+                <defs>
+                  <linearGradient id="f3dG1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dcebff"/><stop offset=".5" stop-color="#7fa6d6"/><stop offset="1" stop-color="#2f465f"/></linearGradient>
+                  <linearGradient id="f3dG2" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ec0e6"/><stop offset="1" stop-color="#1c2a3b"/></linearGradient>
+                </defs>
+                <polygon points="100,12 176,56 100,100" fill="url(#f3dG1)" opacity=".95"/>
+                <polygon points="100,12 24,56 100,100" fill="url(#f3dG2)" opacity=".9"/>
+                <polygon points="176,56 176,144 100,100" fill="#4a6a8c" opacity=".85"/>
+                <polygon points="24,56 24,144 100,100" fill="#223347" opacity=".95"/>
+                <polygon points="176,144 100,188 100,100" fill="#2b4058" opacity=".95"/>
+                <polygon points="24,144 100,188 100,100" fill="#16212f" opacity=".95"/>
+                <polygon points="100,12 176,56 176,144 100,188 24,144 24,56" fill="none" stroke="#cfe1f7" stroke-opacity=".55" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <canvas></canvas>
+          </div>
+          <figure class="en-hero-art f3d-banner" data-f3d-tilt="6">
+            <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
+            <picture>
           <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
           <source type="image/webp" srcset="/images/ai-agent-banner.webp">
           <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" fetchpriority="high">
         </picture>
-        <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정</figcaption>
-      </figure>
-      <aside class="en-offer" aria-labelledby="enOfferTitle">
+            <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정</figcaption>
+          </figure>
+        </div>
+      </div>
+      <aside class="en-offer f3d-offer" aria-labelledby="enOfferTitle" data-f3d-tilt="2.5">
         <p class="en-offer-eyebrow">학교 시험, 더 이상 막막하지 않게</p>
         <h1 class="en-offer-title" id="enOfferTitle">내신 영어 예상문제</h1>
         <p class="en-offer-price"><strong>1회 20,000원</strong><span>40문항</span></p>
@@ -133,19 +169,31 @@
     </section>
 
     <!-- ============ 핵심 사업 3개 ============ -->
-    <section class="en-services" aria-labelledby="enSvcTitle">
+    <section class="en-services f3d-services" aria-labelledby="enSvcTitle">
       <h2 class="en-section-title" id="enSvcTitle">현재 서비스</h2>
-      <div class="en-cards">
-        <article class="en-card" id="svc-exam">
+      <div class="en-cards f3d-deck">
+        <article class="en-card f3d-card" id="svc-exam" data-f3d-tilt="6" data-f3d-reveal>
+          <span class="f3d-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f1f6fc" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/><path d="M10 13l2 2 3.5-4"/></svg></span>
           <span class="en-card-no">01</span>
           <h3>내신 영어 예상문제</h3>
+          <span class="f3d-badge">카톡·이메일 의뢰</span>
           <p>학교별 시험 범위와 출제 특성을 반영해 40문항 예상문제와 정답·해설을 제작합니다.</p>
           <p class="en-card-price"><strong>1회 20,000원</strong> · 40문항</p>
           <a class="en-btn en-btn-outline" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">예상문제 의뢰하기</a>
         </article>
-        <article class="en-card" id="svc-dashboard">
+        <article class="en-card f3d-card" data-f3d-tilt="6" data-f3d-reveal>
+          <span class="f3d-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f1f6fc" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg></span>
           <span class="en-card-no">02</span>
+          <h3>BuildIt 학원 홈페이지 빌더</h3>
+          <span class="f3d-badge">로그인 후 이용</span>
+          <p>로고·문구·이미지를 편집하고 저장·게시해서 학원 홈페이지를 직접 만들고 관리합니다.</p>
+          <a class="en-btn en-btn-outline" href="/builder">홈페이지 만들기</a>
+        </article>
+        <article class="en-card f3d-card" id="svc-dashboard" data-f3d-tilt="6" data-f3d-reveal>
+          <span class="f3d-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f1f6fc" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+          <span class="en-card-no">03</span>
           <h3>학원 운영 대시보드</h3>
+          <span class="f3d-badge">원장·강사</span>
           <p>학생·출결·상담 관리, 장부, 학원 홈페이지를 한곳에서 운영합니다.</p>
           <ul class="en-card-links">
             <li><a href="/dashboard">공용 대시보드</a></li>
@@ -155,15 +203,42 @@
           </ul>
           <a class="en-btn en-btn-outline" href="/dashboard">대시보드 바로가기</a>
         </article>
-        <article class="en-card en-card-dark" id="ai-content">
-          <span class="en-card-no">03</span>
-          <h3>AI 콘텐츠 제작</h3>
-          <p class="en-card-status">2026년 11월 1일 제작 착수 예정</p>
-          <ul class="en-card-points">
-            <li>AI AGENT 웹툰·영상</li>
-            <li>MASTER·BOOSTER 기반 드라마형 영문법 강의</li>
-            <li>한국어·영어 콘텐츠 제작</li>
-          </ul>
+        <article class="en-card f3d-card" data-f3d-tilt="6" data-f3d-reveal>
+          <span class="f3d-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f1f6fc" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.4 2.2 3 5 3s5-1.6 5-3v-4.5"/></svg></span>
+          <span class="en-card-no">04</span>
+          <h3>AcademyCraft</h3>
+          <span class="f3d-badge">원장·강사 로그인</span>
+          <p>학생·반·출결·상담·공지를 한곳에서 관리하는 원장·강사용 학원 운영 화면입니다.</p>
+          <a class="en-btn en-btn-outline" href="/academycraft">AcademyCraft 열기</a>
+        </article>
+        <article class="en-card f3d-card" data-f3d-tilt="6" data-f3d-reveal>
+          <span class="f3d-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f1f6fc" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></span>
+          <span class="en-card-no">05</span>
+          <h3>입시상담 AI</h3>
+          <span class="f3d-badge">베타</span>
+          <p>검수·승인된 공식 입시자료를 학년도별로 안내하고, 답변에 근거 자료와 출처를 함께 표시합니다.</p>
+          <a class="en-btn en-btn-outline" href="/admissions/guide">입시상담 AI 보기</a>
+        </article>
+        <article class="en-card f3d-card" data-f3d-tilt="6" data-f3d-reveal>
+          <span class="f3d-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f1f6fc" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5C4.7 20 4 19.3 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5z"/></svg></span>
+          <span class="en-card-no">06</span>
+          <h3>모의고사위키</h3>
+          <span class="f3d-badge">공개 자료</span>
+          <p>모의고사 해설지와 영어 학습 자료를 한곳에 모았습니다.</p>
+          <a class="en-btn en-btn-outline" href="/wiki">모의고사위키 열기</a>
+        </article>
+        <article class="en-card en-card-dark f3d-card f3d-card--wide" id="ai-content" data-f3d-tilt="3" data-f3d-reveal>
+          <span class="f3d-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#f1f6fc" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4.5-2.5z"/></svg></span>
+          <div class="f3d-wide-body">
+            <span class="en-card-no">07</span>
+            <h3>AI 콘텐츠 제작</h3>
+            <p class="en-card-status">2026년 11월 1일 제작 착수 예정</p>
+            <ul class="en-card-points">
+              <li>AI AGENT 웹툰·영상</li>
+              <li>MASTER·BOOSTER 기반 드라마형 영문법 강의</li>
+              <li>한국어·영어 콘텐츠 제작</li>
+            </ul>
+          </div>
           <span class="en-coming-soon" role="status">COMING SOON</span>
         </article>
       </div>
@@ -193,6 +268,8 @@
       </div>
     </section>
     <script src="/js/landing_chart.js?v=20261014-1" defer></script>
+    <script src="/js/landing_3d_core.js?v=20261022-1" defer></script>
+    <script src="/js/landing_3d.js?v=20261022-1" defer></script>
   </main>
 
 </div>
