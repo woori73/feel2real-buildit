@@ -339,4 +339,8 @@ body[data-member="true"] .ag-welcome {padding:24px;} body[data-member="true"] .a
 .ag-load label { display:grid; gap:4px; font-size:13px; } .ag-load input[type=text],.ag-load select { font-size:16px; min-height:44px; padding:8px; }
 .ag-load-row { display:grid; gap:12px; } .ag-load-error { color:#c5221f; }
 #ag-load-result { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:13px; line-height:1.7; margin:0; }
+.ag-reindex { display:grid; gap:8px; } .ag-reindex button { min-height:44px; }
+.ag-reindex-bar { display:flex; align-items:center; gap:8px; } .ag-reindex-bar progress { flex:1; height:14px; min-width:0; } .ag-reindex-bar span { font-size:13px; min-width:3em; text-align:right; }
+#ag-reindex-status { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; font-size:13px; line-height:1.7; margin:0; }
+@media (min-width:601px) { .ag-reindex { grid-template-columns:repeat(3,auto); justify-content:start; align-items:center; } .ag-reindex-bar,#ag-reindex-status { grid-column:1 / -1; } }
 @media (min-width:601px) { .ag-load-row { grid-template-columns:120px 1fr auto; align-items:end; } }
