@@ -55,3 +55,7 @@ MySQL 회귀36건 PASS(공동 기억6·기존 Studio8·MCP22), Markdown 표/안�
 [Java44건 PASS](projects-java-results.json): 프로젝트8·기존 공동 기억6·Studio8·MCP22. [실제 브라우저9개 PASS](projects-browser-results.json): 기존 작품+빈 QA프로젝트2개 동시 관리, PC 제목/보관/재개, 모바일 초대 수락/알림, 동일 출처/역할/프로젝트/파일 격리, 기존536경로·316파일·승인5종 SHA·버전/승인 포인터·작업 기억 보존. 원작 대조0/68·PASS확정0·컷 승인0·대표10컷 미생성 유지. [PC 프로젝트](screens/projects-1440.png), [모바일 프로젝트](screens/projects-390.png), [보관 화면](screens/project-archived-1440.png), [모바일 알림](screens/notifications-390.png).
 
 [공식 MCP SDK](projects-protocol-results.json)는 동일 프로젝트의 실제 문서/image 블록·카탈로그 projectId, 수락한 프로젝트만 목록 표시, 타 프로젝트 원본/기억 차단, 생성/보관/수락/읽음 처리 POST 차단을 확인했다. 외부 모델 호출0. 실제 ChatGPT/Claude 제품 연결·시각 판독은 미검증이다. 원본 자료는 격리 MySQL과 로컬 파일 저장소에 실제 적재되어 있으며 운영 제작실에는 배포/등록하지 않았다.
+
+## 3단계 · AI 후보 쓰기 연결 설계
+
+[별도 동의형 연결 설계](STUDIO_PROPOSE_DESIGN.md)는 기존 읽기 MCP와 OAuth resource/token/scope를 분리하고, 인증된 AI 주체·출처/SHA·DRAFT·사람 확인·별도 승인을 명시한다. **설계만 제출하며 직접 쓰기 endpoint/토큰 발급/DB는 미구현·비활성이다.** 현재의 사람이 공유한 AI 파일/댓글과 실제 AI 인증 쓰기를 구분한다. Claude 독립 보안 검수와 별도 구현/검증이 필요하다.
