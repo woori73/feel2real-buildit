@@ -29,6 +29,6 @@ class UnifiedAssistantSecurityTest {
   var d=new AssistantDraft(1L,"TUTOR",7L,null,"STUDENT_CREATE","{\"name\":\"하늘\"}","{\"name\":\"하늘\"}","snapshot");
   when(service.draft(any(),eq(7L),isNull(),eq("STUDENT_CREATE"),any())).thenReturn(d);
   mvc.perform(post("/api/dashboard/assistant/v1/drafts").cookie(cookie("TUTOR")).header("Origin","http://localhost:8080").contentType("application/json").content("{\"academyId\":7,\"operation\":\"STUDENT_CREATE\",\"input\":{\"name\":\"하늘\"}}"))
-    .andExpect(status().isOk()).andExpect(jsonPath("$.preview.name").value("하늘")).andExpect(jsonPath("$.status").value("PENDING"));
+    .andExpect(status().isOk()).andExpect(jsonPath("$.preview.name").value("하늘")).andExpect(jsonPath("$.status").value("PENDING")).andExpect(jsonPath("$.expiresAt").value(org.hamcrest.Matchers.endsWith("Z")));
  }
 }

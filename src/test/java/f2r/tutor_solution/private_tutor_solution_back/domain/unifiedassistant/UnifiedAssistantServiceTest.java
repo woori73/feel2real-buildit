@@ -34,6 +34,10 @@ class UnifiedAssistantServiceTest {
     assertThatThrownBy(()->service.draft(p,7L,null,"STUDENT_CREATE",AssistantJson.read("{\"name\":\"하늘\"}"))).hasMessageContaining("비활성화");
     verifyNoInteractions(academy,drafts);
   }
+  @Test void givenFractionalMoney_whenDrafted_thenRejectedWithoutTruncating() {
+    assertThatThrownBy(()->service.draft(p,null,1L,"LEDGER_ENTRY",AssistantJson.read("{\"occurredOn\":\"2099-10-15\",\"direction\":\"EXPENSE\",\"amount\":1.5}"))).isInstanceOf(IllegalArgumentException.class);
+    verifyNoInteractions(imports);
+  }
   @Test void givenSmuggledApprovalOrOwnerField_whenDrafting_thenRejected() {
     assertThatThrownBy(()->service.draft(p,7L,null,"STUDENT_CREATE",AssistantJson.read("{\"name\":\"하늘\",\"ownerId\":2}"))).hasMessageContaining("허용되지 않은");
     assertThatThrownBy(()->service.draft(p,7L,null,"STUDENT_CREATE",AssistantJson.read("{\"name\":\"하늘\",\"approved\":true}"))).hasMessageContaining("허용되지 않은");

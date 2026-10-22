@@ -83,7 +83,7 @@ public class UnifiedAssistantService {
       var allowed=Set.of("occurredOn","direction","amount","counterparty","description","payMethod","externalAccount","evidenceType");
       input.fieldNames().forEachRemaining(key->{if(!allowed.contains(key))throw new IllegalArgumentException("허용되지 않은 항목입니다.");});
       LocalDate.parse(input.path("occurredOn").asText());
-      if(!Set.of("INCOME","EXPENSE").contains(input.path("direction").asText())||!input.path("amount").canConvertToLong()||input.path("amount").asLong()<=0) throw new IllegalArgumentException("수입/지출 구분과 양수 금액을 확인하세요.");
+      if(!Set.of("INCOME","EXPENSE").contains(input.path("direction").asText())||!input.path("amount").isIntegralNumber()||!input.path("amount").canConvertToLong()||input.path("amount").asLong()<=0) throw new IllegalArgumentException("수입/지출 구분과 양수 금액을 확인하세요.");
       String csv="거래일,구분,금액,거래처,적요,결제수단,원본계정,증빙유형\n"+allowedCsv(input)+"\n";
       try { return upload(p,businessId,"assistant-entry.csv",csv.getBytes(StandardCharsets.UTF_8)); } catch(IOException e) {throw new IllegalArgumentException("거래 자료를 읽을 수 없습니다.");}
     }

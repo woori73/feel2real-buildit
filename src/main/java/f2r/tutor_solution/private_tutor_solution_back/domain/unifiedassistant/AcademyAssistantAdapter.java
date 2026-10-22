@@ -77,7 +77,7 @@ public class AcademyAssistantAdapter {
     return AssistantJson.read(AssistantJson.write(Map.of("verified",verified,"recordId",result.path("id").asLong(),"operation",op,"message",verified?"저장 후 재조회로 확인했습니다.":"API가 응답했으나 재조회 검증이 일치하지 않습니다. 수동 확인이 필요합니다.")));
   }
   static long id(JsonNode data,String field) {
-    if(!data.path(field).canConvertToLong() || data.path(field).asLong()<=0) throw new IllegalArgumentException(field+"를 선택하세요.");
+    if(!data.path(field).isIntegralNumber() || !data.path(field).canConvertToLong() || data.path(field).asLong()<=0) throw new IllegalArgumentException(field+"를 선택하세요.");
     return data.path(field).asLong();
   }
 }

@@ -47,9 +47,12 @@ public class UnifiedAssistantController {
   @GetMapping("/drafts") public Object history(@AuthenticationPrincipal AuthenticatedPrincipal p) {return service.history(p).stream().map(this::view).toList();}
   @PostMapping("/drafts/{id}/approve") public Object approve(@AuthenticationPrincipal AuthenticatedPrincipal p,@PathVariable String id,@RequestBody DecisionRequest r) {return view(service.decide(p,id,r.planHash(),false));}
   @PostMapping("/drafts/{id}/cancel") public Object cancel(@AuthenticationPrincipal AuthenticatedPrincipal p,@PathVariable String id,@RequestBody DecisionRequest r) {return view(service.decide(p,id,r.planHash(),true));}
-  @GetMapping("/audit") public Object audit(@AuthenticationPrincipal AuthenticatedPrincipal p) {return service.audit(p);}
+  public record AuditView(Long id,Long ownerId,String draftId,String event,String createdAt) {}
+  @GetMapping("/audit") public Object audit(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return service.audit(p).stream().map(row->new AuditView(row.getId(),row.getOwnerId(),row.getDraftId(),row.getEvent(),row.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toString())).toList();
+  }
   private Map<String,Object> view(AssistantDraft d) {
     var v=new LinkedHashMap<String,Object>(); v.put("id",d.getId());v.put("operation",d.getOperation());v.put("academyId",d.getAcademyId());v.put("businessId",d.getBusinessId());
-    v.put("preview",AssistantJson.plain(AssistantJson.read(d.getPreview())));v.put("planHash",d.getPlanHash());v.put("status",d.getStatus());v.put("createdAt",d.getCreatedAt().toString());v.put("expiresAt",d.getExpiresAt().toString());v.put("result",d.getResult()==null?null:AssistantJson.plain(AssistantJson.read(d.getResult())));return v;
+    v.put("preview",AssistantJson.plain(AssistantJson.read(d.getPreview())));v.put("planHash",d.getPlanHash());v.put("status",d.getStatus());v.put("createdAt",d.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toString());v.put("expiresAt",d.getExpiresAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toString());v.put("result",d.getResult()==null?null:AssistantJson.plain(AssistantJson.read(d.getResult())));return v;
   }
 }

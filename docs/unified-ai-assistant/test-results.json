@@ -3,7 +3,7 @@
   "mainBase": "07d9316a293a30a84e13a09c42957bd64be71bd8",
   "database": "task-local Docker MySQL 8.4.13; f2r_unified_test + ac_unified_test",
   "junit": {
-    "tests": 78,
+    "tests": 80,
     "failures": 0,
     "suites": [
       {
@@ -12,23 +12,23 @@
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "1.631"
+        "time": "1.884"
       },
       {
         "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AcademyAssistantAdapterTest",
-        "tests": "4",
-        "failures": "0",
-        "errors": "0",
-        "skipped": "0",
-        "time": "0.096"
-      },
-      {
-        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantServiceTest",
         "tests": "5",
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "0.307"
+        "time": "0.097"
+      },
+      {
+        "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.UnifiedAssistantServiceTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "time": "0.335"
       },
       {
         "name": "Academy Builder 템플릿 계약",
@@ -36,7 +36,7 @@
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "7.749"
+        "time": "7.11"
       },
       {
         "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantDraftTransactionsTest",
@@ -44,7 +44,7 @@
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "0.164"
+        "time": "0.174"
       },
       {
         "name": "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest",
@@ -52,7 +52,7 @@
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "1.727"
+        "time": "2.249"
       },
       {
         "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyAgentSecurityWebMvcTest",
@@ -60,7 +60,7 @@
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "4.424"
+        "time": "6.048"
       },
       {
         "name": "대시보드 AI 비서(읽기 전용, Muse Spark)",
@@ -68,7 +68,7 @@
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "0.379"
+        "time": "0.338"
       },
       {
         "name": "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.AssistantCommandParserTest",
@@ -84,14 +84,15 @@
         "failures": "0",
         "errors": "0",
         "skipped": "0",
-        "time": "0.005"
+        "time": "0.006"
       }
     ]
   },
   "e2e": {
+    "timezone": "Asia/Seoul",
     "stats": {
-      "startTime": "2026-10-22T02:13:10.824Z",
-      "duration": 22599.6,
+      "startTime": "2026-10-22T02:21:53.755Z",
+      "duration": 39820.161,
       "expected": 9,
       "skipped": 0,
       "unexpected": 0,
@@ -101,47 +102,47 @@
       {
         "name": "anonymous, student and cross-origin calls cannot use assistant writes",
         "status": "expected",
-        "durationMs": 293
+        "durationMs": 684
       },
       {
         "name": "first visit, pause/resume, stale version and completion persist per user",
         "status": "expected",
-        "durationMs": 302
+        "durationMs": 556
       },
       {
         "name": "student draft does not write; forged hash, concurrent approval, replay and ownership are safe",
         "status": "expected",
-        "durationMs": 1390
+        "durationMs": 2094
       },
       {
         "name": "class creation, assignment, updates and stale target checks reuse actual APIs",
         "status": "expected",
-        "durationMs": 1346
+        "durationMs": 2338
       },
       {
         "name": "attendance and consultation create/message verify persisted records",
         "status": "expected",
-        "durationMs": 747
+        "durationMs": 749
       },
       {
         "name": "expiry, cancellation, live permission revocation and unknown outcome never replay writes",
         "status": "expected",
-        "durationMs": 955
+        "durationMs": 949
       },
       {
         "name": "CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access",
         "status": "expected",
-        "durationMs": 1217
+        "durationMs": 1123
       },
       {
         "name": "natural command and desktop/mobile workbench render, highlight, persist and approve through UI",
         "status": "expected",
-        "durationMs": 9145
+        "durationMs": 8337
       },
       {
         "name": "login surfaces welcome link without moving the current service",
         "status": "expected",
-        "durationMs": 3777
+        "durationMs": 3512
       }
     ]
   },

@@ -10,7 +10,7 @@
 - 전용 스키마: `f2r_unified_test`와 `ac_unified_test`. 양쪽 Flyway 적용 + Hibernate `ddl-auto=validate` 기동 성공.
 - BuildIt 기존 migration + 신규 V1094 + local dev-seed, AcademyCraft V1~V6 적용 성공.
 - 테스트 신원: 로컬 ADMIN→학원7 원장, TUTOR→학원7 강사, 다른 TUTOR→학원8 원장, STUDENT. 장부 접근은 BuildIt 학원1/3과 테스트 사업체의 명시적 링크로 분리.
-- 모바일은 Chromium 390×844, PC는 1440×1050. 실기기·실제 모바일 키보드는 미검증.
+- 모바일은 Chromium 390×844, PC는 1440×1050. 브라우저 시간대는 Asia/Seoul이며 초안 만료/감사 API는 UTC ISO-8601로 응답한다. 실기기·실제 모바일 키보드는 미검증.
 
 재현: [로컬 테스트 README](../../e2e/unified-assistant/README.md). 테스트 계정·게이트웨이 비밀값은 로컬 전용이며 운영 자격과 무관하다.
 
@@ -19,7 +19,7 @@
 | 검사 | 결과 |
 |---|---|
 | `compileJava`, `bootJar` | 통과 |
-| 관련 JUnit 78건 | 실패 0. 아래 실행 필터와 항목 참고 |
+| 관련 JUnit 80건 | 실패 0. 아래 실행 필터와 항목 참고 |
 | 실제 두 앱 + MySQL E2E 9개 시나리오 | 전부 통과, skip/flaky 0 |
 | 공통 로그인 후 환영 링크 | 현재 `/home` 유지, 안내 링크 표시·닫기 통과 |
 | PC/모바일 ADMIN·TUTOR | 화면 JS 오류 0, 가로 넘침 0, 안내 하이라이트·재개·UI 승인 통과 |
@@ -38,7 +38,7 @@ bash gradlew test \
   --tests '*AcademyBuilderTemplateContractTest' bootJar --max-workers=4
 ```
 
-최신 main `07d9316a`를 feature 브랜치에 병합한 뒤 템플릿 회귀를 포함한 78건과 bootJar를 다시 실행해 통과했다. 추가된 진단 셸은 `bash -n`도 통과했다.
+최신 main `07d9316a`를 feature 브랜치에 병합한 뒤 템플릿 회귀를 포함한 80건과 bootJar를 다시 실행해 통과했다. 추가된 진단 셸은 `bash -n`도 통과했다.
 
 신규 테스트는 PR Build Check의 기존 무DB 테스트 목록에도 추가했다. E2E는 별도 AcademyCraft와 전용 DB를 요구하므로 로컬 검증 스위트로 제출한다. 전체 Java 테스트 스위트를 통과했다고 주장하지 않는다.
 
@@ -65,6 +65,7 @@ bash gradlew test \
 - OSIV가 먼저 읽은 PENDING 객체를 보관해 행 잠금만으로 중복 실행을 막지 못한 것을 실제 동시 승인 테스트에서 발견했다. DB 조건부 선점과 회귀 단위 테스트로 보강한 뒤 동시 승인 재검증 성공.
 - 늦은 초기 사업체/기록 조회가 새 초안을 지우는 UI 경쟁을 발견했다. 초기 선택 동기화와 화면 수정 버전을 추가했다. 생성·승인 UI E2E와 재실행 성공.
 - 상담 API의 생성/메시지 응답이 envelope이므로 내부 실제 레코드 ID로 재조회하도록 수정했다.
+- 브라우저 시간대가 달라도 만료/감사 시각이 맞도록 UTC ISO 응답을 명시했다. ID·원화 금액의 소수/문자열 강제 변환을 거부하는 검증도 추가했다.
 
 ## 스크린샷
 

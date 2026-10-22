@@ -4876,3 +4876,5 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 학원 쓰기는 기존 AcademyCraft 원장 역할만 허용하고 기존 REST API·서비스의 소속 검사를 유지한다. 기존 AcademyCraft `/agent` 계획을 변경하거나 승인하지 않는다. 실행 후 재조회 결과에 따라 `VERIFIED/REVIEW_REQUIRED/UNKNOWN`을 기록하며, 불명확한 실행은 자동 재시도하지 않는다. 상세 입력 예시·상태·제한은 [분석 보고서](unified-ai-assistant/README.md).
 
 기존 `POST /api/dashboard/assistant`는 선택한 사업체의 **재무 해설 전용** Muse Spark 경로로 유지한다. 이 경로의 LLM 문맥에는 학원 출결 데이터가 없으며 새 통합 현황 조회와 구분한다.
+
+통합 비서의 초안 생성/만료 시각과 감사 시각은 UTC ISO-8601(`Z`)로 응답하고, 화면은 사용자의 시간대로 표시한다. 출결 입력 시각은 기존 AcademyCraft 계약대로 한국 현지 시각이다.

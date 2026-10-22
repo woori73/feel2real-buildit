@@ -12,6 +12,9 @@ class AcademyAssistantAdapterTest {
   final AcademyAssistantAdapter adapter=new AcademyAssistantAdapter(gateway);
   final AuthenticatedPrincipal p=new AuthenticatedPrincipal(1L,"owner","TUTOR");
   void response(String method,String path,String data) throws Exception {when(gateway.exchange(eq(p),eq(method),eq(path),any())).thenReturn(ResponseEntity.ok(data.getBytes(StandardCharsets.UTF_8)));}
+  @Test void givenFractionalOrTextIdentifier_whenValidated_thenRejectedWithoutCoercion() {
+    for(String value:new String[]{"1.5","-1","\"1\""}) assertThatThrownBy(()->AcademyAssistantAdapter.id(AssistantJson.read("{\"studentId\":"+value+"}"),"studentId")).isInstanceOf(IllegalArgumentException.class);
+  }
   @Test void givenTeacherOrOtherAcademy_whenMakingWriteSnapshot_thenDenied() throws Exception {
     response("GET","/api/rea/integration/context?academyId=7","{\"academyId\":7,\"role\":\"TEACHER\"}");
     assertThatThrownBy(()->adapter.snapshot(p,7L,"STUDENT_CREATE",AssistantJson.read("{}"))).hasMessageContaining("원장");

@@ -110,7 +110,7 @@ test('CSV and natural ledger entry preserve evidence, store once, count reviews 
 test('natural command and desktop/mobile workbench render, highlight, persist and approve through UI',async({browser})=>{
   const output=path.resolve(__dirname,'../../docs/unified-ai-assistant/screenshots');fs.mkdirSync(output,{recursive:true});
   const errors=[];
-  const context=await browser.newContext({storageState:await admin.storageState(),viewport:{width:1440,height:1050}});
+  const context=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await admin.storageState(),viewport:{width:1440,height:1050}});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/dashboard');await expect(page.locator('#uaRole')).toContainText('원장 연결');
   await expect(page.locator('#uaTour')).toBeVisible();await page.locator('#uaNext').click();
@@ -125,7 +125,7 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   await page.screenshot({path:path.join(output,'admin-desktop-result-1440.png'),fullPage:true});
   await context.close();
   for(const [role,ctx,width,height] of [['admin',admin,390,844],['tutor',teacher,390,844],['tutor',teacher,1440,1050]]) {
-    const c=await browser.newContext({storageState:await ctx.storageState(),viewport:{width,height},isMobile:width<500,hasTouch:width<500});
+    const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await ctx.storageState(),viewport:{width,height},isMobile:width<500,hasTouch:width<500});
     const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto('/dashboard');
     await expect(p.locator('#uaRole')).toContainText(role==='admin'?'원장 연결':'강사 연결');
     await expect(p.locator('#uaSummary')).not.toContainText('불러오는 중');
@@ -137,7 +137,7 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   expect(errors).toEqual([]);
 });
 test('login surfaces welcome link without moving the current service',async({browser})=>{
-  const c=await browser.newContext({storageState:await admin.storageState()});const p=await c.newPage();await p.goto('/home');
+  const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await admin.storageState()});const p=await c.newPage();await p.goto('/home');
   await expect(p.locator('#assistantWelcome')).toBeVisible();expect(new URL(p.url()).pathname).toBe('/home');
   await expect(p.locator('#assistantWelcome a')).toHaveAttribute('href','/dashboard');await p.locator('#assistantWelcome button').click();await expect(p.locator('#assistantWelcome')).toHaveCount(0);await c.close();
 });
