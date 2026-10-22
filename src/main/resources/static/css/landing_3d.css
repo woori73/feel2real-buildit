@@ -1,0 +1,165 @@
+/* Feel2Real 홈 3D UI — landing_edunova.css 뒤에 로드한다(이 파일은 홈에서만 쓴다).
+ * 팔레트는 홈의 확정 토큰(--ed-*: 아이보리·잉크·스틸블루)을 그대로 따른다. 새 색은 히어로 무대의 어두운 단계뿐이다.
+ * 모든 선택자는 .f3d-* 이거나 .en-hero.f3d-hero / .en-card.f3d-card 로 한정해 다른 화면에 번지지 않는다.
+ */
+:root {
+  --f3d-ink: #0e1218;
+  --f3d-ink2: #151b24;
+  --f3d-steel: #3f5b78;
+  --f3d-steel-l: #8fb0d6;
+  --f3d-glass: rgba(255, 255, 255, .07);
+  --f3d-glass-line: rgba(255, 255, 255, .16);
+  --f3d-champagne: #d9c7a0;
+  --f3d-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* ========== HERO ========== */
+.en-hero.f3d-hero {
+  display: block; position: relative; isolation: isolate; overflow: hidden;
+  background: var(--f3d-ink); color: #eef2f7;
+}
+.f3d-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(900px 520px at 74% 16%, rgba(95, 140, 200, .36), transparent 62%),
+    radial-gradient(720px 440px at 6% 92%, rgba(63, 91, 120, .5), transparent 60%),
+    linear-gradient(180deg, #0e1218, #121923 62%, #0b0f15); }
+.f3d-grid { position: absolute; left: -12%; right: -12%; bottom: -8%; height: 48%;
+  transform: perspective(520px) rotateX(64deg); transform-origin: 50% 100%;
+  background-image: linear-gradient(rgba(143, 176, 214, .22) 1px, transparent 1px), linear-gradient(90deg, rgba(143, 176, 214, .22) 1px, transparent 1px);
+  background-size: 56px 56px; -webkit-mask-image: linear-gradient(to top, #000, transparent 88%); mask-image: linear-gradient(to top, #000, transparent 88%);
+  animation: f3d-grid 16s linear infinite; }
+@keyframes f3d-grid { to { background-position: 0 56px, 0 0; } }
+
+.f3d-hero-inner { max-width: 1240px; margin: 0 auto; padding: 72px 20px 168px;
+  display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.f3d-copy { position: relative; z-index: 3; }
+.f3d-kicker { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .24em; color: var(--f3d-steel-l); }
+.f3d-headline { margin: 16px 0 18px; font-family: var(--ed-serif, Georgia, serif); font-weight: 700; letter-spacing: -.03em; line-height: 1.12;
+  font-size: clamp(32px, 3.9vw, 54px); word-break: keep-all; color: #f6f8fb; text-shadow: 0 2px 28px rgba(0, 0, 0, .45); }
+.f3d-headline em { font-style: normal; background: linear-gradient(100deg, #cfe1f7, #8fb0d6 55%, var(--f3d-champagne)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.f3d-sub { margin: 0; max-width: 34em; font-size: 17px; line-height: 1.7; color: #b9c5d4; }
+.f3d-quick { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 0; }
+.f3d-chip { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px; border-radius: 12px;
+  color: #eef2f7; font-size: 14.5px; font-weight: 600; letter-spacing: .005em;
+  background: var(--f3d-glass); border: 1px solid var(--f3d-glass-line);
+  -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+  transition: transform .25s var(--f3d-ease), background .25s, border-color .25s; }
+.f3d-chip:hover, .f3d-chip:focus-visible { transform: translateY(-3px); background: rgba(255, 255, 255, .13); border-color: rgba(143, 176, 214, .6); }
+.f3d-chip i { font-style: normal; color: var(--f3d-steel-l); transition: transform .25s var(--f3d-ease); }
+.f3d-chip:hover i { transform: translateX(3px); }
+.f3d-chip:focus-visible, .f3d-card a:focus-visible, .f3d-card .en-btn:focus-visible { outline: 2px solid #b9d2f0; outline-offset: 3px; }
+
+.f3d-visual { position: relative; min-height: 470px; }
+.f3d-core { position: absolute; z-index: 1; inset: -72px -6% 24px -2%;
+  transform: translate3d(0, calc((var(--f3d-scroll, .5) - .5) * -64px), 0); }
+.f3d-core canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .9s var(--f3d-ease); }
+.f3d-core[data-f3d-ready] canvas { opacity: 1; }
+.f3d-core-fallback { position: absolute; inset: 6% 12% 4%; display: grid; place-items: center; transition: opacity .9s var(--f3d-ease); animation: f3d-float 7s ease-in-out infinite; }
+.f3d-core-fallback svg { width: 100%; height: 100%; filter: drop-shadow(0 30px 50px rgba(63, 91, 120, .55)); }
+.f3d-core[data-f3d-ready] .f3d-core-fallback { opacity: 0; }
+@keyframes f3d-float { 50% { transform: translateY(-14px) rotate(1.2deg); } }
+
+.f3d-banner.en-hero-art { position: absolute; z-index: 2; left: -4%; right: 26%; bottom: 8px; margin: 0; background: #080b12; border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--f3d-glass-line);
+  box-shadow: 0 34px 70px -24px rgba(0, 0, 0, .75), 0 0 0 1px rgba(143, 176, 214, .1);
+  transform: perspective(1100px) translate3d(0, calc((var(--f3d-scroll, .5) - .5) * -34px), 0) rotateX(var(--f3d-rx, 0deg)) rotateY(calc(var(--f3d-ry, 0deg) - 5deg));
+  transition: transform .4s var(--f3d-ease); will-change: transform; }
+.f3d-banner.en-hero-art::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(360px circle at var(--f3d-gx, 50%) var(--f3d-gy, 0%), rgba(255, 255, 255, .22), transparent 55%); }
+.f3d-banner.is-tilting::after { opacity: 1; }
+.f3d-banner.is-tilting { transition: transform .08s linear; }
+
+/* 오퍼 카드: 히어로 하단에 겹쳐 얹는 종이색 패널 (기존 문구·버튼·ID 그대로) */
+.en-offer.f3d-offer { position: relative; z-index: 4; max-width: 1240px; width: calc(100% - 40px); margin: -112px auto 40px; padding: 30px 36px 26px;
+  display: grid; grid-template-columns: 1.1fr 1fr minmax(240px, .9fr); column-gap: 36px; align-items: start;
+  background: rgba(250, 248, 244, .97); border: 1px solid rgba(255, 255, 255, .6); border-radius: 16px; color: var(--ed-ink, #1f2328);
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, .65), 0 1px 0 #fff inset;
+  transform: perspective(1200px) rotateX(var(--f3d-rx, 0deg)) rotateY(var(--f3d-ry, 0deg)); transition: transform .4s var(--f3d-ease); }
+.f3d-offer.is-tilting { transition: transform .08s linear; }
+.f3d-offer > .en-offer-eyebrow, .f3d-offer > .en-offer-title, .f3d-offer > .en-offer-price { grid-column: 1; }
+.f3d-offer > .en-offer-points { grid-column: 2; grid-row: 1 / span 3; margin: 6px 0 0; }
+.f3d-offer > #enExamCta { grid-column: 3; grid-row: 1; margin-top: 4px; }
+.f3d-offer > #enExamMail { grid-column: 3; grid-row: 2; margin-top: 10px; }
+.f3d-offer > .en-offer-proof { grid-column: 3; grid-row: 3; margin-top: 10px; }
+.f3d-offer > .en-offer-note { grid-column: 1 / -1; grid-row: 4; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ed-line, #ddd7cc); }
+
+/* ========== SERVICES (3D 카드) ========== */
+.en-services.f3d-services { max-width: 1240px; margin: 64px auto 88px; padding: 0 20px; }
+.f3d-deck.en-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; perspective: 1500px; }
+.en-card.f3d-card { position: relative; transform-style: preserve-3d; gap: 12px; padding: 30px 28px 26px; border-radius: 16px;
+  background: linear-gradient(165deg, #fff, #f3f0e9); border: 1px solid var(--ed-line, #ddd7cc);
+  box-shadow: 0 1px 0 #fff inset, 0 22px 44px -26px rgba(31, 35, 40, .45);
+  transform: perspective(1100px) rotateX(var(--f3d-rx, 0deg)) rotateY(var(--f3d-ry, 0deg));
+  transition: transform .45s var(--f3d-ease), box-shadow .3s, border-color .3s; }
+.en-card.f3d-card:hover { border-color: var(--f3d-steel); box-shadow: 0 1px 0 #fff inset, 0 34px 60px -28px rgba(31, 35, 40, .55); }
+.f3d-card.is-tilting { transition: transform .08s linear, box-shadow .3s, border-color .3s; }
+.f3d-card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: radial-gradient(420px circle at var(--f3d-gx, 50%) var(--f3d-gy, 0%), rgba(255, 255, 255, .7), transparent 46%); }
+.f3d-card.is-tilting::after { opacity: 1; }
+.f3d-card > * { transform: translateZ(0); }
+.f3d-icon { width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; transform: translateZ(46px);
+  background: linear-gradient(150deg, #4a6a8c, #2b4058); box-shadow: 0 14px 26px -12px rgba(47, 70, 95, .7), 0 1px 0 rgba(255, 255, 255, .35) inset; }
+.f3d-icon svg { width: 28px; height: 28px; }
+.f3d-card .en-card-no { transform: translateZ(14px); }
+.f3d-card h3 { transform: translateZ(26px); font-family: var(--ed-serif, Georgia, serif); }
+.f3d-card p, .f3d-card ul { transform: translateZ(12px); }
+.f3d-card .en-btn { transform: translateZ(30px); }
+.f3d-badge { display: inline-block; align-self: flex-start; margin: 0; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .04em;
+  color: var(--ed-steel, #3f5b78); background: rgba(63, 91, 120, .1); border: 1px solid rgba(63, 91, 120, .25); transform: translateZ(18px); }
+.en-card.f3d-card--wide { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 28px;
+  background: linear-gradient(120deg, #151b24, #1f2a38); border-color: #2b3646; color: #e8eef6; }
+.f3d-card--wide h3, .f3d-card--wide .en-card-no { color: #f1f5fa; }
+.f3d-card--wide p, .f3d-card--wide .en-card-points li { color: #b9c5d4; }
+.f3d-card--wide .f3d-wide-body { flex: 1 1 auto; display: grid; gap: 8px; }
+.f3d-card--wide .en-card-status { color: #a9c3e2 !important; }
+.f3d-card--wide .en-card-points li::before { background: #8fb0d6; }
+.f3d-card--wide .en-coming-soon { color: #d7e4f4; border-color: rgba(143, 176, 214, .55); background: rgba(255, 255, 255, .05); }
+
+/* 스크롤 등장: JS가 켜졌을 때만 숨겼다가 보여 준다(없거나 움직임 감소면 처음부터 보임) */
+.f3d-js [data-f3d-reveal] { opacity: 0; translate: 0 34px; }
+.f3d-js [data-f3d-reveal].is-in { opacity: 1; translate: 0 0; transition: opacity .7s var(--f3d-ease) var(--f3d-delay, 0ms), translate .7s var(--f3d-ease) var(--f3d-delay, 0ms); }
+
+/* ========== 반응형 ========== */
+@media (max-width: 1100px) {
+  .en-offer.f3d-offer { grid-template-columns: 1fr 1fr; }
+  .f3d-offer > .en-offer-points { grid-column: 2; grid-row: 1 / span 2; }
+  .f3d-offer > #enExamCta { grid-column: 1; grid-row: 4; }
+  .f3d-offer > #enExamMail { grid-column: 2; grid-row: 4; margin-top: 4px; }
+  .f3d-offer > .en-offer-proof { grid-column: 1 / -1; grid-row: 5; }
+  .f3d-offer > .en-offer-note { grid-row: 6; }
+  .f3d-deck.en-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 960px) {
+  .f3d-hero-inner { grid-template-columns: minmax(0, 1fr); padding: 44px 16px 120px; gap: 8px; }
+  .f3d-headline { font-size: clamp(30px, 8vw, 44px); }
+  .f3d-visual { min-height: 0; display: flex; flex-direction: column; }
+  .f3d-core { position: relative; inset: auto; height: 270px; margin: -6px -8px 0; }
+  .f3d-banner.en-hero-art { position: relative; left: auto; right: auto; bottom: auto; margin-top: -52px; }
+  .en-offer.f3d-offer { margin-top: -84px; padding: 24px 20px 22px; width: calc(100% - 24px); grid-template-columns: minmax(0, 1fr); }
+  .f3d-offer > * { grid-column: 1 !important; grid-row: auto !important; }
+  .f3d-offer > .en-offer-points { margin-top: 8px; }
+  .f3d-offer > .en-btn { margin-top: 10px; }
+  .en-card.f3d-card--wide { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 640px) {
+  .f3d-hero-inner { padding: 36px 14px 108px; }
+  .f3d-sub { font-size: 15.5px; }
+  .f3d-quick { gap: 8px; }
+  .f3d-chip { flex: 1 1 calc(50% - 8px); justify-content: space-between; padding: 0 14px; min-height: 52px; }
+  .f3d-core { height: 250px; }
+  .f3d-deck.en-cards { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .en-services.f3d-services { margin-top: 44px; }
+  .f3d-card:active { transform: scale(.985); }
+}
+
+/* 움직임 감소·정적 모드: 모든 연출 제거, 기능과 내용은 그대로 */
+@media (prefers-reduced-motion: reduce) {
+  .f3d-grid, .f3d-core-fallback { animation: none; }
+  .f3d-core, .f3d-banner.en-hero-art, .en-offer.f3d-offer, .en-card.f3d-card { transform: none !important; transition: none !important; }
+  .f3d-card > *, .f3d-icon, .f3d-badge { transform: none !important; }
+  .f3d-js [data-f3d-reveal] { opacity: 1; translate: 0 0; }
+  .f3d-chip, .f3d-chip i { transition: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .f3d-chip { background: rgba(32, 42, 56, .92); }
+}

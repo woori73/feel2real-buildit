@@ -1,0 +1,16 @@
+/* 시안 B "Ivory Studio" — 라이트 무대. 출시 코드에는 포함하지 않는 비교용 덮어쓰기(스크린샷 생성 때만 주입). */
+.en-hero.f3d-hero { background: #efebe4; color: #1f2328; }
+.f3d-bg { background:
+  radial-gradient(900px 520px at 74% 14%, rgba(143, 176, 214, .55), transparent 62%),
+  radial-gradient(720px 440px at 6% 96%, rgba(217, 199, 160, .5), transparent 60%),
+  linear-gradient(180deg, #faf8f4, #efebe4); }
+.f3d-grid { background-image: linear-gradient(rgba(63, 91, 120, .16) 1px, transparent 1px), linear-gradient(90deg, rgba(63, 91, 120, .16) 1px, transparent 1px); }
+.f3d-kicker { color: #3f5b78; }
+.f3d-headline { color: #1f2328; text-shadow: none; }
+.f3d-headline em { background: linear-gradient(100deg, #2f465f, #3f5b78 55%, #9a7b3c); -webkit-background-clip: text; background-clip: text; }
+.f3d-sub { color: #5d6068; }
+.f3d-chip { color: #1f2328; background: rgba(255, 255, 255, .6); border-color: rgba(31, 35, 40, .14); }
+.f3d-chip:hover { background: #fff; border-color: #3f5b78; }
+.f3d-chip i { color: #3f5b78; }
+.f3d-banner.en-hero-art { border-color: rgba(31, 35, 40, .18); box-shadow: 0 30px 60px -28px rgba(31, 35, 40, .55); }
+.en-offer.f3d-offer { box-shadow: 0 30px 60px -34px rgba(31, 35, 40, .45), 0 0 0 1px rgba(31, 35, 40, .08); }

@@ -91,6 +91,7 @@ jobs:
           src/test/js/landing_buildit_start.test.js
           src/test/js/academy_public_hero_cycle.test.js
           src/test/js/landing_v3.test.js
+          src/test/js/landing_3d_core.test.js
           src/test/js/builder_entry.test.js
           src/test/js/unified_assistant_tour.test.js
           src/test/js/easy_tutor_agent_contract.test.js
@@ -188,6 +189,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.controller.ChartPublicControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartSiteToolsContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.ChartPublicPageContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.LandingEdunovaTemplateContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.LandingF3dTemplateContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.LandingV3TemplateContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.chart.service.ChartDiscoveryServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyServiceTest"
