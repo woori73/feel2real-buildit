@@ -47,7 +47,7 @@ public class AdmissionsChatService {
     /** 컨텍스트에 실리는 근거 총량 상한. */
     static final int MAX_CONTEXT_EVIDENCE = 16;
     /** 답변에 붙이는 출처 상한. */
-    static final int MAX_SOURCES = 14;
+    static final int MAX_SOURCES = 6;
     /** 근거 1건 요약 상한. */
     static final int MAX_EVIDENCE_CHARS = 1500;
 
@@ -254,7 +254,7 @@ public class AdmissionsChatService {
         }
 
         // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
-        List<AnswerSource> sources = buildSources(usable);
+        List<AnswerSource> sources = buildSources(usable, question);
 
         String answer = completion.text();
         saveSession(sessionToken, question, answer, pack, academicYearFilter, studentProfile, sources);
@@ -411,10 +411,10 @@ public class AdmissionsChatService {
         return sb.toString();
     }
 
-    private List<AnswerSource> buildSources(List<Evidence> evidence) {
-        java.util.LinkedHashMap<String, AnswerSource> byId = new java.util.LinkedHashMap<>();
-        for (Evidence e : evidence) {
-            if (e.getSourceClass() == AdmissionsResearchService.SourceClass.GUIDE_NOTE) continue; // 사실 근거 아님
+    /** 출처 패널용: 질문과 관련된 근거만 중복 없이 상위 {@link #MAX_SOURCES}개. LLM에 준 근거 자체는 바꾸지 않는다. */
+    List<AnswerSource> buildSources(List<Evidence> evidence, String question) {
+        List<AnswerSource> out = new ArrayList<>();
+        for (Evidence e : AdmissionsSourceSelector.select(evidence, question, MAX_SOURCES)) {
             String kind = switch (e.getSourceClass()) {
                 case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
                 case OFFICIAL_PLANNED -> "공식 자료 (계획)";
@@ -423,9 +423,9 @@ public class AdmissionsChatService {
                 default -> "참고 자료";
             };
             String url = e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl();
-            byId.putIfAbsent(e.getRefId(), new AnswerSource(kind, e.getTitle(), url, e.getRefId()));
+            out.add(new AnswerSource(kind, e.getTitle(), url, e.getRefId()));
         }
-        return byId.values().stream().limit(MAX_SOURCES).toList();
+        return out;
     }
 
     private void saveSession(String sessionToken, String question, String answer,
