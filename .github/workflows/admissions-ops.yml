@@ -32,8 +32,10 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - name: Unit tests (embedding core)
-        run: python3 -m unittest discover -s ops/admissions-embedding -q
+      - name: Unit tests (embedding core, guard)
+        run: |
+          python3 -m unittest discover -s ops/admissions-embedding -q
+          bash ops/admissions-embedding/guard.test.sh
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
@@ -80,7 +82,7 @@ jobs:
           IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration \
             Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
           [ -n "$IID" ] && [ "$IID" != "None" ] || { echo "신규 f2r-app 인스턴스 없음" >&2; exit 1; }
-          for f in server.py embed_core.py calibrate.py ops.sh; do
+          for f in server.py embed_core.py calibrate.py guard.sh ops.sh; do
             aws s3 cp "ops/admissions-embedding/$f" "s3://$B/admissions-embedding/$f" --sse AES256 >/dev/null
           done
           CMDS='["set -e","rm -rf /tmp/f2r-embed-src && mkdir -p /tmp/f2r-embed-src","aws s3 cp s3://'"$B"'/admissions-embedding/ /tmp/f2r-embed-src/ --recursive --only-show-errors","ACTION='"$ACTION"' MIN_SIMILARITY='"$MIN_SIMILARITY"' bash /tmp/f2r-embed-src/ops.sh"]'

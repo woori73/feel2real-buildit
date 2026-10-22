@@ -89,18 +89,7 @@ install)
   ( cd "$BASE/model" && ls -l && sha256sum "$(basename "$PICK")" tokenizer.json ) | tee "$BASE/MODEL_INFO"
   install -m 644 "$SRC/server.py" "$SRC/embed_core.py" "$SRC/calibrate.py" "$BASE/"
   echo "MIN_AVAIL_MB=600" > "$BASE/guard.conf"
-  cat > "$BASE/guard.sh" <<'G'
-#!/bin/bash
-# 앱 보호: 여유 메모리가 임계값 미만이거나 앱이 죽어 있으면 임베딩부터 중지한다(재시작은 사람이 한다).
-. /opt/f2r-embed/guard.conf
-A=$(awk '/MemAvailable/{print int($2/1024)}' /proc/meminfo)
-if systemctl is-active --quiet f2r-embed; then
-  if [ "$A" -lt "$MIN_AVAIL_MB" ] || ! systemctl is-active --quiet f2r-app; then
-    systemctl stop f2r-embed; logger -t f2r-embed-guard "stopped embedding: MemAvailable=${A}MB"
-  fi
-fi
-G
-  chmod 755 "$BASE/guard.sh"
+  install -m 755 "$SRC/guard.sh" "$BASE/guard.sh"
   cat > /etc/systemd/system/f2r-embed.service <<U
 [Unit]
 Description=F2R admissions embedding server (EmbeddingGemma ONNX, CPU)
