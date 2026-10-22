@@ -1,0 +1,2085 @@
+{
+ "version": "r4",
+ "note": "16:9 기준. 모델·해상도·길이는 11월 GPU 환경에서 확인 필요(미정)",
+ "ref_quality": "character_refs는 코드로 그린 도식 시안이며 identity 고정에 쓰기엔 정보량이 부족함. 정식 일러스트(또는 사용자 승인된 후보)로 교체 전에는 구도·의상 참조로만 사용",
+ "cuts": [
+  {
+   "cut": 1,
+   "beat": "B01",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_01.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 2,
+   "beat": "B01",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_02.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 3,
+   "beat": "B01",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_03.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [
+    "박상구"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 4,
+   "beat": "B01",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_04.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 5,
+   "beat": "B02",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_05.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 6,
+   "beat": "B02",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_06.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 7,
+   "beat": "B02",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_07.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 8,
+   "beat": "B02",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_08.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 9,
+   "beat": "B03",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_09.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 10,
+   "beat": "B03",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_10.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 11,
+   "beat": "B03",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_11.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 12,
+   "beat": "B03",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_12.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 13,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_13.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 14,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_14.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "지시 반영 · 원본 미검수",
+   "r4_notes": [
+    "사격 인원 3명(총구 섬광 3곳). 5명으로 생성하지 말 것"
+   ]
+  },
+  {
+   "cut": 15,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_15.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "지시 반영 · 원본 미검수",
+   "r4_notes": [
+    "사격 인원 3명(총구 섬광 3곳). 5명으로 생성하지 말 것"
+   ]
+  },
+  {
+   "cut": 16,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_16.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 17,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_17.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 18,
+   "beat": "B05",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_18.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 19,
+   "beat": "B05",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_19.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 20,
+   "beat": "B05",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_20.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 21,
+   "beat": "B05",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_21.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 22,
+   "beat": "B05",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_22.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 23,
+   "beat": "B05",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_23.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 24,
+   "beat": "B06",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_24.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "박상구"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 25,
+   "beat": "B06",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_25.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 26,
+   "beat": "B06",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_26.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 27,
+   "beat": "B06",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_27.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 28,
+   "beat": "B06",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_28.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 29,
+   "beat": "B07",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_29.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "박상구"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "지시 반영 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 30,
+   "beat": "B07",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_30.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 31,
+   "beat": "B07",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_31.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 32,
+   "beat": "B07",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_32.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [
+    "용역"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 33,
+   "beat": "B07",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_33.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 34,
+   "beat": "B08",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_34.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "눈썹 흉터 표현 금지(미확정)"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 35,
+   "beat": "B08",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_35.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 36,
+   "beat": "B08",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_36.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 37,
+   "beat": "B08",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_37.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 38,
+   "beat": "B08",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_38.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "눈썹 흉터 표현 금지(미확정)"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png",
+    "deliver_r4/cinematic/leader_cut38_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": [
+    "같은 얼굴 4요소(눈썹·귀·턱·입) 일치. 눈썹 흉터 금지"
+   ]
+  },
+  {
+   "cut": 39,
+   "beat": "B09",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_39.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 40,
+   "beat": "B09",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_40.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 41,
+   "beat": "B09",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_41.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 42,
+   "beat": "B09",
+   "duration_sec": 4.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_42.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "우진",
+    "박상구"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": [
+    "음성 트랙 비움(문안 보류)"
+   ]
+  },
+  {
+   "cut": 43,
+   "beat": "B10",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_43.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [
+    "정진모",
+    "용역"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "지시 반영 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 44,
+   "beat": "B10",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_44.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "정진모",
+    "우진",
+    "용역"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 45,
+   "beat": "B10",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_45.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "정진모"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": [
+    "음성 트랙 비움(문안 보류)"
+   ]
+  },
+  {
+   "cut": 46,
+   "beat": "B11",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_46.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [
+    "박상구"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 47,
+   "beat": "B11",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_47.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_A",
+     "files": [
+      "deliver_r3/character_refs/suni_A_front_full.png",
+      "deliver_r3/character_refs/suni_A_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "박상구"
+   ],
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_A_night_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 48,
+   "beat": "B11",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_48.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [
+    "박상구"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 49,
+   "beat": "B12",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_49.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "우진"
+   ],
+   "costume_block": "B",
+   "anchor": "기준 프레임",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "지시 반영 · 원본 미검수",
+   "r4_notes": [
+    "회중시계 사슬/시계는 소품으로만, 뚜껑·문양 노출 금지"
+   ]
+  },
+  {
+   "cut": 50,
+   "beat": "B12",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_50.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "지시 반영 · 원본 미검수",
+   "r4_notes": [
+    "회중시계 사슬/시계는 소품으로만, 뚜껑·문양 노출 금지"
+   ]
+  },
+  {
+   "cut": 51,
+   "beat": "B12",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_51.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 52,
+   "beat": "B12",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_52.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [
+    "박상구"
+   ],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "지시 반영 · 원본 미검수",
+   "r4_notes": [
+    "'3분' 문구만 합성, 시각 숫자 생성 금지"
+   ]
+  },
+  {
+   "cut": 53,
+   "beat": "B13",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_53.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "우진"
+   ],
+   "costume_block": "B",
+   "anchor": "cut_49 첫 프레임",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 54,
+   "beat": "B13",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_54.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "정진모"
+   ],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 55,
+   "beat": "B13",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_55.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 56,
+   "beat": "B13",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_56.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "우진"
+   ],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 57,
+   "beat": "B14",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_57.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 58,
+   "beat": "B14",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_58.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "정진모"
+   ],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 59,
+   "beat": "B14",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_59.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "정진모"
+   ],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "잠정 · 원본 미검수",
+   "r4_notes": [
+    "대사 문안 잠정. 입 모양(립싱크) 없이 후작업"
+   ]
+  },
+  {
+   "cut": 60,
+   "beat": "B15",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_60.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 61,
+   "beat": "B15",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_61.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_B",
+     "files": [
+      "deliver_r3/character_refs/suni_B_front_full.png",
+      "deliver_r3/character_refs/suni_B_side_full.png",
+      "deliver_r3/character_refs/suni_face_front.png",
+      "deliver_r3/character_refs/suni_face_side.png"
+     ],
+     "note": "도식 시안, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [
+    "우진"
+   ],
+   "costume_block": "B",
+   "anchor": "cut_49 첫 프레임",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 62,
+   "beat": "B15",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_62.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_C",
+     "files": [
+      "deliver_r4/character_refs/suni_C_front_full.png",
+      "deliver_r3/character_refs/suni_face_front.png"
+     ],
+     "note": "의상 C 시안 추가(r4). 도식, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "C",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 63,
+   "beat": "B16",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_63.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 64,
+   "beat": "B16",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_64.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 65,
+   "beat": "B16",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_65.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_C",
+     "files": [
+      "deliver_r4/character_refs/suni_C_front_full.png",
+      "deliver_r3/character_refs/suni_face_front.png"
+     ],
+     "note": "의상 C 시안 추가(r4). 도식, 최종 아님"
+    },
+    {
+     "id": "leader",
+     "files": [
+      "deliver_r3/character_refs/leader_face_front.png",
+      "deliver_r3/character_refs/leader_face_side.png"
+     ],
+     "note": "흉터 없음. 컷 38 얼굴 이미지를 65에 재사용"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "C",
+   "anchor": "cut_38 얼굴 앵커 재사용",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "눈썹 흉터 표현 금지(미확정)"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png",
+    "deliver_r4/cinematic/leader_cut65_bust.png"
+   ],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": [
+    "같은 얼굴 4요소(눈썹·귀·턱·입) 일치. 눈썹 흉터 금지"
+   ]
+  },
+  {
+   "cut": 66,
+   "beat": "B16",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_66.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_C",
+     "files": [
+      "deliver_r4/character_refs/suni_C_front_full.png",
+      "deliver_r3/character_refs/suni_face_front.png"
+     ],
+     "note": "의상 C 시안 추가(r4). 도식, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "C",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 67,
+   "beat": "B16",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_67.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "seven_screen",
+     "files": [
+      "deliver_r3/character_refs/seven_c67_screen_layout.png"
+     ],
+     "note": "레이아웃 가이드, 글자는 후반 합성"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "세븐 음성·얼굴 생성 금지"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성",
+   "cinematic_refs": [],
+   "r4_status": "보류 · 원본 미검수",
+   "r4_notes": []
+  },
+  {
+   "cut": 68,
+   "beat": "B16",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_68.png (러프 블로킹, 구도 참조 전용)",
+   "char_refs": [
+    {
+     "id": "suni_C",
+     "files": [
+      "deliver_r4/character_refs/suni_C_front_full.png",
+      "deliver_r3/character_refs/suni_face_front.png"
+     ],
+     "note": "의상 C 시안 추가(r4). 도식, 최종 아님"
+    }
+   ],
+   "other_chars_without_ref": [],
+   "costume_block": "C",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성",
+   "cinematic_refs": [
+    "deliver_r4/cinematic/suni_B_day_bust.png"
+   ],
+   "r4_status": "내부 정합 통과 · 원본 미검수",
+   "r4_notes": []
+  }
+ ]
+}

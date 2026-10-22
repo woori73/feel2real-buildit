@@ -1,0 +1,101 @@
+{
+ "note": "이미지 생성용 프롬프트. 아직 어떤 이미지도 생성하지 않았음. 영어 프롬프트는 ComfyUI 입력용이며 모델별 최적화는 11월 환경에서 조정",
+ "assumptions": [
+  "나이·키는 정본이 아님(프롬프트에는 '30대'로만 표기)",
+  "얼굴 구조·헤어는 잠정 제작 기준",
+  "리더의 눈썹 흉터 금지"
+ ],
+ "prompts": {
+  "suni_front": {
+   "file": "characters/suni/front.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, front view head and shoulders, looking at camera, wearing a dark blue-gray waterproof tactical jacket and trousers, tactical gloves with orange straps, a helicopter-descent harness with orange clips, a holster on the right hip, wet fabric from rain, night rain lighting with cool teal key light and faint rim light",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "의상 A 기준. 얼굴이 같은 사람으로 보이는지 세 각도를 함께 비교",
+   "status": "미생성"
+  },
+  "suni_side": {
+   "file": "characters/suni/side.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, pure side profile facing left so her left side is visible, head and shoulders, wearing a dark blue-gray waterproof tactical jacket and trousers, tactical gloves with orange straps, a helicopter-descent harness with orange clips, a holster on the right hip, wet fabric from rain, night rain lighting with cool teal key light and faint rim light",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "의상 A 기준. 얼굴이 같은 사람으로 보이는지 세 각도를 함께 비교",
+   "status": "미생성"
+  },
+  "suni_three_quarter": {
+   "file": "characters/suni/three_quarter.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, three-quarter view head and shoulders, wearing a dark blue-gray waterproof tactical jacket and trousers, tactical gloves with orange straps, a helicopter-descent harness with orange clips, a holster on the right hip, wet fabric from rain, night rain lighting with cool teal key light and faint rim light",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "의상 A 기준. 얼굴이 같은 사람으로 보이는지 세 각도를 함께 비교",
+   "status": "미생성"
+  },
+  "suni_full_body": {
+   "file": "characters/suni/full_body.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, full body standing neutral pose seen from the front, wearing a dark blue-gray waterproof tactical jacket and trousers, tactical gloves with orange straps, a helicopter-descent harness with orange clips, a holster on the right hip, wet fabric from rain, night rain lighting with cool teal key light and faint rim light",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "키·체격 비율은 확정되지 않음. 자연스러운 인체 비율만 요구",
+   "status": "미생성"
+  },
+  "suni_costume_A": {
+   "file": "characters/suni/costume_A.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, full body, wearing a dark blue-gray waterproof tactical jacket and trousers, tactical gloves with orange straps, a helicopter-descent harness with orange clips, a holster on the right hip, wet fabric from rain, night rain lighting with cool teal key light and faint rim light",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "의상 A. 의상 변경을 임의로 추가하지 않음",
+   "status": "미생성"
+  },
+  "suni_costume_B": {
+   "file": "characters/suni/costume_B.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, full body, wearing a blue-gray police jumper over a white shirt, daytime fluorescent corridor lighting, flat pale blue-white light, clean fabric",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "의상 B. 의상 변경을 임의로 추가하지 않음",
+   "status": "미생성"
+  },
+  "suni_costume_C": {
+   "file": "characters/suni/costume_C.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, full body, wearing only a white collared shirt (the police jumper removed), indoor evening lighting, soft low-contrast light",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "의상 C. 의상 변경을 임의로 추가하지 않음",
+   "status": "미생성"
+  },
+  "suni_expressions": {
+   "file": "characters/suni/expressions.png(구조 외 추가 요청 항목)",
+   "prompt_en": "photorealistic cinematic photograph of a Korean woman in her 30s, long narrow calm eyes, straight nose, thin lips, no scars, no piercings, dark brown chin-length hair tied low at the nape so the ears are visible, natural skin texture with visible pores, subtle shadow under the eyes, composed serious expression, 85mm lens, shallow depth of field, fine film grain, 16:9, expression sheet grid of the same woman: neutral, resolve, suppressed pain, surprise, relief without smiling, wary",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "감정 표정 시트. 컷 22 통증, 컷 50 안도(웃지 않음), 컷 65 놀람, 컷 68 경계",
+   "status": "미생성"
+  },
+  "leader_front": {
+   "file": "characters/leader/front.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean man in his late 30s to 40s, square angular jaw, thick low straight eyebrows, short cropped dark hair with raised temple lines, large ears, thin straight lips, no scars, no facial marks, expressionless guarded look, 85mm lens, shallow depth of field, fine film grain, 16:9, front view head and shoulders, wearing a dark olive tactical work jacket, wet from rain, night lighting with cool teal key light, bare head, right hand swollen",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "컷 38 용역 복장 기준. 흉터 금지",
+   "status": "미생성"
+  },
+  "leader_side": {
+   "file": "characters/leader/side.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean man in his late 30s to 40s, square angular jaw, thick low straight eyebrows, short cropped dark hair with raised temple lines, large ears, thin straight lips, no scars, no facial marks, expressionless guarded look, 85mm lens, shallow depth of field, fine film grain, 16:9, pure side profile facing left, head and shoulders, wearing a dark olive tactical work jacket, wet from rain, night lighting with cool teal key light, bare head, right hand swollen",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "컷 38 용역 복장 기준. 흉터 금지",
+   "status": "미생성"
+  },
+  "leader_three_quarter": {
+   "file": "characters/leader/three_quarter.png",
+   "prompt_en": "photorealistic cinematic photograph of a Korean man in his late 30s to 40s, square angular jaw, thick low straight eyebrows, short cropped dark hair with raised temple lines, large ears, thin straight lips, no scars, no facial marks, expressionless guarded look, 85mm lens, shallow depth of field, fine film grain, 16:9, three-quarter view head and shoulders, wearing a dark olive tactical work jacket, wet from rain, night lighting with cool teal key light, bare head, right hand swollen",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "컷 38 용역 복장 기준. 흉터 금지",
+   "status": "미생성"
+  },
+  "leader_cut38": {
+   "file": "characters/leader/cut38_cut65_comparison.png (왼쪽 칸)",
+   "prompt_en": "photorealistic cinematic photograph of a Korean man in his late 30s to 40s, square angular jaw, thick low straight eyebrows, short cropped dark hair with raised temple lines, large ears, thin straight lips, no scars, no facial marks, expressionless guarded look, 85mm lens, shallow depth of field, fine film grain, 16:9, front view head and shoulders, wearing a dark olive tactical work jacket, wet from rain, night lighting with cool teal key light, bare head, right hand swollen",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "비교 이미지의 컷 38 쪽",
+   "status": "미생성"
+  },
+  "leader_cut65": {
+   "file": "characters/leader/cut38_cut65_comparison.png (오른쪽 칸)",
+   "prompt_en": "photorealistic cinematic photograph of a Korean man in his late 30s to 40s, square angular jaw, thick low straight eyebrows, short cropped dark hair with raised temple lines, large ears, thin straight lips, no scars, no facial marks, expressionless guarded look, 85mm lens, shallow depth of field, fine film grain, 16:9, front view head and shoulders, wearing black tactical gear with straps and a helmet with the visor raised above the forehead, daytime fluorescent lighting, right hand in a clean white splint with a black band",
+   "negative_en": "text, watermark, logo, caption, scar on face, eyebrow scar, glasses, heavy makeup, extra fingers, deformed hands, cartoon, illustration, 3d render look, plastic skin, beauty filter, different person",
+   "note_ko": "비교 이미지의 컷 65 쪽. 같은 얼굴이어야 함",
+   "status": "미생성"
+  }
+ }
+}

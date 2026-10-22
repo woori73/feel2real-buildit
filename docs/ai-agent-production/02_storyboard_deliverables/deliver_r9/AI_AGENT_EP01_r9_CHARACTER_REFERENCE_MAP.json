@@ -1,0 +1,307 @@
+{
+ "meta": {
+  "stage": "r9",
+  "generated_images": 0,
+  "paid_generation": false,
+  "formal_original_compared": "0/68"
+ },
+ "cuts": {
+  "5": {
+   "characters": [
+    "서수니"
+   ],
+   "costume": "A",
+   "refs": {
+    "face": [
+     "references/suni/base/suni_front_face_crop.png",
+     "references/suni/base/suni_three_quarter_face_crop.png",
+     "references/suni/base/suni_right_side_face_crop.png"
+    ],
+    "expression": [
+     "references/suni/base/suni_expr_02_determined_crop.png"
+    ],
+    "costume": [
+     "references/suni/S1_S2/suni_S2_A_front_crop.png",
+     "references/suni/S1_S2/suni_S2_A_side_crop.png",
+     "references/suni/S1_S2/suni_S2_A_back_crop.png"
+    ],
+    "wound": null
+   },
+   "open_decisions": [
+    "손 좌우(제안: 오른손)"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "22": {
+   "characters": [
+    "서수니"
+   ],
+   "costume": "A",
+   "refs": {
+    "face": null,
+    "expression": null,
+    "costume": [
+     "references/suni/S1_S2/suni_S2_A_front_crop.png",
+     "references/suni/S1_S2/suni_S2_A_side_crop.png",
+     "references/suni/S1_S2/suni_S2_A_back_crop.png"
+    ],
+    "wound": [
+     "references/suni/S5_S6/suni_S5_wound_front_crop.png",
+     "references/suni/S5_S6/suni_S5_wound_side_crop.png",
+     "references/suni/S5_S6/suni_S5_wound_back_crop.png",
+     "references/suni/S5_S6/suni_S5_closeup_front_crop.png",
+     "references/suni/S5_S6/suni_S5_closeup_jacket_crop.png",
+     "references/suni/S5_S6/suni_S5_closeup_position_crop.png"
+    ]
+   },
+   "open_decisions": [],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "38": {
+   "characters": [
+    "서수니",
+    "용역 리더"
+   ],
+   "costume": "서수니 A / 리더 야간 복장",
+   "refs": {
+    "face": [
+     "references/suni/base/suni_front_face_crop.png",
+     "references/suni/base/suni_three_quarter_face_crop.png",
+     "references/suni/base/suni_right_side_face_crop.png"
+    ],
+    "expression": null,
+    "costume": [
+     "references/suni/S1_S2/suni_S2_A_front_crop.png",
+     "references/suni/S1_S2/suni_S2_A_side_crop.png",
+     "references/suni/S1_S2/suni_S2_A_back_crop.png"
+    ],
+    "wound": [
+     "references/suni/S5_S6/suni_S5_wound_front_crop.png",
+     "references/suni/S5_S6/suni_S5_wound_side_crop.png",
+     "references/suni/S5_S6/suni_S5_wound_back_crop.png",
+     "references/suni/S5_S6/suni_S5_closeup_front_crop.png",
+     "references/suni/S5_S6/suni_S5_closeup_jacket_crop.png",
+     "references/suni/S5_S6/suni_S5_closeup_position_crop.png"
+    ],
+    "leader_face": [
+     "references/leader_v2/leader_v2_front_crop.png",
+     "references/leader_v2/leader_v2_three_quarter_crop.png",
+     "references/leader_v2/leader_v2_right_side_crop.png"
+    ],
+    "leader_costume": [
+     "references/leader_v2/leader_v2_fullbody_night_crop.png"
+    ],
+    "leader_lighting": [
+     "references/leader_v2/leader_v2_cut38_lighting_crop.png"
+    ]
+   },
+   "open_decisions": [
+    "인물 위치 제안 확인",
+    "서수니 표정 선택",
+    "두 인물 동시 생성 방식(분리 생성 후 합성 여부, 11월 환경에서 검증)"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "40": {
+   "characters": [
+    "서수니(손)"
+   ],
+   "costume": "A",
+   "refs": {
+    "face": null,
+    "expression": null,
+    "costume": [
+     "references/suni/S1_S2/suni_S2_A_front_crop.png",
+     "references/suni/S1_S2/suni_S2_A_side_crop.png",
+     "references/suni/S1_S2/suni_S2_A_back_crop.png"
+    ],
+    "wound": null
+   },
+   "open_decisions": [
+    "쓰는 손(제안: 오른손)"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "43": {
+   "characters": [
+    "정진모(참조 없음)",
+    "용역 리더",
+    "용역 6명(참조 없음)"
+   ],
+   "costume": "리더 야간 복장",
+   "refs": {
+    "face": null,
+    "expression": null,
+    "costume": null,
+    "wound": null,
+    "leader_face": [
+     "references/leader_v2/leader_v2_front_crop.png",
+     "references/leader_v2/leader_v2_three_quarter_crop.png",
+     "references/leader_v2/leader_v2_right_side_crop.png"
+    ],
+    "leader_costume": [
+     "references/leader_v2/leader_v2_fullbody_night_crop.png"
+    ],
+    "leader_hand": [
+     "references/leader_v2/leader_v2_hand_emergency_cut43_crop.png"
+    ]
+   },
+   "open_decisions": [
+    "정진모·용역 6명 디자인 참조 없음(승인 필요)",
+    "리더 얼굴 크기가 작으면 동일성 검증 제한"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "50": {
+   "characters": [
+    "서수니"
+   ],
+   "costume": "B",
+   "refs": {
+    "face": [
+     "references/suni/base/suni_front_face_crop.png",
+     "references/suni/base/suni_three_quarter_face_crop.png",
+     "references/suni/base/suni_right_side_face_crop.png"
+    ],
+    "expression": [
+     "references/suni/base/suni_expr_01_neutral_crop.png",
+     "references/suni/base/suni_expr_02_determined_crop.png"
+    ],
+    "costume": [
+     "references/suni/S3_S4/suni_S3_B_front_crop.png",
+     "references/suni/S3_S4/suni_S3_B_side_crop.png",
+     "references/suni/S3_S4/suni_S3_B_back_crop.png"
+    ],
+    "wound": null
+   },
+   "open_decisions": [
+    "손·주머니 좌우(제안: 오른손이 왼쪽 가슴 주머니)",
+    "S3 재킷에 가슴 주머니 존재 확인"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "60": {
+   "characters": [
+    "서수니(손)"
+   ],
+   "costume": "B",
+   "refs": {
+    "face": null,
+    "expression": null,
+    "costume": [
+     "references/suni/S3_S4/suni_S3_B_front_crop.png",
+     "references/suni/S3_S4/suni_S3_B_side_crop.png",
+     "references/suni/S3_S4/suni_S3_B_back_crop.png"
+    ],
+    "wound": null
+   },
+   "open_decisions": [
+    "손 좌우(제안: 오른손)",
+    "얼굴 동일성 검증에 약함 → 보조 컷 제안 가능"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "64": {
+   "characters": [
+    "용역 리더(선두 남자)"
+   ],
+   "costume": "체포조(특공 지원팀) 복장",
+   "refs": {
+    "face": null,
+    "expression": null,
+    "costume": null,
+    "wound": null,
+    "leader_face": null,
+    "leader_costume": [
+     "references/leader_v2/leader_v2_fullbody_arrest_team_crop.png"
+    ],
+    "leader_hand": [
+     "references/leader_v2/leader_v2_hand_splint_cut64_crop.png"
+    ]
+   },
+   "open_decisions": [
+    "세로 큰 컷의 16:9 처리",
+    "모니터 화면 느낌 vs 실제 카메라"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "65": {
+   "characters": [
+    "서수니",
+    "용역 리더(컷 38 얼굴 플래시 + 모니터 속 체포조 복장)"
+   ],
+   "costume": "서수니 C / 리더 체포조",
+   "refs": {
+    "face": [
+     "references/suni/base/suni_front_face_crop.png",
+     "references/suni/base/suni_three_quarter_face_crop.png",
+     "references/suni/base/suni_right_side_face_crop.png"
+    ],
+    "expression": [
+     "references/suni/base/suni_expr_04_surprised_crop.png"
+    ],
+    "costume": [
+     "references/suni/S3_S4/suni_S4_C_front_crop.png",
+     "references/suni/S3_S4/suni_S4_C_side_crop.png",
+     "references/suni/S3_S4/suni_S4_C_back_crop.png"
+    ],
+    "wound": null,
+    "leader_face": [
+     "references/leader_v2/leader_v2_front_crop.png",
+     "references/leader_v2/leader_v2_three_quarter_crop.png",
+     "references/leader_v2/leader_v2_right_side_crop.png"
+    ],
+    "leader_costume": [
+     "references/leader_v2/leader_v2_fullbody_arrest_team_crop.png"
+    ],
+    "leader_lighting": [
+     "references/leader_v2/leader_v2_cut38_lighting_crop.png",
+     "references/leader_v2/leader_v2_cut65_lighting_crop.png"
+    ]
+   },
+   "open_decisions": [
+    "3비트 분리 생성",
+    "컷 38 얼굴과 모니터 얼굴 동일성(사용자 판정 완료, 재검수만)"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  "68": {
+   "characters": [
+    "서수니"
+   ],
+   "costume": "C",
+   "refs": {
+    "face": [
+     "references/suni/base/suni_front_face_crop.png",
+     "references/suni/base/suni_three_quarter_face_crop.png",
+     "references/suni/base/suni_right_side_face_crop.png"
+    ],
+    "expression": [
+     "references/suni/base/suni_expr_04_surprised_crop.png",
+     "references/suni/base/suni_expr_03_tense_crop.png"
+    ],
+    "costume": [
+     "references/suni/S3_S4/suni_S4_C_front_crop.png",
+     "references/suni/S3_S4/suni_S4_C_side_crop.png",
+     "references/suni/S3_S4/suni_S4_C_back_crop.png"
+    ],
+    "wound": null
+   },
+   "open_decisions": [
+    "S4 양쪽 어깨 끈 최종 확인",
+    "대사 립싱크 방식(11월)"
+   ],
+   "pass_confirmed": false,
+   "original_verified": false
+  }
+ }
+}
