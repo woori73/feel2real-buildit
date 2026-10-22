@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI 협업 관제실 · Feel2Real</title>
+    <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+    <link rel="stylesheet" href="/css/collaboration.css" />
+    <script defer src="/js/collaboration.js"></script>
+  </head>
+  <body>
+    <header>
+      <a href="/">Feel2Real</a>
+      <nav aria-label="관련 화면">
+        <a href="/ai-agent-studio">제작 스튜디오</a
+        ><a href="/mcp/connections">MCP 연결 관리</a>
+      </nav>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">AI AGENT · COLLABORATION</p>
+        <h1>작업의 시작부터<br />사용자의 승인까지.</h1>
+        <p>
+          참여 AI와 자료를 직접 선택하고, 함께 만든 제안과 판단을 한
+          타임라인에서 확인하세요.
+        </p>
+        <p class="notice">
+          AI 답변은 검토할 제안입니다. 작업 승인은 제작실 정본 변경·GitHub
+          병합·운영 배포를 실행하지 않습니다.
+        </p>
+      </section>
+      <p id="status" role="status" aria-live="polite"></p>
+      <section class="layout">
+        <aside>
+          <h2>새 작업</h2>
+          <form id="create-task">
+            <label for="task-title">작업 제목</label
+            ><input
+              id="task-title"
+              maxlength="150"
+              required
+              placeholder="EP01 연출안 검토"
+            />
+            <label for="task-instruction">작업 지시</label
+            ><textarea
+              id="task-instruction"
+              maxlength="8000"
+              rows="5"
+              required
+              placeholder="목표·기준·보존할 자료를 적어주세요."
+            ></textarea>
+            <fieldset>
+              <legend>참여 AI 직접 선택</legend>
+              <p class="small">
+                선택한 AI만 참여합니다. 기본 순서: GPT → Muse → Codex → Claude.
+                Claude가 수정을 요청하면 선택된 Codex로 전달한 뒤 재검수합니다.
+              </p>
+              <div id="agents"></div>
+              <p class="small">
+                Muse는 이 작업에 선택할 때만 참여하며 기존 업무는 유지합니다.
+              </p>
+            </fieldset>
+            <div class="limits">
+              <div>
+                <label for="max-calls">최대 호출 횟수</label
+                ><input
+                  id="max-calls"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value="6"
+                  required
+                />
+              </div>
+              <div>
+                <label for="budget">비용 상한 (USD)</label
+                ><input
+                  id="budget"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value="0"
+                  required
+                />
+              </div>
+            </div>
+            <p class="small">
+              0 USD 작업은 등록·자료 공유가 가능하며 유료 모델을 호출하지
+              않습니다. 실제 과금 연결은 서버 준비와 비용 승인이 필요합니다.
+            </p>
+            <button type="submit">작업 등록</button>
+          </form>
+          <h2>공동 작업</h2>
+          <button id="refresh" type="button">목록 새로고침</button>
+          <div id="tasks" role="region" aria-label="공동 작업 목록" tabindex="0"></div>
+        </aside>
+        <section id="task-panel" aria-label="선택한 작업">
+          <h2>작업을 선택하세요</h2>
+          <p>
+            자료·메시지·호출·사용자 승인 이력을 함께 보존합니다. 제작실 허가
+            사용자에게 이 프로젝트의 작업이 공유됩니다.
+          </p>
+        </section>
+      </section>
+    </main>
+    <template id="detail-template">
+      <article>
+        <p class="eyebrow">SHARED WORKSPACE</p>
+        <h2 class="title"></h2>
+        <pre class="instruction"></pre>
+        <p class="summary"></p>
+        <div class="actions">
+          <button data-action="start">자동 협업 시작</button
+          ><button data-action="pause">중단</button
+          ><button data-action="resume">재개</button
+          ><button data-action="approve">결과 승인</button
+          ><button data-action="cancel">작업 취소</button
+          ><button data-action="recover">미완료 호출 복구</button
+          ><a class="export" href="#">최근 200개 이력·결과 MD</a>
+        </div>
+        <label class="check"
+          ><input class="consent" type="checkbox" />선택한 AI에 작업 지시·연결한
+          버전의 텍스트·공동 타임라인을 제공하고 지정한 비용 상한 안에서
+          호출하는 데 동의합니다. 파일은 메타데이터만 전달하며 이미지·영상
+          byte는 전달하지 않습니다.</label
+        >
+        <label class="check"
+          ><input class="unknown" type="checkbox" />이전 호출의 결과·과금이
+          불명확할 수 있음을 확인했습니다. 서버 재시작 후 미완료 호출 복구는
+          10분 후 가능합니다.</label
+        >
+        <section>
+          <h3>공유 자료·PR</h3>
+          <ul class="artifacts"></ul>
+          <form class="attach-form">
+            <label
+              >연결 유형<select name="kind">
+                <option value="fileId">제작실 파일 ID</option>
+                <option value="revisionId">제작실 버전 ID</option>
+                <option value="prNumber">GitHub PR 번호</option>
+              </select></label
+            ><label
+              >자료 ID 또는 번호<input
+                name="ref"
+                required
+                maxlength="36" /></label
+            ><button type="submit">자료 연결</button>
+          </form>
+          <form class="github-form">
+            <label
+              >PR·CI 조회 번호<input
+                name="pr"
+                type="number"
+                min="1"
+                max="10000000"
+                required /></label
+            ><button type="submit">GitHub 상태 동기화</button>
+          </form>
+          <p class="small">
+            새 파일은 <a href="/ai-agent-studio">제작실에서 업로드</a>한 뒤 ID를
+            연결하세요. 중단 상태에서 자료를 추가하면 다음 시작 시 동의를 다시
+            확인합니다.
+          </p>
+        </section>
+        <section>
+          <h3>공동 타임라인</h3>
+          <form class="message-form">
+            <label
+              >메시지<textarea
+                name="body"
+                maxlength="4000"
+                rows="3"
+                required
+              ></textarea></label
+            ><button type="submit">메시지 남기기</button>
+          </form>
+          <ol class="timeline"></ol>
+          <button type="button" class="older" hidden>
+            이전 이력 200개 더 보기
+          </button>
+        </section>
+      </article>
+    </template>
+  </body>
+</html>

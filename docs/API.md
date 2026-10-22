@@ -4968,3 +4968,9 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - OAuth `originals:read`: 서비스 읽기 권한과 별도인 원본 바이너리 제공 권한. 기본 선택 해제. 모든 역할에서 `sensitiveAcknowledged=true`를 사용자 동의 화면에서 확인해야 발급하며 `SENSITIVE_ACK`를 남긴다. 원본 bytes/SHA를 바꾸지 않으므로 민감정보가 마스킹 없이 외부로 제공될 수 있다는 경고를 표시한다. 도구 인자로 권한을 올릴 수 없다. 기존 원본 scope 없는 grant의 바이너리 조회는 403 `originals_scope_required`; 텍스트·요약 조회는 기존 범위를 유지한다. 원래 서비스의 역할·학원·사업체 권한도 항상 검사한다.
 - MCP 주소 판별은 framework 전달 헤더 wrapper를 벗긴 원래 socket peer 및 원래 XFF를 기존 신뢰 프록시 resolver로 검증한다. `server.forward-headers-strategy=framework`에서 신뢰 CIDR 누락·잘못된 CIDR은 MCP 요청에 503 `MCP_TRUSTED_PROXIES_REQUIRED`. 운영 CIDR·ALB 보안그룹은 이번 작업에서 조회·변경하지 않았다.
 - JSON/텍스트의 +82 휴대·지역전화, 연속 10~19자리 번호, 분리된 카드번호, 숫자형 계좌/카드 필드를 마스킹한다. 숫자형 금액·일반 ID는 유지한다. 자유 텍스트의 긴 숫자는 계좌와 주문번호 등을 구분할 수 없어 보수적으로 마스킹하며 완전한 개인정보 탐지로 간주하지 않는다.
+
+## AI 협업 관제실 (보류 #855 기반 후속)
+
+`/ai-collaboration`: 제작실 허가 사용자만 접근. `GET /api/collaboration/agents`, `/tasks`, `/tasks/{id}`, `/tasks/{id}/events?beforeId=0`, `/tasks/{id}/export`는 조회만 한다. 목록100개/이력200개 커서, export는 최근200개 MD attachment. 화면 템플릿과 실제 데이터 출처를 분리한다.
+
+`POST /api/collaboration/tasks`는 `{title,instruction,participants:[GPT|MUSE|CODEX|CLAUDE],maxCalls:1..20,budgetMicrousd:0..100000000}`를 받는다. 참여 AI 기본값 없음. 소유자/ADMIN만 `/{id}/control` `{version,action:start|pause|resume|approve|cancel|recover,externalConsent,acknowledgeUnknown}`, `/{id}/messages` `{version,body}`, `/{id}/artifacts` `{version,fileId|revisionId|prNumber}`, `/{id}/github-sync` `{version,prNumber}`를 실행한다. 모든 쓰기는 정확한 배포 Origin·64KiB(청크 포함)·DB version 검사. 파일 원본 및 정본 승인 포인터는 변경하지 않는다. 제어/유료 호출 POST는 MCP 미허용. 모델 호출 기본OFF, 별도 서버 비용 승인/단가/작업·일일 상한 및 외부 제공 동의 필요. 자세한 실제 계약/제한/검증은 [관제실 보고서](collaboration/README.md).

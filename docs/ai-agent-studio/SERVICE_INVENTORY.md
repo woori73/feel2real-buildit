@@ -1175,3 +1175,7 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 ## 읽기 도구에서 제외한 동작
 
 쓰기 메서드, OAuth·로그인, 토큰/수집 인증 설정, 작업 할당(next-task), 새 workspace/working-copy 초기화, AI 생성·실시간 외부 API 호출, 파일 렌더/출력 생성, SSE 이벤트 구독은 실행하지 않습니다. 기존 다운로드가 조회 이력을 쓰는 Wiki 경로는 원본 view/preview로 대체합니다. 실제 기존 서비스 코드는 보존합니다.
+
+## 2026-10-22 관제실 후속 추가 (별도 보류 PR)
+
+`/ai-collaboration` 화면과 `/api/collaboration/*` 실제 API는 [관제실 실제 경로 표](../collaboration/README.md#데이터api-계약과-검증)를 따른다. 템플릿 데이터 출처는 `mcp/screen-sources.json`, Gateway의 실제 실행 목록은 runtime handler inventory가 기준이다. agents/tasks/task detail/events GET 4개만 기존 studio scope·권한으로 추가하고 모든 제어·모델 호출 POST는 제외한다. 기존 서비스 생성된 인벤토리 스냅샷은 선행 검증 근거로 보존한다.

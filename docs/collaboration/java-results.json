@@ -1,0 +1,20 @@
+{
+  "environment": "isolated MySQL8.4 and local API/browser; synthetic records and mock external models",
+  "suites": [
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.collaboration.CollaborationMySqlTest",
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.collaboration.CollaborationProvidersTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "actualExternalModelCalls": 0
+}

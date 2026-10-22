@@ -1,0 +1,13 @@
+{
+  "environment": "isolated MySQL and actual Chromium; synthetic data and mock models; no live paid API calls",
+  "results": [
+    "no AI selected by default; Muse not assigned",
+    "task created in actual MySQL from browser",
+    "external sharing consent required before dispatch",
+    "three selected roles automatically exchange stored proposals; unselected Muse absent (mock models)",
+    "user approval stored separately from canonical studio approval",
+    "Chromium 1440px, no horizontal overflow, axe violations 0",
+    "Chromium 390px, no horizontal overflow, axe violations 0",
+    "result and approval history exported as Markdown attachment"
+  ]
+}

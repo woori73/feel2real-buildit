@@ -1006,3 +1006,7 @@ MCP는 제품 관리 화면 callback 정확 등록 → 본인 로그인 → 최�
 신규 UUID 객체 저장 → 즉시 롤백 정리 hook 등록 → DB 파일·감사 행 저장 순서다. 외부 일괄 등록 트랜잭션에서 30번째 컷이 실패해도 해당 트랜잭션이 만든 신규 객체만 정리한다. SHA 중복으로 재사용한 기존 객체는 hook에 넣지 않는다. 커밋 또는 결과 불명에서는 지우지 않는다. 파일 저장소와 DB의 분산 트랜잭션은 아니며 강제 종료·삭제 실패에는 별도 대조가 필요하다.
 
 MCP의 원본 바이너리는 서비스 scope + 기존 사용자 권한 + 별도 originals:read 사용자 동의가 모두 필요하다. 기본은 원본 제공 해제이고 사용자 승인 없는 권한 확장은 없다. 텍스트 조회는 마스킹을 적용하며 금융은 사업체 월 합계만 제공한다. 운영 MCP는 실제 ChatGPT·Claude 연결 검증과 별도 운영 승인 전까지 비활성 상태를 유지한다.
+
+## 제작실 AI 협업 관제실
+
+사용자 작업 등록+참여 AI 직접 선택→DRAFT에서 제작실 파일·버전·PR 연결→비용/외부 제공 동의 후 start→DB 선점·작업/일일 비용 예약 커밋→선택된 AI에 문맥 전달→MODEL_PROPOSAL과 다음 역할 타임라인 보존. Claude CHANGES_REQUESTED는 선택된 Codex에 전달 후 Claude 재검수, 미선택이면 BLOCKED. 상한/권한 회수/연결 불가도 BLOCKED, 외부 호출 결과 불명은 UNKNOWN으로 자동 재시도 중단. 사용자 pause/resume/cancel/approve는 version과 소유권을 확인한다. APPROVED는 제안에 대한 작업 승인으로 정본·GitHub·운영 변경을 실행하지 않는다. MCP는 허용된 GET만 읽는다. 자세한 API·미완료 조건은 [관제실 보고서](collaboration/README.md).

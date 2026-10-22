@@ -1826,3 +1826,12 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 스튜디오 복원은 기존 revision/file 행을 수정하지 않고 새 revision 및 RESTORE 이벤트를 추가한다. `approved_id`는 별도 명시 검수 전 유지한다. JSON/ZIP 일괄 등록도 원본 sourceFileId/SHA를 보존하고 68개 revision과 BULK_IMPORT 이력을 추가한다. 별도 데이터/권한 테이블을 복제하지 않는다. #854는 V1094, #855는 V1095이며 신규 운영 스키마 적용은 하지 않았다. 관리자 외부 제공 위험 확인은 기존 mcp_audit의 SENSITIVE_ACK로 기록한다.
 
 `unified_assistant_audit`에 `operation`, `academy_id`, `business_id`(모두 nullable)가 추가됐다(V1094는 main·운영에 미적용 상태라 같은 파일에서 수정). 초안 관련 이벤트는 업무 종류와 학원/사업체 범위를 함께 남긴다. 이벤트 `RECOVERED_UNKNOWN`은 중단된 `EXECUTING` 초안을 `UNKNOWN`으로 전환했음을 뜻한다.
+
+## AI 협업 관제실 (V1096, #855 의존·미배포)
+
+- `ai_collaboration_tasks` / `CollaborationTask`: studio_projects FK, owner 사용자 FK, 고정 참여 역할·지시·상한, 상태/phase/call count, μUSD 예약액, DB version, active_run. JDBC 행 잠금으로 선점/승인/중단을 전이한다.
+- `ai_collaboration_events` / `CollaborationEvent`: task FK, USER/SYSTEM/선택 모델/GITHUB 저자, 실제 사용자 ID, 사건·본문·run_id·시각. append-only, AI 제안과 사용자 판단을 구분한다.
+- `ai_collaboration_artifacts` / `CollaborationArtifact`: task FK와 기존 studio_files/studio_revisions FK 또는 고정 저장소 PR 번호 참조. 원본 복사/덮어쓰기/승인 포인터 이동 없음.
+- `ai_collaboration_budget_days` / `CollaborationBudgetDay`: UTC 날짜별 보수적 예약 μUSD. upsert 배타 잠금+조건부 UPDATE로 여러 task/JVM의 일일 비용 상한을 함께 지킨다. 실패/불명 호출 예약액은 환급하지 않는다.
+
+마이그레이션은 보류 #854 V1094/#855 V1095 다음 추가 구조이며 기존 적용 migration 및 업무 데이터는 불변. 운영 미적용. [상태/검증](collaboration/README.md).

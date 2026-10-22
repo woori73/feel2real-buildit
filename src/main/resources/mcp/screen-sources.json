@@ -5402,5 +5402,19 @@
         "/api/conversations"
       ]
     }
+  ],
+  "/ai-collaboration": [
+    {
+      "template": "src/main/resources/templates/studio/collaboration.html",
+      "scripts": [
+        "/js/collaboration.js"
+      ],
+      "clientApiLiterals": [
+        "/api/collaboration/agents",
+        "/api/collaboration/tasks",
+        "/api/studio/files/{id}/content"
+      ],
+      "note": "공동 작업·타임라인은 서버 API, 클라이언트가 명시적으로 동의한 POST 제어만 외부 모델 호출 가능. MCP는 허용된 GET만 제공"
+    }
   ]
 }
