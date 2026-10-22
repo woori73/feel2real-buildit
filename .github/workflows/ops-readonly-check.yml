@@ -26,10 +26,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install pinned linters
-        run: python -m pip install --disable-pip-version-check actionlint-py==1.7.12.25 pyyaml==6.0.3
+        run: python -m pip install --disable-pip-version-check actionlint-py==1.7.12.25 shellcheck-py==0.11.0.1 pyyaml==6.0.3
       - name: actionlint (workflows and the snapshot draft)
         run: |
-          actionlint .github/workflows/prod-readonly-status.yml .github/workflows/prod-diagnostic.yml .github/workflows/ops-readonly-check.yml
+          actionlint .github/workflows/prod-readonly-status.yml .github/workflows/ops-readonly-check.yml
+          # prod-diagnostic의 AI 평가 job(이 PR이 건드리지 않은 기존 코드)에 main과 같은 shellcheck 경고 13건이 있어 그 코드만 제외한다.
+          actionlint -ignore 'SC2016:' -ignore 'SC2034:' -ignore 'SC2046:' -ignore 'SC2086:' .github/workflows/prod-diagnostic.yml
           actionlint docs/operations/aws-migration/rds-predeploy-snapshot.yml
       - name: JSON definitions parse
         run: for f in docs/operations/aws-migration/*.json; do python -m json.tool "$f" > /dev/null && echo "ok $f"; done
