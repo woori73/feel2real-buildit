@@ -294,7 +294,7 @@ class EasyCollectionIngestIdempotencyTest {
   }
 
   @Test
-  void givenFinancialArchive_whenHandoffRetried_thenSameRunAndNoLedgerUntilConfirm() {
+  void givenFinancialArchive_whenHandoffRetried_thenSameRunAndGenericConfirmIsDenied() {
     // given
     var rows = new EasyCsvFileAdapter().parse(csv(ROW_A, ROW_B), "sample.csv");
     String archive = java.util.UUID.randomUUID().toString();
@@ -307,12 +307,10 @@ class EasyCollectionIngestIdempotencyTest {
     assertThat(retry.run().runId()).isEqualTo(first.run().runId());
     assertThat(runs).hasSize(1);
     assertThat(pipeline.txnCount()).isZero();
-    pipeline.importService.confirm(first.run().importBatchId(), null);
-    assertThat(pipeline.txnCount()).isEqualTo(2);
     org.assertj.core.api.Assertions.assertThatThrownBy(() ->
         pipeline.importService.confirm(first.run().importBatchId(), null))
-        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("확정할 행이 없습니다");
-    assertThat(pipeline.txnCount()).isEqualTo(2);
+        .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
+    assertThat(pipeline.txnCount()).isZero();
   }
 
   @Test
