@@ -1,0 +1,211 @@
+{
+ "ipsi_universities": [
+  {
+   "name": "서울대학교",
+   "university_code": "SNU",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://example.test/snu"
+  },
+  {
+   "name": "고려대학교",
+   "university_code": "KOREA",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://example.test/korea"
+  },
+  {
+   "name": "연세대학교",
+   "university_code": "YON",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://example.test/yon"
+  },
+  {
+   "name": "성균관대학교",
+   "university_code": "SKKU",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://example.test/skku"
+  },
+  {
+   "name": "중앙대학교",
+   "university_code": "CAU",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://example.test/cau"
+  }
+ ],
+ "ipsi_documents": [
+  {
+   "document_key": "doc_snu_2027_susi",
+   "document_name": "서울대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "서울대학교 입학처",
+   "published_at": null,
+   "source_url": "https://example.test/snu-susi",
+   "verification_note": "테스트용 시드 문서",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_korea_2027_susi",
+   "document_name": "고려대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "고려대학교 입학처",
+   "published_at": null,
+   "source_url": "https://example.test/korea-susi",
+   "verification_note": "테스트용 시드 문서",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_yon_2027_susi",
+   "document_name": "연세대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "연세대학교 입학처",
+   "published_at": null,
+   "source_url": "https://example.test/yon-susi",
+   "verification_note": "테스트용 시드 문서",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_skku_2027_susi",
+   "document_name": "성균관대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "성균관대학교 입학처",
+   "published_at": null,
+   "source_url": "https://example.test/skku-susi",
+   "verification_note": "테스트용 시드 문서",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_cau_2027_susi",
+   "document_name": "중앙대학교 2027학년도 수시모집요강 (사설 미러본 · 공식 원본 미확보)",
+   "applicable_academic_year": 2027,
+   "institution_name": "중앙대학교 입학처",
+   "published_at": null,
+   "source_url": "https://example.test/cau-susi-mirror",
+   "verification_note": "사설 미러본. 공식 원본 미확보.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_cau_2027_jeongsi",
+   "document_name": "중앙대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "중앙대학교 입학처",
+   "published_at": null,
+   "source_url": "https://example.test/cau-jeongsi",
+   "verification_note": "테스트용 시드 문서",
+   "source_type": "official_pdf"
+  }
+ ],
+ "ipsi_departments": [],
+ "ipsi_admission_types": [
+  {
+   "university_code": "SNU",
+   "academic_year": 2027,
+   "type_name": "학생부종합전형(지역균형전형)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "1단계 서류 100%, 2단계 면접",
+   "min_academic_standard": "적용 (3개 영역 등급 합 7 이내)",
+   "source_document_key": "doc_snu_2027_susi",
+   "submission_documents": [
+    "학교생활기록부"
+   ]
+  },
+  {
+   "university_code": "KOREA",
+   "academic_year": 2027,
+   "type_name": "학교추천전형",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "학생부 교과 중심 선발",
+   "min_academic_standard": "적용 (수능최저 별도 안내)",
+   "source_document_key": "doc_korea_2027_susi",
+   "submission_documents": [
+    "학교생활기록부"
+   ]
+  },
+  {
+   "university_code": "YON",
+   "academic_year": 2027,
+   "type_name": "학생부교과전형[추천형]",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "단계별 전형 — 1단계 교과 중심 선발, 2단계 면접",
+   "min_academic_standard": "적용 (추천형 수능최저 적용)",
+   "source_document_key": "doc_yon_2027_susi",
+   "submission_documents": [
+    "학교생활기록부"
+   ]
+  },
+  {
+   "university_code": "SKKU",
+   "academic_year": 2027,
+   "type_name": "학생부교과(추천인재)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "교과 100%",
+   "min_academic_standard": "미적용",
+   "source_document_key": "doc_skku_2027_susi",
+   "submission_documents": [
+    "학교생활기록부"
+   ]
+  },
+  {
+   "university_code": "CAU",
+   "academic_year": 2027,
+   "type_name": "수능위주(일반)",
+   "recruitment_count": "",
+   "eligibility": "",
+   "student_record_method": "수능 100%",
+   "min_academic_standard": "해당 없음",
+   "source_document_key": "doc_cau_2027_jeongsi",
+   "submission_documents": [
+    "학교생활기록부"
+   ]
+  }
+ ],
+ "ipsi_schedules": [
+  {
+   "university_code": "SNU",
+   "academic_year": 2027,
+   "item": "원서접수",
+   "type_name": "수시",
+   "date": "2026. 9. 8.(화) ~ 9. 11.(금)",
+   "source_document_key": "doc_snu_2027_susi"
+  },
+  {
+   "university_code": "KOREA",
+   "academic_year": 2027,
+   "item": "원서접수",
+   "type_name": "수시",
+   "date": "2026. 9. 8.(화) ~ 9. 10.(목)",
+   "source_document_key": "doc_korea_2027_susi"
+  },
+  {
+   "university_code": "YON",
+   "academic_year": 2027,
+   "item": "원서접수",
+   "type_name": "수시",
+   "date": "2026. 9. 7.(월) ~ 9. 9.(수)",
+   "source_document_key": "doc_yon_2027_susi"
+  },
+  {
+   "university_code": "SKKU",
+   "academic_year": 2027,
+   "item": "원서접수",
+   "type_name": "수시",
+   "date": "2026. 9. 9.(수) ~ 9. 11.(금)",
+   "source_document_key": "doc_skku_2027_susi"
+  },
+  {
+   "university_code": "CAU",
+   "academic_year": 2027,
+   "item": "원서접수",
+   "type_name": "정시",
+   "date": "2026. 12. 29.(화) ~ 2027. 1. 1.(금)",
+   "source_document_key": "doc_cau_2027_jeongsi"
+  }
+ ]
+}

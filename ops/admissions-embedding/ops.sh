@@ -128,6 +128,11 @@ PY
   echo "== after =="; report ;;
 
 
+search-eval)
+  # 읽기 전용: 운영 DB 임베딩(SELECT)과 임베딩 서버(query 모드)만 사용해 검색 품질·유사도 하한을 평가한다.
+  systemctl is-active --quiet f2r-embed || { echo "f2r-embed 가 실행 중이 아님"; exit 1; }
+  python3 "$SRC/search_eval.py" ;;
+
 verify)
   report
   T=$(curl -fsS -m 2 -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null || true)

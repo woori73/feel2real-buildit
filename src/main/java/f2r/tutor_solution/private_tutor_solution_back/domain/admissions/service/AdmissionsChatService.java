@@ -104,6 +104,22 @@ public class AdmissionsChatService {
                     + "대교협 등 공식 발표 자료를 직접 확인해 주세요. 대학별 전형·모집단위·일정은 대학 이름을 넣어 물어보세요.";
     static final String MSG_UNSUPPORTED_YEAR =
             "입시상담 가이드는 2027학년도(확정)와 2028학년도(계획) 자료만 다룹니다. 다른 학년도는 안내할 수 없습니다.";
+    /** 질문이 특정 대학을 가리켰지만 그 대학에서 요청한 정보를 찾지 못했을 때의 공통 첫 문장. */
+    static final String MSG_UNIV_NO_INFO =
+            "현재 등록된 공식 입시자료에서 해당 대학의 요청하신 전형 정보를 확인할 수 없습니다.";
+
+    /** 대학 전체 자료가 없는 경우(등록되지 않은 대학). 다른 대학 자료로 대신 답하지 않는다. */
+    static String msgUniversityNotRegistered(List<String> names) {
+        return MSG_UNIV_NO_INFO + " 질문하신 " + String.join(", ", names)
+                + "의 입시자료는 아직 등록되어 있지 않습니다. 해당 대학 입학처의 모집요강 원문을 확인해 주세요.";
+    }
+
+    /** 대학은 등록돼 있지만 요청한 전형·일정 자료만 없는 경우. */
+    static String msgUniversityInfoMissing(List<String> names) {
+        return MSG_UNIV_NO_INFO + " " + String.join(", ", names)
+                + "의 다른 전형·일정 자료는 등록되어 있을 수 있으니, 전형명이나 수시/정시를 바꿔 질문하시거나 "
+                + "해당 대학 입학처의 모집요강 원문을 확인해 주세요.";
+    }
     static final String MSG_UNGROUNDED_NUMBER =
             "근거 자료에서 확인되지 않는 수치가 답변에 포함되어 답변을 제공하지 않습니다. 질문을 더 구체적으로 "
                     + "(대학·학과·전형·학년도) 다시 입력해 주세요.";
@@ -178,6 +194,12 @@ public class AdmissionsChatService {
             return refuse(MSG_UNSUPPORTED_YEAR, sessionToken, question, academicYearFilter, studentProfile);
         }
 
+        // 2-1. 질문이 등록되지 않은 대학만 가리키면 다른 대학 자료로 대신 답하지 않는다.
+        if (parsed.onlyUnregisteredUniversities()) {
+            return refuse(msgUniversityNotRegistered(parsed.unknownUniversities()), sessionToken, question,
+                    academicYearFilter, studentProfile);
+        }
+
         // 3. 조사 사다리 + 사실 근거 병합 (GUIDE는 근거가 아니다)
         ResearchPack pack;
         try {
@@ -200,13 +222,15 @@ public class AdmissionsChatService {
 
         // 5. 사실 근거가 하나도 없으면(GUIDE만 검색된 경우 포함) LLM을 호출하지 않는다.
         if (usable.isEmpty()) {
-            return refuse(MSG_NO_EVIDENCE, sessionToken, question, academicYearFilter, studentProfile);
+            return refuse(parsed.universities().isEmpty() ? MSG_NO_EVIDENCE : msgUniversityInfoMissing(parsed.universities()),
+                    sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 5-1. 문서 제목·발행기관만 있는 공식자료(material:)로는 내용을 알 수 없다. 사실 근거(학과·전형·일정 행 또는
         //      FACT 지식)가 하나도 없으면 LLM이 제목만 보고 내용을 지어내지 못하도록 호출하지 않는다.
         if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
-            return refuse(MSG_TITLE_ONLY, sessionToken, question, academicYearFilter, studentProfile);
+            return refuse(parsed.universities().isEmpty() ? MSG_TITLE_ONLY : MSG_UNIV_NO_INFO + " " + MSG_TITLE_ONLY,
+                    sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 6. 근거를 프롬프트에 조립
@@ -353,6 +377,16 @@ public class AdmissionsChatService {
                 + "확인되지 않는다고 답하라. 근거에 없는 날짜·인원·비율·등급은 절대 쓰지 마라.\n");
         if (parsed.yearUnspecified()) {
             sb.append("질문에 학년도가 없으므로 답변 첫머리에 '2027학년도 기준'이라고 밝혀라.\n");
+        }
+        if (!parsed.unknownUniversities().isEmpty()) {
+            sb.append("[주의] 질문에 언급된 ").append(String.join(", ", parsed.unknownUniversities()))
+                    .append("은(는) 등록된 공식 입시자료가 없다. 답변 첫머리에 '")
+                    .append(String.join(", ", parsed.unknownUniversities()))
+                    .append("의 자료는 등록되어 있지 않아 안내할 수 없다'고 밝히고, 그 대학에 대해서는 어떤 내용도 쓰지 마라.\n");
+        }
+        if (parsed.mentionsUnsupportedYear() && !parsed.years().isEmpty()) {
+            sb.append("[주의] 질문에 지원하지 않는 학년도가 함께 언급되었다. 그 학년도의 자료는 없다고 밝히고, "
+                    + "아래 근거를 그 학년도의 내용인 것처럼 쓰지 마라. 근거의 학년도를 명시해 답하라.\n");
         }
         if (coverage != null && !coverage.covered().isEmpty()) {
             sb.append("[전체 일정 질문] 대학별로 대학명을 구분해 나열하고 각 일정의 원문 날짜를 그대로 써라. 일정이 확인된 대학: ")
