@@ -7,6 +7,7 @@ public interface AssistantDraftRepository extends JpaRepository<AssistantDraft,S
   List<AssistantDraft> findTop30ByOwnerIdOrderByCreatedAtDesc(Long ownerId);
   List<AssistantDraft> findByOwnerIdAndStatusAndExpiresAtBefore(Long ownerId,String status,java.time.LocalDateTime before);
   long countByOwnerIdAndStatus(Long ownerId,String status);
+  boolean existsByOwnerIdAndBusinessIdAndOperationAndPayload(Long ownerId,Long businessId,String operation,String payload);
   @Modifying(flushAutomatically=true)
   @Query("update AssistantDraft d set d.status=:status where d.id=:id and d.ownerId=:owner and d.status='PENDING' and d.expiresAt>:now")
   int claimPending(@Param("id") String id,@Param("owner") Long owner,@Param("status") String status,@Param("now") java.time.LocalDateTime now);

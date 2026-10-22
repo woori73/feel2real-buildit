@@ -4895,3 +4895,4 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 - `GET /audit`의 각 행에 `operation`, `academyId`, `businessId`가 추가됐다.
 - 쓰기 Origin 허용 목록은 `buildit.unified-assistant.allowed-origins`(쉼표 구분, 기본 `http://localhost:8080,https://feel2real.co.kr`)다.
 - `GET /drafts`는 만료 후 5분이 지나도 `EXECUTING`인 본인 초안을 `UNKNOWN`(감사 `RECOVERED_UNKNOWN`)으로 전환한다. 자동 재실행은 하지 않는다.
+- `LEDGER_ACCOUNT`(계정 변경) 초안은 이 비서가 본인의 `LEDGER_IMPORT` 초안으로 만든 가져오기 배치만 대상으로 한다. 금융자료 수집(#853) 등 다른 경로가 만든 승인 전 배치는 403이며 기존 이지장부 화면에서 처리한다(수집 승인 해시·배치 상태가 외부에서 바뀌는 것을 막기 위함).
