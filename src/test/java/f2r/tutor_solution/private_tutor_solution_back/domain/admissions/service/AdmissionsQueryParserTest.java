@@ -151,4 +151,78 @@ class AdmissionsQueryParserTest {
         assertThat(AdmissionsQueryParser.parse("전국 수시 모집인원이 몇 명이에요", UNIVS).asksAggregateStats()).isTrue();
         assertThat(AdmissionsQueryParser.parse("인하대 컴퓨터공학과 몇 명 뽑나요", UNIVS).asksAggregateStats()).isFalse();
     }
+
+    private static final List<String> TEN = List.of(
+            "서울대학교", "연세대학교", "성균관대학교", "고려대학교", "이화여자대학교", "중앙대학교",
+            "한국외국어대학교", "한양대학교", "경희대학교", "서강대학교");
+
+    @Test
+    @DisplayName("given 학생들이 쓰는 줄임말 when 입시 질문을 분석하면 then 정식 대학으로 연결된다")
+    void informal_aliases_map_to_full_names() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.parse("연대 교과전형 수능최저 있어?", TEN).universities()).containsExactly("연세대학교");
+        assertThat(AdmissionsQueryParser.parse("고대 2027 수시 지역균형 전형은?", TEN).universities()).containsExactly("고려대학교");
+        assertThat(AdmissionsQueryParser.parse("이대 정시 원서접수 일정", TEN).universities()).containsExactly("이화여자대학교");
+        assertThat(AdmissionsQueryParser.parse("성대 논술 전형 알려줘", TEN).universities()).containsExactly("성균관대학교");
+        assertThat(AdmissionsQueryParser.parse("중대 수시 일정", TEN).universities()).containsExactly("중앙대학교");
+        assertThat(AdmissionsQueryParser.parse("외대 학종 지원자격", TEN).universities()).containsExactly("한국외국어대학교");
+        assertThat(AdmissionsQueryParser.parse("한국외대 수시 일정", TEN).universities()).containsExactly("한국외국어대학교");
+        assertThat(AdmissionsQueryParser.parse("이화여대 정시 모집", TEN).universities()).containsExactly("이화여자대학교");
+        assertThat(AdmissionsQueryParser.parse("연대는 교과전형 수능최저가 있나요", TEN).universities()).containsExactly("연세대학교");
+    }
+
+    @Test
+    @DisplayName("given 다른 뜻으로 쓰인 표현 when 분석하면 then 대학으로 잘못 치환하지 않는다")
+    void ambiguous_words_are_not_universities() {
+        // given: 입시 문맥이 없거나, 다른 단어의 일부이거나, 조사 '로'가 붙은 부사
+        List<String> questions = List.of(
+                "연대 책임이 뭐예요", "고대 그리스 문명 알려줘", "성대 결절 수술 후기", "중대한 사안이에요",
+                "이대로 괜찮을까요", "고대사 공부법", "연대감을 키우는 법", "외대 안쪽 통증",
+                "이대로 수시 지원해도 되나요", "고대인의 생활", "성대한 파티");
+
+        // when / then
+        for (String q : questions) {
+            assertThat(AdmissionsQueryParser.parse(q, TEN).universities()).as(q).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("given 2025학년도 같은 과거 학년도 when 분석하면 then 미지원 학년도로 인식한다 (2027·2028·개정교육과정·인원 숫자는 제외)")
+    void past_academic_years_are_unsupported() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.parse("2025학년도 서울대 수시 모집요강", TEN).mentionsUnsupportedYear()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("2025학년도 서울대 수시 모집요강", TEN).years()).isEmpty();
+        assertThat(AdmissionsQueryParser.parse("25학년도 연세대 수시", TEN).mentionsUnsupportedYear()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("2024년도 입시 결과", TEN).mentionsUnsupportedYear()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("2026학년도 정시", TEN).mentionsUnsupportedYear()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("27학년도 연세대 수시", TEN).years()).containsExactly(2027);
+        assertThat(AdmissionsQueryParser.parse("27학년도 연세대 수시", TEN).mentionsUnsupportedYear()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("2022 개정 교육과정이 수능에 미치는 영향", TEN).mentionsUnsupportedYear()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("2015년 개정 교육과정 이후", TEN).mentionsUnsupportedYear()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("모집인원이 2000명이에요?", TEN).mentionsUnsupportedYear()).isFalse();
+    }
+
+    @Test
+    @DisplayName("given 등록되지 않은 대학 when 분석하면 then 미등록 대학으로 구분하고, 등록 대학이면 제외한다")
+    void unknown_universities_are_detected() {
+        // given / when
+        var kaist = AdmissionsQueryParser.parse("카이스트 수시 모집요강", TEN);
+        var english = AdmissionsQueryParser.parse("KAIST 입학 전형", TEN);
+        var full = AdmissionsQueryParser.parse("건국대학교 수시 일정", TEN);
+        var mixed = AdmissionsQueryParser.parse("연세대학교와 카이스트 교과전형", TEN);
+        var registered = AdmissionsQueryParser.parse("서울대학교 수시 모집요강", TEN);
+        var cityUniv = AdmissionsQueryParser.parse("서울시립대 수시 일정", TEN);
+
+        // then
+        assertThat(kaist.unknownUniversities()).containsExactly("카이스트");
+        assertThat(kaist.onlyUnregisteredUniversities()).isTrue();
+        assertThat(english.unknownUniversities()).containsExactly("KAIST");
+        assertThat(full.unknownUniversities()).containsExactly("건국대");
+        assertThat(mixed.universities()).containsExactly("연세대학교");
+        assertThat(mixed.unknownUniversities()).containsExactly("카이스트");
+        assertThat(mixed.onlyUnregisteredUniversities()).isFalse();
+        assertThat(registered.unknownUniversities()).isEmpty();
+        assertThat(cityUniv.universities()).as("서울시립대를 서울대로 오인하지 않는다").isEmpty();
+        assertThat(cityUniv.unknownUniversities()).isNotEmpty();
+    }
 }
