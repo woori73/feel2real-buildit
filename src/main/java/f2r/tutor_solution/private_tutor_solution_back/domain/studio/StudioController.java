@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class StudioController {
   private final StudioService service;
+  private final StudioBulkImport bulk;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -71,8 +72,9 @@ public class StudioController {
       @AuthenticationPrincipal AuthenticatedPrincipal p,
       @RequestParam(required = false) Integer episode,
       @RequestParam(required = false) String kind,
-      @RequestParam(required = false) String q) {
-    return service.revisions(p, episode, kind, q);
+      @RequestParam(required = false) String q,
+      @RequestParam(defaultValue="200") int limit,@RequestParam(defaultValue="0") int offset) {
+    return service.revisions(p, episode, kind, q,limit,offset);
   }
 
   @GetMapping("/api/studio/revisions/{id}")
@@ -88,6 +90,17 @@ public class StudioController {
       @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody StudioService.Revision r) {
     return service.save(p, r);
   }
+
+  public record Restore(String expectedHead,String label) {}
+  @PostMapping("/api/studio/revisions/{id}/restore") @ResponseBody
+  public Object restore(@AuthenticationPrincipal AuthenticatedPrincipal p,@PathVariable String id,@RequestBody Restore r) {
+    return service.restore(p,id,r.expectedHead(),r.label());
+  }
+  @GetMapping("/api/studio/cuts") @ResponseBody
+  public Object cuts(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestParam(defaultValue="1") int episode) {return service.cuts(p,episode);}
+  public record Bulk(String fileId) {}
+  @PostMapping("/api/studio/imports/ep01") @ResponseBody
+  public Object bulk(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestBody Bulk r) throws IOException {return bulk.importEp01(p,r.fileId());}
 
   public record Review(String action, String note) {}
 

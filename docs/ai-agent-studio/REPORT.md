@@ -53,13 +53,12 @@ Java MySQL 테스트는 `/tmp/f2r-browser-fixture.json`에 격리 세션을 남�
 ```yaml
 app:
   mcp:
-    enabled: true
+    enabled: false # 운영 활성화 금지; 별도 승인된 격리 시험에서만 true
     public-base-url: https://feel2real.co.kr
     internal-base-url: http://127.0.0.1:8080
     redirect-uris:
       - https://claude.ai/api/mcp/auth_callback
-      - https://chatgpt.com/connector_platform/oauth/callback
-      - https://chat.openai.com/connector_platform/oauth/callback
+      # ChatGPT의 실제 callback은 관리 화면에서 복사 후 정확히 추가. 합성 테스트 URI를 사용하지 않는다.
 ```
 
 기본값 OFF를 변경하지 않았으므로 배포만으로 원격 MCP가 켜지지 않는다. 기존 HTTPS reverse proxy가 `/mcp`, `/mcp/oauth/*`, `/.well-known/oauth-*`를 동일 앱으로 전달해야 한다. Wiki Python의 read-only 검증 코드를 Spring과 함께 적용해야 한다. 구 Python에서 읽기 전용 서명을 무시하는 상태로 운용하지 않는다. 별도 AcademyCraft는 기존 Gateway secret·사용자/학원 연결이 필요하며 이 PR이 신규 계정이나 원격 DB 권한을 만들지 않는다.

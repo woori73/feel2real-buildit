@@ -148,282 +148,6 @@
     "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
   },
   {
-    "path": "/api/admin/easy/summary",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/transactions",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/transactions/export",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/reviews/summary",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/reviews",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/corrections/logs",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/businesses",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/accounts",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/imports",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/imports/{batchId}",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/accounting/general-ledger",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/accounting/trial-balance",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/accounting/balance-audit",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/accounting/income-statement",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/accounting/balance-sheet",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/students",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/easy/students/{studentId}/ledger",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/businesses",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/workspace/monthly",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/workspace/transactions",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/workspace/transactions/{txnId}",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/workspace/reviews",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/accounting/journal",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/accounting/general-ledger",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/accounting/trial-balance",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/accounting/balance-audit",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/accounting/income-statement",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/tutor/easy/accounting/balance-sheet",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/dashboard/businesses",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/admissions/knowledge",
-    "service": "admissions",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/admissions/knowledge/{id}",
-    "service": "admissions",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/admissions/materials",
-    "service": "admissions",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/admissions/stats",
-    "service": "admissions",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
     "path": "/api/dashboard/admissions/history",
     "service": "admissions",
     "roles": [
@@ -908,14 +632,6 @@
   },
   {
     "path": "/api/admin/newstart/consultations",
-    "service": "content",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
-  },
-  {
-    "path": "/api/admin/newstart/consultations/{consultationId}",
     "service": "content",
     "roles": [
       "ADMIN"
@@ -2357,12 +2073,6 @@
     "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
   },
   {
-    "path": "/api/academies/{handle}/midterm-campaign/live-updates",
-    "service": "wiki",
-    "roles": [],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
     "path": "/api/academies/{handle}/midterm-campaign/live-videos",
     "service": "wiki",
     "roles": [],
@@ -2394,24 +2104,6 @@
   },
   {
     "path": "/api/academies/{handle}/midterm-campaign/popup-visual",
-    "service": "wiki",
-    "roles": [],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/academies/{handle}/midterm-campaign/showcase",
-    "service": "wiki",
-    "roles": [],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/academies/{handle}/midterm-campaign/wiki-sources",
-    "service": "wiki",
-    "roles": [],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview",
     "service": "wiki",
     "roles": [],
     "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
@@ -2463,14 +2155,6 @@
     "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
   },
   {
-    "path": "/api/admin/chart/settings",
-    "service": "chart",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
     "path": "/api/admin/chart/tools/scores/preview",
     "service": "chart",
     "roles": [
@@ -2481,206 +2165,6 @@
   {
     "path": "/api/admin/chart/tools/scores/stale",
     "service": "chart",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/accounting/reference-comparison",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/accounts/mappings",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/accounts/rules",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/card-events",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/card-events/merchant-mappings",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/closings",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/collection-approvals/pending",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/collections/connections/{connectionId}/checkpoints",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/collections/runs",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/collections/runs/{runId}",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/collections/sources",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/collector/tasks",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/collector/tasks/{taskId}",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/dashboard/widgets",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/executive-summary",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/filing-check",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/filing-references",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/income-tax",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/payments",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/pl",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/withholdings",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/workspace/monthly",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/workspace/reviews",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/workspace/transactions",
-    "service": "easy",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/admin/easy/workspace/transactions/{txnId}",
-    "service": "easy",
     "roles": [
       "ADMIN"
     ],
@@ -2955,12 +2439,6 @@
     "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
   },
   {
-    "path": "/api/dashboard/widgets",
-    "service": "easy",
-    "roles": [],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
     "path": "/api/hwpx/jobs",
     "service": "learning",
     "roles": [],
@@ -3207,24 +2685,6 @@
     "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
   },
   {
-    "path": "/api/tutor/easy/imports",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/tutor/easy/imports/{batchId}",
-    "service": "easy",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
     "path": "/api/tutor/lesson-applications",
     "service": "learning",
     "roles": [
@@ -3262,15 +2722,6 @@
   },
   {
     "path": "/api/tutor/lms/{handle}/midterm-campaign/live-videos",
-    "service": "wiki",
-    "roles": [
-      "TUTOR",
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
-    "path": "/api/tutor/lms/{handle}/midterm-campaign/wiki-candidates",
     "service": "wiki",
     "roles": [
       "TUTOR",
@@ -3543,15 +2994,6 @@
     "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
   },
   {
-    "path": "/dashboard",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
     "path": "/admin/students",
     "service": "members",
     "roles": [
@@ -3624,78 +3066,6 @@
     "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
   },
   {
-    "path": "/easy",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/easy/transactions",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/easy/students",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/easy/payments",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/easy/card-review",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/easy/reviews",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/easy/evidence",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/ledger",
-    "service": "easy",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
     "path": "/tutor/lessons/{lessonId}/students",
     "service": "learning",
     "roles": [],
@@ -3726,15 +3096,6 @@
     "service": "chart",
     "roles": [
       "ADMIN"
-    ],
-    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
-  },
-  {
-    "path": "/admissions/workspace",
-    "service": "admissions",
-    "roles": [
-      "ADMIN",
-      "TUTOR"
     ],
     "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
   },
@@ -4203,12 +3564,6 @@
     "reason": "기존 키워드 기반 ACTIVE 자료 검색. LLM·임베딩 API 호출 없음"
   },
   {
-    "path": "/api/newstart/consultations/{consultationId}",
-    "service": "content",
-    "roles": [],
-    "reason": "기존 사용자·소유권 검사. MCP 외부 요청은 읽기 전용·rollback 트랜잭션으로 읽음 커서 저장 없음"
-  },
-  {
     "path": "/api/hwpx/jobs/{jobId}/download",
     "service": "learning",
     "roles": [],
@@ -4219,5 +3574,24 @@
     "service": "studio",
     "roles": [],
     "reason": "허가된 원본 PDF·텍스트·ZIP 목록 열람. 원본 불변, 압축 해제·스크립트 실행 없음"
+  },
+  {
+    "path": "/api/mcp/finance/summary",
+    "service": "easy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "params": [
+      "businessId",
+      "month"
+    ],
+    "reason": "명시한 허용 사업체의 월 합계만. 원문·증빙·학생·거래처·계좌번호·수집상태는 미제공"
+  },
+  {
+    "path": "/api/studio/cuts",
+    "service": "studio",
+    "roles": [],
+    "reason": "현재 컷 head 전체의 프로젝트 권한 검증 후 SQL 조회. 초기화·승인·파일 변경 없음"
   }
 ]

@@ -15,6 +15,7 @@ public class McpController {
   private final McpGateway gateway;
   private final McpRateLimit rate;
   private final ObjectMapper json;
+  private final McpConcurrency concurrency;
   private static final Set<String> VERSIONS = Set.of("2025-03-26", "2025-06-18", "2025-11-25");
 
   @PostMapping(
@@ -28,6 +29,7 @@ public class McpController {
       rate.check("user:" + identity.principal().userId(), 60);
     } catch (org.springframework.web.server.ResponseStatusException e) {
       oauth.audit(null, "authentication", null, "DENY", 0);
+      if(e.getStatusCode().value()==429)return ResponseEntity.status(429).header("Retry-After","60").body(Map.of("error",e.getReason()));
       return ResponseEntity.status(e.getStatusCode())
           .header(
               "WWW-Authenticate",
@@ -36,6 +38,8 @@ public class McpController {
                   + "/.well-known/oauth-protected-resource/mcp\", error=\"invalid_token\"")
           .body(Map.of("error", e.getReason()));
     }
+    if(!concurrency.tryAcquire()) return ResponseEntity.status(429).header("Retry-After","1").body(Map.of("error","server_concurrency_limit"));
+    try {
     JsonNode id = request.get("id");
     if (!request.isObject()
         || !"2.0".equals(request.path("jsonrpc").asText())
@@ -107,6 +111,7 @@ public class McpController {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
         .body(Map.of("jsonrpc", "2.0", "id", id, "result", result));
+    } finally {concurrency.release();}
   }
 
   private Map<String, Object> error(JsonNode id, int code, String message) {

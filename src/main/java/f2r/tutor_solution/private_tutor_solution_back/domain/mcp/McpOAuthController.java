@@ -78,6 +78,7 @@ public class McpOAuthController {
     var details = oauth.validateAuthorization(q);
     response.setHeader("Cache-Control", "no-store");
     response.setHeader("Content-Security-Policy", "frame-ancestors 'none'; form-action 'self'");
+    model.addAttribute("adminAccount", "ADMIN".equals(p.role()));
     model.addAttribute("clientName", details.get("client_name"));
     model.addAttribute("nonce", oauth.pending(p, q));
     model.addAttribute(
@@ -113,10 +114,11 @@ public class McpOAuthController {
       @AuthenticationPrincipal AuthenticatedPrincipal p,
       @RequestParam String nonce,
       @RequestParam Set<String> scopes,
+      @RequestParam(defaultValue="false") boolean sensitiveAcknowledged,
       HttpServletRequest req) {
     sameOrigin(req);
     return ResponseEntity.status(303)
-        .location(URI.create(oauth.authorize(p, nonce, scopes)))
+        .location(URI.create(oauth.authorize(p, nonce, scopes, sensitiveAcknowledged)))
         .build();
   }
 

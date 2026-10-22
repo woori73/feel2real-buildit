@@ -68,7 +68,7 @@ async def read(token):
                     'readContent':response.content[0].text,'readLatencyMs':timings,'search':not search.is_error,'writeDenied':denied.is_error}
 
 async def main():
-    a=await read(connect('https://chatgpt.com/connector_platform/oauth/callback','Protocol SDK client A'))
+    a=await read(connect('https://chatgpt.com/connector/oauth/isolated-test-callback','Protocol SDK client A'))
     b=await read(connect('https://claude.ai/api/mcp/auth_callback','Protocol SDK client B'))
     assert a['readContent']==b['readContent']
     digest=hashlib.sha256(a.pop('readContent').encode()).hexdigest();b.pop('readContent')

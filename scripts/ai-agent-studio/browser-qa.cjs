@@ -19,6 +19,7 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
 (async () => {
   const browser = await chromium.launch({
     headless: true,
+    executablePath:process.env.CHROMIUM_PATH||"/usr/bin/chromium",
     args: ["--no-sandbox"],
   });
   try {
@@ -246,6 +247,19 @@ const passed = (name, detail) => results.push({ name, pass: true, detail });
       .analyze();
     assert.equal(ma.violations.length, 0, JSON.stringify(ma.violations));
     passed("모바일 390px·68컷·가로 넘침 없음·axe 위반 0");
+    await m.locator('#cut-grid button').first().click();
+    await m.locator('#detail').getByRole('button',{name:'검수·사용자 승인',exact:true}).click();
+    await m.locator('#review-dialog').waitFor({state:'visible'});
+    await m.locator('#review-form [name=note]').fill('합성 68컷 모바일 승인 검증');
+    await m.locator('#review-form button:not([type=button])').click();
+    await m.locator('#review-dialog').waitFor({state:'hidden'});
+    await m.waitForFunction(()=>document.querySelector('#detail').textContent.includes('사용자 승인본'));
+    passed('모바일 실제 승인 및 저장 재조회');
+    await m.locator('#detail').getByRole('button',{name:'이 버전으로 복원 초안 만들기'}).click();
+    await m.waitForFunction(()=>document.querySelector('#message').textContent.includes('새 버전을 만들었습니다'));
+    assert.match(await m.locator('#detail').innerText(),/미승인/);
+    passed('모바일 복원은 미승인 새 버전·기존 승인 이력 유지');
+    await m.screenshot({path:path.join(out,'screens/restore-mobile-390.png'),fullPage:true});
     await m.screenshot({
       path: path.join(out, "screens/studio-mobile-390.png"),
       fullPage: true,

@@ -16,19 +16,7 @@ public class McpRateLimit {
   public void check(String key, int maximum) {
     String hash = McpOAuth.hash(key);
     long minute = System.currentTimeMillis() / 60000;
-    int updated =
-        db.update(
-            "UPDATE mcp_rate_limits SET calls=CASE WHEN window_start=? THEN calls+1 ELSE 1"
-                + " END,window_start=? WHERE bucket_key=?",
-            minute,
-            minute,
-            hash);
-    if (updated == 0)
-      try {
-        db.update("INSERT INTO mcp_rate_limits VALUES (?,?,1)", hash, minute);
-      } catch (DuplicateKeyException e) {
-        db.update("UPDATE mcp_rate_limits SET calls=calls+1 WHERE bucket_key=?", hash);
-      }
+    db.update("INSERT INTO mcp_rate_limits(bucket_key,window_start,calls) VALUES (?,?,1) ON DUPLICATE KEY UPDATE calls=IF(window_start=VALUES(window_start),calls+1,1),window_start=VALUES(window_start)",hash,minute);
     if (db.queryForObject(
             "SELECT calls FROM mcp_rate_limits WHERE bucket_key=?", Integer.class, hash)
         > maximum) throw McpOAuth.error(429, "rate_limit");

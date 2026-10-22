@@ -113,6 +113,12 @@
       const b = el("button", "이 자료의 다음 버전 작성");
       b.onclick = () => edit(r);
       $("detail").append(b);
+      const restore=el("button","이 버전으로 복원 초안 만들기");
+      restore.onclick=run(async()=>{
+        const restored=await api("revisions/"+r.id+"/restore",json({expectedHead:r.head_id,label:"restore-"+Date.now()}));
+        await load();detail(restored);message("이전 원본을 참조하는 새 버전을 만들었습니다. 기존 승인본은 유지되며 새 버전 승인은 별도입니다.");
+      });
+      $("detail").append(restore);
     }
     if (state.permission === "APPROVER") {
       const b = el("button", "검수·사용자 승인");
@@ -149,7 +155,8 @@
     }
     $("editor").showModal();
   }
-  async function load() {
+  async function load(append=false) {
+    if(typeof append!=="boolean")append=false;
     const qs = new URLSearchParams();
     for (const [key, id] of [
       ["episode", "episode"],
@@ -157,7 +164,10 @@
       ["q", "query"],
     ])
       if ($(id).value) qs.set(key, $(id).value);
-    state.revisions = await api("revisions?" + qs);
+    qs.set("offset",append?state.revisions.length:0);qs.set("limit",200);
+    const page=await api("revisions?"+qs);state.revisions=append?[...state.revisions,...page]:page;
+    $("load-more").hidden=page.length<200;
+    const cuts=await api("cuts?episode="+($('episode').value||1));
     $("revision-list").replaceChildren();
     for (const r of state.revisions) {
       const c = el("div", undefined, "card");
@@ -173,7 +183,7 @@
     $("cut-grid").replaceChildren();
     if ($("episode").value === "1") {
       for (let i = 1; i <= 68; i++) {
-        const found = state.revisions.find(
+        const found = cuts.find(
           (r) => r.cut_number === i && r.kind === "STORYBOARD",
         );
         const b = el("button", String(i), found ? "ready" : "");
@@ -196,6 +206,8 @@
   }
   async function fileList() {
     state.files = await api("files");
+    $("bulk-file").replaceChildren(new Option("일괄 등록 원본을 선택하세요",""));
+    for(const file of state.files.filter(f=>["zip","json"].includes(f.extension)))$("bulk-file").add(new Option(file.filename,file.id));
     $("file-list").replaceChildren();
     const select = $("revision-form").elements.fileId;
     select.replaceChildren(new Option("파일 없음 · 업로드 대기", ""));
@@ -257,7 +269,8 @@
     ids.forEach((id) => ($(id).disabled = true));
     $("compare-button").disabled = true;
     try {
-      const rows = await api("revisions");
+      const rows=[];let page;
+      do {page=await api("revisions?limit=200&offset="+rows.length);rows.push(...page);}while(page.length===200);
       for (const id of ids) {
         const previous = $(id).value;
         $(id).replaceChildren();
@@ -307,6 +320,12 @@
         }
       })),
   );
+  $("load-more").onclick=run(()=>load(true));
+  $("bulk-form").onsubmit=run(async()=>{
+    if(!$("bulk-file").value)throw Error("보관한 JSON 또는 ZIP 원본을 선택하세요.");
+    const result=await api("imports/ep01",json({fileId:$("bulk-file").value}));
+    $("episode").value="1";await load();message(result.registered+"컷을 등록했습니다. 승인 전 초안이며 기존 승인 이력은 보존했습니다.");
+  });
   $("search").onclick = run(load);
   $("episode").onchange = run(load);
   $("kind").onchange = run(load);
@@ -425,7 +444,7 @@
       project.initialized || project.permission !== "APPROVER";
     if (state.permission === "VIEWER") {
       $("new-revision").hidden = true;
-      $("upload-form").hidden = true;
+      $("upload-form").hidden = true;$("bulk-form").hidden=true;
     }
     $("episode").value = "1";
     await Promise.all([load(), fileList()]);

@@ -309,7 +309,7 @@ public class McpGateway {
               e -> {
                 if (!e.getKey()
                     .matches(
-                        "(?i).*(password|secret|access.?token|refresh.?token|credential|cookie|storage_key).*"))
+                        "(?i).*(password|secret|auth.?key|api.?key|access.?token|refresh.?token|credential|cookie|storage_key).*"))
                   copy.set(e.getKey(), redact(e.getValue()));
               });
       return copy;

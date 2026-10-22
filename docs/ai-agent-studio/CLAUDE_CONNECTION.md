@@ -8,9 +8,11 @@
 2. Pro/Max 등의 개인 계정: `Customize → Connectors → + Add → Add custom connector`. Team/Enterprise: 관리자가 `Organization settings → Connectors → Add → Custom → Web`에서 먼저 추가한다.
 3. 이름 `Feel2Real Read Only`와 승인된 HTTPS `/mcp` URL을 입력한다. 운영 적용이 승인된 후 사용할 URL은 `https://feel2real.co.kr/mcp`다.
 4. Authentication은 `Sign in now` 또는 `Sign in when needed`, OAuth client는 **`Register automatically`**를 선택한다. 이 서버는 DCR을 지원한다. 기본 권장 메뉴인 `Use Claude's published identity`의 CIMD fetch는 구현하지 않았으므로 그 선택을 사용하지 않는다. 공유 관리자 API key·고정 bearer header를 넣지 않는다.
-5. 기본 callback은 `https://claude.ai/api/mcp/auth_callback`이다. UI가 다른 공식 callback을 요구하면 운영 설정 담당자가 그 정확한 URI만 `app.mcp.redirect-uris`에 추가한 테스트 환경에서 확인한다. arbitrary redirect·wildcard는 사용하지 않는다.
+5. [Claude 개발 공식 문서](https://claude.com/docs/connectors/building)의 Callback 안내와 일치하는 hosted callback은 `https://claude.ai/api/mcp/auth_callback`이다. UI가 다른 공식 callback을 요구하면 운영 설정 담당자가 그 정확한 URI만 `app.mcp.redirect-uris`에 추가한 테스트 환경에서 확인한다. arbitrary redirect·wildcard는 사용하지 않는다.
 6. Feel2Real 본인 계정으로 로그인하고 필요한 서비스별 읽기 범위만 동의한다. 제작 담당 권한이 없는 계정은 studio scope에 동의해도 제작 자료를 읽을 수 없다. `offline_access`는 선택 사항이다.
 7. 대화의 `+ → Connectors`에서 연결을 활성화하고 실제 자료를 요청한다. [동일 자료 비교 절차](CONNECTION_TEST.md)를 수행한다.
 8. Feel2Real `/mcp/connections`에서 폐기하고 Claude `Customize → Connectors`에서도 제거한다. 폐기 즉시 해당 grant의 access·refresh 모두 무효다.
 
 MCP 서버는 Anthropic/OpenAI API를 호출하지 않는다. Claude의 기존 구독 내 사용량 제한은 그대로 적용된다. Claude Desktop의 로컬 stdio 설정은 이번 원격 OAuth 연결 시험을 대체하지 않는다.
+
+관리자가 studio/catalog/chart/grammar 외 민감 범위를 선택하면 외부 제공 경고를 별도로 확인해야 한다. 금융은 명시한 허용 사업체의 월 합계만 제공한다. OAuth 준비·SDK 검증과 실제 사용자 로그인·동의·도구 스캔·동일 자료 대조는 별개이며, 현재 실제 Claude 연결은 미검증이다.

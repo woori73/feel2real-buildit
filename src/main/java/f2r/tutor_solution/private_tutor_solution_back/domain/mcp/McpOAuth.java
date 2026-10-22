@@ -32,7 +32,7 @@ public class McpOAuth {
   private String base;
 
   @Value(
-      "${app.mcp.redirect-uris:https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform/oauth/callback,https://chat.openai.com/connector_platform/oauth/callback}")
+      "${app.mcp.redirect-uris:https://claude.ai/api/mcp/auth_callback}")
   private List<String> redirects;
 
   public static final Set<String> SCOPES =
@@ -125,6 +125,14 @@ public class McpOAuth {
     return all;
   }
 
+  boolean allowedRedirect(String value) {
+    if(value==null || !redirects.contains(value)) return false;
+    // Callback IDs come from the product's management page. No host/path wildcard registration.
+    return value.equals("https://claude.ai/api/mcp/auth_callback")
+        || value.matches("https://chatgpt\\.com/connector/oauth/[A-Za-z0-9_-]{1,200}")
+        || value.equals("https://chatgpt.com/connector_platform_oauth_redirect");
+  }
+
   @Transactional
   public Map<String, Object> register(Map<String, Object> body) {
     enabled();
@@ -134,7 +142,7 @@ public class McpOAuth {
     if (!(r instanceof List<?> list)
         || list.isEmpty()
         || list.size() > 5
-        || list.stream().anyMatch(v -> !(v instanceof String) || !redirects.contains(v)))
+        || list.stream().anyMatch(v -> !(v instanceof String) || !allowedRedirect((String)v)))
       throw error(400, "invalid_redirect_uri");
     if (db.queryForObject("SELECT COUNT(*) FROM mcp_clients", Long.class) > 5000)
       throw error(429, "registration_limit");
@@ -168,9 +176,8 @@ public class McpOAuth {
         scope = q.getOrDefault("scope", "");
     var c = db.queryForList("SELECT * FROM mcp_clients WHERE id=?", client);
     if (c.isEmpty()
-        || !json.readTree((String) c.getFirst().get("redirect_uris"))
-            .toString()
-            .contains(json.writeValueAsString(redirect))) throw error(400, "invalid_redirect_uri");
+        || !allowedRedirect(redirect)
+        || !json.readTree((String) c.getFirst().get("redirect_uris")).valueStream().anyMatch(n -> redirect.equals(n.asText()))) throw error(400, "invalid_redirect_uri");
     if (!"code".equals(q.get("response_type"))
         || !"S256".equals(q.get("code_challenge_method"))
         || !q.getOrDefault("code_challenge", "").matches("[A-Za-z0-9_-]{43}")
@@ -211,8 +218,16 @@ public class McpOAuth {
 
   @Transactional
   public String authorize(AuthenticatedPrincipal p, String nonce, Set<String> selected) {
+    return authorize(p,nonce,selected,false);
+  }
+
+  @Transactional
+  public String authorize(AuthenticatedPrincipal p,String nonce,Set<String> selected,boolean sensitiveAcknowledged) {
     enabled();
     if (p == null) throw error(401, "login_required");
+    boolean sensitive="ADMIN".equals(p.role()) && selected.stream().anyMatch(s -> !Set.of("catalog:read","studio:read","chart:read","grammar:read","offline_access").contains(s));
+    if(sensitive && !sensitiveAcknowledged)
+      throw error(400,"sensitive_data_acknowledgement_required");
     var rows =
         db.queryForList(
             "SELECT * FROM mcp_pending WHERE hash=? AND user_id=? AND expires_at>? FOR UPDATE",
@@ -249,7 +264,7 @@ public class McpOAuth {
         resource(),
         Timestamp.from(Instant.now().plusSeconds(120)));
     db.update("DELETE FROM mcp_pending WHERE hash=?", hash(nonce));
-    audit(new Identity(id, p, selected), "oauth_consent", null, "ALLOW", 0);
+    audit(new Identity(id, p, selected), "oauth_consent", null, sensitive?"SENSITIVE_ACK":"ALLOW", 0);
     return q.get("redirect_uri").asText()
         + "?code="
         + encode(code)

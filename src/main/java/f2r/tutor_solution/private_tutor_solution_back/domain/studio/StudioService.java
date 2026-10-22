@@ -316,8 +316,29 @@ public class StudioService {
         || text(r.direction()).length() > 10000) throw error(400, "제목 또는 본문 길이 오류");
   }
 
+  @Transactional
+  public Map<String,Object> restore(AuthenticatedPrincipal p,String sourceId,String expectedHead,String label) {
+    require(p,true,false);
+    var source=revision(p,sourceId);
+    var restored=save(p,new Revision((String)source.get("item_key"),expectedHead,label,(String)source.get("kind"),(Integer)source.get("episode"),(Integer)source.get("cut_number"),"USER_EDIT",(String)source.get("title"),(String)source.get("content"),(String)source.get("dialogue"),(String)source.get("direction"),"REVIEW",(String)source.get("file_id")));
+    event((String)restored.get("id"),"RESTORE","source="+sourceId,p.userId());
+    return restored;
+  }
+
+  public List<Map<String,Object>> cuts(AuthenticatedPrincipal p,int episode) {
+    require(p,false,false);
+    if(episode<1||episode>14)throw error(400,"회차를 확인하세요.");
+    var rows=db.queryForList("SELECT r.*,i.head_id,i.approved_id FROM studio_items i JOIN studio_revisions r ON r.id=i.head_id AND r.project_id=i.project_id WHERE i.project_id=? AND r.kind='STORYBOARD' AND r.episode=? AND r.cut_number IS NOT NULL ORDER BY r.cut_number,r.created_at DESC,r.id DESC",PROJECT,episode);
+    var byCut=new LinkedHashMap<Object,Map<String,Object>>();for(var row:rows)byCut.putIfAbsent(row.get("cut_number"),row);return new ArrayList<>(byCut.values());
+  }
+
+  public List<Map<String,Object>> revisions(AuthenticatedPrincipal p,Integer episode,String kind,String query) {
+    return revisions(p,episode,kind,query,200,0);
+  }
+
   public List<Map<String, Object>> revisions(
-      AuthenticatedPrincipal p, Integer episode, String kind, String query) {
+      AuthenticatedPrincipal p, Integer episode, String kind, String query,int limit,int offset) {
+    if(limit<1||limit>200||offset<0||offset>1000000)throw error(400,"페이지 범위를 확인하세요.");
     require(p, false, false);
     String sql =
         "SELECT r.*,i.head_id,i.approved_id,f.filename,f.sha256 FROM studio_revisions r JOIN"
@@ -339,7 +360,8 @@ public class StudioService {
               + " LOCATE(?,r.direction)>0)";
       args.addAll(Collections.nCopies(4, query));
     }
-    return db.queryForList(sql + " ORDER BY r.created_at DESC,r.id LIMIT 200", args.toArray());
+    args.add(limit);args.add(offset);
+    return db.queryForList(sql + " ORDER BY r.created_at DESC,r.id LIMIT ? OFFSET ?", args.toArray());
   }
 
   public Map<String, Object> revision(AuthenticatedPrincipal p, String id) {
