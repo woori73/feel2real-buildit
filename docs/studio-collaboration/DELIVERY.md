@@ -45,3 +45,7 @@ GitHub authoritative main `ae5d1760b9ba76ca79ef5c6f906acc59e6c293b1` 기준. Cla
 3. [Hermes 준비](HERMES_HANDOFF_PREPARATION.md)는 설치/자동 실행 없음. 공식 문서상 Max OAuth는 구매한 추가 크레딧을 소비하므로 사용자가 승인하지 않은 유료 호출을 하지 않는다.
 4. Claude는 단계별 실제536 매핑/5SHA/원본 불변, 문서 sandbox·ZIP 경계·PDF 제한, 프로젝트 선택/동시 보관/권한 폐기 current read, pending 초대 접근 차단, GET 알림 무변경, CAS/전 버전 댓글, MCP original 동의/역할/프로젝트/POST 거부를 독립 재현해 주세요.
 5. Flyway1094/1095 업그레이드, 기존 금융 수집 승인 우회 차단·30번째 컷 업로드 롤백은 기존/CI 회귀를 유지한다. 운영 MCP/DB/배포/main 병합은 별도 승인 전 실행하지 않는다. Claude 재검수와 실제 제품 연결이 남아 **전체 공동 작업 완료·병합 승인 요청을 하지 않는다.**
+
+## 최종 인계에서 발견한 추가 수정
+
+정확한 새 SHA를 기억에 등록한 뒤 재검증하던 중 `6148b8d9c90054485194057e14feff76c37f55b3` 안의 긴 숫자열이 MCP 계좌번호 휴리스틱에 가려지는 결함을 재현했다. 별도 `fix/studio-mcp-commit-sha` Draft 수정으로 PII 키 우선 마스킹을 유지하고 명시적인 Git 커밋 필드의 40자리 hex만 보존했다. 계좌/카드/자유 텍스트 숫자 마스킹은 유지한다. [마스킹 회귀9건](final-sha-java-results.json) PASS, [두 독립 SDK 인계](final-handoff-results.json)에서 같은 기억 revision/digest·4개 근거·완전한 실제 Git SHA 복원·POST 거부를 재확인했다. 이는 외부 제품 계정 시험이 아니다. 재현 스크립트는 `final-handoff-qa.py`이며 현재 저장된 기억을 기준으로 검증한다. 이 추가 PR도 main에 병합하지 않는다.

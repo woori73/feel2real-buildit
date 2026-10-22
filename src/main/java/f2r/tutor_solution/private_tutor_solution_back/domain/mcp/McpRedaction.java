@@ -22,6 +22,14 @@ final class McpRedaction {
   private static final Pattern ACCOUNT =
       Pattern.compile(
           "(?<![\\d-])(?!(?:19|20)\\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])(?!\\d))(\\d{2,6})-(\\d{2,6})-(\\d{2,8})(?![\\d-])");
+  // Standalone SHA-256/SHA-1 digests and UUIDs are verification identifiers, not PII. Their hex
+  // digits can contain 10+ digit runs that LONG_NUMBER would corrupt (~23% of SHA-256 values).
+  // Account, card and phone numbers are digits with separators, so these hex tokens (SHA-1 needs a
+  // letter) are never PII-shaped.
+  private static final Pattern DIGEST_OR_UUID =
+      Pattern.compile(
+          "(?<![0-9A-Za-z])(?:[0-9a-f]{64}|(?=[0-9a-f]*[a-f])[0-9a-f]{40}|[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})(?![0-9A-Za-z])",
+          Pattern.CASE_INSENSITIVE);
   static final Pattern SECRET_KEY =
       Pattern.compile(
           "(?i).*(password|secret|auth.?key|api.?key|access.?token|refresh.?token|credential|cookie|storage_key).*");
@@ -40,6 +48,19 @@ final class McpRedaction {
     // Explicit PII field names still fall through value()'s whole-value masking below.
     if (value.matches("(?i)[a-f0-9]{64}")
         || value.matches("(?i)[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}")) return value;
+    var protectedToken = DIGEST_OR_UUID.matcher(value);
+    var result = new StringBuilder();
+    int last = 0;
+    while (protectedToken.find()) {
+      result
+          .append(mask(value.substring(last, protectedToken.start())))
+          .append(protectedToken.group());
+      last = protectedToken.end();
+    }
+    return result.append(mask(value.substring(last))).toString();
+  }
+
+  private static String mask(String value) {
     String out = RRN.matcher(value).replaceAll("$1-*******");
     out = INTERNATIONAL_PHONE.matcher(out).replaceAll("+82-$1-****-$3");
     out = PHONE.matcher(out).replaceAll("$1-****-$3");
@@ -64,6 +85,11 @@ final class McpRedaction {
       int keep = Math.min(4, value.length() / 2);
       return "*".repeat(value.length() - keep) + value.substring(value.length() - keep);
     }
+    // Git SHA-1 may contain a 10..19 digit run. Preserve only explicit commit fields,
+    // after the PII-key branch; ordinary account/card/free-text values still get masking.
+    if (key.matches("(?i)(commit|commit_?sha|source_?commit|head_?sha|base_?sha)")
+        && value.matches("(?i)[a-f0-9]{40}")
+        && Pattern.compile("[a-f]", Pattern.CASE_INSENSITIVE).matcher(value).find()) return value;
     return text(value);
   }
 }

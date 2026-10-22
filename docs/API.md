@@ -5008,3 +5008,5 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - `GET /notifications?beforeId=`: 현재 프로젝트의 다른 사람 승인/반려/수정 요청/댓글, 100건 cursor; `readThrough/items/nextBeforeId`. GET은 읽음 상태를 변경하지 않는다. `POST /notifications/read {throughId}`: 본인 읽음 위치만 단조 갱신; 타 프로젝트/자기 이벤트/없는 ID 거부. 보관 중에도 확인 가능.
 - 기존 `/members` 직접 ADMIN 권한 변경·폐기 호환 유지; 보관 중 폐기 외 변경 차단. #863 고정 임포터는 기본 작품에만 등록 가능하며 다른 프로젝트에 기본 작품 출처 목록을 노출하지 않는다.
 - 새 MCP 허용 GET은 projects/invitations/notifications 세 개다. 생성·초대·수락·보관·읽음 처리 POST는 MCP에 제공하지 않는다. 운영 MCP 기본 설정은 변경하지 않는다.
+
+MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시적인 commit/commitSha/sourceCommit/headSha/baseSha 필드(밑줄 형식 포함)에서 40자리 hex이고 a~f를 포함하면 원문을 보존한다. PII 필드 마스킹을 먼저 적용하며 계좌/카드/자유 텍스트 숫자 마스킹은 유지한다. Git SHA를 일부 가리면 실제 커밋 재조회가 불가능하므로 최종 인계 회귀에 포함한다.
