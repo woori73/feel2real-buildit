@@ -446,8 +446,17 @@ jobs:
       - name: Ensure Gradle wrapper is executable
         run: chmod +x gradlew
 
-      - name: Install Korean font for Chromium QA
-        run: sudo apt-get update -qq && sudo apt-get install -y fonts-noto-cjk
+      - name: Install bundled Korean font for Chromium QA
+        # Reuse the tracked Noto KR font; downloading the entire 61 MB CJK apt package took
+        # 10+ minutes on CI mirrors and can fail on unrelated external apt repositories.
+        run: |
+          set -euo pipefail
+          f2r_ci_font_dir="$HOME/.local/share/fonts/f2r-ci"
+          mkdir -p "$f2r_ci_font_dir"
+          install -m 0644 ops/designcraft/qa/test/fonts/NotoSansKR-Regular.ttf "$f2r_ci_font_dir/NotoSansKR-Regular.ttf"
+          fc-cache -f "$f2r_ci_font_dir"
+          fc-match -f '%{family}\n' 'Noto Sans KR'
+          test "$(fc-match -f '%{file}' 'Noto Sans KR')" = "$f2r_ci_font_dir/NotoSansKR-Regular.ttf"
 
       - name: Raise MySQL max_connections for cached Spring test contexts
         # 테스트 JVM이 Spring 컨텍스트를 캐시하고 컨텍스트마다 Hikari 풀(기본 10)을 유지한다.

@@ -63,6 +63,7 @@ IAM을 바꾸지 않는 후속 경로도 준비했다. 기존 `migration-infra-b
 - 실제 로컬 HTTP/MySQL에서 production 분기(테스트만 origin을 loopback으로 고정)2회 완료. 각316개 저장 바이트 SHA 재조회·536경로·승인5종·기존정본 불변, createdRevisions0. 실제 운영 연결 아님.
 - 새 빈 격리 스키마 최초 적재678리비전/재시도0, 파일316/출처536/승인5종 검증 PASS. 기존 자료 fixture는 별도 보존.
 - 마지막 변경 후 최종 CI는 PR 본문의 현재 HEAD 결과로 확인한다. 기존 결과를 새 HEAD의 PASS로 대체하지 않는다.
+- CI 폰트 다운로드 병목도 수정했다. 전체 CJK apt61.2MB의 저속 다운로드를 제거하고 저장소의 기존 NotoSansKR-Regular.ttf를 사용자 폰트 경로에 설치·fontconfig로 확인한다. 원본 폰트/검증 범위는 유지하며 새 외부 패키지나 테스트 skip은 추가하지 않는다.
 - 운영 배포/적재/IAM/스냅샷/MCP/유료 호출: 실행 안 함.
 
 근거: [실제 운영 읽기 전용 JSON](readiness-20261022/aws-live-readonly.json), [Java25건](readiness-20261022/java-results.json), [격리 HTTP 최초/재시도](readiness-20261022/local-import-results.json). 인증 쿠키·DB 비밀번호·운영 사용자 데이터는 포함하지 않는다.
