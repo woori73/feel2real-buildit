@@ -17,7 +17,7 @@ public class AssistantMaterialAnalyzer {
       Map.entry("학부모이름","parentName"),Map.entry("parentname","parentName"),
       Map.entry("학부모연락처","parentPhone"),Map.entry("parentphone","parentPhone"));
 
-  public Analysis analyze(String filename, byte[] bytes) {
+  public Analysis analyze(Long userId, String filename, byte[] bytes) {
     if(bytes.length==0 || bytes.length>262144) throw new IllegalArgumentException("자료는 1~256KB로 올려주세요.");
     String file=filename==null?"":filename.toLowerCase(Locale.ROOT);
     if(!file.endsWith(".csv")&&!file.endsWith(".txt")) throw new IllegalArgumentException("학생 명단·거래 CSV 또는 업무 지시 TXT를 올려주세요. 이미지·PDF·엑셀 자동 인식은 지원하지 않습니다.");
@@ -25,11 +25,12 @@ public class AssistantMaterialAnalyzer {
     if(text.indexOf('\0')>=0) throw new IllegalArgumentException("텍스트 자료를 확인하세요.");
     var items=new ArrayList<Item>(); var issues=new ArrayList<String>();
     if(file.endsWith(".txt")) {
+      var allowance=intents.newAllowance();
       var lines=text.lines().filter(line->!line.isBlank()).toList();
       limit(lines.size());
       for(int i=0;i<lines.size();i++) {
         if(lines.get(i).length()>2000) {issues.add((i+1)+"행: 지시는 2000자 이하로 작성하세요.");continue;}
-        items.add(new Item(i+1,intents.analyze(lines.get(i)).suggestion()));
+        items.add(new Item(i+1,intents.analyze(userId,lines.get(i),allowance).suggestion()));
       }
       return new Analysis("업무 지시 텍스트",lines.size(),items,issues);
     }

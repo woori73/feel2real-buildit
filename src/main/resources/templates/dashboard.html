@@ -268,12 +268,12 @@
 
 <section id="unifiedAssistant" class="ua" aria-label="통합 AI 업무 비서">
   <header class="ua-heading"><div><span class="ua-eyebrow">BUILDIT · AI WORKSPACE</span><h2>오늘의 업무, 함께 정리해요</h2><p id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</p></div><button id="uaResume" type="button">사용법 안내</button></header>
-  <div id="uaTour" class="ua-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
+  <div id="uaTour" class="ua-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><div id="uaPurpose" class="ua-chips"><span class="ua-hint">무엇을 하고 싶으세요?</span><button type="button" data-ua-purpose="students">학생·반 관리</button><button type="button" data-ua-purpose="attendance">출결</button><button type="button" data-ua-purpose="consult">상담</button><button type="button" data-ua-purpose="ledger">장부</button></div><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
   <div class="ua-academy"><label for="uaAcademy">업무 학원</label><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></div>
   <nav id="uaMenus" class="ua-menus" aria-label="학원 업무 메뉴">
     <a id="uaStudents" href="/academycraft/screens/MBR-01-student-list.html">학생 <span>등록·정보 관리</span></a>
     <a id="uaClasses" href="/academycraft/screens/CLS-01-class-list.html">반·수업 <span>반 편성·학생 배정</span></a>
-    <a id="uaAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결 <span>기록·정정·월별 조회</span></a>
+    <a id="uaAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결 <span>출결부·월별 조회 (정정은 이 화면에서)</span></a>
     <a id="uaConsult" href="/academycraft/screens/CNS-01-consultation-list.html">상담 <span>상담 작성·후속 메시지</span></a>
     <a id="uaLedger" href="/ledger">이지장부 <span>거래·분류·증빙 확인</span></a>
   </nav>
@@ -285,7 +285,7 @@
       <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="비서 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
       <div class="ua-composer">
         <form id="uaCommandForm"><label for="uaCommand">자연어 업무 지시</label><textarea id="uaCommand" rows="2" maxlength="2000" placeholder="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea><button class="ua-primary" type="submit">비서에게 보내기</button></form>
-        <div class="ua-chips"><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button></div>
+        <div class="ua-chips"><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button></div>
         <form id="uaUploadForm"><label for="uaFile">업무 자료 첨부 (CSV · TXT, 256KB 이하)</label><input id="uaFile" type="file" accept=".csv,.txt,text/csv,text/plain" required><p class="ua-hint">학생 명단 CSV는 이름·학년·학교·학부모연락처 열을, 거래 CSV는 거래일·구분·금액·거래처·적요·증빙유형 열을 사용하세요. TXT는 한 줄에 하나의 업무 지시를 적으세요. 학원 자료는 최대 20행입니다. AI가 연결되지 않으면 정해진 업무 표현과 열 이름으로 분석합니다. 이미지·PDF·엑셀 자동 인식은 지원하지 않습니다.</p><div class="ua-actions"><a href="/data/unified-assistant-students.csv" download>학생 명단 양식</a><a href="/data/unified-assistant-sample.csv" download>거래·증빙 양식</a></div><button type="submit">자료 분석하고 초안 만들기</button></form>
       </div>
       <p id="uaMessage" role="status">먼저 사용법 안내를 따라가거나, 업무를 알려주세요. 승인 전에는 실제 업무에 저장하지 않습니다.</p>

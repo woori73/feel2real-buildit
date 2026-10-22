@@ -125,6 +125,17 @@ test('material text, missing identifiers and unsupported attachments require exp
   await ok(admin.post(API+'/drafts/'+r.drafts[0].id+'/cancel',{data:{planHash:r.drafts[0].planHash}}));
   expect((await admin.post(API+'/materials?academyId=7',{multipart:{file:{name:'receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('not-a-pdf')}}})).status()).toBe(400);
 });
+test('read-only inquiries, correction guidance and notice draft never create write drafts (NOT RUN in review env)',async()=>{
+  const before=(await ok(admin.get(API+'/drafts'))).length;
+  let r=await ok(admin.post(API+'/conversation',{data:{academyId:7,message:'학생 ID '+createdStudent+' 출결 조회해줘'}}));
+  expect(r.drafts).toHaveLength(0);expect(Array.isArray(r.data.events)).toBe(true);
+  r=await ok(admin.post(API+'/conversation',{data:{academyId:7,message:'학생 ID '+createdStudent+' 출결 정정해줘'}}));
+  expect(r.drafts).toHaveLength(0);expect(r.message).toContain('기존 출결 화면');
+  r=await ok(admin.post(API+'/conversation',{data:{academyId:7,message:'공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다'}}));
+  expect(r.drafts).toHaveLength(0);expect(r.data.notice).toContain('내일은 휴강합니다');
+  expect((await ok(admin.get(API+'/drafts'))).length).toBe(before);
+  const audit=await ok(admin.get(API+'/audit'));expect(audit.find(x=>x.operation==='STUDENT_CREATE')).toHaveProperty('academyId',7);
+});
 test('natural command and desktop/mobile workbench render, highlight, persist and approve through UI',async({browser})=>{
   const output=path.resolve(__dirname,'../../docs/unified-ai-assistant/screenshots');fs.mkdirSync(output,{recursive:true});
   const errors=[];
