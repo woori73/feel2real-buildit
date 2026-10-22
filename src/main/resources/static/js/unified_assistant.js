@@ -9,7 +9,7 @@
   if (typeof window !== 'undefined') window.unifiedAssistantTour = { stepAfterMenuClick, stepForPurpose };
   const $ = id => document.getElementById(id);
   const API = '/api/dashboard/assistant/v1';
-  const state = { user: null, context: null, academy: null, progress: null, business: null, generation: 0, draftRevision: 0, busy: false, tour: false };
+  const state = { user: null, context: null, academy: null, progress: null, business: null, generation: 0, draftRevision: 0, busy: false, ready: false, tour: false };
   const labels = { occurredOn:'거래일', direction:'수입·지출', amount:'금액 (원)', counterparty:'거래처', payMethod:'결제수단', externalAccount:'기존 원본 계정명', evidenceType:'증빙 유형', name:'이름 / 반 이름', grade:'학년', schoolName:'학교', parentName:'학부모 이름', parentPhone:'학부모 연락처', studentId:'학생 ID', classId:'반 ID', teacherId:'담당 강사 ID', description:'설명', eventType:'출결 구분', occurredAt:'기록 시각 (한국 시간)', note:'메모', title:'상담 제목', content:'상담 내용', consultId:'상담 ID', batchId:'가져오기 배치 ID', rowId:'거래 행 ID', accountId:'계정과목 ID' };
   const operations = {
     STUDENT_CREATE:['name','grade','schoolName','parentName','parentPhone'], STUDENT_UPDATE:['studentId','name','grade','schoolName','parentName','parentPhone'],
@@ -139,9 +139,10 @@
     try {const data={};for(const [key,value] of new FormData($('uaDraftForm')))if(value)data[key]=key.endsWith('Id')||key==='amount'?Number(value):value;
       const d=await post('/drafts',{operation:$('uaOperation').value,academyId:state.context?.academyId,businessId:state.business?Number(state.business):null,input:data});if(g===state.generation){bubble('user','직접 입력한 '+name($('uaOperation').value)+' 초안을 요청했습니다.');renderDraft(d);} }
     catch(e){error(e);}finally{setBusy(false);}}
-  function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button').forEach(x=>x.disabled=b);if(b)$('uaError').hidden=true;}
+  function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button').forEach(x=>x.disabled=b||!state.ready);if(b)$('uaError').hidden=true;}
+  async function refreshContext() {const g=state.generation;state.ready=false;setBusy(true);try{await overview();await history();if(g===state.generation)state.ready=true;}finally{if(g===state.generation)setBusy(false);}}
   function bind() {
-    $('uaAcademy').addEventListener('change',()=>{state.academy=Number($('uaAcademy').value);state.context=null;state.generation++;$('uaCatalog').replaceChildren();$('uaDrafts').replaceChildren();$('uaEdit').open=false;fields();overview().then(history).catch(error);});
+    $('uaAcademy').addEventListener('change',()=>{state.academy=Number($('uaAcademy').value);state.context=null;state.generation++;$('uaCatalog').replaceChildren();$('uaDrafts').replaceChildren();$('uaEdit').open=false;fields();refreshContext().catch(error);});
     $('uaOperation').addEventListener('change',()=>fields());$('uaDraftForm').addEventListener('submit',submitDraft);
     $('uaCommandForm').addEventListener('submit',async e=>{e.preventDefault();if(state.busy)return;const message=$('uaCommand').value,g=state.generation;setBusy(true);bubble('user',message);try{const turn=await post('/conversation',{academyId:state.academy,businessId:state.business?Number(state.business):null,message});if(g!==state.generation)return;await acceptTurn(turn);$('uaCommand').value='';}catch(e){if(g===state.generation){bubble('assistant','요청 실패: '+e.message);error(e);}}finally{setBusy(false);}});
     document.querySelectorAll('[data-ua-example]').forEach(button=>button.addEventListener('click',()=>{$('uaCommand').value=button.dataset.uaExample;$('uaCommandForm').requestSubmit();}));
@@ -167,11 +168,11 @@
     });
     $('uaRefresh').addEventListener('click',()=>{$('refreshBtn').click();});$('refreshBtn').addEventListener('click',()=>overview().catch(error));$('uaHistoryRefresh').addEventListener('click',()=>history().catch(error));
     $('aiFab').addEventListener('click',()=>{$('unifiedAssistant').scrollIntoView({block:'start'});$('uaCommand').focus({preventScroll:true});});
-    const change=()=>{const business=$('bizSelect').value||null;if(state.business===business)return;state.business=business;state.generation++;$('uaDrafts').replaceChildren();$('uaCatalog').replaceChildren();$('uaFile').value='';$('uaCommand').value='';$('uaEdit').open=false;fields();$('uaScope').textContent=scopeText();overview().then(history).catch(error);};
+    const change=()=>{const business=$('bizSelect').value||null;if(state.business===business)return;state.business=business;state.generation++;$('uaDrafts').replaceChildren();$('uaCatalog').replaceChildren();$('uaFile').value='';$('uaCommand').value='';$('uaEdit').open=false;fields();$('uaScope').textContent=scopeText();refreshContext().catch(error);};
     $('bizSelect').addEventListener('change',change);new MutationObserver(change).observe($('bizSelect'),{childList:true});change();
   }
   async function init() {if(!$('unifiedAssistant'))return;try{state.user=await ensureCurrentUser();if(!state.user||!['ADMIN','TUTOR'].includes(state.user.role))return;
     try { const res=await fetch('/api/dashboard/businesses',{credentials:'same-origin',cache:'no-store'});if(res.ok){const list=await res.json(),saved=localStorage.getItem('dashboard.businessId');state.business=String(list.find(x=>String(x.businessId)===saved)?.businessId||list[0]?.businessId||'')||null;} } catch(_) {}
-    fields();bind();state.progress=await json('/progress');showTour(!state.progress.completed);await overview();await history();}catch(e){error(e);}}
+    fields();setBusy(true);bind();state.progress=await json('/progress');showTour(!state.progress.completed);await refreshContext();}catch(e){error(e);}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
