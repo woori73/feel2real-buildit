@@ -36,3 +36,13 @@ JUnit은 실제 HTTP OAuth 동의·PKCE 오류·일회용 code·token 만료·�
 | Claude 독립 검수 | 최초 검수 항목 반영, 이번 수정의 독립 재검수 대기; CLAUDE_HANDOFF.md 참조 |
 
 실제 연결 미실행 사유는 공개 테스트 endpoint와 두 제품의 로그인 계정 세션이 제공되지 않았기 때문이다. 운영 배포·main 병합을 실행해 이를 우회하지 않았다. 따라서 사용자가 제시한 두 완료 조건을 모두 충족했다고 선언하지 않는다.
+
+## 공식 규격 확인 vs 실제 접속 (2026-10-22 갱신)
+
+| 항목 | 공식 규격 대조 | 실제 접속 |
+|---|---|---|
+| ChatGPT 콜백 URI | 대조 완료(`connector/oauth/{callback_id}` 패턴 허용으로 수정) | 미실행 |
+| Claude 콜백 URI | 대조 완료(`claude.ai`·`claude.com` 허용) | 미실행 |
+| OAuth 메타데이터(RFC 9728/8414), DCR, PKCE S256, resource | 코드·테스트 확인 | 로컬 SDK 시험만 |
+| 로컬 MCP 프로토콜 시험(공식 Python SDK) | — | 하단 '로컬 재실행 결과' 참조 |
+| 실제 ChatGPT·Claude 계정 연결 | — | **미실행 — 공개 HTTPS 테스트 서버와 사용자 계정 필요** |
