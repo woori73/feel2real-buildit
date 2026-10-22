@@ -197,9 +197,14 @@
       const card=el("article",undefined,"story-card");
       card.dataset.cut=n;
       if (r) {
-        card.append(imageFor(r),el("h3",String(n).padStart(2,"0")+" · "+r.title),badges(r),el("p",r.content||"설명 미등록"));
-        if(r.dialogue)card.append(el("p","대사 · "+readableDialogue(r.dialogue)));
-        if(r.direction)card.append(el("p","연출 · "+r.direction,"hint"));
+        card.append(imageFor(r),el("h3",String(n).padStart(2,"0")+" · "+r.title),badges(r));
+        const notes=el("div",undefined,"story-notes");notes.id="cut-notes-"+r.id;
+        notes.append(el("p",r.content||"설명 미등록"));
+        if(r.dialogue)notes.append(el("p","대사 · "+readableDialogue(r.dialogue)));
+        if(r.direction)notes.append(el("p","연출 · "+r.direction,"hint"));
+        const toggle=el("button","더 보기");toggle.className="story-more";toggle.setAttribute("aria-controls",notes.id);toggle.setAttribute("aria-expanded","false");toggle.setAttribute("aria-label",n+"컷 설명 더 보기");
+        toggle.onclick=()=>{const expanded=toggle.getAttribute("aria-expanded")!=="true";toggle.setAttribute("aria-expanded",String(expanded));toggle.textContent=expanded?"접기":"더 보기";toggle.setAttribute("aria-label",n+"컷 설명 "+toggle.textContent);notes.classList.toggle("expanded",expanded);};
+        card.append(notes,toggle);
         const open=el("button","컷 상세·검수");open.onclick=()=>detail(r);card.append(open);
       } else card.append(el("p",n+"컷 · 이미지·설명 업로드 대기","empty-art"));
       board.append(card);
@@ -279,9 +284,19 @@
       const b = el("button", "검수·사용자 승인");
       b.onclick = () => {
         $("review-target").textContent = r.title + " · " + r.label;
+        $("review-form").reset();$("review-form").elements.action.querySelector('option[value="REJECT"]').disabled=r.id===r.approved_id;
         $("review-dialog").showModal();
       };
       $("detail").append(b);
+      if(r.id===r.approved_id){
+        const withdraw=el("button","승인 해제…");withdraw.onclick=run(async()=>{
+          const current=await api("revisions/"+r.id);if(current.approved_id!==r.id)throw Error("승인 상태가 바뀌었습니다. 상세를 다시 여세요.");
+          const file=current.file_id?await api("files/"+current.file_id):null;
+          $("withdraw-form").reset();$("withdraw-target").textContent=current.title+" · "+current.label+" / "+current.id;
+          $("withdraw-sha").textContent=file?"원본 SHA-256 · "+file.sha256:"연결 파일 없음 · 리비전 보존";
+          $("withdraw-dialog").dataset.revisionId=current.id;$("withdraw-dialog").showModal();
+        });$("detail").append(withdraw);
+      }
     }
     $("detail").append(commentThread(r));
     $("detail").scrollIntoView({ block: "nearest" });
@@ -322,7 +337,7 @@
       for(const event of rows) {
         const c=el("article",undefined,"card");let note=event.note,origin="사람 댓글";
         if(event.action==="COMMENT")try{const data=JSON.parse(note);note=data.body;origin=data.authorType==="HUMAN_SHARED_AI_MATERIAL"?"사람이 공유한 "+data.sharedAi+" 자료":"사람 댓글";if(data.sourceFileId){const file=state.files.find(f=>f.id===data.sourceFileId);const button=el("button","근거 파일 열람"),view=el("div");button.onclick=run(async()=>previewFile(file||await api("files/"+data.sourceFileId),view));c.append(button,view);}}catch(_){}
-        else origin={APPROVE:"사용자 승인",REJECT:"반려",REQUEST_CHANGES:"수정 요청"}[event.action]||event.action;
+        else origin={APPROVE:"사용자 승인",REJECT:"반려",REQUEST_CHANGES:"수정 요청",WITHDRAW_APPROVAL:"승인 해제"}[event.action]||event.action;
         c.prepend(el("strong",origin+" · "+event.actor_name+" · "+event.label),el("p",note,"memory-text"),el("small",event.created_at));list.append(c);cursor=event.id;
       }
       if(!list.children.length)list.append(el("p","아직 댓글·검수 기록이 없습니다."));
@@ -552,6 +567,16 @@
     detail(await api("revisions/" + state.selected.id));
     message("사용자 검수 결정을 기록했습니다.");
   });
+  $("cancel-withdraw").onclick=()=>$("withdraw-dialog").close();
+  $("withdraw-form").onsubmit=run(async()=>{
+    const form=$("withdraw-form"),id=$("withdraw-dialog").dataset.revisionId,button=form.querySelector('button[type="submit"]');
+    button.disabled=true;
+    try {
+      await api("revisions/"+id+"/approval-withdrawals",json({confirmed:form.elements.confirmed.checked,expectedApprovedId:id,note:form.elements.note.value}));
+      const actual=await api("revisions/"+id);if(actual.approved_id!==null)throw Error("승인 상태 재조회 결과가 다릅니다. 최신 자료를 확인하세요.");
+      $("withdraw-dialog").close();await load();detail(actual);message("승인 해제를 저장하고 다시 확인했습니다. 원본·SHA·버전·기존 승인 이력은 보존합니다.");
+    } finally {button.disabled=false;}
+  });
   $("upload-form").onsubmit = run(async () => {
     const f = $("upload-file").files[0];
     if (f.size > 100 * 1024 * 1024)
@@ -617,7 +642,7 @@
   async function notifications(reset=false){
     if(reset){notificationCursor=null;notificationThrough=0;$("notification-list").replaceChildren();}
     const data=await api("notifications"+(notificationCursor?"?beforeId="+notificationCursor:""));
-    for(const row of data.items){notificationThrough=Math.max(notificationThrough,row.id);const card=el("article",undefined,"card");card.append(el("strong",({APPROVE:"승인",REJECT:"반려",REQUEST_CHANGES:"수정 요청",COMMENT:"댓글"}[row.action]||row.action)+" · "+row.actor_name),el("h3",row.title||"프로젝트 알림"),el("p",row.id>data.readThrough?"새 알림":"확인한 알림"),el("small",row.created_at));if(row.revision_id){const b=el("button","관련 자료 열기");b.onclick=run(async()=>{document.querySelector('[data-tab="materials"]').click();detail(await api("revisions/"+row.revision_id));});card.append(b);}$("notification-list").append(card);}
+    for(const row of data.items){notificationThrough=Math.max(notificationThrough,row.id);const card=el("article",undefined,"card");card.append(el("strong",({APPROVE:"승인",REJECT:"반려",REQUEST_CHANGES:"수정 요청",WITHDRAW_APPROVAL:"승인 해제",COMMENT:"댓글"}[row.action]||row.action)+" · "+row.actor_name),el("h3",row.title||"프로젝트 알림"),el("p",row.id>data.readThrough?"새 알림":"확인한 알림"),el("small",row.created_at));if(row.revision_id){const b=el("button","관련 자료 열기");b.onclick=run(async()=>{document.querySelector('[data-tab="materials"]').click();detail(await api("revisions/"+row.revision_id));});card.append(b);}$("notification-list").append(card);}
     notificationCursor=data.nextBeforeId||null;$("notifications-more").hidden=!notificationCursor;$("notifications-read").hidden=!notificationThrough;
     if(!$("notification-list").children.length)$("notification-list").append(el("p","아직 다른 팀원의 검수·댓글 알림이 없습니다."));
   }

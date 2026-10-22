@@ -916,16 +916,24 @@ class McpStudioMySqlTest {
   @Order(18)
   void givenPublicRegistration_whenAuthorizationHeaderRotates_thenIpQuotaCannotBeBypassed()
       throws Exception {
-    db.update(
-        "DELETE FROM mcp_rate_limits WHERE bucket_key=?",
-        McpOAuth.hash("/mcp/oauth/register:127.0.0.1"));
     String body = "{\"redirect_uris\":[\"https://claude.ai/api/mcp/auth_callback\"]}";
-    for (int i = 0; i < 5; i++)
-      assertEquals(
-          200, post("/mcp/oauth/register", body, "application/json", "fake-" + i).statusCode());
-    var denied = post("/mcp/oauth/register", body, "application/json", "fake-new-header");
-    assertEquals(429, denied.statusCode());
-    assertEquals("60", denied.headers().firstValue("Retry-After").orElseThrow());
+    // The production quota is a fixed minute window. A rollover between the first
+    // and sixth request legitimately starts a new quota; test one complete window.
+    for (int attempt = 0; attempt < 2; attempt++) {
+      db.update(
+          "DELETE FROM mcp_rate_limits WHERE bucket_key=?",
+          McpOAuth.hash("/mcp/oauth/register:127.0.0.1"));
+      long startedWindow = System.currentTimeMillis() / 60000;
+      for (int i = 0; i < 5; i++)
+        assertEquals(
+            200, post("/mcp/oauth/register", body, "application/json", "fake-" + i).statusCode());
+      var denied = post("/mcp/oauth/register", body, "application/json", "fake-new-header");
+      if (System.currentTimeMillis() / 60000 != startedWindow) continue;
+      assertEquals(429, denied.statusCode());
+      assertEquals("60", denied.headers().firstValue("Retry-After").orElseThrow());
+      return;
+    }
+    fail("Registration probe crossed a minute boundary twice; rerun in a stable test window");
   }
 
   @Test

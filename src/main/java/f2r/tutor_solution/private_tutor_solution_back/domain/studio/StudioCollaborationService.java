@@ -165,8 +165,8 @@ public class StudioCollaborationService {
         "SELECT e.*,r.label,u.name AS actor_name FROM studio_events e JOIN studio_revisions r ON"
             + " r.id=e.revision_id AND r.project_id=e.project_id JOIN users u ON"
             + " u.user_id=e.actor_id WHERE e.project_id=? AND r.item_key=? AND e.action IN"
-            + " ('COMMENT','APPROVE','REJECT','REQUEST_CHANGES') AND e.id<? ORDER BY e.id DESC"
-            + " LIMIT 100",
+            + " ('COMMENT','APPROVE','REJECT','REQUEST_CHANGES','WITHDRAW_APPROVAL') AND e.id<?"
+            + " ORDER BY e.id DESC LIMIT 100",
         studio.projectId(),
         revision.get("item_key"),
         beforeId == null ? Long.MAX_VALUE : beforeId);
@@ -179,8 +179,8 @@ public class StudioCollaborationService {
     return db.queryForList(
         "SELECT * FROM (SELECT r.*,i.head_id,i.approved_id,(SELECT e.action FROM studio_events e"
             + " WHERE e.project_id=i.project_id AND e.revision_id=r.id AND e.action IN"
-            + " ('APPROVE','REJECT','REQUEST_CHANGES') ORDER BY e.id DESC LIMIT 1) AS last_review"
-            + " FROM studio_items i JOIN studio_revisions r ON r.id=i.head_id AND"
+            + " ('APPROVE','REJECT','REQUEST_CHANGES','WITHDRAW_APPROVAL') ORDER BY e.id DESC LIMIT"
+            + " 1) AS last_review FROM studio_items i JOIN studio_revisions r ON r.id=i.head_id AND"
             + " r.project_id=i.project_id WHERE i.project_id=? AND (i.approved_id IS NULL OR"
             + " i.head_id<>i.approved_id) AND r.kind<>'JOB' AND i.item_key NOT LIKE"
             + " 'source-09d62dee-%') pending WHERE COALESCE(last_review,'')<>'REJECT' ORDER BY"

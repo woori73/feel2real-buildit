@@ -178,8 +178,8 @@ public class StudioProjectService {
                 + " FROM studio_events e LEFT JOIN users u ON u.user_id=e.actor_id LEFT JOIN"
                 + " studio_revisions r ON r.id=e.revision_id AND r.project_id=e.project_id WHERE"
                 + " e.project_id=? AND e.actor_id<>? AND e.action IN"
-                + " ('APPROVE','REJECT','REQUEST_CHANGES','COMMENT') AND e.id<? ORDER BY e.id DESC"
-                + " LIMIT 100",
+                + " ('APPROVE','REJECT','REQUEST_CHANGES','COMMENT','WITHDRAW_APPROVAL') AND e.id<?"
+                + " ORDER BY e.id DESC LIMIT 100",
             studio.projectId(),
             p.userId(),
             beforeId == null ? Long.MAX_VALUE : beforeId);
@@ -199,7 +199,8 @@ public class StudioProjectService {
     if (throughId < 1
         || db.queryForObject(
                 "SELECT COUNT(*) FROM studio_events WHERE project_id=? AND id=? AND actor_id<>? AND"
-                    + " action IN ('APPROVE','REJECT','REQUEST_CHANGES','COMMENT')",
+                    + " action IN"
+                    + " ('APPROVE','REJECT','REQUEST_CHANGES','COMMENT','WITHDRAW_APPROVAL')",
                 Long.class,
                 studio.projectId(),
                 throughId,

@@ -514,24 +514,54 @@ public class StudioService {
     if (!Set.of("APPROVE", "REJECT", "REQUEST_CHANGES").contains(text(action))
         || text(note).length() > 2000) throw error(400, "검수 값 오류");
     var revision = revision(p, id);
-    db.queryForList(
-        "SELECT item_key FROM studio_items WHERE project_id=? AND item_key=? FOR UPDATE",
-        projectId(),
-        revision.get("item_key"));
+    var item =
+        db.queryForList(
+                "SELECT approved_id FROM studio_items WHERE project_id=? AND item_key=? FOR UPDATE",
+                projectId(),
+                revision.get("item_key"))
+            .getFirst();
+    if (action.equals("REJECT") && id.equals(item.get("approved_id")))
+      throw error(409, "승인본은 일반 반려할 수 없습니다. 수정 요청 또는 별도 승인 해제를 사용하세요.");
     if (action.equals("APPROVE"))
       db.update(
           "UPDATE studio_items SET approved_id=? WHERE project_id=? AND item_key=?",
           id,
           projectId(),
           revision.get("item_key"));
-    else if (action.equals("REJECT"))
-      db.update(
-          "UPDATE studio_items SET approved_id=NULL WHERE project_id=? AND item_key=? AND"
-              + " approved_id=?",
-          projectId(),
-          revision.get("item_key"),
-          id);
     event(id, action, text(note), p.userId());
+  }
+
+  /** Explicit human intent; existing immutable revision/file records are never changed. */
+  @Transactional
+  public Map<String, Object> withdrawApproval(
+      AuthenticatedPrincipal p,
+      String id,
+      boolean confirmed,
+      String expectedApprovedId,
+      String note) {
+    require(p, false, true);
+    if (!confirmed
+        || !id.equals(expectedApprovedId)
+        || text(note).isBlank()
+        || text(note).length() > 2000) throw error(400, "현재 승인본과 승인 해제 확인·사유가 필요합니다.");
+    var revision = revision(p, id);
+    var item =
+        db.queryForList(
+                "SELECT approved_id FROM studio_items WHERE project_id=? AND item_key=? FOR UPDATE",
+                projectId(),
+                revision.get("item_key"))
+            .getFirst();
+    if (!id.equals(item.get("approved_id"))) throw error(409, "승인 상태가 바뀌었습니다. 최신 승인본을 다시 확인하세요.");
+    int changed =
+        db.update(
+            "UPDATE studio_items SET approved_id=NULL WHERE project_id=? AND item_key=? AND"
+                + " approved_id=?",
+            projectId(),
+            revision.get("item_key"),
+            id);
+    if (changed != 1) throw error(409, "승인 상태가 바뀌었습니다.");
+    event(id, "WITHDRAW_APPROVAL", note.strip(), p.userId());
+    return revision(p, id);
   }
 
   public List<Map<String, Object>> files(AuthenticatedPrincipal p) {

@@ -217,6 +217,18 @@ public class StudioController {
     service.review(p, id, r.action(), r.note());
   }
 
+  public record WithdrawApproval(boolean confirmed, String expectedApprovedId, String note) {}
+
+  @PostMapping("/api/studio/revisions/{id}/approval-withdrawals")
+  @ResponseBody
+  public Object withdrawApproval(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestBody WithdrawApproval request) {
+    return service.withdrawApproval(
+        p, id, request.confirmed(), request.expectedApprovedId(), request.note());
+  }
+
   @GetMapping("/api/studio/compare")
   @ResponseBody
   public Object compare(
