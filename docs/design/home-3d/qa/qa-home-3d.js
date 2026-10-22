@@ -96,6 +96,23 @@ async function page(browser, opts, init) {
     await ctx.close();
   }
 
+  /* 4-2. 저사양·데이터 절약: WebGL을 아예 만들지 않고 정적 UI */
+  for (const [label, init] of [
+    ['저메모리(1GB)', () => Object.defineProperty(navigator, 'deviceMemory', { get: () => 1 })],
+    ['데이터 절약(saveData)', () => Object.defineProperty(navigator, 'connection', { get: () => ({ saveData: true, effectiveType: '4g' }) })],
+    ['느린 망(3g)', () => Object.defineProperty(navigator, 'connection', { get: () => ({ saveData: false, effectiveType: '3g' }) })]
+  ]) {
+    const { ctx, p, errs } = await page(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }, init);
+    await p.goto(BASE + '/', { waitUntil: 'load' });
+    await p.waitForTimeout(1500);
+    const mode = await p.getAttribute('#f3dCore', 'data-f3d-mode');
+    const ready = await p.$eval('#f3dCore', (e) => e.hasAttribute('data-f3d-ready'));
+    check('저사양(' + label + '): 정적 모드·WebGL 미생성', mode === 'static' && !ready, 'mode=' + mode);
+    check('저사양(' + label + '): 서비스 카드·오퍼 정상 표시', (await p.$$('.f3d-card')).length === 7 && (await p.isVisible('#enExamCta')));
+    check('저사양(' + label + '): JS 오류 없음', errs.length === 0, errs.join(' | '));
+    await ctx.close();
+  }
+
   /* 5. JS 비활성: 내용이 숨겨지지 않는다 */
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
