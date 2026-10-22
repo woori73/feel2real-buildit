@@ -1,6 +1,6 @@
 # 제작 협업실 로컬 인수 보고서 · 2026-10-22
 
-GitHub authoritative main `ae5d1760b9ba76ca79ef5c6f906acc59e6c293b1` 기준. Claude 감사 `ccr-d295072e-waeyz7`의 `bd3097682a04804f848eedeea977feb619a55024:docs/reviews/STUDIO_AUDIT_AND_HERMES_PLAN.md`를 반영했다. Codex가 구현·개발 검증했고 **Claude 독립 재검수는 대기**다. 아래 구현은 격리 MySQL/로컬 제작실에 실제 적재·검증했으며 운영에 등록하거나 배포하지 않았다.
+GitHub authoritative main `ae5d1760b9ba76ca79ef5c6f906acc59e6c293b1` 기준. Claude 감사 `ccr-d295072e-waeyz7`의 `bd3097682a04804f848eedeea977feb619a55024:docs/reviews/STUDIO_AUDIT_AND_HERMES_PLAN.md`를 반영했다. Codex가 구현·개발 검증했고, 사용자가 전달한 **#863 및 #864~#871 Claude 독립 검수 PASS를 수용**했다. #862는 중복 구현 FAIL로 병합 제외했다. 이후 더 보기/승인 보호 수정의 범위·검증·병합 준비는 [후속 보고서](review-fixes/README.md)에서 구분한다. 아래 구현은 격리 MySQL/로컬 제작실에 실제 적재·검증했으며 운영에 등록하거나 배포하지 않았다.
 
 ## 제출한 변경
 
@@ -44,7 +44,7 @@ GitHub authoritative main `ae5d1760b9ba76ca79ef5c6f906acc59e6c293b1` 기준. Cla
 2. AI 직접 쓰기/후보 제출은 [별도 동의 설계](STUDIO_PROPOSE_DESIGN.md)만 제출했다. 사람이 공유한 AI 자료의 실제 기록자는 사람이며 모델명이 AI 인증을 증명하지 않는다. 직접 인증 쓰기 구현/실측 전까지 중간 파일 전달 없는 AI 후보 자동 인계 완료로 판정하지 않는다.
 3. [Hermes 준비](HERMES_HANDOFF_PREPARATION.md)는 설치/자동 실행 없음. 공식 문서상 Max OAuth는 구매한 추가 크레딧을 소비하므로 사용자가 승인하지 않은 유료 호출을 하지 않는다.
 4. Claude는 단계별 실제536 매핑/5SHA/원본 불변, 문서 sandbox·ZIP 경계·PDF 제한, 프로젝트 선택/동시 보관/권한 폐기 current read, pending 초대 접근 차단, GET 알림 무변경, CAS/전 버전 댓글, MCP original 동의/역할/프로젝트/POST 거부를 독립 재현해 주세요.
-5. Flyway1094/1095 업그레이드, 기존 금융 수집 승인 우회 차단·30번째 컷 업로드 롤백은 기존/CI 회귀를 유지한다. 운영 MCP/DB/배포/main 병합은 별도 승인 전 실행하지 않는다. Claude 재검수와 실제 제품 연결이 남아 **전체 공동 작업 완료·병합 승인 요청을 하지 않는다.**
+5. Flyway1094/1095 업그레이드, 기존 금융 수집 승인 우회 차단·30번째 컷 업로드 롤백은 기존/CI 회귀를 유지한다. 운영 MCP/DB/배포/main 병합은 별도 승인 전 실행하지 않는다. 이전 제출 당시 재검수 대기였으며, 현재 #863/#864~#871 PASS는 사용자 결정으로 수용했다. 실제 제품 연결은 여전히 미검증이다. 코드 병합 승인은 후속 수정 검증을 마친 뒤 별도로 요청하며 운영/실제품 활성화 승인과 분리한다.
 
 ## 최종 인계에서 발견한 추가 수정
 

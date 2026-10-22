@@ -62,10 +62,15 @@ MySQL 회귀36건 PASS(공동 기억6·기존 Studio8·MCP22), Markdown 표/안�
 
 ## 6단계 · Hermes 준비와 남은 검증
 
-[실행 엔진 인계 준비](HERMES_HANDOFF_PREPARATION.md)는 제작실의 서버 기억/파일/SHA를 새 세션이 읽는 절차, 충돌/권한/예산0/후보 경계, 자동 실행 전 조건을 정리한다. 공식 Hermes 문서를 직접 확인한 결과 Claude Max OAuth는 구매한 추가 사용 크레딧을 쓰므로 자동 실행하지 않는다. Hermes 설치/로그인/유료 호출/운영 활성화 없음. #862 실행기 구현과 중복 개발하지 않는다.
+[실행 엔진 인계 준비](HERMES_HANDOFF_PREPARATION.md)는 제작실의 서버 기억/파일/SHA를 새 세션이 읽는 절차, 충돌/권한/예산0/후보 경계, 자동 실행 전 조건을 정리한다. 공식 Hermes 문서를 직접 확인한 결과 Claude Max OAuth는 구매한 추가 사용 크레딧을 쓰므로 자동 실행하지 않는다. Hermes 설치/로그인/유료 호출/운영 활성화 없음. #862 별도 협업실 구현과 중복 개발하지 않는다.
 
-단계별 Draft PR: [사람 열람 #864](https://github.com/woori73/feel2real-buildit/pull/864) → [536개 실적재 #865](https://github.com/woori73/feel2real-buildit/pull/865) → [읽기 MCP #866](https://github.com/woori73/feel2real-buildit/pull/866) → [기억/검수 #867](https://github.com/woori73/feel2real-buildit/pull/867) → [프로젝트/팀 #868](https://github.com/woori73/feel2real-buildit/pull/868) → [별도 쓰기 설계 #869](https://github.com/woori73/feel2real-buildit/pull/869). 본 Hermes 준비 문서는 마지막 별도 PR이다. 각 PR의 Checks는 해당 HEAD CI 결과의 authoritative source이며 변경 영향에 따라 워크플로가 생략된다. Claude 독립 검수는 아직 대기이며 본 개발자가 대신 PASS 판정하지 않는다.
+단계별 Draft PR: [사람 열람 #864](https://github.com/woori73/feel2real-buildit/pull/864) → [536개 실적재 #865](https://github.com/woori73/feel2real-buildit/pull/865) → [읽기 MCP #866](https://github.com/woori73/feel2real-buildit/pull/866) → [기억/검수 #867](https://github.com/woori73/feel2real-buildit/pull/867) → [프로젝트/팀 #868](https://github.com/woori73/feel2real-buildit/pull/868) → [별도 쓰기 설계 #869](https://github.com/woori73/feel2real-buildit/pull/869). 본 Hermes 준비 문서는 마지막 별도 PR이다. 각 PR의 Checks는 해당 HEAD CI 결과의 authoritative source이며 변경 영향에 따라 워크플로가 생략된다. 현재 사용자 전달 판정(#863/#864~#871 PASS)을 수용했다. 본 개발자가 Claude 판정을 대신 작성하지 않는다. 이후 수정 범위는 별도 보고서에서 구분한다.
 
 **전체 사람·AI 공동 작업 완료 판정은 보류한다.** 로컬 실제 자료·사람 화면·권한·작업 기억·공식 SDK 전달은 검증했지만, 외부 ChatGPT/Claude 제품의 문서/그림 직접 판독, AI 인증 후보 제출, Hermes 실제 실행은 검증하지 않았다. 격리 HTTPS/계정은 사용자가 준비 전이라고 답변했고 외부 연결 시험만 보류하도록 지시했다. 운영 제작실 적재/DB/배포/MCP 활성화·main 병합·유료 모델/금융기관 접속은 실행하지 않았다.
 
 최종 인계 SHA 보완: 긴 숫자가 포함된 Git SHA-1이 PII 휴리스틱으로 훼손되는 경우를 실제 SDK에서 발견해 별도 수정했다. [회귀9건](final-sha-java-results.json)과 [완전한 SHA/동일 기억 복원](final-handoff-results.json)이 통과했다. PII 필드·일반 계좌/카드/숫자 텍스트 마스킹은 유지한다. `final-handoff-qa.py`로 현재 서버 기억과 두 세션의 SHA를 대조할 수 있다.
+
+
+## Claude 검수 수용 후 병합 준비
+
+#863·#864~#871의 PASS를 수용하고 #862는 중복 구현 FAIL로 병합 제외했다. [#862 고유 기능/후속 제안](review-fixes/EXCLUDED_862.md), [base 변경·CI 재검증·merge 순서](review-fixes/MERGE_RUNBOOK.md), [더 보기/명시적 승인 해제 수정과 실제 검증](review-fixes/README.md)을 제출한다. #869는 설계 문서만 유지한다. 실제 main 병합과 운영 변경은 아직 실행하지 않는다.

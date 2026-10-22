@@ -5010,3 +5010,9 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - 새 MCP 허용 GET은 projects/invitations/notifications 세 개다. 생성·초대·수락·보관·읽음 처리 POST는 MCP에 제공하지 않는다. 운영 MCP 기본 설정은 변경하지 않는다.
 
 MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시적인 commit/commitSha/sourceCommit/headSha/baseSha 필드(밑줄 형식 포함)에서 40자리 hex이고 a~f를 포함하면 원문을 보존한다. PII 필드 마스킹을 먼저 적용하며 계좌/카드/자유 텍스트 숫자 마스킹은 유지한다. Git SHA를 일부 가리면 실제 커밋 재조회가 불가능하므로 최종 인계 회귀에 포함한다.
+
+### 제작실 승인 보호 (Claude 검수 후 수정)
+- 일반 `POST /api/studio/revisions/{id}/review`의 REJECT는 미승인 후보만 반려한다. 현재 승인본이면409, 승인 포인터/기존 revision/파일/이력 변경 없음. REQUEST_CHANGES는 기존 동작 유지. 승인 해제 액션을 일반 review로 보낼 수 없다.
+- 별도 `POST /api/studio/revisions/{id}/approval-withdrawals`: APPROVER·동일 Origin·현재 프로젝트·재개 상태 필수. `{confirmed:true,expectedApprovedId:<path id>,note:<1~2000자>}`. 확인 누락/false/잘못된 기대 ID/빈 사유는400, 현재 승인 ID가 달라졌거나 이미 해제됐으면409. 프로젝트/item 현재 읽기·행 잠금 후 포인터만 해제하고 `WITHDRAW_APPROVAL` 감사(리비전/actor/사유/시각)를 같은 트랜잭션에 append한다. 파일·SHA·리비전·기존 승인 이벤트는 불변. 저장 결과와 GET 재조회로 승인 상태를 확인한다.
+- 승인 해제는 상세의 별도 대화상자에서 원본 SHA/버전 확인·사유·확인 체크 후 실행한다. 일반 검수의 반려 옵션은 승인본에서 비활성이다. 해제 이력은 스레드/감사/알림에 노출되고 head 후보는 대기함에 다시 나타난다. MCP 읽기 도구에는 이 POST를 추가하지 않는다.
+- 콘티 보드의 더 보기/접기는 설명·대사·연출 전체 텍스트를 보존한 상태로 펼친다. aria-expanded/aria-controls와 키보드 조작을 지원하며 API/자료 내용을 변경하지 않는다.
