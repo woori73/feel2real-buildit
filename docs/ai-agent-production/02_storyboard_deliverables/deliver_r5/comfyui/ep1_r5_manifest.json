@@ -1,0 +1,1780 @@
+{
+ "version": "r5",
+ "basis": "r14 원본 보존 + 승인된 v5.1/사용자 지시 반영",
+ "resolution_note": "16:9. 모델·해상도·1회 생성 길이는 11월 GPU 환경에서 확인(미정)",
+ "generation_done": 0,
+ "paid_credits_used": 0,
+ "global_forbid": [
+  "자막·시각·일련번호 등 화면 글자 생성 금지",
+  "눈썹 흉터 생성 금지(보류)",
+  "세븐 음성·얼굴 생성 금지"
+ ],
+ "note": "정식 원작 대조는 하지 못했습니다. r5는 제작용 개정본이며 원작 검수 완료본이 아닙니다.",
+ "cuts": [
+  {
+   "cut": 1,
+   "beat": "B01",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_01.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "인물 없음. 빛의 원만 이동",
+   "dialogue": [],
+   "must_keep": [
+    "수직 부감",
+    "서치라이트 흰 원이 상단에서 하강",
+    "자막 00:12는 후반 합성"
+   ],
+   "continuity_note": "지게차 실루엣을 컷 2에 심어 컷 30·31 등장을 예고. 박상구 안경 왼쪽 렌즈 균열(좌우는 [제안], 이후 컷 일치 필요).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 2,
+   "beat": "B01",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_02.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "골목 3곳. 한 칸에 지게차 실루엣(복선), 한 칸에 박상구 발자국 물결",
+   "dialogue": [],
+   "must_keep": [
+    "가로 3분할",
+    "빛 방향 좌→우 통일",
+    "한 칸에 지게차 실루엣(컷 30·31 복선)"
+   ],
+   "continuity_note": "지게차 실루엣을 컷 2에 심어 컷 30·31 등장을 예고. 박상구 안경 왼쪽 렌즈 균열(좌우는 [제안], 이후 컷 일치 필요).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 3,
+   "beat": "B01",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_03.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "박상구 달림. 깨진 안경 한쪽, 숨 가쁨, 공포",
+   "dialogue": [],
+   "must_keep": [
+    "박상구 깨진 안경(왼쪽 렌즈 균열 [제안])",
+    "서치라이트 원 안으로 진입",
+    "공포·숨 가쁨"
+   ],
+   "continuity_note": "지게차 실루엣을 컷 2에 심어 컷 30·31 등장을 예고. 박상구 안경 왼쪽 렌즈 균열(좌우는 [제안], 이후 컷 일치 필요).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 4,
+   "beat": "B01",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_04.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "소음기 총구 섬광 → 컨테이너 벽 불꽃. 총격 주체는 어둠에 가려 얼굴 비노출",
+   "dialogue": [],
+   "must_keep": [
+    "총격 주체는 어둠에 가려 얼굴 비노출",
+    "섬광 2회 → 벽 불꽃",
+    "컷 종료 직전 무음 0.3초"
+   ],
+   "continuity_note": "지게차 실루엣을 컷 2에 심어 컷 30·31 등장을 예고. 박상구 안경 왼쪽 렌즈 균열(좌우는 [제안], 이후 컷 일치 필요).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 5,
+   "beat": "B02",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_05.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니의 눈(결의, 미동 없음), 걸쇠를 채우는 장갑 낀 손",
+   "dialogue": [],
+   "must_keep": [
+    "수니 복장 A 최초 노출(짙은 남색 재킷·하네스·장갑 [제안])",
+    "이후 모든 컷 동일",
+    "총기는 오른손 권총"
+   ],
+   "continuity_note": "수니 복장 최초 노출: 짙은 남색 재킷, 하네스, 장갑[제안]. 이후 모든 컷에서 동일해야 함. 총기는 오른손 권총(컷 9).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 6,
+   "beat": "B02",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_06.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "조종사 긴장, 수니는 옅은 미소 없이 담담. 시선은 지상",
+   "dialogue": [
+    {
+     "speaker": "조종사",
+     "line": "지상팀 8분입니다. 착륙할 곳이 없어요."
+    },
+    {
+     "speaker": "수니",
+     "line": "그럼 내려가면 됩니다."
+    }
+   ],
+   "must_keep": [
+    "조종사 긴장 / 수니 담담",
+    "시선은 지상",
+    "'지상팀 8분'"
+   ],
+   "continuity_note": "수니 복장 최초 노출: 짙은 남색 재킷, 하네스, 장갑[제안]. 이후 모든 컷에서 동일해야 함. 총기는 오른손 권총(컷 9).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 7,
+   "beat": "B02",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_07.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니가 로프를 던짐. 로프가 어둠 속으로 풀려 내려감",
+   "dialogue": [
+    {
+     "speaker": "조종사",
+     "line": "5분 후엔 이탈합니다."
+    }
+   ],
+   "must_keep": [
+    "빗줄기가 컷을 가로로 침",
+    "수니가 로프를 던짐",
+    "'5분 후엔 이탈'"
+   ],
+   "continuity_note": "수니 복장 최초 노출: 짙은 남색 재킷, 하네스, 장갑[제안]. 이후 모든 컷에서 동일해야 함. 총기는 오른손 권총(컷 9).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 8,
+   "beat": "B02",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_08.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니 실루엣이 로프를 타고 하강, 장갑에서 마찰 불꽃. 얼굴은 보이지 않음",
+   "dialogue": [],
+   "must_keep": [
+    "얼굴 비노출",
+    "장갑 마찰 불꽃",
+    "컷 없는 연속 하강(웹툰 3스크린 환산)",
+    "착지 직전 무음 0.3초"
+   ],
+   "continuity_note": "수니 복장 최초 노출: 짙은 남색 재킷, 하네스, 장갑[제안]. 이후 모든 컷에서 동일해야 함. 총기는 오른손 권총(컷 9).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 9,
+   "beat": "B03",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_09.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "한 손 로프, 한 손 권총. 무전에 짧게 지시",
+   "dialogue": [
+    {
+     "speaker": "수니",
+     "line": "서치라이트, 저쪽 컨테이너 사이에 고정. 지금."
+    }
+   ],
+   "must_keep": [
+    "한 손 로프·한 손 권총",
+    "수니 권총에 소음기 없음(용역과 구분)",
+    "원문 대사 '라이트' 보존, '서치라이트'는 제안"
+   ],
+   "continuity_note": "용역 6명 중 컷 11에서 무장해제 2명 / 컷 12에서 쓰러지는 1명이 같은 인물인지 여부를 확정해야 함(정리표 참조). 수니의 권총 소음기 없음(용역과 구분).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 10,
+   "beat": "B03",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_10.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "용역 6명이 야간 고글 과노출로 얼굴을 감싸고 비명",
+   "dialogue": [
+    {
+     "speaker": "용역",
+     "line": "크윽!"
+    }
+   ],
+   "must_keep": [
+    "6명 모두 고글 과노출",
+    "얼굴을 감싸고 비명"
+   ],
+   "continuity_note": "용역 6명 중 컷 11에서 무장해제 2명 / 컷 12에서 쓰러지는 1명이 같은 인물인지 여부를 확정해야 함(정리표 참조). 수니의 권총 소음기 없음(용역과 구분).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 11,
+   "beat": "B03",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_11.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "두 번 사격. 용역 2명의 총이 손에서 튕김",
+   "dialogue": [],
+   "must_keep": [
+    "두 발 사격",
+    "용역 2명 총기가 손에서 튕김(무장해제 2명)"
+   ],
+   "continuity_note": "용역 6명 중 컷 11에서 무장해제 2명 / 컷 12에서 쓰러지는 1명이 같은 인물인지 여부를 확정해야 함(정리표 참조). 수니의 권총 소음기 없음(용역과 구분).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 12,
+   "beat": "B03",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_12.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "로프를 놓고 용역 어깨 위로 낙하",
+   "dialogue": [],
+   "must_keep": [
+    "지상 3m에서 로프를 놓음",
+    "용역 어깨 위 낙하",
+    "총이 바닥을 굴러감"
+   ],
+   "continuity_note": "용역 6명 중 컷 11에서 무장해제 2명 / 컷 12에서 쓰러지는 1명이 같은 인물인지 여부를 확정해야 함(정리표 참조). 수니의 권총 소음기 없음(용역과 구분).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 13,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_13.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "착지 직후 무릎으로 목 아래를 눌러 제압, 발로 총을 차냄",
+   "dialogue": [],
+   "must_keep": [
+    "무릎으로 목 아래 압박",
+    "발로 총을 차냄",
+    "이후 컷 16 '마지막 탄창'(5발 표기 [제안])"
+   ],
+   "continuity_note": "컷 16에서 '마지막 탄창'을 명시(탄창에 5발 정도 표기)[제안]. 이후 컷 17에서 1발 사용. 장전음은 현우 복선(8화 암구호, 12화 현우의 마지막 기억)이므로 음향 연출 일관성 필수.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 14,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_14.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "사용자 승인 반영 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니가 쓰러진 용역(T1)의 몸을 방패 삼아 몸을 낮춘다. 총이 남은 용역 3명(T4·T5·리더)만 소음기 사격. T2·T3은 사격하지 않고 뒤에서 칼·곤봉을 꺼내 든다(컷 20·21 복선).",
+   "dialogue": [],
+   "must_keep": [
+    "쓰러진 용역을 방패로 몸을 낮춤",
+    "사격 인원 3명(컷 11·12~13 무장 상태표) — 원문 '5명'과 충돌, 지시 2-1로 수정, 원본 미대조"
+   ],
+   "continuity_note": "무장 상태표: 컷 11 두 정 이탈, 컷 12~13 한 정 이탈 → 사격 가능 3(T4·T5·리더). 원문 '남은 용역 5명이 사격'과 충돌(사용자 지시 2-1로 수정, 원본 미대조). 사격 인원(3)과 인계 인원(6)은 별개.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [
+    "사격 인원 3명(총구 섬광 3곳). 5명으로 생성하지 말 것"
+   ],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 15,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_15.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "사용자 승인 반영 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "소음기 연사. 총구 섬광이 세 군데(T4·T5·리더). 컨테이너 벽에 불꽃이 비처럼 튄다.",
+   "dialogue": [],
+   "must_keep": [
+    "소음기 연사",
+    "불꽃이 비처럼 튐",
+    "총구 섬광 3곳(컷 14와 일치)"
+   ],
+   "continuity_note": "컷 16에서 '마지막 탄창'을 명시(탄창에 5발 정도 표기)[제안]. 이후 컷 17에서 1발 사용. 장전음은 현우 복선(8화 암구호, 12화 현우의 마지막 기억)이므로 음향 연출 일관성 필수.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [
+    "사격 인원 3명(총구 섬광 3곳). 5명으로 생성하지 말 것"
+   ],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 16,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_16.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "마지막 탄창 장전. 수니의 귀에 '칵' 소리 포커스(현우에게 배운 습관). 대사 없음",
+   "dialogue": [],
+   "must_keep": [
+    "귀 클로즈업, '칵' 장전음 강조",
+    "대사 없음(현우에게 배운 습관, 동작으로만)",
+    "8화 암구호·12화 현우 기억 복선"
+   ],
+   "continuity_note": "컷 16에서 '마지막 탄창'을 명시(탄창에 5발 정도 표기)[제안]. 이후 컷 17에서 1발 사용. 장전음은 현우 복선(8화 암구호, 12화 현우의 마지막 기억)이므로 음향 연출 일관성 필수.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 17,
+   "beat": "B04",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_17.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "조명탑 전원부 한 발. 결단하는 표정",
+   "dialogue": [],
+   "must_keep": [
+    "조명 전원부를 한 발로 사격",
+    "'팍–' 후 전원 꺼짐",
+    "결단하는 표정"
+   ],
+   "continuity_note": "컷 16에서 '마지막 탄창'을 명시(탄창에 5발 정도 표기)[제안]. 이후 컷 17에서 1발 사용. 장전음은 현우 복선(8화 암구호, 12화 현우의 마지막 기억)이므로 음향 연출 일관성 필수.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 18,
+   "beat": "B05",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_18.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "인물 없음 — 전체 암전, 빗줄기 흰 선만 남음(r14 화면 원문)",
+   "dialogue": [],
+   "must_keep": [
+    "전체 검정",
+    "빗줄기 흰 선만 남음",
+    "컷 22부터 수니 좌측 옆구리 찢김 [제안]"
+   ],
+   "continuity_note": "수니 왼쪽 옆구리 재킷 찢김 [제안: 좌측]은 컷 22부터 영상 끝까지 유지. 컷 20~23에서 총성 3발 사운드 추가 제안(탄창 소진 논리, 이전 검수 의견).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 19,
+   "beat": "B05",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_19.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "용역들이 과노출된 고글을 뜯어 던지거나 팔로 눈을 가리고 눈을 질끈 감는다. 수니는 어둠 안쪽에서 접근. (r1)",
+   "dialogue": [],
+   "must_keep": [
+    "빛(용역)과 어둠(수니)이 뒤집힌 구도",
+    "용역이 고글을 뜯거나 눈을 가림(r1)",
+    "지게차 배경 노출 필수"
+   ],
+   "continuity_note": "수니 왼쪽 옆구리 재킷 찢김 [제안: 좌측]은 컷 22부터 영상 끝까지 유지. 컷 20~23에서 총성 3발 사운드 추가 제안(탄창 소진 논리, 이전 검수 의견).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 20,
+   "beat": "B05",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_20.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "어둠 속 칼이 헛손질처럼 번쩍. 수니가 소리 없이 사각으로 파고들어 손목을 꺾고 무릎으로 넘어뜨림. (r1)",
+   "dialogue": [],
+   "must_keep": [
+    "어둠 속 칼 번쩍",
+    "손목 꺾기 → 무릎 타격",
+    "소리 없이 사각으로 접근(r1)"
+   ],
+   "continuity_note": "수니 왼쪽 옆구리 재킷 찢김 [제안: 좌측]은 컷 22부터 영상 끝까지 유지. 컷 20~23에서 총성 3발 사운드 추가 제안(탄창 소진 논리, 이전 검수 의견).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 21,
+   "beat": "B05",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_21.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "곤봉이 감으로 휘둘러짐. 수니가 몸을 낮춰 정강이를 차고 컨테이너 벽에 얼굴을 박음. (r1)",
+   "dialogue": [],
+   "must_keep": [
+    "곤봉이 감으로 휘둘러짐(r1)",
+    "정강이 차기 → 컨테이너 벽 충돌"
+   ],
+   "continuity_note": "수니 왼쪽 옆구리 재킷 찢김 [제안: 좌측]은 컷 22부터 영상 끝까지 유지. 컷 20~23에서 총성 3발 사운드 추가 제안(탄창 소진 논리, 이전 검수 의견).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 22,
+   "beat": "B05",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_22.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "칼날이 스친 자국, 붉은 선. 짧게 숨을 뱉는 수니",
+   "dialogue": [],
+   "must_keep": [
+    "옆구리를 스친 칼날 자국, 붉은 선",
+    "수니 좌측 옆구리 찢김 [제안: 좌측] 영상 끝까지 유지",
+    "짧게 숨을 뱉음"
+   ],
+   "continuity_note": "수니 왼쪽 옆구리 재킷 찢김 [제안: 좌측]은 컷 22부터 영상 끝까지 유지. 컷 20~23에서 총성 3발 사운드 추가 제안(탄창 소진 논리, 이전 검수 의견).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 23,
+   "beat": "B05",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_23.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "이미 쓰러진 용역 3명(컷 12·20·21)을 수갑으로 컨테이너 A 문 손잡이에 묶음. 새 인물 추가 없음. (r1)",
+   "dialogue": [],
+   "must_keep": [
+    "이미 쓰러진 3명을 컨테이너 A 문 손잡이에 구속(r1)",
+    "새 인물 추가 없음"
+   ],
+   "continuity_note": "수니 왼쪽 옆구리 재킷 찢김 [제안: 좌측]은 컷 22부터 영상 끝까지 유지. 컷 20~23에서 총성 3발 사운드 추가 제안(탄창 소진 논리, 이전 검수 의견).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 24,
+   "beat": "B06",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_24.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "박상구가 엎드려 올려다봄. 공포와 안도 혼재",
+   "dialogue": [
+    {
+     "speaker": "박상구",
+     "line": "…경찰?"
+    }
+   ],
+   "must_keep": [
+    "수니 시점 로우앵글",
+    "깨진 안경(좌)",
+    "공포와 안도 혼재"
+   ],
+   "continuity_note": "컷 27의 활동 용역 수 = 3(남은 둘 + 리더). 이는 '컷 23 수정(쓰러진 3명 구속)'을 전제로 한 계산이며, 원문 컷 23 그대로면 2명이 되어 모순.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 25,
+   "beat": "B06",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_25.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니가 시선을 돌리지 않고 단호히 말함",
+   "dialogue": [
+    {
+     "speaker": "수니",
+     "line": "움직이지 말고 내 뒤에."
+    }
+   ],
+   "must_keep": [
+    "수니 단호, 시선을 돌리지 않음",
+    "대사 '움직이지 말고 내 뒤에.'"
+   ],
+   "continuity_note": "컷 27의 활동 용역 수 = 3(남은 둘 + 리더). 이는 '컷 23 수정(쓰러진 3명 구속)'을 전제로 한 계산이며, 원문 컷 23 그대로면 2명이 되어 모순.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 26,
+   "beat": "B06",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_26.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "헬기 이탈, 서치라이트 소멸, 완전 암전. 용역들이 바닥의 고글을 더듬어 다시 쓰며 눈을 비빔. (r1)",
+   "dialogue": [
+    {
+     "speaker": "조종사",
+     "line": "5분 지났습니다. 이탈합니다!"
+    }
+   ],
+   "must_keep": [
+    "헬기 이탈·서치라이트 소멸·완전 암전",
+    "용역이 바닥 고글을 더듬어 다시 씀(r1)"
+   ],
+   "continuity_note": "컷 27의 활동 용역 수 = 3(남은 둘 + 리더). 이는 '컷 23 수정(쓰러진 3명 구속)'을 전제로 한 계산이며, 원문 컷 23 그대로면 2명이 되어 모순.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 27,
+   "beat": "B06",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_27.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "화면이 백색 잔상에서 시작해 연두색 고글 시점으로 서서히 선명해지는 페이드인(시야 회복). 수니의 열 신호가 드러남. (r1)",
+   "dialogue": [],
+   "must_keep": [
+    "백색 잔상에서 연두색으로 서서히 선명해짐(r1)",
+    "수니가 열 신호로 보임",
+    "활동 용역 3명(남은 둘+리더)"
+   ],
+   "continuity_note": "컷 27의 활동 용역 수 = 3(남은 둘 + 리더). 이는 '컷 23 수정(쓰러진 3명 구속)'을 전제로 한 계산이며, 원문 컷 23 그대로면 2명이 되어 모순.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 28,
+   "beat": "B06",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_28.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "방아쇠를 당기지만 '칵, 칵' 빈 소리. 수니의 표정 변화(당황 대신 계산)",
+   "dialogue": [],
+   "must_keep": [
+    "방아쇠 '칵, 칵' 빈 소리",
+    "당황 대신 계산하는 표정"
+   ],
+   "continuity_note": "컷 27의 활동 용역 수 = 3(남은 둘 + 리더). 이는 '컷 23 수정(쓰러진 3명 구속)'을 전제로 한 계산이며, 원문 컷 23 그대로면 2명이 되어 모순.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 29,
+   "beat": "B07",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_29.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "지시 반영 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "박상구가 공황에 빠져 달아남. 수니 \"서요!\" 도로 쪽에는 아직 지원팀의 기척이 없다.",
+   "dialogue": [
+    {
+     "speaker": "수니",
+     "line": "서요!"
+    }
+   ],
+   "must_keep": [
+    "박상구 공황 도주(컷 41까지 퇴장)",
+    "지원팀 도착 시간 숫자 표기 없음(사용자 지시 2-2)",
+    "지게차 사전 노출(컷 2·19)"
+   ],
+   "continuity_note": "지게차 사전 노출: 컷 2(실루엣), 컷 19(배경) 필수. 컷 32에서 가두는 컨테이너 ≠ 컷 23에서 수갑 채운 컨테이너(같은 컨테이너면 위치 혼선). 박상구는 컷 29에서 퇴장해 컷 41까지 화면에 안 나오므로 배경에서 한 번 보여야 함.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 30,
+   "beat": "B07",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_30.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "지게차 위치를 확인(컷 2에서 예고된 실루엣)",
+   "dialogue": [],
+   "must_keep": [
+    "수니가 눈으로 지게차 위치 확인",
+    "어둠 속 윤곽만"
+   ],
+   "continuity_note": "지게차 사전 노출: 컷 2(실루엣), 컷 19(배경) 필수. 컷 32에서 가두는 컨테이너 ≠ 컷 23에서 수갑 채운 컨테이너(같은 컨테이너면 위치 혼선). 박상구는 컷 29에서 퇴장해 컷 41까지 화면에 안 나오므로 배경에서 한 번 보여야 함.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 31,
+   "beat": "B07",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_31.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "헤드라이트 점등으로 용역 고글 과노출",
+   "dialogue": [
+    {
+     "speaker": "용역",
+     "line": "아악!"
+    }
+   ],
+   "must_keep": [
+    "헤드라이트 점등 하이키 화이트아웃",
+    "용역 고글 과노출"
+   ],
+   "continuity_note": "지게차 사전 노출: 컷 2(실루엣), 컷 19(배경) 필수. 컷 32에서 가두는 컨테이너 ≠ 컷 23에서 수갑 채운 컨테이너(같은 컨테이너면 위치 혼선). 박상구는 컷 29에서 퇴장해 컷 41까지 화면에 안 나오므로 배경에서 한 번 보여야 함.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 32,
+   "beat": "B07",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_32.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "지게차가 돌진, 포크로 컨테이너 문을 밀어 용역 2명을 가둠",
+   "dialogue": [],
+   "must_keep": [
+    "포크가 컨테이너 문을 밀어 용역 2명을 가둠",
+    "컷 23의 컨테이너와 위치 혼선 금지"
+   ],
+   "continuity_note": "지게차 사전 노출: 컷 2(실루엣), 컷 19(배경) 필수. 컷 32에서 가두는 컨테이너 ≠ 컷 23에서 수갑 채운 컨테이너(같은 컨테이너면 위치 혼선). 박상구는 컷 29에서 퇴장해 컷 41까지 화면에 안 나오므로 배경에서 한 번 보여야 함.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 33,
+   "beat": "B07",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_33.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "컨테이너 안에서 문 두드림. 수니가 지게차 레버로 문을 고정",
+   "dialogue": [],
+   "must_keep": [
+    "안에서 문 두드리는 소리",
+    "지게차 레버로 문 고정"
+   ],
+   "continuity_note": "지게차 사전 노출: 컷 2(실루엣), 컷 19(배경) 필수. 컷 32에서 가두는 컨테이너 ≠ 컷 23에서 수갑 채운 컨테이너(같은 컨테이너면 위치 혼선). 박상구는 컷 29에서 퇴장해 컷 41까지 화면에 안 나오므로 배경에서 한 번 보여야 함.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 34,
+   "beat": "B08",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_34.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "리더가 운전석 위로 뛰어올라 맨몸 격투 시작(식별 특징은 디자인 확정 전 보류, 눈썹 흉터 표현 금지)",
+   "dialogue": [],
+   "must_keep": [
+    "리더가 운전석 위로 도약",
+    "리더 오른손 부상 → 컷 64 부목 연결(가장 중요한 복선)",
+    "리더 식별 특징 [승인 대기]"
+   ],
+   "continuity_note": "리더의 부상: 오른손 손가락. 이후 컷 64 '오른손 부목'과 연결되는 가장 중요한 복선. 컷 38의 리더 얼굴을 컷 65에서 '같은 얼굴'로 알아보게 해야 하므로 리더에게 식별 특징 부여 필요 [제안: 눈썹 흉터 등, 승인 필요].",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "눈썹 흉터 표현 금지(미확정)"
+   ],
+   "r4_notes": [],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 35,
+   "beat": "B08",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_35.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "포크가 올라가며 컨테이너 사이에서 두 사람 충돌. 빗물 튐",
+   "dialogue": [],
+   "must_keep": [
+    "포크가 올라가며 컨테이너 사이에서 충돌",
+    "빗물 튐"
+   ],
+   "continuity_note": "리더의 부상: 오른손 손가락. 이후 컷 64 '오른손 부목'과 연결되는 가장 중요한 복선. 컷 38의 리더 얼굴을 컷 65에서 '같은 얼굴'로 알아보게 해야 하므로 리더에게 식별 특징 부여 필요 [제안: 눈썹 흉터 등, 승인 필요].",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 36,
+   "beat": "B08",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_36.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "리더가 소음기 권총 겨눔 → 수니가 총구를 위로 쳐냄 → 총알이 하늘로",
+   "dialogue": [],
+   "must_keep": [
+    "총구 → 손 → 하늘 순",
+    "총알은 하늘로"
+   ],
+   "continuity_note": "리더의 부상: 오른손 손가락. 이후 컷 64 '오른손 부목'과 연결되는 가장 중요한 복선. 컷 38의 리더 얼굴을 컷 65에서 '같은 얼굴'로 알아보게 해야 하므로 리더에게 식별 특징 부여 필요 [제안: 눈썹 흉터 등, 승인 필요].",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 37,
+   "beat": "B08",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_37.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니가 오른손 손가락 꺾음. 리더 표정 일그러짐",
+   "dialogue": [],
+   "must_keep": [
+    "리더 오른손 손가락을 꺾음('우득')",
+    "컷 64 부목과 같은 손"
+   ],
+   "continuity_note": "리더의 부상: 오른손 손가락. 이후 컷 64 '오른손 부목'과 연결되는 가장 중요한 복선. 컷 38의 리더 얼굴을 컷 65에서 '같은 얼굴'로 알아보게 해야 하므로 리더에게 식별 특징 부여 필요 [제안: 눈썹 흉터 등, 승인 필요].",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 38,
+   "beat": "B08",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_38.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니-리더 투샷. 리더의 얼굴이 또렷이 한 번 보인다(식별 특징은 디자인 확정 후 결정, 눈썹 흉터는 보류). 수니 \"이름.\" 리더는 침묵.",
+   "dialogue": [
+    {
+     "speaker": "수니",
+     "line": "이름."
+    }
+   ],
+   "must_keep": [
+    "리더 왼쪽 눈썹 흉터(식별 특징 [승인 대기])",
+    "'이름.' / 리더 침묵"
+   ],
+   "continuity_note": "리더의 부상: 오른손 손가락. 이후 컷 64 '오른손 부목'과 연결되는 가장 중요한 복선. 컷 38의 리더 얼굴을 컷 65에서 '같은 얼굴'로 알아보게 해야 하므로 리더에게 식별 특징 부여 필요 [제안: 눈썹 흉터 등, 승인 필요].",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "눈썹 흉터 표현 금지(미확정)"
+   ],
+   "r4_notes": [
+    "같은 얼굴 4요소(눈썹·귀·턱·입) 일치. 눈썹 흉터 금지"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 39,
+   "beat": "B09",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_39.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수갑 채움. 단말기 뒷면 일련번호 'HNL…' 클로즈",
+   "dialogue": [],
+   "must_keep": [
+    "단말기 뒷면 일련번호 'HNL…' 클로즈업",
+    "일련번호는 AI 생성 금지, 후반 합성"
+   ],
+   "continuity_note": "박상구 컷 29~42 사이 위치 공백 → 컷 33~36 배경에 웅크린 모습 삽입 제안. 수니 옆구리 상처가 컷 22와 같은 좌측인가.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 40,
+   "beat": "B09",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_40.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "아날로그 습관으로 번호를 수첩에 옮겨 적고, 옆에 시각 '00:25'을 함께 적음. (r1)",
+   "dialogue": [],
+   "must_keep": [
+    "아날로그로 번호를 수첩에 옮겨 적음",
+    "옆에 시각 00:25(r1)",
+    "컷 66의 'HNL…' 페이지"
+   ],
+   "continuity_note": "박상구 컷 29~42 사이 위치 공백 → 컷 33~36 배경에 웅크린 모습 삽입 제안. 수니 옆구리 상처가 컷 22와 같은 좌측인가.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 41,
+   "beat": "B09",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_41.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "지원팀 도착, 자막 '00:48'. 수니가 사이렌 쪽으로 눈을 돌리는 짧은 반응(예정보다 27분 지연). (r1)",
+   "dialogue": [],
+   "must_keep": [
+    "푸른 사이렌 불빛이 컨테이너 틈으로",
+    "자막 00:48(합성, 반영 여부 미검증)",
+    "예정보다 27분 지연(r1)"
+   ],
+   "continuity_note": "박상구 컷 29~42 사이 위치 공백 → 컷 33~36 배경에 웅크린 모습 삽입 제안. 수니 옆구리 상처가 컷 22와 같은 좌측인가.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 42,
+   "beat": "B09",
+   "duration_sec": 4.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_42.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 대사 보류 유지 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "우진이 달려옴. 수니는 박상구를 먼저 챙김. 옆구리의 피 번짐.",
+   "dialogue": [
+    {
+     "speaker": "우진",
+     "line": "선배!"
+    },
+    {
+     "speaker": "수니",
+     "line": "…나는 괜찮고, 박상구부터."
+    }
+   ],
+   "must_keep": [
+    "수니 옆구리 출혈(좌측 [제안])",
+    "'나는 괜찮고, 박상구부터.'",
+    "r14 우진 대사 추가분은 원본 확인 필요"
+   ],
+   "continuity_note": "박상구 컷 29~42 사이 위치 공백 → 컷 33~36 배경에 웅크린 모습 삽입 제안. 수니 옆구리 상처가 컷 22와 같은 좌측인가.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [
+    "음성 트랙 비움(문안 보류)"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 43,
+   "beat": "B10",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_43.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "지시 반영 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "검은 코트의 정진모가 비를 맞으며 걸어와 멈춤. 시선이 리더의 손과 전술 단말기에 머문다. 자막 '00:55'. 리더의 오른손 손가락은 붕대와 간이 부목으로 응급 고정되어 있다.",
+   "dialogue": [
+    {
+     "speaker": "정진모",
+     "line": "수고했네."
+    }
+   ],
+   "must_keep": [
+    "검은 코트",
+    "리더 오른손 응급 고정(붕대·간이 부목)",
+    "용역 6명이 한 화면에서 세어짐",
+    "자막 00:55는 합성"
+   ],
+   "continuity_note": "용역 6명이 한 화면(컷 44 와이드 또는 배경)에서 반드시 6명으로 세어져야 함(14화 증거 '5명 인계' 대비). 수니 옆구리는 지혈 붕대 처치 완료 상태. 리더 오른손은 붕대·간이 부목으로 응급 고정(컷 64에서 정식 부목). 정진모 얼굴 첫 정식 노출.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 44,
+   "beat": "B10",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_44.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "정진모는 여유, 수니는 단호. 배경에서 우진이 태블릿에 입력(내용 '00:55 용역 6명, 정진모 부장 인수'는 후반 합성). 용역 6명이 지원팀에 둘러싸여 줄지어 앉아 있어 화면에서 인원이 세어짐",
+   "dialogue": [
+    {
+     "speaker": "정진모",
+     "line": "저놈들은 내가 직접 데려가지."
+    },
+    {
+     "speaker": "수니",
+     "line": "보고서에 적겠습니다. 장비가 경찰 것과 같았습니다."
+    }
+   ],
+   "must_keep": [
+    "배경 태블릿 '00:55 용역 6명, 정진모 부장 인수'(합성)",
+    "용역 6명 줄지어 앉음",
+    "음악 정지"
+   ],
+   "continuity_note": "용역 6명이 한 화면(컷 44 와이드 또는 배경)에서 반드시 6명으로 세어져야 함(14화 증거 '5명 인계' 대비). 수니 옆구리는 지혈 붕대 처치 완료 상태. 리더 오른손은 붕대·간이 부목으로 응급 고정(컷 64에서 정식 부목). 정진모 얼굴 첫 정식 노출.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 45,
+   "beat": "B10",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_45.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 대사 보류 유지 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "정진모의 표정이 한 박자 굳는다. 인수증에 서명하며 손으로 인원 칸을 가린다. 수니는 화면 밖.",
+   "dialogue": [],
+   "must_keep": [
+    "정진모 표정이 한 박자 굳음",
+    "서명하며 손으로 인원 칸을 가림",
+    "수니는 화면 밖(OFF)"
+   ],
+   "continuity_note": "용역 6명이 한 화면(컷 44 와이드 또는 배경)에서 반드시 6명으로 세어져야 함(14화 증거 '5명 인계' 대비). 수니 옆구리는 지혈 붕대 처치 완료 상태. 리더 오른손은 붕대·간이 부목으로 응급 고정(컷 64에서 정식 부목). 정진모 얼굴 첫 정식 노출.",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [
+    "음성 트랙 비움(문안 보류)"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 46,
+   "beat": "B11",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_46.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "취조실. 박상구의 손이 떨리며 수첩에 '17-3-7'을 쓴다(글자는 후반 합성 가능). 깨진 안경(좌) 유지",
+   "dialogue": [],
+   "must_keep": [
+    "02:00 취조실",
+    "수첩에 '17-3-7'(글자는 후반 합성 가능)",
+    "깨진 안경(좌)",
+    "수니 의상 A"
+   ],
+   "continuity_note": "박상구는 컷 3~42의 같은 안경·옷(젖은 흔적은 마른 상태로 전환). 박상구 수첩은 '박상구 소유' 소품이며 이후 증거품이 됨(수니는 아날로그로 직접 옮겨 적는지 승인 필요). 수니는 컷 47에서 옷 갈아입기 전 야간 재킷+붕대(의상 A).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 47,
+   "beat": "B11",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_47.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "박상구가 수니를 올려다보며 말함. 수니의 손이 멈춤(수첩을 쥔 손). 이 컷이 수니가 3년 만에 현우의 이름에 반응하는 지점",
+   "dialogue": [
+    {
+     "speaker": "박상구",
+     "line": "도현우 경위 알죠? 그 사람 말이 맞았어요."
+    }
+   ],
+   "must_keep": [
+    "'도현우 경위 알죠? 그 사람 말이 맞았어요.'",
+    "수니의 손이 멈춤(3년 만에 현우 이름에 반응)"
+   ],
+   "continuity_note": "박상구는 컷 3~42의 같은 안경·옷(젖은 흔적은 마른 상태로 전환). 박상구 수첩은 '박상구 소유' 소품이며 이후 증거품이 됨(수니는 아날로그로 직접 옮겨 적는지 승인 필요). 수니는 컷 47에서 옷 갈아입기 전 야간 재킷+붕대(의상 A).",
+   "costume_block": "A",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 48,
+   "beat": "B11",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_48.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "03:00 입감. 철창이 닫히고, 박상구가 철창 안에서 수니를 돌아봄(제안)",
+   "dialogue": [],
+   "must_keep": [
+    "03:00 입감",
+    "철창 닫히는 소리 크게",
+    "박상구가 돌아봄(제안)"
+   ],
+   "continuity_note": "박상구는 컷 3~42의 같은 안경·옷(젖은 흔적은 마른 상태로 전환). 박상구 수첩은 '박상구 소유' 소품이며 이후 증거품이 됨(수니는 아날로그로 직접 옮겨 적는지 승인 필요). 수니는 컷 47에서 옷 갈아입기 전 야간 재킷+붕대(의상 A).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 49,
+   "beat": "B12",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_49.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "지시 반영 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "낮 색(푸른 흰빛). 복도 양쪽에서 팀원 5명이 박수. 한 명의 휴대폰 화면에 헬기 강하 영상이 단체방에서 재생(영상은 후반 합성). 우진이 커피를 건네며 웃음. 수니의 점퍼 가슴 주머니 밖으로 회중시계 사슬 끝이 살짝 보인다(소품만, 뚜껑·문양은 보이지 않음).",
+   "dialogue": [
+    {
+     "speaker": "우진",
+     "line": "선배, 영화 같았어요."
+    }
+   ],
+   "must_keep": [
+    "기준 구도 앵커(수니 중앙 앞·우진 우측 3/4·팀원 좌우 대칭)",
+    "낮 색(푸른 흰빛)",
+    "컷 53·61이 같은 구도 반복",
+    "회중시계 사슬 끝 노출(소품만, 컷 추가 없음)"
+   ],
+   "continuity_note": "기준 구도 앵커(컷 49=53=61): 수니 중앙 앞, 우진 우측 3/4, 팀원 좌우 대칭. 의상 B(경찰 점퍼 위에 붕대를 가림)로 전환. 수니의 휴대폰은 차에서 회수된 상태(소품 확인 필요).",
+   "costume_block": "B",
+   "anchor": "기준 프레임",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [
+    "회중시계 사슬/시계는 소품으로만, 뚜껑·문양 노출 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 50,
+   "beat": "B12",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_50.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "지시 반영 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니는 재킷 안 붕대를 가린 채 아주 작게 안도하는 눈빛, 웃지는 않음. 손이 주머니 속 시계 위에 잠깐 놓인다.",
+   "dialogue": [],
+   "must_keep": [
+    "재킷 안 붕대를 가림",
+    "웃지 않음",
+    "음악 정지",
+    "손이 주머니 속 시계 위에 놓임"
+   ],
+   "continuity_note": "기준 구도 앵커(컷 49=53=61): 수니 중앙 앞, 우진 우측 3/4, 팀원 좌우 대칭. 의상 B(경찰 점퍼 위에 붕대를 가림)로 전환. 수니의 휴대폰은 차에서 회수된 상태(소품 확인 필요).",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [
+    "회중시계 사슬/시계는 소품으로만, 뚜껑·문양 노출 금지"
+   ],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 51,
+   "beat": "B12",
+   "duration_sec": 3.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_51.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "폰 알림 진동 → 시선 → 복도를 달림(07:50)",
+   "dialogue": [],
+   "must_keep": [
+    "화면비 16:9 → 2.35:1 → 3:1 레터박스 압축",
+    "심박 펄스 가속",
+    "복도를 달림"
+   ],
+   "continuity_note": "기준 구도 앵커(컷 49=53=61): 수니 중앙 앞, 우진 우측 3/4, 팀원 좌우 대칭. 의상 B(경찰 점퍼 위에 붕대를 가림)로 전환. 수니의 휴대폰은 차에서 회수된 상태(소품 확인 필요).",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 52,
+   "beat": "B12",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_52.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "지시 반영 · 시각 미입력 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "유치장 바닥에 박상구가 쓰러져 있음. 모니터에 'CCTV 공백 — 3분' 문구만(시각 숫자 없음, 후반 합성).",
+   "dialogue": [],
+   "must_keep": [
+    "사망 현장 직접 묘사 최소",
+    "CCTV 공백 '3분' 표기(시각 숫자 없음)",
+    "무음"
+   ],
+   "continuity_note": "기준 구도 앵커(컷 49=53=61): 수니 중앙 앞, 우진 우측 3/4, 팀원 좌우 대칭. 의상 B(경찰 점퍼 위에 붕대를 가림)로 전환. 수니의 휴대폰은 차에서 회수된 상태(소품 확인 필요).",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [
+    "'3분' 문구만 합성, 시각 숫자 생성 금지"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 53,
+   "beat": "B13",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_53.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "같은 복도·같은 사람들. 아무도 수니와 눈을 마주치지 않는다. 우진은 커피 없이 고개를 숙임",
+   "dialogue": [],
+   "must_keep": [
+    "컷 49와 동일 카메라(높이·렌즈·배경)",
+    "아무도 수니와 눈을 마주치지 않음",
+    "우진 커피 없이 고개 숙임"
+   ],
+   "continuity_note": "앵커 동일(컷 49와 일치 검사 대상). 수니 의상 B 유지. 컷 55 '낮'과 컷 56 '저녁' 사이 시간 경과(자막 불필요, 빛으로 표현). 도어록 '2시간 전' 방문은 수니가 닿기 전(박상구 사망 후 누군가 방문).",
+   "costume_block": "B",
+   "anchor": "cut_49 첫 프레임",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 54,
+   "beat": "B13",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_54.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "정진모가 현장 접근을 팔로 막음. 수니는 굽히지 않음",
+   "dialogue": [
+    {
+     "speaker": "정진모",
+     "line": "서 경위, 이건 위에서 정리해. 자네는 쉬어."
+    },
+    {
+     "speaker": "수니",
+     "line": "쉬는 건 사건 끝나고 합니다."
+    }
+   ],
+   "must_keep": [
+    "정진모가 현장 접근을 팔로 막음",
+    "수니는 굽히지 않음"
+   ],
+   "continuity_note": "앵커 동일(컷 49와 일치 검사 대상). 수니 의상 B 유지. 컷 55 '낮'과 컷 56 '저녁' 사이 시간 경과(자막 불필요, 빛으로 표현). 도어록 '2시간 전' 방문은 수니가 닿기 전(박상구 사망 후 누군가 방문).",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 55,
+   "beat": "B13",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_55.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "낮. 박상구의 집. 책 사이 쪽지 '17-3-7'(자막 1줄 '17동 3층 7호'), 도어록 기록(두 시간 전 방문)은 배경 소품 화면",
+   "dialogue": [],
+   "must_keep": [
+    "낮, 박상구의 집",
+    "쪽지 '17-3-7'(자막 1줄 '17동 3층 7호')",
+    "도어록 기록은 두 시간 전 방문"
+   ],
+   "continuity_note": "앵커 동일(컷 49와 일치 검사 대상). 수니 의상 B 유지. 컷 55 '낮'과 컷 56 '저녁' 사이 시간 경과(자막 불필요, 빛으로 표현). 도어록 '2시간 전' 방문은 수니가 닿기 전(박상구 사망 후 누군가 방문).",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 56,
+   "beat": "B13",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_56.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "저녁. 우진의 전화. 수니가 사무실로 향함",
+   "dialogue": [
+    {
+     "speaker": "우진",
+     "line": "선배, 감찰이 선배 책상 열었어요. 오지 마요."
+    }
+   ],
+   "must_keep": [
+    "저녁(빛으로 표현)",
+    "우진 전화 전체 대사",
+    "수니가 사무실로 향함"
+   ],
+   "continuity_note": "앵커 동일(컷 49와 일치 검사 대상). 수니 의상 B 유지. 컷 55 '낮'과 컷 56 '저녁' 사이 시간 경과(자막 불필요, 빛으로 표현). 도어록 '2시간 전' 방문은 수니가 닿기 전(박상구 사망 후 누군가 방문).",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 57,
+   "beat": "B14",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_57.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "서랍이 열려 있고 현금 다발이 줄줄이 이어져 내려감",
+   "dialogue": [],
+   "must_keep": [
+    "서랍에서 아래로 연속 틸트(약 6초)",
+    "현금 다발이 줄줄이 이어짐"
+   ],
+   "continuity_note": "통화기록 시각(00:21/00:24/00:27)은 헬기 이탈(00:18) 이후 — 그래서 알리바이 대사는 '교전 중'으로 수정(R12). 발신번호는 스푸핑 VoIP 설정이 원본 심사평에서 쟁점으로 언급됨(세부는 미검증). 수니는 의상 B 유지.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 58,
+   "beat": "B14",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_58.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "감찰 3명과 정진모가 책상 앞. 모니터에 통화기록 3통 '00:21 / 00:24 / 00:27'(글자는 합성)",
+   "dialogue": [],
+   "must_keep": [
+    "모니터에 통화기록 3통 00:21/00:24/00:27(글자 합성)",
+    "알리바이 논리의 기준 시각"
+   ],
+   "continuity_note": "통화기록 시각(00:21/00:24/00:27)은 헬기 이탈(00:18) 이후 — 그래서 알리바이 대사는 '교전 중'으로 수정(R12). 발신번호는 스푸핑 VoIP 설정이 원본 심사평에서 쟁점으로 언급됨(세부는 미검증). 수니는 의상 B 유지.",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 59,
+   "beat": "B14",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_59.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "잠정(PROVISIONAL) · V1 승인 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니는 흥분 없이 단호. 정진모는 알리바이를 직접 반박하지 않고 상위 판단으로 넘기는 듯 짧게 받는다. 수니가 \"붙잡은 용역들이 증인입니다\"라고 말하는 순간 정진모의 시선이 한 박자 멈춘다(표정·시선만, 새 대사·새 사건 없음, 증인 통제 여부는 확정하지 않음).",
+   "dialogue": [
+    {
+     "speaker": "수니",
+     "line": "그 시간엔 현장에 있었습니다. 휴대폰은 차에 있었고, 붙잡은 용역들이 증인입니다."
+    },
+    {
+     "speaker": "정진모",
+     "line": "기기 로그는 지울 수 있지."
+    }
+   ],
+   "must_keep": [
+    "수니 단호",
+    "V1: '증인' 순간 정진모의 시선이 한 박자 멈춤(승인된 연출)",
+    "대사·알리바이는 잠정(PROVISIONAL), 대안 A~D 보존",
+    "새 대사·새 사건·컷 추가 없음"
+   ],
+   "continuity_note": "헬기 이탈 00:18 뒤인 통화 00:21·00:24·00:27은 수니가 지상 현장에 있던 시각. v5.1 문안 잠정 유지(사용자 지시). 정진모 대사는 v3.1 원문. 대안 A~D 미결정.",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "충돌 문안: 대사·시각 텍스트를 프롬프트에 넣지 않음"
+   ],
+   "r4_notes": [
+    "대사 문안 잠정. 입 모양(립싱크) 없이 후작업"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 60,
+   "beat": "B15",
+   "duration_sec": 5.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_60.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "직무정지. 수니가 배지와 권총을 책상에 올려놓음. 배지가 닿는 소리가 크게",
+   "dialogue": [],
+   "must_keep": [
+    "배지가 책상에 닿는 소리 크게",
+    "이후 수니 비무장"
+   ],
+   "continuity_note": "회중시계는 컷 49·50에서 소품으로 먼저 노출되고 컷 62에서 처음 클로즈업됨(사용자 지시 2-6). 시계를 닫는 손은 오른손. 권총은 컷 60에서 책상에 두고 퇴장하므로 컷 62 이후 수니는 무장하지 않음.",
+   "costume_block": "B",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 61,
+   "beat": "B15",
+   "duration_sec": 4.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_61.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "아침에 박수를 쳤던 손들이 주머니 안으로. 우진이 한 박자 늦게 손을 내림",
+   "dialogue": [],
+   "must_keep": [
+    "컷 49·53과 같은 구도",
+    "박수 쳤던 손들이 주머니로",
+    "우진이 한 박자 늦게 손을 내림"
+   ],
+   "continuity_note": "회중시계는 컷 49·50에서 소품으로 먼저 노출되고 컷 62에서 처음 클로즈업됨(사용자 지시 2-6). 시계를 닫는 손은 오른손. 권총은 컷 60에서 책상에 두고 퇴장하므로 컷 62 이후 수니는 무장하지 않음.",
+   "costume_block": "B",
+   "anchor": "cut_49 첫 프레임",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 62,
+   "beat": "B15",
+   "duration_sec": 6.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_62.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "귀가. 수첩과 회중시계를 챙김. 시계 뚜껑을 오른손으로 닫는 습관. 휴대폰 전원을 길게 눌러 끔(제안)",
+   "dialogue": [],
+   "must_keep": [
+    "회중시계 뚜껑을 오른손으로 닫음",
+    "휴대폰 전원을 길게 눌러 끔(제안)",
+    "수첩과 회중시계만 챙김"
+   ],
+   "continuity_note": "회중시계는 컷 49·50에서 소품으로 먼저 노출되고 컷 62에서 처음 클로즈업됨(사용자 지시 2-6). 시계를 닫는 손은 오른손. 권총은 컷 60에서 책상에 두고 퇴장하므로 컷 62 이후 수니는 무장하지 않음.",
+   "costume_block": "C",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 63,
+   "beat": "B16",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_63.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "현관 모니터. 체포조가 복도에 도착. 선두는 얼굴이 가려져 있음",
+   "dialogue": [],
+   "must_keep": [
+    "고정·어안 왜곡",
+    "선두 얼굴은 가려져 있음"
+   ],
+   "continuity_note": "리더의 오른손 부목(컷 64) = 컷 37에서 꺾인 오른손. 컷 38 얼굴과 일치해야 함. 수니는 폰을 컷 62에서 껐음. 수첩은 컷 40의 'HNL…' 페이지가 열린 상태로 컷 66에 등장. 4분 타이머는 컷 67 이후 2화로 이어짐.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 64,
+   "beat": "B16",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_64.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "선두 남자의 오른손에 부목이 감겨 있음",
+   "dialogue": [],
+   "must_keep": [
+    "오른손 부목 = 컷 37에서 꺾인 오른손",
+    "손에서 몸으로 틸트업"
+   ],
+   "continuity_note": "리더의 오른손 부목(컷 64) = 컷 37에서 꺾인 오른손. 컷 38 얼굴과 일치해야 함. 수니는 폰을 컷 62에서 껐음. 수첩은 컷 40의 'HNL…' 페이지가 열린 상태로 컷 66에 등장. 4분 타이머는 컷 67 이후 2화로 이어짐.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 65,
+   "beat": "B16",
+   "duration_sec": 2.5,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_65.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니의 눈이 커짐. 컷 38의 리더 얼굴과 같은 얼굴(식별 특징 보류, 눈썹 흉터 표현 금지). 경찰 특공 지원팀 복장",
+   "dialogue": [],
+   "must_keep": [
+    "컷 38 리더 얼굴과 같은 얼굴(눈썹 흉터 [승인 대기])",
+    "플래시 1초 미만",
+    "경찰 특공 지원팀 복장"
+   ],
+   "continuity_note": "리더의 오른손 부목(컷 64) = 컷 37에서 꺾인 오른손. 컷 38 얼굴과 일치해야 함. 수니는 폰을 컷 62에서 껐음. 수첩은 컷 40의 'HNL…' 페이지가 열린 상태로 컷 66에 등장. 4분 타이머는 컷 67 이후 2화로 이어짐.",
+   "costume_block": "C",
+   "anchor": "cut_38 얼굴 앵커 재사용",
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "눈썹 흉터 표현 금지(미확정)"
+   ],
+   "r4_notes": [
+    "같은 얼굴 4요소(눈썹·귀·턱·입) 일치. 눈썹 흉터 금지"
+   ],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 66,
+   "beat": "B16",
+   "duration_sec": 2.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_66.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니의 손이 수첩의 'HNL…' 페이지를 움켜쥠",
+   "dialogue": [],
+   "must_keep": [
+    "수첩의 'HNL…' 페이지를 움켜쥠",
+    "글자는 후반 합성"
+   ],
+   "continuity_note": "리더의 오른손 부목(컷 64) = 컷 37에서 꺾인 오른손. 컷 38 얼굴과 일치해야 함. 수니는 폰을 컷 62에서 껐음. 수첩은 컷 40의 'HNL…' 페이지가 열린 상태로 컷 66에 등장. 4분 타이머는 컷 67 이후 2화로 이어짐.",
+   "costume_block": "C",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 67,
+   "beat": "B16",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_67.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "보류 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "꺼진 폰 화면에 흰 글자가 뜸. 텍스트는 후반 합성(AI 생성 금지)",
+   "dialogue": [
+    {
+     "speaker": "화면텍스트",
+     "line": "하모니 보호 에이전트입니다. 4분 안에 이 집을 나가야 합니다. 현관은 안 됩니다."
+    }
+   ],
+   "must_keep": [
+    "검정에서 폰 화면 점등",
+    "흰 글자는 후반 합성(AI 생성 금지)",
+    "세븐 음성 위치 미확정: 음성 추가 금지"
+   ],
+   "continuity_note": "리더의 오른손 부목(컷 64) = 컷 37에서 꺾인 오른손. 컷 38 얼굴과 일치해야 함. 수니는 폰을 컷 62에서 껐음. 수첩은 컷 40의 'HNL…' 페이지가 열린 상태로 컷 66에 등장. 4분 타이머는 컷 67 이후 2화로 이어짐.",
+   "costume_block": null,
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지",
+    "세븐 음성·얼굴 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": "원본 충돌 해소 대기",
+   "generation_status": "미생성"
+  },
+  {
+   "cut": 68,
+   "beat": "B16",
+   "duration_sec": 3.0,
+   "first_frame": "deliver_r3/panels_preserved_68/cut_68.png (러프 블로킹, 구도 참조 전용)",
+   "status_r5": "내부 정합 통과 · 원본 미대조",
+   "pass_confirmed": false,
+   "action_expression": "수니의 표정(놀람, 경계)",
+   "dialogue": [
+    {
+     "speaker": "수니",
+     "line": "전원 껐는데."
+    }
+   ],
+   "must_keep": [
+    "'전원 껐는데.' 한 줄",
+    "놀람·경계 표정",
+    "엔딩 정적 후 컷아웃"
+   ],
+   "continuity_note": "리더의 오른손 부목(컷 64) = 컷 37에서 꺾인 오른손. 컷 38 얼굴과 일치해야 함. 수니는 폰을 컷 62에서 껐음. 수첩은 컷 40의 'HNL…' 페이지가 열린 상태로 컷 66에 등장. 4분 타이머는 컷 67 이후 2화로 이어짐.",
+   "costume_block": "C",
+   "anchor": null,
+   "forbid": [
+    "자막·시각·일련번호 등 화면 글자 생성 금지"
+   ],
+   "r4_notes": [],
+   "hold": null,
+   "generation_status": "미생성"
+  }
+ ]
+}
