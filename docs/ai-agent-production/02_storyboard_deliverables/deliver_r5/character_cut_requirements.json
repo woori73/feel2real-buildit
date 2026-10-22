@@ -1,0 +1,560 @@
+[
+ {
+  "cut": 5,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 6,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄 투샷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 7,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "와이드",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 8,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "세로 낙차(롱테이크 6초)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 9,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄 클로즈",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 10,
+  "characters": [
+   "리더"
+  ],
+  "shot_type": "와이드",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": null,
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 11,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업 2연속",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 12,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "세로 큰 컷(풀샷)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 13,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 14,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷(오버숄더)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 16,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업(귀/손)",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 17,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 19,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "와이드",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 20,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷 3연속",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 21,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 22,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 23,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷 2연속",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 24,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 25,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 26,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "와이드",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 27,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "POV(연두색 고글)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 28,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 29,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 30,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "중간 컷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 33,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷 2연속",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 34,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "중간 컷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 35,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "와이드",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 36,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "작은 컷 3연속",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 37,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 38,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "중간 컷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 39,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "클로즈업 2단",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 40,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 41,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "와이드",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 42,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "미디엄",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 43,
+  "characters": [
+   "리더"
+  ],
+  "shot_type": "미디엄(로우앵글)",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": null,
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 44,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "오버숄더 투샷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 45,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 47,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "큰 컷(클로즈) + 인서트",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "A",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 49,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "와이드(기준 구도)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 50,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 51,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷 3연속",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 53,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "와이드(컷 49와 동일 구도)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 54,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "중간 투샷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 55,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 56,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 58,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "중간 컷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 59,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷 투샷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 60,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "클로즈업",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 61,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "와이드(컷 49·53 구도)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "B",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 62,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷 → 인서트",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "C",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 63,
+  "characters": [
+   "리더"
+  ],
+  "shot_type": "중간 컷(도어 인터폰 어안)",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": null,
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 64,
+  "characters": [
+   "리더"
+  ],
+  "shot_type": "세로 큰 컷(틸트업 짧게)",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": null,
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 65,
+  "characters": [
+   "수니",
+   "리더"
+  ],
+  "shot_type": "클로즈업 + 플래시컷",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "C",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 66,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "작은 컷",
+  "needs": "전신·실루엣 위주",
+  "suni_costume": "C",
+  "status": "시안 미생성"
+ },
+ {
+  "cut": 68,
+  "characters": [
+   "수니"
+  ],
+  "shot_type": "마지막 컷(클로즈업)",
+  "needs": "얼굴 정면/측면/3·4 + 표정",
+  "suni_costume": "C",
+  "status": "시안 미생성"
+ }
+]

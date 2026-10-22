@@ -1,0 +1,180 @@
+{
+ "note": "새 영화적 시안은 아직 없음. planned는 미생성, legacy는 참고 자료",
+ "planned": [
+  {
+   "id": "suni_front",
+   "planned_file": "characters/suni/front.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_front"
+  },
+  {
+   "id": "suni_side",
+   "planned_file": "characters/suni/side.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_side"
+  },
+  {
+   "id": "suni_three_quarter",
+   "planned_file": "characters/suni/three_quarter.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_three_quarter"
+  },
+  {
+   "id": "suni_full_body",
+   "planned_file": "characters/suni/full_body.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_full_body"
+  },
+  {
+   "id": "suni_costume_A",
+   "planned_file": "characters/suni/costume_A.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_costume_A"
+  },
+  {
+   "id": "suni_costume_B",
+   "planned_file": "characters/suni/costume_B.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_costume_B"
+  },
+  {
+   "id": "suni_costume_C",
+   "planned_file": "characters/suni/costume_C.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_costume_C"
+  },
+  {
+   "id": "suni_expressions",
+   "planned_file": "characters/suni/expressions.png(구조 외 추가 요청 항목)",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#suni_expressions"
+  },
+  {
+   "id": "leader_front",
+   "planned_file": "characters/leader/front.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#leader_front"
+  },
+  {
+   "id": "leader_side",
+   "planned_file": "characters/leader/side.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#leader_side"
+  },
+  {
+   "id": "leader_three_quarter",
+   "planned_file": "characters/leader/three_quarter.png",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#leader_three_quarter"
+  },
+  {
+   "id": "leader_cut38",
+   "planned_file": "characters/leader/cut38_cut65_comparison.png (왼쪽 칸)",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#leader_cut38"
+  },
+  {
+   "id": "leader_cut65",
+   "planned_file": "characters/leader/cut38_cut65_comparison.png (오른쪽 칸)",
+   "status": "미생성",
+   "prompt_ref": "character_prompts.json#leader_cut65"
+  }
+ ],
+ "legacy_reference_only": [
+  {
+   "file": "deliver_r3/character_refs/leader_face_front.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/leader_face_sheet.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/leader_face_side.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/seven_c67_screen_layout.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_A_front_full.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_A_side_full.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_B_front_full.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_B_side_full.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_face_front.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_face_side.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_sheet_AB.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/character_refs/suni_C_front_full.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/character_refs/suni_C_side_full.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/leader_38_65_same_face_board.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/leader_cut38_bust.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/leader_cut65_bust.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/suni_A_night_bust.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/suni_B_day_bust.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/suni_cinematic_board.png",
+   "role": "도식·컨셉 보드(코드로 그림)",
+   "use": "인물 구분·의상 연속성 참고용만. 최종 후보 아님, identity 고정 용도 아님"
+  }
+ ]
+}
