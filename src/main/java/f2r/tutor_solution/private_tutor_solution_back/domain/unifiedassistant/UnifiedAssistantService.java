@@ -114,6 +114,7 @@ public class UnifiedAssistantService {
     JsonNode snapshot;
     if(operation.equals("LEDGER_ACCOUNT")) {
       access.requireAllowedBusiness(p,businessId); academyId=null;
+      requireAssistantBatch(p,businessId,AcademyAssistantAdapter.id(data,"batchId"));
       snapshot=AssistantJson.read(AssistantJson.write(imports.detail(p,businessId,AcademyAssistantAdapter.id(data,"batchId"))));
       AcademyAssistantAdapter.id(data,"rowId"); AcademyAssistantAdapter.id(data,"accountId");
     } else {
@@ -184,6 +185,11 @@ public class UnifiedAssistantService {
     return drafts.findTop30ByOwnerIdOrderByCreatedAtDesc(p.userId()).stream().filter(d->{try{scope(p,d);return true;}catch(Exception e){return false;}}).toList();
   }
   public List<AssistantAudit> audit(AuthenticatedPrincipal p) { actor(p); return audit.findTop50ByOwnerIdOrderByIdDesc(p.userId()); }
+  /** 계정 변경은 이 비서가 본인의 LEDGER_IMPORT 초안으로 만든 가져오기 배치만 대상으로 한다. 금융자료 수집 등 다른 경로가 만든 승인 전 배치는 거부한다. */
+  private void requireAssistantBatch(AuthenticatedPrincipal p,Long businessId,long batchId) {
+    if(!drafts.existsByOwnerIdAndBusinessIdAndOperationAndPayload(p.userId(),businessId,"LEDGER_IMPORT","{\"batchId\":"+batchId+"}"))
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN,"이 비서가 만든 가져오기 배치만 계정을 바꿀 수 있습니다. 다른 경로로 만든 배치는 기존 이지장부 화면에서 처리하세요.");
+  }
   private AssistantDraft owned(AuthenticatedPrincipal p,String id) { return drafts.findById(id).filter(d->d.getOwnerId().equals(p.userId())&&d.getRole().equals(p.role())).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND)); }
   private void scope(AuthenticatedPrincipal p,AssistantDraft d) {
     if(d.getBusinessId()!=null) access.requireAllowedBusiness(p,d.getBusinessId());
