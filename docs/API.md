@@ -4988,3 +4988,12 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - `GET /api/studio/files/{id}/document?offset=0&limit=20000`: 실제 파일 권한 → 최대20 MiB 문서 로컬 파싱 → 파일명/원본SHA/본문/페이지 메타데이터. HTML 내장 이미지·스크립트 제외, PDF 처음100페이지. 총20만 자·한 번2만 자. 조회만 수행한다.
 - `GET /api/studio/files/{id}/mcp-image`: 실제 파일 권한 → PNG의 일시적인 JPEG 파생본(100 KiB 이하, 최대1024px). `X-Studio-Source-Sha256`, `X-Studio-Derivative-Sha256`. 입력4천만화소/20 MiB·동시2. 원본/버전/승인·저장소 객체 변경 없음.
 - MCP `studio_document`/`studio_image`는 위 GET을 기존 loopback 위임·현재 DB 역할·프로젝트 검사·읽기 전용 트랜잭션으로 호출한다. 문서는 기존 마스킹, 이미지는 별도 originals:read 동의 필수. text 메타데이터와 image/jpeg 콘텐츠 블록을 분리한다. 기존 원본 청크·MCP read-only scope는 유지한다. 총 도구21개. 실제 ChatGPT/Claude 판독은 NOT TESTED.
+
+### 제작실 공동 기억·댓글·승인 대기함
+
+- `GET /api/studio/memory`: 프로젝트의 `project-memory` 최신 JOB revision과 구조화한 마지막 결정/담당/문제/다음 작업/PR/SHA/연결 파일 메타데이터. GET은 초기화·복구·실행·쓰기를 하지 않는다.
+- `POST /api/studio/memory`: EDITOR/APPROVER·same-origin, `{expectedRevisionId,lastDecision,currentAi,openIssues,nextWork,pr,commitSha,sourceFileIds}`. 결정4000자/담당100/문제8000/다음4000, 파일50개 이내·같은 프로젝트만. 기존 head CAS 후 USER_EDIT 새 버전·기존 REVISION 감사. stale409, 이전 결정/승인 불변.
+- `GET /api/studio/revisions/{id}/comments?beforeId=`: 같은 프로젝트·item_key의 전 버전 댓글/승인/반려/수정요청을 100개씩 커서 조회. 실제 로그인 작성자·버전 라벨 보존.
+- `POST /api/studio/revisions/{id}/comments`: EDITOR/APPROVER·same-origin, `{body,sharedAi?,sourceFileId?}`. 1200자·최종 audit note2000자. AI 자료 공유는 Claude/Codex/Muse/ChatGPT 라벨과 같은 프로젝트 근거 파일 필수. 실제 작성자는 로그인 사용자이며 `HUMAN_SHARED_AI_MATERIAL`로 기록한다. 직접 인증된 AI 작성으로 주장하지 않는다. 원본/승인 포인터 변경 없음.
+- `GET /api/studio/pending?limit=100&offset=0`: 최신 head가 승인본과 다른 자료. 보관용 #863 출처 키·JOB 제외, 마지막 검수가 REJECT인 head는 대기함 제외(자료/이력은 보존). 100개 페이지로 누락 없이 조회.
+- 기존 review POST에 APPROVER의 `REQUEST_CHANGES` 추가: 감사 이벤트만 남기며 기존 승인 포인터를 유지한다. APPROVE/REJECT 동작은 유지한다. 새 GET3개만 MCP 읽기 허용이며 POST는 계속 금지한다.

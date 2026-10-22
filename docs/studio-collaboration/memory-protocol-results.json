@@ -1,0 +1,17 @@
+{
+  "testType": "Independent official MCP SDK sessions on actual project state; not external ChatGPT/Claude model calls",
+  "sessionA": {
+    "revisionId": "9fa41c14-4bbc-4026-87c4-9e05f5a487d2",
+    "memorySha256": "c6f356c0764dc4ff580684f8a9eaec6aa45a5d65b4b9dab2a990ea285836a7ec",
+    "linkedFiles": 4,
+    "writeDenied": true
+  },
+  "sessionB": {
+    "revisionId": "9fa41c14-4bbc-4026-87c4-9e05f5a487d2",
+    "memorySha256": "c6f356c0764dc4ff580684f8a9eaec6aa45a5d65b4b9dab2a990ea285836a7ec",
+    "linkedFiles": 4,
+    "writeDenied": true
+  },
+  "externalAiCalls": 0,
+  "actualProductSessions": "NOT TESTED"
+}

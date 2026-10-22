@@ -1,7 +1,7 @@
 {
   "mainBase": "ae5d1760b9ba76ca79ef5c6f906acc59e6c293b1",
   "method": "Java AST method-call traversal, repository/JDBC writes, file writes, remote/async calls; no live requests",
-  "getRoutes": 632,
+  "getRoutes": 635,
   "rows": [
     {
       "path": "/",
@@ -4036,7 +4036,7 @@
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java",
       "allowed": true,
       "flags": [
-        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java:200 StudioController.text"
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java:201 StudioController.text"
       ],
       "unresolvedExternalTypes": [
         "S3Client.getObject"
@@ -4051,6 +4051,30 @@
       "handler": "members",
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java",
       "allowed": false,
+      "flags": [],
+      "unresolvedExternalTypes": [],
+      "sourceOnly": false,
+      "assessment": "NO_STATIC_FLAG",
+      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
+    },
+    {
+      "path": "/api/studio/memory",
+      "controller": "StudioController",
+      "handler": "readMemory",
+      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java",
+      "allowed": true,
+      "flags": [],
+      "unresolvedExternalTypes": [],
+      "sourceOnly": false,
+      "assessment": "NO_STATIC_FLAG",
+      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
+    },
+    {
+      "path": "/api/studio/pending",
+      "controller": "StudioController",
+      "handler": "pending",
+      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java",
+      "allowed": true,
       "flags": [],
       "unresolvedExternalTypes": [],
       "sourceOnly": false,
@@ -4085,6 +4109,18 @@
       "path": "/api/studio/revisions/{id}",
       "controller": "StudioController",
       "handler": "revision",
+      "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java",
+      "allowed": true,
+      "flags": [],
+      "unresolvedExternalTypes": [],
+      "sourceOnly": false,
+      "assessment": "NO_STATIC_FLAG",
+      "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
+    },
+    {
+      "path": "/api/studio/revisions/{id}/comments",
+      "controller": "StudioController",
+      "handler": "comments",
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java",
       "allowed": true,
       "flags": [],

@@ -1830,3 +1830,7 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 ### 제작 원본 출처 이관 (#863)
 
 스키마 추가 없이 `studio_files`의 프로젝트/SHA 고유키와 `studio_revisions`의 append-only 구조를 재사용한다. 고정 Git 커밋의 536경로는 경로 해시 기반 `source-09d62dee-*` item으로 각각 보관하며 content에 전체 경로·원본 SHA·bytes·폴더 버전·repository·commit을 기록한다. 316고유 파일을 공유해도 220중복 경로의 출처를 잃지 않는다. `ep01-cut-01`~`68`은 source-r14/source-r5 버전과 원본 러프 파일을 참조한다. `character-approved-*` 5개만 기존 승인 근거를 APPROVE 이벤트로 이관한다. `project-memory` 초기 JOB 버전은 마지막 결정·담당 AI·미해결·다음 작업·PR/SHA·인계 파일 ID를 저장한다. 사용자 편집/결정은 후속 버전으로 보존하며 원본 파일·기존 revision은 갱신하지 않는다.
+
+### 공동 작업 기억과 컷별 검수
+
+새 테이블/마이그레이션 없이 기존 `studio_revisions`의 `project-memory` JOB에 구조화한 작업 기억을 append-only로 저장한다. 입력 expectedRevisionId는 기존 parent/head CAS와 동일하며 이전 버전과 승인본을 수정하지 않는다. 댓글은 `studio_events(action=COMMENT)`의 JSON note에 body/authorType/sharedAi/sourceFileId, actor_id에는 실제 로그인 사용자를 기록한다. 사람이 올린 AI 자료는 HUMAN_SHARED_AI_MATERIAL이고 AI 직접 인증과 구분한다. 댓글 스레드는 동일 project/item_key의 전체 revision을 묶고 각 label을 보존한다. REQUEST_CHANGES 이벤트는 기존 승인 포인터에 영향을 주지 않는다. 물리 삭제·댓글 덮어쓰기는 제공하지 않고 후속 댓글/기억 버전으로 정정한다(승인·감사 이력 보존 목적).

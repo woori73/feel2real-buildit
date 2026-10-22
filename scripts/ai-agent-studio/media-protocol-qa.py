@@ -49,4 +49,4 @@ async def main():
  assert a['documentSha256']==b['documentSha256']==basic['documentSha256'];assert a['derivativeSha256']==b['derivativeSha256']
  report={'testType':'Official Python MCP SDK 2.1.1, 3 independent OAuth grants against actual #863 originals; NOT ChatGPT/Claude product account or model vision tests','sourceCommit':catalog['commit'],'clientA':a,'clientB':b,'withoutOriginalConsent':basic,'actualProductImageReading':'NOT TESTED','actualExternalAiCalls':0}
  (ROOT/'docs/studio-collaboration/media-protocol-results.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print(json.dumps(report,ensure_ascii=False))
-asyncio.run(main())
+if __name__=='__main__': asyncio.run(main())

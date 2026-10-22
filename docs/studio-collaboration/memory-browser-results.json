@@ -1,0 +1,52 @@
+{
+  "actualSourceCommit": "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
+  "localOnly": true,
+  "externalAiCalls": 0,
+  "aiDirectWrite": "NOT IMPLEMENTED — separate consented connection design",
+  "results": [
+    {
+      "name": "새 페이지에서 실제 적재한 공동 기억·인계 문서 4개 복원",
+      "pass": true
+    },
+    {
+      "name": "승인 이력 Markdown 표를 실제 문서 뷰어로 열람",
+      "pass": true
+    },
+    {
+      "name": "작업 기억 새 버전 저장·실제 재조회·이전 결정 불변",
+      "pass": true
+    },
+    {
+      "name": "오래된 세션의 결정 덮어쓰기 409 거부",
+      "pass": true
+    },
+    {
+      "name": "다른 사용자·새 브라우저 세션 390px에서 결정/PR/SHA/미해결/다음 작업 복원",
+      "pass": true
+    },
+    {
+      "name": "실제 68컷 승인 대기함·보관용 536경로 제외",
+      "pass": true
+    },
+    {
+      "name": "근거 파일과 실제 사람 작성자를 남기는 AI 자료 공유 댓글",
+      "pass": true
+    },
+    {
+      "name": "사람 수정 요청·댓글 이력·실제 컷 미승인 상태 보존",
+      "pass": true
+    },
+    {
+      "name": "모바일 승인 대기함 열람",
+      "pass": true
+    },
+    {
+      "name": "무권한 공동 기억·대기함 접근 403",
+      "pass": true
+    },
+    {
+      "name": "실제 브라우저 JS 오류 0",
+      "pass": true
+    }
+  ]
+}

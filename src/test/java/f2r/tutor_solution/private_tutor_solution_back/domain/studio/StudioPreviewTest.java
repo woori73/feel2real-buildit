@@ -47,11 +47,13 @@ class StudioPreviewTest {
                 + "- 첫 컷\n"
                 + "- 둘째 컷\n\n"
                 + "<script>alert(1)</script>\n\n"
-                + "![외부](https://bad/pixel)",
+                + "![외부](https://bad/pixel)\n\n| 단계 | 상태 |\n|---|---|\n| r8 | 기존 승인 |",
             "md");
     var doc = org.jsoup.Jsoup.parse(result);
     assertEquals("장면", doc.selectFirst("h1").text());
     assertEquals(2, doc.select("li").size());
+    assertEquals(1, doc.select("table").size());
+    assertTrue(doc.select("td").text().contains("기존 승인"));
     assertEquals("강조", doc.selectFirst("strong").text());
     assertTrue(doc.select("script,img").isEmpty());
   }
