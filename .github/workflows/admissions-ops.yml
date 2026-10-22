@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'status=상태/메모리 보고, verify=증설 후 점검(상태검사·내부 엔드포인트·RDS·부팅/502 단서), resize-check=EC2 증설 사전 점검(읽기 전용: 권한 dry-run·EIP·볼륨·부팅 자동기동), install=서버 설치·보정, prepare-enable=환경설정만 반영(앱 재시작 없음, 다음 배포 때 적용), embed-stop=비상 차단(임베딩만 중지, 재시작 없음), enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
+        description: 'status=상태/메모리 보고, bench=재색인 처리시간·서버 부하 실측(읽기 전용·합성 문서·DB/앱 무관), verify=증설 후 점검(상태검사·내부 엔드포인트·RDS·부팅/502 단서), resize-check=EC2 증설 사전 점검(읽기 전용: 권한 dry-run·EIP·볼륨·부팅 자동기동), install=서버 설치·보정, prepare-enable=환경설정만 반영(앱 재시작 없음, 다음 배포 때 적용), embed-stop=비상 차단(임베딩만 중지, 재시작 없음), enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
         required: true
         default: status
         type: choice
-        options: [status, verify, resize-check, install, prepare-enable, embed-stop, enable, disable]
+        options: [status, bench, verify, resize-check, install, prepare-enable, embed-stop, enable, disable]
       min_similarity:
         description: 'enable 시 유사도 하한. 비우면 설치 때 보정한 제안값(없으면 기본 0.5)'
         required: false

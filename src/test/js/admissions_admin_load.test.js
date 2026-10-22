@@ -74,3 +74,41 @@ test('given comma-separated exclude keys when parsing then they are trimmed and 
   assert.deepEqual(load.parseExcludeKeys('doc_cau_2027_susi'), ['doc_cau_2027_susi']);
   assert.deepEqual(load.parseExcludeKeys(' doc_a , doc_b,,doc_a , '), ['doc_a', 'doc_b']);
 });
+
+test('given a running status when formatting then percent, progress and current item are shown', () => {
+  // given
+  const st = { total: 188, done: 47, missing: 141, running: true, indexSize: 0, indexReady: false,
+               lastRun: { mode: 'MISSING', result: 'RUNNING', total: 141, processed: 12, embedded: 12, failed: 0, currentId: 99, failures: {} } };
+  // when
+  const v = load.formatReindexStatus(st);
+  // then
+  assert.equal(v.percent, 25);
+  assert.equal(v.running, true);
+  assert.match(v.headline, /전체 188 · 완료 47 · 미완료 141/);
+  assert.match(v.headline, /진행 중 12\/141 \(항목 99 처리 중\)/);
+  assert.match(v.headline, /준비 안 됨/);
+  assert.equal(v.hasFailures, false);
+});
+
+test('given a finished run with failures when formatting then failure reasons are listed per item', () => {
+  // given
+  const st = { total: 4, done: 3, missing: 1, running: false, indexSize: 3, indexReady: true,
+               lastRun: { result: 'COMPLETED', total: 4, processed: 4, embedded: 3, failed: 1, currentId: null, failures: { 7: '타임아웃 60000ms' } } };
+  // when
+  const v = load.formatReindexStatus(st);
+  // then
+  assert.equal(v.percent, 75);
+  assert.equal(v.running, false);
+  assert.match(v.headline, /이번 실행 실패 1/);
+  assert.match(v.headline, /마지막 실행 완료/);
+  assert.match(v.headline, /준비됨/);
+  assert.deepEqual(v.failureLines, ['항목 7: 타임아웃 60000ms']);
+});
+
+test('given no run record after restart when formatting then DB counts still show and total 0 is safe', () => {
+  const v = load.formatReindexStatus({ total: 188, done: 100, missing: 88, running: false, indexSize: 100, indexReady: true, lastRun: null });
+  assert.equal(v.percent, 53);
+  assert.doesNotMatch(v.headline, /마지막 실행/);
+  assert.equal(load.formatReindexStatus({ total: 0, done: 0, missing: 0 }).percent, 0);
+  assert.equal(load.formatReindexStatus(null).percent, 0);
+});

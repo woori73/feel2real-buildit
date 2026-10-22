@@ -130,12 +130,42 @@ public class AdmissionsEmbeddingService {
         return new ReindexResult(ids.size(), embedded, 0, failed, failures);
     }
 
+    /**
+     * 항목 1건을 임베딩해 저장한다. 트랜잭션을 걸지 않아 호출마다 즉시 커밋된다
+     * (백그라운드 재색인이 중간에 끊겨도 완료분이 남는다).
+     * @return 성공하면 null, 실패하면 사유.
+     */
+    public String embedItem(Long id) {
+        var itemOpt = knowledgeRepository.findById(id);
+        if (itemOpt.isEmpty()) {
+            return "지식 항목이 없습니다";
+        }
+        return embedOne(itemOpt.get());
+    }
+
+    /** ACTIVE 항목 id (오름차순). */
+    public List<Long> activeIds() {
+        return knowledgeRepository.findIdsByStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
+    }
+
+    /** 모든 상태 항목 id (오름차순). */
+    public List<Long> allIds() {
+        return knowledgeRepository.findAllIds();
+    }
+
+    /** 현재 모델 버전 임베딩이 있는 knowledge_id 집합. */
+    public Set<Long> embeddedIds() {
+        return new java.util.HashSet<>(embeddingRepository.findKnowledgeIdsByModelVersion(props.getModelVersion()));
+    }
+
     /** @return 성공하면 null, 실패하면 사유. */
     private String embedOne(AdmissionsKnowledgeItem item) {
-        float[] vec = embeddingClient.embed(item.getTitle() + "\n" + item.getContent());
-        if (vec == null) {
-            return "임베딩 서비스 응답 없음 (service-url 미설정 또는 호출 실패)";
+        String text = item.getTitle() + "\n" + item.getContent();
+        AdmissionsEmbeddingClient.DocResult r = embedWithRetry(text);
+        if (r.vector() == null) {
+            return r.failure();
         }
+        float[] vec = r.vector();
         if (vec.length != props.getDimension()) {
             return "임베딩 차원 불일치: expected=" + props.getDimension() + " actual=" + vec.length;
         }
@@ -156,6 +186,21 @@ public class AdmissionsEmbeddingService {
                     .build());
         }
         return null;
+    }
+
+    /** 재시도 가능한 실패(503·타임아웃·연결 오류)만 backoff로 재시도한다. 마지막 사유를 돌려준다. */
+    private AdmissionsEmbeddingClient.DocResult embedWithRetry(String text) {
+        AdmissionsEmbeddingClient.DocResult r = embeddingClient.embedDocument(text);
+        for (int i = 1; r.vector() == null && r.retryable() && i <= props.getIndexRetries(); i++) {
+            try {
+                Thread.sleep(props.getIndexRetryBackoffMs() * i);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return AdmissionsEmbeddingClient.DocResult.fail("중단됨", false);
+            }
+            r = embeddingClient.embedDocument(text);
+        }
+        return r;
     }
 
     /** L2 정규화. 0 벡터는 그대로 돌려준다(NaN 방지). */

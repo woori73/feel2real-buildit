@@ -52,7 +52,34 @@
     return out;
   }
 
-  var api = { summarizeSeed: summarizeSeed, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys };
+  /** 재색인 상태 응답(GET /knowledge/reindex/status)을 화면 문구·진행률로 바꾼다. 서버를 호출하지 않는다. */
+  function formatReindexStatus(st) {
+    var out = { percent: 0, headline: '', failureLines: [], hasFailures: false, running: false };
+    if (!st) return out;
+    var total = st.total || 0, done = st.done || 0;
+    out.percent = total > 0 ? Math.round(done * 100 / total) : 0;
+    out.running = !!st.running;
+    var run = st.lastRun;
+    var parts = ['전체 ' + total + ' · 완료 ' + done + ' · 미완료 ' + (st.missing || 0)];
+    if (st.running && run) {
+      parts.push('진행 중 ' + run.processed + '/' + run.total + (run.currentId ? ' (항목 ' + run.currentId + ' 처리 중)' : ''));
+      if (st.cancelRequested) parts.push('중단 요청됨');
+    }
+    if (run && run.failed > 0) parts.push('이번 실행 실패 ' + run.failed);
+    if (!st.running && run) {
+      var label = { COMPLETED: '완료', CANCELLED: '중단됨', ERROR: '오류' }[run.result] || run.result;
+      parts.push('마지막 실행 ' + label);
+    }
+    parts.push('검색 인덱스 ' + (st.indexSize || 0) + (st.indexReady ? ' (준비됨)' : ' (준비 안 됨)'));
+    out.headline = parts.join(' · ');
+    var failures = (run && run.failures) || {};
+    Object.keys(failures).forEach(function (id) { out.failureLines.push('항목 ' + id + ': ' + failures[id]); });
+    out.hasFailures = out.failureLines.length > 0;
+    return out;
+  }
+
+  var api = { summarizeSeed: summarizeSeed, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys,
+              formatReindexStatus: formatReindexStatus };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   root.AdmissionsAdminLoad = api;
 
@@ -132,13 +159,47 @@
       } catch (e) { show('생성 실패: ' + e.message, true); }
     });
 
+    var pollTimer = null;
+    function renderReindex(st) {
+      var v = formatReindexStatus(st);
+      byId('ag-reindex-progress').value = v.percent;
+      byId('ag-reindex-percent').textContent = v.percent + '%';
+      byId('ag-reindex-status').textContent = v.headline + (v.hasFailures ? '\n' + v.failureLines.slice(0, 20).join('\n') : '');
+      byId('ag-reindex-status').className = v.hasFailures ? 'ag-load-error' : '';
+      byId('ag-knowledge-reindex').disabled = v.running;
+      byId('ag-reindex-cancel').disabled = !v.running;
+      return v.running;
+    }
+    async function pollReindex() {
+      try {
+        var res = await fetchAuth('/api/admin/admissions/knowledge/reindex/status');
+        if (!res.ok) throw new Error(res.status === 403 ? '관리자 권한이 필요합니다.' : '상태 조회 실패 (' + res.status + ')');
+        var running = renderReindex(await res.json());
+        pollTimer = running ? setTimeout(pollReindex, 2000) : null;
+      } catch (e) { byId('ag-reindex-status').textContent = '상태 조회 실패: ' + e.message; pollTimer = null; }
+    }
+    function startPolling() { if (pollTimer) clearTimeout(pollTimer); pollReindex(); }
+
     byId('ag-knowledge-reindex').addEventListener('click', async function () {
+      if (!window.confirm('ACTIVE 항목 중 임베딩이 없는 것만 백그라운드로 재색인합니다(이미 완료된 항목은 건드리지 않음). 계속할까요?')) return;
       try {
         var r = await post('/api/admin/admissions/knowledge/reindex', { mode: 'MISSING' });
-        show('재색인 — 대상 ' + r.requested + ' · 성공 ' + r.embedded + ' · 건너뜀 ' + r.skipped + ' · 실패 ' + r.failed + ' · 인덱스 ' + r.vectorIndexSize + ' · ' + r.status +
-             (r.failures && r.failures.length ? '\n' + r.failures.slice(0, 5).join('\n') : ''), r.failed > 0);
-      } catch (e) { show('재색인 실패: ' + e.message, true); }
+        show(r.status === 'NOTHING_TO_DO' ? '재색인할 항목이 없습니다(모두 완료).' : '재색인을 시작했습니다. 아래 진행 상황을 확인하세요.', false);
+        renderReindex(r);
+        startPolling();
+      } catch (e) {
+        show('재색인 실패: ' + e.message, true);
+        startPolling();
+      }
     });
+
+    byId('ag-reindex-cancel').addEventListener('click', async function () {
+      try { await post('/api/admin/admissions/knowledge/reindex/cancel', {}); show('중단을 요청했습니다(현재 항목까지 마치고 멈춥니다).', false); startPolling(); }
+      catch (e) { show('중단 요청 실패: ' + e.message, true); }
+    });
+
+    byId('ag-reindex-refresh').addEventListener('click', startPolling);
+    startPolling();
 
     byId('ag-index-reload').addEventListener('click', async function () {
       try {
