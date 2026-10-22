@@ -64,6 +64,11 @@ final class McpRedaction {
       int keep = Math.min(4, value.length() / 2);
       return "*".repeat(value.length() - keep) + value.substring(value.length() - keep);
     }
+    // Git SHA-1 may contain a 10..19 digit run. Preserve only explicit commit fields,
+    // after the PII-key branch; ordinary account/card/free-text values still get masking.
+    if (key.matches("(?i)(commit|commit_?sha|source_?commit|head_?sha|base_?sha)")
+        && value.matches("(?i)[a-f0-9]{40}")
+        && Pattern.compile("[a-f]", Pattern.CASE_INSENSITIVE).matcher(value).find()) return value;
     return text(value);
   }
 }

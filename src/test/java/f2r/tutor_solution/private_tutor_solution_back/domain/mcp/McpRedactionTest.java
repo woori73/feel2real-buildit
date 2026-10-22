@@ -96,4 +96,24 @@ class McpRedactionTest {
     assertEquals(uuid, McpRedaction.value("fileId", uuid));
     assertNotEquals(sha, McpRedaction.value("accountNumber", sha));
   }
+
+  @Test
+  void givenGitCommitWithLongDigits_whenMemoryIsRedacted_thenExactCommitRestoresAndPiiStillMasks() {
+    String sha = "6148b8d9c90054485194057e14feff76c37f55b3";
+    var json = new tools.jackson.databind.ObjectMapper();
+    var gateway = new McpGateway(null, null, null, null, json, null);
+    var input = json.createObjectNode();
+    input.putObject("memory").put("commitSha", sha);
+    input.put("accountNumber", sha);
+    input.put("cardNumber", "4111111111111111");
+    input.put("commit", "4111111111111111");
+    input.put("notes", "1234567890123456789");
+    tools.jackson.databind.JsonNode actual =
+        org.springframework.test.util.ReflectionTestUtils.invokeMethod(gateway, "redact", input);
+    assertEquals(sha, actual.path("memory").path("commitSha").asText());
+    assertNotEquals(sha, actual.path("accountNumber").asText());
+    assertFalse(actual.path("cardNumber").asText().contains("41111111"));
+    assertFalse(actual.path("commit").asText().contains("41111111"));
+    assertFalse(actual.path("notes").asText().contains("1234567890"));
+  }
 }
