@@ -1,0 +1,113 @@
+{
+ "stage": "r9_rev1",
+ "checks": [
+  {
+   "id": "R9-06",
+   "desc": "붕대 계획에 컷 62~68 각각 행/범위가 있음(or True 제거)",
+   "result": "PASS",
+   "detail": "누락 []"
+  },
+  {
+   "id": "R9-01",
+   "desc": "대표 10컷 전부 존재(원본·맵·프롬프트)",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-02",
+   "desc": "컷 맵 참조 경로가 실제 파일로 존재",
+   "result": "PASS",
+   "detail": "[]"
+  },
+  {
+   "id": "R9-08",
+   "desc": "참조 이미지가 컷 원본·컷 맵·프롬프트 JSON에서 동일",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-09",
+   "desc": "참조 PNG 전부 SHA-256 기록과 일치",
+   "result": "PASS",
+   "detail": "[]"
+  },
+  {
+   "id": "R9-03",
+   "desc": "pass_confirmed 전부 false",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-04",
+   "desc": "컷마다 좌우 규칙 기재",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-05",
+   "desc": "컷 40·43 합성 금지 항목 기재",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-07",
+   "desc": "38·43·65 negative에 eyebrow scar",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-10",
+   "desc": "프롬프트 positive에 주황 없음, 금지어는 negative에만",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-11",
+   "desc": "서수니 의상 구간 A/B/C 일치",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-12",
+   "desc": "컷 43 응급 고정/컷 64 정식 부목, 모두 오른손",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-13",
+   "desc": "S4 어깨 끈·붕대 가림이 남은 승인 사항에 제안 상태로 존재",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-14",
+   "desc": "정진모·용역 6명 승인 참조 없음(컷 43 refs 비어 있음)",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-15",
+   "desc": "컷 38·40·43·50·60·64 연출이 제안/미확정 항목을 보유",
+   "result": "PASS",
+   "detail": ""
+  },
+  {
+   "id": "R9-16",
+   "desc": "원작 대조·PASS 확정 0 유지(맵에서 계산)",
+   "result": "PASS",
+   "detail": "확정/검증 표시 0건"
+  },
+  {
+   "id": "R9-NC",
+   "desc": "음성 대조: 66행을 지우면 검사가 실패해야 함(검사기 자체 확인)",
+   "result": "PASS",
+   "detail": ""
+  }
+ ],
+ "all_pass": true,
+ "internal_consistency_only": true,
+ "generated_images": 0,
+ "paid_generation": false,
+ "formal_original_compared": "0/68",
+ "pass_confirmed_count": 0
+}
