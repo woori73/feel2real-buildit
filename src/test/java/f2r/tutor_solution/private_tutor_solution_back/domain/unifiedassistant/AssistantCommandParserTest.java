@@ -28,4 +28,24 @@ class AssistantCommandParserTest {
     assertThatThrownBy(()->parser.parse(" ")).isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(()->parser.parse("가".repeat(2001))).isInstanceOf(IllegalArgumentException.class);
   }
+  @Test void givenAttendanceInquiry_whenParsed_thenReadOnlyQueryNotWriteDraft() {
+    for(String s:new String[]{"학생 ID 5 출결 조회해줘","학생 ID 5 출석 확인해줘","학생 ID 5 결석 내역 알려줘"}) {
+      var r=parser.parse(s);
+      assertThat(r.operation()).isEqualTo("ATTENDANCE_QUERY");assertThat(r.input()).containsEntry("studentId",5L).doesNotContainKey("eventType");
+    }
+  }
+  @Test void givenAttendanceRecordWithConfirmWord_whenParsed_thenStillWriteDraft() {
+    assertThat(parser.parse("학생 ID 5 결석 기록해줘, 사유 확인").operation()).isEqualTo("ATTENDANCE_RECORD");
+  }
+  @Test void givenAttendanceCorrection_whenParsed_thenBlockedWithGuidanceNotNewEvent() {
+    var r=parser.parse("학생 ID 5 출결 정정해줘 결석으로");
+    assertThat(r.operation()).isEmpty();assertThat(r.message()).isEqualTo(AssistantCommandParser.CORRECTION_BLOCKED);
+  }
+  @Test void givenNoticeRequest_whenParsed_thenReadOnlyNoticeDraftWithTitleAndContent() {
+    var r=parser.parse("공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다");
+    assertThat(r.operation()).isEqualTo("NOTICE_DRAFT");assertThat(r.input()).containsEntry("title","휴강 안내").containsEntry("content","내일은 휴강합니다");
+  }
+  @Test void givenFinanceStatusQuestion_whenParsed_thenStillOverview() {
+    assertThat(parser.parse("이번 달 지출 현황 알려줘").operation()).isEqualTo("OVERVIEW");
+  }
 }

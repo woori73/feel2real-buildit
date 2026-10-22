@@ -90,3 +90,10 @@ bash gradlew test \
 ## 미검증/후속
 
 Muse Spark 실제 응답(이 환경 자격증명 없음), 운영 화면·실제 계정·운영 스키마 적용, 실기기 키보드, 외부 SMS/메일 도착, Muse Spark 실제 자연어 의도 해석·영수증 OCR, 원격 API의 버전 기반 원자적 변경 검사는 미검증 또는 후속 범위다. 자연어·TXT 분석은 기존 Muse Spark 연결 코드를 추가했고, 자격증명이 없는 이 환경에서는 표시된 규칙 분석으로 업무를 검증했다. 모델 출력 allowlist/타입/추측 ID 차단·미연결 처리는 모의 전송 계층 단위 테스트로 검증했다. 미지원 표현은 폼으로 보완한다. 금융기관 사이트 접속·Playwright 자료 수집은 작업 B 범위로 구현하지 않았다.
+
+## 검수 반영 후 재검증 (Claude, 2026-10-22)
+
+- 실행함: JUnit(`unifiedassistant.*`, `DashboardWidgetControllerTest`), JS `unified_assistant_tour.test.js` (결과는 PR 설명·커밋 메시지 참조).
+- **실행하지 못함**: `e2e/unified-assistant` Playwright 11개와 실제 BuildIt+AcademyCraft 두 앱 E2E는 이 검수 환경에 Docker가 없어 재실행하지 못했다. 스펙은 조회·정정·공지·투어 변경에 맞춰 갱신했으나 **실행 결과로 검증되지 않았다**. 병합 전 격리 환경에서 재실행이 필요하다.
+- 사용량 제한은 단위 테스트(시계 주입)로 검증했고 실제 Muse 응답은 여전히 미검증이다.
+

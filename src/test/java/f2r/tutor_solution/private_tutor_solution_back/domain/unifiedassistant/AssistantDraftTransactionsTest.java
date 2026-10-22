@@ -51,4 +51,17 @@ class AssistantDraftTransactionsTest {
     tx.claim(1L,"TUTOR",d.getId(),d.getPlanHash(),false);tx.finish(1L,d.getId(),"VERIFIED","{}");
     assertThat(tx.claim(1L,"TUTOR",d.getId(),d.getPlanHash(),false).getStatus()).isEqualTo("VERIFIED");
   }
+  @Test void givenExecutingPastGrace_whenRecovered_thenUnknownWithScopedAudit() {
+    d.finish("EXECUTING",null);
+    when(repo.findByOwnerIdAndStatusAndExpiresAtBefore(eq(1L),eq("EXECUTING"),any())).thenReturn(java.util.List.of(d));
+    assertThat(tx.recoverStale(1L)).isEqualTo(1);
+    assertThat(d.getStatus()).isEqualTo("UNKNOWN");assertThat(d.getResult()).contains("자동 재실행하지 않습니다");
+    var captor=org.mockito.ArgumentCaptor.forClass(AssistantAudit.class);verify(audit).save(captor.capture());
+    assertThat(captor.getValue().getEvent()).isEqualTo("RECOVERED_UNKNOWN");assertThat(captor.getValue().getOperation()).isEqualTo("STUDENT_CREATE");assertThat(captor.getValue().getAcademyId()).isEqualTo(7L);
+  }
+  @Test void givenApproval_whenClaimed_thenAuditCarriesOperationAndScope() {
+    tx.claim(1L,"TUTOR",d.getId(),d.getPlanHash(),false);
+    var captor=org.mockito.ArgumentCaptor.forClass(AssistantAudit.class);verify(audit).save(captor.capture());
+    assertThat(captor.getValue().getOperation()).isEqualTo("STUDENT_CREATE");assertThat(captor.getValue().getAcademyId()).isEqualTo(7L);assertThat(captor.getValue().getBusinessId()).isNull();
+  }
 }

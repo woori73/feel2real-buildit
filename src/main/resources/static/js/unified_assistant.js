@@ -1,6 +1,12 @@
 /* Unified workspace: previews are server data; only a clicked approval executes writes. */
 (function () {
   'use strict';
+  // Pure tour rules (also exported for unit tests): which step a menu or purpose belongs to.
+  const MENU_STEP = { uaMenus:0, uaStudents:1, uaClasses:1, uaAttendance:2, uaConsult:3, uaLedger:4 };
+  const PURPOSE_STEP = { students:1, attendance:2, consult:3, ledger:4 };
+  const stepAfterMenuClick = (current, menuId) => (menuId in MENU_STEP ? Math.max(current, Math.min(5, MENU_STEP[menuId] + 1)) : current);
+  const stepForPurpose = purpose => (purpose in PURPOSE_STEP ? PURPOSE_STEP[purpose] : 0);
+  if (typeof window !== 'undefined') window.unifiedAssistantTour = { stepAfterMenuClick, stepForPurpose };
   const $ = id => document.getElementById(id);
   const API = '/api/dashboard/assistant/v1';
   const state = { user: null, context: null, academy: null, progress: null, business: null, generation: 0, draftRevision: 0, busy: false, tour: false };
@@ -14,7 +20,7 @@
   const tours = [
     ['반가워요. 첫 업무를 함께 시작해요','학원 운영과 장부 현황을 한 화면에서 확인하고, 아래 AI 업무 비서에게 평소 쓰는 말로 업무를 알려주세요.','uaMenus'],
     ['학생과 반을 연결하세요','학생 메뉴에서 정보를 확인하고 반·수업 메뉴에서 학생을 배정합니다. 목록에서 정확한 학생·반 ID를 확인한 뒤 비서에게 알려주세요.','uaStudents'],
-    ['오늘의 출결을 기록하세요','출결 메뉴에서 반별 출결부를 확인하세요. 비서에게 “학생 ID 1 결석 기록해줘”라고 요청하면 기록할 내용과 한국 시간 기준 시각을 먼저 보여드립니다.','uaAttendance'],
+    ['오늘의 출결을 기록하세요','출결 메뉴에서 반별 출결부를 확인하세요. 비서에게 “학생 ID 1 출결 조회해줘”라고 하면 조회만, “학생 ID 1 결석 기록해줘”라고 하면 기록할 내용을 먼저 보여드립니다. 출결 정정은 사유 입력이 필요해 출결 화면에서 직접 처리합니다.','uaAttendance'],
     ['상담 기록을 이어가세요','상담을 작성하거나 열린 상담에 후속 메시지를 남길 수 있습니다. 학부모 알림이 전달될 수 있으니 대상과 내용을 확인해 주세요.','uaConsult'],
     ['사업체별 거래와 증빙을 확인하세요','상단에서 사업체를 선택한 뒤 거래·증빙 CSV를 올리세요. 원본과 증빙 유형을 보관하고, 장부에 저장한 수·중복·검토 대기를 구분해 보여드립니다.','uaLedger'],
     ['초안 확인 → 승인 → 결과 확인','대화창의 초안에서 대상과 내용을 검토한 뒤 승인하세요. 실제 API 실행 후 저장 결과를 다시 조회합니다. 연결 오류로 결과가 불명확하면 기존 화면에서 확인하세요.','uaReview']
@@ -55,6 +61,7 @@
     if(i===1){$('uaClasses').classList.add('ua-tour-target');$('uaClasses').setAttribute('aria-current','step');}
     $('uaStep').textContent=(i+1)+' / 6 · 사용법 안내'; $('uaTourTitle').textContent=t[0];
     $('uaTourText').textContent=t[1]+(i===0?(state.user?.role==='ADMIN'?' 관리자는 허용된 사업체를 선택해 현황을 볼 수 있습니다.':' 강사는 연결된 학원·사업체의 업무만 볼 수 있습니다. AI 쓰기는 원장 연결 계정에서 승인할 수 있습니다.'):'');
+    $('uaPurpose').hidden=i!==0;
     $('uaTourProgress').value=i+1; $('uaBack').disabled=i===0; $('uaNext').textContent=i===5?'안내 완료':'다음';
   }
   async function saveProgress(step,completed) {
@@ -121,10 +128,12 @@
     for(const issue of t.issues||[])bubble('assistant','확인 필요: '+issue);
     if(t.suggestion?.operation&&operations[t.suggestion.operation]) { $('uaOperation').value=t.suggestion.operation;fields(t.suggestion.input);if(!t.drafts.length)$('uaEdit').open=true; }
     for(const d of t.drafts||[])renderDraft(d);
+    if(t.data?.notice) bubble('assistant',t.data.notice);
+    if(t.data?.events) {const label={CHECK_IN:'등원',CHECK_OUT:'하원',ABSENT:'결석',LATE:'지각',EARLY_LEAVE:'조퇴'};bubble('assistant','학생 ID '+t.data.studentId+' 최근 출결 (최대 '+t.data.limit+'건): '+(t.data.events.length?t.data.events.map(e=>(e.occurredAt||'')+' '+(label[e.eventType]||e.eventType)).join(' / '):'기록 없음'));}
     if(t.overview) {const o=t.overview;let text='현재 현황: ';if(o.academy)text+='학생 '+o.academy.studentCount+'명 · 반 '+o.academy.classCount+'개. ';if(o.finance)text+=o.finance.businessName+' · 수입 '+money(o.finance.income)+' · 지출 '+money(o.finance.expense)+' · 미수금 '+money(o.finance.receivable);bubble('assistant',text);await overview();}
     $('uaMessage').textContent=t.message;
   }
-  async function loadAudit() {const data=await json('/audit');$('uaAudit').replaceChildren(...data.map(row=>el('div',new Date(row.createdAt).toLocaleString('ko-KR')+' · '+row.event+' · '+(row.draftId||''))));}
+  async function loadAudit() {const data=await json('/audit');$('uaAudit').replaceChildren(...data.map(row=>el('div',new Date(row.createdAt).toLocaleString('ko-KR')+' · '+row.event+' · '+(row.operation?name(row.operation)+' · ':'')+(row.academyId?'학원 '+row.academyId:row.businessId?'사업체 '+row.businessId:'')+' · '+(row.draftId||''))));}
   async function history() {const g=state.generation,revision=state.draftRevision,data=await json('/drafts');if(g!==state.generation||revision!==state.draftRevision)return;$('uaDrafts').replaceChildren();for(const d of data.reverse().filter(x=>(!x.businessId||String(x.businessId)===String(state.business))&&(!x.academyId||Number(x.academyId)===Number(state.academy))))renderDraft(d,false);if(!$('uaDrafts').children.length)bubble('assistant','반가워요. 학생·반·출결·상담과 이지장부 거래를 이 대화에서 함께 처리합니다. 업무 지시 또는 자료를 보내주세요.');scrollChat();await loadAudit();}
   async function submitDraft(e) {e.preventDefault();if(state.busy)return;setBusy(true);const g=state.generation;
     try {const data={};for(const [key,value] of new FormData($('uaDraftForm')))if(value)data[key]=key.endsWith('Id')||key==='amount'?Number(value):value;
@@ -138,6 +147,16 @@
     document.querySelectorAll('[data-ua-example]').forEach(button=>button.addEventListener('click',()=>{$('uaCommand').value=button.dataset.uaExample;$('uaCommandForm').requestSubmit();}));
     document.querySelectorAll('[data-ua-list]').forEach(button=>button.addEventListener('click',async()=>{const g=state.generation;try{const data=await json('/catalog/'+button.dataset.uaList+(state.academy?'?academyId='+state.academy:''));if(g!==state.generation)return;const table=el('table');for(const row of data){const tr=el('tr');for(const value of [row.id,row.name||row.title,row.schoolName||row.teacherName||row.role||row.status||''])tr.append(el('td',String(value??'')));table.append(tr);}$('uaCatalog').replaceChildren(el('p','ID · 이름/제목 · 학교/담당/상태'),table);}catch(e){error(e);}}));
     $('uaUploadForm').addEventListener('submit',async e=>{e.preventDefault();const file=$('uaFile').files[0];if(!file||state.busy)return;if(file.size>262144){error(new Error('자료는 256KB 이하로 올려주세요.'));return;}setBusy(true);const g=state.generation;bubble('user','자료 첨부: '+file.name);try{const form=new FormData();form.append('file',file);const query=new URLSearchParams();if(state.academy)query.set('academyId',state.academy);if(state.business)query.set('businessId',state.business);const turn=await json('/materials?'+query,{method:'POST',body:form});if(g===state.generation){await acceptTurn(turn);$('uaFile').value='';}}catch(e){if(g===state.generation){bubble('assistant','자료 분석 실패: '+e.message);error(e);}}finally{setBusy(false);}});
+    // A highlighted menu click saves the next step first, so coming back resumes there.
+    document.querySelectorAll('#uaMenus a').forEach(link=>link.addEventListener('click',async e=>{
+      if(!state.tour||!state.progress||state.progress.completed||e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
+      e.preventDefault();const next=stepAfterMenuClick(state.progress.step,link.id);
+      try{if(next!==state.progress.step)await saveProgress(next,false);}catch(_){}
+      window.location.href=link.href;
+    }));
+    document.querySelectorAll('[data-ua-purpose]').forEach(button=>button.addEventListener('click',async()=>{
+      try{await saveProgress(stepForPurpose(button.dataset.uaPurpose),false);highlight();$('uaTour').scrollIntoView({block:'nearest'});}catch(e){error(e);}
+    }));
     $('uaNext').addEventListener('click',()=>advance(1).catch(error));$('uaBack').addEventListener('click',()=>advance(-1).catch(error));
     $('uaPause').addEventListener('click',()=>showTour(false));$('uaResume').addEventListener('click',async()=>{try{if(state.progress.completed)await saveProgress(0,false);showTour(true);$('uaTour').scrollIntoView({block:'nearest'});}catch(e){error(e);}});
     $('uaExplain').addEventListener('click',async()=>{
