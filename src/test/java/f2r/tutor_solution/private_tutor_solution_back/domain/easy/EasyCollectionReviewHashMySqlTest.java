@@ -19,7 +19,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /** Financial positive control and approval-to-commit review hash revalidation, real MySQL. */
 @SpringBootTest
-class EasyFinancialApprovalReviewHashMySqlTest {
+class EasyCollectionReviewHashMySqlTest {
   @Autowired EasyCollectionIngestService ingest;
   @Autowired EasyCollectionApprovalService approvals;
   @Autowired EasyCollectionApprovalRepository approvalRows;
