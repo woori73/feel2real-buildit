@@ -490,6 +490,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyDashboardWidgetMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionApprovalP4StagingTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionConfirmBypassMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionConfirmBypassIndependentMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionReviewHashMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepFlowMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPagesMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.ProgramPublicEntryMySqlTest"

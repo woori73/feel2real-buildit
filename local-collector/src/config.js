@@ -10,6 +10,7 @@ export const config = {
   easyBaseUrl: process.env.EASY_BASE_URL || 'http://localhost:8080',
   collectorToken: process.env.EASY_COLLECTOR_TOKEN || '',
   downloadDir: process.env.EASY_COLLECTOR_DOWNLOAD_DIR || DEFAULT_DOWNLOAD_DIR,
+  fileKeyBase64: process.env.EASY_COLLECTOR_FILE_KEY_BASE64 || '',
   pollIntervalMs: Number(process.env.EASY_COLLECTOR_POLL_INTERVAL_MS || 5000),
   authWaitTimeoutMs: Number(process.env.EASY_COLLECTOR_AUTH_TIMEOUT_MS || 10 * 60 * 1000), // 10 min
 };

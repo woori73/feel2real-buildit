@@ -1,0 +1,2 @@
+date,direction,amount,counterparty,description,supplyamount,vat,evidencetype,externalid
+2026-10-01,EXPENSE,11000,SAMPLE_VENDOR,SAMPLE_EVIDENCE,10000,1000,TAX_INVOICE,SAMPLE_TAX_001

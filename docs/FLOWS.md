@@ -929,6 +929,12 @@ Agent/운영자 등록 → DRAFT → 운영자 FINAL 확정 → 필요 시 DRAFT
 
 ## Easy Workspace 2A·2B 관리자 파일럿
 
+금융자료 수집 작업 B의 로컬 프로토타입은 별도 [계약](easy/financial-collector/API_AND_PROTOTYPE.md)을 따른다.
+`사용자 직접 다운로드·업로드 승인 → 암호화 원본/preview → 검토 → BANK_ACCOUNT staging → 현재 batch 검토 해시와 명시 승인 → 기존 approval/confirm/journal → 실제 저장 수·실패 상태 조회` 흐름이다.
+카드 구매·매출·정산·세무 증빙은 각각 전용 이벤트/대사 경로를 안내하며 일반 수입·지출 반영을 막는다.
+브라우저는 loopback mock만 활성화하며, 새 visible context에서 사람의 인증과 별도 수집 동의를 거친다.
+이번 작업은 실제 기관 수집·운영 저장을 하지 않고, 기본 OFF 및 `local & !prd` 조건으로 격리한다.
+
 `사업체 선택 → 월 상태/금액 조회 → 수입·비용 거래 확인·수정 → 유형별 검토 승인 또는 보류 → POSTED 분개 시산표·균형 확인` 순서다. 모든 단계는 `businessId`를 서버에서 다시 검증한다.
 
 - 상태는 `COLLECTED → IMPORT STAGED → LEDGER SAVED → JOURNAL POSTED`를 서로 다른 데이터 원천으로 표시한다. IMPORT STAGED는 아직 장부 행이 아니며, 장부 거래 행의 `IMPORTED_TO_LEDGER`와 혼동하지 않는다.
