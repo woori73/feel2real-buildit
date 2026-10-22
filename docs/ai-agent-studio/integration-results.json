@@ -22,10 +22,14 @@
       "pass": true
     },
     {
+      "name": "Actual #854 rejects account-change draft for #853 staged batch; ledger unchanged",
+      "pass": true
+    },
+    {
       "name": "Actual #853 endpoint rejects absent approval and external MCP bearer; ledger count unchanged",
       "pass": true
     }
   ],
-  "passed": 6,
+  "passed": 7,
   "actualChatGPTClaudeAccounts": "NOT VERIFIED"
 }

@@ -1,8 +1,8 @@
 {
-  "environment": "Actual loopback BuildIt + AcademyCraft on newly created isolated MySQL; latest #854 4553d10b included",
+  "environment": "Actual loopback BuildIt + AcademyCraft with latest #854 2f7d0db0 financial batch guard; isolated MySQL",
   "stats": {
-    "startTime": "2026-10-22T05:54:11.294Z",
-    "duration": 44660.081,
+    "startTime": "2026-10-22T06:17:07.540Z",
+    "duration": 29298.84,
     "expected": 12,
     "skipped": 0,
     "unexpected": 0,

@@ -235,5 +235,13 @@
     "failures": 0,
     "errors": 0,
     "skipped": 0
+  },
+  "finalLedgerGuard": {
+    "upstream": "2f7d0db0195c0e2a179c202738b663be9c1513e2",
+    "run": "Latest #854 assistant-created batch guard unit test scope + bootJar",
+    "tests": 12,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
   }
 }

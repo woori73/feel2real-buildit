@@ -1,6 +1,6 @@
 # GET 비용·부수효과 감사 (2026-10-22)
 
-범위: 최신 main `7472d91e`와 #853·#854·#855를 합친 코드. 격리 앱의 Spring/proxy 매핑 1098개를 수집하고, 비활성 profile/feature의 Java GET 선언도 추가했다. **627개 GET 경로**를 Java AST 호출 그래프로 조사했다. 재현 가능한 전체 경로·근거·판정은 [get-safety-audit.json](get-safety-audit.json)에 있다. 외부 서비스나 금융기관을 호출하는 감사가 아니다.
+범위: 최신 main `2bed3918`와 #853·#854·#855를 합친 코드. 격리 앱의 Spring/proxy 매핑 1098개를 수집하고, 비활성 profile/feature의 Java GET 선언도 추가했다. **627개 GET 경로**를 Java AST 호출 그래프로 조사했다. 재현 가능한 전체 경로·근거·판정은 [get-safety-audit.json](get-safety-audit.json)에 있다. 외부 서비스나 금융기관을 호출하는 감사가 아니다.
 
 MCP 실행 허용 경로는 405개다. 목록에 보이는 서비스 경로와 실행 허용 여부를 구분하며, 새 endpoint는 자동 허용하지 않는다.
 

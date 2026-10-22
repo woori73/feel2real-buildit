@@ -3,7 +3,7 @@
 Requires the two apps and task-only DB described in e2e/unified-assistant/README.md.
 OAuth redirects are parsed, never visited. No cookies/tokens or financial rows are saved.
 """
-import base64, hashlib, json, re, subprocess
+import base64, hashlib, json, re, subprocess, uuid
 from pathlib import Path
 from urllib.parse import urlencode, urlparse, parse_qs
 import httpx
@@ -66,8 +66,14 @@ try:
         assert read(a, service, endpoint, {'id': 'synthetic'})['isError'], endpoint
     passed('Even ADMIN MCP cannot read raw finance/collector previews, recovery/maintenance GET or invoke approval POST')
     prefix = '/api/admin/easy/financial-collector/previews'
-    r = admin.post(prefix, params={'businessId': 1, 'dataset': 'BANK_ACCOUNT', 'accountRef': 'SYNTHETIC_REVIEW_855', 'from': '2026-10-01', 'to': '2026-10-31', 'userApprovedUpload': 'true'}, files={'file': ('synthetic-bank.csv', (ROOT/'docs/easy/financial-collector/sample-bank.csv').read_bytes(), 'text/csv')})
+    r = admin.post(prefix, params={'businessId': 1, 'dataset': 'BANK_ACCOUNT', 'accountRef': 'SYNTHETIC_REVIEW_855_' + uuid.uuid4().hex[:8], 'from': '2026-10-01', 'to': '2026-10-31', 'userApprovedUpload': 'true'}, files={'file': ('synthetic-bank.csv', (ROOT/'docs/easy/financial-collector/sample-bank.csv').read_bytes(), 'text/csv')})
     r.raise_for_status(); cid = r.json()['collectionId']; before = ledger_count()
+    staged = admin.post(prefix + '/' + cid + '/stage', params={'businessId': 1}, json={'reviewed': True})
+    staged.raise_for_status(); batch = staged.json()['batch']['batchId']
+    blocked = admin.post('/api/dashboard/assistant/v1/drafts', json={'operation': 'LEDGER_ACCOUNT', 'businessId': 1, 'input': {'batchId': batch, 'rowId': 1, 'accountId': 1}})
+    assert blocked.status_code == 403, (blocked.status_code, blocked.text)
+    assert ledger_count() == before
+    passed('Actual #854 rejects account-change draft for #853 staged batch; ledger unchanged')
     target = prefix + '/' + cid + '/approve-and-commit'
     r = admin.post(target, params={'businessId': 1}, json={'userApprovedLedgerCommit': False, 'reviewHash': ''})
     assert r.status_code == 400 and 'USER_LEDGER_APPROVAL_REQUIRED' in r.text, (r.status_code, r.text)
