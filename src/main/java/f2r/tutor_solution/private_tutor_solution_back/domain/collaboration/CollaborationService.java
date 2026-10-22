@@ -8,27 +8,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/** Shared memory and handoff only. No inference client or paid model API dependency. */
 @Service
 public class CollaborationService {
   static final String PROJECT = "ai-agent-part1";
   static final List<String> ORDER = List.of("GPT", "MUSE", "CODEX", "CLAUDE");
   private final JdbcTemplate db;
   private final StudioService studio;
-  private final CollaborationProvider provider;
+  private final CollaborationWorkspaces spaces;
   private final TransactionTemplate tx;
-
-  @org.springframework.beans.factory.annotation.Value(
-      "${app.collaboration.daily-budget-microusd:0}")
-  private long dailyBudget;
 
   public CollaborationService(
       JdbcTemplate db,
       StudioService studio,
-      CollaborationProvider provider,
+      CollaborationWorkspaces spaces,
       PlatformTransactionManager manager) {
     this.db = db;
     this.studio = studio;
-    this.provider = provider;
+    this.spaces = spaces;
     this.tx = new TransactionTemplate(manager);
   }
 
@@ -37,14 +34,13 @@ public class CollaborationService {
       String instruction,
       List<String> participants,
       int maxCalls,
-      long budgetMicrousd) {}
+      long budgetMicrousd,
+      String workspaceId) {}
 
   public record Change(
       long version, String action, boolean externalConsent, boolean acknowledgeUnknown) {}
 
   public record Artifact(long version, String fileId, String revisionId, Integer prNumber) {}
-
-  public record Call(String taskId, String runId, String agent, String prompt, long ownerId) {}
 
   static org.springframework.web.server.ResponseStatusException error(int code, String message) {
     return new org.springframework.web.server.ResponseStatusException(
@@ -63,6 +59,10 @@ public class CollaborationService {
 
   static List<String> participants(Map<String, Object> task) {
     return List.of(task.get("participants").toString().split(","));
+  }
+
+  static String workspace(Map<String, Object> task) {
+    return Objects.toString(task.get("workspace_id"), PROJECT);
   }
 
   void event(String task, String actor, Long user, String type, String body, String run) {
@@ -90,7 +90,7 @@ public class CollaborationService {
   }
 
   void owner(AuthenticatedPrincipal p, Map<String, Object> task) {
-    studio.require(p, true, false);
+    spaces.require(p, workspace(task), true, false);
     if (!"ADMIN".equals(p.role()) && p.userId() != number(task, "owner_id"))
       throw error(403, "작업 등록자만 제어할 수 있습니다.");
   }
@@ -102,28 +102,46 @@ public class CollaborationService {
   public Map<String, Object> agents(AuthenticatedPrincipal p) {
     studio.require(p, false, false);
     var out = new LinkedHashMap<String, Object>();
-    for (String agent : ORDER) out.put(agent, provider.readiness(agent));
+    for (String agent : ORDER)
+      out.put(
+          agent,
+          Map.of(
+              "mode",
+              "SUBSCRIPTION_CONNECTOR",
+              "serverAutoRun",
+              false,
+              "paidModelApi",
+              false,
+              "actualProductConnectionVerified",
+              false));
     return out;
   }
 
-  public List<Map<String, Object>> list(AuthenticatedPrincipal p) {
-    studio.require(p, false, false);
+  public List<Map<String, Object>> list(AuthenticatedPrincipal p, String workspaceId) {
+    String id = workspaceId == null ? PROJECT : workspaceId;
+    spaces.require(p, id, false, false);
     return db.queryForList(
         "SELECT"
-            + " id,title,owner_id,participants,status,calls_used,max_calls,budget_microusd,reserved_microusd,version,created_at"
-            + " FROM ai_collaboration_tasks WHERE project_id=? ORDER BY created_at DESC LIMIT 100",
-        PROJECT);
+            + " id,title,owner_id,participants,status,phase_index,calls_used,max_calls,version,created_at,workspace_id"
+            + " FROM ai_collaboration_tasks WHERE project_id=? AND COALESCE(workspace_id,?)=? ORDER"
+            + " BY created_at DESC,id DESC LIMIT 100",
+        PROJECT,
+        PROJECT,
+        id);
   }
 
   public Map<String, Object> detail(AuthenticatedPrincipal p, String id) {
-    studio.require(p, false, false);
-    var result = new LinkedHashMap<String, Object>(task(id, false));
-    result.put(
-        "events",
-        db.queryForList(
-            "SELECT id,actor,actor_user_id,event_type,body,run_id,created_at FROM"
-                + " ai_collaboration_events WHERE task_id=? ORDER BY id DESC LIMIT 200",
-            id));
+    return detail(p, id, 200, 0);
+  }
+
+  public Map<String, Object> detail(
+      AuthenticatedPrincipal p, String id, int eventLimit, long beforeId) {
+    var task = task(id, false);
+    String role = spaces.require(p, workspace(task), false, false);
+    var result = new LinkedHashMap<String, Object>(task);
+    var eventRows = events(p, id, beforeId, eventLimit);
+    result.put("events", eventRows);
+    result.put("eventsNextBeforeId", eventRows.isEmpty() ? 0 : eventRows.getLast().get("id"));
     result.put(
         "artifacts",
         db.queryForList(
@@ -131,67 +149,71 @@ public class CollaborationService {
                 + " ai_collaboration_artifacts a LEFT JOIN studio_files f ON f.id=a.file_id WHERE"
                 + " a.task_id=? ORDER BY a.created_at",
             id));
-    result.put("canControl", "ADMIN".equals(p.role()) || p.userId() == number(result, "owner_id"));
+    result.put(
+        "canControl",
+        !role.equals("VIEWER")
+            && ("ADMIN".equals(p.role()) || p.userId() == number(task, "owner_id")));
+    result.put("canComment", !role.equals("VIEWER"));
+    int phase = (int) number(task, "phase_index");
+    result.put("nextAgent", phase < participants(task).size() ? participants(task).get(phase) : "");
     return result;
   }
 
   public List<Map<String, Object>> events(AuthenticatedPrincipal p, String id, long beforeId) {
-    studio.require(p, false, false);
-    task(id, false);
-    if (beforeId < 0) throw error(400, "이력 위치 오류");
+    return events(p, id, beforeId, 200);
+  }
+
+  List<Map<String, Object>> events(AuthenticatedPrincipal p, String id, long beforeId, int limit) {
+    var task = task(id, false);
+    spaces.require(p, workspace(task), false, false);
+    if (beforeId < 0 || limit < 1 || limit > 200) throw error(400, "이력 위치 오류");
     return beforeId == 0
         ? db.queryForList(
             "SELECT id,actor,actor_user_id,event_type,body,run_id,created_at FROM"
-                + " ai_collaboration_events WHERE task_id=? ORDER BY id DESC LIMIT 200",
-            id)
+                + " ai_collaboration_events WHERE task_id=? ORDER BY id DESC LIMIT ?",
+            id,
+            limit)
         : db.queryForList(
             "SELECT id,actor,actor_user_id,event_type,body,run_id,created_at FROM"
-                + " ai_collaboration_events WHERE task_id=? AND id<? ORDER BY id DESC LIMIT 200",
+                + " ai_collaboration_events WHERE task_id=? AND id<? ORDER BY id DESC LIMIT ?",
             id,
-            beforeId);
+            beforeId,
+            limit);
   }
 
-  public Map<String, Object> create(AuthenticatedPrincipal p, Create request) {
-    studio.require(p, true, false);
-    String title = text(request.title(), 150), instruction = text(request.instruction(), 8000);
-    if (request.participants() == null
-        || request.participants().isEmpty()
-        || request.participants().size() > 4
-        || new HashSet<>(request.participants()).size() != request.participants().size()
-        || !ORDER.containsAll(request.participants())) throw error(400, "참여 AI를 직접 선택하세요.");
-    if (request.maxCalls() < 1
-        || request.maxCalls() > 20
-        || request.budgetMicrousd() < 0
-        || request.budgetMicrousd() > 100_000_000)
-      throw error(400, "호출은 1~20회, 비용 상한은 0~100 USD로 지정하세요.");
-    String selected =
-        String.join(",", ORDER.stream().filter(request.participants()::contains).toList());
-    String id = UUID.randomUUID().toString();
+  public Map<String, Object> create(AuthenticatedPrincipal p, Create r) {
+    String work = r.workspaceId() == null ? PROJECT : r.workspaceId();
+    spaces.require(p, work, true, false);
+    String title = text(r.title(), 150), instruction = text(r.instruction(), 8000);
+    if (r.participants() == null
+        || r.participants().isEmpty()
+        || r.participants().size() > 4
+        || new HashSet<>(r.participants()).size() != r.participants().size()
+        || !ORDER.containsAll(r.participants())) throw error(400, "참여 AI를 직접 선택하세요.");
+    if (r.maxCalls() < 1 || r.maxCalls() > 20 || r.budgetMicrousd() != 0)
+      throw error(400, "인계 상한은 1~20회이며 별도 유료 API 예산은 0으로 고정됩니다.");
+    String selected = String.join(",", ORDER.stream().filter(r.participants()::contains).toList()),
+        id = UUID.randomUUID().toString();
     tx.executeWithoutResult(
         status -> {
           db.update(
               "INSERT INTO"
-                  + " ai_collaboration_tasks(id,project_id,owner_id,title,instruction,participants,status,max_calls,budget_microusd)"
-                  + " VALUES(?,?,?,?,?,?,'DRAFT',?,?)",
+                  + " ai_collaboration_tasks(id,project_id,workspace_id,owner_id,title,instruction,participants,status,max_calls,budget_microusd)"
+                  + " VALUES(?,?,?,?,?,?,?,'DRAFT',?,0)",
               id,
               PROJECT,
+              work,
               p.userId(),
               title,
               instruction,
               selected,
-              request.maxCalls(),
-              request.budgetMicrousd());
+              r.maxCalls());
           event(
               id,
               "USER",
               p.userId(),
               "CREATED",
-              "참여: "
-                  + selected
-                  + " / 호출 상한: "
-                  + request.maxCalls()
-                  + " / 비용 상한 μUSD: "
-                  + request.budgetMicrousd(),
+              "참여: " + selected + " / 인계 상한: " + r.maxCalls() + " / 별도 모델 API 비용 0",
               null);
         });
     return detail(p, id);
@@ -199,57 +221,43 @@ public class CollaborationService {
 
   public Map<String, Object> change(AuthenticatedPrincipal p, String id, Change change) {
     tx.executeWithoutResult(
-        transaction -> {
+        t -> {
           var task = task(id, true);
           owner(p, task);
           expected(task, change.version());
           String current = task.get("status").toString(), next;
           switch (change.action()) {
             case "start", "resume" -> {
-              if (!Set.of("DRAFT", "PAUSED", "UNKNOWN", "BLOCKED").contains(current)
-                  || task.get("active_run") != null) throw error(409, "진행 중 호출이 끝난 뒤 재개하세요.");
-              if (current.equals("UNKNOWN") && !change.acknowledgeUnknown())
-                throw error(409, "이전 호출의 결과·과금이 불명확함을 확인해야 합니다.");
-              if (!change.externalConsent())
-                throw error(400, "선택한 AI에 작업 지시·연결 자료·공동 타임라인을 제공하는 데 동의하세요.");
-              if (number(task, "phase_index") >= participants(task).size())
-                next = "WAITING_APPROVAL";
-              else {
-                for (String agent : participants(task))
-                  if (!provider.readiness(agent).enabled())
-                    throw error(409, agent + " 연결과 비용 승인이 준비되지 않았습니다.");
-                next = "RUNNING";
-              }
+              if (!Set.of("DRAFT", "PAUSED", "BLOCKED", "UNKNOWN").contains(current))
+                throw error(409, "현재 시작/재개할 수 없습니다.");
+              if (number(task, "calls_used") >= number(task, "max_calls"))
+                throw error(409, "인계 횟수 상한에 도달했습니다.");
+              if (!change.externalConsent()) throw error(400, "선택한 구독 AI 연결에 공유할 작업임을 확인하세요.");
+              next =
+                  number(task, "phase_index") >= participants(task).size()
+                      ? "WAITING_APPROVAL"
+                      : "WAITING_AGENT";
             }
             case "pause" -> {
-              if (!Set.of("RUNNING", "DRAFT", "WAITING_APPROVAL").contains(current))
-                throw error(409, "현재 중단할 수 없습니다.");
+              if (!Set.of("DRAFT", "WAITING_AGENT", "WAITING_APPROVAL", "RUNNING")
+                  .contains(current)) throw error(409, "현재 중단할 수 없습니다.");
               next = "PAUSED";
             }
             case "approve" -> {
-              if (!current.equals("WAITING_APPROVAL") || task.get("active_run") != null)
-                throw error(409, "완료된 결과를 확인한 뒤 승인하세요.");
+              if (!current.equals("WAITING_APPROVAL")) throw error(409, "완료된 제안과 검수 이력을 확인하세요.");
               next = "APPROVED";
             }
             case "cancel" -> {
-              if (current.equals("APPROVED") || current.equals("CANCELLED"))
+              if (Set.of("APPROVED", "CANCELLED").contains(current))
                 throw error(409, "이미 종료된 작업입니다.");
               next = "CANCELLED";
-            }
-            case "recover" -> {
-              if (task.get("active_run") == null || !change.acknowledgeUnknown())
-                throw error(409, "미완료 호출과 과금 불명 상태를 확인하세요.");
-              var since = (java.sql.Timestamp) task.get("updated_at");
-              if (since.toInstant().isAfter(java.time.Instant.now().minusSeconds(600)))
-                throw error(409, "호출 시작 후 10분이 지나야 수동 복구할 수 있습니다.");
-              db.update("UPDATE ai_collaboration_tasks SET active_run=NULL WHERE id=?", id);
-              next = "UNKNOWN";
             }
             default -> throw error(400, "지원하지 않는 작업입니다.");
           }
           db.update(
               "UPDATE ai_collaboration_tasks SET"
-                  + " status=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                  + " status=?,active_run=NULL,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE"
+                  + " id=?",
               next,
               id);
           event(
@@ -267,13 +275,13 @@ public class CollaborationService {
       AuthenticatedPrincipal p, String id, long version, String body) {
     String clean = text(body, 4000);
     tx.executeWithoutResult(
-        transaction -> {
+        t -> {
           var task = task(id, true);
-          owner(p, task);
+          spaces.require(p, workspace(task), true, false);
           expected(task, version);
           if (Set.of("APPROVED", "CANCELLED").contains(task.get("status")))
             throw error(409, "종료된 작업입니다.");
-          event(id, "USER", p.userId(), "MESSAGE", clean, null);
+          event(id, "USER", p.userId(), "HUMAN_REVIEW", clean, null);
           db.update(
               "UPDATE ai_collaboration_tasks SET version=version+1,updated_at=CURRENT_TIMESTAMP"
                   + " WHERE id=?",
@@ -282,291 +290,192 @@ public class CollaborationService {
     return detail(p, id);
   }
 
-  public Map<String, Object> attach(AuthenticatedPrincipal p, String id, Artifact artifact) {
+  public Map<String, Object> attach(AuthenticatedPrincipal p, String id, Artifact a) {
     tx.executeWithoutResult(
-        transaction -> {
+        t -> {
           var task = task(id, true);
           owner(p, task);
-          expected(task, artifact.version());
-          if (!Set.of("DRAFT", "PAUSED").contains(task.get("status"))
-              || task.get("active_run") != null) throw error(409, "자료 연결은 시작 전 또는 중단 후에 가능합니다.");
+          expected(task, a.version());
+          if (!Set.of("DRAFT", "PAUSED").contains(task.get("status")))
+            throw error(409, "자료 연결은 시작 전 또는 중단 후 가능합니다.");
           int fields =
-              (artifact.fileId() != null ? 1 : 0)
-                  + (artifact.revisionId() != null ? 1 : 0)
-                  + (artifact.prNumber() != null ? 1 : 0);
+              (a.fileId() != null ? 1 : 0)
+                  + (a.revisionId() != null ? 1 : 0)
+                  + (a.prNumber() != null ? 1 : 0);
           if (fields != 1) throw error(400, "파일·버전·PR 중 하나를 연결하세요.");
-          if (artifact.fileId() != null) studio.file(p, artifact.fileId());
-          if (artifact.revisionId() != null) studio.revision(p, artifact.revisionId());
-          if (artifact.prNumber() != null
-              && (artifact.prNumber() < 1 || artifact.prNumber() > 10_000_000))
+          if (a.fileId() != null) studio.file(p, a.fileId());
+          if (a.revisionId() != null) studio.revision(p, a.revisionId());
+          if (a.prNumber() != null && (a.prNumber() < 1 || a.prNumber() > 10_000_000))
             throw error(400, "PR 번호 오류");
           if (db.queryForObject(
                   "SELECT COUNT(*) FROM ai_collaboration_artifacts WHERE task_id=?",
                   Integer.class,
                   id)
-              >= 20) throw error(400, "연결 자료는 최대 20개입니다.");
+              >= 20) throw error(400, "연결 자료는 최대20개입니다.");
           db.update(
               "INSERT INTO"
                   + " ai_collaboration_artifacts(id,task_id,file_id,revision_id,pr_number,created_by)"
                   + " VALUES(?,?,?,?,?,?)",
               UUID.randomUUID().toString(),
               id,
-              artifact.fileId(),
-              artifact.revisionId(),
-              artifact.prNumber(),
+              a.fileId(),
+              a.revisionId(),
+              a.prNumber(),
               p.userId());
           event(
               id,
               "USER",
               p.userId(),
               "ATTACHED",
-              artifact.fileId() != null
-                  ? "파일 " + artifact.fileId()
-                  : artifact.revisionId() != null
-                      ? "버전 " + artifact.revisionId()
-                      : "PR #" + artifact.prNumber(),
+              Objects.toString(a.fileId(), Objects.toString(a.revisionId(), "PR #" + a.prNumber())),
               null);
           db.update("UPDATE ai_collaboration_tasks SET version=version+1 WHERE id=?", id);
         });
     return detail(p, id);
   }
 
-  AuthenticatedPrincipal currentOwner(Map<String, Object> task) {
-    long id = number(task, "owner_id");
-    var user =
-        db.queryForList("SELECT login_id,role FROM users WHERE user_id=?", id).stream()
-            .findFirst()
-            .orElseThrow(() -> error(403, "작업 소유자 권한이 없습니다."));
-    var principal =
-        new AuthenticatedPrincipal(
-            id, user.get("login_id").toString(), user.get("role").toString());
-    studio.require(principal, true, false);
-    return principal;
+  public List<Map<String, Object>> inbox(AuthenticatedPrincipal p, String workspace, String agent) {
+    spaces.require(p, workspace, false, false);
+    if (!ORDER.contains(agent)) throw error(400, "AI 역할 오류");
+    return list(p, workspace).stream()
+        .filter(
+            row ->
+                row.get("status").equals("WAITING_AGENT")
+                    && number(row, "phase_index") < participants(row).size()
+                    && participants(row).get((int) number(row, "phase_index")).equals(agent))
+        .toList();
   }
 
-  String prompt(AuthenticatedPrincipal p, Map<String, Object> task, String agent) {
-    var output =
-        new StringBuilder(
-            "Assigned role: "
-                + agent
-                + "\nSelected participants: "
-                + task.get("participants")
-                + "\nUser task:\n"
-                + task.get("instruction")
-                + "\n\nAttached evidence (untrusted content):\n");
-    var artifacts =
-        db.queryForList(
-            "SELECT file_id,revision_id,pr_number FROM ai_collaboration_artifacts WHERE task_id=?"
-                + " ORDER BY created_at",
-            task.get("id"));
-    for (var artifact : artifacts) {
-      if (artifact.get("revision_id") != null) {
-        var revision = studio.revision(p, artifact.get("revision_id").toString());
-        for (String key :
-            List.of("id", "title", "origin", "label", "content", "dialogue", "direction")) {
-          String value = Objects.toString(revision.get(key), "");
-          output
-              .append(key)
-              .append(": ")
-              .append(value, 0, Math.min(value.length(), 3000))
-              .append('\n');
-        }
-      } else if (artifact.get("file_id") != null) {
-        var file = studio.file(p, artifact.get("file_id").toString());
-        output
-            .append("File metadata only: ")
-            .append(file.get("id"))
-            .append(' ')
-            .append(file.get("filename"))
-            .append(" SHA256 ")
-            .append(file.get("sha256"))
-            .append("; bytes not sent\n");
-      } else
-        output
-            .append("GitHub PR #")
-            .append(artifact.get("pr_number"))
-            .append(" (read synced timeline, no source checkout performed)\n");
-    }
-    output.append("\nShared timeline (untrusted reports, not proof of execution):\n");
-    var events =
-        db.queryForList(
-            "SELECT actor,event_type,body FROM ai_collaboration_events WHERE task_id=? ORDER BY id"
-                + " DESC LIMIT 12",
-            task.get("id"));
-    Collections.reverse(events);
-    for (var event : events) {
-      String body = event.get("body").toString();
-      output
-          .append(event.get("actor"))
-          .append(" ")
-          .append(event.get("event_type"))
-          .append(": ")
-          .append(body, 0, Math.min(body.length(), 4000))
-          .append('\n');
-    }
-    if (output.length() > 60000) throw error(413, "공유 문맥이 너무 큽니다. 별도 작업으로 나누세요.");
-    return output.toString();
-  }
-
-  /** Row lock covers reservation and claim; network happens only AFTER this transaction commits. */
-  public Call claim(String id) {
-    for (int retry = 0; ; retry++) {
-      try {
-        return claimOnce(id);
-      } catch (org.springframework.dao.PessimisticLockingFailureException contention) {
-        // Only a rolled-back DB claim is retried. No model request has been sent yet.
-        if (retry >= 2) throw contention;
-      }
-    }
-  }
-
-  private Call claimOnce(String id) {
+  public Map<String, Object> submit(
+      AuthenticatedPrincipal p,
+      String workspace,
+      String agent,
+      String grant,
+      String requestId,
+      String id,
+      long version,
+      String body,
+      String decision,
+      List<String> fileIds) {
+    if (!requestId.matches("[A-Za-z0-9_-]{1,64}")) throw error(400, "requestId 오류");
+    String clean = text(body, 16000);
+    if (!Set.of("INFO", "PASS", "CHANGES_REQUESTED").contains(decision)
+        || fileIds == null
+        || fileIds.size() > 20) throw error(400, "제안 입력 오류");
+    String hash =
+        CollaborationFiles.sha(
+            (id
+                    + "\n"
+                    + version
+                    + "\n"
+                    + clean
+                    + "\n"
+                    + decision
+                    + "\n"
+                    + String.join(",", fileIds))
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8));
     return tx.execute(
-        transaction -> {
+        t -> {
           var task = task(id, true);
-          if (!task.get("status").equals("RUNNING") || task.get("active_run") != null) return null;
-          AuthenticatedPrincipal p;
-          try {
-            p = currentOwner(task);
-          } catch (org.springframework.web.server.ResponseStatusException denied) {
-            block(id, "PERMISSION_REVOKED");
-            return null;
+          spaces.require(p, workspace, true, false);
+          if (!workspace(task).equals(workspace) || !participants(task).contains(agent))
+            throw error(403, "지정된 AI·프로젝트가 아닙니다.");
+          var prior =
+              db.queryForList(
+                  "SELECT body_sha,result_json FROM ai_collaboration_submissions WHERE grant_id=?"
+                      + " AND request_id=?",
+                  grant,
+                  requestId);
+          if (!prior.isEmpty()) {
+            if (!prior.getFirst().get("body_sha").equals(hash))
+              throw error(409, "동일 요청 ID의 내용이 다릅니다.");
+            try {
+              return new com.fasterxml.jackson.databind.ObjectMapper()
+                  .readValue(prior.getFirst().get("result_json").toString(), Map.class);
+            } catch (Exception e) {
+              throw error(500, "이력 확인 실패");
+            }
           }
-          var selected = participants(task);
+          expected(task, version);
           int phase = (int) number(task, "phase_index");
-          if (phase >= selected.size()) return null;
-          String agent = selected.get(phase);
-          if (!provider.readiness(agent).enabled()) {
-            block(id, "PROVIDER_DISABLED");
-            return null;
-          }
-          String prompt;
-          long reserve;
-          try {
-            prompt = prompt(p, task, agent);
-            reserve = provider.reserveMicrousd(agent, prompt);
-          } catch (RuntimeException invalid) {
-            block(id, "CONTEXT_OR_PRICE_INVALID");
-            return null;
-          }
-          if (reserve <= 0
-              || number(task, "calls_used") >= number(task, "max_calls")
-              || reserve > number(task, "budget_microusd") - number(task, "reserved_microusd")) {
-            block(id, "LIMIT_REACHED");
-            return null;
-          }
-          // ON DUPLICATE KEY takes the exclusive row lock immediately. INSERT IGNORE on an existing
-          // row would leave competing shared locks that deadlock when both try to UPDATE the
-          // budget.
-          db.update(
-              "INSERT INTO ai_collaboration_budget_days(budget_day,reserved_microusd)"
-                  + " VALUES(UTC_DATE(),0) ON DUPLICATE KEY UPDATE"
-                  + " reserved_microusd=reserved_microusd");
-          if (dailyBudget < reserve
-              || db.update(
-                      "UPDATE ai_collaboration_budget_days SET"
-                          + " reserved_microusd=reserved_microusd+? WHERE budget_day=UTC_DATE() AND"
-                          + " reserved_microusd<=?",
-                      reserve,
-                      dailyBudget - reserve)
-                  != 1) {
-            block(id, "DAILY_LIMIT_REACHED");
-            return null;
-          }
-          String run = UUID.randomUUID().toString();
-          db.update(
-              "UPDATE ai_collaboration_tasks SET"
-                  + " active_run=?,calls_used=calls_used+1,reserved_microusd=reserved_microusd+?,version=version+1,updated_at=CURRENT_TIMESTAMP"
-                  + " WHERE id=?",
-              run,
-              reserve,
-              id);
-          event(
-              id, agent, null, "CALL_STARTED", "예약 μUSD: " + reserve + " / 외부 제공에 동의한 작업만 호출", run);
-          return new Call(id, run, agent, prompt, p.userId());
-        });
-  }
-
-  void block(String id, String reason) {
-    db.update(
-        "UPDATE ai_collaboration_tasks SET"
-            + " status='BLOCKED',version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=?",
-        id);
-    event(id, "SYSTEM", null, reason, "자동 호출을 중단했습니다.", null);
-  }
-
-  public void finish(Call call, CollaborationProvider.Reply reply) {
-    tx.executeWithoutResult(
-        transaction -> {
-          var task = task(call.taskId(), true);
-          if (!Objects.equals(task.get("active_run"), call.runId())) return;
-          var selected = participants(task);
-          int next = (int) number(task, "phase_index") + 1;
-          if (call.agent().equals("CLAUDE")
-              && reply.decision().equals("CHANGES_REQUESTED")
-              && selected.contains("CODEX")) next = selected.indexOf("CODEX");
-          String current = task.get("status").toString();
-          String status =
-              current.equals("RUNNING")
-                  ? (next >= selected.size() ? "WAITING_APPROVAL" : "RUNNING")
-                  : current;
-          if (current.equals("RUNNING")
-              && call.agent().equals("CLAUDE")
-              && (reply.decision().equals("INFO")
-                  || (reply.decision().equals("CHANGES_REQUESTED")
-                      && !selected.contains("CODEX")))) {
+          if (!task.get("status").equals("WAITING_AGENT")
+              || phase >= participants(task).size()
+              || !participants(task).get(phase).equals(agent))
+            throw error(409, "현재 담당 AI의 인계 대기 상태가 아닙니다.");
+          if (number(task, "calls_used") >= number(task, "max_calls"))
+            throw error(409, "인계 횟수 상한에 도달했습니다.");
+          for (String file : fileIds)
+            if (db.queryForObject(
+                    "SELECT COUNT(*) FROM ai_collaboration_files WHERE id=? AND workspace_id=?",
+                    Integer.class,
+                    file,
+                    workspace)
+                != 1) throw error(403, "이 프로젝트의 첨부만 연결하세요.");
+          int next = phase + 1;
+          String status;
+          if (agent.equals("CLAUDE") && decision.equals("CHANGES_REQUESTED")) {
+            next =
+                participants(task).contains("CODEX") ? participants(task).indexOf("CODEX") : phase;
+            status = participants(task).contains("CODEX") ? "WAITING_AGENT" : "BLOCKED";
+          } else if (agent.equals("CLAUDE") && !decision.equals("PASS")) {
+            next = phase;
             status = "BLOCKED";
-            next = selected.indexOf("CLAUDE");
-          }
+          } else status = next >= participants(task).size() ? "WAITING_APPROVAL" : "WAITING_AGENT";
+          if (status.equals("WAITING_AGENT")
+              && number(task, "calls_used") + 1 >= number(task, "max_calls")) status = "BLOCKED";
+          event(id, agent, p.userId(), "DRAFT_PROPOSAL", clean, requestId);
+          if (!fileIds.isEmpty())
+            event(id, agent, p.userId(), "DRAFT_ATTACHMENTS", String.join(",", fileIds), requestId);
           event(
-              call.taskId(),
-              call.agent(),
-              null,
-              "MODEL_PROPOSAL",
-              text(reply.text(), 16000),
-              call.runId());
-          event(
-              call.taskId(),
+              id,
               "SYSTEM",
               null,
-              "ROUTED",
-              call.agent() + " decision=" + reply.decision() + " / 다음 단계 " + next,
-              call.runId());
+              "HANDOFF",
+              agent
+                  + " decision="
+                  + decision
+                  + " / 다음 담당 "
+                  + (next < participants(task).size() ? participants(task).get(next) : "사용자 승인"),
+              requestId);
           db.update(
               "UPDATE ai_collaboration_tasks SET"
-                  + " active_run=NULL,phase_index=?,status=?,version=version+1,updated_at=CURRENT_TIMESTAMP"
+                  + " phase_index=?,status=?,calls_used=calls_used+1,version=version+1,updated_at=CURRENT_TIMESTAMP"
                   + " WHERE id=?",
               next,
               status,
-              call.taskId());
-        });
-  }
-
-  public void unknown(Call call) {
-    tx.executeWithoutResult(
-        transaction -> {
-          var task = task(call.taskId(), true);
-          if (!Objects.equals(task.get("active_run"), call.runId())) return;
-          String state = task.get("status").equals("CANCELLED") ? "CANCELLED" : "UNKNOWN";
-          db.update(
-              "UPDATE ai_collaboration_tasks SET"
-                  + " active_run=NULL,status=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE"
-                  + " id=?",
-              state,
-              call.taskId());
-          event(
-              call.taskId(),
-              "SYSTEM",
-              null,
-              "CALL_UNKNOWN",
-              "호출 결과·과금 불명. 예약 비용을 유지하며 자동 재시도하지 않습니다.",
-              call.runId());
+              id);
+          var result =
+              Map.<String, Object>of(
+                  "taskId",
+                  id,
+                  "status",
+                  status,
+                  "version",
+                  version + 1,
+                  "draft",
+                  true,
+                  "nextAgent",
+                  next < participants(task).size() ? participants(task).get(next) : "");
+          try {
+            db.update(
+                "INSERT INTO"
+                    + " ai_collaboration_submissions(grant_id,request_id,task_id,body_sha,result_json)"
+                    + " VALUES(?,?,?,?,?)",
+                grant,
+                requestId,
+                id,
+                hash,
+                new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(result));
+          } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw error(500, "이력 저장 실패");
+          }
+          return result;
         });
   }
 
   public void githubSnapshot(AuthenticatedPrincipal p, String id, long version, String snapshot) {
     tx.executeWithoutResult(
-        transaction -> {
+        t -> {
           var task = task(id, true);
           owner(p, task);
           expected(task, version);

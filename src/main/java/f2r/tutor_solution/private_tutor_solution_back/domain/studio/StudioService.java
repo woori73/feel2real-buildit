@@ -214,7 +214,7 @@ public class StudioService {
     }
   }
 
-  static void validateType(Path path, String ext) throws IOException {
+  public static void validateType(Path path, String ext) throws IOException {
     byte[] b;
     try (var in = Files.newInputStream(path)) {
       b = in.readNBytes(16);

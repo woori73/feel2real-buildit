@@ -1827,11 +1827,16 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 
 `unified_assistant_audit`에 `operation`, `academy_id`, `business_id`(모두 nullable)가 추가됐다(V1094는 main·운영에 미적용 상태라 같은 파일에서 수정). 초안 관련 이벤트는 업무 종류와 학원/사업체 범위를 함께 남긴다. 이벤트 `RECOVERED_UNKNOWN`은 중단된 `EXECUTING` 초안을 `UNKNOWN`으로 전환했음을 뜻한다.
 
-## AI 협업 관제실 (V1096, #855 의존·미배포)
+## 공동 제작 협업실 (V1096/V1097, 운영 미배포)
 
-- `ai_collaboration_tasks` / `CollaborationTask`: studio_projects FK, owner 사용자 FK, 고정 참여 역할·지시·상한, 상태/phase/call count, μUSD 예약액, DB version, active_run. JDBC 행 잠금으로 선점/승인/중단을 전이한다.
-- `ai_collaboration_events` / `CollaborationEvent`: task FK, USER/SYSTEM/선택 모델/GITHUB 저자, 실제 사용자 ID, 사건·본문·run_id·시각. append-only, AI 제안과 사용자 판단을 구분한다.
-- `ai_collaboration_artifacts` / `CollaborationArtifact`: task FK와 기존 studio_files/studio_revisions FK 또는 고정 저장소 PR 번호 참조. 원본 복사/덮어쓰기/승인 포인터 이동 없음.
-- `ai_collaboration_budget_days` / `CollaborationBudgetDay`: UTC 날짜별 보수적 예약 μUSD. upsert 배타 잠금+조건부 UPDATE로 여러 task/JVM의 일일 비용 상한을 함께 지킨다. 실패/불명 호출 예약액은 환급하지 않는다.
+- `ai_collaboration_tasks` / `CollaborationTask`: 기존 studio_projects FK와 nullable 신규 workspace FK, 사용자 FK, 고정 참여 역할·지시·인계 상한, status/phase/count/version. JDBC 행 잠금으로 인계·승인·중단을 직렬화한다. μUSD 필드는0으로 생성하며 호출/예산 실행기는 없다. 기존 budget_days/active_run 구조는 호환 보존하고 사용하지 않는다.
+- `ai_collaboration_events` / `CollaborationEvent`: 작업 FK, USER/SYSTEM/선택 AI/GITHUB 역할, 실제 사용자 ID, DRAFT 제안·인계·검수·승인 사건·본문·requestId·시각. append-only.
+- `ai_collaboration_artifacts` / `CollaborationArtifact`: 기존 studio_files/studio_revisions FK 또는 고정 저장소 PR 참조. 원본/승인 포인터 불변.
+- `ai_collaboration_workspaces` / `CollaborationWorkspaceEntity`, `ai_collaboration_workspace_members` / `CollaborationMemberEntity`: 프로젝트와 복합키(workspace,user) VIEWER/EDITOR/MANAGER. 기본 프로젝트는 기존 studio_members 권한, 비공개 프로젝트는 명시적 멤버십과 studio 권한 모두 필요.
+- `ai_collaboration_workspace_events` / `CollaborationMemoryEntity`: 프로젝트 기억/결정/진행/검수/등록/권한/연결 이력. 사용자·AI·시각 구분.
+- `mcp_collaboration_bindings` / `CollaborationBindingEntity`: 본인 mcp_grant FK를 AI 역할/프로젝트 FK에 명시적으로 묶는다. OAuth scope를 늘리거나 다른 사용자의 grant를 사용하지 못한다.
+- `ai_collaboration_files` / `CollaborationFileEntity`: 원본 저장키(외부 미노출), SHA/byte수/파일형식/등록자/AI/시각/부모파일 FK, DRAFT/APPROVED/REJECTED. 새 버전은 새 후보, SHA중복 blob 재사용, AI 기존 승인 상태/byte 변경 불가.
+- `ai_collaboration_uploads` / `CollaborationUploadEntity`, `ai_collaboration_chunks` / `CollaborationChunkEntity`: grant/workspace/task 바인딩 업로드 세션과 복합키(upload,index) SHA/원본청크. 완료시 SHA 검증 후 불변 DRAFT 파일로 등록하고 임시 청크만 정리.
+- `ai_collaboration_submissions` / `CollaborationSubmissionEntity`: 복합키(grant,requestId), task FK/본문 SHA/결과JSON. 동시·동일 재시도는1회, 내용 변경은409.
 
-마이그레이션은 보류 #854 V1094/#855 V1095 다음 추가 구조이며 기존 적용 migration 및 업무 데이터는 불변. 운영 미적용. [상태/검증](collaboration/README.md).
+원본/정본/승인 이력 물리 삭제 API와 cascade delete를 만들지 않는다. 신규 DB 구조는 migration+immutable ORM 계약+이 문서를 함께 갱신한다. 적용된 V1096을 수정하지 않고 V1097로 확장했다. 운영 DB에는 적용하지 않았다. [구현/검증](collaboration/README.md).

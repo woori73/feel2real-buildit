@@ -21,6 +21,12 @@ public class CollaborationBodyLimit extends OncePerRequestFilter {
       chain.doFilter(request, response);
       return;
     }
+    if (request.getRequestURI().equals("/api/collaboration/files")
+        && request.getContentType() != null
+        && request.getContentType().startsWith("multipart/form-data")) {
+      chain.doFilter(request, response);
+      return;
+    }
     byte[] body = request.getInputStream().readNBytes(65537);
     if (body.length > 65536) {
       response.setStatus(413);

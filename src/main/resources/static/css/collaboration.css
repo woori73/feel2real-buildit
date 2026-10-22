@@ -273,4 +273,54 @@ section section {
   }
 }
 /* Keep shared task navigation usable before the detail panel on mobile. */
-#tasks { max-height: 26rem; overflow: auto; overscroll-behavior: contain; padding: .2rem; }
+#tasks {
+  max-height: 26rem;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0.2rem;
+}
+.panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+.shared-files {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.file-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+.file-card img {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  margin: 1rem 0;
+}
+.file-card small {
+  display: block;
+  margin: 0.7rem 0;
+}
+.file-card button {
+  display: inline-block;
+  margin: 0.5rem 0.3rem 0.3rem 0;
+}
+#memory-list {
+  max-height: 32rem;
+  overflow: auto;
+}
+@media (max-width: 760px) {
+  .shared-files {
+    grid-template-columns: 1fr;
+  }
+  .panel {
+    padding: 1rem;
+  }
+}

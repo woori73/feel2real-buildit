@@ -1007,6 +1007,8 @@ MCP는 제품 관리 화면 callback 정확 등록 → 본인 로그인 → 최�
 
 MCP의 원본 바이너리는 서비스 scope + 기존 사용자 권한 + 별도 originals:read 사용자 동의가 모두 필요하다. 기본은 원본 제공 해제이고 사용자 승인 없는 권한 확장은 없다. 텍스트 조회는 마스킹을 적용하며 금융은 사업체 월 합계만 제공한다. 운영 MCP는 실제 ChatGPT·Claude 연결 검증과 별도 운영 승인 전까지 비활성 상태를 유지한다.
 
-## 제작실 AI 협업 관제실
+## 공동 제작 협업실
 
-사용자 작업 등록+참여 AI 직접 선택→DRAFT에서 제작실 파일·버전·PR 연결→비용/외부 제공 동의 후 start→DB 선점·작업/일일 비용 예약 커밋→선택된 AI에 문맥 전달→MODEL_PROPOSAL과 다음 역할 타임라인 보존. Claude CHANGES_REQUESTED는 선택된 Codex에 전달 후 Claude 재검수, 미선택이면 BLOCKED. 상한/권한 회수/연결 불가도 BLOCKED, 외부 호출 결과 불명은 UNKNOWN으로 자동 재시도 중단. 사용자 pause/resume/cancel/approve는 version과 소유권을 확인한다. APPROVED는 제안에 대한 작업 승인으로 정본·GitHub·운영 변경을 실행하지 않는다. MCP는 허용된 GET만 읽는다. 자세한 API·미완료 조건은 [관제실 보고서](collaboration/README.md).
+사용자 프로젝트/팀원 선택→작업 등록+참여 AI 직접 선택→자료/기억 공유→사용자 OAuth 범위 동의+연결의 AI/프로젝트 별도 지정→인계 시작 확인→WAITING_AGENT. 선택된 구독 앱/공식 실행 환경이 자신의 대기열과 공동 이력을 읽고 신규 문서/파일/수정 제안을 DRAFT로 추가→동일 요청 중복 차단→다음 선택 역할의 대기열/공동 이력 자동 갱신. 서버가 앱의 대화 또는 유료 모델 API를 실행하지 않는다.
+
+Claude CHANGES_REQUESTED→선택된 Codex→Claude 재검수. Codex 미선택/인계 상한이면 BLOCKED. 인간 프로젝트 EDITOR는 공동 검수/기억을 남기고 작업 소유자/ADMIN은 version 확인 후 중단·재개·작업 결과 승인을 수행한다. 파일은 MANAGER가 후보 검수하며 승인 정본 포인터·원본 byte는 보존한다. AI 도구는 사용자 승인·삭제·정본 교체·배포 권한이 없다. [구현 보고서](collaboration/README.md), [실제 제품 연결 검증표](collaboration/CONNECTORS.md).

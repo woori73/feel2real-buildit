@@ -1,13 +1,17 @@
 {
-  "environment": "isolated MySQL and actual Chromium; synthetic data and mock models; no live paid API calls",
+  "environment": "Isolated MySQL 8.4 + Chromium + real OAuth/PKCE MCP transport. Synthetic QA assets; no inference and no actual ChatGPT/Claude account connection.",
+  "actualConsumerAppConnectionVerified": false,
+  "actualExternalModelCalls": 0,
   "results": [
-    "no AI selected by default; Muse not assigned",
-    "task created in actual MySQL from browser",
-    "external sharing consent required before dispatch",
-    "three selected roles automatically exchange stored proposals; unselected Muse absent (mock models)",
-    "user approval stored separately from canonical studio approval",
-    "Chromium 1440px, no horizontal overflow, axe violations 0",
-    "Chromium 390px, no horizontal overflow, axe violations 0",
-    "result and approval history exported as Markdown attachment"
+    "No roles selected by default; unrelated dashboard assistant is not injected",
+    "Human project memory and decisions saved to MySQL and found through actual search",
+    "Human multipart DRAFT upload, SHA metadata and escaped text preview work",
+    "Two distinct OAuth MCP clients read identical document bytes/SHA; only DRAFT append",
+    "Binary chunk upload verified SHA; second OAuth client receives actual MCP image block",
+    "Selected role handoff and Claude→Codex→Claude loop persist; no consumer app/model auto-run",
+    "Human task approval and candidate review recorded separately from canonical studio originals",
+    "Chromium 1440px: no horizontal overflow, axe WCAG violations 0",
+    "Chromium 390px: no horizontal overflow, axe WCAG violations 0",
+    "Shared proposal and approval history exported as Markdown"
   ]
 }

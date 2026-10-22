@@ -1,0 +1,8 @@
+{
+  "environment": "Isolated loopback Spring/MySQL test instance; single client, no production capacity claim",
+  "endpoint": "GET /api/collaboration/tasks/{id}",
+  "samples": 20,
+  "medianMs": 13.69,
+  "p95Ms": 26.43,
+  "paidModelApiCalls": 0
+}

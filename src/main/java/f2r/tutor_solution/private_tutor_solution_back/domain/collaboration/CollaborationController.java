@@ -14,19 +14,25 @@ import org.springframework.web.server.ResponseStatusException;
 @Controller
 public class CollaborationController {
   private final CollaborationService service;
-  private final CollaborationRunner runner;
+  private final CollaborationWorkspaces spaces;
+  private final CollaborationFiles files;
+  private final CollaborationMcp connector;
   private final CollaborationGithub github;
   private final StudioService studio;
   private final String origin;
 
   public CollaborationController(
       CollaborationService service,
-      CollaborationRunner runner,
+      CollaborationWorkspaces spaces,
+      CollaborationFiles files,
+      CollaborationMcp connector,
       CollaborationGithub github,
       StudioService studio,
       @Value("${app.collaboration.public-base-url:https://feel2real.co.kr}") String origin) {
     this.service = service;
-    this.runner = runner;
+    this.spaces = spaces;
+    this.files = files;
+    this.connector = connector;
     this.github = github;
     this.studio = studio;
     this.origin = origin;
@@ -39,7 +45,9 @@ public class CollaborationController {
         && !request.getMethod().equals("HEAD")
         && !origin.equals(request.getHeader("Origin")))
       throw CollaborationService.error(403, "동일 출처의 관제실에서 요청하세요.");
-    if (request.getContentLengthLong() > 65536)
+    if (request.getContentLengthLong() > 65536
+        && (request.getContentType() == null
+            || !request.getContentType().startsWith("multipart/form-data")))
       throw CollaborationService.error(413, "요청은 64 KiB 이하입니다.");
   }
 
@@ -64,8 +72,10 @@ public class CollaborationController {
 
   @GetMapping("/api/collaboration/tasks")
   @ResponseBody
-  Object tasks(@AuthenticationPrincipal AuthenticatedPrincipal p) {
-    return service.list(p);
+  Object tasks(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(defaultValue = "ai-agent-part1") String workspaceId) {
+    return service.list(p, workspaceId);
   }
 
   @GetMapping("/api/collaboration/tasks/{id}")
@@ -136,7 +146,7 @@ public class CollaborationController {
       @PathVariable String id,
       @RequestBody CollaborationService.Change r) {
     var result = service.change(p, id, r);
-    if (result.get("status").equals("RUNNING")) runner.launch(id);
+
     return result;
   }
 
@@ -179,5 +189,149 @@ public class CollaborationController {
       throw CollaborationService.error(502, "GitHub 읽기 권한·연결을 확인하세요. 원시 오류는 기록하지 않습니다.");
     }
     return service.detail(p, id);
+  }
+
+  @GetMapping("/api/collaboration/workspaces")
+  @ResponseBody
+  Object workspaces(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return spaces.list(p);
+  }
+
+  record Workspace(String title) {}
+
+  @PostMapping("/api/collaboration/workspaces")
+  @ResponseBody
+  Object workspace(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody Workspace r) {
+    return spaces.create(p, r.title());
+  }
+
+  @GetMapping("/api/collaboration/workspaces/{id}")
+  @ResponseBody
+  Object workspaceDetail(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
+    return spaces.snapshot(p, id);
+  }
+
+  record Memory(String kind, String body) {}
+
+  @PostMapping("/api/collaboration/workspaces/{id}/memory")
+  @ResponseBody
+  Object memory(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestBody Memory r) {
+    if (!java.util.Set.of("NOTE", "DECISION", "MILESTONE", "HUMAN_REVIEW").contains(r.kind()))
+      throw CollaborationService.error(400, "기억 유형 오류");
+    spaces.memory(p, id, r.kind(), r.body(), null);
+    return spaces.snapshot(p, id);
+  }
+
+  record Member(long userId, String permission) {}
+
+  @PostMapping("/api/collaboration/workspaces/{id}/members")
+  @ResponseBody
+  Object member(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestBody Member r) {
+    spaces.member(p, id, r.userId(), r.permission());
+    return spaces.snapshot(p, id);
+  }
+
+  @GetMapping("/api/collaboration/search")
+  @ResponseBody
+  Object search(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam String workspaceId,
+      @RequestParam String q) {
+    return spaces.search(p, workspaceId, q);
+  }
+
+  @GetMapping("/api/collaboration/inbox")
+  @ResponseBody
+  Object inbox(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam String workspaceId,
+      @RequestParam String agent) {
+    return service.inbox(p, workspaceId, agent);
+  }
+
+  @GetMapping("/api/collaboration/connections")
+  @ResponseBody
+  Object connections(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return connector.connections(p);
+  }
+
+  @PostMapping("/api/collaboration/connections")
+  @ResponseBody
+  Object bind(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody CollaborationMcp.Bind r) {
+    connector.bind(p, r);
+    return connector.connections(p);
+  }
+
+  @PostMapping("/api/collaboration/connections/{grantId}/unbind")
+  @ResponseBody
+  Object unbind(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String grantId) {
+    connector.unbind(p, grantId);
+    return connector.connections(p);
+  }
+
+  @PostMapping(value = "/api/collaboration/files", consumes = "multipart/form-data")
+  @ResponseBody
+  Object upload(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam String workspaceId,
+      @RequestParam org.springframework.web.multipart.MultipartFile file,
+      @RequestParam(required = false) String parentId) {
+    return files.upload(p, workspaceId, file, parentId);
+  }
+
+  @GetMapping("/api/collaboration/files/{id}")
+  @ResponseBody
+  Object file(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
+    return files.metadata(p, id);
+  }
+
+  @GetMapping("/api/collaboration/files/{id}/text")
+  @ResponseBody
+  Object fileText(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
+    return files.text(p, id);
+  }
+
+  record Review(String decision) {}
+
+  @PostMapping("/api/collaboration/files/{id}/review")
+  @ResponseBody
+  Object review(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestBody Review r) {
+    files.review(p, id, r.decision());
+    return files.metadata(p, id);
+  }
+
+  @GetMapping("/api/collaboration/files/{id}/content")
+  @ResponseBody
+  ResponseEntity<byte[]> download(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestParam(defaultValue = "false") boolean inline) {
+    var meta = files.metadata(p, id);
+    boolean png = inline && meta.get("extension").equals("png");
+    return ResponseEntity.ok()
+        .header(
+            "Content-Disposition",
+            org.springframework.http.ContentDisposition.builder(png ? "inline" : "attachment")
+                .filename(meta.get("filename").toString(), java.nio.charset.StandardCharsets.UTF_8)
+                .build()
+                .toString())
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Content-Security-Policy", "sandbox; default-src 'none'")
+        .contentType(
+            png
+                ? org.springframework.http.MediaType.IMAGE_PNG
+                : org.springframework.http.MediaType.APPLICATION_OCTET_STREAM)
+        .body(files.bytes(p, id));
   }
 }

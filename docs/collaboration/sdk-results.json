@@ -1,0 +1,8 @@
+{
+  "sdk": "official Python mcp 2.1.1",
+  "oauthClients": 2,
+  "sameOriginalTextAndSha": true,
+  "localFileToDraftToSecondClient": true,
+  "actualChatGptClaudeProductLogin": false,
+  "paidModelApiCalls": 0
+}

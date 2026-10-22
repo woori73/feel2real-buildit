@@ -1,0 +1,2 @@
+# Official MCP SDK used by the optional local file transfer and isolated two-client checks.
+mcp==2.1.1

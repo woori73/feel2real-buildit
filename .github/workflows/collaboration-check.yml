@@ -9,6 +9,7 @@ on:
       - 'src/main/resources/static/css/collaboration.css'
       - 'src/test/java/**/collaboration/**'
       - 'scripts/ai-agent-studio/collaboration-qa.cjs'
+      - 'scripts/ai-agent-studio/collaboration-*.py'
       - 'e2e/collaboration/**'
       - '.github/workflows/collaboration-check.yml'
   workflow_dispatch:
@@ -37,6 +38,7 @@ jobs:
     env:
       F2R_COLLAB_MYSQL_TEST: 'true'
       F2R_COLLAB_BROWSER_TEST: 'true'
+      F2R_COLLAB_SDK_TEST: 'true'
       NODE_PATH: ${{ github.workspace }}/e2e/collaboration/node_modules
     steps:
       - uses: actions/checkout@v4
@@ -48,11 +50,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install -r e2e/collaboration/requirements.txt
       - run: npm ci --prefix e2e/collaboration --ignore-scripts
       - run: cd e2e/collaboration && npx playwright install --with-deps chromium
       - run: sudo apt-get update -qq && sudo apt-get install -y fonts-noto-cjk
-      - name: MySQL state, official API wire contracts and real browser (no paid calls)
-        run: bash gradlew test --no-daemon --tests '*CollaborationMySqlTest' --tests '*CollaborationProvidersTest'
+      - name: MySQL, OAuth/PKCE, MCP draft append and real browser (no paid calls)
+        run: bash gradlew test --no-daemon --tests '*CollaborationMySqlTest'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -60,5 +66,7 @@ jobs:
           path: |
             build/reports/tests/test
             docs/collaboration/browser-results.json
+            docs/collaboration/sdk-results.json
+            docs/collaboration/performance-results.json
             docs/collaboration/screens
           retention-days: 7

@@ -17,6 +17,9 @@ public class CollaborationTask {
   @Column(name = "project_id", length = 64, nullable = false)
   private String projectId;
 
+  @Column(name = "workspace_id", length = 64)
+  private String workspaceId;
+
   @Column(name = "owner_id", nullable = false)
   private Long ownerId;
 

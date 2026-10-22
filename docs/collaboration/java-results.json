@@ -1,20 +1,84 @@
 {
-  "environment": "isolated MySQL8.4 and local API/browser; synthetic records and mock external models",
+  "environment": "Fresh isolated MySQL8.4 on loopback3320 for legacy studio/MCP, isolated3319 for collaboration; actual Spring/OAuth/HTTP, no inference clients",
   "suites": [
     {
       "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.collaboration.CollaborationMySqlTest",
-      "tests": 12,
+      "tests": 13,
       "failures": 0,
       "errors": 0,
       "skipped": 0
     },
     {
-      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.collaboration.CollaborationProvidersTest",
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpClientAddressTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpConsentTemplateTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpOAuthDefaultsHttpTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpRedactionTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpStudioMySqlTest",
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpUserLimiterTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.FlywayStackUpgradeMySqlTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioUploadRollbackMySqlTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "ADMIN 상단 메뉴 — 노출만 정리하고 기능·URL은 유지",
       "tests": 3,
       "failures": 0,
       "errors": 0,
       "skipped": 0
     }
   ],
-  "actualExternalModelCalls": 0
+  "actualExternalModelCalls": 0,
+  "actualChatGptClaudeProductLogin": false
 }

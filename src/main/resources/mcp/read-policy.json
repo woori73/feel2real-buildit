@@ -3585,29 +3585,5 @@
     "service": "studio",
     "roles": [],
     "reason": "현재 컷 head 전체의 프로젝트 권한 검증 후 SQL 조회. 초기화·승인·파일 변경 없음"
-  },
-  {
-    "path": "/api/collaboration/agents",
-    "service": "studio",
-    "roles": [],
-    "reason": "제작실 기존 권한으로 공동 작업 이력만 조회. 외부 모델 호출·제어 없음"
-  },
-  {
-    "path": "/api/collaboration/tasks",
-    "service": "studio",
-    "roles": [],
-    "reason": "제작실 기존 권한으로 공동 작업 이력만 조회. 외부 모델 호출·제어 없음"
-  },
-  {
-    "path": "/api/collaboration/tasks/{id}",
-    "service": "studio",
-    "roles": [],
-    "reason": "제작실 기존 권한으로 공동 작업 이력만 조회. 외부 모델 호출·제어 없음"
-  },
-  {
-    "path": "/api/collaboration/tasks/{id}/events",
-    "service": "studio",
-    "roles": [],
-    "reason": "제작실 기존 권한으로 공동 작업 이력만 조회. 외부 모델 호출·제어 없음"
   }
 ]
