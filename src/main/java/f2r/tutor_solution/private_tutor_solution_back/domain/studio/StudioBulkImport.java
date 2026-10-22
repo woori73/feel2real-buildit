@@ -112,7 +112,7 @@ public class StudioBulkImport {
       if (db.queryForObject(
               "SELECT COUNT(*) FROM studio_revisions WHERE project_id=? AND item_key=? AND label=?",
               Long.class,
-              StudioService.PROJECT,
+              studio.projectId(),
               r.itemKey(),
               r.label())
           > 0) throw StudioService.error(409, "이미 등록한 원본입니다. 새 원본 또는 새 버전 작성 기능을 사용하세요.");
@@ -135,7 +135,7 @@ public class StudioBulkImport {
       }
     }
     // Validate all content before any append. One DB transaction covers all 68 revisions.
-    db.queryForList("SELECT id FROM studio_projects WHERE id=? FOR UPDATE", StudioService.PROJECT);
+    db.queryForList("SELECT id FROM studio_projects WHERE id=? FOR UPDATE", studio.projectId());
     var result = new ArrayList<Object>();
     for (int i = 0; i < revisions.size(); i++) {
       var r = revisions.get(i);
@@ -148,7 +148,7 @@ public class StudioBulkImport {
       var heads =
           db.queryForList(
               "SELECT head_id FROM studio_items WHERE project_id=? AND item_key=?",
-              StudioService.PROJECT,
+              studio.projectId(),
               r.itemKey());
       var saved =
           studio.save(
@@ -171,7 +171,7 @@ public class StudioBulkImport {
     }
     db.update(
         "INSERT INTO studio_events(project_id,action,note,actor_id) VALUES (?,?,?,?)",
-        StudioService.PROJECT,
+        studio.projectId(),
         "BULK_IMPORT",
         "source=" + fileId + ";cuts=68",
         p.userId());

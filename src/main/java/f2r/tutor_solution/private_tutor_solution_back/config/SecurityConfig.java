@@ -604,7 +604,7 @@ public class SecurityConfig {
             .requestMatchers("/api/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             .requestMatchers("/api/tutor/**").hasRole("TUTOR")
 
-            .requestMatchers("/ai-agent-studio", "/api/studio/**").authenticated()
+            .requestMatchers("/ai-agent-studio", "/studio-projects", "/api/studio/**").authenticated()
 
             // 그 외 모든 /api/**는 인증 필요
             .requestMatchers("/api/**").authenticated()

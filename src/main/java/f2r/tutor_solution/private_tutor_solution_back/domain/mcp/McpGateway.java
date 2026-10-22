@@ -84,13 +84,21 @@ public class McpGateway {
             "studio_image",
             "허가된 제작실 PNG를 MCP image 블록(100 KiB 이하 JPEG 파생본)으로 조회. studio:read와 originals:read의 별도"
                 + " 사용자 동의가 필요합니다. 실제 제품의 시각 판독 성공을 보장하지 않습니다.",
-            Map.of("fileId", string()),
+            Map.of("fileId", string(), "projectId", string()),
             List.of("fileId")));
     out.add(
         tool(
             "studio_document",
             "허가된 문서 본문을 읽습니다. HTML 내장 이미지/스크립트 제외·전화번호 등 마스킹·PDF 처음100페이지. 파일명/SHA는 메타데이터와 대조하세요.",
-            Map.of("fileId", string(), "offset", integer(0, 200000), "limit", integer(1, 20000)),
+            Map.of(
+                "fileId",
+                string(),
+                "projectId",
+                string(),
+                "offset",
+                integer(0, 200000),
+                "limit",
+                integer(1, 20000)),
             List.of("fileId")));
     out.add(
         tool(
@@ -197,6 +205,11 @@ public class McpGateway {
             .putObject("query")
             .put("offset", Integer.toString(number(args, "offset", 0, 0, 200000)))
             .put("limit", Integer.toString(number(args, "limit", 20000, 1, 20000)));
+      if (args.has("projectId")) {
+        if (!target.has("query")) target.putObject("query");
+        ((tools.jackson.databind.node.ObjectNode) target.get("query"))
+            .put("projectId", args.path("projectId").asText());
+      }
       return read(identity, "studio", target);
     }
     if (name.equals("activity_history")) return oauth.history(identity);

@@ -47,3 +47,11 @@ r14 콘티 68개와 r5 콘티 68개를 서로 다른 버전으로 보관한다. 
 새 테이블 없이 기존 revision/event에 결정과 댓글을 보존한다. 마지막 결정·현재 담당·열린 문제·다음 작업·최신 PR/SHA·연결 파일은 서버의 새 버전으로 저장하고 실제 재조회한다. 오래된 expectedRevisionId는 409, 이전 결정은 불변이다. 컷 댓글은 전 버전을 묶고 각 버전/실제 사람 작성자를 표시한다. 사람이 공유한 Claude/Codex/Muse/ChatGPT 자료는 근거 파일이 필요하며 AI 직접 인증 작성으로 표시하지 않는다. AI 직접 쓰기 연결은 별도 설계 대상이다. 수정 요청은 승인 정본을 바꾸지 않는다. 승인 대기함은 100개씩 페이지 조회하며 보관용 출처536개를 제외한다.
 
 MySQL 회귀36건 PASS(공동 기억6·기존 Studio8·MCP22), Markdown 표/안전 렌더9건 PASS. [브라우저11개 PASS](memory-browser-results.json): [PC 기억](screens/memory-1440.png), [모바일 새 세션 복원](screens/memory-390.png), [승인 이력 표](screens/memory-approval-history-1440.png), [댓글·수정 요청](screens/comments-1440.png), [승인 대기함](screens/inbox-390.png). 실제 작품에서 새 세션·다른 사용자가 동일 기억/파일4개를 복원했고, 오래된 저장 거부·수정 요청 후 컷 미승인 유지·무권한403을 확인했다. [공식 SDK 새 세션 인계](memory-protocol-results.json)도 같은 revisionId/digest를 읽고 POST를 거부했다. 이는 외부 제품 계정 검증을 대신하지 않는다.
+
+## 5단계 · 프로젝트·팀·알림 (로컬 검증 완료)
+
+프로젝트 생성·제목 수정·보관·재개는 ADMIN에게만 허용하고 모든 실제 변경을 감사 기록한다. 영구 삭제는 없다. 보관해도 모든 문서·그림·컷·SHA·버전·승인·기억은 읽을 수 있으며 자료 수정은 재개 후 허용한다. 사용자 이름/닉네임 검색으로 초대하고 상대방의 수락 전에는 접근을 허용하지 않는다. VIEWER/EDITOR/APPROVER 역할을 재사용한다. 검수·승인·댓글 알림은 프로젝트 내에서만 보이며 GET은 읽음 상태를 바꾸지 않는다. 신규 스키마/마이그레이션 없이 기존 프로젝트·권한·감사 테이블을 재사용했다.
+
+[Java44건 PASS](projects-java-results.json): 프로젝트8·기존 공동 기억6·Studio8·MCP22. [실제 브라우저9개 PASS](projects-browser-results.json): 기존 작품+빈 QA프로젝트2개 동시 관리, PC 제목/보관/재개, 모바일 초대 수락/알림, 동일 출처/역할/프로젝트/파일 격리, 기존536경로·316파일·승인5종 SHA·버전/승인 포인터·작업 기억 보존. 원작 대조0/68·PASS확정0·컷 승인0·대표10컷 미생성 유지. [PC 프로젝트](screens/projects-1440.png), [모바일 프로젝트](screens/projects-390.png), [보관 화면](screens/project-archived-1440.png), [모바일 알림](screens/notifications-390.png).
+
+[공식 MCP SDK](projects-protocol-results.json)는 동일 프로젝트의 실제 문서/image 블록·카탈로그 projectId, 수락한 프로젝트만 목록 표시, 타 프로젝트 원본/기억 차단, 생성/보관/수락/읽음 처리 POST 차단을 확인했다. 외부 모델 호출0. 실제 ChatGPT/Claude 제품 연결·시각 판독은 미검증이다. 원본 자료는 격리 MySQL과 로컬 파일 저장소에 실제 적재되어 있으며 운영 제작실에는 배포/등록하지 않았다.

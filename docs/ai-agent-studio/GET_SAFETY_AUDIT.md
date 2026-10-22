@@ -1,12 +1,12 @@
 # GET 비용·부수효과 감사 (2026-10-22)
 
-범위: 최신 main `ae5d1760`와 제작실 열람·#863 적재·MCP 문서/이미지 확장 코드. 격리 앱의 Spring/proxy 매핑 1109개를 수집하고, 비활성 profile/feature의 Java GET 선언도 추가했다. **635개 GET 경로**를 Java AST 호출 그래프로 조사했다. 재현 가능한 전체 경로·근거·판정은 [get-safety-audit.json](get-safety-audit.json)에 있다. 외부 서비스나 금융기관을 호출하는 감사가 아니다.
+범위: 최신 main `ae5d1760`와 제작실 열람·#863 적재·MCP 문서/이미지 확장 코드. 격리 앱의 Spring/proxy 매핑 1120개를 수집하고, 비활성 profile/feature의 Java GET 선언도 추가했다. **641개 GET 경로**를 Java AST 호출 그래프로 조사했다. 재현 가능한 전체 경로·근거·판정은 [get-safety-audit.json](get-safety-audit.json)에 있다. 외부 서비스나 금융기관을 호출하는 감사가 아니다.
 
-MCP 실행 허용 경로는 411개다. 목록에 보이는 서비스 경로와 실행 허용 여부를 구분하며, 새 endpoint는 자동 허용하지 않는다.
+MCP 실행 허용 경로는 414개다. 목록에 보이는 서비스 경로와 실행 허용 여부를 구분하며, 새 endpoint는 자동 허용하지 않는다.
 
 | 허용 경로 분류 | 수 | 근거와 한계 |
 |---|---:|---|
-| 로컬 코드 정적 위험 표지 없음 | 286 | Repository/JDBC DML, 파일 쓰기, HTTP/async 호출 그래프 검사. 동적 dispatch의 안전성을 증명하지는 않음 |
+| 로컬 코드 정적 위험 표지 없음 | 289 | Repository/JDBC DML, 파일 쓰기, HTTP/async 호출 그래프 검사. 동적 dispatch의 안전성을 증명하지는 않음 |
 | 기존 S3 읽기 | 49 | `S3Client.getObject/listObjectsV2`. 읽기 요청·전송료와 CPU 비용 존재. 실제 S3는 접속하지 않음 |
 | ZIP 목록 임시 파일 | 1 | 20 MiB 이하 UUID 임시 파일만 생성·읽기·finally 삭제. 원본/사업 데이터 변경 없음. 저장소가 S3면 읽기 비용도 존재 |
 | MVC 화면 등록 | 35 | SSR 본문과 화면의 기존 권한 검사. 클라이언트가 채우는 데이터는 별도 API 조회 필요 |

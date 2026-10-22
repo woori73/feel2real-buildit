@@ -1,0 +1,51 @@
+{
+  "localOnly": true,
+  "sourceCommit": "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
+  "projects": 3,
+  "canonicalShaVerified": [
+    "461926ffdb3a391c6b31d55aa759a4716674264209947d9cf55c7732e7f23be6",
+    "a35ceeed47c528c716bf21f97001aca14dd216cc5eefbdcda1d723ba4e7c1e9f",
+    "89cc41faa3318279ed9728be993c99c886055105038359f480b10bdc507add0b",
+    "37e8ab8c4563056f11551373f7544651125a9ecb4a32804869d1b7b768ef57e5",
+    "7cb7de4a7bb480e6f5f96b77936ccf8529874c740a16595ca08f8de5a137db59"
+  ],
+  "results": [
+    {
+      "name": "실제 AI AGENT와 빈 QA 프로젝트 2개, 총3개 동시 관리·화면 생성·재조회",
+      "pass": true
+    },
+    {
+      "name": "관리자 제목 수정·실제 저장 결과 재조회",
+      "pass": true
+    },
+    {
+      "name": "PC 프로젝트 보관 구분·재개",
+      "pass": true
+    },
+    {
+      "name": "사용자 검색 기반 초대·수락 전 자료 접근403",
+      "pass": true
+    },
+    {
+      "name": "390px 모바일 본인 초대 수락·역할 적용·본인 프로젝트만 표시",
+      "pass": true
+    },
+    {
+      "name": "프로젝트·역할·원본파일·동일 출처 접근 통제",
+      "pass": true
+    },
+    {
+      "name": "모바일 검수 알림·GET 쓰기0·명시적 읽음 저장·프로젝트별 격리",
+      "pass": true
+    },
+    {
+      "name": "기존 AI AGENT 보관·재개: 536경로·316파일·승인5종 SHA·작업 기억 불변·컷 승인0 유지",
+      "pass": true
+    },
+    {
+      "name": "실제 브라우저 JS 오류0·프로젝트 변경 감사 이력",
+      "pass": true
+    }
+  ],
+  "externalAiCalls": 0
+}

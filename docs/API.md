@@ -4997,3 +4997,14 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - `POST /api/studio/revisions/{id}/comments`: EDITOR/APPROVER·same-origin, `{body,sharedAi?,sourceFileId?}`. 1200자·최종 audit note2000자. AI 자료 공유는 Claude/Codex/Muse/ChatGPT 라벨과 같은 프로젝트 근거 파일 필수. 실제 작성자는 로그인 사용자이며 `HUMAN_SHARED_AI_MATERIAL`로 기록한다. 직접 인증된 AI 작성으로 주장하지 않는다. 원본/승인 포인터 변경 없음.
 - `GET /api/studio/pending?limit=100&offset=0`: 최신 head가 승인본과 다른 자료. 보관용 #863 출처 키·JOB 제외, 마지막 검수가 REJECT인 head는 대기함 제외(자료/이력은 보존). 100개 페이지로 누락 없이 조회.
 - 기존 review POST에 APPROVER의 `REQUEST_CHANGES` 추가: 감사 이벤트만 남기며 기존 승인 포인터를 유지한다. APPROVE/REJECT 동작은 유지한다. 새 GET3개만 MCP 읽기 허용이며 POST는 계속 금지한다.
+
+### 제작 프로젝트 관리·격리
+- `/studio-projects`: 로그인한 사용자의 프로젝트·본인 초대 화면. 기존 `/ai-agent-studio`는 프로젝트별 권한 검사 유지.
+- 제작실 API/화면 공통 `projectId` query: ASCII 영숫자/하이픈/밑줄 1~64자, 중복/경로 문자열 거부. 생략 시 기존 `ai-agent-part1`. UUID 파일/버전만 알아도 다른 프로젝트에서 읽을 수 없다. MCP `read_studio.query.projectId`, `studio_document/studio_image.projectId`도 같은 검사. 다른 서비스 query 허용 범위는 확대하지 않는다.
+- `GET /api/studio/projects`: ADMIN 전체, 일반 사용자는 수락한 VIEWER/EDITOR/APPROVER 프로젝트만. 보관 상태 구분. `GET /project-capabilities`: 본인 관리 가능 여부.
+- `POST /api/studio/projects {title}`: ADMIN 빈 프로젝트 생성. `POST /project-state {action:TITLE|ARCHIVE|REOPEN,title?}`: ADMIN 제목 수정/보관/재개. 영구 삭제 없음. 모든 실제 변경은 `studio_events` 감사 기록. 보관 중 파일/버전/승인/댓글/기억 쓰기 409; 열람 유지. 프로젝트 행 잠금과 current read로 보관/권한 변경과 쓰기를 직렬화한다. 기존 initialize는 기본 프로젝트만 개설한다.
+- `GET /api/studio/users?q=`: ADMIN 이름/닉네임 2~100자 literal 검색, 최대20명, user_id/name/nickname만. 이메일/비밀번호 미제공.
+- `POST /invitations {userId,permission}`: ADMIN 기존 일반 회원에게 VIEWER/EDITOR/APPROVER 초대. `PENDING_*`는 접근 권한이 아니다. `GET /invitations`: 본인 대기 초대만. `POST /invitations/answer {accept}`: 본인 초대 수락/거절. 보관 중 수락/새 초대 차단, 거절/기존 접근 폐기 허용. 외부 알림 전송 없음.
+- `GET /notifications?beforeId=`: 현재 프로젝트의 다른 사람 승인/반려/수정 요청/댓글, 100건 cursor; `readThrough/items/nextBeforeId`. GET은 읽음 상태를 변경하지 않는다. `POST /notifications/read {throughId}`: 본인 읽음 위치만 단조 갱신; 타 프로젝트/자기 이벤트/없는 ID 거부. 보관 중에도 확인 가능.
+- 기존 `/members` 직접 ADMIN 권한 변경·폐기 호환 유지; 보관 중 폐기 외 변경 차단. #863 고정 임포터는 기본 작품에만 등록 가능하며 다른 프로젝트에 기본 작품 출처 목록을 노출하지 않는다.
+- 새 MCP 허용 GET은 projects/invitations/notifications 세 개다. 생성·초대·수락·보관·읽음 처리 POST는 MCP에 제공하지 않는다. 운영 MCP 기본 설정은 변경하지 않는다.

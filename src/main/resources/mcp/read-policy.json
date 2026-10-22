@@ -3621,5 +3621,23 @@
     "service": "studio",
     "roles": [],
     "reason": "프로젝트 권한을 검사한 공동 기억·댓글/검수·승인대기 SQL 조회만. 쓰기·AI 실행·자동 승인 없음."
+  },
+  {
+    "path": "/api/studio/projects",
+    "service": "studio",
+    "roles": [],
+    "reason": "본인 접근 가능한 프로젝트/초대/알림의 순수 SQL 조회. 초대 수락·읽음 표시·생성·보관은 POST 전용이며 MCP에서 차단."
+  },
+  {
+    "path": "/api/studio/invitations",
+    "service": "studio",
+    "roles": [],
+    "reason": "본인 접근 가능한 프로젝트/초대/알림의 순수 SQL 조회. 초대 수락·읽음 표시·생성·보관은 POST 전용이며 MCP에서 차단."
+  },
+  {
+    "path": "/api/studio/notifications",
+    "service": "studio",
+    "roles": [],
+    "reason": "본인 접근 가능한 프로젝트/초대/알림의 순수 SQL 조회. 초대 수락·읽음 표시·생성·보관은 POST 전용이며 MCP에서 차단."
   }
 ]

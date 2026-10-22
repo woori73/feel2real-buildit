@@ -11,12 +11,12 @@
   <body>
     <header>
       <a href="/" class="brand">Feel2Real <span>PRODUCTION</span></a
-      ><a href="/mcp/connections">AI 연결 관리 ↗</a>
+      ><a href="/studio-projects">프로젝트 목록</a><a href="/mcp/connections">AI 연결 관리 ↗</a>
     </header>
     <main>
       <section class="hero">
         <p class="eyebrow">FEEL2REAL ORIGINAL · PART 01</p>
-        <h1>《AI AGENT》<small>제작 스튜디오</small></h1>
+        <h1><span id="project-title">제작 프로젝트</span><small>제작 스튜디오</small></h1>
         <p>각본에서 마지막 컷까지, 작품의 근거와 결정을 함께 보존합니다.</p>
         <div id="project-info"></div><p id="source-info" class="source-info" hidden></p>
         <button id="initialize" hidden>1부 프로젝트 개설</button>
@@ -28,7 +28,7 @@
         ><button data-tab="compare">버전 비교</button
         ><button data-tab="chat">작품 자료 검색·채팅</button
         ><button data-tab="history">작업 이력</button
-        ><button data-tab="members">접근 관리</button>
+        ><button data-tab="notifications">검수·댓글 알림</button><button data-tab="members">접근 관리</button>
       </nav>
       <section id="materials" class="panel">
         <div class="toolbar">
@@ -142,11 +142,14 @@
         <h2>작업·검수·승인 이력</h2>
         <div id="event-list"></div>
       </section>
+      <section id="notifications" class="panel" hidden><h2>검수·댓글 알림</h2><p>이 프로젝트의 다른 팀원이 남긴 승인·검수·댓글을 표시합니다. 열람만으로 읽음 처리하지 않습니다.</p><div id="notification-list"></div><button id="notifications-more" hidden>이전 알림 더 보기</button><button id="notifications-read" hidden>표시한 알림까지 확인</button></section>
       <section id="members" class="panel" hidden>
         <h2>제작 담당자 권한</h2>
         <p>
           관리자만 기존 회원의 사용자 ID에 권한을 부여하거나 폐기할 수 있습니다.
         </p>
+        <form id="invite-search-form" class="toolbar"><label>팀원 이름·닉네임 검색<input id="invite-query" minlength="2" maxlength="100" required /></label><button>회원 검색</button></form><div id="invite-search-results"></div>
+        <p>초대받은 사람은 프로젝트 목록에서 수락 후 참여합니다. 아래는 기존 권한의 직접 변경·폐기입니다.</p>
         <form id="member-form" class="toolbar">
           <label
             >회원 사용자 ID<input

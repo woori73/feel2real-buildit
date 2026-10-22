@@ -11,14 +11,15 @@ ROOT=Path(__file__).resolve().parents[2]
 fixture=json.loads(Path('/tmp/f2r-assets-browser-fixture.json').read_text())
 catalog=json.loads((ROOT/'src/main/resources/studio/production-09d62dee.json').read_text())
 
-def connect(callback,name,originals=True):
+def connect(callback,name,originals=True,cookie=None):
+ cookie=cookie or fixture['adminCookie']
  with httpx.Client(base_url=BASE,trust_env=False) as client:
   r=client.post('/mcp/oauth/register',json={'client_name':name,'redirect_uris':[callback],'token_endpoint_auth_method':'none'});r.raise_for_status();cid=r.json()['client_id'];verifier='local-media-'+'x'*48
   challenge=base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
   q=dict(client_id=cid,redirect_uri=callback,response_type='code',state='local-media',code_challenge_method='S256',code_challenge=challenge,resource=BASE+'/mcp')
-  r=client.get('/mcp/oauth/authorize',params=q,headers={'Cookie':fixture['adminCookie']});r.raise_for_status();nonce=re.search(r'name="nonce" value="([^"]+)"',r.text).group(1)
+  r=client.get('/mcp/oauth/authorize',params=q,headers={'Cookie':cookie});r.raise_for_status();nonce=re.search(r'name="nonce" value="([^"]+)"',r.text).group(1)
   form=urlencode({'nonce':nonce})+'&scopes=catalog%3Aread&scopes=studio%3Aread'+('&scopes=originals%3Aread&sensitiveAcknowledged=true' if originals else '')
-  r=client.post('/mcp/oauth/authorize',content=form,headers={'Cookie':fixture['adminCookie'],'Origin':BASE,'Content-Type':'application/x-www-form-urlencoded'});assert r.status_code==303
+  r=client.post('/mcp/oauth/authorize',content=form,headers={'Cookie':cookie,'Origin':BASE,'Content-Type':'application/x-www-form-urlencoded'});assert r.status_code==303
   code=parse_qs(urlparse(r.headers['location']).query)['code'][0]
   r=client.post('/mcp/oauth/token',data=dict(grant_type='authorization_code',client_id=cid,redirect_uri=callback,code=code,code_verifier=verifier,resource=BASE+'/mcp'));r.raise_for_status();return r.json()['access_token']
 

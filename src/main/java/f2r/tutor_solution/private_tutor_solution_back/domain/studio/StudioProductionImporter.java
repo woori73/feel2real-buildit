@@ -49,6 +49,14 @@ public class StudioProductionImporter {
 
   public Object status(AuthenticatedPrincipal p) throws IOException {
     studio.require(p, false, false);
+    if (!StudioService.PROJECT.equals(studio.projectId()))
+      return Map.of(
+          "projectId",
+          studio.projectId(),
+          "sourceImportAvailable",
+          false,
+          "registeredSourcePaths",
+          0);
     var catalog = catalog();
     return Map.of(
         "commit",
@@ -76,6 +84,8 @@ public class StudioProductionImporter {
   @Transactional(rollbackFor = Exception.class)
   public Object register(AuthenticatedPrincipal p, Request request) throws IOException {
     admin(p);
+    if (!StudioService.PROJECT.equals(studio.projectId()))
+      throw StudioService.error(400, "#863 자료는 AI AGENT 원본 프로젝트에만 등록할 수 있습니다.");
     studio.require(p, true, true);
     if (request == null || !COMMIT.equals(request.commit()) || request.files() == null)
       throw StudioService.error(400, "고정된 #863 커밋과 검증한 파일 매핑이 필요합니다.");

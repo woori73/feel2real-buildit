@@ -38,29 +38,75 @@ public class StudioService {
       String workStatus,
       String fileId) {}
 
+  /** Request-scoped selection; never kept in a shared field or a reusable thread local. */
   public String projectId() {
-    return PROJECT;
+    var attributes =
+        org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+    if (!(attributes
+        instanceof org.springframework.web.context.request.ServletRequestAttributes web))
+      return PROJECT;
+    String[] values = web.getRequest().getParameterValues("projectId");
+    if (values == null) return PROJECT;
+    if (values.length != 1 || !values[0].matches("[A-Za-z0-9_-]{1,64}"))
+      throw error(400, "프로젝트 식별자가 올바르지 않습니다.");
+    return values[0];
+  }
+
+  public boolean archived() {
+    return archived(false);
+  }
+
+  boolean archivedForWrite() {
+    return archived(true);
+  }
+
+  private boolean archived(boolean currentRead) {
+    return db
+        .query(
+            "SELECT action FROM studio_events WHERE project_id=? AND action IN"
+                + " ('PROJECT_ARCHIVE','PROJECT_REOPEN') ORDER BY id DESC LIMIT 1"
+                + (currentRead ? " FOR UPDATE" : ""),
+            (rs, n) -> rs.getString(1),
+            projectId())
+        .stream()
+        .findFirst()
+        .orElse("")
+        .equals("PROJECT_ARCHIVE");
+  }
+
+  void lockProject() {
+    if (db.queryForList("SELECT id FROM studio_projects WHERE id=? FOR UPDATE", projectId())
+        .isEmpty()) throw error(404, "프로젝트가 없습니다.");
   }
 
   public String permission(AuthenticatedPrincipal p) {
+    return permission(p, false);
+  }
+
+  private String permission(AuthenticatedPrincipal p, boolean currentRead) {
     if (p == null) throw error(401, "로그인이 필요합니다.");
     if ("ADMIN".equals(p.role())) return "APPROVER";
     return db
         .query(
-            "SELECT permission FROM studio_members WHERE project_id=? AND user_id=?",
+            "SELECT permission FROM studio_members WHERE project_id=? AND user_id=?"
+                + (currentRead ? " FOR UPDATE" : ""),
             (rs, n) -> rs.getString(1),
-            PROJECT,
+            projectId(),
             p.userId())
         .stream()
+        .filter(role -> Set.of("VIEWER", "EDITOR", "APPROVER").contains(role))
         .findFirst()
         .orElseThrow(() -> error(403, "허가된 제작 담당자만 접근할 수 있습니다."));
   }
 
   public void require(AuthenticatedPrincipal p, boolean edit, boolean approve) {
-    String role = permission(p);
-    if ((edit || approve)
-        && db.queryForObject("SELECT COUNT(*) FROM studio_projects WHERE id=?", Long.class, PROJECT)
-            == 0) throw error(409, "먼저 프로젝트를 개설하세요.");
+    String role;
+    if (edit || approve) {
+      // The same row serializes archive, membership changes and all content writes.
+      lockProject();
+      role = permission(p, true);
+      if (archivedForWrite()) throw error(409, "보관된 프로젝트입니다. 재개 후 수정하세요.");
+    } else role = permission(p);
     if ((edit && role.equals("VIEWER")) || (approve && !role.equals("APPROVER")))
       throw error(403, "이 작업 권한이 없습니다.");
   }
@@ -68,19 +114,24 @@ public class StudioService {
   @Transactional
   public Map<String, Object> initialize(AuthenticatedPrincipal p) {
     if (p == null || !"ADMIN".equals(p.role())) throw error(403, "관리자가 프로젝트를 개설해야 합니다.");
-    if (db.queryForObject("SELECT COUNT(*) FROM studio_projects WHERE id=?", Long.class, PROJECT)
-        == 0)
-      db.update("INSERT INTO studio_projects(id,title) VALUES (?,?)", PROJECT, "《AI AGENT》 1부");
+    if (!PROJECT.equals(projectId())) throw error(400, "새 프로젝트는 프로젝트 목록에서 생성하세요.");
+    if (db.queryForObject(
+            "SELECT COUNT(*) FROM studio_projects WHERE id=?", Long.class, projectId())
+        == 0) {
+      db.update("INSERT INTO studio_projects(id,title) VALUES (?,?)", projectId(), "《AI AGENT》 1부");
+      event(null, "PROJECT_CREATE", "《AI AGENT》 1부", p.userId());
+    }
     return overview(p);
   }
 
   public Map<String, Object> overview(AuthenticatedPrincipal p) {
     String permission = permission(p);
+    var rows = db.queryForList("SELECT title FROM studio_projects WHERE id=?", projectId());
     return Map.of(
         "projectId",
-        PROJECT,
+        projectId(),
         "title",
-        "《AI AGENT》 1부",
+        rows.isEmpty() ? "《AI AGENT》 1부" : rows.getFirst().get("title"),
         "episodes",
         14,
         "ep01Cuts",
@@ -88,32 +139,38 @@ public class StudioService {
         "permission",
         permission,
         "initialized",
-        db.queryForObject("SELECT COUNT(*) FROM studio_projects WHERE id=?", Long.class, PROJECT)
-            > 0,
+        !rows.isEmpty(),
         "files",
         db.queryForObject(
-            "SELECT COUNT(*) FROM studio_files WHERE project_id=?", Long.class, PROJECT),
+            "SELECT COUNT(*) FROM studio_files WHERE project_id=?", Long.class, projectId()),
+        "archived",
+        archived(),
+        "canManage",
+        "ADMIN".equals(p.role()),
         "policy",
-        "실제 자료 미등록 항목은 업로드 대기입니다. AI 제안은 명시적 사용자 승인 후에만 승인본이 됩니다.");
+        "보관 시 모든 원본·버전·승인·기억을 유지합니다. AI 제안 승인은 사람이 결정합니다.");
   }
 
   @Transactional
   public void member(AuthenticatedPrincipal p, long userId, String permission) {
     if (p == null || !"ADMIN".equals(p.role())) throw error(403, "관리자 전용입니다.");
+    lockProject();
+    if (archivedForWrite() && !"REVOKE".equals(permission))
+      throw error(409, "재개 후 권한을 변경하세요. 접근 폐기는 보관 중에도 가능합니다.");
     if (!Set.of("VIEWER", "EDITOR", "APPROVER", "REVOKE").contains(permission))
       throw error(400, "권한 값 오류");
     if (db.queryForObject("SELECT COUNT(*) FROM users WHERE user_id=?", Long.class, userId) == 0)
       throw error(400, "존재하는 회원 사용자 ID를 입력하세요.");
-    db.update("DELETE FROM studio_members WHERE project_id=? AND user_id=?", PROJECT, userId);
+    db.update("DELETE FROM studio_members WHERE project_id=? AND user_id=?", projectId(), userId);
     if (!permission.equals("REVOKE"))
-      db.update("INSERT INTO studio_members VALUES (?,?,?)", PROJECT, userId, permission);
+      db.update("INSERT INTO studio_members VALUES (?,?,?)", projectId(), userId, permission);
     event(null, "MEMBER", userId + ":" + permission, p.userId());
   }
 
   public List<Map<String, Object>> members(AuthenticatedPrincipal p) {
     if (p == null || !"ADMIN".equals(p.role())) throw error(403, "관리자 전용입니다.");
     return db.queryForList(
-        "SELECT user_id,permission FROM studio_members WHERE project_id=?", PROJECT);
+        "SELECT user_id,permission FROM studio_members WHERE project_id=?", projectId());
   }
 
   @Transactional(rollbackFor = Exception.class)
@@ -153,12 +210,12 @@ public class StudioService {
       validateType(tmp, ext);
       String sha = HexFormat.of().formatHex(digest.digest());
       // Serialize project uploads to avoid duplicate objects during concurrent SHA checks.
-      db.queryForList("SELECT id FROM studio_projects WHERE id=? FOR UPDATE", PROJECT);
+      db.queryForList("SELECT id FROM studio_projects WHERE id=? FOR UPDATE", projectId());
       var duplicate =
           db.queryForList(
               "SELECT id,sha256,filename,size_bytes FROM studio_files WHERE project_id=? AND"
                   + " sha256=?",
-              PROJECT,
+              projectId(),
               sha);
       if (!duplicate.isEmpty()) return Map.of("file", duplicate.getFirst(), "duplicate", true);
       String id = UUID.randomUUID().toString(), key;
@@ -176,7 +233,7 @@ public class StudioService {
               + " studio_files(id,project_id,sha256,storage_key,filename,extension,size_bytes,uploaded_by)"
               + " VALUES (?,?,?,?,?,?,?,?)",
           id,
-          PROJECT,
+          projectId(),
           sha,
           key,
           name,
@@ -269,11 +326,11 @@ public class StudioService {
   public Map<String, Object> save(AuthenticatedPrincipal p, Revision r) {
     require(p, true, false);
     validate(r);
-    db.queryForList("SELECT id FROM studio_projects WHERE id=? FOR UPDATE", PROJECT);
+    db.queryForList("SELECT id FROM studio_projects WHERE id=? FOR UPDATE", projectId());
     var items =
         db.queryForList(
             "SELECT head_id FROM studio_items WHERE project_id=? AND item_key=?",
-            PROJECT,
+            projectId(),
             r.itemKey());
     String head = items.isEmpty() ? null : (String) items.getFirst().get("head_id");
     if (!Objects.equals(head, blankNull(r.parentId())))
@@ -282,12 +339,13 @@ public class StudioService {
     if (db.queryForObject(
             "SELECT COUNT(*) FROM studio_revisions WHERE project_id=? AND item_key=? AND label=?",
             Long.class,
-            PROJECT,
+            projectId(),
             r.itemKey(),
             r.label())
         > 0) throw error(409, "이 자료에 같은 버전 라벨이 있습니다. 새 라벨을 입력하세요.");
     if (items.isEmpty())
-      db.update("INSERT INTO studio_items(project_id,item_key) VALUES (?,?)", PROJECT, r.itemKey());
+      db.update(
+          "INSERT INTO studio_items(project_id,item_key) VALUES (?,?)", projectId(), r.itemKey());
     if (!items.isEmpty()) {
       var prev = revision(p, head);
       if (!Objects.equals(prev.get("kind"), r.kind())
@@ -301,7 +359,7 @@ public class StudioService {
             + " studio_revisions(id,project_id,item_key,parent_id,label,kind,episode,cut_number,origin,title,content,dialogue,direction,work_status,file_id,created_by)"
             + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         id,
-        PROJECT,
+        projectId(),
         r.itemKey(),
         head,
         r.label(),
@@ -319,7 +377,7 @@ public class StudioService {
     db.update(
         "UPDATE studio_items SET head_id=? WHERE project_id=? AND item_key=?",
         id,
-        PROJECT,
+        projectId(),
         r.itemKey());
     event(id, "REVISION", "", p.userId());
     return revision(p, id);
@@ -393,7 +451,7 @@ public class StudioService {
                 + " r.id=i.head_id AND r.project_id=i.project_id WHERE i.project_id=? AND"
                 + " r.kind='STORYBOARD' AND r.episode=? AND r.cut_number IS NOT NULL ORDER BY"
                 + " r.cut_number,r.created_at DESC,r.id DESC",
-            PROJECT,
+            projectId(),
             episode);
     var byCut = new LinkedHashMap<Object, Map<String, Object>>();
     for (var row : rows) byCut.putIfAbsent(row.get("cut_number"), row);
@@ -414,7 +472,7 @@ public class StudioService {
         "SELECT r.*,i.head_id,i.approved_id,f.filename,f.sha256 FROM studio_revisions r JOIN"
             + " studio_items i ON i.project_id=r.project_id AND i.item_key=r.item_key LEFT JOIN"
             + " studio_files f ON f.id=r.file_id WHERE r.project_id=?";
-    List<Object> args = new ArrayList<>(List.of(PROJECT));
+    List<Object> args = new ArrayList<>(List.of(projectId()));
     if (episode != null) {
       sql += " AND r.episode=?";
       args.add(episode);
@@ -443,7 +501,7 @@ public class StudioService {
             "SELECT r.*,i.head_id,i.approved_id FROM studio_revisions r JOIN studio_items i ON"
                 + " i.project_id=r.project_id AND i.item_key=r.item_key WHERE r.project_id=? AND"
                 + " r.id=?",
-            PROJECT,
+            projectId(),
             id)
         .stream()
         .findFirst()
@@ -458,19 +516,19 @@ public class StudioService {
     var revision = revision(p, id);
     db.queryForList(
         "SELECT item_key FROM studio_items WHERE project_id=? AND item_key=? FOR UPDATE",
-        PROJECT,
+        projectId(),
         revision.get("item_key"));
     if (action.equals("APPROVE"))
       db.update(
           "UPDATE studio_items SET approved_id=? WHERE project_id=? AND item_key=?",
           id,
-          PROJECT,
+          projectId(),
           revision.get("item_key"));
     else if (action.equals("REJECT"))
       db.update(
           "UPDATE studio_items SET approved_id=NULL WHERE project_id=? AND item_key=? AND"
               + " approved_id=?",
-          PROJECT,
+          projectId(),
           revision.get("item_key"),
           id);
     event(id, action, text(note), p.userId());
@@ -487,7 +545,7 @@ public class StudioService {
     return db.queryForList(
         "SELECT id,filename,extension,sha256,size_bytes,uploaded_by,created_at FROM studio_files"
             + " WHERE project_id=? ORDER BY created_at DESC,id LIMIT ? OFFSET ?",
-        PROJECT,
+        projectId(),
         limit,
         offset);
   }
@@ -495,7 +553,7 @@ public class StudioService {
   public Map<String, Object> file(AuthenticatedPrincipal p, String id) {
     require(p, false, false);
     return db
-        .queryForList("SELECT * FROM studio_files WHERE project_id=? AND id=?", PROJECT, id)
+        .queryForList("SELECT * FROM studio_files WHERE project_id=? AND id=?", projectId(), id)
         .stream()
         .findFirst()
         .orElseThrow(() -> error(404, "파일이 없습니다."));
@@ -509,13 +567,13 @@ public class StudioService {
   public List<Map<String, Object>> events(AuthenticatedPrincipal p) {
     require(p, false, false);
     return db.queryForList(
-        "SELECT * FROM studio_events WHERE project_id=? ORDER BY id DESC LIMIT 200", PROJECT);
+        "SELECT * FROM studio_events WHERE project_id=? ORDER BY id DESC LIMIT 200", projectId());
   }
 
   private void event(String id, String action, String note, Long actor) {
     db.update(
         "INSERT INTO studio_events(project_id,revision_id,action,note,actor_id) VALUES (?,?,?,?,?)",
-        PROJECT,
+        projectId(),
         id,
         action,
         note,
