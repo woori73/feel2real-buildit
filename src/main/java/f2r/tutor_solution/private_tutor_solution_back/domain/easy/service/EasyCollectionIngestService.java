@@ -359,7 +359,8 @@ public class EasyCollectionIngestService {
     requireActiveBusiness(businessId);
     String filename = "financial-" + java.util.UUID.fromString(collectionId);
     var prior = runRepository.findAllByBusiness_BusinessIdOrderByRunIdDesc(businessId).stream()
-        .filter(run -> filename.equals(run.getSourceFilename())).findFirst();
+        .filter(run -> "FINANCIAL_FILE".equals(run.getAdapterCode())
+            && filename.equals(run.getSourceFilename())).findFirst();
     if (prior.isPresent()) {
       return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(prior.get()), List.of());
     }

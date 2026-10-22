@@ -218,6 +218,7 @@ class EasyFinancialCollectorTest {
     var run = mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyCollectionRunResponse.class);
     when(run.runId()).thenReturn(5L);
     when(run.importBatchId()).thenReturn(9L);
+    when(run.adapterCode()).thenReturn("FINANCIAL_FILE");
     when(run.sourceFilename()).thenReturn("financial-" + snapshot.collectionId());
     when(ingest.listRuns(1L)).thenReturn(List.of(run));
     var imports = mock(EasyImportService.class);

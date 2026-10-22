@@ -137,7 +137,8 @@ public class EasyFinancialCollectorService {
 
   private Status status(Snapshot snapshot) {
     EasyCollectionRunResponse run = ingest.listRuns(snapshot.businessId()).stream()
-        .filter(candidate -> ("financial-" + snapshot.collectionId()).equals(candidate.sourceFilename()))
+        .filter(candidate -> "FINANCIAL_FILE".equals(candidate.adapterCode())
+            && ("financial-" + snapshot.collectionId()).equals(candidate.sourceFilename()))
         .findFirst().orElse(null);
     EasyImportBatchResponse batch = run == null || run.importBatchId() == null
         ? null : imports.getBatch(run.importBatchId());

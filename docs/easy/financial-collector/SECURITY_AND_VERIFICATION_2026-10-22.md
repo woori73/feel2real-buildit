@@ -6,10 +6,10 @@
 
 | 검증 | 결과 / 근거 |
 |---|---|
-| `bash scripts/test-financial-collector.sh` | Java 98건, 실패 0, skip 0. 아래 범위를 테스트 XML로 집계했다. Node 4건 통과. |
+| `bash scripts/test-financial-collector.sh` | Java 99건, 실패 0, skip 0. 아래 범위를 테스트 XML로 집계했다. Node 4건 통과. |
 | `bash gradlew build -x test` | 빌드·bootJar/assemble 성공. 테스트는 위의 별도 선택 실행 결과이며 전체 suite 통과를 뜻하지 않는다. |
 | 파서·보안·승인 래퍼 | `EasyFinancialCollectorTest` 21건, `EasyFinancialCollectorSecurityTest` 3건. |
-| 기존 수집 멱등성 | `EasyCollectionIngestIdempotencyTest` 12건. 같은 archive 재전송→같은 run, 다른 계좌 tuple 원문 보존, 승인 전 거래 0, 명시 confirm 후 거래 2와 재confirm 중복 없음 확인. |
+| 기존 수집 멱등성 | `EasyCollectionIngestIdempotencyTest` 13건. 같은 archive 재전송→같은 run, 같은 파일명의 legacy CSV run과 출처 혼동 차단, 다른 계좌 tuple 원문 보존, 승인 전 거래 0, 명시 confirm 후 거래 2와 재confirm 중복 없음 확인. |
 | 기존 회계 회귀 | 승인 상태 전이 11, ADMIN API 권한 12, 장부 17, 분개 4, 신한 XLS 파서·정규화·import 18건. POI 5.5.1에서 통과. |
 | `DISPLAY=:99 npm --prefix local-collector run test:e2e-mock` | 실제 headed Chromium + 임시 X 서버 + loopback mock 사이트/가짜 EASY backend. 암호화 원본 복원·SHA 검증 포함 PASS. |
 | Node 단위·브리지 | 외부/credential 포함 URL 차단, 경로 탈출 이름의 무작위화, 파일 600 권한, 변조 거부, 빈/과대/금지 파일 거부, 업로드 승인 전 HTTP 0건, 메모리 복호화→로컬 multipart 계약 4건 PASS. |

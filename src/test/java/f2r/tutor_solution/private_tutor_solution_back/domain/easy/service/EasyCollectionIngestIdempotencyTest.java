@@ -324,4 +324,16 @@ class EasyCollectionIngestIdempotencyTest {
     assertThat(pipeline.rows).hasSize(2);
     assertThat(pipeline.txnCount()).isZero();
   }
+
+  @Test
+  void givenLegacyCsvNamedLikeArchive_whenFinancialHandoffRuns_thenNeverAdoptUnrelatedRun() {
+    String archive = java.util.UUID.randomUUID().toString();
+    var legacy = service.ingestCsv(BIZ, "default", "financial-" + archive, csv(ROW_A));
+    var rows = new EasyCsvFileAdapter().parse(csv(ROW_B), "sample.csv");
+    var financial = service.ingestFinancialDraft(BIZ, archive, "FIN_0123456789abcdef01234567", rows);
+    assertThat(financial.run().runId()).isNotEqualTo(legacy.run().runId());
+    assertThat(financial.run().adapterCode()).isEqualTo("FINANCIAL_FILE");
+    assertThat(financial.run().acceptedCount()).isEqualTo(1);
+    assertThat(pipeline.txnCount()).isZero();
+  }
 }
