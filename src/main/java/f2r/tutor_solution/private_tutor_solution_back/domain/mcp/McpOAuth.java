@@ -31,7 +31,7 @@ public class McpOAuth {
   @Value("${app.mcp.public-base-url:https://feel2real.co.kr}")
   private String base;
 
-  @Value("${app.mcp.redirect-uris:https://claude.ai/api/mcp/auth_callback}")
+  @Value("${app.mcp.redirect-uris:https://claude.ai/api/mcp/auth_callback,https://claude.com/api/mcp/auth_callback}")
   private List<String> redirects;
 
   public static final Set<String> SCOPES =
@@ -128,6 +128,7 @@ public class McpOAuth {
     if (value == null || !redirects.contains(value)) return false;
     // Callback IDs come from the product's management page. No host/path wildcard registration.
     return value.equals("https://claude.ai/api/mcp/auth_callback")
+        || value.equals("https://claude.com/api/mcp/auth_callback")
         || value.matches("https://chatgpt\\.com/connector/oauth/[A-Za-z0-9_-]{1,200}")
         || value.equals("https://chatgpt.com/connector_platform_oauth_redirect");
   }

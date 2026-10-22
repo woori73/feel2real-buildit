@@ -7,7 +7,6 @@ import java.net.*;
 import java.net.http.*;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.Semaphore;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +31,8 @@ public class McpGateway {
           .connectTimeout(Duration.ofSeconds(3))
           .followRedirects(HttpClient.Redirect.NEVER)
           .build();
-  private final Semaphore concurrency = new Semaphore(2);
+  private final McpUserLimiter limiter = new McpUserLimiter(64, 2);
+  private final McpRateLimit rate;
 
   public List<Map<String, Object>> tools() {
     List<Map<String, Object>> out = new ArrayList<>();
@@ -167,7 +167,11 @@ public class McpGateway {
           "offset",
           offset,
           "items",
-          rows.stream().skip(offset).limit(limit).toList(),
+          rows.stream()
+              .skip(offset)
+              .limit(limit)
+              .map(r -> withBaseUrl(r))
+              .toList(),
           "note",
           "URL은 템플릿입니다. 실제 콘텐츠는 각 read_<service> 도구가 기존 API를 조회합니다.");
     }
@@ -200,6 +204,13 @@ public class McpGateway {
     throw McpOAuth.error(400, "unknown_tool");
   }
 
+  /** 카탈로그 URL을 설정된 공개 주소로 바꾼 사본. */
+  private Map<String, Object> withBaseUrl(Map<String, Object> row) {
+    var copy = new LinkedHashMap<>(row);
+    copy.put("url", oauth.base() + row.get("path"));
+    return copy;
+  }
+
   private void requireScope(McpOAuth.Identity identity, String service) {
     if (!identity.scopes().contains(service + ":read"))
       throw McpOAuth.error(403, "insufficient_scope:" + service);
@@ -221,7 +232,9 @@ public class McpGateway {
         || base.getQuery() != null
         || !Set.of("", "/").contains(base.getPath()))
       throw McpOAuth.error(503, "invalid_internal_configuration");
-    if (!concurrency.tryAcquire()) throw McpOAuth.error(429, "concurrency_limit");
+    rate.check("read:" + identity.grantId(), 120);
+    AutoCloseable permit = limiter.acquire(identity.principal().userId());
+    if (permit == null) throw McpOAuth.error(429, "concurrency_limit");
     try {
       var response =
           http.send(
@@ -255,8 +268,8 @@ public class McpGateway {
           } else if (type.contains("html")) {
             var doc = Jsoup.parse(text);
             doc.select("script,style,noscript,input[type=hidden]").remove();
-            data = doc.body().text();
-          } else data = text;
+            data = McpRedaction.text(doc.body().text());
+          } else data = McpRedaction.text(text);
           return Map.of(
               "url",
               url,
@@ -297,28 +310,32 @@ public class McpGateway {
             "base64는 원본 bytes입니다. chunkSha256은 이 원문 청크의 SHA-256입니다. 전체 파일 SHA는 파일 메타데이터에서 확인하세요.");
       }
     } finally {
-      concurrency.release();
+      permit.close();
     }
   }
 
   private JsonNode redact(JsonNode node) {
+    return redact(null, node);
+  }
+
+  private JsonNode redact(String key, JsonNode node) {
     if (node.isObject()) {
       var copy = json.createObjectNode();
       node.properties()
           .forEach(
               e -> {
-                if (!e.getKey()
-                    .matches(
-                        "(?i).*(password|secret|auth.?key|api.?key|access.?token|refresh.?token|credential|cookie|storage_key).*"))
-                  copy.set(e.getKey(), redact(e.getValue()));
+                if (!McpRedaction.SECRET_KEY.matcher(e.getKey()).matches())
+                  copy.set(e.getKey(), redact(e.getKey(), e.getValue()));
               });
       return copy;
     }
     if (node.isArray()) {
       var copy = json.createArrayNode();
-      node.forEach(n -> copy.add(redact(n)));
+      node.forEach(n -> copy.add(redact(key, n)));
       return copy;
     }
+    if (node.isTextual() && key != null)
+      return json.getNodeFactory().textNode(McpRedaction.value(key, node.asText()));
     return node;
   }
 
@@ -363,7 +380,7 @@ public class McpGateway {
                   row.get("url")));
     } else {
       for (var row : catalog.inventory()) {
-        if (results.size() >= 5) break;
+        if (results.size() >= 3) break;
         if (!Boolean.TRUE.equals(row.get("readable"))
             || !row.get("service").equals(service)
             || ((String) row.get("path")).contains("{")) continue;
