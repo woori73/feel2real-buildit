@@ -98,3 +98,9 @@ data/newstart-cafe/initial_seed/
 ec_state.tsv
 
 __pycache__/
+
+### Unified assistant local browser verification ###
+e2e/unified-assistant/node_modules/
+e2e/unified-assistant/test-results/
+e2e/unified-assistant/playwright-report/
+e2e/unified-assistant/results.json

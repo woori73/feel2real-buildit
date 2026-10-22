@@ -139,6 +139,7 @@ jobs:
         # 주석 처리되어 실행되지 않는다. 그룹 설명은 이 YAML 주석에만 작성할 것.
         run: >-
           ./gradlew test --no-daemon
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycrafthelp.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.DesignCraftCliExecutorTest"
@@ -282,6 +283,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAgentServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyAgentSecurityWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyDashboardWidgetControllerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.DashboardWidgetControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyDashboardWidgetCacheTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingDomainTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyBusinessCardAccountingServiceTest"
@@ -336,6 +338,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingClientCircuitTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJobTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSubmissionDocumentsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsResearchServiceLogicTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest"
@@ -496,6 +499,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsFactSearchServiceDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsActivationServiceDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsGoldenSearchTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJobDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCounselingSessionHistoryDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsPublicApiDefaultOffMySqlTest"

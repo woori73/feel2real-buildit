@@ -4833,7 +4833,9 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
   - 제외 옵션 `excludeFileKeys`: 지정한 fileKey(= 시드 document_key)의 공식자료는 승격 단계에서 원천 제외되고, 그 자료를 출처로 삼는 학과·전형·일정도 함께 제외된다(승격 후 비활성화 방식 아님). 응답에 `excludedMaterials`(제외된 자료 수)·`excludedChildren`(제외된 하위 행 수)을 구분해 포함하며, 제외 건수는 해당 학년도·DRAFT/REVIEW인 승격 대상 행만 센다. 미지정·빈 목록이면 기존과 동일하게 전체 승격된다. 용도: 공식 원본이 아닌 자료(예: 중앙대 수시 미러본 `doc_cau_2027_susi`)를 ACTIVE로 올리지 않기 위함.
 - 기존 `/api/admin/admissions/knowledge`에 academicYear 선택 필터와 검수용 content 필드 추가. ADMIN만 열람·검수 가능.
 - `POST /api/admin/admissions/knowledge/build`: ADMIN 전용. 구조화 자료(전형·일정) 행을 지식 항목으로 변환한다. 공식자료(material)는 항목으로 만들지 않는다(제목만으로 FACT가 되는 것을 막기 위함). 전형 항목 본문에는 제출서류가 들어간다. body 없음. 행 1건→항목 1건, dedupKey(`type:{대학ID}:{학년도}:{전형ID}`·`schedule:{대학ID}:{학년도}:{일정ID}`) 기준 멱등 — 새 항목은 DRAFT(자동 승격 없음), 본문이 바뀐 항목만 내용 갱신+version 증가(승격 상태 보존), 같으면 그대로 둔다. 응답 `{created, updated, unchanged, changedKnowledgeIds, status:"BUILT"}`.
-- `POST /api/admin/admissions/knowledge/reindex`: ADMIN 전용. 지식 항목 임베딩(embeddinggemma-2, 768차원, L2 정규화 후 저장)을 만들고 인메모리 벡터 인덱스를 커밋 후 다시 읽는다. body `{mode?:"MISSING"|"ALL"|"ITEM", knowledgeId?}` — 기본 MISSING(ACTIVE 중 현재 모델 버전 임베딩이 없는 항목만), ALL은 전체 항목, ITEM은 `knowledgeId` 필수(아니면 `400`). `(knowledge_id, model_version)` upsert라 재실행해도 중복 행이 생기지 않는다. 응답 `{mode, requested, embedded, skipped, failed, failures[], vectorIndexSize, status:"REINDEXED"|"PARTIAL"}`. 임베딩 비활성(`app.admissions.embedding.enabled=false`)·서비스 무응답·차원 불일치는 항목별 실패 사유로 보고한다(조용히 성공 처리하지 않음).
+- `POST /api/admin/admissions/knowledge/reindex`: ADMIN 전용. 지식 항목 임베딩(문서 모드 `task=document`, 768차원, L2 정규화 후 저장). body `{mode?:"MISSING"|"ALL"|"ITEM", knowledgeId?}`. **MISSING(기본: ACTIVE 중 현재 모델 버전 임베딩이 없는 항목만)·ALL은 백그라운드 잡**으로 실행한다 — 응답은 즉시 `202`(`status:"STARTED"`) + 현재 진행 상태(아래 status 응답과 동일, `mode` 포함), 이미 실행 중이면 `409`(`status:"ALREADY_RUNNING"`, 새로 시작하지 않음), 대상이 없으면 `200`(`NOTHING_TO_DO`). ITEM은 동기 실행(기존 응답 `{mode, requested, embedded, skipped, failed, failures[], vectorIndexSize, status}`, `knowledgeId` 필수·아니면 `400`). mode 값이 잘못되면 `400`. 항목마다 즉시 커밋하고 `(knowledge_id, model_version)` upsert라 재실행·중단·앱 재시작 후에도 완료분은 유지되고 중복 행이 생기지 않는다. 재시도는 MISSING 재실행(실패·미완료 항목만 대상). 일시 장애(503·타임아웃·연결 오류)는 항목당 `app.admissions.embedding.index-retries`회 backoff 재시도하며 질문용 서킷브레이커와는 분리되어 있다(재색인 타임아웃 `index-timeout-ms`, 항목 간 쉼 `index-pause-ms`).
+- `GET /api/admin/admissions/knowledge/reindex/status`: ADMIN 전용. `{total, done, missing, indexSize, indexReady, running, cancelRequested, lastRun}` — total/done/missing은 DB 기준(ACTIVE 항목 vs 현재 모델 버전 임베딩; 앱 재시작 후에도 유지), running/lastRun(`mode,result:RUNNING|COMPLETED|CANCELLED|ERROR,startedAt,finishedAt,total,processed,embedded,failed,currentId,failures:{knowledgeId:사유}`)은 메모리 기준(재시작 시 `lastRun=null`, 실패 사유는 로그 `admissions reindex item failed`에도 남는다).
+- `POST /api/admin/admissions/knowledge/reindex/cancel`: ADMIN 전용. 실행 중인 재색인에 중단을 요청한다(현재 항목까지 마치고 멈춤). 응답 `{cancelRequested:boolean}`.
 - 학과·전형·일정의 연결 원문 및 연결된 지식 원문도 ACTIVE·동일 학년도여야 답변 근거로 검색한다. DRAFT·REVIEW 제외, 테스트 시드 자동 적재 없음.
 - 배포 후 운영 계정 검증 및 운영 자료 승인/적재는 별도 승인 범위. 개발·CI는 격리 DB만 사용한다.
 
@@ -4881,3 +4883,35 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | `/api/mcp/connections/{id}/revoke` | POST | 기존 사용자 세션의 본인 연결 폐기 |
 
 MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·연결 안내와 검증 결과는 [통합 보고서](ai-agent-studio/REPORT.md), 전체 실제 페이지·API는 [서비스 조사](ai-agent-studio/SERVICE_INVENTORY.md)를 참조한다. 동적 페이지의 SSR 본문과 클라이언트 API 원천은 구분한다. 기존 서비스 권한/tenant 검사, 정확한 GET 경로에 15초로 묶은 내부 위임, 읽기 전용/rollback 트랜잭션을 거치며 사용자 role을 ADMIN으로 바꾸지 않는다. Wiki는 기존 workspace SQLite를 읽기 전용으로 열며 공유 관리자 MCP API key를 사용하지 않는다.
+
+## 통합 AI 업무 비서 v1 (작업 A, 로컬 프로토타입)
+
+접두 `/api/dashboard/assistant/v1`, ADMIN·TUTOR만. 서비스에서 현재 DB 역할·학원/사업체·초안 생성자를 재확인한다. 모든 응답 `no-store`. 변경 요청은 Origin `http://localhost:8080` 또는 `https://feel2real.co.kr`만 허용한다.
+
+| 메서드 / 경로 | 계약 |
+|---|---|
+| `GET /progress` | 사용자 진행을 생성/조회. `{step,completed,firstVisit,version,role}` |
+| `PUT /progress` | `{step:0..5,completed,version}`. 완료는 step=5만. 오래된 버전 409 |
+| `GET /overview?academyId=&businessId=` | 선택한 허용 학원의 context/stats와 선택한 허용 사업체의 월 요약. 학원 연결 실패는 `academyUnavailable:true`, 재무 권한 실패는 403 |
+| `GET /catalog/{kind}?academyId=` | `students/classes/consultations/teachers`만. 기존 학원 API 조회 |
+| `POST /conversation` | `{academyId?,businessId?,message}`. 기존 Muse Spark(설정 시) 또는 명시적으로 표시된 규칙 분석 → 필수 값이 충분하면 서버 초안 생성, 부족하면 보완 제안. `{message,analysis,suggestion,drafts,issues,overview}`. 실제 업무 실행 없음 |
+| `POST /materials?academyId=&businessId=` | multipart `file` CSV/TXT 1~256KB. 학생 명단 CSV/업무 지시 TXT 최대 20행, 거래 CSV는 기존 import 분석. 초안 배열·행별 확인 사항 반환. 자료 내 ID/권한/승인 지시는 권한 근거가 아님. 모든 업무 범위 권한을 먼저 확인하고 각 초안을 개별 저장·승인 |
+| `POST /command` | `{message}` 1~2000자. `{operation,input,message}`의 수정 가능한 업무 제안만 반환. 실행 없음 |
+| `POST /drafts` | `{academyId?,businessId?,operation,input:{...}}`. 허용 필드만 받고 서버 초안 저장. 기본 쓰기 스위치 OFF면 503 |
+| `POST /imports?businessId=` | multipart `file` CSV ≤256KB. 기존 import 원본 행 보관 후 장부 반영 초안 생성 |
+| `GET /drafts` | 본인 최신 30개 중 현재 권한을 가진 범위. `{id,operation,academyId,businessId,preview,planHash,status,createdAt,expiresAt,result}` |
+| `POST /drafts/{uuid}/approve` | `{planHash}`. 본인·역할·소속/권한·해시·10분 만료·대상 지문을 재확인하고 DB 조건부 선점 후 기존 API 실행. 종료 성공 상태는 저장 결과만 재생 |
+| `POST /drafts/{uuid}/cancel` | `{planHash}`. 대기 초안 취소. 이미 승인/종료한 작업을 되돌리지 않음 |
+| `GET /audit` | 본인 최신 50개 이벤트. 입력 원문 없음 |
+
+업무: `STUDENT_CREATE/UPDATE`, `CLASS_CREATE/UPDATE/ASSIGN`, `ATTENDANCE_RECORD`, `CONSULT_CREATE/MESSAGE`, `LEDGER_ENTRY/IMPORT/ACCOUNT`. 거래 직접 입력은 기존 CSV import 초안으로 정규화한다. 실제 입력 필드는 서버의 allowlist와 화면 폼을 따른다. 사용자당 미처리 초안 최대 20개. 요청 범위 밖 필드·모호한 입력 400, 비로그인 401, 권한/출처 403, 타인 초안 404, 해시·상태·대상 변경 409 또는 종료 상태, 초안 한도 429다.
+
+학원 쓰기는 기존 AcademyCraft 원장 역할만 허용하고 기존 REST API·서비스의 소속 검사를 유지한다. 기존 AcademyCraft `/agent` 계획을 변경하거나 승인하지 않는다. 실행 후 재조회 결과에 따라 `VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN`을 기록하며, 불명확한 실행은 자동 재시도하지 않는다. 상세 입력 예시·상태·제한은 [분석 보고서](unified-ai-assistant/README.md).
+
+기존 `POST /api/dashboard/assistant`는 선택한 사업체의 **재무 해설 전용** Muse Spark 경로로 유지한다. 이 경로의 LLM 문맥에는 학원 출결 데이터가 없으며 새 통합 현황 조회와 구분한다.
+
+통합 비서의 초안 생성/만료 시각과 감사 시각은 UTC ISO-8601(`Z`)로 응답하고, 화면은 사용자의 시간대로 표시한다. 출결 입력 시각은 기존 AcademyCraft 계약대로 한국 현지 시각이다.
+
+통합 대화의 `buildit.unified-assistant.model-analysis-enabled` 기본값은 false이며 local에서만 true다. 기존 Muse Spark 전송 계층만 재사용한다. 모델 출력은 업무·필드 allowlist/타입/명시 ID 검증 후에도 승인 권한이 없으며, 실행은 기존 초안 승인 경로만 사용한다. 모델 미연결·잘못된 응답은 규칙 분석으로 처리했음을 알린다. 대화 입력 문장은 현재 브라우저에서만 표시하며 새로고침 시 현재 권한 범위의 서버 초안·결과 최신 30개를 복원한다.
+
+`GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.

@@ -43,6 +43,91 @@ stop_embed() { systemctl stop f2r-embed 2>/dev/null || true; }
 case "$ACTION" in
 status) report ;;
 
+bench)
+  # 읽기 전용 실측: 합성 한국어 문서(일정형 ~150자 / 전형형 ~1900자)를 document 모드로 임베딩해 처리시간·서버 부하를 잰다.
+  # DB·앱 설정·운영 데이터에 접근하지 않는다. 임베딩 서버(127.0.0.1:8081)에만 요청한다.
+  systemctl is-active --quiet f2r-embed || { echo "f2r-embed 가 실행 중이 아님"; exit 1; }
+  report
+  python3 - <<'PY'
+import json, time, subprocess, threading, urllib.request, statistics
+
+URL = "http://127.0.0.1:8081/embed"
+APP = "http://127.0.0.1:8080/actuator/health"
+
+def post(text, task, timeout=120):
+    body = json.dumps({"texts": [text], "task": task}).encode()
+    req = urllib.request.Request(URL, body, {"Content-Type": "application/json"})
+    t0 = time.time()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            r.read(); code = r.status
+    except urllib.error.HTTPError as e:
+        code = e.code
+    except Exception as e:
+        code = "ERR:" + type(e).__name__
+    return code, time.time() - t0
+
+def app_latency():
+    t0 = time.time()
+    try:
+        urllib.request.urlopen(APP, timeout=5).read(); return time.time() - t0
+    except Exception:
+        return None
+
+def load1():
+    return float(open("/proc/loadavg").read().split()[0])
+
+def mem_mb():
+    return int(subprocess.run(["systemctl", "show", "f2r-embed", "-p", "MemoryCurrent", "--value"],
+                              capture_output=True, text=True).stdout.strip() or 0) // 1048576
+
+short = ("연세대학교 2027학년도 일정: 학생부교과전형[추천형] 원서접수\n기간: 2026-09-08 ~ 2026-09-12\n"
+         "일정 원문: 인터넷 원서접수, 서류제출 마감 포함\n출처: 연세대학교 2027학년도 수시모집 요강")
+base = ("고려대학교 2027학년도 학생부종합전형[학업우수형] 지원자격은 국내 고등학교 졸업(예정)자이며 "
+        "제출서류는 학교생활기록부, 자기소개서 없음, 추천서 없음이고 1단계 서류평가 3배수 선발 후 "
+        "2단계 면접평가를 반영한다. 수능최저학력기준은 인문 3개 영역 등급합 7 이내, 자연 3개 영역 등급합 8 이내이며 "
+        "한국사 4등급 이내를 충족해야 한다. 모집인원은 모집단위별로 상이하며 정원 외 전형은 별도 공지한다. ")
+long_ = (base * 10)[:1900]
+print(f"short_chars={len(short)} long_chars={len(long_)}")
+
+peak_mem = [mem_mb()]; peak_load = [load1()]; app_lat = []; stop = threading.Event()
+def sampler():
+    while not stop.is_set():
+        peak_mem[0] = max(peak_mem[0], mem_mb()); peak_load[0] = max(peak_load[0], load1())
+        a = app_latency()
+        if a is not None: app_lat.append(a)
+        time.sleep(0.5)
+th = threading.Thread(target=sampler); th.start()
+
+res = {"short": [], "long": []}
+post(short, "document")  # warm-up
+for name, text in (("short", short), ("long", long_)):
+    for _ in range(6):
+        code, dt = post(text, "document")
+        res[name].append((code, dt)); time.sleep(0.2)
+
+# 동시성: 긴 문서 처리 중 질문 임베딩이 어떻게 되는지(동시성 1 → 503 기대)
+def bg(): res["bg"] = post(long_, "document")
+b = threading.Thread(target=bg); b.start(); time.sleep(0.3)
+q_code, q_dt = post("연세대 교과전형 지원자격", "query", timeout=10)
+b.join()
+stop.set(); th.join()
+
+for name in ("short", "long"):
+    ok = [d for c, d in res[name] if c == 200]
+    codes = sorted(set(str(c) for c, _ in res[name]))
+    if ok:
+        print(f"{name}: n={len(ok)} codes={codes} mean={statistics.mean(ok):.2f}s p50={statistics.median(ok):.2f}s max={max(ok):.2f}s min={min(ok):.2f}s")
+    else:
+        print(f"{name}: no success codes={codes}")
+print(f"query_during_long_doc: status={q_code} elapsed={q_dt:.2f}s (503=서버 사용 중이라 거절됨)")
+print(f"embed_peak_MemoryCurrent_MB={peak_mem[0]} peak_load1={peak_load[0]:.2f}")
+if app_lat:
+    print(f"app_health_latency_during_bench: n={len(app_lat)} mean={statistics.mean(app_lat)*1000:.0f}ms max={max(app_lat)*1000:.0f}ms")
+PY
+  echo "== after =="; report ;;
+
+
 verify)
   report
   T=$(curl -fsS -m 2 -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' 2>/dev/null || true)

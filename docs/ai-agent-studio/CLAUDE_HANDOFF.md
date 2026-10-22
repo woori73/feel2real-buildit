@@ -4,7 +4,7 @@
 
 - 저장소 `woori73/feel2real-buildit`, 브랜치 `feat/ai-agent-studio-unified-mcp`, main `07d9316a293a30a84e13a09c42957bd64be71bd8` 기준.
 - main 병합·운영 배포·운영 DB 적용 금지. PR #850의 랜딩·3D 파일을 수정하지 않았다. 기존 금융 수집 PR #853의 구현 파일도 수정하지 않았다.
-- 신규 V1094는 이 브랜치의 추가 스키마일 뿐 운영에 적용하지 않았다. 병합 직전 최신 main 및 다른 PR의 번호 충돌을 다시 확인한다.
+- 신규 V1095는 이 브랜치의 추가 스키마일 뿐 운영에 적용하지 않았다. 병합 직전 최신 main 및 다른 PR의 번호 충돌을 다시 확인한다.
 - 전체 자료: REPORT.md, SERVICE_INVENTORY.md/JSON, SECURITY_PERFORMANCE_COST.md, CONNECTION_TEST.md, protocol-results.json, browser-results.json, screens/.
 
 ## 검수에서 실제 확인할 것

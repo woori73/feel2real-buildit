@@ -47,6 +47,7 @@ public class AdmissionsAdminController {
     private final AdmissionsActivationService activationService;
     private final AdmissionsKnowledgeBuildService knowledgeBuildService;
     private final AdmissionsEmbeddingService embeddingService;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob;
 
     public AdmissionsAdminController(AdmissionsKnowledgeItemRepository knowledgeRepository,
                                      AdmissionsVectorIndex vectorIndex,
@@ -54,7 +55,8 @@ public class AdmissionsAdminController {
                                      f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials,
                                      AdmissionsActivationService activationService,
                                      AdmissionsKnowledgeBuildService knowledgeBuildService,
-                                     AdmissionsEmbeddingService embeddingService) {
+                                     AdmissionsEmbeddingService embeddingService,
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob) {
         this.knowledgeRepository = knowledgeRepository;
         this.vectorIndex = vectorIndex;
         this.dataLoader = dataLoader;
@@ -62,6 +64,7 @@ public class AdmissionsAdminController {
         this.activationService = activationService;
         this.knowledgeBuildService = knowledgeBuildService;
         this.embeddingService = embeddingService;
+        this.reindexJob = reindexJob;
     }
 
     /** 지식 목록 (상태별 필터). */
@@ -232,7 +235,9 @@ public class AdmissionsAdminController {
                 ? "MISSING" : String.valueOf(body.get("mode")).toUpperCase();
         AdmissionsEmbeddingService.ReindexResult r;
         switch (mode) {
-            case "ALL" -> r = embeddingService.reindexAll();
+            case "ALL", "MISSING" -> {
+                return startReindexJob(mode);
+            }
             case "ITEM" -> {
                 Object idValue = body.get("knowledgeId");
                 if (idValue == null) {
@@ -248,7 +253,10 @@ public class AdmissionsAdminController {
                 }
                 r = embeddingService.reindexItem(id);
             }
-            default -> r = embeddingService.reindexMissing();
+            default -> {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "mode must be MISSING, ALL or ITEM", "status", "REJECTED"));
+            }
         }
         log.info("admissions knowledge reindex by admin: mode={} requested={} embedded={} skipped={} failed={}",
                 mode, r.requested(), r.embedded(), r.skipped(), r.failed());
@@ -262,6 +270,34 @@ public class AdmissionsAdminController {
         out.put("vectorIndexSize", vectorIndex.size());
         out.put("status", r.failed() == 0 ? "REINDEXED" : "PARTIAL");
         return ResponseEntity.ok(out);
+    }
+
+    private ResponseEntity<Map<String, Object>> startReindexJob(String mode) {
+        var outcome = reindexJob.start(
+                f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob.Mode.valueOf(mode));
+        log.info("admissions knowledge reindex job requested by admin: mode={} outcome={}", mode, outcome);
+        Map<String, Object> out = new java.util.LinkedHashMap<>(reindexJob.status());
+        out.put("mode", mode);
+        out.put("status", outcome.name());
+        // STARTED는 접수(202), 이미 실행 중이면 409, 할 일이 없으면 200.
+        return switch (outcome) {
+            case STARTED -> ResponseEntity.accepted().body(out);
+            case ALREADY_RUNNING -> ResponseEntity.status(409).body(out);
+            case NOTHING_TO_DO -> ResponseEntity.ok(out);
+        };
+    }
+
+    /** 재색인 진행 상태: total/done/missing(DB 기준) + running/lastRun(실행 중 메모리). */
+    @GetMapping("/knowledge/reindex/status")
+    public ResponseEntity<Map<String, Object>> reindexStatus() {
+        return ResponseEntity.ok(reindexJob.status());
+    }
+
+    /** 실행 중인 재색인 중단 요청(현재 항목까지 마치고 멈춘다). */
+    @PostMapping("/knowledge/reindex/cancel")
+    public ResponseEntity<Map<String, Object>> cancelReindex() {
+        boolean requested = reindexJob.cancel();
+        return ResponseEntity.ok(Map.of("cancelRequested", requested));
     }
 
     /**

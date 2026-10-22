@@ -74,6 +74,25 @@
       if (user) hydrateRoleHome(menu, user);
     });
     setSignupLinks();
+    showAssistantWelcome(user);
+  }
+
+  var assistantWelcomeUser=null;
+  async function showAssistantWelcome(user) {
+    var previous=document.getElementById('assistantWelcome');
+    if (!user || !['ADMIN','TUTOR'].includes(user.role)) { if(previous)previous.remove(); assistantWelcomeUser=null; return; }
+    if (location.pathname==='/dashboard' || assistantWelcomeUser===user.userId) return;
+    assistantWelcomeUser=user.userId;
+    try {
+      var response=await fetch('/api/dashboard/assistant/v1/progress',{credentials:'same-origin',cache:'no-store'});
+      if(!response.ok)return; var progress=await response.json(); if(progress.completed)return;
+      var banner=document.createElement('aside'); banner.id='assistantWelcome';banner.setAttribute('aria-label','AI 비서 환영 안내');
+      banner.style.cssText='position:fixed;bottom:16px;left:16px;width:min(340px,calc(100% - 32px));padding:18px;background:#fff;border:1px solid #b8d2c7;border-radius:12px;box-shadow:0 8px 30px #183a3026;z-index:90;color:#173c32;font:14px/1.7 system-ui;box-sizing:border-box';
+      var text=document.createElement('p');text.textContent='반가워요. AI 업무 비서가 대시보드 사용법을 차근차근 안내해 드립니다.';
+      var link=document.createElement('a');link.href='/dashboard';link.textContent=progress.step>0?'이어서 안내받기 →':'대시보드 안내 시작 →';link.style.cssText='display:inline-block;min-height:44px;color:#125f4d;font-weight:700';
+      var close=document.createElement('button');close.type='button';close.textContent='나중에';close.style.cssText='margin-left:12px;min-height:44px;border:0;background:transparent;color:#536d62';close.onclick=function(){banner.remove();};
+      banner.append(text,link,close);document.body.appendChild(banner);
+    } catch (_) { /* Service navigation remains available if the guide is unavailable. */ }
   }
 
   function prepareLoginModals() {
