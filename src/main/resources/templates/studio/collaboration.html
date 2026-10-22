@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>공동 제작 협업실 · Feel2Real</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="stylesheet" href="/css/collaboration.css" />
+    <script defer src="/js/collaboration.js"></script>
+  </head>
+  <body>
+    <header>
+      <a href="/">Feel2Real</a>
+      <nav aria-label="관련 화면">
+        <a href="/ai-agent-studio">제작 스튜디오</a
+        ><a href="/mcp/connections">MCP 연결 관리</a>
+      </nav>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">SHARED PRODUCTION · HUMAN + AI</p>
+        <h1>자료도, 결정도.<br />같은 작업 기억 안에.</h1>
+        <p>
+          팀원과 선택한 AI가 프로젝트의 문서·이미지·콘티를 함께 확인하고, 다음
+          담당자에게 같은 근거로 인계합니다.
+        </p>
+        <p class="notice">
+          별도 유료 모델 API를 호출하지 않습니다. AI 자료는 모두 DRAFT 후보로
+          저장하며 기존 승인 정본은 바꾸지 않습니다. 구독 앱의 대화를 서버에서
+          자동 시작하지 않습니다.
+        </p>
+      </section>
+      <p id="status" role="status" aria-live="polite"></p>
+      <section class="panel workspace-panel">
+        <h2>공동 프로젝트</h2>
+        <label for="workspace">현재 프로젝트</label
+        ><select id="workspace"></select>
+        <form id="workspace-create">
+          <label for="workspace-title">새 프로젝트 이름</label
+          ><input id="workspace-title" maxlength="150" required /><button>
+            비공개 프로젝트 만들기
+          </button>
+        </form>
+        <p class="small">
+          새 프로젝트는 등록자에게만 공개됩니다. 관리자가 아래에서 허가된 제작
+          담당자를 초대할 수 있습니다.
+        </p>
+      </section>
+      <section class="layout">
+        <aside>
+          <h2>새 작업</h2>
+          <form id="create-task">
+            <label for="task-title">작업 제목</label
+            ><input
+              id="task-title"
+              maxlength="150"
+              required
+              placeholder="EP01 콘티 검토"
+            /><label for="task-instruction">지시·검수 기준</label
+            ><textarea
+              id="task-instruction"
+              maxlength="8000"
+              rows="5"
+              required
+            ></textarea>
+            <fieldset>
+              <legend>참여 AI 직접 선택</legend>
+              <p class="small">
+                선택한 AI만 인계 대기열에 들어갑니다. GPT → Muse → Codex →
+                Claude 순서이며 수정 요청은 선택된 Codex → Claude로
+                재인계합니다.
+              </p>
+              <div id="agents"></div>
+              <p class="small">Muse는 지정 전까지 기존 업무를 유지합니다.</p>
+            </fieldset>
+            <label for="max-calls">최대 인계 횟수</label
+            ><input
+              id="max-calls"
+              type="number"
+              min="1"
+              max="20"
+              value="6"
+              required
+            />
+            <p class="small">
+              별도 모델 API 비용: 0. 구독 앱의 사용량·승인·실행 제한은 각 제품에
+              따릅니다.
+            </p>
+            <button>작업 등록</button>
+          </form>
+          <h2>프로젝트 작업</h2>
+          <button id="refresh" type="button">새로고침</button>
+          <div
+            id="tasks"
+            role="region"
+            aria-label="공동 작업 목록"
+            tabindex="0"
+          ></div>
+        </aside>
+        <section id="task-panel" aria-label="작업과 검수">
+          <h2>작업을 선택하세요</h2>
+          <p>지시·후보·검수·다음 담당자·사용자 승인 이력을 보존합니다.</p>
+        </section>
+      </section>
+      <section id="production-board" class="panel" hidden>
+        <p class="eyebrow">EP01 · PRESERVED SOURCE</p>
+        <h2>68컷 콘티 · 실제 제작 자료</h2>
+        <p id="production-summary"></p>
+        <p class="notice">
+          러프 콘티와 제작 산출물입니다. 정식 원작 대조 0/68 · PASS 확정 0컷.
+          인계본의 내부 정합 표시는 정본 승인이 아닙니다.
+        </p>
+        <div class="actions">
+          <button id="cuts-prev" type="button">이전 컷</button
+          ><label for="cut-page">컷 구간</label
+          ><select id="cut-page"></select
+          ><button id="cuts-next" type="button">다음 컷</button>
+        </div>
+        <div
+          id="cut-grid"
+          class="cut-grid"
+          role="region"
+          tabindex="0"
+          aria-label="이미지와 대사·연출 콘티 보드"
+        ></div>
+      </section>
+      <section class="panel memory-panel">
+        <h2>프로젝트 기억 · 결정 · 진행</h2>
+        <form id="memory-form">
+          <label for="memory-kind">기록 유형</label
+          ><select id="memory-kind">
+            <option value="NOTE">작업 기억</option>
+            <option value="DECISION">결정</option>
+            <option value="MILESTONE">진행 상태</option>
+            <option value="HUMAN_REVIEW">인간 팀원 검수</option></select
+          ><label for="memory-body">내용</label
+          ><textarea
+            id="memory-body"
+            rows="3"
+            maxlength="4000"
+            required
+          ></textarea
+          ><button>프로젝트 기억에 저장</button>
+        </form>
+        <form id="memory-search">
+          <label for="memory-query">자료·기억 검색</label
+          ><input id="memory-query" maxlength="200" required /><button>
+            검색
+          </button>
+        </form>
+        <div id="search-results"></div>
+        <ol
+          id="memory-list"
+          tabindex="0"
+          aria-label="프로젝트 기억 이력"
+          class="timeline"
+        ></ol>
+      </section>
+      <section class="panel">
+        <h2>공동 자료함</h2>
+        <p>
+          문서·이미지·콘티는 모두 DRAFT 후보입니다. 수정은 부모 파일을 참조하는
+          새 후보로 남기며, 승인된 파일 byte는 보존합니다.
+        </p>
+        <form id="file-upload">
+          <label for="upload-file"
+            >새 첨부 (PDF·HTML·JSON·MD·ZIP·PNG·MP4·MD5 메타자료,
+            최대32MiB)</label
+          ><input
+            id="upload-file"
+            type="file"
+            accept=".pdf,.html,.json,.md,.zip,.png,.mp4,.md5"
+            required
+          /><label for="parent-file">수정 제안의 부모 파일 ID (선택)</label
+          ><input id="parent-file" maxlength="36" /><button>
+            새 DRAFT 첨부
+          </button>
+        </form>
+        <form id="file-search">
+          <label for="file-query">파일 이름·원본 경로·버전 검색</label
+          ><input id="file-query" maxlength="200" /><button>자료 찾기</button>
+        </form>
+        <p id="file-count" role="status"></p>
+        <div class="actions">
+          <button id="compare-open" type="button" disabled>
+            선택 이미지 비교</button
+          ><span id="compare-count" aria-live="polite">0/2 선택</span>
+        </div>
+        <div id="shared-files" class="shared-files"></div>
+        <button id="files-more" type="button" hidden>다음 자료 더 보기</button>
+        <pre id="file-preview" class="instruction" hidden></pre>
+      </section>
+      <section class="panel">
+        <h2>커넥터 · AI · 프로젝트 연결</h2>
+        <p>
+          기존 읽기 전용 MCP는 유지됩니다. DRAFT 추가는 OAuth의
+          <code>collaboration:append</code>를 별도로 선택한 뒤 이 화면에서
+          AI·프로젝트를 지정한 연결만 가능합니다.
+        </p>
+        <form id="binding-form">
+          <label for="binding-grant">내 OAuth 연결</label
+          ><select id="binding-grant" required></select
+          ><label for="binding-agent">이 연결의 AI 역할</label
+          ><select id="binding-agent">
+            <option>GPT</option>
+            <option>CLAUDE</option>
+            <option>CODEX</option>
+            <option>MUSE</option></select
+          ><label class="check"
+            ><input id="binding-ack" type="checkbox" />선택한 연결이 이
+            프로젝트에 새 DRAFT 첨부·수정 제안을 추가하는 범위를 확인했습니다.
+            정본 교체·삭제·사용자 승인·배포는 허용하지 않습니다.</label
+          ><button>이 프로젝트에 연결 지정</button>
+        </form>
+        <div id="bindings"></div>
+        <p class="small">
+          실제 ChatGPT·Claude 연결과 파일 전달은 제품별 기능 및 공개 HTTPS
+          테스트 주소가 필요합니다. SDK 검증만으로 실제 앱 지원을 완료 처리하지
+          않습니다.
+        </p>
+      </section>
+      <section id="project-members" class="panel" hidden>
+        <h2>프로젝트 팀원</h2>
+        <form id="member-form">
+          <label for="member-id">기존 제작 담당자 사용자 ID</label
+          ><input id="member-id" type="number" min="1" required /><label
+            for="member-permission"
+            >프로젝트 권한</label
+          ><select id="member-permission">
+            <option>VIEWER</option>
+            <option>EDITOR</option>
+            <option>MANAGER</option>
+            <option>REVOKE</option></select
+          ><button>팀원 권한 저장</button>
+        </form>
+        <div id="members"></div>
+      </section>
+    </main>
+    <dialog id="image-dialog" aria-labelledby="image-title">
+      <button type="button" class="dialog-close">닫기</button>
+      <h2 id="image-title"></h2>
+      <img id="image-large" alt="" />
+      <p id="image-details"></p>
+    </dialog>
+    <dialog id="compare-dialog" aria-labelledby="compare-title">
+      <button type="button" class="dialog-close">닫기</button>
+      <h2 id="compare-title">원본 이미지 비교</h2>
+      <div id="compare-images" class="compare-images"></div>
+    </dialog>
+    <dialog id="document-dialog" aria-labelledby="document-title">
+      <button type="button" class="dialog-close">닫기</button>
+      <h2 id="document-title"></h2>
+      <p id="document-details"></p>
+      <div id="document-view"></div>
+    </dialog>
+    <template id="detail-template"
+      ><article>
+        <p class="eyebrow">SHARED HANDOFF</p>
+        <h2 class="title"></h2>
+        <pre class="instruction"></pre>
+        <p class="summary"></p>
+        <div class="actions">
+          <button data-action="start">인계 시작</button
+          ><button data-action="pause">중단</button
+          ><button data-action="resume">재개</button
+          ><button data-action="approve">작업 결과 승인</button
+          ><button data-action="cancel">작업 취소</button
+          ><a class="export" href="#">최근200개 이력 MD</a>
+        </div>
+        <label class="check"
+          ><input class="consent" type="checkbox" />선택된 구독 AI 연결이 이
+          작업의 지시·자료·공동 이력을 조회하고 후보를 등록하도록 공유합니다. 앱
+          실행과 도구 승인은 해당 제품에서 진행합니다.</label
+        >
+        <section>
+          <h3>기존 제작실 자료·PR 연결</h3>
+          <ul class="artifacts"></ul>
+          <form class="attach-form">
+            <label
+              >유형<select name="kind">
+                <option value="fileId">제작실 파일 ID</option>
+                <option value="revisionId">제작실 버전 ID</option>
+                <option value="prNumber">GitHub PR 번호</option>
+              </select></label
+            ><label
+              >ID 또는 번호<input name="ref" required maxlength="36" /></label
+            ><button>자료 연결</button>
+          </form>
+          <form class="github-form">
+            <label
+              >PR·CI 조회 번호<input
+                name="pr"
+                type="number"
+                min="1"
+                required /></label
+            ><button>GitHub 상태 동기화</button>
+          </form>
+        </section>
+        <section>
+          <h3>인간 팀원 검수 · 공동 타임라인</h3>
+          <form class="message-form">
+            <label
+              >검수·메시지<textarea
+                name="body"
+                rows="3"
+                maxlength="4000"
+                required
+              ></textarea></label
+            ><button>검수 의견 남기기</button>
+          </form>
+          <ol class="timeline"></ol>
+          <button type="button" class="older" hidden>이전200개 이력</button>
+        </section>
+      </article></template
+    >
+  </body>
+</html>

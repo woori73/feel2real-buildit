@@ -5402,5 +5402,26 @@
         "/api/conversations"
       ]
     }
+  ],
+  "/ai-collaboration": [
+    {
+      "template": "src/main/resources/templates/studio/collaboration.html",
+      "scripts": [
+        "/js/collaboration.js"
+      ],
+      "clientApiLiterals": [
+        "/api/collaboration/workspaces",
+        "/api/collaboration/tasks",
+        "/api/collaboration/search",
+        "/api/collaboration/files",
+        "/api/collaboration/connections",
+        "/api/studio/files/{id}/content",
+        "/api/collaboration/workspaces/{id}/files",
+        "/api/collaboration/workspaces/{id}/production",
+        "/api/collaboration/files/{id}/preview",
+        "/api/collaboration/files/{id}/pdf-page"
+      ],
+      "note": "실제 동적 자료는 프로젝트 ACL을 검사하는 서버 API. 별도 OAuth 범위+AI/프로젝트 binding의 DRAFT 첨부/제안 추가만 MCP 확장. 구독 앱/유료 모델 자동 실행 없음."
+    }
   ]
 }

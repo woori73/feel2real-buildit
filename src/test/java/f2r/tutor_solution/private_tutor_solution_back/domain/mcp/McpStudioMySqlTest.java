@@ -30,7 +30,7 @@ import tools.jackson.databind.ObjectMapper;
       "app.mcp.public-base-url=http://127.0.0.1:18088",
       "app.mcp.internal-base-url=http://127.0.0.1:18088",
       "app.mcp.redirect-uris=https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector/oauth/isolated-test-callback",
-      "spring.datasource.url=jdbc:mysql://127.0.0.1:3318/f2r_studio_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci",
+      "spring.datasource.url=jdbc:mysql://127.0.0.1:${F2R_STUDIO_TEST_PORT:3318}/f2r_studio_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci",
       "spring.datasource.username=f2r_test",
       "spring.datasource.password=isolated_test_password",
       "spring.flyway.locations=classpath:db/migration",

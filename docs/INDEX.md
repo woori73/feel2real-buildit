@@ -59,3 +59,5 @@
 - AcademyCraft 사용 도움말·도움말 AI 비서(Draft, 검토 단계): [academycraft-help/README.md](academycraft-help/README.md)
 
 - 통합 대시보드·AI 업무 비서(작업 A, 로컬 프로토타입): [분석·설계](unified-ai-assistant/README.md), [검증 결과](unified-ai-assistant/verification.md)
+
+- 공동 제작 협업실(유료 API 없음·공식 MCP SDK 검증·실제 제품 연결 미검증): [collaboration/README.md](collaboration/README.md), [실제536개 자료 적재·화면 검증](collaboration/PRODUCTION_IMPORT.md)

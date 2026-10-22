@@ -20,7 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootTest
 @TestPropertySource(
     properties = {
-      "spring.datasource.url=jdbc:mysql://127.0.0.1:3318/f2r_studio_test",
+      "spring.datasource.url=jdbc:mysql://127.0.0.1:${F2R_STUDIO_TEST_PORT:3318}/f2r_studio_test",
       "spring.datasource.username=root",
       "spring.datasource.password=isolated_test_root",
       "spring.flyway.locations=classpath:db/migration",

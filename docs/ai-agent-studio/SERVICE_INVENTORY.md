@@ -1175,3 +1175,11 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 ## 읽기 도구에서 제외한 동작
 
 쓰기 메서드, OAuth·로그인, 토큰/수집 인증 설정, 작업 할당(next-task), 새 workspace/working-copy 초기화, AI 생성·실시간 외부 API 호출, 파일 렌더/출력 생성, SSE 이벤트 구독은 실행하지 않습니다. 기존 다운로드가 조회 이력을 쓰는 Wiki 경로는 원본 view/preview로 대체합니다. 실제 기존 서비스 코드는 보존합니다.
+
+## 2026-10-22 공동 제작 협업실 후속 추가 (#862)
+
+`/ai-collaboration`은 Thymeleaf 화면이며 실제 자료는 [API 계약](../API.md#공동-제작-협업실-v1096v1097-운영-미배포)의 `/api/collaboration/*`에서 읽는다. DB 출처는 ai_collaboration_workspaces/members/events/files/tasks/imports/sources/storyboard_cuts와 기존 사용자·제작실·OAuth 테이블이다. FileStorage의 기존 local/S3 원본을 재사용한다. 템플릿/JS 데이터 출처는 `mcp/screen-sources.json`, 실제 전체 매핑은 runtime handler inventory가 기준이다. 기존 생성된 인벤토리 스냅샷은 선행 검증 근거로 보존한다.
+
+협업실은 기존 서비스의 GET proxy allowlist에 넣지 않는다. 본인이 별도로 지정한 AI/프로젝트 연결만 `collaboration_read`로 실제 기억·자료·작업·원문을 조회한다. 별도 승인된 collaboration:append는 새 DRAFT 첨부/수정 제안 추가만 허용하고 기존 readonly 도구의 효과를 바꾸지 않는다. 세부 도구/권한/동시성/제품별 제한과 실제 검증은 [협업실 보고서](../collaboration/README.md)를 따른다. 유료 모델 호출·승인 정본 교체·삭제·배포 도구는 없다.
+
+실제 #863 자료536개의 local-only 등록/원본 보존/전수 페이지·68컷·사람용 뷰어 검증은 [실자료 보고서](../collaboration/PRODUCTION_IMPORT.md)를 따른다. 운영 importer/컷 PASS 설정을 MCP에 추가하지 않는다.

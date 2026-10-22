@@ -1,0 +1,16 @@
+{
+  "canonicalPass" : 0,
+  "registered" : 536,
+  "importId" : "e6d61776-4a09-4d24-b511-7b2fd02053f0",
+  "canonicalComparedCuts" : 0,
+  "sourceRef" : "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
+  "uniqueSha" : 316,
+  "duplicateSha" : 220,
+  "shaVerified" : 536,
+  "idempotentReplay" : false,
+  "workspaceId" : "570a4cf5-d0e3-411a-b007-0ff0e9faba37",
+  "allNewFilesDraft" : true,
+  "existingApprovedPointersUnchanged" : true,
+  "productionDatabaseChanged" : false,
+  "actualChatGptClaudeConnection" : "NOT TESTED"
+}

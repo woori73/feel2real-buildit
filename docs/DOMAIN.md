@@ -1826,3 +1826,25 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 스튜디오 복원은 기존 revision/file 행을 수정하지 않고 새 revision 및 RESTORE 이벤트를 추가한다. `approved_id`는 별도 명시 검수 전 유지한다. JSON/ZIP 일괄 등록도 원본 sourceFileId/SHA를 보존하고 68개 revision과 BULK_IMPORT 이력을 추가한다. 별도 데이터/권한 테이블을 복제하지 않는다. #854는 V1094, #855는 V1095이며 신규 운영 스키마 적용은 하지 않았다. 관리자 외부 제공 위험 확인은 기존 mcp_audit의 SENSITIVE_ACK로 기록한다.
 
 `unified_assistant_audit`에 `operation`, `academy_id`, `business_id`(모두 nullable)가 추가됐다(V1094는 main·운영에 미적용 상태라 같은 파일에서 수정). 초안 관련 이벤트는 업무 종류와 학원/사업체 범위를 함께 남긴다. 이벤트 `RECOVERED_UNKNOWN`은 중단된 `EXECUTING` 초안을 `UNKNOWN`으로 전환했음을 뜻한다.
+
+## 공동 제작 협업실 (V1096/V1097, 운영 미배포)
+
+- `ai_collaboration_tasks` / `CollaborationTask`: 기존 studio_projects FK와 nullable 신규 workspace FK, 사용자 FK, 고정 참여 역할·지시·인계 상한, status/phase/count/version. JDBC 행 잠금으로 인계·승인·중단을 직렬화한다. μUSD 필드는0으로 생성하며 호출/예산 실행기는 없다. 기존 budget_days/active_run 구조는 호환 보존하고 사용하지 않는다.
+- `ai_collaboration_events` / `CollaborationEvent`: 작업 FK, USER/SYSTEM/선택 AI/GITHUB 역할, 실제 사용자 ID, DRAFT 제안·인계·검수·승인 사건·본문·requestId·시각. append-only.
+- `ai_collaboration_artifacts` / `CollaborationArtifact`: 기존 studio_files/studio_revisions FK 또는 고정 저장소 PR 참조. 원본/승인 포인터 불변.
+- `ai_collaboration_workspaces` / `CollaborationWorkspaceEntity`, `ai_collaboration_workspace_members` / `CollaborationMemberEntity`: 프로젝트와 복합키(workspace,user) VIEWER/EDITOR/MANAGER. 기본 프로젝트는 기존 studio_members 권한, 비공개 프로젝트는 명시적 멤버십과 studio 권한 모두 필요.
+- `ai_collaboration_workspace_events` / `CollaborationMemoryEntity`: 프로젝트 기억/결정/진행/검수/등록/권한/연결 이력. 사용자·AI·시각 구분.
+- `mcp_collaboration_bindings` / `CollaborationBindingEntity`: 본인 mcp_grant FK를 AI 역할/프로젝트 FK에 명시적으로 묶는다. OAuth scope를 늘리거나 다른 사용자의 grant를 사용하지 못한다.
+- `ai_collaboration_files` / `CollaborationFileEntity`: 원본 저장키(외부 미노출), SHA/byte수/파일형식/등록자/AI/시각/부모파일 FK, DRAFT/APPROVED/REJECTED. 새 버전은 새 후보, SHA중복 blob 재사용, AI 기존 승인 상태/byte 변경 불가.
+- `ai_collaboration_uploads` / `CollaborationUploadEntity`, `ai_collaboration_chunks` / `CollaborationChunkEntity`: grant/workspace/task 바인딩 업로드 세션과 복합키(upload,index) SHA/원본청크. 완료시 SHA 검증 후 불변 DRAFT 파일로 등록하고 임시 청크만 정리.
+- `ai_collaboration_submissions` / `CollaborationSubmissionEntity`: 복합키(grant,requestId), task FK/본문 SHA/결과JSON. 동시·동일 재시도는1회, 내용 변경은409.
+
+원본/정본/승인 이력 물리 삭제 API와 cascade delete를 만들지 않는다. 신규 DB 구조는 migration+immutable ORM 계약+이 문서를 함께 갱신한다. 적용된 V1096을 수정하지 않고 V1097로 확장했다. 운영 DB에는 적용하지 않았다. [구현/검증](collaboration/README.md).
+
+### 실제 제작 자료 출처 (V1098)
+
+- `ai_collaboration_imports` / `CollaborationImportEntity`: workspace FK, source_ref/manifest_sha/inventory_sha, 예상/실제 등록 수, 등록자/시각/상태. `(workspace,source_ref,inventory_sha)` 유일키로 동일 배치 재실행을 식별한다.
+- `ai_collaboration_sources` / `CollaborationSourceEntity`: import/file FK, 원본 경로(배치 내 유일), 버전/분류/기존 출처 승인 상태. 동일 SHA의 여러 원본 경로/버전을 별도 등록하고 blob만 재사용한다. source_approval은 앱 DRAFT/APPROVED 상태 및 기존 studio 정본 포인터와 별개다.
+- `ai_collaboration_storyboard_cuts` / `CollaborationCutEntity`: `(import_id,cut_number)` 복합키, 보존 패널 FK, 원문JSON, `NOT_COMPARED`/`pass_confirmed=false`. 원문 qa_status를 정식 PASS로 승격하지 않는다. 신규536개는 DRAFT, 정식 대조0/68·PASS0을 유지한다.
+
+기존 V1094~1097 파일은 수정하지 않았다. nullable/새 테이블만 추가하고 원본/승인 포인터/복원 이력을 바꾸지 않는다. 임포터는 local+명시적 flag+지정 loopback 격리 DB+LocalFileStorage로 제한되며 운영 HTTP/MCP 쓰기 경로는 없다. [무결성/검증](collaboration/PRODUCTION_IMPORT.md).

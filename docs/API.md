@@ -4968,3 +4968,21 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - OAuth `originals:read`: 서비스 읽기 권한과 별도인 원본 바이너리 제공 권한. 기본 선택 해제. 모든 역할에서 `sensitiveAcknowledged=true`를 사용자 동의 화면에서 확인해야 발급하며 `SENSITIVE_ACK`를 남긴다. 원본 bytes/SHA를 바꾸지 않으므로 민감정보가 마스킹 없이 외부로 제공될 수 있다는 경고를 표시한다. 도구 인자로 권한을 올릴 수 없다. 기존 원본 scope 없는 grant의 바이너리 조회는 403 `originals_scope_required`; 텍스트·요약 조회는 기존 범위를 유지한다. 원래 서비스의 역할·학원·사업체 권한도 항상 검사한다.
 - MCP 주소 판별은 framework 전달 헤더 wrapper를 벗긴 원래 socket peer 및 원래 XFF를 기존 신뢰 프록시 resolver로 검증한다. `server.forward-headers-strategy=framework`에서 신뢰 CIDR 누락·잘못된 CIDR은 MCP 요청에 503 `MCP_TRUSTED_PROXIES_REQUIRED`. 운영 CIDR·ALB 보안그룹은 이번 작업에서 조회·변경하지 않았다.
 - JSON/텍스트의 +82 휴대·지역전화, 연속 10~19자리 번호, 분리된 카드번호, 숫자형 계좌/카드 필드를 마스킹한다. 숫자형 금액·일반 ID는 유지한다. 자유 텍스트의 긴 숫자는 계좌와 주문번호 등을 구분할 수 없어 보수적으로 마스킹하며 완전한 개인정보 탐지로 간주하지 않는다.
+
+## 공동 제작 협업실 (V1096/V1097, 운영 미배포)
+
+`/ai-collaboration`은 Thymeleaf 화면이며 동적 자료는 `/api/collaboration/*`에서 가져온다. 기존 제작실 권한과 프로젝트별 ACL을 함께 검사한다. `GET /agents`, `/workspaces`, `/workspaces/{id}`, `/tasks?workspaceId=`, `/tasks/{id}`, `/tasks/{id}/events?beforeId=`, `/tasks/{id}/export`, `/search?workspaceId=&q=`, `/inbox?workspaceId=&agent=`, `/connections`, `/files/{id}`, `/files/{id}/text`, `/files/{id}/content`는 조회다. 작업100·기억/자료200·검색100·이력200개 커서. export는 최근200개 MD이다.
+
+POST 계약: `/workspaces` `{title}`, `/workspaces/{id}/memory` `{kind:NOTE|DECISION|MILESTONE|HUMAN_REVIEW,body}`(EDITOR), `/workspaces/{id}/members` `{userId,permission:VIEWER|EDITOR|MANAGER|REVOKE}`(MANAGER). `/tasks` `{title,instruction,workspaceId,participants:[GPT|MUSE|CODEX|CLAUDE],maxCalls:1..20,budgetMicrousd:0}`. 참여 AI 기본값 없음. 작업 소유자/ADMIN의 `/tasks/{id}/control` `{version,action:start|pause|resume|approve|cancel,externalConsent}`. 프로젝트 EDITOR의 `/tasks/{id}/messages` `{version,body}`는 인간 검수 의견. 소유자/ADMIN의 `/tasks/{id}/artifacts` `{version,fileId|revisionId|prNumber}`, `/tasks/{id}/github-sync` `{version,prNumber}`는 기존 자료/고정 저장소 PR·CI 스냅샷 연결이다. 공유 파일 등록은 `/files` multipart `{workspaceId,file,parentId?}`, 최대32MiB. MANAGER의 `/files/{id}/review` `{decision:APPROVED|REJECTED}`는 협업 후보 검수이며 제작실 정본 포인터를 바꾸지 않는다.
+
+`POST /connections` `{grantId,workspaceId,agent,acknowledgeDraftAppend}`는 본인 OAuth 연결에 AI/프로젝트를 지정한다. append scope는 별도 동의+기능ON+EDITOR+명시적 확인이 필요하다. `/connections/{grantId}/unbind`는 본인 프로젝트 연결만 해제한다. 웹 쓰기는 정확한 Origin·JSON64KiB(chunked 포함)·해당 task.version을 검사한다.
+
+기존 readonly MCP 서비스 도구에 이 API들을 추가하지 않는다. `collaboration_read`는 지정된 연결 프로젝트만 조회하고 원문은 originals:read를 추가 요구한다. taskId 조회는 최신10개 이력, 기본 기억은20개이며 beforeId로 더 조회한다. 별도 collaboration:append와 binding이 있는 연결만 `collaboration_add_document`, `collaboration_begin_upload`, `collaboration_upload_chunk`, `collaboration_commit_upload`, `collaboration_submit`으로 DRAFT를 추가한다. 인자 AI/프로젝트 선택, 사용자 승인, 정본 교체, 삭제, 배포, DB 관리, 유료 모델 호출은 제공하지 않는다. 상세한 scope·파일·제품 제한·검증은 [구현 보고서](collaboration/README.md)와 [연결 절차](collaboration/CONNECTORS.md)를 따른다.
+
+### 실제 제작 자료·원문 뷰어 (V1098)
+
+`GET /api/collaboration/workspaces/{id}/files?beforeId=&limit=100&query=`는 원본 경로/버전/분류/출처 승인 상태를 포함한 keyset 페이지 `{items,nextBeforeId,totalCount}`를 반환한다. limit1~200, cursor는 같은 프로젝트의 파일ID만 허용한다. 536개 전수 조회가 가능하다. `/workspaces/{id}/production`은 배치 출처·68컷 원문JSON/패널참조·정식 대조/확정 상태를 조회한다. 컷의 `status`는 현재 협업 후보 검수 상태이며 `source_approval`(과거 출처 승인) 및 정본 대조/확정과 별개다. 기존 제작실 권한+프로젝트 ACL을 검사한다.
+
+`GET /files/{id}/preview`는 HTML을 sandbox/CSP와 이벤트/외부 리소스 제거 후 표시하고, `/files/{id}/pdf-info`·`/files/{id}/pdf-page?page=1`은 PDF 페이지수·임시 PNG를 반환한다. 모두 인증/파일 ACL/no-store, 원문 불변이다. MD5는 UTF-8 검증 메타자료로 업로드/원문 열람 가능하며 이미지로 분류하지 않는다. MCP `collaboration_read`의 `filesBeforeId`(첫 페이지는 빈 문자열)/`filesQuery`로 같은 프로젝트 전체 파일을 페이지 조회할 수 있다. 원문 제공은 기존 originals:read를 요구한다.
+
+임포트/정본 승격/컷 PASS 설정 API는 없다. 고정 #863 source의 local-only 배치와 실제 결과는 [실자료 적재](collaboration/PRODUCTION_IMPORT.md)를 따른다.

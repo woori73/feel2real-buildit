@@ -118,10 +118,15 @@ public class McpOAuth {
         scopes());
   }
 
+  @org.springframework.beans.factory.annotation.Value(
+      "${app.collaboration.connector-append-enabled:false}")
+  private boolean collaborationAppendEnabled;
+
   public List<String> scopes() {
     var all = new ArrayList<>(SCOPES);
     all.add("offline_access");
     all.add("originals:read");
+    if (collaborationAppendEnabled) all.add("collaboration:append");
     return all;
   }
 

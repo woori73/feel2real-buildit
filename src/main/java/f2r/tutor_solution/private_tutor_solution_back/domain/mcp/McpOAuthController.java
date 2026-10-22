@@ -86,6 +86,8 @@ public class McpOAuthController {
         Map.ofEntries(
             Map.entry("catalog:read", "전체 서비스·페이지 목록"),
             Map.entry("studio:read", "AI AGENT 제작 자료"),
+            Map.entry(
+                "collaboration:append", "별도 지정한 AI·프로젝트에 DRAFT 첨부·수정 제안 추가 (정본 교체·삭제·승인·배포 불가)"),
             Map.entry("academy:read", "AcademyCraft 학생·반·출결·상담·공지"),
             Map.entry("easy:read", "이지장부 금융·거래 자료"),
             Map.entry("admissions:read", "입시상담 자료와 상담 이력"),

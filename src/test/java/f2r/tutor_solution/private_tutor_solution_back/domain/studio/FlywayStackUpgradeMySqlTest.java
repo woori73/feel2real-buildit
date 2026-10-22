@@ -8,10 +8,17 @@ import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-/** Isolated MySQL only: main V1093 -> V1094 -> V1095 and fresh schema, no repair/clean. */
+/** Isolated MySQL only: V1093 -> V1094 -> V1095 -> V1098 and fresh schema, no repair/clean. */
 @EnabledIfEnvironmentVariable(named = "F2R_STUDIO_MYSQL_TEST", matches = "true")
 class FlywayStackUpgradeMySqlTest {
-  private static final String URL = "jdbc:mysql://127.0.0.1:3318/";
+  private static final String URL = "jdbc:mysql://127.0.0.1:" + testPort() + "/";
+
+  private static int testPort() {
+    int port = Integer.parseInt(System.getenv().getOrDefault("F2R_STUDIO_TEST_PORT", "3318"));
+    if (port < 1024 || port > 65535)
+      throw new IllegalArgumentException("Isolated test port required");
+    return port;
+  }
 
   private Flyway flyway(String schema, String target) {
     var config =
@@ -59,6 +66,10 @@ class FlywayStackUpgradeMySqlTest {
     assertThat(stepC.migrate().migrationsExecuted).isEqualTo(1);
     stepC.validate();
     assertThat(stepC.info().current().getVersion().toString()).isEqualTo("1095");
+    var collaboration = flyway(upgrade, null);
+    assertThat(collaboration.migrate().migrationsExecuted).isEqualTo(3);
+    collaboration.validate();
+    assertThat(collaboration.info().current().getVersion().toString()).isEqualTo("1098");
     var all = flyway(fresh, null);
     assertThat(all.migrate().migrationsExecuted).isGreaterThanOrEqualTo(190);
     all.validate();

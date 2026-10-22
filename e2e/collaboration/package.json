@@ -1,0 +1,6 @@
+{
+  "name": "feel2real-collaboration-qa",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {"playwright": "1.64.1", "axe-core": "4.14.0"}
+}

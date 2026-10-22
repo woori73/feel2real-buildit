@@ -1,0 +1,24 @@
+{
+  "sourceRef": "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
+  "environment": "Actual preserved #863 files, isolated MySQL and actual Chromium; no generated replacement assets",
+  "results": [
+    "All 536 real source files paginated through authenticated HTTP; no missing IDs, all DRAFT",
+    "Real 1280x720 rough storyboard and original cut descriptions/dialogue displayed; canonical comparison0/PASS0",
+    "Actual-material storyboard 1440px, no horizontal overflow, axe WCAG violations0",
+    "Actual-material storyboard 390px, no horizontal overflow, axe WCAG violations0",
+    "Last storyboard page includes cut68; all six ranges accessible",
+    "Actual S5/S6 v1 candidate vs approved v2 displayed side by side with distinct SHA/source version; originals unchanged",
+    "Original CURRENT_STATE/APPROVAL_HISTORY/MISSING_FILES are visible in shared memory, with source IDs",
+    "Actual MD, script-disabled HTML and PDF page viewers render original production documents",
+    "MD5 preserved as checksum metadata and never displayed as an image",
+    "HTML/PDF/reference images/MD original download SHA unchanged after all previews and comparison",
+    "Human load-more screen reaches all536 files, exceeding old200 limit",
+    "Human-approved panel and approved-source reference display current APPROVED state after importer replay; primary536 files stay DRAFT and canonical PASS0"
+  ],
+  "originalFilesModified": false,
+  "canonicalComparedCuts": 0,
+  "canonicalPass": 0,
+  "actualChatGptClaudeOAuth": "NOT TESTED",
+  "actualModelImageUnderstanding": "NOT TESTED",
+  "paidModelCalls": 0
+}
