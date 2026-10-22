@@ -1,0 +1,44 @@
+{
+  "testType": "Official Python MCP SDK 2.1.1 with two independently authorized OAuth clients; NOT actual ChatGPT/Claude account connections",
+  "sameContent": true,
+  "responseSha256": "882c812f611745a0a441533a528b06c4c969695027a0dc5a85f02414ae050305",
+  "clientA": {
+    "protocolVersion": "2025-11-25",
+    "toolCount": 19,
+    "catalogRows": 1098,
+    "readLatencyMs": [
+      72.65,
+      60.93,
+      67.32,
+      56.47,
+      72.81,
+      61.72,
+      47.28,
+      50.96,
+      73.41,
+      60.49
+    ],
+    "search": true,
+    "writeDenied": true
+  },
+  "clientB": {
+    "protocolVersion": "2025-11-25",
+    "toolCount": 19,
+    "catalogRows": 1098,
+    "readLatencyMs": [
+      58.1,
+      54.81,
+      60.81,
+      66.1,
+      54.43,
+      63.57,
+      56.4,
+      63.95,
+      58.51,
+      58.55
+    ],
+    "search": true,
+    "writeDenied": true
+  },
+  "actualAccountTests": "NOT RUN: no public staging endpoint or authenticated subscription sessions were supplied; no production deployment authorized."
+}

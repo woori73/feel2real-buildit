@@ -4878,6 +4878,38 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | GET | `/help/academycraft`, `/help/academycraft/{slug}` | ADMIN·TUTOR (비로그인 HTML은 로그인 안내 302) | 도움말 SSR. 역할 전용 문서는 타 역할 404 |
 | POST | `/api/help/academycraft/ask` | ADMIN·TUTOR | body `{question}`(≤300자). 읽기 전용 검색·안내, 사용자당 분당 20회(429). 응답 `{intent,text,sources[],grounded,writeBlocked}` |
 
+## AI AGENT 제작 스튜디오 및 통합 MCP (미배포)
+
+`GET /ai-agent-studio`는 로그인과 프로젝트 제작 권한이 필요하다. ADMIN은 프로젝트 개설·멤버 권한을 관리한다. 상태 변경은 정확한 same-origin을 요구하며 MCP bearer token으로 사용할 수 없다.
+
+| 경로 | 메서드 | 계약 |
+|---|---|---|
+| `/api/studio/project` | GET / POST | 현황 / ADMIN 개설, 14화·EP01 68컷 업로드 대기 구조 |
+| `/api/studio/revisions` | GET / POST | episode·kind·q·offset·limit(1~200) 검색 / parentId 기반 append-only 버전 |
+| `/api/studio/cuts?episode=1` | GET | 전체 컷별 최신 head. 버전 목록 200건 제한과 분리 |
+| `/api/studio/revisions/{id}/restore` | POST | EDITOR/APPROVER, `{expectedHead,label}` CAS 검사 후 이전 원문·파일을 참조하는 새 USER_EDIT 버전. 기존 승인 포인터·원본 불변 |
+| `/api/studio/imports/ep01` | POST | `{fileId}` 보관한 JSON/ZIP source. 1~68컷 필수·중복/누락/잘못된 ZIP 거부, 전체 검증 후 한 DB 트랜잭션으로 새 버전 68개. 자동 승인 없음 |
+| `/api/studio/revisions/{id}` | GET | 권한 있는 버전 원문·승인 포인터 |
+| `/api/studio/revisions/{id}/review` | POST | APPROVER의 APPROVE/REJECT와 메모, AI 자동 승인 없음 |
+| `/api/studio/compare?left=&right=` | GET | 두 실제 버전 비교 |
+| `/api/studio/files` | GET / POST | 보관 목록 / multipart PDF·HTML·JSON·MD·ZIP·PNG·MP4, 100 MiB, SHA-256 중복 검사 |
+| `/api/studio/files/{id}` | GET | storage key 제외 파일 메타데이터 |
+| `/api/studio/files/{id}/content` | GET | 원본 bytes, attachment·no-store·nosniff·CSP sandbox |
+| `/api/studio/files/{id}/text` | GET | 20 MiB 이하 PDF/텍스트·ZIP 목록 열람, ZIP 해제·스크립트 실행 없음 |
+| `/api/studio/events` | GET | 작업·검수·승인 이력 |
+| `/api/studio/members` | GET / POST | ADMIN 전용 명시적 제작 담당자 권한·폐기 |
+| `/mcp` | POST | stateless Streamable HTTP JSON-RPC, bearer 전용, 읽기 도구만 제공 |
+| `/.well-known/oauth-protected-resource/mcp` | GET | RFC 9728 resource metadata |
+| `/.well-known/oauth-authorization-server` | GET | OAuth metadata, S256 PKCE·DCR 지원 |
+| `/mcp/oauth/register` | POST JSON | 정확한 redirect URI 허용 목록의 public client 등록 |
+| `/mcp/oauth/authorize` | GET / POST form | 기존 홈페이지 로그인·일회용 동의 nonce·서비스 범위 승인 |
+| `/mcp/oauth/token` | POST form | code 교환·resource audience 검사·refresh 교체 |
+| `/mcp/oauth/revoke` | POST form | 해당 token의 연결 폐기 |
+| `/mcp/connections` | GET | 본인 연결·범위·만료·폐기 화면 |
+| `/api/mcp/connections/{id}/revoke` | POST | 기존 사용자 세션의 본인 연결 폐기 |
+
+MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·연결 안내와 검증 결과는 [통합 보고서](ai-agent-studio/REPORT.md), 전체 실제 페이지·API는 [서비스 조사](ai-agent-studio/SERVICE_INVENTORY.md)를 참조한다. 동적 페이지의 SSR 본문과 클라이언트 API 원천은 구분한다. 기존 서비스 권한/tenant 검사, 정확한 GET 경로에 15초로 묶은 내부 위임, 읽기 전용/rollback 트랜잭션을 거치며 사용자 role을 ADMIN으로 바꾸지 않는다. Wiki는 기존 workspace SQLite를 읽기 전용으로 열며 공유 관리자 MCP API key를 사용하지 않는다.
+
 ## 통합 AI 업무 비서 v1 (작업 A, 로컬 프로토타입)
 
 접두 `/api/dashboard/assistant/v1`, ADMIN·TUTOR만. 서비스에서 현재 DB 역할·학원/사업체·초안 생성자를 재확인한다. 모든 응답 `no-store`. 변경 요청은 Origin `http://localhost:8080` 또는 `https://feel2real.co.kr`만 허용한다.
@@ -4910,6 +4942,15 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 
 `GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.
 
+### 독립 검수 반영: MCP 외부 제공 경계
+
+- ChatGPT redirect는 관리 화면의 `https://chatgpt.com/connector/oauth/{callback_id}` 전체를 `app.mcp.redirect-uris`에 정확히 등록한다. 안정형 `/connector_platform_oauth_redirect`는 해당 공식 조건/관리 화면 URI인 경우에만 명시 설정한다. 기본은 Claude hosted callback만이며 과거 잘못된 callback·임의 URI·wildcard는 거부한다. DCR·PKCE·resource 검증은 유지한다.
+- ADMIN의 studio/catalog/chart/grammar/offline_access 외 scope 동의는 `sensitiveAcknowledged=true`가 추가로 필요하다. 동의 화면에 외부 민감정보 제공 경고를 표시하고 SENSITIVE_ACK 감사 기록을 남긴다. 기존 scope나 계정 권한을 확대하지 않는다.
+- `read_easy`는 `GET /api/mcp/finance/summary?businessId=&month=`만 실행한다. 현재 DB 역할과 기존 학원/사업체 링크 검사 후 월 수입·지출·수지·미수·건수만 반환한다. 원문·거래처·증빙·계좌·학생 목록·collector preview/status/raw는 제외한다. ADMIN도 정책을 우회하지 않는다.
+- `read_admissions`는 본인 상담 이력 API만 제공한다. 관리자 지식/원자료/통계는 제외했다. 상담 읽음 상태 변경·설정 자동 생성·외부 위키 실시간 호출이 있는 GET 8개를 MCP 실행 정책에서 제외했다. 기존 서비스의 원래 API 동작은 유지한다.
+- 유효 MCP 요청은 프록시 IP 대신 인증된 사용자 ID로 호출 한도를 검사한다. 익명 경로는 기존 AdmissionsRateLimiter의 신뢰 프록시 주소 판별을 재사용(`app.admissions.rate-limit.trusted-proxies`), 비신뢰 XFF는 무시한다. 사용자당 60/분, 모든 JSON-RPC 전체 최대 8개 동시(`app.mcp.max-concurrent-calls`, JVM별), 내부 읽기 사용자당 2개. 상한 시 429/Retry-After이며 DB 기반 분당 한도는 replica에도 공유된다.
+- #853 수집·장부 확정과 #854 초안 승인 POST를 MCP에 노출하지 않는다. 자연어 승인·MCP Bearer·GET 전용 위임 JWT로 장부 확정을 호출할 수 없다. 실제 제품 계정 연결은 별도 사용자 로그인/동의 시험 전까지 미검증이다.
+
 **검수 반영(2026-10-22, Claude).**
 - `POST /conversation`·`/materials` 응답에 `data`(nullable)가 추가됐다. 읽기 전용 업무의 결과만 담는다: 공지 초안 `{notice}`(저장·발송 없음), 출결 조회 `{studentId,events:[{id,eventType,occurredAt}],limit:20}`. 초안·승인 없이 응답하며 메모·연락처 등 다른 필드는 반환하지 않는다.
 - 조회 의도(조회·확인·보여·알려·현황·요약·내역)와 쓰기 동사(등록·기록·추가·만들·생성·수정·배정·처리·남겨)가 함께 없을 때만 읽기 전용으로 분기한다. "출결 조회"는 더 이상 출결 기록 초안이 되지 않는다.
@@ -4921,3 +4962,9 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 - `LEDGER_ACCOUNT`(계정 변경) 초안은 이 비서가 본인의 `LEDGER_IMPORT` 초안으로 만든 가져오기 배치만 대상으로 한다. 금융자료 수집(#853) 등 다른 경로가 만든 승인 전 배치는 403이며 기존 이지장부 화면에서 처리한다(수집 승인 해시·배치 상태가 외부에서 바뀌는 것을 막기 위함).
 
 - `FINANCIAL_FILE` 수집 승인은 기존 서버 승인 기록의 `financial-collector reviewed batch <SHA-256>`과 현재 배치 DTO 해시를 승인 시점과 장부 확정 직전(승인 행 잠금 안) 다시 비교한다. 누락·변경 시 거부하며 승인 전 상태는 유지한다. 일반 수집 CSV의 기존 명시적 승인 흐름은 유지한다.
+
+### MCP 긴급 보완 (2026-10-22)
+
+- OAuth `originals:read`: 서비스 읽기 권한과 별도인 원본 바이너리 제공 권한. 기본 선택 해제. 모든 역할에서 `sensitiveAcknowledged=true`를 사용자 동의 화면에서 확인해야 발급하며 `SENSITIVE_ACK`를 남긴다. 원본 bytes/SHA를 바꾸지 않으므로 민감정보가 마스킹 없이 외부로 제공될 수 있다는 경고를 표시한다. 도구 인자로 권한을 올릴 수 없다. 기존 원본 scope 없는 grant의 바이너리 조회는 403 `originals_scope_required`; 텍스트·요약 조회는 기존 범위를 유지한다. 원래 서비스의 역할·학원·사업체 권한도 항상 검사한다.
+- MCP 주소 판별은 framework 전달 헤더 wrapper를 벗긴 원래 socket peer 및 원래 XFF를 기존 신뢰 프록시 resolver로 검증한다. `server.forward-headers-strategy=framework`에서 신뢰 CIDR 누락·잘못된 CIDR은 MCP 요청에 503 `MCP_TRUSTED_PROXIES_REQUIRED`. 운영 CIDR·ALB 보안그룹은 이번 작업에서 조회·변경하지 않았다.
+- JSON/텍스트의 +82 휴대·지역전화, 연속 10~19자리 번호, 분리된 카드번호, 숫자형 계좌/카드 필드를 마스킹한다. 숫자형 금액·일반 ID는 유지한다. 자유 텍스트의 긴 숫자는 계좌와 주문번호 등을 구분할 수 없어 보수적으로 마스킹하며 완전한 개인정보 탐지로 간주하지 않는다.

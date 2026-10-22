@@ -1,0 +1,3589 @@
+[
+  {
+    "path": "/api/studio/project",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/studio/revisions",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/studio/revisions/{id}",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/studio/compare",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/studio/files",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/studio/files/{id}",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/studio/files/{id}/content",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/studio/events",
+    "service": "studio",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/zones",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/educators",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/educators/search",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/educators/{id:\\d+}",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/publication/current",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/zones/{zoneId}/educators",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/rankings",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/rankings/{id:\\d+}",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/criteria",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/chart/regions",
+    "service": "chart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/chart/zones",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/chart/candidates",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/chart/tools/context",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/chart/tools/review-batches",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/chart/tools/review-batches/{reviewBatchId}",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/dashboard/admissions/history",
+    "service": "admissions",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/home-feed",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/popular-downloads",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/rounds",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/rounds/current",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/questions",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/questions/{questionWikiId}",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/questions/{questionWikiId}/context",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/questions/attachments/{attachmentId}/file",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/learning-materials",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/learning-materials/{id}",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/learning-materials/{id}/preview",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wiki/live-messages",
+    "service": "wiki",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/tags",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/stats",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/questions",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/questions/{questionId}",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/collections",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/collections/{collectionId}",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/collections/{collectionId}/manuscript.md",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/collections/{collectionId}/manuscript.html",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/grammar-bank/collections/{collectionId}/manuscript.json",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/question-sets",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/question-sets/{setId}",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/materials",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/problem-generator/materials/{materialId}/file",
+    "service": "grammar",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/me",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/ai/chat/versions",
+    "service": "buildit",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/page-settings/visual-editor/draft",
+    "service": "buildit",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/page-settings/visual-editor/published",
+    "service": "buildit",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/page-settings/visual-editor/status",
+    "service": "buildit",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/layout",
+    "service": "buildit",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/images",
+    "service": "buildit",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/videos",
+    "service": "buildit",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/academies/{academyId}/builder/versions",
+    "service": "buildit",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/academies/{academyId}/builder/audit",
+    "service": "buildit",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies",
+    "service": "buildit",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies/{slug}",
+    "service": "buildit",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies/{slug}/layout",
+    "service": "buildit",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies/{slug}/homepage",
+    "service": "buildit",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/public/academy/{handle}/homepage",
+    "service": "buildit",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies/{slug}/videos",
+    "service": "buildit",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/newstart/updates",
+    "service": "newstart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/newstart/profile/me",
+    "service": "newstart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/newstart/galmuri",
+    "service": "newstart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/newstart/requests",
+    "service": "newstart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/newstart/requests/{requestId}",
+    "service": "newstart",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/{id}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/stats",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/{id}/history",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/cases",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/cases/{articleId}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/export/manifest",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/updates",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/requests/queue",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/members",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/students",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/academies",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/users/students/me",
+    "service": "members",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/me",
+    "service": "members",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/open-community/posts",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/open-community/posts/{postId}",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academy-posts",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies/{academySlug}/blog-posts",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies/{academySlug}/blog-posts/{postSlug}",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/academies/{academySlug}/blog-sources/{sourceId}/file",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/inquiries",
+    "service": "content",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/blog-posts",
+    "service": "content",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/academy/blog-posts/{postId}",
+    "service": "content",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/academies/{academyId}/inquiries",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/newstart/consultations",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/conversations",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/conversations/{id}",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/learning-materials",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/conversations/{id}/learning-materials",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/conversations/{id}/weakness",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/conversations/{id}/wrong-answers",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/conversations/{id}/score-timeline",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/students/{studentId}/score-timeline",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/sources/pending-review",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/sources/{sourceId}/exam-review",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/sources/{sourceId}/file",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/sources/{sourceId}/download",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/conversations",
+    "service": "learning",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/conversations/{id}",
+    "service": "learning",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/lms/{handle}/contents",
+    "service": "learning",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/tutor/lms/{handle}/lessons",
+    "service": "learning",
+    "roles": [
+      "TUTOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/analytics/summary",
+    "service": "analytics",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/analytics/breakdown",
+    "service": "analytics",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/analytics/events",
+    "service": "analytics",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/symbols",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/prices",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/compare",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/flows",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/events",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/fact-checks",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/game-tracking",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/community",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/disclosures",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/china/disclosures",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/china/news",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/wemade/china/latest",
+    "service": "wemade",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/api/admin/choonggi/posts",
+    "service": "choonggi",
+    "roles": [
+      "ADMIN",
+      "CREATOR"
+    ],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/chart",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/wiki",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/admissions/guide",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/newstart",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/newstart/updates",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/choonggi",
+    "service": "content",
+    "roles": [],
+    "reason": "기존 GET API·객체 소유권/서비스 권한 검사 재사용"
+  },
+  {
+    "path": "/academycraft/api/rea/integration/context",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/integration/teachers",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/students",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/students/{studentId}",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/classes",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/classes/{classId}",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/attendance",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/dashboard/stats",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/timetable",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/consultations",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/consultations/{consultationId}",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/notices",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/academycraft/api/rea/{academyId}/notices/{noticeId}",
+    "service": "academy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "AcademyCraftGateway",
+    "params": [
+      "q",
+      "search",
+      "page",
+      "size",
+      "date",
+      "month",
+      "classId",
+      "status",
+      "from",
+      "to"
+    ],
+    "reason": "기존 Gateway 서명 + upstream 학원 소유권 검사. 백엔드 별도 운영 서비스"
+  },
+  {
+    "path": "/problem-generator/wiki/api/exam-materials",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/exam-materials/{material_id}/original",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/exam-materials/{material_id}/json",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/exam-materials/{material_id}/html",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/exam-materials/{material_id}/body",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/textbook-materials",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/textbook-materials/{material_id}/original",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/textbook-materials/{material_id}/content",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/textbook-materials/{material_id}/questions",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/textbook-questions",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/digital-twins",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/digital-twins/{twin_id}",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/schools",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/questions",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/questions/{question_id}",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/students",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/students/{student_id}/wrong-notes",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/students/{student_id}/wrong-materials",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/final-deliverables",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/final-deliverables/{deliverable_id}/original",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/final-deliverables/{deliverable_id}/json",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/csat/types",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/csat/questions",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/csat/exams",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/csat/exams/{exam_id}",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/csat/exams/{exam_id}/questions",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/problem-generator/wiki/api/csat/exam-resources/{resource_id}/original",
+    "service": "wiki",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "proxy": "BuildItWikiProxyController",
+    "params": [
+      "q",
+      "search",
+      "school",
+      "grade",
+      "year",
+      "semester",
+      "exam",
+      "material_type",
+      "all_years",
+      "student_id",
+      "type",
+      "limit",
+      "offset",
+      "page",
+      "size",
+      "subject",
+      "unit",
+      "textbook_id",
+      "publisher",
+      "lesson",
+      "keyword"
+    ],
+    "reason": "기존 서명 신원 + 사용자별 SQLite workspace. MCP 서명 요청은 SQLite mode=ro, 신규 workspace 개설 금지"
+  },
+  {
+    "path": "/api/academies/{handle}/midterm-campaign",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{handle}/midterm-campaign/live-videos",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{handle}/midterm-campaign/materials/{materialId}",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{handle}/midterm-campaign/materials/{materialId}/file",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{handle}/midterm-campaign/materials/{materialId}/thumbnail",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{handle}/midterm-campaign/popup",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{handle}/midterm-campaign/popup-visual",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{slug}/hero-media/{slot}",
+    "service": "buildit",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{slug}/lessons/{lessonId}/hero-image",
+    "service": "buildit",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{slug}/videos/{videoId}/stream",
+    "service": "buildit",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{slug}/videos/{videoId}/thumbnail",
+    "service": "buildit",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/academies/{slug}/visits",
+    "service": "analytics",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/analyzes",
+    "service": "learning",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/beta-comments",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/chart/tools/scores/preview",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/chart/tools/scores/stale",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/lesson-communities",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/boards",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/commands",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/drafts",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/drafts/{draftId}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/inventory",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/questions",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/sessions",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/jipijigi/sessions/{sessionId}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/thanks-exceptions",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/active",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/cases/by-household/{householdType}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/cases/stats",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/cases/with-actual-rate",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/category/{category}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/export/all",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/export/type/{sourceType}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/review",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/review/{id}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/newstart/wiki/source-type/{sourceType}",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/wiki/analysis-materials",
+    "service": "wiki",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/wiki/ops-overview",
+    "service": "wiki",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/wiki/originals",
+    "service": "wiki",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/wiki/questions/materials/search",
+    "service": "wiki",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/admin/wiki/rounds",
+    "service": "wiki",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/analyzes",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/analyzes/latest",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/analyzes/{id}",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/analyzes/{id}/content",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/artcraft/projects/{id}",
+    "service": "buildit",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/artcraft/projects/{id}/snapshots",
+    "service": "buildit",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/choonggi/media/{id}",
+    "service": "choonggi",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/community/attachments/{attachmentId}/file",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/community/posts/{postId}",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/conversations/{conversationId}/wrong-note-entries",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/hwpx/jobs",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/hwpx/jobs/{jobId}",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/learning-materials/{id}/answers/{aid}/file",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/learning-materials/{id}/download",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/learning-materials/{id}/feedback/{fid}/file",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/learning-materials/{id}/view",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lesson-applications/me",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lessons/search",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lessons/{lessonId}/community/categories",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lessons/{lessonId}/community/context",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lessons/{lessonId}/community/posts",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lms/{handle}/contents/{contentId}/stream",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lms/{handle}/my/lessons",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/lms/{handle}/my/lessons/{lessonId}",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/newstart/consultations",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/newstart/consultations/unread-count",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/newstart/galmuri/{knowledgeId}",
+    "service": "newstart",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/publishing/jobs",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/publishing/jobs/{jobId}",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/publishing/jobs/{jobId}/artifacts",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/publishing/jobs/{jobId}/artifacts/{artifactId}",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/publishing/jobs/{jobId}/versions",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/publishing/styles",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/publishing/templates",
+    "service": "content",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/subjects",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/testprep/attempts",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/testprep/attempts/{attemptId}/review",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/testprep/exams",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/testprep/learning",
+    "service": "learning",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/access-statistics",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/hero-media/{slot}",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/images/flow/{assetId}/edited",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/images/flow/{assetId}/original",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/images/flow/{assetId}/status",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/lessons/{lessonId}/hero-image",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/lms-settings",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/academy/page-settings/visual-editor/proposals",
+    "service": "buildit",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/lesson-applications",
+    "service": "learning",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/lessons/{lessonId}/applications",
+    "service": "learning",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/lms/{handle}/enrollments/lessons/{lessonId}",
+    "service": "learning",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/lms/{handle}/midterm-campaign",
+    "service": "wiki",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/tutor/lms/{handle}/midterm-campaign/live-videos",
+    "service": "wiki",
+    "roles": [
+      "TUTOR",
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/users/students",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/catalyst/composite",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/catalyst/events",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/catalyst/policy",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/delta",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/gap/comparison",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/gap/factors",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/gap/timeline",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/issues",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/ownership/persons",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/ownership/tree",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/valuation/components",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/valuation/scenarios",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wemade/valuation/sotp",
+    "service": "wemade",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wiki/analysis-materials",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wiki/originals",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/api/wiki/originals/{id}/view",
+    "service": "wiki",
+    "roles": [],
+    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
+  },
+  {
+    "path": "/home",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/academy",
+    "service": "buildit",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/academy/videos",
+    "service": "buildit",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/academy/inquiries",
+    "service": "buildit",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/lesson/{lessonId}",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/academy/posts",
+    "service": "buildit",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/academies",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/academy-posts",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/community",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/community/posts/{postId}",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/academies/{slug}",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/analyzes",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/analyzes/{id}",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/learning",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/learning/{id}",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/board/{boardKey}",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/posts/{postId}",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/academies/{slug}/posts",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/academies/{slug}/posts/{postSlug}",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lessons",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/my/profile",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/stdt_dashboard",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor_dashboard",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/exam_review",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/dashboard",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/hub",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/students",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/members",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/analytics",
+    "service": "analytics",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/academies",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/analyzes",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/wiki-originals",
+    "service": "wiki",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/wiki-analysis",
+    "service": "wiki",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/lesson-communities",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/landing",
+    "service": "content",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/lessons/{lessonId}/students",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/academycraft",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/academycraft/",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/academies/{academyId}/builder",
+    "service": "members",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/admin/chart",
+    "service": "chart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/ai-agent-studio",
+    "service": "studio",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/chart/educators/{id:\\d+}",
+    "service": "chart",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/choonggi/admin",
+    "service": "choonggi",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/choonggi/admin/journey",
+    "service": "choonggi",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/choonggi/admin/posts",
+    "service": "choonggi",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/choonggi/journey",
+    "service": "choonggi",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/choonggi/vlog/{slug}",
+    "service": "choonggi",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/choonggi/{section:vlog|gamer|india|about}",
+    "service": "choonggi",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/chat",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/chat.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/dashboard",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/dashboard.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/exam-materials",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/exam-materials.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/homework",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/homework.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/materials",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/materials.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/report",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/report.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/review",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/review.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/study-materials",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/study-materials.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/tutor-materials",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/conversation/tutor-materials.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/designcraft",
+    "service": "buildit",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/exam",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/exam-analysis",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/faq",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/grammar-items",
+    "service": "grammar",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/grammar-items/",
+    "service": "grammar",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/help/academycraft",
+    "service": "academy",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/help/academycraft/{slug}",
+    "service": "academy",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lessons/{lessonId}/community",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/cart",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/checkout",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/contents",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/courses/{courseId}",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/lecture/{courseId}",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/manage",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/midterm-live",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/my",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/lms/{handle}/review/{lessonId}",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/privacy",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/problem-generator",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/problem-generator/digital-twin",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/problem-generator/exam",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/problem-generator/questions",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/problem-generator/schools",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/problem-generator/textbooks",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/problem-generator/wrong-notes",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/sitemap.xml",
+    "service": "content",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep/guide",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep/learning",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep/practice",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep/review",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep/run",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep/scores",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/testprep/vocab",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/conversation/chat",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/conversation/chat.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/conversation/dashboard",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/conversation/materials",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/conversation/materials.html",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/conversation_dashboard",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/tutor/conversations/{id}",
+    "service": "learning",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wemade",
+    "service": "wemade",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wemade/china/disclosures/{id}",
+    "service": "wemade",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/analysis",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/archive",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/originals",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/questions",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/wiki/questions/{questionWikiId}",
+    "service": "wiki",
+    "roles": [],
+    "reason": "실제 SSR 페이지 본문. JS가 채우는 자료는 catalog의 API 데이터 출처로 별도 조회"
+  },
+  {
+    "path": "/api/muse/newstart/knowledge/search",
+    "service": "newstart",
+    "roles": [
+      "ADMIN"
+    ],
+    "reason": "기존 키워드 기반 ACTIVE 자료 검색. LLM·임베딩 API 호출 없음"
+  },
+  {
+    "path": "/api/hwpx/jobs/{jobId}/download",
+    "service": "learning",
+    "roles": [],
+    "reason": "기존 사용자·소유권 검사. MCP 외부 요청은 읽기 전용·rollback 트랜잭션으로 읽음 커서 저장 없음"
+  },
+  {
+    "path": "/api/studio/files/{id}/text",
+    "service": "studio",
+    "roles": [],
+    "reason": "허가된 원본 PDF·텍스트·ZIP 목록 열람. 원본 불변, 압축 해제·스크립트 실행 없음"
+  },
+  {
+    "path": "/api/mcp/finance/summary",
+    "service": "easy",
+    "roles": [
+      "ADMIN",
+      "TUTOR"
+    ],
+    "params": [
+      "businessId",
+      "month"
+    ],
+    "reason": "명시한 허용 사업체의 월 합계만. 원문·증빙·학생·거래처·계좌번호·수집상태는 미제공"
+  },
+  {
+    "path": "/api/studio/cuts",
+    "service": "studio",
+    "roles": [],
+    "reason": "현재 컷 head 전체의 프로젝트 권한 검증 후 SQL 조회. 초기화·승인·파일 변경 없음"
+  }
+]

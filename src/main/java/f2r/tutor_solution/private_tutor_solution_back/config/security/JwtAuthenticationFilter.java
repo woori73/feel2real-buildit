@@ -60,6 +60,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       if (token.isPresent()) {
         try {
           JwtTokenProvider.AuthenticatedPrincipal principal = tokenProvider.parse(token.get());
+          String readOnlyTarget = tokenProvider.readOnlyTarget(token.get());
+          if (readOnlyTarget != null) {
+            String target = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
+            if (!"GET".equals(request.getMethod()) || !readOnlyTarget.equals(target)) {
+              response.sendError(403); return;
+            }
+            request.setAttribute("f2r.mcp.readOnly", Boolean.TRUE);
+          }
           var validator = adminSessionValidator == null ? null : adminSessionValidator.getIfAvailable();
           if (validator != null && !validator.isValid(principal)) {
             // ID·비밀번호가 바뀌었거나 stamp 없는 이전 ADMIN 세션 — 인증 미설정으로 통과(보호 경로는 401).

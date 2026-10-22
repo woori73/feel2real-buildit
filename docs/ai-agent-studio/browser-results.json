@@ -1,0 +1,119 @@
+{
+  "testData": "SYNTHETIC ONLY; real EP01 assets were not created or registered",
+  "checks": [
+    {
+      "name": "EP01 68컷 현재 head 전체 조회",
+      "pass": true
+    },
+    {
+      "name": "PC 가로 넘침 없음",
+      "pass": true
+    },
+    {
+      "name": "PC 6개 탭 axe WCAG 2.1 AA 위반 0",
+      "pass": true,
+      "detail": [
+        {
+          "tab": "materials",
+          "violations": []
+        },
+        {
+          "tab": "files",
+          "violations": []
+        },
+        {
+          "tab": "compare",
+          "violations": []
+        },
+        {
+          "tab": "chat",
+          "violations": []
+        },
+        {
+          "tab": "history",
+          "violations": []
+        },
+        {
+          "tab": "members",
+          "violations": []
+        }
+      ]
+    },
+    {
+      "name": "MD 업로드·원본 SHA-256·다운로드 동일",
+      "pass": true
+    },
+    {
+      "name": "HTML 업로드·원본 SHA-256·다운로드 동일",
+      "pass": true
+    },
+    {
+      "name": "JSON 업로드·원본 SHA-256·다운로드 동일",
+      "pass": true
+    },
+    {
+      "name": "ZIP 업로드·원본 SHA-256·다운로드 동일",
+      "pass": true
+    },
+    {
+      "name": "PNG 업로드·원본 SHA-256·다운로드 동일",
+      "pass": true
+    },
+    {
+      "name": "PDF 업로드·원본 SHA-256·다운로드 동일",
+      "pass": true
+    },
+    {
+      "name": "MP4 업로드·원본 SHA-256·다운로드 동일",
+      "pass": true
+    },
+    {
+      "name": "동일 원본 중복 저장 방지",
+      "pass": true
+    },
+    {
+      "name": "HTML 원문 스크립트 실행 차단",
+      "pass": true
+    },
+    {
+      "name": "새 버전·AI 제안 미승인 유지",
+      "pass": true
+    },
+    {
+      "name": "명시적 사용자 검수 후 승인본 지정",
+      "pass": true
+    },
+    {
+      "name": "r14·r2 버전 실제 비교",
+      "pass": true
+    },
+    {
+      "name": "작품 자료 검색·채팅 근거 링크",
+      "pass": true
+    },
+    {
+      "name": "검수·승인·업로드 작업 이력",
+      "pass": true
+    },
+    {
+      "name": "모바일 390px·68컷·가로 넘침 없음·axe 위반 0",
+      "pass": true
+    },
+    {
+      "name": "모바일 실제 승인 및 저장 재조회",
+      "pass": true
+    },
+    {
+      "name": "모바일 복원은 미승인 새 버전·기존 승인 이력 유지",
+      "pass": true
+    },
+    {
+      "name": "미허가 제작자 파일 목록 403",
+      "pass": true
+    },
+    {
+      "name": "브라우저 JS 오류 0",
+      "pass": true
+    }
+  ]
+}

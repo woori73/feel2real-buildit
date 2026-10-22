@@ -1,0 +1,268 @@
+{
+  "note": "Runs overlap; do not add counts. All data synthetic; loopback MySQL only.",
+  "commonRegression56": [
+    {
+      "name": "EasyImportService staging 테스트",
+      "tests": "24",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.112"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionConfirmBypassMySqlTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "8.939"
+    },
+    {
+      "name": "EasyImport 복구(장부 적재 우선) 테스트",
+      "tests": "16",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.308"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionApprovalP4StagingTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "9.815"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyTutorCsvWorkflowMySqlTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "7.912"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAgentFlowMySqlTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "33.596"
+    }
+  ],
+  "studioRollbackAndValidation9": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioUploadRollbackMySqlTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "63.674"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.723"
+    }
+  ],
+  "mcpStudioOAuth52": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpClientAddressTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.37"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpUserLimiterTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.177"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpRedactionTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.605"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioUploadRollbackMySqlTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "27.278"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.091"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpOAuthDefaultsHttpTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "169.02"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpStudioMySqlTest",
+      "tests": "21",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "167.845"
+    }
+  ],
+  "finalBoundaries63": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionIngestIdempotencyTest",
+      "tests": "13",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "4.643"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.controller.EasyFinancialCollectorSecurityTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.962"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpClientAddressTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.057"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionConfirmBypassMySqlTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "7.843"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionConfirmBypassIndependentMySqlTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "8.319"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyFinancialCollectorTest",
+      "tests": "21",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "8.318"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyCollectionApprovalP4StagingTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "38.948"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyFinancialApprovalReviewHashMySqlTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.018"
+    }
+  ],
+  "flywayFreshAndUpgrade": {
+    "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.FlywayStackUpgradeMySqlTest",
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "54.454"
+  },
+  "consentTemplate": {
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "note": "Original template reproduced missing descriptions; fixed template passed."
+  },
+  "renameNote": "EasyFinancialApprovalReviewHashMySqlTest was renamed to EasyCollectionReviewHashMySqlTest to keep real-DB tests out of the DB-free parser job. Test logic unchanged.",
+  "migrationSha256": {
+    "V1094": "3e1b5aab8393f878901d4216cc86ef8eb8b00bd71cf068d87cfe21352460abac",
+    "V1095": "18d2c7f4b9ca3027216178f806a6ef389448f8ba8f089d5f746f2b9608ccec24"
+  },
+  "flywayChecksum": {
+    "1094": -1031052192,
+    "1095": -1470147673
+  },
+  "latestMainAndCanonicalIdentifier37": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSourceSelectorTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.341"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpClientAddressTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.671"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpConsentTemplateTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.128"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpUserLimiterTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.049"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpRedactionTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.479"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.054"
+    }
+  ]
+}

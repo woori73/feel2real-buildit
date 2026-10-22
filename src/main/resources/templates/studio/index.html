@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI AGENT · 제작 스튜디오</title>
+    <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+    <link rel="stylesheet" href="/css/agent_studio.css" />
+    <script src="/js/agent_studio.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/" class="brand">Feel2Real <span>PRODUCTION</span></a
+      ><a href="/mcp/connections">AI 연결 관리 ↗</a>
+    </header>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">FEEL2REAL ORIGINAL · PART 01</p>
+        <h1>《AI AGENT》<small>제작 스튜디오</small></h1>
+        <p>각본에서 마지막 컷까지, 작품의 근거와 결정을 함께 보존합니다.</p>
+        <div id="project-info"></div>
+        <button id="initialize" hidden>1부 프로젝트 개설</button>
+      </section>
+      <p id="message" role="status" aria-live="polite"></p>
+      <nav class="tabs" aria-label="제작 영역">
+        <button data-tab="materials" aria-current="page">제작 자료</button
+        ><button data-tab="files">원본 파일</button
+        ><button data-tab="compare">버전 비교</button
+        ><button data-tab="chat">작품 자료 검색·채팅</button
+        ><button data-tab="history">작업 이력</button
+        ><button data-tab="members">접근 관리</button>
+      </nav>
+      <section id="materials" class="panel">
+        <div class="toolbar">
+          <label
+            >회차<select id="episode">
+              <option value="">전체 회차·공통 설정</option>
+            </select></label
+          ><label
+            >자료 유형<select id="kind">
+              <option value="">전체 유형</option>
+              <option value="SCRIPT">각본</option>
+              <option value="STORYBOARD">콘티</option>
+              <option value="CHARACTER">캐릭터</option>
+              <option value="VIDEO">영상</option>
+              <option value="JOB">생성 작업</option>
+              <option value="REVIEW">검수 결과</option>
+            </select></label
+          ><label
+            >검색<input
+              id="query"
+              maxlength="200"
+              placeholder="대사·연출·설정 검색" /></label
+          ><button id="search">검색</button
+          ><button id="new-revision">자료 등록</button>
+        </div>
+        <div id="episodes" class="episodes"></div>
+        <div id="cut-grid" class="cuts" aria-label="EP01 68컷 현황"></div>
+        <div class="split">
+          <div>
+            <h2>자료와 수정 이력</h2>
+            <p class="hint">
+              버전은 200개씩 더 불러올 수 있습니다. 컷 현황은 최신 버전 전체를 별도로 조회합니다. 정본·AI 제안·사용자 승인본을 구분합니다.
+            </p>
+            <div id="revision-list"></div><button id="load-more" hidden>이전 버전 더 불러오기</button>
+          </div>
+          <article id="detail" class="detail">
+            <h2>작품의 기록을 선택하세요</h2>
+            <p>실제 자료가 없는 회차와 컷은 업로드 대기입니다.</p>
+          </article>
+        </div>
+      </section>
+      <section id="files" class="panel" hidden>
+        <h2>원본 보관함</h2>
+        <p>
+          PDF · HTML · JSON · MD · ZIP · PNG · MP4 / 파일당 최대 100 MiB. 원본은
+          덮어쓰지 않으며 프로젝트 내 SHA-256으로 중복을 확인합니다.
+        </p>
+        <form id="upload-form">
+          <label
+            >원본 파일<input
+              type="file"
+              id="upload-file"
+              accept=".pdf,.html,.json,.md,.zip,.png,.mp4"
+              required /></label
+          ><button>업로드</button>
+        </form>
+        <form id="bulk-form"><label>EP01 68컷 일괄 등록 원본<select id="bulk-file"></select></label><p>보관한 JSON 또는 manifest.json 포함 ZIP의 1~68컷을 새 버전으로 등록합니다. 원본·이전 버전·기존 승인 이력은 보존하며, 새 버전은 개별 검수 전 미승인입니다.</p><button>68컷 일괄 등록</button></form><div id="file-list"></div>
+        <div id="file-preview"></div>
+      </section>
+      <section id="compare" class="panel" hidden>
+        <h2>버전 비교</h2>
+        <p>
+          r14·r2·r3·r4 등 등록된 버전을 선택하세요. 비교는 승인 상태를 변경하지
+          않습니다.
+        </p>
+        <div class="toolbar">
+          <label>왼쪽 버전<select id="left-version"></select></label
+          ><label>오른쪽 버전<select id="right-version"></select></label
+          ><button id="compare-button">비교</button>
+        </div>
+        <div id="comparison" class="compare-grid"></div>
+      </section>
+      <section id="chat" class="panel" hidden>
+        <h2>작품 자료와 대화</h2>
+        <p>
+          등록한 제목·본문·대사·연출에서 근거를 찾아 보여줍니다. 외부 AI 호출
+          없이 작동하며, 생성형 답변은 연결한 ChatGPT·Claude에서 이용하세요.
+        </p>
+        <div id="chat-log" role="log" aria-live="polite"></div>
+        <form id="chat-form" class="toolbar">
+          <label
+            >찾고 싶은 자료<input
+              id="chat-query"
+              required
+              maxlength="200"
+              placeholder="예: EP01 마지막 장면" /></label
+          ><button>자료 찾기</button>
+        </form>
+      </section>
+      <section id="history" class="panel" hidden>
+        <h2>작업·검수·승인 이력</h2>
+        <div id="event-list"></div>
+      </section>
+      <section id="members" class="panel" hidden>
+        <h2>제작 담당자 권한</h2>
+        <p>
+          관리자만 기존 회원의 사용자 ID에 권한을 부여하거나 폐기할 수 있습니다.
+        </p>
+        <form id="member-form" class="toolbar">
+          <label
+            >회원 사용자 ID<input
+              name="userId"
+              type="number"
+              min="1"
+              required /></label
+          ><label
+            >권한<select name="permission">
+              <option value="VIEWER">열람</option>
+              <option value="EDITOR">제작·수정</option>
+              <option value="APPROVER">검수·승인</option>
+              <option value="REVOKE">접근 폐기</option>
+            </select></label
+          ><button>권한 저장</button>
+        </form>
+        <div id="member-list"></div>
+      </section>
+      <dialog id="editor">
+        <form id="revision-form">
+          <div class="toolbar">
+            <h2>자료 버전 등록</h2>
+            <button type="button" id="close-editor">닫기</button>
+          </div>
+          <p>
+            저장하면 새 이력이 만들어집니다. AI 제안은 자동 승인되지 않습니다.
+          </p>
+          <input name="parentId" type="hidden" />
+          <div class="form-grid">
+            <label
+              >자료 키<input
+                name="itemKey"
+                pattern="[a-zA-Z0-9_-]{1,100}"
+                required
+                placeholder="ep01-script" /></label
+            ><label
+              >버전 라벨<input
+                name="label"
+                required
+                maxlength="40"
+                placeholder="r14" /></label
+            ><label
+              >유형<select name="kind">
+                <option value="SCRIPT">각본</option>
+                <option value="STORYBOARD">콘티</option>
+                <option value="CHARACTER">캐릭터</option>
+                <option value="VIDEO">영상</option>
+                <option value="JOB">생성 작업</option>
+                <option value="REVIEW">검수 결과</option>
+              </select></label
+            ><label
+              >회차 (공통 설정은 비움)<input
+                name="episode"
+                type="number"
+                min="1"
+                max="14" /></label
+            ><label
+              >컷 번호<input
+                name="cutNumber"
+                type="number"
+                min="1"
+                max="999" /></label
+            ><label
+              >출처<select name="origin">
+                <option value="ORIGINAL">원작 정본</option>
+                <option value="AI_PROPOSAL">AI 제안</option>
+                <option value="USER_EDIT">사용자 수정</option>
+              </select></label
+            ><label
+              >작업 상태<select name="workStatus">
+                <option value="WAITING">업로드·작업 대기</option>
+                <option value="WORKING">진행 중</option>
+                <option value="READY">준비 완료</option>
+                <option value="REVIEW">검수 중</option>
+                <option value="FAILED">실패</option>
+              </select></label
+            ><label
+              >원본 파일<select name="fileId">
+                <option value="">파일 없음 · 업로드 대기</option>
+              </select></label
+            >
+          </div>
+          <label>제목<input name="title" required maxlength="150" /></label
+          ><label
+            >각본·캐릭터 설정·생성 작업·검수 내용<textarea
+              name="content"
+              rows="10"
+              maxlength="200000"
+            ></textarea></label
+          ><label
+            >대사<textarea
+              name="dialogue"
+              rows="3"
+              maxlength="10000"
+            ></textarea></label
+          ><label
+            >연출<textarea
+              name="direction"
+              rows="3"
+              maxlength="10000"
+            ></textarea></label
+          ><button type="submit">새 버전으로 저장</button>
+        </form>
+      </dialog>
+      <dialog id="review-dialog">
+        <form id="review-form">
+          <h2>사용자 검수 결정</h2>
+          <p id="review-target"></p>
+          <label
+            >결정<select name="action">
+              <option value="APPROVE">이 버전을 사용자 승인본으로 지정</option>
+              <option value="REJECT">이 버전 반려</option>
+            </select></label
+          ><label
+            >검수 메모<textarea
+              name="note"
+              maxlength="2000"
+              required
+            ></textarea>
+          </label>
+          <div class="toolbar">
+            <button type="button" id="cancel-review">취소</button
+            ><button>검수 결과 저장</button>
+          </div>
+        </form>
+      </dialog>
+      <footer>
+        원본은 보존하고, 제안은 구분하고, 승인은 사람이 결정합니다.
+      </footer>
+    </main>
+  </body>
+</html>

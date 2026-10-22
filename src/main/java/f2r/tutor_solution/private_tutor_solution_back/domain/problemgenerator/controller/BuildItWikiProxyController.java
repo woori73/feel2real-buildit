@@ -85,6 +85,9 @@ public class BuildItWikiProxyController {
     String contentType = request.getHeader("Content-Type");
     if (contentType != null) builder.header("Content-Type", contentType);
     if (principal != null) identitySigner.sign(builder, principal);
+    if (principal != null && Boolean.TRUE.equals(request.getAttribute("f2r.mcp.readOnly"))) {
+      identitySigner.signReadOnly(builder, principal, targetPath + (query == null ? "" : "?" + query));
+    }
     if (principal != null) {
       String workspaceOverride = request.getHeader(WIKI_WORKSPACE_HEADER);
       if (workspaceOverride != null && !workspaceOverride.isBlank()) builder.header(WIKI_WORKSPACE_HEADER, workspaceOverride);

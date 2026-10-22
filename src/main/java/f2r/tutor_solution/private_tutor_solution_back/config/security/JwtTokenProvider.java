@@ -82,6 +82,20 @@ public class JwtTokenProvider {
     return new AuthenticatedPrincipal(userId, loginId, role, claims.get(CLAIM_CREDENTIAL_STAMP, String.class));
   }
 
+  /** Internal MCP delegation: bound to one exact GET target, valid for 15 seconds. Never returned to clients. */
+  public String issueReadOnly(AuthenticatedPrincipal p, String target) {
+    Instant now = Instant.now();
+    var b = Jwts.builder().subject(String.valueOf(p.userId())).claim(CLAIM_LOGIN_ID, p.loginId())
+        .claim(CLAIM_ROLE, p.role()).claim("mcp_get", target);
+    if (p.credentialStamp() != null) b.claim(CLAIM_CREDENTIAL_STAMP, p.credentialStamp());
+    return b.issuedAt(Date.from(now)).expiration(Date.from(now.plusSeconds(15)))
+        .signWith(signingKey, Jwts.SIG.HS256).compact();
+  }
+
+  public String readOnlyTarget(String token) {
+    return Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload().get("mcp_get", String.class);
+  }
+
   /** 만료 시각 — 쿠키 Max-Age 동기화용. */
   public long expirationSeconds() {
     return expirationSeconds;

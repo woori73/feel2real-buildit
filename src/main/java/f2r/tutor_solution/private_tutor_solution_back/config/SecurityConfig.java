@@ -604,6 +604,8 @@ public class SecurityConfig {
             .requestMatchers("/api/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             .requestMatchers("/api/tutor/**").hasRole("TUTOR")
 
+            .requestMatchers("/ai-agent-studio", "/api/studio/**").authenticated()
+
             // 그 외 모든 /api/**는 인증 필요
             .requestMatchers("/api/**").authenticated()
 
@@ -614,7 +616,9 @@ public class SecurityConfig {
         .addFilterBefore(subdomainAcademyFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterAfter(archivedRouteAliasFilter, SubdomainAcademyFilter.class)
         .addFilterAfter(jwtAuthenticationFilter, ArchivedRouteAliasFilter.class)
-        .addFilterAfter(chartAgentTokenFilter, JwtAuthenticationFilter.class)
+        .addFilterAfter(new f2r.tutor_solution.private_tutor_solution_back.config.security.McpReadOnlyTransactionFilter(
+            http.getSharedObject(org.springframework.context.ApplicationContext.class).getBeanProvider(org.springframework.transaction.PlatformTransactionManager.class)), JwtAuthenticationFilter.class)
+        .addFilterAfter(chartAgentTokenFilter, f2r.tutor_solution.private_tutor_solution_back.config.security.McpReadOnlyTransactionFilter.class)
         .addFilterAfter(newstartAgentTokenFilter, ChartAgentTokenFilter.class)
         .addFilterAfter(easyCollectorAgentTokenFilter, NewstartAgentTokenFilter.class)
         .addFilterAfter(veAgentTokenFilter, EasyCollectorAgentTokenFilter.class)

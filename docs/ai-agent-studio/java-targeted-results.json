@@ -1,0 +1,21 @@
+{
+  "targetedFinalRun": [
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpStudioMySqlTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "18.243"
+    },
+    {
+      "name": "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.022"
+    }
+  ],
+  "earlierRegressionRun": "106 tests, 0 failures; JwtTokenProvider, SiteVisitFilter, OriginWhitelistFilter, WikiIdentitySigner, WikiMemberOnlySecurityIntegrationTest, AcademyCraftGateway, BuildItWikiProxyControllerMultipartForwarding, LandingPageController plus studio/MCP. Full repository suite not run."
+}

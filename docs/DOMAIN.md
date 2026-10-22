@@ -1798,6 +1798,17 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 
 > 정정(v3.3 수정 PR): 공식자료(material)는 지식 항목으로 변환하지 않는다. 항목은 근거 전형·일정 행이 ACTIVE일 때만 검색 대상이며, 검색은 대학·캠퍼스·수시/정시·학년도 필터 후 키워드/벡터 관련성 하한을 통과한 항목만 근거로 반환한다.
 
+## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)
+
+- `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.
+- `studio_files`: 원본 불변 메타데이터. project+SHA-256 유일성, 기존 FileStorage local/S3 재사용. 공개 storage key·공유 다운로드 URL 없음. `StudioFile` immutable Entity가 스키마를 검증한다.
+- `studio_items` / `studio_revisions`: 자료별 head·approved 포인터와 append-only 버전. `StudioRevision` immutable Entity 및 `StudioService.Revision` 명령 DTO. 프로젝트 행 잠금과 parentId 비교로 경합 차단. SCRIPT/STORYBOARD/CHARACTER/VIDEO/JOB/REVIEW, ORIGINAL/AI_PROPOSAL/USER_EDIT를 구분한다.
+- `studio_events`: 업로드·새 버전·승인·반려·권한 변경 감사 이력. 원본/버전 삭제·덮어쓰기 API를 제공하지 않는다.
+- `mcp_clients`, `mcp_pending`, `mcp_grants`, `mcp_codes`, `mcp_tokens`: 사용자 OAuth 동의, S256 PKCE, 일회용 코드, hash-only opaque token, 15분 access·최대 30일 갱신·refresh 재사용 시 연결 폐기. 사용자 role·자격 증명 stamp를 매 호출 재검사한다. OAuth 행은 제한된 JDBC 명령으로 관리하며 외부 DTO에 비밀값을 넣지 않는다.
+- `mcp_audit`, `mcp_rate_limits`: 원문/토큰/검색문을 제외한 감사 이력과 DB 기반 호출 상한. 새 RDS·서버·유료 AI/임베딩 API 없음.
+
+설계·실측·실제 연결 미검증 범위: [통합 보고서](ai-agent-studio/REPORT.md). 운영 DB에 이 마이그레이션을 적용하지 않았다. 병합 직전 최신 main과 V번호 충돌을 재확인한다.
+
 ## 통합 AI 업무 비서 (작업 A, 로컬 프로토타입)
 
 `V1094__unified_assistant.sql`과 `domain/unifiedassistant/`의 엔티티를 함께 추가했다.
@@ -1811,5 +1822,7 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 기존 학원·학생·반·출결·상담·사업체·거래 테이블의 권한/생성 정책은 그대로다. 학원 데이터는 서명 게이트웨이/기존 업무 API, 거래·증빙은 기존 Easy import와 장부 서비스를 통해 처리한다. 새 감사행에는 이름·연락처·인증키·원본 파일 내용을 넣지 않는다. 상태 전이와 격리 정책은 [작업 A 분석 보고서](unified-ai-assistant/README.md)를 참고한다.
 
 통합 초안 상태는 PENDING/EXECUTING/VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN/CANCELLED/EXPIRED/INVALIDATED다. FAILED는 원격 쓰기 요청의 명확한 거절이며, 성공 후 조회 실패는 UNKNOWN으로 보존한다. 대화·파일 분석은 기존 초안 저장소를 사용하고 별도 학생/거래 복제 테이블을 만들지 않는다. 대화 입력 원문은 영속화하지 않으며 새로고침 시 승인 기록만 현재 권한으로 복원한다.
+
+스튜디오 복원은 기존 revision/file 행을 수정하지 않고 새 revision 및 RESTORE 이벤트를 추가한다. `approved_id`는 별도 명시 검수 전 유지한다. JSON/ZIP 일괄 등록도 원본 sourceFileId/SHA를 보존하고 68개 revision과 BULK_IMPORT 이력을 추가한다. 별도 데이터/권한 테이블을 복제하지 않는다. #854는 V1094, #855는 V1095이며 신규 운영 스키마 적용은 하지 않았다. 관리자 외부 제공 위험 확인은 기존 mcp_audit의 SENSITIVE_ACK로 기록한다.
 
 `unified_assistant_audit`에 `operation`, `academy_id`, `business_id`(모두 nullable)가 추가됐다(V1094는 main·운영에 미적용 상태라 같은 파일에서 수정). 초안 관련 이벤트는 업무 종류와 학원/사업체 범위를 함께 남긴다. 이벤트 `RECOVERED_UNKNOWN`은 중단된 `EXECUTING` 초안을 `UNKNOWN`으로 전환했음을 뜻한다.
