@@ -12,14 +12,14 @@
 | 운영 RDS 호환성 | **버전 미확인.** 저장소 근거와 추론은 있으나 운영 DB 조회는 하지 않았음 (§4) |
 | ChatGPT·Claude 실접속 | **미실행.** 공개 HTTPS와 사용자 계정 필요 (§5) |
 | 실제 68컷 자료 검증 | **미실행.** 실제 EP01 파일 없음. 합성 22/22 통과 (§6) |
-| #854 CI | 최신 헤드 `mysql-integration-test` 1회 실패(Selenium 시간초과 1건), 재실행 진행 중 (§1) |
+| #854 CI | 최신 헤드 전부 성공 (1차 Selenium 시간초과 1건은 재실행 통과, §1) |
 | **Draft 해제·병합 승인 요청** | **아직 요청하지 않음.** 필수 검증 미완료 (§9) |
 
 ## 1. PR별 현황 (조회 시점 06:30 UTC)
 
 | PR | 최신 HEAD | CI |
 |---|---|---|
-| #854 | `253d938` | build ✅ · mysql-integration-test: 1차 ❌ → 재실행 진행 중. 실패 1건은 `AdmissionsBrowserQaMySqlTest.memberDashboardPcAndMobileWithSourceAndHistory`(입시상담 화면 Selenium 요소 대기 시간초과, 360건 중 1건). main(`2bed391`)은 성공, #855(#854 포함)의 같은 잡은 성공했으므로 일시적 가능성이 높다 — **재실행 결과로 확정 필요** |
+| #854 | `253d938` | build ✅ · mysql-integration-test ✅ (**재실행 후 성공**). 1차 실패는 `AdmissionsBrowserQaMySqlTest.memberDashboardPcAndMobileWithSourceAndHistory`(입시상담 화면 Selenium 요소 대기 시간초과, 360건 중 1건)였고 재실행(06:35)에서 통과 → 일시적 실패로 판단. 같은 테스트가 불안정할 수 있으므로 병합 직전 CI를 한 번 더 확인 |
 | #853 | `cbf19cd` | build ✅ · mysql-integration-test ✅ · sample-only ✅ |
 | #855 | `2d7f74a` | build ✅ · mysql-integration-test ✅ · isolated ✅ · sample-only ✅ |
 | main | `2bed391` | 성공 (마이그레이션 최고 번호 여전히 V1093) |
@@ -120,7 +120,7 @@
 ## 8. 잔여 결함
 
 - **P0:** 없음 (수정 전 상태에서 개인정보 노출은 없으나, §2는 승인 우회라 P1로 분류).
-- **P1:** (1) #853 수집 배치 승인 우회(§2) (2) MCP 운영 활성화 전 trusted-proxies 미설정(§5) (3) 실제 ChatGPT·Claude 접속 미검증 (4) #854 CI 재실행 결과 대기.
+- **P1:** (1) #853 수집 배치 승인 우회(§2) (2) MCP 운영 활성화 전 trusted-proxies 미설정(§5) (3) 실제 ChatGPT·Claude 접속 미검증 (4) 입시상담 Selenium 테스트의 간헐 실패 가능성(재실행으로 통과).
 - **P2:** 운영 RDS 버전 미확인 · 실제 68컷 자료 미검증 · Muse 조직 전체 상한 없음 · 실제 Muse 응답 미검증 · AcademyCraft 실데이터 격리 미검증 · 출결 정정 미제공 · 승인 전 import 배치 고아 정리 정책 없음 · #854 Playwright E2E(Docker) 이번에 미실행 · 원본 100MiB byte[] 적재 · 이전 V1094 적용 로컬 DB 체크섬 불일치.
 - **P3:** 마스킹 휴리스틱 · S3 읽기 비용 · 기존 JS 테스트 40건 실패(main과 동일).
 
