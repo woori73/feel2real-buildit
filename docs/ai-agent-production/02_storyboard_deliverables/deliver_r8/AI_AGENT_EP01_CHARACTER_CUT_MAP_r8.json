@@ -1,0 +1,2499 @@
+{
+ "meta": {
+  "project": "AI AGENT EP01",
+  "version": "r8",
+  "character_id_suni": "CH_SUNI",
+  "approved_image": "references/suni/SUNI_APPROVED_SHEET_original.png",
+  "sha256": "461926ffdb3a391c6b31d55aa759a4716674264209947d9cf55c7732e7f23be6",
+  "approval_status": "APPROVED — CHARACTER VISUAL REFERENCE (얼굴·헤어·인상·질감·동일인 유지 범위)",
+  "not_canon": [
+   "나이 33세",
+   "키 168cm",
+   "직업"
+  ],
+  "costume_blocks": {
+   "A": "컷 1~48 야간·비",
+   "B": "컷 49~61 낮·복도",
+   "C": "컷 62~68 점퍼 탈의 후"
+  },
+  "note": "원본 대조 0/68컷, 모든 컷 pass_confirmed=false. 연결 계획이며 이미지 생성을 의미하지 않음",
+  "character_id_leader": "CH_LEADER",
+  "leader_approved_image": "references/leader/LEADER_APPROVED_SHEET_v2_original.png",
+  "leader_sha256": "7cb7de4a7bb480e6f5f96b77936ccf8529874c740a16595ca08f8de5a137db59",
+  "suni_sha256": "461926ffdb3a391c6b31d55aa759a4716674264209947d9cf55c7732e7f23be6",
+  "leader_approval_status": "APPROVED — CHARACTER VISUAL REFERENCE (얼굴형·눈썹·눈매·턱선 고정, 컷 38·65 동일 인물 판정)",
+  "leader_pending_inspection": [
+   "손 좌우 방향",
+   "장비 세부(패치·견장·벨트)"
+  ],
+  "revision_basis": "deliver_r7 무변경 보존, 본 파일은 개정본",
+  "suni_wound": {
+   "side": "왼쪽 옆구리(인물 기준)",
+   "status": "확정(사용자 승인, 2026-10-22)",
+   "applies": "컷 22~48(찢김·칼 자국 → 지혈 붕대), 후보 S5·S6 동일 위치"
+  },
+  "suni_costume_B_holster": "권총집은 S3 전신 후보에만 작게 표시, 상반신 컷·후보에서는 비표시(사용자 승인). 권총집 위치는 r5 설정(오른쪽 허리) 승계, 확인 가능",
+  "suni_S1_S2_approved_image": "references/suni/SUNI_S1_S2_APPROVED_SHEET_original.png",
+  "suni_S1_S2_sha256": "a35ceeed47c528c716bf21f97001aca14dd216cc5eefbdcda1d723ba4e7c1e9f",
+  "suni_S1_S2_status": "APPROVED — CHARACTER VISUAL REFERENCE (S1 좌측면, S2 의상 A 전신 정면·측면·후면)",
+  "pending_candidates": {
+   "S3": "의상 B 전신 — 이미지 미접수",
+   "S4": "의상 C 전신 — 이미지 미접수",
+   "S5": "상처 상태 — 미제작(S1~S4 검수 후)",
+   "S6": "지혈 붕대 상태 — 미제작(S1~S4 검수 후)"
+  }
+ },
+ "suni_references": {
+  "front": "references/suni/suni_front_face_crop.png",
+  "three_quarter": "references/suni/suni_three_quarter_face_crop.png",
+  "right_side": "references/suni/suni_right_side_face_crop.png",
+  "expressions": {
+   "neutral": "references/suni/suni_expr_01_neutral_crop.png",
+   "determined": "references/suni/suni_expr_02_determined_crop.png",
+   "tense": "references/suni/suni_expr_03_tense_crop.png",
+   "surprised": "references/suni/suni_expr_04_surprised_crop.png",
+   "sad": "references/suni/suni_expr_05_sad_crop.png",
+   "angry": "references/suni/suni_expr_06_angry_crop.png"
+  },
+  "costume": {
+   "A": "references/suni/suni_costume_A_crop.png",
+   "B": "references/suni/suni_costume_B_crop.png",
+   "C": "references/suni/suni_costume_C_crop.png"
+  },
+  "S1_left_profile": "references/suni/suni_S1_left_profile_crop.png",
+  "S2_A_fullbody": {
+   "S2_A_front": "references/suni/suni_S2_A_front_crop.png",
+   "S2_A_side": "references/suni/suni_S2_A_side_crop.png",
+   "S2_A_back": "references/suni/suni_S2_A_back_crop.png"
+  }
+ },
+ "cuts": [
+  {
+   "cut": 1,
+   "shot_type": "풀샷(부감)",
+   "characters": [
+    "-"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_01.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 2,
+   "shot_type": "3분할 컷",
+   "characters": [
+    "-"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_02.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 3,
+   "shot_type": "미디엄",
+   "characters": [
+    "박상구"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_03.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 4,
+   "shot_type": "클로즈업 2연속",
+   "characters": [
+    "(총격 주체 비노출)"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_04.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 5,
+   "shot_type": "클로즈업",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": {
+    "suni": "A 야간 클로즈업(비 조명) 정면 기준"
+   },
+   "rough_panel": "panels_preserved_68/cut_05.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 6,
+   "shot_type": "미디엄 투샷",
+   "characters": [
+    "수니, 조종사"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_06.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 7,
+   "shot_type": "와이드",
+   "characters": [
+    "수니, 조종사"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_07.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 8,
+   "shot_type": "세로 낙차(롱테이크 6초)",
+   "characters": [
+    "수니(실루엣)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_08.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 9,
+   "shot_type": "미디엄 클로즈",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_09.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 10,
+   "shot_type": "와이드",
+   "characters": [
+    "용역(6명, 리더 포함 해석)"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": true,
+   "leader_face_required": false,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "손 정상(컷 37에서 손가락 골절 발생)",
+   "leader_reference": {
+    "face": null,
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_10.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 11,
+   "shot_type": "클로즈업 2연속",
+   "characters": [
+    "수니, 용역 2명"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_11.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 12,
+   "shot_type": "세로 큰 컷(풀샷)",
+   "characters": [
+    "수니, 용역 1명"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_12.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 13,
+   "shot_type": "미디엄",
+   "characters": [
+    "수니, 용역(쓰러짐)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_13.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 14,
+   "shot_type": "작은 컷(오버숄더)",
+   "characters": [
+    "수니, 쓰러진 용역, 남은 용역 5명"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_14.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 15,
+   "shot_type": "와이드",
+   "characters": [
+    "-"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_15.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 16,
+   "shot_type": "클로즈업(귀/손)",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_16.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 17,
+   "shot_type": "미디엄",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_17.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 18,
+   "shot_type": "검정 컷",
+   "characters": [
+    "-"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_18.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 19,
+   "shot_type": "와이드",
+   "characters": [
+    "용역(고글 해제), 수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_19.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 20,
+   "shot_type": "작은 컷 3연속",
+   "characters": [
+    "수니, 용역"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_20.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 21,
+   "shot_type": "미디엄",
+   "characters": [
+    "수니, 용역(두 번째)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": null
+   },
+   "suni_state": "상처 없음(컷 22 이전)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_21.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 22,
+   "shot_type": "클로즈업",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": {
+    "suni": "A 야간 클로즈업, 옆구리 부상 직후"
+   },
+   "rough_panel": "panels_preserved_68/cut_22.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 23,
+   "shot_type": "작은 컷 2연속",
+   "characters": [
+    "수니, 쓰러진 용역 3명(컷 12·20·21)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_23.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 24,
+   "shot_type": "미디엄",
+   "characters": [
+    "박상구, 수니(시점)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_24.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_note": "POV 컷: 화면에 얼굴이 보일 때만 승인 얼굴 참조(사용자 결정)"
+  },
+  {
+   "cut": 25,
+   "shot_type": "미디엄",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_25.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 26,
+   "shot_type": "와이드",
+   "characters": [
+    "조종사(무전), 용역, 수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_26.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 27,
+   "shot_type": "POV(연두색 고글)",
+   "characters": [
+    "용역 2명, 리더, 수니(열 신호)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": false,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "손 정상(컷 37에서 손가락 골절 발생)",
+   "leader_reference": {
+    "face": null,
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_27.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 28,
+   "shot_type": "클로즈업",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_28.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 29,
+   "shot_type": "작은 컷",
+   "characters": [
+    "박상구, 수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_29.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 30,
+   "shot_type": "중간 컷",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_30.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 31,
+   "shot_type": "세로 큰 컷(와이드)",
+   "characters": [
+    "용역"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_31.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 32,
+   "shot_type": "와이드",
+   "characters": [
+    "지게차, 용역 2명"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_32.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 33,
+   "shot_type": "작은 컷 2연속",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_33.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 34,
+   "shot_type": "중간 컷",
+   "characters": [
+    "리더, 수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": true,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "손 정상(컷 37에서 손가락 골절 발생)",
+   "leader_reference": {
+    "face": [
+     "references/leader/leader_v2_front_crop.png",
+     "references/leader/leader_v2_three_quarter_crop.png",
+     "references/leader/leader_v2_right_side_crop.png"
+    ],
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_34.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 35,
+   "shot_type": "와이드",
+   "characters": [
+    "수니, 리더"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": false,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "손 정상(컷 37에서 손가락 골절 발생)",
+   "leader_reference": {
+    "face": null,
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_35.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 36,
+   "shot_type": "작은 컷 3연속",
+   "characters": [
+    "리더, 수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": false,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "손 정상(컷 37에서 손가락 골절 발생)",
+   "leader_reference": {
+    "face": null,
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_36.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 37,
+   "shot_type": "클로즈업",
+   "characters": [
+    "수니, 리더"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": true,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "오른손 손가락 골절(꺾임)",
+   "leader_reference": {
+    "face": [
+     "references/leader/leader_v2_front_crop.png",
+     "references/leader/leader_v2_three_quarter_crop.png",
+     "references/leader/leader_v2_right_side_crop.png"
+    ],
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_37.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 38,
+   "shot_type": "중간 컷",
+   "characters": [
+    "수니, 리더"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": true,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "오른손 부음",
+   "leader_reference": {
+    "face": [
+     "references/leader/leader_v2_front_crop.png",
+     "references/leader/leader_v2_three_quarter_crop.png",
+     "references/leader/leader_v2_right_side_crop.png"
+    ],
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": "references/leader/leader_v2_cut38_lighting_crop.png",
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": {
+    "leader": "야간 중간컷 — 리더 얼굴 기준"
+   },
+   "rough_panel": "panels_preserved_68/cut_38.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 39,
+   "shot_type": "클로즈업 2단",
+   "characters": [
+    "수니, 리더"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": true,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "오른손 부음",
+   "leader_reference": {
+    "face": [
+     "references/leader/leader_v2_front_crop.png",
+     "references/leader/leader_v2_three_quarter_crop.png",
+     "references/leader/leader_v2_right_side_crop.png"
+    ],
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_39.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 40,
+   "shot_type": "클로즈업",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": {
+    "suni": "A 부상·붕대 이후 클로즈업(수첩)"
+   },
+   "rough_panel": "panels_preserved_68/cut_40.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 41,
+   "shot_type": "와이드",
+   "characters": [
+    "(수니 반응)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_41.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 42,
+   "shot_type": "미디엄",
+   "characters": [
+    "우진, 수니, 박상구"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 재킷 찢김·칼 자국(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_42.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 43,
+   "shot_type": "미디엄(로우앵글)",
+   "characters": [
+    "정진모(첫 정식 노출), 리더, 용역 6명"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": true,
+   "leader_face_required": true,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "오른손 붕대+간이 부목(응급 고정)",
+   "leader_reference": {
+    "face": [
+     "references/leader/leader_v2_front_crop.png",
+     "references/leader/leader_v2_three_quarter_crop.png",
+     "references/leader/leader_v2_right_side_crop.png"
+    ],
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": "references/leader/leader_v2_hand_emergency_cut43_crop.png",
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": {
+    "leader": "응급 고정 오른손"
+   },
+   "rough_panel": "panels_preserved_68/cut_43.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 44,
+   "shot_type": "오버숄더 투샷",
+   "characters": [
+    "정진모, 수니, 우진, 용역 6명, 지원팀"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 지혈 붕대 처치 완료(위치 확정)",
+   "leader_appears": true,
+   "leader_face_required": true,
+   "leader_costume": "야간 복장",
+   "leader_right_hand": "오른손 붕대+간이 부목(응급 고정)",
+   "leader_reference": {
+    "face": [
+     "references/leader/leader_v2_front_crop.png",
+     "references/leader/leader_v2_three_quarter_crop.png",
+     "references/leader/leader_v2_right_side_crop.png"
+    ],
+    "costume": "references/leader/leader_v2_fullbody_night_crop.png",
+    "hand": "references/leader/leader_v2_hand_emergency_cut43_crop.png",
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_44.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 45,
+   "shot_type": "클로즈업",
+   "characters": [
+    "정진모, 수니(화면 밖)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 지혈 붕대 처치 완료(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": "오른손 붕대+간이 부목(응급 고정)",
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_45.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 46,
+   "shot_type": "미디엄 → 인서트",
+   "characters": [
+    "박상구"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_46.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 47,
+   "shot_type": "큰 컷(클로즈) + 인서트",
+   "characters": [
+    "박상구, 수니(손)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "A",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_A_crop.png",
+    "costume_fullbody_A": [
+     "references/suni/suni_S2_A_front_crop.png",
+     "references/suni/suni_S2_A_side_crop.png",
+     "references/suni/suni_S2_A_back_crop.png"
+    ],
+    "left_profile_candidate_approved": "references/suni/suni_S1_left_profile_crop.png",
+    "wound_state_reference": "S5·S6 미제작"
+   },
+   "suni_state": "왼쪽 옆구리 지혈 붕대 처치 완료(위치 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_47.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 48,
+   "shot_type": "작은 컷",
+   "characters": [
+    "박상구"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_48.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 49,
+   "shot_type": "와이드(기준 구도)",
+   "characters": [
+    "수니(의상 B), 우진, 팀원 5명"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_49.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "전신·와이드 구도에서만 작게 허용(해석), 상반신·클로즈업 비표시"
+  },
+  {
+   "cut": 50,
+   "shot_type": "클로즈업",
+   "characters": [
+    "수니(의상 B)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": {
+    "suni": "B 낮 복도 클로즈업"
+   },
+   "rough_panel": "panels_preserved_68/cut_50.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 51,
+   "shot_type": "작은 컷 3연속",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_51.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 52,
+   "shot_type": "큰 컷(와이드 → 모니터 인서트)",
+   "characters": [
+    "박상구(쓰러짐)"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_52.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 53,
+   "shot_type": "와이드(컷 49와 동일 구도)",
+   "characters": [
+    "수니, 우진, 팀원 5명"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_53.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "전신·와이드 구도에서만 작게 허용(해석), 상반신·클로즈업 비표시"
+  },
+  {
+   "cut": 54,
+   "shot_type": "중간 투샷",
+   "characters": [
+    "정진모, 수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_54.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 55,
+   "shot_type": "작은 컷",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_55.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 56,
+   "shot_type": "작은 컷",
+   "characters": [
+    "우진(전화), 수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_56.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 57,
+   "shot_type": "세로 큰 컷(틸트다운 6초)",
+   "characters": [
+    "-"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_57.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 58,
+   "shot_type": "중간 컷",
+   "characters": [
+    "감찰 3명, 정진모, 수니(시점)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_58.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_note": "POV 컷: 화면에 얼굴이 보일 때만 승인 얼굴 참조(사용자 결정)",
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 59,
+   "shot_type": "작은 컷 투샷",
+   "characters": [
+    "수니, 정진모"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_59.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 60,
+   "shot_type": "클로즈업",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": {
+    "suni": "B 낮 클로즈업"
+   },
+   "rough_panel": "panels_preserved_68/cut_60.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "비표시(상반신/근접 구도)"
+  },
+  {
+   "cut": 61,
+   "shot_type": "와이드(컷 49·53 구도)",
+   "characters": [
+    "수니, 우진, 팀원 5명"
+   ],
+   "suni_appears": true,
+   "suni_costume": "B",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_B_crop.png"
+   },
+   "suni_state": "붕대는 점퍼로 가림(의상 B), 상처 위치 왼쪽 옆구리(확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_61.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false,
+   "suni_holster": "전신·와이드 구도에서만 작게 허용(해석), 상반신·클로즈업 비표시"
+  },
+  {
+   "cut": 62,
+   "shot_type": "작은 컷 → 인서트",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "C",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_C_crop.png"
+   },
+   "suni_state": "점퍼 탈의 후 붕대 노출 여부 미확정(상처 위치는 왼쪽 옆구리, 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_62.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 63,
+   "shot_type": "중간 컷(도어 인터폰 어안)",
+   "characters": [
+    "체포조(선두 얼굴 가림)"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": true,
+   "leader_face_required": false,
+   "leader_costume": "체포조(특공 지원팀) 복장",
+   "leader_right_hand": "선두 얼굴 가림(체포조)",
+   "leader_reference": {
+    "face": null,
+    "costume": "references/leader/leader_v2_fullbody_arrest_team_crop.png",
+    "hand": null,
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_63.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 64,
+   "shot_type": "세로 큰 컷(틸트업 짧게)",
+   "characters": [
+    "선두 남자(리더)"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": true,
+   "leader_face_required": false,
+   "leader_costume": "체포조(특공 지원팀) 복장",
+   "leader_right_hand": "오른손 정식 부목(흰 부목+검정 밴드)",
+   "leader_reference": {
+    "face": null,
+    "costume": "references/leader/leader_v2_fullbody_arrest_team_crop.png",
+    "hand": "references/leader/leader_v2_hand_splint_cut64_crop.png",
+    "lighting": null,
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": {
+    "leader": "정식 부목 오른손(전신 세로)"
+   },
+   "rough_panel": "panels_preserved_68/cut_64.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 65,
+   "shot_type": "클로즈업 + 플래시컷",
+   "characters": [
+    "수니, 리더(컷 38 얼굴 플래시)"
+   ],
+   "suni_appears": true,
+   "suni_costume": "C",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_C_crop.png"
+   },
+   "suni_state": "점퍼 탈의 후 붕대 노출 여부 미확정(상처 위치는 왼쪽 옆구리, 확정)",
+   "leader_appears": true,
+   "leader_face_required": true,
+   "leader_costume": "체포조(특공 지원팀) 복장",
+   "leader_right_hand": "오른손 정식 부목(흰 부목+검정 밴드)",
+   "leader_reference": {
+    "face": [
+     "references/leader/leader_v2_front_crop.png",
+     "references/leader/leader_v2_three_quarter_crop.png",
+     "references/leader/leader_v2_right_side_crop.png"
+    ],
+    "costume": "references/leader/leader_v2_fullbody_arrest_team_crop.png",
+    "hand": "references/leader/leader_v2_hand_splint_cut64_crop.png",
+    "lighting": "references/leader/leader_v2_cut65_lighting_crop.png",
+    "pending_inspection": [
+     "손 좌우",
+     "장비 세부"
+    ]
+   },
+   "verification_representative": {
+    "leader": "체포조 복장 클로즈업+컷 38 얼굴 플래시"
+   },
+   "rough_panel": "panels_preserved_68/cut_65.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "수니·리더 승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 66,
+   "shot_type": "작은 컷",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "C",
+   "suni_face_tier": "silhouette",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_C_crop.png"
+   },
+   "suni_state": "점퍼 탈의 후 붕대 노출 여부 미확정(상처 위치는 왼쪽 옆구리, 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_66.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 67,
+   "shot_type": "전체 검정 컷",
+   "characters": [
+    "-"
+   ],
+   "suni_appears": false,
+   "suni_costume": null,
+   "suni_face_tier": null,
+   "suni_reference": null,
+   "suni_state": null,
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": null,
+   "rough_panel": "panels_preserved_68/cut_67.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "해당 없음",
+   "status": "캐릭터 참조 불필요/해당 없음",
+   "pass_confirmed": false,
+   "original_verified": false
+  },
+  {
+   "cut": 68,
+   "shot_type": "마지막 컷(클로즈업)",
+   "characters": [
+    "수니"
+   ],
+   "suni_appears": true,
+   "suni_costume": "C",
+   "suni_face_tier": "face",
+   "suni_reference": {
+    "face": [
+     "references/suni/suni_front_face_crop.png",
+     "references/suni/suni_three_quarter_face_crop.png",
+     "references/suni/suni_right_side_face_crop.png"
+    ],
+    "expression": "cut별 표정은 expressions 참조",
+    "costume": "references/suni/suni_costume_C_crop.png"
+   },
+   "suni_state": "점퍼 탈의 후 붕대 노출 여부 미확정(상처 위치는 왼쪽 옆구리, 확정)",
+   "leader_appears": false,
+   "leader_face_required": false,
+   "leader_costume": null,
+   "leader_right_hand": null,
+   "leader_reference": null,
+   "verification_representative": {
+    "suni": "C 마지막 클로즈업(놀람·경계)"
+   },
+   "rough_panel": "panels_preserved_68/cut_68.png (r5 보존, 재생성 안 함)",
+   "new_image_needed": "후보 제작 대기(ComfyUI 11월)",
+   "status": "승인 얼굴 적용 대상 · 이미지 미생성",
+   "pass_confirmed": false,
+   "original_verified": false
+  }
+ ],
+ "summary": {
+  "suni_cuts": 51,
+  "suni_face_cuts": 29,
+  "suni_silhouette_cuts": 22,
+  "leader_cuts": 13,
+  "representative_suni": [
+   5,
+   22,
+   40,
+   50,
+   60,
+   68
+  ],
+  "representative_leader": [
+   38,
+   43,
+   64,
+   65
+  ],
+  "panels_regenerated": 0,
+  "leader_approved_reference": true
+ },
+ "leader_references": {
+  "sheet": "references/leader/LEADER_APPROVED_SHEET_v2_original.png",
+  "front": "references/leader/leader_v2_front_crop.png",
+  "three_quarter": "references/leader/leader_v2_three_quarter_crop.png",
+  "right_side": "references/leader/leader_v2_right_side_crop.png",
+  "fullbody_night": "references/leader/leader_v2_fullbody_night_crop.png",
+  "fullbody_arrest_team": "references/leader/leader_v2_fullbody_arrest_team_crop.png",
+  "hand_cut43": "references/leader/leader_v2_hand_emergency_cut43_crop.png",
+  "hand_cut64": "references/leader/leader_v2_hand_splint_cut64_crop.png",
+  "lighting_cut38": "references/leader/leader_v2_cut38_lighting_crop.png",
+  "lighting_cut65": "references/leader/leader_v2_cut65_lighting_crop.png"
+ },
+ "suni_pending_candidates": {
+  "left_profile": "S1 미생성",
+  "fullbody_A_B_C": "S2~S4 미생성",
+  "wound_states": "S5·S6 미생성(부상 쪽 확정 후)"
+ }
+}
