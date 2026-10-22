@@ -218,7 +218,17 @@ public class EasyImportService {
         || !batch.getSourceName().endsWith("#run:" + run.getRunId())) {
       throw new AccessDeniedException("수집 배치 소유 사업체가 일치하지 않습니다.");
     }
+    requireCollectionReview(run.getImportBatchId(), approval.getDecisionNote());
     return confirmBatch(batch, null);
+  }
+
+  /** The financial collector's reviewed hash is persisted in its existing server approval note. */
+  void requireCollectionReview(Long batchId, String note) {
+    if (batchId == null) throw new AccessDeniedException("수집 배치가 없습니다.");
+    var batch = requireBatch(batchId);
+    if ("FINANCIAL_FILE".equals(batch.getSourceKind())
+        && !EasyImportReviewHash.matches(note, EasyImportBatchResponse.of(batch, rows(batchId))))
+      throw new AccessDeniedException("REVIEW_CHANGED_OR_NO_BATCH");
   }
 
   /** Generic mutation endpoints must never alter a collection's reviewed draft. */

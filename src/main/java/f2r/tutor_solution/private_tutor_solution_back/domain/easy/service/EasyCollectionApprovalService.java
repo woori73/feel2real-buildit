@@ -108,6 +108,7 @@ public class EasyCollectionApprovalService {
       throw new SecurityException("다른 사업체의 승인 요청입니다.");
     }
 
+    importService.requireCollectionReview(approval.getRun().getImportBatchId(), note);
     approval.approve(decidedBy, note);
     log.info("collection approval approved businessId={} approvalId={} decidedBy={}",
         businessId, approvalId, maskUser(decidedBy));
@@ -228,6 +229,7 @@ public class EasyCollectionApprovalService {
     if (!approval.getBusiness().getBusinessId().equals(business.getBusinessId())) {
       throw new SecurityException("다른 사업체의 승인 요청입니다.");
     }
+    importService.requireCollectionReview(approval.getRun().getImportBatchId(), note);
     approval.approve(decidedBy, note);
     log.info("collection approval approved businessId={} approvalId={} decidedBy={}",
         businessId, approvalId, maskUser(decidedBy));
