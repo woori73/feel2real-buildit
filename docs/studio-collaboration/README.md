@@ -59,3 +59,11 @@ MySQL 회귀36건 PASS(공동 기억6·기존 Studio8·MCP22), Markdown 표/안�
 ## 3단계 · AI 후보 쓰기 연결 설계
 
 [별도 동의형 연결 설계](STUDIO_PROPOSE_DESIGN.md)는 기존 읽기 MCP와 OAuth resource/token/scope를 분리하고, 인증된 AI 주체·출처/SHA·DRAFT·사람 확인·별도 승인을 명시한다. **설계만 제출하며 직접 쓰기 endpoint/토큰 발급/DB는 미구현·비활성이다.** 현재의 사람이 공유한 AI 파일/댓글과 실제 AI 인증 쓰기를 구분한다. Claude 독립 보안 검수와 별도 구현/검증이 필요하다.
+
+## 6단계 · Hermes 준비와 남은 검증
+
+[실행 엔진 인계 준비](HERMES_HANDOFF_PREPARATION.md)는 제작실의 서버 기억/파일/SHA를 새 세션이 읽는 절차, 충돌/권한/예산0/후보 경계, 자동 실행 전 조건을 정리한다. 공식 Hermes 문서를 직접 확인한 결과 Claude Max OAuth는 구매한 추가 사용 크레딧을 쓰므로 자동 실행하지 않는다. Hermes 설치/로그인/유료 호출/운영 활성화 없음. #862 실행기 구현과 중복 개발하지 않는다.
+
+단계별 Draft PR: [사람 열람 #864](https://github.com/woori73/feel2real-buildit/pull/864) → [536개 실적재 #865](https://github.com/woori73/feel2real-buildit/pull/865) → [읽기 MCP #866](https://github.com/woori73/feel2real-buildit/pull/866) → [기억/검수 #867](https://github.com/woori73/feel2real-buildit/pull/867) → [프로젝트/팀 #868](https://github.com/woori73/feel2real-buildit/pull/868) → [별도 쓰기 설계 #869](https://github.com/woori73/feel2real-buildit/pull/869). 본 Hermes 준비 문서는 마지막 별도 PR이다. 각 PR의 Checks는 해당 HEAD CI 결과의 authoritative source이며 변경 영향에 따라 워크플로가 생략된다. Claude 독립 검수는 아직 대기이며 본 개발자가 대신 PASS 판정하지 않는다.
+
+**전체 사람·AI 공동 작업 완료 판정은 보류한다.** 로컬 실제 자료·사람 화면·권한·작업 기억·공식 SDK 전달은 검증했지만, 외부 ChatGPT/Claude 제품의 문서/그림 직접 판독, AI 인증 후보 제출, Hermes 실제 실행은 검증하지 않았다. 격리 HTTPS/계정은 사용자가 준비 전이라고 답변했고 외부 연결 시험만 보류하도록 지시했다. 운영 제작실 적재/DB/배포/MCP 활성화·main 병합·유료 모델/금융기관 접속은 실행하지 않았다.
