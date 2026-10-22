@@ -367,7 +367,11 @@
       if (booted) { start(); return; }
       booted = true;
       var go = function () { if (inView && !doc.hidden) start(); };
-      if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 1500 }); else setTimeout(go, 600);
+      var schedule = function () {
+        if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: coarse ? 3000 : 1500 }); else setTimeout(go, 600);
+      };
+      /* 터치 기기는 페이지 로딩이 끝난 뒤에 시작해 첫 방문의 CPU 경쟁을 피한다 */
+      if (coarse && doc.readyState !== 'complete') window.addEventListener('load', schedule, { once: true }); else schedule();
     }
     function sync() { if (inView && !doc.hidden) startSoon(); else stop(); }
     doc.addEventListener('visibilitychange', sync);
