@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 public interface AssistantDraftRepository extends JpaRepository<AssistantDraft,String> {
   List<AssistantDraft> findTop30ByOwnerIdOrderByCreatedAtDesc(Long ownerId);
+  List<AssistantDraft> findByOwnerIdAndStatusAndExpiresAtBefore(Long ownerId,String status,java.time.LocalDateTime before);
   long countByOwnerIdAndStatus(Long ownerId,String status);
   @Modifying(flushAutomatically=true)
   @Query("update AssistantDraft d set d.status=:status where d.id=:id and d.ownerId=:owner and d.status='PENDING' and d.expiresAt>:now")

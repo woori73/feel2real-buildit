@@ -20,6 +20,8 @@ public class UnifiedAssistantController {
   private final UnifiedAssistantService service;
   private final AssistantCommandParser parser;
   private final AssistantConversationService conversation;
+  @org.springframework.beans.factory.annotation.Value("${buildit.unified-assistant.allowed-origins:http://localhost:8080,https://feel2real.co.kr}")
+  private List<String> allowedOrigins;
   public record ProgressRequest(int step,boolean completed,long version) {}
   public record DraftRequest(Long academyId,Long businessId,String operation,Map<String,Object> input) {}
   public record DecisionRequest(String planHash) {}
@@ -31,8 +33,8 @@ public class UnifiedAssistantController {
     if(response!=null)response.setHeader("Cache-Control","no-store");
     if(!Set.of("GET","HEAD").contains(req.getMethod())) {
       String origin=req.getHeader("Origin");
-      // Fixed deployment origins; never trust Host or forwarded headers as approval authority.
-      if(!Set.of("http://localhost:8080","https://feel2real.co.kr").contains(origin==null?"":origin)) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"동일 출처 요청만 허용합니다.");
+      // Configured deployment origins; never trust Host or forwarded headers as approval authority.
+      if(!allowedOrigins.contains(origin==null?"":origin)) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"동일 출처 요청만 허용합니다.");
     }
   }
   @GetMapping("/progress") public Object progress(@AuthenticationPrincipal AuthenticatedPrincipal p) { return service.state(p); }
@@ -57,13 +59,13 @@ public class UnifiedAssistantController {
   @GetMapping("/drafts") public Object history(@AuthenticationPrincipal AuthenticatedPrincipal p) {return service.history(p).stream().map(this::view).toList();}
   @PostMapping("/drafts/{id}/approve") public Object approve(@AuthenticationPrincipal AuthenticatedPrincipal p,@PathVariable String id,@RequestBody DecisionRequest r) {return view(service.decide(p,id,r.planHash(),false));}
   @PostMapping("/drafts/{id}/cancel") public Object cancel(@AuthenticationPrincipal AuthenticatedPrincipal p,@PathVariable String id,@RequestBody DecisionRequest r) {return view(service.decide(p,id,r.planHash(),true));}
-  public record AuditView(Long id,Long ownerId,String draftId,String event,String createdAt) {}
+  public record AuditView(Long id,Long ownerId,String draftId,String event,String operation,Long academyId,Long businessId,String createdAt) {}
   @GetMapping("/audit") public Object audit(@AuthenticationPrincipal AuthenticatedPrincipal p) {
-    return service.audit(p).stream().map(row->new AuditView(row.getId(),row.getOwnerId(),row.getDraftId(),row.getEvent(),row.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toString())).toList();
+    return service.audit(p).stream().map(row->new AuditView(row.getId(),row.getOwnerId(),row.getDraftId(),row.getEvent(),row.getOperation(),row.getAcademyId(),row.getBusinessId(),row.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toString())).toList();
   }
   private Map<String,Object> turn(AssistantConversationService.Turn t) {
     var out=new LinkedHashMap<String,Object>();out.put("message",t.message());out.put("analysis",t.analysis());out.put("suggestion",t.suggestion());
-    out.put("drafts",t.drafts().stream().map(this::view).toList());out.put("issues",t.issues());out.put("overview",t.overview()==null?null:AssistantJson.plain(t.overview()));return out;
+    out.put("drafts",t.drafts().stream().map(this::view).toList());out.put("issues",t.issues());out.put("overview",t.overview()==null?null:AssistantJson.plain(t.overview()));out.put("data",t.data());return out;
   }
   private Map<String,Object> view(AssistantDraft d) {
     var v=new LinkedHashMap<String,Object>(); v.put("id",d.getId());v.put("operation",d.getOperation());v.put("academyId",d.getAcademyId());v.put("businessId",d.getBusinessId());

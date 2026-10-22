@@ -76,6 +76,20 @@ public class UnifiedAssistantService {
     if(businessId!=null) { access.requireAllowedBusiness(p,businessId); result.put("finance",workspace.monthly(businessId,YearMonth.now())); }
     return result;
   }
+  /** Read-only: minimum fields of the latest events. Authority and tenant checks stay in the existing API. */
+  public Map<String,Object> attendanceQuery(AuthenticatedPrincipal p,Long academyId,long studentId) {
+    actor(p); if(studentId<=0) throw new IllegalArgumentException("studentId를 선택하세요.");
+    var c=academy.context(p,academyId);
+    var events=academy.request(p,"GET",academy.base(c.path("academyId").asLong())+"/attendance/student/"+studentId,null);
+    var rows=new ArrayList<Map<String,Object>>();
+    for(var event:events) {
+      if(rows.size()>=20) break;
+      var row=new LinkedHashMap<String,Object>();
+      for(String key:List.of("id","eventType","occurredAt")) if(event.hasNonNull(key)) row.put(key,event.get(key).isNumber()?event.get(key).asLong():event.get(key).asText());
+      rows.add(row);
+    }
+    return Map.of("studentId",studentId,"events",rows,"limit",20);
+  }
   public JsonNode catalog(AuthenticatedPrincipal p,String kind,Long academyId) {
     actor(p); var c=academy.context(p,academyId); String path=switch(kind) { case "students","classes","consultations" -> academy.base(c.path("academyId").asLong())+"/"+kind; case "teachers" -> "/api/rea/integration/teachers?academyId="+c.path("academyId").asLong(); default -> throw new IllegalArgumentException("지원하지 않는 목록입니다."); };
     return academy.request(p,"GET",path,null);
@@ -121,7 +135,7 @@ public class UnifiedAssistantService {
   private AssistantDraft saveDraft(AuthenticatedPrincipal p,Long a,Long b,String op,JsonNode input,JsonNode preview,JsonNode snapshot) {
     if(drafts.countByOwnerIdAndStatus(p.userId(),"PENDING")>=20) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,"대기 초안을 처리해 주세요 (최대 20개).");
     var d=drafts.save(new AssistantDraft(p.userId(),p.role(),a,b,op,AssistantJson.write(input),AssistantJson.write(preview),AssistantJson.hash(AssistantJson.write(snapshot))));
-    audit.save(new AssistantAudit(p.userId(),d.getId(),"DRAFT_CREATED")); return d;
+    audit.save(new AssistantAudit(p.userId(),d,"DRAFT_CREATED")); return d;
   }
   public AssistantDraft decide(AuthenticatedPrincipal p,String id,String hash,boolean cancel) {
     actor(p); if(!cancel) requireWrites();
@@ -166,7 +180,8 @@ public class UnifiedAssistantService {
     }
   }
   public List<AssistantDraft> history(AuthenticatedPrincipal p) {
-    actor(p); return drafts.findTop30ByOwnerIdOrderByCreatedAtDesc(p.userId()).stream().filter(d->{try{scope(p,d);return true;}catch(Exception e){return false;}}).toList();
+    actor(p); transactions.recoverStale(p.userId());
+    return drafts.findTop30ByOwnerIdOrderByCreatedAtDesc(p.userId()).stream().filter(d->{try{scope(p,d);return true;}catch(Exception e){return false;}}).toList();
   }
   public List<AssistantAudit> audit(AuthenticatedPrincipal p) { actor(p); return audit.findTop50ByOwnerIdOrderByIdDesc(p.userId()); }
   private AssistantDraft owned(AuthenticatedPrincipal p,String id) { return drafts.findById(id).filter(d->d.getOwnerId().equals(p.userId())&&d.getRole().equals(p.role())).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND)); }

@@ -13,6 +13,6 @@ CREATE TABLE unified_assistant_drafts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE unified_assistant_audit (
   id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT NOT NULL,
-  draft_id VARCHAR(36) NULL, event VARCHAR(40) NOT NULL, created_at DATETIME(6) NOT NULL,
+  draft_id VARCHAR(36) NULL, event VARCHAR(40) NOT NULL, operation VARCHAR(40) NULL, academy_id BIGINT NULL, business_id BIGINT NULL, created_at DATETIME(6) NOT NULL,
   KEY idx_unified_audit_owner (owner_id,id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

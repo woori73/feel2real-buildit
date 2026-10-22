@@ -4938,3 +4938,12 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - `read_admissions`는 본인 상담 이력 API만 제공한다. 관리자 지식/원자료/통계는 제외했다. 상담 읽음 상태 변경·설정 자동 생성·외부 위키 실시간 호출이 있는 GET 8개를 MCP 실행 정책에서 제외했다. 기존 서비스의 원래 API 동작은 유지한다.
 - 유효 MCP 요청은 프록시 IP 대신 인증된 사용자 ID로 호출 한도를 검사한다. 익명 경로는 기존 AdmissionsRateLimiter의 신뢰 프록시 주소 판별을 재사용(`app.admissions.rate-limit.trusted-proxies`), 비신뢰 XFF는 무시한다. 사용자당 60/분, 모든 JSON-RPC 전체 최대 8개 동시(`app.mcp.max-concurrent-calls`, JVM별), 내부 읽기 2개. 상한 시 429/Retry-After이며 DB 기반 분당 한도는 replica에도 공유된다.
 - #853 수집·장부 확정과 #854 초안 승인 POST를 MCP에 노출하지 않는다. 자연어 승인·MCP Bearer·GET 전용 위임 JWT로 장부 확정을 호출할 수 없다. 실제 제품 계정 연결은 별도 사용자 로그인/동의 시험 전까지 미검증이다.
+
+**검수 반영(2026-10-22, Claude).**
+- `POST /conversation`·`/materials` 응답에 `data`(nullable)가 추가됐다. 읽기 전용 업무의 결과만 담는다: 공지 초안 `{notice}`(저장·발송 없음), 출결 조회 `{studentId,events:[{id,eventType,occurredAt}],limit:20}`. 초안·승인 없이 응답하며 메모·연락처 등 다른 필드는 반환하지 않는다.
+- 조회 의도(조회·확인·보여·알려·현황·요약·내역)와 쓰기 동사(등록·기록·추가·만들·생성·수정·배정·처리·남겨)가 함께 없을 때만 읽기 전용으로 분기한다. "출결 조회"는 더 이상 출결 기록 초안이 되지 않는다.
+- 출결 **정정**은 비서가 처리하지 않는다. AcademyCraft 정정 API의 경로·본문 규격이 이 저장소에 근거(코드·계약서)로 없어 추측 호출하지 않으며, 새 출결 이벤트로 대체하는 오분류를 막고 기존 출결 화면으로 안내한다(조사 근거는 docs/unified-ai-assistant/README.md §8).
+- Muse 호출 상한(설정, 인스턴스 단위): `buildit.unified-assistant.model-calls-per-minute`(기본 6)·`model-calls-per-day`(60)·`model-calls-per-upload`(3). 초과·자료당 횟수 소진·연락처(전화·이메일) 포함 텍스트·읽기 전용/정정 의도는 모델을 호출하지 않고 규칙 분석으로 폴백하며 `analysis`에 이유를 표시한다.
+- `GET /audit`의 각 행에 `operation`, `academyId`, `businessId`가 추가됐다.
+- 쓰기 Origin 허용 목록은 `buildit.unified-assistant.allowed-origins`(쉼표 구분, 기본 `http://localhost:8080,https://feel2real.co.kr`)다.
+- `GET /drafts`는 만료 후 5분이 지나도 `EXECUTING`인 본인 초안을 `UNKNOWN`(감사 `RECOVERED_UNKNOWN`)으로 전환한다. 자동 재실행은 하지 않는다.

@@ -1824,3 +1824,5 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 통합 초안 상태는 PENDING/EXECUTING/VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN/CANCELLED/EXPIRED/INVALIDATED다. FAILED는 원격 쓰기 요청의 명확한 거절이며, 성공 후 조회 실패는 UNKNOWN으로 보존한다. 대화·파일 분석은 기존 초안 저장소를 사용하고 별도 학생/거래 복제 테이블을 만들지 않는다. 대화 입력 원문은 영속화하지 않으며 새로고침 시 승인 기록만 현재 권한으로 복원한다.
 
 스튜디오 복원은 기존 revision/file 행을 수정하지 않고 새 revision 및 RESTORE 이벤트를 추가한다. `approved_id`는 별도 명시 검수 전 유지한다. JSON/ZIP 일괄 등록도 원본 sourceFileId/SHA를 보존하고 68개 revision과 BULK_IMPORT 이력을 추가한다. 별도 데이터/권한 테이블을 복제하지 않는다. #854는 V1094, #855는 V1095이며 신규 운영 스키마 적용은 하지 않았다. 관리자 외부 제공 위험 확인은 기존 mcp_audit의 SENSITIVE_ACK로 기록한다.
+
+`unified_assistant_audit`에 `operation`, `academy_id`, `business_id`(모두 nullable)가 추가됐다(V1094는 main·운영에 미적용 상태라 같은 파일에서 수정). 초안 관련 이벤트는 업무 종류와 학원/사업체 범위를 함께 남긴다. 이벤트 `RECOVERED_UNKNOWN`은 중단된 `EXECUTING` 초안을 `UNKNOWN`으로 전환했음을 뜻한다.
