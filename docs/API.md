@@ -4974,3 +4974,11 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - `GET /api/studio/files/{id}/preview?entry=`: 기존 제작실·파일 권한을 먼저 검사. 원본 20 MiB 이하 PNG 화면용 파생본(최대 1024px/입력 4천만 화소), PDF, MP4, JSON, 안전 HTML/Markdown을 반환한다. `page=1`은 PDF 페이지 PNG와 `X-PDF-Pages` 헤더를 반환하며 브라우저의 이전/다음 페이지 뷰어에 사용한다(처음 100쪽). HTML은 CommonMark→Jsoup 태그 허용 목록·sandbox/CSP로 스크립트·폼·외부 리소스를 차단한다. 승인·원본·SHA·버전을 변경하지 않는다. 미리보기 결과의 SHA는 원본 SHA가 아니다.
 - `GET /api/studio/files/{id}/entries`: ZIP 중앙 디렉터리 목록과 `previewable`. 최대 1000항목, 중복 경로 거부. `preview?entry=<정확한 이름>`은 안전 경로·지원 확장자·8 MiB·압축비 1000 이하를 검사하고 선택 항목만 메모리에서 읽어 CRC 검증한다. 중첩 ZIP·실행 파일·경로 탈출은 미지원. 임시 ZIP은 finally 삭제하며 저장소에 압축 해제하지 않는다.
 - 두 경로는 사이트 로그인 조회 전용이며 이 단계에서는 MCP 허용 목록에 추가하지 않는다. 원본 attachment 경로와 기존 MCP 정책은 유지한다. 동시 미리보기 2건, 초과 429. 각 문서 20만 자 상한, 초과 413.
+
+### #863 제작 원본 적재
+
+- `GET /api/studio/source-import`: 현재 프로젝트 권한으로 536개 원본 경로의 등록 현황·고정 Git 커밋·원작 대조 0/68·PASS 확정 0·인계 문서 메타데이터 조회.
+- `POST /api/studio/source-import`: ADMIN·same-origin 전용. `{commit,files:{"SHA256":"file UUID"}}`. 커밋 `09d62dee982e2e89e3653c90b1ee42f05bff4f9d`과 서버에 검토·고정된 536경로/316고유SHA 카탈로그만 받는다. 기존 업로드 파일의 프로젝트·크기·메타 SHA·실제 저장소 bytes SHA를 검사한 뒤, 한 DB 트랜잭션으로 원본 경로 버전 536개·r14/r5 컷 버전 136개·기존 승인 캐릭터 정본 5개·초기 작업 기억 1개를 등록한다. 기존 사용자 승인 5종만 이관하고 컷은 모두 REVIEW/미승인이다.
+- 재실행은 `(project,item_key,label)`에 존재하는 출처를 재검증하고 새 이력·승인 이벤트를 만들지 않는다. 동일 SHA 파일은 공유하지만 경로별 버전·출처 참조는 보존한다. 사용자 편집본·다른 승인 정본을 자동 덮어쓰지 않는다. 실패 시 등록 트랜잭션을 롤백한다. 선행 업로드는 별도 커밋된 보관 파일로 남아 재시도에 재사용한다(일괄 파일+DB 분산 트랜잭션 아님).
+- 파일 목록은 `GET /api/studio/files?limit=200&offset=0` 페이지 조회. MD5 인계 파일은 엄격한 UTF-8 텍스트로 보관·열람하며 체크섬 검증은 SHA-256으로 별도 수행한다. 기존 형식은 유지한다.
+- 로컬 임포터 `scripts/ai-agent-studio/import-production.py`: 기본 dry-run. 실제 적용은 격리 loopback 포트18090만 허용하며 운영 주소를 받지 않는다. 사용자가 파일을 다운로드·업로드하지 않고 Git 커밋에서 직접 확보한다. MCP POST 허용 목록에 추가하지 않는다.

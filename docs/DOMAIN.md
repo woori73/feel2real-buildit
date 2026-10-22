@@ -1826,3 +1826,7 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 스튜디오 복원은 기존 revision/file 행을 수정하지 않고 새 revision 및 RESTORE 이벤트를 추가한다. `approved_id`는 별도 명시 검수 전 유지한다. JSON/ZIP 일괄 등록도 원본 sourceFileId/SHA를 보존하고 68개 revision과 BULK_IMPORT 이력을 추가한다. 별도 데이터/권한 테이블을 복제하지 않는다. #854는 V1094, #855는 V1095이며 신규 운영 스키마 적용은 하지 않았다. 관리자 외부 제공 위험 확인은 기존 mcp_audit의 SENSITIVE_ACK로 기록한다.
 
 `unified_assistant_audit`에 `operation`, `academy_id`, `business_id`(모두 nullable)가 추가됐다(V1094는 main·운영에 미적용 상태라 같은 파일에서 수정). 초안 관련 이벤트는 업무 종류와 학원/사업체 범위를 함께 남긴다. 이벤트 `RECOVERED_UNKNOWN`은 중단된 `EXECUTING` 초안을 `UNKNOWN`으로 전환했음을 뜻한다.
+
+### 제작 원본 출처 이관 (#863)
+
+스키마 추가 없이 `studio_files`의 프로젝트/SHA 고유키와 `studio_revisions`의 append-only 구조를 재사용한다. 고정 Git 커밋의 536경로는 경로 해시 기반 `source-09d62dee-*` item으로 각각 보관하며 content에 전체 경로·원본 SHA·bytes·폴더 버전·repository·commit을 기록한다. 316고유 파일을 공유해도 220중복 경로의 출처를 잃지 않는다. `ep01-cut-01`~`68`은 source-r14/source-r5 버전과 원본 러프 파일을 참조한다. `character-approved-*` 5개만 기존 승인 근거를 APPROVE 이벤트로 이관한다. `project-memory` 초기 JOB 버전은 마지막 결정·담당 AI·미해결·다음 작업·PR/SHA·인계 파일 ID를 저장한다. 사용자 편집/결정은 후속 버전으로 보존하며 원본 파일·기존 revision은 갱신하지 않는다.

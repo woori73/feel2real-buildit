@@ -127,7 +127,7 @@ public class StudioService {
         name.contains(".")
             ? name.substring(name.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT)
             : "";
-    if (!Set.of("pdf", "html", "json", "md", "zip", "png", "mp4").contains(ext))
+    if (!Set.of("pdf", "html", "json", "md", "md5", "zip", "png", "mp4").contains(ext))
       throw error(400, "지원하지 않는 파일 형식입니다.");
     Path tmp = Files.createTempFile("f2r-studio-", ".upload");
     String createdKey = null;
@@ -233,7 +233,7 @@ public class StudioService {
           default -> true;
         };
     if (!ok) throw error(400, "확장자와 파일 형식이 일치하지 않습니다.");
-    if (Set.of("html", "json", "md").contains(ext)) {
+    if (Set.of("html", "json", "md", "md5").contains(ext)) {
       // Strict UTF-8, streamed validation. Never execute HTML or unpack ZIP archives.
       try (var reader =
           new InputStreamReader(Files.newInputStream(path), StandardCharsets.UTF_8.newDecoder())) {
@@ -473,11 +473,19 @@ public class StudioService {
   }
 
   public List<Map<String, Object>> files(AuthenticatedPrincipal p) {
+    return files(p, 200, 0);
+  }
+
+  public List<Map<String, Object>> files(AuthenticatedPrincipal p, int limit, int offset) {
+    if (limit < 1 || limit > 200 || offset < 0 || offset > 1000000)
+      throw error(400, "파일 페이지 범위를 확인하세요.");
     require(p, false, false);
     return db.queryForList(
         "SELECT id,filename,extension,sha256,size_bytes,uploaded_by,created_at FROM studio_files"
-            + " WHERE project_id=? ORDER BY created_at DESC LIMIT 200",
-        PROJECT);
+            + " WHERE project_id=? ORDER BY created_at DESC,id LIMIT ? OFFSET ?",
+        PROJECT,
+        limit,
+        offset);
   }
 
   public Map<String, Object> file(AuthenticatedPrincipal p, String id) {

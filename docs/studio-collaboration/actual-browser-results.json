@@ -1,0 +1,74 @@
+{
+  "sourceCommit": "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
+  "actualProductionAssets": true,
+  "productionEnvironment": false,
+  "actualExternalAiCalls": 0,
+  "chatgptConnection": "NOT TESTED",
+  "claudeConnection": "NOT TESTED",
+  "results": [
+    {
+      "name": "실제 DB에 원본 536경로 등록·원작대조/PASS 0 유지",
+      "pass": true
+    },
+    {
+      "name": "536경로·316파일·220중복의 SHA/크기/버전/커밋 출처 실제 재조회",
+      "pass": true
+    },
+    {
+      "name": "4개 인계 문서 본문 실제 조회",
+      "pass": true
+    },
+    {
+      "name": "실제 러프 68장·r5 설명/대사/연출 보드 PC1440 전체 이미지 디코딩",
+      "pass": true
+    },
+    {
+      "name": "실제 콘티 이전/다음·키보드 이동",
+      "pass": true
+    },
+    {
+      "name": "실제 컷 이미지 확대",
+      "pass": true
+    },
+    {
+      "name": "68컷 미승인·REVIEW 상태 보존",
+      "pass": true
+    },
+    {
+      "name": "승인 원본 5종 갤러리·승인 포인터·원본 SHA 보존",
+      "pass": true
+    },
+    {
+      "name": "파일 200건 제한 누락 없이 316개 전체 열람",
+      "pass": true
+    },
+    {
+      "name": "r14 실제 대본 HTML 다운로드 없는 안전 열람",
+      "pass": true
+    },
+    {
+      "name": "4 MiB 내장 이미지 HTML도 정제 후 문서 열람",
+      "pass": true
+    },
+    {
+      "name": "실제 콘티 PDF 페이지 렌더·이동",
+      "pass": true
+    },
+    {
+      "name": "실제 패널 ZIP 내부 목록과 PNG 미리보기",
+      "pass": true
+    },
+    {
+      "name": "390px 실제 작품 콘티·확대·승인 캐릭터 화면·가로 넘침 없음",
+      "pass": true
+    },
+    {
+      "name": "실제 작품 무권한 열람 403",
+      "pass": true
+    },
+    {
+      "name": "사람 열람 중 작품 쓰기·승인·이력 변경 0·JS 오류/외부 요청 0",
+      "pass": true
+    }
+  ]
+}

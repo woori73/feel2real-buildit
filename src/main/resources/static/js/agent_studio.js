@@ -11,7 +11,7 @@
     boardEpoch: 0,
   };
   const origins = {
-    ORIGINAL: "원작 정본",
+    ORIGINAL: "보관 원본",
     AI_PROPOSAL: "AI 제안",
     USER_EDIT: "사용자 수정",
   };
@@ -166,6 +166,7 @@
       const frame=el("iframe");frame.title=(entry || file.filename)+" 안전 문서";
       const source=await response.text();if(!currentView())return;
       frame.setAttribute("sandbox","");frame.srcdoc=source;frame.className="document-view";target.append(frame);
+    } else if (ext==="md5") {target.append(el("pre",await response.text()));
     } else if (ext==="json") {
       target.append(el("pre",JSON.stringify(JSON.parse(await response.text()),null,2)));
     } else {
@@ -194,7 +195,7 @@
       card.dataset.cut=n;
       if (r) {
         card.append(imageFor(r),el("h3",String(n).padStart(2,"0")+" · "+r.title),badges(r),el("p",r.content||"설명 미등록"));
-        if(r.dialogue)card.append(el("p","대사 · "+r.dialogue));
+        if(r.dialogue)card.append(el("p","대사 · "+readableDialogue(r.dialogue)));
         if(r.direction)card.append(el("p","연출 · "+r.direction,"hint"));
         const open=el("button","컷 상세·검수");open.onclick=()=>detail(r);card.append(open);
       } else card.append(el("p",n+"컷 · 이미지·설명 업로드 대기","empty-art"));
@@ -206,9 +207,16 @@
     do {page=await api("revisions?kind=CHARACTER&limit=200&offset="+rows.length);rows.push(...page);}while(page.length===200);
     $("character-gallery").replaceChildren();
     for(const r of rows.filter(r=>r.id===r.head_id)) {
-      const c=el("article",undefined,"story-card");c.append(imageFor(r),display(r));$("character-gallery").append(c);
+      const c=el("article",undefined,"story-card");c.append(display(r));$("character-gallery").append(c);
     }
     if(!$("character-gallery").children.length)$("character-gallery").append(el("p","등록된 캐릭터 자료가 없습니다. 이미지·설정 업로드 대기입니다."));
+  }
+  function readableDialogue(value) {
+    try {
+      const rows=JSON.parse(value);
+      if(Array.isArray(rows))return rows.map(row=>typeof row==="string"?row:[row.speaker,row.line].filter(Boolean).join(" · ")).join("\n")||"대사 없음";
+    }catch(_){}
+    return value;
   }
   function display(r) {
     const box = el("div");
@@ -223,7 +231,7 @@
     );
     for (const [name, value] of [
       ["본문·설정", r.content],
-      ["대사", r.dialogue],
+      ["대사", readableDialogue(r.dialogue)],
       ["연출", r.direction],
     ])
       if (value) box.append(el("h3", name), el("pre", value));
@@ -351,7 +359,9 @@
     }
   }
   async function fileList() {
-    state.files = await api("files");
+    const files=[];let filePage;
+    do{filePage=await api("files?limit=200&offset="+files.length);files.push(...filePage);}while(filePage.length===200);
+    state.files=files;
     $("bulk-file").replaceChildren(new Option("일괄 등록 원본을 선택하세요",""));
     for(const file of state.files.filter(f=>["zip","json"].includes(f.extension)))$("bulk-file").add(new Option(file.filename,file.id));
     $("file-list").replaceChildren();
@@ -368,7 +378,7 @@
       a.href = "/api/studio/files/" + f.id + "/content";
       c.append(a);
       if (
-        ["pdf", "zip", "png", "mp4", "md", "json", "html"].includes(f.extension)
+        ["pdf", "zip", "png", "mp4", "md", "md5", "json", "html"].includes(f.extension)
       ) {
         const b = el("button", "자료 열람");
         b.onclick = run(() => previewFile(f, $("file-preview")));
@@ -561,6 +571,12 @@
     }
     const project = await api("project");
     state.permission = project.permission;
+    try {
+      const imported=await api("source-import");
+      if(imported.registeredSourcePaths>0){
+        $("source-info").hidden=false;$("source-info").textContent="GitHub #863 · 자료 "+imported.registeredSourcePaths+" / 536경로 · 원작 대조 0/68 · PASS 확정 0 · 대표 10컷 이미지 미생성";
+      }
+    }catch(error){message(error.message);}
     $("project-info").textContent =
       `1부 14화 · EP01 68컷 · 보관 파일 ${project.files}개 · ${{ VIEWER: "열람", EDITOR: "제작·수정", APPROVER: "검수·승인" }[project.permission]}`;
     $("initialize").hidden =

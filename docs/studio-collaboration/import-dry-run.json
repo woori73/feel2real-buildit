@@ -1,0 +1,20 @@
+{
+  "commit": "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
+  "mode": "dry-run",
+  "sourcePaths": 536,
+  "uniqueFiles": 316,
+  "duplicatePaths": 220,
+  "bytes": 164559341,
+  "verifiedSha": 536,
+  "approvedOriginals": [
+    "461926ffdb3a391c6b31d55aa759a4716674264209947d9cf55c7732e7f23be6",
+    "a35ceeed47c528c716bf21f97001aca14dd216cc5eefbdcda1d723ba4e7c1e9f",
+    "89cc41faa3318279ed9728be993c99c886055105038359f480b10bdc507add0b",
+    "37e8ab8c4563056f11551373f7544651125a9ecb4a32804869d1b7b768ef57e5",
+    "7cb7de4a7bb480e6f5f96b77936ccf8529874c740a16595ca08f8de5a137db59"
+  ],
+  "originalComparedCuts": 0,
+  "confirmedPassCuts": 0,
+  "representativeImagesCreated": 0,
+  "externalAiCalls": 0
+}
