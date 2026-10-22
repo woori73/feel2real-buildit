@@ -34,6 +34,20 @@ class AssistantCommandParserTest {
       assertThat(r.operation()).isEqualTo("ATTENDANCE_QUERY");assertThat(r.input()).containsEntry("studentId",5L).doesNotContainKey("eventType");
     }
   }
+  @Test void givenRecordNounWithInquiryVerb_whenParsed_thenReadOnlyQuery() {
+    // given: "기록"이 명사로 쓰인 자연스러운 조회 문장
+    for(String s:new String[]{"학생 ID 5 출결 기록 조회해줘","학생 ID 5 출결 기록 확인해줘","학생 ID 5 결석 기록 알려줘"}) {
+      // when
+      var r=parser.parse(s);
+      // then
+      assertThat(r.operation()).as(s).isEqualTo("ATTENDANCE_QUERY");
+      assertThat(r.input()).doesNotContainKey("eventType");
+    }
+  }
+  @Test void givenRecordVerb_whenParsed_thenStillWriteDraft() {
+    assertThat(parser.parse("학생 ID 5 지각 기록해줘").operation()).isEqualTo("ATTENDANCE_RECORD");
+    assertThat(parser.parse("학생 ID 5 결석으로 기록하고 싶어").operation()).isEqualTo("ATTENDANCE_RECORD");
+  }
   @Test void givenAttendanceRecordWithConfirmWord_whenParsed_thenStillWriteDraft() {
     assertThat(parser.parse("학생 ID 5 결석 기록해줘, 사유 확인").operation()).isEqualTo("ATTENDANCE_RECORD");
   }

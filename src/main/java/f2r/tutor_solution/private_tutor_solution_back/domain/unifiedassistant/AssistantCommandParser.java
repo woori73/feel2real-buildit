@@ -12,7 +12,7 @@ public class AssistantCommandParser {
   static final String CORRECTION_BLOCKED="출결 정정은 사유 입력이 필요한 기존 출결 화면(출결 메뉴)에서 처리하세요. 비서는 새 출결 기록을 만들어 정정을 대신하지 않습니다.";
   static final Set<String> READ_ONLY=Set.of("OVERVIEW","ATTENDANCE_QUERY","NOTICE_DRAFT");
   private static final List<String> QUERY_WORDS=List.of("조회","확인","보여","알려","현황","요약","내역");
-  private static final List<String> WRITE_WORDS=List.of("등록","기록","추가","만들","생성","수정","배정","처리","남겨");
+  private static final List<String> WRITE_WORDS=List.of("등록","기록해","기록하","기록으로","추가","만들","생성","수정","배정","처리","남겨");
   public Suggestion parse(String text) {
     if(text==null || text.isBlank() || text.length()>2000) throw new IllegalArgumentException("업무 지시는 1~2000자로 입력하세요.");
     var data=new LinkedHashMap<String,Object>(); String op;
