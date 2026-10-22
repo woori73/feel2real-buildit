@@ -1,0 +1,28 @@
+import sys,asyncio,json,uuid,importlib.util,httpx,httpx2
+spec=importlib.util.spec_from_file_location('m','/home/user/wt/sim2/scripts/ai-agent-studio/media-protocol-qa.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+BASE=m.BASE;fx=m.fixture
+def upload(name,data,cookie):
+    b='x'+uuid.uuid4().hex
+    body=(f'--{b}\r\nContent-Disposition: form-data; name="file"; filename="{name}"\r\nContent-Type: application/octet-stream\r\n\r\n').encode()+data+f'\r\n--{b}--\r\n'.encode()
+    r=httpx.post(BASE+'/api/studio/files',content=body,headers={'Cookie':cookie,'Origin':BASE,'Content-Type':'multipart/form-data; boundary='+b},trust_env=False,timeout=60);r.raise_for_status();return r.json()['file']['id']
+pii="연락처 010-1234-5678, 이메일 a.b@example.com, 주민 900101-1234567, 계좌 110-123-456789, 카드 4111-1111-1111-1111. 커밋 6148b8d9c90054485194057e14feff76c37f55b3. 정상문장 EP01 12컷.\n"
+fid=upload('claude-pii-probe-%s.md'%uuid.uuid4().hex[:6],pii.encode(),fx['adminCookie'])
+async def run():
+    tok=m.connect('https://claude.ai/api/mcp/auth_callback','Claude PII probe',False)
+    async with httpx2.AsyncClient(headers={'Authorization':'Bearer '+tok},trust_env=False) as http:
+        async with m.streamable_http_client(BASE+'/mcp',http_client=http) as (rx,tx):
+            async with m.ClientSession(rx,tx) as s:
+                await s.initialize()
+                tools=await s.list_tools();names=[t.name for t in tools.tools];print('tools',len(names),[n for n in names if 'studio' in n or n.startswith('read_')][:12])
+                doc=await s.call_tool('studio_document',{'fileId':fid});txt=json.loads(doc.content[0].text)['data']['text'];print('DOC:',txt.strip())
+                bad=[x for x in ['010-1234-5678','a.b@example.com','900101-1234567','110-123-456789','4111-1111-1111-1111'] if x in txt];print('PII_LEAK',bad)
+                print('sha_kept','6148b8d9c90054485194057e14feff76c37f55b3' in txt,'normal_kept','EP01 12컷' in txt)
+                for name,args in [('studio_image',{'fileId':fx['files'][list(fx['files'])[0]]}),('read_studio',{'endpointId':'POST /api/studio/memory'}),('read_studio',{'endpointId':'POST /api/studio/invitations/answer'})]:
+                    r=await s.call_tool(name,args);print(name,'is_error=',r.is_error)
+                # stranger cookie must not read project through MCP
+    tok2=m.connect('https://claude.ai/api/mcp/auth_callback','Claude stranger probe',False,cookie=fx['strangerCookie'])
+    async with httpx2.AsyncClient(headers={'Authorization':'Bearer '+tok2},trust_env=False) as http:
+        async with m.streamable_http_client(BASE+'/mcp',http_client=http) as (rx,tx):
+            async with m.ClientSession(rx,tx) as s:
+                await s.initialize();r=await s.call_tool('studio_document',{'fileId':fid});print('stranger studio_document is_error=',r.is_error, (r.content[0].text[:120] if r.content else ''))
+asyncio.run(run())

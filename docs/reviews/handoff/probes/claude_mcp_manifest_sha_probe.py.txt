@@ -1,0 +1,20 @@
+import asyncio,json,re,importlib.util,httpx2
+spec=importlib.util.spec_from_file_location('m','/home/user/wt/sim2/scripts/ai-agent-studio/media-protocol-qa.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+BASE=m.BASE;fx=m.fixture;cat=m.catalog
+async def run():
+    tok=m.connect('https://claude.ai/api/mcp/auth_callback','Claude manifest probe',False)
+    async with httpx2.AsyncClient(headers={'Authorization':'Bearer '+tok},trust_env=False) as http:
+        async with m.streamable_http_client(BASE+'/mcp',http_client=http) as (rx,tx):
+            async with m.ClientSession(rx,tx) as s:
+                await s.initialize()
+                for path in ['MANIFEST.md','APPROVAL_HISTORY.md','CURRENT_STATE.md']:
+                    sha=next(f['sha256'] for f in cat['files'] if f['path']==path);fid=fx['files'][sha]
+                    off=0;txt=''
+                    while True:
+                        r=await s.call_tool('studio_document',{'fileId':fid,'offset':off,'limit':20000});d=json.loads(r.content[0].text)['data'];txt+=d['text'];off+=len(d['text'])
+                        if not d['hasMore']:break
+                    truth={f['sha256'] for f in cat['files']}
+                    toks=re.findall(r'[0-9a-f*]{64}',txt)
+                    ok=sum(1 for t in toks if t in truth);bad=sum(1 for t in toks if '*' in t)
+                    print(path,'chars',len(txt),'sha_tokens',len(toks),'intact',ok,'masked',bad)
+asyncio.run(run())

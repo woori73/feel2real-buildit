@@ -1,0 +1,197 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.studio;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidator;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.sql.DriverManager;
+import java.util.*;
+import java.util.zip.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.*;
+import org.springframework.web.server.ResponseStatusException;
+
+/** Claude independent probe of the merged #863+#864..#871 tree on the real 536 materials. */
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@TestPropertySource(
+    properties = {
+      "server.port=18093",
+      "app.mcp.enabled=false",
+      "spring.datasource.username=f2r_test",
+      "spring.datasource.password=isolated_test_password",
+      "spring.flyway.locations=classpath:db/migration",
+      "spring.jpa.show-sql=false"
+    })
+@EnabledIfEnvironmentVariable(named = "F2R_PRODUCTION_SOURCE", matches = ".+")
+class ClaudeStackProbeMySqlTest {
+  static final String SCHEMA =
+      "f2r_claude_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+  static final Path STORE = Path.of("/tmp/" + SCHEMA + "-files");
+
+  @DynamicPropertySource
+  static void isolated(DynamicPropertyRegistry r) throws Exception {
+    try (var c = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3318/mysql", "root", "isolated_test_root");
+        var st = c.createStatement()) {
+      st.execute("CREATE DATABASE " + SCHEMA + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+      st.execute("GRANT ALL PRIVILEGES ON " + SCHEMA + ".* TO 'f2r_test'@'%'");
+    }
+    r.add("spring.datasource.url", () -> "jdbc:mysql://127.0.0.1:3318/" + SCHEMA
+        + "?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci");
+    r.add("app.file.upload-dir", () -> STORE.toString());
+  }
+
+  @Autowired StudioService studio;
+  @Autowired StudioProductionImporter importer;
+  @Autowired StudioProjectService projects;
+  @Autowired StudioCollaborationService collab;
+  @Autowired StudioPreview preview;
+  @Autowired JdbcTemplate db;
+  @Autowired UserRepository users;
+  @Autowired AdminSessionValidator stamps;
+
+  AuthenticatedPrincipal user(String login, Role role) {
+    var u = users.save(User.builder().loginId(login).password("{isolated}").name("probe " + login)
+        .nickname(login).role(role).build());
+    return new AuthenticatedPrincipal(u.getUserId(), u.getLoginId(), u.getRole().name(), stamps.stampFor(u.getUserId()));
+  }
+
+  static int status(org.junit.jupiter.api.function.Executable e) {
+    return assertThrows(ResponseStatusException.class, e).getStatusCode().value();
+  }
+
+  long count(String sql, Object... a) { return db.queryForObject(sql, Long.class, a); }
+
+  @Test
+  void stackOnReal536() throws Exception {
+    var admin = user("cp-admin", Role.ADMIN);
+    var editor = user("cp-editor", Role.TUTOR);
+    var viewer = user("cp-viewer", Role.TUTOR);
+    var invitee = user("cp-invitee", Role.TUTOR);
+    var stranger = user("cp-stranger", Role.TUTOR);
+    studio.initialize(admin);
+    studio.member(admin, editor.userId(), "EDITOR");
+    studio.member(admin, viewer.userId(), "VIEWER");
+
+    // ---- stage 316 originals, register 536 paths
+    var catalog = importer.catalog();
+    var root = Path.of(System.getenv("F2R_PRODUCTION_SOURCE")).toRealPath();
+    var ids = new HashMap<String, String>();
+    for (var s : catalog.files()) {
+      if (ids.containsKey(s.sha256())) continue;
+      var data = Files.readAllBytes(root.resolve(s.path()));
+      var f = (Map<?, ?>) studio.upload(admin, new MockMultipartFile("file", Path.of(s.path()).getFileName().toString(), "application/octet-stream", data)).get("file");
+      ids.put(s.sha256(), (String) f.get("id"));
+    }
+    assertEquals(316, ids.size());
+    var req = new StudioProductionImporter.Request(StudioProductionImporter.COMMIT, ids);
+    assertEquals(403, status(() -> importer.register(editor, req)));   // only ADMIN registers
+    assertEquals(403, status(() -> importer.register(stranger, req)));
+    importer.register(admin, req);
+
+    assertEquals(536, count("SELECT COUNT(*) FROM studio_items WHERE item_key LIKE 'source-09d62dee-%'"));
+    assertEquals(316, count("SELECT COUNT(*) FROM studio_files"));
+    for (var row : db.queryForList("SELECT id,sha256 FROM studio_files"))
+      assertEquals(row.get("sha256"), HexFormat.of().formatHex(StudioService.digest().digest(studio.bytes(admin, row.get("id").toString()))));
+    var approvedSet = new HashSet<>(catalog.approvedSha256());
+    var approvedRows = db.queryForList(
+        "SELECT i.item_key,f.sha256 FROM studio_items i JOIN studio_revisions r ON r.id=i.approved_id LEFT JOIN studio_files f ON f.id=r.file_id WHERE i.approved_id IS NOT NULL");
+    System.out.println("PROBE approved pointers=" + approvedRows.size());
+    for (var r : approvedRows) assertTrue(approvedSet.contains(r.get("sha256")), "unapproved material approved: " + r);
+    assertEquals(5, new HashSet<>(approvedRows.stream().map(r -> r.get("sha256")).toList()).size());
+    assertEquals(0, count("SELECT COUNT(*) FROM studio_items i JOIN studio_revisions r ON r.id=i.approved_id WHERE r.kind='STORYBOARD'"));
+    assertEquals(68, studio.cuts(admin, 1).size());
+
+    // ---- idempotent replay
+    long[] before = {count("SELECT COUNT(*) FROM studio_items"), count("SELECT COUNT(*) FROM studio_revisions"),
+        count("SELECT COUNT(*) FROM studio_events"), count("SELECT COUNT(*) FROM studio_files")};
+    importer.register(admin, req);
+    long[] after = {count("SELECT COUNT(*) FROM studio_items"), count("SELECT COUNT(*) FROM studio_revisions"),
+        count("SELECT COUNT(*) FROM studio_events"), count("SELECT COUNT(*) FROM studio_files")};
+    assertArrayEquals(before, after);
+
+    // ---- approved pointers survive edits/comments/requests
+    var pointers = db.queryForList("SELECT item_key,head_id,approved_id FROM studio_items WHERE approved_id IS NOT NULL ORDER BY item_key");
+    var approvedItem = db.queryForMap("SELECT i.item_key,i.head_id,r.kind,r.title,r.file_id FROM studio_items i JOIN studio_revisions r ON r.id=i.approved_id WHERE i.approved_id IS NOT NULL LIMIT 1");
+    String key = approvedItem.get("item_key").toString(), head = approvedItem.get("head_id").toString();
+    var next = studio.save(editor, new StudioService.Revision(key, head, "probe-edit", approvedItem.get("kind").toString(), null, null,
+        "AI_PROPOSAL", "probe candidate", "candidate text", "", "", "REVIEW", null));
+    String candidate = next.get("id") == null ? db.queryForObject("SELECT head_id FROM studio_items WHERE item_key=?", String.class, key) : next.get("id").toString();
+    assertEquals(403, status(() -> studio.review(editor, candidate, "APPROVE", "no")));      // editor cannot approve
+    assertEquals(403, status(() -> collab.comment(viewer, candidate, new StudioCollaborationService.Comment("v", null, null)))); // viewer cannot comment
+    collab.comment(editor, candidate, new StudioCollaborationService.Comment("human comment", null, null));
+    assertEquals(400, status(() -> collab.comment(editor, candidate, new StudioCollaborationService.Comment("fake ai", "Claude", null)))); // AI claim needs source
+    studio.review(admin, candidate, "REQUEST_CHANGES", "수정 요청");
+    assertEquals(pointers.stream().map(p -> p.get("approved_id")).toList(),
+        db.queryForList("SELECT approved_id FROM studio_items WHERE approved_id IS NOT NULL ORDER BY item_key").stream().map(p -> p.get("approved_id")).toList());
+
+    // ---- invitation: pending has no access, accept grants, decline removes
+    projects.invite(admin, invitee.userId(), "EDITOR");
+    assertEquals(403, status(() -> studio.overview(invitee)));
+    assertEquals(403, status(() -> studio.files(invitee)));
+    assertEquals(403, status(() -> collab.memory(invitee)));
+    assertEquals(403, status(() -> studio.save(invitee, new StudioService.Revision("x", null, "l", "SCRIPT", 1, null, "USER_EDIT", "t", "c", "", "", "WAITING", null))));
+    assertEquals(403, status(() -> projects.invite(editor, stranger.userId(), "VIEWER")));        // only ADMIN invites
+    assertEquals(409, status(() -> projects.invite(admin, invitee.userId(), "VIEWER")));         // no double invite
+    projects.answerInvitation(invitee, true);
+    assertEquals("EDITOR", studio.overview(invitee).get("permission"));
+    assertEquals(403, status(() -> studio.review(invitee, candidate, "APPROVE", "")));
+
+    // ---- memory optimistic lock
+    String cur = String.valueOf(((Map<?, ?>) collab.memory(editor)).get("revisionId"));
+    System.out.println("PROBE existing memory revision after import=" + (cur.isBlank() ? "none" : cur));
+    var m1 = (Map<?, ?>) collab.saveMemory(editor, new StudioCollaborationService.Memory(cur.isBlank() ? null : cur, "결정1", "Claude", "이슈", "다음", 871,
+        "0123456789abcdef0123456789abcdef01234567", List.of()));
+    String rev1 = m1.get("revisionId").toString();
+    collab.saveMemory(editor, new StudioCollaborationService.Memory(rev1, "결정2", "Codex", "", "", null, null, List.of()));
+    assertEquals(409, status(() -> collab.saveMemory(editor, new StudioCollaborationService.Memory(rev1, "stale", "x", "", "", null, null, List.of()))));
+    assertEquals(400, status(() -> collab.saveMemory(editor, new StudioCollaborationService.Memory(null, "bad sha", "x", "", "", null, "zzz", List.of()))));
+    assertEquals(403, status(() -> collab.saveMemory(viewer, new StudioCollaborationService.Memory(null, "v", "x", "", "", null, null, List.of()))));
+
+    // ---- archive blocks writes but keeps reads; reopen restores
+    projects.change(admin, "ARCHIVE", null);
+    assertEquals(409, status(() -> collab.comment(editor, candidate, new StudioCollaborationService.Comment("late", null, null))));
+    assertEquals(409, status(() -> studio.review(admin, candidate, "REJECT", "")));
+    assertEquals(68, studio.cuts(viewer, 1).size());
+    projects.change(admin, "REOPEN", null);
+    collab.comment(editor, candidate, new StudioCollaborationService.Comment("after reopen", null, null));
+    assertEquals(400, status(() -> projects.change(admin, "DELETE", null)));
+    assertEquals(403, status(() -> projects.change(editor, "TITLE", "hijack")));
+
+    // ---- hostile document/ZIP views
+    String evil = "<html onload=alert(1)><body><script>alert(1)</script><img src=x onerror=alert(1)><a href='javascript:alert(1)'>a</a>"
+        + "<iframe srcdoc='<script>1</script>'></iframe><svg onload=alert(1)></svg><form action=//evil><input></form><style>@import url(//evil/x.css)</style>ok-text</body></html>";
+    var h = (Map<?, ?>) studio.upload(admin, new MockMultipartFile("file", "evil.html", "text/html", evil.getBytes(StandardCharsets.UTF_8))).get("file");
+    String out = new String(preview.view(admin, h.get("id").toString(), null).bytes(), StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+    String bodyOnly = out.substring(out.indexOf("<body>"));
+    for (String bad : List.of("<script", "onerror", "onload", "javascript:", "<iframe", "srcdoc", "<svg", "<form", "<input", "<img", "<a ", "@import", "//evil"))
+      assertFalse(bodyOnly.contains(bad), "survived " + bad + " in " + bodyOnly);
+    assertTrue(bodyOnly.contains("ok-text"));
+    var md = (Map<?, ?>) studio.upload(admin, new MockMultipartFile("file", "evil.md", "text/markdown",
+        "# t\n<script>alert(1)</script>\n[x](javascript:alert(1))\n![i](http://evil/x.png)\n".getBytes(StandardCharsets.UTF_8))).get("file");
+    String mdOut = new String(preview.view(admin, md.get("id").toString(), null).bytes(), StandardCharsets.UTF_8).toLowerCase(Locale.ROOT);
+    String mdBody = mdOut.substring(mdOut.indexOf("<body>"));
+    for (String bad : List.of("<script", "javascript:", "<img", "<a ", "http://evil")) assertFalse(mdBody.contains(bad), "md survived " + bad + " in " + mdBody);
+    var bos = new ByteArrayOutputStream();
+    try (var z = new ZipOutputStream(bos)) {
+      for (String n : List.of("a/ok.md", "../esc.md", "/abs.md", "c:/win.md")) { z.putNextEntry(new ZipEntry(n)); z.write("# x".getBytes()); z.closeEntry(); }
+    }
+    var zf = (Map<?, ?>) studio.upload(admin, new MockMultipartFile("file", "t.zip", "application/zip", bos.toByteArray())).get("file");
+    var entries = (List<Map<String, Object>>) ((Map<?, ?>) preview.entries(admin, zf.get("id").toString())).get("entries");
+    for (var e : entries) assertEquals(e.get("name").equals("a/ok.md"), e.get("previewable"), e.toString());
+    for (String bad : List.of("../esc.md", "/abs.md", "c:/win.md")) assertEquals(400, status(() -> preview.view(admin, zf.get("id").toString(), bad)));
+
+    // ---- originals unchanged at the end
+    for (var row : db.queryForList("SELECT id,sha256 FROM studio_files"))
+      assertEquals(row.get("sha256"), HexFormat.of().formatHex(StudioService.digest().digest(studio.bytes(admin, row.get("id").toString()))));
+  }
+}
