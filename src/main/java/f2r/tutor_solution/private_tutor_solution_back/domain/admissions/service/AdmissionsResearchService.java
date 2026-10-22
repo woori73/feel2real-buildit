@@ -138,7 +138,7 @@ public class AdmissionsResearchService {
         }
 
         // STEP3 — 공식자료 원문
-        List<Evidence> officialDocs = searchOfficialMaterials(keywords, academicYearFilter);
+        List<Evidence> officialDocs = searchOfficialMaterials(keywords, academicYearFilter, questionText);
 
         // STEP4 — 유튜브 의견 (별도 분류, 확정 답변에 사용 금지)
         List<Evidence> youtube = searchYoutubeKnowledge(keywords, academicYearFilter);
@@ -329,13 +329,8 @@ public class AdmissionsResearchService {
         // 질문이 대학을 말했으면 그 대학의 항목만 남긴다 (대학명 유사성으로 인한 오검색 방지).
         // 대학 판별은 수시/정시·캠퍼스 필터 이전에 한다 — 그 대학에 해당 캠퍼스·전형 자료가 없을 때
         // 다른 대학 자료로 대신 답하지 않고 근거 없음이 되게 하기 위해서다.
-        java.util.Set<Long> mentioned = new java.util.HashSet<>();
-        for (AdmissionsKnowledgeItem k : approved) {
-            var univ = k.getSource() == null ? null : k.getSource().getUniversity();
-            if (univ != null && AdmissionsQueryParser.aliasesOf(univ.getName()).stream().anyMatch(questionText::contains)) {
-                mentioned.add(univ.getUniversityId());
-            }
-        }
+        // 승인된 항목이 하나도 없는 대학을 말한 경우에도 다른 대학으로 대체되지 않도록 전체 대학 기준으로 판별한다.
+        java.util.Set<Long> mentioned = mentionedUniversityIds(questionText);
         return approved.stream()
                 .filter(k -> mentioned.isEmpty() || (k.getSource() != null && k.getSource().getUniversity() != null
                         && mentioned.contains(k.getSource().getUniversity().getUniversityId())))
@@ -386,6 +381,27 @@ public class AdmissionsResearchService {
     // ── STEP3: 공식자료 원문 ─────────────────────────────────────────
 
     List<Evidence> searchOfficialMaterials(List<String> keywords, Integer yearFilter) {
+        return searchOfficialMaterials(keywords, yearFilter, null);
+    }
+
+    /** 질문이 가리킨 대학의 id들(정식명·줄임말·입시 문맥의 한 글자 줄임말). 자료가 등록된 대학만 대상이다. */
+    private java.util.Set<Long> mentionedUniversityIds(String questionText) {
+        java.util.Set<Long> out = new java.util.HashSet<>();
+        if (questionText == null) return out;
+        for (AdmissionsOfficialMaterial m : materialRepository.findAll()) {
+            var univ = m.getUniversity();
+            if (univ != null && AdmissionsQueryParser.mentionsUniversity(questionText, univ.getName())) {
+                out.add(univ.getUniversityId());
+            }
+        }
+        return out;
+    }
+
+    /**
+     * 공식자료 원문(제목·발행처) 검색. 질문이 대학을 특정했으면 그 대학의 자료만 쓴다 —
+     * "수시", "모집요강" 같은 공통 단어 때문에 다른 대학의 모집요강이 근거로 붙지 않게 한다.
+     */
+    List<Evidence> searchOfficialMaterials(List<String> keywords, Integer yearFilter, String questionText) {
         if (keywords.isEmpty()) return List.of();
         Specification<AdmissionsOfficialMaterial> spec = (root, query, cb) -> {
             List<Predicate> kws = new ArrayList<>();
@@ -405,7 +421,11 @@ public class AdmissionsResearchService {
             query.orderBy(cb.desc(root.get("publishDate")));
             return cb.and(base.toArray(new Predicate[0]));
         };
-        return materialRepository.findAll(spec, PageRequest.of(0, PER_STEP_LIMIT)).stream()
+        java.util.Set<Long> mentioned = mentionedUniversityIds(questionText);
+        return materialRepository.findAll(spec).stream()
+                .filter(m -> mentioned.isEmpty()
+                        || (m.getUniversity() != null && mentioned.contains(m.getUniversity().getUniversityId())))
+                .limit(PER_STEP_LIMIT)
                 .map(AdmissionsResearchService::materialEvidence)
                 .toList();
     }
