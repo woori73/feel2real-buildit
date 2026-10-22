@@ -37,7 +37,7 @@
 | 대상 | HEAD | CI |
 |---|---|---|
 | #863 | `09d62dee` | build ✅ · mysql-integration-test ✅ |
-| #871(스택 팁) | `38284d5d` | **실행 중 — 완료 후 PR 코멘트에 확정 기록**(직전 팁 `27ff850e`는 3/3 성공) |
+| #871(스택 팁) | `38284d5d` | build ✅ · mysql-integration-test ✅ · isolated(Studio/MCP) ✅ — [run 39776696626](https://github.com/woori73/feel2real-buildit/actions/runs/39776696626), [run 39776696589](https://github.com/woori73/feel2real-buildit/actions/runs/39776696589) |
 | 내 로컬 재실행(병합 트리) | #863+스택 | Java 102건(Studio/MCP/Flyway/JWT 등) + 내 프로브 1건 모두 통과, 브라우저 36항목, 공식 SDK MCP 시험 통과 |
 
 ## 4. 실제 자료 536개 검증(독립)
