@@ -27,7 +27,7 @@ def authorize(c):
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
     page = c.get('/mcp/oauth/authorize', params={'client_id': cid, 'redirect_uri': CALLBACK, 'response_type': 'code', 'state': 'synthetic-only', 'code_challenge_method': 'S256', 'code_challenge': challenge, 'resource': BASE + '/mcp'})
     page.raise_for_status(); nonce = re.search(r'name="nonce" value="([^"]+)"', page.text).group(1)
-    consent = c.post('/mcp/oauth/authorize', content=urlencode([('nonce', nonce), ('scopes', 'catalog:read'), ('scopes', 'academy:read'), ('scopes', 'easy:read'), ('sensitiveAcknowledged', 'true')]), headers={'Content-Type': 'application/x-www-form-urlencoded'})
+    consent = c.post('/mcp/oauth/authorize', content=urlencode([('nonce', nonce), ('scopes', 'catalog:read'), ('scopes', 'academy:read'), ('scopes', 'easy:read'), ('scopes', 'content:read'), ('sensitiveAcknowledged', 'true')]), headers={'Content-Type': 'application/x-www-form-urlencoded'})
     assert consent.status_code == 303, consent.status_code
     code = parse_qs(urlparse(consent.headers['location']).query)['code'][0]
     r = c.post('/mcp/oauth/token', data={'grant_type': 'authorization_code', 'client_id': cid, 'redirect_uri': CALLBACK, 'code': code, 'code_verifier': verifier, 'resource': BASE + '/mcp'})
@@ -62,9 +62,9 @@ try:
     passed('Each permitted business exposes only eight summary fields')
     assert read(b, 'easy', 'GET /api/mcp/finance/summary', query={'businessId': '1', 'month': '2026-10'})['isError']
     passed('Foreign business summary denied')
-    for service, endpoint in [('easy','GET /api/admin/easy/transactions'), ('easy','GET /api/admin/easy/financial-collector/previews/{id}'), ('easy','GET /api/dashboard/assistant/v1/drafts'), ('easy','POST /api/admin/easy/financial-collector/previews/{id}/approve-and-commit'), ('easy','POST /api/dashboard/assistant/v1/drafts/{id}/approve')]:
+    for service, endpoint in [('content','GET /api/admin/publishing/maintenance'), ('easy','GET /api/admin/easy/transactions'), ('easy','GET /api/admin/easy/financial-collector/previews/{id}'), ('easy','GET /api/dashboard/assistant/v1/drafts'), ('easy','POST /api/admin/easy/financial-collector/previews/{id}/approve-and-commit'), ('easy','POST /api/dashboard/assistant/v1/drafts/{id}/approve')]:
         assert read(a, service, endpoint, {'id': 'synthetic'})['isError'], endpoint
-    passed('Even ADMIN MCP cannot read raw finance/collector previews or invoke either approval POST')
+    passed('Even ADMIN MCP cannot read raw finance/collector previews, recovery/maintenance GET or invoke approval POST')
     prefix = '/api/admin/easy/financial-collector/previews'
     r = admin.post(prefix, params={'businessId': 1, 'dataset': 'BANK_ACCOUNT', 'accountRef': 'SYNTHETIC_REVIEW_855', 'from': '2026-10-01', 'to': '2026-10-31', 'userApprovedUpload': 'true'}, files={'file': ('synthetic-bank.csv', (ROOT/'docs/easy/financial-collector/sample-bank.csv').read_bytes(), 'text/csv')})
     r.raise_for_status(); cid = r.json()['collectionId']; before = ledger_count()

@@ -2,7 +2,7 @@
 
 `scripts/ai-agent-studio/get-sideeffect-survey.py`가 생성했다. **후보 목록이며 안전성의 증명이 아니다.**
 
-- 정책 경로: 484건 · 키워드 미검출: 361건 · 후보: 15건 · 정적으로 해석 불가(프록시/뷰/템플릿): 108건
+- 정책 경로: 405건 · 키워드 미검출: 313건 · 후보: 12건 · 정적으로 해석 불가(프록시/뷰/템플릿): 80건
 
 검사 범위: 컨트롤러 GET 메서드 본문 + 호출하는 주입 서비스 메서드 본문(2단계). 리포지토리 `@Modifying`·AOP·이벤트 리스너·3단계 이상 호출은 보지 못한다. MCP는 추가로 읽기 전용 트랜잭션+rollback(Java)과 SQLite `mode=ro`(Wiki)로 DB 쓰기를 차단한다. 외부 HTTP·AI·파일 쓰기는 이 트랜잭션이 막지 못하므로 아래 후보를 사람이 검토해야 한다.
 
@@ -11,11 +11,8 @@
 | 경로 | 서비스 | 분류 | 근거 메서드 |
 |---|---|---|---|
 | `/api/academies/{handle}/midterm-campaign/live-videos` | wiki | 외부 HTTP | MidtermLiveVideoService.listPublic |
-| `/api/admin/easy/summary` | easy | DB·파일 쓰기 | EasyLedgerService.summary |
-| `/api/admin/newstart/consultations/{consultationId}` | content | DB·파일 쓰기, 외부 HTTP | NewStartConsultationService.adminThread |
 | `/api/admin/newstart/jipijigi/inventory` | newstart | 외부 AI 비용 | JipijigiInventoryService.build |
 | `/api/chart/regions` | chart | DB·파일 쓰기 | ChartRankingService.regions |
-| `/api/newstart/consultations/{consultationId}` | content | DB·파일 쓰기 | NewStartConsultationService.thread |
 | `/api/studio/files/{id}/text` | studio | DB·파일 쓰기 | StudioController.text |
 | `/api/wemade/catalyst/events` | wemade | 외부 HTTP | WemadeCatalystService.catalysts |
 | `/api/wemade/catalyst/policy` | wemade | 외부 HTTP | WemadeCatalystService.policy |
@@ -62,42 +59,14 @@
 | `/analyzes` | content | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/analyzes/{id}` | content | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/api/admin/choonggi/posts` | choonggi | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/admin/easy/dashboard/widgets` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/admin/easy/workspace/monthly` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/admin/easy/workspace/reviews` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/admin/easy/workspace/transactions` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/admin/easy/workspace/transactions/{txnId}` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/api/chart/educators/{id:\d+}` | chart | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/api/chart/rankings/{id:\d+}` | chart | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/api/dashboard/admissions/history` | admissions | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/dashboard/businesses` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/dashboard/widgets` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/accounting/balance-audit` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/accounting/balance-sheet` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/accounting/general-ledger` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/accounting/income-statement` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/accounting/journal` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/accounting/trial-balance` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/businesses` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/imports/{batchId}` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/workspace/monthly` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/workspace/reviews` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/workspace/transactions` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/api/tutor/easy/workspace/transactions/{txnId}` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/chart/educators/{id:\d+}` | chart | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/community` | content | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/community/posts/{postId}` | content | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/dashboard` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/easy` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/easy/card-review` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/easy/evidence` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/easy/payments` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/easy/reviews` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/easy/students` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/easy/transactions` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/exam_review` | content | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/home` | content | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
-| `/ledger` | easy | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/lessons` | content | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/problem-generator/wiki/api/csat/exam-resources/{resource_id}/original` | wiki | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |
 | `/problem-generator/wiki/api/csat/exams` | wiki | 프록시/뷰 컨트롤러/정적 매핑 — 업스트림 또는 템플릿 |

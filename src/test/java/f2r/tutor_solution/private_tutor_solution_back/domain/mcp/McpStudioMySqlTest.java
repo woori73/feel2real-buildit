@@ -840,9 +840,11 @@ class McpStudioMySqlTest {
     for (String endpoint :
         List.of(
             "GET /api/admin/easy/transactions",
+            "GET /api/admin/publishing/maintenance",
+            "GET /api/dashboard/assistant/v1/drafts",
             "GET /api/tutor/easy/imports/{batchId}",
             "POST /api/dashboard/assistant/v1/drafts/x/approve",
-            "POST /api/admin/easy/financial-collector/commit"))
+            "POST /api/admin/easy/financial-collector/previews/{id}/approve-and-commit"))
       assertThrows(Exception.class, () -> catalog.policy(endpoint));
   }
 

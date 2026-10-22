@@ -18,8 +18,8 @@ import org.springframework.test.context.TestPropertySource;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * 공식 문서의 콜백 형태(ChatGPT 커넥터별 URL, Claude claude.ai/claude.com)를 등록 목록에 넣었을 때의 실제 HTTP OAuth 동의 흐름을 검증한다.
- * 실제 ChatGPT·Claude 접속이 아니라, 공식 문서의 콜백 형태가 서버 정책을 통과하는지의 시험이다.
+ * 공식 문서의 콜백 형태(ChatGPT 커넥터별 URL, Claude claude.ai)를 등록 목록에 넣었을 때의 실제 HTTP OAuth 동의 흐름을 검증한다. 실제
+ * ChatGPT·Claude 접속이 아니라, 공식 문서의 콜백 형태가 서버 정책을 통과하는지의 시험이다.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(
@@ -28,7 +28,7 @@ import tools.jackson.databind.ObjectMapper;
       "app.mcp.enabled=true",
       "app.mcp.public-base-url=http://127.0.0.1:18089",
       "app.mcp.internal-base-url=http://127.0.0.1:18089",
-      "app.mcp.redirect-uris=https://claude.ai/api/mcp/auth_callback,https://claude.com/api/mcp/auth_callback,https://chatgpt.com/connector/oauth/Zx12_ab-9",
+      "app.mcp.redirect-uris=https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector/oauth/Zx12_ab-9",
       "spring.datasource.url=jdbc:mysql://127.0.0.1:3318/f2r_studio_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci",
       "spring.datasource.username=f2r_test",
       "spring.datasource.password=isolated_test_password",
@@ -44,7 +44,9 @@ class McpOAuthDefaultsHttpTest {
   @Autowired JwtTokenProvider jwt;
   @Autowired AdminSessionValidator stamps;
   @Autowired ObjectMapper json;
-  final HttpClient http = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
+  @Autowired org.springframework.jdbc.core.JdbcTemplate db;
+  final HttpClient http =
+      HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
   final String base = "http://127.0.0.1:18089";
 
   String cookie(String login, Role role) {
@@ -62,10 +64,16 @@ class McpOAuthDefaultsHttpTest {
                             .role(role)
                             .build()));
     return "ACCESS_TOKEN="
-        + jwt.issue(u.getUserId(), u.getLoginId(), u.getRole().name(), stamps.stampFor(u.getUserId()));
+        + jwt.issue(
+            u.getUserId(), u.getLoginId(), u.getRole().name(), stamps.stampFor(u.getUserId()));
   }
 
   HttpResponse<String> register(String... uris) throws Exception {
+    // Isolate URI/security cases from the shared fixed-window state. McpStudioMySqlTest
+    // separately verifies that actual HTTP DCR stays limited despite rotating headers.
+    db.update(
+        "DELETE FROM mcp_rate_limits WHERE bucket_key=?",
+        McpOAuth.hash("/mcp/oauth/register:127.0.0.1"));
     return http.send(
         HttpRequest.newBuilder(URI.create(base + "/mcp/oauth/register"))
             .header("Content-Type", "application/json")
@@ -86,13 +94,20 @@ class McpOAuthDefaultsHttpTest {
   Map<String, String> query(String client, String redirect) {
     return new LinkedHashMap<>(
         Map.of(
-            "client_id", client,
-            "redirect_uri", redirect,
-            "response_type", "code",
-            "state", "st-1",
-            "code_challenge_method", "S256",
-            "code_challenge", McpOAuth.challenge("v".repeat(43)),
-            "resource", base + "/mcp"));
+            "client_id",
+            client,
+            "redirect_uri",
+            redirect,
+            "response_type",
+            "code",
+            "state",
+            "st-1",
+            "code_challenge_method",
+            "S256",
+            "code_challenge",
+            McpOAuth.challenge("v".repeat(43)),
+            "resource",
+            base + "/mcp"));
   }
 
   HttpResponse<String> authorizePage(Map<String, String> q, String cookie) throws Exception {
@@ -127,13 +142,15 @@ class McpOAuthDefaultsHttpTest {
   }
 
   @Test
-  void givenOfficialCallbackShapes_whenRegistering_thenAcceptedAndOthersRejected() throws Exception {
+  void givenOfficialCallbackShapes_whenRegistering_thenAcceptedAndOthersRejected()
+      throws Exception {
     // given / when / then
     assertEquals(200, register(CHATGPT).statusCode());
     assertEquals(400, register("https://chatgpt.com/connector/oauth/NotRegistered1").statusCode());
-    assertEquals(400, register("https://chatgpt.com/connector_platform_oauth_redirect").statusCode());
+    assertEquals(
+        400, register("https://chatgpt.com/connector_platform_oauth_redirect").statusCode());
     assertEquals(200, register("https://claude.ai/api/mcp/auth_callback").statusCode());
-    assertEquals(200, register("https://claude.com/api/mcp/auth_callback").statusCode());
+    assertEquals(400, register("https://claude.com/api/mcp/auth_callback").statusCode());
     assertEquals(400, register("https://evil.example/connector/oauth/abc").statusCode());
     assertEquals(400, register("https://chatgpt.com/connector/oauth/a/b").statusCode());
     assertEquals(400, register("https://chatgpt.com/connector/oauth/abc?x=1").statusCode());
@@ -169,9 +186,9 @@ class McpOAuthDefaultsHttpTest {
   void givenAdminChoosingOnlyStudioScope_whenConsenting_thenNoAcknowledgementNeeded()
       throws Exception {
     // given
-    String client = clientFor("https://claude.com/api/mcp/auth_callback");
+    String client = clientFor("https://claude.ai/api/mcp/auth_callback");
     String admin = cookie("oauth-defaults-admin", Role.ADMIN);
-    var page = authorizePage(query(client, "https://claude.com/api/mcp/auth_callback"), admin);
+    var page = authorizePage(query(client, "https://claude.ai/api/mcp/auth_callback"), admin);
     // when
     var result = consent(admin, nonce(page), "&scopes=catalog%3Aread&scopes=studio%3Aread", false);
     // then
@@ -186,7 +203,8 @@ class McpOAuthDefaultsHttpTest {
     String user = cookie("oauth-defaults-admin", Role.ADMIN);
     // when / then: 등록하지 않은 다른 허용 URI, 상태 누락, 잘못된 resource·PKCE
     assertEquals(
-        400, authorizePage(query(client, "https://claude.ai/api/mcp/auth_callback"), user).statusCode());
+        400,
+        authorizePage(query(client, "https://claude.ai/api/mcp/auth_callback"), user).statusCode());
     var noState = query(client, CHATGPT);
     noState.put("state", "");
     assertEquals(400, authorizePage(noState, user).statusCode());

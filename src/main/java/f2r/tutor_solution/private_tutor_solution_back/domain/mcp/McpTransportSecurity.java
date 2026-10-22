@@ -51,8 +51,7 @@ public class McpTransportSecurity {
                               oauth.base(),
                               "https://chatgpt.com",
                               "https://chat.openai.com",
-                              "https://claude.ai",
-                              "https://claude.com")
+                              "https://claude.ai")
                           .contains(origin)) throw McpOAuth.error(403, "invalid_origin");
                   if (origin != null) {
                     res.setHeader("Access-Control-Allow-Origin", origin);

@@ -4936,7 +4936,7 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - ADMIN의 studio/catalog/chart/grammar/offline_access 외 scope 동의는 `sensitiveAcknowledged=true`가 추가로 필요하다. 동의 화면에 외부 민감정보 제공 경고를 표시하고 SENSITIVE_ACK 감사 기록을 남긴다. 기존 scope나 계정 권한을 확대하지 않는다.
 - `read_easy`는 `GET /api/mcp/finance/summary?businessId=&month=`만 실행한다. 현재 DB 역할과 기존 학원/사업체 링크 검사 후 월 수입·지출·수지·미수·건수만 반환한다. 원문·거래처·증빙·계좌·학생 목록·collector preview/status/raw는 제외한다. ADMIN도 정책을 우회하지 않는다.
 - `read_admissions`는 본인 상담 이력 API만 제공한다. 관리자 지식/원자료/통계는 제외했다. 상담 읽음 상태 변경·설정 자동 생성·외부 위키 실시간 호출이 있는 GET 8개를 MCP 실행 정책에서 제외했다. 기존 서비스의 원래 API 동작은 유지한다.
-- 유효 MCP 요청은 프록시 IP 대신 인증된 사용자 ID로 호출 한도를 검사한다. 익명 경로는 기존 AdmissionsRateLimiter의 신뢰 프록시 주소 판별을 재사용(`app.admissions.rate-limit.trusted-proxies`), 비신뢰 XFF는 무시한다. 사용자당 60/분, 모든 JSON-RPC 전체 최대 8개 동시(`app.mcp.max-concurrent-calls`, JVM별), 내부 읽기 2개. 상한 시 429/Retry-After이며 DB 기반 분당 한도는 replica에도 공유된다.
+- 유효 MCP 요청은 프록시 IP 대신 인증된 사용자 ID로 호출 한도를 검사한다. 익명 경로는 기존 AdmissionsRateLimiter의 신뢰 프록시 주소 판별을 재사용(`app.admissions.rate-limit.trusted-proxies`), 비신뢰 XFF는 무시한다. 사용자당 60/분, 모든 JSON-RPC 전체 최대 8개 동시(`app.mcp.max-concurrent-calls`, JVM별), 내부 읽기 사용자당 2개. 상한 시 429/Retry-After이며 DB 기반 분당 한도는 replica에도 공유된다.
 - #853 수집·장부 확정과 #854 초안 승인 POST를 MCP에 노출하지 않는다. 자연어 승인·MCP Bearer·GET 전용 위임 JWT로 장부 확정을 호출할 수 없다. 실제 제품 계정 연결은 별도 사용자 로그인/동의 시험 전까지 미검증이다.
 
 **검수 반영(2026-10-22, Claude).**

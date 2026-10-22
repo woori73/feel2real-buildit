@@ -1,22 +1,22 @@
 {
   "testType": "Official Python MCP SDK 2.1.1 with two independently authorized OAuth clients; NOT actual ChatGPT/Claude account connections",
   "sameContent": true,
-  "responseSha256": "24b35cf884bb201eaf771ceca8a5733a80dbce10ff65300c2c8f64845aeb874e",
+  "responseSha256": "08a7855eca63b4b685c45e4653d4db33f32cae30dcf723ac3dc931e71d62c7bf",
   "clientA": {
     "protocolVersion": "2025-11-25",
     "toolCount": 19,
     "catalogRows": 1098,
     "readLatencyMs": [
-      53.12,
-      64.61,
-      60.15,
-      49.09,
-      61.26,
-      76.36,
-      54.16,
-      53.35,
-      44.14,
-      80.26
+      56.42,
+      61.76,
+      56.43,
+      66.66,
+      58.85,
+      61.86,
+      52.82,
+      54.53,
+      59.81,
+      60.8
     ],
     "search": true,
     "writeDenied": true
@@ -26,16 +26,16 @@
     "toolCount": 19,
     "catalogRows": 1098,
     "readLatencyMs": [
-      59.79,
-      56.17,
-      75.88,
-      91.42,
-      68.88,
-      100.33,
-      90.05,
-      118.43,
-      77.88,
-      45.83
+      51.34,
+      56.26,
+      50.54,
+      50.18,
+      59.23,
+      45.02,
+      47.79,
+      40.14,
+      48.64,
+      47.94
     ],
     "search": true,
     "writeDenied": true

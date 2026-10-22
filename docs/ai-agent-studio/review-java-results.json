@@ -221,5 +221,19 @@
     "failures": 0,
     "errors": 0,
     "skipped": 0
+  },
+  "parallel855Integration": {
+    "run": "Parallel #855 integration: redaction, atomic per-user concurrency, official callback HTTP cases and JSON syntax; bootJar succeeded",
+    "tests": 41,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "finalReadPolicy": {
+    "run": "After excluding maintenance/recovery/commit paths; native HTTP and MySQL; bootJar succeeded",
+    "tests": 20,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
   }
 }

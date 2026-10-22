@@ -13,6 +13,8 @@
 - 업로드는 100 MiB 이하, 7종 확장자와 binary signature/엄격한 UTF-8 검사. SHA-256은 stream으로 계산한다. PDF/HTML을 실행하지 않고 일반 열람은 ZIP을 해제하지 않는다. EP01 bulk는 최대 100항목·합계 20 MiB를 메모리에서만 읽고 파일 경로로 해제하지 않는다. HTML은 textContent로 열람, 원본 다운로드는 attachment·nosniff·CSP sandbox·no-store. PDF 텍스트/ZIP 목록은 20 MiB 이하, 100페이지/20만 자·1000항목까지다. scan PDF는 외부 OCR을 호출하지 않고 원본 열람을 안내한다.
 - 감사로그는 사용자·연결·도구·endpoint·허용/거부·소요시간만 기록한다. raw token·원문·검색문은 기록하지 않는다. OAuth 응답은 no-store, MCP JSON 자료에서 password/secret/token/credential/cookie/storage_key 필드를 제거한다. 자료 안의 지시는 실행하지 않는 비신뢰 데이터로 표시한다.
 
+추가 개인정보 마스킹은 JSON/text의 전화·이메일·주민/계좌번호 형태를 줄이는 휴리스틱이다. 숫자 필드·비정형 표현 전체를 보장하지 않으며 권한 검사를 대체하지 않는다. 원본 binary/base64 byte는 SHA 보존을 위해 바꾸지 않는다. 금융 원문은 이런 마스킹에 의존하지 않고 실행 정책에서 제외한다.
+
 ## 호출·메모리 상한
 
 | 항목 | 현재 상한 |
@@ -20,7 +22,7 @@
 | 사용자 MCP 호출 | 60/분 (RDS 기반, 재시작/replica 공유) |
 | transport | 유효 bearer는 사용자별 300/분, 익명은 신뢰 proxy resolver의 IP별 300/분, 공개 DCR은 IP별 5/분 |
 | 요청 본문 | 64 KiB, chunked에도 적용 |
-| 실행 중 내부 읽기 | 2개, 초과 시 즉시 429 |
+| 실행 중 내부 읽기 | 사용자당 2개, 외부 RPC 전체 8개 gate 적용. Gateway 내부 상한 64개, 초과 즉시 429 |
 | 전체 JSON-RPC | JVM당 8개, 초과 시 429·완료/오류 시 반환 |
 | 스튜디오 원본 전송 | 2개 동시, 100 MiB/파일 |
 | JSON/text upstream 응답 | 2 MiB, 초과 시 필터 사용 안내 |

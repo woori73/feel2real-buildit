@@ -2346,11 +2346,13 @@
       "controller": "PublishingMaintenanceController",
       "handler": "status",
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/maintenance/PublishingMaintenanceController.java",
-      "allowed": true,
-      "flags": [],
+      "allowed": false,
+      "flags": [
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/maintenance/PublishingMaintenanceGate.java:86 PublishingMaintenanceGate.persist"
+      ],
       "unresolvedExternalTypes": [],
       "sourceOnly": false,
-      "assessment": "NO_STATIC_FLAG",
+      "assessment": "SOURCE_FLAGS",
       "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
     },
     {
@@ -3755,10 +3757,12 @@
       "handler": "info",
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/controller/PublishingEditController.java",
       "allowed": false,
-      "flags": [],
+      "flags": [
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/service/DesignCraftCliExecutor.java:224 DesignCraftCliExecutor.runProcess"
+      ],
       "unresolvedExternalTypes": [],
       "sourceOnly": false,
-      "assessment": "NO_STATIC_FLAG",
+      "assessment": "SOURCE_FLAGS",
       "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
     },
     {
@@ -3767,10 +3771,13 @@
       "handler": "renderPage",
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/controller/PublishingEditController.java",
       "allowed": false,
-      "flags": [],
+      "flags": [
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/service/DesignCraftCliExecutor.java:224 DesignCraftCliExecutor.runProcess",
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/service/PublishingEditService.java:220 PublishingEditService.renderPagePng"
+      ],
       "unresolvedExternalTypes": [],
       "sourceOnly": false,
-      "assessment": "NO_STATIC_FLAG",
+      "assessment": "SOURCE_FLAGS",
       "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
     },
     {
@@ -3779,10 +3786,13 @@
       "handler": "renderThumb",
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/controller/PublishingEditController.java",
       "allowed": false,
-      "flags": [],
+      "flags": [
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/service/DesignCraftCliExecutor.java:224 DesignCraftCliExecutor.runProcess",
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/publishing/service/PublishingEditService.java:220 PublishingEditService.renderPagePng"
+      ],
       "unresolvedExternalTypes": [],
       "sourceOnly": false,
-      "assessment": "NO_STATIC_FLAG",
+      "assessment": "SOURCE_FLAGS",
       "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
     },
     {
@@ -3965,12 +3975,14 @@
       "handler": "text",
       "source": "src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java",
       "allowed": true,
-      "flags": [],
+      "flags": [
+        "FILE_WRITE:src/main/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioController.java:195 StudioController.text"
+      ],
       "unresolvedExternalTypes": [
         "S3Client.getObject"
       ],
       "sourceOnly": false,
-      "assessment": "KNOWN_STORAGE_IO",
+      "assessment": "SOURCE_FLAGS",
       "limitation": "Static screening cannot prove dynamic dispatch, external API or filesystem absence. Existing API tenant checks and runtime guards remain mandatory."
     },
     {

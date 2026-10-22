@@ -50,6 +50,7 @@ def inspect(key,seen=None):
   for call in (n for n in walk(node) if n.type=='method_invocation'):
    name=text(call.child_by_field_name('name'),b);obj=text(call.child_by_field_name('object'),b)
    typ=fields.get(owner,{}).get(obj.replace('this.',''),obj if obj in classes else None)
+   if typ is None and obj.rsplit('.',1)[-1] in ('Files','FileOutputStream'):typ=obj.rsplit('.',1)[-1]
    if not obj or obj=='this':typ=owner
    if name in ('save','saveAll','saveAndFlush','delete','deleteAll','deleteById','deleteAllById','deleteAllInBatch','flush','persist','merge','remove','executeUpdate','batchUpdate') or name.startswith('deleteBy'):
     if obj and (typ or 'repository' in obj.lower() or 'entityManager' in obj):evidence['DB_WRITE:'+loc]=loc

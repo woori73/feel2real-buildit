@@ -18,7 +18,7 @@
       "pass": true
     },
     {
-      "name": "Even ADMIN MCP cannot read raw finance/collector previews or invoke either approval POST",
+      "name": "Even ADMIN MCP cannot read raw finance/collector previews, recovery/maintenance GET or invoke approval POST",
       "pass": true
     },
     {

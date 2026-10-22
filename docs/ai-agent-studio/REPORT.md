@@ -15,7 +15,7 @@
 | 자료 열람 | PDF 텍스트/HTML·JSON·MD 원문/ZIP 목록/PNG·MP4 미디어/원본 다운로드. PDF OCR·영상 생성 API를 호출하지 않음 |
 | 권한 | ADMIN 개설·멤버 관리, VIEWER·EDITOR·APPROVER 명시적 부여, 원래 서비스 권한 재사용 |
 | 작품 검색·채팅 | 등록 제목·본문·대사·연출의 키워드 검색과 근거 링크. 외부 생성형 AI 답변은 연결한 구독 클라이언트에서 수행 |
-| 전체 서비스 조사 | 현재 통합 런타임 매핑 1098개, 읽기 허용 경로 406개 (최초 1079/483에서 축소·갱신), Wiki Python 선언 161개(미mount 구분). [전체 목록](SERVICE_INVENTORY.md) |
+| 전체 서비스 조사 | 현재 통합 런타임 매핑 1098개, 읽기 허용 경로 405개 (최초 1079/483에서 축소·갱신), Wiki Python 선언 161개(미mount 구분). [전체 목록](SERVICE_INVENTORY.md) |
 | `/mcp` | 원격 stateless Streamable HTTP, 도구 19개, OAuth·PKCE·scope·만료/폐기·감사·속도 제한, 기본 OFF |
 | 기존 서비스 조회 | URL 목록 외 실제 기존 GET API 호출. 같은 사용자·원래 필터·소유권·tenant 검사 및 읽기 전용/rollback. 별도 Wiki 서명·SQLite mode=ro |
 | 설명서 | [ChatGPT](CHATGPT_CONNECTION.md), [Claude](CLAUDE_CONNECTION.md), [실제 연결 비교 절차](CONNECTION_TEST.md) |

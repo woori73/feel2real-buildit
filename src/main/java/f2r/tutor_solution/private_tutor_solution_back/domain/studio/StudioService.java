@@ -224,7 +224,8 @@ public class StudioService {
     if (ext.equals("json")) {
       // 원본은 바꾸지 않고 문법만 확인한다. 깨진 JSON은 일괄 등록·열람 때 늦게 실패하므로 업로드에서 막는다.
       try (var in = Files.newInputStream(path)) {
-        JSON_SYNTAX.readTree(in);
+        var tree = JSON_SYNTAX.readTree(in);
+        if (tree == null || tree.isMissingNode()) throw error(400, "JSON 값이 필요합니다.");
       } catch (RuntimeException e) {
         throw error(400, "JSON 문법 오류입니다. 원본을 확인하세요.");
       }
@@ -232,7 +233,9 @@ public class StudioService {
   }
 
   private static final tools.jackson.databind.ObjectMapper JSON_SYNTAX =
-      new tools.jackson.databind.ObjectMapper();
+      tools.jackson.databind.json.JsonMapper.builder()
+          .enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+          .build();
 
   @Transactional
   public Map<String, Object> save(AuthenticatedPrincipal p, Revision r) {

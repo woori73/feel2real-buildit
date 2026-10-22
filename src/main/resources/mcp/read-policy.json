@@ -2331,14 +2331,6 @@
     "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
   },
   {
-    "path": "/api/admin/publishing/maintenance",
-    "service": "content",
-    "roles": [
-      "ADMIN"
-    ],
-    "reason": "저장 자료 GET. 기존 권한 검사 및 MCP 읽기 전용·rollback 트랜잭션 적용"
-  },
-  {
     "path": "/api/admin/wiki/analysis-materials",
     "service": "wiki",
     "roles": [

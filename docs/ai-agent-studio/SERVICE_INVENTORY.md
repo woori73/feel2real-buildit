@@ -22,7 +22,7 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | choonggi | 21 | 8 |
 | community | 9 | 0 |
 | consultation | 2 | 0 |
-| content | 77 | 62 |
+| content | 76 | 61 |
 | conversation | 5 | 0 |
 | easy | 140 | 1 |
 | examanalysis | 4 | 0 |
@@ -43,7 +43,7 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | newstartknowledge | 9 | 0 |
 | page | 26 | 0 |
 | problemgenerator | 23 | 0 |
-| publishing | 15 | 0 |
+| publishing | 16 | 0 |
 | questionwiki | 10 | 0 |
 | source | 2 | 0 |
 | studio | 19 | 11 |
@@ -181,10 +181,10 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/admin/analytics/breakdown` | analytics | ROLE_ADMIN | 허용 | `AdminAnalyticsController.breakdown` |
 | GET | `https://feel2real.co.kr/api/admin/analytics/events` | analytics | ROLE_ADMIN | 허용 | `AdminAnalyticsController.events` |
 | GET | `https://feel2real.co.kr/api/admin/analytics/summary` | analytics | ROLE_ADMIN | 허용 | `AdminAnalyticsController.summary` |
-| GET | `https://feel2real.co.kr/api/admin/analyzes` | learning | ROLE_ADMIN | 허용 | `ExamAnalysisController.listAdmin` |
 | POST | `https://feel2real.co.kr/api/admin/analyzes` | learning | ROLE_ADMIN | 미허용 | `ExamAnalysisController.createAdmin` |
-| PUT | `https://feel2real.co.kr/api/admin/analyzes/{id}` | examanalysis | ROLE_ADMIN | 미허용 | `ExamAnalysisController.updateAdmin` |
+| GET | `https://feel2real.co.kr/api/admin/analyzes` | learning | ROLE_ADMIN | 허용 | `ExamAnalysisController.listAdmin` |
 | DELETE | `https://feel2real.co.kr/api/admin/analyzes/{id}` | examanalysis | ROLE_ADMIN | 미허용 | `ExamAnalysisController.softDelete` |
+| PUT | `https://feel2real.co.kr/api/admin/analyzes/{id}` | examanalysis | ROLE_ADMIN | 미허용 | `ExamAnalysisController.updateAdmin` |
 | DELETE | `https://feel2real.co.kr/api/admin/analyzes/{id}/hard` | examanalysis | ROLE_ADMIN | 미허용 | `ExamAnalysisController.hardDelete` |
 | PATCH | `https://feel2real.co.kr/api/admin/analyzes/{id}/visibility` | examanalysis | ROLE_ADMIN | 미허용 | `ExamAnalysisController.updateVisibility` |
 | GET | `https://feel2real.co.kr/api/admin/beta-comments` | content | ROLE_ADMIN | 허용 | `BetaCommentAdminController.list` |
@@ -212,8 +212,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | POST | `https://feel2real.co.kr/api/admin/chart/tools/regions/{regionId}/claim` | chart | ROLE_ADMIN | 미허용 | `ChartSiteToolController.claimRegion` |
 | POST | `https://feel2real.co.kr/api/admin/chart/tools/regions/{regionId}/complete` | chart | ROLE_ADMIN | 미허용 | `ChartSiteToolController.completeRegion` |
 | POST | `https://feel2real.co.kr/api/admin/chart/tools/research-drafts` | chart | ROLE_ADMIN | 미허용 | `ChartSiteToolController.saveResearchDraft` |
-| GET | `https://feel2real.co.kr/api/admin/chart/tools/review-batches` | chart | ROLE_ADMIN | 허용 | `ChartSiteToolController.pendingReviewBatches` |
 | POST | `https://feel2real.co.kr/api/admin/chart/tools/review-batches` | chart | ROLE_ADMIN | 미허용 | `ChartSiteToolController.submitReview` |
+| GET | `https://feel2real.co.kr/api/admin/chart/tools/review-batches` | chart | ROLE_ADMIN | 허용 | `ChartSiteToolController.pendingReviewBatches` |
 | GET | `https://feel2real.co.kr/api/admin/chart/tools/review-batches/{reviewBatchId}` | chart | ROLE_ADMIN | 허용 | `ChartSiteToolController.inspectReviewBatch` |
 | POST | `https://feel2real.co.kr/api/admin/chart/tools/review-batches/{reviewBatchId}/decision` | chart | ROLE_ADMIN | 미허용 | `ChartSiteToolController.decideReview` |
 | POST | `https://feel2real.co.kr/api/admin/chart/tools/review-batches/{reviewBatchId}/finalize` | chart | ROLE_ADMIN | 미허용 | `ChartSiteToolController.finalizeReviewBatch` |
@@ -223,8 +223,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/admin/chart/zones` | chart | ROLE_ADMIN | 허용 | `ChartAdminController.zones` |
 | POST | `https://feel2real.co.kr/api/admin/choonggi/posts` | choonggi | ROLE_ADMIN | 미허용 | `Api.create` |
 | GET | `https://feel2real.co.kr/api/admin/choonggi/posts` | choonggi | ROLE_ADMIN | 허용 | `Api.list` |
-| PUT | `https://feel2real.co.kr/api/admin/choonggi/posts/{id}` | choonggi | ROLE_ADMIN | 미허용 | `Api.update` |
 | DELETE | `https://feel2real.co.kr/api/admin/choonggi/posts/{id}` | choonggi | ROLE_ADMIN | 미허용 | `Api.delete` |
+| PUT | `https://feel2real.co.kr/api/admin/choonggi/posts/{id}` | choonggi | ROLE_ADMIN | 미허용 | `Api.update` |
 | POST | `https://feel2real.co.kr/api/admin/choonggi/posts/{id}/cover/{mediaId}` | choonggi | ROLE_ADMIN | 미허용 | `Api.cover` |
 | POST | `https://feel2real.co.kr/api/admin/choonggi/posts/{id}/media` | choonggi | ROLE_ADMIN | 미허용 | `Api.upload` |
 | DELETE | `https://feel2real.co.kr/api/admin/choonggi/posts/{id}/media/{mediaId}` | choonggi | ROLE_ADMIN | 미허용 | `Api.deleteMedia` |
@@ -242,8 +242,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | POST | `https://feel2real.co.kr/api/admin/easy/accounting/openings` | easy | ROLE_ADMIN | 미허용 | `EasyAccountingController.postOpening` |
 | GET | `https://feel2real.co.kr/api/admin/easy/accounting/reference-comparison` | easy | ROLE_ADMIN | 미허용 | `EasyAccountingController.referenceComparison` |
 | GET | `https://feel2real.co.kr/api/admin/easy/accounting/trial-balance` | easy | ROLE_ADMIN | 미허용 | `EasyAccountingController.trialBalance` |
-| POST | `https://feel2real.co.kr/api/admin/easy/accounts` | easy | ROLE_ADMIN | 미허용 | `EasyAccountController.create` |
 | GET | `https://feel2real.co.kr/api/admin/easy/accounts` | easy | ROLE_ADMIN | 미허용 | `EasyAccountController.list` |
+| POST | `https://feel2real.co.kr/api/admin/easy/accounts` | easy | ROLE_ADMIN | 미허용 | `EasyAccountController.create` |
 | GET | `https://feel2real.co.kr/api/admin/easy/accounts/mappings` | easy | ROLE_ADMIN | 미허용 | `EasyAccountController.listMappings` |
 | POST | `https://feel2real.co.kr/api/admin/easy/accounts/mappings` | easy | ROLE_ADMIN | 미허용 | `EasyAccountController.createMapping` |
 | DELETE | `https://feel2real.co.kr/api/admin/easy/accounts/mappings/{mappingId}` | easy | ROLE_ADMIN | 미허용 | `EasyAccountController.deleteMapping` |
@@ -260,8 +260,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | PUT | `https://feel2real.co.kr/api/admin/easy/card-events/merchant-mappings/{mappingId}/reactivate` | easy | ROLE_ADMIN | 미허용 | `EasyCardReviewController.reactivateMerchantMapping` |
 | POST | `https://feel2real.co.kr/api/admin/easy/card-events/{eventId}/approve` | easy | ROLE_ADMIN | 미허용 | `EasyCardReviewController.approve` |
 | POST | `https://feel2real.co.kr/api/admin/easy/card-events/{eventId}/reject` | easy | ROLE_ADMIN | 미허용 | `EasyCardReviewController.reject` |
-| POST | `https://feel2real.co.kr/api/admin/easy/closings` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.openClosing` |
 | GET | `https://feel2real.co.kr/api/admin/easy/closings` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.listClosings` |
+| POST | `https://feel2real.co.kr/api/admin/easy/closings` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.openClosing` |
 | POST | `https://feel2real.co.kr/api/admin/easy/closings/{closingId}/close` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.close` |
 | POST | `https://feel2real.co.kr/api/admin/easy/closings/{closingId}/reopen` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.reopen` |
 | POST | `https://feel2real.co.kr/api/admin/easy/closings/{closingId}/review` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.markReview` |
@@ -291,8 +291,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | POST | `https://feel2real.co.kr/api/admin/easy/collector-agent/tasks/{taskId}/resume` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAgentController.resume` |
 | POST | `https://feel2real.co.kr/api/admin/easy/collector-agent/tasks/{taskId}/waiting-for-auth` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAgentController.waitingForAuth` |
 | POST | `https://feel2real.co.kr/api/admin/easy/collector/register` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAdminController.register` |
-| POST | `https://feel2real.co.kr/api/admin/easy/collector/tasks` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAdminController.startTask` |
 | GET | `https://feel2real.co.kr/api/admin/easy/collector/tasks` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAdminController.listTasks` |
+| POST | `https://feel2real.co.kr/api/admin/easy/collector/tasks` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAdminController.startTask` |
 | GET | `https://feel2real.co.kr/api/admin/easy/collector/tasks/{taskId}` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAdminController.taskStatus` |
 | POST | `https://feel2real.co.kr/api/admin/easy/collector/tasks/{taskId}/cancel` | easy | ROLE_ADMIN | 미허용 | `EasyCollectorAdminController.cancelTask` |
 | GET | `https://feel2real.co.kr/api/admin/easy/corrections/logs` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.correctionLogs` |
@@ -314,29 +314,29 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/admin/easy/income-tax` | easy | ROLE_ADMIN | 미허용 | `EasyReportController.incomeTax` |
 | GET | `https://feel2real.co.kr/api/admin/easy/payments` | easy | ROLE_ADMIN | 미허용 | `EasyTuitionController.list` |
 | POST | `https://feel2real.co.kr/api/admin/easy/payments` | easy | ROLE_ADMIN | 미허용 | `EasyTuitionController.create` |
-| PUT | `https://feel2real.co.kr/api/admin/easy/payments/{paymentId}` | easy | ROLE_ADMIN | 미허용 | `EasyTuitionController.update` |
 | DELETE | `https://feel2real.co.kr/api/admin/easy/payments/{paymentId}` | easy | ROLE_ADMIN | 미허용 | `EasyTuitionController.delete` |
+| PUT | `https://feel2real.co.kr/api/admin/easy/payments/{paymentId}` | easy | ROLE_ADMIN | 미허용 | `EasyTuitionController.update` |
 | GET | `https://feel2real.co.kr/api/admin/easy/pl` | easy | ROLE_ADMIN | 미허용 | `EasyReportController.yearPl` |
 | GET | `https://feel2real.co.kr/api/admin/easy/reviews` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.listReviews` |
 | POST | `https://feel2real.co.kr/api/admin/easy/reviews/flag-business` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.flagBusiness` |
 | POST | `https://feel2real.co.kr/api/admin/easy/reviews/rebuild` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.rebuild` |
 | GET | `https://feel2real.co.kr/api/admin/easy/reviews/summary` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.reviewSummary` |
 | POST | `https://feel2real.co.kr/api/admin/easy/reviews/{reviewId}/resolve` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.resolve` |
-| POST | `https://feel2real.co.kr/api/admin/easy/students` | easy | ROLE_ADMIN | 미허용 | `EasyStudentController.create` |
 | GET | `https://feel2real.co.kr/api/admin/easy/students` | easy | ROLE_ADMIN | 미허용 | `EasyStudentController.list` |
+| POST | `https://feel2real.co.kr/api/admin/easy/students` | easy | ROLE_ADMIN | 미허용 | `EasyStudentController.create` |
 | PUT | `https://feel2real.co.kr/api/admin/easy/students/{studentId}` | easy | ROLE_ADMIN | 미허용 | `EasyStudentController.update` |
 | GET | `https://feel2real.co.kr/api/admin/easy/students/{studentId}/ledger` | easy | ROLE_ADMIN | 미허용 | `EasyStudentController.detail` |
 | GET | `https://feel2real.co.kr/api/admin/easy/summary` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.summary` |
 | POST | `https://feel2real.co.kr/api/admin/easy/transactions` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.createTxn` |
 | GET | `https://feel2real.co.kr/api/admin/easy/transactions` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.listTxns` |
 | GET | `https://feel2real.co.kr/api/admin/easy/transactions/export` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.exportTxns` |
-| PUT | `https://feel2real.co.kr/api/admin/easy/transactions/{txnId}` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.updateTxn` |
 | DELETE | `https://feel2real.co.kr/api/admin/easy/transactions/{txnId}` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.deleteTxn` |
+| PUT | `https://feel2real.co.kr/api/admin/easy/transactions/{txnId}` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.updateTxn` |
 | POST | `https://feel2real.co.kr/api/admin/easy/transactions/{txnId}/tax-classification` | easy | ROLE_ADMIN | 미허용 | `EasyLedgerController.assignTaxClassification` |
-| GET | `https://feel2real.co.kr/api/admin/easy/withholdings` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.listWithholdings` |
 | POST | `https://feel2real.co.kr/api/admin/easy/withholdings` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.createWithholding` |
-| DELETE | `https://feel2real.co.kr/api/admin/easy/withholdings/{recordId}` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.deleteWithholding` |
+| GET | `https://feel2real.co.kr/api/admin/easy/withholdings` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.listWithholdings` |
 | PUT | `https://feel2real.co.kr/api/admin/easy/withholdings/{recordId}` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.updateWithholding` |
+| DELETE | `https://feel2real.co.kr/api/admin/easy/withholdings/{recordId}` | easy | ROLE_ADMIN | 미허용 | `EasyAuditController.deleteWithholding` |
 | GET | `https://feel2real.co.kr/api/admin/easy/workspace/monthly` | easy | ROLE_ADMIN | 미허용 | `EasyWorkspaceController.monthly` |
 | GET | `https://feel2real.co.kr/api/admin/easy/workspace/reviews` | easy | ROLE_ADMIN | 미허용 | `EasyWorkspaceController.reviews` |
 | POST | `https://feel2real.co.kr/api/admin/easy/workspace/reviews/{reviewId}/approve` | easy | ROLE_ADMIN | 미허용 | `EasyWorkspaceController.approveReview` |
@@ -357,8 +357,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/admin/newstart/consultations/{consultationId}` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartConsultationController.thread` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/consultations/{consultationId}/answer` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartConsultationController.answer` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/consultations/{consultationId}/research` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartConsultationController.research` |
-| GET | `https://feel2real.co.kr/api/admin/newstart/grants` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartGrantController.list` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/grants` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartGrantController.grant` |
+| GET | `https://feel2real.co.kr/api/admin/newstart/grants` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartGrantController.list` |
 | DELETE | `https://feel2real.co.kr/api/admin/newstart/grants/{userId}` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartGrantController.revoke` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/jipijigi/boards` | newstart | ROLE_ADMIN | 미허용 | `JipijigiAdminController.saveBoard` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/jipijigi/boards` | newstart | ROLE_ADMIN | 허용 | `JipijigiAdminController.boards` |
@@ -366,8 +366,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | POST | `https://feel2real.co.kr/api/admin/newstart/jipijigi/commands` | newstart | ROLE_ADMIN | 미허용 | `JipijigiAdminController.runCommand` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/jipijigi/commands` | newstart | ROLE_ADMIN | 허용 | `JipijigiAdminController.commands` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/jipijigi/drafts` | newstart | ROLE_ADMIN | 허용 | `JipijigiAdminController.drafts` |
-| PUT | `https://feel2real.co.kr/api/admin/newstart/jipijigi/drafts/{draftId}` | newstart | ROLE_ADMIN | 미허용 | `JipijigiAdminController.editDraft` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/jipijigi/drafts/{draftId}` | newstart | ROLE_ADMIN | 허용 | `JipijigiAdminController.draftDetail` |
+| PUT | `https://feel2real.co.kr/api/admin/newstart/jipijigi/drafts/{draftId}` | newstart | ROLE_ADMIN | 미허용 | `JipijigiAdminController.editDraft` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/jipijigi/drafts/{draftId}/approve` | newstart | ROLE_ADMIN | 미허용 | `JipijigiAdminController.approve` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/jipijigi/drafts/{draftId}/exposure-report` | newstart | ROLE_ADMIN | 미허용 | `JipijigiAdminController.reportExposure` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/jipijigi/drafts/{draftId}/hold` | newstart | ROLE_ADMIN | 미허용 | `JipijigiAdminController.hold` |
@@ -386,22 +386,22 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/admin/newstart/thanks-exceptions` | newstart | ROLE_ADMIN | 허용 | `AdminNewStartThanksExceptionController.list` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/thanks-exceptions/{id}/dismiss` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksExceptionController.dismiss` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/thanks-exceptions/{id}/resolve` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksExceptionController.resolve` |
-| GET | `https://feel2real.co.kr/api/admin/newstart/thanks-preregistrations` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksPreregistrationController.list` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/thanks-preregistrations` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksPreregistrationController.register` |
+| GET | `https://feel2real.co.kr/api/admin/newstart/thanks-preregistrations` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksPreregistrationController.list` |
 | DELETE | `https://feel2real.co.kr/api/admin/newstart/thanks-preregistrations/{id}` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksPreregistrationController.remove` |
-| POST | `https://feel2real.co.kr/api/admin/newstart/thanks-roster` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksRosterController.add` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/thanks-roster` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksRosterController.list` |
+| POST | `https://feel2real.co.kr/api/admin/newstart/thanks-roster` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksRosterController.add` |
 | DELETE | `https://feel2real.co.kr/api/admin/newstart/thanks-roster/{rosterId}` | newstart | ROLE_ADMIN | 미허용 | `AdminNewStartThanksRosterController.remove` |
-| POST | `https://feel2real.co.kr/api/admin/newstart/updates` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.create` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/updates` | newstart | ROLE_ADMIN | 허용 | `NewStartOfficialUpdateAdminController.list` |
+| POST | `https://feel2real.co.kr/api/admin/newstart/updates` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.create` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/updates/discovery/run` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.runDiscovery` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/updates/{id}/archive` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.archive` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/updates/{id}/featured` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.featured` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/updates/{id}/publish` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.publish` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/updates/{id}/reject` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.reject` |
 | POST | `https://feel2real.co.kr/api/admin/newstart/updates/{id}/review` | newstart | ROLE_ADMIN | 미허용 | `NewStartOfficialUpdateAdminController.review` |
-| POST | `https://feel2real.co.kr/api/admin/newstart/wiki` | newstart | ROLE_ADMIN | 미허용 | `NewstartKnowledgeAdminController.create` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.search` |
+| POST | `https://feel2real.co.kr/api/admin/newstart/wiki` | newstart | ROLE_ADMIN | 미허용 | `NewstartKnowledgeAdminController.create` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki/active` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.getActive` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki/cases` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.searchCases` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki/cases/by-household/{householdType}` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.getCasesByHouseholdType` |
@@ -424,19 +424,19 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | POST | `https://feel2real.co.kr/api/admin/newstart/wiki/review/{id}/keep` | newstartknowledge | ROLE_ADMIN | 미허용 | `NewstartKnowledgeAdminController.keepReview` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki/source-type/{sourceType}` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.getBySourceType` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki/stats` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.getStats` |
-| PUT | `https://feel2real.co.kr/api/admin/newstart/wiki/{id}` | newstart | ROLE_ADMIN | 미허용 | `NewstartKnowledgeAdminController.update` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki/{id}` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.getById` |
 | DELETE | `https://feel2real.co.kr/api/admin/newstart/wiki/{id}` | newstart | ROLE_ADMIN | 미허용 | `NewstartKnowledgeAdminController.delete` |
+| PUT | `https://feel2real.co.kr/api/admin/newstart/wiki/{id}` | newstart | ROLE_ADMIN | 미허용 | `NewstartKnowledgeAdminController.update` |
 | GET | `https://feel2real.co.kr/api/admin/newstart/wiki/{id}/history` | newstart | ROLE_ADMIN | 허용 | `NewstartKnowledgeAdminController.getHistory` |
 | PUT | `https://feel2real.co.kr/api/admin/newstart/wiki/{id}/status` | newstartknowledge | ROLE_ADMIN | 미허용 | `NewstartKnowledgeAdminController.changeStatus` |
 | POST | `https://feel2real.co.kr/api/admin/problem-generator/materials` | problemgenerator | ROLE_ADMIN | 미허용 | `ProblemGeneratorMaterialController.uploadPublic` |
 | PATCH | `https://feel2real.co.kr/api/admin/problem-generator/materials/{materialId}/visibility` | problemgenerator | ROLE_ADMIN | 미허용 | `ProblemGeneratorMaterialController.updateVisibility` |
-| GET | `https://feel2real.co.kr/api/admin/publishing/maintenance` | content | ROLE_ADMIN | 허용 | `PublishingMaintenanceController.status` |
+| GET | `https://feel2real.co.kr/api/admin/publishing/maintenance` | publishing | ROLE_ADMIN | 미허용 | `PublishingMaintenanceController.status` |
 | POST | `https://feel2real.co.kr/api/admin/publishing/maintenance/drain` | publishing | ROLE_ADMIN | 미허용 | `PublishingMaintenanceController.drain` |
 | POST | `https://feel2real.co.kr/api/admin/publishing/maintenance/resume` | publishing | ROLE_ADMIN | 미허용 | `PublishingMaintenanceController.resume` |
 | GET | `https://feel2real.co.kr/api/admin/students` | members | ROLE_ADMIN | 허용 | `AdminController.listStudents` |
-| POST | `https://feel2real.co.kr/api/admin/wiki/analysis-materials` | wiki | ROLE_ADMIN | 미허용 | `WikiAnalysisMaterialController.createAdmin` |
 | GET | `https://feel2real.co.kr/api/admin/wiki/analysis-materials` | wiki | ROLE_ADMIN | 허용 | `WikiAnalysisMaterialController.listAdmin` |
+| POST | `https://feel2real.co.kr/api/admin/wiki/analysis-materials` | wiki | ROLE_ADMIN | 미허용 | `WikiAnalysisMaterialController.createAdmin` |
 | PUT | `https://feel2real.co.kr/api/admin/wiki/analysis-materials/{id}` | wikianalysis | ROLE_ADMIN | 미허용 | `WikiAnalysisMaterialController.updateAdmin` |
 | DELETE | `https://feel2real.co.kr/api/admin/wiki/analysis-materials/{id}` | wikianalysis | ROLE_ADMIN | 미허용 | `WikiAnalysisMaterialController.softDelete` |
 | DELETE | `https://feel2real.co.kr/api/admin/wiki/analysis-materials/{id}/hard` | wikianalysis | ROLE_ADMIN | 미허용 | `WikiAnalysisMaterialController.hardDelete` |
@@ -446,8 +446,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | DELETE | `https://feel2real.co.kr/api/admin/wiki/learning-materials/{id}` | wikilearning | ROLE_ADMIN | 미허용 | `WikiLearningMaterialController.adminDelete` |
 | DELETE | `https://feel2real.co.kr/api/admin/wiki/live-messages/{id}` | wikilive | ROLE_ADMIN | 미허용 | `WikiLiveMessageController.adminHide` |
 | GET | `https://feel2real.co.kr/api/admin/wiki/ops-overview` | wiki | ROLE_ADMIN | 허용 | `WikiOpsOverviewController.overview` |
-| POST | `https://feel2real.co.kr/api/admin/wiki/originals` | wiki | ROLE_ADMIN | 미허용 | `WikiExamOriginalController.createAdmin` |
 | GET | `https://feel2real.co.kr/api/admin/wiki/originals` | wiki | ROLE_ADMIN | 허용 | `WikiExamOriginalController.listAdmin` |
+| POST | `https://feel2real.co.kr/api/admin/wiki/originals` | wiki | ROLE_ADMIN | 미허용 | `WikiExamOriginalController.createAdmin` |
 | DELETE | `https://feel2real.co.kr/api/admin/wiki/originals/{id}` | wikioriginal | ROLE_ADMIN | 미허용 | `WikiExamOriginalController.softDelete` |
 | PUT | `https://feel2real.co.kr/api/admin/wiki/originals/{id}` | wikioriginal | ROLE_ADMIN | 미허용 | `WikiExamOriginalController.updateAdmin` |
 | DELETE | `https://feel2real.co.kr/api/admin/wiki/originals/{id}/hard` | wikioriginal | ROLE_ADMIN | 미허용 | `WikiExamOriginalController.hardDelete` |
@@ -456,8 +456,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/admin/wiki/questions/materials/search` | wiki | ROLE_ADMIN | 허용 | `QuestionWikiAdminController.searchMaterials` |
 | POST | `https://feel2real.co.kr/api/admin/wiki/questions/{questionWikiId}/material-links` | questionwiki | ROLE_ADMIN | 미허용 | `QuestionWikiAdminController.addMaterialLink` |
 | POST | `https://feel2real.co.kr/api/admin/wiki/questions/{questionWikiId}/materials/upload` | questionwiki | ROLE_ADMIN | 미허용 | `QuestionWikiAdminController.uploadMaterial` |
-| POST | `https://feel2real.co.kr/api/admin/wiki/rounds` | wiki | ROLE_ADMIN | 미허용 | `WikiExamRoundController.createAdmin` |
 | GET | `https://feel2real.co.kr/api/admin/wiki/rounds` | wiki | ROLE_ADMIN | 허용 | `WikiExamRoundController.listAdmin` |
+| POST | `https://feel2real.co.kr/api/admin/wiki/rounds` | wiki | ROLE_ADMIN | 미허용 | `WikiExamRoundController.createAdmin` |
 | DELETE | `https://feel2real.co.kr/api/admin/wiki/rounds/{id}` | wikioriginal | ROLE_ADMIN | 미허용 | `WikiExamRoundController.softDelete` |
 | PUT | `https://feel2real.co.kr/api/admin/wiki/rounds/{id}` | wikioriginal | ROLE_ADMIN | 미허용 | `WikiExamRoundController.updateAdmin` |
 | PATCH | `https://feel2real.co.kr/api/admin/wiki/rounds/{id}/current` | wikioriginal | ROLE_ADMIN | 미허용 | `WikiExamRoundController.setCurrent` |
@@ -498,8 +498,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/chart/zones/{zoneId}/educators` | chart | PUBLIC | 허용 | `ChartPublicController.educatorsByZone` |
 | GET | `https://feel2real.co.kr/api/choonggi/media/{id}` | choonggi | MEMBER_SERVICE_POLICY | 허용 | `MediaApi.media` |
 | GET | `https://feel2real.co.kr/api/community/attachments/{attachmentId}/file` | content | MEMBER_SERVICE_POLICY | 허용 | `LessonCommunityController.attachment` |
-| DELETE | `https://feel2real.co.kr/api/community/comments/{commentId}` | lessoncommunity | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.hideComment` |
 | PUT | `https://feel2real.co.kr/api/community/comments/{commentId}` | lessoncommunity | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.updateComment` |
+| DELETE | `https://feel2real.co.kr/api/community/comments/{commentId}` | lessoncommunity | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.hideComment` |
 | GET | `https://feel2real.co.kr/api/community/posts/{postId}` | content | MEMBER_SERVICE_POLICY | 허용 | `LessonCommunityController.getPost` |
 | DELETE | `https://feel2real.co.kr/api/community/posts/{postId}` | content | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.hidePost` |
 | PUT | `https://feel2real.co.kr/api/community/posts/{postId}` | content | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.updatePost` |
@@ -514,8 +514,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/conversations/{id}` | learning | MEMBER_SERVICE_POLICY | 허용 | `ConversationController.detail` |
 | DELETE | `https://feel2real.co.kr/api/conversations/{id}` | learning | MEMBER_SERVICE_POLICY | 미허용 | `ConversationController.delete` |
 | PATCH | `https://feel2real.co.kr/api/conversations/{id}` | learning | MEMBER_SERVICE_POLICY | 미허용 | `ConversationController.updateTitle` |
-| POST | `https://feel2real.co.kr/api/conversations/{id}/learning-materials` | learning | MEMBER_SERVICE_POLICY | 미허용 | `LearningMaterialController.assign` |
 | GET | `https://feel2real.co.kr/api/conversations/{id}/learning-materials` | learning | MEMBER_SERVICE_POLICY | 허용 | `LearningMaterialController.listForConversation` |
+| POST | `https://feel2real.co.kr/api/conversations/{id}/learning-materials` | learning | MEMBER_SERVICE_POLICY | 미허용 | `LearningMaterialController.assign` |
 | POST | `https://feel2real.co.kr/api/conversations/{id}/messages` | conversation | MEMBER_SERVICE_POLICY | 미허용 | `ConversationController.sendMessage` |
 | GET | `https://feel2real.co.kr/api/conversations/{id}/score-timeline` | learning | MEMBER_SERVICE_POLICY | 허용 | `DashboardController.getConversationScoreTimeline` |
 | POST | `https://feel2real.co.kr/api/conversations/{id}/sources` | conversation | MEMBER_SERVICE_POLICY | 미허용 | `ConversationController.attachSources` |
@@ -529,8 +529,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/dashboard/assistant/v1/catalog/{kind}` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.catalog` |
 | POST | `https://feel2real.co.kr/api/dashboard/assistant/v1/command` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.command` |
 | POST | `https://feel2real.co.kr/api/dashboard/assistant/v1/conversation` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.conversation` |
-| GET | `https://feel2real.co.kr/api/dashboard/assistant/v1/drafts` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.history` |
 | POST | `https://feel2real.co.kr/api/dashboard/assistant/v1/drafts` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.draft` |
+| GET | `https://feel2real.co.kr/api/dashboard/assistant/v1/drafts` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.history` |
 | POST | `https://feel2real.co.kr/api/dashboard/assistant/v1/drafts/{id}/approve` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.approve` |
 | POST | `https://feel2real.co.kr/api/dashboard/assistant/v1/drafts/{id}/cancel` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.cancel` |
 | POST | `https://feel2real.co.kr/api/dashboard/assistant/v1/imports` | unifiedassistant | MEMBER_SERVICE_POLICY | 미허용 | `UnifiedAssistantController.upload` |
@@ -544,8 +544,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/exam-insight/config` | examinsight | MEMBER_SERVICE_POLICY | 미허용 | `ExamInsightController.config` |
 | POST | `https://feel2real.co.kr/api/exam-insight/extract` | examinsight | MEMBER_SERVICE_POLICY | 미허용 | `ExamInsightController.extract` |
 | POST | `https://feel2real.co.kr/api/help/academycraft/ask` | academycrafthelp | MEMBER_SERVICE_POLICY | 미허용 | `HelpApiController.ask` |
-| POST | `https://feel2real.co.kr/api/hwpx/jobs` | learning | MEMBER_SERVICE_POLICY | 미허용 | `HwpxJobController.createJob` |
 | GET | `https://feel2real.co.kr/api/hwpx/jobs` | learning | MEMBER_SERVICE_POLICY | 허용 | `HwpxJobController.listJobs` |
+| POST | `https://feel2real.co.kr/api/hwpx/jobs` | learning | MEMBER_SERVICE_POLICY | 미허용 | `HwpxJobController.createJob` |
 | GET | `https://feel2real.co.kr/api/hwpx/jobs/{jobId}` | learning | MEMBER_SERVICE_POLICY | 허용 | `HwpxJobController.getJob` |
 | DELETE | `https://feel2real.co.kr/api/hwpx/jobs/{jobId}` | learning | MEMBER_SERVICE_POLICY | 미허용 | `HwpxJobController.deleteJob` |
 | POST | `https://feel2real.co.kr/api/hwpx/jobs/{jobId}/cancel` | hwpx | MEMBER_SERVICE_POLICY | 미허용 | `HwpxJobController.cancelJob` |
@@ -570,8 +570,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | PUT | `https://feel2real.co.kr/api/lessons/{lessonId}/community/categories/{categoryId}` | lessoncommunity | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.updateCategory` |
 | DELETE | `https://feel2real.co.kr/api/lessons/{lessonId}/community/categories/{categoryId}` | lessoncommunity | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.deleteCategory` |
 | GET | `https://feel2real.co.kr/api/lessons/{lessonId}/community/context` | content | MEMBER_SERVICE_POLICY | 허용 | `LessonCommunityController.context` |
-| POST | `https://feel2real.co.kr/api/lessons/{lessonId}/community/posts` | content | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.createPost` |
 | GET | `https://feel2real.co.kr/api/lessons/{lessonId}/community/posts` | content | MEMBER_SERVICE_POLICY | 허용 | `LessonCommunityController.posts` |
+| POST | `https://feel2real.co.kr/api/lessons/{lessonId}/community/posts` | content | MEMBER_SERVICE_POLICY | 미허용 | `LessonCommunityController.createPost` |
 | GET | `https://feel2real.co.kr/api/lms/{handle}/contents/{contentId}/stream` | learning | MEMBER_SERVICE_POLICY | 허용 | `LmsContentStudentController.stream` |
 | HEAD | `https://feel2real.co.kr/api/lms/{handle}/contents/{contentId}/stream` | learning | MEMBER_SERVICE_POLICY | 미허용 | `LmsContentStudentController.headStream` |
 | GET | `https://feel2real.co.kr/api/lms/{handle}/my/lessons` | learning | MEMBER_SERVICE_POLICY | 허용 | `LmsContentStudentController.myLessons` |
@@ -579,9 +579,9 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/mcp/connections` | mcp | MEMBER_SERVICE_POLICY | 미허용 | `McpOAuthController.list` |
 | POST | `https://feel2real.co.kr/api/mcp/connections/{id}/revoke` | mcp | MEMBER_SERVICE_POLICY | 미허용 | `McpOAuthController.disconnect` |
 | GET | `https://feel2real.co.kr/api/mcp/finance/summary` | easy | MEMBER_SERVICE_POLICY | 허용 | `McpFinanceController.summary` |
-| PATCH | `https://feel2real.co.kr/api/me` | members | MEMBER_SERVICE_POLICY | 미허용 | `MeController.updateMyProfile` |
 | GET | `https://feel2real.co.kr/api/me` | members | MEMBER_SERVICE_POLICY | 허용 | `MeController.getMyProfile` |
 | DELETE | `https://feel2real.co.kr/api/me` | members | MEMBER_SERVICE_POLICY | 미허용 | `MeController.withdraw` |
+| PATCH | `https://feel2real.co.kr/api/me` | members | MEMBER_SERVICE_POLICY | 미허용 | `MeController.updateMyProfile` |
 | GET | `https://feel2real.co.kr/api/muse/newstart/consultations/ping/{token}` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartConsultationPingController.ping` |
 | GET | `https://feel2real.co.kr/api/muse/newstart/knowledge/search` | newstart | MEMBER_SERVICE_POLICY | 허용 | `NewStartMuseKnowledgeController.search` |
 | POST | `https://feel2real.co.kr/api/newstart/ai/chat` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartAiChatController.chat` |
@@ -620,19 +620,19 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | PUT | `https://feel2real.co.kr/api/newstart/profile/nickname` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartProfileController.updateNickname` |
 | POST | `https://feel2real.co.kr/api/newstart/requests` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartRequestController.create` |
 | GET | `https://feel2real.co.kr/api/newstart/requests` | newstart | MEMBER_SERVICE_POLICY | 허용 | `NewStartRequestController.list` |
-| DELETE | `https://feel2real.co.kr/api/newstart/requests/{requestId}` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartRequestController.withdraw` |
 | GET | `https://feel2real.co.kr/api/newstart/requests/{requestId}` | newstart | MEMBER_SERVICE_POLICY | 허용 | `NewStartRequestController.detail` |
+| DELETE | `https://feel2real.co.kr/api/newstart/requests/{requestId}` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartRequestController.withdraw` |
 | POST | `https://feel2real.co.kr/api/newstart/thanks-verification` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartThanksVerificationController.verify` |
 | GET | `https://feel2real.co.kr/api/newstart/thanks-verification/status` | newstart | MEMBER_SERVICE_POLICY | 미허용 | `NewStartThanksVerificationController.status` |
 | GET | `https://feel2real.co.kr/api/newstart/updates` | newstart | MEMBER_SERVICE_POLICY | 허용 | `NewStartOfficialUpdateController.list` |
-| PUT | `https://feel2real.co.kr/api/open-community/answers/{answerId}` | community | MEMBER_SERVICE_POLICY | 미허용 | `CommunityController.updateAnswer` |
 | DELETE | `https://feel2real.co.kr/api/open-community/answers/{answerId}` | community | MEMBER_SERVICE_POLICY | 미허용 | `CommunityController.deleteAnswer` |
+| PUT | `https://feel2real.co.kr/api/open-community/answers/{answerId}` | community | MEMBER_SERVICE_POLICY | 미허용 | `CommunityController.updateAnswer` |
 | DELETE | `https://feel2real.co.kr/api/open-community/attachments/{attachmentId}` | community | MEMBER_SERVICE_POLICY | 미허용 | `CommunityController.deleteAttachment` |
 | GET | `https://feel2real.co.kr/api/open-community/attachments/{attachmentId}/file` | community | MEMBER_SERVICE_POLICY | 미허용 | `CommunityController.getAttachment` |
 | POST | `https://feel2real.co.kr/api/open-community/images` | community | MEMBER_SERVICE_POLICY | 미허용 | `CommunityController.uploadImage` |
 | GET | `https://feel2real.co.kr/api/open-community/images/{imageId}` | community | MEMBER_SERVICE_POLICY | 미허용 | `CommunityController.getImage` |
-| POST | `https://feel2real.co.kr/api/open-community/posts` | content | DATA_DEPENDENT | 미허용 | `CommunityController.createWithAttachments` |
 | GET | `https://feel2real.co.kr/api/open-community/posts` | content | DATA_DEPENDENT | 허용 | `CommunityController.list` |
+| POST | `https://feel2real.co.kr/api/open-community/posts` | content | DATA_DEPENDENT | 미허용 | `CommunityController.createWithAttachments` |
 | POST | `https://feel2real.co.kr/api/open-community/posts` | content | DATA_DEPENDENT | 미허용 | `CommunityController.create` |
 | DELETE | `https://feel2real.co.kr/api/open-community/posts/{postId}` | content | DATA_DEPENDENT | 미허용 | `CommunityController.delete` |
 | PUT | `https://feel2real.co.kr/api/open-community/posts/{postId}` | content | DATA_DEPENDENT | 미허용 | `CommunityController.update` |
@@ -658,8 +658,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/problem-generator/grammar-bank/collections/{collectionId}/manuscript.md` | grammar | MEMBER_SERVICE_POLICY | 허용 | `GrammarCollectionController.manuscriptMarkdown` |
 | POST | `https://feel2real.co.kr/api/problem-generator/grammar-bank/collections/{collectionId}/reorder` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `GrammarCollectionController.reorder` |
 | POST | `https://feel2real.co.kr/api/problem-generator/grammar-bank/import` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `GrammarBankController.importJson` |
-| POST | `https://feel2real.co.kr/api/problem-generator/grammar-bank/import/csv` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `GrammarBankController.importCsvText` |
 | POST | `https://feel2real.co.kr/api/problem-generator/grammar-bank/import/csv` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `GrammarBankController.importCsvFile` |
+| POST | `https://feel2real.co.kr/api/problem-generator/grammar-bank/import/csv` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `GrammarBankController.importCsvText` |
 | GET | `https://feel2real.co.kr/api/problem-generator/grammar-bank/questions` | grammar | MEMBER_SERVICE_POLICY | 허용 | `GrammarBankController.search` |
 | PATCH | `https://feel2real.co.kr/api/problem-generator/grammar-bank/questions/{questionId}` | grammar | MEMBER_SERVICE_POLICY | 미허용 | `GrammarBankController.updateQuestion` |
 | GET | `https://feel2real.co.kr/api/problem-generator/grammar-bank/questions/{questionId}` | grammar | MEMBER_SERVICE_POLICY | 허용 | `GrammarBankController.detail` |
@@ -670,8 +670,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/problem-generator/grammar-bank/tags` | grammar | MEMBER_SERVICE_POLICY | 허용 | `GrammarBankController.tags` |
 | POST | `https://feel2real.co.kr/api/problem-generator/grammar-bank/variants/{variantId}/review` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `GrammarBankController.reviewVariant` |
 | POST | `https://feel2real.co.kr/api/problem-generator/luna/transform` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `ProblemGeneratorLunaController.transform` |
-| POST | `https://feel2real.co.kr/api/problem-generator/materials` | grammar | MEMBER_SERVICE_POLICY | 미허용 | `ProblemGeneratorMaterialController.uploadPrivate` |
 | GET | `https://feel2real.co.kr/api/problem-generator/materials` | grammar | MEMBER_SERVICE_POLICY | 허용 | `ProblemGeneratorMaterialController.list` |
+| POST | `https://feel2real.co.kr/api/problem-generator/materials` | grammar | MEMBER_SERVICE_POLICY | 미허용 | `ProblemGeneratorMaterialController.uploadPrivate` |
 | DELETE | `https://feel2real.co.kr/api/problem-generator/materials/{materialId}` | problemgenerator | MEMBER_SERVICE_POLICY | 미허용 | `ProblemGeneratorMaterialController.delete` |
 | GET | `https://feel2real.co.kr/api/problem-generator/materials/{materialId}/file` | grammar | MEMBER_SERVICE_POLICY | 허용 | `ProblemGeneratorMaterialController.file` |
 | POST | `https://feel2real.co.kr/api/problem-generator/question-sets` | grammar | MEMBER_SERVICE_POLICY | 미허용 | `ProblemGeneratorQuestionSetController.save` |
@@ -683,8 +683,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/public/academy/{handle}/homepage` | buildit | MEMBER_SERVICE_POLICY | 허용 | `VisualEditorPublicController.getHomepage` |
 | POST | `https://feel2real.co.kr/api/publishing/ai/plan` | publishing | MEMBER_SERVICE_POLICY | 미허용 | `PublishingAiController.plan` |
 | POST | `https://feel2real.co.kr/api/publishing/jobs` | content | MEMBER_SERVICE_POLICY | 미허용 | `PublishingJobController.createJob` |
-| POST | `https://feel2real.co.kr/api/publishing/jobs` | content | MEMBER_SERVICE_POLICY | 미허용 | `PublishingJobController.createJobMultipart` |
 | GET | `https://feel2real.co.kr/api/publishing/jobs` | content | MEMBER_SERVICE_POLICY | 허용 | `PublishingJobController.listJobs` |
+| POST | `https://feel2real.co.kr/api/publishing/jobs` | content | MEMBER_SERVICE_POLICY | 미허용 | `PublishingJobController.createJobMultipart` |
 | GET | `https://feel2real.co.kr/api/publishing/jobs/{jobId}` | content | MEMBER_SERVICE_POLICY | 허용 | `PublishingJobController.getJob` |
 | DELETE | `https://feel2real.co.kr/api/publishing/jobs/{jobId}` | content | MEMBER_SERVICE_POLICY | 미허용 | `PublishingJobController.deleteJob` |
 | POST | `https://feel2real.co.kr/api/publishing/jobs/{jobId}/apply-markdown-styles` | publishing | MEMBER_SERVICE_POLICY | 미허용 | `PublishingEditController.applyMarkdownStyles` |
@@ -723,25 +723,25 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/studio/members` | studio | PROJECT_GRANT | 미허용 | `StudioController.members` |
 | POST | `https://feel2real.co.kr/api/studio/project` | studio | PROJECT_GRANT | 미허용 | `StudioController.initialize` |
 | GET | `https://feel2real.co.kr/api/studio/project` | studio | PROJECT_GRANT | 허용 | `StudioController.project` |
-| GET | `https://feel2real.co.kr/api/studio/revisions` | studio | PROJECT_GRANT | 허용 | `StudioController.revisions` |
 | POST | `https://feel2real.co.kr/api/studio/revisions` | studio | PROJECT_GRANT | 미허용 | `StudioController.save` |
+| GET | `https://feel2real.co.kr/api/studio/revisions` | studio | PROJECT_GRANT | 허용 | `StudioController.revisions` |
 | GET | `https://feel2real.co.kr/api/studio/revisions/{id}` | studio | PROJECT_GRANT | 허용 | `StudioController.revision` |
 | POST | `https://feel2real.co.kr/api/studio/revisions/{id}/restore` | studio | PROJECT_GRANT | 미허용 | `StudioController.restore` |
 | POST | `https://feel2real.co.kr/api/studio/revisions/{id}/review` | studio | PROJECT_GRANT | 미허용 | `StudioController.review` |
 | GET | `https://feel2real.co.kr/api/subjects` | learning | MEMBER_SERVICE_POLICY | 허용 | `SubjectController.getSubjects` |
-| GET | `https://feel2real.co.kr/api/testprep/attempts` | learning | MEMBER_SERVICE_POLICY | 허용 | `TestPrepApiController.history` |
 | POST | `https://feel2real.co.kr/api/testprep/attempts` | learning | MEMBER_SERVICE_POLICY | 미허용 | `TestPrepApiController.start` |
+| GET | `https://feel2real.co.kr/api/testprep/attempts` | learning | MEMBER_SERVICE_POLICY | 허용 | `TestPrepApiController.history` |
 | GET | `https://feel2real.co.kr/api/testprep/attempts/{attemptId}` | testprep | MEMBER_SERVICE_POLICY | 미허용 | `TestPrepApiController.resume` |
 | PUT | `https://feel2real.co.kr/api/testprep/attempts/{attemptId}/answers` | testprep | MEMBER_SERVICE_POLICY | 미허용 | `TestPrepApiController.saveAnswer` |
 | GET | `https://feel2real.co.kr/api/testprep/attempts/{attemptId}/review` | learning | MEMBER_SERVICE_POLICY | 허용 | `TestPrepApiController.review` |
 | POST | `https://feel2real.co.kr/api/testprep/attempts/{attemptId}/submit` | testprep | MEMBER_SERVICE_POLICY | 미허용 | `TestPrepApiController.submit` |
 | GET | `https://feel2real.co.kr/api/testprep/exams` | learning | MEMBER_SERVICE_POLICY | 허용 | `TestPrepApiController.exams` |
 | GET | `https://feel2real.co.kr/api/testprep/learning` | learning | MEMBER_SERVICE_POLICY | 허용 | `TestPrepApiController.learning` |
-| DELETE | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.deleteAcademy` |
-| PUT | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.updateAcademy` |
 | PUT | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.updateAcademyJson` |
-| POST | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.createAcademy` |
 | POST | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.createAcademyJson` |
+| PUT | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.updateAcademy` |
+| POST | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.createAcademy` |
+| DELETE | `https://feel2real.co.kr/api/tutor/academy` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.deleteAcademy` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/access-statistics` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyAccessStatisticsController.getMine` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/ai/academy-proposal` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyAiController.academyProposal` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/ai/chat` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyAiChatController.chat` |
@@ -771,11 +771,11 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | POST | `https://feel2real.co.kr/api/tutor/academy/assistant/turn` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyAssistantApiController.turn` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/assistant/undo` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyAssistantApiController.undo` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/assistant/versions` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyAssistantApiController.versions` |
-| GET | `https://feel2real.co.kr/api/tutor/academy/blog-posts` | content | MEMBER_SERVICE_POLICY | 허용 | `AcademyBlogController.listMine` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/blog-posts` | content | MEMBER_SERVICE_POLICY | 미허용 | `AcademyBlogController.create` |
+| GET | `https://feel2real.co.kr/api/tutor/academy/blog-posts` | content | MEMBER_SERVICE_POLICY | 허용 | `AcademyBlogController.listMine` |
+| DELETE | `https://feel2real.co.kr/api/tutor/academy/blog-posts/{postId}` | content | MEMBER_SERVICE_POLICY | 미허용 | `AcademyBlogController.delete` |
 | PUT | `https://feel2real.co.kr/api/tutor/academy/blog-posts/{postId}` | content | MEMBER_SERVICE_POLICY | 미허용 | `AcademyBlogController.update` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/blog-posts/{postId}` | content | MEMBER_SERVICE_POLICY | 허용 | `AcademyBlogController.getMine` |
-| DELETE | `https://feel2real.co.kr/api/tutor/academy/blog-posts/{postId}` | content | MEMBER_SERVICE_POLICY | 미허용 | `AcademyBlogController.delete` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/blog-sources/images` | academyblog | MEMBER_SERVICE_POLICY | 미허용 | `AcademyBlogController.uploadImage` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/handle-available` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.checkHandleAvailable` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/hero-media/{slot}` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyVideoController.myHeroMedia` |
@@ -791,20 +791,20 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | POST | `https://feel2real.co.kr/api/tutor/academy/images/{assetId}/revert` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyImageController.revertImage` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/inquiries` | content | MEMBER_SERVICE_POLICY | 허용 | `AcademyInquiryController.listMine` |
 | PATCH | `https://feel2real.co.kr/api/tutor/academy/inquiries/{inquiryId}/status` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyInquiryController.changeStatus` |
-| PUT | `https://feel2real.co.kr/api/tutor/academy/layout` | buildit | MEMBER_SERVICE_POLICY | 미허용 | `AcademyLayoutApiController.upsertMyLayout` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/layout` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyLayoutApiController.getMyLayout` |
 | DELETE | `https://feel2real.co.kr/api/tutor/academy/layout` | buildit | MEMBER_SERVICE_POLICY | 미허용 | `AcademyLayoutApiController.deleteMyLayout` |
+| PUT | `https://feel2real.co.kr/api/tutor/academy/layout` | buildit | MEMBER_SERVICE_POLICY | 미허용 | `AcademyLayoutApiController.upsertMyLayout` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/lessons` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.createLesson` |
 | PUT | `https://feel2real.co.kr/api/tutor/academy/lessons/collection` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.saveLessonCollection` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/lessons/{lessonId}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.getLesson` |
 | DELETE | `https://feel2real.co.kr/api/tutor/academy/lessons/{lessonId}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.deleteLesson` |
 | PUT | `https://feel2real.co.kr/api/tutor/academy/lessons/{lessonId}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.updateLesson` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/lessons/{lessonId}/hero-image` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyVideoController.myHeroImage` |
-| PUT | `https://feel2real.co.kr/api/tutor/academy/lms-settings` | buildit | MEMBER_SERVICE_POLICY | 미허용 | `LmsBuilderSettingsController.update` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/lms-settings` | buildit | MEMBER_SERVICE_POLICY | 허용 | `LmsBuilderSettingsController.get` |
+| PUT | `https://feel2real.co.kr/api/tutor/academy/lms-settings` | buildit | MEMBER_SERVICE_POLICY | 미허용 | `LmsBuilderSettingsController.update` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/me` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyController.getMyAcademy` |
-| POST | `https://feel2real.co.kr/api/tutor/academy/media/hero/{slot}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.uploadHeroMedia` |
 | DELETE | `https://feel2real.co.kr/api/tutor/academy/media/hero/{slot}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.deleteHeroMedia` |
+| POST | `https://feel2real.co.kr/api/tutor/academy/media/hero/{slot}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.uploadHeroMedia` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/media/lesson-hero` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.uploadLessonHeroImage` |
 | PUT | `https://feel2real.co.kr/api/tutor/academy/page-settings` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyController.updatePageSettings` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/page-settings/visual-editor/agent-tokens` | academy | MEMBER_SERVICE_POLICY | 미허용 | `VisualEditorProposalApiController.issueToken` |
@@ -820,12 +820,12 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/tutor/academy/page-settings/visual-editor/published` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyEditorApiController.getPublished` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/page-settings/visual-editor/status` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyEditorApiController.getStatus` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/page-settings/visual-editor/unpublish` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyEditorApiController.unpublish` |
-| POST | `https://feel2real.co.kr/api/tutor/academy/videos` | buildit | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.upload` |
 | GET | `https://feel2real.co.kr/api/tutor/academy/videos` | buildit | MEMBER_SERVICE_POLICY | 허용 | `AcademyVideoController.listMine` |
+| POST | `https://feel2real.co.kr/api/tutor/academy/videos` | buildit | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.upload` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/videos/link` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.registerExternalLink` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/videos/uploads` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoUploadController.initiate` |
-| GET | `https://feel2real.co.kr/api/tutor/academy/videos/uploads/{sessionId}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoUploadController.observe` |
 | DELETE | `https://feel2real.co.kr/api/tutor/academy/videos/uploads/{sessionId}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoUploadController.abort` |
+| GET | `https://feel2real.co.kr/api/tutor/academy/videos/uploads/{sessionId}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoUploadController.observe` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/videos/uploads/{sessionId}/complete` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoUploadController.complete` |
 | PUT | `https://feel2real.co.kr/api/tutor/academy/videos/uploads/{sessionId}/parts/{partNumber}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoUploadController.uploadLocalPart` |
 | DELETE | `https://feel2real.co.kr/api/tutor/academy/videos/{videoId}` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyVideoController.delete` |
@@ -836,11 +836,11 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/tutor/academy/working-copy/preview` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyWorkingCopyApiController.preview` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/working-copy/publish` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyWorkingCopyApiController.publish` |
 | POST | `https://feel2real.co.kr/api/tutor/academy/working-copy/restore` | academy | MEMBER_SERVICE_POLICY | 미허용 | `AcademyWorkingCopyApiController.restore` |
-| POST | `https://feel2real.co.kr/api/tutor/conversations` | learning | MEMBER_SERVICE_POLICY | 미허용 | `TutorConversationController.create` |
 | GET | `https://feel2real.co.kr/api/tutor/conversations` | learning | MEMBER_SERVICE_POLICY | 허용 | `TutorConversationController.list` |
-| DELETE | `https://feel2real.co.kr/api/tutor/conversations/{id}` | learning | MEMBER_SERVICE_POLICY | 미허용 | `TutorConversationController.delete` |
+| POST | `https://feel2real.co.kr/api/tutor/conversations` | learning | MEMBER_SERVICE_POLICY | 미허용 | `TutorConversationController.create` |
 | PATCH | `https://feel2real.co.kr/api/tutor/conversations/{id}` | learning | MEMBER_SERVICE_POLICY | 미허용 | `TutorConversationController.updateTitle` |
 | GET | `https://feel2real.co.kr/api/tutor/conversations/{id}` | learning | MEMBER_SERVICE_POLICY | 허용 | `TutorConversationController.detail` |
+| DELETE | `https://feel2real.co.kr/api/tutor/conversations/{id}` | learning | MEMBER_SERVICE_POLICY | 미허용 | `TutorConversationController.delete` |
 | POST | `https://feel2real.co.kr/api/tutor/conversations/{id}/messages` | conversation | MEMBER_SERVICE_POLICY | 미허용 | `TutorConversationController.sendMessage` |
 | POST | `https://feel2real.co.kr/api/tutor/conversations/{id}/sources` | conversation | MEMBER_SERVICE_POLICY | 미허용 | `TutorConversationController.attachSources` |
 | GET | `https://feel2real.co.kr/api/tutor/easy/accounting/balance-audit` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorController.balanceAudit` |
@@ -855,10 +855,10 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/tutor/easy/agent/sessions/{sessionId}` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyAgentController.session` |
 | POST | `https://feel2real.co.kr/api/tutor/easy/agent/sessions/{sessionId}/messages` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyAgentController.chat` |
 | GET | `https://feel2real.co.kr/api/tutor/easy/businesses` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorController.businesses` |
-| POST | `https://feel2real.co.kr/api/tutor/easy/imports` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.upload` |
 | GET | `https://feel2real.co.kr/api/tutor/easy/imports` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.list` |
-| DELETE | `https://feel2real.co.kr/api/tutor/easy/imports/{batchId}` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.discard` |
+| POST | `https://feel2real.co.kr/api/tutor/easy/imports` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.upload` |
 | GET | `https://feel2real.co.kr/api/tutor/easy/imports/{batchId}` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.detail` |
+| DELETE | `https://feel2real.co.kr/api/tutor/easy/imports/{batchId}` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.discard` |
 | POST | `https://feel2real.co.kr/api/tutor/easy/imports/{batchId}/confirm` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.confirm` |
 | POST | `https://feel2real.co.kr/api/tutor/easy/imports/{batchId}/reclassify` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.reclassify` |
 | PUT | `https://feel2real.co.kr/api/tutor/easy/imports/{batchId}/rows/{rowId}/account` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorImportController.selectAccount` |
@@ -868,10 +868,10 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/tutor/easy/workspace/transactions/{txnId}` | easy | MEMBER_SERVICE_POLICY | 미허용 | `EasyTutorController.transaction` |
 | GET | `https://feel2real.co.kr/api/tutor/lesson-applications` | learning | MEMBER_SERVICE_POLICY | 허용 | `LessonApplicationController.listTutorApplications` |
 | GET | `https://feel2real.co.kr/api/tutor/lessons/{lessonId}/applications` | learning | MEMBER_SERVICE_POLICY | 허용 | `LessonApplicationController.listLessonApplications` |
-| POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/contents` | learning | MEMBER_SERVICE_POLICY | 미허용 | `LmsContentAdminController.create` |
 | GET | `https://feel2real.co.kr/api/tutor/lms/{handle}/contents` | learning | MEMBER_SERVICE_POLICY | 허용 | `LmsContentAdminController.list` |
-| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/contents/{lmsContentId}` | lmscontent | MEMBER_SERVICE_POLICY | 미허용 | `LmsContentAdminController.delete` |
+| POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/contents` | learning | MEMBER_SERVICE_POLICY | 미허용 | `LmsContentAdminController.create` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/contents/{lmsContentId}` | lmscontent | MEMBER_SERVICE_POLICY | 미허용 | `LmsContentAdminController.updateDetails` |
+| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/contents/{lmsContentId}` | lmscontent | MEMBER_SERVICE_POLICY | 미허용 | `LmsContentAdminController.delete` |
 | PATCH | `https://feel2real.co.kr/api/tutor/lms/{handle}/contents/{lmsContentId}/publish` | lmscontent | MEMBER_SERVICE_POLICY | 미허용 | `LmsContentAdminController.setPublished` |
 | POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/enrollments/lessons/{lessonId}` | learning | MEMBER_SERVICE_POLICY | 미허용 | `LmsEnrollmentAdminController.grant` |
 | GET | `https://feel2real.co.kr/api/tutor/lms/{handle}/enrollments/lessons/{lessonId}` | learning | MEMBER_SERVICE_POLICY | 허용 | `LmsEnrollmentAdminController.getView` |
@@ -879,18 +879,18 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/tutor/lms/{handle}/lessons` | learning | MEMBER_SERVICE_POLICY | 허용 | `AcademyLmsManageApiController.listLessons` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign` | wiki | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.upsertCampaign` |
 | GET | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign` | wiki | MEMBER_SERVICE_POLICY | 허용 | `MidtermCampaignAdminController.get` |
-| POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/live-videos` | wiki | MEMBER_SERVICE_POLICY | 미허용 | `MidtermLiveVideoAdminController.create` |
 | GET | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/live-videos` | wiki | MEMBER_SERVICE_POLICY | 허용 | `MidtermLiveVideoAdminController.list` |
-| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/live-videos/{linkId}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermLiveVideoAdminController.delete` |
+| POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/live-videos` | wiki | MEMBER_SERVICE_POLICY | 미허용 | `MidtermLiveVideoAdminController.create` |
 | PATCH | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/live-videos/{linkId}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermLiveVideoAdminController.update` |
+| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/live-videos/{linkId}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermLiveVideoAdminController.delete` |
 | POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/making-of` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.createMakingOf` |
-| PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/making-of/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.updateMakingOf` |
 | DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/making-of/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.deleteMakingOf` |
+| PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/making-of/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.updateMakingOf` |
 | DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/making-of/{id}/image` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.clearMakingOfImage` |
 | POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/making-of/{id}/image` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.uploadMakingOfImage` |
 | POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/materials` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.createMaterial` |
-| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/materials/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.deleteMaterial` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/materials/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.updateMaterial` |
+| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/materials/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.deleteMaterial` |
 | POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/materials/{id}/thumbnail` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.uploadMaterialThumbnail` |
 | DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/materials/{id}/thumbnail` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.clearMaterialThumbnail` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/next-exam` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.upsertNextExam` |
@@ -898,19 +898,19 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/popup-visual` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.clearPopupVisual` |
 | PATCH | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/publish` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.publish` |
 | POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/school-collections` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.createSchoolCollection` |
-| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/school-collections/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.deleteSchoolCollection` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/school-collections/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.updateSchoolCollection` |
+| DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/school-collections/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.deleteSchoolCollection` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/school-collections/{id}/after-exam` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.upsertAfterExam` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/school-collections/{id}/briefing` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.updateBriefing` |
 | PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/school-collections/{id}/prep-status` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.replacePrepStatuses` |
 | POST | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/update-logs` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.createUpdateLog` |
-| PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/update-logs/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.updateUpdateLog` |
 | DELETE | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/update-logs/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.deleteUpdateLog` |
+| PUT | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/update-logs/{id}` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermCampaignAdminController.updateUpdateLog` |
 | GET | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/wiki-candidates` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermWikiSourceAdminController.list` |
 | PATCH | `https://feel2real.co.kr/api/tutor/lms/{handle}/midterm-campaign/wiki-candidates/{sourceId}/exposure` | midtermcampaign | MEMBER_SERVICE_POLICY | 미허용 | `MidtermWikiSourceAdminController.updateExposure` |
 | GET | `https://feel2real.co.kr/api/users/check-login-id` | user | MEMBER_SERVICE_POLICY | 미허용 | `UserController.checkLoginId` |
-| POST | `https://feel2real.co.kr/api/users/students` | members | MEMBER_SERVICE_POLICY | 미허용 | `UserController.createStudent` |
 | GET | `https://feel2real.co.kr/api/users/students` | members | MEMBER_SERVICE_POLICY | 허용 | `UserController.getAllStudents` |
+| POST | `https://feel2real.co.kr/api/users/students` | members | MEMBER_SERVICE_POLICY | 미허용 | `UserController.createStudent` |
 | GET | `https://feel2real.co.kr/api/users/students/me` | members | MEMBER_SERVICE_POLICY | 허용 | `UserController.getMyStudentProfile` |
 | POST | `https://feel2real.co.kr/api/users/tutors` | user | MEMBER_SERVICE_POLICY | 미허용 | `UserController.createTutor` |
 | GET | `https://feel2real.co.kr/api/wemade/anomaly/events` | wemade | MEMBER_SERVICE_POLICY | 미허용 | `WemadeApiController.anomalyEvents` |
@@ -955,14 +955,14 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/api/wiki/analysis-materials` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiAnalysisMaterialController.listPublic` |
 | GET | `https://feel2real.co.kr/api/wiki/analysis-materials/{id}/download` | wikianalysis | MEMBER_SERVICE_POLICY | 미허용 | `WikiAnalysisMaterialController.download` |
 | GET | `https://feel2real.co.kr/api/wiki/home-feed` | wiki | PUBLIC_METADATA_ONLY | 허용 | `WikiHomeFeedController.homeFeed` |
-| POST | `https://feel2real.co.kr/api/wiki/learning-materials` | wiki | MEMBER_SERVICE_POLICY | 미허용 | `WikiLearningMaterialController.upload` |
 | GET | `https://feel2real.co.kr/api/wiki/learning-materials` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiLearningMaterialController.listPublic` |
+| POST | `https://feel2real.co.kr/api/wiki/learning-materials` | wiki | MEMBER_SERVICE_POLICY | 미허용 | `WikiLearningMaterialController.upload` |
 | POST | `https://feel2real.co.kr/api/wiki/learning-materials/batch` | wikilearning | MEMBER_SERVICE_POLICY | 미허용 | `WikiLearningMaterialController.uploadBatch` |
 | GET | `https://feel2real.co.kr/api/wiki/learning-materials/{id}` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiLearningMaterialController.detail` |
 | GET | `https://feel2real.co.kr/api/wiki/learning-materials/{id}/download` | wikilearning | MEMBER_SERVICE_POLICY | 미허용 | `WikiLearningMaterialController.download` |
 | GET | `https://feel2real.co.kr/api/wiki/learning-materials/{id}/preview` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiLearningMaterialController.preview` |
-| GET | `https://feel2real.co.kr/api/wiki/live-messages` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiLiveMessageController.list` |
 | POST | `https://feel2real.co.kr/api/wiki/live-messages` | wiki | MEMBER_SERVICE_POLICY | 미허용 | `WikiLiveMessageController.create` |
+| GET | `https://feel2real.co.kr/api/wiki/live-messages` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiLiveMessageController.list` |
 | GET | `https://feel2real.co.kr/api/wiki/originals` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiExamOriginalController.listPublic` |
 | GET | `https://feel2real.co.kr/api/wiki/originals/{id}/download` | wikioriginal | MEMBER_SERVICE_POLICY | 미허용 | `WikiExamOriginalController.download` |
 | GET | `https://feel2real.co.kr/api/wiki/originals/{id}/view` | wiki | MEMBER_SERVICE_POLICY | 허용 | `WikiExamOriginalController.view` |
@@ -1055,8 +1055,8 @@ MCP 실행 가능 경로는 `readable=true`입니다. 원래 서비스 권한은
 | GET | `https://feel2real.co.kr/lms/{handle}/review/{lessonId}` | learning | SERVER_POLICY | 허용 | `LmsReviewPageController.review` |
 | GET | `https://feel2real.co.kr/login` | page | SERVER_POLICY | 미허용 | `WebMvcConfig.null` |
 | GET | `https://feel2real.co.kr/login.html` | page | SERVER_POLICY | 미허용 | `WebMvcConfig.null` |
-| POST | `https://feel2real.co.kr/mcp` | mcp | SERVER_POLICY | 미허용 | `McpController.rpc` |
 | DELETE,GET,PATCH,PUT | `https://feel2real.co.kr/mcp` | mcp | SERVER_POLICY | 미허용 | `McpController.unsupported` |
+| POST | `https://feel2real.co.kr/mcp` | mcp | SERVER_POLICY | 미허용 | `McpController.rpc` |
 | GET | `https://feel2real.co.kr/mcp/connections` | mcp | SERVER_POLICY | 미허용 | `McpOAuthController.connections` |
 | POST | `https://feel2real.co.kr/mcp/oauth/authorize` | mcp | SERVER_POLICY | 미허용 | `McpOAuthController.authorize` |
 | GET | `https://feel2real.co.kr/mcp/oauth/authorize` | mcp | SERVER_POLICY | 미허용 | `McpOAuthController.consent` |

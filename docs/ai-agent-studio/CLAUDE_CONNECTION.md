@@ -16,3 +16,5 @@
 MCP 서버는 Anthropic/OpenAI API를 호출하지 않는다. Claude의 기존 구독 내 사용량 제한은 그대로 적용된다. Claude Desktop의 로컬 stdio 설정은 이번 원격 OAuth 연결 시험을 대체하지 않는다.
 
 관리자가 studio/catalog/chart/grammar 외 민감 범위를 선택하면 외부 제공 경고를 별도로 확인해야 한다. 금융은 명시한 허용 사업체의 월 합계만 제공한다. OAuth 준비·SDK 검증과 실제 사용자 로그인·동의·도구 스캔·동일 자료 대조는 별개이며, 현재 실제 Claude 연결은 미검증이다.
+
+Callback 재확인(2026-10-22): [공식 Callback URLs](https://claude.com/docs/connectors/building/authentication)는 hosted URI를 `https://claude.ai/api/mcp/auth_callback` 하나로 명시한다. `https://claude.com/api/mcp/auth_callback`은 등록 허용 목록에서 제외하며 HTTP 거부 시험을 한다. 도메인이 공식 사이트라는 사실만으로 callback 경로를 추정하지 않는다.

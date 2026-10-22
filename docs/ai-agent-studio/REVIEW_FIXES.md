@@ -18,17 +18,22 @@
 | 200건 누락 | 이력 offset/limit 페이지, 비교 화면 전체 페이지 조회. 컷은 `/api/studio/cuts`로 전체 현재 head 별도 조회. 205개 추가 이력이 있어도 68개 컷 유지 시험 |
 | 모바일 | 실제 Chromium 390×844에서 승인 저장 재조회와 미승인 복원, 가로 넘침·axe 검사. PC 1440×1000도 검증 |
 | 프록시별 호출 제한 | 기존 신뢰 프록시 resolver 재사용. 유효 bearer는 IP 대신 userId로 transport 제한, 실제 도구 호출도 사용자 60/분. 공개 DCR은 임의 Authorization 헤더를 바꿔도 IP당 5/분이며 6번째 실제 HTTP 요청 429를 검증. 같은 프록시의 A 제한 초과 시 B 허용, 위조 XFF 무시 시험 |
-| 동시 호출 | JSON-RPC 전체 JVM당 기본 8개, 내부 upstream 읽기 2개. 429 Retry-After 및 finally permit 반환. 여러 replica 전체 합산 동시성 제한은 아님 |
+| 동시 호출 | JSON-RPC 전체 JVM당 기본 8개, 내부 upstream 읽기 사용자당 2개. 사용자 카운터의 생성/감소/제거를 원자적으로 수행해 교체 경쟁과 이중 반환을 막고 스트레스 검증. 429 Retry-After 및 finally permit 반환. 여러 replica 전체 합산 동시성 제한은 아님 |
+| JSON 원본 문법 | JSON 업로드에서 빈 값·깨진 문법·후행 토큰을 거부하며 원본 bytes는 바꾸지 않음 |
 | ADMIN 민감정보 | 외부 AI로 민감정보를 보낸다는 별도 경고와 서버 강제 체크. 미확인 동의 거부·SENSITIVE_ACK 감사 시험 |
-| 입시·GET 감사 | 관리자 입시 지식/자료/통계·화면 제외, 본인 history만. [627개 GET 전수 정적 감사](GET_SAFETY_AUDIT.md), 확인된 저장/외부 HTTP GET 8개 제외 |
+| 입시·GET 감사 | 관리자 입시 지식/자료/통계·화면 제외, 본인 history만. [627개 GET 전수 정적 감사](GET_SAFETY_AUDIT.md), 확인된 저장/외부 HTTP GET 9개 제외 |
 | 금융 최소화 | 원문 정책 66개 제거, 허용 사업체 월 요약 8필드만. 실제 두 backend에서 학원·사업체 격리와 authKey 제거 검증 |
 | #853/#854 승인 | MCP는 두 서비스 승인 POST를 호출할 수 없음. 실제 #853 synthetic CSV preview 후 userApprovedLedgerCommit=false 거부와 MCP bearer 직접 확정 거부, 장부 행 수 불변 확인 |
 | 기존 비서 회귀 | 빠른 새로고침 직후 학원 범위 로딩 전 제출 경쟁을 발견해 #854에서 수정하고 선행 브랜치에 전파. 범위/기록 조회가 끝나야 제출 가능 |
 | CI 메모리 | 최신 main의 다수 Spring context 캐시로 기존 MySQL CI가 OOM 발생. 테스트 제외 없이 context cache 상한 4로 제한하여 자원 반환. 재실행 결과는 PR checks에서 최신 HEAD로 확인 |
 
+병행 추가된 #855의 개인정보 마스킹·사용자별 내부 조회 제한·OAuth HTTP 시험·JSON 검사·r14~r8 준비도도 보존해 통합했다. [공식 Claude callback 문서](https://claude.com/docs/connectors/building/authentication)의 hosted URI는 claude.ai 하나로 명시되어 있어, 근거 없는 claude.com callback 허용은 제외했다. 실제 계정 연결은 여전히 미검증이다.
+
+추가 보강 Java **41건**(마스킹·사용자별 동시성·정확한 callback HTTP·JSON 문법)과 bootJar를 검증했다. 전수 감사의 FQN Files 인식도 보강해 유지보수 상태 파일 저장 GET을 추가 제외하고, ZIP 목록의 제한된 임시 파일 예외를 명시했다. [별도 키워드 조사 대조](GET_SAFETY_AUDIT.md)도 확인했다.
+
 ## 실행 증거
 
-- 최종 #854 반영 후 영향 범위 Java **98건, 실패/오류/skip 0** 및 bootJar 통과. 새 DB의 V1094 감사 컬럼도 확인. 투어 JS **5건** 통과. 이전 통합 Java **224건, 실패/오류/skip 0** 증거도 보존. 스튜디오·MCP·JWT·Wiki 경계·통합 비서·회계/수집 회귀. 최종 ZIP asset bytes/SHA·디렉터리 항목 압축 데이터 20MiB 한도·UUID label 보강 후 영향 범위 **25건 재통과**. [Java 결과](review-java-results.json)
+- 최종 #854 반영 후 영향 범위 Java **98건, 실패/오류/skip 0** 및 bootJar 통과. 새 DB의 V1094 감사 컬럼도 확인. 투어 JS **5건** 통과. 이전 통합 Java **224건, 실패/오류/skip 0** 증거도 보존. 스튜디오·MCP·JWT·Wiki 경계·통합 비서·회계/수집 회귀. 최종 유지보수 GET 제외 후 native HTTP/MySQL **20건**도 통과했다. 최종 ZIP asset bytes/SHA·디렉터리 항목 압축 데이터 20MiB 한도·UUID label 보강 후 영향 범위 **25건 재통과**. [Java 결과](review-java-results.json)
 - 스튜디오 Chromium **22개 검사**, PC 6개 탭과 모바일 axe 위반 0. 7종 업로드·SHA/download 동일·HTML 스크립트 차단·승인·비교·모바일 복원·미허가자 403. [결과](browser-results.json), [PC](screens/studio-pc-1440.png), [모바일 승인](screens/approve-mobile-390.png), [모바일 복원](screens/restore-mobile-390.png)
 - 공식 MCP SDK 2.1.1의 독립 OAuth A/B, PKCE·도구 19개·동일 원문 SHA·쓰기 거부 성공. [결과](protocol-results.json). 합성 ChatGPT callback은 로컬 실행 옵션에만 등록하며 실제 callback 발급 증거가 아님.
 - 실제 localhost BuildIt/AcademyCraft와 격리 MySQL의 경계 검사 **6건**: 다른 학원/사업체 거부, 8필드 재무 요약, 금융 원문/수집 preview·승인 POST 거부, #853 승인 없는 확정 시 장부 불변. [결과](integration-results.json)
@@ -42,7 +47,8 @@
 2. 실제 EP01 정본 미제공. JSON/ZIP 68컷 시험은 **합성 자료**이며 작품 원본 등록 완료가 아니다. 실제 파일로 사전 형식 검사 후 일괄 등록·원문 SHA·승인 포인터 대조 필요.
 3. 새 UUID 파일 저장과 DB 트랜잭션은 분산 atomic commit이 아니다. 모든 asset 사전 검사는 했지만 저장 후 DB 실패 시 미연결 파일이 남을 수 있다. 기존 원본/이력을 삭제하는 보정은 하지 않는다.
 4. 동시성은 JVM 단위이며 replica 전체 합산은 제한하지 않는다. 사용자 rate는 MySQL 공유. 운영 proxy 신뢰 목록은 실제 배치와 대조해야 하며 임의로 넓히지 않는다.
-5. GET 전수 감사는 정적 근거다. 허용 S3 읽기 48개는 요청·전송 비용이 있고 실제 S3는 미검증. SSR 35·Wiki 27·AcademyCraft 13개 프록시의 동적/외부 계약은 별도 검수 대상이다. 운영 모든 endpoint의 실자료 대조를 주장하지 않는다.
-6. 정확한 callback 등록/제거, consent 민감정보 체크 우회, proxy 속도 제한·JVM permit 해제, 금융·입시 축소 정책, DB/파일 복원 불변성, 대용량 ZIP 사전검사, #854 초안 승인 경쟁, 세 PR 병합 후 Flyway/doc diff를 Claude가 독립 재검수해야 한다.
+5. GET 전수 감사는 정적 근거다. 허용 S3 전용 읽기 47개와 ZIP 임시 파일 경로 1개는 요청·전송 비용이 있고 실제 S3는 미검증. SSR 35·Wiki 27·AcademyCraft 13개 프록시의 동적/외부 계약은 별도 검수 대상이다. 운영 모든 endpoint의 실자료 대조를 주장하지 않는다.
+6. 개인정보 마스킹은 휴리스틱이며 원본 binary byte는 바꾸지 않는다. 금융 원문/승인 API 미허용과 기존 권한 격리가 실제 경계다.
+7. 정확한 callback 등록/제거, consent 민감정보 체크 우회, proxy 속도 제한·JVM permit 해제, 금융·입시 축소 정책, DB/파일 복원 불변성, 대용량 ZIP 사전검사, #854 초안 승인 경쟁, 세 PR 병합 후 Flyway/doc diff를 Claude가 독립 재검수해야 한다.
 
 Claude에게 전달하거나 메시지를 발송한 것은 아니다. 재검수에 사용할 코드·근거·절차를 이 문서에 준비했다.
