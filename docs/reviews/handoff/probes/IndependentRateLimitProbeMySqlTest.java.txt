@@ -1,0 +1,42 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.mcp;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+
+/** Claude 독립 검수 프로브: 실제 MySQL에서 동시 호출이 한도를 넘겨 통과하는지(경쟁). */
+@SpringBootTest
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:mysql://127.0.0.1:3318/f2r_studio_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci",
+    "spring.datasource.username=f2r_test", "spring.datasource.password=isolated_test_password",
+    "spring.flyway.locations=classpath:db/migration", "spring.jpa.show-sql=false", "app.file.upload-dir=/tmp/claude-0/probe-files2"})
+class IndependentRateLimitProbeMySqlTest {
+  @Autowired McpRateLimit rate;
+
+  @Test
+  void concurrentCallsNeverExceedTheLimit() throws Exception {
+    int limit = 60, threads = 200;
+    var pool = Executors.newFixedThreadPool(64);
+    var allowed = new AtomicInteger(); var denied = new AtomicInteger(); var other = new AtomicInteger();
+    var start = new CountDownLatch(1); var done = new CountDownLatch(threads);
+    String key = "probe-" + System.nanoTime();
+    for (int i = 0; i < threads; i++) pool.execute(() -> {
+      try { start.await(); rate.check(key, limit); allowed.incrementAndGet(); }
+      catch (org.springframework.web.server.ResponseStatusException e) { if (e.getStatusCode().value() == 429) denied.incrementAndGet(); else other.incrementAndGet(); }
+      catch (Exception e) { other.incrementAndGet(); }
+      finally { done.countDown(); }
+    });
+    start.countDown();
+    assertTrue(done.await(60, TimeUnit.SECONDS));
+    pool.shutdownNow();
+    System.out.println("PROBE rate allowed=" + allowed + " denied=" + denied + " other=" + other);
+    assertTrue(allowed.get() <= limit, "한도 초과 통과: " + allowed);
+    assertEquals(0, other.get(), "예외(중복키 등) 발생");
+    assertEquals(threads, allowed.get() + denied.get());
+  }
+}

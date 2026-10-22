@@ -1,0 +1,190 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.mcp;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioBulkImport;
+import f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.*;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidator;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.security.MessageDigest;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+import java.util.zip.*;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import tools.jackson.databind.ObjectMapper;
+
+/** Claude 독립 검수 프로브(스크래치, 합성 데이터만): 불변성 스냅샷 비교, 승인 포인터, 감사 이력, 트랜잭션 실패 시 고아 파일. */
+@SpringBootTest
+@TestPropertySource(
+    properties = {
+      "spring.datasource.url=jdbc:mysql://127.0.0.1:3318/f2r_studio_test?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci",
+      "spring.datasource.username=f2r_test",
+      "spring.datasource.password=isolated_test_password",
+      "spring.flyway.locations=classpath:db/migration",
+      "spring.jpa.show-sql=false",
+      "app.file.upload-dir=/tmp/claude-0/probe-files",
+      "logging.level.org.hibernate.SQL=WARN"
+    })
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class IndependentStudioProbeMySqlTest {
+  static final Path DIR = Paths.get("/tmp/claude-0/probe-files");
+  @MockitoSpyBean StudioService studio;
+  @Autowired StudioBulkImport bulk;
+  @Autowired JdbcTemplate db;
+  @Autowired UserRepository users;
+  @Autowired AdminSessionValidator stamps;
+  @Autowired ObjectMapper json;
+  static JwtTokenProvider.AuthenticatedPrincipal admin, editor;
+  static final AtomicInteger saveCalls = new AtomicInteger();
+  static volatile int failAt = -1;
+
+  JwtTokenProvider.AuthenticatedPrincipal user(String login, Role role) {
+    var u = users.findByLoginId(login).orElseGet(() -> users.save(User.builder().loginId(login).password("{synthetic}").name("프로브").nickname(login).role(role).build()));
+    return new JwtTokenProvider.AuthenticatedPrincipal(u.getUserId(), u.getLoginId(), u.getRole().name(), stamps.stampFor(u.getUserId()));
+  }
+
+  static String sha(byte[] b) throws Exception { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(b)); }
+
+  static long fileCount() throws Exception {
+    if (!Files.exists(DIR)) return 0;
+    try (Stream<Path> s = Files.walk(DIR)) { return s.filter(Files::isRegularFile).count(); }
+  }
+
+  static Map<String, String> fileHashes() throws Exception {
+    var m = new TreeMap<String, String>();
+    if (!Files.exists(DIR)) return m;
+    try (Stream<Path> s = Files.walk(DIR)) {
+      for (Path p : (Iterable<Path>) s.filter(Files::isRegularFile)::iterator) m.put(DIR.relativize(p).toString(), sha(Files.readAllBytes(p)));
+    }
+    return m;
+  }
+
+  byte[] zip68(String marker) throws Exception {
+    var bos = new ByteArrayOutputStream();
+    var cuts = new ArrayList<Object>();
+    try (var z = new ZipOutputStream(bos)) {
+      for (int i = 1; i <= 68; i++) {
+        String name = String.format("img/cut-%02d.png", i);
+        byte[] png = new byte[64];
+        System.arraycopy(new byte[] {(byte) 137, 80, 78, 71, 13, 10, 26, 10}, 0, png, 0, 8);
+        byte[] tag = (marker + i).getBytes(StandardCharsets.UTF_8);
+        System.arraycopy(tag, 0, png, 8, Math.min(tag.length, 50));
+        z.putNextEntry(new ZipEntry(name)); z.write(png); z.closeEntry();
+        cuts.add(Map.of("cutNumber", i, "title", "SYNTH " + i, "content", "합성 " + i, "dialogue", "대사 " + i, "file", name));
+      }
+      z.putNextEntry(new ZipEntry("manifest.json"));
+      z.write(json.writeValueAsBytes(Map.of("episode", 1, "cuts", cuts)));
+      z.closeEntry();
+    }
+    return bos.toByteArray();
+  }
+
+  @BeforeEach
+  void spy() {
+    doAnswer(inv -> {
+      int n = saveCalls.incrementAndGet();
+      if (failAt > 0 && n == failAt) throw new IllegalStateException("injected DB failure at save #" + n);
+      return inv.callRealMethod();
+    }).when(studio).save(any(), any());
+  }
+
+  @Test
+  @Order(1)
+  void existingRowsFilesAndApprovalPointerSurviveRestoreAndBulkImport() throws Exception {
+    for (String t : List.of("studio_events", "studio_revisions", "studio_items", "studio_files", "studio_members", "studio_projects")) db.update("DELETE FROM " + t);
+    if (Files.exists(DIR)) try (Stream<Path> s = Files.walk(DIR)) { s.sorted(Comparator.reverseOrder()).filter(p -> !p.equals(DIR)).forEach(p -> p.toFile().delete()); }
+    admin = user("probe-admin", Role.ADMIN);
+    var editorUser = user("probe-editor", Role.TUTOR);
+    editor = editorUser;
+    studio.initialize(admin);
+    studio.member(admin, editor.userId(), "EDITOR");
+
+    byte[] original = "# ORIGINAL SYNTHETIC\n원본 불변 시험".getBytes(StandardCharsets.UTF_8);
+    var up = studio.upload(editor, new MockMultipartFile("file", "original.md", "text/markdown", original));
+    String fileId = (String) ((Map<?, ?>) up.get("file")).get("id");
+    var r1 = studio.save(editor, new StudioService.Revision("ep01-script", null, "r1", "SCRIPT", 1, null, "ORIGINAL", "각본", "본문", "", "", "READY", fileId));
+    studio.review(admin, (String) r1.get("id"), "APPROVE", "합성 승인");
+    String approved = db.queryForObject("SELECT approved_id FROM studio_items WHERE item_key='ep01-script'", String.class);
+    assertEquals(r1.get("id"), approved);
+
+    // 스냅샷: 모든 열을 그대로 비교
+    var filesBefore = db.queryForList("SELECT * FROM studio_files ORDER BY id");
+    var revsBefore = db.queryForList("SELECT * FROM studio_revisions ORDER BY id");
+    var objectsBefore = fileHashes();
+    long eventsBefore = db.queryForObject("SELECT COUNT(*) FROM studio_events", Long.class);
+
+    // 복원(새 버전) + 68컷 일괄 등록
+    var restored = studio.restore(editor, (String) r1.get("id"), (String) r1.get("id"), "restore-r1-1");
+    var zip = studio.upload(editor, new MockMultipartFile("file", "ep01.zip", "application/zip", zip68("A")));
+    var imported = (Map<?, ?>) bulk.importEp01(editor, (String) ((Map<?, ?>) zip.get("file")).get("id"));
+    assertEquals(68, imported.get("registered"));
+
+    // 1) 기존 행은 한 열도 바뀌지 않음
+    var filesAfter = db.queryForList("SELECT * FROM studio_files ORDER BY id");
+    var revsAfter = db.queryForList("SELECT * FROM studio_revisions ORDER BY id");
+    for (var row : filesBefore) assertTrue(filesAfter.contains(row), "studio_files 기존 행 변경/삭제됨: " + row.get("id"));
+    for (var row : revsBefore) assertTrue(revsAfter.contains(row), "studio_revisions 기존 행 변경/삭제됨: " + row.get("id"));
+    // 2) 정본(저장 객체) 바이트 불변
+    var objectsAfter = fileHashes();
+    for (var e : objectsBefore.entrySet()) assertEquals(e.getValue(), objectsAfter.get(e.getKey()), "저장 객체 변경/삭제: " + e.getKey());
+    assertArrayEquals(original, studio.bytes(editor, fileId));
+    // 3) 승인 포인터 불변 (복원·일괄 등록은 승인하지 않음)
+    assertEquals(approved, db.queryForObject("SELECT approved_id FROM studio_items WHERE item_key='ep01-script'", String.class));
+    assertEquals(0L, db.queryForObject("SELECT COUNT(*) FROM studio_items WHERE item_key LIKE 'ep01-cut-%' AND approved_id IS NOT NULL", Long.class));
+    assertNotEquals(r1.get("id"), db.queryForObject("SELECT head_id FROM studio_items WHERE item_key='ep01-script'", String.class), "head는 새 복원 버전으로 이동");
+    // 4) 감사 이력: 복원·일괄 등록·업로드가 행위자와 함께 기록
+    var actions = db.queryForList("SELECT action, actor_id FROM studio_events ORDER BY id");
+    assertTrue(db.queryForObject("SELECT COUNT(*) FROM studio_events", Long.class) > eventsBefore);
+    assertTrue(actions.stream().anyMatch(a -> "RESTORE".equals(a.get("action")) && ((Number) a.get("actor_id")).longValue() == editor.userId()));
+    assertTrue(actions.stream().anyMatch(a -> "BULK_IMPORT".equals(a.get("action")) && ((Number) a.get("actor_id")).longValue() == editor.userId()));
+    assertTrue(actions.stream().anyMatch(a -> "APPROVE".equals(a.get("action")) && ((Number) a.get("actor_id")).longValue() == admin.userId()));
+    System.out.println("PROBE immut rows files=" + filesBefore.size() + " revs=" + revsBefore.size() + " objects=" + objectsBefore.size() + " events=" + actions.size() + " restored=" + restored.get("label"));
+  }
+
+  @Test
+  @Order(2)
+  void failureMidImportRollsBackDbButLeavesUnlinkedFiles() throws Exception {
+    byte[] z = zip68("B");
+    var up = studio.upload(editor, new MockMultipartFile("file", "ep01-b.zip", "application/zip", z));
+    String src = (String) ((Map<?, ?>) up.get("file")).get("id");
+    long fileRowsBefore = db.queryForObject("SELECT COUNT(*) FROM studio_files", Long.class);
+    long revRowsBefore = db.queryForObject("SELECT COUNT(*) FROM studio_revisions", Long.class);
+    long objectsBefore = fileCount();
+    var hashesBefore = fileHashes();
+    saveCalls.set(0);
+    failAt = 30; // 30번째 컷 저장에서 DB 실패 주입
+    try { assertThrows(IllegalStateException.class, () -> bulk.importEp01(editor, src)); } finally { failAt = -1; }
+    long fileRowsAfter = db.queryForObject("SELECT COUNT(*) FROM studio_files", Long.class);
+    long revRowsAfter = db.queryForObject("SELECT COUNT(*) FROM studio_revisions", Long.class);
+    long objectsAfter = fileCount();
+    long orphans = objectsAfter - objectsBefore;
+    System.out.println("PROBE orphan dbFiles " + fileRowsBefore + "->" + fileRowsAfter + " dbRevs " + revRowsBefore + "->" + revRowsAfter + " storageObjects " + objectsBefore + "->" + objectsAfter + " (orphans=" + orphans + ")");
+    assertEquals(fileRowsBefore, fileRowsAfter, "DB는 전부 롤백되어야 함");
+    assertEquals(revRowsBefore, revRowsAfter);
+    for (var e : hashesBefore.entrySet()) assertEquals(e.getValue(), fileHashes().get(e.getKey()), "기존 객체는 보존");
+    assertTrue(orphans > 0, "고아 파일이 생기지 않았다면(보정 구현됨) 이 단언은 실패해야 함 — 현재 동작 기록용");
+
+    // 재시도: 성공하지만, 롤백된 파일은 SHA 중복 검사에 걸리지 않아 새 객체가 또 쌓인다
+    long beforeRetry = fileCount();
+    var ok = (Map<?, ?>) bulk.importEp01(editor, src);
+    long afterRetry = fileCount();
+    System.out.println("PROBE orphan retry registered=" + ok.get("registered") + " storageObjects " + beforeRetry + "->" + afterRetry + " (added=" + (afterRetry - beforeRetry) + ", linked rows=" + db.queryForObject("SELECT COUNT(DISTINCT file_id) FROM studio_revisions WHERE label LIKE 'import-%'", Long.class) + ")");
+    assertEquals(68, ok.get("registered"));
+    long referenced = db.queryForObject("SELECT COUNT(*) FROM studio_files", Long.class);
+    System.out.println("PROBE orphan totalObjects=" + fileCount() + " referencedRows=" + referenced + " unreferenced=" + (fileCount() - referenced));
+  }
+}

@@ -1,0 +1,102 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.mcp;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+/** Claude 독립 검수용 프로브(스크래치). OAuth redirect 우회 벡터, 사용자별 한도 스트레스, 마스킹 한계. */
+class IndependentMcpProbeTest {
+  private McpOAuth oauth() {
+    var o = new McpOAuth(null, null, null, null);
+    ReflectionTestUtils.setField(
+        o, "redirects",
+        List.of("https://claude.ai/api/mcp/auth_callback", "https://chatgpt.com/connector/oauth/abc_123"));
+    return o;
+  }
+
+  @Test
+  void redirectBypassVectorsAreAllRejected() {
+    var o = oauth();
+    var bad = new ArrayList<String>(List.of(
+        "https://claude.ai/api/mcp/auth_callback/", "https://claude.ai/api/mcp/auth_callback?x=1",
+        "https://claude.ai/api/mcp/auth_callback#f", "HTTPS://claude.ai/api/mcp/auth_callback",
+        "https://CLAUDE.AI/api/mcp/auth_callback", "https://claude.ai:443/api/mcp/auth_callback",
+        "https://claude.ai@evil.example/api/mcp/auth_callback", "https://claude.ai.evil.example/api/mcp/auth_callback",
+        "https://evil.example/https://claude.ai/api/mcp/auth_callback", "https://claude.ai/api/mcp/auth_callback%2f..",
+        "https://claude.ai/api/mcp/auth_callback\n", " https://claude.ai/api/mcp/auth_callback",
+        "http://claude.ai/api/mcp/auth_callback", "javascript:alert(1)", "",
+        "https://chatgpt.com/connector/oauth/abc_123/", "https://chatgpt.com/connector/oauth/abc_124",
+        "https://chatgpt.com/connector/oauth/abc_123\n", "https://chatgpt.com/connector/oauth/../abc_123",
+        "https://claude.com/api/mcp/auth_callback", "https://chatgpt.com/connector_platform_oauth_redirect"));
+    for (String v : bad) assertFalse(o.allowedRedirect(v), "허용되면 안 됨: " + v.replace("\n", "\\n"));
+    assertTrue(o.allowedRedirect("https://claude.ai/api/mcp/auth_callback"));
+    assertTrue(o.allowedRedirect("https://chatgpt.com/connector/oauth/abc_123"));
+  }
+
+  @Test
+  void userLimiterNeverExceedsCapsAndNeverLeaksUnderContention() throws Exception {
+    int perUser = 2, global = 6, threads = 48, iterations = 20_000;
+    var limiter = new McpUserLimiter(global, perUser);
+    var active = new ConcurrentHashMap<Long, AtomicInteger>();
+    var totalActive = new AtomicInteger();
+    var maxUser = new AtomicInteger();
+    var maxTotal = new AtomicInteger();
+    var granted = new AtomicLong();
+    var pool = Executors.newFixedThreadPool(threads);
+    var latch = new CountDownLatch(threads);
+    for (int t = 0; t < threads; t++) {
+      final long user = t % 4; // 4명이 경쟁
+      pool.execute(() -> {
+        for (int i = 0; i < iterations; i++) {
+          AutoCloseable p = limiter.acquire(user);
+          if (p == null) continue;
+          granted.incrementAndGet();
+          int u = active.computeIfAbsent(user, k -> new AtomicInteger()).incrementAndGet();
+          int g = totalActive.incrementAndGet();
+          maxUser.accumulateAndGet(u, Math::max);
+          maxTotal.accumulateAndGet(g, Math::max);
+          active.get(user).decrementAndGet();
+          totalActive.decrementAndGet();
+          try { p.close(); p.close(); /* 이중 close는 무시되어야 함 */ } catch (Exception e) { throw new RuntimeException(e); }
+        }
+        latch.countDown();
+      });
+    }
+    assertTrue(latch.await(120, TimeUnit.SECONDS));
+    pool.shutdownNow();
+    System.out.println("PROBE limiter granted=" + granted + " maxUser=" + maxUser + " maxTotal=" + maxTotal);
+    assertTrue(maxUser.get() <= perUser, "사용자별 상한 초과: " + maxUser);
+    assertTrue(maxTotal.get() <= global, "전역 상한 초과: " + maxTotal);
+    // 누수 검사: 모두 반환되었으면 다시 global개를 (여러 사용자로) 얻을 수 있고 그 이상은 불가
+    var held = new ArrayList<AutoCloseable>();
+    for (int i = 0; i < global; i++) { var p = limiter.acquire(100 + i); assertNotNull(p, "누수: " + i + "번째 획득 실패"); held.add(p); }
+    assertNull(limiter.acquire(999), "이중 close로 permit이 늘어남(전역 상한 초과 허용)");
+    for (var p : held) p.close();
+  }
+
+  @Test
+  void maskingLimitsAreDocumented() {
+    var cases = new LinkedHashMap<String, String>();
+    cases.put("국내 휴대폰 하이픈", "010-1234-5678");
+    cases.put("국내 휴대폰 공백", "010 1234 5678");
+    cases.put("국내 휴대폰 무구분", "01012345678");
+    cases.put("국제표기", "+82-10-1234-5678");
+    cases.put("국제표기2", "+82 10 1234 5678");
+    cases.put("이메일", "parent.kim@example.com");
+    cases.put("주민번호", "900101-1234567");
+    cases.put("주민번호 무구분", "9001011234567");
+    cases.put("계좌 하이픈", "110-123-456789");
+    cases.put("계좌 무구분", "110123456789");
+    cases.put("지역번호 전화", "02-1234-5678");
+    cases.put("카드번호", "1234-5678-9012-3456");
+    cases.put("날짜(유지돼야 함)", "2026-10-22");
+    cases.put("금액(유지돼야 함)", "1,234,500원");
+    for (var e : cases.entrySet())
+      System.out.println("PROBE mask [" + e.getKey() + "] " + e.getValue() + " -> " + McpRedaction.text(e.getValue()));
+    assertEquals("2026-10-22", McpRedaction.text("2026-10-22"));
+  }
+}
