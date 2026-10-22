@@ -1,0 +1,9 @@
+poi=5.3.0
+shinhan_sample.xls
+ShinhanCardRawRow[transactionDate=2026-09-03, confirmationDate=2026-09-04, cardHolderType=본인, maskedCard=1234.0, productType=일시불, merchantName=가상문구점, amount=11000.0, supplyAmount=10000.0, vatAmount=1000.0, taxExemptAmount=0.0, merchantRegistrationNumber=123-45-67890, sheetRowIndex=5]
+ShinhanCardRawRow[transactionDate=2026-09-15, confirmationDate=2026-09-16, cardHolderType=가족, maskedCard=5678.0, productType=할부, merchantName=가상 주유소 (서울), amount=55000, supplyAmount=50000.0, vatAmount=5000.0, taxExemptAmount=0.0, merchantRegistrationNumber=987-65-43210, sheetRowIndex=6]
+ShinhanCardRawRow[transactionDate=2026-09-20, confirmationDate=2026-09-21, cardHolderType=본인, maskedCard=1234.0, productType=일시불, merchantName=해외가맹점 TEST, amount=-3300.0, supplyAmount=-3000.0, vatAmount=-300.0, taxExemptAmount=0.0, merchantRegistrationNumber=null, sheetRowIndex=7]
+shinhan_xlwt.xls
+ShinhanCardRawRow[transactionDate=2026-09-03, confirmationDate=2026-09-04, cardHolderType=본인, maskedCard=1234, productType=일시불, merchantName=가상문구점, amount=11000.0, supplyAmount=10000.0, vatAmount=1000.0, taxExemptAmount=0.0, merchantRegistrationNumber=123-45-67890, sheetRowIndex=5]
+ShinhanCardRawRow[transactionDate=2026-09-15, confirmationDate=2026-09-16, cardHolderType=가족, maskedCard=5678, productType=할부, merchantName=가상 주유소 (서울), amount=55000.0, supplyAmount=50000.0, vatAmount=5000.0, taxExemptAmount=0.0, merchantRegistrationNumber=987-65-43210, sheetRowIndex=6]
+ShinhanCardRawRow[transactionDate=2026-09-20, confirmationDate=2026-09-21, cardHolderType=본인, maskedCard=1234, productType=일시불, merchantName=해외가맹점 TEST, amount=-3300.0, supplyAmount=-3000.0, vatAmount=-300.0, taxExemptAmount=0.0, merchantRegistrationNumber=null, sheetRowIndex=7]

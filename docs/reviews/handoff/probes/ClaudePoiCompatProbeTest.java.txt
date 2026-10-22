@@ -1,0 +1,31 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
+/** Parses .xls files written by non-POI writers and dumps the result for cross-version diff. */
+@EnabledIfEnvironmentVariable(named = "POI_PROBE_DIR", matches = ".+")
+class ClaudePoiCompatProbeTest {
+  @Test
+  void givenForeignWrittenXls_whenParsed_thenDumpRowsForVersionDiff() throws Exception {
+    // given
+    Path dir = Path.of(System.getenv("POI_PROBE_DIR"));
+    var out = new StringBuilder("poi=" + org.apache.poi.Version.getVersion() + "\n");
+    for (String name : new String[] {"shinhan_sample.xls", "shinhan_xlwt.xls"}) {
+      // when
+      try (InputStream in = Files.newInputStream(dir.resolve(name))) {
+        var rows = new ShinhanCardExcelParser().parse(in);
+        // then
+        assertEquals(3, rows.size(), name);
+        out.append(name).append('\n');
+        for (var r : rows) out.append(r).append('\n');
+      }
+    }
+    Files.writeString(dir.resolve("dump-" + org.apache.poi.Version.getVersion() + ".txt"), out, StandardCharsets.UTF_8);
+  }
+}
