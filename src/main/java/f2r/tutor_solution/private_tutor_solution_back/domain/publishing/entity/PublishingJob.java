@@ -124,6 +124,14 @@ public class PublishingJob extends BaseEntity {
     this.error = error;
   }
 
+  /** Provision retry only: called while holding the claim transaction's row lock. */
+  public void requeueAfterProvisionFailure(String error) {
+    this.status = Status.QUEUED;
+    this.error = error;
+    this.progress = 0;
+    this.currentStep = "재시도 대기 중";
+  }
+
   public void markCancelled() {
     this.status = Status.CANCELLED;
   }

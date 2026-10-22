@@ -142,6 +142,9 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycrafthelp.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.DesignCraftCliExecutorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingWorkerClaimTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service.WemadeKisLeadershipTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.infrastructure.cluster.ClusterScheduleLeaderTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingEditServiceImportTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.PublishingAiServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.CommandAllowlistTest"
@@ -454,6 +457,14 @@ jobs:
           command -v mysql >/dev/null || sudo apt-get install -y -qq mysql-client
           mysql -h 127.0.0.1 -P 3306 -uroot -pci_test_root_pw -e "SET GLOBAL max_connections=500"
           mysql -h 127.0.0.1 -P 3306 -uroot -pci_test_root_pw -e "SHOW VARIABLES LIKE 'max_connections'"
+      - name: Cluster lock and two-JVM claim tests
+        env:
+          F2R_CLUSTER_MYSQL_TEST: 'true'
+        run: >-
+          ./gradlew test --no-daemon
+          --tests "*ClusterConcurrencyMySqlTest"
+          --tests "*HwpxWorkerTransactionMySqlTest"
+
       - name: Run MySQL integration tests
         run: >-
           ./gradlew test --no-daemon --stacktrace

@@ -88,6 +88,31 @@ class HwpxWorkerTransactionMySqlTest {
   }
 
   @Test
+  void twoWorkersRaceAndOnlyWinnerExecutesCli() throws Exception {
+    Long id = newJob(true);
+    var entered = new java.util.concurrent.CountDownLatch(1);
+    var release = new java.util.concurrent.CountDownLatch(1);
+    when(cliExecutor.edit(any(), anyString(), any(), anyString())).thenAnswer(inv -> {
+      entered.countDown();
+      if (!release.await(15, java.util.concurrent.TimeUnit.SECONDS)) throw new IllegalStateException("test timeout");
+      Files.writeString(((Path) inv.getArgument(0)).resolve((String) inv.getArgument(3)), "isolated result");
+      return new CliResult(true, Map.of("ok", true), "");
+    });
+    when(cliExecutor.validate(any())).thenReturn(new CliResult(true, Map.of("ok", true), ""));
+    try (var pool = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+      var first = pool.submit(() -> worker.process(id));
+      try {
+        assertThat(entered.await(15, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+        pool.submit(() -> worker.process(id)).get(10, java.util.concurrent.TimeUnit.SECONDS);
+      } finally { release.countDown(); }
+      first.get(15, java.util.concurrent.TimeUnit.SECONDS);
+    }
+    org.mockito.Mockito.verify(cliExecutor, org.mockito.Mockito.times(1)).edit(any(), anyString(), any(), anyString());
+    assertThat(statusOf(id)).isEqualTo("DONE");
+    assertThat(artifactCount(id)).isEqualTo(1);
+  }
+
+  @Test
   @DisplayName("given QUEUED 작업 when 처리하면 then RUNNING을 거쳐 DONE으로 커밋되고 결과가 1건만 저장된다")
   void queued_to_running_to_done_is_committed() throws Exception {
     // given

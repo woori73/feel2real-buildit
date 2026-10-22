@@ -960,3 +960,7 @@ ADMIN은 같은 화면에서 공식 원문과 근거 지식의 DRAFT→REVIEW→
 `/dashboard` → `/academycraft` → 기존 BuildIt 인증 검증 → 로컬 전용 서명 게이트웨이 → AcademyCraft 명시적 소속 연결·기존 역할·학원 격리 검사 → 기존 업무 화면/API. 미연결·비활성·타 학원·변경된 역할은 차단. 기존 서비스 세션·DB·권한은 보존.
 AI 비서 경로(P1-b): `/academycraft/api/rea/{id}/agent/{tools|execute|plans/{uuid}[/approve|/cancel]}` 5개 정확 경로만 중계한다. 쓰기 도구는 요청만으로 실행되지 않고 AcademyCraft 가 서버에 보관한 계획(변경 미리보기 포함)을 돌려주며, 원장 권한 회원이 계획 해시로 승인해야 단 한 번 실행된다(강사는 초안만, 10분 만료, `writeApproved` 불리언은 400). 서명된 신원의 `agentProtocol` 이 다르면 에이전트 경로만 403 이다.
 AcademyCraft 공통 진입은 ADMIN·TUTOR 전용이다. ADMIN은 보호된 승인 소속 목록에서 학원 선택 후 학생·반·출결·상담·공지의 기존 화면을 이용한다. 미연결 TUTOR 자동 가입·학원 생성은 수행하지 않는다. 운영 DB 무변경 조건으로 신규 TUTOR 소속 준비는 운영 적용 전 별도 확정이 필요하다.
+
+## A1 다중 JVM 작업 진입점
+
+Publishing/HWPX는 QUEUED 조건부 UPDATE 변경 행 수 1을 실행 권한으로 사용한다. Publishing 실패 재시도는 시도 수/오류를 보존한다. 지정된 수집 스케줄러는 물리 MySQL 세션 리더에서만 실행하고 KIS는 별도 리더+기본 OFF다. 운영 검증 한계와 16개 분류는 [A1_SINGLETON_IMPLEMENTATION.md](operations/A1_SINGLETON_IMPLEMENTATION.md)를 따른다. 자동 타임아웃 재선점으로 실행 중 CLI를 중복 호출하지 않는다.
