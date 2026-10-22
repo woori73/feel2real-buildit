@@ -1,0 +1,52 @@
+# DRAFT (검토·승인 전, .github/workflows 에 넣지 않음). 배포 직전 RDS 수동 스냅샷.
+# 하는 일: 스냅샷 1개 생성 후 available 까지 대기. 삭제·수정·복원 없음(복원=새 인스턴스=별도 승인).
+# 보호: 환경(f2r-production-snapshot) 승인 필수, 확인 문자열이 대상 SHA 앞 8자리와 일치해야 진행.
+# 필요 IAM: rds:CreateDBSnapshot, rds:DescribeDBSnapshots, rds:DescribeDBInstances (현재 부여 여부 미확인).
+name: RDS pre-deploy snapshot (manual, approval required)
+on:
+  workflow_dispatch:
+    inputs:
+      db_instance_id:
+        description: 'RDS DB 인스턴스 식별자(읽기 전용 현황 조회 결과 사용)'
+        required: true
+        type: string
+      deploy_sha:
+        description: '곧 배포할 main 커밋 SHA(40자리)'
+        required: true
+        type: string
+      confirm:
+        description: '확인: SNAPSHOT-<deploy_sha 앞 8자리>'
+        required: true
+        type: string
+permissions:
+  id-token: write
+  contents: read
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: f2r-production-snapshot
+    steps:
+      - name: Validate inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.db_instance_id }}" =~ ^[a-zA-Z][a-zA-Z0-9-]{0,62}$ ]]
+          [[ "${{ inputs.deploy_sha }}" =~ ^[0-9a-f]{40}$ ]]
+          [ "${{ inputs.confirm }}" = "SNAPSHOT-$(echo '${{ inputs.deploy_sha }}' | cut -c1-8)" ]
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Create snapshot and wait
+        shell: bash
+        run: |
+          set -euo pipefail
+          SNAP="f2r-predeploy-$(date -u +%Y%m%d%H%M)-$(echo '${{ inputs.deploy_sha }}' | cut -c1-8)"
+          aws rds create-db-snapshot --db-instance-identifier "${{ inputs.db_instance_id }}" --db-snapshot-identifier "$SNAP" --query 'DBSnapshot.Status' --output text
+          aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP"
+          aws rds describe-db-snapshots --db-snapshot-identifier "$SNAP" --query 'DBSnapshots[].{Status:Status,Created:SnapshotCreateTime,Encrypted:Encrypted}' --output table
+          echo "snapshot=$SNAP"

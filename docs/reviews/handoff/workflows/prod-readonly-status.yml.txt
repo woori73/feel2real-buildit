@@ -1,0 +1,54 @@
+# DRAFT (검토 전, .github/workflows 에 넣지 않음). 신규 운영 계정 읽기 전용 현황 조회.
+# 기존 prod-diagnostic·old-account-probe 는 구 계정(067573916809)·구 인스턴스(i-09d7cabb5a42d1135)를 고정해
+# 신규 계정 운영을 볼 수 없다(2026-10-22 실행: SSM InvalidInstanceId, RDS/IAM/S3 AccessDenied).
+# 이 workflow 는 조회(describe/SELECT/systemctl show)만 하며 쓰기·재시작·배포·스냅샷 생성이 없다.
+# 필요 IAM(신규 계정 github-actions-f2r-deploy): rds:DescribeDBInstances, rds:DescribeDBSnapshots,
+# ec2:DescribeInstances, ssm:SendCommand/GetCommandInvocation. 부족하면 AccessDenied 로 표시되고 계속한다.
+name: Prod read-only status (new account, manual)
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+          role-session-name: f2r-readonly-status
+      - name: RDS and EC2 (describe only)
+        shell: bash
+        run: |
+          set +e
+          mask() { sed -E 's/[0-9]{12}/<acct>/g'; }
+          echo "== rds instances"; aws rds describe-db-instances --query 'DBInstances[].{Engine:Engine,Version:EngineVersion,Class:DBInstanceClass,Status:DBInstanceStatus,BackupDays:BackupRetentionPeriod,LatestRestorable:LatestRestorableTime,MultiAZ:MultiAZ,Encrypted:StorageEncrypted,DeletionProtection:DeletionProtection}' --output table 2>&1 | mask
+          echo "== rds snapshots (type, created, status)"; aws rds describe-db-snapshots --query 'DBSnapshots[].{Type:SnapshotType,Created:SnapshotCreateTime,Status:Status}' --output table 2>&1 | mask | tail -30
+          echo "== app instance"; aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=instance-state-name,Values=running --query 'Reservations[].Instances[].{Id:InstanceId,Type:InstanceType,Launched:LaunchTime}' --output table 2>&1 | mask
+      - name: Host (SSM, fixed read-only script)
+        shell: bash
+        run: |
+          set -euo pipefail
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          [ -n "$IID" ] && [ "$IID" != "None" ]
+          cat > /tmp/script.sh <<'SCRIPT'
+          set +e
+          echo "== service"; systemctl show f2r-app.service -p ActiveState -p SubState -p NRestarts -p ExecMainStartTimestamp
+          echo "== jar"; stat -c '%y %s' /home/ec2-user/app.jar; sha256sum /home/ec2-user/app.jar | cut -c1-16
+          echo "== health"; curl -fsS --max-time 10 http://127.0.0.1:8080/actuator/health | head -c 200; echo
+          echo "== flags (names only, values hidden)"
+          for k in APP_MCP_ENABLED ANTHROPIC_ENABLED; do grep -q "^$k=" /etc/f2r/env 2>/dev/null && echo "$k=present" || echo "$k=absent"; done
+          source /etc/f2r/env 2>/dev/null
+          M="mysql -h $DB_HOST -P ${DB_PORT:-3306} -u $DB_USER -p$DB_PASSWORD $DB_NAME"
+          $M -e "SET SESSION TRANSACTION READ ONLY; SELECT VERSION() AS mysql_version;" 2>&1
+          $M -e "SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) applied, MAX(CAST(version AS UNSIGNED)) max_version, SUM(success=0) failed FROM flyway_schema_history WHERE version IS NOT NULL;" 2>&1
+          $M -e "SET SESSION TRANSACTION READ ONLY; SELECT version, success FROM flyway_schema_history WHERE CAST(version AS UNSIGNED)>=1090 ORDER BY installed_rank;" 2>&1
+          $M -e "SET SESSION TRANSACTION READ ONLY; SELECT COUNT(*) studio_tables FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'studio\_%';" 2>&1
+          SCRIPT
+          PARAMS=$(python3 -c 'import json,sys; print(json.dumps({"commands": sys.stdin.read().splitlines()}))' < /tmp/script.sh)
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters "$PARAMS" --query 'Command.CommandId' --output text)
+          for i in $(seq 1 12); do sleep 5; S=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query Status --output text); case "$S" in Success|Failed|Cancelled|TimedOut) break;; esac; done
+          aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query 'StandardOutputContent' --output text
