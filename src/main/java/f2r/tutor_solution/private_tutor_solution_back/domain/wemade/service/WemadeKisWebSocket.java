@@ -2,7 +2,13 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
+import org.springframework.context.event.EventListener;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.cluster.MysqlNamedLocks;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -74,6 +80,15 @@ public class WemadeKisWebSocket {
 
     private final WemadeKisClient kisClient;
     private final ObjectMapper objectMapper;
+    private final MysqlNamedLocks locks;
+    private final boolean websocketEnabled;
+    private volatile MysqlNamedLocks.Session leadership;
+    private volatile Thread loopThread;
+    private final ScheduledExecutorService watchdog = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread thread = new Thread(r, "kis-leader-watchdog");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean enabled = new AtomicBoolean(false);
@@ -88,20 +103,26 @@ public class WemadeKisWebSocket {
     /** 시장별 최신 회원사 스냅샷 (내부 분석용) */
     private final Map<String, Map<String, Object>> latestMemberByEx = new ConcurrentHashMap<>();
 
-    public WemadeKisWebSocket(WemadeKisClient kisClient, ObjectMapper objectMapper) {
+    public WemadeKisWebSocket(WemadeKisClient kisClient, ObjectMapper objectMapper,
+            MysqlNamedLocks locks, @Value("${wemade.kis.websocket-enabled:false}") boolean websocketEnabled) {
         this.kisClient = kisClient;
         this.objectMapper = objectMapper;
+        this.locks = locks;
+        this.websocketEnabled = websocketEnabled;
     }
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void start() {
-        if (!kisClient.isConfigured()) {
+        if (!websocketEnabled || !kisClient.isConfigured()) {
             log.info("WEMADE KIS websocket disabled: keys not set (PENDING)");
             return;
         }
-        enabled.set(true);
+        if (!enabled.compareAndSet(false, true)) return;
+        running.set(true);
+        watchdog.scheduleWithFixedDelay(this::checkLeadership, 1, 1, TimeUnit.SECONDS);
         Thread t = new Thread(this::runLoop, "wemade-kis-ws");
         t.setDaemon(true);
+        loopThread = t;
         t.start();
     }
 
@@ -109,12 +130,14 @@ public class WemadeKisWebSocket {
     public void stop() {
         running.set(false);
         enabled.set(false);
-        closeQuietly();
+        if (loopThread != null) loopThread.interrupt();
+        watchdog.shutdownNow();
+        relinquishLeadership();
     }
 
     /** WebSocket 실시간 수신 여부 */
     public boolean isLive() {
-        return enabled.get() && webSocket != null && !webSocket.isOutputClosed();
+        return enabled.get() && leadership != null && webSocket != null && !webSocket.isOutputClosed();
     }
 
     /** 시장별 최신 호가 스냅샷 (내부 분석용). 외부 API로 원시를 노출하지 않는다. */
@@ -144,7 +167,6 @@ public class WemadeKisWebSocket {
     // ---- 연결 루프 ----
 
     private void runLoop() {
-        running.set(true);
         long backoffMs = 5000;
         while (running.get() && enabled.get()) {
             try {
@@ -153,7 +175,19 @@ public class WemadeKisWebSocket {
                     Thread.sleep(60_000);
                     continue;
                 }
-                connectAndListen();
+                MysqlNamedLocks.Session candidate = locks.tryAcquire("kis-websocket");
+                if (candidate == null) {
+                    Thread.sleep(1000);
+                    continue;
+                }
+                leadership = candidate;
+                try {
+                    // Quarantine gives a prior owner's watchdog time to abort on DB failure.
+                    Thread.sleep(10_000);
+                    if (candidate == leadership && candidate.valid() && running.get()) connectAndListen();
+                } finally {
+                    relinquishLeadership();
+                }
                 backoffMs = 5000; // 성공 후 리셋
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
@@ -190,6 +224,7 @@ public class WemadeKisWebSocket {
     }
 
     private void connectAndListen() throws Exception {
+        if (!ownsLeadership()) return;
         String approvalKey = kisClient.websocketApprovalKey().orElse(null);
         if (approvalKey == null) {
             log.warn("WEMADE KIS websocket: approval key unavailable");
@@ -199,7 +234,11 @@ public class WemadeKisWebSocket {
         CompletableFuture<WebSocket> future = client.newWebSocketBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .buildAsync(URI.create(WS_URL), new WsListener());
-        webSocket = future.join();
+        WebSocket connected = future.join();
+        synchronized (this) {
+            if (!ownsLeadership() || !running.get()) { connected.abort(); return; }
+            webSocket = connected;
+        }
         // 구독 요청 (승인키는 메시지 바디에만 포함, 로그 금지)
         // KRX + NXT + 통합 체결/호가/회원사
         sendSubscribe(TR_TRADE_KRX, "1");
@@ -213,14 +252,15 @@ public class WemadeKisWebSocket {
         sendSubscribe(TR_MEMBER_UNI, "1");
         log.info("WEMADE KIS websocket connected, subscribed KRX/NXT/UNIFIED trade+quote+member");
         // 리스너 스레드에서 수신 처리. 이 스레드는 연결 유지용으로 대기한다.
-        while (running.get() && enabled.get() && !webSocket.isOutputClosed() && isMarketHours()) {
-            Thread.sleep(10_000);
+        while (running.get() && enabled.get() && ownsLeadership() && webSocket != null && !webSocket.isOutputClosed() && isMarketHours()) {
+            Thread.sleep(1000);
         }
         closeQuietly();
     }
 
     private void sendSubscribe(String trId, String trType) {
         try {
+            if (!ownsLeadership() || webSocket == null) return;
             // 승인키는 kisClient에서 직접 읽어 메시지에 포함 (로그에 남기지 않는다)
             String approvalKey = kisClient.websocketApprovalKey().orElse("");
             String msg = "{\"header\":{\"approval_key\":\"" + approvalKey
@@ -234,7 +274,24 @@ public class WemadeKisWebSocket {
         }
     }
 
-    private void closeQuietly() {
+    private boolean ownsLeadership() {
+        MysqlNamedLocks.Session current = leadership;
+        return current != null && current.valid();
+    }
+
+    private void checkLeadership() {
+        MysqlNamedLocks.Session current = leadership;
+        if (current != null && !current.valid()) relinquishLeadership();
+    }
+
+    private synchronized void relinquishLeadership() {
+        MysqlNamedLocks.Session previous = leadership;
+        leadership = null;
+        closeQuietly(); // Abort external connection BEFORE RELEASE_LOCK / physical close.
+        if (previous != null) previous.close();
+    }
+
+    private synchronized void closeQuietly() {
         try {
             if (webSocket != null) webSocket.abort();
         } catch (Exception ignored) {
@@ -249,11 +306,13 @@ public class WemadeKisWebSocket {
 
         @Override
         public void onOpen(WebSocket ws) {
+            if (!ownsLeadership() || !running.get()) { ws.abort(); return; }
             ws.request(1);
         }
 
         @Override
         public CompletionStage<?> onText(WebSocket ws, CharSequence data, boolean last) {
+            if (!ownsLeadership() || !running.get()) { ws.abort(); return null; }
             buffer.append(data);
             if (last) {
                 String msg = buffer.toString();

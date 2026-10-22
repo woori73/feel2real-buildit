@@ -58,21 +58,17 @@ public class PublishingWorker {
       self.claimAndProvision(job.getId());
     } catch (Exception e) {
       log.error("Publishing 작업 시작 실패: jobId={}", job.getId(), e);
-      try {
-        self.markJobFailed(job.getId(), "작업 시작 실패: " + e.getMessage());
-      } catch (Exception ex) {
-        log.error("FAILED 표시 실패: jobId={}", job.getId(), ex);
-      }
+      // A failed transaction rolls the claim back. Never mutate a RUNNING row owned by another JVM.
     }
   }
 
   @Transactional
   public void claimAndProvision(Long jobId) {
-    PublishingJob job = jobRepository.findById(jobId).orElse(null);
-    if (job == null || job.getStatus() != Status.QUEUED) {
+    if (jobRepository.claimQueued(jobId) != 1) {
       log.debug("작업 {} 스킵 (이미 처리됨 또는 상태 변경)", jobId);
       return;
     }
+    PublishingJob job = jobRepository.findById(jobId).orElseThrow();
     if (job.getAttemptCount() >= props.getMaxAttempts()) {
       job.markFailed("최대 재시도 횟수(" + props.getMaxAttempts() + ") 초과");
       log.warn("작업 {} 최대 재시도 초과로 FAILED 확정", jobId);
@@ -94,32 +90,11 @@ public class PublishingWorker {
         job.markFailed("템플릿 프로비저닝 실패 (최대 재시도 초과): " + e.getMessage());
         log.error("템플릿 프로비저닝 실패, FAILED 확정: jobId={}", jobId, e);
       } else {
-        job.updateProgress(0, "재시도 대기 중");
+        job.requeueAfterProvisionFailure("템플릿 프로비저닝 실패: " + e.getMessage());
         log.warn("템플릿 프로비저닝 실패, 재시도 예정 ({}/{}): jobId={}",
             job.getAttemptCount(), props.getMaxAttempts(), jobId);
       }
     }
   }
 
-  /**
-   * 예상치 못한 오류로 claimAndProvision이 예외를 던진 경우 호출된다.
-   * 재시도 횟수 내면 QUEUED를 유지해 다음 poll에서 재시도하고,
-   * 횟수 초과 시에만 FAILED로 확정한다 (무한 반복 방지).
-   */
-  @Transactional
-  public void markJobFailed(Long jobId, String error) {
-    jobRepository.findById(jobId).ifPresent(job -> {
-      if (job.getStatus() != Status.QUEUED && job.getStatus() != Status.RUNNING) {
-        return;
-      }
-      job.incrementAttempt();
-      if (job.getAttemptCount() >= props.getMaxAttempts()) {
-        job.markFailed(error + " (최대 재시도 초과)");
-        log.warn("Publishing 작업 FAILED 확정: jobId={}, 시도={}", jobId, job.getAttemptCount());
-      } else {
-        log.warn("Publishing 작업 실패, 재시도 예정 ({}/{}): jobId={}",
-            job.getAttemptCount(), props.getMaxAttempts(), jobId);
-      }
-    });
-  }
 }

@@ -110,10 +110,8 @@ public class HwpxWorker {
 
   @Transactional
   public Claimed claim(Long jobId) {
-    HwpxJob job = jobRepository.findById(jobId).orElse(null);
-    if (job == null || job.getStatus() != Status.QUEUED) {
-      return null;
-    }
+    if (jobRepository.claimQueued(jobId) != 1) return null;
+    HwpxJob job = jobRepository.findById(jobId).orElseThrow();
     Path workDir = Path.of(props.getStorageRoot(), "jobs", String.valueOf(jobId));
     try {
       Files.createDirectories(workDir);
