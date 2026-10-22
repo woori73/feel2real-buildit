@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'status=상태/메모리 보고, bench=재색인 처리시간·서버 부하 실측(읽기 전용·합성 문서·DB/앱 무관), verify=증설 후 점검(상태검사·내부 엔드포인트·RDS·부팅/502 단서), resize-check=EC2 증설 사전 점검(읽기 전용: 권한 dry-run·EIP·볼륨·부팅 자동기동), install=서버 설치·보정, prepare-enable=환경설정만 반영(앱 재시작 없음, 다음 배포 때 적용), embed-stop=비상 차단(임베딩만 중지, 재시작 없음), enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
+        description: 'status=상태/메모리 보고, search-eval=검색 품질·유사도 하한 평가(읽기 전용: DB SELECT+질문 임베딩만), bench=재색인 처리시간·서버 부하 실측(읽기 전용·합성 문서·DB/앱 무관), verify=증설 후 점검(상태검사·내부 엔드포인트·RDS·부팅/502 단서), resize-check=EC2 증설 사전 점검(읽기 전용: 권한 dry-run·EIP·볼륨·부팅 자동기동), install=서버 설치·보정, prepare-enable=환경설정만 반영(앱 재시작 없음, 다음 배포 때 적용), embed-stop=비상 차단(임베딩만 중지, 재시작 없음), enable=앱 벡터검색 켜기(앱 재시작), disable=끄기(앱 재시작)'
         required: true
         default: status
         type: choice
-        options: [status, bench, verify, resize-check, install, prepare-enable, embed-stop, enable, disable]
+        options: [status, search-eval, bench, verify, resize-check, install, prepare-enable, embed-stop, enable, disable]
       min_similarity:
         description: 'enable 시 유사도 하한. 비우면 설치 때 보정한 제안값(없으면 기본 0.5)'
         required: false
@@ -82,7 +82,7 @@ jobs:
           IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration \
             Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
           [ -n "$IID" ] && [ "$IID" != "None" ] || { echo "신규 f2r-app 인스턴스 없음" >&2; exit 1; }
-          for f in server.py embed_core.py calibrate.py guard.sh ops.sh; do
+          for f in server.py embed_core.py calibrate.py search_eval.py eval_questions.json guard.sh ops.sh; do
             aws s3 cp "ops/admissions-embedding/$f" "s3://$B/admissions-embedding/$f" --sse AES256 >/dev/null
           done
           CMDS='["set -e","rm -rf /tmp/f2r-embed-src && mkdir -p /tmp/f2r-embed-src","aws s3 cp s3://'"$B"'/admissions-embedding/ /tmp/f2r-embed-src/ --recursive --only-show-errors","ACTION='"$ACTION"' MIN_SIMILARITY='"$MIN_SIMILARITY"' bash /tmp/f2r-embed-src/ops.sh"]'

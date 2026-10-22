@@ -1,0 +1,290 @@
+{
+ "_comment": "검색 품질 평가 질문 세트. category: relevant(근거가 있어야 함, expected_title_contains로 정답 근거 지정) / irrelevant(입시와 무관) / no_evidence(입시 분야지만 DB에 근거 없음 — 벡터 유사도만으로는 거를 수 없고 앱의 구조 필터·거절 규칙이 막아야 함). 실제 상담 질문과 정답 근거를 추가해 회귀를 본다.",
+ "floor": 0.316,
+ "cases": [
+  {
+   "question": "연세대학교 2027학년도 학생부교과 추천형 지원자격 알려주세요",
+   "category": "relevant",
+   "university": "연세대",
+   "kind": "type",
+   "expected_title_contains": [
+    "연세대학교",
+    "추천형"
+   ],
+   "note": ""
+  },
+  {
+   "question": "서울대 2027 수시 지역균형선발 수능최저학력기준이 어떻게 되나요",
+   "category": "relevant",
+   "university": "서울대",
+   "kind": "type",
+   "expected_title_contains": [
+    "서울대학교",
+    "지역균형"
+   ],
+   "note": ""
+  },
+  {
+   "question": "고려대 학생부종합 학업우수형 전형방법이 궁금해요",
+   "category": "relevant",
+   "university": "고려대",
+   "kind": "type",
+   "expected_title_contains": [
+    "고려대"
+   ],
+   "note": ""
+  },
+  {
+   "question": "성균관대 2027학년도 수시 원서접수 일정 언제예요",
+   "category": "relevant",
+   "university": "성균관대",
+   "kind": "schedule",
+   "expected_title_contains": [
+    "성균관대학교",
+    "원서접수"
+   ],
+   "note": ""
+  },
+  {
+   "question": "한양대 정시 원서접수 기간 알려줘",
+   "category": "relevant",
+   "university": "한양대",
+   "kind": "schedule",
+   "expected_title_contains": [
+    "한양대학교",
+    "원서접수"
+   ],
+   "note": ""
+  },
+  {
+   "question": "서강대 논술전형 제출서류가 뭐예요",
+   "category": "relevant",
+   "university": "서강대",
+   "kind": "type",
+   "expected_title_contains": [
+    "서강대학교",
+    "논술"
+   ],
+   "note": ""
+  },
+  {
+   "question": "이화여대 정시 모집 일정",
+   "category": "relevant",
+   "university": "이화여자대",
+   "kind": "schedule",
+   "expected_title_contains": [
+    "이화여자대"
+   ],
+   "note": ""
+  },
+  {
+   "question": "경희대 수시 합격자 발표일",
+   "category": "relevant",
+   "university": "경희대",
+   "kind": "schedule",
+   "expected_title_contains": [
+    "경희대학교",
+    "합격자 발표"
+   ],
+   "note": ""
+  },
+  {
+   "question": "한국외대 정시 전형방법",
+   "category": "relevant",
+   "university": "한국외국어대",
+   "kind": "type",
+   "expected_title_contains": [
+    "한국외국어대"
+   ],
+   "note": ""
+  },
+  {
+   "question": "중앙대 정시 원서접수 일정",
+   "category": "relevant",
+   "university": "중앙대",
+   "kind": "schedule",
+   "expected_title_contains": [
+    "중앙대학교",
+    "원서접수"
+   ],
+   "note": ""
+  },
+  {
+   "question": "연대 교과전형 수능최저 있어?",
+   "category": "relevant",
+   "university": "연세대",
+   "kind": "type",
+   "expected_title_contains": [
+    "연세대학교",
+    "학생부교과"
+   ],
+   "note": "줄임말(연대)"
+  },
+  {
+   "question": "고대 2027 수시 지역균형 전형은?",
+   "category": "relevant",
+   "university": "고려대",
+   "kind": "type",
+   "expected_title_contains": [
+    "고려대학교"
+   ],
+   "note": "줄임말(고대) — 서울대 지역균형을 대신 쓰면 안 됨"
+  },
+  {
+   "question": "서울대 정시 일정이 어떻게 돼요",
+   "category": "relevant",
+   "university": "서울대",
+   "kind": "schedule",
+   "expected_title_contains": [
+    "서울대"
+   ],
+   "note": ""
+  },
+  {
+   "question": "성대 논술 전형 알려줘",
+   "category": "relevant",
+   "university": "성균관대",
+   "kind": null,
+   "expected_title_contains": [
+    "성균관대학교"
+   ],
+   "note": "줄임말(성대)"
+  },
+  {
+   "question": "오늘 점심 뭐 먹을까요",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "강아지 훈련 방법 알려줘",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "영어 단어 외우는 요령",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "주말 날씨가 어떨까요",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "파이썬 리스트 정렬하는 법",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "다이어트에 좋은 운동 추천",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "비트코인 가격 전망",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "서울에서 부산 가는 기차 시간",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "연대 책임이 뭐예요",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "고대 그리스 문명 알려줘",
+   "category": "irrelevant",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "카이스트 수시 모집요강 알려주세요",
+   "category": "no_evidence",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": "미등록 대학 — 앱은 '등록된 자료 없음'으로 거절해야 함(벡터 유사도는 높게 나올 수 있음)"
+  },
+  {
+   "question": "2025학년도 서울대 수시 지역균형 수능최저",
+   "category": "no_evidence",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": "과거 학년도 — 앱은 미지원 학년도로 거절해야 함"
+  },
+  {
+   "question": "의대 면접 질문 기출 알려줘",
+   "category": "no_evidence",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "고려대 편입학 모집 일정",
+   "category": "no_evidence",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "대학원 입학 전형 안내",
+   "category": "no_evidence",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "미국 대학 SAT 점수 기준",
+   "category": "no_evidence",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": ""
+  },
+  {
+   "question": "중앙대 수시 일정과 모집요강",
+   "category": "no_evidence",
+   "university": null,
+   "kind": null,
+   "expected_title_contains": [],
+   "note": "수시 일정·공식 모집요강 자료 없음(사설 미러본만) — 정시 일정을 수시로 답하면 안 됨"
+  }
+ ]
+}
