@@ -65,4 +65,20 @@ class UnifiedAssistantServiceTest {
     when(academy.execute(p,d)).thenThrow(new AcademyAssistantAdapter.WriteRejected(org.springframework.http.HttpStatus.CONFLICT));
     assertThat(service.decide(p,d.getId(),d.getPlanHash(),false).getStatus()).isEqualTo("FAILED");verify(academy,times(1)).execute(p,d);
   }
+  @Test void givenAttendanceEvents_whenQueried_thenOnlyMinimumFieldsAndLimit() {
+    when(academy.context(p,7L)).thenReturn(AssistantJson.read("{\"academyId\":7}"));
+    when(academy.base(7L)).thenReturn("/api/rea/7");
+    var events=new StringBuilder("[");for(int i=1;i<=25;i++)events.append(i>1?",":"").append("{\"id\":"+i+",\"eventType\":\"ABSENT\",\"occurredAt\":\"2026-10-22T10:00\",\"note\":\"비공개 메모\",\"parentPhone\":\"010\"}");
+    when(academy.request(p,"GET","/api/rea/7/attendance/student/5",null)).thenReturn(AssistantJson.read(events+"]"));
+    var result=service.attendanceQuery(p,7L,5L);
+    assertThat((java.util.List<?>)result.get("events")).hasSize(20);
+    assertThat(result.toString()).doesNotContain("비공개 메모").doesNotContain("parentPhone");
+  }
+  @Test void givenRevokedRole_whenQueryingAttendance_thenNoAcademyCall() {
+    when(users.findById(1L)).thenReturn(Optional.of(User.builder().role(Role.STUDENT).build()));
+    assertThatThrownBy(()->service.attendanceQuery(p,7L,5L)).isInstanceOf(ResponseStatusException.class);verifyNoInteractions(academy);
+  }
+  @Test void givenHistoryRequest_whenListing_thenRecoversStaleExecutingFirst() {
+    service.history(p);verify(transactions).recoverStale(1L);
+  }
 }

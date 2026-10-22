@@ -9,8 +9,12 @@ public class AssistantAudit {
   @Column(nullable=false) private Long ownerId;
   @Column(length=36) private String draftId;
   @Column(nullable=false,length=40) private String event;
+  @Column(length=40) private String operation;
+  private Long academyId;
+  private Long businessId;
   @Column(nullable=false) private LocalDateTime createdAt;
-  public AssistantAudit(Long ownerId,String draftId,String event) {
-    this.ownerId=ownerId; this.draftId=draftId; this.event=event; this.createdAt=LocalDateTime.now();
+  public AssistantAudit(Long ownerId,AssistantDraft draft,String event) {
+    this.ownerId=ownerId; this.draftId=draft.getId(); this.operation=draft.getOperation();
+    this.academyId=draft.getAcademyId(); this.businessId=draft.getBusinessId(); this.event=event; this.createdAt=LocalDateTime.now();
   }
 }

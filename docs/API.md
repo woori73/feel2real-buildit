@@ -4897,3 +4897,12 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 통합 대화의 `buildit.unified-assistant.model-analysis-enabled` 기본값은 false이며 local에서만 true다. 기존 Muse Spark 전송 계층만 재사용한다. 모델 출력은 업무·필드 allowlist/타입/명시 ID 검증 후에도 승인 권한이 없으며, 실행은 기존 초안 승인 경로만 사용한다. 모델 미연결·잘못된 응답은 규칙 분석으로 처리했음을 알린다. 대화 입력 문장은 현재 브라우저에서만 표시하며 새로고침 시 현재 권한 범위의 서버 초안·결과 최신 30개를 복원한다.
 
 `GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.
+
+**검수 반영(2026-10-22, Claude).**
+- `POST /conversation`·`/materials` 응답에 `data`(nullable)가 추가됐다. 읽기 전용 업무의 결과만 담는다: 공지 초안 `{notice}`(저장·발송 없음), 출결 조회 `{studentId,events:[{id,eventType,occurredAt}],limit:20}`. 초안·승인 없이 응답하며 메모·연락처 등 다른 필드는 반환하지 않는다.
+- 조회 의도(조회·확인·보여·알려·현황·요약·내역)와 쓰기 동사(등록·기록·추가·만들·생성·수정·배정·처리·남겨)가 함께 없을 때만 읽기 전용으로 분기한다. "출결 조회"는 더 이상 출결 기록 초안이 되지 않는다.
+- 출결 **정정**은 비서가 처리하지 않는다. AcademyCraft 정정 API의 경로·본문 규격이 이 저장소에 근거(코드·계약서)로 없어 추측 호출하지 않으며, 새 출결 이벤트로 대체하는 오분류를 막고 기존 출결 화면으로 안내한다(조사 근거는 docs/unified-ai-assistant/README.md §8).
+- Muse 호출 상한(설정, 인스턴스 단위): `buildit.unified-assistant.model-calls-per-minute`(기본 6)·`model-calls-per-day`(60)·`model-calls-per-upload`(3). 초과·자료당 횟수 소진·연락처(전화·이메일) 포함 텍스트·읽기 전용/정정 의도는 모델을 호출하지 않고 규칙 분석으로 폴백하며 `analysis`에 이유를 표시한다.
+- `GET /audit`의 각 행에 `operation`, `academyId`, `businessId`가 추가됐다.
+- 쓰기 Origin 허용 목록은 `buildit.unified-assistant.allowed-origins`(쉼표 구분, 기본 `http://localhost:8080,https://feel2real.co.kr`)다.
+- `GET /drafts`는 만료 후 5분이 지나도 `EXECUTING`인 본인 초안을 `UNKNOWN`(감사 `RECOVERED_UNKNOWN`)으로 전환한다. 자동 재실행은 하지 않는다.

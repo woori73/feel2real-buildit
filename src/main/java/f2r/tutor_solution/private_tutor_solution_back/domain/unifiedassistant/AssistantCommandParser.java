@@ -8,10 +8,28 @@ import org.springframework.stereotype.Component;
 @Component
 public class AssistantCommandParser {
   public record Suggestion(String operation,Map<String,Object> input,String message) {}
+  /** 정정 API의 요청 규격이 이 저장소에 없어 추측 호출하지 않는다. 새 출결 이벤트를 만드는 오분류도 막는다. */
+  static final String CORRECTION_BLOCKED="출결 정정은 사유 입력이 필요한 기존 출결 화면(출결 메뉴)에서 처리하세요. 비서는 새 출결 기록을 만들어 정정을 대신하지 않습니다.";
+  static final Set<String> READ_ONLY=Set.of("OVERVIEW","ATTENDANCE_QUERY","NOTICE_DRAFT");
+  private static final List<String> QUERY_WORDS=List.of("조회","확인","보여","알려","현황","요약","내역");
+  private static final List<String> WRITE_WORDS=List.of("등록","기록해","기록하","기록으로","추가","만들","생성","수정","배정","처리","남겨");
   public Suggestion parse(String text) {
     if(text==null || text.isBlank() || text.length()>2000) throw new IllegalArgumentException("업무 지시는 1~2000자로 입력하세요.");
     var data=new LinkedHashMap<String,Object>(); String op;
     if(text.contains("삭제")||text.contains("승인")||text.contains("실행해")) return new Suggestion("",data,"실행은 저장된 초안의 승인 버튼에서 진행하세요. 삭제는 기존 업무 화면에서 처리합니다.");
+    boolean attendance=text.contains("출결")||text.contains("출석")||text.contains("등원")||text.contains("하원")||text.contains("결석")||text.contains("지각");
+    if(attendance&&text.contains("정정")) return new Suggestion("",data,CORRECTION_BLOCKED);
+    if(text.contains("공지")) {
+      for(var entry:Map.of("제목","title","내용","content").entrySet()) {
+        Matcher m=Pattern.compile("(?:^|[,;\\s])"+entry.getKey()+"[:=]\\s*(\"[^\"]*\"|[^,;\\n]+)").matcher(text);
+        if(m.find())data.put(entry.getValue(),m.group(1).replaceAll("^\"|\"$","").strip());
+      }
+      return new Suggestion("NOTICE_DRAFT",data,"공지 문안 초안만 제안합니다. 저장하거나 발송하지 않습니다.");
+    }
+    if(attendance&&QUERY_WORDS.stream().anyMatch(text::contains)&&WRITE_WORDS.stream().noneMatch(text::contains)) {
+      putId(data,text,"studentId","학생");
+      return new Suggestion("ATTENDANCE_QUERY",data,"출결 내역을 조회만 합니다. 기록을 만들지 않습니다.");
+    }
     if((text.contains("현황")||text.contains("요약")||text.contains("보여")) && !text.contains("등록") && !text.contains("기록")) return new Suggestion("OVERVIEW",data,"허용된 학원과 선택한 사업체의 현황을 새로 조회합니다.");
     if(text.contains("상담")) {op=text.contains("메시지")?"CONSULT_MESSAGE":"CONSULT_CREATE"; putId(data,text,"studentId","학생");putId(data,text,"consultId","상담");}
     else if(text.contains("배정")) {op="CLASS_ASSIGN"; putId(data,text,"studentId","학생");putId(data,text,"classId","반");}
@@ -40,6 +58,7 @@ public class AssistantCommandParser {
   }
   private boolean allowed(String op,String key) {
     return switch(op) {
+      case "NOTICE_DRAFT" -> Set.of("title","content").contains(key);
       case "CONSULT_MESSAGE" -> Set.of("consultId","content").contains(key);
       case "CONSULT_CREATE" -> Set.of("studentId","title","content").contains(key);
       case "CLASS_CREATE" -> Set.of("name","teacherId").contains(key);
