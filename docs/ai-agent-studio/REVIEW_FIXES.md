@@ -17,7 +17,7 @@
 | EP01 일괄 등록 | [사용법](BULK_AND_RESTORE.md). JSON 또는 root manifest.json ZIP, 1~68 중복 없는 정확히 68컷. 첨부 asset 형식/내용 사전 검사, ZIP 100항목·디렉터리 payload 포함 해제 20MiB·경로 이동 거부. 68개 revision은 DB 한 트랜잭션, 원본과 승인 이력 보존 |
 | 200건 누락 | 이력 offset/limit 페이지, 비교 화면 전체 페이지 조회. 컷은 `/api/studio/cuts`로 전체 현재 head 별도 조회. 205개 추가 이력이 있어도 68개 컷 유지 시험 |
 | 모바일 | 실제 Chromium 390×844에서 승인 저장 재조회와 미승인 복원, 가로 넘침·axe 검사. PC 1440×1000도 검증 |
-| 프록시별 호출 제한 | 기존 신뢰 프록시 resolver 재사용. 유효 bearer는 IP 대신 userId로 transport 제한, 실제 도구 호출도 사용자 60/분. 같은 프록시의 A 제한 초과 시 B 허용, 위조 XFF 무시 시험 |
+| 프록시별 호출 제한 | 기존 신뢰 프록시 resolver 재사용. 유효 bearer는 IP 대신 userId로 transport 제한, 실제 도구 호출도 사용자 60/분. 공개 DCR은 임의 Authorization 헤더를 바꿔도 IP당 5/분이며 6번째 실제 HTTP 요청 429를 검증. 같은 프록시의 A 제한 초과 시 B 허용, 위조 XFF 무시 시험 |
 | 동시 호출 | JSON-RPC 전체 JVM당 기본 8개, 내부 upstream 읽기 2개. 429 Retry-After 및 finally permit 반환. 여러 replica 전체 합산 동시성 제한은 아님 |
 | ADMIN 민감정보 | 외부 AI로 민감정보를 보낸다는 별도 경고와 서버 강제 체크. 미확인 동의 거부·SENSITIVE_ACK 감사 시험 |
 | 입시·GET 감사 | 관리자 입시 지식/자료/통계·화면 제외, 본인 history만. [627개 GET 전수 정적 감사](GET_SAFETY_AUDIT.md), 확인된 저장/외부 HTTP GET 8개 제외 |
@@ -28,7 +28,7 @@
 
 ## 실행 증거
 
-- 통합 Java **224건, 실패/오류/skip 0**. 스튜디오·MCP·JWT·Wiki 경계·통합 비서·회계/수집 회귀. 최종 ZIP asset bytes/SHA·디렉터리 항목 압축 데이터 20MiB 한도·UUID label 보강 후 영향 범위 **24건 재통과**. [Java 결과](review-java-results.json)
+- 통합 Java **224건, 실패/오류/skip 0**. 스튜디오·MCP·JWT·Wiki 경계·통합 비서·회계/수집 회귀. 최종 ZIP asset bytes/SHA·디렉터리 항목 압축 데이터 20MiB 한도·UUID label 보강 후 영향 범위 **25건 재통과**. [Java 결과](review-java-results.json)
 - 스튜디오 Chromium **22개 검사**, PC 6개 탭과 모바일 axe 위반 0. 7종 업로드·SHA/download 동일·HTML 스크립트 차단·승인·비교·모바일 복원·미허가자 403. [결과](browser-results.json), [PC](screens/studio-pc-1440.png), [모바일 승인](screens/approve-mobile-390.png), [모바일 복원](screens/restore-mobile-390.png)
 - 공식 MCP SDK 2.1.1의 독립 OAuth A/B, PKCE·도구 19개·동일 원문 SHA·쓰기 거부 성공. [결과](protocol-results.json). 합성 ChatGPT callback은 로컬 실행 옵션에만 등록하며 실제 callback 발급 증거가 아님.
 - 실제 localhost BuildIt/AcademyCraft와 격리 MySQL의 경계 검사 **6건**: 다른 학원/사업체 거부, 8필드 재무 요약, 금융 원문/수집 preview·승인 POST 거부, #853 승인 없는 확정 시 장부 불변. [결과](integration-results.json)

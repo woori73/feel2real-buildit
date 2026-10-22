@@ -193,8 +193,8 @@
     "skipped": 0
   },
   "finalAffected": {
-    "run": "Final rerun after directory-entry ZIP expanded-byte limit regression, in addition to linked asset bytes and UUID label checks",
-    "tests": 24,
+    "run": "Final native rerun: ZIP directory expanded-byte limit and public DCR IP quota despite rotating Authorization headers; bootJar also succeeded",
+    "tests": 25,
     "failures": 0,
     "errors": 0,
     "skipped": 0

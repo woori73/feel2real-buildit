@@ -82,7 +82,9 @@ public class McpTransportSecurity {
                   rate.check(
                       req.getRequestURI()
                           + ":"
-                          + (auth == null ? clientAddress : McpOAuth.hash(auth)),
+                          + (auth == null || req.getRequestURI().endsWith("register")
+                              ? clientAddress
+                              : McpOAuth.hash(auth)),
                       req.getRequestURI().endsWith("register") ? 5 : 120);
                   // Limit chunked bodies too, before JSON/form deserialization.
                   var wrapped =
