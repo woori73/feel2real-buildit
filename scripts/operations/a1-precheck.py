@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Only allowlisted numbers/enums reach stdout. Never print raw command errors."""
+import hashlib
 import json
 import math
 import os
@@ -10,6 +11,7 @@ import signal
 import subprocess
 import tempfile
 import urllib.request
+import zipfile
 
 
 def run(args, **kwargs):
@@ -117,6 +119,42 @@ def database(path="/etc/f2r/env", runner=run):
         return {"status": "unavailable"}
 
 
+def endpoint_digest(path="/etc/f2r/env"):
+    """SHA-256 of the configured DB host only; the host name itself never leaves this process."""
+    try:
+        value = credentials(path)["DB_HOST"].strip().lower().rstrip(".")
+        return hashlib.sha256(value.encode()).hexdigest() if value else None
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+MIGRATION = re.compile(r"BOOT-INF/classes/db/migration/V([0-9]+)__[^/]+\.sql")
+MARKERS = {
+    "studioImporter": "/domain/studio/StudioProductionImporter.class",
+    "studioMcpController": "/domain/mcp/McpController.class",
+}
+
+
+def jar_info(path):
+    """Identify the deployed build without reading configuration: size, mtime, SHA-256, newest bundled migration."""
+    jar = Path(path)
+    try:
+        if not jar.is_file():
+            return {"present": False}
+        digest = hashlib.sha256()
+        with jar.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1 << 20), b""):
+                digest.update(chunk)
+        with zipfile.ZipFile(jar) as archive:
+            names = archive.namelist()
+        versions = [int(m.group(1)) for m in (MIGRATION.fullmatch(n) for n in names) if m]
+        return {"present": True, "sizeBytes": jar.stat().st_size, "mtimeEpoch": int(jar.stat().st_mtime), "sha256": digest.hexdigest(),
+                "maxMigration": max(versions) if versions else None,
+                "markers": {k: any(n.endswith(v) for n in names) for k, v in MARKERS.items()}}
+    except (OSError, zipfile.BadZipFile, ValueError):
+        return {"present": None}
+
+
 def metrics():
     result = {}
     for name in ("jvm.memory.used", "jvm.memory.max", "hikaricp.connections.max", "hikaricp.connections.active", "hikaricp.connections.pending", "process.uptime"):
@@ -167,7 +205,8 @@ def collect():
             if port in bindings:
                 bindings[port].append("loopback" if host.strip("[]") in ("127.0.0.1", "::1") else "non-loopback")
     oom = run(["journalctl", "-k", "--since", "7 days ago", "--no-pager"]) or ""
-    return {"schema": 1, "memory": mem, "services": services, "jvm": jvm, "processes": processes, "metrics": metrics(), "bindings": bindings, "oomEvents7d": len(re.findall(r"oom-kill|killed process", oom, re.I)), "database": database()}
+    return {"schema": 1, "memory": mem, "services": services, "jvm": jvm, "processes": processes, "metrics": metrics(), "bindings": bindings, "oomEvents7d": len(re.findall(r"oom-kill|killed process", oom, re.I)), "database": database(),
+            "dbEndpointSha256": endpoint_digest(), "jar": {"current": jar_info("/home/ec2-user/app.jar"), "previous": jar_info("/home/ec2-user/app.jar.previous")}}
 
 
 def interrupted(_sig, _frame):

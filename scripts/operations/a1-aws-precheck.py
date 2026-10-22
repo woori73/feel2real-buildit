@@ -2,6 +2,7 @@
 """A1 read-only AWS adapter. Raw AWS/SSM responses are never logged."""
 import base64
 import datetime as dt
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -51,6 +52,37 @@ def port_scope(rules, alb_groups):
     return result
 
 
+HEX64 = re.compile(r"[0-9a-f]{64}")
+# RDS identifiers of this project are already public in docs; other names never reach logs.
+DB_IDENTIFIER = re.compile(r"f2r-db(?:-[0-9]{12})?")
+
+
+def hex64(value):
+    return value if isinstance(value, str) and HEX64.fullmatch(value) else None
+
+
+def identifier(value):
+    return value if isinstance(value, str) and DB_IDENTIFIER.fullmatch(value) else None
+
+
+def endpoint_digest(address):
+    return hashlib.sha256(address.strip().lower().rstrip(".").encode()).hexdigest() if isinstance(address, str) and address else None
+
+
+def timestamp(value):
+    text = value.isoformat() if isinstance(value, dt.datetime) else value
+    return text if isinstance(text, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+(?:Z|[+-][0-9]{2}:[0-9]{2})", text) else None
+
+
+def safe_jar(value):
+    if not isinstance(value, dict) or value.get("present") is not True:
+        return {"present": value.get("present") if isinstance(value, dict) and value.get("present") in (False, None) else None}
+    markers = value.get("markers") if isinstance(value.get("markers"), dict) else {}
+    return {"present": True, "sizeBytes": host.number(value.get("sizeBytes")), "mtimeEpoch": host.number(value.get("mtimeEpoch")),
+            "sha256": hex64(value.get("sha256")), "maxMigration": host.number(value.get("maxMigration")),
+            "markers": {k: markers.get(k) is True for k in ("studioImporter", "studioMcpController")}}
+
+
 def attributes(items, keys):
     return {k: host.number(next((item.get("Value") for item in items if item.get("Key") == k), None)) for k in keys}
 
@@ -70,6 +102,9 @@ def safe_host(raw):
     output["bindings"] = {str(p): [host.enum(v, ("loopback", "non-loopback")) for v in data.get("bindings", {}).get(str(p), [])[:16]] for p in (8000, 8080, 8081, 8082, 8083, 3306)}
     output["metrics"] = {k: [host.number(v) for v in (data.get("metrics", {}).get(k) or [])[:8]] for k in ("jvm.memory.used", "jvm.memory.max", "hikaricp.connections.max", "hikaricp.connections.active", "hikaricp.connections.pending", "process.uptime")}
     output["oomEvents7d"] = host.number(data.get("oomEvents7d"))
+    output["dbEndpointSha256"] = hex64(data.get("dbEndpointSha256"))
+    jars = data.get("jar") if isinstance(data.get("jar"), dict) else {}
+    output["jar"] = {k: safe_jar(jars.get(k)) for k in ("current", "previous")}
     return output
 
 
@@ -109,11 +144,17 @@ def collect():
     end = dt.datetime.now(dt.timezone.utc)
     start = end - dt.timedelta(days=14)
     output["rds"] = []
+    digests = []  # kept in memory only, never printed
     dbs = sorted(aws("rds", "describe-db-instances")["DBInstances"], key=lambda d: d["DBInstanceIdentifier"])
     for index, db in enumerate(dbs, 1):
         entry = {"alias": "db" + str(index), "class": kind(db.get("DBInstanceClass")), "engine": host.enum(db.get("Engine"), ("mysql", "mariadb", "postgres", "aurora-mysql", "aurora-postgresql")), "version": host.version(db.get("EngineVersion")), "status": host.enum(db.get("DBInstanceStatus"), ("available", "stopped", "starting", "stopping", "backing-up", "modifying"))}
         entry.update({k: host.number(db.get(k)) for k in ("AllocatedStorage", "Iops", "BackupRetentionPeriod")})
-        entry.update({k: db.get(k) is True for k in ("MultiAZ", "PubliclyAccessible", "DeletionProtection")})
+        entry.update({k: db.get(k) is True for k in ("MultiAZ", "PubliclyAccessible", "DeletionProtection", "StorageEncrypted")})
+        entry["identifier"] = identifier(db.get("DBInstanceIdentifier"))
+        entry["latestRestorableTime"] = timestamp(db.get("LatestRestorableTime"))
+        entry["backupWindow"] = db.get("PreferredBackupWindow") if re.fullmatch(r"[0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}", str(db.get("PreferredBackupWindow"))) else None
+        entry["storageType"] = host.enum(db.get("StorageType"), ("gp2", "gp3", "io1", "io2", "standard"))
+        digests.append(endpoint_digest((db.get("Endpoint") or {}).get("Address")))
         entry["metrics14d"] = {}
         for metric, stat in (("DatabaseConnections", "Maximum"), ("DatabaseConnections", "Average"), ("CPUUtilization", "Average"), ("ReadIOPS", "Average"), ("WriteIOPS", "Average"), ("FreeableMemory", "Minimum")):
             try:
@@ -145,6 +186,11 @@ def collect():
         output["host"] = safe_host(invocation.get("StandardOutputContent", ""))
     except (ValueError, TypeError, AttributeError):
         output["host"] = {"status": "unavailable"}
+    app_digest = output["host"].get("dbEndpointSha256")
+    for entry, digest in zip(output["rds"], digests):
+        entry["appDatabase"] = app_digest is not None and digest == app_digest
+    matched = [e for e in output["rds"] if e["appDatabase"]]
+    output["appDatabase"] = (matched[0]["identifier"] or matched[0]["alias"]) if len(matched) == 1 else ("ambiguous" if matched else "no-match")
     available = output["host"].get("memory", {}).get("MemAvailableMB")
     connected = output["host"].get("database", {}).get("Threads_connected")
     pools = output["host"].get("metrics", {}).get("hikaricp.connections.max", [])

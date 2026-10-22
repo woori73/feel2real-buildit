@@ -173,6 +173,63 @@ m.database(sys.argv[2],runner)
         self.assertEqual(300, result["alb"]["idle_timeout.timeout_seconds"])
         self.assertEqual("db1", result["rds"][0]["alias"])
 
+    def test_endpoint_match_identifies_app_database_without_printing_endpoint(self):
+        # given: 앱 설정 DB_HOST와 같은 엔드포인트를 가진 RDS 1개, 다른 RDS 1개
+        digest = host.endpoint_digest(self.env)
+        dbs = [{"DBInstanceIdentifier": "f2r-db", "DBInstanceClass": "db.t3.micro", "Engine": "mysql", "EngineVersion": "8.4.8", "DBInstanceStatus": "available", "Endpoint": {"Address": "other.endpoint"}, "BackupRetentionPeriod": 7},
+               {"DBInstanceIdentifier": "f2r-db-202610181331", "DBInstanceClass": "db.t3.micro", "Engine": "mysql", "EngineVersion": "8.4.8", "DBInstanceStatus": "available", "Endpoint": {"Address": "Private.Endpoint."}, "BackupRetentionPeriod": 2, "LatestRestorableTime": "2026-10-22T23:31:55+00:00", "PreferredBackupWindow": "18:44-19:14"}]
+        host_out = {"memory": {"MemAvailableMB": 3000}, "database": {"max_connections": 60, "Threads_connected": 18, "Threads_running": 1, "Max_used_connections": 20, "Uptime": 10, "app_connections": 10, "failed_migrations": 0, "flyway_version": "1093"},
+                    "metrics": {"hikaricp.connections.max": [10]}, "bindings": {"8083": []}, "dbEndpointSha256": digest,
+                    "jar": {"current": {"present": True, "sizeBytes": 10, "mtimeEpoch": 1, "sha256": "a" * 64, "maxMigration": 1093, "markers": {"studioImporter": False, "studioMcpController": False}, "path": SECRET}}}
+        def fake(service, operation, **options):
+            return {"get-caller-identity": {"Account": "425805163960"},
+                    "describe-instances": {"Reservations": [{"Instances": [{"InstanceId": "i-1", "InstanceType": "t3.large", "SecurityGroups": [{"GroupId": "sg-private"}]}]}]},
+                    "describe-load-balancers": {"LoadBalancers": [{"LoadBalancerArn": SECRET, "SecurityGroups": ["sg-alb"]}]},
+                    "describe-security-groups": {"SecurityGroups": [{"IpPermissions": []}]},
+                    "describe-load-balancer-attributes": {"Attributes": []}, "describe-listeners": {"Listeners": []}, "describe-target-groups": {"TargetGroups": []},
+                    "describe-db-instances": {"DBInstances": dbs}, "get-metric-statistics": {"Datapoints": []}, "simulate-principal-policy": {"EvaluationResults": []},
+                    "send-command": {"Command": {"CommandId": "c"}}, "get-command-invocation": {"Status": "Success", "StandardOutputContent": json.dumps(host_out)}}[operation]
+        stdout = io.StringIO()
+        # when
+        with patch.object(cloud, "aws", side_effect=fake), patch.object(cloud.time, "sleep"), contextlib.redirect_stdout(stdout):
+            cloud.collect()
+        # then: 식별자로 일치 대상을 보고하고 엔드포인트·해시는 출력하지 않는다
+        output = stdout.getvalue()
+        self.assert_safe(output)
+        self.assertNotIn("other.endpoint", output)
+        result = json.loads(output)
+        self.assertEqual("f2r-db-202610181331", result["appDatabase"])
+        self.assertEqual([False, True], [e["appDatabase"] for e in result["rds"]])
+        self.assertEqual("1093", result["host"]["database"]["flyway_version"])
+        self.assertEqual(1093, result["host"]["jar"]["current"]["maxMigration"])
+        self.assertEqual("18:44-19:14", result["rds"][1]["backupWindow"])
+
+    def test_no_or_ambiguous_endpoint_match_is_reported(self):
+        # given: 해시가 없는 호스트 출력 / when: 투영 / then: 해시 None
+        self.assertIsNone(cloud.safe_host(json.dumps({"dbEndpointSha256": SECRET}))["dbEndpointSha256"])
+        # given 잘못된 식별자 / when / then 출력하지 않음
+        self.assertIsNone(cloud.identifier("prod-" + SECRET))
+        self.assertEqual("f2r-db-202610181240", cloud.identifier("f2r-db-202610181240"))
+
+    def test_jar_info_reports_build_markers_without_paths(self):
+        # given: 마이그레이션 V1093·V1095와 스튜디오 적재 클래스가 든 jar
+        import zipfile
+        jar = Path(self.temp.name) / "app.jar"
+        with zipfile.ZipFile(jar, "w") as archive:
+            archive.writestr("BOOT-INF/classes/db/migration/V1093__a.sql", "")
+            archive.writestr("BOOT-INF/classes/db/migration/V1095__studio_and_mcp.sql", "")
+            archive.writestr("BOOT-INF/classes/f2r/x/domain/studio/StudioProductionImporter.class", "")
+        # when
+        info = host.jar_info(jar)
+        projected = cloud.safe_jar({**info, "path": SECRET})
+        # then
+        self.assertEqual(1095, projected["maxMigration"])
+        self.assertTrue(projected["markers"]["studioImporter"])
+        self.assertFalse(projected["markers"]["studioMcpController"])
+        self.assertEqual(64, len(projected["sha256"]))
+        self.assertEqual({"present": False}, host.jar_info(Path(self.temp.name) / "missing.jar"))
+        self.assert_safe(json.dumps(projected))
+
 
 if __name__ == "__main__":
     unittest.main()
