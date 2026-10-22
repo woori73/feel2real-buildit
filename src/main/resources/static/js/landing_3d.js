@@ -361,7 +361,15 @@
     if ('ResizeObserver' in window) new ResizeObserver(resize).observe(canvas); else window.addEventListener('resize', resize);
 
     /* 지연 로딩·화면 밖 중지: 보일 때만 컨텍스트를 만들고 그린다 */
-    function sync() { if (inView && !doc.hidden) start(); else stop(); }
+    /* 첫 컨텍스트 생성·셰이더 컴파일은 첫 화면 렌더(LCP)와 겹치지 않도록 브라우저 유휴 시간으로 미룬다 */
+    var booted = false;
+    function startSoon() {
+      if (booted) { start(); return; }
+      booted = true;
+      var go = function () { if (inView && !doc.hidden) start(); };
+      if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 1500 }); else setTimeout(go, 600);
+    }
+    function sync() { if (inView && !doc.hidden) startSoon(); else stop(); }
     doc.addEventListener('visibilitychange', sync);
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (es) { inView = es[0].isIntersecting; sync(); }, { rootMargin: '80px' }).observe(box);
