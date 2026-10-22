@@ -49,13 +49,20 @@ HTTP redirect는 거부하며 production proxy/TLS 검증을 유지한다. 실�
 
 Deploy 역할의 RDS 조회/스냅샷 조회/quota/시뮬레이션은 AccessDenied. [기존 main 인프라 워크플로의 읽기 전용 academycraft-preflight39869694839](https://github.com/woori73/feel2real-buildit/actions/runs/39869694839)로 기존 infra-builder 권한에서 메타데이터 조회에 성공했다. RDS3개 모두MySQL8.4.8, 백업7/7/2일, 복구가능시각23:03:41/23:05:40/23:06:55UTC. 기존 available 스냅샷을 확인했으나 DB별 활성 접속 관계를 확인하기 전에는 특정 스냅샷을 운영 복구점으로 확정하지 않는다. 스냅샷은 새로 만들지 않았다.
 
+[보완 진단39870446034](https://github.com/woori73/feel2real-buildit/actions/runs/39870446034)에서 실제 앱의 DB를 TLS_AES_256_GCM_SHA384/READ ONLY로 조회했다. 최신 Flyway는 **V1093**, 최근12행 모두success=1. V1094/V1095는 아직 운영에 없다. 다음 배포는 이 두 마이그레이션 적용을 포함하므로 **별도 운영 DB 변경 승인**이 필요하다. Deploy 역할의 RDS Describe 거부 때문에 활성 DB의 계정/인스턴스 대조는 UNVERIFIED다. 워크플로 성공은 수집 성공이며 진단 coverage는 PARTIAL로 명시된다.
+
+IAM을 바꾸지 않는 후속 경로도 준비했다. 기존 `migration-infra-build.yml`의 보호된 infra-builder/main 경로에 고정 `step=production-readiness`를 추가했다. 같은 읽기 전용 컨트롤러만 실행하고 다른 build/provision/cutover/유료 작업은 선택하지 않는다. 이 변경이 main에 병합된 후 기존 OIDC/환경 보호를 그대로 거쳐 실행하면 RDS 접속 주소 digest 대조·정확한 활성 DB/스냅샷·권한 시뮬레이션을 조회할 수 있다. 병합 전 이 새 경로의 실제 성공은 미검증이며 보호 규칙을 우회하지 않는다.
+
 배포 역할용 최소 읽기 권한의 **미적용 제안**은 [proposed-diagnostic-read-policy.json](proposed-diagnostic-read-policy.json). IAM 변경 승인이 아니다. RDS 목록/백업 조회와 해당 기존 역할의 권한 시뮬레이션만 제안하며 생성/수정/삭제 권한은 추가하지 않는다.
 
 ## 격리 결과
 
-- 정책14 및 production dry-run536 SHA: PASS.
+- 정책15 및 production dry-run536 SHA: PASS.
 - 배포 JAR/env 복구 가드: PASS(격리 파일/fake systemd).
 - POI 파서6·정규화4·장부서비스10·기존자료 MySQL5=25건 PASS. runtimeClasspath poi/poi-ooxml/poi-ooxml-lite 모두5.5.1 확인.
 - 실제 로컬 HTTP/MySQL에서 production 분기(테스트만 origin을 loopback으로 고정)2회 완료. 각316개 저장 바이트 SHA 재조회·536경로·승인5종·기존정본 불변, createdRevisions0. 실제 운영 연결 아님.
-- 새 빈 스키마의 첫 적재/재시도 및 최종 CI/운영 Flyway: 확인 후 갱신.
+- 새 빈 격리 스키마 최초 적재678리비전/재시도0, 파일316/출처536/승인5종 검증 PASS. 기존 자료 fixture는 별도 보존.
+- 마지막 변경 후 최종 CI는 PR 본문의 현재 HEAD 결과로 확인한다. 기존 결과를 새 HEAD의 PASS로 대체하지 않는다.
 - 운영 배포/적재/IAM/스냅샷/MCP/유료 호출: 실행 안 함.
+
+근거: [실제 운영 읽기 전용 JSON](readiness-20261022/aws-live-readonly.json), [Java25건](readiness-20261022/java-results.json), [격리 HTTP 최초/재시도](readiness-20261022/local-import-results.json). 인증 쿠키·DB 비밀번호·운영 사용자 데이터는 포함하지 않는다.

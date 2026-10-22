@@ -3,7 +3,7 @@
 Default is a read-only dry run. Production writes require explicit scoped approval.
 No DB credentials, MCP, paid AI calls or arbitrary remote URLs are accepted.
 """
-import argparse, hashlib, json, os, pathlib, stat, subprocess, urllib.error, urllib.request, urllib.parse, uuid
+import argparse, contextlib, hashlib, json, os, pathlib, stat, subprocess, urllib.error, urllib.request, urllib.parse, uuid
 PIN='09d62dee982e2e89e3653c90b1ee42f05bff4f9d'
 REPO=pathlib.Path(__file__).resolve().parents[2]
 PRODUCTION_ORIGIN='https://feel2real.co.kr'
@@ -45,6 +45,15 @@ def pages(call,endpoint):
 def approved(rows):
     return {r['item_key']:(r['id'],r.get('file_id'),r.get('sha256')) for r in rows if r.get('approved_id')==r['id']}
 
+@contextlib.contextmanager
+def report_failure(receipt,save):
+    try:yield
+    except Exception as error:
+        receipt.update(failedStage=receipt.get('stage','preflight'),stage='failed',errorType=type(error).__name__,
+                       mode='failed-production' if 'production' in receipt['mode'] else 'failed-local')
+        save()
+        raise
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--source',type=pathlib.Path)
@@ -80,55 +89,56 @@ def main():
         args.receipt.parent.mkdir(parents=True,exist_ok=True)
         args.receipt.write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+'\n')
     save()
-    if args.apply:
-        require(args.auth_file is not None,'--auth-file required; never pass a token on the command line')
-        if args.production:
-            require(stat.S_IMODE(args.auth_file.stat().st_mode)&0o077==0 and args.auth_file.stat().st_uid==os.getuid(),'Auth file requires owner-only access')
-        cookie=json.loads(args.auth_file.read_text())['adminCookie']
-        require(bool(cookie) and '\r' not in cookie and '\n' not in cookie,'Invalid session cookie')
-        handlers=[NoRedirect()]
-        if not args.production:handlers.append(urllib.request.ProxyHandler({}))
-        opener=urllib.request.build_opener(*handlers) # Production keeps proxy/verified TLS.
-        def call(path,data=None,ctype='application/json'):
-            require(not path.startswith('/') and '..' not in path and '://' not in path,'Invalid API path')
-            headers={'Cookie':cookie,'Origin':origin}
-            if data is not None:headers['Content-Type']=ctype
-            path+=('&' if '?' in path else '?')+'projectId='+PROJECT
-            request=urllib.request.Request(origin+'/api/studio/'+path,data=data,headers=headers,method='POST' if data is not None else 'GET')
-            try:
-                with opener.open(request,timeout=180) as response:return response.read()
-            except urllib.error.HTTPError as e:raise ValueError('Studio API HTTP '+str(e.code)) from None
-        overview=json.loads(call('project'))
-        require(overview.get('projectId')==PROJECT and overview.get('canManage') is True and not overview.get('archived'),'Active ADMIN project required')
-        if not overview.get('initialized'):
-            require(args.initialize_project,'Project absent; explicit --initialize-project required')
-            call('project',b'{}')
-        before=pages(call,'revisions');canon_before=approved(before)
-        character_keys={'character-approved-'+sha[:12] for sha in catalog['approvedSha256']}
-        require(all(r.get('approved_id') for r in before if r['item_key'] in character_keys),'Existing character approval was withdrawn; automatic reapproval refused')
-        existing={r['sha256']:r for r in pages(call,'files')}
-        receipt.update(mode='applying-production' if args.production else 'applying-local',stage='uploads')
-        save()
-        mapping={}
-        for i,(sha,row) in enumerate(unique.items(),1):
-            boundary='f2r-'+uuid.uuid4().hex;name=pathlib.PurePosixPath(row['path']).name.replace('"','_').replace('\r','_').replace('\n','_')
-            body=(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{name}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode()+(source/row['path']).read_bytes()+f'\r\n--{boundary}--\r\n'.encode())
-            stored=existing.get(sha)
-            if stored is None:stored=json.loads(call('files',body,'multipart/form-data; boundary='+boundary))['file']
-            require(stored['sha256']==sha,'Stored metadata SHA mismatch');mapping[sha]=stored['id']
-            # Re-read persisted original bytes; a successful upload response alone is insufficient.
-            actual_bytes=call('files/'+stored['id']+'/content');require(len(actual_bytes)==row['size'] and hashlib.sha256(actual_bytes).hexdigest()==sha,row['path'])
-            receipt.update(storedOriginalsVerified=len(mapping),fileMapping=dict(mapping));save()
-            if i%50==0:print(f'verified stored originals {i}/{len(unique)}',flush=True)
-        receipt['stage']='registration';save()
-        result=json.loads(call('source-import',json.dumps({'commit':PIN,'files':mapping}).encode()))
-        receipt.update(registration=result,stage='verification');save()
-        status=json.loads(call('source-import'));canon_after=approved(pages(call,'revisions'))
-        require(status.get('commit')==PIN and status.get('registeredSourcePaths')==536,'Persisted source registration incomplete')
-        require(all(canon_after.get(k)==v for k,v in canon_before.items()),'Existing canonical approval changed; manual investigation required')
-        require({v[2] for k,v in canon_after.items() if k in character_keys}==set(catalog['approvedSha256']),'Five canonical SHA values not observed')
-        receipt.update(mode='applied-production' if args.production else 'applied-local',stage='complete',existingApprovalsPreserved=True,registrationVerified=status,
-            sources=[{**row,'fileId':mapping[row['sha256']]} for row in catalog['files']])
+    with report_failure(receipt,save):
+        if args.apply:
+            require(args.auth_file is not None,'--auth-file required; never pass a token on the command line')
+            if args.production:
+                require(stat.S_IMODE(args.auth_file.stat().st_mode)&0o077==0 and args.auth_file.stat().st_uid==os.getuid(),'Auth file requires owner-only access')
+            cookie=json.loads(args.auth_file.read_text())['adminCookie']
+            require(bool(cookie) and '\r' not in cookie and '\n' not in cookie,'Invalid session cookie')
+            handlers=[NoRedirect()]
+            if not args.production:handlers.append(urllib.request.ProxyHandler({}))
+            opener=urllib.request.build_opener(*handlers) # Production keeps proxy/verified TLS.
+            def call(path,data=None,ctype='application/json'):
+                require(not path.startswith('/') and '..' not in path and '://' not in path,'Invalid API path')
+                headers={'Cookie':cookie,'Origin':origin}
+                if data is not None:headers['Content-Type']=ctype
+                path+=('&' if '?' in path else '?')+'projectId='+PROJECT
+                request=urllib.request.Request(origin+'/api/studio/'+path,data=data,headers=headers,method='POST' if data is not None else 'GET')
+                try:
+                    with opener.open(request,timeout=180) as response:return response.read()
+                except urllib.error.HTTPError as e:raise ValueError('Studio API HTTP '+str(e.code)) from None
+            overview=json.loads(call('project'))
+            require(overview.get('projectId')==PROJECT and overview.get('canManage') is True and not overview.get('archived'),'Active ADMIN project required')
+            if not overview.get('initialized'):
+                require(args.initialize_project,'Project absent; explicit --initialize-project required')
+                call('project',b'{}')
+            before=pages(call,'revisions');canon_before=approved(before)
+            character_keys={'character-approved-'+sha[:12] for sha in catalog['approvedSha256']}
+            require(all(r.get('approved_id') for r in before if r['item_key'] in character_keys),'Existing character approval was withdrawn; automatic reapproval refused')
+            existing={r['sha256']:r for r in pages(call,'files')}
+            receipt.update(mode='applying-production' if args.production else 'applying-local',stage='uploads')
+            save()
+            mapping={}
+            for i,(sha,row) in enumerate(unique.items(),1):
+                boundary='f2r-'+uuid.uuid4().hex;name=pathlib.PurePosixPath(row['path']).name.replace('"','_').replace('\r','_').replace('\n','_')
+                body=(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="{name}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode()+(source/row['path']).read_bytes()+f'\r\n--{boundary}--\r\n'.encode())
+                stored=existing.get(sha)
+                if stored is None:stored=json.loads(call('files',body,'multipart/form-data; boundary='+boundary))['file']
+                require(stored['sha256']==sha,'Stored metadata SHA mismatch');mapping[sha]=stored['id']
+                # Re-read persisted original bytes; a successful upload response alone is insufficient.
+                actual_bytes=call('files/'+stored['id']+'/content');require(len(actual_bytes)==row['size'] and hashlib.sha256(actual_bytes).hexdigest()==sha,row['path'])
+                receipt.update(storedOriginalsVerified=len(mapping),fileMapping=dict(mapping));save()
+                if i%50==0:print(f'verified stored originals {i}/{len(unique)}',flush=True)
+            receipt['stage']='registration';save()
+            result=json.loads(call('source-import',json.dumps({'commit':PIN,'files':mapping}).encode()))
+            receipt.update(registration=result,stage='verification');save()
+            status=json.loads(call('source-import'));canon_after=approved(pages(call,'revisions'))
+            require(status.get('commit')==PIN and status.get('registeredSourcePaths')==536,'Persisted source registration incomplete')
+            require(all(canon_after.get(k)==v for k,v in canon_before.items()),'Existing canonical approval changed; manual investigation required')
+            require({v[2] for k,v in canon_after.items() if k in character_keys}==set(catalog['approvedSha256']),'Five canonical SHA values not observed')
+            receipt.update(mode='applied-production' if args.production else 'applied-local',stage='complete',existingApprovalsPreserved=True,registrationVerified=status,
+                sources=[{**row,'fileId':mapping[row['sha256']]} for row in catalog['files']])
     save()
     print(json.dumps({k:v for k,v in receipt.items() if k not in ('sources','fileMapping')},ensure_ascii=False))
 

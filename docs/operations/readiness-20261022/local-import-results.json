@@ -1,0 +1,17 @@
+{
+  "policyTests": 15,
+  "workflowSyntaxFiles": 4,
+  "originalSourcePaths": 536,
+  "uniqueFiles": 316,
+  "approvedOriginals": 5,
+  "freshImportCreatedRevisions": 678,
+  "retryCreatedRevisions": 0,
+  "persistedOriginalsVerifiedPerRun": 316,
+  "originalFixturePreserved": true,
+  "productionWrites": false,
+  "productionMcpActivated": false,
+  "localHttpAppMcpEnabled": false,
+  "externalAiCalls": 0,
+  "productionBranchTestOrigin": "http://127.0.0.1:18090",
+  "testOnlyOriginMonkeypatch": true
+}

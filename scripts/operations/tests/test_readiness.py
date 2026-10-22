@@ -189,6 +189,16 @@ class ImportPolicyTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             imp.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://evil.example')
 
+    def test_failed_registration_receipt_preserves_checkpoint_without_claiming_success(self):
+        receipt = {'mode': 'applying-production', 'stage': 'registration', 'fileMapping': {'sha': 'file-id'}}
+        saved = []
+        with self.assertRaises(ValueError):
+            with imp.report_failure(receipt, lambda: saved.append(dict(receipt))):
+                raise ValueError('synthetic failure')
+        self.assertEqual('failed-production', saved[0]['mode'])
+        self.assertEqual('registration', saved[0]['failedStage'])
+        self.assertEqual({'sha': 'file-id'}, saved[0]['fileMapping'])
+
 
 if __name__ == '__main__':
     unittest.main()

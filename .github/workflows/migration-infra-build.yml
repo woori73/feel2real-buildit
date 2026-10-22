@@ -24,6 +24,7 @@ on:
           - app-diag
           - alb-diag
           - academycraft-preflight
+          - production-readiness
           - admissions-diag
           - acm-dns
           - p2-inventory
@@ -635,6 +636,8 @@ jobs:
             app-diag) step_app_diag ;;
             alb-diag) step_alb_diag ;;
             academycraft-preflight) step_academycraft_preflight ;;
+            # Fixed read-only controller, no infra provisioning or IAM changes.
+            production-readiness) python3 scripts/operations/production-readiness.py --receipt /tmp/f2r-readiness.json ;;
             admissions-diag) step_admissions_diag ;;
             s3) step_s3 ;;
             provision) step_provision ;;
@@ -649,6 +652,15 @@ jobs:
             smoke) step_smoke ;;
             *) echo "unknown step"; exit 1 ;;
           esac
+
+      - name: Preserve production readiness evidence
+        if: always() && inputs.step == 'production-readiness'
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-readonly-readiness-${{ github.sha }}
+          path: /tmp/f2r-readiness.json
+          if-no-files-found: warn
+          retention-days: 7
 
   # 배포 역할(github-actions-f2r-deploy)로도 같은 SSM 경로가 열리는지 확인한다.
   # environment 없이 main 의 이 워크플로(job_workflow_ref)로만 가정 가능(배포 역할 신뢰 정책 참고).
