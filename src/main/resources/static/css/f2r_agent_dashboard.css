@@ -51,7 +51,7 @@ body[data-view="ai"] .ops-all, body[data-view="all"] .ops-main { display: none; 
 .ops .ops-h2 .count { font-size: 12px; color: var(--ops-muted); margin-left: 6px; }
 
 /* ---- AI 메인: 캐릭터 중심 대화 콘솔 ---- */
-.ops-main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 20px; align-items: start; }
+.console-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 20px; align-items: start; }
 .console { position: sticky; top: 76px; display: grid; gap: 12px; min-width: 0; }
 .console-stage {
   position: relative; margin: 0; aspect-ratio: 16 / 10; max-height: 52vh; width: 100%; border-radius: var(--ops-radius); overflow: hidden;
@@ -173,7 +173,7 @@ body[data-agent-state="thinking"] .agent-mini i { animation: ops-pulse .8s infin
 .ops a { color: var(--ops-accent); }
 
 /* ---- 서비스 안내 ---- */
-.svc-guide { grid-column: 1 / -1; }
+.svc-guide { margin-top: 8px; }
 .svc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .svc-card {
   position: relative; display: grid; gap: 4px; padding: 16px; min-height: 84px; text-decoration: none; color: var(--ops-text) !important;
@@ -252,7 +252,7 @@ body[data-view="ai"] .ai-fab { display: none; }
 
 /* ---- 반응형 ---- */
 @media (max-width: 1024px) {
-  .ops-main { grid-template-columns: 1fr; }
+  .console-grid { grid-template-columns: 1fr; }
   .console { position: static; }
   .svc-grid, .dash-kpis { grid-template-columns: repeat(2, 1fr); }
   .dash-widgets { grid-template-columns: repeat(2, 1fr); }
@@ -269,6 +269,9 @@ body[data-view="ai"] .ai-fab { display: none; }
   .ops-btn { white-space: nowrap; padding: 8px 10px; font-size: 13px; }
   .ops { padding: 12px 16px 24px; }
   body[data-view="ai"] .ops { padding-bottom: 150px; }
+  /* 하단 고정 입력창이 포커스·스크롤 대상(서비스 카드 등)을 가리지 않도록 여유를 둔다 */
+  html:has(body[data-view="ai"]) { scroll-padding-bottom: 160px; }
+  body[data-view="ai"] .ops a, body[data-view="ai"] .ops button { scroll-margin-bottom: 160px; }
   .console-stage { aspect-ratio: 4 / 3; max-height: 46vh; }
   .hud-bottom strong { font-size: 20px; }
   .hud-counters { top: 48px; font-size: 11px; }
