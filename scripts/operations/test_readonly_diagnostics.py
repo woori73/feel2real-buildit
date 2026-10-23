@@ -297,6 +297,52 @@ class StaticPolicyTest(unittest.TestCase):
         self.assertEqual(set(re.findall(r"aws rds ([a-z-]+)", run)),
                          {"describe-db-instances", "create-db-snapshot", "wait", "describe-db-snapshots"})
 
+    def _run_pending_gate(self, aws_body):
+        """predeploy-snapshot의 대기 변경 판정 두 줄을 가짜 aws로 실행한다(실제 AWS 호출 없음)."""
+        wf = yaml.safe_load((ROOT / ".github/workflows/migration-infra-build.yml").read_text())
+        run = wf["jobs"]["predeploy-snapshot"]["steps"][1]["run"]
+        gate = "\n".join(line for line in run.splitlines() if "PENDING" in line)
+        with tempfile.TemporaryDirectory() as temp:
+            fake = Path(temp) / "aws"
+            fake.write_text("#!/usr/bin/env bash\n" + aws_body + "\n")
+            fake.chmod(0o755)
+            env = {**os.environ, "PATH": temp + os.pathsep + os.environ["PATH"]}
+            script = "set -euo pipefail\nDB=f2r-db-202610181331\n" + gate + "\necho GATE_PASSED\n"
+            return subprocess.run(["bash", "-c", script], capture_output=True, text=True, env=env)
+
+    def test_pending_gate_passes_when_no_pending_changes(self):
+        # given: PendingModifiedValues가 {}라서 키 개수 쿼리가 0을 출력하는 AWS
+        # (참고: 같은 상황에서 --output json은 아무것도 출력하지 않아 이전 판정이 항상 실패했다)
+        aws = 'case "$*" in *"length(keys(DBInstances[0].PendingModifiedValues))"*"--output text"*) echo 0 ;; *) exit 9 ;; esac'
+        # when
+        result = self._run_pending_gate(aws)
+        # then
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("GATE_PASSED", result.stdout)
+
+    def test_pending_gate_stops_when_changes_are_pending(self):
+        # given: 대기 중 변경 1건
+        result = self._run_pending_gate('echo 1')
+        # then: 스냅샷 생성 전에 중단
+        self.assertNotEqual(0, result.returncode)
+        self.assertNotIn("GATE_PASSED", result.stdout)
+        self.assertIn("대기 중 변경", result.stdout)
+
+    def test_pending_gate_fails_closed_when_aws_read_fails(self):
+        # given: 조회 실패(필드 없음·권한 오류 등)
+        result = self._run_pending_gate('echo "error" >&2; exit 255')
+        # then
+        self.assertNotEqual(0, result.returncode)
+        self.assertNotIn("GATE_PASSED", result.stdout)
+
+    def test_rds_protect_uses_same_pending_gate(self):
+        # given: rds-protect 단계 본문
+        text = (ROOT / ".github/workflows/migration-infra-build.yml").read_text()
+        body = text[text.index("step_rds_protect() {"):text.index("step_a1_precheck() {")]
+        # then: 빈 객체 JSON 비교를 쓰지 않고 키 개수로 판정한다
+        self.assertEqual(2, body.count("length(keys(DBInstances[0].PendingModifiedValues))"))
+        self.assertNotIn('"{}"', body)
+
     def test_snapshot_role_setup_uses_repo_definitions_and_verifies_denials(self):
         # given
         text = (ROOT / ".github/workflows/migration-infra-build.yml").read_text()
