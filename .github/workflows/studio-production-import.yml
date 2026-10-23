@@ -1,0 +1,126 @@
+name: Studio production import (dry-run, manual)
+
+# 운영 제작실 536개 자료 적재의 dry-run과 주요 화면 읽기 전용 점검. 쓰기 요청 없음.
+# - 인증: 기존 승인 ADMIN 계정 secret(NEWSTART_SEED_ADMIN_*)으로 로그인한 쿠키를 러너 임시 파일(0600)에만 둔다.
+#   쿠키·비밀번호·페이지 본문은 출력하지 않는다(상태 코드·제목·카운트만).
+# - 적재 도구(import-production.py --production)는 기본 dry-run(GET만)이며, 배포 SHA가 카탈로그·적재 API를 포함하고
+#   최근 성공 Deploy to EC2와 같을 때만 진행한다. 실제 적재(--apply)는 이 workflow에 없다(별도 승인·별도 변경).
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: '배포 직전 스냅샷 이름(형식·SHA·24시간 일관성만 검사)'
+        required: true
+        default: 'f2r-predeploy-202610230143-32a9e27e'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-production-import
+  cancel-in-progress: false
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: https://feel2real.co.kr
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve deployed SHA (latest successful Deploy to EC2)
+        id: sha
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          SHA=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-ec2.yml/runs?status=success&per_page=1" \
+            | jq -r '.workflow_runs[0].head_sha')
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::deployed SHA not found"; exit 1; }
+          echo "deployed_sha=$SHA"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Snapshot name consistency (format, SHA, 24h)
+        env:
+          SNAPSHOT: ${{ inputs.snapshot }}
+          DEPLOYED_SHA: ${{ steps.sha.outputs.sha }}
+        run: |
+          python3 - <<'PY'
+          import importlib.util, os, sys
+          spec = importlib.util.spec_from_file_location('imp', 'scripts/ai-agent-studio/import-production.py')
+          m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          try:
+              m.check_snapshot(os.environ['SNAPSHOT'], os.environ['DEPLOYED_SHA'])
+          except m.Abort as e:
+              print('snapshot_check=FAIL', e); sys.exit(1)
+          print('snapshot_check=PASS', os.environ['SNAPSHOT'])
+          PY
+
+      - name: ADMIN login (existing approved secret; cookie only on the runner)
+        env:
+          LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          LOGIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [ -n "$LOGIN_ID" ] && [ -n "$LOGIN_PASSWORD" ] || { echo "::error::ADMIN secret missing"; exit 1; }
+          JAR="$RUNNER_TEMP/jar.txt"
+          STATUS=$(jq -n --arg loginId "$LOGIN_ID" --arg password "$LOGIN_PASSWORD" '{loginId:$loginId,password:$password}' \
+            | curl -sS -o /dev/null -w '%{http_code}' -c "$JAR" -H 'Content-Type: application/json' -H "Origin: $BASE_URL" \
+              --data-binary @- "$BASE_URL/api/auth/login")
+          TOKEN=$(awk '$6=="ACCESS_TOKEN"{print $7}' "$JAR" | tail -1)
+          rm -f "$JAR"
+          [ -n "$TOKEN" ] || { echo "::error::login failed (http=$STATUS, body suppressed)"; exit 1; }
+          echo "::add-mask::$TOKEN"
+          jq -n --arg c "ACCESS_TOKEN=$TOKEN" '{adminCookie:$c}' > "$RUNNER_TEMP/f2r-auth.json"
+          chmod 600 "$RUNNER_TEMP/f2r-auth.json"
+          echo "login http=$STATUS cookie=stored(0600, not printed)"
+
+      - name: Read-only screen checks (status, redirect target, title only)
+        run: |
+          set -euo pipefail
+          COOKIE=$(jq -r .adminCookie "$RUNNER_TEMP/f2r-auth.json")
+          page() {
+            local who=$1 path=$2 out
+            local -a auth=()
+            [ "$who" = admin ] && auth=(-H "Cookie: $COOKIE")
+            out=$(curl -sS -o "$RUNNER_TEMP/p.html" -w '%{http_code} %{redirect_url}' -m 30 "${auth[@]}" "$BASE_URL$path" || echo "000 curl-failed")
+            echo "$who $path http=${out%% *} redirect=$(echo "${out#* }" | sed -E 's#https://[^/]+##') title=$(grep -o '<title>[^<]*' "$RUNNER_TEMP/p.html" 2>/dev/null | head -1 | sed 's/<title>//')"
+          }
+          page anon /actuator/health
+          page anon /login
+          for p in / /dashboard /academies /easy /ledger /admissions/guide /admissions/workspace /ai-agent-studio; do
+            page admin "$p"
+          done
+          rm -f "$RUNNER_TEMP/p.html"
+
+      - name: Studio project and registration state (read only)
+        run: |
+          set -euo pipefail
+          COOKIE=$(jq -r .adminCookie "$RUNNER_TEMP/f2r-auth.json")
+          api() { curl -sS -m 30 -H "Cookie: $COOKIE" -w '\n%{http_code}' "$BASE_URL/api/studio/$1"; }
+          R=$(api project); echo "project http=$(tail -n1 <<<"$R")"
+          sed '$d' <<<"$R" | jq -c '{projectId,initialized,files,archived,canManage,permission}' || true
+          R=$(api source-import); echo "source-import http=$(tail -n1 <<<"$R")"
+          sed '$d' <<<"$R" | jq -c '{commit,expectedSourcePaths,registeredSourcePaths,sourceImportAvailable}' || true
+
+      - name: 536 source dry-run (GET only)
+        env:
+          DEPLOYED_SHA: ${{ steps.sha.outputs.sha }}
+        run: |
+          set -uo pipefail
+          python3 scripts/ai-agent-studio/import-production.py --production --extract-to "$RUNNER_TEMP/src" \
+            --base-url "$BASE_URL" --confirm-host feel2real.co.kr --deployed-sha "$DEPLOYED_SHA" \
+            --auth-file "$RUNNER_TEMP/f2r-auth.json" --state "$RUNNER_TEMP/state.json" --receipt "$RUNNER_TEMP/receipt.json"
+          RC=$?
+          echo "dry_run_exit=$RC"
+          [ -f "$RUNNER_TEMP/receipt.json" ] && jq -c '{mode,sourcePaths,uniqueFiles,duplicatePaths,verifiedSha,approvedOriginals:(.approvedOriginals|length),production}' "$RUNNER_TEMP/receipt.json"
+          exit $RC
+
+      - name: Remove credentials and extracted sources
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/f2r-auth.json" "$RUNNER_TEMP/src" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/receipt.json" "$RUNNER_TEMP/jar.txt"

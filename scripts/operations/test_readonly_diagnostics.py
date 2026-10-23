@@ -355,6 +355,22 @@ class StaticPolicyTest(unittest.TestCase):
         self.assertNotIn("attach-role-policy", body)
         self.assertNotRegex(body, r"(update-assume-role-policy|put-role-policy) --role-name github-actions-f2r-deploy")
         self.assertIn("snapshot-role-setup) step_snapshot_role_setup ;;", text)
+    def test_studio_import_dry_run_workflow_never_writes_or_leaks(self):
+        # given: 운영 제작실 dry-run workflow
+        text = (ROOT / ".github/workflows/studio-production-import.yml").read_text()
+        wf = yaml.safe_load(text)
+        runs = "\n".join(s.get("run", "") for s in wf["jobs"]["dry-run"]["steps"])
+        # then: 적재(--apply)·업로드·임의 POST가 없고, 로그인만 POST이며 비밀값은 env로만 받는다
+        self.assertNotIn("--apply", runs)
+        self.assertNotIn("set -x", runs)
+        self.assertEqual(runs.count("--data-binary"), 1)
+        self.assertIn("/api/auth/login", runs)
+        self.assertNotIn("-X POST", runs)
+        self.assertIn("::add-mask::$TOKEN", runs)
+        self.assertIn('chmod 600 "$RUNNER_TEMP/f2r-auth.json"', runs)
+        self.assertNotRegex(runs, r"\$\{\{\s*secrets\.")
+        self.assertEqual(wf["permissions"], {"contents": "read"})
+
 
 if __name__ == "__main__":
     unittest.main()
