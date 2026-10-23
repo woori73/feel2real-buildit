@@ -45,7 +45,7 @@
 
 ## 2. V1094·V1095 적용 계획
 
-- 두 파일 모두 **새 테이블 CREATE만**(V1094: `unified_assistant_*` 3개, V1095: `studio_*` 6개 + `mcp_*` 8개). 기존 테이블 변경·데이터 수정 없음 → 기존 기능 영향 없음, 잠금 짧음.
+- 두 파일 모두 **새 테이블 CREATE만**(V1094: `unified_assistant_*` 3개, V1095: `studio_*` 6개 + `mcp_*` 7개, 합계 16개). 기존 테이블 변경·데이터 수정 없음 → 기존 기능 영향 없음, 잠금 짧음.
 - 적용 방식: 새 jar 부팅 시 Flyway가 자동 적용(repair → migrate). 별도 수동 SQL 없음.
 - 확인: 배포 후 `Prod read-only status`(flyway-history)에서 1094·1095 `success=1`, 체크섬 V1094 `-1031052192`, V1095 `-1470147673`.
 - 실패 시: MySQL DDL은 트랜잭션이 아니므로 V1095가 중간에 실패하면 **일부 테이블이 남는다**. 가드가 이전 jar로 되돌리면 이전 jar는 repair로 실패 행을 지우고 V1093 기준으로 정상 부팅한다(V1094·V1095는 이전 jar가 모르는 버전 → 무시). 재배포 전에는 남은 `studio_*`/`mcp_*` 테이블 정리(DB 변경, 승인 필요) 또는 스냅샷 복원이 필요하다.
@@ -140,3 +140,29 @@ aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SN
 ```
 - 단일 AZ라 스냅샷을 시작할 때 I/O가 잠깐 멈출 수 있다(보통 수 초). 저트래픽 시간에 하고, 배포 바로 전에 한다.
 - 이름 형식은 #876의 `--confirm-snapshot` 검증(같은 SHA8, 24시간 이내)과 맞춘다.
+
+## 11. 배포 직전 최종 확인 (2026-10-23 00:37 UTC)
+
+| 조건 | 결과 |
+|---|---|
+| 운영 DB 보호 | 대표님 CloudShell 결과 + `Prod read-only status` [run 39879110307](https://github.com/woori73/feel2real-buildit/actions/runs/39879110307): `f2r-db-202610181331` 보존 **7일**, 삭제 보호 **True**, available. 다른 두 DB는 7일·False로 변경 없음 |
+| Flyway | 같은 실행에서 188건, 최대 V1093, 실패 0, studio/mcp 테이블 0(변화 없음) |
+| 최신 main | `5f48ab9b`(#878 병합) Build Check [run 39878445940](https://github.com/woori73/feel2real-buildit/actions/runs/39878445940) PASS |
+| #878 | 병합됨(a1-precheck 로그의 DB 엔드포인트 해시 제거, 앱 코드 변경 없음) |
+| 이전 JAR Flyway 롤백 | **PASS** — 아래 |
+
+### 이전 JAR(2bed3918) 롤백 호환성 실측
+- 방법: 운영과 같은 Flyway 11.14.1(두 SHA 모두 Spring Boot 4.0.6)로, prd 설정(`baselineOnMigrate`·`validateOnMigrate`, 그 밖은 기본값)과 `FlywayRepairConfig`(repair → migrate)를 재현했다. 격리 MySQL 8.0.46에서 실행했다(운영은 8.4.8).
+- 증거: `handoff/probes/FlywayRollbackProbe.java.txt`, `FlywayRollbackProbe.result.txt`
+
+| 단계 | 결과 |
+|---|---|
+| 1. 2bed3918 마이그레이션으로 빈 DB | 188건, V1093 |
+| 2. main 배포 | V1094·V1095 적용(새 테이블 16개) |
+| 3. 이전 JAR로 복구 기동 | **성공**, V1094·V1095는 `FUTURE_SUCCESS`로 무시되고 검증 통과 |
+| 4. 다시 main | 성공, 추가 실행 0 |
+| 5. V1095 실패 행이 남은 상태에서 이전 JAR | 성공(repair가 실패 행 제거) |
+| 6. 남은 테이블 정리 없이 main 재배포 | **실패(예상)** — V1095 `CREATE TABLE` 중복 |
+
+→ 결론: 배포 후 이전 JAR로 돌아가는 것은 DB 조치 없이 가능하다. 단, V1095가 **중간에 실패한** 경우에만 재배포 전에 남은 테이블을 정리하거나 스냅샷을 복원해야 한다(§2와 동일).
+- 정정: §2의 "mcp_* 8개"는 7개다(합계 16개).

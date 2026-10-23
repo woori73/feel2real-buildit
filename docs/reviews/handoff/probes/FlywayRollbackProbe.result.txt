@@ -1,0 +1,19 @@
+1) 운영 SHA(2bed3918)로 빈 DB 기동: migrate ok, executed=188, target=1093
+  1093 SUCCESS
+2) main 배포(V1094·V1095 적용): migrate ok, executed=2, target=1095
+  1093 SUCCESS
+  1094 SUCCESS
+  1095 SUCCESS
+3) 이전 JAR로 복구 기동: migrate ok, executed=0, target=null
+  1093 SUCCESS
+  1094 FUTURE_SUCCESS
+  1095 FUTURE_SUCCESS
+   studio/mcp/unified 테이블 수=16
+4) main 재배포(복구 후 재전진): migrate ok, executed=0, target=null
+  1093 SUCCESS
+  1094 SUCCESS
+  1095 SUCCESS
+5) V1095 실패 행이 남은 상태에서 이전 JAR 기동: migrate ok, executed=0, target=null
+  1093 SUCCESS
+  1094 FUTURE_SUCCESS
+6) 테이블 정리 없이 main 재배포: 실패(예상) — FlywayMigrateException: Failed to execute script V1095__studio_and_mcp.sql

@@ -1,0 +1,42 @@
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfo;
+import java.sql.*;
+
+// 운영 prd 프로필과 같은 설정(baselineOnMigrate·validateOnMigrate, 나머지 기본값)과
+// FlywayRepairConfig(repair → migrate)를 그대로 재현한다.
+public class FlywayRollback {
+  static final String URL = "jdbc:mysql://127.0.0.1:3329/f2r_db?allowPublicKeyRetrieval=true&useSSL=false";
+  static Flyway fw(String dir) {
+    return Flyway.configure().dataSource(URL, "root", "").locations("filesystem:" + dir)
+        .baselineOnMigrate(true).validateOnMigrate(true).load();
+  }
+  static void bootLike(String label, String dir) {
+    Flyway f = fw(dir);
+    f.repair();
+    var r = f.migrate();
+    System.out.println(label + ": migrate ok, executed=" + r.migrationsExecuted + ", target=" + r.targetSchemaVersion);
+    for (MigrationInfo i : f.info().all()) {
+      String v = i.getVersion() == null ? "" : i.getVersion().getVersion();
+      if (v.compareTo("1093") >= 0 && v.length() == 4) System.out.println("  " + v + " " + i.getState());
+    }
+  }
+  static void sql(String s) throws Exception {
+    try (Connection c = DriverManager.getConnection(URL, "root", ""); Statement st = c.createStatement()) { st.execute(s); }
+  }
+  static String one(String s) throws Exception {
+    try (Connection c = DriverManager.getConnection(URL, "root", ""); Statement st = c.createStatement(); ResultSet rs = st.executeQuery(s)) { rs.next(); return rs.getString(1); }
+  }
+  public static void main(String[] a) throws Exception {
+    String old = a[0], neu = a[1];
+    bootLike("1) 운영 SHA(2bed3918)로 빈 DB 기동", old);
+    bootLike("2) main 배포(V1094·V1095 적용)", neu);
+    bootLike("3) 이전 JAR로 복구 기동", old);
+    System.out.println("   studio/mcp/unified 테이블 수=" + one("select count(*) from information_schema.tables where table_schema='f2r_db' and (table_name like 'studio\\_%' or table_name like 'mcp\\_%' or table_name like 'unified\\_assistant\\_%')"));
+    bootLike("4) main 재배포(복구 후 재전진)", neu);
+    // 5) V1095 부분 실패 상황: 실패 행을 남기고 일부 테이블만 있는 상태에서 이전 JAR 기동
+    sql("update flyway_schema_history set success=0 where version='1095'");
+    bootLike("5) V1095 실패 행이 남은 상태에서 이전 JAR 기동", old);
+    try { bootLike("6) 테이블 정리 없이 main 재배포", neu); }
+    catch (Exception e) { System.out.println("6) 테이블 정리 없이 main 재배포: 실패(예상) — " + e.getClass().getSimpleName() + ": " + String.valueOf(e.getMessage()).split("\n")[0]); }
+  }
+}
