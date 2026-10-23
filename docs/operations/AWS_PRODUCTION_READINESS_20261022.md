@@ -1,6 +1,6 @@
 # 신규 AWS 운영 진단·배포 준비
 
-기준 main `fc756729d9fced03273ff471055b28af531034ee`. 병합 검증은 반복하지 않는다. 승인 범위는 코드/PR/CI 및 읽기 전용 진단이다. 운영 배포·운영 DB 적재·IAM 변경·스냅샷 생성·MCP 활성화·유료 호출은 실행하지 않는다.
+최초 기준 main `fc756729d9fced03273ff471055b28af531034ee`. 작업 중 병합된 #876/main `0698c496`을 보존해 통합했다. 병합 검증은 반복하지 않는다. 승인 범위는 코드/PR/CI 및 읽기 전용 진단이다. 운영 배포·운영 DB 적재·IAM 변경·스냅샷 생성·MCP 활성화·유료 호출은 실행하지 않는다.
 
 ## 진단
 
@@ -26,22 +26,20 @@ JAR/env 롤백은 Flyway의 DB 변경을 되돌리지 않는다. DB 복원이 �
 
 poi/poi-ooxml 5.5.1을 유지한다. HSSFWorkbook의 실제 BIFF8/OLE2 합성 fixture로 11열·거래일/확정일 분리·원본 음수 부호·합계 종료를 검증한다. 이동한 헤더, HTML 위장 xls 거부를 추가한다. 고객의 실제 파일은 제공되지 않았으므로 해당 운영 원본의 성공을 주장하지 않는다. 금융기관 접속/장부 쓰기는 없다.
 
-## 자료 적재
+## 자료 적재 — main #876 정본 재사용
 
-다음 production dry-run은 운영 HTTP 요청 없이 로컬 원본536개/고유316 SHA만 검사한다.
+작업 중 main에 #876(`0698c496`)이 병합되어 기존 프로토타입의 중복 production 구현을 제거했다. 배포 SHA·호스트 재입력·24시간 이내 스냅샷 이름·0600 인증·검증된 업로드 재시작·부분 등록 중단·등록 POST 재시도 금지는 #876을 그대로 사용한다. 사용법의 정본은 [운영 적재 Runbook](../studio-collaboration/PRODUCTION_IMPORT_RUNBOOK.md)이다. 이전 프로토타입의 --approval-file/--initialize-project는 제공하지 않는다.
+
+카탈로그만 검사하는 오프라인 검증은 다음 명령이다. --production dry-run은 #876 계약대로 배포 SHA/인증을 검증하고 읽기 전용 GET을 수행하므로 실제 운영 실행은 별도 승인 후 진행한다.
 
 ```sh
-python scripts/ai-agent-studio/import-production.py --production \
-  --source docs/ai-agent-production --receipt /tmp/f2r-studio-dry-run.json
+python scripts/ai-agent-studio/import-production.py --source docs/ai-agent-production \
+  --receipt /tmp/f2r-studio-source-dry-run.json
 ```
 
-운영 `--apply`에는 고정 HTTPS https://feel2real.co.kr, 별도 사용자 승인 파일, owner-only ADMIN 세션 파일이 필요하다. 승인 파일은 사용자 의사의 운영 기록이며 인증/서버 권한 검사를 대신하지 않는다. 비밀번호/토큰은 PR·명령행·receipt에 넣지 않는다. 도메인의 신규 계정 배치 관계도 실제 진단 후 승인한다.
+추가 보호만 결합했다: HTTP redirect를 거부해 세션 전달을 막고, 적용 전 ADMIN/원본 프로젝트/보관 여부를 확인한다. 리비전을200건씩 끝까지 읽어 기존 승인 포인터/파일/SHA를 비교하고, 등록 후536경로와 승인5종 SHA를 실제 GET으로 재조회한다. 이미 승인 해제한 캐릭터는 자동 재승인하지 않는다. 인증 쿠키는 명령행/상태/보고서에 쓰지 않는다.
 
-승인 파일 필드: approved=true, action=studio-source-import, account=425805163960, origin=https://feel2real.co.kr, projectId=ai-agent-part1, sourceCommit=09d62dee982e2e89e3653c90b1ee42f05bff4f9d, approvedBy, reference. 이 PR은 실제 승인 파일을 제공하지 않는다. 프로젝트 부재 시 명시적 `--initialize-project`도 필요하다.
-
-도구는 파일/리비전을200개씩 끝까지 읽고 기존 SHA를 재사용한다. 저장 바이트를 GET해 SHA·크기를 확인하고 checkpoint를 남긴다. 등록 후 source-import 상태와 전체 리비전을 재조회해536경로·승인5 SHA·기존 승인 포인터/파일 보존을 확인해야 성공한다. 승인 해제한 캐릭터는 자동 재승인하지 않는다. 기존 출처/멱등/승인 이관/작업 기억 보존 API를 재사용한다.
-
-HTTP redirect는 거부하며 production proxy/TLS 검증을 유지한다. 실패 시 종료2와 마지막 확인 stage/fileMapping을 남긴다. 업로드와 등록은 분산 트랜잭션이 아니므로 등록 실패 시 신규 파일이 남을 수 있다. 재시도는 SHA로 재사용하며 자동 삭제/정본 롤백을 하지 않는다.
+업로드와 등록은 분산 트랜잭션이 아니다. 등록 실패 전 신규 파일은 남을 수 있으나 기존 상태 파일과 서버 SHA 중복 제거를 사용해 재개한다. 자동 삭제/정본 롤백을 하지 않는다. 스냅샷 이름 검사 자체는 AWS상 존재/복원 가능성을 입증하지 않는다.
 
 ## 최초 실제 운영 조회 (UTC 2026-10-22 23:04~23:08)
 
@@ -57,10 +55,10 @@ IAM을 바꾸지 않는 후속 경로도 준비했다. 기존 `migration-infra-b
 
 ## 격리 결과
 
-- 정책15 및 production dry-run536 SHA: PASS.
+- #876 통합 후 운영 진단 정책8 및 로컬 HTTPS importer13(기존9 전부 유지+추가4) PASS. 카탈로그 오프라인536 SHA 검증 PASS.
 - 배포 JAR/env 복구 가드: PASS(격리 파일/fake systemd).
 - POI 파서6·정규화4·장부서비스10·기존자료 MySQL5=25건 PASS. runtimeClasspath poi/poi-ooxml/poi-ooxml-lite 모두5.5.1 확인.
-- 실제 로컬 HTTP/MySQL에서 production 분기(테스트만 origin을 loopback으로 고정)2회 완료. 각316개 저장 바이트 SHA 재조회·536경로·승인5종·기존정본 불변, createdRevisions0. 실제 운영 연결 아님.
+- 통합 전 프로토타입의 HTTP/MySQL 검증은 historical evidence로 보존한다. 통합 후 production 대상 보호는 #876의 로컬 TLS13건으로 검증하고, 실제 MySQL의 공통 등록·재조회 경로는 opt-in 테스트로 확인한다. 운영 연결 성공으로 표현하지 않는다.
 - 새 빈 격리 스키마 최초 적재678리비전/재시도0, 파일316/출처536/승인5종 검증 PASS. 기존 자료 fixture는 별도 보존.
 - 마지막 변경 후 최종 CI는 PR 본문의 현재 HEAD 결과로 확인한다. 기존 결과를 새 HEAD의 PASS로 대체하지 않는다.
 - CI 폰트 다운로드 병목도 수정했다. 전체 CJK apt61.2MB의 저속 다운로드를 제거하고 저장소의 기존 NotoSansKR-Regular.ttf를 사용자 폰트 경로에 설치·fontconfig로 확인한다. 원본 폰트/검증 범위는 유지하며 새 외부 패키지나 테스트 skip은 추가하지 않는다.

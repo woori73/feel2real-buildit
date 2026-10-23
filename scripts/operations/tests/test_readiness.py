@@ -20,7 +20,6 @@ def load(path, name):
 
 diag = load('scripts/operations/production-readiness.py', 'diag')
 host = load('scripts/operations/ec2-readiness.py', 'host')
-imp = load('scripts/ai-agent-studio/import-production.py', 'imp')
 
 
 class ReadinessTest(unittest.TestCase):
@@ -142,62 +141,6 @@ class ReadinessTest(unittest.TestCase):
                 out.writestr('META-INF/MANIFEST.MF', 'Manifest-Version: 1.0\nBuild-Commit: ' + 'b' * 40 + '\nBuild-Working-Tree: clean\n')
             self.assertEqual('b' * 40, host.jar_info(jar)['gitSha'])
 
-
-class ImportPolicyTest(unittest.TestCase):
-    def args(self, **kwargs):
-        import argparse
-        values = dict(base_url=None, production=True, apply=False, approval_file=None)
-        values.update(kwargs)
-        return argparse.Namespace(**values)
-
-    def test_production_dry_run_needs_no_auth_or_approval_and_makes_no_requests(self):
-        with patch.object(imp.urllib.request, 'build_opener') as request:
-            self.assertEqual(imp.PRODUCTION_ORIGIN, imp.target(self.args()))
-        request.assert_not_called()
-
-    def test_apply_without_approval_is_refused(self):
-        with self.assertRaises(ValueError):
-            imp.target(self.args(apply=True))
-
-    def test_arbitrary_and_credential_urls_are_refused(self):
-        for url in ['https://evil.example', 'http://feel2real.co.kr', 'https://feel2real.co.kr?other=1',
-                    'https://user:secret@feel2real.co.kr', 'https://feel2real.co.kr/#fragment']:
-            with self.assertRaises(ValueError):
-                imp.target(self.args(base_url=url))
-
-    def test_approval_is_bound_to_exact_account_project_origin_source(self):
-        approval = dict(approved=True, action='studio-source-import', account='425805163960',
-                        origin=imp.PRODUCTION_ORIGIN, projectId=imp.PROJECT, sourceCommit=imp.PIN,
-                        approvedBy='isolated-test', reference='TEST-ONLY-NOT-AN-APPROVAL')
-        with tempfile.TemporaryDirectory() as temp:
-            path = pathlib.Path(temp) / 'approval.json'
-            path.write_text(json.dumps(approval))
-            self.assertEqual(imp.PRODUCTION_ORIGIN, imp.target(self.args(apply=True, approval_file=path)))
-            for key in ('account', 'projectId', 'sourceCommit', 'origin', 'action'):
-                changed = dict(approval, **{key: 'wrong'})
-                path.write_text(json.dumps(changed))
-                with self.assertRaises(ValueError):
-                    imp.target(self.args(apply=True, approval_file=path))
-
-    def test_pagination_reads_all_678_revisions(self):
-        def call(path):
-            offset = int(path.split('offset=')[1])
-            return json.dumps(list(range(678))[offset:offset+200])
-        self.assertEqual(list(range(678)), imp.pages(call, 'revisions'))
-
-    def test_redirect_never_forwards_session(self):
-        with self.assertRaises(ValueError):
-            imp.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://evil.example')
-
-    def test_failed_registration_receipt_preserves_checkpoint_without_claiming_success(self):
-        receipt = {'mode': 'applying-production', 'stage': 'registration', 'fileMapping': {'sha': 'file-id'}}
-        saved = []
-        with self.assertRaises(ValueError):
-            with imp.report_failure(receipt, lambda: saved.append(dict(receipt))):
-                raise ValueError('synthetic failure')
-        self.assertEqual('failed-production', saved[0]['mode'])
-        self.assertEqual('registration', saved[0]['failedStage'])
-        self.assertEqual({'sha': 'file-id'}, saved[0]['fileMapping'])
 
 
 if __name__ == '__main__':

@@ -19,5 +19,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m unittest discover -s scripts/operations/tests -v
-      - name: Verify production dry-run without credentials or network
-        run: python scripts/ai-agent-studio/import-production.py --source docs/ai-agent-production --production --receipt /tmp/f2r-production-dry-run.json
+      - name: Verify pinned originals without credentials or network
+        run: python scripts/ai-agent-studio/import-production.py --source docs/ai-agent-production --receipt /tmp/f2r-production-dry-run.json
+      - name: Canonical production importer HTTPS safety tests
+        run: python -m unittest scripts/ai-agent-studio/test_import_production.py -v
