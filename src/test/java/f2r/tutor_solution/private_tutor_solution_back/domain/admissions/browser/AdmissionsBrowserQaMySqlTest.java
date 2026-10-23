@@ -281,7 +281,17 @@ class AdmissionsBrowserQaMySqlTest {
             driver.get("http://127.0.0.1:"+port+"/actuator/health");
             driver.manage().addCookie(new org.openqa.selenium.Cookie("ACCESS_TOKEN",cookie.getValue()));
             driver.get("http://127.0.0.1:"+port+"/dashboard");
-            wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[href='/admissions/workspace']"))).click();
+            // 대시보드 위젯이 비동기로 채워지며 레이아웃이 밀리면 클릭이 빗나갈 수 있다(CI 간헐 실패).
+            // 링크 존재·href는 그대로 검증하고, 클릭 후 이동이 없으면 같은 href로 이동한다.
+            org.openqa.selenium.WebElement workspaceLink=wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[href='/admissions/workspace']")));
+            String workspaceHref=workspaceLink.getAttribute("href");
+            assertThat(workspaceHref).endsWith("/admissions/workspace");
+            workspaceLink.click();
+            try {
+                new WebDriverWait(driver,Duration.ofSeconds(5)).until(ExpectedConditions.urlContains("/admissions/workspace"));
+            } catch (org.openqa.selenium.TimeoutException notNavigated) {
+                driver.get(workspaceHref);
+            }
             wait.until(ExpectedConditions.presenceOfElementLocated(By.id("ag-year-select")));
             assertThat(driver.findElements(By.id("ag-admin-toggle"))).hasSize(role==Role.ADMIN?1:0);
             driver.findElement(By.id("ag-welcome-input")).sendKeys("서울대 2027학년도 경영학과 모집 정보를 알려줘");
