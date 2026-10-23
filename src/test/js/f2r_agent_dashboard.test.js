@@ -68,15 +68,55 @@ test('given 초안 상태 문구 when 집계하면 then 승인 대기·완료·�
   assert.deepEqual({ ...c }, { pending: 2, done: 1, review: 2 });
 });
 
-test('given 비서 상태 when 대화 사건이 오면 then 분석→응답→완료→대기로 전환한다', () => {
+test('given 비서 상태 when 입력·전송·응답·승인 사건이 오면 then 대기→듣기→생각→응답→완료로 전환한다', () => {
   // given
   const d = load();
   // when / then
-  assert.equal(d.nextState('idle', 'submit'), 'analyze');
-  assert.equal(d.nextState('analyze', 'reply'), 'talk');
-  assert.equal(d.nextState('talk', 'verified'), 'done');
+  assert.equal(d.nextState('idle', 'typing'), 'listening');
+  assert.equal(d.nextState('listening', 'cleared'), 'idle');
+  assert.equal(d.nextState('listening', 'submit'), 'thinking');
+  assert.equal(d.nextState('thinking', 'typing'), 'thinking');
+  assert.equal(d.nextState('thinking', 'reply'), 'speaking');
+  assert.equal(d.nextState('speaking', 'spoken'), 'idle');
+  assert.equal(d.nextState('thinking', 'verified'), 'done');
   assert.equal(d.nextState('done', 'reply'), 'done');
   assert.equal(d.nextState('done', 'timeout'), 'idle');
+  assert.equal(d.nextState('listening', 'timeout'), 'listening');
+});
+
+test('given 음성 어댑터 when 응답 방식을 정하면 then 연결 전에는 텍스트만, 립싱크가 있을 때만 말하는 영상을 쓴다', () => {
+  // given
+  const d = load();
+  const files = ['idle.mp4', 'think.mp4', 'speak.mp4'];
+  // when / then
+  assert.equal(d.speakingMode(null), 'text');
+  assert.equal(d.speakingMode({}), 'text');
+  assert.equal(d.speakingMode({ speak() {} }), 'voice');
+  assert.equal(d.speakingMode({ speak() {}, lipSync: true }), 'voice-lipsync');
+  assert.equal(d.speakingClip('text', files), 'idle');
+  assert.equal(d.speakingClip('voice', files), 'idle');
+  assert.equal(d.speakingClip('voice-lipsync', files), 'speak');
+  assert.equal(d.speakingClip('voice-lipsync', ['idle.mp4']), 'idle');
+});
+
+test('given 서버가 알려준 자료 목록 when 영상을 고르면 then 없는 영상은 대기 영상으로, 대기 영상도 없으면 표식으로 대체한다', () => {
+  // given
+  const d = load();
+  // when / then
+  assert.equal(d.resolveClip('think', ['idle.mp4', 'think.mp4']), 'think');
+  assert.equal(d.resolveClip('think', ['idle.mp4']), 'idle');
+  assert.equal(d.resolveClip('idle', []), null);
+});
+
+test('given 정본 승인 상태 when 배지를 정하면 then 승인 전 자료를 최종 캐릭터로 표시하지 않는다', () => {
+  // given
+  const d = load();
+  // when / then
+  assert.equal(d.badgeFor('APPROVED'), '정본');
+  assert.equal(d.badgeFor('REFERENCE_APPROVED'), '승인 얼굴 기준 · 영상 확정 전');
+  assert.equal(d.badgeFor('CANDIDATE'), '외형 승인 전 후보');
+  assert.equal(d.badgeFor('MISSING'), '캐릭터 자료 미연결');
+  assert.equal(d.badgeFor('FINAL'), '외형 승인 전 후보');
 });
 
 test('given 대시보드 템플릿 when 읽으면 then F2R 홈 로고·전체 대시보드 전환·사용법 안내·두 화면이 있다', () => {
@@ -88,7 +128,16 @@ test('given 대시보드 템플릿 when 읽으면 then F2R 홈 로고·전체 �
   assert.match(HTML, /id="uaResume"/);
   assert.match(HTML, /data-pane="ai"/);
   assert.match(HTML, /data-pane="all"/);
-  for (const id of ['agentStage', 'agentVideo', 'agentName', 'agentCode', 'agentRole', 'agentGreeting', 'agentStateLabel', 'agentSuggest', 'statusAgent', 'statusPending', 'statusDone', 'statusReview', 'statusServices', 'shortcutRow']) {
+  // 캐릭터 자료는 공개 정적 경로가 아니라 권한 확인 경로로만 읽는다
+  assert.doesNotMatch(HTML, /src="\/agent-media\//);
+  assert.match(HTML, /src="\/dashboard\/agent-media\/seven\/front\.webp"/);
+  // 캐릭터 아래 응답 → 입력창 순서
+  assert.ok(HTML.indexOf('id="agentStage"') < HTML.indexOf('id="agentSpeech"'));
+  assert.ok(HTML.indexOf('id="agentSpeech"') < HTML.indexOf('id="uaCommandForm"'));
+  // PR #892 제작소 링크는 같은 표식(data-studio-entry, 기본 hidden)으로 유지한다
+  assert.match(HTML, /<a class="ops-btn" href="\/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작소<\/a>/);
+  assert.match(HTML, /src="\/js\/studio_entry_link\.js\?v=20261023-1"/);
+  for (const id of ['agentStage', 'agentVideo', 'agentVideoAlt', 'agentName', 'agentCode', 'agentRole', 'agentGreeting', 'agentStateLabel', 'agentBadge', 'agentSuggest', 'agentSpeech', 'speechName', 'speechMode', 'agentMiniImg', 'statusAgent', 'statusPending', 'statusDone', 'statusReview', 'statusServices', 'shortcutRow']) {
     assert.match(HTML, new RegExp('id="' + id + '"'), `템플릿에 id="${id}" 없음`);
   }
 });
