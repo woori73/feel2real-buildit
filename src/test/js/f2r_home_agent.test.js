@@ -39,12 +39,14 @@ test('given 로그인 전후 when 업무 요청에 답하면 then 로그인 전�
   assert.equal(staff.links[0].handoff, true);
 });
 
-test('given 제작소 권한 when 답하면 then 권한이 있을 때만 제작소 링크를 준다', () => {
+test('given 제작협업실 요청 when 답하면 then 누구에게나 제작협업실 링크를 주고 권한은 서버가 확인한다고 안내한다', () => {
   // given
   const h = load();
   // when / then
   assert.equal(h.replyFor('studio', { studio: true }).links[0].href, '/ai-agent-studio');
-  assert.ok(h.replyFor('studio', { studio: false }).links.every((l) => l.href !== '/ai-agent-studio'));
+  assert.equal(h.replyFor('studio', { studio: false }).links[0].href, '/ai-agent-studio');
+  assert.match(h.replyFor('studio', { studio: false }).text, /관리자·운영 계정으로 로그인/);
+  assert.equal(h.detectIntent('제작협업실 들어가고 싶어'), 'studio');
   assert.equal(h.replyFor(null, {}).choices, true);
   assert.equal(h.replyFor('exam', {}).links[0].href, 'https://open.kakao.com/o/sMf4ifRi');
 });

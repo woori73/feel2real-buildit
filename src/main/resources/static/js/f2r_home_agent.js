@@ -22,7 +22,7 @@
     // 같은 점수면 앞의 의도를 고른다: '학원 홈페이지'는 업무보다 홈페이지 제작으로 안내한다.
     { id: 'builder', words: ['홈페이지', '블로그', '사이트', '웹사이트'] },
     { id: 'work', words: ['학원', '학생', '출결', '출석', '상담', '장부', '업무', '대시보드', '운영', '공지', '수납'] },
-    { id: 'studio', words: ['ai agent', '에이전트', '제작소', '웹툰', '영상', '캐릭터', '콘텐츠', '드라마'] },
+    { id: 'studio', words: ['ai agent', '에이전트', '제작소', '제작협업실', '협업실', '웹툰', '영상', '캐릭터', '콘텐츠', '드라마'] },
     { id: 'chart', words: ['차트', '선생님 찾', '쌤', '강사 찾', '순위', 'chart'] }
   ];
 
@@ -38,7 +38,7 @@
     return best;
   }
 
-  /** 의도별 안내 문장과 버튼. staff: 로그인한 원장·강사·관리자, studio: 제작소 접근 가능 여부. */
+  /** 의도별 안내 문장과 버튼. staff: 로그인한 원장·강사·관리자, studio: 제작협업실 접근 확인 여부(문구만 달라짐). */
   function replyFor(intent, ctx) {
     var c = ctx || {};
     switch (intent) {
@@ -54,8 +54,11 @@
         if (c.staff) return { text: 'AI 비서 화면에서 이어서 처리할게요. 학생 등록·출결·상담·공지를 한 단계씩 여쭤보고, 승인한 것만 저장합니다.', links: [{ label: 'AI 비서 화면으로 이어 가기', handoff: true, primary: true }] };
         return { text: '로그인하면 AI 업무 비서가 학생 등록·출결·상담·공지를 한 단계씩 안내하고, 승인한 것만 저장합니다.', links: [{ label: '로그인하고 시작하기', href: '/?login=required&returnUrl=%2Fdashboard', primary: true }] };
       case 'studio':
-        if (c.studio) return { text: 'AI AGENT 제작소에서 각본·콘티·캐릭터·영상 작업을 함께 검수합니다.', links: [{ label: 'AI AGENT 제작소 열기', href: '/ai-agent-studio', primary: true }] };
-        return { text: 'AI AGENT 웹툰·영상은 2026년 11월 1일 제작 착수 예정입니다. 제작소는 운영 계정 전용입니다.', links: [{ label: 'AI 콘텐츠 소개 보기', href: '#ai-content' }] };
+        // 제작협업실 링크는 누구에게나 안내하고, 들어가는 권한(ADMIN·modu)은 서버가 확인한다.
+        return { text: c.studio
+            ? 'AI AGENT 제작협업실에서 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만들고 검수합니다.'
+            : 'AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다.',
+          links: [{ label: 'AI AGENT 제작협업실 열기', href: '/ai-agent-studio', primary: true }, { label: 'AI 콘텐츠 소개 보기', href: '#ai-content' }] };
       case 'builder':
         return { text: '학원 홈페이지를 만들고 관리할 수 있습니다.', links: [{ label: '학원 홈페이지 제작', href: '/builder', primary: true }] };
       case 'chart':
@@ -79,7 +82,7 @@
   var ui = { agent: 'seven', user: null, media: null, base: null };
 
   function staff() { return !!(ui.user && (ui.user.role === 'ADMIN' || ui.user.role === 'TUTOR')); }
-  function studioAllowed() { var a = document.querySelector('a[data-studio-entry]'); return !!(a && !a.hidden); }
+  function studioAllowed() { return !!(ui.user && ui.user.role === 'ADMIN'); }
 
   function el(tag, text, cls) { var e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
 
@@ -133,7 +136,7 @@
     return [
       { label: 'AI 비서와 업무 시작', primary: true, onClick: function () { respond('work'); } },
       { label: 'AI 영어교육', onClick: function () { respond('english'); } },
-      { label: 'AI AGENT 제작소', onClick: function () { respond('studio'); } }
+      { label: 'AI AGENT 제작협업실', onClick: function () { respond('studio'); } }
     ];
   }
 

@@ -531,6 +531,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCounselingSessionHistoryDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.agentmedia.AgentDashboardBrowserQaMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioEntryLinkBrowserQaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsPublicApiDefaultOffMySqlTest"
 
       - name: Admissions member Muse smoke (one real call, isolated DB only)
@@ -558,6 +559,15 @@ jobs:
         with:
           name: agent-dashboard-qa-${{ github.sha }}
           path: build/reports/agent-dashboard-qa
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload studio entry link browser QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-entry-qa-${{ github.sha }}
+          path: build/reports/studio-entry-qa
           if-no-files-found: warn
           retention-days: 7
 

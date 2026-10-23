@@ -390,3 +390,4 @@ body[data-view="ai"] .ai-fab { display: none; }
   .console-stage .scan, .console-stage .ring, .console-stage.is-flash::after, .dash-skel .bar, .speech-text.is-typing::after, .holo-tile, .agent-emblem span { animation: none; }
   .agent-clip, .si-menu, .holo-tile { transition: none; }
 }
+.svc-card[hidden] { display: none !important; }

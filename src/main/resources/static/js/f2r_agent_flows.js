@@ -354,11 +354,11 @@
           { label: '문법 문제은행', href: '/grammar-items' }, { label: '모의고사위키', href: '/wiki' }, { label: '내신 문제 제작', href: '/problem-generator' }
         ]);
       } },
-      { label: 'AI AGENT 제작소', onClick: function () {
+      { label: 'AI AGENT 제작협업실', onClick: function () {
         done();
         var link = document.querySelector('a[data-studio-entry]');
-        if (link && !link.hidden) say('AI AGENT 제작소로 이동할 수 있습니다.', [{ label: '제작소 열기', href: '/ai-agent-studio', primary: true }]);
-        else say('AI AGENT 제작소는 관리자·운영 계정 전용입니다.');
+        if (link && !link.hidden) say('AI AGENT 제작협업실로 이동할 수 있습니다. 아래 버튼을 누르세요.', [{ label: '제작협업실 열기', href: '/ai-agent-studio', primary: true }]);
+        else say('AI AGENT 제작협업실은 관리자·운영 계정 전용입니다.');
       } },
       { label: '나중에', onClick: function () { done(); say('알겠습니다. 메뉴의 "처음 안내 다시 보기"에서 언제든 다시 볼 수 있습니다.'); } }
     ]);
