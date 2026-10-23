@@ -141,8 +141,8 @@ class AgentDashboardBrowserQaMySqlTest {
       assertThat(text(driver, "agentBadge")).isEqualTo("캐릭터 자료 미연결");
       assertThat(driver.findElement(By.id("agentStage")).getAttribute("data-media")).isEqualTo("missing");
 
-      // 화면 끝까지 내려도 입력창이 보이고 가로 넘침이 없다
-      js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
+      // 대화 기록 끝까지 내려도 입력창이 보이고 가로 넘침이 없다
+      js.executeScript("document.getElementById('uaDrafts').scrollIntoView({block:'end'});");
       Thread.sleep(300);
       assertThat(js.executeScript("var r=document.getElementById('uaCommand').getBoundingClientRect();return r.top>=0&&r.bottom<=window.innerHeight;")).isEqualTo(true);
       assertThat(js.executeScript("return document.documentElement.scrollWidth<=window.innerWidth;")).isEqualTo(true);
@@ -151,6 +151,10 @@ class AgentDashboardBrowserQaMySqlTest {
       Path folder = Paths.get("build/reports/agent-dashboard-qa");
       Files.createDirectories(folder);
       Files.copy(driver.getScreenshotAs(OutputType.FILE).toPath(), folder.resolve(screenshot), StandardCopyOption.REPLACE_EXISTING);
+
+      // 실제 사용자 클릭으로 입시상담 AI 서비스 카드가 열린다(주소 직접 이동 없이)
+      driver.findElement(By.cssSelector("a[href='/admissions/workspace']")).click();
+      wait.until(d -> d.getCurrentUrl().contains("/admissions/workspace"));
     } finally {
       driver.quit();
     }
