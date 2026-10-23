@@ -1,0 +1,161 @@
+{
+  "account": "425805163960",
+  "region": "ap-northeast-2",
+  "observedAt": "2026-10-22T23:14:30.764886+00:00",
+  "snapshotCreated": false,
+  "productionWrites": false,
+  "ec2": {
+    "InstanceId": "i-0414de33d2803c723",
+    "InstanceType": "t3.large",
+    "State": {
+      "Code": 16,
+      "Name": "running"
+    },
+    "Architecture": "x86_64"
+  },
+  "rds": {
+    "status": "UNVERIFIED",
+    "reason": "AccessDenied"
+  },
+  "snapshots": {
+    "status": "UNVERIFIED",
+    "reason": "AccessDenied"
+  },
+  "snapshotQuota": {
+    "status": "UNVERIFIED",
+    "reason": "AccessDenied"
+  },
+  "snapshotPermissionSimulation": {
+    "status": "UNVERIFIED",
+    "reason": "active_rds_not_verified"
+  },
+  "snapshotCreation": {
+    "status": "NOT_EXECUTED",
+    "reason": "RDS has no CreateDBSnapshot dry-run; IAM simulation does not prove SCP/KMS/quota/runtime success",
+    "simulationAvailable": false
+  },
+  "ssmCommandId": "8515a03f-307b-4188-bf05-6742d30be74d",
+  "host": {
+    "status": "OBSERVED",
+    "data": {
+      "memory": {
+        "MemTotalKiB": 8007516,
+        "MemAvailableKiB": 5562616,
+        "SwapTotalKiB": 0,
+        "SwapFreeKiB": 0
+      },
+      "service": {
+        "MainPID": "41917",
+        "NRestarts": "0",
+        "ActiveState": "active",
+        "SubState": "running"
+      },
+      "jars": {
+        "current": {
+          "exists": true,
+          "gitSha": null,
+          "sha256": "177f622215a98c54d5a12837975679ef2d7f06850646eb57a8064c2e5b6e9dd8",
+          "bytes": 221747839,
+          "poiLibraries": [
+            "poi-5.3.0.jar"
+          ]
+        },
+        "previous": {
+          "exists": true,
+          "gitSha": null,
+          "sha256": "a332cfa2a5858d87e3754448208c845a903992cef66d928530278a2fd5352b37",
+          "bytes": 221743820,
+          "poiLibraries": [
+            "poi-5.3.0.jar"
+          ]
+        }
+      },
+      "flyway": {
+        "status": "OBSERVED",
+        "tlsCipher": "TLS_AES_256_GCM_SHA384",
+        "recent": [
+          {
+            "success": 1,
+            "version": "1093",
+            "checksum": 477038462
+          },
+          {
+            "success": 1,
+            "version": "1092",
+            "checksum": -152435870
+          },
+          {
+            "success": 1,
+            "version": "1091",
+            "checksum": -253593548
+          },
+          {
+            "success": 1,
+            "version": "1090",
+            "checksum": 1069483538
+          },
+          {
+            "success": 1,
+            "version": "1089",
+            "checksum": -433467045
+          },
+          {
+            "success": 1,
+            "version": "1088",
+            "checksum": -2018944843
+          },
+          {
+            "success": 1,
+            "version": "1087",
+            "checksum": 1994829989
+          },
+          {
+            "success": 1,
+            "version": "1086",
+            "checksum": 2024246694
+          },
+          {
+            "success": 1,
+            "version": "1085",
+            "checksum": 488631801
+          },
+          {
+            "success": 1,
+            "version": "1084",
+            "checksum": 1456729323
+          },
+          {
+            "success": 1,
+            "version": "1083",
+            "checksum": -385912585
+          },
+          {
+            "success": 1,
+            "version": "1082",
+            "checksum": 1010840412
+          }
+        ]
+      },
+      "runningSha": {
+        "status": "UNVERIFIED",
+        "reason": "no_runtime_generation_attestation"
+      },
+      "databaseEndpointSha256": "7ec464eaebad6ef81fbda7a7969ddc1a2ef921acc3679bb6b0bfbf119315f005",
+      "databaseAccountVerification": "UNVERIFIED",
+      "databaseConfigPresent": {
+        "DB_HOST": true,
+        "DB_USER": true,
+        "DB_USERNAME": false,
+        "DB_NAME": true,
+        "DB_PASSWORD": true
+      }
+    }
+  },
+  "diagnosticCoverage": "PARTIAL",
+  "unverifiedChecks": [
+    "rds",
+    "snapshots",
+    "snapshotPermissionSimulation",
+    "runningSha"
+  ]
+}

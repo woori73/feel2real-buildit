@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.ShinhanCardRawRow;
 import java.math.BigDecimal;
@@ -10,6 +11,38 @@ import org.junit.jupiter.api.Test;
 
 class ShinhanCardExcelParserTest {
   private final ShinhanCardExcelParser parser = new ShinhanCardExcelParser();
+
+  @Test
+  void givenBiff8BytesOnPoi551_whenHeaderMoves_thenAllColumnsStillParse() throws Exception {
+    // given: a real BIFF8 workbook with three extra informational rows (no customer data).
+    var data = List.of(new ShinhanCardExcelTestFixtures.Row11(
+        "2026.09.14", "2026.09.15", "본인", "본인111*", "일시불",
+        "합성 호환성 검증", 15000, 13637, 1363, 0, "111-11-11111"));
+    assertThat(org.apache.poi.Version.getVersion()).isEqualTo("5.5.1");
+    try (var workbook = new org.apache.poi.hssf.usermodel.HSSFWorkbook(ShinhanCardExcelTestFixtures.workbook(data));
+        var out = new java.io.ByteArrayOutputStream()) {
+      var sheet = workbook.getSheetAt(0);
+      sheet.shiftRows(4, sheet.getLastRowNum(), 3);
+      workbook.write(out);
+      byte[] bytes = out.toByteArray();
+      assertThat(java.util.HexFormat.of().formatHex(java.util.Arrays.copyOf(bytes, 8)))
+          .isEqualTo("d0cf11e0a1b11ae1");
+      // when / then: signature, dates, amount and actual shifted row are preserved.
+      var rows = parser.parse(new java.io.ByteArrayInputStream(bytes));
+      assertThat(rows).hasSize(1);
+      assertThat(rows.getFirst().amount()).isEqualByComparingTo("15000");
+      assertThat(rows.getFirst().transactionDate()).isEqualTo(LocalDate.of(2026, 9, 14));
+      assertThat(rows.getFirst().confirmationDate()).isEqualTo(LocalDate.of(2026, 9, 15));
+    }
+  }
+
+  @Test
+  void givenHtmlMasqueradingAsXls_whenParsed_thenRejectWithoutImportingAnything() {
+    // given / when / then: a .xls suffix is not evidence of BIFF8 compatibility.
+    assertThatThrownBy(() -> parser.parse(new java.io.ByteArrayInputStream(
+        "<html><table><tr><td>거래일</td></tr></table></html>".getBytes(java.nio.charset.StandardCharsets.UTF_8))))
+        .isInstanceOf(ShinhanCardExcelParser.ShinhanCardParseException.class);
+  }
 
   @Test
   void parsesAllElevenColumnsAndKeepsTransactionAndConfirmationDatesSeparate() {
