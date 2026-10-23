@@ -200,3 +200,11 @@ aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SN
 - dry-run: 적재 도구가 "제작 프로젝트가 초기화되지 않았습니다"로 **설계대로 중단**(쓰기 없음). 원본 536/316 SHA 검증은 도구 안에서 통과한 뒤 이 단계에서 멈췄다.
 - 차단 조건: 프로젝트 개설(POST `/api/studio/project` 1건 — `studio_projects` 1행 + PROJECT_CREATE 이벤트, 쓰기). 승인 후 개설 → dry-run 재실행(예상 `toUpload=316`, `alreadyStored=0`) → PASS면 적재 승인 요청.
 - PC·모바일 화면·사용설명서: 저장소가 공개라 운영 화면 캡처를 Actions 산출물로 올리지 않는다. 적재 후 대표님 화면에서 보드·갤러리·문서 열람을 캡처하거나, 비공개 저장 위치를 정해 같은 workflow에 캡처 단계를 추가한다.
+
+## 16. 제작실 프로젝트 개설 + dry-run PASS (2026-10-23 03:07 UTC)
+- 실행: [run 39893254076](https://github.com/woori73/feel2real-buildit/actions/runs/39893254076) (#887, `initialize_project=true`, `confirm=CREATE-ai-agent-part1`).
+- 개설 전: 프로젝트 목록 `[]`, `initialized=false`. POST `/api/studio/project` 1회 → 200.
+- 개설 후: `ai-agent-part1` 1건(archived 0), `initialized=true`, files 0, 이벤트 total 1 = `PROJECT_CREATE` 1.
+- dry-run(GET만): `production-dry-run`, 경로 536, 고유 316, 중복 경로 220, SHA 검증 536, 승인 원본 SHA 5, `alreadyStored=0`, `toUpload=316`, 등록 0/536, 배포 SHA `32a9e27e`, 권한·중복 오류 없음, exit 0.
+- 화면 8개 200(재확인), 스냅샷 이름 검사 PASS.
+- 실제 적재 최종 조건: ① 적용(`--apply`) 단계 추가(확인 문자열·`--confirm-snapshot f2r-predeploy-202610230143-32a9e27e`·1회) ② 스냅샷 유효기간 **2026-10-24 01:43 UTC**까지(이후 새 스냅샷 필요) ③ 실행 중 승인 포인터 전후 대조·저장 바이트 SHA 재검증·등록 1회(도구 내장) ④ 사후 536/316/승인 5종 SHA/콘티 승인 0 확인.
