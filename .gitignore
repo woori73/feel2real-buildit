@@ -104,3 +104,6 @@ e2e/unified-assistant/node_modules/
 e2e/unified-assistant/test-results/
 e2e/unified-assistant/playwright-report/
 e2e/unified-assistant/results.json
+
+# F2R AI 운영 대시보드 캐릭터 영상·이미지: 승인 전까지 저장소에 올리지 않는다 (docs/design/agent-dashboard/README.md)
+src/main/resources/static/agent-media/
