@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Feel2Real · AI 연결 승인</title>
+    <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+    <link rel="stylesheet" href="/css/agent_studio.css" />
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">FEEL2REAL · READ ONLY</p>
+        <h1>AI 자료 조회 연결</h1>
+        <p>
+          <strong th:text="${clientName}"></strong>에서 사용할 자료 범위를
+          선택하세요.
+        </p>
+      </section>
+      <section class="panel">
+        <p>
+          연결된 AI는 현재 계정이 조회할 수 있는 자료만 읽습니다.
+          학생·회원·금융·상담 자료는 필요한 목적의 범위만 선택하세요. 연결을
+          통해 자료 수정·삭제·승인·배포를 할 수 없습니다.
+        </p>
+        <form action="/mcp/oauth/authorize" method="post">
+          <input type="hidden" name="nonce" th:value="${nonce}" /><label
+            th:each="permissionScope : ${scopes}"
+            ><input
+              type="checkbox"
+              name="scopes"
+              th:value="${permissionScope}"
+              th:checked="${permissionScope == 'catalog:read' or permissionScope == 'studio:read'}"
+              style="
+                width: auto;
+                display: inline;
+                vertical-align: middle;
+              " /><span th:text="${scopeLabels.get(permissionScope)}"></span
+          ></label>
+          <p>
+            offline_access는 최대 30일 동안 재인증 없이 연결을 갱신합니다.
+            access token은 15분 후 만료됩니다.
+          </p>
+          <section th:if="${adminAccount}" role="note"><strong>관리자 자료의 외부 제공 주의</strong><p>학생·회원·금융·상담 범위를 선택하면 관리자 권한으로 볼 수 있는 민감정보가 연결한 외부 AI에 전달될 수 있습니다. 업무에 필요한 최소 범위만 선택하세요. 금융은 사업체별 월 합계만 제공하며 원문·거래처·증빙은 제외합니다.</p></section>
+          <section role="note"><strong>원본 파일의 외부 제공 주의</strong><p>원본 제공 권한은 기본 해제되어 있습니다. 선택하면 PDF·이미지·ZIP·영상 등의 민감정보가 마스킹 없이 외부 AI에 전달될 수 있습니다. 원본을 먼저 확인하고 필요한 경우에만 허용하세요. 서비스별 기존 접근 권한도 계속 적용됩니다.</p><label><input type="checkbox" name="sensitiveAcknowledged" value="true" style="width:auto"> 선택한 민감 범위 또는 원본 파일의 외부 제공 위험을 확인했습니다.</label></section>
+          <button>선택한 읽기 범위 연결</button> <a href="/">취소하고 홈으로</a>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

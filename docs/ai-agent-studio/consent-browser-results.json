@@ -1,0 +1,38 @@
+{
+  "syntheticOnly": true,
+  "liveProvidersVerified": false,
+  "checks": [
+    {
+      "name": "pc every permission has a visible description",
+      "pass": true
+    },
+    {
+      "name": "pc original scope defaults off",
+      "pass": true
+    },
+    {
+      "name": "pc separate acknowledgement and warning",
+      "pass": true
+    },
+    {
+      "name": "pc original scope without acknowledgement rejected",
+      "pass": true
+    },
+    {
+      "name": "mobile every permission has a visible description",
+      "pass": true
+    },
+    {
+      "name": "mobile original scope defaults off",
+      "pass": true
+    },
+    {
+      "name": "mobile separate acknowledgement and warning",
+      "pass": true
+    },
+    {
+      "name": "mobile original scope without acknowledgement rejected",
+      "pass": true
+    }
+  ]
+}

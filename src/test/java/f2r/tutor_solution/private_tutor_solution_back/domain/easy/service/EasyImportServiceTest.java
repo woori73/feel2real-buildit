@@ -63,7 +63,10 @@ class EasyImportServiceTest {
   void setUp() {
     service = new EasyImportService(
         batchRepository, rowRepository, businessRepository, txnRepository, accountService,
-        mappingRepository, journalService);
+        mappingRepository, journalService,
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRunRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionApprovalRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService.class));
     academy = EasyBusiness.builder().code("ACADEMY").name("학원").active(true).sortOrder(1).build();
     telecom = EasyAccount.builder().code("EXPENSE_TELECOM").name("통신비")
         .direction(EasyAccountDirection.EXPENSE).sortOrder(1).active(true).build();

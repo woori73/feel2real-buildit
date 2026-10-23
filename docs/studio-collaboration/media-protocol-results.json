@@ -1,0 +1,29 @@
+{
+  "testType": "Official Python MCP SDK 2.1.1, 3 independent OAuth grants against actual #863 originals; NOT ChatGPT/Claude product account or model vision tests",
+  "sourceCommit": "09d62dee982e2e89e3653c90b1ee42f05bff4f9d",
+  "clientA": {
+    "tools": 21,
+    "documentSha256": "fde084731e1e9933a688b8fc2a0cff930d098a8ae91685aae93942d1c98b7461",
+    "originalSha256": "461926ffdb3a391c6b31d55aa759a4716674264209947d9cf55c7732e7f23be6",
+    "derivativeSha256": "c2f5cda3b8422d3891f70a0bc473c56652257dd01e402098b3bf49b444aaae20",
+    "imageContentBlock": true,
+    "derivativeBytes": 70577,
+    "writeDenied": true
+  },
+  "clientB": {
+    "tools": 21,
+    "documentSha256": "fde084731e1e9933a688b8fc2a0cff930d098a8ae91685aae93942d1c98b7461",
+    "originalSha256": "461926ffdb3a391c6b31d55aa759a4716674264209947d9cf55c7732e7f23be6",
+    "derivativeSha256": "c2f5cda3b8422d3891f70a0bc473c56652257dd01e402098b3bf49b444aaae20",
+    "imageContentBlock": true,
+    "derivativeBytes": 70577,
+    "writeDenied": true
+  },
+  "withoutOriginalConsent": {
+    "tools": 21,
+    "documentSha256": "fde084731e1e9933a688b8fc2a0cff930d098a8ae91685aae93942d1c98b7461",
+    "imageDeniedWithoutConsent": true
+  },
+  "actualProductImageReading": "NOT TESTED",
+  "actualExternalAiCalls": 0
+}

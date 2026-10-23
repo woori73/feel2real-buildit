@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>제작 프로젝트 · Feel2Real</title><th:block th:replace="~{fragments/_head :: favicon}"></th:block><link rel="stylesheet" href="/css/agent_studio.css"/><script src="/js/studio_projects.js" defer></script></head>
+<body><header><a href="/" class="brand">Feel2Real <span>PRODUCTION</span></a><a href="/mcp/connections">AI 연결 관리 ↗</a></header><main>
+<section class="hero"><p class="eyebrow">함께 만드는 작품</p><h1>제작 프로젝트</h1><p>프로젝트마다 자료와 팀 권한을 구분합니다. 보관한 작품도 모든 기록을 유지하며 다시 열 수 있습니다.</p></section>
+<p id="message" role="status" aria-live="polite"></p>
+<form id="create-project" hidden><h2>새 프로젝트</h2><label>제목<input name="title" required maxlength="150"/></label><button>프로젝트 생성</button><p class="hint">빈 프로젝트를 만듭니다. 기존 작품의 자료를 복사하거나 임의 생성하지 않습니다.</p></form>
+<section id="invitations"><h2>나에게 온 초대</h2><div id="invite-list"></div></section>
+<section><h2>작업 중인 프로젝트</h2><div id="active-projects" class="project-grid"></div></section>
+<section><h2>보관된 프로젝트</h2><p>자료·버전·SHA·승인·작업 기억은 열람할 수 있습니다. 수정은 재개 후 가능합니다.</p><div id="archived-projects" class="project-grid"></div></section>
+<dialog id="rename-project"><form id="rename-form"><h2>프로젝트 제목 수정</h2><label>새 제목<input name="title" required maxlength="150"/></label><button type="button" id="cancel-rename">취소</button><button>제목 저장</button></form></dialog>
+<footer>원본과 승인 이력은 보존합니다. 영구 삭제 기능은 제공하지 않습니다.</footer></main></body></html>

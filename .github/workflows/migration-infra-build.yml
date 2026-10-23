@@ -24,6 +24,7 @@ on:
           - app-diag
           - alb-diag
           - academycraft-preflight
+          - readonly-setup
           - admissions-diag
           - a1-precheck
           - acm-dns
@@ -632,6 +633,40 @@ jobs:
             python3 scripts/operations/a1-aws-precheck.py
           }
 
+          # 읽기 전용 진단 기반(#875)을 저장소 JSON 그대로 만든다: 고정 SSM 문서 F2R-ReadOnlyStatus와
+          # 별도 역할 github-actions-f2r-readonly. 배포 역할(github-actions-f2r-deploy)은 건드리지 않는다. 비밀값 없음.
+          step_readonly_setup() {
+            local ACCOUNT D=docs/operations/aws-migration DOC=F2R-ReadOnlyStatus ROLE=github-actions-f2r-readonly V
+            ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+            [ "$ACCOUNT" = "425805163960" ] || { echo wrong-account; exit 1; }
+            if aws ssm describe-document --name "$DOC" >/dev/null 2>&1; then
+              # shellcheck disable=SC2016 # '$LATEST'는 SSM 문서 버전 리터럴
+              if V=$(aws ssm update-document --name "$DOC" --document-version '$LATEST' --document-format JSON \
+                  --content "file://$D/ssm-document-F2R-ReadOnlyStatus.json" --query DocumentDescription.DocumentVersion --output text 2>/tmp/upd.err); then
+                aws ssm update-document-default-version --name "$DOC" --document-version "$V" >/dev/null
+                echo "ssm document $DOC updated to version $V (default)"
+              elif grep -q DuplicateDocumentContent /tmp/upd.err; then echo "ssm document $DOC unchanged"
+              else cat /tmp/upd.err >&2; exit 1; fi
+            else
+              aws ssm create-document --name "$DOC" --document-type Command --document-format JSON \
+                --content "file://$D/ssm-document-F2R-ReadOnlyStatus.json" --tags Key=Project,Value=$P >/dev/null
+              echo "ssm document $DOC created"
+            fi
+            if aws iam get-role --role-name "$ROLE" >/dev/null 2>&1; then
+              aws iam update-assume-role-policy --role-name "$ROLE" --policy-document "file://$D/trust-github-actions-f2r-readonly.json"
+              echo "role $ROLE trust synced"
+            else
+              aws iam create-role --role-name "$ROLE" --assume-role-policy-document "file://$D/trust-github-actions-f2r-readonly.json" \
+                --description "Feel2Real read-only diagnostics (fixed SSM document only)" --max-session-duration 3600 --tags Key=Project,Value=$P >/dev/null
+              echo "role $ROLE created"
+            fi
+            aws iam put-role-policy --role-name "$ROLE" --policy-name f2r-readonly-status --policy-document "file://$D/policy-f2r-readonly-status.json"
+            echo "inline policy f2r-readonly-status synced"
+            echo "attached managed policies: $(aws iam list-attached-role-policies --role-name "$ROLE" --query 'length(AttachedPolicies)' --output text)"
+            echo "inline policies: $(aws iam list-role-policies --role-name "$ROLE" --query 'PolicyNames' --output text)"
+            aws ssm describe-document --name "$DOC" --query 'Document.{Name:Name,DefaultVersion:DefaultVersion,Status:Status,Hash:Hash}' --output table
+          }
+
           step_all_infra() {
             # s3 는 마지막: IAM 정책 반영(부트스트랩 apply) 순서와 무관하게 나머지 구축이 막히지 않게 한다.
             step_validate; step_vpc; step_rds_shell; step_ec2; step_alb; step_acm
@@ -645,6 +680,7 @@ jobs:
             app-diag) step_app_diag ;;
             alb-diag) step_alb_diag ;;
             academycraft-preflight) step_academycraft_preflight ;;
+            readonly-setup) step_readonly_setup ;;
             admissions-diag) step_admissions_diag ;;
             a1-precheck) step_a1_precheck ;;
             s3) step_s3 ;;

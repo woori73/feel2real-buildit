@@ -29,6 +29,18 @@ public final class TransactionalFileDeletion {
     }
   }
 
+  /** 새 객체 보상 — 명확한 롤백에만 삭제한다. 커밋·결과 불명 상태에서는 보존한다. */
+  public static void onRollback(Runnable deleteNewFile) {
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCompletion(int status) {
+          if (status == TransactionSynchronization.STATUS_ROLLED_BACK) deleteNewFile.run();
+        }
+      });
+    }
+  }
+
   /** 파일 교체 보상 — 커밋되면 기존 파일 삭제, 롤백되면 새 파일 삭제. */
   public static void onReplace(Runnable deleteOldFile, Runnable deleteNewFile) {
     if (TransactionSynchronizationManager.isSynchronizationActive()) {

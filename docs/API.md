@@ -954,6 +954,17 @@ LMS 주소가 성립하지 않는다(404).
 - 인증/권한: 전부 `/api/admin/**` → ROLE_ADMIN. SSR `/easy/**`도 `hasRole("ADMIN")`. Wiki `users`와 연결하지 않는다.
 - 금액: 전부 long(원). 상태(미납/일부납/완납)는 저장 없이 청구/납부 기준 자동 계산.
 
+### 작업 B — 금융자료 수집 프로토타입 (기본 OFF, local 전용)
+
+- Prefix: `/api/admin/easy/financial-collector`. `local & !prd` + `app.easy.financial-collector.enabled=true`에서만 생성. 기존 ADMIN 로그인·활성 사업체 접근 확인을 사용한다.
+- `GET /capabilities`: 기관·dataset·파일형식·지원 판정. 실제 기관 다운로드는 모두 OFF.
+- `POST /previews`: multipart `businessId,dataset,accountRef,from,to,file,userApprovedUpload=true` + 선택 `expectedCount,expectedTotal`. CSV/XLS/XLSX/텍스트 PDF 템플릿 → 암호화 원본·초안·누락 보고만 생성(201). 파싱 불가는 암호화 보존 후 FAILED 보고.
+- `GET /previews/{collectionId}?businessId`: 원본 UUID의 보고, 실제 run/batch/approval, `ledgerSaved`, `reviewHash` 조회.
+- `POST /previews/{collectionId}/stage?businessId`, JSON `{"reviewed":true}`: BANK_ACCOUNT만 기존 raw/import staging에 인계. archive ID 재시도는 같은 run. confirm 호출 없음.
+- `POST /previews/{collectionId}/approve-and-commit?businessId`, JSON `{"userApprovedLedgerCommit":true,"reviewHash":"현재 검토 해시"}`: 기존 승인 서비스를 통한 명시 반영. 실패는 COMMIT_FAILED로 추적·재시도, COMMITTED는 재반영하지 않는다.
+- 다른 dataset은 카드 구매/매출/정산/증빙 전용 경로를 표시하고 일반 반영을 거부한다. 통합 AI 자율 도구에 stage/commit을 노출하지 않는다.
+- [상세 계약·샘플·실행](easy/financial-collector/API_AND_PROTOTYPE.md), [기관 조사](easy/financial-collector/INSTITUTION_SUPPORT_2026-10-22.md), [보안·격리 검증 및 한계](easy/financial-collector/SECURITY_AND_VERIFICATION_2026-10-22.md).
+
 ### ✅ GET /api/admin/easy/businesses
 
 - 목적: 활성 사업체 목록 (이름 하드코딩 없이 code/name으로 참조).
@@ -4723,7 +4734,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /api/tutor/easy/imports/{batchId}/confirm?businessId={id}`: 선택 또는 전체 READY 행을 기존 장부·복식분개 엔진에 반영한다.
 - `DELETE /api/tutor/easy/imports/{batchId}?businessId={id}`: 미확정 STAGED 배치만 폐기한다.
 - 모든 batchId/rowId 조작은 principal → Academy → 연결 사업체 검증 뒤 `batch_id + business_id`로 재조회한다. 클라이언트 businessId는 권한 근거가 아니라 선택자다.
-- 기존 `/api/admin/easy/**` 계약은 변경하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.
+- 일반 CSV·이지샵 등록은 기존 경로를 유지한다. `easy_collection_runs.import_batch_id`로 연결된 수집 배치는 일반 ADMIN/TUTOR 확정·계정 변경·재분류·준비·폐기 경로에서 403이다. 수집 승인 전용 서비스만 서버 승인 행 잠금 아래 APPROVED/COMMIT_FAILED 상태, 요청자 사업체 권한, 승인·실행·연결·배치 사업체 일치를 재검증하여 확정한다. 원문 사업체 마커로 수집 승인 범위 밖 장부에 기록하지 않는다. 외부 금융기관 자동수집과 LLM 호출은 없다.
 
 
 ## Easy 원장 대화형 Agent API (V1073)
@@ -4866,3 +4877,142 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 |---|---|---|---|
 | GET | `/help/academycraft`, `/help/academycraft/{slug}` | ADMIN·TUTOR (비로그인 HTML은 로그인 안내 302) | 도움말 SSR. 역할 전용 문서는 타 역할 404 |
 | POST | `/api/help/academycraft/ask` | ADMIN·TUTOR | body `{question}`(≤300자). 읽기 전용 검색·안내, 사용자당 분당 20회(429). 응답 `{intent,text,sources[],grounded,writeBlocked}` |
+
+## AI AGENT 제작 스튜디오 및 통합 MCP (미배포)
+
+`GET /ai-agent-studio`는 로그인과 프로젝트 제작 권한이 필요하다. ADMIN은 프로젝트 개설·멤버 권한을 관리한다. 상태 변경은 정확한 same-origin을 요구하며 MCP bearer token으로 사용할 수 없다.
+
+| 경로 | 메서드 | 계약 |
+|---|---|---|
+| `/api/studio/project` | GET / POST | 현황 / ADMIN 개설, 14화·EP01 68컷 업로드 대기 구조 |
+| `/api/studio/revisions` | GET / POST | episode·kind·q·offset·limit(1~200) 검색 / parentId 기반 append-only 버전 |
+| `/api/studio/cuts?episode=1` | GET | 전체 컷별 최신 head. 버전 목록 200건 제한과 분리 |
+| `/api/studio/revisions/{id}/restore` | POST | EDITOR/APPROVER, `{expectedHead,label}` CAS 검사 후 이전 원문·파일을 참조하는 새 USER_EDIT 버전. 기존 승인 포인터·원본 불변 |
+| `/api/studio/imports/ep01` | POST | `{fileId}` 보관한 JSON/ZIP source. 1~68컷 필수·중복/누락/잘못된 ZIP 거부, 전체 검증 후 한 DB 트랜잭션으로 새 버전 68개. 자동 승인 없음 |
+| `/api/studio/revisions/{id}` | GET | 권한 있는 버전 원문·승인 포인터 |
+| `/api/studio/revisions/{id}/review` | POST | APPROVER의 APPROVE/REJECT와 메모, AI 자동 승인 없음 |
+| `/api/studio/compare?left=&right=` | GET | 두 실제 버전 비교 |
+| `/api/studio/files` | GET / POST | 보관 목록 / multipart PDF·HTML·JSON·MD·ZIP·PNG·MP4, 100 MiB, SHA-256 중복 검사 |
+| `/api/studio/files/{id}` | GET | storage key 제외 파일 메타데이터 |
+| `/api/studio/files/{id}/content` | GET | 원본 bytes, attachment·no-store·nosniff·CSP sandbox |
+| `/api/studio/files/{id}/text` | GET | 20 MiB 이하 PDF/텍스트·ZIP 목록 열람, ZIP 해제·스크립트 실행 없음 |
+| `/api/studio/events` | GET | 작업·검수·승인 이력 |
+| `/api/studio/members` | GET / POST | ADMIN 전용 명시적 제작 담당자 권한·폐기 |
+| `/mcp` | POST | stateless Streamable HTTP JSON-RPC, bearer 전용, 읽기 도구만 제공 |
+| `/.well-known/oauth-protected-resource/mcp` | GET | RFC 9728 resource metadata |
+| `/.well-known/oauth-authorization-server` | GET | OAuth metadata, S256 PKCE·DCR 지원 |
+| `/mcp/oauth/register` | POST JSON | 정확한 redirect URI 허용 목록의 public client 등록 |
+| `/mcp/oauth/authorize` | GET / POST form | 기존 홈페이지 로그인·일회용 동의 nonce·서비스 범위 승인 |
+| `/mcp/oauth/token` | POST form | code 교환·resource audience 검사·refresh 교체 |
+| `/mcp/oauth/revoke` | POST form | 해당 token의 연결 폐기 |
+| `/mcp/connections` | GET | 본인 연결·범위·만료·폐기 화면 |
+| `/api/mcp/connections/{id}/revoke` | POST | 기존 사용자 세션의 본인 연결 폐기 |
+
+MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·연결 안내와 검증 결과는 [통합 보고서](ai-agent-studio/REPORT.md), 전체 실제 페이지·API는 [서비스 조사](ai-agent-studio/SERVICE_INVENTORY.md)를 참조한다. 동적 페이지의 SSR 본문과 클라이언트 API 원천은 구분한다. 기존 서비스 권한/tenant 검사, 정확한 GET 경로에 15초로 묶은 내부 위임, 읽기 전용/rollback 트랜잭션을 거치며 사용자 role을 ADMIN으로 바꾸지 않는다. Wiki는 기존 workspace SQLite를 읽기 전용으로 열며 공유 관리자 MCP API key를 사용하지 않는다.
+
+## 통합 AI 업무 비서 v1 (작업 A, 로컬 프로토타입)
+
+접두 `/api/dashboard/assistant/v1`, ADMIN·TUTOR만. 서비스에서 현재 DB 역할·학원/사업체·초안 생성자를 재확인한다. 모든 응답 `no-store`. 변경 요청은 Origin `http://localhost:8080` 또는 `https://feel2real.co.kr`만 허용한다.
+
+| 메서드 / 경로 | 계약 |
+|---|---|
+| `GET /progress` | 사용자 진행을 생성/조회. `{step,completed,firstVisit,version,role}` |
+| `PUT /progress` | `{step:0..5,completed,version}`. 완료는 step=5만. 오래된 버전 409 |
+| `GET /overview?academyId=&businessId=` | 선택한 허용 학원의 context/stats와 선택한 허용 사업체의 월 요약. 학원 연결 실패는 `academyUnavailable:true`, 재무 권한 실패는 403 |
+| `GET /catalog/{kind}?academyId=` | `students/classes/consultations/teachers`만. 기존 학원 API 조회 |
+| `POST /conversation` | `{academyId?,businessId?,message}`. 기존 Muse Spark(설정 시) 또는 명시적으로 표시된 규칙 분석 → 필수 값이 충분하면 서버 초안 생성, 부족하면 보완 제안. `{message,analysis,suggestion,drafts,issues,overview}`. 실제 업무 실행 없음 |
+| `POST /materials?academyId=&businessId=` | multipart `file` CSV/TXT 1~256KB. 학생 명단 CSV/업무 지시 TXT 최대 20행, 거래 CSV는 기존 import 분석. 초안 배열·행별 확인 사항 반환. 자료 내 ID/권한/승인 지시는 권한 근거가 아님. 모든 업무 범위 권한을 먼저 확인하고 각 초안을 개별 저장·승인 |
+| `POST /command` | `{message}` 1~2000자. `{operation,input,message}`의 수정 가능한 업무 제안만 반환. 실행 없음 |
+| `POST /drafts` | `{academyId?,businessId?,operation,input:{...}}`. 허용 필드만 받고 서버 초안 저장. 기본 쓰기 스위치 OFF면 503 |
+| `POST /imports?businessId=` | multipart `file` CSV ≤256KB. 기존 import 원본 행 보관 후 장부 반영 초안 생성 |
+| `GET /drafts` | 본인 최신 30개 중 현재 권한을 가진 범위. `{id,operation,academyId,businessId,preview,planHash,status,createdAt,expiresAt,result}` |
+| `POST /drafts/{uuid}/approve` | `{planHash}`. 본인·역할·소속/권한·해시·10분 만료·대상 지문을 재확인하고 DB 조건부 선점 후 기존 API 실행. 종료 성공 상태는 저장 결과만 재생 |
+| `POST /drafts/{uuid}/cancel` | `{planHash}`. 대기 초안 취소. 이미 승인/종료한 작업을 되돌리지 않음 |
+| `GET /audit` | 본인 최신 50개 이벤트. 입력 원문 없음 |
+
+업무: `STUDENT_CREATE/UPDATE`, `CLASS_CREATE/UPDATE/ASSIGN`, `ATTENDANCE_RECORD`, `CONSULT_CREATE/MESSAGE`, `LEDGER_ENTRY/IMPORT/ACCOUNT`. 거래 직접 입력은 기존 CSV import 초안으로 정규화한다. 실제 입력 필드는 서버의 allowlist와 화면 폼을 따른다. 사용자당 미처리 초안 최대 20개. 요청 범위 밖 필드·모호한 입력 400, 비로그인 401, 권한/출처 403, 타인 초안 404, 해시·상태·대상 변경 409 또는 종료 상태, 초안 한도 429다.
+
+학원 쓰기는 기존 AcademyCraft 원장 역할만 허용하고 기존 REST API·서비스의 소속 검사를 유지한다. 기존 AcademyCraft `/agent` 계획을 변경하거나 승인하지 않는다. 실행 후 재조회 결과에 따라 `VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN`을 기록하며, 불명확한 실행은 자동 재시도하지 않는다. 상세 입력 예시·상태·제한은 [분석 보고서](unified-ai-assistant/README.md).
+
+기존 `POST /api/dashboard/assistant`는 선택한 사업체의 **재무 해설 전용** Muse Spark 경로로 유지한다. 이 경로의 LLM 문맥에는 학원 출결 데이터가 없으며 새 통합 현황 조회와 구분한다.
+
+통합 비서의 초안 생성/만료 시각과 감사 시각은 UTC ISO-8601(`Z`)로 응답하고, 화면은 사용자의 시간대로 표시한다. 출결 입력 시각은 기존 AcademyCraft 계약대로 한국 현지 시각이다.
+
+통합 대화의 `buildit.unified-assistant.model-analysis-enabled` 기본값은 false이며 local에서만 true다. 기존 Muse Spark 전송 계층만 재사용한다. 모델 출력은 업무·필드 allowlist/타입/명시 ID 검증 후에도 승인 권한이 없으며, 실행은 기존 초안 승인 경로만 사용한다. 모델 미연결·잘못된 응답은 규칙 분석으로 처리했음을 알린다. 대화 입력 문장은 현재 브라우저에서만 표시하며 새로고침 시 현재 권한 범위의 서버 초안·결과 최신 30개를 복원한다.
+
+`GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.
+
+### 독립 검수 반영: MCP 외부 제공 경계
+
+- ChatGPT redirect는 관리 화면의 `https://chatgpt.com/connector/oauth/{callback_id}` 전체를 `app.mcp.redirect-uris`에 정확히 등록한다. 안정형 `/connector_platform_oauth_redirect`는 해당 공식 조건/관리 화면 URI인 경우에만 명시 설정한다. 기본은 Claude hosted callback만이며 과거 잘못된 callback·임의 URI·wildcard는 거부한다. DCR·PKCE·resource 검증은 유지한다.
+- ADMIN의 studio/catalog/chart/grammar/offline_access 외 scope 동의는 `sensitiveAcknowledged=true`가 추가로 필요하다. 동의 화면에 외부 민감정보 제공 경고를 표시하고 SENSITIVE_ACK 감사 기록을 남긴다. 기존 scope나 계정 권한을 확대하지 않는다.
+- `read_easy`는 `GET /api/mcp/finance/summary?businessId=&month=`만 실행한다. 현재 DB 역할과 기존 학원/사업체 링크 검사 후 월 수입·지출·수지·미수·건수만 반환한다. 원문·거래처·증빙·계좌·학생 목록·collector preview/status/raw는 제외한다. ADMIN도 정책을 우회하지 않는다.
+- `read_admissions`는 본인 상담 이력 API만 제공한다. 관리자 지식/원자료/통계는 제외했다. 상담 읽음 상태 변경·설정 자동 생성·외부 위키 실시간 호출이 있는 GET 8개를 MCP 실행 정책에서 제외했다. 기존 서비스의 원래 API 동작은 유지한다.
+- 유효 MCP 요청은 프록시 IP 대신 인증된 사용자 ID로 호출 한도를 검사한다. 익명 경로는 기존 AdmissionsRateLimiter의 신뢰 프록시 주소 판별을 재사용(`app.admissions.rate-limit.trusted-proxies`), 비신뢰 XFF는 무시한다. 사용자당 60/분, 모든 JSON-RPC 전체 최대 8개 동시(`app.mcp.max-concurrent-calls`, JVM별), 내부 읽기 사용자당 2개. 상한 시 429/Retry-After이며 DB 기반 분당 한도는 replica에도 공유된다.
+- #853 수집·장부 확정과 #854 초안 승인 POST를 MCP에 노출하지 않는다. 자연어 승인·MCP Bearer·GET 전용 위임 JWT로 장부 확정을 호출할 수 없다. 실제 제품 계정 연결은 별도 사용자 로그인/동의 시험 전까지 미검증이다.
+
+**검수 반영(2026-10-22, Claude).**
+- `POST /conversation`·`/materials` 응답에 `data`(nullable)가 추가됐다. 읽기 전용 업무의 결과만 담는다: 공지 초안 `{notice}`(저장·발송 없음), 출결 조회 `{studentId,events:[{id,eventType,occurredAt}],limit:20}`. 초안·승인 없이 응답하며 메모·연락처 등 다른 필드는 반환하지 않는다.
+- 조회 의도(조회·확인·보여·알려·현황·요약·내역)와 쓰기 동사(등록·기록·추가·만들·생성·수정·배정·처리·남겨)가 함께 없을 때만 읽기 전용으로 분기한다. "출결 조회"는 더 이상 출결 기록 초안이 되지 않는다.
+- 출결 **정정**은 비서가 처리하지 않는다. AcademyCraft 정정 API의 경로·본문 규격이 이 저장소에 근거(코드·계약서)로 없어 추측 호출하지 않으며, 새 출결 이벤트로 대체하는 오분류를 막고 기존 출결 화면으로 안내한다(조사 근거는 docs/unified-ai-assistant/README.md §8).
+- Muse 호출 상한(설정, 인스턴스 단위): `buildit.unified-assistant.model-calls-per-minute`(기본 6)·`model-calls-per-day`(60)·`model-calls-per-upload`(3). 초과·자료당 횟수 소진·연락처(전화·이메일) 포함 텍스트·읽기 전용/정정 의도는 모델을 호출하지 않고 규칙 분석으로 폴백하며 `analysis`에 이유를 표시한다.
+- `GET /audit`의 각 행에 `operation`, `academyId`, `businessId`가 추가됐다.
+- 쓰기 Origin 허용 목록은 `buildit.unified-assistant.allowed-origins`(쉼표 구분, 기본 `http://localhost:8080,https://feel2real.co.kr`)다.
+- `GET /drafts`는 만료 후 5분이 지나도 `EXECUTING`인 본인 초안을 `UNKNOWN`(감사 `RECOVERED_UNKNOWN`)으로 전환한다. 자동 재실행은 하지 않는다.
+- `LEDGER_ACCOUNT`(계정 변경) 초안은 이 비서가 본인의 `LEDGER_IMPORT` 초안으로 만든 가져오기 배치만 대상으로 한다. 금융자료 수집(#853) 등 다른 경로가 만든 승인 전 배치는 403이며 기존 이지장부 화면에서 처리한다(수집 승인 해시·배치 상태가 외부에서 바뀌는 것을 막기 위함).
+
+- `FINANCIAL_FILE` 수집 승인은 기존 서버 승인 기록의 `financial-collector reviewed batch <SHA-256>`과 현재 배치 DTO 해시를 승인 시점과 장부 확정 직전(승인 행 잠금 안) 다시 비교한다. 누락·변경 시 거부하며 승인 전 상태는 유지한다. 일반 수집 CSV의 기존 명시적 승인 흐름은 유지한다.
+
+### MCP 긴급 보완 (2026-10-22)
+
+- OAuth `originals:read`: 서비스 읽기 권한과 별도인 원본 바이너리 제공 권한. 기본 선택 해제. 모든 역할에서 `sensitiveAcknowledged=true`를 사용자 동의 화면에서 확인해야 발급하며 `SENSITIVE_ACK`를 남긴다. 원본 bytes/SHA를 바꾸지 않으므로 민감정보가 마스킹 없이 외부로 제공될 수 있다는 경고를 표시한다. 도구 인자로 권한을 올릴 수 없다. 기존 원본 scope 없는 grant의 바이너리 조회는 403 `originals_scope_required`; 텍스트·요약 조회는 기존 범위를 유지한다. 원래 서비스의 역할·학원·사업체 권한도 항상 검사한다.
+- MCP 주소 판별은 framework 전달 헤더 wrapper를 벗긴 원래 socket peer 및 원래 XFF를 기존 신뢰 프록시 resolver로 검증한다. `server.forward-headers-strategy=framework`에서 신뢰 CIDR 누락·잘못된 CIDR은 MCP 요청에 503 `MCP_TRUSTED_PROXIES_REQUIRED`. 운영 CIDR·ALB 보안그룹은 이번 작업에서 조회·변경하지 않았다.
+- JSON/텍스트의 +82 휴대·지역전화, 연속 10~19자리 번호, 분리된 카드번호, 숫자형 계좌/카드 필드를 마스킹한다. 숫자형 금액·일반 ID는 유지한다. 자유 텍스트의 긴 숫자는 계좌와 주문번호 등을 구분할 수 없어 보수적으로 마스킹하며 완전한 개인정보 탐지로 간주하지 않는다.
+
+### 제작실 사람 중심 열람 (협업실 1단계)
+
+- `GET /api/studio/files/{id}/preview?entry=`: 기존 제작실·파일 권한을 먼저 검사. 원본 20 MiB 이하 PNG 화면용 파생본(최대 1024px/입력 4천만 화소), PDF, MP4, JSON, 안전 HTML/Markdown을 반환한다. `page=1`은 PDF 페이지 PNG와 `X-PDF-Pages` 헤더를 반환하며 브라우저의 이전/다음 페이지 뷰어에 사용한다(처음 100쪽). HTML은 CommonMark→Jsoup 태그 허용 목록·sandbox/CSP로 스크립트·폼·외부 리소스를 차단한다. 승인·원본·SHA·버전을 변경하지 않는다. 미리보기 결과의 SHA는 원본 SHA가 아니다.
+- `GET /api/studio/files/{id}/entries`: ZIP 중앙 디렉터리 목록과 `previewable`. 최대 1000항목, 중복 경로 거부. `preview?entry=<정확한 이름>`은 안전 경로·지원 확장자·8 MiB·압축비 1000 이하를 검사하고 선택 항목만 메모리에서 읽어 CRC 검증한다. 중첩 ZIP·실행 파일·경로 탈출은 미지원. 임시 ZIP은 finally 삭제하며 저장소에 압축 해제하지 않는다.
+- 두 경로는 사이트 로그인 조회 전용이며 이 단계에서는 MCP 허용 목록에 추가하지 않는다. 원본 attachment 경로와 기존 MCP 정책은 유지한다. 동시 미리보기 2건, 초과 429. 각 문서 20만 자 상한, 초과 413.
+
+### #863 제작 원본 적재
+
+- `GET /api/studio/source-import`: 현재 프로젝트 권한으로 536개 원본 경로의 등록 현황·고정 Git 커밋·원작 대조 0/68·PASS 확정 0·인계 문서 메타데이터 조회.
+- `POST /api/studio/source-import`: ADMIN·same-origin 전용. `{commit,files:{"SHA256":"file UUID"}}`. 커밋 `09d62dee982e2e89e3653c90b1ee42f05bff4f9d`과 서버에 검토·고정된 536경로/316고유SHA 카탈로그만 받는다. 기존 업로드 파일의 프로젝트·크기·메타 SHA·실제 저장소 bytes SHA를 검사한 뒤, 한 DB 트랜잭션으로 원본 경로 버전 536개·r14/r5 컷 버전 136개·기존 승인 캐릭터 정본 5개·초기 작업 기억 1개를 등록한다. 기존 사용자 승인 5종만 이관하고 컷은 모두 REVIEW/미승인이다.
+- 재실행은 `(project,item_key,label)`에 존재하는 출처를 재검증하고 새 이력·승인 이벤트를 만들지 않는다. 동일 SHA 파일은 공유하지만 경로별 버전·출처 참조는 보존한다. 사용자 편집본·다른 승인 정본을 자동 덮어쓰지 않는다. 실패 시 등록 트랜잭션을 롤백한다. 선행 업로드는 별도 커밋된 보관 파일로 남아 재시도에 재사용한다(일괄 파일+DB 분산 트랜잭션 아님).
+- 파일 목록은 `GET /api/studio/files?limit=200&offset=0` 페이지 조회. MD5 인계 파일은 엄격한 UTF-8 텍스트로 보관·열람하며 체크섬 검증은 SHA-256으로 별도 수행한다. 기존 형식은 유지한다.
+- 로컬 임포터 `scripts/ai-agent-studio/import-production.py`: 기본 dry-run. 실제 적용은 격리 loopback 포트18090만 허용하며 운영 주소를 받지 않는다. 사용자가 파일을 다운로드·업로드하지 않고 Git 커밋에서 직접 확보한다. MCP POST 허용 목록에 추가하지 않는다.
+
+### MCP 제작 문서·이미지 콘텐츠
+
+- `GET /api/studio/files/{id}/document?offset=0&limit=20000`: 실제 파일 권한 → 최대20 MiB 문서 로컬 파싱 → 파일명/원본SHA/본문/페이지 메타데이터. HTML 내장 이미지·스크립트 제외, PDF 처음100페이지. 총20만 자·한 번2만 자. 조회만 수행한다.
+- `GET /api/studio/files/{id}/mcp-image`: 실제 파일 권한 → PNG의 일시적인 JPEG 파생본(100 KiB 이하, 최대1024px). `X-Studio-Source-Sha256`, `X-Studio-Derivative-Sha256`. 입력4천만화소/20 MiB·동시2. 원본/버전/승인·저장소 객체 변경 없음.
+- MCP `studio_document`/`studio_image`는 위 GET을 기존 loopback 위임·현재 DB 역할·프로젝트 검사·읽기 전용 트랜잭션으로 호출한다. 문서는 기존 마스킹, 이미지는 별도 originals:read 동의 필수. text 메타데이터와 image/jpeg 콘텐츠 블록을 분리한다. 기존 원본 청크·MCP read-only scope는 유지한다. 총 도구21개. 실제 ChatGPT/Claude 판독은 NOT TESTED.
+
+### 제작실 공동 기억·댓글·승인 대기함
+
+- `GET /api/studio/memory`: 프로젝트의 `project-memory` 최신 JOB revision과 구조화한 마지막 결정/담당/문제/다음 작업/PR/SHA/연결 파일 메타데이터. GET은 초기화·복구·실행·쓰기를 하지 않는다.
+- `POST /api/studio/memory`: EDITOR/APPROVER·same-origin, `{expectedRevisionId,lastDecision,currentAi,openIssues,nextWork,pr,commitSha,sourceFileIds}`. 결정4000자/담당100/문제8000/다음4000, 파일50개 이내·같은 프로젝트만. 기존 head CAS 후 USER_EDIT 새 버전·기존 REVISION 감사. stale409, 이전 결정/승인 불변.
+- `GET /api/studio/revisions/{id}/comments?beforeId=`: 같은 프로젝트·item_key의 전 버전 댓글/승인/반려/수정요청을 100개씩 커서 조회. 실제 로그인 작성자·버전 라벨 보존.
+- `POST /api/studio/revisions/{id}/comments`: EDITOR/APPROVER·same-origin, `{body,sharedAi?,sourceFileId?}`. 1200자·최종 audit note2000자. AI 자료 공유는 Claude/Codex/Muse/ChatGPT 라벨과 같은 프로젝트 근거 파일 필수. 실제 작성자는 로그인 사용자이며 `HUMAN_SHARED_AI_MATERIAL`로 기록한다. 직접 인증된 AI 작성으로 주장하지 않는다. 원본/승인 포인터 변경 없음.
+- `GET /api/studio/pending?limit=100&offset=0`: 최신 head가 승인본과 다른 자료. 보관용 #863 출처 키·JOB 제외, 마지막 검수가 REJECT인 head는 대기함 제외(자료/이력은 보존). 100개 페이지로 누락 없이 조회.
+- 기존 review POST에 APPROVER의 `REQUEST_CHANGES` 추가: 감사 이벤트만 남기며 기존 승인 포인터를 유지한다. APPROVE/REJECT 동작은 유지한다. 새 GET3개만 MCP 읽기 허용이며 POST는 계속 금지한다.
+
+### 제작 프로젝트 관리·격리
+- `/studio-projects`: 로그인한 사용자의 프로젝트·본인 초대 화면. 기존 `/ai-agent-studio`는 프로젝트별 권한 검사 유지.
+- 제작실 API/화면 공통 `projectId` query: ASCII 영숫자/하이픈/밑줄 1~64자, 중복/경로 문자열 거부. 생략 시 기존 `ai-agent-part1`. UUID 파일/버전만 알아도 다른 프로젝트에서 읽을 수 없다. MCP `read_studio.query.projectId`, `studio_document/studio_image.projectId`도 같은 검사. 다른 서비스 query 허용 범위는 확대하지 않는다.
+- `GET /api/studio/projects`: ADMIN 전체, 일반 사용자는 수락한 VIEWER/EDITOR/APPROVER 프로젝트만. 보관 상태 구분. `GET /project-capabilities`: 본인 관리 가능 여부.
+- `POST /api/studio/projects {title}`: ADMIN 빈 프로젝트 생성. `POST /project-state {action:TITLE|ARCHIVE|REOPEN,title?}`: ADMIN 제목 수정/보관/재개. 영구 삭제 없음. 모든 실제 변경은 `studio_events` 감사 기록. 보관 중 파일/버전/승인/댓글/기억 쓰기 409; 열람 유지. 프로젝트 행 잠금과 current read로 보관/권한 변경과 쓰기를 직렬화한다. 기존 initialize는 기본 프로젝트만 개설한다.
+- `GET /api/studio/users?q=`: ADMIN 이름/닉네임 2~100자 literal 검색, 최대20명, user_id/name/nickname만. 이메일/비밀번호 미제공.
+- `POST /invitations {userId,permission}`: ADMIN 기존 일반 회원에게 VIEWER/EDITOR/APPROVER 초대. `PENDING_*`는 접근 권한이 아니다. `GET /invitations`: 본인 대기 초대만. `POST /invitations/answer {accept}`: 본인 초대 수락/거절. 보관 중 수락/새 초대 차단, 거절/기존 접근 폐기 허용. 외부 알림 전송 없음.
+- `GET /notifications?beforeId=`: 현재 프로젝트의 다른 사람 승인/반려/수정 요청/댓글, 100건 cursor; `readThrough/items/nextBeforeId`. GET은 읽음 상태를 변경하지 않는다. `POST /notifications/read {throughId}`: 본인 읽음 위치만 단조 갱신; 타 프로젝트/자기 이벤트/없는 ID 거부. 보관 중에도 확인 가능.
+- 기존 `/members` 직접 ADMIN 권한 변경·폐기 호환 유지; 보관 중 폐기 외 변경 차단. #863 고정 임포터는 기본 작품에만 등록 가능하며 다른 프로젝트에 기본 작품 출처 목록을 노출하지 않는다.
+- 새 MCP 허용 GET은 projects/invitations/notifications 세 개다. 생성·초대·수락·보관·읽음 처리 POST는 MCP에 제공하지 않는다. 운영 MCP 기본 설정은 변경하지 않는다.
+
+MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시적인 commit/commitSha/sourceCommit/headSha/baseSha 필드(밑줄 형식 포함)에서 40자리 hex이고 a~f를 포함하면 원문을 보존한다. PII 필드 마스킹을 먼저 적용하며 계좌/카드/자유 텍스트 숫자 마스킹은 유지한다. Git SHA를 일부 가리면 실제 커밋 재조회가 불가능하므로 최종 인계 회귀에 포함한다.
+
+### 제작실 승인 보호 (Claude 검수 후 수정)
+- 일반 `POST /api/studio/revisions/{id}/review`의 REJECT는 미승인 후보만 반려한다. 현재 승인본이면409, 승인 포인터/기존 revision/파일/이력 변경 없음. REQUEST_CHANGES는 기존 동작 유지. 승인 해제 액션을 일반 review로 보낼 수 없다.
+- 별도 `POST /api/studio/revisions/{id}/approval-withdrawals`: APPROVER·동일 Origin·현재 프로젝트·재개 상태 필수. `{confirmed:true,expectedApprovedId:<path id>,note:<1~2000자>}`. 확인 누락/false/잘못된 기대 ID/빈 사유는400, 현재 승인 ID가 달라졌거나 이미 해제됐으면409. 프로젝트/item 현재 읽기·행 잠금 후 포인터만 해제하고 `WITHDRAW_APPROVAL` 감사(리비전/actor/사유/시각)를 같은 트랜잭션에 append한다. 파일·SHA·리비전·기존 승인 이벤트는 불변. 저장 결과와 GET 재조회로 승인 상태를 확인한다.
+- 승인 해제는 상세의 별도 대화상자에서 원본 SHA/버전 확인·사유·확인 체크 후 실행한다. 일반 검수의 반려 옵션은 승인본에서 비활성이다. 해제 이력은 스레드/감사/알림에 노출되고 head 후보는 대기함에 다시 나타난다. MCP 읽기 도구에는 이 POST를 추가하지 않는다.
+- 콘티 보드의 더 보기/접기는 설명·대사·연출 전체 텍스트를 보존한 상태로 펼친다. aria-expanded/aria-controls와 키보드 조작을 지원하며 API/자료 내용을 변경하지 않는다.

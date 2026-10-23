@@ -1,0 +1,21 @@
+{
+  "testType": "Two independent local official SDK sessions against persisted memory, not product accounts",
+  "sessionA": {
+    "revisionId": "94603b67-8b51-4526-b196-bbf8271346ea",
+    "snapshotSha256": "ccde55b9c7630d27e542af37bb0f927a01db0f35be57829640058c3208acbb50",
+    "pr": 870,
+    "commitSha": "6148b8d9c90054485194057e14feff76c37f55b3",
+    "linkedFiles": 4,
+    "writeDenied": true
+  },
+  "sessionB": {
+    "revisionId": "94603b67-8b51-4526-b196-bbf8271346ea",
+    "snapshotSha256": "ccde55b9c7630d27e542af37bb0f927a01db0f35be57829640058c3208acbb50",
+    "pr": 870,
+    "commitSha": "6148b8d9c90054485194057e14feff76c37f55b3",
+    "linkedFiles": 4,
+    "writeDenied": true
+  },
+  "actualProductConnection": "NOT TESTED",
+  "externalAiCalls": 0
+}

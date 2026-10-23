@@ -1,0 +1,572 @@
+[
+ {
+  "cut": 5,
+  "tc": "00:15~00:17",
+  "duration_sec": 2.0,
+  "shot_type": "클로즈업",
+  "camera_move": "고정 → 하네스 걸쇠에 짧게 푸시인",
+  "aspect": "16:9",
+  "set": "헬기 내부 → 개방 도어 → 비 내리는 상공",
+  "lighting": "헬기 내부 적색 보조등, 외부 어둠",
+  "color": "암녹회색 + 청흑",
+  "props_conti": "하네스 걸쇠, 장갑",
+  "dialogue_conti": [],
+  "sfx_conti": "'철컥'",
+  "action_conti": "수니의 눈(결의, 미동 없음), 걸쇠를 채우는 장갑 낀 손",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "서수니"
+  ],
+  "costume": "A",
+  "face_visible": "눈 위주(눈 클로즈업). 얼굴 전체 동일성 검증은 제한적",
+  "position": "프레임 상단: 수니의 눈, 하단: 하네스 걸쇠를 채우는 장갑 낀 손 [해석: 콘티의 두 요소를 한 프레임에 배치]",
+  "expression": "결의, 미동 없음(콘티). 시트 표정 참조 DETERMINED는 참고용",
+  "injury": "없음(컷 22 이전)",
+  "props": [
+   "하네스 걸쇠",
+   "장갑(손가락 없는 검은 장갑)"
+  ],
+  "left_right": "손 좌우 콘티 미지정. 총기는 오른손 권총(컷 5 프레임에는 총 비노출)",
+  "refs": {
+   "face": [
+    "references/suni/base/suni_front_face_crop.png",
+    "references/suni/base/suni_three_quarter_face_crop.png",
+    "references/suni/base/suni_right_side_face_crop.png"
+   ],
+   "expression": [
+    "references/suni/base/suni_expr_02_determined_crop.png"
+   ],
+   "costume": [
+    "references/suni/S1_S2/suni_S2_A_front_crop.png",
+    "references/suni/S1_S2/suni_S2_A_side_crop.png",
+    "references/suni/S1_S2/suni_S2_A_back_crop.png"
+   ],
+   "wound": null
+  },
+  "superseded_notes": [
+   "r5 must_keep '짙은 남색 재킷·하네스·장갑 [제안]'은 승인된 S2(검은 후디 재킷)가 대체. 원문 파일은 보존"
+  ],
+  "prompt": "photorealistic cinematic photograph of a Korean woman in her 30s, calm slightly long dark brown eyes with faint shadow under the eyes, straight nose, thin lips, natural skin texture with visible pores and rain moisture, dark brown hair pulled back into a low ponytail with loose strands falling around her face, no scars, no piercings, no glasses. Close-up in a helicopter cabin, her determined unblinking eyes in the upper frame, in the lower frame a gloved hand in a black fingerless glove snapping a harness buckle across her chest. She wears a black waterproof hooded jacket with a center zipper, chest buckle strap and shoulder straps crossing on the back, waist buckle belt with small pouches, black fingerless gloves, black cargo pants with thigh straps, black chunky lace-up combat boots, wet from rain. Dim red auxiliary cabin light, open door behind her showing rain and darkness, dark green-grey and blue-black palette, 16:9 cinematic, shallow depth of field, fine film grain.",
+  "motion": "카메라 고정에서 시작해 하네스 걸쇠 쪽으로 짧게 푸시인. 눈은 거의 움직이지 않음. 걸쇠가 채워질 때 손만 움직임(효과음 '철컥'은 별도)",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, orange straps, orange clips, wound, torn jacket, gun visible",
+  "decisions": [
+   "손 좌우(제안: 오른손)"
+  ]
+ },
+ {
+  "cut": 22,
+  "tc": "01:10.5~01:12.5",
+  "duration_sec": 2.0,
+  "shot_type": "클로즈업",
+  "camera_move": "옆구리 클로즈",
+  "aspect": "16:9",
+  "set": "암전된 단지(헬기 서치라이트는 용역 쪽만)",
+  "lighting": "완전 암전 → 빛(용역)/어둠(수니) 반전",
+  "color": "흑 + 빗줄기 백색선",
+  "props_conti": "찢어진 재킷",
+  "dialogue_conti": [],
+  "sfx_conti": "옷 찢어지는 소리, 짧은 숨",
+  "action_conti": "칼날이 스친 자국, 붉은 선. 짧게 숨을 뱉는 수니",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "서수니"
+  ],
+  "costume": "A",
+  "face_visible": "아니오(옆구리 클로즈업). 부상·의상 연속성 검증용",
+  "position": "서수니의 왼쪽 옆구리가 프레임 중심. 카메라는 서수니의 왼쪽 옆에서 옆구리를 향함",
+  "expression": "콘티: 짧게 숨을 뱉음(소리·몸의 움직임). 표정은 프레임에 넣지 않음",
+  "injury": "왼쪽 옆구리 칼날이 스친 얕은 붉은 선, 재킷 찢김, 혈흔 최소(S5 승인 참조, 클로즈업의 소량 혈흔은 참조에서만 허용)",
+  "props": [
+   "찢어진 재킷"
+  ],
+  "left_right": "부상은 서수니의 왼쪽 옆구리. 이 컷에서 좌우 반전 금지(반전 시 오른쪽 옆구리가 됨)",
+  "refs": {
+   "face": null,
+   "expression": null,
+   "costume": [
+    "references/suni/S1_S2/suni_S2_A_front_crop.png",
+    "references/suni/S1_S2/suni_S2_A_side_crop.png",
+    "references/suni/S1_S2/suni_S2_A_back_crop.png"
+   ],
+   "wound": [
+    "references/suni/S5_S6/suni_S5_wound_front_crop.png",
+    "references/suni/S5_S6/suni_S5_wound_side_crop.png",
+    "references/suni/S5_S6/suni_S5_wound_back_crop.png",
+    "references/suni/S5_S6/suni_S5_closeup_front_crop.png",
+    "references/suni/S5_S6/suni_S5_closeup_jacket_crop.png",
+    "references/suni/S5_S6/suni_S5_closeup_position_crop.png"
+   ]
+  },
+  "superseded_notes": [
+   "r5 '[제안: 좌측]'은 사용자 확정(왼쪽 옆구리)으로 대체"
+  ],
+  "prompt": "Extreme close-up of a woman's left flank seen from her left side. Her black waterproof hooded jacket with a center zipper, chest buckle strap and shoulder straps crossing on the back, waist buckle belt with small pouches, black fingerless gloves, black cargo pants with thigh straps, black chunky lace-up combat boots, wet from rain; the black jacket is zipped closed with a clean-cut tear in the fabric at the left flank revealing skin, and a thin shallow red knife-graze line on the skin with minimal blood. Total darkness with thin white rain streaks, only a faint cold edge light on the torn fabric and the red line. Black palette, 16:9 cinematic, shallow depth of field, film grain.",
+  "motion": "거의 정지. 짧은 숨에 맞춘 옆구리의 미세한 움직임. 암전에서 가는 빛이 찢김과 붉은 선에 닿음",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, deep open wound, gaping skin, excessive blood, blood on chest, wound on right side, symmetrical wounds, open jacket",
+  "decisions": []
+ },
+ {
+  "cut": 38,
+  "tc": "01:57~02:00",
+  "duration_sec": 3.0,
+  "shot_type": "중간 컷",
+  "camera_move": "수니-리더 투샷",
+  "aspect": "16:9",
+  "set": "지게차·컨테이너 사이, 비",
+  "lighting": "헤드라이트·빗물 반사",
+  "color": "청흑 + 황색(지게차)",
+  "props_conti": "-",
+  "dialogue_conti": [
+   {
+    "speaker": "수니",
+    "line": "이름."
+   }
+  ],
+  "sfx_conti": "빗소리",
+  "action_conti": "수니-리더 투샷. 리더의 얼굴이 또렷이 한 번 보인다(식별 특징은 디자인 확정 후 결정, 눈썹 흉터는 보류). 수니 \"이름.\" 리더는 침묵.",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "서수니",
+   "용역 리더"
+  ],
+  "costume": "서수니 A / 리더 야간 복장",
+  "face_visible": "서수니 예, 리더 예(리더 얼굴이 또렷이 한 번 보임)",
+  "position": "수니-리더 투샷. 인물 위치는 콘티 미지정 [제안: 서수니 화면 왼쪽, 리더 화면 오른쪽, 마주 봄. 리더 얼굴은 카메라 쪽으로 한 번 또렷이]",
+  "expression": "서수니: 콘티에 표정 지시 없음(대사 \"이름.\"). 시트 표정은 참고용 [사용자 확인]. 리더: 침묵",
+  "injury": "서수니 왼쪽 옆구리 상처(컷 22~42, 재킷 닫음, 찢김 식별 가능, 허리가 프레임에 들어올 때 노출). 리더 오른손은 부음(컷 37 골절 직후, 부목 없음)",
+  "props": [],
+  "left_right": "서수니 부상=왼쪽 옆구리. 리더 부은 손=오른손",
+  "refs": {
+   "face": [
+    "references/suni/base/suni_front_face_crop.png",
+    "references/suni/base/suni_three_quarter_face_crop.png",
+    "references/suni/base/suni_right_side_face_crop.png"
+   ],
+   "expression": null,
+   "costume": [
+    "references/suni/S1_S2/suni_S2_A_front_crop.png",
+    "references/suni/S1_S2/suni_S2_A_side_crop.png",
+    "references/suni/S1_S2/suni_S2_A_back_crop.png"
+   ],
+   "wound": [
+    "references/suni/S5_S6/suni_S5_wound_front_crop.png",
+    "references/suni/S5_S6/suni_S5_wound_side_crop.png",
+    "references/suni/S5_S6/suni_S5_wound_back_crop.png",
+    "references/suni/S5_S6/suni_S5_closeup_front_crop.png",
+    "references/suni/S5_S6/suni_S5_closeup_jacket_crop.png",
+    "references/suni/S5_S6/suni_S5_closeup_position_crop.png"
+   ],
+   "leader_face": [
+    "references/leader_v2/leader_v2_front_crop.png",
+    "references/leader_v2/leader_v2_three_quarter_crop.png",
+    "references/leader_v2/leader_v2_right_side_crop.png"
+   ],
+   "leader_costume": [
+    "references/leader_v2/leader_v2_fullbody_night_crop.png"
+   ],
+   "leader_lighting": [
+    "references/leader_v2/leader_v2_cut38_lighting_crop.png"
+   ]
+  },
+  "superseded_notes": [
+   "r5 must_keep '리더 왼쪽 눈썹 흉터(승인 대기)'는 사용자 결정(눈썹 흉터 제외, v2 승인)으로 대체"
+  ],
+  "prompt": "Medium two-shot in rain between a forklift and shipping containers. Left: photorealistic cinematic photograph of a Korean woman in her 30s, calm slightly long dark brown eyes with faint shadow under the eyes, straight nose, thin lips, natural skin texture with visible pores and rain moisture, dark brown hair pulled back into a low ponytail with loose strands falling around her face, no scars, no piercings, no glasses, wearing a black waterproof hooded jacket with a center zipper, chest buckle strap and shoulder straps crossing on the back, waist buckle belt with small pouches, black fingerless gloves, black cargo pants with thigh straps, black chunky lace-up combat boots, wet from rain, jacket zipped closed with a visible tear at her left flank. Right: Korean man in his late 30s to 40s, square angular jaw, thick low nearly straight eyebrows, small heavy-lidded dark brown eyes, large prominent ears, short cropped black hair, rough natural skin with pores and rain moisture, no scars, no facial marks, wearing a dark olive tactical work jacket wet from rain, right hand visibly swollen at the fingers, face turned toward the camera and clearly visible. They face each other. Forklift headlights and rain reflections, blue-black palette with yellow forklift light, 16:9 cinematic, film grain.",
+  "motion": "거의 고정 투샷. 빗줄기와 헤드라이트 반사만 움직임. 리더는 말하지 않음, 서수니의 대사 '이름.'은 음성 별도",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, two women, two men, merged faces, swapped faces, eyebrow scar",
+  "decisions": [
+   "인물 위치 제안 확인",
+   "서수니 표정 선택",
+   "두 인물 동시 생성 방식(분리 생성 후 합성 여부, 11월 환경에서 검증)"
+  ]
+ },
+ {
+  "cut": 40,
+  "tc": "02:04~02:07",
+  "duration_sec": 3.0,
+  "shot_type": "클로즈업",
+  "camera_move": "수첩 위 손",
+  "aspect": "16:9",
+  "set": "제압 직후 단지 → 지원팀 도착",
+  "lighting": "푸른 사이렌 불빛이 컨테이너 틈으로",
+  "color": "청흑 + 사이렌 청색",
+  "props_conti": "수첩, 펜",
+  "dialogue_conti": [],
+  "sfx_conti": "펜 소리",
+  "action_conti": "아날로그 습관으로 번호를 수첩에 옮겨 적고, 옆에 시각 '00:25'을 함께 적음. (r1)",
+  "post_composite_do_not_generate": [
+   "수첩 'HNL…'",
+   "시각 '00:25'"
+  ],
+  "characters": [
+   "서수니(손)"
+  ],
+  "costume": "A",
+  "face_visible": "아니오(손·수첩 클로즈업)",
+  "position": "수첩 위에서 펜을 쥔 손이 프레임 중심, 수첩은 비어 있거나 줄만 있는 페이지",
+  "expression": "해당 없음(손 연기)",
+  "injury": "프레임 밖(왼쪽 옆구리 상처 유지 사실만 확인)",
+  "props": [
+   "수첩",
+   "펜"
+  ],
+  "left_right": "쓰는 손 콘티 미지정 [제안: 오른손]",
+  "refs": {
+   "face": null,
+   "expression": null,
+   "costume": [
+    "references/suni/S1_S2/suni_S2_A_front_crop.png",
+    "references/suni/S1_S2/suni_S2_A_side_crop.png",
+    "references/suni/S1_S2/suni_S2_A_back_crop.png"
+   ],
+   "wound": null
+  },
+  "superseded_notes": [],
+  "prompt": "Close-up of a hand in a black fingerless glove writing with a pen in a small notebook, the page blank with only faint ruled lines, wet black jacket sleeve with a harness strap at the wrist. Flickering blue siren light entering through gaps between shipping containers, blue-black palette, 16:9 cinematic, shallow depth of field, film grain.",
+  "motion": "펜이 줄 위를 천천히 움직임. 사이렌 청색 불빛이 컨테이너 틈으로 깜빡임. 글자는 생성하지 않음",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, handwriting, readable letters, numbers, digits, timestamp",
+  "decisions": [
+   "쓰는 손(제안: 오른손)"
+  ]
+ },
+ {
+  "cut": 43,
+  "tc": "02:15~02:19",
+  "duration_sec": 4.0,
+  "shot_type": "미디엄(로우앵글)",
+  "camera_move": "푸시인. 정진모 등장 후 시선을 따라 리더의 손과 단말기로 이동",
+  "aspect": "16:9",
+  "set": "지원팀 도착 현장(00:55 표기)",
+  "lighting": "사이렌 점멸, 비",
+  "color": "청흑 + 점멸 청적",
+  "props_conti": "단말기, 자막 00:55",
+  "dialogue_conti": [
+   {
+    "speaker": "정진모",
+    "line": "수고했네."
+   }
+  ],
+  "sfx_conti": "구둣발 물웅덩이, 멀리 사이렌 점멸음",
+  "action_conti": "검은 코트의 정진모가 비를 맞으며 걸어와 멈춤. 시선이 리더의 손과 전술 단말기에 머문다. 자막 '00:55'. 리더의 오른손 손가락은 붕대와 간이 부목으로 응급 고정되어 있다.",
+  "post_composite_do_not_generate": [
+   "자막 '00:55'"
+  ],
+  "characters": [
+   "정진모(참조 없음)",
+   "용역 리더",
+   "용역 6명(참조 없음)"
+  ],
+  "costume": "리더 야간 복장",
+  "face_visible": "리더 얼굴 작게 가능, 정진모는 참조 이미지 없음",
+  "position": "로우앵글 미디엄. 정진모(검은 코트)가 걸어와 멈춤, 리더와 용역 6명이 한 화면에 세어지게 배치",
+  "expression": "정진모의 시선이 리더의 손과 단말기에 머묾. 리더 표정은 콘티에 없음",
+  "injury": "리더 오른손 손가락 붕대+간이 부목(응급 고정). 서수니는 프레임에 없음",
+  "props": [
+   "단말기",
+   "자막 00:55(합성)"
+  ],
+  "left_right": "리더 응급 고정=오른손",
+  "refs": {
+   "face": null,
+   "expression": null,
+   "costume": null,
+   "wound": null,
+   "leader_face": [
+    "references/leader_v2/leader_v2_front_crop.png",
+    "references/leader_v2/leader_v2_three_quarter_crop.png",
+    "references/leader_v2/leader_v2_right_side_crop.png"
+   ],
+   "leader_costume": [
+    "references/leader_v2/leader_v2_fullbody_night_crop.png"
+   ],
+   "leader_hand": [
+    "references/leader_v2/leader_v2_hand_emergency_cut43_crop.png"
+   ]
+  },
+  "superseded_notes": [],
+  "prompt": "Low-angle medium shot in rain at night with flickering blue-red siren light. A man in a long black coat walks into frame through puddles and stops, his gaze moving to Korean man in his late 30s to 40s, square angular jaw, thick low nearly straight eyebrows, small heavy-lidded dark brown eyes, large prominent ears, short cropped black hair, rough natural skin with pores and rain moisture, no scars, no facial marks, who wears a dark olive tactical work jacket wet from rain; the leader's right hand has the fingers bound with gauze and an improvised splint, a tactical terminal beside it. Six men in dark tactical gear stand behind him, all six clearly countable. Blue-black palette with flickering blue-red light, 16:9 cinematic, film grain.",
+  "motion": "정진모 등장 후 시선을 따라 리더의 손과 단말기로 푸시인. 사이렌 점멸, 빗줄기, 물웅덩이 구둣발",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, five men, seven men, fewer than six men, formal white splint, eyebrow scar, subtitle, timestamp",
+  "decisions": [
+   "정진모·용역 6명 디자인 참조 없음(승인 필요)",
+   "리더 얼굴 크기가 작으면 동일성 검증 제한"
+  ]
+ },
+ {
+  "cut": 50,
+  "tc": "02:50~02:52.5",
+  "duration_sec": 2.5,
+  "shot_type": "클로즈업",
+  "camera_move": "고정",
+  "aspect": "16:9",
+  "set": "경찰서 복도 낮(07:00) → 유치장",
+  "lighting": "낮 색(푸른 흰빛) / 유치장 형광등",
+  "color": "푸른 흰빛 → 차가운 정적",
+  "props_conti": "붕대",
+  "dialogue_conti": [],
+  "sfx_conti": "r14 지정 없음(임의 추가하지 않음)",
+  "action_conti": "수니는 재킷 안 붕대를 가린 채 아주 작게 안도하는 눈빛, 웃지는 않음. 손이 주머니 속 시계 위에 잠깐 놓인다.",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "서수니"
+  ],
+  "costume": "B",
+  "face_visible": "예(흉상 클로즈업)",
+  "position": "얼굴과 가슴 높이 손이 보이는 고정 클로즈업. 손이 가슴 주머니 위에 잠깐 놓임 [제안: 왼쪽 가슴 주머니 위에 오른손]",
+  "expression": "아주 작게 안도하는 눈빛, 웃지 않음(콘티). 시트 표정은 참고용",
+  "injury": "붕대는 재킷 안에 가려짐(보이지 않음). 왼쪽 옆구리 위치 유지",
+  "props": [
+   "회중시계(주머니 속, 비노출)",
+   "붕대(비노출)"
+  ],
+  "left_right": "붕대=왼쪽 옆구리(비노출). 권총집=오른쪽 허리(상반신에서 비노출). 손의 좌우는 제안",
+  "refs": {
+   "face": [
+    "references/suni/base/suni_front_face_crop.png",
+    "references/suni/base/suni_three_quarter_face_crop.png",
+    "references/suni/base/suni_right_side_face_crop.png"
+   ],
+   "expression": [
+    "references/suni/base/suni_expr_01_neutral_crop.png",
+    "references/suni/base/suni_expr_02_determined_crop.png"
+   ],
+   "costume": [
+    "references/suni/S3_S4/suni_S3_B_front_crop.png",
+    "references/suni/S3_S4/suni_S3_B_side_crop.png",
+    "references/suni/S3_S4/suni_S3_B_back_crop.png"
+   ],
+   "wound": null
+  },
+  "superseded_notes": [
+   "S3의 목걸이식 회중시계는 사용하지 않음(사용자 확정)"
+  ],
+  "prompt": "photorealistic cinematic photograph of a Korean woman in her 30s, calm slightly long dark brown eyes with faint shadow under the eyes, straight nose, thin lips, natural skin texture with visible pores and rain moisture, dark brown hair pulled back into a low ponytail with loose strands falling around her face, no scars, no piercings, no glasses. Fixed close-up, chest-up, wearing a short navy zip jacket open over a light grey top, black cargo pants, black lace-up combat boots. Her eyes show very slight relief, no smile. Her right hand rests briefly on her left chest pocket of the jacket, over a pocket watch that stays inside the pocket and is not visible. No holster visible. Bright cold blue-white daytime corridor light, 16:9 cinematic, shallow depth of field, fine film grain.",
+  "motion": "카메라 고정. 손이 주머니 위에 잠깐 놓였다 내려감. 표정은 눈빛만 아주 약하게 변함",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, smile, pocket watch visible, pocket watch worn as a necklace, chain visible, holster, gun, bandage visible, wound",
+  "decisions": [
+   "손·주머니 좌우(제안: 오른손이 왼쪽 가슴 주머니)",
+   "S3 재킷에 가슴 주머니 존재 확인"
+  ]
+ },
+ {
+  "cut": 60,
+  "tc": "03:30~03:35",
+  "duration_sec": 5.0,
+  "shot_type": "클로즈업",
+  "camera_move": "배지 → 권총 → 수니의 손",
+  "aspect": "16:9",
+  "set": "사무실 → 복도(컷 49·53 구도) → 귀가",
+  "lighting": "복도 낮 색 기준 구도 / 귀가 실내",
+  "color": "차가운 회청",
+  "props_conti": "배지, 권총, 책상",
+  "dialogue_conti": [],
+  "sfx_conti": "배지가 책상에 닿는 '딸깍'",
+  "action_conti": "직무정지. 수니가 배지와 권총을 책상에 올려놓음. 배지가 닿는 소리가 크게",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "서수니(손)"
+  ],
+  "costume": "B",
+  "face_visible": "콘티상 손·소품 중심. 얼굴은 필수 아님",
+  "position": "배지 → 권총 → 수니의 손 순서로 책상 위 클로즈업",
+  "expression": "콘티 지시 없음",
+  "injury": "재킷에 가려짐(비노출)",
+  "props": [
+   "배지",
+   "권총",
+   "책상"
+  ],
+  "left_right": "손 좌우 콘티 미지정 [제안: 오른손, 총기는 오른손 권총]. 권총집은 프레임 밖(비노출)",
+  "refs": {
+   "face": null,
+   "expression": null,
+   "costume": [
+    "references/suni/S3_S4/suni_S3_B_front_crop.png",
+    "references/suni/S3_S4/suni_S3_B_side_crop.png",
+    "references/suni/S3_S4/suni_S3_B_back_crop.png"
+   ],
+   "wound": null
+  },
+  "superseded_notes": [],
+  "prompt": "Close-up on a desk in a cold blue-grey office: a police badge being set down, then a handgun, then a bare right hand in a navy jacket cuff releasing it. No holster visible. Cold blue-grey palette, daytime office light, 16:9 cinematic, shallow depth of field, film grain.",
+  "motion": "배지가 책상에 닿는 순간을 강조(소리 '딸깍'은 별도), 이어서 권총을 내려놓는 손. 새 사건 없음, 이후 수니 비무장",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, holster, finger on trigger, pointing the gun, readable badge text, readable numbers",
+  "decisions": [
+   "손 좌우(제안: 오른손)",
+   "얼굴 동일성 검증에 약함 → 보조 컷 제안 가능"
+  ]
+ },
+ {
+  "cut": 64,
+  "tc": "03:47.5~03:49.5",
+  "duration_sec": 2.0,
+  "shot_type": "세로 큰 컷(틸트업 짧게)",
+  "camera_move": "손 클로즈에서 몸으로",
+  "aspect": "16:9",
+  "set": "수니의 집 현관·실내",
+  "lighting": "현관 모니터 어안 → 암전 → 폰 점등",
+  "color": "어둠 + 폰 청백광",
+  "props_conti": "오른손 부목",
+  "dialogue_conti": [],
+  "sfx_conti": "r14 지정 없음(임의 추가하지 않음)",
+  "action_conti": "선두 남자의 오른손에 부목이 감겨 있음",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "용역 리더(선두 남자)"
+  ],
+  "costume": "체포조(특공 지원팀) 복장",
+  "face_visible": "아니오(손에서 몸으로 틸트업, 컷 63 선두 얼굴 가림 유지)",
+  "position": "선두 남자의 오른손 → 몸통까지 틸트업. 얼굴은 프레임 밖 또는 가려짐",
+  "expression": "해당 없음",
+  "injury": "오른손 정식 부목(흰 규격 부목+검정 벨크로 밴드), 컷 37에서 꺾인 오른손",
+  "props": [
+   "오른손 부목"
+  ],
+  "left_right": "정식 부목=오른손(응급 고정과 구분). 반전 금지",
+  "refs": {
+   "face": null,
+   "expression": null,
+   "costume": null,
+   "wound": null,
+   "leader_face": null,
+   "leader_costume": [
+    "references/leader_v2/leader_v2_fullbody_arrest_team_crop.png"
+   ],
+   "leader_hand": [
+    "references/leader_v2/leader_v2_hand_splint_cut64_crop.png"
+   ]
+  },
+  "superseded_notes": [],
+  "prompt": "Short tilt-up in a dark apartment entrance seen with a slight door-monitor fisheye feel: starting on a man's right hand wrapped in a clean white rigid splint with a black velcro band, tilting up along black police special-support tactical gear and vest to the chest, face out of frame. Darkness with a cold blue-white glow, 16:9 cinematic, film grain.",
+  "motion": "손에서 몸으로 짧게 틸트업(약 2초). 얼굴은 프레임 위로 나가기 전에 멈춤",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, left hand splint, bandage and improvised stick splint, face visible, helmet visor face visible",
+  "decisions": [
+   "세로 큰 컷의 16:9 처리",
+   "모니터 화면 느낌 vs 실제 카메라"
+  ]
+ },
+ {
+  "cut": 65,
+  "tc": "03:49.5~03:52",
+  "duration_sec": 2.5,
+  "shot_type": "클로즈업 + 플래시컷",
+  "camera_move": "수니의 눈 → 컷 38 얼굴 플래시(1초 미만) → 모니터 속 얼굴",
+  "aspect": "16:9",
+  "set": "수니의 집 현관·실내",
+  "lighting": "현관 모니터 어안 → 암전 → 폰 점등",
+  "color": "어둠 + 폰 청백광",
+  "props_conti": "특공 지원팀 복장",
+  "dialogue_conti": [],
+  "sfx_conti": "r14 지정 없음(임의 추가하지 않음)",
+  "action_conti": "수니의 눈이 커짐. 컷 38의 리더 얼굴과 같은 얼굴(식별 특징 보류, 눈썹 흉터 표현 금지). 경찰 특공 지원팀 복장",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "서수니",
+   "용역 리더(컷 38 얼굴 플래시 + 모니터 속 체포조 복장)"
+  ],
+  "costume": "서수니 C / 리더 체포조",
+  "face_visible": "서수니 눈(놀람), 리더 얼굴 예(플래시와 모니터)",
+  "position": "3비트: ① 수니의 눈이 커짐 ② 컷 38 리더 얼굴 플래시(1초 미만) ③ 현관 모니터 속 체포조 복장의 같은 얼굴",
+  "expression": "서수니: 눈이 커짐(놀람). 시트 SURPRISED는 참고용",
+  "injury": "서수니 붕대는 비노출. 리더 오른손은 프레임에 없음(컷 64에서 정식 부목)",
+  "props": [
+   "특공 지원팀 복장",
+   "현관 모니터"
+  ],
+  "left_right": "서수니 상처는 비노출. 리더 얼굴은 반전 금지",
+  "refs": {
+   "face": [
+    "references/suni/base/suni_front_face_crop.png",
+    "references/suni/base/suni_three_quarter_face_crop.png",
+    "references/suni/base/suni_right_side_face_crop.png"
+   ],
+   "expression": [
+    "references/suni/base/suni_expr_04_surprised_crop.png"
+   ],
+   "costume": [
+    "references/suni/S3_S4/suni_S4_C_front_crop.png",
+    "references/suni/S3_S4/suni_S4_C_side_crop.png",
+    "references/suni/S3_S4/suni_S4_C_back_crop.png"
+   ],
+   "wound": null,
+   "leader_face": [
+    "references/leader_v2/leader_v2_front_crop.png",
+    "references/leader_v2/leader_v2_three_quarter_crop.png",
+    "references/leader_v2/leader_v2_right_side_crop.png"
+   ],
+   "leader_costume": [
+    "references/leader_v2/leader_v2_fullbody_arrest_team_crop.png"
+   ],
+   "leader_lighting": [
+    "references/leader_v2/leader_v2_cut38_lighting_crop.png",
+    "references/leader_v2/leader_v2_cut65_lighting_crop.png"
+   ]
+  },
+  "superseded_notes": [
+   "r5 must_keep '리더 눈썹 흉터 [승인 대기]'는 사용자 결정(눈썹 흉터 제외)으로 대체"
+  ],
+  "prompt": "(Beat 1) photorealistic cinematic photograph of a Korean woman in her 30s, calm slightly long dark brown eyes with faint shadow under the eyes, straight nose, thin lips, natural skin texture with visible pores and rain moisture, dark brown hair pulled back into a low ponytail with loose strands falling around her face, no scars, no piercings, no glasses, close-up of her eyes widening in a dark entryway lit only by a cold blue-white phone glow, wearing a cream long-sleeve top with two black shoulder straps over the shoulders, black cargo pants, no jacket. (Beat 2, under one second) flash of Korean man in his late 30s to 40s, square angular jaw, thick low nearly straight eyebrows, small heavy-lidded dark brown eyes, large prominent ears, short cropped black hair, rough natural skin with pores and rain moisture, no scars, no facial marks in rain with forklift headlight glow. (Beat 3) the same man's face seen on a door intercom monitor in fisheye, in black police special-support gear and helmet with goggles raised on top, ears partly hidden by the helmet. Darkness with cold blue-white light, 16:9 cinematic, film grain.",
+  "motion": "비트 ①약 1.0초 ②1초 미만(약 0.5~0.8초) ③약 1.0초. 비트별로 따로 생성해 이어 붙이는 방식 제안(11월 환경에서 검증)",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, different man in the flash and on the monitor, eyebrow scar, face turned away",
+  "decisions": [
+   "3비트 분리 생성",
+   "컷 38 얼굴과 모니터 얼굴 동일성(사용자 판정 완료, 재검수만)"
+  ]
+ },
+ {
+  "cut": 68,
+  "tc": "03:57~04:00",
+  "duration_sec": 3.0,
+  "shot_type": "마지막 컷(클로즈업)",
+  "camera_move": "고정",
+  "aspect": "16:9",
+  "set": "수니의 집 현관·실내",
+  "lighting": "현관 모니터 어안 → 암전 → 폰 점등",
+  "color": "어둠 + 폰 청백광",
+  "props_conti": "-",
+  "dialogue_conti": [
+   {
+    "speaker": "수니",
+    "line": "전원 껐는데."
+   }
+  ],
+  "sfx_conti": "r14 지정 없음(임의 추가하지 않음)",
+  "action_conti": "수니의 표정(놀람, 경계)",
+  "post_composite_do_not_generate": [],
+  "characters": [
+   "서수니"
+  ],
+  "costume": "C",
+  "face_visible": "예(마지막 클로즈업)",
+  "position": "고정 클로즈업, 얼굴 정면 또는 약간 비스듬히. 휴대폰 청백광이 얼굴을 비춤",
+  "expression": "놀람과 경계(콘티). 시트 SURPRISED/TENSE는 참고용. 대사 \"전원 껐는데.\"",
+  "injury": "붕대는 크림 상의 아래 비노출(프레임에 허리 없음). 위치는 왼쪽 옆구리 유지",
+  "props": [],
+  "left_right": "부상 비노출. 얼굴 반전 금지",
+  "refs": {
+   "face": [
+    "references/suni/base/suni_front_face_crop.png",
+    "references/suni/base/suni_three_quarter_face_crop.png",
+    "references/suni/base/suni_right_side_face_crop.png"
+   ],
+   "expression": [
+    "references/suni/base/suni_expr_04_surprised_crop.png",
+    "references/suni/base/suni_expr_03_tense_crop.png"
+   ],
+   "costume": [
+    "references/suni/S3_S4/suni_S4_C_front_crop.png",
+    "references/suni/S3_S4/suni_S4_C_side_crop.png",
+    "references/suni/S3_S4/suni_S4_C_back_crop.png"
+   ],
+   "wound": null
+  },
+  "superseded_notes": [],
+  "prompt": "photorealistic cinematic photograph of a Korean woman in her 30s, calm slightly long dark brown eyes with faint shadow under the eyes, straight nose, thin lips, natural skin texture with visible pores and rain moisture, dark brown hair pulled back into a low ponytail with loose strands falling around her face, no scars, no piercings, no glasses. Fixed close-up in a dark entryway, face lit only by a cold blue-white phone glow from below frame, wearing a cream long-sleeve top with two black shoulder straps over the shoulders, black cargo pants, no jacket. Her expression is startled and wary, eyes slightly wide, lips just parted as she speaks. 16:9 cinematic, shallow depth of field, fine film grain.",
+  "motion": "카메라 고정. 놀람이 경계로 굳어짐. 대사 '전원 껐는데.'는 음성 별도(입 모양은 11월에 맞춤). 대사 후 정적",
+  "negative": "text, subtitles, watermark, logo, caption, cartoon, illustration, 3d render look, plastic skin, beauty filter, extra fingers, deformed hands, different person, mirrored image, flipped image, eyebrow scar, scar on face, smile, jacket, holster, phone screen text, voice from the phone",
+  "decisions": [
+   "S4 양쪽 어깨 끈 최종 확인",
+   "대사 립싱크 방식(11월)"
+  ]
+ }
+]

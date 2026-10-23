@@ -201,7 +201,7 @@ class EasyCollectionApprovalP4StagingTest {
         "2026-10-01,지출,11000,문구점,펜,카드,F1", "2026-10-02,지출,22000,서점,교재,카드,F2"));
     EasyCollectionApproval approval = request(bizA, ownerA(), res.run().runId());
     doThrow(new IllegalStateException("주입된 일시 오류")).doCallRealMethod()
-        .when(importService).confirm(anyLong(), any());
+        .when(org.springframework.test.util.AopTestUtils.<EasyImportService>getUltimateTargetObject(importService)).confirmApprovedCollection(anyLong(), anyLong(), any());
 
     EasyCollectionApproval failed = approvalService.approveAndCommit(
         bizA.getBusinessId(), approval.getApprovalId(), "owner-a", "ok", ownerA());
@@ -232,7 +232,7 @@ class EasyCollectionApprovalP4StagingTest {
         throw new IllegalStateException("주입된 반영 직후 실패");
       }
       return result;
-    }).when(importService).confirm(anyLong(), any());
+    }).when(org.springframework.test.util.AopTestUtils.<EasyImportService>getUltimateTargetObject(importService)).confirmApprovedCollection(anyLong(), anyLong(), any());
 
     EasyCollectionApproval afterFailure = approvalService.approveAndCommit(
         bizA.getBusinessId(), approval.getApprovalId(), "owner-a", "ok", ownerA());

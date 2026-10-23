@@ -111,7 +111,10 @@ class EasyShopPipelineHarness {
     correctionService = new EasyCorrectionService(correctionLogRepository);
     importService = new EasyImportService(
         batchRepository, rowRepository, businessRepository, txnRepository, accountService,
-        mappingRepository, journalService);
+        mappingRepository, journalService,
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRunRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionApprovalRepository.class),
+        org.mockito.Mockito.mock(f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService.class));
     shopService = new EasyShopImportService(
         businessRepository, txnRepository, rowRepository, importService);
     reportService = new EasyReportService(

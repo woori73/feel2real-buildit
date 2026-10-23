@@ -1,0 +1,66 @@
+{
+  "syntheticOnly": true,
+  "actualExternalAiCalls": 0,
+  "results": [
+    {
+      "name": "실제 MySQL에 합성 68컷 ZIP 일괄 등록",
+      "pass": true
+    },
+    {
+      "name": "68컷 이미지·설명 함께 표시, 실제 이미지 디코딩",
+      "pass": true
+    },
+    {
+      "name": "이전·다음 컷 버튼과 방향키",
+      "pass": true
+    },
+    {
+      "name": "이미지 확대 모달",
+      "pass": true
+    },
+    {
+      "name": "승인본·수정 후보 이미지와 설명 비교",
+      "pass": true
+    },
+    {
+      "name": "캐릭터 최신 head 이미지 갤러리",
+      "pass": true
+    },
+    {
+      "name": "html 안전 렌더링 및 스크립트·외부 이미지 제거",
+      "pass": true
+    },
+    {
+      "name": "md 안전 렌더링 및 스크립트·외부 이미지 제거",
+      "pass": true
+    },
+    {
+      "name": "PDF 브라우저 뷰어와 원문 PDF 응답",
+      "pass": true
+    },
+    {
+      "name": "ZIP 내부 목록·문서 미리보기·경로 탈출 거부",
+      "pass": true
+    },
+    {
+      "name": "모든 미리보기 후 원본 SHA 불변",
+      "pass": true
+    },
+    {
+      "name": "390px 실제 승인 저장 후 API 재조회 확인",
+      "pass": true
+    },
+    {
+      "name": "PC1440·모바일390 네 영역 axe 구조 검사 위반 0·가로 넘침 없음 (색 대비 별도)",
+      "pass": true
+    },
+    {
+      "name": "무권한 사용자 파생본·ZIP 목록 403",
+      "pass": true
+    },
+    {
+      "name": "브라우저 JS 오류 0·외부 네트워크 요청 0",
+      "pass": true
+    }
+  ]
+}

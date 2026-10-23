@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Feel2Real · AI 연결 관리</title>
+    <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+    <link rel="stylesheet" href="/css/agent_studio.css" />
+    <script src="/js/mcp_connections.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <p class="eyebrow">FEEL2REAL · CONNECTED AI</p>
+        <h1>AI 연결 관리</h1>
+        <p>
+          계정별로 승인한 읽기 범위와 만료일입니다. 폐기하면 해당 연결의
+          access·refresh token이 즉시 무효가 됩니다.
+        </p>
+        <a href="/ai-agent-studio">제작 스튜디오</a> · <a href="/">홈</a>
+      </section>
+      <p id="connection-message" role="status"></p>
+      <section class="panel">
+        <article class="card" th:each="connection : ${connections}">
+          <h2 th:text="${connection.name}"></h2>
+          <p th:text="${connection.scopes}"></p>
+          <p>
+            만료 <span th:text="${connection.expires_at}"></span> · 폐기
+            <span th:text="${connection.revoked}"></span>
+          </p>
+          <button
+            th:if="${!connection.revoked}"
+            th:attr="data-revoke=${connection.id}"
+          >
+            연결 폐기
+          </button>
+        </article>
+        <p th:if="${#lists.isEmpty(connections)}">승인한 AI 연결이 없습니다.</p>
+      </section>
+    </main>
+  </body>
+</html>

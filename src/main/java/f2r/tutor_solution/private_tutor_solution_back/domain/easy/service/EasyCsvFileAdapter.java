@@ -227,7 +227,7 @@ public class EasyCsvFileAdapter {
   }
 
   /** UTF-8(BOM 허용) 우선, 실패 시 CP949. */
-  static String decode(byte[] content) {
+  public static String decode(byte[] content) {
     byte[] body = content;
     if (body.length >= 3 && (body[0] & 0xFF) == 0xEF && (body[1] & 0xFF) == 0xBB
         && (body[2] & 0xFF) == 0xBF) {
@@ -246,7 +246,7 @@ public class EasyCsvFileAdapter {
   }
 
   /** 최소 RFC4180 파서: 따옴표·쉼표·개행 포함 필드와 "" 이스케이프를 처리한다. */
-  static List<List<String>> parseCsv(String text) {
+  public static List<List<String>> parseCsv(String text) {
     List<List<String>> result = new ArrayList<>();
     List<String> current = new ArrayList<>();
     StringBuilder field = new StringBuilder();

@@ -1797,3 +1797,44 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **인덱스 반영**: 저장이 끝나면 `AdmissionsVectorIndex.reload()`로 인메모리 인덱스를 다시 읽는다. reload는 트랜잭션 커밋 이후에 실행한다 — 커밋 전에 읽으면 방금 저장한 행의 `knowledge_id`(insertable=false 컬럼)가 비어 인덱스에서 누락되기 때문이다. 인덱스가 비어 있으면 검색은 기존처럼 LIKE로 폴백한다.
 
 > 정정(v3.3 수정 PR): 공식자료(material)는 지식 항목으로 변환하지 않는다. 항목은 근거 전형·일정 행이 ACTIVE일 때만 검색 대상이며, 검색은 대학·캠퍼스·수시/정시·학년도 필터 후 키워드/벡터 관련성 하한을 통과한 항목만 근거로 반환한다.
+
+## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)
+
+- `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.
+- `studio_files`: 원본 불변 메타데이터. project+SHA-256 유일성, 기존 FileStorage local/S3 재사용. 공개 storage key·공유 다운로드 URL 없음. `StudioFile` immutable Entity가 스키마를 검증한다.
+- `studio_items` / `studio_revisions`: 자료별 head·approved 포인터와 append-only 버전. `StudioRevision` immutable Entity 및 `StudioService.Revision` 명령 DTO. 프로젝트 행 잠금과 parentId 비교로 경합 차단. SCRIPT/STORYBOARD/CHARACTER/VIDEO/JOB/REVIEW, ORIGINAL/AI_PROPOSAL/USER_EDIT를 구분한다.
+- `studio_events`: 업로드·새 버전·승인·반려·권한 변경 감사 이력. 원본/버전 삭제·덮어쓰기 API를 제공하지 않는다.
+- `mcp_clients`, `mcp_pending`, `mcp_grants`, `mcp_codes`, `mcp_tokens`: 사용자 OAuth 동의, S256 PKCE, 일회용 코드, hash-only opaque token, 15분 access·최대 30일 갱신·refresh 재사용 시 연결 폐기. 사용자 role·자격 증명 stamp를 매 호출 재검사한다. OAuth 행은 제한된 JDBC 명령으로 관리하며 외부 DTO에 비밀값을 넣지 않는다.
+- `mcp_audit`, `mcp_rate_limits`: 원문/토큰/검색문을 제외한 감사 이력과 DB 기반 호출 상한. 새 RDS·서버·유료 AI/임베딩 API 없음.
+
+설계·실측·실제 연결 미검증 범위: [통합 보고서](ai-agent-studio/REPORT.md). 운영 DB에 이 마이그레이션을 적용하지 않았다. 병합 직전 최신 main과 V번호 충돌을 재확인한다.
+
+## 통합 AI 업무 비서 (작업 A, 로컬 프로토타입)
+
+`V1094__unified_assistant.sql`과 `domain/unifiedassistant/`의 엔티티를 함께 추가했다.
+
+| 테이블 / 엔티티 | 범위 |
+|---|---|
+| `unified_assistant_progress` / `AssistantProgress` | `user_id` PK, 역할, 안내 단계 0~5, 완료 여부, 낙관적 `version`. 사용자별 안내 재개 |
+| `unified_assistant_drafts` / `AssistantDraft` | UUID PK, 사용자·역할, 학원 또는 사업체, 업무 종류, 입력/미리보기 JSON, 계획 해시·대상 지문, 상태·결과·생성/만료 시각. 최신 30개 조회 |
+| `unified_assistant_audit` / `AssistantAudit` | 자동증가 PK, 사용자·초안 ID, 이벤트, 시각. 앱에서 추가·조회만 제공하며 수정/삭제 API 없음 |
+
+기존 학원·학생·반·출결·상담·사업체·거래 테이블의 권한/생성 정책은 그대로다. 학원 데이터는 서명 게이트웨이/기존 업무 API, 거래·증빙은 기존 Easy import와 장부 서비스를 통해 처리한다. 새 감사행에는 이름·연락처·인증키·원본 파일 내용을 넣지 않는다. 상태 전이와 격리 정책은 [작업 A 분석 보고서](unified-ai-assistant/README.md)를 참고한다.
+
+통합 초안 상태는 PENDING/EXECUTING/VERIFIED/REVIEW_REQUIRED/FAILED/UNKNOWN/CANCELLED/EXPIRED/INVALIDATED다. FAILED는 원격 쓰기 요청의 명확한 거절이며, 성공 후 조회 실패는 UNKNOWN으로 보존한다. 대화·파일 분석은 기존 초안 저장소를 사용하고 별도 학생/거래 복제 테이블을 만들지 않는다. 대화 입력 원문은 영속화하지 않으며 새로고침 시 승인 기록만 현재 권한으로 복원한다.
+
+스튜디오 복원은 기존 revision/file 행을 수정하지 않고 새 revision 및 RESTORE 이벤트를 추가한다. `approved_id`는 별도 명시 검수 전 유지한다. JSON/ZIP 일괄 등록도 원본 sourceFileId/SHA를 보존하고 68개 revision과 BULK_IMPORT 이력을 추가한다. 별도 데이터/권한 테이블을 복제하지 않는다. #854는 V1094, #855는 V1095이며 신규 운영 스키마 적용은 하지 않았다. 관리자 외부 제공 위험 확인은 기존 mcp_audit의 SENSITIVE_ACK로 기록한다.
+
+`unified_assistant_audit`에 `operation`, `academy_id`, `business_id`(모두 nullable)가 추가됐다(V1094는 main·운영에 미적용 상태라 같은 파일에서 수정). 초안 관련 이벤트는 업무 종류와 학원/사업체 범위를 함께 남긴다. 이벤트 `RECOVERED_UNKNOWN`은 중단된 `EXECUTING` 초안을 `UNKNOWN`으로 전환했음을 뜻한다.
+
+### 제작 원본 출처 이관 (#863)
+
+스키마 추가 없이 `studio_files`의 프로젝트/SHA 고유키와 `studio_revisions`의 append-only 구조를 재사용한다. 고정 Git 커밋의 536경로는 경로 해시 기반 `source-09d62dee-*` item으로 각각 보관하며 content에 전체 경로·원본 SHA·bytes·폴더 버전·repository·commit을 기록한다. 316고유 파일을 공유해도 220중복 경로의 출처를 잃지 않는다. `ep01-cut-01`~`68`은 source-r14/source-r5 버전과 원본 러프 파일을 참조한다. `character-approved-*` 5개만 기존 승인 근거를 APPROVE 이벤트로 이관한다. `project-memory` 초기 JOB 버전은 마지막 결정·담당 AI·미해결·다음 작업·PR/SHA·인계 파일 ID를 저장한다. 사용자 편집/결정은 후속 버전으로 보존하며 원본 파일·기존 revision은 갱신하지 않는다.
+
+### 공동 작업 기억과 컷별 검수
+
+새 테이블/마이그레이션 없이 기존 `studio_revisions`의 `project-memory` JOB에 구조화한 작업 기억을 append-only로 저장한다. 입력 expectedRevisionId는 기존 parent/head CAS와 동일하며 이전 버전과 승인본을 수정하지 않는다. 댓글은 `studio_events(action=COMMENT)`의 JSON note에 body/authorType/sharedAi/sourceFileId, actor_id에는 실제 로그인 사용자를 기록한다. 사람이 올린 AI 자료는 HUMAN_SHARED_AI_MATERIAL이고 AI 직접 인증과 구분한다. 댓글 스레드는 동일 project/item_key의 전체 revision을 묶고 각 label을 보존한다. REQUEST_CHANGES 이벤트는 기존 승인 포인터에 영향을 주지 않는다. 물리 삭제·댓글 덮어쓰기는 제공하지 않고 후속 댓글/기억 버전으로 정정한다(승인·감사 이력 보존 목적).
+
+제작 프로젝트 확장: 기존 `studio_projects.id/title`과 `studio_members`를 재사용한다. 추가 schema/migration 없음. 보관 상태는 해당 프로젝트의 최신 `PROJECT_ARCHIVE/PROJECT_REOPEN` 감사 이벤트로 결정한다. `PROJECT_CREATE/PROJECT_TITLE`도 실제 actor와 함께 기록한다. 보관/재개는 files/items/revisions/approved_id/작업 기억을 수정·삭제하지 않는다. 영구 삭제 경로 없음. 관리자는 기존 ADMIN이며 일반 팀원은 명시적으로 수락한 VIEWER/EDITOR/APPROVER만 접근한다. 초대는 기존 permission 길이 내 `PENDING_VIEWER/PENDING_EDITOR/PENDING_APPROVER`; 수락 전 권한 검사에서 제외한다. 거절은 본인 pending membership만 제거하고 `MEMBER_DECLINE` 이력을 보존한다. 알림은 기존 검수/댓글 이벤트를 투영하고 본인 `NOTIFY_READ` 이벤트에 확인한 event ID를 저장한다. 이벤트 범위와 프로젝트 행 잠금으로 정보 격리·수정/보관 경합을 보호한다. V1094/V1095 파일은 불변이다.
+
+승인 해제는 신규 schema 없이 `studio_items.approved_id` 포인터와 `studio_events.action=WITHDRAW_APPROVAL`만 사용한다. 일반 REJECT는 승인 포인터를 수정하지 않으며 현재 승인본에 대해서는409다. 별도 confirmed/expectedApprovedId/사유를 확인한 해제만 행 잠금 아래 승인 포인터를 NULL로 바꾼다. studio_files/revisions 및 이전 APPROVE 이벤트는 변경/삭제하지 않는다. #862의 ai_collaboration_*/mcp_collaboration_* 테이블과 V1096~V1098은 병합 제외한다.

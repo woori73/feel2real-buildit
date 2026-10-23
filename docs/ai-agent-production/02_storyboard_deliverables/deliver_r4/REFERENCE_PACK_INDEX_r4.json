@@ -1,0 +1,138 @@
+{
+ "note": "모두 코드로 그린 이미지. AI 생성물·최종 아트 없음. 사용자 승인 전 identity 고정 용도로 쓰지 않음",
+ "files": [
+  {
+   "file": "deliver_r3/character_refs/leader_face_front.png",
+   "sha256": "eeacc3c6aa26e4dd96e173c245907e4637e28a2f74342f60c0ab11befdb9d080",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/leader_face_sheet.png",
+   "sha256": "a0e5fdd733ef246eb0279b93b15f3e360cd6e6e93cb07f977cebc0b7ecf202fe",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/leader_face_side.png",
+   "sha256": "92303c83c1b382385cfcaabbaa29a9f47669ea840bea4570ad4a646cc5e9ca35",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/seven_c67_screen_layout.png",
+   "sha256": "caac196b88d9a4a316d25715dfbb1c9d67f72dfc39321641423c2fdf1d146c4b",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_A_front_full.png",
+   "sha256": "9d211145c4f52bd7499ee0fdbbcab76d371925e0b840c2e9a186cda9f190f554",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_A_side_full.png",
+   "sha256": "5c5fafae3fef66dce37a191a98cffc9bc5f71b4d0390a0a46aedb9d2b99ac1ef",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_B_front_full.png",
+   "sha256": "869851dfda40d34ae4b3b0ea17629b917eca754d060d70465438c6daa6f7c7d1",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_B_side_full.png",
+   "sha256": "69a2d766a9e1c9ef0f561a6eb0a68778aee727b10796dd9094f942d75535ae6b",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_face_front.png",
+   "sha256": "3f214a9c33f1a5c28324e18c45f7700956295e20a83d5e95ff0a5865f86e72c6",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_face_side.png",
+   "sha256": "1dfa3de1be373342e9263c2e8d25b7b8afe81c00d561d17be62512ef16d29c60",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r3/character_refs/suni_sheet_AB.png",
+   "sha256": "fc356bfd035f12da7b8ea100caac3713a136a15a610b5952eab85767df55b74d",
+   "role": "도식 시안(r3)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조. identity 고정에는 부적합"
+  },
+  {
+   "file": "deliver_r4/character_refs/suni_C_front_full.png",
+   "sha256": "a45a6fd9e642c87da117131a00033a40e69ba78ecac7074362d8c9da783ebebb",
+   "role": "도식 시안(r4 추가: 의상 C)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조"
+  },
+  {
+   "file": "deliver_r4/character_refs/suni_C_side_full.png",
+   "sha256": "b9f2ae37d1d3cda31ffc00e74608441e630e0b3fb3857ae91686f0a0c8356e17",
+   "role": "도식 시안(r4 추가: 의상 C)",
+   "stage": "도식",
+   "usable_for": "구도·의상 참조"
+  },
+  {
+   "file": "deliver_r4/cinematic/leader_38_65_same_face_board.png",
+   "sha256": "05e714d6ffb7146fa25d28ee10ea08c9354f02c9e834bbcf9eb41514a09d5fae",
+   "role": "조명 컨셉 보드(r4)",
+   "stage": "컨셉 보드",
+   "usable_for": "조명·분위기 참조. 최종 아트 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/leader_cut38_bust.png",
+   "sha256": "c596ab638ccdb40af7a91d0cb4ddf45d4e47f050d8354841f1309b96a72fe426",
+   "role": "조명 컨셉 보드(r4)",
+   "stage": "컨셉 보드",
+   "usable_for": "조명·분위기 참조. 최종 아트 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/leader_cut65_bust.png",
+   "sha256": "af9e1b601306544ddf4158223b5159347e20a17cdcfcf7fd9aef06877ba76faa",
+   "role": "조명 컨셉 보드(r4)",
+   "stage": "컨셉 보드",
+   "usable_for": "조명·분위기 참조. 최종 아트 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/suni_A_night_bust.png",
+   "sha256": "2dbf3c05d57811876bcb813c093bea313e86efcc445a106c5cd17244cfde1caa",
+   "role": "조명 컨셉 보드(r4)",
+   "stage": "컨셉 보드",
+   "usable_for": "조명·분위기 참조. 최종 아트 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/suni_B_day_bust.png",
+   "sha256": "59845d5d704657f28c856c88d92884c4bc57ed4113492c087011b051b4802be9",
+   "role": "조명 컨셉 보드(r4)",
+   "stage": "컨셉 보드",
+   "usable_for": "조명·분위기 참조. 최종 아트 아님"
+  },
+  {
+   "file": "deliver_r4/cinematic/suni_cinematic_board.png",
+   "sha256": "f03c03e9f57cd1e195fae9a8da4ba0ddc4e8a8e529d94e5675806927522d8e63",
+   "role": "조명 컨셉 보드(r4)",
+   "stage": "컨셉 보드",
+   "usable_for": "조명·분위기 참조. 최종 아트 아님"
+  }
+ ]
+}
