@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 캐릭터 영상·이미지 위치. 승인된 자료를 이 경로에 두면 표시되고, 없으면 상태창 표식으로 대체된다. -->
-  <meta name="f2r-agent-media" content="/agent-media/">
   <title>F2R AI 운영 대시보드</title>
   <link rel="stylesheet" href="/css/unified_assistant.css">
-  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261023-1">
-  <script defer src="/js/unified_assistant.js?v=20261023-1"></script>
-  <script defer src="/js/f2r_agent_dashboard.js?v=20261023-1"></script>
+  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261023-2">
+  <script defer src="/js/unified_assistant.js?v=20261023-2"></script>
+  <script defer src="/js/f2r_agent_dashboard.js?v=20261023-2"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
+  <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
 <body data-view="ai" data-agent="seven">
   <header class="ops-topbar">
@@ -26,6 +25,7 @@
       <select class="ops-select" id="bizSelect" aria-label="사업체 선택">
         <option value="">사업체 불러오는 중...</option>
       </select>
+      <a class="ops-btn" href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작소</a>
       <button class="ops-btn" id="uaResume" type="button">사용법 안내</button>
       <button class="ops-btn" id="refreshBtn" type="button" aria-label="새로고침">↻</button>
     </div>
@@ -34,51 +34,66 @@
 <main id="unifiedAssistant" class="ua ops" aria-label="F2R AI 운영 대시보드">
   <div id="uaTour" class="ua-tour ops-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><div id="uaPurpose" class="ua-chips"><span class="ua-hint">무엇을 하고 싶으세요?</span><button type="button" data-ua-purpose="students">학생·반 관리</button><button type="button" data-ua-purpose="attendance">출결</button><button type="button" data-ua-purpose="consult">상담</button><button type="button" data-ua-purpose="ledger">장부</button></div><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
 
-  <!-- ===== AI 메인 ===== -->
+  <!-- ===== AI 메인: 캐릭터 중심 대화 콘솔 ===== -->
   <section class="ops-pane ops-main" data-pane="ai" aria-label="AI 메인">
-    <div class="agent-col">
-      <figure class="agent-stage" id="agentStage" data-state="idle">
-        <video id="agentVideo" muted loop playsinline autoplay preload="metadata" aria-label="AI 비서 영상"></video>
+    <div class="console">
+      <figure class="console-stage" id="agentStage" data-state="idle" data-media="loading">
+        <video class="agent-clip is-on" id="agentVideo" muted loop playsinline preload="auto" aria-hidden="true"></video>
+        <video class="agent-clip" id="agentVideoAlt" muted loop playsinline preload="auto" aria-hidden="true"></video>
         <div class="agent-emblem" aria-hidden="true"><span id="agentCode">H-07</span></div>
-        <div class="agent-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
-        <figcaption class="agent-plate">
-          <span class="agent-state"><i></i><span id="agentStateLabel">대기</span></span>
-          <strong id="agentName">세븐</strong>
-          <small id="agentRole">업무 분석 · 전략</small>
+        <div class="agent-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i><i class="ring"></i></div>
+        <div class="hud-top">
+          <span class="agent-state" role="status"><i></i><span id="agentStateLabel">대기</span></span>
+          <span class="agent-badge" id="agentBadge">자료 확인 중</span>
+        </div>
+        <div class="hud-counters" aria-label="업무 상태">
+          <span>승인 대기 <b id="statusPending">0건</b></span>
+          <span>처리 완료 <b id="statusDone">0건</b></span>
+          <span>확인 필요 <b id="statusReview">0건</b></span>
+        </div>
+        <figcaption class="hud-bottom">
+          <strong id="agentName">세븐</strong><small id="agentRole">업무 분석 · 전략</small>
+          <span class="hud-services" id="statusServices"></span>
         </figcaption>
       </figure>
-      <div class="agent-pick" role="group" aria-label="AI 비서 선택">
-        <button type="button" data-agent-pick="seven" aria-pressed="true"><img src="/agent-media/seven/front.webp" alt="" loading="lazy"><span>세븐</span></button>
-        <button type="button" data-agent-pick="suni" aria-pressed="false"><img src="/agent-media/suni/front.webp" alt="" loading="lazy"><span>서수니</span></button>
+
+      <div class="speech" id="agentSpeech" aria-live="polite">
+        <p class="speech-who"><b id="speechName">세븐</b><span id="speechMode">텍스트 응답 · 음성 미연결</span></p>
+        <p class="speech-text" id="agentGreeting">세븐입니다. 오늘 처리할 업무를 말씀해 주세요.</p>
+        <div class="speech-actions" id="agentSuggest" hidden></div>
       </div>
+
+      <div class="ua-composer console-composer">
+        <form id="uaCommandForm">
+          <label for="uaCommand">무엇이든 물어보거나 업무를 맡기세요</label>
+          <div class="composer-row">
+            <span class="agent-mini" id="agentMini" aria-hidden="true"><img id="agentMiniImg" src="/dashboard/agent-media/seven/front.webp" alt=""><i></i></span>
+            <textarea id="uaCommand" rows="2" maxlength="2000" placeholder="예: 학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea>
+            <button class="ua-primary" type="submit">보내기</button>
+          </div>
+        </form>
+        <div class="ua-chips"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button></div>
+      </div>
+      <div class="agent-pick" role="group" aria-label="AI 비서 선택">
+        <button type="button" data-agent-pick="seven" aria-pressed="true"><img src="/dashboard/agent-media/seven/front.webp" alt="" loading="lazy"><span>세븐</span></button>
+        <button type="button" data-agent-pick="suni" aria-pressed="false"><img src="/dashboard/agent-media/suni/front.webp" alt="" loading="lazy"><span>서수니</span></button>
+      </div>
+
+      <p id="uaMessage" role="status">업무를 알려주시면 초안을 먼저 보여드립니다. 승인 전에는 실제 업무에 저장하지 않습니다.</p>
     </div>
 
-    <div class="ops-col">
-      <section class="sys-window" aria-label="시스템 상태창">
-        <header><span class="sys-tag">STATUS</span><h2>시스템 상태창</h2></header>
-        <dl class="sys-grid">
-          <div><dt>담당 비서</dt><dd id="statusAgent">세븐 (H-07)</dd></div>
-          <div class="span2"><dt>사용자</dt><dd id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</dd></div>
-          <div class="ua-academy"><dt><label for="uaAcademy">업무 학원</label></dt><dd><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></dd></div>
-          <div class="cnt"><dt>승인 대기</dt><dd id="statusPending">0건</dd></div>
-          <div class="cnt"><dt>처리 완료</dt><dd id="statusDone">0건</dd></div>
-          <div class="cnt"><dt>확인 필요</dt><dd id="statusReview">0건</dd></div>
-          <div class="svc"><dt>연결된 서비스</dt><dd id="statusServices">대화 내용에 맞춰 연결합니다.</dd></div>
-        </dl>
-        <details class="sys-more"><summary>운영·재무 현황 보기</summary><div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div></details>
-      </section>
-
-      <section class="ua-work chat-window" id="uaReview" aria-label="AI 비서 대화창">
-        <div class="ua-section-head"><div><h3>AI 비서 대화</h3><p class="ua-hint" id="agentGreeting">세븐입니다. 오늘 처리할 업무를 말씀해 주세요.</p></div><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div>
+    <aside class="console-log" aria-label="대화 기록과 업무 상태">
+      <dl class="sys-grid">
+        <div><dt>담당 비서</dt><dd id="statusAgent">세븐 (H-07)</dd></div>
+        <div class="ua-academy"><dt><label for="uaAcademy">업무 학원</label></dt><dd><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></dd></div>
+        <div class="wide"><dt>사용자</dt><dd id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</dd></div>
+      </dl>
+      <section class="ua-work chat-window" id="uaReview" aria-label="대화 기록">
+        <div class="ua-section-head"><h3>대화 기록</h3><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div>
         <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="비서 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
-        <div id="agentSuggest" class="agent-suggest" hidden aria-live="polite"></div>
-        <div class="ua-composer">
-          <form id="uaCommandForm"><label for="uaCommand">무엇이든 물어보거나 업무를 맡기세요</label><textarea id="uaCommand" rows="2" maxlength="2000" placeholder="예: 학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea><button class="ua-primary" type="submit">보내기</button></form>
-          <div class="ua-chips"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button></div>
-        </div>
-        <p id="uaMessage" role="status">업무를 알려주시면 초안을 먼저 보여드립니다. 승인 전에는 실제 업무에 저장하지 않습니다.</p>
       </section>
-    </div>
+      <details class="sys-more"><summary>운영·재무 현황 보기</summary><div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div></details>
+    </aside>
 
     <section class="svc-guide" aria-label="사용 가능한 F2R 서비스">
       <h2 class="ops-h2">사용 가능한 F2R 서비스</h2>
