@@ -4942,6 +4942,14 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 
 `GET /api/dashboard/widgets?businessId=&month=&refresh=true`는 기존 사업체 접근 검사 후 5분 서버 캐시를 건너뛰고 최신 장부로 위젯을 갱신한다. 기본 `refresh=false`는 기존 캐시 동작이다. 통합 비서 장부 승인 결과와 수동 새로고침에서 사용한다.
 
+### ✅ F2R AI 운영 대시보드 캐릭터 자료 (2026-10, PR #893)
+
+캐릭터(세븐·서수니) 영상·이미지는 공개 저장소에 두지 않고 운영 서버의 비공개 폴더(`app.agent-media.dir`, 환경변수 `APP_AGENT_MEDIA_DIR`)에서 읽는다. 미설정이면 자료 없음으로 응답하고 화면은 H-07/SUNI 표식으로 대체한다.
+
+- `GET /api/dashboard/agent-media` (ADMIN·TUTOR, `no-store`): `{configured: bool, agents: {seven|suni: {status, files[]}}}`. `status`는 `APPROVED`(정본) · `REFERENCE_APPROVED`(승인 얼굴 기준, 영상 확정 전) · `CANDIDATE`(승인 전 후보) · `MISSING`(파일 없음). 폴더의 `manifest.json`에 없거나 알 수 없는 값은 `CANDIDATE`.
+- `GET /dashboard/agent-media/{seven|suni}/{file}` (ADMIN·TUTOR, `private, max-age=3600`, Range 지원): `file`은 `idle.mp4`·`think.mp4`·`speak.mp4`·`poster.jpg`·`front.webp`·`half.webp`만. 그 외 이름·경로·캐릭터는 404, 비로그인 401.
+
+
 ### 독립 검수 반영: MCP 외부 제공 경계
 
 - ChatGPT redirect는 관리 화면의 `https://chatgpt.com/connector/oauth/{callback_id}` 전체를 `app.mcp.redirect-uris`에 정확히 등록한다. 안정형 `/connector_platform_oauth_redirect`는 해당 공식 조건/관리 화면 URI인 경우에만 명시 설정한다. 기본은 Claude hosted callback만이며 과거 잘못된 callback·임의 URI·wildcard는 거부한다. DCR·PKCE·resource 검증은 유지한다.
