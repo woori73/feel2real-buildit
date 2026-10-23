@@ -301,3 +301,4 @@ body[data-view="ai"] .ai-fab { display: none; }
   .agent-clip { transition: none; }
   .svc-card:hover { transform: none; }
 }
+.svc-card[hidden] { display: none !important; }

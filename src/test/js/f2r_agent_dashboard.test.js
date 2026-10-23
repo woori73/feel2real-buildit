@@ -46,6 +46,7 @@ test('given 자유 대화 when 서비스 키워드가 있으면 then 관련 서�
   assert.deepEqual([...d.matchServices('수시 전형 상담 일정')], ['admissions', 'academycraft']);
   assert.deepEqual([...d.matchServices('중2 내신 예상문제 만들어줘')], ['wiki']);
   assert.deepEqual([...d.matchServices('TESTPREP 모의고사 성적')], ['testprep']);
+  assert.deepEqual([...d.matchServices('AI AGENT 웹툰 콘티 검수')], ['studio']);
   assert.deepEqual([...d.matchServices('   ')], []);
   assert.deepEqual([...d.matchServices('오늘 날씨 어때')], []);
 });
@@ -56,7 +57,9 @@ test('given 서비스 목록 when 읽으면 then 실제 경로가 있는 서비�
   // when
   const hrefs = [...d.SERVICES.map((s) => s.href)];
   // then
-  assert.deepEqual(hrefs, ['/academycraft', '/ledger', '/easy', '/problem-generator', '/testprep', '/admissions/workspace', '/builder']);
+  assert.deepEqual(hrefs, ['/academycraft', '/ledger', '/easy', '/problem-generator', '/testprep', '/admissions/workspace', '/builder', '/ai-agent-studio']);
+  // 제작협업실은 ADMIN·modu 전용 표시 대상(서버가 실제 차단)
+  assert.deepEqual([...d.SERVICES.filter((s) => s.restricted).map((s) => s.id)], ['studio']);
 });
 
 test('given 초안 상태 문구 when 집계하면 then 승인 대기·완료·확인 필요로 나눈다', () => {
@@ -135,7 +138,7 @@ test('given 대시보드 템플릿 when 읽으면 then F2R 홈 로고·전체 �
   assert.ok(HTML.indexOf('id="agentStage"') < HTML.indexOf('id="agentSpeech"'));
   assert.ok(HTML.indexOf('id="agentSpeech"') < HTML.indexOf('id="uaCommandForm"'));
   // PR #892 제작소 링크는 같은 표식(data-studio-entry, 기본 hidden)으로 유지한다
-  assert.match(HTML, /<a class="ops-btn" href="\/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작소<\/a>/);
+  assert.match(HTML, /<a class="ops-btn" href="\/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작협업실<\/a>/);
   assert.match(HTML, /src="\/js\/studio_entry_link\.js\?v=20261023-1"/);
   for (const id of ['agentStage', 'agentVideo', 'agentVideoAlt', 'agentName', 'agentCode', 'agentRole', 'agentGreeting', 'agentStateLabel', 'agentBadge', 'agentSuggest', 'agentSpeech', 'speechName', 'speechMode', 'agentMiniImg', 'statusAgent', 'statusPending', 'statusDone', 'statusReview', 'statusServices', 'shortcutRow']) {
     assert.match(HTML, new RegExp('id="' + id + '"'), `템플릿에 id="${id}" 없음`);

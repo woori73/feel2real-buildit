@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap">
-  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261020-8">
+  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261024-1">
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
@@ -41,7 +41,7 @@
       <a href="/ledger">이지장부</a>
       <a href="/wiki">모의고사위키</a>
       <a href="/builder">학원 홈페이지 제작</a>
-      <a href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작소</a>
+      <a href="/ai-agent-studio" class="en-menu-studio" data-studio-link>AI AGENT 제작협업실</a>
       <a href="#ai-content">AI 콘텐츠 소개</a>
     </nav>
     <div class="en-actions">
@@ -56,13 +56,14 @@
     <a href="/ledger">이지장부</a>
     <a href="/wiki">모의고사위키</a>
     <a href="/builder">학원 홈페이지 제작</a>
-    <a href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작소</a>
+    <a href="/ai-agent-studio" class="en-drawer-studio" data-studio-link>AI AGENT 제작협업실</a>
     <a href="#ai-content">AI 콘텐츠 소개</a>
   </div>
 
   <nav class="en-mobile-services" aria-label="모바일 서비스 바로가기">
     <a href="/grammar-items">문법 문제은행</a>
     <a href="/wiki">모의고사위키</a>
+    <a href="/ai-agent-studio" class="en-mobile-studio" data-studio-link>AI AGENT 제작협업실</a>
   </nav>
 
   <main>
@@ -70,12 +71,15 @@
     <section class="en-hero" id="top" aria-label="Feel2Real 대표 소개">
       <figure class="en-hero-art">
         <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
-        <picture>
-          <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
-          <source type="image/webp" srcset="/images/ai-agent-banner.webp">
-          <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" fetchpriority="high">
-        </picture>
-        <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정</figcaption>
+        <!-- 배너를 누르면 AI AGENT 제작협업실로 이동한다. 접근 권한(ADMIN·modu)은 서버가 확인하고, 로그인 전이면 로그인 안내로 보낸다. -->
+        <a class="en-hero-link" id="enHeroStudio" href="/ai-agent-studio" data-studio-link aria-label="AI AGENT 제작협업실로 이동">
+          <picture>
+            <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
+            <source type="image/webp" srcset="/images/ai-agent-banner.webp">
+            <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" fetchpriority="high">
+          </picture>
+        </a>
+        <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정 <a class="en-hero-studio" href="/ai-agent-studio" data-studio-link>AI AGENT 제작협업실 바로가기 →</a></figcaption>
       </figure>
       <aside class="en-offer" aria-labelledby="enOfferTitle">
         <p class="en-offer-eyebrow">학교 시험, 더 이상 막막하지 않게</p>
@@ -195,7 +199,6 @@
       </div>
     </section>
     <script src="/js/landing_chart.js?v=20261014-1" defer></script>
-    <script src="/js/studio_entry_link.js?v=20261023-1" defer></script>
   </main>
 
 </div>

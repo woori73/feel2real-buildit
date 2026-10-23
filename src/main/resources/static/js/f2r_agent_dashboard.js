@@ -27,7 +27,9 @@
     { id: 'wiki', name: '내신위키', desc: '내신 문제 제작·관리', href: '/problem-generator', keywords: ['내신', '문제', '시험지', '예상문제', '문항', '기출', '위키'] },
     { id: 'testprep', name: 'TESTPREP', desc: '모의고사 응시·성적', href: '/testprep', keywords: ['모의고사', 'testprep', '모의 시험', '성적'] },
     { id: 'admissions', name: '입시상담 AI', desc: '대학·전형 상담', href: '/admissions/workspace', keywords: ['입시', '대학', '수시', '정시', '전형', '학종', '원서'] },
-    { id: 'builder', name: '홈페이지 빌더', desc: '학원 홈페이지 제작', href: '/builder', keywords: ['홈페이지', '사이트', '빌더', '웹사이트', '블로그'] }
+    { id: 'builder', name: '홈페이지 빌더', desc: '학원 홈페이지 제작', href: '/builder', keywords: ['홈페이지', '사이트', '빌더', '웹사이트', '블로그'] },
+    // 제작협업실은 ADMIN·modu 전용: 카드·열기 버튼은 /api/studio-access가 허용할 때만 보인다(studio_entry_link.js). 실제 차단은 서버 규칙.
+    { id: 'studio', name: 'AI AGENT 제작협업실', desc: '각본·콘티·캐릭터·영상 검수', href: '/ai-agent-studio', restricted: true, keywords: ['제작협업실', '제작소', 'ai agent', '웹툰', '콘티', '각본', '캐릭터 영상', '영상 제작'] }
   ];
 
   // 상태별 표시 문구와 영상. speaking은 음성 연결 여부에 따라 아래 speakingClip이 결정한다.
@@ -280,6 +282,7 @@
     SERVICES.forEach(function (s) {
       var a = document.createElement('a');
       a.className = 'svc-card'; a.href = s.href; a.dataset.service = s.id;
+      if (s.restricted) { a.hidden = true; a.setAttribute('data-studio-entry', ''); }
       var n = document.createElement('strong'); n.textContent = s.name;
       var d = document.createElement('span'); d.textContent = s.desc;
       var badge = document.createElement('em'); badge.className = 'svc-on'; badge.textContent = '연결됨';
@@ -299,10 +302,17 @@
     box.querySelectorAll('a[data-svc-link]').forEach(function (x) { x.remove(); });
     active.forEach(function (id) {
       var s = SERVICES.filter(function (x) { return x.id === id; })[0];
+      if (s.restricted && !studioAllowed()) return;
       var tag = document.createElement('em'); tag.textContent = s.name; tags.append(tag);
       var a = document.createElement('a'); a.href = s.href; a.dataset.svcLink = s.id; a.textContent = s.name + ' 열기'; box.append(a);
     });
     box.hidden = !box.children.length;
+  }
+
+  // 제작협업실 열기는 상단 링크가 허용으로 바뀐 경우(ADMIN·modu)에만 권한다.
+  function studioAllowed() {
+    var link = document.querySelector('a.ops-btn[data-studio-entry]');
+    return !!(link && !link.hidden);
   }
 
   function offerApproval(card) {
