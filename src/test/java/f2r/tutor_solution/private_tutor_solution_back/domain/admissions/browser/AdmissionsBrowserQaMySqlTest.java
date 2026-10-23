@@ -281,9 +281,12 @@ class AdmissionsBrowserQaMySqlTest {
             driver.get("http://127.0.0.1:"+port+"/actuator/health");
             driver.manage().addCookie(new org.openqa.selenium.Cookie("ACCESS_TOKEN",cookie.getValue()));
             driver.get("http://127.0.0.1:"+port+"/dashboard");
+            // AI 비서 화면에서는 F2R 서비스 목록이 메뉴 안에 있다(1280px 이상은 늘 펼침). 좁은 화면은 사용자처럼 메뉴를 먼저 연다.
+            org.openqa.selenium.WebElement menuButton=wait.until(d->d.findElement(By.id("siMenuBtn")));
+            if(menuButton.isDisplayed()&&!driver.findElement(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")).isDisplayed())menuButton.click();
             // 대시보드 위젯이 비동기로 채워지며 레이아웃이 밀리면 클릭이 빗나갈 수 있다(CI 간헐 실패).
             // 링크 존재·href는 그대로 검증하고, 클릭 후 이동이 없으면 같은 href로 이동한다.
-            org.openqa.selenium.WebElement workspaceLink=wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[href='/admissions/workspace']")));
+            org.openqa.selenium.WebElement workspaceLink=wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")));
             String workspaceHref=workspaceLink.getAttribute("href");
             assertThat(workspaceHref).endsWith("/admissions/workspace");
             workspaceLink.click();

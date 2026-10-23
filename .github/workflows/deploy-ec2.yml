@@ -660,6 +660,21 @@ jobs:
             echo 'assistant switch not requested; env left unchanged'
           fi
 
+          # 대시보드 캐릭터(세븐·서수니) 비공개 자료 폴더. 없으면 만들고, APP_AGENT_MEDIA_DIR이 비어 있을 때만
+          # env에 기록한다(이미 있으면 그대로 둔다). 자료는 저장소가 아니라 ADMIN이 대시보드에서 올린 ZIP으로만 채운다.
+          # env는 위 f2r_env_snapshot으로 백업되어 배포 실패 시 함께 되돌아간다.
+          AGENT_MEDIA_DIR=/home/ec2-user/agent-media
+          install -d -o ec2-user -g ec2-user -m 750 "$AGENT_MEDIA_DIR"
+          if ! grep -qE '^APP_AGENT_MEDIA_DIR=.+' /etc/f2r/env 2>/dev/null; then
+            install -d -m 755 /etc/f2r
+            touch /etc/f2r/env
+            chmod 600 /etc/f2r/env
+            printf 'APP_AGENT_MEDIA_DIR=%s\n' "$AGENT_MEDIA_DIR" >> /etc/f2r/env
+            echo "[DEPLOY] agent media dir configured: $AGENT_MEDIA_DIR"
+          else
+            echo 'agent media dir already configured; env left unchanged'
+          fi
+
           # Preserve the legacy OpenRouter sync for any remaining consumers.
           if [ -r /etc/buildit-wiki.env ] && grep -qE '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env; then
             install -d -m 755 /etc/f2r

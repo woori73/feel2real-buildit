@@ -20,7 +20,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap">
-  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261024-1">
+  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261024-2">
+  <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261024-2">
+  <script src="/js/f2r_home_agent.js?v=20261024-2" defer></script>
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
@@ -67,6 +69,49 @@
   </nav>
 
   <main>
+    <!-- ============ 첫 화면: AI 비서(세븐·서수니)와 대화로 시작. 기존 상품·교육 콘텐츠는 아래 영역으로 이동(삭제 없음) ============ -->
+    <section class="si-home" id="aiHome" aria-labelledby="siHomeTitle">
+      <div class="si-home-head">
+        <p class="si-home-brand">FEEL2REAL</p>
+        <h1 class="si-home-title" id="siHomeTitle">Human Intelligence <span class="si-x">×</span> AI</h1>
+        <p class="si-home-lead">당신이 느끼고 상상한 것을 현실로.</p>
+      </div>
+      <div class="si-home-console">
+        <figure class="si-home-stage" id="homeStage" data-state="idle" data-media="missing">
+          <video id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
+          <div class="si-home-emblem" aria-hidden="true"><span id="homeCode">H-07</span></div>
+          <div class="si-home-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
+          <div class="si-home-top">
+            <span class="si-home-state"><i></i><span id="homeStateLabel">대기</span></span>
+            <span class="si-home-pick" role="group" aria-label="AI 비서 선택">
+              <button type="button" data-home-agent="seven" aria-pressed="true">세븐</button>
+              <button type="button" data-home-agent="suni" aria-pressed="false">서수니</button>
+            </span>
+          </div>
+          <div class="si-holo si-holo-left" role="group" aria-label="홀로그램 바로가기 1">
+            <button type="button" class="si-holo-tile" data-home-intent="english"><b>AI 영어교육</b><small>문법 · 모의고사</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>예상문제</b><small>1회 20,000원</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="wiki"><b>모의고사위키</b><small>해설 · 자료</small></button>
+          </div>
+          <div class="si-holo si-holo-right" role="group" aria-label="홀로그램 바로가기 2">
+            <button type="button" class="si-holo-tile" data-home-intent="work"><b>AI 비서 업무</b><small>학원 운영</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="studio"><b>AI AGENT</b><small>제작협업실</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="builder"><b>홈페이지</b><small>사이트 제작</small></button>
+          </div>
+          <figcaption class="si-home-name"><strong id="homeName">세븐</strong><small>Feel2Real AI 비서</small></figcaption>
+        </figure>
+        <div class="si-home-talk">
+          <div class="si-home-chat" id="homeChat" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
+          <form class="si-home-composer" id="homeForm" autocomplete="off">
+            <label class="si-sr" for="homeInput">AI 비서에게 말하기</label>
+            <input id="homeInput" type="text" maxlength="300" placeholder="무엇을 만들고 싶으신가요?" enterkeyhint="send">
+            <button type="submit">보내기</button>
+          </form>
+          <p class="si-home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span> <button type="button" id="homeWelcomeAgain">처음 안내 다시 보기</button></p>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ HERO: AI AGENT 이미지 + 2만원 상품 ============ -->
     <section class="en-hero" id="top" aria-label="Feel2Real 대표 소개">
       <figure class="en-hero-art">
@@ -83,7 +128,7 @@
       </figure>
       <aside class="en-offer" aria-labelledby="enOfferTitle">
         <p class="en-offer-eyebrow">학교 시험, 더 이상 막막하지 않게</p>
-        <h1 class="en-offer-title" id="enOfferTitle">내신 영어 예상문제</h1>
+        <h2 class="en-offer-title" id="enOfferTitle">내신 영어 예상문제</h2>
         <p class="en-offer-price"><strong>1회 20,000원</strong><span>40문항</span></p>
         <ul class="en-offer-points">
           <li>학교별 시험범위 맞춤</li>

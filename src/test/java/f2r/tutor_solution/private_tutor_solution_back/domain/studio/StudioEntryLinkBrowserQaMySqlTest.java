@@ -88,11 +88,11 @@ class StudioEntryLinkBrowserQaMySqlTest {
       clickVisible(driver, wait, By.id("enHeroStudio"));
       waitStudio(driver, wait);
 
-      if (mobile) {
-        driver.get(BASE + "/");
-        clickVisible(driver, wait, By.cssSelector(".en-mobile-services a.en-mobile-studio"));
-        waitStudio(driver, wait);
-      }
+      // 모바일 첫 화면은 AI 비서 대화가 먼저다(서비스 바로가기 줄은 숨김). 비서 홀로그램 'AI AGENT'를 눌러도 제작협업실 안내 버튼이 나온다.
+      driver.get(BASE + "/");
+      clickVisible(driver, wait, By.cssSelector("[data-home-intent='studio']"));
+      clickVisible(driver, wait, By.cssSelector("#homeChat a[href='/ai-agent-studio']"));
+      waitStudio(driver, wait);
       driver.get(BASE + "/");
       assertThat(js.executeScript("return document.documentElement.scrollWidth<=window.innerWidth;")).isEqualTo(true);
       shot(driver, (mobile ? "mobile-390" : "pc-1440") + "-home.png");

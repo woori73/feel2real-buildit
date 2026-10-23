@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,6 +29,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.mockito.ArgumentCaptor;
+import org.springframework.mock.web.MockMultipartFile;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -82,6 +88,13 @@ class AgentDashboardBrowserQaMySqlTest {
     // given / when / then: 캐릭터 자료는 로그인한 ADMIN·TUTOR에게만 제공된다.
     mvc.perform(get("/api/dashboard/agent-media")).andExpect(status().isUnauthorized());
     mvc.perform(get("/dashboard/agent-media/seven/idle.mp4")).andExpect(status().isUnauthorized());
+    // 자료 설치는 로그인 없이 불가(ADMIN 전용)
+    mvc.perform(multipart("/api/dashboard/agent-media/package").file(new MockMultipartFile("file", "a.zip", "application/zip", new byte[] {1})))
+        .andExpect(status().isUnauthorized());
+    // 홈 공개 자료는 공개 허용 목록이 비어 있으면 아무것도 내주지 않는다
+    mvc.perform(get("/api/agent-media/public")).andExpect(status().isOk())
+        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.agents").isEmpty());
+    mvc.perform(get("/agent-media/public/seven/idle.mp4")).andExpect(status().isNotFound());
   }
 
   @Test
@@ -132,12 +145,35 @@ class AgentDashboardBrowserQaMySqlTest {
       wait.until(d -> text(driver, "agentGreeting").contains("처리했습니다"));
       assertThat(text(driver, "statusPending")).isEqualTo("0건");
 
+      // 홀로그램 업무 버튼(학생 등록) → 한 번에 하나씩 질문 → 기존 /drafts 초안 API → 승인 대기 카드
+      driver.findElement(By.cssSelector("button[data-flow='student']")).click();
+      wait.until(d -> lastBubble(driver).contains("등록할 학생의 이름"));
+      driver.findElement(By.id("uaCommand")).sendKeys("최유나");
+      driver.findElement(By.cssSelector("#uaCommandForm button[type=submit]")).click();
+      wait.until(d -> lastBubble(driver).contains("학년을 골라"));
+      clickChoice(driver, "중2");
+      wait.until(d -> lastBubble(driver).contains("학교 이름"));
+      clickChoice(driver, "건너뛰기");
+      wait.until(d -> lastBubble(driver).contains("학부모 이름"));
+      clickChoice(driver, "건너뛰기");
+      wait.until(d -> lastBubble(driver).contains("학부모 연락처"));
+      clickChoice(driver, "건너뛰기");
+      wait.until(d -> lastBubble(driver).contains("이름: 최유나"));
+      clickChoice(driver, "초안 만들기");
+      wait.until(d -> "1건".equals(text(driver, "statusPending")));
+      ArgumentCaptor<JsonNode> input = ArgumentCaptor.forClass(JsonNode.class);
+      verify(service, atLeastOnce()).draft(any(), any(), any(), eq("STUDENT_CREATE"), input.capture());
+      assertThat(input.getValue().path("name").asText()).isEqualTo("최유나");
+      assertThat(input.getValue().path("grade").asText()).isEqualTo("중2");
+      assertThat(input.getValue().has("schoolName")).isFalse();
+
       // 비서를 바꿔도 대화 기록·업무 상태는 유지된다
       Object before = js.executeScript("return document.getElementById('uaDrafts').children.length;");
       js.executeScript("document.querySelector('[data-agent-pick=\"suni\"]').click();");
       wait.until(d -> "서수니".equals(text(driver, "agentName")));
       assertThat(js.executeScript("return document.getElementById('uaDrafts').children.length;")).isEqualTo(before);
       assertThat(text(driver, "statusDone")).isEqualTo("1건");
+      assertThat(text(driver, "statusPending")).isEqualTo("1건");
       assertThat(text(driver, "agentBadge")).isEqualTo("캐릭터 자료 미연결");
       assertThat(driver.findElement(By.id("agentStage")).getAttribute("data-media")).isEqualTo("missing");
 
@@ -152,8 +188,13 @@ class AgentDashboardBrowserQaMySqlTest {
       Files.createDirectories(folder);
       Files.copy(driver.getScreenshotAs(OutputType.FILE).toPath(), folder.resolve(screenshot), StandardCopyOption.REPLACE_EXISTING);
 
-      // 실제 사용자 클릭으로 입시상담 AI 서비스 카드가 열린다(주소 직접 이동 없이)
-      driver.findElement(By.cssSelector("a[href='/admissions/workspace']")).click();
+      // 실제 사용자 클릭으로 입시상담 AI 서비스 카드가 열린다(주소 직접 이동 없이). 모바일은 메뉴를 먼저 연다.
+      if (driver.findElement(By.id("siMenuBtn")).isDisplayed()) {
+        driver.findElement(By.id("siMenuBtn")).click();
+        wait.until(d -> d.findElement(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")).isDisplayed());
+        Thread.sleep(400);
+      }
+      driver.findElement(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")).click();
       wait.until(d -> d.getCurrentUrl().contains("/admissions/workspace"));
     } finally {
       driver.quit();
@@ -169,6 +210,9 @@ class AgentDashboardBrowserQaMySqlTest {
     when(service.audit(any())).thenReturn(List.of());
     when(conversation.send(any(), any(), any(), anyString())).thenReturn(new AssistantConversationService.Turn(
         "학생 등록 초안을 만들었습니다. 내용을 확인하고 승인해 주세요.", "규칙 분석", null, List.of(draft), List.of(), null));
+    AssistantDraft guided = new AssistantDraft(1L, "TUTOR", 7L, null, "STUDENT_CREATE",
+        "{\"name\":\"최유나\"}", "{\"name\":\"최유나\",\"grade\":\"중2\"}", "agent-dashboard-flow-" + UUID.randomUUID());
+    when(service.draft(any(), any(), any(), eq("STUDENT_CREATE"), any())).thenReturn(guided);
     when(service.decide(any(), eq(draft.getId()), anyString(), eq(false))).thenAnswer(call -> {
       draft.finish("VERIFIED", "{\"message\":\"학생 등록을 저장하고 다시 조회했습니다.\",\"recordId\":101}");
       return draft;
@@ -182,6 +226,16 @@ class AgentDashboardBrowserQaMySqlTest {
     academies.save(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy.builder()
         .tutor(user).slug("agent-qa-" + suffix).name("격리 QA 학원").logoStorageKey("qa").intro("대시보드 검증용 학원").build());
     return tokens.issue(user.getUserId(), user.getLoginId(), Role.TUTOR.name());
+  }
+
+  private static String lastBubble(ChromeDriver driver) {
+    return String.valueOf(((JavascriptExecutor) driver).executeScript(
+        "var b=document.querySelectorAll('#uaDrafts .ua-bubble.ua-assistant');return b.length?b[b.length-1].textContent:'';"));
+  }
+
+  private static void clickChoice(ChromeDriver driver, String label) {
+    List<org.openqa.selenium.WebElement> buttons = driver.findElements(By.cssSelector("#uaDrafts .ua-bubble.ua-assistant .ua-choice"));
+    buttons.stream().filter(b -> label.equals(b.getText().trim()) && b.isEnabled()).reduce((a, b) -> b).orElseThrow().click();
   }
 
   private static String text(ChromeDriver driver, String id) {

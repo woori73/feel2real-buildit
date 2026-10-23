@@ -2,12 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>F2R AI 운영 대시보드</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#081426">
+  <title>F2R AI 비서</title>
   <link rel="stylesheet" href="/css/unified_assistant.css">
-  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261024-1">
-  <script defer src="/js/unified_assistant.js?v=20261023-2"></script>
-  <script defer src="/js/f2r_agent_dashboard.js?v=20261024-1"></script>
+  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261024-2">
+  <script defer src="/js/unified_assistant.js?v=20261024-2"></script>
+  <script defer src="/js/f2r_agent_dashboard.js?v=20261024-2"></script>
+  <script defer src="/js/f2r_agent_flows.js?v=20261024-2"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
@@ -15,46 +17,93 @@
   <header class="ops-topbar">
     <div class="ops-brand">
       <a class="ops-logo" data-f2r-home href="/" aria-label="F2R 홈으로 이동"><b>F2R</b><span>Feel to Real</span></a>
-      <h1 class="ops-title">AI 운영 대시보드</h1>
+      <h1 class="ops-title">AI 비서</h1>
     </div>
     <nav class="ops-views" aria-label="대시보드 화면 선택">
-      <button type="button" data-view-btn="ai" aria-pressed="true">AI 메인</button>
+      <button type="button" data-view-btn="ai" aria-pressed="true">AI 대화</button>
       <button type="button" data-view-btn="all" aria-pressed="false">전체 대시보드</button>
     </nav>
-    <div class="ops-controls">
-      <select class="ops-select" id="bizSelect" aria-label="사업체 선택">
-        <option value="">사업체 불러오는 중...</option>
-      </select>
-      <a class="ops-btn" href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작협업실</a>
-      <button class="ops-btn" id="uaResume" type="button" title="처음이면 눌러서 1단계부터 안내를 보세요">사용법 안내</button>
-      <button class="ops-btn" id="refreshBtn" type="button" aria-label="새로고침">↻</button>
-    </div>
+    <button class="si-menu-btn" id="siMenuBtn" type="button" aria-controls="siMenu" aria-expanded="false"><span aria-hidden="true"></span>메뉴</button>
   </header>
 
-<main id="unifiedAssistant" class="ua ops" aria-label="F2R AI 운영 대시보드">
+  <div class="si-scrim" id="siScrim" aria-hidden="true"></div>
+  <aside class="si-menu" id="siMenu" aria-label="메뉴와 업무 상태">
+    <div class="si-menu-head"><strong>메뉴</strong><button type="button" id="siMenuClose" aria-label="메뉴 닫기">닫기</button></div>
+    <div class="si-menu-views" role="group" aria-label="화면 선택">
+      <button type="button" data-view-btn="ai" aria-pressed="true">AI 대화</button>
+      <button type="button" data-view-btn="all" aria-pressed="false">전체 대시보드</button>
+    </div>
+    <div class="ops-controls">
+      <label class="si-field"><span>장부 사업체</span>
+        <select class="ops-select" id="bizSelect" aria-label="사업체 선택">
+          <option value="">사업체 불러오는 중...</option>
+        </select>
+      </label>
+      <a class="ops-btn" href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작협업실</a>
+      <button class="ops-btn" type="button" data-welcome-again>처음 안내 다시 보기</button>
+      <button class="ops-btn" id="uaResume" type="button" title="화면별 사용법을 1단계부터 봅니다">사용법 안내</button>
+      <button class="ops-btn" id="refreshBtn" type="button" aria-label="현황 새로고침">현황 새로고침</button>
+    </div>
+
+    <section class="si-status" aria-label="업무 상태">
+      <h2 class="si-h">업무 상태</h2>
+      <dl class="sys-grid">
+        <div><dt>담당 비서</dt><dd id="statusAgent">세븐 (H-07)</dd></div>
+        <div class="ua-academy"><dt><label for="uaAcademy">업무 학원</label></dt><dd><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></dd></div>
+        <div class="wide"><dt>사용자</dt><dd id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</dd></div>
+        <div class="wide si-counters"><dt>이 화면의 업무</dt><dd><span>승인 대기 <b id="statusPending">0건</b></span><span>처리 완료 <b id="statusDone">0건</b></span><span>확인 필요 <b id="statusReview">0건</b></span></dd></div>
+        <div class="wide"><dt>대화에서 연결된 서비스</dt><dd class="hud-services" id="statusServices"></dd></div>
+      </dl>
+      <details class="sys-more"><summary>운영·재무 현황 보기</summary><div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div></details>
+    </section>
+
+    <section class="svc-guide" aria-label="F2R 서비스">
+      <h2 class="si-h">F2R 서비스</h2>
+      <div class="svc-grid" id="shortcutRow"></div>
+    </section>
+
+    <section class="si-media" id="siMediaAdmin" hidden aria-label="캐릭터 자료 관리">
+      <h2 class="si-h">캐릭터 자료 (관리자)</h2>
+      <p class="ua-hint">세븐·서수니 자료 묶음(ZIP)을 올리면 서버 비공개 폴더에 설치됩니다. 승인 상태는 묶음 안의 manifest 그대로 유지하며, 저장소에는 올리지 않습니다.</p>
+      <form id="siMediaForm"><input id="siMediaFile" type="file" accept=".zip,application/zip" required aria-label="캐릭터 자료 ZIP"><button type="submit" class="ops-btn">자료 올리기</button></form>
+      <p class="ua-hint" id="siMediaResult" role="status"></p>
+    </section>
+  </aside>
+
+<main id="unifiedAssistant" class="ua ops" aria-label="F2R AI 비서">
   <div id="uaTour" class="ua-tour ops-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><div id="uaPurpose" class="ua-chips"><span class="ua-hint">무엇을 하고 싶으세요?</span><button type="button" data-ua-purpose="students">학생·반 관리</button><button type="button" data-ua-purpose="attendance">출결</button><button type="button" data-ua-purpose="consult">상담</button><button type="button" data-ua-purpose="ledger">장부</button></div><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
 
-  <!-- ===== AI 메인: 캐릭터 중심 대화 콘솔 ===== -->
-  <section class="ops-pane ops-main" data-pane="ai" aria-label="AI 메인">
+  <!-- ===== AI 대화: 캐릭터 + 홀로그램 업무 선택 + 대화 + 입력창 ===== -->
+  <section class="ops-pane ops-main" data-pane="ai" aria-label="AI 대화">
    <div class="console-grid">
     <div class="console">
       <figure class="console-stage" id="agentStage" data-state="idle" data-media="loading">
-        <video class="agent-clip is-on" id="agentVideo" muted loop playsinline preload="auto" aria-hidden="true"></video>
-        <video class="agent-clip" id="agentVideoAlt" muted loop playsinline preload="auto" aria-hidden="true"></video>
-        <div class="agent-emblem" aria-hidden="true"><span id="agentCode">H-07</span></div>
-        <div class="agent-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i><i class="ring"></i></div>
+        <div class="stage-core">
+          <video class="agent-clip is-on" id="agentVideo" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          <video class="agent-clip" id="agentVideoAlt" muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          <div class="agent-emblem" aria-hidden="true"><span id="agentCode">H-07</span></div>
+          <div class="agent-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i><i class="ring"></i></div>
+        </div>
+        <div class="holo holo-left" role="group" aria-label="홀로그램 업무 선택 1">
+          <button type="button" class="holo-tile" data-flow="student" aria-pressed="false"><b>학생 등록</b><small>이름부터 차례로</small></button>
+          <button type="button" class="holo-tile" data-flow="attendance" aria-pressed="false"><b>출결</b><small>확인 · 기록</small></button>
+          <button type="button" class="holo-tile" data-flow="consult" aria-pressed="false"><b>상담 기록</b><small>학생 · 내용</small></button>
+        </div>
+        <div class="holo holo-right" role="group" aria-label="홀로그램 업무 선택 2">
+          <button type="button" class="holo-tile" data-flow="materials" aria-pressed="false"><b>학습자료</b><small>자료 확인</small></button>
+          <button type="button" class="holo-tile" data-flow="notice" aria-pressed="false"><b>공지 초안</b><small>제목 · 내용</small></button>
+          <button type="button" class="holo-tile" data-flow="overview" aria-pressed="false"><b>운영 현황</b><small>학원 · 재무</small></button>
+        </div>
         <div class="hud-top">
           <span class="agent-state" role="status"><i></i><span id="agentStateLabel">대기</span></span>
-          <span class="agent-badge" id="agentBadge">자료 확인 중</span>
-        </div>
-        <div class="hud-counters" aria-label="업무 상태">
-          <span>승인 대기 <b id="statusPending">0건</b></span>
-          <span>처리 완료 <b id="statusDone">0건</b></span>
-          <span>확인 필요 <b id="statusReview">0건</b></span>
+          <div class="agent-pick" role="group" aria-label="AI 비서 선택">
+            <button type="button" data-agent-pick="seven" aria-pressed="true"><img alt=""><span>세븐</span></button>
+            <button type="button" data-agent-pick="suni" aria-pressed="false"><img alt=""><span>서수니</span></button>
+          </div>
         </div>
         <figcaption class="hud-bottom">
           <strong id="agentName">세븐</strong><small id="agentRole">업무 분석 · 전략</small>
-          <span class="hud-services" id="statusServices"></span>
+          <span class="agent-badge" id="agentBadge">자료 확인 중</span>
         </figcaption>
       </figure>
 
@@ -63,45 +112,25 @@
         <p class="speech-text" id="agentGreeting">세븐입니다. 오늘 처리할 업무를 말씀해 주세요.</p>
         <div class="speech-actions" id="agentSuggest" hidden></div>
       </div>
-
-      <div class="agent-pick" role="group" aria-label="AI 비서 선택">
-        <button type="button" data-agent-pick="seven" aria-pressed="true"><img src="/dashboard/agent-media/seven/front.webp" alt="" loading="lazy"><span>세븐</span></button>
-        <button type="button" data-agent-pick="suni" aria-pressed="false"><img src="/dashboard/agent-media/suni/front.webp" alt="" loading="lazy"><span>서수니</span></button>
-      </div>
-
-      <p id="uaMessage" role="status">업무를 알려주시면 초안을 먼저 보여드립니다. 승인 전에는 실제 업무에 저장하지 않습니다.</p>
+      <p id="uaMessage" class="si-sr" role="status">업무를 알려주시면 초안을 먼저 보여드립니다. 승인 전에는 실제 업무에 저장하지 않습니다.</p>
     </div>
 
-    <aside class="console-log" aria-label="대화 기록과 업무 상태">
-      <dl class="sys-grid">
-        <div><dt>담당 비서</dt><dd id="statusAgent">세븐 (H-07)</dd></div>
-        <div class="ua-academy"><dt><label for="uaAcademy">업무 학원</label></dt><dd><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></dd></div>
-        <div class="wide"><dt>사용자</dt><dd id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</dd></div>
-      </dl>
-      <section class="ua-work chat-window" id="uaReview" aria-label="대화 기록">
-        <div class="ua-section-head"><h3>대화 기록</h3><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div>
-        <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="비서 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
-      </section>
-      <details class="sys-more"><summary>운영·재무 현황 보기</summary><div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div></details>
-    </aside>
+    <section class="ua-work chat-window" id="uaReview" aria-label="대화 기록">
+      <div class="ua-section-head"><h3>대화</h3><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div>
+      <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="비서 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
+    </section>
 
     <div class="ua-composer console-composer">
         <form id="uaCommandForm">
           <label for="uaCommand">무엇이든 물어보거나 업무를 맡기세요</label>
           <div class="composer-row">
-            <span class="agent-mini" id="agentMini" aria-hidden="true"><img id="agentMiniImg" src="/dashboard/agent-media/seven/front.webp" alt=""><i></i></span>
-            <textarea id="uaCommand" rows="2" maxlength="2000" placeholder="예: 학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea>
+            <span class="agent-mini" id="agentMini" aria-hidden="true"><img id="agentMiniImg" alt=""><i></i></span>
+            <textarea id="uaCommand" rows="1" maxlength="2000" placeholder="무엇을 도와드릴까요?" required enterkeyhint="send"></textarea>
             <button class="ua-primary" type="submit">보내기</button>
           </div>
         </form>
-        <div class="ua-chips"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button></div>
-      </div>
+    </div>
    </div>
-
-    <section class="svc-guide" aria-label="사용 가능한 F2R 서비스">
-      <h2 class="ops-h2">사용 가능한 F2R 서비스</h2>
-      <div class="svc-grid" id="shortcutRow"></div>
-    </section>
   </section>
 
   <!-- ===== 전체 대시보드 ===== -->
@@ -125,6 +154,7 @@
       <div class="cmd-grid">
         <form id="uaUploadForm"><label for="uaFile">업무 자료 첨부 (CSV · TXT, 256KB 이하)</label><input id="uaFile" type="file" accept=".csv,.txt,text/csv,text/plain" required><p class="ua-hint">학생 명단 CSV는 이름·학년·학교·학부모연락처 열을, 거래 CSV는 거래일·구분·금액·거래처·적요·증빙유형 열을 사용하세요. TXT는 한 줄에 하나의 업무 지시를 적으세요. 학원 자료는 최대 20행입니다.</p><div class="ua-actions"><a href="/data/unified-assistant-students.csv" download>학생 명단 양식</a><a href="/data/unified-assistant-sample.csv" download>거래·증빙 양식</a></div><button type="submit">자료 분석하고 초안 만들기</button></form>
         <div>
+          <div class="ua-chips si-examples" aria-label="자주 쓰는 요청"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록 예시</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회 예시</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안 예시</button></div>
           <div class="ua-actions"><button id="uaExplain" type="button">AI 재무 해설</button><button id="uaRefresh" type="button">현황 새로고침</button></div>
           <details id="uaEdit"><summary>초안 보완 · 직접 입력</summary>
             <form id="uaDraftForm"><label for="uaOperation">업무 종류</label><select id="uaOperation">

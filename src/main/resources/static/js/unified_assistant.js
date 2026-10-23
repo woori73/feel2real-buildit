@@ -135,17 +135,25 @@
     $('uaMessage').textContent=t.message;
   }
   async function loadAudit() {const data=await json('/audit');$('uaAudit').replaceChildren(...data.map(row=>el('div',new Date(row.createdAt).toLocaleString('ko-KR')+' · '+row.event+' · '+(row.operation?name(row.operation)+' · ':'')+(row.academyId?'학원 '+row.academyId:row.businessId?'사업체 '+row.businessId:'')+' · '+(row.draftId||''))));}
-  async function history() {const g=state.generation,revision=state.draftRevision,data=await json('/drafts');if(g!==state.generation||revision!==state.draftRevision)return;$('uaDrafts').replaceChildren();for(const d of data.reverse().filter(x=>(!x.businessId||String(x.businessId)===String(state.business))&&(!x.academyId||Number(x.academyId)===Number(state.academy))))renderDraft(d,false);if(!$('uaDrafts').children.length)bubble('assistant','반가워요. 학생·반·출결·상담과 이지장부 거래를 이 대화에서 함께 처리합니다. 업무 지시 또는 자료를 보내주세요.');scrollChat();await loadAudit();}
+  async function history() {const g=state.generation,revision=state.draftRevision,data=await json('/drafts');if(g!==state.generation||revision!==state.draftRevision)return;$('uaDrafts').replaceChildren();for(const d of data.reverse().filter(x=>(!x.businessId||String(x.businessId)===String(state.business))&&(!x.academyId||Number(x.academyId)===Number(state.academy))))renderDraft(d,false);if(!$('uaDrafts').children.length)bubble('assistant','무엇을 도와드릴까요? 평소 말투로 요청하거나 홀로그램 업무 버튼을 눌러 주세요. 필요한 내용을 하나씩 여쭤보겠습니다.');scrollChat();await loadAudit();}
   async function submitDraft(e) {e.preventDefault();if(state.busy)return;setBusy(true);const g=state.generation;
     try {const data={};for(const [key,value] of new FormData($('uaDraftForm')))if(value)data[key]=key.endsWith('Id')||key==='amount'?Number(value):value;
       const d=await post('/drafts',{operation:$('uaOperation').value,academyId:state.context?.academyId,businessId:state.business?Number(state.business):null,input:data});if(g===state.generation){bubble('user','직접 입력한 '+name($('uaOperation').value)+' 초안을 요청했습니다.');renderDraft(d);} }
     catch(e){error(e);}finally{setBusy(false);}}
+  // 대화 전송: 기존 /conversation API 그대로. 단계 안내(f2r_agent_flows.js)도 이 함수로 조회형 요청을 보낸다.
+  async function send(message,opts={}) {if(state.busy||!String(message||'').trim())return false;const g=state.generation;setBusy(true);if(!opts.silent)bubble('user',message);
+    try{const turn=await post('/conversation',{academyId:state.academy,businessId:state.business?Number(state.business):null,message});if(g!==state.generation)return false;await acceptTurn(turn);return true;}
+    catch(e){if(g===state.generation){bubble('assistant','요청 실패: '+e.message+' 잠시 후 다시 시도하거나 전체 대시보드의 기존 화면에서 처리하세요.');error(e);}return false;}finally{setBusy(false);}}
+  // 단계 안내가 모은 값으로 기존 /drafts API에 초안을 만든다. 승인 전에는 저장하지 않는다.
+  async function createDraft(operation,input) {const g=state.generation;setBusy(true);
+    try{const d=await post('/drafts',{operation,academyId:state.context?.academyId,businessId:state.business?Number(state.business):null,input});if(g===state.generation)renderDraft(d);return d;}
+    finally{setBusy(false);}}
   function setBusy(b) {state.busy=b;document.querySelectorAll('#uaDraftForm button,#uaUploadForm button,#uaCommandForm button').forEach(x=>x.disabled=b||!state.ready);if(b)$('uaError').hidden=true;}
   async function refreshContext() {const g=state.generation;state.ready=false;setBusy(true);try{await overview();await history();if(g===state.generation)state.ready=true;}finally{if(g===state.generation)setBusy(false);}}
   function bind() {
     $('uaAcademy').addEventListener('change',()=>{state.academy=Number($('uaAcademy').value);state.context=null;state.generation++;$('uaCatalog').replaceChildren();$('uaDrafts').replaceChildren();$('uaEdit').open=false;fields();refreshContext().catch(error);});
     $('uaOperation').addEventListener('change',()=>fields());$('uaDraftForm').addEventListener('submit',submitDraft);
-    $('uaCommandForm').addEventListener('submit',async e=>{e.preventDefault();if(state.busy)return;const message=$('uaCommand').value,g=state.generation;setBusy(true);bubble('user',message);try{const turn=await post('/conversation',{academyId:state.academy,businessId:state.business?Number(state.business):null,message});if(g!==state.generation)return;await acceptTurn(turn);$('uaCommand').value='';}catch(e){if(g===state.generation){bubble('assistant','요청 실패: '+e.message);error(e);}}finally{setBusy(false);}});
+    $('uaCommandForm').addEventListener('submit',async e=>{e.preventDefault();if(await send($('uaCommand').value))$('uaCommand').value='';});
     document.querySelectorAll('[data-ua-example]').forEach(button=>button.addEventListener('click',()=>{$('uaCommand').value=button.dataset.uaExample;$('uaCommandForm').requestSubmit();}));
     document.querySelectorAll('[data-ua-list]').forEach(button=>button.addEventListener('click',async()=>{const g=state.generation;try{const data=await json('/catalog/'+button.dataset.uaList+(state.academy?'?academyId='+state.academy:''));if(g!==state.generation)return;const table=el('table');for(const row of data){const tr=el('tr');for(const value of [row.id,row.name||row.title,row.schoolName||row.teacherName||row.role||row.status||''])tr.append(el('td',String(value??'')));table.append(tr);}$('uaCatalog').replaceChildren(el('p','ID · 이름/제목 · 학교/담당/상태'),table);}catch(e){error(e);}}));
     $('uaUploadForm').addEventListener('submit',async e=>{e.preventDefault();const file=$('uaFile').files[0];if(!file||state.busy)return;if(file.size>262144){error(new Error('자료는 256KB 이하로 올려주세요.'));return;}setBusy(true);const g=state.generation;bubble('user','자료 첨부: '+file.name);try{const form=new FormData();form.append('file',file);const query=new URLSearchParams();if(state.academy)query.set('academyId',state.academy);if(state.business)query.set('businessId',state.business);const turn=await json('/materials?'+query,{method:'POST',body:form});if(g===state.generation){await acceptTurn(turn);$('uaFile').value='';}}catch(e){if(g===state.generation){bubble('assistant','자료 분석 실패: '+e.message);error(e);}}finally{setBusy(false);}});
@@ -182,6 +190,7 @@
     try { const res=await fetch('/api/dashboard/businesses',{credentials:'same-origin',cache:'no-store'});if(res.ok){const list=await res.json(),saved=localStorage.getItem('dashboard.businessId');state.business=String(list.find(x=>String(x.businessId)===saved)?.businessId||list[0]?.businessId||'')||null;} } catch(_) {}
     fields();setBusy(true);bind();state.progress=await json('/progress');
     // 첫 방문 안내는 화면을 밀지 않도록 자동으로 펼치지 않고 '사용법 안내' 버튼에 처음 표시만 한다.
-    if(!state.progress.completed)$('uaResume').classList.add('ua-new');await refreshContext();}catch(e){error(e);}}
+    if(!state.progress.completed)$('uaResume').classList.add('ua-new');await refreshContext();document.dispatchEvent(new CustomEvent('ua:ready'));}catch(e){error(e);document.dispatchEvent(new CustomEvent('ua:failed',{detail:e.message}));}}
+  window.unifiedAssistant={bubble,send,createDraft,json,saveProgress,ready:()=>state.ready,busy:()=>state.busy,academy:()=>state.academy,role:()=>state.user&&state.user.role,ownerContext:()=>state.context?.role==='ACADEMY_OWNER',progress:()=>state.progress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
