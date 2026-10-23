@@ -214,10 +214,11 @@ body[data-view="ai"] .ops-all, body[data-view="all"] .ops-main { display: none; 
 .dash-promo-strip .p-price { font-size: 13px; color: var(--ops-muted); margin-top: 2px; }
 .dash-promo-strip .p-btn { padding: 9px 16px; border-radius: 8px; background: var(--ops-accent); color: var(--ops-accent-ink) !important; font-weight: 800; font-size: 13px; text-decoration: none; white-space: nowrap; }
 
-/* ---- 사용법 안내: 어느 화면에서도 보이도록 하단 고정 카드 ---- */
-.ops .ops-tour {
+/* ---- 사용법 안내: 첫 방문 자동 안내는 화면 위쪽에 자리 잡고, 버튼으로 연 안내만 하단 고정 카드로 띄운다 ---- */
+.ops .ops-tour { margin: 0 0 18px; background: #1c1606; border-color: var(--ops-warn); color: #fff4dc; }
+.ops .ops-tour.is-floating {
   position: fixed; z-index: 40; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(880px, calc(100% - 32px)); margin: 0;
-  background: #1c1606; border-color: var(--ops-warn); color: #fff4dc; box-shadow: 0 18px 48px rgba(0,0,0,.55);
+  box-shadow: 0 18px 48px rgba(0,0,0,.55);
 }
 .ops .ops-tour .ua-eyebrow { color: var(--ops-warn); }
 .ops .ops-tour p { color: #f3e3bd; }
@@ -257,7 +258,8 @@ body[data-view="ai"] .ai-fab { display: none; }
   .svc-grid, .dash-kpis, .dash-widgets, .dash-skeleton, .cmd-grid { grid-template-columns: 1fr; }
   .ops .ua-menus { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ops #uaDrafts.ua-chat-stream { max-height: 380px; }
-  .ops .ops-tour { bottom: 12px; flex-direction: column; align-items: stretch; }
+  .ops .ops-tour { flex-direction: column; align-items: stretch; }
+  .ops .ops-tour.is-floating { bottom: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .agent-stage[data-state="analyze"] .scan, .agent-stage.is-flash::after, .svc-card.is-active, .dash-skel .bar { animation: none; }
