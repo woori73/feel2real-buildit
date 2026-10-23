@@ -220,15 +220,22 @@ class StaticPolicyTest(unittest.TestCase):
         self.assertEqual(sorted(ro["ForAnyValue:StringEquals"]["token.actions.githubusercontent.com:job_workflow_ref"]), [
             "woori73/feel2real-buildit/.github/workflows/prod-diagnostic.yml@refs/heads/main",
             "woori73/feel2real-buildit/.github/workflows/prod-readonly-status.yml@refs/heads/main"])
-        self.assertTrue(sn["StringEquals"]["token.actions.githubusercontent.com:sub"].endswith(":environment:f2r-production-snapshot"))
+        self.assertTrue(sn["StringEquals"]["token.actions.githubusercontent.com:sub"].endswith(":environment:f2r-infra-build"))
+        self.assertEqual(sn["StringEquals"]["token.actions.githubusercontent.com:job_workflow_ref"],
+                         "woori73/feel2real-buildit/.github/workflows/migration-infra-build.yml@refs/heads/main")
 
     def test_snapshot_policy_creates_only_named_snapshots(self):
         # given
         p = json.loads((MIG / "policy-f2r-predeploy-snapshot.json").read_text())
+        stmts = {s["Sid"]: s for s in p["Statement"]}
         acts = sorted(a for s in p["Statement"] for a in (s["Action"] if isinstance(s["Action"], list) else [s["Action"]]))
-        # then: 생성은 CreateDBSnapshot 하나(삭제·복원·수정 없음)
-        self.assertEqual(acts, ["rds:CreateDBSnapshot", "rds:DescribeDBInstances", "rds:DescribeDBSnapshots"])
-        self.assertIn("arn:aws:rds:ap-northeast-2:425805163960:snapshot:f2r-predeploy-*", json.dumps(p))
+        # then: 운영 DB 하나에서 f2r-predeploy-* 생성·태그만(삭제·복원·수정 없음)
+        self.assertEqual(acts, ["rds:AddTagsToResource", "rds:CreateDBSnapshot", "rds:DescribeDBInstances", "rds:DescribeDBSnapshots"])
+        self.assertEqual(sorted(stmts["CreatePreDeploySnapshotOfProductionDbOnly"]["Resource"]), [
+            "arn:aws:rds:ap-northeast-2:425805163960:db:f2r-db-202610181331",
+            "arn:aws:rds:ap-northeast-2:425805163960:snapshot:f2r-predeploy-*"])
+        self.assertEqual(stmts["TagOnlyPreDeploySnapshotsAtCreation"]["Resource"],
+                         "arn:aws:rds:ap-northeast-2:425805163960:snapshot:f2r-predeploy-*")
 
     def test_workflows_use_readonly_role_fixed_document_and_no_inline_inputs(self):
         allowed = set(json.loads(DOC.read_text())["parameters"]["Section"]["allowedValues"])
@@ -271,20 +278,34 @@ class StaticPolicyTest(unittest.TestCase):
         self.assertNotIn("425805163960", out)
         self.assertIn("f2r-db-202610181331", out)
 
-    def test_predeploy_snapshot_step_is_fixed_confirmed_and_create_only(self):
-        # given: 배포 직전 스냅샷 단계 본문
-        text = (ROOT / ".github/workflows/migration-infra-build.yml").read_text()
-        body = text[text.index("step_predeploy_snapshot() {"):text.index("step_a1_precheck() {")]
-        # then: 운영 DB 하나, 실행 커밋 기준 이름·확인 문자열, 생성과 대기만(삭제·복원·수정 없음)
-        self.assertIn("DB=f2r-db-202610181331", body)
-        self.assertIn('[ "${CONFIRM:-}" = "SNAPSHOT-$SHA8" ]', body)
-        self.assertIn('SNAP="f2r-predeploy-$(date -u +%Y%m%d%H%M)-$SHA8"', body)
-        self.assertIn('[ "$PENDING" = "{}" ]', body)
-        self.assertIn("aws rds wait db-snapshot-available", body)
-        rds_calls = set(re.findall(r"aws rds ([a-z-]+)", body))
-        self.assertEqual(rds_calls, {"describe-db-instances", "create-db-snapshot", "wait", "describe-db-snapshots"})
-        self.assertIn("predeploy-snapshot) step_predeploy_snapshot ;;", text)
+    def test_predeploy_snapshot_job_uses_snapshot_role_and_is_create_only(self):
+        # given: 배포 직전 스냅샷 잡과 빌드 잡 조건
+        wf = yaml.safe_load((ROOT / ".github/workflows/migration-infra-build.yml").read_text())
+        job = wf["jobs"]["predeploy-snapshot"]
+        run = job["steps"][1]["run"]
+        # then: 소유자 승인 환경·스냅샷 전용 역할, 운영 DB 고정, 실행 커밋 기준 이름·확인 문자열, 생성·대기·조회만
+        self.assertEqual(job["environment"], "f2r-infra-build")
+        self.assertEqual(job["steps"][0]["with"]["role-to-assume"], "arn:aws:iam::425805163960:role/github-actions-f2r-snapshot")
+        self.assertIn("predeploy-snapshot", wf["jobs"]["build"]["if"])
+        self.assertIn("DB=f2r-db-202610181331", run)
+        self.assertIn('[ "${CONFIRM:-}" = "SNAPSHOT-$SHA8" ]', run)
+        self.assertIn('SNAP="f2r-predeploy-$(date -u +%Y%m%d%H%M)-$SHA8"', run)
+        self.assertIn('[ "$PENDING" = "{}" ]', run)
+        self.assertEqual(set(re.findall(r"aws rds ([a-z-]+)", run)),
+                         {"describe-db-instances", "create-db-snapshot", "wait", "describe-db-snapshots"})
 
+    def test_snapshot_role_setup_uses_repo_definitions_and_verifies_denials(self):
+        # given
+        text = (ROOT / ".github/workflows/migration-infra-build.yml").read_text()
+        body = text[text.index("step_snapshot_role_setup() {"):text.index("step_a1_precheck() {")]
+        # then: 저장소 JSON만 적용, 배포·빌더 역할은 조회만, 삭제·복원·수정 거부를 시뮬레이션으로 확인
+        self.assertIn("file://$D/trust-github-actions-f2r-snapshot.json", body)
+        self.assertIn("file://$D/policy-f2r-predeploy-snapshot.json", body)
+        for denied in ("rds:DeleteDBSnapshot", "rds:RestoreDBInstanceFromDBSnapshot", "rds:ModifyDBInstance", "rds:DeleteDBInstance"):
+            self.assertIn(f"expect {denied}", body)
+        self.assertNotIn("attach-role-policy", body)
+        self.assertNotRegex(body, r"(update-assume-role-policy|put-role-policy) --role-name github-actions-f2r-deploy")
+        self.assertIn("snapshot-role-setup) step_snapshot_role_setup ;;", text)
 
 if __name__ == "__main__":
     unittest.main()

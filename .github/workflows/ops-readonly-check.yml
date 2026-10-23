@@ -11,7 +11,6 @@ on:
       - 'docs/operations/aws-migration/trust-github-actions-f2r-readonly.json'
       - 'docs/operations/aws-migration/policy-f2r-predeploy-snapshot.json'
       - 'docs/operations/aws-migration/trust-github-actions-f2r-snapshot.json'
-      - 'docs/operations/aws-migration/rds-predeploy-snapshot.yml'
       - 'scripts/operations/test_readonly_diagnostics.py'
       - '.github/workflows/migration-infra-build.yml'
   workflow_dispatch:
@@ -33,7 +32,6 @@ jobs:
           actionlint .github/workflows/prod-readonly-status.yml .github/workflows/ops-readonly-check.yml
           # prod-diagnostic의 AI 평가 job(이 PR이 건드리지 않은 기존 코드)에 main과 같은 shellcheck 경고 13건이 있어 그 코드만 제외한다.
           actionlint -ignore 'SC2016:' -ignore 'SC2034:' -ignore 'SC2046:' -ignore 'SC2086:' .github/workflows/prod-diagnostic.yml
-          actionlint docs/operations/aws-migration/rds-predeploy-snapshot.yml
       - name: JSON definitions parse
         run: for f in docs/operations/aws-migration/*.json; do python -m json.tool "$f" > /dev/null && echo "ok $f"; done
       - name: SSM document shell syntax

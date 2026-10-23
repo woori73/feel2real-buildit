@@ -2,13 +2,19 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "CreateNamedPreDeploySnapshotOnly",
+      "Sid": "CreatePreDeploySnapshotOfProductionDbOnly",
       "Effect": "Allow",
       "Action": "rds:CreateDBSnapshot",
       "Resource": [
-        "arn:aws:rds:ap-northeast-2:425805163960:db:f2r-db*",
+        "arn:aws:rds:ap-northeast-2:425805163960:db:f2r-db-202610181331",
         "arn:aws:rds:ap-northeast-2:425805163960:snapshot:f2r-predeploy-*"
       ]
+    },
+    {
+      "Sid": "TagOnlyPreDeploySnapshotsAtCreation",
+      "Effect": "Allow",
+      "Action": "rds:AddTagsToResource",
+      "Resource": "arn:aws:rds:ap-northeast-2:425805163960:snapshot:f2r-predeploy-*"
     },
     {
       "Sid": "WaitAndReport",

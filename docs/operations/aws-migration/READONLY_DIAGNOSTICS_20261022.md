@@ -43,10 +43,15 @@
 
 구 계정 역할 또는 구 인스턴스를 고정한 workflow가 더 있다: `artcraft-setup`, `diagnose-*`(6개), `easy-ledger-census*`, `easy-provenance-check`, `ec2-diagnose`, `newstart-prod-census-readonly`, `newstart-seed`, `old-account-probe`, `old-host-inventory`, `staging-ec2`. `deploy-ec2`와 `migration-infra-build`는 `old` 대상을 긴급 복구용으로 의도적으로 유지한다. 나머지는 사용 여부를 확인한 뒤 신규 계정으로 옮기거나 삭제한다.
 
-## 배포 직전 RDS 스냅샷 (초안, 비활성)
+## 배포 직전 RDS 스냅샷 (migration-infra-build, 최소 권한 전용 역할)
 
-- `rds-predeploy-snapshot.yml`(이 폴더, `.github/workflows` 밖): 승인 환경 `f2r-production-snapshot` + 확인 문자열 `SNAPSHOT-<sha8>` + 스냅샷 1개 생성·대기만. 삭제·복원 없음.
-- 전용 역할 `github-actions-f2r-snapshot`: 신뢰는 main의 이 workflow·환경만(`trust-github-actions-f2r-snapshot.json`), 권한은 `f2r-db*` 인스턴스에서 `f2r-predeploy-*` 이름의 스냅샷 생성과 Describe만(`policy-f2r-predeploy-snapshot.json`). 배포·읽기 전용 역할과 분리.
-- RDS는 `f2r-db`, `f2r-db-202610181240`, `f2r-db-202610181331` 3개다. 기존 실행 기록으로 운영 DB는 **`f2r-db-202610181331`** 이다: 최종 전환 run [39131938382](https://github.com/woori73/feel2real-buildit/actions/runs/39131938382) `cut-new-db`(STAMP=202610181331)가 이 이름으로 복원하고 앱 env의 RDS 호스트를 바꾼 뒤 행 수 216표 일치·`app-healthy`, 이어 `cut-dns` 성공. `202610181240`은 run 39128226823의 실패한 전환(행 수 불일치 → `cut-rollback`)의 잔여, `f2r-db`는 10-18 오전 `db-migrate` 리허설 복원본이다. 이후 env의 DB 호스트를 바꾸는 단계는 확인 문자열이 필요한 `p2-cutover`뿐이고 다시 실행되지 않았다. 바이트 수준 최종 확인은 `Prod read-only status`의 `db_instance_identifier` 출력으로 한다. 나머지 2개는 비용 정리 대상이다(삭제는 소유자 판단, 이 PR은 아무것도 지우지 않는다).
-- 스냅샷 대상 입력의 기본값은 비워 두고, 실행자가 `f2r-db-202610181331`을 직접 입력한다(정규식 `^f2r-db(-[0-9]{12})?$`).
-- 활성화하려면 이 파일을 `.github/workflows/`로 옮기는 PR, 환경 생성, 역할 생성이 각각 승인되어야 한다.
+- `snapshot-role-setup`(빌더 역할, 소유자 승인 환경): 저장소 JSON대로 역할 `github-actions-f2r-snapshot`을 만들거나 맞춘다. 만든 뒤 IAM 시뮬레이션으로 확인하고, 하나라도 다르면 실패한다.
+  - 허용: 운영 DB `f2r-db-202610181331`에서 `f2r-predeploy-*` 스냅샷 생성과 태그
+  - 거부: 다른 DB·다른 이름 스냅샷 생성, 스냅샷 삭제, 복원, 인스턴스 수정·삭제
+  - 배포 역할·빌더 역할은 바꾸지 않고, 두 역할의 스냅샷 생성 권한은 참고로만 출력한다.
+- `predeploy-snapshot`(별도 잡, 소유자 승인 환경, **스냅샷 전용 역할만 사용**):
+  - `confirm=SNAPSHOT-<실행 커밋 앞 8자리>`가 있어야 실행된다.
+  - DB가 available이고 대기 변경이 없는지 확인하고, 자동 백업 창(18:38-19:08 UTC) 근처이면 멈춘다.
+  - `f2r-predeploy-<UTC>-<sha8>` 1건을 만들고 available이 될 때까지 기다린다. 삭제·복원은 없다.
+- 이전 초안 `rds-predeploy-snapshot.yml`(별도 환경 `f2r-production-snapshot` 필요)은 이 방식으로 대체해 삭제했다. 새 환경을 만들 필요가 없다.
+- 신뢰 범위: main의 `migration-infra-build.yml` + 환경 `f2r-infra-build`만. 이 환경을 쓰는 잡은 이미 더 넓은 빌더 역할을 가정할 수 있으므로, 이 역할을 추가해도 노출 범위가 넓어지지 않는다.
