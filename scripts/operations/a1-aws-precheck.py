@@ -186,7 +186,8 @@ def collect():
         output["host"] = safe_host(invocation.get("StandardOutputContent", ""))
     except (ValueError, TypeError, AttributeError):
         output["host"] = {"status": "unavailable"}
-    app_digest = output["host"].get("dbEndpointSha256")
+    # The digest is only a join key: drop it before printing (the endpoint name must not be guessable from logs).
+    app_digest = output["host"].pop("dbEndpointSha256", None)
     for entry, digest in zip(output["rds"], digests):
         entry["appDatabase"] = app_digest is not None and digest == app_digest
     matched = [e for e in output["rds"] if e["appDatabase"]]
