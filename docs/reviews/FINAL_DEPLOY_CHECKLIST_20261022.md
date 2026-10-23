@@ -174,3 +174,9 @@ aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SN
 - #880(Draft): `predeploy-snapshot` 단계. 실행 커밋 기준 이름 `f2r-predeploy-<UTC>-<sha8>`, `CONFIRM=SNAPSHOT-<sha8>`, available 확인.
 - 순서: (#874 수정·병합) → #880 병합 → 최종 main SHA 확정 → 그 커밋에서 `predeploy-snapshot` 실행 → available 확인 → 같은 커밋으로 `Deploy to EC2` → 스모크.
 - 운영 DB 확인값: 백업 창 18:38-19:08 UTC, 스토리지 gp2(a1-precheck run 75).
+
+## 13. 스냅샷 승인 직전 상태 (2026-10-23 01:16 UTC)
+- main `f15a23e5`(#880·#881 병합), Build Check [run 39882411445](https://github.com/woori73/feel2real-buildit/actions/runs/39882411445) PASS.
+- 스냅샷 전용 역할 `github-actions-f2r-snapshot` 생성 [run 39881714098](https://github.com/woori73/feel2real-buildit/actions/runs/39881714098): 시뮬레이션 허용 3·거부 7 기대대로. 배포 역할 CreateDBSnapshot=implicitDeny, 빌더 역할=allowed(사용 안 함).
+- 운영 DB(run 39882421265): 보존 7일·삭제 보호 True. 01:10 조회 시 `backing-up` — 01:08에 만들어진 수동 스냅샷 `f2r-predeploy-yyyymmddhhmm-5572befe`(이름 자리표시자 그대로, creating) 때문. 보존하되 이번 배포 스냅샷으로 쓰지 않는다(#876 이름 형식과도 맞지 않음). Flyway V1093(run 39879110307 이후 배포·DB 변경 없음).
+- #882(테스트만): 충돌 없음, CI 2/2 PASS, 병합 승인 대기. 병합하면 최종 SHA가 그 병합 커밋으로 바뀐다.
