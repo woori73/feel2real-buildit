@@ -26,7 +26,7 @@
         <option value="">사업체 불러오는 중...</option>
       </select>
       <a class="ops-btn" href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작소</a>
-      <button class="ops-btn" id="uaResume" type="button">사용법 안내</button>
+      <button class="ops-btn" id="uaResume" type="button" title="처음이면 눌러서 1단계부터 안내를 보세요">사용법 안내</button>
       <button class="ops-btn" id="refreshBtn" type="button" aria-label="새로고침">↻</button>
     </div>
   </header>
@@ -64,17 +64,6 @@
         <div class="speech-actions" id="agentSuggest" hidden></div>
       </div>
 
-      <div class="ua-composer console-composer">
-        <form id="uaCommandForm">
-          <label for="uaCommand">무엇이든 물어보거나 업무를 맡기세요</label>
-          <div class="composer-row">
-            <span class="agent-mini" id="agentMini" aria-hidden="true"><img id="agentMiniImg" src="/dashboard/agent-media/seven/front.webp" alt=""><i></i></span>
-            <textarea id="uaCommand" rows="2" maxlength="2000" placeholder="예: 학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea>
-            <button class="ua-primary" type="submit">보내기</button>
-          </div>
-        </form>
-        <div class="ua-chips"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button></div>
-      </div>
       <div class="agent-pick" role="group" aria-label="AI 비서 선택">
         <button type="button" data-agent-pick="seven" aria-pressed="true"><img src="/dashboard/agent-media/seven/front.webp" alt="" loading="lazy"><span>세븐</span></button>
         <button type="button" data-agent-pick="suni" aria-pressed="false"><img src="/dashboard/agent-media/suni/front.webp" alt="" loading="lazy"><span>서수니</span></button>
@@ -95,6 +84,18 @@
       </section>
       <details class="sys-more"><summary>운영·재무 현황 보기</summary><div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div></details>
     </aside>
+
+    <div class="ua-composer console-composer">
+        <form id="uaCommandForm">
+          <label for="uaCommand">무엇이든 물어보거나 업무를 맡기세요</label>
+          <div class="composer-row">
+            <span class="agent-mini" id="agentMini" aria-hidden="true"><img id="agentMiniImg" src="/dashboard/agent-media/seven/front.webp" alt=""><i></i></span>
+            <textarea id="uaCommand" rows="2" maxlength="2000" placeholder="예: 학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea>
+            <button class="ua-primary" type="submit">보내기</button>
+          </div>
+        </form>
+        <div class="ua-chips"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button></div>
+      </div>
    </div>
 
     <section class="svc-guide" aria-label="사용 가능한 F2R 서비스">
