@@ -27,6 +27,8 @@ import tools.jackson.databind.ObjectMapper;
     properties = {
       "server.port=18088",
       "app.mcp.enabled=true",
+      // 초대 회원(VIEWER·EDITOR)의 MCP 권한 경계를 검증하는 격리 테스트라 제작소 운영 계정 제한을 끈다.
+      "app.studio.access.operators-only=false",
       "app.mcp.public-base-url=http://127.0.0.1:18088",
       "app.mcp.internal-base-url=http://127.0.0.1:18088",
       "app.mcp.redirect-uris=https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector/oauth/isolated-test-callback",
