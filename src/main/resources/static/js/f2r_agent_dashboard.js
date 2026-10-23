@@ -235,7 +235,10 @@
     if (!step || typeof MutationObserver === 'undefined') return;
     var following = false;
     document.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('#uaResume,#uaNext,#uaBack,[data-ua-purpose]')) following = true;
+      if (!e.target.closest) return;
+      if (e.target.closest('#uaResume,#uaNext,#uaBack,[data-ua-purpose]')) following = true;
+      if (e.target.closest('#uaResume')) $('uaTour').classList.add('is-floating');
+      if (e.target.closest('#uaPause')) { following = false; $('uaTour').classList.remove('is-floating'); }
     }, true);
     new MutationObserver(function () {
       if (!following) return;
