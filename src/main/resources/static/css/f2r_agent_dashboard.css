@@ -54,7 +54,7 @@ body[data-view="ai"] .ops-all, body[data-view="all"] .ops-main { display: none; 
 .console-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); grid-template-areas: "console log" "composer log"; column-gap: 20px; row-gap: 12px; align-items: start; }
 .console { grid-area: console; display: grid; gap: 12px; min-width: 0; }
 .console-log { grid-area: log; }
-.console-grid > .console-composer { grid-area: composer; }
+.console-grid > .console-composer { grid-area: composer; position: sticky; bottom: 8px; z-index: 20; box-shadow: 0 -8px 24px rgba(0,0,0,.45); }
 .console-grid > * { min-width: 0; }
 /* 첫 방문: 안내를 자동으로 펼치지 않고 버튼에 표시 */
 .ops-btn.ua-new { border-color: var(--ops-warn); color: var(--ops-warn); position: relative; }
@@ -284,7 +284,7 @@ body[data-view="ai"] .ai-fab { display: none; }
   .sys-grid .wide dd { min-height: 2.8em; }
   /* 모바일: 입력창은 화면 아래에 고정하고, 작은 캐릭터 상태 표시를 함께 둔다 */
   /* 입력창은 대화 영역(캐릭터·기록)을 보는 동안 화면 아래에 붙고, 서비스 안내까지 내려가면 기록 바로 뒤에 멈춘다(아래 링크를 가리지 않음) */
-  .ops .console-composer { position: sticky; bottom: 0; z-index: 25; margin: 0 -16px; border-radius: 14px 14px 0 0; border-bottom: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 28px rgba(0,0,0,.5); }
+  .ops .console-grid > .console-composer { position: sticky; bottom: 0; z-index: 25; margin: 0 -16px; border-radius: 14px 14px 0 0; border-bottom: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 28px rgba(0,0,0,.5); }
   .ops .console-composer label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .agent-mini { display: block; }
   .ops #uaMessage { display: none; }
