@@ -114,3 +114,29 @@ IAM 역할·SSM 문서 생성, PR 병합, 배포, DB 설정 변경(백업 보존
 | 비밀값 노출 | 없음(DB 사용자·비밀번호·호스트·키 출력 없음) |
 
 발견: Describe 출력의 계정 번호 마스킹이 RDS 이름의 12자리 시각까지 가렸다 → #877로 수정(Draft, 병합은 승인 필요). 호스트 출력에는 영향이 없다.
+
+## 10. 배포 준비 상태 (2026-10-23)
+
+| 항목 | 상태 |
+|---|---|
+| Flyway | 운영 V1093·실패 0 확인(run 39875278441). 배포 시 V1094·V1095는 CREATE TABLE만, 자동 적용(§2) |
+| 운영 JAR SHA | **바이트 대조 미완료.** `app.jar` SHA-256 `177f6222…9dd8`는 확보했지만 Deploy run 39733429342가 jar 해시를 기록하지 않았다. 시각 일치로 `2bed3918`로 판단한 상태다. 다음 배포부터는 배포 스크립트가 `app.jar.meta`(git_sha·jar_sha256)를 남기도록 하는 별도 PR이 필요하다(진단 문서는 그 파일을 읽을 준비가 되어 있다) |
+| 운영 DB 보호 | 백업 7일·삭제 보호 승인됨, 대표님 CloudShell 실행 대기(`RDS_PROTECTION_CLOUDSHELL_GUIDE_20261023.md`) |
+| 배포 직전 수동 스냅샷 | 절차 준비(아래), **미실행** |
+| 536 dry-run | 준비 완료: 원본 536/316/SHA 536 검증, 현재 운영 SHA는 접속 전 거부(§7) |
+
+### 배포 직전 수동 스냅샷 절차 (CloudShell, 별도 승인 후)
+```bash
+export AWS_DEFAULT_REGION=ap-northeast-2
+DB=f2r-db-202610181331
+SHA8=<배포할 main 커밋 앞 8자리>
+SNAP="f2r-predeploy-$(date -u +%Y%m%d%H%M)-$SHA8"
+# 조회: available·Pending {} 확인
+aws rds describe-db-instances --db-instance-identifier $DB --query 'DBInstances[0].{Status:DBInstanceStatus,Pending:PendingModifiedValues}'
+# 생성 (승인 후)
+aws rds create-db-snapshot --db-instance-identifier $DB --db-snapshot-identifier "$SNAP" --query 'DBSnapshot.Status'
+# 검증
+aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SNAP available"
+```
+- 단일 AZ라 스냅샷을 시작할 때 I/O가 잠깐 멈출 수 있다(보통 수 초). 저트래픽 시간에 하고, 배포 바로 전에 한다.
+- 이름 형식은 #876의 `--confirm-snapshot` 검증(같은 SHA8, 24시간 이내)과 맞춘다.
