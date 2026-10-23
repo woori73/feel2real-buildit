@@ -130,14 +130,18 @@ test('given 대시보드 템플릿 when 읽으면 then F2R 홈 로고·전체 �
   assert.match(HTML, /data-pane="all"/);
   // 캐릭터 자료는 공개 정적 경로가 아니라 권한 확인 경로로만 읽는다
   assert.doesNotMatch(HTML, /src="\/agent-media\//);
-  assert.match(HTML, /src="\/dashboard\/agent-media\/seven\/front\.webp"/);
+  // 얼굴 이미지는 서버가 자료가 있다고 알려준 뒤에만 요청한다(미설치 시 깨진 이미지·콘솔 오류 방지)
+  assert.doesNotMatch(HTML, /src="\/dashboard\/agent-media\//);
+  // 홀로그램 업무 선택 6개
+  for (const flow of ['student', 'attendance', 'consult', 'materials', 'notice', 'overview']) assert.match(HTML, new RegExp('data-flow="' + flow + '"'));
+  assert.match(HTML, /src="\/js\/f2r_agent_flows\.js\?v=/);
   // 캐릭터 아래 응답 → 입력창 순서
   assert.ok(HTML.indexOf('id="agentStage"') < HTML.indexOf('id="agentSpeech"'));
   assert.ok(HTML.indexOf('id="agentSpeech"') < HTML.indexOf('id="uaCommandForm"'));
   // PR #892 제작소 링크는 같은 표식(data-studio-entry, 기본 hidden)으로 유지한다
   assert.match(HTML, /<a class="ops-btn" href="\/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작소<\/a>/);
   assert.match(HTML, /src="\/js\/studio_entry_link\.js\?v=20261023-1"/);
-  for (const id of ['agentStage', 'agentVideo', 'agentVideoAlt', 'agentName', 'agentCode', 'agentRole', 'agentGreeting', 'agentStateLabel', 'agentBadge', 'agentSuggest', 'agentSpeech', 'speechName', 'speechMode', 'agentMiniImg', 'statusAgent', 'statusPending', 'statusDone', 'statusReview', 'statusServices', 'shortcutRow']) {
+  for (const id of ['siMenu', 'siMenuBtn', 'siMediaForm', 'agentStage', 'agentVideo', 'agentVideoAlt', 'agentName', 'agentCode', 'agentRole', 'agentGreeting', 'agentStateLabel', 'agentBadge', 'agentSuggest', 'agentSpeech', 'speechName', 'speechMode', 'agentMiniImg', 'statusAgent', 'statusPending', 'statusDone', 'statusReview', 'statusServices', 'shortcutRow']) {
     assert.match(HTML, new RegExp('id="' + id + '"'), `템플릿에 id="${id}" 없음`);
   }
 });
@@ -147,4 +151,10 @@ test('given 사용법 안내 버튼 when 누르면 then 진행 기록과 무관�
   assert.match(UA, /if\(!state\.progress\)state\.progress=\{step:0,completed:false,version:null,local:true\}/);
   assert.match(UA, /await saveProgress\(0,false\)/);
   assert.match(UA, /showTour\(true\);\$\('uaTour'\)\.scrollIntoView/);
+});
+
+test('given 이미지 표시 when 자료 목록이 없으면 then 얼굴 경로를 요청하지 않는다(대시보드 JS 계약)', () => {
+  // given / when / then
+  assert.match(JS, /agentFiles\(key\)\.indexOf\('front\.webp'\) >= 0/);
+  assert.match(JS, /img\.removeAttribute\('src'\)/);
 });
