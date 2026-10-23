@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.LongSupplier;
 
 /**
  * KIS 실시간 WebSocket 클라이언트 (실전: ws://ops.koreainvestment.com:21000).
@@ -40,6 +41,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * - 키/승인키는 절대 로그하지 않는다.
  * - 장 시간 외에는 연결하지 않고 조용히 대기한다 (NXT: 평일 08:00~20:00).
  * - 연결 실패 시 지수 백오프로 재시도하되, 실패가 다른 기능을 막지 않는다.
+ * - 승인키는 연결 1회에 한 번만 발급해 모든 구독에 재사용하고, 유효 시간 동안 재연결에도 재사용한다.
+ *   발급 시도 사이에는 최소 간격을 두어 발급 API를 반복 호출하지 않는다.
  * - 주문 API는 연결하지 않는다 (조회/수집/분석 전용).
  */
 @Slf4j
@@ -72,8 +75,23 @@ public class WemadeKisWebSocket {
             TR_QUOTE_KRX, "QUOTE", TR_QUOTE_NXT, "QUOTE", TR_QUOTE_UNI, "QUOTE",
             TR_MEMBER_KRX, "MEMBER", TR_MEMBER_NXT, "MEMBER", TR_MEMBER_UNI, "MEMBER");
 
+    /** 재시도 백오프: 시작 5초, 실패가 이어지면 두 배씩, 최대 5분. */
+    static final long BACKOFF_BASE_MS = 5_000;
+    static final long BACKOFF_MAX_MS = 300_000;
+    /** 이보다 오래 유지된 연결만 정상 연결로 보고 백오프를 초기화한다(구독 거절로 곧바로 끊기는 경우 제외). */
+    static final long STABLE_SESSION_MS = 60_000;
+    /** 승인키 재사용 기간(KIS 승인키 유효 24시간보다 짧게). */
+    static final long APPROVAL_KEY_TTL_MS = 12 * 60 * 60_000L;
+    /** 승인키 발급 시도 최소 간격. 실패해도 이 간격 안에서는 다시 발급하지 않는다. */
+    static final long APPROVAL_MIN_INTERVAL_MS = 60_000;
+
     private final WemadeKisClient kisClient;
     private final ObjectMapper objectMapper;
+    private final LongSupplier clock;
+
+    private volatile String approvalKey;
+    private volatile long approvalKeyIssuedAt;
+    private volatile long lastApprovalAttemptAt = Long.MIN_VALUE;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean enabled = new AtomicBoolean(false);
@@ -88,9 +106,16 @@ public class WemadeKisWebSocket {
     /** 시장별 최신 회원사 스냅샷 (내부 분석용) */
     private final Map<String, Map<String, Object>> latestMemberByEx = new ConcurrentHashMap<>();
 
+    @org.springframework.beans.factory.annotation.Autowired
     public WemadeKisWebSocket(WemadeKisClient kisClient, ObjectMapper objectMapper) {
+        this(kisClient, objectMapper, System::currentTimeMillis);
+    }
+
+    /** 테스트용: 시계를 주입한다. */
+    WemadeKisWebSocket(WemadeKisClient kisClient, ObjectMapper objectMapper, LongSupplier clock) {
         this.kisClient = kisClient;
         this.objectMapper = objectMapper;
+        this.clock = clock;
     }
 
     @PostConstruct
@@ -145,31 +170,61 @@ public class WemadeKisWebSocket {
 
     private void runLoop() {
         running.set(true);
-        long backoffMs = 5000;
+        long backoffMs = BACKOFF_BASE_MS;
         while (running.get() && enabled.get()) {
+            boolean stable = false;
             try {
                 if (!isMarketHours()) {
                     // 장 시간 외에는 대기 (NXT 애프터 20:00까지 커버)
                     Thread.sleep(60_000);
                     continue;
                 }
-                connectAndListen();
-                backoffMs = 5000; // 성공 후 리셋
+                stable = connectAndListen();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
                 log.warn("WEMADE KIS websocket loop failed (isolated): {}", e.getClass().getSimpleName());
             }
+            backoffMs = nextBackoffMs(backoffMs, stable);
             try {
-                Thread.sleep(Math.min(backoffMs, 120_000));
+                Thread.sleep(backoffMs);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;
             }
-            backoffMs = Math.min(backoffMs * 2, 120_000);
         }
         running.set(false);
+    }
+
+    /**
+     * 다음 대기 시간. 정상 연결(STABLE_SESSION_MS 이상 유지) 뒤에는 시작값으로 돌아가고,
+     * 승인키 실패·즉시 끊김이 이어지면 두 배씩 늘려 BACKOFF_MAX_MS에서 멈춘다.
+     */
+    static long nextBackoffMs(long currentMs, boolean stableSession) {
+        if (stableSession) return BACKOFF_BASE_MS;
+        return Math.min(Math.max(currentMs, BACKOFF_BASE_MS) * 2, BACKOFF_MAX_MS);
+    }
+
+    /**
+     * 연결에 쓸 승인키. 유효한 키가 있으면 재사용하고, 없을 때만 발급한다.
+     * 직전 발급 시도로부터 APPROVAL_MIN_INTERVAL_MS가 지나지 않았으면 발급하지 않고 null을 돌려준다.
+     */
+    String approvalKeyForConnection() {
+        long now = clock.getAsLong();
+        String cached = approvalKey;
+        if (cached != null && now - approvalKeyIssuedAt < APPROVAL_KEY_TTL_MS) return cached;
+        if (lastApprovalAttemptAt != Long.MIN_VALUE && now - lastApprovalAttemptAt < APPROVAL_MIN_INTERVAL_MS) return null;
+        lastApprovalAttemptAt = now;
+        String issued = kisClient.websocketApprovalKey().orElse(null);
+        approvalKey = issued;
+        approvalKeyIssuedAt = issued == null ? 0 : now;
+        return issued;
+    }
+
+    /** 구독이 거절돼 곧바로 끊긴 경우 등, 캐시된 승인키를 더 쓰지 않는다(다음 발급은 최소 간격 이후). */
+    void invalidateApprovalKey() {
+        approvalKey = null;
     }
 
     /**
@@ -189,40 +244,43 @@ public class WemadeKisWebSocket {
         }
     }
 
-    private void connectAndListen() throws Exception {
-        String approvalKey = kisClient.websocketApprovalKey().orElse(null);
-        if (approvalKey == null) {
+    /** @return 연결이 STABLE_SESSION_MS 이상 유지됐으면 true(백오프 초기화 대상). */
+    private boolean connectAndListen() throws Exception {
+        String key = approvalKeyForConnection();
+        if (key == null) {
             log.warn("WEMADE KIS websocket: approval key unavailable");
-            return;
+            return false;
         }
-        HttpClient client = HttpClient.newHttpClient();
-        CompletableFuture<WebSocket> future = client.newWebSocketBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .buildAsync(URI.create(WS_URL), new WsListener());
-        webSocket = future.join();
-        // 구독 요청 (승인키는 메시지 바디에만 포함, 로그 금지)
-        // KRX + NXT + 통합 체결/호가/회원사
-        sendSubscribe(TR_TRADE_KRX, "1");
-        sendSubscribe(TR_TRADE_NXT, "1");
-        sendSubscribe(TR_TRADE_UNI, "1");
-        sendSubscribe(TR_QUOTE_KRX, "1");
-        sendSubscribe(TR_QUOTE_NXT, "1");
-        sendSubscribe(TR_QUOTE_UNI, "1");
-        sendSubscribe(TR_MEMBER_KRX, "1");
-        sendSubscribe(TR_MEMBER_NXT, "1");
-        sendSubscribe(TR_MEMBER_UNI, "1");
-        log.info("WEMADE KIS websocket connected, subscribed KRX/NXT/UNIFIED trade+quote+member");
-        // 리스너 스레드에서 수신 처리. 이 스레드는 연결 유지용으로 대기한다.
-        while (running.get() && enabled.get() && !webSocket.isOutputClosed() && isMarketHours()) {
-            Thread.sleep(10_000);
+        long openedAt = clock.getAsLong();
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            CompletableFuture<WebSocket> future = client.newWebSocketBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .buildAsync(URI.create(WS_URL), new WsListener());
+            webSocket = future.join();
+            // 구독 요청 (승인키는 메시지 바디에만 포함, 로그 금지). 한 번 받은 키를 9개 구독에 재사용한다.
+            // KRX + NXT + 통합 체결/호가/회원사
+            for (String trId : SUBSCRIPTIONS) sendSubscribe(trId, "1", key);
+            log.info("WEMADE KIS websocket connected, subscribed KRX/NXT/UNIFIED trade+quote+member");
+            // 리스너 스레드에서 수신 처리. 이 스레드는 연결 유지용으로 대기한다.
+            while (running.get() && enabled.get() && !webSocket.isOutputClosed() && isMarketHours()) {
+                Thread.sleep(10_000);
+            }
+        } finally {
+            closeQuietly();
         }
-        closeQuietly();
+        boolean stable = clock.getAsLong() - openedAt >= STABLE_SESSION_MS;
+        if (!stable) invalidateApprovalKey();
+        return stable;
     }
 
-    private void sendSubscribe(String trId, String trType) {
+    static final List<String> SUBSCRIPTIONS = List.of(
+            TR_TRADE_KRX, TR_TRADE_NXT, TR_TRADE_UNI,
+            TR_QUOTE_KRX, TR_QUOTE_NXT, TR_QUOTE_UNI,
+            TR_MEMBER_KRX, TR_MEMBER_NXT, TR_MEMBER_UNI);
+
+    private void sendSubscribe(String trId, String trType, String approvalKey) {
         try {
-            // 승인키는 kisClient에서 직접 읽어 메시지에 포함 (로그에 남기지 않는다)
-            String approvalKey = kisClient.websocketApprovalKey().orElse("");
             String msg = "{\"header\":{\"approval_key\":\"" + approvalKey
                     + "\",\"custtype\":\"P\",\"tr_type\":\"" + trType
                     + "\",\"content-type\":\"utf-8\"},"
