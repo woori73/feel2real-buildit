@@ -208,3 +208,12 @@ aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SN
 - dry-run(GET만): `production-dry-run`, 경로 536, 고유 316, 중복 경로 220, SHA 검증 536, 승인 원본 SHA 5, `alreadyStored=0`, `toUpload=316`, 등록 0/536, 배포 SHA `32a9e27e`, 권한·중복 오류 없음, exit 0.
 - 화면 8개 200(재확인), 스냅샷 이름 검사 PASS.
 - 실제 적재 최종 조건: ① 적용(`--apply`) 단계 추가(확인 문자열·`--confirm-snapshot f2r-predeploy-202610230143-32a9e27e`·1회) ② 스냅샷 유효기간 **2026-10-24 01:43 UTC**까지(이후 새 스냅샷 필요) ③ 실행 중 승인 포인터 전후 대조·저장 바이트 SHA 재검증·등록 1회(도구 내장) ④ 사후 536/316/승인 5종 SHA/콘티 승인 0 확인.
+
+## 17. 제작실 536 자료 운영 적재 완료 (2026-10-23 03:54~04:06 UTC)
+- 도구: #889(병합 `821e657b`, CI build·mysql-integration-test·check PASS, 충돌 없음) — 기존 `import-production.py --production --apply` 재사용.
+- 사전 재확인(readonly-status [run 39896801205](https://github.com/woori73/feel2real-buildit/actions/runs/39896801205), 03:46): 운영 DB `f2r-db-202610181331` MySQL 8.4.8, Flyway 190건·최대 V1095·실패 0, 보존 7일·삭제 보호 True, ALB healthy. 스냅샷 `f2r-predeploy-202610230143-32a9e27e` available(01:44:06 생성, 24시간 이내). 기존 수동 스냅샷 `…-5572befe` 보존.
+- 실행: [run 39897445106](https://github.com/woori73/feel2real-buildit/actions/runs/39897445106) (`apply=true`, `apply_confirm=IMPORT-536-32a9e27e`), 1회 실행, 재시도 없음.
+  - 적재 직전: 프로젝트 `ai-agent-part1` initialized·archived false·canManage true, 등록 0/536. 배포 SHA `32a9e27e` = 최근 성공 Deploy. 스냅샷 검사 PASS. dry-run PASS(536/316/중복 220/SHA 536/승인 원본 5/toUpload 316).
+  - 적재 결과: 업로드 316(기존 0), 저장 바이트 SHA 재검증 316/316, 등록 경로 536, 콘티 68컷, 생성 리비전 678, 승인 이관 원본 5, 대표 이미지 생성 0, 외부 AI 호출 0. 등록 전후 승인 포인터 대조 통과(도구 내장, 다르면 중단).
+- 사후 검증 `POST_IMPORT=PASS`: 프로젝트 1(`ai-agent-part1`), 등록 경로 536, 저장 파일 316(카탈로그 고유 316), 원본 SHA 536/536, 승인 캐릭터 5종·SHA 카탈로그 일치, 콘티 승인 0(68컷 모두 DRAFT), 그 밖의 승인 0.
+- 영향 범위: 적재 API는 제작실 프로젝트 범위(`studio_*`) 테이블만 쓴다. 다른 학원·프로젝트·DB·AWS 설정 변경 없음. 재배포·MCP 활성화·AI 쓰기·유료 API 호출 없음. 러너의 쿠키·원본 압축 해제본은 종료 시 삭제.
