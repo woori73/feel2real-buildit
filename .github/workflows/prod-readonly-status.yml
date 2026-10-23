@@ -47,8 +47,6 @@ jobs:
         shell: bash
         run: |
           set +e
-          # Account IDs are private metadata; the 12-digit timestamp inside f2r-db-* is an
-          # operational resource identifier and must remain distinguishable for recovery.
           mask() { sed -E 's/425805163960/<acct>/g'; }
           echo "== app instance"
           aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running \

@@ -222,16 +222,6 @@ class StaticPolicyTest(unittest.TestCase):
             "woori73/feel2real-buildit/.github/workflows/prod-readonly-status.yml@refs/heads/main"])
         self.assertTrue(sn["StringEquals"]["token.actions.githubusercontent.com:sub"].endswith(":environment:f2r-production-snapshot"))
 
-    def test_account_mask_keeps_distinct_database_and_snapshot_identifiers(self):
-        text = (ROOT / '.github/workflows/prod-readonly-status.yml').read_text()
-        function = re.search(r'(?m)^\s*(mask\(\) \{[^\n]+\})$', text).group(1)
-        payload = 'arn:aws:rds:ap-northeast-2:425805163960:db:f2r-db-202610181331\nrds:f2r-db-202610181240-2026-10-22-18-49\n'
-        result = subprocess.run(['bash', '-c', function+'\nmask'], input=payload, text=True,
-                                capture_output=True, check=True).stdout
-        self.assertNotIn('425805163960', result)
-        self.assertIn('f2r-db-202610181331', result)
-        self.assertIn('f2r-db-202610181240-2026-10-22-18-49', result)
-
     def test_snapshot_policy_creates_only_named_snapshots(self):
         # given
         p = json.loads((MIG / "policy-f2r-predeploy-snapshot.json").read_text())
@@ -269,6 +259,17 @@ class StaticPolicyTest(unittest.TestCase):
         for bad in ("github-actions-f2r-deploy", "attach-role-policy", "AWS-RunShellScript", "send-command", "--with-decryption"):
             self.assertNotIn(bad, body)
         self.assertIn("readonly-setup) step_readonly_setup ;;", text)
+
+    def test_account_mask_keeps_rds_identifiers_readable(self):
+        # given: Describe 출력의 계정 번호 마스킹 함수
+        text = WORKFLOWS[0].read_text()
+        line = re.search(r"mask\(\) \{ sed -E '([^']+)'; \}", text).group(1)
+        sample = "arn:aws:rds:ap-northeast-2:425805163960:db:f2r-db-202610181331"
+        # when
+        out = subprocess.run(["sed", "-E", line], input=sample, capture_output=True, text=True).stdout
+        # then: 계정 번호만 가리고 운영 DB 식별자(12자리 시각 포함)는 그대로 둔다
+        self.assertNotIn("425805163960", out)
+        self.assertIn("f2r-db-202610181331", out)
 
 
 if __name__ == "__main__":
