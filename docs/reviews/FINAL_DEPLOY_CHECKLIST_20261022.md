@@ -166,3 +166,11 @@ aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SN
 
 → 결론: 배포 후 이전 JAR로 돌아가는 것은 DB 조치 없이 가능하다. 단, V1095가 **중간에 실패한** 경우에만 재배포 전에 남은 테이블을 정리하거나 스냅샷을 복원해야 한다(§2와 동일).
 - 정정: §2의 "mcp_* 8개"는 7개다(합계 16개).
+
+## 12. 최종 배포 승인 요청 정리 (2026-10-23 00:5x UTC)
+- main `af5e1f99`(#879). Build Check build PASS, mysql-integration-test 테스트 단계 PASS(보고서 업로드 진행 중).
+- #879 `rds-protect`: workflow_dispatch + `CONFIRM=PROTECT-…` + 소유자 승인 환경에서만 실행된다. 병합 후 run 75는 `a1-precheck`(CONFIRM 빈 값)였고 보호 변경은 재실행되지 않았다.
+- #874: 충돌 없음. 병합 트리에서 시험 PASS. P3 2건(gradlew 모드 변경으로 `Build-Working-Tree=dirty` 고정, git 없는 환경에서 설정 실패) → 첫째를 고친 뒤 병합 가능.
+- #880(Draft): `predeploy-snapshot` 단계. 실행 커밋 기준 이름 `f2r-predeploy-<UTC>-<sha8>`, `CONFIRM=SNAPSHOT-<sha8>`, available 확인.
+- 순서: (#874 수정·병합) → #880 병합 → 최종 main SHA 확정 → 그 커밋에서 `predeploy-snapshot` 실행 → available 확인 → 같은 커밋으로 `Deploy to EC2` → 스모크.
+- 운영 DB 확인값: 백업 창 18:38-19:08 UTC, 스토리지 gp2(a1-precheck run 75).
