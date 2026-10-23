@@ -49,19 +49,29 @@
    * 역할 가드 페이지는 sessionStorage만 보고 튕기지 말고 이걸 await 해서 쿠키 세션도 인정해야 한다.
    * (sessionStorage는 탭 단위라 새 탭/브라우저 재시작 시 비지만 JWT 쿠키는 유효할 수 있다.)
    */
+  // 한 화면의 여러 스크립트가 동시에 물어도 /api/auth/me는 한 번만 요청한다(진행 중 요청 공유).
+  let pendingCurrentUser = null;
   async function ensureCurrentUser() {
     const cached = sessionStorage.getItem('currentUser');
     if (cached) {
       try { return JSON.parse(cached); } catch (_) { /* 손상 캐시 무시, 재조회 */ }
     }
+    if (pendingCurrentUser) return pendingCurrentUser;
+    pendingCurrentUser = (async () => {
+      try {
+        const res = await fetch(archiveAwareUrl('/api/auth/me'), { credentials: 'same-origin' });
+        if (!res.ok) return null;
+        const user = await res.json();
+        storeCurrentUser(user);
+        return user;
+      } catch (_) {
+        return null;
+      }
+    })();
     try {
-      const res = await fetch(archiveAwareUrl('/api/auth/me'), { credentials: 'same-origin' });
-      if (!res.ok) return null;
-      const user = await res.json();
-      storeCurrentUser(user);
-      return user;
-    } catch (_) {
-      return null;
+      return await pendingCurrentUser;
+    } finally {
+      pendingCurrentUser = null;
     }
   }
 
