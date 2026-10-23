@@ -20,6 +20,7 @@ public class StudioController {
   private final StudioProductionImporter importer;
   private final StudioCollaborationService collaboration;
   private final StudioProjectService projects;
+  private final StudioAccessGuard accessGuard;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -56,6 +57,13 @@ public class StudioController {
   public String page(@AuthenticationPrincipal AuthenticatedPrincipal p) {
     service.require(p, false, false);
     return "studio/index";
+  }
+
+  /** 홈·대시보드 링크 표시용 본인 권한 확인. 로그인한 누구나 200으로 자신의 여부만 받는다. */
+  @GetMapping("/api/studio-access")
+  @ResponseBody
+  public Map<String, Object> access(@AuthenticationPrincipal AuthenticatedPrincipal p) {
+    return Map.of("allowed", accessGuard.isAllowed(p));
   }
 
   @GetMapping("/studio-projects")

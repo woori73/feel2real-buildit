@@ -4882,6 +4882,11 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 
 `GET /ai-agent-studio`는 로그인과 프로젝트 제작 권한이 필요하다. ADMIN은 프로젝트 개설·멤버 권한을 관리한다. 상태 변경은 정확한 same-origin을 요구하며 MCP bearer token으로 사용할 수 없다.
 
+- **접근 권한(서버 강제)**: `/ai-agent-studio`, `/studio-projects`, `/api/studio/**`(파일 다운로드·미리보기·MCP 내부 호출 포함)는 SecurityConfig에서 `StudioAccessGuard`로 **ADMIN 역할 또는 운영 계정 `modu`**만 통과한다. `modu`는 loginId 문자열이 아니라 저장소에서 조회한 실제 `users.user_id`로 판정한다. 그 외 회원(STUDENT·다른 학원 TUTOR·CREATOR)은 초대 행이 있어도 403. 비로그인은 API 401, 화면은 `/?login=required&returnUrl=...` 로그인 안내. 로그인했으나 권한이 없으면 화면은 안내 페이지(403). 기존 `studio_members` 행은 삭제하지 않는다.
+- **modu 권한**: 초대 행이 없으면 모든 프로젝트에서 `EDITOR`(조회·업로드·버전 작성). 승인(APPROVER)은 ADMIN이 접근 관리(`POST /api/studio/members`)로 부여한 경우에만. 프로젝트 개설·제목·보관·초대·접근 관리·536 자료 등록은 계속 ADMIN 전용이다. modu에게 ADMIN 역할을 부여하지 않는다.
+- `GET /api/studio-access`: 로그인한 누구나 `200 {"allowed": boolean}`으로 본인의 제작소 접근 여부만 받는다(홈·대시보드 링크 표시용). 비로그인 401.
+- 설정: `app.studio.access.operator-login-id`(기본 `modu`), `app.studio.access.operators-only`(기본 `true`, 격리 테스트에서만 `false`).
+
 | 경로 | 메서드 | 계약 |
 |---|---|---|
 | `/api/studio/project` | GET / POST | 현황 / ADMIN 개설, 14화·EP01 68컷 업로드 대기 구조 |

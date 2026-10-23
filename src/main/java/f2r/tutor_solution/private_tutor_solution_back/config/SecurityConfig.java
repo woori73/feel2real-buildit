@@ -11,6 +11,7 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtAuthent
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtProperties;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteVisitRecordingService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAccessGuard;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.CookieOAuth2AuthorizationRequestRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginFailureHandler;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth.NaverOAuth2LoginSuccessHandler;
@@ -25,6 +26,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -107,7 +109,9 @@ public class SecurityConfig {
       // 시각 편집기 AI Agent 전용 Bearer 토큰 필터 의존성(JPA 레포 의존 → ObjectProvider 지연 조회, @WebMvcTest 호환).
       org.springframework.beans.factory.ObjectProvider<
               f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.AgentTokenService>
-          veAgentTokenServiceProvider) throws Exception {
+          veAgentTokenServiceProvider,
+      // AI AGENT 제작소 진입 가드(UserRepository 의존 → ObjectProvider 지연 조회, @WebMvcTest 호환).
+      org.springframework.beans.factory.ObjectProvider<StudioAccessGuard> studioAccessGuardProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -261,7 +265,9 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard"),
                         PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft/**"),
-                        PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft")),
+                        PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/ai-agent-studio"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/studio-projects")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
@@ -606,7 +612,16 @@ public class SecurityConfig {
             .requestMatchers("/api/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             .requestMatchers("/api/tutor/**").hasRole("TUTOR")
 
-            .requestMatchers("/ai-agent-studio", "/studio-projects", "/api/studio/**").authenticated()
+            // AI AGENT 제작소 — ADMIN과 운영 계정(modu)만. 화면·API·원본 다운로드·MCP 내부 호출 모두 이 규칙을 지난다.
+            // 메뉴 숨김이 아니라 서버 규칙으로 차단하며, 가드 빈이 없으면 닫힌 상태(거부)로 둔다.
+            .requestMatchers("/ai-agent-studio", "/ai-agent-studio/**", "/studio-projects", "/studio-projects/**", "/api/studio/**")
+            .access((authentication, context) -> {
+              Object principal = authentication.get() == null ? null : authentication.get().getPrincipal();
+              StudioAccessGuard guard = studioAccessGuardProvider.getIfAvailable();
+              return new AuthorizationDecision(guard != null
+                  && principal instanceof JwtTokenProvider.AuthenticatedPrincipal p
+                  && guard.isAllowed(p));
+            })
 
             // 그 외 모든 /api/**는 인증 필요
             .requestMatchers("/api/**").authenticated()
@@ -725,6 +740,11 @@ public class SecurityConfig {
       }
       if (path.startsWith("/easy/")) {
         response.sendRedirect("/easy");
+        return;
+      }
+      if (path.equals("/ai-agent-studio") || path.equals("/studio-projects")) {
+        forwardToNotice(request, response, "AI AGENT 제작소 이용 안내",
+            "AI AGENT 제작소는 관리자와 지정된 운영 계정만 이용할 수 있습니다.");
         return;
       }
       response.sendError(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN.getReasonPhrase());

@@ -23,6 +23,9 @@ public class StudioService {
   private final JdbcTemplate db;
   private final FileStorage storage;
 
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private StudioAccessGuard access;
+
   public record Revision(
       String itemKey,
       String parentId,
@@ -86,17 +89,25 @@ public class StudioService {
   private String permission(AuthenticatedPrincipal p, boolean currentRead) {
     if (p == null) throw error(401, "로그인이 필요합니다.");
     if ("ADMIN".equals(p.role())) return "APPROVER";
-    return db
-        .query(
-            "SELECT permission FROM studio_members WHERE project_id=? AND user_id=?"
-                + (currentRead ? " FOR UPDATE" : ""),
-            (rs, n) -> rs.getString(1),
-            projectId(),
-            p.userId())
-        .stream()
-        .filter(role -> Set.of("VIEWER", "EDITOR", "APPROVER").contains(role))
-        .findFirst()
-        .orElseThrow(() -> error(403, "허가된 제작 담당자만 접근할 수 있습니다."));
+    var member =
+        db
+            .query(
+                "SELECT permission FROM studio_members WHERE project_id=? AND user_id=?"
+                    + (currentRead ? " FOR UPDATE" : ""),
+                (rs, n) -> rs.getString(1),
+                projectId(),
+                p.userId())
+            .stream()
+            .filter(role -> Set.of("VIEWER", "EDITOR", "APPROVER").contains(role))
+            .findFirst();
+    // 운영 계정(modu)은 초대 없이 EDITOR로 작업한다. 승인·프로젝트 관리는 ADMIN이 접근 관리에서 따로 부여한다.
+    if (member.isEmpty() && operator(p)) return "EDITOR";
+    return member.orElseThrow(() -> error(403, "허가된 제작 담당자만 접근할 수 있습니다."));
+  }
+
+  /** 제작소 운영 계정(modu) 여부. 가드가 없는 슬라이스에서는 false. */
+  public boolean operator(AuthenticatedPrincipal p) {
+    return access != null && access.isOperator(p);
   }
 
   public void require(AuthenticatedPrincipal p, boolean edit, boolean approve) {
