@@ -3,331 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BuildIt 대시보드</title>
-  <style>
-    /* ===== BuildIt 통합 대시보드 (ADMIN·TUTOR 공용) — 시안 B 반영 ===== */
-    :root {
-      --bg: #f4f6f9;
-      --card: #ffffff;
-      --border: #e5e9f0;
-      --text: #1a202c;
-      --text-2: #4a5568;
-      --text-3: #8a94a6;
-      --accent: #2b6cb0;
-      --accent-soft: #ebf4ff;
-      --danger: #e53e3e;
-      --danger-soft: #fff5f5;
-      --ok: #38a169;
-      --radius: 14px;
-      --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 1px 2px rgba(16, 24, 40, .04);
-      /* 타입 스케일 (frontend-design 스킬: 의도적 타입 시스템) */
-      --fs-2xl: 26px; --fs-xl: 22px; --fs-lg: 16px; --fs-md: 15px;
-      --fs-sm: 14px; --fs-xs: 13px; --fs-2xs: 12px;
-    }
-    * { box-sizing: border-box; }
-    body { background: var(--bg); margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif; }
-    .dash-wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 48px; }
-
-    /* ---- 헤더 ---- */
-    .dash-topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
-    }
-    .dash-brand { display: flex; align-items: center; gap: 12px; }
-    .dash-logo {
-      display: inline-flex; align-items: center; text-decoration: none;
-      font-size: 20px; letter-spacing: -.02em; line-height: 1;
-    }
-    .dash-logo b { font-weight: 800; color: var(--text); font-style: normal; }
-    .dash-logo i { font-weight: 400; color: var(--accent); font-style: normal; margin-left: 1px; }
-    .dash-title { font-size: 22px; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -.01em; }
-    .dash-shortcut.is-disabled { opacity: .55; cursor: default; pointer-events: none; }
-    .dash-title-sep { color: var(--border); font-weight: 300; }
-    .dash-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .dash-biz-select {
-      appearance: none; -webkit-appearance: none;
-      padding: 9px 34px 9px 14px; font-size: 14px; font-weight: 600; color: var(--text);
-      border: 1px solid var(--border); border-radius: 10px; background: var(--card);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a5568' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 12px center;
-      cursor: pointer; max-width: 260px; box-shadow: var(--shadow);
-    }
-    .dash-refresh {
-      padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--accent);
-      border: 1px solid var(--border); border-radius: 10px; background: var(--card);
-      cursor: pointer; box-shadow: var(--shadow);
-    }
-    .dash-refresh:hover { background: var(--accent-soft); }
-    .dash-asof { font-size: 12px; color: var(--text-3); margin-bottom: 14px; }
-
-    /* ---- 홍보 스트립 (슬림형) ---- */
-    .dash-promo-strip {
-      display: flex; align-items: center; gap: 14px;
-      background: linear-gradient(135deg, #ebf4ff 0%, #f7fafc 100%);
-      border: 1px solid #bee3f8; border-radius: var(--radius);
-      padding: 14px 18px; margin-bottom: 18px; box-shadow: var(--shadow);
-    }
-    .dash-promo-strip .p-icon { font-size: 24px; }
-    .dash-promo-strip .p-body { flex: 1; min-width: 0; }
-    .dash-promo-strip .p-title { font-size: 14px; font-weight: 700; color: var(--text); }
-    .dash-promo-strip .p-price { font-size: 16px; font-weight: 800; color: var(--accent); }
-    .dash-promo-strip .p-btn {
-      padding: 8px 16px; font-size: 13px; font-weight: 700; border-radius: 8px;
-      background: var(--accent); color: #fff; text-decoration: none; white-space: nowrap;
-    }
-    .dash-promo-strip .p-btn:hover { background: #2c5282; }
-
-    /* ---- KPI 히어로 ---- */
-    .dash-kpis {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-      margin-bottom: 18px;
-    }
-    .dash-kpi {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px; box-shadow: var(--shadow); position: relative; overflow: hidden;
-    }
-    .dash-kpi::before {
-      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-      background: var(--kpi-accent, var(--accent));
-    }
-    .dash-kpi .k-label { font-size: var(--fs-xs); font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
-    .dash-kpi .k-value { font-size: var(--fs-2xl); font-weight: 800; color: var(--text); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-    .dash-kpi .k-value .unit { font-size: var(--fs-sm); font-weight: 600; color: var(--text-3); margin-left: 2px; }
-    .dash-kpi.kpi-income { --kpi-accent: #38a169; }
-    .dash-kpi.kpi-expense { --kpi-accent: #dd6b20; }
-    .dash-kpi.kpi-receivable { --kpi-accent: #e53e3e; }
-    .dash-kpi.kpi-students { --kpi-accent: #2b6cb0; }
-
-    /* ---- 섹션 타이틀 ---- */
-    .dash-section-title {
-      font-size: 15px; font-weight: 700; color: var(--text);
-      margin: 6px 0 12px; display: flex; align-items: center; gap: 8px;
-    }
-    .dash-section-title .count {
-      font-size: 12px; font-weight: 600; color: var(--text-3);
-      background: #edf2f7; border-radius: 999px; padding: 2px 10px;
-    }
-
-    /* ---- 위젯 그리드 ---- */
-    .dash-widgets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
-    .dash-widget {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px; box-shadow: var(--shadow); min-width: 0;
-    }
-    .dash-widget-head {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 12px; gap: 8px;
-    }
-    .dash-widget-head h3 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
-    .dash-widget-head a {
-      font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap;
-    }
-
-    /* ---- 리스트 ---- */
-    .dash-list { list-style: none; padding: 0; margin: 0; }
-    .dash-list li {
-      padding: 11px 0; border-bottom: 1px solid #eef1f6;
-      display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
-    }
-    .dash-list li:last-child { border-bottom: none; }
-    .dash-list .t { font-weight: 600; color: var(--text); font-size: 13.5px; }
-    .dash-list .s { color: var(--text-2); font-size: var(--fs-2xs); margin-top: 3px; }
-    .dash-list .amt { font-weight: 700; color: var(--text); font-size: var(--fs-xs); white-space: nowrap; font-variant-numeric: tabular-nums; }
-
-    /* ---- 서비스 바로가기 ---- */
-    .dash-shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .dash-shortcut {
-      display: flex; align-items: center; gap: 12px; padding: 16px;
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      box-shadow: var(--shadow); text-decoration: none; color: var(--text);
-      transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .dash-shortcut:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,24,40,.1); }
-    .dash-shortcut .ic {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 20px;
-      background: var(--accent-soft);
-    }
-    .dash-shortcut .tx .n { font-size: 14px; font-weight: 700; }
-    .dash-shortcut .tx .d { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-    .dash-shortcut.preparing { opacity: .6; }
-    .dash-shortcut.preparing .tx .d { color: var(--text-3); }
-
-    /* ---- AI 비서 플로팅 ---- */
-    .dash-ai-fab {
-      position: fixed; right: 24px; bottom: 24px; z-index: 100;
-      width: 64px; height: 64px; border-radius: 50%;
-      box-shadow: 0 4px 16px rgba(0,0,0,.15); cursor: pointer;
-      border: 3px solid #fff; overflow: hidden; background: #fff;
-      padding: 0;
-    }
-    .dash-ai-fab img { width: 100%; height: 100%; object-fit: cover; }
-
-    /* ---- 상태 ---- */
-    .dash-skeleton { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .dash-skel {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px; min-height: 150px;
-    }
-    .dash-skel .bar {
-      height: 14px; border-radius: 7px; margin-bottom: 10px;
-      background: linear-gradient(90deg, #edf2f7 25%, #e2e8f0 50%, #edf2f7 75%);
-      background-size: 200% 100%; animation: dash-shimmer 1.2s infinite;
-    }
-    @keyframes dash-shimmer { to { background-position: -200% 0; } }
-    .dash-state {
-      text-align: center; padding: 36px 20px; font-size: 14px; color: var(--text-3);
-      background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius);
-    }
-    .dash-state .icon { font-size: 28px; margin-bottom: 8px; display: block; }
-    .dash-state .msg { font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
-    .dash-state.error { border-color: #feb2b2; background: var(--danger-soft); }
-    .dash-state.error .msg { color: var(--danger); }
-    .dash-retry {
-      margin-top: 12px; padding: 8px 18px; font-size: 13px; font-weight: 600;
-      border: 1px solid var(--danger); border-radius: 8px; background: #fff;
-      color: var(--danger); cursor: pointer;
-    }
-
-    /* ---- 반응형 ---- */
-    @media (max-width: 1024px) {
-      .dash-kpis { grid-template-columns: repeat(2, 1fr); }
-      .dash-widgets { grid-template-columns: repeat(2, 1fr); }
-      .dash-shortcuts { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 640px) {
-      .dash-wrap { padding: 16px 12px 40px; }
-      .dash-topbar { flex-direction: column; align-items: stretch; }
-      .dash-title { font-size: 19px; }
-      .dash-kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .dash-kpi { padding: 14px; }
-      .dash-kpi .k-value { font-size: 20px; }
-      .dash-widgets { grid-template-columns: 1fr; }
-      .dash-skeleton { grid-template-columns: 1fr; }
-      .dash-promo-strip { flex-wrap: wrap; }
-      .dash-ai-fab { right: 16px; bottom: 16px; width: 56px; height: 56px; }
-    }
-
-    /* ---- 키보드 포커스 (frontend-design 스킬: 모션·장식은 행동에 응답할 때만) ---- */
-    .dash-shortcut:focus-visible, .dash-refresh:focus-visible,
-    .dash-biz-select:focus-visible, .p-btn:focus-visible, .dash-retry:focus-visible {
-      outline: 2px solid var(--accent); outline-offset: 2px;
-    }
-    /* ---- 모션 절제: 사용자 동작이 아닌 장식 모션은 reduced-motion에서 중단 ---- */
-    @media (prefers-reduced-motion: reduce) {
-      .dash-shortcut { transition: none; }
-      .dash-shortcut:hover { transform: none; }
-      .dash-skel .bar { animation: none; }
-    }
-
-    /* ===== AI 비서(읽기 전용, Muse Spark) — 모바일은 하단 전체 시트, 메시지 영역만 스크롤 ===== */
-    .ai-fab { position: fixed; right: 16px; bottom: 16px; z-index: 60; border: 0; border-radius: 999px; background: var(--accent, #3157d5); color: #fff; padding: 12px 18px; font-weight: 800; font-size: 14px; box-shadow: 0 8px 24px rgba(49,87,213,.35); cursor: pointer; }
-    .ai-panel { position: fixed; right: 16px; bottom: 16px; z-index: 61; width: 380px; height: min(620px, calc(var(--vvh, 100dvh) - 32px)); display: none; flex-direction: column; background: #fff; border: 1px solid #e3e7ee; border-radius: 16px; box-shadow: 0 16px 48px rgba(16,24,40,.22); overflow: hidden; }
-    .ai-panel.open { display: flex; }
-    .ai-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #e3e7ee; flex-shrink: 0; }
-    .ai-head strong { font-size: 15px; }
-    .ai-head small { display: block; color: #667085; font-size: 11px; margin-top: 2px; }
-    .ai-close { border: 0; background: transparent; font-size: 26px; line-height: 1; color: #667085; cursor: pointer; min-width: 44px; min-height: 44px; }
-    .ai-msgs { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #f7f9fc; -webkit-overflow-scrolling: touch; }
-    .ai-msg { max-width: 90%; padding: 9px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .ai-msg.user { align-self: flex-end; background: var(--accent, #3157d5); color: #fff; }
-    .ai-msg.bot { align-self: flex-start; background: #fff; border: 1px solid #e3e7ee; }
-    .ai-msg.err { align-self: flex-start; background: #fdecec; color: #a11a1a; }
-    .ai-chips { display: flex; gap: 6px; padding: 8px 10px; overflow-x: auto; border-top: 1px solid #e3e7ee; flex-shrink: 0; }
-    .ai-chips button { white-space: nowrap; border: 1px solid #d0d5dd; background: #fff; border-radius: 999px; padding: 7px 11px; font-size: 12px; cursor: pointer; }
-    .ai-form { display: flex; gap: 8px; padding: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #e3e7ee; flex-shrink: 0; align-items: flex-end; }
-    .ai-form textarea { flex: 1; min-width: 0; resize: none; border: 1px solid #cfd6e2; border-radius: 10px; padding: 10px; font: inherit; font-size: 16px; min-height: 44px; max-height: 96px; }
-    .ai-form button { border: 0; border-radius: 10px; background: var(--accent, #3157d5); color: #fff; font-weight: 800; min-width: 64px; min-height: 44px; cursor: pointer; }
-    .ai-form button:disabled { opacity: .55; }
-    @media (max-width: 640px) {
-      .ai-panel { left: 0; right: 0; bottom: var(--vv-bottom, 0px); width: auto; height: var(--vvh, 100dvh); max-height: var(--vvh, 100dvh); border-radius: 0; border: 0; }
-      .ai-fab { right: 12px; bottom: 12px; }
-    }
-  </style>
+  <!-- 캐릭터 영상·이미지 위치. 승인된 자료를 이 경로에 두면 표시되고, 없으면 상태창 표식으로 대체된다. -->
+  <meta name="f2r-agent-media" content="/agent-media/">
+  <title>F2R AI 운영 대시보드</title>
   <link rel="stylesheet" href="/css/unified_assistant.css">
-  <script defer src="/js/unified_assistant.js"></script>
+  <link rel="stylesheet" href="/css/f2r_agent_dashboard.css?v=20261023-1">
+  <script defer src="/js/unified_assistant.js?v=20261023-1"></script>
+  <script defer src="/js/f2r_agent_dashboard.js?v=20261023-1"></script>
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
-<body>
-  <div class="dash-wrap">
-    <div class="dash-topbar">
-      <div class="dash-brand">
-        <a class="dash-logo" href="/builder/entry" aria-label="BuildIt 시작 화면"><b>Build</b><i>It</i></a>
-        <span class="dash-title-sep">|</span>
-        <h1 class="dash-title">학원 운영 대시보드</h1>
-      </div>
-      <div class="dash-controls">
-        <a class="dash-refresh" data-f2r-home href="/">홈으로</a>
-        <select class="dash-biz-select" id="bizSelect" aria-label="사업체 선택">
-          <option value="">사업체 불러오는 중...</option>
-        </select>
-        <button class="dash-refresh" id="refreshBtn" type="button">↻ 새로고침</button>
+<body data-view="ai" data-agent="seven">
+  <header class="ops-topbar">
+    <div class="ops-brand">
+      <a class="ops-logo" data-f2r-home href="/" aria-label="F2R 홈으로 이동"><b>F2R</b><span>Feel to Real</span></a>
+      <h1 class="ops-title">AI 운영 대시보드</h1>
+    </div>
+    <nav class="ops-views" aria-label="대시보드 화면 선택">
+      <button type="button" data-view-btn="ai" aria-pressed="true">AI 메인</button>
+      <button type="button" data-view-btn="all" aria-pressed="false">전체 대시보드</button>
+    </nav>
+    <div class="ops-controls">
+      <select class="ops-select" id="bizSelect" aria-label="사업체 선택">
+        <option value="">사업체 불러오는 중...</option>
+      </select>
+      <button class="ops-btn" id="uaResume" type="button">사용법 안내</button>
+      <button class="ops-btn" id="refreshBtn" type="button" aria-label="새로고침">↻</button>
+    </div>
+  </header>
+
+<main id="unifiedAssistant" class="ua ops" aria-label="F2R AI 운영 대시보드">
+  <div id="uaTour" class="ua-tour ops-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><div id="uaPurpose" class="ua-chips"><span class="ua-hint">무엇을 하고 싶으세요?</span><button type="button" data-ua-purpose="students">학생·반 관리</button><button type="button" data-ua-purpose="attendance">출결</button><button type="button" data-ua-purpose="consult">상담</button><button type="button" data-ua-purpose="ledger">장부</button></div><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
+
+  <!-- ===== AI 메인 ===== -->
+  <section class="ops-pane ops-main" data-pane="ai" aria-label="AI 메인">
+    <div class="agent-col">
+      <figure class="agent-stage" id="agentStage" data-state="idle">
+        <video id="agentVideo" muted loop playsinline autoplay preload="metadata" aria-label="AI 비서 영상"></video>
+        <div class="agent-emblem" aria-hidden="true"><span id="agentCode">H-07</span></div>
+        <div class="agent-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
+        <figcaption class="agent-plate">
+          <span class="agent-state"><i></i><span id="agentStateLabel">대기</span></span>
+          <strong id="agentName">세븐</strong>
+          <small id="agentRole">업무 분석 · 전략</small>
+        </figcaption>
+      </figure>
+      <div class="agent-pick" role="group" aria-label="AI 비서 선택">
+        <button type="button" data-agent-pick="seven" aria-pressed="true"><img src="/agent-media/seven/front.webp" alt="" loading="lazy"><span>세븐</span></button>
+        <button type="button" data-agent-pick="suni" aria-pressed="false"><img src="/agent-media/suni/front.webp" alt="" loading="lazy"><span>서수니</span></button>
       </div>
     </div>
-    <div class="dash-asof" id="dataAsof"></div>
 
-<section id="unifiedAssistant" class="ua" aria-label="통합 AI 업무 비서">
-  <header class="ua-heading"><div><span class="ua-eyebrow">BUILDIT · AI WORKSPACE</span><h2>오늘의 업무, 함께 정리해요</h2><p id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</p></div><button id="uaResume" type="button">사용법 안내</button></header>
-  <div id="uaTour" class="ua-tour" hidden aria-live="polite"><div><span id="uaStep" class="ua-eyebrow"></span><h3 id="uaTourTitle"></h3><p id="uaTourText"></p><div id="uaPurpose" class="ua-chips"><span class="ua-hint">무엇을 하고 싶으세요?</span><button type="button" data-ua-purpose="students">학생·반 관리</button><button type="button" data-ua-purpose="attendance">출결</button><button type="button" data-ua-purpose="consult">상담</button><button type="button" data-ua-purpose="ledger">장부</button></div><progress id="uaTourProgress" max="6" value="1" aria-label="안내 진행률"></progress></div><div class="ua-actions"><button id="uaBack" type="button">이전</button><button id="uaPause" type="button">나중에 계속</button><button id="uaNext" class="ua-primary" type="button">다음</button></div></div>
-  <div class="ua-academy"><label for="uaAcademy">업무 학원</label><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></div>
-  <nav id="uaMenus" class="ua-menus" aria-label="학원 업무 메뉴">
-    <a id="uaStudents" href="/academycraft/screens/MBR-01-student-list.html">학생 <span>등록·정보 관리</span></a>
-    <a id="uaClasses" href="/academycraft/screens/CLS-01-class-list.html">반·수업 <span>반 편성·학생 배정</span></a>
-    <a id="uaAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결 <span>출결부·월별 조회 (정정은 이 화면에서)</span></a>
-    <a id="uaConsult" href="/academycraft/screens/CNS-01-consultation-list.html">상담 <span>상담 작성·후속 메시지</span></a>
-    <a id="uaLedger" href="/ledger">이지장부 <span>거래·분류·증빙 확인</span></a>
-  </nav>
-  <div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div>
-  <div class="ua-grid">
-    <section class="ua-work" id="uaReview" aria-label="AI 업무 비서 대화창">
-      <div class="ua-section-head"><div><h3>AI 업무 비서</h3><p class="ua-hint">AcademyCraft · 이지장부를 하나의 대화에서</p></div><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div>
-      <p class="ua-hint">업무 지시나 자료를 보내면 초안을 만듭니다. 대상·내용을 확인하고 승인하면 저장 결과를 재조회합니다. 초안은 10분 동안 유효합니다. 상담 작성 시 기존 정책에 따라 학부모 알림이 전달될 수 있습니다.</p>
-      <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="비서 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
-      <div class="ua-composer">
-        <form id="uaCommandForm"><label for="uaCommand">자연어 업무 지시</label><textarea id="uaCommand" rows="2" maxlength="2000" placeholder="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea><button class="ua-primary" type="submit">비서에게 보내기</button></form>
-        <div class="ua-chips"><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button></div>
-        <form id="uaUploadForm"><label for="uaFile">업무 자료 첨부 (CSV · TXT, 256KB 이하)</label><input id="uaFile" type="file" accept=".csv,.txt,text/csv,text/plain" required><p class="ua-hint">학생 명단 CSV는 이름·학년·학교·학부모연락처 열을, 거래 CSV는 거래일·구분·금액·거래처·적요·증빙유형 열을 사용하세요. TXT는 한 줄에 하나의 업무 지시를 적으세요. 학원 자료는 최대 20행입니다. AI가 연결되지 않으면 정해진 업무 표현과 열 이름으로 분석합니다. 이미지·PDF·엑셀 자동 인식은 지원하지 않습니다.</p><div class="ua-actions"><a href="/data/unified-assistant-students.csv" download>학생 명단 양식</a><a href="/data/unified-assistant-sample.csv" download>거래·증빙 양식</a></div><button type="submit">자료 분석하고 초안 만들기</button></form>
-      </div>
-      <p id="uaMessage" role="status">먼저 사용법 안내를 따라가거나, 업무를 알려주세요. 승인 전에는 실제 업무에 저장하지 않습니다.</p>
-      <div class="ua-actions"><button id="uaExplain" type="button">AI 재무 해설</button><button id="uaRefresh" type="button">현황 새로고침</button></div>
-      <details id="uaEdit"><summary>초안 보완 · 직접 입력</summary>
-        <form id="uaDraftForm"><label for="uaOperation">업무 종류</label><select id="uaOperation">
-          <option value="STUDENT_CREATE">학생 등록</option><option value="STUDENT_UPDATE">학생 정보 수정</option><option value="CLASS_CREATE">반 생성</option><option value="CLASS_UPDATE">반 정보 수정</option><option value="CLASS_ASSIGN">반에 학생 배정</option><option value="ATTENDANCE_RECORD">출결 기록</option><option value="CONSULT_CREATE">상담 작성</option><option value="CONSULT_MESSAGE">상담 후속 메시지</option><option value="LEDGER_ENTRY">거래·증빙 등록</option><option value="LEDGER_IMPORT">거래·증빙 CSV 가져오기</option><option value="LEDGER_ACCOUNT">가져온 거래 계정과목 수정</option></select>
-          <div id="uaFields" class="ua-fields"></div><p id="uaScope" class="ua-hint"></p><button id="uaCreateDraft" class="ua-primary" type="submit">초안 만들기</button>
-        </form>
-      </details>
-      <div class="ua-actions"><button type="button" data-ua-list="students">학생 목록</button><button type="button" data-ua-list="classes">반 목록</button><button type="button" data-ua-list="consultations">상담 목록</button><button type="button" data-ua-list="teachers">강사 목록</button></div><div id="uaCatalog" class="ua-catalog" aria-live="polite"></div>
-      <a href="/help/academycraft">자세한 사용법 보기 →</a><details><summary>나의 감사로그</summary><div id="uaAudit"></div></details>
+    <div class="ops-col">
+      <section class="sys-window" aria-label="시스템 상태창">
+        <header><span class="sys-tag">STATUS</span><h2>시스템 상태창</h2></header>
+        <dl class="sys-grid">
+          <div><dt>담당 비서</dt><dd id="statusAgent">세븐 (H-07)</dd></div>
+          <div class="span2"><dt>사용자</dt><dd id="uaRole">로그인 정보와 업무 권한을 확인하고 있습니다.</dd></div>
+          <div class="ua-academy"><dt><label for="uaAcademy">업무 학원</label></dt><dd><select id="uaAcademy"><option value="">연결된 학원 확인 중</option></select></dd></div>
+          <div class="cnt"><dt>승인 대기</dt><dd id="statusPending">0건</dd></div>
+          <div class="cnt"><dt>처리 완료</dt><dd id="statusDone">0건</dd></div>
+          <div class="cnt"><dt>확인 필요</dt><dd id="statusReview">0건</dd></div>
+          <div class="svc"><dt>연결된 서비스</dt><dd id="statusServices">대화 내용에 맞춰 연결합니다.</dd></div>
+        </dl>
+        <details class="sys-more"><summary>운영·재무 현황 보기</summary><div class="ua-summary" id="uaSummary" aria-live="polite">학원 운영·재무 현황을 불러오는 중…</div></details>
+      </section>
+
+      <section class="ua-work chat-window" id="uaReview" aria-label="AI 비서 대화창">
+        <div class="ua-section-head"><div><h3>AI 비서 대화</h3><p class="ua-hint" id="agentGreeting">세븐입니다. 오늘 처리할 업무를 말씀해 주세요.</p></div><button id="uaHistoryRefresh" type="button">기록 불러오기</button></div>
+        <div id="uaDrafts" class="ua-chat-stream" role="log" aria-label="비서 대화와 업무 처리 기록" aria-live="polite"><p class="ua-hint">대화 기록을 불러오는 중…</p></div>
+        <div id="agentSuggest" class="agent-suggest" hidden aria-live="polite"></div>
+        <div class="ua-composer">
+          <form id="uaCommandForm"><label for="uaCommand">무엇이든 물어보거나 업무를 맡기세요</label><textarea id="uaCommand" rows="2" maxlength="2000" placeholder="예: 학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2" required></textarea><button class="ua-primary" type="submit">보내기</button></form>
+          <div class="ua-chips"><button type="button" data-ua-example="학원 운영과 재무 현황 보여줘">통합 현황</button><button type="button" data-ua-example="학생 김하늘 등록해줘, 학교: 새봄중, 학년: 중2">학생 등록</button><button type="button" data-ua-example="학생 ID 1 출결 조회해줘">출결 조회</button><button type="button" data-ua-example="학생 ID 1 결석 기록해줘">출결 기록</button><button type="button" data-ua-example="공지 작성해줘, 제목: 휴강 안내, 내용: 내일은 휴강합니다">공지 초안</button><button type="button" data-ua-example="학생 ID 1 상담 작성, 제목: 학습 상담, 내용: 다음 수업 계획을 함께 확인했습니다">상담 작성</button></div>
+        </div>
+        <p id="uaMessage" role="status">업무를 알려주시면 초안을 먼저 보여드립니다. 승인 전에는 실제 업무에 저장하지 않습니다.</p>
+      </section>
+    </div>
+
+    <section class="svc-guide" aria-label="사용 가능한 F2R 서비스">
+      <h2 class="ops-h2">사용 가능한 F2R 서비스</h2>
+      <div class="svc-grid" id="shortcutRow"></div>
     </section>
-  </div><p id="uaError" class="ua-error" role="alert" hidden></p>
-</section>
-    <!-- 내신 예상문제 홍보 스트립 (슬림형) -->
-    <div class="dash-promo-strip">
-      <div class="p-icon">📝</div>
-      <div class="p-body">
-        <div class="p-title">내신 예상문제 제작</div>
-        <div class="p-price">1회 2만원 · 40문항 <a class="p-btn" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener" style="margin-left:8px;">의뢰하기</a></div>
-      </div>
-    </div>
+  </section>
 
-    <!-- KPI 히어로 -->
-    <div class="dash-section-title">이번달 핵심 지표</div>
+  <!-- ===== 전체 대시보드 ===== -->
+  <section class="ops-pane ops-all" data-pane="all" aria-label="전체 대시보드">
+    <nav id="uaMenus" class="ua-menus" aria-label="학원 업무 메뉴">
+      <a id="uaStudents" href="/academycraft/screens/MBR-01-student-list.html">학생 <span>등록·정보 관리</span></a>
+      <a id="uaClasses" href="/academycraft/screens/CLS-01-class-list.html">반·수업 <span>반 편성·학생 배정</span></a>
+      <a id="uaAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결 <span>출결부·월별 조회 (정정은 이 화면에서)</span></a>
+      <a id="uaConsult" href="/academycraft/screens/CNS-01-consultation-list.html">상담 <span>상담 작성·후속 메시지</span></a>
+      <a id="uaLedger" href="/ledger">이지장부 <span>거래·분류·증빙 확인</span></a>
+    </nav>
+
+    <div class="dash-asof" id="dataAsof"></div>
+    <h2 class="ops-h2">이번달 핵심 지표</h2>
     <div class="dash-kpis" id="kpiRow"></div>
-
-    <!-- 위젯 -->
-    <div class="dash-section-title">상세 위젯 <span class="count" id="widgetCount"></span></div>
+    <h2 class="ops-h2">상세 위젯 <span class="count" id="widgetCount"></span></h2>
     <div class="dash-widgets" id="widgetContainer"></div>
 
-    <!-- 서비스 바로가기 -->
-    <div class="dash-section-title">서비스 바로가기</div>
-    <div class="dash-shortcuts" id="shortcutRow"></div>
-  </div>
+    <section class="cmd-window" aria-label="AI 업무 지휘창">
+      <header><span class="sys-tag">COMMAND</span><h2>AI 업무 지휘창</h2><p class="ua-hint">자료 분석·직접 입력·목록 조회는 모두 승인 후에만 실제 업무에 저장됩니다.</p></header>
+      <div class="cmd-grid">
+        <form id="uaUploadForm"><label for="uaFile">업무 자료 첨부 (CSV · TXT, 256KB 이하)</label><input id="uaFile" type="file" accept=".csv,.txt,text/csv,text/plain" required><p class="ua-hint">학생 명단 CSV는 이름·학년·학교·학부모연락처 열을, 거래 CSV는 거래일·구분·금액·거래처·적요·증빙유형 열을 사용하세요. TXT는 한 줄에 하나의 업무 지시를 적으세요. 학원 자료는 최대 20행입니다.</p><div class="ua-actions"><a href="/data/unified-assistant-students.csv" download>학생 명단 양식</a><a href="/data/unified-assistant-sample.csv" download>거래·증빙 양식</a></div><button type="submit">자료 분석하고 초안 만들기</button></form>
+        <div>
+          <div class="ua-actions"><button id="uaExplain" type="button">AI 재무 해설</button><button id="uaRefresh" type="button">현황 새로고침</button></div>
+          <details id="uaEdit"><summary>초안 보완 · 직접 입력</summary>
+            <form id="uaDraftForm"><label for="uaOperation">업무 종류</label><select id="uaOperation">
+              <option value="STUDENT_CREATE">학생 등록</option><option value="STUDENT_UPDATE">학생 정보 수정</option><option value="CLASS_CREATE">반 생성</option><option value="CLASS_UPDATE">반 정보 수정</option><option value="CLASS_ASSIGN">반에 학생 배정</option><option value="ATTENDANCE_RECORD">출결 기록</option><option value="CONSULT_CREATE">상담 작성</option><option value="CONSULT_MESSAGE">상담 후속 메시지</option><option value="LEDGER_ENTRY">거래·증빙 등록</option><option value="LEDGER_IMPORT">거래·증빙 CSV 가져오기</option><option value="LEDGER_ACCOUNT">가져온 거래 계정과목 수정</option></select>
+              <div id="uaFields" class="ua-fields"></div><p id="uaScope" class="ua-hint"></p><button id="uaCreateDraft" class="ua-primary" type="submit">초안 만들기</button>
+            </form>
+          </details>
+          <div class="ua-actions"><button type="button" data-ua-list="students">학생 목록</button><button type="button" data-ua-list="classes">반 목록</button><button type="button" data-ua-list="consultations">상담 목록</button><button type="button" data-ua-list="teachers">강사 목록</button></div><div id="uaCatalog" class="ua-catalog" aria-live="polite"></div>
+          <a href="/help/academycraft">자세한 사용법 보기 →</a><details><summary>나의 감사로그</summary><div id="uaAudit"></div></details>
+        </div>
+      </div>
+    </section>
 
-  <button class="ai-fab" id="aiFab" type="button" aria-controls="unifiedAssistant">AI 업무 비서</button>
+    <div class="dash-promo-strip">
+      <div class="p-body"><div class="p-title">내신 예상문제 제작</div><div class="p-price">1회 2만원 · 40문항</div></div>
+      <a class="p-btn" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">의뢰하기</a>
+    </div>
+  </section>
+  <p id="uaError" class="ua-error" role="alert" hidden></p>
+</main>
+
+  <button class="ai-fab" id="aiFab" type="button" aria-controls="unifiedAssistant">AI 비서</button>
   <script src="/js/api.js"></script>
   <script>
   /**
-   * BuildIt 통합 대시보드 (ADMIN·TUTOR 공용) — 위젯 렌더러.
+   * F2R AI 운영 대시보드 (ADMIN·TUTOR 공용) — 전체 대시보드 위젯 렌더러.
    * 공용 API (/api/dashboard/widgets)를 사용한다.
    */
   (function() {
@@ -343,18 +148,8 @@
     var widgetContainer = document.getElementById('widgetContainer');
     var widgetCount = document.getElementById('widgetCount');
     var dataAsof = document.getElementById('dataAsof');
-    var shortcutRow = document.getElementById('shortcutRow');
 
-    // 서비스 바로가기 (실제 구현된 서비스만)
-    var SHORTCUTS = [
-      { name: '에듀홀릭 장부<운영자용>', desc: '압구정에듀홀릭학원 전용 · 복식부기·수납', icon: '📒', href: '/easy' },
-      { name: '이지장부', desc: '원장용 범용 장부 · AI 장부 도우미', icon: '📓', href: '/ledger' },
-      { name: 'AcademyCraft 출결·학원관리', desc: '학생·반·출결 관리', icon: '🧑‍🏫', href: '/academycraft' },
-      { name: '홈페이지 빌더', desc: '학원 홈페이지 제작', icon: '🏠', href: '/builder' },
-      { name: '내신위키', desc: '문제 제작·관리', icon: '📚', href: '/problem-generator' },
-      { name: 'TESTPREP', desc: '모의고사', icon: '📝', href: '/testprep' },
-      { name: '입시상담 AI', desc: '공식 입시자료 기반 대학·전형 상담', icon: '🎓', href: '/admissions/workspace' },
-    ];
+    // 서비스 안내는 /js/f2r_agent_dashboard.js가 그린다.
 
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
@@ -425,15 +220,6 @@
       }).join('');
     }
 
-    function renderShortcuts() {
-      shortcutRow.innerHTML = SHORTCUTS.map(function(s) {
-        var inner = '<div class="ic">' + s.icon + '</div>' +
-          '<div class="tx"><div class="n">' + esc(s.name) + '</div><div class="d">' + esc(s.desc) + '</div></div>';
-        if (s.disabled) return '<div class="dash-shortcut is-disabled" aria-disabled="true">' + inner + '</div>';
-        return '<a class="dash-shortcut" href="' + esc(s.href) + '">' + inner + '</a>';
-      }).join('');
-    }
-
     function loadWidgets(businessId, refresh) {
       showSkeleton();
       fetchAuth(API_WIDGETS + '?businessId=' + businessId + (refresh ? '&refresh=true' : ''), {cache:'no-store'})
@@ -494,7 +280,6 @@
     }
 
     function init() {
-      renderShortcuts();
       // 로그인 확인
       ensureCurrentUser().then(function(user) {
         if (!user || (user.role !== 'ADMIN' && user.role !== 'TUTOR')) {
