@@ -260,6 +260,17 @@ class StaticPolicyTest(unittest.TestCase):
             self.assertNotIn(bad, body)
         self.assertIn("readonly-setup) step_readonly_setup ;;", text)
 
+    def test_account_mask_keeps_rds_identifiers_readable(self):
+        # given: Describe 출력의 계정 번호 마스킹 함수
+        text = WORKFLOWS[0].read_text()
+        line = re.search(r"mask\(\) \{ sed -E '([^']+)'; \}", text).group(1)
+        sample = "arn:aws:rds:ap-northeast-2:425805163960:db:f2r-db-202610181331"
+        # when
+        out = subprocess.run(["sed", "-E", line], input=sample, capture_output=True, text=True).stdout
+        # then: 계정 번호만 가리고 운영 DB 식별자(12자리 시각 포함)는 그대로 둔다
+        self.assertNotIn("425805163960", out)
+        self.assertIn("f2r-db-202610181331", out)
+
 
 if __name__ == "__main__":
     unittest.main()
