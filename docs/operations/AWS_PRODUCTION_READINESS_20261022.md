@@ -15,7 +15,7 @@
 | 실행 버전 근거 | 기존 [배포39733429342](https://github.com/woori73/feel2real-buildit/actions/runs/39733429342)의 2bed39181c584d8c150e3ed005592c41120319c3과 전체 JAR 해시 일치. JAR mtime06:24:35UTC, 프로세스 시작06:24:57UTC. 내장 Git/배포 marker는 없음 |
 | 이전 JAR | 존재, SHA256 a332cfa2a5858d87e3754448208c845a903992cef66d928530278a2fd5352b37 |
 | 실제 접속 DB | f2r-db-202610181331, MySQL8.4.8, available, 암호화됨 |
-| 백업/복구 | 보존2일, LatestRestorableTime 2026-10-23 00:06:55UTC. 해당 DB의 기존 자동 스냅샷2026-10-22 18:52:21UTC available |
+| 백업/복구 | **2026-10-23 갱신(대표님 변경, `a1-precheck` run 39879463854로 재확인)**: `f2r-db-202610181331` BackupRetentionPeriod **7**, DeletionProtection **true**, PendingModifiedValues `{}`(대표님 확인값), LatestRestorableTime 2026-10-23 00:36:55UTC. 이전 조회값은 보존 2일·삭제 보호 꺼짐이었다. 기존 자동 스냅샷 2026-10-22 18:52:21UTC available |
 | Flyway | 적용188, 최신V1093, 실패0. Studio/MCP 테이블0 |
 | POI | 운영 JAR5.3.0, 후보 runtimeClasspath poi/poi-ooxml/poi-ooxml-lite 모두5.5.1 |
 | 스위치 | APP_MCP_ENABLED 등 설정 없음. 본 작업의 활성화/유료 호출 없음 |
