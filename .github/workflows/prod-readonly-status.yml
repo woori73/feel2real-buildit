@@ -47,7 +47,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          mask() { sed -E 's/[0-9]{12}/<acct>/g'; }
+          mask() { sed -E 's/425805163960/<acct>/g'; }
           echo "== app instance"
           aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running \
             --query 'Reservations[].Instances[].{Id:InstanceId,Type:InstanceType,Launched:LaunchTime}' --output table 2>&1 | mask
