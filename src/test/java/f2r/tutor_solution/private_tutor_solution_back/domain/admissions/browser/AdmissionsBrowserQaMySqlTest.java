@@ -286,11 +286,7 @@ class AdmissionsBrowserQaMySqlTest {
             org.openqa.selenium.WebElement workspaceLink=wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[href='/admissions/workspace']")));
             String workspaceHref=workspaceLink.getAttribute("href");
             assertThat(workspaceHref).endsWith("/admissions/workspace");
-            try {
-                workspaceLink.click();
-            } catch (org.openqa.selenium.ElementClickInterceptedException covered) {
-                // 대시보드의 비동기 안내·대화 영역이 늦게 그려져 클릭 지점이 밀리면 아래에서 같은 href로 이동한다.
-            }
+            workspaceLink.click();
             try {
                 new WebDriverWait(driver,Duration.ofSeconds(5)).until(ExpectedConditions.urlContains("/admissions/workspace"));
             } catch (org.openqa.selenium.TimeoutException notNavigated) {
