@@ -12,6 +12,15 @@ on:
         description: '배포 직전 스냅샷 이름(형식·SHA·24시간 일관성만 검사)'
         required: true
         default: 'f2r-predeploy-202610230143-32a9e27e'
+      initialize_project:
+        description: '제작 프로젝트 ai-agent-part1 최초 개설(POST /api/studio/project 1회, 승인 후에만)'
+        required: false
+        default: false
+        type: boolean
+      confirm:
+        description: '개설 확인 문자열(CREATE-ai-agent-part1)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -98,6 +107,35 @@ jobs:
           done
           rm -f "$RUNNER_TEMP/p.html"
 
+      - name: Initialize studio project once (approved, guarded)
+        if: ${{ inputs.initialize_project }}
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          [ "$CONFIRM" = "CREATE-ai-agent-part1" ] || { echo "::error::confirm must be CREATE-ai-agent-part1"; exit 1; }
+          COOKIE=$(jq -r .adminCookie "$RUNNER_TEMP/f2r-auth.json")
+          get() { curl -sS -f -m 30 -H "Cookie: $COOKIE" "$BASE_URL/api/studio/$1"; }
+          echo "projects(before)=$(get projects | jq -c '[.[]? | {id, archived}]')"
+          BEFORE=$(get project)
+          [ "$(jq -r .projectId <<<"$BEFORE")" = ai-agent-part1 ] || { echo "::error::unexpected project id"; exit 1; }
+          if [ "$(jq -r .initialized <<<"$BEFORE")" = true ]; then
+            echo "already initialized — no POST sent"
+          else
+            CODE=$(curl -sS -o "$RUNNER_TEMP/init.json" -w '%{http_code}' -m 30 -H "Cookie: $COOKIE" -H "Origin: $BASE_URL" \
+              -H 'Content-Type: application/json' --data-binary '{}' "$BASE_URL/api/studio/project")
+            echo "initialize http=$CODE"
+            rm -f "$RUNNER_TEMP/init.json"
+            [ "$CODE" = 200 ] || { echo "::error::initialize failed"; exit 1; }
+          fi
+          AFTER=$(get project)
+          jq -c '{projectId,initialized,files,archived,canManage,permission}' <<<"$AFTER"
+          [ "$(jq -r .initialized <<<"$AFTER")" = true ] || { echo "::error::project not initialized"; exit 1; }
+          EVENTS=$(get events)
+          echo "events total=$(jq 'length' <<<"$EVENTS") by_action=$(jq -c 'group_by(.action) | map({(.[0].action): length}) | add // {}' <<<"$EVENTS")"
+          [ "$(jq '[.[] | select(.action=="PROJECT_CREATE")] | length' <<<"$EVENTS")" = 1 ] || { echo "::error::PROJECT_CREATE event count is not 1"; exit 1; }
+          echo "projects(after)=$(get projects | jq -c '[.[]? | {id, archived}]')"
+
       - name: Studio project and registration state (read only)
         run: |
           set -euo pipefail
@@ -123,4 +161,4 @@ jobs:
 
       - name: Remove credentials and extracted sources
         if: always()
-        run: rm -rf "$RUNNER_TEMP/f2r-auth.json" "$RUNNER_TEMP/src" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/receipt.json" "$RUNNER_TEMP/jar.txt"
+        run: rm -rf "$RUNNER_TEMP/init.json" "$RUNNER_TEMP/f2r-auth.json" "$RUNNER_TEMP/src" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/receipt.json" "$RUNNER_TEMP/jar.txt"
