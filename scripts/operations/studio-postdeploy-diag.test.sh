@@ -16,4 +16,9 @@ check "masking" "ERROR c.x.Svc : user <email> TOKEN=<masked> failed" "$out"
 # given INFO 줄 / when 정규화 / then 출력 없음
 out=$(printf '2026-10-23T02:17:40.123Z  INFO 90488 --- [app] [main] c.x.Svc : started\n' | normalize_log)
 check "info ignored" "" "$out"
+# given SSM처럼 표준입력으로 실행(가짜 journalctl·python3) / when 실행 / then 본문이 돌아 제목을 출력
+stub=$(mktemp -d); printf '#!/bin/sh\nexit 0\n' > "$stub/journalctl"; printf '#!/bin/sh\necho STUB_DB\n' > "$stub/python3"; chmod +x "$stub"/*
+out=$(PATH="$stub:$PATH" bash < ./studio-postdeploy-diag.sh 2>&1)
+rm -rf "$stub"
+case "$out" in *"=== f2r-app WARN/ERROR"*"STUB_DB"*) echo "PASS  stdin execution";; *) echo "FAIL  stdin execution"; echo "$out" | head -5; fail=1;; esac
 exit $fail
