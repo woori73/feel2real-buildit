@@ -165,4 +165,21 @@ class LandingEdunovaTemplateContractTest {
         .contains("params.get('login') !== 'required'")
         .contains("f2r:login");
   }
+
+  @Test
+  @DisplayName("given 홈 when 읽으면 then PC 상단 메뉴·모바일 메뉴·AI AGENT 배너에서 제작협업실로 이동하는 링크가 보인다")
+  void studioEntryLinks_visibleInMenusAndBanner() {
+    // given / when
+    String html = render();
+    String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
+    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("class=\"en-mobile-services\""));
+    String mobile = html.substring(html.indexOf("class=\"en-mobile-services\""), html.indexOf("<main"));
+    String hero = html.substring(html.indexOf("class=\"en-hero\""), html.indexOf("class=\"en-offer\""));
+    // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
+    assertThat(nav).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
+    assertThat(drawer).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
+    assertThat(mobile).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
+    assertThat(hero).contains("id=\"enHeroStudio\" href=\"/ai-agent-studio\"").contains("/images/ai-agent-banner.png");
+    assertThat(html).doesNotContain("data-studio-entry hidden");
+  }
 }

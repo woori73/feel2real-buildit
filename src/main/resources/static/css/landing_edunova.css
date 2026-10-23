@@ -330,3 +330,24 @@ footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); pa
 /* 상단 이름: 화보 "AI AGENT" 타이틀처럼 굵고 넓은 각진 산세리프(Russo One) */
 .en-logo-main { font-family:'Russo One','Montserrat','Noto Sans KR',sans-serif; font-weight:400; font-size:21px; letter-spacing:.06em; text-transform:uppercase; }
 @media (max-width:520px) { .en-logo-main { font-size:16px; letter-spacing:.04em; } }
+
+/* AI AGENT 제작협업실 진입: 상단 메뉴·모바일 메뉴·배너. 접근 권한은 서버(ADMIN·modu)가 확인한다. */
+.en-menu a.en-menu-studio { color:var(--ed-steel, #2f5fd0); font-weight:700; }
+.en-drawer a.en-drawer-studio { color:var(--ed-steel, #2f5fd0); font-weight:700; }
+.en-hero-link { display:block; }
+.en-hero-link:focus-visible { outline:3px solid #8fb4ff; outline-offset:-3px; }
+.en-hero-badge { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+.en-hero-studio { display:inline-flex; align-items:center; min-height:40px; padding:0 14px; border:1px solid rgba(160,190,255,.55); border-radius:8px; color:#fff; font-weight:700; letter-spacing:0; }
+.en-hero-studio:hover { background:rgba(160,190,255,.16); }
+@media (min-width:961px) and (max-width:1240px) {
+  .en-nav { gap:16px; }
+  .en-menu { gap:12px; font-size:13.5px; }
+  .en-logo-sep, .en-logo-sub { display:none; }
+  .en-menu a[href="#ai-content"] { display:none; }
+}
+@media (min-width:1241px) { .en-menu { gap:18px; } }
+@media (min-width:961px) and (max-width:1060px) { .en-menu { gap:9px; font-size:13px; } .en-logo-main { font-size:18px; } }
+@media (max-width:960px) {
+  .en-mobile-services { flex-wrap:wrap; gap:8px; }
+  .en-mobile-services a.en-mobile-studio { color:var(--ed-steel, #2f5fd0); font-weight:700; }
+}
