@@ -180,3 +180,13 @@ aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SN
 - 스냅샷 전용 역할 `github-actions-f2r-snapshot` 생성 [run 39881714098](https://github.com/woori73/feel2real-buildit/actions/runs/39881714098): 시뮬레이션 허용 3·거부 7 기대대로. 배포 역할 CreateDBSnapshot=implicitDeny, 빌더 역할=allowed(사용 안 함).
 - 운영 DB(run 39882421265): 보존 7일·삭제 보호 True. 01:10 조회 시 `backing-up` — 01:08에 만들어진 수동 스냅샷 `f2r-predeploy-yyyymmddhhmm-5572befe`(이름 자리표시자 그대로, creating) 때문. 보존하되 이번 배포 스냅샷으로 쓰지 않는다(#876 이름 형식과도 맞지 않음). Flyway V1093(run 39879110307 이후 배포·DB 변경 없음).
 - #882(테스트만): 충돌 없음, CI 2/2 PASS, 병합 승인 대기. 병합하면 최종 SHA가 그 병합 커밋으로 바뀐다.
+
+## 14. 운영 배포 결과 (2026-10-23 02:13~02:19 UTC)
+- 배포: `Deploy to EC2` run 1034 [39888405152](https://github.com/woori73/feel2real-buildit/actions/runs/39888405152) SUCCESS, SHA `32a9e27e`, target=new. 가드: 새 PID 90488 health OK, 재기동 공백 56초, 위키 healthy.
+- 배포 직전 스냅샷: `f2r-predeploy-202610230143-32a9e27e`(available). 추가 스냅샷 없음.
+- 사후 점검(run 39889057493): f2r-app active·재시작 0(02:17:17 기동), actuator 200, `app.jar` 234,098,601 B sha256 `cc86d83c…4ef2`, 이전 jar `177f6222…`는 `app.jar.previous`로 보존. 메모리 available 5,379MB, OOM 0.
+- Flyway: 190건, 최대 V1095, 실패 0. V1094 `-1031052192`(02:17:35)·V1095 `-1470147673`(02:17:37) 예상 체크섬 일치. studio/mcp 테이블 13개. 운영 DB `f2r-db-202610181331` 연결 정상.
+- ALB(alb-diag run 39889249251, 02:05~02:22): f2r-app-tg healthy 1/1, 대상 5xx 0, ELB 5xx 2건(02:17 재기동 중), 이후 요청 정상 응답.
+- 오류 로그(app-diag run 39889566306): 새 프로세스는 기존과 같은 KIS websocket WARN만. 새 ERROR 없음.
+- 미확인: 이 세션에서 feel2real.co.kr 외부 HTTPS·로그인 화면 직접 접근 불가(네트워크 정책 403). 배포 smoke `/wemade`는 302(로그인 리다이렉트, 비차단 경고).
+- MCP·AI 쓰기 플래그 env에 없음(기본 OFF). 536 적재·MCP 활성화 미실행.
