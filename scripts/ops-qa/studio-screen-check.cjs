@@ -39,13 +39,20 @@ async function inspect(page) {
         let consoleErrors = 0;
         page.on('console', (m) => { if (m.type() === 'error') consoleErrors++; });
         page.on('pageerror', () => { consoleErrors++; });
-        const res = await page.goto(base + path, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => null);
+        // 진행 중 요청(경로만, 쿼리·본문 없음)을 기록해 네트워크가 끝나지 않는 원인을 보여준다.
+        const inflight = new Map();
+        page.on('request', (r) => inflight.set(r, new URL(r.url()).host + new URL(r.url()).pathname));
+        page.on('requestfinished', (r) => inflight.delete(r));
+        page.on('requestfailed', (r) => inflight.delete(r));
+        const res = await page.goto(base + path, { waitUntil: 'load', timeout: 45000 }).catch(() => null);
         const status = res ? res.status() : 0;
+        const networkIdle = await page.waitForLoadState('networkidle', { timeout: 15000 }).then(() => true, () => false);
+        const pending = networkIdle ? [] : [...new Set(inflight.values())].slice(0, 5);
         const finalPath = new URL(page.url()).pathname.replace(/(.)\/$/, '$1');
         const m = status ? await inspect(page) : {};
         const ok = status === 200 && finalPath === path && !m.loginForm && m.overflowX <= 1 && m.brokenImages === 0;
         if (!ok) failed++;
-        console.log(JSON.stringify({ viewport: vp.name, path, status, finalPath, ...m, consoleErrors, result: ok ? 'PASS' : 'FAIL' }));
+        console.log(JSON.stringify({ viewport: vp.name, path, status, finalPath, ...m, consoleErrors, networkIdle, pending, result: ok ? 'PASS' : 'FAIL' }));
         await page.close();
       }
       await context.close();
