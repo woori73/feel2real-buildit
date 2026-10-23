@@ -133,6 +133,12 @@
   var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, front: 0, awaiting: false, voice: null };
   api.currentName = function () { return AGENTS[ui.agent] ? AGENTS[ui.agent].name : null; };
   api.state = function () { return ui.state; };
+  api.awaiting = function () { return ui.awaiting; };
+  // 단계 안내(f2r_agent_flows.js)가 질문을 캐릭터 말풍선으로 보여줄 때 쓴다(응답 대기 아님).
+  api.guide = function (text) { ui.awaiting = false; setState(nextState(ui.state, 'reply')); say(text); };
+  // 초안 생성·조회 요청을 보낸 뒤 결과를 기다린다. 결과 말풍선·초안 카드는 대화 감시가 읽어 준다.
+  api.think = function () { ui.awaiting = true; setState(nextState(ui.state, 'submit')); };
+  api.expect = api.think;
 
   // 음성·립싱크 연결 지점. adapter = { speak(text, {agent, onStart, onEnd, onViseme}) → Promise, stop(), lipSync: bool }
   window.F2RAgentVoice = {
@@ -175,7 +181,7 @@
       ui.front = 1 - ui.front;
       setTimeout(function () { if (!cur.classList.contains('is-on') && cur.pause) cur.pause(); }, 500);
     };
-    next.poster = MEDIA_BASE + ui.agent + '/poster.jpg';
+    if (files().indexOf('poster.jpg') >= 0) next.poster = MEDIA_BASE + ui.agent + '/poster.jpg'; else next.removeAttribute('poster');
     next.src = src;
     if (next.readyState >= 2) swap();
     else {
@@ -211,6 +217,20 @@
     badge.hidden = status === 'APPROVED';
   }
 
+  function agentFiles(key) {
+    var a = ui.media && ui.media.agents && ui.media.agents[key];
+    return a && a.files ? a.files : [];
+  }
+
+  function portrait(img, key, holder) {
+    if (!img) return;
+    var file = agentFiles(key).indexOf('front.webp') >= 0 ? 'front.webp' : agentFiles(key).indexOf('poster.jpg') >= 0 ? 'poster.jpg' : null;
+    if (holder) holder.classList.toggle('no-portrait', !file);
+    if (!file) { img.removeAttribute('src'); return; }
+    var src = MEDIA_BASE + key + '/' + file;
+    if (img.getAttribute('src') !== src) img.src = src;
+  }
+
   function renderAgent() {
     var a = AGENTS[ui.agent];
     document.body.dataset.agent = a.key;
@@ -219,10 +239,13 @@
     $('agentRole').textContent = a.role;
     $('speechName').textContent = a.name;
     $('statusAgent').textContent = a.name + ' (' + a.code + ')';
-    var mini = $('agentMiniImg');
-    if (mini) mini.src = MEDIA_BASE + a.key + '/front.webp';
+    // 얼굴 이미지는 서버가 자료가 있다고 알려준 경우에만 요청한다(없는 자료 요청 → 깨진 이미지·콘솔 오류 방지).
+    portrait($('agentMiniImg'), a.key, $('agentMini'));
     document.querySelectorAll('[data-agent-pick]').forEach(function (b) {
       b.setAttribute('aria-pressed', b.dataset.agentPick === a.key ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-agent-pick]').forEach(function (b) {
+      portrait(b.querySelector('img'), b.dataset.agentPick, b);
     });
     renderBadge();
     ui.clip = null;
@@ -395,7 +418,7 @@
       $('agentGreeting').classList.add('is-typing');
     }, true);
     document.querySelectorAll('[data-ua-example]').forEach(function (b) {
-      b.addEventListener('click', function () { activate(matchServices(b.dataset.uaExample)); }, true);
+      b.addEventListener('click', function () { setView('ai'); activate(matchServices(b.dataset.uaExample)); }, true);
     });
   }
 
@@ -417,6 +440,56 @@
       if (pane) setView(pane.dataset.pane);
       target.scrollIntoView({ block: 'center' });
     }).observe(step, { childList: true, characterData: true, subtree: true });
+  }
+
+  // 보조 메뉴(설정·서비스·전체 대시보드). 모바일에서는 필요할 때만 펼친다.
+  function bindMenu() {
+    var btn = $('siMenuBtn'), menu = $('siMenu');
+    if (!btn || !menu) return;
+    var set = function (open) {
+      menu.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('menu-open', open);
+    };
+    btn.addEventListener('click', function () { set(!menu.classList.contains('is-open')); });
+    var close = $('siMenuClose');
+    if (close) close.addEventListener('click', function () { set(false); });
+    var scrim = $('siScrim');
+    if (scrim) scrim.addEventListener('click', function () { set(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+    menu.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-view-btn],[data-welcome-again],#uaResume')) set(false);
+    });
+  }
+
+  // 관리자: 캐릭터 자료 묶음(ZIP)을 서버 비공개 폴더에 설치한다. 승인 상태는 묶음의 manifest 그대로.
+  function bindMediaAdmin() {
+    var box = $('siMediaAdmin'), form = $('siMediaForm');
+    if (!box || !form) return;
+    document.addEventListener('ua:ready', function () {
+      var ua = window.unifiedAssistant;
+      box.hidden = !(ua && ua.role && ua.role() === 'ADMIN');
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var file = $('siMediaFile').files[0];
+      var out = $('siMediaResult');
+      if (!file) return;
+      var btn = form.querySelector('button');
+      btn.disabled = true;
+      out.textContent = '올리는 중…';
+      var body = new FormData();
+      body.append('file', file);
+      fetch('/api/dashboard/agent-media/package', { method: 'POST', credentials: 'same-origin', body: body })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { if (!r.ok) throw new Error(b.message || ('설치 실패 (' + r.status + ')')); return b; }); })
+        .then(function (m) {
+          var agents = m.agents || {};
+          out.textContent = '설치했습니다. ' + Object.keys(agents).map(function (k) { return (AGENTS[k] ? AGENTS[k].name : k) + ': ' + badgeFor(agents[k].status) + ' · 파일 ' + agents[k].files.length + '개'; }).join(' / ');
+          ui.media = m; ui.clip = null; renderAgent();
+        })
+        .catch(function (err) { out.textContent = err.message; })
+        .then(function () { btn.disabled = false; });
+    });
   }
 
   function loadMedia() {
@@ -454,6 +527,8 @@
     document.querySelectorAll('[data-view-btn]').forEach(function (b) {
       b.addEventListener('click', function () { setView(b.dataset.viewBtn); window.scrollTo(0, 0); });
     });
+    bindMenu();
+    bindMediaAdmin();
     var fab = $('aiFab');
     if (fab) fab.addEventListener('click', function () { setView('ai'); }, true);
 
