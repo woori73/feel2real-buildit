@@ -65,6 +65,7 @@
     $('uaTourProgress').value=i+1; $('uaBack').disabled=i===0; $('uaNext').textContent=i===5?'안내 완료':'다음';
   }
   async function saveProgress(step,completed) {
+    if(state.progress?.local){state.progress={...state.progress,step,completed};return;}
     const p=await json('/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({step,completed,version:state.progress.version})}); state.progress=p;
   }
   function showTour(open) {state.tour=open;$('uaTour').hidden=!open;highlight();}
@@ -122,7 +123,7 @@
     if(existing)existing.replaceWith(card);else $('uaDrafts').append(card);if(prepend)scrollChat();
   }
   function scrollChat() { const log=$('uaDrafts');log.scrollTop=log.scrollHeight; }
-  function bubble(role,text) {const node=el('div',null,'ua-bubble ua-'+role);node.append(el('strong',role==='user'?'나':'업무 비서'),el('p',text));$('uaDrafts').append(node);scrollChat();return node;}
+  function bubble(role,text) {const node=el('div',null,'ua-bubble ua-'+role);node.append(el('strong',role==='user'?'나':(window.f2rAgentDashboard?.currentName?.()||'업무 비서')),el('p',text));$('uaDrafts').append(node);scrollChat();return node;}
   async function acceptTurn(t) {
     bubble('assistant',t.message+' ('+t.analysis+')');
     for(const issue of t.issues||[])bubble('assistant','확인 필요: '+issue);
@@ -159,7 +160,13 @@
       try{await saveProgress(stepForPurpose(button.dataset.uaPurpose),false);highlight();$('uaTour').scrollIntoView({block:'nearest'});}catch(e){error(e);}
     }));
     $('uaNext').addEventListener('click',()=>advance(1).catch(error));$('uaBack').addEventListener('click',()=>advance(-1).catch(error));
-    $('uaPause').addEventListener('click',()=>showTour(false));$('uaResume').addEventListener('click',async()=>{try{if(state.progress.completed)await saveProgress(0,false);showTour(true);$('uaTour').scrollIntoView({block:'nearest'});}catch(e){error(e);}});
+    $('uaPause').addEventListener('click',()=>showTour(false));$('uaResume').addEventListener('click',async()=>{
+      // 사용법 안내는 언제 눌러도 1단계부터 다시 보여준다. 진행 기록을 못 읽은 경우에도 화면 안내는 연다.
+      $('uaResume').classList.remove('ua-new');
+      if(!state.progress)state.progress={step:0,completed:false,version:null,local:true};
+      try{await saveProgress(0,false);}catch(e){state.progress={...state.progress,step:0,completed:false};error(e);}
+      showTour(true);$('uaTour').scrollIntoView({block:'center'});$('uaNext').focus({preventScroll:true});
+    });
     $('uaExplain').addEventListener('click',async()=>{
       if(!state.business){error(new Error('해설할 사업체를 먼저 선택하세요.'));return;}
       const g=state.generation,b=state.business;$('uaExplain').disabled=true;
@@ -173,6 +180,8 @@
   }
   async function init() {if(!$('unifiedAssistant'))return;try{state.user=await ensureCurrentUser();if(!state.user||!['ADMIN','TUTOR'].includes(state.user.role))return;
     try { const res=await fetch('/api/dashboard/businesses',{credentials:'same-origin',cache:'no-store'});if(res.ok){const list=await res.json(),saved=localStorage.getItem('dashboard.businessId');state.business=String(list.find(x=>String(x.businessId)===saved)?.businessId||list[0]?.businessId||'')||null;} } catch(_) {}
-    fields();setBusy(true);bind();state.progress=await json('/progress');showTour(!state.progress.completed);await refreshContext();}catch(e){error(e);}}
+    fields();setBusy(true);bind();state.progress=await json('/progress');
+    // 첫 방문 안내는 화면을 밀지 않도록 자동으로 펼치지 않고 '사용법 안내' 버튼에 처음 표시만 한다.
+    if(!state.progress.completed)$('uaResume').classList.add('ua-new');await refreshContext();}catch(e){error(e);}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
