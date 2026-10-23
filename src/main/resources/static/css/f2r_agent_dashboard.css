@@ -51,8 +51,14 @@ body[data-view="ai"] .ops-all, body[data-view="all"] .ops-main { display: none; 
 .ops .ops-h2 .count { font-size: 12px; color: var(--ops-muted); margin-left: 6px; }
 
 /* ---- AI 메인: 캐릭터 중심 대화 콘솔 ---- */
-.console-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 20px; align-items: start; }
-.console { position: sticky; top: 76px; display: grid; gap: 12px; min-width: 0; }
+.console-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); grid-template-areas: "console log" "composer log"; column-gap: 20px; row-gap: 12px; align-items: start; }
+.console { grid-area: console; display: grid; gap: 12px; min-width: 0; }
+.console-log { grid-area: log; }
+.console-grid > .console-composer { grid-area: composer; }
+.console-grid > * { min-width: 0; }
+/* 첫 방문: 안내를 자동으로 펼치지 않고 버튼에 표시 */
+.ops-btn.ua-new { border-color: var(--ops-warn); color: var(--ops-warn); position: relative; }
+.ops-btn.ua-new::after { content: "처음"; position: absolute; top: -8px; right: -6px; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 999px; background: var(--ops-warn); color: #2b1500; }
 .console-stage {
   position: relative; margin: 0; aspect-ratio: 16 / 10; max-height: 52vh; width: 100%; border-radius: var(--ops-radius); overflow: hidden;
   background: radial-gradient(80% 90% at 50% 35%, #15305a, #060b16 70%); border: 1px solid var(--ops-line);
@@ -253,7 +259,7 @@ body[data-view="ai"] .ai-fab { display: none; }
 /* ---- 반응형 ---- */
 @media (max-width: 1024px) {
   .console-grid { grid-template-columns: 1fr; }
-  .console { position: static; }
+  .console-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "console" "log" "composer"; }
   .svc-grid, .dash-kpis { grid-template-columns: repeat(2, 1fr); }
   .dash-widgets { grid-template-columns: repeat(2, 1fr); }
   .ops .ua-menus { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -268,10 +274,8 @@ body[data-view="ai"] .ai-fab { display: none; }
   .ops-select { flex: 1; min-width: 0; max-width: none; }
   .ops-btn { white-space: nowrap; padding: 8px 10px; font-size: 13px; }
   .ops { padding: 12px 16px 24px; }
-  body[data-view="ai"] .ops { padding-bottom: 150px; }
-  /* 하단 고정 입력창이 포커스·스크롤 대상(서비스 카드 등)을 가리지 않도록 여유를 둔다 */
-  html:has(body[data-view="ai"]) { scroll-padding-bottom: 160px; }
-  body[data-view="ai"] .ops a, body[data-view="ai"] .ops button { scroll-margin-bottom: 160px; }
+  /* 대화 영역 안에서 포커스가 하단 입력창 뒤로 숨지 않도록 여유를 둔다 */
+  .console a, .console button, .console-log a, .console-log button { scroll-margin-bottom: 150px; }
   .console-stage { aspect-ratio: 4 / 3; max-height: 46vh; }
   .hud-bottom strong { font-size: 20px; }
   .hud-counters { top: 48px; font-size: 11px; }
@@ -279,7 +283,8 @@ body[data-view="ai"] .ai-fab { display: none; }
   .speech-text { font-size: 14px; max-height: 7.5em; }
   .sys-grid .wide dd { min-height: 2.8em; }
   /* 모바일: 입력창은 화면 아래에 고정하고, 작은 캐릭터 상태 표시를 함께 둔다 */
-  .ops .console-composer { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; border-radius: 14px 14px 0 0; border-bottom: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 28px rgba(0,0,0,.5); }
+  /* 입력창은 대화 영역(캐릭터·기록)을 보는 동안 화면 아래에 붙고, 서비스 안내까지 내려가면 기록 바로 뒤에 멈춘다(아래 링크를 가리지 않음) */
+  .ops .console-composer { position: sticky; bottom: 0; z-index: 25; margin: 0 -16px; border-radius: 14px 14px 0 0; border-bottom: 0; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 28px rgba(0,0,0,.5); }
   .ops .console-composer label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .agent-mini { display: block; }
   .ops #uaMessage { display: none; }
