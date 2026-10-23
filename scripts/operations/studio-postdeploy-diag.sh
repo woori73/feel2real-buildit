@@ -11,7 +11,8 @@ normalize_log() {
     | sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/<email>/g; s/((KEY|SECRET|TOKEN|PASSWORD|PASS|COOKIE)[A-Za-z_]*[=:])[^ ]+/\1<masked>/Ig; s/[0-9]+/#/g' \
     | cut -c1-170
 }
-[[ "${BASH_SOURCE[0]}" == "$0" ]] || return 0
+# 테스트에서 source하면 함수만 정의하고 끝낸다. SSM처럼 표준입력으로 실행되면 BASH_SOURCE가 비어 있다.
+[[ -z "${BASH_SOURCE[0]:-}" || "${BASH_SOURCE[0]}" == "$0" ]] || return 0
 
 SINCE="${DIAG_SINCE:-2026-10-23 02:17:00 UTC}"
 printf '=== f2r-app WARN/ERROR since %s ===\n' "$SINCE"
