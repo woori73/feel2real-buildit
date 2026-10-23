@@ -149,6 +149,7 @@ jobs:
         run: >-
           ./gradlew test --no-daemon
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.*"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.agentmedia.AgentMediaStoreTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycrafthelp.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.publishing.service.DesignCraftCliExecutorTest"
@@ -524,6 +525,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJobDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCounselingSessionHistoryDbTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.browser.AdmissionsBrowserQaMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.agentmedia.AgentDashboardBrowserQaMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsPublicApiDefaultOffMySqlTest"
 
       - name: Admissions member Muse smoke (one real call, isolated DB only)
@@ -541,6 +543,16 @@ jobs:
         with:
           name: admissions-browser-qa-${{ github.sha }}
           path: build/reports/admissions-qa
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload AI dashboard browser QA screenshots
+        # 캐릭터 얼굴 없는 테스트 자료로 찍은 화면이다(실제 캐릭터 자료는 저장소·CI에 두지 않는다).
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-dashboard-qa-${{ github.sha }}
+          path: build/reports/agent-dashboard-qa
           if-no-files-found: warn
           retention-days: 7
 
