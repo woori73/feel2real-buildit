@@ -227,9 +227,10 @@
   function portrait(img, key, holder) {
     if (!img) return;
     var file = agentFiles(key).indexOf('front.webp') >= 0 ? 'front.webp' : agentFiles(key).indexOf('poster.jpg') >= 0 ? 'poster.jpg' : null;
-    if (holder) holder.classList.toggle('no-portrait', !file);
-    if (!file) { img.removeAttribute('src'); return; }
-    var src = MEDIA_BASE + key + '/' + file;
+    var src = file ? MEDIA_BASE + key + '/' + file : null;
+    // 한 번 불러오지 못한 얼굴 이미지는 깨진 그림 대신 이름만 보인다(다시 그려도 숨김 유지).
+    if (holder) holder.classList.toggle('no-portrait', !src || img.dataset.failed === src);
+    if (!src) { img.removeAttribute('src'); return; }
     if (img.getAttribute('src') !== src) img.src = src;
   }
 
@@ -527,9 +528,15 @@
       });
     });
     document.querySelectorAll('[data-agent-pick] img').forEach(function (img) {
-      var off = function () { img.closest('[data-agent-pick]').classList.add('no-portrait'); };
-      img.addEventListener('error', off);
-      if (img.complete && img.naturalWidth === 0) off();
+      img.addEventListener('error', function () {
+        img.dataset.failed = img.getAttribute('src') || '';
+        img.closest('[data-agent-pick]').classList.add('no-portrait');
+      });
+    });
+    var mini = $('agentMiniImg');
+    if (mini) mini.addEventListener('error', function () {
+      mini.dataset.failed = mini.getAttribute('src') || '';
+      if ($('agentMini')) $('agentMini').classList.add('no-portrait');
     });
     document.querySelectorAll('[data-agent-pick]').forEach(function (b) {
       b.addEventListener('click', function () { chooseAgent(b.dataset.agentPick); });
