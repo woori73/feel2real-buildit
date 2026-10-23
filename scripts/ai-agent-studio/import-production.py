@@ -19,10 +19,16 @@ PRODUCTION_HOSTS = {'feel2real.co.kr', 'www.feel2real.co.kr'}
 LOOPBACK = {'127.0.0.1', 'localhost'}
 GITHUB_API = os.environ.get('F2R_GITHUB_API', 'https://api.github.com')
 GITHUB_REPO = 'woori73/feel2real-buildit'
+PROJECT = 'ai-agent-part1'
 
 
 class Abort(Exception):
     """A precondition failed. Nothing further is sent."""
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise Abort('HTTP redirect refused; credentials were not forwarded')
 
 
 def verify_source(source, catalog):
@@ -88,13 +94,17 @@ def read_cookie(auth_file, key):
     cookie = json.loads(auth_file.read_text()).get(key)
     if not cookie:
         raise Abort(f'인증 파일에 {key} 가 없습니다.')
+    if '\r' in cookie or '\n' in cookie:
+        raise Abort('Invalid session cookie')
     return cookie
 
 
 class Client:
     def __init__(self, base, cookie, proxies=None, context=None, retries=3):
         self.base, self.cookie, self.retries = base.rstrip('/'), cookie, retries
-        handlers = [urllib.request.ProxyHandler(proxies)] if proxies is not None else []
+        handlers = [NoRedirect()]
+        if proxies is not None:
+            handlers.append(urllib.request.ProxyHandler(proxies))
         if context is not None:
             handlers.append(urllib.request.HTTPSHandler(context=context))
         self.opener = urllib.request.build_opener(*handlers)
@@ -141,6 +151,34 @@ def existing_files(client):
         offset += 200
 
 
+def revision_approvals(client):
+    found = {}
+    for offset in range(0, 1000001, 200):
+        rows = client.json(f'revisions?limit=200&offset={offset}')
+        if not isinstance(rows, list):
+            raise Abort('Invalid revision page')
+        for row in rows:
+            if row['item_key'].startswith('character-approved-') and not row.get('approved_id'):
+                raise Abort('Existing character approval was withdrawn; automatic reapproval refused')
+            if row.get('approved_id') == row['id']:
+                found[row['item_key']] = (row['id'], row.get('file_id'), row.get('sha256'))
+        if len(rows) < 200:
+            return found
+    raise Abort('Revision pagination limit reached; incomplete verification refused')
+
+
+def verify_registration(client, before):
+    if client.json('source-import').get('registeredSourcePaths') != 536:
+        raise Abort('등록 후 경로 수가 536이 아닙니다.')
+    after = revision_approvals(client)
+    if any(after.get(key) != value for key, value in before.items()):
+        raise Abort('Existing canonical approval pointer/file/SHA changed; manual investigation required')
+    expected = set(json.loads((REPO / CATALOG).read_bytes())['approvedSha256'])
+    observed = {value[2] for key, value in after.items() if key.startswith('character-approved-')}
+    if observed != expected:
+        raise Abort('Five canonical character SHA values were not observed')
+
+
 def load_state(path):
     if path and path.exists():
         state = json.loads(path.read_text())
@@ -159,13 +197,19 @@ def save_state(path, state):
 
 def stage_and_register(client, source, unique, state_path, apply):
     """Idempotent: verified uploads are skipped on restart; register runs once and is atomic server-side."""
-    if not client.json('project').get('initialized'):
+    project = client.json('project')
+    if not project.get('initialized'):
         raise Abort('제작 프로젝트가 초기화되지 않았습니다(ADMIN이 /ai-agent-studio 에서 먼저 개설).')
+    if apply and (project.get('projectId') != PROJECT or not project.get('canManage') or project.get('archived')):
+        raise Abort('Active original project and ADMIN permission required')
     registered = client.json('source-import').get('registeredSourcePaths')
     if registered == 536:
+        if apply:
+            verify_registration(client, revision_approvals(client))
         return {'action': 'already-registered', 'registeredSourcePaths': 536}
     if registered != 0:
         raise Abort(f'부분 적재 상태({registered}/536) — 자동 진행하지 않습니다.')
+    before = revision_approvals(client) if apply else {}
     state = load_state(state_path)
     present = existing_files(client)
     plan = {'uniqueFiles': len(unique), 'alreadyStored': sum(1 for s in unique if s in present),
@@ -192,8 +236,7 @@ def stage_and_register(client, source, unique, state_path, apply):
         if i % 50 == 0:
             print(f'verified stored originals {i}/{len(unique)}', flush=True)
     result = client.json('source-import', json.dumps({'commit': PIN, 'files': mapping}).encode(), retry=False)
-    if client.json('source-import').get('registeredSourcePaths') != 536:
-        raise Abort('등록 후 경로 수가 536이 아닙니다.')
+    verify_registration(client, before)
     return {'action': 'registered', **plan, 'storedOriginalsVerified': len(mapping), 'registration': result,
             'mapping': mapping}
 

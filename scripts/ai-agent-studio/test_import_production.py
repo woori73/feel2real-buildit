@@ -21,6 +21,9 @@ class FakeStudio:
 
     def __init__(self):
         self.files, self.registered, self.initialized = {}, 0, True
+        self.revisions = []
+        self.can_manage, self.archived = True, False
+        self.redirect_to = None
         self.posts, self.uploads, self.registers, self.content_reads = 0, 0, 0, 0
         self.fail_upload_after = None
 
@@ -51,7 +54,17 @@ class FakeStudio:
                 url = urllib.parse.urlsplit(self.path)
                 q = urllib.parse.parse_qs(url.query)
                 if url.path == '/api/studio/project':
-                    return self.reply(200, {'initialized': studio.initialized})
+                    if studio.redirect_to:
+                        self.send_response(302)
+                        self.send_header('Location', studio.redirect_to)
+                        self.send_header('Content-Length', '0')
+                        self.end_headers()
+                        return
+                    return self.reply(200, {'initialized': studio.initialized, 'projectId': ip.PROJECT,
+                                            'canManage': studio.can_manage, 'archived': studio.archived})
+                if url.path == '/api/studio/revisions':
+                    off, lim = int(q.get('offset', ['0'])[0]), int(q.get('limit', ['200'])[0])
+                    return self.reply(200, studio.revisions[off:off+lim])
                 if url.path == '/api/studio/source-import':
                     return self.reply(200, {'registeredSourcePaths': studio.registered})
                 if url.path == '/api/studio/files':
@@ -88,6 +101,9 @@ class FakeStudio:
                     if len(mapping) != 316 or any(studio.files.get(s, {}).get('id') != i for s, i in mapping.items()):
                         return self.reply(400, {'message': 'mapping'})
                     studio.registered = 536
+                    studio.revisions = [dict(id='approved-'+s, approved_id='approved-'+s,
+                        item_key='character-approved-'+s[:12], file_id=studio.files[s]['id'], sha256=s)
+                        for s in json.loads((ip.REPO / ip.CATALOG).read_bytes())['approvedSha256']]
                     return self.reply(200, {'registered': 536})
                 self.reply(404, {})
 
@@ -95,6 +111,49 @@ class FakeStudio:
 
 
 class ProductionModeTest(unittest.TestCase):
+    def test_redirect_never_forwards_admin_session(self):
+        received = []
+        class Sink(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+            def do_GET(self):
+                received.append(self.headers.get('Cookie'))
+                body = b'{"initialized":true}'
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+        sink = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Sink)
+        sink.socket = self.ctx.wrap_socket(sink.socket, server_side=True)
+        threading.Thread(target=sink.serve_forever, daemon=True).start()
+        try:
+            self.studio.redirect_to = 'https://localhost:%d/other-origin' % sink.server_port
+            self.assertEqual(2, self.run_tool()[0])
+            self.assertEqual([], received)
+        finally:
+            sink.shutdown()
+            sink.server_close()
+
+    def test_withdrawn_canonical_is_not_reapproved(self):
+        self.studio.revisions = [dict(id='old', item_key='character-approved-old', approved_id=None)]
+        code, _, _ = self.run_tool(apply=True)
+        self.assertEqual(2, code)
+        self.assertEqual(0, self.studio.posts)
+
+    def test_non_admin_or_archived_project_has_no_writes(self):
+        for manage, archived in [(False, False), (True, True)]:
+            self.studio.can_manage, self.studio.archived = manage, archived
+            self.assertEqual(2, self.run_tool(apply=True)[0])
+            self.assertEqual(0, self.studio.posts)
+
+    def test_revision_pagination_does_not_drop_678_rows(self):
+        class Pages:
+            def json(self, path):
+                off = int(path.split('offset=')[1])
+                return [dict(id=str(n), item_key='item-'+str(n), approved_id=str(n), file_id='f', sha256='s')
+                        for n in range(off, min(off+200, 678))]
+        self.assertEqual(678, len(ip.revision_approvals(Pages())))
+
     @classmethod
     def setUpClass(cls):
         cls.tmp = pathlib.Path(tempfile.mkdtemp(prefix='f2r-import-test-'))

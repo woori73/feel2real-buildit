@@ -1,5 +1,7 @@
 # AWS 배포·운영 Runbook
 
+신규 계정 읽기 전용 진단·536자료 적재 준비(배포 승인 아님): [2026-10-22 준비 보고](operations/AWS_PRODUCTION_READINESS_20261022.md).
+
 > **Canonical infrastructure source of truth.** EC2/systemd, RDS/Flyway, S3, IAM, CORS,
 > lifecycle, ALB, 임시 디스크, ffmpeg, 관찰성과 수동 브라우저 검증은 이 문서에서만 관리한다.
 > `docs/WORKFLOW.md`는 배포 흐름 포인터만 유지한다.

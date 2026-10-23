@@ -1,0 +1,26 @@
+[
+  {
+    "name": "ShinhanCardExcelParserTest",
+    "tests": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  {
+    "name": "ShinhanCardImportServiceTest",
+    "tests": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  {
+    "name": "StudioProductionImportMySqlTest",
+    "tests": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  {
+    "name": "ShinhanCardNormalizerTest",
+    "tests": 4,
+    "failed": 0,
+    "skipped": 0
+  }
+]
