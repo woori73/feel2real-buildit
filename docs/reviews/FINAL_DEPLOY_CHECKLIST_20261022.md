@@ -190,3 +190,13 @@ aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP" && echo "$SN
 - 오류 로그(app-diag run 39889566306): 새 프로세스는 기존과 같은 KIS websocket WARN만. 새 ERROR 없음.
 - 미확인: 이 세션에서 feel2real.co.kr 외부 HTTPS·로그인 화면 직접 접근 불가(네트워크 정책 403). 배포 smoke `/wemade`는 302(로그인 리다이렉트, 비차단 경고).
 - MCP·AI 쓰기 플래그 env에 없음(기본 OFF). 536 적재·MCP 활성화 미실행.
+
+## 15. 배포 후 운영 화면·제작실 dry-run (2026-10-23 02:40 UTC)
+- 실행: `Studio production import (dry-run)` [run 39890784516](https://github.com/woori73/feel2real-buildit/actions/runs/39890784516) (#885, GET만, 기존 ADMIN secret 로그인 → 러너 0600 쿠키·마스킹, 종료 시 삭제).
+- 화면(ADMIN): `/` `/dashboard` `/academies` `/easy` `/ledger` `/admissions/guide` `/admissions/workspace` `/ai-agent-studio` 모두 200, 제목 정상. 비로그인 `/actuator/health` 200.
+- 관찰(P3, 이번 배포와 무관한 기존 동작으로 추정): `/login` GET이 Spring 기본 OAuth 로그인 화면("Please sign in")을 200으로 준다. `WebMvcConfig`는 `/login → /home` 302를 의도하지만 prd의 `oauth2Login`(loginPage 미지정)이 먼저 응답한다. 로그인은 공통 모달이라 기능 영향은 없다.
+- 스냅샷: `f2r-predeploy-202610230143-32a9e27e` available(run 39885618486), 적재 도구 `check_snapshot`(형식·SHA·24시간) PASS. 배포 SHA `32a9e27e` = 최근 성공 Deploy.
+- 제작실 상태: `projectId=ai-agent-part1`, **initialized=false**, files 0, archived false, canManage true(ADMIN), 등록 0/536.
+- dry-run: 적재 도구가 "제작 프로젝트가 초기화되지 않았습니다"로 **설계대로 중단**(쓰기 없음). 원본 536/316 SHA 검증은 도구 안에서 통과한 뒤 이 단계에서 멈췄다.
+- 차단 조건: 프로젝트 개설(POST `/api/studio/project` 1건 — `studio_projects` 1행 + PROJECT_CREATE 이벤트, 쓰기). 승인 후 개설 → dry-run 재실행(예상 `toUpload=316`, `alreadyStored=0`) → PASS면 적재 승인 요청.
+- PC·모바일 화면·사용설명서: 저장소가 공개라 운영 화면 캡처를 Actions 산출물로 올리지 않는다. 적재 후 대표님 화면에서 보드·갤러리·문서 열람을 캡처하거나, 비공개 저장 위치를 정해 같은 workflow에 캡처 단계를 추가한다.
