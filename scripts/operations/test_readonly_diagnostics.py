@@ -271,6 +271,20 @@ class StaticPolicyTest(unittest.TestCase):
         self.assertNotIn("425805163960", out)
         self.assertIn("f2r-db-202610181331", out)
 
+    def test_predeploy_snapshot_step_is_fixed_confirmed_and_create_only(self):
+        # given: 배포 직전 스냅샷 단계 본문
+        text = (ROOT / ".github/workflows/migration-infra-build.yml").read_text()
+        body = text[text.index("step_predeploy_snapshot() {"):text.index("step_a1_precheck() {")]
+        # then: 운영 DB 하나, 실행 커밋 기준 이름·확인 문자열, 생성과 대기만(삭제·복원·수정 없음)
+        self.assertIn("DB=f2r-db-202610181331", body)
+        self.assertIn('[ "${CONFIRM:-}" = "SNAPSHOT-$SHA8" ]', body)
+        self.assertIn('SNAP="f2r-predeploy-$(date -u +%Y%m%d%H%M)-$SHA8"', body)
+        self.assertIn('[ "$PENDING" = "{}" ]', body)
+        self.assertIn("aws rds wait db-snapshot-available", body)
+        rds_calls = set(re.findall(r"aws rds ([a-z-]+)", body))
+        self.assertEqual(rds_calls, {"describe-db-instances", "create-db-snapshot", "wait", "describe-db-snapshots"})
+        self.assertIn("predeploy-snapshot) step_predeploy_snapshot ;;", text)
+
 
 if __name__ == "__main__":
     unittest.main()
