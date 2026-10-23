@@ -361,7 +361,14 @@ class StaticPolicyTest(unittest.TestCase):
         wf = yaml.safe_load(text)
         runs = "\n".join(s.get("run", "") for s in wf["jobs"]["dry-run"]["steps"])
         # then: 적재(--apply)·업로드·임의 POST가 없고, 로그인만 POST이며 비밀값은 env로만 받는다
-        self.assertNotIn("--apply", runs)
+        # 실제 적재(--apply)는 승인 입력·확인 문자열이 있는 적재 단계에만 있다
+        steps = wf["jobs"]["dry-run"]["steps"]
+        apply_steps = [s for s in steps if "--apply" in s.get("run", "")]
+        self.assertEqual(len(apply_steps), 1)
+        self.assertEqual(apply_steps[0]["if"], "${{ inputs.apply }}")
+        self.assertIn('[ "$APPLY_CONFIRM" = "IMPORT-536-${DEPLOYED_SHA:0:8}" ]', apply_steps[0]["run"])
+        self.assertIn('--confirm-snapshot "$SNAPSHOT"', apply_steps[0]["run"])
+        self.assertIs(wf[True]["workflow_dispatch"]["inputs"]["apply"]["default"], False)
         self.assertNotIn("set -x", runs)
         # POST는 로그인 1건 + 승인된 최초 개설 1건(확인 문자열·미개설일 때만)
         self.assertEqual(runs.count("--data-binary"), 2)

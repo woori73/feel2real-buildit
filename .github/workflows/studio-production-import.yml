@@ -21,6 +21,15 @@ on:
         description: '개설 확인 문자열(CREATE-ai-agent-part1)'
         required: false
         default: ''
+      apply:
+        description: '536 자료 실제 적재(승인 후에만). dry-run 통과 후 실행'
+        required: false
+        default: false
+        type: boolean
+      apply_confirm:
+        description: '적재 확인 문자열(IMPORT-536-<배포 SHA 앞 8자리>)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -159,6 +168,56 @@ jobs:
           [ -f "$RUNNER_TEMP/receipt.json" ] && jq -c '{mode,sourcePaths,uniqueFiles,duplicatePaths,verifiedSha,approvedOriginals:(.approvedOriginals|length),production}' "$RUNNER_TEMP/receipt.json"
           exit $RC
 
+      - name: Apply 536 source import (approved, guarded; reuses import-production.py --apply)
+        if: ${{ inputs.apply }}
+        env:
+          DEPLOYED_SHA: ${{ steps.sha.outputs.sha }}
+          SNAPSHOT: ${{ inputs.snapshot }}
+          APPLY_CONFIRM: ${{ inputs.apply_confirm }}
+        run: |
+          set -euo pipefail
+          [ "$APPLY_CONFIRM" = "IMPORT-536-${DEPLOYED_SHA:0:8}" ] || { echo "::error::apply_confirm must be IMPORT-536-${DEPLOYED_SHA:0:8}"; exit 1; }
+          python3 scripts/ai-agent-studio/import-production.py --production --apply --confirm-snapshot "$SNAPSHOT" \
+            --source "$RUNNER_TEMP/src" --base-url "$BASE_URL" --confirm-host feel2real.co.kr --deployed-sha "$DEPLOYED_SHA" \
+            --auth-file "$RUNNER_TEMP/f2r-auth.json" --state "$RUNNER_TEMP/state.json" --receipt "$RUNNER_TEMP/apply.json"
+          jq -c '{mode,production:(.production|del(.registration.sourceFileIds?))}' "$RUNNER_TEMP/apply.json"
+
+      - name: Post-import verification (read only)
+        if: ${{ inputs.apply }}
+        env:
+          BASE_URL: https://feel2real.co.kr
+        run: |
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, os, sys
+          spec = importlib.util.spec_from_file_location('imp', 'scripts/ai-agent-studio/import-production.py')
+          m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          cookie = json.load(open(os.environ['RUNNER_TEMP'] + '/f2r-auth.json'))['adminCookie']
+          c = m.Client(os.environ['BASE_URL'], cookie)
+          catalog = json.loads((m.REPO / m.CATALOG).read_bytes())
+          projects = c.json('projects'); project = c.json('project'); status = c.json('source-import')
+          stored = m.existing_files(c)
+          approvals = m.revision_approvals(c)
+          chars = {k: v for k, v in approvals.items() if k.startswith('character-approved-')}
+          cuts = [k for k in approvals if k.startswith('ep01-cut-')]
+          paths_ok = sum(1 for f in catalog['files'] if f['sha256'] in stored)
+          result = {
+              'projects': len(projects), 'projectIds': [p.get('id') for p in projects],
+              'initialized': project.get('initialized'), 'archived': project.get('archived'),
+              'registeredSourcePaths': status.get('registeredSourcePaths'),
+              'storedFiles': len(stored), 'catalogUnique': len({f['sha256'] for f in catalog['files']}),
+              'pathsWithStoredSha': paths_ok,
+              'approvedCharacters': len(chars),
+              'approvedCharacterShaMatch': sorted(v[2] for v in chars.values()) == sorted(catalog['approvedSha256']),
+              'approvedCuts': len(cuts), 'approvedOther': len(approvals) - len(chars) - len(cuts),
+          }
+          print(json.dumps(result, ensure_ascii=False))
+          ok = (result['projects'] == 1 and result['registeredSourcePaths'] == 536 and result['storedFiles'] == 316
+                and result['pathsWithStoredSha'] == 536 and result['approvedCharacters'] == 5
+                and result['approvedCharacterShaMatch'] and result['approvedCuts'] == 0 and result['approvedOther'] == 0)
+          print('POST_IMPORT=' + ('PASS' if ok else 'FAIL'))
+          sys.exit(0 if ok else 1)
+          PY
+
       - name: Remove credentials and extracted sources
         if: always()
-        run: rm -rf "$RUNNER_TEMP/init.json" "$RUNNER_TEMP/f2r-auth.json" "$RUNNER_TEMP/src" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/receipt.json" "$RUNNER_TEMP/jar.txt"
+        run: rm -rf "$RUNNER_TEMP/apply.json" "$RUNNER_TEMP/init.json" "$RUNNER_TEMP/f2r-auth.json" "$RUNNER_TEMP/src" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/receipt.json" "$RUNNER_TEMP/jar.txt"
