@@ -19,8 +19,9 @@ async function inspect(page) {
     overflowX: Math.max(0, document.documentElement.scrollWidth - window.innerWidth),
     headings: document.querySelectorAll('h1,h2').length,
     images: document.querySelectorAll('img').length,
-    brokenImages: [...document.querySelectorAll('img')].filter((i) => i.complete && i.naturalWidth === 0).length,
-    loginForm: !!document.querySelector('input[type=password]'),
+    // src 없는 자리표시 img(닫힌 확대 창 등)와 숨겨진 로그인 모달은 제외한다.
+    brokenImages: [...document.querySelectorAll('img[src]:not([src=""])')].filter((i) => i.complete && i.naturalWidth === 0).length,
+    loginForm: [...document.querySelectorAll('input[type=password]')].some((i) => i.getClientRects().length > 0),
   }));
 }
 
