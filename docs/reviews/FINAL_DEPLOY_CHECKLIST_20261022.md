@@ -94,3 +94,23 @@
 ## 8. 하지 않은 것 · 승인 대기
 
 IAM 역할·SSM 문서 생성, PR 병합, 배포, DB 설정 변경(백업 보존 포함), 스냅샷 생성, RDS 삭제, MCP 활성화, 운영 적재, 영상 생성 — 모두 하지 않았다.
+
+## 9. 읽기 전용 진단 실측 (2026-10-22 23:59 UTC, [run 39875278441](https://github.com/woori73/feel2real-buildit/actions/runs/39875278441))
+
+준비: #875 병합(`2916d896`) → `readonly-setup` [run 39875077560](https://github.com/woori73/feel2real-buildit/actions/runs/39875077560)으로 SSM 문서 `F2R-ReadOnlyStatus`(버전 1, Active)와 역할 `github-actions-f2r-readonly`를 만들었다(관리형 정책 0개, 인라인 `f2r-readonly-status` 1개). 배포 역할은 변경하지 않았다.
+
+| 항목 | 결과 |
+|---|---|
+| 운영 DB | 호스트 env 기준 **`db_instance_identifier=f2r-db-202610181331`** (확정) |
+| MySQL | 8.4.8 |
+| Flyway | 적용 188건, **최대 V1093, 실패 0**. V1090~1092는 10-19 04:10, V1093은 10-21 00:58. **V1094·V1095 미적용**, studio/mcp 테이블 0 |
+| 백업 | 운영 DB 보존 **2일**(나머지 7일), 최근 복원 가능 시점은 약 3분 전. 운영 DB 자동 스냅샷은 매일 18:52 UTC. 수동 스냅샷 `before-admissions-20261021`은 운영 DB에서 찍은 것 |
+| RDS 공통 | 3개 모두 db.t4g.micro, 암호화 True, MultiAZ False, **삭제 보호 False**(권고: 운영 DB에 켜기, 승인 필요) |
+| 앱 | f2r-app active/running, 재시작 0, 시작 10-22 06:24:57. health 200, ALB 대상 8080·8082 healthy |
+| jar | `app.jar` 221,747,839 B, 수정 06:24:35, SHA-256 `177f6222…9dd8`. `app.jar.previous` 221,743,820 B, `a332cfa2…2b37`. 배포 표식 `app.jar.meta` 없음 |
+| 운영 SHA | **`2bed3918`(Deploy run 39733429342, 06:24:33 업로드 → 06:24:35 jar → 06:24:57 기동과 시각 일치)**. 배포 로그에 jar 해시가 남지 않아 바이트 대조는 하지 못했다 |
+| 자원 | available 5,427MB, 디스크 26G 여유, OOM 0(7일) |
+| 플래그 | `APP_MCP_ENABLED`·`ANTHROPIC_ENABLED`·`APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES`·`BUILDIT_UNIFIED_ASSISTANT_WRITE_ENABLED` 모두 env에 없음 → 코드 기본값(OFF) |
+| 비밀값 노출 | 없음(DB 사용자·비밀번호·호스트·키 출력 없음) |
+
+발견: Describe 출력의 계정 번호 마스킹이 RDS 이름의 12자리 시각까지 가렸다 → #877로 수정(Draft, 병합은 승인 필요). 호스트 출력에는 영향이 없다.
