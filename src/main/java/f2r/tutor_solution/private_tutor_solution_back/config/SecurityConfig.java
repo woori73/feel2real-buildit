@@ -293,7 +293,11 @@ public class SecurityConfig {
             // BuildIt 통합 대시보드 — ADMIN·TUTOR 공용. 데이터는 /api/dashboard/** 에서 역할별 권한 검증.
             .requestMatchers("/dashboard", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
             // 대시보드 캐릭터 영상·이미지(비공개 폴더) — 로그인한 ADMIN·TUTOR만. 공개 정적 경로로 두지 않는다.
-            .requestMatchers("/api/dashboard/agent-media", "/dashboard/agent-media/**").hasAnyRole("ADMIN", "TUTOR")
+            // 자료 묶음 설치는 ADMIN만(같은 출처 확인은 컨트롤러). 읽기 규칙보다 위에 둔다(first-match-wins).
+            .requestMatchers(HttpMethod.POST, "/api/dashboard/agent-media/package").hasRole("ADMIN")
+            .requestMatchers("/api/dashboard/agent-media", "/api/dashboard/agent-media/**", "/dashboard/agent-media/**").hasAnyRole("ADMIN", "TUTOR")
+            // 홈페이지 공개 캐릭터 자료 — app.agent-media.public-agents에 적은 캐릭터만 응답한다(기본 없음 → 빈 목록·404).
+            .requestMatchers(HttpMethod.GET, "/api/agent-media/public", "/agent-media/public/**").permitAll()
             // AcademyCraft 도움말(SSR)·도움말 AI 비서(읽기 전용) — ADMIN·TUTOR 전용.
             .requestMatchers("/help/academycraft", "/help/academycraft/**", "/api/help/academycraft/**").hasAnyRole("ADMIN", "TUTOR")
             // Easy 회계·학생원장 SSR 화면 — ADMIN 전용. 데이터는 /api/admin/easy/** (ROLE_ADMIN).
