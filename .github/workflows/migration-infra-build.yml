@@ -26,6 +26,7 @@ on:
           - academycraft-preflight
           - readonly-setup
           - admissions-diag
+          - a1-precheck
           - acm-dns
           - p2-inventory
           - p2-s3-copy
@@ -623,6 +624,15 @@ jobs:
             aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardErrorContent --output text | tail -c 1000
           }
 
+          # A1(블루·그린) 사전 점검 — 읽기 전용(describe/get/list·SELECT·free/ps/ss). 생성·수정·재시작·포트 점유 없음.
+          # AWS: SG 인바운드(8083 외부 노출 여부), ALB 리스너·타깃 그룹 설정, RDS 3종 인벤토리·14일 연결/CPU, 배포 역할 권한 시뮬레이션.
+          # 호스트: 메모리·JVM·cgroup·포트·DB 연결·Flyway 상태(scripts/operations/a1-precheck.sh).
+          step_a1_precheck() {
+            # Capture raw AWS/SSM responses in memory; only typed allowlisted fields reach logs.
+            set +x
+            python3 scripts/operations/a1-aws-precheck.py
+          }
+
           # 읽기 전용 진단 기반(#875)을 저장소 JSON 그대로 만든다: 고정 SSM 문서 F2R-ReadOnlyStatus와
           # 별도 역할 github-actions-f2r-readonly. 배포 역할(github-actions-f2r-deploy)은 건드리지 않는다. 비밀값 없음.
           step_readonly_setup() {
@@ -672,6 +682,7 @@ jobs:
             academycraft-preflight) step_academycraft_preflight ;;
             readonly-setup) step_readonly_setup ;;
             admissions-diag) step_admissions_diag ;;
+            a1-precheck) step_a1_precheck ;;
             s3) step_s3 ;;
             provision) step_provision ;;
             restore-rds) step_restore_rds ;;
