@@ -56,6 +56,11 @@ chart:
   re-research-cron: ${CHART_RE_RESEARCH_CRON:0 15 3 * * *}
 
 app:
+  # 대시보드 캐릭터(세븐·서수니) 비공개 자료 폴더. 저장소에 얼굴 자료를 두지 않는다.
+  # public-agents: 로그인 전 홈페이지에 보여줄 캐릭터(쉼표 구분, 기본 없음 = 비공개).
+  agent-media:
+    dir: ${APP_AGENT_MEDIA_DIR:}
+    public-agents: ${APP_AGENT_MEDIA_PUBLIC_AGENTS:}
   newstart:
     discovery:
       # 공식 업데이트 자동 discovery(11:00/21:00 KST). 기본 false — 머지만으로 운영 자동실행 금지.
