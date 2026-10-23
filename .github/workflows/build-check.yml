@@ -56,6 +56,11 @@ jobs:
         # deploy-ec2.yml이 EC2 배포 스크립트에 그대로 이어 붙이는 가드를 같은 소스로 검증한다.
         run: bash scripts/deploy/f2r_app_guard.test.sh
 
+      - name: A1 blue-green gate tests
+        run: |
+          bash scripts/operations/a1-gates-lib.test.sh
+          python3 -m unittest discover -s scripts/operations -p "a1*_test.py" -v
+
       - name: Admissions diagnostic safety test (read-only guard)
         run: bash scripts/operations/admissions-diag.test.sh
 
