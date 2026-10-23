@@ -290,7 +290,10 @@ class StaticPolicyTest(unittest.TestCase):
         self.assertIn("DB=f2r-db-202610181331", run)
         self.assertIn('[ "${CONFIRM:-}" = "SNAPSHOT-$SHA8" ]', run)
         self.assertIn('SNAP="f2r-predeploy-$(date -u +%Y%m%d%H%M)-$SHA8"', run)
-        self.assertIn('[ "$PENDING" = "{}" ]', run)
+        # AWS CLI JSON 출력은 빈 객체 {}를 아무것도 출력하지 않으므로 키 개수로 대기 변경 유무를 판정한다.
+        self.assertIn("length(keys(DBInstances[0].PendingModifiedValues))", run)
+        self.assertIn('[ "$PENDING" = 0 ]', run)
+        self.assertNotIn("PendingModifiedValues' --output json", run)
         self.assertEqual(set(re.findall(r"aws rds ([a-z-]+)", run)),
                          {"describe-db-instances", "create-db-snapshot", "wait", "describe-db-snapshots"})
 

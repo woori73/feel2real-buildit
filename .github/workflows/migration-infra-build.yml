@@ -646,15 +646,15 @@ jobs:
             echo "### 변경 전"; rds_state
             STATUS=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].DBInstanceStatus' --output text)
             [ "$STATUS" = available ] || { echo "DB 상태가 available이 아님($STATUS) — 중단"; exit 1; }
-            PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].PendingModifiedValues' --output json | tr -d ' \n')
-            [ "$PENDING" = "{}" ] || { echo "대기 중 변경이 있어 중단합니다: $PENDING"; exit 1; }
+            PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'length(keys(DBInstances[0].PendingModifiedValues))' --output text)
+            [ "$PENDING" = 0 ] || { echo "대기 중 변경이 있어 중단합니다: $PENDING"; exit 1; }
             aws rds modify-db-instance --db-instance-identifier "$DB" --backup-retention-period 7 --deletion-protection --apply-immediately \
               --query 'DBInstance.{Status:DBInstanceStatus,Pending:PendingModifiedValues}' --output json
             for i in $(seq 1 60); do
               sleep 15
               STATUS=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].DBInstanceStatus' --output text)
-              PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].PendingModifiedValues' --output json | tr -d ' \n')
-              [ "$STATUS" = available ] && [ "$PENDING" = "{}" ] && break
+              PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'length(keys(DBInstances[0].PendingModifiedValues))' --output text)
+              [ "$STATUS" = available ] && [ "$PENDING" = 0 ] && break
               echo "대기 $i: status=$STATUS"
             done
             echo "### 변경 후"; rds_state
@@ -802,8 +802,8 @@ jobs:
             --query 'DBInstances[0].{Status:DBInstanceStatus,BackupDays:BackupRetentionPeriod,DeletionProtection:DeletionProtection,Pending:PendingModifiedValues}' --output json
           STATUS=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].DBInstanceStatus' --output text)
           [ "$STATUS" = available ] || { echo "DB 상태가 available이 아님($STATUS) — 중단"; exit 1; }
-          PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].PendingModifiedValues' --output json | tr -d ' \n')
-          [ "$PENDING" = "{}" ] || { echo "대기 중 변경이 있어 중단합니다: $PENDING"; exit 1; }
+          PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'length(keys(DBInstances[0].PendingModifiedValues))' --output text)
+          [ "$PENDING" = 0 ] || { echo "대기 중 변경이 있어 중단합니다: $PENDING"; exit 1; }
           SNAP="f2r-predeploy-$(date -u +%Y%m%d%H%M)-$SHA8"
           aws rds create-db-snapshot --db-instance-identifier "$DB" --db-snapshot-identifier "$SNAP" \
             --tags Key=Project,Value=f2r-migration Key=DeploySha,Value="$GITHUB_SHA" --query 'DBSnapshot.{Id:DBSnapshotIdentifier,Status:Status}' --output json
