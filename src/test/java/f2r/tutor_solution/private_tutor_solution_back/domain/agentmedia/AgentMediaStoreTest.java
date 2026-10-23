@@ -177,7 +177,7 @@ class AgentMediaStoreTest {
     // then
     assertThat((Map<?, ?>) none.publicManifest().get("agents")).isEmpty();
     assertThat(none.findPublic("suni", "poster.jpg")).isEmpty();
-    assertThat(((Map<?, ?>) suniOnly.publicManifest().get("agents")).keySet()).containsExactly("suni");
+    assertThat(List.copyOf(((Map<?, ?>) suniOnly.publicManifest().get("agents")).keySet())).isEqualTo(List.of("suni"));
     assertThat(suniOnly.findPublic("suni", "poster.jpg")).isPresent();
     assertThat(suniOnly.findPublic("seven", "poster.jpg")).isEmpty();
   }
