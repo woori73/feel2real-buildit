@@ -27,6 +27,7 @@ on:
           - readonly-setup
           - admissions-diag
           - a1-precheck
+          - rds-protect
           - acm-dns
           - p2-inventory
           - p2-s3-copy
@@ -120,6 +121,7 @@ jobs:
           DB_SNAPSHOT: ${{ inputs.db_snapshot }}
           DIAG_START: ${{ inputs.diag_start }}
           DIAG_END: ${{ inputs.diag_end }}
+          CONFIRM: ${{ inputs.confirm }}
         run: |
           set -euo pipefail
           P=f2r-migration
@@ -627,6 +629,37 @@ jobs:
           # A1(블루·그린) 사전 점검 — 읽기 전용(describe/get/list·SELECT·free/ps/ss). 생성·수정·재시작·포트 점유 없음.
           # AWS: SG 인바운드(8083 외부 노출 여부), ALB 리스너·타깃 그룹 설정, RDS 3종 인벤토리·14일 연결/CPU, 배포 역할 권한 시뮬레이션.
           # 호스트: 메모리·JVM·cgroup·포트·DB 연결·Flyway 상태(scripts/operations/a1-precheck.sh).
+          # 운영 DB 보호(사용자 승인 2026-10-23): 자동 백업 보존 2→7일 + 삭제 보호 켜기. 대상은 운영 DB 하나로 고정.
+          # 확인 문자열(confirm=PROTECT-f2r-db-202610181331) 필수. 대기 중 변경(PendingModifiedValues)이 있으면
+          # --apply-immediately가 그것까지 적용하므로 중단한다. 보존 기간 0이 아닌 값 간 변경·삭제 보호는 재시작이 없다.
+          step_rds_protect() {
+            local ACCOUNT DB=f2r-db-202610181331 STATUS PENDING i
+            ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+            [ "$ACCOUNT" = "425805163960" ] || { echo wrong-account; exit 1; }
+            [ "${CONFIRM:-}" = "PROTECT-$DB" ] || { echo "confirm 값이 PROTECT-$DB 와 다릅니다 — 변경하지 않음"; exit 1; }
+            rds_state() {
+              aws rds describe-db-instances --db-instance-identifier "$DB" \
+                --query 'DBInstances[0].{Status:DBInstanceStatus,BackupDays:BackupRetentionPeriod,DeletionProtection:DeletionProtection,Pending:PendingModifiedValues,LatestRestorable:LatestRestorableTime}' --output json
+            }
+            echo "### 변경 전"; rds_state
+            STATUS=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].DBInstanceStatus' --output text)
+            [ "$STATUS" = available ] || { echo "DB 상태가 available이 아님($STATUS) — 중단"; exit 1; }
+            PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].PendingModifiedValues' --output json | tr -d ' \n')
+            [ "$PENDING" = "{}" ] || { echo "대기 중 변경이 있어 중단합니다: $PENDING"; exit 1; }
+            aws rds modify-db-instance --db-instance-identifier "$DB" --backup-retention-period 7 --deletion-protection --apply-immediately \
+              --query 'DBInstance.{Status:DBInstanceStatus,Pending:PendingModifiedValues}' --output json
+            for i in $(seq 1 60); do
+              sleep 15
+              STATUS=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].DBInstanceStatus' --output text)
+              PENDING=$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].PendingModifiedValues' --output json | tr -d ' \n')
+              [ "$STATUS" = available ] && [ "$PENDING" = "{}" ] && break
+              echo "대기 $i: status=$STATUS"
+            done
+            echo "### 변경 후"; rds_state
+            [ "$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].BackupRetentionPeriod' --output text)" = 7 ] || { echo "보존 기간 7 미반영"; exit 1; }
+            [ "$(aws rds describe-db-instances --db-instance-identifier "$DB" --query 'DBInstances[0].DeletionProtection' --output text)" = True ] || { echo "삭제 보호 미반영"; exit 1; }
+          }
+
           step_a1_precheck() {
             # Capture raw AWS/SSM responses in memory; only typed allowlisted fields reach logs.
             set +x
@@ -683,6 +716,7 @@ jobs:
             readonly-setup) step_readonly_setup ;;
             admissions-diag) step_admissions_diag ;;
             a1-precheck) step_a1_precheck ;;
+            rds-protect) step_rds_protect ;;
             s3) step_s3 ;;
             provision) step_provision ;;
             restore-rds) step_restore_rds ;;
