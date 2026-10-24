@@ -110,27 +110,21 @@ public class McpOAuth {
 
   public Map<String, Object> metadata() {
     enabled();
-    return Map.of(
-        "issuer",
-        base(),
-        "authorization_endpoint",
-        base() + "/mcp/oauth/authorize",
-        "token_endpoint",
-        base() + "/mcp/oauth/token",
-        "registration_endpoint",
-        base() + "/mcp/oauth/register",
-        "revocation_endpoint",
-        base() + "/mcp/oauth/revoke",
-        "response_types_supported",
-        List.of("code"),
-        "grant_types_supported",
-        List.of("authorization_code", "refresh_token"),
-        "code_challenge_methods_supported",
-        List.of("S256"),
-        "token_endpoint_auth_methods_supported",
-        List.of("none"),
-        "scopes_supported",
-        scopes());
+    var out = new LinkedHashMap<String, Object>();
+    out.put("issuer", base());
+    out.put("authorization_endpoint", base() + "/mcp/oauth/authorize");
+    out.put("token_endpoint", base() + "/mcp/oauth/token");
+    out.put("registration_endpoint", base() + "/mcp/oauth/register");
+    out.put("revocation_endpoint", base() + "/mcp/oauth/revoke");
+    out.put("response_types_supported", List.of("code"));
+    out.put("grant_types_supported", List.of("authorization_code", "refresh_token"));
+    out.put("code_challenge_methods_supported", List.of("S256"));
+    out.put("token_endpoint_auth_methods_supported", List.of("none"));
+    out.put("scopes_supported", scopes());
+    // RFC 9207: 모든 인가 응답(성공·거절)에 iss를 붙인다. ChatGPT는 이 값이 true일 때 고정 callback
+    // (https://chatgpt.com/connector_platform_oauth_redirect)을 쓰고, 아니면 연결마다 다른 callback ID를 쓴다.
+    out.put("authorization_response_iss_parameter_supported", true);
+    return out;
   }
 
   public List<String> scopes() {
@@ -318,7 +312,31 @@ public class McpOAuth {
         + "?code="
         + encode(code)
         + "&state="
-        + encode(q.get("state").asText());
+        + encode(q.get("state").asText())
+        + "&iss="
+        + encode(base());
+  }
+
+  /** 사용자가 동의 화면에서 거절: 대기 요청을 지우고 RFC 6749 access_denied + RFC 9207 iss로 돌려보낸다. */
+  @Transactional
+  public String deny(AuthenticatedPrincipal p, String nonce) {
+    enabled();
+    if (p == null) throw error(401, "login_required");
+    var rows =
+        db.queryForList(
+            "SELECT * FROM mcp_pending WHERE hash=? AND user_id=? AND expires_at>? FOR UPDATE",
+            hash(nonce),
+            p.userId(),
+            Timestamp.from(Instant.now()));
+    if (rows.isEmpty()) throw error(400, "consent_expired");
+    var q = json.readTree((String) rows.getFirst().get("request_json"));
+    db.update("DELETE FROM mcp_pending WHERE hash=?", hash(nonce));
+    audit(new Identity(null, p, Set.of()), "oauth_consent", null, "USER_DENIED", 0);
+    return q.get("redirect_uri").asText()
+        + "?error=access_denied&state="
+        + encode(q.get("state").asText())
+        + "&iss="
+        + encode(base());
   }
 
   @Transactional(noRollbackFor = ResponseStatusException.class)

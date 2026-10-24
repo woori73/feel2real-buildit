@@ -148,8 +148,7 @@ public class McpController {
       value = "/mcp",
       method = {RequestMethod.GET, RequestMethod.DELETE, RequestMethod.PUT, RequestMethod.PATCH})
   public ResponseEntity<?> unsupported() {
-    return ResponseEntity.status(405)
-        .header("Allow", "POST, OPTIONS")
-        .body(Map.of("error", "stateless_streamable_http_post_only"));
+    // 본문 없이 돌려준다. SSE Accept(text/event-stream) 요청에 JSON 본문을 쓰면 406이 되어 클라이언트가 오판한다.
+    return ResponseEntity.status(405).header("Allow", "POST, OPTIONS").build();
   }
 }

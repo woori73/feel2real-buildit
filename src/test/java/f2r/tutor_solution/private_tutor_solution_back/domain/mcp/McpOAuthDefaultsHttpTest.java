@@ -179,7 +179,75 @@ class McpOAuthDefaultsHttpTest {
     assertEquals(303, allowed.statusCode());
     String location = allowed.headers().firstValue("location").orElseThrow();
     assertTrue(location.startsWith(CHATGPT + "?code="));
-    assertTrue(location.endsWith("&state=st-1"));
+    assertTrue(location.endsWith("&state=st-1&iss=" + McpOAuth.encode(base)));
+  }
+
+  @Test
+  void givenChatGptClient_whenDiscoveringAndConsenting_thenIssuerIdentificationAndCallbackCspHold()
+      throws Exception {
+    // given: ChatGPT는 RFC 9207 지원 여부로 고정/연결별 callback을 고른다.
+    var metadata =
+        json.readTree(
+            http.send(
+                    HttpRequest.newBuilder(
+                            URI.create(base + "/.well-known/oauth-authorization-server"))
+                        .GET()
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString())
+                .body());
+    assertTrue(metadata.get("authorization_response_iss_parameter_supported").asBoolean());
+    assertEquals(base, metadata.get("issuer").asText());
+    String client = clientFor(CHATGPT);
+    String admin = cookie("oauth-defaults-admin", Role.ADMIN);
+    // when: 동의 화면
+    var page = authorizePage(query(client, CHATGPT), admin);
+    // then: 동의 POST의 303이 callback으로 갈 수 있게 그 origin만 form-action에 포함
+    String csp = page.headers().firstValue("Content-Security-Policy").orElse("");
+    assertTrue(csp.contains("form-action 'self' https://chatgpt.com"), csp);
+    assertFalse(csp.contains("*"), csp);
+    // when: 사용자가 거절
+    var denied =
+        http.send(
+            HttpRequest.newBuilder(URI.create(base + "/mcp/oauth/authorize"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Cookie", admin)
+                .header("Origin", base)
+                .POST(
+                    HttpRequest.BodyPublishers.ofString(
+                        "nonce=" + McpOAuth.encode(nonce(page)) + "&deny=true"))
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
+    // then: access_denied + state + iss로 돌려보내고 grant는 만들지 않는다
+    assertEquals(303, denied.statusCode());
+    assertEquals(
+        CHATGPT + "?error=access_denied&state=st-1&iss=" + McpOAuth.encode(base),
+        denied.headers().firstValue("location").orElseThrow());
+    // 같은 nonce 재사용 불가
+    var replay =
+        http.send(
+            HttpRequest.newBuilder(URI.create(base + "/mcp/oauth/authorize"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Cookie", admin)
+                .header("Origin", base)
+                .POST(
+                    HttpRequest.BodyPublishers.ofString(
+                        "nonce=" + McpOAuth.encode(nonce(page)) + "&scopes=studio%3Aread"))
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
+    assertEquals(400, replay.statusCode());
+  }
+
+  @Test
+  void givenSseProbe_whenGettingMcp_thenMethodNotAllowedNotNotAcceptable() throws Exception {
+    var r =
+        http.send(
+            HttpRequest.newBuilder(URI.create(base + "/mcp"))
+                .header("Accept", "text/event-stream")
+                .GET()
+                .build(),
+            HttpResponse.BodyHandlers.ofString());
+    assertEquals(405, r.statusCode());
+    assertEquals("POST, OPTIONS", r.headers().firstValue("Allow").orElse(""));
   }
 
   @Test
