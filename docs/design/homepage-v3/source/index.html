@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko" class="no-js">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BuildIt — 학원 홈페이지, 말로 만들고 말로 고칩니다</title>
+<meta name="description" content="AI 홈페이지 제작, Chart, Easy AI 장부까지. 무엇을 하는 서비스인지, 어떻게 쓰는지 한눈에. (디자인 시안 v3)">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="home.css">
+</head>
+<body>
+<header class="hdr"><div class="wrap">
+  <a class="logo" href="/" aria-label="BuildIt 홈">Build<b>It</b></a>
+  <nav class="nav" aria-label="주요 메뉴"><a href="#journey">제작 과정</a><a href="#services">서비스</a><a href="#chart">Chart</a><a href="#tools">콘텐츠 도구</a><a href="#faq">자주 묻는 질문</a></nav>
+  <div class="hdr-cta"><a class="btn btn-ghost btn-sm" href="/login">로그인</a><a class="btn btn-dark btn-sm" href="/register">시작하기</a></div>
+</div></header>
+
+<main>
+<div class="hero"><div class="wrap">
+  <div>
+    <span class="eyebrow">AI 홈페이지 제작 서비스</span>
+    <h1>말로 만들고,<br>말로 고치는<br><em>학원 홈페이지</em></h1>
+    <p class="lead">원하는 분위기를 한 줄로 말하면 AI가 섹션을 하나씩 만듭니다. 마음에 안 드는 부분은 Agent에게 말로 고치고, 확인한 뒤에만 게시합니다.</p>
+    <form class="ask" action="/builder/entry" method="get" role="search">
+      <label class="sr" for="ask">만들고 싶은 홈페이지</label>
+      <input id="ask" name="q" autocomplete="off" placeholder="예) 영어학원 홈페이지">
+      <button class="btn btn-primary" type="submit">만들기</button>
+    </form>
+    <div class="chips"><button class="chip" type="button">초등·중등 영어학원, 밝고 세련되게</button><button class="chip" type="button">입시·내신 전문 학원, 신뢰감 있게</button><button class="chip" type="button">영어회화 학원, 활기차게</button></div>
+    <div class="assure"><span>미리보기 먼저</span><span>대화로 수정</span><span>승인 후 게시</span></div>
+  </div>
+  <div class="win" role="img" aria-label="AI 홈페이지 제작 화면 예시: 왼쪽 대화, 오른쪽 실시간 미리보기">
+    <div class="win-bar"><i></i><i></i><i></i><span>buildit.app/builder · 내 학원 홈페이지</span></div>
+    <div class="split">
+      <div class="chat" aria-hidden="true">
+        <div class="msg u t">초등·중등 영어학원, 밝고 세련되게 만들어줘</div>
+        <div class="msg a t">소개와 상담 신청 중심으로 만들게요.<div class="pills"><b class="on">히어로</b><b class="on">커리큘럼</b><b>강사진</b><b>상담</b></div></div>
+        <div class="msg u t">커리큘럼 카드는 3개로 줄여줘</div>
+        <div class="msg a t">반영했어요. 오른쪽에서 확인해 주세요.</div>
+      </div>
+      <div class="site" aria-hidden="true">
+        <span class="tag">실시간 미리보기 · 예시</span>
+        <div class="s-nav"><span>우리영어학원</span><span><s></s><s></s><s></s></span></div>
+        <div class="s-hero"><div><h4>아이의 영어가<br>자라는 곳</h4><p>레벨별 소수정예 수업</p><u>상담 신청</u></div><div class="s-img"></div></div>
+        <div class="s-grid"><div>초급<small>파닉스·기초회화</small></div><div>중급<small>독해·문법</small></div><div>심화<small>내신·토론</small></div></div>
+      </div>
+    </div>
+    <div class="pub" aria-hidden="true"><span>초안 · 수정 2회</span><b>확인 후 게시</b></div>
+  </div>
+</div></div>
+
+<section id="journey" style="padding-top:var(--s5)"><div class="wrap">
+  <div class="sec-h rv"><span class="eyebrow">이렇게 진행됩니다</span><h2>의뢰는 한 번,<br>수정은 대화로</h2><p>기존 홈페이지를 베끼지 않고, 학원 정보로 섹션을 새로 쌓습니다. 모든 단계에서 직접 확인합니다.</p></div>
+  <div class="journey">
+    <div class="j rv"><span class="n">1</span><h3>의뢰</h3><p>학원 이름·과목·분위기를 한 문장으로 말합니다.</p><small>약 1분</small></div>
+    <div class="j rv"><span class="n">2</span><h3>초안 확인</h3><p>섹션이 순서대로 만들어지고 바로 미리보기에 나타납니다.</p><small>내용 직접 확인</small></div>
+    <div class="j rv"><span class="n">3</span><h3>Agent로 수정</h3><p>"사진 크게", "문구 부드럽게"처럼 말하면 해당 부분만 고칩니다.</p><small>횟수 제한 없이 반복</small></div>
+    <div class="j rv"><span class="n">4</span><h3>승인 후 게시</h3><p>마음에 들 때 게시하면 공개 주소로 열립니다.</p><small>게시는 직접 승인</small></div>
+  </div>
+</div></section>
+
+<section id="services" style="padding-top:0"><div class="wrap">
+  <div class="sec-h rv"><span class="eyebrow">서비스 안내</span><h2>무엇을 하는지,<br>어떻게 쓰는지</h2><p>서비스를 골라 보세요. 목적과 사용 순서, 실제 화면 예시를 보여드립니다. 아직 열리지 않은 서비스는 그렇게 표시합니다.</p></div>
+  <div class="explore rv">
+    <div class="svc-tabs" role="tablist" aria-label="서비스 선택">
+      <button class="svc" role="tab" id="tb-web" aria-selected="true" aria-controls="pn-web"><span class="dot"></span>AI 홈페이지 제작</button>
+      <button class="svc" role="tab" id="tb-chart" aria-selected="false" aria-controls="pn-chart"><span class="dot"></span>Chart</button>
+      <button class="svc" role="tab" id="tb-easy" aria-selected="false" aria-controls="pn-easy"><span class="dot beta"></span>Easy AI 장부</button>
+      <button class="svc" role="tab" id="tb-dc" aria-selected="false" aria-controls="pn-dc"><span class="dot soon"></span>DesignCraft</button>
+      <button class="svc" role="tab" id="tb-adm" aria-selected="false" aria-controls="pn-adm"><span class="dot soon"></span>입시상담 AI</button>
+    </div>
+
+    <div class="pane on" id="pn-web" role="tabpanel" aria-labelledby="tb-web">
+      <div><span class="badge b-live">운영 중</span><h3>AI 홈페이지 제작</h3>
+        <p class="purpose">학원 홈페이지를 직접 디자인하지 않아도, 말로 의뢰하고 말로 고칩니다.</p>
+        <ol class="how"><li><span><b>의뢰하기</b> — 학원 이름, 과목, 원하는 분위기를 입력</span></li><li><span><b>초안 확인</b> — 섹션별로 만들어지는 미리보기를 확인</span></li><li><span><b>Agent로 수정</b> — 고치고 싶은 부분을 말로 요청한 뒤 게시</span></li></ol>
+        <p class="who"><b>이런 분께</b> 학원 원장·실장 · 학원 계정 로그인이 필요합니다.</p>
+        <div class="pane-cta"><a class="btn btn-primary" href="/builder/entry">제작 시작하기</a><small>게시 전에는 공개되지 않습니다</small></div></div>
+      <div class="shot" aria-hidden="true"><div class="bar"><i></i><i></i><i></i></div>
+        <div class="tbl"><div class="tr"><span class="rk">1</span><span>히어로<small>제목·상담 버튼</small></span><span class="ev">완료</span></div><div class="tr"><span class="rk">2</span><span>커리큘럼<small>레벨별 카드 3개</small></span><span class="ev">완료</span></div><div class="tr"><span class="rk">3</span><span>강사진<small>사진·약력</small></span><span class="ev" style="background:var(--amber-50);color:#7a4f00">수정 중</span></div><div class="tr"><span class="rk">4</span><span>상담 신청<small>폼·연락처</small></span><span class="ev" style="background:var(--surface-2);color:var(--ink-3)">대기</span></div></div></div>
+    </div>
+
+    <div class="pane" id="pn-chart" role="tabpanel" aria-labelledby="tb-chart">
+      <div><span class="badge b-live">운영 중</span><h3>Chart</h3>
+        <p class="purpose">공개된 근거를 바탕으로 교육자를 비교하고 발견하는 독립 서비스입니다.</p>
+        <ol class="how"><li><span><b>둘러보기</b> — 로그인 없이 교육자 목록을 확인</span></li><li><span><b>근거 보기</b> — 점수가 어떤 자료에서 나왔는지 확인</span></li><li><span><b>비교하기</b> — 관심 있는 교육자의 상세 페이지로 이동</span></li></ol>
+        <p class="who"><b>이런 분께</b> 학부모·학생 누구나 · 로그인 불필요</p>
+        <div class="pane-cta"><a class="btn btn-primary" href="/chart">Chart 열기</a><small>BuildIt 사용 여부는 점수에 영향을 주지 않습니다</small></div></div>
+      <div class="shot" aria-hidden="true"><div class="bar"><i></i><i></i><i></i></div>
+        <div class="tbl"><div class="tr"><span class="rk">1</span><span>교육자 A<small>근거 자료 4건</small><div class="mini-bar"><i style="--w:92%"></i></div></span><span class="ev">근거 확인</span></div><div class="tr"><span class="rk">2</span><span>교육자 B<small>근거 자료 3건</small><div class="mini-bar"><i style="--w:78%"></i></div></span><span class="ev">근거 확인</span></div><div class="tr"><span class="rk">3</span><span>교육자 C<small>근거 자료 2건</small><div class="mini-bar"><i style="--w:63%"></i></div></span><span class="ev">근거 확인</span></div></div>
+        <p style="font-size:11px;color:var(--on-night-2);margin:10px 2px 0">화면 예시입니다. 실제 수치가 아닙니다.</p></div>
+    </div>
+
+    <div class="pane" id="pn-easy" role="tabpanel" aria-labelledby="tb-easy">
+      <div><span class="badge b-beta">베타 · 운영자 승인제</span><h3>Easy AI 장부</h3>
+        <p class="purpose">수납·지출 내역을 자동으로 모으고, 사람이 확인한 것만 장부에 올립니다.</p>
+        <ol class="how"><li><span><b>모으기</b> — 카드·계좌 거래 내역을 불러오기</span></li><li><span><b>검토하기</b> — AI가 분류한 항목을 승인하거나 반려</span></li><li><span><b>마감하기</b> — 월별 수입·지출·미수금을 확인</span></li></ol>
+        <p class="who"><b>이런 분께</b> 학원 운영자 · 현재는 신청 후 승인된 계정만 사용할 수 있습니다.</p>
+        <div class="pane-cta"><a class="btn btn-ghost" href="/login">로그인하고 확인</a><small>일반 개방 전까지 도입 문의로 안내합니다</small></div></div>
+      <div class="shot light" aria-hidden="true"><div class="bar"><i></i><i></i><i></i></div>
+        <div class="kpis"><div class="kpi">이번 달 수입<b>예시</b></div><div class="kpi">지출<b>예시</b></div><div class="kpi">미수금<b>예시</b></div></div>
+        <div class="rev"><div class="rv-row"><span>수납 · 3월 수강료<small>AI 분류 · 신뢰도 높음</small></span><span class="ok">승인</span><span class="no">반려</span></div><div class="rv-row"><span>지출 · 교재 구입<small>AI 분류 · 확인 필요</small></span><span class="ok">승인</span><span class="no">반려</span></div><div class="rv-row"><span>미분류 거래<small>직접 분류</small></span><span class="ok">분류</span><span class="no">보류</span></div></div></div>
+    </div>
+
+    <div class="pane" id="pn-dc" role="tabpanel" aria-labelledby="tb-dc">
+      <div><span class="badge b-soon">준비 중</span><h3>DesignCraft</h3>
+        <p class="purpose">작성한 문서를 전문 디자인의 PDF·웹 문서로 바꿔 주는 서비스를 준비하고 있습니다.</p>
+        <p class="who"><b>현재 상태</b> 사용자 화면이 아직 없어 이용할 수 없습니다. 준비되면 이곳에 안내합니다.</p>
+        <div class="pane-cta"><span class="btn" aria-disabled="true" role="link">곧 공개됩니다</span></div></div>
+      <div class="shot light"><div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>화면 준비 중</div></div>
+    </div>
+
+    <div class="pane" id="pn-adm" role="tabpanel" aria-labelledby="tb-adm">
+      <div><span class="badge b-soon">검증 중 · 비공개</span><h3>입시상담 AI</h3>
+        <p class="purpose">공식 자료로 근거를 확인하며 답하는 입시 상담 도우미입니다.</p>
+        <p class="who"><b>현재 상태</b> 답변 정확도 검증이 끝나지 않아 상담 기능을 공개하지 않습니다. 검증이 끝난 뒤에만 공개합니다.</p>
+        <div class="pane-cta"><span class="btn" aria-disabled="true" role="link">검증 완료 후 공개</span></div></div>
+      <div class="shot light"><div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>검증 완료 전 비공개</div></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="chart" style="padding-top:0"><div class="wrap">
+  <div class="band rv">
+    <div style="position:relative"><span class="eyebrow">독립 서비스 · Chart</span><h2>교육자는<br>근거로 발견합니다</h2>
+      <p>홈페이지를 만들지 않아도 누구나 쓸 수 있습니다. 순위가 아니라 근거를 먼저 보여 줍니다.</p>
+      <ul class="principles"><li>점수마다 근거 자료를 함께 표시</li><li>AI 해석과 근거 자료를 구분해서 표시</li><li>BuildIt 사용 여부는 점수에 영향 없음</li></ul>
+      <a class="btn btn-primary" href="/chart">Chart 열기</a></div>
+    <div class="band-r win" style="box-shadow:none" role="img" aria-label="Chart 상세 화면 예시">
+      <div class="win-bar"><i></i><i></i><i></i><span>buildit.app/chart · 화면 예시</span></div>
+      <div style="padding:18px;display:grid;gap:12px"><div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>교육자 A</span><span class="badge b-soon" style="background:#0c1236;color:var(--on-night-2)">예시</span></div>
+        <div class="tr two"><span>수업 자료 공개<small>공식 자료 2건</small></span><span class="ev">근거</span></div><div class="tr two"><span>학생 후기<small>출처 표시 · 1건</small></span><span class="ev">근거</span></div><div class="tr two"><span>AI 요약<small>해석입니다 · 근거와 구분</small></span><span class="ev" style="background:var(--amber-50);color:#7a4f00">해석</span></div></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="tools" style="padding-top:0"><div class="wrap">
+  <div class="sec-h rv"><span class="eyebrow">Wiki · Report · Shorts</span><h2>알리고 이해시키는<br>콘텐츠 도구</h2><p>같은 자료에서 문서와 리포트, 짧은 영상으로 이어집니다.</p></div>
+  <div class="tools">
+    <a class="tool rv" href="/wiki"><div class="art"><i class="h"></i><i></i><i style="--w:84%"></i><i style="--w:60%"></i></div><h3>내신 Wiki</h3><p>학교별 출제 경향과 자료를 출처와 함께 정리한 문서입니다.</p><span class="go">Wiki 열기 →</span></a>
+    <a class="tool rv" href="/report-demo"><div class="art"><i class="h"></i><i style="--w:40%"></i><i></i><i style="--w:76%"></i></div><h3>Report</h3><p>학습 결과를 보호자가 읽기 쉬운 요약 리포트로 보여 줍니다.</p><span class="go">예시 보기 →</span></a>
+    <a class="tool rv" href="/shorts-demo"><div class="art vid"><span aria-hidden="true">▶</span></div><h3>Shorts</h3><p>핵심만 짧게 설명하는 영상으로 학습 내용을 복습합니다.</p><span class="go">예시 보기 →</span></a>
+  </div>
+</div></section>
+
+<section id="faq" style="padding-top:0"><div class="wrap">
+  <div class="sec-h rv"><span class="eyebrow">자주 묻는 질문</span><h2>시작하기 전에</h2></div>
+  <div class="faq rv">
+    <details open><summary>회원가입 없이도 쓸 수 있나요?</summary><p>Chart와 Wiki는 로그인 없이 둘러볼 수 있습니다. 홈페이지 제작은 학원 계정 로그인이 필요합니다.</p></details>
+    <details><summary>만든 홈페이지가 바로 공개되나요?</summary><p>아니요. 미리보기에서 직접 확인하고 게시를 승인한 뒤에만 공개됩니다.</p></details>
+    <details><summary>Easy AI 장부와 DesignCraft, 입시상담 AI는 지금 쓸 수 있나요?</summary><p>Easy AI 장부는 신청 후 승인된 운영자 계정에서 베타로 쓸 수 있습니다. DesignCraft는 준비 중이며, 입시상담 AI는 검증이 끝나기 전까지 공개하지 않습니다.</p></details>
+    <details><summary>Chart 점수에 BuildIt 사용이 영향을 주나요?</summary><p>영향을 주지 않습니다. Chart는 공개 근거만으로 독립적으로 운영됩니다.</p></details>
+  </div>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap">
+  <div class="cta rv"><h2>우리 학원 홈페이지,<br>말 한 줄로 시작하세요</h2><p>미리보기를 보고 마음에 들 때만 게시합니다.</p><a class="btn btn-primary" href="/builder/entry">홈페이지 만들기</a></div>
+</div></section>
+</main>
+<footer><div class="wrap"><span><b class="logo" style="font-size:18px">Build<b>It</b></b> · 디자인 시안 v3 (실제 서비스 아님)</span><nav aria-label="바닥글"><a href="/chart">Chart</a><a href="/wiki">Wiki</a><a href="/builder">빌더</a></nav></div></footer>
+<script src="home.js"></script>
+</body></html>
