@@ -73,7 +73,7 @@ class McpRedactionTest {
     assertEquals("************1111", McpRedaction.text("4111111111111111"));
     assertEquals("****-****-****-1111", McpRedaction.text("4111-1111-1111-1111"));
     var json = new tools.jackson.databind.ObjectMapper();
-    var gateway = new McpGateway(null, null, null, null, json, null);
+    var gateway = new McpGateway(null, null, null, null, json, null, null);
     var source =
         json.readTree(
             "{\"accountNumber\":12345678901,\"cardNumber\":4111111111111111,\"amount\":1234567890,\"accountId\":12345,\"notes\":[\"+821012345678\"]}");
@@ -101,7 +101,7 @@ class McpRedactionTest {
   void givenGitCommitWithLongDigits_whenMemoryIsRedacted_thenExactCommitRestoresAndPiiStillMasks() {
     String sha = "6148b8d9c90054485194057e14feff76c37f55b3";
     var json = new tools.jackson.databind.ObjectMapper();
-    var gateway = new McpGateway(null, null, null, null, json, null);
+    var gateway = new McpGateway(null, null, null, null, json, null, null);
     var input = json.createObjectNode();
     input.putObject("memory").put("commitSha", sha);
     input.put("accountNumber", sha);

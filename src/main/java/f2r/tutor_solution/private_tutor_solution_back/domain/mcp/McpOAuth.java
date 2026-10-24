@@ -55,6 +55,9 @@ public class McpOAuth {
                   "wemade:read",
                   "choonggi:read")));
 
+  /** 제작소 검수 보고서·수정 작업·새 버전 등록만 허용. 승인·삭제·복원·배포는 어떤 scope로도 불가. */
+  public static final String STUDIO_PROPOSE = "studio:propose";
+
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
 
   public void enabled() {
@@ -122,6 +125,7 @@ public class McpOAuth {
     var all = new ArrayList<>(SCOPES);
     all.add("offline_access");
     all.add("originals:read");
+    all.add(STUDIO_PROPOSE);
     return all;
   }
 
@@ -230,6 +234,7 @@ public class McpOAuth {
     if (p == null) throw error(401, "login_required");
     boolean sensitive =
         selected.contains("originals:read")
+            || selected.contains(STUDIO_PROPOSE)
             || "ADMIN".equals(p.role())
                 && selected.stream()
                     .anyMatch(
@@ -435,6 +440,18 @@ public class McpOAuth {
         endpoint,
         outcome,
         ms);
+  }
+
+  /** 등록 client 이름(예: ChatGPT). 클라이언트가 스스로 신고한 값이며 모델 추론의 증명은 아니다. */
+  public String clientName(String grantId) {
+    return db
+        .query(
+            "SELECT c.name FROM mcp_grants g JOIN mcp_clients c ON c.id=g.client_id WHERE g.id=?",
+            (rs, n) -> rs.getString(1),
+            grantId)
+        .stream()
+        .findFirst()
+        .orElse("MCP client");
   }
 
   public List<Map<String, Object>> history(Identity i) {

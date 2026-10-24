@@ -21,6 +21,7 @@ public class StudioController {
   private final StudioCollaborationService collaboration;
   private final StudioProjectService projects;
   private final StudioAccessGuard accessGuard;
+  private final StudioAiService ai;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -475,6 +476,105 @@ public class StudioController {
       @RequestParam(defaultValue = "100") int limit,
       @RequestParam(defaultValue = "0") int offset) {
     return collaboration.pending(p, limit, offset);
+  }
+
+  @GetMapping("/api/studio/assets")
+  @ResponseBody
+  public Object assets(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(required = false) Integer episode,
+      @RequestParam(required = false) String kind,
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) String workId,
+      @RequestParam(defaultValue = "50") int limit,
+      @RequestParam(defaultValue = "0") int offset) {
+    return ai.listAssets(p, episode, kind, q, workId, limit, offset);
+  }
+
+  @GetMapping("/api/studio/assets/{workId}/versions")
+  @ResponseBody
+  public Object assetVersions(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String workId) {
+    return ai.versions(p, workId);
+  }
+
+  @GetMapping("/api/studio/reviews")
+  @ResponseBody
+  public Object reviews(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(required = false) String workId,
+      @RequestParam(required = false) String revisionId) {
+    return ai.reviews(p, workId, revisionId);
+  }
+
+  public record ReviewReport(
+      String revisionId,
+      String verdict,
+      String summary,
+      List<StudioAiService.Issue> issues,
+      String idempotencyKey) {}
+
+  @PostMapping("/api/studio/reviews")
+  @ResponseBody
+  public Object submitReview(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody ReviewReport r) {
+    return ai.submitReview(
+        p,
+        StudioAiService.Connector.HUMAN,
+        r.revisionId(),
+        r.verdict(),
+        r.summary(),
+        r.issues(),
+        r.idempotencyKey());
+  }
+
+  @GetMapping("/api/studio/tasks")
+  @ResponseBody
+  public Object tasks(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String assignee,
+      @RequestParam(required = false) String workId,
+      @RequestParam(defaultValue = "50") int limit,
+      @RequestParam(defaultValue = "0") int offset) {
+    return ai.tasks(p, status, assignee, workId, limit, offset);
+  }
+
+  public record NewTask(
+      String workId,
+      String revisionId,
+      String reviewId,
+      String title,
+      String instructions,
+      String assignee,
+      String idempotencyKey) {}
+
+  @PostMapping("/api/studio/tasks")
+  @ResponseBody
+  public Object createTask(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody NewTask r) {
+    return ai.createTask(
+        p,
+        StudioAiService.Connector.HUMAN,
+        r.workId(),
+        r.revisionId(),
+        r.reviewId(),
+        r.title(),
+        r.instructions(),
+        r.assignee(),
+        r.idempotencyKey());
+  }
+
+  public record TaskStatus(String status, String resultRevisionId, String note) {}
+
+  @PostMapping("/api/studio/tasks/{id}/status")
+  @ResponseBody
+  public Object taskStatus(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestBody TaskStatus r) {
+    return ai.updateTask(
+        p, StudioAiService.Connector.HUMAN, id, r.status(), r.resultRevisionId(), r.note());
   }
 
   @GetMapping("/api/studio/events")

@@ -4903,6 +4903,14 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | `/api/studio/files/{id}/text` | GET | 20 MiB 이하 PDF/텍스트·ZIP 목록 열람, ZIP 해제·스크립트 실행 없음 |
 | `/api/studio/events` | GET | 작업·검수·승인 이력 |
 | `/api/studio/members` | GET / POST | ADMIN 전용 명시적 제작 담당자 권한·폐기 |
+| `/api/studio/assets` | GET | 작업 ID별 최신 버전 목록: workId·revisionId·version·file{url,sha256,format,sizeBytes}·reviewStatus(APPROVED / HUMAN_* / REVIEWED_* / UNREVIEWED). episode·kind·workId·q·limit(1~100) |
+| `/api/studio/assets/{workId}/versions` | GET | 전체 버전·검수 보고서·수정 작업·사람 결정 |
+| `/api/studio/reviews` | GET / POST | 검수 보고서 조회 / EDITOR+ 등록 `{revisionId,verdict(PASS·NEEDS_CHANGES·COMMENT),summary,issues[{severity,description,timecode?,cutNumber?,segment?,suggestion?}],idempotencyKey?}`. 승인 포인터 불변 |
+| `/api/studio/tasks` | GET / POST | 수정 작업 조회 / 생성 `{workId,revisionId?,reviewId?,title,instructions,assignee(CLAUDE·CHATGPT·HUMAN),idempotencyKey?}` |
+| `/api/studio/tasks/{id}/status` | POST | `{status(IN_PROGRESS·DONE·CANCELLED),resultRevisionId?,note?}`. 종료 작업 재변경 409, `TASK_STATUS` 이력 |
+| `/mcp/studio/files` | POST | MCP OAuth Bearer(`studio:read`+`studio:propose`) multipart 업로드(≤100 MiB). 쿠키 인증 불가. 필드 workId·versionLabel·changeNote·file, 선택 projectId·expectedHeadRevisionId·title·kind·episode·cutNumber·taskId. 서버 SHA·형식 검증 후 AI_PROPOSAL 새 버전 |
+
+AI 협업 MCP 도구(기존 `/mcp`): `list_studio_assets`·`read_studio_asset`·`get_asset_versions`·`list_studio_tasks`(studio:read), `submit_studio_review`·`create_studio_task`·`upload_studio_asset`(base64 ≤ 8 MiB)·`update_studio_task`(별도 동의 `studio:propose`). 승인·삭제·복원·공개 도구는 없다. 업로드 허용 형식은 PDF·HTML·JSON·MD·MD5·ZIP·PNG·JPG·WEBP·MP4·MOV·WAV·MP3·FLAC(서명 검사). 절차·운영 활성화: [CHATGPT_STUDIO_CONNECTION](studio-collaboration/CHATGPT_STUDIO_CONNECTION.md).
 | `/mcp` | POST | stateless Streamable HTTP JSON-RPC, bearer 전용, 읽기 도구만 제공 |
 | `/.well-known/oauth-protected-resource/mcp` | GET | RFC 9728 resource metadata |
 | `/.well-known/oauth-authorization-server` | GET | OAuth metadata, S256 PKCE·DCR 지원 |

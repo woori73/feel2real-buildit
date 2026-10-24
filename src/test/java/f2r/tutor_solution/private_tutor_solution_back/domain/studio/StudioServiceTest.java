@@ -53,6 +53,37 @@ class StudioServiceTest {
   }
 
   @Test
+  void givenMediaSignatures_whenValidated_thenOnlyMatchingFormatsAccepted() throws Exception {
+    var ascii = java.nio.charset.StandardCharsets.ISO_8859_1;
+    var samples =
+        java.util.Map.of(
+            "mov", "\0\0\0\u0014ftypqt  \0\0\0\0".getBytes(ascii),
+            "wav", "RIFF$\0\0\0WAVEfmt ".getBytes(ascii),
+            "webp", "RIFF$\0\0\0WEBPVP8 ".getBytes(ascii),
+            "flac", "fLaC\0\0\0\u0010".getBytes(ascii),
+            "mp3", "ID3\u0004\0\0\0\0\0\0".getBytes(ascii),
+            "jpg", new byte[] {(byte) 0xff, (byte) 0xd8, (byte) 0xff, (byte) 0xe0, 0, 16});
+    for (var sample : samples.entrySet()) {
+      Path ok = dir.resolve("ok." + sample.getKey());
+      Files.write(ok, sample.getValue());
+      assertDoesNotThrow(() -> StudioService.validateType(ok, sample.getKey()), sample.getKey());
+      Path bad = dir.resolve("bad." + sample.getKey());
+      Files.writeString(bad, "<html>not media</html>");
+      assertThrows(
+          ResponseStatusException.class,
+          () -> StudioService.validateType(bad, sample.getKey()),
+          sample.getKey());
+    }
+    // WAV 헤더를 WEBP라고 속이면 거부한다.
+    Path wav = dir.resolve("wav.webp");
+    Files.write(wav, samples.get("wav"));
+    assertThrows(ResponseStatusException.class, () -> StudioService.validateType(wav, "webp"));
+    assertTrue(
+        StudioService.EXTENSIONS.containsAll(
+            java.util.Set.of("mov", "wav", "mp3", "flac", "jpg", "webp")));
+  }
+
+  @Test
   void givenNonUtf8_whenValidated_thenRejected() throws Exception {
     Path p = dir.resolve("bad.md");
     Files.write(p, new byte[] {(byte) 0xff, 0});

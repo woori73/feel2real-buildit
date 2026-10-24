@@ -14,6 +14,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Configuration
 public class McpTransportSecurity {
+  static final int BODY_LIMIT = 65536;
+  static final int PROPOSE_BODY_LIMIT = 12 * 1024 * 1024;
+
   @Bean
   @Order(0)
   SecurityFilterChain mcpTransport(
@@ -73,19 +76,28 @@ public class McpTransportSecurity {
                     res.setStatus(204);
                     return;
                   }
-                  if (req.getContentLengthLong() > 65536)
-                    throw McpOAuth.error(413, "body_too_large");
                   String auth = req.getHeader("Authorization");
                   String clientAddress = McpClientAddress.resolve(req, addresses);
+                  // 기본 64 KiB. studio:propose 동의 토큰만 개선 파일(base64 8 MiB) 등록용으로 상한을 올린다.
+                  final int limit;
                   if ("/mcp".equals(req.getRequestURI()) && auth != null) {
                     try {
                       var identity = oauth.authenticate(auth);
                       rate.check("transport-user:" + identity.principal().userId(), 300);
+                      limit =
+                          identity.scopes().contains(McpOAuth.STUDIO_PROPOSE)
+                              ? PROPOSE_BODY_LIMIT
+                              : BODY_LIMIT;
                     } catch (org.springframework.web.server.ResponseStatusException e) {
                       rate.check("transport:" + clientAddress, 300);
                       throw e;
                     }
-                  } else rate.check("transport:" + clientAddress, 300);
+                  } else {
+                    rate.check("transport:" + clientAddress, 300);
+                    limit = BODY_LIMIT;
+                  }
+                  if (req.getContentLengthLong() > limit)
+                    throw McpOAuth.error(413, "body_too_large");
                   rate.check(
                       req.getRequestURI()
                           + ":"
@@ -104,14 +116,14 @@ public class McpTransportSecurity {
 
                             public int read() throws IOException {
                               int b = in.read();
-                              if (b != -1 && ++total > 65536)
+                              if (b != -1 && ++total > limit)
                                 throw new IOException("MCP body limit");
                               return b;
                             }
 
                             public int read(byte[] b, int off, int len) throws IOException {
-                              int n = in.read(b, off, Math.min(len, 65537 - total));
-                              if (n > 0 && (total += n) > 65536)
+                              int n = in.read(b, off, Math.min(len, limit + 1 - total));
+                              if (n > 0 && (total += n) > limit)
                                 throw new IOException("MCP body limit");
                               return n;
                             }

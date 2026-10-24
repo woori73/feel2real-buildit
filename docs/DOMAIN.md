@@ -1803,7 +1803,9 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.
 - `studio_files`: 원본 불변 메타데이터. project+SHA-256 유일성, 기존 FileStorage local/S3 재사용. 공개 storage key·공유 다운로드 URL 없음. `StudioFile` immutable Entity가 스키마를 검증한다.
 - `studio_items` / `studio_revisions`: 자료별 head·approved 포인터와 append-only 버전. `StudioRevision` immutable Entity 및 `StudioService.Revision` 명령 DTO. 프로젝트 행 잠금과 parentId 비교로 경합 차단. SCRIPT/STORYBOARD/CHARACTER/VIDEO/JOB/REVIEW, ORIGINAL/AI_PROPOSAL/USER_EDIT를 구분한다.
-- `studio_events`: 업로드·새 버전·승인·반려·권한 변경 감사 이력. 원본/버전 삭제·덮어쓰기 API를 제공하지 않는다.
+- `studio_events`: 업로드·새 버전·승인·반려·권한 변경 감사 이력. 원본/버전 삭제·덮어쓰기 API를 제공하지 않는다. AI 협업 이벤트 `AI_REVIEW`·`AI_UPLOAD`·`TASK_CREATE`·`TASK_STATUS`를 JSON note로 남긴다.
+- `studio_reviews`(V1096): 버전별 검수 보고서. verdict PASS/NEEDS_CHANGES/COMMENT, issues_json, author_type HUMAN/AI_CONNECTOR, ai_client·model_reported(자기 신고값)·mcp_grant_id·실제 user_id, 프로젝트별 idempotency_key+request_sha256(같은 키 다른 내용 409). 승인이 아니며 `approved_id`를 바꾸지 않는다.
+- `studio_tasks`(V1096): 작업 ID(item_key)별 수정 작업. assignee CLAUDE/CHATGPT/HUMAN, status OPEN→IN_PROGRESS→DONE/CANCELLED(종료 후 불변), review_id·revision_id·result_revision_id 연결. 상태 변경은 `TASK_STATUS` 이벤트로 이력 보존.
 - `mcp_clients`, `mcp_pending`, `mcp_grants`, `mcp_codes`, `mcp_tokens`: 사용자 OAuth 동의, S256 PKCE, 일회용 코드, hash-only opaque token, 15분 access·최대 30일 갱신·refresh 재사용 시 연결 폐기. 사용자 role·자격 증명 stamp를 매 호출 재검사한다. OAuth 행은 제한된 JDBC 명령으로 관리하며 외부 DTO에 비밀값을 넣지 않는다.
 - `mcp_audit`, `mcp_rate_limits`: 원문/토큰/검색문을 제외한 감사 이력과 DB 기반 호출 상한. 새 RDS·서버·유료 AI/임베딩 API 없음.
 
