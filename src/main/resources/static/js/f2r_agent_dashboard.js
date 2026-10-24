@@ -111,6 +111,13 @@
     return mode === 'voice-lipsync' && (files || []).indexOf('speak.mp4') >= 0 ? 'speak' : 'idle';
   }
 
+  // 세븐 인사 영상(speak.mp4)은 음성과 입 모양을 함께 만든 고정 대사 한 편이다.
+  // 임의의 응답 문장에는 입 모양이 맞지 않으므로 이 대사를 재생할 때만 쓴다(일반 응답은 speakingClip 규칙 그대로).
+  var GREETING = { seven: '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?' };
+  function greetingFor(agent, files) {
+    return GREETING[agent] && (files || []).indexOf('speak.mp4') >= 0 ? GREETING[agent] : null;
+  }
+
   // 요청한 영상이 없으면 대기 영상으로, 대기 영상도 없으면 null(표식 표시).
   function resolveClip(clip, files) {
     var list = files || [];
@@ -121,7 +128,7 @@
   var api = {
     AGENTS: AGENTS, SERVICES: SERVICES, STATES: STATES, pickAgent: pickAgent, pickView: pickView, matchServices: matchServices,
     countDraftStatus: countDraftStatus, nextState: nextState, badgeFor: badgeFor, speakingMode: speakingMode,
-    speakingClip: speakingClip, resolveClip: resolveClip
+    speakingClip: speakingClip, resolveClip: resolveClip, greetingFor: greetingFor
   };
   if (typeof window !== 'undefined') window.f2rAgentDashboard = api;
   if (typeof document === 'undefined' || !document.getElementById) return;
@@ -132,7 +139,7 @@
     get: function (k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (_) { /* 저장 불가 환경 */ } }
   };
-  var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, front: 0, awaiting: false, voice: null };
+  var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, front: 0, awaiting: false, voice: null, greeting: false };
   api.currentName = function () { return AGENTS[ui.agent] ? AGENTS[ui.agent].name : null; };
   api.state = function () { return ui.state; };
   api.awaiting = function () { return ui.awaiting; };
@@ -197,12 +204,53 @@
     $('agentStage').dataset.state = next;
     document.body.dataset.agentState = next;
     var label = STATES[next].label;
-    if (next === 'speaking' && speakingMode(ui.voice) !== 'text') label = '말하는 중';
+    if (next === 'speaking' && (ui.greeting || speakingMode(ui.voice) !== 'text')) label = '말하는 중';
     $('agentStateLabel').textContent = label;
-    showClip(next === 'speaking' ? speakingClip(speakingMode(ui.voice), files()) : STATES[next].clip);
+    // 인사 재생 중에는 화면의 영상을 그대로 둔다(끝나면 stopGreeting이 대기 영상으로 돌린다).
+    if (!ui.greeting) showClip(next === 'speaking' ? speakingClip(speakingMode(ui.voice), files()) : STATES[next].clip);
+    renderGreet();
     clearTimeout(ui.timer);
     if (next === 'thinking') ui.timer = setTimeout(function () { setState(nextState(ui.state, 'timeout')); }, 30000);
     if (next === 'done') ui.timer = setTimeout(function () { setState(nextState(ui.state, 'timeout')); }, 6000);
+  }
+
+  // ---- 세븐 인사(음성+영상) ----
+  // 소리 있는 재생은 사용자가 버튼을 누른 뒤에만 시작한다(모바일 자동재생 정책). 재생 중 다시 눌러도 겹쳐 재생하지 않는다.
+  function renderGreet() {
+    var btn = $('agentGreetBtn');
+    if (!btn) return;
+    btn.hidden = !greetingFor(ui.agent, files());
+    btn.disabled = ui.greeting;
+    btn.textContent = ui.greeting ? '말하는 중…' : AGENTS[ui.agent].name + ' 인사 듣기';
+  }
+
+  function playGreeting() {
+    var line = greetingFor(ui.agent, files());
+    if (!line || ui.greeting) return;
+    var pair = clips(), cur = pair[ui.front], other = pair[1 - ui.front];
+    if (!cur) return;
+    ui.greeting = true;
+    clearInterval(ui.typing);
+    $('agentGreeting').classList.remove('is-typing');
+    $('agentGreeting').textContent = line;
+    if (other) { other.pause(); other.classList.remove('is-on'); other.removeAttribute('src'); }
+    ui.clip = MEDIA_BASE + ui.agent + '/speak.mp4';
+    cur.muted = false;
+    cur.loop = false;
+    cur.src = ui.clip;
+    cur.classList.add('is-on');
+    $('agentStage').dataset.media = 'ready';
+    var p = cur.play && cur.play();
+    if (p && p.catch) p.catch(stopGreeting);
+    setState('speaking');
+  }
+
+  function stopGreeting() {
+    if (!ui.greeting) return;
+    ui.greeting = false;
+    clips().forEach(function (v) { if (!v) return; v.muted = true; v.loop = true; });
+    ui.clip = null;
+    setState('idle');
   }
 
   function renderMode() {
@@ -251,6 +299,7 @@
       portrait(b.querySelector('img'), b.dataset.agentPick, b);
     });
     renderBadge();
+    renderGreet();
     ui.clip = null;
     showClip(ui.state === 'speaking' ? speakingClip(speakingMode(ui.voice), files()) : STATES[ui.state].clip);
   }
@@ -284,6 +333,7 @@
   }
 
   function chooseAgent(key) {
+    stopGreeting();
     ui.agent = pickAgent(key);
     store.set(AGENT_KEY, ui.agent);
     renderAgent();
@@ -422,6 +472,7 @@
     input.addEventListener('blur', function () { if (!input.value.trim()) setState(nextState(ui.state, 'cleared')); });
     $('uaCommandForm').addEventListener('submit', function () {
       if (!input.value.trim()) return;
+      stopGreeting();
       ui.awaiting = true;
       activate(matchServices(input.value));
       setState(nextState(ui.state, 'submit'));
@@ -522,7 +573,9 @@
     loadMedia();
 
     clips().forEach(function (v) {
+      v.addEventListener('ended', stopGreeting);
       v.addEventListener('error', function () {
+        if (ui.greeting) { stopGreeting(); return; }
         // 서버가 자료를 알려줬지만 재생에 실패하면 표식으로 대체한다(다른 얼굴을 대신 보여주지 않는다).
         if (v.classList.contains('is-on') || !clips().some(function (x) { return x.classList.contains('is-on') && x.readyState >= 2; })) $('agentStage').dataset.media = 'missing';
       });
@@ -544,6 +597,11 @@
     document.querySelectorAll('[data-view-btn]').forEach(function (b) {
       b.addEventListener('click', function () { setView(b.dataset.viewBtn); window.scrollTo(0, 0); });
     });
+    var greet = $('agentGreetBtn');
+    if (greet) greet.addEventListener('click', playGreeting);
+    // 다른 탭으로 가거나 페이지를 떠나면 인사를 멈춘다(돌아왔을 때 소리가 겹치지 않게).
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stopGreeting(); });
+    window.addEventListener('pagehide', stopGreeting);
     bindMenu();
     bindMediaAdmin();
     var fab = $('aiFab');
