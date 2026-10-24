@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class McpOAuthController {
   private final McpOAuth oauth;
 
@@ -77,7 +78,10 @@ public class McpOAuthController {
                       .collect(java.util.stream.Collectors.joining("&")));
     var details = oauth.validateAuthorization(q);
     response.setHeader("Cache-Control", "no-store");
-    response.setHeader("Content-Security-Policy", "frame-ancestors 'none'; form-action 'self'");
+    // 동의 POST의 303 응답이 등록된 callback으로 가므로, 그 origin만 form-action에 더한다(브라우저는 리디렉션에도 적용).
+    response.setHeader(
+        "Content-Security-Policy",
+        "frame-ancestors 'none'; form-action 'self' " + origin(details.get("redirect_uri")));
     model.addAttribute("adminAccount", "ADMIN".equals(p.role()));
     model.addAttribute("clientName", details.get("client_name"));
     model.addAttribute("nonce", oauth.pending(p, q));
@@ -117,13 +121,22 @@ public class McpOAuthController {
   public ResponseEntity<Void> authorize(
       @AuthenticationPrincipal AuthenticatedPrincipal p,
       @RequestParam String nonce,
-      @RequestParam Set<String> scopes,
+      @RequestParam(required = false) Set<String> scopes,
       @RequestParam(defaultValue = "false") boolean sensitiveAcknowledged,
+      @RequestParam(defaultValue = "false") boolean deny,
       HttpServletRequest req) {
     sameOrigin(req);
-    return ResponseEntity.status(303)
-        .location(URI.create(oauth.authorize(p, nonce, scopes, sensitiveAcknowledged)))
-        .build();
+    String location =
+        deny
+            ? oauth.deny(p, nonce)
+            : oauth.authorize(p, nonce, scopes == null ? Set.of() : scopes, sensitiveAcknowledged);
+    return ResponseEntity.status(303).location(URI.create(location)).build();
+  }
+
+  /** 검증된 callback의 scheme://host[:port]. */
+  static String origin(String redirect) {
+    var uri = URI.create(redirect);
+    return uri.getScheme() + "://" + uri.getHost() + (uri.getPort() == -1 ? "" : ":" + uri.getPort());
   }
 
   @GetMapping("/mcp/connections")
@@ -161,7 +174,15 @@ public class McpOAuthController {
 
   @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
   @ResponseBody
-  public ResponseEntity<?> error(org.springframework.web.server.ResponseStatusException e) {
+  public ResponseEntity<?> error(
+      org.springframework.web.server.ResponseStatusException e, HttpServletRequest request) {
+    // 실패 원인 코드만 남긴다(토큰·code·client 메타데이터 값은 기록하지 않는다). 외부 AI 연결 실패 진단용.
+    log.warn(
+        "MCP OAuth {} {} -> {} {}",
+        request.getMethod(),
+        request.getRequestURI(),
+        e.getStatusCode().value(),
+        e.getReason());
     return ResponseEntity.status(e.getStatusCode())
         .cacheControl(CacheControl.noStore())
         .body(Map.of("error", e.getReason() == null ? "invalid_request" : e.getReason()));

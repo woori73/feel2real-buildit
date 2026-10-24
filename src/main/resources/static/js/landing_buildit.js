@@ -167,7 +167,8 @@
     params.delete('returnUrl');
     const query = params.toString();
     history.replaceState({}, '', location.pathname + (query ? '?' + query : '') + location.hash);
-    alert(isChoonggiReturn
+    const isMcpConsentReturn = returnUrl && returnUrl.startsWith('/mcp/oauth/');
+    alert(isChoonggiReturn || isMcpConsentReturn
       ? '로그인이 필요합니다. 로그인 후 계속 이용할 수 있습니다.'
       : '회원 전용 자료입니다. 로그인 또는 무료 회원가입 후 모든 Wiki 자료를 이용할 수 있습니다.');
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
