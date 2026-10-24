@@ -43,6 +43,15 @@ on:
           - unchanged
           - studio-chatgpt
           - 'off'
+      agent_media_public:
+        description: '로그인 전 홈페이지 캐릭터 공개(APP_AGENT_MEDIA_PUBLIC_AGENTS): unchanged=변경 없음(기본), seven=세븐만 공개, off=공개 안 함. 관리자·비공개 자료 권한은 바뀌지 않음'
+        required: false
+        default: unchanged
+        type: choice
+        options:
+          - unchanged
+          - seven
+          - 'off'
 
 permissions:
   id-token: write
@@ -739,6 +748,31 @@ jobs:
             echo 'agent media dir already configured; env left unchanged'
           fi
 
+          # 로그인 전 홈페이지 캐릭터 공개: 배포 입력 agent_media_public이 seven/off일 때만 반영한다.
+          # APP_AGENT_MEDIA_PUBLIC_AGENTS 한 줄만 바꾸며 관리자·로그인 사용자용 비공개 경로 권한은 그대로다.
+          if aws s3 cp s3://feel2real-buildit-deploy/agent-media-public /tmp/agent-media-public 2>/dev/null; then
+            PUBLIC_MODE=$(tr -d '\r\n "' < /tmp/agent-media-public | tr 'A-Z' 'a-z')
+            rm -f /tmp/agent-media-public
+            install -d -m 755 /etc/f2r
+            touch /etc/f2r/env
+            chmod 600 /etc/f2r/env
+            case "$PUBLIC_MODE" in
+              seven)
+                sed -i '/^APP_AGENT_MEDIA_PUBLIC_AGENTS=/d' /etc/f2r/env
+                printf 'APP_AGENT_MEDIA_PUBLIC_AGENTS=seven\n' >> /etc/f2r/env
+                echo '[DEPLOY] agent media public: seven'
+                ;;
+              off)
+                sed -i '/^APP_AGENT_MEDIA_PUBLIC_AGENTS=/d' /etc/f2r/env
+                echo '[DEPLOY] agent media public: off'
+                ;;
+              *) echo '::warning::agent media public mode invalid; env left unchanged' ;;
+            esac
+            unset PUBLIC_MODE
+          else
+            echo 'agent media public not requested; env left unchanged'
+          fi
+
           # Preserve the legacy OpenRouter sync for any remaining consumers.
           if [ -r /etc/buildit-wiki.env ] && grep -qE '^OPENROUTER_API_KEY=.+' /etc/buildit-wiki.env; then
             install -d -m 755 /etc/f2r
@@ -927,6 +961,26 @@ jobs:
             *)
               aws s3 rm s3://${DEPLOY_BUCKET}/mcp-switch 2>/dev/null || true
               echo "mcp switch unchanged"
+              ;;
+          esac
+
+      - name: Stage agent media public mode in S3 (transient)
+        shell: bash
+        env:
+          AGENT_MEDIA_PUBLIC: ${{ inputs.agent_media_public }}
+        run: |
+          set -euo pipefail
+          # 선택값(unchanged/seven/off)만 올린다. unchanged면 이전 실행이 남긴 값이 적용되지 않도록 지운다.
+          case "${AGENT_MEDIA_PUBLIC:-unchanged}" in
+            seven|off)
+              printf '%s' "$AGENT_MEDIA_PUBLIC" > /tmp/agent-media-public.staging
+              aws s3 cp /tmp/agent-media-public.staging s3://${DEPLOY_BUCKET}/agent-media-public --sse AES256 >/dev/null
+              rm -f /tmp/agent-media-public.staging
+              echo "agent media public staged: $AGENT_MEDIA_PUBLIC"
+              ;;
+            *)
+              aws s3 rm s3://${DEPLOY_BUCKET}/agent-media-public 2>/dev/null || true
+              echo "agent media public unchanged"
               ;;
           esac
 
