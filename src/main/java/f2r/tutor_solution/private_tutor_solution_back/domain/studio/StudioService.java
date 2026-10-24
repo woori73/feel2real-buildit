@@ -20,6 +20,13 @@ import org.springframework.web.server.ResponseStatusException;
 public class StudioService {
   public static final String PROJECT = "ai-agent-part1";
   public static final long MAX_FILE = 100L * 1024 * 1024;
+  public static final String MCP_PROJECT_ATTRIBUTE = "f2r.studio.mcpProjectId";
+
+  /** 영상 MP4/MOV, 음악·음성 WAV/MP3/FLAC, 콘티·이미지 PNG/JPG/WEBP, 각본·검수 PDF/MD/HTML/JSON, 패키지 ZIP. */
+  public static final Set<String> EXTENSIONS =
+      Set.of(
+          "pdf", "html", "json", "md", "md5", "zip", "png", "jpg", "jpeg", "webp", "mp4", "mov",
+          "wav", "mp3", "flac");
   private final JdbcTemplate db;
   private final FileStorage storage;
 
@@ -48,6 +55,11 @@ public class StudioService {
     if (!(attributes
         instanceof org.springframework.web.context.request.ServletRequestAttributes web))
       return PROJECT;
+    // In-process MCP tools select the project on the /mcp request; validated like the parameter.
+    if (web.getRequest().getAttribute(MCP_PROJECT_ATTRIBUTE) instanceof String selected) {
+      if (!selected.matches("[A-Za-z0-9_-]{1,64}")) throw error(400, "프로젝트 식별자가 올바르지 않습니다.");
+      return selected;
+    }
     String[] values = web.getRequest().getParameterValues("projectId");
     if (values == null) return PROJECT;
     if (values.length != 1 || !values[0].matches("[A-Za-z0-9_-]{1,64}"))
@@ -187,11 +199,22 @@ public class StudioService {
   @Transactional(rollbackFor = Exception.class)
   public Map<String, Object> upload(AuthenticatedPrincipal p, MultipartFile file)
       throws IOException {
-    require(p, true, false);
-    if (file == null || file.isEmpty() || file.getSize() > MAX_FILE)
+    if (file == null || file.isEmpty() || file.getSize() > MAX_FILE) {
+      require(p, true, false);
       throw error(413, "파일은 1 byte~100 MiB까지 가능합니다.");
+    }
+    try (InputStream in = file.getInputStream()) {
+      return upload(p, file.getOriginalFilename(), in);
+    }
+  }
+
+  /** Same integrity path for browser, AI connector and token uploads: stream, SHA, type, dedupe. */
+  @Transactional(rollbackFor = Exception.class)
+  public Map<String, Object> upload(AuthenticatedPrincipal p, String filename, InputStream source)
+      throws IOException {
+    require(p, true, false);
     String name =
-        Optional.ofNullable(file.getOriginalFilename())
+        Optional.ofNullable(filename)
             .orElse("file")
             .replaceAll("[\\\\/\\p{Cntrl}]", "_");
     if (name.length() > 255) throw error(400, "파일명이 너무 깁니다.");
@@ -199,7 +222,7 @@ public class StudioService {
         name.contains(".")
             ? name.substring(name.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT)
             : "";
-    if (!Set.of("pdf", "html", "json", "md", "md5", "zip", "png", "mp4").contains(ext))
+    if (!EXTENSIONS.contains(ext))
       throw error(400, "지원하지 않는 파일 형식입니다.");
     Path tmp = Files.createTempFile("f2r-studio-", ".upload");
     String createdKey = null;
@@ -207,7 +230,7 @@ public class StudioService {
     try {
       MessageDigest digest = digest();
       long count = 0;
-      try (InputStream in = file.getInputStream();
+      try (InputStream in = source;
           OutputStream out = Files.newOutputStream(tmp)) {
         byte[] b = new byte[65536];
         int n;
@@ -218,6 +241,7 @@ public class StudioService {
           out.write(b, 0, n);
         }
       }
+      if (count == 0) throw error(413, "파일은 1 byte~100 MiB까지 가능합니다.");
       validateType(tmp, ext);
       String sha = HexFormat.of().formatHex(digest.digest());
       // Serialize project uploads to avoid duplicate objects during concurrent SHA checks.
@@ -302,6 +326,21 @@ public class StudioService {
               b.length >= 4 && b[0] == 80 && b[1] == 75 && (b[2] == 3 || b[2] == 5 || b[2] == 7);
           case "mp4" ->
               b.length >= 12 && new String(b, 4, 4, StandardCharsets.ISO_8859_1).equals("ftyp");
+          case "mov" ->
+              b.length >= 12
+                  && Set.of("ftyp", "moov", "mdat", "wide", "free", "skip", "pnot")
+                      .contains(new String(b, 4, 4, StandardCharsets.ISO_8859_1));
+          case "jpg", "jpeg" ->
+              b.length >= 3
+                  && (b[0] & 0xff) == 0xff
+                  && (b[1] & 0xff) == 0xd8
+                  && (b[2] & 0xff) == 0xff;
+          case "webp" -> riff(b, "WEBP");
+          case "wav" -> riff(b, "WAVE");
+          case "flac" -> new String(b, StandardCharsets.ISO_8859_1).startsWith("fLaC");
+          case "mp3" ->
+              new String(b, StandardCharsets.ISO_8859_1).startsWith("ID3")
+                  || (b.length >= 2 && (b[0] & 0xff) == 0xff && (b[1] & 0xe0) == 0xe0);
           default -> true;
         };
     if (!ok) throw error(400, "확장자와 파일 형식이 일치하지 않습니다.");
@@ -326,6 +365,12 @@ public class StudioService {
         throw error(400, "JSON 문법 오류입니다. 원본을 확인하세요.");
       }
     }
+  }
+
+  private static boolean riff(byte[] b, String form) {
+    return b.length >= 12
+        && new String(b, 0, 4, StandardCharsets.ISO_8859_1).equals("RIFF")
+        && new String(b, 8, 4, StandardCharsets.ISO_8859_1).equals(form);
   }
 
   private static final tools.jackson.databind.ObjectMapper JSON_SYNTAX =
@@ -408,7 +453,7 @@ public class StudioService {
         || !r.itemKey().matches("[a-zA-Z0-9_-]{1,100}")
         || r.label() == null
         || !r.label().matches("[a-zA-Z0-9._-]{1,40}")) throw error(400, "자료 키와 버전 라벨을 확인하세요.");
-    if (!Set.of("SCRIPT", "STORYBOARD", "CHARACTER", "VIDEO", "JOB", "REVIEW")
+    if (!Set.of("SCRIPT", "STORYBOARD", "CHARACTER", "VIDEO", "MUSIC", "JOB", "REVIEW")
             .contains(text(r.kind()))
         || !Set.of("ORIGINAL", "AI_PROPOSAL", "USER_EDIT").contains(text(r.origin()))
         || !Set.of("WAITING", "WORKING", "READY", "FAILED", "REVIEW")

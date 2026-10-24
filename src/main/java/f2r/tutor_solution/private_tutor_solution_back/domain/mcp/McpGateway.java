@@ -22,6 +22,26 @@ public class McpGateway {
   private final JwtTokenProvider jwt;
   private final JwtProperties jwtProperties;
   private final ObjectMapper json;
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAiService
+      studioAi;
+
+  /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
+  public static final Set<String> PROPOSE_TOOLS =
+      Set.of("submit_studio_review", "upload_studio_asset", "create_studio_task", "update_studio_task");
+
+  static final Set<String> STUDIO_TOOLS =
+      Set.of(
+          "list_studio_assets",
+          "read_studio_asset",
+          "get_asset_versions",
+          "list_studio_tasks",
+          "submit_studio_review",
+          "upload_studio_asset",
+          "create_studio_task",
+          "update_studio_task");
+
+  /** MCP로 받는 개선 파일 상한(디코딩 후). 대용량 영상은 토큰 업로드 API를 사용한다. */
+  static final int MAX_MCP_UPLOAD = 8 * 1024 * 1024;
 
   @Value("${app.mcp.internal-base-url:http://127.0.0.1:8080}")
   private String internal;
@@ -36,6 +56,23 @@ public class McpGateway {
 
   public List<Map<String, Object>> tools() {
     List<Map<String, Object>> out = new ArrayList<>();
+    collectTools(out);
+    // 운영 scope 허용 목록 밖의 서비스 도구는 노출하지 않는다(실행 시에도 grant scope가 걸러진다).
+    if (oauth != null)
+      out.removeIf(
+          tool -> {
+            String name = (String) tool.get("name");
+            if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
+            if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
+              return !oauth.scopeAllowed("studio:read");
+            if (name.equals("list_catalog")) return !oauth.scopeAllowed("catalog:read");
+            if (name.startsWith("read_")) return !oauth.scopeAllowed(name.substring(5) + ":read");
+            return false;
+          });
+    return out;
+  }
+
+  private void collectTools(List<Map<String, Object>> out) {
     out.add(
         tool(
             "list_catalog",
@@ -100,6 +137,7 @@ public class McpGateway {
                 "limit",
                 integer(1, 20000)),
             List.of("fileId")));
+    studioTools(out);
     out.add(
         tool(
             "activity_history",
@@ -107,7 +145,158 @@ public class McpGateway {
                 + " read_newstart(history)를 사용합니다. 재무는 read_easy의 허용 사업체 월 요약만 제공합니다.",
             Map.of(),
             List.of()));
-    return out;
+  }
+
+  private void studioTools(List<Map<String, Object>> out) {
+    out.add(
+        tool(
+            "list_studio_assets",
+            "AI AGENT 제작소의 최신 제작물(작업 ID별 최신 버전) 목록. 회차·종류·작업 ID·검색어로 거릅니다. 각 항목에 작업 ID, 버전,"
+                + " 파일 URL·SHA, 검수 상태가 있습니다. studio:read 필요.",
+            Map.of(
+                "projectId", string(),
+                "episode", integer(1, 14),
+                "kind", string(),
+                "workId", string(),
+                "query", string(),
+                "offset", integer(0, 1000000),
+                "limit", integer(1, 100)),
+            List.of()));
+    out.add(
+        tool(
+            "read_studio_asset",
+            "제작물 한 버전(revisionId) 또는 파일(fileId)을 엽니다. 각본·검수 문서는 본문, 콘티 PNG/JPG는 image 블록(originals:read"
+                + " 동의 필요), ZIP은 목록, 영상·음악은 메타데이터와 SHA를 돌려줍니다.",
+            Map.of(
+                "projectId", string(),
+                "revisionId", string(),
+                "fileId", string(),
+                "offset", integer(0, 200000),
+                "limit", integer(1, 20000)),
+            List.of()));
+    out.add(
+        tool(
+            "get_asset_versions",
+            "작업 ID의 모든 버전(이전 버전 포함)과 파일 SHA, 검수 보고서, 수정 작업, 사람 승인 결정을 시간순으로 조회합니다. 버전 비교에"
+                + " 사용하세요.",
+            Map.of("projectId", string(), "workId", string()),
+            List.of("workId")));
+    out.add(
+        tool(
+            "list_studio_tasks",
+            "제작 수정 작업 목록(상태 OPEN·IN_PROGRESS·DONE·CANCELLED, 담당 CLAUDE·CHATGPT·HUMAN).",
+            Map.of(
+                "projectId", string(),
+                "status", string(),
+                "assignee", string(),
+                "workId", string(),
+                "offset", integer(0, 1000000),
+                "limit", integer(1, 100)),
+            List.of()));
+    var issue =
+        Map.of(
+            "type",
+            "object",
+            "properties",
+            Map.of(
+                "severity", Map.of("type", "string", "enum", List.of("HIGH", "MEDIUM", "LOW")),
+                "description", string(),
+                "timecode", string(),
+                "cutNumber", integer(1, 999),
+                "segment", string(),
+                "suggestion", string()),
+            "required",
+            List.of("severity", "description"),
+            "additionalProperties",
+            false);
+    out.add(
+        writeTool(
+            "submit_studio_review",
+            "제작물 버전에 검수 보고서를 등록합니다(verdict PASS·NEEDS_CHANGES·COMMENT, 문제점 목록·타임코드·컷 번호). 승인이"
+                + " 아닙니다. studio:propose 동의 필요. 재시도에는 같은 idempotencyKey를 쓰세요.",
+            Map.of(
+                "projectId", string(),
+                "revisionId", string(),
+                "verdict",
+                Map.of("type", "string", "enum", List.of("PASS", "NEEDS_CHANGES", "COMMENT")),
+                "summary", string(),
+                "issues", Map.of("type", "array", "items", issue, "maxItems", 50),
+                "modelReported", string(),
+                "idempotencyKey", string()),
+            List.of("revisionId", "verdict", "summary")));
+    var upload = new LinkedHashMap<String, Object>();
+    upload.put("projectId", string());
+    upload.put("workId", string());
+    upload.put("expectedHeadRevisionId", string());
+    upload.put("versionLabel", string());
+    upload.put("filename", string());
+    upload.put("contentBase64", string());
+    upload.put("changeNote", string());
+    upload.put("title", string());
+    upload.put(
+        "kind",
+        Map.of(
+            "type",
+            "string",
+            "enum",
+            List.of("SCRIPT", "STORYBOARD", "CHARACTER", "VIDEO", "MUSIC", "REVIEW")));
+    upload.put("episode", integer(1, 14));
+    upload.put("cutNumber", integer(1, 999));
+    upload.put("taskId", string());
+    upload.put("modelReported", string());
+    out.add(
+        writeTool(
+            "upload_studio_asset",
+            "개선 파일(이미지·문서 등, base64 8 MiB 이하)을 작업 ID의 새 버전으로 등록합니다. 기존 파일·버전·승인을 덮어쓰지 않습니다."
+                + " 기존 작업 ID는 expectedHeadRevisionId(현재 최신 버전)가 필요합니다. studio:propose 동의 필요.",
+            upload,
+            List.of("workId", "versionLabel", "filename", "contentBase64", "changeNote")));
+    out.add(
+        writeTool(
+            "create_studio_task",
+            "Claude(또는 ChatGPT·사람)에게 수정 작업을 만듭니다. 검수 보고서(reviewId)와 대상 버전을 연결하세요. studio:propose 동의"
+                + " 필요.",
+            Map.of(
+                "projectId", string(),
+                "workId", string(),
+                "revisionId", string(),
+                "reviewId", string(),
+                "title", string(),
+                "instructions", string(),
+                "assignee", Map.of("type", "string", "enum", List.of("CLAUDE", "CHATGPT", "HUMAN")),
+                "modelReported", string(),
+                "idempotencyKey", string()),
+            List.of("workId", "title", "instructions")));
+    out.add(
+        writeTool(
+            "update_studio_task",
+            "수정 작업 상태를 IN_PROGRESS·DONE·CANCELLED로 바꾸고 결과 버전을 연결합니다. 이력은 보존됩니다. studio:propose 동의"
+                + " 필요.",
+            Map.of(
+                "projectId", string(),
+                "taskId", string(),
+                "status",
+                Map.of("type", "string", "enum", List.of("IN_PROGRESS", "DONE", "CANCELLED")),
+                "resultRevisionId", string(),
+                "note", string()),
+            List.of("taskId", "status")));
+  }
+
+  private Map<String, Object> writeTool(
+      String name, String description, Map<String, Object> props, List<String> required) {
+    var tool = new LinkedHashMap<>(tool(name, description, props, required));
+    tool.put(
+        "annotations",
+        Map.of(
+            "readOnlyHint",
+            false,
+            "destructiveHint",
+            false,
+            "idempotentHint",
+            false,
+            "openWorldHint",
+            false));
+    return tool;
   }
 
   private Map<String, Object> tool(
@@ -167,9 +356,12 @@ public class McpGateway {
               var value = entry.getValue();
               if ((type.equals("string") && !value.isTextual())
                   || (type.equals("object") && !value.isObject())
+                  || (type.equals("array") && !value.isArray())
                   || (type.equals("integer") && !value.isIntegralNumber()))
                 throw McpOAuth.error(400, "invalid_argument_type");
-              if (value.isTextual() && value.asText().length() > 8000)
+              int maximum =
+                  entry.getKey().equals("contentBase64") ? (MAX_MCP_UPLOAD / 3 + 1) * 4 + 4096 : 8000;
+              if (value.isTextual() && value.asText().length() > maximum)
                 throw McpOAuth.error(400, "argument_too_long");
             });
     if (name.equals("list_catalog")) {
@@ -213,6 +405,7 @@ public class McpGateway {
       return read(identity, "studio", target);
     }
     if (name.equals("activity_history")) return oauth.history(identity);
+    if (STUDIO_TOOLS.contains(name)) return studio(identity, name, args);
     if (name.equals("search")) return search(identity, args);
     if (name.equals("fetch")) {
       String id = args.path("id").asText("");
@@ -242,6 +435,148 @@ public class McpGateway {
     if (name.startsWith("read_") && McpOAuth.SCOPES.contains(name.substring(5) + ":read"))
       return read(identity, name.substring(5), args);
     throw McpOAuth.error(400, "unknown_tool");
+  }
+
+  /** 제작 협업 도구는 HTTP 위임 없이 같은 서비스·같은 프로젝트 권한 검사를 그대로 호출한다. */
+  private Object studio(McpOAuth.Identity identity, String name, JsonNode args) throws Exception {
+    requireScope(identity, "studio");
+    boolean write = PROPOSE_TOOLS.contains(name);
+    if (write && !identity.scopes().contains("studio:propose"))
+      throw McpOAuth.error(403, "studio_propose_scope_required");
+    rate.check((write ? "write:" : "read:") + identity.grantId(), write ? 30 : 120);
+    String project = args.path("projectId").asText("");
+    if (!project.isBlank()) {
+      if (!project.matches("[A-Za-z0-9_-]{1,64}")) throw McpOAuth.error(400, "invalid_project_id");
+      ((org.springframework.web.context.request.ServletRequestAttributes)
+              org.springframework.web.context.request.RequestContextHolder
+                  .currentRequestAttributes())
+          .getRequest()
+          .setAttribute(
+              f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioService
+                  .MCP_PROJECT_ATTRIBUTE,
+              project);
+    }
+    var p = identity.principal();
+    var connector =
+        new f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAiService.Connector(
+            oauth.clientName(identity.grantId()),
+            identity.grantId(),
+            text(args, "modelReported"));
+    switch (name) {
+      case "list_studio_assets":
+        return studioAi.listAssets(
+            p,
+            args.has("episode") ? number(args, "episode", 1, 1, 14) : null,
+            text(args, "kind"),
+            text(args, "query"),
+            text(args, "workId"),
+            number(args, "limit", 50, 1, 100),
+            number(args, "offset", 0, 0, 1000000));
+      case "read_studio_asset":
+        {
+          var read =
+              studioAi.readAsset(
+                  p,
+                  text(args, "revisionId"),
+                  text(args, "fileId"),
+                  number(args, "offset", 0, 0, 200000),
+                  number(args, "limit", 20000, 1, 20000),
+                  identity.scopes().contains("originals:read"));
+          return read.image() == null
+              ? read.metadata()
+              : new ImageBlocks(read.metadata(), read.image());
+        }
+      case "get_asset_versions":
+        return studioAi.versions(p, text(args, "workId"));
+      case "list_studio_tasks":
+        return studioAi.tasks(
+            p,
+            text(args, "status"),
+            text(args, "assignee"),
+            text(args, "workId"),
+            number(args, "limit", 50, 1, 100),
+            number(args, "offset", 0, 0, 1000000));
+      case "submit_studio_review":
+        {
+          var issues =
+              new ArrayList<
+                  f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAiService
+                      .Issue>();
+          for (var i : args.path("issues")) {
+            if (!i.isObject()) throw McpOAuth.error(400, "invalid_issue");
+            issues.add(
+                new f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAiService
+                    .Issue(
+                    text(i, "severity"),
+                    text(i, "description"),
+                    text(i, "timecode"),
+                    i.has("cutNumber") ? number(i, "cutNumber", 1, 1, 999) : null,
+                    text(i, "segment"),
+                    text(i, "suggestion")));
+          }
+          return studioAi.submitReview(
+              p,
+              connector,
+              text(args, "revisionId"),
+              text(args, "verdict"),
+              text(args, "summary"),
+              issues,
+              text(args, "idempotencyKey"));
+        }
+      case "upload_studio_asset":
+        {
+          byte[] bytes;
+          try {
+            bytes = Base64.getMimeDecoder().decode(args.path("contentBase64").asText(""));
+          } catch (IllegalArgumentException e) {
+            throw McpOAuth.error(400, "invalid_base64");
+          }
+          if (bytes.length < 1 || bytes.length > MAX_MCP_UPLOAD)
+            throw McpOAuth.error(413, "mcp_upload_limit_8MiB_use_token_upload_api");
+          return studioAi.uploadAsset(
+              p,
+              connector,
+              text(args, "workId"),
+              text(args, "expectedHeadRevisionId"),
+              text(args, "versionLabel"),
+              text(args, "filename"),
+              new ByteArrayInputStream(bytes),
+              text(args, "title"),
+              text(args, "kind"),
+              args.has("episode") ? number(args, "episode", 1, 1, 14) : null,
+              args.has("cutNumber") ? number(args, "cutNumber", 1, 1, 999) : null,
+              text(args, "changeNote"),
+              text(args, "taskId"));
+        }
+      case "create_studio_task":
+        return studioAi.createTask(
+            p,
+            connector,
+            text(args, "workId"),
+            text(args, "revisionId"),
+            text(args, "reviewId"),
+            text(args, "title"),
+            text(args, "instructions"),
+            text(args, "assignee"),
+            text(args, "idempotencyKey"));
+      case "update_studio_task":
+        return studioAi.updateTask(
+            p,
+            connector,
+            text(args, "taskId"),
+            text(args, "status"),
+            text(args, "resultRevisionId"),
+            text(args, "note"));
+      default:
+        throw McpOAuth.error(400, "unknown_tool");
+    }
+  }
+
+  private static String text(JsonNode args, String key) {
+    var value = args.path(key);
+    if (value.isMissingNode() || value.isNull()) return null;
+    if (!value.isTextual()) throw McpOAuth.error(400, "invalid_argument_type:" + key);
+    return value.asText();
   }
 
   /** 카탈로그 URL을 설정된 공개 주소로 바꾼 사본. */

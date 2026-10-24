@@ -34,6 +34,18 @@ public class McpOAuth {
   @Value("${app.mcp.redirect-uris:https://claude.ai/api/mcp/auth_callback}")
   private List<String> redirects;
 
+  /**
+   * 운영에서 외부 AI에 열어 줄 scope 허용 목록(공백 구분). 비어 있으면 전체. 목록 밖 scope는 메타데이터·동의 화면·도구 목록에서
+   * 빠지고, 이전에 발급된 grant에 있어도 실행 시 무시된다.
+   */
+  @Value("${app.mcp.allowed-scopes:}")
+  private String allowedScopes = "";
+
+  public boolean scopeAllowed(String scope) {
+    String configured = allowedScopes == null ? "" : allowedScopes.trim();
+    return configured.isEmpty() || List.of(configured.split("[\\s,]+")).contains(scope);
+  }
+
   public static final Set<String> SCOPES =
       Collections.unmodifiableSet(
           new TreeSet<>(
@@ -54,6 +66,9 @@ public class McpOAuth {
                   "analytics:read",
                   "wemade:read",
                   "choonggi:read")));
+
+  /** 제작소 검수 보고서·수정 작업·새 버전 등록만 허용. 승인·삭제·복원·배포는 어떤 scope로도 불가. */
+  public static final String STUDIO_PROPOSE = "studio:propose";
 
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
 
@@ -119,9 +134,16 @@ public class McpOAuth {
   }
 
   public List<String> scopes() {
+    var all = knownScopes();
+    all.removeIf(scope -> !scopeAllowed(scope));
+    return all;
+  }
+
+  private static List<String> knownScopes() {
     var all = new ArrayList<>(SCOPES);
     all.add("offline_access");
     all.add("originals:read");
+    all.add(STUDIO_PROPOSE);
     return all;
   }
 
@@ -186,8 +208,14 @@ public class McpOAuth {
         || q.getOrDefault("state", "").length() < 1
         || q.getOrDefault("state", "").length() > 1000
         || !resource().equals(q.get("resource"))) throw error(400, "invalid_request");
-    for (String s : scope.split(" +"))
-      if (!s.isBlank() && !scopes().contains(s)) throw error(400, "invalid_scope");
+    var granted = new ArrayList<String>();
+    for (String s : scope.split(" +")) {
+      if (s.isBlank()) continue;
+      if (!knownScopes().contains(s)) throw error(400, "invalid_scope");
+      // 운영 허용 목록 밖의 알려진 scope는 오류 대신 발급 범위에서 뺀다(OAuth는 요청보다 좁게 발급할 수 있다).
+      if (scopeAllowed(s)) granted.add(s);
+    }
+    scope = String.join(" ", granted);
     return Map.of(
         "client_id",
         client,
@@ -230,6 +258,7 @@ public class McpOAuth {
     if (p == null) throw error(401, "login_required");
     boolean sensitive =
         selected.contains("originals:read")
+            || selected.contains(STUDIO_PROPOSE)
             || "ADMIN".equals(p.role())
                 && selected.stream()
                     .anyMatch(
@@ -386,7 +415,9 @@ public class McpOAuth {
         id,
         new AuthenticatedPrincipal(
             uid, u.getLoginId(), u.getRole().name(), (String) g.get("credential_stamp")),
-        Set.copyOf(List.of(((String) g.get("scopes")).split(" +"))));
+        List.of(((String) g.get("scopes")).split(" +")).stream()
+            .filter(this::scopeAllowed)
+            .collect(java.util.stream.Collectors.toUnmodifiableSet()));
   }
 
   public Identity authenticate(String header) {
@@ -435,6 +466,18 @@ public class McpOAuth {
         endpoint,
         outcome,
         ms);
+  }
+
+  /** 등록 client 이름(예: ChatGPT). 클라이언트가 스스로 신고한 값이며 모델 추론의 증명은 아니다. */
+  public String clientName(String grantId) {
+    return db
+        .query(
+            "SELECT c.name FROM mcp_grants g JOIN mcp_clients c ON c.id=g.client_id WHERE g.id=?",
+            (rs, n) -> rs.getString(1),
+            grantId)
+        .stream()
+        .findFirst()
+        .orElse("MCP client");
   }
 
   public List<Map<String, Object>> history(Identity i) {

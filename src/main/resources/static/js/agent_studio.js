@@ -22,6 +22,7 @@
     STORYBOARD: "콘티",
     CHARACTER: "캐릭터",
     VIDEO: "영상",
+    MUSIC: "음악",
     JOB: "생성 작업",
     REVIEW: "검수 결과",
   };
@@ -496,6 +497,7 @@
         if (b.dataset.tab === "characters") await gallery();
         if (b.dataset.tab === "memory") await loadMemory();
         if (b.dataset.tab === "inbox") await pending();
+        if (b.dataset.tab === "ai-work") await aiWork();
         if (b.dataset.tab === "compare") await compareOptions();
         if (b.dataset.tab === "history") {
           const rows = await api("events");
@@ -528,6 +530,37 @@
   });
   $("memory-reload").onclick=run(()=>loadMemory());
   $("pending-more").onclick=run(()=>pending(true));
+  const taskLabels={OPEN:"대기",IN_PROGRESS:"진행 중",DONE:"완료",CANCELLED:"취소"};
+  const verdictLabels={PASS:"통과",NEEDS_CHANGES:"수정 필요",COMMENT:"의견"};
+  async function aiWork(){
+    const status=$("ai-task-status").value;
+    const tasks=await api("tasks?limit=100"+(status?"&status="+encodeURIComponent(status):""));
+    $("ai-task-list").replaceChildren();
+    for(const t of tasks){
+      const c=el("article",undefined,"card");
+      c.append(el("strong",`${taskLabels[t.status]||t.status} · 담당 ${t.assignee}`),el("h3",t.title),el("p",t.instructions),el("small",`작업 ID ${t.workId} · ${t.author_type==="AI_CONNECTOR"?"AI 연결 "+(t.ai_client||""):"사람"} · ${t.created_at}`));
+      if(t.status==="OPEN"||t.status==="IN_PROGRESS")for(const next of t.status==="OPEN"?["IN_PROGRESS","CANCELLED"]:["DONE","CANCELLED"]){
+        const b=el("button",taskLabels[next]+"(으)로 변경");
+        b.onclick=run(async()=>{await api("tasks/"+encodeURIComponent(t.taskId)+"/status",json({status:next}));await aiWork();message("작업 상태를 바꾸고 다시 불러왔습니다.");});
+        c.append(b);
+      }
+      $("ai-task-list").append(c);
+    }
+    if(!tasks.length)$("ai-task-list").append(el("p","수정 작업이 없습니다."));
+    const reviews=await api("reviews");
+    $("ai-review-list").replaceChildren();
+    for(const r of reviews){
+      const c=el("article",undefined,"card");
+      c.append(el("strong",`${verdictLabels[r.verdict]||r.verdict} · ${r.author_type==="AI_CONNECTOR"?"AI 연결 "+(r.ai_client||""):"사람"}`),el("h3",`작업 ID ${r.item_key}`),el("p",r.summary));
+      const list=el("ul");for(const i of r.issues||[])list.append(el("li",`[${i.severity}]${i.timecode?" "+i.timecode:""}${i.cutNumber?" 컷"+i.cutNumber:""} ${i.description}`));
+      c.append(list,el("small",r.created_at));
+      const open=el("button","검수 대상 버전 열기");open.onclick=run(async()=>{document.querySelector('[data-tab="materials"]').click();detail(await api("revisions/"+r.revision_id));});c.append(open);
+      $("ai-review-list").append(c);
+    }
+    if(!reviews.length)$("ai-review-list").append(el("p","검수 보고서가 없습니다."));
+  }
+  $("ai-work-reload").onclick=run(()=>aiWork());
+  $("ai-task-status").onchange=run(()=>aiWork());
   $("memory-form").onsubmit=run(async()=>{
     const data=Object.fromEntries(new FormData($("memory-form")));data.expectedRevisionId=memoryRevision||null;data.pr=data.pr?Number(data.pr):null;data.sourceFileIds=[...$("memory-files").selectedOptions].map(o=>o.value);
     const button=$("memory-form").querySelector("button");button.disabled=true;

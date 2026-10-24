@@ -101,6 +101,9 @@ public class McpOAuthController {
             Map.entry("wemade:read", "위메이드 저장 분석 자료"),
             Map.entry("choonggi:read", "CHOONGGI 콘텐츠"),
             Map.entry("originals:read", "원본·이미지 파생본을 마스킹 없이 외부 AI에 제공 (별도 경고 확인 필요)"),
+            Map.entry(
+                "studio:propose",
+                "AI AGENT 제작소에 검수 의견·수정 작업·새 버전 파일 등록 (승인·삭제·공개 불가, 별도 경고 확인 필요)"),
             Map.entry("offline_access", "30일 동안 연결 자동 갱신")));
     model.addAttribute(
         "scopes",

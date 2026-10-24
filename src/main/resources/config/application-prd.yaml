@@ -68,6 +68,10 @@ spring:
             user-name-attribute: response
 
 app:
+  mcp:
+    # 운영 외부 AI 연결은 AI AGENT 제작소 협업 범위만 연다. 학원·재무·회원 등 다른 서비스 scope는 동의 화면·도구에서 제외된다.
+    # 승인·삭제·공개 도구는 어떤 scope로도 없다. 범위를 넓히려면 별도 승인 후 APP_MCP_ALLOWED_SCOPES로 바꾼다.
+    allowed-scopes: "${APP_MCP_ALLOWED_SCOPES:studio:read studio:propose originals:read offline_access}"
   statistics:
     alb:
       # 운영에서 ALB access log S3 delivery와 EC2 IAM read 권한을 확인한 뒤에만 true로 전환한다.

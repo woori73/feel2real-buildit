@@ -34,6 +34,15 @@ on:
           - unchanged
           - 'off'
           - 'on'
+      mcp_switch:
+        description: '외부 AI MCP(APP_MCP_ENABLED): unchanged=변경 없음(기본), studio-chatgpt=제작소 협업 scope만 켬(ChatGPT·Claude callback, 신뢰 프록시=VPC 대역 미설정 시), off=끔'
+        required: false
+        default: unchanged
+        type: choice
+        options:
+          - unchanged
+          - studio-chatgpt
+          - 'off'
 
 permissions:
   id-token: write
@@ -660,6 +669,61 @@ jobs:
             echo 'assistant switch not requested; env left unchanged'
           fi
 
+          # 외부 AI MCP 스위치: 배포 입력 mcp_switch가 studio-chatgpt/off일 때만 반영한다.
+          # studio-chatgpt는 APP_MCP_ENABLED=true와 공식 callback 2개만 기록한다. 허용 scope는 application-prd.yaml의
+          # 제작소 협업 범위(studio:read·studio:propose·originals:read·offline_access) 기본값을 쓴다.
+          # 운영은 forward-headers-strategy=framework라 신뢰 프록시가 없으면 MCP가 503으로 닫힌다. 값이 없을 때만
+          # 이 인스턴스의 VPC IPv4 대역(IMDSv2)을 기록한다(/8~/28만). 구할 수 없으면 MCP를 켜지 않는다.
+          # env는 위 f2r_env_snapshot으로 백업되어 배포 실패 시 함께 되돌아간다.
+          if aws s3 cp s3://feel2real-buildit-deploy/mcp-switch /tmp/mcp-switch 2>/dev/null; then
+            MCP_MODE=$(tr -d '\r\n "' < /tmp/mcp-switch | tr 'A-Z' 'a-z')
+            rm -f /tmp/mcp-switch
+            install -d -m 755 /etc/f2r
+            touch /etc/f2r/env
+            chmod 600 /etc/f2r/env
+            case "$MCP_MODE" in
+              studio-chatgpt)
+                MCP_PROXY_OK=1
+                if ! grep -qE '^APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=.+' /etc/f2r/env; then
+                  MCP_PROXY_OK=0
+                  IMDS_TOKEN=$(curl -sf -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' || true)
+                  IMDS_MAC=$(curl -sf -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/mac || true)
+                  VPC_CIDR=$(curl -sf -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" "http://169.254.169.254/latest/meta-data/network/interfaces/macs/$IMDS_MAC/vpc-ipv4-cidr-block" || true)
+                  if printf '%s' "$VPC_CIDR" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}/([89]|1[0-9]|2[0-8])$'; then
+                    printf 'APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=%s\n' "$VPC_CIDR" >> /etc/f2r/env
+                    echo "[DEPLOY] trusted proxies set to VPC CIDR $VPC_CIDR"
+                    MCP_PROXY_OK=1
+                  else
+                    echo '::warning::VPC CIDR unavailable; MCP NOT enabled (trusted proxies required)'
+                  fi
+                  unset IMDS_TOKEN IMDS_MAC VPC_CIDR
+                else
+                  echo 'trusted proxies already configured; left unchanged'
+                fi
+                if [ "$MCP_PROXY_OK" = 1 ]; then
+                  grep -vE '^APP_MCP_(ENABLED|REDIRECT_URIS)=' /etc/f2r/env > /etc/f2r/env.tmp || true
+                  printf 'APP_MCP_ENABLED=true\n' >> /etc/f2r/env.tmp
+                  printf 'APP_MCP_REDIRECT_URIS=https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect\n' >> /etc/f2r/env.tmp
+                  mv /etc/f2r/env.tmp /etc/f2r/env
+                  chmod 600 /etc/f2r/env
+                  echo '[DEPLOY] MCP switch applied: studio-chatgpt'
+                fi
+                unset MCP_PROXY_OK
+                ;;
+              off)
+                grep -vE '^APP_MCP_ENABLED=' /etc/f2r/env > /etc/f2r/env.tmp || true
+                printf 'APP_MCP_ENABLED=false\n' >> /etc/f2r/env.tmp
+                mv /etc/f2r/env.tmp /etc/f2r/env
+                chmod 600 /etc/f2r/env
+                echo '[DEPLOY] MCP switch applied: off'
+                ;;
+              *) echo '::warning::mcp switch mode invalid; env left unchanged' ;;
+            esac
+            unset MCP_MODE
+          else
+            echo 'mcp switch not requested; env left unchanged'
+          fi
+
           # 대시보드 캐릭터(세븐·서수니) 비공개 자료 폴더. 없으면 만들고, APP_AGENT_MEDIA_DIR이 비어 있을 때만
           # env에 기록한다(이미 있으면 그대로 둔다). 자료는 저장소가 아니라 ADMIN이 대시보드에서 올린 ZIP으로만 채운다.
           # env는 위 f2r_env_snapshot으로 백업되어 배포 실패 시 함께 되돌아간다.
@@ -843,6 +907,26 @@ jobs:
             *)
               aws s3 rm s3://${DEPLOY_BUCKET}/hwpx-worker 2>/dev/null || true
               echo "hwpx worker unchanged"
+              ;;
+          esac
+
+      - name: Stage MCP switch mode in S3 (transient)
+        shell: bash
+        env:
+          MCP_SWITCH: ${{ inputs.mcp_switch }}
+        run: |
+          set -euo pipefail
+          # 선택값(unchanged/studio-chatgpt/off)만 올린다. unchanged면 이전 실행이 남긴 값이 적용되지 않도록 지운다.
+          case "${MCP_SWITCH:-unchanged}" in
+            studio-chatgpt|off)
+              printf '%s' "$MCP_SWITCH" > /tmp/mcp-switch.staging
+              aws s3 cp /tmp/mcp-switch.staging s3://${DEPLOY_BUCKET}/mcp-switch --sse AES256 >/dev/null
+              rm -f /tmp/mcp-switch.staging
+              echo "mcp switch mode staged: $MCP_SWITCH"
+              ;;
+            *)
+              aws s3 rm s3://${DEPLOY_BUCKET}/mcp-switch 2>/dev/null || true
+              echo "mcp switch unchanged"
               ;;
           esac
 

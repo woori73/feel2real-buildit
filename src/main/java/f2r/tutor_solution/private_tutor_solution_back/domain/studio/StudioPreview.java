@@ -19,7 +19,17 @@ public class StudioPreview {
   private final Semaphore reads = new Semaphore(2);
   static final int SOURCE_LIMIT = 20 * 1024 * 1024;
   static final int ENTRY_LIMIT = 8 * 1024 * 1024;
-  static final Set<String> TYPES = Set.of("png", "pdf", "html", "md", "md5", "json", "mp4");
+  static final Set<String> TYPES =
+      Set.of(
+          "png", "jpg", "jpeg", "pdf", "html", "md", "md5", "json", "mp4", "mov", "wav", "mp3",
+          "flac");
+  static final Map<String, String> MEDIA =
+      Map.of(
+          "mp4", "video/mp4",
+          "mov", "video/quicktime",
+          "wav", "audio/wav",
+          "mp3", "audio/mpeg",
+          "flac", "audio/flac");
 
   public record View(byte[] bytes, String mime, String extension) {}
 
@@ -43,10 +53,11 @@ public class StudioPreview {
                 .getBytes(StandardCharsets.UTF_8),
             "text/html;charset=UTF-8",
             ext);
-      if (ext.equals("png")) return new View(thumbnail(bytes), "image/png", ext);
+      if (Set.of("png", "jpg", "jpeg").contains(ext))
+        return new View(thumbnail(bytes), "image/png", ext);
       if (ext.equals("md5")) return new View(bytes, "text/plain;charset=UTF-8", ext);
       if (ext.equals("json")) return new View(bytes, "application/json", ext);
-      return new View(bytes, ext.equals("pdf") ? "application/pdf" : "video/mp4", ext);
+      return new View(bytes, ext.equals("pdf") ? "application/pdf" : MEDIA.get(ext), ext);
     } finally {
       reads.release();
     }
@@ -88,7 +99,8 @@ public class StudioPreview {
 
   public byte[] aiImage(AuthenticatedPrincipal p, String id) throws IOException {
     var file = studio.file(p, id);
-    if (!"png".equals(file.get("extension"))) throw StudioService.error(415, "PNG 이미지 파일을 선택하세요.");
+    if (!Set.of("png", "jpg", "jpeg").contains(String.valueOf(file.get("extension"))))
+      throw StudioService.error(415, "PNG·JPG 이미지 파일을 선택하세요.");
     if (((Number) file.get("size_bytes")).longValue() > SOURCE_LIMIT)
       throw StudioService.error(413, "이미지 원본은 20 MiB 이하만 지원합니다.");
     if (!reads.tryAcquire()) throw StudioService.error(429, "이미지 파생본 생성 중입니다.");

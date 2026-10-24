@@ -132,6 +132,8 @@ class McpStudioMySqlTest {
   void givenIsolatedUsers_whenProjectInitialized_thenEmpty14Episodes68Cuts() throws Exception {
     for (String table :
         List.of(
+            "studio_tasks",
+            "studio_reviews",
             "mcp_audit",
             "mcp_codes",
             "mcp_tokens",
