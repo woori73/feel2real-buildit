@@ -68,16 +68,23 @@
     }
   }
 
-  // 대시보드와 같은 규칙: 생각 중에는 think.mp4, 그 밖에는 idle.mp4. 해당 영상이 없으면 idle, 그것도 없으면 null.
-  // 홈은 음성 립싱크가 없으므로 speak.mp4를 쓰지 않는다.
+  // 세븐 인사 영상(speak.mp4)은 음성과 입 모양을 함께 만든 고정 대사 한 편이다.
+  // 임의의 안내 문장에는 입 모양이 맞지 않으므로, 이 대사를 재생할 때('greeting')에만 쓴다.
+  var GREETING = { seven: '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?' };
+  function greetingFor(agent, files) {
+    return GREETING[agent] && (files || []).indexOf('speak.mp4') >= 0 ? GREETING[agent] : null;
+  }
+
+  // 대시보드와 같은 규칙: 생각 중에는 think.mp4, 인사 재생 중에는 speak.mp4, 그 밖에는 idle.mp4.
+  // 해당 영상이 없으면 idle, 그것도 없으면 null. 일반 안내 문장('speaking')에는 speak.mp4를 쓰지 않는다.
   function clipFor(state, files) {
     var list = files || [];
-    var clip = state === 'thinking' ? 'think' : 'idle';
+    var clip = state === 'thinking' ? 'think' : state === 'greeting' ? 'speak' : 'idle';
     if (list.indexOf(clip + '.mp4') >= 0) return clip;
     return list.indexOf('idle.mp4') >= 0 ? 'idle' : null;
   }
 
-  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor };
+  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor, greetingFor: greetingFor };
   if (typeof window !== 'undefined') window.f2rHomeAgent = api;
   if (typeof document === 'undefined' || !document.getElementById) return;
 
@@ -101,8 +108,9 @@
     ui.state = s;
     if (stage) stage.dataset.state = s;
     if (changed && stage && stage.dataset.media === 'ready') portrait();
+    renderGreet();
     var label = $('homeStateLabel');
-    if (label) label.textContent = { idle: '대기', listening: '듣는 중', thinking: '생각 중', speaking: '안내 중' }[s] || '대기';
+    if (label) label.textContent = { idle: '대기', listening: '듣는 중', thinking: '생각 중', speaking: '안내 중', greeting: '말하는 중' }[s] || '대기';
   }
 
   function bubble(who, text, links) {
@@ -174,12 +182,44 @@
     if (ui.base && clip) {
       var src = ui.base + ui.agent + '/' + clip + '.mp4';
       if (files.indexOf('poster.jpg') >= 0) video.poster = ui.base + ui.agent + '/poster.jpg'; else video.removeAttribute('poster');
-      if (video.getAttribute('src') !== src) { video.src = src; var p = video.play && video.play(); if (p && p.catch) p.catch(function () {}); }
+      // 인사 영상만 소리를 켜고 한 번 재생한다. 나머지 영상은 소리 없이 반복한다.
+      var talking = clip === 'speak';
+      video.muted = !talking;
+      video.loop = !talking;
+      if (video.getAttribute('src') !== src) {
+        video.src = src;
+        var p = video.play && video.play();
+        if (p && p.catch) p.catch(function () { if (talking) setState('idle'); });
+      }
       stage.dataset.media = 'ready';
     } else {
       video.removeAttribute('src');
       stage.dataset.media = 'missing';
     }
+  }
+
+  // ---- 세븐 인사(음성+영상) ----
+  // 소리 있는 재생은 사용자가 버튼을 누른 뒤에만 시작한다(모바일 자동재생 정책). 재생 중 다시 눌러도 겹쳐 재생하지 않는다.
+  function mediaFiles() {
+    var info = ui.media && ui.media.agents && ui.media.agents[ui.agent];
+    return info && info.files ? info.files : [];
+  }
+  function renderGreet() {
+    var btn = $('homeGreet');
+    if (!btn) return;
+    var line = greetingFor(ui.agent, mediaFiles());
+    btn.hidden = !line;
+    btn.disabled = ui.state === 'greeting';
+    btn.textContent = ui.state === 'greeting' ? '말하는 중…' : AGENTS[ui.agent].name + ' 인사 듣기';
+  }
+  function playGreeting() {
+    var line = greetingFor(ui.agent, mediaFiles());
+    if (!line || ui.state === 'greeting') return;
+    bubble('agent', line);
+    setState('greeting');
+  }
+  function stopGreeting() {
+    if (ui.state === 'greeting') setState('idle');
   }
 
   function loadMedia() {
@@ -188,7 +228,7 @@
     return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
-      .then(function (m) { ui.media = m; portrait(); });
+      .then(function (m) { ui.media = m; portrait(); renderGreet(); });
   }
 
   function readUser() {
@@ -203,6 +243,7 @@
       if (!text) return;
       lastAsk = text;
       input.value = '';
+      stopGreeting();
       bubble('user', text);
       respond(detectIntent(text));
     });
@@ -212,13 +253,25 @@
     });
     document.querySelectorAll('button[data-home-agent]').forEach(function (b) {
       b.addEventListener('click', function () {
+        stopGreeting();
         ui.agent = AGENTS[b.dataset.homeAgent] ? b.dataset.homeAgent : 'seven';
         store.set(AGENT_KEY, ui.agent);
         document.body.dataset.agentTheme = ui.agent;
         portrait();
+        renderGreet();
         bubble('agent', AGENTS[ui.agent].name + '입니다. 이어서 도와드릴게요.');
       });
     });
+    var greet = $('homeGreet');
+    if (greet) greet.addEventListener('click', playGreeting);
+    var video = $('homeVideo');
+    if (video) {
+      video.addEventListener('ended', stopGreeting);
+      video.addEventListener('error', stopGreeting);
+    }
+    // 다른 탭으로 가거나 페이지를 떠나면 인사를 멈춘다(돌아왔을 때 소리가 겹치지 않게).
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stopGreeting(); });
+    window.addEventListener('pagehide', stopGreeting);
     var again = $('homeWelcomeAgain');
     if (again) again.addEventListener('click', function () { welcome(true); });
   }

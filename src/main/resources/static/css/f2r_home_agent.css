@@ -49,6 +49,7 @@ body { background: var(--si-bg); color: var(--si-text); }
 }
 .si-home-stage[data-state="listening"], .si-home-stage[data-state="speaking"] { --si-state: var(--si-violet); }
 .si-home-stage[data-state="thinking"] { --si-state: var(--si-amber); }
+.si-home-stage[data-state="greeting"] { --si-state: var(--si-cyan); }
 .si-home-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 24%; }
 .si-home-stage[data-media="missing"] video { display: none; }
 .si-home-emblem { position: absolute; inset: 0; display: none; place-items: center; }
@@ -94,6 +95,15 @@ body { background: var(--si-bg); color: var(--si-text); }
 .si-home-name strong { font-size: 20px; font-weight: 900; }
 body[data-agent-theme="suni"] .si-home-name strong { color: var(--si-violet); }
 .si-home-name small { color: var(--si-muted); font-size: 13px; }
+/* 세븐 인사 듣기: 소리는 이 버튼을 누른 뒤에만 재생한다(모바일 자동재생 정책). */
+.si-home-greet {
+  position: absolute; z-index: 4; right: 12px; bottom: 12px; min-height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--si-cyan); background: rgba(4,10,20,.78); color: var(--si-text); font: inherit; font-size: 13px; font-weight: 800;
+  box-shadow: 0 0 14px rgba(93,225,255,.35);
+}
+.si-home-greet:disabled { cursor: default; opacity: .8; }
+.si-home-greet[hidden] { display: none; }
+@media (max-width: 560px) { .si-home-greet { bottom: 42px; right: 10px; } }
 .si-home-talk { display: grid; gap: 8px; min-width: 0; }
 .si-home-chat { display: flex; flex-direction: column; gap: 8px; max-height: 300px; min-height: 120px; overflow-y: auto; padding: 2px; }
 .si-home-msg { max-width: 92%; padding: 10px 14px; border-radius: 14px; background: var(--si-panel); border: 1px solid var(--si-line); }
