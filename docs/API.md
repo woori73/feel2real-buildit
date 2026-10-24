@@ -4900,6 +4900,7 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | `/api/studio/files` | GET / POST | 보관 목록 / multipart PDF·HTML·JSON·MD·ZIP·PNG·MP4, 100 MiB, SHA-256 중복 검사 |
 | `/api/studio/files/{id}` | GET | storage key 제외 파일 메타데이터 |
 | `/api/studio/files/{id}/content` | GET | 원본 bytes, attachment·no-store·nosniff·CSP sandbox |
+| `/api/studio/files/{id}/stream` | GET | 영상·음악(MP4·MOV·WAV·MP3·FLAC) HTTP Range 재생. `bytes=a-b`·`a-`·`-n` 한 구간, 응답 최대 4 MiB/요청(206 + Content-Range), Range 없으면 200 전체 스트리밍, 범위 밖 416, 그 외 형식 415. 원본을 메모리에 올리지 않음(S3 ranged GET), 동시 6건 |
 | `/api/studio/files/{id}/text` | GET | 20 MiB 이하 PDF/텍스트·ZIP 목록 열람, ZIP 해제·스크립트 실행 없음 |
 | `/api/studio/events` | GET | 작업·검수·승인 이력 |
 | `/api/studio/members` | GET / POST | ADMIN 전용 명시적 제작 담당자 권한·폐기 |

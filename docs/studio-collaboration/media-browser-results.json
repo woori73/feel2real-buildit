@@ -1,0 +1,72 @@
+[
+ {
+  "name": "1440px upload WAV/JPG/WEBP accepted with server SHA",
+  "pass": true,
+  "detail": "03bdffca,dc3cf125,3fb54eb2"
+ },
+ {
+  "name": "1440px WAV plays through Range stream",
+  "pass": true,
+  "detail": "duration=1.00s statuses=206"
+ },
+ {
+  "name": "1440px JPG preview renders",
+  "pass": true,
+  "detail": "naturalWidth=320"
+ },
+ {
+  "name": "1440px WEBP preview renders",
+  "pass": true,
+  "detail": "naturalWidth=320"
+ },
+ {
+  "name": "1440px AI 검수·작업 tab shows review and task",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "name": "1440px no horizontal overflow on 5 tabs",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "name": "1440px no JS errors, no external requests",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "name": "390px upload WAV/JPG/WEBP accepted with server SHA",
+  "pass": true,
+  "detail": "03bdffca,dc3cf125,3fb54eb2"
+ },
+ {
+  "name": "390px WAV plays through Range stream",
+  "pass": true,
+  "detail": "duration=1.00s statuses=206"
+ },
+ {
+  "name": "390px JPG preview renders",
+  "pass": true,
+  "detail": "naturalWidth=320"
+ },
+ {
+  "name": "390px WEBP preview renders",
+  "pass": true,
+  "detail": "naturalWidth=320"
+ },
+ {
+  "name": "390px AI 검수·작업 tab shows review and task",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "name": "390px no horizontal overflow on 5 tabs",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "name": "390px no JS errors, no external requests",
+  "pass": true,
+  "detail": ""
+ }
+]
