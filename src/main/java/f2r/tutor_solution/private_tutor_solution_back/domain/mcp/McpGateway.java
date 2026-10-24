@@ -56,6 +56,23 @@ public class McpGateway {
 
   public List<Map<String, Object>> tools() {
     List<Map<String, Object>> out = new ArrayList<>();
+    collectTools(out);
+    // 운영 scope 허용 목록 밖의 서비스 도구는 노출하지 않는다(실행 시에도 grant scope가 걸러진다).
+    if (oauth != null)
+      out.removeIf(
+          tool -> {
+            String name = (String) tool.get("name");
+            if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
+            if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
+              return !oauth.scopeAllowed("studio:read");
+            if (name.equals("list_catalog")) return !oauth.scopeAllowed("catalog:read");
+            if (name.startsWith("read_")) return !oauth.scopeAllowed(name.substring(5) + ":read");
+            return false;
+          });
+    return out;
+  }
+
+  private void collectTools(List<Map<String, Object>> out) {
     out.add(
         tool(
             "list_catalog",
@@ -128,7 +145,6 @@ public class McpGateway {
                 + " read_newstart(history)를 사용합니다. 재무는 read_easy의 허용 사업체 월 요약만 제공합니다.",
             Map.of(),
             List.of()));
-    return out;
   }
 
   private void studioTools(List<Map<String, Object>> out) {

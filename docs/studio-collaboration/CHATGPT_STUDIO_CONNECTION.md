@@ -44,14 +44,17 @@ ChatGPT가 연결되지 않은 직접 원인은 **운영 MCP 비활성**이다. 
 ### DB
 `V1096__studio_ai_reviews_and_tasks.sql` — `studio_reviews`, `studio_tasks` 추가만. 기존 테이블·V1094/V1095 불변. (참고: 병합 제외된 #862 브랜치도 V1096을 쓰므로 되살릴 경우 번호를 바꿔야 한다.)
 
-## 3. 운영 활성화 (승인 후 실행 — 본 PR은 실행하지 않음)
+## 3. 운영 활성화
 
-1. PR CI(Build Check, Studio and MCP isolated checks) 통과 후 main 병합·배포 → Flyway V1096 적용 확인.
-2. `/etc/f2r/env`에 추가하고 재시작:
-   - `APP_MCP_ENABLED=true`
-   - `APP_MCP_REDIRECT_URIS=https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect`
-   - 운영은 `forward-headers-strategy: framework`이므로 `APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES`(nginx/ALB 대역)가 비어 있으면 MCP가 `MCP_TRUSTED_PROXIES_REQUIRED`(503)로 닫힌다. 현재 값을 먼저 확인한다.
-3. 확인: `GET /.well-known/oauth-authorization-server` 200, `scopes_supported`에 `studio:propose` 포함.
+운영 사전 점검(2026-10-24, `prod-readonly-status` 읽기 전용): Flyway 190건·최신 V1095·실패 0, V1094/V1095 checksum 저장소와 일치, **V1096 미적용**(→ #862의 V1096~V1098도 운영에 적용된 적 없음, 충돌 없음). ALB 대상 2개 healthy, actuator 200. `APP_MCP_ENABLED`·`APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES` 미설정.
+
+활성화는 `Deploy to EC2` 수동 실행의 `mcp_switch=studio-chatgpt`로만 한다(기존 assistant/hwpx 스위치와 같은 방식, env 스냅샷·배포 실패 시 자동 복원):
+- `APP_MCP_ENABLED=true`, `APP_MCP_REDIRECT_URIS=https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect`
+- 신뢰 프록시가 비어 있으면 이 인스턴스의 VPC IPv4 대역(IMDSv2)을 기록한다. 구할 수 없으면 MCP를 켜지 않는다. 이 값은 입시상담·문의·방문 통계 rate limit의 실제 클라이언트 IP 판별에도 쓰인다(현재는 모두 ALB IP로 묶여 있음).
+- **허용 scope는 `application-prd.yaml`의 `app.mcp.allowed-scopes` = `studio:read studio:propose originals:read offline_access`**. 학원·재무·입시·회원·위키 등 다른 서비스 scope는 메타데이터·동의 화면·도구 목록에서 빠지고, 예전 grant에 있어도 실행 시 무시된다.
+- 끄기: `mcp_switch=off`.
+
+확인: `GET /.well-known/oauth-authorization-server` 200, `scopes_supported`가 위 4개.
 
 ## 4. ChatGPT 채팅 연결 절차 (사용자 작업)
 
