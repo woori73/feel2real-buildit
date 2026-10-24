@@ -121,6 +121,19 @@ public class LocalFileStorage implements FileStorage {
   }
 
   @Override
+  public InputStream openRange(String storageKey, long start, long end) throws IOException {
+    if (start < 0 || end < start) throw new IOException("invalid range");
+    var channel = Files.newByteChannel(Path.of(storageKey));
+    try {
+      channel.position(start);
+    } catch (IOException e) {
+      channel.close();
+      throw e;
+    }
+    return java.nio.channels.Channels.newInputStream(channel);
+  }
+
+  @Override
   public int pageCount(String storageKey, String fileType) {
     if (!"PDF".equals(fileType)) return 1;
     try (var stream = Files.list(Path.of(storageKey))) {

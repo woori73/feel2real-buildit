@@ -21,10 +21,11 @@ public class StudioPreview {
   static final int ENTRY_LIMIT = 8 * 1024 * 1024;
   static final Set<String> TYPES =
       Set.of(
-          "png", "jpg", "jpeg", "pdf", "html", "md", "md5", "json", "mp4", "mov", "wav", "mp3",
-          "flac");
+          "png", "jpg", "jpeg", "webp", "pdf", "html", "md", "md5", "json", "mp4", "mov", "wav",
+          "mp3", "flac");
   static final Map<String, String> MEDIA =
       Map.of(
+          "webp", "image/webp",
           "mp4", "video/mp4",
           "mov", "video/quicktime",
           "wav", "audio/wav",

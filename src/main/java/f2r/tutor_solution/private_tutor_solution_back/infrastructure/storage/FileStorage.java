@@ -89,4 +89,12 @@ public interface FileStorage {
    *     예외 또는 부분 재귀 삭제면 {@code false}
    */
   boolean deleteReported(String storageKey, String fileType);
+
+  /**
+   * 단일 객체의 [start, end] 바이트 구간(양끝 포함)을 스트림으로 연다. 영상·음악 재생의 Range 요청용이며 전체를 메모리에 올리지
+   * 않는다. 호출자가 스트림을 닫는다.
+   */
+  default InputStream openRange(String storageKey, long start, long end) throws IOException {
+    throw new IOException("ranged read not supported");
+  }
 }

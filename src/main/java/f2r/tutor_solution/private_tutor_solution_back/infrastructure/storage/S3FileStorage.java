@@ -197,6 +197,22 @@ public class S3FileStorage implements FileStorage {
     }
   }
 
+  @Override
+  public InputStream openRange(String storageKey, long start, long end) throws IOException {
+    if (start < 0 || end < start) throw new IOException("invalid range");
+    try {
+      return s3.getObject(
+          GetObjectRequest.builder()
+              .bucket(bucket)
+              .key(storageKey)
+              .range("bytes=" + start + "-" + end)
+              .build());
+    } catch (SdkException e) {
+      // 버킷·키가 메시지에 섞이지 않도록 원인 없이 정규화한다(readSingleLimited와 같은 경계).
+      throw new StorageReadException();
+    }
+  }
+
   // ---- helpers ----
 
   private void putObject(String key, byte[] bytes, String contentType) {

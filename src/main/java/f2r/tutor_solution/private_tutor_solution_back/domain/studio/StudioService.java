@@ -650,6 +650,13 @@ public class StudioService {
     return storage.readSingleLimited((String) f.get("storage_key"), "UNKNOWN", MAX_FILE);
   }
 
+  /** 권한 확인 후 원본의 바이트 구간을 연다(영상·음악 재생). 원본은 바꾸지 않는다. */
+  public InputStream openRange(AuthenticatedPrincipal p, String id, long start, long end)
+      throws IOException {
+    var f = file(p, id);
+    return storage.openRange((String) f.get("storage_key"), start, end);
+  }
+
   public List<Map<String, Object>> events(AuthenticatedPrincipal p) {
     require(p, false, false);
     return db.queryForList(

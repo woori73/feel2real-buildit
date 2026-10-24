@@ -26,6 +26,9 @@
     JOB: "생성 작업",
     REVIEW: "검수 결과",
   };
+  const IMAGE_TYPES = ["png", "jpg", "jpeg", "webp"];
+  const STREAM_TYPES = ["mp4", "mov", "wav", "mp3", "flac"];
+  const PREVIEW_TYPES = ["pdf", "zip", "md", "md5", "json", "html", ...IMAGE_TYPES, ...STREAM_TYPES];
   const el = (tag, text, cls) => {
     const e = document.createElement(tag);
     if (text !== undefined) e.textContent = text;
@@ -163,6 +166,18 @@
       previous.onclick=run(()=>show(current-1));next.onclick=run(()=>show(current+1));await show(1);
       return;
     }
+    if (entry == null && STREAM_TYPES.includes(ext)) {
+      // 영상·음악은 Range 스트림으로 바로 재생한다(대용량 러프 영상도 전체를 내려받지 않음).
+      const media = el(ext === "mp4" || ext === "mov" ? "video" : "audio");
+      media.controls = true;
+      media.preload = "metadata";
+      media.setAttribute("playsinline", "");
+      media.className = "media-player";
+      media.src = scoped("/api/studio/files/" + encodeURIComponent(file.id) + "/stream");
+      media.onerror = () => message("재생할 수 없는 형식입니다. 원본 다운로드로 확인하세요. (" + ext + ")");
+      target.append(media);
+      return;
+    }
     const response = await fetch(previewUrl(file.id, entry));
     if(!currentView())return;
     if (!response.ok) {const error=await response.json().catch(()=>({}));throw Error(error.message || "미리보기를 열 수 없습니다 ("+response.status+")");}
@@ -176,9 +191,10 @@
     } else {
       if(state.preview) URL.revokeObjectURL(state.preview);
       state.preview=URL.createObjectURL(await response.blob());
-      const media=el(ext==="png"?"img":ext==="mp4"?"video":"iframe");
-      if(ext==="png")media.alt=entry||file.filename;
-      if(ext==="mp4")media.controls=true;
+      const image=IMAGE_TYPES.includes(ext), playable=STREAM_TYPES.includes(ext);
+      const media=el(image?"img":playable?(ext==="mp4"||ext==="mov"?"video":"audio"):"iframe");
+      if(image)media.alt=entry||file.filename;
+      if(playable)media.controls=true;
       if(ext==="pdf") {media.title=(entry||file.filename)+" PDF 뷰어";media.className="document-view";media.setAttribute("sandbox","allow-same-origin");}
       media.src=state.preview;target.append(media);
     }
@@ -449,7 +465,7 @@
       a.href = scoped("/api/studio/files/" + f.id + "/content");
       c.append(a);
       if (
-        ["pdf", "zip", "png", "mp4", "md", "md5", "json", "html"].includes(f.extension)
+        PREVIEW_TYPES.includes(f.extension)
       ) {
         const b = el("button", "자료 열람");
         b.onclick = run(() => previewFile(f, $("file-preview")));

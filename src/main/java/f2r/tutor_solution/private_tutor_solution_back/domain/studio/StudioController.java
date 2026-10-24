@@ -302,6 +302,90 @@ public class StudioController {
     }
   }
 
+  /** 한 번에 보내는 최대 구간. 브라우저 플레이어는 이어서 다음 구간을 요청한다. */
+  static final long STREAM_CHUNK = 4L * 1024 * 1024;
+
+  private final java.util.concurrent.Semaphore mediaStreams = new java.util.concurrent.Semaphore(6);
+
+  /**
+   * 영상·음악 원본을 HTTP Range로 재생한다(100 MiB 원본도 메모리에 올리지 않음). 권한·감사는 기존 파일 조회와 같고 원본은
+   * 바뀌지 않는다. 내려받기는 기존 /content를 쓴다.
+   */
+  @GetMapping("/api/studio/files/{id}/stream")
+  public void stream(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestHeader(value = HttpHeaders.RANGE, required = false) String range,
+      jakarta.servlet.http.HttpServletResponse response)
+      throws IOException {
+    var f = service.file(p, id);
+    String mime = StudioPreview.MEDIA.get((String) f.get("extension"));
+    if (mime == null || mime.startsWith("image/"))
+      throw StudioService.error(415, "영상·음악 파일만 재생할 수 있습니다.");
+    long size = ((Number) f.get("size_bytes")).longValue();
+    long[] window = rangeWindow(range, size);
+    if (window == null) {
+      response.setStatus(416);
+      response.setHeader(HttpHeaders.CONTENT_RANGE, "bytes */" + size);
+      return;
+    }
+    if (!mediaStreams.tryAcquire())
+      throw StudioService.error(429, "재생 요청이 많습니다. 잠시 후 다시 시도하세요.");
+    try (var in = service.openRange(p, id, window[0], window[1])) {
+      long length = window[1] - window[0] + 1;
+      response.setStatus(range == null ? 200 : 206);
+      response.setContentType(mime);
+      response.setContentLengthLong(length);
+      response.setHeader(HttpHeaders.ACCEPT_RANGES, "bytes");
+      if (range != null)
+        response.setHeader(
+            HttpHeaders.CONTENT_RANGE, "bytes " + window[0] + "-" + window[1] + "/" + size);
+      response.setHeader(HttpHeaders.CACHE_CONTROL, "private, no-store");
+      response.setHeader("X-Content-Type-Options", "nosniff");
+      response.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
+      response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "inline");
+      var out = response.getOutputStream();
+      byte[] buffer = new byte[65536];
+      long remaining = length;
+      while (remaining > 0) {
+        int n = in.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+        if (n < 0) break;
+        out.write(buffer, 0, n);
+        remaining -= n;
+      }
+      response.flushBuffer();
+    } finally {
+      mediaStreams.release();
+    }
+  }
+
+  /**
+   * {@code bytes=a-b}, {@code bytes=a-}, {@code bytes=-n} 한 구간만 지원한다. 헤더가 없으면 전체(200, 스트리밍).
+   * 범위를 벗어나면 null(416).
+   */
+  static long[] rangeWindow(String range, long size) {
+    if (size <= 0) return null;
+    if (range == null) return new long[] {0, size - 1};
+    var m = java.util.regex.Pattern.compile("bytes=(\\d*)-(\\d*)").matcher(range.trim());
+    if (!m.matches() || (m.group(1).isEmpty() && m.group(2).isEmpty())) return null;
+    long start, end;
+    try {
+      if (m.group(1).isEmpty()) {
+        long suffix = Long.parseLong(m.group(2));
+        if (suffix <= 0) return null;
+        start = Math.max(0, size - suffix);
+        end = size - 1;
+      } else {
+        start = Long.parseLong(m.group(1));
+        end = m.group(2).isEmpty() ? size - 1 : Math.min(Long.parseLong(m.group(2)), size - 1);
+      }
+    } catch (NumberFormatException e) {
+      return null;
+    }
+    if (start >= size || end < start) return null;
+    return new long[] {start, Math.min(end, start + STREAM_CHUNK - 1)};
+  }
+
   @GetMapping("/api/studio/files/{id}/text")
   @ResponseBody
   public Object text(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id)
