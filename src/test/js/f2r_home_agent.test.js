@@ -64,3 +64,18 @@ test('given 홈 템플릿 when 읽으면 then AI 비서 첫 화면이 기존 상
   // 홈 첫 화면 제목은 하나(h1)
   assert.equal((HTML.match(/<h1[\s>]/g) || []).length, 1);
 });
+
+test('given 캐릭터 영상 목록 when 대화 상태가 바뀌면 then 생각 중에만 think.mp4, 없으면 idle로 대신한다', () => {
+  // given
+  const h = load();
+  const all = ['idle.mp4', 'think.mp4', 'speak.mp4', 'poster.jpg'];
+  // when / then
+  assert.equal(h.clipFor('thinking', all), 'think');
+  assert.equal(h.clipFor('idle', all), 'idle');
+  assert.equal(h.clipFor('listening', all), 'idle');
+  assert.equal(h.clipFor('speaking', all), 'idle'); // 홈은 립싱크가 없어 speak.mp4를 쓰지 않는다
+  assert.equal(h.clipFor('thinking', ['idle.mp4']), 'idle');
+  assert.equal(h.clipFor('thinking', ['think.mp4']), 'think');
+  assert.equal(h.clipFor('idle', ['think.mp4']), null);
+  assert.equal(h.clipFor('idle', []), null);
+});

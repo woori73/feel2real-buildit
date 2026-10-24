@@ -68,7 +68,16 @@
     }
   }
 
-  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor };
+  // 대시보드와 같은 규칙: 생각 중에는 think.mp4, 그 밖에는 idle.mp4. 해당 영상이 없으면 idle, 그것도 없으면 null.
+  // 홈은 음성 립싱크가 없으므로 speak.mp4를 쓰지 않는다.
+  function clipFor(state, files) {
+    var list = files || [];
+    var clip = state === 'thinking' ? 'think' : 'idle';
+    if (list.indexOf(clip + '.mp4') >= 0) return clip;
+    return list.indexOf('idle.mp4') >= 0 ? 'idle' : null;
+  }
+
+  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor };
   if (typeof window !== 'undefined') window.f2rHomeAgent = api;
   if (typeof document === 'undefined' || !document.getElementById) return;
 
@@ -79,7 +88,7 @@
     get: function (k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (_) { /* 저장 불가 환경 */ } }
   };
-  var ui = { agent: 'seven', user: null, media: null, base: null };
+  var ui = { agent: 'seven', user: null, media: null, base: null, state: 'idle' };
 
   function staff() { return !!(ui.user && (ui.user.role === 'ADMIN' || ui.user.role === 'TUTOR')); }
   function studioAllowed() { return !!(ui.user && ui.user.role === 'ADMIN'); }
@@ -88,7 +97,10 @@
 
   function setState(s) {
     var stage = $('homeStage');
+    var changed = ui.state !== s;
+    ui.state = s;
     if (stage) stage.dataset.state = s;
+    if (changed && stage && stage.dataset.media === 'ready') portrait();
     var label = $('homeStateLabel');
     if (label) label.textContent = { idle: '대기', listening: '듣는 중', thinking: '생각 중', speaking: '안내 중' }[s] || '대기';
   }
@@ -158,8 +170,9 @@
     $('homeCode').textContent = AGENTS[ui.agent].code;
     $('homeName').textContent = AGENTS[ui.agent].name;
     document.querySelectorAll('button[data-home-agent]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.homeAgent === ui.agent ? 'true' : 'false'); });
-    if (ui.base && files.indexOf('idle.mp4') >= 0) {
-      var src = ui.base + ui.agent + '/idle.mp4';
+    var clip = clipFor(ui.state, files);
+    if (ui.base && clip) {
+      var src = ui.base + ui.agent + '/' + clip + '.mp4';
       if (files.indexOf('poster.jpg') >= 0) video.poster = ui.base + ui.agent + '/poster.jpg'; else video.removeAttribute('poster');
       if (video.getAttribute('src') !== src) { video.src = src; var p = video.play && video.play(); if (p && p.catch) p.catch(function () {}); }
       stage.dataset.media = 'ready';
