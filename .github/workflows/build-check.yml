@@ -95,6 +95,7 @@ jobs:
           src/test/js/tutor_academy_inquiries.test.js
           src/test/js/exam_insight.test.js
           src/test/js/home_agent_exam_contract.test.js
+          src/test/js/f2r_spatial.test.js
           src/test/js/landing_buildit_start.test.js
           src/test/js/academy_public_hero_cycle.test.js
           src/test/js/landing_v3.test.js
