@@ -1,0 +1,38 @@
+name: Operations evidence policy
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/artifact-cleanup.yml'
+      - '.github/workflows/deploy-ec2.yml'
+      - '.github/workflows/prod-readonly-status.yml'
+      - '.github/workflows/prod-diagnostic.yml'
+      - '.github/workflows/operations-evidence-check.yml'
+      - 'scripts/deploy/archive_release.py'
+      - 'scripts/operations/tests/test_operations_evidence.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/artifact-cleanup.yml'
+      - '.github/workflows/deploy-ec2.yml'
+      - '.github/workflows/prod-readonly-status.yml'
+      - '.github/workflows/prod-diagnostic.yml'
+      - '.github/workflows/operations-evidence-check.yml'
+      - 'scripts/deploy/archive_release.py'
+      - 'scripts/operations/tests/test_operations_evidence.py'
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'PyYAML==6.0.3'
+      - name: Test archive integrity, failure recovery and retention boundaries (no AWS access)
+        run: python -m unittest discover -s scripts/operations/tests -p test_operations_evidence.py -v

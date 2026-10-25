@@ -2,10 +2,10 @@ name: Artifact Storage Cleanup
 
 # GitHub Actions 저장공간 자동 정리
 # - 매주 일요일 오전 3시(KST) 실행
-# - 7일 이상 된 테스트 리포트와 불필요한 빌드 아티팩트 정리
+# - 운영 증빙은 최소 90일 보존. 기본은 삭제 없는 dry-run.
 # - 최근 성공 배포 3개 버전 + 실행 중인 CI/배포의 아티팩트는 보존
 #
-# 시뮬레이션 검증 완료(2026-10-12). 자동 삭제 활성화됨.
+# 2026-10-25: 장기 증빙 보존 정책에 맞춰 자동 삭제 중지. 명시적 수동 실행만 삭제 가능.
 
 on:
   schedule:
@@ -22,11 +22,11 @@ on:
           - 'true'
           - 'false'
 
-# 최초 실행은 시뮬레이션. 검증 후 'false'로 변경하여 자동 삭제 활성화.
+# 스케줄은 계속 조회·보고하되 삭제하지 않는다.
 env:
-  DRY_RUN_DEFAULT: 'false'
+  DRY_RUN_DEFAULT: 'true'
   KEEP_DEPLOY_COUNT: '3'
-  REPORT_RETENTION_DAYS: '7'
+  REPORT_RETENTION_DAYS: '90'
 
 permissions:
   actions: write
@@ -59,7 +59,7 @@ jobs:
           TOKEN = os.environ['GH_TOKEN']
           DRY_RUN = os.environ.get('DRY_RUN', 'true').lower() == 'true'
           KEEP_DEPLOY_COUNT = int(os.environ.get('KEEP_DEPLOY_COUNT', '3'))
-          REPORT_RETENTION_DAYS = int(os.environ.get('REPORT_RETENTION_DAYS', '7'))
+          REPORT_RETENTION_DAYS = max(90, int(os.environ.get('REPORT_RETENTION_DAYS', '90')))
           SUMMARY = os.environ.get('GITHUB_STEP_SUMMARY', '/dev/null')
           API = 'https://api.github.com'
 
