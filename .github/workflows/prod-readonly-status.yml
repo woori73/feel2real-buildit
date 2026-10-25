@@ -42,11 +42,31 @@ jobs:
           role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-readonly
           aws-region: ap-northeast-2
           role-session-name: f2r-readonly-status
+          role-duration-seconds: 3600
+          unset-current-credentials: true
+
+      - name: Record credential source and evidence policy (no tokens)
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "observed_utc=$(date -u +%FT%TZ)"
+            echo "workflow_sha=$GITHUB_SHA"
+            echo "run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT"
+            echo "repository_log_retention_days=$GITHUB_RETENTION_DAYS"
+            echo "artifact_retention_days=90"
+            echo "credential_source=OIDC requested_duration_seconds=3600"
+            aws sts get-caller-identity --query Arn --output text | sed 's/425805163960/<acct>/g'
+          } | tee ops-status-context.txt
+          if [ "$GITHUB_RETENTION_DAYS" -lt 90 ]; then
+            echo "::warning::Repository log retention is below 90 days; change Actions General settings."
+          fi
 
       - name: AWS resources (describe only)
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
+          exec > >(tee ops-status-aws.txt) 2>&1
           mask() { sed -E 's/425805163960/<acct>/g'; }
           echo "== app instance"
           aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running \
@@ -56,10 +76,10 @@ jobs:
           echo "== rds snapshots (latest 20)"
           aws rds describe-db-snapshots --query "reverse(sort_by(DBSnapshots,&SnapshotCreateTime))[:20].{Id:DBSnapshotIdentifier,Db:DBInstanceIdentifier,Type:SnapshotType,Created:SnapshotCreateTime,Status:Status}" --output table 2>&1 | mask
           echo "== alb target health"
-          for tg in $(aws elbv2 describe-target-groups --query "TargetGroups[?starts_with(TargetGroupName,'f2r-')].TargetGroupArn" --output text 2>/dev/null); do
+          TGS=$(aws elbv2 describe-target-groups --query "TargetGroups[?starts_with(TargetGroupName,'f2r-')].TargetGroupArn" --output text)
+          for tg in $TGS; do
             aws elbv2 describe-target-health --target-group-arn "$tg" --query 'TargetHealthDescriptions[].{Target:Target.Id,Port:Target.Port,State:TargetHealth.State}' --output table 2>&1 | mask
           done
-          exit 0
 
       - name: Host status (fixed SSM document only)
         shell: bash
@@ -67,6 +87,7 @@ jobs:
           SECTION: ${{ inputs.section }}
         run: |
           set -euo pipefail
+          exec > >(tee ops-status-host.txt) 2>&1
           IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running \
             --query 'Reservations[0].Instances[0].InstanceId' --output text)
           [ -n "$IID" ] && [ "$IID" != "None" ] || { echo "::error::running f2r-app instance not found"; exit 1; }
@@ -81,3 +102,15 @@ jobs:
           aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --query StandardOutputContent --output text \
             | sed -E 's/((KEY|SECRET|TOKEN|PASSWORD|PASS)[A-Za-z_]*=)[^ ]+/\1<masked>/Ig; s/\.[a-z0-9]+\.ap-northeast-2\.rds\.amazonaws\.com/.<rds-suffix>/g'
           [ "$ST" = Success ]
+
+      - name: Preserve read-only evidence (90 days)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: prod-readonly-status-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ops-status-context.txt
+            ops-status-aws.txt
+            ops-status-host.txt
+          if-no-files-found: warn
+          retention-days: 90

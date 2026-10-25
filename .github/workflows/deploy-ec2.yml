@@ -292,7 +292,7 @@ jobs:
           name: deploy-gate-test-report
           path: build/reports/tests/test
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 90
 
       - name: Build bootJar
         # auto deploy는 CI artifact를 재사용하므로 스킵 (수동 fallback만 빌드)
@@ -838,6 +838,9 @@ jobs:
         with:
           role-to-assume: ${{ inputs.target == 'new' && 'arn:aws:iam::425805163960:role/github-actions-f2r-deploy' || 'arn:aws:iam::067573916809:role/github-actions-f2r-deploy' }}
           aws-region: ap-northeast-2
+          role-duration-seconds: 3600
+          role-session-name: f2r-deploy-${{ github.run_id }}
+          unset-current-credentials: true
 
       - name: Resolve deploy target (old=기존 운영, new=신규 계정)
         shell: bash
@@ -854,6 +857,30 @@ jobs:
           fi
           echo "DEPLOY_BUCKET=$B" >> "$GITHUB_ENV"
           echo "DEPLOY_IID=$IID" >> "$GITHUB_ENV"
+
+      # 승인된 배포를 실행할 때만 동작한다. 라이브 객체·키·스위치 갱신 전에 복구용 파일을 보존한다.
+      # manifest.json이 마지막에 등록된 prefix만 완전한 보관본이다. 비밀값·env 파일은 포함하지 않는다.
+      - name: Archive release before changing live deployment objects
+        id: archive
+        shell: bash
+        env:
+          RELEASE_SHA: ${{ steps.sha.outputs.value }}
+          RELEASE_JAR: ${{ steps.jar.outputs.path }}
+        run: |
+          python3 scripts/deploy/archive_release.py \
+            --bucket "$DEPLOY_BUCKET" --sha "$RELEASE_SHA" \
+            --run-id "$GITHUB_RUN_ID" --attempt "$GITHUB_RUN_ATTEMPT" \
+            --jar "$RELEASE_JAR" --wiki /tmp/buildit-wiki-backend.tgz \
+            --deploy-script /tmp/deploy-buildit.sh --receipt release-evidence.json
+
+      - name: Preserve release receipt (90 days)
+        if: always() && steps.archive.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-evidence.json
+          retention-days: 90
+          if-no-files-found: error
 
       - name: Stage Meta Vision key in S3 (transient)
         shell: bash
