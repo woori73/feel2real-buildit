@@ -22,7 +22,7 @@
 | 배포 검증 아티팩트 | deploy-gate-test-report 7일. run 40182828747의 artifact 12595201398은 11/01 만료 | 신규 배포 증빙 90일 |
 | 진단 아티팩트 | prod-diagnostic의 평가 자료 7일 / 화면 자료 14일. readonly 현황은 별도 artifact 없음 | 각각 90일, readonly의 마스킹된 현황·실행 문맥도 90일 보존 |
 | 별도 Artifact Storage Cleanup | 매주 예약 실행, 자동 삭제 ON, 보고서/빌드 파일 7일 기준 | 최소 90일, 예약 실행은 dry-run. 최근 성공 배포 3개 SHA·실행 중 SHA 보호 유지 |
-| 저장소 전체 실행 로그 | 관리 설정 조회 API가 연결에서 지원되지 않음; 브라우저 접근 불가 | 실제 값 미확인. Actions General에서 90일 설정 필요. 새 readonly 실행은 GITHUB_RETENTION_DAYS를 기록·90 미만 경고 |
+| 저장소 전체 실행 로그 | 관리 설정 조회 API가 연결에서 지원되지 않음; 브라우저 접근 불가 | 새 CI와 readonly 실행의 플랫폼 변수 GITHUB_RETENTION_DAYS로 독립 확인·90 미만 경고. 최신 관측값은 이 변경 PR 검증란 참조. 90 미만인 경우에만 Actions General 설정 변경 필요 |
 | S3 배포 파일 | app.jar / wiki / script를 고정 키로 덮어씀 | 승인된 다음 배포부터 `releases/<full SHA>/<run>-<attempt>/`에 별도 암호화 보관, 완료 manifest 마지막 등록 |
 | S3 수명주기·버전 관리 | 실제 버킷 정책·lifecycle·versioning 미조회 | 변경·삭제하지 않음. releases/를 조기 만료시키는 규칙이 없는지 추가 확인 필요 |
 | RDS 자동 백업 | 실제 운영 DB 7일 (20:19 KST Describe) | 그대로 유지 |
