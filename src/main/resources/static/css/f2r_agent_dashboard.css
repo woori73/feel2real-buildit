@@ -151,6 +151,9 @@ body[data-view="ai"] .ops { height: calc(100vh - var(--si-top)); height: calc(10
   animation: si-breathe 4s ease-in-out infinite;
 }
 .agent-hud { position: absolute; inset: 8px; pointer-events: none; }
+/* 공통 홀로그램 디자인(HOLO-DESIGN-ASSET, f2r_holo_tokens.json web 값): 홈과 같은 주사선 3px 간격·진하기 0.10. 영상이 보일 때만. */
+.console-stage { --holo-scan-gap: 3px; --holo-scan-alpha: .10; }
+.console-stage[data-media="ready"] .agent-hud { background: repeating-linear-gradient(to bottom, rgba(0,0,0,var(--holo-scan-alpha)) 0 1px, transparent 1px var(--holo-scan-gap)); }
 .agent-hud .c { position: absolute; width: 20px; height: 20px; border-color: var(--si-state); border-style: solid; opacity: .9; }
 .agent-hud .tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
 .agent-hud .tr { top: 0; right: 0; border-width: 2px 2px 0 0; }

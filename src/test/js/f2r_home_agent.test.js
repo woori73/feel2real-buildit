@@ -169,3 +169,14 @@ test('given 홈 상태창 when 대시보드와 비교하면 then 비서 선택�
   assert.match(CSS, /\.si-home-pick button\.no-portrait img \{ display: none; \}/);
   assert.match(JS, /\|\| !stageHasFrame\(\)\) \$\('homeStage'\)\.dataset\.media = 'missing'/);
 });
+
+test('given 홈과 대시보드 CSS when 홀로그램 주사선을 비교하면 then 공통 디자인 값(3px 간격·진하기 0.10)이 같고 영상이 보일 때만 그린다', () => {
+  // given
+  const home = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
+  const dash = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_agent_dashboard.css'), 'utf8');
+  // when / then
+  for (const css of [home, dash]) {
+    assert.match(css, /--holo-scan-gap: 3px; --holo-scan-alpha: \.10;/);
+    assert.match(css, /\[data-media="ready"\] \.(si-home-hud|agent-hud) \{ background: repeating-linear-gradient\(to bottom, rgba\(0,0,0,var\(--holo-scan-alpha\)\) 0 1px, transparent 1px var\(--holo-scan-gap\)\); \}/);
+  }
+});
