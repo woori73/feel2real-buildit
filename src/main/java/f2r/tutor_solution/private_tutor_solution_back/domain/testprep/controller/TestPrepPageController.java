@@ -15,6 +15,7 @@ public class TestPrepPageController {
 
   @GetMapping("/testprep")
   public String home(Model model) {
+    model.addAttribute("tpCanonical", "https://feel2real.co.kr/testprep");
     model.addAttribute("pageActive", "home");
     model.addAttribute("ssoLoginUrl", SSO_LOGIN);
     return "testprep/home";

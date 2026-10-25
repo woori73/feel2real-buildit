@@ -7,7 +7,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 class PrivatePageRobotsHeaderWriterTest {
   @Test void givenPrivatePageOrDeniedApi_whenHeadersWritten_thenNoindexWithoutChangingStatus() {
-    for (String path : new String[]{"/admin/hub", "/admin/login", "/api/admin/users", "/api/studio/catalog", "/ai-agent-studio", "/studio-projects", "/dashboard", "/my/profile"}) {
+    for (String path : new String[]{"/admin/hub", "/admin/login", "/api/admin/users", "/api/studio/catalog", "/ai-agent-studio", "/studio-projects", "/tutor/academy", "/stdt_dashboard", "/tutor_dashboard", "/dashboard", "/my/profile"}) {
       for (int status : new int[]{200, 302, 401, 403}) {
         var response = new MockHttpServletResponse(); response.setStatus(status);
         new PrivatePageRobotsHeaderWriter().writeHeaders(new MockHttpServletRequest("GET", path), response);

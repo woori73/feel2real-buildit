@@ -51,6 +51,15 @@ class AcademyBlogCanonicalInterceptorTest {
   }
 
   @Test void givenPublicListAndPrivacyViews_whenRendered_thenExactlyOneFixedCanonical() {
+    var model = new org.springframework.ui.ExtendedModelMap();
+    String view = new f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller.TestPrepPageController().home(model);
+    var context = new Context(); context.setVariables(model);
+    var testprep = Jsoup.parse(engine().process(view, context)).select("head link[rel=canonical]");
+    assertThat(testprep).hasSize(1);
+    assertThat(testprep.first().attr("href")).isEqualTo("https://feel2real.co.kr/testprep");
+    var registration = Jsoup.parse(engine().process("auth/register", new Context())).select("head link[rel=canonical]");
+    assertThat(registration).hasSize(1);
+    assertThat(registration.first().attr("href")).isEqualTo("https://feel2real.co.kr/register");
     for (var item : Map.of("academies", "/academies", "academy_posts", "/academy-posts", "privacy", "/privacy").entrySet()) {
       var links = Jsoup.parse(engine().process("public/" + item.getKey(), new Context()))
           .select("head link[rel=canonical]");

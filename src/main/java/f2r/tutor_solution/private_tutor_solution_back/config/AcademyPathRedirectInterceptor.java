@@ -33,14 +33,21 @@ public class AcademyPathRedirectInterceptor implements HandlerInterceptor {
   }
 
   @Override
-  public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+  public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws java.io.IOException {
     if (!props.hasBaseDomain() || request.getDispatcherType() != DispatcherType.REQUEST) {
       return true;
     }
     String slug = lastPathSegment(request.getRequestURI());
     if (slug == null) return true;
 
-    return academyRepository.getObject().findBySlug(slug)
+    var academy = academyRepository.getObject().findBySlug(slug);
+    // A missing/private academy must not serve the generic public shell with HTTP 200.
+    if (academy.isEmpty() || !academy.get().isVisible()
+        || academy.get().getStatus() != f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyStatus.PUBLISHED) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND);
+      return false;
+    }
+    return academy
         .map(Academy::getHandle)
         .filter(handle -> handle != null && !handle.isBlank())
         .map(handle -> {

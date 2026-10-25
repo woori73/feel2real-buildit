@@ -5042,3 +5042,11 @@ MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시�
 - 별도 `POST /api/studio/revisions/{id}/approval-withdrawals`: APPROVER·동일 Origin·현재 프로젝트·재개 상태 필수. `{confirmed:true,expectedApprovedId:<path id>,note:<1~2000자>}`. 확인 누락/false/잘못된 기대 ID/빈 사유는400, 현재 승인 ID가 달라졌거나 이미 해제됐으면409. 프로젝트/item 현재 읽기·행 잠금 후 포인터만 해제하고 `WITHDRAW_APPROVAL` 감사(리비전/actor/사유/시각)를 같은 트랜잭션에 append한다. 파일·SHA·리비전·기존 승인 이벤트는 불변. 저장 결과와 GET 재조회로 승인 상태를 확인한다.
 - 승인 해제는 상세의 별도 대화상자에서 원본 SHA/버전 확인·사유·확인 체크 후 실행한다. 일반 검수의 반려 옵션은 승인본에서 비활성이다. 해제 이력은 스레드/감사/알림에 노출되고 head 후보는 대기함에 다시 나타난다. MCP 읽기 도구에는 이 POST를 추가하지 않는다.
 - 콘티 보드의 더 보기/접기는 설명·대사·연출 전체 텍스트를 보존한 상태로 펼친다. aria-expanded/aria-controls와 키보드 조작을 지원하며 API/자료 내용을 변경하지 않는다.
+
+
+## 검색엔진 응답 정책 (2026-10-26)
+
+- `GET /sitemap.xml`: 기존 PUBLISHED·visible 조건 유지. base-domain 설정과 handle이 있는 `/academies/{slug}` 301 alias는 apex sitemap에서 제외하고 미이전 경로·블로그는 유지한다.
+- 운영 base-domain이 설정된 `GET /academies/{slug}`: 없거나 미공개·미게시인 학원은 HTML도 404. 공개 학원의 기존 서브도메인 301과 handle 없는 legacy 200은 유지한다.
+- 공개 학원 목록·블로그·privacy 및 `/register`, `/testprep`는 쿼리를 제외한 HTTPS canonical을 서버 head에 제공한다. 복귀 파라미터 기능과 인증 정책은 바꾸지 않는다.
+- 관리자·강사·회원·Studio 한정 경로는 X-Robots-Tag noindex,nofollow를 추가하며 인증·인가·401/403·로그인 이동은 유지한다. 구체적 경로·GSC 실제 51개 URL·전후 비교는 [2026-10-26 색인 조사](seo/indexing-audit-20261026.md)를 참조한다.

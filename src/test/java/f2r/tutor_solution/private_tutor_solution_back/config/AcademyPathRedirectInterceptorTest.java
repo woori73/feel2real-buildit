@@ -74,8 +74,22 @@ class AcademyPathRedirectInterceptorTest {
     mockMvc.perform(get("/academies/minji-eng")).andExpect(status().isOk());
   }
 
+  @Test
+  void givenMissingOrPrivateAcademy_whenRequested_then404WithoutRedirect() throws Exception {
+    MockMvc mvc = mockMvcWithBaseDomain("feel2real.co.kr");
+    mvc.perform(get("/academies/deleted")).andExpect(status().isNotFound())
+        .andExpect(header().doesNotExist("Location"));
+    Academy hidden = academy("hidden"); hidden.updateVisibility(false);
+    when(academyRepository.findBySlug("hidden")).thenReturn(Optional.of(hidden));
+    mvc.perform(get("/academies/hidden")).andExpect(status().isNotFound());
+    Academy draft = Academy.builder().status(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyStatus.DRAFT).slug("draft").name("draft").build();
+    when(academyRepository.findBySlug("draft")).thenReturn(Optional.of(draft));
+    mvc.perform(get("/academies/draft")).andExpect(status().isNotFound());
+  }
+
   private Academy academy(String handle) {
     return Academy.builder()
+        .status(f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyStatus.PUBLISHED)
         .slug("minji-eng")
         .handle(handle)
         .name("n")

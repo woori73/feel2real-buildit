@@ -1,6 +1,6 @@
 {
   "scope": "Anonymous read-only HTTP probes, not Search Console export",
-  "gsc_access": "Not authenticated; first discovered/index status unavailable",
+  "gsc_access": "Authenticated successfully; see gsc-urls-20261026.json",
   "desktop": [
     {
       "url": "https://feel2real.co.kr/",
