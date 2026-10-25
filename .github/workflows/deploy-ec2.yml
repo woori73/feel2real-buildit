@@ -44,13 +44,14 @@ on:
           - studio-chatgpt
           - 'off'
       agent_media_public:
-        description: '로그인 전 홈페이지 캐릭터 공개(APP_AGENT_MEDIA_PUBLIC_AGENTS): unchanged=변경 없음(기본), seven=세븐만 공개, off=공개 안 함. 관리자·비공개 자료 권한은 바뀌지 않음'
+        description: '로그인 전 홈페이지 캐릭터 공개(APP_AGENT_MEDIA_PUBLIC_AGENTS): unchanged=변경 없음(기본), seven=세븐만 공개, seven-suni=세븐·서수니 공개, off=공개 안 함. 관리자·비공개 자료 권한은 바뀌지 않음'
         required: false
         default: unchanged
         type: choice
         options:
           - unchanged
           - seven
+          - seven-suni
           - 'off'
 
 permissions:
@@ -762,6 +763,11 @@ jobs:
                 printf 'APP_AGENT_MEDIA_PUBLIC_AGENTS=seven\n' >> /etc/f2r/env
                 echo '[DEPLOY] agent media public: seven'
                 ;;
+              seven-suni)
+                sed -i '/^APP_AGENT_MEDIA_PUBLIC_AGENTS=/d' /etc/f2r/env
+                printf 'APP_AGENT_MEDIA_PUBLIC_AGENTS=seven,suni\n' >> /etc/f2r/env
+                echo '[DEPLOY] agent media public: seven,suni'
+                ;;
               off)
                 sed -i '/^APP_AGENT_MEDIA_PUBLIC_AGENTS=/d' /etc/f2r/env
                 echo '[DEPLOY] agent media public: off'
@@ -972,7 +978,7 @@ jobs:
           set -euo pipefail
           # 선택값(unchanged/seven/off)만 올린다. unchanged면 이전 실행이 남긴 값이 적용되지 않도록 지운다.
           case "${AGENT_MEDIA_PUBLIC:-unchanged}" in
-            seven|off)
+            seven|seven-suni|off)
               printf '%s' "$AGENT_MEDIA_PUBLIC" > /tmp/agent-media-public.staging
               aws s3 cp /tmp/agent-media-public.staging s3://${DEPLOY_BUCKET}/agent-media-public --sse AES256 >/dev/null
               rm -f /tmp/agent-media-public.staging

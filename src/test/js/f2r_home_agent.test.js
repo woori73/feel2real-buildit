@@ -91,24 +91,37 @@ test('given 세븐 인사 영상 when 인사를 재생하면 then speak.mp4를 �
   assert.equal(h.clipFor('greeting', []), null);
 });
 
-test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐이고 speak.mp4가 있을 때만 대사를 돌려준다', () => {
+test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐·서수니 각자의 대사를 speak.mp4가 있을 때만 돌려준다', () => {
   // given
   const h = load();
   // when / then
   assert.equal(h.greetingFor('seven', ['idle.mp4', 'speak.mp4']), '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
   assert.equal(h.greetingFor('seven', ['idle.mp4']), null);
-  assert.equal(h.greetingFor('suni', ['idle.mp4', 'speak.mp4']), null);
+  assert.equal(h.greetingFor('suni', ['idle.mp4', 'speak.mp4']), '서수니입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
+  assert.equal(h.greetingFor('suni', ['idle.mp4']), null);
+  assert.equal(h.greetingFor('toString', ['speak.mp4']), null);
   assert.equal(h.greetingFor('seven', null), null);
 });
 
-test('given 홈 화면 when 인사 버튼을 그리면 then 처음에는 숨기고 소리는 버튼을 누른 뒤에만 재생한다', () => {
+test('given 홈 화면 when 캐릭터를 고르면 then 인사 버튼 없이 인사 영상을 소리와 함께 바로 재생한다', () => {
   // given / when
-  const btn = HTML.match(/<button[^>]*id="homeGreet"[^>]*>/);
+  const pick = JS.slice(JS.indexOf("querySelectorAll('button[data-home-agent]').forEach(function (b) {\n      b.addEventListener"), JS.indexOf("video.addEventListener('ended'"));
   // then
-  assert.ok(btn, '인사 듣기 버튼이 있어야 한다');
-  assert.match(btn[0], /hidden/);
-  assert.match(HTML, /<video id="homeVideo" muted loop playsinline/);
-  assert.match(JS, /greet\.addEventListener\('click', playGreeting\)/);
+  assert.doesNotMatch(HTML, /homeGreet/);
+  assert.match(HTML, /<video class="is-on" id="homeVideo" muted loop playsinline/);
+  assert.match(pick, /if \(greetingFor\(ui\.agent, mediaFiles\(\)\)\) playGreeting\(\);/);
+});
+
+test('given 홈 화면 when 영상을 바꾸면 then 대시보드와 같은 전환 모듈로 두 영상 요소를 겹쳐 바꾼다', () => {
+  // given / when
+  const alt = HTML.match(/<video[^>]*id="homeVideoAlt"[^>]*>/);
+  const order = HTML.indexOf('f2r_agent_clip_switch.js') >= 0 && HTML.indexOf('f2r_agent_clip_switch.js') < HTML.indexOf('f2r_home_agent.js');
+  // then
+  assert.ok(alt, '두 번째 영상 요소가 있어야 한다');
+  assert.match(alt[0], /muted loop playsinline/);
+  assert.ok(order, '전환 모듈을 홈 스크립트보다 먼저 불러야 한다');
+  assert.match(JS, /sw\.show\(pair, ui\.sw, src,/);
+  assert.match(JS, /restart: talking \|\| prev === 'speak'/);
 });
 
 test('given 키보드로 보이는 영역이 줄었을 때 when 입력줄 위치를 비교하면 then 가려진 만큼만 올리고 보이면 그대로 둔다', () => {
@@ -130,4 +143,39 @@ test('given 모바일 입력줄 CSS when 읽으면 then 열이 줄어들 수 있
   assert.match(CSS, /\.si-home-composer input \{[^}]*min-width: 0/);
   assert.match(CSS, /\.si-home-composer button \{[^}]*flex: 0 0 auto/);
   assert.match(CSS, /\.si-home-mode \{[^}]*flex-wrap: wrap/);
+});
+
+test('given 비서 자료 파일 목록 when 선택 버튼 사진을 고르면 then front.webp, 없으면 poster.jpg, 둘 다 없으면 이름만 쓴다', () => {
+  // given
+  const h = load();
+  // when / then
+  assert.equal(h.portraitFile(['idle.mp4', 'front.webp', 'poster.jpg']), 'front.webp');
+  assert.equal(h.portraitFile(['idle.mp4', 'poster.jpg']), 'poster.jpg');
+  assert.equal(h.portraitFile(['idle.mp4']), null);
+  assert.equal(h.portraitFile(null), null);
+});
+
+test('given 홈 상태창 when 대시보드와 비교하면 then 비서 선택은 사진+이름, 말하는 중 색과 2D 대체 화면 규칙이 같다', () => {
+  // given
+  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
+  // when
+  const seven = HTML.match(/<button[^>]*data-home-agent="seven"[^>]*>(.*?)<\/button>/);
+  // then
+  assert.match(seven[0], /class="no-portrait"/);
+  assert.match(seven[1], /<img alt=""><span>세븐<\/span>/);
+  assert.match(HTML, /class="si-home-console" id="homeConsole" data-state="idle"/);
+  assert.match(CSS, /\.si-home-stage\[data-state="greeting"\] \{ --si-state: var\(--si-violet\); \}/);
+  assert.match(CSS, /\.si-home-pick button\.no-portrait img \{ display: none; \}/);
+  assert.match(JS, /\|\| !stageHasFrame\(\)\) \$\('homeStage'\)\.dataset\.media = 'missing'/);
+});
+
+test('given 홈과 대시보드 CSS when 홀로그램 주사선을 비교하면 then 공통 디자인 값(3px 간격·진하기 0.10)이 같고 영상이 보일 때만 그린다', () => {
+  // given
+  const home = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
+  const dash = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_agent_dashboard.css'), 'utf8');
+  // when / then
+  for (const css of [home, dash]) {
+    assert.match(css, /--holo-scan-gap: 3px; --holo-scan-alpha: \.10;/);
+    assert.match(css, /\[data-media="ready"\] \.(si-home-hud|agent-hud) \{ background: repeating-linear-gradient\(to bottom, rgba\(0,0,0,var\(--holo-scan-alpha\)\) 0 1px, transparent 1px var\(--holo-scan-gap\)\); \}/);
+  }
 });

@@ -21,8 +21,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap">
   <link rel="stylesheet" href="/css/landing_edunova.css?v=20261024-2">
-  <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261025-2">
-  <script src="/js/f2r_home_agent.js?v=20261025-2" defer></script>
+  <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261025-7">
+  <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
+  <script src="/js/f2r_home_agent.js?v=20261025-6" defer></script>
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
@@ -76,16 +77,17 @@
         <h1 class="si-home-title" id="siHomeTitle">Human Intelligence <span class="si-x">×</span> AI</h1>
         <p class="si-home-lead">당신이 느끼고 상상한 것을 현실로.</p>
       </div>
-      <div class="si-home-console">
+      <div class="si-home-console" id="homeConsole" data-state="idle">
         <figure class="si-home-stage" id="homeStage" data-state="idle" data-media="missing">
-          <video id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
+          <video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
+          <video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
           <div class="si-home-emblem" aria-hidden="true"><span id="homeCode">H-07</span></div>
           <div class="si-home-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
           <div class="si-home-top">
             <span class="si-home-state"><i></i><span id="homeStateLabel">대기</span></span>
             <span class="si-home-pick" role="group" aria-label="AI 비서 선택">
-              <button type="button" data-home-agent="seven" aria-pressed="true">세븐</button>
-              <button type="button" data-home-agent="suni" aria-pressed="false">서수니</button>
+              <button type="button" data-home-agent="seven" aria-pressed="true" class="no-portrait"><img alt=""><span>세븐</span></button>
+              <button type="button" data-home-agent="suni" aria-pressed="false" class="no-portrait"><img alt=""><span>서수니</span></button>
             </span>
           </div>
           <div class="si-holo si-holo-left" role="group" aria-label="홀로그램 바로가기 1">
@@ -98,7 +100,6 @@
             <button type="button" class="si-holo-tile" data-home-intent="studio"><b>AI AGENT</b><small>제작협업실</small></button>
             <button type="button" class="si-holo-tile" data-home-intent="builder"><b>홈페이지</b><small>사이트 제작</small></button>
           </div>
-          <button type="button" class="si-home-greet" id="homeGreet" hidden>세븐 인사 듣기</button>
           <figcaption class="si-home-name"><strong id="homeName">세븐</strong><small>Feel2Real AI 비서</small></figcaption>
         </figure>
         <div class="si-home-talk">

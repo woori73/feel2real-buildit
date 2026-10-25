@@ -162,13 +162,15 @@ test('given 이미지 표시 when 자료 목록이 없으면 then 얼굴 경로�
   assert.match(JS, /img\.removeAttribute\('src'\)/);
 });
 
-test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐이고 speak.mp4가 있을 때만 대사를 돌려준다', () => {
+test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐·서수니 각자의 대사를 speak.mp4가 있을 때만 돌려준다', () => {
   // given
   const d = load();
   // when / then
   assert.equal(d.greetingFor('seven', ['idle.mp4', 'speak.mp4']), '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
   assert.equal(d.greetingFor('seven', ['idle.mp4']), null);
-  assert.equal(d.greetingFor('suni', ['idle.mp4', 'speak.mp4']), null);
+  assert.equal(d.greetingFor('suni', ['idle.mp4', 'speak.mp4']), '서수니입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
+  assert.equal(d.greetingFor('suni', ['idle.mp4']), null);
+  assert.equal(d.greetingFor('toString', ['speak.mp4']), null);
 });
 
 test('given 립싱크 어댑터 없음 when 일반 응답 영상을 고르면 then 인사 영상이 있어도 speak.mp4를 쓰지 않는다', () => {
@@ -179,13 +181,25 @@ test('given 립싱크 어댑터 없음 when 일반 응답 영상을 고르면 th
   assert.equal(d.speakingClip(d.speakingMode(null), files), 'idle');
 });
 
-test('given 대시보드 when 인사 버튼을 그리면 then 처음에는 숨기고 버튼을 눌러야 재생하며 끝나면 대기로 돌아간다', () => {
+test('given 대시보드 when 캐릭터를 고르면 then 인사 버튼 없이 인사 영상을 소리와 함께 바로 재생하고 끝나면 대기로 돌아간다', () => {
   // given / when
-  const btn = HTML.match(/<button[^>]*id="agentGreetBtn"[^>]*>/);
+  const choose = JS.slice(JS.indexOf('function chooseAgent'), JS.indexOf('function setView'));
   // then
-  assert.ok(btn, '인사 듣기 버튼이 있어야 한다');
-  assert.match(btn[0], /hidden/);
-  assert.match(JS, /greet\.addEventListener\('click', playGreeting\)/);
+  assert.doesNotMatch(HTML, /agentGreetBtn/);
+  assert.match(choose, /if \(!ui\.awaiting && greetingFor\(ui\.agent, files\(\)\)\) \{ playGreeting\(\); return; \}/);
   assert.match(JS, /v\.addEventListener\('ended', stopGreeting\)/);
   assert.match(JS, /if \(!line \|\| ui\.greeting\) return;/);
 });
+
+test('given AI 비서 화면 when 영상을 바꾸면 then 홈과 같은 전환 모듈을 먼저 불러 말하기 뒤 대기 영상을 처음부터 보여 준다', () => {
+  // given
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard.html'), 'utf8');
+  // when
+  const sw = html.indexOf('f2r_agent_clip_switch.js'), dash = html.indexOf('f2r_agent_dashboard.js?');
+  // then
+  assert.ok(sw >= 0 && sw < dash, '전환 모듈을 대시보드 스크립트보다 먼저 불러야 한다');
+  assert.match(JS, /window\.f2rClipSwitch\.show\(clips\(\), ui\.sw, src,/);
+  assert.match(JS, /restart: talking \|\| prev === 'speak'/);
+  assert.match(JS, /showClip\('speak', \{ sound: true, force: true, onFail: stopGreeting \}\)/);
+});
+
