@@ -50,7 +50,8 @@ body { background: var(--si-bg); color: var(--si-text); }
 .si-home-stage[data-state="listening"], .si-home-stage[data-state="speaking"] { --si-state: var(--si-violet); }
 .si-home-stage[data-state="thinking"] { --si-state: var(--si-amber); }
 .si-home-stage[data-state="greeting"] { --si-state: var(--si-cyan); }
-.si-home-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 24%; }
+.si-home-stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 24%; opacity: 0; transition: opacity .3s ease; }
+.si-home-stage video.is-on { opacity: 1; }
 .si-home-stage[data-media="missing"] video { display: none; }
 .si-home-emblem { position: absolute; inset: 0; display: none; place-items: center; }
 .si-home-stage[data-media="missing"] .si-home-emblem { display: grid; }

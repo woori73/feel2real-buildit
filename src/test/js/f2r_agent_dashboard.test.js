@@ -191,3 +191,15 @@ test('given 대시보드 when 인사 버튼을 그리면 then 처음에는 숨�
   assert.match(JS, /v\.addEventListener\('ended', stopGreeting\)/);
   assert.match(JS, /if \(!line \|\| ui\.greeting\) return;/);
 });
+
+test('given AI 비서 화면 when 영상을 바꾸면 then 홈과 같은 전환 모듈을 먼저 불러 말하기 뒤 대기 영상을 처음부터 보여 준다', () => {
+  // given
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard.html'), 'utf8');
+  // when
+  const sw = html.indexOf('f2r_agent_clip_switch.js'), dash = html.indexOf('f2r_agent_dashboard.js?');
+  // then
+  assert.ok(sw >= 0 && sw < dash, '전환 모듈을 대시보드 스크립트보다 먼저 불러야 한다');
+  assert.match(JS, /window\.f2rClipSwitch\.show\(clips\(\), ui\.sw, src,/);
+  assert.match(JS, /restart: talking \|\| prev === 'speak'/);
+  assert.match(JS, /showClip\('speak', \{ sound: true, force: true, onFail: stopGreeting \}\)/);
+});

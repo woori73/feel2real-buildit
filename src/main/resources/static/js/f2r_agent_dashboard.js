@@ -143,7 +143,7 @@
     get: function (k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (_) { /* 저장 불가 환경 */ } }
   };
-  var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, front: 0, awaiting: false, voice: null, greeting: false };
+  var ui = { agent: DEFAULT_AGENT, state: 'idle', timer: null, typing: null, media: null, clip: null, clipName: null, sw: { front: 0, token: 0 }, awaiting: false, voice: null, greeting: false };
   api.currentName = function () { return AGENTS[ui.agent] ? AGENTS[ui.agent].name : null; };
   api.state = function () { return ui.state; };
   api.awaiting = function () { return ui.awaiting; };
@@ -170,37 +170,25 @@
 
   function clips() { return [$('agentVideo'), $('agentVideoAlt')]; }
 
-  // 두 영상 요소를 번갈아 쓰며 다음 영상이 재생 준비된 뒤 겹쳐 바꾼다(끊김·얼굴 급변 방지).
-  function showClip(wanted) {
+  // 두 영상 요소를 번갈아 쓰며 다음 영상의 첫 화면이 그려진 뒤 겹쳐 바꾼다(f2r_agent_clip_switch.js, 홈과 같은 방식).
+  // 말하기가 끝나면 대기 영상을 처음(0초)부터 보여 준다.
+  function showClip(wanted, opts) {
+    var o = opts || {};
     var stage = $('agentStage');
     var clip = resolveClip(wanted, files());
-    if (!clip) { stage.dataset.media = ui.media ? 'missing' : 'loading'; ui.clip = null; return; }
+    if (!clip) { stage.dataset.media = ui.media ? 'missing' : 'loading'; ui.clip = null; ui.clipName = null; return; }
     stage.dataset.media = 'ready';
     var src = MEDIA_BASE + ui.agent + '/' + clip + '.mp4';
-    if (ui.clip === src) return;
+    if (ui.clip === src && !o.force) return;
+    var prev = ui.clipName;
     ui.clip = src;
-    var pair = clips(), cur = pair[ui.front], next = pair[1 - ui.front];
-    if (!cur || !next) return;
-    // 이미 화면에 나온 영상이면 다시 불러오지 않는다(같은 영상 재적재로 생기는 깜박임 방지).
-    if (cur.getAttribute('src') === src && cur.classList.contains('is-on')) { next.removeAttribute('src'); return; }
-    var swapped = false;
-    var swap = function () {
-      if (swapped || ui.clip !== src) return;
-      swapped = true;
-      var p = next.play && next.play();
-      if (p && p.catch) p.catch(function () { /* 자동재생 차단 시 정지 화면 유지 */ });
-      next.classList.add('is-on');
-      cur.classList.remove('is-on');
-      ui.front = 1 - ui.front;
-      setTimeout(function () { if (!cur.classList.contains('is-on') && cur.pause) cur.pause(); }, 500);
-    };
-    if (files().indexOf('poster.jpg') >= 0) next.poster = MEDIA_BASE + ui.agent + '/poster.jpg'; else next.removeAttribute('poster');
-    next.src = src;
-    if (next.readyState >= 2) swap();
-    else {
-      next.addEventListener('canplay', swap, { once: true });
-      setTimeout(function () { if (next.readyState >= 1) swap(); }, 1500);
-    }
+    ui.clipName = clip;
+    var talking = !!o.sound;
+    window.f2rClipSwitch.show(clips(), ui.sw, src, {
+      muted: !talking, loop: !talking, restart: talking || prev === 'speak',
+      poster: files().indexOf('poster.jpg') >= 0 ? MEDIA_BASE + ui.agent + '/poster.jpg' : null,
+      fromClip: prev, toClip: clip, onFail: o.onFail
+    });
   }
 
   function setState(next) {
@@ -231,29 +219,19 @@
   function playGreeting() {
     var line = greetingFor(ui.agent, files());
     if (!line || ui.greeting) return;
-    var pair = clips(), cur = pair[ui.front], other = pair[1 - ui.front];
-    if (!cur) return;
     ui.greeting = true;
     clearInterval(ui.typing);
     $('agentGreeting').classList.remove('is-typing');
     $('agentGreeting').textContent = line;
-    if (other) { other.pause(); other.classList.remove('is-on'); other.removeAttribute('src'); }
-    ui.clip = MEDIA_BASE + ui.agent + '/speak.mp4';
-    cur.muted = false;
-    cur.loop = false;
-    cur.src = ui.clip;
-    cur.classList.add('is-on');
-    $('agentStage').dataset.media = 'ready';
-    var p = cur.play && cur.play();
-    if (p && p.catch) p.catch(stopGreeting);
+    // 버튼을 누른 처리 안에서 바로 소리 있는 재생을 시작한다(모바일 자동재생 정책).
+    showClip('speak', { sound: true, force: true, onFail: stopGreeting });
     setState('speaking');
   }
 
   function stopGreeting() {
     if (!ui.greeting) return;
     ui.greeting = false;
-    clips().forEach(function (v) { if (!v) return; v.muted = true; v.loop = true; });
-    ui.clip = null;
+    clips().forEach(function (v) { if (!v) return; v.muted = true; });
     setState('idle');
   }
 

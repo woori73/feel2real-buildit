@@ -109,6 +109,18 @@ test('given 홈 화면 when 인사 버튼을 그리면 then 처음에는 숨기�
   // then
   assert.ok(btn, '인사 듣기 버튼이 있어야 한다');
   assert.match(btn[0], /hidden/);
-  assert.match(HTML, /<video id="homeVideo" muted loop playsinline/);
+  assert.match(HTML, /<video class="is-on" id="homeVideo" muted loop playsinline/);
   assert.match(JS, /greet\.addEventListener\('click', playGreeting\)/);
+});
+
+test('given 홈 화면 when 영상을 바꾸면 then 대시보드와 같은 전환 모듈로 두 영상 요소를 겹쳐 바꾼다', () => {
+  // given / when
+  const alt = HTML.match(/<video[^>]*id="homeVideoAlt"[^>]*>/);
+  const order = HTML.indexOf('f2r_agent_clip_switch.js') >= 0 && HTML.indexOf('f2r_agent_clip_switch.js') < HTML.indexOf('f2r_home_agent.js');
+  // then
+  assert.ok(alt, '두 번째 영상 요소가 있어야 한다');
+  assert.match(alt[0], /muted loop playsinline/);
+  assert.ok(order, '전환 모듈을 홈 스크립트보다 먼저 불러야 한다');
+  assert.match(JS, /sw\.show\(pair, ui\.sw, src,/);
+  assert.match(JS, /restart: talking \|\| prev === 'speak'/);
 });

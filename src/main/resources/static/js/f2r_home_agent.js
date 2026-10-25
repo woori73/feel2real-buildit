@@ -99,7 +99,7 @@
     get: function (k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (_) { /* 저장 불가 환경 */ } }
   };
-  var ui = { agent: 'seven', user: null, media: null, base: null, state: 'idle' };
+  var ui = { agent: 'seven', user: null, media: null, base: null, state: 'idle', clip: null, sw: { front: 0, token: 0 } };
 
   function staff() { return !!(ui.user && (ui.user.role === 'ADMIN' || ui.user.role === 'TUTOR')); }
   function studioAllowed() { return !!(ui.user && ui.user.role === 'ADMIN'); }
@@ -185,9 +185,24 @@
     var clip = clipFor(ui.state, files);
     if (ui.base && clip) {
       var src = ui.base + ui.agent + '/' + clip + '.mp4';
-      if (files.indexOf('poster.jpg') >= 0) video.poster = ui.base + ui.agent + '/poster.jpg'; else video.removeAttribute('poster');
+      var poster = files.indexOf('poster.jpg') >= 0 ? ui.base + ui.agent + '/poster.jpg' : null;
       // 인사 영상만 소리를 켜고 한 번 재생한다. 나머지 영상은 소리 없이 반복한다.
       var talking = clip === 'speak';
+      var prev = ui.clip;
+      ui.clip = clip;
+      stage.dataset.media = 'ready';
+      // 두 영상 요소를 겹쳐 서서히 바꾼다(f2r_agent_clip_switch.js). 말하기가 끝나면 대기 영상을 처음부터 보여 준다.
+      var sw = window.f2rClipSwitch;
+      var pair = [video, $('homeVideoAlt')];
+      if (sw && pair[1]) {
+        sw.show(pair, ui.sw, src, {
+          muted: !talking, loop: !talking, restart: talking || prev === 'speak', poster: poster,
+          fromClip: prev, toClip: clip,
+          onFail: function () { if (talking) setState('idle'); }
+        });
+        return;
+      }
+      if (poster) video.poster = poster; else video.removeAttribute('poster');
       video.muted = !talking;
       video.loop = !talking;
       if (video.getAttribute('src') !== src) {
@@ -195,9 +210,9 @@
         var p = video.play && video.play();
         if (p && p.catch) p.catch(function () { if (talking) setState('idle'); });
       }
-      stage.dataset.media = 'ready';
     } else {
-      video.removeAttribute('src');
+      ui.clip = null;
+      [video, $('homeVideoAlt')].forEach(function (v) { if (v) { v.pause && v.pause(); v.removeAttribute('src'); } });
       stage.dataset.media = 'missing';
     }
   }
@@ -268,11 +283,11 @@
     });
     var greet = $('homeGreet');
     if (greet) greet.addEventListener('click', playGreeting);
-    var video = $('homeVideo');
-    if (video) {
+    [$('homeVideo'), $('homeVideoAlt')].forEach(function (video) {
+      if (!video) return;
       video.addEventListener('ended', stopGreeting);
       video.addEventListener('error', stopGreeting);
-    }
+    });
     // 다른 탭으로 가거나 페이지를 떠나면 인사를 멈춘다(돌아왔을 때 소리가 겹치지 않게).
     document.addEventListener('visibilitychange', function () { if (document.hidden) stopGreeting(); });
     window.addEventListener('pagehide', stopGreeting);

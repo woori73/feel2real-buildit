@@ -21,8 +21,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap">
   <link rel="stylesheet" href="/css/landing_edunova.css?v=20261024-2">
-  <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261025-1">
-  <script src="/js/f2r_home_agent.js?v=20261025-2" defer></script>
+  <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261025-2">
+  <script src="/js/f2r_agent_clip_switch.js?v=20261025-1" defer></script>
+  <script src="/js/f2r_home_agent.js?v=20261025-3" defer></script>
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
@@ -78,7 +79,8 @@
       </div>
       <div class="si-home-console">
         <figure class="si-home-stage" id="homeStage" data-state="idle" data-media="missing">
-          <video id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
+          <video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
+          <video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
           <div class="si-home-emblem" aria-hidden="true"><span id="homeCode">H-07</span></div>
           <div class="si-home-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
           <div class="si-home-top">
