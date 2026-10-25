@@ -95,7 +95,14 @@
     return hidden > 0 ? Math.ceil(hidden) : 0;
   }
 
-  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor, greetingFor: greetingFor, composerScrollDelta: composerScrollDelta };
+  /** 비서 선택 버튼 사진 파일: front.webp → poster.jpg → 없음(null). */
+  function portraitFile(files) {
+    var list = files || [];
+    if (list.indexOf('front.webp') >= 0) return 'front.webp';
+    return list.indexOf('poster.jpg') >= 0 ? 'poster.jpg' : null;
+  }
+
+  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor, greetingFor: greetingFor, portraitFile: portraitFile, composerScrollDelta: composerScrollDelta };
   if (typeof window !== 'undefined') window.f2rHomeAgent = api;
   if (typeof document === 'undefined' || !document.getElementById) return;
 
@@ -118,6 +125,8 @@
     var changed = ui.state !== s;
     ui.state = s;
     if (stage) stage.dataset.state = s;
+    var consoleEl = $('homeConsole');
+    if (consoleEl) consoleEl.dataset.state = s;
     if (changed && stage && stage.dataset.media === 'ready') portrait();
     renderGreet();
     var label = $('homeStateLabel');
@@ -189,6 +198,7 @@
     $('homeCode').textContent = AGENTS[ui.agent].code;
     $('homeName').textContent = AGENTS[ui.agent].name;
     document.querySelectorAll('button[data-home-agent]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.homeAgent === ui.agent ? 'true' : 'false'); });
+    pickPortraits();
     var clip = clipFor(ui.state, files);
     if (ui.base && clip) {
       var src = ui.base + ui.agent + '/' + clip + '.mp4';
@@ -197,6 +207,9 @@
       var talking = clip === 'speak';
       var prev = ui.clip;
       ui.clip = clip;
+      var shown = [video, $('homeVideoAlt')][ui.sw.front];
+      // 이미 실패한 같은 영상이면 다시 시도하지 않고 2D 표식 화면을 유지한다.
+      if (shown && shown.error && shown.getAttribute('src') === src) { stage.dataset.media = 'missing'; return; }
       stage.dataset.media = 'ready';
       // 두 영상 요소를 겹쳐 서서히 바꾼다(f2r_agent_clip_switch.js). 말하기가 끝나면 대기 영상을 처음부터 보여 준다.
       var sw = window.f2rClipSwitch;
@@ -205,7 +218,7 @@
         sw.show(pair, ui.sw, src, {
           muted: !talking, loop: !talking, restart: talking || prev === 'speak', poster: poster,
           fromClip: prev, toClip: clip,
-          onFail: function () { if (talking) setState('idle'); }
+          onFail: function () { if (talking) { setState('idle'); return; } stage.dataset.media = 'missing'; }
         });
         return;
       }
@@ -222,6 +235,27 @@
       [video, $('homeVideoAlt')].forEach(function (v) { if (v) { v.pause && v.pause(); v.removeAttribute('src'); } });
       stage.dataset.media = 'missing';
     }
+  }
+
+  // 비서 선택 버튼의 얼굴 사진(대시보드와 같은 규칙): front.webp, 없으면 poster.jpg. 볼 수 없으면 이름만 보인다.
+  function pickPortraits() {
+    document.querySelectorAll('button[data-home-agent]').forEach(function (b) {
+      var img = b.querySelector('img');
+      if (!img) return;
+      var info = ui.media && ui.media.agents && ui.media.agents[b.dataset.homeAgent];
+      var list = info && info.files ? info.files : [];
+      var file = portraitFile(list);
+      var src = ui.base && file ? ui.base + b.dataset.homeAgent + '/' + file : null;
+      if (!src) { b.classList.add('no-portrait'); img.removeAttribute('src'); return; }
+      if (img.getAttribute('src') === src) return;
+      img.onload = function () { b.classList.remove('no-portrait'); };
+      img.onerror = function () { b.classList.add('no-portrait'); };
+      img.src = src;
+    });
+  }
+
+  function stageHasFrame() {
+    return [$('homeVideo'), $('homeVideoAlt')].some(function (v) { return v && v.classList.contains('is-on') && v.readyState >= 2 && !v.error; });
   }
 
   // ---- 세븐 인사(음성+영상) ----
@@ -302,7 +336,13 @@
     [$('homeVideo'), $('homeVideoAlt')].forEach(function (video) {
       if (!video) return;
       video.addEventListener('ended', stopGreeting);
-      video.addEventListener('error', stopGreeting);
+      video.addEventListener('error', function () {
+        stopGreeting();
+        // 영상을 못 불러오고 보이는 영상도 없으면 기존 2D 표식 화면으로 둔다.
+        if (!$('homeVideo').getAttribute('src') && !$('homeVideoAlt').getAttribute('src')) return;
+        // 보여 주려던 영상이 실패하면 앞 캐릭터 영상이 남아 있어도 2D 표식으로 바꾼다.
+        if (video.getAttribute('src') === ui.base + ui.agent + '/' + ui.clip + '.mp4' || !stageHasFrame()) $('homeStage').dataset.media = 'missing';
+      });
     });
     // 다른 탭으로 가거나 페이지를 떠나면 인사를 멈춘다(돌아왔을 때 소리가 겹치지 않게).
     document.addEventListener('visibilitychange', function () { if (document.hidden) stopGreeting(); });

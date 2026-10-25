@@ -13,7 +13,8 @@
   'use strict';
 
   var FADE_MS = { speakToIdle: 160, toSpeak: 220, other: 300 };
-  var FRAME_WAIT_MS = 2500;
+  // 느린 휴대폰 회선에서도 기다린다. 실제 실패(error)는 바로 알린다.
+  var FRAME_WAIT_MS = 20000;
   var POLL_MS = 20;
 
   function fadeMs(fromClip, toClip) {
@@ -33,29 +34,34 @@
   }
 
   /**
-   * 영상의 현재 화면을 그릴 수 있게 되면(데이터 있음, 되감기 끝) cb(true), 정해진 시간 안에 안 되면 cb(false). 한 번만 부른다.
+   * 영상의 현재 화면을 그릴 수 있게 되면(데이터 있음, 되감기 끝) cb(true), 불러오기 실패면 바로 cb(false, 'error'),
+   * 20초 안에 준비되지 않으면 cb(false, 'timeout'). 한 번만 부른다.
    * 투명(opacity 0)한 영상에는 requestVideoFrameCallback이 오지 않을 수 있어 쓰지 않는다(실측: 2.5초 지연).
    */
   function whenFrame(video, cb) {
     var done = false, waited = 0, start = Date.now();
     var EVENTS = ['loadeddata', 'canplay', 'playing', 'seeked'];
     function ready() { return video.readyState >= 2 && !video.seeking; }
-    function finish(ok) {
+    function finish(ok, why) {
       if (done) return;
       done = true;
       EVENTS.forEach(function (e) { if (video.removeEventListener) video.removeEventListener(e, check); });
-      cb(ok);
+      if (video.removeEventListener) video.removeEventListener('error', failed);
+      cb(ok, why);
     }
+    function failed() { finish(false, 'error'); }
     // 백그라운드 탭에서는 타이머가 1초 단위로 늦어지므로 영상 이벤트로도 바로 확인한다(실측).
     function check() { if (!done && ready()) finish(true); }
     function poll() {
       if (done) return;
       if (ready()) { finish(true); return; }
+      if (video.error) { failed(); return; }
       waited += POLL_MS;
-      if (waited >= FRAME_WAIT_MS || Date.now() - start >= FRAME_WAIT_MS) { finish(false); return; }
+      if (waited >= FRAME_WAIT_MS || Date.now() - start >= FRAME_WAIT_MS) { finish(false, 'timeout'); return; }
       setTimeout(poll, POLL_MS);
     }
     EVENTS.forEach(function (e) { if (video.addEventListener) video.addEventListener(e, check); });
+    if (video.addEventListener) video.addEventListener('error', failed);
     setTimeout(poll, 0);
   }
 
@@ -85,9 +91,9 @@
     // 소리 있는 재생은 버튼을 누른 처리 안에서 바로 시작해야 모바일에서 막히지 않는다(여기서 즉시 play).
     var p = next.play && next.play();
     if (p && p.catch) p.catch(function (e) { if (st.token === token && o.onFail) o.onFail(e && e.name === 'NotAllowedError' ? 'blocked' : 'play'); });
-    whenFrame(next, function (ok) {
+    whenFrame(next, function (ok, why) {
       if (st.token !== token) return;
-      if (!ok) { if (o.onFail) o.onFail('timeout'); return; }
+      if (!ok) { if (o.onFail) o.onFail(why); return; }
       next.classList.add('is-on');
       st.front = 1 - st.front;
       setTimeout(function () {

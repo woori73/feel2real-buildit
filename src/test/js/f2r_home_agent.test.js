@@ -145,3 +145,27 @@ test('given 모바일 입력줄 CSS when 읽으면 then 열이 줄어들 수 있
   assert.match(CSS, /\.si-home-composer button \{[^}]*flex: 0 0 auto/);
   assert.match(CSS, /\.si-home-mode \{[^}]*flex-wrap: wrap/);
 });
+
+test('given 비서 자료 파일 목록 when 선택 버튼 사진을 고르면 then front.webp, 없으면 poster.jpg, 둘 다 없으면 이름만 쓴다', () => {
+  // given
+  const h = load();
+  // when / then
+  assert.equal(h.portraitFile(['idle.mp4', 'front.webp', 'poster.jpg']), 'front.webp');
+  assert.equal(h.portraitFile(['idle.mp4', 'poster.jpg']), 'poster.jpg');
+  assert.equal(h.portraitFile(['idle.mp4']), null);
+  assert.equal(h.portraitFile(null), null);
+});
+
+test('given 홈 상태창 when 대시보드와 비교하면 then 비서 선택은 사진+이름, 말하는 중 색과 2D 대체 화면 규칙이 같다', () => {
+  // given
+  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
+  // when
+  const seven = HTML.match(/<button[^>]*data-home-agent="seven"[^>]*>(.*?)<\/button>/);
+  // then
+  assert.match(seven[0], /class="no-portrait"/);
+  assert.match(seven[1], /<img alt=""><span>세븐<\/span>/);
+  assert.match(HTML, /class="si-home-console" id="homeConsole" data-state="idle"/);
+  assert.match(CSS, /\.si-home-stage\[data-state="greeting"\] \{ --si-state: var\(--si-violet\); \}/);
+  assert.match(CSS, /\.si-home-pick button\.no-portrait img \{ display: none; \}/);
+  assert.match(JS, /\|\| !stageHasFrame\(\)\) \$\('homeStage'\)\.dataset\.media = 'missing'/);
+});

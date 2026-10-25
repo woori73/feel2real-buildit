@@ -138,9 +138,9 @@ test('given 다음 영상이 끝내 그려지지 않음 when 기다림이 끝나
   const { a, b } = stage('/m/seven/idle.mp4');
   const st = { front: 1, token: 0 };
   let failed = null;
-  // when: 2.5초(20ms × 125회) 넘게 기다림
+  // when: 20초(20ms × 1000회) 넘게 기다림
   sw.show([b, a], st, '/m/seven/speak.mp4', { muted: false, loop: false, onFail: (r) => { failed = r; } });
-  for (let i = 0; i < 130 && !failed; i++) tick();
+  for (let i = 0; i < 1010 && !failed; i++) tick();
   // then
   assert.equal(failed, 'timeout');
   assert.equal(a.classList.contains('is-on'), true);
@@ -197,4 +197,20 @@ test('given 타이머가 늦어지는 백그라운드 탭 when 되감기 완료 
   assert.equal(b.classList.contains('is-on'), true);
   assert.equal(st.front, 0);
   assert.deepEqual(b.handlers.seeked, [], '끝나면 이벤트 연결을 푼다');
+});
+
+test('given 다음 영상 불러오기 실패 when error 이벤트가 오면 then 기다리지 않고 바로 실패를 알리고 기존 화면을 둔다', () => {
+  // given
+  const { sw } = load();
+  const { a, b } = stage('/m/suni/idle.mp4');
+  const st = { front: 1, token: 0 };
+  let failed = null;
+  sw.show([b, a], st, '/m/suni/broken.mp4', { onFail: (r) => { failed = r; } });
+  // when
+  b.emit('error');
+  // then
+  assert.equal(failed, 'error');
+  assert.equal(b.classList.contains('is-on'), false);
+  assert.equal(a.classList.contains('is-on'), true);
+  assert.deepEqual(b.handlers.error, []);
 });

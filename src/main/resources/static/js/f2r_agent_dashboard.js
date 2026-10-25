@@ -187,7 +187,9 @@
     window.f2rClipSwitch.show(clips(), ui.sw, src, {
       muted: !talking, loop: !talking, restart: talking || prev === 'speak',
       poster: files().indexOf('poster.jpg') >= 0 ? MEDIA_BASE + ui.agent + '/poster.jpg' : null,
-      fromClip: prev, toClip: clip, onFail: o.onFail
+      fromClip: prev, toClip: clip,
+      // 못 불러오면 기존 2D 표식 화면으로 둔다(말하기 실패는 호출 측이 대기로 돌린다).
+      onFail: o.onFail || function () { if (ui.clip === src) stage.dataset.media = 'missing'; }
     });
   }
 
@@ -559,7 +561,8 @@
       v.addEventListener('error', function () {
         if (ui.greeting) { stopGreeting(); return; }
         // 서버가 자료를 알려줬지만 재생에 실패하면 표식으로 대체한다(다른 얼굴을 대신 보여주지 않는다).
-        if (v.classList.contains('is-on') || !clips().some(function (x) { return x.classList.contains('is-on') && x.readyState >= 2; })) $('agentStage').dataset.media = 'missing';
+        // 지금 보여 주려던 영상이 실패해도 표식으로 바꾼다(앞 캐릭터 영상이 남아 있어도 대신 보여주지 않는다).
+        if (v.classList.contains('is-on') || v.getAttribute('src') === ui.clip || !clips().some(function (x) { return x.classList.contains('is-on') && x.readyState >= 2; })) $('agentStage').dataset.media = 'missing';
       });
     });
     document.querySelectorAll('[data-agent-pick] img').forEach(function (img) {

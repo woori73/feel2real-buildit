@@ -203,3 +203,15 @@ test('given AI 비서 화면 when 영상을 바꾸면 then 홈과 같은 전환 
   assert.match(JS, /restart: talking \|\| prev === 'speak'/);
   assert.match(JS, /showClip\('speak', \{ sound: true, force: true, onFail: stopGreeting \}\)/);
 });
+
+test('given 대시보드 인사 버튼 when 홈과 비교하면 then 같은 모양(어두운 바탕·시안 테두리·빛·높이 36px)이다', () => {
+  // given
+  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_agent_dashboard.css'), 'utf8');
+  // when
+  const rule = CSS.match(/\.speech-who \.agent-greet \{[^}]*\}/)[0];
+  // then
+  assert.match(rule, /min-height: 36px/);
+  assert.match(rule, /border: 1px solid var\(--si-cyan\)/);
+  assert.match(rule, /background: rgba\(4,10,20,\.78\)/);
+  assert.match(rule, /box-shadow: 0 0 14px rgba\(93,225,255,\.35\)/);
+});
