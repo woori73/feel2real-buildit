@@ -430,7 +430,7 @@
     }else{
       state.selected=null;
       const file=cacheFile(row),view=el("div");
-      $("detail").replaceChildren(el("h2",row.filename),el("p","업로드 원본 · 회차·버전·검수 상태 미등록","hint"),view);
+      $("detail").replaceChildren(el("h2",row.filename),el("p","업로드 원본 · 회차·버전·검수 상태 미등록","hint"),el("p",String(row.size_bytes||0)+" bytes · SHA-256 "+row.sha256,"asset-filename"),view);
       if(PREVIEW_TYPES.includes(row.extension))await previewFile(file,view);
       const download=el("a","원본 다운로드");download.href=scoped("/api/studio/files/"+encodeURIComponent(file.id)+"/content");$("detail").append(download);
       if(state.permission!=="VIEWER"){
@@ -564,10 +564,9 @@
   document.querySelectorAll("[data-tab]").forEach(button=>button.onclick=run(()=>setWorkspace(button.dataset.tab)));
   async function openTool(id){
     const tool=$(id);if(tool.dataset.owner!==state.section)await setWorkspace(tool.dataset.owner);
-    tool.open=true;tool.scrollIntoView({block:"nearest"});
+    const wasOpen=tool.open;tool.open=true;if(wasOpen)await loadTool(tool);tool.scrollIntoView({block:"nearest"});
   }
-  document.querySelectorAll("details.tool-panel").forEach(tool=>tool.addEventListener("toggle",run(async()=>{
-    if(!tool.open)return;
+  async function loadTool(tool){
     if(tool.id==="files")await fileList();
     if(tool.id==="characters")await gallery();
     if(tool.id==="memory")await loadMemory();
@@ -587,7 +586,8 @@
     if(tool.id==="members"){
       $("member-list").replaceChildren();for(const member of await api("members"))$("member-list").append(el("p",member.user_id+" · "+member.permission));
     }
-  })));
+  }
+  document.querySelectorAll("details.tool-panel").forEach(tool=>tool.addEventListener("toggle",run(async()=>{if(tool.open)await loadTool(tool);})));
   $("open-upload").onclick=run(()=>openTool("files"));
   for(const id of ["media","versions","review-status"])$(id).onchange=run(()=>load());
   $("query").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();run(()=>load())();}});

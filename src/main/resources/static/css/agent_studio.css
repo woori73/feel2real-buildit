@@ -447,3 +447,5 @@ audio.media-player {
  .studio-workspace #detail{padding:12px}.studio-workspace .tool-panel{padding-left:12px;padding-right:12px}
  .studio-workspace #review-dialog .toolbar{display:flex}.studio-workspace .featured-card .media-player{max-height:none}
 }
+.studio-workspace .featured-card:only-child{width:100%;max-width:980px;margin-inline:auto}
+.studio-workspace .featured-card:only-child video.media-player{width:min(100%,88.8889vh);margin-inline:auto;max-height:none}
