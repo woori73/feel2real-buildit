@@ -207,7 +207,8 @@ class StudioProductionImportMySqlTest {
 
   @Test
   @Order(5)
-  void givenPinned536Sources_whenTwoSectionCataloguePaged_thenAllVersionsAndOriginalsRemainReachable() {
+  void givenPinned536Sources_whenTwoSectionCataloguePaged_thenAllVersionsAndOriginalsRemainReachable()
+      throws Exception {
     var snapshotQueries = List.of("SELECT * FROM studio_files ORDER BY id",
         "SELECT * FROM studio_items ORDER BY project_id,item_key",
         "SELECT * FROM studio_revisions ORDER BY id", "SELECT * FROM studio_events ORDER BY id");
