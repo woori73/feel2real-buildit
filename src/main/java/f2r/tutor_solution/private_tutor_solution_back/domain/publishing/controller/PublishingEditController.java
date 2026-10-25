@@ -58,8 +58,11 @@ public class PublishingEditController {
   public ResponseEntity<Map<String, Object>> info(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
       @PathVariable Long jobId) {
+    var job = editService.getJob(principal, jobId);
     return ResponseEntity.ok(Map.of(
-        "jobId", jobId, "pageCount", editService.pageCount(principal, jobId)));
+        "jobId", jobId,
+        "pageCount", editService.pageCount(principal, jobId),
+        "lockedStories", job.getLockedStoryIds()));
   }
 
   /**

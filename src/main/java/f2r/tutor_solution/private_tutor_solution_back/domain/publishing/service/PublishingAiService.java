@@ -42,14 +42,18 @@ public class PublishingAiService {
 
   /** AI 계획 응답 (Qoder 갭-G3: 차단 시 blocked 형태). */
   public record AiPlan(List<PlannedCommand> plan, boolean needsApproval,
-      boolean blocked, String reason) {
+      boolean blocked, String reason, String warning) {
 
     public static AiPlan approved(List<PlannedCommand> plan) {
-      return new AiPlan(plan, true, false, null);
+      return new AiPlan(plan, true, false, null, null);
+    }
+
+    public static AiPlan approvedWithWarning(List<PlannedCommand> plan, String warning) {
+      return new AiPlan(plan, true, false, null, warning);
     }
 
     public static AiPlan blocked(String reason) {
-      return new AiPlan(List.of(), false, true, reason);
+      return new AiPlan(List.of(), false, true, reason, null);
     }
   }
 
@@ -91,6 +95,22 @@ public class PublishingAiService {
       log.warn("AI 계획 차단: jobId={}, reason={}", jobId, e.getReason());
       return AiPlan.blocked(e.getReason());
     }
+    // 원문 보호: 잠금 스토리를 대상으로 한 AI 수정 계획은 경고 표시
+    // (차단이 아님 — 사용자가 명시적으로 승인하면 applyRevision에서 userConfirmed 전달)
+    java.util.Set<Long> locked = job.getLockedStoryIds();
+    if (!locked.isEmpty()) {
+      for (PublishingCommand cmd : commands) {
+        if ("document.replaceText".equals(cmd.id())
+            && cmd.params() != null
+            && cmd.params().get("story") instanceof Number story
+            && locked.contains(story.longValue())) {
+          log.warn("AI 계획이 원문 보호 영역을 대상으로 함: jobId={}, story={}",
+              jobId, story.longValue());
+          return AiPlan.approvedWithWarning(plan,
+              "원문 보호 영역(영어 지문)을 수정합니다. 승인 시 원문이 변경됩니다.");
+        }
+      }
+    }
 
     log.info("AI 계획 생성: jobId={}, {}건", jobId, plan.size());
     return AiPlan.approved(plan);
@@ -99,19 +119,47 @@ public class PublishingAiService {
   /**
    * 승인된 계획을 실행한다 (스냅샷 후 적용).
    *
+   * @param userConfirmed 원문 보호 영역 수정에 대한 사용자 명시 확인.
+   *     AI는 이 값을 true로 만들 수 없다 (applyRevision에서만 설정).
    * @return 생성된 스냅샷 ID
    */
   public Long applyPlan(AuthenticatedPrincipal principal, Long jobId,
-      List<PlannedCommand> plan) {
+      List<PlannedCommand> plan, boolean userConfirmed) {
     if (plan == null || plan.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "적용할 계획이 없습니다.");
     }
+    PublishingJob job = jobService.requireOwned(principal, jobId);
+    java.util.Set<Long> locked = job.getLockedStoryIds();
     List<PublishingCommand> commands = plan.stream()
-        .map(p -> new PublishingCommand(p.command(), p.params()))
+        .map(p -> {
+          Map<String, Object> params = p.params() == null
+              ? Map.of()
+              : new java.util.HashMap<>(p.params());
+          // 원문 보호: 잠금 스토리 대상 명령은 사용자 명시 확인이 있을 때만 userConfirmed 설정.
+          // AI가 params에 userConfirmed을 넣어도 여기서는 무시된다.
+          params.remove("userConfirmed");
+          if (userConfirmed
+              && "document.replaceText".equals(p.command())
+              && params.get("story") instanceof Number story
+              && locked.contains(story.longValue())) {
+            params.put("userConfirmed", true);
+          }
+          return new PublishingCommand(p.command(), Map.copyOf(params));
+        })
         .toList();
     // 재검증: 승인된 계획이라도 서버에서 allowlist 재확인
     allowlist.validateAiPlan(commands);
     return editService.executeCommands(principal, jobId, commands);
+  }
+
+  /**
+   * 승인된 계획을 실행한다 (원문 보호 확인 없음).
+   *
+   * @return 생성된 스냅샷 ID
+   */
+  public Long applyPlan(AuthenticatedPrincipal principal, Long jobId,
+      List<PlannedCommand> plan) {
+    return applyPlan(principal, jobId, plan, false);
   }
 
   /** 계획 생성용 시스템 프롬프트. */
