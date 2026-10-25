@@ -84,7 +84,14 @@
     return list.indexOf('idle.mp4') >= 0 ? 'idle' : null;
   }
 
-  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor, greetingFor: greetingFor };
+  // 휴대폰 키보드가 열려 보이는 영역(visualViewport)이 줄었을 때, 입력줄 아래쪽이 가려진 만큼(+여유) 스크롤할 거리.
+  // 가려지지 않았으면 0.
+  function composerScrollDelta(composerBottom, viewTop, viewHeight, margin) {
+    var hidden = composerBottom + (margin || 0) - (viewTop + viewHeight);
+    return hidden > 0 ? Math.ceil(hidden) : 0;
+  }
+
+  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor, greetingFor: greetingFor, composerScrollDelta: composerScrollDelta };
   if (typeof window !== 'undefined') window.f2rHomeAgent = api;
   if (typeof document === 'undefined' || !document.getElementById) return;
 
@@ -248,6 +255,15 @@
       respond(detectIntent(text));
     });
     input.addEventListener('input', function () { setState(input.value.trim() ? 'listening' : 'idle'); });
+    // 키보드가 열려도 입력창·보내기 버튼이 보이도록, 보이는 영역 아래로 내려가면 그만큼 올린다.
+    var vv = window.visualViewport;
+    function keepComposerVisible() {
+      if (document.activeElement !== input || !vv) return;
+      var d = composerScrollDelta(form.getBoundingClientRect().bottom, vv.offsetTop, vv.height, 12);
+      if (d) window.scrollBy(0, d);
+    }
+    if (vv) vv.addEventListener('resize', keepComposerVisible);
+    input.addEventListener('focus', function () { setTimeout(keepComposerVisible, 350); });
     document.querySelectorAll('button[data-home-intent]').forEach(function (b) {
       b.addEventListener('click', function () { lastAsk = ''; bubble('user', (b.querySelector('b') || b).textContent.trim()); respond(b.dataset.homeIntent); });
     });
