@@ -404,12 +404,3 @@ body[data-view="ai"] .ai-fab { display: none; }
 }
 .svc-card[hidden] { display: none !important; }
 
-/* 세븐 인사 듣기(말풍선 이름 줄 오른쪽): 소리는 이 버튼을 누른 뒤에만 재생한다(모바일 자동재생 정책). */
-/* 홈의 인사 버튼과 같은 모양(어두운 바탕·시안 테두리·빛). */
-.speech-who .agent-greet {
-  margin-left: auto; flex: 0 0 auto; white-space: nowrap; min-height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--si-cyan); background: rgba(4,10,20,.78); color: var(--si-text); font: inherit; font-size: 13px; font-weight: 800;
-  box-shadow: 0 0 14px rgba(93,225,255,.35);
-}
-.speech-who .agent-greet:disabled { cursor: default; opacity: .8; }
-.speech-who .agent-greet[hidden] { display: none; }

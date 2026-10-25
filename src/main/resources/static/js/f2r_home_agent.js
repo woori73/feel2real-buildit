@@ -128,7 +128,6 @@
     var consoleEl = $('homeConsole');
     if (consoleEl) consoleEl.dataset.state = s;
     if (changed && stage && stage.dataset.media === 'ready') portrait();
-    renderGreet();
     var label = $('homeStateLabel');
     if (label) label.textContent = { idle: '대기', listening: '듣는 중', thinking: '생각 중', speaking: '안내 중', greeting: '말하는 중' }[s] || '대기';
   }
@@ -259,18 +258,10 @@
   }
 
   // ---- 세븐 인사(음성+영상) ----
-  // 소리 있는 재생은 사용자가 버튼을 누른 뒤에만 시작한다(모바일 자동재생 정책). 재생 중 다시 눌러도 겹쳐 재생하지 않는다.
+  // 소리 있는 재생은 사용자가 캐릭터 버튼을 누른 뒤에만 시작한다(모바일 자동재생 정책). 재생 중 다시 눌러도 겹쳐 재생하지 않는다.
   function mediaFiles() {
     var info = ui.media && ui.media.agents && ui.media.agents[ui.agent];
     return info && info.files ? info.files : [];
-  }
-  function renderGreet() {
-    var btn = $('homeGreet');
-    if (!btn) return;
-    var line = greetingFor(ui.agent, mediaFiles());
-    btn.hidden = !line;
-    btn.disabled = ui.state === 'greeting';
-    btn.textContent = ui.state === 'greeting' ? '말하는 중…' : AGENTS[ui.agent].name + ' 인사 듣기';
   }
   function playGreeting() {
     var line = greetingFor(ui.agent, mediaFiles());
@@ -288,7 +279,7 @@
     return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
-      .then(function (m) { ui.media = m; portrait(); renderGreet(); });
+      .then(function (m) { ui.media = m; portrait(); });
   }
 
   function readUser() {
@@ -327,12 +318,11 @@
         store.set(AGENT_KEY, ui.agent);
         document.body.dataset.agentTheme = ui.agent;
         portrait();
-        renderGreet();
-        bubble('agent', AGENTS[ui.agent].name + '입니다. 이어서 도와드릴게요.');
+        // 캐릭터를 고르면(사용자 클릭 = 소리 재생 허용) 인사 영상을 소리와 함께 바로 재생한다. 인사 영상이 없으면 글로만 안내한다.
+        if (greetingFor(ui.agent, mediaFiles())) playGreeting();
+        else bubble('agent', AGENTS[ui.agent].name + '입니다. 이어서 도와드릴게요.');
       });
     });
-    var greet = $('homeGreet');
-    if (greet) greet.addEventListener('click', playGreeting);
     [$('homeVideo'), $('homeVideoAlt')].forEach(function (video) {
       if (!video) return;
       video.addEventListener('ended', stopGreeting);

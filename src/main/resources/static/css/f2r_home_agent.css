@@ -107,18 +107,9 @@ body { background: var(--si-bg); color: var(--si-text); }
 .si-home-name strong { font-size: 20px; font-weight: 900; }
 body[data-agent-theme="suni"] .si-home-name strong { color: var(--si-violet); }
 .si-home-name small { color: var(--si-muted); font-size: 13px; }
-/* 세븐 인사 듣기: 소리는 이 버튼을 누른 뒤에만 재생한다(모바일 자동재생 정책). */
-.si-home-greet {
-  position: absolute; z-index: 4; right: 12px; bottom: 12px; min-height: 36px; padding: 0 14px; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--si-cyan); background: rgba(4,10,20,.78); color: var(--si-text); font: inherit; font-size: 13px; font-weight: 800;
-  box-shadow: 0 0 14px rgba(93,225,255,.35);
-}
-.si-home-greet:disabled { cursor: default; opacity: .8; }
-.si-home-greet[hidden] { display: none; }
-/* 모바일(2D): 인사 버튼은 양옆 홀로그램 버튼과 겹치지 않게 가운데 열 아래에 둔다. 이름표가 잘리지 않게 무대를 조금 높인다. */
+/* 모바일(2D): 이름표가 잘리지 않게 무대를 조금 높인다. */
 @media (max-width: 560px) {
   .si-home-stage { height: clamp(320px, 44vh, 420px); }
-  .si-home-greet { right: auto; left: 50%; transform: translateX(-50%); bottom: 48px; white-space: nowrap; }
 }
 .si-home-talk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
 .si-home-chat { min-width: 0; display: flex; flex-direction: column; gap: 8px; max-height: 300px; min-height: 120px; overflow-y: auto; padding: 2px; }

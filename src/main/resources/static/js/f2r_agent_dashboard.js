@@ -202,7 +202,6 @@
     $('agentStateLabel').textContent = label;
     // 인사 재생 중에는 화면의 영상을 그대로 둔다(끝나면 stopGreeting이 대기 영상으로 돌린다).
     if (!ui.greeting) showClip(next === 'speaking' ? speakingClip(speakingMode(ui.voice), files()) : STATES[next].clip);
-    renderGreet();
     clearTimeout(ui.timer);
     if (next === 'thinking') ui.timer = setTimeout(function () { setState(nextState(ui.state, 'timeout')); }, 30000);
     if (next === 'done') ui.timer = setTimeout(function () { setState(nextState(ui.state, 'timeout')); }, 6000);
@@ -210,13 +209,6 @@
 
   // ---- 세븐 인사(음성+영상) ----
   // 소리 있는 재생은 사용자가 버튼을 누른 뒤에만 시작한다(모바일 자동재생 정책). 재생 중 다시 눌러도 겹쳐 재생하지 않는다.
-  function renderGreet() {
-    var btn = $('agentGreetBtn');
-    if (!btn) return;
-    btn.hidden = !greetingFor(ui.agent, files());
-    btn.disabled = ui.greeting;
-    btn.textContent = ui.greeting ? '말하는 중…' : AGENTS[ui.agent].name + ' 인사 듣기';
-  }
 
   function playGreeting() {
     var line = greetingFor(ui.agent, files());
@@ -283,7 +275,6 @@
       portrait(b.querySelector('img'), b.dataset.agentPick, b);
     });
     renderBadge();
-    renderGreet();
     ui.clip = null;
     showClip(ui.state === 'speaking' ? speakingClip(speakingMode(ui.voice), files()) : STATES[ui.state].clip);
   }
@@ -323,6 +314,8 @@
     renderAgent();
     var stage = $('agentStage');
     stage.classList.remove('is-flash'); void stage.offsetWidth; stage.classList.add('is-flash');
+    // 캐릭터를 고르면(사용자 클릭 = 소리 재생 허용) 인사 영상을 소리와 함께 바로 재생한다. 없으면 글로만 인사한다.
+    if (!ui.awaiting && greetingFor(ui.agent, files())) { playGreeting(); return; }
     if (ui.state === 'idle' && !ui.awaiting) say(AGENTS[ui.agent].greeting, { keepState: true });
   }
 
@@ -582,8 +575,6 @@
     document.querySelectorAll('[data-view-btn]').forEach(function (b) {
       b.addEventListener('click', function () { setView(b.dataset.viewBtn); window.scrollTo(0, 0); });
     });
-    var greet = $('agentGreetBtn');
-    if (greet) greet.addEventListener('click', playGreeting);
     // 다른 탭으로 가거나 페이지를 떠나면 인사를 멈춘다(돌아왔을 때 소리가 겹치지 않게).
     document.addEventListener('visibilitychange', function () { if (document.hidden) stopGreeting(); });
     window.addEventListener('pagehide', stopGreeting);

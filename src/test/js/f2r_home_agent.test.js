@@ -103,14 +103,13 @@ test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐·서�
   assert.equal(h.greetingFor('seven', null), null);
 });
 
-test('given 홈 화면 when 인사 버튼을 그리면 then 처음에는 숨기고 소리는 버튼을 누른 뒤에만 재생한다', () => {
+test('given 홈 화면 when 캐릭터를 고르면 then 인사 버튼 없이 인사 영상을 소리와 함께 바로 재생한다', () => {
   // given / when
-  const btn = HTML.match(/<button[^>]*id="homeGreet"[^>]*>/);
+  const pick = JS.slice(JS.indexOf("querySelectorAll('button[data-home-agent]').forEach(function (b) {\n      b.addEventListener"), JS.indexOf("video.addEventListener('ended'"));
   // then
-  assert.ok(btn, '인사 듣기 버튼이 있어야 한다');
-  assert.match(btn[0], /hidden/);
+  assert.doesNotMatch(HTML, /homeGreet/);
   assert.match(HTML, /<video class="is-on" id="homeVideo" muted loop playsinline/);
-  assert.match(JS, /greet\.addEventListener\('click', playGreeting\)/);
+  assert.match(pick, /if \(greetingFor\(ui\.agent, mediaFiles\(\)\)\) playGreeting\(\);/);
 });
 
 test('given 홈 화면 when 영상을 바꾸면 then 대시보드와 같은 전환 모듈로 두 영상 요소를 겹쳐 바꾼다', () => {

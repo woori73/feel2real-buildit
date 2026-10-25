@@ -181,13 +181,12 @@ test('given 립싱크 어댑터 없음 when 일반 응답 영상을 고르면 th
   assert.equal(d.speakingClip(d.speakingMode(null), files), 'idle');
 });
 
-test('given 대시보드 when 인사 버튼을 그리면 then 처음에는 숨기고 버튼을 눌러야 재생하며 끝나면 대기로 돌아간다', () => {
+test('given 대시보드 when 캐릭터를 고르면 then 인사 버튼 없이 인사 영상을 소리와 함께 바로 재생하고 끝나면 대기로 돌아간다', () => {
   // given / when
-  const btn = HTML.match(/<button[^>]*id="agentGreetBtn"[^>]*>/);
+  const choose = JS.slice(JS.indexOf('function chooseAgent'), JS.indexOf('function setView'));
   // then
-  assert.ok(btn, '인사 듣기 버튼이 있어야 한다');
-  assert.match(btn[0], /hidden/);
-  assert.match(JS, /greet\.addEventListener\('click', playGreeting\)/);
+  assert.doesNotMatch(HTML, /agentGreetBtn/);
+  assert.match(choose, /if \(!ui\.awaiting && greetingFor\(ui\.agent, files\(\)\)\) \{ playGreeting\(\); return; \}/);
   assert.match(JS, /v\.addEventListener\('ended', stopGreeting\)/);
   assert.match(JS, /if \(!line \|\| ui\.greeting\) return;/);
 });
@@ -204,14 +203,3 @@ test('given AI 비서 화면 when 영상을 바꾸면 then 홈과 같은 전환 
   assert.match(JS, /showClip\('speak', \{ sound: true, force: true, onFail: stopGreeting \}\)/);
 });
 
-test('given 대시보드 인사 버튼 when 홈과 비교하면 then 같은 모양(어두운 바탕·시안 테두리·빛·높이 36px)이다', () => {
-  // given
-  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_agent_dashboard.css'), 'utf8');
-  // when
-  const rule = CSS.match(/\.speech-who \.agent-greet \{[^}]*\}/)[0];
-  // then
-  assert.match(rule, /min-height: 36px/);
-  assert.match(rule, /border: 1px solid var\(--si-cyan\)/);
-  assert.match(rule, /background: rgba\(4,10,20,\.78\)/);
-  assert.match(rule, /box-shadow: 0 0 14px rgba\(93,225,255,\.35\)/);
-});
