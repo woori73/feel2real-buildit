@@ -68,11 +68,15 @@
     }
   }
 
-  // 세븐 인사 영상(speak.mp4)은 음성과 입 모양을 함께 만든 고정 대사 한 편이다.
+  // 캐릭터별 인사 영상(speak.mp4)은 음성과 입 모양을 함께 만든 고정 대사 한 편이다.
   // 임의의 안내 문장에는 입 모양이 맞지 않으므로, 이 대사를 재생할 때('greeting')에만 쓴다.
-  var GREETING = { seven: '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?' };
+  var GREETING = {
+    seven: '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?',
+    suni: '서수니입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?'
+  };
   function greetingFor(agent, files) {
-    return GREETING[agent] && (files || []).indexOf('speak.mp4') >= 0 ? GREETING[agent] : null;
+    var line = Object.prototype.hasOwnProperty.call(GREETING, agent) ? GREETING[agent] : null;
+    return line && (files || []).indexOf('speak.mp4') >= 0 ? line : null;
   }
 
   // 대시보드와 같은 규칙: 생각 중에는 think.mp4, 인사 재생 중에는 speak.mp4, 그 밖에는 idle.mp4.

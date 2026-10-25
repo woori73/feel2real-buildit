@@ -111,11 +111,15 @@
     return mode === 'voice-lipsync' && (files || []).indexOf('speak.mp4') >= 0 ? 'speak' : 'idle';
   }
 
-  // 세븐 인사 영상(speak.mp4)은 음성과 입 모양을 함께 만든 고정 대사 한 편이다.
+  // 캐릭터별 인사 영상(speak.mp4)은 음성과 입 모양을 함께 만든 고정 대사 한 편이다.
   // 임의의 응답 문장에는 입 모양이 맞지 않으므로 이 대사를 재생할 때만 쓴다(일반 응답은 speakingClip 규칙 그대로).
-  var GREETING = { seven: '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?' };
+  var GREETING = {
+    seven: '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?',
+    suni: '서수니입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?'
+  };
   function greetingFor(agent, files) {
-    return GREETING[agent] && (files || []).indexOf('speak.mp4') >= 0 ? GREETING[agent] : null;
+    var line = Object.prototype.hasOwnProperty.call(GREETING, agent) ? GREETING[agent] : null;
+    return line && (files || []).indexOf('speak.mp4') >= 0 ? line : null;
   }
 
   // 요청한 영상이 없으면 대기 영상으로, 대기 영상도 없으면 null(표식 표시).

@@ -162,13 +162,15 @@ test('given 이미지 표시 when 자료 목록이 없으면 then 얼굴 경로�
   assert.match(JS, /img\.removeAttribute\('src'\)/);
 });
 
-test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐이고 speak.mp4가 있을 때만 대사를 돌려준다', () => {
+test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐·서수니 각자의 대사를 speak.mp4가 있을 때만 돌려준다', () => {
   // given
   const d = load();
   // when / then
   assert.equal(d.greetingFor('seven', ['idle.mp4', 'speak.mp4']), '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
   assert.equal(d.greetingFor('seven', ['idle.mp4']), null);
-  assert.equal(d.greetingFor('suni', ['idle.mp4', 'speak.mp4']), null);
+  assert.equal(d.greetingFor('suni', ['idle.mp4', 'speak.mp4']), '서수니입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
+  assert.equal(d.greetingFor('suni', ['idle.mp4']), null);
+  assert.equal(d.greetingFor('toString', ['speak.mp4']), null);
 });
 
 test('given 립싱크 어댑터 없음 when 일반 응답 영상을 고르면 then 인사 영상이 있어도 speak.mp4를 쓰지 않는다', () => {
