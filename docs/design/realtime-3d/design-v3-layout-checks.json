@@ -1,0 +1,866 @@
+[
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "english",
+        "rect": {
+          "bottom": 480.46875,
+          "height": 53.5,
+          "right": 118.65625,
+          "width": 91.65625,
+          "x": 27,
+          "y": 426.96875
+        },
+        "text": "AI 영어교육문법 · 모의고사"
+      },
+      {
+        "contentFits": true,
+        "key": "exam",
+        "rect": {
+          "bottom": 480.46875,
+          "height": 53.5,
+          "right": 218.328125,
+          "width": 91.671875,
+          "x": 126.65625,
+          "y": 426.96875
+        },
+        "text": "예상문제1회 20,000원"
+      },
+      {
+        "contentFits": true,
+        "key": "wiki",
+        "rect": {
+          "bottom": 480.46875,
+          "height": 53.5,
+          "right": 317.984375,
+          "width": 91.65625,
+          "x": 226.328125,
+          "y": 426.96875
+        },
+        "text": "모의고사위키해설 · 자료"
+      },
+      {
+        "contentFits": true,
+        "key": "work",
+        "rect": {
+          "bottom": 541.96875,
+          "height": 53.5,
+          "right": 118.65625,
+          "width": 91.65625,
+          "x": 27,
+          "y": 488.46875
+        },
+        "text": "AI 비서 업무학원 운영"
+      },
+      {
+        "contentFits": true,
+        "key": "studio",
+        "rect": {
+          "bottom": 541.96875,
+          "height": 53.5,
+          "right": 218.328125,
+          "width": 91.671875,
+          "x": 126.65625,
+          "y": 488.46875
+        },
+        "text": "AI AGENT제작협업실"
+      },
+      {
+        "contentFits": true,
+        "key": "builder",
+        "rect": {
+          "bottom": 541.96875,
+          "height": 53.5,
+          "right": 317.984375,
+          "width": 91.65625,
+          "x": 226.328125,
+          "y": 488.46875
+        },
+        "text": "홈페이지사이트 제작"
+      }
+    ],
+    "compact": true,
+    "composer": {
+      "bottom": 786.96875,
+      "height": 50,
+      "right": 329,
+      "width": 313,
+      "x": 16,
+      "y": 736.96875
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 552.96875,
+      "height": 384,
+      "right": 329,
+      "width": 313,
+      "x": 16,
+      "y": 168.96875
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      360,
+      800
+    ],
+    "page": "home"
+  },
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "english",
+        "rect": {
+          "bottom": 501.578125,
+          "height": 53.5,
+          "right": 133.65625,
+          "width": 106.65625,
+          "x": 27,
+          "y": 448.078125
+        },
+        "text": "AI 영어교육문법 · 모의고사"
+      },
+      {
+        "contentFits": true,
+        "key": "exam",
+        "rect": {
+          "bottom": 501.578125,
+          "height": 53.5,
+          "right": 248.328125,
+          "width": 106.671875,
+          "x": 141.65625,
+          "y": 448.078125
+        },
+        "text": "예상문제1회 20,000원"
+      },
+      {
+        "contentFits": true,
+        "key": "wiki",
+        "rect": {
+          "bottom": 501.578125,
+          "height": 53.5,
+          "right": 362.984375,
+          "width": 106.65625,
+          "x": 256.328125,
+          "y": 448.078125
+        },
+        "text": "모의고사위키해설 · 자료"
+      },
+      {
+        "contentFits": true,
+        "key": "work",
+        "rect": {
+          "bottom": 563.078125,
+          "height": 53.5,
+          "right": 133.65625,
+          "width": 106.65625,
+          "x": 27,
+          "y": 509.578125
+        },
+        "text": "AI 비서 업무학원 운영"
+      },
+      {
+        "contentFits": true,
+        "key": "studio",
+        "rect": {
+          "bottom": 563.078125,
+          "height": 53.5,
+          "right": 248.328125,
+          "width": 106.671875,
+          "x": 141.65625,
+          "y": 509.578125
+        },
+        "text": "AI AGENT제작협업실"
+      },
+      {
+        "contentFits": true,
+        "key": "builder",
+        "rect": {
+          "bottom": 563.078125,
+          "height": 53.5,
+          "right": 362.984375,
+          "width": 106.65625,
+          "x": 256.328125,
+          "y": 509.578125
+        },
+        "text": "홈페이지사이트 제작"
+      }
+    ],
+    "compact": true,
+    "composer": {
+      "bottom": 813.796875,
+      "height": 50,
+      "right": 374,
+      "width": 358,
+      "x": 16,
+      "y": 763.796875
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 574.078125,
+      "height": 405.109375,
+      "right": 374,
+      "width": 358,
+      "x": 16,
+      "y": 168.96875
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      390,
+      844
+    ],
+    "page": "home"
+  },
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "english",
+        "rect": {
+          "bottom": 507.703125,
+          "height": 53.5,
+          "right": 141,
+          "width": 114,
+          "x": 27,
+          "y": 454.203125
+        },
+        "text": "AI 영어교육문법 · 모의고사"
+      },
+      {
+        "contentFits": true,
+        "key": "exam",
+        "rect": {
+          "bottom": 507.703125,
+          "height": 53.5,
+          "right": 263,
+          "width": 114,
+          "x": 149,
+          "y": 454.203125
+        },
+        "text": "예상문제1회 20,000원"
+      },
+      {
+        "contentFits": true,
+        "key": "wiki",
+        "rect": {
+          "bottom": 507.703125,
+          "height": 53.5,
+          "right": 385,
+          "width": 114,
+          "x": 271,
+          "y": 454.203125
+        },
+        "text": "모의고사위키해설 · 자료"
+      },
+      {
+        "contentFits": true,
+        "key": "work",
+        "rect": {
+          "bottom": 569.203125,
+          "height": 53.5,
+          "right": 141,
+          "width": 114,
+          "x": 27,
+          "y": 515.703125
+        },
+        "text": "AI 비서 업무학원 운영"
+      },
+      {
+        "contentFits": true,
+        "key": "studio",
+        "rect": {
+          "bottom": 569.203125,
+          "height": 53.5,
+          "right": 263,
+          "width": 114,
+          "x": 149,
+          "y": 515.703125
+        },
+        "text": "AI AGENT제작협업실"
+      },
+      {
+        "contentFits": true,
+        "key": "builder",
+        "rect": {
+          "bottom": 569.203125,
+          "height": 53.5,
+          "right": 385,
+          "width": 114,
+          "x": 271,
+          "y": 515.703125
+        },
+        "text": "홈페이지사이트 제작"
+      }
+    ],
+    "compact": true,
+    "composer": {
+      "bottom": 822.203125,
+      "height": 50,
+      "right": 396,
+      "width": 380,
+      "x": 16,
+      "y": 772.203125
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 580.203125,
+      "height": 410,
+      "right": 396,
+      "width": 380,
+      "x": 16,
+      "y": 170.203125
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      412,
+      915
+    ],
+    "page": "home"
+  },
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "english",
+        "rect": {
+          "bottom": 405.421875,
+          "height": 54,
+          "right": 240.78125,
+          "width": 148,
+          "x": 92.78125,
+          "y": 351.421875
+        },
+        "text": "AI 영어교육문법 · 모의고사"
+      },
+      {
+        "contentFits": true,
+        "key": "exam",
+        "rect": {
+          "bottom": 488.453125,
+          "height": 54,
+          "right": 244.109375,
+          "width": 148,
+          "x": 96.109375,
+          "y": 434.453125
+        },
+        "text": "예상문제1회 20,000원"
+      },
+      {
+        "contentFits": true,
+        "key": "wiki",
+        "rect": {
+          "bottom": 569.59375,
+          "height": 54,
+          "right": 247.34375,
+          "width": 148,
+          "x": 99.34375,
+          "y": 515.59375
+        },
+        "text": "모의고사위키해설 · 자료"
+      },
+      {
+        "contentFits": true,
+        "key": "work",
+        "rect": {
+          "bottom": 405.421875,
+          "height": 54,
+          "right": 820.203125,
+          "width": 148,
+          "x": 672.203125,
+          "y": 351.421875
+        },
+        "text": "AI 비서 업무학원 운영"
+      },
+      {
+        "contentFits": true,
+        "key": "studio",
+        "rect": {
+          "bottom": 488.453125,
+          "height": 54,
+          "right": 816.875,
+          "width": 148,
+          "x": 668.875,
+          "y": 434.453125
+        },
+        "text": "AI AGENT제작협업실"
+      },
+      {
+        "contentFits": true,
+        "key": "builder",
+        "rect": {
+          "bottom": 569.59375,
+          "height": 54,
+          "right": 813.640625,
+          "width": 148,
+          "x": 665.640625,
+          "y": 515.59375
+        },
+        "text": "홈페이지사이트 제작"
+      }
+    ],
+    "compact": false,
+    "composer": {
+      "bottom": 743.375,
+      "height": 50,
+      "right": 1372.484375,
+      "width": 489.796875,
+      "x": 882.6875,
+      "y": 693.375
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 733.375,
+      "height": 520,
+      "right": 860.6875,
+      "width": 808.1875,
+      "x": 52.5,
+      "y": 213.375
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      1440,
+      960
+    ],
+    "page": "home"
+  },
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "student",
+        "rect": {
+          "bottom": 302.09375,
+          "height": 54,
+          "right": 163.3125,
+          "width": 136.3125,
+          "x": 27,
+          "y": 248.09375
+        },
+        "text": "학생 등록이름부터 차례로"
+      },
+      {
+        "contentFits": true,
+        "key": "attendance",
+        "rect": {
+          "bottom": 377.609375,
+          "height": 54,
+          "right": 163.3125,
+          "width": 136.3125,
+          "x": 27,
+          "y": 323.609375
+        },
+        "text": "출결확인 · 기록"
+      },
+      {
+        "contentFits": true,
+        "key": "consult",
+        "rect": {
+          "bottom": 451.890625,
+          "height": 54,
+          "right": 163.3125,
+          "width": 136.3125,
+          "x": 27,
+          "y": 397.890625
+        },
+        "text": "상담 기록학생 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "materials",
+        "rect": {
+          "bottom": 302.09375,
+          "height": 54,
+          "right": 671.984375,
+          "width": 136.3125,
+          "x": 535.671875,
+          "y": 248.09375
+        },
+        "text": "학습자료자료 확인"
+      },
+      {
+        "contentFits": true,
+        "key": "notice",
+        "rect": {
+          "bottom": 377.609375,
+          "height": 54,
+          "right": 671.984375,
+          "width": 136.3125,
+          "x": 535.671875,
+          "y": 323.609375
+        },
+        "text": "공지 초안제목 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "overview",
+        "rect": {
+          "bottom": 451.890625,
+          "height": 54,
+          "right": 671.984375,
+          "width": 136.3125,
+          "x": 535.671875,
+          "y": 397.890625
+        },
+        "text": "운영 현황학원 · 재무"
+      }
+    ],
+    "compact": false,
+    "composer": {
+      "bottom": 942,
+      "height": 51.59375,
+      "right": 1103.984375,
+      "width": 404.515625,
+      "x": 699.46875,
+      "y": 890.40625
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 642,
+      "height": 560,
+      "right": 683.46875,
+      "width": 667.46875,
+      "x": 16,
+      "y": 82
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      1440,
+      960
+    ],
+    "page": "dashboard"
+  },
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "student",
+        "rect": {
+          "bottom": 345.5,
+          "height": 53.5,
+          "right": 122.328125,
+          "width": 99.328125,
+          "x": 23,
+          "y": 292
+        },
+        "text": "학생 등록이름부터 차례로"
+      },
+      {
+        "contentFits": true,
+        "key": "attendance",
+        "rect": {
+          "bottom": 345.5,
+          "height": 53.5,
+          "right": 229.65625,
+          "width": 99.328125,
+          "x": 130.328125,
+          "y": 292
+        },
+        "text": "출결확인 · 기록"
+      },
+      {
+        "contentFits": true,
+        "key": "consult",
+        "rect": {
+          "bottom": 345.5,
+          "height": 53.5,
+          "right": 337,
+          "width": 99.34375,
+          "x": 237.65625,
+          "y": 292
+        },
+        "text": "상담 기록학생 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "materials",
+        "rect": {
+          "bottom": 407,
+          "height": 53.5,
+          "right": 122.328125,
+          "width": 99.328125,
+          "x": 23,
+          "y": 353.5
+        },
+        "text": "학습자료자료 확인"
+      },
+      {
+        "contentFits": true,
+        "key": "notice",
+        "rect": {
+          "bottom": 407,
+          "height": 53.5,
+          "right": 229.65625,
+          "width": 99.328125,
+          "x": 130.328125,
+          "y": 353.5
+        },
+        "text": "공지 초안제목 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "overview",
+        "rect": {
+          "bottom": 407,
+          "height": 53.5,
+          "right": 337,
+          "width": 99.34375,
+          "x": 237.65625,
+          "y": 353.5
+        },
+        "text": "운영 현황학원 · 재무"
+      }
+    ],
+    "compact": true,
+    "composer": {
+      "bottom": 790,
+      "height": 51.59375,
+      "right": 348,
+      "width": 336,
+      "x": 12,
+      "y": 738.40625
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 418,
+      "height": 352,
+      "right": 348,
+      "width": 336,
+      "x": 12,
+      "y": 66
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      360,
+      800
+    ],
+    "page": "dashboard"
+  },
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "student",
+        "rect": {
+          "bottom": 364.859375,
+          "height": 53.5,
+          "right": 132.328125,
+          "width": 109.328125,
+          "x": 23,
+          "y": 311.359375
+        },
+        "text": "학생 등록이름부터 차례로"
+      },
+      {
+        "contentFits": true,
+        "key": "attendance",
+        "rect": {
+          "bottom": 364.859375,
+          "height": 53.5,
+          "right": 249.65625,
+          "width": 109.328125,
+          "x": 140.328125,
+          "y": 311.359375
+        },
+        "text": "출결확인 · 기록"
+      },
+      {
+        "contentFits": true,
+        "key": "consult",
+        "rect": {
+          "bottom": 364.859375,
+          "height": 53.5,
+          "right": 367,
+          "width": 109.34375,
+          "x": 257.65625,
+          "y": 311.359375
+        },
+        "text": "상담 기록학생 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "materials",
+        "rect": {
+          "bottom": 426.359375,
+          "height": 53.5,
+          "right": 132.328125,
+          "width": 109.328125,
+          "x": 23,
+          "y": 372.859375
+        },
+        "text": "학습자료자료 확인"
+      },
+      {
+        "contentFits": true,
+        "key": "notice",
+        "rect": {
+          "bottom": 426.359375,
+          "height": 53.5,
+          "right": 249.65625,
+          "width": 109.328125,
+          "x": 140.328125,
+          "y": 372.859375
+        },
+        "text": "공지 초안제목 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "overview",
+        "rect": {
+          "bottom": 426.359375,
+          "height": 53.5,
+          "right": 367,
+          "width": 109.34375,
+          "x": 257.65625,
+          "y": 372.859375
+        },
+        "text": "운영 현황학원 · 재무"
+      }
+    ],
+    "compact": true,
+    "composer": {
+      "bottom": 834,
+      "height": 51.59375,
+      "right": 378,
+      "width": 366,
+      "x": 12,
+      "y": 782.40625
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 437.359375,
+      "height": 371.359375,
+      "right": 378,
+      "width": 366,
+      "x": 12,
+      "y": 66
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      390,
+      844
+    ],
+    "page": "dashboard"
+  },
+  {
+    "buttons": [
+      {
+        "contentFits": true,
+        "key": "student",
+        "rect": {
+          "bottom": 383.5,
+          "height": 53.5,
+          "right": 139.65625,
+          "width": 116.65625,
+          "x": 23,
+          "y": 330
+        },
+        "text": "학생 등록이름부터 차례로"
+      },
+      {
+        "contentFits": true,
+        "key": "attendance",
+        "rect": {
+          "bottom": 383.5,
+          "height": 53.5,
+          "right": 264.328125,
+          "width": 116.671875,
+          "x": 147.65625,
+          "y": 330
+        },
+        "text": "출결확인 · 기록"
+      },
+      {
+        "contentFits": true,
+        "key": "consult",
+        "rect": {
+          "bottom": 383.5,
+          "height": 53.5,
+          "right": 388.984375,
+          "width": 116.65625,
+          "x": 272.328125,
+          "y": 330
+        },
+        "text": "상담 기록학생 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "materials",
+        "rect": {
+          "bottom": 445,
+          "height": 53.5,
+          "right": 139.65625,
+          "width": 116.65625,
+          "x": 23,
+          "y": 391.5
+        },
+        "text": "학습자료자료 확인"
+      },
+      {
+        "contentFits": true,
+        "key": "notice",
+        "rect": {
+          "bottom": 445,
+          "height": 53.5,
+          "right": 264.328125,
+          "width": 116.671875,
+          "x": 147.65625,
+          "y": 391.5
+        },
+        "text": "공지 초안제목 · 내용"
+      },
+      {
+        "contentFits": true,
+        "key": "overview",
+        "rect": {
+          "bottom": 445,
+          "height": 53.5,
+          "right": 388.984375,
+          "width": 116.65625,
+          "x": 272.328125,
+          "y": 391.5
+        },
+        "text": "운영 현황학원 · 재무"
+      }
+    ],
+    "compact": true,
+    "composer": {
+      "bottom": 905,
+      "height": 51.59375,
+      "right": 400,
+      "width": 388,
+      "x": 12,
+      "y": 853.40625
+    },
+    "overflow": 0,
+    "stage": {
+      "bottom": 456,
+      "height": 390,
+      "right": 400,
+      "width": 388,
+      "x": 12,
+      "y": 66
+    },
+    "videoSources": [
+      "/dashboard/agent-media/seven/idle.mp4"
+    ],
+    "viewport": [
+      412,
+      915
+    ],
+    "page": "dashboard"
+  }
+]

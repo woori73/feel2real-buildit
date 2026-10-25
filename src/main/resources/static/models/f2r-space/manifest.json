@@ -1,0 +1,26 @@
+{
+  "generator": "F2R procedural original / Three.js 0.180.0 (MIT)",
+  "models": [
+    {
+      "name": "01_central_stage.glb",
+      "bytes": 134052
+    },
+    {
+      "name": "02_hologram_rings.glb",
+      "bytes": 89644
+    },
+    {
+      "name": "03_research_facility.glb",
+      "bytes": 60944
+    },
+    {
+      "name": "04_service_panels.glb",
+      "bytes": 43500
+    }
+  ],
+  "combinedBytes": 326432,
+  "bundleBytes": 595650,
+  "bundleGzipBytes": 154578,
+  "characterGeometry": false,
+  "textures": 0
+}

@@ -1,0 +1,1 @@
+{"name":"f2r-spatial-ui","private":true,"type":"module","scripts":{"build":"node build.mjs"},"dependencies":{"esbuild":"0.25.11","three":"0.180.0"}}
