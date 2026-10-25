@@ -4964,7 +4964,7 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 - `GET /api/dashboard/agent-media` (ADMIN·TUTOR, `no-store`): `{configured: bool, agents: {seven|suni: {status, files[]}}}`. `status`는 `APPROVED`(정본) · `REFERENCE_APPROVED`(승인 얼굴 기준, 영상 확정 전) · `CANDIDATE`(승인 전 후보) · `MISSING`(파일 없음). 폴더의 `manifest.json`에 없거나 알 수 없는 값은 `CANDIDATE`.
 - `GET /dashboard/agent-media/{seven|suni}/{file}` (ADMIN·TUTOR, `private, max-age=3600`, Range 지원): `file`은 `idle.mp4`·`think.mp4`·`speak.mp4`·`poster.jpg`·`front.webp`·`half.webp`만. 그 외 이름·경로·캐릭터는 404, 비로그인 401.
 - `POST /api/dashboard/agent-media/package` (ADMIN만, 같은 출처 `Origin` 필수, multipart `file`=ZIP ≤64MB, `no-store`): 자료 묶음을 비공개 폴더에 설치한다. ZIP 안에서 마지막 두 단계가 `{seven|suni}/{허용 파일명}`인 항목과 맨 위 또는 `agent-media-private/` 아래 `manifest.json`만 쓰고 나머지(화면 캡처 등)는 무시한다. 파일 내용이 이름과 맞지 않으면(MP4 `ftyp`·JPEG·WebP 머리) 아무것도 바꾸지 않고 400. manifest는 캐릭터별 `status`·`note`만 남기고 알 수 없는 상태는 `CANDIDATE`로 낮춘다(승인 상태를 올리지 않음). manifest가 없으면 기존 승인 상태 유지. 폴더 미설정 503, 다른 출처 403, TUTOR 403, 비로그인 401. 응답은 `GET /api/dashboard/agent-media`와 같은 형식.
-- `GET /api/agent-media/public` (공개, `no-store`): 로그인 전 홈페이지용. `app.agent-media.public-agents`(환경변수 `APP_AGENT_MEDIA_PUBLIC_AGENTS`, 쉼표 구분, 기본 비어 있음)에 적은 캐릭터만 `agents`에 담는다. 기본값에서는 `{configured, agents:{}}`. 운영 값은 수동 배포(`deploy-ec2.yml`) 입력 `agent_media_public`(unchanged·seven·off)으로 바꾼다.
+- `GET /api/agent-media/public` (공개, `no-store`): 로그인 전 홈페이지용. `app.agent-media.public-agents`(환경변수 `APP_AGENT_MEDIA_PUBLIC_AGENTS`, 쉼표 구분, 기본 비어 있음)에 적은 캐릭터만 `agents`에 담는다. 기본값에서는 `{configured, agents:{}}`. 운영 값은 수동 배포(`deploy-ec2.yml`) 입력 `agent_media_public`(unchanged·seven·seven-suni·off)으로 바꾼다.
 - `GET /agent-media/public/{seven|suni}/{file}` (공개, `public, max-age=3600`): 공개 허용한 캐릭터의 허용 파일만. 그 외 404.
 
 

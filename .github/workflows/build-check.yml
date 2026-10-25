@@ -101,6 +101,7 @@ jobs:
           src/test/js/landing_v3.test.js
           src/test/js/builder_entry.test.js
           src/test/js/unified_assistant_tour.test.js
+          src/test/js/f2r_agent_clip_switch.test.js
           src/test/js/f2r_agent_dashboard.test.js
           src/test/js/f2r_agent_flows.test.js
           src/test/js/f2r_home_agent.test.js
