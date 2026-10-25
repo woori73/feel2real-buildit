@@ -4,10 +4,11 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const cyan = 0x54d9f8;
 export function createEnvironment() {
   const root = new T.Group(); root.name = 'F2R_SPATIAL_ENVIRONMENT';
-  const metal = new T.MeshStandardMaterial({ color: 0x102131, metalness: .72, roughness: .36 });
+  const metal = new T.MeshStandardMaterial({ color: 0x162b3a, metalness: .58, roughness: .42 });
   const dark = new T.MeshStandardMaterial({ color: 0x080f1a, metalness: .55, roughness: .5 });
-  const light = new T.MeshBasicMaterial({ color: cyan, toneMapped: false });
-  const violet = new T.MeshBasicMaterial({ color: 0x9e89ed, toneMapped: false });
+  const light = new T.MeshBasicMaterial({ color: cyan, toneMapped: false });light.name='f2r_state_light';
+  const rail = new T.MeshBasicMaterial({color:0x35758e,transparent:true,opacity:.38,depthWrite:false,toneMapped:false});rail.name='f2r_structure_glow';
+  const violet = new T.MeshBasicMaterial({ color: 0x8e79cf, transparent:true,opacity:.6,depthWrite:false,toneMapped:false });
   function mesh(g, m, name, x=0,y=0,z=0, parent=root) {
     const o=new T.Mesh(g,m);o.name=name;o.position.set(x,y,z);parent.add(o);return o;
   }
@@ -36,10 +37,10 @@ export function createEnvironment() {
     const z=-2.6-i*2.4;
     for(const s of [-1,1]) {
       block('portal_column',s*(5.2+i*.25),2.3,z,.14,5.2,.25,metal,lab);
-      block('portal_strip',s*(5.05+i*.25),2.4,z+.14,.025,4.9,.025,light,lab);
+      block('portal_strip',s*(5.05+i*.25),2.4,z+.14,.025,4.9,.025,rail,lab);
     }
     block('portal_ceiling',0,4.9,z,10.5+i*.5,.12,.25,metal,lab);
-    block('ceiling_light',0,4.82,z+.14,9.8+i*.5,.025,.025,light,lab);
+    block('ceiling_light',0,4.82,z+.14,9.8+i*.5,.025,.025,rail,lab);
   }
   for(let i=-7;i<=7;i++) {
     block('floor_grid_x',i,-.25,-2,.008,.008,15,metal,lab);
@@ -47,10 +48,10 @@ export function createEnvironment() {
   }
   for(const s of [-1,1]) {
     block('console_plinth',s*4.5,.1,-1,.6,.7,1,metal,lab);
-    block('console_edge',s*4.5,.46,-1,.5,.025,.9,light,lab);
+    block('console_edge',s*4.5,.46,-1,.5,.025,.9,rail,lab);
   }
   const panels=new T.Group();panels.name='04_SERVICE_PANELS';root.add(panels);
-  const glass=new T.MeshStandardMaterial({color:0x092b3c,emissive:0x063048,emissiveIntensity:.7,metalness:.1,roughness:.45,transparent:true,opacity:.8});
+  const glass=new T.MeshStandardMaterial({color:0x092b3c,emissive:0x063048,emissiveIntensity:.28,metalness:.1,roughness:.45,transparent:true,opacity:.65});
   for(let i=0;i<6;i++) {
     const s=i<3?-1:1,row=i%3,g=new T.Group();g.name='service_'+i;g.position.set(s*3.45,3.1-row*.93,.45);g.rotation.y=-s*.18;panels.add(g);g.userData.panel=i;
     block('glass_panel',0,0,0,2.1,.7,.065,glass,g);

@@ -37,12 +37,12 @@
       if (pending || controller || (!visible && !force) || !wanted || (reason && !force)) return;
       pending=true;var current=++generation;toggle.disabled=true;label.textContent='3D 공간 준비 중…';
       try {
-        var mod=await import('/js/f2r_spatial_scene.js?v=20261025-4');
+        var mod=await import('/js/f2r_spatial_scene.js?v=20261025-5');
         if (!wanted || current!==generation) return;
         var made=await mod.mount(stage,{onFailure:function(){wanted=false;fallback('error');}});
         if (!wanted || current!==generation) {made.dispose();return;}
         controller=made;toggle.textContent='2D 화면으로';toggle.setAttribute('aria-pressed','true');reset.hidden=false;
-        label.textContent=stage.dataset.spaceRenderer==='svg-compatibility'?'검수용 SVG · GPU·VideoTexture 미검증':'3D 공간 · 드래그해서 둘러보기';
+        label.textContent=stage.dataset.spaceRenderer==='svg-compatibility'?'검수용 SVG':'3D 공간 · 드래그해서 둘러보기';
       } catch (error) {wanted=false;fallback(error.code==='WEBGL_UNAVAILABLE'?'webgl-unavailable':'error');} finally {pending=false;toggle.disabled=false;}
     }
     toggle.addEventListener('click',function(){

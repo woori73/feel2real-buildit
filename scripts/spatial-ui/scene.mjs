@@ -1,15 +1,19 @@
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {SVGRenderer} from 'three/addons/renderers/SVGRenderer.js';
+import {VIDEO_APERTURE,cameraFrame,panelLabel} from './layout.mjs';
 
 export async function mount(stage,{onFailure}={}) {
   let renderer,context,compat=false;
-  const canvas=document.createElement('canvas');
-  try{context=canvas.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'low-power'});}
-  catch(_) {context=null;}
-  if(context)renderer=new T.WebGLRenderer({canvas,context,alpha:false,antialias:false,powerPreference:'low-power'});
-  else if(stage.dataset.spacePreview==='svg'){renderer=new SVGRenderer();renderer.setQuality('low');compat=true;}
-  else {const error=new Error('WebGL2 unavailable');error.code='WEBGL_UNAVAILABLE';throw error;}
+  if(stage.dataset.spacePreview==='svg'){renderer=new SVGRenderer();renderer.setQuality('low');compat=true;}
+  else {
+    const canvas=document.createElement('canvas');
+    try{context=canvas.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'low-power'});}
+    catch(_) {context=null;}
+    if(!context){const error=new Error('WebGL2 unavailable');error.code='WEBGL_UNAVAILABLE';throw error;}
+    renderer=new T.WebGLRenderer({canvas,context,alpha:false,antialias:false,powerPreference:'low-power'});
+    renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
+  }
   renderer.setPixelRatio?.(Math.min(devicePixelRatio,innerWidth<600?1:1.25));
   renderer.setClearColor(0x050d17);renderer.outputColorSpace=T.SRGBColorSpace;
   const scene=new T.Scene();scene.fog=new T.Fog(0x050d17,9,24);
@@ -33,16 +37,16 @@ export async function mount(stage,{onFailure}={}) {
     stage.dataset.spaceDevice=info?String(context.getParameter(info.UNMASKED_RENDERER_WEBGL)):'unreported';
   }else stage.dataset.spaceDevice='no-webgl-context';
   const originalVideoStyles=new Map([...stage.querySelectorAll('video')].map(v=>[v,v.getAttribute('style')]));
-  const labels=document.createElement('div');labels.className='f2r-space-labels';stage.append(labels);
+  const labels=document.createElement('div');labels.className='f2r-space-labels';labels.setAttribute('role','group');labels.setAttribute('aria-label','서비스 선택');stage.append(labels);
   const buttons=[...stage.querySelectorAll('[data-home-intent],[data-flow]')];
   const homes=buttons.map(button=>({button,parent:button.parentNode,next:button.nextSibling}));
   buttons.forEach((button,i)=>{button.dataset.spatialPanel=String(i);labels.append(button);});
-  const rings=[],panels=[],lights=[],resources=new Set();
+  const rings=[],panels=[],lights=new Set(),resources=new Set();
   env.traverse(o=>{
     if(o.isMesh){
       resources.add(o.geometry);resources.add(o.material);
-      if(o.material?.isMeshBasicMaterial)lights.push(o.material);
-      else if(compat){
+      if(o.material?.name==='f2r_state_light')lights.add(o.material);
+      if(compat&&!o.material?.isMeshBasicMaterial){
         // Flat shading avoids thousands of per-face SVG style changes; WebGL keeps PBR lighting.
         o.material=new T.MeshBasicMaterial({color:o.material.color,transparent:o.material.transparent,opacity:o.material.opacity,side:o.material.side});resources.add(o.material);
       }
@@ -50,16 +54,18 @@ export async function mount(stage,{onFailure}={}) {
     if(/^orbit_/.test(o.name))rings.push(o);
     if(/^service_\d$/.test(o.name))panels[Number(o.name.slice(-1))]=o;
   });
-  const videoMaterials=new Map(),geo=new T.PlaneGeometry(7.35,4.2),emptyMaterial=new T.MeshBasicMaterial({visible:false}),screen=new T.Mesh(geo,emptyMaterial);
-  screen.position.set(0,2.25,.15);screen.renderOrder=2;scene.add(screen);
-  const posterMaterial=new T.MeshBasicMaterial({transparent:true,toneMapped:false});
+  const aperture=VIDEO_APERTURE;
+  const videoMaterials=new Map(),geo=new T.PlaneGeometry(aperture.width,aperture.height),emptyMaterial=new T.MeshBasicMaterial({visible:false}),screen=new T.Mesh(geo,emptyMaterial);
+  screen.position.set(0,aperture.y,aperture.z);screen.renderOrder=2;scene.add(screen);
+  const posterMaterial=new T.MeshBasicMaterial({transparent:true,toneMapped:false,depthWrite:false});
   let posterURL='',posterTexture=null,posterGeneration=0;
   function prepareMaterial(mat) {
     // Feather only the backdrop edges. Approved RGB pixels in the face stay unchanged.
     mat.onBeforeCompile=s=>{s.fragmentShader=s.fragmentShader.replace('#include <alphamap_fragment>',`#include <alphamap_fragment>
-      float side=smoothstep(0.10,0.31,vMapUv.x)*smoothstep(0.10,0.31,1.0-vMapUv.x);
-      float bottom=smoothstep(0.0,0.15,vMapUv.y);
-      diffuseColor.a*=side*bottom;`);};
+      float side=smoothstep(0.12,0.34,vMapUv.x)*smoothstep(0.12,0.34,1.0-vMapUv.x);
+      float bottom=smoothstep(0.0,0.22,vMapUv.y);
+      float top=1.0-smoothstep(0.98,1.0,vMapUv.y);
+      diffuseColor.a*=side*bottom*top;`);};
     return mat;
   }
   prepareMaterial(posterMaterial);
@@ -71,7 +77,7 @@ export async function mount(stage,{onFailure}={}) {
     if(v.readyState>=2) {
       if(!videoMaterials.has(v)) {
         const tex=new T.VideoTexture(v);tex.colorSpace=T.SRGBColorSpace;tex.minFilter=T.LinearFilter;tex.magFilter=T.LinearFilter;tex.generateMipmaps=false;
-        videoMaterials.set(v,prepareMaterial(new T.MeshBasicMaterial({map:tex,transparent:true,toneMapped:false})));
+        videoMaterials.set(v,prepareMaterial(new T.MeshBasicMaterial({map:tex,transparent:true,toneMapped:false,depthWrite:false})));
       }
       screen.material=videoMaterials.get(v);screen.visible=true;stage.dataset.spaceVideo=v.paused?'paused':'playing';
     } else if(v.poster) {
@@ -85,30 +91,29 @@ export async function mount(stage,{onFailure}={}) {
   const pointer=new T.Vector2(),smooth=new T.Vector2(),raycaster=new T.Raycaster(),projection=new T.Vector3();
   let selected=-1,drag=null,tap=null,targetZoom=0,zoom=0;
   function dimensions() {
-    const w=stage.clientWidth,h=stage.clientHeight;if(w<1||h<1)return;
+    stage.classList.toggle('f2r-space-compact',stage.clientWidth<600);
+    const w=host.clientWidth,h=host.clientHeight;if(w<1||h<1)return;
     renderer.setPixelRatio?.(Math.min(devicePixelRatio,w<600?1:1.25));
     camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);
   }
-  const resize=new ResizeObserver(dimensions);resize.observe(stage);dimensions();
+  const resize=new ResizeObserver(dimensions);resize.observe(stage);resize.observe(host);dimensions();
   function cameraUpdate(dt) {
     smooth.lerp(pointer,1-Math.exp(-dt*5));zoom+=(targetZoom-zoom)*(1-Math.exp(-dt*5));
-    // Keep all six panels in frame, including narrow 390px viewports.
-    const mobile=stage.clientWidth<600;
-    const distance=mobile?Math.max(11.2,11/camera.aspect):Math.max(9.6,15/camera.aspect);
-    camera.position.set(smooth.x*.5,3.25+smooth.y*.26,distance-zoom*.4);
-    camera.lookAt(smooth.x*.13,1.85+smooth.y*.06,0);camera.updateMatrixWorld();
+    const framing=cameraFrame(host.clientWidth,host.clientHeight);
+    camera.position.set(smooth.x*(framing.compact?.22:.45),3.25+smooth.y*.2,framing.distance-zoom*.4);
+    camera.lookAt(smooth.x*.1,framing.targetY+smooth.y*.05,0);camera.updateMatrixWorld();
   }
   function project() {
-    const w=stage.clientWidth,h=stage.clientHeight;
+    const w=host.clientWidth,h=host.clientHeight,compact=stage.classList.contains('f2r-space-compact');
     panels.forEach((p,i)=>{
       const button=buttons[i];if(!button)return;
+      if(compact){button.removeAttribute('style');return;}
       p.getWorldPosition(projection);projection.project(camera);
-      button.style.left=((projection.x*.5+.5)*w)+'px';button.style.top=((-projection.y*.5+.5)*h)+'px';
-      button.style.width=(innerWidth<600?Math.min(102,w*.27):Math.min(148,w*.21))+'px';
-      button.style.transform='translate(-50%,-50%)';
+      const rect=panelLabel((projection.x*.5+.5)*w,(-projection.y*.5+.5)*h,w,h);
+      for(const key of ['left','top','width','height'])button.style[key]=rect[key]+'px';
     });
     if(compat){
-      const top=new T.Vector3(-3.675,4.35,.15).project(camera),bottom=new T.Vector3(3.675,.15,.15).project(camera);
+      const top=new T.Vector3(-aperture.width/2,aperture.y+aperture.height/2,aperture.z).project(camera),bottom=new T.Vector3(aperture.width/2,aperture.y-aperture.height/2,aperture.z).project(camera);
       for(const v of stage.querySelectorAll('video')){
         v.style.left=((top.x*.5+.5)*w)+'px';v.style.top=((-top.y*.5+.5)*h)+'px';
         v.style.width=((bottom.x-top.x)*.5*w)+'px';v.style.height=((top.y-bottom.y)*.5*h)+'px';
@@ -116,7 +121,8 @@ export async function mount(stage,{onFailure}={}) {
     }
   }
   function pick(event) {
-    const rect=stage.getBoundingClientRect();
+    if(stage.classList.contains('f2r-space-compact'))return -1;
+    const rect=host.getBoundingClientRect();
     raycaster.setFromCamera(new T.Vector2((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1),camera);
     const hit=raycaster.intersectObjects(panels,true)[0];if(!hit)return -1;
     let o=hit.object;while(o&&!/^service_\d$/.test(o.name))o=o.parent;return o?Number(o.name.slice(-1)):-1;
@@ -153,8 +159,8 @@ export async function mount(stage,{onFailure}={}) {
     for(const m of lights)m.color.lerp(color,.07);
     rings.forEach((r,i)=>{r.rotation.z+=dt*(i%2?-1:1)*(state==='thinking'?.55:.12)*(i+1);r.rotation.y=Math.sin(ms*.00017+i)*.13;});
     panels.forEach((p,i)=>{
-      const mobile=stage.clientWidth<600;p.position.x=(i<3?-1:1)*(mobile?2.75:3.45);
-      p.position.y=mobile?3.55-(i%3)*1.3:3.1-(i%3)*.93;p.scale.x=mobile?.8:1;
+      p.visible=!stage.classList.contains('f2r-space-compact');p.position.x=(i<3?-1:1)*3.65;
+      p.position.y=3.45-(i%3)*1.05;p.scale.x=1;
       p.position.z=T.MathUtils.lerp(p.position.z,i===selected?.7:.45,.12);
     });
     media();cameraUpdate(dt);project();const then=performance.now();renderer.render(scene,camera);renderMs+=performance.now()-then;frames++;
@@ -185,7 +191,7 @@ export async function mount(stage,{onFailure}={}) {
     renderer.domElement.removeEventListener('webglcontextlost',contextLost);
     // Reverse restores original order even though nextSibling was moved too.
     [...homes].reverse().forEach(({button,parent,next})=>{parent.insertBefore(button,next?.parentNode===parent?next:null);button.removeAttribute('style');delete button.dataset.spatialPanel;});
-    host.remove();labels.remove();stage.classList.remove('f2r-space-ready','f2r-space-compat');
+    host.remove();labels.remove();stage.classList.remove('f2r-space-ready','f2r-space-compat','f2r-space-compact');
     for(const [v,style] of originalVideoStyles)style===null?v.removeAttribute('style'):v.setAttribute('style',style);
     for(const m of videoMaterials.values()){m.map.dispose();m.dispose();}posterTexture?.dispose();posterMaterial.dispose();geo.dispose();
     emptyMaterial.dispose();for(const r of resources)r.dispose();renderer.dispose?.();
