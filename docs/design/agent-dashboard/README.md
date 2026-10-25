@@ -59,6 +59,14 @@ window.F2RAgentVoice.register({
 });
 ```
 
+### 세븐 인사 영상 (speak.mp4)
+
+- `seven/speak.mp4`는 음성과 입 모양을 함께 만든 **고정 대사 한 편**이다: "세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?"
+- 홈(`/`)과 대시보드(`/dashboard`)에 `speak.mp4`가 있으면 "세븐 인사 듣기" 버튼이 보인다. 소리 있는 재생은 이 버튼을 누른 뒤에만 시작한다(모바일 자동재생 정책).
+- 재생 중: 상태 표시 `말하는 중`, 버튼 비활성(중복 재생 없음). 끝나거나 실패하면 대기 영상(소리 없음·반복)으로 돌아간다.
+- 다른 캐릭터 선택·새 질문 전송·탭 숨김·페이지 이탈 시 인사를 멈춘다.
+- 일반 응답 문장에는 입 모양이 맞지 않으므로 `speak.mp4`를 쓰지 않는다(립싱크 어댑터 규칙 그대로).
+
 연결 전에는 `텍스트 응답 · 음성 미연결`로 표시하고 응답 중에도 대기 영상만 쓴다.
 
 ## 캐릭터 자료: 비공개 폴더
@@ -68,7 +76,7 @@ window.F2RAgentVoice.register({
 ```
 {APP_AGENT_MEDIA_DIR}/
   manifest.json   {"seven":{"status":"CANDIDATE"},"suni":{"status":"REFERENCE_APPROVED"}}
-  seven/  idle.mp4  think.mp4  poster.jpg  front.webp  half.webp   (speak.mp4는 음성 연동 시)
+  seven/  idle.mp4  think.mp4  poster.jpg  front.webp  half.webp   speak.mp4(세븐 인사 영상)
   suni/   idle.mp4  think.mp4  poster.jpg  front.webp  half.webp
 ```
 

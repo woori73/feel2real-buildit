@@ -79,3 +79,34 @@ test('given 캐릭터 영상 목록 when 대화 상태가 바뀌면 then 생각 
   assert.equal(h.clipFor('idle', ['think.mp4']), null);
   assert.equal(h.clipFor('idle', []), null);
 });
+
+test('given 세븐 인사 영상 when 인사를 재생하면 then speak.mp4를 쓰고 일반 안내에는 쓰지 않는다', () => {
+  // given
+  const h = load();
+  const files = ['idle.mp4', 'speak.mp4'];
+  // when / then
+  assert.equal(h.clipFor('greeting', files), 'speak');
+  assert.equal(h.clipFor('speaking', files), 'idle');
+  assert.equal(h.clipFor('greeting', ['idle.mp4']), 'idle');
+  assert.equal(h.clipFor('greeting', []), null);
+});
+
+test('given 캐릭터·자료 when 인사 대사를 고르면 then 세븐이고 speak.mp4가 있을 때만 대사를 돌려준다', () => {
+  // given
+  const h = load();
+  // when / then
+  assert.equal(h.greetingFor('seven', ['idle.mp4', 'speak.mp4']), '세븐입니다. Feel to Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
+  assert.equal(h.greetingFor('seven', ['idle.mp4']), null);
+  assert.equal(h.greetingFor('suni', ['idle.mp4', 'speak.mp4']), null);
+  assert.equal(h.greetingFor('seven', null), null);
+});
+
+test('given 홈 화면 when 인사 버튼을 그리면 then 처음에는 숨기고 소리는 버튼을 누른 뒤에만 재생한다', () => {
+  // given / when
+  const btn = HTML.match(/<button[^>]*id="homeGreet"[^>]*>/);
+  // then
+  assert.ok(btn, '인사 듣기 버튼이 있어야 한다');
+  assert.match(btn[0], /hidden/);
+  assert.match(HTML, /<video id="homeVideo" muted loop playsinline/);
+  assert.match(JS, /greet\.addEventListener\('click', playGreeting\)/);
+});
