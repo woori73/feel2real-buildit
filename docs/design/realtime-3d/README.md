@@ -52,7 +52,9 @@ node --test src/test/js/f2r_spatial.test.js src/test/js/f2r_home_agent.test.js s
 - 서수니 선택 기능 유지. 격리 자료에는 공개 승인 세븐 자료만 있어서 서수니 선택 시 원래 SUNI 표식으로 표시한다. 운영 비공개 서수니 영상을 새로 만들어 대체하지 않는다.
 - 원격 검수 브라우저는 WebGL이 Disabled 상태다. 스크린샷은 SVG 호환 렌더다. 원격 호환 렌더의 관측 평균은 약 1.1fps, JS render 호출 비용 약 16~18ms였다. 실제 GPU 프레임 속도나 영상+WebGL 동시 재생 성능이 통과했다고 주장하지 않는다.
 - 운영 로그인·실제 업무 저장·Android/iOS 터치 실기기·키보드·WebGL context-loss 복구·실 GPU 시각 검수는 미완료다. 실제 기기 검수와 감독 승인 전 운영 배포하지 않는다.
-- Studio 승인 파일 목록/원본 해시 대조 및 신규 산출물 업로드는 Studio 인증이 필요한 별도 완료 항목이다. 기존 승인 포인터와 원본은 변경하지 않는다.
+- Studio 원본 묶음 `AGENT_MEDIA_SEVEN_T2f_v2_APPROVED.zip`(SHA-256 `65fe99b7578ce51a08a156752a1ba72bebf4fac21533abbaefde4d2dc1be4776`)을 다운로드해 시범의 idle·speak·poster 3개 모두 바이트 일치를 확인했다.
+- Studio에 `F2R-REALTIME-3D-MODELS`, `F2R-REALTIME-3D-DEMO`, `F2R-REALTIME-3D-REVIEW` 3건을 `AI_PROPOSAL / REVIEW / work-v1-20261025`로 등록하고 재조회했다. 모델 ZIP·실행 시범 ZIP·독립 비교 HTML을 연결했다. 기존 승인 포인터와 원본은 변경하지 않았다.
+- 운영 대시보드도 읽기 전용으로 확인했다. 세븐은 정본이며 서수니는 기존부터 자료 미연결 상태다. 새 얼굴·영상으로 대체하거나 운영 자료를 설치하지 않았다.
 
 ## 무료 혜택 확인
 
