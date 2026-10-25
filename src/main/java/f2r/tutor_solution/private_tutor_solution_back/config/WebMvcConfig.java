@@ -25,6 +25,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(roleModelInterceptor);
+        registry.addInterceptor(new AcademyBlogCanonicalInterceptor())
+                .addPathPatterns("/academies/*/posts", "/academies/*/posts/*");
         // 경로형 /academies/{slug} → handle 있으면 서브도메인 301. 단일 segment만.
         registry.addInterceptor(academyPathRedirectInterceptor).addPathPatterns("/academies/*");
         // NewStart: 홈·로그인만 공개, 나머지 /newstart/** 화면은 회원 전용(비회원은 자체 로그인으로).

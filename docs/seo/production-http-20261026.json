@@ -1,0 +1,576 @@
+{
+  "scope": "Anonymous read-only HTTP probes, not Search Console export",
+  "gsc_access": "Not authenticated; first discovered/index status unavailable",
+  "desktop": [
+    {
+      "url": "https://feel2real.co.kr/",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/\">"
+      ],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/home",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/home\">"
+      ],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/faq",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/faq\">"
+      ],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/newstart",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/newstart\">"
+      ],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/exam",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/exam\">"
+      ],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/wiki",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/wiki\">"
+      ],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/privacy",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academy-posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/새-학원-3",
+      "status": 301,
+      "location": "https://academy-2f7pul.feel2real.co.kr/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/새-학원-3/posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/새-학원-2",
+      "status": 301,
+      "location": "https://academy-1u9rzi.feel2real.co.kr/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/새-학원-2/posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/에이닷-영어학원-의정부지점",
+      "status": 301,
+      "location": "https://academy-4pxqk4.feel2real.co.kr/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/에이닷-영어학원-의정부지점/posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/wendy-영어",
+      "status": 301,
+      "location": "https://academy-1mgqpa.feel2real.co.kr/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/wendy-영어/posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/압구정에듀홀릭",
+      "status": 301,
+      "location": "https://eduholic.feel2real.co.kr/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/압구정에듀홀릭/posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/제목은-수정가능-한글-마지막-두번써지는것-확인인-수정사항항",
+      "status": 301,
+      "location": "https://academy-2ir7a2.feel2real.co.kr/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/제목은-수정가능-한글-마지막-두번써지는것-확인인-수정사항항/posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/모두영어",
+      "status": 301,
+      "location": "https://modooeng.feel2real.co.kr/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/academies/모두영어/posts",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/login",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/dashboard",
+      "status": 302,
+      "location": "https://feel2real.co.kr/?login=required&returnUrl=%2Fdashboard",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/ai-agent-studio",
+      "status": 302,
+      "location": "https://feel2real.co.kr/?login=required&returnUrl=%2Fai-agent-studio",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/admin",
+      "status": 404,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://feel2real.co.kr/seo-audit-missing-20261026",
+      "status": 404,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "http://feel2real.co.kr/",
+      "status": 301,
+      "location": "https://feel2real.co.kr:443/",
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    },
+    {
+      "url": "https://www.feel2real.co.kr/",
+      "status": 404,
+      "location": null,
+      "robots": null,
+      "canonical": [],
+      "meta": []
+    }
+  ],
+  "mobile_and_googlebot_user_agent": [
+    {
+      "url": "https://feel2real.co.kr/robots.txt",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 68,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/robots.txt",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 68,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/sitemap.xml",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 1853,
+      "xml_urls": 23
+    },
+    {
+      "url": "https://feel2real.co.kr/sitemap.xml",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 1853,
+      "xml_urls": 23
+    },
+    {
+      "url": "https://feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/\">"
+      ],
+      "bytes": 26643,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/\">"
+      ],
+      "bytes": 26643,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/wiki",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/wiki\">"
+      ],
+      "bytes": 22592,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/wiki",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [
+        "<link rel=\"canonical\" href=\"https://feel2real.co.kr/wiki\">"
+      ],
+      "bytes": 22592,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/api/studio/catalog",
+      "agent": "mobile",
+      "status": 401,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 0,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/api/studio/catalog",
+      "agent": "googlebot_mobile",
+      "status": 401,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 0,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/admin/hub",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 20003,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/admin/hub",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 20003,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/exam/insight",
+      "agent": "mobile",
+      "status": 404,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 2646,
+      "xml_urls": null
+    },
+    {
+      "url": "https://feel2real.co.kr/exam/insight",
+      "agent": "googlebot_mobile",
+      "status": 404,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 2646,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-2f7pul.feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-2f7pul.feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-1u9rzi.feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-1u9rzi.feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-4pxqk4.feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9701,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-4pxqk4.feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9701,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-1mgqpa.feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-1mgqpa.feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    },
+    {
+      "url": "https://eduholic.feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9684,
+      "xml_urls": null
+    },
+    {
+      "url": "https://eduholic.feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9684,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-2ir7a2.feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9747,
+      "xml_urls": null
+    },
+    {
+      "url": "https://academy-2ir7a2.feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9747,
+      "xml_urls": null
+    },
+    {
+      "url": "https://modooeng.feel2real.co.kr/",
+      "agent": "mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    },
+    {
+      "url": "https://modooeng.feel2real.co.kr/",
+      "agent": "googlebot_mobile",
+      "status": 200,
+      "location": null,
+      "robots": null,
+      "meta": [],
+      "canonical": [],
+      "bytes": 9675,
+      "xml_urls": null
+    }
+  ]
+}

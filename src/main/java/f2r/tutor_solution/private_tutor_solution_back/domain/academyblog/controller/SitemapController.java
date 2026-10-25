@@ -1,7 +1,9 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.controller;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyListResponse;
-import f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyService;
+import f2r.tutor_solution.private_tutor_solution_back.config.PublicSiteProperties;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.AcademyRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.dto.AcademyBlogPostResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.service.AcademyBlogService;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +17,8 @@ import java.time.format.DateTimeFormatter;
 @RestController
 @RequiredArgsConstructor
 public class SitemapController {
-  private final AcademyService academyService;
+  private final AcademyRepository academyRepository;
+  private final PublicSiteProperties publicSite;
   private final AcademyBlogService academyBlogService;
 
   @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
@@ -31,9 +34,13 @@ public class SitemapController {
     append(xml, "/privacy", null);
     append(xml, "/academies", null);
     append(xml, "/academy-posts", null);
-    for (AcademyListResponse academy : academyService.listPublic(null, null, null, null)) {
-      append(xml, "/academies/" + academy.slug(), null);
-      append(xml, "/academies/" + academy.slug() + "/posts", null);
+    for (Academy academy : academyRepository.findPublicList(AcademyStatus.PUBLISHED, null, null, null, null)) {
+      // Match AcademyPathRedirectInterceptor: migrated home URLs are 301 aliases.
+      // Subdomain URLs need their own verified property/sitemap; keep this sitemap on the apex.
+      if (!publicSite.hasBaseDomain() || academy.getHandle() == null || academy.getHandle().isBlank()) {
+        append(xml, "/academies/" + academy.getSlug(), null);
+      }
+      append(xml, "/academies/" + academy.getSlug() + "/posts", null);
     }
     for (AcademyBlogPostResponse post : academyBlogService.listPublishedForSitemap()) {
       append(xml, post.publicUrl(), post.updatedAt());
