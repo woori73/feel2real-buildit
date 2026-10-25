@@ -124,3 +124,24 @@ test('given 홈 화면 when 영상을 바꾸면 then 대시보드와 같은 전�
   assert.match(JS, /sw\.show\(pair, ui\.sw, src,/);
   assert.match(JS, /restart: talking \|\| prev === 'speak'/);
 });
+
+test('given 키보드로 보이는 영역이 줄었을 때 when 입력줄 위치를 비교하면 then 가려진 만큼만 올리고 보이면 그대로 둔다', () => {
+  // given
+  const h = load();
+  // when / then
+  assert.equal(h.composerScrollDelta(700, 0, 420, 12), 292);
+  assert.equal(h.composerScrollDelta(400, 0, 420, 12), 0);
+  assert.equal(h.composerScrollDelta(500, 100, 420, 0), 0);
+  assert.equal(h.composerScrollDelta(530.2, 100, 420, 0), 11);
+});
+
+test('given 모바일 입력줄 CSS when 읽으면 then 열이 줄어들 수 있고 보내기 버튼은 고정 너비, 안내 줄은 줄바꿈된다', () => {
+  // given
+  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
+  // when / then
+  assert.match(CSS, /\.si-home-console \{[^}]*grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(CSS, /\.si-home-talk \{[^}]*grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(CSS, /\.si-home-composer input \{[^}]*min-width: 0/);
+  assert.match(CSS, /\.si-home-composer button \{[^}]*flex: 0 0 auto/);
+  assert.match(CSS, /\.si-home-mode \{[^}]*flex-wrap: wrap/);
+});
