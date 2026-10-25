@@ -22,6 +22,7 @@ public class StudioController {
   private final StudioProjectService projects;
   private final StudioAccessGuard accessGuard;
   private final StudioAiService ai;
+  private final StudioCatalog catalog;
   private final java.util.concurrent.Semaphore originalReads =
       new java.util.concurrent.Semaphore(2);
 
@@ -171,6 +172,22 @@ public class StudioController {
       @RequestParam(defaultValue = "200") int limit,
       @RequestParam(defaultValue = "0") int offset) {
     return service.revisions(p, episode, kind, q, limit, offset);
+  }
+
+  @GetMapping("/api/studio/catalog")
+  @ResponseBody
+  public Object catalog(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam(defaultValue = "materials") String section,
+      @RequestParam(defaultValue = "") String episode,
+      @RequestParam(defaultValue = "") String kind,
+      @RequestParam(defaultValue = "") String media,
+      @RequestParam(defaultValue = "") String status,
+      @RequestParam(defaultValue = "latest") String versions,
+      @RequestParam(defaultValue = "") String q,
+      @RequestParam(defaultValue = "40") int limit,
+      @RequestParam(defaultValue = "0") int offset) {
+    return catalog.list(p, section, episode, kind, media, status, versions, q, limit, offset);
   }
 
   @GetMapping("/api/studio/revisions/{id}")

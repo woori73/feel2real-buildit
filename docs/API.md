@@ -4897,6 +4897,7 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | `/api/studio/revisions/{id}` | GET | 권한 있는 버전 원문·승인 포인터 |
 | `/api/studio/revisions/{id}/review` | POST | APPROVER의 APPROVE/REJECT와 메모, AI 자동 승인 없음 |
 | `/api/studio/compare?left=&right=` | GET | 두 실제 버전 비교 |
+| `/api/studio/catalog` | GET | 프로젝트 권한을 재검사하는 읽기 전용 통합 목록. 연결된 버전 + 미연결 원본, 최신순. section=materials/review, episode=전체(빈 값)/common/1~14, kind, media=VIDEO/IMAGE/AUDIO/DOCUMENT/PACKAGE, status=PENDING/APPROVED/CHANGES/REJECTED/UNASSIGNED, versions=latest/all, q(제목·자료 키·버전·파일명·SHA·본문·대사·연출, 200자), limit=1~100(기본40), offset. latest는 최신본과 현재 승인본을 함께 보존해 표시. 저장소 키·본문을 목록에 반환하지 않음. DB·파일·승인 포인터 변경 없음 |
 | `/api/studio/files` | GET / POST | 보관 목록 / multipart PDF·HTML·JSON·MD·ZIP·PNG·MP4, 100 MiB, SHA-256 중복 검사 |
 | `/api/studio/files/{id}` | GET | storage key 제외 파일 메타데이터 |
 | `/api/studio/files/{id}/content` | GET | 원본 bytes, attachment·no-store·nosniff·CSP sandbox |

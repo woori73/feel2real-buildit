@@ -51,7 +51,7 @@ jobs:
           python scripts/ai-agent-studio/import-production.py --extract-to /tmp/f2r-production-source --receipt /tmp/f2r-source-dry-run.json
       - name: Production-mode importer safety tests (local fake HTTPS, no production access)
         run: python -m unittest scripts/ai-agent-studio/test_import_production.py -v
-      - run: bash gradlew test --no-daemon --tests '*StudioServiceTest' --tests '*StudioPreviewTest' --tests '*StudioMediaRangeTest' --tests '*StudioMediaStreamMySqlTest' --tests '*StudioCollaborationMySqlTest' --tests '*StudioProjectsMySqlTest' --tests '*StudioApprovalProtectionMySqlTest' --tests '*StudioProductionImportMySqlTest' --tests '*StudioUploadRollbackMySqlTest' --tests '*FlywayStackUpgradeMySqlTest' --tests '*Mcp*Test' --tests '*JwtTokenProviderTest' --tests '*SiteVisitFilterTest' --tests '*WikiMemberOnlySecurityIntegrationTest' bootJar
+      - run: bash gradlew test --no-daemon --tests '*StudioCatalog*Test' --tests '*StudioServiceOperatorPermissionTest' --tests '*StudioServiceTest' --tests '*StudioPreviewTest' --tests '*StudioMediaRangeTest' --tests '*StudioMediaStreamMySqlTest' --tests '*StudioCollaborationMySqlTest' --tests '*StudioProjectsMySqlTest' --tests '*StudioApprovalProtectionMySqlTest' --tests '*StudioProductionImportMySqlTest' --tests '*StudioUploadRollbackMySqlTest' --tests '*FlywayStackUpgradeMySqlTest' --tests '*Mcp*Test' --tests '*JwtTokenProviderTest' --tests '*SiteVisitFilterTest' --tests '*WikiMemberOnlySecurityIntegrationTest' bootJar
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

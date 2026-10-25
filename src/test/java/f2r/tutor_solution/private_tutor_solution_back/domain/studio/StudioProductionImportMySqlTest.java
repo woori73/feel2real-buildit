@@ -58,6 +58,7 @@ class StudioProductionImportMySqlTest {
 
   @Autowired StudioService studio;
   @Autowired StudioProductionImporter importer;
+  @Autowired StudioCatalog workspaceCatalog;
   @Autowired JdbcTemplate db;
   @Autowired UserRepository users;
   @Autowired JwtTokenProvider jwt;
@@ -202,6 +203,37 @@ class StudioProductionImportMySqlTest {
                 admin,
                 new StudioProductionImporter.Request(StudioProductionImporter.COMMIT, changed)));
     assertEquals(prior, counts());
+  }
+
+  @Test
+  @Order(5)
+  void givenPinned536Sources_whenTwoSectionCataloguePaged_thenAllVersionsAndOriginalsRemainReachable()
+      throws Exception {
+    var snapshotQueries = List.of("SELECT * FROM studio_files ORDER BY id",
+        "SELECT * FROM studio_items ORDER BY project_id,item_key",
+        "SELECT * FROM studio_revisions ORDER BY id", "SELECT * FROM studio_events ORDER BY id");
+    var prior = snapshotQueries.stream().map(db::queryForList).toList();
+    var rows = new ArrayList<Map<String, Object>>();
+    for (int offset = 0; ; offset += 100) {
+      var page = workspaceCatalog.list(admin, "materials", "", "", "", "", "all", "", 100, offset);
+      rows.addAll(page);
+      if (page.size() < 100) break;
+    }
+    var expected = new HashSet<>(db.queryForList("SELECT id FROM studio_revisions", String.class));
+    var actual = new HashSet<String>();
+    var reachableFiles = new HashSet<String>();
+    for (var row : rows) {
+      if ("REVISION".equals(row.get("entry_type"))) assertTrue(actual.add((String) row.get("id")));
+      if (row.get("file_id") != null) reachableFiles.add((String) row.get("file_id"));
+    }
+    assertEquals(678, expected.size());
+    assertEquals(expected, actual);
+    assertEquals(new HashSet<>(files.values()), reachableFiles);
+    assertEquals(316, reachableFiles.size());
+    var approved = workspaceCatalog.list(admin, "review", "", "", "", "APPROVED", "all", "", 100, 0);
+    assertEquals(new HashSet<>(importer.catalog().approvedSha256()),
+        new HashSet<>(approved.stream().map(r -> (String) r.get("sha256")).toList()));
+    assertEquals(prior, snapshotQueries.stream().map(db::queryForList).toList());
   }
 
   @Test

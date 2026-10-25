@@ -83,6 +83,7 @@ jobs:
         # 나머지 35건 실패(하네스 결함 13 + 낡은 계약 22)는 docs/BUILDIT_JS_TEST_BASELINE_20261013.md에 기록했다.
         run: >-
           node --test
+          src/test/js/studio_catalog.test.js
           src/test/js/assistant_wait.test.js
           src/test/js/admissions_admin_load.test.js
           src/test/js/assistant_export.test.js
@@ -243,6 +244,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.StudioAccessSecurityIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAccessGuardTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioServiceOperatorPermissionTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionWikiServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.service.QuestionThreadServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.QuestionWikiContractTest"
