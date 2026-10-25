@@ -148,6 +148,11 @@ body[data-agent-theme="suni"] .si-home-name strong { color: var(--si-violet); }
   .si-holo-tile b { font-size: 14px; }
   .si-holo-tile small { font-size: 11.5px; }
 }
+@media (max-width: 380px) {
+  .si-holo-tile { padding: 6px 6px; }
+  .si-holo-tile b { font-size: 13px; }
+  .si-holo-tile small { font-size: 11px; }
+}
 @media (min-width: 1024px) {
   .si-home { padding: 28px 24px 34px; }
   .si-home-console { grid-template-columns: minmax(0, 1.1fr) minmax(360px, 1fr); gap: 22px; align-items: stretch; }
