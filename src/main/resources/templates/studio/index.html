@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI AGENT · 제작 스튜디오</title>
     <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-    <link rel="stylesheet" href="/css/agent_studio.css?v=20261024" />
-    <script src="/js/agent_studio.js?v=20261024" defer></script>
+    <link rel="stylesheet" href="/css/agent_studio.css?v=20261025-sections-1" />
+    <script src="/js/studio_catalog.js?v=20261025-sections-1" defer></script>
+    <script src="/js/agent_studio.js?v=20261025-sections-1" defer></script>
   </head>
-  <body>
+  <body class="studio-workspace" data-studio-ui="two-sections-v1">
     <header>
       <a href="/" class="brand">Feel2Real <span>PRODUCTION</span></a
       ><a href="/studio-projects">프로젝트 목록</a><a href="/mcp/connections">AI 연결 관리 ↗</a>
@@ -17,24 +18,21 @@
       <section class="hero">
         <p class="eyebrow">FEEL2REAL ORIGINAL · PART 01</p>
         <h1><span id="project-title">제작 프로젝트</span><small>제작 스튜디오</small></h1>
-        <p>각본에서 마지막 컷까지, 작품의 근거와 결정을 함께 보존합니다.</p>
-        <div id="project-info"></div><p id="source-info" class="source-info" hidden></p>
+        <p>제작 자료를 찾고, 영상을 확인하고, 검수 결정을 남깁니다.</p>
+        <div id="project-info"></div><details class="source-details"><summary>기존 자료 보존 정보</summary><p id="source-info" class="source-info" hidden></p></details>
         <button id="initialize" hidden>1부 프로젝트 개설</button>
       </section>
       <p id="message" role="status" aria-live="polite"></p>
-      <nav class="tabs" aria-label="제작 영역">
-        <button data-tab="materials" aria-current="page">제작 자료</button
-        ><button data-tab="memory">공동 작업 기억</button><button data-tab="inbox">승인 대기함</button><button data-tab="ai-work">AI 검수·작업</button><button data-tab="characters">캐릭터 갤러리</button><button data-tab="files">원본 파일</button
-        ><button data-tab="compare">버전 비교</button
-        ><button data-tab="chat">작품 자료 검색·채팅</button
-        ><button data-tab="history">작업 이력</button
-        ><button data-tab="notifications">검수·댓글 알림</button><button data-tab="members">접근 관리</button>
+      <nav class="tabs studio-sections" aria-label="Studio 섹션">
+        <button data-tab="materials" aria-current="page">제작 자료</button>
+        <button data-tab="review">검수·승인</button>
       </nav>
       <section id="materials" class="panel">
         <div class="toolbar">
           <label
             >회차<select id="episode">
-              <option value="">전체 회차·공통 설정</option>
+              <option value="">전체 회차·공통 자료</option>
+              <option value="common">공통·회차 미등록</option>
             </select></label
           ><label
             >자료 유형<select id="kind">
@@ -50,30 +48,35 @@
             >검색<input
               id="query"
               maxlength="200"
-              placeholder="대사·연출·설정 검색" /></label
+              placeholder="제목·파일명·자료 키·버전 검색" /></label
           ><button id="search">검색</button
-          ><button id="new-revision">자료 등록</button>
+          ><button id="new-revision">자료 등록</button><button id="open-upload" type="button">자료 올리기</button>
         </div>
+        <div class="toolbar catalog-filters">
+          <label>파일 종류<select id="media"><option value="">모든 파일</option><option value="VIDEO">영상</option><option value="IMAGE">이미지</option><option value="AUDIO">음성·음악</option><option value="DOCUMENT">문서·각본·콘티</option><option value="PACKAGE">합성 자료·패키지</option></select></label>
+          <label>버전<select id="versions"><option value="latest">최신본·현재 승인본</option><option value="all">모든 버전</option></select></label>
+          <label id="status-filter" hidden>검수 상태<select id="review-status"><option value="">전체 상태</option><option value="PENDING">승인 대기</option><option value="APPROVED">승인 완료</option><option value="CHANGES">수정 요청</option><option value="REJECTED">반려</option><option value="UNASSIGNED">검수 상태 미등록 원본</option></select></label>
+        </div>
+        <p id="catalog-note" class="hint">공통 자료와 회차 미등록 원본을 포함합니다. 이전 버전은 ‘모든 버전’에서 찾을 수 있습니다.</p>
+        <div id="featured" class="featured-grid"></div>
+        <h2 id="catalog-heading">제작 자료</h2><p id="catalog-count" role="status" aria-live="polite"></p>
+        <div class="catalog-layout">
+          <div class="catalog-results">
+            <h3>영상·이미지·음성</h3><div id="revision-list" class="asset-grid"></div>
+            <details id="document-results"><summary>각본·콘티·문서·합성 자료 <span id="document-count"></span></summary><div id="document-list" class="document-grid"></div></details>
+            <button id="load-more" hidden>자료 더 불러오기</button>
+          </div>
+          <article id="detail" class="detail" aria-label="선택한 자료" hidden></article>
+        </div>
+      </section>
+      <details id="board" class="tool-panel" data-owner="materials"><summary>콘티·회차·컷별 자료</summary>
         <details><summary>회차 빠른 이동</summary><div id="episodes" class="episodes"></div></details>
         <details><summary>컷 번호로 이동</summary><div id="cut-grid" class="cuts" aria-label="EP01 68컷 현황"></div></details>
         <h2 id="board-heading">콘티 보드</h2>
         <p class="hint">등록한 이미지와 설명만 표시합니다. 컷을 선택한 뒤 이전·다음 버튼 또는 좌우 방향키로 이동하세요.</p>
         <div id="storyboard" class="storyboard"></div>
-        <div class="split">
-          <div>
-            <h2>자료와 수정 이력</h2>
-            <p class="hint">
-              버전은 200개씩 더 불러올 수 있습니다. 컷 현황은 최신 버전 전체를 별도로 조회합니다. 정본·AI 제안·사용자 승인본을 구분합니다.
-            </p>
-            <div id="revision-list"></div><button id="load-more" hidden>이전 버전 더 불러오기</button>
-          </div>
-          <article id="detail" class="detail">
-            <h2>작품의 기록을 선택하세요</h2>
-            <p>실제 자료가 없는 회차와 컷은 업로드 대기입니다.</p>
-          </article>
-        </div>
-      </section>
-      <section id="memory" class="panel" hidden>
+      </details>
+      <details id="memory" class="tool-panel" data-owner="materials"><summary>공동 작업 기억</summary>
         <h2>프로젝트 공동 작업 기억</h2>
         <p>사람과 AI가 같은 결정·자료·다음 작업을 확인합니다. 새 세션에서도 서버에 기록한 최신 상태를 불러옵니다. 이 기록은 자동 실행 지시가 아닙니다.</p>
         <div id="memory-record"></div><div id="memory-evidence"></div>
@@ -87,13 +90,13 @@
           <p class="hint">저장하면 기존 결정을 보존한 새 버전을 만듭니다. 다른 사람이 먼저 갱신했으면 최신 상태를 다시 불러오세요.</p>
           <button>작업 기억 새 버전 저장</button><button id="memory-reload" type="button">최신 상태 다시 불러오기</button></form>
         </details>
-      </section>
-      <section id="inbox" class="panel" hidden><h2>사용자 승인 대기함</h2><p>보관용 출처 목록은 제외하고 최신 수정 후보를 보여줍니다. 실제 승인은 상세 화면에서 사람이 결정합니다. 반려본과 이전 이력은 자료 탭에 보존합니다.</p><div id="pending-list"></div><button id="pending-more" hidden>대기 자료 더 불러오기</button></section>
-      <section id="ai-work" class="panel" hidden><h2>AI 검수·수정 작업</h2><p>ChatGPT·Claude 연결과 팀원이 등록한 검수 보고서와 수정 작업입니다. 검수 보고서는 승인이 아니며, 승인은 상세 화면에서 사람이 결정합니다.</p>
+      </details>
+      <details id="inbox" class="tool-panel" data-owner="review" hidden><summary>승인 대기 목록</summary><h2>사용자 승인 대기함</h2><p>보관용 출처 목록은 제외하고 최신 수정 후보를 보여줍니다. 실제 승인은 상세 화면에서 사람이 결정합니다. 반려본과 이전 이력은 자료 탭에 보존합니다.</p><div id="pending-list"></div><button id="pending-more" hidden>대기 자료 더 불러오기</button></details>
+      <details id="ai-work" class="tool-panel" data-owner="review" hidden><summary>AI 검수표·수정 작업</summary><h2>AI 검수·수정 작업</h2><p>ChatGPT·Claude 연결과 팀원이 등록한 검수 보고서와 수정 작업입니다. 검수 보고서는 승인이 아니며, 승인은 상세 화면에서 사람이 결정합니다.</p>
         <div class="toolbar"><label>작업 상태<select id="ai-task-status"><option value="">전체</option><option value="OPEN">대기</option><option value="IN_PROGRESS">진행 중</option><option value="DONE">완료</option><option value="CANCELLED">취소</option></select></label><button id="ai-work-reload">다시 불러오기</button></div>
-        <h3>수정 작업</h3><div id="ai-task-list"></div><h3>최근 검수 보고서</h3><div id="ai-review-list"></div></section>
-      <section id="characters" class="panel" hidden><h2>캐릭터 갤러리</h2><div id="character-gallery" class="storyboard"></div></section>
-      <section id="files" class="panel" hidden>
+        <h3>수정 작업</h3><div id="ai-task-list"></div><h3>최근 검수 보고서</h3><div id="ai-review-list"></div></details>
+      <details id="characters" class="tool-panel" data-owner="materials"><summary>승인 캐릭터·기준 자료</summary><h2>캐릭터 갤러리</h2><div id="character-gallery" class="storyboard"></div></details>
+      <details id="files" class="tool-panel" data-owner="materials"><summary>자료 올리기·원본 보관함</summary>
         <h2>원본 보관함</h2>
         <p>
           각본·검수 PDF·HTML·JSON·MD, 패키지 ZIP, 콘티·이미지 PNG·JPG·WEBP, 영상 MP4·MOV, 음악·음성 WAV·MP3·FLAC / 파일당 최대 100 MiB. 원본은
@@ -108,10 +111,10 @@
               required /></label
           ><button>업로드</button>
         </form>
-        <form id="bulk-form"><label>EP01 68컷 일괄 등록 원본<select id="bulk-file"></select></label><p>보관한 JSON 또는 manifest.json 포함 ZIP의 1~68컷을 새 버전으로 등록합니다. 원본·이전 버전·기존 승인 이력은 보존하며, 새 버전은 개별 검수 전 미승인입니다.</p><button>68컷 일괄 등록</button></form><div class="file-browser"><div id="file-list"></div>
+        <details><summary>기존 콘티 일괄 등록</summary><form id="bulk-form"><label>EP01 68컷 일괄 등록 원본<select id="bulk-file"></select></label><p>보관한 JSON 또는 manifest.json 포함 ZIP의 1~68컷을 새 버전으로 등록합니다. 원본·이전 버전·기존 승인 이력은 보존하며, 새 버전은 개별 검수 전 미승인입니다.</p><button>68컷 일괄 등록</button></form></details><div class="file-browser"><div id="file-list"></div>
         <div id="file-preview" aria-live="polite"></div></div>
-      </section>
-      <section id="compare" class="panel" hidden>
+      </details>
+      <details id="compare" class="tool-panel" data-owner="review" hidden><summary>수정 전후·버전 비교</summary>
         <h2>버전 비교</h2>
         <p>
           r14·r2·r3·r4 등 등록된 버전을 선택하세요. 비교는 승인 상태를 변경하지
@@ -123,8 +126,8 @@
           ><button id="compare-button">비교</button>
         </div>
         <div id="comparison" class="compare-grid"></div>
-      </section>
-      <section id="chat" class="panel" hidden>
+      </details>
+      <details id="chat" class="tool-panel" data-owner="materials" hidden><summary>이전 검색 도구</summary>
         <h2>작품 자료와 대화</h2>
         <p>
           등록한 제목·본문·대사·연출에서 근거를 찾아 보여줍니다. 외부 AI 호출
@@ -140,13 +143,13 @@
               placeholder="예: EP01 마지막 장면" /></label
           ><button>자료 찾기</button>
         </form>
-      </section>
-      <section id="history" class="panel" hidden>
+      </details>
+      <details id="history" class="tool-panel" data-owner="review" hidden><summary>검수·승인·작업 이력</summary>
         <h2>작업·검수·승인 이력</h2>
         <div id="event-list"></div>
-      </section>
-      <section id="notifications" class="panel" hidden><h2>검수·댓글 알림</h2><p>이 프로젝트의 다른 팀원이 남긴 승인·검수·댓글을 표시합니다. 열람만으로 읽음 처리하지 않습니다.</p><div id="notification-list"></div><button id="notifications-more" hidden>이전 알림 더 보기</button><button id="notifications-read" hidden>표시한 알림까지 확인</button></section>
-      <section id="members" class="panel" hidden>
+      </details>
+      <details id="notifications" class="tool-panel" data-owner="review" hidden><summary>검수·댓글 알림</summary><h2>검수·댓글 알림</h2><p>이 프로젝트의 다른 팀원이 남긴 승인·검수·댓글을 표시합니다. 열람만으로 읽음 처리하지 않습니다.</p><div id="notification-list"></div><button id="notifications-more" hidden>이전 알림 더 보기</button><button id="notifications-read" hidden>표시한 알림까지 확인</button></details>
+      <details id="members" class="tool-panel" data-owner="materials"><summary>프로젝트 접근 관리</summary>
         <h2>제작 담당자 권한</h2>
         <p>
           관리자만 기존 회원의 사용자 ID에 권한을 부여하거나 폐기할 수 있습니다.
@@ -170,7 +173,7 @@
           ><button>권한 저장</button>
         </form>
         <div id="member-list"></div>
-      </section>
+      </details>
       <dialog id="image-zoom" aria-labelledby="zoom-title"><div class="toolbar"><h2 id="zoom-title">이미지 확대</h2><button id="close-zoom">닫기</button></div><p class="hint">화면용 파생 이미지 · 원본 다운로드는 상세 화면에서 가능합니다.</p><img id="zoom-image" alt="" /></dialog>
       <dialog id="cut-compare-dialog" aria-label="승인본과 수정 후보 비교"><div class="toolbar"><h2>승인본 · 수정 후보</h2><button id="close-cut-compare">닫기</button></div><div id="cut-comparison" class="compare-grid"></div></dialog>
       <dialog id="editor">

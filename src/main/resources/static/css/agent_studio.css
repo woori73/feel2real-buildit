@@ -376,3 +376,74 @@ footer {
 audio.media-player {
   max-height: none;
 }
+
+/* Studio two-section workspace. Project administration pages retain their existing theme. */
+.studio-workspace{color-scheme:dark;--ink:#e7edf7;--muted:#9eb0c8;--line:#293c56;--blue:#8ddae6;--paper:#080f1d;background:radial-gradient(ellipse at 80% 0,#142d46 0,transparent 50%),var(--paper)}
+.studio-workspace header{background:#0b1524;border-color:var(--line);flex-wrap:wrap;padding:14px 4%}
+.studio-workspace header a{font-size:14px}.studio-workspace header .brand{font-size:19px;margin-right:auto}
+.studio-workspace main{padding:0 3.5%;max-width:1540px}
+.studio-workspace .hero{padding:22px 0 12px}.studio-workspace .hero h1{font-size:28px;letter-spacing:-.6px}.studio-workspace .hero h1 small{font-size:16px}
+.studio-workspace .hero p{font-size:14px}.studio-workspace #project-info{font-size:13px;color:var(--muted)}
+.studio-workspace .source-details{font-size:12px}.studio-workspace .source-details summary{padding:0;min-height:28px}
+.studio-workspace .studio-sections{position:sticky;top:0;z-index:4;display:grid;grid-template-columns:1fr 1fr;overflow:visible;padding:8px 0 14px;background:#080f1def;backdrop-filter:blur(12px)}
+.studio-workspace .studio-sections button{border-color:#354964;border-radius:9px;color:#b6c9de;min-height:50px;font-weight:700}
+.studio-workspace .studio-sections [aria-current]{background:#173a51;color:#c1f5ff;border-color:#72c5d5;box-shadow:inset 0 -2px #73d8e8}
+.studio-workspace .panel{background:#0d192a;border-radius:14px;padding:22px;min-height:0}
+.studio-workspace input,.studio-workspace select,.studio-workspace textarea{background:#0a1424;border-color:#49607e;color:var(--ink);min-width:0}
+.studio-workspace button{background:#245572;border-color:#426d8d;color:#eef8ff}
+.studio-workspace button:disabled{opacity:.5;cursor:not-allowed}
+.studio-workspace button:focus-visible,.studio-workspace a:focus-visible,.studio-workspace input:focus-visible,.studio-workspace select:focus-visible{outline-color:#85e3f1}
+.studio-workspace .toolbar{gap:10px}.studio-workspace .toolbar label{min-width:135px;font-size:13px;margin-bottom:8px}
+.studio-workspace .catalog-filters label{max-width:260px}.studio-workspace .catalog-filters{padding-top:5px}
+.studio-workspace #catalog-count,.studio-workspace #catalog-note{font-size:13px;color:var(--muted);margin:8px 0 16px}
+.studio-workspace .featured-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:18px;margin:18px 0 28px}
+.studio-workspace .featured-card{min-width:0;border:1px solid #34536d;border-radius:12px;background:linear-gradient(145deg,#11273c,#0b1423);padding:16px;overflow-wrap:anywhere}
+.studio-workspace .featured-card h3{margin:0 0 12px;font-size:14px;color:#94e1ed;letter-spacing:.3px}
+.studio-workspace .featured-card h3+div>h3{color:var(--muted);font-size:12px;overflow-wrap:anywhere;font-weight:400;letter-spacing:0}
+.studio-workspace .featured-card .media-player{aspect-ratio:16/9;object-fit:contain;background:#02060c;border:1px solid #243c54;border-radius:8px;max-height:60vh}
+.studio-workspace .featured-card strong{display:block;margin-top:12px}.studio-workspace .featured-card button{margin-top:8px}
+.studio-workspace .catalog-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
+.studio-workspace .catalog-layout:has(#detail:not([hidden])){grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+.studio-workspace .catalog-results{min-width:0}.studio-workspace .catalog-results h3{font-size:15px;color:var(--muted)}
+.studio-workspace .asset-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.studio-workspace .catalog-layout:has(#detail:not([hidden])) .asset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.studio-workspace .card{background:#101f32;border-color:#2c425e;min-width:0}
+.studio-workspace .asset-card{padding:12px;margin:0;overflow:hidden}
+.studio-workspace .asset-card button{padding:0;background:transparent;color:var(--ink);display:block;border-radius:6px;line-height:1.55}
+.studio-workspace .asset-card button strong{display:block;padding:10px 0;font-size:14px}
+.studio-workspace .asset-art{display:grid;place-items:center;aspect-ratio:16/9;background:radial-gradient(ellipse at center,#1c4661,#0a1526 75%);border:1px solid #31506a;border-radius:7px;color:#98dbe7;font-size:13px;letter-spacing:2px;overflow:hidden}
+.studio-workspace .asset-art img{display:block;width:100%;height:100%;max-height:220px;object-fit:contain;background:#08101c}
+.studio-workspace .asset-meta,.studio-workspace .asset-filename{font-size:12px;line-height:1.6;color:#a4b7cc;margin:6px 0;overflow-wrap:anywhere;display:block}
+.studio-workspace .asset-filename{color:#839bb8}.studio-workspace .badge{color:#c7dcf0;background:#243b56}.studio-workspace .approved{background:#123f3c;color:#a2ebd4}.studio-workspace .proposal{background:#4b3b1e;color:#f8d9a2}
+.studio-workspace #document-results{padding-top:16px;margin-top:18px;border-top:1px solid var(--line)}
+.studio-workspace #document-results summary{color:#b8cbe1;font-weight:650}.studio-workspace .document-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.studio-workspace .document-grid .asset-art{aspect-ratio:auto;min-height:50px}
+.studio-workspace #load-more{width:100%;margin:20px 0 8px}
+.studio-workspace #detail{min-width:0;background:#0b1525;border:1px solid #355571;border-radius:10px;padding:18px;scroll-margin-top:85px}
+.studio-workspace #detail .media-player{aspect-ratio:16/9;background:#02060c;object-fit:contain;border-radius:7px}
+.studio-workspace #detail audio.media-player{aspect-ratio:auto}.studio-workspace #detail>button{margin:5px 6px 5px 0}
+.studio-workspace #detail h3{font-size:17px;line-height:1.6}
+.studio-workspace .tool-panel{background:#0d1929;border:1px solid var(--line);border-radius:10px;margin:12px 0;color:var(--ink);padding:0 18px;scroll-margin-top:85px}
+.studio-workspace .tool-panel>summary{font-size:14px;min-height:48px;padding:12px 0;color:#bed0e4}
+.studio-workspace .tool-panel[open]{padding-bottom:20px}.studio-workspace .tool-panel>h2{margin-top:15px}
+.studio-workspace .tool-panel p{font-size:14px}.studio-workspace .tool-panel .card button{background:transparent;color:var(--blue)}
+.studio-workspace pre{background:#091323;color:#c7d6e9;max-height:400px}
+.studio-workspace dialog{background:#101e30;color:var(--ink)}
+.studio-workspace .empty-art{background:#101f31;color:#a6bed8;min-height:140px}
+.studio-workspace .story-card,.studio-workspace .chat-entry{background:#101f32}
+.studio-workspace .story-card p{color:var(--ink)}.studio-workspace #message{color:#ffce88}
+@media(max-width:1000px){.studio-workspace .asset-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.studio-workspace .catalog-layout:has(#detail:not([hidden])){grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){
+ .studio-workspace header{gap:8px 16px}.studio-workspace header a{font-size:12px}.studio-workspace header .brand{flex-basis:100%}
+ .studio-workspace main{padding:0 12px}.studio-workspace .hero h1{font-size:24px;line-height:1.5}.studio-workspace .hero h1 small{display:block;margin:0;font-size:14px}
+ .studio-workspace .hero{padding:14px 0 8px}.studio-workspace .hero p{margin:5px 0;font-size:12px}
+ .studio-workspace .panel{padding:13px}.studio-workspace .toolbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 8px}
+ .studio-workspace .toolbar label{min-width:0;margin:0;max-width:none}.studio-workspace .toolbar label:has(#query){grid-column:1/-1}
+ .studio-workspace .toolbar button{margin:0;min-width:0;padding:8px;font-size:13px}
+ .studio-workspace .catalog-filters{margin-top:10px}.studio-workspace .featured-grid{margin-top:14px;gap:12px}
+ .studio-workspace .featured-card{padding:10px}.studio-workspace .featured-card strong{font-size:14px}
+ .studio-workspace .asset-grid,.studio-workspace .catalog-layout:has(#detail:not([hidden])) .asset-grid{grid-template-columns:minmax(0,1fr)}
+ .studio-workspace .document-grid{grid-template-columns:minmax(0,1fr)}.studio-workspace .asset-card{padding:10px}
+ .studio-workspace #detail{padding:12px}.studio-workspace .tool-panel{padding-left:12px;padding-right:12px}
+ .studio-workspace #review-dialog .toolbar{display:flex}.studio-workspace .featured-card .media-player{max-height:none}
+}
