@@ -28,10 +28,10 @@ Three.js 0.180.0, PerspectiveCamera, HemisphereLight·PointLight, GLTFLoader, �
 ## 모드와 성능 정책
 
 - WebGL2: 실제 메시·PBR 조명·영상 텍스처, 최대 30fps, DPR PC 1.25 / 작은 무대 1.
-- WebGL을 만들 수 없으면: 같은 GLB·카메라를 쓰는 Three.js SVG 호환 모드, 최대 8fps. 영상은 기존 video 요소를 동일 카메라 위치에 투영한다. PBR·VideoTexture 경로를 검수한 것으로 간주하지 않는다.
+- WebGL2를 만들 수 없으면 즉시 기존 2D 화면으로 복귀한다. 자동 재시도하지 않는다. `data-space-preview="svg"`를 명시한 격리 검수 화면에서만 SVG 호환 렌더를 허용한다(최대 8fps). 이 모드의 영상은 DOM video이며 PBR·VideoTexture 검증이 아니다.
 - 메모리 ≤2GB, CPU ≤2코어, Save-Data/2G, 모션 감소, 사용자가 저장한 2D 선택: 엔진을 자동으로 다운로드하지 않고 기존 2D 화면을 유지한다. 수동 3D 전환은 가능하다.
 - 무대가 화면 밖에 있거나 탭이 숨겨지면 RAF와 재생 중 영상을 멈춘다. 복귀 시 직접 일시정지한 영상만 같은 소스인지 확인하고 재개한다. 해제 시 텍스처·지오메트리·재질·리스너·렌더러를 정리한다.
-- 3D 엔진 번들 593,966 B / gzip 153,932 B. 초기 로더 약 4KB. 모델도 보일 때만 다운로드한다.
+- 3D 엔진 번들 594,849 B / gzip 154,290 B. 초기 로더 약 4KB. 모델도 보일 때만 다운로드한다.
 
 ## 빌드
 
@@ -61,3 +61,9 @@ node --test src/test/js/f2r_spatial.test.js src/test/js/f2r_home_agent.test.js s
 사용자가 제공한 Hyper3D Rodin 화면에 5크레딧이 표시된다. Chroma 공식 Hyper3D 페이지에는 Creator 1개월($30 가치) 혜택이 표시된다. 계정에서 혜택 적용/만료 여부는 인증 전이라 확인하지 못했다. 이번 작업은 Rodin 크레딧·유료 구독·추가 결제를 사용하지 않았다.
 
 공식 근거: https://chromaawards.com/prizes/creative-tools-hyper3d-awards / https://hyper3d.ai/pricing?lang=en / https://threejs.org/docs/pages/GLTFExporter.html
+
+## 2차 검수 및 공통 디자인
+
+2차 검수에서도 실제 GPU 브라우저에 접근하지 못했다. 실 WebGL2·VideoTexture·PBR·실기기 FPS·GPU 사용률은 미검증이며 Draft를 유지한다. 움직이는 호환 시범과 실제 GPU 검증을 구분한다. [공통 AI Agent 공간 디자인](./AI_AGENT_DESIGN.md)을 따른다.
+
+[2차 검수 결과·영상 위치](./SECOND_REVIEW.md)

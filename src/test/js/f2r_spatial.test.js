@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {policy}=require('../../main/resources/static/js/f2r_spatial.js');
 test('given 저사양·데이터 절약·모션 감소 설정 when 렌더 정책을 정하면 then 3D를 자동으로 불러오지 않는다',()=>{
-  for(const env of [{memory:2},{cores:2},{saveData:true},{connection:'slow-2g'},{connection:'2g'},{reduced:true},{preference:'2d'}])assert.ok(policy(env));
+  for(const env of [{memory:2},{cores:2},{saveData:true},{connection:'slow-2g'},{connection:'2g'},{reduced:true},{preference:'2d'},{webgl:false}])assert.ok(policy(env));
   assert.equal(policy({memory:8,cores:8,connection:'4g',preference:'3d'}),null);
 });
 test('given 실제 GLB 환경 when 파일을 읽으면 then 네 모델·6개 패널·3개 링과 경량 예산을 충족한다',()=>{

@@ -3,9 +3,13 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {SVGRenderer} from 'three/addons/renderers/SVGRenderer.js';
 
 export async function mount(stage,{onFailure}={}) {
-  let renderer,compat=false;
-  try{renderer=new T.WebGLRenderer({alpha:false,antialias:false,powerPreference:'low-power'});}
-  catch(_){renderer=new SVGRenderer();renderer.setQuality('low');compat=true;}
+  let renderer,context,compat=false;
+  const canvas=document.createElement('canvas');
+  try{context=canvas.getContext('webgl2',{alpha:false,antialias:false,powerPreference:'low-power'});}
+  catch(_) {context=null;}
+  if(context)renderer=new T.WebGLRenderer({canvas,context,alpha:false,antialias:false,powerPreference:'low-power'});
+  else if(stage.dataset.spacePreview==='svg'){renderer=new SVGRenderer();renderer.setQuality('low');compat=true;}
+  else {const error=new Error('WebGL2 unavailable');error.code='WEBGL_UNAVAILABLE';throw error;}
   renderer.setPixelRatio?.(Math.min(devicePixelRatio,innerWidth<600?1:1.25));
   renderer.setClearColor(0x050d17);renderer.outputColorSpace=T.SRGBColorSpace;
   const scene=new T.Scene();scene.fog=new T.Fog(0x050d17,9,24);
@@ -24,6 +28,10 @@ export async function mount(stage,{onFailure}={}) {
   host.append(renderer.domElement);stage.prepend(host);
   if(compat)stage.classList.add('f2r-space-compat');
   stage.dataset.spaceRenderer=compat?'svg-compatibility':'webgl2';
+  if(context){
+    const info=context.getExtension('WEBGL_debug_renderer_info');
+    stage.dataset.spaceDevice=info?String(context.getParameter(info.UNMASKED_RENDERER_WEBGL)):'unreported';
+  }else stage.dataset.spaceDevice='no-webgl-context';
   const originalVideoStyles=new Map([...stage.querySelectorAll('video')].map(v=>[v,v.getAttribute('style')]));
   const labels=document.createElement('div');labels.className='f2r-space-labels';stage.append(labels);
   const buttons=[...stage.querySelectorAll('[data-home-intent],[data-flow]')];
@@ -128,7 +136,9 @@ export async function mount(stage,{onFailure}={}) {
   stage.addEventListener('pointerdown',pointerDown);stage.addEventListener('pointermove',pointerMove);
   window.addEventListener('pointerup',pointerUp);stage.addEventListener('pointercancel',pointerCancel);stage.addEventListener('pointerleave',pointerLeave);
   labels.addEventListener('pointerover',focusPanel);labels.addEventListener('focusin',focusPanel);labels.addEventListener('pointerleave',blurPanel);labels.addEventListener('focusout',blurPanel);
-  const color=new T.Color(),stateColors={idle:0x5de1ff,listening:0xbb8aff,thinking:0xffca77,speaking:0xbb8aff,greeting:0x5de1ff,done:0x7df0b2,error:0xff9999};
+  const style=getComputedStyle(stage),token=(name,fallback)=>style.getPropertyValue('--f2r-space-'+name).trim()||fallback;
+  const idle=token('idle','#5de1ff'),active=token('active','#bb8aff');
+  const color=new T.Color(),stateColors={idle,listening:active,thinking:token('thinking','#ffca77'),speaking:active,greeting:idle,done:token('done','#7df0b2'),error:token('error','#ff9999')};
   function publishMetrics(ms){
     stage.dataset.spaceFrames=String(frames);stage.dataset.spaceFps=(frames*1000/Math.max(1,activeMs)).toFixed(1);
     stage.dataset.spaceDrawCalls=String(renderer.info?.render?.calls||0);stage.dataset.spaceTriangles=String(renderer.info?.render?.triangles||renderer.info?.render?.faces||0);
@@ -139,7 +149,7 @@ export async function mount(stage,{onFailure}={}) {
     raf=0;if(disposed||!visible||document.hidden)return;
     raf=requestAnimationFrame(frame);if(ms-last<1000/(compat?8:30))return;
     const dt=Math.min(.08,(ms-last)/1000||.033);activeMs+=ms-last;last=ms;
-    const state=stage.dataset.state||'idle';color.setHex(stateColors[state]||stateColors.idle);key.color.lerp(color,.12);
+    const state=stage.dataset.state||'idle';color.set(stateColors[state]||stateColors.idle);key.color.lerp(color,.12);
     for(const m of lights)m.color.lerp(color,.07);
     rings.forEach((r,i)=>{r.rotation.z+=dt*(i%2?-1:1)*(state==='thinking'?.55:.12)*(i+1);r.rotation.y=Math.sin(ms*.00017+i)*.13;});
     panels.forEach((p,i)=>{
@@ -148,6 +158,10 @@ export async function mount(stage,{onFailure}={}) {
       p.position.z=T.MathUtils.lerp(p.position.z,i===selected?.7:.45,.12);
     });
     media();cameraUpdate(dt);project();const then=performance.now();renderer.render(scene,camera);renderMs+=performance.now()-then;frames++;
+    stage.dataset.spaceFrames=String(frames);
+    stage.dataset.spaceOrbit=rings.map(r=>r.rotation.z.toFixed(3)).join(',');
+    stage.dataset.spaceCamera=camera.position.toArray().map(x=>x.toFixed(3)).join(',');
+    if(frames%15===0&&performance.memory)stage.dataset.spaceJsHeapBytes=String(performance.memory.usedJSHeapSize);
     if(frames%15===0)publishMetrics(ms);
   }
   const pausedMedia=new Map();
