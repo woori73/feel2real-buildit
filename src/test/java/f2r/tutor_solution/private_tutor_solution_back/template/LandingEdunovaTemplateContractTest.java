@@ -182,4 +182,22 @@ class LandingEdunovaTemplateContractTest {
     assertThat(hero).contains("id=\"enHeroStudio\" href=\"/ai-agent-studio\"").contains("/images/ai-agent-banner.png");
     assertThat(html).doesNotContain("data-studio-entry hidden");
   }
+
+  @Test
+  @DisplayName("given 홈 when 읽으면 then PC 상단 메뉴·모바일 메뉴에 내신 제작소가 있고 중등부·고등부 제작소로 이동한다")
+  void naesinStudioEntry_visibleInMenusWithDivisionChoice() {
+    // given / when
+    String html = render();
+    String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
+    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("class=\"en-mobile-services\""));
+    // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
+    for (String menu : new String[] {nav, drawer}) {
+      assertThat(menu)
+          .contains("<summary>내신 제작소</summary>")
+          .contains("href=\"/naesin-production-studio?division=MIDDLE\">중등부 제작소<")
+          .contains("href=\"/naesin-production-studio?division=HIGH\">고등부 제작소<")
+          .contains("href=\"/wiki\"")
+          .contains("href=\"/ai-agent-studio\"");
+    }
+  }
 }

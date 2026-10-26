@@ -1,6 +1,6 @@
 ## 내신 문제 제작소 (2026-10-26)
 
-- 내부 화면 `/naesin-production-studio`: 중등부·고등부 구분. 양쪽 모두 같은 제작·등록·검수 기능을 사용하며 `division=MIDDLE|HIGH`로 구분한다(기본 MIDDLE). ADMIN·실제 운영 계정(modu)만 접근. 대시보드 권한 링크 재사용.
+- 내부 화면 `/naesin-production-studio`: 중등부·고등부 구분. 양쪽 모두 같은 제작·등록·검수 기능을 사용하며 `division=MIDDLE|HIGH`로 구분한다(기본 MIDDLE). ADMIN·실제 운영 계정(modu)만 접근. 대시보드 권한 링크 재사용. 홈(`/`) PC 상단 메뉴·모바일 메뉴의 `내신 제작소`에서 중등부(`?division=MIDDLE`)·고등부(`?division=HIGH`)를 고른다(링크는 숨기지 않고 권한은 서버가 확인, 비로그인은 로그인 안내 후 원래 주소로 복귀).
 - `/api/naesin-production/projects` GET/POST: 목록/개설. POST `{title,school,grade,examRange,division,importKey?}`, grade=중1/중2/중3/중등공통 또는 고1/고2/고3/고등공통. 학교급·학년 불일치400, 다른 학교급 프로젝트 선택409. importKey는 학교급별 멱등 개설 키이며 다른 메타데이터로 재사용하면409. ADMIN 전용 개설. 나머지 내부 API는 `?projectId=naesin-<uuid>` 필수, 타 서비스 프로젝트 선택 거부.
 - `GET /state?q=&offset=0`: 프로젝트·200개 리비전/파일·200개 최근 이벤트, nextOffset. `POST /project-state {action:TITLE|ARCHIVE|REOPEN,title}`: 기존 Studio 보관·재개 재사용, 영구 삭제 없음.
 - `POST /files` multipart `{file,source,rights}`: 기존 문서 검증 허용 문서·이미지·ZIP 및 텍스트/JSON/CSV/TSV, 최대384MiB(텍스트20MiB, 기존 Studio 경로 미디어100MiB). 큰 파일은 `POST /raw-files` application/octet-stream + query filename/source/rights로 스트리밍 등록하며 다운로드도 스트리밍한다. 권한은 항상 PENDING_REVIEW로 시작한다. SHA 중복 바이트 재사용, 동일 출처·권한 재시도는 기존 원본 리비전 반환, 출처 변경은 별도 연결. `GET /files/{id}`: 동일 프로젝트 파일 메타만(storage_key 제외), 검색 결과에서 수정할 때 원재료 선택 복원. `GET /files/{id}/download`: 내부 원본 attachment.
