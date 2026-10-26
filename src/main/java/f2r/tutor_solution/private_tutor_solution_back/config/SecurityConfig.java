@@ -154,7 +154,8 @@ public class SecurityConfig {
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)
-        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
+        .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin())
+            .addHeaderWriter(new PrivatePageRobotsHeaderWriter()))
         .logout(AbstractHttpConfigurer::disable)
         .exceptionHandling(e -> e
             // LMS SSR 화면(/lms/{handle}/**)의 익명 브라우저 요청만 랜딩("/")으로 302한다.

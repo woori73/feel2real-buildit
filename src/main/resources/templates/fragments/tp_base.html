@@ -2,6 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:fragment="head(title)">
   <meta charset="UTF-8">
+  <link rel="canonical" th:if="${tpCanonical != null}" th:href="${tpCanonical}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title th:text="${title} + ' · TestPrep'">TestPrep</title>
   <link rel="stylesheet" href="/css/testprep.css">

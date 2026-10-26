@@ -135,10 +135,12 @@ class StudioAccessSecurityIntegrationTest {
   void givenGuest_whenRequestingStudio_thenUnauthenticated(String path) throws Exception {
     // when / then
     if (path.startsWith("/api/")) {
-      mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+      mockMvc.perform(get(path)).andExpect(status().isUnauthorized())
+          .andExpect(header().string("X-Robots-Tag", "noindex, nofollow"));
     } else {
       mockMvc.perform(get(path).accept(MediaType.TEXT_HTML))
           .andExpect(status().is3xxRedirection())
+          .andExpect(header().string("X-Robots-Tag", "noindex, nofollow"))
           .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("/?login=required")));
     }
   }
