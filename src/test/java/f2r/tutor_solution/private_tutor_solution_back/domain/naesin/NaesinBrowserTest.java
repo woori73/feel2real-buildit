@@ -86,6 +86,11 @@ class NaesinBrowserTest {
       }
       var decision=driver.findElement(By.id("decision-form"));new Select(decision.findElement(By.name("action"))).selectByValue("APPROVE");decision.findElement(By.name("note")).sendKeys("최종 승인");decision.findElement(By.tagName("button")).click();
       wait.until(d->d.findElement(By.id("message")).getText().contains("최종 판단"));driver.findElement(By.id("publish")).click();wait.until(d->d.findElement(By.id("message")).getText().contains("게시 승인 완료"));
+      driver.findElement(By.id("query")).sendKeys("문항 검증");driver.findElement(By.id("search")).click();
+      wait.until(d->d.findElements(By.cssSelector("#files article")).isEmpty());
+      driver.findElement(By.cssSelector("#revisions button")).click();wait.until(d->d.findElement(By.id("detail")).isDisplayed());
+      driver.findElement(By.id("revise")).click();wait.until(d->d.findElement(By.id("message")).getText().contains("새 리비전"));
+      assertEquals(1,new Select(driver.findElement(By.id("source-files"))).getAllSelectedOptions().size());
       for(int width:new int[]{1440,390}){driver.manage().window().setSize(new Dimension(width,900));assertEquals(0L,((Number)((JavascriptExecutor)driver).executeScript("return Math.max(0,document.documentElement.scrollWidth-innerWidth)")).longValue());
         ((JavascriptExecutor)driver).executeScript("scrollTo(0,0)");
         if(System.getenv("NAESIN_BROWSER_EVIDENCE")!=null){Path evidence=Path.of(System.getenv("NAESIN_BROWSER_EVIDENCE"));Files.createDirectories(evidence);Files.copy(driver.getScreenshotAs(OutputType.FILE).toPath(),evidence.resolve("workspace-"+width+".png"),StandardCopyOption.REPLACE_EXISTING);}

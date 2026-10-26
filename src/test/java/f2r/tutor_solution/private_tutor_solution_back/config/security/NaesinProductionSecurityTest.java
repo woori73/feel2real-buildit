@@ -32,7 +32,7 @@ class NaesinProductionSecurityTest {
   @BeforeEach void operator(){var u=User.builder().loginId("modu").role(Role.TUTOR).build();ReflectionTestUtils.setField(u,"userId",42L);when(users.findByLoginId("modu")).thenReturn(Optional.of(u));}
 
   @Test void givenPrivateRoutes_whenStudentOrSpoofedOperatorOrGuest_thenDenied() throws Exception {
-    for(String path:new String[]{"/api/naesin-production/projects","/api/naesin-production/state?projectId=naesin-test","/api/naesin-production/files/test/download?projectId=naesin-test"}){
+    for(String path:new String[]{"/api/naesin-production/projects","/api/naesin-production/state?projectId=naesin-test","/api/naesin-production/files/test?projectId=naesin-test","/api/naesin-production/files/test/download?projectId=naesin-test"}){
       mvc.perform(get(path)).andExpect(status().isUnauthorized()).andExpect(header().string("X-Robots-Tag","noindex, nofollow"));
       mvc.perform(get(path).cookie(cookie(3L,"student","STUDENT"))).andExpect(status().isForbidden());
       mvc.perform(get(path).cookie(cookie(77L,"modu","TUTOR"))).andExpect(status().isForbidden());

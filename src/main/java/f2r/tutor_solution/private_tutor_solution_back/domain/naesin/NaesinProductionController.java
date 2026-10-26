@@ -98,6 +98,11 @@ public class NaesinProductionController {
       @RequestParam String projectId, @PathVariable String id) throws IOException {
     service.select(p, projectId); return attachment(service.file(p, id));
   }
+  @GetMapping("/api/naesin-production/files/{id}") @ResponseBody
+  public Object fileMetadata(@AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestParam String projectId, @PathVariable String id) {
+    service.select(p, projectId); return NaesinProductionService.safeFile(service.file(p, id));
+  }
   @GetMapping("/api/naesin-wiki/publications") @ResponseBody
   public Object publications(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestParam(defaultValue="0") int offset) {
     return service.published(p, offset);
