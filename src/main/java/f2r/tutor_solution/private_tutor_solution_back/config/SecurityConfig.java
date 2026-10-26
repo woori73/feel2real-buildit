@@ -268,7 +268,9 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft/**"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft"),
                         PathPatternRequestMatcher.withDefaults().matcher("/ai-agent-studio"),
-                        PathPatternRequestMatcher.withDefaults().matcher("/studio-projects")),
+                        PathPatternRequestMatcher.withDefaults().matcher("/studio-projects"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/naesin-production-studio"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/naesin-wiki/published")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 그 외 전부 기존 계약 유지 — 인증 실패 시 401. 프론트가 401 받으면 /home으로 이동.
             .defaultAuthenticationEntryPointFor(
@@ -627,6 +629,15 @@ public class SecurityConfig {
                   && principal instanceof JwtTokenProvider.AuthenticatedPrincipal p
                   && guard.isAllowed(p));
             })
+
+            .requestMatchers("/naesin-production-studio", "/api/naesin-production/**")
+            .access((authentication, context) -> {
+              Object principal = authentication.get() == null ? null : authentication.get().getPrincipal();
+              StudioAccessGuard guard = studioAccessGuardProvider.getIfAvailable();
+              return new AuthorizationDecision(guard != null
+                  && principal instanceof JwtTokenProvider.AuthenticatedPrincipal p && guard.isAllowed(p));
+            })
+            .requestMatchers("/naesin-wiki/published", "/api/naesin-wiki/**").hasAnyRole("ADMIN", "TUTOR", "STUDENT")
 
             // 그 외 모든 /api/**는 인증 필요
             .requestMatchers("/api/**").authenticated()

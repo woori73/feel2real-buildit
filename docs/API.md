@@ -1,3 +1,16 @@
+## 내신 문제 제작소 (2026-10-26)
+
+- 내부 화면 `/naesin-production-studio`: 중등부·고등부 구분. 현재 중등부만 제작·등록, 고등부는 빈 준비 화면. ADMIN·실제 운영 계정(modu)만 접근. 대시보드 권한 링크 재사용.
+- `/api/naesin-production/projects` GET/POST: 목록/개설. POST `{title,school,grade,examRange}`, grade=중1/중2/중3. ADMIN 전용 개설. 나머지 내부 API는 `?projectId=naesin-<uuid>` 필수, 타 서비스 프로젝트 선택 거부.
+- `GET /state?q=&offset=0`: 프로젝트·200개 리비전/파일·200개 최근 이벤트, nextOffset. `POST /project-state {action:TITLE|ARCHIVE|REOPEN,title}`: 기존 Studio 보관·재개 재사용, 영구 삭제 없음.
+- `POST /files` multipart `{file,source,rights}`: HWP/HWPX/PDF/DOCX/TXT/MD/HTML/JPG/PNG, 기존 문서 검증·20MiB 상한. SHA 중복 바이트 재사용, 동일 출처·권한 재시도는 기존 원본 리비전 반환, 출처 변경은 별도 연결. `GET /files/{id}/download`: 내부 원본 attachment.
+- `POST /files/{id}/extract?retry=false`: HWP5 레코드 또는 기존 ExamInsight 추출기 재사용. 유효한 성공 결과 재사용, 실패는 FAILED 리비전 보존·명시적 retry로 재시험. 이미지 OCR·모델 호출 없음. 본문 추출은 문항 분할·정답/서식 검수 완료를 뜻하지 않음.
+- `POST /work`: `{itemKey,parentId,label,category:WORK|RESULT|HANDOFF,title,ai:Claude|ChatGPT Work|HUMAN,goal,prompt,model,tools,result,errors,nextWork,status,fileId,sourceFileIds,referenceRevisionIds}`. 기존 Studio 부모 리비전/라벨 충돌409, 원재료와 참조는 동일 프로젝트에 존재해야 함. SOURCE 리비전 변경 불가. `GET /revisions/{id}`: 본문/부모/변경 비교용 이력/검수.
+- `POST /revisions/{id}/checks {dimension:QUESTION|EXPLANATION|FORMAT|RIGHTS,passed,note}`: 승인권자 검수 근거 append. `POST /revisions/{id}/review {action:APPROVE|REJECT|REQUEST_CHANGES,note}`: 기존 승인 포인터 재사용. APPROVE는 파일이 연결된 RESULT+READY/REVIEW+4개 검수 PASS 필요. 검수는 리비전에 귀속하고 다음 버전에 자동 상속하지 않음.
+- `POST /revisions/{id}/publish {expectedApprovedId}`: ADMIN 전용, 최신 승인 포인터·4개 검수 재확인 후 고정 리비전 게시 이벤트 append. 동일 리비전 게시 재시도는 멱등. 중간 결과 자동 게시 없음. 새 버전/승인 포인터 이동으로 기존 Wiki 게시 파일을 변경하지 않음.
+- `/naesin-wiki/published`, `GET /api/naesin-wiki/publications?offset=0`, `GET /api/naesin-wiki/publications/{publicationId}/download`: STUDENT/TUTOR/ADMIN에게 게시 승인된 완성본 메타·고정 파일만 제공. 내부 작업·프롬프트·원재료는 이 API에 노출하지 않음. 내신Wiki 기존 화면에 완성본 목록 링크 추가, 기존 자료·동작 보존.
+- 모든 경로 no-store/noindex. 내부 쓰기는 기존 public-base와 일치하는 Origin 필수. 기존 AI AGENT Studio 코드/API/파일·승인본 변경 없음. 기존 MCP의 프로젝트 선택/조회는 공유 엔진을 따르며 HWP 직접 업로드는 새 REST/화면 경로 사용. 실제 구독 앱의 자동 실행·배포·대량 적재 없음.
+
 ## Wiki 접근 정책 (2026-09)
 
 - 공개: `GET /wiki`, `GET /api/wiki/home-feed`(비회원은 최신 자료/인기 자료 메타데이터만), `GET /api/wiki/popular-downloads`, `POST /api/wiki/visits`.

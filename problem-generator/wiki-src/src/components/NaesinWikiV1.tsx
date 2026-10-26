@@ -304,7 +304,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   }
   return <section className="naesin-v1">
     <header><p className="kicker">BUILD IT · NAESIN WIKI V1.1</p>
-    <div role="group" aria-label="Wiki 섹션"><button className="btn-ghost" disabled style={{fontWeight:700}}>[내신 Wiki]</button><button className="btn-ghost" onClick={()=>onNavigate('csatwiki')}>[수능영어 Wiki]</button></div>
+    <div role="group" aria-label="Wiki 섹션"><button className="btn-ghost" disabled style={{fontWeight:700}}>[내신 Wiki]</button><button className="btn-ghost" onClick={()=>onNavigate('csatwiki')}>[수능영어 Wiki]</button><a href="/naesin-wiki/published">중등부 승인 완성본</a></div>
     <h1>시험 자료 한눈에 모으기</h1><p>학교와 시험을 먼저 고르면 STEP 1부터 4까지 순서대로 따라가며 시험을 준비할 수 있습니다.</p></header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="exam-context" aria-label="시험 Context">

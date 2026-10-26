@@ -1,0 +1,101 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.naesin;
+
+import static org.junit.jupiter.api.Assertions.*;
+import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
+import java.nio.file.*;
+import java.time.Duration;
+import java.util.*;
+import jakarta.servlet.MultipartConfigElement;
+import org.apache.catalina.startup.Tomcat;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.io.TempDir;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.*;
+import org.openqa.selenium.support.ui.*;
+import org.springframework.context.annotation.*;
+import org.springframework.core.MethodParameter;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.web.context.request.*;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.method.support.*;
+import org.springframework.web.servlet.*;
+import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.*;
+import org.springframework.web.servlet.view.AbstractView;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
+
+/** Loopback-only real MVC/JDBC/disk browser fixture. Production authorization is tested separately. */
+@EnabledIfEnvironmentVariable(named="NAESIN_BROWSER_TEST",matches="true")
+class NaesinBrowserTest {
+  @TempDir Path directory;
+  static NaesinProductionTest fixture;
+  @org.springframework.boot.test.context.TestConfiguration @EnableWebMvc @EnableTransactionManagement
+  static class Web implements WebMvcConfigurer {
+    @Bean NaesinProductionService service(){return fixture.service;}
+    @Bean PlatformTransactionManager transactionManager(){return new DataSourceTransactionManager(fixture.db.getDataSource());}
+    @Bean NaesinProductionController controller(NaesinProductionService service){var c=new NaesinProductionController(service);ReflectionTestUtils.setField(c,"publicBase",base);return c;}
+    @Bean StandardServletMultipartResolver multipartResolver(){return new StandardServletMultipartResolver();}
+    @Override public void addResourceHandlers(ResourceHandlerRegistry r){r.addResourceHandler("/js/**").addResourceLocations("classpath:/static/js/");r.addResourceHandler("/css/**").addResourceLocations("classpath:/static/css/");}
+    @Override public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers){resolvers.add(new HandlerMethodArgumentResolver(){
+      public boolean supportsParameter(MethodParameter p){return p.getParameterType()==AuthenticatedPrincipal.class;}
+      public Object resolveArgument(MethodParameter p,ModelAndViewContainer c,NativeWebRequest r,org.springframework.web.bind.support.WebDataBinderFactory f){return fixture.admin;}
+    });}
+    @Bean ViewResolver views(){return (name,locale)->new AbstractView(){protected void renderMergedOutputModel(Map<String,Object> m,jakarta.servlet.http.HttpServletRequest req,jakarta.servlet.http.HttpServletResponse res)throws Exception{
+      res.setContentType("text/html;charset=UTF-8");try(var in=getClass().getResourceAsStream("/templates/"+name+".html")){res.getOutputStream().write(Objects.requireNonNull(in).readAllBytes());}
+    }};}
+  }
+  static String base;
+  @Test void givenMiddleWorkspace_whenUploadRevisionReviewPublishAndMobileNavigation_thenRealPipelineWorks() throws Exception {
+    fixture=new NaesinProductionTest();fixture.dir=directory.resolve("files");Files.createDirectories(fixture.dir);fixture.setup();
+    var tomcat=new Tomcat();tomcat.setBaseDir(directory.resolve("tomcat").toString());tomcat.setPort(0);tomcat.getConnector().setProperty("address","127.0.0.1");
+    var ctx=tomcat.addContext("",directory.toString());var web=new AnnotationConfigWebApplicationContext();web.register(Web.class);
+    var wrapper=Tomcat.addServlet(ctx,"mvc",new DispatcherServlet(web));wrapper.setLoadOnStartup(1);
+    wrapper.setMultipartConfigElement(new MultipartConfigElement(directory.toString(),20971520,22020096,0));ctx.addServletMappingDecoded("/","mvc");
+    ChromeDriver driver=null;
+    try {
+      tomcat.start();base="http://127.0.0.1:"+tomcat.getConnector().getLocalPort();
+      ReflectionTestUtils.setField(web.getBean(NaesinProductionController.class),"publicBase",base);
+      // Controller initializes on first request, after the ephemeral port is known.
+      var opts=new ChromeOptions();opts.addArguments("--headless=new","--no-sandbox","--disable-dev-shm-usage","--window-size=1440,1000");
+      if(System.getenv("NAESIN_CHROME_BINARY")!=null)opts.setBinary(System.getenv("NAESIN_CHROME_BINARY"));
+      driver=System.getenv("NAESIN_CHROMEDRIVER")==null?new ChromeDriver(opts):new ChromeDriver(new ChromeDriverService.Builder().usingDriverExecutable(new java.io.File(System.getenv("NAESIN_CHROMEDRIVER"))).build(),opts);
+      var wait=new WebDriverWait(driver,Duration.ofSeconds(20));
+      driver.get(base+"/naesin-production-studio?projectId="+fixture.project);
+      wait.until(d->d.findElement(By.id("project-title")).getText().contains("신구중"));
+      driver.findElement(By.id("division-high")).click();assertTrue(driver.findElement(By.id("high-school")).isDisplayed());assertFalse(driver.findElement(By.id("middle-school")).isDisplayed());
+      assertTrue(driver.findElement(By.id("high-school")).getText().contains("자료가 없습니다"));driver.findElement(By.id("division-middle")).click();
+      Path original=directory.resolve("중2_시험.hwp");Files.write(original,NaesinTextExtractorTest.fixture(true,false,false));
+      driver.findElement(By.cssSelector("#upload-form input[type=file]")).sendKeys(original.toString());
+      driver.findElement(By.cssSelector("#upload-form [name=source]")).sendKeys("중등부 격리 검증 표본");driver.findElement(By.cssSelector("#upload-form [name=rights]")).sendKeys("테스트용 직접 작성");
+      driver.findElement(By.cssSelector("#upload-form button")).click();wait.until(d->d.findElement(By.id("message")).getText().contains("재조회"));
+      assertTrue(driver.findElement(By.id("files")).getText().contains("중2_시험.hwp"));
+      driver.findElement(By.cssSelector("#files button")).click();wait.until(d->d.findElement(By.id("detail-content")).getText().contains("정답"));
+      ((JavascriptExecutor)driver).executeScript("document.querySelector('#work-form').closest('details').open=true");
+      var form=driver.findElement(By.id("work-form"));new Select(form.findElement(By.name("category"))).selectByValue("RESULT");
+      for(var e:Map.of("title","중2 완성본 후보","goal","문항 검증","prompt","원본·정답 확인","model","test-no-llm","tools","HWP5 parser","result","문항·정답 대조 완료","nextWork","최신 승인본 확인").entrySet())form.findElement(By.name(e.getKey())).sendKeys(e.getValue());
+      new Select(form.findElement(By.name("sourceFileIds"))).selectByIndex(0);new Select(form.findElement(By.name("fileId"))).selectByIndex(1);new Select(form.findElement(By.name("status"))).selectByValue("REVIEW");
+      form.findElement(By.cssSelector("button")).click();wait.until(d->d.findElement(By.id("detail-title")).getText().equals("중2 완성본 후보"));
+      for(String dimension:NaesinProductionService.CHECKS){
+        var check=driver.findElement(By.id("check-form"));new Select(check.findElement(By.name("dimension"))).selectByValue(dimension);
+        var note=check.findElement(By.name("note"));note.clear();note.sendKeys("격리 표본 검수 완료");check.findElement(By.tagName("button")).click();
+        wait.until(d->!"true".equals(d.findElement(By.cssSelector("#check-form button")).getAttribute("disabled")));
+      }
+      var decision=driver.findElement(By.id("decision-form"));new Select(decision.findElement(By.name("action"))).selectByValue("APPROVE");decision.findElement(By.name("note")).sendKeys("최종 승인");decision.findElement(By.tagName("button")).click();
+      wait.until(d->d.findElement(By.id("message")).getText().contains("최종 판단"));driver.findElement(By.id("publish")).click();wait.until(d->d.findElement(By.id("message")).getText().contains("게시 승인 완료"));
+      for(int width:new int[]{1440,390}){driver.manage().window().setSize(new Dimension(width,900));assertEquals(0L,((Number)((JavascriptExecutor)driver).executeScript("return Math.max(0,document.documentElement.scrollWidth-innerWidth)")).longValue());
+        ((JavascriptExecutor)driver).executeScript("scrollTo(0,0)");
+        if(System.getenv("NAESIN_BROWSER_EVIDENCE")!=null){Path evidence=Path.of(System.getenv("NAESIN_BROWSER_EVIDENCE"));Files.createDirectories(evidence);Files.copy(driver.getScreenshotAs(OutputType.FILE).toPath(),evidence.resolve("workspace-"+width+".png"),StandardCopyOption.REPLACE_EXISTING);}
+      }
+      driver.get(base+"/naesin-wiki/published");wait.until(d->d.findElements(By.cssSelector("#publications article")).size()==1);
+      assertTrue(driver.findElement(By.id("publications")).getText().contains("중2 완성본 후보"));
+      var link=driver.findElement(By.cssSelector("#publications a")).getAttribute("href");
+      var download=java.net.http.HttpClient.newHttpClient().send(java.net.http.HttpRequest.newBuilder(java.net.URI.create(link)).build(),java.net.http.HttpResponse.BodyHandlers.ofByteArray());
+      assertEquals(200,download.statusCode());assertArrayEquals(Files.readAllBytes(original),download.body());
+      System.out.println("NAESIN_BROWSER_QA: middle/high split, HWP upload/extraction, work/revision, four checks, approval/publication, fixed download, 1440/390 overflow=0 PASS");
+    } finally {if(driver!=null)driver.quit();tomcat.stop();tomcat.destroy();fixture.clear();}
+  }
+}

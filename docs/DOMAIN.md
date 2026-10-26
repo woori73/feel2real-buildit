@@ -1,5 +1,11 @@
 # 도메인 모델
 
+## 내신 제작소 — 기존 Studio 엔진 재사용 (2026-10-26)
+
+새 테이블/마이그레이션/Entity 없음. `studio_projects.id=naesin-<uuid>`로 교육 프로젝트를 구분하고 `project-profile/original` JOB 리비전에 학교·중등 학년·시험 범위를 고정한다. `studio_files`의 원본/SHA/프로젝트별 중복 제약, `StudioRevision`의 불변 부모 연결, `studio_items` head/approved 포인터와 프로젝트 잠금, 기존 권한·보관 상태를 그대로 사용한다. 기존 AI AGENT 데이터와 코드는 수정하지 않는다.
+
+리비전 content의 category는 SOURCE(출처·이용 권한·SHA), WORK/RESULT/HANDOFF(담당 AI·목표·지시·모델·도구·원재료·참조·결과·오류·다음 작업), EXTRACTION(원재료·추출 본문·실패)이다. `studio_events`에 NAESIN_CHECK(리비전별 4개 검수, 마지막 판정 유효), NAESIN_PUBLISH(관리자 승인된 고정 완성본)만 추가 사용한다. 기존 스키마 길이/제약 안에서 저장하며 이전 이벤트를 수정·삭제하지 않는다. 게시 목록은 해당 이벤트와 불변 리비전/파일을 조인하여 프롬프트나 원재료를 공개하지 않는다. 고등부 UI는 자리만 마련하고 자료/프로젝트 등록은 이번 범위에서 제외한다.
+
 ## NewStart Official Updates V1 (V988)
 
 `newstart_official_updates`는 NewStart Knowledge/RAG와 분리된 공식 업데이트 게시 모델이다.
