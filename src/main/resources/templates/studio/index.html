@@ -7,7 +7,7 @@
     <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
     <link rel="stylesheet" href="/css/agent_studio.css?v=20261025-sections-1" />
     <script src="/js/studio_catalog.js?v=20261025-sections-1" defer></script>
-    <script src="/js/agent_studio.js?v=20261025-sections-1" defer></script>
+    <script src="/js/agent_studio.js?v=20261026-upload-recovery-1" defer></script>
   </head>
   <body class="studio-workspace" data-studio-ui="two-sections-v1">
     <header>
@@ -51,7 +51,7 @@
               maxlength="200"
               placeholder="제목·파일명·자료 키·버전 검색" /></label
           ><button id="search">검색</button
-          ><button id="new-revision">자료 등록</button><button id="open-upload" type="button">자료 올리기</button>
+          ><button id="new-revision">자료 등록</button><button id="open-upload" type="button" aria-controls="upload-file">자료 올리기</button>
         </div>
         <div class="toolbar catalog-filters">
           <label>파일 종류<select id="media"><option value="">모든 파일</option><option value="VIDEO">영상</option><option value="IMAGE">이미지</option><option value="AUDIO">음성·음악</option><option value="DOCUMENT">문서·각본·콘티</option><option value="PACKAGE">합성 자료·패키지</option></select></label>
@@ -109,8 +109,10 @@
               id="upload-file"
               accept=".pdf,.html,.json,.md,.md5,.zip,.png,.jpg,.jpeg,.webp,.mp4,.mov,.wav,.mp3,.flac"
               required /></label
-          ><button>업로드</button>
+          ><button id="upload-submit" type="submit">업로드</button>
         </form>
+        <p id="upload-status" role="status" aria-live="polite"></p>
+        <div id="upload-receipt"></div>
         <details><summary>기존 콘티 일괄 등록</summary><form id="bulk-form"><label>EP01 68컷 일괄 등록 원본<select id="bulk-file"></select></label><p>보관한 JSON 또는 manifest.json 포함 ZIP의 1~68컷을 새 버전으로 등록합니다. 원본·이전 버전·기존 승인 이력은 보존하며, 새 버전은 개별 검수 전 미승인입니다.</p><button>68컷 일괄 등록</button></form></details><div class="file-browser"><div id="file-list"></div>
         <div id="file-preview" aria-live="polite"></div></div>
       </details>
