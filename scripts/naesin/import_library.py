@@ -107,9 +107,11 @@ def run(a):
                 summary[division]["failed"]+=1;journal["failures"][identity]={"name":r["name"],"error_type":type(error).__name__};checkpoint()
         # Bounded handoff records preserve aliases, proposed question/answer/version relationships.
         for at in range(0,len(linked),40):
-            chunk=linked[at:at+40];item="library-handoff-"+manifest["manifest_sha256"][:16]+"-"+group_hash+"-"+str(at//40)
+            chunk=linked[at:at+40]
+            chunk_hash=hashlib.sha256(json.dumps(chunk,ensure_ascii=False,sort_keys=True).encode()).hexdigest()[:12]
+            item="library-handoff-"+manifest["manifest_sha256"][:16]+"-"+group_hash+"-"+str(at//40)+"-"+chunk_hash
             if item in journal["handoffs"]:continue
-            title="Library 인계 "+manifest["manifest_sha256"][:16]+" "+group_hash+" "+str(at//40)
+            title="Library 인계 "+manifest["manifest_sha256"][:16]+" "+group_hash+" "+str(at//40)+" "+chunk_hash
             state=api.request("state",division,project,query={"q":title,"offset":0})
             prior=next((r for r in state["revisions"] if r["item_key"]==item and r["label"]=="v1"),None)
             if not prior:
