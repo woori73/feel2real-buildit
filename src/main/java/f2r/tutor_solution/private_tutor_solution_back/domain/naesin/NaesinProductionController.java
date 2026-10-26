@@ -69,6 +69,11 @@ public class NaesinProductionController {
       @RequestBody NaesinProductionService.Work r) {
     service.select(p, projectId); return service.save(p, r);
   }
+  @PostMapping(value="/api/naesin-production/raw-files",consumes="application/octet-stream") @ResponseBody
+  public Object rawUpload(@AuthenticationPrincipal AuthenticatedPrincipal p,@RequestParam String projectId,
+      @RequestParam String filename,@RequestParam String source,@RequestParam String rights,HttpServletRequest request)throws Exception{
+    service.select(p,projectId);return service.uploadStream(p,filename,request.getInputStream(),request.getContentLengthLong(),source,rights);
+  }
   @GetMapping("/api/naesin-production/revisions/{id}") @ResponseBody
   public Object detail(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestParam String projectId, @PathVariable String id) {
     service.select(p, projectId); return service.detail(p, id);
@@ -94,7 +99,7 @@ public class NaesinProductionController {
     service.select(p, projectId); return service.extract(p, id, retry);
   }
   @GetMapping("/api/naesin-production/files/{id}/download")
-  public ResponseEntity<byte[]> download(@AuthenticationPrincipal AuthenticatedPrincipal p,
+  public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> download(@AuthenticationPrincipal AuthenticatedPrincipal p,
       @RequestParam String projectId, @PathVariable String id) throws IOException {
     service.select(p, projectId); return attachment(service.file(p, id));
   }
@@ -108,14 +113,16 @@ public class NaesinProductionController {
     return service.published(p, offset);
   }
   @GetMapping("/api/naesin-wiki/publications/{id}/download")
-  public ResponseEntity<byte[]> publishedFile(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable long id) throws IOException {
+  public ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> publishedFile(@AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable long id) throws IOException {
     return attachment(service.publishedFile(p, id));
   }
-  private ResponseEntity<byte[]> attachment(Map<String,Object> f) throws IOException {
+  private ResponseEntity<org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody> attachment(Map<String,Object> f) throws IOException {
     String name = (String) f.get("filename");
     return ResponseEntity.ok().header("X-Content-Type-Options", "nosniff")
         .header("Content-Security-Policy", "sandbox")
         .header("Content-Disposition", ContentDisposition.attachment().filename(name, StandardCharsets.UTF_8).build().toString())
-        .contentType(MediaType.parseMediaType(DocumentUploadValidator.contentType(name))).body(service.fileBytes(f));
+        .contentLength(((Number)f.get("size_bytes")).longValue())
+        .contentType(MediaType.parseMediaType(DocumentUploadValidator.contentType(name)))
+        .body(out->{try(var in=service.fileStream(f)){in.transferTo(out);}});
   }
 }

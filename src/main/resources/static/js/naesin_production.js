@@ -4,11 +4,13 @@
   const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
   const labels = {SOURCE:"원재료",WORK:"제작 과정",RESULT:"완성본 후보",HANDOFF:"AI 인계",EXTRACTION:"본문 추출"};
   const statuses = {READY:"완료",WORKING:"작업 중",WAITING:"대기",REVIEW:"검수 요청",FAILED:"실패"};
+  let divisionName = new URLSearchParams(location.search).get("division")==="HIGH"?"HIGH":"MIDDLE";
+  const projectSelection = {MIDDLE:"",HIGH:""};
   let projectId = new URLSearchParams(location.search).get("projectId") || "", rows = [], files = [], selected = null, role = "VIEWER", archived = false, nextOffset = -1;
   let epoch = 0;
   const message = value => { $("message").textContent = value; };
   const data = r => { try { return JSON.parse(r.content); } catch { return {}; } };
-  const url = path => { const u = new URL("/api/naesin-production/" + path, location.origin); if (projectId) u.searchParams.set("projectId", projectId); return u.pathname + u.search; };
+  const url = path => { const u = new URL("/api/naesin-production/" + path, location.origin); u.searchParams.set("division",divisionName); if (projectId) u.searchParams.set("projectId", projectId); return u.pathname + u.search; };
   async function api(path, options = {}) {
     const response = await fetch(url(path), {credentials:"same-origin",...options});
     const result = await response.json();
@@ -30,7 +32,9 @@
     values.forEach(([id,title])=>{const o=el("option",title);o.value=id;o.selected=chosen.has(id);select.append(o);});
   }
   async function projects() {
+    const current=epoch, chosenDivision=divisionName;
     const items = await api("projects");
+    if(current!==epoch || chosenDivision!==divisionName)return;
     $("project").replaceChildren(el("option", "프로젝트 선택")); $("project").firstChild.value="";
     items.forEach(item=>{const o=el("option",item.title);o.value=item.id;$("project").append(o);});
     if (!items.some(item=>item.id===projectId)) projectId="";
@@ -60,7 +64,7 @@
     $("files").replaceChildren(...files.map(f=>{
       const card=el("article",undefined,"card");card.append(el("b",f.filename),el("p",`${f.size_bytes.toLocaleString()} bytes · SHA-256 ${f.sha256}`,"meta"));
       const a=el("a","원본 다운로드");a.href=url(`files/${f.id}/download`);card.append(a);
-      if (!["png","jpg","jpeg"].includes(f.extension)) card.append(button("본문 추출",async()=>{const r=await api(`files/${f.id}/extract`,{method:"POST"});await refresh();await open(r.id);message(r.work_status==="FAILED"?"추출 실패 기록을 남겼습니다. 원본을 확인하세요.":"본문 추출 결과를 확인했습니다. 서식·정답 검수는 별도입니다.");}));
+      if (["hwp","hwpx","pdf","docx","txt","md","html","htm"].includes(f.extension)) card.append(button("본문 추출",async()=>{const r=await api(`files/${f.id}/extract`,{method:"POST"});await refresh();await open(r.id);message(r.work_status==="FAILED"?"추출 실패 기록을 남겼습니다. 원본을 확인하세요.":"본문 추출 결과를 확인했습니다. 서식·정답 검수는 별도입니다.");}));
       return card;
     }));
     const listed=rows.filter(r=>r.item_key!=="project-profile");
@@ -86,11 +90,11 @@
     $("detail").scrollIntoView({behavior:"smooth",block:"start"});
   }
   function clearWork() {$("work-form").reset();$("work-form").elements.parentId.value="";$("work-form").elements.itemKey.value="work-"+crypto.randomUUID();}
-  bind("project-form",async()=>{const values=Object.fromEntries(new FormData($("project-form")));const r=await post("projects",values);projectId=r.id;await projects();message("중등 제작 프로젝트를 만들었습니다.");},"submit");
-  bind("project",async()=>{projectId=$("project").value;epoch++;clearWork();const u=new URL(location.href);if(projectId)u.searchParams.set("projectId",projectId);else u.searchParams.delete("projectId");history.replaceState(null,"",u);await projects();},"change");
+  bind("project-form",async()=>{const values=Object.fromEntries(new FormData($("project-form")));values.division=divisionName;const r=await post("projects",values);projectId=r.id;syncLocation();await projects();message((divisionName==="HIGH"?"고등":"중등")+" 제작 프로젝트를 만들었습니다.");},"submit");
+  bind("project",async()=>{projectId=$("project").value;epoch++;clearWork();syncLocation();await projects();},"change");
   bind("project-manage",async e=>{await post("project-state",{action:e.submitter.value,title:$("project-manage").elements.title.value});await refresh();},"submit");
   bind("reload",()=>projects());bind("search",()=>refresh());bind("more-revisions",()=>refresh(true));bind("more-files",()=>refresh(true));
-  bind("upload-form",async()=>{const r=await api("files",{method:"POST",body:new FormData($("upload-form"))});const check=await api(`revisions/${r.revision.id}`);if(check.revision.file_id!==r.file.id || data(check.revision).sha256!==r.file.sha256)throw Error("파일·SHA 연결 재조회 실패");$("query").value="";await refresh();message((r.duplicate?"기존 원본을 재사용했습니다.":"원본 파일을 등록했습니다.")+" SHA와 연결 리비전의 재조회를 확인했습니다.");},"submit");
+  bind("upload-form",async()=>{const formData=new FormData($("upload-form")),file=formData.get("file");const r=file.size>20*1024*1024?await api("raw-files?"+new URLSearchParams({filename:file.name,source:formData.get("source"),rights:formData.get("rights")}),{method:"POST",headers:{"Content-Type":"application/octet-stream"},body:file}):await api("files",{method:"POST",body:formData});const check=await api(`revisions/${r.revision.id}`);if(check.revision.file_id!==r.file.id || data(check.revision).sha256!==r.file.sha256)throw Error("파일·SHA 연결 재조회 실패");$("query").value="";await refresh();message((r.duplicate?"기존 원본을 재사용했습니다.":"원본 파일을 등록했습니다.")+" SHA와 연결 리비전의 재조회를 확인했습니다.");},"submit");
   bind("work-form",async()=>{const form=$("work-form"), values=Object.fromEntries(new FormData(form));values.sourceFileIds=Array.from($("source-files").selectedOptions).map(o=>o.value);values.referenceRevisionIds=Array.from($("reference-revisions").selectedOptions).map(o=>o.value);if(!values.fileId)values.fileId=null;const r=await post("work",values);const verify=await api(`revisions/${r.id}`);if(verify.revision.id!==r.id || JSON.stringify(data(verify.revision).sourceFileIds)!==JSON.stringify(values.sourceFileIds))throw Error("리비전·원재료 연결 재조회 실패");clearWork();await refresh();await open(r.id);message("리비전과 원재료 연결을 저장하고 재조회했습니다.");},"submit");
   bind("clear-work",()=>clearWork());
   bind("revise",async()=>{const f=$("work-form"),revision=selected,d=data(revision),current=epoch;
@@ -105,7 +109,9 @@
   bind("publish",async()=>{const r=await post(`revisions/${selected.id}/publish`,{expectedApprovedId:selected.approved_id});message(`내신Wiki 게시 승인 완료 · ${r.title} / ${r.label}. 승인 완성본 화면에서 확인할 수 있습니다.`);});
   function section(name){$("materials").hidden=name!=="materials";$("review").hidden=name!=="review";for(const x of ["materials","review"]){if(x===name)$("tab-"+x).setAttribute("aria-current","page");else $("tab-"+x).removeAttribute("aria-current");}}
   bind("tab-materials",()=>section("materials"));bind("tab-review",()=>section("review"));
-  function division(high){$("middle-school").hidden=high;$("high-school").hidden=!high;for(const [id,active] of [["division-middle",!high],["division-high",high]]){if(active)$(id).setAttribute("aria-current","page");else $(id).removeAttribute("aria-current");}}
+  function syncLocation(){const u=new URL(location.href);u.searchParams.set("division",divisionName);if(projectId)u.searchParams.set("projectId",projectId);else u.searchParams.delete("projectId");history.replaceState(null,"",u);}
+  function divisionUi(){const high=divisionName==="HIGH";$("division-summary").textContent=(high?"고등부":"중등부")+" · 원본 자료와 제작 이력을 관리합니다.";$("wiki-publications").href="/naesin-wiki/published?division="+divisionName;const select=$("project-form").elements.grade;select.replaceChildren(...(high?["고1","고2","고3","고등공통"]:["중1","중2","중3","중등공통"]).map(x=>el("option",x)));for(const [id,active] of [["division-middle",!high],["division-high",high]]){if(active)$(id).setAttribute("aria-current","page");else $(id).removeAttribute("aria-current");}}
+  async function division(high){projectSelection[divisionName]=projectId;divisionName=high?"HIGH":"MIDDLE";projectId=projectSelection[divisionName];epoch++;rows=[];files=[];selected=null;$("workspace").hidden=true;$("query").value="";clearWork();divisionUi();syncLocation();message("");await projects();}
   bind("division-middle",()=>division(false));bind("division-high",()=>division(true));
-  clearWork();projects().catch(e=>message(e.message));
+  divisionUi();clearWork();projects().catch(e=>message(e.message));
 })();

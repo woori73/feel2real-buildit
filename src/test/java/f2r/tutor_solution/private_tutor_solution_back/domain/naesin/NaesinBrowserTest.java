@@ -49,11 +49,17 @@ class NaesinBrowserTest {
     }};}
   }
   static String base;
-  @Test void givenMiddleWorkspace_whenUploadRevisionReviewPublishAndMobileNavigation_thenRealPipelineWorks() throws Exception {
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings={"MIDDLE","HIGH"})
+  void givenSchoolDivision_whenUploadRevisionReviewPublishAndMobileNavigation_thenRealPipelineWorks(String division) throws Exception {
     fixture=new NaesinProductionTest();fixture.dir=directory.resolve("files");Files.createDirectories(fixture.dir);fixture.setup();
+    String project=fixture.project;
+    String grade=division.equals("HIGH")?"고1":"중2", candidateTitle=grade+" 완성본 후보";
+    if(division.equals("HIGH"))project=fixture.json.valueToTree(fixture.call(()->fixture.service.create(fixture.admin,new NaesinProductionService.Project("고1 시험 제작","시험고","고1","학력평가","HIGH")))).path("id").asText();
     var tomcat=new Tomcat();tomcat.setBaseDir(directory.resolve("tomcat").toString());tomcat.setPort(0);tomcat.getConnector().setProperty("address","127.0.0.1");
     var ctx=tomcat.addContext("",directory.toString());var web=new AnnotationConfigWebApplicationContext();web.register(Web.class);
     var wrapper=Tomcat.addServlet(ctx,"mvc",new DispatcherServlet(web));wrapper.setLoadOnStartup(1);
+    wrapper.setAsyncSupported(true);
     wrapper.setMultipartConfigElement(new MultipartConfigElement(directory.toString(),20971520,22020096,0));ctx.addServletMappingDecoded("/","mvc");
     ChromeDriver driver=null;
     try {
@@ -64,21 +70,24 @@ class NaesinBrowserTest {
       if(System.getenv("NAESIN_CHROME_BINARY")!=null)opts.setBinary(System.getenv("NAESIN_CHROME_BINARY"));
       driver=System.getenv("NAESIN_CHROMEDRIVER")==null?new ChromeDriver(opts):new ChromeDriver(new ChromeDriverService.Builder().usingDriverExecutable(new java.io.File(System.getenv("NAESIN_CHROMEDRIVER"))).build(),opts);
       var wait=new WebDriverWait(driver,Duration.ofSeconds(20));
-      driver.get(base+"/naesin-production-studio?projectId="+fixture.project);
-      wait.until(d->d.findElement(By.id("project-title")).getText().contains("신구중"));
-      driver.findElement(By.id("division-high")).click();assertTrue(driver.findElement(By.id("high-school")).isDisplayed());assertFalse(driver.findElement(By.id("middle-school")).isDisplayed());
-      assertTrue(driver.findElement(By.id("high-school")).getText().contains("자료가 없습니다"));driver.findElement(By.id("division-middle")).click();
-      Path original=directory.resolve("중2_시험.hwp");Files.write(original,NaesinTextExtractorTest.fixture(true,false,false));
+      driver.get(base+"/naesin-production-studio?division="+division+"&projectId="+project);
+      wait.until(d->d.findElement(By.id("project-title")).getText().contains(division.equals("HIGH")?"고1":"신구중"));
+      if(division.equals("MIDDLE")){
+        driver.findElement(By.id("division-high")).click();wait.until(d->new Select(d.findElement(By.name("grade"))).getFirstSelectedOption().getAttribute("value").equals("고1"));
+        assertTrue(driver.findElement(By.id("project-form")).findElement(By.name("grade")).isEnabled());
+        driver.findElement(By.id("division-middle")).click();wait.until(d->d.findElement(By.id("project-title")).getText().contains("신구중") && d.findElement(By.id("workspace")).isDisplayed());
+      }
+      Path original=directory.resolve(grade+"_시험.hwp");Files.write(original,NaesinTextExtractorTest.fixture(grade,true,false,false));
       driver.findElement(By.cssSelector("#upload-form input[type=file]")).sendKeys(original.toString());
       driver.findElement(By.cssSelector("#upload-form [name=source]")).sendKeys("중등부 격리 검증 표본");driver.findElement(By.cssSelector("#upload-form [name=rights]")).sendKeys("테스트용 직접 작성");
       driver.findElement(By.cssSelector("#upload-form button")).click();wait.until(d->d.findElement(By.id("message")).getText().contains("재조회"));
-      assertTrue(driver.findElement(By.id("files")).getText().contains("중2_시험.hwp"));
+      assertTrue(driver.findElement(By.id("files")).getText().contains(grade+"_시험.hwp"));
       driver.findElement(By.cssSelector("#files button")).click();wait.until(d->d.findElement(By.id("detail-content")).getText().contains("정답"));
       ((JavascriptExecutor)driver).executeScript("document.querySelector('#work-form').closest('details').open=true");
       var form=driver.findElement(By.id("work-form"));new Select(form.findElement(By.name("category"))).selectByValue("RESULT");
-      for(var e:Map.of("title","중2 완성본 후보","goal","문항 검증","prompt","원본·정답 확인","model","test-no-llm","tools","HWP5 parser","result","문항·정답 대조 완료","nextWork","최신 승인본 확인").entrySet())form.findElement(By.name(e.getKey())).sendKeys(e.getValue());
+      for(var e:Map.of("title",candidateTitle,"goal","문항 검증","prompt","원본·정답 확인","model","test-no-llm","tools","HWP5 parser","result","문항·정답 대조 완료","nextWork","최신 승인본 확인").entrySet())form.findElement(By.name(e.getKey())).sendKeys(e.getValue());
       new Select(form.findElement(By.name("sourceFileIds"))).selectByIndex(0);new Select(form.findElement(By.name("fileId"))).selectByIndex(1);new Select(form.findElement(By.name("status"))).selectByValue("REVIEW");
-      form.findElement(By.cssSelector("button")).click();wait.until(d->d.findElement(By.id("detail-title")).getText().equals("중2 완성본 후보"));
+      form.findElement(By.cssSelector("button")).click();wait.until(d->d.findElement(By.id("detail-title")).getText().equals(candidateTitle));
       for(String dimension:NaesinProductionService.CHECKS){
         var check=driver.findElement(By.id("check-form"));new Select(check.findElement(By.name("dimension"))).selectByValue(dimension);
         var note=check.findElement(By.name("note"));note.clear();note.sendKeys("격리 표본 검수 완료");check.findElement(By.tagName("button")).click();
@@ -93,14 +102,14 @@ class NaesinBrowserTest {
       assertEquals(1,new Select(driver.findElement(By.id("source-files"))).getAllSelectedOptions().size());
       for(int width:new int[]{1440,390}){driver.manage().window().setSize(new Dimension(width,900));assertEquals(0L,((Number)((JavascriptExecutor)driver).executeScript("return Math.max(0,document.documentElement.scrollWidth-innerWidth)")).longValue());
         ((JavascriptExecutor)driver).executeScript("scrollTo(0,0)");
-        if(System.getenv("NAESIN_BROWSER_EVIDENCE")!=null){Path evidence=Path.of(System.getenv("NAESIN_BROWSER_EVIDENCE"));Files.createDirectories(evidence);Files.copy(driver.getScreenshotAs(OutputType.FILE).toPath(),evidence.resolve("workspace-"+width+".png"),StandardCopyOption.REPLACE_EXISTING);}
+        if(System.getenv("NAESIN_BROWSER_EVIDENCE")!=null){Path evidence=Path.of(System.getenv("NAESIN_BROWSER_EVIDENCE"));Files.createDirectories(evidence);Files.copy(driver.getScreenshotAs(OutputType.FILE).toPath(),evidence.resolve(division+"-workspace-"+width+".png"),StandardCopyOption.REPLACE_EXISTING);}
       }
-      driver.get(base+"/naesin-wiki/published");wait.until(d->d.findElements(By.cssSelector("#publications article")).size()==1);
-      assertTrue(driver.findElement(By.id("publications")).getText().contains("중2 완성본 후보"));
+      driver.get(base+"/naesin-wiki/published?division="+division);wait.until(d->d.findElements(By.cssSelector("#publications article")).size()==1);
+      assertTrue(driver.findElement(By.id("publications")).getText().contains(candidateTitle));
       var link=driver.findElement(By.cssSelector("#publications a")).getAttribute("href");
       var download=java.net.http.HttpClient.newHttpClient().send(java.net.http.HttpRequest.newBuilder(java.net.URI.create(link)).build(),java.net.http.HttpResponse.BodyHandlers.ofByteArray());
       assertEquals(200,download.statusCode());assertArrayEquals(Files.readAllBytes(original),download.body());
-      System.out.println("NAESIN_BROWSER_QA: middle/high split, HWP upload/extraction, work/revision, four checks, approval/publication, fixed download, 1440/390 overflow=0 PASS");
+      System.out.println("NAESIN_BROWSER_QA: "+division+" HWP upload/extraction, work/revision, four checks, approval/publication, fixed download, 1440/390 overflow=0 PASS");
     } finally {if(driver!=null)driver.quit();tomcat.stop();tomcat.destroy();fixture.clear();}
   }
 }

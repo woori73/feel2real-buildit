@@ -13,6 +13,10 @@ import org.springframework.web.multipart.MultipartFile;
 /** HWP5 text records only; original bytes and layout are never rewritten. */
 @Component
 public class NaesinTextExtractor {
+  @org.springframework.beans.factory.annotation.Value("${app.naesin.kordoc-cli:}")
+  private String kordocCli = "";
+  @org.springframework.beans.factory.annotation.Value("${app.naesin.kordoc-node:node}")
+  private String kordocNode = "node";
   private static final int MAX_EXPANDED = 8 * 1024 * 1024;
   private final ExamInsightTextExtractor existing;
   public NaesinTextExtractor(ExamInsightTextExtractor existing) { this.existing = existing; }
@@ -20,6 +24,7 @@ public class NaesinTextExtractor {
   public String extract(MultipartFile file) throws IOException {
     if (!Objects.toString(file.getOriginalFilename(), "").toLowerCase(Locale.ROOT).endsWith(".hwp"))
       return existing.extract(file).text();
+    if(!kordocCli.isBlank())return kordoc(file);
     try (var fs = new POIFSFileSystem(file.getInputStream())) {
       var root = fs.getRoot();
       byte[] header = read(root, "FileHeader", 256);
@@ -70,6 +75,27 @@ public class NaesinTextExtractor {
       if (text.isEmpty()) throw new IOException("추출 가능한 HWP 본문이 없습니다.");
       if (text.length() > 150000) throw new IOException("본문은 15만 자 이하만 추출할 수 있습니다.");
       return text.toString().strip();
+    }
+  }
+  public String toolName(){return kordocCli.isBlank()?"HWP5 / ExamInsightTextExtractor":"Kordoc CLI / ExamInsightTextExtractor";}
+  private String kordoc(MultipartFile file)throws IOException {
+    var dir=java.nio.file.Files.createTempDirectory("naesin-kordoc-");
+    Process process=null;
+    try{
+      var input=dir.resolve("original.hwp");var output=dir.resolve("extracted.md");
+      try(var in=file.getInputStream()){java.nio.file.Files.copy(in,input);}
+      process=new ProcessBuilder(kordocNode,"--max-old-space-size=256",kordocCli,input.toString(),"--keep-layout-tables","-o",output.toString())
+          .redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start();
+      if(!process.waitFor(30,java.util.concurrent.TimeUnit.SECONDS)){process.destroyForcibly();throw new IOException("Kordoc 추출 시간 초과");}
+      if(process.exitValue()!=0 || !java.nio.file.Files.exists(output))throw new IOException("Kordoc 본문 추출 실패");
+      if(java.nio.file.Files.size(output)>600000)throw new IOException("Kordoc 본문 크기 상한 초과");
+      String text=java.nio.file.Files.readString(output);
+      if(text.isBlank() || text.length()>150000)throw new IOException("Kordoc 본문 길이 오류");
+      return text;
+    }catch(InterruptedException e){Thread.currentThread().interrupt();throw new IOException("Kordoc 추출 중단",e);}
+    finally{
+      if(process!=null && process.isAlive())process.destroyForcibly();
+      try(var paths=java.nio.file.Files.walk(dir)){for(var p:paths.sorted(Comparator.reverseOrder()).toList())java.nio.file.Files.deleteIfExists(p);}
     }
   }
   private static int le32(byte[] b, int i) {
