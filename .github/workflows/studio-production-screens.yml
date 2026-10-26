@@ -1,57 +1,19 @@
-name: Studio production screens (PC/mobile, read-only, manual)
-
-# 운영 주요 화면을 PC 1440·모바일 390에서 연다. GET 탐색만 하고 쓰기·클릭·입력은 하지 않는다.
-# 인증은 기존 승인 ADMIN secret(NEWSTART_SEED_ADMIN_*, studio-production-import와 같은 방식)으로 받은 쿠키를
-# 러너 임시 파일(0600)에만 둔다. 화면 내용·스크린샷·쿠키는 출력하거나 아티팩트로 올리지 않는다(공개 저장소).
+name: Naesin registered originals read-only probe
 on:
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
-  group: studio-production-import
+  group: naesin-original-read-probe
   cancel-in-progress: false
-
 jobs:
-  screens:
+  reread:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      BASE_URL: https://feel2real.co.kr
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install Playwright (pinned)
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/qa" && cd "$RUNNER_TEMP/qa"
-          npm init -y > /dev/null
-          npm install --no-audit --no-fund playwright@1.48.2 > /dev/null
-          npx playwright install --with-deps chromium > /dev/null
-      - name: ADMIN login (existing approved secret; cookie only on the runner)
+      - name: Verify registered original lengths and SHA without changing data
         env:
           LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
           LOGIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
-        run: |
-          set -euo pipefail
-          umask 077
-          [ -n "$LOGIN_ID" ] && [ -n "$LOGIN_PASSWORD" ] || { echo "::error::ADMIN secret missing"; exit 1; }
-          JAR="$RUNNER_TEMP/jar.txt"
-          STATUS=$(jq -n --arg loginId "$LOGIN_ID" --arg password "$LOGIN_PASSWORD" '{loginId:$loginId,password:$password}' \
-            | curl -sS -o /dev/null -w '%{http_code}' -c "$JAR" -H 'Content-Type: application/json' -H "Origin: $BASE_URL" \
-              --data-binary @- "$BASE_URL/api/auth/login")
-          TOKEN=$(awk '$6=="ACCESS_TOKEN"{print $7}' "$JAR" | tail -1)
-          rm -f "$JAR"
-          [ -n "$TOKEN" ] || { echo "::error::login failed (http=$STATUS, body suppressed)"; exit 1; }
-          echo "::add-mask::$TOKEN"
-          jq -n --arg c "ACCESS_TOKEN=$TOKEN" '{adminCookie:$c}' > "$RUNNER_TEMP/f2r-auth.json"
-          chmod 600 "$RUNNER_TEMP/f2r-auth.json"
-          echo "login http=$STATUS cookie=stored(0600, not printed)"
-      - name: PC 1440 / mobile 390 checks (numbers and verdicts only)
-        run: NODE_PATH="$RUNNER_TEMP/qa/node_modules" COOKIE_FILE="$RUNNER_TEMP/f2r-auth.json" node scripts/ops-qa/studio-screen-check.cjs
-      - name: Remove credentials
-        if: always()
-        run: rm -f "$RUNNER_TEMP/f2r-auth.json" "$RUNNER_TEMP/jar.txt"
+        run: python3 scripts/naesin/probe_registered_originals.py
