@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap">
-  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261024-2">
+  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261026-1">
   <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261025-7">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
   <script src="/js/f2r_home_agent.js?v=20261025-6" defer></script>
@@ -45,6 +45,13 @@
       <a href="/wiki">모의고사위키</a>
       <a href="/builder">학원 홈페이지 제작</a>
       <a href="/ai-agent-studio" class="en-menu-studio" data-studio-link>AI AGENT 제작협업실</a>
+      <details class="en-naesin" data-naesin-menu>
+        <summary>내신 제작소</summary>
+        <div class="en-naesin-panel">
+          <a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a>
+          <a href="/naesin-production-studio?division=HIGH">고등부 제작소</a>
+        </div>
+      </details>
       <a href="#ai-content">AI 콘텐츠 소개</a>
     </nav>
     <div class="en-actions">
@@ -60,6 +67,13 @@
     <a href="/wiki">모의고사위키</a>
     <a href="/builder">학원 홈페이지 제작</a>
     <a href="/ai-agent-studio" class="en-drawer-studio" data-studio-link>AI AGENT 제작협업실</a>
+    <details class="en-naesin" data-naesin-menu>
+      <summary>내신 제작소</summary>
+      <div class="en-naesin-panel">
+        <a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a>
+        <a href="/naesin-production-studio?division=HIGH">고등부 제작소</a>
+      </div>
+    </details>
     <a href="#ai-content">AI 콘텐츠 소개</a>
   </div>
 
@@ -291,6 +305,16 @@
     });
     drawer.addEventListener('click', function (e) {
       if (e.target.tagName === 'A') { drawer.setAttribute('hidden', ''); burger.setAttribute('aria-expanded', 'false'); }
+    });
+  })();
+  (function () {
+    // 내신 제작소 선택 메뉴: 바깥을 누르거나 Esc를 누르면 닫는다.
+    var menus = document.querySelectorAll('[data-naesin-menu]');
+    document.addEventListener('click', function (e) {
+      menus.forEach(function (m) { if (m.open && !m.contains(e.target)) m.removeAttribute('open'); });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') menus.forEach(function (m) { m.removeAttribute('open'); });
     });
   })();
 </script>

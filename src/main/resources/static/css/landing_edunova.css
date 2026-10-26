@@ -351,3 +351,27 @@ footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); pa
   .en-mobile-services { flex-wrap:wrap; gap:8px; }
   .en-mobile-services a.en-mobile-studio { color:var(--ed-steel, #2f5fd0); font-weight:700; }
 }
+
+/* 내신 제작소 진입: 상단 메뉴·모바일 메뉴에서 중등부·고등부 제작소를 고른다. 접근 권한은 서버(ADMIN·modu)가 확인한다. */
+.en-naesin { position:relative; }
+.en-naesin summary { list-style:none; cursor:pointer; white-space:nowrap; color:var(--ed-steel, #2f5fd0); font-weight:700; }
+.en-naesin summary::-webkit-details-marker { display:none; }
+.en-naesin summary::after { content:"▾"; margin-left:4px; font-size:.8em; }
+.en-naesin[open] summary::after { content:"▴"; }
+.en-naesin summary:focus-visible { outline:2px solid var(--en-blue, #2f5fd0); outline-offset:2px; }
+.en-menu .en-naesin summary { padding:8px 2px; border-bottom:2px solid transparent; }
+.en-menu .en-naesin summary:hover { border-bottom-color:var(--en-blue); }
+.en-menu .en-naesin-panel { position:absolute; top:calc(100% + 10px); right:0; z-index:60; display:flex; flex-direction:column; min-width:156px; padding:6px; background:var(--ed-paper, #fff); border:1px solid var(--en-line); border-radius:10px; box-shadow:0 12px 24px rgba(0,0,0,.35); }
+.en-menu .en-naesin-panel a { padding:10px 12px; border-bottom:0; border-radius:6px; }
+.en-menu .en-naesin-panel a:hover { background:rgba(93,225,255,.1); }
+.en-drawer .en-naesin summary { padding:16px 20px; font-size:17px; border-top:1px solid var(--en-line); }
+.en-drawer .en-naesin-panel { display:flex; flex-direction:column; }
+.en-drawer .en-naesin-panel a { padding:14px 20px 14px 36px; font-size:16px; }
+/* 메뉴가 하나 늘어 좁은 PC 폭에서 넘치지 않도록: 1241px 이상은 간격만 줄이고, 961~1060px은 모바일 메뉴(같은 항목 전부 포함)를 쓴다. */
+@media (min-width:1241px) { .en-nav { gap:20px; } .en-menu { gap:12px; font-size:14px; } }
+@media (min-width:1061px) and (max-width:1240px) { .en-menu { gap:9px; } }
+@media (min-width:961px) and (max-width:1060px) {
+  .en-menu { display:none; }
+  .en-burger { display:flex; }
+  .en-actions { margin-left:auto; }
+}
