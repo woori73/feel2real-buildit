@@ -15,6 +15,7 @@
     catalogEpoch: 0,
     canManage: false,
   };
+  let uploadInFlight = false;
   const origins = {
     ORIGINAL: "보관 원본",
     AI_PROPOSAL: "AI 제안",
@@ -51,12 +52,9 @@
       try {
         body = await r.json();
       } catch (_) {}
-      throw Error(
-        body.detail ||
-          body.message ||
-          body.errorMessage ||
-          `요청 실패 (${r.status})`,
-      );
+      const error = Error(`${body.detail || body.message || body.errorMessage || "요청 실패"} (${r.status})`);
+      error.status = r.status;
+      throw error;
     }
     if (r.status === 204 || r.headers.get("content-length") === "0") return;
     const t = await r.text();
@@ -588,7 +586,12 @@
     }
   }
   document.querySelectorAll("details.tool-panel").forEach(tool=>tool.addEventListener("toggle",run(async()=>{if(tool.open)await loadTool(tool);})));
-  $("open-upload").onclick=run(()=>openTool("files"));
+  $("open-upload").onclick=run(()=>{
+    if(uploadInFlight)return;
+    // Keep the native picker inside the user's click, before any network await.
+    $("upload-file").click();
+    return openTool("files");
+  });
   for(const id of ["media","versions","review-status"])$(id).onchange=run(()=>load());
   $("query").addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();run(()=>load())();}});
   $("close-zoom").onclick=()=>$("image-zoom").close();
@@ -681,21 +684,67 @@
       $("withdraw-dialog").close();await load();detail(actual);message("승인 해제를 저장하고 다시 확인했습니다. 원본·SHA·버전·기존 승인 이력은 보존합니다.");
     } finally {button.disabled=false;}
   });
+  function uploadStatus(text, needsLogin = false) {
+    const target = $("upload-status");
+    target.replaceChildren(el("span", text));
+    message(text);
+    if (needsLogin) {
+      const login = el("a", " 로그인 화면 열기");
+      login.href = "/?" + new URLSearchParams({login:"required", returnUrl:location.pathname + location.search});
+      login.target = "_blank";
+      login.rel = "noopener";
+      target.append(login);
+    }
+  }
   $("upload-form").onsubmit = run(async () => {
-    const f = $("upload-file").files[0];
-    if (f.size > 100 * 1024 * 1024)
-      throw Error("100 MiB 이하 파일을 선택하세요.");
-    const data = new FormData();
-    data.append("file", f);
-    const result = await api("files", { method: "POST", body: data });
-    await fileList();
-    $("episode").value="";$("query").value=f.name;$("kind").value="";$("media").value="";
-    await setWorkspace("materials");
-    message(
-      result.duplicate
-        ? "동일 SHA-256의 원본이 이미 보관되어 있습니다."
-        : "원본을 보관했습니다. 자료 등록에서 연결할 수 있습니다.",
-    );
+    if (uploadInFlight) return;
+    const input = $("upload-file"), f = input.files[0];
+    if (!f || f.size === 0 || f.size > 100 * 1024 * 1024) {
+      uploadStatus("1 byte~100 MiB의 파일을 선택하세요.");
+      return;
+    }
+    uploadInFlight = true;
+    for (const id of ["upload-submit", "upload-file", "open-upload"]) $(id).disabled = true;
+    $("upload-receipt").replaceChildren();
+    uploadStatus("원본 업로드 중 · " + f.name);
+    let result;
+    try {
+      const data = new FormData();
+      data.append("file", f);
+      result = await api("files", { method: "POST", body: data });
+      if (!result?.file?.id || !result.file.sha256) throw Error("원본 보관 응답을 확인하세요.");
+      const file = result.file;
+      // Preserve the server receipt before refreshing a potentially large/expired list.
+      const download = el("a", "보관한 원본 다운로드 · " + file.filename);
+      download.href = scoped("/api/studio/files/" + encodeURIComponent(file.id) + "/content");
+      $("upload-receipt").append(
+        el("p", "원본 보관 ID · " + file.id),
+        el("p", "SHA-256 · " + file.sha256, "asset-filename"),
+        download,
+      );
+      uploadStatus(result.duplicate
+        ? "동일 SHA-256의 원본이 이미 보관되어 있습니다. 기존 원본을 연결해 자료를 등록하세요."
+        : "원본 보관 완료. 회차·출처·검수 상태는 자료 등록에서 지정하세요.");
+      try {
+        await fileList();
+        // A SHA duplicate can have a different stored filename from the selected file.
+        $("episode").value="";$("query").value=file.filename;$("kind").value="";$("media").value="";
+        await setWorkspace("materials");
+      } catch (error) {
+        uploadStatus("원본 보관은 완료됐지만 목록 새로고침에 실패했습니다. 재업로드하지 말고 아래 보관 ID로 확인하세요. " + error.message, error.status === 401);
+      }
+    } catch (error) {
+      if (error.status === 401) {
+        uploadStatus("로그인이 만료되었습니다 (401). 다시 로그인한 뒤 업로드하세요. 선택한 파일은 유지됩니다.", true);
+      } else if (error.status && error.status < 500) {
+        uploadStatus("원본 업로드 요청이 거부되었습니다. " + error.message);
+      } else {
+        uploadStatus("업로드 결과를 확인하지 못했습니다. 원본 보관함에서 파일명·SHA-256으로 중복 여부를 확인한 뒤 다시 시도하세요. " + error.message);
+      }
+    } finally {
+      uploadInFlight = false;
+      for (const id of ["upload-submit", "upload-file", "open-upload"]) $(id).disabled = false;
+    }
   });
   $("compare-button").onclick = run(async () => {
     if (!$("left-version").value || !$("right-version").value)

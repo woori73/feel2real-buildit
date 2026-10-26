@@ -87,6 +87,7 @@ jobs:
         run: >-
           node --test
           src/test/js/studio_catalog.test.js
+          src/test/js/studio_upload.test.js
           src/test/js/assistant_wait.test.js
           src/test/js/admissions_admin_load.test.js
           src/test/js/assistant_export.test.js
