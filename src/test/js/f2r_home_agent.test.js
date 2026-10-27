@@ -51,16 +51,27 @@ test('given 제작협업실 요청 when 답하면 then 누구에게나 제작협
   assert.equal(h.replyFor('exam', {}).links[0].href, 'https://open.kakao.com/o/sMf4ifRi');
 });
 
-test('given 홈 템플릿 when 읽으면 then AI 비서 첫 화면이 기존 상품 영역보다 앞에 있고 대화·입력창·홀로그램 버튼이 있다', () => {
+test('given 홈 템플릿 when 읽으면 then AI 비서 첫 화면이 상품 영역보다 앞에 있고 20,000원·3주·6회·240문항 안내와 개별 신청 메뉴가 있다', () => {
   // given / when / then
   const ai = HTML.indexOf('id="aiHome"');
   const hero = HTML.indexOf('class="en-hero"');
   assert.ok(ai > 0 && ai < hero);
-  assert.match(HTML, /Human Intelligence <span class="si-x">×<\/span> AI/);
-  assert.match(HTML, /당신이 느끼고 상상한 것을 현실로\./);
+  // 최종 적용 기준: 기말고사 시험기간 이용권 20,000원·3주·주 2회·총 6회·240문항(회당 40문항)
+  assert.match(HTML, /시험기간 이용권 20,000원/);
+  assert.match(HTML, /3주 · 주 2회 · 총 6회 · 240문항/);
+  assert.match(HTML, /1회 20,000원\(40문항\)/);
+  // Human Intelligence 문구는 삭제됨
+  assert.doesNotMatch(HTML, /Human Intelligence/);
+  // 간소화된 홀로그램 메뉴: 개별 신청 타일
+  assert.match(HTML, /개별 신청/);
+  assert.match(HTML, /si-holo-tile/);
   for (const id of ['homeStage', 'homeChat', 'homeForm', 'homeInput', 'homeMode', 'homeWelcomeAgain']) assert.match(HTML, new RegExp('id="' + id + '"'));
-  for (const intent of ['english', 'exam', 'wiki', 'work', 'studio', 'builder']) assert.match(HTML, new RegExp('data-home-intent="' + intent + '"'));
+  for (const intent of ['english', 'exam', 'wiki', 'studio', 'builder']) assert.match(HTML, new RegExp('data-home-intent="' + intent + '"'));
   assert.match(HTML, /안내 모드/);
+  // 결제는 별도 안내 후 진행 (미완성 결제 기능을 결제 가능한 것처럼 표시하지 않음)
+  assert.match(HTML, /결제는 별도 안내 후 진행됩니다/);
+  // 신청 접수는 카톡·이메일
+  assert.match(HTML, /카톡·이메일로 접수합니다/);
   // 홈 첫 화면 제목은 하나(h1)
   assert.equal((HTML.match(/<h1[\s>]/g) || []).length, 1);
 });
