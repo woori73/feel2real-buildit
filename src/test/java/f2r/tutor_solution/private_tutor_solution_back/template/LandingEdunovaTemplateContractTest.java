@@ -87,7 +87,7 @@ class LandingEdunovaTemplateContractTest {
     // then
     assertThat(html)
         .contains("Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.")
-        .contains("기말고사 시험기간 이용권 30,000원 안내")
+        .contains("기말고사 시험기간 이용권 20,000원 안내")
         .contains("href=\"#pass-offer\"")
         .contains("href=\"/wiki\"")
         .doesNotContain("탑재 완료")
