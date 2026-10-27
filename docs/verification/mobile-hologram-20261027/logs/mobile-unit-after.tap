@@ -1,0 +1,39 @@
+✔ given 세부 내용 없는 업무 요청 when 판별하면 then 해당 단계 안내를 시작한다 (3.638972ms)
+✔ given 이름·ID·항목이 이미 있는 요청 when 판별하면 then 기존 대화 분석에 맡긴다 (0.989514ms)
+✔ given 출결 안내 when 확인을 고르면 then 출결 구분·메모는 묻지 않는다 (2.770948ms)
+✔ given 단계별 입력 when 확인하면 then 필수·선택지·길이·연락처 규칙을 지킨다 (2.029602ms)
+✔ given 학생 목록 when 이름으로 찾으면 then 같은 이름 우선·여러 명이면 모두 돌려준다 (1.039908ms)
+✔ given 모은 값 when 마치면 then 쓰기는 기존 초안 API, 조회·공지는 기존 대화, 자료는 기존 화면으로 보낸다 (1.121509ms)
+✔ given 홈 요청 when 의도를 고르면 then 가장 많이 맞은 서비스를 고른다 (8.920668ms)
+✔ given 로그인 전후 when 업무 요청에 답하면 then 로그인 전에는 로그인 안내, 원장·강사는 AI 비서 화면으로 넘긴다 (0.920792ms)
+✔ given 제작협업실 요청 when 답하면 then 누구에게나 제작협업실 링크를 주고 권한은 서버가 확인한다고 안내한다 (0.630272ms)
+✔ given 홈 템플릿 when 읽으면 then AI 비서 첫 화면이 상품 영역보다 앞에 있고 20,000원·3주·6회·240문항 안내와 개별 신청 메뉴가 있다 (0.486039ms)
+✔ given 캐릭터 영상 목록 when 대화 상태가 바뀌면 then 생각 중에만 think.mp4, 없으면 idle로 대신한다 (0.711752ms)
+✔ given 세븐 인사 영상 when 인사를 재생하면 then speak.mp4를 쓰고 일반 안내에는 쓰지 않는다 (0.513319ms)
+✔ given 캐릭터·자료 when 인사 대사를 고르면 then 세븐·서수니 각자의 대사를 speak.mp4가 있을 때만 돌려준다 (0.951527ms)
+✔ given 홈 화면 when 캐릭터를 고르면 then 인사 버튼 없이 인사 영상을 소리와 함께 바로 재생한다 (0.185774ms)
+✔ given 홈 화면 when 영상을 바꾸면 then 대시보드와 같은 전환 모듈로 두 영상 요소를 겹쳐 바꾼다 (0.294415ms)
+✔ given 키보드로 보이는 영역이 줄었을 때 when 입력줄 위치를 비교하면 then 가려진 만큼만 올리고 보이면 그대로 둔다 (1.21014ms)
+✔ given 모바일 입력줄 CSS when 읽으면 then 열이 줄어들 수 있고 보내기 버튼은 고정 너비, 안내 줄은 줄바꿈된다 (2.577522ms)
+✔ given 비서 자료 파일 목록 when 선택 버튼 사진을 고르면 then front.webp, 없으면 poster.jpg, 둘 다 없으면 이름만 쓴다 (0.687376ms)
+✔ given 홈 상태창 when 대시보드와 비교하면 then 비서 선택은 사진+이름, 말하는 중 색과 2D 대체 화면 규칙이 같다 (0.29705ms)
+✔ given 홈과 대시보드 CSS when 홀로그램 주사선을 비교하면 then 공통 디자인 값(3px 간격·진하기 0.10)이 같고 영상이 보일 때만 그린다 (0.371299ms)
+✔ landing: 예상문제 의뢰는 기존 카톡·이메일로 연결된다(자체 접수 폼 없음) (1.285882ms)
+✔ landing: /wiki 는 모의고사위키로만 표기하고 폐기 서비스는 노출하지 않는다 (0.406091ms)
+✔ given 기말고사 이용권 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (1.201377ms)
+✔ given 시험 범위 제출 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (0.249519ms)
+✔ given 학부모·학생 신청 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (0.125956ms)
+✔ given 접수 방법 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (1.276618ms)
+✔ given 현재 단계와 메뉴 when 강조된 메뉴를 누르면 then 다음 단계로 저장된다 (2.076922ms)
+✔ given 이미 지나간 메뉴 when 다시 누르면 then 단계가 뒤로 가지 않는다 (1.378519ms)
+✔ given 사용 목적 when 선택하면 then 해당 메뉴 단계가 추천된다 (2.318409ms)
+✔ given unified_assistant.js when $(id) 참조를 모으면 then 모두 dashboard 템플릿에 존재한다 (0.809046ms)
+✔ given 안내 메뉴 when 읽으면 then 지원하지 않는 기능을 약속하지 않는다 (0.203471ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 143.630834

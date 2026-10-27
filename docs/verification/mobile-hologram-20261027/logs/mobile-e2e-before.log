@@ -1,0 +1,64 @@
+
+Running 12 tests using 1 worker
+
+(node:2327) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 unified.spec.js:29:1 › anonymous, student and cross-origin calls cannot use assistant writes (461ms)
+  ✓   2 unified.spec.js:41:1 › first visit, pause/resume, stale version and completion persist per user (155ms)
+  ✓   3 unified.spec.js:50:1 › student draft does not write; forged hash, concurrent approval, replay and ownership are safe (773ms)
+  ✓   4 unified.spec.js:63:1 › class creation, assignment, updates and stale target checks reuse actual APIs (1.1s)
+  ✓   5 unified.spec.js:74:1 › attendance and consultation create/message verify persisted records (739ms)
+  ✓   6 unified.spec.js:81:1 › expiry, cancellation, live permission revocation and unknown outcome never replay writes (642ms)
+  ✓   7 unified.spec.js:97:1 › CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access (556ms)
+  ✓   8 unified.spec.js:112:1 › definite upstream rejection reports failure, audits it and cannot replay (232ms)
+  ✓   9 unified.spec.js:120:1 › material text, missing identifiers and unsupported attachments require explicit review (204ms)
+  ✓  10 unified.spec.js:128:1 › read-only inquiries, correction guidance and notice draft never create write drafts (NOT RUN in review env) (576ms)
+  ✘  11 unified.spec.js:139:1 › natural command and desktop/mobile workbench render, highlight, persist and approve through UI (6.0s)
+  -  12 unified.spec.js:196:1 › login surfaces welcome link without moving the current service
+
+
+  1) unified.spec.js:139:1 › natural command and desktop/mobile workbench render, highlight, persist and approve through UI
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  locator('#uaTour')
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" locator('#uaTour') with timeout 5000ms
+      - waiting for locator('#uaTour')
+        14 × locator resolved to <div hidden="" id="uaTour" aria-live="polite" class="ua-tour ops-tour">…</div>
+           - unexpected value "hidden"
+
+
+      143 |   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+      144 |   await page.goto('/dashboard');await expect(page.locator('#uaRole')).toContainText('원장 연결');
+    > 145 |   await expect(page.locator('#uaTour')).toBeVisible();await page.locator('#uaNext').click();
+          |                                         ^
+      146 |   await expect(page.locator('#uaStudents')).toHaveClass(/ua-tour-target/);await expect(page.locator('#uaClasses')).toHaveClass(/ua-tour-target/);
+      147 |   await page.reload();await expect(page.locator('#uaStep')).toContainText('2 / 6');
+      148 |   const uiName='UI하늘 '+suffix;
+        at /workspace/feel2real-buildit/e2e/unified-assistant/unified.spec.js:145:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/unified-natural-command-an-18cc0-sist-and-approve-through-UI/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/unified-natural-command-an-18cc0-sist-and-approve-through-UI/error-context.md
+
+    Error Context: test-results/unified-natural-command-an-18cc0-sist-and-approve-through-UI/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/unified-natural-command-an-18cc0-sist-and-approve-through-UI/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/unified-natural-command-an-18cc0-sist-and-approve-through-UI/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    unified.spec.js:139:1 › natural command and desktop/mobile workbench render, highlight, persist and approve through UI
+  1 did not run
+  10 passed (14.5s)

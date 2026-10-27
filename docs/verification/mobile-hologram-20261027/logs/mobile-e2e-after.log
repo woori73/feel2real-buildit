@@ -1,0 +1,65 @@
+
+Running 20 tests using 1 worker
+
+(node:4456) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 home-responsive.spec.js:15:5 › home 360x800, fallback: geometry, all six menus, intake links and assistant (11.7s)
+  ✘   2 home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant (1.0m)
+(node:4958) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   3 home-responsive.spec.js:15:5 › home 430x932, fallback: geometry, all six menus, intake links and assistant (8.4s)
+  ✓   4 home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant (9.1s)
+  ✓   5 home-responsive.spec.js:15:5 › home 360x800, pretendard: geometry, all six menus, intake links and assistant (7.8s)
+  ✓   6 home-responsive.spec.js:15:5 › home 390x844, pretendard: geometry, all six menus, intake links and assistant (8.2s)
+  ✓   7 home-responsive.spec.js:15:5 › home 430x932, pretendard: geometry, all six menus, intake links and assistant (8.9s)
+  ✓   8 home-responsive.spec.js:15:5 › home 1440x1050, pretendard: geometry, all six menus, intake links and assistant (9.5s)
+  ✓   9 unified.spec.js:41:1 › anonymous, student and cross-origin calls cannot use assistant writes (278ms)
+  ✓  10 unified.spec.js:53:1 › first visit, pause/resume, stale version and completion persist per user (146ms)
+  ✓  11 unified.spec.js:62:1 › student draft does not write; forged hash, concurrent approval, replay and ownership are safe (800ms)
+  ✓  12 unified.spec.js:75:1 › class creation, assignment, updates and stale target checks reuse actual APIs (886ms)
+  ✓  13 unified.spec.js:86:1 › attendance and consultation create/message verify persisted records (523ms)
+  ✓  14 unified.spec.js:93:1 › expiry, cancellation, live permission revocation and unknown outcome never replay writes (657ms)
+  ✓  15 unified.spec.js:109:1 › CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access (491ms)
+  ✓  16 unified.spec.js:124:1 › definite upstream rejection reports failure, audits it and cannot replay (283ms)
+  ✓  17 unified.spec.js:132:1 › material text, missing identifiers and unsupported attachments require explicit review (210ms)
+  ✓  18 unified.spec.js:140:1 › read-only inquiries, correction guidance and notice draft never create write drafts (740ms)
+  ✓  19 unified.spec.js:151:1 › natural command and desktop/mobile workbench render, highlight, persist and approve through UI (19.5s)
+  ✓  20 unified.spec.js:226:1 › login surfaces welcome link without moving the current service (1.1s)
+
+
+  1) home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant
+
+    Test timeout of 60000ms exceeded.
+
+    Error: locator.tap: Test ended.
+    Call log:
+      - waiting for locator('#homeChat .is-agent').last().getByRole('button', { name: '나중에', exact: true })
+
+
+      37 |         const page = await context.newPage();
+      38 |         page.on('pageerror', error => errors.push(error.message));
+    > 39 |         const act = locator => mobile ? locator.tap() : locator.click();
+         |                                                 ^
+      40 |         await page.goto('/');
+      41 |         await expect(page.locator('#homeChat .is-agent')).toHaveCount(1);
+      42 |         await page.evaluate(() => document.fonts.ready);
+        at act (/workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:39:49)
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:102:15
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant
+  19 passed (2.6m)

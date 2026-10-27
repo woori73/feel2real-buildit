@@ -1,0 +1,15 @@
+
+Running 8 tests using 1 worker
+
+(node:7569) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 home-responsive.spec.js:15:5 › home 360x800, fallback: geometry, all six menus, intake links and assistant (9.6s)
+  ✓  2 home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant (9.1s)
+  ✓  3 home-responsive.spec.js:15:5 › home 430x932, fallback: geometry, all six menus, intake links and assistant (9.4s)
+  ✓  4 home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant (9.8s)
+  ✓  5 home-responsive.spec.js:15:5 › home 360x800, pretendard: geometry, all six menus, intake links and assistant (8.8s)
+  ✓  6 home-responsive.spec.js:15:5 › home 390x844, pretendard: geometry, all six menus, intake links and assistant (8.9s)
+  ✓  7 home-responsive.spec.js:15:5 › home 430x932, pretendard: geometry, all six menus, intake links and assistant (9.6s)
+  ✓  8 home-responsive.spec.js:15:5 › home 1440x1050, pretendard: geometry, all six menus, intake links and assistant (9.8s)
+
+  8 passed (1.3m)
