@@ -39,12 +39,23 @@ public final class AnalyticsEventCatalog {
     add(Type.SECTION_VIEW, "faq", "home", null, "자주 묻는 질문");
     add(Type.SECTION_VIEW, "cta", "home", null, "하단 만들기 CTA");
 
+    // ── 홈페이지 개편(2026-10-27): 기말고사 이용권·과정·적중 사례·고객 요청·브랜드 ──
+    add(Type.SECTION_VIEW, "passHero", "home", null, "기말고사 이용권 히어로");
+    add(Type.SECTION_VIEW, "passProcess", "home", null, "제출→제작→공급→피드백 과정");
+    add(Type.SECTION_VIEW, "exam-hit", "home", null, "압구정중 적중 사례");
+    add(Type.SECTION_VIEW, "agentRequest", "home", null, "서수니·세븐 고객 요청");
+    add(Type.SECTION_VIEW, "brand", "home", null, "AI AGENT 브랜드 영역");
+
     // ── 버튼 클릭(클릭률 = 같은 방문에서 이 섹션을 본 뒤 클릭한 방문 ÷ 섹션 노출 방문) ──
     add(Type.CLICK, "nav_contact", "home", null, "상단 '문의하기'");
     add(Type.CLICK, "home_start", "home", "homeTop", "한 문장 시작(제작 입력)");
     add(Type.CLICK, "wiki_kakao", "home", "wiki", "카톡 문의(예상문제)");
     add(Type.CLICK, "wiki_mail", "home", "wiki", "이메일 문의(예상문제)");
     add(Type.CLICK, "cta_start", "home", "cta", "하단 '만들기'");
+    add(Type.CLICK, "pass_kakao", "home", "passHero", "이용권 카톡 신청 안내");
+    add(Type.CLICK, "pass_mail", "home", "passHero", "이용권 이메일 신청 안내");
+    add(Type.CLICK, "dashboard_cta", "home", "services", "무료 대시보드 바로가기");
+    add(Type.CLICK, "hit_blog", "home", "exam-hit", "적중 사례 블로그");
 
     // ── 서비스 이동(대상=서비스 키) ──
     for (String[] s : new String[][] {
@@ -58,6 +69,7 @@ public final class AnalyticsEventCatalog {
     add(Type.FLOW_START, "consult_contact", "home", null, "문의하기 시작(홈 모달)");
     add(Type.FLOW_START, "exam_request", "home", "wiki", "예상문제 제작 문의 시작");
     add(Type.FLOW_START, "home_builder", "home", "homeTop", "홈페이지 제작 시작");
+    add(Type.FLOW_START, "pass_apply", "home", "passHero", "이용권 신청 안내 시작");
     add(Type.FLOW_START, "consult_academy", "academy_public", null, "학원 상담신청 시작");
   }
 
