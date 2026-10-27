@@ -107,9 +107,10 @@ body { background: var(--si-bg); color: var(--si-text); }
 .si-home-name strong { font-size: 20px; font-weight: 900; }
 body[data-agent-theme="suni"] .si-home-name strong { color: var(--si-violet); }
 .si-home-name small { color: var(--si-muted); font-size: 13px; }
-/* 모바일(2D): 이름표가 잘리지 않게 무대를 조금 높인다. */
+/* 모바일: 줄바꿈으로 타일 행이 커져도 이름표까지 담도록 내용 높이를 허용한다.
+   고정 높이 + 1fr의 자동 최소 크기는 마지막 행을 overflow:hidden 밖으로 밀어낸다. */
 @media (max-width: 560px) {
-  .si-home-stage { height: clamp(320px, 44vh, 420px); }
+  .si-home-stage { height: auto; min-height: clamp(320px, 44vh, 420px); }
 }
 .si-home-talk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
 .si-home-chat { min-width: 0; display: flex; flex-direction: column; gap: 8px; max-height: 300px; min-height: 120px; overflow-y: auto; padding: 2px; }

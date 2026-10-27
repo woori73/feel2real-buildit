@@ -108,6 +108,7 @@ jobs:
           src/test/js/f2r_agent_dashboard.test.js
           src/test/js/f2r_agent_flows.test.js
           src/test/js/f2r_home_agent.test.js
+          src/test/js/home_hologram_intake.test.js
           src/test/js/easy_tutor_agent_contract.test.js
           src/test/js/testprep_gate.test.js
           src/test/js/testprep_flush.test.js
