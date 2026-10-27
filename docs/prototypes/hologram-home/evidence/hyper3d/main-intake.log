@@ -1,0 +1,12 @@
+✔ given 기말고사 이용권 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (1.000376ms)
+✔ given 시험 범위 제출 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (0.124334ms)
+✔ given 학부모·학생 신청 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (0.112387ms)
+✔ given 접수 방법 타일 when 실제 intent로 답하면 then 승인된 신청·자료 안내와 카톡·이메일로 연결된다 (0.10776ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7.527019

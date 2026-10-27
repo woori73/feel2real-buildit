@@ -1,0 +1,2 @@
+# Three.js embeds upstream GLSL template strings; preserve shader whitespace in the reproducible bundle.
+hyper3d/viewer.bundle.js whitespace=-blank-at-eol,-space-before-tab linguist-generated=true

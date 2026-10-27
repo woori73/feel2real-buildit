@@ -3,7 +3,15 @@
   "private": true,
   "scripts": {
     "test:legacy": "node tests/legacy-75.cjs",
-    "test:restoration": "node tests/regression.cjs"
+    "test:restoration": "node tests/regression.cjs",
+    "build:3d": "esbuild hyper3d/viewer.js --bundle --format=esm --minify --legal-comments=linked --outfile=hyper3d/viewer.bundle.js",
+    "fixture:3d": "node hyper3d/generate-fixture.mjs",
+    "test:3d": "node tests/hyper3d.cjs",
+    "test:3d:unit": "node tests/hyper3d-validation.cjs"
   },
-  "devDependencies": { "playwright": "1.64.1" }
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.64.1",
+    "three": "0.186.1"
+  }
 }

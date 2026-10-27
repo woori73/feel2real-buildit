@@ -1,0 +1,12 @@
+{
+  "kind": "diagnostic-only",
+  "url": "hyper3d/diagnostic.glb",
+  "sha256": "4423610ae14fd42d04723c6219731a487f771114036bb6de8e0a772b2eacb9b5",
+  "bytes": 19584,
+  "clips": {
+    "idle": "idle",
+    "greeting": "greeting",
+    "thinking": "thinking",
+    "responding": "responding"
+  }
+}

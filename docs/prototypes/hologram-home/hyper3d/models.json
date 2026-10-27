@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "note": "No production-approved character GLBs were verified. Never map diagnostic geometry to approved character assets.",
+  "agents": { "seven": null, "suni": null }
+}

@@ -1,0 +1,33 @@
+{
+  "scope": "Tracked PR #913 tree plus local workspace inspection; Hyper3D account and production filesystem not accessible",
+  "base": "e458864e7340f9f795726605511fa0851b606b79",
+  "main": "df425588c97d7f1fb668e23452e638bc9cb14fd4",
+  "modelFiles": [],
+  "hyper3dHistoryMatches": [],
+  "historicalSuniReferences": [
+    {
+      "path": "docs/ai-agent-production/02_storyboard_deliverables/deliver_r9/references/suni/S1_S2/SUNI_S1_S2_APPROVED_SHEET_original.png",
+      "sha256": "a35ceeed47c528c716bf21f97001aca14dd216cc5eefbdcda1d723ba4e7c1e9f",
+      "productionIdentity": "UNVERIFIED",
+      "usage": "Historical film reference only; excluded from prototype"
+    },
+    {
+      "path": "docs/ai-agent-production/02_storyboard_deliverables/deliver_r9/references/suni/S3_S4/SUNI_S3_S4_APPROVED_SHEET_original.png",
+      "sha256": "89cc41faa3318279ed9728be993c99c886055105038359f480b10bdc507add0b",
+      "productionIdentity": "UNVERIFIED",
+      "usage": "Historical film reference only; excluded from prototype"
+    },
+    {
+      "path": "docs/ai-agent-production/02_storyboard_deliverables/deliver_r9/references/suni/S5_S6/SUNI_S5_S6_APPROVED_SHEET_original.png",
+      "sha256": "37e8ab8c4563056f11551373f7544651125a9ecb4a32804869d1b7b768ef57e5",
+      "productionIdentity": "UNVERIFIED",
+      "usage": "Historical film reference only; excluded from prototype"
+    },
+    {
+      "path": "docs/ai-agent-production/02_storyboard_deliverables/deliver_r9/references/suni/base/SUNI_APPROVED_SHEET_original.png",
+      "sha256": "461926ffdb3a391c6b31d55aa759a4716674264209947d9cf55c7732e7f23be6",
+      "productionIdentity": "UNVERIFIED",
+      "usage": "Historical film reference only; excluded from prototype"
+    }
+  ]
+}

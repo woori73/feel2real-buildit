@@ -1,0 +1,28 @@
+{
+  "pr": {
+    "number": 913,
+    "url": "https://github.com/woori73/feel2real-buildit/pull/913",
+    "head": "e458864e7340f9f795726605511fa0851b606b79",
+    "base": "df425588c97d7f1fb668e23452e638bc9cb14fd4",
+    "state": "open",
+    "draft": true,
+    "merged": false
+  },
+  "main": "df425588c97d7f1fb668e23452e638bc9cb14fd4",
+  "checks": [
+    {
+      "name": "build",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/woori73/feel2real-buildit/actions/runs/40506039049/job/122195477398",
+      "completed_at": "2026-10-27T12:47:31Z"
+    },
+    {
+      "name": "mysql-integration-test",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/woori73/feel2real-buildit/actions/runs/40506039049/job/122195477015",
+      "completed_at": "2026-10-27T12:49:49Z"
+    }
+  ]
+}

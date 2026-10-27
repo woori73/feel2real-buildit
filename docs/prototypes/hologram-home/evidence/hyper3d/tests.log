@@ -1,0 +1,76 @@
+[
+  {
+    "width": 360,
+    "scenario": "functional + synthetic performance",
+    "status": "PASS",
+    "checks": 15
+  },
+  {
+    "width": 390,
+    "scenario": "functional + synthetic performance",
+    "status": "PASS",
+    "checks": 15
+  },
+  {
+    "width": 430,
+    "scenario": "functional + synthetic performance",
+    "status": "PASS",
+    "checks": 15
+  },
+  {
+    "width": 1440,
+    "scenario": "functional + synthetic performance",
+    "status": "PASS",
+    "checks": 15
+  },
+  {
+    "scenario": "http404",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "bad-hash",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "malformed",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "missing-clip",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "no-webgl",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "timeout",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "context-loss",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "rapid-switch",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "reduced-motion",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "offscreen",
+    "status": "PASS",
+    "checks": 2
+  }
+]

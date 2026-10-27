@@ -1,0 +1,11 @@
+#modelViewport{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:3;background:radial-gradient(ellipse at center,#0a2535,#03090e 75%)}
+#modelViewport.ready{opacity:1}
+#modelViewport canvas{display:block;width:100%;height:100%}
+.model-badge{position:absolute;bottom:8px;left:0;right:0;text-align:center;font:10px/1.5 monospace;color:#d4f8ff}
+.model-controls{grid-column:1/-1;grid-row:2;border:1px solid #5bdfff55;padding:12px 16px;color:#c3efff;font-size:12px;min-width:0;background:#07131c}
+.model-controls strong{display:block;margin-bottom:8px;font-size:12px}
+.model-controls>div{display:flex;flex-wrap:wrap;gap:8px}
+.model-controls button{border:1px solid #5bdfff55;background:#081e2a;color:#dcf9ff;padding:10px;min-height:44px;border-radius:6px;font:inherit;cursor:pointer}
+.model-controls button[aria-pressed=true]{border-color:#d3f8ff;background:#16384b}
+.model-controls p{overflow-wrap:anywhere;margin-bottom:0;line-height:1.6}
+@media(max-width:900px){.model-controls{grid-row:auto}}
