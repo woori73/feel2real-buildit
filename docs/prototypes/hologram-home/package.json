@@ -1,0 +1,9 @@
+{
+  "name": "feel2real-hologram-preview",
+  "private": true,
+  "scripts": {
+    "test:legacy": "node tests/legacy-75.cjs",
+    "test:restoration": "node tests/regression.cjs"
+  },
+  "devDependencies": { "playwright": "1.64.1" }
+}
