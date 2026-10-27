@@ -110,7 +110,7 @@ Playwright 1.64.1 Chromium, 360×800·390×844·430×932·1440×1050, DPR 1, ko-
 
 첫 전용 CI는 DB 초기화 단계에서 실패했다([실행 40480394585](https://github.com/woori73/feel2real-buildit/actions/runs/40480394585)). MySQL 이미지의 임시 초기화 서버가 ping을 먼저 받아 실제 root 인증 준비 전에 CREATE DATABASE가 실행돼 1045로 거절됐다. 준비 검사를 인증된 TCP `SELECT 1`로 강화했으며 테스트 조건은 바꾸지 않았다. 해당 실패 로그도 `logs/mobile-ci-initial-failure.log`에 남겼다.
 
-다음 전용 CI([40480798444](https://github.com/woori73/feel2real-buildit/actions/runs/40480798444))는 준비·단위 검사를 통과한 뒤 20개 E2E 중 19 통과·데스크톱 넘침 1 실패였다. 당시 기존 Build Check([40480798394](https://github.com/woori73/feel2real-buildit/actions/runs/40480798394))는 build 작업 성공, MySQL 작업 372개 중 370 통과·Studio 테스트 1 실패·유료 Muse 키 조건 테스트 1 skip이었다. 위 원인을 수정하고 다시 실행한다. 실패 로그·좌표·캡처도 보존했으며 최종 CI 결과는 PR 본문/Checks와 최종 제출에 따로 명시한다.
+다음 전용 CI([40480798444](https://github.com/woori73/feel2real-buildit/actions/runs/40480798444))는 준비·단위 검사를 통과한 뒤 20개 E2E 중 19 통과·데스크톱 넘침 1 실패였다. 당시 기존 Build Check([40480798394](https://github.com/woori73/feel2real-buildit/actions/runs/40480798394))는 build 작업 성공, MySQL 작업 372개 중 370 통과·Studio 테스트 1 실패·유료 Muse 키 조건 테스트 1 skip이었다. 위 원인을 수정한 뒤 로컬 전체 20개와 기존 Studio 테스트를 재통과했다(`9f01be7`). 실패 로그·좌표·캡처도 보존했으며 최종 원격 CI 결과는 [PR #912](https://github.com/woori73/feel2real-buildit/pull/912) 본문/Checks와 최종 제출에 따로 명시한다. CI 상태 기록만을 위해 검증된 코드를 다시 변경하지 않는다.
 
 ## 6. 검증 구분과 남은 제한
 

@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/main/resources/templates/public/landing.html'
       - 'src/main/resources/static/css/f2r_home_agent.css'
+      - 'src/main/resources/static/css/landing_edunova.css'
       - 'src/main/resources/static/js/f2r_home_agent.js'
       - 'src/test/js/*home*'
       - 'e2e/unified-assistant/**'
