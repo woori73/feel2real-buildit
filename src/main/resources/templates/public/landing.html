@@ -85,6 +85,50 @@
   </nav>
 
   <main>
+    <!-- ============ 첫 화면: AI 비서(세븐·서수니)와 대화로 시작. 기존 상품·교육 콘텐츠는 아래 영역으로 이동(삭제 없음) ============ -->
+    <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle">
+      <div class="si-home-head">
+        <p class="si-home-brand">FEEL2REAL</p>
+        <h1 class="si-home-title" id="siHomeTitle">Human Intelligence <span class="si-x">×</span> AI</h1>
+        <p class="si-home-lead">당신이 느끼고 상상한 것을 현실로.</p>
+      </div>
+      <div class="si-home-console" id="homeConsole" data-state="idle">
+        <figure class="si-home-stage" id="homeStage" data-state="idle" data-media="missing">
+          <video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
+          <video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
+          <div class="si-home-emblem" aria-hidden="true"><span id="homeCode">H-07</span></div>
+          <div class="si-home-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
+          <div class="si-home-top">
+            <span class="si-home-state"><i></i><span id="homeStateLabel">대기</span></span>
+            <span class="si-home-pick" role="group" aria-label="AI 비서 선택">
+              <button type="button" data-home-agent="seven" aria-pressed="true" class="no-portrait"><img alt=""><span>세븐</span></button>
+              <button type="button" data-home-agent="suni" aria-pressed="false" class="no-portrait"><img alt=""><span>서수니</span></button>
+            </span>
+          </div>
+          <div class="si-holo si-holo-left" role="group" aria-label="홀로그램 바로가기 1">
+            <button type="button" class="si-holo-tile" data-home-intent="english"><b>AI 영어교육</b><small>문법 · 모의고사</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>예상문제</b><small>1회 20,000원</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="wiki"><b>모의고사위키</b><small>해설 · 자료</small></button>
+          </div>
+          <div class="si-holo si-holo-right" role="group" aria-label="홀로그램 바로가기 2">
+            <button type="button" class="si-holo-tile" data-home-intent="work"><b>AI 비서 업무</b><small>학원 운영</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="studio"><b>AI AGENT</b><small>제작협업실</small></button>
+            <button type="button" class="si-holo-tile" data-home-intent="builder"><b>홈페이지</b><small>사이트 제작</small></button>
+          </div>
+          <figcaption class="si-home-name"><strong id="homeName">세븐</strong><small>Feel2Real AI 비서</small></figcaption>
+        </figure>
+        <div class="si-home-talk">
+          <div class="si-home-chat" id="homeChat" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
+          <form class="si-home-composer" id="homeForm" autocomplete="off">
+            <label class="si-sr" for="homeInput">AI 비서에게 말하기</label>
+            <input id="homeInput" type="text" maxlength="300" placeholder="무엇을 만들고 싶으신가요?" enterkeyhint="send">
+            <button type="submit">보내기</button>
+          </form>
+          <p class="si-home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span> <button type="button" id="homeWelcomeAgain">처음 안내 다시 보기</button></p>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ HERO: AI AGENT 이미지 + 기말고사 이용권 30,000원 ============ -->
     <section class="en-hero" id="top" data-track-section="passHero" aria-label="Feel2Real 대표 소개">
       <figure class="en-hero-art">
@@ -214,51 +258,8 @@
       <p class="en-eyebrow">서수니 · 세븐 AI 비서</p>
       <h2 id="agentReqTitle">서수니·세븐에게 요청하세요</h2>
       <p>시험범위 변경, 문제 수정, 필기자료 추가, 난이도 조정 — 요청하면 관리자가 접수하고 제작·검수 뒤 수정본을 전달합니다.</p>
-      <p>아래 대화창은 안내 모드입니다. 로그인하면 AI 업무 비서와 연결되고, 정식 제작 요청과 자료 제출은 카톡·이메일 의뢰로 접수합니다.</p>
-    </section>
-
-    <!-- ============ 고객 요청: 서수니·세븐 AI 비서 (첫 화면에서 이 위치로 이동, 삭제 없음) ============ -->
-    <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle">
-      <div class="si-home-head">
-        <p class="si-home-brand">FEEL2REAL</p>
-        <h1 class="si-home-title" id="siHomeTitle">Human Intelligence <span class="si-x">×</span> AI</h1>
-        <p class="si-home-lead">당신이 느끼고 상상한 것을 현실로.</p>
-      </div>
-      <div class="si-home-console" id="homeConsole" data-state="idle">
-        <figure class="si-home-stage" id="homeStage" data-state="idle" data-media="missing">
-          <video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
-          <video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
-          <div class="si-home-emblem" aria-hidden="true"><span id="homeCode">H-07</span></div>
-          <div class="si-home-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
-          <div class="si-home-top">
-            <span class="si-home-state"><i></i><span id="homeStateLabel">대기</span></span>
-            <span class="si-home-pick" role="group" aria-label="AI 비서 선택">
-              <button type="button" data-home-agent="seven" aria-pressed="true" class="no-portrait"><img alt=""><span>세븐</span></button>
-              <button type="button" data-home-agent="suni" aria-pressed="false" class="no-portrait"><img alt=""><span>서수니</span></button>
-            </span>
-          </div>
-          <div class="si-holo si-holo-left" role="group" aria-label="홀로그램 바로가기 1">
-            <button type="button" class="si-holo-tile" data-home-intent="english"><b>AI 영어교육</b><small>문법 · 모의고사</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>예상문제</b><small>1회 20,000원</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="wiki"><b>모의고사위키</b><small>해설 · 자료</small></button>
-          </div>
-          <div class="si-holo si-holo-right" role="group" aria-label="홀로그램 바로가기 2">
-            <button type="button" class="si-holo-tile" data-home-intent="work"><b>AI 비서 업무</b><small>학원 운영</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="studio"><b>AI AGENT</b><small>제작협업실</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="builder"><b>홈페이지</b><small>사이트 제작</small></button>
-          </div>
-          <figcaption class="si-home-name"><strong id="homeName">세븐</strong><small>Feel2Real AI 비서</small></figcaption>
-        </figure>
-        <div class="si-home-talk">
-          <div class="si-home-chat" id="homeChat" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
-          <form class="si-home-composer" id="homeForm" autocomplete="off">
-            <label class="si-sr" for="homeInput">AI 비서에게 말하기</label>
-            <input id="homeInput" type="text" maxlength="300" placeholder="무엇을 만들고 싶으신가요?" enterkeyhint="send">
-            <button type="submit">보내기</button>
-          </form>
-          <p class="si-home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span> <button type="button" id="homeWelcomeAgain">처음 안내 다시 보기</button></p>
-        </div>
-      </div>
+      <p>첫 화면의 대화창은 안내 모드입니다. 로그인하면 AI 업무 비서와 연결되고, 정식 제작 요청과 자료 제출은 카톡·이메일 의뢰로 접수합니다.</p>
+      <p><a class="en-btn en-btn-outline" href="#aiHome">첫 화면 대화창으로 이동 →</a></p>
     </section>
 
     <!-- ============ 브랜드: AI AGENT 승인 화보 (영상 배너는 15초 하이라이트 승인 후 적용) ============ -->
