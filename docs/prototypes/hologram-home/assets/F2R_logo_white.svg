@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_레이어_1" data-name="레이어_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 1024 1024">
+  <!-- Generator: Adobe Illustrator 30.4.0, SVG Export Plug-In . SVG Version: 2.1.4 Build 226)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: #FFFFFF;
+      }
+
+      .st1 {
+        fill: #FFFFFF;
+      }
+
+      .st2 {
+        fill: #FFFFFF;
+      }
+    </style>
+    <linearGradient id="_무제_그라디언트_2" data-name="무제 그라디언트 2" x1="603.17" y1="610.69" x2="603.17" y2="273.84" gradientTransform="translate(0 1024) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3751d1"/>
+      <stop offset=".15" stop-color="#324ac8"/>
+      <stop offset=".4" stop-color="#2739b0"/>
+      <stop offset=".71" stop-color="#151e89"/>
+      <stop offset="1" stop-color="#01005f"/>
+    </linearGradient>
+    <linearGradient id="_무제_그라디언트_3" data-name="무제 그라디언트 3" x1="512" y1="872.61" x2="512" y2="647.78" gradientTransform="translate(0 1024) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3751d1"/>
+      <stop offset=".15" stop-color="#324ac8"/>
+      <stop offset=".4" stop-color="#2739b0"/>
+      <stop offset=".71" stop-color="#151e89"/>
+      <stop offset="1" stop-color="#01005f"/>
+    </linearGradient>
+    <linearGradient id="_무제_그라디언트_4" data-name="무제 그라디언트 4" x1="276.17" y1="610.7" x2="276.17" y2="151.39" gradientTransform="translate(0 1024) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3751d1"/>
+      <stop offset=".15" stop-color="#324ac8"/>
+      <stop offset=".4" stop-color="#2739b0"/>
+      <stop offset=".71" stop-color="#151e89"/>
+      <stop offset="1" stop-color="#01005f"/>
+    </linearGradient>
+  </defs>
+  <g id="_레이어_11" data-name="_레이어_1">
+    <g>
+      <path class="st1" d="M771.6,582.12c-65.67,46.35-120.91,102.76-168.81,168.04-45.59-65.29-102.76-120.14-168.04-168.04,65.29-46.36,120.91-102.76,168.04-168.81,46.35,66.06,103.14,120.91,168.81,168.81Z"/>
+      <path class="st2" d="M860.45,151.39v224.83H163.55v-25.88c0-109.71,89.24-198.95,199.33-198.95h497.57Z"/>
+      <path class="st0" d="M388.77,413.3v260.37c0,110.1-89.24,198.94-199.33,198.94h-25.88v-411.8c0-26.27,21.25-47.51,47.52-47.51h177.7,0Z"/>
+    </g>
+  </g>
+</svg>
