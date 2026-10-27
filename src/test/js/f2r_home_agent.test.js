@@ -174,9 +174,10 @@ test('given 홈 상태창 when 대시보드와 비교하면 then 비서 선택�
   // when
   const seven = HTML.match(/<button[^>]*data-home-agent="seven"[^>]*>(.*?)<\/button>/);
   // then
-  assert.match(seven[0], /class="no-portrait"/);
-  assert.match(seven[1], /<img alt=""><span>세븐<\/span>/);
-  assert.match(HTML, /class="si-home-console" id="homeConsole" data-state="idle"/);
+  assert.match(seven[0], /class="[^"]*\bno-portrait\b[^"]*"/);
+  assert.match(seven[1], /<img alt="세븐">/);
+  assert.match(seven[1], /<strong>세븐<\/strong>/);
+  assert.match(HTML, /class="command" id="homeConsole" data-state="idle"/);
   assert.match(CSS, /\.si-home-stage\[data-state="greeting"\] \{ --si-state: var\(--si-violet\); \}/);
   assert.match(CSS, /\.si-home-pick button\.no-portrait img \{ display: none; \}/);
   assert.match(JS, /\|\| !stageHasFrame\(\)\) \$\('homeStage'\)\.dataset\.media = 'missing'/);

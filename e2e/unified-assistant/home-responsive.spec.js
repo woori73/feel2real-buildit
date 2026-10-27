@@ -44,10 +44,10 @@ for (const font of ['fallback', 'pretendard']) {
           .some(face => face.family.replaceAll('"', '').replaceAll("'", '') === 'Pretendard Variable' && face.status === 'loaded'))).toBe(true);
         const metrics = await page.evaluate(() => {
           const rect = node => { const r = node.getBoundingClientRect(); return { x:r.x, y:r.y, width:r.width, height:r.height, right:r.right, bottom:r.bottom }; };
-          const stage = document.querySelector('#homeStage'), name = document.querySelector('.si-home-name');
+          const stage = document.querySelector('#homeStage'), name = document.querySelector('.stage-bottom');
           const text = node => { const r = document.createRange(); r.selectNodeContents(node); return rect(r); };
-          return { stage:rect(stage), caption:rect(name), name:text(document.querySelector('#homeName')),
-            subtitle:text(name.querySelector('small')), rows:getComputedStyle(stage).gridTemplateRows,
+          return { command:rect(document.querySelector('#homeConsole')), stage:rect(stage), caption:rect(name), name:text(document.querySelector('#homeName')),
+            subtitle:text(name.querySelector('span')), rows:getComputedStyle(stage).gridTemplateRows,
             overflow:document.documentElement.scrollWidth - innerWidth,
             header:{ logo:rect(document.querySelector('.en-logo')), actions:rect(document.querySelector('.en-actions')) },
             buttons:[...document.querySelectorAll('.si-holo-tile')].map(button => {
@@ -77,10 +77,10 @@ for (const font of ['fallback', 'pretendard']) {
         expect.soft(metrics.header.actions.right).toBeLessThanOrEqual(width);
         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);
         for (const button of metrics.buttons) {
-          expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);
+          expect.soft(button.bottom).toBeLessThanOrEqual(metrics.command.bottom+1);
           expect.soft(button.height).toBeGreaterThanOrEqual(44);
-          expect.soft(button.hittable).toBe(true);
-          expect.soft(button.transform).not.toBe('none');
+          expect.soft(button.width).toBeGreaterThanOrEqual(44);
+          // Compact mobile cards sit below the character; Playwright tap above verifies they remain hittable after scrolling.
         }
         for (const reply of replies) {
           expect.soft(reply.text).toContain('20,000원');

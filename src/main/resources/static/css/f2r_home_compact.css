@@ -1,0 +1,258 @@
+/* Compact JARVIS presentation from prototype 37ae9dfe; scoped to the home assistant.
+   78% dimensions refer to that prototype, not the former production two-column layout. */
+#aiHome{max-width:1320px;margin-inline:auto;padding:28px 32px;background:#020609;color:#eaf9ff;font-family:inherit}
+#aiHome .si-holo-tile{animation:none;backdrop-filter:none;box-shadow:none;transform:none}
+#aiHome .si-home-msg{padding:0;border:0;border-radius:0;background:transparent;max-width:none;align-self:auto}
+#aiHome .si-home-msg p{font-size:inherit}
+.en-logo-mark{filter:brightness(0) invert(1)}
+#aiHome *{box-sizing:border-box}
+#aiHome{scroll-behavior:smooth}
+#aiHome{margin:0;background:#020609;color:#EAF9FF;font:15px/1.6 F2R,Arial,sans-serif}
+#aiHome button,#aiHome input,#aiHome a{-webkit-tap-highlight-color:transparent}
+#aiHome button,#aiHome input{font:inherit}
+#aiHome button,#aiHome a{touch-action:manipulation}
+#aiHome button{cursor:pointer}
+#aiHome a{color:inherit;text-decoration:none}
+#aiHome button{color:inherit}
+#aiHome button:focus-visible,#aiHome a:focus-visible,#aiHome input:focus-visible,#aiHome summary:focus-visible{outline:2px solid #B5F3FF;outline-offset:4px}
+#aiHome button:hover,#aiHome a:hover{color:#B5F3FF}
+#aiHome .command{display:grid;grid-template-columns:238px minmax(0,1fr) 238px;gap:20px;position:relative}
+#aiHome .service-stack{display:flex;flex-direction:column;gap:15px;padding:30px 0}
+#aiHome .si-holo-tile{display:flex;flex-direction:column;gap:10px;text-align:left;border:1px solid #36d9ff38;border-radius:3px;background:linear-gradient(115deg,#071b24b3,#030d1399);padding:20px;transition:transform .18s,border-color .18s;position:relative;min-height:145px}
+#aiHome .si-holo-tile:before{content:'';position:absolute;left:-1px;top:-1px;width:24px;border-top:1px solid #36D9FF}
+#aiHome .si-holo-tile:hover{transform:translateY(-3px);border-color:#36d9ff9c}
+#aiHome .si-holo-tile strong{font-size:18px;line-height:1.45;font-weight:500}
+#aiHome .si-holo-tile b{font-size:17px;color:#FFB45C}
+#aiHome .si-holo-tile b small{font-size:10px;font-weight:normal}
+#aiHome .stage{position:relative;isolation:isolate;min-width:0;display:flex;flex-direction:column;min-height:420px;background:radial-gradient(ellipse at 50% 82%,#36d9ff0d,transparent 65%);border-top:1px solid #36d9ff35;border-bottom:1px solid #36d9ff35}
+#aiHome .stage-top,#aiHome .stage-bottom{display:flex;justify-content:space-between;gap:10px;font:9px/1.6 monospace;color:#B5F3FF;padding:15px 8px;letter-spacing:.08em}
+#aiHome .ready{color:#45E4BE}
+#aiHome .stage-bottom{font-family:F2R;letter-spacing:0;font-size:10px}
+#aiHome .stage-bottom>span:last-child{font:8px/1.8 monospace;letter-spacing:.1em}
+#aiHome .orbit{overflow:hidden;position:absolute;z-index:-1;inset:0;display:grid;place-items:center;color:#36d9ff36;pointer-events:none}
+#aiHome .orbit svg{width:100%;height:100%;overflow:visible}
+#aiHome .characters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:8px;flex:1;padding:0 12px}
+#aiHome .character{border:0;background:transparent;min-width:0;padding:0;display:flex;flex-direction:column;align-items:stretch;text-align:center}
+#aiHome .portrait{position:relative;height:280px;display:flex;align-items:center;justify-content:center;width:100%;border-bottom:1px solid #36d9ff24}
+#aiHome .portrait img{height:100%;width:100%;object-fit:contain;opacity:.75;transition:opacity .18s}
+#aiHome .selected .portrait img{opacity:1}
+#aiHome .identity{display:grid;grid-template-columns:1fr auto;gap:2px 8px;text-align:left;padding:13px 12px;border:1px solid transparent;border-top-color:#36d9ff24}
+#aiHome .identity small{grid-column:1/-1;font:9px monospace;letter-spacing:.1em;color:#B5F3FF}
+#aiHome .identity strong{font-size:21px;font-weight:500}
+#aiHome .selected-word{font-size:10px;align-self:center;color:#B5F3FF}
+#aiHome .selected .identity{border-color:#45e4be70;background:#071b24b3}
+#aiHome .selected .selected-word{color:#45E4BE}
+#aiHome .assistant{max-width:760px;margin:26px auto 0;padding:22px 24px;border:1px solid #36d9ff40;border-radius:5px;background:linear-gradient(160deg,#071b2480,#030D13);box-shadow:0 16px 60px #0006}
+#aiHome .assistant-title,#aiHome .assistant-title>div{display:flex;align-items:center;gap:10px}
+#aiHome .assistant-title{justify-content:space-between}
+#aiHome .assistant-title strong{font-size:15px;font-weight:500}
+#aiHome .assistant-title>div>span:last-child{color:#B5F3FF;font-size:11px}
+#aiHome .status-dot{width:5px;height:5px;background:#45E4BE;border-radius:50%;box-shadow:0 0 10px #45e4be50}
+#aiHome .conversation{max-height:200px;overflow:auto;scrollbar-width:thin}
+#aiHome form{display:flex;gap:8px;padding:6px;background:#020609;border:1px solid #36d9ff55;border-radius:4px}
+#aiHome input{min-width:0;flex:1;border:0;color:#EAF9FF;background:transparent;padding:10px;font-size:14px}
+#aiHome input::placeholder{color:#a6c7d1}
+#aiHome .send{background:#36D9FF;border:0;color:#020609;padding:8px 16px;border-radius:2px;white-space:nowrap;font-weight:bold;min-height:44px}
+#aiHome .send:hover{color:#020609;background:#B5F3FF}
+#aiHome .send span{padding-left:12px;font-size:19px}
+#aiHome .prompt-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#aiHome .prompt-row button{background:transparent;border:0;color:#B5F3FF;font-size:10px;min-height:36px;padding:4px 10px}
+#aiHome h2{font-size:26px;line-height:1.45;font-weight:500;letter-spacing:-.025em;margin:10px 0}
+#aiHome .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media(min-width:1100px){
+#aiHome .left{transform:perspective(1000px) rotateY(5deg)}
+#aiHome .right{transform:perspective(1000px) rotateY(-5deg)}
+}
+@media(max-width:1100px){
+#aiHome .command{grid-template-columns:190px minmax(0,1fr) 190px;gap:12px}
+#aiHome .si-holo-tile{padding:15px}
+#aiHome .si-holo-tile strong{font-size:16px}
+#aiHome .portrait{height:250px}
+#aiHome .identity{padding:10px 8px}
+}
+@media(max-width:900px){
+#aiHome .command{grid-template-columns:1fr 1fr}
+#aiHome .stage{grid-column:1/-1;grid-row:1;min-height:340px}
+#aiHome .characters{max-width:480px;width:100%;margin:auto}
+#aiHome .portrait{height:245px}
+#aiHome .service-stack{padding:8px 0 0;display:contents}
+#aiHome .si-holo-tile{min-height:125px}
+#aiHome .si-holo-tile strong br{display:none}
+}
+@media(max-width:600px){
+#aiHome .command{gap:10px}
+#aiHome .stage{min-height:280px}
+#aiHome .stage-top{padding:12px 2px;font-size:7px;letter-spacing:.04em}
+#aiHome .stage-bottom{padding:10px 2px;font-size:8px}
+#aiHome .stage-bottom>span:last-child{font-size:6px}
+#aiHome .characters{padding:0 4px;gap:8px}
+#aiHome .portrait{height:165px}
+#aiHome .identity{padding:10px 8px;gap:3px 6px}
+#aiHome .identity strong{font-size:18px}
+#aiHome .identity small{font-size:8px}
+#aiHome .selected-word{font-size:8px}
+#aiHome .si-holo-tile{padding:13px 12px;gap:7px;min-height:132px}
+#aiHome .si-holo-tile strong{font-size:14px;line-height:1.55}
+#aiHome .si-holo-tile b{font-size:14px}
+#aiHome .si-holo-tile b small{display:block;font-size:8px}
+#aiHome .assistant{margin-top:20px;padding:17px 14px}
+#aiHome .assistant-title>div{gap:7px}
+#aiHome .assistant-title>div>span:last-child{font-size:9px}
+#aiHome input{font-size:12px;padding:8px 6px}
+#aiHome .send{padding:8px 10px;font-size:11px}
+#aiHome .send span{padding-left:5px;font-size:16px}
+#aiHome .prompt-row{gap:1px}
+#aiHome .prompt-row button{padding:5px 6px;font-size:9px;min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){
+#aiHome{scroll-behavior:auto}
+#aiHome *,#aiHome *::before,#aiHome *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+#aiHome .si-holo-tile:hover{transform:none}
+}
+#aiHome .stage{margin:0;min-height:560px}
+#aiHome .service-stack{gap:14px}
+#aiHome .si-holo-tile{min-height:150px;justify-content:center}
+#aiHome .si-holo-tile b{color:#EAF9FF;font-size:18px;font-weight:500}
+#aiHome .si-holo-tile small{color:#B5F3FF;font-size:12px}
+#aiHome .media-screen{position:relative;flex:1;min-height:300px;margin:0 18px}
+#aiHome .media-screen video,#aiHome .media-screen>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:none}
+#aiHome .media-screen video{opacity:0;pointer-events:none;transition:opacity .3s}
+#aiHome .has-frame .media-screen video.is-on{opacity:1}
+#aiHome .media-screen>img{opacity:1}
+#aiHome .media-screen>img[hidden]{display:none}
+#aiHome .media-screen>p{position:absolute;inset:40% 0 auto;text-align:center;color:#B5F3FF;font-size:12px}
+#aiHome .media-screen>p[hidden]{display:none}
+#aiHome .characters{flex:0;align-items:stretch;margin-top:16px}
+#aiHome .character{display:grid;grid-template-columns:44px 1fr;align-items:center}
+#aiHome .portrait{height:54px;border:0}
+#aiHome .portrait img,#aiHome .selected .portrait img{opacity:1;filter:none}
+#aiHome .no-portrait .portrait img{visibility:hidden}
+#aiHome .identity{height:100%;padding:8px}
+#aiHome .identity strong{font-size:18px}
+#aiHome .orbit{inset:0 0 60px}
+#aiHome .stage-bottom strong{font-size:15px}
+#aiHome .si-home-msg{margin:18px 0;font-size:15px;overflow-wrap:anywhere}
+#aiHome .si-home-msg>strong{font-size:12px;color:#45E4BE}
+#aiHome .si-home-msg p{margin:6px 0;line-height:1.8}
+#aiHome .si-home-msg.is-user{border-left:1px solid #36D9FF;padding-left:12px}
+#aiHome .si-home-actions{display:flex;flex-wrap:wrap;gap:8px}
+#aiHome .si-home-actions a,#aiHome .si-home-actions button,#aiHome #naesin-panel a{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px;border:1px solid #36d9ff66;background:#071B24;font-size:12px;border-radius:3px}
+#aiHome .si-home-actions .is-primary{color:#B5F3FF;border-color:#36D9FF}
+#aiHome .conversation{max-height:300px}
+#aiHome .home-mode{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:#B5F3FF;font-size:11px}
+#aiHome .home-mode button{min-height:44px;background:transparent;border:1px solid #36d9ff66;border-radius:3px;padding:8px;color:#B5F3FF;font-size:12px}
+#aiHome .prompt-row a{font-size:12px;display:inline-flex;align-items:center;min-height:44px;padding:5px 8px}
+@media(max-width:900px){
+#aiHome .stage{min-height:510px}
+#aiHome .service-stack{display:contents}
+#aiHome .si-holo-tile{min-height:110px}
+#aiHome .media-screen{min-height:280px}
+#aiHome .characters{max-width:480px}
+#aiHome .si-holo-tile b{font-size:16px}
+}
+@media(max-width:600px){
+#aiHome .stage{min-height:410px}
+#aiHome .media-screen{min-height:220px}
+#aiHome .character{grid-template-columns:30px 1fr}
+#aiHome .portrait{height:46px}
+#aiHome .identity{padding:8px 5px;gap:2px}
+#aiHome .identity strong{font-size:16px}
+#aiHome .selected-word{font-size:9px}
+#aiHome .si-holo-tile b{font-size:15px}
+#aiHome .si-holo-tile small{font-size:11px}
+#aiHome .si-holo-tile{min-height:102px;padding:12px 10px}
+#aiHome .si-home-msg{font-size:16px}
+#aiHome #homeInput{font-size:16px}
+#aiHome .home-mode{font-size:12px}
+#aiHome .prompt-row button{font-size:12px}
+}
+#aiHome .command{width:78%;margin-inline:auto;grid-template-columns:185.64px minmax(0,1fr) 185.64px;gap:15.6px}
+#aiHome .stage{min-height:436.8px}
+#aiHome .service-stack{padding:23.4px 0;gap:10.92px}
+#aiHome .si-holo-tile{min-height:117px;padding:15.6px;gap:7.8px}
+#aiHome .si-holo-tile b{font-size:16px;line-height:1.5}
+#aiHome .si-holo-tile small{font-size:12px;line-height:1.5}
+#aiHome .si-holo-tile:before{width:18.72px}
+#aiHome .stage-top,#aiHome .stage-bottom{padding:11.7px 6px}
+#aiHome .media-screen{min-height:234px;margin-inline:14px}
+#aiHome .media-screen video,#aiHome .media-screen>img{object-fit:contain}
+#aiHome .characters{margin-top:12px;padding-inline:9px;gap:6px}
+#aiHome .character{grid-template-columns:34px minmax(0,1fr);min-height:44px}
+#aiHome .portrait{height:44px}
+#aiHome .identity{padding:6px;gap:2px 4px}
+#aiHome .identity strong{font-size:16px}
+#aiHome .orbit{inset:0 0 46.8px}
+#aiHome .assistant{width:78%;max-width:592.8px;margin-top:20px;padding:17px 18px;box-shadow:0 12.5px 46.8px #0006}
+#aiHome .assistant-title,#aiHome .assistant-title>div{gap:8px}
+#aiHome .conversation{max-height:230px}
+#aiHome .si-home-msg{margin:14px 0;font-size:14px}
+#aiHome .si-home-msg p{margin:5px 0;line-height:1.7}
+#aiHome .si-home-actions{gap:6px}
+#aiHome .si-home-actions a,#aiHome .si-home-actions button,#aiHome #naesin-panel a{padding:6px 9px;min-height:44px}
+#aiHome #homeForm{gap:6px;padding:4px}
+#aiHome #homeInput{padding:7px;min-height:44px}
+#aiHome .send{padding:6px 10px;min-width:44px;min-height:44px;font-size:13px}
+#aiHome .home-mode{gap:6px;margin-block:8px}
+#aiHome .home-mode button{padding:6px;min-height:44px}
+#aiHome .prompt-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px}
+#aiHome .prompt-row button,#aiHome .prompt-row a{min-width:0;min-height:44px;padding:4px;font-size:12px;line-height:1.5;text-align:center;justify-content:center;white-space:normal;word-break:keep-all}
+#aiHome .status-dot{box-shadow:0 0 7.8px #45e4be50}
+@media(max-width:1100px){
+#aiHome .command{grid-template-columns:148.2px minmax(0,1fr) 148.2px;gap:9.36px}
+}
+@media(max-width:900px){
+#aiHome .command{grid-template-columns:repeat(2,minmax(0,1fr))}
+#aiHome .stage{min-height:397.8px}
+#aiHome .service-stack{display:contents}
+#aiHome .si-holo-tile{min-height:85.8px;padding:10px;gap:5px}
+#aiHome .media-screen{min-height:218.4px}
+#aiHome .characters{max-width:374.4px}
+}
+@media(max-width:600px){
+#aiHome .command{gap:8px}
+#aiHome .stage{min-height:319.8px}
+#aiHome .stage-top,#aiHome .stage-bottom{padding:8px 2px}
+#aiHome .stage-bottom strong{font-size:14px}
+#aiHome .media-screen{min-height:171.6px;margin-inline:14px}
+#aiHome .characters{padding-inline:3px;margin-top:8px;gap:6px}
+#aiHome .character{grid-template-columns:24px minmax(0,1fr)}
+#aiHome .portrait{height:44px}
+#aiHome .identity{padding:6px 4px;gap:2px}
+#aiHome .identity strong{font-size:14px}
+#aiHome .selected-word{font-size:10px}
+#aiHome .si-holo-tile{min-height:79.56px;padding:8px;gap:5px}
+#aiHome .si-holo-tile b{font-size:14px;line-height:1.5}
+#aiHome .si-holo-tile small{font-size:12px;line-height:1.5}
+#aiHome .assistant{padding:12px 10px;margin-top:16px}
+#aiHome .assistant-title>div{gap:6px}
+#aiHome .assistant-title>div>span:last-child{font-size:10px}
+#aiHome .conversation{max-height:180px}
+#aiHome .si-home-msg{font-size:16px;margin-block:10px}
+#aiHome #homeInput{font-size:16px;padding:6px 4px}
+#aiHome .send{font-size:12px;padding:6px 4px}
+#aiHome .si-home-actions a,#aiHome .si-home-actions button{font-size:12px;padding:6px;min-height:44px}
+#aiHome .home-mode{font-size:12px;line-height:1.5}
+#aiHome .home-mode button{font-size:12px}
+}
+@media(min-width:601px){
+#aiHome .assistant{padding-block:12px}
+#aiHome .conversation{max-height:120px}
+#aiHome .home-mode{margin-block:6px}
+}
+#aiHome .conversation:focus-visible{outline:2px solid #B5F3FF;outline-offset:3px}
+#aiHome .si-holo-tile b,#aiHome .si-holo-tile small{word-break:keep-all}
+#aiHome{font-family:inherit;line-height:1.6}
+#aiHome .si-home-head{margin-bottom:30px}
+#aiHome .si-home-title{font-size:clamp(26px,4vw,42px)}
+#aiHome .si-home-lead{font-size:15px;color:#b5f3ff}
+#aiHome .si-holo-tile{box-shadow:inset 0 0 12px #36d9ff0a,0 8px 20px #0005}
+#aiHome .si-holo-tile:hover{transform:translateY(-3px)}
+@media(max-width:600px){
+#aiHome{padding:20px 16px}
+#aiHome .si-home-lead{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+#aiHome .si-holo-tile:hover{transform:none}
+}
+
+#aiHome{margin-inline:auto}
