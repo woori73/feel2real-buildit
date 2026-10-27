@@ -1,0 +1,27 @@
+
+Running 20 tests using 1 worker
+
+(node:6142) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 home-responsive.spec.js:15:5 › home 360x800, fallback: geometry, all six menus, intake links and assistant (9.1s)
+  ✓   2 home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant (8.9s)
+  ✓   3 home-responsive.spec.js:15:5 › home 430x932, fallback: geometry, all six menus, intake links and assistant (9.5s)
+  ✓   4 home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant (10.4s)
+  ✓   5 home-responsive.spec.js:15:5 › home 360x800, pretendard: geometry, all six menus, intake links and assistant (9.3s)
+  ✓   6 home-responsive.spec.js:15:5 › home 390x844, pretendard: geometry, all six menus, intake links and assistant (9.2s)
+  ✓   7 home-responsive.spec.js:15:5 › home 430x932, pretendard: geometry, all six menus, intake links and assistant (10.2s)
+  ✓   8 home-responsive.spec.js:15:5 › home 1440x1050, pretendard: geometry, all six menus, intake links and assistant (10.4s)
+  ✓   9 unified.spec.js:41:1 › anonymous, student and cross-origin calls cannot use assistant writes (231ms)
+  ✓  10 unified.spec.js:53:1 › first visit, pause/resume, stale version and completion persist per user (71ms)
+  ✓  11 unified.spec.js:62:1 › student draft does not write; forged hash, concurrent approval, replay and ownership are safe (578ms)
+  ✓  12 unified.spec.js:75:1 › class creation, assignment, updates and stale target checks reuse actual APIs (777ms)
+  ✓  13 unified.spec.js:86:1 › attendance and consultation create/message verify persisted records (434ms)
+  ✓  14 unified.spec.js:93:1 › expiry, cancellation, live permission revocation and unknown outcome never replay writes (606ms)
+  ✓  15 unified.spec.js:109:1 › CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access (309ms)
+  ✓  16 unified.spec.js:124:1 › definite upstream rejection reports failure, audits it and cannot replay (168ms)
+  ✓  17 unified.spec.js:132:1 › material text, missing identifiers and unsupported attachments require explicit review (127ms)
+  ✓  18 unified.spec.js:140:1 › read-only inquiries, correction guidance and notice draft never create write drafts (485ms)
+  ✓  19 unified.spec.js:151:1 › natural command and desktop/mobile workbench render, highlight, persist and approve through UI (18.5s)
+  ✓  20 unified.spec.js:226:1 › login surfaces welcome link without moving the current service (817ms)
+
+  20 passed (1.7m)

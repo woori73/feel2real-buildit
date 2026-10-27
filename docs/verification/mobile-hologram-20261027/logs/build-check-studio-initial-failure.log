@@ -1,0 +1,37 @@
+2026-10-27T09:34:04.5761345Z StudioEntryLinkBrowserQaMySqlTest > givenHomeOnPcAndMobile_whenClickingStudioLinks_thenGuestLogsInFirstAdminEntersAndOtherTutorIsBlocked() FAILED
+2026-10-27T09:34:04.5783126Z     org.openqa.selenium.TimeoutException at StudioEntryLinkBrowserQaMySqlTest.java:123
+2026-10-27T09:34:04.5820414Z         Caused by: org.openqa.selenium.NoSuchElementException at StudioEntryLinkBrowserQaMySqlTest.java:124
+2026-10-27T09:34:13.5644026Z
+2026-10-27T09:34:13.5645713Z 2026-10-27T09:34:13.499Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-27T09:34:13.5648585Z 2026-10-27T09:34:13.501Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-22 - Shutdown initiated...
+2026-10-27T09:34:13.5655017Z 2026-10-27T09:34:13.504Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-22 - Shutdown completed.
+2026-10-27T09:34:13.5657523Z 2026-10-27T09:34:13.520Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-27T09:34:13.5659809Z 2026-10-27T09:34:13.521Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-23 - Shutdown initiated...
+2026-10-27T09:34:13.5661794Z 2026-10-27T09:34:13.523Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-23 - Shutdown completed.
+2026-10-27T09:34:13.5663170Z 2026-10-27T09:34:13.525Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] o.s.boot.tomcat.GracefulShutdown         : Commencing graceful shutdown. Waiting for active requests to complete
+2026-10-27T09:34:13.5664383Z 2026-10-27T09:34:13.526Z  INFO 3635 --- [private_tutor_solution_back] [tomcat-shutdown] o.s.boot.tomcat.GracefulShutdown         : Graceful shutdown complete
+2026-10-27T09:34:13.5665591Z 2026-10-27T09:34:13.538Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-27T09:34:13.5667160Z 2026-10-27T09:34:13.538Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-24 - Shutdown initiated...
+2026-10-27T09:34:13.5668310Z 2026-10-27T09:34:13.541Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-24 - Shutdown completed.
+2026-10-27T09:34:13.5669862Z 2026-10-27T09:34:13.556Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-10-27T09:34:13.5671080Z 2026-10-27T09:34:13.556Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-25 - Shutdown initiated...
+2026-10-27T09:34:13.5672192Z 2026-10-27T09:34:13.558Z  INFO 3635 --- [private_tutor_solution_back] [ionShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-25 - Shutdown completed.
+2026-10-27T09:34:14.0647261Z
+2026-10-27T09:34:14.0657126Z
+2026-10-27T09:34:14.0657669Z > Task :test
+2026-10-27T09:34:14.0658190Z 372 tests completed, 1 failed, 1 skipped
+2026-10-27T09:34:15.2670636Z
+2026-10-27T09:34:15.2678049Z > Task :test FAILED
+2026-10-27T09:34:15.2679106Z gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_4-1793093314622.json
+2026-10-27T09:34:15.3644511Z
+2026-10-27T09:34:15.3644537Z
+2026-10-27T09:34:15.3645842Z [Incubating] Problems report is available at: file:///home/runner/work/feel2real-buildit/feel2real-buildit/build/reports/problems/problems-report.html
+2026-10-27T09:34:15.3647400Z FAILURE: Build failed with an exception.
+2026-10-27T09:34:15.3702643Z
+2026-10-27T09:34:15.3703122Z 5 actionable tasks: 5 executed
+2026-10-27T09:34:15.3703766Z * What went wrong:
+2026-10-27T09:34:15.3704706Z Execution failed for task ':test'.
+2026-10-27T09:34:15.3706092Z > There were failing tests. See the report at: file:///home/runner/work/feel2real-buildit/feel2real-buildit/build/reports/tests/test/index.html
+2026-10-27T09:34:15.3707518Z
+2026-10-27T09:34:15.3707902Z * Try:
+2026-10-27T09:34:15.3708727Z > Run with --scan to get full insights from a Build Scan (powered by Develocity).

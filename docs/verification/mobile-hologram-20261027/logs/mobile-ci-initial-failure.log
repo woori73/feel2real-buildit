@@ -1,0 +1,71 @@
+chromium-local	Create isolated synthetic test databases	﻿2026-10-27T09:24:08.1477431Z ##[group]Run docker run -d --name unified-ai-mysql -e MYSQL_ROOT_PASSWORD=unified-local-only -e MYSQL_DATABASE=f2r_unified_test -p 127.0.0.1:13308:3306 mysql:8.4
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1478594Z docker run -d --name unified-ai-mysql -e MYSQL_ROOT_PASSWORD=unified-local-only -e MYSQL_DATABASE=f2r_unified_test -p 127.0.0.1:13308:3306 mysql:8.4
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1479263Z for attempt in {1..60}; do
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1479785Z   if docker exec unified-ai-mysql mysqladmin ping -uroot -punified-local-only --silent; then break; fi
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1480280Z   sleep 1
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1480482Z done
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1481083Z docker exec unified-ai-mysql mysql -uroot -punified-local-only -e 'CREATE DATABASE ac_unified_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1546009Z shell: /usr/bin/bash -e {0}
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1546269Z env:
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1546597Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1547440Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.1547850Z ##[endgroup]
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.2447035Z Unable to find image 'mysql:8.4' locally
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.4861388Z 8.4: Pulling from library/mysql
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5497713Z 97347cf073b1: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5498299Z e8d4024251a9: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5498783Z ea1749d53e24: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5499226Z e99723a85985: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5499595Z 0c9ac1647849: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5500074Z 4730445dfddd: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5500461Z a3274015618b: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5500821Z 65fb9e68a2ac: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5501314Z 1ba383bbcb80: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5501685Z d14dbab65632: Pulling fs layer
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5502012Z a3274015618b: Waiting
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5502401Z 65fb9e68a2ac: Waiting
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5502748Z e99723a85985: Waiting
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5503029Z d14dbab65632: Waiting
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5503309Z 0c9ac1647849: Waiting
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5503726Z 4730445dfddd: Waiting
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5504035Z 1ba383bbcb80: Waiting
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5813947Z e8d4024251a9: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5815231Z e8d4024251a9: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5938996Z ea1749d53e24: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.5940076Z ea1749d53e24: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6250845Z 0c9ac1647849: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6254976Z 0c9ac1647849: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6459547Z e99723a85985: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6460314Z e99723a85985: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6548626Z 4730445dfddd: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6550974Z 4730445dfddd: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6834930Z 65fb9e68a2ac: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.6838582Z 65fb9e68a2ac: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.7629557Z 97347cf073b1: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.7630312Z 97347cf073b1: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.8014984Z d14dbab65632: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.8015990Z d14dbab65632: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.8666025Z a3274015618b: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:08.8666682Z a3274015618b: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:09.1925955Z 1ba383bbcb80: Verifying Checksum
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:09.1928348Z 1ba383bbcb80: Download complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:10.1717569Z 97347cf073b1: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:13.5697958Z e8d4024251a9: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:13.5895969Z ea1749d53e24: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:13.7921391Z e99723a85985: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:13.8034786Z 0c9ac1647849: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:13.8143614Z 4730445dfddd: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:14.6608150Z a3274015618b: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:14.6719069Z 65fb9e68a2ac: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:22.7574000Z 1ba383bbcb80: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:22.7674383Z d14dbab65632: Pull complete
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:22.7734798Z Digest: sha256:76f0358884cb92d9a086d24e5671c38048d3fef40f2588703d73eb55392d6b69
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:22.7746004Z Status: Downloaded newer image for mysql:8.4
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:22.7931108Z 73595ff85f3d7835d41bf14dd602fb6e2beec9658696181f12abd33b08ef88a3
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:23.0404687Z mysqladmin: [Warning] Using a password on the command line interface can be insecure.
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:24.1030905Z mysqladmin: [Warning] Using a password on the command line interface can be insecure.
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:25.1588013Z mysqladmin: [Warning] Using a password on the command line interface can be insecure.
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:26.2221217Z mysqladmin: [Warning] Using a password on the command line interface can be insecure.
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:26.2964299Z mysql: [Warning] Using a password on the command line interface can be insecure.
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:26.3010044Z ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+chromium-local	Create isolated synthetic test databases	2026-10-27T09:24:26.3058350Z ##[error]Process completed with exit code 1.

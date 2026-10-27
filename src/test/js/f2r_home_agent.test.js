@@ -66,7 +66,9 @@ test('given 홈 템플릿 when 읽으면 then AI 비서 첫 화면이 상품 영
   assert.match(HTML, /개별 신청/);
   assert.match(HTML, /si-holo-tile/);
   for (const id of ['homeStage', 'homeChat', 'homeForm', 'homeInput', 'homeMode', 'homeWelcomeAgain']) assert.match(HTML, new RegExp('id="' + id + '"'));
-  for (const intent of ['english', 'exam', 'wiki', 'studio', 'builder']) assert.match(HTML, new RegExp('data-home-intent="' + intent + '"'));
+  // 승인된 신청 중심 타일은 신청 안내로 연결하고, 다른 서비스의 공개 경로는 메뉴에 유지한다.
+  assert.equal((HTML.match(/class="si-holo-tile" data-home-intent="exam"/g) || []).length, 6);
+  for (const href of ['/grammar-items', '/wiki', '/ai-agent-studio', '/builder']) assert.ok(HTML.includes('href="' + href + '"'));
   assert.match(HTML, /안내 모드/);
   // 결제는 별도 안내 후 진행 (미완성 결제 기능을 결제 가능한 것처럼 표시하지 않음)
   assert.match(HTML, /결제는 별도 안내 후 진행됩니다/);

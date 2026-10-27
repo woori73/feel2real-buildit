@@ -15,6 +15,18 @@ async function ok(response) {const r=await response;expect(r.ok(),await r.text()
 async function draft(operation,input,academyId=7,businessId=null) {return ok(admin.post(API+'/drafts',{data:{operation,input,academyId,businessId}}));}
 async function approve(d,ctx=admin) {return ok(ctx.post(API+'/drafts/'+d.id+'/approve',{data:{planHash:d.planHash}}));}
 async function catalog(kind) {return ok(admin.get(API+'/catalog/'+kind));}
+async function selectView(page, view) {
+  const button=page.locator('[data-view-btn="'+view+'"]:visible');
+  if(!await button.count())await page.locator('#siMenuBtn').tap();
+  await page.locator('[data-view-btn="'+view+'"]:visible').first().click();
+  await expect(page.locator('body')).toHaveAttribute('data-view',view);
+}
+async function openGuide(page) {
+  if(!await page.locator('#uaResume').isVisible())await page.locator('#siMenuBtn').tap();
+  await page.locator('#uaResume').click();
+  await expect(page.locator('#uaTour')).toBeVisible();
+  await expect(page.locator('#uaStep')).toContainText('1 / 6');
+}
 async function seedFixtureSql(sql) {
   // This helper only talks to the explicitly named task-local Docker DB, never arbitrary DB hosts.
   require('child_process').execFileSync('docker',['exec','-i','unified-ai-mysql','mysql','--default-character-set=utf8mb4','-uroot','-punified-local-only'],{input:sql,stdio:['pipe','pipe','pipe']});
@@ -125,7 +137,7 @@ test('material text, missing identifiers and unsupported attachments require exp
   await ok(admin.post(API+'/drafts/'+r.drafts[0].id+'/cancel',{data:{planHash:r.drafts[0].planHash}}));
   expect((await admin.post(API+'/materials?academyId=7',{multipart:{file:{name:'receipt.pdf',mimeType:'application/pdf',buffer:Buffer.from('not-a-pdf')}}})).status()).toBe(400);
 });
-test('read-only inquiries, correction guidance and notice draft never create write drafts (NOT RUN in review env)',async()=>{
+test('read-only inquiries, correction guidance and notice draft never create write drafts',async()=>{
   const before=(await ok(admin.get(API+'/drafts'))).length;
   let r=await ok(admin.post(API+'/conversation',{data:{academyId:7,message:'학생 ID '+createdStudent+' 출결 조회해줘'}}));
   expect(r.drafts).toHaveLength(0);expect(Array.isArray(r.data.events)).toBe(true);
@@ -137,14 +149,23 @@ test('read-only inquiries, correction guidance and notice draft never create wri
   const audit=await ok(admin.get(API+'/audit'));expect(audit.find(x=>x.operation==='STUDENT_CREATE')).toHaveProperty('academyId',7);
 });
 test('natural command and desktop/mobile workbench render, highlight, persist and approve through UI',async({browser})=>{
-  const output=path.resolve(__dirname,'../../docs/unified-ai-assistant/screenshots');fs.mkdirSync(output,{recursive:true});
+  const output=path.resolve(process.env.UNIFIED_EVIDENCE_DIR||path.join(__dirname,'../../docs/unified-ai-assistant/screenshots'));fs.mkdirSync(output,{recursive:true});
   const errors=[];
   const context=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await admin.storageState(),viewport:{width:1440,height:1050}});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/dashboard');await expect(page.locator('#uaRole')).toContainText('원장 연결');
-  await expect(page.locator('#uaTour')).toBeVisible();await page.locator('#uaNext').click();
+  await page.waitForFunction(()=>window.unifiedAssistant?.ready());
+  // Approved dashboard contract: first-visit conversation, then an explicit menu command opens the guide.
+  await expect(page.locator('#uaTour')).toBeHidden();
+  await openGuide(page);await page.locator('#uaNext').click();
   await expect(page.locator('#uaStudents')).toHaveClass(/ua-tour-target/);await expect(page.locator('#uaClasses')).toHaveClass(/ua-tour-target/);
-  await page.reload();await expect(page.locator('#uaStep')).toContainText('2 / 6');
+  await expect(page.locator('#uaStudents')).toBeVisible();
+  await page.reload();await page.waitForFunction(()=>window.unifiedAssistant?.ready());
+  await expect(page.locator('#uaTour')).toBeHidden();
+  expect((await ok(page.request.get(API+'/progress'))).step).toBe(1); // saved second step survives reload without an unsolicited modal
+  await openGuide(page);await page.locator('#uaPause').click();await expect(page.locator('#uaTour')).toBeHidden();
+  await openGuide(page);await page.locator('#uaPause').click();
+  await selectView(page,'ai');
   const uiName='UI하늘 '+suffix;
   await page.locator('#uaCommand').fill('학생 등록, 이름: '+uiName+', 학교: 새봄중, 학년: 중2');
   await page.locator('#uaCommandForm button').click();
@@ -156,16 +177,20 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   await page.screenshot({path:path.join(output,'admin-desktop-result-1440.png'),fullPage:true});
   // Academic and financial material are sent and approved in this SAME browser conversation.
   const rosterName='자료하늘 '+suffix;
+  await selectView(page,'all');
   await page.locator('#uaFile').setInputFiles({name:'student-roster.csv',mimeType:'text/csv',buffer:Buffer.from('이름,학년,학교\n'+rosterName+',중2,새봄중\n,중1,빈이름학교\n')});
   await page.locator('#uaUploadForm button').click();
+  await selectView(page,'ai');
   await expect(page.locator('#uaDrafts')).toContainText('학생 이름이 없어 초안을 만들지 않았습니다');
   const rosterDraft=page.locator('#uaDrafts .ua-draft').filter({hasText:rosterName});await expect(rosterDraft).toContainText('승인 대기');
   expect((await catalog('students')).filter(x=>x.name===rosterName)).toHaveLength(0);
   await rosterDraft.getByRole('button',{name:'승인하고 실행'}).click();await expect(rosterDraft).toContainText('저장 검증 완료');
   expect((await catalog('students')).filter(x=>x.name===rosterName)).toHaveLength(1);
   const today=new Date().toISOString().slice(0,10);
+  await selectView(page,'all');
   await page.locator('#uaFile').setInputFiles({name:'chat-ledger-'+suffix+'.csv',mimeType:'text/csv',buffer:Buffer.from('거래일,구분,금액,거래처,적요,원본계정,증빙유형\n'+today+',지출,8400,대화거래 '+suffix+',전화요금,전화/휴대폰/인터넷,INVOICE\n잘못된날짜,지출,1000,오류행 '+suffix+',검토,,NONE\n')});
   await page.locator('#uaUploadForm button').click();
+  await selectView(page,'ai');
   const ledgerDraft=page.locator('#uaDrafts .ua-draft').filter({hasText:'chat-ledger-'+suffix+'.csv'});
   await expect(ledgerDraft).toContainText('승인 대기');
   await ledgerDraft.getByRole('button',{name:'승인하고 실행'}).click();
@@ -176,17 +201,22 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   await ledgerDraft.scrollIntoViewIfNeeded();
   await page.screenshot({path:path.join(output,'admin-desktop-unified-chat-1440.png'),fullPage:true});
   await context.close();
-  for(const [role,ctx,width,height] of [['admin',admin,390,844],['tutor',teacher,390,844],['tutor',teacher,1440,1050]]) {
+  for(const [role,ctx,width,height] of [['admin',admin,360,800],['admin',admin,390,844],['admin',admin,430,932],['tutor',teacher,390,844],['tutor',teacher,1440,1050]]) {
     const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await ctx.storageState(),viewport:{width,height},isMobile:width<500,hasTouch:width<500});
     const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto('/dashboard');
     await expect(p.locator('#uaRole')).toContainText(role==='admin'?'원장 연결':'강사 연결');
+    await p.waitForFunction(()=>window.unifiedAssistant?.ready());
     await expect(p.locator('#uaSummary')).not.toContainText('불러오는 중');
     await expect(p.locator('#uaDrafts')).not.toContainText('불러오는 중');
     if(role==='admin') {
-      const mobileName='모바일하늘 '+suffix;
+      await expect(p.locator('#uaTour')).toBeHidden();
+      await openGuide(p);await p.locator('#uaPause').tap();await expect(p.locator('#uaTour')).toBeHidden();
+      await openGuide(p);await p.locator('#uaPause').tap();
+      await selectView(p,'ai');
+      const mobileName='모바일하늘 '+width+' '+suffix;
       await p.locator('#uaCommand').fill('학생 등록, 이름: '+mobileName+', 학년: 중1');await p.locator('#uaCommandForm button').click();
       const mobileDraft=p.locator('#uaDrafts .ua-draft').filter({hasText:mobileName});await expect(mobileDraft).toContainText('승인 대기');
-      await mobileDraft.getByRole('button',{name:'승인하고 실행'}).click();await expect(mobileDraft).toContainText('저장 검증 완료');await mobileDraft.scrollIntoViewIfNeeded();await expect(mobileDraft).toBeInViewport();await p.screenshot({path:path.join(output,'admin-mobile-chat-390.png'),fullPage:false});
+      await mobileDraft.getByRole('button',{name:'승인하고 실행'}).tap();await expect(mobileDraft).toContainText('저장 검증 완료');await mobileDraft.scrollIntoViewIfNeeded();await expect(mobileDraft).toBeInViewport();await p.screenshot({path:path.join(output,'admin-mobile-chat-'+width+'.png'),fullPage:false});
     }
     expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await p.screenshot({path:path.join(output,role+'-'+width+'.png'),fullPage:true});await c.close();

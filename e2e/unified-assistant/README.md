@@ -49,3 +49,20 @@ npm test
 결과 JSON과 실패 trace는 로컬 ignored 파일이다. 제출할 캡처는 `docs/unified-ai-assistant/screenshots/`에 생성한다. 저장소에 로그인 쿠키·브라우저 storageState·실제 파일은 저장하지 않는다.
 
 추가 검증: 같은 PC 대화창에 학생 명단 CSV와 혼합 거래 CSV를 연달아 올려 승인 전 불변·승인 후 재조회·행별 실패를 검사한다. 모바일은 자연어 학생 등록을 승인하고 결과 카드가 뷰포트에 보이는지 검사한다. `model-analysis-enabled`는 local에서 true지만 자격증명 없이는 명시적으로 표시된 규칙 분석을 사용한다. 실제 모델 응답을 E2E로 검증한 것은 아니다.
+
+## 2026-10-27 모바일 회귀
+
+기존 `unified.spec.js` 12개에 `home-responsive.spec.js` 8개를 추가했다. 360×800·390×844·430×932·1440×1050 각각에서 글꼴 대체 상태와 실제 Pretendard Variable v1.3.9 로드 상태를 검사한다. 모든 외부 문서·통계 POST는 차단하며 카톡 창은 생성만 확인하고 외부 페이지 로드 전에 막는다. 이메일은 href만 확인하며 전송하지 않는다.
+
+테스트 앱은 `--server.address=127.0.0.1 --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false`로 실행한다. DB는 3308의 기존 개발 DB를 대신 쓰지 않고, 위 절차의 신규 `unified-ai-mysql`을 `127.0.0.1:13308`에 바인딩해 두 앱 URL도 13308로 맞춘다. 테스트는 고정 컨테이너·전용 스키마의 합성 자료만 변경한다.
+
+```sh
+curl -fLSs https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2 -o /tmp/PretendardVariable.woff2
+HOME_FONT_PATH=/tmp/PretendardVariable.woff2 \
+UNIFIED_EVIDENCE_DIR=/absolute/path/to/new-evidence/assistant \
+CHROMIUM_PATH=/path/to/playwright/chromium npm test
+```
+
+`MOBILE_EVIDENCE_PHASE=before|after`는 홈 캡처·좌표·메뉴 응답 JSON의 저장 경로만 정한다. `before`에서도 같은 검증 조건을 사용하므로 수정 전 결함은 실패로 남는다. 기존 증거 이미지를 덮어쓰지 않으려면 `UNIFIED_EVIDENCE_DIR`를 새 폴더로 지정한다. 결과·로그·수정 전후 캡처와 실행 구분은 [검증 보고서](../../docs/verification/mobile-hologram-20261027/README.md)를 참조한다.
+
+대시보드는 처음부터 `#uaTour`를 자동 표시하지 않는다. 테스트는 안내가 닫힌 것을 확인하고 `사용법 안내` 버튼으로 연 뒤 단계 저장을 확인한다. 새로고침은 팝업을 다시 열지 않으며 저장 단계는 API로 확인한다. 버튼으로 다시 열면 승인된 동작대로 1단계부터 시작한다. 자료 첨부는 `전체 대시보드`, 대화·승인은 `AI 대화`로 실제 메뉴 전환해 검증한다. 테스트를 삭제하거나 강제 DOM 조작으로 숨은 요소를 클릭하지 않는다.

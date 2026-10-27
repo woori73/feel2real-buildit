@@ -1,0 +1,92 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.4.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+
+> Task :compileTestJava
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyCompletionCheckServiceTest.java:73: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k1").thumbnailKey("t1").status(VideoStatus.READY)
+                                                                     ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyCompletionCheckServiceTest.java:76: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k2").thumbnailKey("t2").status(VideoStatus.READY)
+                                                                     ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyCompletionCheckServiceTest.java:93: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyCompletionCheckServiceTest.java:108: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:229: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+    assertThat(response.status()).isEqualTo(VideoStatus.READY);
+                                            ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:288: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY).build();
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:305: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:320: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:347: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:353: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY)
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:377: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .status(VideoStatus.READY).build();
+                ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:412: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .status(VideoStatus.READY).build();
+                ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:436: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .status(VideoStatus.READY).build();
+                ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:455: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .status(VideoStatus.READY).build();
+                ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:499: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY).build();
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:502: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        100L, VideoStatus.READY)).thenReturn(List.of(ready));
+              ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:501: warning: [removal] findTop10ByAcademy_AcademyIdAndStatusOrderByCreatedAtDesc(Long,VideoStatus) in AcademyVideoRepository has been deprecated and marked for removal
+    when(academyVideoRepository.findTop10ByAcademy_AcademyIdAndStatusOrderByCreatedAtDesc(
+                               ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:509: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+    assertThat(videos.get(0).status()).isEqualTo(VideoStatus.READY);
+                                                 ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:516: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        .academy(academy).storageKey("k").thumbnailKey("t").status(VideoStatus.READY).build();
+                                                                   ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:524: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        100L, VideoStatus.READY)).thenReturn(List.of(upload, external));
+              ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/service/AcademyVideoServiceTest.java:523: warning: [removal] findTop10ByAcademy_AcademyIdAndStatusOrderByCreatedAtDesc(Long,VideoStatus) in AcademyVideoRepository has been deprecated and marked for removal
+    when(academyVideoRepository.findTop10ByAcademy_AcademyIdAndStatusOrderByCreatedAtDesc(
+                               ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/controller/AcademyVideoStreamControllerTest.java:109: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        VideoStatus.READY, VideoLifecycleStatus.READY, null,
+        ^
+/workspace/feel2real-buildit/src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/academy/controller/AcademyVideoStreamControllerTest.java:129: warning: [removal] VideoStatus in f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity has been deprecated and marked for removal
+        VideoStatus.READY, VideoLifecycleStatus.READY, null,
+        ^
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+23 warnings
+
+> Task :processTestResources
+> Task :testClasses
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+> Task :test
+
+[Incubating] Problems report is available at: file:///workspace/feel2real-buildit/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 47s
+5 actionable tasks: 3 executed, 2 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.4.1/userguide/configuration_cache_enabling.html

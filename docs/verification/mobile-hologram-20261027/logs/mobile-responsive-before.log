@@ -1,0 +1,1790 @@
+
+Running 8 tests using 1 worker
+
+(node:2689) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 home-responsive.spec.js:15:5 › home 360x800, fallback: geometry, all six menus, intake links and assistant (9.5s)
+(node:2867) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant (8.8s)
+(node:3025) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  3 home-responsive.spec.js:15:5 › home 430x932, fallback: geometry, all six menus, intake links and assistant (9.2s)
+(node:3195) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  4 home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant (10.0s)
+(node:3351) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  5 home-responsive.spec.js:15:5 › home 360x800, pretendard: geometry, all six menus, intake links and assistant (8.8s)
+(node:3508) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  6 home-responsive.spec.js:15:5 › home 390x844, pretendard: geometry, all six menus, intake links and assistant (9.0s)
+(node:3666) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  7 home-responsive.spec.js:15:5 › home 430x932, pretendard: geometry, all six menus, intake links and assistant (9.7s)
+(node:3867) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  8 home-responsive.spec.js:15:5 › home 1440x1050, pretendard: geometry, all six menus, intake links and assistant (10.8s)
+
+
+  1) home-responsive.spec.js:15:5 › home 360x800, fallback: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 501.78125
+    Received:    513.90625
+
+      72 |         // Soft checks retain every baseline defect and all evidence, rather than stopping at the first tile.
+      73 |         expect.soft(metrics.overflow).toBe(0);
+    > 74 |         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);
+         |                                                                                       ^
+      75 |         for (const button of metrics.buttons) {
+      76 |           expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);
+      77 |           expect.soft(button.height).toBeGreaterThanOrEqual(44);
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:74:87
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 501.78125
+    Received:    511.90625
+
+      72 |         // Soft checks retain every baseline defect and all evidence, rather than stopping at the first tile.
+      73 |         expect.soft(metrics.overflow).toBe(0);
+    > 74 |         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);
+         |                                                                                       ^
+      75 |         for (const button of metrics.buttons) {
+      76 |           expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);
+      77 |           expect.soft(button.height).toBeGreaterThanOrEqual(44);
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:74:87
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-360x8-f0183--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-360x8-f0183--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-360x8-f0183--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-360x8-f0183--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 521.140625
+    Received:    531.53125
+
+      72 |         // Soft checks retain every baseline defect and all evidence, rather than stopping at the first tile.
+      73 |         expect.soft(metrics.overflow).toBe(0);
+    > 74 |         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);
+         |                                                                                       ^
+      75 |         for (const button of metrics.buttons) {
+      76 |           expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);
+      77 |           expect.soft(button.height).toBeGreaterThanOrEqual(44);
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:74:87
+
+    Error: expect(received).toBeLessThanOrEqual(expected)
+
+    Expected: <= 521.140625
+    Received:    529.53125
+
+      72 |         // Soft checks retain every baseline defect and all evidence, rather than stopping at the first tile.
+      73 |         expect.soft(metrics.overflow).toBe(0);
+    > 74 |         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);
+         |                                                                                       ^
+      75 |         for (const button of metrics.buttons) {
+      76 |           expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);
+      77 |           expect.soft(button.height).toBeGreaterThanOrEqual(44);
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:74:87
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-390x8-86c68--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) home-responsive.spec.js:15:5 › home 430x932, fallback: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-430x9-f5a76--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-430x9-f5a76--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-430x9-f5a76--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-430x9-f5a76--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) home-responsive.spec.js:15:5 › home 360x800, pretendard: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-360x8-a01e3--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-360x8-a01e3--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-360x8-a01e3--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-360x8-a01e3--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) home-responsive.spec.js:15:5 › home 390x844, pretendard: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-390x8-1d64e--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-390x8-1d64e--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-390x8-1d64e--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-390x8-1d64e--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) home-responsive.spec.js:15:5 › home 430x932, pretendard: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-430x9-0fed6--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-430x9-0fed6--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-430x9-0fed6--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-430x9-0fed6--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) home-responsive.spec.js:15:5 › home 1440x1050, pretendard: geometry, all six menus, intake links and assistant
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/grammar-items", "/wiki", "#svc-exam"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "모의고사 해설과 자료는 모의고사위키에서 볼 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/wiki"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["https://open.kakao.com/o/sMf4ifRi", "#exam-hit"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "AI AGENT 제작협업실은 사람과 AI가 각본·콘티·캐릭터·영상을 함께 만드는 곳입니다. 관리자·운영 계정으로 로그인하면 들어갈 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/ai-agent-studio", "#ai-content"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "20,000원"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      80 |         }
+      81 |         for (const reply of replies) {
+    > 82 |           expect.soft(reply.text).toContain('20,000원');
+         |                                   ^
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:82:35
+
+    Error: expect(received).toContain(expected) // indexOf
+
+    Expected substring: "카톡·이메일"
+    Received string:    "학원 홈페이지를 만들고 관리할 수 있습니다."
+
+      81 |         for (const reply of replies) {
+      82 |           expect.soft(reply.text).toContain('20,000원');
+    > 83 |           expect.soft(reply.text).toContain('카톡·이메일');
+         |                                   ^
+      84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:83:35
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    Expected: ArrayContaining ["https://open.kakao.com/o/sMf4ifRi", "mailto:woorinaesin@naver.com"]
+    Received: ["/builder"]
+
+      82 |           expect.soft(reply.text).toContain('20,000원');
+      83 |           expect.soft(reply.text).toContain('카톡·이메일');
+    > 84 |           expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+         |                                                   ^
+      85 |         }
+      86 |         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
+      87 |         await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        at /workspace/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:84:51
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/home-responsive-home-1440x-e9d3c--intake-links-and-assistant/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/home-responsive-home-1440x-e9d3c--intake-links-and-assistant/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/home-responsive-home-1440x-e9d3c--intake-links-and-assistant/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/home-responsive-home-1440x-e9d3c--intake-links-and-assistant/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8 failed
+    home-responsive.spec.js:15:5 › home 360x800, fallback: geometry, all six menus, intake links and assistant
+    home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant
+    home-responsive.spec.js:15:5 › home 430x932, fallback: geometry, all six menus, intake links and assistant
+    home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant
+    home-responsive.spec.js:15:5 › home 360x800, pretendard: geometry, all six menus, intake links and assistant
+    home-responsive.spec.js:15:5 › home 390x844, pretendard: geometry, all six menus, intake links and assistant
+    home-responsive.spec.js:15:5 › home 430x932, pretendard: geometry, all six menus, intake links and assistant
+    home-responsive.spec.js:15:5 › home 1440x1050, pretendard: geometry, all six menus, intake links and assistant

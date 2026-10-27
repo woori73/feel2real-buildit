@@ -1,0 +1,96 @@
+name: Mobile UI and assistant regression
+on:
+  pull_request:
+    paths:
+      - 'src/main/resources/templates/public/landing.html'
+      - 'src/main/resources/static/css/f2r_home_agent.css'
+      - 'src/main/resources/static/css/landing_edunova.css'
+      - 'src/main/resources/static/js/f2r_home_agent.js'
+      - 'src/test/js/*home*'
+      - 'e2e/unified-assistant/**'
+      - '.github/workflows/mobile-assistant-regression.yml'
+permissions:
+  contents: read
+jobs:
+  chromium-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: woori73/academycraft
+          ref: 115477f7ea0afa27dd69d9ae12318261c47a5a82
+          path: .test-academycraft
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install test browser and pinned production font
+        working-directory: e2e/unified-assistant
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          curl -fLSs --retry 2 https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2 -o "$RUNNER_TEMP/PretendardVariable.woff2"
+      - name: Create isolated synthetic test databases
+        run: |
+          docker run -d --name unified-ai-mysql -e MYSQL_ROOT_PASSWORD=unified-local-only -e MYSQL_DATABASE=f2r_unified_test -p 127.0.0.1:13308:3306 mysql:8.4
+          for attempt in {1..60}; do
+            # The image's temporary init server can answer ping before root credentials are ready.
+            if docker exec unified-ai-mysql mysql --protocol=TCP -h127.0.0.1 -uroot -punified-local-only -Nse 'SELECT 1'; then break; fi
+            sleep 1
+          done
+          docker exec unified-ai-mysql mysql --protocol=TCP -h127.0.0.1 -uroot -punified-local-only -Nse 'SELECT 1'
+          docker exec unified-ai-mysql mysql -uroot -punified-local-only -e 'CREATE DATABASE ac_unified_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+      - name: Build both local applications
+        run: |
+          bash gradlew bootJar --no-daemon
+          mvn -f .test-academycraft/pom.xml -DskipTests package -q
+      - name: Start applications on loopback with paid AI disabled
+        env:
+          SPRING_PROFILES_ACTIVE: local
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:13308/f2r_unified_test?allowPublicKeyRetrieval=true&connectionCollation=utf8mb4_unicode_ci
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: unified-local-only
+          ACADEMYCRAFT_GATEWAY_SECRET: unified-local-only-gateway-secret-32bytes
+          ACADEMYCRAFT_BUILDIT_BINDINGS: '[{"userId":5,"role":"ADMIN","builditAcademyId":3,"academyId":7,"memberId":101},{"userId":7,"role":"TUTOR","builditAcademyId":3,"academyId":7,"memberId":102},{"userId":3,"role":"TUTOR","builditAcademyId":1,"academyId":8,"memberId":103}]'
+        run: |
+          java -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8080 --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false > "$RUNNER_TEMP/mobile-buildit.log" 2>&1 &
+          echo "MOBILE_BUILDIT_PID=$!" >> "$GITHUB_ENV"
+          java -jar .test-academycraft/target/academycraft-1.0.0.jar --server.address=127.0.0.1 --server.port=8082 --spring.datasource.url='jdbc:mysql://127.0.0.1:13308/ac_unified_test?allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8' --spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver --spring.datasource.username=root --spring.datasource.password=unified-local-only --spring.jpa.hibernate.ddl-auto=validate --spring.flyway.enabled=true --spring.web.resources.static-locations="file:$GITHUB_WORKSPACE/.test-academycraft/frontend/" > "$RUNNER_TEMP/mobile-academycraft.log" 2>&1 &
+          echo "MOBILE_ACADEMYCRAFT_PID=$!" >> "$GITHUB_ENV"
+          for attempt in {1..60}; do
+            if curl -fsS http://127.0.0.1:8080/actuator/health && curl -fsS http://127.0.0.1:8082/actuator/health; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8080/actuator/health
+          curl -fsS http://127.0.0.1:8082/actuator/health
+          docker exec -i unified-ai-mysql mysql --default-character-set=utf8mb4 -uroot -punified-local-only < e2e/unified-assistant/fixtures.sql
+      - name: Original unit tests plus intake and guide regression
+        run: node --test src/test/js/f2r_home_agent.test.js src/test/js/f2r_agent_flows.test.js src/test/js/home_agent_exam_contract.test.js src/test/js/unified_assistant_tour.test.js src/test/js/home_hologram_intake.test.js
+      - name: Original assistant E2E and responsive regression
+        working-directory: e2e/unified-assistant
+        run: |
+          export HOME_FONT_PATH="$RUNNER_TEMP/PretendardVariable.woff2"
+          export CHROMIUM_PATH="$(node -e 'process.stdout.write(require("@playwright/test").chromium.executablePath())')"
+          export UNIFIED_EVIDENCE_DIR="$GITHUB_WORKSPACE/docs/verification/mobile-hologram-20261027/assistant"
+          npm test
+      - name: Preserve screenshots, metrics and results (no cookies or traces)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-assistant-regression
+          path: |
+            docs/verification/mobile-hologram-20261027/after
+            docs/verification/mobile-hologram-20261027/assistant
+            e2e/unified-assistant/results.json
+      - name: Stop only this job's test applications and DB
+        if: always()
+        run: |
+          if [ -n "${MOBILE_BUILDIT_PID:-}" ]; then kill "$MOBILE_BUILDIT_PID" || true; fi
+          if [ -n "${MOBILE_ACADEMYCRAFT_PID:-}" ]; then kill "$MOBILE_ACADEMYCRAFT_PID" || true; fi
+          docker rm -f unified-ai-mysql || true

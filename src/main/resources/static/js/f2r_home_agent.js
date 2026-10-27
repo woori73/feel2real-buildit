@@ -44,7 +44,7 @@
     switch (intent) {
       case 'exam':
         return { text: '기말고사 맞춤 이용권은 20,000원으로 3주 동안 매주 2회, 총 6회(회당 40문항, 총 240문항)를 안내합니다. 학교·학년·시험 범위·최근 기출·선생님 힌트를 보내 주세요. 현재는 카톡·이메일로 접수 안내하며 결제는 별도로 확인합니다.',
-          links: [{ label: '기말고사 이용권 신청 (카톡)', href: KAKAO, external: true, primary: true }, { label: '실제 적중 사례 보기', href: '#exam-hit' }] };
+          links: [{ label: '기말고사 이용권 신청 (카톡)', href: KAKAO, external: true, primary: true }, { label: '이메일 신청·자료 제출', href: 'mailto:woorinaesin@naver.com' }, { label: '실제 적중 사례 보기', href: '#exam-hit' }] };
       case 'english':
         return { text: 'AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다.',
           links: [{ label: '문법 문제은행', href: '/grammar-items', primary: true }, { label: '모의고사위키', href: '/wiki' }, { label: '내신 예상문제', href: '#svc-exam' }] };

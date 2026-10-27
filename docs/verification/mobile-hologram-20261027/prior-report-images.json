@@ -1,0 +1,35 @@
+{
+  "page": "https://chatgpt.com/space/page_5877ca1f0c148191b13cac2ca1a4106d",
+  "readImages": [
+    {
+      "file": "original-0.png",
+      "sha256": "ffc314ce074b22be0250e9c9ab672872c805515682502a18854c4a2939476a85"
+    },
+    {
+      "file": "original-1.png",
+      "sha256": "fe2698f3f40e7e9a1b998dd8152c8d0a6bc77d845b823ee26cf6f5d91e027574"
+    },
+    {
+      "file": "original-2.png",
+      "sha256": "750e8b218b98f254280372a050cbab0f2aee55a7a4b99ae3f5b61165f4c73412"
+    },
+    {
+      "file": "original-3.png",
+      "sha256": "775d7829470adbadbdf6a58af9e29ec3ae251ca9e6686281bb313dc4091d29f8"
+    },
+    {
+      "file": "original-4.png",
+      "sha256": "47906489a7e763e75fcce0d530eb3e66ba6d5877da4d3c02bf26217423414db5"
+    },
+    {
+      "file": "original-5.png",
+      "sha256": "48f57f305704cd43a66b12c370b10ec2a7229e597ccd82663b90823bd9e39913"
+    },
+    {
+      "file": "original-6.png",
+      "sha256": "5dd5ebc0bffbe233fbcf314dc0507419457f33ef2f15a52727e32c1e198f7a44"
+    }
+  ],
+  "zipLogsRead": false,
+  "reason": "Pages reference reader does not support ZIP; baseline was rerun and logs retained."
+}
