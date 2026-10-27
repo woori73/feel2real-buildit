@@ -1,0 +1,997 @@
+[
+  {
+    "width": 360,
+    "status": "PASS",
+    "metrics": {
+      "command": {
+        "width": 328,
+        "height": 746,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 328,
+        "clientWidth": 328
+      },
+      "stage": {
+        "width": 328,
+        "height": 410,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 328,
+        "clientWidth": 328
+      },
+      "media": {
+        "width": 292,
+        "height": 258.21875,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 292,
+        "clientWidth": 292
+      },
+      "hud": {
+        "width": 328,
+        "height": 348,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 328,
+        "clientWidth": 328
+      },
+      "assistant": {
+        "width": 328,
+        "height": 543.96875,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 326,
+        "clientWidth": 326
+      },
+      "conversation": {
+        "width": 298,
+        "height": 284.78125,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 298,
+        "clientWidth": 298
+      },
+      "form": {
+        "width": 298,
+        "height": 58,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 296,
+        "clientWidth": 296
+      },
+      "input": {
+        "width": 225.625,
+        "height": 44,
+        "font": 16,
+        "fit": "fill",
+        "scrollWidth": 226,
+        "clientWidth": 226
+      },
+      "send": {
+        "width": 50.375,
+        "height": 44,
+        "font": 11,
+        "fit": "fill",
+        "scrollWidth": 50,
+        "clientWidth": 50
+      },
+      "card": {
+        "width": 159,
+        "height": 102,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 157,
+        "clientWidth": 157
+      },
+      "title": {
+        "width": 137,
+        "height": 24,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 137,
+        "clientWidth": 137
+      },
+      "subtitle": {
+        "width": 137,
+        "height": 17.59375,
+        "font": 11,
+        "fit": "fill",
+        "scrollWidth": 137,
+        "clientWidth": 137
+      },
+      "video": {
+        "width": 292,
+        "height": 258.21875,
+        "font": 15,
+        "fit": "contain",
+        "scrollWidth": 292,
+        "clientWidth": 292
+      },
+      "overflow": 0,
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 · 6회",
+          "width": 159,
+          "height": 102
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "width": 159,
+          "height": 102
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "width": 159,
+          "height": 102
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "width": 156,
+          "height": 54.59375
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "width": 156,
+          "height": 54.59375
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원장",
+          "width": 159,
+          "height": 102
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "width": 159,
+          "height": 102
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "width": 159,
+          "height": 102
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "width": 132.09375,
+          "height": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "width": 153.21875,
+          "height": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "width": 113.140625,
+          "height": 44
+        },
+        {
+          "text": "나중에",
+          "width": 59.125,
+          "height": 44
+        },
+        {
+          "text": "보내기",
+          "width": 50.375,
+          "height": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "width": 116.40625,
+          "height": 44
+        },
+        {
+          "text": "내신 제작소",
+          "width": 70.5625,
+          "height": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "width": 85.609375,
+          "height": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "width": 104.5,
+          "height": 44
+        }
+      ],
+      "clipped": []
+    }
+  },
+  {
+    "width": 390,
+    "status": "PASS",
+    "metrics": {
+      "command": {
+        "width": 358,
+        "height": 746,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 358,
+        "clientWidth": 358
+      },
+      "stage": {
+        "width": 358,
+        "height": 410,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 358,
+        "clientWidth": 358
+      },
+      "media": {
+        "width": 322,
+        "height": 258.21875,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 322,
+        "clientWidth": 322
+      },
+      "hud": {
+        "width": 358,
+        "height": 348,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 358,
+        "clientWidth": 358
+      },
+      "assistant": {
+        "width": 358,
+        "height": 543.96875,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 356,
+        "clientWidth": 356
+      },
+      "conversation": {
+        "width": 328,
+        "height": 284.78125,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 328,
+        "clientWidth": 328
+      },
+      "form": {
+        "width": 328,
+        "height": 58,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 326,
+        "clientWidth": 326
+      },
+      "input": {
+        "width": 255.625,
+        "height": 44,
+        "font": 16,
+        "fit": "fill",
+        "scrollWidth": 256,
+        "clientWidth": 256
+      },
+      "send": {
+        "width": 50.375,
+        "height": 44,
+        "font": 11,
+        "fit": "fill",
+        "scrollWidth": 50,
+        "clientWidth": 50
+      },
+      "card": {
+        "width": 174,
+        "height": 102,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 172,
+        "clientWidth": 172
+      },
+      "title": {
+        "width": 152,
+        "height": 24,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 152,
+        "clientWidth": 152
+      },
+      "subtitle": {
+        "width": 152,
+        "height": 17.59375,
+        "font": 11,
+        "fit": "fill",
+        "scrollWidth": 152,
+        "clientWidth": 152
+      },
+      "video": {
+        "width": 322,
+        "height": 258.21875,
+        "font": 15,
+        "fit": "contain",
+        "scrollWidth": 322,
+        "clientWidth": 322
+      },
+      "overflow": 0,
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 · 6회",
+          "width": 174,
+          "height": 102
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "width": 174,
+          "height": 102
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "width": 174,
+          "height": 102
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "width": 171,
+          "height": 54.59375
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "width": 171,
+          "height": 54.59375
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원장",
+          "width": 174,
+          "height": 102
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "width": 174,
+          "height": 102
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "width": 174,
+          "height": 102
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "width": 132.09375,
+          "height": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "width": 153.21875,
+          "height": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "width": 113.140625,
+          "height": 44
+        },
+        {
+          "text": "나중에",
+          "width": 59.125,
+          "height": 44
+        },
+        {
+          "text": "보내기",
+          "width": 50.375,
+          "height": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "width": 116.40625,
+          "height": 44
+        },
+        {
+          "text": "내신 제작소",
+          "width": 70.5625,
+          "height": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "width": 85.609375,
+          "height": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "width": 104.5,
+          "height": 44
+        }
+      ],
+      "clipped": []
+    }
+  },
+  {
+    "width": 430,
+    "status": "PASS",
+    "metrics": {
+      "command": {
+        "width": 398,
+        "height": 746,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 398,
+        "clientWidth": 398
+      },
+      "stage": {
+        "width": 398,
+        "height": 410,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 398,
+        "clientWidth": 398
+      },
+      "media": {
+        "width": 362,
+        "height": 258.21875,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 362,
+        "clientWidth": 362
+      },
+      "hud": {
+        "width": 398,
+        "height": 348,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 398,
+        "clientWidth": 398
+      },
+      "assistant": {
+        "width": 398,
+        "height": 543.96875,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 396,
+        "clientWidth": 396
+      },
+      "conversation": {
+        "width": 368,
+        "height": 284.78125,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 368,
+        "clientWidth": 368
+      },
+      "form": {
+        "width": 368,
+        "height": 58,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 366,
+        "clientWidth": 366
+      },
+      "input": {
+        "width": 295.625,
+        "height": 44,
+        "font": 16,
+        "fit": "fill",
+        "scrollWidth": 296,
+        "clientWidth": 296
+      },
+      "send": {
+        "width": 50.375,
+        "height": 44,
+        "font": 11,
+        "fit": "fill",
+        "scrollWidth": 50,
+        "clientWidth": 50
+      },
+      "card": {
+        "width": 194,
+        "height": 102,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 192,
+        "clientWidth": 192
+      },
+      "title": {
+        "width": 172,
+        "height": 24,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 172,
+        "clientWidth": 172
+      },
+      "subtitle": {
+        "width": 172,
+        "height": 17.59375,
+        "font": 11,
+        "fit": "fill",
+        "scrollWidth": 172,
+        "clientWidth": 172
+      },
+      "video": {
+        "width": 362,
+        "height": 258.21875,
+        "font": 15,
+        "fit": "contain",
+        "scrollWidth": 362,
+        "clientWidth": 362
+      },
+      "overflow": 0,
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 · 6회",
+          "width": 194,
+          "height": 102
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "width": 194,
+          "height": 102
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "width": 194,
+          "height": 102
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "width": 191,
+          "height": 54.59375
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "width": 191,
+          "height": 54.59375
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원장",
+          "width": 194,
+          "height": 102
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "width": 194,
+          "height": 102
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "width": 194,
+          "height": 102
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "width": 132.09375,
+          "height": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "width": 153.21875,
+          "height": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "width": 113.140625,
+          "height": 44
+        },
+        {
+          "text": "나중에",
+          "width": 59.125,
+          "height": 44
+        },
+        {
+          "text": "보내기",
+          "width": 50.375,
+          "height": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "width": 116.40625,
+          "height": 44
+        },
+        {
+          "text": "내신 제작소",
+          "width": 70.5625,
+          "height": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "width": 85.609375,
+          "height": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "width": 104.5,
+          "height": 44
+        }
+      ],
+      "clipped": []
+    }
+  },
+  {
+    "width": 768,
+    "status": "PASS",
+    "metrics": {
+      "command": {
+        "width": 704,
+        "height": 876,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 704,
+        "clientWidth": 704
+      },
+      "stage": {
+        "width": 704,
+        "height": 510,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 704,
+        "clientWidth": 704
+      },
+      "media": {
+        "width": 668,
+        "height": 334.8125,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 668,
+        "clientWidth": 668
+      },
+      "hud": {
+        "width": 704,
+        "height": 448,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 704,
+        "clientWidth": 704
+      },
+      "assistant": {
+        "width": 704,
+        "height": 408,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 702,
+        "clientWidth": 702
+      },
+      "conversation": {
+        "width": 654,
+        "height": 170,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 654,
+        "clientWidth": 654
+      },
+      "form": {
+        "width": 654,
+        "height": 58,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 652,
+        "clientWidth": 652
+      },
+      "input": {
+        "width": 558.59375,
+        "height": 44,
+        "font": 14,
+        "fit": "fill",
+        "scrollWidth": 559,
+        "clientWidth": 559
+      },
+      "send": {
+        "width": 73.40625,
+        "height": 44,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 73,
+        "clientWidth": 73
+      },
+      "card": {
+        "width": 346,
+        "height": 110,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 344,
+        "clientWidth": 344
+      },
+      "title": {
+        "width": 314,
+        "height": 25.59375,
+        "font": 16,
+        "fit": "fill",
+        "scrollWidth": 314,
+        "clientWidth": 314
+      },
+      "subtitle": {
+        "width": 314,
+        "height": 19.1875,
+        "font": 12,
+        "fit": "fill",
+        "scrollWidth": 314,
+        "clientWidth": 314
+      },
+      "video": {
+        "width": 668,
+        "height": 334.8125,
+        "font": 15,
+        "fit": "contain",
+        "scrollWidth": 668,
+        "clientWidth": 668
+      },
+      "overflow": 0,
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 · 6회",
+          "width": 346,
+          "height": 110
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "width": 346,
+          "height": 110
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "width": 346,
+          "height": 110
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "width": 224,
+          "height": 58.796875
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "width": 224,
+          "height": 58.796875
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원장",
+          "width": 346,
+          "height": 110
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "width": 346,
+          "height": 110
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "width": 346,
+          "height": 110
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "width": 132.09375,
+          "height": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "width": 153.21875,
+          "height": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "width": 113.140625,
+          "height": 44
+        },
+        {
+          "text": "나중에",
+          "width": 59.125,
+          "height": 44
+        },
+        {
+          "text": "보내기",
+          "width": 73.40625,
+          "height": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "width": 116.40625,
+          "height": 44
+        },
+        {
+          "text": "내신 제작소",
+          "width": 68.8125,
+          "height": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "width": 85.609375,
+          "height": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "width": 97.078125,
+          "height": 44
+        }
+      ],
+      "clipped": []
+    }
+  },
+  {
+    "width": 1440,
+    "status": "PASS",
+    "metrics": {
+      "command": {
+        "width": 1256,
+        "height": 560,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 1257,
+        "clientWidth": 1256
+      },
+      "stage": {
+        "width": 740,
+        "height": 560,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 740,
+        "clientWidth": 740
+      },
+      "media": {
+        "width": 704,
+        "height": 384.8125,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 704,
+        "clientWidth": 704
+      },
+      "hud": {
+        "width": 740,
+        "height": 498,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 740,
+        "clientWidth": 740
+      },
+      "assistant": {
+        "width": 760,
+        "height": 408,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 758,
+        "clientWidth": 758
+      },
+      "conversation": {
+        "width": 710,
+        "height": 170,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 710,
+        "clientWidth": 710
+      },
+      "form": {
+        "width": 710,
+        "height": 58,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 708,
+        "clientWidth": 708
+      },
+      "input": {
+        "width": 614.59375,
+        "height": 44,
+        "font": 14,
+        "fit": "fill",
+        "scrollWidth": 615,
+        "clientWidth": 615
+      },
+      "send": {
+        "width": 73.40625,
+        "height": 44,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 73,
+        "clientWidth": 73
+      },
+      "card": {
+        "width": 237.11984252929688,
+        "height": 153.64654541015625,
+        "font": 15,
+        "fit": "fill",
+        "scrollWidth": 236,
+        "clientWidth": 236
+      },
+      "title": {
+        "width": 195.26841735839844,
+        "height": 32.0380859375,
+        "font": 18,
+        "fit": "fill",
+        "scrollWidth": 196,
+        "clientWidth": 196
+      },
+      "subtitle": {
+        "width": 195.26841735839844,
+        "height": 21.847320556640625,
+        "font": 12,
+        "fit": "fill",
+        "scrollWidth": 196,
+        "clientWidth": 196
+      },
+      "video": {
+        "width": 704,
+        "height": 384.8125,
+        "font": 15,
+        "fit": "contain",
+        "scrollWidth": 704,
+        "clientWidth": 704
+      },
+      "overflow": 0,
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 · 6회",
+          "width": 237.11984252929688,
+          "height": 153.64654541015625
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "width": 237.11984252929688,
+          "height": 151.57208251953125
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "width": 237.11984252929688,
+          "height": 153.190185546875
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "width": 354,
+          "height": 58.796875
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "width": 354,
+          "height": 58.796875
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원장",
+          "width": 237.119873046875,
+          "height": 153.64654541015625
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "width": 237.119873046875,
+          "height": 151.57208251953125
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "width": 237.119873046875,
+          "height": 153.190185546875
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "width": 132.09375,
+          "height": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "width": 153.21875,
+          "height": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "width": 113.140625,
+          "height": 44
+        },
+        {
+          "text": "나중에",
+          "width": 59.125,
+          "height": 44
+        },
+        {
+          "text": "보내기",
+          "width": 73.40625,
+          "height": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "width": 116.40625,
+          "height": 44
+        },
+        {
+          "text": "내신 제작소",
+          "width": 68.8125,
+          "height": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "width": 85.609375,
+          "height": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "width": 97.078125,
+          "height": 44
+        }
+      ],
+      "clipped": []
+    }
+  }
+]

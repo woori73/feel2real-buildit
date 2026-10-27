@@ -1,0 +1,77 @@
+[
+  {
+    "width": 360,
+    "scenario": "functional + synthetic performance",
+    "status": "FAIL",
+    "checks": 9,
+    "failure": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /안녕하세요/. Input:\n\n'서수니\\n' +\n  '\\n' +\n  '기말고사 맞춤 이용권은 20,000원으로 3주 동안 매주 2회, 총 6회(회당 40문항, 총 240문항)를 안내합니다. 학교·학년·시험 범위·최근 기출·선생님 힌트를 보내 주세요. 현재는 카톡·이메일로 접수 안내하며 결제는 별도로 확인합니다.\\n' +\n  '\\n' +\n  '기말고사 이용권 신청 (카톡)\\n' +\n  '이메일 신청·자료 제출\\n' +\n  '실제 적중 사례 보기'\n"
+  },
+  {
+    "width": 390,
+    "scenario": "functional + synthetic performance",
+    "status": "PASS",
+    "checks": 15
+  },
+  {
+    "width": 430,
+    "scenario": "functional + synthetic performance",
+    "status": "PASS",
+    "checks": 15
+  },
+  {
+    "width": 1440,
+    "scenario": "functional + synthetic performance",
+    "status": "PASS",
+    "checks": 15
+  },
+  {
+    "scenario": "http404",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "bad-hash",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "malformed",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "missing-clip",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "no-webgl",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "timeout",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "context-loss",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "rapid-switch",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "reduced-motion",
+    "status": "PASS",
+    "checks": 2
+  },
+  {
+    "scenario": "offscreen",
+    "status": "PASS",
+    "checks": 2
+  }
+]

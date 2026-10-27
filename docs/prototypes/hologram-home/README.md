@@ -1,5 +1,7 @@
 # Feel2Real 홀로그램 시안 기능 복원과 검증
 
+> AI 비서 축소 후속 작업: [전후 캡처·실측·350개 검사 보고서](evidence/compact/report.html). 캐릭터/메뉴/HUD 약22%, 대화 패널 가로22%·세로20~24% 축소. 기존 기능 로직은 그대로입니다.
+
 > 후속 Hyper3D 조사·무료 로컬 GLB 검증: [보고서와 캡처](evidence/hyper3d/report.html), [실행 방법](hyper3d/README.md). 실제 승인 캐릭터 모델은 미확보이며 기존 기능을 유지하는 별도 검증 모드입니다.
 
 기준 main: `df425588c97d7f1fb668e23452e638bc9cb14fd4` (2026-10-27 원격 재확인).

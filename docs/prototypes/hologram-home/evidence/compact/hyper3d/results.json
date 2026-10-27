@@ -1,0 +1,1253 @@
+{
+  "environment": "Local Chromium / SwiftShader; mobile viewport emulation, not phone hardware. Diagnostic GLB and intercepted synthetic media only.",
+  "results": [
+    {
+      "width": 360,
+      "scenario": "functional + synthetic performance",
+      "checks": [
+        {
+          "name": "default video mode has no WebGL bundle or canvas",
+          "status": "PASS"
+        },
+        {
+          "name": "unapproved/missing model keeps video and never substitutes character",
+          "status": "PASS"
+        },
+        {
+          "name": "actual hashed GLB decoded and rendered; diagnostic label visible",
+          "status": "PASS"
+        },
+        {
+          "name": "animated render frames advance and DPR cap enforced",
+          "status": "PASS"
+        },
+        {
+          "name": "no horizontal overflow",
+          "status": "PASS"
+        },
+        {
+          "name": "character selection and greeting animation follow unchanged main",
+          "status": "PASS"
+        },
+        {
+          "name": "greeting completion returns to idle",
+          "status": "PASS"
+        },
+        {
+          "name": "actual input produces thinking/responding and three unknown-question options",
+          "status": "PASS"
+        },
+        {
+          "name": "all six application menus retain real main guidance and Kakao link",
+          "status": "PASS"
+        },
+        {
+          "name": "replay welcome works with 3D active",
+          "status": "PASS"
+        },
+        {
+          "name": "studio and dashboard destinations preserved (destination backends untested)",
+          "status": "PASS"
+        },
+        {
+          "name": "AI AGENT Studio guidance and destination preserved",
+          "status": "PASS"
+        },
+        {
+          "name": "hologram service menu opens and Escape closes",
+          "status": "PASS"
+        },
+        {
+          "name": "explicit video return disposes canvas and existing MP4 is playing",
+          "status": "PASS"
+        },
+        {
+          "name": "no JavaScript errors or write requests",
+          "status": "PASS"
+        }
+      ],
+      "performance": {
+        "mode": "diagnostic",
+        "agent": "seven",
+        "state": "idle",
+        "result": "ready",
+        "metrics": {
+          "bytes": 19584,
+          "sha256": "4423610ae14fd42d04723c6219731a487f771114036bb6de8e0a772b2eacb9b5",
+          "triangles": 584,
+          "drawCalls": 2,
+          "firstFrameMs": 178,
+          "pixelRatio": 1.5,
+          "renderer": "WebKit WebGL"
+        },
+        "stats": {
+          "frames": 63,
+          "intervals": [
+            149.93399999999997,
+            50,
+            33.30000000000018,
+            33.399999999999636,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.30000000000018,
+            33.30000000000018,
+            33.29999999999973,
+            33.40000000000009,
+            33.40000000000009,
+            33.29999999999973,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.20000000000027,
+            33.40000000000009,
+            33.399999999999636,
+            33.30000000000018,
+            33.30000000000018,
+            33.29999999999973,
+            33.40000000000009,
+            33.30000000000018,
+            33.399999999999636,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.20000000000027,
+            33.40000000000009,
+            33.29999999999973,
+            33.40000000000009,
+            33.30000000000018,
+            33.399999999999636,
+            33.20000000000027,
+            33.29999999999973,
+            33.5,
+            33.30000000000018,
+            33.30000000000018,
+            33.29999999999973,
+            33.40000000000009,
+            33.30000000000018,
+            33.29999999999973,
+            33.40000000000009,
+            33.30000000000018,
+            33.29999999999973,
+            33.30000000000018,
+            33.40000000000009,
+            33.29999999999973,
+            33.30000000000018,
+            33.40000000000009,
+            33.29999999999973,
+            33.40000000000009,
+            33.30000000000018,
+            33.29999999999973,
+            33.29999999999973,
+            33.400000000000546,
+            66.59999999999945
+          ],
+          "renderCalls": 2
+        }
+      },
+      "status": "PASS",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/"
+        },
+        {
+          "method": "GET",
+          "path": "/style.css"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.css"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/F2R_logo_white.svg"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_agent_clip_switch.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/adapter.js"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_home_agent.js"
+        },
+        {
+          "method": "GET",
+          "path": "/presentation.js"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.js"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/NotoSansKR-Regular.ttf"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.css"
+        },
+        {
+          "method": "GET",
+          "path": "/api/agent-media/public"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/models.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.bundle.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/speak.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/think.mp4"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "scenario": "functional + synthetic performance",
+      "checks": [
+        {
+          "name": "default video mode has no WebGL bundle or canvas",
+          "status": "PASS"
+        },
+        {
+          "name": "unapproved/missing model keeps video and never substitutes character",
+          "status": "PASS"
+        },
+        {
+          "name": "actual hashed GLB decoded and rendered; diagnostic label visible",
+          "status": "PASS"
+        },
+        {
+          "name": "animated render frames advance and DPR cap enforced",
+          "status": "PASS"
+        },
+        {
+          "name": "no horizontal overflow",
+          "status": "PASS"
+        },
+        {
+          "name": "character selection and greeting animation follow unchanged main",
+          "status": "PASS"
+        },
+        {
+          "name": "greeting completion returns to idle",
+          "status": "PASS"
+        },
+        {
+          "name": "actual input produces thinking/responding and three unknown-question options",
+          "status": "PASS"
+        },
+        {
+          "name": "all six application menus retain real main guidance and Kakao link",
+          "status": "PASS"
+        },
+        {
+          "name": "replay welcome works with 3D active",
+          "status": "PASS"
+        },
+        {
+          "name": "studio and dashboard destinations preserved (destination backends untested)",
+          "status": "PASS"
+        },
+        {
+          "name": "AI AGENT Studio guidance and destination preserved",
+          "status": "PASS"
+        },
+        {
+          "name": "hologram service menu opens and Escape closes",
+          "status": "PASS"
+        },
+        {
+          "name": "explicit video return disposes canvas and existing MP4 is playing",
+          "status": "PASS"
+        },
+        {
+          "name": "no JavaScript errors or write requests",
+          "status": "PASS"
+        }
+      ],
+      "performance": {
+        "mode": "diagnostic",
+        "agent": "seven",
+        "state": "idle",
+        "result": "ready",
+        "metrics": {
+          "bytes": 19584,
+          "sha256": "4423610ae14fd42d04723c6219731a487f771114036bb6de8e0a772b2eacb9b5",
+          "triangles": 584,
+          "drawCalls": 2,
+          "firstFrameMs": 110,
+          "pixelRatio": 1.5,
+          "renderer": "WebKit WebGL"
+        },
+        "stats": {
+          "frames": 68,
+          "intervals": [
+            33.299999999999955,
+            33.39999999999998,
+            33.30000000000007,
+            33.299999999999955,
+            33.39999999999998,
+            33.299999999999955,
+            33.40000000000009,
+            33.299999999999955,
+            33.299999999999955,
+            33.40000000000009,
+            33.299999999999955,
+            33.299999999999955,
+            33.30000000000018,
+            33.399999999999864,
+            33.299999999999955,
+            33.30000000000018,
+            33.399999999999864,
+            33.299999999999955,
+            33.30000000000018,
+            33.299999999999955,
+            33.399999999999864,
+            33.30000000000018,
+            33.399999999999864,
+            33.299999999999955,
+            33.30000000000018,
+            33.399999999999864,
+            33.200000000000045,
+            33.40000000000009,
+            33.299999999999955,
+            33.399999999999864,
+            33.30000000000018,
+            33.299999999999955,
+            33.399999999999864,
+            33.30000000000018,
+            33.299999999999955,
+            33.299999999999955,
+            33.40000000000009,
+            33.40000000000009,
+            33.29999999999973,
+            33.30000000000018,
+            33.29999999999973,
+            33.40000000000009,
+            33.30000000000018,
+            33.40000000000009,
+            33.19999999999982,
+            33.40000000000009,
+            33.29999999999973,
+            33.30000000000018,
+            33.40000000000009,
+            33.29999999999973,
+            33.30000000000018,
+            33.40000000000009,
+            33.29999999999973,
+            33.40000000000009,
+            33.30000000000018,
+            33.29999999999973,
+            33.40000000000009,
+            33.20000000000027,
+            33.399999999999636,
+            33.30000000000018,
+            33.40000000000009,
+            33.29999999999973,
+            33.30000000000018,
+            33.40000000000009,
+            33.19999999999982
+          ],
+          "renderCalls": 2
+        }
+      },
+      "status": "PASS",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/"
+        },
+        {
+          "method": "GET",
+          "path": "/style.css"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.css"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/F2R_logo_white.svg"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_agent_clip_switch.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/adapter.js"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_home_agent.js"
+        },
+        {
+          "method": "GET",
+          "path": "/presentation.js"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.js"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/NotoSansKR-Regular.ttf"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.css"
+        },
+        {
+          "method": "GET",
+          "path": "/api/agent-media/public"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/models.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.bundle.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/speak.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/think.mp4"
+        }
+      ]
+    },
+    {
+      "width": 430,
+      "scenario": "functional + synthetic performance",
+      "checks": [
+        {
+          "name": "default video mode has no WebGL bundle or canvas",
+          "status": "PASS"
+        },
+        {
+          "name": "unapproved/missing model keeps video and never substitutes character",
+          "status": "PASS"
+        },
+        {
+          "name": "actual hashed GLB decoded and rendered; diagnostic label visible",
+          "status": "PASS"
+        },
+        {
+          "name": "animated render frames advance and DPR cap enforced",
+          "status": "PASS"
+        },
+        {
+          "name": "no horizontal overflow",
+          "status": "PASS"
+        },
+        {
+          "name": "character selection and greeting animation follow unchanged main",
+          "status": "PASS"
+        },
+        {
+          "name": "greeting completion returns to idle",
+          "status": "PASS"
+        },
+        {
+          "name": "actual input produces thinking/responding and three unknown-question options",
+          "status": "PASS"
+        },
+        {
+          "name": "all six application menus retain real main guidance and Kakao link",
+          "status": "PASS"
+        },
+        {
+          "name": "replay welcome works with 3D active",
+          "status": "PASS"
+        },
+        {
+          "name": "studio and dashboard destinations preserved (destination backends untested)",
+          "status": "PASS"
+        },
+        {
+          "name": "AI AGENT Studio guidance and destination preserved",
+          "status": "PASS"
+        },
+        {
+          "name": "hologram service menu opens and Escape closes",
+          "status": "PASS"
+        },
+        {
+          "name": "explicit video return disposes canvas and existing MP4 is playing",
+          "status": "PASS"
+        },
+        {
+          "name": "no JavaScript errors or write requests",
+          "status": "PASS"
+        }
+      ],
+      "performance": {
+        "mode": "diagnostic",
+        "agent": "seven",
+        "state": "idle",
+        "result": "ready",
+        "metrics": {
+          "bytes": 19584,
+          "sha256": "4423610ae14fd42d04723c6219731a487f771114036bb6de8e0a772b2eacb9b5",
+          "triangles": 584,
+          "drawCalls": 2,
+          "firstFrameMs": 63,
+          "pixelRatio": 1.5,
+          "renderer": "WebKit WebGL"
+        },
+        "stats": {
+          "frames": 69,
+          "intervals": [
+            50.10000000000002,
+            33.299999999999955,
+            33.30000000000007,
+            33.299999999999955,
+            33.30000000000007,
+            33.39999999999998,
+            33.39999999999998,
+            33.299999999999955,
+            33.299999999999955,
+            33.30000000000018,
+            33.299999999999955,
+            33.299999999999955,
+            33.40000000000009,
+            33.399999999999864,
+            33.200000000000045,
+            33.40000000000009,
+            33.399999999999864,
+            33.200000000000045,
+            33.40000000000009,
+            33.299999999999955,
+            33.399999999999864,
+            33.30000000000018,
+            33.299999999999955,
+            33.399999999999864,
+            33.30000000000018,
+            33.299999999999955,
+            33.399999999999864,
+            33.30000000000018,
+            33.299999999999955,
+            33.399999999999864,
+            33.200000000000045,
+            33.40000000000009,
+            33.299999999999955,
+            33.40000000000009,
+            33.299999999999955,
+            33.399999999999864,
+            33.200000000000045,
+            33.40000000000009,
+            33.399999999999864,
+            33.30000000000018,
+            33.29999999999973,
+            33.40000000000009,
+            33.20000000000027,
+            33.399999999999636,
+            33.30000000000018,
+            33.40000000000009,
+            33.29999999999973,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.40000000000009,
+            33.30000000000018,
+            33.29999999999973,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.40000000000009,
+            33.20000000000027,
+            33.399999999999636,
+            33.30000000000018,
+            33.30000000000018,
+            33.399999999999636,
+            33.30000000000018,
+            33.40000000000009
+          ],
+          "renderCalls": 2
+        }
+      },
+      "status": "PASS",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/"
+        },
+        {
+          "method": "GET",
+          "path": "/style.css"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.css"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/F2R_logo_white.svg"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_agent_clip_switch.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/adapter.js"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_home_agent.js"
+        },
+        {
+          "method": "GET",
+          "path": "/presentation.js"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.js"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/NotoSansKR-Regular.ttf"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.css"
+        },
+        {
+          "method": "GET",
+          "path": "/api/agent-media/public"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/models.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.bundle.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/speak.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/think.mp4"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "scenario": "functional + synthetic performance",
+      "checks": [
+        {
+          "name": "default video mode has no WebGL bundle or canvas",
+          "status": "PASS"
+        },
+        {
+          "name": "unapproved/missing model keeps video and never substitutes character",
+          "status": "PASS"
+        },
+        {
+          "name": "actual hashed GLB decoded and rendered; diagnostic label visible",
+          "status": "PASS"
+        },
+        {
+          "name": "animated render frames advance and DPR cap enforced",
+          "status": "PASS"
+        },
+        {
+          "name": "no horizontal overflow",
+          "status": "PASS"
+        },
+        {
+          "name": "character selection and greeting animation follow unchanged main",
+          "status": "PASS"
+        },
+        {
+          "name": "greeting completion returns to idle",
+          "status": "PASS"
+        },
+        {
+          "name": "actual input produces thinking/responding and three unknown-question options",
+          "status": "PASS"
+        },
+        {
+          "name": "all six application menus retain real main guidance and Kakao link",
+          "status": "PASS"
+        },
+        {
+          "name": "replay welcome works with 3D active",
+          "status": "PASS"
+        },
+        {
+          "name": "studio and dashboard destinations preserved (destination backends untested)",
+          "status": "PASS"
+        },
+        {
+          "name": "AI AGENT Studio guidance and destination preserved",
+          "status": "PASS"
+        },
+        {
+          "name": "hologram service menu opens and Escape closes",
+          "status": "PASS"
+        },
+        {
+          "name": "explicit video return disposes canvas and existing MP4 is playing",
+          "status": "PASS"
+        },
+        {
+          "name": "no JavaScript errors or write requests",
+          "status": "PASS"
+        }
+      ],
+      "performance": {
+        "mode": "diagnostic",
+        "agent": "seven",
+        "state": "idle",
+        "result": "ready",
+        "metrics": {
+          "bytes": 19584,
+          "sha256": "4423610ae14fd42d04723c6219731a487f771114036bb6de8e0a772b2eacb9b5",
+          "triangles": 584,
+          "drawCalls": 2,
+          "firstFrameMs": 99,
+          "pixelRatio": 1,
+          "renderer": "WebKit WebGL"
+        },
+        "stats": {
+          "frames": 135,
+          "intervals": [
+            16.600000000000023,
+            33.39999999999998,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.700000000000045,
+            16.5,
+            16.799999999999955,
+            16.700000000000045,
+            16.59999999999991,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.600000000000136,
+            16.799999999999955,
+            16.59999999999991,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.700000000000045,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            33.299999999999955,
+            16.700000000000045,
+            16.59999999999991,
+            16.700000000000045,
+            16.600000000000136,
+            16.699999999999818,
+            16.700000000000045,
+            16.600000000000136,
+            16.799999999999955,
+            16.59999999999991,
+            16.700000000000045,
+            49.90000000000009,
+            16.699999999999818,
+            16.700000000000045,
+            16.600000000000136,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.799999999999727,
+            16.5,
+            16.700000000000273,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.700000000000273,
+            16.699999999999818,
+            16.59999999999991,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.59999999999991,
+            16.800000000000182,
+            16.59999999999991,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.700000000000273,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.700000000000273,
+            16.59999999999991,
+            16.699999999999818,
+            16.59999999999991,
+            16.700000000000273,
+            16.699999999999818,
+            16.700000000000273
+          ],
+          "renderCalls": 2
+        }
+      },
+      "status": "PASS",
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/"
+        },
+        {
+          "method": "GET",
+          "path": "/style.css"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.css"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/F2R_logo_white.svg"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_agent_clip_switch.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/adapter.js"
+        },
+        {
+          "method": "GET",
+          "path": "/vendor/f2r_home_agent.js"
+        },
+        {
+          "method": "GET",
+          "path": "/presentation.js"
+        },
+        {
+          "method": "GET",
+          "path": "/compact.js"
+        },
+        {
+          "method": "GET",
+          "path": "/assets/NotoSansKR-Regular.ttf"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.css"
+        },
+        {
+          "method": "GET",
+          "path": "/api/agent-media/public"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/front.webp"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/seven/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/models.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/viewer.bundle.js"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/fixture.json"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/poster.jpg"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/speak.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/hyper3d/diagnostic.glb"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/idle.mp4"
+        },
+        {
+          "method": "GET",
+          "path": "/agent-media/public/suni/think.mp4"
+        }
+      ]
+    },
+    {
+      "scenario": "http404",
+      "checks": [
+        {
+          "name": "loading failure releases 3D and exposes existing video",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "message": "GLB HTTP 404 · 기존 영상/포스터 경로로 복귀",
+      "status": "PASS"
+    },
+    {
+      "scenario": "bad-hash",
+      "checks": [
+        {
+          "name": "loading failure releases 3D and exposes existing video",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "message": "Model SHA-256 does not match review record · 기존 영상/포스터 경로로 복귀",
+      "status": "PASS"
+    },
+    {
+      "scenario": "malformed",
+      "checks": [
+        {
+          "name": "loading failure releases 3D and exposes existing video",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "message": "Invalid GLB 2.0 · 기존 영상/포스터 경로로 복귀",
+      "status": "PASS"
+    },
+    {
+      "scenario": "missing-clip",
+      "checks": [
+        {
+          "name": "loading failure releases 3D and exposes existing video",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "message": "Missing reviewed animation: greeting · 기존 영상/포스터 경로로 복귀",
+      "status": "PASS"
+    },
+    {
+      "scenario": "no-webgl",
+      "checks": [
+        {
+          "name": "loading failure releases 3D and exposes existing video",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "message": "THREE.WebGLRenderer: Error creating WebGL context. · 기존 영상/포스터 경로로 복귀",
+      "status": "PASS"
+    },
+    {
+      "scenario": "timeout",
+      "checks": [
+        {
+          "name": "loading failure releases 3D and exposes existing video",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "message": "3D 로딩 시간 초과 · 기존 영상/포스터 경로로 복귀",
+      "status": "PASS"
+    },
+    {
+      "scenario": "context-loss",
+      "checks": [
+        {
+          "name": "real WebGL context loss returns to video",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "scenario": "rapid-switch",
+      "checks": [
+        {
+          "name": "stale model loads cannot overwrite latest character",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "scenario": "reduced-motion",
+      "checks": [
+        {
+          "name": "reduced motion renders static pose without continuous frames",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    {
+      "scenario": "offscreen",
+      "checks": [
+        {
+          "name": "offscreen rendering pauses and resumes",
+          "status": "PASS"
+        },
+        {
+          "name": "no uncaught page errors",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
+  ]
+}

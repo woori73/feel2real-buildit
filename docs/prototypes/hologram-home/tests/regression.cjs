@@ -48,7 +48,7 @@ async function scenario(width,height,mode='valid',staff=false){
  await page.locator('.review-note').evaluate(e=>e.textContent='TEST FIXTURE · 운영 캐릭터 아님 · 로컬 기능 검증');
  return {context,page,requests,errors};
 }
-async function shownClip(page,agent,clip){await page.waitForFunction(([agent,clip])=>[...document.querySelectorAll('video')].some(v=>v.classList.contains('is-on')&&v.getAttribute('src')?.endsWith('/'+agent+'/'+clip+'.mp4')&&v.readyState>=2&&!v.paused),[agent,clip]);}
+async function shownClip(page,agent,clip){const frame=await page.waitForFunction(([agent,clip])=>{const v=[...document.querySelectorAll('video')].find(v=>v.classList.contains('is-on')&&v.getAttribute('src')?.endsWith('/'+agent+'/'+clip+'.mp4')&&v.readyState>=2&&!v.paused);return v?{muted:v.muted,loop:v.loop,src:v.getAttribute('src')}:false;},[agent,clip]);const value=await frame.jsonValue();await frame.dispose();return value;}
 async function shot(page,width,name){await page.screenshot({path:path.join(out,'captures',width+'-'+name+'.png'),fullPage:true});}
 try{
  for(const [width,height] of [[360,800],[390,844],[430,932],[768,1024],[1440,1050]]){
@@ -88,9 +88,8 @@ try{
    await page.locator('#homeChat .is-agent').last().filter({hasText:'학교·학년·시험 범위'}).waitFor();
    pass(row,'unknown choice performs intake guidance');
    await page.locator('[data-home-agent="suni"]').click();
-   await shownClip(page,'suni','speak');
+   const speaking=await shownClip(page,'suni','speak');
    assert.match(await page.locator('#homeChat .is-agent').last().innerText(),/서수니입니다. Feel to Real/);
-   const speaking=await page.locator('video.is-on').last().evaluate(v=>({muted:v.muted,loop:v.loop,src:v.getAttribute('src')}));
    check(row,'Suni selection starts unmuted nonloop greeting clip',()=>{assert.equal(speaking.muted,false);assert.equal(speaking.loop,false);assert.match(speaking.src,/suni\/speak.mp4/);});
    await shot(page,width,'suni-fixture-video');
    await shownClip(page,'suni','idle');

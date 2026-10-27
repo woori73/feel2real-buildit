@@ -1,0 +1,31 @@
+{
+  "base": "2ac1b1d1",
+  "main": "df425588",
+  "pr913Head": "e458864e",
+  "branch": "feat/compact-ai-assistant-20261028",
+  "counts": {
+    "legacy": 75,
+    "restoration": 118,
+    "mainGuidance": 20,
+    "hyper3dBrowser": 80,
+    "glbUnit": 8,
+    "resize": 45,
+    "keyboardUnit": 4
+  },
+  "pass": 350,
+  "fail": 0,
+  "beforeAfterCaptures": 40,
+  "scope": "Local Chromium emulation; synthetic media and diagnostic GLB. Production characters/devices unverified.",
+  "unchangedSHA256": {
+    "vendor/f2r_home_agent.js": "ff1220d1cd9e520533897b7a896bb03a5ab50559ed03bd54b61bfa25a858e6d5",
+    "vendor/f2r_agent_clip_switch.js": "880e19fffbbd079e1bb668f379d6c7c0d7517cb858ed904c3882019850c64d89",
+    "presentation.js": "0a6d7ba3dcee48e5a40206471e7b5f3b146e0dbb5bc37ccdc7877d316077db4b",
+    "style.css": "d913ebbb3299c72f49252d0d5b0ffebe98b1179d6ecd3f2fb61ee69455ccdaa7",
+    "hyper3d/adapter.js": "135b025cc6ba1b9f6567217cf71d73733985a7413c5a524d84ffadc3804d46ec",
+    "hyper3d/viewer.js": "9976d1d74a240da7e7b52156e33d60629676ebea3b51bcb8a1eb3116a756a0ef",
+    "hyper3d/viewer.bundle.js": "88c895ee9d14bf67ae6be8fa61d475a8e14a95f641ac499a62c27bdf0a679896",
+    "hyper3d/diagnostic.glb": "4423610ae14fd42d04723c6219731a487f771114036bb6de8e0a772b2eacb9b5",
+    "hyper3d/models.json": "62c61247c757c4332d2d5fe1f41a44ebec7fdc6ed16ec1409d3a3a1fb9591f1c",
+    "assets/F2R_logo_white.svg": "579068bf2a9de74ea7ef1aa41067840c5901096bce4bcf96ad968cd91d2f4224"
+  }
+}

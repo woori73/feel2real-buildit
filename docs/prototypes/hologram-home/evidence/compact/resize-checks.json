@@ -1,0 +1,207 @@
+[
+  {
+    "width": 360,
+    "checks": [
+      {
+        "name": "before and after captures complete without JS errors",
+        "status": "PASS"
+      },
+      {
+        "name": "command width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "stage width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "assistant width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "zero page overflow and no clipped names/menu labels",
+        "status": "PASS"
+      },
+      {
+        "name": "all visible assistant and intake controls retain 44px hit targets",
+        "status": "PASS"
+      },
+      {
+        "name": "readable menu type and mobile 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "whole video remains contained; 3D canvas shrinks on both axes",
+        "status": "PASS"
+      },
+      {
+        "name": "complete conversation remains keyboard-scrollable",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "checks": [
+      {
+        "name": "before and after captures complete without JS errors",
+        "status": "PASS"
+      },
+      {
+        "name": "command width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "stage width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "assistant width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "zero page overflow and no clipped names/menu labels",
+        "status": "PASS"
+      },
+      {
+        "name": "all visible assistant and intake controls retain 44px hit targets",
+        "status": "PASS"
+      },
+      {
+        "name": "readable menu type and mobile 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "whole video remains contained; 3D canvas shrinks on both axes",
+        "status": "PASS"
+      },
+      {
+        "name": "complete conversation remains keyboard-scrollable",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "width": 430,
+    "checks": [
+      {
+        "name": "before and after captures complete without JS errors",
+        "status": "PASS"
+      },
+      {
+        "name": "command width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "stage width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "assistant width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "zero page overflow and no clipped names/menu labels",
+        "status": "PASS"
+      },
+      {
+        "name": "all visible assistant and intake controls retain 44px hit targets",
+        "status": "PASS"
+      },
+      {
+        "name": "readable menu type and mobile 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "whole video remains contained; 3D canvas shrinks on both axes",
+        "status": "PASS"
+      },
+      {
+        "name": "complete conversation remains keyboard-scrollable",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "width": 768,
+    "checks": [
+      {
+        "name": "before and after captures complete without JS errors",
+        "status": "PASS"
+      },
+      {
+        "name": "command width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "stage width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "assistant width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "zero page overflow and no clipped names/menu labels",
+        "status": "PASS"
+      },
+      {
+        "name": "all visible assistant and intake controls retain 44px hit targets",
+        "status": "PASS"
+      },
+      {
+        "name": "readable menu type and mobile 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "whole video remains contained; 3D canvas shrinks on both axes",
+        "status": "PASS"
+      },
+      {
+        "name": "complete conversation remains keyboard-scrollable",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "checks": [
+      {
+        "name": "before and after captures complete without JS errors",
+        "status": "PASS"
+      },
+      {
+        "name": "command width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "stage width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "assistant width and height shrink by 20–25%",
+        "status": "PASS"
+      },
+      {
+        "name": "zero page overflow and no clipped names/menu labels",
+        "status": "PASS"
+      },
+      {
+        "name": "all visible assistant and intake controls retain 44px hit targets",
+        "status": "PASS"
+      },
+      {
+        "name": "readable menu type and mobile 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "whole video remains contained; 3D canvas shrinks on both axes",
+        "status": "PASS"
+      },
+      {
+        "name": "complete conversation remains keyboard-scrollable",
+        "status": "PASS"
+      }
+    ]
+  }
+]

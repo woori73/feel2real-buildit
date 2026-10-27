@@ -1,7 +1,7 @@
 // Given/when/then browser integration. All media intercepted locally; no paid/API/DB calls.
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
-const root=path.resolve(__dirname,'..'),out=path.join(root,'evidence/hyper3d');fs.mkdirSync(out+'/captures',{recursive:true});
+const root=path.resolve(__dirname,'..'),out=path.resolve(process.env.EVIDENCE_DIR||path.join(root,'evidence/hyper3d'));fs.mkdirSync(out+'/captures',{recursive:true});
 const results=[];const save=()=>fs.writeFileSync(out+'/results.json',JSON.stringify({environment:'Local Chromium / SwiftShader; mobile viewport emulation, not phone hardware. Diagnostic GLB and intercepted synthetic media only.',results},null,2));
 const fixture=JSON.parse(fs.readFileSync(root+'/hyper3d/fixture.json'));let browser;
 const record=(row,name)=>{row.checks.push({name,status:'PASS'});save();};
@@ -52,7 +52,7 @@ try{
    await page.evaluate(()=>{window.observed3D=[];new MutationObserver(()=>observed3D.push(document.querySelector('#modelViewport').dataset.clip)).observe(document.querySelector('#modelViewport'),{attributes:true,attributeFilter:['data-clip']});});
    await page.locator('#homeInput').fill('알 수 없는 질문 zzz');await page.locator('.send').click();await page.waitForFunction(()=>window.observed3D.includes('thinking')&&window.observed3D.includes('responding'));
    assert.equal(await page.locator('#homeChat .is-agent').last().locator('button').count(),3);record(row,'actual input produces thinking/responding and three unknown-question options');
-   for(const button of await page.locator('.si-holo-tile').all()){await button.click();await page.locator('#homeChat .is-agent').last().filter({hasText:'240문항'}).waitFor();}
+   for(const button of await page.locator('.si-holo-tile').all()){const count=await page.locator('#homeChat .is-agent').count();await button.click();await page.waitForFunction(count=>document.querySelectorAll('#homeChat .is-agent').length>count,count);await page.locator('#homeChat .is-agent').last().filter({hasText:'240문항'}).waitFor();}
    assert.equal(await page.locator('.si-holo-tile').count(),6);assert.equal(await page.locator('#homeChat .is-agent').last().locator('a').first().getAttribute('href'),'https://open.kakao.com/o/sMf4ifRi');record(row,'all six application menus retain real main guidance and Kakao link');
    await page.locator('#homeWelcomeAgain').click();assert.match(await page.locator('#homeChat .is-agent').last().innerText(),/안녕하세요/);record(row,'replay welcome works with 3D active');
    await page.locator('[data-panel=naesin]').click();assert.equal(await page.locator('#naesin-panel a').last().getAttribute('href'),'/naesin-production-studio?division=HIGH');assert.equal(await page.locator('.prompt-row a').getAttribute('href'),'/dashboard');record(row,'studio and dashboard destinations preserved (destination backends untested)');

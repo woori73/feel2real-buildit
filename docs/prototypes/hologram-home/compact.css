@@ -1,0 +1,76 @@
+/* Compact presentation only. Keep main dialogue/media/3D state machines unchanged.
+   Shrink layout dimensions, not the whole page: type and hit targets stay usable. */
+.command{width:78%;margin-inline:auto;grid-template-columns:185.64px minmax(0,1fr) 185.64px;gap:15.6px}
+.stage{min-height:436.8px}
+.service-stack{padding:23.4px 0;gap:10.92px}
+.si-holo-tile{min-height:117px;padding:15.6px;gap:7.8px}
+.si-holo-tile b{font-size:16px;line-height:1.5}
+.si-holo-tile small{font-size:12px;line-height:1.5}
+.service-card:before{width:18.72px}
+.stage-top,.stage-bottom{padding:11.7px 6px}
+.media-screen{min-height:234px;margin-inline:14px}
+/* contain preserves every edge of the existing video and fallback poster. */
+.media-screen video,.media-screen>img{object-fit:contain}
+.characters{margin-top:12px;padding-inline:9px;gap:6px}
+.character{grid-template-columns:34px minmax(0,1fr);min-height:44px}
+.portrait{height:44px}
+.identity{padding:6px;gap:2px 4px}
+.identity strong{font-size:16px}
+.orbit{inset:0 0 46.8px}
+.assistant{width:78%;max-width:592.8px;margin-top:20px;padding:17px 18px;box-shadow:0 12.5px 46.8px #0006}
+.assistant-title,.assistant-title>div{gap:8px}
+.conversation{max-height:230px}
+.si-home-msg{margin:14px 0;font-size:14px}
+.si-home-msg p{margin:5px 0;line-height:1.7}
+.si-home-actions{gap:6px}
+.si-home-actions a,.si-home-actions button,#naesin-panel a{padding:6px 9px;min-height:44px}
+#homeForm{gap:6px;padding:4px}
+#homeInput{padding:7px;min-height:44px}
+.send{padding:6px 10px;min-width:44px;min-height:44px;font-size:13px}
+.home-mode{gap:6px;margin-block:8px}
+.home-mode button{padding:6px;min-height:44px}
+.prompt-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px}
+.prompt-row button,.prompt-row a{min-width:0;min-height:44px;padding:4px;font-size:12px;line-height:1.5;text-align:center;justify-content:center;white-space:normal;word-break:keep-all}
+.status-dot{box-shadow:0 0 7.8px #45e4be50}
+@media(max-width:1100px){.command{grid-template-columns:148.2px minmax(0,1fr) 148.2px;gap:9.36px}}
+@media(max-width:900px){
+ .command{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .stage{min-height:397.8px}
+ .service-stack{display:contents}
+ .si-holo-tile{min-height:85.8px;padding:10px;gap:5px}
+ .media-screen{min-height:218.4px}
+ .characters{max-width:374.4px}
+}
+@media(max-width:600px){
+ .command{gap:8px}
+ .stage{min-height:319.8px}
+ .stage-top,.stage-bottom{padding:8px 2px}
+ .stage-bottom strong{font-size:14px}
+ .media-screen{min-height:171.6px;margin-inline:14px}
+ .characters{padding-inline:3px;margin-top:8px;gap:6px}
+ .character{grid-template-columns:24px minmax(0,1fr)}
+ .portrait{height:44px}
+ .identity{padding:6px 4px;gap:2px}
+ .identity strong{font-size:14px}
+ .selected-word{font-size:10px}
+ .si-holo-tile{min-height:79.56px;padding:8px;gap:5px}
+ .si-holo-tile b{font-size:14px;line-height:1.5}
+ .si-holo-tile small{font-size:12px;line-height:1.5}
+ .assistant{padding:12px 10px;margin-top:16px}
+ .assistant-title>div{gap:6px}
+ .assistant-title>div>span:last-child{font-size:10px}
+ .conversation{max-height:180px}
+ .si-home-msg{font-size:16px;margin-block:10px}
+ #homeInput{font-size:16px;padding:6px 4px}
+ .send{font-size:12px;padding:6px 4px}
+ .si-home-actions a,.si-home-actions button{font-size:12px;padding:6px;min-height:44px}
+ .home-mode{font-size:12px;line-height:1.5}
+ .home-mode button{font-size:12px}
+}
+@media(min-width:601px){
+ .assistant{padding-block:12px}
+ .conversation{max-height:120px}
+ .home-mode{margin-block:6px}
+}
+.conversation:focus-visible{outline:2px solid #B5F3FF;outline-offset:3px}
+.si-holo-tile b,.si-holo-tile small{word-break:keep-all}

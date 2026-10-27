@@ -1,0 +1,12 @@
+✔ given focused log, Home and End expose the complete conversation (2.699766ms)
+✔ given a descendant action, retain its native key handling (0.808084ms)
+✔ given modified Home/End, preserve browser and selection shortcuts (0.940233ms)
+✔ given other navigation/input keys, do not intercept (0.739451ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13.489406

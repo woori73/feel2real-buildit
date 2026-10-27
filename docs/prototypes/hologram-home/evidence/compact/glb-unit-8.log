@@ -1,0 +1,20 @@
+(node:151795) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/work/f2r-compact-assistant/docs/prototypes/hologram-home/hyper3d/viewer.bundle.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /workspace/work/f2r-compact-assistant/docs/prototypes/hologram-home/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ given self-contained GLB, inspection accepts its JSON (0.913539ms)
+✔ given external buffer URI, reject before any loader request (0.441767ms)
+✔ given external texture URI, reject before image decoding (0.192362ms)
+✔ given excessive texture count, reject allocation (0.165312ms)
+✔ given required compression extension, require separate validation (0.174205ms)
+✔ given >8MiB model, reject byte budget (0.151081ms)
+✔ given corrupt GLB length, reject structure (0.169568ms)
+✔ given authored fixture, hash matches recorded source (3.709694ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10.86801
