@@ -368,7 +368,8 @@ footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); pa
 .en-drawer .en-naesin-panel { display:flex; flex-direction:column; }
 .en-drawer .en-naesin-panel a { padding:14px 20px 14px 36px; font-size:16px; }
 /* 메뉴가 하나 늘어 좁은 PC 폭에서 넘치지 않도록: 1241px 이상은 간격만 줄이고, 961~1060px은 모바일 메뉴(같은 항목 전부 포함)를 쓴다. */
-@media (min-width:1241px) { .en-nav { gap:20px; } .en-menu { gap:12px; font-size:14px; } }
+/* 대체 글꼴에서도 서비스·인증 메뉴가 모두 들어가도록 넓은 PC의 바깥 여백만 줄인다. */
+@media (min-width:1241px) { .en-nav { gap:20px; padding-inline:max(16px, calc((100vw - 1360px)/2)); } .en-menu { gap:12px; font-size:14px; } }
 @media (min-width:1061px) and (max-width:1240px) { .en-menu { gap:9px; } }
 @media (min-width:961px) and (max-width:1060px) {
   .en-menu { display:none; }

@@ -88,9 +88,11 @@ class StudioEntryLinkBrowserQaMySqlTest {
       clickVisible(driver, wait, By.id("enHeroStudio"));
       waitStudio(driver, wait);
 
-      // 모바일 첫 화면은 AI 비서 대화가 먼저다(서비스 바로가기 줄은 숨김). 비서 홀로그램 'AI AGENT'를 눌러도 제작협업실 안내 버튼이 나온다.
+      // 신청 타일은 신청 안내를 연다. 제작협업실은 기존 비서 입력으로 요청해 안내 링크를 실제 클릭한다.
       driver.get(BASE + "/");
-      clickVisible(driver, wait, By.cssSelector("[data-home-intent='studio']"));
+      wait.until(d -> d.findElement(By.id("homeInput")).isDisplayed());
+      driver.findElement(By.id("homeInput")).sendKeys("AI AGENT 제작협업실");
+      clickVisible(driver, wait, By.cssSelector("#homeForm button[type='submit']"));
       clickVisible(driver, wait, By.cssSelector("#homeChat a[href='/ai-agent-studio']"));
       waitStudio(driver, wait);
       driver.get(BASE + "/");

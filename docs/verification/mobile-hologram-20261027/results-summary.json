@@ -601,5 +601,280 @@
     "failures": 0,
     "errors": 0,
     "skipped": 0
+  },
+  "ci_initial_e2e": {
+    "stats": {
+      "startTime": "2026-10-27T09:30:35.001Z",
+      "duration": 111014.513,
+      "expected": 19,
+      "skipped": 0,
+      "unexpected": 1,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "name": "home 360x800, fallback: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 10443,
+        "errors": []
+      },
+      {
+        "name": "home 390x844, fallback: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 8761,
+        "errors": []
+      },
+      {
+        "name": "home 430x932, fallback: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9627,
+        "errors": []
+      },
+      {
+        "name": "home 1440x1050, fallback: geometry, all six menus, intake links and assistant",
+        "status": "failed",
+        "durationMs": 10035,
+        "errors": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m18\u001b[39m\n\n  72 |         fs.writeFileSync(path.join(output, `${id}.json`), JSON.stringify({ width,height,font,metrics,replies }, null, 2));\n  73 |         // Soft checks retain every baseline defect and all evidence, rather than stopping at the first tile.\n> 74 |         expect.soft(metrics.overflow).toBe(0);\n     |                                       ^\n  75 |         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);\n  76 |         for (const button of metrics.buttons) {\n  77 |           expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);\n    at /home/runner/work/feel2real-buildit/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:74:39"
+        ]
+      },
+      {
+        "name": "home 360x800, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9096,
+        "errors": []
+      },
+      {
+        "name": "home 390x844, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9045,
+        "errors": []
+      },
+      {
+        "name": "home 430x932, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9184,
+        "errors": []
+      },
+      {
+        "name": "home 1440x1050, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9849,
+        "errors": []
+      },
+      {
+        "name": "anonymous, student and cross-origin calls cannot use assistant writes",
+        "status": "passed",
+        "durationMs": 461,
+        "errors": []
+      },
+      {
+        "name": "first visit, pause/resume, stale version and completion persist per user",
+        "status": "passed",
+        "durationMs": 122,
+        "errors": []
+      },
+      {
+        "name": "student draft does not write; forged hash, concurrent approval, replay and ownership are safe",
+        "status": "passed",
+        "durationMs": 774,
+        "errors": []
+      },
+      {
+        "name": "class creation, assignment, updates and stale target checks reuse actual APIs",
+        "status": "passed",
+        "durationMs": 1256,
+        "errors": []
+      },
+      {
+        "name": "attendance and consultation create/message verify persisted records",
+        "status": "passed",
+        "durationMs": 785,
+        "errors": []
+      },
+      {
+        "name": "expiry, cancellation, live permission revocation and unknown outcome never replay writes",
+        "status": "passed",
+        "durationMs": 617,
+        "errors": []
+      },
+      {
+        "name": "CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access",
+        "status": "passed",
+        "durationMs": 555,
+        "errors": []
+      },
+      {
+        "name": "definite upstream rejection reports failure, audits it and cannot replay",
+        "status": "passed",
+        "durationMs": 256,
+        "errors": []
+      },
+      {
+        "name": "material text, missing identifiers and unsupported attachments require explicit review",
+        "status": "passed",
+        "durationMs": 229,
+        "errors": []
+      },
+      {
+        "name": "read-only inquiries, correction guidance and notice draft never create write drafts",
+        "status": "passed",
+        "durationMs": 615,
+        "errors": []
+      },
+      {
+        "name": "natural command and desktop/mobile workbench render, highlight, persist and approve through UI",
+        "status": "passed",
+        "durationMs": 22327,
+        "errors": []
+      },
+      {
+        "name": "login surfaces welcome link without moving the current service",
+        "status": "passed",
+        "durationMs": 1873,
+        "errors": []
+      }
+    ]
+  },
+  "final_after_ci_fixes": {
+    "stats": {
+      "startTime": "2026-10-27T09:39:40.526Z",
+      "duration": 111586.73300000001,
+      "expected": 20,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "name": "home 360x800, fallback: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 11479,
+        "errors": []
+      },
+      {
+        "name": "home 390x844, fallback: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 10231,
+        "errors": []
+      },
+      {
+        "name": "home 430x932, fallback: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 11088,
+        "errors": []
+      },
+      {
+        "name": "home 1440x1050, fallback: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 11415,
+        "errors": []
+      },
+      {
+        "name": "home 360x800, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 11562,
+        "errors": []
+      },
+      {
+        "name": "home 390x844, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9912,
+        "errors": []
+      },
+      {
+        "name": "home 430x932, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9024,
+        "errors": []
+      },
+      {
+        "name": "home 1440x1050, pretendard: geometry, all six menus, intake links and assistant",
+        "status": "passed",
+        "durationMs": 9699,
+        "errors": []
+      },
+      {
+        "name": "anonymous, student and cross-origin calls cannot use assistant writes",
+        "status": "passed",
+        "durationMs": 327,
+        "errors": []
+      },
+      {
+        "name": "first visit, pause/resume, stale version and completion persist per user",
+        "status": "passed",
+        "durationMs": 147,
+        "errors": []
+      },
+      {
+        "name": "student draft does not write; forged hash, concurrent approval, replay and ownership are safe",
+        "status": "passed",
+        "durationMs": 1016,
+        "errors": []
+      },
+      {
+        "name": "class creation, assignment, updates and stale target checks reuse actual APIs",
+        "status": "passed",
+        "durationMs": 939,
+        "errors": []
+      },
+      {
+        "name": "attendance and consultation create/message verify persisted records",
+        "status": "passed",
+        "durationMs": 526,
+        "errors": []
+      },
+      {
+        "name": "expiry, cancellation, live permission revocation and unknown outcome never replay writes",
+        "status": "passed",
+        "durationMs": 617,
+        "errors": []
+      },
+      {
+        "name": "CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access",
+        "status": "passed",
+        "durationMs": 642,
+        "errors": []
+      },
+      {
+        "name": "definite upstream rejection reports failure, audits it and cannot replay",
+        "status": "passed",
+        "durationMs": 242,
+        "errors": []
+      },
+      {
+        "name": "material text, missing identifiers and unsupported attachments require explicit review",
+        "status": "passed",
+        "durationMs": 192,
+        "errors": []
+      },
+      {
+        "name": "read-only inquiries, correction guidance and notice draft never create write drafts",
+        "status": "passed",
+        "durationMs": 626,
+        "errors": []
+      },
+      {
+        "name": "natural command and desktop/mobile workbench render, highlight, persist and approve through UI",
+        "status": "passed",
+        "durationMs": 18936,
+        "errors": []
+      },
+      {
+        "name": "login surfaces welcome link without moving the current service",
+        "status": "passed",
+        "durationMs": 791,
+        "errors": []
+      }
+    ]
+  },
+  "studio_entry_ci_fix": {
+    "tests": 1,
+    "passed": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "durationSeconds": 66.489,
+    "schema": "f2r_studio_mobile_test"
   }
 }

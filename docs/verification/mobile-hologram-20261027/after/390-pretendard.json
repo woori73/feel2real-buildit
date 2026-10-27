@@ -37,6 +37,24 @@
     },
     "rows": "54px 254.812px 68px",
     "overflow": 0,
+    "header": {
+      "logo": {
+        "x": 16,
+        "y": 16.5,
+        "width": 127.015625,
+        "height": 30,
+        "right": 143.015625,
+        "bottom": 46.5
+      },
+      "actions": {
+        "x": 205.390625,
+        "y": 11.5,
+        "width": 168.609375,
+        "height": 40,
+        "right": 374,
+        "bottom": 51.5
+      }
+    },
     "buttons": [
       {
         "title": "기말고사 이용권",

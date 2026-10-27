@@ -1,0 +1,75 @@
+chromium-local	Original assistant E2E and responsive regression	﻿2026-10-27T09:30:33.8871014Z ##[group]Run export HOME_FONT_PATH="$RUNNER_TEMP/PretendardVariable.woff2"
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8871607Z export HOME_FONT_PATH="$RUNNER_TEMP/PretendardVariable.woff2"
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8872263Z export CHROMIUM_PATH="$(node -e 'process.stdout.write(require("@playwright/test").chromium.executablePath())')"
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8873045Z export UNIFIED_EVIDENCE_DIR="$GITHUB_WORKSPACE/docs/verification/mobile-hologram-20261027/assistant"
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8873559Z npm test
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8937953Z shell: /usr/bin/bash -e {0}
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8938692Z env:
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8939015Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8939528Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-1/x64
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8939919Z   MOBILE_BUILDIT_PID: 4681
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8940162Z   MOBILE_ACADEMYCRAFT_PID: 4682
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:33.8940398Z ##[endgroup]
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:34.3864523Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:34.3865149Z > test
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:34.3865568Z > playwright test
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:34.3865744Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:35.6488901Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:35.6489594Z Running 20 tests using 1 worker
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:35.6491017Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:47.4700425Z   ✓   1 home-responsive.spec.js:15:5 › home 360x800, fallback: geometry, all six menus, intake links and assistant (10.4s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:30:56.2667703Z   ✓   2 home-responsive.spec.js:15:5 › home 390x844, fallback: geometry, all six menus, intake links and assistant (8.8s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:05.9231282Z   ✓   3 home-responsive.spec.js:15:5 › home 430x932, fallback: geometry, all six menus, intake links and assistant (9.6s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:17.0146114Z   ✘   4 home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant (10.0s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:26.7930231Z   ✓   5 home-responsive.spec.js:15:5 › home 360x800, pretendard: geometry, all six menus, intake links and assistant (9.1s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:35.8646894Z   ✓   6 home-responsive.spec.js:15:5 › home 390x844, pretendard: geometry, all six menus, intake links and assistant (9.0s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:45.0735749Z   ✓   7 home-responsive.spec.js:15:5 › home 430x932, pretendard: geometry, all six menus, intake links and assistant (9.2s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:54.9481899Z   ✓   8 home-responsive.spec.js:15:5 › home 1440x1050, pretendard: geometry, all six menus, intake links and assistant (9.8s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:56.2210886Z   ✓   9 unified.spec.js:41:1 › anonymous, student and cross-origin calls cannot use assistant writes (461ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:56.3640658Z   ✓  10 unified.spec.js:53:1 › first visit, pause/resume, stale version and completion persist per user (122ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:57.1491917Z   ✓  11 unified.spec.js:62:1 › student draft does not write; forged hash, concurrent approval, replay and ownership are safe (774ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:58.4323212Z   ✓  12 unified.spec.js:75:1 › class creation, assignment, updates and stale target checks reuse actual APIs (1.3s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:59.2361754Z   ✓  13 unified.spec.js:86:1 › attendance and consultation create/message verify persisted records (785ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:31:59.8677448Z   ✓  14 unified.spec.js:93:1 › expiry, cancellation, live permission revocation and unknown outcome never replay writes (617ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:00.4350211Z   ✓  15 unified.spec.js:109:1 › CSV and natural ledger entry preserve evidence, store once, count reviews and enforce business access (555ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:00.7033058Z   ✓  16 unified.spec.js:124:1 › definite upstream rejection reports failure, audits it and cannot replay (256ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:00.9491632Z   ✓  17 unified.spec.js:132:1 › material text, missing identifiers and unsupported attachments require explicit review (229ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:01.5798801Z   ✓  18 unified.spec.js:140:1 › read-only inquiries, correction guidance and notice draft never create write drafts (615ms)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:23.9371050Z   ✓  19 unified.spec.js:151:1 › natural command and desktop/mobile workbench render, highlight, persist and approve through UI (22.3s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:25.8647988Z   ✓  20 unified.spec.js:226:1 › login surfaces welcome link without moving the current service (1.9s)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0160220Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0165182Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0176090Z   1) home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0177013Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0177436Z     Error: expect(received).toBe(expected) // Object.is equality
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0177941Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0178106Z     Expected: 0
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0182374Z     Received: 18
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0183066Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0183906Z       72 |         fs.writeFileSync(path.join(output, `${id}.json`), JSON.stringify({ width,height,font,metrics,replies }, null, 2));
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0185430Z       73 |         // Soft checks retain every baseline defect and all evidence, rather than stopping at the first tile.
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0186373Z     > 74 |         expect.soft(metrics.overflow).toBe(0);
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0187023Z          |                                       ^
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0188169Z       75 |         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0189681Z       76 |         for (const button of metrics.buttons) {
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0190553Z       77 |           expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0191808Z         at /home/runner/work/feel2real-buildit/feel2real-buildit/e2e/unified-assistant/home-responsive.spec.js:74:39
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0192593Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0193464Z     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0194784Z     test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/test-failed-1.png
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0196197Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0196705Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0197477Z     Error Context: test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/error-context.md
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0202984Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0203815Z     attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0204997Z     test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/trace.zip
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0205808Z     Usage:
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0205994Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0206776Z         npx playwright show-trace test-results/home-responsive-home-1440x-5f89d--intake-links-and-assistant/trace.zip
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0207630Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0208497Z     ────────────────────────────────────────────────────────────────────────────────────────────────
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0209006Z
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0209142Z   1 failed
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0210154Z     home-responsive.spec.js:15:5 › home 1440x1050, fallback: geometry, all six menus, intake links and assistant
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0211068Z   19 passed (1.9m)
+chromium-local	Original assistant E2E and responsive regression	2026-10-27T09:32:26.0454380Z ##[error]Process completed with exit code 1.

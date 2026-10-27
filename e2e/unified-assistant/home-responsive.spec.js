@@ -49,6 +49,7 @@ for (const font of ['fallback', 'pretendard']) {
           return { stage:rect(stage), caption:rect(name), name:text(document.querySelector('#homeName')),
             subtitle:text(name.querySelector('small')), rows:getComputedStyle(stage).gridTemplateRows,
             overflow:document.documentElement.scrollWidth - innerWidth,
+            header:{ logo:rect(document.querySelector('.en-logo')), actions:rect(document.querySelector('.en-actions')) },
             buttons:[...document.querySelectorAll('.si-holo-tile')].map(button => {
               const r=rect(button), hit=document.elementFromPoint(r.x+r.width/2, r.y+r.height/2);
               return { title:button.querySelector('b').textContent, intent:button.dataset.homeIntent,
@@ -72,6 +73,8 @@ for (const font of ['fallback', 'pretendard']) {
         fs.writeFileSync(path.join(output, `${id}.json`), JSON.stringify({ width,height,font,metrics,replies }, null, 2));
         // Soft checks retain every baseline defect and all evidence, rather than stopping at the first tile.
         expect.soft(metrics.overflow).toBe(0);
+        expect.soft(metrics.header.logo.x).toBeGreaterThanOrEqual(0);
+        expect.soft(metrics.header.actions.right).toBeLessThanOrEqual(width);
         for (const text of [metrics.name, metrics.subtitle]) expect.soft(text.bottom).toBeLessThanOrEqual(metrics.stage.bottom-1);
         for (const button of metrics.buttons) {
           expect.soft(button.bottom).toBeLessThanOrEqual(metrics.caption.y+1);

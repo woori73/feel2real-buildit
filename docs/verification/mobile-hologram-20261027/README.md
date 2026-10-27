@@ -1,7 +1,7 @@
 # Feel2Real 모바일 UI 수정·AI 비서 회귀 검증
 
 작업 기준일: 2026-10-27 (한국 시간). 기준 `main`: `b8242e87cf9fee596c2a1122f9b9f88144caa45c` (#911).
-브랜치: `fix/mobile-hologram-assistant-20261027`. 제품·테스트 수정 커밋: `83d1819`.
+브랜치: `fix/mobile-hologram-assistant-20261027`. 최초 제품·테스트 수정 커밋: `83d1819`. CI에서 드러난 데스크톱 여백·기존 Studio 테스트 정합성도 이 브랜치에서 후속 수정했다.
 
 ## 1. 완료 범위와 근거
 
@@ -25,6 +25,10 @@
 | 1440×1050 | 안쪽 여유 13px | 안쪽 여유 13px | 470 → 470px | 0px |
 
 이 수치는 이번 Chromium·글꼴 환경의 직접 측정값이다. 이전 보고서의 13.12/11.39px와 동일 환경이라고 가정하지 않았다. 실제 Pretendard 로드 상태도 별도 4개 케이스에서 검사했고, 수정 후 이름표·타일 겹침·가로 넘침이 없었다. 각 JSON에 그리드 행 높이·문자 Range 좌표·타일 변환/터치 가능 여부와 메뉴별 실제 응답을 담았다.
+
+### CI에서 확인한 데스크톱 상단 메뉴
+
+CI의 1440px 대체 글꼴에서는 상단 서비스 메뉴와 인증 버튼의 최소 너비가 기존 1240px 내부 폭보다 커져 가로로 18px 넘쳤다. 로컬 기본 글꼴에서는 넘침이 0이어서 CI 캡처로 확인했다([당시 화면](ci-initial/1440-fallback-home.png)·[좌표](ci-initial/1440-fallback.json)). `landing_edunova.css`의 1241px 이상 규칙에서 상단 바의 바깥 여백 계산 기준만 1240→1360px로 넓혔다. 문구·글자 크기·서비스 항목·클릭 경로는 유지하고, 회귀 검사에 로고/인증 버튼이 화면 안에 있는지도 추가했다.
 
 ### 홀로그램 메뉴 비교표
 
@@ -53,6 +57,8 @@
 - serial 실패 때문에 미실행됐던 마지막 `/home` 환영 링크까지 실행
 
 신규 반응형 검사의 첫 수정 후 실행은 19 통과·1 실패였다. 이전 안내에도 같은 `240문항`이 있어 입력 직후의 응답 대기가 먼저 통과하는 테스트 경쟁 조건이었다. 새 응답 개수 증가를 먼저 기다리도록 강화해 모두 재실행했다. 기존 테스트를 삭제하거나 숨은 요소 강제 클릭·조건 완화로 통과시키지 않았다.
+
+기존 Build Check의 `StudioEntryLinkBrowserQaMySqlTest`도 신청 중심 홈페이지 이전의 `data-home-intent='studio'` 타일을 찾다가 실패했다. 이 타일은 잘못된 학부모·학생 신청 연결이었으므로 되돌리지 않았다. 같은 테스트에서 비서 입력창에 `AI AGENT 제작협업실`을 요청하고 실제 응답 링크를 클릭하도록 갱신했다. 상단/모바일 메뉴·배너·비서의 실제 Studio 진입과 비로그인 로그인 유도, ADMIN 허용, 다른 TUTOR 차단 검증은 모두 유지했다. 새 합성 스키마 `f2r_studio_mobile_test`와 로컬 Chromium/ChromeDriver에서 이 기존 테스트 1개도 통과했다.
 
 ## 3. 화면 증거
 
@@ -92,6 +98,7 @@ Playwright 1.64.1 Chromium, 360×800·390×844·430×932·1440×1050, DPR 1, ko-
 | 영상 전환·대시보드 표현 | 기존 25 | 25 통과 |
 | CI JS allowlist | 기존 220 + 신규 4 | 224 통과 (위 관련 단위를 포함한 집계, 중복 합산하지 않음) |
 | 통합 비서·DashboardWidgetController JUnit | 기존 90 | 90 통과, 실패·skip 0 |
+| Studio 진입·권한 Selenium/MySQL | 기존 1 | 1 통과, 실패·skip 0 (PC 1440·모바일 390 실제 링크 조작) |
 | 통합 비서 Playwright | 기존 12 | 12 통과, 실패·미실행·flaky 0 |
 | 홈 반응형 Playwright | 신규 8 | 8 통과, 실패·미실행·flaky 0 |
 | bootJar 및 `gradlew build -x test` | 빌드 | 성공. 전체 JUnit suite를 실행했다는 의미가 아님 |
@@ -102,6 +109,8 @@ Playwright 1.64.1 Chromium, 360×800·390×844·430×932·1440×1050, DPR 1, ko-
 전용 GitHub workflow `Mobile UI and assistant regression`은 같은 두 로컬 앱·별도 MySQL·폰트·20개 E2E를 실행하고 캡처·좌표·결과 JSON을 artifact로 보존한다. 기존 Build Check에도 신규 단위 4개를 추가했다. CI 최종 성공/실패와 실행 링크는 이 브랜치 PR 본문·Checks 및 최종 제출 보고에 기록한다. CI가 끝나기 전에 완료로 표시하지 않는다.
 
 첫 전용 CI는 DB 초기화 단계에서 실패했다([실행 40480394585](https://github.com/woori73/feel2real-buildit/actions/runs/40480394585)). MySQL 이미지의 임시 초기화 서버가 ping을 먼저 받아 실제 root 인증 준비 전에 CREATE DATABASE가 실행돼 1045로 거절됐다. 준비 검사를 인증된 TCP `SELECT 1`로 강화했으며 테스트 조건은 바꾸지 않았다. 해당 실패 로그도 `logs/mobile-ci-initial-failure.log`에 남겼다.
+
+다음 전용 CI([40480798444](https://github.com/woori73/feel2real-buildit/actions/runs/40480798444))는 준비·단위 검사를 통과한 뒤 20개 E2E 중 19 통과·데스크톱 넘침 1 실패였다. 당시 기존 Build Check([40480798394](https://github.com/woori73/feel2real-buildit/actions/runs/40480798394))는 build 작업 성공, MySQL 작업 372개 중 370 통과·Studio 테스트 1 실패·유료 Muse 키 조건 테스트 1 skip이었다. 위 원인을 수정하고 다시 실행한다. 실패 로그·좌표·캡처도 보존했으며 최종 CI 결과는 PR 본문/Checks와 최종 제출에 따로 명시한다.
 
 ## 6. 검증 구분과 남은 제한
 
@@ -118,9 +127,10 @@ Playwright 1.64.1 Chromium, 360×800·390×844·430×932·1440×1050, DPR 1, ko-
 
 ## 7. 수정 파일
 
-- 제품: `src/main/resources/static/css/f2r_home_agent.css`, `static/js/f2r_home_agent.js`, `templates/public/landing.html` (위 경로는 resources 기준)
+- 제품: `src/main/resources/static/css/f2r_home_agent.css`, `static/css/landing_edunova.css`, `static/js/f2r_home_agent.js`, `templates/public/landing.html` (위 경로는 resources 기준)
 - 단위: `src/test/js/f2r_home_agent.test.js`, 신규 `home_hologram_intake.test.js`
 - 브라우저: `e2e/unified-assistant/unified.spec.js`, 신규 `home-responsive.spec.js`, 재현 README
+- 기존 Java 브라우저: `src/test/java/f2r/tutor_solution/private_tutor_solution_back/domain/studio/StudioEntryLinkBrowserQaMySqlTest.java`
 - CI: 기존 `build-check.yml`, 신규 `mobile-assistant-regression.yml`
 - 증거: 이 디렉터리의 보고서·원본 PNG·좌표/응답 JSON·요약/로그
 
