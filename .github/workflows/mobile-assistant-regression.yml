@@ -39,9 +39,11 @@ jobs:
         run: |
           docker run -d --name unified-ai-mysql -e MYSQL_ROOT_PASSWORD=unified-local-only -e MYSQL_DATABASE=f2r_unified_test -p 127.0.0.1:13308:3306 mysql:8.4
           for attempt in {1..60}; do
-            if docker exec unified-ai-mysql mysqladmin ping -uroot -punified-local-only --silent; then break; fi
+            # The image's temporary init server can answer ping before root credentials are ready.
+            if docker exec unified-ai-mysql mysql --protocol=TCP -h127.0.0.1 -uroot -punified-local-only -Nse 'SELECT 1'; then break; fi
             sleep 1
           done
+          docker exec unified-ai-mysql mysql --protocol=TCP -h127.0.0.1 -uroot -punified-local-only -Nse 'SELECT 1'
           docker exec unified-ai-mysql mysql -uroot -punified-local-only -e 'CREATE DATABASE ac_unified_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
       - name: Build both local applications
         run: |

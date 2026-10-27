@@ -101,6 +101,8 @@ Playwright 1.64.1 Chromium, 360×800·390×844·430×932·1440×1050, DPR 1, ko-
 
 전용 GitHub workflow `Mobile UI and assistant regression`은 같은 두 로컬 앱·별도 MySQL·폰트·20개 E2E를 실행하고 캡처·좌표·결과 JSON을 artifact로 보존한다. 기존 Build Check에도 신규 단위 4개를 추가했다. CI 최종 성공/실패와 실행 링크는 이 브랜치 PR 본문·Checks 및 최종 제출 보고에 기록한다. CI가 끝나기 전에 완료로 표시하지 않는다.
 
+첫 전용 CI는 DB 초기화 단계에서 실패했다([실행 40480394585](https://github.com/woori73/feel2real-buildit/actions/runs/40480394585)). MySQL 이미지의 임시 초기화 서버가 ping을 먼저 받아 실제 root 인증 준비 전에 CREATE DATABASE가 실행돼 1045로 거절됐다. 준비 검사를 인증된 TCP `SELECT 1`로 강화했으며 테스트 조건은 바꾸지 않았다. 해당 실패 로그도 `logs/mobile-ci-initial-failure.log`에 남겼다.
+
 ## 6. 검증 구분과 남은 제한
 
 | 검증 | 상태 |
