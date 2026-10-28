@@ -389,7 +389,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-test-report
-          path: build/reports/tests/test
+          path: |
+            build/reports/tests/test
+            build/reports/naesin-browser-failure
           if-no-files-found: ignore
           retention-days: 7
 
@@ -432,7 +434,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-check-test-report
-          path: build/reports/tests/test
+          path: |
+            build/reports/tests/test
+            build/reports/naesin-browser-failure
           if-no-files-found: ignore
           retention-days: 7
 

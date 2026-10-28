@@ -20,3 +20,12 @@ MediaAudit 정확한 파일 SHA-256: `dcf762eb8ebea2c7332fd291ae7d9bc42241231b1b
 이번 작업은 기존 350개 UI 검사 등을 반복한 결과가 아니다. 기존 PR914 head의 `build`, `mysql-integration-test`, `chromium-local` check-runs는 조회 시 success였으며 새 배포 실행에서는 이를 재조회한다.
 
 초기 로컬 검사에서는 /var/tmp가 이 작업 환경에서 read-only여서 4개 임시 파일 테스트가 실패했다. 테스트에서 staging 경로를 임시 디렉터리로 분리한 뒤 25개 모두 통과했다. 운영 경로는 /var/tmp로 유지한다. AWS 권한이 있는 것처럼 테스트를 우회하지 않았다.
+
+## PR915 Build Check 간헐 실패 조사
+
+- 최초 실행 [40619262385 / attempt 1](https://github.com/woori73/feel2real-buildit/actions/runs/40619262385/attempts/1): JAR 빌드·MySQL PASS, 비MySQL 2,109개 중 HIGH NaesinBrowserTest 한 건이 97행에서 20초 TimeoutException. 당시 PR915는 내신 제작소 코드/테스트/일반 Build Check를 변경하지 않았다.
+- 동일 head `d2ad5bf05035e4f1d5afa681c740103c8934c321`에서 **실패한 build job만 한 번** 재실행한 [attempt 2](https://github.com/woori73/feel2real-buildit/actions/runs/40619262385/attempts/2)는 PASS. 자동화 변경에 의한 결정적인 제품 회귀는 재현되지 않았다. 단일 재실행 성공만으로 원인이 확정된 것은 아니다.
+- 코드에서 확인한 대기 허점: 검수 버튼이 활성화된 상태는 저장 성공뿐 아니라 클릭 미전달/요청 실패에서도 성립한다. 또한 매 상세 조회가 smooth scroll을 시작하고 다음 네이티브 클릭이 이어진다. 최초 실패 당시 화면·응답 증거가 없어 어느 조건이 직접 원인이었는지는 확정할 수 없다.
+- 테스트만 보완: 각 검수의 실제 통과 표시와 요청 종료를 기다리고, 다음 클릭 전에 진행 중 스크롤을 정리한다. 네이티브 클릭은 한 번만 수행한다. 승인/게시 대기를 별도 행·진단 메시지로 분리하고 실패 시 DOM·상태·캡처를 기존 CI artifact에 보존한다. 제한 시간은 20초 유지, skip/자동 재시도/기능 검사 삭제 없음.
+- 운영 Java/HTML/JS·DB·미디어·MediaAudit·배포 정책은 변경하지 않았다. 보완 코드의 최종 CI 결과는 PR915 최신 checks와 PR 본문에 기록한다.
+- 보완된 테스트의 로컬 `compileTestJava` PASS, 변경된 Build Check의 actionlint PASS. 로컬 실제 Selenium 실행은 대응 ChromeDriver가 준비되지 않아 수행하지 않았으며 실제 중등부/고등부 브라우저 검증은 GitHub CI에서 확인한다.

@@ -69,7 +69,8 @@ class NaesinBrowserTest {
       var opts=new ChromeOptions();opts.addArguments("--headless=new","--no-sandbox","--disable-dev-shm-usage","--window-size=1440,1000");
       if(System.getenv("NAESIN_CHROME_BINARY")!=null)opts.setBinary(System.getenv("NAESIN_CHROME_BINARY"));
       driver=System.getenv("NAESIN_CHROMEDRIVER")==null?new ChromeDriver(opts):new ChromeDriver(new ChromeDriverService.Builder().usingDriverExecutable(new java.io.File(System.getenv("NAESIN_CHROMEDRIVER"))).build(),opts);
-      var wait=new WebDriverWait(driver,Duration.ofSeconds(20));
+      final WebDriver browser=driver;
+      var wait=new WebDriverWait(browser,Duration.ofSeconds(20));
       driver.get(base+"/naesin-production-studio?division="+division+"&projectId="+project);
       wait.until(d->d.findElement(By.id("project-title")).getText().contains(division.equals("HIGH")?"고1":"신구중"));
       if(division.equals("MIDDLE")){
@@ -88,13 +89,22 @@ class NaesinBrowserTest {
       for(var e:Map.of("title",candidateTitle,"goal","문항 검증","prompt","원본·정답 확인","model","test-no-llm","tools","HWP5 parser","result","문항·정답 대조 완료","nextWork","최신 승인본 확인").entrySet())form.findElement(By.name(e.getKey())).sendKeys(e.getValue());
       new Select(form.findElement(By.name("sourceFileIds"))).selectByIndex(0);new Select(form.findElement(By.name("fileId"))).selectByIndex(1);new Select(form.findElement(By.name("status"))).selectByValue("REVIEW");
       form.findElement(By.cssSelector("button")).click();wait.until(d->d.findElement(By.id("detail-title")).getText().equals(candidateTitle));
+      Map<String,String> checkLabels=Map.of("QUESTION","문항·정답","EXPLANATION","해설","FORMAT","서식","RIGHTS","이용 권한");
       for(String dimension:NaesinProductionService.CHECKS){
         var check=driver.findElement(By.id("check-form"));new Select(check.findElement(By.name("dimension"))).selectByValue(dimension);
-        var note=check.findElement(By.name("note"));note.clear();note.sendKeys("격리 표본 검수 완료");check.findElement(By.tagName("button")).click();
-        wait.until(d->!"true".equals(d.findElement(By.cssSelector("#check-form button")).getAttribute("disabled")));
+        var note=check.findElement(By.name("note"));note.clear();note.sendKeys("격리 표본 검수 완료");clickWithoutPendingScroll(driver,check.findElement(By.tagName("button")));
+        // An enabled button also describes a missed click or a rejected request.
+        // Wait for the persisted result rendered by GET revision, not merely finally{}.
+        wait.withMessage(()->"Check "+dimension+" was not saved. "+browserState(browser))
+          .until(d->d.findElement(By.id("check-status")).getText().contains(checkLabels.get(dimension)+": 통과")
+            && d.findElement(By.cssSelector("#check-form button")).isEnabled());
       }
-      var decision=driver.findElement(By.id("decision-form"));new Select(decision.findElement(By.name("action"))).selectByValue("APPROVE");decision.findElement(By.name("note")).sendKeys("최종 승인");decision.findElement(By.tagName("button")).click();
-      wait.until(d->d.findElement(By.id("message")).getText().contains("최종 판단"));driver.findElement(By.id("publish")).click();wait.until(d->d.findElement(By.id("message")).getText().contains("게시 승인 완료"));
+      var decision=driver.findElement(By.id("decision-form"));new Select(decision.findElement(By.name("action"))).selectByValue("APPROVE");decision.findElement(By.name("note")).sendKeys("최종 승인");clickWithoutPendingScroll(driver,decision.findElement(By.tagName("button")));
+      wait.withMessage(()->"Final review was not saved. "+browserState(browser))
+        .until(d->d.findElement(By.id("message")).getText().contains("최종 판단") && d.findElement(By.cssSelector("#decision-form button")).isEnabled());
+      clickWithoutPendingScroll(driver,driver.findElement(By.id("publish")));
+      wait.withMessage(()->"Publication was not completed. "+browserState(browser))
+        .until(d->d.findElement(By.id("message")).getText().contains("게시 승인 완료"));
       driver.findElement(By.id("query")).sendKeys("문항 검증");driver.findElement(By.id("search")).click();
       wait.until(d->d.findElements(By.cssSelector("#files article")).isEmpty());
       driver.findElement(By.cssSelector("#revisions button")).click();wait.until(d->d.findElement(By.id("detail")).isDisplayed());
@@ -110,6 +120,30 @@ class NaesinBrowserTest {
       var download=java.net.http.HttpClient.newHttpClient().send(java.net.http.HttpRequest.newBuilder(java.net.URI.create(link)).build(),java.net.http.HttpResponse.BodyHandlers.ofByteArray());
       assertEquals(200,download.statusCode());assertArrayEquals(Files.readAllBytes(original),download.body());
       System.out.println("NAESIN_BROWSER_QA: "+division+" HWP upload/extraction, work/revision, four checks, approval/publication, fixed download, 1440/390 overflow=0 PASS");
+    } catch(Exception | AssertionError failure) {
+      if(driver!=null) {
+        try {
+          Path evidence=Path.of("build/reports/naesin-browser-failure",division);Files.createDirectories(evidence);
+          Files.writeString(evidence.resolve("state.txt"),browserState(driver));
+          Files.writeString(evidence.resolve("page.html"),driver.getPageSource());
+          Files.copy(driver.getScreenshotAs(OutputType.FILE).toPath(),evidence.resolve("screen.png"),StandardCopyOption.REPLACE_EXISTING);
+        } catch(Exception evidenceFailure) { failure.addSuppressed(evidenceFailure); }
+      }
+      throw failure;
     } finally {if(driver!=null)driver.quit();tomcat.stop();tomcat.destroy();fixture.clear();}
   }
+
+  private static void clickWithoutPendingScroll(WebDriver driver, WebElement target) {
+    // open() starts smooth scrolling after each check. Stop that motion before the
+    // next native pointer click so mouse-down/up cannot land on different controls.
+    ((JavascriptExecutor)driver).executeScript("arguments[0].scrollIntoView({behavior:'instant',block:'center'})",target);
+    target.click(); // Native WebDriver click, exactly once; no JS click or request retry.
+  }
+
+  private static String browserState(WebDriver driver) {
+    return "message="+driver.findElement(By.id("message")).getText()
+      +"; checks="+driver.findElement(By.id("check-status")).getText()
+      +"; detail="+driver.findElement(By.id("detail-meta")).getText();
+  }
+
 }
