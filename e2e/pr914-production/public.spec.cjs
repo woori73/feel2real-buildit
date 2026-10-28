@@ -2,6 +2,7 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
+const {collectMediaEvidence}=require('./media-evidence.cjs');
 const origin = 'https://feel2real.co.kr';
 const phase = process.env.EVIDENCE_PHASE || 'before';
 if (!['before', 'after', 'rollback'].includes(phase)) throw new Error('Invalid phase');
@@ -17,6 +18,7 @@ for (const width of [1440,360,390,430]) {
       return route.continue();
     });
     const page=await context.newPage();
+    const evidence=collectMediaEvidence(page,origin);
     page.on('response', response => { const u=new URL(response.url()); if (u.origin===origin && u.pathname.startsWith('/agent-media/public/')) media.push({path:u.pathname,status:response.status()}); });
     const out=path.resolve('release-evidence',phase,String(width));fs.mkdirSync(out,{recursive:true});
     try {
@@ -71,6 +73,7 @@ for (const width of [1440,360,390,430]) {
       expect(media.some(r=>r.path.endsWith('.mp4') && [200,206].includes(r.status))).toBe(true);
     } finally {
       await page.screenshot({path:path.join(out,'final.png'),fullPage:true}).catch(()=>{});
+      fs.writeFileSync(path.join(out,'media-evidence.json'),JSON.stringify(await evidence(),null,2));
       fs.writeFileSync(path.join(out,'network-summary.json'),JSON.stringify({media,blocked,phase,production:true},null,2));
       await context.close();
     }
