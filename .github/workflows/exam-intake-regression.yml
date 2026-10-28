@@ -1,0 +1,78 @@
+name: Exam intake local regression
+on:
+  pull_request:
+    paths:
+      - 'src/main/java/**/examintake/**'
+      - 'src/main/resources/templates/public/exam_service.html'
+      - 'src/main/resources/static/js/exam_service.js'
+      - 'src/main/resources/static/css/exam_service.css'
+      - 'src/test/java/**/examintake/**'
+      - 'docs/home-exam/proposed-schema.sql'
+      - 'e2e/exam-intake/**'
+      - '.github/workflows/exam-intake-regression.yml'
+permissions:
+  contents: read
+jobs:
+  local-intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and run isolated H2 security/state/file regression
+        run: bash gradlew bootJar test --tests '*ExamIntakeServiceTest' --tests '*LandingEdunovaTemplateContractTest' --no-daemon
+      - name: Install browser
+        working-directory: e2e/unified-assistant
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Prepare synthetic local database only
+        run: |
+          docker run -d --name exam-intake-ci -e MYSQL_ROOT_PASSWORD=exam-ci-only -e MYSQL_DATABASE=f2r_exam_ci -p 127.0.0.1:13319:3306 mysql:8.4
+          for attempt in {1..60}; do
+            if docker exec exam-intake-ci mysql --protocol=TCP -h127.0.0.1 -uroot -pexam-ci-only -Nse 'SELECT 1'; then break; fi
+            sleep 1
+          done
+          docker exec -i exam-intake-ci mysql -uroot -pexam-ci-only f2r_exam_ci < docs/home-exam/proposed-schema.sql
+      - name: Start opt-in application with private test storage and no external senders
+        env:
+          SPRING_PROFILES_ACTIVE: local
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:13319/f2r_exam_ci?allowPublicKeyRetrieval=true&connectionCollation=utf8mb4_unicode_ci
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: exam-ci-only
+        run: |
+          # Schema proposal was installed only in this fresh CI DB; baseline 0 still runs existing V1.
+          java -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091 --spring.flyway.baseline-version=0 --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.private-directory="$RUNNER_TEMP/exam-private" --app.exam-intake.email-notifications-enabled=false --app.file.upload-dir="$RUNNER_TEMP/general-files" > "$RUNNER_TEMP/exam-app.log" 2>&1 &
+          echo "EXAM_APP_PID=$!" >> "$GITHUB_ENV"
+          # Public homepage is the readiness probe; intake API remains authenticated.
+          for attempt in {1..90}; do
+            if curl -fsS http://localhost:8091/ > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8091/ > /dev/null
+      - name: Real local application/browser regression
+        run: |
+          export NODE_PATH="$GITHUB_WORKSPACE/e2e/unified-assistant/node_modules"
+          export CHROMIUM_PATH="$(node -e 'process.stdout.write(require("@playwright/test").chromium.executablePath())')"
+          e2e/unified-assistant/node_modules/.bin/playwright test --config e2e/exam-intake/playwright.config.cjs
+      - name: Preserve synthetic evidence, excluding cookies/tokens/traces/private uploads
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exam-intake-local-evidence
+          retention-days: 14
+          path: |
+            build/verification/exam-intake
+            results.json
+            build/test-results/test
+      - name: Stop only this job's local resources
+        if: always()
+        run: |
+          if [ -n "${EXAM_APP_PID:-}" ]; then kill "$EXAM_APP_PID" || true; fi
+          docker rm -f exam-intake-ci || true

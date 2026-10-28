@@ -1846,3 +1846,16 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 제작 프로젝트 확장: 기존 `studio_projects.id/title`과 `studio_members`를 재사용한다. 추가 schema/migration 없음. 보관 상태는 해당 프로젝트의 최신 `PROJECT_ARCHIVE/PROJECT_REOPEN` 감사 이벤트로 결정한다. `PROJECT_CREATE/PROJECT_TITLE`도 실제 actor와 함께 기록한다. 보관/재개는 files/items/revisions/approved_id/작업 기억을 수정·삭제하지 않는다. 영구 삭제 경로 없음. 관리자는 기존 ADMIN이며 일반 팀원은 명시적으로 수락한 VIEWER/EDITOR/APPROVER만 접근한다. 초대는 기존 permission 길이 내 `PENDING_VIEWER/PENDING_EDITOR/PENDING_APPROVER`; 수락 전 권한 검사에서 제외한다. 거절은 본인 pending membership만 제거하고 `MEMBER_DECLINE` 이력을 보존한다. 알림은 기존 검수/댓글 이벤트를 투영하고 본인 `NOTIFY_READ` 이벤트에 확인한 event ID를 저장한다. 이벤트 범위와 프로젝트 행 잠금으로 정보 격리·수정/보관 경합을 보호한다. V1094/V1095 파일은 불변이다.
 
 승인 해제는 신규 schema 없이 `studio_items.approved_id` 포인터와 `studio_events.action=WITHDRAW_APPROVAL`만 사용한다. 일반 REJECT는 승인 포인터를 수정하지 않으며 현재 승인본에 대해서는409다. 별도 confirmed/expectedApprovedId/사유를 확인한 해제만 행 잠금 아래 승인 포인터를 NULL로 바꾼다. studio_files/revisions 및 이전 APPROVE 이벤트는 변경/삭제하지 않는다. #862의 ai_collaboration_*/mcp_collaboration_* 테이블과 V1096~V1098은 병합 제외한다.
+
+## Exam intake 제안 모델 (운영 미적용)
+
+[P1 설계](home-exam/P1-DESIGN.md), [비활성 제안 SQL](home-exam/proposed-schema.sql).
+JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `ExamIntake`의 Request/Document/Action/Bank 레코드와 opt-in JDBC repository를 사용한다. 운영 Flyway 파일은 아직 추가하지 않았다.
+`exam_intake_request`는 owner·kind·상태·제출 정보·버전·개인정보 동의·계약 스냅샷·멱등키를 저장한다.
+`exam_intake_document`는 공개 URL 없이 private 난수키·해시·검사 상태·비공개 여부를 저장한다.
+`exam_intake_action`은 변경/삭제/수정/취소/환불 요청과 관리자 검토 이력, `exam_intake_delivery`는 계약별 순서 있는 회차 전달 기록을 저장한다.
+`exam_intake_event`는 개인정보 본문 없는 durable outbox/재시도/관리자 확인을 저장한다.
+`exam_intake_bank`는 미승인/승인 계좌 설정, `exam_intake_bank_audit`는 변경·승인 주체와 버전별 설정 이력을 보존한다.
+기존 고객 계약·기존 운영 테이블은 갱신하지 않는다. 운영 적용 전에 최신 migration 번호·정책·백업·비공개 저장소를 승인받는다.
+
+영어 기말 신규 접수의 offer_snapshot에는 `refundProposalVersion=per-delivery-proposal-v1`을 보존한다. 회차별 예정액은 참고 정보이며 법적 승인 금액과 분리한다. 이전 snapshot에 이 키를 추가/소급 UPDATE하지 않는다. bank 승인/입금 확인은 기존 관리자 이력에 기록하며 추가 DB 스키마 변경은 없다.

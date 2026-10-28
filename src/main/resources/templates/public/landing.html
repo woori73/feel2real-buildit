@@ -90,7 +90,7 @@
 
   <main>
     <!-- ============ 첫 화면: AI 비서(세븐·서수니)와 대화로 시작. 기존 상품·교육 콘텐츠는 아래 영역으로 이동(삭제 없음) ============ -->
-    <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version}">
+    <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version},data-intake-enabled=${examIntakeEnabled}">
       <div class="si-home-head" id="pass-offer">
         <p class="exam-eyebrow">YOUR SCHOOL. YOUR EXAM.</p>
         <h1 class="si-home-title" id="siHomeTitle">기출과 아주 유사한<br>영어 기말 대비 문제!</h1>
@@ -158,6 +158,7 @@
       <p class="exam-eyebrow">LET’S GET STARTED</p><h2 id="examContactTitle">문의·신청·자료 제출</h2>
       <p>학교·학년·시험일과 최근 기출·시험 범위를 보내 주세요. 문제 유형·난이도·시험지 형식과 추가 요구사항도 함께 알려 주세요.</p>
       <div class="exam-contact-actions">
+        <a th:if="${examIntakeEnabled}" class="en-btn en-btn-primary" href="/exam-service">사이트에서 신청·자료 제출</a>
         <a class="en-btn en-btn-primary" id="enExamCta" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener" data-track-click="pass_kakao">카카오톡 문의·신청</a>
         <a class="en-btn en-btn-outline" id="enExamMail" href="mailto:woorinaesin@naver.com" data-track-click="pass_mail" aria-describedby="examMailHelp">이메일 작성·자료 첨부</a>
         <button type="button" class="en-btn en-btn-outline" data-copy-address="woorinaesin@naver.com" aria-describedby="examCopyStatus">이메일 주소 복사</button>
@@ -165,7 +166,7 @@
       <p id="examMailHelp">이메일 작성 버튼은 기기의 이메일 앱을 엽니다. 앱이 열리지 않으면 주소를 복사해 사용 중인 메일 서비스에서 자료를 첨부해 주세요.</p>
       <p class="exam-mail-address"><a href="mailto:woorinaesin@naver.com">woorinaesin@naver.com</a></p>
       <p id="examCopyStatus" role="status" aria-live="polite"></p>
-      <p class="exam-caption">현재 신청과 자료 제출은 카카오톡·이메일로 접수합니다. 사이트 내 접수 기능은 준비 중입니다.</p>
+      <p th:unless="${examIntakeEnabled}" class="exam-caption">현재 신청과 자료 제출은 카카오톡·이메일로 접수합니다. 사이트 내 접수 기능은 준비 중입니다.</p>
     </section>
 
     <section class="exam-section" id="exam-payment" aria-labelledby="examPaymentTitle">

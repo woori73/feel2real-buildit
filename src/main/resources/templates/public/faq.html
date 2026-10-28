@@ -82,6 +82,16 @@
     </div>
   </details>
 </div>
+<section id="exam-service-terms" style="max-width:900px;margin:32px auto;padding:20px;line-height:1.8">
+  <h2>영어 기말고사 서비스 이용·환불 안내</h2>
+  <p th:text="${examOffer.assistantSummary}"></p>
+  <p>입금 후 카카오톡으로 신청번호와 입금자명을 알려 주세요. 관리자 입금·자료 확인 후 최대한 빨리 제작하고 1차 수정·검수를 거쳐 제공합니다. 제작 가능 일정은 개별 안내합니다.</p>
+  <p>정상 전달되고 접근 가능한 문제지·해설지 회차만 제공 완료로 기록합니다. 회차별 잔여 이용료의 기본 정산 예시는 다음과 같습니다.</p>
+  <ul><li th:each="n : ${#numbers.sequence(0, examOffer.totalDeliveries)}" th:text="'제공 완료 ' + ${n} + '회 / 잔여 ' + ${examOffer.totalDeliveries - n} + '회 / 기본 환불 예정액 ' + ${#numbers.formatInteger((examOffer.priceWon / examOffer.totalDeliveries) * (examOffer.totalDeliveries - n), 1, 'COMMA')} + '원'"></li></ul>
+  <p>기본 예정액은 최종 법정 환불액이 아닙니다. 법정 청약철회, 사업자 귀책, 서비스 하자는 별도 기준을 검토합니다. 자동 공제·환불 송금은 하지 않습니다. 과거 계약에는 해당 계약의 조건을 적용합니다.</p>
+  <p>신청 전 개인정보·취소·환불 안내를 읽고 동의하며, 제작 전 변경·자료 삭제를 요청할 수 있습니다. 제작 시작 후에는 수정·취소 요청을 접수합니다. <a href="mailto:woorinaesin@naver.com">이메일 문의</a></p>
+</section>
+<footer th:if="${examSeller != null}" th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
 </th:block>
 </body>
 </html>

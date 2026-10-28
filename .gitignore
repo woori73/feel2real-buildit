@@ -113,3 +113,9 @@ release-evidence/
 
 # Isolated poster observation evidence (uploaded by CI, never source assets)
 /poster-observation-results/
+
+# Isolated exam intake evidence (synthetic accounts only)
+/test-results/
+/results.json
+e2e/exam-intake/results.json
+e2e/exam-intake/test-results/
