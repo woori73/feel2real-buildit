@@ -50,7 +50,8 @@
     inquiryType: "문의 유형",
     message: "문의 내용",
   };
-  let paymentAllowed = false,
+  let paymentAccount = "",
+    paymentAllowed = false,
     config,
     current,
     bankVersion = 0,
@@ -173,6 +174,23 @@
       "/" +
       current.offer.totalDeliveries +
       "회";
+    const estimate = value.refundEstimate;
+    $("refundEstimate").textContent = estimate.available
+      ? "잔여 " +
+        estimate.remaining +
+        "회 · 기본 환불 예정액 " +
+        Number(estimate.estimatedWon).toLocaleString("ko-KR") +
+        "원 — 최종 법정 환불액이 아니며 별도 검토합니다."
+      : estimate.message;
+    const paymentRecord = value.actions.findLast(
+      (a) => a.kind === "PAYMENT_CONFIRMATION",
+    );
+    let payment = null;
+    if (paymentRecord) {
+      try {
+        payment = JSON.parse(paymentRecord.body);
+      } catch (_) {}
+    }
     const before = [
       "RECEIVED",
       "AWAITING_DEPOSIT",
@@ -352,16 +370,49 @@
     });
     if (!admin) {
       const bank = await api("/api/exam-intake/bank");
-      $("bankGuide").textContent = bank.available
-        ? bank.bank.bankName +
-          " / " +
-          bank.bank.accountNumber +
-          " / " +
-          bank.bank.accountHolder +
-          " · " +
-          Number(current.offer.priceWon).toLocaleString("ko-KR") +
-          "원"
-        : bank.message;
+      const application = current.kind === "APPLICATION";
+      const unpaid = ["RECEIVED", "AWAITING_DEPOSIT"].includes(current.state);
+      const approved = payment
+        ? payment.bank
+        : bank.available
+          ? bank.bank
+          : null;
+      paymentAccount =
+        application && unpaid && approved ? approved.accountNumber : "";
+      $("bankGuide").replaceChildren();
+      if (application && approved) {
+        const account = el("dl");
+        for (const [label, content] of [
+          ["은행", approved.bankName],
+          ["계좌번호", approved.accountNumber],
+          ["예금주", approved.accountHolder],
+          [
+            payment ? "입금 확인 요청액" : "입금액",
+            Number(current.offer.priceWon).toLocaleString("ko-KR") + "원",
+          ],
+          ["신청번호", current.id],
+        ])
+          account.append(el("dt", label), el("dd", content));
+        $("bankGuide").append(account);
+        if (payment)
+          $("bankGuide").append(
+            el("p", "입금자명: " + payment.payer + " · 추가 입금하지 마세요."),
+          );
+      } else
+        $("bankGuide").textContent = application
+          ? bank.message
+          : "문의 접수에는 입금하지 마세요.";
+      $("copyAccount").hidden = !paymentAccount;
+      $("copyStatus").textContent = "";
+      $("kakaoConfirmation").hidden = !application || !approved;
+      $("paymentMessage").value =
+        "신청번호: " +
+        current.id +
+        "\n입금자명: " +
+        (payment ? payment.payer : $("paymentForm").elements.payer.value) +
+        "\n입금액: " +
+        Number(current.offer.priceWon).toLocaleString("ko-KR") +
+        "원\n실제 입금 확인을 부탁드립니다.";
       paymentAllowed =
         bank.available &&
         current.kind === "APPLICATION" &&
@@ -369,6 +420,64 @@
       $("paymentRequest").disabled = !paymentAllowed;
     }
   }
+  async function copyPaymentText(text) {
+    if (!text) return;
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText)
+        throw new Error("unavailable");
+      await navigator.clipboard.writeText(text);
+      $("copyStatus").textContent = "복사했습니다.";
+    } catch (_) {
+      $("copyStatus").textContent =
+        "복사할 수 없습니다. 화면의 내용을 선택해 직접 복사해 주세요.";
+    }
+  }
+  if ($("copyAccount"))
+    $("copyAccount").addEventListener("click", () =>
+      copyPaymentText(paymentAccount),
+    );
+  if ($("copyPaymentMessage"))
+    $("copyPaymentMessage").addEventListener("click", () =>
+      copyPaymentText($("paymentMessage").value),
+    );
+  if ($("paymentForm"))
+    $("paymentForm").elements.payer.addEventListener("input", () => {
+      if (current)
+        $("paymentMessage").value =
+          "신청번호: " +
+          current.id +
+          "\n입금자명: " +
+          $("paymentForm").elements.payer.value +
+          "\n입금액: " +
+          Number(current.offer.priceWon).toLocaleString("ko-KR") +
+          "원\n실제 입금 확인을 부탁드립니다.";
+    });
+  if ($("bankImport"))
+    $("bankImport").addEventListener("change", async (event) => {
+      try {
+        const file = event.target.files[0];
+        if (!file || file.size > 4096)
+          throw new Error("4KiB 이하 등록 파일을 선택해 주세요.");
+        const data = JSON.parse(await file.text());
+        for (const key of ["bankName", "accountNumber", "accountHolder"])
+          if (
+            typeof data[key] !== "string" ||
+            !data[key].trim() ||
+            data[key].length > 80
+          )
+            throw new Error("은행명·계좌번호·예금주를 확인해 주세요.");
+        for (const key of ["bankName", "accountNumber", "accountHolder"])
+          $("bankForm").elements[key].value = data[key];
+        $("approveBank").disabled = true;
+        note(
+          "등록 내용을 채웠습니다. 아직 저장·승인하지 않았습니다. 저장 후 표시할 계좌를 승인해 주세요.",
+        );
+      } catch (_) {
+        note("등록 파일을 확인해 주세요. 저장·승인하지 않았습니다.");
+      } finally {
+        event.target.value = "";
+      }
+    });
   async function bank() {
     const value = await api("/api/admin/exam-intake/bank");
     const b = value.bank;
@@ -490,6 +599,7 @@
         version: current.version,
         ordinal: Number(data.get("ordinal")),
         note: data.get("note"),
+        accessibleAndReviewed: data.get("accessibleAndReviewed") === "on",
       },
     );
     await detail(current.id);
@@ -547,6 +657,23 @@
   (async () => {
     config = await api("/api/exam-intake/config");
     $("offerSummary").textContent = config.summary;
+    if ($("refundRows"))
+      for (let n = 0; n <= config.offer.totalDeliveries; n++) {
+        const row = el("tr");
+        const remaining = config.offer.totalDeliveries - n;
+        row.append(
+          el("td", n + "회"),
+          el("td", remaining + "회"),
+          el(
+            "td",
+            (
+              (config.offer.priceWon / config.offer.totalDeliveries) *
+              remaining
+            ).toLocaleString("ko-KR") + "원",
+          ),
+        );
+        $("refundRows").append(row);
+      }
     await list();
     if (admin) await bank();
     note(

@@ -1857,3 +1857,5 @@ JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `E
 `exam_intake_event`는 개인정보 본문 없는 durable outbox/재시도/관리자 확인을 저장한다.
 `exam_intake_bank`는 미승인/승인 계좌 설정, `exam_intake_bank_audit`는 변경·승인 주체와 버전별 설정 이력을 보존한다.
 기존 고객 계약·기존 운영 테이블은 갱신하지 않는다. 운영 적용 전에 최신 migration 번호·정책·백업·비공개 저장소를 승인받는다.
+
+영어 기말 신규 접수의 offer_snapshot에는 `refundProposalVersion=per-delivery-proposal-v1`을 보존한다. 회차별 예정액은 참고 정보이며 법적 승인 금액과 분리한다. 이전 snapshot에 이 키를 추가/소급 UPDATE하지 않는다. bank 승인/입금 확인은 기존 관리자 이력에 기록하며 추가 DB 스키마 변경은 없다.

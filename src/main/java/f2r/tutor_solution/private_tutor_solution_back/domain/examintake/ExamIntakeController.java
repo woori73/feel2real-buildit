@@ -46,7 +46,8 @@ public class ExamIntakeController {
 
   public record StateInput(long version, State state) {}
 
-  public record DeliveryInput(long version, int ordinal, String note) {}
+  public record DeliveryInput(
+      long version, int ordinal, String note, boolean accessibleAndReviewed) {}
 
   public record ReviewInput(long version, String state, Integer amount, String note) {}
 
@@ -86,7 +87,8 @@ public class ExamIntakeController {
         "consentVersion",
         CONSENT,
         "refundPolicy",
-        "환불은 제작·제공 상태와 관계 법령을 검토해 개별 안내합니다. 자동 공제·송금하지 않습니다.",
+        "4회·20,000원 상품은 정상 전달된 회차당5,000원을 기준으로 잔여 이용료를 검토합니다. 법정 청약철회·사업자 귀책·서비스 하자는 별도 검토하며, 예정액은"
+            + " 최종 법정 환불액이 아닙니다. 자동 공제·송금하지 않습니다.",
         "uploadPolicy",
         "PDF/JPEG/PNG, 파일당 10MiB·신청당 10개. 제출 파일은 관리자만 열람합니다. 검사 대기 파일은 열람할 수 없습니다.");
   }
@@ -200,6 +202,8 @@ public class ExamIntakeController {
       @RequestBody DeliveryInput body,
       HttpServletRequest request) {
     mutation(request);
+    if (!body.accessibleAndReviewed())
+      throw error(400, "1차 수정·검수 후 문제지와 해설지의 전달 및 접근 가능 여부를 확인해 주세요.");
     return service.delivered(p, id, body.version(), body.ordinal(), body.note());
   }
 

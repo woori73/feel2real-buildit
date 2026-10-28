@@ -5073,3 +5073,9 @@ ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(�
 계좌 GET/PUT `/api/admin/exam-intake/bank`, POST `/bank/approve`; 일반 로그인 사용자 GET `/api/exam-intake/bank`는 승인본만 반환.
 알림 GET `/api/admin/exam-intake/events`, POST `/events/{id}/ack`.
 모든 응답 `private, no-store`. 변경 버전 불일치 409, 다른 소유자 ID 404, 파일 열람은 ADMIN만(일반 소유자도 403), 검사 미완료 자료 409.
+
+### 신청 계좌·회차 정산 보완 (2026-10-28)
+- 관리자 등록 파일 불러오기는 브라우저의 입력만 채운다. 계좌 PUT 저장 후 승인 POST는 별개이며 approved 입력값을 신뢰하지 않는다. 실제 계좌 값은 저장소/공개 JS/CI에 넣지 않는다.
+- 신청 상세 응답의 `refundEstimate`는 제안 정책 스냅샷이 있는 신규 APPLICATION만 산출한다. `finalLegalAmount=false`; 과거 계약과 INQUIRY는 산출하지 않는다. 환불 승인 금액/송금 상태를 변경하지 않는다.
+- 전달 완료 POST에는 `accessibleAndReviewed:true` 필수. 1차 수정·검수 및 문제지·해설지 전달/접근 확인 없으면400이며 회차/예정액은 불변.
+- 동의 버전 v2는 회차별 기본 환불 예정액·법정 예외 안내를 포함한다. 이전 동의/계약 행을 소급 변경하지 않는다.

@@ -45,14 +45,16 @@
         </div>
       </div>
       <div class="footer-links">
-        <a onclick="comingSoon()">서비스 이용약관</a>
+        <a th:if="${examSeller != null}" href="/faq#exam-service-terms">서비스 이용·환불 안내</a>
+        <a th:unless="${examSeller != null}" onclick="comingSoon()">서비스 이용약관</a>
         <a href="/privacy">개인정보처리방침</a>
         <a onclick="openContactModal()">문의하기</a>
       </div>
     </div>
     <th:block th:unless="${hideBiz}">
       <hr class="footer-divider"/>
-      <div class="footer-biz">
+      <th:block th:if="${examSeller != null}" th:insert="~{fragments/_public_footer :: examSellerDetails}"></th:block>
+      <div class="footer-biz" th:unless="${examSeller != null}">
       <div class="footer-biz-row">
         <span class="footer-biz-item">상호명: 압구정에듀홀릭학원</span>
         <span class="footer-biz-item">대표: 박정민</span>
@@ -71,6 +73,18 @@
     <div class="footer-copyright"
          th:text="${buildIt} ? '© 2026 Feel 2 Real. All rights reserved.' : '© 2026 Feel to Real. All rights reserved.'">© 2026 Feel to Real. All rights reserved.</div>
   </footer>
+</th:block>
+
+<th:block th:fragment="examSellerDetails">
+  <div class="footer-biz" th:if="${examSeller != null}" id="examSellerDetails">
+    <p><span th:text="'온라인 판매자: ' + ${examSeller.name}"></span> · <span th:text="'대표자: ' + ${examSeller.owner}"></span></p>
+    <p th:text="'사업자등록번호: ' + ${examSeller.businessNumber}"></p>
+    <p th:text="'통신판매업 신고번호: ' + ${examSeller.commerceNumber}"></p>
+    <p th:text="'주소: ' + ${examSeller.address}"></p>
+    <a th:href="'mailto:' + ${examSeller.email}" th:text="${examSeller.email}"></a>
+    <p><a href="/privacy">개인정보처리방침</a> · <a href="/faq#exam-service-terms">서비스 이용·환불 안내</a></p>
+    <p>F2R은 교육 서비스 브랜드입니다.</p>
+  </div>
 </th:block>
 
 <!-- hideDirect(NewStart): 전화/이메일 직접 연락 옵션을 렌더하지 않는다.

@@ -507,4 +507,71 @@ class ExamIntakeServiceTest {
       verifyNoInteractions(chain);
     }
   }
+
+  @Test
+  void givenDeliveries_whenEstimatingRefund_thenProposalOnlyAndHistoryUnchanged() {
+    var r = production();
+    for (int n = 0; n <= 4; n++) {
+      assertThat(service.refundEstimate(r))
+          .containsEntry("estimatedWon", 20000 - n * 5000)
+          .containsEntry("finalLegalAmount", false);
+      if (n < 4) r = service.delivered(admin, r.id(), r.version(), n + 1, "합성 검수·접근 확인");
+    }
+    repo.jdbc()
+        .update(
+            "UPDATE exam_intake_request SET offer_snapshot=? WHERE id=?",
+            "{\"priceWon\":30000,\"totalDeliveries\":6}",
+            r.id());
+    assertThat(service.refundEstimate(repo.get(r.id(), false))).containsEntry("available", false);
+    assertThat(repo.actions(r.id())).noneMatch(a -> a.amountWon() != null);
+  }
+
+  @Test
+  void givenUnconfirmedDelivery_whenAdminRequests_thenNotCountedForRefund() {
+    var r = production();
+    var request =
+        new MockHttpServletRequest(
+            "POST", "/api/admin/exam-intake/requests/" + r.id() + "/deliveries");
+    request.addHeader("X-F2R-Exam", "1");
+    request.addHeader("Origin", "http://localhost");
+    status(
+        400,
+        () ->
+            new ExamIntakeController(service)
+                .delivered(
+                    admin,
+                    r.id(),
+                    new ExamIntakeController.DeliveryInput(r.version(), 1, "아직 확인 전", false),
+                    request));
+    assertThat(service.refundEstimate(r)).containsEntry("delivered", 0);
+  }
+
+  @Test
+  void givenUnconfirmedSeller_whenRendering_thenNoUnverifiedPublication() {
+    assertThat(
+            new f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller
+                    .HomeExamSellerAdvice(false)
+                .seller())
+        .isNull();
+    var seller =
+        new f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller
+                .HomeExamSellerAdvice(true)
+            .seller();
+    assertThat(seller.businessNumber()).isEqualTo("146-99-01347");
+    assertThat(seller.commerceNumber()).isEqualTo("제2026-서울송파-1411호");
+  }
+
+  @Test
+  void givenInquiry_whenViewingRefundGuide_thenNoChargeOrEstimatedRefund() {
+    var in = input(UUID.randomUUID().toString());
+    var details = new HashMap<>(in.details());
+    details.put("inquiryType", "서비스 문의");
+    details.put("message", "일정 문의");
+    var r =
+        service.create(
+            owner, new Create(Kind.INQUIRY, details, true, CONSENT, in.idempotencyKey()));
+    assertThat(service.refundEstimate(r))
+        .containsEntry("available", false)
+        .containsEntry("message", "문의 접수에는 이용료를 청구하지 않습니다.");
+  }
 }

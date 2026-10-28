@@ -68,7 +68,9 @@ public class ExamIntakeService {
                     "totalQuestions",
                     offer.getTotalQuestions(),
                     "priceWon",
-                    offer.priceWon());
+                    offer.priceWon(),
+                    "refundProposalVersion",
+                    "per-delivery-proposal-v1");
             Request r = repo.insert(owner, input, details, snapshot, hash);
             repo.event(
                 r,
@@ -89,6 +91,36 @@ public class ExamIntakeService {
     return repo.list(adminView ? null : p.userId(), page * 50);
   }
 
+  /**
+   * Arithmetic guide only. Never writes an approved refund amount. Historical contracts are
+   * excluded.
+   */
+  public Map<String, Object> refundEstimate(Request r) {
+    if (r.kind() != Kind.APPLICATION)
+      return Map.of("available", false, "message", "문의 접수에는 이용료를 청구하지 않습니다.");
+    if (!"per-delivery-proposal-v1".equals(r.offer().get("refundProposalVersion")))
+      return Map.of("available", false, "message", "이전 계약의 환불 조건은 별도로 검토합니다.");
+    int total = ((Number) r.offer().get("totalDeliveries")).intValue();
+    int price = ((Number) r.offer().get("priceWon")).intValue();
+    int delivered =
+        repo.jdbc()
+            .queryForObject(
+                "SELECT COUNT(*) FROM exam_intake_delivery WHERE request_id=?",
+                Integer.class,
+                r.id());
+    return Map.of(
+        "available",
+        true,
+        "delivered",
+        delivered,
+        "remaining",
+        Math.max(0, total - delivered),
+        "estimatedWon",
+        (price / total) * Math.max(0, total - delivered),
+        "finalLegalAmount",
+        false);
+  }
+
   public Map<String, Object> detail(AuthenticatedPrincipal p, String id) {
     user(p);
     Request r = repo.get(id, false);
@@ -96,6 +128,8 @@ public class ExamIntakeService {
     return Map.of(
         "request",
         r,
+        "refundEstimate",
+        refundEstimate(r),
         "documents",
         repo.documents(id).stream()
             .map(

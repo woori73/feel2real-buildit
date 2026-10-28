@@ -100,7 +100,7 @@
             </label>
           </div>
           <details>
-            <summary>개인정보 수집·이용 및 취소 안내</summary>
+            <summary>개인정보 수집·이용 및 취소·환불 안내</summary>
             <p>
               문의 답변과 맞춤 문제 제작을 위해 이름, 학교·학년, 연락처, 시험
               범위와 제출 자료를 수집합니다. 제출 파일은 담당 관리자만
@@ -113,15 +113,47 @@
               조건을 확인해 주세요.
             </p>
           </details>
+          <section id="refundTerms" aria-label="회차별 환불 예정액">
+            <h3>제공 회차별 기본 환불 예정액</h3>
+            <p>
+              총4회·회당40문항·20,000원. 1차 수정·검수 후 문제지와 해설지가 정상
+              전달되고 접근 가능한 회차만 제공 완료로 기록합니다.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>제공 완료</th>
+                  <th>잔여 회차</th>
+                  <th>기본 예정액</th>
+                </tr>
+              </thead>
+              <tbody id="refundRows"></tbody>
+            </table>
+            <p>
+              위 금액은 잔여 이용료의 기본 정산 예시이며 최종 법정 환불액이
+              아닙니다. 법정 청약철회, 사업자 귀책과 서비스 하자는 별도 기준으로
+              검토합니다. 자동 환불 송금은 하지 않습니다.
+            </p>
+          </section>
           <label class="check"
             ><input type="checkbox" name="consent" required />개인정보 수집·이용
-            및 취소 안내를 읽고 동의합니다.</label
+            및 취소·환불 안내를 읽고 동의합니다.</label
           ><button type="submit">접수하기</button>
         </form>
       </section>
       <section th:if="${adminView}">
         <h2>통장입금 계좌 설정</h2>
         <p>저장한 뒤 별도로 승인해야 신청자에게 표시됩니다.</p>
+        <label
+          >등록용 JSON 파일 불러오기<input
+            id="bankImport"
+            type="file"
+            accept=".json,application/json"
+        /></label>
+        <p>
+          파일 불러오기는 입력만 채웁니다. 내용을 확인한 뒤 저장·승인을 각각
+          진행하세요.
+        </p>
         <form id="bankForm" class="grid">
           <label>은행명<input name="bankName" maxlength="80" required /></label
           ><label
@@ -152,6 +184,7 @@
         <h2 id="detailTitle" tabindex="-1"></h2>
         <div id="details"></div>
         <p id="progress"></p>
+        <p id="refundEstimate"></p>
         <h3>제출 자료</h3>
         <p>
           제출 파일 본문은 관리자만 열람하며, 검사 대기 자료는 열람할 수
@@ -169,7 +202,9 @@
         </form>
         <div th:unless="${adminView}">
           <h3>입금 확인 요청</h3>
-          <p id="bankGuide"></p>
+          <div id="bankGuide"></div>
+          <button id="copyAccount" type="button" hidden>계좌번호 복사</button>
+          <p id="copyStatus" role="status" aria-live="polite"></p>
           <form id="paymentForm">
             <label>입금자명<input name="payer" maxlength="80" required /></label
             ><button id="paymentRequest" type="submit" disabled>
@@ -180,6 +215,33 @@
             이 버튼은 입금 완료 처리가 아닙니다. 관리자가 확인한 뒤 상태가
             변경됩니다.
           </p>
+          <section id="kakaoConfirmation" hidden>
+            <p>
+              입금 후 카카오톡으로 신청번호와 입금자명을 알려 주세요. 관리자가
+              실제 입금과 자료를 확인하면 최대한 빨리 제작하고, 1차 수정·검수를
+              거쳐 제공합니다. 제작·제공 일정은 개별 안내합니다.
+            </p>
+            <label
+              >카카오톡에 보낼 확인 내용<textarea
+                id="paymentMessage"
+                readonly
+              ></textarea>
+            </label>
+            <button id="copyPaymentMessage" type="button">
+              입금 확인 내용 복사
+            </button>
+            <a
+              id="paymentKakao"
+              href="https://open.kakao.com/o/sMf4ifRi"
+              target="_blank"
+              rel="noopener noreferrer"
+              >카카오톡에서 입금 확인 요청</a
+            >
+            <p>
+              내용을 복사해 직접 보내 주세요. 버튼으로 메시지가 자동 전송되지는
+              않습니다.
+            </p>
+          </section>
         </div>
         <h3>수정·삭제·취소·환불 요청</h3>
         <form id="actionForm">
@@ -231,6 +293,13 @@
                 name="note"
                 maxlength="500"
                 required /></label
+            ><label class="check"
+              ><input
+                type="checkbox"
+                name="accessibleAndReviewed"
+                required
+              />1차 수정·검수 후 문제지·해설지를 전달했고 고객이 접근 가능한
+              상태임을 확인했습니다.</label
             ><button type="submit">전달 완료 기록</button>
           </form>
         </div>
@@ -245,7 +314,11 @@
         </p>
         <div id="events"></div>
       </section>
+      <footer
+        th:if="${examSeller != null}"
+        th:insert="~{fragments/_public_footer :: examSellerDetails}"
+      ></footer>
     </main>
-    <script src="/js/exam_service.js?v=20261028-1" defer></script>
+    <script src="/js/exam_service.js?v=20261028-2" defer></script>
   </body>
 </html>

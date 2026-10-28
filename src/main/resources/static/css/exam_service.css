@@ -180,3 +180,28 @@ small {
     width: auto;
   }
 }
+
+#bankGuide dd {
+  overflow-wrap: anywhere;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+#bankGuide dt {
+  color: #b4c9dc;
+}
+#paymentKakao {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+#refundTerms table {
+  width: 100%;
+  border-collapse: collapse;
+}
+#refundTerms th,
+#refundTerms td {
+  padding: 8px;
+  border-bottom: 1px solid #355469;
+  text-align: left;
+}

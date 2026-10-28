@@ -13,7 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 public final class ExamIntake {
   private ExamIntake() {}
 
-  public static final String CONSENT = "exam-intake-review-20261028-v1";
+  public static final String CONSENT = "exam-intake-review-20261028-v2";
 
   public enum Kind {
     INQUIRY,

@@ -305,6 +305,7 @@ test("admin bank save/approve, manual confirmation, four deliveries and refund g
             version: r.version,
             ordinal,
             note: "합성 전달 완료 기록 — 실제 전달 없음",
+            accessibleAndReviewed: true,
           },
         }),
       );
@@ -370,4 +371,173 @@ test("admin bank save/approve, manual confirmation, four deliveries and refund g
     await owner.dispose();
     await admin.dispose();
   }
+});
+
+test("bank import stays unapproved; approved account, clipboard and Kakao acknowledgement at all widths", async ({
+  browser,
+}) => {
+  const a = await logged("admin"),
+    owner = await logged("student");
+  const bank = process.env.F2R_LOCAL_BANK_FILE
+    ? JSON.parse(fs.readFileSync(process.env.F2R_LOCAL_BANK_FILE, "utf8"))
+    : {
+        bankName: "SYNTHETIC BANK",
+        accountNumber: "TEST-ACCOUNT-ONLY",
+        accountHolder: "LOCAL FIXTURE",
+      };
+  const context = await browser.newContext({
+    storageState: await a.storageState(),
+    viewport: { width: 1440, height: 1050 },
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto("/admin/hub/exam-requests");
+    await expect(page.locator("#bankStatus")).toContainText("승인됨");
+    await page.locator("#bankImport").setInputFiles({
+      name: "registration.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(bank)),
+    });
+    await expect(
+      page.locator('#bankForm input[name="accountNumber"]'),
+    ).toHaveValue(bank.accountNumber);
+    await expect(page.locator("#approveBank")).toBeDisabled();
+    await page.locator('#bankForm button[type="submit"]').click();
+    await expect(page.locator("#bankStatus")).toContainText(
+      "승인 전에는 비공개",
+    );
+    expect((await ok(owner.get("/api/exam-intake/bank"))).available).toBe(
+      false,
+    );
+    await page.locator("#approveBank").click();
+    await expect(page.locator("#bankStatus")).toContainText("승인됨");
+    const saved = await ok(a.get("/api/admin/exam-intake/bank"));
+    expect(saved.bank.approved).toBe(true);
+    expect(saved.bank.accountNumber).toBe(bank.accountNumber);
+    await page.screenshot({
+      path: path.join(output, "bank-admin-approved.png"),
+      fullPage: true,
+    });
+    for (const width of [360, 390, 430, 768, 1440]) {
+      const r = await create(owner);
+      const c = await browser.newContext({
+        storageState: await owner.storageState(),
+        viewport: { width, height: 960 },
+        isMobile: width < 768,
+        hasTouch: width < 768,
+      });
+      try {
+        const p = await c.newPage();
+        await p.addInitScript(() => {
+          window.__copies = [];
+          Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: { writeText: async (text) => window.__copies.push(text) },
+          });
+        });
+        await p.goto("/exam-service");
+        await p
+          .locator("#requests article")
+          .filter({ hasText: r.id })
+          .getByRole("button")
+          .click();
+        await expect(p.locator("#bankGuide")).toContainText(bank.bankName);
+        await expect(p.locator("#bankGuide")).toContainText(bank.accountNumber);
+        await expect(p.locator("#bankGuide")).toContainText(bank.accountHolder);
+        await expect(p.locator("#bankGuide")).toContainText("20,000원");
+        await expect(p.locator("#refundRows tr")).toHaveCount(5);
+        await expect(p.locator("#refundEstimate")).toContainText("20,000원");
+        await p.locator("#copyAccount").click();
+        await expect(p.locator("#copyStatus")).toHaveText("복사했습니다.");
+        expect(await p.evaluate(() => window.__copies[0])).toBe(
+          bank.accountNumber,
+        );
+        await p.locator('#paymentForm input[name="payer"]').fill("합성 입금자");
+        await expect(p.locator("#paymentMessage")).toHaveValue(
+          new RegExp(r.id),
+        );
+        await expect(p.locator("#paymentMessage")).toHaveValue(/합성 입금자/);
+        await expect(p.locator("#paymentKakao")).toHaveAttribute(
+          "href",
+          "https://open.kakao.com/o/sMf4ifRi",
+        );
+        expect(
+          await p.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth + 1,
+          ),
+        ).toBe(true);
+        await p.locator("#bankGuide").scrollIntoViewIfNeeded();
+        await p.screenshot({
+          path: path.join(output, `${width}-bank-guide.png`),
+        });
+        await p.evaluate(() =>
+          Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: {
+              writeText: async () => {
+                throw new Error("denied");
+              },
+            },
+          }),
+        );
+        await p.locator("#copyAccount").click();
+        await expect(p.locator("#copyStatus")).toContainText("직접 복사");
+        await p.evaluate(() =>
+          Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: undefined,
+          }),
+        );
+        await p.locator("#copyAccount").click();
+        await expect(p.locator("#copyStatus")).toContainText("직접 복사");
+        await p.locator("#paymentRequest").click();
+        await expect(p.locator("#notice")).toContainText("관리자 확인 전");
+        await expect(p.locator("#copyAccount")).toBeHidden();
+        await expect(p.locator("#bankGuide")).toContainText(
+          "추가 입금하지 마세요",
+        );
+        const detail = await ok(a.get("/api/exam-intake/requests/" + r.id));
+        expect(detail.request.state).toBe("CONFIRMATION_REQUESTED");
+        const payment = JSON.parse(
+          detail.actions.find((x) => x.kind === "PAYMENT_CONFIRMATION").body,
+        );
+        expect(payment.payer).toBe("합성 입금자");
+        expect(payment.bank.accountNumber).toBe(bank.accountNumber);
+        await p.locator("#kakaoConfirmation").scrollIntoViewIfNeeded();
+        await p.screenshot({
+          path: path.join(output, `${width}-payment-requested.png`),
+        });
+      } finally {
+        await c.close();
+      }
+    }
+  } finally {
+    await context.close();
+    await a.dispose();
+    await owner.dispose();
+  }
+});
+
+test("public refund guide renders and unconfirmed seller stays gated", async ({
+  page,
+}) => {
+  const response = await page.goto("/faq#exam-service-terms");
+  expect(response.status()).toBe(200);
+  await expect(page.locator("#exam-service-terms")).toContainText("20,000원");
+  await expect(page.locator("#exam-service-terms")).toContainText("15,000원");
+  await expect(page.locator("#exam-service-terms")).toContainText(
+    "최종 법정 환불액이 아닙니다",
+  );
+  if (process.env.F2R_LOCAL_SELLER_REVIEW === "true") {
+    await expect(page.locator("#examSellerDetails")).toContainText(
+      "146-99-01347",
+    );
+    await expect(page.locator("#examSellerDetails")).toContainText(
+      "제2026-서울송파-1411호",
+    );
+  } else await expect(page.locator("#examSellerDetails")).toHaveCount(0);
+  await page.screenshot({
+    path: path.join(output, "refund-seller-review.png"),
+    fullPage: true,
+  });
 });
