@@ -1,12 +1,14 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.LandingVideoRenderItem;
+import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.entity.LandingVideoSlotKey;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.LandingVideoService;
 import java.util.EnumMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -22,8 +24,14 @@ public class LandingPageController {
 
   private final LandingVideoService landingVideoService;
 
+  // Disabled until the final, approved promo is installed separately. No remote/unsigned URLs.
+  @Value("${app.home.exam-promo-path:}")
+  private String examPromoPath = "";
+
   @GetMapping("/")
   public String landing(Model model) {
+    model.addAttribute("examOffer", HomeExamOffer.CURRENT);
+    model.addAttribute("examPromoPath", safePromoPath(examPromoPath));
     Map<LandingVideoSlotKey, LandingVideoRenderItem> videos =
         new EnumMap<>(LandingVideoSlotKey.class);
     landingVideoService.resolveRenderItems().forEach(item -> videos.put(item.slot(), item));
@@ -33,6 +41,11 @@ public class LandingPageController {
     model.addAttribute(
         "parentReportVideo", required(videos, LandingVideoSlotKey.PARENT_REPORT_DEMO));
     return "public/landing";
+  }
+
+  static String safePromoPath(String path) {
+    return path != null && path.matches("/video/landing/[A-Za-z0-9][A-Za-z0-9_-]*\\.mp4")
+        ? path : "";
   }
 
   private LandingVideoRenderItem required(

@@ -4,11 +4,11 @@ const path = require('node:path');
 
 const phase = process.env.MOBILE_EVIDENCE_PHASE || 'after';
 if (!['before', 'after'].includes(phase)) throw new Error('MOBILE_EVIDENCE_PHASE must be before or after');
-const output = path.resolve(__dirname, '../../docs/verification/mobile-hologram-20261027', phase);
+const output = path.resolve(__dirname, '../../build/verification/home-responsive', phase);
 const kakao = 'https://open.kakao.com/o/sMf4ifRi';
 const email = 'mailto:woorinaesin@naver.com';
 const titles = ['기말고사 이용권', '맞춤 문제 신청', '시험 범위 제출', '개별 신청', '학부모·학생 신청', '접수 방법'];
-const sizes = [[360, 800], [390, 844], [430, 932], [1440, 1050]];
+const sizes = [[360, 800], [390, 844], [430, 932], [768, 1024], [1440, 1050]];
 
 for (const font of ['fallback', 'pretendard']) {
   for (const [width, height] of sizes) {
@@ -89,22 +89,22 @@ for (const font of ['fallback', 'pretendard']) {
         }
         await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
         await expect(page.locator('#enHeroStudio img')).toBeVisible();
-        const submit = page.locator('#pass-offer a').filter({ hasText:'기말고사 이용권 신청 안내' });
+        const submit = page.locator('#enExamCta');
         await expect(submit).toHaveAttribute('href', kakao);
         const popupPromise = page.waitForEvent('popup');
         await act(submit);
         const popup = await popupPromise; await popup.close(); // external document is blocked; never submit an application
-        await expect(page.locator('#pass-offer a[href^="mailto:"]')).toHaveAttribute('href', email);
+        await expect(page.locator('#enExamMail')).toHaveAttribute('href', email);
         const beforeInputReply = await page.locator('#homeChat .is-agent').count();
         await page.locator('#homeInput').fill('기말고사 이용권 신청');
         await act(page.locator('#homeForm button'));
         await expect(page.locator('#homeChat .is-agent')).toHaveCount(beforeInputReply+1);
-        await expect(page.locator('#homeChat .is-agent').last()).toContainText('240문항');
+        await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
         await act(page.locator('[data-home-agent="suni"]'));
         await expect(page.locator('#homeName')).toHaveText('서수니');
         await expect(page.locator('[data-home-agent="suni"]')).toHaveAttribute('aria-pressed', 'true');
         await act(page.locator('#homeWelcomeAgain'));
-        await expect(page.locator('#homeChat .is-agent').last()).toContainText('서수니');
+        await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
         await act(page.locator('#homeChat .is-agent').last().getByRole('button', { name:'나중에', exact:true }));
         await expect(page.locator('#homeChat .is-agent').last()).toContainText('필요할 때');
         await act(page.locator('#homeWelcomeAgain'));

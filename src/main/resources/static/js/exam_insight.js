@@ -115,8 +115,8 @@
 
   function slug(id, kind) { return (kind === 'analysis' ? 'exam-analysis' : 'exam-direction') + '_' + id + '.md'; }
 
-  function buildOrderMessage(id, meta) {
-    return ['[BuildIt 영어 내신 예상문제 제작 의뢰]', '- 상품: 영어 내신 예상문제 40문항 / 1회 20,000원',
+  function buildOrderMessage(id, meta, offerSummary) {
+    return ['[BuildIt 영어 내신 예상문제 제작 의뢰]', '- 상품: ' + (offerSummary || (typeof document !== 'undefined' && document.getElementById('eiMain') && document.getElementById('eiMain').dataset.offerSummary) || '현재 홈페이지의 기말고사 맞춤 이용권 구성·금액을 확인해 주세요.'),
       '- 분석 번호: ' + id, '- 학교/학년: ' + [meta.school, meta.grade].filter(Boolean).join(' / '),
       '- 교과서: ' + (meta.publisher || ''), '- 시험: ' + (meta.examType || ''),
       '※ 분석 문서(.md 2개)를 함께 보내드리겠습니다.'].join('\n');

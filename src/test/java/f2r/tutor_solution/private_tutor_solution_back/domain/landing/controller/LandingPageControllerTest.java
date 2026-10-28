@@ -42,7 +42,9 @@ class LandingPageControllerTest {
     assertThat(model.asMap())
         .containsEntry("academyShortsVideo", shorts)
         .containsEntry("parentReportVideo", report)
-        .hasSize(2);
+        .containsEntry("examOffer", f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer.CURRENT)
+        .containsEntry("examPromoPath", "")
+        .hasSize(4);
   }
 
   @Test
@@ -72,4 +74,13 @@ class LandingPageControllerTest {
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("PARENT_REPORT_DEMO");
   }
+  @Test
+  void givenUnapprovedPromoPath_whenValidated_thenRemoteAndTraversalPathsAreRejected() {
+    for (String path : new String[]{"https://example.com/a.mp4", "//x/a.mp4", "/video/landing/../x.mp4", "/video/landing/%2e.mp4", "", "/video/landing/a.mp4?token=secret"}) {
+      assertThat(LandingPageController.safePromoPath(path)).isEmpty();
+    }
+    assertThat(LandingPageController.safePromoPath("/video/landing/exam-approved-v2.mp4"))
+        .isEqualTo("/video/landing/exam-approved-v2.mp4");
+  }
+
 }

@@ -5,27 +5,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Feel2Real | BuildIt — AI로 만드는 영어 교육</title>
-  <meta name="description" content="Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다. 기말고사 시험기간 이용권 20,000원(3주·총 6회·240문항), 내신 영어 예상문제 1회 20,000원(40문항), 학원 운영 대시보드.">
+  <title>Feel2Real | 영어 기말 대비 맞춤 문제</title>
+  <meta name="description" th:content="${examOffer.description}">
   <th:block th:replace="~{fragments/_seo :: seo (
-    keywords='내신 영어 예상문제, 학원 운영 대시보드, 영어 교육 AI, 에듀테크, Feel2Real, BuildIt',
+    keywords='영어 기말고사, 학교별 맞춤 문제, Feel2Real, BuildIt',
     canonical='https://feel2real.co.kr/',
-    ogTitle='Feel2Real | BuildIt — AI로 만드는 영어 교육',
-    ogDescription='Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다. 기말고사 시험기간 이용권 20,000원(3주·총 6회·240문항), 내신 영어 예상문제 1회 20,000원(40문항), 학원 운영 대시보드.',
-    ogImage=null)}"></th:block>
+    ogTitle='Feel2Real | 영어 기말 대비 맞춤 문제',
+    ogDescription=${examOffer.description}, ogImage=null)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="/css/landing_edunova.css?v=20261027-1">
   <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261027-8">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
-  <script src="/js/f2r_home_agent.js?v=20261027-8" defer></script>
+  <script src="/js/f2r_home_agent.js?v=20261028-2" defer></script>
   <link rel="stylesheet" href="/css/f2r_home_compact.css?v=20261028-1">
   <script src="/js/f2r_home_presentation.js?v=20261028-1" defer></script>
+  <link rel="stylesheet" href="/css/home_exam.css?v=20261028-2">
+  <script src="/js/home_exam_contact.js?v=20261028-2" defer></script>
+  <script src="/js/home_exam_promo.js?v=20261028-2" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
 </head>
 <body data-track-page="home">
@@ -88,15 +90,21 @@
 
   <main>
     <!-- ============ 첫 화면: AI 비서(세븐·서수니)와 대화로 시작. 기존 상품·교육 콘텐츠는 아래 영역으로 이동(삭제 없음) ============ -->
-    <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle">
-      <div class="si-home-head">
-        <h1 class="si-home-title" id="siHomeTitle">기말고사 맞춤 문제 신청</h1>
-        <p class="si-home-lead">20,000원 · 3주 · 주 2회 · 총 6회 · 240문항</p>
+    <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version}">
+      <div class="si-home-head" id="pass-offer">
+        <p class="exam-eyebrow">YOUR SCHOOL. YOUR EXAM.</p>
+        <h1 class="si-home-title" id="siHomeTitle">기출과 아주 유사한<br>영어 기말 대비 문제!</h1>
+        <p class="exam-hero-quantity" th:text="${examOffer.headline}">2주 동안 160문항</p>
+        <p class="exam-hero-price">단 <strong th:text="${examOffer.priceLabel}">20,000원</strong>!</p>
+        <p class="si-home-lead">학교별 맞춤 제작 · 요구사항에 따라 수정</p>
+        <p class="exam-hero-detail" th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p>
+        <a class="en-btn en-btn-primary" href="#exam-contact">문의·신청 및 자료 제출</a>
+        <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
       </div>
 <section class="command" id="homeConsole" data-state="idle" aria-label="AI 비서와 신청 안내">
-<div class="service-stack left"><button type="button" class="si-holo-tile" data-home-intent="exam"><b>기말고사 이용권</b><small>20,000원 · 3주 · 6회</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>맞춤 문제 신청</b><small>학교별 총 240문항</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>시험 범위 제출</b><small>기출 · 교사 힌트</small></button></div>
+<div class="service-stack left"><button type="button" class="si-holo-tile" data-home-intent="exam"><b>기말고사 이용권</b><small>이용 구성 안내</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>맞춤 문제 신청</b><small>학교별 맞춤 제작</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>시험 범위 제출</b><small>기출 · 교사 힌트</small></button></div>
 <div class="stage" id="homeStage" data-state="idle" data-media="missing" aria-label="캐릭터 영상과 선택">
-<div class="stage-top"><span id="homeCode">H-07</span><span class="ready" id="homeStateLabel">대기</span></div><div class="orbit" aria-hidden="true"><svg viewBox="0 0 600 500"><g fill="none" stroke="currentColor"><ellipse cx="300" cy="265" rx="264" ry="166" transform="rotate(-16 300 265)"/><ellipse cx="300" cy="265" rx="225" ry="210" stroke-dasharray="3 16"/><ellipse cx="300" cy="265" rx="275" ry="74" transform="rotate(16 300 265)"/><path d="M35 265h35m460 0h35M300 35v35m0 390v-35"/></g></svg></div>
+<div class="stage-top"><span id="homeCode">SUNI</span><span class="ready" id="homeStateLabel">대기</span></div><div class="orbit" aria-hidden="true"><svg viewBox="0 0 600 500"><g fill="none" stroke="currentColor"><ellipse cx="300" cy="265" rx="264" ry="166" transform="rotate(-16 300 265)"/><ellipse cx="300" cy="265" rx="225" ry="210" stroke-dasharray="3 16"/><ellipse cx="300" cy="265" rx="275" ry="74" transform="rotate(16 300 265)"/><path d="M35 265h35m460 0h35M300 35v35m0 390v-35"/></g></svg></div>
 <div class="media-screen">
 <img id="stagePoster" alt="선택한 캐릭터의 기존 포스터" hidden>
 <video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-label="선택한 캐릭터 영상"></video>
@@ -104,9 +112,9 @@
 <p id="mediaStatus" role="status">캐릭터 영상을 불러오지 못했습니다. 안내는 계속 이용할 수 있습니다.</p>
 </div>
 <div class="characters" role="group" aria-label="AI 비서 선택">
-<button type="button" class="character no-portrait" data-home-agent="seven" aria-pressed="true"><span class="portrait"><img alt="세븐"></span><span class="identity"><small>H-07</small><strong>세븐</strong><span class="selected-word"></span></span></button><button type="button" class="character no-portrait" data-home-agent="suni" aria-pressed="false"><span class="portrait"><img alt="서수니"></span><span class="identity"><small>SUNI</small><strong>서수니</strong><span class="selected-word"></span></span></button></div><div class="stage-bottom"><strong id="homeName">세븐</strong><span>Feel2Real AI 비서</span></div></div>
+<button type="button" class="character no-portrait" data-home-agent="seven" aria-pressed="false"><span class="portrait"><img alt="세븐"></span><span class="identity"><small>H-07</small><strong>세븐</strong><span class="selected-word"></span></span></button><button type="button" class="character no-portrait" data-home-agent="suni" aria-pressed="true"><span class="portrait"><img alt="서수니"></span><span class="identity"><small>SUNI</small><strong>서수니</strong><span class="selected-word"></span></span></button></div><div class="stage-bottom"><strong id="homeName">서수니</strong><span>Feel2Real AI 비서</span></div></div>
 <div class="service-stack right"><button type="button" class="si-holo-tile" data-home-intent="exam"><b>개별 신청</b><small>학생 · 학부모 · 강사 · 원장</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>학부모·학생 신청</b><small>학교 · 학년 안내</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>접수 방법</b><small>카톡 · 이메일 안내</small></button></div></section>
-<section class="assistant" id="assistant" aria-label="AI 비서 대화"><div class="assistant-title"><div><span class="status-dot"></span><strong id="assistant-name">세븐</strong><span>Feel2Real AI 비서</span></div></div>
+<section class="assistant" id="assistant" aria-label="AI 비서 대화"><div class="assistant-title"><div><span class="status-dot"></span><strong id="assistant-name">서수니</strong><span>Feel2Real AI 비서</span></div></div>
 <div id="homeChat" class="conversation" tabindex="0" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
 <form id="homeForm" autocomplete="off"><label class="sr" for="homeInput">AI 비서에게 말하기</label><input id="homeInput" maxlength="300" placeholder="학교·학년·시험 범위나 신청 문의를 입력하세요" enterkeyhint="send"><button class="send" type="submit">보내기</button></form>
 <p class="home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span><button type="button" id="homeWelcomeAgain">처음 안내 다시 보기</button></p>
@@ -115,8 +123,59 @@
 
     </section>
 
-    <!-- ============ HERO: AI AGENT 이미지 + 기말고사 이용권 20,000원 ============ -->
-    <section class="en-hero" id="top" data-track-section="passHero" aria-label="Feel2Real 대표 소개">
+    <section id="examPromo" class="exam-section exam-promo" hidden th:attr="data-src=${examPromoPath}">
+      <h2>영어 기말 대비 문제 서비스</h2>
+      <video id="examPromoVideo" controls muted playsinline preload="none" aria-label="20초 서비스 소개 영상"></video>
+    </section>
+
+    <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">
+      <p class="exam-eyebrow">MADE FOR YOUR SCHOOL</p>
+      <h2 id="passProcessTitle">우리 학교에 맞춰 만들고,<br>필요에 맞춰 수정합니다.</h2>
+      <div class="exam-grid">
+        <article class="exam-card"><span class="exam-step">01 / 분석</span><h3>학교별 기출과 시험 범위</h3><p>학교별 기출문제와 출제 경향을 분석합니다. 최근 기출과 시험 범위를 보내 주세요.</p></article>
+        <article class="exam-card"><span class="exam-step">02 / 맞춤 제작</span><h3>유형·난이도·시험지 형식</h3><p>원하는 문제 유형과 난이도, 시험지 형식을 반영해 회당 <span th:text="${examOffer.questionsPerDelivery}">40</span>문항을 제작합니다.</p></article>
+        <article class="exam-card"><span class="exam-step">03 / 반영과 수정</span><h3>시험 직전까지 새롭게</h3><p>새로 확인된 시험 범위, 선생님의 출제 힌트, 학생의 취약 유형을 다음 제작에 반영합니다. 요구사항을 전달하면 문제를 수정합니다.</p></article>
+      </div>
+      <p class="exam-callout"><strong th:text="${examOffer.weeks} + '주 동안 함께하는 이유'">2주 동안 함께하는 이유</strong>시험이 가까워질수록 달라지는 정보를 반영하고, 기출 유사 문제와 취약 유형을 반복 학습하기 위해서입니다.</p>
+    </section>
+
+    <section class="exam-section" id="exam-samples" aria-labelledby="examSamplesTitle">
+      <p class="exam-eyebrow">WORKSHEETS &amp; EXPLANATIONS</p><h2 id="examSamplesTitle">문제지와 해설지 살펴보기</h2>
+      <div class="exam-card"><h3>검수한 실제 자료를 안내합니다.</h3><p>공개 샘플은 준비 중입니다. 현재 확인할 수 있는 자료는 문의로 안내받으실 수 있습니다.</p><a class="en-btn en-btn-outline" href="#exam-contact">문제지·해설지 문의</a></div>
+    </section>
+
+    <section class="exam-section" id="exam-hit" aria-labelledby="enHitTitle">
+      <p class="exam-eyebrow">EDUHOLIC / APGUJEONG</p><h2 id="enHitTitle">압구정에듀홀릭 활용 사례</h2>
+      <div class="exam-case"><div><h3>학교 시험과 수업 자료를 함께 살펴봅니다.</h3><p>기존에 소개한 압구정중2 영어 시험 분석과 직보 수업 사례를 에듀홀릭 블로그에서 확인할 수 있습니다.</p><p class="exam-caption">개별 사례는 다른 학교나 시험의 적중률을 보장하지 않습니다.</p></div><a class="en-btn en-btn-outline" href="#exam-blog">분석 원문 보기 ↓</a></div>
+    </section>
+
+    <section class="exam-section" id="exam-blog" aria-labelledby="examBlogTitle">
+      <p class="exam-eyebrow">SCHOOL EXAM NOTES</p><h2 id="examBlogTitle">학교별 시험 분석 블로그</h2>
+      <a class="exam-blog-link" id="enHitBlog" href="https://blog.naver.com/apgujungeduholic/224435388122" target="_blank" rel="noopener"><span><small>압구정에듀홀릭 · 기존 연결 원문</small><strong>압구정중2 영어 시험 분석</strong></span><span aria-hidden="true">↗</span></a>
+    </section>
+
+    <section class="exam-section" id="exam-contact" aria-labelledby="examContactTitle">
+      <p class="exam-eyebrow">LET’S GET STARTED</p><h2 id="examContactTitle">문의·신청·자료 제출</h2>
+      <p>학교·학년·시험일과 최근 기출·시험 범위를 보내 주세요. 문제 유형·난이도·시험지 형식과 추가 요구사항도 함께 알려 주세요.</p>
+      <div class="exam-contact-actions">
+        <a class="en-btn en-btn-primary" id="enExamCta" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener" data-track-click="pass_kakao">카카오톡 문의·신청</a>
+        <a class="en-btn en-btn-outline" id="enExamMail" href="mailto:woorinaesin@naver.com" data-track-click="pass_mail" aria-describedby="examMailHelp">이메일 작성·자료 첨부</a>
+        <button type="button" class="en-btn en-btn-outline" data-copy-address="woorinaesin@naver.com" aria-describedby="examCopyStatus">이메일 주소 복사</button>
+      </div>
+      <p id="examMailHelp">이메일 작성 버튼은 기기의 이메일 앱을 엽니다. 앱이 열리지 않으면 주소를 복사해 사용 중인 메일 서비스에서 자료를 첨부해 주세요.</p>
+      <p class="exam-mail-address"><a href="mailto:woorinaesin@naver.com">woorinaesin@naver.com</a></p>
+      <p id="examCopyStatus" role="status" aria-live="polite"></p>
+      <p class="exam-caption">현재 신청과 자료 제출은 카카오톡·이메일로 접수합니다. 사이트 내 접수 기능은 준비 중입니다.</p>
+    </section>
+
+    <section class="exam-section" id="exam-payment" aria-labelledby="examPaymentTitle">
+      <p class="exam-eyebrow">PAYMENT &amp; DELIVERY</p><h2 id="examPaymentTitle">이용료와 통장입금 안내</h2>
+      <div class="exam-payment"><div><p class="exam-payment-price" th:text="${examOffer.priceLabel}">20,000원</p><p th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p></div><div><p>신청 내용과 제작 가능 일정을 확인한 뒤 입금 방법을 안내합니다. 결제는 별도 안내 후 진행됩니다.</p><p>온라인 계좌 안내는 아직 제공하지 않습니다. 임의로 입금하지 마시고 먼저 문의해 주세요.</p><p class="exam-caption">입금은 관리자 확인 후 완료됩니다. 취소·환불은 콘텐츠 제공 상태와 관계 법령을 확인해 개별 안내하며, 자동 공제하지 않습니다.</p></div></div>
+    </section>
+
+    <section class="exam-section" id="ai-content" aria-labelledby="brandTitle" data-track-section="brand">
+      <p class="exam-eyebrow">FEEL2REAL ORIGINAL</p><h2 id="brandTitle">AI AGENT — 인간과 AI의 협업</h2>
+      <p>AI 콘텐츠 제작 · 웹툰·영상 제작 예정</p>
       <figure class="en-hero-art">
         <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
         <!-- 배너를 누르면 AI AGENT 제작협업실로 이동한다. 접근 권한(ADMIN·modu)은 서버가 확인하고, 로그인 전이면 로그인 안내로 보낸다. -->
@@ -124,138 +183,16 @@
           <picture>
             <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
             <source type="image/webp" srcset="/images/ai-agent-banner.webp">
-            <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" fetchpriority="high">
+            <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" loading="lazy">
           </picture>
         </a>
         <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정 <a class="en-hero-studio" href="/ai-agent-studio" data-studio-link>AI AGENT 제작협업실 바로가기 →</a></figcaption>
       </figure>
-      <aside class="en-offer" id="pass-offer" aria-labelledby="enOfferTitle">
-        <p class="en-offer-eyebrow">기말고사 맞춤 모의고사</p>
-        <h2 class="en-offer-title" id="enOfferTitle">시험기간 이용권 20,000원</h2>
-        <p class="en-offer-price"><strong>20,000원</strong><span>3주 · 주 2회 · 총 6회 · 240문항</span></p>
-        <ul class="en-offer-points">
-          <li>매주 2회, 회당 40문항 공급</li>
-          <li>학교 기출문제·시험범위 기반 맞춤 제작</li>
-          <li>출제 비율·시험지 포맷 선택 가능</li>
-          <li>피드백을 다음 회차에 반영, 학교 필기·학습자료 직보 정리 포함</li>
-        </ul>
-        <a class="en-btn en-btn-primary" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener" id="enExamCta" data-track-click="pass_kakao" data-track-flow="pass_apply">기말고사 이용권 신청 안내 (카톡)</a>
-        <a class="en-btn en-btn-outline" href="mailto:woorinaesin@naver.com" id="enExamMail" data-copy-mail="woorinaesin@naver.com" data-track-click="pass_mail">이메일로 신청 안내</a>
-        <a class="en-offer-proof" href="#exam-hit">압구정중2 실제 적중률 100% 사례 보기 ↓</a>
-        <p class="en-offer-note">학교·학년·시험일을 보내 주시면 이용권 안내와 제작 일정을 확인해 드립니다. 결제는 별도 안내 후 진행됩니다.<br>이메일 주소: <b class="en-mail-addr">woorinaesin@naver.com</b></p>
-        <p class="en-offer-note">필수 제출: 최근 기출문제 + 시험범위 자료 / 선택: 교사 강조·학생 필기·출제 비율·시험지 형식<br>1회 20,000원(40문항)도 계속 안내합니다.</p>
-      </aside>
-    </section>
-
-    <!-- ============ 공지 ============ -->
-    <a class="en-notice" href="#pass-offer" aria-label="공지사항: 기말고사 시험기간 이용권 20,000원 안내">
-      <span class="en-notice-tag">이용권 안내</span>
-      <span class="en-notice-text">기말고사 시험기간 이용권 20,000원 안내 — 신청·자료 제출은 카톡·이메일로 접수합니다</span>
-    </a>
-
-    <!-- 실제 제작 성과(복구): 직보 수업 자료·예상문제 대조 결과. 근거와 원문은 에듀홀릭 블로그. -->
-    <section class="en-hit" id="exam-hit" data-track-section="exam-hit" aria-labelledby="enHitTitle">
-      <p class="en-hit-badge">실제 적중 사례</p>
-      <h2 class="en-hit-title" id="enHitTitle"><span>40문항 직보 예상문제,</span><b>실제 적중률 100%</b></h2>
-      <p class="en-hit-lead">압구정중2 영어 시험은 어떻게 나왔을까?</p>
-      <div class="en-hit-grid">
-        <div class="en-hit-box">
-          <small>직보 수업 대조 결과</small>
-          <strong>직보 수업 자료와 직보 수업 때 푼 예상문제에서 <em>100% 출제</em></strong>
-          <p>외부지문 2문항(5 · 9번) 제외, 28문항 전부</p>
-          <p class="en-hit-cap">압구정중2 영어 2026학년도 2학기 중간고사 대비</p>
-        </div>
-        <div class="en-hit-side">
-          <blockquote class="en-hit-quote">“4점 문항 열 개가 모두 어법과 영작이었습니다.”</blockquote>
-          <a class="en-btn en-btn-outline" id="enHitBlog" href="https://blog.naver.com/apgujungeduholic/224435388122" target="_blank" rel="noopener" data-track-click="hit_blog">에듀홀릭 블로그에서 자세히 보기</a>
-          <div class="en-hit-cta">
-            <a class="en-btn en-btn-primary" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">예상문제 의뢰하기 (카톡)</a>
-            <a class="en-btn en-btn-outline" href="mailto:woorinaesin@naver.com" data-copy-mail="woorinaesin@naver.com">이메일 문의</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-
-
-
-
-
-    <!-- ============ 과정: 제출 → 제작 → 매주 공급 → 피드백 반영 ============ -->
-    <section class="en-services" data-track-section="passProcess" aria-labelledby="passProcessTitle">
-      <h2 class="en-section-title" id="passProcessTitle">이렇게 진행됩니다</h2>
-      <div class="en-cards">
-        <article class="en-card"><span class="en-card-no">01</span><h3>기출·시험범위 제출</h3><p>최근 기출문제와 시험범위 자료를 필수로 보내고, 학교·학년·시험일을 알려 주세요.</p></article>
-        <article class="en-card"><span class="en-card-no">02</span><h3>맞춤 제작</h3><p>학교별 출제 유형과 난이도를 반영하고, 원하는 출제 비율과 시험지 형식을 선택할 수 있습니다.</p></article>
-        <article class="en-card"><span class="en-card-no">03</span><h3>매주 2회 공급</h3><p>3주 동안 총 6회, 240문항을 공급합니다. 학교 필기와 학습자료를 직보용으로 정리해 드립니다.</p></article>
-        <article class="en-card"><span class="en-card-no">04</span><h3>피드백 반영·재공급</h3><p>추가 자료와 피드백을 다음 회차에 반영해 수정본을 다시 공급합니다.</p></article>
-      </div>
-    </section>
-
-    <!-- ============ 회사 소개 ============ -->
-    <section class="en-intro" aria-labelledby="enIntroTitle">
-      <p class="en-eyebrow">FEEL2REAL · BUILDIT</p>
-      <h2 id="enIntroTitle">AI로, 더 현실적인 교육의 미래를 만듭니다.</h2>
+      <!-- AI AGENT highlight is separate from the exam-service promo; approved gallery stays. -->
+      <div id="agentHighlightSlot" hidden></div>
       <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.</p>
-      <p>현재는 내신 영어 예상문제 제작, 학원 운영 대시보드, AI 기반 콘텐츠 제작 시스템을 중심으로 사업을 추진하고 있습니다.</p>
+      <details id="svc-dashboard" class="exam-other-services"><summary>BuildIt의 교육 서비스 더 보기</summary><div class="exam-contact-actions"><a href="/dashboard">학원 대시보드</a><a href="/ledger">이지장부</a><a href="/builder">학원 홈페이지 제작·관리</a><a href="/admin/hub">관리자 허브</a><a href="/wiki">모의고사위키</a></div></details>
     </section>
-
-    <!-- ============ 핵심 사업 3개 ============ -->
-    <section class="en-services" data-track-section="services" aria-labelledby="enSvcTitle">
-      <h2 class="en-section-title" id="enSvcTitle">현재 서비스</h2>
-      <div class="en-cards">
-        <article class="en-card" id="svc-exam">
-          <span class="en-card-no">01</span>
-          <h3>기말고사 맞춤 모의고사</h3>
-          <p>학교 기출문제와 시험범위를 바탕으로 매주 2회, 회당 40문항을 제작합니다. 피드백을 다음 회차에 반영합니다.</p>
-          <p class="en-card-price"><strong>시험기간 이용권 20,000원</strong> · 3주 · 주 2회 · 총 6회 · 240문항</p>
-          <p>1회 20,000원 · 40문항도 계속 안내합니다.</p>
-          <a class="en-btn en-btn-outline" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">예상문제 의뢰하기</a>
-        </article>
-        <article class="en-card" id="svc-dashboard">
-          <span class="en-card-no">02</span>
-          <h3>무료 학원 통합 대시보드</h3>
-          <p>복식장부와 학생 출결을 하나의 대시보드에서 함께 관리합니다. 2026년 무료 제공, 2027년 AI Agent 기반 정식 유료 서비스 출시 계획입니다.</p>
-          <p>현재 제공: 학생·출결·상담 관리, 장부, 학원 홈페이지 / 개발 예정: AI 자동화 기능(출시 시 안내) / 세무신고 대행은 제공하지 않습니다.</p>
-          <ul class="en-card-links">
-            <li><a href="/dashboard">공용 대시보드</a></li>
-            <li><a href="/ledger">이지장부</a></li>
-            <li><a href="/builder">학원 홈페이지 제작·관리</a></li>
-            <li><a href="/admin/hub">관리자 허브</a></li>
-          </ul>
-          <a class="en-btn en-btn-outline" href="/dashboard" data-track-click="dashboard_cta">대시보드 바로가기</a>
-        </article>
-        <article class="en-card en-card-dark" id="ai-content">
-          <span class="en-card-no">03</span>
-          <h3>AI 콘텐츠 제작</h3>
-          <p class="en-card-status">2026년 11월 1일 제작 착수 예정</p>
-          <ul class="en-card-points">
-            <li>AI AGENT 웹툰·영상</li>
-            <li>MASTER·BOOSTER 기반 드라마형 영문법 강의</li>
-            <li>한국어·영어 콘텐츠 제작</li>
-          </ul>
-          <span class="en-coming-soon" role="status">COMING SOON</span>
-        </article>
-      </div>
-    </section>
-
-    <!-- ============ 고객 요청 안내: 요청 → 접수 → 제작·검수 → 전달 ============ -->
-    <section class="en-intro" aria-labelledby="agentReqTitle">
-      <p class="en-eyebrow">서수니 · 세븐 AI 비서</p>
-      <h2 id="agentReqTitle">서수니·세븐에게 요청하세요</h2>
-      <p>시험범위 변경, 문제 수정, 필기자료 추가, 난이도 조정 — 요청하면 관리자가 접수하고 제작·검수 뒤 수정본을 전달합니다.</p>
-      <p>첫 화면의 대화창은 안내 모드입니다. 로그인하면 AI 업무 비서와 연결되고, 정식 제작 요청과 자료 제출은 카톡·이메일 의뢰로 접수합니다.</p>
-      <p><a class="en-btn en-btn-outline" href="#aiHome">첫 화면 대화창으로 이동 →</a></p>
-    </section>
-
-    <!-- ============ 브랜드: AI AGENT 승인 화보 (영상 배너는 15초 하이라이트 승인 후 적용) ============ -->
-    <section class="en-intro" data-track-section="brand" aria-labelledby="brandTitle">
-      <p class="en-eyebrow">FEEL2REAL · AI AGENT</p>
-      <h2 id="brandTitle">AI AGENT — 인간과 AI의 협업</h2>
-      <p>《AI AGENT》 승인 화보를 브랜드 영역으로 사용합니다. 영상 배너는 제작 중인 15초 하이라이트를 승인받은 뒤 적용합니다.</p>
-      <p><a class="en-btn en-btn-outline" href="/ai-agent-studio" data-studio-link>AI AGENT 제작협업실 바로가기 →</a></p>
-    </section>
-
     <!-- BUILD IT CHART(복구): 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
     <section class="en-chart bb-chart" id="chart-showcase" data-track-section="chart-showcase" aria-labelledby="enChartTitle">
       <div class="bb-wrap">
@@ -300,18 +237,6 @@
     window.addEventListener('f2r:login', function () { if (safe) location.href = safe; });
     document.addEventListener('DOMContentLoaded', function () {
       if (typeof window.openLoginModal === 'function') window.openLoginModal();
-    });
-  })();
-  /* 이메일 의뢰: 메일 앱이 없는 기기에서도 주소가 보이도록 복사하고 안내한다(링크 동작은 그대로) */
-  (function () {
-    document.addEventListener('click', function (e) {
-      var a = e.target.closest('a[data-copy-mail]');
-      if (!a) return;
-      var addr = a.getAttribute('data-copy-mail');
-      try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(addr); } catch (_) {}
-      var note = a.parentNode.querySelector('.en-mail-toast');
-      if (!note) { note = document.createElement('p'); note.className = 'en-mail-toast'; note.setAttribute('role', 'status'); a.parentNode.appendChild(note); }
-      note.textContent = '이메일 주소: ' + addr + ' (복사했습니다. 메일 앱이 열리지 않으면 이 주소로 보내 주세요.)';
     });
   })();
   (function () {
