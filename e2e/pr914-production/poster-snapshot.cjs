@@ -46,7 +46,7 @@ async function collectPosterSnapshot({origin, selector}) {
       const n=blockers[0], b=n.getBoundingClientRect(), s=getComputedStyle(n), v=visualState(n);
       const color=s.backgroundColor.match(/^rgba?\(([^)]+)\)$/), parts=color?.[1].split(',').map(Number);
       const opaque=parts && (parts.length===3 || parts[3]===1);
-      return opaque && v.opacity===1 && !v.hidden && !v.effects && !v.animated && s.borderRadius==='0px' &&
+      return !n.contains(e) && opaque && v.opacity===1 && !v.hidden && !v.effects && !v.animated && s.borderRadius==='0px' &&
         b.left<=left && b.top<=top && b.right>=right && b.bottom>=bottom;
     })();
     const occlusion={state:!area?'not-tested':opaqueCover?'full':exposed>0&&exposed<9?'partial':

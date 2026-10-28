@@ -119,7 +119,7 @@ test('unresponsive DOM snapshot cannot discard collected HTTP evidence',async({p
 
 for(const [scenario,expected] of [['offscreen','offscreen'],['covered','occluded'],['partial','uncertain'],['opacity','uncertain'],
   ['transparent-cover','uncertain'],['animated','uncertain'],['pointer-none-cover','uncertain'],['viewport-clipped','uncertain'],
-  ['no-io-v2','uncertain'],['css-hidden','css-hidden'],['tiny-cover','uncertain']]) {
+  ['no-io-v2','uncertain'],['css-hidden','css-hidden'],['tiny-cover','uncertain'],['pointer-none-image','uncertain']]) {
   test(`visibility separates ${scenario} from a successfully displayed image`,async({page},info)=>{
     const o=await setup(page,'healthy');await expect.poll(()=>image(page).evaluate(e=>e.naturalWidth>0)).toBe(true);
     await page.evaluate(scenario=>{
@@ -127,6 +127,7 @@ for(const [scenario,expected] of [['offscreen','offscreen'],['covered','occluded
       if(scenario==='offscreen')img.style.cssText='position:absolute;left:2000px;top:2000px';
       if(scenario==='viewport-clipped')img.style.cssText='position:fixed;left:-40px;top:200px';
       if(scenario==='opacity')img.parentElement.style.opacity='.5';
+      if(scenario==='pointer-none-image')img.style.pointerEvents='none';
       if(scenario==='css-hidden')img.style.visibility='hidden';
       if(scenario==='animated')img.animate([{opacity:1},{opacity:.5}],{duration:2000,iterations:Infinity});
       if(scenario==='no-io-v2')window.IntersectionObserver=undefined;
