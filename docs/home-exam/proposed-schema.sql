@@ -43,3 +43,16 @@ CREATE TABLE exam_intake_bank_audit (
  id VARCHAR(36) PRIMARY KEY, actor_id BIGINT NOT NULL, action VARCHAR(20) NOT NULL,
  bank_snapshot TEXT NOT NULL, created_at TIMESTAMP NOT NULL
 );
+
+-- Preparation only: adult guardian information, no child's data before verification.
+CREATE TABLE exam_intake_guardian_consent (
+ id VARCHAR(36) PRIMARY KEY, owner_id BIGINT NOT NULL, guardian_name VARCHAR(80) NOT NULL,
+ phone VARCHAR(25) NOT NULL, relationship VARCHAR(30) NOT NULL, state VARCHAR(20) NOT NULL,
+ privacy_version VARCHAR(80) NOT NULL, terms_version VARCHAR(80) NOT NULL,
+ created_at TIMESTAMP NOT NULL, expires_at TIMESTAMP NOT NULL, consent_items TEXT NOT NULL,
+ reviewed_at TIMESTAMP NULL, verification_result VARCHAR(20) NULL,
+ verified_by BIGINT NULL, verified_at TIMESTAMP NULL, verification_method VARCHAR(40) NULL,
+ request_id VARCHAR(36) NULL UNIQUE, revoked_by BIGINT NULL, revoked_at TIMESTAMP NULL,
+ FOREIGN KEY(request_id) REFERENCES exam_intake_request(id)
+);
+CREATE INDEX ix_exam_guardian_owner ON exam_intake_guardian_consent(owner_id,created_at);

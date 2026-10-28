@@ -270,6 +270,7 @@
     </div>
 
     <div class="hub-tabs" id="serviceTabs" role="tablist">
+      <a th:if="${examBankAdminEnabled}" class="hub-tab" href="/admin/hub/exam-bank">입금 계좌 사전 등록</a>
       <a th:if="${examIntakeEnabled}" class="hub-tab" href="/admin/hub/exam-requests">기말고사 접수·자료·입금</a>
       <button class="hub-tab active" data-service="all" role="tab">전체</button>
       <button class="hub-tab" data-service="easy" role="tab">이지재무</button>

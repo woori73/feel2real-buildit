@@ -1,7 +1,8 @@
 (function () {
   "use strict";
   const $ = (id) => document.getElementById(id),
-    admin = document.body.dataset.admin === "true";
+    admin = document.body.dataset.admin === "true",
+    bankOnly = document.body.dataset.bankOnly === "true";
   const labels = {
     RECEIVED: "신청 접수",
     AWAITING_DEPOSIT: "입금 대기",
@@ -13,6 +14,8 @@
     CANCELLED: "취소 완료",
   };
   const actionLabels = {
+    PRIVACY_REQUEST: "개인정보 권리 행사 요청",
+    DOCUMENT_CONSENT: "선택 자료 제출 동의",
     UPDATE_DETAILS: "신청 내용 변경 요청",
     DELETE_DOCUMENT: "자료 삭제 요청",
     REVISION: "문제 수정 요청",
@@ -152,6 +155,10 @@
   async function detail(id) {
     const value = await api("/api/exam-intake/requests/" + id);
     current = value.request;
+    if ($("earlyErasure"))
+      $("earlyErasure").hidden = !["COMPLETE", "CANCELLED"].includes(
+        current.state,
+      );
     $("requestDetail").hidden = false;
     $("detailTitle").textContent = "접수 번호 " + id;
     $("details").replaceChildren();
@@ -214,21 +221,23 @@
         $("amendForm").elements.actionId.append(o);
       });
       $("amendFields").replaceChildren();
-      Object.entries(current.details).forEach(([key, value]) => {
-        const label = el("label", fieldLabels[key] || key);
-        const input = el(
-          ["scope", "requirements", "message"].includes(key)
-            ? "textarea"
-            : "input",
-        );
-        input.name = key;
-        input.value = value;
-        input.maxLength = ["scope", "requirements", "message"].includes(key)
-          ? 2000
-          : 120;
-        label.append(input);
-        $("amendFields").append(label);
-      });
+      Object.entries(current.details)
+        .filter(([key]) => Object.hasOwn(fieldLabels, key))
+        .forEach(([key, value]) => {
+          const label = el("label", fieldLabels[key] || key);
+          const input = el(
+            ["scope", "requirements", "message"].includes(key)
+              ? "textarea"
+              : "input",
+          );
+          input.name = key;
+          input.value = value;
+          input.maxLength = ["scope", "requirements", "message"].includes(key)
+            ? 2000
+            : 120;
+          label.append(input);
+          $("amendFields").append(label);
+        });
     }
     $("documents").replaceChildren();
     value.documents.forEach((d) => {
@@ -488,7 +497,9 @@
     $("approveBank").disabled = !b || b.approved;
     $("bankStatus").textContent = b
       ? b.approved
-        ? "승인됨 · 신청자에게 표시됩니다."
+        ? value.customerVisible
+          ? "승인됨 · 신청자에게 표시됩니다."
+          : "승인됨 · 고객 계좌 공개는 아직 비활성입니다."
         : "저장됨 · 승인 전에는 비공개입니다."
       : "등록된 계좌 없음";
   }
@@ -527,6 +538,12 @@
     const details = {};
     for (const k of Object.keys(fieldLabels))
       details[k] = String(data.get(k) || "");
+    details.ageBand = data.get("ageBand");
+    details.guardianConsentId = data.get("guardianConsentId") || "";
+    details.privacyVersion = config.privacyVersion;
+    details.termsVersion = config.termsVersion;
+    details.termsAccepted = String(data.get("termsAccepted") === "on");
+    details.optionalConsent = String(data.get("optionalConsent") === "on");
     const r = await api("/api/exam-intake/requests", "POST", {
       kind: data.get("kind"),
       details,
@@ -541,6 +558,21 @@
     await detail(r.id);
     $("detailTitle").focus();
     note("접수되었습니다. 접수 번호: " + r.id);
+  });
+  control($("earlyErasure"), async (data) => {
+    await api(
+      "/api/admin/exam-intake/requests/" + current.id + "/erase-learning-data",
+      "POST",
+      {
+        version: current.version,
+        purposeComplete: data.get("purposeComplete") === "on",
+        noLegalHold: data.get("noLegalHold") === "on",
+      },
+    );
+    await detail(current.id);
+    note(
+      "학습자료와 불필요한 개인정보를 정리했습니다. 법정 거래기록은 별도 보존합니다.",
+    );
   });
   control($("uploadForm"), async (data) => {
     await api(
@@ -628,6 +660,71 @@
         note(e.message);
       }
     });
+  if (bankOnly) {
+    bank().catch((e) => note(e.message));
+    return;
+  }
+  async function retentionPlan() {
+    const rows = await api("/api/admin/exam-intake/retention");
+    $("retentionPlan").replaceChildren();
+    if (!rows.length)
+      $("retentionPlan").append(el("p", "현재 정리 대상이 없습니다."));
+    for (const row of rows) {
+      const f = el("form"),
+        title = el("p", row.id + " · " + row.state);
+      f.append(title);
+      for (const [key, text] of [
+        ["purposeComplete", "서비스 목적 달성을 확인했습니다."],
+        ["noLegalHold", "진행 중인 분쟁·법적 보존 유보가 없음을 확인했습니다."],
+      ]) {
+        const label = el("label", text),
+          check = el("input");
+        label.className = "check";
+        check.type = "checkbox";
+        check.name = key;
+        check.required = true;
+        label.prepend(check);
+        f.append(label);
+      }
+      const submit = el("button", "학습자료 삭제·개인정보 정리");
+      submit.type = "submit";
+      f.append(submit);
+      control(f, async (data) => {
+        const detail = await api("/api/exam-intake/requests/" + row.id);
+        await api(
+          "/api/admin/exam-intake/requests/" + row.id + "/erase-learning-data",
+          "POST",
+          {
+            version: detail.request.version,
+            purposeComplete: data.get("purposeComplete") === "on",
+            noLegalHold: data.get("noLegalHold") === "on",
+          },
+        );
+        await retentionPlan();
+        note(
+          "학습자료 정리를 완료했습니다. 법정 거래기록은 별도로 보존합니다.",
+        );
+      });
+      $("retentionPlan").append(f);
+    }
+  }
+  if ($("retentionRefresh"))
+    $("retentionRefresh").onclick = () =>
+      retentionPlan().catch((e) => note(e.message));
+  if ($("unusedGuardians"))
+    $("unusedGuardians").onclick = async () => {
+      try {
+        const v = await api(
+          "/api/admin/exam-intake/retention/unused-guardians",
+          "POST",
+          {},
+        );
+        note(v.redacted + "건의 미사용 보호자 연락처를 정리했습니다.");
+      } catch (e) {
+        note(e.message);
+      }
+    };
+
   $("refresh").addEventListener("click", () =>
     list().catch((e) => note(e.message)),
   );
@@ -650,10 +747,64 @@
           .forEach((input) => {
             input.disabled = $(id).hidden;
           });
+      for (const name of ["school", "grade"])
+        $("intakeForm").elements[name].required = application;
+      $("termsConsent").hidden = !application;
+      $("intakeForm").elements.termsAccepted.required = application;
+      syncAge();
       $("inquiryFields")
         .querySelectorAll("input,textarea")
         .forEach((input) => (input.required = !application));
     });
+  function syncAge() {
+    const f = $("intakeForm");
+    if (!f) return;
+    const under = f.elements.ageBand.value === "UNDER14";
+    $("guardianGate").hidden = !under;
+    $("intakeData").disabled = !(
+      f.elements.ageBand.value === "OVER14" ||
+      (under && f.elements.guardianConsentId.value)
+    );
+  }
+  if ($("intakeForm")) {
+    const f = $("intakeForm");
+    let generation = 0;
+    f.elements.guardianConsentId.addEventListener("change", syncAge);
+    f.elements.ageBand.addEventListener("change", async () => {
+      const thisGeneration = ++generation;
+      f.querySelectorAll(
+        '#intakeData input:not([type="checkbox"]),#intakeData textarea',
+      ).forEach((e) => (e.value = ""));
+      f.querySelectorAll('#intakeData input[type="checkbox"]').forEach(
+        (e) => (e.checked = false),
+      );
+      f.elements.guardianConsentId.replaceChildren(
+        new Option("확인된 동의를 선택해 주세요", ""),
+      );
+      syncAge();
+      if (f.elements.ageBand.value !== "UNDER14") return;
+      try {
+        const rows = await api("/api/exam-intake/guardian-consents");
+        if (thisGeneration !== generation) return;
+        rows
+          .filter(
+            (r) =>
+              r.state === "VERIFIED" &&
+              r.privacy_version === config.privacyVersion &&
+              r.terms_version === config.termsVersion &&
+              Date.parse(r.expires_at) > Date.now(),
+          )
+          .forEach((r) =>
+            f.elements.guardianConsentId.append(
+              new Option(r.guardian_name + " · " + r.id, r.id),
+            ),
+          );
+      } catch (e) {
+        note(e.message);
+      }
+      syncAge();
+    });
+  }
   (async () => {
     config = await api("/api/exam-intake/config");
     $("offerSummary").textContent = config.summary;
@@ -675,7 +826,7 @@
         $("refundRows").append(row);
       }
     await list();
-    if (admin) await bank();
+    if (admin && $("bankForm")) await bank();
     note(
       "접수 내역은 로그인한 계정과 담당 관리자에게 표시됩니다. 파일 본문은 관리자만 열람합니다.",
     );

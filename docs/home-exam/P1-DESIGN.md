@@ -4,7 +4,7 @@ P0 PR #919(병합 커밋52290ec2)를 기반으로 한다. 기존 AcademyInquiry�
 
 ## 활성화 경계
 
-`app.exam-intake.enabled=false`가 기본이다. 신규 API/화면은 명시적으로 활성화하기 전 등록되지 않는다. 제안 SQL은 `docs/home-exam/proposed-schema.sql`에만 두고 Flyway 운영 위치에 설치하지 않는다. 로컬 테스트 전용 H2/격리 MySQL에만 적용한다. 운영 전에는 승인 후 최신 main 및 실제 flyway_schema_history를 확인해 다음 버전을 지정해야 한다(현재 저장소 최고 V1096; 문서의 오래된 V947 예시를 사용하지 않음).
+`app.exam-intake.enabled=false`가 기본이다. 고객 접수 API/화면은 명시적으로 활성화하기 전 등록되지 않는다. 2026-10-29 보완에서는 개인정보 없는 정책 안내를 상시 제공하고, 관리자 계좌 사전 등록과 고객 계좌 공개를 각각 기본 OFF 설정으로 분리했다. 현재 경계와 법정대리인·보존 절차는 [활성화 보완 명세](ACTIVATION-GATES-20261029.md)를 따른다. 제안 SQL은 `docs/home-exam/proposed-schema.sql`에만 두고 Flyway 운영 위치에 설치하지 않는다. 로컬 테스트 전용 H2/격리 MySQL에만 적용한다. 운영 전에는 승인 후 최신 main 및 실제 flyway_schema_history를 확인해 다음 버전을 지정해야 한다(현재 저장소 최고 V1096; 문서의 오래된 V947 예시를 사용하지 않음).
 
 운영 승인에는 DB schema, 비공개 파일 경로/볼륨·백업·삭제 정책, 악성파일 검사기, 개인정보 처리 동의/환불 안내, 계좌 등록·승인을 포함한다. 현재 운영 DB나 기존 미디어에 접근/변경하지 않는다.
 

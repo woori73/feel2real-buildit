@@ -3,8 +3,10 @@ on:
   pull_request:
     paths:
       - 'src/main/java/**/examintake/**'
-      - 'src/main/resources/templates/public/exam_service.html'
-      - 'src/main/resources/static/js/exam_service.js'
+      - 'src/main/resources/templates/public/exam_*.html'
+      - 'src/main/resources/templates/admin/exam_bank.html'
+      - 'src/main/resources/templates/fragments/_public_footer.html'
+      - 'src/main/resources/static/js/exam_*.js'
       - 'src/main/resources/static/css/exam_service.css'
       - 'src/test/java/**/examintake/**'
       - 'docs/home-exam/proposed-schema.sql'
@@ -48,7 +50,7 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: exam-ci-only
         run: |
           # Schema proposal was installed only in this fresh CI DB; baseline 0 still runs existing V1.
-          java -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091 --spring.flyway.baseline-version=0 --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.private-directory="$RUNNER_TEMP/exam-private" --app.exam-intake.email-notifications-enabled=false --app.file.upload-dir="$RUNNER_TEMP/general-files" > "$RUNNER_TEMP/exam-app.log" 2>&1 &
+          java -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091 --spring.flyway.baseline-version=0 --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.bank-admin-enabled=true --app.exam-intake.bank-public-enabled=true --app.exam-intake.private-directory="$RUNNER_TEMP/exam-private" --app.exam-intake.email-notifications-enabled=false --app.file.upload-dir="$RUNNER_TEMP/general-files" > "$RUNNER_TEMP/exam-app.log" 2>&1 &
           echo "EXAM_APP_PID=$!" >> "$GITHUB_ENV"
           # Public homepage is the readiness probe; intake API remains authenticated.
           for attempt in {1..90}; do
@@ -56,6 +58,24 @@ jobs:
             sleep 1
           done
           curl -fsS http://localhost:8091/ > /dev/null
+          # ApplicationReady seeding is transactional; HTTP readiness can precede that commit.
+          for attempt in {1..90}; do
+            if [ "$(docker exec exam-intake-ci mysql -uroot -pexam-ci-only f2r_exam_ci -Nse 'SELECT COUNT(*) FROM wemade_raw_prices' 2>/dev/null)" -gt 0 ]; then break; fi
+            sleep 1
+          done
+          [ "$(docker exec exam-intake-ci mysql -uroot -pexam-ci-only f2r_exam_ci -Nse 'SELECT COUNT(*) FROM wemade_raw_prices' 2>/dev/null)" -gt 0 ]
+          # Independent preparation and publication gates; same synthetic DB only, no production credentials.
+          java -Xmx512m -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8092 --spring.flyway.enabled=false --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=false --app.exam-intake.bank-admin-enabled=true --app.exam-intake.bank-public-enabled=true --app.file.upload-dir="$RUNNER_TEMP/prep-files" > "$RUNNER_TEMP/exam-prep.log" 2>&1 &
+          echo "EXAM_PREP_PID=$!" >> "$GITHUB_ENV"
+          java -Xmx512m -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8093 --spring.flyway.enabled=false --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.bank-admin-enabled=true --app.exam-intake.bank-public-enabled=false --app.exam-intake.private-directory="$RUNNER_TEMP/hidden-private" --app.file.upload-dir="$RUNNER_TEMP/hidden-files" > "$RUNNER_TEMP/exam-hidden.log" 2>&1 &
+          echo "EXAM_HIDDEN_PID=$!" >> "$GITHUB_ENV"
+          for port in 8092 8093; do
+            for attempt in {1..90}; do
+              if curl -fsS "http://localhost:$port/" >/dev/null; then break; fi
+              sleep 1
+            done
+            curl -fsS "http://localhost:$port/" >/dev/null
+          done
       - name: Real local application/browser regression
         run: |
           export NODE_PATH="$GITHUB_WORKSPACE/e2e/unified-assistant/node_modules"
@@ -75,4 +95,6 @@ jobs:
         if: always()
         run: |
           if [ -n "${EXAM_APP_PID:-}" ]; then kill "$EXAM_APP_PID" || true; fi
+          if [ -n "${EXAM_PREP_PID:-}" ]; then kill "$EXAM_PREP_PID" || true; fi
+          if [ -n "${EXAM_HIDDEN_PID:-}" ]; then kill "$EXAM_HIDDEN_PID" || true; fi
           docker rm -f exam-intake-ci || true

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>법정대리인 동의 확인 | Feel2Real</title>
+    <link rel="stylesheet" href="/css/exam_service.css" />
+  </head>
+  <body
+    th:attr="data-admin=${adminView},data-privacy=${privacyVersion},data-terms=${termsVersion}"
+  >
+    <main class="intake">
+      <header>
+        <a href="/exam-service">문의·신청</a
+        ><a th:if="${adminView}" href="/admin/hub/exam-requests">접수 관리</a>
+        <h1>법정대리인 동의 확인</h1>
+      </header>
+      <p id="notice" role="status"></p>
+      <p>
+        아동의 이름·학교·시험자료를 입력하지 마세요. 성인 법정대리인이 자신의
+        계정으로 제출하고, 관리자 전화 확인이 끝나면 같은 계정에서 아동 신청을
+        진행합니다.
+      </p>
+      <p>
+        <a href="/exam-service/privacy#privacy" target="_blank" rel="noopener"
+          >수집 항목·목적·기간·거부권 전체 안내</a
+        >
+        ·
+        <a href="/exam-service/terms#terms" target="_blank" rel="noopener"
+          >서비스 이용·환불 약관</a
+        >
+      </p>
+      <form id="guardianForm" th:unless="${adminView}">
+        <label
+          >법정대리인 이름<input
+            name="guardianName"
+            maxlength="80"
+            required
+            autocomplete="name" /></label
+        ><label
+          >확인 전화를 받을 번호<input
+            name="phone"
+            type="tel"
+            maxlength="25"
+            required
+            autocomplete="tel" /></label
+        ><label
+          >관계<select name="relationship">
+            <option value="PARENT">친권자인 부모</option>
+            <option value="LEGAL_GUARDIAN">그 밖의 법정대리인</option>
+          </select></label
+        ><label class="check"
+          ><input type="checkbox" name="adultGuardian" required />성인
+          법정대리인이며 아동 본인의 정보는 입력하지 않았습니다.</label
+        ><label class="check"
+          ><input type="checkbox" name="consent" required />본인 정보의 확인
+          절차 및 아동 정보 수집·이용 안내와 이용·환불 약관을 읽고 동의합니다.
+          전화 확인 전에는 아동 정보 제출이 허용되지 않음을 확인합니다.</label
+        ><button type="submit">동의 확인 요청</button>
+      </form>
+      <p th:if="${adminView}">
+        실제 전화로 법정대리인의 신원·권한과 정책 내용을 설명하고 동의 의사를
+        확인한 경우에만 기록하세요. 녹취·신분증·아동 정보는 이 화면에 입력하지
+        않습니다. 체크박스는 실제 확인을 대체하지 않습니다.
+      </p>
+      <button id="refresh" type="button">새로고침</button>
+      <div id="consents"></div>
+      <p>
+        내용을 잘못 입력한 경우 철회하고 다시 요청하세요. 철회 시 추가 아동 정보
+        처리를 차단하며 계약 취소·기존 자료 삭제는 개인정보 요청으로 별도
+        처리합니다.
+      </p>
+    </main>
+    <script src="/js/exam_guardian.js" defer></script>
+  </body>
+</html>

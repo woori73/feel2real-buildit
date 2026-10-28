@@ -47,7 +47,7 @@
       <div class="footer-links">
         <a th:if="${examSeller != null}" href="/faq#exam-service-terms">서비스 이용·환불 안내</a>
         <a th:unless="${examSeller != null}" onclick="comingSoon()">서비스 이용약관</a>
-        <a href="/privacy">개인정보처리방침</a>
+        <a th:href="${examSeller != null} ? '/exam-service/privacy#privacy' : '/privacy'">개인정보처리방침</a>
         <a onclick="openContactModal()">문의하기</a>
       </div>
     </div>
@@ -82,7 +82,7 @@
     <p th:text="'통신판매업 신고번호: ' + ${examSeller.commerceNumber}"></p>
     <p th:text="'주소: ' + ${examSeller.address}"></p>
     <a th:href="'mailto:' + ${examSeller.email}" th:text="${examSeller.email}"></a>
-    <p><a href="/privacy">개인정보처리방침</a> · <a href="/faq#exam-service-terms">서비스 이용·환불 안내</a></p>
+    <p><a href="/exam-service/privacy#privacy">개인정보처리방침</a> · <a href="/exam-service/terms#terms">서비스 이용·환불 안내</a></p>
     <p>F2R은 교육 서비스 브랜드입니다.</p>
   </div>
 </th:block>
