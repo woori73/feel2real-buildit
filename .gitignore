@@ -110,3 +110,6 @@ src/main/resources/static/agent-media/
 
 # Anonymous production release evidence belongs in Actions artifacts, not source.
 release-evidence/
+
+# Isolated poster observation evidence (uploaded by CI, never source assets)
+/poster-observation-results/

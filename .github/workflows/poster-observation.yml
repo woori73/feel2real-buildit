@@ -1,0 +1,29 @@
+name: Poster loading observation
+on:
+  pull_request:
+    paths:
+      - 'e2e/pr914-production/**'
+      - 'e2e/poster-observation/**'
+      - '.github/workflows/poster-observation.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --prefix e2e/unified-assistant
+      - run: cd e2e/unified-assistant && npx playwright install --with-deps chromium
+      - name: Synthetic loopback HTTP tests (no production or database access)
+        env:
+          NODE_PATH: ${{ github.workspace }}/e2e/unified-assistant/node_modules
+        run: e2e/unified-assistant/node_modules/.bin/playwright test --config e2e/poster-observation/playwright.config.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: poster-observation-local-evidence
+          path: poster-observation-results
+          retention-days: 30
