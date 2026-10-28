@@ -152,3 +152,8 @@ EC2/systemd, IAM, S3 CORS/lifecycle, ALB 180초 inactivity gate, `/var/tmp` 용�
 - Muse Python Worker(`/opt/hwpx-worker`)가 운영에 연결되기 전까지는 `off`로 배포한다. 연결 후에는 `on`으로 한 번 배포하면 활성화된다(코드·DB 변경 불필요).
 - 변경 전 `/etc/f2r/env.bak-hwpx-<시각>`에 백업하고, 대상 키는 지우고 다시 쓴다. assistant 스위치보다 먼저 적용하며, 배포(health)가 실패하면 가장 이른 백업 하나로 두 스위치 변경을 함께 되돌리고 서비스를 재시작한다.
 - 확인: 로그인 상태 `POST /api/hwpx/jobs` → 503, `hwpx_jobs` 건수·저장 파일 불변, 비로그인 401.
+
+## PR #914 승인 UI 전용 운영 자동화
+
+[PR914 최초 설치 및 운영 안내](operations/pr914/README.md)의 CloudFormation/OIDC 경로를 추가한다.
+`PR914 automated release`의 명시적 workflow_dispatch가 백업·복구 사전검사·운영 공개 UI 검사를 통과한 경우에만 승인 head의 #914를 병합한다. GITHUB_TOKEN 병합으로 push CI가 자동 발화하지 않는 경우를 위해 병합 SHA의 Build Check를 workflow_dispatch로 실행하고 성공을 기다린다. 기존 범용 배포는 그대로 유지하며 이 경로는 Java·DB migration·미디어를 변경하지 않는 승인된 HTML/CSS/JS 3개에만 한정한다. 자세한 설치·복구·증거·미검증 상태는 위 안내를 따른다.

@@ -479,3 +479,7 @@ PR #134 이후 브라우저 Wiki API는 Spring proxy(`BuildItWikiProxyController
 ## BuildIt Wiki AI timeout 순서
 
 운영 Question Wiki AI 요청은 안쪽부터 OpenRouter 45초(`AI_PROVIDER_TIMEOUT_SECONDS`) → Spring AI proxy 52초 → 외부 ALB 순으로 제한한다. 일반 Wiki proxy의 280초 제한은 파일 처리 호환을 위해 유지한다. 외부 게이트웨이보다 내부 오류가 먼저 JSON으로 반환되며 무한 대기는 허용하지 않는다. 배포 workflow가 systemd 환경과 `/etc/nginx/conf.d/buildit-wiki-timeouts.conf`를 설정하고 `nginx -t` 후 reload한다.
+
+## PR #914 고정 UI 배포 자동화
+
+CloudFormation 초기 설치, 운영 인스턴스 1개에 한정한 OIDC 역할, 기존 MediaAudit 보존, df425588 JAR/미디어 백업 및 별도 역할 자동 복구는 [PR914 운영 안내](operations/pr914/README.md)를 따른다. 기존 범용 EC2/Wiki 배포 경로를 대체하지 않으며 승인된 UI 파일 3개만 적용한다. 스택을 설치하기 전에는 권한이나 운영 복구가 검증된 것으로 간주하지 않는다.

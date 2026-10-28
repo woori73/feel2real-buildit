@@ -1,0 +1,22 @@
+name: PR914 automation safety checks
+on:
+  pull_request:
+    paths:
+      - 'scripts/operations/pr914/**'
+      - 'infra/pr914/**'
+      - 'e2e/pr914-production/**'
+      - '.github/workflows/pr914-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  automation-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python3 -m unittest discover -s scripts/operations/pr914 -p 'test_*.py' -v
+      - run: python3 scripts/operations/pr914/generate.py && git diff --exit-code -- infra/pr914
+      - run: bash -n scripts/operations/pr914/bootstrap.sh
+      - run: node --check e2e/pr914-production/public.spec.cjs
