@@ -24,6 +24,8 @@
   <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261027-8">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
   <script src="/js/f2r_home_agent.js?v=20261027-8" defer></script>
+  <link rel="stylesheet" href="/css/f2r_home_compact.css?v=20261028-1">
+  <script src="/js/f2r_home_presentation.js?v=20261028-1" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
 </head>
 <body data-track-page="home">
@@ -91,41 +93,26 @@
         <h1 class="si-home-title" id="siHomeTitle">기말고사 맞춤 문제 신청</h1>
         <p class="si-home-lead">20,000원 · 3주 · 주 2회 · 총 6회 · 240문항</p>
       </div>
-      <div class="si-home-console" id="homeConsole" data-state="idle">
-        <figure class="si-home-stage" id="homeStage" data-state="idle" data-media="missing">
-          <video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-hidden="true"></video>
-          <video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
-          <div class="si-home-emblem" aria-hidden="true"><span id="homeCode">H-07</span></div>
-          <div class="si-home-hud" aria-hidden="true"><i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i><i class="scan"></i></div>
-          <div class="si-home-top">
-            <span class="si-home-state"><i></i><span id="homeStateLabel">대기</span></span>
-            <span class="si-home-pick" role="group" aria-label="AI 비서 선택">
-              <button type="button" data-home-agent="seven" aria-pressed="true" class="no-portrait"><img alt=""><span>세븐</span></button>
-              <button type="button" data-home-agent="suni" aria-pressed="false" class="no-portrait"><img alt=""><span>서수니</span></button>
-            </span>
-          </div>
-          <div class="si-holo si-holo-left" role="group" aria-label="홀로그램 바로가기 1">
-            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>기말고사 이용권</b><small>20,000원 · 3주 · 6회</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>맞춤 문제 신청</b><small>학교별 총 240문항</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>시험 범위 제출</b><small>기출 · 교사 힌트</small></button>
-          </div>
-          <div class="si-holo si-holo-right" role="group" aria-label="홀로그램 바로가기 2">
-            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>개별 신청</b><small>학생 · 학부모 · 강사 · 원장</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>학부모·학생 신청</b><small>학교 · 학년 안내</small></button>
-            <button type="button" class="si-holo-tile" data-home-intent="exam"><b>접수 방법</b><small>카톡 · 이메일 안내</small></button>
-          </div>
-          <figcaption class="si-home-name"><strong id="homeName">세븐</strong><small>Feel2Real AI 비서</small></figcaption>
-        </figure>
-        <div class="si-home-talk">
-          <div class="si-home-chat" id="homeChat" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
-          <form class="si-home-composer" id="homeForm" autocomplete="off">
-            <label class="si-sr" for="homeInput">AI 비서에게 말하기</label>
-            <input id="homeInput" type="text" maxlength="300" placeholder="학교·학년·시험 범위나 신청 문의를 입력하세요" enterkeyhint="send">
-            <button type="submit">보내기</button>
-          </form>
-          <p class="si-home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span> <button type="button" id="homeWelcomeAgain">처음 안내 다시 보기</button></p>
-        </div>
-      </div>
+<section class="command" id="homeConsole" data-state="idle" aria-label="AI 비서와 신청 안내">
+<div class="service-stack left"><button type="button" class="si-holo-tile" data-home-intent="exam"><b>기말고사 이용권</b><small>20,000원 · 3주 · 6회</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>맞춤 문제 신청</b><small>학교별 총 240문항</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>시험 범위 제출</b><small>기출 · 교사 힌트</small></button></div>
+<div class="stage" id="homeStage" data-state="idle" data-media="missing" aria-label="캐릭터 영상과 선택">
+<div class="stage-top"><span id="homeCode">H-07</span><span class="ready" id="homeStateLabel">대기</span></div><div class="orbit" aria-hidden="true"><svg viewBox="0 0 600 500"><g fill="none" stroke="currentColor"><ellipse cx="300" cy="265" rx="264" ry="166" transform="rotate(-16 300 265)"/><ellipse cx="300" cy="265" rx="225" ry="210" stroke-dasharray="3 16"/><ellipse cx="300" cy="265" rx="275" ry="74" transform="rotate(16 300 265)"/><path d="M35 265h35m460 0h35M300 35v35m0 390v-35"/></g></svg></div>
+<div class="media-screen">
+<img id="stagePoster" alt="선택한 캐릭터의 기존 포스터" hidden>
+<video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-label="선택한 캐릭터 영상"></video>
+<video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
+<p id="mediaStatus" role="status">캐릭터 영상을 불러오지 못했습니다. 안내는 계속 이용할 수 있습니다.</p>
+</div>
+<div class="characters" role="group" aria-label="AI 비서 선택">
+<button type="button" class="character no-portrait" data-home-agent="seven" aria-pressed="true"><span class="portrait"><img alt="세븐"></span><span class="identity"><small>H-07</small><strong>세븐</strong><span class="selected-word"></span></span></button><button type="button" class="character no-portrait" data-home-agent="suni" aria-pressed="false"><span class="portrait"><img alt="서수니"></span><span class="identity"><small>SUNI</small><strong>서수니</strong><span class="selected-word"></span></span></button></div><div class="stage-bottom"><strong id="homeName">세븐</strong><span>Feel2Real AI 비서</span></div></div>
+<div class="service-stack right"><button type="button" class="si-holo-tile" data-home-intent="exam"><b>개별 신청</b><small>학생 · 학부모 · 강사 · 원장</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>학부모·학생 신청</b><small>학교 · 학년 안내</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>접수 방법</b><small>카톡 · 이메일 안내</small></button></div></section>
+<section class="assistant" id="assistant" aria-label="AI 비서 대화"><div class="assistant-title"><div><span class="status-dot"></span><strong id="assistant-name">세븐</strong><span>Feel2Real AI 비서</span></div></div>
+<div id="homeChat" class="conversation" tabindex="0" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
+<form id="homeForm" autocomplete="off"><label class="sr" for="homeInput">AI 비서에게 말하기</label><input id="homeInput" maxlength="300" placeholder="학교·학년·시험 범위나 신청 문의를 입력하세요" enterkeyhint="send"><button class="send" type="submit">보내기</button></form>
+<p class="home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span><button type="button" id="homeWelcomeAgain">처음 안내 다시 보기</button></p>
+<div class="prompt-row"><button type="button" data-panel="naesin">내신 제작소</button><a href="/dashboard">학원 대시보드</a><button type="button" data-home-intent="studio">AI AGENT Studio</button></div>
+<div id="naesin-panel" hidden><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></section>
+
     </section>
 
     <!-- ============ HERO: AI AGENT 이미지 + 기말고사 이용권 20,000원 ============ -->

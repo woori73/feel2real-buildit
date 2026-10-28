@@ -1,0 +1,1374 @@
+[
+  {
+    "width": 360,
+    "mode": "video",
+    "checks": [
+      {
+        "name": "MP4 real playback",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 1",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 2",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 3",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 4",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 5",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 6",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question choices",
+        "status": "PASS"
+      },
+      {
+        "name": "welcome replay",
+        "status": "PASS"
+      },
+      {
+        "name": "login returnUrl preserved",
+        "status": "PASS"
+      },
+      {
+        "name": "real login modal opens and closes; no credentials submitted",
+        "status": "PASS"
+      },
+      {
+        "name": "naesin and dashboard paths",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/think.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 52.078125,
+        "y": 204.984375,
+        "width": 255.828125,
+        "height": 583.34375,
+        "top": 204.984375,
+        "right": 307.90625,
+        "bottom": 788.328125,
+        "left": 52.078125
+      },
+      "stage": {
+        "x": 52.078125,
+        "y": 204.984375,
+        "width": 255.828125,
+        "height": 319.796875,
+        "top": 204.984375,
+        "right": 307.90625,
+        "bottom": 524.78125,
+        "left": 52.078125
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 123.90625,
+          "h": 80
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 123.921875,
+          "h": 80
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 123.90625,
+          "h": 80
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 121.90625,
+          "h": 47.390625
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 121.921875,
+          "h": 47.390625
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 123.921875,
+          "h": 80
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 123.90625,
+          "h": 79.546875
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 123.921875,
+          "h": 79.546875
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 120.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 141.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 101.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 47.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 44,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 75.265625,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 75.28125,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 75.265625,
+          "h": 44
+        }
+      ],
+      "input": 16
+    },
+    "status": "PASS"
+  },
+  {
+    "width": 360,
+    "mode": "failed-video",
+    "checks": [
+      {
+        "name": "Seven approved-path poster on MP4 404",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 52.078125,
+        "y": 204.984375,
+        "width": 255.828125,
+        "height": 583.34375,
+        "top": 204.984375,
+        "right": 307.90625,
+        "bottom": 788.328125,
+        "left": 52.078125
+      },
+      "stage": {
+        "x": 52.078125,
+        "y": 204.984375,
+        "width": 255.828125,
+        "height": 319.796875,
+        "top": 204.984375,
+        "right": 307.90625,
+        "bottom": 524.78125,
+        "left": 52.078125
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 123.90625,
+          "h": 80
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 123.921875,
+          "h": 80
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 123.90625,
+          "h": 80
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 121.90625,
+          "h": 47.390625
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 121.921875,
+          "h": 47.390625
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 123.921875,
+          "h": 80
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 123.90625,
+          "h": 79.546875
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 123.921875,
+          "h": 79.546875
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 120.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 141.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 101.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 47.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 44,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 75.265625,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 75.28125,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 75.265625,
+          "h": 44
+        }
+      ],
+      "input": 16
+    },
+    "status": "PASS"
+  },
+  {
+    "width": 390,
+    "mode": "video",
+    "checks": [
+      {
+        "name": "MP4 real playback",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 1",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 2",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 3",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 4",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 5",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 6",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question choices",
+        "status": "PASS"
+      },
+      {
+        "name": "welcome replay",
+        "status": "PASS"
+      },
+      {
+        "name": "login returnUrl preserved",
+        "status": "PASS"
+      },
+      {
+        "name": "real login modal opens and closes; no credentials submitted",
+        "status": "PASS"
+      },
+      {
+        "name": "naesin and dashboard paths",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/think.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 55.375,
+        "y": 204.984375,
+        "width": 279.234375,
+        "height": 582.890625,
+        "top": 204.984375,
+        "right": 334.609375,
+        "bottom": 787.875,
+        "left": 55.375
+      },
+      "stage": {
+        "x": 55.375,
+        "y": 204.984375,
+        "width": 279.234375,
+        "height": 319.796875,
+        "top": 204.984375,
+        "right": 334.609375,
+        "bottom": 524.78125,
+        "left": 55.375
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 135.609375,
+          "h": 79.546875
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 135.625,
+          "h": 79.546875
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 135.609375,
+          "h": 80
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 133.609375,
+          "h": 47.390625
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 133.625,
+          "h": 47.390625
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 135.625,
+          "h": 80
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 135.609375,
+          "h": 79.546875
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 135.625,
+          "h": 79.546875
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 120.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 141.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 101.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 47.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 44,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 83.078125,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 83.078125,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 83.078125,
+          "h": 44
+        }
+      ],
+      "input": 16
+    },
+    "status": "PASS"
+  },
+  {
+    "width": 390,
+    "mode": "failed-video",
+    "checks": [
+      {
+        "name": "Seven approved-path poster on MP4 404",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 55.375,
+        "y": 204.984375,
+        "width": 279.234375,
+        "height": 582.890625,
+        "top": 204.984375,
+        "right": 334.609375,
+        "bottom": 787.875,
+        "left": 55.375
+      },
+      "stage": {
+        "x": 55.375,
+        "y": 204.984375,
+        "width": 279.234375,
+        "height": 319.796875,
+        "top": 204.984375,
+        "right": 334.609375,
+        "bottom": 524.78125,
+        "left": 55.375
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 135.609375,
+          "h": 79.546875
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 135.625,
+          "h": 79.546875
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 135.609375,
+          "h": 80
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 133.609375,
+          "h": 47.390625
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 133.625,
+          "h": 47.390625
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 135.625,
+          "h": 80
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 135.609375,
+          "h": 79.546875
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 135.625,
+          "h": 79.546875
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 120.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 141.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 101.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 47.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 44,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 83.078125,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 83.078125,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 83.078125,
+          "h": 44
+        }
+      ],
+      "input": 16
+    },
+    "status": "PASS"
+  },
+  {
+    "width": 430,
+    "mode": "video",
+    "checks": [
+      {
+        "name": "MP4 real playback",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 1",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 2",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 3",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 4",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 5",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 6",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question choices",
+        "status": "PASS"
+      },
+      {
+        "name": "welcome replay",
+        "status": "PASS"
+      },
+      {
+        "name": "login returnUrl preserved",
+        "status": "PASS"
+      },
+      {
+        "name": "real login modal opens and closes; no credentials submitted",
+        "status": "PASS"
+      },
+      {
+        "name": "naesin and dashboard paths",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/think.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 59.78125,
+        "y": 204.984375,
+        "width": 310.4375,
+        "height": 582.890625,
+        "top": 204.984375,
+        "right": 370.21875,
+        "bottom": 787.875,
+        "left": 59.78125
+      },
+      "stage": {
+        "x": 59.78125,
+        "y": 204.984375,
+        "width": 310.4375,
+        "height": 319.796875,
+        "top": 204.984375,
+        "right": 370.21875,
+        "bottom": 524.78125,
+        "left": 59.78125
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 151.21875,
+          "h": 80
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 149.21875,
+          "h": 47.390625
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 149.21875,
+          "h": 47.390625
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 151.21875,
+          "h": 80
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 120.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 141.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 101.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 47.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 44,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 93.46875,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 93.484375,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 93.46875,
+          "h": 44
+        }
+      ],
+      "input": 16
+    },
+    "status": "PASS"
+  },
+  {
+    "width": 430,
+    "mode": "failed-video",
+    "checks": [
+      {
+        "name": "Seven approved-path poster on MP4 404",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 59.78125,
+        "y": 204.984375,
+        "width": 310.4375,
+        "height": 582.890625,
+        "top": 204.984375,
+        "right": 370.21875,
+        "bottom": 787.875,
+        "left": 59.78125
+      },
+      "stage": {
+        "x": 59.78125,
+        "y": 204.984375,
+        "width": 310.4375,
+        "height": 319.796875,
+        "top": 204.984375,
+        "right": 370.21875,
+        "bottom": 524.78125,
+        "left": 59.78125
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 151.21875,
+          "h": 80
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 149.21875,
+          "h": 47.390625
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 149.21875,
+          "h": 47.390625
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 151.21875,
+          "h": 80
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 151.21875,
+          "h": 79.546875
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 120.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 141.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 101.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 47.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 44,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 93.46875,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 93.484375,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 93.46875,
+          "h": 44
+        }
+      ],
+      "input": 16
+    },
+    "status": "PASS"
+  },
+  {
+    "width": 1440,
+    "mode": "video",
+    "checks": [
+      {
+        "name": "MP4 real playback",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 1",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 2",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 3",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 4",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 5",
+        "status": "PASS"
+      },
+      {
+        "name": "intake menu 6",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question choices",
+        "status": "PASS"
+      },
+      {
+        "name": "welcome replay",
+        "status": "PASS"
+      },
+      {
+        "name": "login returnUrl preserved",
+        "status": "PASS"
+      },
+      {
+        "name": "real login modal opens and closes; no credentials submitted",
+        "status": "PASS"
+      },
+      {
+        "name": "naesin and dashboard paths",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/think.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 170.15625,
+        "y": 235.390625,
+        "width": 979.671875,
+        "height": 436.796875,
+        "top": 235.390625,
+        "right": 1149.828125,
+        "bottom": 672.1875,
+        "left": 170.15625
+      },
+      "stage": {
+        "x": 371.375,
+        "y": 235.390625,
+        "width": 577.234375,
+        "height": 436.796875,
+        "top": 235.390625,
+        "right": 948.609375,
+        "bottom": 672.1875,
+        "left": 371.375
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 184.9307403564453,
+          "h": 119.21624755859375
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 184.9307403564453,
+          "h": 117.95416259765625
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 184.9307403564453,
+          "h": 118.93792724609375
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 276.609375,
+          "h": 51.59375
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 276.625,
+          "h": 51.59375
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 184.9307861328125,
+          "h": 119.21624755859375
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 184.9307861328125,
+          "h": 117.95416259765625
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 184.9307861328125,
+          "h": 118.93792724609375
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 126.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 147.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 107.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 53.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 55.890625,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 182.265625,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 182.265625,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 182.265625,
+          "h": 44
+        }
+      ],
+      "input": 14
+    },
+    "status": "PASS"
+  },
+  {
+    "width": 1440,
+    "mode": "failed-video",
+    "checks": [
+      {
+        "name": "Seven approved-path poster on MP4 404",
+        "status": "PASS"
+      },
+      {
+        "name": "no overflow, contained video, 44px controls, 16px input",
+        "status": "PASS"
+      },
+      {
+        "name": "diagnostic 3D unavailable even with preview3d query",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni switch/greeting or selected poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no JavaScript errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "requests": [
+      "/agent-media/public/seven/front.webp",
+      "/agent-media/public/suni/front.webp",
+      "/agent-media/public/seven/poster.jpg",
+      "/agent-media/public/seven/idle.mp4",
+      "/agent-media/public/suni/poster.jpg",
+      "/agent-media/public/suni/speak.mp4",
+      "/agent-media/public/suni/idle.mp4"
+    ],
+    "metrics": {
+      "overflow": 0,
+      "fit": "contain",
+      "command": {
+        "x": 170.15625,
+        "y": 235.390625,
+        "width": 979.671875,
+        "height": 436.796875,
+        "top": 235.390625,
+        "right": 1149.828125,
+        "bottom": 672.1875,
+        "left": 170.15625
+      },
+      "stage": {
+        "x": 371.375,
+        "y": 235.390625,
+        "width": 577.234375,
+        "height": 436.796875,
+        "top": 235.390625,
+        "right": 948.609375,
+        "bottom": 672.1875,
+        "left": 371.375
+      },
+      "touch": [
+        {
+          "text": "기말고사 이용권20,000원 · 3주 ·",
+          "w": 184.9307403564453,
+          "h": 119.21624755859375
+        },
+        {
+          "text": "맞춤 문제 신청학교별 총 240문항",
+          "w": 184.9307403564453,
+          "h": 117.95416259765625
+        },
+        {
+          "text": "시험 범위 제출기출 · 교사 힌트",
+          "w": 184.9307403564453,
+          "h": 118.93792724609375
+        },
+        {
+          "text": "H-07세븐선택됨",
+          "w": 276.609375,
+          "h": 51.59375
+        },
+        {
+          "text": "SUNI서수니선택하기",
+          "w": 276.625,
+          "h": 51.59375
+        },
+        {
+          "text": "개별 신청학생 · 학부모 · 강사 · 원",
+          "w": 184.9307861328125,
+          "h": 119.21624755859375
+        },
+        {
+          "text": "학부모·학생 신청학교 · 학년 안내",
+          "w": 184.9307861328125,
+          "h": 117.95416259765625
+        },
+        {
+          "text": "접수 방법카톡 · 이메일 안내",
+          "w": 184.9307861328125,
+          "h": 118.93792724609375
+        },
+        {
+          "text": "기말고사 이용권 신청",
+          "w": 126.09375,
+          "h": 44
+        },
+        {
+          "text": "시험 범위·자료 제출 안내",
+          "w": 147.21875,
+          "h": 44
+        },
+        {
+          "text": "학원 운영 AI 비서",
+          "w": 107.140625,
+          "h": 44
+        },
+        {
+          "text": "나중에",
+          "w": 53.125,
+          "h": 44
+        },
+        {
+          "text": "보내기",
+          "w": 55.890625,
+          "h": 44
+        },
+        {
+          "text": "처음 안내 다시 보기",
+          "w": 112.40625,
+          "h": 44
+        },
+        {
+          "text": "내신 제작소",
+          "w": 182.265625,
+          "h": 44
+        },
+        {
+          "text": "학원 대시보드",
+          "w": 182.265625,
+          "h": 44
+        },
+        {
+          "text": "AI AGENT Studio",
+          "w": 182.265625,
+          "h": 44
+        }
+      ],
+      "input": 14
+    },
+    "status": "PASS"
+  }
+]
