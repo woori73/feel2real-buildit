@@ -29,6 +29,11 @@ async function create(api) {
       data: {
         kind: "APPLICATION",
         details: {
+          ageBand: "OVER14",
+          privacyVersion: cfg.privacyVersion,
+          termsVersion: cfg.termsVersion,
+          termsAccepted: "true",
+          optionalConsent: "true",
           name: "로컬 합성 신청자",
           school: "검증중학교",
           grade: "중3",
@@ -89,6 +94,7 @@ for (const width of [360, 390, 430, 768, 1440])
         await page.goto("/exam-service");
         await expect(page.locator("#offerSummary")).toContainText("160문항");
         const form = page.locator("#intakeForm");
+        await form.locator('[name="ageBand"]').selectOption("OVER14");
         for (const [name, value] of Object.entries({
           name: "합성 신청자",
           school: "테스트중",
@@ -102,6 +108,7 @@ for (const width of [360, 390, 430, 768, 1440])
         }))
           await form.locator('[name="' + name + '"]').fill(value);
         await form.locator('[name="consent"]').check();
+        await form.locator('[name="termsAccepted"]').check();
         await form
           .getByRole("button", { name: "접수하기", exact: true })
           .click();
@@ -111,10 +118,11 @@ for (const width of [360, 390, 430, 768, 1440])
         );
         await expect(page.locator("#paymentRequest")).toBeDisabled();
         await page
-          .locator("#uploadForm input")
+          .locator('#uploadForm input[type="file"]')
           .setInputFiles(
             path.join(__dirname, "../unified-assistant/fixtures/poster.jpg"),
           );
+        await page.locator('#uploadForm [name="materialConsent"]').check();
         await page.locator("#uploadForm button").click();
         await expect(page.locator("#documents")).toContainText(
           "격리·검사 대기",
@@ -155,6 +163,7 @@ test("inquiry form omits application requirements", async ({ browser }) => {
     const page = await context.newPage();
     await page.goto("/exam-service");
     await expect(page.locator("#offerSummary")).toContainText("160문항");
+    await page.locator('#intakeForm [name="ageBand"]').selectOption("OVER14");
     await page.locator('#intakeForm [name="kind"]').selectOption("INQUIRY");
     for (const [key, value] of Object.entries({
       name: "합성 문의자",
@@ -166,6 +175,7 @@ test("inquiry form omits application requirements", async ({ browser }) => {
     }))
       await page.locator('#intakeForm [name="' + key + '"]').fill(value);
     await page.locator('[name="consent"]').check();
+    await page.locator('[name="optionalConsent"]').check();
     await page.locator("#intakeForm button").click();
     await expect(page.locator("#notice")).toContainText("접수되었습니다");
     await expect(page.locator("#details")).toContainText("합성 문의입니다");
@@ -204,6 +214,7 @@ test("ownership, forged payment, quarantine and CSRF are enforced by actual API"
     await ok(
       owner.post("/api/exam-intake/requests/" + r.id + "/documents", {
         multipart: {
+          materialConsent: "true",
           file: {
             name: "synthetic.jpg",
             mimeType: "image/jpeg",

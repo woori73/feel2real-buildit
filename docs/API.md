@@ -5079,3 +5079,17 @@ ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(�
 - 신청 상세 응답의 `refundEstimate`는 제안 정책 스냅샷이 있는 신규 APPLICATION만 산출한다. `finalLegalAmount=false`; 과거 계약과 INQUIRY는 산출하지 않는다. 환불 승인 금액/송금 상태를 변경하지 않는다.
 - 전달 완료 POST에는 `accessibleAndReviewed:true` 필수. 1차 수정·검수 및 문제지·해설지 전달/접근 확인 없으면400이며 회차/예정액은 불변.
 - 동의 버전 v2는 회차별 기본 환불 예정액·법정 예외 안내를 포함한다. 이전 동의/계약 행을 소급 변경하지 않는다.
+
+## 신청 활성화 경계 보완 (2026-10-29, 운영 미적용)
+
+상세: [설정·동의·보존 정책](home-exam/ACTIVATION-GATES-20261029.md).
+
+- `GET /admin/hub/exam-bank`, `GET/PUT /api/admin/exam-intake/bank`, `POST /api/admin/exam-intake/bank/approve`: `bank-admin-enabled` 독립 제어, ADMIN 전용. 고객 신청 OFF에서도 등록 가능. 누락 스키마503, 저장→미승인, 별도 승인. 공개는 `enabled && bank-public-enabled && approved`.
+- `GET /exam-service/privacy`, `/exam-service/terms`: 신청 활성 여부와 무관한 비개인 안내. 기존 `/privacy` 보존.
+- 신규 접수 details에 `ageBand`, `privacyVersion`, `termsVersion`, `termsAccepted`, `optionalConsent`, 필요 시 `guardianConsentId`. 동의/연령 누락400, 미확인 보호자409. 문의에는 학교/학년 선택, 신청에는 이용·환불 약관 동의 필수. 버전은 config에서 읽는다. 과거 계약 변경 없음.
+- `GET/POST /api/exam-intake/guardian-consents`: 본인 목록·성인 법정대리인 전자동의 요청. 본인 정보만 수집, 하루5건 한도. `GET /api/admin/exam-intake/guardian-consents`: ADMIN 목록. 화면 `/exam-service/guardian`, `/admin/hub/exam-guardians`.
+- `POST /api/admin/exam-intake/guardian-consents/{id}/verify`: ADMIN 전화 확인3항목 모두true. 자신 요청 확인403. `/reject`: 결과 `DECLINED` 또는 `UNVERIFIED`. 본인/ADMIN `POST /api/exam-intake/guardian-consents/{id}/revoke`. 모두 기존 same-origin/X-F2R-Exam=1 조건. 30일 유효·계정 귀속·1회 사용·철회 시 추가 아동 자료 처리 거부.
+- 업로드 multipart `materialConsent=true` 필수. 본문 파싱 전 권한/동의 확인. 선택 자료 동의는 처리 이력에 정책 버전과 기록.
+- 기존 요청 actions에 `PRIVACY_REQUEST` 추가. 취소 후에도 개인정보 권리 행사 접수 허용.
+- `GET /api/admin/exam-intake/retention`: ADMIN 정리 대상 조회. `POST /api/admin/exam-intake/requests/{id}/erase-learning-data`: version/purposeComplete/noLegalHold, 검토된 보존 정책 필요. 종료/취소 후 일찍 삭제 가능하며 기본 대상 조회는30일 경과. 실제 파일 실패503·비공개 유지·재시도 가능. 법정 결제/계약 증빙 보존.
+- `POST /api/admin/exam-intake/retention/unused-guardians`: 검토된 정책이 등록된 경우 미사용 만료/철회/거절 보호자 연락정보 정리. 자동 실행 없음.

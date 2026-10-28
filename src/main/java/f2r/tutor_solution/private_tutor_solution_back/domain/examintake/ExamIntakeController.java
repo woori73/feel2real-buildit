@@ -86,6 +86,10 @@ public class ExamIntakeController {
         o.getAssistantSummary(),
         "consentVersion",
         CONSENT,
+        "privacyVersion",
+        PRIVACY,
+        "termsVersion",
+        TERMS,
         "refundPolicy",
         "4회·20,000원 상품은 정상 전달된 회차당5,000원을 기준으로 잔여 이용료를 검토합니다. 법정 청약철회·사업자 귀책·서비스 하자는 별도 검토하며, 예정액은"
             + " 최종 법정 환불액이 아닙니다. 자동 공제·송금하지 않습니다.",
@@ -147,9 +151,11 @@ public class ExamIntakeController {
       @AuthenticationPrincipal AuthenticatedPrincipal p,
       @PathVariable String id,
       @RequestPart("file") MultipartFile file,
+      @RequestParam(defaultValue = "false") boolean materialConsent,
       HttpServletRequest request)
       throws IOException {
     mutation(request);
+    if (!materialConsent) throw error(400, "선택 자료 제출 동의를 확인해 주세요.");
     service.upload(p, id, file);
     return Map.of("message", "자료를 접수했습니다. 검사 상태를 확인해 주세요.");
   }
@@ -226,29 +232,6 @@ public class ExamIntakeController {
         .map(b -> Map.<String, Object>of("available", true, "bank", b))
         .orElseGet(
             () -> Map.of("available", false, "message", "승인된 계좌가 아직 없습니다. 입금하지 말고 안내를 기다려 주세요."));
-  }
-
-  @GetMapping("/api/admin/exam-intake/bank")
-  Map<String, Object> adminBank(@AuthenticationPrincipal AuthenticatedPrincipal p) {
-    return service.adminBank(p).map(b -> Map.<String, Object>of("bank", b)).orElseGet(Map::of);
-  }
-
-  @PutMapping("/api/admin/exam-intake/bank")
-  Bank bankSaved(
-      @AuthenticationPrincipal AuthenticatedPrincipal p,
-      @RequestBody Bank body,
-      HttpServletRequest request) {
-    mutation(request);
-    return service.saveBank(p, body);
-  }
-
-  @PostMapping("/api/admin/exam-intake/bank/approve")
-  Bank bankApproved(
-      @AuthenticationPrincipal AuthenticatedPrincipal p,
-      @RequestBody VersionInput body,
-      HttpServletRequest request) {
-    mutation(request);
-    return service.approveBank(p, body.version());
   }
 
   @GetMapping("/api/admin/exam-intake/events")

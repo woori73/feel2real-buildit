@@ -13,7 +13,18 @@ import org.springframework.web.server.ResponseStatusException;
 public final class ExamIntake {
   private ExamIntake() {}
 
-  public static final String CONSENT = "exam-intake-review-20261028-v2";
+  public static final String CONSENT = "exam-intake-review-20261029-v3";
+
+  public static final String PRIVACY = "exam-privacy-20261029-v1";
+  public static final String TERMS = "exam-terms-20261029-v1";
+  static final Set<String> AGREEMENTS =
+      Set.of(
+          "ageBand",
+          "guardianConsentId",
+          "privacyVersion",
+          "termsVersion",
+          "termsAccepted",
+          "optionalConsent");
 
   public enum Kind {
     INQUIRY,
@@ -109,8 +120,26 @@ public final class ExamIntake {
       throw error(400, "개인정보 처리 안내를 확인하고 동의해 주세요.");
     text(in.idempotencyKey(), "접수 키", 16, 80);
     if (!in.idempotencyKey().matches("[A-Za-z0-9_-]+")) throw error(400, "접수 키가 올바르지 않습니다.");
-    var fields = new LinkedHashMap<String, String>();
     var src = in.details() == null ? Map.<String, String>of() : in.details();
+    if (!Set.of("OVER14", "UNDER14").contains(Objects.toString(src.get("ageBand"), "")))
+      throw error(400, "만 14세 이상 여부를 선택해 주세요.");
+    if (!PRIVACY.equals(src.get("privacyVersion"))) throw error(400, "최신 개인정보 처리방침에 동의해 주세요.");
+    if (in.kind() == Kind.APPLICATION
+        && (!"true".equals(src.get("termsAccepted")) || !TERMS.equals(src.get("termsVersion"))))
+      throw error(400, "서비스 이용·환불 약관을 확인하고 별도로 동의해 주세요.");
+    var fields = new LinkedHashMap<>(validateFields(in.kind(), src));
+    if ((!fields.get("requirements").isEmpty()
+            || (in.kind() == Kind.INQUIRY
+                && (!fields.get("school").isEmpty() || !fields.get("grade").isEmpty())))
+        && !"true".equals(src.get("optionalConsent")))
+      throw error(400, "선택 정보 동의 또는 선택 정보 삭제가 필요합니다.");
+    for (String key : AGREEMENTS) fields.put(key, text(src.get(key), key, 0, 80));
+    return Collections.unmodifiableMap(fields);
+  }
+
+  static Map<String, String> validateFields(Kind kind, Map<String, String> src) {
+    if (src == null) src = Map.of();
+    var fields = new LinkedHashMap<String, String>();
     for (String f :
         List.of(
             "name",
@@ -134,8 +163,7 @@ public final class ExamIntake {
               f,
               0,
               Set.of("scope", "requirements", "message").contains(f) ? 2000 : 120));
-    for (String f : List.of("name", "school", "grade", "contactMethod", "contact"))
-      text(fields.get(f), f, 1, 120);
+    for (String f : List.of("name", "contactMethod", "contact")) text(fields.get(f), f, 1, 120);
     if (!Set.of("EMAIL", "PHONE", "KAKAO").contains(fields.get("contactMethod")))
       throw error(400, "연락 방법을 선택해 주세요.");
     if (fields.get("contactMethod").equals("EMAIL")
@@ -143,13 +171,20 @@ public final class ExamIntake {
       throw error(400, "이메일 주소를 확인해 주세요.");
     if (fields.get("contactMethod").equals("PHONE")
         && !fields.get("contact").matches("[0-9+() -]{7,25}")) throw error(400, "전화번호를 확인해 주세요.");
-    if (in.kind() == Kind.INQUIRY) {
+    if (kind == Kind.INQUIRY) {
       text(fields.get("inquiryType"), "문의 유형", 1, 120);
       text(fields.get("message"), "문의 내용", 1, 2000);
     } else {
       for (String f :
-          List.of("examDate", "scope", "pastPapers", "questionTypes", "difficulty", "format"))
-        text(fields.get(f), f, 1, 2000);
+          List.of(
+              "school",
+              "grade",
+              "examDate",
+              "scope",
+              "pastPapers",
+              "questionTypes",
+              "difficulty",
+              "format")) text(fields.get(f), f, 1, 2000);
       try {
         var d = LocalDate.parse(fields.get("examDate"));
         if (d.isBefore(LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))))

@@ -15,6 +15,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Order(-90)
 @ConditionalOnProperty(name = "app.exam-intake.enabled", havingValue = "true")
 public class ExamUploadLimitFilter extends OncePerRequestFilter {
+  @org.springframework.beans.factory.annotation.Autowired private ExamIntakeService service;
+
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -27,6 +29,28 @@ public class ExamUploadLimitFilter extends OncePerRequestFilter {
         response.setContentType("application/json;charset=UTF-8");
         response.setHeader("Cache-Control", "no-store");
         response.getWriter().write("{\"message\":\"업로드 요청 크기를 확인해 주세요. 파일당 10MiB 제한입니다.\"}");
+        return;
+      }
+      try {
+        ExamIntakeController.mutation(request);
+        var auth =
+            org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication();
+        var p =
+            auth != null
+                    && auth.getPrincipal()
+                        instanceof
+                        f2r.tutor_solution.private_tutor_solution_back.config.security
+                                .JwtTokenProvider.AuthenticatedPrincipal
+                            principal
+                ? principal
+                : null;
+        service.checkUploadAccess(p, request.getRequestURI().split("/")[4]);
+      } catch (org.springframework.web.server.ResponseStatusException denied) {
+        response.setStatus(denied.getStatusCode().value());
+        response.setContentType("application/json;charset=UTF-8");
+        response.setHeader("Cache-Control", "no-store");
+        response.getWriter().write("{\"message\":\"자료 제출 권한·동의 상태를 확인해 주세요.\"}");
         return;
       }
     }

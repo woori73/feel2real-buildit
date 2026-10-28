@@ -22,16 +22,25 @@ public class ExamIntakeService {
   final ExamPrivateFiles files;
   final TransactionTemplate tx;
   private final String refundPolicyVersion;
+  private final ExamBankService banks;
+  private final boolean bankPublic;
+  private final ExamGuardianConsentService guardians;
 
   public ExamIntakeService(
       ExamIntakeRepository repo,
       ExamPrivateFiles files,
       TransactionTemplate tx,
-      @Value("${app.exam-intake.refund-reviewed-policy-version:}") String refundPolicyVersion) {
+      @Value("${app.exam-intake.refund-reviewed-policy-version:}") String refundPolicyVersion,
+      ExamBankService banks,
+      @Value("${app.exam-intake.bank-public-enabled:false}") boolean bankPublic,
+      ExamGuardianConsentService guardians) {
     this.repo = repo;
     this.files = files;
     this.tx = tx;
     this.refundPolicyVersion = refundPolicyVersion;
+    this.banks = banks;
+    this.bankPublic = bankPublic;
+    this.guardians = guardians;
   }
 
   public Request create(AuthenticatedPrincipal p, Create input) {
@@ -71,7 +80,11 @@ public class ExamIntakeService {
                     offer.priceWon(),
                     "refundProposalVersion",
                     "per-delivery-proposal-v1");
+            if ("UNDER14".equals(details.get("ageBand")))
+              guardians.checkAvailable(owner, details.get("guardianConsentId"));
             Request r = repo.insert(owner, input, details, snapshot, hash);
+            if ("UNDER14".equals(details.get("ageBand")))
+              guardians.consume(owner, details.get("guardianConsentId"), r.id());
             repo.event(
                 r,
                 input.kind() == Kind.INQUIRY ? "inquiry.created" : "application.created",
@@ -147,7 +160,7 @@ public class ExamIntakeService {
                         d.hidden()))
             .toList(),
         "actions",
-        repo.actions(id),
+        publicActions(p, id),
         "deliveries",
         repo.jdbc()
             .queryForList(
@@ -156,9 +169,32 @@ public class ExamIntakeService {
                 id));
   }
 
+  private List<Action> publicActions(AuthenticatedPrincipal p, String id) {
+    var actions = repo.actions(id);
+    if (isAdmin(p) || publicBank(p).isPresent()) return actions;
+    return actions.stream()
+        .map(
+            a ->
+                a.kind().equals("PAYMENT_CONFIRMATION")
+                    ? new Action(
+                        a.id(),
+                        a.requestId(),
+                        a.actorId(),
+                        a.kind(),
+                        "입금 확인 요청 기록 (계좌 비공개)",
+                        a.state(),
+                        a.amountWon(),
+                        a.createdAt())
+                    : a)
+        .toList();
+  }
+
   private Request locked(AuthenticatedPrincipal p, String id, long version) {
     Request r = repo.get(id, true);
     owner(p, r);
+    if (repo.actions(id).stream()
+        .anyMatch(a -> a.kind().equals("PRIVACY_ERASURE") && a.state().equals("PROCESSING")))
+      throw error(409, "개인정보 정리가 진행 중입니다. 완료 후 다시 시도해 주세요.");
     if (r.version() != version) throw error(409, "다른 변경이 있습니다. 접수를 새로 불러와 주세요.");
     return r;
   }
@@ -167,12 +203,14 @@ public class ExamIntakeService {
       AuthenticatedPrincipal p, String id, long version, String kind, String body) {
     user(p);
     String clean = text(body, "요청 내용", 1, 2000);
-    if (!Set.of("UPDATE_DETAILS", "DELETE_DOCUMENT", "REVISION", "CANCEL", "REFUND").contains(kind))
-      throw error(400, "요청 유형을 확인해 주세요.");
+    if (!Set.of(
+            "UPDATE_DETAILS", "DELETE_DOCUMENT", "REVISION", "CANCEL", "REFUND", "PRIVACY_REQUEST")
+        .contains(kind)) throw error(400, "요청 유형을 확인해 주세요.");
     return tx.execute(
         status -> {
           Request r = locked(p, id, version);
-          if (r.state() == State.CANCELLED) throw error(409, "취소 완료된 접수입니다.");
+          if (r.state() == State.CANCELLED && !kind.equals("PRIVACY_REQUEST"))
+            throw error(409, "취소 완료된 접수입니다.");
           if (Set.of("UPDATE_DETAILS", "DELETE_DOCUMENT").contains(kind) && !beforeProduction(r))
             throw error(409, "제작 시작 후에는 수정·취소 요청으로 접수해 주세요.");
           if (kind.equals("DELETE_DOCUMENT")
@@ -189,6 +227,7 @@ public class ExamIntakeService {
 
   public Request paymentRequested(AuthenticatedPrincipal p, String id, long version, String payer) {
     user(p);
+    if (!bankPublic) throw error(409, "계좌 공개 전에는 입금 확인을 요청할 수 없습니다.");
     String name = text(payer, "입금자명", 1, 80);
     return tx.execute(
         status -> {
@@ -340,10 +379,19 @@ public class ExamIntakeService {
         });
   }
 
+  public void checkUploadAccess(AuthenticatedPrincipal p, String id) {
+    user(p);
+    Request r = repo.get(id, false);
+    owner(p, r);
+    guardians.checkActive(r);
+    if (!beforeProduction(r)) throw error(409, "제작 시작 후에는 수정 요청으로 접수해 주세요.");
+  }
+
   public void upload(AuthenticatedPrincipal p, String id, MultipartFile upload) throws IOException {
     user(p);
     Request before = repo.get(id, false);
     owner(p, before);
+    guardians.checkActive(before);
     if (!beforeProduction(before)) throw error(409, "제작 시작 후에는 수정 요청으로 접수해 주세요.");
     var prepared = files.prepare(upload);
     boolean[] retained = {false};
@@ -352,6 +400,7 @@ public class ExamIntakeService {
           status -> {
             Request r = repo.get(id, true);
             owner(p, r);
+            guardians.checkActive(r);
             if (!beforeProduction(r)) throw error(409, "제작이 시작되어 제출할 수 없습니다.");
             var docs = repo.documents(id);
             if (docs.stream().anyMatch(d -> d.sha256().equals(prepared.hash()))) return;
@@ -359,6 +408,7 @@ public class ExamIntakeService {
                 || docs.stream().mapToLong(Document::sizeBytes).sum() + prepared.size()
                     > 100L * 1024 * 1024) throw error(400, "접수당 10개·100MiB 제한을 초과했습니다.");
             String fileId = UUID.randomUUID().toString();
+            repo.action(r, p.userId(), "DOCUMENT_CONSENT", PRIVACY);
             repo.jdbc()
                 .update(
                     "INSERT INTO"
@@ -400,86 +450,19 @@ public class ExamIntakeService {
 
   public Optional<Bank> publicBank(AuthenticatedPrincipal p) {
     user(p);
-    return repo.bank().filter(Bank::approved);
+    return bankPublic ? banks.read().filter(Bank::approved) : Optional.empty();
   }
 
   public Optional<Bank> adminBank(AuthenticatedPrincipal p) {
-    admin(p);
-    return repo.bank();
+    return banks.adminBank(p);
   }
 
   public Bank saveBank(AuthenticatedPrincipal p, Bank bank) {
-    admin(p);
-    String name = text(bank.bankName(), "은행명", 1, 80),
-        account = text(bank.accountNumber(), "계좌번호", 1, 80),
-        holder = text(bank.accountHolder(), "예금주", 1, 80);
-    return tx.execute(
-        status -> {
-          var rows =
-              repo.jdbc()
-                  .queryForList("SELECT version FROM exam_intake_bank WHERE id=1 FOR UPDATE");
-          if (rows.isEmpty()) {
-            if (bank.version() != 0) throw error(409, "계좌 설정을 다시 불러와 주세요.");
-            repo.jdbc()
-                .update(
-                    "INSERT INTO"
-                        + " exam_intake_bank(id,bank_name,account_number,account_holder,approved,version,changed_by,updated_at)"
-                        + " VALUES(1,?,?,?,FALSE,1,?,?)",
-                    name,
-                    account,
-                    holder,
-                    p.userId(),
-                    Timestamp.from(Instant.now()));
-          } else {
-            if (((Number) rows.getFirst().get("version")).longValue() != bank.version())
-              throw error(409, "계좌 설정이 변경되었습니다.");
-            repo.jdbc()
-                .update(
-                    "UPDATE exam_intake_bank SET"
-                        + " bank_name=?,account_number=?,account_holder=?,approved=FALSE,approved_by=NULL,version=version+1,changed_by=?,updated_at=?"
-                        + " WHERE id=1",
-                    name,
-                    account,
-                    holder,
-                    p.userId(),
-                    Timestamp.from(Instant.now()));
-          }
-          Bank saved = repo.bank().orElseThrow();
-          bankAudit(p, "SAVE", saved);
-          return saved;
-        });
+    return banks.saveBank(p, bank);
   }
 
   public Bank approveBank(AuthenticatedPrincipal p, long version) {
-    admin(p);
-    return tx.execute(
-        status -> {
-          int changed =
-              repo.jdbc()
-                  .update(
-                      "UPDATE exam_intake_bank SET"
-                          + " approved=TRUE,approved_by=?,version=version+1,updated_at=? WHERE id=1"
-                          + " AND version=? AND approved=FALSE",
-                      p.userId(),
-                      Timestamp.from(Instant.now()),
-                      version);
-          if (changed != 1) throw error(409, "계좌 설정을 다시 확인해 주세요.");
-          Bank saved = repo.bank().orElseThrow();
-          bankAudit(p, "APPROVE", saved);
-          return saved;
-        });
-  }
-
-  private void bankAudit(AuthenticatedPrincipal p, String action, Bank bank) {
-    repo.jdbc()
-        .update(
-            "INSERT INTO exam_intake_bank_audit(id,actor_id,action,bank_snapshot,created_at)"
-                + " VALUES(?,?,?,?,?)",
-            UUID.randomUUID().toString(),
-            p.userId(),
-            action,
-            repo.json(bank),
-            Timestamp.from(Instant.now()));
+    return banks.approveBank(p, version);
   }
 
   public Request amend(
@@ -502,8 +485,16 @@ public class ExamIntakeService {
                               && a.state().equals("APPROVED"))
                   .findFirst()
                   .orElseThrow(() -> error(409, "승인된 신청 내용 변경 요청을 선택해 주세요."));
-          var clean =
-              validate(new Create(r.kind(), details, true, CONSENT, "admin-amend-validation"));
+          var clean = new LinkedHashMap<>(validateFields(r.kind(), details));
+          for (String key : AGREEMENTS)
+            if (r.details().containsKey(key)) clean.put(key, r.details().get(key));
+          guardians.checkActive(r);
+          if ((!clean.get("requirements").isEmpty()
+                  || (r.kind() == Kind.INQUIRY
+                      && (!clean.get("school").isEmpty() || !clean.get("grade").isEmpty())))
+              && r.details().containsKey("privacyVersion")
+              && !"true".equals(r.details().get("optionalConsent")))
+            throw error(400, "선택 정보 동의 없이 선택 정보를 추가할 수 없습니다.");
           repo.action(
               r,
               p.userId(),

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>입금 계좌 사전 등록 | Feel2Real</title>
+    <link rel="stylesheet" href="/css/exam_service.css" />
+  </head>
+  <body data-admin="true" data-bank-only="true">
+    <main class="intake">
+      <header>
+        <a href="/admin/hub">관리자 허브</a>
+        <h1>입금 계좌 사전 등록</h1>
+        <p>고객 신청이 비활성이어도 관리자만 등록·수정·승인할 수 있습니다.</p>
+      </header>
+      <p id="notice" role="status" aria-live="polite"></p>
+      <section>
+        <h2>통장입금 계좌 설정</h2>
+        <p>
+          저장·승인과 신청 활성화·고객 계좌 공개는 각각 별개입니다. 계좌
+          승인만으로 고객에게 공개되지 않습니다.
+        </p>
+        <label
+          >등록용 JSON 파일 불러오기<input
+            id="bankImport"
+            type="file"
+            accept=".json,application/json"
+        /></label>
+        <p>
+          파일 불러오기는 입력만 채웁니다. 내용을 확인한 뒤 저장·승인을 각각
+          진행하세요.
+        </p>
+        <form id="bankForm" class="grid">
+          <label>은행명<input name="bankName" maxlength="80" required /></label
+          ><label
+            >계좌번호<input
+              name="accountNumber"
+              maxlength="80"
+              required /></label
+          ><label
+            >예금주<input name="accountHolder" maxlength="80" required /></label
+          ><button type="submit">계좌 저장·미승인으로 전환</button>
+        </form>
+        <button id="approveBank" type="button" disabled>
+          표시할 계좌 승인
+        </button>
+        <p id="bankStatus"></p>
+      </section>
+    </main>
+    <script src="/js/exam_service.js" defer></script>
+  </body>
+</html>

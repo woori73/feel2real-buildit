@@ -1859,3 +1859,10 @@ JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `E
 기존 고객 계약·기존 운영 테이블은 갱신하지 않는다. 운영 적용 전에 최신 migration 번호·정책·백업·비공개 저장소를 승인받는다.
 
 영어 기말 신규 접수의 offer_snapshot에는 `refundProposalVersion=per-delivery-proposal-v1`을 보존한다. 회차별 예정액은 참고 정보이며 법적 승인 금액과 분리한다. 이전 snapshot에 이 키를 추가/소급 UPDATE하지 않는다. bank 승인/입금 확인은 기존 관리자 이력에 기록하며 추가 DB 스키마 변경은 없다.
+# 신청 활성화 준비 보완 (2026-10-29)
+
+기존 제안7개 테이블에 `exam_intake_guardian_consent` 1개를 추가한 **로컬/CI 제안 스키마**다. 운영 Flyway 파일은 생성/변경하지 않았다. JDBC 레코드/SQL 정의: `ExamGuardianConsentService`, `docs/home-exam/proposed-schema.sql`.
+
+성인 법정대리인의 계정·이름·전화·관계, 동의 항목/정책 버전/시각, 검증 결과/방법/관리자/시각, 만료·신청 사용·철회를 저장한다. 아동 정보는 사전 동의 테이블에 넣지 않는다. 상태는 PENDING/VERIFIED/USED/REJECTED/REVOKED. 신청 ID unique/FK로 한 건 사용을 제한하고 트랜잭션으로 소비한다. 기존 사용자 계정 행을 잠가 일일 요청 한도를 직렬화한다.
+
+신청 payload의 동의/연령 필드는 신규 생성 시 기록하며 내용 변경 시 보존한다. 삭제 처리 이력은 기존 action의 PRIVACY_ERASURE(PROCESSING/RESOLVED)로 기록하며 실패 시 재시도한다. 학습자료·개인정보 정리와 법정 결제/계약 기록을 구분한다. 상세 및 운영 전 조건: [활성화 준비](home-exam/ACTIVATION-GATES-20261029.md).

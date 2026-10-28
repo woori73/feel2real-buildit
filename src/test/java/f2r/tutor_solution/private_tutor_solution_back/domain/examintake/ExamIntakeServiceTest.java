@@ -46,7 +46,15 @@ class ExamIntakeServiceTest {
     repo = new ExamIntakeRepository(new JdbcTemplate(ds));
     tx = new TransactionTemplate(new DataSourceTransactionManager(ds));
     files = new ExamPrivateFiles(directory.toString(), "");
-    service = new ExamIntakeService(repo, files, tx, "");
+    service =
+        new ExamIntakeService(
+            repo,
+            files,
+            tx,
+            "",
+            new ExamBankService(repo.jdbc(), tx),
+            true,
+            new ExamGuardianConsentService(repo.jdbc(), tx));
   }
 
   Create input(String key) {
@@ -76,6 +84,11 @@ class ExamIntakeServiceTest {
                 "중간")) {
           {
             put("format", "A4");
+            put("ageBand", "OVER14");
+            put("privacyVersion", PRIVACY);
+            put("termsVersion", TERMS);
+            put("termsAccepted", "true");
+            put("optionalConsent", "true");
           }
         },
         true,
@@ -275,7 +288,15 @@ class ExamIntakeServiceTest {
     var r = create();
     r = service.requestAction(owner, r.id(), 0, "REFUND", "합성 환불 요청");
     String action = repo.actions(r.id()).getFirst().id();
-    var reviewed = new ExamIntakeService(repo, files, tx, "TEST-REVIEW-ONLY");
+    var reviewed =
+        new ExamIntakeService(
+            repo,
+            files,
+            tx,
+            "TEST-REVIEW-ONLY",
+            new ExamBankService(repo.jdbc(), tx),
+            true,
+            new ExamGuardianConsentService(repo.jdbc(), tx));
     r = reviewed.resolveAction(admin, r.id(), r.version(), action, "REVIEWING", null, "테스트 검토");
     r =
         reviewed.resolveAction(
@@ -370,7 +391,15 @@ class ExamIntakeServiceTest {
     doThrow(new IllegalStateException("synthetic event write failure"))
         .when(broken)
         .event(any(), eq("document.uploaded"), anyString());
-    var svc = new ExamIntakeService(broken, files, tx, "");
+    var svc =
+        new ExamIntakeService(
+            broken,
+            files,
+            tx,
+            "",
+            new ExamBankService(broken.jdbc(), tx),
+            true,
+            new ExamGuardianConsentService(broken.jdbc(), tx));
     assertThatThrownBy(() -> svc.upload(owner, r.id(), image()))
         .isInstanceOf(IllegalStateException.class);
     assertThat(repo.documents(r.id())).isEmpty();
@@ -386,7 +415,12 @@ class ExamIntakeServiceTest {
     r = repo.get(r.id(), false);
     String doc = repo.documents(r.id()).getFirst().id();
     r = service.requestAction(owner, r.id(), r.version(), "DELETE_DOCUMENT", doc);
-    String action = repo.actions(r.id()).getFirst().id();
+    String action =
+        repo.actions(r.id()).stream()
+            .filter(a -> a.kind().equals("DELETE_DOCUMENT"))
+            .findFirst()
+            .orElseThrow()
+            .id();
     for (String state : List.of("REVIEWING", "APPROVED", "RESOLVED"))
       r = service.resolveAction(admin, r.id(), r.version(), action, state, null, "합성 삭제 요청 처리");
     assertThat(repo.documents(r.id()).getFirst().hidden()).isTrue();
@@ -444,7 +478,15 @@ class ExamIntakeServiceTest {
     factory.addAdvice(
         (org.aopalliance.intercept.MethodInterceptor) invocation -> invocation.proceed());
     var proxied = (ExamIntakeRepository) factory.getProxy();
-    var svc = new ExamIntakeService(proxied, files, tx, "");
+    var svc =
+        new ExamIntakeService(
+            proxied,
+            files,
+            tx,
+            "",
+            new ExamBankService(proxied.jdbc(), tx),
+            true,
+            new ExamGuardianConsentService(proxied.jdbc(), tx));
     assertThat(svc.create(owner, input("proxy-regression-key")).state()).isEqualTo(State.RECEIVED);
   }
 
@@ -452,7 +494,12 @@ class ExamIntakeServiceTest {
   void givenApprovedChange_whenAdminApplies_thenDetailsChangeButContractDoesNot() {
     var r = create();
     r = service.requestAction(owner, r.id(), r.version(), "UPDATE_DETAILS", "시험 범위 변경");
-    String action = repo.actions(r.id()).getFirst().id();
+    String action =
+        repo.actions(r.id()).stream()
+            .filter(a -> a.kind().equals("UPDATE_DETAILS"))
+            .findFirst()
+            .orElseThrow()
+            .id();
     for (String state : List.of("REVIEWING", "APPROVED"))
       r = service.resolveAction(admin, r.id(), r.version(), action, state, null, "합성 검토");
     var details = new LinkedHashMap<>(r.details());
@@ -482,7 +529,15 @@ class ExamIntakeServiceTest {
             return "CLEAN";
           }
         };
-    var svc = new ExamIntakeService(repo, clean, tx, "");
+    var svc =
+        new ExamIntakeService(
+            repo,
+            clean,
+            tx,
+            "",
+            new ExamBankService(repo.jdbc(), tx),
+            true,
+            new ExamGuardianConsentService(repo.jdbc(), tx));
     status(403, () -> svc.rescan(owner, r.id(), id));
     assertThat(svc.rescan(admin, r.id(), id)).isEqualTo("CLEAN");
     assertThat(svc.download(admin, r.id(), id).scanState()).isEqualTo("CLEAN");
@@ -573,5 +628,317 @@ class ExamIntakeServiceTest {
     assertThat(service.refundEstimate(r))
         .containsEntry("available", false)
         .containsEntry("message", "문의 접수에는 이용료를 청구하지 않습니다.");
+  }
+
+  ExamGuardianConsentService guardians() {
+    repo.jdbc().execute("CREATE TABLE IF NOT EXISTS users (user_id BIGINT PRIMARY KEY)");
+    repo.jdbc().update("MERGE INTO users KEY(user_id) VALUES (1),(2),(3)");
+    return new ExamGuardianConsentService(repo.jdbc(), tx);
+  }
+
+  Map<String, Object> guardian(ExamGuardianConsentService g) {
+    return g.submit(
+        owner,
+        new ExamGuardianConsentService.Submission(
+            "합성 보호자", "010-0000-0000", "PARENT", true, true, PRIVACY, TERMS));
+  }
+
+  Create child(String grant) {
+    var in = input(UUID.randomUUID().toString());
+    var d = new LinkedHashMap<>(in.details());
+    d.put("ageBand", "UNDER14");
+    d.put("guardianConsentId", grant);
+    return new Create(in.kind(), d, true, CONSENT, in.idempotencyKey());
+  }
+
+  @Test
+  void givenIntakeDisabled_whenAdminPreparesBank_thenNoFileStoreOrIntakeRequired() {
+    new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+        .withPropertyValues(
+            "app.exam-intake.enabled=false",
+            "app.exam-intake.bank-admin-enabled=true",
+            "app.exam-intake.bank-public-enabled=true")
+        .withBean(JdbcTemplate.class, () -> repo.jdbc())
+        .withBean(TransactionTemplate.class, () -> tx)
+        .withUserConfiguration(
+            ExamBankService.class,
+            ExamBankAdminController.class,
+            ExamIntakeService.class,
+            ExamPrivateFiles.class,
+            ExamIntakeRepository.class)
+        .run(
+            context -> {
+              assertThat(context)
+                  .hasNotFailed()
+                  .doesNotHaveBean(ExamIntakeService.class)
+                  .doesNotHaveBean(ExamPrivateFiles.class);
+              var c = context.getBean(ExamBankAdminController.class);
+              var request = new MockHttpServletRequest();
+              request.addHeader("X-F2R-Exam", "1");
+              var saved = c.save(admin, new Bank("합성은행", "000-test-only", "합성", true, 0), request);
+              assertThat(saved.approved()).isFalse();
+              c.approve(admin, new ExamBankAdminController.Approval(saved.version()), request);
+              assertThat(c.read(admin).get("customerVisible")).isEqualTo(false);
+              status(403, () -> c.read(owner));
+              status(401, () -> c.read(null));
+            });
+  }
+
+  @Test
+  void givenUninstalledSchema_whenBankPreparationStarts_thenHealthyAndSanitizedFailure() {
+    var jdbc =
+        new JdbcTemplate(new DriverManagerDataSource("jdbc:h2:mem:" + UUID.randomUUID(), "sa", ""));
+    new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+        .withPropertyValues(
+            "app.exam-intake.enabled=false", "app.exam-intake.bank-admin-enabled=true")
+        .withBean(JdbcTemplate.class, () -> jdbc)
+        .withBean(TransactionTemplate.class, () -> tx)
+        .withUserConfiguration(ExamBankService.class, ExamBankAdminController.class)
+        .run(
+            c -> {
+              assertThat(c).hasNotFailed();
+              var controller = c.getBean(ExamBankAdminController.class);
+              try {
+                controller.read(admin);
+                fail("missing schema must fail");
+              } catch (org.springframework.dao.DataAccessException e) {
+                var response = controller.unavailable(e);
+                assertThat(response.getStatusCode().value()).isEqualTo(503);
+                assertThat(response.getBody().toString()).doesNotContain("SELECT", "jdbc:");
+              }
+            });
+  }
+
+  @Test
+  void givenBankPublicDisabled_whenReadingAllCustomerPaths_thenNoAccountLeak() {
+    var b = service.saveBank(admin, new Bank("합성은행", "secret-test-account", "합성", false, 0));
+    service.approveBank(admin, b.version());
+    var r = create();
+    service.paymentRequested(owner, r.id(), r.version(), "합성");
+    var hidden =
+        new ExamIntakeService(
+            repo, files, tx, "", new ExamBankService(repo.jdbc(), tx), false, guardians());
+    assertThat(hidden.publicBank(owner)).isEmpty();
+    assertThat(hidden.detail(owner, r.id()).toString()).doesNotContain("secret-test-account");
+    assertThat(hidden.detail(admin, r.id()).toString()).contains("secret-test-account");
+    var next = create();
+    status(409, () -> hidden.paymentRequested(owner, next.id(), next.version(), "합성"));
+  }
+
+  @Test
+  void givenMissingAgeOrSeparateTerms_whenSubmitting_thenRejectedBeforePersistence() {
+    for (String key : List.of("ageBand", "privacyVersion", "termsAccepted", "termsVersion")) {
+      var in = input(UUID.randomUUID().toString());
+      var d = new LinkedHashMap<>(in.details());
+      d.remove(key);
+      status(
+          400,
+          () ->
+              service.create(owner, new Create(in.kind(), d, true, CONSENT, in.idempotencyKey())));
+    }
+    assertThat(
+            repo.jdbc().queryForObject("SELECT COUNT(*) FROM exam_intake_request", Integer.class))
+        .isZero();
+  }
+
+  @Test
+  void givenChildWithoutVerifiedGuardian_whenSubmitting_thenNoStudentRecord() {
+    var g = guardians();
+    String id = guardian(g).get("id").toString();
+    status(409, () -> service.create(owner, child(id)));
+    status(
+        403,
+        () -> g.verify(owner, id, new ExamGuardianConsentService.Verification(true, true, true)));
+    status(
+        400,
+        () -> g.verify(admin, id, new ExamGuardianConsentService.Verification(true, true, false)));
+    assertThat(
+            repo.jdbc().queryForObject("SELECT COUNT(*) FROM exam_intake_request", Integer.class))
+        .isZero();
+    assertThat(g.list(owner, false).toString()).doesNotContain("테스트중", "합성 시험 범위");
+  }
+
+  @Test
+  void givenTelephoneVerification_whenChildSubmits_thenSingleUseOwnerBoundConsentAndWithdrawal()
+      throws Exception {
+    var g = guardians();
+    String id = guardian(g).get("id").toString();
+    var verified =
+        g.verify(admin, id, new ExamGuardianConsentService.Verification(true, true, true));
+    assertThat(verified.get("verification_result")).isEqualTo("AGREED");
+    assertThat(verified.get("reviewed_at")).isNotNull();
+    assertThat(verified.get("consent_items").toString()).contains(PRIVACY, TERMS);
+    status(409, () -> service.create(other, child(id)));
+    var in = child(id);
+    var r = service.create(owner, in);
+    assertThat(service.create(owner, in).id()).isEqualTo(r.id());
+    status(409, () -> service.create(owner, child(id)));
+    status(404, () -> g.revoke(other, id));
+    g.revoke(owner, id);
+    status(409, () -> service.upload(owner, r.id(), image()));
+    assertThat(repo.documents(r.id())).isEmpty();
+    assertThat(
+            service.requestAction(owner, r.id(), r.version(), "PRIVACY_REQUEST", "동의 철회 후 삭제 요청"))
+        .isNotNull();
+  }
+
+  @Test
+  void givenDeclinedExpiredOrOldPolicyConsent_whenSubmitting_thenRejected() {
+    var g = guardians();
+    for (String result : List.of("DECLINED", "UNVERIFIED")) {
+      String id = guardian(g).get("id").toString();
+      g.reject(admin, id, result);
+      status(409, () -> service.create(owner, child(id)));
+    }
+    String id = guardian(g).get("id").toString();
+    g.verify(admin, id, new ExamGuardianConsentService.Verification(true, true, true));
+    repo.jdbc()
+        .update(
+            "UPDATE exam_intake_guardian_consent SET expires_at=? WHERE id=?",
+            java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(1)),
+            id);
+    status(409, () -> service.create(owner, child(id)));
+    String old = guardian(g).get("id").toString();
+    repo.jdbc()
+        .update("UPDATE exam_intake_guardian_consent SET privacy_version='old' WHERE id=?", old);
+    status(
+        409,
+        () -> g.verify(admin, old, new ExamGuardianConsentService.Verification(true, true, true)));
+  }
+
+  @Test
+  void givenOptionalDataWithoutConsent_whenSubmitting_thenRejectButMinimalInquiryAllowed() {
+    var in = input(UUID.randomUUID().toString());
+    var d = new LinkedHashMap<>(in.details());
+    d.put("requirements", "선택 요구사항");
+    d.put("optionalConsent", "false");
+    status(
+        400,
+        () -> service.create(owner, new Create(in.kind(), d, true, CONSENT, in.idempotencyKey())));
+    d.put("requirements", "");
+    d.put("school", "");
+    d.put("grade", "");
+    d.put("inquiryType", "일정");
+    d.put("message", "합성 문의");
+    d.put("termsAccepted", "false");
+    assertThat(
+            service
+                .create(owner, new Create(Kind.INQUIRY, d, true, CONSENT, in.idempotencyKey()))
+                .kind())
+        .isEqualTo(Kind.INQUIRY);
+  }
+
+  @Test
+  void givenRetentionReviewMissingOrOpenCase_whenErasing_thenNoDeletion() throws Exception {
+    var r = create();
+    service.upload(owner, r.id(), image());
+    var retention = new ExamPrivacyRetentionService(repo, files, tx, "");
+    status(403, () -> retention.plan(owner));
+    status(409, () -> retention.erase(admin, r.id(), r.version(), true, true));
+    try (var paths = Files.list(directory)) {
+      assertThat(paths.count()).isEqualTo(1);
+    }
+    var enabled = new ExamPrivacyRetentionService(repo, files, tx, PRIVACY);
+    status(409, () -> enabled.erase(admin, r.id(), r.version(), true, true));
+  }
+
+  @Test
+  void givenExpiredClosedRequest_whenErasing_thenFilesRemovedAndContractPreserved()
+      throws Exception {
+    var b = service.saveBank(admin, new Bank("합성은행", "test-only", "합성", false, 0));
+    service.approveBank(admin, b.version());
+    var r = create();
+    service.upload(owner, r.id(), image());
+    r = repo.get(r.id(), false);
+    service.paymentRequested(owner, r.id(), r.version(), "합성 입금자");
+    r = repo.get(r.id(), false);
+    r = service.requestAction(owner, r.id(), r.version(), "REFUND", "보존 대상 환불 사유");
+    String refundId =
+        repo.actions(r.id()).stream()
+            .filter(a -> a.kind().equals("REFUND"))
+            .findFirst()
+            .orElseThrow()
+            .id();
+    service.resolveAction(admin, r.id(), r.version(), refundId, "REJECTED", null, "보존 대상 법적 판단 근거");
+    repo.jdbc()
+        .update(
+            "UPDATE exam_intake_request SET state='COMPLETE',updated_at=? WHERE id=?",
+            java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(31L * 86400)),
+            r.id());
+    r = repo.get(r.id(), false);
+    var retention = new ExamPrivacyRetentionService(repo, files, tx, PRIVACY);
+    assertThat(retention.plan(admin)).hasSize(1);
+    retention.erase(admin, r.id(), r.version(), true, true);
+    try (var paths = Files.list(directory)) {
+      assertThat(paths.count()).isZero();
+    }
+    assertThat(repo.get(r.id(), false).details().toString())
+        .doesNotContain("synthetic@example.invalid", "합성 시험 범위");
+    assertThat(repo.get(r.id(), false).offer().get("priceWon")).isEqualTo(20000);
+    assertThat(
+            repo.actions(r.id()).stream()
+                .filter(a -> a.kind().equals("PAYMENT_CONFIRMATION"))
+                .findFirst()
+                .orElseThrow()
+                .body())
+        .contains("합성 입금자");
+    assertThat(
+            repo.actions(r.id()).stream()
+                .filter(a -> a.kind().equals("REFUND"))
+                .findFirst()
+                .orElseThrow()
+                .body())
+        .contains("보존 대상 환불 사유");
+    assertThat(
+            repo.actions(r.id()).stream()
+                .filter(a -> a.kind().equals("ACTION_REVIEW"))
+                .findFirst()
+                .orElseThrow()
+                .body())
+        .contains("보존 대상 법적 판단 근거");
+    assertThat(retention.plan(admin)).isEmpty();
+  }
+
+  @Test
+  void givenFileErasureFailure_whenRetried_thenNoFalseSuccessAndResourcesPreserved()
+      throws Exception {
+    var initial = create();
+    service.upload(owner, initial.id(), image());
+    var r = repo.get(initial.id(), false);
+    repo.jdbc()
+        .update(
+            "UPDATE exam_intake_request SET state='CANCELLED',updated_at=? WHERE id=?",
+            java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(31L * 86400)),
+            r.id());
+    var broken = spy(files);
+    doThrow(new IOException("synthetic")).when(broken).discard(anyString());
+    var retention = new ExamPrivacyRetentionService(repo, broken, tx, PRIVACY);
+    status(503, () -> retention.erase(admin, r.id(), r.version(), true, true));
+    assertThat(repo.documents(r.id()).getFirst().hidden()).isTrue();
+    assertThat(retention.plan(admin)).hasSize(1);
+    status(
+        409,
+        () ->
+            service.requestAction(owner, r.id(), r.version(), "PRIVACY_REQUEST", "during cleanup"));
+    new ExamPrivacyRetentionService(repo, files, tx, PRIVACY)
+        .erase(admin, r.id(), r.version(), true, true);
+    assertThat(retention.plan(admin)).isEmpty();
+  }
+
+  @Test
+  void givenCancelledRequest_whenSubjectRequestsErasure_thenRightsRemainAndNoMinimumRetention() {
+    var r = create();
+    repo.jdbc().update("UPDATE exam_intake_request SET state='CANCELLED' WHERE id=?", r.id());
+    r = service.requestAction(owner, r.id(), r.version(), "PRIVACY_REQUEST", "개인정보 삭제 요청");
+    var action =
+        repo.actions(r.id()).stream()
+            .filter(a -> a.kind().equals("PRIVACY_REQUEST"))
+            .findFirst()
+            .orElseThrow();
+    for (String state : List.of("REVIEWING", "APPROVED", "RESOLVED"))
+      r = service.resolveAction(admin, r.id(), r.version(), action.id(), state, null, "합성 요청 검토");
+    new ExamPrivacyRetentionService(repo, files, tx, PRIVACY)
+        .erase(admin, r.id(), r.version(), true, true);
+    assertThat(repo.get(r.id(), false).details().get("contact")).isEmpty();
   }
 }
