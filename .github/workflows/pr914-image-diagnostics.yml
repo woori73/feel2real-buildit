@@ -1,0 +1,31 @@
+name: Character image read-only diagnosis
+on:
+  pull_request:
+    paths:
+      - 'e2e/pr914-image-diagnostics/**'
+      - '.github/workflows/pr914-image-diagnostics.yml'
+      - 'src/main/resources/static/js/f2r_home_presentation.js'
+      - 'src/main/resources/templates/public/landing.html'
+permissions:
+  contents: read
+jobs:
+  anonymous-browser:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --prefix e2e/unified-assistant
+      - run: cd e2e/unified-assistant && npx playwright install --with-deps chromium
+      - name: GET-only production baseline and browser-only candidate overlay
+        env:
+          NODE_PATH: ${{ github.workspace }}/e2e/unified-assistant/node_modules
+        run: node e2e/pr914-image-diagnostics/read-only.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: character-image-diagnosis
+          path: image-evidence
+          retention-days: 14
