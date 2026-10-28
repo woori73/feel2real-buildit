@@ -50,11 +50,12 @@ jobs:
           # Schema proposal was installed only in this fresh CI DB; baseline 0 still runs existing V1.
           java -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091 --spring.flyway.baseline-version=0 --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.private-directory="$RUNNER_TEMP/exam-private" --app.exam-intake.email-notifications-enabled=false --app.file.upload-dir="$RUNNER_TEMP/general-files" > "$RUNNER_TEMP/exam-app.log" 2>&1 &
           echo "EXAM_APP_PID=$!" >> "$GITHUB_ENV"
+          # Public homepage is the readiness probe; intake API remains authenticated.
           for attempt in {1..90}; do
-            if curl -fsS http://localhost:8091/api/exam-intake/config > /dev/null; then break; fi
+            if curl -fsS http://localhost:8091/ > /dev/null; then break; fi
             sleep 1
           done
-          curl -fsS http://localhost:8091/api/exam-intake/config > /dev/null
+          curl -fsS http://localhost:8091/ > /dev/null
       - name: Real local application/browser regression
         run: |
           export NODE_PATH="$GITHUB_WORKSPACE/e2e/unified-assistant/node_modules"
