@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>영어 기말고사 문의·신청 | Feel2Real</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="/css/exam_service.css" />
+  </head>
+  <body th:attr="data-admin=${adminView}">
+    <main class="intake">
+      <header>
+        <a href="/">← Feel2Real</a
+        ><a th:if="${adminView}" href="/admin/hub">관리자 허브</a>
+        <h1
+          th:text="${adminView} ? '기말고사 접수 관리' : '문의·신청·자료 제출'"
+        ></h1>
+        <p id="offerSummary"></p>
+      </header>
+      <p id="notice" role="status" aria-live="polite"></p>
+      <section th:unless="${adminView}" aria-labelledby="createTitle">
+        <h2 id="createTitle">새 문의·신청</h2>
+        <form id="intakeForm">
+          <div class="grid">
+            <label
+              >접수 종류<select name="kind">
+                <option value="APPLICATION">맞춤 문제 신청</option>
+                <option value="INQUIRY">문의</option>
+              </select></label
+            ><label
+              >신청자 이름<input
+                name="name"
+                maxlength="120"
+                required
+                autocomplete="name" /></label
+            ><label>학교<input name="school" maxlength="120" required /></label
+            ><label>학년<input name="grade" maxlength="120" required /></label
+            ><label
+              >연락 방법<select name="contactMethod">
+                <option value="EMAIL">이메일</option>
+                <option value="PHONE">전화</option>
+                <option value="KAKAO">카카오톡</option>
+              </select></label
+            ><label
+              >연락처<input name="contact" maxlength="120" required
+            /></label>
+          </div>
+          <div id="applicationFields" class="grid">
+            <label>시험일<input type="date" name="examDate" required /></label
+            ><label
+              >기출문제 보유<select name="pastPapers">
+                <option value="YES">있음</option>
+                <option value="NO">없음</option>
+              </select></label
+            ><label
+              >원하는 문제 유형<input
+                name="questionTypes"
+                maxlength="120"
+                required /></label
+            ><label
+              >난이도<input name="difficulty" maxlength="120" required /></label
+            ><label
+              >시험지 형식<input
+                name="format"
+                maxlength="120"
+                required /></label
+            ><label class="wide"
+              >시험 범위<textarea
+                name="scope"
+                maxlength="2000"
+                required
+              ></textarea></label
+            ><label class="wide"
+              >추가 요구사항<textarea
+                name="requirements"
+                maxlength="2000"
+              ></textarea>
+            </label>
+          </div>
+          <div id="inquiryFields" hidden>
+            <label
+              >문의 유형<input
+                name="inquiryType"
+                maxlength="120"
+                disabled /></label
+            ><label
+              >문의 내용<textarea
+                name="message"
+                maxlength="2000"
+                disabled
+              ></textarea>
+            </label>
+          </div>
+          <details>
+            <summary>개인정보 수집·이용 및 취소 안내</summary>
+            <p>
+              문의 답변과 맞춤 문제 제작을 위해 이름, 학교·학년, 연락처, 시험
+              범위와 제출 자료를 수집합니다. 제출 파일은 담당 관리자만
+              열람합니다. 개인정보와 파일은 목적 달성 후 관계 법령 및 보존
+              정책에 따라 삭제하거나 비식별화합니다.
+            </p>
+            <p>
+              취소·환불은 콘텐츠 제작·제공 상태와 관계 법령을 검토해 개별
+              안내하며 자동 공제하지 않습니다. 실제 입금 전에 제작 가능 일정과
+              조건을 확인해 주세요.
+            </p>
+          </details>
+          <label class="check"
+            ><input type="checkbox" name="consent" required />개인정보 수집·이용
+            및 취소 안내를 읽고 동의합니다.</label
+          ><button type="submit">접수하기</button>
+        </form>
+      </section>
+      <section th:if="${adminView}">
+        <h2>통장입금 계좌 설정</h2>
+        <p>저장한 뒤 별도로 승인해야 신청자에게 표시됩니다.</p>
+        <form id="bankForm" class="grid">
+          <label>은행명<input name="bankName" maxlength="80" required /></label
+          ><label
+            >계좌번호<input
+              name="accountNumber"
+              maxlength="80"
+              required /></label
+          ><label
+            >예금주<input name="accountHolder" maxlength="80" required /></label
+          ><button type="submit">계좌 저장·미승인으로 전환</button>
+        </form>
+        <button id="approveBank" type="button" disabled>
+          표시할 계좌 승인
+        </button>
+        <p id="bankStatus"></p>
+      </section>
+      <section>
+        <h2 th:text="${adminView} ? '접수 목록' : '내 접수 내역'"></h2>
+        <button id="refresh" type="button">새로고침</button>
+        <div id="requests"></div>
+        <div class="actions">
+          <button id="previous" type="button">이전</button
+          ><span id="pageNumber"></span
+          ><button id="next" type="button">다음</button>
+        </div>
+      </section>
+      <section id="requestDetail" hidden aria-labelledby="detailTitle">
+        <h2 id="detailTitle" tabindex="-1"></h2>
+        <div id="details"></div>
+        <p id="progress"></p>
+        <h3>제출 자료</h3>
+        <p>
+          제출 파일 본문은 관리자만 열람하며, 검사 대기 자료는 열람할 수
+          없습니다.
+        </p>
+        <div id="documents"></div>
+        <form id="uploadForm">
+          <label
+            >PDF·JPEG·PNG 첨부 (파일당 10MiB)<input
+              type="file"
+              name="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              required /></label
+          ><button type="submit">자료 제출 / 실패 시 재시도</button>
+        </form>
+        <div th:unless="${adminView}">
+          <h3>입금 확인 요청</h3>
+          <p id="bankGuide"></p>
+          <form id="paymentForm">
+            <label>입금자명<input name="payer" maxlength="80" required /></label
+            ><button id="paymentRequest" type="submit" disabled>
+              입금했습니다 — 확인 요청
+            </button>
+          </form>
+          <p>
+            이 버튼은 입금 완료 처리가 아닙니다. 관리자가 확인한 뒤 상태가
+            변경됩니다.
+          </p>
+        </div>
+        <h3>수정·삭제·취소·환불 요청</h3>
+        <form id="actionForm">
+          <label
+            >요청 유형<select name="kind">
+              <option value="UPDATE_DETAILS">
+                제작 전 신청 내용 변경 요청
+              </option>
+              <option value="REVISION">문제 수정 요청</option>
+              <option value="CANCEL">취소 요청</option>
+              <option value="REFUND">환불 검토 요청</option>
+            </select></label
+          ><label
+            >요청 내용<textarea
+              name="body"
+              maxlength="2000"
+              required
+            ></textarea></label
+          ><button type="submit">요청 접수</button>
+        </form>
+        <div th:if="${adminView}">
+          <h3>관리자 처리</h3>
+          <form id="amendForm" hidden>
+            <h4>승인한 신청 내용 변경 반영</h4>
+            <label>변경 요청<select name="actionId"></select></label>
+            <div id="amendFields" class="grid"></div>
+            <button type="submit">검토한 내용으로 변경 반영</button>
+          </form>
+          <form id="stateForm">
+            <label
+              >다음 상태<select name="state">
+                <option value="AWAITING_DEPOSIT">입금 대기</option>
+                <option value="CONFIRMED">실제 입금 확인 완료</option>
+                <option value="PRODUCTION">제작 시작</option>
+                <option value="COMPLETE">검수·처리 완료</option>
+              </select></label
+            ><button type="submit">상태 기록</button>
+          </form>
+          <form id="deliveryForm">
+            <label
+              >전달 회차<input
+                type="number"
+                name="ordinal"
+                min="1"
+                max="4"
+                required /></label
+            ><label
+              >전달 채널과 내역<input
+                name="note"
+                maxlength="500"
+                required /></label
+            ><button type="submit">전달 완료 기록</button>
+          </form>
+        </div>
+        <h3>요청·처리 이력</h3>
+        <div id="history"></div>
+      </section>
+      <section th:if="${adminView}">
+        <h2>알림 상태와 관리자 확인</h2>
+        <p>
+          48시간 미처리 알림은 점검 요청입니다. 전송 실패와 실제 접수 실패는
+          별개입니다.
+        </p>
+        <div id="events"></div>
+      </section>
+    </main>
+    <script src="/js/exam_service.js?v=20261028-1" defer></script>
+  </body>
+</html>

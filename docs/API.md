@@ -5063,3 +5063,13 @@ MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시�
 - 운영 base-domain이 설정된 `GET /academies/{slug}`: 없거나 미공개·미게시인 학원은 HTML도 404. 공개 학원의 기존 서브도메인 301과 handle 없는 legacy 200은 유지한다.
 - 공개 학원 목록·블로그·privacy 및 `/register`, `/testprep`는 쿼리를 제외한 HTTPS canonical을 서버 head에 제공한다. 복귀 파라미터 기능과 인증 정책은 바꾸지 않는다.
 - 관리자·강사·회원·Studio 한정 경로는 X-Robots-Tag noindex,nofollow를 추가하며 인증·인가·401/403·로그인 이동은 유지한다. 구체적 경로·GSC 실제 51개 URL·전후 비교는 [2026-10-26 색인 조사](seo/indexing-audit-20261026.md)를 참조한다.
+
+## 영어 기말고사 신청 (P1, 기본 비활성 / 운영 미설치)
+
+`app.exam-intake.enabled=false`. [설계 및 활성화 경계](home-exam/P1-DESIGN.md).
+GET `/api/exam-intake/config`, 로그인 후 GET/POST `/api/exam-intake/requests`, GET `/{id}`, POST `/{id}/documents`, `/{id}/actions`, `/{id}/payment-confirmation`.
+기존 인증 principal 재사용. 모든 변경은 같은 origin + `X-F2R-Exam: 1` 필수. owner 또는 ADMIN만 해당 접수 메타데이터 조회 가능.
+ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(승인된 제작 전 변경 요청 처리), `/{id}/deliveries`, `/{id}/actions/{action}`, `/{id}/documents/{document}`(다운로드), `/{id}/documents/{document}/rescan`.
+계좌 GET/PUT `/api/admin/exam-intake/bank`, POST `/bank/approve`; 일반 로그인 사용자 GET `/api/exam-intake/bank`는 승인본만 반환.
+알림 GET `/api/admin/exam-intake/events`, POST `/events/{id}/ack`.
+모든 응답 `private, no-store`. 변경 버전 불일치 409, 다른 소유자 ID 404, 파일 열람은 ADMIN만(일반 소유자도 403), 검사 미완료 자료 409.
