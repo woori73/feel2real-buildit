@@ -38,3 +38,7 @@ docker compose -f docker-compose.main.yaml down -v
 ## 개발 흐름
 
 기본 작업은 `main`에서 진행하고, 검증 후 PR로 `main`에 병합한다. 배포는 GitHub Actions의 수동 EC2 배포 workflow로만 수행한다. 상세 규칙은 `docs/WORKFLOW.md`를 따른다.
+
+## 영어 기말고사 현재 상품
+
+현재 판매 조건은 **2주 · 주 2회 · 총 4회 · 회당 40문항 · 총 160문항 · 20,000원**입니다. 서버 기준은 `HomeExamOffer.CURRENT`이며 과거 계약에는 소급 적용하지 않습니다. [개편 범위와 검증 안내](docs/home-exam/P0-20261028.md).

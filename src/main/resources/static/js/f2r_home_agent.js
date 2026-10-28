@@ -16,7 +16,7 @@
 
   // 요청 의도 → 안내. 링크는 이미 공개된 실제 경로만 쓴다.
   var INTENTS = [
-    { id: 'exam', words: ['예상문제', '시험지', '내신 시험', '의뢰', '시험 대비', '중간고사', '기말고사', '이용권', '신청', '주문', '시험 범위', '시험범위', '자료 제출', '단체 신청', '학부모', '240문항'] },
+    { id: 'exam', words: ['예상문제', '시험지', '내신 시험', '의뢰', '시험 대비', '중간고사', '기말고사', '이용권', '신청', '주문', '시험 범위', '시험범위', '자료 제출', '단체 신청', '학부모', '160문항'] },
     { id: 'english', words: ['영어', '문법', '단어', '독해', '공부', '학습', '내신', '영문법'] },
     { id: 'wiki', words: ['모의고사', '해설', '기출', '수능'] },
     // 같은 점수면 앞의 의도를 고른다: '학원 홈페이지'는 업무보다 홈페이지 제작으로 안내한다.
@@ -38,13 +38,19 @@
     return best;
   }
 
+  // The server owns the current offer. Pure callers may supply the same rendered summary.
+  function offerSummary(ctx) {
+    var home = typeof document !== 'undefined' && document.getElementById('aiHome');
+    return (ctx && ctx.offerSummary) || (home && home.dataset.offerSummary) || '이용권 구성과 금액은 홈페이지의 이용 안내를 확인해 주세요.';
+  }
+
   /** 의도별 안내 문장과 버튼. staff: 로그인한 원장·강사·관리자, studio: 제작협업실 접근 확인 여부(문구만 달라짐). */
   function replyFor(intent, ctx) {
     var c = ctx || {};
     switch (intent) {
       case 'exam':
-        return { text: '기말고사 맞춤 이용권은 20,000원으로 3주 동안 매주 2회, 총 6회(회당 40문항, 총 240문항)를 안내합니다. 학교·학년·시험 범위·최근 기출·선생님 힌트를 보내 주세요. 현재는 카톡·이메일로 접수 안내하며 결제는 별도로 확인합니다.',
-          links: [{ label: '기말고사 이용권 신청 (카톡)', href: KAKAO, external: true, primary: true }, { label: '이메일 신청·자료 제출', href: 'mailto:woorinaesin@naver.com' }, { label: '실제 적중 사례 보기', href: '#exam-hit' }] };
+        return { text: offerSummary(c) + ' 학교·학년·시험 범위·최근 기출·선생님 힌트를 보내 주세요. 현재는 카톡·이메일로 접수 안내하며 결제는 별도로 확인합니다.',
+          links: [{ label: '기말고사 이용권 신청 (카톡)', href: KAKAO, external: true, primary: true }, { label: '이메일 신청·자료 제출', href: 'mailto:woorinaesin@naver.com' }, { label: '학교별 활용 사례 보기', href: '#exam-hit' }] };
       case 'english':
         return { text: 'AI 영어교육 서비스를 안내해 드릴게요. 문법 문제은행과 모의고사위키는 바로 볼 수 있습니다.',
           links: [{ label: '문법 문제은행', href: '/grammar-items', primary: true }, { label: '모의고사위키', href: '/wiki' }, { label: '내신 예상문제', href: '#svc-exam' }] };
@@ -113,7 +119,7 @@
     get: function (k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (_) { /* 저장 불가 환경 */ } }
   };
-  var ui = { agent: 'seven', user: null, media: null, base: null, state: 'idle', clip: null, sw: { front: 0, token: 0 } };
+  var ui = { agent: 'suni', user: null, media: null, base: null, state: 'idle', clip: null, sw: { front: 0, token: 0 } };
 
   function staff() { return !!(ui.user && (ui.user.role === 'ADMIN' || ui.user.role === 'TUTOR')); }
   function studioAllowed() { return !!(ui.user && ui.user.role === 'ADMIN'); }
@@ -182,11 +188,10 @@
   function welcome(force) {
     var log = $('homeChat');
     if (!log) return;
-    var name = AGENTS[ui.agent].name;
     var later = store.get(WELCOME_KEY) === 'later' && !force;
     if (later) { bubble('agent', '다시 오셨네요. 기말고사 이용권 신청이나 시험 범위 제출을 도와드릴까요?'); return; }
     var choices = mainChoices().concat([{ label: '나중에', onClick: function () { store.set(WELCOME_KEY, 'later'); bubble('agent', '알겠습니다. 필요할 때 아래 입력창이나 홀로그램 버튼을 눌러 주세요.'); } }]);
-    bubble('agent', '안녕하세요. 저는 ' + name + '입니다. 기말고사 맞춤 문제를 신청하시겠어요? 3주·6회·240문항 이용권은 20,000원입니다. 학교와 시험 범위를 알려주시면 접수 방법을 안내해 드릴게요.', choices);
+    bubble('agent', '학교와 시험 범위를 알려 주세요. ' + offerSummary() + ' 접수 방법을 안내해 드릴게요.', choices);
   }
 
   function portrait() {
@@ -266,7 +271,7 @@
   function playGreeting() {
     var line = greetingFor(ui.agent, mediaFiles());
     if (!line || ui.state === 'greeting') return;
-    bubble('agent', line);
+    bubble('agent', 'Feel2Real에 오신 걸 환영합니다. 무엇을 도와 드릴까요?');
     setState('greeting');
   }
   function stopGreeting() {
@@ -320,7 +325,7 @@
         portrait();
         // 캐릭터를 고르면(사용자 클릭 = 소리 재생 허용) 인사 영상을 소리와 함께 바로 재생한다. 인사 영상이 없으면 글로만 안내한다.
         if (greetingFor(ui.agent, mediaFiles())) playGreeting();
-        else bubble('agent', AGENTS[ui.agent].name + '입니다. 이어서 도와드릴게요.');
+        else bubble('agent', '이어서 도와드릴게요. 학교와 시험 범위를 알려 주세요.');
       });
     });
     [$('homeVideo'), $('homeVideoAlt')].forEach(function (video) {
@@ -344,7 +349,7 @@
   function init() {
     if (!$('homeStage')) return;
     var saved = store.get(AGENT_KEY);
-    ui.agent = AGENTS[saved] ? saved : 'seven';
+    ui.agent = AGENTS[saved] ? saved : 'suni';
     document.body.dataset.agentTheme = ui.agent;
     ui.user = readUser();
     bind();

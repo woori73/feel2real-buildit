@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.template;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer;
 import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,9 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 /** Feel2Real | EDUNOVA 홈 계약: 확정 문구·실제 링크·폐기 서비스 비노출. DB 없이 실제 렌더한다. */
 class LandingEdunovaTemplateContractTest {
 
-  private static String render() {
+  private static String render() { return render("public/landing"); }
+
+  private static String render(String template) {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
@@ -22,11 +25,14 @@ class LandingEdunovaTemplateContractTest {
     TemplateEngine engine = new TemplateEngine();
     engine.setTemplateResolver(resolver);
     engine.addDialect(new LayoutDialect());
-    return engine.process("public/landing", new Context());
+    Context context = new Context();
+    context.setVariable("examOffer", HomeExamOffer.CURRENT);
+    context.setVariable("examPromoPath", "");
+    return engine.process(template, context);
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 레이아웃이 해석되고 AI AGENT 이미지·1회 20,000원·40문항·의뢰 버튼이 있다")
+  @DisplayName("given 홈 when 렌더하면 then 레이아웃이 해석되고 AI AGENT 이미지·2주 160문항·40문항·의뢰 버튼이 있다")
   void hero_showsAgentImageAndOffer() {
     // given / when
     String html = render();
@@ -39,12 +45,12 @@ class LandingEdunovaTemplateContractTest {
         .contains("/images/ai-agent-banner-m.webp")
         .doesNotContain("/images/ai-agent-hero.jpg")
         .contains("제작 예정")
-        .contains("1회 20,000원")
+        .contains("2주 동안 160문항")
         .contains("40문항")
         .contains("https://open.kakao.com/o/sMf4ifRi")
         .contains("mailto:woorinaesin@naver.com")
         .doesNotContain("/exam-request")
-        .contains("예상문제 의뢰하기");
+        .contains("카카오톡 문의·신청");
   }
 
   @Test
@@ -87,8 +93,8 @@ class LandingEdunovaTemplateContractTest {
     // then
     assertThat(html)
         .contains("Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.")
-        .contains("기말고사 시험기간 이용권 20,000원 안내")
-        .contains("href=\"#pass-offer\"")
+        .contains("기출과 아주 유사한")
+        .contains("id=\"pass-offer\"")
         .contains("href=\"/wiki\"")
         .doesNotContain("탑재 완료")
         .doesNotContain("10월 21일 탑재 예정");
@@ -105,10 +111,10 @@ class LandingEdunovaTemplateContractTest {
     int ai = html.indexOf("id=\"ai-content\"");
     assertThat(exam).isPositive();
     assertThat(dash).isGreaterThan(exam);
-    assertThat(ai).isGreaterThan(dash);
+    assertThat(dash).isGreaterThan(ai);
     assertThat(html).contains("AI 콘텐츠 제작").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
-    assertThat(html).contains("class=\"en-coming-soon\"").contains("COMING SOON").doesNotContain("href=\"#top\"").doesNotContain("href=\"#\"");
-    assertThat(html).contains("2026년 11월 1일").contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
+    assertThat(html).contains("제작 예정").doesNotContain("href=\"#\"");
+    assertThat(html).contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
   }
 
   @Test
@@ -118,26 +124,17 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("40문항 직보 예상문제,")
-        .contains("실제 적중률 100%")
-        .contains("압구정중2 영어 시험은 어떻게 나왔을까?")
-        .contains("href=\"#exam-hit\"")
-        .contains("100% 출제")
-        .contains("외부지문 2문항(5 · 9번) 제외, 28문항 전부")
+        .contains("압구정에듀홀릭 활용 사례")
+        .contains("기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.")
+        .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    int hero = html.indexOf("id=\"enExamCta\"");
-    int hit = html.indexOf("id=\"exam-hit\"");
-    int hitBlog = html.indexOf("id=\"enHitBlog\"");
-    int chart = html.indexOf("id=\"chart-showcase\"");
-    int notice = html.indexOf("class=\"en-notice\"");
-    int services = html.indexOf("id=\"svc-exam\"");
-    // 공지는 상단(히어로 직후), 적중 성과가 그 다음, BUILD IT CHART는 맨 마지막
-    assertThat(hero).isPositive();
-    assertThat(notice).isGreaterThan(hero);
-    assertThat(hit).isGreaterThan(notice);
-    assertThat(hitBlog).isGreaterThan(hit);
-    assertThat(services).isGreaterThan(hitBlog);
-    assertThat(chart).isGreaterThan(services);
+    String[] sections = {"aiHome", "svc-exam", "exam-samples", "exam-hit", "exam-blog", "exam-contact", "exam-payment", "ai-content", "chart-showcase"};
+    int previous = -1;
+    for (String id : sections) {
+      int next = html.indexOf("id=\"" + id + "\"");
+      assertThat(next).as(id).isGreaterThan(previous);
+      previous = next;
+    }
   }
 
   @Test
@@ -162,8 +159,8 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("class=\"en-mail-addr\">woorinaesin@naver.com</b>")
-        .contains("data-copy-mail=\"woorinaesin@naver.com\"")
+        .contains("href=\"mailto:woorinaesin@naver.com\"")
+        .contains("data-copy-address=\"woorinaesin@naver.com\"")
         .contains("params.get('login') !== 'required'")
         .contains("f2r:login");
   }
@@ -176,7 +173,7 @@ class LandingEdunovaTemplateContractTest {
     String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
     String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("class=\"en-mobile-services\""));
     String mobile = html.substring(html.indexOf("class=\"en-mobile-services\""), html.indexOf("<main"));
-    String hero = html.substring(html.indexOf("class=\"en-hero\""), html.indexOf("class=\"en-offer\""));
+    String hero = html.substring(html.indexOf("class=\"en-hero-art\""), html.indexOf("id=\"agentHighlightSlot\""));
     // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
     assertThat(nav).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
     assertThat(drawer).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
@@ -202,4 +199,40 @@ class LandingEdunovaTemplateContractTest {
           .contains("href=\"/ai-agent-studio\"");
     }
   }
+  @Test
+  @DisplayName("given current offer when rendered then all sales/SEO use 14 days, four deliveries, 160 questions without stale copy")
+  void currentOffer_and_renderedEvidence() throws Exception {
+    String html = render();
+    assertThat(html).contains("2주 동안 160문항", "20,000원", "총 4회", "회당 40문항")
+        .doesNotContain("3주", "240문항", "총 6회", "30,000원", "1회 20,000원");
+    assertThat(html).contains("data-offer-version=\"final-exam-20261028-v2\"")
+        .contains("id=\"examPromo\"").doesNotContain("src=\"\"");
+    java.nio.file.Path output = java.nio.file.Path.of("build/verification/home-after.html");
+    java.nio.file.Files.createDirectories(output.getParent());
+    java.nio.file.Files.writeString(output, html);
+    String baseline = System.getenv("F2R_BASELINE_TEMPLATE_ROOT");
+    if (baseline != null) {
+      var old = new org.thymeleaf.templateresolver.FileTemplateResolver();
+      old.setPrefix(baseline + "/"); old.setSuffix(".html"); old.setCheckExistence(true); old.setOrder(1);
+      old.setTemplateMode(TemplateMode.HTML); old.setCharacterEncoding("UTF-8");
+      var fragments = new ClassLoaderTemplateResolver();
+      fragments.setPrefix("templates/"); fragments.setSuffix(".html"); fragments.setOrder(2);
+      fragments.setTemplateMode(TemplateMode.HTML); fragments.setCharacterEncoding("UTF-8");
+      var engine = new TemplateEngine(); engine.addTemplateResolver(old); engine.addTemplateResolver(fragments);
+      engine.addDialect(new LayoutDialect());
+      java.nio.file.Files.writeString(output.resolveSibling("home-before.html"), engine.process("before-template", new Context()));
+    }
+
+  }
+
+  @Test
+  void givenOtherCurrentSalesPaths_whenRendered_thenUseSameOfferAndSeparateEmailControls() {
+    for (String template : new String[]{"public/exam", "public/faq", "public/exam_insight"}) {
+      String html = render(template);
+      assertThat(html).as(template).contains("20,000원", "160문항", "총 4회")
+          .doesNotContain("3주", "240문항", "총 6회", "기본 1회", "1회 20,000원");
+    }
+    assertThat(render("public/exam")).contains("href=\"mailto:woorinaesin@naver.com\"", "data-copy-address");
+  }
+
 }

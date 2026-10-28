@@ -137,7 +137,7 @@ test('buildOrderMessage: 분석 번호와 상품 정보를 포함한다', () => 
   // given
   const meta = { school: 'A고', grade: '고2', publisher: '능률', examType: '중간고사' };
   // when
-  const msg = ei.buildOrderMessage('EI-123', meta);
+  const msg = ei.buildOrderMessage('EI-123', meta, '2주 · 주 2회 · 총 4회 · 회당 40문항 · 총 160문항 · 20,000원');
   // then
   assert.match(msg, /EI-123/);
   assert.match(msg, /40문항/);
