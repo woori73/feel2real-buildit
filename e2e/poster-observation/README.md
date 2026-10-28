@@ -46,3 +46,35 @@ NODE_PATH="$PWD/e2e/unified-assistant/node_modules" \
 설치된 브라우저를 쓰면 `CHROMIUM_PATH`를 지정한다. 테스트는 390px 합성 페이지에서 정상, 일시 지연, 실제 5초 초과 후 회복, HTTP 404, 손상된 200 본문, 전송 실패, 디코딩 가능한 MIME 불일치, 리다이렉트, 이미 로드된 이미지, 숨김/src 미지정, 브라우저 오류 구분·비밀값 미기록, 수집량 제한·페이지 종료, DOM 무응답을 검증한다. 서버가 본 이미지 요청 수도 확인해 관측기가 추가 fetch를 하지 않음을 검사한다.
 
 결과/캡처는 `poster-observation-results/`에 저장되고 CI가 30일 보존한다. 합성 테스트 캡처를 실제 승인 캐릭터나 운영 화면으로 표시하지 않는다. 장애 원인 해결 검증과 이 관측 기능의 CI 통과는 별개다.
+
+## PR #917 검토 결함 보완
+
+기존 `schemaVersion: 1`과 모든 기존 필드/타입을 유지하고 아래 필드를 추가한다. `visible`은 boolean을 유지하지만 이제 **보수적으로 표시가 확인된 경우만 true**다. 이전의 CSS 박스 가시성과 같은 의미로 사용하면 안 된다. `visibilityVersion: 2`로 의미 변경을 구분한다. 로딩 상태 `state`, `complete`, `naturalWidth` 및 HTTP/오류/타이밍은 그대로다.
+
+| 추가 필드 | 의미 |
+| --- | --- |
+| cssVisibility | display, visibility, 본인/조상 opacity, CSS상 가시성 |
+| viewportIntersection | 화면 교차 여부·전체 포함 여부·면적 비율 |
+| occlusion | clear/full/partial/unknown/not-tested, 제한된 히트테스트와 브라우저 paint visibility |
+| animated / visualEffects | 이미지 또는 조상 애니메이션/효과로 판정이 불확실한지 |
+| presentationState | visible/not-loaded/css-hidden/offscreen/occluded/uncertain |
+
+IntersectionObserver v2의 보수적인 paint 판정과 9개 지점의 히트테스트를 함께 사용한다. 화면 밖, CSS 숨김, 확실한 불투명 덮개는 성공으로 기록하지 않는다. 부분 가림/화면 잘림/투명도/애니메이션/시각 효과/지원 없는 브라우저/관측 시간 초과는 `uncertain`이며 `visible=false`다. `false`가 이미지 디코딩 실패를 의미하지는 않는다. 작은 `pointer-events:none` 덮개처럼 히트테스트만으로 놓칠 수 있는 사례도 paint 판정으로 성공에서 제외한다. 픽셀 단위 렌더링 정답을 보장하는 시스템은 아니며 브라우저가 확신하지 못하면 미확정으로 남긴다.
+
+브라우저 관측기는 최대 300ms 대기 후 disconnect/타이머 해제한다. 기존 전체 DOM 수집 제한은 1초이며, 둘 다 기존 이미지 **5000ms 검사와 별개**다. 새 DOM 관측 비용이 0이라고 주장하지 않는다. 운영 성능·운영 캐시는 이번 보완에서 미검증이다.
+
+### 저장 오류 격리와 정리
+
+- `save()`는 같은 디렉터리에 0600 임시 파일을 기록한 뒤 rename한다. 실패하면 이전 완성 파일을 보존하고 임시 파일·파일 디스크립터를 finally에서 정리한다.
+- 저장 실패는 `saveStatus=failed`, `diagnostics[{code,errorCode}]`에 남기며 호출자에 예외를 전파하지 않는다. 원래 PASS/FAIL은 변경하지 않는다. 성공은 `saveStatus=saved`다.
+- 디스크에 쓸 수 없으면 CI stderr에 `poster-observation` 진단을 남긴다. 예외 메시지/파일 경로/원문 민감값 없이 허용된 오류 코드만 출력한다. 로그 출력 자체가 실패해도 원래 검사 결과에 영향을 주지 않는다.
+- 공개 검사의 finally는 `finish()`로 저장→리스너 해제→context.close를 수행한다. 기존 screenshot/network-summary 처리에서도 예외가 나면 정리는 실행된다. 원래 서비스 assertion은 수정하지 않는다.
+- 프로세스 강제 종료/OS의 삭제·close 거부까지 정리를 보장할 수는 없다. 정리 실패는 별도 진단으로 표시한다. 신규 임시 파일은 다음 테스트의 성공 증거로 쓰지 않는다.
+
+회귀 검사에는 화면 밖/완전·부분·작은 가림/투명도/애니메이션/미지원 브라우저, 저장 write·rename 실패 시 PASS 유지와 이전 파일/정리 보존, 실제 5초 FAIL 오류 객체 보존, 정상 저장/정리, 기존 필드 호환성, 실제 캐시 재사용/HTTP 304가 포함된다. 기존 13개 테스트와 함께 실행한다.
+
+### 장애 자료 조회와 보존 기간
+
+GitHub Actions 해당 실행 → Artifacts → `poster-observation-local-evidence`에서 JSON/합성 캡처를 확인한다. 신규 CI 보존 기간은 30일이다. 향후 승인된 운영 실행에서는 `pr914-before-production`/`pr914-after-production`의 `{phase}/{width}/poster-observation.json`과 기존 `browser-results.json`·캡처를 함께 조회한다. 파일이 없으면 작업 로그에서 `poster-observation`의 `SAVE_FAILED`를 찾는다. `collectionErrors`, `diagnostics`, `dropped`가 있으면 증거 불완전성을 먼저 기록한다.
+
+기존 운영 검사 upload 단계에는 명시적 retention-days가 없어 저장소/조직 기본값을 따른다(기존 2026-10-28 실행은 실제 90일). 신규 합성 CI의 30일과 혼동하지 않는다. 건수 상한은 유지되지만 전체 파일의 바이트 상한은 따로 없다.

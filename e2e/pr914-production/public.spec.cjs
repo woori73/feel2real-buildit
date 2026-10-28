@@ -76,11 +76,12 @@ for (const width of [1440,360,390,430]) {
       expect(media.filter(r=>r.status>=400)).toEqual([]);
       expect(media.some(r=>r.path.endsWith('.mp4') && [200,206].includes(r.status))).toBe(true);
     } finally {
-      await page.screenshot({path:path.join(out,'final.png'),fullPage:true}).catch(()=>{});
-      fs.writeFileSync(path.join(out,'network-summary.json'),JSON.stringify({media,blocked,phase,production:true},null,2));
-      await observer.save(path.join(out,'poster-observation.json'));
-      observer.dispose();
-      await context.close();
+      try {
+        await page.screenshot({path:path.join(out,'final.png'),fullPage:true}).catch(()=>{});
+        fs.writeFileSync(path.join(out,'network-summary.json'),JSON.stringify({media,blocked,phase,production:true},null,2));
+      } finally {
+        await observer.finish(path.join(out,'poster-observation.json'),()=>context.close());
+      }
     }
   });
 }

@@ -1,7 +1,8 @@
 // Passive Playwright instrumentation. No fetch/retry, page content, credentials or response bodies.
 const fs = require('node:fs');
 const path = require('node:path');
-const {createHash} = require('node:crypto');
+const {createHash, randomUUID} = require('node:crypto');
+const {collectPosterSnapshot} = require('./poster-snapshot.cjs');
 const SELECTOR = '[data-home-agent] img, #stagePoster';
 const MEDIA = /^\/agent-media\/public\/(seven|suni)\/(poster\.jpg|front\.webp)$/;
 const MANIFEST = '/api/agent-media/public';
@@ -31,7 +32,7 @@ async function observePosters(page, {origin, limit = 200} = {}) {
   if (!Number.isInteger(limit) || limit < 1 || limit > 1000) throw new Error('Invalid observation limit');
   const report = {schemaVersion: 1, gatePolicy: 'Existing assertions and 5000ms deadline unchanged',
     requests: [], browserErrors: [], snapshots: [], dropped: {requests: 0, browserErrors: 0, snapshots: 0},
-    collectionErrors: [], automaticIncidentDecision: false};
+    collectionErrors: [], diagnostics: [], saveStatus: 'not-attempted', automaticIncidentDecision: false};
   const tracked = new WeakMap(), listeners = [];
   let nextId = 0;
   const append = (key, value) => {
@@ -94,23 +95,7 @@ async function observePosters(page, {origin, limit = 200} = {}) {
   async function checkpoint(label) {
     let timer;
     try {
-      const data = await Promise.race([page.evaluate(({origin, selector}) => {
-        const safePath = url => { try { const u = new URL(url, location.href); return u.origin === origin && /^\/agent-media\/public\/(seven|suni)\/(poster\.jpg|front\.webp)$/.test(u.pathname) ? u.pathname : null; } catch { return null; } };
-        const state = window.__f2rPosterObservationV1;
-        return {timeOrigin: performance.timeOrigin, atMs: performance.now(), images: [...document.querySelectorAll(selector)].slice(0,10).map(e => {
-          const assigned = !!e.getAttribute('src'), rect = e.getBoundingClientRect(), style = getComputedStyle(e);
-          const agent = e.closest('[data-home-agent]')?.dataset.homeAgent;
-          return {role: e.id === 'stagePoster' ? 'stage-poster' : 'choice', agent: ['seven','suni'].includes(agent) ? agent : null,
-            path: assigned ? safePath(e.currentSrc || e.src) : null, assigned, complete: e.complete,
-            naturalWidth: e.naturalWidth, naturalHeight: e.naturalHeight,
-            state: !assigned ? 'not-requested' : !e.complete ? 'loading' : e.naturalWidth > 0 ? 'loaded' : 'not-decoded',
-            visible: !!(rect.width && rect.height && style.visibility === 'visible' && style.display !== 'none' && (!e.checkVisibility || e.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}))),
-            width: rect.width, height: rect.height};
-        }), imageEvents: state?.events || [], imageEventsDropped: state?.dropped || 0,
-        resourceTiming: performance.getEntriesByType('resource').filter(r => safePath(r.name)).slice(-200).map(r => ({path: safePath(r.name),
-          durationMs: r.duration, transferSize: r.transferSize, encodedBodySize: r.encodedBodySize, decodedBodySize: r.decodedBodySize,
-          workerStart: r.workerStart, deliveryType: ['cache','navigational-prefetch'].includes(r.deliveryType) ? r.deliveryType : 'unknown'}))};
-      }, {origin, selector: SELECTOR}), new Promise((_,reject) => { timer = setTimeout(() => reject(new Error('Snapshot deadline')), 1000); })]);
+      const data = await Promise.race([page.evaluate(collectPosterSnapshot, {origin, selector: SELECTOR}), new Promise((_,reject) => { timer = setTimeout(() => reject(new Error('Snapshot deadline')), 1000); })]);
       // Loading is a state, never an automatic incident. Preserve later successful recovery.
       for (const image of data.images) {
         image.loadedAfterObservedWait = image.state === 'loaded' && report.snapshots.some(s => s.timeOrigin === data.timeOrigin && s.images.some(old =>
@@ -121,12 +106,39 @@ async function observePosters(page, {origin, limit = 200} = {}) {
     finally { clearTimeout(timer); }
     return report;
   }
+  function diagnostic(code, error) {
+    const errorCode=['ENOSPC','EACCES','EROFS','EIO','ENOENT','EDQUOT','EPERM'].includes(error?.code)?error.code:'UNKNOWN';
+    if(report.diagnostics.length<10)report.diagnostics.push({code,errorCode});
+    // No paths, exception messages, tokens or page data in fallback output.
+    try { process.stderr.write(JSON.stringify({source:'poster-observation',code,errorCode})+'\n'); } catch { /* logging must not change the gate */ }
+  }
   async function save(file) {
-    await checkpoint('final');
-    fs.mkdirSync(path.dirname(file), {recursive:true});
-    fs.writeFileSync(file, JSON.stringify(report,null,2));
+    let temporary, fd;
+    try {
+      await checkpoint('final');
+      fs.mkdirSync(path.dirname(file), {recursive:true});
+      temporary=path.join(path.dirname(file),'.poster-observation-'+randomUUID()+'.tmp');
+      fd=fs.openSync(temporary,'wx',0o600);
+      report.saveStatus='saved';
+      fs.writeFileSync(fd,JSON.stringify(report,null,2));
+      fs.closeSync(fd); fd=undefined;
+      fs.renameSync(temporary,file); temporary=undefined;
+    } catch(error) {
+      report.saveStatus='failed'; diagnostic('SAVE_FAILED',error);
+    } finally {
+      if(fd!==undefined)try { fs.closeSync(fd); } catch(error) { diagnostic('CLOSE_FAILED',error); }
+      if(temporary)try { fs.unlinkSync(temporary); } catch(error) { if(error.code!=='ENOENT')diagnostic('TEMP_CLEANUP_FAILED',error); }
+    }
     return report;
   }
-  return {checkpoint, save, report, dispose: () => listeners.forEach(([event, callback]) => page.off(event, callback))};
+  function dispose() { for(const [event,callback] of listeners.splice(0))page.off(event,callback); }
+  async function finish(file, close) {
+    try { await save(file); } finally {
+      try { dispose(); } finally {
+        try { await close(); } catch(error) { diagnostic('CONTEXT_CLOSE_FAILED',error); }
+      }
+    }
+  }
+  return {checkpoint, save, report, dispose, finish};
 }
 module.exports = {observePosters};
