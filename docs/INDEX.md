@@ -61,3 +61,4 @@
 - 통합 대시보드·AI 업무 비서(작업 A, 로컬 프로토타입): [분석·설계](unified-ai-assistant/README.md), [검증 결과](unified-ai-assistant/verification.md)
 
 - 제작 협업실 단계별 확장·실제 자료 적재: [구현과 검증](studio-collaboration/README.md)
+- PR #914 고정 UI 운영 자동화(CloudFormation/OIDC/백업·복구): [설치 및 검증 상태](operations/pr914/README.md).

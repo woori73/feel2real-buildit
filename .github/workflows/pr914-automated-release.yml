@@ -1,0 +1,207 @@
+name: PR914 automated release
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'preflight=권한·백업·실제 화면 확인, release=승인된 PR914 병합·CI·배포'
+        type: choice
+        options: [preflight, release]
+        default: preflight
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: github.ref == 'refs/heads/main' && github.repository == 'woori73/feel2real-buildit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-914-preflight
+          aws-region: ap-northeast-2
+          role-session-name: f2r914-preflight
+          unset-current-credentials: true
+      - name: Existing MediaAudit (version 1 unchanged)
+        run: python3 scripts/operations/pr914/ssm.py audit
+      - name: Verified baseline and media backup
+        run: python3 scripts/operations/pr914/ssm.py backup
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr914-backup-evidence
+          path: release-evidence
+          retention-days: 30
+  restore-permission:
+    needs: backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-914-restore
+          aws-region: ap-northeast-2
+          role-session-name: f2r914-restore-preflight
+          unset-current-credentials: true
+      - name: Execute restore document in verify mode (no restart)
+        run: python3 scripts/operations/pr914/ssm.py verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr914-restore-permission
+          path: release-evidence
+  before:
+    needs: restore-permission
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --prefix e2e/unified-assistant
+      - run: cd e2e/unified-assistant && npx playwright install --with-deps chromium
+      - name: Actual public baseline, PC and 360/390/430px
+        env:
+          NODE_PATH: ${{ github.workspace }}/e2e/unified-assistant/node_modules
+          EVIDENCE_PHASE: before
+        run: e2e/unified-assistant/node_modules/.bin/playwright test --config e2e/pr914-production/playwright.config.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr914-before-production
+          path: release-evidence
+  merge-ci:
+    needs: before
+    if: inputs.operation == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    outputs:
+      release_sha: ${{ steps.merge.outputs.release_sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ready and merge approved head, explicitly dispatch merged SHA CI
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/operations/pr914/github_release.py merge
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr914-merge-ci-evidence
+          path: release-evidence
+  deploy:
+    needs: merge-ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      attempted: ${{ steps.attempt.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.merge-ci.outputs.release_sha }}
+          fetch-depth: 0
+      - name: Package only hash-pinned approved UI resources
+        id: package
+        env:
+          RELEASE_SHA: ${{ needs.merge-ci.outputs.release_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/operations/pr914/github_release.py package
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-914-deploy
+          aws-region: ap-northeast-2
+          role-session-name: f2r914-deploy
+          unset-current-credentials: true
+      - name: Upload approved patch
+        env:
+          RELEASE_SHA: ${{ needs.merge-ci.outputs.release_sha }}
+          PATCH_SHA256: ${{ steps.package.outputs.patch_sha256 }}
+        run: aws s3api put-object --bucket f2r-deploy-425805163960 --key "pr914-approved/$RELEASE_SHA/$PATCH_SHA256.zip" --body resources.zip --server-side-encryption AES256 > /dev/null
+      - name: Mark deployment attempt
+        id: attempt
+        run: echo 'value=true' >> "$GITHUB_OUTPUT"
+      - name: Deploy verified resource-only JAR
+        env:
+          RELEASE_SHA: ${{ needs.merge-ci.outputs.release_sha }}
+          PATCH_SHA256: ${{ steps.package.outputs.patch_sha256 }}
+          RELEASE_RUN_ID: ${{ github.run_id }}
+        run: python3 scripts/operations/pr914/ssm.py deploy
+      - name: Verify production media after deployment
+        run: python3 scripts/operations/pr914/ssm.py audit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr914-deployment-evidence
+          path: release-evidence
+  after:
+    needs: [merge-ci, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.merge-ci.outputs.release_sha }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci --prefix e2e/unified-assistant
+      - run: cd e2e/unified-assistant && npx playwright install --with-deps chromium
+      - name: Actual public release, PC and 360/390/430px
+        env:
+          NODE_PATH: ${{ github.workspace }}/e2e/unified-assistant/node_modules
+          EVIDENCE_PHASE: after
+        run: e2e/unified-assistant/node_modules/.bin/playwright test --config e2e/pr914-production/playwright.config.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr914-after-production
+          path: release-evidence
+  rollback:
+    needs: [deploy, after]
+    if: always() && !cancelled() && needs.deploy.outputs.attempted == 'true' && (needs.deploy.result != 'success' || needs.after.result != 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-914-restore
+          aws-region: ap-northeast-2
+          role-session-name: f2r914-recovery
+          unset-current-credentials: true
+      - name: Restore verified df425588 (only this run's deployed JAR)
+        env:
+          RELEASE_RUN_ID: ${{ github.run_id }}
+        run: python3 scripts/operations/pr914/ssm.py restore
+      - name: Verify original media
+        run: python3 scripts/operations/pr914/ssm.py audit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pr914-rollback-evidence
+          path: release-evidence
+      - name: Report failed release even when recovery succeeds
+        if: always()
+        run: |
+          echo '::error::Release failed. Inspect rollback evidence; never treat this run as a successful deployment.'
+          exit 1

@@ -1,0 +1,47 @@
+name: PR914 interrupted release recovery
+on:
+  workflow_run:
+    workflows: ['PR914 automated release']
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  recovery:
+    if: github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.conclusion != 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Check whether deployment actually started and recovery is incomplete
+        id: required
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 scripts/operations/pr914/recovery_watch.py
+      - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.required.outputs.required == 'true'
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-914-restore
+          aws-region: ap-northeast-2
+          role-session-name: f2r914-interrupted-recovery
+          unset-current-credentials: true
+      - name: Recover the interrupted run, never overwrite another release
+        if: steps.required.outputs.required == 'true'
+        env:
+          RELEASE_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 scripts/operations/pr914/ssm.py restore
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.required.outputs.required == 'true'
+        with:
+          name: pr914-interrupted-recovery
+          path: release-evidence
+      - name: Flag recovery failure prominently
+        if: failure()
+        run: echo '::error::Automatic recovery could not be verified. Production needs operator attention; inspect fixed SSM evidence. No backup or media originals were deleted.'

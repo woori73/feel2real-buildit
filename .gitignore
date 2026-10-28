@@ -107,3 +107,6 @@ e2e/unified-assistant/results.json
 
 # F2R AI 운영 대시보드 캐릭터 영상·이미지: 승인 전까지 저장소에 올리지 않는다 (docs/design/agent-dashboard/README.md)
 src/main/resources/static/agent-media/
+
+# Anonymous production release evidence belongs in Actions artifacts, not source.
+release-evidence/

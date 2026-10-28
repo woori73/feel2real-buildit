@@ -1,0 +1,10 @@
+{
+  "approved_pr": 914,
+  "approved_head": "f04b910e65cbe8ba86e7b9de2fa550b12a3084a0",
+  "baseline_commit": "df425588c97d7f1fb668e23452e638bc9cb14fd4",
+  "files": {
+    "BOOT-INF/classes/static/css/f2r_home_compact.css": "508f5b9d14e87ff14e2690cd871b246f53de7e7dbaecd811f008bbffadf823e8",
+    "BOOT-INF/classes/static/js/f2r_home_presentation.js": "12325ee126d1f271ca2624652bf2dbbd9d5513c180a9e688292d058a8579c5d2",
+    "BOOT-INF/classes/templates/public/landing.html": "9cc5055caf3a8f920df6fca98df70c1c5712eb2059d9c483f7cbffc3e5314168"
+  }
+}
