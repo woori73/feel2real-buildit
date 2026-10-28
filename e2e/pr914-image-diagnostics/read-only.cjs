@@ -1,5 +1,5 @@
 // Anonymous GET-only diagnosis. Never deploys, authenticates, or submits forms.
-const { chromium } = require('@playwright/test');
+const { chromium, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
 const origin = 'https://feel2real.co.kr';
@@ -15,6 +15,7 @@ function section(html) {
   throw new Error('Unclosed aiHome');
 }
 (async () => {
+  let failed=false;
   const browser=await chromium.launch({headless:true, ...(process.env.CHROMIUM_PATH ? {executablePath:process.env.CHROMIUM_PATH} : {})});
   const template=fs.readFileSync('src/main/resources/templates/public/landing.html','utf8');
   const [a,b]=section(template);
@@ -39,11 +40,11 @@ function section(html) {
     });
     await context.route('**/*', async route=>{
       const req=route.request(),u=new URL(req.url());
-      if(req.method()!=='GET' || u.origin!==origin) return route.abort();
+      if(req.method()!=='GET') return route.abort();
       if(mode==='candidate' && u.pathname==='/') {
         const response=await route.fetch();let html=await response.text();
         const [s,e]=section(html);html=html.slice(0,s)+template.slice(a,b)+html.slice(e);
-        html=html.replace('</head>','<link rel="stylesheet" href="/css/f2r_home_compact.css?v=diagnostic"><script src="/js/f2r_home_presentation.js?v=diagnostic" defer></script></head>');
+        html=html.replace(/(?=<script src="\/js\/site_events\.js)/, '<link rel="stylesheet" href="/css/f2r_home_compact.css?v=20261028-1"><script src="/js/f2r_home_presentation.js?v=20261028-1" defer></script>');
         return route.fulfill({response,body:html});
       }
       if(mode==='candidate' && ['/css/f2r_home_compact.css','/js/f2r_home_presentation.js'].includes(u.pathname)) return route.fulfill({path:'src/main/resources/static'+u.pathname});
@@ -61,15 +62,23 @@ function section(html) {
       await snapshot('initial');
       for (const agent of ['seven','suni']) {
         await page.locator(`[data-home-agent="${agent}"]`).click();
-        await page.waitForTimeout(6000); await snapshot(agent);
+        const start=Date.now();
+        try {
+          await expect.poll(()=>page.locator(`[data-home-agent="${agent}"] img`).evaluate(e=>e.complete&&e.naturalWidth>0),{timeout:5000}).toBe(true);
+          events.push({kind:'portrait-check',agent,status:'PASS',elapsedMs:Date.now()-start});
+        } catch(e) { events.push({kind:'portrait-check',agent,status:'FAIL',elapsedMs:Date.now()-start,message:e.message}); }
+        await snapshot(agent);
+        await page.waitForTimeout(1000);
         await page.locator('#aiHome').screenshot({path:`${out}/${mode}-${width}-${agent}.png`});
       }
     } catch(e) { events.push({kind:'diagnostic-error',message:e.message}); }
     finally {
       await Promise.allSettled(pending);
+      if(events.some(e=>e.kind==='diagnostic-error'||e.kind==='pageerror'||e.status==='FAIL'))failed=true;
       fs.writeFileSync(`${out}/${mode}-${width}.json`,JSON.stringify({mode,width,browser:browser.version(),productionModified:false,events,snapshots},null,2));
       await context.close();
     }
   }
   await browser.close();
+  if(failed)process.exitCode=1;
 })();
