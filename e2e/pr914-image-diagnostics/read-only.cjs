@@ -41,6 +41,7 @@ function section(html) {
     await context.route('**/*', async route=>{
       const req=route.request(),u=new URL(req.url());
       if(req.method()!=='GET') return route.abort();
+      if(u.origin!==origin) return route.continue();
       if(mode==='candidate' && u.pathname==='/') {
         const response=await route.fetch();let html=await response.text();
         const [s,e]=section(html);html=html.slice(0,s)+template.slice(a,b)+html.slice(e);
