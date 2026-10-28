@@ -1,0 +1,53 @@
+# Prepared template only. Administrator installs on main after reviewing the fixed SSM documents.
+name: PR914 fixed release preparation
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        required: true
+        default: audit
+        type: choice
+        options: [audit, backup, verify, restore]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  fixed-operation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.F2R_PR914_OPERATIONS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-session-name: f2r-pr914-fixed-ops
+          unset-current-credentials: true
+      - name: Run only fixed version 1 document
+        shell: bash
+        env:
+          OPERATION: ${{ inputs.operation }}
+          INSTANCE: ${{ vars.F2R_PROD_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+          [[ "$INSTANCE" =~ ^i-[a-f0-9]{17}$ ]] || { echo 'Invalid production instance ID'; exit 1; }
+          params='{}'
+          case "$OPERATION" in
+            audit) document=F2R-914-MediaAudit ;;
+            backup) document=F2R-914-Backup ;;
+            verify|restore) document=F2R-914-Restore; params=$(jq -nc --arg op "$OPERATION" '{Operation:[$op]}') ;;
+            *) exit 1 ;;
+          esac
+          command_id=$(aws ssm send-command --instance-ids "$INSTANCE" --document-name "$document" --document-version 1 --parameters "$params" --query Command.CommandId --output text)
+          status=Pending
+          for attempt in {1..120}; do
+            status=$(aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE" --query Status --output text 2>/dev/null || echo Pending)
+            case "$status" in Success|Failed|Cancelled|TimedOut) break ;; esac
+            sleep 5
+          done
+          # Documents output only file paths/hashes and verdicts. Never cat environment files or cookies.
+          aws ssm get-command-invocation --command-id "$command_id" --instance-id "$INSTANCE" --query StandardOutputContent --output text
+          printf 'operation=%s status=%s\n' "$OPERATION" "$status"
+          [ "$status" = Success ]
