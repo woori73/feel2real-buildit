@@ -69,7 +69,8 @@ function section(html) {
         } catch(e) { events.push({kind:'portrait-check',agent,status:'FAIL',elapsedMs:Date.now()-start,message:e.message}); }
         await snapshot(agent);
         await page.waitForTimeout(1000);
-        await page.locator('#aiHome').screenshot({path:`${out}/${mode}-${width}-${agent}.png`});
+        await page.evaluate(()=>window.scrollTo(0,0));
+        await page.screenshot({path:`${out}/${mode}-${width}-${agent}.png`,fullPage:true});
       }
     } catch(e) { events.push({kind:'diagnostic-error',message:e.message}); }
     finally {
