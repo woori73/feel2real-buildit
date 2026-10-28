@@ -2,6 +2,7 @@
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
+const {observePosters}=require('./poster-observer.cjs');
 const origin = 'https://feel2real.co.kr';
 const phase = process.env.EVIDENCE_PHASE || 'before';
 if (!['before', 'after', 'rollback'].includes(phase)) throw new Error('Invalid phase');
@@ -17,6 +18,7 @@ for (const width of [1440,360,390,430]) {
       return route.continue();
     });
     const page=await context.newPage();
+    const observer=await observePosters(page,{origin});
     page.on('response', response => { const u=new URL(response.url()); if (u.origin===origin && u.pathname.startsWith('/agent-media/public/')) media.push({path:u.pathname,status:response.status()}); });
     const out=path.resolve('release-evidence',phase,String(width));fs.mkdirSync(out,{recursive:true});
     try {
@@ -41,7 +43,11 @@ for (const width of [1440,360,390,430]) {
         await page.locator(`[data-home-agent="${agent}"]`).click();
         await expect(page.locator('#homeName')).toHaveText(name);
         const portrait=page.locator(`[data-home-agent="${agent}"] img`);
-        await expect.poll(()=>portrait.evaluate(e=>e.complete && e.naturalWidth>0)).toBe(true);
+        try {
+          await expect.poll(()=>portrait.evaluate(e=>e.complete && e.naturalWidth>0)).toBe(true);
+        } finally {
+          await observer.checkpoint('portrait-check-ended:'+agent);
+        }
         // Real MP4 playback, not only a src attribute or synthetic fixture.
         await expect.poll(()=>page.locator('#homeStage video').evaluateAll((nodes,a)=>nodes.some(v=>v.currentSrc.includes('/'+a+'/') && v.readyState>=2 && !v.error),agent)).toBe(true);
         const start=await page.locator('#homeStage video').evaluateAll((nodes,a)=>Math.max(...nodes.filter(v=>v.currentSrc.includes('/'+a+'/')).map(v=>v.currentTime)),agent);
@@ -70,9 +76,12 @@ for (const width of [1440,360,390,430]) {
       expect(media.filter(r=>r.status>=400)).toEqual([]);
       expect(media.some(r=>r.path.endsWith('.mp4') && [200,206].includes(r.status))).toBe(true);
     } finally {
-      await page.screenshot({path:path.join(out,'final.png'),fullPage:true}).catch(()=>{});
-      fs.writeFileSync(path.join(out,'network-summary.json'),JSON.stringify({media,blocked,phase,production:true},null,2));
-      await context.close();
+      try {
+        await page.screenshot({path:path.join(out,'final.png'),fullPage:true}).catch(()=>{});
+        fs.writeFileSync(path.join(out,'network-summary.json'),JSON.stringify({media,blocked,phase,production:true},null,2));
+      } finally {
+        await observer.finish(path.join(out,'poster-observation.json'),()=>context.close());
+      }
     }
   });
 }
