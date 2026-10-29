@@ -151,3 +151,11 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
   #aiHome .character { flex:1 1 0; justify-content:center; }
 }
 @media(prefers-reduced-motion:reduce) { .en-page *, .en-page *::before, .en-page *::after { scroll-behavior:auto!important; } }
+
+/* 무통장입금 계좌 */
+.exam-bank { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:10px 20px; margin:0 0 12px; padding:20px; border:1px solid var(--exam-line); border-radius:12px; background:var(--exam-panel); }
+.exam-bank dt { color:var(--exam-muted); font-size:15px; }
+.exam-bank dd { margin:0; color:var(--exam-text); font-size:16px; font-weight:650; display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }
+.exam-bank-number { font-size:20px; letter-spacing:.02em; user-select:all; }
+.en-page .exam-bank-copy { min-height:44px; padding:8px 14px; font-size:14px; }
+@media(max-width:600px) { .exam-bank { padding:16px; gap:8px 14px; } .exam-bank-number { font-size:18px; } }

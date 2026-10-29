@@ -69,8 +69,10 @@ test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위, AI 비�
   for (const id of ['homeStage', 'homeChat', 'homeForm', 'homeInput', 'homeMode']) assert.match(HTML, new RegExp('id="' + id + '"'));
   for (const href of ['/grammar-items', '/wiki', '/ai-agent-studio', '/builder']) assert.ok(HTML.includes('href="' + href + '"'));
   assert.match(HTML, /안내 모드/);
-  // 결제는 별도 안내 후 진행 (미완성 결제 기능을 결제 가능한 것처럼 표시하지 않음)
-  assert.match(HTML, /결제는 별도 안내 후 진행됩니다/);
+  // 결제는 무통장입금, 입금 확인은 관리자 수동 확인(자동 결제 기능처럼 표시하지 않음)
+  assert.match(HTML, /이용료와 무통장입금 안내/);
+  assert.match(HTML, /관리자가 입금을 직접 확인한 뒤 제작을 시작합니다/);
+  assert.doesNotMatch(HTML, /온라인 계좌 안내는 아직 제공하지 않습니다/);
   assert.match(HTML, /카카오톡·이메일로 접수합니다/);
   assert.equal((HTML.match(/<h1[\s>]/g) || []).length, 1);
 });

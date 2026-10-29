@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.template;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageController;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer;
 import nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +32,11 @@ class LandingEdunovaTemplateContractTest {
   }
 
   private static String render(String template, String promoPath, String gameUrl, String trailerPath, String gamePath) {
+    return render(template, promoPath, gameUrl, trailerPath, gamePath, null);
+  }
+
+  private static String render(String template, String promoPath, String gameUrl, String trailerPath, String gamePath,
+      f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeBankTransfer bank) {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
@@ -45,6 +51,7 @@ class LandingEdunovaTemplateContractTest {
     context.setVariable("homeReviewGameUrl", gameUrl);
     context.setVariable("homeAgentTrailerPath", trailerPath);
     context.setVariable("homeReviewGamePath", gamePath);
+    context.setVariable("homeBankTransfer", bank);
     return engine.process(template, context);
   }
 
@@ -306,4 +313,46 @@ class LandingEdunovaTemplateContractTest {
     assertThat(render("public/exam")).contains("href=\"mailto:woorinaesin@naver.com\"", "data-copy-address");
   }
 
+
+  @Test
+  @DisplayName("given 계좌 공개 when 홈 결제 안내를 그리면 then 무통장입금 은행·계좌·예금주·금액·상품과 복사 버튼을 보여 주고 '아직 제공하지 않습니다' 문구가 없다")
+  void bankTransfer_isShownOnlyWhenPublic() {
+    // given
+    var bank = f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeBankTransfer.CURRENT;
+    // when
+    String shown = render("public/landing", LandingPageController.DEFAULT_PROMO_PATH,
+        LandingPageController.DEFAULT_REVIEW_GAME_URL, "", f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.HomeReviewGameController.PAGE_PATH, bank);
+    String hidden = render();
+    // then
+    String payment = shown.substring(shown.indexOf("id=\"exam-payment\""), shown.indexOf("</section>", shown.indexOf("id=\"exam-payment\"")));
+    assertThat(payment).contains("이용료와 무통장입금 안내", "신한은행", "110-498-250866", "박정민", "20,000원",
+        "2주 · 주 2회 · 총 4회 · 160문항", "data-copy-address=\"110-498-250866\"", "관리자가 입금을 직접 확인");
+    assertThat(shown).doesNotContain("온라인 계좌 안내는 아직", "임의로 입금하지");
+    assertThat(hidden).doesNotContain("110-498-250866").contains("입금 계좌는 문의해 주시면 안내합니다")
+        .doesNotContain("온라인 계좌 안내는 아직");
+  }
+
+  @Test
+  @DisplayName("given 홈 when 그리면 then footer에 확정 출판사 사업자 정보와 확인 링크가 있고 학원 사업자 정보는 없다")
+  void footer_showsConfirmedPublisher() {
+    // given / when
+    String html = render();
+    String footer = html.substring(html.indexOf("class=\"public-footer\""));
+    // then
+    assertThat(footer).contains("상호명: 압구정에듀홀릭출판사", "대표: 박정민", "사업자등록번호: 146-99-01347",
+        "통신판매업 신고번호: 제2026-서울송파-1411호", "이메일: woorinaesin@naver.com",
+        "https://www.ftc.go.kr/bizCommPop.do?wrkr_no=1469901347");
+    assertThat(html).doesNotContain("압구정에듀홀릭학원", "759-91-01977", "7599101977", "압구정로34길");
+  }
+
+  @Test
+  @DisplayName("given 시험 문제지 페이지 when 그리면 then 같은 출판사 사업자 정보를 쓰고 학원 정보는 없다")
+  void examPage_usesSameSellerFragment() {
+    // given / when
+    String html = render("public/exam");
+    // then
+    String biz = html.substring(html.indexOf("class=\"exam-bizinfo\""));
+    assertThat(biz).contains("압구정에듀홀릭출판사", "146-99-01347", "제2026-서울송파-1411호", "010-8507-1453", "woorinaesin@naver.com");
+    assertThat(html).doesNotContain("압구정에듀홀릭학원", "759-91-01977", "02-6324-1453");
+  }
 }

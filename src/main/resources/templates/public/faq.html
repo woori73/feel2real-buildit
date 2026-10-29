@@ -78,7 +78,7 @@
   <details class="faq-item">
     <summary>문의는 어디로 하나요?</summary>
     <div class="faq-answer">
-      <p>전화 02-6324-1453, 이메일 woorinaesin@naver.com으로 문의해 주세요.</p>
+      <p>전화 010-8507-1453, 이메일 woorinaesin@naver.com으로 문의해 주세요.</p>
     </div>
   </details>
 </div>
@@ -91,7 +91,8 @@
   <p>기본 예정액은 최종 법정 환불액이 아닙니다. 법정 청약철회, 사업자 귀책, 서비스 하자는 별도 기준을 검토합니다. 자동 공제·환불 송금은 하지 않습니다. 과거 계약에는 해당 계약의 조건을 적용합니다.</p>
   <p>신청 전 개인정보·취소·환불 안내를 읽고 동의하며, 제작 전 변경·자료 삭제를 요청할 수 있습니다. 제작 시작 후에는 수정·취소 요청을 접수합니다. <a href="mailto:woorinaesin@naver.com">이메일 문의</a></p>
 </section>
-<footer th:if="${examSeller != null}" th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
+<style>.seller-details .seller-row{display:flex;flex-wrap:wrap;gap:0 14px}</style>
+<footer style="max-width:900px;margin:0 auto 32px;padding:0 20px;font-size:13px;line-height:1.8;color:#5b6472" th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
 </th:block>
 </body>
 </html>
