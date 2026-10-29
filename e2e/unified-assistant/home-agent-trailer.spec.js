@@ -15,6 +15,8 @@ const id = '8c2ef989-b739-4bf4-bcd7-b9582851e8e1';
 const item = 'homepage-trailer-isolated-test';
 const revision = '00000000-0000-4000-8000-000000009925';
 const url = '/api/landing/videos/home-agent-trailer/stream';
+const uploaded = '/video/landing/ai-agent-trailer-20261029-d23ef53c.mp4';
+const uploadedHash = 'd23ef53c8db23f8243624779bfb74c94d6a4d78c7098560c57dbe490b658bcb1';
 const output = process.env.TRAILER_EVIDENCE_DIR || path.join(__dirname, '../../build/verification/home-trailer');
 const fixture = fs.readFileSync(path.join(__dirname, 'fixtures/test-only.mp4'));
 const hash = crypto.createHash('sha256').update(fixture).digest('hex');
@@ -30,7 +32,7 @@ function sql(statement) {
   { input: statement, encoding: 'utf8', env, stdio: ['pipe', 'pipe', 'pipe'] }).trim();
 }
 
-test.describe('isolated approved Studio trailer — synthetic MP4, never the production original', () => {
+test.describe('uploaded original homepage trailer and isolated legacy Studio alias', () => {
   test.beforeAll(async ({ baseURL }) => {
     if (baseURL !== 'http://localhost:8080') throw new Error('Trailer fixtures require the loopback application');
     // Refuse to overwrite ANY pre-existing file or test item, including from an interrupted run.
@@ -76,8 +78,19 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
     expect(sql('SELECT COUNT(*) FROM studio_files; SELECT COUNT(*) FROM studio_events;')).toBe(counts);
   });
 
+  test('uploaded original is public without Studio login and byte-identical with range support', async ({ request }) => {
+    const response = await request.get(uploaded);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('video/mp4');
+    expect(crypto.createHash('sha256').update(await response.body()).digest('hex')).toBe(uploadedHash);
+    const range = await request.get(uploaded, { headers: { Range: 'bytes=0-31' } });
+    expect(range.status()).toBe(206);
+    expect(range.headers()['content-range']).toBe('bytes 0-31/9495474');
+    expect((await range.body()).length).toBe(32);
+  });
+
   for (const width of [360, 390, 430, 1440]) {
-    test(`manual trailer playback ${width}px with source-preserving fallback`, async ({ browser }) => {
+    test(`uploaded original trailer ${width}px: manual playback, pause, frame and fallback`, async ({ browser }) => {
       const context = await browser.newContext({ viewport: { width, height: 1000 }, isMobile: width < 500, hasTouch: width < 500 });
       try {
         await context.route('**/*', route => {
@@ -88,18 +101,35 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
           return route.continue();
         });
         const page = await context.newPage();
+        const studioRequests = [];
+        page.on('request', r => { if (r.url().includes('/api/studio/') || r.url().includes(url)) studioRequests.push(r.url()); });
         await page.goto('/');
         const video = page.locator('#homeAgentTrailer');
-        await expect(video).toHaveAttribute('src', url);
+        await expect(video).toHaveAttribute('src', uploaded);
+        await expect(video).toHaveAttribute('poster', '/img/landing/ai-agent-trailer-20261029-d23ef53c.jpg');
         await expect(page.locator('#homeAgentTrailerPending')).toHaveCount(0);
         expect(await video.evaluate(v => v.paused && !v.autoplay && v.controls && v.playsInline)).toBe(true);
         await page.locator('#homeAgentTrailerPlay').click();
         await expect.poll(() => video.evaluate(v => v.currentTime > 0 && v.readyState >= 2), { timeout: 5000 }).toBe(true);
         await page.locator('#homeAgentTrailerPlay').click();
         await expect.poll(() => video.evaluate(v => v.paused), { timeout: 5000 }).toBe(true);
+        const metrics = await video.evaluate(v => ({ duration: v.duration, width: v.videoWidth, height: v.videoHeight }));
+        expect(metrics.duration).toBeCloseTo(54.916667, 1);
+        expect(metrics).toMatchObject({ width: 1280, height: 720 });
+        expect(studioRequests).toEqual([]);
+        await video.evaluate(v => { v.currentTime = 20; });
+        await expect.poll(() => video.evaluate(v => !v.seeking && v.readyState >= 2), { timeout: 5000 }).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
-        await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-synthetic-trailer.png`) });
-        await page.route(`**${url}`, route => route.fulfill({ status: 503 }));
+        // Capture the real viewport with the fixed navigation above the video, not a tall element
+        // screenshot that can paint the fixed header across the middle of the clipped section.
+        await page.locator('#ai-content').evaluate(section => window.scrollTo({
+          top: window.scrollY + section.getBoundingClientRect().top - 80, behavior: 'instant'
+        }));
+        const rect = await video.boundingBox();
+        expect(rect.y).toBeGreaterThanOrEqual(64);
+        expect(rect.y + rect.height).toBeLessThanOrEqual(1000);
+        await page.screenshot({ path: path.join(output, `${width}-uploaded-trailer.png`) });
+        await page.route(`**${uploaded}`, route => route.fulfill({ status: 503 }));
         // Inject transport failure directly: load() may hide the play button before another click.
         await video.evaluate(v => { v.load(); v.play().catch(() => {}); });
         await expect(page.locator('#homeAgentTrailerStatus')).toContainText('불러오지 못했습니다');
@@ -109,13 +139,15 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
     });
   }
 
-  test('approval revocation immediately removes the home slot and denies the public stream', async ({ request }) => {
+  test('legacy Studio approval revocation denies its alias while the separately uploaded home video stays available', async ({ request }) => {
     try {
       sql(`UPDATE studio_items SET approved_id=NULL WHERE project_id='ai-agent-part1' AND item_key='${item}';`);
       expect((await request.get(url)).status()).toBe(404);
       const html = await (await request.get('/')).text();
-      expect(html).not.toContain('id="homeAgentTrailer"');
-      expect(html).toContain('id="homeAgentTrailerPending"');
+      expect(html).toContain('id="homeAgentTrailer"');
+      expect(html).toContain(uploaded);
+      expect(html).not.toContain('id="homeAgentTrailerPending"');
+      expect((await request.get(uploaded)).status()).toBe(200);
     } finally {
       sql(`UPDATE studio_items SET approved_id='${revision}' WHERE project_id='ai-agent-part1' AND item_key='${item}';`);
     }

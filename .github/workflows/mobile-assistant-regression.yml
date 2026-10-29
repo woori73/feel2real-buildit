@@ -20,6 +20,8 @@ on:
       - 'src/main/resources/static/img/agents/seven/**'
       - 'src/main/resources/static/img/landing/f2r-exam-*'
       - 'src/main/resources/static/video/landing/f2r-exam-*'
+      - 'src/main/resources/static/video/landing/ai-agent-trailer-*'
+      - 'src/main/resources/static/img/landing/ai-agent-trailer-*'
       - 'src/test/js/*home*'
       - 'src/main/resources/static/js/home_exam*'
       - 'src/main/resources/static/js/home_agent_trailer.js'

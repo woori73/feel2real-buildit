@@ -1,0 +1,42 @@
+{
+  "base": "f5cc36c169424eb5a85a3980c2993970863322aa",
+  "recordedAt": "2026-10-29T21:35:00.613447+09:00",
+  "originalFileName": "AI Agent Trailer.mp4",
+  "durationSeconds": 54.916667,
+  "width": 1280,
+  "height": 720,
+  "videoCodec": "h264",
+  "audioCodec": "aac",
+  "videoReencoded": false,
+  "posterFrameSeconds": 53,
+  "studioByteEqualityVerified": false,
+  "files": [
+    {
+      "path": "src/main/resources/static/video/landing/ai-agent-trailer-20261029-d23ef53c.mp4",
+      "bytes": 9495474,
+      "sha256": "d23ef53c8db23f8243624779bfb74c94d6a4d78c7098560c57dbe490b658bcb1"
+    },
+    {
+      "path": "src/main/resources/static/img/landing/ai-agent-trailer-20261029-d23ef53c.jpg",
+      "bytes": 18092,
+      "sha256": "782d31493ba41337d1245345b152309eada05a3b1da0ec67320f282d48058cec"
+    }
+  ],
+  "preserved": [
+    {
+      "path": "src/main/resources/static/video/landing/f2r-exam-remotion-v3-20261029.mp4",
+      "unchangedFromMain": true,
+      "sha256": "09a62f5696459dc8df79b5468a4ec2f0c6a5a276340fd35a9427042327d8e0af"
+    },
+    {
+      "path": "src/main/resources/static/img/agents/seven/portrait-20261029.png",
+      "unchangedFromMain": true,
+      "sha256": "7896e8c4908aa9cd05ccaa0fb7fd71fe358c6a12c2004998768dce38cd4fe402"
+    },
+    {
+      "path": "src/main/resources/static/images/ai-agent-banner.png",
+      "unchangedFromMain": true,
+      "sha256": "e535c2d390173d8bd44f915bd5fbf2ee49d587c75c2251e6c87a396c42ffd5ef"
+    }
+  ]
+}
