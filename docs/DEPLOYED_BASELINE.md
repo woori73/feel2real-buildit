@@ -1,63 +1,51 @@
 # 운영 배포 기준 (Production baseline)
 
-> 가장 최근 운영 배포를 한 곳에 기록한다. 새 배포가 성공하면 맨 위 표를 갱신하고 이전 행은 이력으로 내린다.
-> 롤백 기준 SHA를 찾을 때 먼저 이 문서를 본다. (배포 절차는 [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md))
+운영에서 읽은 JAR과 배포 보관 증거를 기준으로 기록한다. main 최신 커밋은 배포 완료를 의미하지 않는다. 새 배포가 성공하면 관측 시각·전체 해시·실행 기록을 함께 갱신한다.
 
-> **주의**: main의 최신 커밋은 운영에 배포된 SHA보다 앞서 있을 수 있다. 운영 SHA는 아래 표의 `e034492f`뿐이며,
-> main 최신 SHA를 운영 SHA로 읽지 않는다. 배포 승인 때는 "배포 SHA"를 명시해 고정한다.
+## 현재 관측 기준 — 2026-10-29 02:21:39 UTC
 
-## 현재 운영 기준
-
-| 항목 | 값 |
+| 항목 | 확인된 값과 근거 |
 |---|---|
-| 배포 SHA | `e034492fc26f943181869379d3b26646fc713dd7` |
-| 배포 시각 (UTC) | 2026-10-17 02:57 (Spring 재시작 02:57:01) |
-| 배포 run | Deploy to EC2 #993 (Actions run 38996686563), 브랜치 `deploy/main-e034492f`에서 dispatch |
-| 입력 | `assistant_switch=unchanged`, `hwpx_worker=unchanged` |
-| 운영 jar | sha256 앞 16자 `09dc7626112e1e77` (215,628,490 B) |
-| 직전 jar | sha256 앞 16자 `a6c409cceb78eb98` → 서버 `app.jar.previous` (+ 사전 백업 `/var/backups/dc-deploy-pre-bbbd9222/`) |
-| 롤백 여부 | 없음 (health 첫 세대 통과, 재시작 0회) |
+| 운영 JAR과 일치하는 배포 커밋 | `38f40090e49f6cd2641865ce538aebea033546ef` |
+| 식별 방법 | 현재 JAR 전체 SHA-256이 아래 배포 보관 영수증과 일치. `app.jar.meta`는 없으므로 실행 마커로 확인한 커밋은 아님 |
+| 현재 JAR | `/home/ec2-user/app.jar`, 234,270,368 bytes |
+| 현재 JAR SHA-256 | `a28100f0bdbc419ea52adc3c76ffcc536a4157705b28838297eb0551907f7ca2` |
+| 기존 배포 기록 | [Deploy to EC2 40656618382](https://github.com/woori73/feel2real-buildit/actions/runs/40656618382), 2026-10-28, attempt 1 |
+| 읽기 전용 관측 | [40308339478 / attempt 4](https://github.com/woori73/feel2real-buildit/actions/runs/40308339478/attempts/4), job `123224544583`; 고정 SSM 문서 `F2R-ReadOnlyStatus` |
+| 서비스 | active/running, NRestarts 0, 시작 2026-10-28 08:29:17 UTC, health HTTP 200, ALB 8080·8082 healthy |
+| 연결 DB | `f2r-db-202610181331`, MySQL 8.4.8; Flyway 191건, 최대 V1096, 실패 0 |
+| DB 백업 조회 | 7일 자동 백업, 암호화·삭제 보호 ON, latest restorable 2026-10-29 02:16:55 UTC; 2026-10-28 18:52:20.570 UTC 자동 스냅샷 available |
 
-포함된 변경 (직전 운영 jar `a6c409cc` 이후. 그 배포 SHA는 `0ac6fe7b`로 추정 — 이전 배포 브랜치 이름 기준이며 확인하지 못함):
+관측 이후 상태가 계속 동일하다는 보장은 아니다. 다음 배포 직전에 현재 JAR/서비스/백업을 다시 읽어 비교해야 한다. DB 연결·백업 메타데이터 PASS는 전체 데이터 무결성이나 실제 복원 시험 PASS와 다르다.
 
-- #721 DesignCraft gate OPEN TTL(기본 1800초) · #722 PDF 인쇄 마크 제목 ASCII
-- #723 EASY 대시보드 위젯 API v1 (`GET /api/admin/easy/dashboard/widgets`, ADMIN 전용)
-- #724 배포 env 백업 보장 + 배포 실패 시 env 자동 복원 (첫 운영 적용)
+## 현재 JAR, 이전 JAR, 보관본 구분
 
-## main에는 있으나 아직 운영에 배포되지 않은 변경
+| 대상 | 상태 |
+|---|---|
+| `app.jar.previous` | 234,264,626 bytes, SHA-256 `18ca78cb7743fbd9e94e055fa5c6a4cd6fb5ca1011885b63d866f96eaa1dcdc0`; df425588 복구본과 일치. **현재 38f40090의 백업이 아님** |
+| 현재 버전 배포 보관본 | `s3://f2r-deploy-425805163960/releases/38f40090e49f6cd2641865ce538aebea033546ef/40656618382-1/app.jar`; 영수증의 크기·해시가 현재 JAR과 일치 |
+| 보관본 검증 범위 | 2026-10-28 08:28:06 UTC 생성 영수증 재사용. S3 객체의 현재 존재·읽기 권한·새 격리 복원은 미검증 |
+| PR914 고정 백업 | `/var/backups/f2r-pr914-df425588`; 2026-10-28 MediaAudit 검증 성공 기록 있음. 현재 버전 백업으로 혼용 금지 |
+| 실제 복구 권한 | 현재 실행 주체의 S3 읽기·JAR 복원·서비스 재시작 권한은 미검증. 읽기 전용 SSM 성공으로 대체하지 않음 |
 
-- #725 Hub 통합 대시보드 UI (`/admin/hub`)
-- #726 EASY 위젯 응답 캐시 상한·만료 제거
-- #727 이 문서
+일반 배포는 [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md)와 `.github/workflows/deploy-ec2.yml`을 따른다. PR914 전용 자동화는 df425588 및 승인 UI 파일 3개에 고정되어 있으며, PR923 전체 JAR 배포나 38f40090 복구 경로로 사용할 수 없다. 고정 검사값을 바꾸거나 예전 배포 작업을 재실행하여 우회하지 않는다.
 
-- #729 기출분석 사진·HTML 업로드(`app.exam-insight.enabled` 기본 false라 켜기 전에는 동작 없음)
-- #730 홈 내신위키 링크 복구 · #731 수업 인사이트 카드(날짜 세로 깨짐)
-- #732 새 홈페이지 만들기·수정 초기화·변경 기록 접기 (`POST /api/tutor/academy/assistant/restart`)
-- #733 학원 상담신청 접수·원장 조회 (**마이그레이션 V1086 `academy_inquiries` 신규 테이블 — 배포 시 운영 DB에 적용되므로 DB 변경 승인 필요**)
-- #734 빌더 미리보기 로고 클릭 오류 + **저장 전 초기화 시 작업본(디자인)이 사라지는 데이터 손실 수정(우선 포함 대상)**
+## 미디어 관측 범위
 
-### 다음 배포 후보 체크리스트 (승인 전 — 이 문서는 배포 승인이 아니다)
+2026-10-28 [PR914 실행 40625991893](https://github.com/woori73/feel2real-buildit/actions/runs/40625991893)의 보존된 MediaAudit 출력에서 경로 `/home/ec2-user/agent-media`, 세븐·서수니 이미지/MP4 6개와 백업 검증을 확인했다. 파일별 해시는 [증거 JSON](operations/homepage-gates-20261029/evidence.json)의 `historicalMedia`에 보존한다.
 
-배포 SHA는 승인 시점의 main 최신 SHA로 다시 고정한다(작성 시점 main: `83015546`, #734 병합 커밋).
+이는 **과거 확인**이다. 현재 실제 경로·원본 해시·백업 해시, AI AGENT Studio 전체 자료의 백업 범위는 이번 연결에서 재조회하지 못했다. 기존 미디어 파일을 수정·삭제·복원하지 않았다.
 
-1. RDS 복구 지점(자동 백업/스냅샷) 확인 — V1086 적용 전 필수. (배포 IAM 역할은 RDS 조회 권한이 없다: 담당자가 콘솔/별도 권한으로 확인)
-2. DesignCraft job 1: 작업 폴더 보존 복사 완료(`/var/backups/dc-job1-preserve-20261017/1`, 9개 파일·체크섬 일치). gate는 `CLOSED` 유지.
-3. 메모리 MemAvailable ≥ 400MB, 최근 OOM 0건 재확인.
-4. 승인 시 SHA == main 최신 SHA 재확인, CI(build·mysql-integration-test) 성공 확인.
-5. 신규 환경 설정 없음(상담신청 한도는 기본값 사용: `app.academy-inquiry.rate-limit.*`). 기출분석은 켜지지 않음.
-6. 배포 후 확인: `/builder`(초기화·새 홈페이지·로고 클릭), 공개 학원 페이지 상담 접수 → `/tutor/academy/inquiries`, Flyway V1086 적용, 기존 공개 홈페이지 불변.
+## 다음 홈페이지 후보 — 아직 운영 미배포
 
-다음 운영 배포는 별도 승인 후 진행하며, 성공하면 위 표와 이 목록을 갱신한다.
+- main 확인값: `71e33cdfc2f054dcf290c0731a24ecb923af4440` (PR923 병합, PR922 정책 연결 포함).
+- [main Build Check 40805496826](https://github.com/woori73/feel2real-buildit/actions/runs/40805496826): build·MySQL PASS. 같은 소스 트리의 PR 모바일/비서 CI 48/48 PASS 재사용.
+- [승인 미디어](home-exam/APPROVED-MEDIA-20261029.md): 새 MP4·PNG는 업로드 원본과 해시 일치. 운영에서 표시됐다고 판정하지 않는다.
+- 신청·고객 계좌 공개는 OFF 유지가 요구된다. 코드 기본값은 false이나 **실제 운영 설정값은 미검증**이다.
+- 현재 버전 대비 migration 파일 변경 없음. 이것만으로 DB 쓰기나 모든 데이터 무결성이 검증된 것은 아니다.
+- 일반 홈페이지 배포와 신청 활성화의 조건을 분리한 [검증/차단 목록](operations/homepage-gates-20261029/README.md)을 따른다. 현재 둘 다 보류다.
+- 일반 배포 workflow는 `workflow_dispatch` 전용이다. 이번 문서 변경·PR 생성·CI 실행으로 운영을 배포하지 않는다.
 
-## 배포 직후 상태 (기록용)
+## 이전 문서 보존
 
-- DesignCraft gate: `CLOSED` 유지, 정식 개방 전. job 1은 `RUNNING` 그대로 보존.
-- 메모리: MemAvailable 약 540 MiB, swap 약 775 MiB, 최근 60분 OOM 0건 (인스턴스 t2.small, 2 GiB).
-- env 백업: `/var/backups/f2r-deploy-env/<시각>-<pid>/` (0700, 배포마다 생성, 성공 시 최신 5개 유지).
-
-## 이력
-
-| SHA | 시각 (UTC) | 비고 |
-|---|---|---|
-| `e034492f` | 2026-10-17 02:57 | 위 표 |
-| `0ac6fe7b`(추정) | 확인 못 함 | 직전 운영 jar `a6c409cc`의 배포 SHA로 추정 (미확인) |
+2026-10-17의 e034492f 기준 문서는 [당시 원문](DEPLOYED_BASELINE-20261017.md)으로 바이트 그대로 보존했다. 그 문서의 ‘현재 운영’, ‘미배포 PR 목록’, 메모리/인스턴스 값은 **당시 기록이며 현재 상태가 아니다**. 후속 변경 이력을 모두 재구성했다고 주장하지 않는다.

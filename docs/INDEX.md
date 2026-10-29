@@ -38,6 +38,7 @@
 | **다음 할 일 / 우선순위** | [ROADMAP.md](ROADMAP.md) |
 | **인프라 / EC2 배포 상세** | [AWS_DEPLOYMENT.md](AWS_DEPLOYMENT.md) · 무중단 배포(A1) 설계: [operations/A1_BLUE_GREEN_DESIGN.md](operations/A1_BLUE_GREEN_DESIGN.md) |
 | **현재 운영 배포 SHA / 롤백 기준** | [DEPLOYED_BASELINE.md](DEPLOYED_BASELINE.md) |
+| **PR923 홈페이지 배포와 신청 활성화 조건 구분 / 읽기 전용 증거** | [조건별 검증](operations/homepage-gates-20261029/README.md) |
 | **선택적 worktree / 과거 dev·stg 정책 확인** | [WORKFLOW.md](WORKFLOW.md) §6 |
 | **GitHub 이슈 / PR 작성** | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
