@@ -1,6 +1,6 @@
 # 홈페이지 개편 — 2026-10-29 (메뉴 정리 · 영상 위로 · 콘텐츠 3개 · 게임 사이트 안 실행)
 
-기준 main: `f5cc36c` (PR #927 병합). 운영 DB·Studio 승인 포인터·환경변수·신청/계좌 플래그는 바꾸지 않았다. 새 유료 AI 호출 없음. **운영 배포는 하지 않았다**(수동 `deploy-ec2.yml`, 사용자 확인 후).
+기준 main: `f5cc36c` (PR #927 병합). 운영 DB·Studio 승인 포인터·환경변수·신청/계좌 플래그는 바꾸지 않았다. 새 유료 AI 호출 없음. 2026-10-29 23:10 사용자 배포 승인 → PR #930 병합(`315e8db`) → 수동 `deploy-ec2.yml`(target=new, 나머지 스위치 unchanged) [run 40888789291](https://github.com/woori73/feel2real-buildit/actions/runs/40888789291) 성공.
 
 ## 바뀐 화면
 
@@ -57,8 +57,11 @@ Studio 트레일러 별칭(`/api/landing/videos/home-agent-trailer/stream`)과 �
 
 [PC 첫 화면](screens/1440-home.png) · [모바일 첫 화면](screens/390-home.png) · [모바일 트레일러](screens/390-trailer.png) · [모바일 게임](screens/390-game.png) · [PC 게임](screens/1440-game.png) · [게임 정답·해설](screens/game-answer-explanation.png) · [모바일 AI 비서](screens/390-assistant.png)
 
-## 남은 일
+## 운영 확인 (배포 직후, feel2real.co.kr)
 
-- 운영 배포(수동 `deploy-ec2.yml`). 배포 후 운영에서 게임 로딩·트레일러 재생·메뉴를 다시 확인.
-- 운영 앞단(nginx 등)이 `Content-Encoding: br` 응답을 다시 압축하거나 지우지 않는지 배포 후 확인.
+- 메뉴 5개(문법 문제은행·모의고사위키·내신 제작소·AI AGENT 제작협업실·더보기), 섹션 순서(상품→영상→콘텐츠 버튼→트레일러→게임→차트→비서→기존 안내), 가로 넘침 0 — 390px·1440px.
+- 홍보 영상 무음 자동재생, 트레일러 최종본 sha256 `2c9fb23c…2a99` 일치, 서수니 사진(`/agent-media/public/suni/poster.jpg`) 표시.
+- 게임: 앞단을 거쳐도 `Content-Encoding: br`·`application/wasm`·1년 캐시 유지. "게임 시작" 후 6~7초에 로딩 완료, 오류·페이지 오류 0.
+
+## 남은 일
 - Nimble 이용 조건상 빌드 재배포 허용 여부는 사용자 계정에서 확인 필요(빌드는 사용자 소유 게임).
