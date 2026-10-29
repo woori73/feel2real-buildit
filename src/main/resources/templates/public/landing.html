@@ -22,12 +22,12 @@
   <link rel="stylesheet" href="/css/landing_edunova.css?v=20261027-1">
   <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261027-8">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
-  <script src="/js/f2r_home_agent.js?v=20261028-2" defer></script>
+  <script src="/js/f2r_home_agent.js?v=20261029-1" defer></script>
   <link rel="stylesheet" href="/css/f2r_home_compact.css?v=20261028-1">
   <script src="/js/f2r_home_presentation.js?v=20261028-1" defer></script>
-  <link rel="stylesheet" href="/css/home_exam.css?v=20261028-2">
+  <link rel="stylesheet" href="/css/home_exam.css?v=20261029-1">
   <script src="/js/home_exam_contact.js?v=20261028-2" defer></script>
-  <script src="/js/home_exam_promo.js?v=20261028-2" defer></script>
+  <script src="/js/home_exam_promo.js?v=20261029-1" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
 </head>
 <body data-track-page="home">
@@ -89,6 +89,21 @@
   </nav>
 
   <main>
+    <section class="exam-section exam-promo" id="examPromo" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
+      <div class="exam-promo-frame">
+        <video id="examPromoVideo" th:src="${examPromoPath}" controls muted playsinline preload="metadata"
+               th:poster="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4' ? '/img/landing/f2r-exam-remotion-v3-20261029.jpg' : null}"
+               aria-label="20초 영어 기말 맞춤 문제 서비스 홍보 영상" aria-describedby="examPromoSummary"></video>
+        <img id="examPromoFallback" th:if="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4'}"
+             src="/img/landing/f2r-exam-remotion-v3-20261029.jpg" alt="학교별 영어 기말 맞춤 문제, 2주 160문항 20,000원" hidden>
+      </div>
+      <div class="exam-promo-actions">
+        <button type="button" class="en-btn en-btn-outline" id="examPromoSound" aria-pressed="false" hidden>소리 켜기</button>
+        <a class="en-btn en-btn-primary" href="#exam-contact">맞춤 문제 문의·신청</a>
+      </div>
+      <p id="examPromoSummary" class="exam-caption">학교별 맞춤 제작 · 2주 · 총 4회 · 160문항 · 20,000원</p>
+      <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
+    </section>
     <!-- ============ 첫 화면: AI 비서(세븐·서수니)와 대화로 시작. 기존 상품·교육 콘텐츠는 아래 영역으로 이동(삭제 없음) ============ -->
     <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version},data-intake-enabled=${examIntakeEnabled}">
       <div class="si-home-head" id="pass-offer">
@@ -121,11 +136,6 @@
 <div class="prompt-row"><button type="button" data-panel="naesin">내신 제작소</button><a href="/dashboard">학원 대시보드</a><button type="button" data-home-intent="studio">AI AGENT Studio</button></div>
 <div id="naesin-panel" hidden><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></section>
 
-    </section>
-
-    <section id="examPromo" class="exam-section exam-promo" hidden th:attr="data-src=${examPromoPath}">
-      <h2>영어 기말 대비 문제 서비스</h2>
-      <video id="examPromoVideo" controls muted playsinline preload="none" aria-label="20초 서비스 소개 영상"></video>
     </section>
 
     <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">

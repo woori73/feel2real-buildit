@@ -43,7 +43,7 @@ class LandingPageControllerTest {
         .containsEntry("academyShortsVideo", shorts)
         .containsEntry("parentReportVideo", report)
         .containsEntry("examOffer", f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer.CURRENT)
-        .containsEntry("examPromoPath", "")
+        .containsEntry("examPromoPath", LandingPageController.DEFAULT_PROMO_PATH)
         .hasSize(4);
   }
 
@@ -81,6 +81,17 @@ class LandingPageControllerTest {
     }
     assertThat(LandingPageController.safePromoPath("/video/landing/exam-approved-v2.mp4"))
         .isEqualTo("/video/landing/exam-approved-v2.mp4");
+  }
+
+  @Test
+  void givenExplicitEmptyPromoSetting_whenRendered_thenPromoCanStillBeDisabled() {
+    org.springframework.test.util.ReflectionTestUtils.setField(controller, "examPromoPath", "");
+    when(service.resolveRenderItems()).thenReturn(List.of(
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
+    Model model = new ConcurrentModel();
+    controller.landing(model);
+    assertThat(model.asMap()).containsEntry("examPromoPath", "");
   }
 
 }

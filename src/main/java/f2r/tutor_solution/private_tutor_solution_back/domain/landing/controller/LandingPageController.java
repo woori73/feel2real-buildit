@@ -24,9 +24,10 @@ public class LandingPageController {
 
   private final LandingVideoService landingVideoService;
 
-  // Disabled until the final, approved promo is installed separately. No remote/unsigned URLs.
-  @Value("${app.home.exam-promo-path:}")
-  private String examPromoPath = "";
+  // User-supplied approved video (2026-10-29). An explicit empty setting still disables it.
+  public static final String DEFAULT_PROMO_PATH = "/video/landing/f2r-exam-remotion-v3-20261029.mp4";
+  @Value("${app.home.exam-promo-path:" + DEFAULT_PROMO_PATH + "}")
+  private String examPromoPath = DEFAULT_PROMO_PATH;
 
   @GetMapping("/")
   public String landing(Model model) {

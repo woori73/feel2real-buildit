@@ -17,6 +17,10 @@ class LandingEdunovaTemplateContractTest {
   private static String render() { return render("public/landing"); }
 
   private static String render(String template) {
+    return render(template, f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageController.DEFAULT_PROMO_PATH);
+  }
+
+  private static String render(String template, String promoPath) {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
@@ -27,8 +31,17 @@ class LandingEdunovaTemplateContractTest {
     engine.addDialect(new LayoutDialect());
     Context context = new Context();
     context.setVariable("examOffer", HomeExamOffer.CURRENT);
-    context.setVariable("examPromoPath", "");
+    context.setVariable("examPromoPath", promoPath);
     return engine.process(template, context);
+  }
+
+  @Test
+  void approvedPromoIsFirstContent_andExplicitEmptyPathHidesIt() {
+    String html = render();
+    assertThat(html.indexOf("id=\"examPromo\"")).isLessThan(html.indexOf("id=\"aiHome\""));
+    assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
+    assertThat(render("public/landing", "")).doesNotContain("id=\"examPromo\"", "id=\"examPromoVideo\"")
+        .contains("id=\"aiHome\"", "id=\"homeChat\"");
   }
 
   @Test
