@@ -12,8 +12,9 @@ function load() {
   return window.f2rHomeReviewGame;
 }
 
-function setup({ fullscreen } = {}) {
+function setup({ fullscreen, phone = false, rootFullscreen } = {}) {
   const clicks = {};
+  const classes = new Set();
   const node = (id, extra = {}) => Object.assign({ id, hidden: false, children: [],
     addEventListener(name, fn) { clicks[id] = fn; },
     appendChild(child) { this.children.push(child); },
@@ -21,18 +22,21 @@ function setup({ fullscreen } = {}) {
   const paused = [];
   const media = id => ({ pause() { paused.push(id); } });
   const nodes = {
-    homeGame: node('homeGame', { getAttribute: name => name === 'data-game-src' ? '/games/g1-oct-review/v1/' : null }),
+    homeGame: node('homeGame', { getAttribute: name => name === 'data-game-src' ? '/games/g1-oct-review/v1/' : null,
+      classList: { toggle: (c, on) => { if (on) classes.add(c); else classes.delete(c); } },
+      ...(rootFullscreen ? { requestFullscreen: rootFullscreen } : {}) }),
     homeGameCover: node('homeGameCover'), homeGameStage: node('homeGameStage', { hidden: true }),
     homeGameTools: node('homeGameTools', { hidden: true }), homeGameStart: node('homeGameStart'),
     homeGameClose: node('homeGameClose'), homeGameFullscreen: node('homeGameFullscreen'),
     examPromoVideo: media('examPromoVideo'), homeAgentTrailer: media('homeAgentTrailer') };
   const opened = [];
-  const doc = { getElementById: id => nodes[id] || null,
+  const doc = { getElementById: id => nodes[id] || null, documentElement: { style: { overflow: '' } }, fullscreenElement: null,
+    exitFullscreen() { this.exited = (this.exited || 0) + 1; this.fullscreenElement = null; return Promise.resolve(); },
     createElement: tag => ({ tag, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; },
       ...(fullscreen ? { requestFullscreen: fullscreen } : {}) }) };
-  const win = { open: (...args) => opened.push(args) };
+  const win = { open: (...args) => opened.push(args), matchMedia: query => ({ matches: phone && query === '(max-width: 760px)' }) };
   const game = load().init(doc, win);
-  return { game, nodes, clicks, paused, opened };
+  return { game, nodes, clicks, paused, opened, classes, doc };
 }
 
 test('given 홈 when 처음 열면 then 게임 파일을 불러오지 않고 시작 버튼만 보인다', () => {
@@ -97,4 +101,60 @@ test('given 홈 템플릿 when 읽으면 then 게임 영역·시작 버튼·Nimb
   }
   assert.match(html, /home_review_game\.js/);
   assert.doesNotMatch(html, /<iframe/);
+});
+
+test('given 휴대폰 when 게임을 시작하면 then 카드 대신 화면 전체로 열고 브라우저 전체 화면을 요청하며 뒤 페이지 스크롤을 막는다', async () => {
+  // given
+  let requested = 0;
+  const { clicks, classes, doc, game } = setup({ phone: true, rootFullscreen: () => { requested++; return Promise.reject(new Error('iOS')); } });
+  // when
+  clicks.homeGameStart();
+  await new Promise(resolve => setImmediate(resolve));
+  // then: 전체 화면이 거절돼도(아이폰) 화면 전체 레이어는 유지된다
+  assert.equal(requested, 1);
+  assert.ok(classes.has('is-immersive'));
+  assert.equal(game.immersive(), true);
+  assert.equal(doc.documentElement.style.overflow, 'hidden');
+});
+
+test('given 휴대폰 화면 전체 게임 when 닫으면 then 전체 화면을 끄고 레이어·스크롤을 원래대로 돌린다', () => {
+  // given
+  const { clicks, classes, doc, nodes } = setup({ phone: true, rootFullscreen: () => Promise.resolve() });
+  clicks.homeGameStart();
+  doc.fullscreenElement = nodes.homeGame;
+  // when
+  clicks.homeGameClose();
+  // then
+  assert.equal(doc.exited, 1);
+  assert.equal(classes.has('is-immersive'), false);
+  assert.equal(doc.documentElement.style.overflow, '');
+  assert.equal(nodes.homeGameStage.children.length, 0);
+});
+
+test('given 휴대폰 화면 전체 게임 when 전체 화면 버튼을 누르면 then 새 창 없이 브라우저 전체 화면만 켜고 끈다', () => {
+  // given
+  let requested = 0;
+  const { clicks, doc, nodes, opened } = setup({ phone: true, rootFullscreen: () => { requested++; return Promise.resolve(); } });
+  clicks.homeGameStart();
+  // when
+  doc.fullscreenElement = nodes.homeGame;
+  clicks.homeGameFullscreen();
+  doc.fullscreenElement = null;
+  clicks.homeGameFullscreen();
+  // then
+  assert.equal(doc.exited, 1);
+  assert.equal(requested, 2);
+  assert.deepEqual(opened, []);
+});
+
+test('given PC when 게임을 시작하면 then 카드 안에서 열고 전체 화면을 저절로 요청하지 않는다', () => {
+  // given
+  let requested = 0;
+  const { clicks, classes, doc } = setup({ rootFullscreen: () => { requested++; return Promise.resolve(); } });
+  // when
+  clicks.homeGameStart();
+  // then
+  assert.equal(requested, 0);
+  assert.equal(classes.has('is-immersive'), false);
+  assert.equal(doc.documentElement.style.overflow, '');
 });

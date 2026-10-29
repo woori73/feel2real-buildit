@@ -34,7 +34,7 @@ test('game files are precompressed, cached by version and limited to the fixed l
   expect((await request.get(page_path + 'Build/WebGLBuild.wasm', { headers: { 'Accept-Encoding': 'gzip' } })).status()).toBe(406);
 });
 
-for (const [width, height] of [[390, 844], [1440, 1050]]) {
+for (const [width, height] of [[360, 800], [390, 844], [1440, 1050]]) {
   test(`review game ${width}px: starts only on click, runs inside Feel2Real and closes cleanly`, async ({ browser }) => {
     test.setTimeout(240000);
     const mobile = width < 500;
@@ -61,13 +61,26 @@ for (const [width, height] of [[390, 844], [1440, 1050]]) {
       const box = await frame.boundingBox();
       expect(box.width).toBeLessThanOrEqual(width);
       expect(box.height).toBeGreaterThan(300);
+      if (mobile) {
+        // Phones get the whole screen: the game scales its 900-unit portrait layout to this width, so wider = larger text.
+        expect(box.x).toBe(0);
+        expect(box.width).toBe(width);
+        expect(box.height).toBeGreaterThan(height - 80);
+        expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('hidden');
+        await expect(page.locator('#homeGameClose')).toBeInViewport();
+      } else {
+        expect(await page.locator('#homeGame').evaluate(n => n.classList.contains('is-immersive'))).toBe(false);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
       fs.mkdirSync(output, { recursive: true });
       await page.waitForTimeout(1500);
-      await page.locator('#review-game').screenshot({ path: path.join(output, `${width}-game.png`) });
+      if (mobile) await page.screenshot({ path: path.join(output, `${width}-game.png`) });
+      else await page.locator('#review-game').screenshot({ path: path.join(output, `${width}-game.png`) });
       await page.locator('#homeGameClose').click();
       await expect(page.locator('#homeGameStage iframe')).toHaveCount(0);
       await expect(page.locator('#homeGameStart')).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('');
+      expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false);
       // Only the homepage's own font/analytics tags are external (blocked here); the game itself never leaves Feel2Real.
       expect(external.filter(u => !/^https:\/\/(cdn\.jsdelivr\.net|fonts\.googleapis\.com|www\.googletagmanager\.com)\//.test(u))).toEqual([]);
       expect(errors).toEqual([]);

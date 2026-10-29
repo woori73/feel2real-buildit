@@ -2,10 +2,14 @@
  * 홈 복습 게임: "게임 시작"을 누를 때만 같은 출처의 게임 페이지(/games/…)를 iframe으로 불러온다.
  * 페이지를 열자마자 약 10MB를 받지 않게 하고, 닫으면 iframe을 지워 메모리를 돌려준다.
  * 게임은 저장(XP·오답 노트)에 localStorage를 쓰므로 같은 출처 권한이 필요하다. 게임 페이지 자체는 CSP로 같은 출처만 쓴다.
+ *
+ * 휴대폰(폭 760px 이하): 게임은 세로 화면을 가로 900칸 기준으로 그려 화면 폭에 맞춰 줄이므로, 폭이 넓을수록 글자가 커진다.
+ * 그래서 카드 안이 아니라 화면 전체(여백·테두리 없음)로 열고, 지원되면 브라우저 전체 화면까지 켠다.
  */
 (function () {
   'use strict';
   var SANDBOX = 'allow-scripts allow-same-origin allow-pointer-lock allow-popups';
+  var COMPACT_QUERY = '(max-width: 760px)';
 
   function init(doc, win) {
     var root = doc.getElementById('homeGame');
@@ -15,12 +19,35 @@
     var stage = doc.getElementById('homeGameStage');
     var tools = doc.getElementById('homeGameTools');
     var frame = null;
+    var immersive = false;
+
+    function compact() {
+      return !!(win.matchMedia && win.matchMedia(COMPACT_QUERY).matches);
+    }
 
     function pauseOtherMedia() {
       ['examPromoVideo', 'homeAgentTrailer'].forEach(function (id) {
         var v = doc.getElementById(id);
         if (v && v.pause) v.pause();
       });
+    }
+
+    function isFullscreen() {
+      return !!doc.fullscreenElement;
+    }
+
+    // 브라우저 전체 화면(주소창 숨김). 아이폰 Safari처럼 지원하지 않으면 화면 전체 레이어만 쓴다.
+    function enterFullscreen(target) {
+      if (!target.requestFullscreen) return null;
+      var result = target.requestFullscreen();
+      return result && result.catch ? result : null;
+    }
+
+    function setImmersive(on) {
+      immersive = on;
+      root.classList.toggle('is-immersive', on);
+      // 레이어 뒤 홈페이지가 같이 스크롤되지 않게 막고, 닫으면 원래대로 돌린다.
+      doc.documentElement.style.overflow = on ? 'hidden' : '';
     }
 
     function start() {
@@ -36,34 +63,52 @@
       tools.hidden = false;
       cover.hidden = true;
       pauseOtherMedia();
+      if (compact()) {
+        setImmersive(true);
+        var pending = enterFullscreen(root);
+        if (pending) pending.catch(function () { /* 화면 전체 레이어로 계속 */ });
+      }
       if (frame.focus) frame.focus();
     }
 
     function close() {
       if (!frame) return;
+      if (isFullscreen() && doc.exitFullscreen) {
+        var exiting = doc.exitFullscreen();
+        if (exiting && exiting.catch) exiting.catch(function () {});
+      }
       stage.removeChild(frame);
       frame = null;
+      setImmersive(false);
       stage.hidden = true;
       tools.hidden = true;
       cover.hidden = false;
     }
 
-    // 아이폰 Safari는 iframe 전체 화면을 지원하지 않는다. 그때는 게임 페이지를 새 창으로 연다.
+    // PC: 게임 영역만 전체 화면. 안 되면 게임 페이지를 새 창으로 연다.
+    // 휴대폰: 이미 화면 전체 레이어이므로 브라우저 전체 화면을 켜고 끈다(안 되면 그대로 둔다).
     function fullscreen() {
       if (!frame) return;
+      if (immersive) {
+        if (isFullscreen()) { if (doc.exitFullscreen) doc.exitFullscreen(); return; }
+        var pending = enterFullscreen(root);
+        if (pending) pending.catch(function () {});
+        return;
+      }
       var openWindow = function () { win.open(src, '_blank', 'noopener'); };
       if (!frame.requestFullscreen) { openWindow(); return; }
-      var result = frame.requestFullscreen();
-      if (result && result.catch) result.catch(openWindow);
+      var result = enterFullscreen(frame);
+      if (result) result.catch(openWindow);
     }
 
     doc.getElementById('homeGameStart').addEventListener('click', start);
     doc.getElementById('homeGameClose').addEventListener('click', close);
     doc.getElementById('homeGameFullscreen').addEventListener('click', fullscreen);
-    return { start: start, close: close, fullscreen: fullscreen, frame: function () { return frame; } };
+    return { start: start, close: close, fullscreen: fullscreen, frame: function () { return frame; },
+      immersive: function () { return immersive; } };
   }
 
-  var api = { SANDBOX: SANDBOX, init: init };
+  var api = { SANDBOX: SANDBOX, COMPACT_QUERY: COMPACT_QUERY, init: init };
   if (typeof window !== 'undefined') window.f2rHomeReviewGame = api;
   if (typeof document === 'undefined' || !document.getElementById) return;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { init(document, window); });
