@@ -35,14 +35,28 @@ for (const [width, height] of [[1440, 1050], [360, 800], [390, 844], [430, 932]]
       await expect(page.locator('#homeChat .is-agent')).toHaveCount(1);
       await expect(page.locator('.si-holo-tile')).toHaveCount(6);
       const footer = page.locator('.footer-links');
-      await expect(footer.locator('a[href="/policies#terms"]')).toHaveText('서비스 이용·환불 안내');
-      await act(footer.locator('a[href="/policies#privacy"]'));
-      await expect(page).toHaveURL(baseURL + '/policies#privacy');
+      for (const [document, label, heading] of [
+        ['privacy', '개인정보처리방침', 'Feel2Real 홈페이지 개인정보 처리방침'],
+        ['terms', '이용약관', 'Feel2Real 홈페이지 이용약관'],
+        ['refunds', '환불·청약철회 정책', '환불·청약철회 정책'],
+        ['business', '사업자 정보', '사업자 정보']
+      ]) {
+        const link = footer.locator(`a[href="/policies/${document}"]`);
+        await expect(link).toHaveText(label);
+        await expect.poll(() => link.evaluate(x=>x.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+        await act(link);
+        await expect(page).toHaveURL(baseURL + '/policies/' + document);
+        await expect(page.locator('h1')).toHaveText(heading);
+        await expect(page.locator('.policy-content')).toBeVisible();
+        await expect(page.locator('main form, main input')).toHaveCount(0);
+        if (document !== 'business') await expect(page.locator('.policy-notice')).toContainText('최종 승인 전');
+        await capture('site-' + document);
+      }
+      await page.goto('/policies');
       await expect(page.locator('#privacy')).toContainText('홈페이지 전체 정책의 최종 승인 원문을 확인 중');
       await expect(page.locator('.policy-notice')).toContainText('확정된 약관이나 시행 중인 개인정보 처리방침이 아닙니다');
       await expect(page.locator('main form, main input')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText('110-498-250866');
-      await capture('policy-hub');
       // when: follow each real policy link; then: non-empty SSR and explicit status, no placeholder alert
       await act(page.locator('main a[href="/exam-service/privacy#privacy"]'));
       await expect(page.locator('header')).toContainText('운영 활성화 전 검토안');

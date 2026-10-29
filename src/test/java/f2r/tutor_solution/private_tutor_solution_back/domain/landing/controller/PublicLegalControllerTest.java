@@ -119,7 +119,8 @@ class PublicLegalControllerTest {
     assertThat(doc.selectFirst(".policy-notice").text())
         .contains("검토안", "확정된 약관이나 시행 중인 개인정보 처리방침이 아닙니다");
     assertThat(doc.select(".footer-links a[href]").eachAttr("href"))
-        .contains("/policies#privacy", "/policies#terms");
+        .containsExactly(
+            "/policies/privacy", "/policies/terms", "/policies/refunds", "/policies/business");
     assertThat(doc.select(".footer-links [onclick=comingSoon()]")).isEmpty();
     assertThat(doc.select("main a[href]").eachAttr("href"))
         .contains("/privacy", "/exam-service/privacy#privacy", "/exam-service/terms#terms");
@@ -161,5 +162,45 @@ class PublicLegalControllerTest {
     assertThat(doc.select("a[href='/policies#privacy']")).isNotEmpty();
     assertThat(doc.getElementById("contactModal")).isNotNull();
     assertThat(html).contains("function openContactModal()");
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "privacy, Feel2Real 홈페이지 개인정보 처리방침, 8",
+    "terms, Feel2Real 홈페이지 이용약관, 6",
+    "refunds, 환불·청약철회 정책, 4",
+    "business, 사업자 정보, 2"
+  })
+  @DisplayName("네 푸터 문서는 독립 주소·본문·적용 범위를 가지며 확정 정책을 가장하지 않는다")
+  void separatePolicyDocuments(String section, String title, int headings) throws Exception {
+    // given: anonymous and all intake/publication flags disabled; when: navigate directly
+    var html =
+        mockMvc
+            .perform(get("/policies/" + section))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    var doc = Jsoup.parse(html);
+    // then: the requested document, not a blank shell or extension document, is rendered
+    assertThat(doc.selectFirst("h1").text()).isEqualTo(title);
+    assertThat(doc.select(".policy-content h2")).hasSize(headings);
+    assertThat(doc.select(".policy-content").text()).hasSizeGreaterThan(100);
+    assertThat(doc.select("form,input")).isEmpty();
+    assertThat(html).doesNotContain("110-498-250866");
+    if (!section.equals("business")) {
+      assertThat(doc.selectFirst(".policy-notice").text())
+          .contains("최종 승인 전", "시행일 미확정", "확정된 정책이 아니며");
+    }
+    if (section.equals("privacy")) {
+      assertThat(doc.text())
+          .contains("보유 기간은 검토 필요", "제3자 제공·처리위탁·국외 이전", "전체 서비스의 연령 확인", "보호책임자");
+      assertThat(doc.select(".policy-content a[href='/privacy']")).hasSize(1);
+    }
+    if (section.equals("refunds")) {
+      assertThat(doc.select("tbody td:nth-child(2)").eachText())
+          .containsExactly("20,000원", "15,000원", "10,000원", "5,000원", "0원");
+      assertThat(doc.text()).contains("모든 법정 환불 권리의 소멸을 뜻하지 않습니다");
+    }
   }
 }

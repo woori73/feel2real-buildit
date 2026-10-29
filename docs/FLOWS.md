@@ -1,6 +1,6 @@
 ## 홈페이지 정책 안내 (2026-10-29)
 
-공통 푸터 개인정보/이용·환불 → `/policies#privacy` 또는 `#terms` → 적용 서비스·검토 상태 확인 → 신청 서비스 검토안(`/exam-service/privacy`, `/exam-service/terms`) 또는 기존 확장 전용 `/privacy`. 신청·계좌 공개·판매자 확인 여부에 따라 정책 링크가 사라지지 않는다. 홈페이지 공통 정책 승인 원문과 최신 사업자 증빙은 확인 중이며 미승인 정책을 시행 중인 것으로 표시하지 않는다. 신규 신청 활성화·계좌 공개·운영 변경 없음. [조사 및 후속 승인](home-exam/PUBLIC-POLICY-REVIEW-20261029.md).
+공통 푸터 개인정보/이용약관/환불·청약철회/사업자 정보 → 각각 `/policies/privacy`, `/policies/terms`, `/policies/refunds`, `/policies/business` 독립 문서 → 적용 범위·검토 상태 확인 → 필요한 경우 신청 서비스 검토안(`/exam-service/privacy`, `/exam-service/terms`) 또는 기존 확장 전용 `/privacy`. 전체 안내는 `/policies`. 신청·계좌 공개·판매자 확인 여부에 따라 링크가 사라지지 않는다. 홈페이지 공통 정책 승인 원문과 최신 사업자 증빙은 확인 중이며 미승인 정책을 시행 중인 것으로 표시하지 않는다. 신규 신청 활성화·계좌 공개·운영 변경 없음. [조사 및 후속 승인](home-exam/PUBLIC-POLICY-REVIEW-20261029.md).
 
 ## 내신 제작과 Wiki 게시 (2026-10-26)
 

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title th:text="${policyTitle} + ' | Feel2Real'">정책 안내 | Feel2Real</title>
+  <link rel="stylesheet" href="/css/public_policies.css">
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+</head>
+<body>
+<th:block layout:fragment="content">
+  <main class="policy-page" th:attr="data-policy=${policySection}">
+    <header>
+      <a href="/">← Feel2Real 홈</a> · <a href="/policies">정책 안내 전체</a>
+      <p class="policy-label">FEEL2REAL · POLICY</p>
+      <h1 th:text="${policyTitle}"></h1>
+    </header>
+    <aside class="policy-notice" aria-label="정책 검토 상태" th:unless="${policySection == 'business'}">
+      <strong>검토안 · 최종 승인 전 · 시행일 미확정</strong>
+      <p>기존 승인 원문과 실제 운영 현황을 확인 중입니다. 이 문서는 확정된 정책이 아니며,
+        열람만으로 동의나 신청이 접수되지 않습니다. 기존 고객의 계약과 법정 권리는 변경하지 않습니다.</p>
+    </aside>
+    <nav class="policy-nav" aria-label="서비스 정책 문서">
+      <a href="/policies/privacy">개인정보 처리방침</a><a href="/policies/terms">이용약관</a>
+      <a href="/policies/refunds">환불·청약철회 정책</a><a href="/policies/business">사업자 정보</a>
+    </nav>
+    <th:block th:switch="${policySection}">
+      <th:block th:case="'privacy'"><th:block th:replace="~{fragments/_policy_documents :: sitePrivacy}"></th:block></th:block>
+      <th:block th:case="'terms'"><th:block th:replace="~{fragments/_policy_documents :: siteTerms}"></th:block></th:block>
+      <th:block th:case="'refunds'"><th:block th:replace="~{fragments/_policy_documents :: refunds}"></th:block></th:block>
+      <th:block th:case="'business'"><th:block th:replace="~{fragments/_policy_documents :: business}"></th:block></th:block>
+    </th:block>
+  </main>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooter}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicContactModal(false)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
+</th:block>
+</body>
+</html>

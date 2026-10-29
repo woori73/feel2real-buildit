@@ -41,7 +41,16 @@ class PublicPolicyMySqlTest {
                 "SELECT COUNT(*) FROM flyway_schema_history WHERE success=1", Integer.class))
         .isPositive();
     for (String path :
-        new String[] {"/policies", "/privacy", "/exam-service/privacy", "/exam-service/terms"}) {
+        new String[] {
+          "/policies",
+          "/policies/privacy",
+          "/policies/terms",
+          "/policies/refunds",
+          "/policies/business",
+          "/privacy",
+          "/exam-service/privacy",
+          "/exam-service/terms"
+        }) {
       var html =
           mvc.perform(get(path))
               .andExpect(status().isOk())

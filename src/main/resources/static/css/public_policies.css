@@ -18,6 +18,9 @@
 .policy-details dt { font-weight:700; }
 .policy-details dd { margin:0; }
 .policy-contact { margin-right:24px; }
+.policy-page table { width:100%; border-collapse:collapse; }
+.policy-page th, .policy-page td { padding:10px; border:1px solid #cbd8e1; text-align:left; }
+.policy-page th { background:#f4f9fc; }
 @media (max-width:600px) {
   .policy-page { padding:24px 18px 48px; }
   .policy-cards { grid-template-columns:1fr; }
