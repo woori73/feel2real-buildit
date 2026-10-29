@@ -5,6 +5,13 @@ on:
       - 'src/main/resources/templates/public/landing.html'
       - 'src/main/resources/templates/public/exam*.html'
       - 'src/main/resources/templates/public/faq.html'
+      - 'src/main/resources/templates/public/policies.html'
+      - 'src/main/resources/templates/public/policy_document.html'
+      - 'src/main/resources/templates/public/privacy.html'
+      - 'src/main/resources/templates/fragments/_public_footer.html'
+      - 'src/main/resources/templates/fragments/_policy_documents.html'
+      - 'src/main/resources/static/css/public_policies.css'
+      - 'src/main/resources/static/css/public_footer.css'
       - 'src/main/resources/static/css/f2r_home_agent.css'
       - 'src/main/resources/static/css/f2r_home_compact.css'
       - 'src/main/resources/static/js/f2r_home_presentation.js'
@@ -96,6 +103,7 @@ jobs:
             docs/verification/mobile-hologram-20261027/assistant
             e2e/unified-assistant/results.json
             build/verification/home-exam
+            build/verification/public-policies
       - name: Stop only this job's test applications and DB
         if: always()
         run: |

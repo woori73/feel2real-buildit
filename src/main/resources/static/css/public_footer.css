@@ -41,8 +41,9 @@
         width: 18px; height: 18px; display: block; filter: brightness(0) invert(1); opacity: .72;
       }
       .public-footer .footer-parent-name { color: rgba(255,255,255,0.56); }
-      .public-footer .footer-links { display: flex; gap: 24px; }
-      .public-footer .footer-links a { color: rgba(255,255,255,0.45); text-decoration: none; font-size: 12px; cursor: pointer; }
+      .public-footer .footer-links { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+      .public-footer .footer-links a { display: inline-flex; align-items: center; min-height: 44px; color: rgba(255,255,255,0.85); text-decoration: none; font-size: 13px; cursor: pointer; }
+      .public-footer .footer-links a:focus-visible { outline: 2px solid #c9edff; outline-offset: 3px; }
       .public-footer .footer-links a:hover { color: rgba(255,255,255,0.8); }
       .public-footer .footer-divider {
         border: none; border-top: 1px solid rgba(255,255,255,0.1);

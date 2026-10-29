@@ -26,6 +26,7 @@
 <div class="pg-wrap">
   <div class="pg-top">
     <a href="/newstart">← NewStart로 돌아가기</a>
+    <p><a href="/policies#privacy">Feel2Real 서비스별 개인정보 안내</a></p>
   </div>
   <h1>개인정보처리방침</h1>
   <p class="pg-updated">시행일: 2026년 9월 25일 · 대상: NewStart Chrome Agent (FSS 안내) 확장 프로그램 v0.4.0</p>
@@ -89,5 +90,7 @@
   </div>
 </div>
 <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(true, false, false)}"></th:block>
+<th:block th:replace="~{fragments/_public_footer :: publicContactModal(false)}"></th:block>
+<th:block th:replace="~{fragments/_public_footer :: publicFooterScripts}"></th:block>
 </body>
 </html>

@@ -1,18 +1,49 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-/**
- * 공개 법적 페이지. Chrome Web Store 제출에 필요한 개인정보처리방침 공개 URL을 제공한다.
- * 내용은 NewStart Chrome Agent v0.4.0의 실제 동작(읽기·판별·안내 전용)과 1:1로 일치해야 한다.
- */
+/** Public policy navigation; /privacy remains the existing Chrome extension document. */
 @Controller
 public class PublicLegalController {
 
   @GetMapping("/privacy")
   public String privacy() {
     return "public/privacy";
+  }
+
+  @GetMapping("/policies")
+  public String policies() {
+    return "public/policies";
+  }
+
+  @GetMapping("/policies/privacy")
+  public String sitePrivacy(Model model) {
+    return document(model, "privacy", "Feel2Real 홈페이지 개인정보 처리방침");
+  }
+
+  @GetMapping("/policies/terms")
+  public String siteTerms(Model model) {
+    return document(model, "terms", "Feel2Real 홈페이지 이용약관");
+  }
+
+  @GetMapping("/policies/refunds")
+  public String refunds(Model model) {
+    model.addAttribute("offer", HomeExamOffer.CURRENT);
+    return document(model, "refunds", "환불·청약철회 정책");
+  }
+
+  @GetMapping("/policies/business")
+  public String business(Model model) {
+    return document(model, "business", "사업자 정보");
+  }
+
+  private String document(Model model, String section, String title) {
+    model.addAttribute("policySection", section);
+    model.addAttribute("policyTitle", title);
+    return "public/policy_document";
   }
 
   @GetMapping("/faq")
