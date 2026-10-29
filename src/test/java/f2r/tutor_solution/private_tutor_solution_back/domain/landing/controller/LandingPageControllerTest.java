@@ -18,7 +18,9 @@ import org.springframework.ui.Model;
 class LandingPageControllerTest {
 
   private final LandingVideoService service = mock(LandingVideoService.class);
-  private final LandingPageController controller = new LandingPageController(service);
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService trailer =
+      mock(f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService.class);
+  private final LandingPageController controller = new LandingPageController(service, trailer);
 
   @Test
   @DisplayName("given 제품 영상 슬롯 when 루트 렌더 then Shorts/Report 슬롯을 모델에 담고 랜딩 뷰를 반환한다")
@@ -44,7 +46,9 @@ class LandingPageControllerTest {
         .containsEntry("parentReportVideo", report)
         .containsEntry("examOffer", f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer.CURRENT)
         .containsEntry("examPromoPath", LandingPageController.DEFAULT_PROMO_PATH)
-        .hasSize(4);
+        .containsEntry("homeReviewGameUrl", LandingPageController.DEFAULT_REVIEW_GAME_URL)
+        .containsEntry("homeAgentTrailerPath", "")
+        .hasSize(6);
   }
 
   @Test
@@ -92,6 +96,36 @@ class LandingPageControllerTest {
     Model model = new ConcurrentModel();
     controller.landing(model);
     assertThat(model.asMap()).containsEntry("examPromoPath", "");
+  }
+
+  @Test
+  void givenGameSetting_whenValidated_thenOnlyHttpsPublicNimbleLinksAreAccepted() {
+    for (String value : new String[]{null, "", "https://app.nimblefox.ai/g/g1y7QeOYd8/edit",
+        "https://app.nimblefox.ai/g/g1y7QeOYd8/edit/", "https://app.nimblefox.ai/g/a/EDIT",
+        "https://app.nimblefox.ai/g/a/%65dit", "https://app.nimblefox.ai/g/a?token=private",
+        "https://app.nimblefox.ai/g/a#private", "https://app.nimblefox.ai:8443/g/a",
+        "https://u:p@app.nimblefox.ai/g/a", "https://nimblefox.ai.example.com/g/a",
+        "http://app.nimblefox.ai/g/a", "//app.nimblefox.ai/g/a", "javascript:alert(1)"}) {
+      assertThat(LandingPageController.safeReviewGameUrl(value)).as(value).isEmpty();
+    }
+    // Syntax fixture only; it is not evidence of a published game.
+    assertThat(LandingPageController.safeReviewGameUrl("https://app.nimblefox.ai/g/public-fixture"))
+        .isEqualTo("https://app.nimblefox.ai/g/public-fixture");
+  }
+
+  @Test
+  void givenCurrentlyApprovedTrailer_whenRendered_thenOnlyFixedPublicAliasIsUsed() {
+    when(trailer.approvedMedia()).thenReturn(java.util.Optional.of(
+        new f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService.Media(
+            "private/key", 100, "a".repeat(64))));
+    when(service.resolveRenderItems()).thenReturn(List.of(
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
+    Model model = new ConcurrentModel();
+    controller.landing(model);
+    assertThat(model.asMap()).containsEntry("homeAgentTrailerPath",
+        "/api/landing/videos/home-agent-trailer/stream");
+    assertThat(model.asMap().toString()).doesNotContain("private/key", "/api/studio/files");
   }
 
 }

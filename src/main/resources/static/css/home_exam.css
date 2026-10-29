@@ -99,3 +99,13 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
   .en-hero-badge { font-size:13px; }
 }
 @media(prefers-reduced-motion:reduce) { #aiHome *, #aiHome *::before, #aiHome *::after { animation:none!important; transition:none!important; } }
+
+/* Content priority: request → approved promo → review game → approved trailer. */
+.home-game-card { display:flex; align-items:flex-start; gap:24px; }
+.home-game-card>img { flex:0 0 56px; }
+.home-game-card>div { min-width:0; }
+.home-game-card h3 { margin-top:0; }
+.home-trailer-frame video { display:block; width:100%; aspect-ratio:16/9; object-fit:contain; background:#040d17; border-radius:12px; }
+.home-trailer-frame [hidden] { display:none; }
+#homeAgentTrailerPlay { margin-top:14px; }
+@media(max-width:600px) { .home-game-card { flex-direction:column; gap:16px; } }

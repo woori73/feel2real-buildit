@@ -4,8 +4,10 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.Landing
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.entity.LandingVideoSlotKey;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.LandingVideoService;
+import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService;
 import java.util.EnumMap;
 import java.util.Map;
+import java.net.URI;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,16 +25,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class LandingPageController {
 
   private final LandingVideoService landingVideoService;
+  private final HomeAgentTrailerService homeAgentTrailerService;
 
   // User-supplied approved video (2026-10-29). An explicit empty setting still disables it.
   public static final String DEFAULT_PROMO_PATH = "/video/landing/f2r-exam-remotion-v3-20261029.mp4";
   @Value("${app.home.exam-promo-path:" + DEFAULT_PROMO_PATH + "}")
   private String examPromoPath = DEFAULT_PROMO_PATH;
 
+  // Public URL supplied by the user on 2026-10-29. An empty override hides the link.
+  public static final String DEFAULT_REVIEW_GAME_URL = "https://app.nimblefox.ai/g/g1y7QeOYd8";
+  @Value("${app.home.review-game-url:" + DEFAULT_REVIEW_GAME_URL + "}")
+  private String reviewGameUrl = DEFAULT_REVIEW_GAME_URL;
+
   @GetMapping("/")
   public String landing(Model model) {
     model.addAttribute("examOffer", HomeExamOffer.CURRENT);
     model.addAttribute("examPromoPath", safePromoPath(examPromoPath));
+    model.addAttribute("homeReviewGameUrl", safeReviewGameUrl(reviewGameUrl));
+    model.addAttribute("homeAgentTrailerPath", homeAgentTrailerService.approvedMedia().isPresent()
+        ? HomeAgentTrailerService.PUBLIC_PATH : "");
     Map<LandingVideoSlotKey, LandingVideoRenderItem> videos =
         new EnumMap<>(LandingVideoSlotKey.class);
     landingVideoService.resolveRenderItems().forEach(item -> videos.put(item.slot(), item));
@@ -47,6 +58,24 @@ public class LandingPageController {
   static String safePromoPath(String path) {
     return path != null && path.matches("/video/landing/[A-Za-z0-9][A-Za-z0-9_-]*\\.mp4")
         ? path : "";
+  }
+
+  static String safeReviewGameUrl(String value) {
+    if (value == null || value.isBlank()) return "";
+    try {
+      URI uri = URI.create(value);
+      String host = uri.getHost();
+      String path = uri.getRawPath();
+      boolean approvedHost = "nimblefox.ai".equals(host)
+          || (host != null && host.endsWith(".nimblefox.ai"));
+      return "https".equals(uri.getScheme()) && approvedHost
+          && uri.getRawUserInfo() == null && uri.getPort() == -1
+          && uri.getRawQuery() == null && uri.getRawFragment() == null
+          && path != null && path.matches("/[A-Za-z0-9_/-]+")
+          && !path.matches("(?i).*/edit(?:/.*)?") ? value : "";
+    } catch (IllegalArgumentException ignored) {
+      return "";
+    }
   }
 
   private LandingVideoRenderItem required(
