@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "scope": "read-only evidence reuse and local isolated guard; no deployment",
+  "candidateMain": "71e33cdfc2f054dcf290c0731a24ecb923af4440",
+  "runtimeObservation": {
+    "observedUtc": "2026-10-29T02:21:39Z",
+    "run": 40308339478,
+    "attempt": 4,
+    "job": 123224544583,
+    "workflowSha": "ecccf7b8151f901f95cbb59bce2f3b9183a7a5e8",
+    "service": {
+      "active": true,
+      "restarts": 0,
+      "healthHttp": 200
+    },
+    "jar": {
+      "path": "/home/ec2-user/app.jar",
+      "bytes": 234270368,
+      "sha256": "a28100f0bdbc419ea52adc3c76ffcc536a4157705b28838297eb0551907f7ca2",
+      "commitMatchedViaArchive": "38f40090e49f6cd2641865ce538aebea033546ef",
+      "deployMarkerPresent": false
+    },
+    "previousJar": {
+      "path": "/home/ec2-user/app.jar.previous",
+      "bytes": 234264626,
+      "sha256": "18ca78cb7743fbd9e94e055fa5c6a4cd6fb5ca1011885b63d866f96eaa1dcdc0",
+      "isBackupOfCurrentJar": false
+    },
+    "database": {
+      "identifier": "f2r-db-202610181331",
+      "engineVersion": "8.4.8",
+      "appliedFlyway": 191,
+      "maximumVersion": "1096",
+      "failedFlyway": 0,
+      "available": true,
+      "encrypted": true,
+      "deletionProtection": true,
+      "multiAz": false,
+      "backupRetentionDays": 7,
+      "latestRestorableUtc": "2026-10-29T02:16:55Z",
+      "snapshotUtc": "2026-10-28T18:52:20.570Z",
+      "snapshotStatus": "available",
+      "dataIntegrityAndRestoreDrill": "UNVERIFIED"
+    }
+  },
+  "effectiveRuntimeSettings": {
+    "app.exam-intake.enabled": "UNVERIFIED",
+    "app.exam-intake.bank-public-enabled": "UNVERIFIED",
+    "app.exam-intake.bank-admin-enabled": "UNVERIFIED",
+    "administratorBankRegistered": "UNVERIFIED",
+    "administratorBankApproved": "UNVERIFIED",
+    "app.home.exam-promo-path": "UNVERIFIED"
+  },
+  "historicalReleaseArchive": {
+    "receipt": {
+      "bucket": "f2r-deploy-425805163960",
+      "prefix": "releases/38f40090e49f6cd2641865ce538aebea033546ef/40656618382-1",
+      "complete": true,
+      "format": 1,
+      "commit": "38f40090e49f6cd2641865ce538aebea033546ef",
+      "run_id": "40656618382",
+      "attempt": "1",
+      "created_utc": "2026-10-28T08:28:06.160522+00:00",
+      "artifacts": [
+        {
+          "key": "releases/38f40090e49f6cd2641865ce538aebea033546ef/40656618382-1/app.jar",
+          "sha256": "a28100f0bdbc419ea52adc3c76ffcc536a4157705b28838297eb0551907f7ca2",
+          "bytes": 234270368
+        },
+        {
+          "key": "releases/38f40090e49f6cd2641865ce538aebea033546ef/40656618382-1/buildit-wiki-backend.tgz",
+          "sha256": "217897a10857d84ee03ea500b9397ce303c61754f5ef416b83462e099961a3ff",
+          "bytes": 2456249
+        },
+        {
+          "key": "releases/38f40090e49f6cd2641865ce538aebea033546ef/40656618382-1/deploy-buildit.sh",
+          "sha256": "650573ce87f247da2086ac2210f95fc4efe05951bbad92bc5e208839463af797",
+          "bytes": 44305
+        }
+      ]
+    },
+    "currentObjectAccess": "UNVERIFIED",
+    "currentRestorePermission": "UNVERIFIED"
+  },
+  "historicalMedia": {
+    "run": 40625991893,
+    "runDateUtc": "2026-10-28",
+    "evidenceType": "saved SSM MediaAudit output after PR914 rollback; not a new live audit",
+    "commandId": "1dceb3cf-de0f-4700-9e7d-3ca6cf61125e",
+    "root": "/home/ec2-user/agent-media",
+    "files": {
+      "seven/idle.mp4": {
+        "sha256": "7f3a15d21625c3bd21487700d53ef63e5083341e0ebdefc31cd1b8276d5dc689",
+        "bytes": 391506
+      },
+      "seven/poster.jpg": {
+        "sha256": "7c1880841691acb7055ccc8f2e1354ef8e67587822c9cbef2671cb0109954f9f",
+        "bytes": 35382
+      },
+      "seven/speak.mp4": {
+        "sha256": "238da5d62957bafb112296fd9af672ed930153a3c68cdf2f587930f0aa0f9f3d",
+        "bytes": 1244914
+      },
+      "suni/idle.mp4": {
+        "sha256": "92fcca2bfb6923817910f6498316bed3c8bbbddd9f35fcaa7894121447ba9fd3",
+        "bytes": 971637
+      },
+      "suni/poster.jpg": {
+        "sha256": "34ecd28b144561cd69c128a94a2cdad8472d05ee93ee38951c0eec91fa1ac22a",
+        "bytes": 65368
+      },
+      "suni/speak.mp4": {
+        "sha256": "016e2e151c6dc054d8e7f36ae1e331d3c60b4e2e2bf6d47d12e384e08859ba1e",
+        "bytes": 3017494
+      }
+    },
+    "fixedBackupPath": "/var/backups/f2r-pr914-df425588",
+    "fixedBackupVerifiedThen": true,
+    "currentSourceAndBackupHashes": "UNVERIFIED",
+    "coversAllStudioAssets": false
+  },
+  "candidateCI": {
+    "run": 40805496826,
+    "conclusion": "success",
+    "counts": {
+      "build": {
+        "total": 2158,
+        "passed": 2154,
+        "failed": 0,
+        "skipped": 4,
+        "artifactSha256": "7d0e01301d3cfedf6aae6299f9403fd9397e79606acc0d5de810f1dc7dbad136"
+      },
+      "mysql": {
+        "total": 374,
+        "passed": 373,
+        "failed": 0,
+        "skipped": 1,
+        "artifactSha256": "fd3fb73cb50b7285b7ccde79dc7370e1c0eecdd7635768cb1d2c2fde8fdac184"
+      }
+    },
+    "sameTreePrMobileRun": 40803964175,
+    "sameTreePrMobilePassed": 48,
+    "sameTreePrJsPassed": 42,
+    "operationalBrowser": "UNVERIFIED"
+  },
+  "isolatedRecoveryTest": {
+    "command": "bash scripts/deploy/f2r_app_guard.test.sh",
+    "testedCommit": "71e33cdfc2f054dcf290c0731a24ecb923af4440",
+    "passedAssertions": 71,
+    "failedAssertions": 0,
+    "passed": true,
+    "fixtures": "synthetic temporary JAR/env, stubbed HTTP and service operations",
+    "realProductionJarBooted": false,
+    "productionPermissionVerified": false,
+    "logSha256": "dee352ba7c0836b3318d56752b3b3d249768e36514c6dec9385b6140789d0853"
+  },
+  "connectionLimits": {
+    "configuredCloudAwsIdentity": false,
+    "browserControlToolExposed": false,
+    "productionHostnameAllowed": false,
+    "githubReadAndExistingJobRerunAvailable": true,
+    "githubNewWorkflowDispatchToolExposed": false,
+    "installedIamPolicyIndependentlyRead": false
+  },
+  "sourcePreservation": {
+    "main": "71e33cdfc2f054dcf290c0731a24ecb923af4440",
+    "prHead": "0ddee1bab61b2957dbb8aa79c388c3216934abab",
+    "tree": "d89081fcf503bed7736e475baab6ed11a7fe6a8f",
+    "sameTreeAsApprovedPR": true,
+    "assets": [
+      {
+        "path": "src/main/resources/static/img/agents/seven/portrait-20261029.png",
+        "sha256": "7896e8c4908aa9cd05ccaa0fb7fd71fe358c6a12c2004998768dce38cd4fe402",
+        "matchesApprovedUpload": true,
+        "bytes": 138483
+      },
+      {
+        "path": "src/main/resources/static/video/landing/f2r-exam-remotion-v3-20261029.mp4",
+        "sha256": "09a62f5696459dc8df79b5468a4ec2f0c6a5a276340fd35a9427042327d8e0af",
+        "matchesApprovedUpload": true,
+        "bytes": 14649213
+      }
+    ],
+    "policyRoutes": {
+      "/policies/privacy": {
+        "footer": true,
+        "controller": true
+      },
+      "/policies/terms": {
+        "footer": true,
+        "controller": true
+      },
+      "/policies/refunds": {
+        "footer": true,
+        "controller": true
+      },
+      "/policies/business": {
+        "footer": true,
+        "controller": true
+      }
+    },
+    "preservationSincePR922": {
+      "src/main/resources/templates/public/privacy.html": true,
+      "src/main/resources/templates/fragments/_policy_documents.html": true,
+      "src/main/resources/static/js/f2r_agent_clip_switch.js": true,
+      "src/main/resources/static/js/f2r_home_presentation.js": true,
+      "src/main/resources/static/css/f2r_home_compact.css": true
+    },
+    "dbMigrationDiffSinceRunningCommit": [],
+    "dbAndStudioDiffPR923": [],
+    "existingBundledMediaChangedSinceRunningCommit": [],
+    "newBundledMedia": [
+      "A\tsrc/main/resources/static/img/agents/seven/portrait-20261029.png",
+      "A\tsrc/main/resources/static/img/landing/f2r-exam-remotion-v3-20261029.jpg",
+      "A\tsrc/main/resources/static/video/landing/f2r-exam-remotion-v3-20261029.mp4"
+    ],
+    "studioDomainDiffSinceRunningCommit": [],
+    "agentMediaDomainDiffSinceRunningCommit": [],
+    "flags": {
+      "intakeCodeDefault": false,
+      "bankPublicCodeDefault": false,
+      "productionIntakeEffective": "미검증",
+      "productionBankPublicEffective": "미검증",
+      "productionPromoPathEffective": "미검증"
+    }
+  },
+  "decisions": {
+    "homepageDeployment": "HOLD",
+    "intakeActivation": "HOLD",
+    "newProductionDeployment": false,
+    "productionWritesThisTask": false
+  }
+}
