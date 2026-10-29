@@ -4,7 +4,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.Landing
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.entity.LandingVideoSlotKey;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.LandingVideoService;
-import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService;
 import java.util.EnumMap;
 import java.util.Map;
 import java.net.URI;
@@ -25,7 +24,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class LandingPageController {
 
   private final LandingVideoService landingVideoService;
-  private final HomeAgentTrailerService homeAgentTrailerService;
+
+  // Uploaded by the user for public homepage use. Exact original bytes; no Studio login/DB dependency.
+  public static final String HOME_AGENT_TRAILER_PATH =
+      "/video/landing/ai-agent-trailer-20261029-d23ef53c.mp4";
 
   // User-supplied approved video (2026-10-29). An explicit empty setting still disables it.
   public static final String DEFAULT_PROMO_PATH = "/video/landing/f2r-exam-remotion-v3-20261029.mp4";
@@ -42,8 +44,7 @@ public class LandingPageController {
     model.addAttribute("examOffer", HomeExamOffer.CURRENT);
     model.addAttribute("examPromoPath", safePromoPath(examPromoPath));
     model.addAttribute("homeReviewGameUrl", safeReviewGameUrl(reviewGameUrl));
-    model.addAttribute("homeAgentTrailerPath", homeAgentTrailerService.approvedMedia().isPresent()
-        ? HomeAgentTrailerService.PUBLIC_PATH : "");
+    model.addAttribute("homeAgentTrailerPath", HOME_AGENT_TRAILER_PATH);
     Map<LandingVideoSlotKey, LandingVideoRenderItem> videos =
         new EnumMap<>(LandingVideoSlotKey.class);
     landingVideoService.resolveRenderItems().forEach(item -> videos.put(item.slot(), item));

@@ -61,13 +61,13 @@ for (const width of [360, 390, 430, 1440]) {
       await page.screenshot({ path: path.join(output, `${width}-promo-visible.png`) });
       await page.locator('#examPromo').screenshot({ path: path.join(output, `${width}-promo-section.png`) });
       await page.locator('#review-game').screenshot({ path: path.join(output, `${width}-game-link.png`) });
-      await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-trailer-pending.png`) });
+      await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-trailer-uploaded.png`) });
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('href', 'https://app.nimblefox.ai/g/g1y7QeOYd8');
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('target', '_blank');
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('rel', 'noopener noreferrer');
-      await expect(page.locator('#homeAgentTrailer')).toHaveCount(0);
+      await expect(page.locator('#homeAgentTrailer')).toHaveAttribute('src', '/video/landing/ai-agent-trailer-20261029-d23ef53c.mp4');
       await expect(page.locator('#homeReviewGamePending')).toHaveCount(0);
-      await expect(page.locator('#homeAgentTrailerPending')).toContainText('트레일러 공개 준비 중');
+      await expect(page.locator('#homeAgentTrailerPending')).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
       await video.scrollIntoViewIfNeeded();
       fs.writeFileSync(path.join(output, `${width}.json`), JSON.stringify(initial, null, 2));

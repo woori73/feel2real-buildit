@@ -18,9 +18,7 @@ import org.springframework.ui.Model;
 class LandingPageControllerTest {
 
   private final LandingVideoService service = mock(LandingVideoService.class);
-  private final f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService trailer =
-      mock(f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService.class);
-  private final LandingPageController controller = new LandingPageController(service, trailer);
+  private final LandingPageController controller = new LandingPageController(service);
 
   @Test
   @DisplayName("given 제품 영상 슬롯 when 루트 렌더 then Shorts/Report 슬롯을 모델에 담고 랜딩 뷰를 반환한다")
@@ -47,7 +45,7 @@ class LandingPageControllerTest {
         .containsEntry("examOffer", f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer.CURRENT)
         .containsEntry("examPromoPath", LandingPageController.DEFAULT_PROMO_PATH)
         .containsEntry("homeReviewGameUrl", LandingPageController.DEFAULT_REVIEW_GAME_URL)
-        .containsEntry("homeAgentTrailerPath", "")
+        .containsEntry("homeAgentTrailerPath", LandingPageController.HOME_AGENT_TRAILER_PATH)
         .hasSize(6);
   }
 
@@ -114,18 +112,14 @@ class LandingPageControllerTest {
   }
 
   @Test
-  void givenCurrentlyApprovedTrailer_whenRendered_thenOnlyFixedPublicAliasIsUsed() {
-    when(trailer.approvedMedia()).thenReturn(java.util.Optional.of(
-        new f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService.Media(
-            "private/key", 100, "a".repeat(64))));
+  void givenUserUploadedTrailer_whenRendered_thenPublicOriginalDoesNotRequireStudioService() {
     when(service.resolveRenderItems()).thenReturn(List.of(
         LandingVideoRenderItem.bundled(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
         LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
     Model model = new ConcurrentModel();
     controller.landing(model);
-    assertThat(model.asMap()).containsEntry("homeAgentTrailerPath",
-        "/api/landing/videos/home-agent-trailer/stream");
-    assertThat(model.asMap().toString()).doesNotContain("private/key", "/api/studio/files");
+    assertThat(model.asMap()).containsEntry("homeAgentTrailerPath", LandingPageController.HOME_AGENT_TRAILER_PATH);
+    assertThat(model.asMap().toString()).doesNotContain("/api/studio/", "/api/landing/videos/home-agent-trailer/stream");
   }
 
 }

@@ -22,7 +22,8 @@ class LandingEdunovaTemplateContractTest {
 
   private static String render(String template, String promoPath) {
     return render(template, promoPath,
-        f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageController.DEFAULT_REVIEW_GAME_URL, "");
+        f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageController.DEFAULT_REVIEW_GAME_URL,
+        f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageController.HOME_AGENT_TRAILER_PATH);
   }
 
   private static String render(String template, String promoPath, String gameUrl, String trailerPath) {
@@ -52,8 +53,8 @@ class LandingEdunovaTemplateContractTest {
       assertThat(position).as(id).isGreaterThan(previous);
       previous = position;
     }
-    assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/g1y7QeOYd8", "트레일러 공개 준비 중")
-        .doesNotContain("id=\"homeAgentTrailer\"", "g1y7QeOYd8/edit");
+    assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/g1y7QeOYd8", "id=\"homeAgentTrailer\"", "/video/landing/ai-agent-trailer-20261029-d23ef53c.mp4")
+        .doesNotContain("트레일러 공개 준비 중", "g1y7QeOYd8/edit");
     assertThat(render("public/landing", "", "", "")).contains("게임 공개 준비 중")
         .doesNotContain("id=\"homeReviewGame\"");
     assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
