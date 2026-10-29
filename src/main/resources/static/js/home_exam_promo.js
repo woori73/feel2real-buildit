@@ -6,6 +6,8 @@
   var sound = document.getElementById('examPromoSound');
   var status = document.getElementById('examPromoStatus');
   var fallback = document.getElementById('examPromoFallback');
+  var autoAttempted = false;
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function notice(text) { status.textContent = text; status.hidden = !text; }
   function syncSound() {
@@ -27,7 +29,7 @@
   sound.hidden = false;
   sound.addEventListener('click', function () { video.muted = !video.muted; syncSound(); play(); });
   video.addEventListener('volumechange', syncSound);
-  video.addEventListener('playing', function () { notice(''); });
+  video.addEventListener('playing', function () { autoAttempted = true; notice(''); });
   video.addEventListener('error', failed);
   document.querySelectorAll('[data-home-agent]').forEach(function (button) {
     button.addEventListener('click', function () { video.pause(); });
@@ -36,12 +38,19 @@
   window.addEventListener('pagehide', function () { video.pause(); });
   if ('IntersectionObserver' in window) {
     var observer = new IntersectionObserver(function (entries) {
-      if (!entries[0].isIntersecting) video.pause();
-    });
+      var entry = entries[0];
+      if (!entry.isIntersecting) video.pause();
+      else if (entry.intersectionRatio >= 0.5 && !autoAttempted && !reducedMotion
+          && !video.error && !document.hidden) {
+        // Start once when the second section is actually in view, never behind the AI assistant.
+        autoAttempted = true;
+        play();
+      }
+    }, { threshold: [0, 0.5] });
     observer.observe(video);
     window.addEventListener('pagehide', function () { observer.disconnect(); }, { once: true });
   }
   syncSound();
   if (video.error) failed();
-  else if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) play();
+  // Browsers without visibility observation retain native/manual controls.
 })();

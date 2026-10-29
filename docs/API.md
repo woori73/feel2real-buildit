@@ -1,5 +1,13 @@
 ## 내신 문제 제작소 (2026-10-26)
 
+## 홈페이지 승인 트레일러 (2026-10-29)
+
+- `GET /api/landing/videos/home-agent-trailer/stream`: 사용자가 홈페이지 공개 대상으로 지정한 `ai-agent-part1`의 파일 `8c2ef989-b739-4bf4-bcd7-b9582851e8e1` **하나**만 읽는다. 임의 파일/프로젝트 선택 인수는 받지 않으며 query가 있으면400. 기존 공개 landing-video GET 권한 범위를 재사용하고 `/api/studio/**`의 인증·프로젝트 권한은 유지한다.
+- Studio `approved_id`가 현재 해당 파일의 VIDEO 리비전을 가리키는지 매 요청 확인한다. 다른 프로젝트·다른 파일·미승인·승인 해제·MP4 외 형식·잘못된 메타데이터·DB 확인 실패는404(홈페이지에서는 준비 중). 원본·승인 포인터·감사 기록·DB를 수정하지 않는다.
+- 정상200 `video/mp4`, 단일 Range206(접미 범위 포함), 잘못되거나 다중 Range416, 동시 재생3건 초과429, 저장소 조회 실패503. 원본은64KiB 버퍼로 스트리밍하며 파일/연결을 닫는다. 저장소 키·파일명·예외 상세는 응답에 노출하지 않는다. `no-store`, `nosniff`로 승인 해제 후 캐시 재사용과 타입 오인을 방지한다. 승인 해제 전에 이미 시작한 스트림은 강제 회수하지 않는다.
+- 공개 홍보 영상과 달리 트레일러는 사용자 클릭으로 재생한다. 영상 오류 시 기존 공개 배너를 유지한다. 실제 운영 파일 MIME·크기·해시·승인 상태·CDN 성능은 운영 읽기 검증 전까지 미검증이다.
+
+
 - 내부 화면 `/naesin-production-studio`: 중등부·고등부 구분. 양쪽 모두 같은 제작·등록·검수 기능을 사용하며 `division=MIDDLE|HIGH`로 구분한다(기본 MIDDLE). ADMIN·실제 운영 계정(modu)만 접근. 대시보드 권한 링크 재사용. 홈(`/`) PC 상단 메뉴·모바일 메뉴의 `내신 제작소`에서 중등부(`?division=MIDDLE`)·고등부(`?division=HIGH`)를 고른다(링크는 숨기지 않고 권한은 서버가 확인, 비로그인은 로그인 안내 후 원래 주소로 복귀).
 - `/api/naesin-production/projects` GET/POST: 목록/개설. POST `{title,school,grade,examRange,division,importKey?}`, grade=중1/중2/중3/중등공통 또는 고1/고2/고3/고등공통. 학교급·학년 불일치400, 다른 학교급 프로젝트 선택409. importKey는 학교급별 멱등 개설 키이며 다른 메타데이터로 재사용하면409. ADMIN 전용 개설. 나머지 내부 API는 `?projectId=naesin-<uuid>` 필수, 타 서비스 프로젝트 선택 거부.
 - `GET /state?q=&offset=0`: 프로젝트·200개 리비전/파일·200개 최근 이벤트, nextOffset. `POST /project-state {action:TITLE|ARCHIVE|REOPEN,title}`: 기존 Studio 보관·재개 재사용, 영구 삭제 없음.

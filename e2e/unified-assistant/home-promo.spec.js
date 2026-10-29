@@ -18,7 +18,7 @@ async function isolate(page, failed = false) {
 }
 
 for (const width of [360, 390, 430, 1440]) {
-  test(`approved promo ${width}: first content, actual playback, sound, controls and contact`, async ({ browser }) => {
+  test(`approved promo ${width}: second section, actual playback, sound, controls and contact`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height: width === 1440 ? 1050 : 900 },
       isMobile: width < 500, hasTouch: width < 500, locale: 'ko-KR' });
     try {
@@ -28,7 +28,14 @@ for (const width of [360, 390, 430, 1440]) {
       await isolate(page);
       await page.goto('/');
       const video = page.locator('#examPromoVideo');
-      await expect(page.locator('main > section').first()).toHaveAttribute('id', 'examPromo');
+      await expect(page.locator('main > section').first()).toHaveAttribute('id', 'aiHome');
+      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 4).map(s => s.id)))
+        .toEqual(['aiHome', 'examPromo', 'review-game', 'ai-content']);
+      // New content order must not start promotional playback behind the first section.
+      expect(await video.evaluate(v => v.paused)).toBe(true);
+      fs.mkdirSync(output, { recursive: true });
+      await page.screenshot({ path: path.join(output, `${width}-request-first.png`) });
+      await video.scrollIntoViewIfNeeded();
       await expect(video).toBeVisible();
       await expect(video).toHaveAttribute('src', source);
       await expect.poll(() => video.evaluate(v => v.readyState >= 2 && !v.paused && v.currentTime > 0), { timeout: 5000 }).toBe(true);
@@ -51,8 +58,18 @@ for (const width of [360, 390, 430, 1440]) {
       await video.evaluate(v => { v.pause(); v.currentTime = 19; });
       await expect.poll(() => video.evaluate(v => !v.seeking && v.readyState >= 2)).toBe(true);
       fs.mkdirSync(output, { recursive: true });
-      await page.screenshot({ path: path.join(output, `${width}-promo-top.png`) });
+      await page.screenshot({ path: path.join(output, `${width}-promo-visible.png`) });
       await page.locator('#examPromo').screenshot({ path: path.join(output, `${width}-promo-section.png`) });
+      await page.locator('#review-game').screenshot({ path: path.join(output, `${width}-game-link.png`) });
+      await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-trailer-pending.png`) });
+      await expect(page.locator('#homeReviewGame')).toHaveAttribute('href', 'https://app.nimblefox.ai/g/g1y7QeOYd8');
+      await expect(page.locator('#homeReviewGame')).toHaveAttribute('target', '_blank');
+      await expect(page.locator('#homeReviewGame')).toHaveAttribute('rel', 'noopener noreferrer');
+      await expect(page.locator('#homeAgentTrailer')).toHaveCount(0);
+      await expect(page.locator('#homeReviewGamePending')).toHaveCount(0);
+      await expect(page.locator('#homeAgentTrailerPending')).toContainText('트레일러 공개 준비 중');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+      await video.scrollIntoViewIfNeeded();
       fs.writeFileSync(path.join(output, `${width}.json`), JSON.stringify(initial, null, 2));
       await video.evaluate(v => v.play());
       await page.locator('#examPromo a').click();
@@ -76,7 +93,25 @@ test('supplied MP4 is byte-identical and supports browser range requests', async
   expect((await partial.body()).length).toBe(32);
 });
 
-test('reduced motion keeps the first video visible and manually playable', async ({ page }) => {
+test('game CTA hands off to the user-provided public URL in an isolated tab (destination is a fixture)', async ({ page, context }) => {
+  await isolate(page);
+  // No live Nimble request: this verifies the link/navigation boundary, not game content or availability.
+  const destination = 'https://app.nimblefox.ai/g/g1y7QeOYd8';
+  await context.route('https://app.nimblefox.ai/**', route => route.fulfill({
+    contentType: 'text/html', body: '<title>Navigation fixture — not the live game</title>'
+  }));
+  await page.goto('/');
+  const opened = page.waitForEvent('popup');
+  await page.locator('#homeReviewGame').click();
+  const popup = await opened;
+  await popup.waitForURL(destination);
+  expect(popup.url()).toBe(destination);
+  expect(await popup.evaluate(() => window.opener === null)).toBe(true);
+  await popup.close();
+  await expect(page.locator('#homeReviewGame')).toBeVisible();
+});
+
+test('reduced motion keeps the promo visible and manually playable', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await isolate(page);
   await page.goto('/');
@@ -97,6 +132,7 @@ test('autoplay rejection retains native controls and a user gesture recovers pla
     };
   });
   await page.goto('/');
+  await page.locator('#examPromoVideo').scrollIntoViewIfNeeded();
   await expect(page.locator('#examPromoStatus')).toContainText('재생 버튼');
   await expect(page.locator('#examPromoVideo')).toBeVisible();
   await page.locator('#examPromoSound').click();
@@ -122,6 +158,7 @@ test('ended video remains visible for replay and character selection pauses its 
   await isolate(page);
   await page.goto('/');
   const video = page.locator('#examPromoVideo');
+  await video.scrollIntoViewIfNeeded();
   await expect.poll(() => video.evaluate(v => !v.paused && v.readyState >= 2), { timeout: 5000 }).toBe(true);
   await video.evaluate(v => { v.currentTime = v.duration - 0.15; });
   await expect.poll(() => video.evaluate(v => v.ended), { timeout: 5000 }).toBe(true);

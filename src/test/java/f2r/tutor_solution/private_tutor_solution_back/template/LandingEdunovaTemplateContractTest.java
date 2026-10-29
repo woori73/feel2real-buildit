@@ -21,6 +21,11 @@ class LandingEdunovaTemplateContractTest {
   }
 
   private static String render(String template, String promoPath) {
+    return render(template, promoPath,
+        f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.LandingPageController.DEFAULT_REVIEW_GAME_URL, "");
+  }
+
+  private static String render(String template, String promoPath, String gameUrl, String trailerPath) {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
@@ -32,16 +37,38 @@ class LandingEdunovaTemplateContractTest {
     Context context = new Context();
     context.setVariable("examOffer", HomeExamOffer.CURRENT);
     context.setVariable("examPromoPath", promoPath);
+    context.setVariable("homeReviewGameUrl", gameUrl);
+    context.setVariable("homeAgentTrailerPath", trailerPath);
     return engine.process(template, context);
   }
 
   @Test
-  void approvedPromoIsFirstContent_andExplicitEmptyPathHidesIt() {
+  void givenContentPriority_whenRendered_thenRequestPromoGameTrailerOrderAndEmptySlotsAreHonest() {
     String html = render();
-    assertThat(html.indexOf("id=\"examPromo\"")).isLessThan(html.indexOf("id=\"aiHome\""));
+    String[] ids = {"aiHome", "examPromo", "review-game", "ai-content", "svc-exam"};
+    int previous = -1;
+    for (String id : ids) {
+      int position = html.indexOf("id=\"" + id + "\"");
+      assertThat(position).as(id).isGreaterThan(previous);
+      previous = position;
+    }
+    assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/g1y7QeOYd8", "트레일러 공개 준비 중")
+        .doesNotContain("id=\"homeAgentTrailer\"", "g1y7QeOYd8/edit");
+    assertThat(render("public/landing", "", "", "")).contains("게임 공개 준비 중")
+        .doesNotContain("id=\"homeReviewGame\"");
     assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
     assertThat(render("public/landing", "")).doesNotContain("id=\"examPromo\"", "id=\"examPromoVideo\"")
         .contains("id=\"aiHome\"", "id=\"homeChat\"");
+  }
+
+  @Test
+  void givenVerifiedContentSettings_whenRendered_thenPublicLinkAndManualTrailerUseSeparateSlots() {
+    String html = render("public/landing", "", "https://app.nimblefox.ai/g/public-fixture",
+        "/api/landing/videos/home-agent-trailer/stream");
+    assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/public-fixture",
+        "rel=\"noopener noreferrer\"", "id=\"homeAgentTrailer\"", "preload=\"none\"",
+        "/images/ai-agent-banner.png").doesNotContain("id=\"homeReviewGamePending\"",
+        "id=\"homeAgentTrailerPending\"", "id=\"examPromoVideo\"");
   }
 
   @Test
@@ -114,7 +141,7 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 읽으면 then 카드 3개가 순서대로 있고 GPU 에듀테인먼트는 제작 착수 예정으로만 표기한다")
+  @DisplayName("given 새 우선순위 when 홈을 읽으면 then 기존 교육 서비스와 제작 예정 표기를 보존한다")
   void cards_inOrder() {
     // given / when
     String html = render();
@@ -123,7 +150,7 @@ class LandingEdunovaTemplateContractTest {
     int dash = html.indexOf("id=\"svc-dashboard\"");
     int ai = html.indexOf("id=\"ai-content\"");
     assertThat(exam).isPositive();
-    assertThat(dash).isGreaterThan(exam);
+    assertThat(exam).isGreaterThan(dash);
     assertThat(dash).isGreaterThan(ai);
     assertThat(html).contains("AI 콘텐츠 제작").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
     assertThat(html).contains("제작 예정").doesNotContain("href=\"#\"");
@@ -141,7 +168,7 @@ class LandingEdunovaTemplateContractTest {
         .contains("기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.")
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    String[] sections = {"aiHome", "svc-exam", "exam-samples", "exam-hit", "exam-blog", "exam-contact", "exam-payment", "ai-content", "chart-showcase"};
+    String[] sections = {"aiHome", "examPromo", "review-game", "ai-content", "svc-exam", "exam-samples", "exam-hit", "exam-blog", "exam-contact", "exam-payment", "chart-showcase"};
     int previous = -1;
     for (String id : sections) {
       int next = html.indexOf("id=\"" + id + "\"");

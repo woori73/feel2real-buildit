@@ -25,9 +25,10 @@
   <script src="/js/f2r_home_agent.js?v=20261029-1" defer></script>
   <link rel="stylesheet" href="/css/f2r_home_compact.css?v=20261028-1">
   <script src="/js/f2r_home_presentation.js?v=20261028-1" defer></script>
-  <link rel="stylesheet" href="/css/home_exam.css?v=20261029-1">
+  <link rel="stylesheet" href="/css/home_exam.css?v=20261029-2">
   <script src="/js/home_exam_contact.js?v=20261028-2" defer></script>
-  <script src="/js/home_exam_promo.js?v=20261029-1" defer></script>
+  <script src="/js/home_exam_promo.js?v=20261029-2" defer></script>
+  <script src="/js/home_agent_trailer.js?v=20261029-1" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
 </head>
 <body data-track-page="home">
@@ -89,25 +90,10 @@
   </nav>
 
   <main>
-    <section class="exam-section exam-promo" id="examPromo" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
-      <div class="exam-promo-frame">
-        <video id="examPromoVideo" th:src="${examPromoPath}" controls muted playsinline preload="metadata"
-               th:poster="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4' ? '/img/landing/f2r-exam-remotion-v3-20261029.jpg' : null}"
-               aria-label="20초 영어 기말 맞춤 문제 서비스 홍보 영상" aria-describedby="examPromoSummary"></video>
-        <img id="examPromoFallback" th:if="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4'}"
-             src="/img/landing/f2r-exam-remotion-v3-20261029.jpg" alt="학교별 영어 기말 맞춤 문제, 2주 160문항 20,000원" hidden>
-      </div>
-      <div class="exam-promo-actions">
-        <button type="button" class="en-btn en-btn-outline" id="examPromoSound" aria-pressed="false" hidden>소리 켜기</button>
-        <a class="en-btn en-btn-primary" href="#exam-contact">맞춤 문제 문의·신청</a>
-      </div>
-      <p id="examPromoSummary" class="exam-caption">학교별 맞춤 제작 · 2주 · 총 4회 · 160문항 · 20,000원</p>
-      <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
-    </section>
     <!-- ============ 첫 화면: AI 비서(세븐·서수니)와 대화로 시작. 기존 상품·교육 콘텐츠는 아래 영역으로 이동(삭제 없음) ============ -->
     <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version},data-intake-enabled=${examIntakeEnabled}">
       <div class="si-home-head" id="pass-offer">
-        <p class="exam-eyebrow">YOUR SCHOOL. YOUR EXAM.</p>
+        <p class="exam-eyebrow">맞춤문제 신청</p>
         <h1 class="si-home-title" id="siHomeTitle">기출과 아주 유사한<br>영어 기말 대비 문제!</h1>
         <p class="exam-hero-quantity" th:text="${examOffer.headline}">2주 동안 160문항</p>
         <p class="exam-hero-price">단 <strong th:text="${examOffer.priceLabel}">20,000원</strong>!</p>
@@ -138,6 +124,62 @@
 
     </section>
 
+    <section class="exam-section exam-promo" id="examPromo" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
+      <div class="exam-promo-frame">
+        <video id="examPromoVideo" th:src="${examPromoPath}" controls muted playsinline preload="metadata"
+               th:poster="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4' ? '/img/landing/f2r-exam-remotion-v3-20261029.jpg' : null}"
+               aria-label="20초 영어 기말 맞춤 문제 서비스 홍보 영상" aria-describedby="examPromoSummary"></video>
+        <img id="examPromoFallback" th:if="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4'}"
+             src="/img/landing/f2r-exam-remotion-v3-20261029.jpg" alt="학교별 영어 기말 맞춤 문제, 2주 160문항 20,000원" hidden>
+      </div>
+      <div class="exam-promo-actions">
+        <button type="button" class="en-btn en-btn-outline" id="examPromoSound" aria-pressed="false" hidden>소리 켜기</button>
+        <a class="en-btn en-btn-primary" href="#exam-contact">맞춤 문제 문의·신청</a>
+      </div>
+      <p id="examPromoSummary" class="exam-caption">학교별 맞춤 제작 · 2주 · 총 4회 · 160문항 · 20,000원</p>
+      <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
+    </section>
+    <section class="exam-section" id="review-game" aria-labelledby="reviewGameTitle">
+      <p class="exam-eyebrow">F2R ENGLISH REVIEW</p>
+      <h2 id="reviewGameTitle">고1 10월 모의고사 복습 게임</h2>
+      <div class="exam-card home-game-card">
+        <img src="/img/F2R_logo_pure.svg" alt="Feel2Real" width="56" height="56" loading="lazy">
+        <div><h3>서수니 AI 튜터와 함께 복습하세요.</h3>
+          <p>고1 10월 모의고사 영어를 게임으로 다시 살펴봅니다.</p>
+          <a id="homeReviewGame" class="en-btn en-btn-primary" th:if="${!#strings.isEmpty(homeReviewGameUrl)}"
+             th:href="${homeReviewGameUrl}" target="_blank" rel="noopener noreferrer">복습 게임 시작하기 ↗</a>
+          <p id="homeReviewGamePending" class="exam-caption" th:if="${#strings.isEmpty(homeReviewGameUrl)}">게임 공개 준비 중입니다. 공개되면 이곳에서 시작할 수 있습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="exam-section" id="ai-content" aria-labelledby="brandTitle" data-track-section="brand">
+      <p class="exam-eyebrow">FEEL2REAL ORIGINAL</p><h2 id="brandTitle">AI AGENT 트레일러</h2>
+      <p>AI AGENT — 인간과 AI의 협업 · AI 콘텐츠 제작</p>
+      <div class="home-trailer-frame" th:if="${!#strings.isEmpty(homeAgentTrailerPath)}">
+        <video id="homeAgentTrailer" th:src="${homeAgentTrailerPath}" controls playsinline preload="none"
+               poster="/images/ai-agent-banner.webp" aria-label="AI AGENT 승인 트레일러"></video>
+        <button type="button" class="en-btn en-btn-outline" id="homeAgentTrailerPlay">트레일러 재생</button>
+        <p id="homeAgentTrailerStatus" class="exam-caption" role="status" hidden></p>
+      </div>
+      <p id="homeAgentTrailerPending" th:if="${#strings.isEmpty(homeAgentTrailerPath)}">트레일러 공개 준비 중입니다. AI AGENT의 대표 이미지를 먼저 만나 보세요.</p>
+      <figure class="en-hero-art">
+        <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
+        <!-- 배너를 누르면 AI AGENT 제작협업실로 이동한다. 접근 권한(ADMIN·modu)은 서버가 확인하고, 로그인 전이면 로그인 안내로 보낸다. -->
+        <a class="en-hero-link" id="enHeroStudio" href="/ai-agent-studio" data-studio-link aria-label="AI AGENT 제작협업실로 이동">
+          <picture>
+            <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
+            <source type="image/webp" srcset="/images/ai-agent-banner.webp">
+            <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" loading="lazy">
+          </picture>
+        </a>
+        <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정 <a class="en-hero-studio" href="/ai-agent-studio" data-studio-link>AI AGENT 제작협업실 바로가기 →</a></figcaption>
+      </figure>
+      <!-- AI AGENT highlight is separate from the exam-service promo; approved gallery stays. -->
+      <div id="agentHighlightSlot" hidden></div>
+      <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.</p>
+      <details id="svc-dashboard" class="exam-other-services"><summary>BuildIt의 교육 서비스 더 보기</summary><div class="exam-contact-actions"><a href="/dashboard">학원 대시보드</a><a href="/ledger">이지장부</a><a href="/builder">학원 홈페이지 제작·관리</a><a href="/admin/hub">관리자 허브</a><a href="/wiki">모의고사위키</a></div></details>
+    </section>
     <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">
       <p class="exam-eyebrow">MADE FOR YOUR SCHOOL</p>
       <h2 id="passProcessTitle">우리 학교에 맞춰 만들고,<br>필요에 맞춰 수정합니다.</h2>
@@ -184,26 +226,6 @@
       <div class="exam-payment"><div><p class="exam-payment-price" th:text="${examOffer.priceLabel}">20,000원</p><p th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p></div><div><p>신청 내용과 제작 가능 일정을 확인한 뒤 입금 방법을 안내합니다. 결제는 별도 안내 후 진행됩니다.</p><p>온라인 계좌 안내는 아직 제공하지 않습니다. 임의로 입금하지 마시고 먼저 문의해 주세요.</p><p class="exam-caption">입금은 관리자 확인 후 완료됩니다. 취소·환불은 콘텐츠 제공 상태와 관계 법령을 확인해 개별 안내하며, 자동 공제하지 않습니다.</p></div></div>
     </section>
 
-    <section class="exam-section" id="ai-content" aria-labelledby="brandTitle" data-track-section="brand">
-      <p class="exam-eyebrow">FEEL2REAL ORIGINAL</p><h2 id="brandTitle">AI AGENT — 인간과 AI의 협업</h2>
-      <p>AI 콘텐츠 제작 · 웹툰·영상 제작 예정</p>
-      <figure class="en-hero-art">
-        <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
-        <!-- 배너를 누르면 AI AGENT 제작협업실로 이동한다. 접근 권한(ADMIN·modu)은 서버가 확인하고, 로그인 전이면 로그인 안내로 보낸다. -->
-        <a class="en-hero-link" id="enHeroStudio" href="/ai-agent-studio" data-studio-link aria-label="AI AGENT 제작협업실로 이동">
-          <picture>
-            <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
-            <source type="image/webp" srcset="/images/ai-agent-banner.webp">
-            <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" loading="lazy">
-          </picture>
-        </a>
-        <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정 <a class="en-hero-studio" href="/ai-agent-studio" data-studio-link>AI AGENT 제작협업실 바로가기 →</a></figcaption>
-      </figure>
-      <!-- AI AGENT highlight is separate from the exam-service promo; approved gallery stays. -->
-      <div id="agentHighlightSlot" hidden></div>
-      <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.</p>
-      <details id="svc-dashboard" class="exam-other-services"><summary>BuildIt의 교육 서비스 더 보기</summary><div class="exam-contact-actions"><a href="/dashboard">학원 대시보드</a><a href="/ledger">이지장부</a><a href="/builder">학원 홈페이지 제작·관리</a><a href="/admin/hub">관리자 허브</a><a href="/wiki">모의고사위키</a></div></details>
-    </section>
     <!-- BUILD IT CHART(복구): 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
     <section class="en-chart bb-chart" id="chart-showcase" data-track-section="chart-showcase" aria-labelledby="enChartTitle">
       <div class="bb-wrap">

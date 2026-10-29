@@ -1,0 +1,47 @@
+{
+  "base": "ba62b7d6840caca65e2bb0f55792b1782bb03efb",
+  "media": [
+    {
+      "path": "src/main/resources/static/video/landing/f2r-exam-remotion-v3-20261029.mp4",
+      "size": 14649213,
+      "sha256": "09a62f5696459dc8df79b5468a4ec2f0c6a5a276340fd35a9427042327d8e0af",
+      "unchangedFromMain": true
+    },
+    {
+      "path": "src/main/resources/static/img/agents/seven/portrait-20261029.png",
+      "size": 138483,
+      "sha256": "7896e8c4908aa9cd05ccaa0fb7fd71fe358c6a12c2004998768dce38cd4fe402",
+      "unchangedFromMain": true
+    },
+    {
+      "path": "src/main/resources/static/img/landing/f2r-exam-remotion-v3-20261029.jpg",
+      "size": 198138,
+      "sha256": "3dcff6318ad0fbb43b046fd29bca7dd9ef994c4e53c463acda336411dd83e984",
+      "unchangedFromMain": true
+    },
+    {
+      "path": "src/main/resources/static/images/ai-agent-banner.png",
+      "size": 2397828,
+      "sha256": "e535c2d390173d8bd44f915bd5fbf2ee49d587c75c2251e6c87a396c42ffd5ef",
+      "unchangedFromMain": true
+    },
+    {
+      "path": "src/main/resources/static/images/ai-agent-banner.webp",
+      "size": 284236,
+      "sha256": "6f5f6027d84289489dd1adba324febe9bf4874368d6b879693f89757713b6231",
+      "unchangedFromMain": true
+    },
+    {
+      "path": "src/main/resources/static/images/ai-agent-banner-m.webp",
+      "size": 105594,
+      "sha256": "be9950b945b4bd106d5d53108a46aade1a10f1a90728f9095e1a99ba37322d69",
+      "unchangedFromMain": true
+    },
+    {
+      "path": "src/main/resources/static/img/F2R_logo_pure.svg",
+      "size": 2508,
+      "sha256": "cd42f22f0203e6086ff5846078292eb77f7fa593e749834e501adc736095df45",
+      "unchangedFromMain": true
+    }
+  ]
+}
