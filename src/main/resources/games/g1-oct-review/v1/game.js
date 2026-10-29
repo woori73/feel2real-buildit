@@ -31,6 +31,18 @@
     showBanner: function (message, type) { if (type === 'error') showError(message); }
   };
 
+  // The game only advances while its own page has focus (document.hasFocus). Inside the homepage iframe a tap on the
+  // homepage toolbar (전체 화면) moves focus out, and Unity blocks the touch default so a later tap never brings it back:
+  // the next question then waits in its 준비 state with an invisible passage. Any touch or click in the game takes focus back.
+  function reclaimFocus() {
+    if (document.hasFocus()) return;
+    window.focus();
+    canvas.focus();
+  }
+  ['touchstart', 'pointerdown', 'mousedown'].forEach(function (type) {
+    window.addEventListener(type, reclaimFocus, { capture: true, passive: true });
+  });
+
   var loader = document.createElement('script');
   loader.src = 'Build/WebGLBuild.loader.js';
   loader.onload = function () {

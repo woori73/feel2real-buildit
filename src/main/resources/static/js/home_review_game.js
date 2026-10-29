@@ -32,6 +32,13 @@
       });
     }
 
+    // 게임은 자기 화면에 포커스가 있을 때만 문제를 진행한다. 홈페이지 버튼을 누르면 포커스가 밖으로 나가므로 바로 되돌려 준다.
+    function focusGame() {
+      if (!frame) return;
+      try { if (frame.contentWindow && frame.contentWindow.focus) frame.contentWindow.focus(); } catch (_) { /* 로딩 전 */ }
+      if (frame.focus) frame.focus();
+    }
+
     function isFullscreen() {
       return !!doc.fullscreenElement;
     }
@@ -68,7 +75,7 @@
         var pending = enterFullscreen(root);
         if (pending) pending.catch(function () { /* 화면 전체 레이어로 계속 */ });
       }
-      if (frame.focus) frame.focus();
+      focusGame();
     }
 
     function close() {
@@ -90,9 +97,10 @@
     function fullscreen() {
       if (!frame) return;
       if (immersive) {
-        if (isFullscreen()) { if (doc.exitFullscreen) doc.exitFullscreen(); return; }
+        if (isFullscreen()) { if (doc.exitFullscreen) doc.exitFullscreen(); focusGame(); return; }
         var pending = enterFullscreen(root);
         if (pending) pending.catch(function () {});
+        focusGame();
         return;
       }
       var openWindow = function () { win.open(src, '_blank', 'noopener'); };
@@ -101,6 +109,8 @@
       if (result) result.catch(openWindow);
     }
 
+    // 전체 화면이 켜지고 꺼지는 동안에도 포커스가 바뀔 수 있으므로 끝난 뒤 한 번 더 되돌린다.
+    if (doc.addEventListener) doc.addEventListener('fullscreenchange', focusGame);
     doc.getElementById('homeGameStart').addEventListener('click', start);
     doc.getElementById('homeGameClose').addEventListener('click', close);
     doc.getElementById('homeGameFullscreen').addEventListener('click', fullscreen);
