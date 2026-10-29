@@ -5086,6 +5086,7 @@ ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(�
 
 - `GET /admin/hub/exam-bank`, `GET/PUT /api/admin/exam-intake/bank`, `POST /api/admin/exam-intake/bank/approve`: `bank-admin-enabled` 독립 제어, ADMIN 전용. 고객 신청 OFF에서도 등록 가능. 누락 스키마503, 저장→미승인, 별도 승인. 공개는 `enabled && bank-public-enabled && approved`.
 - `GET /exam-service/privacy`, `/exam-service/terms`: 신청 활성 여부와 무관한 비개인 안내. 기존 `/privacy` 보존.
+- `GET /policies`: 신청·판매자 확인·계좌 공개 여부와 무관한 정책 안내. 개인정보/이용·환불/사업자 정보와 확장 전용 `/privacy`, 신청 정책 검토안의 범위를 구분한다. 사용자 데이터 조회·변경 없음. 공통 푸터는 `/policies#privacy`, `/policies#terms`로 연결한다. [조사·승인 대기 항목](home-exam/PUBLIC-POLICY-REVIEW-20261029.md).
 - 신규 접수 details에 `ageBand`, `privacyVersion`, `termsVersion`, `termsAccepted`, `optionalConsent`, 필요 시 `guardianConsentId`. 동의/연령 누락400, 미확인 보호자409. 문의에는 학교/학년 선택, 신청에는 이용·환불 약관 동의 필수. 버전은 config에서 읽는다. 과거 계약 변경 없음.
 - `GET/POST /api/exam-intake/guardian-consents`: 본인 목록·성인 법정대리인 전자동의 요청. 본인 정보만 수집, 하루5건 한도. `GET /api/admin/exam-intake/guardian-consents`: ADMIN 목록. 화면 `/exam-service/guardian`, `/admin/hub/exam-guardians`.
 - `POST /api/admin/exam-intake/guardian-consents/{id}/verify`: ADMIN 전화 확인3항목 모두true. 자신 요청 확인403. `/reject`: 결과 `DECLINED` 또는 `UNVERIFIED`. 본인/ADMIN `POST /api/exam-intake/guardian-consents/{id}/revoke`. 모두 기존 same-origin/X-F2R-Exam=1 조건. 30일 유효·계정 귀속·1회 사용·철회 시 추가 아동 자료 처리 거부.

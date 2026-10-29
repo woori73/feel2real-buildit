@@ -45,9 +45,8 @@
         </div>
       </div>
       <div class="footer-links">
-        <a th:if="${examSeller != null}" href="/faq#exam-service-terms">서비스 이용·환불 안내</a>
-        <a th:unless="${examSeller != null}" onclick="comingSoon()">서비스 이용약관</a>
-        <a th:href="${examSeller != null} ? '/exam-service/privacy#privacy' : '/privacy'">개인정보처리방침</a>
+        <a href="/policies#terms">서비스 이용·환불 안내</a>
+        <a href="/policies#privacy">개인정보처리방침</a>
         <a onclick="openContactModal()">문의하기</a>
       </div>
     </div>

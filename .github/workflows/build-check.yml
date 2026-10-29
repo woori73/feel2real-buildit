@@ -164,6 +164,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.controller.SitemapControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.examintake.*"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.PublicLegalControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.agentmedia.AgentMediaStoreTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycraft.AcademyCraftGatewayTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academycrafthelp.*"
@@ -503,6 +504,7 @@ jobs:
       - name: Run MySQL integration tests
         run: >-
           ./gradlew test --no-daemon --stacktrace
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.PublicPolicyMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.service.AcademyAiMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.VisualEditorMySqlIntegrationTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyWorkingCopyMySqlTest"
