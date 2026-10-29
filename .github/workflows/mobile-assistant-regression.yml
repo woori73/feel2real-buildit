@@ -13,8 +13,6 @@ on:
       - 'src/main/resources/static/css/public_policies.css'
       - 'src/main/resources/static/css/public_footer.css'
       - 'src/main/resources/static/css/f2r_home_agent.css'
-      - 'src/main/resources/static/css/f2r_home_compact.css'
-      - 'src/main/resources/static/js/f2r_home_presentation.js'
       - 'src/main/resources/static/css/landing_edunova.css'
       - 'src/main/resources/static/js/f2r_home_agent.js'
       - 'src/main/resources/static/img/agents/seven/**'
@@ -23,6 +21,9 @@ on:
       - 'src/test/js/*home*'
       - 'src/main/resources/static/js/home_exam*'
       - 'src/main/resources/static/js/home_agent_trailer.js'
+      - 'src/main/resources/static/js/home_review_game.js'
+      - 'src/main/resources/static/video/landing/ai-agent-trailer-*'
+      - 'src/main/resources/games/**'
       - 'src/main/resources/static/css/home_exam.css'
       - 'src/main/java/**/landing/**'
       - 'e2e/unified-assistant/**'
@@ -32,7 +33,7 @@ permissions:
 jobs:
   chromium-local:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -89,7 +90,7 @@ jobs:
           curl -fsS http://127.0.0.1:8082/actuator/health
           docker exec -i unified-ai-mysql mysql --default-character-set=utf8mb4 -uroot -punified-local-only < e2e/unified-assistant/fixtures.sql
       - name: Original unit tests plus intake and guide regression
-        run: node --test src/test/js/f2r_home_agent.test.js src/test/js/f2r_agent_flows.test.js src/test/js/home_agent_exam_contract.test.js src/test/js/unified_assistant_tour.test.js src/test/js/home_hologram_intake.test.js src/test/js/home_exam_contact.test.js src/test/js/home_exam_promo.test.js src/test/js/home_agent_trailer.test.js
+        run: node --test src/test/js/f2r_home_agent.test.js src/test/js/f2r_agent_flows.test.js src/test/js/home_agent_exam_contract.test.js src/test/js/unified_assistant_tour.test.js src/test/js/home_hologram_intake.test.js src/test/js/home_exam_contact.test.js src/test/js/home_exam_promo.test.js src/test/js/home_agent_trailer.test.js src/test/js/home_review_game.test.js
       - name: Original assistant E2E and responsive regression
         working-directory: e2e/unified-assistant
         run: |
@@ -110,6 +111,7 @@ jobs:
             build/verification/home-seven
             build/verification/home-promo
             build/verification/home-trailer
+            build/verification/home-game
             build/verification/public-policies
       - name: Stop only this job's test applications and DB
         if: always()

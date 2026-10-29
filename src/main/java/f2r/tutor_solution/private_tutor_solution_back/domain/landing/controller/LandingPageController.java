@@ -37,13 +37,19 @@ public class LandingPageController {
   @Value("${app.home.review-game-url:" + DEFAULT_REVIEW_GAME_URL + "}")
   private String reviewGameUrl = DEFAULT_REVIEW_GAME_URL;
 
+  // Trailer file supplied by the user on 2026-10-29. An empty override falls back to the Studio-approved alias.
+  public static final String DEFAULT_AGENT_TRAILER_PATH = "/video/landing/ai-agent-trailer-v16i-20261029.mp4";
+  @Value("${app.home.agent-trailer-path:" + DEFAULT_AGENT_TRAILER_PATH + "}")
+  private String agentTrailerPath = DEFAULT_AGENT_TRAILER_PATH;
+
   @GetMapping("/")
   public String landing(Model model) {
     model.addAttribute("examOffer", HomeExamOffer.CURRENT);
     model.addAttribute("examPromoPath", safePromoPath(examPromoPath));
     model.addAttribute("homeReviewGameUrl", safeReviewGameUrl(reviewGameUrl));
-    model.addAttribute("homeAgentTrailerPath", homeAgentTrailerService.approvedMedia().isPresent()
-        ? HomeAgentTrailerService.PUBLIC_PATH : "");
+    // The game build runs inside Feel2Real; the Nimble URL stays as the fallback link.
+    model.addAttribute("homeReviewGamePath", HomeReviewGameController.PAGE_PATH);
+    model.addAttribute("homeAgentTrailerPath", trailerPath());
     Map<LandingVideoSlotKey, LandingVideoRenderItem> videos =
         new EnumMap<>(LandingVideoSlotKey.class);
     landingVideoService.resolveRenderItems().forEach(item -> videos.put(item.slot(), item));
@@ -53,6 +59,12 @@ public class LandingPageController {
     model.addAttribute(
         "parentReportVideo", required(videos, LandingVideoSlotKey.PARENT_REPORT_DEMO));
     return "public/landing";
+  }
+
+  private String trailerPath() {
+    String bundled = safePromoPath(agentTrailerPath);
+    if (!bundled.isEmpty()) return bundled;
+    return homeAgentTrailerService.approvedMedia().isPresent() ? HomeAgentTrailerService.PUBLIC_PATH : "";
   }
 
   static String safePromoPath(String path) {

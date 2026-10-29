@@ -25,8 +25,8 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     await isolate(page);
     await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new DOMException('Denied','NotAllowedError');}}}));
     await page.goto('/');
-    await expect(page.locator('#siHomeTitle')).toHaveText('기출과 아주 유사한영어 기말 대비 문제!');
-    await expect(page.locator('#homeChat')).toContainText('160문항');
+    await expect(page.locator('#siHomeTitle')).toHaveText('기출과 아주 유사한 영어 기말 대비 문제');
+    await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
     await expect(page.locator('#homeName')).toHaveText('서수니');
     await expect(page.locator('#exam-payment')).toContainText('20,000원');
     expect(await page.locator('main').innerText()).not.toMatch(/3주|240문항|총 6회|30,000원|서수니입니다/);
@@ -39,12 +39,13 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
       await expect.poll(()=>page.locator(`[data-home-agent="${agent}"] img`).evaluate(i=>i.complete&&i.naturalWidth>0),{timeout:5000}).toBe(true);
       await expect.poll(()=>page.locator('#homeStage video').evaluateAll((vs,a)=>vs.some(v=>v.currentSrc.includes('/'+a+'/')&&v.readyState>=2&&!v.paused),agent),{timeout:5000}).toBe(true);
     }
-    for(const tile of await page.locator('.si-holo-tile').all()) {
-      await tile.click(); await expect(page.locator('#homeChat .is-agent').last()).toContainText('총 4회');
+    await expect(page.locator('.si-holo-tile')).toHaveCount(0);
+    for(const question of ['시험 범위 제출 방법','학부모 신청 문의']) {
+      await page.locator('#homeInput').fill(question);await page.locator('#homeForm button').click();
+      await expect(page.locator('#homeChat .is-agent').last()).toContainText('총 4회');
     }
     await page.locator('#homeInput').fill('zqxv 알 수 없는 질문');await page.locator('#homeForm button').click();
     await expect(page.locator('#homeChat .is-agent').last()).toContainText('아래에서 골라');
-    await page.locator('#homeWelcomeAgain').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
     await expect(page.locator('#enExamMail')).toHaveAttribute('href','mailto:woorinaesin@naver.com');
     // Observe the actual native click without launching an external email app in a CI runner.
     await page.evaluate(()=>{ window.mailClicks=[]; document.addEventListener('click',e=>{const a=e.target.closest('#enExamMail');if(a){window.mailClicks.push({href:a.href,prevented:e.defaultPrevented});e.preventDefault();}}); });
@@ -70,5 +71,5 @@ test('given failed clip when rendering then approved-path poster remains visible
   await isolate(page,{brokenVideo:true}); await page.goto('/');
   await expect(page.locator('#stagePoster')).toBeVisible();
   await expect.poll(()=>page.locator('#stagePoster').evaluate(i=>i.complete&&i.naturalWidth>0),{timeout:5000}).toBe(true);
-  await expect(page.locator('#homeChat')).toContainText('160문항');
+  await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
 });

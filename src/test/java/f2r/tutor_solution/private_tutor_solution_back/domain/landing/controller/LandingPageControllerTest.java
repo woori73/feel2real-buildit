@@ -47,8 +47,9 @@ class LandingPageControllerTest {
         .containsEntry("examOffer", f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer.CURRENT)
         .containsEntry("examPromoPath", LandingPageController.DEFAULT_PROMO_PATH)
         .containsEntry("homeReviewGameUrl", LandingPageController.DEFAULT_REVIEW_GAME_URL)
-        .containsEntry("homeAgentTrailerPath", "")
-        .hasSize(6);
+        .containsEntry("homeReviewGamePath", HomeReviewGameController.PAGE_PATH)
+        .containsEntry("homeAgentTrailerPath", LandingPageController.DEFAULT_AGENT_TRAILER_PATH)
+        .hasSize(7);
   }
 
   @Test
@@ -114,7 +115,27 @@ class LandingPageControllerTest {
   }
 
   @Test
+  @DisplayName("given 사용자 제공 트레일러 when 홈을 그리면 then Studio 조회 없이 번들 영상을 쓰고 잘못된 설정은 거부한다")
+  void givenBundledTrailer_whenRendered_thenStudioIsNotQueried() {
+    // given
+    when(service.resolveRenderItems()).thenReturn(List.of(
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
+    Model model = new ConcurrentModel();
+    // when
+    controller.landing(model);
+    // then
+    assertThat(model.asMap()).containsEntry("homeAgentTrailerPath", "/video/landing/ai-agent-trailer-v16i-20261029.mp4");
+    org.mockito.Mockito.verifyNoInteractions(trailer);
+    org.springframework.test.util.ReflectionTestUtils.setField(controller, "agentTrailerPath", "https://example.com/t.mp4");
+    Model invalid = new ConcurrentModel();
+    controller.landing(invalid);
+    assertThat(invalid.asMap()).containsEntry("homeAgentTrailerPath", "");
+  }
+
+  @Test
   void givenCurrentlyApprovedTrailer_whenRendered_thenOnlyFixedPublicAliasIsUsed() {
+    org.springframework.test.util.ReflectionTestUtils.setField(controller, "agentTrailerPath", "");
     when(trailer.approvedMedia()).thenReturn(java.util.Optional.of(
         new f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.HomeAgentTrailerService.Media(
             "private/key", 100, "a".repeat(64))));

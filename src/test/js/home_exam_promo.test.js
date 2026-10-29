@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const code = fs.readFileSync(require('node:path').resolve(__dirname, '../../main/resources/static/js/home_exam_promo.js'), 'utf8');
 
-function setup({ reduced = false, rejected = false, absent = false, observerAvailable = true } = {}) {
+function setup({ reduced = false, rejected = false, absent = false, observerAvailable = true, saveData = false } = {}) {
   const events = () => ({ handlers: {}, addEventListener(name, fn) {
     const previous = this.handlers[name];
     this.handlers[name] = previous ? () => { previous(); fn(); } : fn;
@@ -25,7 +25,8 @@ function setup({ reduced = false, rejected = false, absent = false, observerAvai
     this.disconnect = () => { disconnected = true; };
   }
   if (observerAvailable) window.IntersectionObserver = IntersectionObserver;
-  vm.runInNewContext(code, { window, document, IntersectionObserver });
+  const navigator = { connection: { saveData } };
+  vm.runInNewContext(code, { window, document, IntersectionObserver, navigator });
   return { video, sound, status, fallback, button, document, window,
     enter(ratio = 1) { intersection([{ isIntersecting: ratio > 0, intersectionRatio: ratio }]); },
     disconnected() { return disconnected; } };
@@ -87,6 +88,16 @@ test('given reduced motion or a hidden tab when entering viewport then no automa
 
 test('given no visibility observer when loaded then native controls remain manual', () => {
   const { video, sound } = setup({ observerAvailable: false });
+  assert.equal(video.plays, 0);
+  sound.handlers.click(); assert.equal(video.plays, 1);
+});
+
+test('given 데이터 절약 모드 when 영상이 화면에 들어오면 then 저절로 받지 않고 소리 버튼으로는 재생된다', () => {
+  // given
+  const { video, sound, enter } = setup({ saveData: true });
+  // when
+  enter();
+  // then
   assert.equal(video.plays, 0);
   sound.handlers.click(); assert.equal(video.plays, 1);
 });

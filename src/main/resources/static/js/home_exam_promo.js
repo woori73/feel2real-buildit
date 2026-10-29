@@ -8,6 +8,8 @@
   var fallback = document.getElementById('examPromoFallback');
   var autoAttempted = false;
   var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // 휴대폰 데이터 절약 모드에서는 14.6MB 영상을 저절로 받지 않는다. 재생 버튼은 그대로 쓸 수 있다.
+  var saveData = !!(typeof navigator !== 'undefined' && navigator.connection && navigator.connection.saveData);
 
   function notice(text) { status.textContent = text; status.hidden = !text; }
   function syncSound() {
@@ -40,7 +42,7 @@
     var observer = new IntersectionObserver(function (entries) {
       var entry = entries[0];
       if (!entry.isIntersecting) video.pause();
-      else if (entry.intersectionRatio >= 0.5 && !autoAttempted && !reducedMotion
+      else if (entry.intersectionRatio >= 0.5 && !autoAttempted && !reducedMotion && !saveData
           && !video.error && !document.hidden) {
         // Start once when the second section is actually in view, never behind the AI assistant.
         autoAttempted = true;

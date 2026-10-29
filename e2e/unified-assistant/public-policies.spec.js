@@ -33,7 +33,7 @@ for (const [width, height] of [[1440, 1050], [360, 800], [390, 844], [430, 932]]
       };
       await page.goto('/');
       await expect(page.locator('#homeChat .is-agent')).toHaveCount(1);
-      await expect(page.locator('.si-holo-tile')).toHaveCount(6);
+      await expect(page.locator('#homeJump a')).toHaveCount(3);
       const footer = page.locator('.footer-links');
       for (const [document, label, heading] of [
         ['privacy', '개인정보처리방침', 'Feel2Real 홈페이지 개인정보 처리방침'],

@@ -15,6 +15,9 @@ const id = '8c2ef989-b739-4bf4-bcd7-b9582851e8e1';
 const item = 'homepage-trailer-isolated-test';
 const revision = '00000000-0000-4000-8000-000000009925';
 const url = '/api/landing/videos/home-agent-trailer/stream';
+// Final trailer supplied by the user on 2026-10-29 (preview_v16i_web.mp4); the homepage plays this bundled file.
+const bundled = '/video/landing/ai-agent-trailer-v16i-20261029.mp4';
+const bundledHash = '2c9fb23ce1a131f7946eec8ee10a8d38541c89186d9d49337b246bebf0b02a99';
 const output = process.env.TRAILER_EVIDENCE_DIR || path.join(__dirname, '../../build/verification/home-trailer');
 const fixture = fs.readFileSync(path.join(__dirname, 'fixtures/test-only.mp4'));
 const hash = crypto.createHash('sha256').update(fixture).digest('hex');
@@ -76,6 +79,16 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
     expect(sql('SELECT COUNT(*) FROM studio_files; SELECT COUNT(*) FROM studio_events;')).toBe(counts);
   });
 
+  test('bundled final trailer is byte-identical and supports range requests', async ({ request }) => {
+    const full = await request.get(bundled);
+    expect(full.status()).toBe(200);
+    expect(full.headers()['content-type']).toContain('video/mp4');
+    expect(crypto.createHash('sha256').update(await full.body()).digest('hex')).toBe(bundledHash);
+    const partial = await request.get(bundled, { headers: { Range: 'bytes=0-31' } });
+    expect(partial.status()).toBe(206);
+    expect((await partial.body()).length).toBe(32);
+  });
+
   for (const width of [360, 390, 430, 1440]) {
     test(`manual trailer playback ${width}px with source-preserving fallback`, async ({ browser }) => {
       const context = await browser.newContext({ viewport: { width, height: 1000 }, isMobile: width < 500, hasTouch: width < 500 });
@@ -90,7 +103,7 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
         const page = await context.newPage();
         await page.goto('/');
         const video = page.locator('#homeAgentTrailer');
-        await expect(video).toHaveAttribute('src', url);
+        await expect(video).toHaveAttribute('src', bundled);
         await expect(page.locator('#homeAgentTrailerPending')).toHaveCount(0);
         expect(await video.evaluate(v => v.paused && !v.autoplay && v.controls && v.playsInline)).toBe(true);
         await page.locator('#homeAgentTrailerPlay').click();
@@ -98,8 +111,8 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
         await page.locator('#homeAgentTrailerPlay').click();
         await expect.poll(() => video.evaluate(v => v.paused), { timeout: 5000 }).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
-        await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-synthetic-trailer.png`) });
-        await page.route(`**${url}`, route => route.fulfill({ status: 503 }));
+        await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-final-trailer.png`) });
+        await page.route(`**${bundled}`, route => route.fulfill({ status: 503 }));
         // Inject transport failure directly: load() may hide the play button before another click.
         await video.evaluate(v => { v.load(); v.play().catch(() => {}); });
         await expect(page.locator('#homeAgentTrailerStatus')).toContainText('불러오지 못했습니다');
@@ -109,13 +122,14 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
     });
   }
 
-  test('approval revocation immediately removes the home slot and denies the public stream', async ({ request }) => {
+  test('approval revocation denies the Studio alias while the homepage keeps the bundled final trailer', async ({ request }) => {
     try {
       sql(`UPDATE studio_items SET approved_id=NULL WHERE project_id='ai-agent-part1' AND item_key='${item}';`);
       expect((await request.get(url)).status()).toBe(404);
       const html = await (await request.get('/')).text();
-      expect(html).not.toContain('id="homeAgentTrailer"');
-      expect(html).toContain('id="homeAgentTrailerPending"');
+      expect(html).toContain(`src="${bundled}"`);
+      expect(html).not.toContain(url);
+      expect(html).not.toContain('id="homeAgentTrailerPending"');
     } finally {
       sql(`UPDATE studio_items SET approved_id='${revision}' WHERE project_id='ai-agent-part1' AND item_key='${item}';`);
     }

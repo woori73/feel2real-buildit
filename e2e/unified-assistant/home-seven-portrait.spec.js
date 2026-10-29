@@ -53,11 +53,11 @@ for (const width of [360, 390, 430, 1440]) {
       await expect(poster).toBeVisible();
       await expect.poll(() => poster.evaluate(i => i.complete && i.naturalWidth > 0), { timeout: 5000 }).toBe(true);
       for (const image of [seven.locator('img'), poster]) {
-        expect(await image.evaluate(i => getComputedStyle(i).objectFit)).toBe('contain');
+        expect(await image.evaluate(i => getComputedStyle(i).objectFit)).toBe('cover');
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
-      await expect(page.locator('.si-holo-tile')).toHaveCount(6);
-      await expect(page.locator('#homeChat')).toContainText('160문항');
+      await expect(page.locator('#homeJump a')).toHaveCount(3);
+      await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
       fs.mkdirSync(output, { recursive: true });
       await page.locator('#homeStage').screenshot({ path: path.join(output, `${width}-seven-stage.png`) });
       await page.screenshot({ path: path.join(output, `${width}-seven-home.png`), fullPage: true });
@@ -85,7 +85,7 @@ for (const mode of ['api-failed', 'empty']) {
   });
 }
 
-test('Seven original poster preserves existing MP4 greeting and idle playback', async ({ page }) => {
+test('Seven greeting plays the existing MP4, then the home returns to the still photo (no idle download)', async ({ page }) => {
   await isolate(page, 'healthy');
   await page.goto('/');
   await page.locator('[data-home-agent="seven"]').click();
@@ -93,7 +93,7 @@ test('Seven original poster preserves existing MP4 greeting and idle playback', 
     v.currentSrc.endsWith('/seven/speak.mp4') && v.readyState >= 2 && !v.paused)), { timeout: 5000 }).toBe(true);
   await expect(page.locator('#stagePoster')).toBeHidden();
   await page.locator('#homeStage video[src="/agent-media/public/seven/speak.mp4"]').evaluate(v => v.dispatchEvent(new Event('ended')));
-  await expect.poll(() => page.locator('#homeStage video').evaluateAll(vs => vs.some(v =>
-    v.currentSrc.endsWith('/seven/idle.mp4') && v.readyState >= 2 && !v.paused)), { timeout: 5000 }).toBe(true);
-  await expect(page.locator('#homeStage video[src="/agent-media/public/seven/idle.mp4"]')).toHaveAttribute('poster', portrait);
+  await expect(page.locator('#stagePoster')).toHaveAttribute('src', portrait);
+  await expect(page.locator('#stagePoster')).toBeVisible();
+  expect(await page.locator('#homeStage video').evaluateAll(vs => vs.every(v => v.paused && !(v.getAttribute('src') || '').endsWith('idle.mp4')))).toBe(true);
 });
