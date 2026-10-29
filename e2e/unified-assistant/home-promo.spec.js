@@ -28,11 +28,11 @@ for (const width of [360, 390, 430, 1440]) {
       await isolate(page);
       await page.goto('/');
       const video = page.locator('#examPromoVideo');
-      await expect(page.locator('main > section').first()).toHaveAttribute('id', 'aiHome');
+      await expect(page.locator('main > section').first()).toHaveAttribute('id', 'pass-offer');
       expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 4).map(s => s.id)))
-        .toEqual(['aiHome', 'examPromo', 'review-game', 'ai-content']);
-      // New content order must not start promotional playback behind the first section.
-      expect(await video.evaluate(v => v.paused)).toBe(true);
+        .toEqual(['pass-offer', 'examPromo', 'ai-content', 'review-game']);
+      // The promo sits right under the short offer, so it starts muted once it is half visible.
+      expect(await video.evaluate(v => v.getBoundingClientRect().top)).toBeLessThan(width === 1440 ? 1050 : 900);
       fs.mkdirSync(output, { recursive: true });
       await page.screenshot({ path: path.join(output, `${width}-request-first.png`) });
       await video.scrollIntoViewIfNeeded();
@@ -61,13 +61,14 @@ for (const width of [360, 390, 430, 1440]) {
       await page.screenshot({ path: path.join(output, `${width}-promo-visible.png`) });
       await page.locator('#examPromo').screenshot({ path: path.join(output, `${width}-promo-section.png`) });
       await page.locator('#review-game').screenshot({ path: path.join(output, `${width}-game-link.png`) });
-      await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-trailer-pending.png`) });
+      await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-trailer.png`) });
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('href', 'https://app.nimblefox.ai/g/g1y7QeOYd8');
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('target', '_blank');
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('rel', 'noopener noreferrer');
-      await expect(page.locator('#homeAgentTrailer')).toHaveCount(0);
+      await expect(page.locator('#homeAgentTrailer')).toHaveAttribute('src', '/video/landing/ai-agent-trailer-v16i-20261029.mp4');
       await expect(page.locator('#homeReviewGamePending')).toHaveCount(0);
-      await expect(page.locator('#homeAgentTrailerPending')).toContainText('트레일러 공개 준비 중');
+      await expect(page.locator('#homeAgentTrailerPending')).toHaveCount(0);
+      await expect(page.locator('#homeGameStart')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
       await video.scrollIntoViewIfNeeded();
       fs.writeFileSync(path.join(output, `${width}.json`), JSON.stringify(initial, null, 2));
@@ -151,7 +152,7 @@ test('failed video keeps the original-frame poster, contact and assistant availa
   await expect(page.locator('#examContactTitle')).toBeInViewport();
   await page.locator('[data-home-agent="seven"]').click();
   await expect(page.locator('#stagePoster')).toBeVisible();
-  await expect(page.locator('#homeChat')).toContainText('160문항');
+  await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
 });
 
 test('ended video remains visible for replay and character selection pauses its audio', async ({ page }) => {

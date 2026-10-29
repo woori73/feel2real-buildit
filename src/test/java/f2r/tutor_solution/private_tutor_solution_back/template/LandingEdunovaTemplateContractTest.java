@@ -26,6 +26,11 @@ class LandingEdunovaTemplateContractTest {
   }
 
   private static String render(String template, String promoPath, String gameUrl, String trailerPath) {
+    return render(template, promoPath, gameUrl, trailerPath,
+        f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller.HomeReviewGameController.PAGE_PATH);
+  }
+
+  private static String render(String template, String promoPath, String gameUrl, String trailerPath, String gamePath) {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
     resolver.setPrefix("templates/");
     resolver.setSuffix(".html");
@@ -39,13 +44,15 @@ class LandingEdunovaTemplateContractTest {
     context.setVariable("examPromoPath", promoPath);
     context.setVariable("homeReviewGameUrl", gameUrl);
     context.setVariable("homeAgentTrailerPath", trailerPath);
+    context.setVariable("homeReviewGamePath", gamePath);
     return engine.process(template, context);
   }
 
   @Test
+  @DisplayName("given 개편 순서 when 렌더하면 then 상품→영상→콘텐츠 버튼→트레일러→게임→차트→비서→기존 안내 순서이고 빈 칸은 솔직하게 표시한다")
   void givenContentPriority_whenRendered_thenRequestPromoGameTrailerOrderAndEmptySlotsAreHonest() {
     String html = render();
-    String[] ids = {"aiHome", "examPromo", "review-game", "ai-content", "svc-exam"};
+    String[] ids = {"pass-offer", "examPromo", "homeJump", "ai-content", "review-game", "chart-showcase", "aiHome", "svc-exam"};
     int previous = -1;
     for (String id : ids) {
       int position = html.indexOf("id=\"" + id + "\"");
@@ -53,9 +60,17 @@ class LandingEdunovaTemplateContractTest {
       previous = position;
     }
     assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/g1y7QeOYd8", "트레일러 공개 준비 중")
+        .contains("data-game-src=\"/games/g1-oct-review/v1/\"", "id=\"homeGameStart\"")
         .doesNotContain("id=\"homeAgentTrailer\"", "g1y7QeOYd8/edit");
-    assertThat(render("public/landing", "", "", "")).contains("게임 공개 준비 중")
-        .doesNotContain("id=\"homeReviewGame\"");
+    // The game iframe is created only after the user presses 게임 시작 (layout-level noscript tags excluded).
+    assertThat(html.substring(html.indexOf("<main"), html.indexOf("</main>"))).doesNotContain("<iframe");
+    String jump = html.substring(html.indexOf("id=\"homeJump\""), html.indexOf("id=\"ai-content\""));
+    int trailer = jump.indexOf("href=\"#ai-content\""), game = jump.indexOf("href=\"#review-game\""), chart = jump.indexOf("href=\"#chart-showcase\"");
+    assertThat(trailer).isPositive().isLessThan(game);
+    assertThat(game).isLessThan(chart);
+    assertThat(jump).contains("AI AGENT 트레일러", "고1 10월 영어 복습 게임", "BuildIt 차트 소개");
+    assertThat(render("public/landing", "", "", "", "")).contains("게임 공개 준비 중")
+        .doesNotContain("id=\"homeReviewGame\"", "id=\"homeGame\"");
     assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
     assertThat(render("public/landing", "")).doesNotContain("id=\"examPromo\"", "id=\"examPromoVideo\"")
         .contains("id=\"aiHome\"", "id=\"homeChat\"");
@@ -69,6 +84,9 @@ class LandingEdunovaTemplateContractTest {
         "rel=\"noopener noreferrer\"", "id=\"homeAgentTrailer\"", "preload=\"none\"",
         "/images/ai-agent-banner.png").doesNotContain("id=\"homeReviewGamePending\"",
         "id=\"homeAgentTrailerPending\"", "id=\"examPromoVideo\"");
+    String bundled = render("public/landing", "", "", "/video/landing/ai-agent-trailer-v16i-20261029.mp4");
+    assertThat(bundled).contains("src=\"/video/landing/ai-agent-trailer-v16i-20261029.mp4\"", "id=\"homeAgentTrailerPlay\"")
+        .doesNotContain("id=\"homeAgentTrailerPending\"");
   }
 
   @Test
@@ -94,20 +112,35 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 읽으면 then 상단 메뉴 6개가 순서대로 있고 학습자료실·고객센터는 없다")
-  void menu_hasSixItemsInOrder() {
+  @DisplayName("given 홈 when 읽으면 then 상단 메뉴는 5개로 줄고 BuildIt 표기·예상문제·AI 콘텐츠 소개는 없으며 기존 서비스 링크는 더보기에 모두 남는다")
+  void menu_isCompactAndKeepsEveryService() {
     // given / when
     String html = render();
     String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
+    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("<main"));
+    String header = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("<main"));
     // then
-    String[] labels = {"예상문제", "대시보드", "이지장부", "모의고사위키", "학원 홈페이지 제작", "AI 콘텐츠 소개"};
+    String[] labels = {">문법 문제은행<", "<summary>내신 제작소</summary>", ">AI AGENT 제작협업실<", "<summary>더보기</summary>"};
     int prev = -1;
     for (String l : labels) {
-      int at = nav.indexOf(">" + l + "<");
+      int at = nav.indexOf(l);
       assertThat(at).as(l).isGreaterThan(prev);
       prev = at;
     }
+    assertThat(nav.indexOf(">모의고사위키<")).isBetween(nav.indexOf(">문법 문제은행<"), nav.indexOf("<summary>내신 제작소</summary>"));
+    assertThat(header).doesNotContain(">예상문제<", ">AI 콘텐츠 소개<", "en-logo-sub", ">BuildIt<", "en-mobile-services");
+    String[] links = {"/grammar-items", "/wiki", "/naesin-production-studio?division=MIDDLE", "/naesin-production-studio?division=HIGH",
+        "/ai-agent-studio", "/dashboard", "/ledger", "/builder", "/chart"};
+    for (String menu : new String[] {nav, drawer}) {
+      for (String link : links) assertThat(menu).as(link).contains("href=\"" + link + "\"");
+    }
+    assertThat(menuLinks(nav)).isEqualTo(menuLinks(drawer));
     assertThat(html).doesNotContain("학습자료실").doesNotContain("고객센터");
+  }
+
+  private static java.util.List<String> menuLinks(String fragment) {
+    return java.util.regex.Pattern.compile("href=\"([^\"]+)\"").matcher(fragment).results()
+        .map(m -> m.group(1)).toList();
   }
 
   @Test
@@ -168,7 +201,7 @@ class LandingEdunovaTemplateContractTest {
         .contains("기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.")
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    String[] sections = {"aiHome", "examPromo", "review-game", "ai-content", "svc-exam", "exam-samples", "exam-hit", "exam-blog", "exam-contact", "exam-payment", "chart-showcase"};
+    String[] sections = {"pass-offer", "examPromo", "homeJump", "ai-content", "review-game", "chart-showcase", "aiHome", "svc-exam", "exam-samples", "exam-hit", "exam-blog", "exam-contact", "exam-payment"};
     int previous = -1;
     for (String id : sections) {
       int next = html.indexOf("id=\"" + id + "\"");
@@ -211,13 +244,11 @@ class LandingEdunovaTemplateContractTest {
     // given / when
     String html = render();
     String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
-    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("class=\"en-mobile-services\""));
-    String mobile = html.substring(html.indexOf("class=\"en-mobile-services\""), html.indexOf("<main"));
+    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("<main"));
     String hero = html.substring(html.indexOf("class=\"en-hero-art\""), html.indexOf("id=\"agentHighlightSlot\""));
     // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
     assertThat(nav).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
     assertThat(drawer).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
-    assertThat(mobile).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
     assertThat(hero).contains("id=\"enHeroStudio\" href=\"/ai-agent-studio\"").contains("/images/ai-agent-banner.png");
     assertThat(html).doesNotContain("data-studio-entry hidden");
   }
@@ -228,7 +259,7 @@ class LandingEdunovaTemplateContractTest {
     // given / when
     String html = render();
     String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
-    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("class=\"en-mobile-services\""));
+    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("<main"));
     // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
     for (String menu : new String[] {nav, drawer}) {
       assertThat(menu)

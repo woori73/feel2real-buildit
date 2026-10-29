@@ -121,7 +121,6 @@
   if (typeof document === 'undefined' || !document.getElementById) return;
 
   var $ = function (id) { return document.getElementById(id); };
-  var WELCOME_KEY = 'f2r.home.welcome';
   var AGENT_KEY = 'f2r.dashboard.agent';
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
@@ -141,7 +140,8 @@
     if (stage) stage.dataset.state = s;
     var consoleEl = $('homeConsole');
     if (consoleEl) consoleEl.dataset.state = s;
-    if (changed && stage && stage.dataset.media === 'ready') portrait();
+    // 홈은 평소 사진만 보여 주므로(영상 없음), 인사를 시작할 때도 화면을 다시 그려 인사 영상을 붙인다.
+    if (changed && stage && (stage.dataset.media === 'ready' || s === 'greeting')) portrait();
     var label = $('homeStateLabel');
     if (label) label.textContent = { idle: '대기', listening: '듣는 중', thinking: '생각 중', speaking: '안내 중', greeting: '말하는 중' }[s] || '대기';
   }
@@ -193,13 +193,23 @@
     ];
   }
 
-  function welcome(force) {
-    var log = $('homeChat');
-    if (!log) return;
-    var later = store.get(WELCOME_KEY) === 'later' && !force;
-    if (later) { bubble('agent', '다시 오셨네요. 기말고사 이용권 신청이나 시험 범위 제출을 도와드릴까요?'); return; }
-    var choices = mainChoices().concat([{ label: '나중에', onClick: function () { store.set(WELCOME_KEY, 'later'); bubble('agent', '알겠습니다. 필요할 때 아래 입력창이나 홀로그램 버튼을 눌러 주세요.'); } }]);
-    bubble('agent', '학교와 시험 범위를 알려 주세요. ' + offerSummary() + ' 접수 방법을 안내해 드릴게요.', choices);
+  // 첫 안내는 한 문장. 상품 설명은 바로 위 화면에 있으므로 되풀이하지 않는다.
+  function welcome() {
+    if (!$('homeChat')) return;
+    bubble('agent', '학교·학년·시험 범위를 적어 주세요. 접수 방법을 알려 드릴게요.');
+  }
+
+  // 홈에서는 사진을 기본으로 보여 준다(데이터 절약). 영상은 캐릭터를 골라 인사할 때만 재생한다.
+  function showPoster(files) {
+    var img = $('stagePoster');
+    if (!img) return;
+    var src = portraitUrl(ui.agent, files, ui.base, true);
+    if (!src) { img.hidden = true; img.removeAttribute('src'); return; }
+    if (img.getAttribute('src') === src) return;
+    img.hidden = true;
+    img.onload = function () { img.hidden = false; };
+    img.onerror = function () { img.hidden = true; };
+    img.src = src;
   }
 
   function portrait() {
@@ -211,7 +221,8 @@
     $('homeName').textContent = AGENTS[ui.agent].name;
     document.querySelectorAll('button[data-home-agent]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.homeAgent === ui.agent ? 'true' : 'false'); });
     pickPortraits();
-    var clip = clipFor(ui.state, files);
+    showPoster(files);
+    var clip = ui.state === 'greeting' ? clipFor(ui.state, files) : null;
     if (ui.base && clip) {
       var src = ui.base + ui.agent + '/' + clip + '.mp4';
       var poster = portraitUrl(ui.agent, files, ui.base, true);
@@ -349,8 +360,6 @@
     // 다른 탭으로 가거나 페이지를 떠나면 인사를 멈춘다(돌아왔을 때 소리가 겹치지 않게).
     document.addEventListener('visibilitychange', function () { if (document.hidden) stopGreeting(); });
     window.addEventListener('pagehide', stopGreeting);
-    var again = $('homeWelcomeAgain');
-    if (again) again.addEventListener('click', function () { welcome(true); });
   }
 
   function init() {
@@ -361,7 +370,7 @@
     ui.user = readUser();
     bind();
     portrait();
-    welcome(false);
+    welcome();
     loadMedia();
     // 계정 메뉴가 로그인 정보를 늦게 채우는 경우(새 탭 첫 진입) 한 번 더 확인한다. 추가 요청은 보내지 않는다.
     setTimeout(function () {

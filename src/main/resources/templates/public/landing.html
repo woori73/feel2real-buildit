@@ -22,35 +22,27 @@
   <link rel="stylesheet" href="/css/landing_edunova.css?v=20261027-1">
   <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261027-8">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
-  <script src="/js/f2r_home_agent.js?v=20261029-1" defer></script>
-  <link rel="stylesheet" href="/css/f2r_home_compact.css?v=20261028-1">
-  <script src="/js/f2r_home_presentation.js?v=20261028-1" defer></script>
-  <link rel="stylesheet" href="/css/home_exam.css?v=20261029-2">
+  <script src="/js/f2r_home_agent.js?v=20261029-2" defer></script>
+  <link rel="stylesheet" href="/css/home_exam.css?v=20261029-3">
   <script src="/js/home_exam_contact.js?v=20261028-2" defer></script>
-  <script src="/js/home_exam_promo.js?v=20261029-2" defer></script>
+  <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
   <script src="/js/home_agent_trailer.js?v=20261029-1" defer></script>
+  <script src="/js/home_review_game.js?v=20261029-1" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
 <div class="en-page">
 
-  <!-- ============ NAV: Feel2Real | BuildIt ============ -->
+  <!-- ============ NAV: 주요 서비스는 그대로, 같은 페이지 앵커·중복 항목은 정리 ============ -->
   <header class="en-nav" id="enNav">
-    <a href="/" class="en-logo" aria-label="Feel2Real BuildIt 홈">
+    <a href="/" class="en-logo" aria-label="Feel2Real 홈">
       <img class="en-logo-mark" src="/img/F2R_logo_pure.svg" alt="F2R 로고" width="40" height="40">
       <span class="en-logo-main">FEEL2REAL</span>
-      <span class="en-logo-sep" aria-hidden="true"></span>
-      <span class="en-logo-sub">BuildIt</span>
     </a>
     <nav class="en-menu" aria-label="주요 서비스">
-      <a href="#svc-exam">예상문제</a>
       <a href="/grammar-items">문법 문제은행</a>
-      <a href="/dashboard">대시보드</a>
-      <a href="/ledger">이지장부</a>
       <a href="/wiki">모의고사위키</a>
-      <a href="/builder">학원 홈페이지 제작</a>
-      <a href="/ai-agent-studio" class="en-menu-studio" data-studio-link>AI AGENT 제작협업실</a>
       <details class="en-naesin" data-naesin-menu>
         <summary>내신 제작소</summary>
         <div class="en-naesin-panel">
@@ -58,7 +50,16 @@
           <a href="/naesin-production-studio?division=HIGH">고등부 제작소</a>
         </div>
       </details>
-      <a href="#ai-content">AI 콘텐츠 소개</a>
+      <a href="/ai-agent-studio" class="en-menu-studio" data-studio-link>AI AGENT 제작협업실</a>
+      <details class="en-naesin en-more" data-naesin-menu>
+        <summary>더보기</summary>
+        <div class="en-naesin-panel">
+          <a href="/dashboard">대시보드</a>
+          <a href="/ledger">이지장부</a>
+          <a href="/builder">학원 홈페이지 제작</a>
+          <a href="/chart">BUILD IT CHART</a>
+        </div>
+      </details>
     </nav>
     <div class="en-actions">
       <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
@@ -66,13 +67,8 @@
     </div>
   </header>
   <div class="en-drawer" id="enDrawer" hidden>
-    <a href="#svc-exam">예상문제</a>
     <a href="/grammar-items">문법 문제은행</a>
-    <a href="/dashboard">대시보드</a>
-    <a href="/ledger">이지장부</a>
     <a href="/wiki">모의고사위키</a>
-    <a href="/builder">학원 홈페이지 제작</a>
-    <a href="/ai-agent-studio" class="en-drawer-studio" data-studio-link>AI AGENT 제작협업실</a>
     <details class="en-naesin" data-naesin-menu>
       <summary>내신 제작소</summary>
       <div class="en-naesin-panel">
@@ -80,48 +76,27 @@
         <a href="/naesin-production-studio?division=HIGH">고등부 제작소</a>
       </div>
     </details>
-    <a href="#ai-content">AI 콘텐츠 소개</a>
+    <a href="/ai-agent-studio" class="en-drawer-studio" data-studio-link>AI AGENT 제작협업실</a>
+    <details class="en-naesin en-more" data-naesin-menu>
+      <summary>더보기</summary>
+      <div class="en-naesin-panel">
+        <a href="/dashboard">대시보드</a>
+        <a href="/ledger">이지장부</a>
+        <a href="/builder">학원 홈페이지 제작</a>
+        <a href="/chart">BUILD IT CHART</a>
+      </div>
+    </details>
   </div>
 
-  <nav class="en-mobile-services" aria-label="모바일 서비스 바로가기">
-    <a href="/grammar-items">문법 문제은행</a>
-    <a href="/wiki">모의고사위키</a>
-    <a href="/ai-agent-studio" class="en-mobile-studio" data-studio-link>AI AGENT 제작협업실</a>
-  </nav>
-
   <main>
-    <!-- ============ 첫 화면: AI 비서(세븐·서수니)와 대화로 시작. 기존 상품·교육 콘텐츠는 아래 영역으로 이동(삭제 없음) ============ -->
-    <section class="si-home" id="aiHome" data-track-section="agentRequest" aria-labelledby="siHomeTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version},data-intake-enabled=${examIntakeEnabled}">
-      <div class="si-home-head" id="pass-offer">
-        <p class="exam-eyebrow">맞춤문제 신청</p>
-        <h1 class="si-home-title" id="siHomeTitle">기출과 아주 유사한<br>영어 기말 대비 문제!</h1>
-        <p class="exam-hero-quantity" th:text="${examOffer.headline}">2주 동안 160문항</p>
-        <p class="exam-hero-price">단 <strong th:text="${examOffer.priceLabel}">20,000원</strong>!</p>
-        <p class="si-home-lead">학교별 맞춤 제작 · 요구사항에 따라 수정</p>
-        <p class="exam-hero-detail" th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p>
-        <a class="en-btn en-btn-primary" href="#exam-contact">문의·신청 및 자료 제출</a>
-        <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
-      </div>
-<section class="command" id="homeConsole" data-state="idle" aria-label="AI 비서와 신청 안내">
-<div class="service-stack left"><button type="button" class="si-holo-tile" data-home-intent="exam"><b>기말고사 이용권</b><small>이용 구성 안내</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>맞춤 문제 신청</b><small>학교별 맞춤 제작</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>시험 범위 제출</b><small>기출 · 교사 힌트</small></button></div>
-<div class="stage" id="homeStage" data-state="idle" data-media="missing" aria-label="캐릭터 영상과 선택">
-<div class="stage-top"><span id="homeCode">SUNI</span><span class="ready" id="homeStateLabel">대기</span></div><div class="orbit" aria-hidden="true"><svg viewBox="0 0 600 500"><g fill="none" stroke="currentColor"><ellipse cx="300" cy="265" rx="264" ry="166" transform="rotate(-16 300 265)"/><ellipse cx="300" cy="265" rx="225" ry="210" stroke-dasharray="3 16"/><ellipse cx="300" cy="265" rx="275" ry="74" transform="rotate(16 300 265)"/><path d="M35 265h35m460 0h35M300 35v35m0 390v-35"/></g></svg></div>
-<div class="media-screen">
-<img id="stagePoster" alt="선택한 캐릭터의 기존 포스터" hidden>
-<video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-label="선택한 캐릭터 영상"></video>
-<video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
-<p id="mediaStatus" role="status">캐릭터 영상을 불러오지 못했습니다. 안내는 계속 이용할 수 있습니다.</p>
-</div>
-<div class="characters" role="group" aria-label="AI 비서 선택">
-<button type="button" class="character no-portrait" data-home-agent="seven" aria-pressed="false"><span class="portrait"><img alt="세븐"></span><span class="identity"><small>H-07</small><strong>세븐</strong><span class="selected-word"></span></span></button><button type="button" class="character no-portrait" data-home-agent="suni" aria-pressed="true"><span class="portrait"><img alt="서수니"></span><span class="identity"><small>SUNI</small><strong>서수니</strong><span class="selected-word"></span></span></button></div><div class="stage-bottom"><strong id="homeName">서수니</strong><span>Feel2Real AI 비서</span></div></div>
-<div class="service-stack right"><button type="button" class="si-holo-tile" data-home-intent="exam"><b>개별 신청</b><small>학생 · 학부모 · 강사 · 원장</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>학부모·학생 신청</b><small>학교 · 학년 안내</small></button><button type="button" class="si-holo-tile" data-home-intent="exam"><b>접수 방법</b><small>카톡 · 이메일 안내</small></button></div></section>
-<section class="assistant" id="assistant" aria-label="AI 비서 대화"><div class="assistant-title"><div><span class="status-dot"></span><strong id="assistant-name">서수니</strong><span>Feel2Real AI 비서</span></div></div>
-<div id="homeChat" class="conversation" tabindex="0" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
-<form id="homeForm" autocomplete="off"><label class="sr" for="homeInput">AI 비서에게 말하기</label><input id="homeInput" maxlength="300" placeholder="학교·학년·시험 범위나 신청 문의를 입력하세요" enterkeyhint="send"><button class="send" type="submit">보내기</button></form>
-<p class="home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span><button type="button" id="homeWelcomeAgain">처음 안내 다시 보기</button></p>
-<div class="prompt-row"><button type="button" data-panel="naesin">내신 제작소</button><a href="/dashboard">학원 대시보드</a><button type="button" data-home-intent="studio">AI AGENT Studio</button></div>
-<div id="naesin-panel" hidden><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></section>
-
+    <!-- 1. 상품 안내(짧게) → 2. 20초 홍보 영상 → 3. 콘텐츠 버튼 3개 → 트레일러·복습 게임·차트 → AI 비서 → 기존 안내 섹션 -->
+    <section class="home-offer" id="pass-offer" aria-labelledby="siHomeTitle">
+      <p class="exam-eyebrow">맞춤문제 신청</p>
+      <h1 class="home-offer-title" id="siHomeTitle">기출과 아주 유사한 영어 기말 대비 문제</h1>
+      <p class="home-offer-line"><span th:text="${examOffer.headline}">2주 동안 160문항</span> · <strong th:text="${examOffer.priceLabel}">20,000원</strong></p>
+      <p class="exam-hero-detail" th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p>
+      <a class="en-btn en-btn-primary" href="#exam-contact">문의·신청 및 자료 제출</a>
+      <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
     </section>
 
     <section class="exam-section exam-promo" id="examPromo" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
@@ -139,26 +114,19 @@
       <p id="examPromoSummary" class="exam-caption">학교별 맞춤 제작 · 2주 · 총 4회 · 160문항 · 20,000원</p>
       <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
     </section>
-    <section class="exam-section" id="review-game" aria-labelledby="reviewGameTitle">
-      <p class="exam-eyebrow">F2R ENGLISH REVIEW</p>
-      <h2 id="reviewGameTitle">고1 10월 모의고사 복습 게임</h2>
-      <div class="exam-card home-game-card">
-        <img src="/img/F2R_logo_pure.svg" alt="Feel2Real" width="56" height="56" loading="lazy">
-        <div><h3>서수니 AI 튜터와 함께 복습하세요.</h3>
-          <p>고1 10월 모의고사 영어를 게임으로 다시 살펴봅니다.</p>
-          <a id="homeReviewGame" class="en-btn en-btn-primary" th:if="${!#strings.isEmpty(homeReviewGameUrl)}"
-             th:href="${homeReviewGameUrl}" target="_blank" rel="noopener noreferrer">복습 게임 시작하기 ↗</a>
-          <p id="homeReviewGamePending" class="exam-caption" th:if="${#strings.isEmpty(homeReviewGameUrl)}">게임 공개 준비 중입니다. 공개되면 이곳에서 시작할 수 있습니다.</p>
-        </div>
-      </div>
-    </section>
+
+    <nav class="home-jump" id="homeJump" aria-label="콘텐츠 바로가기">
+      <a href="#ai-content"><b>AI AGENT 트레일러</b><small>55초 예고편</small></a>
+      <a href="#review-game"><b>고1 10월 영어 복습 게임</b><small>사이트에서 바로 플레이</small></a>
+      <a href="#chart-showcase"><b>BuildIt 차트 소개</b><small>지역별 영어 선생님 찾기</small></a>
+    </nav>
 
     <section class="exam-section" id="ai-content" aria-labelledby="brandTitle" data-track-section="brand">
       <p class="exam-eyebrow">FEEL2REAL ORIGINAL</p><h2 id="brandTitle">AI AGENT 트레일러</h2>
       <p>AI AGENT — 인간과 AI의 협업 · AI 콘텐츠 제작</p>
       <div class="home-trailer-frame" th:if="${!#strings.isEmpty(homeAgentTrailerPath)}">
         <video id="homeAgentTrailer" th:src="${homeAgentTrailerPath}" controls playsinline preload="none"
-               poster="/images/ai-agent-banner.webp" aria-label="AI AGENT 승인 트레일러"></video>
+               th:poster="${homeAgentTrailerPath == '/video/landing/ai-agent-trailer-v16i-20261029.mp4' ? '/img/landing/ai-agent-trailer-v16i-poster.jpg' : '/images/ai-agent-banner.webp'}" aria-label="AI AGENT 트레일러"></video>
         <button type="button" class="en-btn en-btn-outline" id="homeAgentTrailerPlay">트레일러 재생</button>
         <p id="homeAgentTrailerStatus" class="exam-caption" role="status" hidden></p>
       </div>
@@ -180,6 +148,78 @@
       <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.</p>
       <details id="svc-dashboard" class="exam-other-services"><summary>BuildIt의 교육 서비스 더 보기</summary><div class="exam-contact-actions"><a href="/dashboard">학원 대시보드</a><a href="/ledger">이지장부</a><a href="/builder">학원 홈페이지 제작·관리</a><a href="/admin/hub">관리자 허브</a><a href="/wiki">모의고사위키</a></div></details>
     </section>
+
+    <section class="exam-section" id="review-game" aria-labelledby="reviewGameTitle">
+      <p class="exam-eyebrow">F2R ENGLISH REVIEW</p>
+      <h2 id="reviewGameTitle">고1 10월 영어 복습 게임</h2>
+      <p>서수니 튜터와 함께 지문과 유형을 골라 문제를 풉니다. 타이머, 정답 확인, 해설, 오답 노트가 있습니다.</p>
+      <div class="home-game" id="homeGame" th:if="${!#strings.isEmpty(homeReviewGamePath)}" th:attr="data-game-src=${homeReviewGamePath}">
+        <div class="home-game-cover" id="homeGameCover">
+          <img src="/img/F2R_logo_pure.svg" alt="" width="56" height="56" loading="lazy">
+          <p>처음 시작할 때 게임 파일 약 10MB를 내려받습니다. 두 번째부터는 저장된 파일로 바로 열립니다.</p>
+          <button type="button" class="en-btn en-btn-primary" id="homeGameStart">게임 시작</button>
+        </div>
+        <div class="home-game-stage" id="homeGameStage" hidden></div>
+        <div class="home-game-tools" id="homeGameTools" hidden>
+          <button type="button" class="en-btn en-btn-outline" id="homeGameFullscreen">전체 화면</button>
+          <a class="en-btn en-btn-outline" id="homeGameWindow" th:href="${homeReviewGamePath}" target="_blank" rel="noopener">새 창에서 열기</a>
+          <button type="button" class="en-btn en-btn-outline" id="homeGameClose">게임 닫기</button>
+        </div>
+      </div>
+      <p id="homeReviewGamePending" class="exam-caption" th:if="${#strings.isEmpty(homeReviewGamePath) and #strings.isEmpty(homeReviewGameUrl)}">게임 공개 준비 중입니다. 공개되면 이곳에서 시작할 수 있습니다.</p>
+      <p class="exam-caption" th:if="${!#strings.isEmpty(homeReviewGameUrl)}">게임이 열리지 않으면 <a id="homeReviewGame" th:href="${homeReviewGameUrl}" target="_blank" rel="noopener noreferrer">Nimble에서 열기 ↗</a></p>
+    </section>
+
+    <!-- BUILD IT CHART(복구): 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
+    <section class="en-chart bb-chart" id="chart-showcase" data-track-section="chart-showcase" aria-labelledby="enChartTitle">
+      <div class="bb-wrap">
+        <h2 class="bb-title" id="enChartTitle">BUILD IT CHART</h2>
+        <p class="bb-sub">전국의 색깔 있는 영어교육자를 발견합니다.</p>
+        <div class="bb-meta">
+          <span class="bb-week">기준일 <span id="landingChartDate"></span></span>
+          <form class="bb-region" id="chartRegionPicker" autocomplete="off">
+            <label class="visually-hidden" for="chartProvince">시·도</label>
+            <select id="chartProvince"><option value="">시·도 선택</option></select>
+            <label class="visually-hidden" for="chartDistrict">시·군·구</label>
+            <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
+            <button type="submit">색깔 있는 영어쌤 보기</button>
+          </form>
+        </div>
+        <div class="bb-list" id="landingChartTop5" aria-label="BuildIt Chart 공개 TOP5"><div class="bb-empty">전국 Chart를 불러오는 중입니다.</div></div>
+        <div class="bb-foot">
+          <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
+          <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
+        </div>
+        <p class="bb-note">점수마다 근거 자료를 함께 표시 · AI 해석과 근거 자료를 구분 · BuildIt 사용 여부는 점수에 영향 없음</p>
+      </div>
+    </section>
+    <script src="/js/landing_chart.js?v=20261014-1" defer></script>
+
+    <!-- AI 비서: 서수니(기본)·세븐, 입력창과 보내기 중심. 안내 규칙과 로그인 사용자 대시보드 연결은 f2r_home_agent.js 그대로. -->
+    <section class="exam-section home-assistant" id="aiHome" data-track-section="agentRequest" aria-labelledby="assistantTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version},data-intake-enabled=${examIntakeEnabled}">
+      <div class="assistant" id="assistant">
+        <div class="assistant-head">
+          <div class="stage" id="homeStage" data-state="idle" data-media="missing">
+            <img id="stagePoster" alt="선택한 AI 비서 얼굴" hidden>
+            <video class="is-on" id="homeVideo" muted loop playsinline preload="none" aria-label="선택한 캐릭터 영상"></video>
+            <video id="homeVideoAlt" muted loop playsinline preload="none" aria-hidden="true"></video>
+            <span class="stage-mark" aria-hidden="true">F2R</span>
+          </div>
+          <div class="assistant-id">
+            <h2 id="assistantTitle"><span id="homeName">서수니</span> <small>Feel2Real AI 비서</small></h2>
+            <p><span id="homeCode">SUNI</span> · <span id="homeStateLabel">대기</span></p>
+          </div>
+          <div class="characters" role="group" aria-label="AI 비서 선택">
+            <button type="button" class="character no-portrait" data-home-agent="suni" aria-pressed="true"><span class="portrait"><img alt="서수니"></span><strong>서수니</strong></button>
+            <button type="button" class="character no-portrait" data-home-agent="seven" aria-pressed="false"><span class="portrait"><img alt="세븐"></span><strong>세븐</strong></button>
+          </div>
+        </div>
+        <div id="homeChat" class="conversation" tabindex="0" role="log" aria-live="polite" aria-label="AI 비서 대화"></div>
+        <form id="homeForm" autocomplete="off"><label class="sr" for="homeInput">AI 비서에게 말하기</label><input id="homeInput" maxlength="300" placeholder="학교·학년·시험 범위나 신청 문의를 입력하세요" enterkeyhint="send"><button class="send" type="submit">보내기</button></form>
+        <p class="home-mode"><span id="homeMode">안내 모드 · 로그인하면 AI 업무 비서와 연결됩니다</span></p>
+      </div>
+    </section>
+
     <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">
       <p class="exam-eyebrow">MADE FOR YOUR SCHOOL</p>
       <h2 id="passProcessTitle">우리 학교에 맞춰 만들고,<br>필요에 맞춰 수정합니다.</h2>
@@ -226,30 +266,6 @@
       <div class="exam-payment"><div><p class="exam-payment-price" th:text="${examOffer.priceLabel}">20,000원</p><p th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p></div><div><p>신청 내용과 제작 가능 일정을 확인한 뒤 입금 방법을 안내합니다. 결제는 별도 안내 후 진행됩니다.</p><p>온라인 계좌 안내는 아직 제공하지 않습니다. 임의로 입금하지 마시고 먼저 문의해 주세요.</p><p class="exam-caption">입금은 관리자 확인 후 완료됩니다. 취소·환불은 콘텐츠 제공 상태와 관계 법령을 확인해 개별 안내하며, 자동 공제하지 않습니다.</p></div></div>
     </section>
 
-    <!-- BUILD IT CHART(복구): 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
-    <section class="en-chart bb-chart" id="chart-showcase" data-track-section="chart-showcase" aria-labelledby="enChartTitle">
-      <div class="bb-wrap">
-        <h2 class="bb-title" id="enChartTitle">BUILD IT CHART</h2>
-        <p class="bb-sub">전국의 색깔 있는 영어교육자를 발견합니다.</p>
-        <div class="bb-meta">
-          <span class="bb-week">기준일 <span id="landingChartDate"></span></span>
-          <form class="bb-region" id="chartRegionPicker" autocomplete="off">
-            <label class="visually-hidden" for="chartProvince">시·도</label>
-            <select id="chartProvince"><option value="">시·도 선택</option></select>
-            <label class="visually-hidden" for="chartDistrict">시·군·구</label>
-            <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
-            <button type="submit">색깔 있는 영어쌤 보기</button>
-          </form>
-        </div>
-        <div class="bb-list" id="landingChartTop5" aria-label="BuildIt Chart 공개 TOP5"><div class="bb-empty">전국 Chart를 불러오는 중입니다.</div></div>
-        <div class="bb-foot">
-          <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
-          <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
-        </div>
-        <p class="bb-note">점수마다 근거 자료를 함께 표시 · AI 해석과 근거 자료를 구분 · BuildIt 사용 여부는 점수에 영향 없음</p>
-      </div>
-    </section>
-    <script src="/js/landing_chart.js?v=20261014-1" defer></script>
   </main>
 
 </div>

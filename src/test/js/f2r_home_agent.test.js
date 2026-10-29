@@ -51,31 +51,40 @@ test('given 제작협업실 요청 when 답하면 then 누구에게나 제작협
   assert.equal(h.replyFor('exam', {}).links[0].href, 'https://open.kakao.com/o/sMf4ifRi');
 });
 
-test('given 홈 템플릿 when 읽으면 then AI 비서 첫 화면이 상품 영역보다 앞에 있고 20,000원·2주·4회·160문항 안내와 개별 신청 메뉴가 있다', () => {
-  // given / when / then
+test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위, AI 비서는 콘텐츠 아래에 있고 20,000원·2주·4회·160문항 안내와 입력창이 있다', () => {
+  // given / when
+  const offer = HTML.indexOf('id="pass-offer"');
+  const chart = HTML.indexOf('id="chart-showcase"');
   const ai = HTML.indexOf('id="aiHome"');
-  const hero = HTML.indexOf('id="ai-content"');
-  assert.ok(ai > 0 && ai < hero);
+  const process = HTML.indexOf('id="svc-exam"');
+  // then
+  assert.ok(offer > 0 && offer < chart && chart < ai && ai < process);
   // 최종 적용 기준: 기말고사 시험기간 이용권 20,000원·2주·주 2회·총 4회·160문항(회당 40문항)
   assert.match(HTML, /20,000원/);
   assert.match(HTML, /2주 · 주 2회 · 총 4회 · 160문항/);
   assert.doesNotMatch(HTML, /1회 20,000원|3주|240문항/);
-  // Human Intelligence 문구는 삭제됨
   assert.doesNotMatch(HTML, /Human Intelligence/);
-  // 간소화된 홀로그램 메뉴: 개별 신청 타일
-  assert.match(HTML, /개별 신청/);
-  assert.match(HTML, /si-holo-tile/);
-  for (const id of ['homeStage', 'homeChat', 'homeForm', 'homeInput', 'homeMode', 'homeWelcomeAgain']) assert.match(HTML, new RegExp('id="' + id + '"'));
-  // 승인된 신청 중심 타일은 신청 안내로 연결하고, 다른 서비스의 공개 경로는 메뉴에 유지한다.
-  assert.equal((HTML.match(/class="si-holo-tile" data-home-intent="exam"/g) || []).length, 6);
+  // 같은 안내를 되풀이하던 버튼 6개·처음 안내 다시 보기·중복 바로가기는 없다
+  assert.doesNotMatch(HTML, /si-holo-tile|homeWelcomeAgain|prompt-row|id="naesin-panel"|homeConsole/);
+  for (const id of ['homeStage', 'homeChat', 'homeForm', 'homeInput', 'homeMode']) assert.match(HTML, new RegExp('id="' + id + '"'));
   for (const href of ['/grammar-items', '/wiki', '/ai-agent-studio', '/builder']) assert.ok(HTML.includes('href="' + href + '"'));
   assert.match(HTML, /안내 모드/);
   // 결제는 별도 안내 후 진행 (미완성 결제 기능을 결제 가능한 것처럼 표시하지 않음)
   assert.match(HTML, /결제는 별도 안내 후 진행됩니다/);
-  // 신청 접수는 카톡·이메일
   assert.match(HTML, /카카오톡·이메일로 접수합니다/);
-  // 홈 첫 화면 제목은 하나(h1)
   assert.equal((HTML.match(/<h1[\s>]/g) || []).length, 1);
+});
+
+test('given 홈 비서 when 처음 열면 then 한 문장으로 인사하고 사진을 먼저 보여 주며 영상은 인사할 때만 쓴다', () => {
+  // given / when
+  const welcome = JS.slice(JS.indexOf('function welcome()'), JS.indexOf('function showPoster('));
+  const portraitFn = JS.slice(JS.indexOf('function portrait()'), JS.indexOf('function pickPortraits()'));
+  // then
+  assert.equal((welcome.match(/bubble\(/g) || []).length, 1);
+  assert.doesNotMatch(welcome, /mainChoices|links/);
+  assert.match(portraitFn, /showPoster\(files\);/);
+  assert.match(portraitFn, /var clip = ui\.state === 'greeting' \? clipFor\(ui\.state, files\) : null;/);
+  assert.match(HTML, /<img id="stagePoster" alt="선택한 AI 비서 얼굴" hidden>/);
 });
 
 test('given 캐릭터 영상 목록 when 대화 상태가 바뀌면 then 생각 중에만 think.mp4, 없으면 idle로 대신한다', () => {
@@ -191,18 +200,19 @@ test('given 서수니 미디어 when 사진·포스터를 고르면 then 기존 
   assert.equal(h.portraitUrl('suni', ['front.webp'], null, false), null);
 });
 
-test('given 홈 상태창 when 대시보드와 비교하면 then 비서 선택은 사진+이름, 말하는 중 색과 2D 대체 화면 규칙이 같다', () => {
+test('given 홈 비서 선택 when 읽으면 then 서수니가 기본이고 세븐도 사진+이름 버튼으로 남는다', () => {
   // given
   const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
   // when
   const seven = HTML.match(/<button[^>]*data-home-agent="seven"[^>]*>(.*?)<\/button>/);
+  const suni = HTML.match(/<button[^>]*data-home-agent="suni"[^>]*>/);
   // then
   assert.match(seven[0], /class="[^"]*\bno-portrait\b[^"]*"/);
   assert.match(seven[1], /<img alt="세븐">/);
   assert.match(seven[1], /<strong>세븐<\/strong>/);
-  assert.match(HTML, /class="command" id="homeConsole" data-state="idle"/);
+  assert.match(suni[0], /aria-pressed="true"/);
+  assert.match(HTML, /class="stage" id="homeStage" data-state="idle" data-media="missing"/);
   assert.match(CSS, /\.si-home-stage\[data-state="greeting"\] \{ --si-state: var\(--si-violet\); \}/);
-  assert.match(CSS, /\.si-home-pick button\.no-portrait img \{ display: none; \}/);
   assert.match(JS, /\|\| !stageHasFrame\(\)\) \$\('homeStage'\)\.dataset\.media = 'missing'/);
 });
 
