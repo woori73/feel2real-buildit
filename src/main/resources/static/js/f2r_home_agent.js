@@ -109,7 +109,14 @@
     return list.indexOf('poster.jpg') >= 0 ? 'poster.jpg' : null;
   }
 
-  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor, greetingFor: greetingFor, portraitFile: portraitFile, composerScrollDelta: composerScrollDelta };
+  // 홈페이지 세븐 사진은 사용자가 제공한 원본을 쓴다. 운영 영상·미디어 파일은 교체하지 않는다.
+  function portraitUrl(agent, files, base, posterOnly) {
+    if (agent === 'seven') return '/img/agents/seven/portrait-20261029.png';
+    var file = posterOnly ? ((files || []).indexOf('poster.jpg') >= 0 ? 'poster.jpg' : null) : portraitFile(files);
+    return base && file ? base + agent + '/' + file : null;
+  }
+
+  var api = { INTENTS: INTENTS, detectIntent: detectIntent, replyFor: replyFor, clipFor: clipFor, greetingFor: greetingFor, portraitFile: portraitFile, portraitUrl: portraitUrl, composerScrollDelta: composerScrollDelta };
   if (typeof window !== 'undefined') window.f2rHomeAgent = api;
   if (typeof document === 'undefined' || !document.getElementById) return;
 
@@ -207,7 +214,7 @@
     var clip = clipFor(ui.state, files);
     if (ui.base && clip) {
       var src = ui.base + ui.agent + '/' + clip + '.mp4';
-      var poster = files.indexOf('poster.jpg') >= 0 ? ui.base + ui.agent + '/poster.jpg' : null;
+      var poster = portraitUrl(ui.agent, files, ui.base, true);
       // 인사 영상만 소리를 켜고 한 번 재생한다. 나머지 영상은 소리 없이 반복한다.
       var talking = clip === 'speak';
       var prev = ui.clip;
@@ -242,15 +249,14 @@
     }
   }
 
-  // 비서 선택 버튼의 얼굴 사진(대시보드와 같은 규칙): front.webp, 없으면 poster.jpg. 볼 수 없으면 이름만 보인다.
+  // 세븐은 승인된 홈페이지 사진, 다른 비서는 기존 front.webp → poster.jpg 규칙을 유지한다.
   function pickPortraits() {
     document.querySelectorAll('button[data-home-agent]').forEach(function (b) {
       var img = b.querySelector('img');
       if (!img) return;
       var info = ui.media && ui.media.agents && ui.media.agents[b.dataset.homeAgent];
       var list = info && info.files ? info.files : [];
-      var file = portraitFile(list);
-      var src = ui.base && file ? ui.base + b.dataset.homeAgent + '/' + file : null;
+      var src = portraitUrl(b.dataset.homeAgent, list, ui.base, false);
       if (!src) { b.classList.add('no-portrait'); img.removeAttribute('src'); return; }
       if (img.getAttribute('src') === src) return;
       img.onload = function () { b.classList.remove('no-portrait'); };

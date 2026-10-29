@@ -67,6 +67,13 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
 .exam-other-services a { min-height:44px; padding:12px; color:var(--exam-cyan); }
 .exam-promo[hidden] { display:none; }
 .exam-promo video { display:block; width:100%; aspect-ratio:16/9; object-fit:contain; background:#040d17; border-radius:12px; }
+.en-page .exam-promo { padding:24px 24px 16px; }
+.exam-promo-frame { width:100%; aspect-ratio:16/9; background:#040d17; border-radius:12px; overflow:hidden; }
+.exam-promo-frame img { display:block; width:100%; height:100%; object-fit:contain; }
+.exam-promo [hidden] { display:none; }
+.exam-promo-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+.exam-promo .exam-caption { margin:10px 0 0; font-size:14px; }
+@media(max-width:600px) { .en-page .exam-promo { padding:16px 12px; } }
 .en-chart { margin-top:48px; }
 @media(max-width:900px) {
   #aiHome .command { gap:10px; }

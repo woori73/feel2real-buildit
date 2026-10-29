@@ -4972,7 +4972,9 @@ MCP는 `app.mcp.enabled=false` 기본값이다. 등록 범위·읽기 정책·�
 
 ### ✅ F2R AI 운영 대시보드 캐릭터 자료 (2026-10, PR #893)
 
-캐릭터(세븐·서수니) 영상·이미지는 공개 저장소에 두지 않고 운영 서버의 비공개 폴더(`app.agent-media.dir`, 환경변수 `APP_AGENT_MEDIA_DIR`)에서 읽는다. 미설정이면 자료 없음으로 응답하고 화면은 H-07/SUNI 표식으로 대체한다.
+2026-10-29 사용자 제공 홈페이지 전용 세븐 PNG(`/img/agents/seven/portrait-20261029.png`)는 공개 정적 파일로 별도 제공한다. 선택 버튼과 대체 포스터에만 사용하며 미디어 API·대시보드·운영 원본은 변경하지 않는다.
+
+기존 캐릭터(세븐·서수니) 영상·이미지는 공개 저장소에 두지 않고 운영 서버의 비공개 폴더(`app.agent-media.dir`, 환경변수 `APP_AGENT_MEDIA_DIR`)에서 읽는다. 미설정이면 자료 없음으로 응답하고 화면은 H-07/SUNI 표식으로 대체한다.
 
 - `GET /api/dashboard/agent-media` (ADMIN·TUTOR, `no-store`): `{configured: bool, agents: {seven|suni: {status, files[]}}}`. `status`는 `APPROVED`(정본) · `REFERENCE_APPROVED`(승인 얼굴 기준, 영상 확정 전) · `CANDIDATE`(승인 전 후보) · `MISSING`(파일 없음). 폴더의 `manifest.json`에 없거나 알 수 없는 값은 `CANDIDATE`.
 - `GET /dashboard/agent-media/{seven|suni}/{file}` (ADMIN·TUTOR, `private, max-age=3600`, Range 지원): `file`은 `idle.mp4`·`think.mp4`·`speak.mp4`·`poster.jpg`·`front.webp`·`half.webp`만. 그 외 이름·경로·캐릭터는 404, 비로그인 401.

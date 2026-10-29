@@ -168,6 +168,29 @@ test('given 비서 자료 파일 목록 when 선택 버튼 사진을 고르면 t
   assert.equal(h.portraitFile(null), null);
 });
 
+test('given 승인된 세븐 원본 when 사진·포스터를 고르면 then 미디어 API 유무와 로그인 경로에 관계없이 원본을 쓴다', () => {
+  const h = load();
+  for (const base of [null, '/agent-media/public/', '/dashboard/agent-media/']) {
+    for (const files of [null, [], ['front.webp', 'poster.jpg', 'idle.mp4']]) {
+      for (const posterOnly of [false, true]) {
+        assert.equal(h.portraitUrl('seven', files, base, posterOnly), '/img/agents/seven/portrait-20261029.png');
+      }
+    }
+  }
+});
+
+test('given 서수니 미디어 when 사진·포스터를 고르면 then 기존 파일 우선순위와 공개·로그인 경로를 보존한다', () => {
+  const h = load();
+  for (const base of ['/agent-media/public/', '/dashboard/agent-media/']) {
+    assert.equal(h.portraitUrl('suni', ['front.webp', 'poster.jpg'], base, false), base + 'suni/front.webp');
+    assert.equal(h.portraitUrl('suni', ['front.webp', 'poster.jpg'], base, true), base + 'suni/poster.jpg');
+    assert.equal(h.portraitUrl('suni', ['poster.jpg'], base, false), base + 'suni/poster.jpg');
+    assert.equal(h.portraitUrl('suni', ['front.webp'], base, true), null);
+    assert.equal(h.portraitUrl('suni', [], base, false), null);
+  }
+  assert.equal(h.portraitUrl('suni', ['front.webp'], null, false), null);
+});
+
 test('given 홈 상태창 when 대시보드와 비교하면 then 비서 선택은 사진+이름, 말하는 중 색과 2D 대체 화면 규칙이 같다', () => {
   // given
   const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
