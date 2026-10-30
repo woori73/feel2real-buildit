@@ -96,6 +96,20 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 홈 when 렌더하면 then 제목은 두 줄 단위로 나뉘고 문제지·해설지 샘플 섹션은 없으며 활용 사례가 바로 이어진다")
+  void titleLines_andSampleSectionRemoved() {
+    // given / when
+    String html = render();
+    // then
+    assertThat(html).contains("<h1 class=\"home-offer-title\" id=\"siHomeTitle\"><span class=\"home-offer-title-line\">기출과 아주 유사한</span> "
+        + "<span class=\"home-offer-title-line\">영어 기말 대비 문제</span></h1>");
+    assertThat(html).doesNotContain("id=\"exam-samples\"", "WORKSHEETS &amp; EXPLANATIONS", "문제지와 해설지 살펴보기",
+        "공개 샘플은 준비 중", "문제지·해설지 문의");
+    String between = html.substring(html.indexOf("id=\"svc-exam\""), html.indexOf("id=\"exam-hit\""));
+    assertThat(between.split("<section", -1)).hasSize(2);
+  }
+
+  @Test
   @DisplayName("given 홈 when 렌더하면 then 2주·160문항·20,000원은 위 상품 안내에 한 번만 보이고 영상 아래 반복 문구·버튼이 없다")
   void offer_isShownOnceAtTop() {
     // given / when
@@ -217,7 +231,7 @@ class LandingEdunovaTemplateContractTest {
         .contains("기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.")
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    String[] sections = {"pass-offer", "examPromo", "homeJump", "ai-content", "review-game", "chart-showcase", "aiHome", "svc-exam", "exam-samples", "exam-hit", "exam-blog", "exam-contact", "exam-payment"};
+    String[] sections = {"pass-offer", "examPromo", "homeJump", "ai-content", "review-game", "chart-showcase", "aiHome", "svc-exam", "exam-hit", "exam-blog", "exam-contact", "exam-payment"};
     int previous = -1;
     for (String id : sections) {
       int next = html.indexOf("id=\"" + id + "\"");
