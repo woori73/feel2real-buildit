@@ -112,26 +112,26 @@ class PublicLegalControllerTest {
             .getResponse()
             .getContentAsString();
     var doc = Jsoup.parse(html);
-    // then: scope and draft status are readable, and no bank account is published
+    // then: the hub lists the official documents with the effective date, and no bank account is published
     assertThat(doc.selectFirst("h1").text()).contains("개인정보·이용·환불 안내");
-    for (String id : new String[] {"privacy", "terms", "business"}) {
+    for (String id : new String[] {"documents", "business"}) {
       assertThat(doc.getElementById(id).text()).hasSizeGreaterThan(80);
     }
-    assertThat(doc.selectFirst(".policy-notice").text())
-        .contains("검토안", "확정된 약관이나 시행 중인 개인정보 처리방침이 아닙니다");
+    assertThat(doc.selectFirst(".policy-notice")).isNull();
+    assertThat(doc.selectFirst("header").text()).contains("시행일 2026년 10월 30일");
     assertThat(doc.select(".footer-links a[href]").eachAttr("href"))
         .containsExactly(
             "/policies/privacy", "/policies/terms", "/policies/refunds", "/policies/business");
     assertThat(doc.select(".footer-links [onclick=comingSoon()]")).isEmpty();
     assertThat(doc.select("main a[href]").eachAttr("href"))
-        .contains("/privacy", "/exam-service/privacy#privacy", "/exam-service/terms#terms");
+        .contains("/privacy", "/policies/privacy", "/policies/terms", "/policies/refunds");
     assertThat(doc.select("form,input")).isEmpty();
     assertThat(html).doesNotContain("110-498-250866");
   }
 
   @Test
-  @DisplayName("정책 보완 범위와 기존 문의 창구를 명시하고 책임자·주소를 추정하지 않는다")
-  void pendingPolicyDetailsAreNotPresentedAsApproved() throws Exception {
+  @DisplayName("given 정책 안내 when 열면 then 문서 카드와 사업자 문의처를 보여 주고 출판사 정보만 쓴다")
+  void policyHubShowsDocumentsAndPublisherContact() throws Exception {
     var html =
         mockMvc
             .perform(get("/policies"))
@@ -140,9 +140,8 @@ class PublicLegalControllerTest {
             .getResponse()
             .getContentAsString();
     var doc = Jsoup.parse(html);
-    assertThat(doc.select(".policy-details dt").eachText())
-        .containsExactly("수집 목적·항목", "보유 기간·파기", "제3자 제공·처리위탁", "권리 행사", "보호책임자·안전조치", "아동 개인정보");
-    assertThat(doc.text()).contains("만 14세 미만", "법정대리인", "최종 승인 원문을 확인 중").doesNotContain("증빙 확인 중");
+    assertThat(doc.select("#documents article h3").eachText())
+        .containsExactly("개인정보 처리방침", "이용약관", "환불·청약철회 정책", "NewStart Chrome Agent");
     assertThat(doc.select("#business a").eachAttr("href"))
         .contains("mailto:woorinaesin@naver.com", "tel:010-8507-1453",
             "https://www.ftc.go.kr/bizCommPop.do?wrkr_no=1469901347");
@@ -171,12 +170,13 @@ class PublicLegalControllerTest {
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.CsvSource({
     // 사업자 정보 문서에 「결제 방법」이 추가됐다(2026-10-30). 다른 문서의 운영자 정보는 본문 밖 별도 영역이다.
-    "privacy, Feel2Real 홈페이지 개인정보 처리방침, 8",
-    "terms, Feel2Real 홈페이지 이용약관, 6",
-    "refunds, 환불·청약철회 정책, 4",
+    // 2026-10-30 정식 문서로 개편: 개인정보 12개 항목, 약관 12개 조, 환불 5개 항목.
+    "privacy, Feel2Real 홈페이지 개인정보 처리방침, 12",
+    "terms, Feel2Real 홈페이지 이용약관, 12",
+    "refunds, 환불·청약철회 정책, 5",
     "business, 사업자 정보, 3"
   })
-  @DisplayName("네 푸터 문서는 독립 주소·본문·적용 범위를 가지며 확정 정책을 가장하지 않는다")
+  @DisplayName("네 푸터 문서는 독립 주소·본문·적용 범위를 가지며 시행일이 있는 정식 문서로 보인다")
   void separatePolicyDocuments(String section, String title, int headings) throws Exception {
     // given: anonymous and all intake/publication flags disabled; when: navigate directly
     var html =
@@ -193,19 +193,37 @@ class PublicLegalControllerTest {
     assertThat(doc.select(".policy-content").text()).hasSizeGreaterThan(100);
     assertThat(doc.select("form,input")).isEmpty();
     assertThat(html).doesNotContain("110-498-250866");
+    assertThat(doc.selectFirst(".policy-notice")).isNull();
     if (!section.equals("business")) {
-      assertThat(doc.selectFirst(".policy-notice").text())
-          .contains("최종 승인 전", "시행일 미확정", "확정된 정책이 아니며");
+      assertThat(doc.selectFirst(".policy-effective").text()).isEqualTo("시행일 2026년 10월 30일");
     }
     if (section.equals("privacy")) {
       assertThat(doc.text())
-          .contains("보유 기간은 검토 필요", "제3자 제공·처리위탁·국외 이전", "전체 서비스의 연령 확인", "보호책임자");
+          .contains("처리 위탁과 국외 이전", "Amazon Web Services", "국외로 이전하지 않습니다",
+              "개인정보 보호책임자: 박정민(대표)", "만 14세 미만", "법정대리인", "계약 또는 청약철회 등에 관한 기록: 5년",
+              "ACCESS_TOKEN", "F2R_VISITOR");
       assertThat(doc.select(".policy-content a[href='/privacy']")).hasSize(1);
+    }
+    if (section.equals("terms")) {
+      assertThat(doc.text()).contains("20,000원", "무통장입금", "대한민국 법", "시험 적중을 보장하지 않습니다");
     }
     if (section.equals("refunds")) {
       assertThat(doc.select("tbody td:nth-child(2)").eachText())
           .containsExactly("20,000원", "15,000원", "10,000원", "5,000원", "0원");
-      assertThat(doc.text()).contains("모든 법정 환불 권리의 소멸을 뜻하지 않습니다");
+      assertThat(doc.text()).contains("7일 이내", "제17조 제2항 제5호", "3영업일 이내", "위 표와 관계없이");
+    }
+  }
+
+  @Test
+  @DisplayName("given 정책 안내·문서·FAQ when 열면 then 검토안·초안·확인 중·미확정 등 내부 작업 표시가 없다")
+  void policyPagesHaveNoDraftWording() throws Exception {
+    for (String path : new String[] {"/policies", "/policies/privacy", "/policies/terms", "/policies/refunds", "/policies/business", "/faq"}) {
+      // given / when
+      var text = Jsoup.parse(mockMvc.perform(get(path)).andExpect(status().isOk())
+          .andReturn().getResponse().getContentAsString()).select("main, #exam-service-terms").text();
+      // then
+      assertThat(text).as(path).doesNotContain("검토안", "초안", "임시안", "확인 중", "미확정", "추후 확정", "최종 승인",
+          "미승인", "보존안", "준비안", "기본 정산", "예정액");
     }
   }
 

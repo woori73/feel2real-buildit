@@ -6,14 +6,13 @@
 .policy-label { color:#346b83; font-weight:700; letter-spacing:.08em; }
 .policy-page a { display:inline-flex; min-height:44px; align-items:center; color:#155a77; text-underline-offset:4px; padding:6px 0; }
 .policy-page a:focus-visible { outline:3px solid #197b9e; outline-offset:3px; }
-.policy-notice { background:#fff7e8; border:1px solid #b9974e; border-radius:12px; padding:20px; }
-.policy-notice p { margin-bottom:0; }
 .policy-nav { display:flex; flex-wrap:wrap; gap:8px 24px; border-bottom:1px solid #cbd8e1; margin:24px 0; }
 .policy-page section { scroll-margin-top:20px; margin:40px 0; }
 .policy-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
 .policy-page article { min-width:0; background:#f4f9fc; border:1px solid #d4e3eb; border-radius:12px; padding:20px; }
 .policy-page article h3 { margin-top:0; }
-.policy-state { color:#715313; font-size:14px; font-weight:650; }
+.policy-effective { color:#346b83; font-weight:650; margin:0 0 8px; }
+.policy-content ul { padding-left:1.3em; }
 .policy-details { display:grid; grid-template-columns:160px minmax(0,1fr); gap:16px 24px; }
 .policy-details dt { font-weight:700; }
 .policy-details dd { margin:0; }

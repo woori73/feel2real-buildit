@@ -26,6 +26,7 @@ public class PublicLegalController {
 
   @GetMapping("/policies/terms")
   public String siteTerms(Model model) {
+    model.addAttribute("offer", HomeExamOffer.CURRENT);
     return document(model, "terms", "Feel2Real 홈페이지 이용약관");
   }
 
