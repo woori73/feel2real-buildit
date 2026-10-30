@@ -537,8 +537,9 @@ test("public refund guide renders with the confirmed publisher seller info", asy
   await expect(page.locator("#exam-service-terms")).toContainText("20,000원");
   await expect(page.locator("#exam-service-terms")).toContainText("15,000원");
   await expect(page.locator("#exam-service-terms")).toContainText(
-    "최종 법정 환불액이 아닙니다",
+    "위 금액과 관계없이 해당 부분을 환불합니다",
   );
+  await expect(page.locator("#exam-service-terms")).not.toContainText("예정액");
   // 2026-10-28 확정 출판사 정보는 항상 표시한다(학원 정보와 섞지 않음).
   await expect(page.locator("#examSellerDetails")).toContainText("압구정에듀홀릭출판사");
   await expect(page.locator("#examSellerDetails")).toContainText("146-99-01347");

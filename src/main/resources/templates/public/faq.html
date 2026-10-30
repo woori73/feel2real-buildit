@@ -6,12 +6,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>자주 묻는 질문 | Feel2Real</title>
-  <meta name="description" content="Feel2Real 자주 묻는 질문. 내신 영어 예상문제 의뢰 방법과 가격, 학원 운영 대시보드, NewStart 1:1 상담, 입시상담 AI 안내.">
+  <meta name="description" content="Feel2Real 자주 묻는 질문. 내신 영어 예상문제 의뢰 방법과 가격, 학원 운영 대시보드, 입시상담 AI 안내.">
   <th:block th:replace="~{fragments/_seo :: seo (
-    keywords='Feel2Real 자주 묻는 질문, 내신 영어 예상문제 가격, 학원 운영 대시보드, 새출발기금 상담',
+    keywords='Feel2Real 자주 묻는 질문, 내신 영어 예상문제 가격, 학원 운영 대시보드',
     canonical='https://feel2real.co.kr/faq',
     ogTitle='자주 묻는 질문 | Feel2Real',
-    ogDescription='Feel2Real 자주 묻는 질문. 내신 영어 예상문제 의뢰 방법과 가격, 학원 운영 대시보드, NewStart 1:1 상담, 입시상담 AI 안내.',
+    ogDescription='Feel2Real 자주 묻는 질문. 내신 영어 예상문제 의뢰 방법과 가격, 학원 운영 대시보드, 입시상담 AI 안내.',
     ogImage=null)}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
   <style>
@@ -36,7 +36,7 @@
   <details class="faq-item" open>
     <summary>Feel2Real은 어떤 회사인가요?</summary>
     <div class="faq-answer">
-      <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다. 내신 영어 예상문제 제작, 학원 운영 대시보드, NewStart 1:1 상담 서비스를 운영하고 있습니다.</p>
+      <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다. 내신 영어 예상문제 제작과 학원 운영 대시보드 서비스를 운영하고 있습니다.</p>
     </div>
   </details>
 
@@ -51,13 +51,6 @@
     <summary>학원 운영 대시보드는 무엇인가요?</summary>
     <div class="faq-answer">
       <p>학생·출결·상담 관리, 장부, 학원 홈페이지를 한곳에서 운영하는 학원용 대시보드입니다. 원장과 강사가 함께 사용할 수 있습니다.</p>
-    </div>
-  </details>
-
-  <details class="faq-item">
-    <summary>NewStart 1:1 상담은 어떻게 신청하나요?</summary>
-    <div class="faq-answer">
-      <p>NewStart는 새출발기금 부실차주를 위한 1:1 비대면 상담 서비스입니다. 홈페이지에서 채무 상황을 정리하면 운영자가 1:1로 답변합니다. 상담 내용은 비공개로 처리됩니다.</p>
     </div>
   </details>
 
@@ -85,10 +78,10 @@
 <section id="exam-service-terms" style="max-width:900px;margin:32px auto;padding:20px;line-height:1.8">
   <h2>영어 기말고사 서비스 이용·환불 안내</h2>
   <p th:text="${examOffer.assistantSummary}"></p>
-  <p>입금 후 카카오톡으로 신청번호와 입금자명을 알려 주세요. 관리자 입금·자료 확인 후 최대한 빨리 제작하고 1차 수정·검수를 거쳐 제공합니다. 제작 가능 일정은 개별 안내합니다.</p>
-  <p>정상 전달되고 접근 가능한 문제지·해설지 회차만 제공 완료로 기록합니다. 회차별 잔여 이용료의 기본 정산 예시는 다음과 같습니다.</p>
-  <ul><li th:each="n : ${#numbers.sequence(0, examOffer.totalDeliveries)}" th:text="'제공 완료 ' + ${n} + '회 / 잔여 ' + ${examOffer.totalDeliveries - n} + '회 / 기본 환불 예정액 ' + ${#numbers.formatInteger((examOffer.priceWon / examOffer.totalDeliveries) * (examOffer.totalDeliveries - n), 1, 'COMMA')} + '원'"></li></ul>
-  <p>기본 예정액은 최종 법정 환불액이 아닙니다. 법정 청약철회, 사업자 귀책, 서비스 하자는 별도 기준을 검토합니다. 자동 공제·환불 송금은 하지 않습니다. 과거 계약에는 해당 계약의 조건을 적용합니다.</p>
+  <p>입금 후 카카오톡 또는 이메일로 입금자명과 학교·학년을 알려 주세요. 관리자 입금·자료 확인 후 최대한 빨리 제작하고 1차 수정·검수를 거쳐 제공합니다. 제작 가능 일정은 개별 안내합니다.</p>
+  <p>정상 전달되고 접근 가능한 문제지·해설지 회차만 제공 완료로 기록합니다. 이용 중 해지하면 제공하지 않은 회차의 이용료를 다음과 같이 환불합니다.</p>
+  <ul><li th:each="n : ${#numbers.sequence(0, examOffer.totalDeliveries)}" th:text="'제공 완료 ' + ${n} + '회 / 잔여 ' + ${examOffer.totalDeliveries - n} + '회 / 환불 금액 ' + ${#numbers.formatInteger((examOffer.priceWon / examOffer.totalDeliveries) * (examOffer.totalDeliveries - n), 1, 'COMMA')} + '원'"></li></ul>
+  <p>회사 사정으로 제공하지 못했거나 안내와 다르게 제공된 경우에는 위 금액과 관계없이 해당 부분을 환불합니다. 환불은 관리자가 제공 내역을 확인한 뒤 처리하며, 과거 계약에는 해당 계약의 조건을 적용합니다. 자세한 기준은 <a href="/policies/refunds">환불·청약철회 정책</a>에 있습니다.</p>
   <p>신청 전 개인정보·취소·환불 안내를 읽고 동의하며, 제작 전 변경·자료 삭제를 요청할 수 있습니다. 제작 시작 후에는 수정·취소 요청을 접수합니다. <a href="mailto:woorinaesin@naver.com">이메일 문의</a></p>
 </section>
 <style>.seller-details .seller-row{display:flex;flex-wrap:wrap;gap:0 14px}</style>
