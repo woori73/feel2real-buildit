@@ -158,18 +158,10 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
 .en-page .exam-bank-copy { min-height:44px; padding:8px 14px; font-size:14px; }
 @media(max-width:600px) { .exam-bank { padding:16px; gap:8px 14px; } .exam-bank-number { font-size:18px; } }
 
-/* 하단 문의하기 버튼과 상담 신청 팝업(홈 전용, 2026-10-30). 다른 페이지의 footer·팝업 모양은 public_footer.css 그대로. */
+/* 하단 문의하기 버튼(홈 전용, 2026-10-30). 상담 신청 팝업은 모든 페이지 공통으로 public_footer.css에 있다. */
 .public-footer .footer-links a.footer-contact { min-height:44px; padding:0 22px; border-radius:999px; background:var(--exam-cyan); color:#062032; font-size:15px; font-weight:800; text-decoration:none; }
 .public-footer .footer-links a.footer-contact:hover { background:#a6f0ff; color:#062032; }
 .public-footer .footer-links a.footer-contact:focus-visible { outline:3px solid #ffffff; outline-offset:3px; }
-#contactModal { padding:16px; box-sizing:border-box; background:rgba(2,8,18,.72) !important; }
-#contactModal .contact-modal-panel { width:100%; max-width:360px; background:#0d2035; border:1px solid #2f5577; color:var(--exam-text); box-shadow:0 18px 48px rgba(0,0,0,.5); }
-#contactModal .contact-modal-title { color:#ffffff; font-size:19px; }
-#contactModal .public-contact-option { min-height:72px; background:#112b45; border:1.5px solid #3c6d8f; color:#ffffff; }
-#contactModal .public-contact-option:hover, #contactModal .public-contact-option:focus-visible { background:#173a5c; border-color:var(--exam-cyan); outline:none; }
-#contactModal .contact-option-detail { margin-top:2px; color:var(--exam-cyan); font-size:16px; font-weight:700; letter-spacing:.01em; overflow-wrap:anywhere; }
-#contactModal .contact-modal-close { min-height:48px; background:transparent; color:#edf6ff; border:1.5px solid #8fb3cc; border-radius:10px; font-weight:700; }
-#contactModal .contact-modal-close:hover, #contactModal .contact-modal-close:focus-visible { background:rgba(255,255,255,.08); border-color:#ffffff; outline:none; }
 @media(max-width:600px) {
   .public-footer .footer-links a.footer-contact { width:100%; justify-content:center; min-height:48px; font-size:16px; }
 }
