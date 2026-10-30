@@ -54,7 +54,7 @@ for (const [width, height] of [[1440, 1050], [360, 800], [390, 844], [430, 932]]
         await capture('site-' + document);
       }
       await page.goto('/policies');
-      await expect(page.locator('#documents article')).toHaveCount(4);
+      await expect(page.locator('#documents article')).toHaveCount(3);
       await expect(page.locator('main form, main input')).toHaveCount(0);
       await expect(page.locator('main')).not.toContainText('110-498-250866');
       // 2026-10-30: draft labels removed; the site-intake policy pages stay reachable by address.
@@ -76,8 +76,8 @@ for (const [width, height] of [[1440, 1050], [360, 800], [390, 844], [430, 932]]
       await expect(page.locator('#terms tbody tr').first()).toContainText('20,000원');
       await expect(page.locator('#terms')).toContainText('자동으로 공제·송금하지 않습니다');
       await capture('intake-terms');
-      await page.goto('/policies#privacy');
-      await act(page.locator('main a[href="/privacy"]'));
+      // NewStart 확장 프로그램 안내는 홈페이지 정책과 별개 페이지로 남아 있다(홈페이지에서 링크하지 않음).
+      await page.goto('/privacy');
       await expect(page.locator('.pg-updated')).toContainText('확장 프로그램 v0.4.0');
       await act(page.locator('.footer-links a[onclick="openContactModal()"]'));
       await expect(page.locator('#contactModal')).toBeVisible();

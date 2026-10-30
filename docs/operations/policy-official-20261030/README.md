@@ -1,6 +1,7 @@
 # 정책 페이지 정식 문서화 (2026-10-30)
 
 대상: `/policies`, `/policies/privacy`, `/policies/terms`, `/policies/refunds`, `/policies/business`, `/exam-service/privacy`, `/exam-service/terms`, `/faq` 환불 안내.
+NewStart는 홈페이지와 관련 없는 서비스라 홈페이지 정책·FAQ에서 언급과 링크를 뺐다(사용자 지시, 2026-10-30). `/privacy`(NewStart 확장 프로그램 안내) 페이지 자체는 그대로 둔다.
 검토안·초안·확인 중·미확정 등 내부 작업 표시를 모두 지우고, 시행일 2026년 10월 30일의 정식 문서로 바꿨다.
 
 ## 문서에 쓴 내용의 근거
@@ -26,5 +27,4 @@
 - 회원 가입에 만 14세 확인·법정대리인 동의 절차가 없다(약관·방침은 만 14세 미만 법정대리인 동의를 요구).
 - 네이버 로그인 회원은 비밀번호가 없어 스스로 탈퇴할 수 없다(방침에 연락처로 탈퇴 요청 안내).
 - Google Tag Manager 컨테이너 설정(GA 등 국외 전송 여부)은 저장소에서 확인할 수 없다.
-- NewStart 서비스의 Meta AI 답변 처리는 이 방침 범위 밖이며 NewStart 쪽 안내 확인이 필요하다.
 - `/exam-service` 정책 버전 문자열(`exam-privacy-20261029-v1` 등)은 바꾸지 않았다.

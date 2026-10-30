@@ -124,7 +124,9 @@ class PublicLegalControllerTest {
             "/policies/privacy", "/policies/terms", "/policies/refunds", "/policies/business");
     assertThat(doc.select(".footer-links [onclick=comingSoon()]")).isEmpty();
     assertThat(doc.select("main a[href]").eachAttr("href"))
-        .contains("/privacy", "/policies/privacy", "/policies/terms", "/policies/refunds");
+        .contains("/policies/privacy", "/policies/terms", "/policies/refunds")
+        .doesNotContain("/privacy");
+    assertThat(doc.text()).doesNotContain("NewStart");  // 홈페이지와 NewStart는 관련 없음(2026-10-30)
     assertThat(doc.select("form,input")).isEmpty();
     assertThat(html).doesNotContain("110-498-250866");
   }
@@ -141,7 +143,7 @@ class PublicLegalControllerTest {
             .getContentAsString();
     var doc = Jsoup.parse(html);
     assertThat(doc.select("#documents article h3").eachText())
-        .containsExactly("개인정보 처리방침", "이용약관", "환불·청약철회 정책", "NewStart Chrome Agent");
+        .containsExactly("개인정보 처리방침", "이용약관", "환불·청약철회 정책");
     assertThat(doc.select("#business a").eachAttr("href"))
         .contains("mailto:woorinaesin@naver.com", "tel:010-8507-1453",
             "https://www.ftc.go.kr/bizCommPop.do?wrkr_no=1469901347");
@@ -202,7 +204,8 @@ class PublicLegalControllerTest {
           .contains("처리 위탁과 국외 이전", "Amazon Web Services", "국외로 이전하지 않습니다",
               "개인정보 보호책임자: 박정민(대표)", "만 14세 미만", "법정대리인", "계약 또는 청약철회 등에 관한 기록: 5년",
               "ACCESS_TOKEN", "F2R_VISITOR");
-      assertThat(doc.select(".policy-content a[href='/privacy']")).hasSize(1);
+      assertThat(doc.select(".policy-content a[href='/privacy']")).isEmpty();
+      assertThat(doc.select("main").text()).doesNotContain("NewStart");
     }
     if (section.equals("terms")) {
       assertThat(doc.text()).contains("20,000원", "무통장입금", "대한민국 법", "시험 적중을 보장하지 않습니다");
