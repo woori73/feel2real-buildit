@@ -60,6 +60,12 @@
       .public-footer .footer-copyright { margin-top: 12px; font-size: 11px; color: rgba(255,255,255,0.3); }
       .public-contact-option { display:flex; align-items:center; gap:12px; padding:16px 20px; border:1.5px solid #e5e7eb; border-radius:12px; text-decoration:none; color:#1a1a2e; margin-bottom:12px; font-weight:600; transition:background 0.15s; }
       .public-contact-option:hover { background:#f3f4f6; }
+      /* 상담 신청 팝업(기존 인라인 스타일을 그대로 옮김). 홈은 home_exam.css에서 어두운 화면에 맞춰 덮어쓴다. */
+      .contact-modal-panel { background:#fff; border-radius:16px; padding:32px 28px; max-width:340px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+      .contact-modal-title { font-size:18px; font-weight:700; color:#1a1a2e; margin-bottom:24px; }
+      .contact-option-detail { font-size:13px; color:#6b7280; font-weight:400; }
+      .public-contact-option-last { margin-bottom:20px; }
+      .contact-modal-close { width:100%; padding:12px; border:none; border-radius:8px; background:#f3f4f6; color:#6b7280; font-size:15px; cursor:pointer; }
       @media (max-width: 900px) {
         footer.public-footer { padding: 28px 24px; }
         .public-footer .footer-top { flex-direction: column; align-items: flex-start; gap: 16px; }

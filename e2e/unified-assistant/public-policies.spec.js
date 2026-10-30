@@ -79,7 +79,7 @@ for (const [width, height] of [[1440, 1050], [360, 800], [390, 844], [430, 932]]
       // NewStart 확장 프로그램 안내는 홈페이지 정책과 별개 페이지로 남아 있다(홈페이지에서 링크하지 않음).
       await page.goto('/privacy');
       await expect(page.locator('.pg-updated')).toContainText('확장 프로그램 v0.4.0');
-      await act(page.locator('.footer-links a[onclick="openContactModal()"]'));
+      await act(page.locator('.footer-links a.footer-contact'));
       await expect(page.locator('#contactModal')).toBeVisible();
       await act(page.getByRole('button', { name: '닫기', exact: true }));
       await expect(page.locator('#contactModal')).toBeHidden();
