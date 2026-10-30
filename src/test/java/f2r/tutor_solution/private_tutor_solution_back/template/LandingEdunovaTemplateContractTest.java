@@ -349,6 +349,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(payment).contains("이용료와 무통장입금 안내", "신한은행", "110-498-250866", "박정민", "20,000원",
         "<dt>서비스</dt>", "2주 · 주 2회 · 총 4회 · 160문항", "data-copy-address=\"110-498-250866\"", "관리자가 입금을 직접 확인");
     assertThat(shown).doesNotContain("온라인 계좌 안내는 아직", "임의로 입금하지");
+    assertThat(payment).contains("href=\"/policies/refunds\"", "청약철회 제한과 회차별 환불 기준");  // 청약철회 제한 사전 표시
     assertThat(payment).containsOnlyOnce("20,000원").containsOnlyOnce("2주 · 주 2회 · 총 4회 · 160문항").doesNotContain("exam-payment-price");
     assertThat(hidden).doesNotContain("110-498-250866").contains("입금 계좌는 문의해 주시면 안내합니다")
         .doesNotContain("온라인 계좌 안내는 아직");

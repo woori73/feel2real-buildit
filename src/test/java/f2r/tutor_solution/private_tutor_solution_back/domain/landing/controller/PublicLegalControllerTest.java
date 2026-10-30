@@ -201,11 +201,13 @@ class PublicLegalControllerTest {
     }
     if (section.equals("privacy")) {
       assertThat(doc.text())
-          .contains("처리 위탁과 국외 이전", "Amazon Web Services", "국외로 이전하지 않습니다",
+          .contains("6. 처리 위탁", "Amazon Web Services(AWS)", "AWS 서울 리전(ap-northeast-2)",
+              "담당자가 직접 삭제합니다", "매일 자동으로 삭제합니다", "네이버 로그인으로 가입한 회원은 비밀번호가 없어",
+              "연령 확인 절차가 없으므로", "방문 분석 태그(Google Analytics 등)는 설정되어 있지 않습니다",
               "개인정보 보호책임자: 박정민(대표)", "만 14세 미만", "법정대리인", "계약 또는 청약철회 등에 관한 기록: 5년",
               "ACCESS_TOKEN", "F2R_VISITOR");
       assertThat(doc.select(".policy-content a[href='/privacy']")).isEmpty();
-      assertThat(doc.select("main").text()).doesNotContain("NewStart");
+      assertThat(doc.select("main").text()).doesNotContain("NewStart", "국외로 이전하지 않습니다");
     }
     if (section.equals("terms")) {
       assertThat(doc.text()).contains("20,000원", "무통장입금", "대한민국 법", "시험 적중을 보장하지 않습니다");
@@ -213,7 +215,8 @@ class PublicLegalControllerTest {
     if (section.equals("refunds")) {
       assertThat(doc.select("tbody td:nth-child(2)").eachText())
           .containsExactly("20,000원", "15,000원", "10,000원", "5,000원", "0원");
-      assertThat(doc.text()).contains("7일 이내", "제17조 제2항 제5호", "3영업일 이내", "위 표와 관계없이");
+      assertThat(doc.text()).contains("7일 이내", "제17조 제2항 제5호·제6항", "제공하지 않은 회차는 언제나 청약철회 대상",
+          "3영업일 이내", "위 표와 관계없이");
     }
   }
 
