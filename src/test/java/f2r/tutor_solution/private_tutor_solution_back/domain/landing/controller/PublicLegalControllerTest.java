@@ -41,8 +41,7 @@ import org.springframework.test.web.servlet.MockMvc;
       "app.jwt.cookie-name=ACCESS_TOKEN",
       "app.jwt.secure-cookie=false",
       "app.exam-intake.enabled=false",
-      "app.exam-intake.bank-public-enabled=false",
-      "app.home.exam-seller-confirmed=false"
+      "app.exam-intake.bank-public-enabled=false"
     })
 class PublicLegalControllerTest {
 
@@ -77,10 +76,12 @@ class PublicLegalControllerTest {
         .contains("공동인증서, OTP, CAPTCHA, 주민등록번호")
         .contains("민원을 자동 제출하지 않습니다")
         .contains("외부 서버로 전송하지 않습니다");
-    // 실제 사이트 푸터의 운영자 정보 재사용(가짜 연락처 금지)
+    // 사이트 푸터와 같은 운영자 정보(2026-10-28 확정 출판사, 가짜 연락처 금지)
     org.assertj.core.api.Assertions.assertThat(html)
-        .contains("admin@feel2real.co.kr")
-        .contains("압구정에듀홀릭학원");
+        .contains("woorinaesin@naver.com")
+        .contains("압구정에듀홀릭출판사")
+        .doesNotContain("압구정에듀홀릭학원")
+        .doesNotContain("759-91-01977");
   }
 
   @Test
@@ -141,10 +142,13 @@ class PublicLegalControllerTest {
     var doc = Jsoup.parse(html);
     assertThat(doc.select(".policy-details dt").eachText())
         .containsExactly("수집 목적·항목", "보유 기간·파기", "제3자 제공·처리위탁", "권리 행사", "보호책임자·안전조치", "아동 개인정보");
-    assertThat(doc.text()).contains("만 14세 미만", "법정대리인", "최종 승인 원문을 확인 중", "증빙 확인 중");
+    assertThat(doc.text()).contains("만 14세 미만", "법정대리인", "최종 승인 원문을 확인 중").doesNotContain("증빙 확인 중");
     assertThat(doc.select("#business a").eachAttr("href"))
-        .contains("mailto:admin@feel2real.co.kr", "tel:02-6324-1453");
-    assertThat(doc.select(".footer-biz").text()).contains("압구정에듀홀릭학원", "압구정로34길 11");
+        .contains("mailto:woorinaesin@naver.com", "tel:010-8507-1453",
+            "https://www.ftc.go.kr/bizCommPop.do?wrkr_no=1469901347");
+    assertThat(doc.select(".footer-biz").text())
+        .contains("압구정에듀홀릭출판사", "146-99-01347", "제2026-서울송파-1411호", "송파구 중대로10길 37-25")
+        .doesNotContain("압구정에듀홀릭학원", "759-91-01977", "압구정로34길");
   }
 
   @Test
@@ -166,10 +170,11 @@ class PublicLegalControllerTest {
 
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.CsvSource({
+    // 사업자 정보 문서에 「결제 방법」이 추가됐다(2026-10-30). 다른 문서의 운영자 정보는 본문 밖 별도 영역이다.
     "privacy, Feel2Real 홈페이지 개인정보 처리방침, 8",
     "terms, Feel2Real 홈페이지 이용약관, 6",
     "refunds, 환불·청약철회 정책, 4",
-    "business, 사업자 정보, 2"
+    "business, 사업자 정보, 3"
   })
   @DisplayName("네 푸터 문서는 독립 주소·본문·적용 범위를 가지며 확정 정책을 가장하지 않는다")
   void separatePolicyDocuments(String section, String title, int headings) throws Exception {
@@ -202,5 +207,29 @@ class PublicLegalControllerTest {
           .containsExactly("20,000원", "15,000원", "10,000원", "5,000원", "0원");
       assertThat(doc.text()).contains("모든 법정 환불 권리의 소멸을 뜻하지 않습니다");
     }
+  }
+
+  @Test
+  @DisplayName("given 사업자 정보·정책 문서 when 열면 then 확정 출판사 정보를 한 출처로 보여 주고 학원 정보·증빙 확인 중 문구가 없다")
+  void businessAndPolicyDocumentsShowConfirmedPublisher() throws Exception {
+    for (String path : new String[] {"/policies/business", "/policies/privacy", "/policies/terms", "/policies/refunds"}) {
+      // given / when
+      var doc = Jsoup.parse(mockMvc.perform(get(path)).andExpect(status().isOk())
+          .andReturn().getResponse().getContentAsString());
+      // then: 본문(.policy-seller)과 footer가 같은 값
+      var seller = doc.selectFirst("main .policy-seller");
+      assertThat(seller).as(path).isNotNull();
+      assertThat(seller.text()).as(path)
+          .contains("상호명: 압구정에듀홀릭출판사", "대표: 박정민", "사업자등록번호: 146-99-01347",
+              "통신판매업 신고번호: 제2026-서울송파-1411호", "주소: 서울특별시 송파구 중대로10길 37-25, 4층(가락동)",
+              "전화: 010-8507-1453", "이메일: woorinaesin@naver.com");
+      assertThat(seller.select("a").eachAttr("href")).contains("https://www.ftc.go.kr/bizCommPop.do?wrkr_no=1469901347");
+      assertThat(doc.select(".footer-biz").text()).as(path).contains("146-99-01347");
+      assertThat(doc.text()).as(path)
+          .doesNotContain("압구정에듀홀릭학원", "759-91-01977", "압구정로34길", "02-6324-1453", "admin@feel2real.co.kr",
+              "증빙 확인 중", "기존 운영자 창구");
+    }
+    var business = mockMvc.perform(get("/policies/business")).andReturn().getResponse().getContentAsString();
+    assertThat(business).contains("무통장입금").doesNotContain("최신 증빙 확인 중");
   }
 }

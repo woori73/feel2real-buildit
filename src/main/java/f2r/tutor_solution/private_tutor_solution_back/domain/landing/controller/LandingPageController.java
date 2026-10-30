@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.LandingVideoRenderItem;
+import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeBankTransfer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeExamOffer;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.entity.LandingVideoSlotKey;
 import f2r.tutor_solution.private_tutor_solution_back.domain.landing.service.LandingVideoService;
@@ -42,6 +43,10 @@ public class LandingPageController {
   @Value("${app.home.agent-trailer-path:" + DEFAULT_AGENT_TRAILER_PATH + "}")
   private String agentTrailerPath = DEFAULT_AGENT_TRAILER_PATH;
 
+  // 무통장입금 계좌 공개는 이 설정 하나로만 켠다(신청 기능 설정과 독립). 기본은 비공개, 운영(prd)은 승인된 설정으로 켠다.
+  @Value("${app.home.bank-transfer-public:false}")
+  private boolean bankTransferPublic;
+
   @GetMapping("/")
   public String landing(Model model) {
     model.addAttribute("examOffer", HomeExamOffer.CURRENT);
@@ -50,6 +55,7 @@ public class LandingPageController {
     // The game build runs inside Feel2Real; the Nimble URL stays as the fallback link.
     model.addAttribute("homeReviewGamePath", HomeReviewGameController.PAGE_PATH);
     model.addAttribute("homeAgentTrailerPath", trailerPath());
+    model.addAttribute("homeBankTransfer", bankTransferPublic ? HomeBankTransfer.CURRENT : null);
     Map<LandingVideoSlotKey, LandingVideoRenderItem> videos =
         new EnumMap<>(LandingVideoSlotKey.class);
     landingVideoService.resolveRenderItems().forEach(item -> videos.put(item.slot(), item));

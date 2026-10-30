@@ -26,7 +26,7 @@ class NewStartUpdatesInternalViewContractTest {
 
   private static final String POLLUTED_OFFICIAL_URL =
       "https://www.newstartfund.or.kr/https://www.newstartfund.or.kr/Faq/List.do?pageIndex=1&schPrcdRnk=005";
-  private static final String ADDRESS = "서울특별시 강남구 압구정로34길 11, 2층 206호";
+  private static final String ADDRESS = "서울특별시 송파구 중대로10길 37-25, 4층(가락동)";
 
   private static TemplateEngine engine() {
     ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
@@ -85,6 +85,7 @@ class NewStartUpdatesInternalViewContractTest {
     assertThat(html).doesNotContain("대표: 박정민");
     assertThat(html).doesNotContain("사업자등록번호: 146-99-01347");
     assertThat(html).doesNotContain("통신판매업신고번호: 2026-서울송파-1411");
+    assertThat(html).doesNotContain("제2026-서울송파-1411호");
     assertThat(html).doesNotContain("010-8507-1453");
     assertThat(html).doesNotContain("woorinaesin@naver.com");
     // display:none이 아니라 미렌더 — 빈 footer-biz 컨테이너가 남으면 안 된다.
@@ -94,7 +95,7 @@ class NewStartUpdatesInternalViewContractTest {
   }
 
   @Test
-  @DisplayName("G. 다른 서비스(BuildIt footer, F2R 공용 footer)는 학원 사업자 정보와 주소 표기를 유지한다 (2026-10-10 압구정에듀홀릭학원으로 변경)")
+  @DisplayName("G. 다른 서비스(BuildIt footer, F2R 공용 footer)는 사업자 정보와 주소를 표시한다 (2026-10-28 압구정에듀홀릭출판사로 확정)")
   void otherServiceFootersStillShowAddress() {
     TemplateEngine engine = engine();
     String buildIt = engine.process(
@@ -103,7 +104,8 @@ class NewStartUpdatesInternalViewContractTest {
     String plain = engine.process(
         new TemplateSpec("fragments/_public_footer", "publicFooter"), new Context());
     assertThat(plain).contains(ADDRESS);
-    assertThat(plain).contains("상호명: 압구정에듀홀릭학원").contains("사업자등록번호: 759-91-01977");
+    assertThat(plain).contains("상호명: 압구정에듀홀릭출판사").contains("사업자등록번호: 146-99-01347")
+        .doesNotContain("압구정에듀홀릭학원").doesNotContain("759-91-01977");
   }
 
   // ---- B/C/D: 내부 상세 화면 ----

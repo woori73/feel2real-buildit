@@ -205,3 +205,6 @@ small {
   border-bottom: 1px solid #355469;
   text-align: left;
 }
+
+/* 사업자 정보(공통 조각 sellerRows): 항목 사이 간격과 줄바꿈 */
+.seller-details .seller-row { display: flex; flex-wrap: wrap; gap: 0 14px; }

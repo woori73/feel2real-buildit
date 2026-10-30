@@ -68,6 +68,10 @@ spring:
             user-name-attribute: response
 
 app:
+  home:
+    # 홈페이지 무통장입금 계좌 공개(2026-10-30 사용자 승인). 신청 기능(app.exam-intake.*)과 독립적이며,
+    # 끄려면 EC2 env에 APP_HOME_BANK_TRANSFER_PUBLIC=false. 입금 확인은 관리자 수동 확인 그대로다.
+    bank-transfer-public: ${APP_HOME_BANK_TRANSFER_PUBLIC:true}
   mcp:
     # 운영 외부 AI 연결은 AI AGENT 제작소 협업 범위만 연다. 학원·재무·회원 등 다른 서비스 scope는 동의 화면·도구에서 제외된다.
     # 승인·삭제·공개 도구는 어떤 scope로도 없다. 범위를 넓히려면 별도 승인 후 APP_MCP_ALLOWED_SCOPES로 바꾼다.

@@ -32,6 +32,10 @@
       <th:block th:case="'refunds'"><th:block th:replace="~{fragments/_policy_documents :: refunds}"></th:block></th:block>
       <th:block th:case="'business'"><th:block th:replace="~{fragments/_policy_documents :: business}"></th:block></th:block>
     </th:block>
+    <section class="policy-operator" th:unless="${policySection == 'business'}" aria-labelledby="policyOperatorTitle">
+      <h2 id="policyOperatorTitle">운영자(사업자) 정보</h2>
+      <div class="policy-seller"><th:block th:replace="~{fragments/_public_footer :: sellerRows(false)}"></th:block></div>
+    </section>
   </main>
   <th:block th:replace="~{fragments/_public_footer :: publicFooter}"></th:block>
   <th:block th:replace="~{fragments/_public_footer :: publicContactModal(false)}"></th:block>

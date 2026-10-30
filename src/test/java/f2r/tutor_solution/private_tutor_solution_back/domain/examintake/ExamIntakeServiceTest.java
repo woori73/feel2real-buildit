@@ -602,21 +602,6 @@ class ExamIntakeServiceTest {
   }
 
   @Test
-  void givenUnconfirmedSeller_whenRendering_thenNoUnverifiedPublication() {
-    assertThat(
-            new f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller
-                    .HomeExamSellerAdvice(false)
-                .seller())
-        .isNull();
-    var seller =
-        new f2r.tutor_solution.private_tutor_solution_back.domain.landing.controller
-                .HomeExamSellerAdvice(true)
-            .seller();
-    assertThat(seller.businessNumber()).isEqualTo("146-99-01347");
-    assertThat(seller.commerceNumber()).isEqualTo("제2026-서울송파-1411호");
-  }
-
-  @Test
   void givenInquiry_whenViewingRefundGuide_thenNoChargeOrEstimatedRefund() {
     var in = input(UUID.randomUUID().toString());
     var details = new HashMap<>(in.details());

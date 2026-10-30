@@ -51,13 +51,21 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     await page.evaluate(()=>{ window.mailClicks=[]; document.addEventListener('click',e=>{const a=e.target.closest('#enExamMail');if(a){window.mailClicks.push({href:a.href,prevented:e.defaultPrevented});e.preventDefault();}}); });
     await page.locator('#enExamMail').click();
     expect(await page.evaluate(()=>window.mailClicks)).toEqual([{href:'mailto:woorinaesin@naver.com',prevented:false}]);
-    await page.locator('[data-copy-address]').click();
+    await page.locator('[data-copy-address="woorinaesin@naver.com"]').click();
     await expect(page.locator('#examCopyStatus')).toContainText('자동 복사를 사용할 수 없습니다');
-    await expect(page.locator('[data-copy-address]')).toBeEnabled();
+    await expect(page.locator('[data-copy-address="woorinaesin@naver.com"]')).toBeEnabled();
     await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async v=>{window.copiedAddress=v;}}}));
-    await page.locator('[data-copy-address]').click();
+    await page.locator('[data-copy-address="woorinaesin@naver.com"]').click();
     await expect(page.locator('#examCopyStatus')).toHaveText('이메일 주소를 복사했습니다.');
     expect(await page.evaluate(()=>window.copiedAddress)).toBe('woorinaesin@naver.com');
+    // 무통장입금 계좌는 공개 설정이 켜진 경우에만 보이고, 복사 버튼은 계좌번호 전용 안내를 쓴다.
+    if (await page.locator('#examBank').count()) {
+      await page.locator('#examBank [data-copy-address]').click();
+      await expect(page.locator('#examBankCopyStatus')).toHaveText('계좌번호를 복사했습니다.');
+      expect(await page.evaluate(()=>window.copiedAddress)).toBe('110-498-250866');
+    } else {
+      await expect(page.locator('#exam-payment')).toContainText('입금 계좌는 문의해 주시면 안내합니다');
+    }
     fs.mkdirSync(output,{recursive:true});
     await page.screenshot({path:path.join(output,`${width}-contact.png`)});
     await page.evaluate(()=>scrollTo(0,0));

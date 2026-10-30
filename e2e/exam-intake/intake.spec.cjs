@@ -529,7 +529,7 @@ test("bank import stays unapproved; approved account, clipboard and Kakao acknow
   }
 });
 
-test("public refund guide renders and unconfirmed seller stays gated", async ({
+test("public refund guide renders with the confirmed publisher seller info", async ({
   page,
 }) => {
   const response = await page.goto("/faq#exam-service-terms");
@@ -539,14 +539,11 @@ test("public refund guide renders and unconfirmed seller stays gated", async ({
   await expect(page.locator("#exam-service-terms")).toContainText(
     "최종 법정 환불액이 아닙니다",
   );
-  if (process.env.F2R_LOCAL_SELLER_REVIEW === "true") {
-    await expect(page.locator("#examSellerDetails")).toContainText(
-      "146-99-01347",
-    );
-    await expect(page.locator("#examSellerDetails")).toContainText(
-      "제2026-서울송파-1411호",
-    );
-  } else await expect(page.locator("#examSellerDetails")).toHaveCount(0);
+  // 2026-10-28 확정 출판사 정보는 항상 표시한다(학원 정보와 섞지 않음).
+  await expect(page.locator("#examSellerDetails")).toContainText("압구정에듀홀릭출판사");
+  await expect(page.locator("#examSellerDetails")).toContainText("146-99-01347");
+  await expect(page.locator("#examSellerDetails")).toContainText("제2026-서울송파-1411호");
+  await expect(page.locator("#examSellerDetails")).not.toContainText("759-91-01977");
   await page.screenshot({
     path: path.join(output, "refund-seller-review.png"),
     fullPage: true,

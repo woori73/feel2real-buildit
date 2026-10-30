@@ -54,21 +54,8 @@
     </div>
     <th:block th:unless="${hideBiz}">
       <hr class="footer-divider"/>
-      <th:block th:if="${examSeller != null}" th:insert="~{fragments/_public_footer :: examSellerDetails}"></th:block>
-      <div class="footer-biz" th:unless="${examSeller != null}">
-      <div class="footer-biz-row">
-        <span class="footer-biz-item">상호명: 압구정에듀홀릭학원</span>
-        <span class="footer-biz-item">대표: 박정민</span>
-        <span class="footer-biz-item" th:unless="${hideAddress}">주소: 서울특별시 강남구 압구정로34길 11, 2층 206호</span>
-      </div>
-      <div class="footer-biz-row">
-        <span class="footer-biz-item">사업자등록번호: 759-91-01977</span>
-        <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=7599101977" target="_blank" rel="noopener">사업자 정보 확인</a>
-      </div>
-      <div class="footer-biz-row">
-        <span class="footer-biz-item">전화: 02-6324-1453</span>
-        <span class="footer-biz-item" th:text="${buildIt} ? '이메일: woorinaesin@naver.com' : '이메일: admin@feel2real.co.kr'">이메일: admin@feel2real.co.kr</span>
-      </div>
+      <div class="footer-biz">
+        <th:block th:replace="~{fragments/_public_footer :: sellerRows(${hideAddress})}"></th:block>
       </div>
     </th:block>
     <div class="footer-copyright"
@@ -76,14 +63,29 @@
   </footer>
 </th:block>
 
+<!-- 사업자 정보의 유일한 출처(2026-10-28 확정, 압구정에듀홀릭출판사). 학원 사업자 정보와 섞지 않는다.
+     footer·시험 문제지 페이지·정책 문서·FAQ·신청 화면이 모두 이 조각을 쓴다. 값은 여기서만 고친다. -->
+<th:block th:fragment="sellerRows(hideAddress)">
+  <div class="footer-biz-row seller-row">
+    <span class="footer-biz-item">상호명: 압구정에듀홀릭출판사</span>
+    <span class="footer-biz-item">대표: 박정민</span>
+    <span class="footer-biz-item" th:unless="${hideAddress}">주소: 서울특별시 송파구 중대로10길 37-25, 4층(가락동)</span>
+  </div>
+  <div class="footer-biz-row seller-row">
+    <span class="footer-biz-item">사업자등록번호: 146-99-01347</span>
+    <span class="footer-biz-item">통신판매업 신고번호: 제2026-서울송파-1411호</span>
+    <a href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=1469901347" target="_blank" rel="noopener">사업자 정보 확인</a>
+  </div>
+  <div class="footer-biz-row seller-row">
+    <span class="footer-biz-item">전화: 010-8507-1453</span>
+    <span class="footer-biz-item">이메일: woorinaesin@naver.com</span>
+  </div>
+</th:block>
+
 <th:block th:fragment="examSellerDetails">
-  <div class="footer-biz" th:if="${examSeller != null}" id="examSellerDetails">
-    <p><span th:text="'온라인 판매자: ' + ${examSeller.name}"></span> · <span th:text="'대표자: ' + ${examSeller.owner}"></span></p>
-    <p th:text="'사업자등록번호: ' + ${examSeller.businessNumber}"></p>
-    <p th:text="'통신판매업 신고번호: ' + ${examSeller.commerceNumber}"></p>
-    <p th:text="'주소: ' + ${examSeller.address}"></p>
-    <a th:href="'mailto:' + ${examSeller.email}" th:text="${examSeller.email}"></a>
-    <p><a href="/exam-service/privacy#privacy">개인정보처리방침</a> · <a href="/exam-service/terms#terms">서비스 이용·환불 안내</a></p>
+  <div class="footer-biz seller-details" id="examSellerDetails">
+    <th:block th:replace="~{fragments/_public_footer :: sellerRows(false)}"></th:block>
+    <p><a href="/policies/privacy">개인정보처리방침</a> · <a href="/policies/terms">이용약관</a> · <a href="/policies/refunds">환불·청약철회 정책</a></p>
     <p>F2R은 교육 서비스 브랜드입니다.</p>
   </div>
 </th:block>
@@ -93,7 +95,7 @@
 <!-- 기존 호출부(F2R home, NewStart, 이전 BuildIt)는 시그니처 그대로 F2R 문의 이메일을 쓴다.
      BuildIt 랜딩만 publicContactModalFor(hideDirect, email)로 BuildIt 공식 이메일을 넘긴다. -->
 <th:block th:fragment="publicContactModal(hideDirect)">
-  <th:block th:replace="~{fragments/_public_footer :: publicContactModalFor(${hideDirect}, 'admin@feel2real.co.kr')}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicContactModalFor(${hideDirect}, 'woorinaesin@naver.com')}"></th:block>
 </th:block>
 
 <th:block th:fragment="publicContactModalFor(hideDirect, email)">
@@ -101,11 +103,11 @@
     <div style="background:#fff; border-radius:16px; padding:32px 28px; max-width:340px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18);" onclick="event.stopPropagation()">
       <div style="font-size:18px; font-weight:700; color:#1a1a2e; margin-bottom:24px;">상담 신청하기</div>
       <th:block th:unless="${hideDirect}">
-      <a href="tel:02-6324-1453" class="public-contact-option">
+      <a href="tel:010-8507-1453" class="public-contact-option">
         <span style="font-size:22px;">📞</span>
         <div style="text-align:left;">
           <div>전화하기</div>
-          <div style="font-size:13px; color:#6b7280; font-weight:400;">02-6324-1453</div>
+          <div style="font-size:13px; color:#6b7280; font-weight:400;">010-8507-1453</div>
         </div>
       </a>
       <a th:href="'mailto:' + ${email}" href="mailto:admin@feel2real.co.kr" class="public-contact-option" style="margin-bottom:20px;">

@@ -49,6 +49,7 @@ class LandingPageControllerTest {
         .containsEntry("homeReviewGameUrl", LandingPageController.DEFAULT_REVIEW_GAME_URL)
         .containsEntry("homeReviewGamePath", HomeReviewGameController.PAGE_PATH)
         .containsEntry("homeAgentTrailerPath", LandingPageController.DEFAULT_AGENT_TRAILER_PATH)
+        .doesNotContainKey("homeBankTransfer")  // 기본은 비공개(모델에 null은 담기지 않는다)
         .hasSize(7);
   }
 
@@ -149,4 +150,25 @@ class LandingPageControllerTest {
     assertThat(model.asMap().toString()).doesNotContain("private/key", "/api/studio/files");
   }
 
+
+  @Test
+  @DisplayName("given 계좌 공개 설정 when 홈을 그리면 then 켜졌을 때만 확정 무통장입금 계좌를 모델에 담는다")
+  void givenBankTransferSetting_whenRendered_thenAccountOnlyWhenPublic() {
+    // given
+    when(service.resolveRenderItems()).thenReturn(List.of(
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
+    Model hidden = new ConcurrentModel();
+    Model shown = new ConcurrentModel();
+    // when
+    controller.landing(hidden);
+    org.springframework.test.util.ReflectionTestUtils.setField(controller, "bankTransferPublic", true);
+    controller.landing(shown);
+    // then
+    assertThat(hidden.asMap()).doesNotContainKey("homeBankTransfer");
+    var bank = (f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeBankTransfer) shown.asMap().get("homeBankTransfer");
+    assertThat(bank.bank()).isEqualTo("신한은행");
+    assertThat(bank.accountNumber()).isEqualTo("110-498-250866");
+    assertThat(bank.holder()).isEqualTo("박정민");
+  }
 }

@@ -27,3 +27,9 @@
   .policy-details { grid-template-columns:1fr; gap:6px; }
   .policy-details dd { margin-bottom:16px; }
 }
+
+/* 사업자 정보(공통 조각 sellerRows) */
+.policy-seller { margin: 12px 0 16px; padding: 16px 18px; border: 1px solid #d6dde6; border-radius: 12px; background: #f7f9fb; line-height: 1.9; }
+.policy-seller .seller-row { display: flex; flex-wrap: wrap; gap: 0 16px; }
+.policy-seller a { color: inherit; }
+.policy-operator { margin-top: 32px; }

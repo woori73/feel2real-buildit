@@ -408,10 +408,7 @@
         </p>
         <div id="events"></div>
       </section>
-      <footer
-        th:if="${examSeller != null}"
-        th:insert="~{fragments/_public_footer :: examSellerDetails}"
-      ></footer>
+      <footer th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
     </main>
     <script src="/js/exam_service.js?v=20261028-2" defer></script>
   </body>
