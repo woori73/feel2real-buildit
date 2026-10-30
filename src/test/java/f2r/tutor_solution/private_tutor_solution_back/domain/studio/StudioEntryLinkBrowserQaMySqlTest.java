@@ -77,16 +77,12 @@ class StudioEntryLinkBrowserQaMySqlTest {
       assertThat(URI.create(driver.getCurrentUrl()).getPath()).isEqualTo("/");
       assertThat(driver.getTitle()).doesNotContain("제작 스튜디오");
 
-      // ADMIN 로그인 후: 메뉴 링크·배너·(모바일) 바로가기 모두 실제 클릭으로 제작협업실이 열린다
+      // ADMIN 로그인 후: 메뉴 링크·비서 안내 링크를 실제 클릭하면 제작협업실이 열린다(홈의 AI AGENT 배너는 2026-10-30에 내렸다)
       driver.manage().addCookie(new Cookie("ACCESS_TOKEN", admin));
       driver.get(BASE + "/");
       clickMenuLink(driver, wait, mobile);
       waitStudio(driver, wait);
       shot(driver, (mobile ? "mobile-390" : "pc-1440") + "-studio.png");
-
-      driver.get(BASE + "/");
-      clickVisible(driver, wait, By.id("enHeroStudio"));
-      waitStudio(driver, wait);
 
       // 신청 타일은 신청 안내를 연다. 제작협업실은 기존 비서 입력으로 요청해 안내 링크를 실제 클릭한다.
       driver.get(BASE + "/");

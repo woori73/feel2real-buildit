@@ -44,6 +44,9 @@
 
 Studio 트레일러 별칭(`/api/landing/videos/home-agent-trailer/stream`)과 승인 검사는 지우지 않았다. `app.home.agent-trailer-path`를 빈 값으로 두면 홈은 다시 그 별칭을 쓴다.
 
+> 2026-10-30 변경(사용자 지시): 트레일러 영상은 그대로 두고, 영상 아래 AI AGENT 배너(화보)만 홈에서 내렸다. 배너 파일은 지우지 않았고 제작협업실은 상단 메뉴로 들어간다.
+> 같은 날 2주·160문항·20,000원 안내를 위(상품 안내)와 아래(무통장입금 안내)에 한 번씩만 남겼다. 영상 아래 반복 문구·중복 신청 버튼과 결제 안내의 큰 가격 칸을 뺐다.
+
 삭제: 홈 전용이던 `css/f2r_home_compact.css`, `js/f2r_home_presentation.js`(새 구조에서 쓰이지 않음). `e2e/pr914-production/public.spec.cjs`는 PR914 배포 당시 화면을 검사하는 수동 실행 스크립트라 손대지 않았다(이번 홈에는 맞지 않음).
 
 ## 검증 (로컬, 운영 아님)

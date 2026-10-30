@@ -27,7 +27,7 @@
     trailer.pause();
     trailer.hidden = true;
     if (playButton) playButton.hidden = true;
-    status.textContent = '트레일러를 불러오지 못했습니다. 아래 대표 이미지를 확인해 주세요.';
+    status.textContent = '트레일러를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     status.hidden = false;
   });
   document.querySelectorAll('[data-home-agent]').forEach(function (button) {

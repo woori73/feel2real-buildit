@@ -23,10 +23,10 @@
   <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261027-8">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
   <script src="/js/f2r_home_agent.js?v=20261029-2" defer></script>
-  <link rel="stylesheet" href="/css/home_exam.css?v=20261030-1">
+  <link rel="stylesheet" href="/css/home_exam.css?v=20261030-2">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
-  <script src="/js/home_agent_trailer.js?v=20261029-1" defer></script>
+  <script src="/js/home_agent_trailer.js?v=20261030-1" defer></script>
   <script src="/js/home_review_game.js?v=20261029-1" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
 </head>
@@ -94,7 +94,7 @@
       <p class="exam-eyebrow">맞춤문제 신청</p>
       <h1 class="home-offer-title" id="siHomeTitle">기출과 아주 유사한 영어 기말 대비 문제</h1>
       <p class="home-offer-line"><span th:text="${examOffer.headline}">2주 동안 160문항</span> · <strong th:text="${examOffer.priceLabel}">20,000원</strong></p>
-      <p class="exam-hero-detail" th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p>
+      <p class="exam-hero-detail" th:text="'주 ' + ${examOffer.deliveriesPerWeek} + '회 · 총 ' + ${examOffer.totalDeliveries} + '회 제공'">주 2회 · 총 4회 제공</p>
       <a class="en-btn en-btn-primary" href="#exam-contact">문의·신청 및 자료 제출</a>
       <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
     </section>
@@ -109,9 +109,9 @@
       </div>
       <div class="exam-promo-actions">
         <button type="button" class="en-btn en-btn-outline" id="examPromoSound" aria-pressed="false" hidden>소리 켜기</button>
-        <a class="en-btn en-btn-primary" href="#exam-contact">맞춤 문제 문의·신청</a>
       </div>
-      <p id="examPromoSummary" class="exam-caption">학교별 맞춤 제작 · 2주 · 총 4회 · 160문항 · 20,000원</p>
+      <!-- 상품 내용은 바로 위 안내에 이미 있으므로 화면에는 다시 쓰지 않고 영상 설명(스크린리더)으로만 둔다. -->
+      <p id="examPromoSummary" class="sr" th:text="'학교별 맞춤 제작 · ' + ${examOffer.summary} + ' · ' + ${examOffer.priceLabel}">학교별 맞춤 제작 · 2주 · 주 2회 · 총 4회 · 160문항 · 20,000원</p>
       <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
     </section>
 
@@ -130,19 +130,7 @@
         <button type="button" class="en-btn en-btn-outline" id="homeAgentTrailerPlay">트레일러 재생</button>
         <p id="homeAgentTrailerStatus" class="exam-caption" role="status" hidden></p>
       </div>
-      <p id="homeAgentTrailerPending" th:if="${#strings.isEmpty(homeAgentTrailerPath)}">트레일러 공개 준비 중입니다. AI AGENT의 대표 이미지를 먼저 만나 보세요.</p>
-      <figure class="en-hero-art">
-        <!-- 대표 배너(사용자 확정본, 원본 PNG: /images/ai-agent-banner.png). 글자가 잘리지 않도록 전체를 그대로 표시한다. -->
-        <!-- 배너를 누르면 AI AGENT 제작협업실로 이동한다. 접근 권한(ADMIN·modu)은 서버가 확인하고, 로그인 전이면 로그인 안내로 보낸다. -->
-        <a class="en-hero-link" id="enHeroStudio" href="/ai-agent-studio" data-studio-link aria-label="AI AGENT 제작협업실로 이동">
-          <picture>
-            <source type="image/webp" media="(max-width: 760px)" srcset="/images/ai-agent-banner-m.webp">
-            <source type="image/webp" srcset="/images/ai-agent-banner.webp">
-            <img src="/images/ai-agent-banner.png" alt="AI AGENT — 부패한 권력을 겨누는 여경과 자유의지를 추구하는 AI, BEYOND CONTROL. BEYOND HUMAN." width="1942" height="809" loading="lazy">
-          </picture>
-        </a>
-        <figcaption class="en-hero-badge">AI AGENT · 웹툰·영상 제작 예정 <a class="en-hero-studio" href="/ai-agent-studio" data-studio-link>AI AGENT 제작협업실 바로가기 →</a></figcaption>
-      </figure>
+      <p id="homeAgentTrailerPending" th:if="${#strings.isEmpty(homeAgentTrailerPath)}">트레일러 공개 준비 중입니다.</p>
       <!-- AI AGENT highlight is separate from the exam-service promo; approved gallery stays. -->
       <div id="agentHighlightSlot" hidden></div>
       <p>Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.</p>
@@ -263,7 +251,7 @@
 
     <section class="exam-section" id="exam-payment" aria-labelledby="examPaymentTitle">
       <p class="exam-eyebrow">PAYMENT &amp; DELIVERY</p><h2 id="examPaymentTitle">이용료와 무통장입금 안내</h2>
-      <div class="exam-payment"><div><p class="exam-payment-price" th:text="${examOffer.priceLabel}">20,000원</p><p th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</p></div><div>
+      <div class="exam-payment">
         <th:block th:if="${homeBankTransfer != null}">
           <dl class="exam-bank" id="examBank" aria-label="무통장입금 계좌">
             <dt>은행</dt><dd th:text="${homeBankTransfer.bank}">신한은행</dd>
@@ -271,13 +259,13 @@
               <button type="button" class="en-btn en-btn-outline exam-bank-copy" th:attr="data-copy-address=${homeBankTransfer.accountNumber}" data-copy-done="계좌번호를 복사했습니다." data-copy-fail="자동 복사를 사용할 수 없습니다. 계좌번호를 길게 누르거나 선택해서 복사해 주세요." aria-describedby="examBankCopyStatus">계좌번호 복사</button></dd>
             <dt>예금주</dt><dd th:text="${homeBankTransfer.holder}">박정민</dd>
             <dt>입금액</dt><dd th:text="${examOffer.priceLabel}">20,000원</dd>
-            <dt>상품</dt><dd th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</dd>
+            <dt>서비스</dt><dd th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</dd>
           </dl>
           <p id="examBankCopyStatus" class="exam-caption" role="status" aria-live="polite"></p>
           <p>무통장입금 후 카카오톡 또는 이메일로 입금자명과 학교·학년을 알려 주세요. 관리자가 입금을 직접 확인한 뒤 제작을 시작합니다.</p>
         </th:block>
-        <p th:unless="${homeBankTransfer != null}">무통장입금으로 결제합니다. 입금 계좌는 문의해 주시면 안내합니다.</p>
-        <p class="exam-caption">취소·환불은 콘텐츠 제공 상태와 관계 법령을 확인해 개별 안내하며, 자동 공제하지 않습니다.</p></div></div>
+        <p th:unless="${homeBankTransfer != null}">이용료는 <strong th:text="${examOffer.priceLabel}">20,000원</strong>이며 무통장입금으로 결제합니다. 입금 계좌는 문의해 주시면 안내합니다.</p>
+        <p class="exam-caption">취소·환불은 콘텐츠 제공 상태와 관계 법령을 확인해 개별 안내하며, 자동 공제하지 않습니다.</p></div>
     </section>
 
   </main>

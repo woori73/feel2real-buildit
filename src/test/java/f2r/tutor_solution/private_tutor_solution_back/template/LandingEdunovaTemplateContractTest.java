@@ -88,8 +88,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render("public/landing", "", "https://app.nimblefox.ai/g/public-fixture",
         "/api/landing/videos/home-agent-trailer/stream");
     assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/public-fixture",
-        "rel=\"noopener noreferrer\"", "id=\"homeAgentTrailer\"", "preload=\"none\"",
-        "/images/ai-agent-banner.png").doesNotContain("id=\"homeReviewGamePending\"",
+        "rel=\"noopener noreferrer\"", "id=\"homeAgentTrailer\"", "preload=\"none\"").doesNotContain("id=\"homeReviewGamePending\"",
         "id=\"homeAgentTrailerPending\"", "id=\"examPromoVideo\"");
     String bundled = render("public/landing", "", "", "/video/landing/ai-agent-trailer-v16i-20261029.mp4");
     assertThat(bundled).contains("src=\"/video/landing/ai-agent-trailer-v16i-20261029.mp4\"", "id=\"homeAgentTrailerPlay\"")
@@ -97,19 +96,29 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 레이아웃이 해석되고 AI AGENT 이미지·2주 160문항·40문항·의뢰 버튼이 있다")
-  void hero_showsAgentImageAndOffer() {
+  @DisplayName("given 홈 when 렌더하면 then 2주·160문항·20,000원은 위 상품 안내에 한 번만 보이고 영상 아래 반복 문구·버튼이 없다")
+  void offer_isShownOnceAtTop() {
+    // given / when
+    String html = render();
+    String offer = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"examPromo\""));
+    String promo = html.substring(html.indexOf("id=\"examPromo\""), html.indexOf("id=\"homeJump\""));
+    // then
+    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회 제공").containsOnlyOnce("20,000원");
+    assertThat(promo).doesNotContain("맞춤 문제 문의·신청", "exam-caption\">학교별")
+        .contains("id=\"examPromoSummary\" class=\"sr\"");
+  }
+
+  @Test
+  @DisplayName("given 홈 when 렌더하면 then 레이아웃이 해석되고 2주 160문항·40문항·의뢰 버튼이 있으며 트레일러 아래 AI AGENT 배너(화보)는 없다")
+  void hero_showsOfferWithoutAgentBanner() {
     // given / when
     String html = render();
     // then
     assertThat(html)
         .doesNotContain("th:block")
         .doesNotContain("th:replace")
-        .contains("/images/ai-agent-banner.png")
-        .contains("/images/ai-agent-banner.webp")
-        .contains("/images/ai-agent-banner-m.webp")
+        .doesNotContain("/images/ai-agent-banner.png", "/images/ai-agent-banner-m.webp", "en-hero-art", "id=\"enHeroStudio\"")
         .doesNotContain("/images/ai-agent-hero.jpg")
-        .contains("제작 예정")
         .contains("2주 동안 160문항")
         .contains("40문항")
         .contains("https://open.kakao.com/o/sMf4ifRi")
@@ -181,7 +190,7 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 새 우선순위 when 홈을 읽으면 then 기존 교육 서비스와 제작 예정 표기를 보존한다")
+  @DisplayName("given 새 우선순위 when 홈을 읽으면 then 기존 교육 서비스 링크를 보존한다")
   void cards_inOrder() {
     // given / when
     String html = render();
@@ -193,7 +202,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(exam).isGreaterThan(dash);
     assertThat(dash).isGreaterThan(ai);
     assertThat(html).contains("AI 콘텐츠 제작").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
-    assertThat(html).contains("제작 예정").doesNotContain("href=\"#\"");
+    assertThat(html).doesNotContain("href=\"#\"");
     assertThat(html).contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
   }
 
@@ -246,17 +255,15 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 읽으면 then PC 상단 메뉴·모바일 메뉴·AI AGENT 배너에서 제작협업실로 이동하는 링크가 보인다")
-  void studioEntryLinks_visibleInMenusAndBanner() {
+  @DisplayName("given 홈 when 읽으면 then PC 상단 메뉴·모바일 메뉴에서 제작협업실로 이동하는 링크가 보인다")
+  void studioEntryLinks_visibleInMenus() {
     // given / when
     String html = render();
     String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
     String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("<main"));
-    String hero = html.substring(html.indexOf("class=\"en-hero-art\""), html.indexOf("id=\"agentHighlightSlot\""));
     // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
     assertThat(nav).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
     assertThat(drawer).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
-    assertThat(hero).contains("id=\"enHeroStudio\" href=\"/ai-agent-studio\"").contains("/images/ai-agent-banner.png");
     assertThat(html).doesNotContain("data-studio-entry hidden");
   }
 
@@ -315,7 +322,7 @@ class LandingEdunovaTemplateContractTest {
 
 
   @Test
-  @DisplayName("given 계좌 공개 when 홈 결제 안내를 그리면 then 무통장입금 은행·계좌·예금주·금액·상품과 복사 버튼을 보여 주고 '아직 제공하지 않습니다' 문구가 없다")
+  @DisplayName("given 계좌 공개 when 홈 결제 안내를 그리면 then 무통장입금 은행·계좌·예금주·금액·서비스와 복사 버튼을 보여 주고 '아직 제공하지 않습니다' 문구가 없다")
   void bankTransfer_isShownOnlyWhenPublic() {
     // given
     var bank = f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeBankTransfer.CURRENT;
@@ -326,8 +333,9 @@ class LandingEdunovaTemplateContractTest {
     // then
     String payment = shown.substring(shown.indexOf("id=\"exam-payment\""), shown.indexOf("</section>", shown.indexOf("id=\"exam-payment\"")));
     assertThat(payment).contains("이용료와 무통장입금 안내", "신한은행", "110-498-250866", "박정민", "20,000원",
-        "2주 · 주 2회 · 총 4회 · 160문항", "data-copy-address=\"110-498-250866\"", "관리자가 입금을 직접 확인");
+        "<dt>서비스</dt>", "2주 · 주 2회 · 총 4회 · 160문항", "data-copy-address=\"110-498-250866\"", "관리자가 입금을 직접 확인");
     assertThat(shown).doesNotContain("온라인 계좌 안내는 아직", "임의로 입금하지");
+    assertThat(payment).containsOnlyOnce("20,000원").containsOnlyOnce("2주 · 주 2회 · 총 4회 · 160문항").doesNotContain("exam-payment-price");
     assertThat(hidden).doesNotContain("110-498-250866").contains("입금 계좌는 문의해 주시면 안내합니다")
         .doesNotContain("온라인 계좌 안내는 아직");
   }
