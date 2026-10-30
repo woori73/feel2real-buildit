@@ -96,6 +96,21 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 홈 when 렌더하면 then 하단 문의하기는 버튼이고 상담 팝업은 클래스 스타일·전화·이메일 링크·닫기 버튼을 가진다")
+  void footerContactButton_andReadableContactModal() {
+    // given / when
+    String html = render();
+    String modal = html.substring(html.indexOf("id=\"contactModal\""), html.indexOf("<script", html.indexOf("id=\"contactModal\"")));
+    // then
+    assertThat(html).contains("<a href=\"#contactModal\" role=\"button\" class=\"footer-contact\" onclick=\"openContactModal(); return false;\">문의하기</a>");
+    assertThat(modal).contains("class=\"contact-modal-panel\" role=\"dialog\"", "href=\"tel:010-8507-1453\"",
+        "href=\"mailto:woorinaesin@naver.com\"", "<div class=\"contact-option-detail\">010-8507-1453</div>",
+        "class=\"contact-modal-close\"");
+    assertThat(modal).doesNotContain("color:#6b7280", "background:#fff;");
+    assertThat(html).contains("/css/public_footer.css?v=20261030-1");
+  }
+
+  @Test
   @DisplayName("given 홈 when 렌더하면 then 제목은 두 줄 단위로 나뉘고 문제지·해설지 샘플 섹션은 없으며 활용 사례가 바로 이어진다")
   void titleLines_andSampleSectionRemoved() {
     // given / when

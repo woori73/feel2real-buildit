@@ -121,7 +121,7 @@ class PublicLegalControllerTest {
     assertThat(doc.selectFirst("header").text()).contains("시행일 2026년 10월 30일");
     assertThat(doc.select(".footer-links a[href]").eachAttr("href"))
         .containsExactly(
-            "/policies/privacy", "/policies/terms", "/policies/refunds", "/policies/business");
+            "/policies/privacy", "/policies/terms", "/policies/refunds", "/policies/business", "#contactModal");
     assertThat(doc.select(".footer-links [onclick=comingSoon()]")).isEmpty();
     assertThat(doc.select("main a[href]").eachAttr("href"))
         .contains("/policies/privacy", "/policies/terms", "/policies/refunds")
