@@ -30,13 +30,17 @@ function setup({ fullscreen, phone = false, rootFullscreen } = {}) {
     homeGameClose: node('homeGameClose'), homeGameFullscreen: node('homeGameFullscreen'),
     examPromoVideo: media('examPromoVideo'), homeAgentTrailer: media('homeAgentTrailer') };
   const opened = [];
+  const focus = { game: 0 };
+  const listeners = {};
   const doc = { getElementById: id => nodes[id] || null, documentElement: { style: { overflow: '' } }, fullscreenElement: null,
+    addEventListener(type, fn) { listeners[type] = fn; },
     exitFullscreen() { this.exited = (this.exited || 0) + 1; this.fullscreenElement = null; return Promise.resolve(); },
     createElement: tag => ({ tag, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; },
+      contentWindow: { focus() { focus.game++; } },
       ...(fullscreen ? { requestFullscreen: fullscreen } : {}) }) };
   const win = { open: (...args) => opened.push(args), matchMedia: query => ({ matches: phone && query === '(max-width: 760px)' }) };
   const game = load().init(doc, win);
-  return { game, nodes, clicks, paused, opened, classes, doc };
+  return { game, nodes, clicks, paused, opened, classes, doc, focus, listeners };
 }
 
 test('given 홈 when 처음 열면 then 게임 파일을 불러오지 않고 시작 버튼만 보인다', () => {
@@ -157,4 +161,31 @@ test('given PC when 게임을 시작하면 then 카드 안에서 열고 전체 �
   assert.equal(requested, 0);
   assert.equal(classes.has('is-immersive'), false);
   assert.equal(doc.documentElement.style.overflow, '');
+});
+
+test('given 휴대폰 게임 when 홈페이지의 전체 화면 버튼을 누르면 then 포커스를 게임으로 되돌려 다음 문제가 준비 상태에 멈추지 않는다', () => {
+  // given: 게임은 자기 화면에 포커스가 있을 때만 문제를 진행한다
+  const { clicks, focus, listeners, doc, nodes } = setup({ phone: true, rootFullscreen: () => Promise.resolve() });
+  clicks.homeGameStart();
+  const afterStart = focus.game;
+  // when: 켜기, 끄기, 전체 화면 전환이 끝난 뒤
+  clicks.homeGameFullscreen();
+  doc.fullscreenElement = nodes.homeGame;
+  clicks.homeGameFullscreen();
+  listeners.fullscreenchange();
+  // then
+  assert.ok(afterStart >= 1);
+  assert.equal(focus.game, afterStart + 3);
+});
+
+test('given 게임 시작 페이지 when 읽으면 then 게임 안을 터치하면 포커스를 되찾는 처리가 Unity 로딩보다 먼저 걸린다', () => {
+  // given
+  const starter = fs.readFileSync(path.resolve(__dirname, '../../main/resources/games/g1-oct-review/v1/game.js'), 'utf8');
+  // when
+  const reclaim = starter.indexOf("['touchstart', 'pointerdown', 'mousedown'].forEach");
+  const loader = starter.indexOf("loader.src = 'Build/WebGLBuild.loader.js'");
+  // then
+  assert.ok(reclaim > 0 && reclaim < loader);
+  assert.match(starter, /if \(document\.hasFocus\(\)\) return;\s*window\.focus\(\);\s*canvas\.focus\(\);/);
+  assert.match(starter, /capture: true, passive: true/);
 });
