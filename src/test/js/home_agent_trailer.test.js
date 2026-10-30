@@ -48,7 +48,7 @@ test('given a failed trailer when media error occurs then stop playback and show
   const { trailer, status } = setup();
   trailer.paused = false; trailer.handlers.error();
   assert.equal(trailer.paused, true); assert.equal(trailer.hidden, true);
-  assert.equal(status.hidden, false); assert.match(status.textContent, /대표 이미지/);
+  assert.equal(status.hidden, false); assert.match(status.textContent, /다시 시도/);
 });
 test('given trailer playback when offscreen or character selected or tab leaves then playback stops and resources clean up', () => {
   const { trailer, button, document, window, leave, disconnected } = setup();

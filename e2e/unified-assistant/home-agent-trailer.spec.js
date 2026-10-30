@@ -117,7 +117,7 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
         await video.evaluate(v => { v.load(); v.play().catch(() => {}); });
         await expect(page.locator('#homeAgentTrailerStatus')).toContainText('불러오지 못했습니다');
         await expect(video).toBeHidden();
-        await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        await expect(page.locator('.en-hero-art')).toHaveCount(0);
       } finally { await context.close(); }
     });
   }

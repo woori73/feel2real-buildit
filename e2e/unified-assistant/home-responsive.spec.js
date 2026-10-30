@@ -90,8 +90,7 @@ for (const font of ['fallback', 'pretendard']) {
           await act(page.locator(`#homeJump a[href="${link}"]`));
           await expect(page.locator(target)).toBeInViewport();
         }
-        await expect(page.locator('#enHeroStudio')).toHaveAttribute('href', '/ai-agent-studio');
-        await expect(page.locator('#enHeroStudio img')).toBeVisible();
+        await expect(page.locator('#enHeroStudio, .en-hero-art')).toHaveCount(0); // 2026-10-30: 트레일러 아래 배너(화보) 삭제
         const submit = page.locator('#enExamCta');
         await expect(submit).toHaveAttribute('href', kakao);
         const popupPromise = page.waitForEvent('popup');

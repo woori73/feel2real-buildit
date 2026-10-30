@@ -23,7 +23,7 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
 .exam-step { color:var(--exam-cyan); font-size:13px; font-weight:650; }
 .exam-callout { padding:24px 0 0; margin-bottom:0; }
 .exam-callout strong { display:block; color:var(--exam-text); margin-bottom:8px; }
-.exam-case, .exam-payment { display:grid; grid-template-columns:2fr 1fr; align-items:center; gap:36px; }
+.exam-case { display:grid; grid-template-columns:2fr 1fr; align-items:center; gap:36px; }
 .exam-case .en-btn { justify-self:end; }
 .exam-blog-link { display:flex; align-items:center; justify-content:space-between; gap:16px; border:1px solid var(--exam-line); border-radius:12px; padding:28px; background:var(--exam-panel); color:var(--exam-text); text-decoration:none; }
 .exam-blog-link small { display:block; font-size:13px; color:var(--exam-muted); margin-bottom:12px; }
@@ -33,11 +33,7 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
 .exam-mail-address { user-select:all; overflow-wrap:anywhere; }
 .exam-mail-address a { color:var(--exam-cyan); }
 #examCopyStatus { min-height:26px; color:var(--exam-cyan); }
-.exam-payment { grid-template-columns:1fr 2fr; }
-.exam-payment .exam-payment-price { color:var(--exam-cyan); font-size:40px; font-weight:750; line-height:1.2; margin:0 0 16px; }
-.exam-section .en-hero-art { margin:28px 0; border:1px solid var(--exam-line); border-radius:14px; overflow:hidden; }
-.exam-section .en-hero-art img { display:block; width:100%; height:auto; }
-.exam-section .en-hero-badge { position:static; padding:14px; color:var(--exam-text); background:var(--exam-panel); line-height:1.6; }
+.exam-payment { max-width:640px; }
 .exam-other-services { margin-top:30px; color:var(--exam-muted); }
 .exam-other-services summary { min-height:44px; padding:12px 0; cursor:pointer; }
 .exam-other-services a { min-height:44px; padding:12px; color:var(--exam-cyan); }
@@ -54,7 +50,7 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
 @media(max-width:900px) {
   .exam-grid { grid-template-columns:1fr; }
   .exam-card { padding:22px; }
-  .exam-case, .exam-payment { grid-template-columns:1fr; gap:16px; }
+  .exam-case { grid-template-columns:1fr; gap:16px; }
   .exam-case .en-btn { justify-self:start; }
 }
 @media(max-width:600px) {
@@ -65,7 +61,6 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
   .exam-contact-actions .en-btn { width:100%; }
   .exam-blog-link { padding:22px; }
   .exam-blog-link strong { font-size:19px; }
-  .en-hero-badge { font-size:13px; }
 }
 
 .home-trailer-frame video { display:block; width:100%; aspect-ratio:16/9; object-fit:contain; background:#040d17; border-radius:12px; }
@@ -136,7 +131,7 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
 #aiHome #homeInput:focus { outline:2px solid var(--exam-cyan); outline-offset:1px; }
 #aiHome .send { flex:0 0 auto; min-width:76px; min-height:48px; padding:10px 16px; border:0; border-radius:10px; background:var(--exam-cyan); color:#062032; font:inherit; font-weight:700; cursor:pointer; }
 #aiHome .home-mode { margin:10px 0 0; font-size:12px; color:var(--exam-muted); line-height:1.6; }
-#aiHome .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+#aiHome .sr, #examPromoSummary { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 @media(max-width:600px) {
   .home-offer { padding:28px 16px 4px; }
   .home-jump { grid-template-columns:1fr; padding:4px 16px 20px; gap:8px; }

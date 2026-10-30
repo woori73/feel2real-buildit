@@ -73,7 +73,7 @@ for (const width of [360, 390, 430, 1440]) {
       await video.scrollIntoViewIfNeeded();
       fs.writeFileSync(path.join(output, `${width}.json`), JSON.stringify(initial, null, 2));
       await video.evaluate(v => v.play());
-      await page.locator('#examPromo a').click();
+      await page.locator('#pass-offer a.en-btn-primary').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
       await expect(page.locator('#examContactTitle')).toBeInViewport();
       await expect.poll(() => video.evaluate(v => v.paused)).toBe(true);
       await expect(page.locator('#enExamMail')).toHaveAttribute('href', 'mailto:woorinaesin@naver.com');
@@ -148,7 +148,7 @@ test('failed video keeps the original-frame poster, contact and assistant availa
   await expect.poll(() => page.locator('#examPromoFallback').evaluate(i => i.complete && i.naturalWidth > 0), { timeout: 5000 }).toBe(true);
   await expect(page.locator('#examPromoStatus')).toContainText('영상을 불러오지 못했습니다');
   await expect(page.locator('#examPromoSound')).toBeHidden();
-  await page.locator('#examPromo a').click();
+  await page.locator('#pass-offer a.en-btn-primary').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
   await expect(page.locator('#examContactTitle')).toBeInViewport();
   await page.locator('[data-home-agent="seven"]').click();
   await expect(page.locator('#stagePoster')).toBeVisible();
