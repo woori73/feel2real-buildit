@@ -58,14 +58,23 @@
       .public-footer .footer-biz a { color: rgba(255,255,255,0.45); text-decoration: underline; }
       .public-footer .footer-biz a:hover { color: rgba(255,255,255,0.75); }
       .public-footer .footer-copyright { margin-top: 12px; font-size: 11px; color: rgba(255,255,255,0.3); }
-      .public-contact-option { display:flex; align-items:center; gap:12px; padding:16px 20px; border:1.5px solid #e5e7eb; border-radius:12px; text-decoration:none; color:#1a1a2e; margin-bottom:12px; font-weight:600; transition:background 0.15s; }
-      .public-contact-option:hover { background:#f3f4f6; }
-      /* 상담 신청 팝업(기존 인라인 스타일을 그대로 옮김). 홈은 home_exam.css에서 어두운 화면에 맞춰 덮어쓴다. */
-      .contact-modal-panel { background:#fff; border-radius:16px; padding:32px 28px; max-width:340px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
-      .contact-modal-title { font-size:18px; font-weight:700; color:#1a1a2e; margin-bottom:24px; }
-      .contact-option-detail { font-size:13px; color:#6b7280; font-weight:400; }
-      .public-contact-option-last { margin-bottom:20px; }
-      .contact-modal-close { width:100%; padding:12px; border:none; border-radius:8px; background:#f3f4f6; color:#6b7280; font-size:15px; cursor:pointer; }
+      /* 상담 신청 팝업 — 모든 페이지 공통 디자인(2026-10-30, 홈 PR #938 디자인을 공통화).
+         id 선택자로 페이지별 .public-contact-option 덮어쓰기보다 우선한다. box-sizing을 직접 지정해
+         전역 border-box가 없는 페이지(정책 등)에서도 좌우 16px 여백 안에 들어온다. */
+      #contactModal { padding:16px; box-sizing:border-box; background:rgba(2,8,18,.72) !important; }
+      #contactModal *, #contactModal *::before, #contactModal *::after { box-sizing:border-box; }
+      #contactModal .contact-modal-panel { width:100%; max-width:360px; padding:32px 28px; border-radius:16px; text-align:center;
+        background:#0d2035; border:1px solid #2f5577; color:#edf6ff; box-shadow:0 18px 48px rgba(0,0,0,.5);
+        font-family:Inter,'Pretendard Variable',Pretendard,'Noto Sans KR',sans-serif; }
+      #contactModal .contact-modal-title { margin-bottom:24px; color:#ffffff; font-size:19px; font-weight:700; }
+      #contactModal .public-contact-option { display:flex; align-items:center; gap:12px; min-height:72px; margin-bottom:12px; padding:16px 20px;
+        border:1.5px solid #3c6d8f; border-radius:12px; background:#112b45; color:#ffffff; font-weight:600; text-decoration:none; transition:background .15s; }
+      #contactModal .public-contact-option-last { margin-bottom:20px; }
+      #contactModal .public-contact-option:hover, #contactModal .public-contact-option:focus-visible { background:#173a5c; border-color:#6ee4ff; outline:none; }
+      #contactModal .contact-option-detail { margin-top:2px; color:#6ee4ff; font-size:16px; font-weight:700; letter-spacing:.01em; overflow-wrap:anywhere; }
+      #contactModal .contact-modal-close { width:100%; min-height:48px; padding:12px; border:1.5px solid #8fb3cc; border-radius:10px;
+        background:transparent; color:#edf6ff; font-size:15px; font-weight:700; cursor:pointer; transition:background .15s, border-color .15s; }
+      #contactModal .contact-modal-close:hover, #contactModal .contact-modal-close:focus-visible { background:rgba(255,255,255,.08); border-color:#ffffff; outline:none; }
       @media (max-width: 900px) {
         footer.public-footer { padding: 28px 24px; }
         .public-footer .footer-top { flex-direction: column; align-items: flex-start; gap: 16px; }

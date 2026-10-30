@@ -200,5 +200,3 @@ footer.public-footer { background: #050d1b; color: rgba(234,243,255,.62); border
 .login-modal-submit:hover:not(:disabled) { background: #8ceaff; }
 .login-modal-signup { border-color: var(--si-cyan); color: var(--si-cyan); }
 .login-modal-social-placeholder { background: var(--si-panel); border-color: var(--si-line); }
-.public-contact-option { background: var(--si-panel); border-color: var(--si-line); color: var(--si-text); }
-.public-contact-option:hover { background: #18365a; }

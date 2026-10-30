@@ -297,8 +297,6 @@ body .en-mail-toast { background:var(--ed-stone); color:var(--ed-ink); border:1p
 .login-modal-divider::before, .login-modal-divider::after { background:var(--ed-line); }
 .login-modal-social-placeholder { border-color:var(--ed-line); border-radius:8px; background:var(--ed-stone); }
 .login-modal-social-placeholder::before { background:var(--ed-line); }
-.public-contact-option { border:1px solid var(--ed-line); border-radius:8px; color:var(--ed-ink); background:#fff; }
-.public-contact-option:hover { background:var(--ed-stone); }
 footer.public-footer { background:var(--ed-ink); color:rgba(250,248,244,.62); padding:48px max(20px, calc((100vw - 1240px)/2)) 32px; }
 .public-footer .footer-name-bi i { background:none; -webkit-background-clip:border-box; background-clip:border-box; color:#b9cde4; }
 .public-footer .footer-links a { color:rgba(250,248,244,.62); }

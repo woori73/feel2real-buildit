@@ -96,6 +96,27 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 공통 footer CSS when 읽으면 then 상담 팝업 디자인은 public_footer.css 한 곳에만 있고 테두리 상자 기준·밝은 연락처 색을 쓴다")
+  void contactModalStyle_isSharedInPublicFooterCss() throws Exception {
+    // given
+    java.util.function.Function<String, String> css = path -> {
+      try (var in = LandingEdunovaTemplateContractTest.class.getClassLoader().getResourceAsStream(path)) {
+        return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+      } catch (java.io.IOException e) { throw new IllegalStateException(e); }
+    };
+    // when
+    String shared = css.apply("static/css/public_footer.css");
+    // then
+    assertThat(shared).contains("#contactModal { padding:16px; box-sizing:border-box;",
+        "#contactModal *, #contactModal *::before, #contactModal *::after { box-sizing:border-box; }",
+        "#contactModal .contact-modal-panel { width:100%; max-width:360px;", "#contactModal .contact-option-detail { margin-top:2px; color:#6ee4ff;",
+        "#contactModal .contact-modal-close { width:100%; min-height:48px;");
+    for (String page : new String[] {"static/css/home_exam.css", "static/css/landing_edunova.css", "static/css/f2r_home_agent.css"}) {
+      assertThat(css.apply(page)).as(page).doesNotContain("#contactModal", ".public-contact-option");
+    }
+  }
+
+  @Test
   @DisplayName("given 홈 when 렌더하면 then 하단 문의하기는 버튼이고 상담 팝업은 클래스 스타일·전화·이메일 링크·닫기 버튼을 가진다")
   void footerContactButton_andReadableContactModal() {
     // given / when
@@ -107,7 +128,7 @@ class LandingEdunovaTemplateContractTest {
         "href=\"mailto:woorinaesin@naver.com\"", "<div class=\"contact-option-detail\">010-8507-1453</div>",
         "class=\"contact-modal-close\"");
     assertThat(modal).doesNotContain("color:#6b7280", "background:#fff;");
-    assertThat(html).contains("/css/public_footer.css?v=20261030-1");
+    assertThat(html).contains("/css/public_footer.css?v=20261030-2");
   }
 
   @Test
