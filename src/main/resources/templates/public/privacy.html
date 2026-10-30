@@ -19,6 +19,8 @@
     table{border-collapse:collapse;width:100%;font-size:14px}
     th,td{border:1px solid #e2e8f0;padding:8px 10px;text-align:left;vertical-align:top}
     th{background:#f1f5f9;font-weight:700}
+    /* 휴대폰 가로 넘침 방지(2026-10-30): 「내용」 칸의 긴 주소(https://www.fss.or.kr/*)가 표 최소 폭을 키우지 않게 그 칸만 줄바꿈을 허용하고, 480px 이하에서만 여백을 줄인다. PC 표시는 그대로. */
+    @media (max-width:480px){.pg-wrap{padding:24px 16px 56px}.pg-card{padding:16px 14px}table{font-size:13px;table-layout:fixed}th,td{padding:7px 8px}th:nth-child(1){width:21%}th:nth-child(2){width:30%}td:nth-child(2){overflow-wrap:anywhere}}
     ul{padding-left:22px;margin:6px 0}
   </style>
 </head>

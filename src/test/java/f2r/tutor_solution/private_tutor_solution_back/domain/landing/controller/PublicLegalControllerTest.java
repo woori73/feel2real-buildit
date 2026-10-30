@@ -153,6 +153,26 @@ class PublicLegalControllerTest {
   }
 
   @Test
+  @DisplayName("given 확장 프로그램 안내 when 렌더하면 then 표 칸의 긴 주소가 줄바꿈되고 휴대폰 여백 규칙이 있으며 안내 내용은 그대로다")
+  void extensionPolicyTableWrapsOnPhones() throws Exception {
+    // given / when
+    var html =
+        mockMvc
+            .perform(get("/privacy"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    var doc = Jsoup.parse(html);
+    // then
+    assertThat(doc.select("head style").html())
+        .contains("@media (max-width:480px){.pg-wrap{padding:24px 16px 56px}", "table-layout:fixed", "td:nth-child(2){overflow-wrap:anywhere}}");
+    assertThat(doc.select("table td").eachText())
+        .contains("https://feel2real.co.kr/*", "https://www.fss.or.kr/*", "확장 로컬 저장소 1종만 사용");
+    assertThat(doc.selectFirst(".pg-updated").text()).contains("2026년 9월 25일", "v0.4.0");
+  }
+
+  @Test
   @DisplayName("기존 확장 정책에는 범위 구분 링크와 동작 가능한 문의 모달이 있다")
   void extensionPolicyKeepsOriginalScopeAndWorkingContact() throws Exception {
     var html =
