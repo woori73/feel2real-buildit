@@ -40,7 +40,7 @@ def validate(observation):
 def sql_text(value):
     if value is None:
         return 'NULL'
-    return "CONVERT(0x" + str(value).encode('utf-8').hex() + " USING utf8mb4)"
+    return "CONVERT(0x" + str(value).encode('utf-8').hex() + " USING utf8mb4) COLLATE utf8mb4_unicode_ci"
 
 
 def statement(raw):
