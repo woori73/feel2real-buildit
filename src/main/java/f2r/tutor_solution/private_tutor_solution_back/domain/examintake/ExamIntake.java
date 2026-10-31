@@ -4,7 +4,6 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -121,8 +120,6 @@ public final class ExamIntake {
     text(in.idempotencyKey(), "접수 키", 16, 80);
     if (!in.idempotencyKey().matches("[A-Za-z0-9_-]+")) throw error(400, "접수 키가 올바르지 않습니다.");
     var src = in.details() == null ? Map.<String, String>of() : in.details();
-    if (!Set.of("OVER14", "UNDER14").contains(Objects.toString(src.get("ageBand"), "")))
-      throw error(400, "만 14세 이상 여부를 선택해 주세요.");
     if (!PRIVACY.equals(src.get("privacyVersion"))) throw error(400, "최신 개인정보 처리방침에 동의해 주세요.");
     if (in.kind() == Kind.APPLICATION
         && (!"true".equals(src.get("termsAccepted")) || !TERMS.equals(src.get("termsVersion"))))
@@ -175,25 +172,8 @@ public final class ExamIntake {
       text(fields.get("inquiryType"), "문의 유형", 1, 120);
       text(fields.get("message"), "문의 내용", 1, 2000);
     } else {
-      for (String f :
-          List.of(
-              "school",
-              "grade",
-              "examDate",
-              "scope",
-              "pastPapers",
-              "questionTypes",
-              "difficulty",
-              "format")) text(fields.get(f), f, 1, 2000);
-      try {
-        var d = LocalDate.parse(fields.get("examDate"));
-        if (d.isBefore(LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))))
-          throw new IllegalArgumentException();
-      } catch (Exception e) {
-        throw error(400, "시험일을 확인해 주세요.");
-      }
-      if (!Set.of("YES", "NO").contains(fields.get("pastPapers")))
-        throw error(400, "기출 보유 여부를 선택해 주세요.");
+      for (String f : List.of("school", "grade", "format"))
+        text(fields.get(f), f, 1, 120);
     }
     return Collections.unmodifiableMap(fields);
   }

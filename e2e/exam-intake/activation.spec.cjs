@@ -188,15 +188,9 @@ test("child intake waits for adult electronic consent and administrator telephon
     const page = await ctx.newPage();
     await page.goto("/exam-service");
     await expect(page.locator("#offerSummary")).not.toBeEmpty();
-    await page.locator('[name="ageBand"]').selectOption("UNDER14");
-    await expect(page.locator("#intakeData")).toHaveJSProperty(
-      "disabled",
-      true,
-    );
-    await expect(page.locator('#intakeData input[name="name"]')).toBeDisabled();
-    await expect(
-      page.locator('#intakeData button[type="submit"]'),
-    ).toBeDisabled();
+    await expect(page.locator('[name="ageBand"]')).toHaveCount(0);
+    await expect(page.locator('#intakeData input[name="name"]')).toBeEnabled();
+    await expect(page.getByRole("link", { name: "보호자 확인" })).toBeVisible();
     const cfg = await ok(user.get("/api/exam-intake/config"));
     const submission = {
       guardianName: "합성 법정대리인",
@@ -270,15 +264,7 @@ test("child intake waits for adult electronic consent and administrator telephon
     expect(v.verified_at).toBeTruthy();
     await page.reload();
     await expect(page.locator("#offerSummary")).not.toBeEmpty();
-    await page.locator('[name="ageBand"]').selectOption("UNDER14");
-    await expect(
-      page.locator(`[name="guardianConsentId"] option[value="${grant.id}"]`),
-    ).toHaveCount(1);
-    await page.locator('[name="guardianConsentId"]').selectOption(grant.id);
-    await expect(page.locator("#intakeData")).toHaveJSProperty(
-      "disabled",
-      false,
-    );
+    await expect(page.locator('[name="ageBand"]')).toHaveCount(0);
     await expect(page.locator('#intakeData input[name="name"]')).toBeEnabled();
     await expect(page.locator('[name="consent"]')).not.toBeChecked();
     await expect(page.locator('[name="termsAccepted"]')).not.toBeChecked();

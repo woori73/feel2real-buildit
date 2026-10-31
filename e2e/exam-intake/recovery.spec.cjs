@@ -51,18 +51,13 @@ async function session(browser, width = 390) {
 async function fill(page, marker) {
   await page.goto("/exam-service");
   await expect(page.locator("#offerSummary")).toContainText("160문항");
-  await page.locator("[name=ageBand]").selectOption("OVER14");
   const form = page.locator("#intakeForm");
   for (const [key, value] of Object.entries({
     name: marker,
     school: "합성중학교",
     grade: "중3",
     contact: "synthetic@example.invalid",
-    examDate: "2030-12-01",
-    questionTypes: "독해",
-    difficulty: "중간",
     format: "A4",
-    scope: "합성 시험범위",
   }))
     await form.locator(`[name=${key}]`).fill(value);
   await form.locator("[name=consent]").check();

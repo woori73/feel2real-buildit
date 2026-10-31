@@ -37,41 +37,19 @@
       <section id="newRequestSection" th:unless="${adminView}" aria-labelledby="createTitle">
         <h2 id="createTitle">새 문의·신청</h2>
         <form id="intakeForm">
-          <label
-            >정보를 제출할 학생·신청자의 연령<select name="ageBand" required>
-              <option value="">선택해 주세요</option>
-              <option value="OVER14">만 14세 이상</option>
-              <option value="UNDER14">만 14세 미만</option>
-            </select></label
-          >
-          <div id="guardianGate" hidden>
-            <p>
-              아동 정보는 법정대리인의 전화 확인 후에만 입력할 수 있습니다.
-              법정대리인 본인 계정에서 진행해 주세요.
-            </p>
-            <a href="/exam-service/guardian">법정대리인 동의 확인 요청·철회</a
-            ><label
-              >확인 완료된 동의<select name="guardianConsentId">
-                <option value="">확인된 동의를 선택해 주세요</option>
-              </select></label
-            >
-          </div>
-          <fieldset id="intakeData" disabled>
+          <p>만 14세 미만 학생의 자료는 법정대리인이 <a href="/exam-service/guardian">보호자 확인</a> 후 제출해 주세요.</p>
+          <fieldset id="intakeData">
             <legend>문의·신청 정보</legend>
             <div class="grid">
+              <input type="hidden" name="kind" value="APPLICATION" />
               <label
-                >접수 종류<select name="kind">
-                  <option value="APPLICATION">맞춤 문제 신청</option>
-                  <option value="INQUIRY">문의</option>
-                </select></label
-              ><label
                 >신청자 이름<input
                   name="name"
                   maxlength="120"
                   required
                   autocomplete="name" /></label
               ><label
-                >학교<input name="school" maxlength="120" required /></label
+                >학교/학원<input name="school" maxlength="120" required /></label
               ><label>학년<input name="grade" maxlength="120" required /></label
               ><label
                 >연락 방법<select name="contactMethod">
@@ -84,35 +62,21 @@
               /></label>
             </div>
             <div id="applicationFields" class="grid">
-              <label>시험일<input type="date" name="examDate" required /></label
-              ><label
-                >기출문제 보유<select name="pastPapers">
-                  <option value="YES">있음</option>
-                  <option value="NO">없음</option>
-                </select></label
-              ><label
-                >원하는 문제 유형<input
-                  name="questionTypes"
-                  maxlength="120"
-                  required /></label
-              ><label
-                >난이도<input
-                  name="difficulty"
-                  maxlength="120"
-                  required /></label
-              ><label
+              <label
                 >시험지 형식<input
                   name="format"
                   maxlength="120"
                   required /></label
-              ><label class="wide"
-                >시험 범위<textarea
-                  name="scope"
-                  maxlength="2000"
-                  required
-                ></textarea></label
-              ><label class="wide"
-                >추가 요구사항<textarea
+              >
+            </div>
+            <label>기출 시험자료 업로드 (선택, PDF·JPEG·PNG, 파일당 10MiB·최대 20개)
+              <input id="initialFiles" name="initialFiles" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple />
+            </label>
+            <label class="check"><input type="checkbox" name="initialMaterialConsent" />[선택] 제출 자료를 맞춤 제작에 이용하고 종료·취소 후30일 이내 정리하는 데 동의합니다. 다른 학생 정보는 제거했습니다.</label>
+            <p>신청을 저장한 뒤 선택한 자료를 제출합니다. 자료 전송에 실패하면 같은 접수 번호로 다시 제출할 수 있습니다.</p>
+            <div class="grid">
+              <label class="wide"
+                >출제시 요구사항<textarea
                   name="requirements"
                   maxlength="2000"
                 ></textarea>
@@ -136,7 +100,7 @@
               <summary>개인정보 수집·이용 안내</summary>
               <p>
                 문의: 이름·연락처·문의 내용이 필수이며 학교·학년은 선택입니다.
-                신청: 학교·학년·시험일·범위·문제 요구 형식 등이 필수이며 추가
+                신청: 학교/학원·학년·시험지 형식이 필수이며 출제시
                 요구사항·시험자료는 선택입니다. 연령 구분·동의 버전과 시각도
                 기록합니다.
               </p>
@@ -176,17 +140,12 @@
                 기준으로 검토합니다. 자동 환불 송금은 하지 않습니다.
               </p>
             </section>
-            <label>기출·시험자료 (선택, PDF·JPEG·PNG, 파일당 10MiB·최대 10개)
-              <input id="initialFiles" name="initialFiles" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple />
-            </label>
-            <label class="check"><input type="checkbox" name="initialMaterialConsent" />[선택] 제출 자료를 맞춤 제작에 이용하고 종료·취소 후30일 이내 정리하는 데 동의합니다. 다른 학생 정보는 제거했습니다.</label>
-            <p>신청을 저장한 뒤 선택한 자료를 제출합니다. 자료 전송에 실패하면 같은 접수 번호로 다시 제출할 수 있습니다.</p>
             <label class="check"
               ><input type="checkbox" name="consent" required />개인정보
               수집·이용 안내를 읽고 필수 정보 수집·이용에 동의합니다.</label
             ><label class="check"
-              ><input type="checkbox" name="optionalConsent" />[선택] 추가
-              요구사항·문의의 학교·학년 정보 수집·이용에 동의합니다.</label
+              ><input type="checkbox" name="optionalConsent" />[선택] 출제시
+              요구사항·문의의 학교/학원·학년 정보 수집·이용에 동의합니다.</label
             >
             <label class="check" id="termsConsent"
               ><input type="checkbox" name="termsAccepted" required /><span
@@ -424,6 +383,6 @@
       </section>
       <footer th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
     </main>
-    <script src="/js/exam_service.js?v=20261031-1" defer></script>
+    <script src="/js/exam_service.js?v=20261101-1" defer></script>
   </body>
 </html>

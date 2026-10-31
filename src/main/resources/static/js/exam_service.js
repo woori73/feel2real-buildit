@@ -40,7 +40,7 @@
   };
   const fieldLabels = {
     name: "신청자",
-    school: "학교",
+    school: "학교/학원",
     grade: "학년",
     contactMethod: "연락 방법",
     contact: "연락처",
@@ -50,7 +50,7 @@
     questionTypes: "문제 유형",
     difficulty: "난이도",
     format: "시험지 형식",
-    requirements: "추가 요구사항",
+    requirements: "출제시 요구사항",
     inquiryType: "문의 유형",
     message: "문의 내용",
   };
@@ -671,7 +671,6 @@
       $("receipt").hidden = true;
       $("newRequestSection").hidden = false;
       $("intakeForm").reset();
-      $("intakeForm").elements.kind.dispatchEvent(new Event("change"));
     };
   control($("intakeForm"), async (data) => {
     if (!config)
@@ -684,19 +683,17 @@
     if (selectedFiles.length && data.get("initialMaterialConsent") !== "on")
       throw new Error("선택 자료 제출 동의를 확인해 주세요.");
     if (
-      selectedFiles.length > 10 ||
+      selectedFiles.length > 20 ||
       selectedFiles.some(
         (f) => f.size > 10 * 1024 * 1024 || !/\.(pdf|jpe?g|png)$/i.test(f.name),
       )
     )
       throw new Error(
-        "PDF·JPEG·PNG 파일을 10MiB 이하, 최대 10개 선택해 주세요.",
+        "PDF·JPEG·PNG 파일을 10MiB 이하, 최대 20개 선택해 주세요.",
       );
     const details = {};
     for (const k of Object.keys(fieldLabels))
       details[k] = String(data.get(k) || "");
-    details.ageBand = data.get("ageBand");
-    details.guardianConsentId = data.get("guardianConsentId") || "";
     details.privacyVersion = config.privacyVersion;
     details.termsVersion = config.termsVersion;
     details.termsAccepted = String(data.get("termsAccepted") === "on");
@@ -903,75 +900,6 @@
     page++;
     list().catch((e) => note(e.message));
   });
-  if ($("intakeForm"))
-    $("intakeForm").elements.kind.addEventListener("change", (event) => {
-      const application = event.target.value === "APPLICATION";
-      $("applicationFields").hidden = !application;
-      $("inquiryFields").hidden = application;
-      for (const id of ["applicationFields", "inquiryFields"])
-        $(id)
-          .querySelectorAll("input,textarea,select")
-          .forEach((input) => {
-            input.disabled = $(id).hidden;
-          });
-      for (const name of ["school", "grade"])
-        $("intakeForm").elements[name].required = application;
-      $("termsConsent").hidden = !application;
-      $("intakeForm").elements.termsAccepted.required = application;
-      syncAge();
-      $("inquiryFields")
-        .querySelectorAll("input,textarea")
-        .forEach((input) => (input.required = !application));
-    });
-  function syncAge() {
-    const f = $("intakeForm");
-    if (!f) return;
-    const under = f.elements.ageBand.value === "UNDER14";
-    $("guardianGate").hidden = !under;
-    $("intakeData").disabled = !(
-      f.elements.ageBand.value === "OVER14" ||
-      (under && f.elements.guardianConsentId.value)
-    );
-  }
-  if ($("intakeForm")) {
-    const f = $("intakeForm");
-    let generation = 0;
-    f.elements.guardianConsentId.addEventListener("change", syncAge);
-    f.elements.ageBand.addEventListener("change", async () => {
-      const thisGeneration = ++generation;
-      f.querySelectorAll(
-        '#intakeData input:not([type="checkbox"]),#intakeData textarea',
-      ).forEach((e) => (e.value = ""));
-      f.querySelectorAll('#intakeData input[type="checkbox"]').forEach(
-        (e) => (e.checked = false),
-      );
-      f.elements.guardianConsentId.replaceChildren(
-        new Option("확인된 동의를 선택해 주세요", ""),
-      );
-      syncAge();
-      if (f.elements.ageBand.value !== "UNDER14") return;
-      try {
-        const rows = await api("/api/exam-intake/guardian-consents");
-        if (thisGeneration !== generation) return;
-        rows
-          .filter(
-            (r) =>
-              r.state === "VERIFIED" &&
-              r.privacy_version === config.privacyVersion &&
-              r.terms_version === config.termsVersion &&
-              Date.parse(r.expires_at) > Date.now(),
-          )
-          .forEach((r) =>
-            f.elements.guardianConsentId.append(
-              new Option(r.guardian_name + " · " + r.id, r.id),
-            ),
-          );
-      } catch (e) {
-        note(e.message);
-      }
-      syncAge();
-    });
-  }
   (async () => {
     config = await api("/api/exam-intake/config");
     $("offerSummary").textContent = config.summary;

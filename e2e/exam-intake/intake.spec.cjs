@@ -39,11 +39,8 @@ async function create(api) {
           grade: "중3",
           contactMethod: "EMAIL",
           contact: "fixture@example.invalid",
-          examDate: "2030-12-01",
           scope: "합성 시험범위",
           pastPapers: "YES",
-          questionTypes: "독해",
-          difficulty: "중간",
           format: "A4",
         },
         consent: true,
@@ -94,17 +91,12 @@ for (const width of [360, 390, 430, 768, 1440])
         await page.goto("/exam-service");
         await expect(page.locator("#offerSummary")).toContainText("160문항");
         const form = page.locator("#intakeForm");
-        await form.locator('[name="ageBand"]').selectOption("OVER14");
         for (const [name, value] of Object.entries({
           name: "합성 신청자",
           school: "테스트중",
           grade: "중3",
           contact: "fixture@example.invalid",
-          examDate: "2030-12-01",
-          questionTypes: "독해",
-          difficulty: "중간",
           format: "A4",
-          scope: "로컬 검증 자료",
         }))
           await form.locator('[name="' + name + '"]').fill(value);
         await form.locator('[name="consent"]').check();
@@ -154,7 +146,7 @@ for (const width of [360, 390, 430, 768, 1440])
       }
     },
   );
-test("inquiry form omits application requirements", async ({ browser }) => {
+test("simplified form omits age and kind selectors and collects requirements", async ({ browser }) => {
   const api = await logged("student");
   const context = await browser.newContext({
     storageState: await api.storageState(),
@@ -163,22 +155,25 @@ test("inquiry form omits application requirements", async ({ browser }) => {
     const page = await context.newPage();
     await page.goto("/exam-service");
     await expect(page.locator("#offerSummary")).toContainText("160문항");
-    await page.locator('#intakeForm [name="ageBand"]').selectOption("OVER14");
-    await page.locator('#intakeForm [name="kind"]').selectOption("INQUIRY");
+    await expect(page.locator('#intakeForm select[name="kind"]')).toHaveCount(0);
+    await expect(page.locator('#intakeForm [name="ageBand"]')).toHaveCount(0);
+    await expect(page.locator('#intakeForm [name="examDate"], #intakeForm [name="scope"], #intakeForm [name="pastPapers"], #intakeForm [name="questionTypes"], #intakeForm [name="difficulty"]')).toHaveCount(0);
+    await expect(page.locator('#intakeForm [name="name"]')).toBeEnabled();
     for (const [key, value] of Object.entries({
       name: "합성 문의자",
       school: "테스트중",
       grade: "중3",
       contact: "fixture@example.invalid",
-      inquiryType: "일정",
-      message: "합성 문의입니다",
+      format: "A4",
+      requirements: "합성 출제 요구사항입니다",
     }))
       await page.locator('#intakeForm [name="' + key + '"]').fill(value);
     await page.locator('[name="consent"]').check();
     await page.locator('[name="optionalConsent"]').check();
+    await page.locator('[name="termsAccepted"]').check();
     await page.locator("#intakeForm button").click();
     await expect(page.locator("#notice")).toContainText("접수되었습니다");
-    await expect(page.locator("#details")).toContainText("합성 문의입니다");
+    await expect(page.locator("#details")).toContainText("합성 출제 요구사항입니다");
   } finally {
     await context.close();
     await api.dispose();
