@@ -23,6 +23,7 @@
 
   bindOpen('btnUploadOriginal', 'original');
   bindOpen('btnUploadAnalysis', 'analysis');
+  bindOpen('btnUploadReview', 'analysis');
 
   modal.addEventListener('click', function (e) {
     if (e.target === modal || e.target.closest('[data-upload-close]')) closeModal();
@@ -251,3 +252,4 @@
     el.style.color = isError ? '#c53030' : '#5b6472';
   }
 })();
+
