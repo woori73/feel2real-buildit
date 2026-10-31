@@ -69,7 +69,7 @@ test('October shows ascending question buttons without search or download links'
 });
 test('September arrow shows only September material and returns to October',async()=>{
  const app=setup({items:[{wikiAnalysisMaterialId:1,title:'10월 20번 복습 과제'},{wikiAnalysisMaterialId:2,title:'9월 자습용 상세해설',originalFileName:'9.html'}]});await tick();
- assert.equal(app.ids.reviewMonthSwitch.textContent,'← 2026년 9모');
+ assert.equal(app.ids.reviewMonthSwitch.textContent,'← 2026년 9모 자료');
  await app.ids.reviewMonthSwitch.fire('click');await tick();
  assert.equal(app.ids.reviewMonthTitle.textContent,'2026년 9모 복습과제');
  assert.match(app.ids.reviewList.innerHTML,/전체 과제/);assert.doesNotMatch(app.ids.reviewList.innerHTML,/20번/);
