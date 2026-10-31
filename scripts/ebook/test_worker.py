@@ -101,18 +101,18 @@ class WorkerTest(unittest.TestCase):
 
     def confirmed(self):
         self.observe(detail())
-        w.confirm_cafe(self.db, 'test-order', 'synthetic-member-key', '합성회원', '검증운영자', '감사회원')
+        w.confirm_cafe(self.db, 'test-order', 'synthetic-member-key', '합성회원', '검증운영자', '감사멤버')
 
     def test_cafe_confirmation_requires_exact_member_and_grade(self):
         self.observe(detail())
-        for key, grade in [('', '감사회원'), ('synthetic-member-key', '일반회원')]:
+        for key, grade in [('', '감사멤버'), ('synthetic-member-key', '일반회원')]:
             with self.assertRaises(ValueError):
                 w.confirm_cafe(self.db, 'test-order', key, '합성회원', '검증운영자', grade)
         self.confirmed()
         self.confirmed()
         self.assertEqual(self.db.execute('SELECT COUNT(*) FROM cafe_receipts').fetchone()[0], 1)
         with self.assertRaises(ValueError):
-            w.confirm_cafe(self.db, 'test-order', 'different-member-key', '동명이인', '검증운영자', '감사회원')
+            w.confirm_cafe(self.db, 'test-order', 'different-member-key', '동명이인', '검증운영자', '감사멤버')
 
     def test_unconfirmed_grade_never_sends_even_with_smtp_enabled(self):
         self.observe(detail())

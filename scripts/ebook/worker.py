@@ -76,7 +76,7 @@ def database(directory):
 
 def confirm_cafe(db, order_id, member_key, nickname, verified_by, observed_grade):
     """Record a real UI observation, never perform/pretend a Naver membership change."""
-    if observed_grade != '감사회원':
+    if observed_grade != '감사멤버':
         raise ValueError('ACTUAL_THANKS_GRADE_REQUIRED')
     if not re.fullmatch(r'[A-Za-z0-9_-]{8,160}', member_key or ''):
         raise ValueError('CAFE_MEMBER_KEY_REQUIRED')
@@ -228,7 +228,7 @@ def deliver(db, api, config):
     if hashlib.sha256(content).hexdigest() != config['pdf_sha256']:
         raise RuntimeError('PDF_CHANGED')
     smtp_config = json.loads(Path(config['smtp_config']).read_text())
-    for queued in db.execute("SELECT o.* FROM orders o JOIN cafe_receipts c ON c.order_id=o.id WHERE o.status='READY' AND o.delivery='QUEUED' AND o.cafe='CONFIRMED' AND c.observed_grade='감사회원'").fetchall():
+    for queued in db.execute("SELECT o.* FROM orders o JOIN cafe_receipts c ON c.order_id=o.id WHERE o.status='READY' AND o.delivery='QUEUED' AND o.cafe='CONFIRMED' AND c.observed_grade='감사멤버'").fetchall():
         # Recheck current payment/claim immediately before sending.
         fresh = api.details([queued['id']])
         if len(fresh) != 1:
