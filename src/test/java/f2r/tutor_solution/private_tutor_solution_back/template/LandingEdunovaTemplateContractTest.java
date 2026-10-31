@@ -435,7 +435,7 @@ class LandingEdunovaTemplateContractTest {
         .contains("93.5", "예상문제 범위 31문항 중 29문항 적중", "배점 기준 90점 중 85점 · 대화문 5문항 제외", "92점")
         .contains("id=\"hitStory\"", "id=\"hitCompare\"", "id=\"hitScope\"", "id=\"hitAll\"")
         .contains("개별 사례는 다른 학교나 시험의 적중률을 보장하지 않습니다.")
-        .doesNotContain("100%", "/exam-cases/apgujeong");
+        .doesNotContain("100%", "href=\"/exam-cases");
     assertThat(section.split("class=\"hit-q\"", -1)).hasSize(16);
     assertThat(images).hasSize(30);
     for (String path : images) {
