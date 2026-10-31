@@ -7,12 +7,14 @@
  * - 게시판 글쓰기/상세는 /wiki 전용 화면(/wiki/board/{key}/new, /wiki/posts/{id})
  */
 (function () {
-  var grade = 1;
+  var entryGrade = Number(new URLSearchParams(location.search).get('grade'));
+  var grade = [1,2,3].indexOf(entryGrade) >= 0 ? entryGrade : 1;
   var liveMaxId = 0;
   var LIVE_POLL_MS = 8000;
   var POPULAR_POLL_MS = 45000;
 
   var gradeTabs = document.getElementById('gradeTabs');
+  gradeTabs.querySelectorAll('.grade-tab').forEach(function (tab) { tab.classList.toggle('active', Number(tab.dataset.grade) === grade); });
   var gradeNote = document.getElementById('gradeNote');
 
   var LEARNING_TYPE_LABEL = { VOCAB: '어휘', WORKBOOK: 'Workbook', VARIANT: '변형문제', WEEKLY: 'WEEKLY', ETC: '기타' };
@@ -468,7 +470,7 @@
     try {
       var res = await fetch('/api/wiki/analysis-materials?grade=' + grade);
       if (!res.ok) throw new Error();
-      var items = (await res.json()).slice(0, 6);
+      var items = (await res.json()).filter(function (it) { return !/이전 편집 시안|검토본/.test(it.title || ''); }).slice(0, 6);
       if (!items.length) {
         box.innerHTML = '<p class="muted">해당 학년의 공개 분석 자료가 아직 없습니다.</p>';
         return;
@@ -478,7 +480,10 @@
       box.innerHTML = items.map(function (it) {
         hubAnalysesById[it.wikiAnalysisMaterialId] = it;
         var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
-        var card = '<a class="analysis-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
+        var review = /복습|자습/.test(it.title || '') && /\.html?$/i.test(it.originalFileName || '');
+        var q = String(it.title || '').match(/(\d+)(?:[~～-]\d+)?번/);
+        var href = review ? '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + (q ? '&question=' + q[1] : '') + '#review' : it.downloadUrl;
+        var card = '<a class="analysis-card" ' + (review ? '' : 'data-member-download ') + 'href="' + escapeAttr(href) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'
           + '<span class="analysis-badge">' + escapeHtml(it.subject || '영어') + ' · ' + fileMeta(it) + '</span>'
@@ -548,3 +553,4 @@
   }
   function escapeAttr(v) { return escapeHtml(v).replace(/`/g, '&#96;'); }
 })();
+
