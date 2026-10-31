@@ -7,8 +7,9 @@
  * - 게시판 글쓰기/상세는 /wiki 전용 화면(/wiki/board/{key}/new, /wiki/posts/{id})
  */
 (function () {
+  var grade = 1;
   var entryGrade = Number(new URLSearchParams(location.search).get('grade'));
-  var grade = [1,2,3].indexOf(entryGrade) >= 0 ? entryGrade : 1;
+  if ([1,2,3].indexOf(entryGrade) >= 0) grade = entryGrade;
   var liveMaxId = 0;
   var LIVE_POLL_MS = 8000;
   var POPULAR_POLL_MS = 45000;
