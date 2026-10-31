@@ -14,6 +14,7 @@
     CANCELLED: "취소 완료",
   };
   const actionLabels = {
+    NOTIFICATION_RECEIVED: "담당자 메일 수신 확인",
     PRIVACY_REQUEST: "개인정보 권리 행사 요청",
     DOCUMENT_CONSENT: "선택 자료 제출 동의",
     UPDATE_DETAILS: "신청 내용 변경 요청",
@@ -59,7 +60,21 @@
     current,
     bankVersion = 0,
     page = 0,
-    intakeKey = crypto.randomUUID().replaceAll("-", "");
+    intakeKey = submissionKey(),
+    pendingFiles = [],
+    receiptId = null;
+  function submissionKey(reset = false) {
+    const fresh = () => crypto.randomUUID().replaceAll("-", "");
+    try {
+      const key = !reset && sessionStorage.getItem("f2r-exam-submission-key");
+      const value = key && /^[A-Za-z0-9_-]{16,80}$/.test(key) ? key : fresh();
+      // Opaque retry key only: never persist form fields, files, contact details or credentials.
+      sessionStorage.setItem("f2r-exam-submission-key", value);
+      return value;
+    } catch (_) {
+      return fresh();
+    }
+  }
   function note(message) {
     $("notice").textContent = message;
   }
@@ -81,11 +96,14 @@
     }
     const r = await fetch(path, init);
     const value = await r.json().catch(() => ({}));
-    if (!r.ok)
-      throw new Error(
+    if (!r.ok) {
+      const error = new Error(
         value.message ||
           "요청을 처리하지 못했습니다. 로그인과 연결을 확인해 주세요.",
       );
+      error.status = r.status;
+      throw error;
+    }
     return value;
   }
   function control(form, work) {
@@ -160,6 +178,27 @@
         current.state,
       );
     $("requestDetail").hidden = false;
+    const notificationLabels = {
+      PENDING: "담당자 알림 전송 대기 중입니다. 신청은 저장되었습니다.",
+      SENDING: "담당자 알림을 전송 중입니다. 신청은 저장되었습니다.",
+      SENT: "알림 메일 서버에 전달했습니다. 실제 수신 확인은 대기 중입니다.",
+      FAILED:
+        "담당자 알림 전송에 실패했습니다. 신청은 저장되어 관리자 목록에서 확인할 수 있습니다.",
+    };
+    $("notificationStatus").textContent = "알림 상태를 확인하고 있습니다.";
+    api("/api/exam-intake/requests/" + id + "/notification")
+      .then((n) => {
+        if (current.id !== id) return;
+        $("notificationStatus").textContent = n.received
+          ? "담당자가 알림 메일의 실제 수신을 확인했습니다."
+          : notificationLabels[n.state] ||
+            "알림 상태 미확인 · 신청 저장과 별도로 확인합니다.";
+      })
+      .catch(() => {
+        if (current.id === id)
+          $("notificationStatus").textContent =
+            "알림 상태를 불러오지 못했습니다. 신청은 저장되었습니다.";
+      });
     $("detailTitle").textContent = "접수 번호 " + id;
     $("details").replaceChildren();
     const dl = el("dl");
@@ -531,10 +570,122 @@
             await events();
           }),
         );
+      if (item.state === "FAILED")
+        a.append(
+          button("실패 알림 다시 전송", async () => {
+            await api(
+              "/api/admin/exam-intake/events/" + item.id + "/retry",
+              "POST",
+              {},
+            );
+            await events();
+          }),
+        );
+      if (item.state === "SENT")
+        a.append(
+          button("수신함에서 이 이벤트 ID의 메일 확인 완료", async () => {
+            await api(
+              "/api/admin/exam-intake/events/" + item.id + "/received",
+              "POST",
+              { confirmedInMailbox: true },
+            );
+            note("담당자가 확인한 메일 수신 기록을 남겼습니다.");
+          }),
+        );
       $("events").append(a);
     });
   }
+  function receipt(id) {
+    receiptId = id;
+    $("receipt").hidden = false;
+    $("newRequestSection").hidden = true;
+    $("receiptNumber").textContent = id;
+    $("receiptLink").href = "/exam-service?request=" + encodeURIComponent(id);
+    $("receiptTitle").focus();
+  }
+  async function uploadInitialFiles() {
+    const failed = [];
+    for (const file of pendingFiles) {
+      const data = new FormData();
+      data.set("file", file);
+      data.set("materialConsent", "true");
+      try {
+        await api(
+          "/api/exam-intake/requests/" + receiptId + "/documents",
+          "POST",
+          data,
+        );
+      } catch (_) {
+        failed.push(file);
+      }
+    }
+    pendingFiles = failed;
+    $("retryInitialFiles").hidden = !failed.length;
+    $("receiptStatus").textContent = failed.length
+      ? "신청은 저장되었습니다. 자료 " +
+        failed.length +
+        "개는 제출 실패했습니다. 실패한 자료만 다시 제출하거나 접수 상세에서 파일을 변경해 제출해 주세요."
+      : "접수되었습니다. 제출 자료의 검사 상태와 담당자 알림 상태는 접수 상세에서 확인할 수 있습니다.";
+    const refresh = await Promise.allSettled([list(), detail(receiptId)]);
+    if (refresh.some((r) => r.status === "rejected"))
+      $("receiptStatus").textContent +=
+        " 상세 조회에 실패했습니다. 접수 번호를 보관하고 내 접수 확인을 다시 눌러 주세요.";
+    note(
+      failed.length
+        ? "자료 제출 실패 · 신청을 새로 만들지 말고 같은 접수에서 재시도해 주세요."
+        : "접수되었습니다. 접수 번호: " + receiptId,
+    );
+  }
+  if ($("retryInitialFiles"))
+    $("retryInitialFiles").replaceWith(
+      buttonWithId(
+        "retryInitialFiles",
+        "실패한 자료만 다시 제출",
+        uploadInitialFiles,
+      ),
+    );
+  function buttonWithId(id, text, work) {
+    const b = button(text, work);
+    b.id = id;
+    b.hidden = true;
+    return b;
+  }
+  if ($("newRequest"))
+    $("newRequest").onclick = () => {
+      if (
+        pendingFiles.length &&
+        !window.confirm(
+          "아직 제출하지 못한 자료가 있습니다. 현재 접수에서 나중에 제출하고 새 신청을 작성할까요?",
+        )
+      )
+        return;
+      intakeKey = submissionKey(true);
+      receiptId = null;
+      pendingFiles = [];
+      $("receipt").hidden = true;
+      $("newRequestSection").hidden = false;
+      $("intakeForm").reset();
+      $("intakeForm").elements.kind.dispatchEvent(new Event("change"));
+    };
   control($("intakeForm"), async (data) => {
+    if (!config)
+      throw new Error(
+        "신청 설정을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.",
+      );
+    const selectedFiles = data
+      .getAll("initialFiles")
+      .filter((f) => f instanceof File && f.size > 0);
+    if (selectedFiles.length && data.get("initialMaterialConsent") !== "on")
+      throw new Error("선택 자료 제출 동의를 확인해 주세요.");
+    if (
+      selectedFiles.length > 10 ||
+      selectedFiles.some(
+        (f) => f.size > 10 * 1024 * 1024 || !/\.(pdf|jpe?g|png)$/i.test(f.name),
+      )
+    )
+      throw new Error(
+        "PDF·JPEG·PNG 파일을 10MiB 이하, 최대 10개 선택해 주세요.",
+      );
     const details = {};
     for (const k of Object.keys(fieldLabels))
       details[k] = String(data.get(k) || "");
@@ -544,20 +695,30 @@
     details.termsVersion = config.termsVersion;
     details.termsAccepted = String(data.get("termsAccepted") === "on");
     details.optionalConsent = String(data.get("optionalConsent") === "on");
-    const r = await api("/api/exam-intake/requests", "POST", {
-      kind: data.get("kind"),
-      details,
-      consent: data.get("consent") === "on",
-      consentVersion: config.consentVersion,
-      idempotencyKey: intakeKey,
-    });
-    intakeKey = crypto.randomUUID().replaceAll("-", "");
-    $("intakeForm").reset();
-    $("intakeForm").elements.kind.dispatchEvent(new Event("change"));
-    await list();
-    await detail(r.id);
-    $("detailTitle").focus();
-    note("접수되었습니다. 접수 번호: " + r.id);
+    let r;
+    try {
+      r = await api("/api/exam-intake/requests", "POST", {
+        kind: data.get("kind"),
+        details,
+        consent: data.get("consent") === "on",
+        consentVersion: config.consentVersion,
+        idempotencyKey: intakeKey,
+      });
+    } catch (e) {
+      // A network/5xx failure can occur after commit. Keep the same key for resolution/retry.
+      if ([400, 401, 403, 422, 429].includes(e.status))
+        intakeKey = submissionKey(true);
+      throw e;
+    }
+    if (!r || !r.id)
+      throw new Error(
+        "접수 결과를 확인하지 못했습니다. 같은 신청으로 다시 시도해 주세요.",
+      );
+    pendingFiles = selectedFiles;
+    receipt(r.id);
+    $("receiptStatus").textContent =
+      "신청이 저장되었습니다. 선택한 자료를 제출하고 있습니다.";
+    await uploadInitialFiles();
   });
   control($("earlyErasure"), async (data) => {
     await api(
@@ -825,6 +986,19 @@
         );
         $("refundRows").append(row);
       }
+    if (!admin) {
+      const requestId = new URL(location.href).searchParams.get("request");
+      const prior = await api("/api/exam-intake/submissions/resolve", "POST", {
+        idempotencyKey: intakeKey,
+      });
+      const id = requestId || (prior.found && prior.request.id);
+      if (id) {
+        await detail(id); // Ownership is checked by the server before showing a receipt.
+        receipt(id);
+        $("receiptStatus").textContent =
+          "저장된 접수를 확인했습니다. 자료 제출 여부와 검사 상태를 상세에서 확인해 주세요.";
+      }
+    }
     await list();
     if (admin && $("bankForm")) await bank();
     note(

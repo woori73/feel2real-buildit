@@ -1,0 +1,12 @@
+{
+  "localOnly": true,
+  "requestId": "9d40bcd3-0e0d-4377-8cfd-3b8bb7190923",
+  "eventId": "ea4c2e6f-ea1c-4dc9-bc94-ea8931667fa8",
+  "smtpReceived": true,
+  "recipientConfirmed": true,
+  "cleanScanned": true,
+  "eicarRejected": true,
+  "nonAdminFileDenied": true,
+  "productionDefinitionsVerified": false,
+  "productionVerified": false
+}

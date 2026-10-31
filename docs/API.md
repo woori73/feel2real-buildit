@@ -5111,3 +5111,12 @@ ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(�
 - 기존 요청 actions에 `PRIVACY_REQUEST` 추가. 취소 후에도 개인정보 권리 행사 접수 허용.
 - `GET /api/admin/exam-intake/retention`: ADMIN 정리 대상 조회. `POST /api/admin/exam-intake/requests/{id}/erase-learning-data`: version/purposeComplete/noLegalHold, 검토된 보존 정책 필요. 종료/취소 후 일찍 삭제 가능하며 기본 대상 조회는30일 경과. 실제 파일 실패503·비공개 유지·재시도 가능. 법정 결제/계약 증빙 보존.
 - `POST /api/admin/exam-intake/retention/unused-guardians`: 검토된 정책이 등록된 경우 미사용 만료/철회/거절 보호자 연락정보 정리. 자동 실행 없음.
+
+## 신청 응답 복구·알림 수신 구분 (2026-10-31, 운영 미적용)
+
+- 기존 `app.exam-intake.enabled` 조건 유지. `POST /api/exam-intake/submissions/resolve` `{idempotencyKey}` → 본인 소유 기존 접수만 `{found:true,request}`; 없음 `{found:false}`. 로그인/동일 출처 헤더 필수. 관리자도 타인의 키를 이 경로로 조회하지 못한다.
+- `GET /api/exam-intake/requests/{id}/notification` → 본인/ADMIN만 `{state,received}`. PENDING/SENDING/SENT/FAILED와 수신 확인은 별개. SMTP 수락만으로 `received=true`가 되지 않는다.
+- ADMIN `POST /api/admin/exam-intake/events/{id}/retry`: FAILED만 PENDING으로 재등록. 새 신청/이벤트 생성 없음. `/received` `{confirmedInMailbox:true}`는 SENT의 실제 수신함 확인을 별도 `NOTIFICATION_RECEIVED` 감사 행으로 기록하며 반복 호출은 중복 기록하지 않는다. 기존 `/ack` 관리자 목록 확인과 구분한다.
+- 시행 문서는 2026-10-30 기준. 신규 동의 버전은 `exam-intake-20261030-v1`, 개인정보 `exam-privacy-20261030-v1`, 약관 `exam-terms-20261030-v1`. 과거 계약/동의 불변. 보존/환불 검토 설정도 해당 버전과 일치해야 한다.
+- 30일 지난 미계약·미입금(RECEIVED/AWAITING_DEPOSIT)도 보존 검토 목록에 포함. 관리자 목적 달성/법적 유보 없음 확인과 미처리 요청 검사를 거쳐 종결·학습정보 정리한다. 자동 실행 없음.
+- [구현·로컬 증거·운영 연결 절차](operations/exam-intake-20261031/README.md). 운영 테이블 설치 여부 확인 전 신규 Flyway 번호는 확정하지 않는다.

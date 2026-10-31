@@ -11,6 +11,9 @@ on:
       - 'src/test/java/**/examintake/**'
       - 'docs/home-exam/proposed-schema.sql'
       - 'e2e/exam-intake/**'
+      - 'scripts/operations/*exam*'
+      - 'scripts/test/prepare-exam-adapters.py'
+      - 'src/main/resources/templates/public/landing.html'
       - '.github/workflows/exam-intake-regression.yml'
 permissions:
   contents: read
@@ -28,7 +31,9 @@ jobs:
         with:
           node-version: '24'
       - name: Build and run isolated H2 security/state/file regression
-        run: bash gradlew bootJar test --tests '*ExamIntakeServiceTest' --tests '*LandingEdunovaTemplateContractTest' --no-daemon
+        run: |
+          python3 -m unittest discover -s scripts/operations -p test_exam_intake_preflight.py
+          bash gradlew bootJar test --tests '*ExamIntakeServiceTest' --tests '*LandingEdunovaTemplateContractTest' --no-daemon
       - name: Install browser
         working-directory: e2e/unified-assistant
         run: |
@@ -42,6 +47,10 @@ jobs:
             sleep 1
           done
           docker exec -i exam-intake-ci mysql -uroot -pexam-ci-only f2r_exam_ci < docs/home-exam/proposed-schema.sql
+      - name: Prepare isolated SMTP inbox and actual scanner engine with test signatures only
+        run: |
+          python3 scripts/test/prepare-exam-adapters.py "$RUNNER_TEMP/exam-adapters"
+          docker run -d --name exam-mail-ci -p 127.0.0.1:11025:1025 -p 127.0.0.1:18025:8025 axllent/mailpit:v1.27.9
       - name: Start opt-in application with private test storage and no external senders
         env:
           SPRING_PROFILES_ACTIVE: local
@@ -69,7 +78,9 @@ jobs:
           echo "EXAM_PREP_PID=$!" >> "$GITHUB_ENV"
           java -Xmx512m -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8093 --spring.flyway.enabled=false --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.bank-admin-enabled=true --app.exam-intake.bank-public-enabled=false --app.exam-intake.private-directory="$RUNNER_TEMP/hidden-private" --app.file.upload-dir="$RUNNER_TEMP/hidden-files" > "$RUNNER_TEMP/exam-hidden.log" 2>&1 &
           echo "EXAM_HIDDEN_PID=$!" >> "$GITHUB_ENV"
-          for port in 8092 8093; do
+          java -Xmx512m -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8094 --spring.flyway.enabled=false --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.bank-admin-enabled=true --app.exam-intake.bank-public-enabled=true --app.exam-intake.private-directory="$RUNNER_TEMP/exam-adapters/private" --app.exam-intake.scanner-executable="$RUNNER_TEMP/exam-adapters/scanner" --app.exam-intake.email-notifications-enabled=true --app.exam-intake.notification-recipient=operator@example.invalid --app.exam-intake.notification-from=sender@example.invalid --app.exam-intake.notification-poll-ms=1000 --spring.mail.host=127.0.0.1 --spring.mail.port=11025 --app.file.upload-dir="$RUNNER_TEMP/adapter-files" > "$RUNNER_TEMP/exam-adapter.log" 2>&1 &
+          echo "EXAM_ADAPTER_PID=$!" >> "$GITHUB_ENV"
+          for port in 8092 8093 8094; do
             for attempt in {1..90}; do
               if curl -fsS "http://localhost:$port/" >/dev/null; then break; fi
               sleep 1
@@ -80,6 +91,7 @@ jobs:
         run: |
           export NODE_PATH="$GITHUB_WORKSPACE/e2e/unified-assistant/node_modules"
           export CHROMIUM_PATH="$(node -e 'process.stdout.write(require("@playwright/test").chromium.executablePath())')"
+          export INTAKE_ADAPTERS_BASE=http://localhost:8094
           e2e/unified-assistant/node_modules/.bin/playwright test --config e2e/exam-intake/playwright.config.cjs
       - name: Preserve synthetic evidence, excluding cookies/tokens/traces/private uploads
         if: always()
@@ -97,4 +109,6 @@ jobs:
           if [ -n "${EXAM_APP_PID:-}" ]; then kill "$EXAM_APP_PID" || true; fi
           if [ -n "${EXAM_PREP_PID:-}" ]; then kill "$EXAM_PREP_PID" || true; fi
           if [ -n "${EXAM_HIDDEN_PID:-}" ]; then kill "$EXAM_HIDDEN_PID" || true; fi
+          if [ -n "${EXAM_ADAPTER_PID:-}" ]; then kill "$EXAM_ADAPTER_PID" || true; fi
+          docker rm -f exam-mail-ci || true
           docker rm -f exam-intake-ci || true

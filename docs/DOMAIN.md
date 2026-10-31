@@ -1866,3 +1866,7 @@ JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `E
 성인 법정대리인의 계정·이름·전화·관계, 동의 항목/정책 버전/시각, 검증 결과/방법/관리자/시각, 만료·신청 사용·철회를 저장한다. 아동 정보는 사전 동의 테이블에 넣지 않는다. 상태는 PENDING/VERIFIED/USED/REJECTED/REVOKED. 신청 ID unique/FK로 한 건 사용을 제한하고 트랜잭션으로 소비한다. 기존 사용자 계정 행을 잠가 일일 요청 한도를 직렬화한다.
 
 신청 payload의 동의/연령 필드는 신규 생성 시 기록하며 내용 변경 시 보존한다. 삭제 처리 이력은 기존 action의 PRIVACY_ERASURE(PROCESSING/RESOLVED)로 기록하며 실패 시 재시도한다. 학습자료·개인정보 정리와 법정 결제/계약 기록을 구분한다. 상세 및 운영 전 조건: [활성화 준비](home-exam/ACTIVATION-GATES-20261029.md).
+
+### 신청 활성화 준비 보완 (2026-10-31)
+
+기존 8개 제안 테이블·JDBC 레코드를 재사용하며 운영 테이블 존재/이력은 아직 미검증이다. 스키마를 추측해 Flyway 위치에 설치하지 않았다. `exam_intake_action.kind=NOTIFICATION_RECEIVED`는 관리자·기록 시각·이벤트 ID만 저장하고, SMTP 수락(`exam_intake_event.state=SENT`)과 구별한다. 브라우저 복구 키는 기존 `(owner_id,intake_key)` 유일성을 재사용하며 새 중복 저장소를 만들지 않는다. 신규 동의 버전만 2026-10-30 시행 문서에 맞추고 기존 계약/동의 행을 소급 수정하지 않는다. [읽기 전용 조사 및 신규 마이그레이션 준비](operations/exam-intake-20261031/README.md).

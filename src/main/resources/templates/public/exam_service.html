@@ -26,7 +26,15 @@
         <p id="offerSummary"></p>
       </header>
       <p id="notice" role="status" aria-live="polite"></p>
-      <section th:unless="${adminView}" aria-labelledby="createTitle">
+      <section id="receipt" th:unless="${adminView}" hidden aria-labelledby="receiptTitle">
+        <h2 id="receiptTitle" tabindex="-1">신청 저장 완료</h2>
+        <p>접수 번호: <strong id="receiptNumber"></strong></p>
+        <p id="receiptStatus" role="status"></p>
+        <a id="receiptLink">내 접수 확인</a>
+        <button id="retryInitialFiles" type="button" hidden>실패한 자료만 다시 제출</button>
+        <button id="newRequest" type="button">다른 문의·신청 작성</button>
+      </section>
+      <section id="newRequestSection" th:unless="${adminView}" aria-labelledby="createTitle">
         <h2 id="createTitle">새 문의·신청</h2>
         <form id="intakeForm">
           <label
@@ -133,8 +141,8 @@
                 기록합니다.
               </p>
               <p>
-                문의 종결·서비스 종료·취소 후30일 이내 삭제/비식별화하는
-                준비안이며, 법정 거래기록5년·불만/분쟁3년은 필요한 증빙만
+                문의 종결·서비스 종료·취소 후30일 이내 삭제/비식별화하며,
+                법정 거래기록5년·불만/분쟁3년은 필요한 증빙만
                 분리합니다. 목적 달성 후 불필요한 정보는 지체 없이 파기합니다.
                 필수 동의 거부 시 접수할 수 없고 선택 동의 거부는 기본 신청에
                 불이익이 없습니다.
@@ -168,6 +176,11 @@
                 기준으로 검토합니다. 자동 환불 송금은 하지 않습니다.
               </p>
             </section>
+            <label>기출·시험자료 (선택, PDF·JPEG·PNG, 파일당 10MiB·최대 10개)
+              <input id="initialFiles" name="initialFiles" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple />
+            </label>
+            <label class="check"><input type="checkbox" name="initialMaterialConsent" />[선택] 제출 자료를 맞춤 제작에 이용하고 종료·취소 후30일 이내 정리하는 데 동의합니다. 다른 학생 정보는 제거했습니다.</label>
+            <p>신청을 저장한 뒤 선택한 자료를 제출합니다. 자료 전송에 실패하면 같은 접수 번호로 다시 제출할 수 있습니다.</p>
             <label class="check"
               ><input type="checkbox" name="consent" required />개인정보
               수집·이용 안내를 읽고 필수 정보 수집·이용에 동의합니다.</label
@@ -227,7 +240,7 @@
       <section th:if="${adminView}" aria-label="개인정보 보존 기간 검토">
         <h2>개인정보 보존·삭제 검토</h2>
         <p>
-          종료·취소 후30일 경과 건을 조회합니다. 분쟁·법적 보존 검토와 정책 승인
+          종료·취소 또는 미계약·미입금 상태로30일 경과한 건을 조회합니다. 분쟁·법적 보존 검토와 정책 승인
           전에는 삭제하지 않습니다. 학습자료 정리와 법정 거래기록 보존을
           구분합니다.
         </p>
@@ -266,6 +279,7 @@
           ><button type="submit">학습자료 삭제·개인정보 정리</button>
         </form>
         <p id="progress"></p>
+        <p id="notificationStatus" role="status"></p>
         <p id="refundEstimate"></p>
         <h3>제출 자료</h3>
         <p>
@@ -410,6 +424,6 @@
       </section>
       <footer th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
     </main>
-    <script src="/js/exam_service.js?v=20261028-2" defer></script>
+    <script src="/js/exam_service.js?v=20261031-1" defer></script>
   </body>
 </html>

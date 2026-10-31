@@ -25,6 +25,9 @@ public class ExamIntakeNotifications {
   private final boolean enabled;
   private final String recipient;
 
+  @Value("${app.exam-intake.notification-from:${spring.mail.username:}}")
+  private String from = "";
+
   public ExamIntakeNotifications(
       ExamIntakeRepository repo,
       TransactionTemplate tx,
@@ -90,6 +93,7 @@ public class ExamIntakeNotifications {
     if (event == null) return;
     try {
       SimpleMailMessage message = new SimpleMailMessage();
+      if (!from.isBlank()) message.setFrom(from);
       message.setTo(recipient);
       message.setSubject("Feel2Real 접수 알림 [" + event.get("id") + "]");
       message.setText(

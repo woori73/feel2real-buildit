@@ -144,7 +144,13 @@ public class ExamIntakeRepository {
         actor,
         kind,
         body,
-        Set.of("STATE_CHANGED", "DELIVERED", "ACTION_REVIEW", "DOCUMENT_RESCAN", "DETAILS_AMENDED")
+        Set.of(
+                    "STATE_CHANGED",
+                    "DELIVERED",
+                    "ACTION_REVIEW",
+                    "DOCUMENT_RESCAN",
+                    "DETAILS_AMENDED",
+                    "NOTIFICATION_RECEIVED")
                 .contains(kind)
             ? "RECORDED"
             : "REQUESTED",

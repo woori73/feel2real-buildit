@@ -40,11 +40,11 @@ public class ExamPrivacyRetentionService {
     return repo.jdbc()
         .queryForList(
             "SELECT r.id,r.kind,r.state,r.updated_at FROM exam_intake_request r WHERE r.state IN"
-                + " ('COMPLETE','CANCELLED') AND (r.updated_at<? OR EXISTS(SELECT 1 FROM"
-                + " exam_intake_action a WHERE a.request_id=r.id AND a.kind='PRIVACY_ERASURE' AND"
-                + " a.state='PROCESSING')) AND NOT EXISTS(SELECT 1 FROM exam_intake_action a WHERE"
-                + " a.request_id=r.id AND a.kind='PRIVACY_ERASURE' AND a.state='RESOLVED') ORDER BY"
-                + " r.updated_at LIMIT 100",
+                + " ('COMPLETE','CANCELLED','RECEIVED','AWAITING_DEPOSIT') AND (r.updated_at<? OR"
+                + " EXISTS(SELECT 1 FROM exam_intake_action a WHERE a.request_id=r.id AND"
+                + " a.kind='PRIVACY_ERASURE' AND a.state='PROCESSING')) AND NOT EXISTS(SELECT 1"
+                + " FROM exam_intake_action a WHERE a.request_id=r.id AND a.kind='PRIVACY_ERASURE'"
+                + " AND a.state='RESOLVED') ORDER BY r.updated_at LIMIT 100",
             Timestamp.from(Instant.now().minusSeconds(30L * 86400)));
   }
 
@@ -67,8 +67,13 @@ public class ExamPrivacyRetentionService {
                       .filter(a -> a.kind().equals("PRIVACY_ERASURE"))
                       .findFirst();
               if (prior.isPresent() && prior.get().state().equals("RESOLVED")) return null;
-              if (!Set.of(State.COMPLETE, State.CANCELLED).contains(r.state()))
-                throw error(409, "종료·취소와 목적 달성을 확인한 건만 정리할 수 있습니다.");
+              boolean inactiveUnpaid =
+                  Set.of(State.RECEIVED, State.AWAITING_DEPOSIT).contains(r.state())
+                      && r.updatedAt().isBefore(Instant.now().minusSeconds(30L * 86400))
+                      && repo.actions(id).stream()
+                          .noneMatch(a -> a.kind().equals("PAYMENT_CONFIRMATION"));
+              if (!Set.of(State.COMPLETE, State.CANCELLED).contains(r.state()) && !inactiveUnpaid)
+                throw error(409, "종료·취소 또는 30일이 지난 미계약·미입금 건의 목적 달성을 확인해 주세요.");
               if (repo.actions(id).stream()
                   .anyMatch(
                       a ->
@@ -82,6 +87,10 @@ public class ExamPrivacyRetentionService {
                                   .contains(a.kind())
                               && !Set.of("RESOLVED", "REMITTED", "REJECTED").contains(a.state())))
                 throw error(409, "진행 중인 요청과 분쟁을 먼저 검토해 주세요.");
+              if (inactiveUnpaid) {
+                repo.action(r, p.userId(), "STATE_CHANGED", "30일 경과 미계약·미입금 종결: CANCELLED");
+                repo.state(r, State.CANCELLED);
+              }
               String action =
                   prior
                       .map(Action::id)
