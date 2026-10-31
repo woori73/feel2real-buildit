@@ -142,7 +142,12 @@ class WikiPageContractTest {
     assertThat(html).contains("WIKI LIVE", "id=\"liveMessages\"", "id=\"recentMembers\"",
         "id=\"liveForm\"", "id=\"liveInput\"");
     // 기존 자료실 3종은 유지된다(개편으로 삭제 금지)
-    assertThat(html).contains("모의고사 원본", "분석 자료", "모의고사 학습 자료", "커뮤니티");
+    assertThat(html).contains("모의고사 원본", "분석 자료", "모의고사 학습 자료");
+    // 사용자 요청: 미사용 커뮤니티는 허브에서 제거하고 학습 자료 메뉴로 전환한다.
+    assertThat(html).doesNotContain("data-wiki-nav=\"community\"", "data-wiki-panel=\"community\"",
+        "class=\"board-col\"");
+    assertThat(html).contains("id=\"wikiSidebar\"", "data-wiki-nav=\"review\"",
+        "id=\"reviewList\"", "id=\"reviewFrame\"");
 
     // JS: aggregate + 실시간(폴링) 엔드포인트 사용, admin analytics 직접 호출 없음
     assertThat(js).contains("/api/wiki/home-feed");
