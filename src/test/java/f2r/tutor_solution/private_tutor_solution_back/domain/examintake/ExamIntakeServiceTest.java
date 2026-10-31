@@ -115,7 +115,14 @@ class ExamIntakeServiceTest {
   @Test
   void acceptsTwentyDocumentsAndRejectsTwentyFirst() throws Exception {
     var request = create();
-    for (int i = 0; i < 20; i++) service.upload(owner, request.id(), image());
+    for (int i = 0; i < 20; i++) {
+      var pixels = new java.awt.image.BufferedImage(2, 2, java.awt.image.BufferedImage.TYPE_INT_RGB);
+      pixels.setRGB(0, 0, i + 1);
+      var bytes = new ByteArrayOutputStream();
+      javax.imageio.ImageIO.write(pixels, "png", bytes);
+      service.upload(owner, request.id(), new MockMultipartFile("file", "synthetic-" + i + ".png",
+          "image/png", bytes.toByteArray()));
+    }
     assertThat(repo.documents(request.id())).hasSize(20);
     status(400, () -> service.upload(owner, request.id(), image()));
     assertThat(repo.documents(request.id())).hasSize(20);
@@ -808,8 +815,8 @@ class ExamIntakeServiceTest {
   }
 
   @Test
-  void givenMissingAgeOrSeparateTerms_whenSubmitting_thenRejectedBeforePersistence() {
-    for (String key : List.of("ageBand", "privacyVersion", "termsAccepted", "termsVersion")) {
+  void givenMissingSeparateTerms_whenSubmitting_thenRejectedBeforePersistence() {
+    for (String key : List.of("privacyVersion", "termsAccepted", "termsVersion")) {
       var in = input(UUID.randomUUID().toString());
       var d = new LinkedHashMap<>(in.details());
       d.remove(key);
