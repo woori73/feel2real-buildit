@@ -19,7 +19,14 @@
   var title = document.getElementById('wikiPaneTitle');
   var description = document.getElementById('wikiPaneDescription');
   var list = document.getElementById('reviewList');
-  var search = document.getElementById('reviewSearch');
+  var monthTitle = document.getElementById('reviewMonthTitle');
+  var monthSwitch = document.getElementById('reviewMonthSwitch');
+  var status = document.getElementById('reviewStatus');
+  var retry = document.getElementById('reviewRetry');
+  var query = new URLSearchParams(location.search || '');
+  var month = query.get('month') === '9' ? 9 : 10;
+  var pendingQuestion = query.get('question');
+  var loading = false;
   var reader = document.getElementById('reviewReader');
   var frame = document.getElementById('reviewFrame');
   var reviews = [];
@@ -42,7 +49,10 @@
     description.textContent = PANES[key][1];
     sidebar.classList.remove('menu-open');
     toggle.setAttribute('aria-expanded', 'false');
+    var intro = document.getElementById('wikiIntro');
+    if (intro) intro.dataset.pane = key;
     if (key !== 'review') closeReader(false);
+    else if (loadVersion > 0) loadReviews();
     if (focus) {
       title.scrollIntoView({ block: 'start', behavior: 'auto' });
       title.focus({ preventScroll: true });
@@ -69,39 +79,77 @@
   async function loadReviews() {
     var version = ++loadVersion;
     closeReader(false);
-    list.innerHTML = '<p class="muted">복습 과제를 불러오는 중입니다.</p>';
+    loading = true;
+    reviews = [];
+    renderReviews();
+    status.textContent = '복습 과제를 불러오는 중입니다.';
+    retry.hidden = true;
     try {
-      var response = await fetch('/api/wiki/analysis-materials?grade=' + currentGrade());
+      var response = await fetch('/api/wiki/analysis-materials?grade=' + currentGrade(), { credentials: 'same-origin', cache: 'no-store' });
       if (!response.ok) throw new Error();
       var items = await response.json();
-      var canManage = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin() : false;
+      if (!Array.isArray(items)) throw new Error();
+      var canManage = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin().catch(function () { return false; }) : false;
       if (version !== loadVersion) return;
       admin = canManage;
       reviews = items.filter(function (item) { return /복습|자습/.test(item.title || ''); });
       byId = {};
       reviews.forEach(function (item) { byId[String(item.wikiAnalysisMaterialId)] = item; });
+      loading = false;
+      status.textContent = '';
       renderReviews();
+      if (pendingQuestion) {
+        var direct = visibleReviews().find(function (it) { return String(questionNumber(it)) === pendingQuestion; });
+        pendingQuestion = null;
+        if (direct) openReview(direct, null);
+      }
     } catch (_) {
-      if (version === loadVersion) list.innerHTML = '<p class="error">복습 과제를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>';
+      if (version === loadVersion) {
+        status.textContent = '자료 연결이 지연되고 있습니다. 다시 불러오기를 눌러 주세요.';
+        retry.hidden = false;
+      }
     }
   }
+  function questionNumber(it) {
+    var match = String(it.title || '').match(/(\d+)(?:[~～-]\d+)?번/);
+    return match ? Number(match[1]) : 999;
+  }
+  function visibleReviews() {
+    var monthPattern = month === 10 ? /10월|10모/ : /9월|9모/;
+    return reviews.filter(function (it) {
+      return monthPattern.test(it.title || '') && !/검토본|이전 편집|시안/.test(it.title || '');
+    }).sort(function (a, b) { return questionNumber(a) - questionNumber(b); });
+  }
   function renderReviews() {
-    var term = search.value.trim().toLowerCase();
-    var items = reviews.filter(function (it) { return [it.title, it.year, it.examType, it.description].join(' ').toLowerCase().indexOf(term) !== -1; });
+    monthTitle.textContent = '2026년 ' + month + '모 복습과제';
+    monthSwitch.textContent = month === 10 ? '← 2026년 9모' : '2026년 10모 →';
+    var items = visibleReviews();
+    if (loading && month === 10) {
+      list.innerHTML = [20,21,22,23,24,29,30,31,32,33,34,35,36,37,38,39,40,41].map(function (n) {
+        return '<article class="review-card"><button class="review-open" type="button" disabled><strong>'
+          + (n === 41 ? '41~42' : n) + '번</strong><span>불러오는 중</span></button></article>';
+      }).join('');
+      return;
+    }
     if (!items.length) {
-      list.innerHTML = '<p class="muted">' + (term ? '검색어에 맞는 복습 과제가 없습니다.' : '이 학년의 복습 과제를 준비하고 있습니다.') + '</p>';
+      list.innerHTML = '<p class="muted">이 학년의 2026년 ' + month + '모 복습과제가 아직 없습니다.</p>';
       return;
     }
     list.innerHTML = items.map(function (it) {
       var id = String(it.wikiAnalysisMaterialId);
-      return '<article class="review-card"><button type="button" class="review-open" data-review-open="' + escapeHtml(id) + '">'
-        + '<span class="file-badge">고' + escapeHtml(it.grade) + ' · 복습 과제</span>'
-        + '<strong>' + escapeHtml(it.title) + '</strong>'
-        + '<span class="file-meta">문제 풀기 · 정답과 해설 확인 →</span></button>'
+      var number = questionNumber(it);
+      var label = number === 999 ? '전체 과제' : (number === 41 ? '41~42' : number) + '번';
+      return '<article class="review-card"><button type="button" class="review-open" data-review-open="' + escapeHtml(id) + '" aria-label="' + label + ' 복습 과제">'
+        + '<strong>' + label + '</strong><span>문제 · 정답 · 해설</span></button>'
         + (admin ? window.WikiAdminManage.buttonsHtml('analysis', id) : '') + '</article>';
     }).join('');
   }
-  search.addEventListener('input', renderReviews);
+  monthSwitch.addEventListener('click', function () {
+    month = month === 10 ? 9 : 10;
+    pendingQuestion = null;
+    loadReviews();
+  });
+  retry.addEventListener('click', loadReviews);
   document.getElementById('gradeTabs').addEventListener('click', function (e) {
     if (e.target.closest('.grade-tab')) loadReviews();
   });
@@ -127,13 +175,16 @@
     if (!button) return;
     var item = byId[button.dataset.reviewOpen];
     if (!item) return;
+    openReview(item, button);
+  });
+  async function openReview(item, button) {
     lastOpener = button;
     closeReader(false);
     var version = ++readVersion;
-    button.disabled = true;
+    if (button) button.disabled = true;
     try {
       // Use a local ID-based route; never trust a returned URL to select a destination.
-      var response = await fetch('/api/wiki/analysis-materials/' + encodeURIComponent(item.wikiAnalysisMaterialId) + '/download', { credentials: 'same-origin' });
+      var response = await fetch('/api/wiki/analysis-materials/' + encodeURIComponent(item.wikiAnalysisMaterialId) + '/download', { credentials: 'same-origin', cache: 'no-store' });
       if (version !== readVersion) return;
       if (response.status === 401 || response.status === 403) {
         alert('복습 과제는 로그인 후 이용하실 수 있습니다.');
@@ -143,7 +194,7 @@
       if (!response.ok) throw new Error();
       var ext = (item.originalFileName || '').split('.').pop().toLowerCase();
       if (ext !== 'html' && ext !== 'htm') {
-        alert('이 자료는 HTML 열람 파일이 아닙니다. 분석 자료 메뉴에서 내려받아 주세요.');
+        alert('이 자료는 사이트에서 열람할 수 있는 HTML 과제가 아닙니다.');
         return;
       }
       var text = await response.text();
@@ -157,11 +208,12 @@
       document.getElementById('reviewReaderClose').focus({ preventScroll: true });
     } catch (_) {
       if (version === readVersion) alert('자료를 열지 못했습니다. 다시 시도해 주세요.');
-    } finally { button.disabled = false; }
-  });
+    } finally { if (button) button.disabled = false; }
+  }
   window.addEventListener('pagehide', function () { closeReader(false); });
   loadReviews();
   function escapeHtml(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; });
   }
 })();
+
