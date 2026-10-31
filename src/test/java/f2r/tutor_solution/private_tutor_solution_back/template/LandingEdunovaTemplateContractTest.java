@@ -414,4 +414,32 @@ class LandingEdunovaTemplateContractTest {
     assertThat(biz).contains("압구정에듀홀릭출판사", "146-99-01347", "제2026-서울송파-1411호", "010-8507-1453", "woorinaesin@naver.com");
     assertThat(html).doesNotContain("압구정에듀홀릭학원", "759-91-01977", "02-6324-1453");
   }
+
+  @Test
+  @DisplayName("given 홈 when 렌더하면 then 압구정중3 적중 사례가 홍보 영상·바로가기 바로 아래 한 화면에 있고 항목을 누르면 펼쳐지는 구조이며 이미지가 모두 있다")
+  void hitCase_sitsRightBelowPromoJump_andExpandsInPlace() {
+    // given
+    String html = render();
+    int jump = html.indexOf("id=\"homeJump\"");
+    int hit = html.indexOf("id=\"hitCase\"");
+    int ai = html.indexOf("id=\"ai-content\"");
+    // when
+    String section = html.substring(hit, ai);
+    java.util.regex.Matcher m = java.util.regex.Pattern.compile("src=\"(/img/exam-cases/[^\"]+)\"").matcher(section);
+    java.util.Set<String> images = new java.util.LinkedHashSet<>();
+    while (m.find()) images.add(m.group(1));
+    // then
+    assertThat(hit).isGreaterThan(jump).isLessThan(ai);
+    assertThat(html.substring(jump, hit).split("<section", -1)).hasSize(2);
+    assertThat(section)
+        .contains("93.5", "예상문제 범위 31문항 중 29문항 적중", "배점 기준 90점 중 85점 · 대화문 5문항 제외", "92점")
+        .contains("id=\"hitStory\"", "id=\"hitCompare\"", "id=\"hitScope\"", "id=\"hitAll\"")
+        .contains("개별 사례는 다른 학교나 시험의 적중률을 보장하지 않습니다.")
+        .doesNotContain("100%", "href=\"/exam-cases");
+    assertThat(section.split("class=\"hit-q\"", -1)).hasSize(16);
+    assertThat(images).hasSize(30);
+    for (String path : images) {
+      assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
+    }
+  }
 }

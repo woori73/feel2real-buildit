@@ -30,7 +30,7 @@ for (const width of [360, 390, 430, 1440]) {
       const video = page.locator('#examPromoVideo');
       await expect(page.locator('main > section').first()).toHaveAttribute('id', 'pass-offer');
       expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 4).map(s => s.id)))
-        .toEqual(['pass-offer', 'examPromo', 'ai-content', 'review-game']);
+        .toEqual(['pass-offer', 'examPromo', 'hitCase', 'ai-content']);
       // The promo sits right under the short offer, so it starts muted once it is half visible.
       expect(await video.evaluate(v => v.getBoundingClientRect().top)).toBeLessThan(width === 1440 ? 1050 : 900);
       fs.mkdirSync(output, { recursive: true });
