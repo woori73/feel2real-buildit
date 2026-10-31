@@ -10,6 +10,7 @@ on:
       - 'src/main/resources/static/css/exam_service.css'
       - 'src/test/java/**/examintake/**'
       - 'docs/home-exam/proposed-schema.sql'
+      - 'src/main/resources/db/migration/**'
       - 'e2e/exam-intake/**'
       - 'scripts/operations/*exam*'
       - 'scripts/test/prepare-exam-adapters.py'
@@ -46,7 +47,6 @@ jobs:
             if docker exec exam-intake-ci mysql --protocol=TCP -h127.0.0.1 -uroot -pexam-ci-only -Nse 'SELECT 1'; then break; fi
             sleep 1
           done
-          docker exec -i exam-intake-ci mysql -uroot -pexam-ci-only f2r_exam_ci < docs/home-exam/proposed-schema.sql
       - name: Prepare isolated SMTP inbox and actual scanner engine with test signatures only
         run: |
           python3 scripts/test/prepare-exam-adapters.py "$RUNNER_TEMP/exam-adapters"
@@ -58,7 +58,7 @@ jobs:
           SPRING_DATASOURCE_USERNAME: root
           SPRING_DATASOURCE_PASSWORD: exam-ci-only
         run: |
-          # Schema proposal was installed only in this fresh CI DB; baseline 0 still runs existing V1.
+          # The fresh CI DB runs the real Flyway chain, including V1097 intake tables.
           java -jar build/libs/*-SNAPSHOT.jar --server.address=127.0.0.1 --server.port=8091 --spring.flyway.baseline-version=0 --spring.jpa.show-sql=false --app.security.admin-session-binding.enabled=false --buildit.unified-assistant.model-analysis-enabled=false --anthropic.enabled=false --app.exam-intake.enabled=true --app.exam-intake.bank-admin-enabled=true --app.exam-intake.bank-public-enabled=true --app.exam-intake.private-directory="$RUNNER_TEMP/exam-private" --app.exam-intake.email-notifications-enabled=false --app.file.upload-dir="$RUNNER_TEMP/general-files" > "$RUNNER_TEMP/exam-app.log" 2>&1 &
           echo "EXAM_APP_PID=$!" >> "$GITHUB_ENV"
           # Public homepage is the readiness probe; intake API remains authenticated.

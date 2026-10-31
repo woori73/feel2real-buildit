@@ -1847,10 +1847,10 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 
 승인 해제는 신규 schema 없이 `studio_items.approved_id` 포인터와 `studio_events.action=WITHDRAW_APPROVAL`만 사용한다. 일반 REJECT는 승인 포인터를 수정하지 않으며 현재 승인본에 대해서는409다. 별도 confirmed/expectedApprovedId/사유를 확인한 해제만 행 잠금 아래 승인 포인터를 NULL로 바꾼다. studio_files/revisions 및 이전 APPROVE 이벤트는 변경/삭제하지 않는다. #862의 ai_collaboration_*/mcp_collaboration_* 테이블과 V1096~V1098은 병합 제외한다.
 
-## Exam intake 제안 모델 (운영 미적용)
+## Exam intake 모델 (V1097 준비, 운영 미적용)
 
 [P1 설계](home-exam/P1-DESIGN.md), [비활성 제안 SQL](home-exam/proposed-schema.sql).
-JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `ExamIntake`의 Request/Document/Action/Bank 레코드와 opt-in JDBC repository를 사용한다. 운영 Flyway 파일은 아직 추가하지 않았다.
+JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `ExamIntake`의 Request/Document/Action/Bank 레코드와 opt-in JDBC repository를 사용한다. 운영 읽기 전용 조사에서 기존 신청 테이블이 없고 Flyway 최대 버전이 1096임을 확인해, 신규 V1097__exam_intake.sql을 준비했다. 운영 설치는 아직 실행하지 않았다.
 `exam_intake_request`는 owner·kind·상태·제출 정보·버전·개인정보 동의·계약 스냅샷·멱등키를 저장한다.
 `exam_intake_document`는 공개 URL 없이 private 난수키·해시·검사 상태·비공개 여부를 저장한다.
 `exam_intake_action`은 변경/삭제/수정/취소/환불 요청과 관리자 검토 이력, `exam_intake_delivery`는 계약별 순서 있는 회차 전달 기록을 저장한다.
@@ -1869,4 +1869,4 @@ JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `E
 
 ### 신청 활성화 준비 보완 (2026-10-31)
 
-기존 8개 제안 테이블·JDBC 레코드를 재사용하며 운영 테이블 존재/이력은 아직 미검증이다. 스키마를 추측해 Flyway 위치에 설치하지 않았다. `exam_intake_action.kind=NOTIFICATION_RECEIVED`는 관리자·기록 시각·이벤트 ID만 저장하고, SMTP 수락(`exam_intake_event.state=SENT`)과 구별한다. 브라우저 복구 키는 기존 `(owner_id,intake_key)` 유일성을 재사용하며 새 중복 저장소를 만들지 않는다. 신규 동의 버전만 2026-10-30 시행 문서에 맞추고 기존 계약/동의 행을 소급 수정하지 않는다. [읽기 전용 조사 및 신규 마이그레이션 준비](operations/exam-intake-20261031/README.md).
+기존 8개 제안 테이블·JDBC 레코드를 재사용한다. 운영 읽기 전용 조사에서 Flyway 1096·실패 이력 0·신청 테이블 0개를 확인했고, 동일 스키마를 신규 V1097로 준비했다. 운영 적용은 배포 후 별도 검증한다. `exam_intake_action.kind=NOTIFICATION_RECEIVED`는 관리자·기록 시각·이벤트 ID만 저장하고, SMTP 수락(`exam_intake_event.state=SENT`)과 구별한다. 브라우저 복구 키는 기존 `(owner_id,intake_key)` 유일성을 재사용하며 새 중복 저장소를 만들지 않는다. 신규 동의 버전만 2026-10-30 시행 문서에 맞추고 기존 계약/동의 행을 소급 수정하지 않는다. [읽기 전용 조사 및 신규 마이그레이션 준비](operations/exam-intake-20261031/README.md).
