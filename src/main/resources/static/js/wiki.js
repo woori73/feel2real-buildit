@@ -397,7 +397,7 @@
       return;
     }
     if (period) period.textContent = (data.periodLabel || '') + ' 기준';
-    box.innerHTML = data.items.filter(function (it) { return /복습|자습|변형문제|WORKBOOK/i.test(it.title || '') && it.materialId && it.grade; }).map(function (it) {
+    box.innerHTML = data.items.filter(function (it) { return it.category === 'ANALYSIS' && /복습|자습|변형문제|WORKBOOK/i.test(it.title || '') && /[0-9]+(?:[~～-][0-9]+)?번/.test(it.title || '') && !/검토본|이전 편집|시안/.test(it.title || '') && it.materialId && it.grade; }).map(function (it) {
       var g = it.grade ? '고' + it.grade : '학년 미상';
       var q = String(it.title || '').match(/(\d+)(?:[~～-]\d+)?번/);
       var href = '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + '&material=' + encodeURIComponent(it.materialId) + (q ? '&question=' + q[1] : '') + '#review';
