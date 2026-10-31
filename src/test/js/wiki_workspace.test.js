@@ -12,7 +12,7 @@ class Element {
   getAttribute(k) { return this.attrs[k]; }
   removeAttribute(k) { delete this.attrs[k]; }
   focus() { this.focused = true; }
-  scrollIntoView() {}
+  scrollIntoView() { this.scrolled = true; }
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function setup({ hash = '#review', admin = true, items = [], download } = {}) {
@@ -38,6 +38,7 @@ test('a sidebar selection exposes only its matching pane and names it', async ()
   app.context.location.hash = '#originals'; await app.window.fire('hashchange');
   assert.deepEqual(app.panels.filter(p => !p.hidden).map(p => p.dataset.wikiPanel), ['originals']);
   assert.equal(app.ids.wikiPaneTitle.focused, true);
+  assert.equal(app.ids.wikiPaneTitle.scrolled, true);
   assert.equal(app.navs.filter(p => p.attrs['aria-current'] === 'page').length, 1);
 });
 test('unrecognized hash falls back to home without leaving a blank workspace', () => {

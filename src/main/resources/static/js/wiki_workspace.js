@@ -44,7 +44,10 @@
     sidebar.classList.remove('menu-open');
     toggle.setAttribute('aria-expanded', 'false');
     if (key !== 'review') closeReader(false);
-    if (focus) title.focus({ preventScroll: true });
+    if (focus) {
+      title.scrollIntoView({ block: 'start', behavior: 'auto' });
+      title.focus({ preventScroll: true });
+    }
   }
   toggle.addEventListener('click', function () {
     var open = sidebar.classList.toggle('menu-open');
