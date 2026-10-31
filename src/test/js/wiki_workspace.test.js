@@ -34,7 +34,7 @@ function setup({ hash = '#review', admin = true, items = [], download, listFailu
 test('a sidebar selection exposes only its matching pane and names it', async () => {
   const app = setup(); await tick();
   assert.deepEqual(app.panels.filter(p => !p.hidden).map(p => p.dataset.wikiPanel), ['review']);
-  assert.equal(app.ids.wikiPaneTitle.textContent, '복습 과제');
+  assert.equal(app.ids.wikiPaneTitle.textContent, '지문 복습 문제');
   app.context.location.hash = '#originals'; await app.window.fire('hashchange');
   assert.deepEqual(app.panels.filter(p => !p.hidden).map(p => p.dataset.wikiPanel), ['originals']);
   assert.equal(app.ids.wikiPaneTitle.focused, true);
@@ -43,7 +43,7 @@ test('a sidebar selection exposes only its matching pane and names it', async ()
 });
 test('unrecognized hash falls back to home without leaving a blank workspace', () => {
   const app = setup({ hash: '#unknown' });
-  assert.equal(app.ids.wikiPaneTitle.textContent, '위키 홈');
+  assert.equal(app.ids.wikiPaneTitle.textContent, '위키홈');
   assert.equal(app.panels[0].hidden, false);
 });
 test('mobile menu closes on Escape and returns focus to its toggle', async () => {

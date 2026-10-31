@@ -161,7 +161,21 @@
       var res = await fetch('/api/wiki/home-feed');
       if (!res.ok) throw new Error();
       var feed = await res.json();
-      renderLatestUpdates(feed.latestUpdates || []);
+      var reviewLists = await Promise.all([1, 2].map(function (g) {
+        return fetch('/api/wiki/analysis-materials?grade=' + g, { credentials: 'same-origin', cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+      }));
+      var reviews = reviewLists.reduce(function (all, list) { return all.concat(Array.isArray(list) ? list : []); }, [])
+        .filter(function (it) { return /10월|10모/.test(it.title || '') && /복습/.test(it.title || '') && !/검토본|이전 편집|시안/.test(it.title || ''); })
+        .map(function (it) {
+          var q = String(it.title).match(/(\d+)(?:[~～-](\d+))?번/);
+          return { title: '2026년 고' + it.grade + ' 10모 ' + (q ? q[1] + (q[2] ? '~' + q[2] : '') + '번 ' : '') + '복습과제',
+            grade: it.grade, kind: 'review', isNew: true, updatedAt: it.updatedAt || it.createdAt,
+            href: '/wiki?grade=' + it.grade + '&month=10' + (q ? '&question=' + q[1] : '') + '#review' };
+        });
+      renderLatestUpdates(reviews.concat((feed.latestUpdates || []).filter(function (it) {
+        return !/검토본|이전 편집|시안|복습/.test(it.title || '');
+      })).sort(function (a, b) { return new Date(b.updatedAt) - new Date(a.updatedAt); }).slice(0, 8));
       renderRecentThreads(feed.latestThreads || []);
       renderRecentMembers(feed.recentMembers || []);
       renderLive(feed.liveMessages || []);
@@ -178,7 +192,7 @@
       return;
     }
     box.innerHTML = items.map(function (it) {
-      var kind = UPDATE_KIND_LABEL[it.kind] || '자료';
+      var kind = it.kind === 'review' ? '복습과제' : UPDATE_KIND_LABEL[it.kind] || '자료';
       var g = it.grade ? '고' + it.grade + ' · ' : '';
       return '<a class="update-row' + (it.isNew ? ' is-new' : '') + '" href="' + escapeAttr(it.href) + '">'
         + (it.isNew ? '<span class="new-badge">NEW</span>' : '<span class="new-badge ghost">·</span>')
