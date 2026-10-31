@@ -112,6 +112,18 @@ for (const width of [390, 1440])
       });
       await page.reload();
       await expect(page.locator("#receiptNumber")).toHaveText(id);
+      await page.locator("#newRequest").click();
+      await expect(page).toHaveURL(base + "/exam-service");
+      await fill(page, marker + " 추가");
+      await page.getByRole("button", { name: "접수하기", exact: true }).click();
+      await expect(page.locator("#receiptStatus")).toContainText(
+        "접수되었습니다",
+      );
+      const secondId = await page.locator("#receiptNumber").textContent();
+      expect(secondId).not.toBe(id);
+      await expect(page).toHaveURL(base + "/exam-service?request=" + secondId);
+      await page.reload();
+      await expect(page.locator("#receiptNumber")).toHaveText(secondId);
       const privacy = await page.evaluate(() => JSON.stringify(sessionStorage));
       expect(privacy).not.toContain(marker);
       expect(privacy).not.toContain("synthetic@example.invalid");

@@ -597,6 +597,11 @@
   }
   function receipt(id) {
     receiptId = id;
+    history.replaceState(
+      null,
+      "",
+      "/exam-service?request=" + encodeURIComponent(id),
+    );
     $("receipt").hidden = false;
     $("newRequestSection").hidden = true;
     $("receiptNumber").textContent = id;
@@ -660,6 +665,7 @@
       )
         return;
       intakeKey = submissionKey(true);
+      history.replaceState(null, "", "/exam-service");
       receiptId = null;
       pendingFiles = [];
       $("receipt").hidden = true;
