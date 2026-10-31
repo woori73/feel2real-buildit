@@ -1,0 +1,16 @@
+[Unit]
+Description=SmartStore ebook order queue (sending disabled until configured)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/f2r-ebook/worker.py
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/f2r-ebook
+TimeoutStartSec=180
