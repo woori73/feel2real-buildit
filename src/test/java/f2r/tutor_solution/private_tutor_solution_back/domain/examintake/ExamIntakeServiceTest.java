@@ -150,6 +150,82 @@ class ExamIntakeServiceTest {
   }
 
   @Test
+  void givenLostResponse_whenResolvingKey_thenOnlyOwnerFindsSingleStoredRequest() {
+    var in = input("lost-response-12345678");
+    assertThat(service.resolveSubmission(owner, in.idempotencyKey())).isEmpty();
+    var r = service.create(owner, in);
+    assertThat(service.resolveSubmission(owner, in.idempotencyKey()).orElseThrow().id())
+        .isEqualTo(r.id());
+    assertThat(service.resolveSubmission(other, in.idempotencyKey())).isEmpty();
+    assertThat(service.resolveSubmission(admin, in.idempotencyKey())).isEmpty();
+    status(401, () -> service.resolveSubmission(null, in.idempotencyKey()));
+    assertThat(service.create(owner, in).id()).isEqualTo(r.id());
+    assertThat(
+            repo.jdbc().queryForObject("SELECT COUNT(*) FROM exam_intake_request", Integer.class))
+        .isEqualTo(1);
+  }
+
+  @Test
+  void givenNotificationFailure_whenRetryingAndConfirming_thenReceiptAndDeliveryRemainDistinct() {
+    var r = create();
+    var event = repo.jdbc().queryForObject("SELECT id FROM exam_intake_event", String.class);
+    assertThat(service.notificationStatus(owner, r.id()))
+        .containsEntry("state", "PENDING")
+        .containsEntry("received", false);
+    status(404, () -> service.notificationStatus(other, r.id()));
+    status(403, () -> service.retryNotification(owner, event));
+    status(409, () -> service.retryNotification(admin, event));
+    status(409, () -> service.confirmNotificationReceipt(admin, event));
+    repo.jdbc().update("UPDATE exam_intake_event SET state='FAILED',attempts=8");
+    service.retryNotification(admin, event);
+    assertThat(repo.jdbc().queryForMap("SELECT state,attempts FROM exam_intake_event"))
+        .containsEntry("state", "PENDING")
+        .containsEntry("attempts", 0);
+    repo.jdbc().update("UPDATE exam_intake_event SET state='SENT'");
+    assertThat(service.notificationStatus(owner, r.id())).containsEntry("received", false);
+    status(403, () -> service.confirmNotificationReceipt(owner, event));
+    service.confirmNotificationReceipt(admin, event);
+    service.confirmNotificationReceipt(admin, event);
+    assertThat(service.notificationStatus(owner, r.id())).containsEntry("received", true);
+    assertThat(repo.actions(r.id()).stream().filter(a -> a.kind().equals("NOTIFICATION_RECEIVED")))
+        .hasSize(1);
+    assertThat(repo.get(r.id(), false).state()).isEqualTo(State.RECEIVED);
+  }
+
+  @Test
+  void givenPublishedPolicy_whenCreating_thenOldDraftConsentIsRejectedWithoutChangingHistory() {
+    var in = input("published-policy-123456");
+    var old = new LinkedHashMap<>(in.details());
+    old.put("privacyVersion", "exam-privacy-20261029-v1");
+    status(
+        400,
+        () ->
+            service.create(owner, new Create(in.kind(), old, true, CONSENT, in.idempotencyKey())));
+    assertThat(PRIVACY).isEqualTo("exam-privacy-20261030-v1");
+    assertThat(TERMS).isEqualTo("exam-terms-20261030-v1");
+  }
+
+  @Test
+  void givenThirtyDayUnpaidRequest_whenAdminReviewsRetention_thenCloseAndEraseOnlyLearningData() {
+    var r = create();
+    var retention = new ExamPrivacyRetentionService(repo, files, tx, PRIVACY);
+    status(409, () -> retention.erase(admin, r.id(), r.version(), true, true));
+    repo.jdbc()
+        .update(
+            "UPDATE exam_intake_request SET updated_at=? WHERE id=?",
+            java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(31L * 86400)),
+            r.id());
+    assertThat(retention.plan(admin)).anyMatch(row -> row.get("id").equals(r.id()));
+    status(400, () -> retention.erase(admin, r.id(), r.version(), true, false));
+    retention.erase(admin, r.id(), r.version(), true, true);
+    var erased = repo.get(r.id(), false);
+    assertThat(erased.state()).isEqualTo(State.CANCELLED);
+    assertThat(erased.details().get("school")).isEmpty();
+    assertThat(erased.offer()).isEqualTo(r.offer());
+    assertThat(retention.plan(admin)).isEmpty();
+  }
+
+  @Test
   void givenCurrentOffer_whenCreatedAndRetried_thenOneSnapshotAndEvent() {
     var in = input("same-key-123456789");
     var r = service.create(owner, in);

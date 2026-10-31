@@ -13,10 +13,10 @@ import org.springframework.web.server.ResponseStatusException;
 public final class ExamIntake {
   private ExamIntake() {}
 
-  public static final String CONSENT = "exam-intake-review-20261029-v3";
+  public static final String CONSENT = "exam-intake-20261030-v1";
 
-  public static final String PRIVACY = "exam-privacy-20261029-v1";
-  public static final String TERMS = "exam-terms-20261029-v1";
+  public static final String PRIVACY = "exam-privacy-20261030-v1";
+  public static final String TERMS = "exam-terms-20261030-v1";
   static final Set<String> AGREEMENTS =
       Set.of(
           "ageBand",

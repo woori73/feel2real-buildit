@@ -104,6 +104,72 @@ public class ExamIntakeService {
     return repo.list(adminView ? null : p.userId(), page * 50);
   }
 
+  /** Resolve a lost submission response without storing personal form data in the browser. */
+  public Optional<Request> resolveSubmission(AuthenticatedPrincipal p, String key) {
+    long owner = user(p);
+    String clean = text(key, "접수 키", 16, 80);
+    if (!clean.matches("[A-Za-z0-9_-]+")) throw error(400, "접수 키가 올바르지 않습니다.");
+    return repo
+        .jdbc()
+        .queryForList(
+            "SELECT id FROM exam_intake_request WHERE owner_id=? AND intake_key=?",
+            String.class,
+            owner,
+            clean)
+        .stream()
+        .findFirst()
+        .map(id -> repo.get(id, false));
+  }
+
+  public Map<String, Object> notificationStatus(AuthenticatedPrincipal p, String id) {
+    Request r = repo.get(id, false);
+    owner(p, r);
+    var rows =
+        repo.jdbc()
+            .queryForList(
+                "SELECT id,state FROM exam_intake_event WHERE request_id=? AND event_key=?",
+                id,
+                id + ":created");
+    if (rows.isEmpty()) return Map.of("state", "UNKNOWN", "received", false);
+    var event = rows.getFirst();
+    boolean received =
+        repo.actions(id).stream()
+            .anyMatch(
+                a -> a.kind().equals("NOTIFICATION_RECEIVED") && a.body().equals(event.get("id")));
+    return Map.of("state", event.get("state"), "received", received);
+  }
+
+  public void retryNotification(AuthenticatedPrincipal p, String id) {
+    admin(p);
+    int updated =
+        repo.jdbc()
+            .update(
+                "UPDATE exam_intake_event SET"
+                    + " state='PENDING',attempts=0,last_error=NULL,next_attempt_at=? WHERE id=? AND"
+                    + " state='FAILED'",
+                Timestamp.from(Instant.now()),
+                id);
+    if (updated != 1) throw error(409, "재시도 가능한 실패 알림을 새로 확인해 주세요.");
+  }
+
+  public void confirmNotificationReceipt(AuthenticatedPrincipal p, String id) {
+    admin(p);
+    tx.executeWithoutResult(
+        status -> {
+          var rows =
+              repo.jdbc()
+                  .queryForList(
+                      "SELECT request_id,state FROM exam_intake_event WHERE id=? FOR UPDATE", id);
+          if (rows.isEmpty()) throw error(404, "알림을 찾을 수 없습니다.");
+          var event = rows.getFirst();
+          if (!"SENT".equals(event.get("state"))) throw error(409, "메일 전송 후 실제 수신을 확인해 주세요.");
+          Request r = repo.get(event.get("request_id").toString(), true);
+          if (repo.actions(r.id()).stream()
+              .noneMatch(a -> a.kind().equals("NOTIFICATION_RECEIVED") && a.body().equals(id)))
+            repo.action(r, p.userId(), "NOTIFICATION_RECEIVED", id);
+        });
+  }
+
   /**
    * Arithmetic guide only. Never writes an approved refund amount. Historical contracts are
    * excluded.

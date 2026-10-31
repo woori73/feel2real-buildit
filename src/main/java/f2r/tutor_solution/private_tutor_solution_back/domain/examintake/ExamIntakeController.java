@@ -53,6 +53,49 @@ public class ExamIntakeController {
 
   public record VersionInput(long version) {}
 
+  public record SubmissionKey(String idempotencyKey) {}
+
+  @PostMapping("/api/exam-intake/submissions/resolve")
+  Map<String, Object> resolve(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @RequestBody SubmissionKey body,
+      HttpServletRequest request) {
+    mutation(request);
+    return service
+        .resolveSubmission(p, body.idempotencyKey())
+        .map(r -> Map.<String, Object>of("found", true, "request", r))
+        .orElseGet(() -> Map.of("found", false));
+  }
+
+  @GetMapping("/api/exam-intake/requests/{id}/notification")
+  Map<String, Object> notification(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @PathVariable String id) {
+    return service.notificationStatus(p, id);
+  }
+
+  @PostMapping("/api/admin/exam-intake/events/{id}/retry")
+  Map<String, Boolean> retry(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      HttpServletRequest request) {
+    mutation(request);
+    service.retryNotification(p, id);
+    return Map.of("queued", true);
+  }
+
+  @PostMapping("/api/admin/exam-intake/events/{id}/received")
+  Map<String, Boolean> received(
+      @AuthenticationPrincipal AuthenticatedPrincipal p,
+      @PathVariable String id,
+      @RequestBody Map<String, Boolean> body,
+      HttpServletRequest request) {
+    mutation(request);
+    if (!Boolean.TRUE.equals(body.get("confirmedInMailbox")))
+      throw error(400, "실제 수신함에서 해당 이벤트 ID의 메일을 확인해 주세요.");
+    service.confirmNotificationReceipt(p, id);
+    return Map.of("received", true);
+  }
+
   @ModelAttribute
   void noCache(HttpServletResponse response) {
     response.setHeader("Cache-Control", "private, no-store");

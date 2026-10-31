@@ -95,7 +95,7 @@
       <h1 class="home-offer-title" id="siHomeTitle"><span class="home-offer-title-line">기출과 아주 유사한</span> <span class="home-offer-title-line">영어 기말 대비 문제</span></h1>
       <p class="home-offer-line"><span th:text="${examOffer.headline}">2주 동안 160문항</span> · <strong th:text="${examOffer.priceLabel}">20,000원</strong></p>
       <p class="exam-hero-detail" th:text="'주 ' + ${examOffer.deliveriesPerWeek} + '회 · 총 ' + ${examOffer.totalDeliveries} + '회 제공'">주 2회 · 총 4회 제공</p>
-      <a class="en-btn en-btn-primary" href="#exam-contact">문의·신청 및 자료 제출</a>
+      <a id="homeIntakeCta" class="en-btn en-btn-primary" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" th:text="${examIntakeEnabled} ? '맞춤문제 신청·자료 제출' : '문의·신청 및 자료 제출'" href="#exam-contact">문의·신청 및 자료 제출</a>
       <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
     </section>
 
