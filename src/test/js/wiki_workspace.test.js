@@ -17,7 +17,7 @@ class Element {
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function setup({ hash = '#review', admin = true, items = [], download } = {}) {
   const ids = Object.fromEntries(['wikiSidebar','wikiMenuToggle','wikiPaneTitle','wikiPaneDescription','reviewList','reviewSearch','reviewReader','reviewFrame','reviewReaderClose','reviewReaderTitle','gradeTabs'].map(id => [id, new Element()]));
-  const keys = ['home','review','guides','originals','analysis','learning','threads','community','live'];
+  const keys = ['home','review','guides','originals','analysis','learning','threads','live'];
   const panels = keys.map(key => new Element({ wikiPanel: key }));
   const navs = keys.map(key => new Element({ wikiNav: key }));
   ids.wikiSidebar.querySelectorAll = () => navs;
@@ -92,4 +92,9 @@ test('management renders exactly edit and recoverable delete buttons', () => {
   assert.equal((html.match(/<button/g) || []).length, 2);
   assert.match(html, />수정<\/button>/); assert.match(html, />삭제<\/button>/);
   assert.doesNotMatch(html, /data-manage-hard/);
+});
+
+test('unused community navigation and board previews are absent from the hub', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../../main/resources/templates/public/wiki.html'), 'utf8');
+  assert.doesNotMatch(html, /data-wiki-nav="community"|data-wiki-panel="community"|class="board-col"/);
 });

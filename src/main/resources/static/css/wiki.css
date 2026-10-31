@@ -524,3 +524,5 @@ body.wiki-body {
 
 #wikiPaneTitle{scroll-margin-top:88px}.review-reader{scroll-margin-top:82px}
 @media(max-width:700px){#wikiPaneTitle,.review-reader{scroll-margin-top:136px}}
+
+.html-direct{border:1px solid #dce3e7;padding:12px;border-radius:8px;background:#fafcfb}.html-direct summary{cursor:pointer;padding:3px 0}.html-direct label{display:flex;flex-direction:column;gap:6px;margin:12px 0}.html-direct textarea{width:100%;padding:10px;border:1px solid #cad3d8;border-radius:6px;font:12px/1.6 monospace;resize:vertical;min-height:150px}

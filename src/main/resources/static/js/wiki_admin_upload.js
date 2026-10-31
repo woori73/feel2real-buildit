@@ -34,6 +34,15 @@
   if (forms.original) forms.original.addEventListener('submit', function (e) { submit(e, 'original'); });
   if (forms.analysis) forms.analysis.addEventListener('submit', function (e) { submit(e, 'analysis'); });
 
+  Object.keys(forms).forEach(function (kind) {
+    var form = forms[kind];
+    if (!form) return;
+    var source = form.querySelector('[name="htmlSource"]');
+    if (source) source.addEventListener('input', function () {
+      setFormMode(form, !!editing && editing.kind === kind);
+    });
+  });
+
   // 업로드 전 미리보기 — 이미지 파일은 썸네일, 그 외는 이름·크기만 보여준다(서버 전송 없음).
   Object.keys(forms).forEach(function (k) {
     var form = forms[k];
@@ -121,7 +130,7 @@
 
   function setFormMode(form, isEdit) {
     var fileInput = form.querySelector('[name="file"]');
-    if (fileInput) fileInput.required = !isEdit;
+    if (fileInput) fileInput.required = !isEdit && !val(form, "htmlSource");
     var submitBtn = form.querySelector('[data-upload-submit]');
     if (submitBtn) submitBtn.textContent = isEdit ? '수정 저장' : '업로드';
   }
@@ -175,7 +184,10 @@
     var form = forms[kind];
     var submitBtn = form.querySelector('[data-upload-submit]');
     var isEdit = !!editing && editing.kind === kind;
-    var fd = kind === 'original' ? originalPayload(form, isEdit) : analysisPayload(form, isEdit);
+    var fd;
+    try {
+      fd = kind === 'original' ? originalPayload(form, isEdit) : analysisPayload(form, isEdit);
+    } catch (error) { msg(form, error.message || 'HTML 입력을 확인해 주세요.', true); return; }
     if (!fd) return;
 
     submitBtn.disabled = true;
@@ -215,7 +227,7 @@
     fd.set('examYear', val(form, 'year'));
     fd.set('examMonth', val(form, 'examMonth'));
     fd.set('visible', val(form, 'visible') || 'true');
-    var file = form.querySelector('[name="file"]').files[0];
+    var file = window.WikiHtmlInput.fileFor(form);
     if (!file) {
       if (!isEdit) { msg(form, '파일(PDF·HWP·HWPX·HTML·이미지)을 선택해주세요.', true); return null; }
       return fd;
@@ -231,7 +243,7 @@
     });
     // 수정 API는 visible 기본값이 true 라서, 비공개 자료를 수정할 때 현재 상태를 그대로 보낸다.
     fd.set('visible', isEdit && editing && editing.item ? String(editing.item.isVisible) : 'true');
-    var file = form.querySelector('[name="file"]').files[0];
+    var file = window.WikiHtmlInput.fileFor(form);
     if (!file) {
       if (!isEdit) { msg(form, '파일을 선택해주세요.', true); return null; }
       return fd;

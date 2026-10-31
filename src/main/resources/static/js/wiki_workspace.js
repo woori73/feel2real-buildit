@@ -11,7 +11,6 @@
     analysis: ['분석 · 변형문제', '지문을 이해하고 내신형 변형문제로 연습하세요.'],
     learning: ['어휘 · Workbook', '함께 나누는 어휘와 학습 자료를 확인하세요.'],
     threads: ['문항별 Wiki Thread', '분석과 해설, 변형문제 제작을 한 흐름으로 연결합니다.'],
-    community: ['커뮤니티', '시험 후기와 자료를 나누고 궁금한 점을 남겨 주세요.'],
     live: ['한 줄 인사', '함께 공부하는 분들에게 짧은 인사를 남겨 주세요.']
   };
   var navs = sidebar.querySelectorAll('[data-wiki-nav]');
