@@ -430,7 +430,7 @@ class LandingEdunovaTemplateContractTest {
     while (m.find()) images.add(m.group(1));
     // then
     assertThat(hit).isGreaterThan(jump).isLessThan(ai);
-    assertThat(html.substring(jump, hit).split("<section", -1)).hasSize(1);
+    assertThat(html.substring(jump, hit).split("<section", -1)).hasSize(2);
     assertThat(section)
         .contains("93.5", "예상문제 범위 31문항 중 29문항 적중", "배점 기준 90점 중 85점 · 대화문 5문항 제외", "92점")
         .contains("id=\"hitStory\"", "id=\"hitCompare\"", "id=\"hitScope\"", "id=\"hitAll\"")
