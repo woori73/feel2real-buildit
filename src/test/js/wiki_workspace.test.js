@@ -15,7 +15,7 @@ class Element {
   scrollIntoView() { this.scrolled = true; }
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function setup({ hash = '#review', admin = true, items = [], download, listFailure = false } = {}) {
+function setup({ hash = '#review', search = '', admin = true, items = [], download, listFailure = false } = {}) {
   const ids = Object.fromEntries(['wikiSidebar','wikiMenuToggle','wikiPaneTitle','wikiPaneDescription','reviewList','reviewMonthTitle','reviewMonthSwitch','reviewStatus','reviewRetry','reviewReader','reviewFrame','reviewReaderClose','reviewReaderTitle','gradeTabs'].map(id => [id, new Element()]));
   const keys = ['home','review','guides','originals','analysis','learning','threads','live'];
   const panels = keys.map(key => new Element({ wikiPanel: key }));
@@ -27,7 +27,7 @@ function setup({ hash = '#review', admin = true, items = [], download, listFailu
   const document = new Element();
   document.getElementById = id => ids[id];
   document.querySelectorAll = () => panels;
-  const context = { document, window, URLSearchParams, location: { hash }, URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} }, Blob, alert: () => {}, fetch: async url => { if (listFailure && !url.endsWith('/download')) throw new Error('temporary'); return url.endsWith('/download') ? download() : { ok: true, json: async () => items }; } };
+  const context = { document, window, URLSearchParams, location: { hash, search }, URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} }, Blob, alert: () => {}, fetch: async url => { if (listFailure && !url.endsWith('/download')) throw new Error('temporary'); return url.endsWith('/download') ? download(url) : { ok: true, json: async () => items }; } };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'wiki_workspace.js'), 'utf8'), context);
   return { ids, panels, navs, window, context, document };
 }
@@ -131,4 +131,19 @@ test('September uses numbered HTML variants, prefers them to workbooks, and excl
  assert.equal((html.match(/data-review-open=/g)||[]).length,2);
  assert.match(html,/data-review-open="3"/);assert.match(html,/data-review-open="4"/);
  assert.doesNotMatch(html,/data-review-open="[25]"|전체 과제/);
+});
+
+test('material links open the exact item even when question numbers repeat',async()=>{
+ let opened='';
+ const app=setup({search:'?question=20&material=2',items:[
+ {wikiAnalysisMaterialId:1,title:'10월 20번 복습 과제',originalFileName:'old.html'},
+ {wikiAnalysisMaterialId:2,title:'10월 20번 복습 과제',originalFileName:'new.html'}
+ ],download:async url=>{opened=url;return {ok:true,text:async()=>'<html>exact material</html>'};}});
+ await tick();await tick();assert.equal(opened,'/api/wiki/analysis-materials/2/download');
+});
+test('a missing material ID never falls back to a different same-number item',async()=>{
+ let opened=false;setup({search:'?question=20&material=404',items:[
+ {wikiAnalysisMaterialId:1,title:'10월 20번 복습 과제',originalFileName:'old.html'}
+ ],download:async()=>{opened=true;return {ok:true,text:async()=>'<html>wrong</html>'};}});
+ await tick();await tick();assert.equal(opened,false);
 });
