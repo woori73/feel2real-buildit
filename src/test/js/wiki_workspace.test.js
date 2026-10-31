@@ -68,7 +68,7 @@ test('October shows ascending question buttons without search or download links'
   assert.equal(app.ids.reviewMonthTitle.textContent,'2026년 10모 복습과제');
 });
 test('September arrow shows only September material and returns to October',async()=>{
- const app=setup({items:[{wikiAnalysisMaterialId:1,title:'10월 20번 복습 과제'},{wikiAnalysisMaterialId:2,title:'9월 자습용 상세해설'}]});await tick();
+ const app=setup({items:[{wikiAnalysisMaterialId:1,title:'10월 20번 복습 과제'},{wikiAnalysisMaterialId:2,title:'9월 자습용 상세해설',originalFileName:'9.html'}]});await tick();
  assert.equal(app.ids.reviewMonthSwitch.textContent,'← 2026년 9모');
  await app.ids.reviewMonthSwitch.fire('click');await tick();
  assert.equal(app.ids.reviewMonthTitle.textContent,'2026년 9모 복습과제');
@@ -119,3 +119,16 @@ test('unused community navigation and board previews are absent from the hub', (
 
 
 test('review template has month navigation and no search field',()=>{const html=fs.readFileSync(path.join(__dirname,'../../main/resources/templates/public/wiki.html'),'utf8');assert.match(html,/id="reviewMonthSwitch"/);assert.doesNotMatch(html,/reviewSearch|복습 과제 검색/);});
+
+test('September uses numbered HTML variants, prefers them to workbooks, and excludes PDF',async()=>{
+ const app=setup({items:[
+ {wikiAnalysisMaterialId:2,title:'2026 고1 9월 20번 WORKBOOK',originalFileName:'20-workbook.html'},
+ {wikiAnalysisMaterialId:3,title:'2026 고1 9월 20번 변형문제',originalFileName:'20.html'},
+ {wikiAnalysisMaterialId:4,title:'2026 고1 9월 21번 변형문제',originalFileName:'21.html'},
+ {wikiAnalysisMaterialId:5,title:'2026 고1 9월 자습용 통합본',originalFileName:'all.pdf'}
+ ]});await tick();await app.ids.reviewMonthSwitch.fire('click');await tick();
+ const html=app.ids.reviewList.innerHTML;
+ assert.equal((html.match(/data-review-open=/g)||[]).length,2);
+ assert.match(html,/data-review-open="3"/);assert.match(html,/data-review-open="4"/);
+ assert.doesNotMatch(html,/data-review-open="[25]"|전체 과제/);
+});

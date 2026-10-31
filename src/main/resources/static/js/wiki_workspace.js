@@ -92,7 +92,7 @@
       var canManage = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin().catch(function () { return false; }) : false;
       if (version !== loadVersion) return;
       admin = canManage;
-      reviews = items.filter(function (item) { return /복습|자습/.test(item.title || ''); });
+      reviews = items.filter(function (item) { return /복습|자습/.test(item.title || '') || (/9월|9모/.test(item.title || '') && /변형문제|WORKBOOK/i.test(item.title || '')); });
       byId = {};
       reviews.forEach(function (item) { byId[String(item.wikiAnalysisMaterialId)] = item; });
       loading = false;
@@ -116,9 +116,22 @@
   }
   function visibleReviews() {
     var monthPattern = month === 10 ? /10월|10모/ : /9월|9모/;
+    var seen = {};
     return reviews.filter(function (it) {
+      if (month === 9 && !/\.html?$/i.test(it.originalFileName || '')) return false;
       return monthPattern.test(it.title || '') && !/검토본|이전 편집|시안/.test(it.title || '');
-    }).sort(function (a, b) { return questionNumber(a) - questionNumber(b); });
+    }).sort(function (a, b) {
+      var order = questionNumber(a) - questionNumber(b);
+      if (order || month !== 9) return order;
+      function rank(it) { return /변형문제/.test(it.title || '') ? 0 : /WORKBOOK/i.test(it.title || '') ? 1 : 2; }
+      return rank(a) - rank(b) || Number(b.wikiAnalysisMaterialId) - Number(a.wikiAnalysisMaterialId);
+    }).filter(function (it) {
+      if (month !== 9) return true;
+      var key = questionNumber(it);
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
   }
   function renderReviews() {
     monthTitle.textContent = '2026년 ' + month + '모 복습과제';
