@@ -304,10 +304,14 @@ def main():
             return
         api = Commerce(config)
         poll(db, api, config, dt.datetime.now(UTC))
+        if config.get('cafe_auto_upgrade'):
+            import cafe_fulfillment
+            import sys
+            cafe_fulfillment.complete_ready(db, api, config, sys.modules[__name__])
         deliver(db, api, config)
         print(json.dumps({'counts': [dict(r) for r in db.execute(
             'SELECT status,delivery,cafe,COUNT(*) AS count FROM orders GROUP BY status,delivery,cafe')],
-            'live_send': bool(config.get('live_send')), 'cafe_auto_upgrade': False}))
+            'live_send': bool(config.get('live_send')), 'cafe_auto_upgrade': bool(config.get('cafe_auto_upgrade'))}))
         db.close()
 
 
@@ -318,3 +322,4 @@ if __name__ == '__main__':
         # No exception messages/tracebacks: HTTP responses and SMTP errors can contain PII.
         print(json.dumps({'error_type': type(exc).__name__, 'ok': False}))
         raise SystemExit(1)
+
