@@ -48,3 +48,16 @@ buyer name, nickname or email alone. A stale observation requires fresh checking
 
 Run tests: `python -m unittest discover -s scripts/cafe-runtime -p 'test_*.py'`.
 Stop consumer: `systemctl disable --now f2r-cafe-roster-sync.timer`.
+
+## 2026-10-31 후속: 주문 기반 연결 활성화
+
+위 초기 구축 기록 이후 전용 매니저 로그인·운영진 본인 인증·세션 재사용을 실제 확인했다.
+`order_member.py`는 전체 아이디 검색 완료 후 결과 1명과 고유 태그를 검증하고,
+감사멤버 미만 등급만 UI에서 변경·재조회한다. 독립적인 전체 카페 일괄 수집기는
+여전히 비활성이다. 신규 주문은 ebook 연결기가 회원 확인·명부 동기화·발송을 조정한다.
+운영 명부의 utf8mb4_unicode_ci 비교 충돌을 수정했으며, 운영자가 확인한 기존 수동
+명부 1건은 비공개 이전 기록을 보존하고 실제 고유 태그에 연결했다. 반복 동기화는
+같은 명부 ID를 반환했다. 실제 고객 정보와 세션 파일은 저장소에 포함하지 않는다.
+
+새로운 유료 주문의 전체 실발송은 아직 관측하지 않았다. 상세 조건과 예외는
+`scripts/ebook/INTEGRATION.md`를 따른다.
