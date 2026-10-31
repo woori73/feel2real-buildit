@@ -101,6 +101,27 @@ class ExamIntakeServiceTest {
   }
 
   @Test
+  void simplifiedApplicationAcceptsOnlyVisibleRequiredFields() {
+    var original = input(UUID.randomUUID().toString());
+    var details = new LinkedHashMap<>(original.details());
+    for (var key : List.of("examDate", "scope", "pastPapers", "questionTypes", "difficulty", "ageBand"))
+      details.remove(key);
+    var result = service.create(owner, new Create(Kind.APPLICATION, details, true, CONSENT,
+        UUID.randomUUID().toString()));
+    assertThat(result.details().get("school")).isEqualTo("테스트중");
+    assertThat(result.details().get("examDate")).isEmpty();
+  }
+
+  @Test
+  void acceptsTwentyDocumentsAndRejectsTwentyFirst() throws Exception {
+    var request = create();
+    for (int i = 0; i < 20; i++) service.upload(owner, request.id(), image());
+    assertThat(repo.documents(request.id())).hasSize(20);
+    status(400, () -> service.upload(owner, request.id(), image()));
+    assertThat(repo.documents(request.id())).hasSize(20);
+  }
+
+  @Test
   void privateStorageRejectsPublicDirectoryAndSymlinkBeforeCreatingFiles() throws Exception {
     for (var path :
         List.of(

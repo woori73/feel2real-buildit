@@ -470,9 +470,9 @@ public class ExamIntakeService {
             if (!beforeProduction(r)) throw error(409, "제작이 시작되어 제출할 수 없습니다.");
             var docs = repo.documents(id);
             if (docs.stream().anyMatch(d -> d.sha256().equals(prepared.hash()))) return;
-            if (docs.size() >= 10
+            if (docs.size() >= 20
                 || docs.stream().mapToLong(Document::sizeBytes).sum() + prepared.size()
-                    > 100L * 1024 * 1024) throw error(400, "접수당 10개·100MiB 제한을 초과했습니다.");
+                    > 200L * 1024 * 1024) throw error(400, "접수당 20개·200MiB 제한을 초과했습니다.");
             String fileId = UUID.randomUUID().toString();
             repo.action(r, p.userId(), "DOCUMENT_CONSENT", PRIVACY);
             repo.jdbc()
