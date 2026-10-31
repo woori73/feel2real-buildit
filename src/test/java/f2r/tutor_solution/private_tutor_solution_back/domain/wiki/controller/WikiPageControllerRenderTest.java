@@ -54,7 +54,7 @@ class WikiPageControllerRenderTest {
         .andExpect(content().string(containsString("id=\"wikiUploadModal\"")))
         .andExpect(content().string(containsString("wiki_admin_upload.js")))
         .andExpect(content().string(containsString("＋ 원본 업로드")))
-        .andExpect(content().string(containsString("＋ 분석 자료 업로드")))
+        .andExpect(content().string(containsString("＋ 실전예상문제 올리기")))
         .andExpect(content().string(containsString(">BuildIt 홈</a>")));
   }
 

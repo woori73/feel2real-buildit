@@ -102,7 +102,7 @@ class WikiPageContractTest {
     assertThat(html).contains("layout:decorate=\"~{layouts/public(bodyClass='wiki-body')}\"");
     assertThat(html).contains("id=\"gradeTabs\"", "data-grade=\"3\"", "data-grade=\"2\"", "data-grade=\"1\"");
     assertThat(countOccurrences(html, "/problem-generator")).isEqualTo(1);
-    assertThat(html).contains("href=\"/wiki/originals\"", "href=\"/wiki/analysis\"");
+    assertThat(html).contains("href=\"/wiki/originals\"", "href=\"#analysis\"", "<h2>실전예상문제</h2>");
     // 업로드 버튼/모달/스크립트는 role 조건부 렌더 없이 항상 존재 — th:if 로 지워지지 않는다.
     assertThat(html).contains("id=\"btnUploadOriginal\"", "id=\"btnUploadAnalysis\"");
     assertThat(html).doesNotContain("th:if=\"${wikiAdmin}\"", "th:if=\"${role");

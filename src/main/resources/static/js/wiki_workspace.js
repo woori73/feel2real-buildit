@@ -26,6 +26,7 @@
   var query = new URLSearchParams(location.search || '');
   var month = query.get('month') === '9' ? 9 : 10;
   var pendingQuestion = query.get('question');
+  var pendingMaterial = query.get('material');
   var loading = false;
   var reader = document.getElementById('reviewReader');
   var frame = document.getElementById('reviewFrame');
@@ -98,8 +99,9 @@
       loading = false;
       status.textContent = '';
       renderReviews();
-      if (pendingQuestion) {
-        var direct = visibleReviews().find(function (it) { return String(questionNumber(it)) === pendingQuestion; });
+      if (pendingMaterial || pendingQuestion) {
+        var direct = visibleReviews().find(function (it) { return pendingMaterial ? String(it.wikiAnalysisMaterialId) === pendingMaterial : String(questionNumber(it)) === pendingQuestion; });
+        pendingMaterial = null;
         pendingQuestion = null;
         if (direct) openReview(direct, null);
       }
