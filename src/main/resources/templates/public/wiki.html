@@ -15,7 +15,7 @@
     ogImage=null)}"></th:block>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
-  <link rel="stylesheet" href="/css/wiki.css?v=20261021-1">
+  <link rel="stylesheet" href="/css/wiki.css?v=20261031-sidebar-1">
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body class="wiki-body">
@@ -31,22 +31,41 @@
     <th:block th:replace="~{fragments/_account_menu :: accountMenu('/stdt_dashboard', '학생 홈')}"></th:block>
   </header>
 
-  <main class="wiki-wrap">
+  <div class="wiki-workspace">
+    <aside class="wiki-sidebar" id="wikiSidebar" aria-label="위키 메뉴">
+      <div class="sidebar-heading"><span>모의고사 자료실</span><button type="button" id="wikiMenuToggle" aria-expanded="false" aria-controls="wikiMenu">메뉴</button></div>
+      <nav id="wikiMenu" aria-label="학습 메뉴">
+        <a href="#home" data-wiki-nav="home" aria-current="page">위키 홈</a>
+        <p class="sidebar-label">학습 자료</p>
+        <a href="#review" data-wiki-nav="review">복습 과제 <span>문제 · 정답 · 해설</span></a>
+        <a href="#guides" data-wiki-nav="guides">이번 회차 해설</a>
+        <a href="#originals" data-wiki-nav="originals">문제지 · 정답지</a>
+        <a href="#analysis" data-wiki-nav="analysis">분석 · 변형문제</a>
+        <a href="#learning" data-wiki-nav="learning">어휘 · Workbook</a>
+        <p class="sidebar-label">함께 만드는 위키</p>
+        <a href="#threads" data-wiki-nav="threads">문항별 Wiki Thread</a>
+        <a href="#live" data-wiki-nav="live">한 줄 인사</a>
+        <a href="/wiki/archive">지난 회차 아카이브 ↗</a>
+      </nav>
+      <p class="sidebar-help">학년을 선택하고 필요한 자료를 찾아보세요.</p>
+    </aside>
+  <main class="wiki-wrap wiki-content" id="wikiContent">
+    <div class="workspace-heading"><p class="workspace-eyebrow">BUILDIT WIKI</p><h1 id="wikiPaneTitle" tabindex="-1">위키 홈</h1><p id="wikiPaneDescription">필요한 자료를 고르고, 한 문항씩 이해해 보세요.</p></div>
 
     <!-- 1-1. 현재 회차 히어로 — 배너 이미지가 있으면 이미지(문구가 이미지에 포함되어 있어 텍스트를 겹치지 않음),
          없으면 텍스트 히어로. 제목은 접근성·검색용으로 항상 DOM에 둔다. -->
-    <section class="exam-hero" id="examHero" hidden>
+    <div data-wiki-panel="home"><section class="exam-hero" id="examHero" hidden>
       <h2 class="sr-only" id="examHeroTitle"></h2>
       <img id="examHeroImg" class="exam-hero-img" alt="" hidden>
       <div class="exam-hero-text" id="examHeroText" hidden>
         <p class="exam-hero-title" id="examHeroTextTitle"></p>
         <p class="exam-hero-subtitle" id="examHeroSubtitle"></p>
       </div>
-    </section>
+    </section></div>
 
     <!-- 2. Hero -->
     <section class="wiki-intro">
-      <h1>시험이 끝난 후, 새로운 공부가 시작됩니다.</h1>
+      <p class="wiki-welcome">시험이 끝난 후, 새로운 공부가 시작됩니다.</p>
       <p class="intro-lead">
         모의고사 분석부터 내신 변형문제까지 — 고1·고2·고3 영어 자료를 함께 나누고,
         문항별 분석과 AI 변형문제 제작까지 이어집니다.
@@ -61,8 +80,19 @@
       <p id="gradeNote" class="grade-note"></p>
     </section>
 
+    <section class="wiki-block review-panel" data-wiki-panel="review" hidden>
+      <div class="block-head"><h2>지문별 복습 과제</h2><button type="button" class="upload-link" id="btnUploadReview">＋ 복습 과제 올리기</button></div>
+      <p class="review-lead">지문을 고르면 문제가 열립니다. 각 문제 바로 아래에서 정답과 해설을 확인해 보세요.</p>
+      <label class="review-filter">자료 검색<input id="reviewSearch" type="search" placeholder="예: 10월, 31번" aria-label="복습 과제 검색"></label>
+      <div id="reviewList" class="review-list" aria-live="polite"><p class="muted">불러오는 중...</p></div>
+      <section id="reviewReader" class="review-reader" hidden aria-label="복습 과제 열람">
+        <div class="reader-head"><h3 id="reviewReaderTitle"></h3><button type="button" id="reviewReaderClose">열람 닫기</button></div>
+        <iframe id="reviewFrame" title="선택한 복습 과제" sandbox="allow-scripts allow-modals" referrerpolicy="no-referrer"></iframe>
+      </section>
+    </section>
+
     <!-- 4-1. 현재 회차 해설 자료 (학년별) + 지난 회차 아카이브 -->
-    <section class="wiki-block" id="roundBlock" hidden>
+    <div data-wiki-panel="guides" hidden><section class="wiki-block" id="roundBlock" hidden>
       <div class="block-head">
         <h2 id="roundTitle">모의고사 해설 자료</h2>
         <a class="more-link" href="/wiki/archive">지난 회차 아카이브 →</a>
@@ -73,27 +103,27 @@
         <select id="archiveSelect" aria-label="지난 회차 선택"></select>
         <button type="button" id="archiveGo" class="btn-ghost">아카이브 열기</button>
       </div>
-    </section>
+    </section></div>
 
     <!-- 4. NEW 최신 업데이트 -->
-    <section class="wiki-block" id="latestBlock">
+    <div data-wiki-panel="home"><section class="wiki-block" id="latestBlock">
       <div class="block-head">
         <h2>최신 업데이트</h2>
       </div>
       <div id="latestUpdates" class="latest-list"><p class="muted">불러오는 중...</p></div>
-    </section>
+    </section></div>
 
     <!-- 5. 지금 많이 받는 자료 TOP 10 -->
-    <section class="wiki-block" id="popularBlock">
+    <div data-wiki-panel="home"><section class="wiki-block" id="popularBlock">
       <div class="block-head">
         <h2>🔥 지금 많이 받는 자료</h2>
         <span id="popularPeriod" class="block-note">최근 24시간 기준</span>
       </div>
       <ol id="popularDownloads" class="popular-list"><li class="muted">불러오는 중...</li></ol>
-    </section>
+    </section></div>
 
     <!-- 6. WIKI THREAD 핵심 기능 -->
-    <section class="wiki-block wiki-thread-feature">
+    <div data-wiki-panel="threads" hidden><section class="wiki-block wiki-thread-feature">
       <div class="block-head">
         <h2><span class="wiki-thread-badge">WIKI THREAD</span> 한 문항을 끝까지 분석합니다</h2>
         <a class="more-link" href="/wiki/questions">문항별 Wiki Thread 보기 →</a>
@@ -122,10 +152,10 @@
       </ol>
       <div class="recent-threads-head">최근 문항 분석</div>
       <div id="recentThreads" class="recent-threads"><p class="muted">불러오는 중...</p></div>
-    </section>
+    </section></div>
 
     <!-- 7. WIKI LIVE (최근 회원 + 한 줄 인사 + 실시간 활동) -->
-    <section class="wiki-block wiki-live" id="wikiLive">
+    <div data-wiki-panel="live" hidden><section class="wiki-block wiki-live" id="wikiLive">
       <div class="block-head">
         <h2>WIKI LIVE <span class="live-dot" aria-hidden="true">● LIVE</span></h2>
       </div>
@@ -144,10 +174,10 @@
         <button type="submit" id="liveSubmit">등록</button>
       </form>
       <p id="liveMsg" class="live-hint" role="status"></p>
-    </section>
+    </section></div>
 
     <!-- 8. 모의고사 원본 -->
-    <section class="wiki-block">
+    <div data-wiki-panel="originals" hidden><section class="wiki-block">
       <div class="block-head">
         <h2>모의고사 원본</h2>
         <div class="block-actions">
@@ -156,10 +186,10 @@
         </div>
       </div>
       <div id="originalList" class="original-list"><p class="muted">불러오는 중...</p></div>
-    </section>
+    </section></div>
 
     <!-- 9. 분석 자료 -->
-    <section class="wiki-block">
+    <div data-wiki-panel="analysis" hidden><section class="wiki-block">
       <div class="block-head">
         <h2>분석 자료</h2>
         <div class="block-actions">
@@ -168,10 +198,10 @@
         </div>
       </div>
       <div id="analysisList" class="analysis-list"><p class="muted">불러오는 중...</p></div>
-    </section>
+    </section></div>
 
     <!-- 10. 모의고사 학습 자료 -->
-    <section class="wiki-block">
+    <div data-wiki-panel="learning" hidden><section class="wiki-block">
       <div class="block-head">
         <h2>모의고사 학습 자료</h2>
         <div class="block-actions">
@@ -181,38 +211,7 @@
       </div>
       <p class="muted">회원이 함께 나누는 어휘 · Workbook · 변형문제 자료입니다. 다운로드는 로그인 후 이용할 수 있습니다.</p>
       <div id="learningList" class="learning-list"><p class="muted">불러오는 중...</p></div>
-    </section>
-
-    <!-- 11. 커뮤니티 -->
-    <section class="wiki-block">
-      <div class="block-head"><h2>커뮤니티</h2></div>
-      <div class="board-grid">
-        <article class="board-col" data-board="EXAM_REVIEW" data-key="review">
-          <div class="board-col-head">
-            <h3>시험 후기</h3>
-            <a class="more-link" href="/wiki/board/review">더 보기 →</a>
-          </div>
-          <div class="board-col-list"><p class="muted">불러오는 중...</p></div>
-          <button type="button" class="board-write" data-board="EXAM_REVIEW" data-key="review">＋ 후기 남기기</button>
-        </article>
-        <article class="board-col" data-board="VARIANT" data-key="variant">
-          <div class="board-col-head">
-            <h3>변형문제</h3>
-            <a class="more-link" href="/wiki/board/variant">더 보기 →</a>
-          </div>
-          <div class="board-col-list"><p class="muted">불러오는 중...</p></div>
-          <button type="button" class="board-write" data-board="VARIANT" data-key="variant">＋ 변형문제 공유</button>
-        </article>
-        <article class="board-col" data-board="MATERIAL" data-key="share">
-          <div class="board-col-head">
-            <h3>자료 공유·요청</h3>
-            <a class="more-link" href="/wiki/board/share">더 보기 →</a>
-          </div>
-          <div class="board-col-list"><p class="muted">불러오는 중...</p></div>
-          <button type="button" class="board-write" data-board="MATERIAL" data-key="share">＋ 공유 / 요청하기</button>
-        </article>
-      </div>
-    </section>
+    </section></div>
 
     <section class="wiki-foot-note">
       <p>학교별 시험을 직접 분석하고 문제를 만들고 싶다면 BuildIt 내신 Wiki를 이용할 수 있습니다.</p>
@@ -220,6 +219,7 @@
     </section>
 
   </main>
+  </div>
 
   <!-- 자료 업로드 모달 — 항상 HTML에 존재. 권한은 클릭 시 /api/auth/me + 서버 API가 최종 결정. -->
   <th:block th:replace="~{fragments/_wiki_admin_upload :: modal}"></th:block>
@@ -228,8 +228,10 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
-  <script src="/js/wiki_admin_manage.js?v=20261021-2"></script>
-  <script src="/js/wiki.js?v=20261021-1"></script>
+  <script src="/js/wiki_admin_manage.js?v=20261031-1"></script>
+  <script src="/js/wiki.js?v=20261031-sidebar-1"></script>
+  <script src="/js/wiki_workspace.js?v=20261031-1"></script>
 </th:block>
 </body>
 </html>
+

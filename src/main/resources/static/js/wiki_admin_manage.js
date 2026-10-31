@@ -1,5 +1,5 @@
 /**
- * BuildIt Wiki 자료 관리 버튼(수정/숨김 삭제/완전 삭제) — 공개 목록 페이지 공용.
+ * BuildIt Wiki 자료 관리 버튼(수정/삭제) — 공개 목록 페이지 공용.
  * /wiki, /wiki/originals, /wiki/analysis 의 원본·분석 자료 카드 아래에 붙는다.
  *
  * 원칙: "UI 표시 ≠ 권한 부여" (wiki_admin_upload.js 와 동일).
@@ -32,8 +32,7 @@
   function buttonsHtml(kind, id) {
     return '<div class="card-manage" data-manage="' + kind + '">'
       + '<button type="button" data-manage-edit="' + id + '">수정</button>'
-      + '<button type="button" data-manage-soft="' + id + '">숨김 삭제</button>'
-      + '<button type="button" class="danger" data-manage-hard="' + id + '">완전 삭제</button>'
+      + '<button type="button" data-manage-soft="' + id + '">삭제</button>'
       + '</div>';
   }
 
@@ -74,3 +73,4 @@
 
   window.WikiAdminManage = { isAdmin: isAdmin, buttonsHtml: buttonsHtml, bind: bind };
 })();
+

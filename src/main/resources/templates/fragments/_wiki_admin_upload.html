@@ -47,6 +47,13 @@
           </label>
           <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · HTML · PNG · JPG)</span><input type="file" name="file"
                  accept=".pdf,.hwp,.hwpx,.html,.htm,.png,.jpg,.jpeg,.webp,application/pdf,text/html,image/png,image/jpeg,image/webp" required></label>
+
+          <details class="uf uf-full html-direct">
+            <summary>HTML 직접 입력 (파일 선택 대신)</summary>
+            <label>HTML 파일명<input type="text" name="htmlFilename" value="study.html" placeholder="예: 2026_10_g1_20_review.html"></label>
+            <label>HTML 내용<textarea name="htmlSource" rows="9" spellcheck="false" placeholder="완성된 HTML 문서 전체를 붙여 넣으세요."></textarea></label>
+            <span class="muted">파일 첨부와 직접 입력 중 하나만 사용해 주세요. 기존 자료를 수정할 때 입력하면 HTML 파일이 교체됩니다.</span>
+          </details>
         </div>
         <div class="uf-preview" data-file-preview hidden></div>
         <p class="uf-msg" data-upload-msg></p>
@@ -70,6 +77,13 @@
           <label class="uf">과목<input type="text" name="subject" value="영어"></label>
           <label class="uf uf-full">파일 <span class="muted">(PDF · HWP · HWPX · DOCX · HTML 등 문서)</span><input type="file" name="file"
                  accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.html,.htm,text/html" required></label>
+
+          <details class="uf uf-full html-direct">
+            <summary>HTML 직접 입력 (파일 선택 대신)</summary>
+            <label>HTML 파일명<input type="text" name="htmlFilename" value="study.html" placeholder="예: 2026_10_g1_20_review.html"></label>
+            <label>HTML 내용<textarea name="htmlSource" rows="9" spellcheck="false" placeholder="완성된 HTML 문서 전체를 붙여 넣으세요."></textarea></label>
+            <span class="muted">파일 첨부와 직접 입력 중 하나만 사용해 주세요. 기존 자료를 수정할 때 입력하면 HTML 파일이 교체됩니다.</span>
+          </details>
         </div>
         <p class="uf-msg" data-upload-msg></p>
         <div class="uf-actions">
@@ -79,7 +93,9 @@
       </form>
     </div>
   </div>
-  <script src="/js/wiki_admin_upload.js?v=20261021-1"></script>
+  <script src="/js/wiki_html_input.js?v=20261031-1"></script>
+  <script src="/js/wiki_admin_upload.js?v=20261031-2"></script>
 </th:block>
 </body>
 </html>
+
