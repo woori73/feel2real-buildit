@@ -171,7 +171,7 @@
           var q = String(it.title).match(/(\d+)(?:[~～-](\d+))?번/);
           return { title: '2026년 고' + it.grade + ' 10모 ' + (q ? q[1] + (q[2] ? '~' + q[2] : '') + '번 ' : '') + '복습과제',
             grade: it.grade, kind: 'review', isNew: true, updatedAt: it.updatedAt || it.createdAt,
-            href: '/wiki?grade=' + it.grade + '&month=10' + (q ? '&question=' + q[1] : '') + '#review' };
+            href: '/wiki?grade=' + it.grade + '&month=10&material=' + encodeURIComponent(it.wikiAnalysisMaterialId) + (q ? '&question=' + q[1] : '') + '#review' };
         });
       renderLatestUpdates(reviews.concat((feed.latestUpdates || []).filter(function (it) {
         return !/검토본|이전 편집|시안|복습/.test(it.title || '');
@@ -397,12 +397,14 @@
       return;
     }
     if (period) period.textContent = (data.periodLabel || '') + ' 기준';
-    box.innerHTML = data.items.map(function (it) {
+    box.innerHTML = data.items.filter(function (it) { return /복습|자습|변형문제|WORKBOOK/i.test(it.title || '') && it.materialId && it.grade; }).map(function (it) {
       var g = it.grade ? '고' + it.grade : '학년 미상';
+      var q = String(it.title || '').match(/(\d+)(?:[~～-]\d+)?번/);
+      var href = '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + '&material=' + encodeURIComponent(it.materialId) + (q ? '&question=' + q[1] : '') + '#review';
       return '<li class="popular-row' + (it.rank <= 3 ? ' top' : '') + '">'
         + '<span class="pop-rank">' + String(it.rank).padStart(2, '0') + '</span>'
         + '<span class="pop-trend ' + trendClass(it.trend) + '">' + trendLabel(it.trend, it.trendAmount) + '</span>'
-        + '<a class="pop-main" href="' + escapeAttr(it.href) + '">'
+        + '<a class="pop-main" href="' + escapeAttr(href) + '">'
         + '<span class="pop-cat">' + escapeHtml(g + ' · ' + (it.categoryLabel || '')) + '</span>'
         + '<span class="pop-title">' + escapeHtml(it.title) + '</span>'
         + '</a>'
@@ -485,9 +487,9 @@
     try {
       var res = await fetch('/api/wiki/analysis-materials?grade=' + grade);
       if (!res.ok) throw new Error();
-      var items = (await res.json()).filter(function (it) { return !/이전 편집 시안|검토본/.test(it.title || ''); }).slice(0, 6);
+      var items = (await res.json()).filter(function (it) { return /실전|예상/.test(it.title || '') && !/10월|10모/.test((it.title || '') + ' ' + (it.examType || '')) && !/이전 편집 시안|검토본/.test(it.title || ''); }).slice(0, 6);
       if (!items.length) {
-        box.innerHTML = '<p class="muted">해당 학년의 공개 분석 자료가 아직 없습니다.</p>';
+        box.innerHTML = '<p class="muted">해당 학년의 실전예상문제가 아직 등록되지 않았습니다.</p>';
         return;
       }
       var adminA = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin() : false;
