@@ -30,7 +30,7 @@ def main():
             str(ROOT/'profile'),headless=True,chromium_sandbox=True,
             viewport={'width':1000,'height':850},locale='ko-KR')
         page=context.pages[0] if context.pages else context.new_page()
-        page.goto(STUDIO,wait_until='domcontentloaded',timeout=60000)
+        page.goto('https://nid.naver.com/nidlogin.login',wait_until='domcontentloaded',timeout=60000)
         page.wait_for_timeout(2000)
         # Only normal visible authentication UI is used; challenges are not solved.
         qr=page.get_by_text('QR코드',exact=True)
@@ -39,6 +39,8 @@ def main():
         record(page,'USER_LOGIN_REQUIRED')
         for _ in range(120):
             page.wait_for_timeout(5000)
+            if 'www.naver.com' in page.url:
+                page.goto(STUDIO,wait_until='domcontentloaded',timeout=60000)
             if 'studio.cafe.naver.com' in page.url:
                 manager=page.get_by_role('link',name='지피지기자산 내 정보',exact=True)
                 members=page.get_by_role('heading',name='전체 멤버 관리',exact=True)
