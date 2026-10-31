@@ -35,14 +35,17 @@
     try {
       var res = await fetch('/api/wiki/analysis-materials' + (grade ? '?grade=' + grade : ''));
       if (!res.ok) throw new Error();
-      var items = await res.json();
+      var items = (await res.json()).filter(function (it) { return !/이전 편집 시안|검토본/.test(it.title || ''); });
       if (!items.length) { list.innerHTML = '<p class="list-empty">등록된 분석 자료가 없습니다.</p>'; return; }
       var admin = window.WikiAdminManage ? await window.WikiAdminManage.isAdmin() : false;
       itemsById = {};
       list.innerHTML = items.map(function (it) {
         itemsById[it.wikiAnalysisMaterialId] = it;
         var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
-        var card = '<a class="analysis-card" data-member-download href="' + escapeAttr(it.downloadUrl) + '">'
+        var review = /복습|자습/.test(it.title || '') && /\.html?$/i.test(it.originalFileName || '');
+        var q = String(it.title || '').match(/(\d+)(?:[~～-]\d+)?번/);
+        var href = review ? '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + (q ? '&question=' + q[1] : '') + '#review' : it.downloadUrl;
+        var card = '<a class="analysis-card" ' + (review ? '' : 'data-member-download ') + 'href="' + escapeAttr(href) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + (it.description ? '<span class="analysis-meta">' + escapeHtml(it.description) + '</span>' : '')
           + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'
@@ -73,3 +76,4 @@
   function escapeHtml(v) { return String(v || '').replace(/[&<>'"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]; }); }
   function escapeAttr(v) { return escapeHtml(v).replace(/`/g, '&#96;'); }
 })();
+

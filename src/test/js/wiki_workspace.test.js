@@ -15,8 +15,8 @@ class Element {
   scrollIntoView() { this.scrolled = true; }
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
-function setup({ hash = '#review', admin = true, items = [], download } = {}) {
-  const ids = Object.fromEntries(['wikiSidebar','wikiMenuToggle','wikiPaneTitle','wikiPaneDescription','reviewList','reviewSearch','reviewReader','reviewFrame','reviewReaderClose','reviewReaderTitle','gradeTabs'].map(id => [id, new Element()]));
+function setup({ hash = '#review', admin = true, items = [], download, listFailure = false } = {}) {
+  const ids = Object.fromEntries(['wikiSidebar','wikiMenuToggle','wikiPaneTitle','wikiPaneDescription','reviewList','reviewMonthTitle','reviewMonthSwitch','reviewStatus','reviewRetry','reviewReader','reviewFrame','reviewReaderClose','reviewReaderTitle','gradeTabs'].map(id => [id, new Element()]));
   const keys = ['home','review','guides','originals','analysis','learning','threads','live'];
   const panels = keys.map(key => new Element({ wikiPanel: key }));
   const navs = keys.map(key => new Element({ wikiNav: key }));
@@ -27,7 +27,7 @@ function setup({ hash = '#review', admin = true, items = [], download } = {}) {
   const document = new Element();
   document.getElementById = id => ids[id];
   document.querySelectorAll = () => panels;
-  const context = { document, window, location: { hash }, URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} }, Blob, alert: () => {}, fetch: async url => url.endsWith('/download') ? download() : { ok: true, json: async () => items } };
+  const context = { document, window, URLSearchParams, location: { hash }, URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} }, Blob, alert: () => {}, fetch: async url => { if (listFailure && !url.endsWith('/download')) throw new Error('temporary'); return url.endsWith('/download') ? download() : { ok: true, json: async () => items }; } };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'wiki_workspace.js'), 'utf8'), context);
   return { ids, panels, navs, window, context, document };
 }
@@ -53,14 +53,32 @@ test('mobile menu closes on Escape and returns focus to its toggle', async () =>
   assert.equal(app.ids.wikiMenuToggle.attrs['aria-expanded'], 'false');
   assert.equal(app.ids.wikiMenuToggle.focused, true);
 });
-test('review search escapes titles and keeps admin controls to two actions', async () => {
-  const app = setup({ items: [{ wikiAnalysisMaterialId: 1, grade: 1, title: '10월 20번 복습 <img>', originalFileName: 'a.html' }, { wikiAnalysisMaterialId: 2, title: '9월 구문독해' }] });
-  await tick();
-  assert.match(app.ids.reviewList.innerHTML, /&lt;img&gt;/);
-  assert.equal((app.ids.reviewList.innerHTML.match(/<button/g) || []).length, 3); // open + edit + delete
-  assert.doesNotMatch(app.ids.reviewList.innerHTML, /9월 구문독해/);
-  app.ids.reviewSearch.value = '31번'; await app.ids.reviewSearch.fire('input');
-  assert.match(app.ids.reviewList.innerHTML, /검색어에 맞는/);
+test('October shows ascending question buttons without search or download links', async () => {
+  const app = setup({items:[
+    {wikiAnalysisMaterialId:2,title:'2026 고1 10월 31번 복습 과제',originalFileName:'31.html'},
+    {wikiAnalysisMaterialId:1,title:'2026 고1 10월 20번 복습 과제',originalFileName:'20.html'},
+    {wikiAnalysisMaterialId:3,title:'고1 9월 자습용 상세해설',originalFileName:'9.html'},
+    {wikiAnalysisMaterialId:4,title:'이전 편집 시안 검토본',originalFileName:'old.html'}
+  ]});await tick();
+  const html=app.ids.reviewList.innerHTML;
+  assert.ok(html.indexOf('20번') < html.indexOf('31번'));
+  assert.equal((html.match(/data-review-open=/g)||[]).length,2);
+  assert.doesNotMatch(html,/href=|download|검토본|전체 과제/);
+  assert.equal((html.match(/<button/g)||[]).length,6);
+  assert.equal(app.ids.reviewMonthTitle.textContent,'2026년 10모 복습과제');
+});
+test('September arrow shows only September material and returns to October',async()=>{
+ const app=setup({items:[{wikiAnalysisMaterialId:1,title:'10월 20번 복습 과제'},{wikiAnalysisMaterialId:2,title:'9월 자습용 상세해설'}]});await tick();
+ assert.equal(app.ids.reviewMonthSwitch.textContent,'← 2026년 9모');
+ await app.ids.reviewMonthSwitch.fire('click');await tick();
+ assert.equal(app.ids.reviewMonthTitle.textContent,'2026년 9모 복습과제');
+ assert.match(app.ids.reviewList.innerHTML,/전체 과제/);assert.doesNotMatch(app.ids.reviewList.innerHTML,/20번/);
+ await app.ids.reviewMonthSwitch.fire('click');await tick();assert.match(app.ids.reviewList.innerHTML,/20번/);
+});
+test('failed loading keeps question numbers and offers an explicit retry',async()=>{
+ const app=setup({listFailure:true});await tick();assert.match(app.ids.reviewList.innerHTML,/20번/);assert.match(app.ids.reviewList.innerHTML,/41~42번/);assert.equal(app.ids.reviewRetry.hidden,false);
+ app.context.fetch=async()=>({ok:true,json:async()=>[{wikiAnalysisMaterialId:1,title:'10월 20번 복습 과제'}]});
+ await app.ids.reviewRetry.fire('click');await tick();assert.equal(app.ids.reviewRetry.hidden,true);assert.match(app.ids.reviewList.innerHTML,/data-review-open="1"/);
 });
 test('student cards contain no administrator controls', async () => {
   const app = setup({ admin: false, items: [{ wikiAnalysisMaterialId: 1, grade: 1, title: '10월 복습' }] });
@@ -98,3 +116,6 @@ test('unused community navigation and board previews are absent from the hub', (
   const html = fs.readFileSync(path.join(__dirname, '../../main/resources/templates/public/wiki.html'), 'utf8');
   assert.doesNotMatch(html, /data-wiki-nav="community"|data-wiki-panel="community"|class="board-col"/);
 });
+
+
+test('review template has month navigation and no search field',()=>{const html=fs.readFileSync(path.join(__dirname,'../../main/resources/templates/public/wiki.html'),'utf8');assert.match(html,/id="reviewMonthSwitch"/);assert.doesNotMatch(html,/reviewSearch|복습 과제 검색/);});
