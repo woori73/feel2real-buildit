@@ -64,10 +64,50 @@ def database(directory):
         id TEXT PRIMARY KEY,status TEXT NOT NULL,email TEXT,buyer TEXT,
         delivery TEXT NOT NULL DEFAULT 'QUEUED',cafe TEXT NOT NULL DEFAULT 'REVIEW',
         message_id TEXT,sent_at TEXT,updated_at TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS cafe_receipts(
+        order_id TEXT PRIMARY KEY REFERENCES orders(id),member_key TEXT NOT NULL,
+        nickname TEXT NOT NULL,observed_grade TEXT NOT NULL,
+        verified_by TEXT NOT NULL,verified_at TEXT NOT NULL);
     ''')
     db.execute("UPDATE orders SET delivery='UNKNOWN' WHERE delivery='SENDING'")
     db.commit()
     return db
+
+
+def confirm_cafe(db, order_id, member_key, nickname, verified_by, observed_grade):
+    """Record a real UI observation, never perform/pretend a Naver membership change."""
+    if observed_grade != '감사회원':
+        raise ValueError('ACTUAL_THANKS_GRADE_REQUIRED')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{8,160}', member_key or ''):
+        raise ValueError('CAFE_MEMBER_KEY_REQUIRED')
+    if not nickname or not verified_by or len(nickname) > 100 or len(verified_by) > 100:
+        raise ValueError('OBSERVED_MEMBER_AND_OPERATOR_REQUIRED')
+    row = db.execute('SELECT status,cafe FROM orders WHERE id=?', (order_id,)).fetchone()
+    if row is None or row['status'] != 'READY':
+        raise ValueError('CURRENT_PAID_ORDER_REQUIRED')
+    prior = db.execute('SELECT * FROM cafe_receipts WHERE order_id=?', (order_id,)).fetchone()
+    if prior:
+        if prior['member_key'] != member_key:
+            raise ValueError('MEMBER_IDENTITY_CONFLICT')
+        return
+    with db:
+        db.execute('INSERT INTO cafe_receipts VALUES(?,?,?,?,?,?)',
+                   (order_id, member_key, nickname, observed_grade, verified_by,
+                    iso(dt.datetime.now(UTC))))
+        db.execute("UPDATE orders SET cafe='CONFIRMED',updated_at=? WHERE id=?",
+                   (iso(dt.datetime.now(UTC)), order_id))
+
+
+def message_for(row, config, sender, content):
+    message = EmailMessage()
+    message['From'] = sender
+    message['To'] = row['email']
+    message['Subject'] = config['subject']
+    message['Message-ID'] = '<ebook-' + hashlib.sha256(row['id'].encode()).hexdigest() + '@' + sender.split('@')[1] + '>'
+    message.set_content(Path(config['body_path']).read_text())
+    message.add_attachment(content, maintype='application', subtype='pdf',
+                           filename=config.get('attachment_name', '새출발 2억2천 탕감.pdf'))
+    return message
 
 
 class Commerce:
@@ -188,7 +228,7 @@ def deliver(db, api, config):
     if hashlib.sha256(content).hexdigest() != config['pdf_sha256']:
         raise RuntimeError('PDF_CHANGED')
     smtp_config = json.loads(Path(config['smtp_config']).read_text())
-    for queued in db.execute("SELECT * FROM orders WHERE status='READY' AND delivery='QUEUED'").fetchall():
+    for queued in db.execute("SELECT o.* FROM orders o JOIN cafe_receipts c ON c.order_id=o.id WHERE o.status='READY' AND o.delivery='QUEUED' AND o.cafe='CONFIRMED' AND c.observed_grade='감사회원'").fetchall():
         # Recheck current payment/claim immediately before sending.
         fresh = api.details([queued['id']])
         if len(fresh) != 1:
@@ -197,15 +237,8 @@ def deliver(db, api, config):
         row = db.execute('SELECT * FROM orders WHERE id=?', (queued['id'],)).fetchone()
         if row['status'] != 'READY':
             continue
-        message = EmailMessage()
-        message['From'] = smtp_config['username']
-        message['To'] = row['email']
-        message['Subject'] = config['subject']
-        mid = '<ebook-' + hashlib.sha256(row['id'].encode()).hexdigest() + '@' + smtp_config['username'].split('@')[1] + '>'
-        message['Message-ID'] = mid
-        message.set_content(Path(config['body_path']).read_text())
-        message.add_attachment(content, maintype='application', subtype='pdf',
-                               filename=config.get('attachment_name', '새출발 2억2천 탕감.pdf'))
+        message = message_for(row, config, smtp_config['username'], content)
+        mid = str(message['Message-ID'])
         # Authenticate before changing delivery state. A failed connection can safely retry.
         with smtplib.SMTP_SSL(smtp_config['host'], int(smtp_config.get('port', 465)),
                               timeout=30, context=ssl.create_default_context()) as smtp:
@@ -230,6 +263,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='/etc/f2r-ebook/commerce.json')
     parser.add_argument('--state-dir', default='/var/lib/f2r-ebook')
+    parser.add_argument('--confirm-cafe', metavar='PRODUCT_ORDER_ID',
+                        help='Record an actually verified completed cafe upgrade; never guesses membership')
+    parser.add_argument('--member-key')
+    parser.add_argument('--nickname')
+    parser.add_argument('--verified-by')
+    parser.add_argument('--observed-grade')
+    parser.add_argument('--queue', action='store_true', help='Show fulfillment review queue with masked email')
     args = parser.parse_args()
     os.umask(0o077)
     directory = Path(args.state_dir)
@@ -241,6 +281,27 @@ def main():
             return
         config = json.loads(Path(args.config).read_text())
         db = database(directory)
+        if args.queue:
+            items = []
+            for row in db.execute("SELECT o.*,c.member_key,c.nickname FROM orders o LEFT JOIN cafe_receipts c ON c.order_id=o.id WHERE o.status!='INELIGIBLE' ORDER BY o.updated_at"):
+                item = dict(row)
+                email = item.pop('email') or ''
+                item['email_masked'] = email[:2] + '***@' + email.split('@')[-1] if '@' in email else ''
+                items.append(item)
+            print(json.dumps({'queue': items, 'live_send': bool(config.get('live_send'))}, ensure_ascii=False))
+            db.close()
+            return
+        if args.confirm_cafe:
+            api = Commerce(config)
+            fresh = api.details([args.confirm_cafe])
+            if len(fresh) != 1 or str(fresh[0].get('productOrder', {}).get('productOrderId')) != args.confirm_cafe:
+                raise RuntimeError('ORDER_RECHECK_FAILED')
+            observe(db, fresh, config, instant(config['activation_from']), dt.datetime.now(UTC))
+            confirm_cafe(db, args.confirm_cafe, args.member_key, args.nickname,
+                         args.verified_by, args.observed_grade)
+            db.close()
+            print(json.dumps({'cafe_completion_recorded': True}))
+            return
         api = Commerce(config)
         poll(db, api, config, dt.datetime.now(UTC))
         deliver(db, api, config)
