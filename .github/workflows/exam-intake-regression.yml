@@ -101,7 +101,7 @@ jobs:
           retention-days: 14
           path: |
             build/verification/exam-intake
-            results.json
+            e2e/exam-intake/results.json
             build/test-results/test
       - name: Stop only this job's local resources
         if: always()
