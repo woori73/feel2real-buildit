@@ -15,7 +15,7 @@
     ogImage=null)}"></th:block>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
-  <link rel="stylesheet" href="/css/wiki.css?v=20261031-sidebar-1">
+  <link rel="stylesheet" href="/css/wiki.css?v=20261101-review-numbers-1">
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body class="wiki-body">
@@ -64,7 +64,7 @@
     </section></div>
 
     <!-- 2. Hero -->
-    <section class="wiki-intro">
+    <section class="wiki-intro" id="wikiIntro">
       <p class="wiki-welcome">시험이 끝난 후, 새로운 공부가 시작됩니다.</p>
       <p class="intro-lead">
         모의고사 분석부터 내신 변형문제까지 — 고1·고2·고3 영어 자료를 함께 나누고,
@@ -81,9 +81,9 @@
     </section>
 
     <section class="wiki-block review-panel" data-wiki-panel="review" hidden>
-      <div class="block-head"><h2>지문별 복습 과제</h2><button type="button" class="upload-link" id="btnUploadReview">＋ 복습 과제 올리기</button></div>
-      <p class="review-lead">지문을 고르면 문제가 열립니다. 각 문제 바로 아래에서 정답과 해설을 확인해 보세요.</p>
-      <label class="review-filter">자료 검색<input id="reviewSearch" type="search" placeholder="예: 10월, 31번" aria-label="복습 과제 검색"></label>
+      <div class="block-head"><h2 id="reviewMonthTitle">2026년 10모 복습과제</h2><button type="button" class="upload-link" id="btnUploadReview">＋ 복습 과제 올리기</button></div>
+      <div class="review-month-nav"><button type="button" id="reviewMonthSwitch">← 2026년 9모</button></div>
+      <p id="reviewStatus" role="status"></p><button type="button" id="reviewRetry" hidden>다시 불러오기</button>
       <div id="reviewList" class="review-list" aria-live="polite"><p class="muted">불러오는 중...</p></div>
       <section id="reviewReader" class="review-reader" hidden aria-label="복습 과제 열람">
         <div class="reader-head"><h3 id="reviewReaderTitle"></h3><button type="button" id="reviewReaderClose">열람 닫기</button></div>
@@ -229,9 +229,10 @@
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
   <script src="/js/wiki_admin_manage.js?v=20261031-1"></script>
-  <script src="/js/wiki.js?v=20261031-sidebar-1"></script>
-  <script src="/js/wiki_workspace.js?v=20261031-1"></script>
+  <script src="/js/wiki.js?v=20261101-review-numbers-1"></script>
+  <script src="/js/wiki_workspace.js?v=20261101-1"></script>
 </th:block>
 </body>
 </html>
+
 
