@@ -33,7 +33,7 @@ def main():
         page.goto('https://nid.naver.com/nidlogin.login',wait_until='domcontentloaded',timeout=60000)
         page.wait_for_timeout(2000)
         # Only normal visible authentication UI is used; challenges are not solved.
-        qr=page.get_by_text('QR코드',exact=True)
+        qr=page.get_by_text('QR 코드 로그인',exact=True)
         if qr.count()==1 and qr.is_visible():
             qr.click()
         record(page,'USER_LOGIN_REQUIRED')
