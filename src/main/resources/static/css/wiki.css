@@ -526,3 +526,10 @@ body.wiki-body {
 @media(max-width:700px){#wikiPaneTitle,.review-reader{scroll-margin-top:136px}}
 
 .html-direct{border:1px solid #dce3e7;padding:12px;border-radius:8px;background:#fafcfb}.html-direct summary{cursor:pointer;padding:3px 0}.html-direct label{display:flex;flex-direction:column;gap:6px;margin:12px 0}.html-direct textarea{width:100%;padding:10px;border:1px solid #cad3d8;border-radius:6px;font:12px/1.6 monospace;resize:vertical;min-height:150px}
+
+
+/* Direct monthly review navigation: numbers are the entry point, never search. */
+#wikiIntro:not([data-pane="home"]) .wiki-welcome,#wikiIntro:not([data-pane="home"]) .intro-lead,#wikiIntro:not([data-pane="home"]) .grade-note{display:none}
+.review-month-nav{display:flex;justify-content:flex-start;margin:4px 0 18px}.review-month-nav button,#reviewRetry{font:inherit;font-weight:600;font-size:14px;line-height:1.5;border:1px solid #c5d3ce;background:#fff;border-radius:7px;padding:9px 14px;cursor:pointer}
+.review-list{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}.review-open{min-height:94px;padding:17px 12px;align-items:center;text-align:center;gap:8px}.review-open strong{font-size:23px;line-height:1.25}.review-open>span{font-size:12px;color:#596574}.review-open:disabled{cursor:wait;opacity:.6}.review-card .card-manage{justify-content:center;gap:5px;padding:7px}.review-card .card-manage button{padding:4px 8px;min-height:30px;font-size:11px}
+@media(max-width:700px){.review-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.review-open{padding:15px 5px;min-height:86px}.review-open strong{font-size:21px}.review-open>span{font-size:10px}.review-reader iframe{height:calc(100dvh - 195px);min-height:400px}}
