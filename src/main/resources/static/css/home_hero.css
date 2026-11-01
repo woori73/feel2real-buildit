@@ -40,3 +40,6 @@
 .hero-exam .hero-copy .exam-hero-detail { font-size:12px; margin-bottom:0; }
 .hero-exam .hero-copy .exam-caption { color:#657984; font-size:10px; }
 @media(max-width:600px){.hero-exam{padding:20px 16px 62px;min-height:570px}.hero-exam .hero-copy{padding:22px 18px}.hero-exam .hero-art{margin-top:-10px}.hero-exam .hero-copy>p{font-size:13px}}
+/* Home already has a brand header and service banner; keep its extra pane heading accessible only. */
+.home-shell:has(#homeMenu [data-home-nav="home"][aria-current="page"]) .home-pane-heading { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); border:0; }
+.home-content .home-offer { max-width:none; margin-inline:0; }
