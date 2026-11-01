@@ -209,7 +209,7 @@ class LandingEdunovaTemplateContractTest {
       assertThat(html).contains("href=\"" + link + "\"");
     assertThat(html).contains("<div class=\"hl-menu\" id=\"homeMenuPanel\" hidden>", "role=\"dialog\" aria-modal=\"true\"",
         "id=\"homeMenuClose\"", "압구정중3 기출문제 적중률 분석 리포트", "모의고사 위키 지문 복습 문제 업로드",
-        "id=\"homeNoticePause\"", "/css/home_light.css", "/js/home_workspace.js", "/js/home_hero.js");
+        "id=\"homeNoticePause\"", "/css/home_light.css", "/js/home_workspace.js", "/js/home_hero.js", "/js/home_motion.js");
     assertThat(html).doesNotContain("id=\"homeSidebar\"", "id=\"enDrawer\"", "class=\"en-menu\"", "/css/home_workspace.css");
   }
 

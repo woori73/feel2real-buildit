@@ -257,6 +257,25 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hl-service #request { border: 0; background: #fff; box-shadow: var(--hl-lift); }
 @media (max-width: 600px) { .hl-service { margin: 40px -16px 0; padding: 16px; border-radius: 0; } }
 
+/* ---- 맞춤문제 서비스 모션(home_motion.js가 .motion-ready를 붙인 뒤에만 숨겼다가 보여 준다) ---- */
+/* 숨길 때는 바로(깜빡임 없이), 보여 줄 때만 움직인다. */
+.motion-ready .mo-reveal { opacity: 0; transform: translateY(28px); }
+.motion-ready .mo-reveal.is-in { opacity: 1; transform: none; transition: opacity .6s ease, transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--mo-delay, 0ms); }
+.motion-ready .hit-stats li.mo-reveal { transform: translateY(18px) scale(.96); }
+.motion-ready .hit-stats li.mo-reveal.is-in { transform: none; }
+/* 제작 과정 01→02→03: 화면에 들어오면 위쪽 선이 왼쪽부터 채워진다 */
+#svc-exam .exam-grid { position: relative; padding-top: 14px; }
+#svc-exam .exam-grid::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--hl-green), var(--hl-mint)); transform-origin: left; }
+.motion-ready #svc-exam .exam-grid::before { transform: scaleX(0); transition: transform 1.2s cubic-bezier(.2,.7,.2,1) .2s; }
+.motion-ready #svc-exam.is-in .exam-grid::before { transform: scaleX(1); }
+/* 모서리에 걸친 3D(과녁·저금통)가 천천히 떠다닌다 */
+@keyframes hl-float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-10px) rotate(-3deg); } }
+.hl-service .hl-corner { animation: hl-float 4.5s ease-in-out infinite; }
+.hl-service .hl-pay-main .hl-corner { animation-delay: -2s; }
+/* 맞춤문제 배너의 '동일 적중' 표시가 한 번씩 반짝인다 */
+@keyframes hl-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(14,124,107,.45); } 50% { box-shadow: 0 0 0 8px rgba(14,124,107,0); } }
+.hero-compare-head em { animation: hl-pulse 2.4s ease-out infinite; }
+
 /* ---- 영어 교육 카드 4개(실제 화면) ---- */
 .hl-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 .hl-card { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -570,6 +589,7 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .home-light *, .home-light *::before, .home-light *::after { scroll-behavior: auto !important; transition: none !important; }
   .home-light a:hover .hl-obj { transform: none; }
+  .hl-service .hl-corner, .hero-compare-head em { animation: none; }
   .home-notice-track { animation: none; width: auto; min-width: 0; }
   .home-notice-group { flex: 1; min-width: 0; white-space: normal; flex-wrap: wrap; gap: 8px; padding: 0; font-size: 12px; }
   .home-notice-group[aria-hidden="true"] { display: none; }
