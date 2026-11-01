@@ -26,7 +26,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     await isolate(page);
     await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new DOMException('Denied','NotAllowedError');}}}));
     await page.goto('/#dashboard');
-    await expect(page.locator('#siHomeTitle')).toHaveText('기출과 아주 유사한 영어 기말 대비 문제');
+    await expect(page.locator('#siHomeTitle')).toHaveText('우리 학교 맞춤문제 1장 먼저 받아보세요.');
     await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
     await expect(page.locator('#homeName')).toHaveText('서수니');
     await expect(page.locator('#exam-payment')).toContainText('20,000원');

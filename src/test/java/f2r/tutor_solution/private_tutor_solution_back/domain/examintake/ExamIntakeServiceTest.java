@@ -57,6 +57,22 @@ class ExamIntakeServiceTest {
             new ExamGuardianConsentService(repo.jdbc(), tx));
   }
 
+  @Test
+  void givenFreeSample_whenReceived_thenNoFeeAndNoPaymentTransition() {
+    var d = new LinkedHashMap<>(input("sample-request-key-001").details());
+    d.put("inquiryType", "FREE_SAMPLE");
+    d.put("message", "맞춤 예상문제 1장 무료 신청");
+    d.put("optionalConsent", "true");
+    d.put("termsAccepted", "false");
+    var r = service.create(owner, new Create(Kind.INQUIRY, d, true, CONSENT, "sample-request-key-001"));
+    assertThat(r.kind()).isEqualTo(Kind.INQUIRY);
+    assertThat(((Number) r.offer().get("priceWon")).intValue()).isZero();
+    assertThat(r.details().get("inquiryType")).isEqualTo("FREE_SAMPLE");
+    assertThatThrownBy(() -> service.adminState(admin, r.id(), r.version(), State.AWAITING_DEPOSIT))
+        .isInstanceOf(ResponseStatusException.class);
+    assertThat(repo.jdbc().queryForObject("SELECT COUNT(*) FROM exam_intake_event WHERE request_id=?", Integer.class, r.id())).isEqualTo(1);
+  }
+
   Create input(String key) {
     return new Create(
         Kind.APPLICATION,

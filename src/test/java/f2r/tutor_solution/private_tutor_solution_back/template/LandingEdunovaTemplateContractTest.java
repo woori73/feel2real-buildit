@@ -73,9 +73,9 @@ class LandingEdunovaTemplateContractTest {
     assertThat(html.substring(html.indexOf("<main"), html.indexOf("</main>"))).doesNotContain("<iframe");
     String jump = html.substring(html.indexOf("id=\"homeJump\""), html.indexOf("id=\"ai-content\""));
     int trailer = jump.indexOf("href=\"#ai-content\""), game = jump.indexOf("href=\"#review-game\""), chart = jump.indexOf("href=\"#chart-showcase\"");
-    assertThat(trailer).isPositive().isLessThan(game);
-    assertThat(game).isLessThan(chart);
-    assertThat(jump).contains("AI AGENT 트레일러", "고1 10월 영어 복습 게임", "BuildIt 차트 소개");
+    assertThat(game).isPositive().isLessThan(trailer);
+    assertThat(trailer).isLessThan(chart);
+    assertThat(jump).contains("AI AGENT 트레일러", "영어 복습 게임", "BuildIt 차트 소개");
     assertThat(render("public/landing", "", "", "", "")).contains("게임 공개 준비 중")
         .doesNotContain("id=\"homeReviewGame\"", "id=\"homeGame\"");
     assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
@@ -137,8 +137,8 @@ class LandingEdunovaTemplateContractTest {
     // given / when
     String html = render();
     // then
-    assertThat(html).contains("<h2 class=\"home-offer-title\" id=\"siHomeTitle\"><span class=\"home-offer-title-line\">기출과 아주 유사한</span> "
-        + "<span class=\"home-offer-title-line\">영어 기말 대비 문제</span></h2>");
+    assertThat(html).contains("<h2 class=\"home-offer-title\" id=\"siHomeTitle\"><span class=\"home-offer-title-line\">우리 학교 맞춤문제</span> "
+        + "<span class=\"home-offer-title-line\">1장 먼저 받아보세요.</span></h2>");
     assertThat(html).doesNotContain("id=\"exam-samples\"", "WORKSHEETS &amp; EXPLANATIONS", "문제지와 해설지 살펴보기",
         "공개 샘플은 준비 중", "문제지·해설지 문의");
     String between = html.substring(html.indexOf("id=\"svc-exam\""), html.indexOf("id=\"exam-hit\""));
@@ -153,7 +153,7 @@ class LandingEdunovaTemplateContractTest {
     String offer = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"examPromo\""));
     String promo = html.substring(html.indexOf("id=\"examPromo\""), html.indexOf("id=\"homeJump\""));
     // then
-    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회 제공").containsOnlyOnce("20,000원");
+    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회", "맞춤문제 1장 무료 신청").containsOnlyOnce("2만원");
     assertThat(promo).doesNotContain("맞춤 문제 문의·신청", "exam-caption\">학교별")
         .contains("id=\"examPromoSummary\" class=\"sr\"");
   }
@@ -225,8 +225,8 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.")
-        .contains("기출과 아주 유사한")
+        .contains("맞춤문제 1장 무료 신청", "직접 제작한 첫 페이지 또는 1장")
+        .contains("우리 학교 맞춤문제")
         .contains("id=\"pass-offer\"")
         .contains("href=\"/wiki\"")
         .doesNotContain("탑재 완료")
@@ -245,7 +245,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(exam).isPositive();
     assertThat(exam).isGreaterThan(dash);
     assertThat(dash).isGreaterThan(ai);
-    assertThat(html).contains("AI 콘텐츠 제작").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
+    assertThat(html).contains("콘텐츠 제작협업실").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
     assertThat(html).doesNotContain("href=\"#\"");
     assertThat(html).contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
   }
