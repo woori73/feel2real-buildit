@@ -205,7 +205,7 @@
     $("details").replaceChildren();
     const dl = el("dl");
     Object.entries(current.details).forEach(([k, v]) => {
-      if (v) dl.append(el("dt", fieldLabels[k] || k), el("dd", v));
+      if (v) dl.append(el("dt", fieldLabels[k] || k), el("dd", k === "inquiryType" && v === "FREE_SAMPLE" ? "무료 샘플 1장" : v));
     });
     $("details").append(el("p", labels[current.state]), dl);
     $("progress").textContent = current.details.inquiryType === "FREE_SAMPLE"

@@ -225,8 +225,8 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("Feel2Real은 AI를 활용해 영어 교육과 에듀테인먼트 콘텐츠를 제작하는 회사입니다.")
-        .contains("기출과 아주 유사한")
+        .contains("맞춤문제 1장 무료 신청", "직접 제작한 첫 페이지 또는 1장")
+        .contains("우리 학교 맞춤문제")
         .contains("id=\"pass-offer\"")
         .contains("href=\"/wiki\"")
         .doesNotContain("탑재 완료")
@@ -245,7 +245,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(exam).isPositive();
     assertThat(exam).isGreaterThan(dash);
     assertThat(dash).isGreaterThan(ai);
-    assertThat(html).contains("AI 콘텐츠 제작").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
+    assertThat(html).contains("콘텐츠 제작협업실").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
     assertThat(html).doesNotContain("href=\"#\"");
     assertThat(html).contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
   }
