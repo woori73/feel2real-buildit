@@ -73,9 +73,9 @@ class LandingEdunovaTemplateContractTest {
     assertThat(html.substring(html.indexOf("<main"), html.indexOf("</main>"))).doesNotContain("<iframe");
     String jump = html.substring(html.indexOf("id=\"homeJump\""), html.indexOf("id=\"ai-content\""));
     int trailer = jump.indexOf("href=\"#ai-content\""), game = jump.indexOf("href=\"#review-game\""), chart = jump.indexOf("href=\"#chart-showcase\"");
-    assertThat(trailer).isPositive().isLessThan(game);
-    assertThat(game).isLessThan(chart);
-    assertThat(jump).contains("AI AGENT 트레일러", "고1 10월 영어 복습 게임", "BuildIt 차트 소개");
+    assertThat(game).isPositive().isLessThan(trailer);
+    assertThat(trailer).isLessThan(chart);
+    assertThat(jump).contains("AI AGENT 트레일러", "영어 복습 게임", "BuildIt 차트 소개");
     assertThat(render("public/landing", "", "", "", "")).contains("게임 공개 준비 중")
         .doesNotContain("id=\"homeReviewGame\"", "id=\"homeGame\"");
     assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");

@@ -154,3 +154,24 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   await expect(plain.locator('#homeMenu')).toBeVisible();
   await fallback.close();
 });
+
+test('rotating hero supports manual navigation, pause, service links and reduced motion', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await page.goto('/');
+  const hero = page.locator('#homeHero');
+  await expect(hero.locator('[data-hero-slide]:visible')).toHaveCount(1);
+  await expect(page.locator('#heroPause')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#heroNext').click();
+  await expect(page.locator('#heroCount')).toHaveText('2 / 4');
+  await expect(hero.getByRole('link', { name: '모의고사 위키 열기 ↗' })).toHaveAttribute('href', '/wiki');
+  await page.locator('[data-hero-go="3"]').click();
+  await expect(page.locator('#heroCount')).toHaveText('4 / 4');
+  await hero.getByRole('link', { name: 'AI AGENT 만나보기 →' }).click();
+  await expect(page.locator('#homePaneTitle')).toHaveText('AI AGENT');
+  await page.goto('/');
+  await page.locator('#heroPrev').click();
+  await expect(page.locator('#heroCount')).toHaveText('4 / 4');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+  await context.close();
+});

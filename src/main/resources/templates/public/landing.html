@@ -31,6 +31,8 @@
   <script src="/js/site_events.js?v=20261027-1" defer></script>
   <link rel="stylesheet" href="/css/home_workspace.css?v=20261101-1">
   <script src="/js/home_workspace.js?v=20261101-1" defer></script>
+  <link rel="stylesheet" href="/css/home_hero.css?v=20261101-1">
+  <script src="/js/home_hero.js?v=20261101-1" defer></script>
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
@@ -82,12 +84,31 @@
     </header>
     <!-- 1. 상품 안내(짧게) → 2. 20초 홍보 영상 → 3. 콘텐츠 버튼 3개 → 트레일러·복습 게임·차트 → AI 비서 → 기존 안내 섹션 -->
     <section class="home-offer" id="pass-offer" data-home-panel="home" aria-labelledby="siHomeTitle">
-      <p class="exam-eyebrow">맞춤문제 신청</p>
+      <div id="homeHero" class="home-hero" role="region" aria-roledescription="캐러셀" aria-label="Feel2Real 주요 서비스">
+        <div class="hero-slide hero-exam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="1 / 4 맞춤문제">
+          <div class="hero-copy">      <p class="exam-eyebrow">맞춤문제 신청</p>
       <h2 class="home-offer-title" id="siHomeTitle"><span class="home-offer-title-line">기출과 아주 유사한</span> <span class="home-offer-title-line">영어 기말 대비 문제</span></h2>
       <p class="home-offer-line"><span th:text="${examOffer.headline}">2주 동안 160문항</span> · <strong th:text="${examOffer.priceLabel}">20,000원</strong></p>
       <p class="exam-hero-detail" th:text="'주 ' + ${examOffer.deliveriesPerWeek} + '회 · 총 ' + ${examOffer.totalDeliveries} + '회 제공'">주 2회 · 총 4회 제공</p>
       <a id="homeIntakeCta" class="en-btn en-btn-primary" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" th:text="${examIntakeEnabled} ? '맞춤문제 신청·자료 제출' : '문의·신청 및 자료 제출'" href="#exam-contact">문의·신청 및 자료 제출</a>
-      <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
+      <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p></div>
+          <div class="hero-art exam-art" aria-hidden="true"><div class="hero-orbit"></div><div class="paper back"></div><div class="paper"><small>FEEL2REAL · ENGLISH</small><b>우리 학교<br>기말 대비</b><i></i><i></i><i></i><span>160 QUESTIONS</span></div><strong class="hero-sticker">2주 완성</strong></div>
+        </div>
+        <div class="hero-slide hero-wiki" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="2 / 4 모의고사 위키" hidden>
+          <div class="hero-copy"><p class="exam-eyebrow">모의고사 위키</p><h2>읽고 이해한 지문,<br>문제로 내 것으로.</h2><p>문제 원본부터 지문해설, 복습 문제까지 한곳에서.</p><a class="en-btn en-btn-primary" href="/wiki">모의고사 위키 열기 ↗</a></div>
+          <div class="hero-art wiki-art" aria-hidden="true"><div class="hero-orbit"></div><div class="wiki-book"><small>ENGLISH ARCHIVE</small><b>WIKI</b><span>읽기 → 이해 → 복습</span></div><strong class="hero-sticker">지문 복습 문제</strong></div>
+        </div>
+        <div class="hero-slide hero-game" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="3 / 4 영어 복습 게임" hidden>
+          <div class="hero-copy"><p class="exam-eyebrow">영어 복습 게임</p><h2>복습도 게임처럼.<br>한 문제 더, 한 걸음 더.</h2><p>고1 10월 영어, 서수니 튜터와 함께 도전하세요.</p><a class="en-btn en-btn-primary" href="#review-game">영어 복습 게임 시작 →</a></div>
+          <div class="hero-art game-art" aria-hidden="true"><div class="hero-orbit"></div><div class="game-card"><small>REVIEW QUEST</small><b>LEVEL UP</b><div>✦ ✦ ✦</div><span>READ · PLAY · LEARN</span></div><strong class="hero-sticker">오늘의 복습 미션</strong></div>
+        </div>
+        <div class="hero-slide hero-agent" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="4 / 4 AI AGENT" hidden>
+          <div class="hero-copy"><p class="exam-eyebrow">AI AGENT</p><h2>상상이 이야기가 되는 곳.<br>인간과 AI가 함께.</h2><p>트레일러를 보고, 나의 콘텐츠 제작을 시작하세요.</p><a class="en-btn en-btn-primary" href="#ai-content">AI AGENT 만나보기 →</a></div>
+          <div class="hero-art agent-art" aria-hidden="true"><div class="hero-orbit"></div><div class="agent-core">AI<span>CREATIVE STUDIO</span></div><strong class="hero-sticker">WATCH · CREATE</strong></div>
+        </div>
+        <div class="hero-controls" hidden><div class="hero-dots" aria-label="배너 선택"><button type="button" data-hero-go="0" aria-label="맞춤문제 배너" aria-pressed="true"></button><button type="button" data-hero-go="1" aria-label="모의고사 위키 배너" aria-pressed="false"></button><button type="button" data-hero-go="2" aria-label="영어 복습 게임 배너" aria-pressed="false"></button><button type="button" data-hero-go="3" aria-label="AI AGENT 배너" aria-pressed="false"></button></div><span id="heroCount" aria-live="off">1 / 4</span><button type="button" id="heroPrev" aria-label="이전 배너">‹</button><button type="button" id="heroPause" aria-label="배너 자동 전환 일시정지" aria-pressed="false">Ⅱ</button><button type="button" id="heroNext" aria-label="다음 배너">›</button></div>
+        <span id="heroStatus" class="sr" role="status" aria-live="polite"></span>
+      </div>
     </section>
 
     <section class="exam-section exam-promo" id="examPromo" data-home-panel="home" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
@@ -106,10 +127,12 @@
       <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
     </section>
 
-    <nav class="home-jump" id="homeJump" data-home-panel="home" aria-label="콘텐츠 바로가기">
-      <a href="#ai-content"><b>AI AGENT 트레일러</b><small>55초 예고편</small></a>
-      <a href="#review-game"><b>고1 10월 영어 복습 게임</b><small>사이트에서 바로 플레이</small></a>
-      <a href="#chart-showcase"><b>BuildIt 차트 소개</b><small>지역별 영어 선생님 찾기</small></a>
+    <nav class="home-jump hero-shortcuts" id="homeJump" data-home-panel="home" aria-label="콘텐츠 바로가기">
+      <a href="#request"><span aria-hidden="true">▤</span><b>맞춤문제</b><small>우리 학교 시험 대비</small></a>
+      <a href="/wiki"><span aria-hidden="true">W</span><b>모의고사 위키</b><small>지문 이해부터 복습</small></a>
+      <a href="#review-game"><span aria-hidden="true">✦</span><b>영어 복습 게임</b><small>문제를 풀며 레벨 업</small></a>
+      <a href="#ai-content"><span aria-hidden="true">AI</span><b>AI AGENT 트레일러</b><small>55초 예고편</small></a>
+      <a href="#chart-showcase"><span aria-hidden="true">↗</span><b>BuildIt 차트 소개</b><small>지역별 영어 선생님 찾기</small></a>
     </nav>
 
 

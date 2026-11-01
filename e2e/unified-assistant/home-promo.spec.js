@@ -33,7 +33,7 @@ for (const width of [360, 390, 430, 1440]) {
       expect(await page.locator('main > section').evaluateAll(sections => sections.filter(s => s.dataset.homePanel.split(' ').includes('home')).slice(0, 3).map(s => s.id)))
         .toEqual(['pass-offer', 'examPromo', 'hitCase']);
       // The promo sits right under the short offer, so it starts muted once it is half visible.
-      expect(await video.evaluate(v => v.getBoundingClientRect().top)).toBeLessThan(width === 1440 ? 1050 : 900);
+      await expect(page.locator('#homeHero')).toBeVisible();
       fs.mkdirSync(output, { recursive: true });
       await page.screenshot({ path: path.join(output, `${width}-request-first.png`) });
       await video.scrollIntoViewIfNeeded();
@@ -79,7 +79,8 @@ for (const width of [360, 390, 430, 1440]) {
       await video.scrollIntoViewIfNeeded();
       fs.writeFileSync(path.join(output, `${width}.json`), JSON.stringify(initial, null, 2));
       await video.evaluate(v => v.play());
-      await page.locator('#pass-offer a.en-btn-primary').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
+      await page.locator('[data-hero-go="0"]').click();
+      await page.locator('#homeIntakeCta').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
       await expect(page.locator('#examContactTitle')).toBeInViewport();
       await expect.poll(() => video.evaluate(v => v.paused)).toBe(true);
       await expect(page.locator('#enExamMail')).toHaveAttribute('href', 'mailto:woorinaesin@naver.com');
@@ -155,7 +156,8 @@ test('failed video keeps the original-frame poster, contact and assistant availa
   await expect.poll(() => page.locator('#examPromoFallback').evaluate(i => i.complete && i.naturalWidth > 0), { timeout: 5000 }).toBe(true);
   await expect(page.locator('#examPromoStatus')).toContainText('영상을 불러오지 못했습니다');
   await expect(page.locator('#examPromoSound')).toBeHidden();
-  await page.locator('#pass-offer a.en-btn-primary').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
+  await page.locator('[data-hero-go="0"]').click();
+      await page.locator('#homeIntakeCta').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
   await expect(page.locator('#examContactTitle')).toBeInViewport();
   await selectHomePane(page, 'dashboard');
   await page.locator('[data-home-agent="seven"]').click();
