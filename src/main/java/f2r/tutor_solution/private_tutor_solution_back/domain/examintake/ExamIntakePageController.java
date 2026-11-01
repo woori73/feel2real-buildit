@@ -8,13 +8,16 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @ConditionalOnProperty(name = "app.exam-intake.enabled", havingValue = "true")
 public class ExamIntakePageController {
   @GetMapping("/exam-service")
-  public String page(@AuthenticationPrincipal AuthenticatedPrincipal p, Model model) {
-    if (p == null) return "redirect:/?login=required&returnUrl=%2Fexam-service";
+  public String page(@AuthenticationPrincipal AuthenticatedPrincipal p, Model model,
+      @RequestParam(name = "sample", defaultValue = "") String sample) {
+    if (p == null) return "redirect:/?login=required&returnUrl=%2Fexam-service"
+        + ("1".equals(sample) ? "%3Fsample%3D1" : "");
     model.addAttribute("adminView", false);
     return "public/exam_service";
   }
