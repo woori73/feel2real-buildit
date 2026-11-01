@@ -57,7 +57,7 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.logo.x).toBeGreaterThanOrEqual(0);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
         expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
-        expect(metrics.promo.y).toBeLessThan(height);
+        expect(metrics.promo.y).toBeGreaterThan(metrics.offer.bottom);
         expect(metrics.keys).toEqual(['home','request','wiki','game','agent','dashboard','chart','guide']);
         await expect(page.locator('#homePaneTitle')).toHaveText('홈');
         await expect(page.locator('#homeNotice')).toBeVisible();
