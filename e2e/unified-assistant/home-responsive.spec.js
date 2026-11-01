@@ -66,6 +66,8 @@ for (const font of ['fallback', 'pretendard']) {
         await page.locator('#homeNoticePause').click();
         await expect(page.locator('#homeNoticePause')).toHaveAttribute('aria-pressed','true');
         await expect(page.locator('#homeNoticeTrack')).toHaveClass(/is-paused/);
+        await page.locator('#homeNoticePause').click();
+        await expect(page.locator('#homeNoticeTrack')).toHaveCSS('animation-play-state','running');
         if (width <= 900) {
           await expect(page.locator('#homeMenu')).toBeHidden();
           await page.locator('#enBurger').click();
@@ -129,6 +131,8 @@ for (const font of ['fallback', 'pretendard']) {
 
 test('legacy anchors, browser history, reduced motion and no-JS fallback remain usable',async({browser})=>{
   const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
+  const localOnly=route=>new URL(route.request().url()).origin==='http://localhost:8080'?route.continue():route.abort();
+  await context.route('**/*',localOnly);
   const page=await context.newPage();
   await page.goto('/#exam-contact');
   await expect(page.locator('#exam-contact')).toBeVisible();
@@ -143,6 +147,7 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   await expect(page.locator('#wiki')).toBeVisible();
   await context.close();
   const fallback=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});
+  await fallback.route('**/*',localOnly);
   const plain=await fallback.newPage();
   await plain.goto('/');
   for(const id of ['pass-offer','wiki','ai-content','review-game','chart-showcase','aiHome','exam-contact']) await expect(plain.locator('#'+id)).toBeVisible();

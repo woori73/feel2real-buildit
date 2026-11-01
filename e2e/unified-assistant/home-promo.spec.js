@@ -48,7 +48,8 @@ for (const width of [360, 390, 430, 1440]) {
       expect(initial.rect.x).toBeGreaterThanOrEqual(0);
       expect(initial.rect.right).toBeLessThanOrEqual(width);
       expect(initial.rect.y).toBeGreaterThanOrEqual(0);
-      expect(initial.rect.bottom).toBeLessThanOrEqual(width === 1440 ? 1050 : 900);
+      // Fractional CSS pixels can round the scrolled viewport boundary by less than 1px.
+      expect(initial.rect.bottom).toBeLessThanOrEqual((width === 1440 ? 1050 : 900) + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
       await page.locator('#examPromoSound').click();
       await expect(page.locator('#examPromoSound')).toHaveText('소리 끄기');
