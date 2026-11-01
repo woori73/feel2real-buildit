@@ -35,8 +35,8 @@
 .home-notice { display:flex; align-items:center; gap:14px; min-width:0; padding:10px 12px; margin-bottom:22px; border:1px solid #28495e; border-radius:10px; background:#0d2337; }
 .home-notice-label { flex:none; color:var(--exam-cyan); font-size:12px; white-space:nowrap; }
 .home-notice-window { flex:1; min-width:0; overflow:hidden; }
-.home-notice-track { display:flex; width:max-content; animation:home-notices 34s linear infinite; }
-.home-notice-group { display:flex; align-items:center; gap:40px; padding-right:40px; flex:none; font-size:13px; white-space:nowrap; line-height:1.7; }
+.home-notice-track { display:flex; width:max-content; min-width:200%; animation:home-notices 34s linear infinite; }
+.home-notice-group { display:flex; align-items:center; gap:40px; padding-right:40px; flex:1 0 auto; font-size:13px; white-space:nowrap; line-height:1.7; }
 .home-notice-group a, .home-notice-group span { color:var(--exam-text); text-decoration:none; }
 .home-notice-group a:hover { text-decoration:underline; text-underline-offset:4px; }
 .home-notice-group time { color:var(--exam-muted); margin-right:6px; }
@@ -69,7 +69,7 @@
   #homeNoticePause { width:36px; min-height:36px; }
 }
 @media (prefers-reduced-motion:reduce) {
-  .home-notice-track { animation:none; width:auto; }
+  .home-notice-track { animation:none; width:auto; min-width:0; }
   .home-notice-group { flex:1; min-width:0; white-space:normal; flex-wrap:wrap; gap:8px; padding:0; font-size:12px; }
   .home-notice-group[aria-hidden="true"] { display:none; }
 }
