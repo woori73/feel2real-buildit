@@ -85,7 +85,7 @@ class StudioEntryLinkBrowserQaMySqlTest {
       shot(driver, (mobile ? "mobile-390" : "pc-1440") + "-studio.png");
 
       // 신청 타일은 신청 안내를 연다. 제작협업실은 기존 비서 입력으로 요청해 안내 링크를 실제 클릭한다.
-      driver.get(BASE + "/");
+      driver.get(BASE + "/#dashboard");
       wait.until(d -> d.findElement(By.id("homeInput")).isDisplayed());
       driver.findElement(By.id("homeInput")).sendKeys("AI AGENT 제작협업실");
       clickVisible(driver, wait, By.cssSelector("#homeForm button[type='submit']"));
@@ -109,12 +109,9 @@ class StudioEntryLinkBrowserQaMySqlTest {
   }
 
   private static void clickMenuLink(ChromeDriver driver, WebDriverWait wait, boolean mobile) {
-    if (mobile) {
-      clickVisible(driver, wait, By.id("enBurger"));
-      clickVisible(driver, wait, By.cssSelector("#enDrawer a.en-drawer-studio"));
-    } else {
-      clickVisible(driver, wait, By.cssSelector(".en-menu a.en-menu-studio"));
-    }
+    if (mobile) clickVisible(driver, wait, By.id("enBurger"));
+    clickVisible(driver, wait, By.cssSelector("#homeMenu [data-home-nav='agent']"));
+    clickVisible(driver, wait, By.cssSelector("#ai-content a[data-studio-link]"));
   }
 
   private static void clickVisible(ChromeDriver driver, WebDriverWait wait, By by) {
