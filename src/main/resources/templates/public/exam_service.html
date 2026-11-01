@@ -61,14 +61,10 @@
                 >연락처<input name="contact" maxlength="120" required
               /></label>
             </div>
-            <div id="applicationFields" class="grid">
-              <label
-                >시험지 형식<input
-                  name="format"
-                  maxlength="120"
-                  required /></label
-              >
-            </div>
+            <label>시험지에 들어갈 로고 (선택)
+              <input id="logoFile" name="logoFile" type="file" accept=".jpg,.jpeg,.png" />
+            </label>
+            <p>JPEG·PNG 이미지, 10MiB 이하. 로고를 포함해 자료는 총 20개까지 첨부할 수 있습니다.</p>
             <label>기출 시험자료 업로드 (선택, PDF·JPEG·PNG, 파일당 10MiB·최대 20개)
               <input id="initialFiles" name="initialFiles" type="file" accept=".pdf,.jpg,.jpeg,.png" multiple />
             </label>
@@ -100,8 +96,8 @@
               <summary>개인정보 수집·이용 안내</summary>
               <p>
                 문의: 이름·연락처·문의 내용이 필수이며 학교·학년은 선택입니다.
-                신청: 학교/학원·학년·시험지 형식이 필수이며 출제시
-                요구사항·시험자료는 선택입니다. 연령 구분·동의 버전과 시각도
+                신청: 학교/학원·학년이 필수이며 출제시
+                요구사항·로고·시험자료는 선택입니다. 동의 버전과 시각도
                 기록합니다.
               </p>
               <p>
@@ -383,6 +379,6 @@
       </section>
       <footer th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
     </main>
-    <script src="/js/exam_service.js?v=20261101-1" defer></script>
+    <script src="/js/exam_service.js?v=20261101-logo-1" defer></script>
   </body>
 </html>

@@ -57,7 +57,6 @@ async function fill(page, marker) {
     school: "합성중학교",
     grade: "중3",
     contact: "synthetic@example.invalid",
-    format: "A4",
   }))
     await form.locator(`[name=${key}]`).fill(value);
   await form.locator("[name=consent]").check();
@@ -88,6 +87,7 @@ for (const width of [390, 1440])
       await expect(page).toHaveURL(/exam-service/);
       await fill(page, marker);
       await page.locator("#initialFiles").setInputFiles(fixture);
+      await page.locator("#logoFile").setInputFiles(fixture);
       await page.locator("[name=initialMaterialConsent]").check();
       fs.mkdirSync(output, { recursive: true });
       await page.screenshot({
@@ -98,7 +98,7 @@ for (const width of [390, 1440])
       await expect(page.locator("#receiptStatus")).toContainText(
         "접수되었습니다",
       );
-      await expect(page.locator("#documents")).toContainText("poster.jpg");
+      await expect(page.locator("#documents")).toContainText("시험지로고-poster.jpg");
       const id = await page.locator("#receiptNumber").textContent();
       expect((await matching(api, marker)).map((r) => r.id)).toEqual([id]);
       await page.screenshot({

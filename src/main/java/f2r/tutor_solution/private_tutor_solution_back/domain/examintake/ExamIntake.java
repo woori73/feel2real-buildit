@@ -172,7 +172,7 @@ public final class ExamIntake {
       text(fields.get("inquiryType"), "문의 유형", 1, 120);
       text(fields.get("message"), "문의 내용", 1, 2000);
     } else {
-      for (String f : List.of("school", "grade", "format"))
+      for (String f : List.of("school", "grade"))
         text(fields.get(f), f, 1, 120);
     }
     return Collections.unmodifiableMap(fields);

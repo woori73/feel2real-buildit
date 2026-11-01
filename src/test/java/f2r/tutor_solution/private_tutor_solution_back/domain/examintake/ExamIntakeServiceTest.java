@@ -104,12 +104,13 @@ class ExamIntakeServiceTest {
   void simplifiedApplicationAcceptsOnlyVisibleRequiredFields() {
     var original = input(UUID.randomUUID().toString());
     var details = new LinkedHashMap<>(original.details());
-    for (var key : List.of("examDate", "scope", "pastPapers", "questionTypes", "difficulty", "ageBand"))
+    for (var key : List.of("examDate", "scope", "pastPapers", "questionTypes", "difficulty", "ageBand", "format"))
       details.remove(key);
     var result = service.create(owner, new Create(Kind.APPLICATION, details, true, CONSENT,
         UUID.randomUUID().toString()));
     assertThat(result.details().get("school")).isEqualTo("테스트중");
     assertThat(result.details().get("examDate")).isEmpty();
+    assertThat(result.details().get("format")).isEmpty();
   }
 
   @Test
