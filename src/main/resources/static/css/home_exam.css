@@ -222,3 +222,12 @@ body, .en-page { background:var(--exam-bg); color:var(--exam-text); font-family:
 @media(max-width:600px) {
   .public-footer .footer-links a.footer-contact { width:100%; justify-content:center; min-height:48px; font-size:16px; }
 }
+
+/* 상단 로고: 푸터와 같은 "Feel to Real (F2R)" 표기(대소문자 유지) */
+.en-logo-main { text-transform:none; letter-spacing:.01em; }
+@media (min-width:961px) and (max-width:1060px) { .en-logo-main { font-size:16px; } }
+/* 좁은 화면(400px 이하): "(F2R)"을 둘째 줄로 내려 계정 버튼이 화면 밖으로 밀리지 않게 */
+@media (max-width:400px) {
+  .en-logo-main { display:flex; flex-direction:column; line-height:1.1; }
+  .en-logo-abbr { font-size:.78em; opacity:.8; }
+}
