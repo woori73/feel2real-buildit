@@ -48,10 +48,11 @@
 .hero-slide { min-height:600px; }
 @media(max-width:600px){.hero-slide,.hero-exam { min-height:680px; }}
 /* 2026-11-01 배너 4장: Hyper3D(Rodin) 3D 에셋으로 통일. 맞춤문제 배너는 실제 예상문제지(신사중3 Boiling Frog Q1·Q2)를 클립보드에 넣은 이미지. */
-.hero-art:has(.hero-3d) { height:360px; }
-.hero-3d { width:auto; height:100%; max-width:100%; object-fit:contain; filter:drop-shadow(0 18px 30px #00132440); }
-.hero-3d-exam { height:112%; margin-top:-4%; }
+.hero-art:has(.hero-3d) { height:420px; grid-template-rows:100%; grid-template-columns:100%; }
+.hero-3d { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 18px 30px #00132440); }
+.hero-3d-exam { transform:scale(1.08); }
 .hero-art:has(.hero-3d) .hero-orbit { width:300px; height:300px; }
 .hero-art:has(.hero-3d) .hero-sticker { bottom:12px; right:4%; }
-@media(max-width:1100px){.hero-art:has(.hero-3d){transform:none;height:320px}}
-@media(max-width:600px){.hero-art:has(.hero-3d){height:230px;transform:none;margin:4px 0 0}.hero-art:has(.hero-3d) .hero-orbit{width:200px;height:200px}.hero-art:has(.hero-3d) .hero-sticker{bottom:-6px;right:0}}
+@media(max-width:1100px){.hero-art:has(.hero-3d){transform:none;height:340px}}
+/* 휴대폰: 그림 높이를 고정해 배너 밖으로 나가지 않게 하고, 4장의 높이를 같게 맞춰 넘길 때 아래 내용이 들썩이지 않게 한다. */
+@media(max-width:600px){.hero-art:has(.hero-3d){height:240px;transform:none;margin:4px 0 0}.hero-3d-exam{transform:none}.hero-art:has(.hero-3d) .hero-orbit{width:200px;height:200px}.hero-art:has(.hero-3d) .hero-sticker{bottom:-6px;right:0}.hero-slide,.hero-exam{min-height:730px}.hero-slide:not(.hero-exam){align-content:center}}
