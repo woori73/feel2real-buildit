@@ -16,58 +16,113 @@
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="/css/landing_edunova.css?v=20261027-1">
-  <link rel="stylesheet" href="/css/f2r_home_agent.css?v=20261027-8">
+  <link rel="stylesheet" href="/css/home_light.css?v=20261101-1">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
   <script src="/js/f2r_home_agent.js?v=20261029-2" defer></script>
-  <link rel="stylesheet" href="/css/home_exam.css?v=20261101-2">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
   <script src="/js/home_agent_trailer.js?v=20261030-1" defer></script>
   <script src="/js/home_review_game.js?v=20261029-1" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
-  <link rel="stylesheet" href="/css/home_workspace.css?v=20261101-1">
-  <script src="/js/home_workspace.js?v=20261101-2" defer></script>
-  <link rel="stylesheet" href="/css/home_hero.css?v=20261101-6">
-  <script src="/js/home_hero.js?v=20261101-1" defer></script>
+  <script src="/js/home_workspace.js?v=20261101-3" defer></script>
+  <script src="/js/home_hero.js?v=20261101-2" defer></script>
 </head>
 <body data-track-page="home">
 <th:block layout:fragment="content">
-<div class="en-page home-shell">
-
-  <!-- ============ NAV: 주요 서비스는 그대로, 같은 페이지 앵커·중복 항목은 정리 ============ -->
-  <header class="en-nav" id="enNav">
-    <a href="/" class="en-logo" aria-label="Feel to Real (F2R) 홈">
-      <img class="en-logo-mark" src="/img/F2R_logo_pure.svg" alt="F2R 로고" width="40" height="40">
-      <span class="en-logo-main">Feel to Real <span class="en-logo-abbr">(F2R)</span></span>
-    </a>
-    <div class="en-actions">
-      <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
-      <button type="button" class="en-burger" id="enBurger" aria-label="메뉴 열기" aria-expanded="false" aria-controls="homeMenu"><span></span><span></span><span></span></button>
-    </div>
-  </header>
+<div class="home-light" id="homeTop">
   <a class="home-skip" href="#homePaneTitle">본문으로 건너뛰기</a>
-  <div class="home-workspace">
-    <aside class="home-sidebar" id="homeSidebar" aria-label="홈페이지 메뉴">
-      <p class="home-sidebar-label">둘러보기</p>
-      <nav id="homeMenu" aria-label="서비스 메뉴">
-        <a href="#home" data-home-nav="home" aria-current="page"><span aria-hidden="true">01</span>홈</a>
-        <a href="#request" data-home-nav="request"><span aria-hidden="true">02</span>맞춤문제 신청</a>
-        <a href="#wiki" data-home-nav="wiki"><span aria-hidden="true">03</span>모의고사 위키</a>
-        <a href="#review-game" data-home-nav="game"><span aria-hidden="true">04</span>영어 복습 게임</a>
-        <a href="#ai-content" data-home-nav="agent"><span aria-hidden="true">05</span>AI AGENT</a>
-        <a href="#dashboard" data-home-nav="dashboard"><span aria-hidden="true">06</span>대시보드</a>
-        <a href="#chart-showcase" data-home-nav="chart"><span aria-hidden="true">07</span>빌드잇 차트</a>
-        <a href="#guide" data-home-nav="guide"><span aria-hidden="true">08</span>이용 안내</a>
-      </nav>
-      <p class="home-sidebar-note"></p>
-    </aside>
 
-  <main class="home-content" id="homeContent">
-    <aside class="home-notice" id="homeNotice" data-home-panel="home" aria-label="공지사항">
+  <!-- 상단 메뉴(2026-11-01 밝은 개편): 로고 · 주요 서비스 · 1장 무료 신청 · 로그인 · 전체 메뉴. 측면 메뉴는 없다. -->
+  <header class="hl-top" id="enNav">
+    <div class="hl-top-inner">
+      <a href="/" class="hl-logo" data-home-nav="home" aria-label="Feel to Real (F2R) 홈">
+        <img src="/img/F2R_logo_pure.svg" alt="" width="36" height="36">
+        <span class="hl-logo-text">Feel to Real <span class="hl-logo-abbr">(F2R)</span></span>
+      </a>
+      <nav class="hl-links" aria-label="주요 메뉴">
+        <a href="#exam-payment" class="hl-link-offer">맞춤문제<span class="hl-badge">2주 4회 · 2만원</span></a>
+        <a href="/wiki">모의고사 위키</a>
+        <a href="#review-game">복습 게임</a>
+        <a href="#ai-content">AI AGENT</a>
+        <a href="#chart-showcase">빌드잇 차트</a>
+      </nav>
+      <div class="hl-actions">
+        <a class="hl-btn hl-btn-dark hl-free" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">1장 무료 신청</a>
+        <div class="hl-account">
+          <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
+        </div>
+        <button type="button" class="hl-menu-btn" id="enBurger" aria-label="전체 메뉴 열기" aria-expanded="false" aria-controls="homeMenuPanel">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <span class="hl-menu-label" aria-hidden="true">전체 메뉴</span>
+        </button>
+      </div>
+    </div>
+    <nav class="hl-chips" aria-label="바로가기">
+      <a href="#exam-payment" class="is-offer">맞춤문제 2주 4회 · 2만원</a>
+      <a href="#edu">영어 교육</a>
+      <a href="#ai-content">AI 드라마</a>
+      <a href="#hitCase">적중 사례</a>
+      <a href="#chart-showcase">빌드잇 차트</a>
+    </nav>
+  </header>
+
+  <!-- 전체 메뉴: 데스크톱은 오른쪽 패널, 휴대폰은 전체 화면. Esc·닫기·바깥 누르면 닫히고 메뉴 버튼으로 포커스가 돌아간다. -->
+  <div class="hl-menu" id="homeMenuPanel" hidden>
+    <div class="hl-menu-backdrop" data-menu-close></div>
+    <div class="hl-menu-sheet" role="dialog" aria-modal="true" aria-labelledby="homeMenuTitle">
+      <div class="hl-menu-head">
+        <h2 id="homeMenuTitle">전체 메뉴</h2>
+        <div class="hl-account">
+          <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
+        </div>
+        <button type="button" class="hl-menu-close" id="homeMenuClose" aria-label="메뉴 닫기" data-menu-close>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <section class="hl-menu-offer hl-lift" aria-labelledby="menuOfferTitle">
+        <img class="hl-obj" src="/img/landing/home-hero-exam-3d.webp" alt="" width="104" height="104" loading="lazy">
+        <p class="hl-eyebrow">학교별 맞춤 예상문제</p>
+        <h3 id="menuOfferTitle">2주 4회 · 2만원</h3>
+        <p>주 2회 · 총 4회 · 160문항</p>
+        <div class="hl-menu-offer-actions">
+          <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">1장 무료 신청</a>
+          <a class="hl-btn hl-btn-white" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">신청·자료 제출</a>
+        </div>
+        <div class="hl-menu-offer-links"><a href="#hitCase">적중 사례</a><a href="#exam-payment">이용료·입금 안내</a></div>
+      </section>
+      <nav id="homeMenu" aria-label="전체 메뉴 목록">
+        <div class="hl-menu-group">
+          <p>영어 교육</p>
+          <a href="#request" data-home-nav="request"><span>맞춤문제 신청</span><span class="hl-badge">2주 4회 · 2만원</span></a>
+          <a href="/wiki" data-home-nav="wiki"><span>모의고사 위키</span></a>
+          <a href="/wiki#review"><span>지문 복습 문제</span></a>
+          <a href="/grammar-items"><span>문법 문제은행</span></a>
+          <a href="#review-game" data-home-nav="game"><span>영어 복습 게임</span></a>
+        </div>
+        <div class="hl-menu-group">
+          <p>AI 드라마 제작</p>
+          <a href="#ai-content" data-home-nav="agent"><span>AI AGENT 트레일러</span></a>
+          <a href="/ai-agent-studio"><span>AI AGENT 제작협업실</span></a>
+        </div>
+        <div class="hl-menu-group">
+          <p>더 보기</p>
+          <a href="#dashboard" data-home-nav="dashboard"><span>대시보드</span></a>
+          <a href="#chart-showcase" data-home-nav="chart"><span>빌드잇 차트</span></a>
+        </div>
+        <div class="hl-menu-group">
+          <p>이용 안내</p>
+          <a href="#guide" data-home-nav="guide"><span>이용 방법</span></a>
+          <a href="/faq"><span>자주 묻는 질문</span></a>
+          <a href="/policies/refunds"><span>환불·청약철회 정책</span></a>
+        </div>
+      </nav>
+      <a class="hl-btn hl-btn-kakao hl-menu-kakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카카오톡 문의·신청</a>
+    </div>
+  </div>
+
+  <main class="hl-main" id="homeContent">
+    <h1 id="homePaneTitle" class="sr" tabindex="-1">Feel to Real (F2R) 홈</h1>
+    <aside class="home-notice" id="homeNotice" aria-label="공지사항">
       <strong class="home-notice-label">공지사항</strong>
       <div class="home-notice-window">
         <div class="home-notice-track" id="homeNoticeTrack">
@@ -77,272 +132,345 @@
       </div>
       <button id="homeNoticePause" type="button" aria-label="공지 흐름 일시정지" aria-pressed="false">Ⅱ</button>
     </aside>
-    <header class="home-pane-heading" id="home">
-      <p class="exam-eyebrow">FEEL2REAL</p>
-      <h1 id="homePaneTitle" tabindex="-1">홈</h1>
-      <p id="homePaneDescription">우리 학교 시험 준비부터 영어 복습, AI 콘텐츠까지.</p>
-    </header>
-    <!-- 1. 상품 안내(짧게) → 2. 20초 홍보 영상 → 3. 콘텐츠 버튼 3개 → 트레일러·복습 게임·차트 → AI 비서 → 기존 안내 섹션 -->
-    <section class="home-offer" id="pass-offer" data-home-panel="home" aria-labelledby="siHomeTitle">
-      <div id="homeHero" class="home-hero" role="region" aria-roledescription="캐러셀" aria-label="Feel2Real 주요 서비스">
-        <div class="hero-slide hero-exam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="1 / 4 맞춤문제">
-          <div class="hero-copy"><p class="exam-eyebrow">학교별 맞춤 예상문제</p>
-      <h2 class="home-offer-title" id="siHomeTitle"><span class="home-offer-title-line">우리 학교 맞춤문제</span> <span class="home-offer-title-line">1장 먼저 받아보세요.</span></h2>
-      <p>기출문제지와 수업자료를 보내 주세요.<br>직접 제작한 첫 페이지 또는 1장을 무료로 드립니다.</p>
-      <a id="homeIntakeCta" class="en-btn en-btn-primary" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">맞춤문제 1장 무료 신청 →</a>
-      <p class="home-offer-line">정식 이용 · <span th:text="${examOffer.headline}">2주 동안 160문항</span> · <strong>2만원</strong></p>
-      <p class="exam-hero-detail">주 2회 · 총 4회 · 샘플 확인 후 별도 신청</p>
-      <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
-      </div>
-          <div class="hero-art exam-art" aria-hidden="true"><div class="hero-orbit"></div><img class="hero-3d hero-3d-exam" src="/img/landing/home-hero-exam-3d.webp" alt="" width="800" height="800" decoding="async"><strong class="hero-sticker">1장 무료</strong></div>
+
+    <!-- 1. 대표 배너 4장(아래 타일로 선택) → 2. 영어 교육 → 3. AI 드라마 제작 → 4. 적중 사례 → 5. 이용료와 무통장입금 → 6. 빌드잇 차트 → 자세한 안내 -->
+    <section class="home-offer" id="pass-offer" aria-label="주요 서비스">
+      <div id="homeHero" class="hl-hero hl-lift" data-active="0" role="region" aria-roledescription="캐러셀" aria-label="Feel to Real 주요 서비스">
+        <div class="hl-slides">
+          <div class="hero-slide hero-exam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="1 / 4 맞춤문제">
+            <div class="hero-text">
+              <p class="hl-eyebrow">학교별 맞춤 예상문제</p>
+              <h2 class="home-offer-title" id="siHomeTitle"><span class="home-offer-title-line">우리 학교 맞춤문제</span> <span class="home-offer-title-line">1장 먼저 받아보세요.</span></h2>
+              <p class="hero-lead">기출문제지와 수업자료를 보내 주세요.<br>직접 제작한 첫 페이지 또는 1장을 무료로 드립니다.</p>
+              <p class="home-offer-line">정식 이용 · <span th:text="${examOffer.headline}">2주 동안 160문항</span> · <strong>2만원</strong></p>
+            </div>
+            <div class="hero-art" aria-hidden="true"><span class="hl-floor"></span><img class="hl-obj" src="/img/landing/home-hero-exam-3d.webp" alt="" width="800" height="800" decoding="async"></div>
+            <div class="hero-cta">
+              <a id="homeIntakeCta" class="hl-btn hl-btn-dark hl-btn-lg" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">맞춤문제 1장 무료 신청 <span aria-hidden="true">→</span></a>
+              <a class="hl-btn hl-btn-white hl-btn-lg" href="#hitCase">적중 사례 보기</a>
+            </div>
+            <div class="hero-note">
+              <p class="exam-hero-detail">주 2회 · 총 4회 · 샘플 확인 후 별도 신청</p>
+              <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
+            </div>
+          </div>
+          <div class="hero-slide hero-wiki" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="2 / 4 모의고사 위키" hidden>
+            <div class="hero-text"><h2>모의고사 위키</h2><p class="hero-lead">문제 원본부터 지문해설, 복습 문제까지 한곳에서.</p></div>
+            <div class="hero-art" aria-hidden="true"><span class="hl-floor"></span><img class="hl-obj" src="/img/landing/home-hero-wiki-3d.webp" alt="" width="800" height="800" decoding="async"></div>
+            <div class="hero-cta"><a class="hl-btn hl-btn-dark hl-btn-lg" href="/wiki">위키 열기 <span aria-hidden="true">↗</span></a></div>
+          </div>
+          <div class="hero-slide hero-game" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="3 / 4 영어 복습 게임" hidden>
+            <div class="hero-text"><h2>고1 10월<br>영어 복습 게임</h2><p class="hero-lead">고1 10월 영어, 서수니 튜터와 함께 도전하세요.</p></div>
+            <div class="hero-art" aria-hidden="true"><span class="hl-floor"></span><img class="hl-obj" src="/img/landing/home-hero-game-3d.webp" alt="" width="800" height="800" decoding="async"></div>
+            <div class="hero-cta"><a class="hl-btn hl-btn-dark hl-btn-lg" href="#review-game">게임 시작 <span aria-hidden="true">→</span></a></div>
+          </div>
+          <div class="hero-slide hero-agent" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="4 / 4 AI AGENT" hidden>
+            <div class="hero-text"><h2>AI AGENT</h2><p class="hero-lead">트레일러와 콘텐츠 제작협업실</p></div>
+            <div class="hero-art" aria-hidden="true"><span class="hl-floor"></span><img class="hl-obj" src="/img/landing/home-hero-agent-3d.webp" alt="" width="800" height="800" decoding="async"></div>
+            <div class="hero-cta"><a class="hl-btn hl-btn-dark hl-btn-lg" href="#ai-content">트레일러 보기 <span aria-hidden="true">→</span></a></div>
+          </div>
         </div>
-        <div class="hero-slide hero-wiki" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="2 / 4 모의고사 위키" hidden>
-          <div class="hero-copy"><p class="exam-eyebrow">모의고사 위키</p><h2>모의고사 위키</h2><p>문제 원본부터 지문해설, 복습 문제까지 한곳에서.</p><a class="en-btn en-btn-primary" href="/wiki">위키 열기 ↗</a></div>
-          <div class="hero-art wiki-art" aria-hidden="true"><div class="hero-orbit"></div><img class="hero-3d" src="/img/landing/home-hero-wiki-3d.webp" alt="" width="800" height="800" decoding="async"><strong class="hero-sticker">지문 복습 문제</strong></div>
+        <div class="hl-tiles" role="group" aria-label="배너 선택">
+          <button type="button" data-hero-go="0" aria-pressed="true"><span class="hl-tile-img"><img src="/img/landing/home-hero-exam-3d.webp" alt="" width="48" height="48"></span><span>맞춤문제</span></button>
+          <button type="button" data-hero-go="1" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-hero-wiki-3d.webp" alt="" width="48" height="48"></span><span>모의고사 위키</span></button>
+          <button type="button" data-hero-go="2" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-hero-game-3d.webp" alt="" width="48" height="48"></span><span>영어 복습 게임</span></button>
+          <button type="button" data-hero-go="3" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-hero-agent-3d.webp" alt="" width="48" height="48"></span><span>AI AGENT</span></button>
         </div>
-        <div class="hero-slide hero-game" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="3 / 4 영어 복습 게임" hidden>
-          <div class="hero-copy"><p class="exam-eyebrow">영어 복습 게임</p><h2>고1 10월<br>영어 복습 게임</h2><p>고1 10월 영어, 서수니 튜터와 함께 도전하세요.</p><a class="en-btn en-btn-primary" href="#review-game">게임 시작 →</a></div>
-          <div class="hero-art game-art" aria-hidden="true"><div class="hero-orbit"></div><img class="hero-3d" src="/img/landing/home-hero-game-3d.webp" alt="" width="800" height="800" decoding="async"><strong class="hero-sticker">오늘의 복습 미션</strong></div>
-        </div>
-        <div class="hero-slide hero-agent" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="4 / 4 AI AGENT" hidden>
-          <div class="hero-copy"><p class="exam-eyebrow">AI AGENT</p><h2>AI AGENT</h2><p>트레일러와 콘텐츠 제작협업실</p><a class="en-btn en-btn-primary" href="#ai-content">트레일러 보기 →</a></div>
-          <div class="hero-art agent-art" aria-hidden="true"><div class="hero-orbit"></div><img class="hero-3d" src="/img/landing/home-hero-agent-3d.webp" alt="" width="800" height="800" decoding="async"><strong class="hero-sticker">WATCH · CREATE</strong></div>
-        </div>
-        <div class="hero-controls" hidden><div class="hero-dots" aria-label="배너 선택"><button type="button" data-hero-go="0" aria-label="맞춤문제 배너" aria-pressed="true"></button><button type="button" data-hero-go="1" aria-label="모의고사 위키 배너" aria-pressed="false"></button><button type="button" data-hero-go="2" aria-label="영어 복습 게임 배너" aria-pressed="false"></button><button type="button" data-hero-go="3" aria-label="AI AGENT 배너" aria-pressed="false"></button></div><span id="heroCount" aria-live="off">1 / 4</span><button type="button" id="heroPrev" aria-label="이전 배너">‹</button><button type="button" id="heroPause" aria-label="배너 자동 전환 일시정지" aria-pressed="false">Ⅱ</button><button type="button" id="heroNext" aria-label="다음 배너">›</button></div>
+        <div class="hero-controls" hidden><button type="button" id="heroPause" aria-label="배너 자동 전환 일시정지" aria-pressed="false">Ⅱ</button></div>
         <span id="heroStatus" class="sr" role="status" aria-live="polite"></span>
       </div>
     </section>
 
-    <section class="exam-section exam-promo" id="examPromo" data-home-panel="home" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
-      <div class="exam-promo-frame">
-        <video id="examPromoVideo" th:src="${examPromoPath}" controls muted playsinline preload="metadata"
-               th:poster="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4' ? '/img/landing/f2r-exam-remotion-v3-20261029.jpg' : null}"
-               aria-label="20초 영어 기말 맞춤 문제 서비스 홍보 영상" aria-describedby="examPromoSummary"></video>
-        <img id="examPromoFallback" th:if="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4'}"
-             src="/img/landing/f2r-exam-remotion-v3-20261029.jpg" alt="학교별 영어 기말 맞춤 문제, 2주 160문항 20,000원" hidden>
-      </div>
-      <div class="exam-promo-actions">
-        <button type="button" class="en-btn en-btn-outline" id="examPromoSound" aria-pressed="false" hidden>소리 켜기</button>
-      </div>
-      <!-- 상품 내용은 바로 위 안내에 이미 있으므로 화면에는 다시 쓰지 않고 영상 설명(스크린리더)으로만 둔다. -->
-      <p id="examPromoSummary" class="sr" th:text="'학교별 맞춤 제작 · ' + ${examOffer.summary} + ' · ' + ${examOffer.priceLabel}">학교별 맞춤 제작 · 2주 · 주 2회 · 총 4회 · 160문항 · 20,000원</p>
-      <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
-    </section>
-
-    <nav class="home-jump hero-shortcuts" id="homeJump" data-home-panel="home" aria-label="콘텐츠 바로가기">
-      <a href="#request"><span aria-hidden="true">▤</span><b>맞춤문제</b><small>우리 학교 시험 대비</small></a>
-      <a href="/wiki"><span aria-hidden="true">W</span><b>모의고사 위키</b><small>지문 이해부터 복습</small></a>
-      <a href="#review-game"><span aria-hidden="true">✦</span><b>영어 복습 게임</b><small>문제를 풀며 레벨 업</small></a>
-      <a href="#ai-content"><span aria-hidden="true">AI</span><b>AI AGENT 트레일러</b><small>55초 예고편</small></a>
-      <a href="#chart-showcase"><span aria-hidden="true">↗</span><b>BuildIt 차트 소개</b><small>지역별 영어 선생님 찾기</small></a>
-    </nav>
-
-
-    <section class="exam-section home-service-intro" id="request" data-home-panel="request" aria-labelledby="requestPaneTitle">
-      <p class="exam-eyebrow">학교별 맞춤 제작</p>
-      <h2 id="requestPaneTitle">맞춤문제 신청</h2>
-      <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
-      <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/exam-service?sample=1">1장 무료 신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
-      <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
-    </section>
-    <section class="exam-section home-service-intro" id="wiki" data-home-panel="wiki" aria-labelledby="wikiPaneIntroTitle">
-      <p class="exam-eyebrow">모의고사 학습 자료</p><h2 id="wikiPaneIntroTitle">모의고사 자료</h2>
-      <p>문제·정답 원본, 지문해설, 지문 복습 문제와 실전예상문제를 모의고사 위키에서 확인할 수 있습니다.</p>
-      <div class="home-service-grid">
-        <a class="home-service-card" href="/wiki"><strong>모의고사위키</strong><span>학년과 회차를 골라 자료 살펴보기</span><b aria-hidden="true">↗</b></a>
-        <a class="home-service-card" href="/wiki#review"><strong>지문 복습 문제</strong><span>지문별 문제·정답·해설로 복습하기</span><b aria-hidden="true">↗</b></a>
-        <a class="home-service-card" href="/grammar-items"><strong>문법 문제은행</strong><span>문법 유형별 문제 연습하기</span><b aria-hidden="true">↗</b></a>
+    <section class="hl-section" id="edu" aria-labelledby="eduTitle">
+      <div class="hl-head"><h2 id="eduTitle">영어 교육</h2><p>우리 학교 시험 준비부터 영어 복습까지</p></div>
+      <div class="hl-cards">
+        <a class="hl-card" href="#request">
+          <span class="hl-card-media hl-lift"><img src="/img/landing/f2r-exam-remotion-v3-20261029.jpg" alt="" width="1920" height="1080" loading="lazy"></span>
+          <strong>맞춤문제 신청</strong><span th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</span>
+        </a>
+        <a class="hl-card" href="/wiki">
+          <span class="hl-card-media hl-lift is-top"><img src="/img/landing/wiki-sample.jpg" alt="" width="628" height="710" loading="lazy"></span>
+          <strong>모의고사 위키</strong><span>학년과 회차를 골라 자료 살펴보기</span>
+        </a>
+        <a class="hl-card" href="/wiki#review">
+          <span class="hl-card-media hl-lift is-3d" style="--tile:#ECEBFB"><img class="hl-obj" src="/img/landing/home-3d-notebook.webp" alt="" width="800" height="800" loading="lazy"></span>
+          <strong>지문 복습 문제</strong><span>지문별 문제·정답·해설로 복습하기</span>
+        </a>
+        <a class="hl-card" href="#review-game">
+          <span class="hl-card-media hl-lift is-3d" style="--tile:#E3F4E6"><img class="hl-obj" src="/img/landing/home-hero-game-3d.webp" alt="" width="800" height="800" loading="lazy"></span>
+          <strong>영어 복습 게임</strong><span>고1 10월 · 서수니 튜터와 함께</span>
+        </a>
+        <a class="hl-card" href="/grammar-items">
+          <span class="hl-card-media hl-lift is-3d" style="--tile:#EEE8F7"><img class="hl-obj" src="/img/landing/home-3d-blocks.webp" alt="" width="800" height="800" loading="lazy"></span>
+          <strong>문법 문제은행</strong><span>문법 유형별 문제 연습하기</span>
+        </a>
       </div>
     </section>
 
-    <!-- 홍보 영상·바로가기 바로 아래: 압구정중3 2026 2학기 기말 적중 사례. 한 화면에서 항목을 누르면 내용이 이어서 펼쳐진다. -->
-    <section class="exam-section home-hit" id="hitCase" data-home-panel="home request" aria-labelledby="hitCaseTitle">
-      <p class="exam-eyebrow">적중 사례 · 압구정중 3학년 2학기 기말 영어</p>
-      <h2 id="hitCaseTitle">예상문제 범위 31문항 중 29문항 적중</h2>
-      <div class="hit-top">
-        <p class="hit-rate"><span>예상문제 적중률</span><strong>93.5<small>%</small></strong><em>배점 기준 90점 중 85점 · 대화문 5문항 제외</em></p>
-        <ul class="hit-facts">
+    <section class="hl-section" id="ai-content" aria-labelledby="dramaTitle" data-track-section="brand">
+      <div class="hl-head"><h2 id="dramaTitle">AI 드라마 제작</h2><p>Feel to Real 오리지널</p></div>
+      <div class="hl-split">
+        <div class="hl-trailer hl-lift">
+          <div class="home-trailer-frame" th:if="${!#strings.isEmpty(homeAgentTrailerPath)}">
+            <video id="homeAgentTrailer" th:src="${homeAgentTrailerPath}" controls playsinline preload="none"
+                   th:poster="${homeAgentTrailerPath == '/video/landing/ai-agent-trailer-v16i-20261029.mp4' ? '/img/landing/ai-agent-trailer-v16i-poster.jpg' : '/images/ai-agent-banner.webp'}" aria-label="AI AGENT 트레일러"></video>
+          </div>
+          <img class="hl-trailer-poster" th:if="${#strings.isEmpty(homeAgentTrailerPath)}" src="/img/landing/ai-agent-trailer-v16i-poster.jpg" alt="" width="1280" height="720" loading="lazy">
+          <div class="hl-trailer-bar">
+            <span class="hl-trailer-title"><strong id="brandTitle">AI AGENT 트레일러</strong><small>55초 예고편</small></span>
+            <button type="button" class="hl-btn hl-btn-white" id="homeAgentTrailerPlay" th:if="${!#strings.isEmpty(homeAgentTrailerPath)}">트레일러 재생</button>
+          </div>
+          <p id="homeAgentTrailerStatus" class="hl-trailer-msg" role="status" th:if="${!#strings.isEmpty(homeAgentTrailerPath)}" hidden></p>
+          <p id="homeAgentTrailerPending" class="hl-trailer-msg" th:if="${#strings.isEmpty(homeAgentTrailerPath)}">트레일러 공개 준비 중입니다.</p>
+        </div>
+        <a class="hl-studio hl-lift" href="/ai-agent-studio" data-studio-link>
+          <img src="/images/ai-agent-banner.webp" alt="" width="1942" height="809" loading="lazy">
+          <span class="hl-studio-text"><strong>AI AGENT 제작협업실</strong><span>트레일러와 콘텐츠 제작협업실</span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 적중 사례: 요약은 항상 보이고, 항목을 누르면 내용이 이어서 펼쳐진다(이미지 30장). -->
+    <section class="hl-section home-hit" id="hitCase" aria-labelledby="hitCaseTitle">
+      <div class="hl-box hl-lift">
+        <img class="hl-obj hl-corner" src="/img/landing/home-3d-target.webp" alt="" width="800" height="800" loading="lazy">
+        <p class="hl-eyebrow is-green">적중 사례 · 압구정중 3학년 2학기 기말 영어</p>
+        <h2 id="hitCaseTitle">예상문제 범위 31문항 중 29문항 적중</h2>
+        <ul class="hit-stats">
+          <li class="is-main"><b>93.5%</b><span>예상문제 적중률</span></li>
           <li><b>92점</b><span>수강생 실제 점수</span></li>
           <li><b>14/14</b><span>문법 문항 적중</span></li>
-          <li><b>18문항</b><span>같은 예문으로 적중</span></li>
         </ul>
+        <p class="hit-basis">배점 기준 90점 중 85점 · 대화문 5문항 제외 · 같은 예문으로 적중 18문항</p>
+        <p class="hit-guide">아래 항목을 누르면 내용이 이어서 펼쳐집니다.</p>
+        <details class="hit-more" id="hitStory">
+          <summary><b>시험 상황과 준비 과정</b><span>중간고사 없이 기말 한 번 · 예상문제 560문항</span></summary>
+          <ol class="hit-story">
+            <li><b>중간고사 없이 기말 한 번</b><span>2학기는 중간고사가 없어 Lesson 5~8을 기말고사 한 번에 봤습니다. 본문 2개, 문법 8가지, 단어 48개가 한 시험에 들어갔습니다.</span></li>
+            <li><b>학교 프린트로 실전 연습</b><span>학교 프린트(필기본)만으로 기출 유형에 맞춘 예상문제 8회, 560문항을 풀었습니다. 시험 형식에 미리 익숙해져 대비가 수월했습니다.</span></li>
+            <li><b>결과: 수강생 92점</b><span>실제 시험 36문항 중 예상문제 범위 31문항에서 29문항이 예상문제와 같거나 비슷하게 나왔습니다. 대화문 5문항은 쉬운 영역이라 수업 시간에만 다뤘습니다.</span></li>
+          </ol>
+        </details>
+        <details class="hit-more" id="hitCompare">
+          <summary><b>실제 시험과 예상문제 비교</b><span>주요 15문항 · 문항을 누르면 시험지와 예상문제가 보입니다</span></summary>
+          <div class="hit-qs">
+            <details class="hit-q">
+              <summary><span class="hit-qno">1번</span><b>wear out (be beginning to + 동사원형)</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 1번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q01.jpg" alt="실제 기말고사 1번 문항" loading="lazy" width="818" height="554"></figure>
+                <figure><figcaption>시험 전 예상문제 3회 3번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q01.jpg" alt="예상문제 3회 3번" loading="lazy" width="843" height="620"></figure>
+              </div>
+              <p class="hit-qnote">기출과 같은 예문 “My boots are beginning ____.”에서 wear out을 to부정사로 넣는 문제. 예상문제는 같은 문장으로 to 뒤 형태를 물었습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">3번</span><b>어휘와 뜻 연결 (dynasty - 왕조)</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 3번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q03.jpg" alt="실제 기말고사 3번 문항" loading="lazy" width="760" height="245"></figure>
+                <figure><figcaption>시험 전 예상문제 3회 10번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q03.jpg" alt="예상문제 3회 10번" loading="lazy" width="843" height="413"></figure>
+              </div>
+              <p class="hit-qnote">“어휘와 뜻의 연결이 옳은 것은?” 발문이 같고, 정답 근거도 dynasty - 왕조로 같습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">4번</span><b>achieve 영영풀이</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 4번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q04.jpg" alt="실제 기말고사 4번 문항" loading="lazy" width="831" height="753"></figure>
+                <figure><figcaption>시험 전 예상문제 8회 3번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q04.jpg" alt="예상문제 8회 3번" loading="lazy" width="843" height="758"></figure>
+              </div>
+              <p class="hit-qnote">&lt;보기&gt; 문장 “I should try my best to achieve my goal.”과 정답 풀이 “to succeed in doing or getting something you want”가 그대로 나왔습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">9번</span><b>pacers / target / support 고르기</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 9번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q09.jpg" alt="실제 기말고사 9번 문항" loading="lazy" width="837" height="902"></figure>
+                <figure><figcaption>시험 전 예상문제 7회 1번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q09.jpg" alt="예상문제 7회 1번" loading="lazy" width="843" height="848"></figure>
+              </div>
+              <p class="hit-qnote">하프 마라톤 지문의 ⓐ pacers/players, ⓑ register/target, ⓒ support/attention 고르기. 지문과 표 형식이 같습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">13번</span><b>동명사와 현재분사 구별</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 13번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg" alt="실제 기말고사 13번 문항" loading="lazy" width="785" height="451"></figure>
+                <figure><figcaption>시험 전 예상문제 7회 15번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q13.jpg" alt="예상문제 7회 15번" loading="lazy" width="843" height="415"></figure>
+              </div>
+              <p class="hit-qnote">-ing의 쓰임이 다른 것 고르기. 기출 정답 문장 “Reading books is a good hobby.”(동명사)가 예상문제에도 같은 자리에 나왔습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">15번</span><b>not as ~ as = 비교급 바꿔 쓰기</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 15번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q15.jpg" alt="실제 기말고사 15번 문항" loading="lazy" width="799" height="876"></figure>
+                <figure><figcaption>시험 전 예상문제 6회 19번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q15.jpg" alt="예상문제 6회 19번" loading="lazy" width="843" height="678"></figure>
+              </div>
+              <p class="hit-qnote">두 문장의 의미가 같지 않은 것. “Sue doesn’t speak as slowly as Jenny. = Jenny speaks more slowly than Sue.” 문장이 같습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">16번</span><b>명사 + V-ing 뒤에서 꾸미기</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 16번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q16.jpg" alt="실제 기말고사 16번 문항" loading="lazy" width="876" height="515"></figure>
+                <figure><figcaption>시험 전 예상문제 8회 16번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q16.jpg" alt="예상문제 8회 16번" loading="lazy" width="843" height="415"></figure>
+              </div>
+              <p class="hit-qnote">명사 + V-ing 어법. 기출 선지의 call/calling my name, play/playing the piano가 같은 문장으로 나왔습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">17번</span><b>as much as I used to</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 17번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q17.jpg" alt="실제 기말고사 17번 문항" loading="lazy" width="824" height="412"></figure>
+                <figure><figcaption>시험 전 예상문제 4회 19번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q17.jpg" alt="예상문제 4회 19번" loading="lazy" width="843" height="413"></figure>
+              </div>
+              <p class="hit-qnote">as ~ as 어법. 기출 정답 “I don’t play football as much as I was.”의 원문 “as much as I used to”와 Greece 문장이 함께 나왔습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">18번</span><b>과거완료 (had + p.p.)</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 18번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q18.jpg" alt="실제 기말고사 18번 문항" loading="lazy" width="798" height="631"></figure>
+                <figure><figcaption>시험 전 예상문제 6회 22번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q18.jpg" alt="예상문제 6회 22번" loading="lazy" width="843" height="678"></figure>
+              </div>
+              <p class="hit-qnote">과거완료 어법. 기출 선지의 바탕 문장인 “He had lived there for ten years when his mother died.”, “Kate had never seen snow until last year”, “When I dropped by his office yesterday …”가 예상문제에 그대로 나왔습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">20번</span><b>what의 쓰임 (관계대명사 / 의문사)</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 20번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q20.jpg" alt="실제 기말고사 20번 문항" loading="lazy" width="882" height="489"></figure>
+                <figure><figcaption>시험 전 예상문제 7회 25번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q20.jpg" alt="예상문제 7회 25번" loading="lazy" width="843" height="413"></figure>
+              </div>
+              <p class="hit-qnote">“what의 쓰임이 나머지와 다른 하나는?” 같은 발문. 관계대명사 what 사이에 의문사 what 하나를 섞는 방식도 같습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">24번</span><b>가정법 과거와 조건문</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 24번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q24.jpg" alt="실제 기말고사 24번 문항" loading="lazy" width="811" height="618"></figure>
+                <figure><figcaption>시험 전 예상문제 7회 38번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q24.jpg" alt="예상문제 7회 38번" loading="lazy" width="843" height="573"></figure>
+              </div>
+              <p class="hit-qnote">가정법 과거와 조건문 구별. 기출 정답 문장 “If we miss the last train, we’ll have to walk home.”과 도둑 문장(If I found a thief …)이 예상문제에 함께 나왔습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">25번</span><b>분사구문을 부사절로 바꿔 쓰기</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 25번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q25.jpg" alt="실제 기말고사 25번 문항" loading="lazy" width="811" height="1198"></figure>
+                <figure><figcaption>시험 전 예상문제 5회 34번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q25.jpg" alt="예상문제 5회 34번" loading="lazy" width="843" height="1130"></figure>
+              </div>
+              <p class="hit-qnote">분사구문을 부사절로 바꿔 쓸 때 어색한 것. “Not having musical talent …”, “Enjoying the sunshine …” 문장과 화살표 형식이 같습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">27번</span><b>접속사·전치사 as</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 27번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q27.jpg" alt="실제 기말고사 27번 문항" loading="lazy" width="837" height="580"></figure>
+                <figure><figcaption>시험 전 예상문제 5회 36번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q27.jpg" alt="예상문제 5회 36번" loading="lazy" width="843" height="573"></figure>
+              </div>
+              <p class="hit-qnote">as의 쓰임. “Leave everything just as you found it.”, “As people use cars more often …”, “dressed as a banana” 세 문장이 같습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">28번</span><b>“Races are won in the pits.”의 의미</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 28번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q28.jpg" alt="실제 기말고사 28번 문항" loading="lazy" width="837" height="437"></figure>
+                <figure><figcaption>시험 전 예상문제 3회 59번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q28.jpg" alt="예상문제 3회 59번" loading="lazy" width="843" height="573"></figure>
+              </div>
+              <p class="hit-qnote">“Races are won in the pits.”가 의미하는 것을 우리말 선지로 고르는 문제. 발문과 선지 형식이 같습니다.</p>
+            </details>
+            <details class="hit-q">
+              <summary><span class="hit-qno">33번</span><b>내용 일치 (대나무, clean ponds)</b><em class="hit-tag gA">동일 적중</em></summary>
+              <div class="hit-pair">
+                <figure><figcaption>실제 시험 33번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q33.jpg" alt="실제 기말고사 33번 문항" loading="lazy" width="850" height="592"></figure>
+                <figure><figcaption>시험 전 예상문제 8회 64번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q33.jpg" alt="예상문제 8회 64번" loading="lazy" width="843" height="413"></figure>
+              </div>
+              <p class="hit-qnote">문자도 지문 내용 일치. 대나무가 왕에 대한 충성을 상징한다는 정답과 “Lotus flowers grow in clean ponds” 오답이 같습니다.</p>
+            </details>
+          </div>
+        </details>
+        <details class="hit-more" id="hitScope">
+          <summary><b>시험 범위 (학교 프린트 필기본)</b><span>필기본 쪽별로 실제 시험에 나온 문항</span></summary>
+            <div class="hit-les"><h3>Lesson 5 <small>The Team Behind the Team</small></h3><ul><li><b>어휘 · register, pacer, achieve, keep track of, wear out 등 20개</b><span>필기본 5-1 단어장 · 5-2 크로스워드 · 5-3, 5-4 Words and Phrases · 5-4-2 낱말 찾기</span><span class="hit-chips"><i class=gA>1</i><i class=gA>2</i><i class=gA>4</i><i class=gA>9</i></span></li><li><b>문법 · 현재분사(명사 + V-ing), 동명사와 구별</b><span>필기본 5-5 My Grammar · 5-6 문법 A · 5-7 Practice A</span><span class="hit-chips"><i class=gA>13</i><i class=gA>16</i></span></li><li><b>문법 · as + 원급 + as, not as[so] ~ as</b><span>필기본 5-8 문법 B · 5-9 Practice B</span><span class="hit-chips"><i class=gA>15</i><i class=gA>17</i></span></li><li><b>본문 · 페이서, 피트 크루, 셰르파</b><span>필기본 5-10~5-13 Hidden People in Sports · 5-14, 5-15 본문 활동</span><span class="hit-chips"><i class=gA>28</i><i class=gB>29</i><i class=gB>30</i><i class=gB>31</i><i class=gC>32</i></span></li></ul></div>
+            <div class="hit-les"><h3>Lesson 6 <small>문법</small></h3><ul><li><b>문법 · 과거완료 (had + p.p.)</b><span>필기본 6-5 My Grammar · 6-6 문법 A · 6-7 Practice A</span><span class="hit-chips"><i class=gA>18</i><i class=gB>19</i></span></li><li><b>문법 · 관계대명사 what</b><span>필기본 6-8 문법 B · 6-9 Practice B</span><span class="hit-chips"><i class=gA>20</i><i class=gB>21</i><i class=gB>22</i></span></li></ul></div>
+            <div class="hit-les"><h3>Lesson 7 <small>문법</small></h3><ul><li><b>문법 · 분사구문</b><span>필기본 7-5 My Grammar · 7-6 문법 A · 7-7 Practice A</span><span class="hit-chips"><i class=gA>25</i><i class=gB>26</i></span></li><li><b>문법 · 접속사·전치사 as</b><span>필기본 7-8 문법 B · 7-9 Practice B</span><span class="hit-chips"><i class=gA>27</i></span></li></ul></div>
+            <div class="hit-les"><h3>Lesson 8 <small>The Joseon Dynasty Through Paintings</small></h3><ul><li><b>어휘 · dynasty, carp, loyalty, symbol, appear 등 28개</b><span>필기본 8-1 단어장 · 8-2 크로스워드 · 8-3, 8-4 Words and Phrases</span><span class="hit-chips"><i class=gA>3</i><i class=gA>5</i><i class=gC>6</i><i class=gB>7</i></span></li><li><b>문법 · to부정사의 의미상 주어 (for / of)</b><span>필기본 8-5 My Grammar · 8-6 문법 A · 8-7 Practice A</span><span class="hit-chips"><i class=gA>23</i></span></li><li><b>문법 · 가정법 과거, 조건의 if절</b><span>필기본 8-5 My Grammar · 8-8 문법 B · 8-9 Practice B</span><span class="hit-chips"><i class=gA>24</i></span></li><li><b>본문 · 문자도, 잉어·대나무·연꽃의 상징</b><span>필기본 8-10~8-13 Munjado 본문 · 8-14, 8-15 본문 활동</span><span class="hit-chips"><i class=gA>33</i><i class=gB>34</i><i class=gB>35</i><i class=gB>36</i></span></li></ul></div>
+            <div class="hit-les"><h3>교과서 대화문 <small>수업 시간에만 다룸</small></h3><ul><li><b>대화 · 쉬운 영역이라 수업 시간에만 다루고 예상문제에서는 뺐습니다</b><span>필기본 교과서 대화문</span><span class="hit-chips"><i class=gX>8</i><i class=gX>10</i><i class=gX>11</i><i class=gX>12</i><i class=gX>14</i></span></li></ul></div>
+        </details>
+        <details class="hit-more" id="hitAll">
+          <summary><b>36문항 전체 판정</b><span>동일 적중 18 · 유사 적중 11 · 필기 적중 2 · 예상문제 제외 5</span></summary>
+          <ol class="hit-map" aria-label="36문항 판정"><li class="gA">1</li><li class="gA">2</li><li class="gA">3</li><li class="gA">4</li><li class="gA">5</li><li class="gC">6</li><li class="gB">7</li><li class="gX">8</li><li class="gA">9</li><li class="gX">10</li><li class="gX">11</li><li class="gX">12</li><li class="gA">13</li><li class="gX">14</li><li class="gA">15</li><li class="gA">16</li><li class="gA">17</li><li class="gA">18</li><li class="gB">19</li><li class="gA">20</li><li class="gB">21</li><li class="gB">22</li><li class="gA">23</li><li class="gA">24</li><li class="gA">25</li><li class="gB">26</li><li class="gA">27</li><li class="gA">28</li><li class="gB">29</li><li class="gB">30</li><li class="gB">31</li><li class="gC">32</li><li class="gA">33</li><li class="gB">34</li><li class="gB">35</li><li class="gB">36</li></ol>
+          <ol class="hit-list"><li><span class="hit-ln">1</span><span class="hit-lb"><b>wear out (be beginning to + 동사원형)</b><small>2점 · 어휘 · 3회 3번 · 6회·7회 11번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">2</span><span class="hit-lb"><b>괄호 어휘 그대로 넣기 (repair → be repaired)</b><small>2점 · 어휘 · 3회 3번·6회 10번(같은 유형) · 8회 11번(같은 예문)</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">3</span><span class="hit-lb"><b>어휘와 뜻 연결 (dynasty - 왕조)</b><small>2점 · 어휘 · 3회 10번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">4</span><span class="hit-lb"><b>achieve 영영풀이</b><small>2점 · 어휘 · 8회 3번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">5</span><span class="hit-lb"><b>appear 영영풀이</b><small>2점 · 어휘 · 3회 7번 · 4회 9번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">6</span><span class="hit-lb"><b>단어장 예문 수 일치 (carp, lotus flowers, symbol)</b><small>2점 · 어휘 · 필기본 8-1 단어장 예문</small></span><em class="hit-tag gC">필기 적중</em></li><li><span class="hit-ln">7</span><span class="hit-lb"><b>글 속 어휘의 영영풀이가 아닌 것</b><small>2점 · 어휘 · 7회 7번 (같은 발문·같은 풀이 문구)</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">8</span><span class="hit-lb"><b>빈도 묻고 답하기</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">9</span><span class="hit-lb"><b>pacers / target / support 고르기</b><small>2점 · 어휘 · 7회 1번 · 3회 17번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">10</span><span class="hit-lb"><b>기쁨 표현 (어색한 것)</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">11</span><span class="hit-lb"><b>대화 내용 불일치</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">12</span><span class="hit-lb"><b>대화 순서 배열</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">13</span><span class="hit-lb"><b>동명사와 현재분사 구별</b><small>3점 · 문법 · 7회 15번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">14</span><span class="hit-lb"><b>흐름상 자연스러운 말</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">15</span><span class="hit-lb"><b>not as ~ as = 비교급 바꿔 쓰기</b><small>3점 · 문법 · 6회 19번 · 4회 20번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">16</span><span class="hit-lb"><b>명사 + V-ing 뒤에서 꾸미기</b><small>4점 · 문법 · 8회 16번 · 7회 18번 · 3회 23번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">17</span><span class="hit-lb"><b>as much as I used to</b><small>4점 · 문법 · 4회 19번 · 7회 20번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">18</span><span class="hit-lb"><b>과거완료 (had + p.p.)</b><small>4점 · 문법 · 6회 22번 · 7회 22번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">19</span><span class="hit-lb"><b>had never tried ~ before</b><small>3점 · 문법 · 7회 24번 · 필기본 6-7</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">20</span><span class="hit-lb"><b>what의 쓰임 (관계대명사 / 의문사)</b><small>3점 · 문법 · 7회 25번 · 3회 32번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">21</span><span class="hit-lb"><b>what과 that 구별 (빈칸)</b><small>3점 · 문법 · 3회 32번 · 필기본 6-9</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">22</span><span class="hit-lb"><b>what 절 배열, n번째 어휘</b><small>3점 · 문법 · 1회 25번 · 3회 37번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">23</span><span class="hit-lb"><b>of + 성격 형용사 (wise of Susan)</b><small>3점 · 문법 · 3회 38번 · 5회 39번 · 8회 14번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">24</span><span class="hit-lb"><b>가정법 과거와 조건문</b><small>3점 · 문법 · 7회 38번 · 5회 42번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">25</span><span class="hit-lb"><b>분사구문을 부사절로 바꿔 쓰기</b><small>4점 · 문법 · 5회 34번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">26</span><span class="hit-lb"><b>분사구문 어법</b><small>4점 · 문법 · 5회 25번·33번 · 6회 13번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">27</span><span class="hit-lb"><b>접속사·전치사 as</b><small>3점 · 문법 · 5회 36번 · 4회 32번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">28</span><span class="hit-lb"><b>“Races are won in the pits.”의 의미</b><small>3점 · 독해 · 3회 59번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">29</span><span class="hit-lb"><b>내용 일치 (우리말 선지)</b><small>3점 · 독해 · 4회 63번 · 1회 42번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">30</span><span class="hit-lb"><b>내용 불일치 (셰르파와 사진)</b><small>3점 · 독해 · 6회 53번 · 1회 42번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">31</span><span class="hit-lb"><b>글로 대답할 수 없는 질문</b><small>3점 · 독해 · 7회 49번 · 8회 50번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">32</span><span class="hit-lb"><b>페이서·피트 크루·셰르파 비유 짝짓기</b><small>3점 · 독해 · 필기본 5-10~5-11 본문</small></span><em class="hit-tag gC">필기 적중</em></li><li><span class="hit-ln">33</span><span class="hit-lb"><b>내용 일치 (대나무, clean ponds)</b><small>3점 · 독해 · 8회 64번 · 5회 66번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">34</span><span class="hit-lb"><b>내용 불일치 (문자도의 영향)</b><small>3점 · 독해 · 7회 68번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">35</span><span class="hit-lb"><b>글로 대답할 수 없는 질문</b><small>3점 · 독해 · 7회 59번 · 6회 62번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">36</span><span class="hit-lb"><b>요소와 상징 연결 (잉어 - 효)</b><small>3점 · 독해 · 4회 59번 · 7회 56번</small></span><em class="hit-tag gB">유사 적중</em></li></ol>
+          <p class="exam-caption">동일 적중: 같은 예문·같은 출제 포인트 · 유사 적중: 같은 포인트·유형, 예문 일부 다름 · 필기 적중: 필기본에 같은 문장. 적중률은 동일 적중과 유사 적중을 합한 값이며, 36문항 전체로 계산하면 80.6%입니다.</p>
+        </details>
+        <p class="exam-caption">대조 자료: 2026학년도 2학기 기말고사 영어과 3학년 시험지 일부(저작권 압구정중학교), 압구정에듀홀릭 기말대비 예상문제 1~8회, 압구정중3 필기본. 개별 사례는 다른 학교나 시험의 적중률을 보장하지 않습니다.</p>
       </div>
-      <p class="hit-guide">아래 항목을 누르면 내용이 이어서 펼쳐집니다.</p>
-      <details class="hit-more" id="hitStory">
-        <summary><b>시험 상황과 준비 과정</b><span>중간고사 없이 기말 한 번 · 예상문제 560문항</span></summary>
-        <ol class="hit-story">
-          <li><b>중간고사 없이 기말 한 번</b><span>2학기는 중간고사가 없어 Lesson 5~8을 기말고사 한 번에 봤습니다. 본문 2개, 문법 8가지, 단어 48개가 한 시험에 들어갔습니다.</span></li>
-          <li><b>학교 프린트로 실전 연습</b><span>학교 프린트(필기본)만으로 기출 유형에 맞춘 예상문제 8회, 560문항을 풀었습니다. 시험 형식에 미리 익숙해져 대비가 수월했습니다.</span></li>
-          <li><b>결과: 수강생 92점</b><span>실제 시험 36문항 중 예상문제 범위 31문항에서 29문항이 예상문제와 같거나 비슷하게 나왔습니다. 대화문 5문항은 쉬운 영역이라 수업 시간에만 다뤘습니다.</span></li>
-        </ol>
-      </details>
-      <details class="hit-more" id="hitCompare">
-        <summary><b>실제 시험과 예상문제 비교</b><span>주요 15문항 · 문항을 누르면 시험지와 예상문제가 보입니다</span></summary>
-        <div class="hit-qs">
-          <details class="hit-q">
-            <summary><span class="hit-qno">1번</span><b>wear out (be beginning to + 동사원형)</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 1번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q01.jpg" alt="실제 기말고사 1번 문항" loading="lazy" width="818" height="554"></figure>
-              <figure><figcaption>시험 전 예상문제 3회 3번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q01.jpg" alt="예상문제 3회 3번" loading="lazy" width="843" height="620"></figure>
-            </div>
-            <p class="hit-qnote">기출과 같은 예문 “My boots are beginning ____.”에서 wear out을 to부정사로 넣는 문제. 예상문제는 같은 문장으로 to 뒤 형태를 물었습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">3번</span><b>어휘와 뜻 연결 (dynasty - 왕조)</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 3번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q03.jpg" alt="실제 기말고사 3번 문항" loading="lazy" width="760" height="245"></figure>
-              <figure><figcaption>시험 전 예상문제 3회 10번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q03.jpg" alt="예상문제 3회 10번" loading="lazy" width="843" height="413"></figure>
-            </div>
-            <p class="hit-qnote">“어휘와 뜻의 연결이 옳은 것은?” 발문이 같고, 정답 근거도 dynasty - 왕조로 같습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">4번</span><b>achieve 영영풀이</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 4번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q04.jpg" alt="실제 기말고사 4번 문항" loading="lazy" width="831" height="753"></figure>
-              <figure><figcaption>시험 전 예상문제 8회 3번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q04.jpg" alt="예상문제 8회 3번" loading="lazy" width="843" height="758"></figure>
-            </div>
-            <p class="hit-qnote">&lt;보기&gt; 문장 “I should try my best to achieve my goal.”과 정답 풀이 “to succeed in doing or getting something you want”가 그대로 나왔습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">9번</span><b>pacers / target / support 고르기</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 9번 · 2점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q09.jpg" alt="실제 기말고사 9번 문항" loading="lazy" width="837" height="902"></figure>
-              <figure><figcaption>시험 전 예상문제 7회 1번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q09.jpg" alt="예상문제 7회 1번" loading="lazy" width="843" height="848"></figure>
-            </div>
-            <p class="hit-qnote">하프 마라톤 지문의 ⓐ pacers/players, ⓑ register/target, ⓒ support/attention 고르기. 지문과 표 형식이 같습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">13번</span><b>동명사와 현재분사 구별</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 13번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg" alt="실제 기말고사 13번 문항" loading="lazy" width="785" height="451"></figure>
-              <figure><figcaption>시험 전 예상문제 7회 15번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q13.jpg" alt="예상문제 7회 15번" loading="lazy" width="843" height="415"></figure>
-            </div>
-            <p class="hit-qnote">-ing의 쓰임이 다른 것 고르기. 기출 정답 문장 “Reading books is a good hobby.”(동명사)가 예상문제에도 같은 자리에 나왔습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">15번</span><b>not as ~ as = 비교급 바꿔 쓰기</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 15번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q15.jpg" alt="실제 기말고사 15번 문항" loading="lazy" width="799" height="876"></figure>
-              <figure><figcaption>시험 전 예상문제 6회 19번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q15.jpg" alt="예상문제 6회 19번" loading="lazy" width="843" height="678"></figure>
-            </div>
-            <p class="hit-qnote">두 문장의 의미가 같지 않은 것. “Sue doesn’t speak as slowly as Jenny. = Jenny speaks more slowly than Sue.” 문장이 같습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">16번</span><b>명사 + V-ing 뒤에서 꾸미기</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 16번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q16.jpg" alt="실제 기말고사 16번 문항" loading="lazy" width="876" height="515"></figure>
-              <figure><figcaption>시험 전 예상문제 8회 16번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q16.jpg" alt="예상문제 8회 16번" loading="lazy" width="843" height="415"></figure>
-            </div>
-            <p class="hit-qnote">명사 + V-ing 어법. 기출 선지의 call/calling my name, play/playing the piano가 같은 문장으로 나왔습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">17번</span><b>as much as I used to</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 17번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q17.jpg" alt="실제 기말고사 17번 문항" loading="lazy" width="824" height="412"></figure>
-              <figure><figcaption>시험 전 예상문제 4회 19번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q17.jpg" alt="예상문제 4회 19번" loading="lazy" width="843" height="413"></figure>
-            </div>
-            <p class="hit-qnote">as ~ as 어법. 기출 정답 “I don’t play football as much as I was.”의 원문 “as much as I used to”와 Greece 문장이 함께 나왔습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">18번</span><b>과거완료 (had + p.p.)</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 18번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q18.jpg" alt="실제 기말고사 18번 문항" loading="lazy" width="798" height="631"></figure>
-              <figure><figcaption>시험 전 예상문제 6회 22번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q18.jpg" alt="예상문제 6회 22번" loading="lazy" width="843" height="678"></figure>
-            </div>
-            <p class="hit-qnote">과거완료 어법. 기출 선지의 바탕 문장인 “He had lived there for ten years when his mother died.”, “Kate had never seen snow until last year”, “When I dropped by his office yesterday …”가 예상문제에 그대로 나왔습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">20번</span><b>what의 쓰임 (관계대명사 / 의문사)</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 20번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q20.jpg" alt="실제 기말고사 20번 문항" loading="lazy" width="882" height="489"></figure>
-              <figure><figcaption>시험 전 예상문제 7회 25번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q20.jpg" alt="예상문제 7회 25번" loading="lazy" width="843" height="413"></figure>
-            </div>
-            <p class="hit-qnote">“what의 쓰임이 나머지와 다른 하나는?” 같은 발문. 관계대명사 what 사이에 의문사 what 하나를 섞는 방식도 같습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">24번</span><b>가정법 과거와 조건문</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 24번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q24.jpg" alt="실제 기말고사 24번 문항" loading="lazy" width="811" height="618"></figure>
-              <figure><figcaption>시험 전 예상문제 7회 38번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q24.jpg" alt="예상문제 7회 38번" loading="lazy" width="843" height="573"></figure>
-            </div>
-            <p class="hit-qnote">가정법 과거와 조건문 구별. 기출 정답 문장 “If we miss the last train, we’ll have to walk home.”과 도둑 문장(If I found a thief …)이 예상문제에 함께 나왔습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">25번</span><b>분사구문을 부사절로 바꿔 쓰기</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 25번 · 4점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q25.jpg" alt="실제 기말고사 25번 문항" loading="lazy" width="811" height="1198"></figure>
-              <figure><figcaption>시험 전 예상문제 5회 34번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q25.jpg" alt="예상문제 5회 34번" loading="lazy" width="843" height="1130"></figure>
-            </div>
-            <p class="hit-qnote">분사구문을 부사절로 바꿔 쓸 때 어색한 것. “Not having musical talent …”, “Enjoying the sunshine …” 문장과 화살표 형식이 같습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">27번</span><b>접속사·전치사 as</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 27번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q27.jpg" alt="실제 기말고사 27번 문항" loading="lazy" width="837" height="580"></figure>
-              <figure><figcaption>시험 전 예상문제 5회 36번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q27.jpg" alt="예상문제 5회 36번" loading="lazy" width="843" height="573"></figure>
-            </div>
-            <p class="hit-qnote">as의 쓰임. “Leave everything just as you found it.”, “As people use cars more often …”, “dressed as a banana” 세 문장이 같습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">28번</span><b>“Races are won in the pits.”의 의미</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 28번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q28.jpg" alt="실제 기말고사 28번 문항" loading="lazy" width="837" height="437"></figure>
-              <figure><figcaption>시험 전 예상문제 3회 59번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q28.jpg" alt="예상문제 3회 59번" loading="lazy" width="843" height="573"></figure>
-            </div>
-            <p class="hit-qnote">“Races are won in the pits.”가 의미하는 것을 우리말 선지로 고르는 문제. 발문과 선지 형식이 같습니다.</p>
-          </details>
-          <details class="hit-q">
-            <summary><span class="hit-qno">33번</span><b>내용 일치 (대나무, clean ponds)</b><em class="hit-tag gA">동일 적중</em></summary>
-            <div class="hit-pair">
-              <figure><figcaption>실제 시험 33번 · 3점</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/exam_q33.jpg" alt="실제 기말고사 33번 문항" loading="lazy" width="850" height="592"></figure>
-              <figure><figcaption>시험 전 예상문제 8회 64번</figcaption><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q33.jpg" alt="예상문제 8회 64번" loading="lazy" width="843" height="413"></figure>
-            </div>
-            <p class="hit-qnote">문자도 지문 내용 일치. 대나무가 왕에 대한 충성을 상징한다는 정답과 “Lotus flowers grow in clean ponds” 오답이 같습니다.</p>
-          </details>
+    </section>
+
+    <section class="hl-section" id="exam-payment" aria-labelledby="examPaymentTitle">
+      <div class="hl-split hl-pay">
+        <div class="hl-pay-main hl-lift">
+          <img class="hl-obj hl-corner" src="/img/landing/home-3d-piggy.webp" alt="" width="800" height="800" loading="lazy">
+          <p class="hl-eyebrow is-mint">무통장입금</p>
+          <h2 id="examPaymentTitle">이용료와 무통장입금 안내</h2>
+          <th:block th:if="${homeBankTransfer != null}">
+            <dl class="exam-bank" id="examBank" aria-label="무통장입금 계좌">
+              <dt>은행</dt><dd th:text="${homeBankTransfer.bank}"></dd>
+              <dt>계좌번호</dt><dd><span class="exam-bank-number" th:text="${homeBankTransfer.accountNumber}"></span></dd>
+              <dt>예금주</dt><dd th:text="${homeBankTransfer.holder}"></dd>
+              <dt>입금액</dt><dd th:text="${examOffer.priceLabel}">20,000원</dd>
+              <dt>서비스</dt><dd th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</dd>
+            </dl>
+            <button type="button" class="hl-btn hl-btn-mint exam-bank-copy" th:attr="data-copy-address=${homeBankTransfer.accountNumber}" data-copy-done="계좌번호를 복사했습니다." data-copy-fail="자동 복사를 사용할 수 없습니다. 계좌번호를 길게 누르거나 선택해서 복사해 주세요." aria-describedby="examBankCopyStatus">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+              계좌번호 복사
+            </button>
+            <p id="examBankCopyStatus" class="hl-pay-status" role="status" aria-live="polite"></p>
+          </th:block>
+          <p class="hl-pay-text" th:unless="${homeBankTransfer != null}">이용료는 <strong th:text="${examOffer.priceLabel}">20,000원</strong>이며 무통장입금으로 결제합니다. 입금 계좌는 문의해 주시면 안내합니다.</p>
         </div>
-      </details>
-      <details class="hit-more" id="hitScope">
-        <summary><b>시험 범위 (학교 프린트 필기본)</b><span>필기본 쪽별로 실제 시험에 나온 문항</span></summary>
-          <div class="hit-les"><h3>Lesson 5 <small>The Team Behind the Team</small></h3><ul><li><b>어휘 · register, pacer, achieve, keep track of, wear out 등 20개</b><span>필기본 5-1 단어장 · 5-2 크로스워드 · 5-3, 5-4 Words and Phrases · 5-4-2 낱말 찾기</span><span class="hit-chips"><i class=gA>1</i><i class=gA>2</i><i class=gA>4</i><i class=gA>9</i></span></li><li><b>문법 · 현재분사(명사 + V-ing), 동명사와 구별</b><span>필기본 5-5 My Grammar · 5-6 문법 A · 5-7 Practice A</span><span class="hit-chips"><i class=gA>13</i><i class=gA>16</i></span></li><li><b>문법 · as + 원급 + as, not as[so] ~ as</b><span>필기본 5-8 문법 B · 5-9 Practice B</span><span class="hit-chips"><i class=gA>15</i><i class=gA>17</i></span></li><li><b>본문 · 페이서, 피트 크루, 셰르파</b><span>필기본 5-10~5-13 Hidden People in Sports · 5-14, 5-15 본문 활동</span><span class="hit-chips"><i class=gA>28</i><i class=gB>29</i><i class=gB>30</i><i class=gB>31</i><i class=gC>32</i></span></li></ul></div>
-          <div class="hit-les"><h3>Lesson 6 <small>문법</small></h3><ul><li><b>문법 · 과거완료 (had + p.p.)</b><span>필기본 6-5 My Grammar · 6-6 문법 A · 6-7 Practice A</span><span class="hit-chips"><i class=gA>18</i><i class=gB>19</i></span></li><li><b>문법 · 관계대명사 what</b><span>필기본 6-8 문법 B · 6-9 Practice B</span><span class="hit-chips"><i class=gA>20</i><i class=gB>21</i><i class=gB>22</i></span></li></ul></div>
-          <div class="hit-les"><h3>Lesson 7 <small>문법</small></h3><ul><li><b>문법 · 분사구문</b><span>필기본 7-5 My Grammar · 7-6 문법 A · 7-7 Practice A</span><span class="hit-chips"><i class=gA>25</i><i class=gB>26</i></span></li><li><b>문법 · 접속사·전치사 as</b><span>필기본 7-8 문법 B · 7-9 Practice B</span><span class="hit-chips"><i class=gA>27</i></span></li></ul></div>
-          <div class="hit-les"><h3>Lesson 8 <small>The Joseon Dynasty Through Paintings</small></h3><ul><li><b>어휘 · dynasty, carp, loyalty, symbol, appear 등 28개</b><span>필기본 8-1 단어장 · 8-2 크로스워드 · 8-3, 8-4 Words and Phrases</span><span class="hit-chips"><i class=gA>3</i><i class=gA>5</i><i class=gC>6</i><i class=gB>7</i></span></li><li><b>문법 · to부정사의 의미상 주어 (for / of)</b><span>필기본 8-5 My Grammar · 8-6 문법 A · 8-7 Practice A</span><span class="hit-chips"><i class=gA>23</i></span></li><li><b>문법 · 가정법 과거, 조건의 if절</b><span>필기본 8-5 My Grammar · 8-8 문법 B · 8-9 Practice B</span><span class="hit-chips"><i class=gA>24</i></span></li><li><b>본문 · 문자도, 잉어·대나무·연꽃의 상징</b><span>필기본 8-10~8-13 Munjado 본문 · 8-14, 8-15 본문 활동</span><span class="hit-chips"><i class=gA>33</i><i class=gB>34</i><i class=gB>35</i><i class=gB>36</i></span></li></ul></div>
-          <div class="hit-les"><h3>교과서 대화문 <small>수업 시간에만 다룸</small></h3><ul><li><b>대화 · 쉬운 영역이라 수업 시간에만 다루고 예상문제에서는 뺐습니다</b><span>필기본 교과서 대화문</span><span class="hit-chips"><i class=gX>8</i><i class=gX>10</i><i class=gX>11</i><i class=gX>12</i><i class=gX>14</i></span></li></ul></div>
-      </details>
-      <details class="hit-more" id="hitAll">
-        <summary><b>36문항 전체 판정</b><span>동일 적중 18 · 유사 적중 11 · 필기 적중 2 · 예상문제 제외 5</span></summary>
-        <ol class="hit-map" aria-label="36문항 판정"><li class="gA">1</li><li class="gA">2</li><li class="gA">3</li><li class="gA">4</li><li class="gA">5</li><li class="gC">6</li><li class="gB">7</li><li class="gX">8</li><li class="gA">9</li><li class="gX">10</li><li class="gX">11</li><li class="gX">12</li><li class="gA">13</li><li class="gX">14</li><li class="gA">15</li><li class="gA">16</li><li class="gA">17</li><li class="gA">18</li><li class="gB">19</li><li class="gA">20</li><li class="gB">21</li><li class="gB">22</li><li class="gA">23</li><li class="gA">24</li><li class="gA">25</li><li class="gB">26</li><li class="gA">27</li><li class="gA">28</li><li class="gB">29</li><li class="gB">30</li><li class="gB">31</li><li class="gC">32</li><li class="gA">33</li><li class="gB">34</li><li class="gB">35</li><li class="gB">36</li></ol>
-        <ol class="hit-list"><li><span class="hit-ln">1</span><span class="hit-lb"><b>wear out (be beginning to + 동사원형)</b><small>2점 · 어휘 · 3회 3번 · 6회·7회 11번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">2</span><span class="hit-lb"><b>괄호 어휘 그대로 넣기 (repair → be repaired)</b><small>2점 · 어휘 · 3회 3번·6회 10번(같은 유형) · 8회 11번(같은 예문)</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">3</span><span class="hit-lb"><b>어휘와 뜻 연결 (dynasty - 왕조)</b><small>2점 · 어휘 · 3회 10번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">4</span><span class="hit-lb"><b>achieve 영영풀이</b><small>2점 · 어휘 · 8회 3번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">5</span><span class="hit-lb"><b>appear 영영풀이</b><small>2점 · 어휘 · 3회 7번 · 4회 9번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">6</span><span class="hit-lb"><b>단어장 예문 수 일치 (carp, lotus flowers, symbol)</b><small>2점 · 어휘 · 필기본 8-1 단어장 예문</small></span><em class="hit-tag gC">필기 적중</em></li><li><span class="hit-ln">7</span><span class="hit-lb"><b>글 속 어휘의 영영풀이가 아닌 것</b><small>2점 · 어휘 · 7회 7번 (같은 발문·같은 풀이 문구)</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">8</span><span class="hit-lb"><b>빈도 묻고 답하기</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">9</span><span class="hit-lb"><b>pacers / target / support 고르기</b><small>2점 · 어휘 · 7회 1번 · 3회 17번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">10</span><span class="hit-lb"><b>기쁨 표현 (어색한 것)</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">11</span><span class="hit-lb"><b>대화 내용 불일치</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">12</span><span class="hit-lb"><b>대화 순서 배열</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">13</span><span class="hit-lb"><b>동명사와 현재분사 구별</b><small>3점 · 문법 · 7회 15번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">14</span><span class="hit-lb"><b>흐름상 자연스러운 말</b><small>2점 · 대화 · 쉬운 영역이라 수업 시간에만 다룸</small></span><em class="hit-tag gX">예상문제 제외</em></li><li><span class="hit-ln">15</span><span class="hit-lb"><b>not as ~ as = 비교급 바꿔 쓰기</b><small>3점 · 문법 · 6회 19번 · 4회 20번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">16</span><span class="hit-lb"><b>명사 + V-ing 뒤에서 꾸미기</b><small>4점 · 문법 · 8회 16번 · 7회 18번 · 3회 23번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">17</span><span class="hit-lb"><b>as much as I used to</b><small>4점 · 문법 · 4회 19번 · 7회 20번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">18</span><span class="hit-lb"><b>과거완료 (had + p.p.)</b><small>4점 · 문법 · 6회 22번 · 7회 22번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">19</span><span class="hit-lb"><b>had never tried ~ before</b><small>3점 · 문법 · 7회 24번 · 필기본 6-7</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">20</span><span class="hit-lb"><b>what의 쓰임 (관계대명사 / 의문사)</b><small>3점 · 문법 · 7회 25번 · 3회 32번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">21</span><span class="hit-lb"><b>what과 that 구별 (빈칸)</b><small>3점 · 문법 · 3회 32번 · 필기본 6-9</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">22</span><span class="hit-lb"><b>what 절 배열, n번째 어휘</b><small>3점 · 문법 · 1회 25번 · 3회 37번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">23</span><span class="hit-lb"><b>of + 성격 형용사 (wise of Susan)</b><small>3점 · 문법 · 3회 38번 · 5회 39번 · 8회 14번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">24</span><span class="hit-lb"><b>가정법 과거와 조건문</b><small>3점 · 문법 · 7회 38번 · 5회 42번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">25</span><span class="hit-lb"><b>분사구문을 부사절로 바꿔 쓰기</b><small>4점 · 문법 · 5회 34번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">26</span><span class="hit-lb"><b>분사구문 어법</b><small>4점 · 문법 · 5회 25번·33번 · 6회 13번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">27</span><span class="hit-lb"><b>접속사·전치사 as</b><small>3점 · 문법 · 5회 36번 · 4회 32번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">28</span><span class="hit-lb"><b>“Races are won in the pits.”의 의미</b><small>3점 · 독해 · 3회 59번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">29</span><span class="hit-lb"><b>내용 일치 (우리말 선지)</b><small>3점 · 독해 · 4회 63번 · 1회 42번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">30</span><span class="hit-lb"><b>내용 불일치 (셰르파와 사진)</b><small>3점 · 독해 · 6회 53번 · 1회 42번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">31</span><span class="hit-lb"><b>글로 대답할 수 없는 질문</b><small>3점 · 독해 · 7회 49번 · 8회 50번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">32</span><span class="hit-lb"><b>페이서·피트 크루·셰르파 비유 짝짓기</b><small>3점 · 독해 · 필기본 5-10~5-11 본문</small></span><em class="hit-tag gC">필기 적중</em></li><li><span class="hit-ln">33</span><span class="hit-lb"><b>내용 일치 (대나무, clean ponds)</b><small>3점 · 독해 · 8회 64번 · 5회 66번</small></span><em class="hit-tag gA">동일 적중</em></li><li><span class="hit-ln">34</span><span class="hit-lb"><b>내용 불일치 (문자도의 영향)</b><small>3점 · 독해 · 7회 68번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">35</span><span class="hit-lb"><b>글로 대답할 수 없는 질문</b><small>3점 · 독해 · 7회 59번 · 6회 62번</small></span><em class="hit-tag gB">유사 적중</em></li><li><span class="hit-ln">36</span><span class="hit-lb"><b>요소와 상징 연결 (잉어 - 효)</b><small>3점 · 독해 · 4회 59번 · 7회 56번</small></span><em class="hit-tag gB">유사 적중</em></li></ol>
-        <p class="exam-caption">동일 적중: 같은 예문·같은 출제 포인트 · 유사 적중: 같은 포인트·유형, 예문 일부 다름 · 필기 적중: 필기본에 같은 문장. 적중률은 동일 적중과 유사 적중을 합한 값이며, 36문항 전체로 계산하면 80.6%입니다.</p>
-      </details>
-      <p class="exam-caption">대조 자료: 2026학년도 2학기 기말고사 영어과 3학년 시험지 일부(저작권 압구정중학교), 압구정에듀홀릭 기말대비 예상문제 1~8회, 압구정중3 필기본. 개별 사례는 다른 학교나 시험의 적중률을 보장하지 않습니다.</p>
-    </section>
-
-
-    <section class="exam-section" id="ai-content" data-home-panel="agent" aria-labelledby="brandTitle" data-track-section="brand">
-      <p class="exam-eyebrow">FEEL2REAL ORIGINAL</p><h2 id="brandTitle">AI AGENT 트레일러</h2>
-      <p>55초 트레일러</p>
-      <div class="exam-contact-actions"><a class="en-btn en-btn-outline" href="/ai-agent-studio" data-studio-link>AI AGENT 제작협업실</a></div>
-      <div class="home-trailer-frame" th:if="${!#strings.isEmpty(homeAgentTrailerPath)}">
-        <video id="homeAgentTrailer" th:src="${homeAgentTrailerPath}" controls playsinline preload="none"
-               th:poster="${homeAgentTrailerPath == '/video/landing/ai-agent-trailer-v16i-20261029.mp4' ? '/img/landing/ai-agent-trailer-v16i-poster.jpg' : '/images/ai-agent-banner.webp'}" aria-label="AI AGENT 트레일러"></video>
-        <button type="button" class="en-btn en-btn-outline" id="homeAgentTrailerPlay">트레일러 재생</button>
-        <p id="homeAgentTrailerStatus" class="exam-caption" role="status" hidden></p>
+        <div class="hl-pay-side hl-lift">
+          <h3>입금 후 안내</h3>
+          <ol>
+            <li>무통장입금 후 카카오톡 또는 이메일로 입금자명과 학교·학년을 알려 주세요.</li>
+            <li>관리자가 입금을 직접 확인한 뒤 제작을 시작합니다.</li>
+            <li>2주 동안 주 2회, 총 4회 받아 보실 수 있습니다.</li>
+          </ol>
+          <div class="hl-pay-actions">
+            <a class="hl-btn hl-btn-kakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카카오톡 문의·신청</a>
+            <a class="hl-btn hl-btn-line" href="mailto:woorinaesin@naver.com">이메일 보내기</a>
+          </div>
+          <p class="exam-caption">제공한 회차의 청약철회 제한과 회차별 환불 기준은 <a href="/policies/refunds">환불·청약철회 정책</a>에서 확인해 주세요. 환불은 담당자가 제공 내역을 확인한 뒤 처리합니다.</p>
+        </div>
       </div>
-      <p id="homeAgentTrailerPending" th:if="${#strings.isEmpty(homeAgentTrailerPath)}">트레일러 공개 준비 중입니다.</p>
-      <!-- AI AGENT highlight is separate from the exam-service promo; approved gallery stays. -->
-      <div id="agentHighlightSlot" hidden></div>
-      <p></p>
-
     </section>
 
-    <section class="exam-section" id="review-game" data-home-panel="game" aria-labelledby="reviewGameTitle">
-      <p class="exam-eyebrow">F2R ENGLISH REVIEW</p>
+    <!-- BUILD IT CHART: 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
+    <section class="hl-section en-chart bb-chart" id="chart-showcase" data-track-section="chart-showcase" aria-labelledby="enChartTitle">
+      <div class="hl-chart hl-lift">
+        <div class="hl-chart-top">
+          <div class="hl-chart-art" aria-hidden="true"><span class="hl-floor"></span><img class="hl-obj" src="/img/landing/home-3d-chart.webp" alt="" width="800" height="800" loading="lazy"></div>
+          <div class="hl-chart-text">
+            <h2 class="bb-title" id="enChartTitle">BUILD IT CHART</h2>
+            <p class="bb-sub">전국의 색깔 있는<br>영어교육자를 발견합니다.</p>
+            <p class="hl-chart-line">지역별 영어 선생님 찾기</p>
+            <a class="hl-btn hl-btn-dark chart-cta" href="/chart">전국 TOP100 보기</a>
+          </div>
+        </div>
+        <div class="bb-meta">
+          <span class="bb-week">기준일 <span id="landingChartDate"></span></span>
+          <form class="bb-region" id="chartRegionPicker" autocomplete="off">
+            <label class="sr" for="chartProvince">시·도</label>
+            <select id="chartProvince"><option value="">시·도 선택</option></select>
+            <label class="sr" for="chartDistrict">시·군·구</label>
+            <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
+            <button type="submit">색깔 있는 영어쌤 보기</button>
+          </form>
+        </div>
+        <div class="bb-list" id="landingChartTop5" aria-label="BuildIt Chart 공개 TOP5"><div class="bb-empty">전국 Chart를 불러오는 중입니다.</div></div>
+        <div class="bb-foot">
+          <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
+        </div>
+        <p class="bb-note">점수마다 근거 자료를 함께 표시 · AI 해석과 근거 자료를 구분 · BuildIt 사용 여부는 점수에 영향 없음</p>
+      </div>
+    </section>
+    <script src="/js/landing_chart.js?v=20261014-1" defer></script>
+
+    <!-- 자세한 안내: 위 카드·메뉴에서 이어지는 서비스별 내용(기존 기능 그대로) -->
+    <section class="exam-section" id="review-game" aria-labelledby="reviewGameTitle">
+      <p class="hl-eyebrow">F2R ENGLISH REVIEW</p>
       <h2 id="reviewGameTitle">고1 10월 영어 복습 게임</h2>
       <p>서수니 튜터와 함께 지문과 유형을 골라 문제를 풉니다. 타이머, 정답 확인, 해설, 오답 노트가 있습니다.</p>
       <div class="home-game" id="homeGame" th:if="${!#strings.isEmpty(homeReviewGamePath)}" th:attr="data-game-src=${homeReviewGamePath}">
         <div class="home-game-cover" id="homeGameCover">
-          <img src="/img/F2R_logo_pure.svg" alt="" width="56" height="56" loading="lazy">
+          <img src="/img/landing/home-hero-game-3d.webp" alt="" width="96" height="96" loading="lazy">
           <p>처음 시작할 때 게임 파일 약 10MB를 내려받습니다. 두 번째부터는 저장된 파일로 바로 열립니다.</p>
           <button type="button" class="en-btn en-btn-primary" id="homeGameStart">게임 시작</button>
         </div>
@@ -357,40 +485,8 @@
       <p class="exam-caption" th:if="${!#strings.isEmpty(homeReviewGameUrl)}">게임이 열리지 않으면 <a id="homeReviewGame" th:href="${homeReviewGameUrl}" target="_blank" rel="noopener noreferrer">Nimble에서 열기 ↗</a></p>
     </section>
 
-    <!-- BUILD IT CHART(복구): 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
-    <section class="en-chart bb-chart" id="chart-showcase" data-home-panel="chart" data-track-section="chart-showcase" aria-labelledby="enChartTitle">
-      <div class="bb-wrap">
-        <h2 class="bb-title" id="enChartTitle">BUILD IT CHART</h2>
-        <p class="bb-sub">전국의 색깔 있는 영어교육자를 발견합니다.</p>
-        <div class="bb-meta">
-          <span class="bb-week">기준일 <span id="landingChartDate"></span></span>
-          <form class="bb-region" id="chartRegionPicker" autocomplete="off">
-            <label class="visually-hidden" for="chartProvince">시·도</label>
-            <select id="chartProvince"><option value="">시·도 선택</option></select>
-            <label class="visually-hidden" for="chartDistrict">시·군·구</label>
-            <select id="chartDistrict" disabled><option value="">시·군·구 선택</option></select>
-            <button type="submit">색깔 있는 영어쌤 보기</button>
-          </form>
-        </div>
-        <div class="bb-list" id="landingChartTop5" aria-label="BuildIt Chart 공개 TOP5"><div class="bb-empty">전국 Chart를 불러오는 중입니다.</div></div>
-        <div class="bb-foot">
-          <a class="chart-criteria-link" href="/chart#criteria">평가 기준 보기 →</a>
-          <a class="chart-cta" href="/chart">전국 TOP100 보기 →</a>
-        </div>
-        <p class="bb-note">점수마다 근거 자료를 함께 표시 · AI 해석과 근거 자료를 구분 · BuildIt 사용 여부는 점수에 영향 없음</p>
-      </div>
-    </section>
-    <script src="/js/landing_chart.js?v=20261014-1" defer></script>
-
-    <section class="exam-section home-service-intro" id="dashboard" data-home-panel="dashboard" aria-labelledby="dashboardPaneTitle">
-      <p class="exam-eyebrow">학원 운영과 제작</p><h2 id="dashboardPaneTitle">대시보드</h2>
-      <p></p>
-      <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/dashboard">대시보드 열기</a><a class="en-btn en-btn-outline" href="/ledger">이지장부</a><a class="en-btn en-btn-outline" href="/builder">학원 홈페이지 제작·관리</a></div>
-      <details id="svc-dashboard" class="exam-other-services"><summary>BuildIt의 교육 서비스 더 보기</summary><div class="exam-contact-actions"><a href="/dashboard">학원 대시보드</a><a href="/ledger">이지장부</a><a href="/builder">학원 홈페이지 제작·관리</a><a href="/admin/hub">관리자 허브</a><a href="/wiki">모의고사위키</a></div></details>
-    </section>
-
     <!-- AI 비서: 서수니(기본)·세븐, 입력창과 보내기 중심. 안내 규칙과 로그인 사용자 대시보드 연결은 f2r_home_agent.js 그대로. -->
-    <section class="exam-section home-assistant" id="aiHome" data-home-panel="dashboard" data-track-section="agentRequest" aria-labelledby="assistantTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version},data-intake-enabled=${examIntakeEnabled}">
+    <section class="exam-section home-assistant" id="aiHome" data-track-section="agentRequest" aria-labelledby="assistantTitle" th:attr="data-offer-summary=${examOffer.assistantSummary},data-offer-version=${examOffer.version},data-intake-enabled=${examIntakeEnabled}">
       <div class="assistant" id="assistant">
         <div class="assistant-head">
           <div class="stage" id="homeStage" data-state="idle" data-media="missing">
@@ -414,8 +510,32 @@
       </div>
     </section>
 
-    <section class="exam-section" id="svc-exam" data-home-panel="request" aria-labelledby="passProcessTitle">
-      <p class="exam-eyebrow">MADE FOR YOUR SCHOOL</p>
+    <section class="exam-section" id="request" aria-labelledby="requestPaneTitle">
+      <p class="hl-eyebrow">학교별 맞춤 제작</p>
+      <h2 id="requestPaneTitle">맞춤문제 신청</h2>
+      <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
+      <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/exam-service?sample=1">1장 무료 신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
+      <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
+    </section>
+
+    <section class="exam-section exam-promo" id="examPromo" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
+      <div class="exam-promo-frame">
+        <video id="examPromoVideo" th:src="${examPromoPath}" controls muted playsinline preload="metadata"
+               th:poster="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4' ? '/img/landing/f2r-exam-remotion-v3-20261029.jpg' : null}"
+               aria-label="20초 영어 기말 맞춤 문제 서비스 홍보 영상" aria-describedby="examPromoSummary"></video>
+        <img id="examPromoFallback" th:if="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4'}"
+             src="/img/landing/f2r-exam-remotion-v3-20261029.jpg" alt="학교별 영어 기말 맞춤 문제, 2주 160문항 20,000원" hidden>
+      </div>
+      <div class="exam-promo-actions">
+        <button type="button" class="en-btn en-btn-outline" id="examPromoSound" aria-pressed="false" hidden>소리 켜기</button>
+      </div>
+      <!-- 상품 내용은 위 안내에 이미 있으므로 화면에는 다시 쓰지 않고 영상 설명(스크린리더)으로만 둔다. -->
+      <p id="examPromoSummary" class="sr" th:text="'학교별 맞춤 제작 · ' + ${examOffer.summary} + ' · ' + ${examOffer.priceLabel}">학교별 맞춤 제작 · 2주 · 주 2회 · 총 4회 · 160문항 · 20,000원</p>
+      <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
+    </section>
+
+    <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">
+      <p class="hl-eyebrow">MADE FOR YOUR SCHOOL</p>
       <h2 id="passProcessTitle">제작 과정</h2>
       <div class="exam-grid">
         <article class="exam-card"><span class="exam-step">01 / 분석</span><h3>학교별 기출과 시험 범위</h3><p>학교별 기출문제와 출제 경향을 분석합니다. 최근 기출과 시험 범위를 보내 주세요.</p></article>
@@ -425,22 +545,22 @@
       <p class="exam-callout"><strong th:text="${examOffer.weeks} + '주 동안 함께하는 이유'">2주 동안 함께하는 이유</strong>시험이 가까워질수록 달라지는 정보를 반영하고, 기출 유사 문제와 취약 유형을 반복 학습하기 위해서입니다.</p>
     </section>
 
-    <section class="exam-section" id="exam-hit" data-home-panel="request" aria-labelledby="enHitTitle">
-      <p class="exam-eyebrow">EDUHOLIC / APGUJEONG</p><h2 id="enHitTitle">압구정에듀홀릭 활용 사례</h2>
+    <section class="exam-section" id="exam-hit" aria-labelledby="enHitTitle">
+      <p class="hl-eyebrow">EDUHOLIC / APGUJEONG</p><h2 id="enHitTitle">압구정에듀홀릭 활용 사례</h2>
       <div class="exam-case"><div><h3>학교 시험과 수업 자료를 함께 살펴봅니다.</h3><p>기존에 소개한 압구정중2 영어 시험 분석과 직보 수업 사례를 에듀홀릭 블로그에서 확인할 수 있습니다.</p><p class="exam-caption">개별 사례는 다른 학교나 시험의 적중률을 보장하지 않습니다.</p></div><a class="en-btn en-btn-outline" href="#exam-blog">분석 원문 보기 ↓</a></div>
     </section>
 
-    <section class="exam-section" id="exam-blog" data-home-panel="request" aria-labelledby="examBlogTitle">
-      <p class="exam-eyebrow">SCHOOL EXAM NOTES</p><h2 id="examBlogTitle">학교별 시험 분석 블로그</h2>
+    <section class="exam-section" id="exam-blog" aria-labelledby="examBlogTitle">
+      <p class="hl-eyebrow">SCHOOL EXAM NOTES</p><h2 id="examBlogTitle">학교별 시험 분석 블로그</h2>
       <a class="exam-blog-link" id="enHitBlog" href="https://blog.naver.com/apgujungeduholic/224435388122" target="_blank" rel="noopener"><span><small>압구정에듀홀릭 · 기존 연결 원문</small><strong>압구정중2 영어 시험 분석</strong></span><span aria-hidden="true">↗</span></a>
     </section>
 
-    <section class="exam-section" id="exam-contact" data-home-panel="request guide" aria-labelledby="examContactTitle">
-      <p class="exam-eyebrow">LET’S GET STARTED</p><h2 id="examContactTitle">문의·신청·자료 제출</h2>
+    <section class="exam-section" id="exam-contact" aria-labelledby="examContactTitle">
+      <p class="hl-eyebrow">LET’S GET STARTED</p><h2 id="examContactTitle">문의·신청·자료 제출</h2>
       <p>학교·학년과 기출 시험자료를 보내 주세요. 출제시 요구사항과 시험지에 들어갈 로고는 선택해 제출할 수 있습니다.</p>
       <div class="exam-contact-actions">
         <a th:if="${examIntakeEnabled}" class="en-btn en-btn-primary" href="/exam-service">사이트에서 신청·자료 제출</a>
-        <a class="en-btn en-btn-primary" id="enExamCta" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener" data-track-click="pass_kakao">카카오톡 문의·신청</a>
+        <a class="en-btn en-btn-kakao" id="enExamCta" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener" data-track-click="pass_kakao">카카오톡 문의·신청</a>
         <a class="en-btn en-btn-outline" id="enExamMail" href="mailto:woorinaesin@naver.com" data-track-click="pass_mail" aria-describedby="examMailHelp">이메일 작성·자료 첨부</a>
         <button type="button" class="en-btn en-btn-outline" data-copy-address="woorinaesin@naver.com" aria-describedby="examCopyStatus">이메일 주소 복사</button>
       </div>
@@ -450,37 +570,26 @@
       <p th:unless="${examIntakeEnabled}" class="exam-caption">현재 신청과 자료 제출은 카카오톡·이메일로 접수합니다. 사이트 내 접수 기능은 준비 중입니다.</p>
     </section>
 
-    <section class="exam-section home-service-intro" id="guide" data-home-panel="guide" aria-labelledby="guidePaneTitle">
-      <p class="exam-eyebrow">이용 방법</p><h2 id="guidePaneTitle">이용 방법</h2>
-      <div class="home-service-grid">
+    <section class="exam-section" id="dashboard" aria-labelledby="dashboardPaneTitle">
+      <p class="hl-eyebrow">학원 운영과 제작</p><h2 id="dashboardPaneTitle">대시보드</h2>
+      <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/dashboard">대시보드 열기</a><a class="en-btn en-btn-outline" href="/ledger">이지장부</a><a class="en-btn en-btn-outline" href="/builder">학원 홈페이지 제작·관리</a></div>
+      <details id="svc-dashboard" class="exam-other-services"><summary>BuildIt의 교육 서비스 더 보기</summary><div class="exam-contact-actions"><a href="/dashboard">학원 대시보드</a><a href="/ledger">이지장부</a><a href="/builder">학원 홈페이지 제작·관리</a><a href="/admin/hub">관리자 허브</a><a href="/wiki">모의고사위키</a></div></details>
+    </section>
+
+    <section class="exam-section" id="guide" aria-labelledby="guidePaneTitle">
+      <p class="hl-eyebrow">이용 안내</p><h2 id="guidePaneTitle">이용 방법</h2>
+      <div class="exam-grid is-two">
         <article class="exam-card"><span class="exam-step">01 / 신청</span><h3>학교·학년과 자료 제출</h3><p>기출 시험자료와 출제시 요구사항을 제출합니다. 시험지에 들어갈 로고도 선택해 첨부할 수 있습니다.</p></article>
         <article class="exam-card"><span class="exam-step">02 / 확인·제작</span><h3>입금과 자료 확인</h3><p>관리자가 입금과 자료를 확인한 뒤 제작하며, 수정·검수를 거쳐 문제지와 해설지를 제공합니다.</p></article>
       </div>
       <div class="exam-contact-actions"><a class="en-btn en-btn-outline" href="/faq">자주 묻는 질문</a><a class="en-btn en-btn-outline" href="/policies/terms">이용약관</a><a class="en-btn en-btn-outline" href="/policies/refunds">환불·청약철회 정책</a></div>
     </section>
-
-    <section class="exam-section" id="exam-payment" data-home-panel="guide" aria-labelledby="examPaymentTitle">
-      <p class="exam-eyebrow">PAYMENT &amp; DELIVERY</p><h2 id="examPaymentTitle">이용료와 무통장입금 안내</h2>
-      <div class="exam-payment">
-        <th:block th:if="${homeBankTransfer != null}">
-          <dl class="exam-bank" id="examBank" aria-label="무통장입금 계좌">
-            <dt>은행</dt><dd th:text="${homeBankTransfer.bank}">신한은행</dd>
-            <dt>계좌번호</dt><dd><span class="exam-bank-number" th:text="${homeBankTransfer.accountNumber}">110-498-250866</span>
-              <button type="button" class="en-btn en-btn-outline exam-bank-copy" th:attr="data-copy-address=${homeBankTransfer.accountNumber}" data-copy-done="계좌번호를 복사했습니다." data-copy-fail="자동 복사를 사용할 수 없습니다. 계좌번호를 길게 누르거나 선택해서 복사해 주세요." aria-describedby="examBankCopyStatus">계좌번호 복사</button></dd>
-            <dt>예금주</dt><dd th:text="${homeBankTransfer.holder}">박정민</dd>
-            <dt>입금액</dt><dd th:text="${examOffer.priceLabel}">20,000원</dd>
-            <dt>서비스</dt><dd th:text="${examOffer.summary}">2주 · 주 2회 · 총 4회 · 160문항</dd>
-          </dl>
-          <p id="examBankCopyStatus" class="exam-caption" role="status" aria-live="polite"></p>
-          <p>무통장입금 후 카카오톡 또는 이메일로 입금자명과 학교·학년을 알려 주세요. 관리자가 입금을 직접 확인한 뒤 제작을 시작합니다.</p>
-        </th:block>
-        <p th:unless="${homeBankTransfer != null}">이용료는 <strong th:text="${examOffer.priceLabel}">20,000원</strong>이며 무통장입금으로 결제합니다. 입금 계좌는 문의해 주시면 안내합니다.</p>
-        <p class="exam-caption">제공한 회차의 청약철회 제한과 회차별 환불 기준은 <a href="/policies/refunds">환불·청약철회 정책</a>에서 확인해 주세요. 환불은 담당자가 제공 내역을 확인한 뒤 처리합니다.</p></div>
-    </section>
-
   </main>
-  </div>
 
+  <a class="hl-fab" href="#aiHome" aria-label="AI 비서 서수니에게 말하기">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+    서수니
+  </a>
 </div>
 <th:block th:replace="~{fragments/_public_footer :: publicFooterBranded(false, false, false)}"></th:block>
 <th:block th:replace="~{fragments/_public_footer :: publicContactModalFor(false, 'woorinaesin@naver.com')}"></th:block>

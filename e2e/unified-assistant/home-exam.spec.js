@@ -65,7 +65,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     // 무통장입금 계좌는 공개 설정이 켜진 경우에만 보이고, 복사 버튼은 계좌번호 전용 안내를 쓴다.
     await selectHomePane(page, 'guide');
     if (await page.locator('#examBank').count()) {
-      await page.locator('#examBank [data-copy-address]').click();
+      await page.locator('#exam-payment [data-copy-address]').click();
       await expect(page.locator('#examBankCopyStatus')).toHaveText('계좌번호를 복사했습니다.');
       expect(await page.evaluate(()=>window.copiedAddress)).toBe('110-498-250866');
     } else {
@@ -76,7 +76,10 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     await page.evaluate(()=>scrollTo(0,0));
     await page.screenshot({path:path.join(output,`${width}-home.png`)});
     await page.screenshot({path:path.join(output,`${width}-full.png`),fullPage:true});
-    await page.locator('[data-auth-login]').first().click();await expect(page.locator('[data-login-modal]')).toBeVisible();
+    // 휴대폰 상단에는 로그인 버튼이 없고(시안) 「전체 메뉴」 안에 있다.
+    if (!(await page.locator('[data-auth-login]').first().isVisible())) await page.locator('#enBurger').click();
+    await page.locator('[data-auth-login]:visible').first().click();await expect(page.locator('[data-login-modal]')).toBeVisible();
+    await expect(page.locator('#homeMenuPanel')).toBeHidden();
     expect(errors).toEqual([]);
   } finally {await context.close();}
 });

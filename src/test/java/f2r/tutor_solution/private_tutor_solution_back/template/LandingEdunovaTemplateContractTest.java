@@ -56,10 +56,11 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 개편 순서 when 렌더하면 then 상품→영상→콘텐츠 버튼→트레일러→게임→차트→비서→기존 안내 순서이고 빈 칸은 솔직하게 표시한다")
-  void givenContentPriority_whenRendered_thenRequestPromoGameTrailerOrderAndEmptySlotsAreHonest() {
+  @DisplayName("given 밝은 개편 순서 when 렌더하면 then 배너→영어 교육→AI 드라마→적중 사례→입금→차트→자세한 안내 순서이고 빈 칸은 솔직하게 표시한다")
+  void givenContentPriority_whenRendered_thenApprovedSinglePageOrderAndEmptySlotsAreHonest() {
     String html = render();
-    String[] ids = {"pass-offer", "examPromo", "homeJump", "ai-content", "review-game", "chart-showcase", "aiHome", "svc-exam"};
+    String[] ids = {"pass-offer", "edu", "ai-content", "hitCase", "exam-payment", "chart-showcase",
+        "review-game", "aiHome", "request", "examPromo", "svc-exam", "exam-contact", "dashboard", "guide"};
     int previous = -1;
     for (String id : ids) {
       int position = html.indexOf("id=\"" + id + "\"");
@@ -71,11 +72,12 @@ class LandingEdunovaTemplateContractTest {
         .doesNotContain("id=\"homeAgentTrailer\"", "g1y7QeOYd8/edit");
     // The game iframe is created only after the user presses 게임 시작 (layout-level noscript tags excluded).
     assertThat(html.substring(html.indexOf("<main"), html.indexOf("</main>"))).doesNotContain("<iframe");
-    String jump = html.substring(html.indexOf("id=\"homeJump\""), html.indexOf("id=\"ai-content\""));
-    int trailer = jump.indexOf("href=\"#ai-content\""), game = jump.indexOf("href=\"#review-game\""), chart = jump.indexOf("href=\"#chart-showcase\"");
-    assertThat(game).isPositive().isLessThan(trailer);
-    assertThat(trailer).isLessThan(chart);
-    assertThat(jump).contains("AI AGENT 트레일러", "영어 복습 게임", "BuildIt 차트 소개");
+    // 영어 교육 카드 5개: 맞춤문제 → 모의고사 위키 → 지문 복습 문제 → 영어 복습 게임 → 문법 문제은행(실제 링크)
+    String edu = html.substring(html.indexOf("id=\"edu\""), html.indexOf("id=\"ai-content\""));
+    assertThat(edu.split("class=\"hl-card\"", -1)).hasSize(6);
+    assertThat(edu).containsSubsequence("href=\"#request\"", "href=\"/wiki\"", "href=\"/wiki#review\"",
+        "href=\"#review-game\"", "href=\"/grammar-items\"");
+    assertThat(html).doesNotContain("data-home-panel", "id=\"homeJump\"", "id=\"homeSidebar\"");
     assertThat(render("public/landing", "", "", "", "")).contains("게임 공개 준비 중")
         .doesNotContain("id=\"homeReviewGame\"", "id=\"homeGame\"");
     assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
@@ -111,8 +113,10 @@ class LandingEdunovaTemplateContractTest {
         "#contactModal *, #contactModal *::before, #contactModal *::after { box-sizing:border-box; }",
         "#contactModal .contact-modal-panel { width:100%; max-width:360px;", "#contactModal .contact-option-detail { margin-top:2px; color:#6ee4ff;",
         "#contactModal .contact-modal-close { width:100%; min-height:48px;");
-    for (String page : new String[] {"static/css/home_exam.css", "static/css/landing_edunova.css", "static/css/f2r_home_agent.css"}) {
-      assertThat(css.apply(page)).as(page).doesNotContain("#contactModal", ".public-contact-option");
+    assertThat(css.apply("static/css/home_light.css")).doesNotContain("#contactModal", ".public-contact-option");
+    for (String removed : new String[] {"static/css/home_exam.css", "static/css/landing_edunova.css", "static/css/f2r_home_agent.css",
+        "static/css/home_workspace.css", "static/css/home_hero.css"}) {
+      assertThat(getClass().getClassLoader().getResource(removed)).as(removed).isNull();
     }
   }
 
@@ -146,12 +150,12 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 2주·160문항·20,000원은 위 상품 안내에 한 번만 보이고 영상 아래 반복 문구·버튼이 없다")
+  @DisplayName("given 홈 when 렌더하면 then 2주·160문항·2만원은 대표 배너에 한 번만 보이고 영상 아래 반복 문구·버튼이 없다")
   void offer_isShownOnceAtTop() {
     // given / when
     String html = render();
-    String offer = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"examPromo\""));
-    String promo = html.substring(html.indexOf("id=\"examPromo\""), html.indexOf("id=\"homeJump\""));
+    String offer = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"edu\""));
+    String promo = html.substring(html.indexOf("id=\"examPromo\""), html.indexOf("id=\"svc-exam\""));
     // then
     assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회", "맞춤문제 1장 무료 신청").containsOnlyOnce("2만원");
     assertThat(promo).doesNotContain("맞춤 문제 문의·신청", "exam-caption\">학교별")
@@ -178,24 +182,45 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 승인 메뉴 when 렌더하면 then 사이드바 8개 순서와 실제 서비스 링크·공지를 보존한다")
-  void menu_isWorkspaceAndKeepsEveryService() {
+  @DisplayName("given 승인 메뉴 when 렌더하면 then 상단 메뉴와 전체 메뉴가 8개 목적지·실제 서비스 링크·공지를 보존하고 측면 메뉴는 없다")
+  void menu_topAndFullMenuKeepEveryService() {
     String html = render();
-    String nav = html.substring(html.indexOf("id=\"homeMenu\""), html.indexOf("home-sidebar-note"));
-    String[] keys = {"home", "request", "wiki", "game", "agent", "dashboard", "chart", "guide"};
+    String top = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("</header>", html.indexOf("id=\"enNav\"")));
+    String nav = html.substring(html.indexOf("id=\"homeMenu\""), html.indexOf("</nav>", html.indexOf("id=\"homeMenu\"")));
+    assertThat(top).contains("data-home-nav=\"home\"", "Feel to Real", "2주 4회 · 2만원", "1장 무료 신청", "전체 메뉴",
+        "aria-controls=\"homeMenuPanel\"", "aria-expanded=\"false\"");
+    String[] keys = {"request", "wiki", "game", "agent", "dashboard", "chart", "guide"};
     int previous = -1;
     for (String key : keys) {
       int position = nav.indexOf("data-home-nav=\"" + key + "\"");
       assertThat(position).as(key).isGreaterThan(previous);
       previous = position;
     }
+    assertThat(nav).contains("영어 교육", "AI 드라마 제작", "더 보기", "이용 안내", "지문 복습 문제", "문법 문제은행",
+        "AI AGENT 제작협업실", "자주 묻는 질문", "환불·청약철회 정책");
     for (String link : new String[] {"/grammar-items", "/wiki", "/naesin-production-studio?division=MIDDLE",
         "/naesin-production-studio?division=HIGH", "/ai-agent-studio", "/dashboard", "/ledger", "/builder", "/chart"})
       assertThat(html).contains("href=\"" + link + "\"");
-    assertThat(html).contains("id=\"homeSidebar\"", "id=\"homePaneTitle\"", "aria-controls=\"homeMenu\"",
-        "압구정중3 기출문제 적중률 분석 리포트", "모의고사 위키 지문 복습 문제 업로드",
-        "id=\"homeNoticePause\"", "/css/home_workspace.css", "/js/home_workspace.js");
-    assertThat(html).doesNotContain("id=\"enDrawer\"", "class=\"en-menu\"");
+    assertThat(html).contains("<div class=\"hl-menu\" id=\"homeMenuPanel\" hidden>", "role=\"dialog\" aria-modal=\"true\"",
+        "id=\"homeMenuClose\"", "압구정중3 기출문제 적중률 분석 리포트", "모의고사 위키 지문 복습 문제 업로드",
+        "id=\"homeNoticePause\"", "/css/home_light.css", "/js/home_workspace.js", "/js/home_hero.js");
+    assertThat(html).doesNotContain("id=\"homeSidebar\"", "id=\"enDrawer\"", "class=\"en-menu\"", "/css/home_workspace.css");
+  }
+
+  @Test
+  @DisplayName("given 대표 배너 when 렌더하면 then 4장과 선택 타일 4개·일시정지가 있고 3D 그림 9장이 모두 저장소에 있다")
+  void hero_tilesAndThreeDimensionalArt() {
+    String html = render();
+    String hero = html.substring(html.indexOf("id=\"homeHero\""), html.indexOf("id=\"edu\""));
+    assertThat(hero.split("data-hero-slide", -1)).hasSize(5);
+    assertThat(hero.split("data-hero-go=", -1)).hasSize(5);
+    assertThat(hero).contains("data-active=\"0\"", "id=\"heroPause\"", "id=\"heroStatus\"", "aria-pressed=\"true\"");
+    for (String name : new String[] {"home-hero-exam-3d", "home-hero-wiki-3d", "home-hero-game-3d", "home-hero-agent-3d",
+        "home-3d-notebook", "home-3d-blocks", "home-3d-target", "home-3d-piggy", "home-3d-chart"}) {
+      String path = "/img/landing/" + name + ".webp";
+      assertThat(html).as(path).contains("src=\"" + path + "\"");
+      assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
+    }
   }
 
   private static java.util.List<String> menuLinks(String fragment) {
@@ -242,9 +267,9 @@ class LandingEdunovaTemplateContractTest {
     int exam = html.indexOf("id=\"svc-exam\"");
     int dash = html.indexOf("id=\"svc-dashboard\"");
     int ai = html.indexOf("id=\"ai-content\"");
-    assertThat(exam).isPositive();
-    assertThat(exam).isGreaterThan(dash);
-    assertThat(dash).isGreaterThan(ai);
+    assertThat(ai).isPositive();
+    assertThat(exam).isGreaterThan(ai);
+    assertThat(dash).isGreaterThan(exam);
     assertThat(html).contains("콘텐츠 제작협업실").doesNotContain("EduNova").doesNotContain("EDUNOVA").contains("BuildIt").doesNotContain("GPU 에듀테인먼트").doesNotContain("AI AGENT 소개 보기");
     assertThat(html).doesNotContain("href=\"#\"");
     assertThat(html).contains("href=\"/dashboard\"").contains("href=\"/ledger\"").contains("href=\"/admin/hub\"");
@@ -261,7 +286,8 @@ class LandingEdunovaTemplateContractTest {
         .contains("기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.")
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    String[] sections = {"pass-offer", "examPromo", "homeJump", "ai-content", "review-game", "chart-showcase", "aiHome", "svc-exam", "exam-hit", "exam-blog", "exam-contact", "exam-payment"};
+    String[] sections = {"pass-offer", "edu", "ai-content", "hitCase", "exam-payment", "chart-showcase", "review-game", "aiHome",
+        "request", "examPromo", "svc-exam", "exam-hit", "exam-blog", "exam-contact"};
     int previous = -1;
     for (String id : sections) {
       int next = html.indexOf("id=\"" + id + "\"");
@@ -303,9 +329,11 @@ class LandingEdunovaTemplateContractTest {
   void studioEntryLinks_visibleInMenus() {
     // given / when
     String html = render();
-    // The AI AGENT pane is shared by desktop and mobile navigation; access is still checked by the server.
-    assertThat(html).contains("data-home-nav=\"agent\"", "data-home-panel=\"agent\"",
-        "href=\"/ai-agent-studio\"", ">AI AGENT 제작협업실<");
+    // 전체 메뉴(PC·휴대폰 공통)와 AI 드라마 제작 카드에서 들어간다. 권한은 서버가 확인한다.
+    String menu = html.substring(html.indexOf("id=\"homeMenu\""), html.indexOf("</nav>", html.indexOf("id=\"homeMenu\"")));
+    String drama = html.substring(html.indexOf("id=\"ai-content\""), html.indexOf("id=\"hitCase\""));
+    assertThat(menu).contains("data-home-nav=\"agent\"", "href=\"/ai-agent-studio\"", ">AI AGENT 제작협업실<");
+    assertThat(drama).contains("href=\"/ai-agent-studio\" data-studio-link", ">AI AGENT 제작협업실<");
     assertThat(html).doesNotContain("data-studio-entry hidden");
   }
 
@@ -314,7 +342,7 @@ class LandingEdunovaTemplateContractTest {
   void naesinStudioEntry_visibleInMenusWithDivisionChoice() {
     // given / when
     String html = render();
-    assertThat(html).contains("data-home-nav=\"request\"", "data-home-panel=\"request\"",
+    assertThat(html).contains("data-home-nav=\"request\"", "href=\"#request\"", "id=\"request\"",
         "<summary>내신 제작소</summary>",
         "href=\"/naesin-production-studio?division=MIDDLE\">중등부 제작소<",
         "href=\"/naesin-production-studio?division=HIGH\">고등부 제작소<");
@@ -359,7 +387,7 @@ class LandingEdunovaTemplateContractTest {
 
   @Test
   @DisplayName("given 계좌 공개 when 홈 결제 안내를 그리면 then 무통장입금 은행·계좌·예금주·금액·서비스와 복사 버튼을 보여 주고 '아직 제공하지 않습니다' 문구가 없다")
-  void bankTransfer_isShownOnlyWhenPublic() {
+  void bankTransfer_isShownOnlyWhenPublic() throws Exception {
     // given
     var bank = f2r.tutor_solution.private_tutor_solution_back.domain.landing.dto.HomeBankTransfer.CURRENT;
     // when
@@ -375,6 +403,10 @@ class LandingEdunovaTemplateContractTest {
     assertThat(payment).containsOnlyOnce("20,000원").containsOnlyOnce("2주 · 주 2회 · 총 4회 · 160문항").doesNotContain("exam-payment-price");
     assertThat(hidden).doesNotContain("110-498-250866").contains("입금 계좌는 문의해 주시면 안내합니다")
         .doesNotContain("온라인 계좌 안내는 아직");
+    // 계좌 정보는 HomeBankTransfer 값으로만 그린다(템플릿 원문에 쓰지 않는다).
+    String source = new String(java.util.Objects.requireNonNull(getClass().getResourceAsStream("/templates/public/landing.html"))
+        .readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+    assertThat(source).doesNotContain("110-498-250866", "박정민", "신한은행");
   }
 
   @Test
@@ -402,24 +434,20 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 압구정중3 적중 사례가 홍보 영상·바로가기 바로 아래 한 화면에 있고 항목을 누르면 펼쳐지는 구조이며 이미지가 모두 있다")
-  void hitCase_sitsRightBelowPromoJump_andExpandsInPlace() {
+  @DisplayName("given 홈 when 렌더하면 then 압구정중3 적중 사례가 AI 드라마 제작 아래·입금 안내 위에 있고 항목을 누르면 펼쳐지는 구조이며 이미지가 모두 있다")
+  void hitCase_sitsBetweenDramaAndPayment_andExpandsInPlace() {
     // given
     String html = render();
-    int jump = html.indexOf("id=\"homeJump\"");
+    int drama = html.indexOf("id=\"ai-content\"");
     int hit = html.indexOf("id=\"hitCase\"");
-    int ai = html.indexOf("id=\"ai-content\"");
+    int payment = html.indexOf("id=\"exam-payment\"");
     // when
-    String section = html.substring(hit, ai);
+    String section = html.substring(hit, payment);
     java.util.regex.Matcher m = java.util.regex.Pattern.compile("src=\"(/img/exam-cases/[^\"]+)\"").matcher(section);
     java.util.Set<String> images = new java.util.LinkedHashSet<>();
     while (m.find()) images.add(m.group(1));
     // then
-    assertThat(hit).isGreaterThan(jump).isLessThan(ai);
-    var homeBlocks = org.jsoup.Jsoup.parse(html).select("[data-home-panel]").stream()
-        .filter(e -> java.util.Arrays.asList(e.attr("data-home-panel").split(" ")).contains("home"))
-        .map(org.jsoup.nodes.Element::id).toList();
-    assertThat(homeBlocks.indexOf("hitCase")).isEqualTo(homeBlocks.indexOf("homeJump") + 1);
+    assertThat(hit).isGreaterThan(drama).isLessThan(payment);
     assertThat(section)
         .contains("93.5", "예상문제 범위 31문항 중 29문항 적중", "배점 기준 90점 중 85점 · 대화문 5문항 제외", "92점")
         .contains("id=\"hitStory\"", "id=\"hitCompare\"", "id=\"hitScope\"", "id=\"hitAll\"")

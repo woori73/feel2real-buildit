@@ -13,5 +13,16 @@ function setup(reduce=false){
 }
 test('given default carousel when timer advances then one slide and its selector are active',()=>{const s=setup();assert.equal(s.scheduled(),true);s.tick();assert.equal(s.app.current(),1);assert.equal(s.slides.filter(x=>!x.hidden).length,1);assert.equal(s.dots[1].attrs['aria-pressed'],'true')});
 test('given manual controls when wrapping then counter and announcement follow the slide',()=>{const s=setup();s.ids.heroPrev.events.click();assert.equal(s.app.current(),3);assert.equal(s.ids.heroCount.textContent,'4 / 4');s.ids.heroNext.events.click();assert.equal(s.app.current(),0);s.dots[2].events.click();assert.equal(s.ids.heroStatus.textContent,'3 / 4')});
-test('given pause, focus, hover or hidden page then automatic navigation waits',()=>{const s=setup();s.root.events.mouseenter();assert.equal(s.scheduled(),false);s.root.events.mouseleave();assert.equal(s.scheduled(),true);s.root.events.focusin();assert.equal(s.scheduled(),false);s.root.events.focusout({relatedTarget:null});s.ids.heroPause.events.click();assert.equal(s.scheduled(),false);s.ids.heroPause.events.click();s.doc.hidden=true;s.doc.events.visibilitychange();assert.equal(s.scheduled(),false);s.doc.hidden=false;s.panel.hidden=true;s.win.events.hashchange();assert.equal(s.scheduled(),false)});
+test('given pause, focus, hover or hidden page then automatic navigation waits',()=>{const s=setup();s.root.events.mouseenter();assert.equal(s.scheduled(),false);s.root.events.mouseleave();assert.equal(s.scheduled(),true);s.root.events.focusin();assert.equal(s.scheduled(),false);s.root.events.focusout({relatedTarget:null});s.ids.heroPause.events.click();assert.equal(s.scheduled(),false);s.ids.heroPause.events.click();s.doc.hidden=true;s.doc.events.visibilitychange();assert.equal(s.scheduled(),false);s.doc.hidden=false;s.doc.events.visibilitychange();assert.equal(s.scheduled(),true)});
+test('given tiles only (no previous/next buttons or counter) when a tile is chosen then the slide, pressed tile and banner colour key follow',()=>{
+  // given
+  const s=setup(true);delete s.ids.heroNext;delete s.ids.heroPrev;delete s.ids.heroCount;
+  const app=init(s.doc,s.win);
+  // when
+  s.dots[3].events.click();
+  // then
+  assert.equal(app.current(),3);assert.equal(s.slides.filter(x=>!x.hidden).length,1);
+  assert.equal(s.dots[3].attrs['aria-pressed'],'true');assert.equal(s.root.attrs['data-active'],'3');
+  assert.equal(s.ids.heroStatus.textContent,'4 / 4');
+});
 test('given reduced motion then rotation starts paused but manual selection remains usable',()=>{const s=setup(true);assert.equal(s.scheduled(),false);assert.equal(s.ids.heroPause.attrs['aria-pressed'],'true');s.ids.heroNext.events.click();assert.equal(s.app.current(),1);assert.equal(s.scheduled(),false)});

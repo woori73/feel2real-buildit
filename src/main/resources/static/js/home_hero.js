@@ -10,7 +10,7 @@
     var stopped = reduced.matches, hovered = false, focused = false, index = 0, timer;
     function schedule() {
       win.clearTimeout(timer);
-      if (!stopped && !hovered && !focused && !doc.hidden && !root.closest('[data-home-panel]').hidden) {
+      if (!stopped && !hovered && !focused && !doc.hidden) {
         timer = win.setTimeout(function () { show(index + 1, false); }, 6500);
       }
     }
@@ -18,7 +18,9 @@
       index = (next + slides.length) % slides.length;
       slides.forEach(function (slide, i) { slide.hidden = i !== index; });
       dots.forEach(function (dot, i) { dot.setAttribute('aria-pressed', String(i === index)); });
-      doc.getElementById('heroCount').textContent = (index + 1) + ' / ' + slides.length;
+      root.setAttribute('data-active', String(index));
+      var count = doc.getElementById('heroCount');
+      if (count) count.textContent = (index + 1) + ' / ' + slides.length;
       if (announce) doc.getElementById('heroStatus').textContent = slides[index].getAttribute('aria-label');
       schedule();
     }
@@ -29,15 +31,16 @@
       schedule();
     }
     dots.forEach(function (dot, i) { dot.addEventListener('click', function () { show(i, true); }); });
-    doc.getElementById('heroNext').addEventListener('click', function () { show(index + 1, true); });
-    doc.getElementById('heroPrev').addEventListener('click', function () { show(index - 1, true); });
+    // 이전/다음 버튼은 선택 사항이다(밝은 개편 홈은 아래 타일 4개로 고른다).
+    var next = doc.getElementById('heroNext'), prev = doc.getElementById('heroPrev');
+    if (next) next.addEventListener('click', function () { show(index + 1, true); });
+    if (prev) prev.addEventListener('click', function () { show(index - 1, true); });
     pause.addEventListener('click', function () { stopped = !stopped; syncPause(); });
     root.addEventListener('mouseenter', function () { hovered = true; schedule(); });
     root.addEventListener('mouseleave', function () { hovered = false; schedule(); });
     root.addEventListener('focusin', function () { focused = true; schedule(); });
     root.addEventListener('focusout', function (event) { focused = root.contains(event.relatedTarget); schedule(); });
     doc.addEventListener('visibilitychange', schedule);
-    win.addEventListener('hashchange', schedule);
     reduced.addEventListener('change', function () { if (reduced.matches) { stopped = true; syncPause(); } });
     root.querySelector('.hero-controls').hidden = false;
     show(0, false); syncPause();

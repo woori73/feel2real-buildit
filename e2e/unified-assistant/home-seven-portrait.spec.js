@@ -56,7 +56,7 @@ for (const width of [360, 390, 430, 1440]) {
         expect(await image.evaluate(i => getComputedStyle(i).objectFit)).toBe('cover');
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
-      await expect(page.locator('#homeJump a')).toHaveCount(5);
+      await expect(page.locator('#edu .hl-card')).toHaveCount(5);
       await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
       fs.mkdirSync(output, { recursive: true });
       await page.locator('#homeStage').screenshot({ path: path.join(output, `${width}-seven-stage.png`) });

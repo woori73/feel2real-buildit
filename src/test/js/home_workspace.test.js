@@ -1,64 +1,144 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {PANES, init} = require('../../main/resources/static/js/home_workspace.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const {init} = require('../../main/resources/static/js/home_workspace.js');
 
-function node(dataset={}) {
+const HTML = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/public/landing.html'), 'utf8');
+
+function node(extra={}) {
   const classes=new Set(), handlers={};
-  return {dataset,hidden:false,attrs:{},handlers,
+  return Object.assign({hidden:false,attrs:{},handlers,offsetParent:{},
     classList:{add:k=>classes.add(k),remove:k=>classes.delete(k),contains:k=>classes.has(k),toggle(k){if(classes.has(k)){classes.delete(k);return false;}classes.add(k);return true;}},
-    addEventListener(k,fn){handlers[k]=fn;},setAttribute(k,v){this.attrs[k]=v;},removeAttribute(k){delete this.attrs[k];},getAttribute(k){return this.attrs[k];},
-    focus(){this.focused=true;},scrollIntoView(){this.scrolled=true;},querySelectorAll(){return [];},closest(){return null;}
-  };
+    addEventListener(k,fn){handlers[k]=fn;},setAttribute(k,v){this.attrs[k]=v;},getAttribute(k){return this.attrs[k];},
+    focus(){doc.activeElement=this;},closest(){return null;},querySelectorAll(){return [];}
+  },extra);
 }
+let doc;
 function setup(hash='') {
-  const shell=node(),sidebar=node(),toggle=node(),title=node(),description=node(),ticker=node(),pause=node();
-  const panels=Object.keys(PANES).map(key=>node({homePanel:key}));
-  const shared=node({homePanel:'request guide'});panels.push(shared);
-  const video={paused:false,pause(){this.paused=true;}};
-  panels.find(p=>p.dataset.homePanel==='agent').querySelectorAll=()=>[video];
-  const links=Object.keys(PANES).map(key=>node({homeNav:key}));
-  sidebar.closest=()=>shell;sidebar.querySelectorAll=()=>links;
-  const contact=node();contact.closest=()=>shared;
-  const stage=node(),close=node();stage.querySelector=()=>({});close.click=()=>{close.clicked=true;};
-  const ids={homeSidebar:sidebar,enBurger:toggle,homePaneTitle:title,homePaneDescription:description,
-    homeNoticeTrack:ticker,homeNoticePause:pause,'exam-contact':contact,homeGameStage:stage,homeGameClose:close};
-  const doc={title:'Feel2Real',handlers:{},getElementById:id=>ids[id]||null,
-    querySelectorAll:q=>q==='[data-home-panel]'?panels:links,addEventListener(k,fn){this.handlers[k]=fn;}};
+  const root=node(),toggle=node(),closeBtn=node(),firstLink=node(),lastLink=node(),ticker=node(),pause=node();
+  const details={tagName:'DETAILS',open:false};
+  const panel=node({hidden:true,closest:s=>s==='.home-light'?root:null,querySelectorAll:()=>[closeBtn,firstLink,lastLink]});
+  [closeBtn,firstLink,lastLink].forEach(n=>{n.closest=()=>null;});
+  const ids={homeMenuPanel:panel,enBurger:toggle,homeMenuClose:closeBtn,homeNoticeTrack:ticker,homeNoticePause:pause,hitCompare:details};
+  doc={body:{},activeElement:null,handlers:{},getElementById:id=>ids[id]||null,addEventListener(k,fn){this.handlers[k]=fn;}};
   const win={location:{hash},handlers:{},addEventListener(k,fn){this.handlers[k]=fn;}};
   const app=init(doc,win);
-  return {app,win,doc,panels,links,sidebar,toggle,title,ticker,pause,video,close,contact,
-    go(hash){win.location.hash=hash;win.handlers.hashchange();}};
+  const key=(k,shiftKey=false)=>{let prevented=false;doc.handlers.keydown({key:k,shiftKey,preventDefault(){prevented=true;}});return prevented;};
+  const clickIn=target=>panel.handlers.click({target});
+  return {app,doc,win,root,panel,toggle,closeBtn,firstLink,lastLink,ticker,pause,details,key,clickIn};
 }
-test('given no hash when initialized then only home is visible and navigation order is approved',()=>{
+
+test('given the page loads then the full menu starts closed, the shell is marked ready and nothing else is hidden', () => {
+  // given / when
   const s=setup();
-  assert.deepEqual(Object.keys(PANES),['home','request','wiki','game','agent','dashboard','chart','guide']);
-  assert.deepEqual(s.panels.filter(p=>!p.hidden).map(p=>p.dataset.homePanel),['home']);
-  assert.equal(s.links[0].attrs['aria-current'],'page');
+  // then
+  assert.equal(s.panel.hidden,true);
+  assert.equal(s.root.classList.contains('home-ready'),true);
+  assert.equal(s.app.isOpen(),false);
 });
-test('given a selection or history hash change then content, focus, title and current link agree',()=>{
-  const s=setup();s.go('#ai-content');assert.equal(s.app.current(),'agent');assert.equal(s.title.textContent,'AI AGENT');
-  assert.equal(s.title.focused,true);assert.equal(s.doc.title,'AI AGENT | Feel2Real');
-  s.go('#home');assert.equal(s.video.paused,true);assert.equal(s.doc.title,'Feel2Real');
+
+test('given the menu button when pressed then the panel opens, the button reports expanded and focus moves to 닫기', () => {
+  // given
+  const s=setup();s.toggle.focus();
+  // when
+  s.toggle.handlers.click();
+  // then
+  assert.equal(s.panel.hidden,false);
+  assert.equal(s.toggle.attrs['aria-expanded'],'true');
+  assert.equal(s.root.classList.contains('menu-open'),true);
+  assert.equal(s.doc.activeElement,s.closeBtn);
 });
-test('given legacy contact anchor then its pane is shown and the contact itself is scrolled',()=>{
-  const s=setup('#exam-contact');assert.equal(s.app.current(),'request');s.go('#exam-contact');assert.equal(s.contact.scrolled,true);
-  s.go('#guide');assert.equal(s.panels.at(-1).hidden,false);
+
+test('given an open menu when Escape is pressed then it closes and focus returns to the menu button', () => {
+  // given
+  const s=setup();s.toggle.focus();s.toggle.handlers.click();
+  // when
+  const prevented=s.key('Escape');
+  // then
+  assert.equal(prevented,true);
+  assert.equal(s.panel.hidden,true);
+  assert.equal(s.toggle.attrs['aria-expanded'],'false');
+  assert.equal(s.root.classList.contains('menu-open'),false);
+  assert.equal(s.doc.activeElement,s.toggle);
 });
-test('given unknown or malformed hash then homepage remains available',()=>{
-  for(const hash of ['#unknown','#%E0%A4%A'])assert.equal(setup(hash).app.current(),'home');
+
+test('given an open menu when 닫기 or the dimmed backdrop is pressed then it closes and focus returns', () => {
+  // given
+  const s=setup();s.toggle.focus();s.toggle.handlers.click();
+  // when
+  s.clickIn({closest:sel=>sel==='[data-menu-close]'?{}:null});
+  // then
+  assert.equal(s.panel.hidden,true);
+  assert.equal(s.doc.activeElement,s.toggle);
 });
-test('given open mobile menu when Escape or a selection occurs then it closes accessibly',()=>{
-  const s=setup();s.toggle.handlers.click();assert.equal(s.toggle.attrs['aria-expanded'],'true');
-  s.doc.handlers.keydown({key:'Escape'});assert.equal(s.toggle.attrs['aria-expanded'],'false');assert.equal(s.toggle.focused,true);
-  s.toggle.handlers.click();s.go('#wiki');assert.equal(s.sidebar.classList.contains('menu-open'),false);
+
+test('given an open menu when a destination link is chosen then the menu closes and the browser follows the link', () => {
+  // given
+  const s=setup();s.toggle.handlers.click();
+  // when
+  s.clickIn({closest:sel=>sel==='a[href], [data-auth-login]'?{}:null});
+  // then
+  assert.equal(s.panel.hidden,true);
 });
-test('given game pane when leaving then the real game close action releases its iframe',()=>{
-  const s=setup('#review-game');s.go('#dashboard');assert.equal(s.close.clicked,true);
+
+test('given an open menu when 로그인 inside it is pressed then the menu closes so the login dialog gets the keyboard', () => {
+  // given
+  const s=setup();s.toggle.handlers.click();
+  const login={closest:sel=>sel.split(', ').includes('[data-auth-login]')?{}:null};
+  // when
+  s.clickIn(login);
+  // then
+  assert.equal(s.panel.hidden,true);
+  assert.equal(s.key('Tab'),false);
 });
-test('given async media play inside hidden pane then it is paused',()=>{
-  const s=setup();let paused=false;s.doc.handlers.play({target:{closest:()=>({hidden:true}),pause(){paused=true;}}});assert.equal(paused,true);
+
+test('given an open menu when Tab passes the last or first item then focus wraps inside the panel', () => {
+  // given
+  const s=setup();s.toggle.handlers.click();
+  // when / then
+  s.lastLink.focus();assert.equal(s.key('Tab'),true);assert.equal(s.doc.activeElement,s.closeBtn);
+  assert.equal(s.key('Tab',true),true);assert.equal(s.doc.activeElement,s.lastLink);
+  s.firstLink.focus();assert.equal(s.key('Tab'),false);
 });
-test('given moving notices when pause is toggled then control and animation state match',()=>{
-  const s=setup();s.pause.handlers.click();assert.equal(s.ticker.classList.contains('is-paused'),true);assert.equal(s.pause.attrs['aria-pressed'],'true');
+
+test('given a closed menu when keys are pressed then the page keeps its normal keyboard behaviour', () => {
+  // given
+  const s=setup();
+  // when / then
+  assert.equal(s.key('Escape'),false);
+  assert.equal(s.key('Tab'),false);
+  assert.equal(s.panel.hidden,true);
+});
+
+test('given a link to a closed 적중 사례 item when the hash points at it then the item opens', () => {
+  // given
+  const s=setup('#hitCompare');
+  // then (initial load)
+  assert.equal(s.details.open,true);
+  // and on later navigation
+  s.details.open=false;s.win.location.hash='#hitCompare';s.win.handlers.hashchange();
+  assert.equal(s.details.open,true);
+  s.win.location.hash='#%E0%A4%A';assert.doesNotThrow(()=>s.win.handlers.hashchange());
+});
+
+test('given moving notices when pause is toggled then control and animation state match', () => {
+  // given
+  const s=setup();
+  // when / then
+  s.pause.handlers.click();assert.equal(s.ticker.classList.contains('is-paused'),true);assert.equal(s.pause.attrs['aria-pressed'],'true');
   s.pause.handlers.click();assert.equal(s.ticker.classList.contains('is-paused'),false);assert.equal(s.pause.attrs['aria-label'],'공지 흐름 일시정지');
+});
+
+test('given the home template then the full menu is a closed dialog wired to the menu button and every approved destination stays reachable', () => {
+  // given / when
+  const panel=HTML.slice(HTML.indexOf('id="homeMenuPanel"'),HTML.indexOf('<main'));
+  const keys=[...HTML.matchAll(/data-home-nav="([a-z]+)"/g)].map(m=>m[1]);
+  // then
+  assert.match(HTML,/id="enBurger" aria-label="전체 메뉴 열기" aria-expanded="false" aria-controls="homeMenuPanel"/);
+  assert.match(HTML,/<div class="hl-menu" id="homeMenuPanel" hidden>/);
+  assert.match(panel,/role="dialog" aria-modal="true" aria-labelledby="homeMenuTitle"/);
+  assert.match(panel,/id="homeMenuClose" aria-label="메뉴 닫기" data-menu-close/);
+  assert.deepEqual(keys,['home','request','wiki','game','agent','dashboard','chart','guide']);
+  assert.doesNotMatch(HTML,/data-home-panel|id="homeSidebar"/);
 });

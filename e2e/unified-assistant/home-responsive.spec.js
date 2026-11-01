@@ -46,8 +46,8 @@ for (const font of ['fallback', 'pretendard']) {
         const metrics = await page.evaluate(() => {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
-            logo:rect(document.querySelector('.en-logo')), actions:rect(document.querySelector('.en-actions')),
-            offer:rect(document.querySelector('#pass-offer .en-btn-primary')), promo:rect(document.querySelector('#examPromo')),
+            logo:rect(document.querySelector('.hl-logo')), actions:rect(document.querySelector('.hl-actions')),
+            offer:rect(document.querySelector('#homeIntakeCta')), promo:rect(document.querySelector('#examPromo')),
             keys:[...document.querySelectorAll('[data-home-nav]')].map(n=>n.dataset.homeNav) };
         });
         fs.mkdirSync(output, { recursive:true });
@@ -55,11 +55,15 @@ for (const font of ['fallback', 'pretendard']) {
         await page.screenshot({ path:path.join(output, `${id}-home.png`), fullPage:false });
         expect(metrics.overflow).toBe(0);
         expect(metrics.logo.x).toBeGreaterThanOrEqual(0);
+        expect(metrics.logo.right).toBeLessThanOrEqual(metrics.actions.x);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
         expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
         expect(metrics.promo.y).toBeGreaterThan(metrics.offer.bottom);
         expect(metrics.keys).toEqual(['home','request','wiki','game','agent','dashboard','chart','guide']);
-        await expect(page.locator('#homePaneTitle')).toHaveText('홈');
+        await expect(page.locator('#homePaneTitle')).toHaveText('Feel to Real (F2R) 홈');
+        await expect(page.locator('#homeMenuPanel')).toBeHidden();
+        await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1200 });
+        await expect(page.locator('.hl-chips')).toBeVisible({ visible: width <= 1200 });
         await expect(page.locator('#homeNotice')).toBeVisible();
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('압구정중3 기출문제 적중률 분석 리포트');
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('모의고사 위키 지문 복습 문제 업로드');
@@ -68,26 +72,20 @@ for (const font of ['fallback', 'pretendard']) {
         await expect(page.locator('#homeNoticeTrack')).toHaveClass(/is-paused/);
         await page.locator('#homeNoticePause').click();
         await expect(page.locator('#homeNoticeTrack')).toHaveCSS('animation-play-state','running');
-        if (width <= 900) {
-          await expect(page.locator('#homeMenu')).toBeHidden();
-          await page.locator('#enBurger').click();
-          await expect(page.locator('#homeMenu')).toBeVisible();
-          await page.keyboard.press('Escape');
-          await expect(page.locator('#homeMenu')).toBeHidden();
-          await expect(page.locator('#enBurger')).toBeFocused();
-        } else {
-          await expect(page.locator('#homeSidebar')).toBeVisible();
-          const side = await page.locator('#homeSidebar').boundingBox();
-          const content = await page.locator('#homeContent').boundingBox();
-          expect(side.x + side.width).toBeLessThan(content.x);
-        }
-        for (const [key,target] of [['wiki','#wiki'],['game','#review-game'],['agent','#ai-content'],['chart','#chart-showcase'],['guide','#guide']]) {
+        // 전체 메뉴: 모든 화면에서 같은 버튼으로 열고, Esc로 닫으면 메뉴 버튼으로 포커스가 돌아온다.
+        await page.locator('#enBurger').click();
+        await expect(page.locator('#homeMenuPanel')).toBeVisible();
+        await expect(page.locator('#enBurger')).toHaveAttribute('aria-expanded','true');
+        await expect(page.locator('#homeMenuClose')).toBeFocused();
+        await page.screenshot({path:path.join(output,`${id}-menu.png`),fullPage:false});
+        expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#homeMenuPanel')).toBeHidden();
+        await expect(page.locator('#enBurger')).toBeFocused();
+        for (const [key,target] of [['request','#request'],['game','#review-game'],['agent','#ai-content'],['chart','#chart-showcase'],['guide','#guide']]) {
           await selectHomePane(page,key);
-          await expect(page.locator(target)).toBeVisible();
-          await expect(page.locator('#pass-offer')).toBeHidden();
-          await expect(page.locator('#homeNotice')).toBeHidden();
+          await expect(page.locator(target)).toBeInViewport();
           expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
-          if (width <= 900) await expect(page.locator('#homeMenu')).toBeHidden();
         }
         await selectHomePane(page,'dashboard');
         const replies = [];
@@ -117,8 +115,10 @@ for (const font of ['fallback', 'pretendard']) {
         const popup = await popupPromise; await popup.close();
         await expect(page.locator('#enExamMail')).toHaveAttribute('href',email);
         await selectHomePane(page,'home');
-        for (const [link,target] of [['#ai-content','#brandTitle'],['#review-game','#reviewGameTitle'],['#chart-showcase','#enChartTitle']]) {
-          await act(page.locator(`#homeJump a[href="${link}"]`));
+        for (const [link,target] of [['#edu a[href="#request"]','#requestPaneTitle'],['#edu a[href="#review-game"]','#reviewGameTitle'],['#pass-offer a[href="#hitCase"]','#hitCaseTitle']]) {
+          // 배너는 자동으로 넘어가므로 첫 장의 링크는 타일로 첫 장을 고른 뒤 누른다.
+          if (link.startsWith('#pass-offer')) await act(page.locator('[data-hero-go="0"]'));
+          await act(page.locator(link));
           await expect(page.locator(target)).toBeInViewport();
           await selectHomePane(page,'home');
         }
@@ -135,43 +135,48 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   await context.route('**/*',localOnly);
   const page=await context.newPage();
   await page.goto('/#exam-contact');
-  await expect(page.locator('#exam-contact')).toBeVisible();
-  await expect(page.locator('[data-home-nav="request"]')).toHaveAttribute('aria-current','page');
-  const {selectHomePane}=require('./home-navigation.cjs');
-  await selectHomePane(page,'wiki');
+  await expect(page.locator('#exam-contact')).toBeInViewport();
   await page.reload();
-  await expect(page.locator('#wiki')).toBeVisible();
-  await selectHomePane(page,'home');
-  expect(await page.locator('#homeNoticeTrack').evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
+  await expect(page.locator('#exam-contact')).toBeInViewport();
+  const {selectHomePane}=require('./home-navigation.cjs');
+  await selectHomePane(page,'guide');
+  expect(await page.evaluate(()=>location.hash)).toBe('#guide');
   await page.goBack();
-  await expect(page.locator('#wiki')).toBeVisible();
+  expect(await page.evaluate(()=>location.hash)).toBe('#exam-contact');
+  // A link to a closed 적중 사례 item opens it on arrival.
+  await page.goto('/#hitCompare');
+  await expect(page.locator('#hitCompare')).toHaveAttribute('open','');
+  expect(await page.locator('#homeNoticeTrack').evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
   await context.close();
   const fallback=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});
   await fallback.route('**/*',localOnly);
   const plain=await fallback.newPage();
   await plain.goto('/');
-  for(const id of ['pass-offer','wiki','ai-content','review-game','chart-showcase','aiHome','exam-contact']) await expect(plain.locator('#'+id)).toBeVisible();
-  await expect(plain.locator('#homeMenu')).toBeVisible();
+  for(const id of ['pass-offer','edu','ai-content','hitCase','exam-payment','chart-showcase','review-game','aiHome','request','exam-contact','dashboard','guide']) await expect(plain.locator('#'+id)).toBeVisible();
+  await expect(plain.locator('.hl-chips')).toBeVisible();
+  await expect(plain.locator('#homeMenuPanel')).toBeHidden();
   await fallback.close();
 });
 
-test('rotating hero supports manual navigation, pause, service links and reduced motion', async ({ browser }) => {
+test('rotating hero supports tile selection, pause, service links, equal heights and reduced motion', async ({ browser }) => {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   const page = await context.newPage();
   await page.goto('/');
   const hero = page.locator('#homeHero');
   await expect(hero.locator('[data-hero-slide]:visible')).toHaveCount(1);
   await expect(page.locator('#heroPause')).toHaveAttribute('aria-pressed', 'true');
-  await page.locator('#heroNext').click();
-  await expect(page.locator('#heroCount')).toHaveText('2 / 4');
-  await expect(hero.getByRole('link', { name: '위키 열기 ↗' })).toHaveAttribute('href', '/wiki');
+  const heights = await hero.locator('[data-hero-slide]').evaluateAll(slides => slides.map(s => Math.round(s.getBoundingClientRect().height)));
+  expect(new Set(heights).size).toBe(1);
+  await page.locator('[data-hero-go="1"]').click();
+  await expect(hero).toHaveAttribute('data-active', '1');
+  await expect(page.locator('[data-hero-go="1"]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#heroStatus')).toHaveText('2 / 4 모의고사 위키');
+  await expect(hero.getByRole('link', { name: '위키 열기' })).toHaveAttribute('href', '/wiki');
   await page.locator('[data-hero-go="3"]').click();
-  await expect(page.locator('#heroCount')).toHaveText('4 / 4');
-  await hero.getByRole('link', { name: '트레일러 보기 →' }).click();
-  await expect(page.locator('#homePaneTitle')).toHaveText('AI AGENT');
-  await page.goto('/');
-  await page.locator('#heroPrev').click();
-  await expect(page.locator('#heroCount')).toHaveText('4 / 4');
+  await expect(page.locator('#heroStatus')).toHaveText('4 / 4 AI AGENT');
+  await hero.getByRole('link', { name: '트레일러 보기' }).click();
+  await expect(page.locator('#brandTitle')).toBeInViewport();
+  for (const img of await hero.locator('.hero-art img').all()) expect(await img.evaluate(i => i.complete && i.naturalWidth > 0)).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
   await context.close();
 });
