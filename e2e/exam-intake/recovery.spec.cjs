@@ -81,7 +81,7 @@ for (const width of [390, 1440])
       await page.goto("/");
       await expect(page.locator("#homeIntakeCta")).toHaveAttribute(
         "href",
-        "/exam-service",
+        "/exam-service?sample=1",
       );
       await page.locator("#homeIntakeCta").click();
       await expect(page).toHaveURL(/exam-service/);
@@ -258,7 +258,7 @@ test("anonymous homepage application returns to form after existing login", asyn
     await modal.locator("[name=loginId]").fill("student");
     await modal.locator("[name=password]").fill("admin1234");
     await modal.locator("[type=submit]").click();
-    await expect(page).toHaveURL(/\/exam-service$/);
+    await expect(page).toHaveURL(/\/exam-service\?sample=1$/);
     await expect(page.locator("#offerSummary")).toContainText("160문항");
   } finally {
     await ctx.close();
