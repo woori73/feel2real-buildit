@@ -30,9 +30,10 @@ for (const width of [360, 390, 430, 1440]) {
       await page.goto('/');
       const video = page.locator('#examPromoVideo');
       await expect(page.locator('main > section').first()).toHaveAttribute('id', 'pass-offer');
-      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 4).map(s => s.id)))
-        .toEqual(['pass-offer', 'edu', 'ai-content', 'hitCase']);
-      // The promo sits in the 맞춤문제 신청 detail area and starts muted once it is half visible.
+      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 3).map(s => s.id)))
+        .toEqual(['pass-offer', 'edu', 'ai-content']);
+      await expect(page.locator('#service > section').first()).toHaveAttribute('id', 'request');
+      // The promo sits on the first screen next to the banners (below them on phones) and starts muted once half visible.
       await expect(page.locator('#homeHero')).toBeVisible();
       fs.mkdirSync(output, { recursive: true });
       await page.screenshot({ path: path.join(output, `${width}-request-first.png`) });
