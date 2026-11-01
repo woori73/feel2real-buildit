@@ -40,7 +40,7 @@ for (const width of [360, 390, 430, 1440]) {
       page.on('pageerror', error => errors.push(error.message));
       await isolate(page);
       const responsePromise = page.waitForResponse(r => new URL(r.url()).pathname === portrait);
-      await page.goto('/');
+      await page.goto('/#dashboard');
       const response = await responsePromise;
       expect(response.status()).toBe(200);
       expect(response.headers()['content-type']).toContain('image/png');
@@ -75,7 +75,7 @@ for (const width of [360, 390, 430, 1440]) {
 for (const mode of ['api-failed', 'empty']) {
   test(`Seven original survives ${mode} without replacing Suni`, async ({ page }) => {
     await isolate(page, mode);
-    await page.goto('/');
+    await page.goto('/#dashboard');
     await page.locator('[data-home-agent="seven"]').click();
     await expect(page.locator('#stagePoster')).toHaveAttribute('src', portrait);
     await expect(page.locator('#stagePoster')).toBeVisible();
@@ -87,7 +87,7 @@ for (const mode of ['api-failed', 'empty']) {
 
 test('Seven greeting plays the existing MP4, then the home returns to the still photo (no idle download)', async ({ page }) => {
   await isolate(page, 'healthy');
-  await page.goto('/');
+  await page.goto('/#dashboard');
   await page.locator('[data-home-agent="seven"]').click();
   await expect.poll(() => page.locator('#homeStage video').evaluateAll(vs => vs.some(v =>
     v.currentSrc.endsWith('/seven/speak.mp4') && v.readyState >= 2 && !v.paused)), { timeout: 5000 }).toBe(true);

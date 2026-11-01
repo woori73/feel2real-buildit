@@ -1,3 +1,4 @@
+const { selectHomePane } = require('./home-navigation.cjs');
 const {test, expect} = require('@playwright/test');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -24,7 +25,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     const page=await context.newPage(); const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await isolate(page);
     await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new DOMException('Denied','NotAllowedError');}}}));
-    await page.goto('/');
+    await page.goto('/#dashboard');
     await expect(page.locator('#siHomeTitle')).toHaveText('기출과 아주 유사한 영어 기말 대비 문제');
     await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
     await expect(page.locator('#homeName')).toHaveText('서수니');
@@ -33,7 +34,9 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     expect(await page.locator('meta[name="description"]').getAttribute('content')).toContain('총 4회');
     expect(await page.locator('meta[property="og:description"]').getAttribute('content')).toContain('160문항');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
+    await selectHomePane(page, 'home');
     await expect(page.locator('#examPromo')).toBeVisible();
+    await selectHomePane(page, 'dashboard');
     for(const agent of ['seven','suni']) {
       await page.locator(`[data-home-agent="${agent}"]`).click();
       await expect.poll(()=>page.locator(`[data-home-agent="${agent}"] img`).evaluate(i=>i.complete&&i.naturalWidth>0),{timeout:5000}).toBe(true);
@@ -49,6 +52,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     await expect(page.locator('#enExamMail')).toHaveAttribute('href','mailto:woorinaesin@naver.com');
     // Observe the actual native click without launching an external email app in a CI runner.
     await page.evaluate(()=>{ window.mailClicks=[]; document.addEventListener('click',e=>{const a=e.target.closest('#enExamMail');if(a){window.mailClicks.push({href:a.href,prevented:e.defaultPrevented});e.preventDefault();}}); });
+    await selectHomePane(page, 'request');
     await page.locator('#enExamMail').click();
     expect(await page.evaluate(()=>window.mailClicks)).toEqual([{href:'mailto:woorinaesin@naver.com',prevented:false}]);
     await page.locator('[data-copy-address="woorinaesin@naver.com"]').click();
@@ -59,6 +63,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     await expect(page.locator('#examCopyStatus')).toHaveText('이메일 주소를 복사했습니다.');
     expect(await page.evaluate(()=>window.copiedAddress)).toBe('woorinaesin@naver.com');
     // 무통장입금 계좌는 공개 설정이 켜진 경우에만 보이고, 복사 버튼은 계좌번호 전용 안내를 쓴다.
+    await selectHomePane(page, 'guide');
     if (await page.locator('#examBank').count()) {
       await page.locator('#examBank [data-copy-address]').click();
       await expect(page.locator('#examBankCopyStatus')).toHaveText('계좌번호를 복사했습니다.');
@@ -76,7 +81,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
   } finally {await context.close();}
 });
 test('given failed clip when rendering then approved-path poster remains visible',async({page})=>{
-  await isolate(page,{brokenVideo:true}); await page.goto('/');
+  await isolate(page,{brokenVideo:true}); await page.goto('/#dashboard');
   await expect(page.locator('#stagePoster')).toBeVisible();
   await expect.poll(()=>page.locator('#stagePoster').evaluate(i=>i.complete&&i.naturalWidth>0),{timeout:5000}).toBe(true);
   await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');

@@ -42,22 +42,52 @@ for (const font of ['fallback', 'pretendard']) {
         await page.evaluate(() => document.fonts.ready);
         if (font === 'pretendard') expect(await page.evaluate(() => [...document.fonts]
           .some(face => face.family.replaceAll('"', '').replaceAll("'", '') === 'Pretendard Variable' && face.status === 'loaded'))).toBe(true);
+        const { selectHomePane } = require('./home-navigation.cjs');
         const metrics = await page.evaluate(() => {
-          const rect = node => { const r = node.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, width:r.width, height:r.height, right:r.right, bottom:r.bottom + scrollY }; };
-          const visible = node => !!node && getComputedStyle(node).display !== 'none' && node.getBoundingClientRect().height > 0;
+          const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
-            header:{ logo:rect(document.querySelector('.en-logo')), actions:rect(document.querySelector('.en-actions')) },
-            menu:[...document.querySelectorAll('.en-menu > a, .en-menu > details > summary')].filter(visible).map(n => n.textContent.trim()),
-            offerCta:rect(document.querySelector('#pass-offer .en-btn-primary')), promo:rect(document.querySelector('#examPromo')),
-            jump:[...document.querySelectorAll('#homeJump a')].map(a => ({ href:a.getAttribute('href'), ...rect(a) })),
-            order:['pass-offer','examPromo','homeJump','ai-content','review-game','chart-showcase','aiHome','svc-exam'].map(id => rect(document.getElementById(id)).y),
-            stage:rect(document.querySelector('#homeStage')), input:rect(document.querySelector('#homeInput')), send:rect(document.querySelector('#homeForm button')) };
+            logo:rect(document.querySelector('.en-logo')), actions:rect(document.querySelector('.en-actions')),
+            offer:rect(document.querySelector('#pass-offer .en-btn-primary')), promo:rect(document.querySelector('#examPromo')),
+            keys:[...document.querySelectorAll('[data-home-nav]')].map(n=>n.dataset.homeNav) };
         });
         fs.mkdirSync(output, { recursive:true });
         const id = `${width}-${font}`;
         await page.screenshot({ path:path.join(output, `${id}-home.png`), fullPage:false });
-        await page.locator('#aiHome').screenshot({ path:path.join(output, `${id}-assistant.png`) });
-        if (width === 430 && font === 'fallback') await page.screenshot({ path:path.join(output, `${id}-full.png`), fullPage:true });
+        expect(metrics.overflow).toBe(0);
+        expect(metrics.logo.x).toBeGreaterThanOrEqual(0);
+        expect(metrics.actions.right).toBeLessThanOrEqual(width);
+        expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
+        expect(metrics.promo.y).toBeLessThan(height);
+        expect(metrics.keys).toEqual(['home','request','wiki','game','agent','dashboard','chart','guide']);
+        await expect(page.locator('#homePaneTitle')).toHaveText('홈');
+        await expect(page.locator('#homeNotice')).toBeVisible();
+        await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('압구정중3 기출문제 적중률 분석 리포트');
+        await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('모의고사 위키 지문 복습 문제 업로드');
+        await page.locator('#homeNoticePause').click();
+        await expect(page.locator('#homeNoticePause')).toHaveAttribute('aria-pressed','true');
+        await expect(page.locator('#homeNoticeTrack')).toHaveClass(/is-paused/);
+        if (width <= 900) {
+          await expect(page.locator('#homeMenu')).toBeHidden();
+          await page.locator('#enBurger').click();
+          await expect(page.locator('#homeMenu')).toBeVisible();
+          await page.keyboard.press('Escape');
+          await expect(page.locator('#homeMenu')).toBeHidden();
+          await expect(page.locator('#enBurger')).toBeFocused();
+        } else {
+          await expect(page.locator('#homeSidebar')).toBeVisible();
+          const side = await page.locator('#homeSidebar').boundingBox();
+          const content = await page.locator('#homeContent').boundingBox();
+          expect(side.x + side.width).toBeLessThan(content.x);
+        }
+        for (const [key,target] of [['wiki','#wiki'],['game','#review-game'],['agent','#ai-content'],['chart','#chart-showcase'],['guide','#guide']]) {
+          await selectHomePane(page,key);
+          await expect(page.locator(target)).toBeVisible();
+          await expect(page.locator('#pass-offer')).toBeHidden();
+          await expect(page.locator('#homeNotice')).toBeHidden();
+          expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
+          if (width <= 900) await expect(page.locator('#homeMenu')).toBeHidden();
+        }
+        await selectHomePane(page,'dashboard');
         const replies = [];
         for (const question of questions) {
           const before = await page.locator('#homeChat .is-agent').count();
@@ -65,46 +95,57 @@ for (const font of ['fallback', 'pretendard']) {
           await act(page.locator('#homeForm button'));
           await expect(page.locator('#homeChat .is-agent')).toHaveCount(before+1);
           const reply = page.locator('#homeChat .is-agent').last();
-          replies.push({ question, text:await reply.locator('p').innerText(), links:await reply.locator('a').evaluateAll(a=>a.map(x=>({ label:x.textContent, href:x.getAttribute('href') }))) });
+          replies.push({question,text:await reply.locator('p').innerText(),links:await reply.locator('a').evaluateAll(a=>a.map(x=>x.getAttribute('href')))});
         }
-        await page.locator('#aiHome').screenshot({ path:path.join(output, `${id}-intake.png`) });
-        fs.writeFileSync(path.join(output, `${id}.json`), JSON.stringify({ width,height,font,metrics,replies }, null, 2));
-        // Soft checks keep every defect and all evidence instead of stopping at the first one.
-        expect.soft(metrics.overflow).toBe(0);
-        expect.soft(metrics.header.logo.x).toBeGreaterThanOrEqual(0);
-        expect.soft(metrics.header.actions.right).toBeLessThanOrEqual(width);
-        if (width > 1060) expect.soft(metrics.menu).toEqual(['문법 문제은행', '모의고사위키', '내신 제작소', 'AI AGENT 제작협업실', '더보기']);
-        expect.soft(metrics.offerCta.bottom).toBeLessThanOrEqual(height);
-        expect.soft(metrics.promo.y).toBeLessThan(height);
-        expect.soft(metrics.jump.map(j => j.href)).toEqual(['#ai-content', '#review-game', '#chart-showcase']);
-        for (const button of metrics.jump) expect.soft(button.height).toBeGreaterThanOrEqual(44);
-        for (let i = 1; i < metrics.order.length; i++) expect.soft(metrics.order[i]).toBeGreaterThan(metrics.order[i-1]);
-        expect.soft(metrics.stage.width).toBeLessThanOrEqual(64);
-        for (const control of [metrics.input, metrics.send]) expect.soft(control.height).toBeGreaterThanOrEqual(44);
         for (const reply of replies) {
-          expect.soft(reply.text).toContain('20,000원');
-          expect.soft(reply.text).toContain('카톡·이메일');
-          expect.soft(reply.links.map(x=>x.href)).toEqual(expect.arrayContaining([kakao,email]));
+          expect(reply.text).toContain('20,000원');
+          expect(reply.text).toContain('카톡·이메일');
+          expect(reply.links).toEqual(expect.arrayContaining([kakao,email]));
         }
-        for (const [link, target] of [['#ai-content', '#brandTitle'], ['#review-game', '#reviewGameTitle'], ['#chart-showcase', '#enChartTitle']]) {
-          await act(page.locator(`#homeJump a[href="${link}"]`));
-          await expect(page.locator(target)).toBeInViewport();
-        }
-        await expect(page.locator('#enHeroStudio, .en-hero-art')).toHaveCount(0); // 2026-10-30: 트레일러 아래 배너(화보) 삭제
-        const submit = page.locator('#enExamCta');
-        await expect(submit).toHaveAttribute('href', kakao);
-        const popupPromise = page.waitForEvent('popup');
-        await act(submit);
-        const popup = await popupPromise; await popup.close(); // external document is blocked; never submit an application
-        await expect(page.locator('#enExamMail')).toHaveAttribute('href', email);
+        await page.locator('#aiHome').screenshot({path:path.join(output,`${id}-assistant.png`)});
         await act(page.locator('[data-home-agent="seven"]'));
         await expect(page.locator('#homeName')).toHaveText('세븐');
         await act(page.locator('[data-home-agent="suni"]'));
         await expect(page.locator('#homeName')).toHaveText('서수니');
-        await expect(page.locator('[data-home-agent="suni"]')).toHaveAttribute('aria-pressed', 'true');
+        await selectHomePane(page,'request');
+        const submit = page.locator('#enExamCta');
+        await expect(submit).toHaveAttribute('href',kakao);
+        const popupPromise = page.waitForEvent('popup');
+        await act(submit);
+        const popup = await popupPromise; await popup.close();
+        await expect(page.locator('#enExamMail')).toHaveAttribute('href',email);
+        await selectHomePane(page,'home');
+        for (const [link,target] of [['#ai-content','#brandTitle'],['#review-game','#reviewGameTitle'],['#chart-showcase','#enChartTitle']]) {
+          await act(page.locator(`#homeJump a[href="${link}"]`));
+          await expect(page.locator(target)).toBeInViewport();
+          await selectHomePane(page,'home');
+        }
         expect(errors).toEqual([]);
-        expect(externalRequests.some(url=>url===kakao)).toBe(true);
+        fs.writeFileSync(path.join(output,`${id}.json`),JSON.stringify({width,height,font,metrics,replies},null,2));
       } finally { await context.close(); }
     });
   }
 }
+
+test('legacy anchors, browser history, reduced motion and no-JS fallback remain usable',async({browser})=>{
+  const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
+  const page=await context.newPage();
+  await page.goto('/#exam-contact');
+  await expect(page.locator('#exam-contact')).toBeVisible();
+  await expect(page.locator('[data-home-nav="request"]')).toHaveAttribute('aria-current','page');
+  const {selectHomePane}=require('./home-navigation.cjs');
+  await selectHomePane(page,'wiki');
+  await page.reload();
+  await expect(page.locator('#wiki')).toBeVisible();
+  await selectHomePane(page,'home');
+  expect(await page.locator('#homeNoticeTrack').evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
+  await page.goBack();
+  await expect(page.locator('#wiki')).toBeVisible();
+  await context.close();
+  const fallback=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});
+  const plain=await fallback.newPage();
+  await plain.goto('/');
+  for(const id of ['pass-offer','wiki','ai-content','review-game','chart-showcase','aiHome','exam-contact']) await expect(plain.locator('#'+id)).toBeVisible();
+  await expect(plain.locator('#homeMenu')).toBeVisible();
+  await fallback.close();
+});

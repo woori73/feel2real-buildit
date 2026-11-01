@@ -137,8 +137,8 @@ class LandingEdunovaTemplateContractTest {
     // given / when
     String html = render();
     // then
-    assertThat(html).contains("<h1 class=\"home-offer-title\" id=\"siHomeTitle\"><span class=\"home-offer-title-line\">기출과 아주 유사한</span> "
-        + "<span class=\"home-offer-title-line\">영어 기말 대비 문제</span></h1>");
+    assertThat(html).contains("<h2 class=\"home-offer-title\" id=\"siHomeTitle\"><span class=\"home-offer-title-line\">기출과 아주 유사한</span> "
+        + "<span class=\"home-offer-title-line\">영어 기말 대비 문제</span></h2>");
     assertThat(html).doesNotContain("id=\"exam-samples\"", "WORKSHEETS &amp; EXPLANATIONS", "문제지와 해설지 살펴보기",
         "공개 샘플은 준비 중", "문제지·해설지 문의");
     String between = html.substring(html.indexOf("id=\"svc-exam\""), html.indexOf("id=\"exam-hit\""));
@@ -178,30 +178,24 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 읽으면 then 상단 메뉴는 5개로 줄고 BuildIt 표기·예상문제·AI 콘텐츠 소개는 없으며 기존 서비스 링크는 더보기에 모두 남는다")
-  void menu_isCompactAndKeepsEveryService() {
-    // given / when
+  @DisplayName("given 승인 메뉴 when 렌더하면 then 사이드바 8개 순서와 실제 서비스 링크·공지를 보존한다")
+  void menu_isWorkspaceAndKeepsEveryService() {
     String html = render();
-    String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
-    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("<main"));
-    String header = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("<main"));
-    // then
-    String[] labels = {">문법 문제은행<", "<summary>내신 제작소</summary>", ">AI AGENT 제작협업실<", "<summary>더보기</summary>"};
-    int prev = -1;
-    for (String l : labels) {
-      int at = nav.indexOf(l);
-      assertThat(at).as(l).isGreaterThan(prev);
-      prev = at;
+    String nav = html.substring(html.indexOf("id=\"homeMenu\""), html.indexOf("home-sidebar-note"));
+    String[] keys = {"home", "request", "wiki", "game", "agent", "dashboard", "chart", "guide"};
+    int previous = -1;
+    for (String key : keys) {
+      int position = nav.indexOf("data-home-nav=\"" + key + "\"");
+      assertThat(position).as(key).isGreaterThan(previous);
+      previous = position;
     }
-    assertThat(nav.indexOf(">모의고사위키<")).isBetween(nav.indexOf(">문법 문제은행<"), nav.indexOf("<summary>내신 제작소</summary>"));
-    assertThat(header).doesNotContain(">예상문제<", ">AI 콘텐츠 소개<", "en-logo-sub", ">BuildIt<", "en-mobile-services");
-    String[] links = {"/grammar-items", "/wiki", "/naesin-production-studio?division=MIDDLE", "/naesin-production-studio?division=HIGH",
-        "/ai-agent-studio", "/dashboard", "/ledger", "/builder", "/chart"};
-    for (String menu : new String[] {nav, drawer}) {
-      for (String link : links) assertThat(menu).as(link).contains("href=\"" + link + "\"");
-    }
-    assertThat(menuLinks(nav)).isEqualTo(menuLinks(drawer));
-    assertThat(html).doesNotContain("학습자료실").doesNotContain("고객센터");
+    for (String link : new String[] {"/grammar-items", "/wiki", "/naesin-production-studio?division=MIDDLE",
+        "/naesin-production-studio?division=HIGH", "/ai-agent-studio", "/dashboard", "/ledger", "/builder", "/chart"})
+      assertThat(html).contains("href=\"" + link + "\"");
+    assertThat(html).contains("id=\"homeSidebar\"", "id=\"homePaneTitle\"", "aria-controls=\"homeMenu\"",
+        "압구정중3 기출문제 적중률 분석 리포트", "모의고사 위키 지문 복습 문제 업로드",
+        "id=\"homeNoticePause\"", "/css/home_workspace.css", "/js/home_workspace.js");
+    assertThat(html).doesNotContain("id=\"enDrawer\"", "class=\"en-menu\"");
   }
 
   private static java.util.List<String> menuLinks(String fragment) {
@@ -309,11 +303,9 @@ class LandingEdunovaTemplateContractTest {
   void studioEntryLinks_visibleInMenus() {
     // given / when
     String html = render();
-    String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
-    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("<main"));
-    // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
-    assertThat(nav).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
-    assertThat(drawer).contains("href=\"/ai-agent-studio\"").contains(">AI AGENT 제작협업실<");
+    // The AI AGENT pane is shared by desktop and mobile navigation; access is still checked by the server.
+    assertThat(html).contains("data-home-nav=\"agent\"", "data-home-panel=\"agent\"",
+        "href=\"/ai-agent-studio\"", ">AI AGENT 제작협업실<");
     assertThat(html).doesNotContain("data-studio-entry hidden");
   }
 
@@ -322,18 +314,12 @@ class LandingEdunovaTemplateContractTest {
   void naesinStudioEntry_visibleInMenusWithDivisionChoice() {
     // given / when
     String html = render();
-    String nav = html.substring(html.indexOf("class=\"en-menu\""), html.indexOf("class=\"en-actions\""));
-    String drawer = html.substring(html.indexOf("id=\"enDrawer\""), html.indexOf("<main"));
-    // then: 접근 권한(ADMIN·modu)은 서버가 확인하므로 링크 자체는 숨기지 않는다
-    for (String menu : new String[] {nav, drawer}) {
-      assertThat(menu)
-          .contains("<summary>내신 제작소</summary>")
-          .contains("href=\"/naesin-production-studio?division=MIDDLE\">중등부 제작소<")
-          .contains("href=\"/naesin-production-studio?division=HIGH\">고등부 제작소<")
-          .contains("href=\"/wiki\"")
-          .contains("href=\"/ai-agent-studio\"");
-    }
+    assertThat(html).contains("data-home-nav=\"request\"", "data-home-panel=\"request\"",
+        "<summary>내신 제작소</summary>",
+        "href=\"/naesin-production-studio?division=MIDDLE\">중등부 제작소<",
+        "href=\"/naesin-production-studio?division=HIGH\">고등부 제작소<");
   }
+
   @Test
   @DisplayName("given current offer when rendered then all sales/SEO use 14 days, four deliveries, 160 questions without stale copy")
   void currentOffer_and_renderedEvidence() throws Exception {
@@ -430,7 +416,10 @@ class LandingEdunovaTemplateContractTest {
     while (m.find()) images.add(m.group(1));
     // then
     assertThat(hit).isGreaterThan(jump).isLessThan(ai);
-    assertThat(html.substring(jump, hit).split("<section", -1)).hasSize(2);
+    var homeBlocks = org.jsoup.Jsoup.parse(html).select("[data-home-panel]").stream()
+        .filter(e -> java.util.Arrays.asList(e.attr("data-home-panel").split(" ")).contains("home"))
+        .map(org.jsoup.nodes.Element::id).toList();
+    assertThat(homeBlocks.indexOf("hitCase")).isEqualTo(homeBlocks.indexOf("homeJump") + 1);
     assertThat(section)
         .contains("93.5", "예상문제 범위 31문항 중 29문항 적중", "배점 기준 90점 중 85점 · 대화문 5문항 제외", "92점")
         .contains("id=\"hitStory\"", "id=\"hitCompare\"", "id=\"hitScope\"", "id=\"hitAll\"")

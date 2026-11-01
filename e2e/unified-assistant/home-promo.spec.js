@@ -1,3 +1,4 @@
+const { selectHomePane } = require('./home-navigation.cjs');
 const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -29,8 +30,8 @@ for (const width of [360, 390, 430, 1440]) {
       await page.goto('/');
       const video = page.locator('#examPromoVideo');
       await expect(page.locator('main > section').first()).toHaveAttribute('id', 'pass-offer');
-      expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 4).map(s => s.id)))
-        .toEqual(['pass-offer', 'examPromo', 'hitCase', 'ai-content']);
+      expect(await page.locator('main > section').evaluateAll(sections => sections.filter(s => s.dataset.homePanel.split(' ').includes('home')).slice(0, 3).map(s => s.id)))
+        .toEqual(['pass-offer', 'examPromo', 'hitCase']);
       // The promo sits right under the short offer, so it starts muted once it is half visible.
       expect(await video.evaluate(v => v.getBoundingClientRect().top)).toBeLessThan(width === 1440 ? 1050 : 900);
       fs.mkdirSync(output, { recursive: true });
@@ -60,7 +61,9 @@ for (const width of [360, 390, 430, 1440]) {
       fs.mkdirSync(output, { recursive: true });
       await page.screenshot({ path: path.join(output, `${width}-promo-visible.png`) });
       await page.locator('#examPromo').screenshot({ path: path.join(output, `${width}-promo-section.png`) });
+      await selectHomePane(page, 'game');
       await page.locator('#review-game').screenshot({ path: path.join(output, `${width}-game-link.png`) });
+      await selectHomePane(page, 'agent');
       await page.locator('#ai-content').screenshot({ path: path.join(output, `${width}-trailer.png`) });
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('href', 'https://app.nimblefox.ai/g/g1y7QeOYd8');
       await expect(page.locator('#homeReviewGame')).toHaveAttribute('target', '_blank');
@@ -68,8 +71,10 @@ for (const width of [360, 390, 430, 1440]) {
       await expect(page.locator('#homeAgentTrailer')).toHaveAttribute('src', '/video/landing/ai-agent-trailer-v16i-20261029.mp4');
       await expect(page.locator('#homeReviewGamePending')).toHaveCount(0);
       await expect(page.locator('#homeAgentTrailerPending')).toHaveCount(0);
+      await selectHomePane(page, 'game');
       await expect(page.locator('#homeGameStart')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+      await selectHomePane(page, 'home');
       await video.scrollIntoViewIfNeeded();
       fs.writeFileSync(path.join(output, `${width}.json`), JSON.stringify(initial, null, 2));
       await video.evaluate(v => v.play());
@@ -102,6 +107,7 @@ test('game CTA hands off to the user-provided public URL in an isolated tab (des
     contentType: 'text/html', body: '<title>Navigation fixture — not the live game</title>'
   }));
   await page.goto('/');
+  await selectHomePane(page, 'game');
   const opened = page.waitForEvent('popup');
   await page.locator('#homeReviewGame').click();
   const popup = await opened;
@@ -150,6 +156,7 @@ test('failed video keeps the original-frame poster, contact and assistant availa
   await expect(page.locator('#examPromoSound')).toBeHidden();
   await page.locator('#pass-offer a.en-btn-primary').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
   await expect(page.locator('#examContactTitle')).toBeInViewport();
+  await selectHomePane(page, 'dashboard');
   await page.locator('[data-home-agent="seven"]').click();
   await expect(page.locator('#stagePoster')).toBeVisible();
   await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
@@ -166,6 +173,7 @@ test('ended video remains visible for replay and character selection pauses its 
   await expect(page.locator('#examPromo')).toBeVisible();
   await page.locator('#examPromoSound').click();
   await expect.poll(() => video.evaluate(v => !v.paused)).toBe(true);
+  await selectHomePane(page, 'dashboard');
   await page.locator('[data-home-agent="seven"]').click();
   await expect.poll(() => video.evaluate(v => v.paused)).toBe(true);
 });

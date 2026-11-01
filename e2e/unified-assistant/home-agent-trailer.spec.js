@@ -101,7 +101,7 @@ test.describe('isolated approved Studio trailer — synthetic MP4, never the pro
           return route.continue();
         });
         const page = await context.newPage();
-        await page.goto('/');
+        await page.goto('/#ai-content');
         const video = page.locator('#homeAgentTrailer');
         await expect(video).toHaveAttribute('src', bundled);
         await expect(page.locator('#homeAgentTrailerPending')).toHaveCount(0);
