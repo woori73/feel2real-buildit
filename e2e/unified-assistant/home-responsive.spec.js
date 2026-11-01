@@ -164,10 +164,10 @@ test('rotating hero supports manual navigation, pause, service links and reduced
   await expect(page.locator('#heroPause')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#heroNext').click();
   await expect(page.locator('#heroCount')).toHaveText('2 / 4');
-  await expect(hero.getByRole('link', { name: '모의고사 위키 열기 ↗' })).toHaveAttribute('href', '/wiki');
+  await expect(hero.getByRole('link', { name: '위키 열기 ↗' })).toHaveAttribute('href', '/wiki');
   await page.locator('[data-hero-go="3"]').click();
   await expect(page.locator('#heroCount')).toHaveText('4 / 4');
-  await hero.getByRole('link', { name: 'AI AGENT 만나보기 →' }).click();
+  await hero.getByRole('link', { name: '트레일러 보기 →' }).click();
   await expect(page.locator('#homePaneTitle')).toHaveText('AI AGENT');
   await page.goto('/');
   await page.locator('#heroPrev').click();

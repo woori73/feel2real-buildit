@@ -80,6 +80,11 @@ public class ExamIntakeService {
                     offer.priceWon(),
                     "refundProposalVersion",
                     "per-delivery-proposal-v1");
+            if (input.kind() == Kind.INQUIRY && "FREE_SAMPLE".equals(details.get("inquiryType"))) {
+              snapshot = Map.<String, Object>of("version", "free-sample-1page-v1", "durationDays", 0,
+                  "deliveriesPerWeek", 0, "totalDeliveries", 1, "questionsPerDelivery", 0,
+                  "totalQuestions", 0, "priceWon", 0, "refundProposalVersion", "free-sample");
+            }
             if ("UNDER14".equals(details.get("ageBand")))
               guardians.checkAvailable(owner, details.get("guardianConsentId"));
             Request r = repo.insert(owner, input, details, snapshot, hash);

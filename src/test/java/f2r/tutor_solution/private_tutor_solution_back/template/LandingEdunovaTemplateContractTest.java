@@ -137,8 +137,8 @@ class LandingEdunovaTemplateContractTest {
     // given / when
     String html = render();
     // then
-    assertThat(html).contains("<h2 class=\"home-offer-title\" id=\"siHomeTitle\"><span class=\"home-offer-title-line\">기출과 아주 유사한</span> "
-        + "<span class=\"home-offer-title-line\">영어 기말 대비 문제</span></h2>");
+    assertThat(html).contains("<h2 class=\"home-offer-title\" id=\"siHomeTitle\"><span class=\"home-offer-title-line\">우리 학교 맞춤문제</span> "
+        + "<span class=\"home-offer-title-line\">1장 먼저 받아보세요.</span></h2>");
     assertThat(html).doesNotContain("id=\"exam-samples\"", "WORKSHEETS &amp; EXPLANATIONS", "문제지와 해설지 살펴보기",
         "공개 샘플은 준비 중", "문제지·해설지 문의");
     String between = html.substring(html.indexOf("id=\"svc-exam\""), html.indexOf("id=\"exam-hit\""));
@@ -153,7 +153,7 @@ class LandingEdunovaTemplateContractTest {
     String offer = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"examPromo\""));
     String promo = html.substring(html.indexOf("id=\"examPromo\""), html.indexOf("id=\"homeJump\""));
     // then
-    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회 제공").containsOnlyOnce("20,000원");
+    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회", "맞춤문제 1장 무료 신청").containsOnlyOnce("2만원");
     assertThat(promo).doesNotContain("맞춤 문제 문의·신청", "exam-caption\">학교별")
         .contains("id=\"examPromoSummary\" class=\"sr\"");
   }

@@ -2,7 +2,9 @@
   "use strict";
   const $ = (id) => document.getElementById(id),
     admin = document.body.dataset.admin === "true",
-    bankOnly = document.body.dataset.bankOnly === "true";
+    bankOnly = document.body.dataset.bankOnly === "true",
+    sample = !admin && new URL(location.href).searchParams.get("sample") === "1",
+    storageKey = sample ? "f2r-exam-sample-submission-key" : "f2r-exam-submission-key";
   const labels = {
     RECEIVED: "신청 접수",
     AWAITING_DEPOSIT: "입금 대기",
@@ -66,10 +68,10 @@
   function submissionKey(reset = false) {
     const fresh = () => crypto.randomUUID().replaceAll("-", "");
     try {
-      const key = !reset && sessionStorage.getItem("f2r-exam-submission-key");
+      const key = !reset && sessionStorage.getItem(storageKey);
       const value = key && /^[A-Za-z0-9_-]{16,80}$/.test(key) ? key : fresh();
       // Opaque retry key only: never persist form fields, files, contact details or credentials.
-      sessionStorage.setItem("f2r-exam-submission-key", value);
+      sessionStorage.setItem(storageKey, value);
       return value;
     } catch (_) {
       return fresh();
@@ -153,7 +155,7 @@
         el("strong", r.id),
         el(
           "p",
-          (r.kind === "INQUIRY" ? "문의" : "신청") +
+          (r.details.inquiryType === "FREE_SAMPLE" ? "무료 샘플" : r.kind === "INQUIRY" ? "문의" : "정식 신청") +
             " · " +
             r.details.school +
             " " +
@@ -206,8 +208,9 @@
       if (v) dl.append(el("dt", fieldLabels[k] || k), el("dd", v));
     });
     $("details").append(el("p", labels[current.state]), dl);
-    $("progress").textContent =
-      "계약: " +
+    $("progress").textContent = current.details.inquiryType === "FREE_SAMPLE"
+      ? "무료 샘플 1장 · 결제 없음 · 정식 서비스는 별도 신청"
+      : "계약: " +
       current.offer.durationDays +
       "일 · 총 " +
       current.offer.totalDeliveries +
@@ -705,10 +708,14 @@
     details.termsVersion = config.termsVersion;
     details.termsAccepted = String(data.get("termsAccepted") === "on");
     details.optionalConsent = String(data.get("optionalConsent") === "on");
+    if (sample) {
+      details.inquiryType = "FREE_SAMPLE";
+      details.message = "맞춤 예상문제 첫 페이지 또는 1장 무료 제작 신청";
+    }
     let r;
     try {
       r = await api("/api/exam-intake/requests", "POST", {
-        kind: data.get("kind"),
+        kind: sample ? "INQUIRY" : data.get("kind"),
         details,
         consent: data.get("consent") === "on",
         consentVersion: config.consentVersion,
@@ -766,7 +773,7 @@
   control($("actionForm"), async (data) => {
     await api("/api/exam-intake/requests/" + current.id + "/actions", "POST", {
       version: current.version,
-      kind: data.get("kind"),
+      kind: sample ? "INQUIRY" : data.get("kind"),
       body: data.get("body"),
     });
     await detail(current.id);
@@ -909,7 +916,17 @@
   });
   (async () => {
     config = await api("/api/exam-intake/config");
-    $("offerSummary").textContent = config.summary;
+    $("offerSummary").textContent = sample
+      ? "기출자료 접수 후 직접 제작한 첫 페이지 또는 1장을 무료로 제공합니다. 정식 서비스는 2주·주 2회·총 4회·160문항·2만원입니다."
+      : config.summary;
+    if (sample && $("intakeForm")) {
+      document.querySelector(".intake header h1").textContent = "맞춤문제 1장 무료 신청";
+      $("createTitle").textContent = "자료 제출";
+      $("refundTerms").hidden = true;
+      $("termsConsent").hidden = true;
+      $("intakeForm").elements.termsAccepted.required = false;
+      $("intakeForm").querySelector('button[type="submit"]').textContent = "무료 샘플 신청하기";
+    }
     if ($("refundRows"))
       for (let n = 0; n <= config.offer.totalDeliveries; n++) {
         const row = el("tr");
