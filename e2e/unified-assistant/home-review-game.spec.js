@@ -46,7 +46,7 @@ for (const [width, height] of [[360, 800], [390, 844], [1440, 1050]]) {
       page.on('pageerror', e => errors.push(e.message));
       page.on('request', r => { if (r.url().includes(page_path)) gameRequests.push(r.url()); });
       await page.goto('/');
-      await page.locator('#homeJump a[href="#review-game"]').click();
+      await page.locator('#edu a[href="#review-game"]').click();
       await expect(page.locator('#reviewGameTitle')).toBeInViewport();
       expect(gameRequests).toEqual([]); // nothing heavy before the user asks for it
       await page.locator('#homeGameStart').click();

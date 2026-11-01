@@ -15,6 +15,7 @@
 - 홈(`templates/public/landing.html`, `static/css/landing_edunova.css`): 순서 = 히어로(확정 배너 `ai-agent-banner.*`, 1회 20,000원·40문항) → 공지 → 적중 성과(블로그 링크) → 소개 → 서비스 카드 3종 → BUILD IT CHART(마지막, 실제 `/api/chart` 데이터).
 - 디자인 확정: Cinematic Editorial(웜 화이트 `#faf8f4`, 스톤 `#efebe4`, 차콜 `#1f2328`, 스틸 블루 `#3f5b78`). 명조는 큰 제목·주요 숫자만, 버튼 6~8px. 다크 테마(`001fdfbc`)는 되돌림 — 다시 쓰지 말 것.
 - 상단: F2R 로고 이미지(`/img/F2R_logo_pure.svg`) + `FEEL2REAL`(Google Fonts **Russo One**, 실패 시 Montserrat→고딕) + `BuildIt`(1280px 이하에선 숨김). 표기는 BuildIt으로 통일(EDUNOVA 삭제), 3번째 카드명은 "AI 콘텐츠 제작"(COMING SOON). CSS 파일명 `landing_edunova.css`·테스트 클래스명은 유지(변경 금지 지시).
+- **2026-11-01 밝은 개편(`feat/home-redesign-light`)**: 홈을 승인 시안 기준 밝은 한 페이지(대표 배너 4장 → 영어 교육 → AI 드라마 제작 → 적중 사례 → 이용료·입금 → 빌드잇 차트 → 자세한 안내)로 바꾸고, 측면 메뉴·패널 전환 대신 상단 메뉴 + 「전체 메뉴」를 쓴다. 홈 전용 스타일은 `static/css/home_light.css` 하나로 모았다(`landing_edunova.css`·`home_exam.css`·`home_workspace.css`·`home_hero.css`·`f2r_home_agent.css` 삭제). 위 'CSS 파일명 `landing_edunova.css` 유지' 항목 대신 2026-11-01 작업 지시서(home_light.css로 모으기)를 따랐고, 테스트 클래스명 `LandingEdunovaTemplateContractTest`는 유지했다.
 - **예상문제 의뢰 = 기존 카톡(open.kakao.com/o/sMf4ifRi) + 이메일(woorinaesin@naver.com).** 자체 접수 폼/DB는 사용자 지시로 제거함 — 다시 만들지 말 것.
 - 대시보드: 카드 6개, 이지장부=`/ledger`, 에듀홀릭 장부=`/easy`, 대시보드 AI 비서(`POST /api/dashboard/assistant`, Muse Spark 1.3 Contributor, 읽기 전용). AcademyCraft는 별도 앱·미배포라 비링크 "준비 중".
 - 기존 실패(main에서도 동일): `TemplateBrandingTest` 2건, JS 39건, MySQL 필요 테스트.

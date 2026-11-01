@@ -71,7 +71,7 @@ class StudioEntryLinkBrowserQaMySqlTest {
 
       // 로그인 전: 상단(모바일은 메뉴) 링크 클릭 → 홈의 로그인 창이 열린다(제작협업실 화면은 열리지 않음)
       driver.get(BASE + "/");
-      clickMenuLink(driver, wait, mobile);
+      clickMenuLink(driver, wait);
       wait.until(d -> Boolean.TRUE.equals(js.executeScript(
           "var m=document.querySelector('[data-login-modal]');return !!m && !m.hidden;")));
       assertThat(URI.create(driver.getCurrentUrl()).getPath()).isEqualTo("/");
@@ -80,7 +80,7 @@ class StudioEntryLinkBrowserQaMySqlTest {
       // ADMIN 로그인 후: 메뉴 링크·비서 안내 링크를 실제 클릭하면 제작협업실이 열린다(홈의 AI AGENT 배너는 2026-10-30에 내렸다)
       driver.manage().addCookie(new Cookie("ACCESS_TOKEN", admin));
       driver.get(BASE + "/");
-      clickMenuLink(driver, wait, mobile);
+      clickMenuLink(driver, wait);
       waitStudio(driver, wait);
       shot(driver, (mobile ? "mobile-390" : "pc-1440") + "-studio.png");
 
@@ -99,7 +99,7 @@ class StudioEntryLinkBrowserQaMySqlTest {
       driver.manage().deleteCookieNamed("ACCESS_TOKEN");
       driver.manage().addCookie(new Cookie("ACCESS_TOKEN", tutor));
       driver.get(BASE + "/");
-      clickMenuLink(driver, wait, mobile);
+      clickMenuLink(driver, wait);
       wait.until(d -> URI.create(d.getCurrentUrl()).getPath().equals("/ai-agent-studio"));
       wait.until(d -> String.valueOf(js.executeScript("return document.body.innerText;")).contains("관리자와 지정된 운영 계정만"));
       assertThat(driver.getTitle()).doesNotContain("제작 스튜디오");
@@ -108,8 +108,9 @@ class StudioEntryLinkBrowserQaMySqlTest {
     }
   }
 
-  private static void clickMenuLink(ChromeDriver driver, WebDriverWait wait, boolean mobile) {
-    if (mobile) clickVisible(driver, wait, By.id("enBurger"));
+  private static void clickMenuLink(ChromeDriver driver, WebDriverWait wait) {
+    // 밝은 개편 홈(2026-11-01): PC·휴대폰 모두 「전체 메뉴」를 열어 AI AGENT로 이동한다.
+    clickVisible(driver, wait, By.id("enBurger"));
     clickVisible(driver, wait, By.cssSelector("#homeMenu [data-home-nav='agent']"));
     clickVisible(driver, wait, By.cssSelector("#ai-content a[data-studio-link]"));
   }

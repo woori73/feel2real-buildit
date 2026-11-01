@@ -158,15 +158,14 @@ test('given 키보드로 보이는 영역이 줄었을 때 when 입력줄 위치
   assert.equal(h.composerScrollDelta(530.2, 100, 420, 0), 11);
 });
 
-test('given 모바일 입력줄 CSS when 읽으면 then 열이 줄어들 수 있고 보내기 버튼은 고정 너비, 안내 줄은 줄바꿈된다', () => {
-  // given
-  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
+test('given 모바일 입력줄 CSS when 읽으면 then 입력칸은 줄어들 수 있고 보내기 버튼은 고정 너비, 대화 글은 줄바꿈된다', () => {
+  // given (2026-11-01 밝은 개편: 홈 스타일은 home_light.css 하나에 있다)
+  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/home_light.css'), 'utf8');
   // when / then
-  assert.match(CSS, /\.si-home-console \{[^}]*grid-template-columns: minmax\(0, 1fr\)/);
-  assert.match(CSS, /\.si-home-talk \{[^}]*grid-template-columns: minmax\(0, 1fr\)/);
-  assert.match(CSS, /\.si-home-composer input \{[^}]*min-width: 0/);
-  assert.match(CSS, /\.si-home-composer button \{[^}]*flex: 0 0 auto/);
-  assert.match(CSS, /\.si-home-mode \{[^}]*flex-wrap: wrap/);
+  assert.match(CSS, /#aiHome #homeInput \{[^}]*min-width: 0/);
+  assert.match(CSS, /#aiHome \.send \{[^}]*flex: 0 0 auto/);
+  assert.match(CSS, /#aiHome \.si-home-msg \{[^}]*overflow-wrap: anywhere/);
+  assert.match(CSS, /#aiHome \.assistant-head \{[^}]*grid-template-columns: 64px minmax\(0, 1fr\) auto/);
 });
 
 test('given 비서 자료 파일 목록 when 선택 버튼 사진을 고르면 then front.webp, 없으면 poster.jpg, 둘 다 없으면 이름만 쓴다', () => {
@@ -203,9 +202,7 @@ test('given 서수니 미디어 when 사진·포스터를 고르면 then 기존 
 });
 
 test('given 홈 비서 선택 when 읽으면 then 서수니가 기본이고 세븐도 사진+이름 버튼으로 남는다', () => {
-  // given
-  const CSS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
-  // when
+  // given / when
   const seven = HTML.match(/<button[^>]*data-home-agent="seven"[^>]*>(.*?)<\/button>/);
   const suni = HTML.match(/<button[^>]*data-home-agent="suni"[^>]*>/);
   // then
@@ -214,17 +211,13 @@ test('given 홈 비서 선택 when 읽으면 then 서수니가 기본이고 세�
   assert.match(seven[1], /<strong>세븐<\/strong>/);
   assert.match(suni[0], /aria-pressed="true"/);
   assert.match(HTML, /class="stage" id="homeStage" data-state="idle" data-media="missing"/);
-  assert.match(CSS, /\.si-home-stage\[data-state="greeting"\] \{ --si-state: var\(--si-violet\); \}/);
   assert.match(JS, /\|\| !stageHasFrame\(\)\) \$\('homeStage'\)\.dataset\.media = 'missing'/);
 });
 
-test('given 홈과 대시보드 CSS when 홀로그램 주사선을 비교하면 then 공통 디자인 값(3px 간격·진하기 0.10)이 같고 영상이 보일 때만 그린다', () => {
-  // given
-  const home = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_home_agent.css'), 'utf8');
+test('given 대시보드 CSS when 홀로그램 주사선을 읽으면 then 공통 디자인 값(3px 간격·진하기 0.10)이고 영상이 보일 때만 그린다', () => {
+  // given (2026-11-01 밝은 개편 홈에는 홀로그램 화면이 없다. 같은 값은 대시보드 한 곳에서 유지한다)
   const dash = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/f2r_agent_dashboard.css'), 'utf8');
   // when / then
-  for (const css of [home, dash]) {
-    assert.match(css, /--holo-scan-gap: 3px; --holo-scan-alpha: \.10;/);
-    assert.match(css, /\[data-media="ready"\] \.(si-home-hud|agent-hud) \{ background: repeating-linear-gradient\(to bottom, rgba\(0,0,0,var\(--holo-scan-alpha\)\) 0 1px, transparent 1px var\(--holo-scan-gap\)\); \}/);
-  }
+  assert.match(dash, /--holo-scan-gap: 3px; --holo-scan-alpha: \.10;/);
+  assert.match(dash, /\[data-media="ready"\] \.agent-hud \{ background: repeating-linear-gradient\(to bottom, rgba\(0,0,0,var\(--holo-scan-alpha\)\) 0 1px, transparent 1px var\(--holo-scan-gap\)\); \}/);
 });
