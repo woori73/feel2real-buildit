@@ -677,9 +677,16 @@
       throw new Error(
         "신청 설정을 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.",
       );
-    const selectedFiles = data
-      .getAll("initialFiles")
+    const logo = data.get("logoFile");
+    const selectedFiles = data.getAll("initialFiles")
       .filter((f) => f instanceof File && f.size > 0);
+    if (logo instanceof File && logo.size > 0) {
+      if (logo.size > 10 * 1024 * 1024 || !/\.(jpe?g|png)$/i.test(logo.name))
+        throw new Error("로고는 10MiB 이하 JPEG·PNG 이미지로 선택해 주세요.");
+      selectedFiles.unshift(new File([logo], "시험지로고-" + logo.name, {
+        type: logo.type, lastModified: logo.lastModified,
+      }));
+    }
     if (selectedFiles.length && data.get("initialMaterialConsent") !== "on")
       throw new Error("선택 자료 제출 동의를 확인해 주세요.");
     if (
@@ -689,7 +696,7 @@
       )
     )
       throw new Error(
-        "PDF·JPEG·PNG 파일을 10MiB 이하, 최대 20개 선택해 주세요.",
+        "로고 포함 PDF·JPEG·PNG 파일을 10MiB 이하, 최대 20개 선택해 주세요.",
       );
     const details = {};
     for (const k of Object.keys(fieldLabels))

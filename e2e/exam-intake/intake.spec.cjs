@@ -41,7 +41,6 @@ async function create(api) {
           contact: "fixture@example.invalid",
           scope: "합성 시험범위",
           pastPapers: "YES",
-          format: "A4",
         },
         consent: true,
         consentVersion: cfg.consentVersion,
@@ -96,7 +95,6 @@ for (const width of [360, 390, 430, 768, 1440])
           school: "테스트중",
           grade: "중3",
           contact: "fixture@example.invalid",
-          format: "A4",
         }))
           await form.locator('[name="' + name + '"]').fill(value);
         await form.locator('[name="consent"]').check();
@@ -159,12 +157,13 @@ test("simplified form omits age and kind selectors and collects requirements", a
     await expect(page.locator('#intakeForm [name="ageBand"]')).toHaveCount(0);
     await expect(page.locator('#intakeForm [name="examDate"], #intakeForm [name="scope"], #intakeForm [name="pastPapers"], #intakeForm [name="questionTypes"], #intakeForm [name="difficulty"]')).toHaveCount(0);
     await expect(page.locator('#intakeForm [name="name"]')).toBeEnabled();
+    await expect(page.locator('#intakeForm [name="format"]')).toHaveCount(0);
+    await expect(page.getByLabel("시험지에 들어갈 로고 (선택)")).toHaveAttribute("type", "file");
     for (const [key, value] of Object.entries({
       name: "합성 문의자",
       school: "테스트중",
       grade: "중3",
       contact: "fixture@example.invalid",
-      format: "A4",
       requirements: "합성 출제 요구사항입니다",
     }))
       await page.locator('#intakeForm [name="' + key + '"]').fill(value);
