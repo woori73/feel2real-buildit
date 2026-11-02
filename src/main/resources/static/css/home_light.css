@@ -159,10 +159,13 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hero-shot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-radius: 14px; background: #fff; box-shadow: var(--hl-lift); }
 /* 1장: 압구정중3 기말 실제 시험 13번 ↔ 시험 전 예상문제 7회 15번(적중 사례 그대로). 글이 읽히도록 아래에 넓게 둔다.
    2~4장(위키·게임·AI AGENT)도 같은 배치: 제목·버튼을 위에, 그림을 배너 폭 전체로 크게. */
-.hero-exam, .hero-wiki, .hero-game, .hero-agent { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text cta" "art art" "note note"; grid-template-rows: auto auto auto; column-gap: 16px; align-content: start; }
-.hero-exam .hero-cta, .hero-wiki .hero-cta, .hero-game .hero-cta, .hero-agent .hero-cta { flex-direction: column; align-self: end; margin-top: 0; }
-.hero-exam .hero-art, .hero-wiki .hero-art, .hero-game .hero-art, .hero-agent .hero-art { margin-top: 14px; }
-.hero-wiki .hero-shot img, .hero-game .hero-shot img, .hero-agent .hero-shot img { aspect-ratio: 2 / 1; }
+.hero-exam, .hero-wiki, .hero-game, .hero-agent, .hero-ebook { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text cta" "art art" "note note"; grid-template-rows: auto auto auto; column-gap: 16px; align-content: start; }
+.hero-exam .hero-cta, .hero-wiki .hero-cta, .hero-game .hero-cta, .hero-agent .hero-cta, .hero-ebook .hero-cta { flex-direction: column; align-self: end; margin-top: 0; }
+.hero-exam .hero-art, .hero-wiki .hero-art, .hero-game .hero-art, .hero-agent .hero-art, .hero-ebook .hero-art { margin-top: 14px; }
+.hero-wiki .hero-shot img, .hero-game .hero-shot img, .hero-agent .hero-shot img, .hero-ebook .hero-shot img { aspect-ratio: 2 / 1; }
+.hero-ebook .hero-shot img { object-position: center; }
+/* 버튼이 2개라 위쪽 일시정지(Ⅱ) 버튼과 겹치지 않게 조금 내린다. */
+.hero-ebook .hero-cta { padding-top: 26px; }
 .hero-compare { padding: 12px; border-radius: 16px; background: #fff; box-shadow: var(--hl-lift); }
 .hero-compare-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 8px; font-size: 14px; }
 .hero-qno { padding: 2px 10px; border-radius: 8px; background: var(--hl-ink); color: #fff; font-weight: 800; }
@@ -178,8 +181,9 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hero-lead { margin: 10px 0 0; font-size: 16px; line-height: 1.6; color: var(--hl-body); }
 .home-offer-line { margin: 10px 0 0; font-size: 16px; font-weight: 700; }
 .hero-note p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--hl-note); }
-.hl-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.hl-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
 .hl-tiles button { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 5px 10px 5px 5px; border-radius: 14px; border: 2px solid transparent; background: rgba(255,255,255,.55); color: var(--hl-ink); font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
+.hl-tiles button { word-break: keep-all; }
 .hl-tiles button:hover { background: rgba(255,255,255,.8); }
 .hl-tiles button[aria-pressed="true"] { background: #fff; border-color: var(--hl-ink); }
 .hl-tile-img { flex: none; width: 40px; height: 40px; border-radius: 8px; overflow: hidden; background: #fff; }
@@ -213,8 +217,8 @@ html:has(.home-light.menu-open) { overflow: hidden; }
   .hero-lead, .home-offer-line { font-size: 14px; margin-top: 6px; }
   .hero-art { margin-top: 10px; }
   .hero-shot img { aspect-ratio: 16 / 8; }
-  .hero-exam, .hero-wiki, .hero-game, .hero-agent { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "art" "cta" "note"; }
-  .hero-exam .hero-cta, .hero-wiki .hero-cta, .hero-game .hero-cta, .hero-agent .hero-cta { flex-direction: row; margin-top: 10px; }
+  .hero-exam, .hero-wiki, .hero-game, .hero-agent, .hero-ebook { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "art" "cta" "note"; }
+  .hero-exam .hero-cta, .hero-wiki .hero-cta, .hero-game .hero-cta, .hero-agent .hero-cta, .hero-ebook .hero-cta { flex-direction: row; margin-top: 10px; }
   .hero-exam .hero-art { margin-top: 10px; }
   .hero-compare { padding: 8px; border-radius: 12px; }
   .hero-compare-head { font-size: 12px; margin-bottom: 6px; }
@@ -228,6 +232,7 @@ html:has(.home-light.menu-open) { overflow: hidden; }
   .hl-tiles button { flex-direction: column; justify-content: center; gap: 3px; min-height: 64px; padding: 5px 2px; font-size: 11px; text-align: center; line-height: 1.2; }
   .hl-tile-img, .hl-tile-img img { width: 30px; height: 30px; }
   .hero-controls { top: 8px; right: 8px; }
+  .hero-ebook .hero-cta { padding-top: 0; }
   .hl-promo { display: flex; border-radius: 20px; }
   .hl-promo-body { padding: 14px 16px 16px; }
   .hl-promo-body h2 { font-size: 19px; }
