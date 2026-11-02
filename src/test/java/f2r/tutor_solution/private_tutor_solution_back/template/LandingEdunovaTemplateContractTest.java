@@ -214,14 +214,17 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 첫 화면 when 렌더하면 then 배너 4장·타일·일시정지와 오른쪽 홍보 영상·신청 버튼 2개가 있고 실제 화면·적중 대조 이미지가 저장소에 있다")
+  @DisplayName("given 첫 화면 when 렌더하면 then 배너 5장(전자책 포함)·타일·일시정지와 오른쪽 홍보 영상·신청 버튼 2개가 있고 실제 화면·적중 대조 이미지가 저장소에 있다")
   void hero_tilesPromoAndRealImages() {
     String html = render();
     String first = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"edu\""));
     String hero = first.substring(first.indexOf("id=\"homeHero\""), first.indexOf("class=\"hl-promo"));
     String promo = first.substring(first.indexOf("class=\"hl-promo"));
-    assertThat(hero.split("data-hero-slide", -1)).hasSize(5);
-    assertThat(hero.split("data-hero-go=", -1)).hasSize(5);
+    assertThat(hero.split("data-hero-slide", -1)).hasSize(6);
+    assertThat(hero.split("data-hero-go=", -1)).hasSize(6);
+    // 전자책 배너: 스마트스토어 판매처와 카페로 새 창 이동
+    assertThat(hero).contains("새출발 2억2천 탕감", "href=\"https://smartstore.naver.com/newlibrary/products/12879870964\"",
+        "href=\"https://cafe.naver.com/newhopero\"", "rel=\"noopener\"");
     assertThat(hero).contains("data-active=\"0\"", "id=\"heroPause\"", "id=\"heroStatus\"", "aria-pressed=\"true\"",
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
     assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "서수니 · 세븐", "1장 무료 신청", "맞춤문제 신청");
@@ -229,7 +232,8 @@ class LandingEdunovaTemplateContractTest {
         "/img/landing/home-card-ibt.webp", "/img/landing/home-agent-suni.webp", "/img/landing/home-agent-seven.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
         "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
-        "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp", "/img/landing/ai-agent-hero.webp"}) {
+        "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp", "/img/landing/ai-agent-hero.webp",
+        "/img/landing/home-ebook-hero.webp", "/img/landing/home-tile-ebook.webp"}) {
       // 그림을 고화질로 바꾸면 캐시를 피하려고 ?v= 를 붙이므로 경로 앞부분까지만 확인한다.
       assertThat(html).as(path).contains("src=\"" + path);
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
