@@ -47,8 +47,18 @@ public class AdmissionsDataLoader {
     private final AdmissionsScheduleRepository scheduleRepository;
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
 
+    /**
+     * 적재 결과. departmentsUpdated·typesUpdated는 이미 있던 행(같은 대학·학년도·이름) 중 내용이 바뀌어
+     * 갱신하고 DRAFT로 되돌린 건수다. schedulesArchived는 시드의 archive_schedules로 보관 처리한 일정 건수다.
+     */
     public record LoadResult(int universities, int materials, int departments,
-                             int types, int schedules, int knowledgeItems, int skipped) {}
+                             int types, int schedules, int knowledgeItems, int skipped,
+                             int departmentsUpdated, int typesUpdated, int schedulesArchived) {
+        public LoadResult(int universities, int materials, int departments,
+                          int types, int schedules, int knowledgeItems, int skipped) {
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0);
+        }
+    }
 
     /** 시드 구조/참조 오류. 던지면 트랜잭션이 롤백되어 부분 적재가 남지 않는다. */
     public static class SeedLoadException extends IllegalArgumentException {
@@ -58,6 +68,10 @@ public class AdmissionsDataLoader {
     /**
      * 시드 JSON 전체를 적재한다. 같은 시드를 다시 실행해도 중복되지 않는다
      * (대학명 / 자료 제목 / 대학+학년도+학과·전형명 / 대학+학년도+일정 제목+비고 기준).
+     * 이미 있는 학과·전형 행의 내용(학과 인원표, 전형 세부내용·분류)이 시드와 다르면 그 행을 갱신하고
+     * DRAFT로 되돌린다(재검수 후 다시 승인해야 상담 검색에 노출된다). 내용이 같으면 그대로 둔다.
+     * 시드 최상위 {@code archive_schedules}(대학 코드·학년도·일정 제목·비고)에 적힌 기존 일정은 원문과 달라
+     * 폐기된 행이므로 ARCHIVED로 바꾸고, 그 일정에서 만든 지식 항목도 ARCHIVED로 바꾼다. 행을 지우지는 않는다.
      * 구조 오류(대학 목록 없음, 알 수 없는 대학 코드)는 {@link SeedLoadException}으로 전체 롤백한다.
      * 학년도 미확정·미지원 행만 건너뛰며 그 건수를 {@code skipped}로 돌려준다.
      */
@@ -70,15 +84,16 @@ public class AdmissionsDataLoader {
         Map<String, AdmissionsUniversity> univByCode = new HashMap<>();
         Map<String, AdmissionsOfficialMaterial> matByKey = new HashMap<>();
         // 재실행 중복 방지: 적재 전에 이미 있는 행의 자연키 스냅샷(같은 파일 안의 원본 중복행은 보존한다).
-        java.util.Set<String> existingDept = new java.util.HashSet<>();
-        departmentRepository.findAll().forEach(d -> existingDept.add(
-                d.getUniversity().getUniversityId() + "|" + d.getAcademicYear() + "|" + d.getName()));
-        java.util.Set<String> existingType = new java.util.HashSet<>();
-        typeRepository.findAll().forEach(t -> existingType.add(
-                t.getUniversity().getUniversityId() + "|" + t.getAcademicYear() + "|" + t.getName()));
-        java.util.Set<String> existingSched = new java.util.HashSet<>();
-        scheduleRepository.findAll().forEach(sc -> existingSched.add(
-                sc.getUniversity().getUniversityId() + "|" + sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote()));
+        Map<String, AdmissionsDepartment> existingDept = new HashMap<>();
+        departmentRepository.findAll().forEach(d -> existingDept.putIfAbsent(
+                d.getUniversity().getUniversityId() + "|" + d.getAcademicYear() + "|" + d.getName(), d));
+        Map<String, AdmissionsType> existingType = new HashMap<>();
+        typeRepository.findAll().forEach(t -> existingType.putIfAbsent(
+                t.getUniversity().getUniversityId() + "|" + t.getAcademicYear() + "|" + t.getName(), t));
+        Map<String, AdmissionsSchedule> existingSchedRows = new HashMap<>();
+        scheduleRepository.findAll().forEach(sc -> existingSchedRows.putIfAbsent(
+                sc.getUniversity().getUniversityId() + "|" + sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote(), sc));
+        java.util.Set<String> existingSched = existingSchedRows.keySet();
         Map<String, AdmissionsOfficialMaterial> materialByTitle = new HashMap<>();
         materialRepository.findAll().forEach(m -> materialByTitle.put(m.getTitle(), m));
 
@@ -122,6 +137,8 @@ public class AdmissionsDataLoader {
             }
             String univCode = extractUnivCode(docKey);
             AdmissionsUniversity univ = univByCode.get(univCode);
+            // 연세대는 시드에 따라 코드가 YON(검증용 시드) 또는 YONSEI(buildit-admissions 시드)다. 둘 다 받는다.
+            if (univ == null && "YON".equals(univCode)) univ = univByCode.get("YONSEI");
             AdmissionsOfficialMaterial mat = AdmissionsOfficialMaterial.builder()
                     .university(univ)
                     .academicYear(matYear)
@@ -138,11 +155,24 @@ public class AdmissionsDataLoader {
         }
 
         int deptCount = 0;
+        int deptUpdated = 0;
         for (JsonNode dep : root.path("ipsi_departments")) {
             AdmissionsUniversity univ = requireUniversity(univByCode, dep.path("university_code").asText(), "ipsi_departments");
             Integer year = readSupportedYear(dep.path("academic_year"));
             if (year == null) { skipped++; continue; }
-            if (existingDept.contains(univ.getUniversityId() + "|" + year + "|" + dep.path("department_name").asText())) continue;
+            AdmissionsDepartment old = existingDept.get(univ.getUniversityId() + "|" + year + "|" + dep.path("department_name").asText());
+            if (old != null) {
+                String quota = dep.path("counts_by_type").toString();
+                if (!quota.equals(old.getQuotaInfo())) {
+                    old.setQuotaInfo(quota);
+                    AdmissionsOfficialMaterial src = matByKey.get(dep.path("source_document_key").asText(null));
+                    if (src != null) old.setSource(src);
+                    old.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                    departmentRepository.save(old);
+                    deptUpdated++;
+                }
+                continue;
+            }
             AdmissionsDepartment dept = AdmissionsDepartment.builder()
                     .university(univ)
                     .academicYear(year)
@@ -155,17 +185,33 @@ public class AdmissionsDataLoader {
         }
 
         int typeCount = 0;
+        int typeUpdated = 0;
         for (JsonNode t : root.path("ipsi_admission_types")) {
             AdmissionsUniversity univ = requireUniversity(univByCode, t.path("university_code").asText(), "ipsi_admission_types");
             Integer year = readSupportedYear(t.path("academic_year"));
             if (year == null) { skipped++; continue; }
-            if (existingType.contains(univ.getUniversityId() + "|" + year + "|" + t.path("type_name").asText())) continue;
+            AdmissionsType oldType = existingType.get(univ.getUniversityId() + "|" + year + "|" + t.path("type_name").asText());
             StringBuilder details = new StringBuilder();
             details.append("모집인원: ").append(t.path("recruitment_count").asText("미확인")).append("\n");
             details.append("지원자격: ").append(t.path("eligibility").asText("")).append("\n");
             details.append("전형방법: ").append(t.path("student_record_method").asText("")).append("\n");
             details.append("수능최저: ").append(t.path("min_academic_standard").asText(""));
             details.append("\n제출서류: ").append(submissionDocuments(t.path("submission_documents")));
+            if (oldType != null) {
+                String category = t.path("type_category").asText(null);
+                boolean changed = !details.toString().equals(oldType.getDetails())
+                        || (category != null && !category.equals(oldType.getCategory()));
+                if (changed) {
+                    oldType.setDetails(details.toString());
+                    if (category != null) oldType.setCategory(category);
+                    AdmissionsOfficialMaterial src = matByKey.get(t.path("source_document_key").asText(null));
+                    if (src != null) oldType.setSource(src);
+                    oldType.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                    typeRepository.save(oldType);
+                    typeUpdated++;
+                }
+                continue;
+            }
             AdmissionsType type = AdmissionsType.builder()
                     .university(univ)
                     .academicYear(year)
@@ -197,9 +243,24 @@ public class AdmissionsDataLoader {
             schedCount++;
         }
 
-        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={}",
-                univCount, matCount, deptCount, typeCount, schedCount, skipped);
-        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped);
+        int schedArchived = 0;
+        for (JsonNode a : root.path("archive_schedules")) {
+            AdmissionsUniversity univ = requireUniversity(univByCode, a.path("university_code").asText(), "archive_schedules");
+            Integer year = readSupportedYear(a.path("academic_year"));
+            if (year == null) { skipped++; continue; }
+            AdmissionsSchedule old = existingSchedRows.get(univ.getUniversityId() + "|" + year + "|"
+                    + a.path("title").asText() + "|" + a.path("note").asText(null));
+            if (old == null || old.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
+            old.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+            scheduleRepository.save(old);
+            knowledgeRepository.findByDedupKey("schedule:" + univ.getUniversityId() + ":" + year + ":" + old.getScheduleId())
+                    .ifPresent(k -> { k.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED); knowledgeRepository.save(k); });
+            schedArchived++;
+        }
+
+        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={}",
+                univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived);
+        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped, deptUpdated, typeUpdated, schedArchived);
     }
 
     /**

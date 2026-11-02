@@ -117,6 +117,102 @@ class AdmissionsDataLoaderDbTest {
     }
 
     @Test
+    @DisplayName("given 승인된 학과·전형 when 인원·지원자격이 보완된 시드를 다시 적재하면 then 새 행 없이 내용이 갱신되고 DRAFT로 돌아간다")
+    void reload_with_changed_content_updates_rows_and_resets_to_draft() throws Exception {
+        // given
+        loader.loadSeed(GOOD_SEED);
+        departments.findAll().forEach(d -> { d.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE); departments.save(d); });
+        types.findAll().forEach(t -> { t.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE); types.save(t); });
+        String filled = GOOD_SEED
+                .replace("\"department_name\":\"수학과\",\"counts_by_type\":{\"a\":2}",
+                         "\"department_name\":\"수학과\",\"counts_by_type\":{\"a\":2,\"정시 일반전형(나군)\":5}")
+                .replace("\"type_name\":\"학생부교과\",\"recruitment_count\":10",
+                         "\"type_name\":\"학생부교과\",\"recruitment_count\":10,\"eligibility\":\"고교 졸업(예정)자\"");
+
+        // when
+        var result = loader.loadSeed(filled);
+
+        // then
+        assertThat(result.departments() + result.types()).isZero();
+        assertThat(result.departmentsUpdated()).isEqualTo(1);
+        assertThat(result.typesUpdated()).isEqualTo(1);
+        assertThat(departments.count()).isEqualTo(2);
+        assertThat(types.count()).isEqualTo(1);
+        var math = departments.findAll().stream().filter(d -> "수학과".equals(d.getName())).findFirst().orElseThrow();
+        assertThat(math.getQuotaInfo()).contains("정시 일반전형(나군)");
+        assertThat(math.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+        var cs = departments.findAll().stream().filter(d -> "컴퓨터공학과".equals(d.getName())).findFirst().orElseThrow();
+        assertThat(cs.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
+        var type = types.findAll().get(0);
+        assertThat(type.getDetails()).contains("지원자격: 고교 졸업(예정)자");
+        assertThat(type.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+    }
+
+    @Test
+    @DisplayName("given 승인된 행 when 같은 시드를 다시 적재하면 then 갱신 0건이고 승인 상태가 유지된다")
+    void reload_with_same_content_keeps_approved_status() throws Exception {
+        // given
+        loader.loadSeed(GOOD_SEED);
+        types.findAll().forEach(t -> { t.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE); types.save(t); });
+
+        // when
+        var result = loader.loadSeed(GOOD_SEED);
+
+        // then
+        assertThat(result.departmentsUpdated() + result.typesUpdated()).isZero();
+        assertThat(types.findAll()).allSatisfy(t -> assertThat(t.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE));
+    }
+
+    @Test
+    @DisplayName("given 연세대 자료 키(doc_yon_·doc_yonsei_) when 적재하면 then 자료가 시드 코드 YONSEI의 대학에 연결된다")
+    void yonsei_document_keys_link_to_university() throws Exception {
+        // given
+        String seed = """
+            {"ipsi_universities":[{"name":"연세대학교","university_code":"YONSEI"}],
+             "ipsi_documents":[{"document_key":"doc_yon_2027_susi","document_name":"연세 2027 수시","applicable_academic_year":2027},
+                               {"document_key":"doc_yonsei_2027_jeongsi","document_name":"연세 2027 정시","applicable_academic_year":2027}]}
+            """;
+
+        // when
+        loader.loadSeed(seed);
+
+        // then
+        assertThat(materials.findAll()).hasSize(2)
+                .allSatisfy(m -> assertThat(m.getUniversity()).isNotNull());
+    }
+
+    @Test
+    @DisplayName("given 원문과 다른 기존 일정 when archive_schedules에 적어 적재하면 then 그 일정과 지식 항목이 ARCHIVED가 되고 다른 일정은 그대로다")
+    void archive_schedules_retires_listed_rows_and_their_knowledge() throws Exception {
+        // given
+        loader.loadSeed(GOOD_SEED);
+        var wrong = schedules.findAll().get(0);
+        wrong.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
+        schedules.save(wrong);
+        knowledge.save(AdmissionsKnowledgeItem.builder()
+                .academicYear(2027).title("테스트대 2027학년도 일정: 원서접수 (수시)").content("원서접수 2026-09-10").sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                .dedupKey("schedule:" + wrong.getUniversity().getUniversityId() + ":2027:" + wrong.getScheduleId())
+                .status(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE).build());
+        String fix = GOOD_SEED.replaceFirst("\\}\\s*$",
+                ",\"ipsi_schedules\":[{\"university_code\":\"TST\",\"academic_year\":\"2027\",\"item\":\"원서접수\",\"type_name\":\"수시\",\"date\":\"2026-09-11\"}],"
+                + "\"archive_schedules\":[{\"university_code\":\"TST\",\"academic_year\":2027,\"title\":\"원서접수 (수시)\",\"note\":\"2026-09-10\"}]}")
+                .replaceFirst("\"ipsi_schedules\":\\[\\{[^\\]]*2026-09-10[^\\]]*\\],", "");
+
+        // when
+        var result = loader.loadSeed(fix);
+
+        // then
+        assertThat(result.schedulesArchived()).isEqualTo(1);
+        assertThat(result.schedules()).isEqualTo(1);
+        assertThat(schedules.findById(wrong.getScheduleId()).orElseThrow().getStatus())
+                .isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+        assertThat(knowledge.findAll()).singleElement()
+                .satisfies(k -> assertThat(k.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED));
+        assertThat(schedules.findAll()).filteredOn(sc -> "2026-09-11".equals(sc.getNote())).singleElement()
+                .satisfies(sc -> assertThat(sc.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT));
+    }
+
+    @Test
     @DisplayName("given 알 수 없는 대학 코드가 섞인 시드 when 적재하면 then 예외가 나고 아무것도 저장되지 않는다(전체 롤백)")
     void partial_failure_rolls_back_everything() {
         // given

@@ -250,6 +250,33 @@ class AdmissionsFactSearchServiceDbTest {
     }
 
     @Test
+    @DisplayName("given 대학명과 정시만 말한 일반 일정 질문 when '가대 정시 일정 알려줘'를 물으면 then 그 대학 정시 원서접수 일정이 나오고 수시 일정은 섞이지 않는다")
+    void named_university_generic_schedule_question_returns_application_rows() throws Exception {
+        // given
+        clean();
+        loader.loadSeed("""
+            {"ipsi_universities":[{"name":"가대학교","university_code":"GA"}],
+             "ipsi_documents":[{"document_key":"doc_ga_susi","document_name":"가대 2027 수시 모집요강","applicable_academic_year":2027,"source_url":"https://example.test/ga"},
+                               {"document_key":"doc_ga_jeongsi","document_name":"가대 2027 정시 모집요강","applicable_academic_year":2027,"source_url":"https://example.test/ga-j"}],
+             "ipsi_schedules":[
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"전 전형","date":"2026.9.8.~9.11.","source_document_key":"doc_ga_susi"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"정시 전 전형","date":"2026.12.29.~12.31.","source_document_key":"doc_ga_jeongsi"},
+               {"university_code":"GA","academic_year":2027,"item":"합격자 발표","type_name":"정시 전 전형","date":"2027.2.2.","source_document_key":"doc_ga_jeongsi"}]}
+            """);
+        approveAll();
+
+        // when
+        var result = search.search("가대 정시 일정 알려줘", null);
+
+        // then
+        var sched = result.evidence().stream().filter(e -> e.getRefId().startsWith("sched:")).toList();
+        assertThat(sched).singleElement().satisfies(e -> {
+            assertThat(e.getTitle()).startsWith("가대학교 2027학년도").contains("정시");
+            assertThat(e.getExcerpt()).contains("2026.12.29.~12.31.");
+        });
+    }
+
+    @Test
     @DisplayName("given 승인 전(DRAFT) 일정 when 전체 일정을 물으면 then 근거가 없고 전 대학이 missing이다")
     void all_university_schedule_ignores_draft_rows() throws Exception {
         // given

@@ -172,6 +172,20 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given 서울 확대 대학 줄임말(건대·홍대·시립대) when 입시 질문이면 then 정식 대학으로 연결되고 입시 문맥이 없으면 연결하지 않는다")
+    void seoul_expansion_aliases_need_admission_context() {
+        // given
+        List<String> univs = List.of("건국대학교", "홍익대학교", "서울시립대학교", "서울대학교");
+
+        // when / then
+        assertThat(AdmissionsQueryParser.parse("건대 정시 모집인원", univs).universities()).containsExactly("건국대학교");
+        assertThat(AdmissionsQueryParser.parse("홍대 수시 실기전형 일정", univs).universities()).containsExactly("홍익대학교");
+        assertThat(AdmissionsQueryParser.parse("시립대 학생부교과 수능최저", univs).universities()).containsExactly("서울시립대학교");
+        assertThat(AdmissionsQueryParser.parse("홍대 맛집 추천", univs).universities()).isEmpty();
+        assertThat(AdmissionsQueryParser.parse("건대 입구역 근처 카페", univs).universities()).isEmpty();
+    }
+
+    @Test
     @DisplayName("given 다른 뜻으로 쓰인 표현 when 분석하면 then 대학으로 잘못 치환하지 않는다")
     void ambiguous_words_are_not_universities() {
         // given: 입시 문맥이 없거나, 다른 단어의 일부이거나, 조사 '로'가 붙은 부사
