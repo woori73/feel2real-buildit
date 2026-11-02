@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -250,4 +251,30 @@ class AdmissionsSearchAccuracyDbTest {
         assertThat(pack.getOfficialDocHits()).isNotEmpty();
         assertThat(pack.getOfficialDocHits()).allSatisfy(e -> assertThat(e.getTitle()).startsWith("연세대학교"));
     }
+
+    @Test
+    @DisplayName("given 승인된 유튜브 해석 5건 when 키워드로 찾으면 then 많이 겹치는 순서로 최대 3건, 겹침이 약한 항목과 DRAFT는 빠진다")
+    void youtubeSearch_ranksByKeywordOverlapAndLimits() {
+        // given
+        java.util.function.BiConsumer<String, String[]> add = (id, tc) -> knowledgeItems.save(
+                f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.builder()
+                        .academicYear(2028).yearConfirmed(false).title(tc[0]).content(tc[1]).tags(tc[2])
+                        .sourceClass(f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.SourceClass.YOUTUBE)
+                        .status(AdmissionsKnowledgeItem.KnowledgeStatus.valueOf(tc[3])).dedupKey("youtube:" + id).build());
+        add.accept("A", new String[]{"학생부종합 준비 전략", "학생부종합 세특 관리", "학생부종합", "ACTIVE"});
+        add.accept("B", new String[]{"학생부종합 면접", "면접 대비", "학생부종합", "ACTIVE"});
+        add.accept("C", new String[]{"수능 영어", "학생부종합 언급 한 번", "", "ACTIVE"});
+        add.accept("D", new String[]{"학생부종합 서류", "학생부종합", "학생부종합", "DRAFT"});
+        add.accept("E", new String[]{"학생부종합 세특", "학생부종합 세특", "세특", "ACTIVE"});
+
+        // when
+        var hits = researchService.searchYoutubeKnowledge(List.of("학생부종합", "세특"), 2027);
+
+        // then: 2027 질문이어도 2028 해석을 찾고(제목에 대상 학년도 표시), C(본문 1회)·D(DRAFT)는 제외
+        assertThat(hits).extracting(AdmissionsResearchService.Evidence::getTitle)
+                .containsExactly("[유튜브 해석 · 2028학년도 대상] 학생부종합 세특", // 제목·태그 2개 + 본문 2개
+                        "[유튜브 해석 · 2028학년도 대상] 학생부종합 준비 전략", // 제목 1개 + 본문 2개
+                        "[유튜브 해석 · 2028학년도 대상] 학생부종합 면접");
+    }
+
 }

@@ -147,7 +147,8 @@ public class AdmissionsFactSearchService {
                 .filter(t -> AdmissionsQueryParser.typePieces(t.getName()).stream().anyMatch(question::contains))
                 .toList();
         List<AdmissionsType> chosen = mainCampusFirst(question,
-                !matched.isEmpty() ? matched : (p.wantsType() ? candidates : List.of()),
+                // 합격 가능성 질문은 판단 대신 참고할 전형 정보(모집인원·전형방법·수능최저)를 근거로 쓴다.
+                !matched.isEmpty() ? matched : (p.wantsType() || p.asksAdmissionChance() ? candidates : List.of()),
                 t -> (t.getSource() == null ? "" : t.getSource().getTitle()) + " " + t.getName());
         List<Evidence> out = new ArrayList<>();
         for (AdmissionsType t : chosen) {

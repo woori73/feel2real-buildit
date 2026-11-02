@@ -287,6 +287,8 @@ public class AdmissionsDataLoader {
             schedArchived++;
         }
 
+        int youtube = loadYoutubeKnowledge(root.path("youtube_knowledge"));
+
         int superseded = 0;
         for (JsonNode code : root.path("authoritative_universities")) {
             superseded += archiveSuperseded(root, code.asText(), univByCode);
@@ -294,7 +296,57 @@ public class AdmissionsDataLoader {
 
         log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={}",
                 univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
-        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
+        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, youtube, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
+    }
+
+    /**
+     * 시드의 youtube_knowledge(유튜브 영상 분석 = 전문가 해석·전략·전망)를 지식 항목으로 넣는다.
+     * 공식 사실이 아니므로 sourceClass=YOUTUBE로 두어 공식 근거 검색(OFFICIAL만)에 섞이지 않게 한다.
+     * 같은 id(dedupKey youtube:{id})가 있으면 제목·본문이 바뀐 경우에만 갱신하고 DRAFT로 되돌린다.
+     * 지원하지 않는 학년도(2027·2028 외) 항목은 넣지 않는다. 넣거나 갱신한 건수를 돌려준다.
+     */
+    int loadYoutubeKnowledge(JsonNode items) {
+        if (items == null || !items.isArray()) return 0;
+        int n = 0;
+        for (JsonNode it : items) {
+            String id = it.path("id").asText("");
+            Integer year = readSupportedYear(it.path("academic_year"));
+            String title = it.path("title").asText("");
+            String content = it.path("content").asText("");
+            if (id.isBlank() || year == null || title.isBlank() || content.isBlank()) continue;
+            String dedupKey = "youtube:" + id;
+            java.util.Optional<AdmissionsKnowledgeItem> existing = knowledgeRepository.findByDedupKey(dedupKey);
+            if (existing.isPresent()) {
+                AdmissionsKnowledgeItem k = existing.get();
+                if (title.equals(k.getTitle()) && content.equals(k.getContent())) continue;
+                k.setTitle(title);
+                k.setContent(content);
+                k.setTags(it.path("tags").asText(null));
+                k.setSourceUrl(it.path("source_url").asText(null));
+                k.setAcademicYear(year);
+                k.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                knowledgeRepository.save(k);
+                n++;
+                continue;
+            }
+            knowledgeRepository.save(AdmissionsKnowledgeItem.builder()
+                    .academicYear(year)
+                    .yearConfirmed(false)
+                    .title(title)
+                    .content(content)
+                    .category("유튜브 해석")
+                    .tags(it.path("tags").asText(null))
+                    .sourceClass(AdmissionsKnowledgeItem.SourceClass.YOUTUBE)
+                    .sourceUrl(it.path("source_url").asText(null))
+                    .role(AdmissionsKnowledgeItem.Role.FACT)
+                    .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
+                    .dedupKey(dedupKey)
+                    .verificationNote("유튜브 영상 분석(buildit-admissions data/youtube). 공식 사실이 아닌 전문가 해석 — 답변에서는 별도 참고 단락으로만 쓴다.")
+                    .createdBy("admissions-loader")
+                    .build());
+            n++;
+        }
+        return n;
     }
 
     /** authoritative_universities 한 대학 처리. 보관한 행 수를 돌려준다. */

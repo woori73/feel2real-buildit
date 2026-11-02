@@ -116,6 +116,22 @@ class AdmissionsActivationServiceDbTest {
     }
 
     @Test
+    @DisplayName("given 시드로 넣은 2028 유튜브 해석(DRAFT) when 2028을 전체 승격하면 then 유튜브 항목도 ACTIVE가 된다")
+    void activateAll_promotesYoutubeKnowledgeOfTheYear() throws Exception {
+        // given
+        loader.loadSeed(SEED.replace("\"ipsi_schedules\"", "\"youtube_knowledge\":[{\"id\":\"YT-A001\",\"academic_year\":\"2028\","
+                + "\"title\":\"5등급제 해설\",\"content\":\"전문가 해석\",\"source_url\":\"https://www.youtube.com/watch?v=x\"}],\"ipsi_schedules\""));
+
+        // when
+        var r = activation.activateAll(2028, "ACTIVATE-ALL-2028");
+
+        // then
+        assertThat(r.knowledgeItems()).isEqualTo(1);
+        assertThat(knowledgeItems.findByDedupKey("youtube:YT-A001")).get()
+                .satisfies(k -> assertThat(k.getStatus()).isEqualTo(KnowledgeStatus.ACTIVE));
+    }
+
+    @Test
     @DisplayName("given 2027 승격 when 실행하면 then 다른 학년도(2028) 행은 DRAFT로 남는다")
     void activateAll_leavesOtherYearsUntouched() {
         // when

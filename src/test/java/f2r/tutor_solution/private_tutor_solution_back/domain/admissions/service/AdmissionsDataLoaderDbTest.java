@@ -361,6 +361,33 @@ class AdmissionsDataLoaderDbTest {
     }
 
     @Test
+    @DisplayName("given youtube_knowledge가 있는 시드 when 적재·재적재하면 then YOUTUBE 지식 항목(DRAFT)이 생기고 내용이 바뀐 것만 갱신된다")
+    void youtube_knowledge_is_loaded_as_youtube_items() throws Exception {
+        // given
+        String seed = """
+            {"ipsi_universities":[{"name":"사대학교","university_code":"SA"}],
+             "youtube_knowledge":[
+               {"id":"YT-A001","academic_year":"2028","title":"[전문가 해석] 5등급제","content":"주장: 학생부 중심","tags":"내신 5등급","source_url":"https://www.youtube.com/watch?v=a&t=60"},
+               {"id":"YT-A002","academic_year":"2028","title":"[전략] 수능","content":"주장: 최저 대비"},
+               {"id":"YT-A003","academic_year":"2026","title":"지원 안 하는 학년도","content":"x"}]}
+            """;
+
+        // when
+        var first = loader.loadSeed(seed);
+        var second = loader.loadSeed(seed.replace("주장: 최저 대비", "주장: 최저 대비(수정)"));
+
+        // then
+        assertThat(first.knowledgeItems()).as("2026 항목은 넣지 않는다").isEqualTo(2);
+        assertThat(second.knowledgeItems()).as("바뀐 1건만 갱신").isEqualTo(1);
+        assertThat(knowledge.findAll()).hasSize(2).allSatisfy(k -> {
+            assertThat(k.getSourceClass()).isEqualTo(AdmissionsKnowledgeItem.SourceClass.YOUTUBE);
+            assertThat(k.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+        });
+        assertThat(knowledge.findByDedupKey("youtube:YT-A001")).get()
+                .satisfies(k -> assertThat(k.getSourceUrl()).isEqualTo("https://www.youtube.com/watch?v=a&t=60"));
+    }
+
+    @Test
     @DisplayName("given authoritative 표시가 없는 시드 when 적재하면 then 예전 행을 보관하지 않는다")
     void without_authoritative_flag_nothing_is_superseded() throws Exception {
         // given

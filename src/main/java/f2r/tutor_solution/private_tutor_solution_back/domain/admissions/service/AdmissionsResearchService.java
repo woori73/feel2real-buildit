@@ -487,41 +487,41 @@ public class AdmissionsResearchService {
 
     // ── STEP4: 유튜브 의견 (별도 분류) ────────────────────────────────
 
+    /**
+     * 유튜브 해석 항목 중 질문 키워드와 가장 많이 겹치는 것 최대 {@link #YOUTUBE_LIMIT}건.
+     * 대부분 2028 대입(현 고2) 해설이라 학년도로 거르지 않고, 제목에 대상 학년도를 붙여 답변에서 밝히게 한다.
+     * 키워드가 하나만 본문에 걸린 항목(점수 2 미만)은 관련이 약해 쓰지 않는다.
+     */
     List<Evidence> searchYoutubeKnowledge(List<String> keywords, Integer yearFilter) {
         if (keywords.isEmpty()) return List.of();
-        Specification<AdmissionsKnowledgeItem> spec = (root, query, cb) -> {
-            List<Predicate> kws = new ArrayList<>();
-            for (String kw : keywords) {
-                String p = "%" + kw + "%";
-                kws.add(cb.or(
-                        cb.like(root.get("title"), p),
-                        cb.like(root.get("content"), p),
-                        cb.like(root.get("tags"), p)));
-            }
-            List<Predicate> base = new ArrayList<>();
-            base.add(cb.equal(root.get("status"), AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE));
-            base.add(cb.equal(root.get("sourceClass"), AdmissionsKnowledgeItem.SourceClass.YOUTUBE));
-            if (yearFilter != null) {
-                base.add(cb.equal(root.get("academicYear"), yearFilter));
-            }
-            base.add(cb.or(kws.toArray(new Predicate[0])));
-            query.orderBy(cb.desc(root.get("createdAt")));
-            return cb.and(base.toArray(new Predicate[0]));
-        };
-        return knowledgeRepository.findAll(spec, PageRequest.of(0, PER_STEP_LIMIT)).stream()
+        Specification<AdmissionsKnowledgeItem> spec = (root, query, cb) -> cb.and(
+                cb.equal(root.get("status"), AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE),
+                cb.equal(root.get("sourceClass"), AdmissionsKnowledgeItem.SourceClass.YOUTUBE));
+        java.util.Map<Long, Integer> score = new java.util.HashMap<>();
+        List<AdmissionsKnowledgeItem> candidates = knowledgeRepository.findAll(spec);
+        for (AdmissionsKnowledgeItem k : candidates) {
+            score.put(k.getKnowledgeId(), keywordHits(keywords, k.getTitle(), k.getTags()) * 2 + keywordHits(keywords, k.getContent()));
+        }
+        return candidates.stream()
+                .filter(k -> score.get(k.getKnowledgeId()) >= 2)
+                .sorted(Comparator.comparingInt((AdmissionsKnowledgeItem k) -> score.get(k.getKnowledgeId())).reversed()
+                        .thenComparing(AdmissionsKnowledgeItem::getKnowledgeId))
+                .limit(YOUTUBE_LIMIT)
                 .map(k -> Evidence.builder()
                         .stepNo(STEP_YOUTUBE)
                         .sourceClass(SourceClass.YOUTUBE_OPINION)
-                        .refId(String.valueOf(k.getKnowledgeId()))
+                        .refId("youtube:" + k.getKnowledgeId())
                         .refUrl(k.getSourceUrl())
-                        .title("[유튜브 의견] " + k.getTitle())
-                        .excerpt(firstChars(k.getContent(), 300))
-                        .note("유튜브 분석 의견 — 확정 사실이 아님")
+                        .title("[유튜브 해석 · " + k.getAcademicYear() + "학년도 대상] " + k.getTitle())
+                        .excerpt(firstChars(k.getContent(), 400))
+                        .note("유튜브 영상 분석 — 공식 자료가 아닌 전문가 해석")
                         .academicYear(k.getAcademicYear())
-                        .yearConfirmed(k.getYearConfirmed())
+                        .yearConfirmed(false)
                         .build())
                 .toList();
     }
+
+    static final int YOUTUBE_LIMIT = 3;
 
     // ── STEP5: 충돌대장 ──────────────────────────────────────────────
 
