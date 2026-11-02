@@ -112,3 +112,26 @@ test('given no run record after restart when formatting then DB counts still sho
   assert.equal(load.formatReindexStatus({ total: 0, done: 0, missing: 0 }).percent, 0);
   assert.equal(load.formatReindexStatus(null).percent, 0);
 });
+
+test('given a load response with update and archive counts when formatting then they are shown', () => {
+  // given
+  const r = { universities: 0, materials: 8, departments: 112, types: 79, schedules: 264, skippedUnknownYear: 0,
+              departmentsUpdated: 433, typesUpdated: 31, schedulesArchived: 15, supersededArchived: 25, schedulesSourced: 51, status: 'LOADED' };
+  // when
+  const text = load.formatLoadResult(r);
+  // then
+  assert.match(text, /학과 112/);
+  assert.match(text, /갱신 학과 433 · 갱신 전형 31/);
+  assert.match(text, /보관 일정 15/);
+  assert.match(text, /예전 자료 보관 25 · 일정 출처 연결 51/);
+});
+
+test('given an older server response without update counts when formatting then the extra parts are omitted', () => {
+  // given
+  const r = { universities: 1, materials: 1, departments: 2, types: 1, schedules: 1, skippedUnknownYear: 0, status: 'LOADED' };
+  // when
+  const text = load.formatLoadResult(r);
+  // then
+  assert.doesNotMatch(text, /갱신|보관/);
+  assert.match(text, /상태 LOADED/);
+});

@@ -146,7 +146,9 @@ public class AdmissionsFactSearchService {
         List<AdmissionsType> matched = candidates.stream()
                 .filter(t -> AdmissionsQueryParser.typePieces(t.getName()).stream().anyMatch(question::contains))
                 .toList();
-        List<AdmissionsType> chosen = !matched.isEmpty() ? matched : (p.wantsType() ? candidates : List.of());
+        List<AdmissionsType> chosen = mainCampusFirst(question,
+                !matched.isEmpty() ? matched : (p.wantsType() ? candidates : List.of()),
+                t -> (t.getSource() == null ? "" : t.getSource().getTitle()) + " " + t.getName());
         List<Evidence> out = new ArrayList<>();
         for (AdmissionsType t : chosen) {
             out.add(evidence("type", t.getAdmissionTypeId(), t.getAcademicYear(),
@@ -166,7 +168,7 @@ public class AdmissionsFactSearchService {
         boolean genericQuestion = AdmissionsQueryParser.SCHEDULE_TERMS.stream().noneMatch(question::contains);
         boolean asksSusi = question.contains("수시");
         boolean asksJeongsi = question.contains("정시");
-        List<Evidence> out = new ArrayList<>();
+        List<AdmissionsSchedule> rows = new ArrayList<>();
         for (AdmissionsSchedule s : scheduleRepository.findAll()) {
             if (s.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(s.getAcademicYear())) continue;
             if (!approvedSource(s.getSource(), s.getAcademicYear())) continue;
@@ -179,6 +181,11 @@ public class AdmissionsFactSearchService {
                 if (asksSusi && !asksJeongsi && title.contains("정시")) continue;
                 if (asksJeongsi && !asksSusi && !title.contains("정시")) continue;
             } else if (!scheduleMatches(question, title)) continue;
+            rows.add(s);
+        }
+        List<Evidence> out = new ArrayList<>();
+        for (AdmissionsSchedule s : mainCampusFirst(question, rows,
+                x -> (x.getSource() == null ? "" : x.getSource().getTitle()) + " " + x.getTitle())) {
             out.add(evidence("sched", s.getScheduleId(), s.getAcademicYear(),
                     s.getUniversity().getName() + " " + s.getAcademicYear() + "학년도 " + s.getTitle(),
                     "일정 원문: " + (s.getNote() == null || s.getNote().isBlank() ? "확인되지 않음" : s.getNote()),
@@ -186,6 +193,33 @@ public class AdmissionsFactSearchService {
             if (out.size() >= MAX_SCHEDULES) break;
         }
         return out;
+    }
+
+    /** 서울(본교)이 아닌 캠퍼스 표기(세종·글로벌·다빈치·ERICA·WISE 등)가 있으면 true. */
+    static boolean otherCampusMarked(String text) {
+        if (text == null) return false;
+        String t = text.replace(" ", "");
+        for (String marker : OTHER_CAMPUS_MARKERS) {
+            if (t.contains(marker)) return true;
+        }
+        return false;
+    }
+
+    private static final List<String> OTHER_CAMPUS_MARKERS = List.of(
+            "세종캠퍼스", "글로벌캠퍼스", "다빈치캠퍼스", "안성캠퍼스", "ERICA", "WISE캠퍼스", "경주캠퍼스",
+            "글로컬캠퍼스", "충주캠퍼스", "국제캠퍼스", "미래캠퍼스", "원주캠퍼스", "천안캠퍼스", "자연캠퍼스", "용인캠퍼스");
+
+    /**
+     * 질문이 캠퍼스를 말하지 않았으면 서울(본교) 행을 앞에 둔다(다른 캠퍼스 행은 뒤로, 순서는 유지).
+     * 근거 상한(MAX_*) 때문에 다른 캠퍼스 일정이 본교 일정을 밀어내던 문제를 막는다.
+     */
+    static <T> List<T> mainCampusFirst(String question, List<T> rows, java.util.function.Function<T, String> label) {
+        if (campusOf(question) != null || rows.size() < 2) return rows;
+        List<T> main = new ArrayList<>();
+        List<T> other = new ArrayList<>();
+        for (T r : rows) (otherCampusMarked(label.apply(r)) ? other : main).add(r);
+        main.addAll(other);
+        return main;
     }
 
     /**

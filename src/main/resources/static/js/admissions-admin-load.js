@@ -78,8 +78,19 @@
     return out;
   }
 
+  /** 적재 응답을 한 줄 문구로 바꾼다. 갱신·보관 건수는 서버가 보낸 경우에만 붙인다. */
+  function formatLoadResult(r) {
+    var text = '적재 결과 — 대학 ' + r.universities + ' · 공식자료 ' + r.materials + ' · 학과 ' + r.departments + ' · 전형 ' + r.types +
+        ' · 일정 ' + r.schedules + ' (건너뜀 ' + r.skippedUnknownYear + ')';
+    if (typeof r.departmentsUpdated === 'number') text += ' · 갱신 학과 ' + r.departmentsUpdated + ' · 갱신 전형 ' + r.typesUpdated;
+    if (typeof r.schedulesArchived === 'number') text += ' · 보관 일정 ' + r.schedulesArchived;
+    if (typeof r.supersededArchived === 'number') text += ' · 예전 자료 보관 ' + r.supersededArchived;
+    if (typeof r.schedulesSourced === 'number') text += ' · 일정 출처 연결 ' + r.schedulesSourced;
+    return text + ' · 상태 ' + r.status;
+  }
+
   var api = { summarizeSeed: summarizeSeed, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys,
-              formatReindexStatus: formatReindexStatus };
+              formatReindexStatus: formatReindexStatus, formatLoadResult: formatLoadResult };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   root.AdmissionsAdminLoad = api;
 
@@ -128,8 +139,7 @@
       var btn = byId('ag-load-run'); btn.disabled = true;
       try {
         var r = await post('/api/admin/admissions/load/seed', { seedJson: fileText });
-        show('적재 결과 — 대학 ' + r.universities + ' · 공식자료 ' + r.materials + ' · 학과 ' + r.departments + ' · 전형 ' + r.types +
-             ' · 일정 ' + r.schedules + ' (건너뜀 ' + r.skippedUnknownYear + ') · 상태 ' + r.status, false);
+        show(formatLoadResult(r), false);
       } catch (e) { show('적재 실패: ' + e.message, true); }
       finally { btn.disabled = false; }
     });
@@ -167,6 +177,7 @@
       byId('ag-reindex-status').textContent = v.headline + (v.hasFailures ? '\n' + v.failureLines.slice(0, 20).join('\n') : '');
       byId('ag-reindex-status').className = v.hasFailures ? 'ag-load-error' : '';
       byId('ag-knowledge-reindex').disabled = v.running;
+      byId('ag-knowledge-reindex-all').disabled = v.running;
       byId('ag-reindex-cancel').disabled = !v.running;
       return v.running;
     }
@@ -185,6 +196,19 @@
       try {
         var r = await post('/api/admin/admissions/knowledge/reindex', { mode: 'MISSING' });
         show(r.status === 'NOTHING_TO_DO' ? '재색인할 항목이 없습니다(모두 완료).' : '재색인을 시작했습니다. 아래 진행 상황을 확인하세요.', false);
+        renderReindex(r);
+        startPolling();
+      } catch (e) {
+        show('재색인 실패: ' + e.message, true);
+        startPolling();
+      }
+    });
+
+    byId('ag-knowledge-reindex-all').addEventListener('click', async function () {
+      if (!window.confirm('ACTIVE 항목 전체를 다시 임베딩합니다. 자료를 다시 적재해 내용이 바뀐 항목이 있을 때 사용하세요(시간이 더 걸립니다). 계속할까요?')) return;
+      try {
+        var r = await post('/api/admin/admissions/knowledge/reindex', { mode: 'ALL' });
+        show(r.status === 'NOTHING_TO_DO' ? '재색인할 항목이 없습니다.' : '전체 재색인을 시작했습니다. 아래 진행 상황을 확인하세요.', false);
         renderReindex(r);
         startPolling();
       } catch (e) {
