@@ -186,6 +186,21 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given 서울 2차 대학 줄임말(숙명여대·숙대·성신여대·서울여대·서울과기대) when 분석하면 then 정식 대학으로 연결되고 서울대와 섞이지 않는다")
+    void seoul_second_batch_aliases() {
+        // given
+        List<String> univs = List.of("숙명여자대학교", "성신여자대학교", "서울여자대학교", "서울과학기술대학교", "서울대학교");
+
+        // when / then
+        assertThat(AdmissionsQueryParser.parse("숙명여대 수시 일정", univs).universities()).containsExactly("숙명여자대학교");
+        assertThat(AdmissionsQueryParser.parse("숙대 정시 모집인원", univs).universities()).containsExactly("숙명여자대학교");
+        assertThat(AdmissionsQueryParser.parse("성신여대 논술 전형", univs).universities()).containsExactly("성신여자대학교");
+        assertThat(AdmissionsQueryParser.parse("서울여대 수시 원서접수", univs).universities()).containsExactly("서울여자대학교");
+        assertThat(AdmissionsQueryParser.parse("서울과기대 정시 모집인원", univs).universities()).containsExactly("서울과학기술대학교");
+        assertThat(AdmissionsQueryParser.parse("숙대입구역 맛집", univs).universities()).isEmpty();
+    }
+
+    @Test
     @DisplayName("given 다른 뜻으로 쓰인 표현 when 분석하면 then 대학으로 잘못 치환하지 않는다")
     void ambiguous_words_are_not_universities() {
         // given: 입시 문맥이 없거나, 다른 단어의 일부이거나, 조사 '로'가 붙은 부사
