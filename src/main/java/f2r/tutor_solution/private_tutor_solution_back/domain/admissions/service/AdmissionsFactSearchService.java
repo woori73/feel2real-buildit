@@ -197,12 +197,17 @@ public class AdmissionsFactSearchService {
 
     /** 서울(본교)이 아닌 캠퍼스 표기(세종·글로벌·다빈치·ERICA·WISE 등)가 있으면 true. */
     static boolean otherCampusMarked(String text) {
-        if (text == null) return false;
+        return campusMarker(text) != null;
+    }
+
+    /** 글에 들어 있는 다른 캠퍼스 표시(예: "ERICA", "세종캠퍼스"). 없으면 null(서울·본교). */
+    static String campusMarker(String text) {
+        if (text == null) return null;
         String t = text.replace(" ", "");
         for (String marker : OTHER_CAMPUS_MARKERS) {
-            if (t.contains(marker)) return true;
+            if (t.contains(marker)) return marker;
         }
-        return false;
+        return null;
     }
 
     private static final List<String> OTHER_CAMPUS_MARKERS = List.of(

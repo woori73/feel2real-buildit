@@ -256,6 +256,38 @@ class AdmissionsDataLoaderDbTest {
     }
 
     @Test
+    @DisplayName("given 본교와 분교(ERICA) 자료 when 분교를 authoritative로 다시 적재하면 then 분교 예전 행만 보관되고 본교 행은 남는다")
+    void authoritative_branch_campus_does_not_archive_main_campus() throws Exception {
+        // given: 본교 '나대학교(서울)'와 분교 '나대학교(ERICA)'가 각각 적재돼 있다
+        loader.loadSeed("""
+            {"ipsi_universities":[{"name":"나대학교(서울)","university_code":"NA"},{"name":"나대학교(ERICA)","university_code":"NAERICA"}],
+             "ipsi_documents":[{"document_key":"doc_na","document_name":"나대 2027 수시 모집요강","applicable_academic_year":2027},
+                               {"document_key":"doc_naerica_old","document_name":"나대 ERICA 2027 수시(예전)","applicable_academic_year":2027}],
+             "ipsi_admission_types":[{"university_code":"NA","academic_year":2027,"type_name":"학생부교과","recruitment_count":300,"source_document_key":"doc_na"},
+                                     {"university_code":"NAERICA","academic_year":2027,"type_name":"교과(예전)","recruitment_count":100,"source_document_key":"doc_naerica_old"}],
+             "ipsi_schedules":[{"university_code":"NA","academic_year":2027,"item":"원서접수","type_name":"전 전형","date":"2026.9.8.","source_document_key":"doc_na"}]}
+            """);
+
+        // when: 분교 최신본만 authoritative로 적재
+        var result = loader.loadSeed("""
+            {"ipsi_universities":[{"name":"나대학교(ERICA)","university_code":"NAERICA"}],
+             "ipsi_documents":[{"document_key":"doc_naerica","document_name":"나대 ERICA 2027 수시 모집요강","applicable_academic_year":2027}],
+             "ipsi_admission_types":[{"university_code":"NAERICA","academic_year":2027,"type_name":"학생부교과","recruitment_count":120,"source_document_key":"doc_naerica"}],
+             "authoritative_universities":["NAERICA"]}
+            """);
+
+        // then: 분교 예전 전형·자료만 보관, 본교 전형·일정·자료는 그대로
+        var A = AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED;
+        assertThat(result.supersededArchived()).isEqualTo(2);
+        assertThat(types.findAll()).filteredOn(t -> "교과(예전)".equals(t.getName())).singleElement().satisfies(t -> assertThat(t.getStatus()).isEqualTo(A));
+        // 본교 '학생부교과'와 분교 새 '학생부교과' 두 행 모두 남아 있다
+        assertThat(types.findAll()).filteredOn(t -> "학생부교과".equals(t.getName())).hasSize(2)
+                .allSatisfy(t -> assertThat(t.getStatus()).isNotEqualTo(A));
+        assertThat(schedules.findAll()).singleElement().satisfies(sc -> assertThat(sc.getStatus()).isNotEqualTo(A));
+        assertThat(materials.findAll()).filteredOn(m -> "나대 2027 수시 모집요강".equals(m.getTitle())).singleElement().satisfies(m -> assertThat(m.getStatus()).isNotEqualTo(A));
+    }
+
+    @Test
     @DisplayName("given authoritative 표시가 없는 시드 when 적재하면 then 예전 행을 보관하지 않는다")
     void without_authoritative_flag_nothing_is_superseded() throws Exception {
         // given
