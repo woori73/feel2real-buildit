@@ -161,6 +161,11 @@ public class AdmissionsFactSearchService {
 
     private List<Evidence> searchSchedules(String question, AdmissionsQueryParser.Parsed p, Set<Integer> years) {
         if (p.universities().isEmpty() || !p.wantsSchedule()) return List.of();
+        // "OO대 정시 일정 알려줘"처럼 구체 항목(접수·발표 등) 없이 일정만 물으면 전체 일정 질문과 같은 규칙으로
+        // 원서접수 행을 근거로 쓰고, 수시/정시 한쪽만 말했으면 반대쪽 일정은 뺀다.
+        boolean genericQuestion = AdmissionsQueryParser.SCHEDULE_TERMS.stream().noneMatch(question::contains);
+        boolean asksSusi = question.contains("수시");
+        boolean asksJeongsi = question.contains("정시");
         List<Evidence> out = new ArrayList<>();
         for (AdmissionsSchedule s : scheduleRepository.findAll()) {
             if (s.getStatus() != KnowledgeStatus.ACTIVE || !years.contains(s.getAcademicYear())) continue;
@@ -168,7 +173,12 @@ public class AdmissionsFactSearchService {
             if (!trackAllowed(question, s.getSource())) continue;
             if (!campusAllowed(question, s.getSource(), s.getTitle())) continue;
             if (s.getUniversity() == null || !univSelected(p, s.getUniversity())) continue;
-            if (!scheduleMatches(question, s.getTitle())) continue;
+            String title = s.getTitle();
+            if (genericQuestion) {
+                if (!(title.contains("접수") || title.contains("원서"))) continue;
+                if (asksSusi && !asksJeongsi && title.contains("정시")) continue;
+                if (asksJeongsi && !asksSusi && !title.contains("정시")) continue;
+            } else if (!scheduleMatches(question, title)) continue;
             out.add(evidence("sched", s.getScheduleId(), s.getAcademicYear(),
                     s.getUniversity().getName() + " " + s.getAcademicYear() + "학년도 " + s.getTitle(),
                     "일정 원문: " + (s.getNote() == null || s.getNote().isBlank() ? "확인되지 않음" : s.getNote()),

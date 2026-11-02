@@ -137,6 +137,8 @@ public class AdmissionsDataLoader {
             }
             String univCode = extractUnivCode(docKey);
             AdmissionsUniversity univ = univByCode.get(univCode);
+            // 연세대는 시드에 따라 코드가 YON(검증용 시드) 또는 YONSEI(buildit-admissions 시드)다. 둘 다 받는다.
+            if (univ == null && "YON".equals(univCode)) univ = univByCode.get("YONSEI");
             AdmissionsOfficialMaterial mat = AdmissionsOfficialMaterial.builder()
                     .university(univ)
                     .academicYear(matYear)
@@ -349,7 +351,7 @@ public class AdmissionsDataLoader {
         if (parts.length < 2) return null;
         return switch (parts[1].toLowerCase()) {
             case "snu" -> "SNU";
-            case "yon", "yonsei" -> "YONSEI"; // 시드의 university_code와 같아야 자료가 대학에 연결된다
+            case "yon", "yonsei" -> "YON";
             case "korea" -> "KOREA";
             case "skku" -> "SKKU";
             case "hanyang" -> "HANYANG";
