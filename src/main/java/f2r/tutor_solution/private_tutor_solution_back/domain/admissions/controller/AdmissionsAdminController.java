@@ -322,6 +322,7 @@ public class AdmissionsAdminController {
                     "skippedUnknownYear", result.skipped(),
                     "departmentsUpdated", result.departmentsUpdated(),
                     "typesUpdated", result.typesUpdated(),
+                    "schedulesArchived", result.schedulesArchived(),
                     "status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED"));
         } catch (AdmissionsDataLoader.SeedLoadException e) {
             // 구조/참조 오류: 전체 롤백되었다. 성공 응답을 내지 않는다.

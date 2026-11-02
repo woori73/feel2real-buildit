@@ -49,14 +49,14 @@ public class AdmissionsDataLoader {
 
     /**
      * 적재 결과. departmentsUpdated·typesUpdated는 이미 있던 행(같은 대학·학년도·이름) 중 내용이 바뀌어
-     * 갱신하고 DRAFT로 되돌린 건수다.
+     * 갱신하고 DRAFT로 되돌린 건수다. schedulesArchived는 시드의 archive_schedules로 보관 처리한 일정 건수다.
      */
     public record LoadResult(int universities, int materials, int departments,
                              int types, int schedules, int knowledgeItems, int skipped,
-                             int departmentsUpdated, int typesUpdated) {
+                             int departmentsUpdated, int typesUpdated, int schedulesArchived) {
         public LoadResult(int universities, int materials, int departments,
                           int types, int schedules, int knowledgeItems, int skipped) {
-            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0);
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0);
         }
     }
 
@@ -70,6 +70,8 @@ public class AdmissionsDataLoader {
      * (대학명 / 자료 제목 / 대학+학년도+학과·전형명 / 대학+학년도+일정 제목+비고 기준).
      * 이미 있는 학과·전형 행의 내용(학과 인원표, 전형 세부내용·분류)이 시드와 다르면 그 행을 갱신하고
      * DRAFT로 되돌린다(재검수 후 다시 승인해야 상담 검색에 노출된다). 내용이 같으면 그대로 둔다.
+     * 시드 최상위 {@code archive_schedules}(대학 코드·학년도·일정 제목·비고)에 적힌 기존 일정은 원문과 달라
+     * 폐기된 행이므로 ARCHIVED로 바꾸고, 그 일정에서 만든 지식 항목도 ARCHIVED로 바꾼다. 행을 지우지는 않는다.
      * 구조 오류(대학 목록 없음, 알 수 없는 대학 코드)는 {@link SeedLoadException}으로 전체 롤백한다.
      * 학년도 미확정·미지원 행만 건너뛰며 그 건수를 {@code skipped}로 돌려준다.
      */
@@ -88,9 +90,10 @@ public class AdmissionsDataLoader {
         Map<String, AdmissionsType> existingType = new HashMap<>();
         typeRepository.findAll().forEach(t -> existingType.putIfAbsent(
                 t.getUniversity().getUniversityId() + "|" + t.getAcademicYear() + "|" + t.getName(), t));
-        java.util.Set<String> existingSched = new java.util.HashSet<>();
-        scheduleRepository.findAll().forEach(sc -> existingSched.add(
-                sc.getUniversity().getUniversityId() + "|" + sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote()));
+        Map<String, AdmissionsSchedule> existingSchedRows = new HashMap<>();
+        scheduleRepository.findAll().forEach(sc -> existingSchedRows.putIfAbsent(
+                sc.getUniversity().getUniversityId() + "|" + sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote(), sc));
+        java.util.Set<String> existingSched = existingSchedRows.keySet();
         Map<String, AdmissionsOfficialMaterial> materialByTitle = new HashMap<>();
         materialRepository.findAll().forEach(m -> materialByTitle.put(m.getTitle(), m));
 
@@ -238,9 +241,24 @@ public class AdmissionsDataLoader {
             schedCount++;
         }
 
-        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={}",
-                univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated);
-        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped, deptUpdated, typeUpdated);
+        int schedArchived = 0;
+        for (JsonNode a : root.path("archive_schedules")) {
+            AdmissionsUniversity univ = requireUniversity(univByCode, a.path("university_code").asText(), "archive_schedules");
+            Integer year = readSupportedYear(a.path("academic_year"));
+            if (year == null) { skipped++; continue; }
+            AdmissionsSchedule old = existingSchedRows.get(univ.getUniversityId() + "|" + year + "|"
+                    + a.path("title").asText() + "|" + a.path("note").asText(null));
+            if (old == null || old.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
+            old.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+            scheduleRepository.save(old);
+            knowledgeRepository.findByDedupKey("schedule:" + univ.getUniversityId() + ":" + year + ":" + old.getScheduleId())
+                    .ifPresent(k -> { k.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED); knowledgeRepository.save(k); });
+            schedArchived++;
+        }
+
+        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={}",
+                univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived);
+        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped, deptUpdated, typeUpdated, schedArchived);
     }
 
     /**
@@ -331,7 +349,7 @@ public class AdmissionsDataLoader {
         if (parts.length < 2) return null;
         return switch (parts[1].toLowerCase()) {
             case "snu" -> "SNU";
-            case "yon", "yonsei" -> "YON";
+            case "yon", "yonsei" -> "YONSEI"; // 시드의 university_code와 같아야 자료가 대학에 연결된다
             case "korea" -> "KOREA";
             case "skku" -> "SKKU";
             case "hanyang" -> "HANYANG";

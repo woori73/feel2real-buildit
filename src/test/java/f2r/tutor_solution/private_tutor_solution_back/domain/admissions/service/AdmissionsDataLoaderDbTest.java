@@ -164,6 +164,55 @@ class AdmissionsDataLoaderDbTest {
     }
 
     @Test
+    @DisplayName("given 연세대 자료 키(doc_yon_·doc_yonsei_) when 적재하면 then 자료가 시드 코드 YONSEI의 대학에 연결된다")
+    void yonsei_document_keys_link_to_university() throws Exception {
+        // given
+        String seed = """
+            {"ipsi_universities":[{"name":"연세대학교","university_code":"YONSEI"}],
+             "ipsi_documents":[{"document_key":"doc_yon_2027_susi","document_name":"연세 2027 수시","applicable_academic_year":2027},
+                               {"document_key":"doc_yonsei_2027_jeongsi","document_name":"연세 2027 정시","applicable_academic_year":2027}]}
+            """;
+
+        // when
+        loader.loadSeed(seed);
+
+        // then
+        assertThat(materials.findAll()).hasSize(2)
+                .allSatisfy(m -> assertThat(m.getUniversity()).isNotNull());
+    }
+
+    @Test
+    @DisplayName("given 원문과 다른 기존 일정 when archive_schedules에 적어 적재하면 then 그 일정과 지식 항목이 ARCHIVED가 되고 다른 일정은 그대로다")
+    void archive_schedules_retires_listed_rows_and_their_knowledge() throws Exception {
+        // given
+        loader.loadSeed(GOOD_SEED);
+        var wrong = schedules.findAll().get(0);
+        wrong.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
+        schedules.save(wrong);
+        knowledge.save(AdmissionsKnowledgeItem.builder()
+                .academicYear(2027).title("테스트대 2027학년도 일정: 원서접수 (수시)").content("원서접수 2026-09-10").sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                .dedupKey("schedule:" + wrong.getUniversity().getUniversityId() + ":2027:" + wrong.getScheduleId())
+                .status(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE).build());
+        String fix = GOOD_SEED.replaceFirst("\\}\\s*$",
+                ",\"ipsi_schedules\":[{\"university_code\":\"TST\",\"academic_year\":\"2027\",\"item\":\"원서접수\",\"type_name\":\"수시\",\"date\":\"2026-09-11\"}],"
+                + "\"archive_schedules\":[{\"university_code\":\"TST\",\"academic_year\":2027,\"title\":\"원서접수 (수시)\",\"note\":\"2026-09-10\"}]}")
+                .replaceFirst("\"ipsi_schedules\":\\[\\{[^\\]]*2026-09-10[^\\]]*\\],", "");
+
+        // when
+        var result = loader.loadSeed(fix);
+
+        // then
+        assertThat(result.schedulesArchived()).isEqualTo(1);
+        assertThat(result.schedules()).isEqualTo(1);
+        assertThat(schedules.findById(wrong.getScheduleId()).orElseThrow().getStatus())
+                .isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+        assertThat(knowledge.findAll()).singleElement()
+                .satisfies(k -> assertThat(k.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED));
+        assertThat(schedules.findAll()).filteredOn(sc -> "2026-09-11".equals(sc.getNote())).singleElement()
+                .satisfies(sc -> assertThat(sc.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT));
+    }
+
+    @Test
     @DisplayName("given 알 수 없는 대학 코드가 섞인 시드 when 적재하면 then 예외가 나고 아무것도 저장되지 않는다(전체 롤백)")
     void partial_failure_rolls_back_everything() {
         // given
