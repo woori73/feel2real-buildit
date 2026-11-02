@@ -7,7 +7,7 @@
 - `app.admissions.public-api.enabled` (환경변수 `APP_ADMISSIONS_PUBLIC_API_ENABLED`), 코드 기본값 `false`.
 - OFF면 컨트롤러 첫 줄에서 `503 {"status":"error","errorMessage":"입시상담 AI는 아직 이용할 수 없습니다."}`를 돌려준다. IP 제한·일일 카운트·서비스(LLM)·DB 쓰기를 모두 거치지 않는다.
 - 안내 화면(`/admissions/guide`)은 그대로 열린다(화면은 오류 메시지를 표시). SecurityConfig의 permitAll은 변경 없음 — 인가 규칙은 완화하지도 강화하지도 않았다.
-- 켜는 법(승인 후): EC2 `/etc/f2r/env`에 `APP_ADMISSIONS_PUBLIC_API_ENABLED=true` 추가 후 재시작. 끄는 법: 값 삭제 또는 `false` 후 재시작.
+- 켜는 법(승인 후): GitHub Actions `Deploy to EC2`를 `admissions_public=on`으로 실행한다(Meta 키·신뢰 프록시가 없으면 켜지 않음, 신뢰 프록시가 비어 있으면 VPC 대역으로 채움). 끄는 법: `admissions_public=off`로 실행. 절차: [WORKFLOW.md](../WORKFLOW.md) 「입시상담 AI 공개 답변 스위치」. (수동: EC2 `/etc/f2r/env`에 `APP_ADMISSIONS_PUBLIC_API_ENABLED=true` 추가 후 재시작)
 
 ## 2. 구현됨 — 전역 일일 요청 상한
 - `app.admissions.rate-limit.daily-limit` (기본 **500**), 하루는 **KST 00:00** 기준. IP와 무관하게 하루에 허용하는 전체 요청 수.

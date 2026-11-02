@@ -54,6 +54,16 @@ on:
           - seven-suni
           - 'off'
 
+      admissions_public:
+        description: '입시상담 AI 공개 답변(APP_ADMISSIONS_PUBLIC_API_ENABLED): unchanged=변경 없음(기본), on=켬(Meta 키와 신뢰 프록시가 있을 때만, 프록시가 없으면 VPC 대역으로 채움), off=끔'
+        required: false
+        default: unchanged
+        type: choice
+        # YAML 1.1은 따옴표 없는 off/on을 불리언으로 해석하므로 반드시 따옴표로 문자열을 고정한다.
+        options:
+          - unchanged
+          - 'on'
+          - 'off'
 permissions:
   id-token: write
   contents: read
@@ -734,6 +744,29 @@ jobs:
             echo 'mcp switch not requested; env left unchanged'
           fi
 
+          # 입시상담 공개 API 스위치: 배포 입력 admissions_public이 on/off일 때만 반영한다(f2r_admissions_public_apply,
+          # scripts/deploy/f2r_app_guard.sh — 같은 소스를 f2r_app_guard.test.sh가 검증한다). on은 Meta 키가 있고
+          # 신뢰 프록시가 있거나 이 인스턴스의 VPC 대역(IMDSv2)으로 채울 수 있을 때만 켠다.
+          # env는 위 f2r_env_snapshot으로 백업되어 배포 실패 시 함께 되돌아간다.
+          if aws s3 cp s3://feel2real-buildit-deploy/admissions-public /tmp/admissions-public 2>/dev/null; then
+            ADM_MODE=$(tr -d '\r\n "' < /tmp/admissions-public | tr 'A-Z' 'a-z')
+            rm -f /tmp/admissions-public
+            install -d -m 755 /etc/f2r
+            touch /etc/f2r/env
+            chmod 600 /etc/f2r/env
+            ADM_VPC_CIDR=""
+            if [ "$ADM_MODE" = on ] && ! grep -qE '^APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=.+' /etc/f2r/env; then
+              IMDS_TOKEN=$(curl -sf -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' || true)
+              IMDS_MAC=$(curl -sf -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/mac || true)
+              ADM_VPC_CIDR=$(curl -sf -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" "http://169.254.169.254/latest/meta-data/network/interfaces/macs/$IMDS_MAC/vpc-ipv4-cidr-block" || true)
+              unset IMDS_TOKEN IMDS_MAC
+            fi
+            f2r_admissions_public_apply "$ADM_MODE" /etc/f2r/env "$ADM_VPC_CIDR" || echo "::warning::admissions public switch not applied (code $?)"
+            unset ADM_MODE ADM_VPC_CIDR
+          else
+            echo 'admissions public switch not requested; env left unchanged'
+          fi
+
           # 대시보드 캐릭터(세븐·서수니) 비공개 자료 폴더. 없으면 만들고, APP_AGENT_MEDIA_DIR이 비어 있을 때만
           # env에 기록한다(이미 있으면 그대로 둔다). 자료는 저장소가 아니라 ADMIN이 대시보드에서 올린 ZIP으로만 채운다.
           # env는 위 f2r_env_snapshot으로 백업되어 배포 실패 시 함께 되돌아간다.
@@ -1017,6 +1050,26 @@ jobs:
               ;;
           esac
 
+      - name: Stage admissions public mode in S3 (transient)
+        shell: bash
+        env:
+          ADMISSIONS_PUBLIC: ${{ inputs.admissions_public }}
+        run: |
+          set -euo pipefail
+          # 선택값(on/off)만 올린다. unchanged면 이전 실행이 남긴 값이 적용되지 않도록 지운다.
+          case "${ADMISSIONS_PUBLIC:-unchanged}" in
+            on|off)
+              printf '%s' "$ADMISSIONS_PUBLIC" > /tmp/admissions-public.staging
+              aws s3 cp /tmp/admissions-public.staging s3://${DEPLOY_BUCKET}/admissions-public --sse AES256 >/dev/null
+              rm -f /tmp/admissions-public.staging
+              echo "admissions public staged: $ADMISSIONS_PUBLIC"
+              ;;
+            *)
+              aws s3 rm s3://${DEPLOY_BUCKET}/admissions-public 2>/dev/null || true
+              echo "admissions public unchanged"
+              ;;
+          esac
+
       - name: Upload deployment artifacts to S3
         run: |
           aws s3 cp "${{ steps.jar.outputs.path }}" s3://${DEPLOY_BUCKET}/app.jar
@@ -1202,5 +1255,12 @@ jobs:
         shell: bash
         run: |
           aws s3 rm s3://${DEPLOY_BUCKET}/hwpx-worker 2>/dev/null || true
+          echo "Staging file cleaned up"
+
+      - name: Cleanup admissions public switch staging file
+        if: always()
+        shell: bash
+        run: |
+          aws s3 rm s3://${DEPLOY_BUCKET}/admissions-public 2>/dev/null || true
           echo "Staging file cleaned up"
 

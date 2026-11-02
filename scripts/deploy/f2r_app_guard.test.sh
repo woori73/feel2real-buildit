@@ -501,6 +501,69 @@ e11_workflow_contract() {
 echo "--- E11: gap report call-order contract ---"
 e11_workflow_contract
 
+# ── ADM: 입시상담 공개 API 스위치(admissions_public) ─────────────────────
+adm_cases() {
+  local dir env rc
+  dir=$(mktemp -d)
+  env="$dir/env"
+
+  # given 키·신뢰 프록시가 있는 env / when on / then true 한 줄만 남고 다른 값은 그대로
+  printf 'META_JIPJIGI_API_KEY=k\nAPP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=10.0.0.0/16\nAPP_ADMISSIONS_PUBLIC_API_ENABLED=false\nOTHER=1\n' > "$env"
+  f2r_admissions_public_apply on "$env" >/dev/null; rc=$?
+  assert_eq "0" "$rc" "ADM: on with key and proxies is applied"
+  assert_eq "1" "$(grep -c '^APP_ADMISSIONS_PUBLIC_API_ENABLED=true$' "$env")" "ADM: exactly one enabled=true line"
+  assert_eq "0" "$(grep -c '^APP_ADMISSIONS_PUBLIC_API_ENABLED=false$' "$env")" "ADM: old false line removed"
+  assert_eq "1" "$(grep -c '^OTHER=1$' "$env")" "ADM: unrelated env kept"
+  assert_eq "600" "$(stat -c '%a' "$env")" "ADM: env stays 600"
+
+  # given 신뢰 프록시 없음 / when on + VPC 대역 / then 대역을 기록하고 켠다
+  printf 'META_JIPJIGI_API_KEY=k\n' > "$env"
+  f2r_admissions_public_apply on "$env" 172.31.0.0/16 >/dev/null; rc=$?
+  assert_eq "0" "$rc" "ADM: on fills trusted proxies from VPC CIDR"
+  assert_eq "1" "$(grep -c '^APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=172.31.0.0/16$' "$env")" "ADM: VPC CIDR recorded"
+  assert_eq "1" "$(grep -c '^APP_ADMISSIONS_PUBLIC_API_ENABLED=true$' "$env")" "ADM: enabled after proxies set"
+
+  # given 신뢰 프록시 없음 / when on + 대역 없음·너무 넓음 / then 켜지 않고 env 그대로
+  for cidr in "" "0.0.0.0/0" "10.0.0.0/4" "not-a-cidr"; do
+    printf 'META_JIPJIGI_API_KEY=k\n' > "$env"
+    f2r_admissions_public_apply on "$env" "$cidr" >/dev/null; rc=$?
+    assert_eq "3" "$rc" "ADM: on refused without usable proxies [$cidr]"
+    assert_eq "META_JIPJIGI_API_KEY=k" "$(cat "$env")" "ADM: env unchanged when proxies unusable [$cidr]"
+  done
+
+  # given 키 없음 / when on / then 켜지 않고 env 그대로
+  printf 'APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=10.0.0.0/16\nMETA_JIPJIGI_API_KEY=\n' > "$env"
+  f2r_admissions_public_apply on "$env" 10.0.0.0/16 >/dev/null; rc=$?
+  assert_eq "2" "$rc" "ADM: on refused without Meta key"
+  assert_eq "0" "$(grep -c '^APP_ADMISSIONS_PUBLIC_API_ENABLED=' "$env")" "ADM: nothing written without key"
+
+  # given 켜진 env / when off / then false 한 줄
+  printf 'META_JIPJIGI_API_KEY=k\nAPP_ADMISSIONS_PUBLIC_API_ENABLED=true\n' > "$env"
+  f2r_admissions_public_apply off "$env" >/dev/null; rc=$?
+  assert_eq "0" "$rc" "ADM: off applied"
+  assert_eq "APP_ADMISSIONS_PUBLIC_API_ENABLED=false" "$(grep '^APP_ADMISSIONS_PUBLIC_API_ENABLED=' "$env")" "ADM: single false line"
+
+  # given 아무 env / when 잘못된 모드 / then 바꾸지 않음
+  printf 'X=1\n' > "$env"
+  f2r_admissions_public_apply maybe "$env" >/dev/null; rc=$?
+  assert_eq "1" "$rc" "ADM: invalid mode rejected"
+  assert_eq "X=1" "$(cat "$env")" "ADM: env unchanged on invalid mode"
+  rm -rf "$dir"
+}
+echo "--- ADM: admissions public switch ---"
+adm_cases
+
+# ── ADM-WF: 워크플로 배선 계약 ───────────────────────────────────────────
+adm_workflow_contract() {
+  local wf="$SCRIPT_DIR/../../.github/workflows/deploy-ec2.yml"
+  assert_eq "1" "$(grep -c '^      admissions_public:$' "$wf")" "ADM-WF: workflow input exists"
+  assert_eq "1" "$(grep -c 'f2r_admissions_public_apply "$ADM_MODE" /etc/f2r/env' "$wf")" "ADM-WF: EC2 script calls the tested function"
+  assert_eq "1" "$(grep -c 's3://${DEPLOY_BUCKET}/admissions-public --sse AES256' "$wf")" "ADM-WF: mode staged in S3"
+  assert_eq "1" "$(grep -c 'Cleanup admissions public switch staging file' "$wf")" "ADM-WF: staging file cleaned up"
+}
+echo "--- ADM-WF: admissions switch wiring ---"
+adm_workflow_contract
+
 echo
 if [ "$FAILURES" -eq 0 ]; then
   echo "All f2r_app_guard checks passed."
