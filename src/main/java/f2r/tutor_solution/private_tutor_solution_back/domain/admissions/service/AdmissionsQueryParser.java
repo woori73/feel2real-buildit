@@ -133,7 +133,11 @@ public final class AdmissionsQueryParser {
     /** 다른 뜻으로 쓰일 일이 거의 없는 줄임말(그대로 포함되면 해당 대학으로 본다). */
     private static final Map<String, List<String>> STRONG_ALIASES = Map.of(
             "이화여자대학교", List.of("이화여대"),
-            "한국외국어대학교", List.of("한국외대"));
+            "한국외국어대학교", List.of("한국외대"),
+            "숙명여자대학교", List.of("숙명여대"),
+            "성신여자대학교", List.of("성신여대"),
+            "서울여자대학교", List.of("서울여대"),
+            "서울과학기술대학교", List.of("서울과기대"));
 
     /**
      * 학생들이 쓰는 한 글자 줄임말. 일반 단어와 겹치므로("연대 책임", "고대 그리스", "성대 결절", "중대 사안", "이대로")
@@ -148,7 +152,8 @@ public final class AdmissionsQueryParser {
             "한국외국어대학교", List.of("외대"),
             "건국대학교", List.of("건대"),
             "홍익대학교", List.of("홍대"),
-            "서울시립대학교", List.of("시립대"));
+            "서울시립대학교", List.of("시립대"),
+            "숙명여자대학교", List.of("숙대"));
 
     /** 입시 문맥 판단용 단어. 줄임말 해석은 이 중 하나가 질문에 있을 때만 한다. */
     private static final Pattern ADMISSION_CONTEXT = Pattern.compile(
