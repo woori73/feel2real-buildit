@@ -131,13 +131,15 @@ public final class AdmissionsQueryParser {
     }
 
     /** 다른 뜻으로 쓰일 일이 거의 없는 줄임말(그대로 포함되면 해당 대학으로 본다). */
-    private static final Map<String, List<String>> STRONG_ALIASES = Map.of(
-            "이화여자대학교", List.of("이화여대"),
-            "한국외국어대학교", List.of("한국외대"),
-            "숙명여자대학교", List.of("숙명여대"),
-            "성신여자대학교", List.of("성신여대"),
-            "서울여자대학교", List.of("서울여대"),
-            "서울과학기술대학교", List.of("서울과기대"));
+    private static final Map<String, List<String>> STRONG_ALIASES = Map.ofEntries(
+            Map.entry("이화여자대학교", List.of("이화여대")),
+            Map.entry("한국외국어대학교", List.of("한국외대")),
+            Map.entry("숙명여자대학교", List.of("숙명여대")),
+            Map.entry("성신여자대학교", List.of("성신여대")),
+            Map.entry("서울여자대학교", List.of("서울여대")),
+            Map.entry("서울과학기술대학교", List.of("서울과기대")),
+            Map.entry("덕성여자대학교", List.of("덕성여대")),
+            Map.entry("동덕여자대학교", List.of("동덕여대")));
 
     /**
      * 학생들이 쓰는 한 글자 줄임말. 일반 단어와 겹치므로("연대 책임", "고대 그리스", "성대 결절", "중대 사안", "이대로")

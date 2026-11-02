@@ -201,6 +201,20 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given 서울 3차 대학 줄임말(덕성여대·동덕여대·가톨릭대·경기대·명지대) when 분석하면 then 괄호 캠퍼스 표기가 있는 정식 대학으로 연결된다")
+    void seoul_third_batch_aliases() {
+        // given
+        List<String> univs = List.of("덕성여자대학교", "동덕여자대학교", "가톨릭대학교(서울)", "경기대학교(서울캠퍼스)", "명지대학교(인문캠퍼스)");
+
+        // when / then
+        assertThat(AdmissionsQueryParser.parse("덕성여대 수시 원서접수 일정", univs).universities()).containsExactly("덕성여자대학교");
+        assertThat(AdmissionsQueryParser.parse("동덕여대 정시 모집인원", univs).universities()).containsExactly("동덕여자대학교");
+        assertThat(AdmissionsQueryParser.parse("가톨릭대 의예과 정시", univs).universities()).containsExactly("가톨릭대학교(서울)");
+        assertThat(AdmissionsQueryParser.parse("경기대 수시 논술", univs).universities()).containsExactly("경기대학교(서울캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("명지대 정시 모집인원", univs).universities()).containsExactly("명지대학교(인문캠퍼스)");
+    }
+
+    @Test
     @DisplayName("given 다른 뜻으로 쓰인 표현 when 분석하면 then 대학으로 잘못 치환하지 않는다")
     void ambiguous_words_are_not_universities() {
         // given: 입시 문맥이 없거나, 다른 단어의 일부이거나, 조사 '로'가 붙은 부사
