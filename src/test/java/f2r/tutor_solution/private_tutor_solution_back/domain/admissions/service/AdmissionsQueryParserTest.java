@@ -320,4 +320,26 @@ class AdmissionsQueryParserTest {
         assertThat(p.universities()).containsExactly("한국항공대학교");
         assertThat(p.unknownUniversities()).isEmpty();
     }
+
+    @Test
+    @DisplayName("given 세종·글로컬·WISE·천안·미래캠퍼스 분교 항목 when 캠퍼스 줄임말로 물으면 then 그 분교 항목만, 분교 항목이 없는 대학은 그대로 고른다")
+    void campus_short_names_narrow_to_branch_entities() {
+        // given
+        var names = List.of("고려대학교(서울)", "고려대학교(세종캠퍼스)", "건국대학교", "건국대학교(글로컬캠퍼스)",
+                "동국대학교", "동국대학교(WISE캠퍼스)", "상명대학교", "상명대학교(천안캠퍼스)", "연세대학교", "연세대학교(미래캠퍼스)",
+                "세종대학교", "단국대학교");
+
+        // when / then
+        assertThat(AdmissionsQueryParser.parse("고려대 세종 수시 원서접수", names).universities()).containsExactly("고려대학교(세종캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("건국대 글로컬 정시 모집인원", names).universities()).containsExactly("건국대학교(글로컬캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("동국대 와이즈 수시", names).universities()).containsExactly("동국대학교(WISE캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("동국대 wise 정시", names).universities()).containsExactly("동국대학교(WISE캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("상명대 천안 수시 모집인원", names).universities()).containsExactly("상명대학교(천안캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("연세대 원주 수시", names).universities()).containsExactly("연세대학교(미래캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("연세대 미래캠퍼스 수시", names).universities()).containsExactly("연세대학교(미래캠퍼스)");
+        assertThat(AdmissionsQueryParser.parse("세종대 수시 원서접수", names).universities()).as("세종대는 분교 줄임말과 무관").containsExactly("세종대학교");
+        assertThat(AdmissionsQueryParser.parse("단국대 천안 의예과", names).universities()).as("통합 항목 대학은 그대로").containsExactly("단국대학교");
+        assertThat(AdmissionsQueryParser.parse("고려대 수시 원서접수", names).universities())
+                .containsExactlyInAnyOrder("고려대학교(서울)", "고려대학교(세종캠퍼스)");
+    }
 }

@@ -121,7 +121,9 @@ public final class AdmissionsQueryParser {
     }
 
     /** 캠퍼스 줄임말 → 대학 이름에 붙는 캠퍼스 표시. */
-    private static final Map<String, String> CAMPUS_ALIASES = Map.of("에리카", "ERICA", "다빈치", "다빈치캠퍼스");
+    private static final Map<String, String> CAMPUS_ALIASES = Map.of(
+            "에리카", "ERICA", "다빈치", "다빈치캠퍼스", "세종", "세종캠퍼스", "글로컬", "글로컬캠퍼스",
+            "와이즈", "WISE캠퍼스", "WISE", "WISE캠퍼스", "천안", "천안캠퍼스", "원주", "미래캠퍼스");
 
     /**
      * 질문이 캠퍼스를 말했고(예: "한양대 ERICA") 그 캠퍼스가 별도 대학 항목(예: "한양대학교(ERICA)")으로 등록돼 있으면,
@@ -144,11 +146,13 @@ public final class AdmissionsQueryParser {
 
     private static String askedCampus(String question) {
         if (question == null) return null;
-        String q = question.replace(" ", "");
+        String q = question.replace(" ", "").toUpperCase(); // "erica"·"wise"도 대문자로 본다
+        String marker = AdmissionsFactSearchService.campusMarker(q);
+        if (marker != null) return marker;
         for (Map.Entry<String, String> e : CAMPUS_ALIASES.entrySet()) {
             if (q.contains(e.getKey())) return e.getValue();
         }
-        return AdmissionsFactSearchService.campusMarker(q.toUpperCase()); // "erica"도 ERICA로 본다
+        return null;
     }
 
     /** "한양대학교(ERICA)" → "한양대학교". 괄호 부기를 뺀 이름. */
