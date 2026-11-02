@@ -33,7 +33,8 @@ public final class AdmissionsQueryParser {
 
     /** 합격 가능성·합격선·지원 조합 추천 등 판단/예측성 질문 — 답변하지 않는다. */
     private static final Pattern CHANCE = Pattern.compile(
-            "합격\\s*(가능|확률|선|컷|권)|지원\\s*가능할까|어디쯤|추천해|소신|안정\\s*지원|상향\\s*지원|하향\\s*지원|붙을까|될까요");
+            "합격\\s*(가능|확률|선|컷|권)|지원\\s*가능할까|어디쯤|추천해|소신|안정\\s*지원|상향\\s*지원|하향\\s*지원|붙을까|될까요"
+                    + "|^\\s*가능성\\s*[?？]*\\s*$|가능성\\s*(높|낮|어때|얼마)");
 
     /** 아직 수집하지 않은 자료(경쟁률·입시결과·권장이수 등) — 만들어 답하지 않는다. */
     private static final Pattern NOT_COLLECTED = Pattern.compile(
@@ -107,6 +108,7 @@ public final class AdmissionsQueryParser {
                 if (mentionsUniversity(q, name)) univs.add(name);
             }
         }
+        univs = narrowToAskedCampus(q, univs);
         List<String> unknown = unknownUniversities(q, universityNames);
         return new Parsed(
                 years, univs, unknown, unsupported,
@@ -116,6 +118,42 @@ public final class AdmissionsQueryParser {
                 SCHEDULE_INTENT.matcher(q).find(),
                 TYPE_INTENT.matcher(q).find(),
                 QUOTA_INTENT.matcher(q).find());
+    }
+
+    /** 캠퍼스 줄임말 → 대학 이름에 붙는 캠퍼스 표시. */
+    private static final Map<String, String> CAMPUS_ALIASES = Map.of("에리카", "ERICA", "다빈치", "다빈치캠퍼스");
+
+    /**
+     * 질문이 캠퍼스를 말했고(예: "한양대 ERICA") 그 캠퍼스가 별도 대학 항목(예: "한양대학교(ERICA)")으로 등록돼 있으면,
+     * 같은 대학의 다른 캠퍼스 항목(예: "한양대학교(서울)")은 뺀다. 별도 항목이 없으면(고려대 세종 등) 그대로 둔다.
+     */
+    static List<String> narrowToAskedCampus(String question, List<String> univs) {
+        String asked = askedCampus(question);
+        if (asked == null || univs.size() < 2) return univs;
+        java.util.Set<String> basesWithAsked = new java.util.HashSet<>();
+        for (String u : univs) {
+            if (asked.equals(AdmissionsFactSearchService.campusMarker(u))) basesWithAsked.add(univBase(u));
+        }
+        if (basesWithAsked.isEmpty()) return univs;
+        List<String> out = new ArrayList<>();
+        for (String u : univs) {
+            if (!basesWithAsked.contains(univBase(u)) || asked.equals(AdmissionsFactSearchService.campusMarker(u))) out.add(u);
+        }
+        return out;
+    }
+
+    private static String askedCampus(String question) {
+        if (question == null) return null;
+        String q = question.replace(" ", "");
+        for (Map.Entry<String, String> e : CAMPUS_ALIASES.entrySet()) {
+            if (q.contains(e.getKey())) return e.getValue();
+        }
+        return AdmissionsFactSearchService.campusMarker(q.toUpperCase()); // "erica"도 ERICA로 본다
+    }
+
+    /** "한양대학교(ERICA)" → "한양대학교". 괄호 부기를 뺀 이름. */
+    private static String univBase(String name) {
+        return name.replaceAll("\\(.*?\\)", "").trim();
     }
 
     /** "고려대학교(서울)" → {고려대학교, 고려대}. 괄호 부기는 제거한다. */
@@ -144,7 +182,8 @@ public final class AdmissionsQueryParser {
             Map.entry("한국예술종합학교", List.of("한예종")),
             Map.entry("추계예술대학교", List.of("추계예대")),
             Map.entry("장로회신학대학교", List.of("장신대")),
-            Map.entry("감리교신학대학교", List.of("감신대")));
+            Map.entry("감리교신학대학교", List.of("감신대")),
+            Map.entry("한국항공대학교", List.of("항공대")));
 
     /**
      * 학생들이 쓰는 한 글자 줄임말. 일반 단어와 겹치므로("연대 책임", "고대 그리스", "성대 결절", "중대 사안", "이대로")

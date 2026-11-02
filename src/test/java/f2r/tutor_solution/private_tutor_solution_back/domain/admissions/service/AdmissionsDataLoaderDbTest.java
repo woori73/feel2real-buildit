@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.JpaConfig;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsSchedule;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsDepartmentRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
@@ -285,6 +286,78 @@ class AdmissionsDataLoaderDbTest {
                 .allSatisfy(t -> assertThat(t.getStatus()).isNotEqualTo(A));
         assertThat(schedules.findAll()).singleElement().satisfies(sc -> assertThat(sc.getStatus()).isNotEqualTo(A));
         assertThat(materials.findAll()).filteredOn(m -> "나대 2027 수시 모집요강".equals(m.getTitle())).singleElement().satisfies(m -> assertThat(m.getStatus()).isNotEqualTo(A));
+    }
+
+    @Test
+    @DisplayName("given 제목이 같은 두 대학 자료 when 적재하면 then 각 대학 행은 자기 대학 자료에 연결된다")
+    void same_document_title_in_two_universities_links_each_to_its_own() throws Exception {
+        // given / when: 두 대학 자료 제목이 똑같이 "2027학년도 수시모집 모집요강"
+        loader.loadSeed("""
+            {"ipsi_universities":[{"name":"다대학교","university_code":"DA"},{"name":"라대학교","university_code":"RA"}],
+             "ipsi_documents":[{"document_key":"doc_da_2027_susi","document_name":"2027학년도 수시모집 모집요강","applicable_academic_year":2027,"source_url":"https://da.example/"},
+                               {"document_key":"doc_ra_2027_susi","document_name":"2027학년도 수시모집 모집요강","applicable_academic_year":2027,"source_url":"https://ra.example/"}],
+             "ipsi_admission_types":[{"university_code":"DA","academic_year":2027,"type_name":"교과","recruitment_count":10,"source_document_key":"doc_da_2027_susi"},
+                                     {"university_code":"RA","academic_year":2027,"type_name":"교과","recruitment_count":20,"source_document_key":"doc_ra_2027_susi"}]}
+            """);
+
+        // then: 자료 2건, 전형마다 자기 대학 자료(URL)
+        assertThat(materials.findAll()).hasSize(2);
+        var urlById = new java.util.HashMap<Long, String>();
+        materials.findAll().forEach(m -> urlById.put(m.getMaterialId(), m.getDocumentUrl()));
+        assertThat(types.findAll()).hasSize(2).allSatisfy(t ->
+                assertThat(urlById.get(t.getSource().getMaterialId()))
+                        .isEqualTo(t.getDetails().contains("모집인원: 10") ? "https://da.example/" : "https://ra.example/"));
+    }
+
+    @Test
+    @DisplayName("given 다른 자료에 잘못 연결된 승인 행 when 같은 내용 시드를 다시 적재하면 then 시드의 자료로 다시 연결되고 DRAFT가 된다")
+    void row_linked_to_wrong_material_is_relinked_on_reload() throws Exception {
+        // given: 전형·일정이 엉뚱한 자료(wrong)에 연결된 채 승인돼 있다
+        String seed = """
+            {"ipsi_universities":[{"name":"마대학교","university_code":"MA"}],
+             "ipsi_documents":[{"document_key":"doc_ma_2027_susi","document_name":"마대학교 2027학년도 수시 모집요강","applicable_academic_year":2027}],
+             "ipsi_admission_types":[{"university_code":"MA","academic_year":2027,"type_name":"교과","recruitment_count":10,"source_document_key":"doc_ma_2027_susi"}],
+             "ipsi_schedules":[{"university_code":"MA","academic_year":2027,"item":"원서접수","type_name":"전 전형","date":"2026.9.7.","source_document_key":"doc_ma_2027_susi"}]}
+            """;
+        loader.loadSeed(seed);
+        var right = materials.findAll().get(0);
+        var wrong = materials.save(AdmissionsOfficialMaterial.builder().university(right.getUniversity()).academicYear(2027)
+                .title("엉뚱한 자료").issuer("x").build());
+        types.findAll().forEach(t -> { t.setSource(wrong); t.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE); types.save(t); });
+        schedules.findAll().forEach(sc -> { sc.setSource(wrong); sc.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE); schedules.save(sc); });
+
+        // when
+        var result = loader.loadSeed(seed);
+
+        // then
+        assertThat(result.typesUpdated()).isEqualTo(1);
+        assertThat(types.findAll()).singleElement().satisfies(t -> {
+            assertThat(t.getSource().getMaterialId()).isEqualTo(right.getMaterialId());
+            assertThat(t.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+        });
+        assertThat(schedules.findAll()).singleElement().satisfies(sc ->
+                assertThat(sc.getSource().getMaterialId()).isEqualTo(right.getMaterialId()));
+    }
+
+    @Test
+    @DisplayName("given 보관(ARCHIVED)된 같은 대학·같은 제목 자료 when 시드가 그 자료를 다시 쓰면 then 자료가 DRAFT로 되살아난다")
+    void archived_material_reused_by_seed_is_revived() throws Exception {
+        // given
+        String seed = """
+            {"ipsi_universities":[{"name":"바대학교","university_code":"BA"}],
+             "ipsi_documents":[{"document_key":"doc_ba_2027_jeongsi","document_name":"바대학교 2027학년도 정시모집요강","applicable_academic_year":2027}],
+             "ipsi_admission_types":[{"university_code":"BA","academic_year":2027,"type_name":"정시 일반(나군)","recruitment_count":30,"source_document_key":"doc_ba_2027_jeongsi"}]}
+            """;
+        loader.loadSeed(seed);
+        materials.findAll().forEach(m -> { m.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED); materials.save(m); });
+
+        // when
+        var result = loader.loadSeed(seed);
+
+        // then
+        assertThat(result.materials()).isEqualTo(1);
+        assertThat(materials.findAll()).singleElement().satisfies(m ->
+                assertThat(m.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT));
     }
 
     @Test
