@@ -101,9 +101,9 @@ try:
 except Exception as e:
     print('embed probe failed:', type(e).__name__)
 PY
-printf '=== admissions index/reindex log (app journal since last start; message text only) ===\n'
+printf '=== admissions index/reindex/seed log (app journal since last start; message text only) ===\n'
 SINCE=$(systemctl show f2r-app -p ActiveEnterTimestamp --value 2>/dev/null)
 journalctl -u f2r-app --since "${SINCE:-1 hour ago}" --no-pager 2>/dev/null \
-  | grep -E '입시 벡터 인덱스 로드|admissions knowledge (build|reindex)|AdmissionsEmbedding|admissions embedding|index/reload' \
+  | grep -E '입시 벡터 인덱스 로드|admissions knowledge (build|reindex)|AdmissionsEmbedding|admissions embedding|index/reload|admissions seed' \
   | sed -E 's/^.*java\[[0-9]+\]: //' | cut -c1-260 | tail -40
 printf '(end of log section)\n'

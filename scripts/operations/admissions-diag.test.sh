@@ -12,4 +12,6 @@ check "READ ONLY 트랜잭션 사용" 'printf "%s" "$SQL_ONLY" | grep -q "START 
 check "세션 READ ONLY 지정" 'grep -q "SET SESSION TRANSACTION READ ONLY" "$S"'
 check "구 AWS 계정 ID 없음" '! grep -q "067573916809" "$S"'
 check "비밀값 출력 없음(password 출력 금지)" '! grep -Eq "print\(.*password|echo .*PASSWORD" "$S"'
+# given: 관리자 화면 시드 적재 실패 / when: 앱 로그 구간을 검사 / then: 적재 성공·실패 줄(admissions seed)을 포함
+check "시드 적재 로그 포함" 'grep -q "index/reload|admissions seed" "$S"'
 exit $fail
