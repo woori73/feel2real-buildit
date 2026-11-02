@@ -14,4 +14,6 @@ check "구 AWS 계정 ID 없음" '! grep -q "067573916809" "$S"'
 check "비밀값 출력 없음(password 출력 금지)" '! grep -Eq "print\(.*password|echo .*PASSWORD" "$S"'
 # given: 관리자 화면 시드 적재 실패 / when: 앱 로그 구간을 검사 / then: 적재 성공·실패 줄(admissions seed)을 포함
 check "시드 적재 로그 포함" 'grep -q "index/reload|admissions seed" "$S"'
+# given: SSM 출력은 앞부분만 남는다 / when: 구간 순서를 검사 / then: 로그 구간이 긴 DB 집계보다 먼저 나온다
+check "로그 구간이 DB 집계보다 앞" '[ "$(grep -n "seed log" "$S" | head -1 | cut -d: -f1)" -lt "$(grep -n "DB census" "$S" | head -1 | cut -d: -f1)" ]'
 exit $fail

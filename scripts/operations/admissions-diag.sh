@@ -8,6 +8,12 @@ systemctl is-active f2r-app || true
 systemctl show f2r-app -p ActiveState -p SubState -p ActiveEnterTimestamp 2>/dev/null || true
 printf 'health: '
 curl -fsS --max-time 5 http://127.0.0.1:8080/actuator/health 2>/dev/null | head -c 200 || printf 'unreachable'
+printf '\n=== admissions index/reindex/seed log (app journal since last start; message text only; printed first so SSM output truncation keeps it) ===\n'
+SINCE=$(systemctl show f2r-app -p ActiveEnterTimestamp --value 2>/dev/null)
+journalctl -u f2r-app --since "${SINCE:-1 hour ago}" --no-pager 2>/dev/null \
+  | grep -E '입시 벡터 인덱스 로드|admissions knowledge (build|reindex)|AdmissionsEmbedding|admissions embedding|index/reload|admissions seed' \
+  | sed -E 's/^.*java\[[0-9]+\]: //' | cut -c1-260 | tail -40
+printf '(end of log section)\n'
 printf '\n=== admissions flags (names allow-listed; secrets never printed) ===\n'
 python3 - <<'PY'
 import shlex
@@ -101,9 +107,3 @@ try:
 except Exception as e:
     print('embed probe failed:', type(e).__name__)
 PY
-printf '=== admissions index/reindex/seed log (app journal since last start; message text only) ===\n'
-SINCE=$(systemctl show f2r-app -p ActiveEnterTimestamp --value 2>/dev/null)
-journalctl -u f2r-app --since "${SINCE:-1 hour ago}" --no-pager 2>/dev/null \
-  | grep -E '입시 벡터 인덱스 로드|admissions knowledge (build|reindex)|AdmissionsEmbedding|admissions embedding|index/reload|admissions seed' \
-  | sed -E 's/^.*java\[[0-9]+\]: //' | cut -c1-260 | tail -40
-printf '(end of log section)\n'
