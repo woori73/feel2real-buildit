@@ -145,7 +145,10 @@ public final class AdmissionsQueryParser {
             "이화여자대학교", List.of("이대"),
             "성균관대학교", List.of("성대"),
             "중앙대학교", List.of("중대"),
-            "한국외국어대학교", List.of("외대"));
+            "한국외국어대학교", List.of("외대"),
+            "건국대학교", List.of("건대"),
+            "홍익대학교", List.of("홍대"),
+            "서울시립대학교", List.of("시립대"));
 
     /** 입시 문맥 판단용 단어. 줄임말 해석은 이 중 하나가 질문에 있을 때만 한다. */
     private static final Pattern ADMISSION_CONTEXT = Pattern.compile(
