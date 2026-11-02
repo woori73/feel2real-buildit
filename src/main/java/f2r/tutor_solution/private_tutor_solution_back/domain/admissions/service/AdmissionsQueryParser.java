@@ -139,7 +139,12 @@ public final class AdmissionsQueryParser {
             Map.entry("서울여자대학교", List.of("서울여대")),
             Map.entry("서울과학기술대학교", List.of("서울과기대")),
             Map.entry("덕성여자대학교", List.of("덕성여대")),
-            Map.entry("동덕여자대학교", List.of("동덕여대")));
+            Map.entry("동덕여자대학교", List.of("동덕여대")),
+            Map.entry("한국체육대학교", List.of("한국체대", "한체대")),
+            Map.entry("한국예술종합학교", List.of("한예종")),
+            Map.entry("추계예술대학교", List.of("추계예대")),
+            Map.entry("장로회신학대학교", List.of("장신대")),
+            Map.entry("감리교신학대학교", List.of("감신대")));
 
     /**
      * 학생들이 쓰는 한 글자 줄임말. 일반 단어와 겹치므로("연대 책임", "고대 그리스", "성대 결절", "중대 사안", "이대로")
