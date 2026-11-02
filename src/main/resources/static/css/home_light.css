@@ -157,10 +157,12 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hero-note { grid-area: note; margin-top: 10px; }
 .hero-art { grid-area: art; align-self: center; margin: 0; min-width: 0; }
 .hero-shot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top left; border-radius: 14px; background: #fff; box-shadow: var(--hl-lift); }
-/* 1장: 압구정중3 기말 실제 시험 13번 ↔ 시험 전 예상문제 7회 15번(적중 사례 그대로). 글이 읽히도록 아래에 넓게 둔다. */
-.hero-exam { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text cta" "art art" "note note"; grid-template-rows: auto auto auto; column-gap: 16px; align-content: start; }
-.hero-exam .hero-cta { flex-direction: column; align-self: end; margin-top: 0; }
-.hero-exam .hero-art { margin-top: 14px; }
+/* 1장: 압구정중3 기말 실제 시험 13번 ↔ 시험 전 예상문제 7회 15번(적중 사례 그대로). 글이 읽히도록 아래에 넓게 둔다.
+   2~4장(위키·게임·AI AGENT)도 같은 배치: 제목·버튼을 위에, 그림을 배너 폭 전체로 크게. */
+.hero-exam, .hero-wiki, .hero-game, .hero-agent { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "text cta" "art art" "note note"; grid-template-rows: auto auto auto; column-gap: 16px; align-content: start; }
+.hero-exam .hero-cta, .hero-wiki .hero-cta, .hero-game .hero-cta, .hero-agent .hero-cta { flex-direction: column; align-self: end; margin-top: 0; }
+.hero-exam .hero-art, .hero-wiki .hero-art, .hero-game .hero-art, .hero-agent .hero-art { margin-top: 14px; }
+.hero-wiki .hero-shot img, .hero-game .hero-shot img, .hero-agent .hero-shot img { aspect-ratio: 2 / 1; }
 .hero-compare { padding: 12px; border-radius: 16px; background: #fff; box-shadow: var(--hl-lift); }
 .hero-compare-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 8px; font-size: 14px; }
 .hero-qno { padding: 2px 10px; border-radius: 8px; background: var(--hl-ink); color: #fff; font-weight: 800; }
@@ -211,8 +213,8 @@ html:has(.home-light.menu-open) { overflow: hidden; }
   .hero-lead, .home-offer-line { font-size: 14px; margin-top: 6px; }
   .hero-art { margin-top: 10px; }
   .hero-shot img { aspect-ratio: 16 / 8; }
-  .hero-exam { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "art" "cta" "note"; }
-  .hero-exam .hero-cta { flex-direction: row; margin-top: 10px; }
+  .hero-exam, .hero-wiki, .hero-game, .hero-agent { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "art" "cta" "note"; }
+  .hero-exam .hero-cta, .hero-wiki .hero-cta, .hero-game .hero-cta, .hero-agent .hero-cta { flex-direction: row; margin-top: 10px; }
   .hero-exam .hero-art { margin-top: 10px; }
   .hero-compare { padding: 8px; border-radius: 12px; }
   .hero-compare-head { font-size: 12px; margin-bottom: 6px; }
