@@ -229,8 +229,9 @@ class LandingEdunovaTemplateContractTest {
         "/img/landing/home-card-ibt.webp", "/img/landing/home-agent-suni.webp", "/img/landing/home-agent-seven.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
         "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
-        "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp"}) {
-      assertThat(html).as(path).contains("src=\"" + path + "\"");
+        "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp", "/img/landing/ai-agent-hero.webp"}) {
+      // 그림을 고화질로 바꾸면 캐시를 피하려고 ?v= 를 붙이므로 경로 앞부분까지만 확인한다.
+      assertThat(html).as(path).contains("src=\"" + path);
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
     }
     // 모의고사 위키는 실제 위키홈 화면을 쓴다(배너·타일·카드). 예전 예시 그림은 남기지 않는다.
