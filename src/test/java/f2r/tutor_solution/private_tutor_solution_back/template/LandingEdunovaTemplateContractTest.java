@@ -228,10 +228,15 @@ class LandingEdunovaTemplateContractTest {
     for (String path : new String[] {"/img/landing/home-card-exam-seven.webp", "/img/landing/home-card-game.webp",
         "/img/landing/home-card-ibt.webp", "/img/landing/home-agent-suni.webp", "/img/landing/home-agent-seven.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
-        "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg"}) {
+        "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
+        "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp"}) {
       assertThat(html).as(path).contains("src=\"" + path + "\"");
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
     }
+    // 모의고사 위키는 실제 위키홈 화면을 쓴다(배너·타일·카드). 예전 예시 그림은 남기지 않는다.
+    assertThat(hero.split("home-card-wiki.webp", -1)).hasSize(2);
+    assertThat(html.substring(html.indexOf("id=\"edu\""))).contains("home-card-wiki.webp");
+    assertThat(html).doesNotContain("wiki-sample.jpg");
   }
 
   @Test
