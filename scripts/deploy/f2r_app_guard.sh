@@ -394,3 +394,39 @@ f2r_report_service_gap() {
   fi
   return 0
 }
+
+# 입시상담 공개 API 스위치(APP_ADMISSIONS_PUBLIC_API_ENABLED). 배포 입력 admissions_public이 on/off일 때만 부른다.
+#   on : Meta 지피지기 키(META_JIPJIGI_API_KEY)가 env에 있고, 신뢰 프록시(APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES)가
+#        있거나 vpc_cidr(/8~/28)로 채울 수 있을 때만 켠다. 신뢰 프록시 없이 켜면 모든 방문자가 ALB 주소 하나로 보여
+#        분당 10회 한도를 함께 쓰게 되므로 켜지 않는다.
+#   off: false로 기록한다(코드 기본값도 false).
+# 키 줄은 지우고 다시 쓰므로 중복되지 않는다. env 백업·실패 시 복구는 f2r_env_snapshot/f2r_env_rollback_after_failed_deploy 몫이다.
+# 반환: 0 적용, 1 잘못된 모드, 2 키 없음, 3 신뢰 프록시를 정할 수 없음(2·3은 env를 바꾸지 않는다).
+f2r_admissions_public_apply() {
+  local mode="$1" env_file="$2" vpc_cidr="${3:-}" value
+  case "$mode" in
+    on)
+      if ! grep -qE '^META_JIPJIGI_API_KEY=.+' "$env_file" 2>/dev/null; then
+        echo '::warning::admissions public NOT enabled: META_JIPJIGI_API_KEY missing in env'
+        return 2
+      fi
+      if ! grep -qE '^APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=.+' "$env_file"; then
+        if ! printf '%s' "$vpc_cidr" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}/([89]|1[0-9]|2[0-8])$'; then
+          echo '::warning::admissions public NOT enabled: trusted proxies missing and VPC CIDR unavailable'
+          return 3
+        fi
+        printf 'APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES=%s\n' "$vpc_cidr" >> "$env_file"
+        echo "[DEPLOY] trusted proxies set to VPC CIDR $vpc_cidr"
+      fi
+      value=true
+      ;;
+    off) value=false ;;
+    *) echo '::warning::admissions public mode invalid; env left unchanged'; return 1 ;;
+  esac
+  grep -vE '^APP_ADMISSIONS_PUBLIC_API_ENABLED=' "$env_file" > "$env_file.tmp" || true
+  printf 'APP_ADMISSIONS_PUBLIC_API_ENABLED=%s\n' "$value" >> "$env_file.tmp"
+  mv "$env_file.tmp" "$env_file"
+  chmod 600 "$env_file"
+  echo "[DEPLOY] admissions public switch applied: $mode"
+  return 0
+}

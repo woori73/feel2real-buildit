@@ -153,6 +153,14 @@ EC2/systemd, IAM, S3 CORS/lifecycle, ALB 180초 inactivity gate, `/var/tmp` 용�
 - 변경 전 `/etc/f2r/env.bak-hwpx-<시각>`에 백업하고, 대상 키는 지우고 다시 쓴다. assistant 스위치보다 먼저 적용하며, 배포(health)가 실패하면 가장 이른 백업 하나로 두 스위치 변경을 함께 되돌리고 서비스를 재시작한다.
 - 확인: 로그인 상태 `POST /api/hwpx/jobs` → 503, `hwpx_jobs` 건수·저장 파일 불변, 비로그인 401.
 
+## 입시상담 AI 공개 답변 스위치 (Deploy to EC2 입력 `admissions_public`)
+
+- `unchanged`(기본): 환경파일을 건드리지 않는다. `on`: `APP_ADMISSIONS_PUBLIC_API_ENABLED=true`를 기록한다. `off`: `false`를 기록한다(코드 기본값도 false, `/admissions/guide` 화면은 항상 열리고 꺼져 있으면 상담 요청에 503 안내).
+- `on`은 두 조건이 맞을 때만 적용한다: ① `META_JIPJIGI_API_KEY`가 env에 있음(배포가 매번 동기화) ② 신뢰 프록시 `APP_ADMISSIONS_RATE_LIMIT_TRUSTED_PROXIES`가 있거나, 없으면 이 인스턴스의 VPC 대역(IMDSv2, /8~/28)으로 채울 수 있음. 신뢰 프록시 없이 켜면 모든 방문자가 ALB 주소 하나로 보여 분당 10회 한도를 함께 쓰게 되므로 켜지 않고 경고만 남긴다.
+- 로직은 `scripts/deploy/f2r_app_guard.sh`의 `f2r_admissions_public_apply`(테스트: `f2r_app_guard.test.sh` ADM·ADM-WF). 대상 키는 지우고 다시 쓰고, env는 배포 시작 시 스냅샷되어 health 실패 시 함께 되돌아간다.
+- 비용 상한: 전체 하루 500 요청(`app.admissions.rate-limit.daily-limit`), IP당 분당 10·시간당 60. 상세: [design/admissions-public-api-controls.md](design/admissions-public-api-controls.md).
+- 확인: `/admissions/guide`에서 질문 → 503 대신 답변. 끄기는 `off`로 한 번 배포.
+
 ## PR #914 승인 UI 전용 운영 자동화
 
 [PR914 최초 설치 및 운영 안내](operations/pr914/README.md)의 CloudFormation/OIDC 경로를 추가한다.
