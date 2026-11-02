@@ -1,8 +1,9 @@
 :root {
-  color-scheme: dark;
-  font-family: Inter, "Pretendard Variable", Pretendard, system-ui, sans-serif;
-  color: #eaf6ff;
-  background: #071525;
+  /* 2026-11-01: 홈(home_light.css)과 같은 밝은 색 체계 */
+  color-scheme: light;
+  font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  color: #0f1b2d;
+  background: #f6f7f9;
 }
 * {
   box-sizing: border-box;
@@ -15,8 +16,17 @@ body {
   margin: auto;
   padding: 24px 18px 60px;
 }
+a {
+  color: #0e7c6b;
+}
+fieldset {
+  border: 1px solid #e3e7ee;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px 16px 16px;
+}
 header a {
-  color: #6ee4ff;
+  color: #0e7c6b;
   display: inline-flex;
   min-height: 44px;
   align-items: center;
@@ -38,7 +48,7 @@ summary {
 }
 section {
   padding: 24px 0;
-  border-top: 1px solid #28465f;
+  border-top: 1px solid #e3e7ee;
   margin-top: 20px;
 }
 .grid {
@@ -63,11 +73,11 @@ button {
   font: inherit;
   min-height: 46px;
   max-width: 100%;
-  border: 1px solid #50718e;
-  border-radius: 7px;
+  border: 1px solid #d5dbe5;
+  border-radius: 10px;
   padding: 11px;
-  color: #eaf6ff;
-  background: #0d2035;
+  color: #0f1b2d;
+  background: #ffffff;
 }
 input,
 select,
@@ -81,9 +91,12 @@ textarea {
 button {
   cursor: pointer;
   white-space: normal;
-  background: #6ee4ff;
-  color: #062032;
-  font-weight: 650;
+  background: #0f1b2d;
+  color: #ffffff;
+  border-color: #0f1b2d;
+  border-radius: 999px;
+  padding: 11px 20px;
+  font-weight: 700;
   margin: 8px 8px 8px 0;
 }
 button:disabled {
@@ -108,20 +121,22 @@ button:disabled {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: #0d2035;
+  background: #ffffff;
   padding: 14px;
-  border: 1px solid #28465f;
+  border: 1px solid #e3e7ee;
+  border-radius: 12px;
   min-height: 54px;
 }
 article {
   padding: 18px;
-  border: 1px solid #28465f;
+  background: #ffffff;
+  border: 1px solid #e3e7ee;
   border-radius: 10px;
   margin: 12px 0;
   overflow-wrap: anywhere;
 }
 article a {
-  color: #6ee4ff;
+  color: #0e7c6b;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -137,11 +152,12 @@ dd {
   overflow-wrap: anywhere;
 }
 dt {
-  color: #b1c4d6;
+  color: #5a6576;
 }
 details {
   padding: 14px;
-  border: 1px solid #28465f;
+  background: #ffffff;
+  border: 1px solid #e3e7ee;
   border-radius: 8px;
 }
 summary {
@@ -149,13 +165,13 @@ summary {
   min-height: 44px;
 }
 small {
-  color: #b1c4d6;
+  color: #5a6576;
 }
 [hidden] {
   display: none !important;
 }
 :focus-visible {
-  outline: 3px solid #6ee4ff;
+  outline: 3px solid #1f6feb;
   outline-offset: 3px;
 }
 @media (max-width: 600px) {
@@ -187,7 +203,7 @@ small {
   font-weight: 600;
 }
 #bankGuide dt {
-  color: #b4c9dc;
+  color: #5a6576;
 }
 #paymentKakao {
   display: inline-flex;
@@ -202,7 +218,7 @@ small {
 #refundTerms th,
 #refundTerms td {
   padding: 8px;
-  border-bottom: 1px solid #355469;
+  border-bottom: 1px solid #e3e7ee;
   text-align: left;
 }
 

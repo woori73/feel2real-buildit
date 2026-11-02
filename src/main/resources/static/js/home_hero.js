@@ -11,7 +11,7 @@
     function schedule() {
       win.clearTimeout(timer);
       if (!stopped && !hovered && !focused && !doc.hidden) {
-        timer = win.setTimeout(function () { show(index + 1, false); }, 6500);
+        timer = win.setTimeout(function () { show(index + 1, false); }, 3000);
       }
     }
     function show(next, announce) {

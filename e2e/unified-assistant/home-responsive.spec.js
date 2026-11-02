@@ -58,12 +58,13 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.logo.right).toBeLessThanOrEqual(metrics.actions.x);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
         expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
-        expect(metrics.promo.y).toBeGreaterThan(metrics.offer.bottom);
+        // 홍보 영상(서수니·세븐)은 첫 화면 배너 옆(휴대폰은 바로 아래)에 있다.
+        expect(metrics.promo.y).toBeLessThan(height);
         expect(metrics.keys).toEqual(['home','request','wiki','game','agent','dashboard','chart','guide']);
         await expect(page.locator('#homePaneTitle')).toHaveText('Feel to Real (F2R) 홈');
         await expect(page.locator('#homeMenuPanel')).toBeHidden();
-        await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1200 });
-        await expect(page.locator('.hl-chips')).toBeVisible({ visible: width <= 1200 });
+        await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1400 });
+        await expect(page.locator('.hl-chips')).toBeVisible({ visible: width <= 1400 });
         await expect(page.locator('#homeNotice')).toBeVisible();
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('압구정중3 기출문제 적중률 분석 리포트');
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('모의고사 위키 지문 복습 문제 업로드');
@@ -115,9 +116,7 @@ for (const font of ['fallback', 'pretendard']) {
         const popup = await popupPromise; await popup.close();
         await expect(page.locator('#enExamMail')).toHaveAttribute('href',email);
         await selectHomePane(page,'home');
-        for (const [link,target] of [['#edu a[href="#request"]','#requestPaneTitle'],['#edu a[href="#review-game"]','#reviewGameTitle'],['#pass-offer a[href="#hitCase"]','#hitCaseTitle']]) {
-          // 배너는 자동으로 넘어가므로 첫 장의 링크는 타일로 첫 장을 고른 뒤 누른다.
-          if (link.startsWith('#pass-offer')) await act(page.locator('[data-hero-go="0"]'));
+        for (const [link,target] of [['#edu a[href="#request"]','#requestPaneTitle'],['#edu a[href="#review-game"]','#reviewGameTitle'],['.hl-promo-actions .hl-btn-dark','#examContactTitle']]) {
           await act(page.locator(link));
           await expect(page.locator(target)).toBeInViewport();
           await selectHomePane(page,'home');

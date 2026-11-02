@@ -58,7 +58,8 @@ test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위, AI 비�
   const ai = HTML.indexOf('id="aiHome"');
   const process = HTML.indexOf('id="svc-exam"');
   // then
-  assert.ok(offer > 0 && offer < chart && chart < ai && ai < process);
+  // 2026-11-01 정리: 맞춤문제 서비스(제작 과정 포함)를 한곳에 모은 뒤 AI 비서, 차트·대시보드는 맨 아래.
+  assert.ok(offer > 0 && offer < process && process < ai && ai < chart);
   // 최종 적용 기준: 기말고사 시험기간 이용권 20,000원·2주·주 2회·총 4회·160문항(회당 40문항)
   assert.match(HTML, /20,000원/);
   assert.match(HTML, /2주 · 주 2회 · 총 4회 · 160문항/);
@@ -67,7 +68,7 @@ test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위, AI 비�
   // 같은 안내를 되풀이하던 버튼 6개·처음 안내 다시 보기·중복 바로가기는 없다
   assert.doesNotMatch(HTML, /si-holo-tile|homeWelcomeAgain|prompt-row|id="naesin-panel"|homeConsole/);
   for (const id of ['homeStage', 'homeChat', 'homeForm', 'homeInput', 'homeMode']) assert.match(HTML, new RegExp('id="' + id + '"'));
-  for (const href of ['/grammar-items', '/wiki', '/ai-agent-studio', '/builder']) assert.ok(HTML.includes('href="' + href + '"'));
+  for (const href of ['/testprep', '/wiki', '/ai-agent-studio', '/builder']) assert.ok(HTML.includes('href="' + href + '"'));
   assert.match(HTML, /안내 모드/);
   // 결제는 무통장입금, 입금 확인은 관리자 수동 확인(자동 결제 기능처럼 표시하지 않음)
   assert.match(HTML, /이용료와 무통장입금 안내/);
