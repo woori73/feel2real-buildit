@@ -66,7 +66,7 @@ class AdmissionsChatServicePolicyTest {
     }
 
     @Test
-    @DisplayName("given 합격 가능성·추천 질문 when 묻으면 then LLM을 호출하지 않고 안내 문구를 돌려준다")
+    @DisplayName("given 대학 없는 합격 가능성·추천 질문 when 묻으면 then LLM을 호출하지 않고 대학·전형을 알려 달라고 안내한다")
     void admission_chance_question_is_refused_without_llm() {
         // given
         String q = "합격 가능성 높은 조합으로 6장 추천해 주세요.";
@@ -76,7 +76,7 @@ class AdmissionsChatServicePolicyTest {
         var answer = service.ask(q, null, null);
 
         // then
-        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_CHANCE);
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_CHANCE_NEED_TARGET);
         assertThat(answer.sources()).isEmpty();
         verify(llm, never()).complete(anyString(), anyString(), anyInt());
     }
@@ -492,6 +492,119 @@ class AdmissionsChatServicePolicyTest {
 
         // then
         assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_TITLE_ONLY);
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
+
+    private Evidence youtube(String id, String title, String excerpt) {
+        return Evidence.builder().stepNo(4).sourceClass(SourceClass.YOUTUBE_OPINION).refId(id)
+                .refUrl("https://www.youtube.com/watch?v=abc&t=60").title(title).excerpt(excerpt)
+                .note("유튜브 영상 분석 — 공식 자료가 아닌 전문가 해석").academicYear(2028).yearConfirmed(false).build();
+    }
+
+    @Test
+    @DisplayName("given 대학을 말한 합격 가능성 질문 when 묻으면 then 판단 대신 공식 전형 정보를 정리하라고 지시해 LLM을 호출한다")
+    void admission_chance_with_university_gives_reference_info() {
+        // given
+        String q = "서울대 지역균형 합격 가능성 있을까요?";
+        Evidence e = fact("type:1", "서울대학교 2027학년도 지역균형", "모집인원: 523\n수능최저: 3개 영역 3등급 이내", 2027, null);
+        givenFacts(q, List.of(e), Set.of(2027), false);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+        when(llm.complete(anyString(), anyString(), anyInt())).thenReturn(NewStartLlmCompletion.success(
+                "합격 가능성은 판단해 드릴 수 없지만, 지원 판단에 참고할 공식 정보를 정리해 드립니다. 지역균형 모집인원은 523명입니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        ArgumentCaptor<String> user = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(anyString(), user.capture(), anyInt());
+        assertThat(user.getValue()).contains("[합격 가능성 질문]").contains("판단하거나 추정하지 마라");
+        assertThat(answer.answer()).contains("523명");
+        assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::id).containsExactly("type:1");
+    }
+
+    @Test
+    @DisplayName("given 대학을 말한 합격 가능성 질문인데 공식 근거가 없음 when 묻으면 then LLM 없이 합격 가능성 안내 문구를 돌려준다")
+    void admission_chance_without_evidence_is_refused() {
+        // given
+        String q = "연세대 합격 가능성 있을까요?";
+        givenFacts(q, List.of(), Set.of(2027), false);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).isEqualTo(AdmissionsChatService.MSG_CHANCE);
+        verify(llm, never()).complete(anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("given 관련 유튜브 해석 when 답변이 유튜브 단락을 쓰면 then 시스템 프롬프트에 공식 아님 블록이 있고 출처에 참고로 붙는다")
+    void youtube_expert_opinion_is_separate_block_and_reference_source() {
+        // given
+        String q = "서울대 지역균형 수능최저 알려줘";
+        Evidence e = fact("type:1", "서울대학교 2027학년도 지역균형", "수능최저: 3개 영역 3등급 이내", 2027, null);
+        givenFacts(q, List.of(e), Set.of(2027), false);
+        var yt = youtube("youtube:9", "[유튜브 해석 · 2028학년도 대상] 수능최저 전략", "채널 A: 최저 충족이 관건이라는 해석");
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q).confirmedHits(List.of()).plannedHits(List.of())
+                .officialDocHits(List.of()).youtubeHits(List.of(yt)).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+        when(llm.complete(anyString(), anyString(), anyInt())).thenReturn(NewStartLlmCompletion.success(
+                "서울대 지역균형 수능최저는 3개 영역 3등급 이내입니다.\n참고 — 유튜브 전문가 해석(공식 자료 아님): 채널 A는 최저 충족이 관건이라고 봅니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        ArgumentCaptor<String> system = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> user = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(system.capture(), user.capture(), anyInt());
+        assertThat(system.getValue()).contains("[참고: 유튜브 전문가 해석 — 공식 자료 아님").contains("최저 충족이 관건");
+        assertThat(user.getValue()).contains("숫자를 쓰지 말고");
+        assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::kind)
+                .containsExactly("공식 자료 (확정)", "유튜브 전문가 해석 (참고, 공식 아님)");
+    }
+
+    @Test
+    @DisplayName("given 유튜브 해석이 있어도 when 답변이 유튜브를 쓰지 않으면 then 출처에 유튜브를 붙이지 않는다")
+    void youtube_source_only_when_used() {
+        // given
+        String q = "서울대 지역균형 수능최저 알려줘";
+        Evidence e = fact("type:1", "서울대학교 2027학년도 지역균형", "수능최저: 3개 영역 3등급 이내", 2027, null);
+        givenFacts(q, List.of(e), Set.of(2027), false);
+        var yt = youtube("youtube:9", "[유튜브 해석 · 2028학년도 대상] 학종 준비", "관련 없는 해석");
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q).confirmedHits(List.of()).plannedHits(List.of())
+                .officialDocHits(List.of()).youtubeHits(List.of(yt)).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("서울대 지역균형 수능최저는 3개 영역 3등급 이내입니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.sources()).extracting(AdmissionsChatService.AnswerSource::kind).containsExactly("공식 자료 (확정)");
+    }
+
+    @Test
+    @DisplayName("given 공식 근거 없는 2028 질문과 관련 유튜브 해석 when 묻으면 then LLM 없이 미발표 안내 뒤에 유튜브 해석 목록·링크를 참고로 붙인다")
+    void no_official_evidence_shows_youtube_reference_list_without_llm() {
+        // given
+        String q = "고려대 2028 학생부종합 내신 5등급제 영향";
+        givenFacts(q, List.of(), Set.of(2028), true);
+        var yt = youtube("youtube:3", "[유튜브 해석 · 2028학년도 대상] [전문가 해석] 채널 B: 5등급제에서는 세특 비중이 커진다", "요지");
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q).confirmedHits(List.of()).plannedHits(List.of())
+                .officialDocHits(List.of()).youtubeHits(List.of(yt)).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).startsWith(AdmissionsChatService.MSG_UNPUBLISHED_2028)
+                .contains("참고 — 관련 유튜브 전문가 해석(공식 자료 아님").contains("채널 B: 5등급제에서는 세특 비중이 커진다");
+        assertThat(answer.sources()).singleElement().satisfies(src -> {
+            assertThat(src.kind()).isEqualTo("유튜브 전문가 해석 (참고, 공식 아님)");
+            assertThat(src.url()).isEqualTo("https://www.youtube.com/watch?v=abc&t=60");
+        });
         verify(llm, never()).complete(anyString(), anyString(), anyInt());
     }
 }

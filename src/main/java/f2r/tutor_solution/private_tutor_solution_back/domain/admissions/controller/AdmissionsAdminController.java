@@ -325,6 +325,7 @@ public class AdmissionsAdminController {
             out.put("schedulesArchived", result.schedulesArchived());
             out.put("supersededArchived", result.supersededArchived());
             out.put("schedulesSourced", result.schedulesSourced());
+            out.put("youtubeKnowledge", result.knowledgeItems());
             out.put("status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED");
             return ResponseEntity.ok(out);
         } catch (AdmissionsDataLoader.SeedLoadException e) {

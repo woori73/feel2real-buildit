@@ -91,11 +91,16 @@ public class AdmissionsActivationService {
         schedules.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeSchedules.add(row.getScheduleId()); });
         for (var item : knowledgeItems.findAll()) {
             if (item.getAcademicYear() != academicYear || !promotable(item.getStatus())) continue;
-            if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
             String key = item.getDedupKey() == null ? "" : item.getDedupKey();
-            boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
-                    || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)));
-            if (!backed) continue;
+            // 시드로 넣은 유튜브 해석 항목(원본 행 없음)도 함께 승격한다. 답변에서는 공식 근거와 분리해 참고로만 쓴다.
+            boolean youtube = key.startsWith("youtube:")
+                    && item.getSourceClass() == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.SourceClass.YOUTUBE;
+            if (!youtube) {
+                if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
+                boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
+                        || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)));
+                if (!backed) continue;
+            }
             item.setStatus(KnowledgeStatus.ACTIVE);
             k++;
         }

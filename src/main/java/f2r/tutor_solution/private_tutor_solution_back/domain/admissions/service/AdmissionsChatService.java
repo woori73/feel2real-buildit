@@ -89,6 +89,11 @@ public class AdmissionsChatService {
     static final String MSG_CHANCE =
             "합격 가능성·합격선·지원 조합 추천은 제공하지 않습니다. 입시상담 가이드는 대학이 공개한 모집요강 정보"
                     + "(모집단위, 전형, 일정 등)만 안내합니다. 개인별 합격 판단은 학교 진학 상담과 각 대학 입학처를 이용해 주세요.";
+    /** 합격 가능성 질문인데 대학을 특정하지 않은 경우: 판단 대신 참고 정보를 줄 수 있음을 안내한다. */
+    static final String MSG_CHANCE_NEED_TARGET =
+            "합격 가능성은 판단해 드릴 수 없습니다. 대신 지원하려는 대학과 전형을 알려 주시면 모집인원·전형방법·수능최저처럼 "
+                    + "지원 판단에 참고할 공식 모집요강 정보와 관련 유튜브 전문가 해석을 정리해 드립니다. "
+                    + "예: \"성균관대 학생부종합 가능성\", \"아주대 교과전형 합격 가능성\"";
     static final String MSG_NOT_COLLECTED =
             "경쟁률·전년도 입시결과·충원 현황·권장 이수 과목은 아직 수집된 공식 자료가 없어 안내할 수 없습니다. "
                     + "해당 정보는 각 대학 입학처 발표를 확인해 주세요.";
@@ -129,8 +134,9 @@ public class AdmissionsChatService {
                     + "수능 출제 과목·대입 제도 등 대학 외 정책은 교육부·한국교육과정평가원 발표 자료를 확인해 주세요. "
                     + "2027학년도(확정)와 2028학년도(계획) 자료는 구분되어 있으니 확인하실 때 학년도도 함께 확인해 주세요.";
     static final String MSG_NO_EVIDENCE =
-            "승인된 공식 입시 자료에서 질문에 해당하는 정보를 찾지 못했습니다. 대학명·학년도·전형·학과를 구체적으로 "
-                    + "넣어 다시 질문하시거나, 해당 대학 입학처의 모집요강 원문을 확인해 주세요.";
+            "승인된 공식 입시 자료에서 질문에 해당하는 정보를 찾지 못했습니다. 대학명과 궁금한 내용(전형·모집인원·일정·학과)을 "
+                    + "함께 넣어 다시 질문해 주세요. 예: \"아주대 2027 수시 원서접수 일정 알려줘\", \"고려대 학교추천전형 모집인원은?\" "
+                    + "자료에 없는 내용은 해당 대학 입학처의 모집요강 원문을 확인해 주세요.";
     /** 검색 단계 오류: 자료 부족(MSG_NO_EVIDENCE)·AI 호출 실패와 구분한다. */
     static final String MSG_SEARCH_FAILED =
             "입시 자료를 검색하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
@@ -181,8 +187,10 @@ public class AdmissionsChatService {
         AdmissionsQueryParser.Parsed parsed = facts.parsed();
 
         // 2. LLM 없이 차단하는 질문: 합격 가능성 판단/추천, 수집하지 않은 자료, 미지원 학년도
-        if (parsed.asksAdmissionChance()) {
-            return refuse(MSG_CHANCE, sessionToken, question, academicYearFilter, studentProfile);
+        // 합격 가능성은 판단하지 않는다. 대학을 말했으면 판단 대신 참고할 공식 정보를 정리하고(아래 프롬프트 지시),
+        // 대학이 없으면 무엇을 알려 주면 되는지 안내한다.
+        if (parsed.asksAdmissionChance() && parsed.universities().isEmpty()) {
+            return refuse(MSG_CHANCE_NEED_TARGET, sessionToken, question, academicYearFilter, studentProfile);
         }
         if (parsed.asksNotCollected()) {
             return refuse(MSG_NOT_COLLECTED, sessionToken, question, academicYearFilter, studentProfile);
@@ -216,27 +224,28 @@ public class AdmissionsChatService {
             usable = usable.stream().filter(e -> Integer.valueOf(2028).equals(e.getAcademicYear())).toList();
             // 문서 제목만 있는 자료(material:)로는 2028 일정·수치를 답할 수 없다. 학과·전형·일정 행 또는 사실 지식이 있어야 한다.
             if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
-                return refuse(MSG_UNPUBLISHED_2028, sessionToken, question, academicYearFilter, studentProfile);
+                return refuseWithYoutube(MSG_UNPUBLISHED_2028, pack, sessionToken, question, academicYearFilter, studentProfile);
             }
         }
 
         // 5. 사실 근거가 하나도 없으면(GUIDE만 검색된 경우 포함) LLM을 호출하지 않는다.
         if (usable.isEmpty()) {
-            return refuse(parsed.universities().isEmpty() ? MSG_NO_EVIDENCE : msgUniversityInfoMissing(parsed.universities()),
+            return refuseWithYoutube(parsed.asksAdmissionChance() ? MSG_CHANCE
+                            : parsed.universities().isEmpty() ? MSG_NO_EVIDENCE : msgUniversityInfoMissing(parsed.universities()), pack,
                     sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 5-1. 문서 제목·발행기관만 있는 공식자료(material:)로는 내용을 알 수 없다. 사실 근거(학과·전형·일정 행 또는
         //      FACT 지식)가 하나도 없으면 LLM이 제목만 보고 내용을 지어내지 못하도록 호출하지 않는다.
         if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
-            return refuse(parsed.universities().isEmpty() ? MSG_TITLE_ONLY : MSG_UNIV_NO_INFO + " " + MSG_TITLE_ONLY,
+            return refuseWithYoutube(parsed.universities().isEmpty() ? MSG_TITLE_ONLY : MSG_UNIV_NO_INFO + " " + MSG_TITLE_ONLY, pack,
                     sessionToken, question, academicYearFilter, studentProfile);
         }
 
         // 6. 근거를 프롬프트에 조립
         String evidenceContext = buildEvidenceContext(usable);
         String systemPrompt = BASE_PROMPT + "\n\n[입시 공식자료 근거]\n" + evidenceContext
-                + buildGuideBlock(pack);
+                + buildGuideBlock(pack) + buildYoutubeBlock(pack);
         String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile, facts.scheduleCoverage());
 
         // 7. LLM 호출
@@ -254,9 +263,11 @@ public class AdmissionsChatService {
         }
 
         // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
-        List<AnswerSource> sources = buildSources(usable, question);
-
+        List<AnswerSource> sources = new ArrayList<>(buildSources(usable, question));
         String answer = completion.text();
+        // 답변이 유튜브 해석 단락을 썼으면 그 영상들을 공식 출처와 구분된 "참고" 출처로 붙인다.
+        if (answer.contains("유튜브")) sources.addAll(youtubeSources(pack));
+
         saveSession(sessionToken, question, answer, pack, academicYearFilter, studentProfile, sources);
 
         log.info("admissions chat ok questionChars={} evidenceCount={} answerChars={} model={}",
@@ -313,6 +324,28 @@ public class AdmissionsChatService {
         if (s == null) return "";
         int nl = s.indexOf('\n');
         return nl < 0 ? s : s.substring(0, nl);
+    }
+
+    /**
+     * 공식 근거가 없어 답하지 못할 때, 관련 유튜브 전문가 해석이 있으면 LLM 없이 목록(채널·요지)과 영상 링크를 덧붙인다.
+     * 공식 자료가 아님을 문구와 출처 종류에 밝히고, 내용을 새로 만들지 않는다(저장된 요지를 그대로 보여 준다).
+     */
+    private AdmissionsAnswer refuseWithYoutube(String message, ResearchPack pack, String sessionToken, String question,
+                                               Integer year, String studentProfile) {
+        List<AnswerSource> yt = youtubeSources(pack);
+        if (yt.isEmpty()) return refuse(message, sessionToken, question, year, studentProfile);
+        String answer = message + "\n\n" + youtubeReferenceText(pack);
+        saveSession(sessionToken, question, answer, null, year, studentProfile, yt);
+        return new AdmissionsAnswer(true, answer, null, null, yt, year, false);
+    }
+
+    /** 근거 없음 안내 뒤에 붙는 유튜브 해석 참고 목록. */
+    static String youtubeReferenceText(ResearchPack pack) {
+        StringBuilder sb = new StringBuilder("참고 — 관련 유튜브 전문가 해석(공식 자료 아님, 영상 설명·챕터를 바탕으로 정리한 요지이며 발언을 직접 확인한 것은 아닙니다):");
+        for (Evidence e : pack.getYoutubeHits()) {
+            sb.append("\n- ").append(e.getTitle());
+        }
+        return sb.toString();
     }
 
     private AdmissionsAnswer refuse(String message, String sessionToken, String question, Integer year, String studentProfile) {
@@ -397,9 +430,17 @@ public class AdmissionsChatService {
             }
             sb.append(" 답변 첫머리에 기준 학년도를 밝혀라.\n");
         }
+        if (parsed.asksAdmissionChance()) {
+            sb.append("[합격 가능성 질문] 합격 가능성·합격 확률·합격선은 판단하거나 추정하지 마라. 답변 첫 문장에서 "
+                    + "'합격 가능성은 판단해 드릴 수 없지만, 지원 판단에 참고할 공식 정보를 정리해 드립니다.'라고 밝힌 뒤, "
+                    + "근거에 있는 모집인원·전형방법(반영 비율)·수능최저·제출서류를 전형별로 정리하라. 학생 성적과 비교해 "
+                    + "유불리를 말하지 말고, 끝에 학교 진학 상담과 대학 입학처 상담을 함께 권하라.\n");
+        }
         if (!pack.getYoutubeHits().isEmpty()) {
-            sb.append("[참고] 유튜브 의견 ").append(pack.getYoutubeHits().size()).append("건이 있으나, "
-                    + "이는 확정 사실이 아니므로 본 답변에 포함하지 말고, 필요한 경우 '일부 유튜브 분석에서는 ~라는 의견도 있다' 정도로만 언급하라.\n");
+            sb.append("[유튜브 전문가 해석] 시스템의 '참고: 유튜브 전문가 해석' 항목 중 질문과 직접 관련된 것이 있으면, 공식 정보 뒤에 "
+                    + "'참고 — 유튜브 전문가 해석(공식 자료 아님)' 단락을 따로 두고 1~3문장으로 요약하라. 채널 이름과 대상 학년도를 밝히고, "
+                    + "영상 설명·챕터를 바탕으로 정리한 내용이라 발언을 직접 확인한 것은 아니라고 덧붙여라. 이 단락에는 숫자를 쓰지 말고 "
+                    + "확정 사실처럼 쓰지 마라. 관련이 없으면 이 단락을 쓰지 마라.\n");
         }
         if (!pack.getConflictHits().isEmpty()) {
             sb.append("[주의] 충돌 중인 정보 ").append(pack.getConflictHits().size()).append("건이 있다. "
@@ -409,6 +450,27 @@ public class AdmissionsChatService {
             sb.append("[부족] ").append(String.join(" / ", pack.getGapNotes())).append("\n");
         }
         return sb.toString();
+    }
+
+    /** 유튜브 전문가 해석 블록: 공식 근거와 분리해 "공식 자료 아님"을 표시한다. 답변 사후 검증(수치 근거)에는 넣지 않는다. */
+    static String buildYoutubeBlock(ResearchPack pack) {
+        if (pack == null || pack.getYoutubeHits() == null || pack.getYoutubeHits().isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\n\n[참고: 유튜브 전문가 해석 — 공식 자료 아님, 사실 근거로 쓰지 말 것]\n");
+        for (Evidence e : pack.getYoutubeHits()) {
+            sb.append("- ").append(e.getTitle()).append("\n  ").append(e.getExcerpt() == null ? "" : e.getExcerpt().replace("\n", " ")).append("\n");
+        }
+        return sb.toString();
+    }
+
+    /** 유튜브 해석 출처(참고). */
+    static List<AnswerSource> youtubeSources(ResearchPack pack) {
+        if (pack == null || pack.getYoutubeHits() == null) return List.of();
+        List<AnswerSource> out = new ArrayList<>();
+        for (Evidence e : pack.getYoutubeHits()) {
+            String url = e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl();
+            out.add(new AnswerSource("유튜브 전문가 해석 (참고, 공식 아님)", e.getTitle(), url, e.getRefId()));
+        }
+        return out;
     }
 
     /** 출처 패널용: 질문과 관련된 근거만 중복 없이 상위 {@link #MAX_SOURCES}개. LLM에 준 근거 자체는 바꾸지 않는다. */

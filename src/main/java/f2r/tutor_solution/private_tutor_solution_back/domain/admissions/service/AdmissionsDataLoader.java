@@ -100,8 +100,10 @@ public class AdmissionsDataLoader {
         Map<String, AdmissionsSchedule> existingSchedRows = new HashMap<>();
         scheduleRepository.findAll().forEach(sc -> existingSchedRows.putIfAbsent(
                 sc.getUniversity().getUniversityId() + "|" + sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote(), sc));
+        // 같은 자료 판단은 "대학 + 제목"으로 한다. 제목만 보면 "2027학년도 수시모집 모집요강"처럼 흔한 제목의
+        // 다른 대학 자료에 행이 잘못 연결된다.
         Map<String, AdmissionsOfficialMaterial> materialByTitle = new HashMap<>();
-        materialRepository.findAll().forEach(m -> materialByTitle.put(m.getTitle(), m));
+        materialRepository.findAll().forEach(m -> materialByTitle.put(materialKey(m.getUniversity(), m.getTitle()), m));
 
         int univCount = 0;
         for (JsonNode u : root.path("ipsi_universities")) {
@@ -128,8 +130,19 @@ public class AdmissionsDataLoader {
             String docKey = d.path("document_key").asText();
             // 중복 방지: 같은 제목의 자료가 이미 있으면 새로 만들지 않고 출처 매핑만 연결한다.
             String title = d.path("document_name").asText();
-            AdmissionsOfficialMaterial already = materialByTitle.get(title);
+            String univCode = extractUnivCode(docKey);
+            AdmissionsUniversity univ = univByCode.get(univCode);
+            // 연세대는 시드에 따라 코드가 YON(검증용 시드) 또는 YONSEI(buildit-admissions 시드)다. 둘 다 받는다.
+            if (univ == null && "YON".equals(univCode)) univ = univByCode.get("YONSEI");
+            AdmissionsOfficialMaterial already = materialByTitle.get(materialKey(univ, title));
             if (already != null) {
+                // 예전에 보관(ARCHIVED)된 같은 자료를 시드가 다시 쓰면 되살려 재승인을 받게 한다.
+                // 보관된 자료에 연결된 행은 검색에 쓰이지 않기 때문이다.
+                if (already.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
+                    already.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                    materialRepository.save(already);
+                    matCount++;
+                }
                 matByKey.put(docKey, already);
                 continue;
             }
@@ -141,10 +154,6 @@ public class AdmissionsDataLoader {
                 skipped++;
                 continue;
             }
-            String univCode = extractUnivCode(docKey);
-            AdmissionsUniversity univ = univByCode.get(univCode);
-            // 연세대는 시드에 따라 코드가 YON(검증용 시드) 또는 YONSEI(buildit-admissions 시드)다. 둘 다 받는다.
-            if (univ == null && "YON".equals(univCode)) univ = univByCode.get("YONSEI");
             AdmissionsOfficialMaterial mat = AdmissionsOfficialMaterial.builder()
                     .university(univ)
                     .academicYear(matYear)
@@ -156,7 +165,7 @@ public class AdmissionsDataLoader {
                     .build();
             mat = materialRepository.save(mat);
             matByKey.put(docKey, mat);
-            materialByTitle.put(title, mat);
+            materialByTitle.put(materialKey(univ, title), mat);
             matCount++;
         }
 
@@ -169,9 +178,9 @@ public class AdmissionsDataLoader {
             AdmissionsDepartment old = existingDept.get(univ.getUniversityId() + "|" + year + "|" + dep.path("department_name").asText());
             if (old != null) {
                 String quota = dep.path("counts_by_type").toString();
-                if (!quota.equals(old.getQuotaInfo())) {
+                AdmissionsOfficialMaterial src = matByKey.get(dep.path("source_document_key").asText(null));
+                if (!quota.equals(old.getQuotaInfo()) || sourceChanged(old.getSource(), src)) {
                     old.setQuotaInfo(quota);
-                    AdmissionsOfficialMaterial src = matByKey.get(dep.path("source_document_key").asText(null));
                     if (src != null) old.setSource(src);
                     old.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
                     departmentRepository.save(old);
@@ -205,12 +214,13 @@ public class AdmissionsDataLoader {
             details.append("\n제출서류: ").append(submissionDocuments(t.path("submission_documents")));
             if (oldType != null) {
                 String category = t.path("type_category").asText(null);
+                AdmissionsOfficialMaterial src = matByKey.get(t.path("source_document_key").asText(null));
                 boolean changed = !details.toString().equals(oldType.getDetails())
-                        || (category != null && !category.equals(oldType.getCategory()));
+                        || (category != null && !category.equals(oldType.getCategory()))
+                        || sourceChanged(oldType.getSource(), src);
                 if (changed) {
                     oldType.setDetails(details.toString());
                     if (category != null) oldType.setCategory(category);
-                    AdmissionsOfficialMaterial src = matByKey.get(t.path("source_document_key").asText(null));
                     if (src != null) oldType.setSource(src);
                     oldType.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
                     typeRepository.save(oldType);
@@ -242,7 +252,8 @@ public class AdmissionsDataLoader {
             if (existing != null) {
                 // 예전에 출처 없이 들어간 일정(검색에 쓰이지 않음)은 시드의 출처를 연결하고 재승인을 받게 DRAFT로 둔다.
                 AdmissionsOfficialMaterial src = matByKey.get(docKey);
-                if (existing.getSource() == null && src != null && existing.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
+                // 다른 자료(예: 같은 제목의 다른 대학 자료)에 잘못 연결된 일정도 시드의 출처로 다시 연결한다.
+                if (sourceChanged(existing.getSource(), src) && existing.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
                     existing.setSource(src);
                     existing.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
                     scheduleRepository.save(existing);
@@ -276,6 +287,8 @@ public class AdmissionsDataLoader {
             schedArchived++;
         }
 
+        int youtube = loadYoutubeKnowledge(root.path("youtube_knowledge"));
+
         int superseded = 0;
         for (JsonNode code : root.path("authoritative_universities")) {
             superseded += archiveSuperseded(root, code.asText(), univByCode);
@@ -283,17 +296,70 @@ public class AdmissionsDataLoader {
 
         log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={}",
                 univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
-        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
+        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, youtube, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
+    }
+
+    /**
+     * 시드의 youtube_knowledge(유튜브 영상 분석 = 전문가 해석·전략·전망)를 지식 항목으로 넣는다.
+     * 공식 사실이 아니므로 sourceClass=YOUTUBE로 두어 공식 근거 검색(OFFICIAL만)에 섞이지 않게 한다.
+     * 같은 id(dedupKey youtube:{id})가 있으면 제목·본문이 바뀐 경우에만 갱신하고 DRAFT로 되돌린다.
+     * 지원하지 않는 학년도(2027·2028 외) 항목은 넣지 않는다. 넣거나 갱신한 건수를 돌려준다.
+     */
+    int loadYoutubeKnowledge(JsonNode items) {
+        if (items == null || !items.isArray()) return 0;
+        int n = 0;
+        for (JsonNode it : items) {
+            String id = it.path("id").asText("");
+            Integer year = readSupportedYear(it.path("academic_year"));
+            String title = it.path("title").asText("");
+            String content = it.path("content").asText("");
+            if (id.isBlank() || year == null || title.isBlank() || content.isBlank()) continue;
+            String dedupKey = "youtube:" + id;
+            java.util.Optional<AdmissionsKnowledgeItem> existing = knowledgeRepository.findByDedupKey(dedupKey);
+            if (existing.isPresent()) {
+                AdmissionsKnowledgeItem k = existing.get();
+                if (title.equals(k.getTitle()) && content.equals(k.getContent())) continue;
+                k.setTitle(title);
+                k.setContent(content);
+                k.setTags(it.path("tags").asText(null));
+                k.setSourceUrl(it.path("source_url").asText(null));
+                k.setAcademicYear(year);
+                k.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                knowledgeRepository.save(k);
+                n++;
+                continue;
+            }
+            knowledgeRepository.save(AdmissionsKnowledgeItem.builder()
+                    .academicYear(year)
+                    .yearConfirmed(false)
+                    .title(title)
+                    .content(content)
+                    .category("유튜브 해석")
+                    .tags(it.path("tags").asText(null))
+                    .sourceClass(AdmissionsKnowledgeItem.SourceClass.YOUTUBE)
+                    .sourceUrl(it.path("source_url").asText(null))
+                    .role(AdmissionsKnowledgeItem.Role.FACT)
+                    .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
+                    .dedupKey(dedupKey)
+                    .verificationNote("유튜브 영상 분석(buildit-admissions data/youtube). 공식 사실이 아닌 전문가 해석 — 답변에서는 별도 참고 단락으로만 쓴다.")
+                    .createdBy("admissions-loader")
+                    .build());
+            n++;
+        }
+        return n;
     }
 
     /** authoritative_universities 한 대학 처리. 보관한 행 수를 돌려준다. */
     private int archiveSuperseded(JsonNode root, String code, Map<String, AdmissionsUniversity> univByCode) {
         AdmissionsUniversity seedUniv = requireUniversity(univByCode, code, "authoritative_universities");
         String base = baseName(seedUniv.getName());
+        // 같은 캠퍼스끼리만 정리한다: 분교(ERICA 등) 시드가 본교 행을, 본교 시드가 분교 행을 보관하지 않게.
+        String seedCampus = AdmissionsFactSearchService.campusMarker(seedUniv.getName());
         java.util.Set<Long> targets = new java.util.HashSet<>();
         for (AdmissionsUniversity u : universityRepository.findAll()) {
             if (u.getName().equals(seedUniv.getName())
-                    || (base.equals(baseName(u.getName())) && !AdmissionsFactSearchService.otherCampusMarked(u.getName()))) {
+                    || (base.equals(baseName(u.getName()))
+                        && java.util.Objects.equals(seedCampus, AdmissionsFactSearchService.campusMarker(u.getName())))) {
                 targets.add(u.getUniversityId());
             }
         }
@@ -330,7 +396,7 @@ public class AdmissionsDataLoader {
         for (AdmissionsType t : typeRepository.findAll()) {
             if (!inScope(t.getUniversity(), t.getAcademicYear(), targets, years)) continue;
             boolean keep = (seedId.equals(t.getUniversity().getUniversityId()) && keepType.contains(t.getAcademicYear() + "|" + t.getName()))
-                    || AdmissionsFactSearchService.otherCampusMarked(sourceTitle(t.getSource()) + " " + t.getName());
+                    || otherCampus(sourceTitle(t.getSource()) + " " + t.getName(), seedCampus);
             if (keep || t.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
                 if (t.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && t.getSource() != null) stillUsedMaterials.add(t.getSource().getMaterialId());
                 continue;
@@ -343,7 +409,7 @@ public class AdmissionsDataLoader {
         for (AdmissionsDepartment d : departmentRepository.findAll()) {
             if (!inScope(d.getUniversity(), d.getAcademicYear(), targets, years)) continue;
             boolean keep = (seedId.equals(d.getUniversity().getUniversityId()) && keepDept.contains(d.getAcademicYear() + "|" + d.getName()))
-                    || AdmissionsFactSearchService.otherCampusMarked(sourceTitle(d.getSource()) + " " + d.getName());
+                    || otherCampus(sourceTitle(d.getSource()) + " " + d.getName(), seedCampus);
             if (keep || d.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
                 if (d.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && d.getSource() != null) stillUsedMaterials.add(d.getSource().getMaterialId());
                 continue;
@@ -356,7 +422,7 @@ public class AdmissionsDataLoader {
             if (!inScope(sc.getUniversity(), sc.getAcademicYear(), targets, years)) continue;
             boolean keep = (seedId.equals(sc.getUniversity().getUniversityId())
                     && keepSched.contains(sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote()))
-                    || AdmissionsFactSearchService.otherCampusMarked(sourceTitle(sc.getSource()) + " " + sc.getTitle());
+                    || otherCampus(sourceTitle(sc.getSource()) + " " + sc.getTitle(), seedCampus);
             if (keep || sc.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
                 if (sc.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && sc.getSource() != null) stillUsedMaterials.add(sc.getSource().getMaterialId());
                 continue;
@@ -370,7 +436,7 @@ public class AdmissionsDataLoader {
             if (!inScope(m.getUniversity(), m.getAcademicYear(), targets, years)) continue;
             if (m.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
             if (keepDocTitles.contains(m.getTitle()) || stillUsedMaterials.contains(m.getMaterialId())) continue;
-            if (AdmissionsFactSearchService.otherCampusMarked(m.getTitle())) continue;
+            if (otherCampus(m.getTitle(), seedCampus)) continue;
             m.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
             materialRepository.save(m);
             archived++;
@@ -382,8 +448,27 @@ public class AdmissionsDataLoader {
         return u != null && targets.contains(u.getUniversityId()) && years.contains(year);
     }
 
+    /** 괄호·공백·캠퍼스 표시를 뺀 대학 이름. "한양대학교(ERICA)"와 "한양대학교 ERICA"는 같은 "한양대학교"다. */
     private static String baseName(String name) {
-        return name == null ? "" : name.replaceAll("\\(.*?\\)", "").trim();
+        if (name == null) return "";
+        String t = name.replaceAll("\\(.*?\\)", "").replace(" ", "");
+        String marker = AdmissionsFactSearchService.campusMarker(t);
+        return marker == null ? t : t.replace(marker, "");
+    }
+
+    /** 시드 대학과 다른 캠퍼스 표시가 붙은 글인가. */
+    private static boolean otherCampus(String text, String seedCampus) {
+        String marker = AdmissionsFactSearchService.campusMarker(text);
+        return marker != null && !marker.equals(seedCampus);
+    }
+
+    private static String materialKey(AdmissionsUniversity univ, String title) {
+        return (univ == null ? "-" : String.valueOf(univ.getUniversityId())) + "|" + title;
+    }
+
+    /** 시드가 가리키는 자료가 있고, 행의 현재 자료와 다른가(없던 출처 포함). */
+    private static boolean sourceChanged(AdmissionsOfficialMaterial current, AdmissionsOfficialMaterial seed) {
+        return seed != null && (current == null || !java.util.Objects.equals(current.getMaterialId(), seed.getMaterialId()));
     }
 
     private static String sourceTitle(AdmissionsOfficialMaterial m) {

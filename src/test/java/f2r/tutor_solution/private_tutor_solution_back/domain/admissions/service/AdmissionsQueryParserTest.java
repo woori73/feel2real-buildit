@@ -48,6 +48,9 @@ class AdmissionsQueryParserTest {
         assertThat(AdmissionsQueryParser.parse("합격 가능성 높은 조합으로 6장 추천해 주세요.", UNIVS).asksAdmissionChance()).isTrue();
         assertThat(AdmissionsQueryParser.parse("내신이 2.5등급이면 성균관대 어디쯤 지원 가능할까요?", UNIVS).asksAdmissionChance()).isTrue();
         assertThat(AdmissionsQueryParser.parse("서울대 지역균형은 수능최저가 얼마인가요?", UNIVS).asksAdmissionChance()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("가능성", UNIVS).asksAdmissionChance()).as("가능성만 물어도 합격 가능성 질문").isTrue();
+        assertThat(AdmissionsQueryParser.parse("연세대 가능성 높을까요?", UNIVS).asksAdmissionChance()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("수시 일정 변경 가능성 있나요?", UNIVS).asksAdmissionChance()).as("합격 판단이 아닌 가능성").isFalse();
     }
 
     @Test
@@ -282,5 +285,39 @@ class AdmissionsQueryParserTest {
         assertThat(registered.unknownUniversities()).isEmpty();
         assertThat(cityUniv.universities()).as("서울시립대를 서울대로 오인하지 않는다").isEmpty();
         assertThat(cityUniv.unknownUniversities()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("given 본교와 ERICA가 별도 대학으로 등록 when 질문이 ERICA·에리카를 말하면 then ERICA 항목만, 캠퍼스를 말하지 않으면 둘 다 고른다")
+    void asked_campus_narrows_to_that_campus_entity() {
+        // given
+        var names = List.of("한양대학교(서울)", "한양대학교(ERICA)", "고려대학교(서울)", "중앙대학교", "중앙대학교(다빈치캠퍼스)");
+
+        // when
+        var erica = AdmissionsQueryParser.parse("한양대 ERICA 2027 수시 원서접수", names);
+        var ericaKo = AdmissionsQueryParser.parse("한양대 에리카 정시 모집인원", names);
+        var plain = AdmissionsQueryParser.parse("한양대 수시 원서접수", names);
+        var davinci = AdmissionsQueryParser.parse("중앙대 다빈치 수시 모집인원", names);
+        var sejong = AdmissionsQueryParser.parse("고려대 세종캠퍼스 수시 일정", names);
+        var both = AdmissionsQueryParser.parse("한양대 ERICA와 고려대 수시 비교", names);
+
+        // then
+        assertThat(erica.universities()).containsExactly("한양대학교(ERICA)");
+        assertThat(ericaKo.universities()).containsExactly("한양대학교(ERICA)");
+        assertThat(plain.universities()).containsExactlyInAnyOrder("한양대학교(서울)", "한양대학교(ERICA)");
+        assertThat(davinci.universities()).containsExactly("중앙대학교(다빈치캠퍼스)");
+        assertThat(sejong.universities()).as("세종캠퍼스가 별도 항목이 아니면 그대로").containsExactly("고려대학교(서울)");
+        assertThat(both.universities()).containsExactlyInAnyOrder("한양대학교(ERICA)", "고려대학교(서울)");
+    }
+
+    @Test
+    @DisplayName("given 한국항공대학교 when 항공대라고 물으면 then 한국항공대학교로 본다")
+    void hangkongdae_alias() {
+        // given / when
+        var p = AdmissionsQueryParser.parse("항공대 2027 수시 원서접수 일정", List.of("한국항공대학교", "서울대학교"));
+
+        // then
+        assertThat(p.universities()).containsExactly("한국항공대학교");
+        assertThat(p.unknownUniversities()).isEmpty();
     }
 }

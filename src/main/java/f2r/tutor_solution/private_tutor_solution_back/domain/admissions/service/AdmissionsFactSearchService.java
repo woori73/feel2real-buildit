@@ -147,7 +147,8 @@ public class AdmissionsFactSearchService {
                 .filter(t -> AdmissionsQueryParser.typePieces(t.getName()).stream().anyMatch(question::contains))
                 .toList();
         List<AdmissionsType> chosen = mainCampusFirst(question,
-                !matched.isEmpty() ? matched : (p.wantsType() ? candidates : List.of()),
+                // 합격 가능성 질문은 판단 대신 참고할 전형 정보(모집인원·전형방법·수능최저)를 근거로 쓴다.
+                !matched.isEmpty() ? matched : (p.wantsType() || p.asksAdmissionChance() ? candidates : List.of()),
                 t -> (t.getSource() == null ? "" : t.getSource().getTitle()) + " " + t.getName());
         List<Evidence> out = new ArrayList<>();
         for (AdmissionsType t : chosen) {
@@ -197,12 +198,17 @@ public class AdmissionsFactSearchService {
 
     /** 서울(본교)이 아닌 캠퍼스 표기(세종·글로벌·다빈치·ERICA·WISE 등)가 있으면 true. */
     static boolean otherCampusMarked(String text) {
-        if (text == null) return false;
+        return campusMarker(text) != null;
+    }
+
+    /** 글에 들어 있는 다른 캠퍼스 표시(예: "ERICA", "세종캠퍼스"). 없으면 null(서울·본교). */
+    static String campusMarker(String text) {
+        if (text == null) return null;
         String t = text.replace(" ", "");
         for (String marker : OTHER_CAMPUS_MARKERS) {
-            if (t.contains(marker)) return true;
+            if (t.contains(marker)) return marker;
         }
-        return false;
+        return null;
     }
 
     private static final List<String> OTHER_CAMPUS_MARKERS = List.of(

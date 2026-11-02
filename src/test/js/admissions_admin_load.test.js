@@ -17,7 +17,7 @@ test('given a valid seed when previewed then counts, years and no warnings are r
   const r = load.summarizeSeed(text);
   // then
   assert.equal(r.ok, true);
-  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1 });
+  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1, youtube: 0 });
   assert.deepEqual(r.years, [2027]);
   assert.deepEqual(r.warnings, []);
 });
@@ -134,4 +134,24 @@ test('given an older server response without update counts when formatting then 
   // then
   assert.doesNotMatch(text, /갱신|보관/);
   assert.match(text, /상태 LOADED/);
+});
+
+test('given a seed with youtube_knowledge when previewed then the youtube count is reported', () => {
+  // given
+  const text = JSON.stringify(Object.assign({}, SEED, { youtube_knowledge: [{ id: 'YT-A001' }, { id: 'YT-A002' }] }));
+  // when
+  const r = load.summarizeSeed(text);
+  // then
+  assert.equal(r.counts.youtube, 2);
+});
+
+test('given a load response with youtube knowledge count when formatting then it is shown only when positive', () => {
+  // given
+  const base = { universities: 0, materials: 0, departments: 0, types: 0, schedules: 0, skippedUnknownYear: 0, status: 'LOADED' };
+  // when
+  const withYt = load.formatLoadResult(Object.assign({ youtubeKnowledge: 110 }, base));
+  const zeroYt = load.formatLoadResult(Object.assign({ youtubeKnowledge: 0 }, base));
+  // then
+  assert.match(withYt, /유튜브 해석 110/);
+  assert.doesNotMatch(zeroYt, /유튜브/);
 });
