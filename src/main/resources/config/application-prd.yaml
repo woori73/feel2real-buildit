@@ -68,6 +68,12 @@ spring:
             user-name-attribute: response
 
 app:
+  sns:
+    # 인스타 자동 피드 운영값(2026-11-02 대표 승인: 월 상한 3만원, 11~12월 runyour.ai GPU로 이미지 생성).
+    # 매일 19:00 예약 실행. 규칙은 꺼진 채로 들어가므로 관리자가 시험 생성 확인 후 켠다.
+    scheduler-enabled: ${SNS_SCHEDULER_ENABLED:true}
+    monthly-budget-krw: ${SNS_MONTHLY_BUDGET_KRW:30000}
+    public-base-url: ${SNS_PUBLIC_BASE_URL:https://feel2real.co.kr}
   home:
     # 홈페이지 무통장입금 계좌 공개(2026-10-30 사용자 승인). 신청 기능(app.exam-intake.*)과 독립적이며,
     # 끄려면 EC2 env에 APP_HOME_BANK_TRANSFER_PUBLIC=false. 입금 확인은 관리자 수동 확인 그대로다.

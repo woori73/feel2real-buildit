@@ -313,6 +313,12 @@ public class SecurityConfig {
             // NewStart 운영자 화면 — ADMIN 전용. 메뉴 숨김이 아니라 서버 규칙으로 차단한다.
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
+            // 인스타 자동 피드 관리자 화면 — ADMIN 전용(API는 /api/admin/sns/** → 아래 /api/admin/** ADMIN 규칙).
+            .requestMatchers("/admin/sns", "/admin/sns/**").hasRole("ADMIN")
+            // GPU 작업자 API는 로그인 대신 Bearer 작업자 토큰(SNS_WORKER_TOKEN)을 컨트롤러에서 검사한다.
+            .requestMatchers("/api/sns/worker/**").permitAll()
+            // 인스타그램 서버가 image_url로 가져가는 게시물 이미지 — 추측 불가 토큰 주소만, GET만.
+            .requestMatchers(HttpMethod.GET, "/api/sns/media/**").permitAll()
             // DesignCraft 첫 화면·편집기 주소는 비회원 공개(200). 실제 편집기는 DesignCraftEditorController가
             // TUTOR 권한을 검사해 렌더하고, 권한 없는 로그인 사용자에게는 안내 화면을 준다. API는 아래에서 그대로 보호된다.
             .requestMatchers(HttpMethod.GET, "/designcraft", "/designcraft/editor").permitAll()

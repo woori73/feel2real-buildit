@@ -5146,3 +5146,40 @@ ADMIN 전용 `/api/admin/exam-intake/requests`, `/{id}/state`, `/{id}/details`(�
 
 ### 무료 샘플 신청 (2026-11-01)
 홈 첫 배너는 1장 무료 신청 → `/exam-service?sample=1`로 연결한다. 기출·수업자료를 접수하면 운영자가 첫 페이지 또는 1장을 직접 제작해 제공한다. 자동 생성이나 무료 2주 상품이 아니다. 기존 INQUIRY 접수의 `inquiryType=FREE_SAMPLE`으로 저장하고 가격0원·1회 스냅샷을 사용한다. 유료 이용·환불 약관 동의와 입금을 요구하지 않으며 정식 상품은 별도 신청(2주·주2회·총4회·160문항·2만원)이다. 자료 업로드·개인정보 동의·관리자 확인·기존 이메일 outbox를 재사용한다. 샘플/정식 중복 방지 키는 분리한다. 신규 객체 CRUD나 DB 변경 없이 기존 접수 관리 기능을 재사용한다.
+
+## 인스타 자동 피드 (2026-11-02, HANDOFF: docs/handoff/instagram-auto-feed/HANDOFF.md)
+
+관리자 화면 `/admin/sns`(홈) · `/admin/sns/accounts` · `/admin/sns/brands` · `/admin/sns/rules` · `/admin/sns/posts` — ADMIN 전용(SecurityConfig + 컨트롤러 재확인, `Cache-Control: private, no-store`).
+
+관리자 API `/api/admin/sns/**` (ADMIN 전용, JSON. 오류는 `{message}`와 400/409):
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/summary` | 검토 대기·생성 중·실패·오늘 예약·이번 달 발행·생성 횟수·비용/상한, 설정 누락·토큰 만료 알림 |
+| GET | `/logs?limit=` | 최근 생성·발행 기록(규칙, 종류, 모델, 비용, 걸린 시간, 성공 여부) |
+| GET | `/accounts` | 연결 계정(토큰 값은 응답에 없음) |
+| POST | `/accounts/connect` | 인스타그램 로그인 주소 `{url}` + state HttpOnly 쿠키(10분, Path=/admin/sns) |
+| POST | `/accounts/{id}/refresh` · `/disconnect` · DELETE `/accounts/{id}` | 토큰 갱신 · 연결 해제(토큰 삭제) · 삭제(규칙이 쓰면 409) |
+| GET/POST/PUT/DELETE | `/brands`, `/brands/{id}` | 브랜드 프리셋(규칙이 쓰면 삭제 409) |
+| POST | `/brands/{id}/test-caption` | 문구만 시험 생성 `{topic, caption, hashtags, imagePromptEn}` |
+| GET/POST(multipart: label, brand, file) | `/references` | 참고 이미지(JPEG). 새로 올린 것은 미승인 |
+| POST | `/references/{id}/approve?approved=` · DELETE `/references/{id}` | 승인 전환 · 삭제(규칙이 쓰면 409) |
+| GET | `/references/{id}/image` | 참고 이미지 미리보기 |
+| GET/POST/PUT/DELETE | `/rules`, `/rules/{id}` | 자동화 규칙(자동 발행 PUBLISH는 400, 게시물이 있으면 삭제 409 → 끄기) |
+| POST | `/rules/{id}/enabled?enabled=` | 켜기/끄기 |
+| POST | `/rules/{id}/trial` · `/rules/{id}/run-now` | 시험 생성(trial=true) · 즉시 실행. 월 상한에 막히면 409 |
+| GET | `/rules/{id}/trials` | 최근 시험 생성 결과 5개 |
+| GET | `/posts?tab=review\|scheduled\|published\|failed\|discarded` · `/posts/{id}` | 콘텐츠 목록·상세(검토 대기 탭에 생성 중 포함) |
+| PUT | `/posts/{id}` `{caption, hashtags}` | 문구 수정(2,200자 이하, 해시태그 30개 이하) |
+| POST | `/posts/{id}/regenerate-image` · `/publish` · `/schedule {scheduledAt}` · `/unschedule` · `/discard` | 이미지 다시 만들기 · 지금 발행 · 예약 발행(서울 시각) · 예약 취소 · 버리기 |
+
+GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bearer {SNS_WORKER_TOKEN}`(미설정 503, 불일치 401). 운영 Origin 검사 때문에 작업자는 `Origin: https://feel2real.co.kr`를 보낸다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/jobs/next` | 이미지 작업 하나를 원자적으로 가져감 `{jobId, ruleId, attempt, prompt, aspectRatio, referenceImageUrl}`, 없으면 204. 월 상한에 닿으면 204 |
+| GET | `/jobs/{id}/reference` | 진행 중 작업의 승인된 참고 이미지 |
+| POST(multipart: image(JPEG), durationMs, model) | `/jobs/{id}/result` | 결과 저장 → 문구도 끝났으면 검토 대기. 비용 = 걸린 시간 × GPU 시간당 요금 |
+| POST | `/jobs/{id}/fail {reason, durationMs}` | 첫 실패는 다시 대기, 두 번째는 실패 처리 |
+
+공개 이미지 `GET /api/sns/media/{token}.jpg` — 인스타그램이 `image_url`로 가져가는 주소. 24바이트 임의 토큰만, 버린 게시물은 404, `X-Robots-Tag: noindex`.
