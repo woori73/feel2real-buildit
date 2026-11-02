@@ -277,6 +277,38 @@ class AdmissionsFactSearchServiceDbTest {
     }
 
     @Test
+    @DisplayName("given 세종캠퍼스 일정이 상한(8건)보다 많고 서울 일정이 뒤에 있을 때 when 캠퍼스 없이 일정을 물으면 then 서울 일정이 근거에 먼저 들어간다")
+    void main_campus_schedule_is_not_crowded_out_by_other_campus() throws Exception {
+        // given
+        clean();
+        loader.loadSeed("""
+            {"ipsi_universities":[{"name":"가대학교","university_code":"GA"}],
+             "ipsi_documents":[{"document_key":"doc_ga_sj","document_name":"가대 세종캠퍼스 2027 수시 모집요강","applicable_academic_year":2027},
+                               {"document_key":"doc_ga_seoul","document_name":"가대 2027 수시 모집요강","applicable_academic_year":2027}],
+             "ipsi_schedules":[
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 1","date":"2026.9.1.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 2","date":"2026.9.2.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 3","date":"2026.9.3.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 4","date":"2026.9.4.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 5","date":"2026.9.5.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 6","date":"2026.9.6.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 7","date":"2026.9.7.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 8","date":"2026.9.8.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"세종 9","date":"2026.9.9.","source_document_key":"doc_ga_sj"},
+               {"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"전 전형","date":"2026.9.8.~9.11.","source_document_key":"doc_ga_seoul"}]}
+            """);
+        approveAll();
+
+        // when
+        var result = search.search("가대 수시 원서접수 일정 알려줘", null);
+
+        // then
+        var sched = result.evidence().stream().filter(e -> e.getRefId().startsWith("sched:")).toList();
+        assertThat(sched).hasSize(8);
+        assertThat(sched.get(0).getExcerpt()).contains("2026.9.8.~9.11.");
+    }
+
+    @Test
     @DisplayName("given 승인 전(DRAFT) 일정 when 전체 일정을 물으면 then 근거가 없고 전 대학이 missing이다")
     void all_university_schedule_ignores_draft_rows() throws Exception {
         // given

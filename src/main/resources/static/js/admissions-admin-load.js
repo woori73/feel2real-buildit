@@ -84,6 +84,8 @@
         ' · 일정 ' + r.schedules + ' (건너뜀 ' + r.skippedUnknownYear + ')';
     if (typeof r.departmentsUpdated === 'number') text += ' · 갱신 학과 ' + r.departmentsUpdated + ' · 갱신 전형 ' + r.typesUpdated;
     if (typeof r.schedulesArchived === 'number') text += ' · 보관 일정 ' + r.schedulesArchived;
+    if (typeof r.supersededArchived === 'number') text += ' · 예전 자료 보관 ' + r.supersededArchived;
+    if (typeof r.schedulesSourced === 'number') text += ' · 일정 출처 연결 ' + r.schedulesSourced;
     return text + ' · 상태 ' + r.status;
   }
 

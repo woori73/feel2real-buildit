@@ -50,13 +50,16 @@ public class AdmissionsDataLoader {
     /**
      * 적재 결과. departmentsUpdated·typesUpdated는 이미 있던 행(같은 대학·학년도·이름) 중 내용이 바뀌어
      * 갱신하고 DRAFT로 되돌린 건수다. schedulesArchived는 시드의 archive_schedules로 보관 처리한 일정 건수다.
+     * supersededArchived는 authoritative_universities 처리로 보관한 예전 행(학과·전형·일정·공식자료) 건수다.
+     * schedulesSourced는 출처 없이 들어가 있던 기존 일정에 시드의 출처를 연결한(DRAFT로 되돌린) 건수다.
      */
     public record LoadResult(int universities, int materials, int departments,
                              int types, int schedules, int knowledgeItems, int skipped,
-                             int departmentsUpdated, int typesUpdated, int schedulesArchived) {
+                             int departmentsUpdated, int typesUpdated, int schedulesArchived,
+                             int supersededArchived, int schedulesSourced) {
         public LoadResult(int universities, int materials, int departments,
                           int types, int schedules, int knowledgeItems, int skipped) {
-            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0);
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0, 0, 0);
         }
     }
 
@@ -72,6 +75,10 @@ public class AdmissionsDataLoader {
      * DRAFT로 되돌린다(재검수 후 다시 승인해야 상담 검색에 노출된다). 내용이 같으면 그대로 둔다.
      * 시드 최상위 {@code archive_schedules}(대학 코드·학년도·일정 제목·비고)에 적힌 기존 일정은 원문과 달라
      * 폐기된 행이므로 ARCHIVED로 바꾸고, 그 일정에서 만든 지식 항목도 ARCHIVED로 바꾼다. 행을 지우지는 않는다.
+     * 시드 최상위 {@code authoritative_universities}(대학 코드 목록)에 적힌 대학은 이 시드를 최신본으로 본다:
+     * 시드가 다루는 학년도에서, 같은 대학(이름이 같거나 괄호 부기를 뺀 이름이 같은 기존 대학 포함)의 예전 학과·전형·일정 중
+     * 시드에 없는 행과 그 지식 항목, 더 이상 근거로 쓰이지 않는 예전 공식자료를 ARCHIVED로 바꾼다.
+     * 다른 캠퍼스(세종 등) 표기가 있는 행은 시드 범위 밖이므로 남긴다.
      * 구조 오류(대학 목록 없음, 알 수 없는 대학 코드)는 {@link SeedLoadException}으로 전체 롤백한다.
      * 학년도 미확정·미지원 행만 건너뛰며 그 건수를 {@code skipped}로 돌려준다.
      */
@@ -93,7 +100,6 @@ public class AdmissionsDataLoader {
         Map<String, AdmissionsSchedule> existingSchedRows = new HashMap<>();
         scheduleRepository.findAll().forEach(sc -> existingSchedRows.putIfAbsent(
                 sc.getUniversity().getUniversityId() + "|" + sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote(), sc));
-        java.util.Set<String> existingSched = existingSchedRows.keySet();
         Map<String, AdmissionsOfficialMaterial> materialByTitle = new HashMap<>();
         materialRepository.findAll().forEach(m -> materialByTitle.put(m.getTitle(), m));
 
@@ -225,13 +231,25 @@ public class AdmissionsDataLoader {
         }
 
         int schedCount = 0;
+        int schedSourced = 0;
         for (JsonNode s : root.path("ipsi_schedules")) {
             AdmissionsUniversity univ = requireUniversity(univByCode, s.path("university_code").asText(), "ipsi_schedules");
             Integer year = readSupportedYear(s.path("academic_year"));
             if (year == null) { skipped++; continue; }
             String docKey = s.path("source_document_key").asText(null);
             String schedTitle = s.path("item").asText() + " (" + s.path("type_name").asText("") + ")";
-            if (existingSched.contains(univ.getUniversityId() + "|" + year + "|" + schedTitle + "|" + s.path("date").asText(null))) continue;
+            AdmissionsSchedule existing = existingSchedRows.get(univ.getUniversityId() + "|" + year + "|" + schedTitle + "|" + s.path("date").asText(null));
+            if (existing != null) {
+                // 예전에 출처 없이 들어간 일정(검색에 쓰이지 않음)은 시드의 출처를 연결하고 재승인을 받게 DRAFT로 둔다.
+                AdmissionsOfficialMaterial src = matByKey.get(docKey);
+                if (existing.getSource() == null && src != null && existing.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
+                    existing.setSource(src);
+                    existing.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                    scheduleRepository.save(existing);
+                    schedSourced++;
+                }
+                continue;
+            }
             AdmissionsSchedule sched = AdmissionsSchedule.builder()
                     .university(univ)
                     .academicYear(year)
@@ -258,9 +276,125 @@ public class AdmissionsDataLoader {
             schedArchived++;
         }
 
-        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={}",
-                univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived);
-        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped, deptUpdated, typeUpdated, schedArchived);
+        int superseded = 0;
+        for (JsonNode code : root.path("authoritative_universities")) {
+            superseded += archiveSuperseded(root, code.asText(), univByCode);
+        }
+
+        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={}",
+                univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
+        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, 0, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
+    }
+
+    /** authoritative_universities 한 대학 처리. 보관한 행 수를 돌려준다. */
+    private int archiveSuperseded(JsonNode root, String code, Map<String, AdmissionsUniversity> univByCode) {
+        AdmissionsUniversity seedUniv = requireUniversity(univByCode, code, "authoritative_universities");
+        String base = baseName(seedUniv.getName());
+        java.util.Set<Long> targets = new java.util.HashSet<>();
+        for (AdmissionsUniversity u : universityRepository.findAll()) {
+            if (u.getName().equals(seedUniv.getName())
+                    || (base.equals(baseName(u.getName())) && !AdmissionsFactSearchService.otherCampusMarked(u.getName()))) {
+                targets.add(u.getUniversityId());
+            }
+        }
+        // 시드에 있는 이 대학 행의 자연키(학년도별). 시드가 다루는 학년도만 정리한다.
+        java.util.Set<Integer> years = new java.util.HashSet<>();
+        java.util.Set<String> keepType = new java.util.HashSet<>();
+        java.util.Set<String> keepDept = new java.util.HashSet<>();
+        java.util.Set<String> keepSched = new java.util.HashSet<>();
+        java.util.Set<String> keepDocTitles = new java.util.HashSet<>();
+        for (JsonNode t : root.path("ipsi_admission_types")) {
+            if (!code.equals(t.path("university_code").asText())) continue;
+            Integer y = readSupportedYear(t.path("academic_year"));
+            if (y == null) continue;
+            years.add(y);
+            keepType.add(y + "|" + t.path("type_name").asText());
+        }
+        for (JsonNode d : root.path("ipsi_departments")) {
+            if (!code.equals(d.path("university_code").asText())) continue;
+            Integer y = readSupportedYear(d.path("academic_year"));
+            if (y != null) keepDept.add(y + "|" + d.path("department_name").asText());
+        }
+        for (JsonNode sc : root.path("ipsi_schedules")) {
+            if (!code.equals(sc.path("university_code").asText())) continue;
+            Integer y = readSupportedYear(sc.path("academic_year"));
+            if (y != null) keepSched.add(y + "|" + sc.path("item").asText() + " (" + sc.path("type_name").asText("") + ")"
+                    + "|" + sc.path("date").asText(null));
+        }
+        for (JsonNode d : root.path("ipsi_documents")) keepDocTitles.add(d.path("document_name").asText());
+        if (years.isEmpty()) return 0;
+
+        Long seedId = seedUniv.getUniversityId();
+        int archived = 0;
+        java.util.Set<Long> stillUsedMaterials = new java.util.HashSet<>();
+        for (AdmissionsType t : typeRepository.findAll()) {
+            if (!inScope(t.getUniversity(), t.getAcademicYear(), targets, years)) continue;
+            boolean keep = (seedId.equals(t.getUniversity().getUniversityId()) && keepType.contains(t.getAcademicYear() + "|" + t.getName()))
+                    || AdmissionsFactSearchService.otherCampusMarked(sourceTitle(t.getSource()) + " " + t.getName());
+            if (keep || t.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
+                if (t.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && t.getSource() != null) stillUsedMaterials.add(t.getSource().getMaterialId());
+                continue;
+            }
+            t.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+            typeRepository.save(t);
+            archiveKnowledge("type:" + t.getUniversity().getUniversityId() + ":" + t.getAcademicYear() + ":" + t.getAdmissionTypeId());
+            archived++;
+        }
+        for (AdmissionsDepartment d : departmentRepository.findAll()) {
+            if (!inScope(d.getUniversity(), d.getAcademicYear(), targets, years)) continue;
+            boolean keep = (seedId.equals(d.getUniversity().getUniversityId()) && keepDept.contains(d.getAcademicYear() + "|" + d.getName()))
+                    || AdmissionsFactSearchService.otherCampusMarked(sourceTitle(d.getSource()) + " " + d.getName());
+            if (keep || d.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
+                if (d.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && d.getSource() != null) stillUsedMaterials.add(d.getSource().getMaterialId());
+                continue;
+            }
+            d.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+            departmentRepository.save(d);
+            archived++;
+        }
+        for (AdmissionsSchedule sc : scheduleRepository.findAll()) {
+            if (!inScope(sc.getUniversity(), sc.getAcademicYear(), targets, years)) continue;
+            boolean keep = (seedId.equals(sc.getUniversity().getUniversityId())
+                    && keepSched.contains(sc.getAcademicYear() + "|" + sc.getTitle() + "|" + sc.getNote()))
+                    || AdmissionsFactSearchService.otherCampusMarked(sourceTitle(sc.getSource()) + " " + sc.getTitle());
+            if (keep || sc.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) {
+                if (sc.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && sc.getSource() != null) stillUsedMaterials.add(sc.getSource().getMaterialId());
+                continue;
+            }
+            sc.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+            scheduleRepository.save(sc);
+            archiveKnowledge("schedule:" + sc.getUniversity().getUniversityId() + ":" + sc.getAcademicYear() + ":" + sc.getScheduleId());
+            archived++;
+        }
+        for (AdmissionsOfficialMaterial m : materialRepository.findAll()) {
+            if (!inScope(m.getUniversity(), m.getAcademicYear(), targets, years)) continue;
+            if (m.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
+            if (keepDocTitles.contains(m.getTitle()) || stillUsedMaterials.contains(m.getMaterialId())) continue;
+            if (AdmissionsFactSearchService.otherCampusMarked(m.getTitle())) continue;
+            m.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+            materialRepository.save(m);
+            archived++;
+        }
+        return archived;
+    }
+
+    private static boolean inScope(AdmissionsUniversity u, Integer year, java.util.Set<Long> targets, java.util.Set<Integer> years) {
+        return u != null && targets.contains(u.getUniversityId()) && years.contains(year);
+    }
+
+    private static String baseName(String name) {
+        return name == null ? "" : name.replaceAll("\\(.*?\\)", "").trim();
+    }
+
+    private static String sourceTitle(AdmissionsOfficialMaterial m) {
+        return m == null || m.getTitle() == null ? "" : m.getTitle();
+    }
+
+    private void archiveKnowledge(String dedupKey) {
+        knowledgeRepository.findByDedupKey(dedupKey).ifPresent(k -> {
+            k.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED);
+            knowledgeRepository.save(k);
+        });
     }
 
     /**

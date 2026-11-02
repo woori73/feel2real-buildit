@@ -313,17 +313,20 @@ public class AdmissionsAdminController {
         try {
             var result = dataLoader.loadSeed(seedJson);
             log.info("admissions seed loaded by admin: {}", result);
-            return ResponseEntity.ok(Map.of(
-                    "universities", result.universities(),
-                    "materials", result.materials(),
-                    "departments", result.departments(),
-                    "types", result.types(),
-                    "schedules", result.schedules(),
-                    "skippedUnknownYear", result.skipped(),
-                    "departmentsUpdated", result.departmentsUpdated(),
-                    "typesUpdated", result.typesUpdated(),
-                    "schedulesArchived", result.schedulesArchived(),
-                    "status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED"));
+            Map<String, Object> out = new java.util.LinkedHashMap<>();
+            out.put("universities", result.universities());
+            out.put("materials", result.materials());
+            out.put("departments", result.departments());
+            out.put("types", result.types());
+            out.put("schedules", result.schedules());
+            out.put("skippedUnknownYear", result.skipped());
+            out.put("departmentsUpdated", result.departmentsUpdated());
+            out.put("typesUpdated", result.typesUpdated());
+            out.put("schedulesArchived", result.schedulesArchived());
+            out.put("supersededArchived", result.supersededArchived());
+            out.put("schedulesSourced", result.schedulesSourced());
+            out.put("status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED");
+            return ResponseEntity.ok(out);
         } catch (AdmissionsDataLoader.SeedLoadException e) {
             // 구조/참조 오류: 전체 롤백되었다. 성공 응답을 내지 않는다.
             log.warn("admissions seed rejected: {}", e.getMessage());

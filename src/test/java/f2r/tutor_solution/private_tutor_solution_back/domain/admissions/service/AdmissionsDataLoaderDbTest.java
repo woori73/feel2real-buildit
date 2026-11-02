@@ -213,6 +213,85 @@ class AdmissionsDataLoaderDbTest {
     }
 
     @Test
+    @DisplayName("given 괄호 없는 이름의 예전 대학 자료 when 같은 대학을 authoritative로 적재하면 then 예전 서울 행·지식·자료는 보관되고 세종캠퍼스 행과 새 행은 남는다")
+    void authoritative_university_archives_superseded_rows_but_keeps_other_campus() throws Exception {
+        // given: 예전 수집본(대학명 '가대학교', 서울 전형·일정 + 세종캠퍼스 전형)
+        loader.loadSeed("""
+            {"ipsi_universities":[{"name":"가대학교","university_code":"GA"}],
+             "ipsi_documents":[{"document_key":"doc_ga_old","document_name":"가대 2027 수시(예전 수집본)","applicable_academic_year":2027},
+                               {"document_key":"doc_ga_sj","document_name":"가대 세종캠퍼스 2027 수시","applicable_academic_year":2027}],
+             "ipsi_departments":[{"university_code":"GA","academic_year":"2027","department_name":"국문과","counts_by_type":{"a":1},"source_document_key":"doc_ga_old"}],
+             "ipsi_admission_types":[{"university_code":"GA","academic_year":2027,"type_name":"학교추천","recruitment_count":414,"source_document_key":"doc_ga_old"},
+                                     {"university_code":"GA","academic_year":2027,"type_name":"[세종캠퍼스] 논술","recruitment_count":50,"source_document_key":"doc_ga_sj"}],
+             "ipsi_schedules":[{"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"수시","date":"2026.9.7.","source_document_key":"doc_ga_old"}]}
+            """);
+        types.findAll().forEach(t -> { t.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE); types.save(t); });
+        var oldType = types.findAll().stream().filter(t -> "학교추천".equals(t.getName())).findFirst().orElseThrow();
+        knowledge.save(AdmissionsKnowledgeItem.builder().academicYear(2027).title("가대학교 2027학년도 학교추천").content("모집인원 414")
+                .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                .dedupKey("type:" + oldType.getUniversity().getUniversityId() + ":2027:" + oldType.getAdmissionTypeId())
+                .status(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE).build());
+
+        // when: 공식 원문 시드(대학명 '가대학교(서울)')를 최신본으로 적재
+        var result = loader.loadSeed("""
+            {"ipsi_universities":[{"name":"가대학교(서울)","university_code":"GA"}],
+             "ipsi_documents":[{"document_key":"doc_ga_2027_susi","document_name":"가대 2027 수시 모집요강","applicable_academic_year":2027}],
+             "ipsi_admission_types":[{"university_code":"GA","academic_year":2027,"type_name":"학교추천전형","recruitment_count":523,"source_document_key":"doc_ga_2027_susi"}],
+             "ipsi_schedules":[{"university_code":"GA","academic_year":2027,"item":"원서접수","type_name":"전 전형","date":"2026.9.8.","source_document_key":"doc_ga_2027_susi"}],
+             "authoritative_universities":["GA"]}
+            """);
+
+        // then
+        var A = AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED;
+        assertThat(result.supersededArchived()).isEqualTo(4); // 예전 전형·학과·일정·예전 자료
+        assertThat(types.findAll()).filteredOn(t -> "학교추천".equals(t.getName())).singleElement().satisfies(t -> assertThat(t.getStatus()).isEqualTo(A));
+        assertThat(types.findAll()).filteredOn(t -> t.getName().contains("세종캠퍼스")).singleElement().satisfies(t -> assertThat(t.getStatus()).isNotEqualTo(A));
+        assertThat(types.findAll()).filteredOn(t -> "학교추천전형".equals(t.getName())).singleElement().satisfies(t -> assertThat(t.getStatus()).isNotEqualTo(A));
+        assertThat(departments.findAll()).singleElement().satisfies(d -> assertThat(d.getStatus()).isEqualTo(A));
+        assertThat(schedules.findAll()).filteredOn(sc -> "2026.9.7.".equals(sc.getNote())).singleElement().satisfies(sc -> assertThat(sc.getStatus()).isEqualTo(A));
+        assertThat(schedules.findAll()).filteredOn(sc -> "2026.9.8.".equals(sc.getNote())).singleElement().satisfies(sc -> assertThat(sc.getStatus()).isNotEqualTo(A));
+        assertThat(knowledge.findAll()).singleElement().satisfies(k -> assertThat(k.getStatus()).isEqualTo(A));
+        assertThat(materials.findAll()).filteredOn(m -> m.getTitle().contains("예전 수집본")).singleElement().satisfies(m -> assertThat(m.getStatus()).isEqualTo(A));
+        assertThat(materials.findAll()).filteredOn(m -> m.getTitle().contains("세종캠퍼스")).singleElement().satisfies(m -> assertThat(m.getStatus()).isNotEqualTo(A));
+    }
+
+    @Test
+    @DisplayName("given authoritative 표시가 없는 시드 when 적재하면 then 예전 행을 보관하지 않는다")
+    void without_authoritative_flag_nothing_is_superseded() throws Exception {
+        // given
+        loader.loadSeed(GOOD_SEED);
+
+        // when
+        var result = loader.loadSeed(GOOD_SEED.replace("\"학생부교과\"", "\"학생부교과(새 이름)\""));
+
+        // then
+        assertThat(result.supersededArchived()).isZero();
+        assertThat(types.findAll()).noneSatisfy(t -> assertThat(t.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED));
+    }
+
+    @Test
+    @DisplayName("given 출처 없이 들어간 기존 일정 when 출처가 붙은 같은 일정을 다시 적재하면 then 출처가 연결되고 DRAFT로 돌아가며 새 행은 생기지 않는다")
+    void existing_schedule_without_source_gets_source_on_reload() throws Exception {
+        // given
+        loader.loadSeed(GOOD_SEED.replace(",\"source_document_key\":\"doc_tst_2027_susi\"}]}", "}]}"));
+        var before = schedules.findAll().get(0);
+        assertThat(before.getSource()).isNull();
+        before.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
+        schedules.save(before);
+
+        // when
+        var result = loader.loadSeed(GOOD_SEED);
+
+        // then
+        assertThat(result.schedules()).isZero();
+        assertThat(result.schedulesSourced()).isEqualTo(1);
+        assertThat(schedules.findAll()).singleElement().satisfies(sc -> {
+            assertThat(sc.getSource()).isNotNull();
+            assertThat(sc.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+        });
+    }
+
+    @Test
     @DisplayName("given 알 수 없는 대학 코드가 섞인 시드 when 적재하면 then 예외가 나고 아무것도 저장되지 않는다(전체 롤백)")
     void partial_failure_rolls_back_everything() {
         // given
