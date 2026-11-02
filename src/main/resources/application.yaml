@@ -56,6 +56,22 @@ chart:
   re-research-cron: ${CHART_RE_RESEARCH_CRON:0 15 3 * * *}
 
 app:
+  sns:
+    # 인스타 자동 피드(docs/handoff/instagram-auto-feed/HANDOFF.md). 기본은 모두 꺼짐:
+    # 월 상한(SNS_MONTHLY_BUDGET_KRW)이 비었거나 0이면 문구·이미지를 만들지 않는다. 운영 상한은 application-prd.yaml.
+    scheduler-enabled: ${SNS_SCHEDULER_ENABLED:false}
+    monthly-budget-krw: ${SNS_MONTHLY_BUDGET_KRW:0}
+    gpu-krw-per-hour: ${SNS_GPU_KRW_PER_HOUR:1261}
+    gpu-estimated-seconds-per-image: ${SNS_GPU_EST_SECONDS_PER_IMAGE:120}
+    text-cost-krw-per-call: ${SNS_TEXT_COST_KRW_PER_CALL:0}
+    # 비밀값은 환경변수로만(yaml에 값 금지). 비면 해당 기능만 막힌다.
+    worker-token: ${SNS_WORKER_TOKEN:}
+    token-key-base64: ${SNS_TOKEN_KEY_BASE64:}
+    public-base-url: ${SNS_PUBLIC_BASE_URL:http://localhost:8080}
+    meta:
+      app-id: ${SNS_META_APP_ID:}
+      app-secret: ${SNS_META_APP_SECRET:}
+      redirect-uri: ${SNS_META_REDIRECT_URI:}
   # 대시보드 캐릭터(세븐·서수니) 비공개 자료 폴더. 저장소에 얼굴 자료를 두지 않는다.
   # public-agents: 로그인 전 홈페이지에 보여줄 캐릭터(쉼표 구분, 기본 없음 = 비공개).
   agent-media:

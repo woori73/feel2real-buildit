@@ -1,0 +1,65 @@
+/* 인스타 자동 피드 관리자 화면 — 기존 관리자 톤(흰 바탕·회색 테두리·파란 강조) */
+.sns-admin { max-width: 1240px; margin: 0 auto; padding: 24px; color: #1a202c; }
+.sns-admin h2 { margin: 0 0 6px; }
+.sns-admin h3 { margin: 28px 0 10px; font-size: 16px; }
+.sns-admin .hint { color: #718096; font-size: 13px; margin: 0 0 12px; }
+.sns-admin .bad { color: #c53030; }
+.sns-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 18px; }
+.sns-tabs a { padding: 8px 14px; border: 1px solid #cbd5e0; border-radius: 999px; color: #2d3748; text-decoration: none; font-size: 14px; background: #fff; }
+.sns-tabs a[aria-current="page"] { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+.sns-flash { padding: 10px 14px; border-radius: 10px; background: #ebf8ff; border: 1px solid #bee3f8; color: #2c5282; }
+.sns-flash.is-error { background: #fff5f5; border-color: #fed7d7; color: #c53030; }
+.sns-alerts { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 6px; }
+.sns-alerts li { padding: 10px 12px; background: #fffaf0; border: 1px solid #feebc8; border-radius: 10px; color: #7b341e; font-size: 14px; }
+.sns-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.sns-stat { padding: 14px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: grid; gap: 4px; }
+.sns-stat span { color: #718096; font-size: 12px; }
+.sns-stat strong { font-size: 18px; }
+.sns-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; }
+.sns-table { width: 100%; border-collapse: collapse; min-width: 860px; }
+.sns-table th, .sns-table td { padding: 9px 10px; border-bottom: 1px solid #edf2f7; text-align: left; font-size: 13px; vertical-align: top; }
+.sns-table th { background: #f7fafc; color: #4a5568; }
+.sns-actions { margin-bottom: 10px; }
+.sns-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sns-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; display: grid; gap: 6px; align-content: start; }
+.sns-card h4 { margin: 0; font-size: 15px; }
+.sns-card h4 small, .sns-post h4 small, .sns-ref small { font-weight: 600; color: #4a5568; background: #edf2f7; border-radius: 999px; padding: 1px 8px; font-size: 11px; }
+.sns-card p { margin: 0; font-size: 13px; color: #4a5568; }
+.sns-card .clip { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.sns-card pre, .sns-post pre, .sns-preview pre { white-space: pre-wrap; word-break: keep-all; font-family: inherit; font-size: 13px; margin: 0; padding: 10px; background: #f7fafc; border-radius: 8px; }
+.sns-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.sns-admin .btn { border: 1px solid #cbd5e0; border-radius: 8px; background: #fff; padding: 6px 10px; cursor: pointer; font-size: 13px; }
+.sns-admin .btn:hover { border-color: #3182ce; color: #2b6cb0; }
+.sns-admin .btn-primary { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+.sns-admin .btn-primary:hover { background: #2c5282; color: #fff; }
+.sns-admin .btn-danger { color: #c53030; }
+.sns-inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.sns-inline-form input { padding: 7px; border: 1px solid #cbd5e0; border-radius: 6px; }
+.sns-refs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.sns-ref { margin: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; display: grid; gap: 6px; }
+.sns-ref img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: #edf2f7; }
+.sns-ref figcaption { font-size: 13px; }
+.sns-subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.sns-subtabs button { border: 1px solid #cbd5e0; background: #fff; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.sns-subtabs button[aria-pressed="true"] { background: #1a202c; color: #fff; border-color: #1a202c; }
+.sns-posts, .sns-trials { display: grid; gap: 12px; }
+.sns-trials h5 { margin: 8px 0 0; font-size: 13px; }
+.sns-post { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; }
+.sns-post img, .sns-post .noimg { width: 220px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: #edf2f7; }
+.sns-post .noimg { display: grid; place-items: center; color: #718096; font-size: 13px; }
+.sns-post .body { display: grid; gap: 6px; align-content: start; }
+.sns-post h4 { margin: 0; font-size: 15px; }
+.sns-post p { margin: 0; font-size: 13px; }
+.sns-dialog { border: 0; border-radius: 14px; padding: 0; width: min(720px, 94vw); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.sns-dialog form { padding: 20px; display: grid; gap: 10px; max-height: 86vh; overflow: auto; }
+.sns-dialog h3 { margin: 0 0 4px; }
+.sns-dialog label { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: #4a5568; }
+.sns-dialog input, .sns-dialog textarea, .sns-dialog select { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; font: inherit; font-weight: 400; }
+@media (max-width: 780px) {
+  .sns-admin { padding: 16px; }
+  .sns-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sns-cards { grid-template-columns: 1fr; }
+  .sns-refs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sns-post { grid-template-columns: 1fr; }
+  .sns-post img, .sns-post .noimg { width: 100%; }
+}

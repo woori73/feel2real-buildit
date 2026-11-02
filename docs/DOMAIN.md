@@ -1870,3 +1870,18 @@ JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `E
 ### 신청 활성화 준비 보완 (2026-10-31)
 
 기존 8개 제안 테이블·JDBC 레코드를 재사용한다. 운영 읽기 전용 조사에서 Flyway 1096·실패 이력 0·신청 테이블 0개를 확인했고, 동일 스키마를 신규 V1097로 준비했다. 운영 적용은 배포 후 별도 검증한다. `exam_intake_action.kind=NOTIFICATION_RECEIVED`는 관리자·기록 시각·이벤트 ID만 저장하고, SMTP 수락(`exam_intake_event.state=SENT`)과 구별한다. 브라우저 복구 키는 기존 `(owner_id,intake_key)` 유일성을 재사용하며 새 중복 저장소를 만들지 않는다. 신규 동의 버전만 2026-10-30 시행 문서에 맞추고 기존 계약/동의 행을 소급 수정하지 않는다. [읽기 전용 조사 및 신규 마이그레이션 준비](operations/exam-intake-20261031/README.md).
+
+## 인스타 자동 피드 (V1098, 새 테이블 6개)
+
+HANDOFF(docs/handoff/instagram-auto-feed/HANDOFF.md) §7의 6개 표를 다른 기능과 겹치지 않게 `sns_` 접두어로 만든다. 기존 테이블은 바꾸지 않는다. 되돌리기 SQL: `src/main/resources/db/rollback/V1098__sns_auto_feed_down.sql`(Flyway 경로 밖, 수동). 모든 시각은 서울 시간(`SnsTime`).
+
+| 테이블 | 핵심 칸 | 비고 |
+|---|---|---|
+| `sns_accounts` | platform(INSTAGRAM), ig_user_id, username, access_token_enc, token_expires_at, token_refreshed_at, status(CONNECTED/EXPIRED/DISCONNECTED/ERROR), last_error | 토큰은 AES-256-GCM(`SNS_TOKEN_KEY_BASE64`)로만 저장, 화면·응답·로그에 없음. 매일 03:17 만료 10일 전부터 갱신 |
+| `sns_brand_presets` | name, industry, audience, purpose, instructions, fixed_text, fixed_text_position(TOP/BOTTOM), banned_phrases(줄마다), language | 고정 문구는 LLM이 아니라 서버가 그대로 붙인다 |
+| `sns_reference_images` | label, brand, file_path(`classpath:` 또는 저장 키), content_type, approved | 승인된 것만 규칙·GPU 작업자가 쓴다. 승인된 캐릭터 3장은 저장소 `src/main/resources/sns/reference/` |
+| `sns_automation_rules` | title, account_id, brand_id, reference_image_id, image_prompt, image_style, aspect_ratio(1:1·4:5·16:9), image_count(1차 1), fixed_hashtags(≤5), ai_hashtags, schedule_type(DAILY/EVERY_OTHER_DAY/WEEKLY), schedule_days, run_time, start_date, save_mode(LIST/PAUSED; PUBLISH는 1차에서 막음), enabled, monthly_budget_krw, last_run_on | last_run_on 원자적 갱신으로 하루 한 번만 실행. 실행 시각부터 3시간 안에만 따라잡는다 |
+| `sns_posts` | rule_id, trial, status(GENERATING/REVIEW/SCHEDULED/PUBLISHED/FAILED/DISCARDED), topic, caption, hashtags, caption_status·attempts, image_paths, image_prompt, image_status·attempts·claimed_at, media_token, scheduled_at, publish_attempts, published_at, ig_media_id, fail_reason | 문구·이미지·발행 모두 최대 2회(1회 재시도) 후 FAILED. 삭제 대신 DISCARDED |
+| `sns_generation_logs` | rule_id, post_id, kind(IMAGE/TEXT/PUBLISH), model, prompt, cost_krw, duration_ms, success, error_message | 월 상한 = 이번 달 cost_krw 합 |
+
+초기 데이터: 로보MD에서 옮긴 3개 규칙(F2R 영어학습·새출발기금 전자책·카페·AI AGENT × F2R)과 브랜드 3개, 참고 이미지 3장. 규칙은 꺼진 채(enabled=false)·계정 미지정으로 들어간다.

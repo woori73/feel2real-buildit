@@ -63,3 +63,4 @@
 
 - 제작 협업실 단계별 확장·실제 자료 적재: [구현과 검증](studio-collaboration/README.md)
 - PR #914 고정 UI 운영 자동화(CloudFormation/OIDC/백업·복구): [설치 및 검증 상태](operations/pr914/README.md).
+- 인스타 자동 피드(관리자 /admin/sns, GPU 작업자): [운영 설정](sns/OPERATIONS.md), [GPU 작업자](../gpu-pipeline/sns_worker/README.md), 작업 지시서 `handoff/instagram-auto-feed/HANDOFF.md`(PR #970).

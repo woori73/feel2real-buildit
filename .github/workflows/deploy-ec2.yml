@@ -612,6 +612,22 @@ jobs:
             echo '::warning::KIS staging files unavailable in S3; skipping KIS sync (deploy continues)'
           fi
 
+          # 인스타 자동 피드 비밀값(docs/sns/OPERATIONS.md): 없을 때만 EC2 안에서 한 번 만들어 둔다.
+          # 이미 있으면 절대 바꾸지 않는다(암호화 키를 바꾸면 연결된 계정 토큰을 못 푼다). 값은 출력하지 않는다.
+          # GPU 작업자에는 운영자가 EC2에서 SNS_WORKER_TOKEN 값을 직접 옮긴다.
+          install -d -m 755 /etc/f2r
+          touch /etc/f2r/env
+          chmod 600 /etc/f2r/env
+          if ! grep -qE '^SNS_WORKER_TOKEN=.+' /etc/f2r/env; then
+            printf 'SNS_WORKER_TOKEN=%s\n' "$(openssl rand -hex 32)" >> /etc/f2r/env
+            echo '[DEPLOY] generated SNS_WORKER_TOKEN in f2r-app env (value hidden)'
+          fi
+          if ! grep -qE '^SNS_TOKEN_KEY_BASE64=.+' /etc/f2r/env; then
+            printf 'SNS_TOKEN_KEY_BASE64=%s\n' "$(openssl rand -base64 32)" >> /etc/f2r/env
+            echo '[DEPLOY] generated SNS_TOKEN_KEY_BASE64 in f2r-app env (value hidden)'
+          fi
+          chmod 600 /etc/f2r/env
+
           # HWPX Worker 스위치(HWPX_WORKER_ENABLED): 배포 입력 hwpx_worker가 off/on일 때만 반영한다.
           # 변경 전 환경파일을 백업하고, 키는 지우고 다시 쓰므로 중복되지 않는다. on은 변수를 제거해 기본값(true)으로 되돌린다.
           # assistant 스위치보다 먼저 적용해, 배포 실패 시 가장 이른 백업 하나로 두 변경이 함께 되돌려지게 한다.

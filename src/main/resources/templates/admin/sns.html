@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>관리자 - 인스타 자동 피드</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_sns.css?v=20261102-1">
+</head>
+<body>
+  <th:block th:replace="~{fragments/_admin_topnav :: topnav('sns')}"></th:block>
+  <main class="sns-admin" id="snsApp" th:attr="data-section=${section}" data-section="home">
+    <header class="sns-head">
+      <h2>인스타 자동 피드</h2>
+      <p class="hint">매일 정해진 시간에 이미지와 문구를 만들어 목록에 쌓습니다. 사람이 검토한 뒤 발행합니다(자동 발행은 꺼져 있음).</p>
+      <nav class="sns-tabs" aria-label="인스타 자동 피드 메뉴">
+        <a href="/admin/sns" data-tab="home">홈</a>
+        <a href="/admin/sns/accounts" data-tab="accounts">계정</a>
+        <a href="/admin/sns/brands" data-tab="brands">브랜드</a>
+        <a href="/admin/sns/rules" data-tab="rules">자동화 규칙</a>
+        <a href="/admin/sns/posts" data-tab="posts">콘텐츠</a>
+      </nav>
+    </header>
+    <p id="snsFlash" class="sns-flash" role="status" hidden></p>
+
+    <section data-panel="home" hidden>
+      <ul id="snsAlerts" class="sns-alerts"></ul>
+      <div id="snsStats" class="sns-stats"></div>
+      <h3>최근 생성 기록</h3>
+      <div class="sns-table-wrap"><table class="sns-table"><thead><tr><th>시각</th><th>종류</th><th>규칙</th><th>게시물</th><th>모델</th><th>비용</th><th>걸린 시간</th><th>결과</th></tr></thead><tbody id="snsLogs"></tbody></table></div>
+    </section>
+
+    <section data-panel="accounts" hidden>
+      <div class="sns-actions"><button type="button" class="btn btn-primary" id="snsConnect">인스타그램 계정 연결</button></div>
+      <p class="hint">버튼을 누르면 인스타그램 로그인 화면으로 이동합니다. 로그인과 권한 동의는 계정 주인이 직접 합니다(비즈니스·크리에이터 계정만 연결됩니다).</p>
+      <div id="snsAccounts" class="sns-cards"></div>
+    </section>
+
+    <section data-panel="brands" hidden>
+      <div class="sns-actions"><button type="button" class="btn btn-primary" id="snsNewBrand">새 브랜드</button></div>
+      <div id="snsBrands" class="sns-cards"></div>
+      <h3>참고 이미지</h3>
+      <p class="hint">이미지 생성 때 얼굴·분위기를 맞추는 사진입니다. 새로 올린 사진은 확인 후 '승인'해야 규칙에서 쓸 수 있습니다. JPEG만 받습니다.</p>
+      <form id="snsRefForm" class="sns-inline-form">
+        <input name="label" placeholder="이름(예: 세븐 정면)" required>
+        <input name="brand" placeholder="브랜드(선택)">
+        <input name="file" type="file" accept="image/jpeg" required>
+        <button class="btn" type="submit">올리기</button>
+      </form>
+      <div id="snsRefs" class="sns-refs"></div>
+    </section>
+
+    <section data-panel="rules" hidden>
+      <div class="sns-actions"><button type="button" class="btn btn-primary" id="snsNewRule">새 규칙</button></div>
+      <div id="snsRules" class="sns-cards"></div>
+    </section>
+
+    <section data-panel="posts" hidden>
+      <div class="sns-subtabs" role="tablist">
+        <button type="button" data-post-tab="review" aria-pressed="true">검토 대기</button>
+        <button type="button" data-post-tab="scheduled" aria-pressed="false">예약</button>
+        <button type="button" data-post-tab="published" aria-pressed="false">발행</button>
+        <button type="button" data-post-tab="failed" aria-pressed="false">실패</button>
+        <button type="button" data-post-tab="discarded" aria-pressed="false">버림</button>
+      </div>
+      <div id="snsPosts" class="sns-posts"></div>
+    </section>
+
+    <dialog id="snsDialog" class="sns-dialog"><form method="dialog" id="snsDialogForm"></form></dialog>
+  </main>
+  <script src="/js/admin_sns.js?v=20261102-1" defer></script>
+</body>
+</html>
