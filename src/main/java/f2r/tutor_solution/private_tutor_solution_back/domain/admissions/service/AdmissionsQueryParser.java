@@ -232,16 +232,31 @@ public final class AdmissionsQueryParser {
         return name.replaceAll("\\(.*?\\)", "").trim();
     }
 
-    /** "고려대학교(서울)" → {고려대학교, 고려대}. 괄호 부기는 제거한다. */
+    /**
+     * "고려대학교(서울)" → {고려대학교, 고려대}. 괄호 부기는 제거한다.
+     * "국립공주대학교"처럼 '국립'이 붙은 정식명은 '국립'을 뗀 이름도 넣는다 → {국립공주대학교, 국립공주대, 공주대학교, 공주대}.
+     */
     static List<String> aliasesOf(String universityName) {
         if (universityName == null) return List.of();
         String base = universityName.replaceAll("\\(.*?\\)", "").trim();
         List<String> out = new ArrayList<>();
-        if (base.length() >= 2) out.add(base);
-        String shortName = base.replace("학교", "");
-        if (shortName.length() >= 2 && !shortName.equals(base)) out.add(shortName);
+        for (String name : fullNamesOf(base)) {
+            if (name.length() >= 2) out.add(name);
+            String shortName = name.replace("학교", "");
+            if (shortName.length() >= 2 && !shortName.equals(name)) out.add(shortName);
+        }
         out.addAll(STRONG_ALIASES.getOrDefault(base, List.of()));
         return out;
+    }
+
+    private static final String NATIONAL_PREFIX = "국립";
+
+    /** 괄호를 뺀 정식명과, '국립'으로 시작하면 '국립'을 뗀 이름. */
+    private static List<String> fullNamesOf(String base) {
+        if (base.startsWith(NATIONAL_PREFIX) && base.length() > NATIONAL_PREFIX.length() + 2) {
+            return List.of(base, base.substring(NATIONAL_PREFIX.length()));
+        }
+        return List.of(base);
     }
 
     /** 다른 뜻으로 쓰일 일이 거의 없는 줄임말(그대로 포함되면 해당 대학으로 본다). */
@@ -332,7 +347,8 @@ public final class AdmissionsQueryParser {
         Matcher full = FULL_UNIVERSITY_NAME.matcher(question);
         while (full.find()) {
             String found = full.group();
-            boolean known = registered.stream().anyMatch(r -> found.contains(r.replaceAll("\\(.*?\\)", "").trim()));
+            boolean known = registered.stream().anyMatch(r ->
+                    fullNamesOf(r.replaceAll("\\(.*?\\)", "").trim()).stream().anyMatch(found::contains));
             if (!known && out.stream().noneMatch(found::contains)) out.add(found);
         }
         return new ArrayList<>(out);
