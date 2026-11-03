@@ -120,8 +120,12 @@ public class AdmissionsFactSearchService {
         boolean asksSusi = question.contains("수시");
         boolean asksJeongsi = question.contains("정시");
         java.util.Map<String, List<AdmissionsPriorResult>> units = new java.util.LinkedHashMap<>();
-        for (AdmissionsPriorResult r : priorResultRepository.findAll()) {
-            if (r.getStatus() != KnowledgeStatus.ACTIVE) continue;
+        // 질문이 말한 대학 행만 DB에서 읽는다(입시결과는 대학당 수천 행이라 전체를 읽지 않는다).
+        List<Long> univIds = universityRepository.findAll().stream()
+                .filter(u -> p.universities().contains(u.getName()))
+                .map(AdmissionsUniversity::getUniversityId).toList();
+        if (univIds.isEmpty()) return List.of();
+        for (AdmissionsPriorResult r : priorResultRepository.findByUniversityUniversityIdInAndStatus(univIds, KnowledgeStatus.ACTIVE)) {
             if (r.getSource() == null || r.getSource().getStatus() != KnowledgeStatus.ACTIVE) continue;
             if (!univSelected(p, r.getUniversity())) continue;
             if (asksSusi && !asksJeongsi && !"SUSI".equals(r.getRoundType())) continue;
@@ -132,7 +136,7 @@ public class AdmissionsFactSearchService {
         List<List<AdmissionsPriorResult>> all = new ArrayList<>(units.values());
         List<List<AdmissionsPriorResult>> matched = all.stream()
                 .filter(rows -> AdmissionsQueryParser.mentionsDepartment(question, rows.get(0).getDepartmentName())
-                        || AdmissionsQueryParser.typePieces(rows.get(0).getTypeName()).stream().anyMatch(question::contains))
+                        || priorTypeMentioned(question, rows.get(0).getTypeName()))
                 .toList();
         if (matched.isEmpty()) {
             matched = all.stream()
@@ -144,7 +148,7 @@ public class AdmissionsFactSearchService {
         chosen.sort(java.util.Comparator.comparingInt((List<AdmissionsPriorResult> rows) -> {
             AdmissionsPriorResult r = rows.get(0);
             boolean dept = AdmissionsQueryParser.mentionsDepartment(question, r.getDepartmentName());
-            boolean type = AdmissionsQueryParser.typePieces(r.getTypeName()).stream().anyMatch(question::contains);
+            boolean type = priorTypeMentioned(question, r.getTypeName());
             return dept && type ? 0 : dept || type ? 1 : 2;
         }));
         List<Evidence> out = new ArrayList<>();
@@ -153,6 +157,24 @@ public class AdmissionsFactSearchService {
             if (out.size() >= MAX_PRIOR_UNITS) break;
         }
         return out;
+    }
+
+    /**
+     * 질문이 입시결과의 전형을 가리키는지. 원문 전형명은 대학마다 "학생부종합[활동우수형]", "학생부교과 (추천형)"처럼 괄호가 섞여
+     * 있어 괄호([]·()) 안팎 조각을 따로 본다. "학생부교과"·"학생부종합"처럼 대분류만 맞는 조각보다 세부 이름이 맞는 쪽을 쓴다.
+     */
+    static boolean priorTypeMentioned(String question, String typeName) {
+        if (typeName == null) return false;
+        String q = question.replaceAll("\\s+", "");
+        for (String piece : typeName.split("[\\[\\]()/\\s·,_]+")) {
+            String p = piece.replaceAll("전형$", "").trim();
+            if (p.length() < 2 || p.equals("학생부") || p.equals("수시") || p.equals("정시")) continue;
+            if (q.contains(p)) return true;
+            // "학생부교과" ↔ 질문의 "교과", "학생부종합" ↔ "학종"/"종합"
+            if (p.equals("학생부교과") && q.contains("교과")) return true;
+            if (p.equals("학생부종합") && (q.contains("학종") || q.contains("종합"))) return true;
+        }
+        return false;
     }
 
     static Evidence priorEvidence(List<AdmissionsPriorResult> rows) {

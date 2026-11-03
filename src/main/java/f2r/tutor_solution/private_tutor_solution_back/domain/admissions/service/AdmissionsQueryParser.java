@@ -36,6 +36,12 @@ public final class AdmissionsQueryParser {
             "합격\\s*(가능|확률|선|컷|권)|지원\\s*가능할까|어디쯤|추천해|소신|안정\\s*지원|상향\\s*지원|하향\\s*지원|붙을까|될까요"
                     + "|^\\s*가능성\\s*[?？]*\\s*$|가능성\\s*(높|낮|어때|얼마)");
 
+    /** 성적을 적고 "가능/이면/인데/정도면"으로 묻는 질문도 합격 가능성 질문으로 본다(예: "수능 백분위 85인데 … 가능성"). */
+    private static final Pattern STUDENT_SCORE_CHANCE = Pattern.compile("가능|이면|인데|정도면|으로\\s*(될|갈)");
+
+    /** 수능최저 기준을 묻는 문장의 등급("2개 영역 등급 합 5 이내")은 학생 성적이 아니다. */
+    private static final Pattern MIN_STANDARD = Pattern.compile("최저|이내|등급\\s*합|합\\s*[0-9]");
+
     /** 아직 수집하지 않은 자료(경쟁률·입시결과·권장이수 등) — 만들어 답하지 않는다. */
     private static final Pattern NOT_COLLECTED = Pattern.compile(
             "경쟁률|입시\\s*결과|입결|충원|등급\\s*컷|평균\\s*등급|권장\\s*이수|권장\\s*과목");
@@ -126,7 +132,8 @@ public final class AdmissionsQueryParser {
         List<String> unknown = unknownUniversities(q, universityNames);
         return new Parsed(
                 years, univs, unknown, unsupported,
-                CHANCE.matcher(q).find(),
+                CHANCE.matcher(q).find() || (STUDENT_SCORE_CHANCE.matcher(q).find() && !MIN_STANDARD.matcher(q).find()
+                        && !studentScores(q).isEmpty()),
                 NOT_COLLECTED.matcher(q).find(),
                 AGGREGATE_STATS.matcher(q).find(),
                 SCHEDULE_INTENT.matcher(q).find(),
@@ -168,9 +175,14 @@ public final class AdmissionsQueryParser {
         return out;
     }
 
+    private static final Pattern NOT_SCORE_METRIC = Pattern.compile(
+            "표준\\s*편차|편차|총점|점수|환산|만점|충족|비율|인원|순위|번호|응시|실질\\s*경쟁률|\\(\\s*[0-9,]+\\s*점\\s*\\)");
+
     /** 지난해 지표가 어떤 성적 체계인지(원문 지표명·단위로 판단). 모르면 null — 그 지표와는 비교하지 않는다. */
     public static String metricKind(String metricLabel, String metricUnit) {
         String l = metricLabel == null ? "" : metricLabel;
+        // 성적 값 자체가 아닌 지표(분포·점수·인원·비율·순위)는 학생 성적과 나란히 놓지 않는다.
+        if (NOT_SCORE_METRIC.matcher(l).find()) return null;
         if ("PERCENTILE".equals(metricUnit) || l.contains("백분위")) return "PERCENTILE";
         if (!"GRADE".equals(metricUnit) && !l.contains("등급")) return null;
         boolean school = l.matches("(?s).*(교과|내신|학생부|학업).*");

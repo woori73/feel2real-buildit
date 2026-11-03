@@ -357,6 +357,8 @@ public class AdmissionsChatService {
      * 판정·확률은 쓰지 않는다. 체계가 다르거나 알 수 없으면 비교하지 않았다고 적는다.
      * 등급의 내신/수능 구분이 질문에 없으면 수시 지표는 내신, 정시 지표는 수능 등급으로 보고 그 사실을 밝힌다.
      */
+    static final int MAX_COMPARISONS_PER_UNIT = 6;
+
     static List<String> priorComparisonLines(List<Evidence> evidence, List<AdmissionsQueryParser.StudentScore> scores) {
         if (scores.isEmpty()) return List.of();
         List<String> out = new ArrayList<>();
@@ -382,6 +384,7 @@ public class AdmissionsChatService {
                 }
             }
             String head = e.getTitle() + ": ";
+            if (pairs.size() > MAX_COMPARISONS_PER_UNIT) pairs = pairs.subList(0, MAX_COMPARISONS_PER_UNIT);
             if (!pairs.isEmpty()) out.add(head + String.join(" / ", pairs));
             else if (anyMetric) out.add(head + "입력하신 성적과 같은 방식의 지표가 없어 비교하지 않음");
             else out.add(head + "성적 지표가 공개되지 않아 비교하지 않음");

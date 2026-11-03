@@ -189,6 +189,16 @@ class AdmissionsPriorResultChatTest {
     }
 
     @Test
+    @DisplayName("given 괄호가 섞인 원문 전형명 when 질문이 세부 이름만 말하면 then 그 전형으로 알아본다")
+    void priorTypeMentioned_matchesBracketedNames() {
+        // given / when / then
+        assertThat(AdmissionsFactSearchService.priorTypeMentioned("연세대 경영학과 활동우수형 70%컷", "학생부종합[활동우수형]")).isTrue();
+        assertThat(AdmissionsFactSearchService.priorTypeMentioned("경희대 지역균형 입결", "학생부교과[지역균형전형]")).isTrue();
+        assertThat(AdmissionsFactSearchService.priorTypeMentioned("한양대 교과 경쟁률", "학생부교과 (추천형)")).isTrue();
+        assertThat(AdmissionsFactSearchService.priorTypeMentioned("연세대 경영학과 활동우수형 70%컷", "학생부교과[추천형]")).isFalse();
+    }
+
+    @Test
     @DisplayName("given 대학 없이 가능성만 물음 when 성적을 적어도 then 대학·전형을 알려 달라고 안내한다")
     void chanceWithoutUniversity_stillAsksForTarget() {
         // given

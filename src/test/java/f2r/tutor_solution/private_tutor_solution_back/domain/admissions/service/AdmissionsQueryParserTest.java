@@ -107,6 +107,17 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given 성적을 적고 가능성을 묻는 질문 when 분석하면 then 합격 가능성 질문으로 보되 수능최저 기준 질문은 제외한다")
+    void flags_score_based_chance_questions() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.parse("수능 백분위 85인데 연세대 정시 경영학과 가능성", UNIVS).asksAdmissionChance()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("내신 2.5등급이면 연세대 교과 어때요", UNIVS).asksAdmissionChance()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("연세대 수능최저 2개 영역 등급 합 4 이내인데 3등급이면 충족인가요", UNIVS).asksAdmissionChance())
+                .as("수능최저 기준 질문").isFalse();
+        assertThat(AdmissionsQueryParser.parse("연세대 수시 일정 알려줘", UNIVS).asksAdmissionChance()).isFalse();
+    }
+
+    @Test
     @DisplayName("given 원문 지표명 when 성적 체계를 판단하면 then 교과·수능·백분위만 구분하고 모르면 null")
     void classifies_metric_kind() {
         // given / when / then
@@ -115,6 +126,9 @@ class AdmissionsQueryParserTest {
         assertThat(AdmissionsQueryParser.metricKind("국수탐 백분위 평균", "PERCENTILE")).isEqualTo("PERCENTILE");
         assertThat(AdmissionsQueryParser.metricKind("최종등록자 환산점수 70%", "SCORE")).isNull();
         assertThat(AdmissionsQueryParser.metricKind("최종등록자 상위 80% 평균 영어 등급", "GRADE")).isNull();
+        assertThat(AdmissionsQueryParser.metricKind("교과종합등급 표준편차", "OTHER")).as("분포 지표").isNull();
+        assertThat(AdmissionsQueryParser.metricKind("최초합격자 교과 등급 학생부총점(1,000점) 평균", null)).as("점수 지표").isNull();
+        assertThat(AdmissionsQueryParser.metricKind("최종등록자 학생부등급 70%CUT", "GRADE")).isEqualTo("SCHOOL_GRADE");
     }
 
     @Test
