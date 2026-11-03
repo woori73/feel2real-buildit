@@ -38,6 +38,15 @@
     return out;
   }
 
+  /**
+   * 적재 버튼·파일 선택 칸의 잠금 상태. 적재가 도는 동안에는 파일을 다시 고를 수 없고(다시 고르면 버튼이 켜져 두 번 눌리던 문제),
+   * 적재가 끝난 뒤에도 같은 파일로 버튼이 다시 켜지지 않는다(파일을 새로 골라야 한다).
+   */
+  function loadControls(state) {
+    var loading = !!(state && state.loading);
+    return { fileDisabled: loading, runDisabled: loading || !(state && state.previewOk) || !!(state && state.loaded) };
+  }
+
   /** 승격 확인 문자열. 서버 규칙(AdmissionsActivationService)과 같아야 한다. */
   function confirmationFor(year) { return 'ACTIVATE-ALL-' + year; }
 
@@ -90,7 +99,7 @@
     return text + ' · 상태 ' + r.status;
   }
 
-  var api = { summarizeSeed: summarizeSeed, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys,
+  var api = { summarizeSeed: summarizeSeed, loadControls: loadControls, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys,
               formatReindexStatus: formatReindexStatus, formatLoadResult: formatLoadResult };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   root.AdmissionsAdminLoad = api;
@@ -100,7 +109,12 @@
     var panel = document.getElementById('ag-load');
     if (!panel) return;
     function byId(id) { return document.getElementById(id); }
-    var fileText = null, preview = null;
+    var fileText = null, preview = null, loading = false, loaded = false;
+    function applyLoadControls() {
+      var c = loadControls({ loading: loading, loaded: loaded, previewOk: !!(preview && preview.ok) });
+      byId('ag-load-file').disabled = c.fileDisabled;
+      byId('ag-load-run').disabled = c.runDisabled;
+    }
     var result = byId('ag-load-result');
 
     function show(msg, isError) { result.textContent = msg; result.className = isError ? 'ag-load-error' : ''; }
@@ -115,8 +129,9 @@
     }
 
     byId('ag-load-file').addEventListener('change', function (ev) {
+      if (loading) return;
       var f = ev.target.files && ev.target.files[0];
-      byId('ag-load-run').disabled = true; preview = null; fileText = null;
+      preview = null; fileText = null; loaded = false; applyLoadControls();
       if (!f) { show('', false); return; }
       var reader = new FileReader();
       reader.onload = function () {
@@ -127,22 +142,24 @@
         show('미리보기 — 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 학과 ' + c.departments + ' · 전형 ' + c.types +
              ' · 일정 ' + c.schedules + (c.youtube ? ' · 유튜브 해석 ' + c.youtube : '') + ' / 학년도 ' + preview.years.join(', ') +
              (preview.warnings.length ? '\n⚠ ' + preview.warnings.join('\n⚠ ') : '\n이상 없음. 적재는 DRAFT 상태로 들어가며 기존 자료는 중복 적재되지 않습니다.'), preview.warnings.length > 0 && !preview.ok);
-        byId('ag-load-run').disabled = !preview.ok;
+        applyLoadControls();
       };
       reader.readAsText(f, 'utf-8');
     });
 
     byId('ag-load-run').addEventListener('click', async function () {
-      if (!preview || !preview.ok || !fileText) return;
+      if (loading || loaded || !preview || !preview.ok || !fileText) return;
       var c = preview.counts;
       if (!window.confirm('대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 전형 ' + c.types + ' · 일정 ' + c.schedules +
           '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
-      var btn = byId('ag-load-run'); btn.disabled = true;
+      loading = true; applyLoadControls();
+      show('적재 중입니다. 1~3분 걸립니다. 결과가 나올 때까지 이 화면을 그대로 두세요.', false);
       try {
         var r = await post('/api/admin/admissions/load/seed', { seedJson: fileText });
+        loaded = true;
         show(formatLoadResult(r), false);
       } catch (e) { show('적재 실패: ' + e.message, true); }
-      finally { btn.disabled = false; }
+      finally { loading = false; applyLoadControls(); }
     });
 
     byId('ag-activate-run').addEventListener('click', async function () {

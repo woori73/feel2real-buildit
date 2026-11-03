@@ -141,7 +141,8 @@ public class AdmissionsResearchService {
         List<Evidence> officialDocs = searchOfficialMaterials(keywords, academicYearFilter, questionText);
 
         // STEP4 — 유튜브 의견 (별도 분류, 확정 답변에 사용 금지)
-        List<Evidence> youtube = searchYoutubeKnowledge(keywords, academicYearFilter);
+        // 대학명·학년도·일정 같은 공통어만 있는 질문(예: "강원대 수시 원서접수 일정")은 해석 영상이 보탤 내용이 없어 찾지 않는다.
+        List<Evidence> youtube = searchYoutubeKnowledge(youtubeTopicKeywords(keywords), academicYearFilter);
         if (!youtube.isEmpty()) {
             gaps.add("STEP4 유튜브 의견 " + youtube.size() + "건 — 보조 설명으로만 사용, 확정 사실 인용 금지");
         }
@@ -522,6 +523,26 @@ public class AdmissionsResearchService {
     }
 
     static final int YOUTUBE_LIMIT = 3;
+
+    /** 유튜브 해석 검색에서 주제어로 치지 않는 공통어(트랙·일정·접수 표현). 이런 말만으로는 일반 일정 해설 영상이 걸린다. */
+    private static final java.util.Set<String> YOUTUBE_GENERIC_TERMS = java.util.Set.of(
+            "수시", "정시", "수시모집", "정시모집", "모집", "모집요강", "요강", "학년도", "일정", "원서접수", "원서", "접수",
+            "기간", "날짜", "마감", "언제야", "언제예요", "알려줘", "알려줄래");
+
+    /**
+     * 유튜브 해석 검색어: 질문 키워드에서 대학명(~대·~대학·~대학교·~캠퍼스)·숫자(학년도)·공통어를 뺀 주제어만 남긴다.
+     * 남는 주제어가 없으면 빈 목록 — 유튜브 해석을 붙이지 않는다.
+     */
+    static List<String> youtubeTopicKeywords(List<String> keywords) {
+        List<String> out = new ArrayList<>();
+        for (String k : keywords) {
+            if (k == null || k.isBlank() || YOUTUBE_GENERIC_TERMS.contains(k)) continue;
+            if (k.chars().anyMatch(Character::isDigit)) continue;
+            if (k.endsWith("대") || k.endsWith("대학") || k.endsWith("대학교") || k.endsWith("캠퍼스")) continue;
+            out.add(k);
+        }
+        return out;
+    }
 
     // ── STEP5: 충돌대장 ──────────────────────────────────────────────
 

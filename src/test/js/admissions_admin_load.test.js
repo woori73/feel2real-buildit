@@ -155,3 +155,23 @@ test('given a load response with youtube knowledge count when formatting then it
   assert.match(withYt, /유튜브 해석 110/);
   assert.doesNotMatch(zeroYt, /유튜브/);
 });
+
+test('given a load in progress when controls are computed then file picker and load button are both locked', () => {
+  // given / when
+  const c = load.loadControls({ loading: true, loaded: false, previewOk: true });
+  // then
+  assert.deepEqual(c, { fileDisabled: true, runDisabled: true });
+});
+
+test('given a finished load when controls are computed then the button stays off until a new file is chosen', () => {
+  // given / when
+  const done = load.loadControls({ loading: false, loaded: true, previewOk: true });
+  const fresh = load.loadControls({ loading: false, loaded: false, previewOk: true });
+  // then
+  assert.deepEqual(done, { fileDisabled: false, runDisabled: true });
+  assert.deepEqual(fresh, { fileDisabled: false, runDisabled: false });
+});
+
+test('given no valid preview when controls are computed then the load button is off', () => {
+  assert.deepEqual(load.loadControls({ loading: false, loaded: false, previewOk: false }), { fileDisabled: false, runDisabled: true });
+});
