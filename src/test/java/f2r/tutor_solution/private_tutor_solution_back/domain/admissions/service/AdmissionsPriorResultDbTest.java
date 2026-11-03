@@ -202,6 +202,27 @@ class AdmissionsPriorResultDbTest {
     }
 
     @Test
+    @DisplayName("given 입시결과 적재 후 when 그 대학 모집요강 시드를 최신본(authoritative)으로 다시 적재하면 then 입시결과 출처 자료는 보관되지 않는다")
+    void authoritativeReload_keepsPriorSourceMaterials() throws Exception {
+        // given
+        loader.loadSeed(SEED);
+        String guideOnly = """
+            {"ipsi_universities":[{"name":"테스트대학교","university_code":"TST"}],
+             "authoritative_universities":["TST"],
+             "ipsi_documents":[{"document_key":"doc_tst_2027_susi","document_name":"테스트대 2027 수시 모집요강","applicable_academic_year":2027,"institution_name":"테스트대","source_url":"https://example.test/tst"}],
+             "ipsi_admission_types":[{"university_code":"TST","academic_year":2027,"type_name":"학생부교과(지역균형)","recruitment_count":10,"source_document_key":"doc_tst_2027_susi"}]}
+            """;
+
+        // when
+        loader.loadSeed(guideOnly);
+
+        // then
+        assertThat(materials.findAll().stream().filter(m -> m.getTitle().contains("2026학년도 수시 입시결과")))
+                .isNotEmpty()
+                .allSatisfy(m -> assertThat(m.getStatus()).isNotEqualTo(KnowledgeStatus.ARCHIVED));
+    }
+
+    @Test
     @DisplayName("given 승인된 입시결과 when 지식을 만들면 then prior: 항목이 전형·모집단위마다 하나 생기고 다시 만들어도 늘지 않는다")
     void knowledgeBuild_createsPriorItemsOnce() throws Exception {
         // given

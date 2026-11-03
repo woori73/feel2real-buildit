@@ -562,6 +562,12 @@ public class AdmissionsDataLoader {
             archiveKnowledge("schedule:" + sc.getUniversity().getUniversityId() + ":" + sc.getAcademicYear() + ":" + sc.getScheduleId());
             archived++;
         }
+        // 지난해 입시결과 행의 출처 자료는 모집요강 시드가 다루지 않는다(별도 시드로 들어올 수 있음) — 보관하지 않는다.
+        for (AdmissionsPriorResult r : priorResultRepository.findAll()) {
+            if (r.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && r.getSource() != null) {
+                stillUsedMaterials.add(r.getSource().getMaterialId());
+            }
+        }
         for (AdmissionsOfficialMaterial m : materialRepository.findAll()) {
             if (!inScope(m.getUniversity(), m.getAcademicYear(), targets, years)) continue;
             if (m.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
