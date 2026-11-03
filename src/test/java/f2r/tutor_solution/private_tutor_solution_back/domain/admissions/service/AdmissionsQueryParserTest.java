@@ -391,6 +391,32 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given '국립'이 붙은 정식명 when '국립' 없이 줄여 물으면 then 그 대학으로 보고, 비슷한 이름의 다른 대학과 섞지 않는다")
+    void national_prefix_is_optional() {
+        // given
+        var names = List.of("국립공주대학교", "국립목포대학교", "국립목포해양대학교", "순천향대학교", "국립순천대학교", "서울대학교");
+
+        // when
+        var shortName = AdmissionsQueryParser.parse("공주대 2026학년도 교과 경쟁률 알려줘", names);
+        var fullNoPrefix = AdmissionsQueryParser.parse("공주대학교 수시 모집요강", names);
+        var withPrefix = AdmissionsQueryParser.parse("국립공주대 수시 일정", names);
+        var haeyang = AdmissionsQueryParser.parse("목포해양대 수시 경쟁률", names);
+        var mokpo = AdmissionsQueryParser.parse("목포대 수시 경쟁률", names);
+        var soonchunhyang = AdmissionsQueryParser.parse("순천향대 수시 일정", names);
+        var suncheon = AdmissionsQueryParser.parse("순천대 수시 일정", names);
+
+        // then
+        assertThat(shortName.universities()).containsExactly("국립공주대학교");
+        assertThat(fullNoPrefix.universities()).containsExactly("국립공주대학교");
+        assertThat(fullNoPrefix.unknownUniversities()).as("'국립' 없는 정식명을 미등록 대학으로 보지 않는다").isEmpty();
+        assertThat(withPrefix.universities()).containsExactly("국립공주대학교");
+        assertThat(haeyang.universities()).containsExactly("국립목포해양대학교");
+        assertThat(mokpo.universities()).containsExactly("국립목포대학교");
+        assertThat(soonchunhyang.universities()).containsExactly("순천향대학교");
+        assertThat(suncheon.universities()).containsExactly("국립순천대학교");
+    }
+
+    @Test
     @DisplayName("given 세종·글로컬·WISE·천안·미래캠퍼스 분교 항목 when 캠퍼스 줄임말로 물으면 then 그 분교 항목만, 분교 항목이 없는 대학은 그대로 고른다")
     void campus_short_names_narrow_to_branch_entities() {
         // given
