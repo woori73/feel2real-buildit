@@ -19,7 +19,10 @@ import java.util.Set;
  *   <li>질문에서 뽑은 주제어가 제목·내용에 거의 없으면 뺀다(질문과 무관한 논술·실기·다른 트랙 일정). 공식 문서(material:)
  *       링크는 최대 {@value #MAX_BARE_MATERIALS}건까지 예외로 남긴다.</li>
  *   <li>질문이 수시/정시 한쪽만 말하면 반대 트랙 제목은 뺀다.</li>
- *   <li>관련도(주제어 일치 수)가 높은 순, 같으면 공식 자료 등급 순, 그래도 같으면 원래 순서로 상위 N개만 남긴다.</li>
+ *   <li>질문이 캠퍼스를 말했고(예: "동국대 와이즈") 그 캠퍼스 표시가 붙은 근거가 있으면, 표시가 없는 근거(본교 등)는 뺀다.</li>
+ *   <li>일정을 묻는 질문이면 일정 근거에 가산점을 준다(같은 대학 전형 행이 일정 행을 밀어내지 않게).</li>
+ *   <li>관련도(주제어 일치 수)가 높은 순, 같으면 공식 자료 등급 순, 그래도 같으면 원래 순서로 상위 N개만 남긴다.
+ *       주제어는 띄어쓰기를 무시하고 비교한다("원서접수" ↔ "입학원서 접수").</li>
  * </ol>
  * 걸러낸 뒤 남는 것이 없으면 원래 순서의 앞 {@value #FALLBACK_COUNT}건을 그대로 보여준다(출처 없는 답변 방지).
  */
@@ -41,13 +44,17 @@ final class AdmissionsSourceSelector {
         List<Evidence> unique = dedupe(evidence);
         Set<String> terms = topicTerms(question);
         String track = askedTrack(question);
+        String campus = presentCampus(question, unique);
+        boolean scheduleQuestion = question != null && SCHEDULE_INTENT.matcher(question).find();
 
         List<Scored> scored = new ArrayList<>();
         for (int i = 0; i < unique.size(); i++) {
             Evidence e = unique.get(i);
             if (e.getSourceClass() == SourceClass.GUIDE_NOTE) continue;
             if (track != null && oppositeTrackTitle(e.getTitle(), track)) continue;
-            scored.add(new Scored(e, i, relevance(e, terms)));
+            if (campus != null && !compact(e.getTitle()).contains(campus)) continue;
+            int score = relevance(e, terms) + (scheduleQuestion && isSchedule(e) ? 1 : 0);
+            scored.add(new Scored(e, i, score));
         }
         if (scored.isEmpty()) return unique.stream().limit(FALLBACK_COUNT).toList();
 
@@ -101,12 +108,39 @@ final class AdmissionsSourceSelector {
     }
 
     private static int relevance(Evidence e, Set<String> terms) {
-        String hay = normalize(e.getTitle()) + " " + normalize(e.getExcerpt());
+        String hay = compact(e.getTitle()) + " " + compact(e.getExcerpt());
         int score = 0;
         for (String term : terms) {
-            if (hay.contains(term) || expand(term).stream().anyMatch(hay::contains)) score++;
+            String t = compact(term);
+            if (hay.contains(t) || expand(term).stream().map(AdmissionsSourceSelector::compact).anyMatch(hay::contains)) score++;
         }
         return score;
+    }
+
+    /** 일정 질문 판단 — 질문 분석기(AdmissionsQueryParser)의 일정 의도 단어와 같게 두고 "기간"을 더한다. */
+    private static final java.util.regex.Pattern SCHEDULE_INTENT =
+            java.util.regex.Pattern.compile("일정|언제|접수|원서|발표|마감|까지|기간|며칠|날짜|몇\\s*월");
+
+    /** 일정 근거: 일정 행(sched:) 또는 일정에서 만든 지식 항목(제목 "…학년도 일정: …"). */
+    static boolean isSchedule(Evidence e) {
+        return (e.getRefId() != null && e.getRefId().startsWith("sched:"))
+                || (e.getTitle() != null && e.getTitle().contains("일정:"));
+    }
+
+    /**
+     * 질문이 말한 캠퍼스 표시(대문자·띄어쓰기 제거, 예: "WISE캠퍼스"). 근거 중 그 표시가 붙은 것이 하나도 없으면 null —
+     * "세종대"처럼 캠퍼스 줄임말과 겹치는 대학 이름 질문에서 근거를 모두 지우지 않기 위함이다.
+     */
+    static String presentCampus(String question, List<Evidence> evidence) {
+        String marker = AdmissionsQueryParser.askedCampus(question);
+        if (marker == null) return null;
+        String m = compact(marker);
+        return evidence.stream().anyMatch(e -> compact(e.getTitle()).contains(m)) ? m : null;
+    }
+
+    /** 비교용: 띄어쓰기를 지우고 대문자로("WISE"·"wise" 같게). */
+    private static String compact(String s) {
+        return s == null ? "" : s.replaceAll("\\s+", "").toUpperCase();
     }
 
     private static List<String> expand(String term) {

@@ -48,6 +48,8 @@ public class AdmissionsAdminController {
     private final AdmissionsKnowledgeBuildService knowledgeBuildService;
     private final AdmissionsEmbeddingService embeddingService;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob;
+    /** 시드 적재 중 표시. 같은 적재가 겹쳐 돌면 두 번째가 중복 키로 실패하므로 한 번에 하나만 받는다(앱 1대 기준). */
+    private final java.util.concurrent.atomic.AtomicBoolean seedLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     public AdmissionsAdminController(AdmissionsKnowledgeItemRepository knowledgeRepository,
                                      AdmissionsVectorIndex vectorIndex,
@@ -310,6 +312,11 @@ public class AdmissionsAdminController {
         if (seedJson == null || seedJson.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "seedJson required"));
         }
+        if (!seedLoading.compareAndSet(false, true)) {
+            log.warn("admissions seed load rejected: already running");
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(Map.of(
+                    "error", "이미 적재가 진행 중입니다. 끝날 때까지 기다린 뒤 결과를 확인하세요.", "status", "ALREADY_RUNNING"));
+        }
         try {
             var result = dataLoader.loadSeed(seedJson);
             log.info("admissions seed loaded by admin: {}", result);
@@ -335,6 +342,8 @@ public class AdmissionsAdminController {
         } catch (Exception e) {
             log.warn("admissions seed load failed: {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("error", "load failed", "status", "FAILED"));
+        } finally {
+            seedLoading.set(false);
         }
     }
 

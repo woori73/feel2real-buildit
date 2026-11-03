@@ -168,4 +168,49 @@ class AdmissionsSourceSelectorTest {
         // then
         assertThat(ids(picked)).containsExactly("dept:7", "material:1", "material:2");
     }
+
+    @Test
+    @DisplayName("given 원서접수 일정 질문 when 출처를 고르면 then 띄어쓰기가 다른 일정 행이 같은 대학 전형 행보다 앞선다")
+    void scheduleQuestionPrefersScheduleRows() {
+        // given: 전형 행 본문에도 "원서접수"가 있고, 일정 제목은 "입학원서 접수"로 띄어 씀
+        List<Evidence> evidence = List.of(
+                ev("type:1", "강원대학교 2027학년도 학생부종합(미래인재서류전형)", "제출서류: 원서접수 시 입력"),
+                ev("type:2", "강원대학교 2027학년도 학생부종합(지역인재면접전형)", "제출서류: 원서접수 시 입력"),
+                ev("sched:5", "강원대학교 2027학년도 일정: 입학원서 접수 (전 전형)", "2026. 9. 7.(월) 09:00 ~ 9. 11.(금) 20:00"));
+
+        // when
+        List<Evidence> picked = AdmissionsSourceSelector.select(evidence, "강원대 2027학년도 수시 원서접수 일정 알려줘", 6);
+
+        // then
+        assertThat(ids(picked)).first().isEqualTo("sched:5");
+    }
+
+    @Test
+    @DisplayName("given 캠퍼스(와이즈)를 말한 질문 when 출처를 고르면 then 그 캠퍼스 표시가 없는 본교 근거는 빠진다")
+    void askedCampusDropsOtherCampusSources() {
+        // given
+        List<Evidence> evidence = List.of(
+                ev("sched:1", "동국대학교(WISE캠퍼스) 2027학년도 일정: 원서접수 (전 전형)", "2026.09.07 ~ 09.11"),
+                ev("knowledge:2", "동국대학교 2027학년도 일정: 고등학교(교사) 추천서 접수기간", "2026.09.14 ~ 09.18"));
+
+        // when
+        List<Evidence> picked = AdmissionsSourceSelector.select(evidence, "동국대 와이즈캠퍼스 2027 수시 원서접수 기간은?", 6);
+
+        // then
+        assertThat(ids(picked)).containsExactly("sched:1");
+    }
+
+    @Test
+    @DisplayName("given 캠퍼스 줄임말과 겹치는 대학 이름(세종대) when 출처를 고르면 then 근거를 지우지 않는다")
+    void campusAliasWithoutMarkedEvidenceKeepsSources() {
+        // given
+        List<Evidence> evidence = List.of(
+                ev("sched:1", "세종대학교 2027학년도 일정: 원서접수 (수시)", "2026. 9. 8."));
+
+        // when
+        List<Evidence> picked = AdmissionsSourceSelector.select(evidence, "세종대 수시 원서접수 일정", 6);
+
+        // then
+        assertThat(ids(picked)).containsExactly("sched:1");
+    }
 }

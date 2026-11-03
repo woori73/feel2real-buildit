@@ -144,7 +144,7 @@ public final class AdmissionsQueryParser {
         return out;
     }
 
-    private static String askedCampus(String question) {
+    static String askedCampus(String question) {
         if (question == null) return null;
         String q = question.replace(" ", "").toUpperCase(); // "erica"·"wise"도 대문자로 본다
         String marker = AdmissionsFactSearchService.campusMarker(q);

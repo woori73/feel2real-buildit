@@ -134,4 +134,45 @@ class AdmissionsResearchServiceLogicTest {
         assertFalse(AdmissionsResearchService.isUnverifiedMirror(material(3, "X 수시모집요강")));
         assertFalse(AdmissionsResearchService.isUnverifiedMirror(null));
     }
+
+    @Test
+    @DisplayName("given 대학·학년도·일정 말만 있는 질문 when 유튜브 검색어를 고르면 then 남는 주제어가 없다")
+    void youtubeTopicKeywords_scheduleOnlyQuestion_isEmpty() {
+        // given
+        List<String> keywords = service.keywordsOf("강원대 2027학년도 수시 원서접수 일정 알려줘");
+
+        // when
+        List<String> topic = AdmissionsResearchService.youtubeTopicKeywords(keywords);
+
+        // then
+        assertTrue(topic.isEmpty(), "주제어 없음: " + topic);
+    }
+
+    @Test
+    @DisplayName("given 캠퍼스·기간을 묻는 질문 when 유튜브 검색어를 고르면 then 캠퍼스명·기간도 주제어가 아니다")
+    void youtubeTopicKeywords_campusAndPeriod_isEmpty() {
+        // given
+        List<String> keywords = service.keywordsOf("동국대 와이즈캠퍼스 2027 수시 원서접수 기간은?");
+
+        // when
+        List<String> topic = AdmissionsResearchService.youtubeTopicKeywords(keywords);
+
+        // then
+        assertTrue(topic.isEmpty(), "주제어 없음: " + topic);
+    }
+
+    @Test
+    @DisplayName("given 전형·수능최저를 묻는 질문 when 유튜브 검색어를 고르면 then 대학명은 빠지고 주제어는 남는다")
+    void youtubeTopicKeywords_keepsTopicTerms() {
+        // given
+        List<String> keywords = service.keywordsOf("경북대 학생부종합 수능최저 전략");
+
+        // when
+        List<String> topic = AdmissionsResearchService.youtubeTopicKeywords(keywords);
+
+        // then
+        assertTrue(topic.contains("학생부종합"), "주제어: " + topic);
+        assertTrue(topic.contains("수능최저"), "주제어: " + topic);
+        assertFalse(topic.contains("경북대"), "대학명 제외: " + topic);
+    }
 }
