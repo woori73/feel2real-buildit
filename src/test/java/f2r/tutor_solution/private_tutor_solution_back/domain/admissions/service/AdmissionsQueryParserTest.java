@@ -63,6 +63,75 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given 경쟁률·입결·충원·컷 질문 when 분석하면 then 지난해 입시결과 질문으로 표시하고 권장이수는 표시하지 않는다")
+    void flags_prior_result_questions() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.parse("연세대 경영학과 경쟁률 알려줘", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("작년 입결 어땠어요?", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("교과 70% 컷이 몇이에요?", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("충원 몇 명 돌았어요?", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("미적분 권장이수 꼭 들어야 해요?", UNIVS).asksPriorResult()).isFalse();
+        assertThat(AdmissionsQueryParser.parse("인하대 컴퓨터공학과 몇 명 뽑나요", UNIVS).asksPriorResult()).isFalse();
+    }
+
+    @Test
+    @DisplayName("given 2026학년도 입시결과 질문 when 분석하면 then 2026을 지원하지 않는 학년도로 보지 않는다")
+    void prior_question_with_2026_is_not_unsupported_year() {
+        // given / when
+        var prior = AdmissionsQueryParser.parse("2026학년도 경쟁률 알려줘", UNIVS);
+        var plain = AdmissionsQueryParser.parse("2026학년도 모집인원 알려줘", UNIVS);
+
+        // then
+        assertThat(prior.mentionsUnsupportedYear()).isFalse();
+        assertThat(prior.yearUnspecified()).isTrue();
+        assertThat(plain.mentionsUnsupportedYear()).as("입시결과가 아닌 질문의 2026은 여전히 미지원").isTrue();
+    }
+
+    @Test
+    @DisplayName("given 성적이 적힌 질문 when 읽으면 then 등급(1~9)·백분위(0~100)만 종류와 함께 뽑는다")
+    void reads_student_scores() {
+        // given / when
+        var school = AdmissionsQueryParser.studentScores("내신 2.5등급인데 가능할까요?");
+        var csat = AdmissionsQueryParser.studentScores("수능 3등급, 백분위 85예요");
+        var unknown = AdmissionsQueryParser.studentScores("2등급이면요?");
+        var outOfRange = AdmissionsQueryParser.studentScores("12등급");
+
+        // then
+        assertThat(school).singleElement().satisfies(s -> {
+            assertThat(s.kind()).isEqualTo("SCHOOL_GRADE");
+            assertThat(s.value()).isEqualByComparingTo("2.5");
+        });
+        assertThat(csat).extracting(AdmissionsQueryParser.StudentScore::kind).containsExactly("CSAT_GRADE", "PERCENTILE");
+        assertThat(unknown).singleElement().satisfies(s -> assertThat(s.kind()).isEqualTo("GRADE"));
+        assertThat(outOfRange).isEmpty();
+    }
+
+    @Test
+    @DisplayName("given 성적을 적고 가능성을 묻는 질문 when 분석하면 then 합격 가능성 질문으로 보되 수능최저 기준 질문은 제외한다")
+    void flags_score_based_chance_questions() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.parse("수능 백분위 85인데 연세대 정시 경영학과 가능성", UNIVS).asksAdmissionChance()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("내신 2.5등급이면 연세대 교과 어때요", UNIVS).asksAdmissionChance()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("연세대 수능최저 2개 영역 등급 합 4 이내인데 3등급이면 충족인가요", UNIVS).asksAdmissionChance())
+                .as("수능최저 기준 질문").isFalse();
+        assertThat(AdmissionsQueryParser.parse("연세대 수시 일정 알려줘", UNIVS).asksAdmissionChance()).isFalse();
+    }
+
+    @Test
+    @DisplayName("given 원문 지표명 when 성적 체계를 판단하면 then 교과·수능·백분위만 구분하고 모르면 null")
+    void classifies_metric_kind() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.metricKind("최종등록자 교과등급 70%컷", "GRADE")).isEqualTo("SCHOOL_GRADE");
+        assertThat(AdmissionsQueryParser.metricKind("수능등급 평균", "GRADE")).isEqualTo("CSAT_GRADE");
+        assertThat(AdmissionsQueryParser.metricKind("국수탐 백분위 평균", "PERCENTILE")).isEqualTo("PERCENTILE");
+        assertThat(AdmissionsQueryParser.metricKind("최종등록자 환산점수 70%", "SCORE")).isNull();
+        assertThat(AdmissionsQueryParser.metricKind("최종등록자 상위 80% 평균 영어 등급", "GRADE")).isNull();
+        assertThat(AdmissionsQueryParser.metricKind("교과종합등급 표준편차", "OTHER")).as("분포 지표").isNull();
+        assertThat(AdmissionsQueryParser.metricKind("최초합격자 교과 등급 학생부총점(1,000점) 평균", null)).as("점수 지표").isNull();
+        assertThat(AdmissionsQueryParser.metricKind("최종등록자 학생부등급 70%CUT", "GRADE")).isEqualTo("SCHOOL_GRADE");
+    }
+
+    @Test
     @DisplayName("given 일정·전형 질문 when 분석하면 then 의도 플래그가 켜진다")
     void detects_schedule_and_type_intent() {
         // given / when

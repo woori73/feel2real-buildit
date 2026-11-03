@@ -163,14 +163,14 @@ public class AdmissionsAdminController {
         try {
             var excludeFileKeys = normalizeExcludeFileKeys(request.excludeFileKeys());
             var r = activationService.activateAll(request.academicYear(), request.confirm(), excludeFileKeys);
-            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} excludedMaterials={} excludedChildren={} knowledgeItems={} excludedKeys={} note={}",
+            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} excludedMaterials={} excludedChildren={} knowledgeItems={} priorResults={} excludedKeys={} note={}",
                     actorOf(authentication), r.academicYear(), r.materials(),
-                    r.departments(), r.types(), r.schedules(), r.excludedMaterials(), r.excludedChildren(), r.knowledgeItems(),
+                    r.departments(), r.types(), r.schedules(), r.excludedMaterials(), r.excludedChildren(), r.knowledgeItems(), r.priorResults(),
                     excludeFileKeys, request.note());
             return ResponseEntity.ok(Map.of("academicYear", r.academicYear(), "materials", r.materials(),
                     "departments", r.departments(), "types", r.types(), "schedules", r.schedules(),
                     "excludedMaterials", r.excludedMaterials(), "excludedChildren", r.excludedChildren(),
-                    "knowledgeItems", r.knowledgeItems(), "status", "ACTIVATED"));
+                    "knowledgeItems", r.knowledgeItems(), "priorResults", r.priorResults(), "status", "ACTIVATED"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         }
@@ -333,6 +333,8 @@ public class AdmissionsAdminController {
             out.put("supersededArchived", result.supersededArchived());
             out.put("schedulesSourced", result.schedulesSourced());
             out.put("youtubeKnowledge", result.knowledgeItems());
+            out.put("priorResults", result.priorResults());
+            out.put("priorResultsUpdated", result.priorResultsUpdated());
             out.put("status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED");
             return ResponseEntity.ok(out);
         } catch (AdmissionsDataLoader.SeedLoadException e) {

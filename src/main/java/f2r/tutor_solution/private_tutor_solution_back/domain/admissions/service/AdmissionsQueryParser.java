@@ -36,9 +36,25 @@ public final class AdmissionsQueryParser {
             "합격\\s*(가능|확률|선|컷|권)|지원\\s*가능할까|어디쯤|추천해|소신|안정\\s*지원|상향\\s*지원|하향\\s*지원|붙을까|될까요"
                     + "|^\\s*가능성\\s*[?？]*\\s*$|가능성\\s*(높|낮|어때|얼마)");
 
+    /** 성적을 적고 "가능/이면/인데/정도면"으로 묻는 질문도 합격 가능성 질문으로 본다(예: "수능 백분위 85인데 … 가능성"). */
+    private static final Pattern STUDENT_SCORE_CHANCE = Pattern.compile("가능|이면|인데|정도면|으로\\s*(될|갈)");
+
+    /** 수능최저 기준을 묻는 문장의 등급("2개 영역 등급 합 5 이내")은 학생 성적이 아니다. */
+    private static final Pattern MIN_STANDARD = Pattern.compile("최저|이내|등급\\s*합|합\\s*[0-9]");
+
     /** 아직 수집하지 않은 자료(경쟁률·입시결과·권장이수 등) — 만들어 답하지 않는다. */
     private static final Pattern NOT_COLLECTED = Pattern.compile(
             "경쟁률|입시\\s*결과|입결|충원|등급\\s*컷|평균\\s*등급|권장\\s*이수|권장\\s*과목");
+
+    /**
+     * 지난해 입시결과(경쟁률·입결·충원·등급컷) 질문. 대학 입학처 공식 입시결과를 수집한 대학이면 그 자료로 답하고,
+     * 없으면 "수집되지 않음"으로 안내한다. 권장 이수 과목은 여기에 들지 않는다(여전히 미수집).
+     */
+    private static final Pattern PRIOR_RESULT = Pattern.compile(
+            "경쟁률|입시\\s*결과|입결|충원|추가\\s*합격\\s*(인원|몇)|등급\\s*컷|평균\\s*등급|[0-9]{2}\\s*%\\s*컷|커트\\s*라인|지난해\\s*결과|작년\\s*결과");
+
+    /** 질문 속 2026학년도 표기(입시결과 질문에서는 지원하지 않는 학년도로 보지 않는다). */
+    private static final Pattern PRIOR_YEAR_MENTION = Pattern.compile("(?<![\\d.])(?:20)?26(?!\\d)\\s*(?:학년도|년도|년)?");
 
     /** 전국 단위 총량 통계(수시/정시 비중, 전체 모집인원 등) — 대학을 특정하지 않으면 수집된 자료가 없다. */
     private static final Pattern AGGREGATE_STATS = Pattern.compile(
@@ -67,7 +83,8 @@ public final class AdmissionsQueryParser {
             boolean asksAggregateStats,
             boolean wantsSchedule,
             boolean wantsType,
-            boolean wantsQuota) {
+            boolean wantsQuota,
+            boolean asksPriorResult) {
 
         /** 질문에 학년도가 명시되지 않았는가. */
         public boolean yearUnspecified() {
@@ -86,17 +103,20 @@ public final class AdmissionsQueryParser {
      */
     public static Parsed parse(String question, List<String> universityNames) {
         String q = question == null ? "" : question;
+        boolean asksPrior = PRIOR_RESULT.matcher(q).find();
+        // 입시결과 질문의 "2026학년도"는 지난해 결과를 묻는 것이라 학년도 판정에서 뺀다(지원하지 않는 학년도로 거절하지 않음).
+        String yearText = asksPrior ? PRIOR_YEAR_MENTION.matcher(q).replaceAll(" ") : q;
         Set<Integer> years = new LinkedHashSet<>();
         boolean unsupported = false;
-        Matcher m = YEAR.matcher(q);
+        Matcher m = YEAR.matcher(yearText);
         while (m.find()) {
             int y = Integer.parseInt(m.group(1));
             if (SUPPORTED_YEARS.contains(y)) years.add(y);
             else if (y >= 2026 && y <= 2035) unsupported = true;
         }
-        Matcher past = YEAR_WITH_SUFFIX.matcher(q);
+        Matcher past = YEAR_WITH_SUFFIX.matcher(yearText);
         while (past.find()) unsupported = true;
-        Matcher two = YEAR_TWO_DIGIT.matcher(q);
+        Matcher two = YEAR_TWO_DIGIT.matcher(yearText);
         while (two.find()) {
             int y = 2000 + Integer.parseInt(two.group(1));
             if (SUPPORTED_YEARS.contains(y)) years.add(y);
@@ -112,12 +132,64 @@ public final class AdmissionsQueryParser {
         List<String> unknown = unknownUniversities(q, universityNames);
         return new Parsed(
                 years, univs, unknown, unsupported,
-                CHANCE.matcher(q).find(),
+                CHANCE.matcher(q).find() || (STUDENT_SCORE_CHANCE.matcher(q).find() && !MIN_STANDARD.matcher(q).find()
+                        && !studentScores(q).isEmpty()),
                 NOT_COLLECTED.matcher(q).find(),
                 AGGREGATE_STATS.matcher(q).find(),
                 SCHEDULE_INTENT.matcher(q).find(),
                 TYPE_INTENT.matcher(q).find(),
-                QUOTA_INTENT.matcher(q).find());
+                QUOTA_INTENT.matcher(q).find(),
+                asksPrior);
+    }
+
+    /** 학생이 질문에 적은 성적 하나. kind: SCHOOL_GRADE(내신·교과 등급), CSAT_GRADE(수능 등급), PERCENTILE(수능 백분위). */
+    public record StudentScore(String kind, java.math.BigDecimal value, String text) {}
+
+    private static final Pattern GRADE_NUM = Pattern.compile("(?<![\\d.])([1-9](?:\\.\\d{1,2})?)\\s*등급");
+    private static final Pattern PERCENTILE_NUM = Pattern.compile(
+            "백분위\\s*(?:평균|합)?\\s*(?:은|는|이|가)?\\s*(\\d{1,3}(?:\\.\\d{1,2})?)|(\\d{1,3}(?:\\.\\d{1,2})?)\\s*(?:점\\s*)?백분위");
+
+    /**
+     * 질문에서 학생 성적을 읽는다(합격 판정이 아니라 지난해 지표와 나란히 보여 주기 위한 용도).
+     * 등급은 1~9, 백분위는 0~100만 받는다. 등급이 내신인지 수능인지 질문에 단서가 없으면 GRADE(구분 불명)로 둔다.
+     */
+    public static List<StudentScore> studentScores(String question) {
+        String q = question == null ? "" : question;
+        List<StudentScore> out = new ArrayList<>();
+        boolean school = q.matches("(?s).*(내신|교과|학생부|생기부).*");
+        boolean csat = q.contains("수능");
+        Matcher g = GRADE_NUM.matcher(q);
+        while (g.find()) {
+            java.math.BigDecimal v = new java.math.BigDecimal(g.group(1));
+            if (v.compareTo(java.math.BigDecimal.ONE) < 0 || v.compareTo(java.math.BigDecimal.valueOf(9)) > 0) continue;
+            String kind = school && !csat ? "SCHOOL_GRADE" : csat && !school ? "CSAT_GRADE" : "GRADE";
+            out.add(new StudentScore(kind, v, g.group()));
+        }
+        Matcher pm = PERCENTILE_NUM.matcher(q);
+        while (pm.find()) {
+            String num = pm.group(1) != null ? pm.group(1) : pm.group(2);
+            java.math.BigDecimal v = new java.math.BigDecimal(num);
+            if (v.compareTo(java.math.BigDecimal.ZERO) < 0 || v.compareTo(java.math.BigDecimal.valueOf(100)) > 0) continue;
+            out.add(new StudentScore("PERCENTILE", v, pm.group().strip()));
+        }
+        return out;
+    }
+
+    private static final Pattern NOT_SCORE_METRIC = Pattern.compile(
+            "표준\\s*편차|편차|총점|점수|환산|만점|충족|비율|인원|순위|번호|응시|실질\\s*경쟁률|\\(\\s*[0-9,]+\\s*점\\s*\\)");
+
+    /** 지난해 지표가 어떤 성적 체계인지(원문 지표명·단위로 판단). 모르면 null — 그 지표와는 비교하지 않는다. */
+    public static String metricKind(String metricLabel, String metricUnit) {
+        String l = metricLabel == null ? "" : metricLabel;
+        // 성적 값 자체가 아닌 지표(분포·점수·인원·비율·순위)는 학생 성적과 나란히 놓지 않는다.
+        if (NOT_SCORE_METRIC.matcher(l).find()) return null;
+        if ("PERCENTILE".equals(metricUnit) || l.contains("백분위")) return "PERCENTILE";
+        if (!"GRADE".equals(metricUnit) && !l.contains("등급")) return null;
+        boolean school = l.matches("(?s).*(교과|내신|학생부|학업).*");
+        boolean csat = l.contains("수능");
+        if (school && !csat) return "SCHOOL_GRADE";
+        if (csat && !school) return "CSAT_GRADE";
+        return null;
     }
 
     /** 캠퍼스 줄임말 → 대학 이름에 붙는 캠퍼스 표시. */

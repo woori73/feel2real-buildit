@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsDepartment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.KnowledgeStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsSchedule;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsUniversity;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsDepartmentRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsUniversityRepository;
@@ -46,6 +48,8 @@ public class AdmissionsFactSearchService {
     static final int MAX_DEPARTMENTS = 10;
     static final int MAX_TYPES = 8;
     static final int MAX_SCHEDULES = 8;
+    /** 지난해 입시결과: 근거로 쓰는 전형·모집단위 수 상한. */
+    static final int MAX_PRIOR_UNITS = 8;
     /** 대학을 지정하지 않은 전체 일정 질문: 대학당 근거 수와 전체 상한. */
     static final int MAX_SCHEDULES_PER_UNIVERSITY = 2;
     static final int MAX_ALL_UNIVERSITY_SCHEDULES = 14;
@@ -55,6 +59,7 @@ public class AdmissionsFactSearchService {
     private final AdmissionsDepartmentRepository departmentRepository;
     private final AdmissionsTypeRepository typeRepository;
     private final AdmissionsScheduleRepository scheduleRepository;
+    private final AdmissionsPriorResultRepository priorResultRepository;
 
     /**
      * @param evidence 근거(없으면 빈 목록)
@@ -86,6 +91,8 @@ public class AdmissionsFactSearchService {
         else years.add(2027); // 학년도 미지정: 확정 자료(2027)만. 답변에 기준 학년도를 명시한다.
 
         List<Evidence> out = new ArrayList<>();
+        // 지난해 입시결과는 질문 학년도와 상관없이(올해 자료와 다른 학년도임을 표시해) 맨 앞에 둔다.
+        out.addAll(searchPriorResults(question, parsed));
         out.addAll(searchDepartments(question, parsed, years));
         out.addAll(searchTypes(question, parsed, years));
         ScheduleCoverage coverage = null;
@@ -99,6 +106,127 @@ public class AdmissionsFactSearchService {
 
         boolean askedUnpublished = years.contains(2028) && !years.contains(2027);
         return new FactResult(out, parsed, years, askedUnpublished && out.isEmpty(), coverage);
+    }
+
+    // ── 지난해 입시결과 ─────────────────────────────────────────────
+
+    /**
+     * 경쟁률·입결·충원·등급컷 또는 합격 가능성 질문이고 대학을 말했을 때, 그 대학의 승인된(ACTIVE) 지난해 입시결과를
+     * 전형·모집단위 단위로 묶어 근거로 만든다. 출처 공식자료도 승인돼 있어야 한다.
+     * 학과·전형을 말했으면 그 단위만, 말하지 않았으면 앞에서부터 {@value #MAX_PRIOR_UNITS}개까지.
+     */
+    List<Evidence> searchPriorResults(String question, AdmissionsQueryParser.Parsed p) {
+        if (p.universities().isEmpty() || !(p.asksPriorResult() || p.asksAdmissionChance())) return List.of();
+        boolean asksSusi = question.contains("수시");
+        boolean asksJeongsi = question.contains("정시");
+        java.util.Map<String, List<AdmissionsPriorResult>> units = new java.util.LinkedHashMap<>();
+        // 질문이 말한 대학 행만 DB에서 읽는다(입시결과는 대학당 수천 행이라 전체를 읽지 않는다).
+        List<Long> univIds = universityRepository.findAll().stream()
+                .filter(u -> p.universities().contains(u.getName()))
+                .map(AdmissionsUniversity::getUniversityId).toList();
+        if (univIds.isEmpty()) return List.of();
+        for (AdmissionsPriorResult r : priorResultRepository.findByUniversityUniversityIdInAndStatus(univIds, KnowledgeStatus.ACTIVE)) {
+            if (r.getSource() == null || r.getSource().getStatus() != KnowledgeStatus.ACTIVE) continue;
+            if (!univSelected(p, r.getUniversity())) continue;
+            if (asksSusi && !asksJeongsi && !"SUSI".equals(r.getRoundType())) continue;
+            if (asksJeongsi && !asksSusi && !"JEONGSI".equals(r.getRoundType())) continue;
+            if (!campusAllowed(question, r.getSource(), r.getTypeName() + " " + r.getDepartmentName())) continue;
+            units.computeIfAbsent(r.getUniversity().getUniversityId() + "|" + r.unitKey(), k -> new ArrayList<>()).add(r);
+        }
+        List<List<AdmissionsPriorResult>> all = new ArrayList<>(units.values());
+        List<List<AdmissionsPriorResult>> matched = all.stream()
+                .filter(rows -> AdmissionsQueryParser.mentionsDepartment(question, rows.get(0).getDepartmentName())
+                        || priorTypeMentioned(question, rows.get(0).getTypeName()))
+                .toList();
+        if (matched.isEmpty()) {
+            matched = all.stream()
+                    .filter(rows -> AdmissionsQueryParser.mentionsDepartmentByKeyword(question, rows.get(0).getDepartmentName()))
+                    .toList();
+        }
+        // 학과와 전형을 둘 다 말했으면 둘 다 맞는 단위를 앞에 둔다.
+        List<List<AdmissionsPriorResult>> chosen = new ArrayList<>(matched.isEmpty() ? all : matched);
+        chosen.sort(java.util.Comparator.comparingInt((List<AdmissionsPriorResult> rows) -> {
+            AdmissionsPriorResult r = rows.get(0);
+            boolean dept = AdmissionsQueryParser.mentionsDepartment(question, r.getDepartmentName());
+            boolean type = priorTypeMentioned(question, r.getTypeName());
+            return dept && type ? 0 : dept || type ? 1 : 2;
+        }));
+        List<Evidence> out = new ArrayList<>();
+        for (List<AdmissionsPriorResult> rows : chosen) {
+            out.add(priorEvidence(rows));
+            if (out.size() >= MAX_PRIOR_UNITS) break;
+        }
+        return out;
+    }
+
+    /**
+     * 질문이 입시결과의 전형을 가리키는지. 원문 전형명은 대학마다 "학생부종합[활동우수형]", "학생부교과 (추천형)"처럼 괄호가 섞여
+     * 있어 괄호([]·()) 안팎 조각을 따로 본다. "학생부교과"·"학생부종합"처럼 대분류만 맞는 조각보다 세부 이름이 맞는 쪽을 쓴다.
+     */
+    static boolean priorTypeMentioned(String question, String typeName) {
+        if (typeName == null) return false;
+        String q = question.replaceAll("\\s+", "");
+        for (String piece : typeName.split("[\\[\\]()/\\s·,_]+")) {
+            String p = piece.replaceAll("전형$", "").trim();
+            if (p.length() < 2 || p.equals("학생부") || p.equals("수시") || p.equals("정시")) continue;
+            if (q.contains(p)) return true;
+            // "학생부교과" ↔ 질문의 "교과", "학생부종합" ↔ "학종"/"종합"
+            if (p.equals("학생부교과") && q.contains("교과")) return true;
+            if (p.equals("학생부종합") && (q.contains("학종") || q.contains("종합"))) return true;
+        }
+        return false;
+    }
+
+    static Evidence priorEvidence(List<AdmissionsPriorResult> rows) {
+        AdmissionsPriorResult first = rows.stream().min(java.util.Comparator.comparing(AdmissionsPriorResult::getPriorResultId)).orElseThrow();
+        AdmissionsOfficialMaterial source = first.getSource();
+        String url = first.getSourceUrl() != null && !first.getSourceUrl().isBlank() ? first.getSourceUrl()
+                : source == null ? null : source.getDocumentUrl();
+        String title = first.getUniversity().getName() + " " + first.getResultYear() + "학년도(지난해) "
+                + roundLabel(first.getRoundType()) + (first.getGroupName() == null ? "" : " " + first.getGroupName() + "군")
+                + " 입시결과: " + first.getTypeName() + " " + first.getDepartmentName();
+        return Evidence.builder()
+                .stepNo(STEP_FACT)
+                .sourceClass(SourceClass.OFFICIAL_PRIOR_RESULT)
+                .refId("prior:" + first.getPriorResultId())
+                .refUrl(url)
+                .title(title)
+                .excerpt(formatPriorUnit(rows))
+                .note("대학 입학처 공식 입시결과(" + first.getResultYear() + "학년도, 지난해 — 올해 결과 아님) / 출처: "
+                        + (source == null ? first.getInstitutionName() : source.getTitle()))
+                .academicYear(first.getResultYear())
+                .yearConfirmed(true)
+                .build();
+    }
+
+    static String roundLabel(String roundType) {
+        return "JEONGSI".equals(roundType) ? "정시" : "SUSI".equals(roundType) ? "수시" : roundType;
+    }
+
+    /**
+     * 한 전형·모집단위의 기본 행(모집·지원·경쟁률·충원)과 지표 행을 한 줄로. 지표명은 원문 그대로 쓰고 값은 원문 문자열을
+     * 우선한다. 서로 다른 지표를 합치거나 환산하지 않는다. 원문에 없는 값은 쓰지 않는다.
+     */
+    static String formatPriorUnit(List<AdmissionsPriorResult> rows) {
+        StringBuilder sb = new StringBuilder();
+        AdmissionsPriorResult base = rows.stream().filter(AdmissionsPriorResult::isBaseRow).findFirst().orElse(null);
+        List<String> basics = new ArrayList<>();
+        if (base != null) {
+            if (base.getRecruitCount() != null) basics.add("모집인원 " + base.getRecruitCount() + "명");
+            if (base.getApplicantCount() != null) basics.add("지원자 " + base.getApplicantCount() + "명");
+            if (base.getCompetitionRate() != null) basics.add("경쟁률 " + base.getCompetitionRate().stripTrailingZeros().toPlainString() + ":1");
+            if (base.getExtraAdmittedCount() != null) basics.add("충원(추가합격) " + base.getExtraAdmittedCount() + "명");
+        }
+        sb.append(basics.isEmpty() ? "모집·지원·경쟁률 자료 없음" : String.join(", ", basics));
+        List<String> metrics = new ArrayList<>();
+        for (AdmissionsPriorResult r : rows) {
+            if (r.isBaseRow()) continue;
+            String value = r.getRawValueText() != null && !r.getRawValueText().isBlank() ? r.getRawValueText()
+                    : r.getMetricValue() == null ? "값 없음" : r.getMetricValue().stripTrailingZeros().toPlainString();
+            metrics.add(r.getMetricLabel() + " = " + value);
+        }
+        if (!metrics.isEmpty()) sb.append("\n성적 지표(대학 원문 표기 그대로, 지표끼리 합치거나 환산하지 않음): ").append(String.join("; ", metrics));
+        return sb.toString();
     }
 
     // ── 모집단위(학과) ───────────────────────────────────────────────

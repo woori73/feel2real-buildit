@@ -94,6 +94,15 @@ public class AdmissionsChatService {
             "합격 가능성은 판단해 드릴 수 없습니다. 대신 지원하려는 대학과 전형을 알려 주시면 모집인원·전형방법·수능최저처럼 "
                     + "지원 판단에 참고할 공식 모집요강 정보와 관련 유튜브 전문가 해석을 정리해 드립니다. "
                     + "예: \"성균관대 학생부종합 가능성\", \"아주대 교과전형 합격 가능성\"";
+    /** 지난해 입시결과 근거에 반드시 붙이는 안내. 답변에 없으면 서버가 앞에 붙인다. */
+    static final String PRIOR_DISCLAIMER = "아래 수치는 2026학년도(지난해) 결과이며 올해와 다를 수 있습니다.";
+
+    /** 입시결과를 물었지만 그 대학의 승인된 지난해 입시결과가 없을 때. */
+    static String msgPriorNotCollected(List<String> names) {
+        return String.join(", ", names) + "의 2026학년도(지난해) 공식 입시결과(경쟁률·입결·충원)는 아직 수집되지 않아 "
+                + "안내할 수 없습니다. 해당 대학 입학처의 입시결과 발표를 확인해 주세요.";
+    }
+
     static final String MSG_NOT_COLLECTED =
             "경쟁률·전년도 입시결과·충원 현황·권장 이수 과목은 아직 수집된 공식 자료가 없어 안내할 수 없습니다. "
                     + "해당 정보는 각 대학 입학처 발표를 확인해 주세요.";
@@ -192,8 +201,12 @@ public class AdmissionsChatService {
         if (parsed.asksAdmissionChance() && parsed.universities().isEmpty()) {
             return refuse(MSG_CHANCE_NEED_TARGET, sessionToken, question, academicYearFilter, studentProfile);
         }
-        if (parsed.asksNotCollected()) {
-            return refuse(MSG_NOT_COLLECTED, sessionToken, question, academicYearFilter, studentProfile);
+        boolean hasPrior = facts.evidence().stream().anyMatch(AdmissionsChatService::isPrior);
+        if (parsed.asksNotCollected() && !(parsed.asksPriorResult() && hasPrior && !asksRecommendedCourses(question))) {
+            // 대학을 말한 입시결과 질문인데 그 대학 자료가 없으면 "그 대학은 아직 수집 안 됨"으로 구체적으로 안내한다.
+            String msg = parsed.asksPriorResult() && !parsed.universities().isEmpty() && !asksRecommendedCourses(question)
+                    ? msgPriorNotCollected(parsed.universities()) : MSG_NOT_COLLECTED;
+            return refuse(msg, sessionToken, question, academicYearFilter, studentProfile);
         }
         if (parsed.asksAggregateStats() && parsed.universities().isEmpty()) {
             return refuse(MSG_AGGREGATE_NOT_COLLECTED, sessionToken, question, academicYearFilter, studentProfile);
@@ -246,7 +259,12 @@ public class AdmissionsChatService {
         String evidenceContext = buildEvidenceContext(usable);
         String systemPrompt = BASE_PROMPT + "\n\n[입시 공식자료 근거]\n" + evidenceContext
                 + buildGuideBlock(pack) + buildYoutubeBlock(pack);
-        String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile, facts.scheduleCoverage());
+        List<String> comparisons = hasPrior
+                ? priorComparisonLines(usable, AdmissionsQueryParser.studentScores(
+                        question + (studentProfile == null ? "" : "\n" + studentProfile)))
+                : List.of();
+        String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile, facts.scheduleCoverage(),
+                hasPrior, comparisons);
 
         // 7. LLM 호출
         NewStartLlmCompletion completion = admissionsLlmClient.complete(systemPrompt, userPrompt, MAX_ANSWER_CHARS);
@@ -262,9 +280,20 @@ public class AdmissionsChatService {
             return refuse(MSG_UNGROUNDED_NUMBER, sessionToken, question, academicYearFilter, studentProfile);
         }
 
+        String answer = completion.text();
+        boolean usesPrior = usable.stream().anyMatch(AdmissionsChatService::isPrior);
+        if (usesPrior || parsed.asksAdmissionChance()) {
+            // 8-1. 합격·불합격 판정 문장이 있으면 LLM 답변을 버리고 근거를 그대로 나열한 답변으로 바꾼다.
+            if (containsVerdict(answer)) {
+                log.warn("admissions answer replaced: verdict phrase");
+                answer = usesPrior ? priorFallbackAnswer(usable, comparisons) : MSG_CHANCE;
+            }
+        }
+        // 8-2. 지난해 결과를 썼으면 "지난해 결과이며 올해와 다를 수 있음"을 반드시 밝힌다.
+        if (usesPrior && !answer.contains("올해와 다를 수 있")) answer = PRIOR_DISCLAIMER + "\n" + answer;
+
         // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
         List<AnswerSource> sources = new ArrayList<>(buildSources(usable, question));
-        String answer = completion.text();
         // 답변이 유튜브 해석 단락을 썼으면 그 영상들을 공식 출처와 구분된 "참고" 출처로 붙인다.
         if (answer.contains("유튜브")) sources.addAll(youtubeSources(pack));
 
@@ -293,10 +322,90 @@ public class AdmissionsChatService {
                 .toList();
     }
 
-    /** 내용이 있는 사실 근거(학과·전형·일정 행, 사실 지식). 문서 제목만 있는 material은 제외. */
+    /** 내용이 있는 사실 근거(학과·전형·일정 행, 지난해 입시결과 행, 사실 지식). 문서 제목만 있는 material은 제외. */
     static boolean isFactRow(String refId) {
         return refId != null && (refId.startsWith("dept:") || refId.startsWith("type:")
-                || refId.startsWith("sched:") || refId.startsWith("knowledge:"));
+                || refId.startsWith("sched:") || refId.startsWith("prior:") || refId.startsWith("knowledge:"));
+    }
+
+    static boolean isPrior(Evidence e) {
+        return e.getSourceClass() == AdmissionsResearchService.SourceClass.OFFICIAL_PRIOR_RESULT;
+    }
+
+    /** 권장 이수 과목은 여전히 수집하지 않은 자료다. */
+    static boolean asksRecommendedCourses(String question) {
+        return question != null && question.matches("(?s).*권장\\s*(이수|과목).*");
+    }
+
+    /**
+     * 합격·불합격을 판정하거나 가능성을 높다/낮다로 말하는 문장. "합격 가능성은 판단해 드릴 수 없지만" 같은 안내 문장은 해당하지 않는다.
+     */
+    private static final java.util.regex.Pattern VERDICT = java.util.regex.Pattern.compile(
+            "(합격|붙)\\s*(할|을)\\s*(수\\s*있|것\\s*같|것으로|가능성이\\s*(높|크|있))"
+                    + "|떨어질|불합격|합격권|안정권|적정권|상향권|하향권|합격\\s*안정"
+                    + "|가능성(이|은)?\\s*(높|낮|크|작|충분|희박)"
+                    + "|충분히\\s*(합격|가능|노려|도전|해\\s*볼)"
+                    + "|(유리|불리)(합니다|해요|하다|한\\s*편|할\\s*수)"
+                    + "|(합격|지원)\\s*(이|은)?\\s*(어렵|힘들|무난)");
+
+    static boolean containsVerdict(String answer) {
+        return answer != null && VERDICT.matcher(answer).find();
+    }
+
+    /**
+     * 학생이 적은 성적과 같은 체계의 지난해 지표만 나란히 놓는 줄(서버가 만든다 — LLM이 비교 대상을 고르지 않게).
+     * 판정·확률은 쓰지 않는다. 체계가 다르거나 알 수 없으면 비교하지 않았다고 적는다.
+     * 등급의 내신/수능 구분이 질문에 없으면 수시 지표는 내신, 정시 지표는 수능 등급으로 보고 그 사실을 밝힌다.
+     */
+    static final int MAX_COMPARISONS_PER_UNIT = 6;
+
+    static List<String> priorComparisonLines(List<Evidence> evidence, List<AdmissionsQueryParser.StudentScore> scores) {
+        if (scores.isEmpty()) return List.of();
+        List<String> out = new ArrayList<>();
+        for (Evidence e : evidence) {
+            if (!isPrior(e) || e.getExcerpt() == null) continue;
+            boolean jeongsi = e.getTitle() != null && e.getTitle().contains(" 정시");
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("([^;:\\n]+?) = ([^;\\n]+)")
+                    .matcher(e.getExcerpt().substring(Math.max(0, e.getExcerpt().indexOf("성적 지표"))));
+            List<String> pairs = new ArrayList<>();
+            boolean anyMetric = false;
+            while (m.find()) {
+                anyMetric = true;
+                String label = m.group(1).strip();
+                String value = m.group(2).strip();
+                String kind = AdmissionsQueryParser.metricKind(label, null);
+                for (AdmissionsQueryParser.StudentScore s : scores) {
+                    String sk = s.kind();
+                    boolean assumed = false;
+                    if ("GRADE".equals(sk)) { sk = jeongsi ? "CSAT_GRADE" : "SCHOOL_GRADE"; assumed = true; }
+                    if (kind == null || !kind.equals(sk)) continue;
+                    pairs.add("지난해 " + label + " " + value + ", 입력 성적 " + s.text()
+                            + (assumed ? (jeongsi ? "(수능 등급으로 보고 비교)" : "(내신 등급으로 보고 비교)") : ""));
+                }
+            }
+            String head = e.getTitle() + ": ";
+            if (pairs.size() > MAX_COMPARISONS_PER_UNIT) pairs = pairs.subList(0, MAX_COMPARISONS_PER_UNIT);
+            if (!pairs.isEmpty()) out.add(head + String.join(" / ", pairs));
+            else if (anyMetric) out.add(head + "입력하신 성적과 같은 방식의 지표가 없어 비교하지 않음");
+            else out.add(head + "성적 지표가 공개되지 않아 비교하지 않음");
+        }
+        return out;
+    }
+
+    /** 판정 문장이 섞인 답변 대신 보여 줄, 근거를 그대로 옮긴 답변(LLM 문장 없음). */
+    static String priorFallbackAnswer(List<Evidence> evidence, List<String> comparisons) {
+        StringBuilder sb = new StringBuilder(PRIOR_DISCLAIMER)
+                .append(" 합격 가능성은 판단해 드릴 수 없어, 대학 입학처가 공개한 지난해 결과를 그대로 옮겨 드립니다.");
+        for (Evidence e : evidence) {
+            if (!isPrior(e)) continue;
+            sb.append("\n\n").append(e.getTitle()).append("\n").append(e.getExcerpt());
+        }
+        if (!comparisons.isEmpty()) {
+            sb.append("\n\n[입력하신 성적과 나란히 보기 — 판정 아님]");
+            for (String c : comparisons) sb.append("\n- ").append(c);
+        }
+        sb.append("\n\n지원 판단은 학교 진학 상담과 대학 입학처 상담을 함께 이용해 주세요.");
+        return sb.toString();
     }
 
     /** 사실 테이블 근거를 앞에 두고 중복(refId) 없이 합친다. */
@@ -379,7 +488,10 @@ public class AdmissionsChatService {
         for (Evidence e : evidence) {
             sb.append("── 근거 ").append(i++).append(" ──\n");
             sb.append("제목: ").append(e.getTitle()).append("\n");
-            if (e.getAcademicYear() != null) {
+            if (isPrior(e)) {
+                sb.append("결과 학년도: ").append(e.getAcademicYear())
+                        .append("학년도 (지난해 입시결과 — 올해 모집요강이 아니며 올해와 다를 수 있음)\n");
+            } else if (e.getAcademicYear() != null) {
                 sb.append("적용 학년도: ").append(e.getAcademicYear()).append("학년도");
                 sb.append(Boolean.TRUE.equals(e.getYearConfirmed()) ? " (확정)" : " (계획 단계)").append("\n");
             }
@@ -399,7 +511,8 @@ public class AdmissionsChatService {
     }
 
     private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed, String studentProfile,
-                                   AdmissionsFactSearchService.ScheduleCoverage coverage) {
+                                   AdmissionsFactSearchService.ScheduleCoverage coverage, boolean hasPrior,
+                                   List<String> comparisons) {
         StringBuilder sb = new StringBuilder();
         if (studentProfile != null && !studentProfile.isBlank()) {
             sb.append("[학생 정보 — 맞춤 설명에만 사용하며 합격 가능성을 추정하지 않는다]\n")
@@ -429,6 +542,19 @@ public class AdmissionsChatService {
                         .append(" — 이 대학들은 '확인된 일정 자료가 없다'고 밝히고 각 대학 입학처 확인을 안내하라.");
             }
             sb.append(" 답변 첫머리에 기준 학년도를 밝혀라.\n");
+        }
+        if (hasPrior) {
+            sb.append("[지난해 입시결과] 근거 중 '결과 학년도: 2026학년도'인 항목은 지난해 입시결과다. 이 수치를 쓸 때는 답변 첫머리에 '")
+                    .append(PRIOR_DISCLAIMER).append("'라고 밝히고, 올해(2027학년도) 모집요강 수치와 섞지 마라. "
+                    + "지표 이름은 근거에 적힌 원문 그대로 쓰고(예: '최종등록자 교과등급 70%컷'을 '평균'이나 '합격선'으로 바꾸지 않음), "
+                    + "서로 다른 지표나 서로 다른 대학의 지표를 하나로 합치거나 평균내거나 환산하지 마라. 대학마다 지표가 다르면 대학별로 따로 적어라. "
+                    + "근거에 없는 지표·수치는 쓰지 말고 '공개되지 않음'이라고 하라. 출처는 '대학 입학처 공식 입시결과(지난해)'라고 밝혀라. "
+                    + "합격·불합격 판정, 합격 확률, '가능성이 높다/낮다', '안정권/상향' 같은 표현은 절대 쓰지 마라.\n");
+            if (!comparisons.isEmpty()) {
+                sb.append("[성적 나란히 보기 — 서버가 만든 줄, 판정 없이 그대로 옮겨라]\n");
+                for (String c : comparisons) sb.append("- ").append(c).append("\n");
+                sb.append("위 줄 외에 학생 성적과 지표를 새로 비교하거나 차이를 해석하지 마라.\n");
+            }
         }
         if (parsed.asksAdmissionChance()) {
             sb.append("[합격 가능성 질문] 합격 가능성·합격 확률·합격선은 판단하거나 추정하지 마라. 답변 첫 문장에서 "
@@ -481,11 +607,18 @@ public class AdmissionsChatService {
                 case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
                 case OFFICIAL_PLANNED -> "공식 자료 (계획)";
                 case OFFICIAL_DOCUMENT -> "공식자료 원문";
+                case OFFICIAL_PRIOR_RESULT -> "공식 입시결과 (지난해)";
                 case UNVERIFIED_MIRROR -> "사설 미러본 (공식 원본 아님)";
                 default -> "참고 자료";
             };
             String url = e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl();
             out.add(new AnswerSource(kind, e.getTitle(), url, e.getRefId()));
+        }
+        // 지난해 결과를 근거로 줬으면 출처에도 반드시 하나 이상 보인다.
+        if (out.stream().noneMatch(s -> s.id() != null && s.id().startsWith("prior:"))) {
+            evidence.stream().filter(AdmissionsChatService::isPrior).findFirst().ifPresent(e -> out.add(0,
+                    new AnswerSource("공식 입시결과 (지난해)", e.getTitle(),
+                            e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl(), e.getRefId())));
         }
         return out;
     }
