@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.A
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsUniversity;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,7 @@ class AdmissionsKnowledgeBuildServiceTest {
     private AdmissionsTypeRepository typeRepository;
     private AdmissionsScheduleRepository scheduleRepository;
     private AdmissionsKnowledgeItemRepository knowledgeRepository;
+    private AdmissionsPriorResultRepository priorResultRepository;
     private AdmissionsKnowledgeBuildService service;
 
     private final Map<String, AdmissionsKnowledgeItem> store = new HashMap<>();
@@ -49,8 +51,9 @@ class AdmissionsKnowledgeBuildServiceTest {
         typeRepository = mock(AdmissionsTypeRepository.class);
         scheduleRepository = mock(AdmissionsScheduleRepository.class);
         knowledgeRepository = mock(AdmissionsKnowledgeItemRepository.class);
+        priorResultRepository = mock(AdmissionsPriorResultRepository.class);
         service = new AdmissionsKnowledgeBuildService(
-                typeRepository, scheduleRepository, knowledgeRepository);
+                typeRepository, scheduleRepository, knowledgeRepository, priorResultRepository);
 
         korea = AdmissionsUniversity.builder().universityId(10L).name("고려대학교").build();
         sejongMaterial = AdmissionsOfficialMaterial.builder()

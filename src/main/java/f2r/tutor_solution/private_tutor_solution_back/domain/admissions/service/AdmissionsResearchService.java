@@ -92,7 +92,9 @@ public class AdmissionsResearchService {
         /** 답변 형식 안내문(GUIDE) — 사실 근거가 아니며 출처로 표시하지 않는다 */
         GUIDE_NOTE,
         /** 사설 미러본(공식 원본 미확보) — 공식 자료로 표시하거나 확정 근거로 쓰지 않는다 */
-        UNVERIFIED_MIRROR
+        UNVERIFIED_MIRROR,
+        /** 대학 입학처가 공식 게시한 지난해(2026학년도) 입시결과 — 올해 결과가 아님을 밝혀야 한다 */
+        OFFICIAL_PRIOR_RESULT
     }
 
     @Getter
@@ -349,6 +351,9 @@ public class AdmissionsResearchService {
         String key = k.getDedupKey();
         if (key == null) return true;
         if (key.startsWith("material:")) return false;
+        // 지난해 입시결과 항목은 이 일반 검색에 섞지 않는다(올해 모집인원 질문에 지난해 숫자가 섞이지 않게).
+        // 입시결과는 질문이 경쟁률·입결·충원·합격 가능성을 물을 때만 AdmissionsFactSearchService가 원본 행에서 직접 근거로 만든다.
+        if (key.startsWith("prior:")) return false;
         if (key.startsWith("type:")) return activeTypes.contains(lastId(key));
         if (key.startsWith("schedule:")) return activeSchedules.contains(lastId(key));
         return true;

@@ -15,12 +15,13 @@
         types = list('ipsi_admission_types'), schedules = list('ipsi_schedules');
     if (!universities.length) { out.error = 'ipsi_universities가 비어 있습니다.'; return out; }
     out.counts = { universities: universities.length, documents: documents.length, departments: departments.length,
-                   types: types.length, schedules: schedules.length, youtube: list('youtube_knowledge').length };
+                   types: types.length, schedules: schedules.length, youtube: list('youtube_knowledge').length,
+                   priorResults: list('prior_results').length };
     var codes = {}, docKeys = {}, years = {};
     universities.forEach(function (u) { codes[u.university_code] = true; });
     documents.forEach(function (d) { docKeys[d.document_key] = true; years[d.applicable_academic_year] = true; });
     var badUniv = 0, badDoc = 0;
-    [departments, types, schedules].forEach(function (rows) {
+    [departments, types, schedules, list('prior_results')].forEach(function (rows) {
       rows.forEach(function (r) {
         years[r.academic_year] = true;
         if (!codes[r.university_code]) badUniv++;
@@ -96,6 +97,7 @@
     if (typeof r.supersededArchived === 'number') text += ' · 예전 자료 보관 ' + r.supersededArchived;
     if (typeof r.schedulesSourced === 'number') text += ' · 일정 출처 연결 ' + r.schedulesSourced;
     if (typeof r.youtubeKnowledge === 'number' && r.youtubeKnowledge > 0) text += ' · 유튜브 해석 ' + r.youtubeKnowledge;
+    if (typeof r.priorResults === 'number') text += ' · 지난해 입시결과 신규 ' + r.priorResults + ' · 변경 ' + r.priorResultsUpdated;
     return text + ' · 상태 ' + r.status;
   }
 
@@ -140,7 +142,8 @@
         if (preview.error) { show('미리보기 실패: ' + preview.error, true); return; }
         var c = preview.counts;
         show('미리보기 — 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 학과 ' + c.departments + ' · 전형 ' + c.types +
-             ' · 일정 ' + c.schedules + (c.youtube ? ' · 유튜브 해석 ' + c.youtube : '') + ' / 학년도 ' + preview.years.join(', ') +
+             ' · 일정 ' + c.schedules + (c.youtube ? ' · 유튜브 해석 ' + c.youtube : '') +
+             (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + ' / 학년도 ' + preview.years.join(', ') +
              (preview.warnings.length ? '\n⚠ ' + preview.warnings.join('\n⚠ ') : '\n이상 없음. 적재는 DRAFT 상태로 들어가며 기존 자료는 중복 적재되지 않습니다.'), preview.warnings.length > 0 && !preview.ok);
         applyLoadControls();
       };
@@ -151,7 +154,7 @@
       if (loading || loaded || !preview || !preview.ok || !fileText) return;
       var c = preview.counts;
       if (!window.confirm('대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 전형 ' + c.types + ' · 일정 ' + c.schedules +
-          '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
+          (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
       loading = true; applyLoadControls();
       show('적재 중입니다. 1~3분 걸립니다. 결과가 나올 때까지 이 화면을 그대로 두세요.', false);
       try {
@@ -175,7 +178,8 @@
         var r = await post('/api/admin/admissions/activate-all', body);
         show('승격 결과 — 공식자료 ' + r.materials + ' · 학과 ' + r.departments + ' · 전형 ' + r.types + ' · 일정 ' + r.schedules +
              (typeof r.excludedMaterials === 'number' ? ' · 제외 자료 ' + r.excludedMaterials + ' · 제외 하위 행 ' + r.excludedChildren : '') +
-             (typeof r.knowledgeItems === 'number' ? ' · 지식항목 ' + r.knowledgeItems : '') + ' · ' + r.status, false);
+             (typeof r.knowledgeItems === 'number' ? ' · 지식항목 ' + r.knowledgeItems : '') +
+             (typeof r.priorResults === 'number' ? ' · 지난해 입시결과 ' + r.priorResults : '') + ' · ' + r.status, false);
       } catch (e) { show('승격 실패: ' + e.message, true); }
     });
 

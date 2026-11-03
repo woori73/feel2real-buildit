@@ -1804,6 +1804,22 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 
 > 정정(v3.3 수정 PR): 공식자료(material)는 지식 항목으로 변환하지 않는다. 항목은 근거 전형·일정 행이 ACTIVE일 때만 검색 대상이며, 검색은 대학·캠퍼스·수시/정시·학년도 필터 후 키워드/벡터 관련성 하한을 통과한 항목만 근거로 반환한다.
 
+## 지난해 입시결과 (admissions_prior_results, V1099)
+
+대학 입학처가 공식 게시한 **2026학년도(지난해) 입시결과**(경쟁률·충원·등록자 성적)를 대학·전형·모집단위별로 보관한다. 상담에서 경쟁률·입결·충원·등급컷을 물을 때 근거로 쓴다.
+
+- **출처 규칙**: 각 대학 입학처의 공식 "입시결과" 파일(PDF/HWP/XLSX/HTML)만. 대학어디가(adiga.kr)·수능 사이트는 자동 수집하지 않고 링크·메타만 남긴다. 사설 배치표·학원·커뮤니티 수치는 넣지 않는다. 수집은 buildit-admissions(`scripts/ipsi_fetch.py` RobotsGate 통과)에서 하고, 결과는 시드 최상위 `prior_results`로 들어온다.
+- **행 모양**: 한 행 = (대학, 결과학년도, 트랙 `SUSI|JEONGSI`, 군, 전형명, 모집단위명, 지표명).
+  - 기본 행(`metric_label=''`): `recruit_count`·`applicant_count`·`competition_rate`·`extra_admitted_count`만 담는다(원문에 없으면 NULL, 추정·역산 금지).
+  - 지표 행: `metric_label`(대학 원문 지표명 그대로, 예 "최종등록자 교과등급 70%컷")·`metric_unit`(GRADE/PERCENTILE/SCORE/OTHER)·`metric_value`·`raw_value_text`(원문 셀 문자열). 서로 다른 지표를 합치거나 환산하지 않는다.
+  - `extra_admitted_count`는 **충원 인원**일 때만 채운다. 원문이 "마지막 예비번호(충원합격순위·추합 번호)"만 주면 인원 칸은 NULL로 두고 그 값을 원문 이름의 지표 행(OTHER)으로 남긴다.
+- **학년도 두 개**: `academic_year`=상담 학년도(2027, 승격 단위), `result_year`=결과 학년도(2026). 전형·모집단위명은 원문 그대로 저장하고, 2027 이름과 정확히 같을 때만 `linked_type_name`·`linked_department_name`에 적는다.
+- **자연키·멱등**: `natural_key`=SHA-256(결과학년도|트랙|군|전형|모집단위|지표명), `UNIQUE(university_id, natural_key)`. 재적재 시 같은 키는 새 행을 만들지 않고, 값·출처가 바뀐 행만 갱신해 DRAFT로 되돌린다(같으면 승인 상태 유지).
+- **출처 연결**: `source_id`→`admissions_official_materials`(시드 `ipsi_documents`의 "…2026학년도 수시/정시 입시결과" 문서, document_key `doc_{대학키}_2026_{susi|jeongsi}_result`, applicable_academic_year 2027). `source_url`(원문 파일 주소)·`institution_name`·`published_at`·`evidence_pages`도 행에 남긴다.
+- **상태**: DRAFT로 들어오고 activate-all(2027)이 공식자료와 함께 ACTIVE로 올린다(자료 제외 키 규칙 동일 적용). 상담 검색은 행과 출처 자료가 모두 ACTIVE일 때만 쓴다.
+- **지식 항목**: knowledge/build가 (대학, 학년도, 트랙·군·전형·모집단위) 묶음마다 `prior:{대학ID}:{학년도}:{묶음 최소 행ID}` 항목(FACT, 분류 "입시결과")을 만든다. 일반 RAG 검색에는 섞지 않는다(올해 질문에 지난해 숫자가 섞이지 않게) — 상담은 입시결과 질문일 때 행에서 직접 근거를 만든다.
+- **CRUD 범위**: 생성·갱신은 시드 적재로만, 삭제 API 없음(Create/Update-only). 잘못된 행은 원본 수집본을 고쳐 재적재하면 갱신되고 DRAFT로 돌아간다. 시드에서 빠진 행을 자동 보관하는 규칙은 아직 없다(향후 authoritative 규칙 확장 시 추가).
+
 ## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)
 
 - `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.

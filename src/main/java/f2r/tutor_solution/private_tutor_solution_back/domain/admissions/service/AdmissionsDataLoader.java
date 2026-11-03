@@ -5,12 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsDepartment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsSchedule;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsUniversity;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsDepartmentRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsKnowledgeItemRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsUniversityRepository;
@@ -46,6 +48,7 @@ public class AdmissionsDataLoader {
     private final AdmissionsTypeRepository typeRepository;
     private final AdmissionsScheduleRepository scheduleRepository;
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
+    private final AdmissionsPriorResultRepository priorResultRepository;
 
     /**
      * 적재 결과. departmentsUpdated·typesUpdated는 이미 있던 행(같은 대학·학년도·이름) 중 내용이 바뀌어
@@ -56,10 +59,19 @@ public class AdmissionsDataLoader {
     public record LoadResult(int universities, int materials, int departments,
                              int types, int schedules, int knowledgeItems, int skipped,
                              int departmentsUpdated, int typesUpdated, int schedulesArchived,
-                             int supersededArchived, int schedulesSourced) {
+                             int supersededArchived, int schedulesSourced,
+                             int priorResults, int priorResultsUpdated) {
         public LoadResult(int universities, int materials, int departments,
                           int types, int schedules, int knowledgeItems, int skipped) {
-            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0, 0, 0);
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0, 0, 0, 0, 0);
+        }
+
+        public LoadResult(int universities, int materials, int departments,
+                          int types, int schedules, int knowledgeItems, int skipped,
+                          int departmentsUpdated, int typesUpdated, int schedulesArchived,
+                          int supersededArchived, int schedulesSourced) {
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped,
+                    departmentsUpdated, typesUpdated, schedulesArchived, supersededArchived, schedulesSourced, 0, 0);
         }
     }
 
@@ -288,15 +300,133 @@ public class AdmissionsDataLoader {
         }
 
         int youtube = loadYoutubeKnowledge(root.path("youtube_knowledge"));
+        int[] prior = loadPriorResults(root.path("prior_results"), univByCode, matByKey);
 
         int superseded = 0;
         for (JsonNode code : root.path("authoritative_universities")) {
             superseded += archiveSuperseded(root, code.asText(), univByCode);
         }
 
-        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={}",
-                univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
-        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, youtube, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced);
+        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={} prior={} priorUpdated={}",
+                univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced,
+                prior[0], prior[1]);
+        return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, youtube, skipped, deptUpdated, typeUpdated,
+                schedArchived, superseded, schedSourced, prior[0], prior[1]);
+    }
+
+    /**
+     * 시드의 prior_results(지난해 입시결과)를 DRAFT로 넣는다. 자연키(대학·결과학년도·트랙·군·전형·모집단위·지표명)가 같으면
+     * 새로 만들지 않고, 값이나 출처가 바뀐 행만 갱신해 DRAFT로 되돌린다(재승인 필요). 같은 시드를 다시 적재해도 중복이 없다.
+     * 상담 학년도(academic_year)가 2027·2028이 아니거나 결과 학년도·전형·모집단위가 비어 있는 행은 건너뛴다.
+     * @return [새로 넣은 수, 갱신한 수]
+     */
+    int[] loadPriorResults(JsonNode rows, Map<String, AdmissionsUniversity> univByCode,
+                           Map<String, AdmissionsOfficialMaterial> matByKey) {
+        if (rows == null || !rows.isArray() || rows.isEmpty()) return new int[] {0, 0};
+        Map<String, AdmissionsPriorResult> existing = new HashMap<>();
+        priorResultRepository.findAll().forEach(r ->
+                existing.putIfAbsent(r.getUniversity().getUniversityId() + "|" + r.getNaturalKey(), r));
+        int created = 0;
+        int updated = 0;
+        for (JsonNode r : rows) {
+            AdmissionsUniversity univ = requireUniversity(univByCode, r.path("university_code").asText(), "prior_results");
+            Integer year = readSupportedYear(r.path("academic_year"));
+            int resultYear = r.path("result_year").asInt(0);
+            String round = r.path("round_type").asText("");
+            String type = r.path("type_name").asText("").strip();
+            String dept = r.path("department_name").asText("").strip();
+            if (year == null || resultYear < 2020 || round.isBlank() || type.isEmpty() || dept.isEmpty()) continue;
+            String group = textOrNull(r.path("group"));
+            String label = r.path("metric_label").isNull() ? "" : r.path("metric_label").asText("").strip();
+            String naturalKey = priorNaturalKey(resultYear, round, group, type, dept, label);
+            AdmissionsOfficialMaterial src = matByKey.get(r.path("source_document_key").asText(null));
+            AdmissionsPriorResult row = existing.get(univ.getUniversityId() + "|" + naturalKey);
+            boolean isNew = row == null;
+            if (isNew) {
+                row = AdmissionsPriorResult.builder()
+                        .university(univ).academicYear(year).resultYear(resultYear).roundType(round).groupName(group)
+                        .typeName(type).departmentName(dept).metricLabel(label).naturalKey(naturalKey).build();
+            }
+            String before = isNew ? null : priorSignature(row);
+            row.setAcademicYear(year);
+            row.setMetricUnit(textOrNull(r.path("metric_unit")));
+            row.setMetricValue(decimalOrNull(r.path("metric_value")));
+            row.setRawValueText(truncate(textOrNull(r.path("raw_value_text")), 200));
+            row.setRecruitCount(intOrNull(r.path("recruit_count")));
+            row.setApplicantCount(intOrNull(r.path("applicant_count")));
+            row.setCompetitionRate(decimalOrNull(r.path("competition_rate")));
+            row.setExtraAdmittedCount(intOrNull(r.path("extra_admitted_count")));
+            row.setLinkedTypeName(truncate(textOrNull(r.path("linked_2027_type_name")), 200));
+            row.setLinkedDepartmentName(truncate(textOrNull(r.path("linked_2027_department_name")), 200));
+            row.setSourceUrl(truncate(textOrNull(r.path("source_url")), 1000));
+            row.setInstitutionName(truncate(textOrNull(r.path("institution_name")), 200));
+            row.setPublishedAt(parseDate(textOrNull(r.path("published_at"))));
+            row.setEvidencePages(truncate(r.path("evidence_pages").isArray() ? r.path("evidence_pages").toString() : null, 100));
+            if (src != null) row.setSource(src);
+            if (isNew) {
+                priorResultRepository.save(row);
+                existing.put(univ.getUniversityId() + "|" + naturalKey, row);
+                created++;
+            } else if (!before.equals(priorSignature(row))) {
+                row.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                priorResultRepository.save(row);
+                updated++;
+            }
+        }
+        return new int[] {created, updated};
+    }
+
+    static String priorNaturalKey(int resultYear, String round, String group, String type, String dept, String label) {
+        String raw = resultYear + "|" + round + "|" + (group == null ? "" : group) + "|" + type + "|" + dept + "|" + label;
+        try {
+            byte[] h = java.security.MessageDigest.getInstance("SHA-256").digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : h) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** 바뀌었는지 비교할 값 묶음(학년도·값·출처). 상태·시각은 넣지 않는다. */
+    private static String priorSignature(AdmissionsPriorResult r) {
+        return r.getAcademicYear() + "|" + r.getMetricUnit() + "|" + plain(r.getMetricValue()) + "|" + r.getRawValueText()
+                + "|" + r.getRecruitCount() + "|" + r.getApplicantCount() + "|" + plain(r.getCompetitionRate()) + "|" + r.getExtraAdmittedCount()
+                + "|" + r.getLinkedTypeName() + "|" + r.getLinkedDepartmentName() + "|" + r.getSourceUrl() + "|" + r.getInstitutionName()
+                + "|" + r.getPublishedAt() + "|" + r.getEvidencePages() + "|" + (r.getSource() == null ? null : r.getSource().getMaterialId());
+    }
+
+    private static String plain(java.math.BigDecimal v) {
+        return v == null ? null : v.stripTrailingZeros().toPlainString();
+    }
+
+    private static String textOrNull(JsonNode n) {
+        if (n == null || n.isMissingNode() || n.isNull()) return null;
+        String t = n.asText("").strip();
+        return t.isEmpty() ? null : t;
+    }
+
+    private static Integer intOrNull(JsonNode n) {
+        if (n == null || n.isMissingNode() || n.isNull()) return null;
+        if (n.isIntegralNumber()) return n.asInt();
+        try {
+            return Integer.valueOf(n.asText("").replace(",", "").strip());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static java.math.BigDecimal decimalOrNull(JsonNode n) {
+        if (n == null || n.isMissingNode() || n.isNull()) return null;
+        try {
+            return n.isNumber() ? n.decimalValue() : new java.math.BigDecimal(n.asText("").replace(",", "").strip());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static String truncate(String s, int max) {
+        return s == null || s.length() <= max ? s : s.substring(0, max);
     }
 
     /**

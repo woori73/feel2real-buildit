@@ -17,7 +17,7 @@ test('given a valid seed when previewed then counts, years and no warnings are r
   const r = load.summarizeSeed(text);
   // then
   assert.equal(r.ok, true);
-  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1, youtube: 0 });
+  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1, youtube: 0, priorResults: 0 });
   assert.deepEqual(r.years, [2027]);
   assert.deepEqual(r.warnings, []);
 });
@@ -174,4 +174,26 @@ test('given a finished load when controls are computed then the button stays off
 
 test('given no valid preview when controls are computed then the load button is off', () => {
   assert.deepEqual(load.loadControls({ loading: false, loaded: false, previewOk: false }), { fileDisabled: false, runDisabled: true });
+});
+
+test('given a seed with prior_results when previewed then the prior result count is reported and unknown codes are warned', () => {
+  // given
+  const text = JSON.stringify(Object.assign({}, SEED, { prior_results: [
+    { university_code: SEED.ipsi_universities[0].university_code, academic_year: 2027, source_document_key: SEED.ipsi_documents[0].document_key },
+    { university_code: 'NOPE', academic_year: 2027, source_document_key: SEED.ipsi_documents[0].document_key }] }));
+  // when
+  const r = load.summarizeSeed(text);
+  // then
+  assert.equal(r.counts.priorResults, 2);
+  assert.ok(r.warnings.some(w => /university_code/.test(w)));
+});
+
+test('given a load response with prior result counts when formatting then new and changed counts are shown', () => {
+  // given
+  const r = { universities: 0, materials: 2, departments: 0, types: 0, schedules: 0, skippedUnknownYear: 0,
+              priorResults: 950, priorResultsUpdated: 3, status: 'LOADED' };
+  // when
+  const text = load.formatLoadResult(r);
+  // then
+  assert.match(text, /지난해 입시결과 신규 950 · 변경 3/);
 });

@@ -45,6 +45,7 @@ public class AdmissionsKnowledgeBuildService {
     private final AdmissionsTypeRepository typeRepository;
     private final AdmissionsScheduleRepository scheduleRepository;
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository priorResultRepository;
 
     /**
      * @param created 새로 만든 항목 수
@@ -65,6 +66,17 @@ public class AdmissionsKnowledgeBuildService {
         }
         for (AdmissionsSchedule s : scheduleRepository.findAll()) {
             apply(fromSchedule(s), counters, changedIds);
+        }
+        // 지난해 입시결과: 대학·상담학년도·전형·모집단위(·군)마다 항목 1건(기본 행 + 지표 행을 한 본문에).
+        java.util.Map<String, List<f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult>> units =
+                new java.util.LinkedHashMap<>();
+        for (var r : priorResultRepository.findAll()) {
+            if (r.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
+            units.computeIfAbsent(universityId(r.getUniversity()) + "|" + r.getAcademicYear() + "|" + r.unitKey(),
+                    k -> new ArrayList<>()).add(r);
+        }
+        for (var rows : units.values()) {
+            apply(fromPriorUnit(rows), counters, changedIds);
         }
 
         log.info("admissions knowledge build: created={} updated={} unchanged={}",
@@ -111,6 +123,39 @@ public class AdmissionsKnowledgeBuildService {
         return baseItem(s.getAcademicYear(), title, content.toString(), "일정",
                 tags, s.getSource(),
                 "schedule:" + universityId(s.getUniversity()) + ":" + s.getAcademicYear() + ":" + s.getScheduleId());
+    }
+
+    /**
+     * 지난해 입시결과 한 단위(전형·모집단위) → 지식 항목. 지표명은 원문 그대로, 값은 원문 문자열을 우선한다.
+     * dedupKey의 마지막 숫자는 그 단위의 대표 행 ID(가장 작은 ID)라 승격 시 원본 행이 ACTIVE인지 확인할 수 있다.
+     */
+    static AdmissionsKnowledgeItem fromPriorUnit(List<f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult> rows) {
+        var first = rows.stream().min(java.util.Comparator.comparing(
+                f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult::getPriorResultId)).orElseThrow();
+        String univName = universityName(first.getUniversity());
+        String title = univName + " " + first.getResultYear() + "학년도(지난해) " + AdmissionsFactSearchService.roundLabel(first.getRoundType())
+                + (first.getGroupName() == null ? "" : " " + first.getGroupName() + "군") + " 입시결과: "
+                + first.getTypeName() + " " + first.getDepartmentName();
+        StringBuilder content = new StringBuilder(title);
+        content.append("\n").append(AdmissionsFactSearchService.formatPriorUnit(rows));
+        appendSourceLine(content, first.getSource());
+        AdmissionsKnowledgeItem item = AdmissionsKnowledgeItem.builder()
+                .academicYear(first.getAcademicYear())
+                .yearConfirmed(true)
+                .title(title)
+                .content(content.toString())
+                .category("입시결과")
+                .tags("입시결과 경쟁률 입결 지난해 " + first.getResultYear())
+                .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                .source(first.getSource())
+                .sourceUrl(first.getSourceUrl() != null ? first.getSourceUrl()
+                        : first.getSource() != null ? first.getSource().getDocumentUrl() : null)
+                .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
+                .role(AdmissionsKnowledgeItem.Role.FACT)
+                .dedupKey("prior:" + universityId(first.getUniversity()) + ":" + first.getAcademicYear() + ":" + first.getPriorResultId())
+                .createdBy(CREATED_BY)
+                .build();
+        return item;
     }
 
     private AdmissionsKnowledgeItem baseItem(Integer academicYear, String title, String content,
@@ -167,11 +212,11 @@ public class AdmissionsKnowledgeBuildService {
         }
     }
 
-    private static String universityName(AdmissionsUniversity u) {
+    static String universityName(AdmissionsUniversity u) {
         return u != null && u.getName() != null ? u.getName() : "대학 미상";
     }
 
-    private static Long universityId(AdmissionsUniversity u) {
+    static Long universityId(AdmissionsUniversity u) {
         return u != null ? u.getUniversityId() : 0L;
     }
 

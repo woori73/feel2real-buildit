@@ -37,9 +37,15 @@ public class AdmissionsActivationService {
     private final AdmissionsTypeRepository types;
     private final AdmissionsScheduleRepository schedules;
     private final AdmissionsKnowledgeItemRepository knowledgeItems;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository priorResults;
 
     public record ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
-                                   int excludedMaterials, int excludedChildren, int knowledgeItems) {}
+                                   int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults) {
+        public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
+                                int excludedMaterials, int excludedChildren, int knowledgeItems) {
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, 0);
+        }
+    }
 
     public static String confirmationFor(int academicYear) {
         return "ACTIVATE-ALL-" + academicYear;
@@ -84,11 +90,21 @@ public class AdmissionsActivationService {
                 row.setStatus(KnowledgeStatus.ACTIVE); s++;
             }
         }
+        // 지난해 입시결과(상담 학년도 = academicYear)도 같은 규칙으로 승격한다. 출처 자료가 제외 대상이면 함께 제외.
+        int p = 0;
+        for (var row : priorResults.findAll()) {
+            if (row.getAcademicYear() == academicYear && promotable(row.getStatus())) {
+                if (excludedBySource(row.getSource(), excluded)) { exC++; continue; }
+                row.setStatus(KnowledgeStatus.ACTIVE); p++;
+            }
+        }
         int k = 0;
         java.util.Set<Long> activeTypes = new java.util.HashSet<>();
         types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
         java.util.Set<Long> activeSchedules = new java.util.HashSet<>();
         schedules.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeSchedules.add(row.getScheduleId()); });
+        java.util.Set<Long> activePrior = new java.util.HashSet<>();
+        priorResults.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activePrior.add(row.getPriorResultId()); });
         for (var item : knowledgeItems.findAll()) {
             if (item.getAcademicYear() != academicYear || !promotable(item.getStatus())) continue;
             String key = item.getDedupKey() == null ? "" : item.getDedupKey();
@@ -98,13 +114,14 @@ public class AdmissionsActivationService {
             if (!youtube) {
                 if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
                 boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
-                        || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)));
+                        || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)))
+                        || (key.startsWith("prior:") && activePrior.contains(idOf(key)));
                 if (!backed) continue;
             }
             item.setStatus(KnowledgeStatus.ACTIVE);
             k++;
         }
-        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k);
+        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p);
     }
 
     /** 출처 자료가 제외 대상이면 true. 출처가 없는 행은 제외할 근거가 없어 승격 대상에 남는다. */
