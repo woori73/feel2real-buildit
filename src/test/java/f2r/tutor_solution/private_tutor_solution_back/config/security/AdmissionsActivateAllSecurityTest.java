@@ -64,6 +64,7 @@ class AdmissionsActivateAllSecurityTest {
   @MockitoBean AdmissionsKnowledgeBuildService knowledgeBuildService;
   @MockitoBean AdmissionsEmbeddingService embeddingService;
   @MockitoBean AdmissionsReindexJob reindexJob;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob knowledgeBuildJob;
   @MockitoBean AdmissionsKnowledgeItemRepository knowledgeRepository;
   @MockitoBean AdmissionsVectorIndex vectorIndex;
   @MockitoBean AdmissionsDataLoader dataLoader;

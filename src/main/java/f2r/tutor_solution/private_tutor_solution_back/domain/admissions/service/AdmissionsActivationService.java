@@ -91,20 +91,19 @@ public class AdmissionsActivationService {
             }
         }
         // 지난해 입시결과(상담 학년도 = academicYear)도 같은 규칙으로 승격한다. 출처 자료가 제외 대상이면 함께 제외.
-        int p = 0;
-        for (var row : priorResults.findAll()) {
-            if (row.getAcademicYear() == academicYear && promotable(row.getStatus())) {
-                if (excludedBySource(row.getSource(), excluded)) { exC++; continue; }
-                row.setStatus(KnowledgeStatus.ACTIVE); p++;
-            }
+        // 행이 수십만 건이 될 수 있어 엔티티로 읽지 않고 한 문장으로 바꾼다(앞의 변경은 먼저 반영된다).
+        java.util.List<KnowledgeStatus> promotableStatuses = java.util.List.of(KnowledgeStatus.DRAFT, KnowledgeStatus.REVIEW);
+        // 빈 IN 목록을 피하려고, 제외할 자료가 없으면 실제 file_key와 겹칠 수 없는 값을 넣는다.
+        java.util.Collection<String> excludedKeys = excluded.isEmpty() ? java.util.List.of("__no_excluded_file__") : excluded;
+        if (!excluded.isEmpty()) {
+            exC += (int) priorResults.countPromotableFromFiles(academicYear, promotableStatuses, excluded);
         }
+        int p = priorResults.promote(academicYear, promotableStatuses, KnowledgeStatus.ACTIVE, excludedKeys);
         int k = 0;
         java.util.Set<Long> activeTypes = new java.util.HashSet<>();
         types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
         java.util.Set<Long> activeSchedules = new java.util.HashSet<>();
         schedules.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeSchedules.add(row.getScheduleId()); });
-        java.util.Set<Long> activePrior = new java.util.HashSet<>();
-        priorResults.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activePrior.add(row.getPriorResultId()); });
         for (var item : knowledgeItems.findAll()) {
             if (item.getAcademicYear() != academicYear || !promotable(item.getStatus())) continue;
             String key = item.getDedupKey() == null ? "" : item.getDedupKey();
@@ -114,8 +113,7 @@ public class AdmissionsActivationService {
             if (!youtube) {
                 if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
                 boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
-                        || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)))
-                        || (key.startsWith("prior:") && activePrior.contains(idOf(key)));
+                        || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)));
                 if (!backed) continue;
             }
             item.setStatus(KnowledgeStatus.ACTIVE);

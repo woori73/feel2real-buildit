@@ -324,7 +324,13 @@ public class AdmissionsDataLoader {
                            Map<String, AdmissionsOfficialMaterial> matByKey) {
         if (rows == null || !rows.isArray() || rows.isEmpty()) return new int[] {0, 0};
         Map<String, AdmissionsPriorResult> existing = new HashMap<>();
-        priorResultRepository.findAll().forEach(r ->
+        // 이번 시드에 나온 대학의 기존 행만 읽는다(187개교면 전체가 수십만 행).
+        java.util.Set<Long> seedUnivIds = new java.util.HashSet<>();
+        for (JsonNode r : rows) {
+            AdmissionsUniversity u = univByCode.get(r.path("university_code").asText());
+            if (u != null) seedUnivIds.add(u.getUniversityId());
+        }
+        priorResultRepository.findByUniversityUniversityIdIn(seedUnivIds).forEach(r ->
                 existing.putIfAbsent(r.getUniversity().getUniversityId() + "|" + r.getNaturalKey(), r));
         int created = 0;
         int updated = 0;
@@ -563,11 +569,7 @@ public class AdmissionsDataLoader {
             archived++;
         }
         // 지난해 입시결과 행의 출처 자료는 모집요강 시드가 다루지 않는다(별도 시드로 들어올 수 있음) — 보관하지 않는다.
-        for (AdmissionsPriorResult r : priorResultRepository.findAll()) {
-            if (r.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && r.getSource() != null) {
-                stillUsedMaterials.add(r.getSource().getMaterialId());
-            }
-        }
+        stillUsedMaterials.addAll(priorResultRepository.findSourceMaterialIdsInUse(AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED));
         for (AdmissionsOfficialMaterial m : materialRepository.findAll()) {
             if (!inScope(m.getUniversity(), m.getAcademicYear(), targets, years)) continue;
             if (m.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;

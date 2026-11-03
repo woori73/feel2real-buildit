@@ -101,7 +101,39 @@
     return text + ' · 상태 ' + r.status;
   }
 
-  var api = { summarizeSeed: summarizeSeed, loadControls: loadControls, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys,
+  /**
+   * 여러 시드 파일의 미리보기를 하나로 합친다(건수 합계·학년도 합집합·경고에 파일명). 하나라도 실패하면 전체를 막는다.
+   * @param items [{name, preview}] — preview는 summarizeSeed 결과
+   */
+  function combinePreviews(items) {
+    var out = { ok: items.length > 0, error: null, files: items.length, counts: null, years: [], warnings: [] };
+    var keys = ['universities', 'documents', 'departments', 'types', 'schedules', 'youtube', 'priorResults'];
+    var sum = {}, years = {};
+    keys.forEach(function (k) { sum[k] = 0; });
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i], p = it.preview;
+      if (p.error) { out.ok = false; out.error = it.name + ': ' + p.error; return out; }
+      keys.forEach(function (k) { sum[k] += (p.counts && p.counts[k]) || 0; });
+      (p.years || []).forEach(function (y) { years[y] = true; });
+      (p.warnings || []).forEach(function (w) { out.warnings.push(it.name + ': ' + w); });
+      if (!p.ok) out.ok = false;
+    }
+    out.counts = sum;
+    out.years = Object.keys(years).map(Number).sort();
+    return out;
+  }
+
+  /** 지식 항목 생성 상태(GET /knowledge/build/status)를 한 줄 문구로 바꾼다. */
+  function formatBuildStatus(st) {
+    if (!st || !st.lastRun) return st && st.running ? '지식 항목 생성 중입니다…' : '';
+    var r = st.lastRun;
+    if (st.running || r.result === 'RUNNING') return '지식 항목 생성 중입니다(시작 ' + (r.startedAt || '') + '). 화면을 닫아도 서버에서 계속됩니다.';
+    if (r.result === 'ERROR') return '지식 항목 생성 실패: ' + (r.error || '알 수 없는 오류');
+    return '지식 항목 생성 — 새로 ' + r.created + ' · 갱신 ' + r.updated + ' · 변경 없음 ' + r.unchanged + ' · 완료';
+  }
+
+  var api = { summarizeSeed: summarizeSeed, combinePreviews: combinePreviews, formatBuildStatus: formatBuildStatus,
+              loadControls: loadControls, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys,
               formatReindexStatus: formatReindexStatus, formatLoadResult: formatLoadResult };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   root.AdmissionsAdminLoad = api;
@@ -111,7 +143,7 @@
     var panel = document.getElementById('ag-load');
     if (!panel) return;
     function byId(id) { return document.getElementById(id); }
-    var fileText = null, preview = null, loading = false, loaded = false;
+    var files = [], preview = null, loading = false, loaded = false;
     function applyLoadControls() {
       var c = loadControls({ loading: loading, loaded: loaded, previewOk: !!(preview && preview.ok) });
       byId('ag-load-file').disabled = c.fileDisabled;
@@ -130,38 +162,55 @@
       return data;
     }
 
-    byId('ag-load-file').addEventListener('change', function (ev) {
+    function readText(f) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function () { resolve(String(reader.result)); };
+        reader.onerror = function () { reject(reader.error); };
+        reader.readAsText(f, 'utf-8');
+      });
+    }
+
+    // 여러 파일을 고르면 이름순으로 하나씩 차례로 적재한다(파일당 결과를 모아 보여 준다).
+    byId('ag-load-file').addEventListener('change', async function (ev) {
       if (loading) return;
-      var f = ev.target.files && ev.target.files[0];
-      preview = null; fileText = null; loaded = false; applyLoadControls();
-      if (!f) { show('', false); return; }
-      var reader = new FileReader();
-      reader.onload = function () {
-        fileText = String(reader.result);
-        preview = summarizeSeed(fileText);
-        if (preview.error) { show('미리보기 실패: ' + preview.error, true); return; }
-        var c = preview.counts;
-        show('미리보기 — 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 학과 ' + c.departments + ' · 전형 ' + c.types +
-             ' · 일정 ' + c.schedules + (c.youtube ? ' · 유튜브 해석 ' + c.youtube : '') +
-             (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + ' / 학년도 ' + preview.years.join(', ') +
-             (preview.warnings.length ? '\n⚠ ' + preview.warnings.join('\n⚠ ') : '\n이상 없음. 적재는 DRAFT 상태로 들어가며 기존 자료는 중복 적재되지 않습니다.'), preview.warnings.length > 0 && !preview.ok);
-        applyLoadControls();
-      };
-      reader.readAsText(f, 'utf-8');
+      var picked = Array.prototype.slice.call((ev.target.files) || []).sort(function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
+      files = []; preview = null; loaded = false; applyLoadControls();
+      if (!picked.length) { show('', false); return; }
+      show('파일 ' + picked.length + '개를 읽는 중입니다…', false);
+      try {
+        for (var i = 0; i < picked.length; i++) files.push({ name: picked[i].name, text: await readText(picked[i]) });
+      } catch (e) { files = []; show('파일 읽기 실패: ' + e.message, true); return; }
+      preview = combinePreviews(files.map(function (f) { return { name: f.name, preview: summarizeSeed(f.text) }; }));
+      if (preview.error) { show('미리보기 실패: ' + preview.error, true); applyLoadControls(); return; }
+      var c = preview.counts;
+      show('미리보기 — 파일 ' + preview.files + '개 · 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 학과 ' + c.departments + ' · 전형 ' + c.types +
+           ' · 일정 ' + c.schedules + (c.youtube ? ' · 유튜브 해석 ' + c.youtube : '') +
+           (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + ' / 학년도 ' + preview.years.join(', ') +
+           (preview.warnings.length ? '\n⚠ ' + preview.warnings.join('\n⚠ ') : '\n이상 없음. 적재는 DRAFT 상태로 들어가며 기존 자료는 중복 적재되지 않습니다.'), preview.warnings.length > 0 && !preview.ok);
+      applyLoadControls();
     });
 
     byId('ag-load-run').addEventListener('click', async function () {
-      if (loading || loaded || !preview || !preview.ok || !fileText) return;
+      if (loading || loaded || !preview || !preview.ok || !files.length) return;
       var c = preview.counts;
-      if (!window.confirm('대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 전형 ' + c.types + ' · 일정 ' + c.schedules +
+      if (!window.confirm('파일 ' + files.length + '개 · 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 전형 ' + c.types + ' · 일정 ' + c.schedules +
           (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
       loading = true; applyLoadControls();
-      show('적재 중입니다. 1~3분 걸립니다. 결과가 나올 때까지 이 화면을 그대로 두세요.', false);
+      var lines = [];
       try {
-        var r = await post('/api/admin/admissions/load/seed', { seedJson: fileText });
+        for (var i = 0; i < files.length; i++) {
+          show((lines.length ? lines.join('\n') + '\n' : '') + '(' + (i + 1) + '/' + files.length + ') ' + files[i].name +
+               ' 적재 중입니다. 끝날 때까지 이 화면을 그대로 두세요.', false);
+          var r = await post('/api/admin/admissions/load/seed', { seedJson: files[i].text });
+          lines.push('(' + (i + 1) + '/' + files.length + ') ' + files[i].name + ': ' + formatLoadResult(r));
+        }
         loaded = true;
-        show(formatLoadResult(r), false);
-      } catch (e) { show('적재 실패: ' + e.message, true); }
+        show(lines.join('\n') + '\n모든 파일 적재 완료', false);
+      } catch (e) {
+        show((lines.length ? lines.join('\n') + '\n' : '') + '적재 실패(' + files[lines.length].name + '): ' + e.message +
+             '\n앞의 파일은 적재되었습니다. 원인을 확인한 뒤 남은 파일만 다시 고르세요.', true);
+      }
       finally { loading = false; applyLoadControls(); }
     });
 
@@ -185,11 +234,29 @@
 
     byId('ag-knowledge-build').addEventListener('click', async function () {
       if (!window.confirm('전형·일정 행을 검색용 지식 항목으로 변환합니다(DRAFT로 생성, 기존 항목은 내용이 바뀐 것만 갱신). 계속할까요?')) return;
+      var btn = byId('ag-knowledge-build'); btn.disabled = true;
       try {
-        var r = await post('/api/admin/admissions/knowledge/build', {});
-        show('지식 항목 생성 — 새로 ' + r.created + ' · 갱신 ' + r.updated + ' · 변경 없음 ' + r.unchanged + ' · ' + r.status, false);
+        var res = await fetchAuth('/api/admin/admissions/knowledge/build', { method: 'POST' });
+        if (res.status === 403) throw new Error('관리자 권한이 필요합니다.');
+        if (res.status !== 202 && res.status !== 409) throw new Error('요청 실패 (' + res.status + ')');
+        if (res.status === 409) show('이미 지식 항목 생성이 진행 중입니다. 끝날 때까지 기다립니다.', false);
+        await pollBuild();
       } catch (e) { show('생성 실패: ' + e.message, true); }
+      finally { btn.disabled = false; }
     });
+
+    // 생성은 서버에서 백그라운드로 돈다. 끝날 때까지 상태를 3초마다 확인한다(화면을 닫아도 서버 작업은 계속된다).
+    async function pollBuild() {
+      for (;;) {
+        var res = await fetchAuth('/api/admin/admissions/knowledge/build/status');
+        var st = await res.json().catch(function () { return null; });
+        if (!res.ok || !st) throw new Error('상태 조회 실패 (' + res.status + ')');
+        var msg = formatBuildStatus(st);
+        show(msg, st.lastRun && st.lastRun.result === 'ERROR');
+        if (!st.running) return;
+        await new Promise(function (r) { setTimeout(r, 3000); });
+      }
+    }
 
     var pollTimer = null;
     function renderReindex(st) {
