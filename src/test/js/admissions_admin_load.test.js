@@ -197,3 +197,38 @@ test('given a load response with prior result counts when formatting then new an
   // then
   assert.match(text, /지난해 입시결과 신규 950 · 변경 3/);
 });
+
+test('given two valid seed previews when combined then counts are summed and years merged', () => {
+  // given
+  const a = load.summarizeSeed(JSON.stringify(SEED));
+  const b = load.summarizeSeed(JSON.stringify({ ...SEED, ipsi_schedules: [] }));
+  // when
+  const c = load.combinePreviews([{ name: '01.json', preview: a }, { name: '02.json', preview: b }]);
+  // then
+  assert.equal(c.ok, true);
+  assert.equal(c.files, 2);
+  assert.equal(c.counts.universities, 2);
+  assert.equal(c.counts.types, 2);
+  assert.equal(c.counts.schedules, 1);
+  assert.deepEqual(c.years, [2027]);
+});
+
+test('given one broken file when combined then the whole batch is blocked with that file name', () => {
+  // given
+  const good = load.summarizeSeed(JSON.stringify(SEED));
+  const bad = load.summarizeSeed('{not json');
+  // when
+  const c = load.combinePreviews([{ name: '01.json', preview: good }, { name: '02.json', preview: bad }]);
+  // then
+  assert.equal(c.ok, false);
+  assert.match(c.error, /^02\.json: /);
+});
+
+test('given build job states when formatted then running, done and error read plainly', () => {
+  // given / when / then
+  assert.match(load.formatBuildStatus({ running: true, lastRun: { result: 'RUNNING', startedAt: 't0' } }), /생성 중/);
+  assert.equal(load.formatBuildStatus({ running: false, lastRun: { result: 'COMPLETED', created: 3, updated: 1, unchanged: 10 } }),
+    '지식 항목 생성 — 새로 3 · 갱신 1 · 변경 없음 10 · 완료');
+  assert.match(load.formatBuildStatus({ running: false, lastRun: { result: 'ERROR', error: 'IllegalStateException' } }), /실패: IllegalStateException/);
+  assert.equal(load.formatBuildStatus({ running: false, lastRun: null }), '');
+});

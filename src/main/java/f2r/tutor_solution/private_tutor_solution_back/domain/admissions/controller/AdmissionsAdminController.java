@@ -5,7 +5,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.reposito
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsActivationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoader;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingService;
-import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsVectorIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +44,9 @@ public class AdmissionsAdminController {
     private final AdmissionsDataLoader dataLoader;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials;
     private final AdmissionsActivationService activationService;
-    private final AdmissionsKnowledgeBuildService knowledgeBuildService;
     private final AdmissionsEmbeddingService embeddingService;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob knowledgeBuildJob;
     /** 시드 적재 중 표시. 같은 적재가 겹쳐 돌면 두 번째가 중복 키로 실패하므로 한 번에 하나만 받는다(앱 1대 기준). */
     private final java.util.concurrent.atomic.AtomicBoolean seedLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
 
@@ -56,17 +55,17 @@ public class AdmissionsAdminController {
                                      AdmissionsDataLoader dataLoader,
                                      f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials,
                                      AdmissionsActivationService activationService,
-                                     AdmissionsKnowledgeBuildService knowledgeBuildService,
                                      AdmissionsEmbeddingService embeddingService,
-                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob) {
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob,
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob knowledgeBuildJob) {
         this.knowledgeRepository = knowledgeRepository;
         this.vectorIndex = vectorIndex;
         this.dataLoader = dataLoader;
         this.materials = materials;
         this.activationService = activationService;
-        this.knowledgeBuildService = knowledgeBuildService;
         this.embeddingService = embeddingService;
         this.reindexJob = reindexJob;
+        this.knowledgeBuildJob = knowledgeBuildJob;
     }
 
     /** 지식 목록 (상태별 필터). */
@@ -212,18 +211,22 @@ public class AdmissionsAdminController {
      * 구조화 자료(전형·일정·공식자료) 전체를 지식 항목으로 변환한다.
      * 새 항목은 DRAFT로 시작하며 자동 승격은 없다. 본문이 바뀐 항목만 갱신하고 version을 올린다(멱등).
      */
+    /** 지식 항목 생성을 백그라운드로 시작한다. 202 STARTED, 이미 실행 중이면 409 ALREADY_RUNNING. 결과는 /knowledge/build/status. */
     @PostMapping("/knowledge/build")
     public ResponseEntity<Map<String, Object>> buildKnowledge() {
-        var r = knowledgeBuildService.buildAll();
-        log.info("admissions knowledge build by admin: created={} updated={} unchanged={}",
-                r.created(), r.updated(), r.unchanged());
-        Map<String, Object> out = new java.util.LinkedHashMap<>();
-        out.put("created", r.created());
-        out.put("updated", r.updated());
-        out.put("unchanged", r.unchanged());
-        out.put("changedKnowledgeIds", r.changedKnowledgeIds());
-        out.put("status", "BUILT");
-        return ResponseEntity.ok(out);
+        var outcome = knowledgeBuildJob.start();
+        log.info("admissions knowledge build requested by admin: outcome={}", outcome);
+        Map<String, Object> out = new java.util.LinkedHashMap<>(knowledgeBuildJob.status());
+        out.put("status", outcome.name());
+        return outcome == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob.StartOutcome.STARTED
+                ? ResponseEntity.accepted().body(out)
+                : ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(out);
+    }
+
+    /** 지식 항목 생성 진행 상태 {@code {running, lastRun}}. */
+    @GetMapping("/knowledge/build/status")
+    public ResponseEntity<Map<String, Object>> buildKnowledgeStatus() {
+        return ResponseEntity.ok(knowledgeBuildJob.status());
     }
 
     /**

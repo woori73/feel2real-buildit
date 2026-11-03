@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.JpaConfig;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.KnowledgeStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsDepartmentRepository;
@@ -223,22 +224,52 @@ class AdmissionsPriorResultDbTest {
     }
 
     @Test
-    @DisplayName("given 승인된 입시결과 when 지식을 만들면 then prior: 항목이 전형·모집단위마다 하나 생기고 다시 만들어도 늘지 않는다")
-    void knowledgeBuild_createsPriorItemsOnce() throws Exception {
+    @DisplayName("given 승인된 입시결과 when 지식을 만들면 then prior: 항목은 만들지 않는다(상담은 원본 행을 직접 조회)")
+    void knowledgeBuild_doesNotCreatePriorItems() throws Exception {
         // given
         loader.loadSeed(SEED);
         activation.activateAll(2027, "ACTIVATE-ALL-2027");
 
         // when
         knowledgeBuild.buildAll();
-        long afterFirst = knowledgeItems.findAll().stream().filter(k -> k.getDedupKey().startsWith("prior:")).count();
-        knowledgeBuild.buildAll();
-        long afterSecond = knowledgeItems.findAll().stream().filter(k -> k.getDedupKey().startsWith("prior:")).count();
 
         // then
-        assertThat(afterFirst).isEqualTo(2);
-        assertThat(afterSecond).isEqualTo(2);
-        assertThat(knowledgeItems.findAll().stream().filter(k -> k.getDedupKey().startsWith("prior:")))
-                .allSatisfy(k -> assertThat(k.getTitle()).contains("2026학년도(지난해)"));
+        assertThat(knowledgeItems.findAll()).noneSatisfy(k -> assertThat(k.getDedupKey()).startsWith("prior:"));
+    }
+
+    @Test
+    @DisplayName("given 테스트대 입시결과 자료를 승격 제외 when 2027을 전체 승격하면 then 그 자료의 입시결과만 DRAFT로 남고 제외 하위 행으로 센다")
+    void activation_excludedFileKeepsPriorRowsDraft() throws Exception {
+        // given
+        loader.loadSeed(SEED);
+
+        // when
+        var r = activation.activateAll(2027, "ACTIVATE-ALL-2027", java.util.Set.of("doc_tst_2026_susi_result"));
+
+        // then: 테스트대 2행은 제외, 예시대 1행만 승격
+        assertThat(r.priorResults()).isEqualTo(1);
+        assertThat(r.excludedChildren()).isGreaterThanOrEqualTo(2);
+        assertThat(priorResults.findAll()).filteredOn(x -> x.getStatus() == KnowledgeStatus.ACTIVE).hasSize(1);
+        assertThat(priorResults.findAll()).filteredOn(x -> x.getStatus() == KnowledgeStatus.DRAFT).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("given ACTIVE prior: 지식 항목 when 재색인 대상 id를 조회하면 then prior: 항목은 빠지고 일반 항목은 남는다")
+    void embeddingTargets_excludePriorItems() {
+        // given
+        var common = AdmissionsKnowledgeItem.builder().academicYear(2027).yearConfirmed(true).title("일반").content("본문")
+                .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL).status(KnowledgeStatus.ACTIVE).dedupKey("type:1:2027:1").build();
+        var prior = AdmissionsKnowledgeItem.builder().academicYear(2027).yearConfirmed(true).title("입시결과").content("본문")
+                .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL).status(KnowledgeStatus.ACTIVE).dedupKey("prior:1:2027:9").build();
+        Long commonId = knowledgeItems.save(common).getKnowledgeId();
+        knowledgeItems.save(prior);
+
+        // when
+        var active = knowledgeItems.findIdsByStatus(KnowledgeStatus.ACTIVE);
+        var all = knowledgeItems.findAllIds();
+
+        // then
+        assertThat(active).containsExactly(commonId);
+        assertThat(all).containsExactly(commonId);
     }
 }
