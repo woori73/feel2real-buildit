@@ -54,7 +54,8 @@ public class AdmissionsVectorIndex {
         Map<Long, float[]> fresh = new ConcurrentHashMap<>();
         String model = props.getModelVersion();
         int dim = props.getDimension();
-        for (AdmissionsKnowledgeEmbedding e : embeddingRepository.findByModelVersion(model)) {
+        // 지난해 입시결과(prior:) 항목 임베딩은 검색에 쓰지 않으므로 올리지 않는다(이미 만들어진 것이 있어도 메모리·상위 K 자리 낭비 방지).
+        for (AdmissionsKnowledgeEmbedding e : embeddingRepository.findSearchableByModelVersion(model)) {
             float[] vec = bytesToFloats(e.getVector(), dim);
             // knowledgeId 컬럼 필드는 같은 영속성 컨텍스트에서 방금 저장한 엔티티에서는 null이다(읽기 전용 매핑).
             // 그 경우 연관 객체의 id로 대체한다(프록시여도 id 조회는 초기화 없이 가능).

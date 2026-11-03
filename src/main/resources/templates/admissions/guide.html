@@ -24,14 +24,21 @@
       <div id="ag-review-list" aria-live="polite"></div><button id="ag-review-prev" type="button">이전</button><button id="ag-review-next" type="button">다음</button>
       <div id="ag-load" class="ag-load" aria-label="입시자료 적재">
         <h2>자료 적재 · 전체 승격</h2>
-        <p>① 시드 JSON 선택 → 미리보기 → 적재(DRAFT) ② 학년도 전체 ACTIVE 승격 ③ 지식 항목 생성 → ②를 한 번 더(항목 승격) → 임베딩 재색인(임베딩 서버 연결 후) ④ 검색 인덱스 갱신. 적재 전에 DB 백업을 확인하세요.</p>
+        <p>① 시드 JSON 선택 → 미리보기 → 적재(DRAFT) — 파일이 여러 개면 아래 URL 목록 적재를 쓴다 ② 학년도 전체 ACTIVE 승격 ③ 지식 항목 생성 → ②를 한 번 더(항목 승격) → 임베딩 재색인(임베딩 서버 연결 후) ④ 검색 인덱스 갱신. 적재 전에 DB 백업을 확인하세요.</p>
         <label>시드 파일(.json) <input id="ag-load-file" type="file" accept="application/json,.json"></label>
         <button id="ag-load-run" type="button" disabled>미리보기 확인 후 DRAFT로 적재</button>
+        <div class="ag-load-row ag-url-load" aria-label="시드 URL 목록 적재">
+          <label>시드 URL 목록(한 줄에 하나, buildit-admissions 고정 커밋 raw 주소) <textarea id="ag-url-list" rows="4" placeholder="https://raw.githubusercontent.com/woori73/buildit-admissions/&lt;40자 커밋&gt;/data/seed/prior_2026/ipsi_seed_prior_2026_01_....json"></textarea></label>
+          <button id="ag-url-run" type="button">URL 목록 차례로 적재(백그라운드)</button>
+          <progress id="ag-url-progress" max="100" value="0" aria-label="URL 목록 적재 진행률"></progress>
+          <pre id="ag-url-status" aria-live="polite"></pre>
+        </div>
         <div class="ag-load-row"><label>학년도<select id="ag-activate-year"><option value="2027">2027</option><option value="2028">2028</option></select></label>
         <label>확인 문자열 <input id="ag-activate-confirm" type="text" placeholder="ACTIVATE-ALL-2027" autocomplete="off"></label>
         <button id="ag-activate-run" type="button">학년도 전체 ACTIVE 승격</button></div>
         <div class="ag-load-row"><label>승격 제외 자료 키(쉼표 구분, 선택) <input id="ag-activate-exclude" type="text" placeholder="doc_cau_2027_susi" autocomplete="off"></label></div>
-        <button id="ag-knowledge-build" type="button">지식 항목 생성(전형·일정 → 검색용)</button>
+        <button id="ag-knowledge-build" type="button">지식 항목 생성(전형·일정·지난해 입시결과, 백그라운드)</button>
+        <pre id="ag-build-status" aria-live="polite"></pre>
         <div class="ag-reindex" aria-label="임베딩 재색인 진행">
           <button id="ag-knowledge-reindex" type="button">임베딩 재색인(ACTIVE 중 미적재분)</button>
           <button id="ag-knowledge-reindex-all" type="button">임베딩 전체 재색인(내용이 바뀐 항목 포함)</button>
@@ -94,6 +101,6 @@
   <script src="/js/api.js"></script>
   <script src="/js/admissions-guide.js?v=20261019-2" defer></script>
   <script src="/js/admissions-member.js?v=20261019-2" defer></script>
-  <script src="/js/admissions-admin-load.js?v=20261103-1" defer></script>
+  <script src="/js/admissions-admin-load.js?v=20261104-1" defer></script>
 </body>
 </html>

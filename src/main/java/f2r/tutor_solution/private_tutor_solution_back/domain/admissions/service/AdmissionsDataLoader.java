@@ -303,8 +303,10 @@ public class AdmissionsDataLoader {
         int[] prior = loadPriorResults(root.path("prior_results"), univByCode, matByKey);
 
         int superseded = 0;
+        java.util.Set<Long> priorSources = root.path("authoritative_universities").isEmpty() ? java.util.Set.of()
+                : new java.util.HashSet<>(priorResultRepository.findSourceIdsInUse());
         for (JsonNode code : root.path("authoritative_universities")) {
-            superseded += archiveSuperseded(root, code.asText(), univByCode);
+            superseded += archiveSuperseded(root, code.asText(), univByCode, priorSources);
         }
 
         log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={} prior={} priorUpdated={}",
@@ -323,9 +325,17 @@ public class AdmissionsDataLoader {
     int[] loadPriorResults(JsonNode rows, Map<String, AdmissionsUniversity> univByCode,
                            Map<String, AdmissionsOfficialMaterial> matByKey) {
         if (rows == null || !rows.isArray() || rows.isEmpty()) return new int[] {0, 0};
+        // 이 시드에 든 대학의 기존 행만 읽는다(187개교 전체 행을 파일마다 메모리에 올리지 않게).
+        java.util.Set<Long> seedUnivIds = new java.util.HashSet<>();
+        for (JsonNode r : rows) {
+            AdmissionsUniversity u = univByCode.get(r.path("university_code").asText());
+            if (u != null) seedUnivIds.add(u.getUniversityId());
+        }
         Map<String, AdmissionsPriorResult> existing = new HashMap<>();
-        priorResultRepository.findAll().forEach(r ->
-                existing.putIfAbsent(r.getUniversity().getUniversityId() + "|" + r.getNaturalKey(), r));
+        if (!seedUnivIds.isEmpty()) {
+            priorResultRepository.findByUniversityUniversityIdIn(seedUnivIds).forEach(r ->
+                    existing.putIfAbsent(r.getUniversity().getUniversityId() + "|" + r.getNaturalKey(), r));
+        }
         int created = 0;
         int updated = 0;
         for (JsonNode r : rows) {
@@ -480,7 +490,8 @@ public class AdmissionsDataLoader {
     }
 
     /** authoritative_universities 한 대학 처리. 보관한 행 수를 돌려준다. */
-    private int archiveSuperseded(JsonNode root, String code, Map<String, AdmissionsUniversity> univByCode) {
+    private int archiveSuperseded(JsonNode root, String code, Map<String, AdmissionsUniversity> univByCode,
+                                  java.util.Set<Long> priorSourceIds) {
         AdmissionsUniversity seedUniv = requireUniversity(univByCode, code, "authoritative_universities");
         String base = baseName(seedUniv.getName());
         // 같은 캠퍼스끼리만 정리한다: 분교(ERICA 등) 시드가 본교 행을, 본교 시드가 분교 행을 보관하지 않게.
@@ -563,11 +574,7 @@ public class AdmissionsDataLoader {
             archived++;
         }
         // 지난해 입시결과 행의 출처 자료는 모집요강 시드가 다루지 않는다(별도 시드로 들어올 수 있음) — 보관하지 않는다.
-        for (AdmissionsPriorResult r : priorResultRepository.findAll()) {
-            if (r.getStatus() != AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED && r.getSource() != null) {
-                stillUsedMaterials.add(r.getSource().getMaterialId());
-            }
-        }
+        stillUsedMaterials.addAll(priorSourceIds);
         for (AdmissionsOfficialMaterial m : materialRepository.findAll()) {
             if (!inScope(m.getUniversity(), m.getAcademicYear(), targets, years)) continue;
             if (m.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;

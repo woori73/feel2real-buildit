@@ -53,7 +53,8 @@ class AdmissionsKnowledgeBuildServiceTest {
         knowledgeRepository = mock(AdmissionsKnowledgeItemRepository.class);
         priorResultRepository = mock(AdmissionsPriorResultRepository.class);
         service = new AdmissionsKnowledgeBuildService(
-                typeRepository, scheduleRepository, knowledgeRepository, priorResultRepository);
+                typeRepository, scheduleRepository, knowledgeRepository, priorResultRepository,
+                mock(org.springframework.transaction.PlatformTransactionManager.class));
 
         korea = AdmissionsUniversity.builder().universityId(10L).name("고려대학교").build();
         sejongMaterial = AdmissionsOfficialMaterial.builder()

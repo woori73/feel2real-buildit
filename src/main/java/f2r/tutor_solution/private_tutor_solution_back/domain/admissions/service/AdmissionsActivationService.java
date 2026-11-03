@@ -91,35 +91,45 @@ public class AdmissionsActivationService {
             }
         }
         // 지난해 입시결과(상담 학년도 = academicYear)도 같은 규칙으로 승격한다. 출처 자료가 제외 대상이면 함께 제외.
-        int p = 0;
-        for (var row : priorResults.findAll()) {
-            if (row.getAcademicYear() == academicYear && promotable(row.getStatus())) {
-                if (excludedBySource(row.getSource(), excluded)) { exC++; continue; }
-                row.setStatus(KnowledgeStatus.ACTIVE); p++;
+        // 187개교면 수십만 행이라 엔티티로 읽지 않고 한 번의 UPDATE로 올린다.
+        java.util.List<KnowledgeStatus> promotableStatuses = java.util.List.of(KnowledgeStatus.DRAFT, KnowledgeStatus.REVIEW);
+        java.util.List<Long> excludedMaterialIds = new java.util.ArrayList<>();
+        if (!excluded.isEmpty()) {
+            for (var mat : materials.findAll()) {
+                if (excluded.contains(mat.getFileKey())) excludedMaterialIds.add(mat.getMaterialId());
             }
         }
+        if (excludedMaterialIds.isEmpty()) excludedMaterialIds.add(-1L); // 빈 IN 목록 방지
+        exC += (int) priorResults.countExcluded(academicYear, promotableStatuses, excludedMaterialIds);
+        int p = priorResults.promote(academicYear, promotableStatuses, excludedMaterialIds, KnowledgeStatus.ACTIVE);
+
         int k = 0;
         java.util.Set<Long> activeTypes = new java.util.HashSet<>();
         types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
         java.util.Set<Long> activeSchedules = new java.util.HashSet<>();
         schedules.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeSchedules.add(row.getScheduleId()); });
-        java.util.Set<Long> activePrior = new java.util.HashSet<>();
-        priorResults.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activePrior.add(row.getPriorResultId()); });
-        for (var item : knowledgeItems.findAll()) {
-            if (item.getAcademicYear() != academicYear || !promotable(item.getStatus())) continue;
-            String key = item.getDedupKey() == null ? "" : item.getDedupKey();
+        java.util.Set<Long> activePrior = new java.util.HashSet<>(priorResults.findIdsByStatus(KnowledgeStatus.ACTIVE));
+        // 지식 항목도 본문을 읽지 않고 [id, dedupKey, sourceClass, createdBy]만 읽어 고른 뒤 id로 한꺼번에 올린다.
+        java.util.List<Long> promote = new java.util.ArrayList<>();
+        for (Object[] row : knowledgeItems.findPromotionCandidates(academicYear, promotableStatuses)) {
+            Long id = (Long) row[0];
+            String key = row[1] == null ? "" : (String) row[1];
+            var sourceClass = (f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.SourceClass) row[2];
+            String createdBy = (String) row[3];
             // 시드로 넣은 유튜브 해석 항목(원본 행 없음)도 함께 승격한다. 답변에서는 공식 근거와 분리해 참고로만 쓴다.
             boolean youtube = key.startsWith("youtube:")
-                    && item.getSourceClass() == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.SourceClass.YOUTUBE;
+                    && sourceClass == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.SourceClass.YOUTUBE;
             if (!youtube) {
-                if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
+                if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(createdBy)) continue;
                 boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
                         || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)))
                         || (key.startsWith("prior:") && activePrior.contains(idOf(key)));
                 if (!backed) continue;
             }
-            item.setStatus(KnowledgeStatus.ACTIVE);
-            k++;
+            promote.add(id);
+        }
+        for (int i = 0; i < promote.size(); i += 1000) {
+            k += knowledgeItems.updateStatusByIds(promote.subList(i, Math.min(promote.size(), i + 1000)), KnowledgeStatus.ACTIVE);
         }
         return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p);
     }

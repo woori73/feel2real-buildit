@@ -197,3 +197,45 @@ test('given a load response with prior result counts when formatting then new an
   // then
   assert.match(text, /지난해 입시결과 신규 950 · 변경 3/);
 });
+
+test('given pasted lines when parsing seed urls then blank lines and spaces are dropped', () => {
+  // given
+  const text = '  https://a/1.json \n\n https://a/2.json\r\n';
+  // when
+  const urls = load.parseSeedUrls(text);
+  // then
+  assert.deepEqual(urls, ['https://a/1.json', 'https://a/2.json']);
+});
+
+test('given a running url load when formatting then progress, prior counts and current file are shown', () => {
+  // given
+  const st = { running: true, lastRun: { result: 'RUNNING', total: 8, processed: 2, current: 'x_03.json', priorResults: 9000, priorResultsUpdated: 0 } };
+  // when
+  const v = load.formatSeedUrlStatus(st);
+  // then
+  assert.equal(v.percent, 25);
+  assert.equal(v.running, true);
+  assert.match(v.headline, /2\/8개 파일 · 지난해 입시결과 신규 9000/);
+  assert.match(v.headline, /진행 중: x_03.json/);
+});
+
+test('given a failed url load when formatting then the failing file and resume hint are shown', () => {
+  // given
+  const st = { running: false, lastRun: { result: 'FAILED', total: 3, processed: 1, error: 'x_02.json: 알 수 없는 university_code=X' } };
+  // when
+  const v = load.formatSeedUrlStatus(st);
+  // then
+  assert.equal(v.failed, true);
+  assert.match(v.headline, /x_02.json/);
+  assert.match(v.headline, /중복 없이 이어집니다/);
+});
+
+test('given a knowledge build in progress when formatting then phase progress and counts are shown', () => {
+  // given
+  const st = { running: true, lastRun: { result: 'RUNNING', phase: '지난해 입시결과(대학별)', phaseDone: 3, phaseTotal: 10, created: 120, updated: 2, unchanged: 5 } };
+  // when
+  const v = load.formatBuildStatus(st);
+  // then
+  assert.equal(v.running, true);
+  assert.match(v.headline, /지난해 입시결과\(대학별\) 3\/10 · 새로 120 · 갱신 2 · 변경 없음 5/);
+});

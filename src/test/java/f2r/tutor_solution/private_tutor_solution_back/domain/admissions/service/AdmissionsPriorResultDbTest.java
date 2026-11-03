@@ -241,4 +241,39 @@ class AdmissionsPriorResultDbTest {
         assertThat(knowledgeItems.findAll().stream().filter(k -> k.getDedupKey().startsWith("prior:")))
                 .allSatisfy(k -> assertThat(k.getTitle()).contains("2026학년도(지난해)"));
     }
+
+    @Test
+    @DisplayName("given 승인된 입시결과로 만든 prior: 지식 항목 when 임베딩 대상 id를 조회하면 then prior: 항목은 빠진다")
+    void priorKnowledge_isNotEmbeddable() throws Exception {
+        // given
+        loader.loadSeed(SEED);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        knowledgeBuild.buildAll();
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // when
+        var embeddable = knowledgeItems.findEmbeddableIdsByStatus(KnowledgeStatus.ACTIVE);
+
+        // then
+        var priorIds = knowledgeItems.findAll().stream().filter(k -> k.getDedupKey().startsWith("prior:"))
+                .map(k -> k.getKnowledgeId()).toList();
+        assertThat(priorIds).isNotEmpty();
+        assertThat(embeddable).doesNotContainAnyElementsOf(priorIds).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("given 한 대학 입시결과 자료를 승격 제외로 지정 when 전체 승격하면 then 그 자료의 행만 DRAFT로 남고 제외 건수에 잡힌다")
+    void activateAll_excludedSourceKeepsPriorRowsDraft() throws Exception {
+        // given
+        loader.loadSeed(SEED);
+
+        // when
+        var r = activation.activateAll(2027, "ACTIVATE-ALL-2027", java.util.Set.of("doc_exa_2026_susi_result"));
+
+        // then
+        assertThat(r.priorResults()).isEqualTo(2);
+        assertThat(r.excludedChildren()).isGreaterThanOrEqualTo(1);
+        assertThat(priorResults.findAll()).extracting(AdmissionsPriorResult::getStatus)
+                .containsExactlyInAnyOrder(KnowledgeStatus.ACTIVE, KnowledgeStatus.ACTIVE, KnowledgeStatus.DRAFT);
+    }
 }

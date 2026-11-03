@@ -5,7 +5,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.reposito
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsActivationService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoader;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingService;
-import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsVectorIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,28 +44,30 @@ public class AdmissionsAdminController {
     private final AdmissionsDataLoader dataLoader;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials;
     private final AdmissionsActivationService activationService;
-    private final AdmissionsKnowledgeBuildService knowledgeBuildService;
     private final AdmissionsEmbeddingService embeddingService;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob;
-    /** 시드 적재 중 표시. 같은 적재가 겹쳐 돌면 두 번째가 중복 키로 실패하므로 한 번에 하나만 받는다(앱 1대 기준). */
-    private final java.util.concurrent.atomic.AtomicBoolean seedLoading = new java.util.concurrent.atomic.AtomicBoolean(false);
+    /** 시드 적재(단일 파일·URL 목록)와 그 잠금. 같은 적재가 겹쳐 돌면 두 번째가 중복 키로 실패하므로 한 번에 하나만 받는다(앱 1대 기준). */
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSeedLoadJob seedLoadJob;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob knowledgeBuildJob;
 
     public AdmissionsAdminController(AdmissionsKnowledgeItemRepository knowledgeRepository,
                                      AdmissionsVectorIndex vectorIndex,
                                      AdmissionsDataLoader dataLoader,
                                      f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsOfficialMaterialRepository materials,
                                      AdmissionsActivationService activationService,
-                                     AdmissionsKnowledgeBuildService knowledgeBuildService,
                                      AdmissionsEmbeddingService embeddingService,
-                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob) {
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob reindexJob,
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSeedLoadJob seedLoadJob,
+                                     f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob knowledgeBuildJob) {
         this.knowledgeRepository = knowledgeRepository;
         this.vectorIndex = vectorIndex;
         this.dataLoader = dataLoader;
         this.materials = materials;
         this.activationService = activationService;
-        this.knowledgeBuildService = knowledgeBuildService;
         this.embeddingService = embeddingService;
         this.reindexJob = reindexJob;
+        this.seedLoadJob = seedLoadJob;
+        this.knowledgeBuildJob = knowledgeBuildJob;
     }
 
     /** 지식 목록 (상태별 필터). */
@@ -209,21 +210,30 @@ public class AdmissionsAdminController {
     }
 
     /**
-     * 구조화 자료(전형·일정·공식자료) 전체를 지식 항목으로 변환한다.
+     * 구조화 자료(전형·일정·지난해 입시결과) 전체를 지식 항목으로 변환한다 — 백그라운드 잡(202 + 상태 조회).
      * 새 항목은 DRAFT로 시작하며 자동 승격은 없다. 본문이 바뀐 항목만 갱신하고 version을 올린다(멱등).
+     * 이미 돌고 있거나 시드 적재 중이면 409.
      */
     @PostMapping("/knowledge/build")
-    public ResponseEntity<Map<String, Object>> buildKnowledge() {
-        var r = knowledgeBuildService.buildAll();
-        log.info("admissions knowledge build by admin: created={} updated={} unchanged={}",
-                r.created(), r.updated(), r.unchanged());
-        Map<String, Object> out = new java.util.LinkedHashMap<>();
-        out.put("created", r.created());
-        out.put("updated", r.updated());
-        out.put("unchanged", r.unchanged());
-        out.put("changedKnowledgeIds", r.changedKnowledgeIds());
-        out.put("status", "BUILT");
-        return ResponseEntity.ok(out);
+    public ResponseEntity<Map<String, Object>> buildKnowledge(org.springframework.security.core.Authentication authentication) {
+        if (seedLoadJob.isRunning()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(Map.of(
+                    "error", "시드 적재가 진행 중입니다. 적재가 끝난 뒤 지식 항목을 생성하세요.", "status", "SEED_LOADING"));
+        }
+        var outcome = knowledgeBuildJob.start();
+        Map<String, Object> out = new java.util.LinkedHashMap<>(knowledgeBuildJob.status());
+        if (outcome == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob.StartOutcome.ALREADY_RUNNING) {
+            out.put("status", "ALREADY_RUNNING");
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(out);
+        }
+        log.info("admissions knowledge build started by={}", actorOf(authentication));
+        out.put("status", "STARTED");
+        return ResponseEntity.accepted().body(out);
+    }
+
+    @GetMapping("/knowledge/build/status")
+    public ResponseEntity<Map<String, Object>> buildKnowledgeStatus() {
+        return ResponseEntity.ok(knowledgeBuildJob.status());
     }
 
     /**
@@ -312,7 +322,7 @@ public class AdmissionsAdminController {
         if (seedJson == null || seedJson.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "seedJson required"));
         }
-        if (!seedLoading.compareAndSet(false, true)) {
+        if (!seedLoadJob.tryLock()) {
             log.warn("admissions seed load rejected: already running");
             return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(Map.of(
                     "error", "이미 적재가 진행 중입니다. 끝날 때까지 기다린 뒤 결과를 확인하세요.", "status", "ALREADY_RUNNING"));
@@ -345,13 +355,41 @@ public class AdmissionsAdminController {
             log.warn("admissions seed load failed: {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("error", "load failed", "status", "FAILED"));
         } finally {
-            seedLoading.set(false);
+            seedLoadJob.unlock();
         }
     }
 
     /**
      * 상담 지식베이스 적재 (개발·검증 환경용). 전부 DRAFT 상태로 시작.
      */
+    /**
+     * 시드 여러 파일을 서버가 차례로 받아 적재(백그라운드). body {@code {urls:[...]}} — buildit-admissions 고정 커밋 raw URL만.
+     * 주소가 잘못되면 400, 적재가 이미 돌고 있으면 409, 시작하면 202 + 진행 상태.
+     */
+    @PostMapping("/load/seed-urls")
+    public ResponseEntity<Map<String, Object>> loadSeedUrls(@RequestBody Map<String, java.util.List<String>> body,
+                                                            org.springframework.security.core.Authentication authentication) {
+        java.util.List<String> urls = body == null ? null : body.get("urls");
+        var problems = f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSeedLoadJob.validateUrls(urls);
+        if (!problems.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", String.join("\n", problems), "status", "REJECTED"));
+        }
+        var outcome = seedLoadJob.start(urls);
+        Map<String, Object> out = new java.util.LinkedHashMap<>(seedLoadJob.status());
+        if (outcome == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSeedLoadJob.StartOutcome.ALREADY_RUNNING) {
+            out.put("status", "ALREADY_RUNNING");
+            return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(out);
+        }
+        log.info("admissions seed url load started by={} files={}", actorOf(authentication), urls.size());
+        out.put("status", "STARTED");
+        return ResponseEntity.accepted().body(out);
+    }
+
+    @GetMapping("/load/seed-urls/status")
+    public ResponseEntity<Map<String, Object>> loadSeedUrlsStatus() {
+        return ResponseEntity.ok(seedLoadJob.status());
+    }
+
     @PostMapping("/load/knowledge-base")
     public ResponseEntity<Map<String, Object>> loadKnowledgeBase(@RequestBody Map<String, String> body) {
         String kbJson = body == null ? null : body.get("knowledgeBaseJson");

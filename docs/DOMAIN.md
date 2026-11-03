@@ -1817,7 +1817,8 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **자연키·멱등**: `natural_key`=SHA-256(결과학년도|트랙|군|전형|모집단위|지표명), `UNIQUE(university_id, natural_key)`. 재적재 시 같은 키는 새 행을 만들지 않고, 값·출처가 바뀐 행만 갱신해 DRAFT로 되돌린다(같으면 승인 상태 유지).
 - **출처 연결**: `source_id`→`admissions_official_materials`(시드 `ipsi_documents`의 "…2026학년도 수시/정시 입시결과" 문서, document_key `doc_{대학키}_2026_{susi|jeongsi}_result`, applicable_academic_year 2027). `source_url`(원문 파일 주소)·`institution_name`·`published_at`·`evidence_pages`도 행에 남긴다.
 - **상태**: DRAFT로 들어오고 activate-all(2027)이 공식자료와 함께 ACTIVE로 올린다(자료 제외 키 규칙 동일 적용). 상담 검색은 행과 출처 자료가 모두 ACTIVE일 때만 쓴다.
-- **지식 항목**: knowledge/build가 (대학, 학년도, 트랙·군·전형·모집단위) 묶음마다 `prior:{대학ID}:{학년도}:{묶음 최소 행ID}` 항목(FACT, 분류 "입시결과")을 만든다. 일반 RAG 검색에는 섞지 않는다(올해 질문에 지난해 숫자가 섞이지 않게) — 상담은 입시결과 질문일 때 행에서 직접 근거를 만든다.
+- **지식 항목**: knowledge/build가 (대학, 학년도, 트랙·군·전형·모집단위) 묶음마다 `prior:{대학ID}:{학년도}:{묶음 최소 행ID}` 항목(FACT, 분류 "입시결과")을 만든다. 일반 RAG 검색에는 섞지 않는다(올해 질문에 지난해 숫자가 섞이지 않게) — 상담은 입시결과 질문일 때 행에서 직접 근거를 만든다. 임베딩 재색인 대상과 벡터 인덱스에서도 빠진다(검색에 쓰지 않으므로 — 187개교면 수만 건). 상담 지식 검색(eligibleItems)도 DB 조회 단계에서 `prior:`를 뺀다.
+- **대량 처리**: 적재는 시드에 든 대학의 기존 행만 읽고, activate-all은 입시결과 행을 UPDATE 한 번으로 승격하며 지식 항목은 [id, dedupKey, 출처구분, 생성자]만 읽어 id로 승격한다. knowledge/build는 대학 하나씩 커밋하는 백그라운드 잡이다.
 - **CRUD 범위**: 생성·갱신은 시드 적재로만, 삭제 API 없음(Create/Update-only). 잘못된 행은 원본 수집본을 고쳐 재적재하면 갱신되고 DRAFT로 돌아간다. 시드에서 빠진 행을 자동 보관하는 규칙은 아직 없다(향후 authoritative 규칙 확장 시 추가).
 
 ## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)

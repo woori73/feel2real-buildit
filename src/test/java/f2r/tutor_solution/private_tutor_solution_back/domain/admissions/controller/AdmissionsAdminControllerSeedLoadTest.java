@@ -24,7 +24,8 @@ class AdmissionsAdminControllerSeedLoadTest {
             new AdmissionsDataLoader.LoadResult(1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0);
 
     private static AdmissionsAdminController controller(AdmissionsDataLoader loader) {
-        return new AdmissionsAdminController(null, null, loader, null, null, null, null, null);
+        return new AdmissionsAdminController(null, null, loader, null, null, null, null,
+                new f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSeedLoadJob(loader), null);
     }
 
     @Test

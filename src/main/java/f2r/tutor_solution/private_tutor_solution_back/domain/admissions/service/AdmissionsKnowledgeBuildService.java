@@ -11,7 +11,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.reposito
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +45,18 @@ public class AdmissionsKnowledgeBuildService {
     private final AdmissionsScheduleRepository scheduleRepository;
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository priorResultRepository;
+    private final org.springframework.transaction.PlatformTransactionManager transactionManager;
+
+    /** 진행 상황 알림(백그라운드 잡용). 단계 이름과 그 단계의 전체 수, 처리 1건마다 step. */
+    public interface Progress {
+        void phase(String name, int total);
+        void step(int created, int updated, int unchanged);
+
+        Progress NONE = new Progress() {
+            @Override public void phase(String name, int total) {}
+            @Override public void step(int created, int updated, int unchanged) {}
+        };
+    }
 
     /**
      * @param created 새로 만든 항목 수
@@ -55,28 +66,49 @@ public class AdmissionsKnowledgeBuildService {
      */
     public record BuildResult(int created, int updated, int unchanged, List<Long> changedKnowledgeIds) {}
 
-    /** 전형·일정 전체 행을 지식 항목으로 변환·저장한다. */
-    @Transactional
+    /** 전형·일정·지난해 입시결과 전체 행을 지식 항목으로 변환·저장한다. */
     public BuildResult buildAll() {
+        return buildAll(Progress.NONE);
+    }
+
+    /**
+     * 같은 변환을 나눠 커밋한다: 전형·일정은 한 트랜잭션, 지난해 입시결과는 대학 하나씩 트랜잭션.
+     * 187개교 입시결과(수십만 행)를 한 트랜잭션·한 영속성 컨텍스트에 올리지 않기 위함이며, 중간에 끊겨도 끝난 대학분은 남는다.
+     */
+    public BuildResult buildAll(Progress progress) {
         Counters counters = new Counters();
         List<Long> changedIds = new ArrayList<>();
+        var tx = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
 
-        for (AdmissionsType t : typeRepository.findAll()) {
-            apply(fromType(t), counters, changedIds);
-        }
-        for (AdmissionsSchedule s : scheduleRepository.findAll()) {
-            apply(fromSchedule(s), counters, changedIds);
-        }
+        tx.executeWithoutResult(st -> {
+            List<AdmissionsType> types = typeRepository.findAll();
+            List<AdmissionsSchedule> schedules = scheduleRepository.findAll();
+            progress.phase("전형·일정", types.size() + schedules.size());
+            for (AdmissionsType t : types) {
+                apply(fromType(t), counters, changedIds);
+                progress.step(counters.created, counters.updated, counters.unchanged);
+            }
+            for (AdmissionsSchedule s : schedules) {
+                apply(fromSchedule(s), counters, changedIds);
+                progress.step(counters.created, counters.updated, counters.unchanged);
+            }
+        });
         // 지난해 입시결과: 대학·상담학년도·전형·모집단위(·군)마다 항목 1건(기본 행 + 지표 행을 한 본문에).
-        java.util.Map<String, List<f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult>> units =
-                new java.util.LinkedHashMap<>();
-        for (var r : priorResultRepository.findAll()) {
-            if (r.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
-            units.computeIfAbsent(universityId(r.getUniversity()) + "|" + r.getAcademicYear() + "|" + r.unitKey(),
-                    k -> new ArrayList<>()).add(r);
-        }
-        for (var rows : units.values()) {
-            apply(fromPriorUnit(rows), counters, changedIds);
+        List<Long> univIds = priorResultRepository.findDistinctUniversityIds();
+        progress.phase("지난해 입시결과(대학별)", univIds.size());
+        for (Long univId : univIds) {
+            tx.executeWithoutResult(st -> {
+                java.util.Map<String, List<f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult>> units =
+                        new java.util.LinkedHashMap<>();
+                for (var r : priorResultRepository.findByUniversityUniversityIdIn(List.of(univId))) {
+                    if (r.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ARCHIVED) continue;
+                    units.computeIfAbsent(r.getAcademicYear() + "|" + r.unitKey(), k -> new ArrayList<>()).add(r);
+                }
+                for (var rows : units.values()) {
+                    apply(fromPriorUnit(rows), counters, changedIds);
+                }
+            });
+            progress.step(counters.created, counters.updated, counters.unchanged);
         }
 
         log.info("admissions knowledge build: created={} updated={} unchanged={}",

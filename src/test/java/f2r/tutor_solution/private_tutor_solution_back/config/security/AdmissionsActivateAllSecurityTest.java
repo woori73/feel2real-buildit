@@ -11,7 +11,6 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoader;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsReindexJob;
-import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsVectorIndex;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
@@ -61,7 +60,8 @@ class AdmissionsActivateAllSecurityTest {
   @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean AuthenticatedUserResolver authResolver;
   @MockitoBean AdmissionsActivationService activationService;
-  @MockitoBean AdmissionsKnowledgeBuildService knowledgeBuildService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob knowledgeBuildJob;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSeedLoadJob seedLoadJob;
   @MockitoBean AdmissionsEmbeddingService embeddingService;
   @MockitoBean AdmissionsReindexJob reindexJob;
   @MockitoBean AdmissionsKnowledgeItemRepository knowledgeRepository;
@@ -197,5 +197,48 @@ class AdmissionsActivateAllSecurityTest {
     mockMvc.perform(post(REINDEX).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{}"))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.status").value("ALREADY_RUNNING"));
+  }
+
+  @Test
+  @DisplayName("given TUTOR when 지식 생성·URL 적재를 시작하면 then 403이고 잡은 시작되지 않는다")
+  void nonAdminCannotStartBuildOrUrlLoad() throws Exception {
+    // when / then
+    mockMvc.perform(post("/api/admin/admissions/knowledge/build").cookie(token("TUTOR")).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isForbidden());
+    mockMvc.perform(post("/api/admin/admissions/load/seed-urls").cookie(token("TUTOR")).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"urls\":[]}"))
+        .andExpect(status().isForbidden());
+    verify(knowledgeBuildJob, never()).start();
+    verify(seedLoadJob, never()).start(any());
+  }
+
+  @Test
+  @DisplayName("given ADMIN when 지식 생성을 시작하면 then 202, 이미 실행 중이면 409, 시드 적재 중이면 409")
+  void adminKnowledgeBuildIsBackground() throws Exception {
+    // given
+    when(knowledgeBuildJob.status()).thenReturn(java.util.Map.of("running", true));
+    when(knowledgeBuildJob.start())
+        .thenReturn(f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob.StartOutcome.STARTED)
+        .thenReturn(f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJob.StartOutcome.ALREADY_RUNNING);
+    String build = "/api/admin/admissions/knowledge/build";
+
+    // when / then
+    mockMvc.perform(post(build).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isAccepted()).andExpect(jsonPath("$.status").value("STARTED"));
+    mockMvc.perform(post(build).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.status").value("ALREADY_RUNNING"));
+    when(seedLoadJob.isRunning()).thenReturn(true);
+    mockMvc.perform(post(build).cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isConflict()).andExpect(jsonPath("$.status").value("SEED_LOADING"));
+  }
+
+  @Test
+  @DisplayName("given ADMIN when 허용되지 않은 주소로 URL 적재를 요청하면 then 400이고 잡은 시작되지 않는다")
+  void adminUrlLoadRejectsForeignUrls() throws Exception {
+    // when / then
+    mockMvc.perform(post("/api/admin/admissions/load/seed-urls").cookie(token("ADMIN")).contentType(MediaType.APPLICATION_JSON)
+            .content("{\"urls\":[\"https://example.com/seed.json\"]}"))
+        .andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value("REJECTED"));
+    verify(seedLoadJob, never()).start(any());
   }
 }

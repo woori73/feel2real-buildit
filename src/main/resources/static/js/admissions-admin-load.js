@@ -101,8 +101,36 @@
     return text + ' · 상태 ' + r.status;
   }
 
+  /** 여러 줄 입력에서 시드 URL 목록을 뽑는다(빈 줄·앞뒤 공백 무시). */
+  function parseSeedUrls(text) {
+    return String(text || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length > 0; });
+  }
+
+  /** URL 목록 적재 상태 → 한 줄 요약과 진행률. */
+  function formatSeedUrlStatus(st) {
+    var run = st && st.lastRun;
+    if (!run) return { running: !!(st && st.running), percent: 0, headline: '아직 실행한 URL 목록 적재가 없습니다.', failed: false };
+    var percent = run.total ? Math.floor(run.processed * 100 / run.total) : 0;
+    var head = 'URL 목록 적재 ' + run.result + ' — ' + run.processed + '/' + run.total + '개 파일 · 지난해 입시결과 신규 ' +
+        (run.priorResults || 0) + ' · 변경 ' + (run.priorResultsUpdated || 0);
+    if (run.current) head += ' · 진행 중: ' + run.current;
+    if (run.error) head += '\n실패: ' + run.error + ' (끝난 파일은 남아 있습니다. 고친 뒤 다시 실행하면 중복 없이 이어집니다.)';
+    return { running: !!st.running, percent: percent, headline: head, failed: run.result === 'FAILED' };
+  }
+
+  /** 지식 항목 생성 잡 상태 → 한 줄 요약. */
+  function formatBuildStatus(st) {
+    var run = st && st.lastRun;
+    if (!run) return { running: !!(st && st.running), headline: '아직 실행한 지식 항목 생성이 없습니다.', failed: false };
+    var head = '지식 항목 생성 ' + run.result + ' — ' + run.phase + ' ' + run.phaseDone + '/' + run.phaseTotal +
+        ' · 새로 ' + run.created + ' · 갱신 ' + run.updated + ' · 변경 없음 ' + run.unchanged;
+    if (run.error) head += '\n오류: ' + run.error;
+    return { running: !!st.running, headline: head, failed: run.result === 'ERROR' };
+  }
+
   var api = { summarizeSeed: summarizeSeed, loadControls: loadControls, confirmationFor: confirmationFor, parseExcludeKeys: parseExcludeKeys,
-              formatReindexStatus: formatReindexStatus, formatLoadResult: formatLoadResult };
+              formatReindexStatus: formatReindexStatus, formatLoadResult: formatLoadResult, parseSeedUrls: parseSeedUrls,
+              formatSeedUrlStatus: formatSeedUrlStatus, formatBuildStatus: formatBuildStatus };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; }
   root.AdmissionsAdminLoad = api;
 
@@ -183,13 +211,58 @@
       } catch (e) { show('승격 실패: ' + e.message, true); }
     });
 
-    byId('ag-knowledge-build').addEventListener('click', async function () {
-      if (!window.confirm('전형·일정 행을 검색용 지식 항목으로 변환합니다(DRAFT로 생성, 기존 항목은 내용이 바뀐 것만 갱신). 계속할까요?')) return;
+    async function getJson(path) {
+      var res = await fetchAuth(path);
+      if (!res.ok) throw new Error(res.status === 403 ? '관리자 권한이 필요합니다.' : '상태 조회 실패 (' + res.status + ')');
+      return res.json();
+    }
+
+    // 지식 항목 생성: 백그라운드 잡 — 시작 후 2초마다 상태를 본다.
+    var buildTimer = null;
+    async function pollBuild() {
       try {
-        var r = await post('/api/admin/admissions/knowledge/build', {});
-        show('지식 항목 생성 — 새로 ' + r.created + ' · 갱신 ' + r.updated + ' · 변경 없음 ' + r.unchanged + ' · ' + r.status, false);
-      } catch (e) { show('생성 실패: ' + e.message, true); }
+        var v = formatBuildStatus(await getJson('/api/admin/admissions/knowledge/build/status'));
+        byId('ag-build-status').textContent = v.headline;
+        byId('ag-build-status').className = v.failed ? 'ag-load-error' : '';
+        byId('ag-knowledge-build').disabled = v.running;
+        buildTimer = v.running ? setTimeout(pollBuild, 2000) : null;
+      } catch (e) { byId('ag-build-status').textContent = e.message; buildTimer = null; }
+    }
+    byId('ag-knowledge-build').addEventListener('click', async function () {
+      if (!window.confirm('전형·일정·지난해 입시결과 행을 검색용 지식 항목으로 변환합니다(백그라운드, DRAFT로 생성, 기존 항목은 내용이 바뀐 것만 갱신). 계속할까요?')) return;
+      try {
+        await post('/api/admin/admissions/knowledge/build', {});
+        show('지식 항목 생성을 시작했습니다. 아래 진행 상황을 확인하세요.', false);
+      } catch (e) { show('생성 시작 실패: ' + e.message, true); }
+      if (buildTimer) clearTimeout(buildTimer);
+      pollBuild();
     });
+    pollBuild();
+
+    // 시드 URL 목록 적재: 서버가 고정 커밋 raw 파일을 차례로 받아 적재한다.
+    var urlTimer = null;
+    async function pollSeedUrls() {
+      try {
+        var v = formatSeedUrlStatus(await getJson('/api/admin/admissions/load/seed-urls/status'));
+        byId('ag-url-progress').value = v.percent;
+        byId('ag-url-status').textContent = v.headline;
+        byId('ag-url-status').className = v.failed ? 'ag-load-error' : '';
+        byId('ag-url-run').disabled = v.running;
+        urlTimer = v.running ? setTimeout(pollSeedUrls, 3000) : null;
+      } catch (e) { byId('ag-url-status').textContent = e.message; urlTimer = null; }
+    }
+    byId('ag-url-run').addEventListener('click', async function () {
+      var urls = parseSeedUrls(byId('ag-url-list').value);
+      if (!urls.length) { show('적재할 시드 URL을 한 줄에 하나씩 넣으세요.', true); return; }
+      if (!window.confirm('시드 파일 ' + urls.length + '개를 서버가 차례로 받아 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
+      try {
+        await post('/api/admin/admissions/load/seed-urls', { urls: urls });
+        show('URL 목록 적재를 시작했습니다. 아래 진행 상황을 확인하세요.', false);
+      } catch (e) { show('URL 목록 적재 실패: ' + e.message, true); }
+      if (urlTimer) clearTimeout(urlTimer);
+      pollSeedUrls();
+    });
+    pollSeedUrls();
 
     var pollTimer = null;
     function renderReindex(st) {

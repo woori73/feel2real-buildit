@@ -14,9 +14,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 지식 항목 임베딩 쓰기 경로 — 지금까지 비어 있던 부분.
@@ -67,27 +65,18 @@ public class AdmissionsEmbeddingService {
         return runTargets(knowledgeIds == null ? List.of() : knowledgeIds);
     }
 
-    /** 상태와 무관하게 전체 항목 재색인. */
+    /** 상태와 무관하게 전체 항목 재색인(지난해 입시결과 prior: 항목 제외 — 검색에 쓰지 않음). */
     @Transactional
     public ReindexResult reindexAll() {
-        List<Long> ids = knowledgeRepository.findAll().stream()
-                .map(AdmissionsKnowledgeItem::getKnowledgeId)
-                .toList();
-        return runTargets(ids);
+        return runTargets(knowledgeRepository.findAllEmbeddableIds());
     }
 
     /** ACTIVE 항목 중 현재 모델 버전 임베딩이 없는 항목만 재색인한다. */
     @Transactional
     public ReindexResult reindexMissing() {
-        List<AdmissionsKnowledgeItem> actives = knowledgeRepository.findAll().stream()
-                .filter(k -> k.getStatus() == AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)
-                .toList();
-        Set<Long> have = embeddingRepository.findByModelVersion(props.getModelVersion()).stream()
-                .map(AdmissionsKnowledgeEmbedding::getKnowledgeId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        List<Long> actives = activeIds();
+        Set<Long> have = embeddedIds();
         List<Long> targets = actives.stream()
-                .map(AdmissionsKnowledgeItem::getKnowledgeId)
                 .filter(id -> !have.contains(id))
                 .toList();
         ReindexResult core = runTargets(targets);
@@ -143,14 +132,17 @@ public class AdmissionsEmbeddingService {
         return embedOne(itemOpt.get());
     }
 
-    /** ACTIVE 항목 id (오름차순). */
+    /**
+     * 임베딩 대상 ACTIVE 항목 id (오름차순). 지난해 입시결과(prior:) 항목은 상담이 원본 행에서 직접 근거를 만들고
+     * 지식 검색에는 쓰지 않으므로 대상에서 뺀다(187개교면 수만 건 — 임베딩 시간·인덱스 메모리 낭비).
+     */
     public List<Long> activeIds() {
-        return knowledgeRepository.findIdsByStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
+        return knowledgeRepository.findEmbeddableIdsByStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
     }
 
-    /** 모든 상태 항목 id (오름차순). */
+    /** 모든 상태의 임베딩 대상 항목 id (오름차순, prior: 제외). */
     public List<Long> allIds() {
-        return knowledgeRepository.findAllIds();
+        return knowledgeRepository.findAllEmbeddableIds();
     }
 
     /** 현재 모델 버전 임베딩이 있는 knowledge_id 집합. */

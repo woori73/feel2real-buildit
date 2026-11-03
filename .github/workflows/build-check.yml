@@ -381,6 +381,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsAdminControllerSeedLoadTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsPriorResultChatTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSeedLoadJobTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildJobTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.service.SnsPublishServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.service.SnsCaptionServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.service.SnsMiscTest"

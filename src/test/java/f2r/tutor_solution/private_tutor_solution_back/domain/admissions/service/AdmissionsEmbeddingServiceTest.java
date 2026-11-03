@@ -193,13 +193,10 @@ class AdmissionsEmbeddingServiceTest {
         var activeNoEmb = item(1L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
         var activeWithEmb = item(2L, AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE);
         var draftNoEmb = item(3L, AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
-        when(knowledgeRepository.findAll()).thenReturn(List.of(activeNoEmb, activeWithEmb, draftNoEmb));
+        // 임베딩 대상 ACTIVE id(지난해 입시결과 prior: 항목은 쿼리에서 이미 빠짐)와 임베딩이 있는 id만 읽는다.
+        when(knowledgeRepository.findEmbeddableIdsByStatus(AdmissionsKnowledgeItem.KnowledgeStatus.ACTIVE)).thenReturn(List.of(1L, 2L));
         when(knowledgeRepository.findById(1L)).thenReturn(Optional.of(activeNoEmb));
-        // findByModelVersion 결과는 서비스가 getKnowledgeId()(insertable=false 컬럼)로 읽으므로 그 필드를 채워 둔다.
-        var existing = withKnowledgeId(AdmissionsKnowledgeEmbedding.builder()
-                .knowledge(activeWithEmb).modelVersion("embeddinggemma-2")
-                .dimension(768).vector(new byte[3072]).build(), 2L);
-        when(embeddingRepository.findByModelVersion("embeddinggemma-2")).thenReturn(List.of(existing));
+        when(embeddingRepository.findKnowledgeIdsByModelVersion("embeddinggemma-2")).thenReturn(List.of(2L));
         when(embeddingClient.embedDocument(anyString()))
                 .thenReturn(AdmissionsEmbeddingClient.DocResult.ok(rawVector(0f, 2f)));
 
@@ -213,18 +210,6 @@ class AdmissionsEmbeddingServiceTest {
         assertEquals(0, result.failed());
         assertTrue(embeddingStore.containsKey(1L));
         assertFalse(embeddingStore.containsKey(3L), "DRAFT는 대상 아님");
-    }
-
-    /** knowledgeId는 insertable=false 컬럼이라 빌더로 못 채운다 — 테스트에서만 리플렉션으로 채운다. */
-    private static AdmissionsKnowledgeEmbedding withKnowledgeId(AdmissionsKnowledgeEmbedding e, Long id) {
-        try {
-            var f = AdmissionsKnowledgeEmbedding.class.getDeclaredField("knowledgeId");
-            f.setAccessible(true);
-            f.set(e, id);
-            return e;
-        } catch (ReflectiveOperationException ex) {
-            throw new IllegalStateException(ex);
-        }
     }
 
     @Test

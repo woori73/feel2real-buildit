@@ -311,6 +311,8 @@ public class AdmissionsResearchService {
             // GUIDE(답변 형식 안내문)는 사실 근거가 아니다
             base.add(cb.equal(root.get("role"), AdmissionsKnowledgeItem.Role.FACT));
             base.add(cb.equal(root.get("yearConfirmed"), confirmedOnly));
+            // 지난해 입시결과(prior:) 항목은 DB 단계에서 뺀다 — 질문마다 수만 건을 읽지 않게(아래 backingRowActive도 제외).
+            base.add(cb.or(cb.isNull(root.get("dedupKey")), cb.notLike(root.get("dedupKey"), "prior:%")));
             if (yearFilter != null) {
                 base.add(cb.equal(root.get("academicYear"), yearFilter));
             }
