@@ -60,7 +60,7 @@ class LandingEdunovaTemplateContractTest {
   void givenContentPriority_whenRendered_thenApprovedSinglePageOrderAndEmptySlotsAreHonest() {
     String html = render();
     String[] ids = {"pass-offer", "homeHero", "examPromo", "/admissions/guide", "edu", "service", "request", "hitCase", "svc-exam",
-        "exam-hit", "exam-blog", "exam-payment", "exam-contact", "guide", "ai-content", "review-game", "aiHome", "chart-showcase", "dashboard"};
+        "exam-blog", "exam-payment", "exam-contact", "guide", "ai-content", "review-game", "aiHome", "chart-showcase", "dashboard"};
     int previous = -1;
     for (String id : ids) {
       int position = id.startsWith("/") ? html.indexOf("href=\"" + id + "\"") : html.indexOf("id=\"" + id + "\"");
@@ -140,7 +140,7 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 제목은 두 줄 단위로 나뉘고 문제지·해설지 샘플 섹션은 없으며 활용 사례가 바로 이어진다")
+  @DisplayName("given 홈 when 렌더하면 then 제목은 두 줄 단위로 나뉘고 문제지·해설지 샘플 섹션은 없으며 학교별 시험 적중률 블로그가 바로 이어진다")
   void titleLines_andSampleSectionRemoved() {
     // given / when
     String html = render();
@@ -149,7 +149,7 @@ class LandingEdunovaTemplateContractTest {
         + "<span class=\"home-offer-title-line\">1장 먼저 받아보세요.</span></h2>");
     assertThat(html).doesNotContain("id=\"exam-samples\"", "WORKSHEETS &amp; EXPLANATIONS", "문제지와 해설지 살펴보기",
         "공개 샘플은 준비 중", "문제지·해설지 문의");
-    String between = html.substring(html.indexOf("id=\"svc-exam\""), html.indexOf("id=\"exam-hit\""));
+    String between = html.substring(html.indexOf("id=\"svc-exam\""), html.indexOf("id=\"exam-blog\""));
     assertThat(between.split("<section", -1)).hasSize(2);
   }
 
@@ -317,11 +317,12 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("압구정에듀홀릭 활용 사례")
+        .doesNotContain("압구정에듀홀릭 활용 사례", "id=\"exam-hit\"")
+        .contains("학교별 시험 적중률 블로그", "href=\"https://blog.naver.com/apgujungeduholic/224463820746\"")
         .contains("기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.")
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    String[] sections = {"pass-offer", "examPromo", "edu", "request", "hitCase", "svc-exam", "exam-hit", "exam-blog", "exam-payment",
+    String[] sections = {"pass-offer", "examPromo", "edu", "request", "hitCase", "svc-exam", "exam-blog", "exam-payment",
         "exam-contact", "ai-content", "review-game", "aiHome", "chart-showcase", "dashboard"};
     int previous = -1;
     for (String id : sections) {
