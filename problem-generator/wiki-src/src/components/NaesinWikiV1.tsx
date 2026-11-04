@@ -312,7 +312,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
 
     <ol className="wiki-steps">
       <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 1</p><h2>자료 모으기</h2><p>시험 준비에 필요한 자료부터 모아주세요.</p></div></div>
+        <div className="panel-heading"><div><h2>자료 모으기</h2><p>시험 준비에 필요한 자료부터 모아주세요.</p></div></div>
         <div className="twin-actions">
           <button className="primary-action past-exam-action" onClick={()=>setCore('past_exam')}>기출시험지 업로드 · 관리 <strong>{pastExams.length}</strong>건</button>
           <button className="primary-action ai-work-log-action" onClick={()=>setCore('ai_work_log')}>AI 작업기록 업로드 · 관리 <strong>{aiWorkLogs.length}</strong>건</button>
@@ -320,26 +320,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
         </div>
       </li>
       <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 2</p><h2>수업 기록</h2><p>수업하면서 발견한 내용이나 학교 선생님의 강조사항을 남겨주세요.</p></div></div>
+        <div className="panel-heading"><div><h2>수업 기록</h2><p>수업하면서 발견한 내용이나 학교 선생님의 강조사항을 남겨주세요.</p></div></div>
         <div className="twin-actions"><button className="primary-action" onClick={()=>{setInsightPanelOpen(true);window.setTimeout(()=>document.getElementById('insight-entry')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}>수업 인사이트 기록 <strong>{insights.length}</strong></button></div>
-      </li>
-      <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 3</p><h2>문제 준비</h2><p>모아둔 자료와 출제자 Digital Twin을 활용해 시험 문제를 준비합니다.</p></div></div>
-        <div className="twin-actions">
-          <button className="primary-action" onClick={()=>openQuestionMaker('new')}>문제 만들기</button>
-          <button className="primary-action" onClick={()=>openQuestionMaker('transform')}>기존 문제 변형</button>
-          <button className="primary-action chrome-transform-entry" onClick={openChromeWorkbench}>크롬 문제 변형</button>
-          <button className="primary-action" onClick={()=>{sessionStorage.setItem('buildit_assistant_state',JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,year:context.year,semester:context.semester}));onNavigate('database')}}>저장된 문제 <strong>{questions.length}</strong></button>
-          <button className="secondary-button" onClick={()=>onNavigate('grammabank')}>문법 문제은행</button>
-        </div>
-        <p className="field-hint">저장된 문제를 선택하면 기존 오피스 2007(.docx) 내보내기로 이어집니다. Digital Twin을 새로 등록하려면 <button type="button" className="link-button" onClick={()=>onNavigate('twin')}>Digital Twin 관리</button>로 이동하세요.</p>
-      </li>
-      <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 4</p><h2>시험 준비</h2><p>지금까지 모은 자료와 문제로 최종 시험을 준비합니다.</p></div></div>
-        <div className="twin-actions">
-          <button className="primary-action" onClick={()=>setWorkspace(v=>v==='final'?null:'final')}>FINAL 준비</button>
-          <button className="primary-action" onClick={()=>setWorkspace(v=>v==='jikbo'?null:'jikbo')}>직보 준비</button>
-        </div>
       </li>
     </ol>
 

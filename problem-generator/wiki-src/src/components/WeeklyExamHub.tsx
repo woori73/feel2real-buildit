@@ -130,17 +130,6 @@ export default function WeeklyExamHub(props:Props){
   return <section className="naesin-repeat-hub" aria-label="반복 제작 허브">
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <input ref={replaceInputRef} type="file" style={{display:'none'}} aria-hidden="true" tabIndex={-1} onChange={handleReplaceFile}/>
-    <div className="current-context-card">
-      <div><p className="kicker">CURRENT EXAM CONTEXT</p><h2>{context.school} · {context.grade}</h2><p>{context.year}년 · {context.semester} · {context.exam}</p></div>
-      <div className="context-health">
-        <span className={currentStatus==='COMPLETE'?'context-status living':'context-status partial'}>Context {currentStatus}</span>
-        <small>기출 {pastExamCount} · 학습지/필기 {schoolPrintCount} · Digital Twin {hasDigitalTwin?'연결':'미연결'}</small>
-        <small>제작·검수 기록 {aiWorkLogCount}</small>
-        {lastContextUpdate&&<small>마지막 Context 업데이트 {new Date(lastContextUpdate).toLocaleString('ko-KR')}</small>}
-      </div>
-      <button type="button" className="secondary-button" onClick={onOpenContext}>자료 보기 · AI Context</button>
-    </div>
-
     <div className="repeat-entry-grid">
       <article className="repeat-entry-card weekly">
         <p className="kicker">WEEKLY EXAM</p><h2>주간 실전 모의고사</h2>

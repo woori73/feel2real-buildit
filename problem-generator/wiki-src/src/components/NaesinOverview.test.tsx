@@ -10,10 +10,10 @@ beforeEach(() => {
   HTMLElement.prototype.scrollIntoView = vi.fn()
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
-it('given 내신위키 홈 when 개요를 열면 then 오답 UI 없이 네 단계와 접힌 상세 자료를 제공한다', async () => {
+it('given 내신위키 홈 when 개요를 열면 then 오답 UI 없이 자료 등록과 접힌 상세 자료를 제공한다', async () => {
   const navigate = vi.fn()
   const {container} = render(<NaesinWikiV1 onNavigate={navigate}/>)
-  for (const name of ['자료 모으기','수업 기록','문제 준비','시험 준비']) expect(screen.getByRole('heading',{name})).toBeInTheDocument()
+  for (const name of ['자료 모으기','수업 기록']) expect(screen.getByRole('heading',{name})).toBeInTheDocument()
   expect(screen.queryByRole('button',{name:/오답/})).not.toBeInTheDocument()
   expect(screen.queryByRole('heading',{name:/오답/})).not.toBeInTheDocument()
   expect(container.querySelector('.wrong-review')).not.toBeInTheDocument()
@@ -22,7 +22,7 @@ it('given 내신위키 홈 when 개요를 열면 then 오답 UI 없이 네 단�
   panels.forEach(panel => expect(panel).not.toHaveAttribute('open'))
   fireEvent.click(screen.getByRole('button',{name:'수업 인사이트 기록 0',exact:true}))
   expect(container.querySelector('.insight-details')).toHaveAttribute('open')
-  fireEvent.click(screen.getByRole('button',{name:'FINAL 준비'}))
-  expect(await screen.findByRole('heading',{name:'현재 시험 자료'})).toBeInTheDocument()
-  expect(screen.queryByRole('heading',{name:/학생 오답/})).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading',{name:'문제 준비'})).not.toBeInTheDocument()
+  expect(screen.queryByRole('heading',{name:'시험 준비'})).not.toBeInTheDocument()
+  expect(container.querySelector('.current-context-card')).not.toBeInTheDocument()
 })
