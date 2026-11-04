@@ -3,6 +3,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsDepartment;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsJeongsiFormula;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult;
@@ -49,6 +50,7 @@ public class AdmissionsDataLoader {
     private final AdmissionsScheduleRepository scheduleRepository;
     private final AdmissionsKnowledgeItemRepository knowledgeRepository;
     private final AdmissionsPriorResultRepository priorResultRepository;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsJeongsiFormulaRepository jeongsiFormulaRepository;
 
     /**
      * 적재 결과. departmentsUpdated·typesUpdated는 이미 있던 행(같은 대학·학년도·이름) 중 내용이 바뀌어
@@ -60,10 +62,19 @@ public class AdmissionsDataLoader {
                              int types, int schedules, int knowledgeItems, int skipped,
                              int departmentsUpdated, int typesUpdated, int schedulesArchived,
                              int supersededArchived, int schedulesSourced,
-                             int priorResults, int priorResultsUpdated) {
+                             int priorResults, int priorResultsUpdated,
+                             int jeongsiFormulas, int jeongsiFormulasUpdated) {
         public LoadResult(int universities, int materials, int departments,
                           int types, int schedules, int knowledgeItems, int skipped) {
-            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0, 0, 0, 0, 0);
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        }
+
+        public LoadResult(int universities, int materials, int departments,
+                          int types, int schedules, int knowledgeItems, int skipped,
+                          int departmentsUpdated, int typesUpdated, int schedulesArchived,
+                          int supersededArchived, int schedulesSourced, int priorResults, int priorResultsUpdated) {
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, departmentsUpdated, typesUpdated,
+                    schedulesArchived, supersededArchived, schedulesSourced, priorResults, priorResultsUpdated, 0, 0);
         }
 
         public LoadResult(int universities, int materials, int departments,
@@ -71,7 +82,7 @@ public class AdmissionsDataLoader {
                           int departmentsUpdated, int typesUpdated, int schedulesArchived,
                           int supersededArchived, int schedulesSourced) {
             this(universities, materials, departments, types, schedules, knowledgeItems, skipped,
-                    departmentsUpdated, typesUpdated, schedulesArchived, supersededArchived, schedulesSourced, 0, 0);
+                    departmentsUpdated, typesUpdated, schedulesArchived, supersededArchived, schedulesSourced, 0, 0, 0, 0);
         }
     }
 
@@ -301,17 +312,101 @@ public class AdmissionsDataLoader {
 
         int youtube = loadYoutubeKnowledge(root.path("youtube_knowledge"));
         int[] prior = loadPriorResults(root.path("prior_results"), univByCode, matByKey);
+        int[] jeongsi = loadJeongsiFormulas(root.path("jeongsi_formulas"), univByCode, matByKey);
 
         int superseded = 0;
         for (JsonNode code : root.path("authoritative_universities")) {
             superseded += archiveSuperseded(root, code.asText(), univByCode);
         }
 
-        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={} prior={} priorUpdated={}",
+        log.info("admissions seed loaded: univ={} mat={} dept={} type={} sched={} skippedUnknownYear={} deptUpdated={} typeUpdated={} schedArchived={} superseded={} schedSourced={} prior={} priorUpdated={} jeongsi={} jeongsiUpdated={}",
                 univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced,
-                prior[0], prior[1]);
+                prior[0], prior[1], jeongsi[0], jeongsi[1]);
         return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, youtube, skipped, deptUpdated, typeUpdated,
-                schedArchived, superseded, schedSourced, prior[0], prior[1]);
+                schedArchived, superseded, schedSourced, prior[0], prior[1], jeongsi[0], jeongsi[1]);
+    }
+
+    /**
+     * 시드의 jeongsi_formulas(정시 수능 환산 계산식)를 DRAFT로 넣는다. 대학·학년도·formula_key가 같으면 새로 만들지 않고,
+     * 내용(계산식·등급표·적용 범위·원문·확인 필요 사유·출처)이 바뀐 것만 갱신해 DRAFT로 되돌린다(재승인 필요).
+     * 계산식이 이 서버 계산기로 해석되지 않으면 {@link SeedLoadException}으로 전체 롤백한다.
+     * @return [새로 넣은 수, 갱신한 수]
+     */
+    int[] loadJeongsiFormulas(JsonNode rows, Map<String, AdmissionsUniversity> univByCode,
+                              Map<String, AdmissionsOfficialMaterial> matByKey) {
+        if (rows == null || !rows.isArray() || rows.isEmpty()) return new int[] {0, 0};
+        java.util.Set<Long> seedUnivIds = new java.util.HashSet<>();
+        for (JsonNode r : rows) {
+            AdmissionsUniversity u = univByCode.get(r.path("university_code").asText());
+            if (u != null) seedUnivIds.add(u.getUniversityId());
+        }
+        Map<String, AdmissionsJeongsiFormula> existing = new HashMap<>();
+        jeongsiFormulaRepository.findByUniversityUniversityIdIn(seedUnivIds).forEach(f ->
+                existing.putIfAbsent(f.getUniversity().getUniversityId() + "|" + f.getAcademicYear() + "|" + f.getFormulaKey(), f));
+        int created = 0;
+        int updated = 0;
+        for (JsonNode r : rows) {
+            AdmissionsUniversity univ = requireUniversity(univByCode, r.path("university_code").asText(), "jeongsi_formulas");
+            Integer year = readSupportedYear(r.path("academic_year"));
+            String key = textOrNull(r.path("formula_key"));
+            String expression = textOrNull(r.path("expression"));
+            if (year == null || key == null || expression == null || !r.path("type_names").isArray() || r.path("type_names").isEmpty()) continue;
+            try {
+                JeongsiFormulaEvaluator.variables(expression);
+            } catch (JeongsiFormulaEvaluator.FormulaException e) {
+                throw new SeedLoadException("jeongsi_formulas " + key + ": 계산식을 해석할 수 없습니다 — " + e.getMessage());
+            }
+            AdmissionsOfficialMaterial src = matByKey.get(r.path("source_document_key").asText(null));
+            String hash = sha256(r.toString());
+            String mapKey = univ.getUniversityId() + "|" + year + "|" + key;
+            AdmissionsJeongsiFormula row = existing.get(mapKey);
+            if (row != null && hash.equals(row.getContentHash())
+                    && (src == null || (row.getSource() != null && src.getMaterialId().equals(row.getSource().getMaterialId())))) {
+                continue;
+            }
+            boolean isNew = row == null;
+            if (isNew) {
+                row = AdmissionsJeongsiFormula.builder().university(univ).academicYear(year).formulaKey(key).build();
+            }
+            row.setLabel(truncate(r.path("label").asText(key), 300));
+            row.setTypeNames(r.path("type_names").toString());
+            row.setDepartmentNames(r.path("department_names").isArray() ? r.path("department_names").toString() : "[]");
+            row.setUnitScopeText(textOrNull(r.path("unit_scope_text")));
+            row.setCsatPoints(decimalOrNull(r.path("csat_points")));
+            row.setPerfectScoreExpected(decimalOrNull(r.path("perfect_score_expected")));
+            row.setExpression(expression);
+            row.setTablesJson(r.path("tables").isObject() ? r.path("tables").toString() : "{}");
+            row.setRoundingText(truncate(textOrNull(r.path("rounding_text")), 500));
+            row.setEligibilityText(textOrNull(r.path("eligibility_text")));
+            row.setNotInCsatScoreText(textOrNull(r.path("not_in_csat_score_text")));
+            row.setEvidencePages(truncate(r.path("evidence_pages").isArray() ? r.path("evidence_pages").toString() : null, 200));
+            row.setRawText(textOrNull(r.path("raw_text")));
+            row.setUncertainJson(r.path("uncertain").isArray() ? r.path("uncertain").toString() : "[]");
+            row.setNeedsReviewReason(textOrNull(r.path("needs_review_reason")));
+            row.setSourceUrl(truncate(textOrNull(r.path("source_url")), 1000));
+            if (src != null) row.setSource(src);
+            row.setContentHash(hash);
+            row.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+            jeongsiFormulaRepository.save(row);
+            if (isNew) {
+                existing.put(mapKey, row);
+                created++;
+            } else {
+                updated++;
+            }
+        }
+        return new int[] {created, updated};
+    }
+
+    private static String sha256(String raw) {
+        try {
+            byte[] h = java.security.MessageDigest.getInstance("SHA-256").digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : h) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**

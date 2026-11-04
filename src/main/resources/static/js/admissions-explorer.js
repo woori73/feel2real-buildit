@@ -89,12 +89,12 @@
   function renderDetail(parent,data,compact){
     var row=data.department;parent.replaceChildren();paragraph(parent,row.universityName+' · '+data.academicYear+'학년도','ae-eyebrow');parent.appendChild(el('h2',row.name));
     if(data.academicYear===2028)paragraph(parent,'2028학년도 계획 자료 · 변경될 수 있습니다.','ae-note');
-    var actions=el('div',null,'ae-actions');if(!compact)actions.appendChild(button('비교에 담기',function(){keep(row);}));actions.appendChild(button('이 대학 AI 상담',function(){ask({id:Number(row.id),year:data.academicYear,name:row.name,universityName:row.universityName});},'ae-primary'));parent.appendChild(actions);
+    var actions=el('div',null,'ae-actions');if(!compact)actions.appendChild(button('비교에 담기',function(){keep(row);}));if(data.academicYear===2027)actions.appendChild(button('환산점수 계산',function(){calculate(parent,data);}));actions.appendChild(button('이 대학 AI 상담',function(){ask({id:Number(row.id),year:data.academicYear,name:row.name,universityName:row.universityName});},'ae-primary'));parent.appendChild(actions);
     source(parent,row.sourceUrl,row.sourceTitle||'공식 모집요강');
     if(row.quotaInfo){var d=el('details');d.append(el('summary','모집인원 원문'),el('pre',row.quotaInfo));parent.appendChild(d);}
     parent.appendChild(el('h3','지난해 공식 입시결과'));renderPrior(parent,data.priorResults);
     if(data.priorResultsTruncated)paragraph(parent,'표시 한도를 넘었습니다. 전체 입시결과는 연결된 공식 원문에서 확인해 주세요.','ae-note');
-    paragraph(parent,'대학별 환산점수: 연결 준비 중 · 합격 판정은 제공하지 않습니다.','ae-note');
+    paragraph(parent,'환산점수는 내 성적의 확정 수능 성적으로 계산합니다. 전형별 적용 범위·지원자격을 원문에서 확인해 주세요. 합격 판정은 제공하지 않습니다.','ae-note');
     if(!compact){
       var td=el('details');td.appendChild(el('summary','대학 전체 전형 안내 (이 모집단위 적용 여부는 원문 확인)'));
       data.universityTypes.forEach(function(t){td.appendChild(el('h3',t.name));td.appendChild(el('pre',t.details||'세부내용 미공개'));source(td,t.sourceUrl,t.sourceTitle);});if(!data.universityTypes.length)paragraph(td,'승인된 전형 안내가 없습니다.');if(data.typesTruncated)paragraph(td,'일부 전형만 표시됩니다. 전체는 공식 원문을 확인해 주세요.');parent.appendChild(td);
@@ -115,11 +115,49 @@
       catch(e){if(token===compareGeneration){paragraph(content,c.universityName+' '+c.name);paragraph(content,e.message);}}
     }));if(token===compareGeneration)byId('ae-compare-status').textContent='모집요강·지난해 입결을 원문 지표명 그대로 표시했습니다.';
   }
+  function scoreInputs(){
+    var out={}, prefixes={korean:'KOR',math:'MATH',inquiry1:'INQ1',inquiry2:'INQ2'},hasAny=false;
+    Object.keys(prefixes).forEach(function(key){
+      var hasScore=false;
+      ['standard','percentile','grade'].forEach(function(field){var value=byId('ae-'+key+'-'+field).value;if(value!==''){out[prefixes[key]+'_'+{standard:'STD',percentile:'PCT',grade:'GRD'}[field]]=Number(value);hasAny=true;hasScore=true;}});
+      if(key.indexOf('inquiry')===0){var group=byId('ae-'+key+'-kind').value;if(hasScore&&(!group||!byId('ae-'+key+'-subject').value.trim()))throw new Error('탐구 성적의 과목명과 계열(사회/과학I/과학II/직업)을 선택해 주세요.');
+        ['SOC','SCI','VOC','SCI2'].forEach(function(flag){out[prefixes[key]+'_'+flag]=Number(group===flag||(flag==='SCI'&&group==='SCI2'));});}
+    });
+    var kor=byId('ae-korean-subject').value,math=byId('ae-math-subject').value;
+    out.KOR_SEL_HW=Number(kor==='화법과 작문');out.KOR_SEL_EM=Number(kor==='언어와 매체');
+    out.MATH_SEL_PROB=Number(math==='확률과 통계');out.MATH_SEL_CALC=Number(math==='미적분');out.MATH_SEL_GEOM=Number(math==='기하');
+    ['english','history','foreign'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v!==''){out[{english:'ENG_GRD',history:'HIST_GRD',foreign:'FL_GRD'}[key]]=Number(v);hasAny=true;}});out.FL_TAKEN=Number(byId('ae-foreign-grade').value!=='');
+    if(!hasAny)throw new Error('내 성적에서 확정 수능 성적을 입력해 주세요.');return out;
+  }
+  function inputLabel(key){var labels={KOR:'국어',MATH:'수학',INQ1:'탐구1',INQ2:'탐구2',ENG:'영어',HIST:'한국사',FL:'제2외국어·한문'};var parts=key.split('_'),subject=labels[parts.shift()]||key,field=parts.join('_');return subject+' '+({STD:'표준점수',PCT:'백분위',GRD:'등급',STD_MAX:'전국 최고 표준점수',CONV:'대학 변환표준점수',CONV_MAX:'대학 변환표준점수 최고점'}[field]||field);}
+  async function calculate(parent,data){
+    if(byId('ae-score-kind').value!=='수능 확정 성적'){tab('scores');byId('ae-score-status').textContent='환산 계산에는 확정 수능 성적이 필요합니다. 성적 종류와 점수를 확인한 뒤 모집단위에서 계산해 주세요.';return;}
+    if(!byId('ae-score-form').reportValidity()){tab('scores');return;}
+    var inputs;try{inputs=scoreInputs();}catch(e){tab('scores');byId('ae-score-status').textContent=e.message;return;}
+    var old=parent.querySelector('.ae-calculation');if(old)old.remove();var panel=el('section',null,'ae-calculation');panel.setAttribute('aria-live','polite');parent.appendChild(panel);panel.textContent='공식 계산식을 조회하고 있습니다…';
+    try{
+      var endpoint=member?base+'/score':'/api/admissions/jeongsi/score';
+      var res=await(member?root.fetchAuth:root.fetch)(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({university:data.department.universityName,academicYear:2027,departmentName:data.department.name,scores:inputs})});
+      var result=await res.json().catch(function(){return null;});if(!panel.isConnected)return;
+      if(!res.ok)throw new Error(res.status===503?'현재 환산 계산을 이용할 수 없습니다.':res.status===429?'요청이 많습니다. 잠시 후 다시 계산해 주세요.':res.status===400?'입력 성적과 선택한 대학을 확인해 주세요.':'환산 계산에 실패했습니다.');
+      panel.replaceChildren(el('h3','대학별 수능 환산점수'));paragraph(panel,result.notice||'공식 계산 결과');
+      if(!result.formulas||!result.formulas.length){paragraph(panel,'이 모집단위에 승인된 계산식이 아직 없습니다. 공식 모집요강과 AI 상담을 이용해 주세요.');return;}
+      result.formulas.forEach(function(f){var card=el('article',null,'ae-formula');card.appendChild(el('h4',f.label||f.formulaKey));paragraph(card,'전형: '+(f.typeNames||[]).join(' / '));if(f.unitScopeText)paragraph(card,'적용 범위: '+f.unitScopeText);
+        if(f.outcome==='CALCULATED')paragraph(card,text(f.score)+' / '+text(f.csatPoints)+'점','ae-score-result');
+        else if(f.outcome==='WITHHELD_NEEDS_REVIEW')paragraph(card,'계산 보류: '+text(f.needsReviewReason),'ae-note');
+        else if(f.outcome==='NEEDS_INPUT'){if((f.missingInputs||[]).length)paragraph(card,'학생 입력 필요: '+f.missingInputs.map(inputLabel).join(', '));if((f.pendingInputs||[]).length)paragraph(card,'공식 자료 연결 필요: '+f.pendingInputs.map(inputLabel).join(', '));}
+        else paragraph(card,'계산식을 확인하고 있습니다. 점수를 안내할 수 없습니다.');
+        if(f.eligibilityText)paragraph(card,'지원자격: '+f.eligibilityText);if(f.notInCsatScoreText)paragraph(card,'수능 점수 외 반영요소: '+f.notInCsatScoreText);if(f.roundingText)paragraph(card,'점수 처리: '+f.roundingText);
+        if((f.defaultedInputs||[]).length)paragraph(card,'미입력 선택 표시를 0으로 처리한 항목: '+f.defaultedInputs.map(inputLabel).join(', '));
+        if((f.uncertain||[]).length)paragraph(card,'원문 확인 사항: '+f.uncertain.join(' / '));source(card,f.sourceUrl,f.sourceTitle||'공식 계산식 출처');if(f.evidencePages)paragraph(card,'근거 쪽: '+f.evidencePages);panel.appendChild(card);
+      });paragraph(panel,'입력값을 바꾸면 다시 계산해 주세요. 지난해 입결과 올해 환산점수는 점수 체계가 다를 수 있습니다.','ae-note');
+    }catch(e){if(panel.isConnected)panel.textContent=e.message;}
+  }
   function scores(){
     var labels={korean:'국어',math:'수학',inquiry1:'탐구1',inquiry2:'탐구2'},parts=[],kind=byId('ae-score-kind').value;
     var avg=byId('ae-grade-average').value;if(avg)parts.push('내신 평균 '+avg+'등급');
     Object.keys(labels).forEach(function(key){var values=['standard','percentile','grade'].map(function(k){var v=byId('ae-'+key+'-'+k).value;return v?{standard:'표준점수 ',percentile:'백분위 ',grade:'등급 '}[k]+v:'';}).filter(Boolean);if(values.length){var subject=byId('ae-'+key+'-subject').value;if(key.indexOf('inquiry')===0&&!subject.trim())throw new Error('점수를 입력한 탐구 과목의 이름도 적어 주세요.');parts.push(labels[key]+'('+subject+') '+values.join(', '));}});
-    ['english','history'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v)parts.push((key==='english'?'영어':'한국사')+' '+v+'등급');});
+    ['english','history','foreign'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v)parts.push(({english:'영어',history:'한국사',foreign:'제2외국어·한문'}[key])+' '+v+'등급');});
     if(!parts.length)throw new Error('상담에 적용할 성적을 하나 이상 입력해 주세요.');
     return kind+': '+parts.join(' / ');
   }

@@ -74,7 +74,7 @@
         <p class="ae-note">지표명·대상 학년도·전형이 다른 점수는 직접 비교할 수 없습니다. 지난해 입결은 올해의 합격선이 아닙니다.</p>
       </section>
       <section id="ae-scores-panel" hidden aria-labelledby="ae-scores-title">
-        <div class="ae-heading"><p class="ae-eyebrow">상담을 위한 성적 입력</p><h1 id="ae-scores-title">성적을 정리하면<br>질문도 더 쉬워집니다.</h1><p>입력값은 이 화면에서만 유지되며, 상담을 전송할 때 성적 요약에 포함됩니다.</p></div>
+        <div class="ae-heading"><p class="ae-eyebrow">상담을 위한 성적 입력</p><h1 id="ae-scores-title">성적을 입력하고<br>대학 환산점수를 확인하세요.</h1><p>입력값은 이 화면에서만 유지되며, 상담을 전송할 때 성적 요약에 포함됩니다.</p></div>
         <p id="ae-score-year-note" class="ae-note" hidden>2028학년도는 수능 체계가 달라 이 성적 입력표를 사용하지 않습니다. AI 상담의 성적 요약에 현재 상황을 적어 주세요.</p>
         <form id="ae-score-form" class="ae-score-form">
           <label>성적 종류<select id="ae-score-kind"><option>모의고사</option><option>가채점</option><option>수능 확정 성적</option></select></label>
@@ -83,13 +83,13 @@
             <span>영역</span><span>선택과목</span><span>표준점수</span><span>백분위</span><span>등급</span>
             <strong>국어</strong><select id="ae-korean-subject" aria-label="국어 선택과목"><option>언어와 매체</option><option>화법과 작문</option></select><input id="ae-korean-standard" aria-label="국어 표준점수" type="number" min="0" max="200"><input id="ae-korean-percentile" aria-label="국어 백분위" type="number" min="0" max="100"><input id="ae-korean-grade" aria-label="국어 등급" type="number" min="1" max="9">
             <strong>수학</strong><select id="ae-math-subject" aria-label="수학 선택과목"><option>미적분</option><option>확률과 통계</option><option>기하</option></select><input id="ae-math-standard" aria-label="수학 표준점수" type="number" min="0" max="200"><input id="ae-math-percentile" aria-label="수학 백분위" type="number" min="0" max="100"><input id="ae-math-grade" aria-label="수학 등급" type="number" min="1" max="9">
-            <strong>탐구 1</strong><input id="ae-inquiry1-subject" aria-label="탐구 1 과목명" maxlength="30" placeholder="과목명"><input id="ae-inquiry1-standard" aria-label="탐구 1 표준점수" type="number" min="0" max="100"><input id="ae-inquiry1-percentile" aria-label="탐구 1 백분위" type="number" min="0" max="100"><input id="ae-inquiry1-grade" aria-label="탐구 1 등급" type="number" min="1" max="9">
-            <strong>탐구 2</strong><input id="ae-inquiry2-subject" aria-label="탐구 2 과목명" maxlength="30" placeholder="과목명"><input id="ae-inquiry2-standard" aria-label="탐구 2 표준점수" type="number" min="0" max="100"><input id="ae-inquiry2-percentile" aria-label="탐구 2 백분위" type="number" min="0" max="100"><input id="ae-inquiry2-grade" aria-label="탐구 2 등급" type="number" min="1" max="9">
+            <strong>탐구 1</strong><div class="ae-inquiry"><input id="ae-inquiry1-subject" aria-label="탐구 1 과목명" maxlength="30" placeholder="과목명"><select id="ae-inquiry1-kind" aria-label="탐구 1 계열"><option value="">계열 선택</option><option value="SOC">사회탐구</option><option value="SCI">과학탐구 I</option><option value="SCI2">과학탐구 II</option><option value="VOC">직업탐구</option></select></div><input id="ae-inquiry1-standard" aria-label="탐구 1 표준점수" type="number" min="0" max="100"><input id="ae-inquiry1-percentile" aria-label="탐구 1 백분위" type="number" min="0" max="100"><input id="ae-inquiry1-grade" aria-label="탐구 1 등급" type="number" min="1" max="9">
+            <strong>탐구 2</strong><div class="ae-inquiry"><input id="ae-inquiry2-subject" aria-label="탐구 2 과목명" maxlength="30" placeholder="과목명"><select id="ae-inquiry2-kind" aria-label="탐구 2 계열"><option value="">계열 선택</option><option value="SOC">사회탐구</option><option value="SCI">과학탐구 I</option><option value="SCI2">과학탐구 II</option><option value="VOC">직업탐구</option></select></div><input id="ae-inquiry2-standard" aria-label="탐구 2 표준점수" type="number" min="0" max="100"><input id="ae-inquiry2-percentile" aria-label="탐구 2 백분위" type="number" min="0" max="100"><input id="ae-inquiry2-grade" aria-label="탐구 2 등급" type="number" min="1" max="9">
           </div>
-          <div class="ae-actions"><label>영어 등급<input id="ae-english-grade" type="number" min="1" max="9"></label><label>한국사 등급<input id="ae-history-grade" type="number" min="1" max="9"></label></div>
+          <div class="ae-actions"><label>영어 등급<input id="ae-english-grade" type="number" min="1" max="9"></label><label>한국사 등급<input id="ae-history-grade" type="number" min="1" max="9"></label><label>제2외국어·한문 등급<input id="ae-foreign-grade" type="number" min="1" max="9" placeholder="미응시: 비워둠"></label></div>
           <div class="ae-actions"><button type="submit" class="ae-primary">상담에 성적 적용</button><button id="ae-score-clear" type="button">입력 성적 지우기</button></div><p id="ae-score-status" role="status"></p>
         </form>
-        <aside class="ae-note"><strong>대학별 환산점수 연결 준비 중</strong><p>현재 성적 입력은 상담용입니다. 공식 환산식과 해당 학년도의 변환표가 연결된 뒤 계산 결과를 제공하며, 준비되지 않은 계산값이나 합격 확률은 표시하지 않습니다.</p></aside>
+        <aside class="ae-note"><strong>공식 수능 환산식으로 계산</strong><p>성적을 입력한 다음 대학 찾기에서 모집단위의 「환산점수 계산」을 누르세요. 모의고사·가채점은 확정 수능 환산 계산에 사용하지 않습니다. 검토 중인 식이나 공식 변환표가 필요한 식은 사유를 표시합니다. 합격 판정은 제공하지 않습니다.</p></aside>
       </section>
     </main>
     <!-- 첫 화면 -->
@@ -143,6 +143,6 @@
   <script src="/js/admissions-guide.js?v=20261104-2" defer></script>
   <script src="/js/admissions-explorer.js?v=20261104-1" defer></script>
   <script src="/js/admissions-member.js?v=20261019-2" defer></script>
-  <script src="/js/admissions-admin-load.js?v=20261104-1" defer></script>
+  <script src="/js/admissions-admin-load.js?v=20261104-2" defer></script>
 </body>
 </html>

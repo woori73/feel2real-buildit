@@ -108,7 +108,7 @@ public class AdmissionsExplorerService {
                 "priorResults", prior.stream().limit(200).toList(), "priorResultsTruncated", prior.size() > 200,
                 "universityTypes", types.stream().limit(60).toList(), "typesTruncated", types.size() > 60,
                 "universitySchedules", schedules.stream().limit(80).toList(), "schedulesTruncated", schedules.size() > 80,
-                "calculationStatus", "NOT_CONNECTED");
+                "calculationStatus", year == 2027 ? "API_AVAILABLE" : "UNSUPPORTED_YEAR");
     }
 
     private static void year(int year) {

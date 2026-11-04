@@ -38,12 +38,19 @@ public class AdmissionsActivationService {
     private final AdmissionsScheduleRepository schedules;
     private final AdmissionsKnowledgeItemRepository knowledgeItems;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository priorResults;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsJeongsiFormulaRepository jeongsiFormulas;
 
     public record ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
-                                   int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults) {
+                                   int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults,
+                                   int jeongsiFormulas) {
         public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                 int excludedMaterials, int excludedChildren, int knowledgeItems) {
-            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, 0);
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, 0, 0);
+        }
+
+        public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
+                                int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults) {
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, priorResults, 0);
         }
     }
 
@@ -99,6 +106,14 @@ public class AdmissionsActivationService {
             exC += (int) priorResults.countPromotableFromFiles(academicYear, promotableStatuses, excluded);
         }
         int p = priorResults.promote(academicYear, promotableStatuses, KnowledgeStatus.ACTIVE, excludedKeys);
+        // 정시 수능 환산 계산식도 같은 규칙으로 승격한다(대학당 수십 건이라 엔티티로 처리). 확인 필요 계산식도 승격하지만
+        // 계산 서비스가 점수를 내지 않는다(needsReviewReason).
+        int jf = 0;
+        for (var row : jeongsiFormulas.findByAcademicYearAndStatusIn(academicYear, promotableStatuses)) {
+            if (excludedBySource(row.getSource(), excluded)) { exC++; continue; }
+            row.setStatus(KnowledgeStatus.ACTIVE);
+            jf++;
+        }
         int k = 0;
         java.util.Set<Long> activeTypes = new java.util.HashSet<>();
         types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
@@ -119,7 +134,7 @@ public class AdmissionsActivationService {
             item.setStatus(KnowledgeStatus.ACTIVE);
             k++;
         }
-        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p);
+        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p, jf);
     }
 
     /** 출처 자료가 제외 대상이면 true. 출처가 없는 행은 제외할 근거가 없어 승격 대상에 남는다. */

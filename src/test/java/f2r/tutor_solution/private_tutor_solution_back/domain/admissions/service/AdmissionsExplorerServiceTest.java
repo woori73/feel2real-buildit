@@ -50,7 +50,7 @@ class AdmissionsExplorerServiceTest {
         var first=(java.util.Map<?,?>)((java.util.List<?>)data.get("priorResults")).getFirst();
         assertThat(first.get("recruitCount")).isNull();
         assertThat((java.util.List<?>)service.detail(2027,10,"JEONGSI").get("priorResults")).hasSize(1);
-        assertThat(data.get("calculationStatus")).isEqualTo("NOT_CONNECTED");
+        assertThat(data.get("calculationStatus")).isEqualTo("API_AVAILABLE");
     }
     @Test void givenWildcardAndWrongYear_whenSearching_thenLiteralSearchAndValidation() {
         assertThat((java.util.List<?>)service.departments(2027,1,"%").get("items")).isEmpty();

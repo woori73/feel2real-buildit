@@ -162,14 +162,23 @@ public class AdmissionsAdminController {
         try {
             var excludeFileKeys = normalizeExcludeFileKeys(request.excludeFileKeys());
             var r = activationService.activateAll(request.academicYear(), request.confirm(), excludeFileKeys);
-            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} excludedMaterials={} excludedChildren={} knowledgeItems={} priorResults={} excludedKeys={} note={}",
+            log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} excludedMaterials={} excludedChildren={} knowledgeItems={} priorResults={} jeongsiFormulas={} excludedKeys={} note={}",
                     actorOf(authentication), r.academicYear(), r.materials(),
                     r.departments(), r.types(), r.schedules(), r.excludedMaterials(), r.excludedChildren(), r.knowledgeItems(), r.priorResults(),
-                    excludeFileKeys, request.note());
-            return ResponseEntity.ok(Map.of("academicYear", r.academicYear(), "materials", r.materials(),
-                    "departments", r.departments(), "types", r.types(), "schedules", r.schedules(),
-                    "excludedMaterials", r.excludedMaterials(), "excludedChildren", r.excludedChildren(),
-                    "knowledgeItems", r.knowledgeItems(), "priorResults", r.priorResults(), "status", "ACTIVATED"));
+                    r.jeongsiFormulas(), excludeFileKeys, request.note());
+            Map<String, Object> out = new java.util.LinkedHashMap<>();
+            out.put("academicYear", r.academicYear());
+            out.put("materials", r.materials());
+            out.put("departments", r.departments());
+            out.put("types", r.types());
+            out.put("schedules", r.schedules());
+            out.put("excludedMaterials", r.excludedMaterials());
+            out.put("excludedChildren", r.excludedChildren());
+            out.put("knowledgeItems", r.knowledgeItems());
+            out.put("priorResults", r.priorResults());
+            out.put("jeongsiFormulas", r.jeongsiFormulas());
+            out.put("status", "ACTIVATED");
+            return ResponseEntity.ok(out);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage(), "status", "REJECTED"));
         }
@@ -338,6 +347,8 @@ public class AdmissionsAdminController {
             out.put("youtubeKnowledge", result.knowledgeItems());
             out.put("priorResults", result.priorResults());
             out.put("priorResultsUpdated", result.priorResultsUpdated());
+            out.put("jeongsiFormulas", result.jeongsiFormulas());
+            out.put("jeongsiFormulasUpdated", result.jeongsiFormulasUpdated());
             out.put("status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED");
             return ResponseEntity.ok(out);
         } catch (AdmissionsDataLoader.SeedLoadException e) {
