@@ -5,16 +5,16 @@ import GrammarBank from './GrammarBank'
 import McpProblemMaker from './McpProblemMaker'
 import '../styles/naesin-workspace.css'
 
-type Section = 'materials' | 'mcp' | 'grammar' | 'production'
+// 내신제작소 탭은 화면에서만 뺐다. 제작소 데이터와 /naesin-production-studio 화면은 그대로 둔다.
+type Section = 'materials' | 'mcp' | 'grammar'
 const sections: { id: Section; label: string; detail: string }[] = [
   { id: 'materials', label: '문제·자료 업로드', detail: '학교별 자료 · 기출 · 오답 · 완성본' },
   { id: 'mcp', label: 'MCP 문제 만들기', detail: '시험 선택 · 자료 확인 · Claude 지시문' },
   { id: 'grammar', label: '문법문제은행', detail: '검색 · 검수 · 선택함 · 문제집' },
-  { id: 'production', label: '내신제작소', detail: '원재료 · AI 작업 · 버전 · 승인' },
 ]
 const initialSection = (): Section => {
   const section = new URLSearchParams(window.location.search).get('section')
-  return section === 'mcp' || section === 'grammar' || section === 'production' ? section : 'materials'
+  return section === 'mcp' || section === 'grammar' ? section : 'materials'
 }
 export default function NaesinWorkspace({ onNavigate }: { onNavigate: (page: Page) => void }) {
   const [active, setActive] = useState<Section>(initialSection)
@@ -36,8 +36,5 @@ export default function NaesinWorkspace({ onNavigate }: { onNavigate: (page: Pag
       {opened.has('mcp') && <McpProblemMaker onNavigate={page => page === 'state' ? select('materials') : onNavigate(page)} />}
     </section>
     <section id="naesin-grammar" aria-label="문법문제은행" hidden={active !== 'grammar'}>{opened.has('grammar') && <GrammarBank />}</section>
-    <section id="naesin-production" aria-label="내신제작소" hidden={active !== 'production'}>
-      {opened.has('production') && <iframe title="내신제작소 작업 화면" src="/naesin-production-studio?embedded=1" className="naesin-production-frame" />}
-    </section>
   </section>
 }

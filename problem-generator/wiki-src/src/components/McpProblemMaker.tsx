@@ -9,7 +9,10 @@ import '../styles/mcp-maker.css'
 const years = [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2]
 const EXAMS = [{ label: '전체', value: '전체' }, { label: '중간', value: '중간고사' }, { label: '기말', value: '기말고사' }]
 const COUNTS = [20, 40, 70, 100]
-const KINDS: McpJobKind[] = ['expected', 'final', 'jikbo']
+const KINDS: McpJobKind[] = ['expected', 'jikbo']
+// 학년은 자료 유무와 관계없이 항상 1~3학년을 고를 수 있다. 자료가 없으면 2단계에 "없음"으로 보인다.
+const GRADES = ['1학년', '2학년', '3학년']
+const firstGradeWithData = (node?: SchoolNode) => node?.grades.find(g => GRADES.includes(g.grade))?.grade || GRADES[0]
 
 // MCP 문제제작 — 시험 고르기 → 자료 확인 → 만들 것 고르기 → 지시문 복사 → 결과 확인.
 // 이 화면은 자료를 읽기만 한다(GET). 문제 생성·저장은 Claude가 MCP tool로 한다.
@@ -26,11 +29,14 @@ export default function McpProblemMaker({ onNavigate }: { onNavigate: (page: Pag
   useEffect(() => {
     fetchSchoolTree().then(nodes => {
       setTree(nodes)
-      if (nodes.length && !touched.current) setContext(c => resolveSavedContext(c, nodes, years[0]))
+      if (nodes.length && !touched.current) setContext(c => {
+        const resolved = resolveSavedContext(c, nodes, years[0])
+        const grade = resolved.school === c.school && GRADES.includes(c.grade) ? c.grade : firstGradeWithData(nodes.find(n => n.school === resolved.school))
+        return { ...resolved, grade }
+      })
     }).catch(() => setError('학교 목록을 불러오지 못했습니다.'))
   }, [])
 
-  const grades = tree.find(node => node.school === context.school)?.grades || []
   const ready = Boolean(context.school && context.grade)
 
   const loadContext = async (c: ExamContext) => {
@@ -69,8 +75,8 @@ export default function McpProblemMaker({ onNavigate }: { onNavigate: (page: Pag
       <li className="mcp-step">
         <h2><span>1</span>시험 고르기</h2>
         <div className="mcp-fields">
-          <label>학교<select value={context.school} onChange={e => { const node = tree.find(n => n.school === e.target.value); update({ school: e.target.value, grade: node?.grades[0]?.grade || '' }) }}>{!tree.length && <option value="">학교 없음</option>}{tree.map(n => <option key={n.school}>{n.school}</option>)}</select></label>
-          <label>학년<select value={context.grade} onChange={e => update({ grade: e.target.value })}>{grades.map(g => <option key={g.grade}>{g.grade}</option>)}</select></label>
+          <label>학교<select value={context.school} onChange={e => update({ school: e.target.value, grade: firstGradeWithData(tree.find(n => n.school === e.target.value)) })}>{!tree.length && <option value="">학교 없음</option>}{tree.map(n => <option key={n.school}>{n.school}</option>)}</select></label>
+          <label>학년<select value={context.grade} onChange={e => update({ grade: e.target.value })}>{GRADES.map(g => <option key={g}>{g}</option>)}</select></label>
           <label>연도<select value={context.year} onChange={e => update({ year: Number(e.target.value) })}>{years.map(y => <option key={y}>{y}</option>)}</select></label>
           <label>학기<select value={context.semester} onChange={e => update({ semester: e.target.value })}><option>1학기</option><option>2학기</option></select></label>
           <label>시험<select value={context.exam} onChange={e => update({ exam: e.target.value })}>{EXAMS.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}</select></label>
@@ -108,7 +114,7 @@ export default function McpProblemMaker({ onNavigate }: { onNavigate: (page: Pag
 
       <li className="mcp-step">
         <h2><span>5</span>저장된 결과 보기</h2>
-        <p className="mcp-hint">Claude가 저장을 마치면 2단계 [다시 확인]을 누르세요. 저장된 문항·FINAL 수가 늘어납니다.</p>
+        <p className="mcp-hint">Claude가 저장을 마치면 2단계 [다시 확인]을 누르세요. 저장된 문항 수가 늘어납니다.</p>
         <div className="mcp-actions">
           <button type="button" className="secondary-button" onClick={() => onNavigate('database')}>강사 문제 DB</button>
           <button type="button" className="secondary-button" onClick={() => onNavigate('gentests')}>생성 문제</button>

@@ -3396,19 +3396,23 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
 
 @app.get('/api/workspaces/jikbo/context')
 def get_jikbo_workspace_context(school: str, grade: str, year: int, semester: str, exam: str):
-    """직보는 FINAL과 별도 원천 저장소가 아니다 — FINAL 완성본 → FINAL 이후 최신 수업 인사이트 →
-    학생 반복 오답 순으로만 압축한다. 학교 프린트/제작 문제/Digital Twin 전체는 FINAL 제작 과정에서
-    이미 반영된 자료라 다시 담지 않는다."""
+    """직보는 학교 프린트(학습지 원본)를 근거로 만든다 — FINAL이 없어도 멈추지 않는다.
+    ready는 학습지 원본이 하나라도 있는지를 뜻한다. 학교 프린트는 본문(html_text)까지 담고,
+    기출·기출 분석·AI 작업기록은 학습지가 아니라서 뺀다. FINAL이 있으면 참고용으로 함께 주고,
+    수업 인사이트는 FINAL 이후 것만(없으면 전부) 담는다. 제작 문제/Digital Twin은 담지 않는다."""
     with get_db() as conn:
+        school_prints = _material_context_items(conn, 'school_print', school, grade, year, semester, exam)
+        school_prints = [item for item in school_prints if item['material_type'] not in ('PAST_EXAM', 'AI_WORK_LOG', 'EXAM_ANALYSIS')]
         final_items = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
         latest_final = final_items[0] if final_items else None
         student_weaknesses = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         jikbo_deliverables = _final_deliverable_context_items(conn, 'jikbo', school, grade, year, semester, exam)
-    ready = latest_final is not None
-    post_final_insights = _insight_context_items(school, grade, year, semester, exam, after=latest_final['created_at']) if ready else []
+    after = latest_final['created_at'] if latest_final else None
+    post_final_insights = _insight_context_items(school, grade, year, semester, exam, after=after)
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
-        'ready': ready,
+        'ready': bool(school_prints),
+        'school_prints': school_prints,
         'latest_final': latest_final,
         'post_final_insights': post_final_insights,
         'student_weaknesses': student_weaknesses,

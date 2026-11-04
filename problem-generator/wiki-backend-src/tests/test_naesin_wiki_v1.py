@@ -262,11 +262,33 @@ class WorkspaceContextTest(unittest.TestCase):
         for key in ('school_prints', 'student_errors', 'class_insights', 'generated_questions', 'final_deliverables'):
             self.assertEqual([], result[key])
 
-    def test_jikbo_context_is_not_ready_without_final(self):
+    def test_jikbo_context_is_not_ready_without_school_prints(self):
         result = main.get_jikbo_workspace_context(**self.CTX)
         self.assertFalse(result['ready'])
+        self.assertEqual([], result['school_prints'])
         self.assertIsNone(result['latest_final'])
         self.assertEqual([], result['post_final_insights'])
+
+    def test_jikbo_context_reads_school_print_bodies_without_final(self):
+        """직보는 FINAL이 없어도 학습지 원본(본문 포함)으로 만든다. 기출·분석은 학습지가 아니다."""
+        main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '5과 학습지 원본', None,
+            None, None, '', html_text='<p>5과 본문</p>')
+        main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '1학기말 기출', None,
+            UploadFile(filename='past.html', file=io.BytesIO('<!doctype html><html><body><p>기출</p></body></html>'.encode()), headers={'content-type': 'text/html'}),
+            None, '', material_type='PAST_EXAM')
+        main.create_educator_insight(main.EducatorInsightCreate(
+            content='5과 본문 암기 강조', school='신구중', grade='중2', year=2026, semester='2학기',
+            exam='중간고사', source='school_teacher'))
+
+        result = main.get_jikbo_workspace_context(**self.CTX)
+
+        self.assertTrue(result['ready'])
+        self.assertIsNone(result['latest_final'])
+        self.assertEqual(['5과 학습지 원본'], [item['title'] for item in result['school_prints']])
+        self.assertIn('5과 본문', result['school_prints'][0]['html_text'])
+        self.assertEqual(['5과 본문 암기 강조'], [item['content'] for item in result['post_final_insights']])
 
     def test_final_context_assembles_every_category_with_metadata(self):
         main.import_digital_twin(main.ImportedTwinProfile(
@@ -325,8 +347,8 @@ class WorkspaceContextTest(unittest.TestCase):
         self.assertEqual('<p>html-part</p>', item['html_text'])
         self.assertEqual({'a': 1}, item['json_text'])
 
-    def test_jikbo_context_ready_with_final_shows_correct_order_and_excludes_bulk_materials(self):
-        """직보는 학교 프린트/제작 문제/Digital Twin 전체를 다시 담지 않는다."""
+    def test_jikbo_context_with_final_keeps_prints_and_excludes_bulk_materials(self):
+        """직보는 학습지 원본과 참고용 FINAL을 담고, 제작 문제/Digital Twin은 담지 않는다."""
         main.import_digital_twin(main.ImportedTwinProfile(school='신구중', grade='중2', exam='중간고사', dna='x'))
         main.create_exam_material(
             'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '프린트', None,
@@ -338,7 +360,7 @@ class WorkspaceContextTest(unittest.TestCase):
 
         self.assertTrue(result['ready'])
         self.assertEqual('기말 FINAL', result['latest_final']['title'])
-        self.assertNotIn('school_prints', result)
+        self.assertEqual(['프린트'], [item['title'] for item in result['school_prints']])
         self.assertNotIn('digital_twin', result)
         self.assertNotIn('generated_questions', result)
 

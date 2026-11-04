@@ -83,11 +83,11 @@ def get_final_context(school: str, grade: str, year: int, semester: str, exam: s
 
 @mcp.tool()
 def get_jikbo_context(school: str, grade: str, year: int, semester: str, exam: str) -> dict:
-    """직보 Workspace Context를 반환한다. FINAL 완성본이 아직 없으면 ready=false와 함께
-    빈 자료만 반환한다. FINAL이 있으면 latest_final, FINAL 완성 이후에 기록된 수업
-    인사이트(post_final_insights), 학생 반복 오답만 담는다 — 학교 프린트 전체/제작 문제
-    전체/Digital Twin 전체는 FINAL 제작 과정에서 이미 반영된 자료라 다시 담지 않는다.
-    운영 GET /api/workspaces/jikbo/context와 완전히 같은 데이터다."""
+    """직보 Workspace Context를 반환한다. 직보는 학교 프린트(학습지 원본)를 근거로 만들며
+    FINAL이 없어도 멈추지 않는다. school_prints에 학습지 원본을 본문(html_text) 포함으로 담고,
+    ready는 학습지 원본이 하나라도 있으면 true다. FINAL이 있으면 latest_final을 참고용으로 주고,
+    수업 인사이트(post_final_insights)는 FINAL 이후 것만(FINAL이 없으면 전부), 학생 오답을 함께
+    담는다. 운영 GET /api/workspaces/jikbo/context와 완전히 같은 데이터다."""
     from main import get_jikbo_workspace_context
     return get_jikbo_workspace_context(school=school, grade=grade, year=year, semester=semester, exam=exam)
 

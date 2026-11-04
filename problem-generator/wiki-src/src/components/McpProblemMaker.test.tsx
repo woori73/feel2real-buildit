@@ -30,7 +30,7 @@ describe('MCP 문제 만들기', () => {
     expect(screen.getByText(/아직 없는 자료: 학교 프린트\./)).toBeInTheDocument()
   })
 
-  it('given 시험 선택 when 문항 수를 바꾸면 then 지시문에 시험 인자와 batch가 반영된다', async () => {
+  it('given 시험 선택 when 문항 수를 바꾸면 then 지시문에 시험 인자와 문항 수가 반영된다', async () => {
     // given
     render(<McpProblemMaker onNavigate={vi.fn()} />)
     await screen.findByRole('list', { name: '자료 현황' })
@@ -39,7 +39,20 @@ describe('MCP 문제 만들기', () => {
     // then
     const prompt = screen.getByLabelText('MCP 작업 지시문')
     expect(prompt).toHaveTextContent('school="신사중", grade="3학년"')
-    expect(prompt).toHaveTextContent('Q61~70')
+    expect(prompt).toHaveTextContent('예상문제 시험지 70문항')
+  })
+
+  it('given 3학년 자료만 있는 학교 when 학년을 보면 then 1~3학년을 모두 고를 수 있고 FINAL 항목은 없다', async () => {
+    // given
+    render(<McpProblemMaker onNavigate={vi.fn()} />)
+    await screen.findByRole('list', { name: '자료 현황' })
+    // when
+    const grade = screen.getByLabelText('학년')
+    fireEvent.change(grade, { target: { value: '1학년' } })
+    // then
+    expect(within(grade).getAllByRole('option').map(o => o.textContent)).toEqual(['1학년', '2학년', '3학년'])
+    await waitFor(() => expect(screen.getByLabelText('MCP 작업 지시문')).toHaveTextContent('grade="1학년"'))
+    expect(screen.getAllByRole('radio', { name: /예상문제|직보|FINAL/ }).map(r => r.textContent)).toEqual(['예상문제 시험지', '직보(시험 직전 정리)'])
   })
 
   it('given 지시문 when 복사 버튼을 누르면 then 클립보드에 같은 지시문을 넣는다', async () => {
