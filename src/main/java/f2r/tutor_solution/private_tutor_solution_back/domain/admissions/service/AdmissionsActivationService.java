@@ -39,18 +39,25 @@ public class AdmissionsActivationService {
     private final AdmissionsKnowledgeItemRepository knowledgeItems;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository priorResults;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsJeongsiFormulaRepository jeongsiFormulas;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsSusiMinimumRepository susiMinimums;
 
     public record ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                    int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults,
-                                   int jeongsiFormulas) {
+                                   int jeongsiFormulas, int susiMinimums) {
+        public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
+                                int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults, int jeongsiFormulas) {
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems,
+                    priorResults, jeongsiFormulas, 0);
+        }
+
         public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                 int excludedMaterials, int excludedChildren, int knowledgeItems) {
-            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, 0, 0);
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, 0, 0, 0);
         }
 
         public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                 int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults) {
-            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, priorResults, 0);
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, priorResults, 0, 0);
         }
     }
 
@@ -114,6 +121,12 @@ public class AdmissionsActivationService {
             row.setStatus(KnowledgeStatus.ACTIVE);
             jf++;
         }
+        int sm = 0;
+        for (var row : susiMinimums.findByAcademicYearAndStatusIn(academicYear, promotableStatuses)) {
+            if (excludedBySource(row.getSource(), excluded)) { exC++; continue; }
+            row.setStatus(KnowledgeStatus.ACTIVE);
+            sm++;
+        }
         int k = 0;
         java.util.Set<Long> activeTypes = new java.util.HashSet<>();
         types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
@@ -134,7 +147,7 @@ public class AdmissionsActivationService {
             item.setStatus(KnowledgeStatus.ACTIVE);
             k++;
         }
-        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p, jf);
+        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p, jf, sm);
     }
 
     /** 출처 자료가 제외 대상이면 true. 출처가 없는 행은 제외할 근거가 없어 승격 대상에 남는다. */

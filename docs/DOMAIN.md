@@ -1835,6 +1835,16 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **상태**: DRAFT로 들어오고 activate-all(2027)이 ACTIVE로 올린다(제외 자료 규칙 동일). 계산 API는 ACTIVE만 쓴다. 지식 항목·임베딩은 만들지 않는다.
 - **CRUD 범위**: 생성·갱신은 시드 적재로만, 삭제 API 없음(Create/Update-only). 고칠 때는 buildit-admissions 계산식 파일을 고쳐 재적재한다.
 
+## 수시 수능최저학력기준 (admissions_susi_minimums, V1101)
+
+대학 수시 모집요강의 **수능최저학력기준**을 조건식으로 옮겨 둔다. 학생 등급(가채점 포함)을 넣으면 전형·모집단위별 충족 여부를 알려 준다. 합격 여부는 판단하지 않는다.
+
+- **형식**: buildit-admissions `docs/schema/SUSI_MINIMUM.md`(susi_minimum/v1). `condition_expr`는 정시 계산식과 같은 수식 언어(등급 변수·선택 표시만, `low_sum` 등)이고 참이면 충족.
+- **한 행** = (대학, 학년도, `rule_key`). `rule_kind`=`RULE`(조건식 있음) 또는 `NO_MINIMUM`(최저 없는 전형 — 원문 근거만, 조건식 없음). `type_names`·`department_names`(JSON 배열, 2027 이름 그대로)·`unit_scope_text`·`required_areas_text`(응시 필수 영역 원문)·`raw_text`·`evidence_pages`·`uncertain_json`·`needs_review_reason`.
+- **적용 순서**: 모집단위를 주면, 그 모집단위를 `department_names`로 지정한 규칙이 있는 전형에서는 전형 전체 규칙(`department_names` 비어 있음)을 쓰지 않는다(예: "전체(의예과 제외)" / "의예과"). 모집단위를 모르면 그 대학 규칙을 모두 돌려준다.
+- **확인 필요**: `needs_review_reason`이 있으면 판정하지 않고 사유만 돌려준다.
+- **멱등·거절·출처·상태·CRUD**: 정시 계산식과 같다(`content_hash`, 해석 안 되는 조건식·알 수 없는 `rule_kind`면 시드 전체 거절, `source_id`=그 대학 2027 수시 모집요강 자료, DRAFT→activate-all→ACTIVE, 시드 적재로만 생성·갱신).
+
 ## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)
 
 - `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.
