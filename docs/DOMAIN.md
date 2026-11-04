@@ -1821,6 +1821,20 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **대량 처리**: 승격은 입시결과 행을 엔티티로 읽지 않고 한 문장(bulk update)으로 바꾸고, 적재 중복 판정은 시드에 나온 대학의 행만 읽는다(187개교면 수십만 행).
 - **CRUD 범위**: 생성·갱신은 시드 적재로만, 삭제 API 없음(Create/Update-only). 잘못된 행은 원본 수집본을 고쳐 재적재하면 갱신되고 DRAFT로 돌아간다. 시드에서 빠진 행을 자동 보관하는 규칙은 아직 없다(향후 authoritative 규칙 확장 시 추가).
 
+## 정시 수능 환산 계산식 (admissions_jeongsi_formulas, V1100)
+
+대학 정시 모집요강의 **수능 반영 방법**(반영비율·활용지표·영어/한국사 등급표·가산점·소수점 처리)을 계산식과 등급표로 옮겨 둔다. 학생 성적을 넣으면 그 대학 기준 수능 환산점수를 계산한다. 합격 판정은 하지 않는다.
+
+- **형식**: buildit-admissions `docs/schema/JEONGSI_FORMULA.md`(jeongsi_formula/v1). `expression`은 허용 문법만 쓰는 수식(사칙연산·비교·and/or/not·max/min/sum/top_sum/cond/table/round/trunc), `tables_json`은 등급표(`{"ENG":{"1":100,…,"9":0}}`).
+- **계산기**: `JeongsiFormulaEvaluator`(서버). buildit-admissions `scripts/jeongsi_formula.py`와 같은 결과를 내야 하며, 실제 계산식 전부로 만든 일치 검사 자료(`src/test/resources/admissions/jeongsi_formula_conformance.json`)로 확인한다.
+- **한 행** = (대학, 학년도, `formula_key`). `type_names`(적용 전형명 JSON 배열, 2027 전형명 그대로)·`department_names`(적용 모집단위명, 비면 전형 전체)·`unit_scope_text`(원문 모집단위 문구)·`csat_points`(원문 수능 만점)·`raw_text`(근거 원문 발췌)·`evidence_pages`·`uncertain_json`(해석이 들어간 부분).
+- **확인 필요**: `needs_review_reason`이 있으면 원문에 없는 환산 방법을 정했거나 해석에 따라 점수가 크게 달라지는 계산식이다. 승격은 되지만 계산 API는 점수를 내지 않고 사유만 돌려준다.
+- **성적 발표 뒤 값**: 전국 최고 표준점수(`*_STD_MAX`)·대학 변환표준점수(`INQ*_CONV`, `INQ*_CONV_MAX`)는 2027 수능 성적 통지(2026-12-11) 뒤 정해진다. 값이 없으면 계산 API는 점수 대신 `pendingInputs`로 알린다.
+- **멱등**: `UNIQUE(university_id, academic_year, formula_key)`. 시드 행 전체의 sha256(`content_hash`)과 출처 자료가 같으면 그대로 두고, 바뀌면 갱신해 DRAFT로 되돌린다. 해석되지 않는 계산식이 있으면 시드 전체를 거절한다(롤백).
+- **출처 연결**: `source_id`→`admissions_official_materials`(그 대학의 기존 2027 정시 모집요강 자료, document_key `doc_{대학키}_2027_jeongsi`), `source_url`=계산식 근거 원문 파일 주소(대학 입학처).
+- **상태**: DRAFT로 들어오고 activate-all(2027)이 ACTIVE로 올린다(제외 자료 규칙 동일). 계산 API는 ACTIVE만 쓴다. 지식 항목·임베딩은 만들지 않는다.
+- **CRUD 범위**: 생성·갱신은 시드 적재로만, 삭제 API 없음(Create/Update-only). 고칠 때는 buildit-admissions 계산식 파일을 고쳐 재적재한다.
+
 ## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)
 
 - `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.

@@ -16,12 +16,12 @@
     if (!universities.length) { out.error = 'ipsi_universities가 비어 있습니다.'; return out; }
     out.counts = { universities: universities.length, documents: documents.length, departments: departments.length,
                    types: types.length, schedules: schedules.length, youtube: list('youtube_knowledge').length,
-                   priorResults: list('prior_results').length };
+                   priorResults: list('prior_results').length, jeongsiFormulas: list('jeongsi_formulas').length };
     var codes = {}, docKeys = {}, years = {};
     universities.forEach(function (u) { codes[u.university_code] = true; });
     documents.forEach(function (d) { docKeys[d.document_key] = true; years[d.applicable_academic_year] = true; });
     var badUniv = 0, badDoc = 0;
-    [departments, types, schedules, list('prior_results')].forEach(function (rows) {
+    [departments, types, schedules, list('prior_results'), list('jeongsi_formulas')].forEach(function (rows) {
       rows.forEach(function (r) {
         years[r.academic_year] = true;
         if (!codes[r.university_code]) badUniv++;
@@ -98,6 +98,7 @@
     if (typeof r.schedulesSourced === 'number') text += ' · 일정 출처 연결 ' + r.schedulesSourced;
     if (typeof r.youtubeKnowledge === 'number' && r.youtubeKnowledge > 0) text += ' · 유튜브 해석 ' + r.youtubeKnowledge;
     if (typeof r.priorResults === 'number') text += ' · 지난해 입시결과 신규 ' + r.priorResults + ' · 변경 ' + r.priorResultsUpdated;
+    if (typeof r.jeongsiFormulas === 'number' && (r.jeongsiFormulas > 0 || r.jeongsiFormulasUpdated > 0)) text += ' · 정시 계산식 신규 ' + r.jeongsiFormulas + ' · 변경 ' + r.jeongsiFormulasUpdated;
     return text + ' · 상태 ' + r.status;
   }
 
@@ -107,7 +108,7 @@
    */
   function combinePreviews(items) {
     var out = { ok: items.length > 0, error: null, files: items.length, counts: null, years: [], warnings: [] };
-    var keys = ['universities', 'documents', 'departments', 'types', 'schedules', 'youtube', 'priorResults'];
+    var keys = ['universities', 'documents', 'departments', 'types', 'schedules', 'youtube', 'priorResults', 'jeongsiFormulas'];
     var sum = {}, years = {};
     keys.forEach(function (k) { sum[k] = 0; });
     for (var i = 0; i < items.length; i++) {
@@ -186,7 +187,7 @@
       var c = preview.counts;
       show('미리보기 — 파일 ' + preview.files + '개 · 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 학과 ' + c.departments + ' · 전형 ' + c.types +
            ' · 일정 ' + c.schedules + (c.youtube ? ' · 유튜브 해석 ' + c.youtube : '') +
-           (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + ' / 학년도 ' + preview.years.join(', ') +
+           (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + (c.jeongsiFormulas ? ' · 정시 계산식 ' + c.jeongsiFormulas : '') + ' / 학년도 ' + preview.years.join(', ') +
            (preview.warnings.length ? '\n⚠ ' + preview.warnings.join('\n⚠ ') : '\n이상 없음. 적재는 DRAFT 상태로 들어가며 기존 자료는 중복 적재되지 않습니다.'), preview.warnings.length > 0 && !preview.ok);
       applyLoadControls();
     });
@@ -195,7 +196,7 @@
       if (loading || loaded || !preview || !preview.ok || !files.length) return;
       var c = preview.counts;
       if (!window.confirm('파일 ' + files.length + '개 · 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 전형 ' + c.types + ' · 일정 ' + c.schedules +
-          (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
+          (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + (c.jeongsiFormulas ? ' · 정시 계산식 ' + c.jeongsiFormulas : '') + '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
       loading = true; applyLoadControls();
       var lines = [];
       try {
@@ -228,7 +229,8 @@
         show('승격 결과 — 공식자료 ' + r.materials + ' · 학과 ' + r.departments + ' · 전형 ' + r.types + ' · 일정 ' + r.schedules +
              (typeof r.excludedMaterials === 'number' ? ' · 제외 자료 ' + r.excludedMaterials + ' · 제외 하위 행 ' + r.excludedChildren : '') +
              (typeof r.knowledgeItems === 'number' ? ' · 지식항목 ' + r.knowledgeItems : '') +
-             (typeof r.priorResults === 'number' ? ' · 지난해 입시결과 ' + r.priorResults : '') + ' · ' + r.status, false);
+             (typeof r.priorResults === 'number' ? ' · 지난해 입시결과 ' + r.priorResults : '') +
+             (typeof r.jeongsiFormulas === 'number' ? ' · 정시 계산식 ' + r.jeongsiFormulas : '') + ' · ' + r.status, false);
       } catch (e) { show('승격 실패: ' + e.message, true); }
     });
 
