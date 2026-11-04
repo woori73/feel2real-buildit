@@ -368,6 +368,9 @@ class AdmissionsBrowserQaMySqlTest {
             // AI 비서 화면에서는 F2R 서비스 목록이 메뉴 안에 있다(1280px 이상은 늘 펼침). 좁은 화면은 사용자처럼 메뉴를 먼저 연다.
             org.openqa.selenium.WebElement menuButton=wait.until(d->d.findElement(By.id("siMenuBtn")));
             if(menuButton.isDisplayed()&&!driver.findElement(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")).isDisplayed())menuButton.click();
+            // 모바일 메뉴의 슬라이드가 끝나야 링크 중심이 실제 뷰포트 안에 있다.
+            // elementToBeClickable은 CSS transform 애니메이션 완료를 기다리지 않는다.
+            wait.until(d->"none".equals(d.findElement(By.id("siMenu")).getCssValue("transform")));
             // 대시보드 위젯이 비동기로 채워지며 레이아웃이 밀리면 클릭이 빗나갈 수 있다(CI 간헐 실패).
             // 링크 존재·href는 그대로 검증하고, 클릭 후 이동이 없으면 같은 href로 이동한다.
             org.openqa.selenium.WebElement workspaceLink=wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")));

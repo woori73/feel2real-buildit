@@ -69,6 +69,7 @@ public class McpOAuth {
 
   /** 제작소 검수 보고서·수정 작업·새 버전 등록만 허용. 승인·삭제·복원·배포는 어떤 scope로도 불가. */
   public static final String STUDIO_PROPOSE = "studio:propose";
+  public static final String ACADEMY_MOVE_WRITE = "academy-move:write";
 
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
 
@@ -138,6 +139,7 @@ public class McpOAuth {
     all.add("offline_access");
     all.add("originals:read");
     all.add(STUDIO_PROPOSE);
+    all.add(ACADEMY_MOVE_WRITE);
     return all;
   }
 
@@ -253,6 +255,7 @@ public class McpOAuth {
     boolean sensitive =
         selected.contains("originals:read")
             || selected.contains(STUDIO_PROPOSE)
+            || selected.contains(ACADEMY_MOVE_WRITE)
             || "ADMIN".equals(p.role())
                 && selected.stream()
                     .anyMatch(

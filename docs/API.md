@@ -5233,3 +5233,9 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 - POST `chat`: `{question,agent:suni|seven}`. 활성 등록 설명 최대15개와 최근 대화6개를 참고하며 파일 이미지/원문 자동 분석은 하지 않는다. 학원이사 전용 `app.academy-move.ai-enabled`(기본 true)와 기존 사용자별 예산을 사용한다. 기존 대시보드 의도 분석 스위치와 독립적으로 설정된 Muse 모델을 연결하며, 자료 설명은 건당1500자·최근 답변은 건당2000자로 제한한다. 키 미설정·연결 실패·한도 소진 시 자료 기반 체크리스트로 구분해 반환하고 상담을 서버에 보존한다.
 
 기존 Studio 프로젝트/파일/리비전 테이블을 재사용하며 새 스키마는 없다. 고정 프로젝트 `academy-relocation`은 첫 명시적 저장 시 생성하고, 일반 Studio API에서도 ADMIN 이외 접근·프로젝트 목록 노출을 차단한다.
+
+### 학원이사 이슈별 정리·MCP (2026-11-04)
+
+화면은 원상복구/교습소 전환/명칭·로고 3개 이슈와 최신 AI 답변을 우선 표시하고 원문·이력·기관 자료는 접는다. POST `/api/admin/academy-move/posts`는 `{title?,content(1~8000),issue,idempotencyKey}`를 받아 원문과 AI 정리를 저장한다. 같은 사용자/연결/키는 동일 응답을 재사용하고 내용이 달라지면409다. 일반 chat은 선택적 `issue`를 받으며 기존 2필드 요청도 유지한다. 공식·참고 조사 자료는 `static/data/academy-move-sources.json`에서 이슈별로 가져와 AI의 근거에 포함한다. 개인 일정·명칭 후보·주소는 이 공개 파일에 넣지 않는다.
+
+MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의와 ADMIN을 모두 요구한다. 기존 studio 토큰에 권한을 자동 추가하지 않는다. 이 scope는 관리자 글·대화 읽기와 새 원문/AI 정리 등록만 허용하며 삭제·승인·원문 파일 제공은 없다. 전용 도구에는 projectId가 없고 `academy-relocation`으로 고정된다. 기존 Studio 도구로 해당 프로젝트를 지정할 때도 별도 scope를 요구한다. 운영 기본 허용 scope 목록에 새 동의 항목을 추가하되 명시적 환경변수 override는 그대로 존중한다. 실제 외부 ChatGPT/Claude 연결은 사용자가 새 범위를 선택해 재연결해야 한다.

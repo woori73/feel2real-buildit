@@ -25,6 +25,9 @@ public class McpGateway {
   private final f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAiService
       studioAi;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.studio.AcademyMoveController> academyMove;
+
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
       Set.of("submit_studio_review", "upload_studio_asset", "create_studio_task", "update_studio_task");
@@ -62,6 +65,7 @@ public class McpGateway {
       out.removeIf(
           tool -> {
             String name = (String) tool.get("name");
+            if (name.equals("read_academy_move") || name.equals("post_academy_move")) return !oauth.scopeAllowed(McpOAuth.ACADEMY_MOVE_WRITE);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
               return !oauth.scopeAllowed("studio:read");
@@ -138,6 +142,10 @@ public class McpGateway {
                 integer(1, 20000)),
             List.of("fileId")));
     studioTools(out);
+    out.add(tool("read_academy_move","학원이사 이슈별 글·AI 정리·대화를 읽습니다. 관리자와 academy-move:write 별도 동의가 필요합니다. 원문 파일은 제외합니다.",Map.of(),List.of()));
+    out.add(writeTool("post_academy_move","학원이사 글을 해당 이슈에 올리고 AI가 핵심·미확정 사항·다음 행동을 정리해 함께 답합니다. 같은 idempotencyKey 재시도는 중복 저장하지 않습니다. 관리자와 academy-move:write 별도 동의가 필요합니다.",
+        Map.of("title",string(),"content",string(),"issue",Map.of("type","string","enum",List.of("원상복구","교습소 전환","명칭·로고")),"idempotencyKey",string()),List.of("content","issue","idempotencyKey")));
+
     out.add(
         tool(
             "activity_history",
@@ -364,6 +372,16 @@ public class McpGateway {
               if (value.isTextual() && value.asText().length() > maximum)
                 throw McpOAuth.error(400, "argument_too_long");
             });
+    if (name.equals("read_academy_move") || name.equals("post_academy_move")) {
+      if (!identity.scopes().contains(McpOAuth.ACADEMY_MOVE_WRITE) || !"ADMIN".equals(identity.principal().role()))
+        throw McpOAuth.error(403,"academy_move_admin_consent_required");
+      rate.check("academy-move:"+identity.grantId(),12);
+      var moves=academyMove==null?null:academyMove.getIfAvailable();
+      if(moves==null) throw McpOAuth.error(503,"academy_move_unavailable");
+      if(name.equals("read_academy_move")) return moves.mcpRead(identity.principal());
+      return moves.mcpPost(identity.principal(),new f2r.tutor_solution.private_tutor_solution_back.domain.studio.AcademyMoveController.Post(
+          text(args,"title"),text(args,"content"),text(args,"issue"),text(args,"idempotencyKey")),identity.grantId());
+    }
     if (name.equals("list_catalog")) {
       requireScope(identity, "catalog");
       int offset = number(args, "offset", 0, 0, 10000), limit = number(args, "limit", 50, 1, 100);
@@ -456,6 +474,8 @@ public class McpGateway {
                   .MCP_PROJECT_ATTRIBUTE,
               project);
     }
+    if (project.equals("academy-relocation") && !identity.scopes().contains(McpOAuth.ACADEMY_MOVE_WRITE))
+      throw McpOAuth.error(403,"academy_move_consent_required");
     var p = identity.principal();
     var connector =
         new f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioAiService.Connector(
@@ -594,6 +614,8 @@ public class McpGateway {
   public Map<String, Object> read(McpOAuth.Identity identity, String service, JsonNode args)
       throws Exception {
     requireScope(identity, service);
+    if(service.equals("studio") && args.path("query").path("projectId").asText().equals("academy-relocation")
+        && !identity.scopes().contains(McpOAuth.ACADEMY_MOVE_WRITE)) throw McpOAuth.error(403,"academy_move_consent_required");
     String id = args.path("endpointId").asText("");
     var p = catalog.policy(id);
     if (!service.equals(p.service())) throw McpOAuth.error(403, "service_mismatch");
