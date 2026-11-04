@@ -44,7 +44,7 @@ class AdmissionsExplorerControllerTest {
         var req=new AdmissionsJeongsiController.ScoreRequest("테스트대학교",2027,null,"컴퓨터공학과",input);
         var response=new AdmissionsMemberExplorerController(access,service,scores,limiter).score(p,req);
         assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-store");
-        var order=inOrder(access,scores);order.verify(access).token(p);order.verify(scores).calculate("테스트대학교",2027,null,"컴퓨터공학과",input);
+        var order=inOrder(access,scores);order.verify(access).token(p);order.verify(scores).calculate("테스트대학교",2027,null,"컴퓨터공학과",input,null);
         verify(limiter,never()).tryAcquireDaily();
     }
     @Test void givenInvalidMember_whenCalculating_thenEngineIsNeverReached() {

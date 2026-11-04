@@ -13,21 +13,28 @@
     function list(name) { return Array.isArray(seed[name]) ? seed[name] : []; }
     var universities = list('ipsi_universities'), documents = list('ipsi_documents'), departments = list('ipsi_departments'),
         types = list('ipsi_admission_types'), schedules = list('ipsi_schedules');
-    if (!universities.length) { out.error = 'ipsi_universities가 비어 있습니다.'; return out; }
+    // 평가원 표준점수 최고점만 담은 시드는 대학이 없다.
+    if (!universities.length && !list('csat_std_max').length) { out.error = 'ipsi_universities가 비어 있습니다.'; return out; }
     out.counts = { universities: universities.length, documents: documents.length, departments: departments.length,
                    types: types.length, schedules: schedules.length, youtube: list('youtube_knowledge').length,
-                   priorResults: list('prior_results').length, jeongsiFormulas: list('jeongsi_formulas').length };
+                   priorResults: list('prior_results').length, jeongsiFormulas: list('jeongsi_formulas').length,
+                   susiMinimums: list('susi_minimums').length, csatStdMax: list('csat_std_max').length,
+                   conversionScores: list('conversion_scores').length };
     var codes = {}, docKeys = {}, years = {};
     universities.forEach(function (u) { codes[u.university_code] = true; });
     documents.forEach(function (d) { docKeys[d.document_key] = true; years[d.applicable_academic_year] = true; });
     var badUniv = 0, badDoc = 0;
-    [departments, types, schedules, list('prior_results'), list('jeongsi_formulas')].forEach(function (rows) {
+    [departments, types, schedules, list('prior_results'), list('jeongsi_formulas'), list('susi_minimums'), list('conversion_scores')].forEach(function (rows) {
       rows.forEach(function (r) {
         years[r.academic_year] = true;
         if (!codes[r.university_code]) badUniv++;
         if (r.source_document_key && !docKeys[r.source_document_key]) badDoc++;
         if (!r.source_document_key) badDoc++;
       });
+    });
+    list('csat_std_max').forEach(function (r) {
+      years[r.academic_year] = true;
+      if (!r.source_document_key || !docKeys[r.source_document_key]) badDoc++;
     });
     if (badUniv) out.warnings.push('알 수 없는 university_code 행 ' + badUniv + '건 (적재 시 전체 거부됩니다)');
     if (badDoc) out.warnings.push('출처 자료(source_document_key)가 없거나 연결되지 않은 행 ' + badDoc + '건');
@@ -99,6 +106,9 @@
     if (typeof r.youtubeKnowledge === 'number' && r.youtubeKnowledge > 0) text += ' · 유튜브 해석 ' + r.youtubeKnowledge;
     if (typeof r.priorResults === 'number') text += ' · 지난해 입시결과 신규 ' + r.priorResults + ' · 변경 ' + r.priorResultsUpdated;
     if (typeof r.jeongsiFormulas === 'number' && (r.jeongsiFormulas > 0 || r.jeongsiFormulasUpdated > 0)) text += ' · 정시 계산식 신규 ' + r.jeongsiFormulas + ' · 변경 ' + r.jeongsiFormulasUpdated;
+    if (typeof r.susiMinimums === 'number' && (r.susiMinimums > 0 || r.susiMinimumsUpdated > 0)) text += ' · 수능최저 신규 ' + r.susiMinimums + ' · 변경 ' + r.susiMinimumsUpdated;
+    if (typeof r.csatStdMax === 'number' && (r.csatStdMax > 0 || r.csatStdMaxUpdated > 0)) text += ' · 표준점수 최고점 신규 ' + r.csatStdMax + ' · 변경 ' + r.csatStdMaxUpdated;
+    if (typeof r.conversionScores === 'number' && (r.conversionScores > 0 || r.conversionScoresUpdated > 0)) text += ' · 변환표준점수표 신규 ' + r.conversionScores + ' · 변경 ' + r.conversionScoresUpdated;
     return text + ' · 상태 ' + r.status;
   }
 
@@ -108,7 +118,7 @@
    */
   function combinePreviews(items) {
     var out = { ok: items.length > 0, error: null, files: items.length, counts: null, years: [], warnings: [] };
-    var keys = ['universities', 'documents', 'departments', 'types', 'schedules', 'youtube', 'priorResults', 'jeongsiFormulas'];
+    var keys = ['universities', 'documents', 'departments', 'types', 'schedules', 'youtube', 'priorResults', 'jeongsiFormulas', 'susiMinimums', 'csatStdMax', 'conversionScores'];
     var sum = {}, years = {};
     keys.forEach(function (k) { sum[k] = 0; });
     for (var i = 0; i < items.length; i++) {
@@ -187,7 +197,7 @@
       var c = preview.counts;
       show('미리보기 — 파일 ' + preview.files + '개 · 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 학과 ' + c.departments + ' · 전형 ' + c.types +
            ' · 일정 ' + c.schedules + (c.youtube ? ' · 유튜브 해석 ' + c.youtube : '') +
-           (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + (c.jeongsiFormulas ? ' · 정시 계산식 ' + c.jeongsiFormulas : '') + ' / 학년도 ' + preview.years.join(', ') +
+           (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + (c.jeongsiFormulas ? ' · 정시 계산식 ' + c.jeongsiFormulas : '') + (c.susiMinimums ? ' · 수능최저 ' + c.susiMinimums : '') + (c.csatStdMax ? ' · 표준점수 최고점 ' + c.csatStdMax : '') + (c.conversionScores ? ' · 변환표준점수표 ' + c.conversionScores : '') + ' / 학년도 ' + preview.years.join(', ') +
            (preview.warnings.length ? '\n⚠ ' + preview.warnings.join('\n⚠ ') : '\n이상 없음. 적재는 DRAFT 상태로 들어가며 기존 자료는 중복 적재되지 않습니다.'), preview.warnings.length > 0 && !preview.ok);
       applyLoadControls();
     });
@@ -196,7 +206,7 @@
       if (loading || loaded || !preview || !preview.ok || !files.length) return;
       var c = preview.counts;
       if (!window.confirm('파일 ' + files.length + '개 · 대학 ' + c.universities + ' · 공식자료 ' + c.documents + ' · 전형 ' + c.types + ' · 일정 ' + c.schedules +
-          (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + (c.jeongsiFormulas ? ' · 정시 계산식 ' + c.jeongsiFormulas : '') + '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
+          (c.priorResults ? ' · 지난해 입시결과 ' + c.priorResults : '') + (c.jeongsiFormulas ? ' · 정시 계산식 ' + c.jeongsiFormulas : '') + (c.susiMinimums ? ' · 수능최저 ' + c.susiMinimums : '') + (c.csatStdMax ? ' · 표준점수 최고점 ' + c.csatStdMax : '') + (c.conversionScores ? ' · 변환표준점수표 ' + c.conversionScores : '') + '건을 DRAFT로 적재합니다. DB 백업을 확인하셨습니까?')) return;
       loading = true; applyLoadControls();
       var lines = [];
       try {
@@ -230,7 +240,10 @@
              (typeof r.excludedMaterials === 'number' ? ' · 제외 자료 ' + r.excludedMaterials + ' · 제외 하위 행 ' + r.excludedChildren : '') +
              (typeof r.knowledgeItems === 'number' ? ' · 지식항목 ' + r.knowledgeItems : '') +
              (typeof r.priorResults === 'number' ? ' · 지난해 입시결과 ' + r.priorResults : '') +
-             (typeof r.jeongsiFormulas === 'number' ? ' · 정시 계산식 ' + r.jeongsiFormulas : '') + ' · ' + r.status, false);
+             (typeof r.jeongsiFormulas === 'number' ? ' · 정시 계산식 ' + r.jeongsiFormulas : '') +
+             (typeof r.susiMinimums === 'number' ? ' · 수능최저 ' + r.susiMinimums : '') +
+             (typeof r.csatStdMax === 'number' ? ' · 표준점수 최고점 ' + r.csatStdMax : '') +
+             (typeof r.conversionScores === 'number' ? ' · 변환표준점수표 ' + r.conversionScores : '') + ' · ' + r.status, false);
       } catch (e) { show('승격 실패: ' + e.message, true); }
     });
 

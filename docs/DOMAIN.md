@@ -1829,11 +1829,30 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **계산기**: `JeongsiFormulaEvaluator`(서버). buildit-admissions `scripts/jeongsi_formula.py`와 같은 결과를 내야 하며, 실제 계산식 전부로 만든 일치 검사 자료(`src/test/resources/admissions/jeongsi_formula_conformance.json`)로 확인한다.
 - **한 행** = (대학, 학년도, `formula_key`). `type_names`(적용 전형명 JSON 배열, 2027 전형명 그대로)·`department_names`(적용 모집단위명, 비면 전형 전체)·`unit_scope_text`(원문 모집단위 문구)·`csat_points`(원문 수능 만점)·`raw_text`(근거 원문 발췌)·`evidence_pages`·`uncertain_json`(해석이 들어간 부분).
 - **확인 필요**: `needs_review_reason`이 있으면 원문에 없는 환산 방법을 정했거나 해석에 따라 점수가 크게 달라지는 계산식이다. 승격은 되지만 계산 API는 점수를 내지 않고 사유만 돌려준다.
-- **성적 발표 뒤 값**: 전국 최고 표준점수(`*_STD_MAX`)·대학 변환표준점수(`INQ*_CONV`, `INQ*_CONV_MAX`)는 2027 수능 성적 통지(2026-12-11) 뒤 정해진다. 값이 없으면 계산 API는 점수 대신 `pendingInputs`로 알린다.
+- **성적 발표 뒤 값**: 전국 최고 표준점수(`*_STD_MAX`)·대학 변환표준점수(`INQ*_CONV`, `INQ*_CONV_MAX`)는 2027 수능 성적 통지(2026-12-11) 뒤 정해진다. 계산 API는 아래 "정시 환산용 발표 값"의 ACTIVE 행으로 채우고, 행이 없으면 점수 대신 `pendingInputs`로 알린다.
 - **멱등**: `UNIQUE(university_id, academic_year, formula_key)`. 시드 행 전체의 sha256(`content_hash`)과 출처 자료가 같으면 그대로 두고, 바뀌면 갱신해 DRAFT로 되돌린다. 해석되지 않는 계산식이 있으면 시드 전체를 거절한다(롤백).
 - **출처 연결**: `source_id`→`admissions_official_materials`(그 대학의 기존 2027 정시 모집요강 자료, document_key `doc_{대학키}_2027_jeongsi`), `source_url`=계산식 근거 원문 파일 주소(대학 입학처).
 - **상태**: DRAFT로 들어오고 activate-all(2027)이 ACTIVE로 올린다(제외 자료 규칙 동일). 계산 API는 ACTIVE만 쓴다. 지식 항목·임베딩은 만들지 않는다.
 - **CRUD 범위**: 생성·갱신은 시드 적재로만, 삭제 API 없음(Create/Update-only). 고칠 때는 buildit-admissions 계산식 파일을 고쳐 재적재한다.
+
+## 수시 수능최저학력기준 (admissions_susi_minimums, V1101)
+
+대학 수시 모집요강의 **수능최저학력기준**을 조건식으로 옮겨 둔다. 학생 등급(가채점 포함)을 넣으면 전형·모집단위별 충족 여부를 알려 준다. 합격 여부는 판단하지 않는다.
+
+- **형식**: buildit-admissions `docs/schema/SUSI_MINIMUM.md`(susi_minimum/v1). `condition_expr`는 정시 계산식과 같은 수식 언어(등급 변수·선택 표시만, `low_sum` 등)이고 참이면 충족.
+- **한 행** = (대학, 학년도, `rule_key`). `rule_kind`=`RULE`(조건식 있음) 또는 `NO_MINIMUM`(최저 없는 전형 — 원문 근거만, 조건식 없음). `type_names`·`department_names`(JSON 배열, 2027 이름 그대로)·`unit_scope_text`·`required_areas_text`(응시 필수 영역 원문)·`raw_text`·`evidence_pages`·`uncertain_json`·`needs_review_reason`.
+- **적용 순서**: 모집단위를 주면, 그 모집단위를 `department_names`로 지정한 규칙이 있는 전형에서는 전형 전체 규칙(`department_names` 비어 있음)을 쓰지 않는다(예: "전체(의예과 제외)" / "의예과"). 모집단위를 모르면 그 대학 규칙을 모두 돌려준다.
+- **확인 필요**: `needs_review_reason`이 있으면 판정하지 않고 사유만 돌려준다.
+- **멱등·거절·출처·상태·CRUD**: 정시 계산식과 같다(`content_hash`, 해석 안 되는 조건식·알 수 없는 `rule_kind`면 시드 전체 거절, `source_id`=그 대학 2027 수시 모집요강 자료, DRAFT→activate-all→ACTIVE, 시드 적재로만 생성·갱신).
+
+## 정시 환산용 발표 값 (admissions_csat_std_max · admissions_conversion_scores, V1102)
+
+정시 계산식에서 수능 성적 발표 뒤에야 정해지는 값을 원문 그대로 둔다. 형식: buildit-admissions `docs/schema/JEONGSI_STATS.md`(csat_std_max/v1, conversion_score/v1).
+
+- **admissions_csat_std_max** — 한국교육과정평가원 수능 채점 결과의 표준점수 최고점. 한 행 = (학년도, `subject_key`). `subject_key`=`KOR`·`MATH`·`INQ:{원문 과목명}`, `area`=KOR/MATH/INQ, 탐구는 `subject_name`(원문 표기)·`track`(SOC/SCI/VOC) 필수, `std_max` 0 초과 200 이하. 대학과 무관(근거 자료도 대학 없는 평가원 자료 `doc_kice_{학년도}_csat_scores`).
+- **admissions_conversion_scores** — 대학이 발표한 탐구 변환표준점수표. 한 행 = (대학, 학년도, `track`). `scores_json`=백분위 "0"~"100" 101칸 → 점수. 백분위가 빠졌거나 낮은 백분위 점수가 더 높으면 시드 전체 거절.
+- **계산 연결**: `KOR_STD_MAX`·`MATH_STD_MAX`는 영역 행, `INQn_STD_MAX`는 학생이 준 탐구 과목명(띄어쓰기·가운뎃점·Ⅰ/I/1 표기 차이는 같게 봄)의 행, `INQn_CONV`는 학생 탐구 계열 표(SCI2는 SCI 표)에서 학생 백분위(정수) 칸, `INQn_CONV_MAX`는 같은 표 백분위 100 칸. 학생이 과목명·계열·백분위를 주지 않았으면 `missingInputs`(`INQn_SUBJECT`·`INQn_TRACK`·`INQn_PCT`), 자료가 없으면 `pendingInputs`. 채운 값은 출처와 함께 `derivedInputs`로 돌려준다. 학생이 값을 직접 넣으면 그 값을 쓴다.
+- **멱등·상태·CRUD**: 정시 계산식과 같다(`content_hash`, DRAFT→activate-all→ACTIVE, 계산은 ACTIVE만, 시드 적재로만 생성·갱신, 삭제 API 없음).
 
 ## AI AGENT 제작 스튜디오 · MCP Gateway (V1094, 미배포)
 

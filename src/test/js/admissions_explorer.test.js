@@ -17,3 +17,13 @@ test('given 탭 저장 후보 when 복원 then 올바른 모집단위 3개만 �
   assert.equal(result.length,3);assert.deepEqual(Object.keys(result[0]),['id','year','name','universityName']);
   assert.deepEqual(model.cleanCandidates([{...row,year:2026},null,{id:'1'}]),[]);
 });
+test('given 수능최저 판정 결과 when 화면 문구로 바꾸면 then 합격이 아니라 기준 충족 여부만 말한다',()=>{
+  // given / when / then
+  assert.equal(model.minimumLabel('MET'),'충족');
+  assert.equal(model.minimumLabel('NOT_MET'),'미충족');
+  assert.equal(model.minimumLabel('NO_MINIMUM'),'수능최저 없음');
+  assert.equal(model.minimumLabel('NEEDS_INPUT'),'등급 입력 필요');
+  assert.equal(model.minimumLabel('WITHHELD_NEEDS_REVIEW'),'원문 확인 필요');
+  assert.equal(model.minimumLabel('SOMETHING'),'확인할 수 없음');
+  assert.doesNotMatch(Object.values({a:model.minimumLabel('MET'),b:model.minimumLabel('NOT_MET')}).join(),/합격/);
+});
