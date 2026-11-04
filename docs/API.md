@@ -5188,3 +5188,7 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 | POST | `/jobs/{id}/fail {reason, durationMs}` | 첫 실패는 다시 대기, 두 번째는 실패 처리 |
 
 공개 이미지 `GET /api/sns/media/{token}.jpg` — 인스타그램이 `image_url`로 가져가는 주소. 24바이트 임의 토큰만, 버린 게시물은 404, `X-Robots-Tag: noindex`.
+
+## 내신위키 통합 작업실 (2026-11-04)
+
+`/problem-generator/wiki/index.html` 첫 화면에서 문제·자료 업로드, 문법문제은행, 내신제작소 세 기능을 전환한다. `?section=grammar|production`으로 바로 연다. 방문한 패널은 마운트를 유지하여 미저장 입력을 보존한다. 문법은 기존 GrammarBank/API, 제작소는 같은 출처 `/naesin-production-studio?embedded=1` 화면/API를 재사용한다. 원본·프로젝트·리비전·선택함을 복사하거나 삭제하지 않는다. 기존 ADMIN/modu 서버 권한 및 승인 정책과 독립 주소는 유지한다.
