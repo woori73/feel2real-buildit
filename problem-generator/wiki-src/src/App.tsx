@@ -13,7 +13,6 @@ import DigitalTwinImport from './components/DigitalTwinImport'
 import QuestionCard from './components/QuestionCard'
 import CategoryHub from './components/CategoryHub'
 import InsightRecorder from './components/InsightRecorder'
-import AssistantComposer, { AssistantMessage } from './components/AssistantComposer'
 import CsatEnglishWorkspace from './components/CsatEnglishWorkspace'
 import CsatWikiV1 from './components/CsatWikiV1'
 import NaesinWorkspace from './components/NaesinWorkspace'
@@ -24,7 +23,7 @@ import ChromeQuestionWorkbench from './components/ChromeQuestionWorkbench'
 import QuestionEditModal from './components/QuestionEditModal'
 import AdminWorkspaceSelector from './components/AdminWorkspaceSelector'
 import { StoredQuestion, createExamPaper, exportExamOffice, fetchExamDraft, fetchQuestions, saveExamDraft } from './lib/types'
-import { api, normalizedApiError } from './lib/api'
+import { api } from './lib/api'
 import { registerCsatSiteTools } from './lib/csatWebMcp'
 import { storageKey } from './lib/workspaceStorage'
 import './styles/generator.css'
@@ -104,10 +103,6 @@ export default function App() {
   const [wrongReviews, setWrongReviews] = useState<WrongReviewMaterial[]>(() => { try { return JSON.parse(localStorage.getItem(storageKey('f2r_wrong_review_materials')) || '[]') } catch { return [] } })
   const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([])
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([])
-  const [assistantOpen, setAssistantOpen] = useState(false)
-  const [assistantBusy, setAssistantBusy] = useState(false)
-  const [assistantState, setAssistantState] = useState(() => { try { return JSON.parse(sessionStorage.getItem('buildit_assistant_state') || '{}') } catch { return {} } })
   const [manualSaveOpen, setManualSaveOpen] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<StoredQuestion|null>(null)
   const [apiSettings, setApiSettings] = useState<ApiSettings>(() => { try { return { provider: JSON.parse(localStorage.getItem('f2r_ai_preference') || '{}').provider || 'auto' } } catch { return { provider: 'auto' } } })
@@ -130,25 +125,6 @@ export default function App() {
   const exportOffice = async () => { if (!selectedExamIds.length) { ready('강사 문제 DB에서 문항을 먼저 선택해 주세요.'); return } setSavingExam(true); try { await saveExamPaper(); const blob = await exportExamOffice({ title: examTitle, academy_name: academyName, teacher_name: teacherName, question_ids: selectedExamIds }); downloadBlob(`${(examTitle || '내신_실전_시험지').replace(/[\\/:*?"<>|]/g, '_')}.docx`, blob); setNotice('문제지와 정답을 하나로 묶은 오피스 2007(.docx) 파일을 내보냈습니다.') } catch (err) { setNotice(err instanceof Error ? err.message : '문제지·정답지를 내보내지 못했습니다.') } finally { setSavingExam(false) } }
   const examQuestions = selectedExamIds.map(id => questions.find(item => item.id === id)).filter((item): item is StoredQuestion => Boolean(item))
   const mcCount = examQuestions.filter(q => q.q_kind === 'mc').length, saCount = examQuestions.filter(q => q.q_kind === 'sa').length, totalScore = examQuestions.reduce((sum, q) => sum + (q.score || 0), 0)
-  const runAssistant = async (raw: string, files: File[] = []) => {
-    const command = raw.trim()
-    if (!command && !files.length) return
-    const userMessage: AssistantMessage = { role: 'user', content: command || `첨부: ${files.map(file => file.name).join(', ')}` }
-    const history = [...assistantMessages, userMessage]
-    setAssistantMessages(history); setAssistantOpen(true); setAssistantBusy(true)
-    try {
-      let pageContext = {}; try { pageContext = JSON.parse(sessionStorage.getItem('buildit_page_context') || '{}') } catch { /* use assistant state */ }
-      const response = await api('assistant/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: command, provider: apiSettings.provider, state: { ...assistantState, ...pageContext, current_page: page }, history: history.slice(-8), attachments: files.map(file => ({ name: file.name, type: file.type })) }) })
-      if (!response.ok) throw new Error(await normalizedApiError(response, apiSettings?.provider || 'auto'))
-      const body = await response.json()
-      const nextState = body.state || assistantState
-      setAssistantState(nextState); sessionStorage.setItem('buildit_assistant_state', JSON.stringify(nextState))
-      setAssistantMessages(items => [...items, { role: 'assistant', content: body.text, page: body.page as Page, action: body.action }])
-    } catch (error) {
-      setAssistantMessages(items => [...items, { role: 'assistant', content: error instanceof Error ? error.message : 'Assistant 연결에 실패했습니다.', page: 'home', action: '내신 문제 준비하기' }])
-    } finally { setAssistantBusy(false) }
-  }
-
   const isHome = page === 'state' || page === 'csatwiki'
   const isHub = page === 'create' || page === 'student' || page === 'intelligence'
   const parentHub: Page = ['wrongextract', 'wrongrestore', 'wrongnote', 'wronghub'].includes(page) ? 'student' : page === 'brain' || page === 'twin' ? 'intelligence' : 'create'
@@ -182,7 +158,6 @@ export default function App() {
       {page === 'exam' && <section className="work-panel final-school-print-picker"><div className="panel-heading"><div><p className="kicker">FINAL SOURCE</p><h2>학생 오답 복습자료 source</h2><p>학교·학년·시험 정보가 함께 저장된 편집 HTML을 선택하며 AI가 다시 쓰지 않습니다.</p></div></div><div className="material-list">{wrongReviews.length?wrongReviews.map(item=><article key={item.id}><input type="checkbox" checked={selectedReviewIds.includes(item.id)} onChange={()=>setSelectedReviewIds(ids=>ids.includes(item.id)?ids.filter(id=>id!==item.id):[...ids,item.id])}/><div><b>{item.title}</b><p>{item.studentName} · {item.school} · {item.grade} · {item.exam}</p></div>{selectedReviewIds.includes(item.id)&&<><button aria-label={`${item.title} 위로`} onClick={()=>setSelectedReviewIds(ids=>moveSource(ids,item.id,-1))}>위로</button><button aria-label={`${item.title} 아래로`} onClick={()=>setSelectedReviewIds(ids=>moveSource(ids,item.id,1))}>아래로</button></>}</article>):<div className="empty-state"><b>저장된 학생 오답 복습자료가 없습니다.</b></div>}</div>{selectedReviewIds.map(id=>wrongReviews.find(x=>x.id===id)).filter((x):x is WrongReviewMaterial=>Boolean(x)).map(item=><section className="final-school-print" data-source-type="student-wrong-review" key={item.id}><h3>{item.title}</h3><div className="final-html-canvas" contentEditable suppressContentEditableWarning dangerouslySetInnerHTML={{__html:item.html}}/></section>)}{selectedReviewIds.length>0&&<button className="primary-action" onClick={()=>window.print()}>A4 인쇄</button>}</section>}
     </main>
     {editingQuestion&&<QuestionEditModal question={editingQuestion} onClose={()=>setEditingQuestion(null)} onSaved={saved=>{setQuestions(items=>items.map(item=>item.id===saved.id?saved:item));setEditingQuestion(null);setNotice(`QID ${saved.id} 문항을 수정했습니다.`)}}/>}
-    <AssistantComposer messages={assistantOpen ? assistantMessages : []} busy={assistantBusy} onRun={runAssistant} onNavigate={setPage} onDismiss={() => setAssistantOpen(false)} />
     <ApiSettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={settings => { setApiSettings(settings); setNotice('AI API 설정을 저장했습니다. 문제 생성기에서 바로 사용할 수 있습니다.') }} />
   </div>
 }
