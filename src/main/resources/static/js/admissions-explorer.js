@@ -32,15 +32,46 @@
   function save(){
     try{sessionStorage.setItem('f2r-admissions-candidates-v1',JSON.stringify(candidates));}catch(e){}
     byId('ae-count').textContent=String(candidates.length);
+    byId('ae-my-candidates').textContent=candidates.length?candidates.map(function(c){return c.universityName+' '+c.name;}).join(' · '):'대학 찾기에서 관심 모집단위를 담아보세요.';
+    byId('ae-compare-ask').disabled=!candidates.length;
   }
   function tab(name){
+    if(['home','prepare','my','search','compare','scores','chat'].indexOf(name)<0)return;
     byId('ae-workspace').hidden=name==='chat';
-    ['search','compare','scores'].forEach(function(p){byId('ae-'+p+'-panel').hidden=p!==name;});
+    ['home','prepare','my','search','compare','scores'].forEach(function(p){byId('ae-'+p+'-panel').hidden=p!==name;});
     if(name!=='chat'){byId('ag-welcome').hidden=true;byId('ag-chat').hidden=true;}
-    else {byId('ag-chat').hidden=true;byId('ag-welcome').hidden=false;doc.dispatchEvent(new CustomEvent('admissions:show-chat'));}
+    else {var hasConversation=byId('ag-messages').children.length>0;byId('ag-chat').hidden=!hasConversation;byId('ag-welcome').hidden=hasConversation;doc.dispatchEvent(new CustomEvent('admissions:show-chat'));}
     doc.querySelectorAll('[data-ae-tab]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.aeTab===name));});
     if(name==='scores'){byId('ae-score-form').hidden=year()===2028;byId('ae-score-year-note').hidden=year()!==2028;}
     if(name==='compare')compare();
+    doc.body.dataset.admissionsView=name;
+  }
+  function scoreMode(){
+    var onlyGrades=byId('ae-score-kind').value==='내신';
+    doc.querySelectorAll('[data-ae-csat]').forEach(function(area){area.hidden=onlyGrades;area.querySelectorAll('input,select').forEach(function(input){input.disabled=onlyGrades;});});
+  }
+  function prepare(){
+    var nextYear=byId('ae-prepare-year').value;
+    if(byId('ae-year').value!==nextYear){byId('ae-year').value=nextYear;byId('ae-year').dispatchEvent(new Event('change'));}
+    byId('ag-grade').value=byId('ae-prepare-grade').value;
+    byId('ag-admission-track').value=byId('ae-prepare-track').value;
+    byId('ag-target-majors').value=byId('ae-prepare-major').value.trim();
+    byId('ae-major').value=byId('ae-prepare-major').value.trim();
+    var kind=byId('ae-prepare-kind').value;
+    if(kind==='none'){resetScores();tab('search');return;}
+    if(year()===2028){tab('chat');return;}
+    if(byId('ae-score-kind').value!==kind){byId('ae-score-kind').value=kind;byId('ae-score-kind').dispatchEvent(new Event('change'));}
+    scoreMode();tab('scores');
+  }
+  function askCandidates(){
+    if(!candidates.length)return;
+    var selectedYear=candidates[0].year;
+    if(candidates.some(function(c){return c.year!==selectedYear;})){byId('ae-compare-status').textContent='같은 학년도의 후보만 남긴 뒤 비교 상담을 시작해 주세요.';return;}
+    byId('ag-year-select').value=String(selectedYear);byId('ag-year-select').dispatchEvent(new Event('change'));
+    byId('ag-target-universities').value=Array.from(new Set(candidates.map(function(c){return c.universityName;}))).join(', ').slice(0,200);
+    byId('ag-target-majors').value=Array.from(new Set(candidates.map(function(c){return c.name;}))).join(', ').slice(0,200);
+    tab('chat');
+    doc.dispatchEvent(new CustomEvent('admissions:question',{detail:{question:selectedYear+'학년도 지원 후보 '+candidates.map(function(c){return c.universityName+' '+c.name;}).join(' / ')+'를 비교해 줘. 공식 모집요강과 '+(selectedYear-1)+'학년도 입결의 전형·지표·출처를 구분하고, 내 성적 요약이 있으면 참고해 줘. 비교할 근거가 없으면 미확보라고 말하고 합격 가능성을 단정하지 마.'}}));
   }
   function ask(row){
     byId('ag-year-select').value=String(row.year);byId('ag-year-select').dispatchEvent(new Event('change'));
@@ -156,20 +187,27 @@
   function scores(){
     var labels={korean:'국어',math:'수학',inquiry1:'탐구1',inquiry2:'탐구2'},parts=[],kind=byId('ae-score-kind').value;
     var avg=byId('ae-grade-average').value;if(avg)parts.push('내신 평균 '+avg+'등급');
+    if(kind==='내신'){if(!avg)throw new Error('내신 평균등급을 입력해 주세요.');return kind+': '+parts.join(' / ');}
     Object.keys(labels).forEach(function(key){var values=['standard','percentile','grade'].map(function(k){var v=byId('ae-'+key+'-'+k).value;return v?{standard:'표준점수 ',percentile:'백분위 ',grade:'등급 '}[k]+v:'';}).filter(Boolean);if(values.length){var subject=byId('ae-'+key+'-subject').value;if(key.indexOf('inquiry')===0&&!subject.trim())throw new Error('점수를 입력한 탐구 과목의 이름도 적어 주세요.');parts.push(labels[key]+'('+subject+') '+values.join(', '));}});
     ['english','history','foreign'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v)parts.push(({english:'영어',history:'한국사',foreign:'제2외국어·한문'}[key])+' '+v+'등급');});
     if(!parts.length)throw new Error('상담에 적용할 성적을 하나 이상 입력해 주세요.');
     return kind+': '+parts.join(' / ');
   }
   doc.querySelectorAll('[data-ae-tab]').forEach(function(b){b.addEventListener('click',function(){tab(b.dataset.aeTab);});});
-  byId('ae-year').addEventListener('change',function(){byId('ag-year-select').value=String(year());byId('ag-year-select').dispatchEvent(new Event('change'));byId('ae-score-form').reset();byId('ag-academic-summary').value='';loadUniversities();});
-  byId('ag-year-select').addEventListener('change',function(){if(byId('ae-year').value!==this.value){byId('ae-year').value=this.value;byId('ae-score-form').reset();byId('ag-academic-summary').value='';loadUniversities();}});
+  doc.addEventListener('admissions:navigate',function(e){if(e.detail)tab(e.detail.tab);});
+  byId('ae-prepare-form').addEventListener('submit',function(e){e.preventDefault();prepare();});
+  byId('ae-score-kind').addEventListener('change',function(){scoreMode();byId('ae-score-next').hidden=true;byId('ag-academic-summary').value='';byId('ae-score-status').textContent='성적 종류가 바뀌었습니다. 입력값을 확인하고 다시 적용해 주세요.';});
+  function resetScores(){byId('ae-score-form').reset();byId('ag-academic-summary').value='';byId('ae-score-next').hidden=true;byId('ae-score-status').textContent='';scoreMode();}
+  byId('ae-year').addEventListener('change',function(){byId('ag-year-select').value=String(year());byId('ag-year-select').dispatchEvent(new Event('change'));resetScores();loadUniversities();});
+  byId('ag-year-select').addEventListener('change',function(){byId('ae-prepare-year').value=this.value;if(byId('ae-year').value!==this.value){byId('ae-year').value=this.value;resetScores();loadUniversities();}});
   byId('ae-univ-filter').addEventListener('input',renderUniversities);
   byId('ae-university').addEventListener('change',function(){++generation;++detailGeneration;byId('ae-results').replaceChildren();byId('ae-detail').hidden=true;});
   byId('ae-search-form').addEventListener('submit',function(e){e.preventDefault();search();});
   byId('ae-compare-refresh').addEventListener('click',compare);
+  byId('ae-compare-ask').addEventListener('click',askCandidates);
   byId('ae-clear').addEventListener('click',function(){candidates=[];save();compare();});
-  byId('ae-score-form').addEventListener('submit',function(e){e.preventDefault();try{var value=scores();byId('ag-academic-summary').value=value;byId('ae-score-status').textContent='상담 성적 요약에 적용했습니다. AI 상담에서 질문을 전송하면 함께 전달됩니다.';}catch(error){byId('ae-score-status').textContent=error.message;}});
-  byId('ae-score-clear').addEventListener('click',function(){byId('ae-score-form').reset();byId('ag-academic-summary').value='';byId('ae-score-status').textContent='성적 입력과 상담용 성적 요약을 지웠습니다.';});
-  save();loadUniversities();
+  byId('ae-score-form').addEventListener('submit',function(e){e.preventDefault();try{var value=scores();byId('ag-academic-summary').value=value;byId('ae-score-next').hidden=false;byId('ae-score-status').textContent='상담 성적 요약에 적용했습니다. AI 상담에서 질문을 전송하면 함께 전달됩니다.';}catch(error){byId('ae-score-next').hidden=true;byId('ae-score-status').textContent=error.message;}});
+  byId('ae-score-clear').addEventListener('click',function(){resetScores();byId('ae-score-status').textContent='성적 입력과 상담용 성적 요약을 지웠습니다.';});
+  byId('ae-score-form').addEventListener('input',function(){byId('ae-score-next').hidden=true;byId('ag-academic-summary').value='';});
+  save();scoreMode();tab('home');loadUniversities();
 })(typeof window!=='undefined'?window:globalThis);
