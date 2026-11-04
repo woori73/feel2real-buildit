@@ -372,6 +372,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsChatServicePolicyTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderYearTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsLlmClientTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransportTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmClientTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsQueryParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildServiceTest"

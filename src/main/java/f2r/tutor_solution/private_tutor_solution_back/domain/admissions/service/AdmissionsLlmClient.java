@@ -7,6 +7,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewSta
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NvidiaNimLlmTransport;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenRouterQwenLlmTransport;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.WikiRouterLlmTransport;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
  * 정상 경로 primary 1회, 기술적 실패 시에만 fallback 1회. 그 이상 재시도 없음.
  *
  * <p>transport 빈(WikiRouter/Meta/NVIDIA/OpenRouter)은 NewStart와 공유한다 (인프라 재사용).
+ * OpenAI Luna는 두 상담 서비스가 답변 transport만 공유한다.
  * primary 선택만 {@code app.admissions.llm.primary} 설정으로 분리한다.
  * NewStart 운영 코드는 변경하지 않는다.
  *
@@ -45,8 +47,9 @@ public class AdmissionsLlmClient {
             WikiRouterLlmTransport wikiRouter,
             NvidiaNimLlmTransport nvidia,
             MetaMuseSparkLlmTransport metaMuseSpark,
-            OpenRouterQwenLlmTransport openRouter) {
-        this(selectPrimary(properties == null ? null : properties.getPrimary(), wikiRouter, nvidia, metaMuseSpark),
+            OpenRouterQwenLlmTransport openRouter,
+      OpenAiLunaLlmTransport luna) {
+        this(selectPrimary(properties == null ? null : properties.getPrimary(), wikiRouter, nvidia, metaMuseSpark, luna),
                 openRouter);
         log.info("admissions llm primary={} fallback={}", this.primary.name(), openRouter.name());
     }
@@ -60,7 +63,13 @@ public class AdmissionsLlmClient {
         return "nvidia".equalsIgnoreCase(value) ? nvidia : wikiRouter;
     }
 
-    public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter,
+      NewStartLlmTransport nvidia, NewStartLlmTransport metaMuseSpark, NewStartLlmTransport luna) {
+    if ("openai".equalsIgnoreCase(configured == null ? "" : configured.trim())) return luna;
+    return selectPrimary(configured, wikiRouter, nvidia, metaMuseSpark);
+  }
+
+  public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
         long tPrimary = System.nanoTime();
         NewStartLlmCompletion first = primary.complete(systemPrompt, prompt, maxOutputChars);
         if (first.ok()) {

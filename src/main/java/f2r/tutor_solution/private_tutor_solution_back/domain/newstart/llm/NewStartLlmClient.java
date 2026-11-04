@@ -42,8 +42,9 @@ public class NewStartLlmClient {
       WikiRouterLlmTransport wikiRouter,
       NvidiaNimLlmTransport nvidia,
       MetaMuseSparkLlmTransport metaMuseSpark,
-      OpenRouterQwenLlmTransport openRouter) {
-    this(selectPrimary(properties == null ? null : properties.getPrimary(), wikiRouter, nvidia, metaMuseSpark), openRouter);
+      OpenRouterQwenLlmTransport openRouter,
+      OpenAiLunaLlmTransport luna) {
+    this(selectPrimary(properties == null ? null : properties.getPrimary(), wikiRouter, nvidia, metaMuseSpark, luna), openRouter);
     log.info("newstart llm primary={} fallback={}", this.primary.name(), openRouter.name());
   }
 
@@ -60,6 +61,12 @@ public class NewStartLlmClient {
   static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter,
       NewStartLlmTransport nvidia) {
     return selectPrimary(configured, wikiRouter, nvidia, null);
+  }
+
+  static NewStartLlmTransport selectPrimary(String configured, NewStartLlmTransport wikiRouter,
+      NewStartLlmTransport nvidia, NewStartLlmTransport metaMuseSpark, NewStartLlmTransport luna) {
+    if ("openai".equalsIgnoreCase(configured == null ? "" : configured.trim())) return luna;
+    return selectPrimary(configured, wikiRouter, nvidia, metaMuseSpark);
   }
 
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
