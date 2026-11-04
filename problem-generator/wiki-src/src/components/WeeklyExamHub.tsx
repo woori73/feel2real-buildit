@@ -135,7 +135,7 @@ export default function WeeklyExamHub(props:Props){
       <div className="context-health">
         <span className={currentStatus==='COMPLETE'?'context-status living':'context-status partial'}>Context {currentStatus}</span>
         <small>기출 {pastExamCount} · 학습지/필기 {schoolPrintCount} · Digital Twin {hasDigitalTwin?'연결':'미연결'}</small>
-        <small>제작·검수 기록 {aiWorkLogCount} · 학생 오답 {wrongCount}</small>
+        <small>제작·검수 기록 {aiWorkLogCount}</small>
         {lastContextUpdate&&<small>마지막 Context 업데이트 {new Date(lastContextUpdate).toLocaleString('ko-KR')}</small>}
       </div>
       <button type="button" className="secondary-button" onClick={onOpenContext}>자료 보기 · AI Context</button>
@@ -147,7 +147,7 @@ export default function WeeklyExamHub(props:Props){
         <p>문제지·해설지·출제검수를 회차별로 보관합니다.</p>
         <div className="next-round-summary"><b>다음 회차 준비 · {nextRound}회</b>
           <span>현재 Context 전체를 다시 계산해 Blueprint를 준비합니다.</span>
-          <small>최근 FINAL {latestFinal?latestFinal.round+'회':'없음'} · 학생 오답 {wrongCount}건</small>
+          <small>최근 FINAL {latestFinal?latestFinal.round+'회':'없음'}</small>
           {latestFinal&&<button onClick={()=>open(`weekly-exams/${latestFinal.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>}
         </div>
         <div className="weekly-set-list" aria-label="주간 실전 모의고사 상태">
@@ -180,12 +180,7 @@ export default function WeeklyExamHub(props:Props){
         <button type="button" className="primary-action" onClick={()=>setShowRegister(value=>!value)}>제작물 3종 DRAFT 등록</button>
       </article>
 
-      <article className="repeat-entry-card wrong-review">
-        <p className="kicker">STUDENT ERROR CONTEXT</p><h2>오답 복습</h2>
-        <p>학교 공통 Context와 섞지 않고 학생별 100발100중 오답을 누적합니다.</p>
-        <div className="wrong-summary"><strong>{wrongCount}</strong><span>현재 시험 Context 오답 자료</span></div>
-        <button type="button" className="primary-action" onClick={onOpenWrongReview}>오답 복습 열기</button>
-      </article>
+
 
     </div>
 
