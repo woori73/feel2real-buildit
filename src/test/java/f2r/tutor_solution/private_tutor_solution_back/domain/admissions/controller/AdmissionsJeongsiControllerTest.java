@@ -46,7 +46,7 @@ class AdmissionsJeongsiControllerTest {
     void rateLimited_returns429() {
         // given
         var service = mock(AdmissionsJeongsiScoreService.class);
-        when(service.calculate(anyString(), anyInt(), any(), any(), any()))
+        when(service.calculate(anyString(), anyInt(), any(), any(), any(), any()))
                 .thenReturn(new AdmissionsJeongsiScoreService.ScoreResult("서울시립대학교", 2027, List.of(), "안내"));
         var controller = new AdmissionsJeongsiController(service, limiter(1), true);
         // when
@@ -62,7 +62,7 @@ class AdmissionsJeongsiControllerTest {
     void invalid_returns400() {
         // given
         var service = mock(AdmissionsJeongsiScoreService.class);
-        when(service.calculate(anyString(), anyInt(), any(), any(), any()))
+        when(service.calculate(anyString(), anyInt(), any(), any(), any(), any()))
                 .thenThrow(new AdmissionsJeongsiScoreService.InvalidScoreRequestException("알 수 없는 입력 항목: KOREAN"));
         var controller = new AdmissionsJeongsiController(service, limiter(10), true);
         // when
@@ -73,6 +73,6 @@ class AdmissionsJeongsiControllerTest {
         assertThat(bad.getStatusCode().value()).isEqualTo(400);
         assertThat(bad.getBody()).isEqualTo(Map.of("error", "알 수 없는 입력 항목: KOREAN"));
         assertThat(wrongYear.getStatusCode().value()).isEqualTo(400);
-        verify(service, never()).calculate(anyString(), org.mockito.ArgumentMatchers.eq(2028), any(), any(), any());
+        verify(service, never()).calculate(anyString(), org.mockito.ArgumentMatchers.eq(2028), any(), any(), any(), any());
     }
 }

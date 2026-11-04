@@ -124,6 +124,15 @@
     if(math){out.MATH_SEL_PROB=Number(math==='확률과 통계');out.MATH_SEL_CALC=Number(math==='미적분');out.MATH_SEL_GEOM=Number(math==='기하');}
   }
   function trackFlags(out,prefix,group){if(!group)return;['SOC','SCI','VOC','SCI2'].forEach(function(flag){out[prefix+'_'+flag]=Number(group===flag||(flag==='SCI'&&group==='SCI2'));});}
+  function inquirySubjects(){var out={};['1','2'].forEach(function(n){var v=byId('ae-inquiry'+n+'-subject').value.trim();if(v)out['INQ'+n]=v;});return out;}
+  // 평가원 채점 결과가 승인되면 탐구 과목명 입력에 원문 표기 목록을 붙인다(발표 전에는 빈 목록이라 아무것도 하지 않는다).
+  async function loadInquirySubjects(){
+    try{var res=await root.fetch('/api/admissions/jeongsi/inquiry-subjects?academicYear=2027');if(!res.ok)return;var body=await res.json();var list=(body&&body.subjects)||[];if(!list.length)return;
+      var dl=document.getElementById('ae-inquiry-subjects');if(!dl){dl=document.createElement('datalist');dl.id='ae-inquiry-subjects';document.body.appendChild(dl);}
+      dl.replaceChildren();list.forEach(function(x){var o=document.createElement('option');o.value=x.subject;dl.appendChild(o);});
+      ['1','2'].forEach(function(n){var i=byId('ae-inquiry'+n+'-subject');if(i)i.setAttribute('list','ae-inquiry-subjects');});
+    }catch(e){}
+  }
   function scoreInputs(){
     var out={}, prefixes={korean:'KOR',math:'MATH',inquiry1:'INQ1',inquiry2:'INQ2'},hasAny=false;
     Object.keys(prefixes).forEach(function(key){
@@ -137,7 +146,7 @@
     ['english','history','foreign'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v!==''){out[{english:'ENG_GRD',history:'HIST_GRD',foreign:'FL_GRD'}[key]]=Number(v);hasAny=true;}});out.FL_TAKEN=Number(byId('ae-foreign-grade').value!=='');
     if(!hasAny)throw new Error('내 성적에서 확정 수능 성적을 입력해 주세요.');return out;
   }
-  function inputLabel(key){var labels={KOR:'국어',MATH:'수학',INQ1:'탐구1',INQ2:'탐구2',ENG:'영어',HIST:'한국사',FL:'제2외국어·한문'};var parts=key.split('_'),subject=labels[parts.shift()]||key,field=parts.join('_');return subject+' '+({STD:'표준점수',PCT:'백분위',GRD:'등급',STD_MAX:'전국 최고 표준점수',CONV:'대학 변환표준점수',CONV_MAX:'대학 변환표준점수 최고점',SEL:'선택과목',TRACK:'계열(사회/과학/직업)',TAKEN:'응시 여부',SEL_HW:'화법과 작문 선택',SEL_EM:'언어와 매체 선택',SEL_PROB:'확률과 통계 선택',SEL_CALC:'미적분 선택',SEL_GEOM:'기하 선택',SOC:'사회탐구',SCI:'과학탐구',VOC:'직업탐구',SCI2:'과학탐구Ⅱ'}[field]||field);}
+  function inputLabel(key){var labels={KOR:'국어',MATH:'수학',INQ1:'탐구1',INQ2:'탐구2',ENG:'영어',HIST:'한국사',FL:'제2외국어·한문'};var parts=key.split('_'),subject=labels[parts.shift()]||key,field=parts.join('_');return subject+' '+({STD:'표준점수',PCT:'백분위',GRD:'등급',STD_MAX:'전국 최고 표준점수',CONV:'대학 변환표준점수',CONV_MAX:'대학 변환표준점수 최고점',SEL:'선택과목',SUBJECT:'과목명(평가원 표기와 같게)',TRACK:'계열(사회/과학/직업)',TAKEN:'응시 여부',SEL_HW:'화법과 작문 선택',SEL_EM:'언어와 매체 선택',SEL_PROB:'확률과 통계 선택',SEL_CALC:'미적분 선택',SEL_GEOM:'기하 선택',SOC:'사회탐구',SCI:'과학탐구',VOC:'직업탐구',SCI2:'과학탐구Ⅱ'}[field]||field);}
   async function calculate(parent,data){
     if(byId('ae-score-kind').value!=='수능 확정 성적'){tab('scores');byId('ae-score-status').textContent='환산 계산에는 확정 수능 성적이 필요합니다. 성적 종류와 점수를 확인한 뒤 모집단위에서 계산해 주세요.';return;}
     if(!byId('ae-score-form').reportValidity()){tab('scores');return;}
@@ -145,7 +154,7 @@
     var old=parent.querySelector('.ae-calculation');if(old)old.remove();var panel=el('section',null,'ae-calculation');panel.setAttribute('aria-live','polite');parent.appendChild(panel);panel.textContent='공식 계산식을 조회하고 있습니다…';
     try{
       var endpoint=member?base+'/score':'/api/admissions/jeongsi/score';
-      var res=await(member?root.fetchAuth:root.fetch)(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({university:data.department.universityName,academicYear:2027,departmentName:data.department.name,scores:inputs})});
+      var res=await(member?root.fetchAuth:root.fetch)(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({university:data.department.universityName,academicYear:2027,departmentName:data.department.name,scores:inputs,inquirySubjects:inquirySubjects()})});
       var result=await res.json().catch(function(){return null;});if(!panel.isConnected)return;
       if(!res.ok)throw new Error(res.status===503?'현재 환산 계산을 이용할 수 없습니다.':res.status===429?'요청이 많습니다. 잠시 후 다시 계산해 주세요.':res.status===400?'입력 성적과 선택한 대학을 확인해 주세요.':'환산 계산에 실패했습니다.');
       panel.replaceChildren(el('h3','대학별 수능 환산점수'));paragraph(panel,result.notice||'공식 계산 결과');
@@ -156,6 +165,7 @@
         else if(f.outcome==='NEEDS_INPUT'){if((f.missingInputs||[]).length)paragraph(card,'학생 입력 필요: '+f.missingInputs.map(inputLabel).join(', '));if((f.pendingInputs||[]).length)paragraph(card,'공식 자료 연결 필요: '+f.pendingInputs.map(inputLabel).join(', '));}
         else paragraph(card,'계산식을 확인하고 있습니다. 점수를 안내할 수 없습니다.');
         if(f.eligibilityText)paragraph(card,'지원자격: '+f.eligibilityText);if(f.notInCsatScoreText)paragraph(card,'수능 점수 외 반영요소: '+f.notInCsatScoreText);if(f.roundingText)paragraph(card,'점수 처리: '+f.roundingText);
+        if((f.derivedInputs||[]).length)paragraph(card,'공식 발표 자료에서 채운 값: '+f.derivedInputs.map(function(d){return inputLabel(d.name)+' '+text(d.value)+' ('+text(d.basis)+(d.sourceTitle?', '+d.sourceTitle:'')+')';}).join(' / '));
         if((f.defaultedInputs||[]).length)paragraph(card,'미입력 선택 표시를 0으로 처리한 항목: '+f.defaultedInputs.map(inputLabel).join(', '));
         if((f.uncertain||[]).length)paragraph(card,'원문 확인 사항: '+f.uncertain.join(' / '));source(card,f.sourceUrl,f.sourceTitle||'공식 계산식 출처');if(f.evidencePages)paragraph(card,'근거 쪽: '+f.evidencePages);panel.appendChild(card);
       });paragraph(panel,'입력값을 바꾸면 다시 계산해 주세요. 지난해 입결과 올해 환산점수는 점수 체계가 다를 수 있습니다.','ae-note');
@@ -211,5 +221,5 @@
   byId('ae-clear').addEventListener('click',function(){candidates=[];save();compare();});
   byId('ae-score-form').addEventListener('submit',function(e){e.preventDefault();try{var value=scores();byId('ag-academic-summary').value=value;byId('ae-score-status').textContent='상담 성적 요약에 적용했습니다. AI 상담에서 질문을 전송하면 함께 전달됩니다.';}catch(error){byId('ae-score-status').textContent=error.message;}});
   byId('ae-score-clear').addEventListener('click',function(){byId('ae-score-form').reset();byId('ag-academic-summary').value='';byId('ae-score-status').textContent='성적 입력과 상담용 성적 요약을 지웠습니다.';});
-  save();loadUniversities();
+  save();loadUniversities();loadInquirySubjects();
 })(typeof window!=='undefined'?window:globalThis);

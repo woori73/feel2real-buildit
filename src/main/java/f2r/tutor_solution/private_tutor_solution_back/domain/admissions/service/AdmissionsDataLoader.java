@@ -53,6 +53,8 @@ public class AdmissionsDataLoader {
     private final AdmissionsPriorResultRepository priorResultRepository;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsJeongsiFormulaRepository jeongsiFormulaRepository;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsSusiMinimumRepository susiMinimumRepository;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCsatStdMaxRepository csatStdMaxRepository;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsConversionScoreRepository conversionScoreRepository;
 
     /**
      * 적재 결과. departmentsUpdated·typesUpdated는 이미 있던 행(같은 대학·학년도·이름) 중 내용이 바뀌어
@@ -66,7 +68,18 @@ public class AdmissionsDataLoader {
                              int supersededArchived, int schedulesSourced,
                              int priorResults, int priorResultsUpdated,
                              int jeongsiFormulas, int jeongsiFormulasUpdated,
-                             int susiMinimums, int susiMinimumsUpdated) {
+                             int susiMinimums, int susiMinimumsUpdated,
+                             int csatStdMax, int csatStdMaxUpdated, int conversionScores, int conversionScoresUpdated) {
+        public LoadResult(int universities, int materials, int departments,
+                          int types, int schedules, int knowledgeItems, int skipped,
+                          int departmentsUpdated, int typesUpdated, int schedulesArchived,
+                          int supersededArchived, int schedulesSourced, int priorResults, int priorResultsUpdated,
+                          int jeongsiFormulas, int jeongsiFormulasUpdated, int susiMinimums, int susiMinimumsUpdated) {
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, departmentsUpdated, typesUpdated,
+                    schedulesArchived, supersededArchived, schedulesSourced, priorResults, priorResultsUpdated,
+                    jeongsiFormulas, jeongsiFormulasUpdated, susiMinimums, susiMinimumsUpdated, 0, 0, 0, 0);
+        }
+
         public LoadResult(int universities, int materials, int departments,
                           int types, int schedules, int knowledgeItems, int skipped,
                           int departmentsUpdated, int typesUpdated, int schedulesArchived,
@@ -74,12 +87,12 @@ public class AdmissionsDataLoader {
                           int jeongsiFormulas, int jeongsiFormulasUpdated) {
             this(universities, materials, departments, types, schedules, knowledgeItems, skipped, departmentsUpdated, typesUpdated,
                     schedulesArchived, supersededArchived, schedulesSourced, priorResults, priorResultsUpdated,
-                    jeongsiFormulas, jeongsiFormulasUpdated, 0, 0);
+                    jeongsiFormulas, jeongsiFormulasUpdated, 0, 0, 0, 0, 0, 0);
         }
 
         public LoadResult(int universities, int materials, int departments,
                           int types, int schedules, int knowledgeItems, int skipped) {
-            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            this(universities, materials, departments, types, schedules, knowledgeItems, skipped, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         public LoadResult(int universities, int materials, int departments,
@@ -87,7 +100,7 @@ public class AdmissionsDataLoader {
                           int departmentsUpdated, int typesUpdated, int schedulesArchived,
                           int supersededArchived, int schedulesSourced, int priorResults, int priorResultsUpdated) {
             this(universities, materials, departments, types, schedules, knowledgeItems, skipped, departmentsUpdated, typesUpdated,
-                    schedulesArchived, supersededArchived, schedulesSourced, priorResults, priorResultsUpdated, 0, 0, 0, 0);
+                    schedulesArchived, supersededArchived, schedulesSourced, priorResults, priorResultsUpdated, 0, 0, 0, 0, 0, 0, 0, 0);
         }
 
         public LoadResult(int universities, int materials, int departments,
@@ -95,7 +108,7 @@ public class AdmissionsDataLoader {
                           int departmentsUpdated, int typesUpdated, int schedulesArchived,
                           int supersededArchived, int schedulesSourced) {
             this(universities, materials, departments, types, schedules, knowledgeItems, skipped,
-                    departmentsUpdated, typesUpdated, schedulesArchived, supersededArchived, schedulesSourced, 0, 0, 0, 0, 0, 0);
+                    departmentsUpdated, typesUpdated, schedulesArchived, supersededArchived, schedulesSourced, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 
@@ -121,7 +134,9 @@ public class AdmissionsDataLoader {
     @Transactional
     public LoadResult loadSeed(String seedJson) throws Exception {
         JsonNode root = objectMapper.readTree(seedJson);
-        if (!root.path("ipsi_universities").isArray() || root.path("ipsi_universities").isEmpty()) {
+        // 평가원 표준점수 최고점만 있는 시드는 대학이 없다(근거 자료도 대학 없는 평가원 자료).
+        boolean stdMaxOnly = root.path("csat_std_max").isArray() && !root.path("csat_std_max").isEmpty();
+        if (!stdMaxOnly && (!root.path("ipsi_universities").isArray() || root.path("ipsi_universities").isEmpty())) {
             throw new SeedLoadException("ipsi_universities가 없거나 비어 있습니다.");
         }
         Map<String, AdmissionsUniversity> univByCode = new HashMap<>();
@@ -327,6 +342,8 @@ public class AdmissionsDataLoader {
         int[] prior = loadPriorResults(root.path("prior_results"), univByCode, matByKey);
         int[] jeongsi = loadJeongsiFormulas(root.path("jeongsi_formulas"), univByCode, matByKey);
         int[] susiMin = loadSusiMinimums(root.path("susi_minimums"), univByCode, matByKey);
+        int[] stdMax = loadCsatStdMax(root.path("csat_std_max"), matByKey);
+        int[] conv = loadConversionScores(root.path("conversion_scores"), univByCode, matByKey);
 
         int superseded = 0;
         for (JsonNode code : root.path("authoritative_universities")) {
@@ -337,8 +354,10 @@ public class AdmissionsDataLoader {
                 univCount, matCount, deptCount, typeCount, schedCount, skipped, deptUpdated, typeUpdated, schedArchived, superseded, schedSourced,
                 prior[0], prior[1], jeongsi[0], jeongsi[1]);
         log.info("admissions seed susi minimums: created={} updated={}", susiMin[0], susiMin[1]);
+        log.info("admissions seed jeongsi stats: stdMax created={} updated={} conversion created={} updated={}", stdMax[0], stdMax[1], conv[0], conv[1]);
         return new LoadResult(univCount, matCount, deptCount, typeCount, schedCount, youtube, skipped, deptUpdated, typeUpdated,
-                schedArchived, superseded, schedSourced, prior[0], prior[1], jeongsi[0], jeongsi[1], susiMin[0], susiMin[1]);
+                schedArchived, superseded, schedSourced, prior[0], prior[1], jeongsi[0], jeongsi[1], susiMin[0], susiMin[1],
+                stdMax[0], stdMax[1], conv[0], conv[1]);
     }
 
     /**
@@ -488,6 +507,118 @@ public class AdmissionsDataLoader {
             } else {
                 updated++;
             }
+        }
+        return new int[] {created, updated};
+    }
+
+    static final java.util.Set<String> INQUIRY_TRACKS = java.util.Set.of("SOC", "SCI", "VOC");
+
+    /**
+     * 시드의 csat_std_max(평가원 수능 채점 결과의 영역·탐구 과목별 표준점수 최고점)를 DRAFT로 넣는다. 학년도·subject_key가 같으면
+     * 새로 만들지 않고 값·출처가 바뀐 것만 갱신해 DRAFT로 되돌린다. 값이 없거나 0~200 밖이면 전체 롤백한다.
+     * @return [새로 넣은 수, 갱신한 수]
+     */
+    int[] loadCsatStdMax(JsonNode rows, Map<String, AdmissionsOfficialMaterial> matByKey) {
+        if (rows == null || !rows.isArray() || rows.isEmpty()) return new int[] {0, 0};
+        Map<String, f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsCsatStdMax> existing = new HashMap<>();
+        csatStdMaxRepository.findAll().forEach(m -> existing.putIfAbsent(m.getAcademicYear() + "|" + m.getSubjectKey(), m));
+        int created = 0;
+        int updated = 0;
+        for (JsonNode r : rows) {
+            Integer year = readSupportedYear(r.path("academic_year"));
+            String key = textOrNull(r.path("subject_key"));
+            String area = r.path("area").asText("");
+            if (year == null || key == null) continue;
+            if (!java.util.Set.of("KOR", "MATH", "INQ").contains(area)) throw new SeedLoadException("csat_std_max " + key + ": area는 KOR/MATH/INQ — " + area);
+            String track = textOrNull(r.path("track"));
+            if ("INQ".equals(area) && (textOrNull(r.path("subject_name")) == null || !INQUIRY_TRACKS.contains(track))) {
+                throw new SeedLoadException("csat_std_max " + key + ": 탐구는 subject_name과 track(SOC/SCI/VOC)이 필요합니다.");
+            }
+            if (!r.path("std_max").isNumber() || r.path("std_max").asDouble() <= 0 || r.path("std_max").asDouble() > 200) {
+                throw new SeedLoadException("csat_std_max " + key + ": std_max가 없거나 0~200 밖입니다.");
+            }
+            AdmissionsOfficialMaterial src = matByKey.get(r.path("source_document_key").asText(null));
+            String hash = sha256(r.toString());
+            String mapKey = year + "|" + key;
+            var row = existing.get(mapKey);
+            if (row != null && hash.equals(row.getContentHash())
+                    && (src == null || (row.getSource() != null && src.getMaterialId().equals(row.getSource().getMaterialId())))) {
+                continue;
+            }
+            boolean isNew = row == null;
+            if (isNew) {
+                row = f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsCsatStdMax.builder()
+                        .academicYear(year).subjectKey(key).build();
+            }
+            row.setArea(area);
+            row.setSubjectName(textOrNull(r.path("subject_name")));
+            row.setTrack(track);
+            row.setStdMax(r.path("std_max").decimalValue());
+            row.setEvidencePages(truncate(r.path("evidence_pages").isArray() ? r.path("evidence_pages").toString() : null, 200));
+            row.setSourceUrl(truncate(textOrNull(r.path("source_url")), 1000));
+            if (src != null) row.setSource(src);
+            row.setContentHash(hash);
+            row.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+            csatStdMaxRepository.save(row);
+            if (isNew) { existing.put(mapKey, row); created++; } else { updated++; }
+        }
+        return new int[] {created, updated};
+    }
+
+    /**
+     * 시드의 conversion_scores(대학 탐구 변환표준점수표, 백분위 0~100 → 점수)를 DRAFT로 넣는다. 대학·학년도·track이 같으면
+     * 새로 만들지 않고 표·출처가 바뀐 것만 갱신해 DRAFT로 되돌린다. 백분위가 빠졌거나, 낮은 백분위 점수가 더 높으면 전체 롤백한다.
+     * @return [새로 넣은 수, 갱신한 수]
+     */
+    int[] loadConversionScores(JsonNode rows, Map<String, AdmissionsUniversity> univByCode,
+                               Map<String, AdmissionsOfficialMaterial> matByKey) {
+        if (rows == null || !rows.isArray() || rows.isEmpty()) return new int[] {0, 0};
+        Map<String, f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsConversionScore> existing = new HashMap<>();
+        conversionScoreRepository.findAll().forEach(m ->
+                existing.putIfAbsent(m.getUniversity().getUniversityId() + "|" + m.getAcademicYear() + "|" + m.getTrack(), m));
+        int created = 0;
+        int updated = 0;
+        for (JsonNode r : rows) {
+            AdmissionsUniversity univ = requireUniversity(univByCode, r.path("university_code").asText(), "conversion_scores");
+            Integer year = readSupportedYear(r.path("academic_year"));
+            String track = r.path("track").asText("");
+            if (year == null) continue;
+            if (!INQUIRY_TRACKS.contains(track)) throw new SeedLoadException("conversion_scores " + univ.getName() + ": track은 SOC/SCI/VOC — " + track);
+            JsonNode scores = r.path("scores");
+            Double prev = null;
+            for (int pct = 100; pct >= 0; pct--) {
+                JsonNode v = scores.path(String.valueOf(pct));
+                if (!v.isNumber() || v.asDouble() < 0 || v.asDouble() > 200) {
+                    throw new SeedLoadException("conversion_scores " + univ.getName() + " " + track + ": 백분위 " + pct + " 점수가 없거나 0~200 밖입니다.");
+                }
+                if (prev != null && v.asDouble() > prev) {
+                    throw new SeedLoadException("conversion_scores " + univ.getName() + " " + track + ": 백분위 " + pct + " 점수가 위 백분위보다 큽니다.");
+                }
+                prev = v.asDouble();
+            }
+            AdmissionsOfficialMaterial src = matByKey.get(r.path("source_document_key").asText(null));
+            String hash = sha256(r.toString());
+            String mapKey = univ.getUniversityId() + "|" + year + "|" + track;
+            var row = existing.get(mapKey);
+            if (row != null && hash.equals(row.getContentHash())
+                    && (src == null || (row.getSource() != null && src.getMaterialId().equals(row.getSource().getMaterialId())))) {
+                continue;
+            }
+            boolean isNew = row == null;
+            if (isNew) {
+                row = f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsConversionScore.builder()
+                        .university(univ).academicYear(year).track(track).build();
+            }
+            row.setLabel(truncate(r.path("label").asText(track), 100));
+            row.setScoresJson(scores.toString());
+            row.setNote(textOrNull(r.path("note")));
+            row.setEvidencePages(truncate(r.path("evidence_pages").isArray() ? r.path("evidence_pages").toString() : null, 200));
+            row.setSourceUrl(truncate(textOrNull(r.path("source_url")), 1000));
+            if (src != null) row.setSource(src);
+            row.setContentHash(hash);
+            row.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+            conversionScoreRepository.save(row);
+            if (isNew) { existing.put(mapKey, row); created++; } else { updated++; }
         }
         return new int[] {created, updated};
     }

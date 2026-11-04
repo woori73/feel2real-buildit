@@ -33,7 +33,7 @@ public class AdmissionsMemberExplorerController {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 계산해 주세요.");
         try {
             return AdmissionsExplorerController.ok(scores.calculate(request.university(), 2027, request.typeName(),
-                    request.departmentName(), request.scores()));
+                    request.departmentName(), request.scores(), request.inquirySubjects()));
         } catch (AdmissionsJeongsiScoreService.InvalidScoreRequestException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }

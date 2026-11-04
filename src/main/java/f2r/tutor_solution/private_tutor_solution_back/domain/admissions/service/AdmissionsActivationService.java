@@ -40,24 +40,33 @@ public class AdmissionsActivationService {
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository priorResults;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsJeongsiFormulaRepository jeongsiFormulas;
     private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsSusiMinimumRepository susiMinimums;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsCsatStdMaxRepository csatStdMax;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsConversionScoreRepository conversionScores;
 
     public record ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                    int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults,
-                                   int jeongsiFormulas, int susiMinimums) {
+                                   int jeongsiFormulas, int susiMinimums, int csatStdMax, int conversionScores) {
+        public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
+                                int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults,
+                                int jeongsiFormulas, int susiMinimums) {
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems,
+                    priorResults, jeongsiFormulas, susiMinimums, 0, 0);
+        }
+
         public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                 int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults, int jeongsiFormulas) {
             this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems,
-                    priorResults, jeongsiFormulas, 0);
+                    priorResults, jeongsiFormulas, 0, 0, 0);
         }
 
         public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                 int excludedMaterials, int excludedChildren, int knowledgeItems) {
-            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, 0, 0, 0);
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, 0, 0, 0, 0, 0);
         }
 
         public ActivationResult(int academicYear, int materials, int departments, int types, int schedules,
                                 int excludedMaterials, int excludedChildren, int knowledgeItems, int priorResults) {
-            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, priorResults, 0, 0);
+            this(academicYear, materials, departments, types, schedules, excludedMaterials, excludedChildren, knowledgeItems, priorResults, 0, 0, 0, 0);
         }
     }
 
@@ -127,6 +136,19 @@ public class AdmissionsActivationService {
             row.setStatus(KnowledgeStatus.ACTIVE);
             sm++;
         }
+        // 정시 환산용 발표 값(평가원 최고점·대학 변환표준점수표)도 같은 규칙으로 승격한다.
+        int st = 0;
+        for (var row : csatStdMax.findByAcademicYearAndStatusIn(academicYear, promotableStatuses)) {
+            if (excludedBySource(row.getSource(), excluded)) { exC++; continue; }
+            row.setStatus(KnowledgeStatus.ACTIVE);
+            st++;
+        }
+        int cv = 0;
+        for (var row : conversionScores.findByAcademicYearAndStatusIn(academicYear, promotableStatuses)) {
+            if (excludedBySource(row.getSource(), excluded)) { exC++; continue; }
+            row.setStatus(KnowledgeStatus.ACTIVE);
+            cv++;
+        }
         int k = 0;
         java.util.Set<Long> activeTypes = new java.util.HashSet<>();
         types.findAll().forEach(row -> { if (row.getStatus() == KnowledgeStatus.ACTIVE) activeTypes.add(row.getAdmissionTypeId()); });
@@ -147,7 +169,7 @@ public class AdmissionsActivationService {
             item.setStatus(KnowledgeStatus.ACTIVE);
             k++;
         }
-        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p, jf, sm);
+        return new ActivationResult(academicYear, m, d, t, s, exM, exC, k, p, jf, sm, st, cv);
     }
 
     /** 출처 자료가 제외 대상이면 true. 출처가 없는 행은 제외할 근거가 없어 승격 대상에 남는다. */
