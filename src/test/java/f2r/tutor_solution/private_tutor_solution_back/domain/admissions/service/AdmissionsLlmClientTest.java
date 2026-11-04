@@ -79,4 +79,10 @@ class AdmissionsLlmClientTest {
         // then
         assertEquals("wiki-router", selected.name());
     }
+  @org.junit.jupiter.api.Test
+  void givenOpenAiPrimary_whenSelected_thenLunaIsUsed() {
+    NewStartLlmTransport luna = org.mockito.Mockito.mock(NewStartLlmTransport.class);
+    org.junit.jupiter.api.Assertions.assertSame(luna,
+        AdmissionsLlmClient.selectPrimary("openai", null, null, null, luna));
+  }
 }

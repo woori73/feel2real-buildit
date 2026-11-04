@@ -150,4 +150,10 @@ class NewStartLlmClientTest {
 
     assertThat(result.text()).hasSize(20);
   }
+  @org.junit.jupiter.api.Test
+  void givenOpenAiPrimary_whenSelected_thenLunaIsUsed() {
+    NewStartLlmTransport luna = org.mockito.Mockito.mock(NewStartLlmTransport.class);
+    org.junit.jupiter.api.Assertions.assertSame(luna,
+        NewStartLlmClient.selectPrimary("openai", null, null, null, luna));
+  }
 }

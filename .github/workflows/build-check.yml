@@ -54,7 +54,9 @@ jobs:
 
       - name: Deploy guard shell tests (jar rollback + env backup/restore)
         # deploy-ec2.yml이 EC2 배포 스크립트에 그대로 이어 붙이는 가드를 같은 소스로 검증한다.
-        run: bash scripts/deploy/f2r_app_guard.test.sh
+        run: |
+          bash scripts/deploy/f2r_app_guard.test.sh
+          bash scripts/deploy/f2r_luna_env.test.sh
 
       - name: Naesin Library classification and production import guard
         run: python3 -m unittest discover -s scripts/naesin -p 'test_*.py' -v
@@ -372,6 +374,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsChatServicePolicyTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderYearTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsLlmClientTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransportTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmClientTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsQueryParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsKnowledgeBuildServiceTest"
