@@ -17,7 +17,7 @@ test('given a valid seed when previewed then counts, years and no warnings are r
   const r = load.summarizeSeed(text);
   // then
   assert.equal(r.ok, true);
-  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1, youtube: 0, priorResults: 0 });
+  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1, youtube: 0, priorResults: 0, jeongsiFormulas: 0 });
   assert.deepEqual(r.years, [2027]);
   assert.deepEqual(r.warnings, []);
 });
@@ -231,4 +231,28 @@ test('given build job states when formatted then running, done and error read pl
     '지식 항목 생성 — 새로 3 · 갱신 1 · 변경 없음 10 · 완료');
   assert.match(load.formatBuildStatus({ running: false, lastRun: { result: 'ERROR', error: 'IllegalStateException' } }), /실패: IllegalStateException/);
   assert.equal(load.formatBuildStatus({ running: false, lastRun: null }), '');
+});
+
+test('given a seed with jeongsi_formulas when previewed then the formula count is reported and unknown codes are warned', () => {
+  // given
+  const seed = { ...SEED, jeongsi_formulas: [
+    { university_code: 'GA', academic_year: 2027, formula_key: 'ga_hum', source_document_key: 'doc_ga_2027_susi' },
+    { university_code: 'ZZ', academic_year: 2027, formula_key: 'zz_nat', source_document_key: 'doc_ga_2027_susi' }] };
+  // when
+  const r = load.summarizeSeed(JSON.stringify(seed));
+  // then
+  assert.equal(r.counts.jeongsiFormulas, 2);
+  assert.equal(r.ok, false);
+  assert.ok(r.warnings.some(w => /university_code/.test(w)));
+});
+
+test('given a load response with jeongsi formula counts when formatting then they are shown only when present', () => {
+  // given
+  const base = { universities: 0, materials: 0, departments: 0, types: 0, schedules: 0, skippedUnknownYear: 0, status: 'LOADED' };
+  // when
+  const shown = load.formatLoadResult({ ...base, jeongsiFormulas: 156, jeongsiFormulasUpdated: 0 });
+  const hidden = load.formatLoadResult({ ...base, jeongsiFormulas: 0, jeongsiFormulasUpdated: 0 });
+  // then
+  assert.match(shown, /정시 계산식 신규 156 · 변경 0/);
+  assert.doesNotMatch(hidden, /정시 계산식/);
 });
