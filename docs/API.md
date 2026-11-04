@@ -5203,3 +5203,12 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 ## 내신위키 통합 작업실 (2026-11-04)
 
 `/problem-generator/wiki/index.html` 첫 화면에서 문제·자료 업로드, 문법문제은행, 내신제작소 세 기능을 전환한다. `?section=grammar|production`으로 바로 연다. 방문한 패널은 마운트를 유지하여 미저장 입력을 보존한다. 문법은 기존 GrammarBank/API, 제작소는 같은 출처 `/naesin-production-studio?embedded=1` 화면/API를 재사용한다. 원본·프로젝트·리비전·선택함을 복사하거나 삭제하지 않는다. 기존 ADMIN/modu 서버 권한 및 승인 정책과 독립 주소는 유지한다.
+
+## 입시상담 대학 탐색·비교 (2026-11-04)
+
+- 공개 GET `/api/admissions/explore/universities?academicYear=2027|2028`, `/departments?academicYear=&universityId=&q=`, `/departments/{id}?academicYear=&round=ALL|SUSI|JEONGSI`. `/api/admissions/explore` 아래의 이 세 경로만 GET permitAll. 기존 공개 답변 스위치(`app.admissions.public-api.enabled`, 기본 false)가 꺼져 있으면 DB 조회 전 503. 기존 신뢰 프록시 IP 제한을 `explore-` 키로 적용(초과 429); AI 일일 호출 상한은 사용하지 않는다. LLM 호출·개인정보 조회·DB 쓰기 없음.
+- 회원 GET `/api/dashboard/admissions/explore/...`는 같은 응답을 제공하되 기존 ADMIN/TUTOR 역할·실제 회원/소유 학원 검증(`AdmissionsMemberAccess`) 유지. 새 역할·자동 권한 부여 없음.
+- 대학 목록: 같은 학년도 ACTIVE 모집단위와 ACTIVE 공식 출처가 연결된 대학만 `{id,name,region}[]`.
+- 모집단위: `{academicYear,items:[{id,name,category,quotaInfo,universityName,universityId,sourceTitle,sourceUrl}],hasMore}`. q 최대 100자, LIKE 특수문자 이스케이프, 정렬 후 최대 80건. hasMore면 검색어로 좁히도록 안내한다.
+- 상세: `{academicYear,department,priorResults,priorResultsTruncated,universityTypes,typesTruncated,universitySchedules,schedulesTruncated,calculationStatus:"API_AVAILABLE"|"UNSUPPORTED_YEAR"}`. 대학 ID·학년도·행 및 공식 출처의 ACTIVE 상태가 모두 일치해야 반환(없으면 404). 지난해 결과는 result_year=상담학년도−1, 검증된 linked_department_name 또는 연결명이 비어 있고 원문 모집단위명 정확 일치인 행만. 원문 지표명·rawValueText·metricValue·결과학년도·전형·군·출처·근거 쪽을 그대로 반환한다. 빈값은 null. 전형·일정은 **대학 전체**로 반환하며 선택 모집단위 적용으로 단정하지 않는다. 상세 한도 결과 200행·대학 전형 60행·일정 80행; 초과 플래그를 함께 제공한다.
+- 모든 탐색·회원 계산 성공 응답 Cache-Control:no-store. `POST /api/dashboard/admissions/explore/score`는 기존 회원/소유 학원을 확인하고 사용자별 한도 후 `AdmissionsJeongsiScoreService`를 재사용한다. 요청은 기존 공개 계산 API와 같은 `{university,academicYear:2027,typeName?,departmentName?,scores}`. 공개 UI는 기존 `/api/admissions/jeongsi/score`를 사용한다. 확인된 수능 성적만 전송하며 선택과목·탐구 계열 플래그를 명시한다. 전국 최고 표준점수·대학 변환표준점수는 브라우저에서 만들어 넣지 않는다. CALCULATED/NEEDS_INPUT/WITHHELD_NEEDS_REVIEW/ERROR와 전형·적용범위·원문 출처를 표시한다. 합격예측·사설 배치표 적재 API는 없다.

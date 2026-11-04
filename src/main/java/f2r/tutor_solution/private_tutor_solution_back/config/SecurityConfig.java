@@ -596,6 +596,8 @@ public class SecurityConfig {
 
             // 입시상담 공개 채팅 API. 관리자 API는 아래 /api/admin/** 규칙을 유지한다.
             .requestMatchers(HttpMethod.POST, "/api/admissions/chat").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/admissions/explore/universities",
+                "/api/admissions/explore/departments", "/api/admissions/explore/departments/{id}").permitAll()
             // 정시 수능 환산점수 계산(AI 호출 없음). 공개 API 스위치·IP rate limit은 컨트롤러가 적용한다.
             .requestMatchers(HttpMethod.POST, "/api/admissions/jeongsi/score").permitAll()
 
