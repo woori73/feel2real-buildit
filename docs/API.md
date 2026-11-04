@@ -5203,3 +5203,6 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 ## 내신위키 통합 작업실 (2026-11-04)
 
 `/problem-generator/wiki/index.html` 첫 화면에서 문제·자료 업로드, 문법문제은행, 내신제작소 세 기능을 전환한다. `?section=grammar|production`으로 바로 연다. 방문한 패널은 마운트를 유지하여 미저장 입력을 보존한다. 문법은 기존 GrammarBank/API, 제작소는 같은 출처 `/naesin-production-studio?embedded=1` 화면/API를 재사용한다. 원본·프로젝트·리비전·선택함을 복사하거나 삭제하지 않는다. 기존 ADMIN/modu 서버 권한 및 승인 정책과 독립 주소는 유지한다.
+
+### 내신위키 학습자료 원본 업로드 (2026-11-04)
+`POST /problem-generator/wiki/api/exam-materials`의 SCHOOL_PRINT는 HTML·PDF·HWPX·DOCX 원본(파일당 30MB) 또는 기존 html_text를 받는다. 원본 단독 업로드도 허용한다. PAST_EXAM은 DOCX를 추가 지원하며 기존 저장 자료/호환 API 확장자는 유지한다. DOCX는 ZIP 내 [Content_Types].xml·word/document.xml을 확인한다. 비HTML 문서 원본 보관은 자동 본문 추출·문제 생성 완료를 의미하지 않는다.

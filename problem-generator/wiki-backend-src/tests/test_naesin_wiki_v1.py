@@ -57,6 +57,29 @@ class NaesinWikiV1Test(unittest.TestCase):
                 None, None, '')
         self.assertEqual(400, raised.exception.status_code)
 
+    def test_school_material_four_formats_preserve_original_bytes(self):
+        docx = io.BytesIO()
+        with zipfile.ZipFile(docx, 'w') as archive:
+            archive.writestr('[Content_Types].xml', '<Types/>')
+            archive.writestr('word/document.xml', '<document/>')
+        hwpx = io.BytesIO()
+        with zipfile.ZipFile(hwpx, 'w') as archive:
+            archive.writestr('mimetype', 'application/hwp+zip')
+            archive.writestr('Contents/section0.xml', '<section/>')
+        for name, data in [('print.html', b'<!doctype html><html><body>material</body></html>'),
+                           ('print.pdf', b'%PDF-1.7\nmaterial'),
+                           ('print.hwpx', hwpx.getvalue()), ('print.docx', docx.getvalue())]:
+            with self.subTest(name=name):
+                created = main.create_exam_material('school_print', '신구중', '중3', 2026, '2학기', '기말고사', name, None,
+                    UploadFile(filename=name, file=io.BytesIO(data)), None, '')
+                self.assertEqual(data, main.open_exam_material_original(created['id']).body)
+
+    def test_fake_docx_is_rejected_before_storing(self):
+        with self.assertRaises(HTTPException) as raised:
+            main.create_exam_material('school_print', '신구중', '중3', 2026, '2학기', '기말고사', '', None,
+                UploadFile(filename='fake.docx', file=io.BytesIO(b'not a document')), None, '')
+        self.assertEqual(400, raised.exception.status_code)
+
     def test_wrong_note_requires_selected_student(self):
         with self.assertRaises(HTTPException) as raised:
             main.create_exam_material('student_wrong_note', '신구중', '중2', 2026, '2학기', '중간고사', '', None,

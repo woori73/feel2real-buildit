@@ -26,3 +26,21 @@ it('given 내신위키 홈 when 개요를 열면 then 오답 UI 없이 자료 �
   expect(screen.queryByRole('heading',{name:'시험 준비'})).not.toBeInTheDocument()
   expect(container.querySelector('.current-context-card')).not.toBeInTheDocument()
 })
+it('given PDF 자료 when 파일을 골라 저장하면 then HTML 입력 없이 원본을 전송한다', async () => {
+  let uploaded: FormData | null = null
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input)
+    if(url.endsWith('/schools')) return new Response(JSON.stringify([{school:'신구중',grades:[{grade:'3학년',exams:[{exam:'전체',hasDigitalTwin:false}]}]}]),{status:200})
+    if(init?.method === 'POST' && url.endsWith('/exam-materials')) { uploaded=init.body as FormData;return new Response('{"id":1}',{status:201}) }
+    return new Response('[]',{status:200})
+  }))
+  render(<NaesinWikiV1 onNavigate={vi.fn()}/>)
+  await screen.findByRole('option',{name:'신구중'})
+  fireEvent.click(screen.getByRole('button',{name:/학교 프린트 추가/}))
+  const chooser=screen.getByLabelText('학습자료 파일 선택')
+  expect(chooser).toHaveAttribute('accept','.html,.pdf,.hwpx,.docx')
+  fireEvent.change(chooser,{target:{files:[new File(['%PDF-1.7\nmaterial'],'school.pdf',{type:'application/pdf'})]}})
+  fireEvent.click(screen.getByRole('button',{name:'저장',exact:true}))
+  expect(await screen.findByRole('status')).toHaveTextContent('자료와 추가 정보를 저장했습니다.')
+  expect((uploaded?.get('original') as File).name).toBe('school.pdf')
+})

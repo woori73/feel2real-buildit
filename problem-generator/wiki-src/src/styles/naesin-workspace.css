@@ -9,3 +9,5 @@
 @media(max-width:600px){.wiki-home-shell .naesin-v1 .wiki-steps{grid-template-columns:1fr}.wiki-home-shell .naesin-workspace-tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.wiki-home-shell .naesin-workspace-tabs button{padding:10px 6px;text-align:center}.wiki-home-shell .naesin-workspace-tabs span{display:none}}
 
 .wiki-home-shell .naesin-workspace-heading p,.wiki-home-shell .naesin-workspace-tabs span{display:none}.wiki-home-shell .naesin-workspace-tabs button{padding:10px 14px}.wiki-home-shell .admin-workspace-selector{padding:8px 12px;margin-bottom:10px}.wiki-home-shell .wiki-step-help{margin-top:8px;font-size:12px}.wiki-step-help>summary{cursor:pointer;color:#536478}
+
+.wiki-home-shell .naesin-v1{padding:8px 18px 90px}.wiki-home-shell .naesin-v1 .context-summary{padding:4px;margin:6px 0}.wiki-home-shell .naesin-v1 .exam-context select{padding:8px}.wiki-home-shell .naesin-v1 .exam-context label{gap:4px;font-size:13px}

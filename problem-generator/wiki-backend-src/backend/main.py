@@ -1098,7 +1098,7 @@ def _validate_json_upload(json_file: Optional[UploadFile], json_text: str, requi
 
 
 # 실제 기출: 실물 시험지(PDF/HWP/HWPX/이미지)와, 본문을 그대로 읽어야 하는 텍스트 원본(HTML/MD)을 함께 받는다.
-_PAST_EXAM_EXTENSIONS = {'.pdf', '.hwp', '.hwpx', '.html', '.htm', '.md', '.markdown', '.jpg', '.jpeg', '.png'}
+_PAST_EXAM_EXTENSIONS = {'.docx', '.pdf', '.hwp', '.hwpx', '.html', '.htm', '.md', '.markdown', '.jpg', '.jpeg', '.png'}
 _PAST_EXAM_MAX_BYTES = 30 * 1024 * 1024
 # AI 작업기록: Claude/ChatGPT 등이 시험 준비 과정에서 남긴 작업 로그. 다음 세션에서 MCP가 다시 읽어야 하므로
 # 본문을 텍스트로 보관한다. 실물 시험지가 아니라 작업 메모라 텍스트 포맷만 허용한다.
@@ -1273,7 +1273,7 @@ def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str
         raise HTTPException(status_code=400, detail='기출시험지 원본 파일을 올려 주세요.')
     suffix = Path(original.filename).suffix.lower()
     if suffix not in _PAST_EXAM_EXTENSIONS:
-        raise HTTPException(status_code=400, detail='기출시험지는 PDF, HWP, HWPX, HTML, MD, JPG, PNG 파일만 지원합니다.')
+        raise HTTPException(status_code=400, detail='기출시험지는 HTML, PDF, HWPX, DOCX 등 지원되는 자료 파일을 올려 주세요.')
     data = original.file.read()
     if not data or len(data) > _PAST_EXAM_MAX_BYTES:
         raise HTTPException(status_code=400, detail='기출시험지 원본은 30MB 이하의 파일이어야 합니다.')
@@ -1289,6 +1289,14 @@ def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str
                     raise ValueError
         except (ValueError, zipfile.BadZipFile):
             raise HTTPException(status_code=400, detail='올바른 HWPX 파일인지 확인해 주세요.')
+    if suffix == '.docx':
+        try:
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                names = set(archive.namelist())
+                if '[Content_Types].xml' not in names or 'word/document.xml' not in names:
+                    raise ValueError
+        except (ValueError, zipfile.BadZipFile):
+            raise HTTPException(status_code=400, detail='올바른 DOCX 파일인지 확인해 주세요.')
     if suffix in ('.jpg', '.jpeg') and not data.startswith(b'\xff\xd8\xff'):
         raise HTTPException(status_code=400, detail='올바른 JPG 파일인지 확인해 주세요.')
     if suffix == '.png' and not data.startswith(b'\x89PNG\r\n\x1a\n'):
@@ -1346,6 +1354,10 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
         original_name, original_type, original_bytes, body_text, body_format = _validate_past_exam_upload(original)
     elif normalized_material_type == 'AI_WORK_LOG':
         original_name, original_type, original_bytes, body_text, body_format = _validate_ai_work_log_upload(original)
+    elif has_original and normalized_material_type == 'SCHOOL_PRINT':
+        if Path(original.filename).suffix.lower() not in {'.html', '.pdf', '.hwpx', '.docx'}:
+            raise HTTPException(status_code=400, detail='학습자료는 HTML·PDF·HWPX·DOCX 파일만 지원합니다.')
+        original_name, original_type, original_bytes, body_text, body_format = _validate_past_exam_upload(original)
     elif has_original:
         original_bytes = original.file.read()
         if not original_bytes or len(original_bytes) > 30 * 1024 * 1024:

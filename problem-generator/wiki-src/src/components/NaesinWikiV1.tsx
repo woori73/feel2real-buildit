@@ -135,10 +135,18 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     reader.onerror=()=>setNotice('HTML 파일을 읽지 못했습니다.')
     reader.readAsText(file)
   }
+  const chooseSchoolMaterial=(e:ChangeEvent<HTMLInputElement>)=>{
+    const file=e.target.files?.[0];if(!file)return
+    if(!/\.(html|pdf|hwpx|docx)$/i.test(file.name)){e.target.value='';setNotice('HTML·PDF·HWPX·DOCX 파일을 선택해 주세요.');return}
+    if(file.size>30*1024*1024){e.target.value='';setNotice('파일당 30MB 이하로 선택해 주세요.');return}
+    setOriginals([file]);setHtmlText('')
+    if(/\.html$/i.test(file.name))chooseHtmlFile(e)
+    else {e.target.value='';setNotice(`${file.name} 파일을 선택했습니다.`)}
+  }
   const saveSchoolPrint=async(e:FormEvent)=>{
     e.preventDefault()
     if(savingSchoolPrint)return
-    if(!htmlText.trim()){setNotice('학교 프린트 HTML을 입력하거나 HTML 파일을 선택해 주세요.');return}
+    if(!htmlText.trim()&&!originals.length){setNotice('HTML·PDF·HWPX·DOCX 자료를 선택하거나 HTML을 붙여넣어 주세요.');return}
     if(!context.school||!context.grade||!context.exam){setNotice('학교·학년·시험 Context를 먼저 선택해 주세요.');return}
     const savedContext={...context}
     const form=new FormData()
@@ -146,6 +154,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     form.append('core_type','school_print')
     form.append('title',title)
     form.append('html_text',htmlText)
+    if(originals[0])form.append('original',originals[0])
     if(jsonFile)form.append('json_file',jsonFile)
     form.append('json_text',jsonText)
     setSavingSchoolPrint(true);setNotice('학교 프린트를 저장하는 중입니다.')
@@ -154,7 +163,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       const b=await r.json().catch(()=>({}))
       if(!r.ok){setNotice(apiErrorMessage(b,'학교 프린트를 저장하지 못했습니다.'));return}
       if(!await load(savedContext))return
-      resetUpload();setCore(null);setNotice('HTML과 JSON을 한 세트로 저장했습니다.')
+      resetUpload();setCore(null);setNotice('자료와 추가 정보를 저장했습니다.')
     }catch(error){setNotice(error instanceof Error?`학교 프린트를 저장하지 못했습니다: ${error.message}`:'학교 프린트를 저장하지 못했습니다.')}
     finally{setSavingSchoolPrint(false)}
   }
@@ -345,17 +354,17 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     {core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}
     {(core==='school_print'||core==='past_exam'||core==='ai_work_log')&&<label>{core==='past_exam'?'관리 메모 / 자료 제목':core==='ai_work_log'?'작업기록 제목 / 메모':'자료 제목'}<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}
     {core==='school_print'?<>
-      <label>HTML 자료 파일 선택<input type="file" accept=".html,.htm,text/html" onChange={chooseHtmlFile}/></label>
+      <label>학습자료 파일 선택<input type="file" accept=".html,.pdf,.hwpx,.docx" onChange={chooseSchoolMaterial}/></label><small className="field-hint">HTML·PDF·HWPX·DOCX, 파일당 30MB 이하. 원본 파일을 보관합니다.</small>{originals[0]&&<p className="field-hint">선택: {originals[0].name}</p>}
       <label>HTML 붙여넣기<textarea value={htmlText} onChange={e=>setHtmlText(e.target.value)} placeholder="<p>학교 프린트 HTML을 붙여넣거나 파일을 선택해 불러오세요.</p>"/></label>
     </>:<>
-      <label>{core==='past_exam'?'기출시험지 원본 파일':core==='ai_work_log'?'AI 작업기록 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'?'.pdf,.hwp,.hwpx,.html,.htm,.md,.markdown,.jpg,.jpeg,.png':core==='ai_work_log'?'.md,.markdown,.txt,.html,.htm':undefined} onChange={chooseOriginals}/></label>
-      {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. PDF·HWP·HWPX·HTML·MD·JPG·PNG, 파일당 30MB 이하. HTML은 편집기 toolbar·스크립트를 걷어낸 시험 본문만, MD는 원문 그대로 MCP Context에 전달됩니다(원본 파일은 그대로 보관).</small>}
+      <label>{core==='past_exam'?'기출시험지 원본 파일':core==='ai_work_log'?'AI 작업기록 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'?'.html,.pdf,.hwpx,.docx':core==='ai_work_log'?'.md,.markdown,.txt,.html,.htm':undefined} onChange={chooseOriginals}/></label>
+      {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. HTML·PDF·HWPX·DOCX, 파일당 30MB 이하. HTML은 편집기 toolbar·스크립트를 걷어낸 시험 본문만, MD는 원문 그대로 MCP Context에 전달됩니다(원본 파일은 그대로 보관).</small>}
       {core==='ai_work_log'&&<small className="field-hint">Claude·ChatGPT가 이 시험 준비 과정에서 남긴 작업 로그를 올리세요. MD·MARKDOWN·TXT·HTML, 파일당 10MB 이하. 본문이 MCP Context에 전달되어 다음 세션에서 이어서 읽힙니다.</small>}
       <small className="field-hint">원본 자료는 한 번에 최대 {MAX_ORIGINALS}개까지 선택할 수 있습니다.</small>
       {originals.length>0&&<div className="selected-file-list"><b>선택한 원본 파일 {originals.length}개</b>{originals.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" onClick={()=>removeOriginal(index)}>삭제</button></div>)}</div>}
     </>}
     {core!=='past_exam'&&core!=='ai_work_log'&&<><label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label></>}
-    <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||!htmlText.trim():core==='past_exam'||core==='ai_work_log'?!originals.length:(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>
+    <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||(!htmlText.trim()&&!originals.length):core==='past_exam'||core==='ai_work_log'?!originals.length:(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>
     {core==='past_exam'&&<section className="work-panel past-exam-panel" aria-label="저장된 기출시험지 관리"><div className="panel-heading"><div><p className="kicker">ACTUAL PAST EXAMS</p><h2>기출시험지 <strong>{pastExams.length}</strong>건</h2><p>{context.school} · {context.grade} · {context.semester} {examLabel}의 연도별 실제 기출입니다.</p></div></div>
       {pastExams.length?<div className="material-list">{pastExams.map(m=><article key={m.id}><div className="past-exam-meta"><span className="past-exam-badge">실제 기출</span><span className="past-exam-year">{m.year}</span><b>{m.title||m.original_name}</b><p>{m.school} {m.grade} · {m.semester} {examLabel} · {m.original_name}{m.has_body?` · 본문 ${m.body_format==='markdown'?'MD':'HTML'}`:''}</p><p>{m.uploaded_by||'TUTOR'} · {new Date(m.created_at).toLocaleString('ko-KR')}</p></div>{m.has_body?<button type="button" onClick={()=>open(`exam-materials/${m.id}/body`)}>본문 보기</button>:null}<button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'original')}>{downloadingId===m.id?'내려받는 중...':'원본 열기/다운로드'}</button><button type="button" onClick={()=>void deleteMaterial(m)}>삭제</button></article>)}</div>:<div className="empty-state"><b>이 학교·학년·학기·시험에 저장된 실제 기출이 없습니다.</b></div>}
     </section>}

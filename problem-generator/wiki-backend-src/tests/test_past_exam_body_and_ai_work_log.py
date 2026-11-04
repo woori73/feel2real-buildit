@@ -139,12 +139,12 @@ class PastExamBodyTest(unittest.TestCase):
         self.assertIn('## 서답형 1', item['body_text'])
         self.assertIn('40자 내외로 서술할 것', item['body_text'])
 
-    def test_md_extension_is_accepted_and_docx_is_still_rejected(self):
+    def test_md_legacy_is_accepted_and_malformed_docx_is_rejected(self):
         self._create('past.markdown', PAST_EXAM_MD, 'text/markdown', 'PAST_EXAM')  # no raise
         with self.assertRaises(HTTPException) as raised:
             self._create('generated.docx', b'not-an-exam', 'application/octet-stream', 'PAST_EXAM')
         self.assertEqual(400, raised.exception.status_code)
-        self.assertIn('MD', raised.exception.detail)
+        self.assertIn('DOCX', raised.exception.detail)
 
     def test_binary_past_exam_originals_keep_working_without_a_body(self):
         fixtures = (
