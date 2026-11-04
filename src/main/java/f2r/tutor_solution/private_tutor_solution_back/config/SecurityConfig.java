@@ -596,6 +596,8 @@ public class SecurityConfig {
 
             // 입시상담 공개 채팅 API. 관리자 API는 아래 /api/admin/** 규칙을 유지한다.
             .requestMatchers(HttpMethod.POST, "/api/admissions/chat").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/admissions/explore/universities",
+                "/api/admissions/explore/departments", "/api/admissions/explore/departments/{id}").permitAll()
 
             // Admin 전용
             .requestMatchers("/api/admin/**").hasRole("ADMIN")

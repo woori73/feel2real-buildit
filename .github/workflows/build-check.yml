@@ -89,6 +89,7 @@ jobs:
           src/test/js/studio_catalog.test.js
           src/test/js/assistant_wait.test.js
           src/test/js/admissions_admin_load.test.js
+          src/test/js/admissions_explorer.test.js
           src/test/js/assistant_export.test.js
           src/test/js/academy_adopt.test.js
           src/test/js/assistant_home_contract.test.js
@@ -382,6 +383,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsAdminControllerSeedLoadTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsSimulationStaticTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsPriorResultChatTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsExplorerServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.controller.AdmissionsExplorerControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.service.SnsPublishServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.service.SnsCaptionServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.service.SnsMiscTest"
