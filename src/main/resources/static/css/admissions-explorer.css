@@ -5,3 +5,84 @@ body{background:#f4f7fb;color:#1b2940}.admissions-page{max-width:1240px;padding:
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 
 .ae-inquiry{display:grid;gap:5px}.ae-calculation{border-top:2px solid #cbdaf2;margin-top:20px;padding-top:16px}.ae-formula{background:#f6f9ff;border:1px solid #dfE8f8;padding:16px;border-radius:10px;margin-top:12px}.ae-formula p{font-size:13px;line-height:1.6}.ae-formula .ae-score-result{font-size:25px;font-weight:700;color:#2055b5}.ae-formula h4{margin:0 0 12px}
+
+/* 성적부터 시작하는 공개 상담 홈. 하단 메뉴는 모든 동선에서 같은 위치를 유지한다. */
+html{scroll-padding-bottom:100px}
+.admissions-page{background:#f4f7fb;padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+.ae-brand{border-bottom:1px solid #dfe6f0;padding:24px 0;margin-bottom:0}
+.ae-tools-nav{display:flex;justify-content:flex-end;gap:8px;padding:12px 0}
+.ae-tools-nav button{font:inherit;font-size:13px;min-height:44px;border:1px solid #dce5f2;border-radius:10px;padding:9px 14px;background:#fff;color:#345273;cursor:pointer}
+.ae-tools-nav button[aria-pressed=true]{background:#e6efff;border-color:#b4cef9;color:#1d51b5}
+.ae-tools-nav span{display:inline-block;min-width:20px;border-radius:12px;background:#eaf1fd;color:#245dc9;margin-left:5px;padding:1px 5px;font-size:12px}
+.ae-tabs{position:fixed;top:auto;bottom:0;left:0;right:0;max-width:1240px;width:100%;margin:0 auto;z-index:20;background:#fff;border-top:1px solid #dce5f1;border-bottom:0;padding:8px 16px calc(8px + env(safe-area-inset-bottom));box-shadow:0 -4px 22px #17345c08;gap:6px}
+.ae-tabs button{flex:1;min-width:0;min-height:48px;font-size:14px;padding:12px 8px;color:#60718b}
+.ae-tabs button[aria-pressed=true]{background:#edf3ff;color:#205bc7;font-weight:600}
+.ae-home{display:grid;grid-template-columns:1.1fr 1fr;gap:64px;align-items:center;max-width:1020px;margin:55px auto 70px;padding:32px 0}
+.ae-home-copy h1{font-size:clamp(30px,3.4vw,44px);line-height:1.5;letter-spacing:-1.7px;font-weight:650;margin:12px 0 22px}
+.ae-home-copy>p:last-child{line-height:1.85;font-size:16px;color:#596e88}
+.ae-start-options{background:#fff;padding:26px;border:1px solid #e0e7f1;border-radius:20px}
+.ae-workspace .ae-start-primary{display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:18px 16px;min-height:62px;background:#245dc9;color:#fff;border-color:#245dc9;border-radius:12px;font-weight:600}
+.ae-start-primary>span:last-child,.ae-start-choice>span:last-child{margin-left:auto}
+.ae-start-symbol{font-size:24px;line-height:1;flex-shrink:0}
+.ae-start-hint{font-size:12px;color:#657894;margin:12px 0 16px;line-height:1.7}
+.ae-workspace .ae-start-choice{display:flex;align-items:center;gap:14px;text-align:left;width:100%;padding:20px 0;border:0;border-bottom:1px solid #e4ebf4;border-radius:0;font-weight:500;line-height:1.5}
+.ae-start-choice small{display:block;margin-top:7px;color:#61758f;font-size:12px;font-weight:400}
+.ae-trust{display:flex;align-items:center;gap:10px;background:#f1f6fd;padding:14px;border-radius:10px;margin:24px 0 0;font-size:12px;color:#526b89;line-height:1.8}
+.ae-trust>span{font-size:18px;color:#245dc9}
+.ae-heading h1{font-size:clamp(27px,3vw,36px)}
+.ae-prepare-form{display:grid;grid-template-columns:1fr 1fr;gap:20px;background:#fff;border:1px solid #e0e7f1;border-radius:16px;padding:26px;max-width:760px}
+.ae-prepare-form label{display:grid;gap:8px;font-size:14px;font-weight:500}
+.ae-prepare-form .ae-note,.ae-prepare-form>button{grid-column:1/-1;margin:0}
+.ae-prepare-form>button{justify-self:start;min-width:200px}
+.ae-workspace .ae-back-link{border:0;background:transparent;padding:8px 0;color:#60718b;font-size:13px}
+.ae-my-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.ae-my-grid small{display:block;line-height:1.8;font-size:12px;color:#61758f;margin-top:16px}
+.ae-score-next{border-top:1px solid #dae5f5;padding-top:14px;margin-top:20px;font-size:14px}
+.ae-workspace button:disabled{opacity:.55;cursor:not-allowed}
+.ag-welcome{padding:24px 0}
+.ag-welcome-inner{text-align:left;max-width:760px}
+.ag-profile-details{margin:22px 0;background:#fff;padding:16px;border:1px solid #dfe6f0;border-radius:12px}
+.ag-profile-details summary{min-height:24px;font-size:14px;color:#425d80;cursor:pointer}
+.ag-welcome .ag-year-badge{display:block;font-size:13px;margin-top:20px}
+.ag-welcome .ag-year-badge select{margin-left:8px}
+.ag-privacy{font-size:12px;line-height:1.7}
+.ag-chat,body[data-member=true] .ag-chat{height:calc(100dvh - 215px);min-height:460px;flex:none;border:1px solid #dfe6f0;border-radius:16px;overflow:hidden;margin-top:12px}
+.ag-chat-form{position:static}
+.ag-next-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;white-space:normal}
+.ag-next-actions button{border:1px solid #d2dff1;border-radius:8px;background:#fff;color:#2859a6;font:inherit;font-size:12px;padding:10px;min-height:44px;cursor:pointer}
+.ag-profile-details:focus-visible,.ag-next-actions button:focus-visible,.ae-tools-nav button:focus-visible{outline:3px solid #81aaf4;outline-offset:3px}
+.ae-search-form,.ae-score-form,.ae-card,.ae-detail,.ae-compare-card,.ae-my-grid>article{min-width:0}
+@media(max-width:800px){.ae-home{gap:28px;margin:20px auto 36px}.ae-home-copy h1{font-size:32px}.ae-start-options{padding:20px}}
+@media(max-width:600px){
+ .admissions-page{padding-left:20px;padding-right:20px}
+ .ae-brand{padding:22px 0;gap:12px}
+ .ae-brand>a{font-size:22px}
+ .ae-tools-nav{padding:10px 0;gap:6px}
+ .ae-tools-nav button{font-size:12px;padding:8px 12px}
+ .ae-home{display:block;margin:18px 0 30px;padding:0}
+ .ae-home-copy h1{font-size:29px;line-height:1.5;letter-spacing:-1.2px;margin:10px 0 16px}
+ .ae-home-copy>p:last-child{font-size:14px;line-height:1.85;margin:0 0 24px}
+ .ae-start-options{background:transparent;border:0;padding:0;border-radius:0}
+ .ae-workspace .ae-start-choice{background:transparent;padding:19px 0}
+ .ae-trust{margin-top:22px}
+ .ae-tabs{padding-left:10px;padding-right:10px}
+ .ae-tabs button{font-size:13px;padding:11px 4px;white-space:normal}
+ .ae-prepare-form{grid-template-columns:1fr;padding:20px;gap:18px}
+ .ae-prepare-form>button{width:100%}
+ .ae-my-grid{grid-template-columns:1fr}
+ .ae-search-form{grid-template-columns:1fr}
+ .ae-search-form label:nth-child(3){grid-column:auto}
+ .ae-workspace input,.ae-workspace select{font-size:16px}
+ .ae-score-grid{grid-template-columns:40px minmax(72px,1.1fr) repeat(3,minmax(35px,1fr));gap:4px}
+ .ae-score-grid input,.ae-score-grid select{font-size:13px;padding:10px 2px}
+ .ae-score-form .ae-actions{gap:8px}
+ .ae-score-form .ae-actions label{max-width:calc(50% - 8px)}
+ .ag-welcome{padding:22px 0}
+ body[data-member=true] .ag-welcome{padding:22px 0}
+ .ag-title{font-size:27px}
+ .ag-profile-details{padding:14px}
+ .ag-chat,body[data-member=true] .ag-chat{height:calc(100dvh - 220px);min-height:420px;border-radius:12px}
+ .ag-msg{max-width:94%;padding:12px;font-size:14px}
+ .ag-messages{padding:12px}
+ .ag-next-actions button{font-size:12px}
+}

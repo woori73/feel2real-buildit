@@ -118,6 +118,18 @@
       });
       container.appendChild(srcDiv);
     }
+    if (document.getElementById('ae-workspace')) {
+      var next = document.createElement('div');
+      next.className = 'ag-next-actions';
+      next.setAttribute('aria-label', '답변 다음 행동');
+      [{label:'대학 찾아보기',tab:'search'},{label:'입결 비교하기',tab:'compare'},{label:'성적 확인·수정',tab:'scores'}].forEach(function(action) {
+        var button = document.createElement('button');
+        button.type = 'button'; button.textContent = action.label;
+        button.addEventListener('click',function(){document.dispatchEvent(new CustomEvent('admissions:navigate',{detail:{tab:action.tab}}));});
+        next.appendChild(button);
+      });
+      container.appendChild(next);
+    }
     scrollBottom();
   }
 
