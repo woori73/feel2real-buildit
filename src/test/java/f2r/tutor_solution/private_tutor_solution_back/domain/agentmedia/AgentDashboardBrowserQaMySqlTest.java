@@ -122,6 +122,9 @@ class AgentDashboardBrowserQaMySqlTest {
 
       // 업무 비서 준비 완료(실제 /api/auth/me·/progress·/overview·/drafts 호출 후 버튼 활성화)
       wait.until(d -> Boolean.TRUE.equals(js.executeScript("var b=document.querySelector('#uaCommandForm button[type=submit]');return !!b && !b.disabled;")));
+      // 메뉴가 기본 화면이며 사용자가 필요할 때 AI 대화를 펼친다.
+      assertThat(driver.findElement(By.cssSelector("body")).getAttribute("data-view")).isEqualTo("all");
+      driver.findElement(By.cssSelector(".dashboard-agent-intro [data-view-btn=ai]")).click();
       // 비공개 자료 상태: 세븐은 승인 전 후보, 서수니는 자료 없음
       wait.until(d -> "외형 승인 전 후보".equals(text(driver, "agentBadge")));
       assertThat(js.executeAsyncScript("var done=arguments[arguments.length-1];fetch('/dashboard/agent-media/seven/idle.mp4',{headers:{Range:'bytes=0-1'}}).then(function(r){done(r.status)}).catch(function(){done(-1)});"))
@@ -145,8 +148,9 @@ class AgentDashboardBrowserQaMySqlTest {
       wait.until(d -> text(driver, "agentGreeting").contains("처리했습니다"));
       assertThat(text(driver, "statusPending")).isEqualTo("0건");
 
-      // 홀로그램 업무 버튼(학생 등록) → 한 번에 하나씩 질문 → 기존 /drafts 초안 API → 승인 대기 카드
-      driver.findElement(By.cssSelector("button[data-flow='student']")).click();
+      // 일반 대화로 학생 등록 요청 → 한 번에 하나씩 질문 → 기존 /drafts 초안 API → 승인 대기 카드
+      driver.findElement(By.id("uaCommand")).sendKeys("학생 등록");
+      driver.findElement(By.cssSelector("#uaCommandForm button[type=submit]")).click();
       wait.until(d -> lastBubble(driver).contains("등록할 학생의 이름"));
       driver.findElement(By.id("uaCommand")).sendKeys("최유나");
       driver.findElement(By.cssSelector("#uaCommandForm button[type=submit]")).click();
