@@ -5225,3 +5225,27 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 - 모집단위: `{academicYear,items:[{id,name,category,quotaInfo,universityName,universityId,sourceTitle,sourceUrl}],hasMore}`. q 최대 100자, LIKE 특수문자 이스케이프, 정렬 후 최대 80건. hasMore면 검색어로 좁히도록 안내한다.
 - 상세: `{academicYear,department,priorResults,priorResultsTruncated,universityTypes,typesTruncated,universitySchedules,schedulesTruncated,calculationStatus:"API_AVAILABLE"|"UNSUPPORTED_YEAR"}`. 대학 ID·학년도·행 및 공식 출처의 ACTIVE 상태가 모두 일치해야 반환(없으면 404). 지난해 결과는 result_year=상담학년도−1, 검증된 linked_department_name 또는 연결명이 비어 있고 원문 모집단위명 정확 일치인 행만. 원문 지표명·rawValueText·metricValue·결과학년도·전형·군·출처·근거 쪽을 그대로 반환한다. 빈값은 null. 전형·일정은 **대학 전체**로 반환하며 선택 모집단위 적용으로 단정하지 않는다. 상세 한도 결과 200행·대학 전형 60행·일정 80행; 초과 플래그를 함께 제공한다.
 - 모든 탐색·회원 계산 성공 응답 Cache-Control:no-store. `POST /api/dashboard/admissions/explore/score`는 기존 회원/소유 학원을 확인하고 사용자별 한도 후 `AdmissionsJeongsiScoreService`를 재사용한다. 요청은 기존 공개 계산 API와 같은 `{university,academicYear:2027,typeName?,departmentName?,scores}`. 공개 UI는 기존 `/api/admissions/jeongsi/score`를 사용한다. 확인된 수능 성적만 전송하며 선택과목·탐구 계열 플래그를 명시한다. 전국 최고 표준점수·대학 변환표준점수는 브라우저에서 만들어 넣지 않는다. CALCULATED/NEEDS_INPUT/WITHHELD_NEEDS_REVIEW/ERROR와 전형·적용범위·원문 출처를 표시한다. 합격예측·사설 배치표 적재 API는 없다.
+
+### Wiki 전용 MCP 인증 설정 복구
+
+`/problem-generator/wiki/api/mcp`는 `/mcp` 제작소 OAuth와 별개인 기존 API-key endpoint다.
+서버 `BUILDIT_MCP_API_KEY` 미설정은 503, 무인증/오인증은 401이다. Claude의 요청 헤더
+`X-Api-Key` 또는 `Authorization: Bearer <key>`로 연결하며 OAuth 필드에 키를 넣지 않는다.
+수동 복구·암호화된 키 전달·검증: [Wiki MCP 연결 복구](operations/WIKI_MCP_CONNECTION.md).
+
+## 학원이사 관리자 노트 (2026-11-04)
+
+`/admin/academy-move` 및 `/api/admin/academy-move/**`는 ADMIN 전용이다. 동일 출처 쓰기만 허용하며 응답은 private/no-store다.
+
+- GET `entries?offset=0`: 최신 자료 버전 50건, GET `history?itemKey=move-...`: 수정 이력 100건, itemKey 생략 시 최근 상담 30건.
+- POST `files` multipart `file`: 기존 Studio 형식/실제 bytes 검증·SHA·100MiB 한도 재사용. GET Studio file content/preview에는 `projectId=academy-relocation`을 명시한다.
+- POST `entries`: `{itemKey?,parentId?,title,content,category,archived,fileId?}`. 새 자료와 수정·보관·해제를 새 리비전으로 보존하고 기존 parent 불일치는409. 영구 삭제는 없다.
+- POST `chat`: `{question,agent:suni|seven}`. 활성 등록 설명 최대15개와 최근 대화6개를 참고하며 파일 이미지/원문 자동 분석은 하지 않는다. 학원이사 전용 `app.academy-move.ai-enabled`(기본 true)와 기존 사용자별 예산을 사용한다. 기존 대시보드 의도 분석 스위치와 독립적으로 설정된 Muse 모델을 연결하며, 자료 설명은 건당1500자·최근 답변은 건당2000자로 제한한다. 키 미설정·연결 실패·한도 소진 시 자료 기반 체크리스트로 구분해 반환하고 상담을 서버에 보존한다.
+
+기존 Studio 프로젝트/파일/리비전 테이블을 재사용하며 새 스키마는 없다. 고정 프로젝트 `academy-relocation`은 첫 명시적 저장 시 생성하고, 일반 Studio API에서도 ADMIN 이외 접근·프로젝트 목록 노출을 차단한다.
+
+### 학원이사 이슈별 정리·MCP (2026-11-04)
+
+화면은 원상복구/교습소 전환/명칭·로고 3개 이슈와 최신 AI 답변을 우선 표시하고 원문·이력·기관 자료는 접는다. POST `/api/admin/academy-move/posts`는 `{title?,content(1~8000),issue,idempotencyKey}`를 받아 원문과 AI 정리를 저장한다. 같은 사용자/연결/키는 동일 응답을 재사용하고 내용이 달라지면409다. 일반 chat은 선택적 `issue`를 받으며 기존 2필드 요청도 유지한다. 공식·참고 조사 자료는 `static/data/academy-move-sources.json`에서 이슈별로 가져와 AI의 근거에 포함한다. 개인 일정·명칭 후보·주소는 이 공개 파일에 넣지 않는다.
+
+MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의와 ADMIN을 모두 요구한다. 기존 studio 토큰에 권한을 자동 추가하지 않는다. 이 scope는 관리자 글·대화 읽기와 새 원문/AI 정리 등록만 허용하며 삭제·승인·원문 파일 제공은 없다. 전용 도구에는 projectId가 없고 `academy-relocation`으로 고정된다. 기존 Studio 도구로 해당 프로젝트를 지정할 때도 별도 scope를 요구한다. 운영 기본 허용 scope 목록에 새 동의 항목을 추가하되 명시적 환경변수 override는 그대로 존중한다. 실제 외부 ChatGPT/Claude 연결은 사용자가 새 범위를 선택해 재연결해야 한다.

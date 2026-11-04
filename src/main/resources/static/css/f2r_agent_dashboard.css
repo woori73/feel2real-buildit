@@ -404,3 +404,9 @@ body[data-view="ai"] .ai-fab { display: none; }
 }
 .svc-card[hidden] { display: none !important; }
 
+
+/* 메뉴 우선 대시보드, AI는 필요할 때 펼친다. */
+.move-launch,.dashboard-agent-intro{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px;border:1px solid #b5cced;border-radius:18px;margin-bottom:18px;background:#edf5ff;color:#183359}
+.move-launch[hidden]{display:none}.move-launch h2,.dashboard-agent-intro h2{margin:5px 0;font-size:24px}.move-launch p,.dashboard-agent-intro p{margin:7px 0;line-height:1.6}.move-launch a{background:#2359aa;color:white;padding:13px 18px;border-radius:10px;white-space:nowrap;text-decoration:none}.dashboard-agent-intro{padding:16px 20px;background:#fff}.dashboard-agent-intro h2{font-size:18px}.dashboard-agent-intro .ops-btn{color:#183359;border-color:#a9bdd9}.move-admin-link{margin:12px;display:block}.move-admin-link[hidden]{display:none}
+body[data-view="ai"] .console-stage{height:230px;min-height:0;grid-template-columns:1fr}body[data-view="ai"] .holo{display:none}body[data-view="ai"] .console-grid{grid-template-columns:minmax(220px,.6fr) minmax(320px,1fr)}
+@media(max-width:700px){.move-launch,.dashboard-agent-intro{align-items:stretch;flex-direction:column;gap:10px}.move-launch a{text-align:center}body[data-view="ai"] .console-stage{height:180px;min-height:0}.dashboard-agent-intro .ops-btn{min-height:44px}}

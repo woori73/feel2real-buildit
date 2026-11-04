@@ -48,6 +48,7 @@ import tools.jackson.databind.ObjectMapper;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class McpStudioCollaborationMySqlTest {
   @Autowired StudioService studio;
+  @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.studio.AcademyMoveController relocation;
   @Autowired StudioAiService ai;
   @Autowired McpOAuth oauth;
   @Autowired UserRepository users;
@@ -438,6 +439,28 @@ class McpStudioCollaborationMySqlTest {
                 "changeNote", "승인 뒤 추가 제안"));
     assertEquals("UNREVIEWED", v3.get("reviewStatus").asText());
     assertEquals(v2, studio.revision(director, v3.get("revisionId").asText()).get("approved_id"));
+  }
+
+  @Test @Order(6)
+  void givenSeparateRelocationConsent_whenPostingTwice_thenOneNoteAndSummaryAndReadBack() throws Exception {
+    Object previousAi=org.springframework.test.util.ReflectionTestUtils.getField(relocation,"aiEnabled");
+    org.springframework.test.util.ReflectionTestUtils.setField(relocation,"aiEnabled",false);
+    try {
+    String token=connect("Relocation isolated client","https://claude.ai/api/mcp/auth_callback",Set.of(McpOAuth.ACADEMY_MOVE_WRITE));
+    String key="synthetic-"+UUID.randomUUID();
+    var args=Map.of("issue","원상복구","title","격리 합성 자료","content","테스트 원문: 합의되지 않은 항목을 분리해 정리합니다.","idempotencyKey",key);
+    var first=ok(token,"post_academy_move",args);
+    var second=ok(token,"post_academy_move",args);
+    assertEquals(first.get("entryId").asText(),second.get("entryId").asText());
+    assertTrue(second.get("replayed").asBoolean());
+    assertEquals("AI_PROPOSAL",db.queryForObject("SELECT origin FROM studio_revisions WHERE id=?",String.class,first.get("entryId").asText()));
+    var state=ok(token,"read_academy_move",Map.of());
+    assertTrue(state.get("entries").toString().contains("격리 합성 자료"));
+    assertTrue(state.get("conversation").toString().contains("[원상복구]"));
+    assertTrue(denied(claude,"read_academy_move",Map.of()).contains("consent"));
+    assertTrue(denied(claude,"list_studio_assets",Map.of("projectId","academy-relocation")).contains("consent"));
+    assertTrue(denied(token,"post_academy_move",Map.of("issue","원상복구","title","격리 합성 자료","content","changed","idempotencyKey",key)).contains("같은 요청 키"));
+    } finally {org.springframework.test.util.ReflectionTestUtils.setField(relocation,"aiEnabled",previousAi);}
   }
 
   @AfterAll

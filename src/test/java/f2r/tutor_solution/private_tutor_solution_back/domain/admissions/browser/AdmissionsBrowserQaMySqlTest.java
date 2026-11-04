@@ -159,17 +159,21 @@ class AdmissionsBrowserQaMySqlTest {
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
             driver.get("http://127.0.0.1:" + port + "/admissions/guide");
 
+            exerciseGuidedHome(driver, wait, width);
             exerciseExplorer(driver, wait, width);
-            driver.findElement(By.cssSelector("[data-ae-tab='chat']")).click();
+            driver.findElement(By.cssSelector(".ae-tabs [data-ae-tab='chat']")).click();
+            driver.findElement(By.cssSelector(".ag-profile-details summary")).click();
             if (width == 390) assertNoHorizontalOverflow(driver, "student-form");
             new Select(driver.findElement(By.id("ag-grade"))).selectByVisibleText("고3");
+            driver.findElement(By.id("ag-target-universities")).clear();
             driver.findElement(By.id("ag-target-universities")).sendKeys("서울대학교");
+            driver.findElement(By.id("ag-target-majors")).clear();
             driver.findElement(By.id("ag-target-majors")).sendKeys("경영학과");
             new Select(driver.findElement(By.id("ag-admission-track"))).selectByVisibleText("학생부종합");
             driver.findElement(By.id("ag-academic-summary")).sendKeys("내신과 모의고사 성적을 함께 검토 중");
             driver.findElement(By.id("ag-welcome-input"))
                     .sendKeys("서울대 2027학년도 경영학과 모집 정보를 알려줘");
-            driver.findElement(By.cssSelector("#ag-welcome-form button[type=submit]")).click();
+            clickInView(driver, driver.findElement(By.cssSelector("#ag-welcome-form button[type=submit]")));
 
             wait.until(ExpectedConditions.textToBePresentInElementLocated(
                     By.cssSelector(".ag-msg-ai"), "서울대학교 경영학과"));
@@ -181,10 +185,25 @@ class AdmissionsBrowserQaMySqlTest {
 
             driver.findElement(By.id("ag-input"))
                     .sendKeys("서울대 2027학년도 경영학과 공식 자료를 다시 설명해줘");
-            driver.findElement(By.cssSelector("#ag-form button[type=submit]")).click();
+            clickInView(driver, driver.findElement(By.cssSelector("#ag-form button[type=submit]")));
             wait.until(driverState -> driverState.findElements(By.cssSelector(".ag-msg-ai")).stream()
                     .filter(element -> element.getText().contains("서울대학교 경영학과"))
                     .count() >= 2);
+
+            // 답변의 다음 행동 -> 비교 -> 후보를 포함한 질문 -> 같은 대화로 복귀.
+            clickInView(driver, driver.findElements(By.cssSelector(".ag-next-actions button")).get(1));
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("ae-compare-panel")));
+            driver.findElement(By.id("ae-compare-ask")).click();
+            wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(
+                    By.cssSelector(".ag-msg-ai:not(.ag-msg-typing)"), 2));
+            // 이 fixture에는 지난해 입결이 없다. 모집요강 답변으로 대체하지 않고 미확보를 알린다.
+            assertThat(driver.findElements(By.cssSelector(".ag-msg-ai")).get(2).getText())
+                    .contains("서울대학교", "2026학년도", "아직 수집되지");
+            driver.findElement(By.cssSelector(".ae-tabs [data-ae-tab='my']")).click();
+            assertThat(driver.findElement(By.id("ae-my-candidates")).getText()).contains("경영학과");
+            driver.findElement(By.cssSelector(".ae-tabs [data-ae-tab='chat']")).click();
+            assertThat(driver.findElement(By.id("ag-chat")).isDisplayed()).isTrue();
+            assertThat(driver.findElements(By.cssSelector(".ag-msg-ai"))).hasSize(3);
 
             if (width == 390) assertNoHorizontalOverflow(driver, "second-response-complete");
             Path out = Path.of("build/reports/admissions-qa", screenshotName);
@@ -195,33 +214,67 @@ class AdmissionsBrowserQaMySqlTest {
         }
     }
 
+    private void exerciseGuidedHome(ChromeDriver driver, WebDriverWait wait, int width) throws Exception {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("ae-home-panel")));
+        assertThat(driver.findElement(By.id("ae-home-title")).getText()).contains("내 성적으로");
+        if(width==390)assertNoHorizontalOverflow(driver,"guided-home");
+        Path folder=Path.of("build/reports/admissions-qa");Files.createDirectories(folder);
+        Files.write(folder.resolve("home-"+width+".png"),driver.getScreenshotAs(OutputType.BYTES));
+        driver.findElement(By.cssSelector("#ae-home-panel [data-ae-tab='prepare']")).click();
+        new Select(driver.findElement(By.id("ae-prepare-grade"))).selectByVisibleText("고3");
+        new Select(driver.findElement(By.id("ae-prepare-track"))).selectByVisibleText("학생부종합");
+        driver.findElement(By.id("ae-prepare-major")).sendKeys("경영학과");
+        new Select(driver.findElement(By.id("ae-prepare-kind"))).selectByValue("내신");
+        clickInView(driver, driver.findElement(By.cssSelector("#ae-prepare-form button[type=submit]")));
+        assertThat(driver.findElement(By.id("ae-korean-standard")).isDisplayed()).isFalse();
+        driver.findElement(By.id("ae-grade-average")).sendKeys("2.35");
+        clickInView(driver, driver.findElement(By.cssSelector("#ae-score-form button[type=submit]")));
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("ae-score-next")));
+        assertThat(driver.findElement(By.id("ag-academic-summary")).getAttribute("value")).contains("내신 평균 2.35");
+        driver.findElement(By.id("ae-grade-average")).sendKeys("1");
+        assertThat(driver.findElement(By.id("ag-academic-summary")).getAttribute("value")).isEmpty();
+        driver.findElement(By.id("ae-score-clear")).click();
+        driver.findElement(By.cssSelector(".ae-tabs [data-ae-tab='search']")).click();
+    }
+
     private void exerciseExplorer(ChromeDriver driver, WebDriverWait wait, int width) throws Exception {
         // 실제 MySQL fixture -> 공개 탐색 API -> 사용자 화면. 데이터/점수 모킹으로 대체하지 않는다.
         wait.until(d -> new Select(d.findElement(By.id("ae-university"))).getOptions().size() > 1);
         new Select(driver.findElement(By.id("ae-university"))).selectByVisibleText("서울대학교 · 서울");
+        driver.findElement(By.id("ae-major")).clear();
         driver.findElement(By.id("ae-major")).sendKeys("경영학과");
-        driver.findElement(By.cssSelector("#ae-search-form button[type='submit']")).click();
-        wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.cssSelector(".ae-card"), 0));
-        WebElement card=driver.findElements(By.cssSelector(".ae-card")).stream()
+        clickInView(driver, driver.findElement(By.cssSelector("#ae-search-form button[type='submit']")));
+        wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.cssSelector("#ae-results .ae-card"), 0));
+        WebElement card=driver.findElements(By.cssSelector("#ae-results .ae-card")).stream()
                 .filter(e->e.getText().contains("경영학과")).findFirst().orElseThrow();
-        card.findElements(By.tagName("button")).get(0).click();
+        clickInView(driver, card.findElements(By.tagName("button")).get(0));
         wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("ae-detail"), "서울대학교"));
         assertThat(driver.findElement(By.cssSelector("#ae-detail a")).getAttribute("href"))
                 .isEqualTo("https://admission.snu.ac.kr/2027-guide");
-        card.findElements(By.tagName("button")).get(1).click();
+        clickInView(driver, card.findElements(By.tagName("button")).get(1));
         assertThat(driver.findElement(By.id("ae-count")).getText()).isEqualTo("1");
-        driver.findElement(By.cssSelector("[data-ae-tab='compare']")).click();
+        driver.findElement(By.cssSelector(".ae-tools-nav [data-ae-tab='compare']")).click();
         wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("ae-comparison"), "경영학과"));
         if(width==390)assertNoHorizontalOverflow(driver,"explorer-comparison");
         Path folder=Path.of("build/reports/admissions-qa");Files.createDirectories(folder);
         Files.write(folder.resolve("explorer-"+width+".png"),driver.getScreenshotAs(OutputType.BYTES));
-        driver.findElement(By.cssSelector("[data-ae-tab='scores']")).click();
+        driver.findElement(By.cssSelector(".ae-tools-nav [data-ae-tab='scores']")).click();
         driver.findElement(By.id("ae-korean-standard")).sendKeys("131");
-        driver.findElement(By.cssSelector("#ae-score-form button[type='submit']")).click();
+        clickInView(driver, driver.findElement(By.cssSelector("#ae-score-form button[type='submit']")));
         wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("ae-score-status"), "적용했습니다"));
         if(width==390)assertNoHorizontalOverflow(driver,"explorer-scores");
         driver.findElement(By.id("ae-score-clear")).click();
         assertThat(driver.findElement(By.id("ag-academic-summary")).getAttribute("value")).isEmpty();
+    }
+
+    private void clickInView(ChromeDriver driver, WebElement element) {
+        // 사용자 스크롤처럼 고정 하단 메뉴 위로 이동한 뒤 실제 포인터 클릭으로 검사한다.
+        driver.executeScript("arguments[0].scrollIntoView({block:'center',inline:'nearest',behavior:'instant'})", element);
+        assertThat(driver.executeScript("""
+                const rect=arguments[0].getBoundingClientRect();
+                return arguments[0].contains(document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2));
+                """, element)).as("click target must be visible above navigation and notices").isEqualTo(true);
+        element.click();
     }
 
     private void assertNoHorizontalOverflow(ChromeDriver driver, String phase) throws Exception {
@@ -315,6 +368,9 @@ class AdmissionsBrowserQaMySqlTest {
             // AI 비서 화면에서는 F2R 서비스 목록이 메뉴 안에 있다(1280px 이상은 늘 펼침). 좁은 화면은 사용자처럼 메뉴를 먼저 연다.
             org.openqa.selenium.WebElement menuButton=wait.until(d->d.findElement(By.id("siMenuBtn")));
             if(menuButton.isDisplayed()&&!driver.findElement(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")).isDisplayed())menuButton.click();
+            // 모바일 메뉴의 슬라이드가 끝나야 링크 중심이 실제 뷰포트 안에 있다.
+            // elementToBeClickable은 CSS transform 애니메이션 완료를 기다리지 않는다.
+            wait.until(d->"none".equals(d.findElement(By.id("siMenu")).getCssValue("transform")));
             // 대시보드 위젯이 비동기로 채워지며 레이아웃이 밀리면 클릭이 빗나갈 수 있다(CI 간헐 실패).
             // 링크 존재·href는 그대로 검증하고, 클릭 후 이동이 없으면 같은 href로 이동한다.
             org.openqa.selenium.WebElement workspaceLink=wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")));
@@ -328,9 +384,9 @@ class AdmissionsBrowserQaMySqlTest {
             }
             wait.until(ExpectedConditions.presenceOfElementLocated(By.id("ag-year-select")));
             assertThat(driver.findElements(By.id("ag-admin-toggle"))).hasSize(role==Role.ADMIN?1:0);
-            driver.findElement(By.cssSelector("[data-ae-tab='chat']")).click();
+            driver.findElement(By.cssSelector(".ae-tabs [data-ae-tab='chat']")).click();
             driver.findElement(By.id("ag-welcome-input")).sendKeys("서울대 2027학년도 경영학과 모집 정보를 알려줘");
-            driver.findElement(By.cssSelector("#ag-welcome-form button[type=submit]")).click();
+            clickInView(driver, driver.findElement(By.cssSelector("#ag-welcome-form button[type=submit]")));
             wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.cssSelector(".ag-source"),0));
             driver.findElement(By.id("ag-history-toggle")).click();
             wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.cssSelector("#ag-history-list article"),0));

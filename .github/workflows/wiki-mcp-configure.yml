@@ -1,0 +1,72 @@
+name: Wiki MCP connection repair
+
+# Existing API-key endpoint only. No application deployment or DB writes.
+on:
+  workflow_dispatch:
+    inputs:
+      public_key_b64:
+        description: 'Operator RSA public PEM (base64). Private key must remain with operator. Credential output is RSA-OAEP-SHA256 ciphertext only.'
+        required: true
+        type: string
+  pull_request:
+    paths:
+      - 'scripts/wiki-mcp/**'
+      - '.github/workflows/wiki-mcp-configure.yml'
+permissions:
+  contents: read
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install cryptography
+      - run: python -m unittest discover -s scripts/wiki-mcp -v
+  configure:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: test
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::425805163960:role/github-actions-f2r-deploy
+          aws-region: ap-northeast-2
+      - name: Configure and verify the existing Wiki MCP service
+        env:
+          PUBLIC_KEY_B64: ${{ inputs.public_key_b64 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, json, os
+          from pathlib import Path
+          value = os.environ['PUBLIC_KEY_B64']
+          public = base64.b64decode(value, validate=True)
+          if not public.startswith(b'-----BEGIN PUBLIC KEY-----') or len(public) > 4096:
+              raise SystemExit('Invalid RSA public PEM')
+          script = base64.b64encode(Path('scripts/wiki-mcp/configure.py').read_bytes()).decode()
+          command = 'WIKI_MCP_PUBLIC_KEY_B64=' + value + ' python3 -c "import base64;exec(base64.b64decode(\'' + script + '\'))"'
+          Path('/tmp/wiki-mcp-parameters.json').write_text(json.dumps({'commands': [command]}))
+          PY
+          IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
+          [ -n "$IID" ] && [ "$IID" != None ]
+          CID=$(aws ssm send-command --instance-ids "$IID" --document-name AWS-RunShellScript --parameters file:///tmp/wiki-mcp-parameters.json --timeout-seconds 300 --query Command.CommandId --output text)
+          echo "SSM command: $CID"
+          for _ in $(seq 1 60); do
+            RESULT=$(aws ssm get-command-invocation --command-id "$CID" --instance-id "$IID" --output json 2>/dev/null || true)
+            STATUS=$(printf '%s' "$RESULT" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("Status",""))' 2>/dev/null || true)
+            case "$STATUS" in Success|Failed|Cancelled|TimedOut) break ;; esac
+            sleep 5
+          done
+          # stdout contains only safe status, tool names and sealed credential. Never emit stderr.
+          printf '%s' "$RESULT" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("status="+d.get("Status","")); print(d.get("StandardOutputContent",""))'
+          [ "$STATUS" = Success ]
