@@ -5239,3 +5239,6 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 화면은 원상복구/교습소 전환/명칭·로고 3개 이슈와 최신 AI 답변을 우선 표시하고 원문·이력·기관 자료는 접는다. POST `/api/admin/academy-move/posts`는 `{title?,content(1~8000),issue,idempotencyKey}`를 받아 원문과 AI 정리를 저장한다. 같은 사용자/연결/키는 동일 응답을 재사용하고 내용이 달라지면409다. 일반 chat은 선택적 `issue`를 받으며 기존 2필드 요청도 유지한다. 공식·참고 조사 자료는 `static/data/academy-move-sources.json`에서 이슈별로 가져와 AI의 근거에 포함한다. 개인 일정·명칭 후보·주소는 이 공개 파일에 넣지 않는다.
 
 MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의와 ADMIN을 모두 요구한다. 기존 studio 토큰에 권한을 자동 추가하지 않는다. 이 scope는 관리자 글·대화 읽기와 새 원문/AI 정리 등록만 허용하며 삭제·승인·원문 파일 제공은 없다. 전용 도구에는 projectId가 없고 `academy-relocation`으로 고정된다. 기존 Studio 도구로 해당 프로젝트를 지정할 때도 별도 scope를 요구한다. 운영 기본 허용 scope 목록에 새 동의 항목을 추가하되 명시적 환경변수 override는 그대로 존중한다. 실제 외부 ChatGPT/Claude 연결은 사용자가 새 범위를 선택해 재연결해야 한다.
+
+### 학원이사 / 모두의창업2기 문서 작업 (2026-11-04)
+기존 ADMIN 노트 경로·프로젝트·권한을 유지한다. entries의 category에 `사업계획서`, `활동보고서`를 추가한다. `/admin/academy-move?workspace=startup`은 모두의창업2기 메뉴로 진입한다. 해당 업무에서는 entries 수정·이력·보관 기능을 이용해 문서를 작성하며 법률 상담용 posts/chat을 호출하지 않는다. 기존 자료 중 `[모두의창업2기 사업계획서]`, `[모두의창업2기 활동보고서]` 제목 접두사는 각 문서 섹션으로 분류한다. 공개 소스에는 개인 제출 자료나 집행내역을 넣지 않고 보호된 노트에 저장한다. 파일 원본 연결은 현재 계정의 접근 권한을 따르며 HWP 자동 편집이나 공식 플랫폼 제출을 뜻하지 않는다.
