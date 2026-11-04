@@ -57,7 +57,7 @@
   function pickView(hash, saved) {
     if (hash === '#all') return 'all';
     if (hash === '#ai') return 'ai';
-    return saved === 'all' ? 'all' : 'ai';
+    return 'all'; // 메뉴 우선: 대화는 명시적인 #ai 또는 펼치기 버튼으로 연다.
   }
 
   function matchServices(text) {
@@ -508,6 +508,7 @@
     document.addEventListener('ua:ready', function () {
       var ua = window.unifiedAssistant;
       box.hidden = !(ua && ua.role && ua.role() === 'ADMIN');
+      document.querySelectorAll('[data-move-admin]').forEach(function (el) { el.hidden = box.hidden; });
     });
     form.addEventListener('submit', function (e) {
       e.preventDefault();

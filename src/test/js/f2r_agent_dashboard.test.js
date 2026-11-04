@@ -25,15 +25,15 @@ test('given 저장된 비서 값 when 고르면 then 세븐·서수니만 허용
   assert.equal(d.pickAgent(null), 'seven');
 });
 
-test('given 주소 해시와 저장값 when 첫 화면을 고르면 then 기본은 AI 메인이고 #all만 전체 대시보드를 연다', () => {
+test('given 주소 해시와 저장값 when 첫 화면을 고르면 then 기본은 메뉴이고 #ai로 대화를 연다', () => {
   // given
   const d = load();
   // when / then
-  assert.equal(d.pickView('', null), 'ai');
+  assert.equal(d.pickView('', null), 'all');
   assert.equal(d.pickView('#all', null), 'all');
   assert.equal(d.pickView('#ai', 'all'), 'ai');
   assert.equal(d.pickView('', 'all'), 'all');
-  assert.equal(d.pickView('', 'weird'), 'ai');
+  assert.equal(d.pickView('', 'weird'), 'all');
 });
 
 test('given 자유 대화 when 서비스 키워드가 있으면 then 관련 서비스를 많이 맞은 순서로 활성화한다', () => {

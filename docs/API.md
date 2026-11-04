@@ -5222,3 +5222,14 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 서버 `BUILDIT_MCP_API_KEY` 미설정은 503, 무인증/오인증은 401이다. Claude의 요청 헤더
 `X-Api-Key` 또는 `Authorization: Bearer <key>`로 연결하며 OAuth 필드에 키를 넣지 않는다.
 수동 복구·암호화된 키 전달·검증: [Wiki MCP 연결 복구](operations/WIKI_MCP_CONNECTION.md).
+
+## 학원이사 관리자 노트 (2026-11-04)
+
+`/admin/academy-move` 및 `/api/admin/academy-move/**`는 ADMIN 전용이다. 동일 출처 쓰기만 허용하며 응답은 private/no-store다.
+
+- GET `entries?offset=0`: 최신 자료 버전 50건, GET `history?itemKey=move-...`: 수정 이력 100건, itemKey 생략 시 최근 상담 30건.
+- POST `files` multipart `file`: 기존 Studio 형식/실제 bytes 검증·SHA·100MiB 한도 재사용. GET Studio file content/preview에는 `projectId=academy-relocation`을 명시한다.
+- POST `entries`: `{itemKey?,parentId?,title,content,category,archived,fileId?}`. 새 자료와 수정·보관·해제를 새 리비전으로 보존하고 기존 parent 불일치는409. 영구 삭제는 없다.
+- POST `chat`: `{question,agent:suni|seven}`. 활성 등록 설명 최대15개와 최근 대화6개를 참고하며 파일 이미지/원문 자동 분석은 하지 않는다. 기존 `buildit.unified-assistant.model-analysis-enabled` 및 사용자별 예산을 재사용한다. 미설정·실패 시 자료 기반 체크리스트로 구분해 반환하고 상담을 서버에 보존한다.
+
+기존 Studio 프로젝트/파일/리비전 테이블을 재사용하며 새 스키마는 없다. 고정 프로젝트 `academy-relocation`은 첫 명시적 저장 시 생성하고, 일반 Studio API에서도 ADMIN 이외 접근·프로젝트 목록 노출을 차단한다.
