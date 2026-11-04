@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DeleteOnlyLunaTransientStagingObjects",
+      "Effect": "Allow",
+      "Action": "s3:DeleteObject",
+      "Resource": [
+        "arn:aws:s3:::f2r-deploy-425805163960/counseling-model",
+        "arn:aws:s3:::f2r-deploy-425805163960/openai-luna-key"
+      ]
+    }
+  ]
+}
