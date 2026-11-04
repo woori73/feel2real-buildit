@@ -32,7 +32,6 @@ import tools.jackson.databind.ObjectMapper;
     properties = {
       "server.port=18088",
       "app.mcp.enabled=true",
-      "app.academy-move.ai-enabled=false",
       "app.studio.access.operators-only=false",
       "app.mcp.public-base-url=http://127.0.0.1:18088",
       "app.mcp.internal-base-url=http://127.0.0.1:18088",
@@ -49,6 +48,7 @@ import tools.jackson.databind.ObjectMapper;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class McpStudioCollaborationMySqlTest {
   @Autowired StudioService studio;
+  @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.studio.AcademyMoveController relocation;
   @Autowired StudioAiService ai;
   @Autowired McpOAuth oauth;
   @Autowired UserRepository users;
@@ -443,6 +443,9 @@ class McpStudioCollaborationMySqlTest {
 
   @Test @Order(6)
   void givenSeparateRelocationConsent_whenPostingTwice_thenOneNoteAndSummaryAndReadBack() throws Exception {
+    Object previousAi=org.springframework.test.util.ReflectionTestUtils.getField(relocation,"aiEnabled");
+    org.springframework.test.util.ReflectionTestUtils.setField(relocation,"aiEnabled",false);
+    try {
     String token=connect("Relocation isolated client","https://claude.ai/api/mcp/auth_callback",Set.of(McpOAuth.ACADEMY_MOVE_WRITE));
     String key="synthetic-"+UUID.randomUUID();
     var args=Map.of("issue","원상복구","title","격리 합성 자료","content","테스트 원문: 합의되지 않은 항목을 분리해 정리합니다.","idempotencyKey",key);
@@ -457,6 +460,7 @@ class McpStudioCollaborationMySqlTest {
     assertTrue(denied(claude,"read_academy_move",Map.of()).contains("consent"));
     assertTrue(denied(claude,"list_studio_assets",Map.of("projectId","academy-relocation")).contains("consent"));
     assertTrue(denied(token,"post_academy_move",Map.of("issue","원상복구","title","격리 합성 자료","content","changed","idempotencyKey",key)).contains("같은 요청 키"));
+    } finally {org.springframework.test.util.ReflectionTestUtils.setField(relocation,"aiEnabled",previousAi);}
   }
 
   @AfterAll
