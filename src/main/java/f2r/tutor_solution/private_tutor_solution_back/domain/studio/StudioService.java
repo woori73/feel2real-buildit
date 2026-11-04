@@ -101,6 +101,7 @@ public class StudioService {
   private String permission(AuthenticatedPrincipal p, boolean currentRead) {
     if (p == null) throw error(401, "로그인이 필요합니다.");
     if ("ADMIN".equals(p.role())) return "APPROVER";
+    if ("academy-relocation".equals(projectId())) throw error(403, "학원이사 자료는 관리자 전용입니다.");
     var member =
         db
             .query(
