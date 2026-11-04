@@ -1104,6 +1104,11 @@ _PAST_EXAM_MAX_BYTES = 30 * 1024 * 1024
 # 본문을 텍스트로 보관한다. 실물 시험지가 아니라 작업 메모라 텍스트 포맷만 허용한다.
 _AI_WORK_LOG_EXTENSIONS = {'.md', '.markdown', '.txt', '.html', '.htm'}
 _AI_WORK_LOG_MAX_BYTES = 10 * 1024 * 1024
+# 기출 분석: 중간·기말 기출을 분석한 자료(출제 경향·문항별 분석 등). 이미지·폰트를 품은 큰 HTML이 많아
+# 상한을 넉넉히 둔다(운영 컨테이너 multipart 상한 200MB 아래). HTML은 본문을 정제해 MCP Context로 전달하고
+# PDF·HWPX·DOCX는 원본만 보관한다.
+_EXAM_ANALYSIS_EXTENSIONS = {'.html', '.htm', '.pdf', '.hwpx', '.docx'}
+_EXAM_ANALYSIS_MAX_BYTES = 150 * 1024 * 1024
 # MCP Context 1건에 담는 본문 최대 길이. 넘으면 조용히 잘라내지 않고 body_truncated=true +
 # body_length(원문 전체 길이)로 명시해 누락을 감지할 수 있게 한다.
 _CONTEXT_BODY_MAX_CHARS = 200_000
@@ -1277,6 +1282,13 @@ def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str
     data = original.file.read()
     if not data or len(data) > _PAST_EXAM_MAX_BYTES:
         raise HTTPException(status_code=400, detail='기출시험지 원본은 30MB 이하의 파일이어야 합니다.')
+    _check_upload_signature(suffix, data)
+    body_text, body_format = _extract_uploaded_body(suffix, data, label='기출시험지')
+    return original.filename[:255], original.content_type or 'application/octet-stream', data, body_text, body_format
+
+
+def _check_upload_signature(suffix: str, data: bytes) -> None:
+    """확장자와 실제 파일 형식이 맞는지 확인한다(기출시험지·학습자료·기출 분석 공통)."""
     if suffix == '.pdf' and not data.startswith(b'%PDF-'):
         raise HTTPException(status_code=400, detail='올바른 PDF 파일인지 확인해 주세요.')
     if suffix == '.hwp' and not data.startswith(bytes.fromhex('D0CF11E0A1B11AE1')):
@@ -1305,7 +1317,19 @@ def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str
         html_source = _decode_text_upload(data, 'HTML').lstrip().lower()
         if not re.search(r'<!doctype\s+html|<html(?:\s|>)|<body(?:\s|>)', html_source):
             raise HTTPException(status_code=400, detail='올바른 HTML 파일인지 확인해 주세요.')
-    body_text, body_format = _extract_uploaded_body(suffix, data, label='기출시험지')
+
+
+def _validate_exam_analysis_upload(original: Optional[UploadFile]) -> tuple[str, str, bytes, str, str]:
+    if not original or not original.filename:
+        raise HTTPException(status_code=400, detail='기출 분석 파일을 올려 주세요.')
+    suffix = Path(original.filename).suffix.lower()
+    if suffix not in _EXAM_ANALYSIS_EXTENSIONS:
+        raise HTTPException(status_code=400, detail='기출 분석은 HTML, PDF, HWPX, DOCX 파일만 지원합니다.')
+    data = original.file.read()
+    if not data or len(data) > _EXAM_ANALYSIS_MAX_BYTES:
+        raise HTTPException(status_code=400, detail='기출 분석은 150MB 이하의 파일이어야 합니다.')
+    _check_upload_signature(suffix, data)
+    body_text, body_format = _extract_uploaded_body(suffix, data, label='기출 분석')
     return original.filename[:255], original.content_type or 'application/octet-stream', data, body_text, body_format
 
 
@@ -1335,16 +1359,16 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
     # 생략돼 Form 기본값 객체가 그대로 들어올 수 있다 — str이 아니면 미지정으로 취급한다.
     raw_material_type = material_type if isinstance(material_type, str) else ''
     normalized_material_type = raw_material_type.strip().upper() or ('SCHOOL_PRINT' if core_type == 'school_print' else 'STUDENT_WRONG_NOTE')
-    if normalized_material_type not in ('SCHOOL_PRINT', 'STUDENT_WRONG_NOTE', 'PAST_EXAM', 'AI_WORK_LOG'):
+    if normalized_material_type not in ('SCHOOL_PRINT', 'STUDENT_WRONG_NOTE', 'PAST_EXAM', 'AI_WORK_LOG', 'EXAM_ANALYSIS'):
         raise HTTPException(status_code=400, detail='지원하지 않는 자료 유형입니다.')
-    if normalized_material_type in ('PAST_EXAM', 'AI_WORK_LOG') and core_type != 'school_print':
-        raise HTTPException(status_code=400, detail='실제 기출·AI 작업기록은 학교 자료로만 등록할 수 있습니다.')
+    if normalized_material_type in ('PAST_EXAM', 'AI_WORK_LOG', 'EXAM_ANALYSIS') and core_type != 'school_print':
+        raise HTTPException(status_code=400, detail='실제 기출·AI 작업기록·기출 분석은 학교 자료로만 등록할 수 있습니다.')
     if core_type == 'student_wrong_note' and student_id is None:
         raise HTTPException(status_code=400, detail='학생을 선택해 주세요.')
     has_original = bool(original and original.filename)
     if core_type == 'student_wrong_note' and not has_original:
         raise HTTPException(status_code=400, detail='원본 파일을 올려 주세요.')
-    # PAST_EXAM/AI_WORK_LOG은 붙여넣은 html_text 폼값을 쓰지 않는다 — 본문은 업로드 원본에서 추출한다.
+    # PAST_EXAM/AI_WORK_LOG/EXAM_ANALYSIS는 붙여넣은 html_text 폼값을 쓰지 않는다 — 본문은 업로드 원본에서 추출한다.
     canonical_html = html_text.strip() if normalized_material_type == 'SCHOOL_PRINT' and isinstance(html_text, str) else ''
     if normalized_material_type == 'SCHOOL_PRINT' and not has_original and not canonical_html:
         raise HTTPException(status_code=400, detail='HTML 자료를 올리거나 붙여넣어 주세요.')
@@ -1354,6 +1378,8 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
         original_name, original_type, original_bytes, body_text, body_format = _validate_past_exam_upload(original)
     elif normalized_material_type == 'AI_WORK_LOG':
         original_name, original_type, original_bytes, body_text, body_format = _validate_ai_work_log_upload(original)
+    elif normalized_material_type == 'EXAM_ANALYSIS':
+        original_name, original_type, original_bytes, body_text, body_format = _validate_exam_analysis_upload(original)
     elif has_original and normalized_material_type == 'SCHOOL_PRINT':
         if Path(original.filename).suffix.lower() not in {'.html', '.pdf', '.hwpx', '.docx'}:
             raise HTTPException(status_code=400, detail='학습자료는 HTML·PDF·HWPX·DOCX 파일만 지원합니다.')
@@ -1933,7 +1959,7 @@ def list_live_update_metadata(year: int, semester: str, exam: str):
     updates = []
     for row in materials:
         material_type = (row['material_type'] or '').upper()
-        if material_type == 'PAST_EXAM':
+        if material_type in ('PAST_EXAM', 'EXAM_ANALYSIS'):
             kind, label = 'PAST_EXAM', '기출·출제패턴 분석 업데이트'
         elif material_type == 'AI_WORK_LOG':
             kind, label = 'PRODUCTION_LOG', '제작·검수 기록 업데이트'
@@ -3162,7 +3188,7 @@ def _material_context_items(conn, core_type: str, school: str, grade: str, year:
 
 
 def _apply_context_body_budget(*item_lists) -> dict:
-    """past_exams + ai_work_logs 항목에 본문을 배분한다. 각 항목의 임시 키 '_body_full'(정제된 본문
+    """past_exams + exam_analyses + ai_work_logs 항목에 본문을 배분한다. 각 항목의 임시 키 '_body_full'(정제된 본문
     전체)을 저장 순서대로 소비하며 다음 규칙을 deterministic 하게 적용한다.
 
       - 항목당 최대 _CONTEXT_BODY_MAX_CHARS.
@@ -3235,17 +3261,28 @@ def _ai_work_log_context_items(conn, school: str, grade: str, semester: str, exa
     """AI 작업기록(Claude/ChatGPT 등의 작업 로그)을 Context 항목으로 담는다. PAST_EXAM과 같은
     (학교/학년/학기/시험) 조건으로 조회하고 연도별로 누적하며, 본문(body_text)을 그대로 전달해
     다음 세션에서 MCP가 이어서 읽을 수 있게 한다."""
+    return _text_material_context_items(conn, 'AI_WORK_LOG', 'ai_work_log', 'AI 작업기록', school, grade, semester, exam)
+
+
+def _exam_analysis_context_items(conn, school: str, grade: str, semester: str, exam: str) -> list:
+    """기출 분석(중간·기말 기출의 출제 경향·문항별 분석)을 Context 항목으로 담는다. 조회 조건과 본문 전달
+    방식은 AI 작업기록과 같다. PDF·HWPX·DOCX는 본문 없이 original_api_path만 노출한다."""
+    return _text_material_context_items(conn, 'EXAM_ANALYSIS', 'exam_analysis', '기출 분석', school, grade, semester, exam)
+
+
+def _text_material_context_items(conn, material_type: str, item_type: str, fallback_title: str,
+                                 school: str, grade: str, semester: str, exam: str) -> list:
     rows = conn.execute(
         '''SELECT m.id, m.school, m.grade, m.year, m.semester, m.exam, m.title, m.original_name,
                   m.body_text, m.body_format, m.uploaded_by, m.created_at
            FROM exam_material_sets m
-           WHERE m.material_type='AI_WORK_LOG' AND m.school=? AND m.grade=? AND m.semester=? AND m.exam=?
+           WHERE m.material_type=? AND m.school=? AND m.grade=? AND m.semester=? AND m.exam=?
            ORDER BY m.year DESC, m.id DESC''',
-        (school, grade, semester, exam),
+        (material_type, school, grade, semester, exam),
     ).fetchall()
     return [{
-        'id': row['id'], 'type': 'ai_work_log', 'material_type': 'AI_WORK_LOG',
-        'title': row['title'] or row['original_name'] or 'AI 작업기록', 'source': 'exam_material_sets',
+        'id': row['id'], 'type': item_type, 'material_type': material_type,
+        'title': row['title'] or row['original_name'] or fallback_title, 'source': 'exam_material_sets',
         'school': row['school'], 'grade': row['grade'], 'semester': row['semester'], 'exam': row['exam'],
         'exam_year': row['year'], 'original_name': row['original_name'],
         'original_api_path': f"/api/exam-materials/{row['id']}/original",
@@ -3253,7 +3290,7 @@ def _ai_work_log_context_items(conn, school: str, grade: str, semester: str, exa
         'body_api_path': f"/api/exam-materials/{row['id']}/body" if row['body_text'] else None,
         'uploaded_by': row['uploaded_by'], 'uploaded_at': row['created_at'],
         'provenance': {'school': row['school'], 'grade': row['grade'], 'semester': row['semester'],
-                       'exam': row['exam'], 'exam_year': row['year'], 'material_type': 'AI_WORK_LOG',
+                       'exam': row['exam'], 'exam_year': row['year'], 'material_type': material_type,
                        'uploaded_by': row['uploaded_by'], 'uploaded_at': row['created_at']},
         '_body_full': row['body_text'] or '',
     } for row in rows]
@@ -3331,18 +3368,20 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
     with get_db() as conn:
         digital_twin = _match_digital_twin(conn, school, grade, exam)
         school_prints = _material_context_items(conn, 'school_print', school, grade, year, semester, exam)
-        school_prints = [item for item in school_prints if item['material_type'] not in ('PAST_EXAM', 'AI_WORK_LOG')]
+        school_prints = [item for item in school_prints if item['material_type'] not in ('PAST_EXAM', 'AI_WORK_LOG', 'EXAM_ANALYSIS')]
         past_exams = _past_exam_context_items(conn, school, grade, semester, exam)
+        exam_analyses = _exam_analysis_context_items(conn, school, grade, semester, exam)
         ai_work_logs = _ai_work_log_context_items(conn, school, grade, semester, exam)
         student_errors = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         final_deliverables = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
         generated_tests = _generated_test_context_items(conn, school, grade, exam)
     weekly_exam_finals = weekly_exam.final_context_items(school, grade, year, semester, exam)
-    context_budget = _apply_context_body_budget(past_exams, ai_work_logs)
+    context_budget = _apply_context_body_budget(past_exams, exam_analyses, ai_work_logs)
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
         'digital_twin': digital_twin,
         'past_exams': past_exams,
+        'exam_analyses': exam_analyses,
         'ai_work_logs': ai_work_logs,
         'context_budget': context_budget,
         'school_prints': school_prints,

@@ -44,3 +44,25 @@ it('given PDF 자료 when 파일을 골라 저장하면 then HTML 입력 없이 
   expect(await screen.findByRole('status')).toHaveTextContent('자료와 추가 정보를 저장했습니다.')
   expect((uploaded?.get('original') as File).name).toBe('school.pdf')
 })
+it('given 기출 분석 칸 when HTML·PDF·HWPX·DOCX 파일을 올리면 then EXAM_ANALYSIS로 원본을 전송한다', async () => {
+  // given
+  let uploaded: FormData | null = null
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input)
+    if(url.endsWith('/schools')) return new Response(JSON.stringify([{school:'신구중',grades:[{grade:'2학년',exams:[{exam:'기말고사',hasDigitalTwin:false}]}]}]),{status:200})
+    if(init?.method === 'POST' && url.endsWith('/exam-materials')) { uploaded=init.body as FormData;return new Response('{"id":1}',{status:201}) }
+    return new Response('[]',{status:200})
+  }))
+  render(<NaesinWikiV1 onNavigate={vi.fn()}/>)
+  await screen.findByRole('option',{name:'신구중'})
+  fireEvent.click(screen.getByRole('button',{name:/기출 분석 업로드/}))
+  const chooser=screen.getByLabelText('기출 분석 파일')
+  expect(chooser).toHaveAttribute('accept','.html,.pdf,.hwpx,.docx')
+  // when
+  fireEvent.change(chooser,{target:{files:[new File(['<!doctype html><body>분석</body>'],'analysis.html',{type:'text/html'})]}})
+  fireEvent.click(screen.getByRole('button',{name:'저장',exact:true}))
+  // then
+  expect(await screen.findByRole('status')).toHaveTextContent('기출 분석 1건을 저장했습니다.')
+  expect(uploaded?.get('material_type')).toBe('EXAM_ANALYSIS')
+  expect((uploaded?.get('original') as File).name).toBe('analysis.html')
+})
