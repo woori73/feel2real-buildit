@@ -179,6 +179,36 @@ class AdmissionsSusiMinimumDbTest {
         assertThat(general.missingInputs()).containsExactly("ENG_GRD", "INQ1_GRD", "INQ2_GRD", "MATH_GRD");
     }
 
+    /** 수학 선택과목 조건이 있는 규칙 하나(교과). */
+    private static final String SEED_FLAGS = """
+        {"ipsi_universities":[{"name":"테스트한양대학교","university_code":"TST"}],
+         "ipsi_documents":[{"document_key":"doc_tst_2027_susi","document_name":"테스트한양대학교 2027학년도 수시모집 요강",
+            "applicable_academic_year":2027,"institution_name":"테스트한양대학교 입학처","source_url":"https://example.test/susi.pdf"}],
+         "susi_minimums":[
+           {"university_code":"TST","academic_year":2027,"rule_key":"tst_kyogwa","rule_kind":"RULE","label":"자연계열",
+            "type_names":["학생부교과"],"condition":"(MATH_SEL_CALC == 1 or MATH_SEL_GEOM == 1) and MATH_GRD <= 2",
+            "evidence_pages":[20],"raw_text":"수학(미적분/기하) 2등급 이내","uncertain":[],
+            "source_document_key":"doc_tst_2027_susi","source_url":"https://example.test/susi.pdf"}]}
+        """;
+
+    @Test
+    @DisplayName("given 선택과목 조건 규칙 when 선택과목을 안 고르면 then 미충족이 아니라 입력 요청이고, 고르면 그 과목으로 판정한다")
+    void flagGroupMissing_needsInput() throws Exception {
+        // given
+        loader.loadSeed(SEED_FLAGS);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        // when
+        var none = service.check("테스트한양대학교", 2027, "학생부교과", null, Map.of("MATH_GRD", 1.0));
+        var prob = service.check("테스트한양대학교", 2027, "학생부교과", null, Map.of("MATH_GRD", 1.0, "MATH_SEL_PROB", 1.0));
+        var calc = service.check("테스트한양대학교", 2027, "학생부교과", null, Map.of("MATH_GRD", 1.0, "MATH_SEL_CALC", 1.0));
+        // then: 고르지 않으면 0으로 두지 않는다(0이면 충족 학생도 미충족으로 나온다)
+        assertThat(none.rules().get(0).outcome()).isEqualTo(Outcome.NEEDS_INPUT);
+        assertThat(none.rules().get(0).missingInputs()).containsExactly("MATH_SEL");
+        assertThat(prob.rules().get(0).outcome()).isEqualTo(Outcome.NOT_MET);
+        assertThat(prob.rules().get(0).defaultedInputs()).containsExactly("MATH_SEL_CALC", "MATH_SEL_GEOM");
+        assertThat(calc.rules().get(0).outcome()).isEqualTo(Outcome.MET);
+    }
+
     @Test
     @DisplayName("given 점수 항목·범위 밖 등급 when 확인하면 then 요청 오류다")
     void invalidGrades() throws Exception {

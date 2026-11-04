@@ -117,21 +117,27 @@
       catch(e){if(token===compareGeneration){paragraph(content,c.universityName+' '+c.name);paragraph(content,e.message);}}
     }));if(token===compareGeneration)byId('ae-compare-status').textContent='모집요강·지난해 입결을 원문 지표명 그대로 표시했습니다.';
   }
+  // 선택 표시는 학생이 고른 묶음만 보낸다. 고르지 않은 묶음을 0으로 보내면 서버가 '해당 없음'으로 판정해
+  // 수능최저를 충족한 학생도 미충족으로 나올 수 있다(서버는 묶음이 없으면 입력을 요청한다).
+  function selectionFlags(out,kor,math){
+    if(kor){out.KOR_SEL_HW=Number(kor==='화법과 작문');out.KOR_SEL_EM=Number(kor==='언어와 매체');}
+    if(math){out.MATH_SEL_PROB=Number(math==='확률과 통계');out.MATH_SEL_CALC=Number(math==='미적분');out.MATH_SEL_GEOM=Number(math==='기하');}
+  }
+  function trackFlags(out,prefix,group){if(!group)return;['SOC','SCI','VOC','SCI2'].forEach(function(flag){out[prefix+'_'+flag]=Number(group===flag||(flag==='SCI'&&group==='SCI2'));});}
   function scoreInputs(){
     var out={}, prefixes={korean:'KOR',math:'MATH',inquiry1:'INQ1',inquiry2:'INQ2'},hasAny=false;
     Object.keys(prefixes).forEach(function(key){
       var hasScore=false;
       ['standard','percentile','grade'].forEach(function(field){var value=byId('ae-'+key+'-'+field).value;if(value!==''){out[prefixes[key]+'_'+{standard:'STD',percentile:'PCT',grade:'GRD'}[field]]=Number(value);hasAny=true;hasScore=true;}});
       if(key.indexOf('inquiry')===0){var group=byId('ae-'+key+'-kind').value;if(hasScore&&(!group||!byId('ae-'+key+'-subject').value.trim()))throw new Error('탐구 성적의 과목명과 계열(사회/과학I/과학II/직업)을 선택해 주세요.');
-        ['SOC','SCI','VOC','SCI2'].forEach(function(flag){out[prefixes[key]+'_'+flag]=Number(group===flag||(flag==='SCI'&&group==='SCI2'));});}
+        trackFlags(out,prefixes[key],group);}
     });
     var kor=byId('ae-korean-subject').value,math=byId('ae-math-subject').value;
-    out.KOR_SEL_HW=Number(kor==='화법과 작문');out.KOR_SEL_EM=Number(kor==='언어와 매체');
-    out.MATH_SEL_PROB=Number(math==='확률과 통계');out.MATH_SEL_CALC=Number(math==='미적분');out.MATH_SEL_GEOM=Number(math==='기하');
+    selectionFlags(out,kor,math);
     ['english','history','foreign'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v!==''){out[{english:'ENG_GRD',history:'HIST_GRD',foreign:'FL_GRD'}[key]]=Number(v);hasAny=true;}});out.FL_TAKEN=Number(byId('ae-foreign-grade').value!=='');
     if(!hasAny)throw new Error('내 성적에서 확정 수능 성적을 입력해 주세요.');return out;
   }
-  function inputLabel(key){var labels={KOR:'국어',MATH:'수학',INQ1:'탐구1',INQ2:'탐구2',ENG:'영어',HIST:'한국사',FL:'제2외국어·한문'};var parts=key.split('_'),subject=labels[parts.shift()]||key,field=parts.join('_');return subject+' '+({STD:'표준점수',PCT:'백분위',GRD:'등급',STD_MAX:'전국 최고 표준점수',CONV:'대학 변환표준점수',CONV_MAX:'대학 변환표준점수 최고점'}[field]||field);}
+  function inputLabel(key){var labels={KOR:'국어',MATH:'수학',INQ1:'탐구1',INQ2:'탐구2',ENG:'영어',HIST:'한국사',FL:'제2외국어·한문'};var parts=key.split('_'),subject=labels[parts.shift()]||key,field=parts.join('_');return subject+' '+({STD:'표준점수',PCT:'백분위',GRD:'등급',STD_MAX:'전국 최고 표준점수',CONV:'대학 변환표준점수',CONV_MAX:'대학 변환표준점수 최고점',SEL:'선택과목',TRACK:'계열(사회/과학/직업)',TAKEN:'응시 여부',SEL_HW:'화법과 작문 선택',SEL_EM:'언어와 매체 선택',SEL_PROB:'확률과 통계 선택',SEL_CALC:'미적분 선택',SEL_GEOM:'기하 선택',SOC:'사회탐구',SCI:'과학탐구',VOC:'직업탐구',SCI2:'과학탐구Ⅱ'}[field]||field);}
   async function calculate(parent,data){
     if(byId('ae-score-kind').value!=='수능 확정 성적'){tab('scores');byId('ae-score-status').textContent='환산 계산에는 확정 수능 성적이 필요합니다. 성적 종류와 점수를 확인한 뒤 모집단위에서 계산해 주세요.';return;}
     if(!byId('ae-score-form').reportValidity()){tab('scores');return;}
@@ -158,10 +164,9 @@
   function gradeInputs(){
     var out={},has=false,prefixes={korean:'KOR',math:'MATH',inquiry1:'INQ1',inquiry2:'INQ2'};
     Object.keys(prefixes).forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v!==''){out[prefixes[key]+'_GRD']=Number(v);has=true;}
-      if(key.indexOf('inquiry')===0){var group=byId('ae-'+key+'-kind').value;if(v!==''&&!group)throw new Error('탐구 등급을 입력했으면 계열(사회/과학I/과학II/직업)도 선택해 주세요.');['SOC','SCI','VOC','SCI2'].forEach(function(flag){out[prefixes[key]+'_'+flag]=Number(group===flag||(flag==='SCI'&&group==='SCI2'));});}});
+      if(key.indexOf('inquiry')===0){var group=byId('ae-'+key+'-kind').value;if(v!==''&&!group)throw new Error('탐구 등급을 입력했으면 계열(사회/과학I/과학II/직업)도 선택해 주세요.');trackFlags(out,prefixes[key],group);}});
     var kor=byId('ae-korean-subject').value,math=byId('ae-math-subject').value;
-    out.KOR_SEL_HW=Number(kor==='화법과 작문');out.KOR_SEL_EM=Number(kor==='언어와 매체');
-    out.MATH_SEL_PROB=Number(math==='확률과 통계');out.MATH_SEL_CALC=Number(math==='미적분');out.MATH_SEL_GEOM=Number(math==='기하');
+    selectionFlags(out,kor,math);
     ['english','history','foreign'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v!==''){out[{english:'ENG_GRD',history:'HIST_GRD',foreign:'FL_GRD'}[key]]=Number(v);has=true;}});out.FL_TAKEN=Number(byId('ae-foreign-grade').value!=='');
     if(!has)throw new Error('내 성적에서 영역별 등급을 입력해 주세요(가채점 등급도 됩니다).');return out;
   }
@@ -177,7 +182,7 @@
       if(!result.rules||!result.rules.length){paragraph(panel,'이 대학의 수능최저 자료가 아직 연결되지 않았습니다. 공식 모집요강을 확인해 주세요.');return;}
       result.rules.forEach(function(r){var card=el('article',null,'ae-formula');card.appendChild(el('h4',(r.typeNames||[]).join(' / ')+(r.label&&r.outcome!=='NO_MINIMUM'?' · '+r.label:'')));
         paragraph(card,minimumLabel(r.outcome),'ae-score-result');
-        if(r.outcome==='NEEDS_INPUT'&&(r.missingInputs||[]).length)paragraph(card,'필요한 등급: '+r.missingInputs.map(inputLabel).join(', '));
+        if(r.outcome==='NEEDS_INPUT'&&(r.missingInputs||[]).length)paragraph(card,'필요한 입력: '+r.missingInputs.map(inputLabel).join(', ')+' (내 성적에서 선택과목·탐구 계열도 골라 주세요)');
         if(r.outcome==='WITHHELD_NEEDS_REVIEW')paragraph(card,'확인 필요 사유: '+text(r.needsReviewReason),'ae-note');
         if(r.rawText)paragraph(card,(r.outcome==='NO_MINIMUM'?'원문: ':'원문 기준: ')+r.rawText);
         if(r.requiredAreasText)paragraph(card,'응시 필수 영역: '+r.requiredAreasText);

@@ -94,6 +94,19 @@ public class AdmissionsSusiMinimumService {
         return new CheckResult(univ.getName(), academicYear, out, notice);
     }
 
+    /** 선택 표시 묶음. 묶음 이름은 입력이 없을 때 missingInputs에 그대로 나간다(KOR_SEL, MATH_SEL, INQ1_TRACK, INQ2_TRACK, FL_TAKEN). */
+    static final Map<String, List<String>> FLAG_GROUPS = Map.of(
+            "KOR_SEL", List.of("KOR_SEL_HW", "KOR_SEL_EM"),
+            "MATH_SEL", List.of("MATH_SEL_PROB", "MATH_SEL_CALC", "MATH_SEL_GEOM"),
+            "INQ1_TRACK", List.of("INQ1_SOC", "INQ1_SCI", "INQ1_VOC", "INQ1_SCI2"),
+            "INQ2_TRACK", List.of("INQ2_SOC", "INQ2_SCI", "INQ2_VOC", "INQ2_SCI2"),
+            "FL_TAKEN", List.of("FL_TAKEN"));
+
+    static String flagGroupOf(String variable) {
+        for (var e : FLAG_GROUPS.entrySet()) if (e.getValue().contains(variable)) return e.getKey();
+        return null;
+    }
+
     private RuleResult judge(AdmissionsSusiMinimum m, List<String> types, List<String> depts, Map<String, Double> grades) {
         String sourceTitle = m.getSource() == null ? null : m.getSource().getTitle();
         List<String> uncertain = readList(m.getUncertainJson());
@@ -110,8 +123,12 @@ public class AdmissionsSusiMinimumService {
             Set<String> defaulted = new TreeSet<>();
             for (String v : vars) {
                 if (in.containsKey(v)) continue;
-                if (AdmissionsJeongsiScoreService.FLAG_INPUTS.contains(v)) { in.put(v, 0.0); defaulted.add(v); }
-                else missing.add(v);
+                String group = flagGroupOf(v);
+                if (group == null) { missing.add(v); continue; }
+                // 같은 묶음(예: 수학 선택과목)의 다른 표시를 받았으면 이 표시는 해당 없음(0). 묶음 전체가 없으면 학생이
+                // 과목을 고르지 않은 것이므로 0으로 판정하지 않고 입력을 요청한다(0으로 두면 충족 학생이 미충족으로 나온다).
+                if (FLAG_GROUPS.get(group).stream().anyMatch(in::containsKey)) { in.put(v, 0.0); defaulted.add(v); }
+                else missing.add(group);
             }
             if (!missing.isEmpty()) {
                 return result(m, types, depts, Outcome.NEEDS_INPUT, List.copyOf(missing), List.copyOf(defaulted), sourceTitle, uncertain);

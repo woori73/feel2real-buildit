@@ -4856,7 +4856,8 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - 비회원 이용(permitAll). 공개 API 스위치가 꺼져 있으면 `503`, IP별 rate limit(키 `minimum-<ip>`), AI 호출 없음. 응답 `Cache-Control: no-store`.
 - body `{university, academicYear?=2027, typeName?, departmentName?, grades:{변수:값}}`. 변수는 등급(`KOR_GRD·MATH_GRD·ENG_GRD·HIST_GRD·INQ1_GRD·INQ2_GRD·FL_GRD`, 1~9 정수)과 선택 표시(정시 계산과 같은 0/1 항목)만. 점수 항목·범위 밖 값은 `400`.
 - 응답 `{universityName, academicYear, notice, rules:[{ruleKey, label, typeNames, departmentNames, unitScopeText, outcome, missingInputs, defaultedInputs, requiredAreasText, rawText, evidencePages, sourceUrl, sourceTitle, uncertain, needsReviewReason}]}`.
-  - `outcome`: `MET` · `NOT_MET` · `NEEDS_INPUT`(빠진 등급 `missingInputs`) · `NO_MINIMUM`(최저 없는 전형) · `WITHHELD_NEEDS_REVIEW` · `ERROR`.
+  - 선택 표시는 묶음(국어·수학 선택과목, 탐구1·2 계열, 제2외국어 응시) 단위로 본다. 묶음 중 하나라도 받으면 나머지는 0(해당 없음), 묶음을 하나도 받지 않으면 0으로 판정하지 않는다.
+  - `outcome`: `MET` · `NOT_MET` · `NEEDS_INPUT`(빠진 등급, 또는 고르지 않은 선택 묶음 `KOR_SEL`·`MATH_SEL`·`INQ1_TRACK`·`INQ2_TRACK`·`FL_TAKEN`을 `missingInputs`로) · `NO_MINIMUM`(최저 없는 전형) · `WITHHELD_NEEDS_REVIEW` · `ERROR`.
   - 모집단위 지정 규칙이 있으면 그 모집단위에는 전형 전체 규칙을 쓰지 않는다(DOMAIN.md "수시 수능최저학력기준").
 - 화면: 입시상담 대학 찾기 → 모집단위 상세 "수능최저 확인"(내 성적의 등급, 가채점 가능).
 
