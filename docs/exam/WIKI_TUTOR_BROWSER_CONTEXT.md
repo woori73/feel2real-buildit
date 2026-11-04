@@ -265,3 +265,15 @@ MCP와 TUTOR 브라우저가 서로 다른 결과를 보이면 실제 운영 TUT
 학교별 Context의 `PAST_EXAM`은 AI 예상문제나 Digital Twin이 아니라 실제 학교에서 시행된 PDF/HWP/HWPX/HTML/HTM/MD/MARKDOWN/JPG/JPEG/PNG 시험지 원본 증거다. Context/MCP는 학교·학년·학기·시험·시험연도·업로더·업로드시각·원본 접근 식별자를 provenance와 함께 노출한다. HTML/MD로 올린 기출은 `body_text`를 함께 실어 1번·10번 실제 발문, 서답형 작성요령 같은 문면을 metadata가 아니라 원문으로 읽을 수 있다. HTML은 script/style/편집기 toolbar·화면전용 UI를 제거하고 제목·문항·지문·선택지·표·보기·밑줄/강조·서답형 작성요령만 남긴 정제본이다(원본 파일은 `/original`로 그대로 보존). `body_format`이 `html`|`markdown`이고, 각 항목에 `body_included`/`body_truncated`/`body_length`/`body_chars`가 붙는다. `past_exams`+`ai_work_logs` 본문은 항목당 200,000자·합산 600,000자로 제한되며, budget 때문에 잘리거나 빠진 자료는 응답 `context_budget.truncated_items`/`omitted_items`로 명시되므로(조용히 빠지지 않는다) 필요하면 해당 자료의 `body_api_path`/`original_api_path`로 다시 연다. PDF·이미지·HWP(X) 기출은 여전히 원본 접근 식별자만 노출한다.
 
 `AI_WORK_LOG`는 Claude/ChatGPT가 이 시험 준비 과정에서 남긴 작업 로그(MD/MARKDOWN/TXT/HTML)다. FINAL Context의 `ai_work_logs`로 본문이 그대로 전달되어, 다음 세션에서 이전 분석·할 일을 이어받는다. 자동 분석과 Digital Twin 자동 갱신은 별도 후속 범위다.
+
+## 16. Wiki 화면의 [MCP 문제 만들기] 탭
+
+내신위키 첫 화면의 [MCP 문제 만들기] 탭(`?section=mcp`)은 이 문서의 절차를 강사가 쉽게 시작하도록 묶은 화면이다. 화면은 읽기(GET)만 하고 문제 생성·저장은 MCP client가 한다.
+
+1. 시험(학교·학년·연도·학기·시험)을 고른다 — [문제·자료 업로드] 탭과 같은 저장 Context를 공유한다.
+2. `GET /api/workspaces/final/context` 결과를 자료 종류별 건수로 보여 준다. 기출시험지·학교 프린트가 없으면 업로드 탭으로 안내한다.
+3. 만들 것(예상문제 시험지 / FINAL / 직보), 문항 수(20·40·70·100), 문항 구성, 추가 요청을 고른다.
+4. 위 조건으로 `get_final_context`/`get_jikbo_context` 인자, §6 batch 순서, 저장 tool(`save_generated_questions`·`save_final`·`save_jikbo`) 요청을 담은 지시문을 만들어 복사한다. 지시문 생성 규칙은 `problem-generator/wiki-src/src/lib/mcpPrompt.ts`.
+5. 저장 뒤 [다시 확인]으로 건수 변화를 보고, 강사 문제 DB·생성 문제·시험지 묶기 화면으로 이동한다.
+
+MCP 연결 주소는 `{사이트}/problem-generator/wiki/api/mcp`이며 화면의 "처음 한 번" 안내에 표시된다.
