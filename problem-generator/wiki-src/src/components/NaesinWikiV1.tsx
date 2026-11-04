@@ -59,6 +59,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const [savingFinal,setSavingFinal]=useState(false)
   const [insightText,setInsightText]=useState(''), [insightSource,setInsightSource]=useState<'director'|'school_teacher'>('director')
   const [insightComposerOpen,setInsightComposerOpen]=useState(false)
+  const [insightPanelOpen,setInsightPanelOpen]=useState(false)
   const [selected,setSelected]=useState<Set<string>>(new Set())
   const [exportingWrong,setExportingWrong]=useState(false)
   const [savingSchoolPrint,setSavingSchoolPrint]=useState(false)
@@ -124,13 +125,6 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   useEffect(()=>{if(core)document.getElementById('material-set-form')?.scrollIntoView({behavior:'auto',block:'start'})},[core])
   const filteredStudents=students.filter(s=>(!s.school||s.school===context.school)&&(!s.grade||s.grade===context.grade))
   const prints=materials.filter(m=>m.material_type==='SCHOOL_PRINT'||(!m.material_type&&m.core_type==='school_print')), wrongs=materials.filter(m=>m.material_type==='STUDENT_WRONG_NOTE'||(!m.material_type&&m.core_type==='student_wrong_note'))
-  const [studentTotalWrongCount,setStudentTotalWrongCount]=useState<number|null>(null)
-  useEffect(()=>{api('students').then(r=>r.ok?r.json():[]).then((list:Student[])=>{
-    if(!Array.isArray(list)||!list.length){setStudentTotalWrongCount(null);return}
-    Promise.all(list.map((s:Student)=>api(`students/${s.id}/wrong-notes`).then(r=>r.ok?r.json():[]).catch(()=>[] as unknown[]))).then(results=>{
-      setStudentTotalWrongCount(results.reduce((sum:number,rows:unknown)=>sum+(Array.isArray(rows)?rows.length:0),0))
-    })
-  }).catch(()=>setStudentTotalWrongCount(null))},[])
   const resetUpload=()=>{setOriginals([]);setJsonFile(null);setJsonText('');setTitle('');setHtmlText('')}
   const chooseOriginals=(e:ChangeEvent<HTMLInputElement>)=>{const selected=Array.from(e.target.files||[]);e.target.value='';if(!selected.length)return;const merged=[...originals];let added=0,skipped=0;for(const file of selected){const duplicate=merged.some(item=>item.name===file.name&&item.size===file.size&&item.lastModified===file.lastModified);if(duplicate)continue;if(merged.length>=MAX_ORIGINALS){skipped+=1;continue}merged.push(file);added+=1}setOriginals(merged);setNotice(skipped?`원본 자료는 한 번에 최대 ${MAX_ORIGINALS}개까지 선택할 수 있습니다. ${skipped}개를 제외했습니다.`:added?`${added}개 파일을 선택했습니다.`:'')}
   const removeOriginal=(index:number)=>setOriginals(current=>current.filter((_,i)=>i!==index))
@@ -303,9 +297,9 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     finally{setLoadingAiContext(false)}
   }
   return <section className="naesin-v1">
-    <header><p className="kicker">BUILD IT · NAESIN WIKI V1.1</p>
+    <header>
     <div role="group" aria-label="Wiki 섹션"><button className="btn-ghost" disabled style={{fontWeight:700}}>[내신 Wiki]</button><button className="btn-ghost" onClick={()=>onNavigate('csatwiki')}>[수능영어 Wiki]</button><a href="/naesin-wiki/published">중등부 승인 완성본</a></div>
-    <h1>시험 자료 한눈에 모으기</h1><p>학교와 시험을 먼저 고르면 STEP 1부터 4까지 순서대로 따라가며 시험을 준비할 수 있습니다.</p></header>
+    </header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="exam-context" aria-label="시험 Context">
       <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=node?.grades[0];touchedRef.current.school=true;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,school,grade:grade?.grade||'',exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
@@ -316,7 +310,23 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     </div>
     <div className="context-summary"><b>{context.school} · {context.grade}</b><span>{context.year}년 · {context.semester} · {examLabel}</span></div>
 
-    <WeeklyExamHub
+    <ol className="wiki-steps">
+      <li className="wiki-step">
+        <div className="panel-heading"><div><h2>자료 모으기</h2><p>시험 준비에 필요한 자료부터 모아주세요.</p></div></div>
+        <div className="twin-actions">
+          <button className="primary-action past-exam-action" onClick={()=>setCore('past_exam')}>기출시험지 업로드 · 관리 <strong>{pastExams.length}</strong>건</button>
+          <button className="primary-action ai-work-log-action" onClick={()=>setCore('ai_work_log')}>AI 작업기록 업로드 · 관리 <strong>{aiWorkLogs.length}</strong>건</button>
+          <button className="primary-action" onClick={()=>setCore('school_print')}>학교 프린트 추가 · 저장 <strong>{prints.length}</strong>건</button>
+        </div>
+      </li>
+      <li className="wiki-step">
+        <div className="panel-heading"><div><h2>수업 기록</h2><p>수업하면서 발견한 내용이나 학교 선생님의 강조사항을 남겨주세요.</p></div></div>
+        <div className="twin-actions"><button className="primary-action" onClick={()=>{setInsightPanelOpen(true);window.setTimeout(()=>document.getElementById('insight-entry')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}>수업 인사이트 기록 <strong>{insights.length}</strong></button></div>
+      </li>
+    </ol>
+
+    <details className="wiki-secondary-panel"><summary>주간 실전 모의고사 · 회차별 자료</summary>
+<WeeklyExamHub
       context={context}
       pastExamCount={pastExams.length}
       schoolPrintCount={prints.length}
@@ -324,48 +334,12 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       aiWorkLogCount={aiWorkLogs.length}
       hasDigitalTwin={Boolean(twinProfile)}
       lastContextUpdate={lastContextUpdate}
-      studentTotalWrongCount={studentTotalWrongCount}
       onOpenStudentWrongAnswers={()=>onNavigate('wronghub')}
       onOpenContext={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
       onOpenWeeklyWorkspace={()=>{setWorkspace('final');window.setTimeout(()=>document.querySelector('.admin-final-view')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}
       onOpenWrongReview={()=>setCore('student_wrong_note')}
     />
-
-
-    <ol className="wiki-steps">
-      <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 1</p><h2>자료 모으기</h2><p>시험 준비에 필요한 자료부터 모아주세요.</p></div></div>
-        <div className="twin-actions">
-          <button className="primary-action past-exam-action" onClick={()=>setCore('past_exam')}>기출시험지 업로드 · 관리 <strong>{pastExams.length}</strong>건</button>
-          <button className="primary-action ai-work-log-action" onClick={()=>setCore('ai_work_log')}>AI 작업기록 업로드 · 관리 <strong>{aiWorkLogs.length}</strong>건</button>
-          <button className="primary-action" onClick={()=>setCore('school_print')}>학교 프린트 추가 · 저장 <strong>{prints.length}</strong>건</button>
-          <button className="primary-action" onClick={()=>setCore('student_wrong_note')}>학생 오답 추가 · 저장 <strong>{wrongs.length}</strong>건</button>
-          <button className="primary-action wrong-restore-action" onClick={()=>onNavigate('wronghub')}>학생 오답 · 사진 AI 복원 · 복습</button>
-        </div>
-      </li>
-      <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 2</p><h2>수업 기록</h2><p>수업하면서 발견한 내용이나 학교 선생님의 강조사항을 남겨주세요.</p></div></div>
-        <div className="twin-actions"><button className="primary-action" onClick={()=>document.getElementById('insight-entry')?.scrollIntoView({behavior:'smooth'})}>수업 인사이트 기록 <strong>{insights.length}</strong></button></div>
-      </li>
-      <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 3</p><h2>문제 준비</h2><p>모아둔 자료와 출제자 Digital Twin을 활용해 시험 문제를 준비합니다.</p></div></div>
-        <div className="twin-actions">
-          <button className="primary-action" onClick={()=>openQuestionMaker('new')}>문제 만들기</button>
-          <button className="primary-action" onClick={()=>openQuestionMaker('transform')}>기존 문제 변형</button>
-          <button className="primary-action chrome-transform-entry" onClick={openChromeWorkbench}>크롬 문제 변형</button>
-          <button className="primary-action" onClick={()=>{sessionStorage.setItem('buildit_assistant_state',JSON.stringify({school:context.school,grade:context.grade,exam:context.exam,year:context.year,semester:context.semester}));onNavigate('database')}}>저장된 문제 <strong>{questions.length}</strong></button>
-          <button className="secondary-button" onClick={()=>onNavigate('grammabank')}>문법 문제은행</button>
-        </div>
-        <p className="field-hint">저장된 문제를 선택하면 기존 오피스 2007(.docx) 내보내기로 이어집니다. Digital Twin을 새로 등록하려면 <button type="button" className="link-button" onClick={()=>onNavigate('twin')}>Digital Twin 관리</button>로 이동하세요.</p>
-      </li>
-      <li className="wiki-step">
-        <div className="panel-heading"><div><p className="kicker">STEP 4</p><h2>시험 준비</h2><p>지금까지 모은 자료와 문제로 최종 시험을 준비합니다.</p></div></div>
-        <div className="twin-actions">
-          <button className="primary-action" onClick={()=>setWorkspace(v=>v==='final'?null:'final')}>FINAL 준비</button>
-          <button className="primary-action" onClick={()=>setWorkspace(v=>v==='jikbo'?null:'jikbo')}>직보 준비</button>
-        </div>
-      </li>
-    </ol>
+    </details>
 
     {core&&<><form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">{core==='school_print'?'HTML + JSON SET':core==='past_exam'?'PAST EXAM · ORIGINAL':core==='ai_work_log'?'AI WORK LOG · MD':'ORIGINAL + JSON SET'}</p><h2>{core==='school_print'?'학교 프린트':core==='past_exam'?'기출시험지':core==='ai_work_log'?'AI 작업기록':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>
     {core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}
@@ -394,10 +368,11 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       {m.original_name?<button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'original')}>{downloadingId===m.id?'내려받는 중...':'원본 다운로드'}</button>:null}
       <button type="button" onClick={()=>void deleteMaterial(m)}>삭제</button>
     </article>)}</div>:<div className="empty-state"><b>이 시험 Context에 저장된 학교 프린트가 없습니다.</b></div>}</section>}</>}
+    <details className="wiki-secondary-panel insight-details" open={insightPanelOpen} onToggle={e=>setInsightPanelOpen(e.currentTarget.open)}><summary>수업 인사이트 · {insights.length}건</summary>
     <section id="insight-entry" className="work-panel"><div className="panel-heading"><div><p className="kicker">CLASS INSIGHT</p><h2>수업 인사이트 기록 <strong>{insights.length}</strong></h2><p>박원장 인사이트와 학교 선생님 힌트를 한곳에 기록합니다. 아래는 {context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel} Context에 저장된 기록입니다.</p></div></div>
     {insights.length?<div className="insight-list" aria-label="저장된 수업 인사이트 목록">{insights.map(i=>{const examLine=insightExamLine(i),studentLine=insightStudentLine(i),when=formatInsightDate(i.created_at);return <article key={i.id} className="insight-card"><header className="insight-card-head"><span className="past-exam-badge">{INSIGHT_SOURCE_LABELS[i.source]||i.source}</span>{when&&<time dateTime={i.created_at}>{when}</time>}</header>{examLine&&<p className="insight-card-exam">{examLine}</p>}{studentLine&&<p className="insight-card-student">{studentLine}</p>}<p className="insight-card-body">{i.content}</p></article>})}</div>:<div className="empty-state"><b>아직 기록된 수업 인사이트가 없습니다.</b></div>}
     {insightComposerOpen?<div id="insight-composer" className="insight-entry"><select value={insightSource} onChange={e=>setInsightSource(e.target.value as typeof insightSource)}><option value="director">박원장 인사이트</option><option value="school_teacher">학교 선생님 힌트</option></select><textarea value={insightText} onChange={e=>setInsightText(e.target.value)} placeholder="이번 시험에 재사용할 관찰과 힌트"/><button className="primary-action" onClick={()=>void saveInsight()}>저장</button><button type="button" onClick={()=>setInsightComposerOpen(false)}>닫기</button></div>:<div className="twin-actions"><button type="button" className="primary-action" onClick={()=>{setInsightComposerOpen(true);window.setTimeout(()=>document.getElementById('insight-composer')?.scrollIntoView({behavior:'auto',block:'start'}),0)}}>+ 새 수업 인사이트 기록</button></div>}
-    </section>
+    </section></details>
 
     {workspace==='final'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">FINAL WORKSPACE</p><h2>현재 시험 자료</h2><p>필요한 항목만 선택하고 원본과 JSON을 각각 엽니다.</p></div><span className="context-chip">선택 {selected.size}</span><button type="button" className="secondary-button" disabled={loadingAiContext} onClick={()=>void showAiContext('final')}>{loadingAiContext?'불러오는 중...':'AI Context 보기'}</button><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
       {aiContext?.workspace==='final'&&<div className="admin-core"><h3>AI Context 미리보기<button type="button" onClick={()=>setAiContext(null)}>닫기</button></h3><p className="field-hint">GET /api/workspaces/final/context 응답 원문입니다. MCP/외부 LLM에 실제로 전달되는 것과 같습니다.</p><pre style={{whiteSpace:'pre-wrap',maxHeight:400,overflow:'auto'}}>{aiContext.json}</pre></div>}
@@ -406,8 +381,6 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       <Core title="AI 작업기록" count={aiWorkLogs.length}>{aiWorkLogs.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`AI 작업기록 · ${m.year} · ${m.title||m.original_name}`} actions={<>{m.has_body?<button onClick={()=>open(`exam-materials/${m.id}/body`)}>본문</button>:null}<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button></>}/>)}</Core>
       <Core title="제작 문제" count={questions.length}>{questions.map(q=><Row key={q.id} checked={selected.has(`q-${q.id}`)} onToggle={()=>toggle(`q-${q.id}`)} label={`${q.question_type||'문항'} · ${q.stem.slice(0,70)}`} actions={<button onClick={()=>onNavigate('database')}>상세 열기</button>}/>)}</Core>
       <Core title="학교 프린트" count={prints.length}>{prints.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={m.title||m.original_name||'학교 프린트'} actions={<>{m.has_html?<button onClick={()=>open(`exam-materials/${m.id}/html`)}>HTML 보기</button>:m.original_name&&<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button>}<button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON 보기</button></>}/>)}</Core>
-      <Core title="학생 오답" count={wrongs.length}>{wrongs.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`${m.student_name||'학생'} · ${m.title||m.original_name}`} actions={<><button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button><button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON</button></>}/>)}</Core>
-      {wrongs.length>0&&<div className="twin-actions"><button className="primary-action" disabled={!selectedWrongMaterialIds.length||exportingWrong} onClick={()=>void exportSelectedWrong()}>{exportingWrong?'내보내는 중...':`선택 학생 오답 Word 내보내기 (${selectedWrongMaterialIds.length})`}</button></div>}
       <Core title="수업 인사이트" count={insights.length}>{insights.map(i=><Row key={i.id} checked={selected.has(`i-${i.id}`)} onToggle={()=>toggle(`i-${i.id}`)} label={`${i.source==='school_teacher'?'학교 선생님 힌트':'박원장 인사이트'} · ${i.content}`} actions={null}/>)}</Core>
       <div className="admin-core"><h3>FINAL 완성본 <span>{finals.length}</span></h3>
         {finals.length?finals.map(f=><Row key={f.id} checked={false} onToggle={()=>undefined} label={`${f.title||'FINAL 완성본'} · ${new Date(f.created_at).toLocaleString('ko-KR')}`} actions={<>{f.has_html?<button onClick={()=>open(`final-deliverables/${f.id}/html`)}>HTML 보기</button>:f.original_name&&<button onClick={()=>open(`final-deliverables/${f.id}/original`)}>원본</button>}<button onClick={()=>open(`final-deliverables/${f.id}/json`)}>JSON 보기</button></>}/>):<p className="field-hint">아직 저장된 FINAL 완성본이 없습니다. 외부에서 만든 결과물을 아래에서 저장할 수 있습니다.</p>}
@@ -423,12 +396,11 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       </div>
     </section>}
 
-    {workspace==='jikbo'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">직보 WORKSPACE</p><h2>직보 준비</h2><p>FINAL 완성본에서 시험 직전 확인할 내용을 추출하고, FINAL 이후 최신 수업 인사이트와 학생 취약점을 반영합니다.</p></div><button type="button" className="secondary-button" disabled={loadingAiContext} onClick={()=>void showAiContext('jikbo')}>{loadingAiContext?'불러오는 중...':'AI Context 보기'}</button><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
+    {workspace==='jikbo'&&<section className="work-panel admin-final-view"><div className="panel-heading"><div><p className="kicker">직보 WORKSPACE</p><h2>직보 준비</h2><p>FINAL 완성본에서 시험 직전 확인할 내용을 추출하고, FINAL 이후 최신 수업 인사이트를 반영합니다.</p></div><button type="button" className="secondary-button" disabled={loadingAiContext} onClick={()=>void showAiContext('jikbo')}>{loadingAiContext?'불러오는 중...':'AI Context 보기'}</button><button type="button" className="secondary-button" onClick={()=>setWorkspace(null)}>닫기</button></div>
       {aiContext?.workspace==='jikbo'&&<div className="admin-core"><h3>AI Context 미리보기<button type="button" onClick={()=>setAiContext(null)}>닫기</button></h3><p className="field-hint">GET /api/workspaces/jikbo/context 응답 원문입니다. MCP/외부 LLM에 실제로 전달되는 것과 같습니다.</p><pre style={{whiteSpace:'pre-wrap',maxHeight:400,overflow:'auto'}}>{aiContext.json}</pre></div>}
       {!finals.length?<p className="field-hint">아직 FINAL 자료가 없습니다. FINAL 제작 후 직보를 준비할 수 있습니다.</p>:<>
         <Core title="FINAL 완성본" count={finals.length}>{finals.map(f=><Row key={f.id} checked={false} onToggle={()=>undefined} label={`${f.title||'FINAL 완성본'} · ${new Date(f.created_at).toLocaleString('ko-KR')}`} actions={<>{f.has_html?<button onClick={()=>open(`final-deliverables/${f.id}/html`)}>HTML 보기</button>:f.original_name&&<button onClick={()=>open(`final-deliverables/${f.id}/original`)}>원본</button>}<button onClick={()=>open(`final-deliverables/${f.id}/json`)}>JSON 보기</button></>}/>)}</Core>
         <Core title="최신 수업 인사이트 (학교 힌트 우선)" count={sortedInsights.length}>{sortedInsights.map(i=><Row key={i.id} checked={false} onToggle={()=>undefined} label={`${i.source==='school_teacher'?'학교 선생님 힌트':'박원장 인사이트'} · ${i.content}`} actions={null}/>)}</Core>
-        <Core title="학생 반복 오답" count={wrongs.length}>{wrongs.map(m=><Row key={m.id} checked={false} onToggle={()=>undefined} label={`${m.student_name||'학생'} · ${m.title||m.original_name}`} actions={<><button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button><button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON</button></>}/>)}</Core>
       </>}
     </section>}
   </section>
