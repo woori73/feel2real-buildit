@@ -168,6 +168,14 @@
       });
   }
 
+  // 탐색기에서 고른 대학·모집단위를 기존 상담 API로 넘긴다.
+  document.addEventListener('admissions:question', function(e) {
+    if (e.detail && typeof e.detail.question === 'string') send(e.detail.question);
+  });
+  document.addEventListener('admissions:show-chat', function() {
+    if (!chatSection.hidden) chatInput.focus(); else welcomeInput.focus();
+  });
+
   // 첫 화면 폼
   welcomeForm.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -205,6 +213,6 @@
   document.getElementById('ag-year-select').addEventListener('change',function(e){
     academicYear=Number(e.target.value);yearLabel.textContent=academicYear===2028?'2028 계획':'2027 확정';
   });
-  yearToggle.addEventListener('click',function(){document.getElementById('ag-year-select').value=String(academicYear);});
-  welcomeInput.focus();
+  yearToggle.addEventListener('click',function(){var select=document.getElementById('ag-year-select');select.value=String(academicYear);select.dispatchEvent(new Event('change'));});
+  if (!welcomeSection.hidden) welcomeInput.focus();
 })();
