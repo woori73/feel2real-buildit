@@ -7,7 +7,7 @@ import WeeklyExamHub from './WeeklyExamHub'
 import { formatInsightDate, insightExamLine, insightStudentLine } from '../lib/insightFormat'
 
 type Context = { school:string; grade:string; year:number; semester:string; exam:string }
-type Material = { id:number; core_type:'school_print'|'student_wrong_note'; material_type:'SCHOOL_PRINT'|'STUDENT_WRONG_NOTE'|'PAST_EXAM'|'AI_WORK_LOG'; school:string; grade:string; year:number; semester:string; exam:string; uploaded_by:string; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number; has_body?:number; body_format?:string }
+type Material = { id:number; core_type:'school_print'|'student_wrong_note'; material_type:'SCHOOL_PRINT'|'STUDENT_WRONG_NOTE'|'PAST_EXAM'|'AI_WORK_LOG'|'EXAM_ANALYSIS'; school:string; grade:string; year:number; semester:string; exam:string; uploaded_by:string; student_id:number|null; student_name:string|null; title:string; original_name:string; created_at:string; has_html?:number; has_body?:number; body_format?:string }
 type Insight = { id:number; content:string; source:'director'|'school_teacher'|'claude'|'chatgpt'; created_at:string; school?:string; grade?:string; year:number|null; semester?:string; exam?:string; student_context?:string; lesson_context?:string }
 const INSIGHT_SOURCE_LABELS: Record<Insight['source'],string> = { director:'박원장 인사이트', school_teacher:'학교 선생님 힌트', claude:'Claude 기록', chatgpt:'ChatGPT 기록' }
 type FinalDeliverable = { id:number; kind:'final'|'jikbo'; school:string; grade:string; year:number; semester:string; exam:string; title:string; original_name:string; created_at:string; has_html?:number }
@@ -50,9 +50,9 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   // 마지막으로 선택한 Context를 localStorage(workspace별 분리)에서 우선 복원한다. 트리 로드 후
   // 더 이상 존재하지 않는 학교/학년이면 resolveSavedContext가 기본값으로 되돌린다.
   const [context,setContext]=useState<Context>(()=>({school:'',grade:'',year:years[0],semester:'1학기',exam:'전체',...loadExamContext()}))
-  const [questions,setQuestions]=useState<StoredQuestion[]>([]), [materials,setMaterials]=useState<Material[]>([]), [pastExams,setPastExams]=useState<Material[]>([]), [aiWorkLogs,setAiWorkLogs]=useState<Material[]>([]), [insights,setInsights]=useState<Insight[]>([])
+  const [questions,setQuestions]=useState<StoredQuestion[]>([]), [materials,setMaterials]=useState<Material[]>([]), [pastExams,setPastExams]=useState<Material[]>([]), [aiWorkLogs,setAiWorkLogs]=useState<Material[]>([]), [examAnalyses,setExamAnalyses]=useState<Material[]>([]), [insights,setInsights]=useState<Insight[]>([])
   const [finals,setFinals]=useState<FinalDeliverable[]>([]), [twinProfile,setTwinProfile]=useState<DigitalTwinProfile|null>(null)
-  const [core,setCore]=useState<'school_print'|'student_wrong_note'|'past_exam'|'ai_work_log'|null>(null), [workspace,setWorkspace]=useState<Workspace>(null), [notice,setNotice]=useState('')
+  const [core,setCore]=useState<'school_print'|'student_wrong_note'|'past_exam'|'ai_work_log'|'exam_analysis'|null>(null), [workspace,setWorkspace]=useState<Workspace>(null), [notice,setNotice]=useState('')
   const [studentId,setStudentId]=useState(''), [title,setTitle]=useState(''), [originals,setOriginals]=useState<File[]>([]), [jsonFile,setJsonFile]=useState<File|null>(null), [jsonText,setJsonText]=useState('')
   const [htmlText,setHtmlText]=useState('')
   const [finalTitle,setFinalTitle]=useState(''), [finalHtmlText,setFinalHtmlText]=useState(''), [finalOriginal,setFinalOriginal]=useState<File|null>(null), [finalJsonFile,setFinalJsonFile]=useState<File|null>(null), [finalJsonText,setFinalJsonText]=useState('')
@@ -84,11 +84,12 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const load=async(targetContext:Context)=>{
     if(!targetContext.school||!targetContext.grade||!targetContext.exam)return false
     const query=contextQuery(targetContext)
-    const [q,materialResponse,pastExamResponse,aiWorkLogResponse,i,finalRows]=await Promise.all([
+    const [q,materialResponse,pastExamResponse,aiWorkLogResponse,examAnalysisResponse,i,finalRows]=await Promise.all([
       fetchQuestions({school:targetContext.school,grade:targetContext.grade,exam:targetContext.exam}),
       api(`exam-materials?${query}`),
       api(`exam-materials?${query}&material_type=PAST_EXAM&all_years=true`),
       api(`exam-materials?${query}&material_type=AI_WORK_LOG&all_years=true`),
+      api(`exam-materials?${query}&material_type=EXAM_ANALYSIS&all_years=true`),
       api(`educator-insights?limit=100&${query}`).then(r=>r.ok?r.json():[]),
       api(`final-deliverables?kind=final&${query}`).then(r=>r.ok?r.json():[]),
     ])
@@ -100,7 +101,8 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     const m=await materialResponse.json()
     const p=pastExamResponse.ok?await pastExamResponse.json():[]
     const a=aiWorkLogResponse.ok?await aiWorkLogResponse.json():[]
-    setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setPastExams(Array.isArray(p)?p:[]);setAiWorkLogs(Array.isArray(a)?a:[]);setInsights(i);setFinals(Array.isArray(finalRows)?finalRows:[])
+    const ea=examAnalysisResponse.ok?await examAnalysisResponse.json():[]
+    setQuestions(q);setMaterials(Array.isArray(m)?m:[]);setPastExams(Array.isArray(p)?p:[]);setAiWorkLogs(Array.isArray(a)?a:[]);setExamAnalyses(Array.isArray(ea)?ea:[]);setInsights(i);setFinals(Array.isArray(finalRows)?finalRows:[])
     return true
   }
   useEffect(()=>{fetchSchoolTree().then(nodes=>{setTree(nodes);if(!nodes.length)return;const t=touchedRef.current;setContext(c=>{
@@ -218,7 +220,22 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     const saved=originals.length-failed;resetUpload();setCore(null);await load({...context})
     setNotice(failed?`AI 작업기록 ${saved}건을 저장했습니다. ${failed}건은 저장하지 못했습니다.`:`AI 작업기록 ${saved}건을 저장했습니다.`)
   }
-  const saveMaterial=(e:FormEvent)=>core==='school_print'?saveSchoolPrint(e):core==='past_exam'?savePastExam(e):core==='ai_work_log'?saveAiWorkLog(e):saveStudentWrongNote(e)
+  const saveExamAnalysis=async(e:FormEvent)=>{
+    e.preventDefault();if(!originals.length)return
+    let failed=0
+    for(const file of originals){
+      const form=new FormData()
+      Object.entries(context).forEach(([k,v])=>form.append(k,String(v)))
+      form.append('core_type','school_print');form.append('material_type','EXAM_ANALYSIS')
+      form.append('title',title||file.name);form.append('original',file)
+      const r=await api('exam-materials',{method:'POST',body:form})
+      if(!r.ok){failed+=1;const b=await r.json().catch(()=>({}));setNotice(apiErrorMessage(b,'기출 분석을 저장하지 못했습니다.'))}
+    }
+    if(failed===originals.length)return
+    const saved=originals.length-failed;resetUpload();setCore(null);await load({...context})
+    setNotice(failed?`기출 분석 ${saved}건을 저장했습니다. ${failed}건은 저장하지 못했습니다.`:`기출 분석 ${saved}건을 저장했습니다.`)
+  }
+  const saveMaterial=(e:FormEvent)=>core==='school_print'?saveSchoolPrint(e):core==='past_exam'?savePastExam(e):core==='ai_work_log'?saveAiWorkLog(e):core==='exam_analysis'?saveExamAnalysis(e):saveStudentWrongNote(e)
   // 기존 저장 학교 프린트: 현재 Context 것만 목록/다운로드/삭제. 다른 학교·학년·시험 자료는
   // list가 애초에 반환하지 않고, 다른 workspace 자료는 서버 get_db()가 라우팅을 분리한다.
   const [downloadingId,setDownloadingId]=useState<number|null>(null)
@@ -238,7 +255,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     try{
       const r=await api(`exam-materials/${m.id}`,{method:'DELETE'})
       if(!r.ok&&r.status!==204){const b=await r.json().catch(()=>({}));setNotice(apiErrorMessage(b,'삭제하지 못했습니다.'));return}
-      setNotice(m.material_type==='PAST_EXAM'?'기출시험지를 삭제했습니다.':m.material_type==='AI_WORK_LOG'?'AI 작업기록을 삭제했습니다.':'학교 프린트를 삭제했습니다.')
+      setNotice(m.material_type==='PAST_EXAM'?'기출시험지를 삭제했습니다.':m.material_type==='AI_WORK_LOG'?'AI 작업기록을 삭제했습니다.':m.material_type==='EXAM_ANALYSIS'?'기출 분석을 삭제했습니다.':'학교 프린트를 삭제했습니다.')
       await load(context)
     }catch(error){setNotice(error instanceof Error?`삭제 실패: ${error.message}`:'삭제에 실패했습니다.')}
   }
@@ -291,7 +308,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     }catch(err){setNotice(err instanceof Error?err.message:'학생 오답 복습 문제지를 내보내지 못했습니다.')}finally{setExportingWrong(false)}
   }
   const sortedInsights=[...insights].sort((a,b)=>(a.source==='school_teacher'?0:1)-(b.source==='school_teacher'?0:1))
-  const contextDates=[...materials,...pastExams,...aiWorkLogs].map(item=>item.created_at).filter(Boolean).sort()
+  const contextDates=[...materials,...pastExams,...examAnalyses,...aiWorkLogs].map(item=>item.created_at).filter(Boolean).sort()
   const lastContextUpdate=contextDates.length?contextDates[contextDates.length-1]:undefined
   // "화면에는 자료가 있는데 AI에는 전달되지 않는" 문제를 확인하기 위한 디버깅 장치.
   // 화면을 다시 조합하지 않고 MCP가 실제로 호출할 Context read API를 그대로 호출해 그 응답을 보여준다.
@@ -324,6 +341,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
         <div className="panel-heading"><div><h2>자료 모으기</h2><p>시험 준비에 필요한 자료부터 모아주세요.</p></div></div>
         <div className="twin-actions">
           <button className="primary-action past-exam-action" onClick={()=>setCore('past_exam')}>기출시험지 업로드 · 관리 <strong>{pastExams.length}</strong>건</button>
+          <button className="primary-action exam-analysis-action" onClick={()=>setCore('exam_analysis')}>기출 분석 업로드 · 관리 <strong>{examAnalyses.length}</strong>건</button>
           <button className="primary-action ai-work-log-action" onClick={()=>setCore('ai_work_log')}>AI 작업기록 업로드 · 관리 <strong>{aiWorkLogs.length}</strong>건</button>
           <button className="primary-action" onClick={()=>setCore('school_print')}>학교 프린트 추가 · 저장 <strong>{prints.length}</strong>건</button>
         </div>
@@ -350,26 +368,30 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     />
     </details>
 
-    {core&&<><form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">{core==='school_print'?'HTML + JSON SET':core==='past_exam'?'PAST EXAM · ORIGINAL':core==='ai_work_log'?'AI WORK LOG · MD':'ORIGINAL + JSON SET'}</p><h2>{core==='school_print'?'학교 프린트':core==='past_exam'?'기출시험지':core==='ai_work_log'?'AI 작업기록':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>
+    {core&&<><form id="material-set-form" className="work-panel material-set-form" onSubmit={saveMaterial}><div className="panel-heading"><div><p className="kicker">{core==='school_print'?'HTML + JSON SET':core==='past_exam'?'PAST EXAM · ORIGINAL':core==='ai_work_log'?'AI WORK LOG · MD':core==='exam_analysis'?'EXAM ANALYSIS · ORIGINAL':'ORIGINAL + JSON SET'}</p><h2>{core==='school_print'?'학교 프린트':core==='past_exam'?'기출시험지':core==='ai_work_log'?'AI 작업기록':core==='exam_analysis'?'기출 분석':'학생 오답'} 추가</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel}에 자동 연결됩니다.</p></div><button type="button" onClick={()=>setCore(null)}>닫기</button></div>
     {core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}
-    {(core==='school_print'||core==='past_exam'||core==='ai_work_log')&&<label>{core==='past_exam'?'관리 메모 / 자료 제목':core==='ai_work_log'?'작업기록 제목 / 메모':'자료 제목'}<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}
+    {(core==='school_print'||core==='past_exam'||core==='ai_work_log'||core==='exam_analysis')&&<label>{core==='past_exam'?'관리 메모 / 자료 제목':core==='ai_work_log'?'작업기록 제목 / 메모':core==='exam_analysis'?'분석 자료 제목':'자료 제목'}<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}
     {core==='school_print'?<>
       <label>학습자료 파일 선택<input type="file" accept=".html,.pdf,.hwpx,.docx" onChange={chooseSchoolMaterial}/></label><small className="field-hint">HTML·PDF·HWPX·DOCX, 파일당 30MB 이하. 원본 파일을 보관합니다.</small>{originals[0]&&<p className="field-hint">선택: {originals[0].name}</p>}
       <label>HTML 붙여넣기<textarea value={htmlText} onChange={e=>setHtmlText(e.target.value)} placeholder="<p>학교 프린트 HTML을 붙여넣거나 파일을 선택해 불러오세요.</p>"/></label>
     </>:<>
-      <label>{core==='past_exam'?'기출시험지 원본 파일':core==='ai_work_log'?'AI 작업기록 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'?'.html,.pdf,.hwpx,.docx':core==='ai_work_log'?'.md,.markdown,.txt,.html,.htm':undefined} onChange={chooseOriginals}/></label>
+      <label>{core==='past_exam'?'기출시험지 원본 파일':core==='ai_work_log'?'AI 작업기록 파일':core==='exam_analysis'?'기출 분석 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'||core==='exam_analysis'?'.html,.pdf,.hwpx,.docx':core==='ai_work_log'?'.md,.markdown,.txt,.html,.htm':undefined} onChange={chooseOriginals}/></label>
       {core==='past_exam'&&<small className="field-hint">실제 학교에서 시행된 시험 원본만 등록하세요. AI 예상·변형 문제는 기출로 등록할 수 없습니다. HTML·PDF·HWPX·DOCX, 파일당 30MB 이하. HTML은 편집기 toolbar·스크립트를 걷어낸 시험 본문만, MD는 원문 그대로 MCP Context에 전달됩니다(원본 파일은 그대로 보관).</small>}
+      {core==='exam_analysis'&&<small className="field-hint">중간·기말 기출을 분석한 자료를 올리세요. 위에서 고른 시험({examLabel})에 연결되니 중간·기말을 먼저 고르세요. HTML·PDF·HWPX·DOCX, 파일당 150MB 이하. HTML은 본문이 MCP Context에 전달되고, PDF·HWPX·DOCX는 원본으로 보관됩니다.</small>}
       {core==='ai_work_log'&&<small className="field-hint">Claude·ChatGPT가 이 시험 준비 과정에서 남긴 작업 로그를 올리세요. MD·MARKDOWN·TXT·HTML, 파일당 10MB 이하. 본문이 MCP Context에 전달되어 다음 세션에서 이어서 읽힙니다.</small>}
       <small className="field-hint">원본 자료는 한 번에 최대 {MAX_ORIGINALS}개까지 선택할 수 있습니다.</small>
       {originals.length>0&&<div className="selected-file-list"><b>선택한 원본 파일 {originals.length}개</b>{originals.map((file,index)=><div key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" onClick={()=>removeOriginal(index)}>삭제</button></div>)}</div>}
     </>}
-    {core!=='past_exam'&&core!=='ai_work_log'&&<><label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label></>}
-    <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||(!htmlText.trim()&&!originals.length):core==='past_exam'||core==='ai_work_log'?!originals.length:(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>
+    {core!=='past_exam'&&core!=='ai_work_log'&&core!=='exam_analysis'&&<><label>JSON 파일 업로드<input type="file" accept="application/json,.json" onChange={(e:ChangeEvent<HTMLInputElement>)=>setJsonFile(e.target.files?.[0]||null)}/></label><label>또는 JSON 붙여넣기<textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} placeholder='{"items":[]}'/></label></>}
+    <button type="submit" className="primary-action" disabled={core==='school_print'?savingSchoolPrint||(!htmlText.trim()&&!originals.length):core==='past_exam'||core==='ai_work_log'||core==='exam_analysis'?!originals.length:(!originals.length||!jsonFile&&!jsonText.trim())}>{core==='school_print'&&savingSchoolPrint?'저장 중...':'저장'}</button></form>
     {core==='past_exam'&&<section className="work-panel past-exam-panel" aria-label="저장된 기출시험지 관리"><div className="panel-heading"><div><p className="kicker">ACTUAL PAST EXAMS</p><h2>기출시험지 <strong>{pastExams.length}</strong>건</h2><p>{context.school} · {context.grade} · {context.semester} {examLabel}의 연도별 실제 기출입니다.</p></div></div>
       {pastExams.length?<div className="material-list">{pastExams.map(m=><article key={m.id}><div className="past-exam-meta"><span className="past-exam-badge">실제 기출</span><span className="past-exam-year">{m.year}</span><b>{m.title||m.original_name}</b><p>{m.school} {m.grade} · {m.semester} {examLabel} · {m.original_name}{m.has_body?` · 본문 ${m.body_format==='markdown'?'MD':'HTML'}`:''}</p><p>{m.uploaded_by||'TUTOR'} · {new Date(m.created_at).toLocaleString('ko-KR')}</p></div>{m.has_body?<button type="button" onClick={()=>open(`exam-materials/${m.id}/body`)}>본문 보기</button>:null}<button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'original')}>{downloadingId===m.id?'내려받는 중...':'원본 열기/다운로드'}</button><button type="button" onClick={()=>void deleteMaterial(m)}>삭제</button></article>)}</div>:<div className="empty-state"><b>이 학교·학년·학기·시험에 저장된 실제 기출이 없습니다.</b></div>}
     </section>}
     {core==='ai_work_log'&&<section className="work-panel ai-work-log-panel" aria-label="저장된 AI 작업기록 관리"><div className="panel-heading"><div><p className="kicker">AI WORK LOGS</p><h2>AI 작업기록 <strong>{aiWorkLogs.length}</strong>건</h2><p>{context.school} · {context.grade} · {context.semester} {examLabel}의 AI 작업 로그입니다. 다음 세션에서 MCP가 본문을 다시 읽습니다.</p></div></div>
       {aiWorkLogs.length?<div className="material-list">{aiWorkLogs.map(m=><article key={m.id}><div className="past-exam-meta"><span className="past-exam-badge">AI 작업기록</span><span className="past-exam-year">{m.year}</span><b>{m.title||m.original_name}</b><p>{m.school} {m.grade} · {m.semester} {examLabel} · {m.original_name}</p><p>{m.uploaded_by||'TUTOR'} · {new Date(m.created_at).toLocaleString('ko-KR')}</p></div>{m.has_body?<button type="button" onClick={()=>open(`exam-materials/${m.id}/body`)}>본문 보기</button>:null}<button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'original')}>{downloadingId===m.id?'내려받는 중...':'원본 열기/다운로드'}</button><button type="button" onClick={()=>void deleteMaterial(m)}>삭제</button></article>)}</div>:<div className="empty-state"><b>이 학교·학년·학기·시험에 저장된 AI 작업기록이 없습니다.</b></div>}
+    </section>}
+    {core==='exam_analysis'&&<section className="work-panel exam-analysis-panel" aria-label="저장된 기출 분석 관리"><div className="panel-heading"><div><p className="kicker">EXAM ANALYSIS</p><h2>기출 분석 <strong>{examAnalyses.length}</strong>건</h2><p>{context.school} · {context.grade} · {context.semester} {examLabel}의 연도별 기출 분석입니다.</p></div></div>
+      {examAnalyses.length?<div className="material-list">{examAnalyses.map(m=><article key={m.id}><div className="past-exam-meta"><span className="past-exam-badge">기출 분석</span><span className="past-exam-year">{m.year}</span><b>{m.title||m.original_name}</b><p>{m.school} {m.grade} · {m.semester} {examLabel} · {m.original_name}{m.has_body?' · 본문 HTML':''}</p><p>{m.uploaded_by||'TUTOR'} · {new Date(m.created_at).toLocaleString('ko-KR')}</p></div>{m.has_body?<button type="button" onClick={()=>open(`exam-materials/${m.id}/body`)}>본문 보기</button>:null}<button type="button" disabled={downloadingId===m.id} onClick={()=>void downloadMaterial(m,'original')}>{downloadingId===m.id?'내려받는 중...':'원본 열기/다운로드'}</button><button type="button" onClick={()=>void deleteMaterial(m)}>삭제</button></article>)}</div>:<div className="empty-state"><b>이 학교·학년·학기·시험에 저장된 기출 분석이 없습니다.</b></div>}
     </section>}
     {core==='school_print'&&<section className="work-panel" aria-label="저장된 학교 프린트 관리"><div className="panel-heading"><div><p className="kicker">SAVED SCHOOL PRINTS</p><h2>저장된 학교 프린트 <strong>{prints.length}</strong>건</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {examLabel} 자료입니다.</p></div></div>
     {prints.length?<div className="material-list">{prints.map(m=><article key={m.id}><div><b>{m.title||m.original_name||'학교 프린트'}</b><p>{m.has_html?'HTML':m.original_name||'원본'} · {new Date(m.created_at).toLocaleString('ko-KR')}</p></div>
@@ -387,6 +409,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
       {aiContext?.workspace==='final'&&<div className="admin-core"><h3>AI Context 미리보기<button type="button" onClick={()=>setAiContext(null)}>닫기</button></h3><p className="field-hint">GET /api/workspaces/final/context 응답 원문입니다. MCP/외부 LLM에 실제로 전달되는 것과 같습니다.</p><pre style={{whiteSpace:'pre-wrap',maxHeight:400,overflow:'auto'}}>{aiContext.json}</pre></div>}
       <Core title="출제자 Digital Twin" count={twinProfile?1:0}>{twinProfile&&<Row checked={false} onToggle={()=>undefined} label={`${twinProfile.description||twinProfile.dna||'Digital Twin'} · v${twinProfile.version}`} actions={<button onClick={()=>open(`digital-twins/${twinProfile.id}`)}>JSON 보기</button>}/>}</Core>
       <Core title="실제 기출시험지" count={pastExams.length}>{pastExams.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`실제 기출 · ${m.year} · ${m.school} ${m.grade} · ${m.semester} ${examLabel} · ${m.original_name}`} actions={<>{m.has_body?<button onClick={()=>open(`exam-materials/${m.id}/body`)}>본문</button>:null}<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button></>}/>)}</Core>
+      <Core title="기출 분석" count={examAnalyses.length}>{examAnalyses.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`기출 분석 · ${m.year} · ${m.title||m.original_name}`} actions={<>{m.has_body?<button onClick={()=>open(`exam-materials/${m.id}/body`)}>본문</button>:null}<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button></>}/>)}</Core>
       <Core title="AI 작업기록" count={aiWorkLogs.length}>{aiWorkLogs.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={`AI 작업기록 · ${m.year} · ${m.title||m.original_name}`} actions={<>{m.has_body?<button onClick={()=>open(`exam-materials/${m.id}/body`)}>본문</button>:null}<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button></>}/>)}</Core>
       <Core title="제작 문제" count={questions.length}>{questions.map(q=><Row key={q.id} checked={selected.has(`q-${q.id}`)} onToggle={()=>toggle(`q-${q.id}`)} label={`${q.question_type||'문항'} · ${q.stem.slice(0,70)}`} actions={<button onClick={()=>onNavigate('database')}>상세 열기</button>}/>)}</Core>
       <Core title="학교 프린트" count={prints.length}>{prints.map(m=><Row key={m.id} checked={selected.has(`m-${m.id}`)} onToggle={()=>toggle(`m-${m.id}`)} label={m.title||m.original_name||'학교 프린트'} actions={<>{m.has_html?<button onClick={()=>open(`exam-materials/${m.id}/html`)}>HTML 보기</button>:m.original_name&&<button onClick={()=>open(`exam-materials/${m.id}/original`)}>원본</button>}<button onClick={()=>open(`exam-materials/${m.id}/json`)}>JSON 보기</button></>}/>)}</Core>
