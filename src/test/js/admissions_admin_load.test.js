@@ -17,7 +17,7 @@ test('given a valid seed when previewed then counts, years and no warnings are r
   const r = load.summarizeSeed(text);
   // then
   assert.equal(r.ok, true);
-  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1, youtube: 0, priorResults: 0, jeongsiFormulas: 0 });
+  assert.deepEqual(r.counts, { universities: 1, documents: 1, departments: 0, types: 1, schedules: 1, youtube: 0, priorResults: 0, jeongsiFormulas: 0, susiMinimums: 0 });
   assert.deepEqual(r.years, [2027]);
   assert.deepEqual(r.warnings, []);
 });
@@ -255,4 +255,15 @@ test('given a load response with jeongsi formula counts when formatting then the
   // then
   assert.match(shown, /정시 계산식 신규 156 · 변경 0/);
   assert.doesNotMatch(hidden, /정시 계산식/);
+});
+
+test('given a load response with susi minimum counts when formatting then they are shown only when present', () => {
+  // given
+  const base = { universities: 0, materials: 0, departments: 0, types: 0, schedules: 0, skippedUnknownYear: 0, status: 'LOADED' };
+  // when
+  const shown = load.formatLoadResult({ ...base, susiMinimums: 412, susiMinimumsUpdated: 2 });
+  const hidden = load.formatLoadResult({ ...base, susiMinimums: 0, susiMinimumsUpdated: 0 });
+  // then
+  assert.match(shown, /수능최저 신규 412 · 변경 2/);
+  assert.doesNotMatch(hidden, /수능최저/);
 });

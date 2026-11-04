@@ -13,7 +13,7 @@ import java.util.Set;
  * (일치 여부는 JeongsiFormulaEvaluatorConformanceTest가 계산식 전부로 확인한다).
  *
  * <p>문법: 숫자, 변수, {@code + - * /}, 괄호, 비교({@code == != < <= > >=}, 이어 쓰기 가능), {@code and or not},
- * 함수 {@code max min sum top_sum(k, …) cond(조건, 참, 거짓) table('표', 값) round(x, 자릿수) trunc(x, 자릿수)}.
+ * 함수 {@code max min sum top_sum(k, …) low_sum(k, …) cond(조건, 참, 거짓) table('표', 값) round(x, 자릿수) trunc(x, 자릿수)}.
  * 비교·논리식은 참 1, 거짓 0. round는 반올림(half-up), trunc는 버림.
  */
 public final class JeongsiFormulaEvaluator {
@@ -24,7 +24,7 @@ public final class JeongsiFormulaEvaluator {
         public FormulaException(String message) { super(message); }
     }
 
-    private static final Set<String> FUNCTIONS = Set.of("max", "min", "round", "trunc", "cond", "table", "top_sum", "sum");
+    private static final Set<String> FUNCTIONS = Set.of("max", "min", "round", "trunc", "cond", "table", "top_sum", "low_sum", "sum");
 
     /** 수식이 쓰는 변수 이름(함수 이름·표 이름 제외). */
     public static Set<String> variables(String expression) {
@@ -136,6 +136,11 @@ public final class JeongsiFormulaEvaluator {
                 case "top_sum" -> {
                     int k = (int) v.get(0).doubleValue();
                     yield v.subList(1, v.size()).stream().sorted((a, b) -> Double.compare(b, a)).limit(Math.max(k, 0))
+                            .mapToDouble(Double::doubleValue).sum();
+                }
+                case "low_sum" -> {
+                    int k = (int) v.get(0).doubleValue();
+                    yield v.subList(1, v.size()).stream().sorted().limit(Math.max(k, 0))
                             .mapToDouble(Double::doubleValue).sum();
                 }
                 case "round", "trunc" -> {

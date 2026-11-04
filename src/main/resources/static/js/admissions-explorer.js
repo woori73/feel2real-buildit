@@ -12,7 +12,9 @@
       var key=r.year+':'+r.id; if(seen[key])return false;seen[key]=true;return true;
     }).slice(0,3).map(function(r){return {id:r.id,year:r.year,name:r.name.slice(0,200),universityName:r.universityName.slice(0,100)};});
   }
-  var model={text:text,norm:norm,metric:metric,cleanCandidates:cleanCandidates};
+  /** 수능최저 판정 결과를 쉬운 말로. 합격 여부가 아니라 등급 기준 충족 여부만 말한다. */
+  function minimumLabel(outcome){return ({MET:'충족',NOT_MET:'미충족',NO_MINIMUM:'수능최저 없음',NEEDS_INPUT:'등급 입력 필요',WITHHELD_NEEDS_REVIEW:'원문 확인 필요',ERROR:'확인할 수 없음'})[outcome]||'확인할 수 없음';}
+  var model={text:text,norm:norm,metric:metric,cleanCandidates:cleanCandidates,minimumLabel:minimumLabel};
   if(typeof module!=='undefined'&&module.exports) module.exports=model;
   if(!root.document || !root.document.getElementById('ae-workspace'))return;
   var doc=root.document, byId=function(id){return doc.getElementById(id);};
@@ -89,7 +91,7 @@
   function renderDetail(parent,data,compact){
     var row=data.department;parent.replaceChildren();paragraph(parent,row.universityName+' · '+data.academicYear+'학년도','ae-eyebrow');parent.appendChild(el('h2',row.name));
     if(data.academicYear===2028)paragraph(parent,'2028학년도 계획 자료 · 변경될 수 있습니다.','ae-note');
-    var actions=el('div',null,'ae-actions');if(!compact)actions.appendChild(button('비교에 담기',function(){keep(row);}));if(data.academicYear===2027)actions.appendChild(button('환산점수 계산',function(){calculate(parent,data);}));actions.appendChild(button('이 대학 AI 상담',function(){ask({id:Number(row.id),year:data.academicYear,name:row.name,universityName:row.universityName});},'ae-primary'));parent.appendChild(actions);
+    var actions=el('div',null,'ae-actions');if(!compact)actions.appendChild(button('비교에 담기',function(){keep(row);}));if(data.academicYear===2027){actions.appendChild(button('수능최저 확인',function(){minimum(parent,data);}));actions.appendChild(button('환산점수 계산',function(){calculate(parent,data);}));}actions.appendChild(button('이 대학 AI 상담',function(){ask({id:Number(row.id),year:data.academicYear,name:row.name,universityName:row.universityName});},'ae-primary'));parent.appendChild(actions);
     source(parent,row.sourceUrl,row.sourceTitle||'공식 모집요강');
     if(row.quotaInfo){var d=el('details');d.append(el('summary','모집인원 원문'),el('pre',row.quotaInfo));parent.appendChild(d);}
     parent.appendChild(el('h3','지난해 공식 입시결과'));renderPrior(parent,data.priorResults);
@@ -151,6 +153,39 @@
         if((f.defaultedInputs||[]).length)paragraph(card,'미입력 선택 표시를 0으로 처리한 항목: '+f.defaultedInputs.map(inputLabel).join(', '));
         if((f.uncertain||[]).length)paragraph(card,'원문 확인 사항: '+f.uncertain.join(' / '));source(card,f.sourceUrl,f.sourceTitle||'공식 계산식 출처');if(f.evidencePages)paragraph(card,'근거 쪽: '+f.evidencePages);panel.appendChild(card);
       });paragraph(panel,'입력값을 바꾸면 다시 계산해 주세요. 지난해 입결과 올해 환산점수는 점수 체계가 다를 수 있습니다.','ae-note');
+    }catch(e){if(panel.isConnected)panel.textContent=e.message;}
+  }
+  function gradeInputs(){
+    var out={},has=false,prefixes={korean:'KOR',math:'MATH',inquiry1:'INQ1',inquiry2:'INQ2'};
+    Object.keys(prefixes).forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v!==''){out[prefixes[key]+'_GRD']=Number(v);has=true;}
+      if(key.indexOf('inquiry')===0){var group=byId('ae-'+key+'-kind').value;if(v!==''&&!group)throw new Error('탐구 등급을 입력했으면 계열(사회/과학I/과학II/직업)도 선택해 주세요.');['SOC','SCI','VOC','SCI2'].forEach(function(flag){out[prefixes[key]+'_'+flag]=Number(group===flag||(flag==='SCI'&&group==='SCI2'));});}});
+    var kor=byId('ae-korean-subject').value,math=byId('ae-math-subject').value;
+    out.KOR_SEL_HW=Number(kor==='화법과 작문');out.KOR_SEL_EM=Number(kor==='언어와 매체');
+    out.MATH_SEL_PROB=Number(math==='확률과 통계');out.MATH_SEL_CALC=Number(math==='미적분');out.MATH_SEL_GEOM=Number(math==='기하');
+    ['english','history','foreign'].forEach(function(key){var v=byId('ae-'+key+'-grade').value;if(v!==''){out[{english:'ENG_GRD',history:'HIST_GRD',foreign:'FL_GRD'}[key]]=Number(v);has=true;}});out.FL_TAKEN=Number(byId('ae-foreign-grade').value!=='');
+    if(!has)throw new Error('내 성적에서 영역별 등급을 입력해 주세요(가채점 등급도 됩니다).');return out;
+  }
+  async function minimum(parent,data){
+    var grades;try{grades=gradeInputs();}catch(e){tab('scores');byId('ae-score-status').textContent=e.message;return;}
+    var kind=byId('ae-score-kind').value;
+    var old=parent.querySelector('.ae-minimum');if(old)old.remove();var panel=el('section',null,'ae-minimum ae-calculation');panel.setAttribute('aria-live','polite');parent.appendChild(panel);panel.textContent='수능최저 기준을 확인하고 있습니다…';
+    try{
+      var res=await root.fetch('/api/admissions/susi/minimum-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({university:data.department.universityName,academicYear:2027,departmentName:data.department.name,grades:grades})});
+      var result=await res.json().catch(function(){return null;});if(!panel.isConnected)return;
+      if(!res.ok)throw new Error(res.status===503?'현재 수능최저 확인을 이용할 수 없습니다.':res.status===429?'요청이 많습니다. 잠시 후 다시 확인해 주세요.':res.status===400?'입력 등급과 선택한 대학을 확인해 주세요.':'수능최저 확인에 실패했습니다.');
+      panel.replaceChildren(el('h3','수시 수능최저학력기준 확인'));paragraph(panel,kind+' 등급 기준 · '+(result.notice||''));
+      if(!result.rules||!result.rules.length){paragraph(panel,'이 대학의 수능최저 자료가 아직 연결되지 않았습니다. 공식 모집요강을 확인해 주세요.');return;}
+      result.rules.forEach(function(r){var card=el('article',null,'ae-formula');card.appendChild(el('h4',(r.typeNames||[]).join(' / ')+(r.label&&r.outcome!=='NO_MINIMUM'?' · '+r.label:'')));
+        paragraph(card,minimumLabel(r.outcome),'ae-score-result');
+        if(r.outcome==='NEEDS_INPUT'&&(r.missingInputs||[]).length)paragraph(card,'필요한 등급: '+r.missingInputs.map(inputLabel).join(', '));
+        if(r.outcome==='WITHHELD_NEEDS_REVIEW')paragraph(card,'확인 필요 사유: '+text(r.needsReviewReason),'ae-note');
+        if(r.rawText)paragraph(card,(r.outcome==='NO_MINIMUM'?'원문: ':'원문 기준: ')+r.rawText);
+        if(r.requiredAreasText)paragraph(card,'응시 필수 영역: '+r.requiredAreasText);
+        if(r.unitScopeText)paragraph(card,'적용 모집단위: '+r.unitScopeText);
+        if((r.defaultedInputs||[]).length&&r.outcome!=='NO_MINIMUM')paragraph(card,'선택하지 않은 과목 표시는 해당 없음으로 보았습니다: '+r.defaultedInputs.map(inputLabel).join(', '));
+        if((r.uncertain||[]).length)paragraph(card,'원문 확인 사항: '+r.uncertain.join(' / '));
+        source(card,r.sourceUrl,r.sourceTitle||'공식 수시 모집요강');if(r.evidencePages)paragraph(card,'근거 쪽: '+r.evidencePages);panel.appendChild(card);});
+      paragraph(panel,'수능최저 충족은 합격을 뜻하지 않습니다. 지원한 전형과 모집단위가 맞는지 원문에서 꼭 확인해 주세요.','ae-note');
     }catch(e){if(panel.isConnected)panel.textContent=e.message;}
   }
   function scores(){

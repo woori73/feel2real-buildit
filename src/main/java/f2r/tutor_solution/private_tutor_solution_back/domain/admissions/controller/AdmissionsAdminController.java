@@ -165,7 +165,7 @@ public class AdmissionsAdminController {
             log.info("admissions activate-all by={} year={} materials={} departments={} types={} schedules={} excludedMaterials={} excludedChildren={} knowledgeItems={} priorResults={} jeongsiFormulas={} excludedKeys={} note={}",
                     actorOf(authentication), r.academicYear(), r.materials(),
                     r.departments(), r.types(), r.schedules(), r.excludedMaterials(), r.excludedChildren(), r.knowledgeItems(), r.priorResults(),
-                    r.jeongsiFormulas(), excludeFileKeys, request.note());
+                    r.jeongsiFormulas() + " susiMinimums=" + r.susiMinimums(), excludeFileKeys, request.note());
             Map<String, Object> out = new java.util.LinkedHashMap<>();
             out.put("academicYear", r.academicYear());
             out.put("materials", r.materials());
@@ -177,6 +177,7 @@ public class AdmissionsAdminController {
             out.put("knowledgeItems", r.knowledgeItems());
             out.put("priorResults", r.priorResults());
             out.put("jeongsiFormulas", r.jeongsiFormulas());
+            out.put("susiMinimums", r.susiMinimums());
             out.put("status", "ACTIVATED");
             return ResponseEntity.ok(out);
         } catch (IllegalArgumentException e) {
@@ -349,6 +350,8 @@ public class AdmissionsAdminController {
             out.put("priorResultsUpdated", result.priorResultsUpdated());
             out.put("jeongsiFormulas", result.jeongsiFormulas());
             out.put("jeongsiFormulasUpdated", result.jeongsiFormulasUpdated());
+            out.put("susiMinimums", result.susiMinimums());
+            out.put("susiMinimumsUpdated", result.susiMinimumsUpdated());
             out.put("status", result.skipped() > 0 ? "LOADED_WITH_SKIPS" : "LOADED");
             return ResponseEntity.ok(out);
         } catch (AdmissionsDataLoader.SeedLoadException e) {

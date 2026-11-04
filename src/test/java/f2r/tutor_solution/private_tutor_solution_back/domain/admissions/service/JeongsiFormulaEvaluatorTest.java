@@ -67,6 +67,19 @@ class JeongsiFormulaEvaluatorTest {
     }
 
     @Test
+    @DisplayName("given 수능최저 '4개 영역 중 3개 합' when 등급을 넣으면 then 작은 세 등급의 합으로 판정한다")
+    void lowSum_forMinimumGrades() {
+        // given
+        String expr = "low_sum(3, KOR_GRD, MATH_GRD, ENG_GRD, min(INQ1_GRD, INQ2_GRD)) <= 6";
+        // when
+        double met = JeongsiFormulaEvaluator.evaluate(expr, Map.of("KOR_GRD", 2, "MATH_GRD", 1, "ENG_GRD", 3, "INQ1_GRD", 4, "INQ2_GRD", 2), null);
+        double notMet = JeongsiFormulaEvaluator.evaluate(expr, Map.of("KOR_GRD", 3, "MATH_GRD", 3, "ENG_GRD", 3, "INQ1_GRD", 4, "INQ2_GRD", 4), null);
+        // then: 1+2+2=5 충족, 3+3+3=9 미충족
+        assertThat(met).isEqualTo(1.0);
+        assertThat(notMet).isEqualTo(0.0);
+    }
+
+    @Test
     @DisplayName("given and·or·not·이어 쓴 비교 when 계산하면 then 참 1, 거짓 0")
     void logicAndChainedCompare() {
         // given
