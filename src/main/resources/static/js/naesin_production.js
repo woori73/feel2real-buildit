@@ -1,5 +1,6 @@
 "use strict";
 (() => {
+  if (new URLSearchParams(location.search).get("embedded") === "1") document.body.classList.add("embedded");
   const $ = id => document.getElementById(id);
   const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
   const labels = {SOURCE:"원재료",WORK:"제작 과정",RESULT:"완성본 후보",HANDOFF:"AI 인계",EXTRACTION:"본문 추출"};
