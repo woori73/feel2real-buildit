@@ -61,7 +61,7 @@ public class AcademyMoveController {
 
   public record Entry(String itemKey, String parentId, String title, String content,
                       String category, boolean archived, String fileId) {}
-  static final Set<String> CATEGORIES=Set.of("원상복구", "교습소 전환", "명칭·로고", "이전 일정", "문서·계약", "공간·사진", "견적·비용", "로고·간판", "홍보·안내");
+  static final Set<String> CATEGORIES=Set.of("원상복구", "교습소 전환", "명칭·로고", "이전 일정", "문서·계약", "공간·사진", "견적·비용", "로고·간판", "홍보·안내", "사업계획서", "활동보고서");
 
   @PostMapping("/api/admin/academy-move/entries") @ResponseBody @Transactional
   public Object save(@AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody Entry e) {
