@@ -58,7 +58,7 @@
     byId('ag-target-majors').value=byId('ae-prepare-major').value.trim();
     byId('ae-major').value=byId('ae-prepare-major').value.trim();
     var kind=byId('ae-prepare-kind').value;
-    if(kind==='none'){tab('search');return;}
+    if(kind==='none'){resetScores();tab('search');return;}
     if(year()===2028){tab('chat');return;}
     if(byId('ae-score-kind').value!==kind){byId('ae-score-kind').value=kind;byId('ae-score-kind').dispatchEvent(new Event('change'));}
     scoreMode();tab('scores');
