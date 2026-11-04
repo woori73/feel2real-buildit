@@ -194,8 +194,11 @@ class AdmissionsBrowserQaMySqlTest {
             clickInView(driver, driver.findElements(By.cssSelector(".ag-next-actions button")).get(1));
             wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("ae-compare-panel")));
             driver.findElement(By.id("ae-compare-ask")).click();
-            wait.until(d -> d.findElements(By.cssSelector(".ag-msg-ai")).stream()
-                    .filter(e -> e.getText().contains("서울대학교 경영학과")).count() >= 3);
+            wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(
+                    By.cssSelector(".ag-msg-ai:not(.ag-msg-typing)"), 2));
+            // 이 fixture에는 지난해 입결이 없다. 모집요강 답변으로 대체하지 않고 미확보를 알린다.
+            assertThat(driver.findElements(By.cssSelector(".ag-msg-ai")).get(2).getText())
+                    .contains("서울대학교", "2026학년도", "아직 수집되지");
             driver.findElement(By.cssSelector(".ae-tabs [data-ae-tab='my']")).click();
             assertThat(driver.findElement(By.id("ae-my-candidates")).getText()).contains("경영학과");
             driver.findElement(By.cssSelector(".ae-tabs [data-ae-tab='chat']")).click();
