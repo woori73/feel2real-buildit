@@ -5215,3 +5215,10 @@ GPU 작업자 API `/api/sns/worker/**` — 로그인 없음, `Authorization: Bea
 - 모집단위: `{academicYear,items:[{id,name,category,quotaInfo,universityName,universityId,sourceTitle,sourceUrl}],hasMore}`. q 최대 100자, LIKE 특수문자 이스케이프, 정렬 후 최대 80건. hasMore면 검색어로 좁히도록 안내한다.
 - 상세: `{academicYear,department,priorResults,priorResultsTruncated,universityTypes,typesTruncated,universitySchedules,schedulesTruncated,calculationStatus:"API_AVAILABLE"|"UNSUPPORTED_YEAR"}`. 대학 ID·학년도·행 및 공식 출처의 ACTIVE 상태가 모두 일치해야 반환(없으면 404). 지난해 결과는 result_year=상담학년도−1, 검증된 linked_department_name 또는 연결명이 비어 있고 원문 모집단위명 정확 일치인 행만. 원문 지표명·rawValueText·metricValue·결과학년도·전형·군·출처·근거 쪽을 그대로 반환한다. 빈값은 null. 전형·일정은 **대학 전체**로 반환하며 선택 모집단위 적용으로 단정하지 않는다. 상세 한도 결과 200행·대학 전형 60행·일정 80행; 초과 플래그를 함께 제공한다.
 - 모든 탐색·회원 계산 성공 응답 Cache-Control:no-store. `POST /api/dashboard/admissions/explore/score`는 기존 회원/소유 학원을 확인하고 사용자별 한도 후 `AdmissionsJeongsiScoreService`를 재사용한다. 요청은 기존 공개 계산 API와 같은 `{university,academicYear:2027,typeName?,departmentName?,scores}`. 공개 UI는 기존 `/api/admissions/jeongsi/score`를 사용한다. 확인된 수능 성적만 전송하며 선택과목·탐구 계열 플래그를 명시한다. 전국 최고 표준점수·대학 변환표준점수는 브라우저에서 만들어 넣지 않는다. CALCULATED/NEEDS_INPUT/WITHHELD_NEEDS_REVIEW/ERROR와 전형·적용범위·원문 출처를 표시한다. 합격예측·사설 배치표 적재 API는 없다.
+
+### Wiki 전용 MCP 인증 설정 복구
+
+`/problem-generator/wiki/api/mcp`는 `/mcp` 제작소 OAuth와 별개인 기존 API-key endpoint다.
+서버 `BUILDIT_MCP_API_KEY` 미설정은 503, 무인증/오인증은 401이다. Claude의 요청 헤더
+`X-Api-Key` 또는 `Authorization: Bearer <key>`로 연결하며 OAuth 필드에 키를 넣지 않는다.
+수동 복구·암호화된 키 전달·검증: [Wiki MCP 연결 복구](operations/WIKI_MCP_CONNECTION.md).
