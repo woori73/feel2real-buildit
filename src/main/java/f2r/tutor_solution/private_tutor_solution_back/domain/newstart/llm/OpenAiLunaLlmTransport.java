@@ -69,7 +69,7 @@ public class OpenAiLunaLlmTransport implements NewStartLlmTransport {
           "instructions", systemPrompt == null || systemPrompt.isBlank() ? " " : systemPrompt,
           "input", input,
           "reasoning", Map.of("effort", "low"),
-          "max_output_tokens", Math.min(16384, Math.max(4096, maxOutputChars)),
+          "max_output_tokens", maxOutputChars <= 0 ? 16384 : Math.min(16384, Math.max(4096, maxOutputChars)),
           "store", false));
       HttpRequest request = HttpRequest.newBuilder(endpoint)
           .timeout(Duration.ofSeconds(90))
