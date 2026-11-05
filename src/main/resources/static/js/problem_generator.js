@@ -13,17 +13,17 @@
   function renderGenerated(text, model){
     var out=$('#generationOutput');if(!out)return;var parsed=null;try{parsed=JSON.parse(text)}catch(e){}
     if(parsed&&Array.isArray(parsed.questions)){
-      out.innerHTML='<div class="result-toolbar"><div><div class="result-title">Gemini 생성 결과 · '+esc(model||'gemini')+'</div><div id="saveGeneratedStatus" class="save-generated-status"></div></div><div class="result-actions"><button class="btn-ghost" type="button" data-copy-result>JSON 복사</button><button class="btn-ghost save-db-button" type="button" data-save-generated>DB 저장</button></div></div><div class="exam-sheet"><div class="exam-meta-box"><div class="meta-row"><span>요약</span><b>'+esc(parsed.summary||'생성 완료')+'</b></div></div><div class="question-list">'+parsed.questions.map(function(q,i){return '<article class="q-card"><div class="q-head"><span class="q-num">'+(i+1)+'.</span><b>'+esc(q.type||'문항')+'</b><span class="q-score">'+esc(q.score||'')+'점</span></div><p class="q-stem">'+esc(q.stem||'')+'</p>'+(Array.isArray(q.choices)?'<ol class="opt-list">'+q.choices.map(function(c){return '<li>'+esc(c)+'</li>'}).join('')+'</ol>':'')+'<div class="answer-format">정답: '+esc(q.answer||'')+'</div><div class="grading-rule">'+esc(q.explanation||'')+'</div></article>'}).join('')+'</div><pre id="rawGeminiResult" class="raw-result">'+esc(text)+'</pre></div>';
+      out.innerHTML='<div class="result-toolbar"><div><div class="result-title">AI 생성 결과 · '+esc(model||'gemini')+'</div><div id="saveGeneratedStatus" class="save-generated-status"></div></div><div class="result-actions"><button class="btn-ghost" type="button" data-copy-result>JSON 복사</button><button class="btn-ghost save-db-button" type="button" data-save-generated>DB 저장</button></div></div><div class="exam-sheet"><div class="exam-meta-box"><div class="meta-row"><span>요약</span><b>'+esc(parsed.summary||'생성 완료')+'</b></div></div><div class="question-list">'+parsed.questions.map(function(q,i){return '<article class="q-card"><div class="q-head"><span class="q-num">'+(i+1)+'.</span><b>'+esc(q.type||'문항')+'</b><span class="q-score">'+esc(q.score||'')+'점</span></div><p class="q-stem">'+esc(q.stem||'')+'</p>'+(Array.isArray(q.choices)?'<ol class="opt-list">'+q.choices.map(function(c){return '<li>'+esc(c)+'</li>'}).join('')+'</ol>':'')+'<div class="answer-format">정답: '+esc(q.answer||'')+'</div><div class="grading-rule">'+esc(q.explanation||'')+'</div></article>'}).join('')+'</div><pre id="rawGeminiResult" class="raw-result">'+esc(text)+'</pre></div>';
       return;
     }
-    out.innerHTML='<div class="result-toolbar"><div><div class="result-title">Gemini 생성 결과 · '+esc(model||'gemini')+'</div><div id="saveGeneratedStatus" class="save-generated-status"></div></div><div class="result-actions"><button class="btn-ghost" type="button" data-copy-result>텍스트 복사</button></div></div><pre id="rawGeminiResult" class="raw-result">'+esc(text)+'</pre>';
+    out.innerHTML='<div class="result-toolbar"><div><div class="result-title">AI 생성 결과 · '+esc(model||'gemini')+'</div><div id="saveGeneratedStatus" class="save-generated-status"></div></div><div class="result-actions"><button class="btn-ghost" type="button" data-copy-result>텍스트 복사</button></div></div><pre id="rawGeminiResult" class="raw-result">'+esc(text)+'</pre>';
   }
 
   async function saveGenerated(btn){
-    if(!lastGeneration||!lastGeneration.text){genStatus('먼저 Gemini 문제를 생성해 주세요.',true);return}
+    if(!lastGeneration||!lastGeneration.text){genStatus('먼저 문제를 생성해 주세요.',true);return}
     btn.disabled=true;btn.textContent='저장 중...';saveStatus('DB에 저장 중입니다...', 'pending');genStatus('생성 문제 DB 저장 중...',false);
     try{
-      var title=(lastGeneration.grammar||'Gemini 생성 문제').trim().slice(0,80)||'Gemini 생성 문제';
+      var title=(lastGeneration.grammar||'AI 생성 문제').trim().slice(0,80)||'AI 생성 문제';
       var r=await fetch('/api/problem-generator/question-sets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,materialId:lastGeneration.materialId,grammar:lastGeneration.grammar,promptPassage:lastGeneration.passage,model:lastGeneration.model,rawResponseJson:lastGeneration.text})});
       var raw=await r.text();var body=null;try{body=raw?JSON.parse(raw):null}catch(e){}
       if(!r.ok)throw new Error(apiError(body,raw,r.status,'DB 저장 실패'));
@@ -40,7 +40,7 @@
     var open=e.target.closest('[data-open-set]');if(open){toggleQuestionSet(open.getAttribute('data-open-set'), true);return}
     var detailHead=e.target.closest('.inline-detail-header');if(detailHead&&!e.target.closest('a,button,input,textarea,select')){closeQuestionSet();return}
     var upd=e.target.closest('[data-update-question]');if(upd){updateSavedQuestion(upd);return}
-    var b=e.target.closest('[data-action="mock"]');if(!b)return;e.preventDefault();alert('준비 중입니다. 실제 Gemini 생성은 문제 생성기 탭의 생성 버튼에서 테스트할 수 있습니다.')
+    var b=e.target.closest('[data-action="mock"]');if(!b)return;e.preventDefault();alert('준비 중입니다. 실제 AI 생성은 문제 생성기 탭의 생성 버튼에서 테스트할 수 있습니다.')
   });
 
   loadGeneratorMaterials();
@@ -70,7 +70,7 @@
     if(hint)hint.textContent=selectedMaterial?('선택됨: '+selectedMaterial.title+' · '+selectedMaterial.visibility+' · 저장 시 문제 묶음에 연결됩니다.'):'업로드한 Digital Twin 자료를 선택하면 생성/저장에 연결됩니다.';
     var badge=document.querySelector('.f2r-gen .header-badge');if(badge)badge.innerHTML='<span class="dot"></span>'+(selectedMaterial?'Digital Twin 적용 중':'Digital Twin 선택 필요');
     var eyebrow=document.querySelector('.f2r-gen .eyebrow');if(eyebrow)eyebrow.textContent=(selectedMaterial?'1':'0')+'개 학교 Digital Twin 연동';
-    if(output&&!lastGeneration&&selectedMaterial){output.innerHTML='<div class="selected-material-preview"><div><p class="kicker">SELECTED DIGITAL TWIN</p><h2>'+esc(selectedMaterial.title)+'</h2><p>'+esc(selectedMaterial.originalFileName||'자료')+' · '+esc(selectedMaterial.visibility||'PRIVATE')+' · '+esc(selectedMaterial.pageCount||1)+'p</p></div><img src="/api/problem-generator/materials/'+encodeURIComponent(selectedMaterial.materialId)+'/file?page=1" alt="선택 Digital Twin 미리보기"></div><div class="empty-state compact-empty"><div class="empty-title">선택한 Digital Twin으로 생성 준비 완료</div><div class="empty-desc">왼쪽에 Gemini 키·핵심 문법·새 지문을 입력하고 생성 버튼을 누르세요.</div></div>'}
+    if(output&&!lastGeneration&&selectedMaterial){output.innerHTML='<div class="selected-material-preview"><div><p class="kicker">SELECTED DIGITAL TWIN</p><h2>'+esc(selectedMaterial.title)+'</h2><p>'+esc(selectedMaterial.originalFileName||'자료')+' · '+esc(selectedMaterial.visibility||'PRIVATE')+' · '+esc(selectedMaterial.pageCount||1)+'p</p></div><img src="/api/problem-generator/materials/'+encodeURIComponent(selectedMaterial.materialId)+'/file?page=1" alt="선택 Digital Twin 미리보기"></div><div class="empty-state compact-empty"><div class="empty-title">선택한 Digital Twin으로 생성 준비 완료</div><div class="empty-desc">왼쪽에 핵심 문법·새 지문을 입력하고 생성 버튼을 누르세요.</div></div>'}
   }
   async function loadGeneratorMaterials(){
     if(!$('#pgMaterialSelect'))return;

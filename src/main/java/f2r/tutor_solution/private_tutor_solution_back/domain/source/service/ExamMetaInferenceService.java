@@ -59,6 +59,13 @@ public class ExamMetaInferenceService {
 
   private static final long MAX_TOKENS_INFERENCE = 256L;
 
+  @Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.source.service.LunaSourceContext lunaSources;
+  @Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   private final AnthropicClient client;
   private final boolean anthropicEnabled;
   private final ObjectMapper objectMapper;
@@ -100,6 +107,12 @@ public class ExamMetaInferenceService {
     }
     if (sources == null || sources.isEmpty()) {
       return new ExamAnalysisResult.ExamMeta(null, null, null, null, null, null);
+    }
+    if (sitewideLunaEnabled) {
+      var result = sitewideLuna.completeMessages(META_INFERENCE_SYSTEM_PROMPT,
+          List.of(java.util.Map.of("role", "user", "content", lunaSources.content(sources, META_INFERENCE_USER_PROMPT))), 0);
+      if (!result.ok()) throw new IllegalStateException(result.errorMessage());
+      return parse(result.text());
     }
     List<ContentBlockParam> blocks = new ArrayList<>();
     for (Source src : sources) {

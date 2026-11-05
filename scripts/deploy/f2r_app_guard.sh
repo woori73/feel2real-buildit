@@ -334,7 +334,7 @@ f2r_env_rollback_after_failed_deploy() {
   for f in "${F2R_ENV_RESTORED_FILES[@]}"; do
     case "$f" in
       /etc/f2r/env) spring=1 ;;
-      /etc/buildit-wiki-identity.env) wiki=1 ;;
+      /etc/buildit-wiki-identity.env|/etc/buildit-wiki.env) wiki=1 ;;
     esac
   done
   if [ "$wiki" -eq 1 ]; then

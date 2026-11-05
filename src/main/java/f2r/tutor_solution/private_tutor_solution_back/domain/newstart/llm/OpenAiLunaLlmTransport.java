@@ -9,6 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +42,24 @@ public class OpenAiLunaLlmTransport implements NewStartLlmTransport {
   @Override
   public String name() { return "openai-luna"; }
 
+  public boolean available() { return apiKey != null && !apiKey.isBlank(); }
+
+  public NewStartLlmCompletion completeWithImage(String systemPrompt, String prompt, String dataUrl, int maxOutputChars) {
+    return completeInput(systemPrompt, List.of(Map.of("role", "user", "content", List.of(
+        Map.of("type", "input_text", "text", prompt),
+        Map.of("type", "input_image", "image_url", dataUrl)))), maxOutputChars);
+  }
+
   @Override
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    return completeInput(systemPrompt, prompt == null || prompt.isBlank() ? " " : prompt, maxOutputChars);
+  }
+
+  public NewStartLlmCompletion completeMessages(String systemPrompt, List<Map<String, Object>> messages, int maxOutputChars) {
+    return completeInput(systemPrompt, messages, maxOutputChars);
+  }
+
+  private NewStartLlmCompletion completeInput(String systemPrompt, Object input, int maxOutputChars) {
     if (apiKey == null || apiKey.isBlank()) {
       return NewStartLlmCompletion.failed(ERROR, false);
     }
@@ -50,9 +67,9 @@ public class OpenAiLunaLlmTransport implements NewStartLlmTransport {
       String payload = mapper.writeValueAsString(Map.of(
           "model", MODEL,
           "instructions", systemPrompt == null || systemPrompt.isBlank() ? " " : systemPrompt,
-          "input", prompt == null || prompt.isBlank() ? " " : prompt,
+          "input", input,
           "reasoning", Map.of("effort", "low"),
-          "max_output_tokens", 4096,
+          "max_output_tokens", Math.min(16384, Math.max(4096, maxOutputChars)),
           "store", false));
       HttpRequest request = HttpRequest.newBuilder(endpoint)
           .timeout(Duration.ofSeconds(90))

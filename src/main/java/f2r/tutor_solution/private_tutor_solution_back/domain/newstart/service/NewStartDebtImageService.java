@@ -173,7 +173,17 @@ public class NewStartDebtImageService {
    * <p>진단 전용 로그(prefix: {@code DEBT_VISION_DIAG})만 남기며, 요청/재시도/파싱 동작은
    * 변경하지 않는다. 로그에는 API key·개인정보·이미지 원문을 절대 포함하지 않는다.
    */
+  @org.springframework.beans.factory.annotation.Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   private String callVisionApi(String dataUrl) throws IOException {
+    if (sitewideLunaEnabled) {
+      var result = sitewideLuna.completeWithImage(SYSTEM_PROMPT, USER_PROMPT, dataUrl, 24000);
+      if (!result.ok()) throw new IOException("이미지 분석에 실패했습니다.");
+      return result.text();
+    }
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
       throw new IOException("AI 서비스 설정이 없습니다.");
     }

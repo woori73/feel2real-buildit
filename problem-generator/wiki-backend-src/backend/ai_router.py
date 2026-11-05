@@ -6,7 +6,7 @@ import private_reference_bank
 DEFAULT_PROVIDER_TIMEOUT_SECONDS=45.0;_LOG=logging.getLogger(__name__)
 MODELS_URL='https://openrouter.ai/api/v1/models';CHAT_URL='https://openrouter.ai/api/v1/chat/completions';FREE_ROUTER='openrouter/free'
 QUESTION_WIKI_FREE_MODELS=('z-ai/glm-5.2:free','liquid/lfm-2.5-2.6b:free')
-QWEN_PROVIDER='openrouter';QWEN_MODEL='qwen/qwen3.7-flash';GEMINI_PROBLEM_MODEL='google/gemini-3.7-flash';LUNA_MODEL='gpt-5.6-luna';_models_cache=(0.0,[])
+QWEN_PROVIDER='openrouter';QWEN_MODEL='qwen/qwen3.7-flash';GEMINI_PROBLEM_MODEL='google/gemini-3.7-flash';LUNA_MODEL='gpt-6-luna';_models_cache=(0.0,[])
 def provider_timeout_seconds():
     try:value=float(os.getenv('AI_PROVIDER_TIMEOUT_SECONDS',DEFAULT_PROVIDER_TIMEOUT_SECONDS))
     except ValueError:value=DEFAULT_PROVIDER_TIMEOUT_SECONDS
@@ -37,7 +37,59 @@ def openrouter_free_models(force=False):
         with urllib.request.urlopen(request,timeout=min(provider_timeout_seconds(),20)) as response:payload=json.loads(response.read().decode())
         models=[_normalized(x) for x in payload.get('data',[]) if _free(x)];models=sorted((m for m in models if m['id'] and m['textGeneration']),key=lambda m:(not m['structuredOutput'],-(m['contextLength'] or 0),m['name']));_models_cache=(now,models);return models
     except Exception:return _models_cache[1]
+def luna_enabled():
+    return os.getenv('SITEWIDE_LUNA_ENABLED', '').lower() in ('true', '1', 'yes')
+
+def _luna(system, prompt, schema=None):
+    key = os.getenv('OPENAI_API_KEY', '').strip()
+    if not key:
+        raise ProviderError('AI 서버 키가 설정되지 않았습니다.', 'openai', 503)
+    if schema:
+        prompt += '\n\n다음 JSON Schema를 따르는 JSON 객체만 반환하세요:\n' + json.dumps(schema, ensure_ascii=False)
+    body = {'model': LUNA_MODEL, 'instructions': system or ' ',
+            'input': prompt if isinstance(prompt, str) else [{'role': 'user', 'content': prompt}],
+            'reasoning': {'effort': 'low'}, 'max_output_tokens': 16384, 'store': False}
+    if schema:
+        body['text'] = {'format': {'type': 'json_object'}}
+    request = urllib.request.Request('https://api.openai.com/v1/responses',
+        data=json.dumps(body, ensure_ascii=False).encode(), method='POST',
+        headers={'Authorization': f'Bearer {key}', 'Content-Type': 'application/json'})
+    try:
+        with urllib.request.urlopen(request, timeout=provider_timeout_seconds()) as response:
+            payload = json.loads(response.read().decode())
+        if not isinstance(payload, dict) or payload.get('status') != 'completed':
+            raise ValueError('incomplete response')
+        text = ''.join(part.get('text', '') for item in payload.get('output', [])
+            if item.get('type') == 'message' and item.get('role') == 'assistant'
+            for part in item.get('content', []) if part.get('type') == 'output_text').strip()
+        if not text:
+            raise ValueError('empty response')
+        if schema:
+            parsed = json.loads(text)
+            if not isinstance(parsed, dict):
+                raise ValueError('expected JSON object')
+        usage = payload.get('usage') or {}
+        _LOG.info('openai-luna model=%s inputTokens=%s outputTokens=%s', LUNA_MODEL,
+                  usage.get('input_tokens', 0), usage.get('output_tokens', 0))
+        return ProviderResult(text, 'openai', LUNA_MODEL, 'server')
+    except urllib.error.HTTPError as exc:
+        raise ProviderError(f'AI 요청 실패 ({exc.code})', 'openai', exc.code,
+                            retryable=exc.code == 429 or exc.code >= 500) from exc
+    except (TimeoutError, socket.timeout) as exc:
+        raise ProviderError('AI 응답 시간이 초과되었습니다. 다시 시도해 주세요.', 'openai', 504, retryable=True) from exc
+    except urllib.error.URLError as exc:
+        raise ProviderError('AI 연결에 실패했습니다. 다시 시도해 주세요.', 'openai', 502, retryable=True) from exc
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise ProviderError('AI 응답을 해석하지 못했습니다.', 'openai', 502, retryable=True) from exc
+
 def availability():
+    if luna_enabled():
+        ready = bool(os.getenv('OPENAI_API_KEY', '').strip())
+        # Preserve legacy selector keys for existing clients, report the actual paid model.
+        providers = {name: {'available': ready, 'experimental': False,
+            'serverKeyConfigured': ready, 'model': LUNA_MODEL, 'free': False}
+            for name in ('auto', 'qwen', 'gpt-5.6-luna', 'gpt-6-luna', 'gemini', 'openrouter', 'openrouter-free', 'ox-alpha')}
+        return {'defaultProvider': 'auto', 'defaultModel': LUNA_MODEL, 'providers': providers}
     gemini,openrouter=_server_keys();return {'defaultProvider':'auto','defaultModel':QWEN_MODEL,'providers':{'qwen':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':QWEN_MODEL},'gpt-5.6-luna':{'available':False,'experimental':True,'serverKeyConfigured':False,'model':LUNA_MODEL,'purpose':'future-transform-review'},'gemini':{'available':bool(gemini),'experimental':False,'serverKeyConfigured':bool(gemini),'model':'gemini-flash'},'openrouter':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter)},'openrouter-free':{'available':bool(openrouter),'experimental':False,'serverKeyConfigured':bool(openrouter),'model':FREE_ROUTER},'ox-alpha':{'available':bool(openrouter),'experimental':True,'serverKeyConfigured':bool(openrouter),'model':os.getenv('OX_ALPHA_MODEL','stealth/ox-alpha')}}}
 def _openrouter(key,model,provider,system,prompt,schema,temperature,models=None,provider_routing=None):
     schema=strict_object_schema(schema) if schema else None
@@ -67,6 +119,20 @@ def _openrouter_request(key,model,provider,system,prompt,schema,temperature,forc
     except json.JSONDecodeError as exc:raise ProviderError('OpenRouter 응답을 해석하지 못했습니다.',provider,502,'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE',True) from exc
     finally:_LOG.info('ai_provider_done provider=%s model=%s routing=%s provider_total_ms=%.2f',provider,model,provider_routing,(time.perf_counter()-started)*1000)
 def generate_multimodal(model,system,content,temperature=.15):
+    if luna_enabled():
+        parts = []
+        for part in content:
+            if part.get('type') == 'text':
+                parts.append({'type': 'input_text', 'text': part.get('text', '')})
+            elif part.get('type') == 'image_url':
+                image = part.get('image_url')
+                url = image.get('url', '') if isinstance(image, dict) else image
+                if not isinstance(url, str) or not url:
+                    raise ProviderError('이미지 입력이 올바르지 않습니다.', 'openai', 400)
+                parts.append({'type': 'input_image', 'image_url': url})
+            else:
+                raise ProviderError('지원하지 않는 이미지 입력입니다.', 'openai', 400)
+        return _luna(system, parts)
     _,openrouter=_server_keys()
     if not openrouter:raise ProviderError('OpenRouter 서버 키가 설정되지 않았습니다.','openrouter',503)
     body={'model':model,'messages':[{'role':'system','content':system},{'role':'user','content':content}],'temperature':temperature};request=urllib.request.Request(CHAT_URL,data=json.dumps(body,ensure_ascii=False).encode(),method='POST',headers={'Authorization':f'Bearer {openrouter}','Content-Type':'application/json','HTTP-Referer':'https://feel2real.com','X-Title':'BuildIt Wiki'})
@@ -93,6 +159,18 @@ def generate(provider,system,prompt,*,schema=None,temperature=.25,gemini_key='',
     if question_wiki:
         try:prompt=private_reference_bank.enrich_prompt(prompt)
         except private_reference_bank.ReferenceNotFoundError as exc:raise ProviderError('현재 문항의 변형 Reference를 찾지 못했습니다.',requested,422,'QUESTION_WIKI_REFERENCE_NOT_FOUND',False) from exc
+    if luna_enabled():
+        result = _luna(system, prompt, schema)
+        if not question_wiki:
+            return result
+        issues = private_reference_bank.output_issues(prompt, result.text)
+        if not issues:
+            return result
+        retry_prompt = prompt + '\n\nQUALITY RETRY: previous output rejected for ' + ','.join(issues) + '. Regenerate ONCE, obey TYPE CONTRACT; instruction, problem, answer and explanation must match.'
+        result = _luna(system, retry_prompt, schema)
+        if private_reference_bank.output_issues(prompt, result.text):
+            raise ProviderError('선택한 문제 유형과 생성 결과가 일치하지 않아 차단했습니다. 다시 생성해 주세요.', 'openai', 422, 'QUESTION_WIKI_FREE_AI_INVALID_RESPONSE', True)
+        return result
     candidates=['qwen','ox-alpha','openrouter-free'] if requested=='auto' and allow_noncritical_fallback else ['qwen'] if requested=='auto' else [requested];last_error=None
     for candidate in candidates:
         try:

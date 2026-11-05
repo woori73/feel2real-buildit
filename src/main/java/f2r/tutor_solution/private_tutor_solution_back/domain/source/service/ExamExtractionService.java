@@ -121,6 +121,13 @@ public class ExamExtractionService {
    */
   private static final long MAX_TOKENS_EXTRACTION = 32768L;
 
+  @Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.source.service.LunaSourceContext lunaSources;
+  @Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   private final AnthropicClient client;
   private final boolean anthropicEnabled;
   private final ObjectMapper objectMapper;
@@ -161,6 +168,12 @@ public class ExamExtractionService {
     }
     if (sources == null || sources.isEmpty()) {
       throw new IllegalArgumentException("추출 대상 source가 비어 있습니다.");
+    }
+    if (sitewideLunaEnabled) {
+      var result = sitewideLuna.completeMessages(EXTRACTION_SYSTEM_PROMPT,
+          List.of(java.util.Map.of("role", "user", "content", lunaSources.content(sources, EXTRACTION_USER_PROMPT))), 0);
+      if (!result.ok()) throw new IllegalStateException(result.errorMessage());
+      return parse(result.text());
     }
     List<ContentBlockParam> blocks = new ArrayList<>();
     for (Source src : sources) {

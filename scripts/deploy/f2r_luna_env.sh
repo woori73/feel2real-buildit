@@ -15,13 +15,13 @@ f2r_counseling_model_apply() {
   model_tmp=$(mktemp "${model_env}.luna.XXXXXX") || return 2
   chmod 600 "$model_tmp"
   if ! awk -v mode="$model_mode" '
-    !/^(APP_ADMISSIONS_LLM_PRIMARY|NEWSTART_LLM_PRIMARY|APP_NEWSTART_LLM_PRIMARY)=/ &&
+    !/^(APP_ADMISSIONS_LLM_PRIMARY|NEWSTART_LLM_PRIMARY|APP_NEWSTART_LLM_PRIMARY|SITEWIDE_LUNA_ENABLED)=/ &&
     !(mode == "luna" && /^OPENAI_API_KEY=/) { print }
   ' "$model_env" > "$model_tmp"; then rm -f "$model_tmp"; return 2; fi
   if [ "$model_mode" = luna ]; then
-    printf 'OPENAI_API_KEY=%s\nAPP_ADMISSIONS_LLM_PRIMARY=openai\nNEWSTART_LLM_PRIMARY=openai\nAPP_NEWSTART_LLM_PRIMARY=openai\n' "$model_key" >> "$model_tmp"
+    printf 'SITEWIDE_LUNA_ENABLED=true\nOPENAI_API_KEY=%s\nAPP_ADMISSIONS_LLM_PRIMARY=openai\nNEWSTART_LLM_PRIMARY=openai\nAPP_NEWSTART_LLM_PRIMARY=openai\n' "$model_key" >> "$model_tmp"
   else
-    printf 'APP_ADMISSIONS_LLM_PRIMARY=meta\nNEWSTART_LLM_PRIMARY=meta\nAPP_NEWSTART_LLM_PRIMARY=meta\n' >> "$model_tmp"
+    printf 'SITEWIDE_LUNA_ENABLED=false\nAPP_ADMISSIONS_LLM_PRIMARY=meta\nNEWSTART_LLM_PRIMARY=meta\nAPP_NEWSTART_LLM_PRIMARY=meta\n' >> "$model_tmp"
   fi
   unset model_key
   mv "$model_tmp" "$model_env"

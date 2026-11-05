@@ -62,7 +62,7 @@ public class MuseSparkAcademyAiProvider implements AiProvider {
     long sparkMs = (System.nanoTime() - started) / 1_000_000;
 
     if (sparkResult.ok()) {
-      log.info("buildit ai muse-spark ok model={} ms={} promptChars={}",
+      log.info("buildit ai text ok model={} ms={} promptChars={}",
           sparkResult.model(), sparkMs,
           prompt == null ? 0 : prompt.length());
       return AiCompletion.ok(sparkResult.text());
@@ -103,7 +103,7 @@ public class MuseSparkAcademyAiProvider implements AiProvider {
 
   @Override
   public String name() {
-    return "muse-spark";
+    return "openai-luna".equals(museSparkTransport.name()) ? "openai-luna" : "muse-spark";
   }
 
   private static String truncate(String s, int max) {

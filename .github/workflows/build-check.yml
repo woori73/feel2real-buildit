@@ -58,6 +58,9 @@ jobs:
           bash scripts/deploy/f2r_app_guard.test.sh
           bash scripts/deploy/f2r_luna_env.test.sh
 
+      - name: Sitewide Luna router contract tests
+        run: python3 -m unittest discover -s problem-generator/wiki-backend-src/tests -p test_sitewide_luna.py -v
+
       - name: Naesin Library classification and production import guard
         run: python3 -m unittest discover -s scripts/naesin -p 'test_*.py' -v
 
@@ -375,6 +378,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsDataLoaderYearTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsLlmClientTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransportTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.SitewideLunaRoutingTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.service.N8nProblemGenerationServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.NewStartLlmClientTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsQueryParserTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsEmbeddingServiceTest"

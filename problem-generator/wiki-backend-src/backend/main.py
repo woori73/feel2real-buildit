@@ -2613,6 +2613,8 @@ def _ab_generate(provider: str, payload: AbComparisonRequest, twin: dict) -> dic
 
 @app.post('/api/questions/ab-compare')
 def compare_questions(payload: AbComparisonRequest):
+    if ai_router.luna_enabled():
+        raise HTTPException(status_code=409, detail="현재 GPT-6 Luna를 사용합니다. 일반 문제 생성을 이용해 주세요.")
     if not payload.passage.strip() or not payload.grammar.strip():
         raise HTTPException(status_code=400, detail='새 영어 지문과 핵심 문법을 입력해 주세요.')
     with get_db() as conn:

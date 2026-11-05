@@ -75,4 +75,26 @@ class OpenAiLunaLlmTransportTest {
       assertEquals(1, requests.get());
     } finally { server.stop(0); }
   }
+  @Test
+  void givenImageInput_whenCalled_thenResponsesImagePartsArePreserved() throws Exception {
+    HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext("/v1/responses", exchange -> {
+      var body = new ObjectMapper().readTree(exchange.getRequestBody());
+      var content = body.path("input").path(0).path("content");
+      assertEquals("input_text", content.path(0).path("type").asText());
+      assertEquals("input_image", content.path(1).path("type").asText());
+      assertEquals("data:image/png;base64,test", content.path(1).path("image_url").asText());
+      assertEquals(16384, body.path("max_output_tokens").asInt());
+      byte[] response = SUCCESS.getBytes(StandardCharsets.UTF_8);
+      exchange.sendResponseHeaders(200, response.length);
+      exchange.getResponseBody().write(response);
+      exchange.close();
+    });
+    server.start();
+    try {
+      var transport = new OpenAiLunaLlmTransport("test-only-key", HttpClient.newHttpClient(),
+          URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/v1/responses"));
+      assertTrue(transport.completeWithImage("policy", "read", "data:image/png;base64,test", 24000).ok());
+    } finally { server.stop(0); }
+  }
 }

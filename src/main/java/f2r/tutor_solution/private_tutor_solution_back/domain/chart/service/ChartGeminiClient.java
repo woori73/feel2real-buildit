@@ -39,6 +39,9 @@ public class ChartGeminiClient {
   @Value("${OPENAI_MODEL:chat-latest}")
   private String openaiModel;
 
+  @Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   private volatile String runtimeProvider = "gemini";
   private volatile String runtimeApiKey;
 
@@ -62,12 +65,13 @@ public class ChartGeminiClient {
   }
 
   public String apiKeySource() {
-    if (runtimeApiKey != null && !runtimeApiKey.isBlank()) return "runtime";
+    if (!sitewideLunaEnabled && runtimeApiKey != null && !runtimeApiKey.isBlank()) return "runtime";
     String envKey = envApiKeyFor(provider());
     return envKey != null && !envKey.isBlank() ? "environment" : "missing";
   }
 
   public String provider() {
+    if (sitewideLunaEnabled) return "openai";
     if (runtimeApiKey != null && !runtimeApiKey.isBlank()) return runtimeProvider;
     if (geminiApiKey != null && !geminiApiKey.isBlank()) return "gemini";
     if (openaiApiKey != null && !openaiApiKey.isBlank()) return "openai";
@@ -75,10 +79,11 @@ public class ChartGeminiClient {
   }
 
   public String model() {
-    return "openai".equals(provider()) ? openaiModel : geminiModel;
+    return sitewideLunaEnabled ? "gpt-6-luna" : "openai".equals(provider()) ? openaiModel : geminiModel;
   }
 
   private String resolvedApiKey() {
+    if (sitewideLunaEnabled) return openaiApiKey;
     if (runtimeApiKey != null && !runtimeApiKey.isBlank()) return runtimeApiKey;
     return envApiKeyFor(provider());
   }
@@ -140,10 +145,12 @@ public class ChartGeminiClient {
     if (key == null || key.isBlank()) return GroundedResponse.notReady("OPENAI_API_KEY 환경변수 또는 관리자 입력 ChatGPT 키가 설정되지 않았습니다.");
     try {
       String body = objectMapper.writeValueAsString(Map.of(
-          "model", openaiModel,
+          "model", model(),
           "input", prompt,
           "tools", List.of(Map.of("type", "web_search")),
-          "temperature", 0.2
+          "reasoning", Map.of("effort", "low"),
+          "max_output_tokens", 8192,
+          "store", false
       ));
       HttpResponse<String> response = sendJson(URI.create(OPENAI_RESPONSES_API), body, "Bearer " + key);
       if (response.statusCode() < 200 || response.statusCode() >= 300) return GroundedResponse.failed(String.valueOf(response.statusCode()), parseErrorMessage(response.body()));

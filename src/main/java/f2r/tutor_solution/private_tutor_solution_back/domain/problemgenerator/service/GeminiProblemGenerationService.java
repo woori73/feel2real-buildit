@@ -23,7 +23,20 @@ public class GeminiProblemGenerationService {
     this.restClient = RestClient.builder().baseUrl("https://generativelanguage.googleapis.com").build();
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
+  public String model() { return sitewideLunaEnabled ? "gpt-6-luna" : MODEL; }
+
   public String chat(String apiKey, String message, String context) {
+    if (sitewideLunaEnabled) {
+      if (message == null || message.isBlank()) throw new IllegalArgumentException("질문을 입력해 주세요.");
+      var result = sitewideLuna.complete(assistantInstruction(), "현재 작업 컨텍스트:\n" + nullToBlank(context) + "\n사용자 질문:\n" + message, 12000);
+      if (!result.ok()) throw new IllegalStateException(result.errorMessage());
+      return result.text();
+    }
     String resolvedApiKey = resolveApiKey(apiKey);
     if (message == null || message.isBlank()) throw new IllegalArgumentException("질문을 입력해 주세요.");
     String prompt = "현재 작업 컨텍스트:\n" + nullToBlank(context) + "\n\n사용자 질문:\n" + message.trim();

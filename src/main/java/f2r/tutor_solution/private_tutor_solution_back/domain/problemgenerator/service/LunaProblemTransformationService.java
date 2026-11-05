@@ -13,7 +13,7 @@ import org.springframework.web.client.RestClientException;
 
 @Service
 public class LunaProblemTransformationService {
-  public static final String MODEL = "gpt-5.6-luna";
+  public static final String MODEL = "gpt-6-luna";
   private final RestClient restClient;
   private final ObjectMapper objectMapper;
 
@@ -22,7 +22,18 @@ public class LunaProblemTransformationService {
     this.restClient = RestClient.builder().baseUrl("https://api.openai.com").build();
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   public String transform(String sourceQuestion, String instructions, String difficulty, String digitalTwinContext) {
+    if (sitewideLunaEnabled) {
+      if (sourceQuestion == null || sourceQuestion.isBlank()) throw new IllegalArgumentException("변형할 기존 문제를 입력해 주세요.");
+      var result = sitewideLuna.complete("유효한 JSON 객체만 반환하세요.", prompt(sourceQuestion, instructions, difficulty, digitalTwinContext), 24000);
+      if (!result.ok()) throw new IllegalStateException(result.errorMessage());
+      return stripCodeFence(result.text());
+    }
     String apiKey = System.getenv("OPENAI_API_KEY");
     if (apiKey == null || apiKey.isBlank()) {
       throw new IllegalStateException("OPENAI_API_KEY 서버 환경변수가 설정되지 않았습니다.");
@@ -34,7 +45,7 @@ public class LunaProblemTransformationService {
     Map<String, Object> request = Map.of(
         "model", MODEL,
         "input", prompt(sourceQuestion, instructions, difficulty, digitalTwinContext),
-        "reasoning", Map.of("effort", "low"));
+        "reasoning", Map.of("effort", "low"), "store", false, "max_output_tokens", 16384);
 
     try {
       String response = restClient.post()
