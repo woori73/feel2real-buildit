@@ -45,13 +45,19 @@ public class NvidiaNimLlmTransport implements NewStartLlmTransport {
         .build();
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   @Override
   public String name() {
-    return "nvidia-nim";
+    return sitewideLunaEnabled ? "openai-luna" : "nvidia-nim";
   }
 
   @Override
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    if (sitewideLunaEnabled) return sitewideLuna.complete(systemPrompt, prompt, maxOutputChars);
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
       // 키 미설정은 "연결이 실패한 것"이 아니라 설정 상태다. §4의 재시도 대상이 아니므로
       // fallback(Qwen)으로 넘기지 않고, 설정상 세부(provider명·사유)를 회원 응답에 내리지 않는다.

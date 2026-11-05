@@ -38,13 +38,19 @@ public class OpenRouterQwenLlmTransport implements NewStartLlmTransport {
         .build();
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   @Override
   public String name() {
-    return "openrouter";
+    return sitewideLunaEnabled ? "openai-luna" : "openrouter";
   }
 
   @Override
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    if (sitewideLunaEnabled) return sitewideLuna.complete(systemPrompt, prompt, maxOutputChars);
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
       // fallback도 미설정이면 내부 provider명을 회원 응답으로 내리지 않고 통제된 오류로 끝낸다.
       return NewStartLlmCompletion.failed(GENERIC_ERROR, false);

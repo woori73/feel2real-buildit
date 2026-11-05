@@ -34,7 +34,7 @@ public class ProblemGeneratorGeminiController {
   @PostMapping("/api/problem-generator/gemini/chat")
   public ResponseEntity<GeminiChatResponse> chat(@RequestBody GeminiChatRequest request) {
     String text = chatService.chat(request.apiKey(), request.message(), request.context());
-    return ResponseEntity.ok(new GeminiChatResponse(GeminiProblemGenerationService.MODEL, text));
+    return ResponseEntity.ok(new GeminiChatResponse(chatService.model(), text));
   }
 
   @PostMapping("/api/problem-generator/gemini/generate")
@@ -47,7 +47,7 @@ public class ProblemGeneratorGeminiController {
         request.passage(),
         request.count(),
         request.difficulty());
-    return ResponseEntity.ok(new GeminiGenerateResponse(N8nProblemGenerationService.MODEL, text));
+    return ResponseEntity.ok(new GeminiGenerateResponse(generationService.model(), text));
   }
 
   @ExceptionHandler(IllegalArgumentException.class)

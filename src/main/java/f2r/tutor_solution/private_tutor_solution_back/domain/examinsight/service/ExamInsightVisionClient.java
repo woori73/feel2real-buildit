@@ -85,8 +85,14 @@ public class ExamInsightVisionClient {
     this.retryBackoffMillis = retryBackoffMillis;
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   /** API 키가 설정돼 있어 사진을 읽을 수 있는지. 화면이 사진 업로드를 열지 판단하는 데 쓴다. */
   public boolean available() {
+    if (sitewideLunaEnabled) return sitewideLuna.available();
     return config.getApiKey() != null && !config.getApiKey().isBlank();
   }
 
@@ -115,6 +121,15 @@ public class ExamInsightVisionClient {
 
   private Transcription call(byte[] jpeg, String label) {
     String dataUrl = "data:image/jpeg;base64," + Base64.getEncoder().encodeToString(jpeg);
+    if (sitewideLunaEnabled) {
+      var result = sitewideLuna.completeWithImage(SYSTEM_PROMPT, USER_PROMPT, dataUrl, 24000);
+      if (!result.ok()) throw failed();
+      try {
+        byte[] adapted = mapper.writeValueAsBytes(Map.of("model", result.model(), "choices", List.of(
+            Map.of("message", Map.of("content", result.text())))));
+        return parse(adapted);
+      } catch (IOException exception) { throw failed(); }
+    }
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("model", config.getModel());
     body.put("messages", List.of(

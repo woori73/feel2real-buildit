@@ -46,6 +46,13 @@ public class ClaudeChatService {
   private static final String DEMO_NOTICE =
       "데모 버전에서는 AI 채팅 기능이 비활성화되어 있습니다. (Claude API 미연결)";
 
+  @Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.source.service.LunaSourceContext lunaSources;
+  @Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   private final AnthropicClient client;
   private final boolean anthropicEnabled;
   private final ConversationSourceRepository conversationSourceRepository;
@@ -100,6 +107,21 @@ public class ClaudeChatService {
       return DEMO_NOTICE;
     }
     List<Source> sources = loadSources(conversation.getConversationId());
+    if (sitewideLunaEnabled) {
+      List<java.util.Map<String, Object>> inputs = new ArrayList<>();
+      if (!sources.isEmpty()) {
+        try {
+          inputs.add(java.util.Map.of("role", "user", "content", lunaSources.content(sources, FILE_CONTEXT_PROMPT)));
+          inputs.add(java.util.Map.of("role", "assistant", "content", FILE_ACK));
+        } catch (IOException exception) { throw new IllegalStateException("첨부 자료를 읽지 못했습니다."); }
+      }
+      for (ConversationMessage msg : history) inputs.add(java.util.Map.of(
+          "role", msg.getRole() == MessageRole.USER ? "user" : "assistant", "content", msg.getContent()));
+      inputs.add(java.util.Map.of("role", "user", "content", userInput));
+      var result = sitewideLuna.completeMessages(buildSystemText(conversation), inputs, 12000);
+      if (!result.ok()) throw new IllegalStateException(result.errorMessage());
+      return result.text();
+    }
     List<MessageParam> messages = buildMessages(sources, history, userInput);
     String systemText = buildSystemText(conversation);
 

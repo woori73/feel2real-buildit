@@ -52,11 +52,13 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
   const [error,setError]=useState('')
   const [provider,setProvider]=useState('openrouter:google/gemini-3.7-flash')
   const [freeModels,setFreeModels]=useState<any[]>([])
+  const [luna,setLuna]=useState(false)
   const [abMode,setAbMode]=useState(false)
   const [comparison,setComparison]=useState<any>(null)
 
   useEffect(()=>{ Promise.all([fetchSchoolTree(),fetchTypeDefs(),fetchQuestions()]).then(([a,b,c])=>{setTree(a);setTypeDefs(b);setStored(c)}).catch(()=>{}) },[])
   useEffect(()=>{api('ai/openrouter/free-models').then(r=>r.ok?r.json():{models:[]}).then(body=>setFreeModels(body.models||[])).catch(()=>{})},[])
+  useEffect(()=>{api('ai/providers').then(r=>r.json()).then(a=>{if(a.defaultModel==='gpt-6-luna'){setLuna(true);setProvider('auto');setAbMode(false)}}).catch(()=>{})},[])
   const schoolNode=useMemo(()=>tree.find(x=>x.school===school),[tree,school])
   const grades=schoolNode?.grades||[]
   const gradeNode=useMemo(()=>grades.find(x=>x.grade===grade),[grades,grade])
@@ -140,8 +142,8 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
         {mode==='new'&&<label className="passage-label grammar-focus-label">시험 범위 주요 문법 사항<textarea value={grammarFocus} onChange={e=>setGrammarFocus(e.target.value)} placeholder="예: 관계대명사 what, 가정법, 수동태" /><small>문법·서술형 문항에 우선 반영하고 생성 기록에도 함께 보관합니다.</small></label>}
         <div className="type-head"><b>문제 유형 {profile?'· Digital Twin 자동 적용':''}</b><span>{selectedTypes.length}개 선택</span></div>
         <div className="type-grid">{(typeDefs.length?typeDefs:Object.keys(TYPE_LABELS).map(id=>({id,label:TYPE_LABELS[id]} as TypeDef))).map(t=>{const id=t.id;return <button type="button" key={id} className={selectedTypes.includes(id)?'selected':''} onClick={()=>toggleType(id)}>{t.label||TYPE_LABELS[id]||id}</button>})}</div>
-        <div className="model-routing"><label>문제 제작 모델<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="openrouter:google/gemini-3.7-flash">Gemini 3.7 Flash · 기본/추천</option><option value="openrouter-free">OpenRouter Free · 무료 자동</option>{freeModels.map(model=><option key={model.id} value={`openrouter:${model.id}`}>{model.name||model.id} · 무료</option>)}</select></label><small>무료 모델은 직접 선택했을 때만 사용합니다. Gemini 실패 시 무료 모델로 자동 전환하지 않습니다.</small></div>
-        <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label>{mode==='new'&&<label><input type="checkbox" checked={abMode} onChange={e=>setAbMode(e.target.checked)} /> A/B 비교</label>}<button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':abMode?'A/B 비교 생성':'문제 만들기'}</button></div>
+        <div className="model-routing">{luna?<p>GPT-6 Luna · 문제 제작·변형</p>:<><label>문제 제작 모델<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="openrouter:google/gemini-3.7-flash">Gemini 3.7 Flash · 기본/추천</option><option value="openrouter-free">OpenRouter Free · 무료 자동</option>{freeModels.map(model=><option key={model.id} value={`openrouter:${model.id}`}>{model.name||model.id} · 무료</option>)}</select></label><small>무료 모델은 직접 선택했을 때만 사용합니다. Gemini 실패 시 무료 모델로 자동 전환하지 않습니다.</small></>}</div>
+        <div className="gen-actions"><label>문항 수<input type="number" min={1} max={30} value={count} onChange={e=>setCount(Number(e.target.value)||1)} /></label>{mode==='new'&&!luna&&<label><input type="checkbox" checked={abMode} onChange={e=>setAbMode(e.target.checked)} /> A/B 비교</label>}<button className="generate" disabled={loading} onClick={generate}>{loading?'제작 중…':abMode?'A/B 비교 생성':'문제 만들기'}</button></div>
         {error&&<div className="gen-error">{error}</div>}
       </section>
       {comparison&&<AbResults data={comparison} context={{school,grade,exam,twinId:profile?.id,questionType:selectedTypes.join(', ')}} />}

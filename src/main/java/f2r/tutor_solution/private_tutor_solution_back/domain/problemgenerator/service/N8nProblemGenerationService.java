@@ -54,13 +54,41 @@ public class N8nProblemGenerationService {
     this.readTimeout = Duration.ofMillis(Math.max(1000, readTimeoutMs));
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private f2r.tutor_solution.private_tutor_solution_back.domain.newstart.llm.OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   /**
    * @return 기존 Gemini 직접 호출 시절과 동일한 형태({@code {summary,questions:[...]}})의 JSON 문자열
    */
+  public String model() { return sitewideLunaEnabled ? "gpt-6-luna" : MODEL; }
+
   public String generate(String school, String grade, String exam, String grammar, String passage,
       Integer count, String difficulty) {
     if (isBlank(grammar) && isBlank(passage)) {
       throw new IllegalArgumentException("핵심 문법 또는 새 지문을 입력해 주세요.");
+    }
+    if (sitewideLunaEnabled) {
+      String prompt = writeRequestJson(Map.of("school", blank(school), "grade", blank(grade), "exam", blank(exam),
+          "grammar", blank(grammar), "passage", blank(passage), "count", clampCount(count),
+          "difficulty", isBlank(difficulty) ? DEFAULT_DIFFICULTY : difficulty.trim()));
+      var result = sitewideLuna.complete("한국 학교 영어 문제를 제작합니다. 입력 count만큼 정확히 생성합니다. 유효한 JSON 객체만 반환합니다. "
+          + "schema: {summary:string,questions:[{type:string,level:string,score:number,stem:string,choices:[string],answer:string,explanation:string}]}.", prompt, 24000);
+      if (!result.ok()) throw new IllegalStateException(result.errorMessage());
+      JsonNode generated;
+      try { generated = objectMapper.readTree(result.text().strip().replaceFirst("^```(?:json)?\\s*", "").replaceFirst("\\s*```$", "")); }
+      catch (JsonProcessingException exception) { throw new IllegalStateException("AI 문제 응답 형식이 올바르지 않습니다."); }
+      if (generated == null || !generated.path("questions").isArray() || generated.path("questions").size() != clampCount(count)) {
+        throw new IllegalStateException("AI 문제 생성 결과의 문항 수 또는 형식이 올바르지 않습니다.");
+      }
+      for (JsonNode question : generated.path("questions")) {
+        for (String field : new String[]{"type", "stem", "answer", "explanation"}) {
+          if (!question.path(field).isTextual() || question.path(field).asText().isBlank())
+            throw new IllegalStateException("AI 문제 생성 결과에 필수 항목이 없습니다.");
+        }
+      }
+      return generated.toString();
     }
     if (webhookUrl.isBlank()) {
       throw new IllegalStateException(

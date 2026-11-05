@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       counseling_model:
-        description: '두 상담 답변 모델: unchanged=유지, luna=OpenAI Luna, meta=기존 Meta로 복귀'
+        description: '사이트 AI 모델: unchanged=유지, luna=전체 Luna, meta=기존 라우팅으로 복귀'
         required: false
         default: unchanged
         type: choice
@@ -381,10 +381,19 @@ jobs:
           # 재작성 등 모든 env 변경보다 먼저 실행돼야 하기 때문이다. 테스트(f2r_app_guard.test.sh)가 검증하는 것과 같은 소스다.
           cat scripts/deploy/f2r_app_guard.sh >> /tmp/deploy-buildit.sh
           cat scripts/deploy/f2r_luna_env.sh >> /tmp/deploy-buildit.sh
+          cat >> /tmp/deploy-buildit.sh <<'SMOKE_HEADER'
+          f2r_luna_smoke() {
+            python3 - "$1" <<'LUNA_CAPABILITY_PY'
+          SMOKE_HEADER
+          cat scripts/deploy/f2r_luna_smoke.py >> /tmp/deploy-buildit.sh
+          cat >> /tmp/deploy-buildit.sh <<'SMOKE_FOOTER'
+          LUNA_CAPABILITY_PY
+          }
+          SMOKE_FOOTER
           cat >> /tmp/deploy-buildit.sh <<'SCRIPT'
           # env 변경 전 백업을 보장한다(/etc/f2r/env, /etc/buildit-wiki-identity.env). 실패하면 아무것도 바꾸기 전에 배포를 중단한다.
           F2R_ENV_BACKUP_DIR="/var/backups/f2r-deploy-env/$(date +%Y%m%d-%H%M%S)-$$"
-          if ! f2r_env_snapshot "$F2R_ENV_BACKUP_DIR" /etc/f2r/env /etc/buildit-wiki-identity.env; then
+          if ! f2r_env_snapshot "$F2R_ENV_BACKUP_DIR" /etc/f2r/env /etc/buildit-wiki-identity.env /etc/buildit-wiki.env; then
             echo "[DEPLOY] ABORT env_backup_failed — nothing was changed"
             exit 3
           fi
@@ -578,15 +587,21 @@ jobs:
             if [ "$COUNSELING_MODE" = luna ]; then
               umask 077
               aws s3 cp "s3://${BUCKET}/openai-luna-key" /tmp/openai-luna-key >/dev/null
+              f2r_luna_smoke /tmp/openai-luna-key
               f2r_counseling_model_apply luna /etc/f2r/env /tmp/openai-luna-key
+              touch /etc/buildit-wiki.env
+              f2r_counseling_model_apply luna /etc/buildit-wiki.env /tmp/openai-luna-key
               shred -u /tmp/openai-luna-key 2>/dev/null || rm -f /tmp/openai-luna-key
             elif [ "$COUNSELING_MODE" = meta ]; then
               f2r_counseling_model_apply meta /etc/f2r/env
+              touch /etc/buildit-wiki.env
+              f2r_counseling_model_apply meta /etc/buildit-wiki.env
             else
               echo '::error::invalid counseling model selection'
               exit 1
             fi
-            echo "[DEPLOY] counseling model applied: $COUNSELING_MODE (key hidden)"
+            systemctl restart buildit-wiki.service
+            echo "[DEPLOY] sitewide AI model applied: $COUNSELING_MODE (key hidden)"
           fi
 
           # NewStart 지피지기 (Meta Muse Spark) 전용 키를 S3 staging에서 가져와 /etc/f2r/env에 동기화한다.

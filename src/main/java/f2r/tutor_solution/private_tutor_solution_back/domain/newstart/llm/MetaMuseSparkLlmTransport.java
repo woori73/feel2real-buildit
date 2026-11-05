@@ -49,13 +49,19 @@ public class MetaMuseSparkLlmTransport implements NewStartLlmTransport {
         .build();
   }
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private OpenAiLunaLlmTransport sitewideLuna;
+  @org.springframework.beans.factory.annotation.Value("${SITEWIDE_LUNA_ENABLED:false}")
+  private boolean sitewideLunaEnabled;
+
   @Override
   public String name() {
-    return "meta-muse-spark";
+    return sitewideLunaEnabled ? "openai-luna" : "meta-muse-spark";
   }
 
   @Override
   public NewStartLlmCompletion complete(String systemPrompt, String prompt, int maxOutputChars) {
+    if (sitewideLunaEnabled) return sitewideLuna.complete(systemPrompt, prompt, maxOutputChars);
     if (config.getApiKey() == null || config.getApiKey().isBlank()) {
       // 키 미설정은 설정 상태이므로 fallback 대상이 아니다.
       return NewStartLlmCompletion.failed(GENERIC_ERROR, false);
