@@ -27,3 +27,43 @@ test('given 수능최저 판정 결과 when 화면 문구로 바꾸면 then 합�
   assert.equal(model.minimumLabel('SOMETHING'),'확인할 수 없음');
   assert.doesNotMatch(Object.values({a:model.minimumLabel('MET'),b:model.minimumLabel('NOT_MET')}).join(),/합격/);
 });
+test('given 모집인원표 when 정시 군별로 나누면 then 군 표기만 쓰고 0명·합계·수시는 뺀다',()=>{
+  // given
+  const quota=JSON.stringify({'지역균형전형':10,'정시 일반전형(나군)':36,'정시 지역균형전형(나군)':0,'정시 기회균형(가군)':2,'정시 합계':38,'수시 합계':10});
+  // when
+  const g=model.jeongsiGroups(quota);
+  // then
+  assert.deepEqual(g['나'],[{type:'정시 일반전형(나군)',count:36}]);
+  assert.deepEqual(g['가'],[{type:'정시 기회균형(가군)',count:2}]);
+  assert.deepEqual(g['다'],[]);assert.deepEqual(g.unclear,[]);assert.equal(g.readable,true);
+});
+test('given 군이 둘 적힌 전형과 군 없는 정시 전형 when 나누면 then 한 군으로 단정하지 않는다',()=>{
+  // given
+  const quota=JSON.stringify({'정시 농어촌학생전형(정원외)(가·다군)':3,'정시 특성화고등을졸업한재직자전형(정원외)':5});
+  // when
+  const g=model.jeongsiGroups(quota);
+  // then
+  assert.equal(g.unclear.length,2);assert.deepEqual([g['가'],g['나'],g['다']],[[],[],[]]);
+});
+test('given 읽을 수 없는 모집인원표 when 나누면 then 읽을 수 없음으로 표시',()=>{
+  // given / when / then
+  assert.equal(model.jeongsiGroups('수시 10명').readable,false);
+  assert.equal(model.jeongsiGroups(null).readable,false);
+  assert.equal(model.jeongsiGroups('[1,2]').readable,false);
+});
+test('given 한국 시간 자정 직후 when 오늘 날짜 then 한국 날짜',()=>{
+  // given: UTC 2026-11-06 15:30 = KST 2026-11-07 00:30
+  const now=Date.UTC(2026,10,6,15,30);
+  // when / then
+  assert.equal(model.todayKst(now),'2026-11-07');
+});
+test('given 두 대학 일정 when 합치면 then 날짜순·중복 제거·지난 일정 표시',()=>{
+  // given
+  const a={universityName:'가대학교',schedules:[{title:'원서접수 (일반)',startDate:'2026-12-29',endDate:'2026-12-31'},{title:'면접',startDate:'2026-10-03',endDate:'2026-10-03'},{title:'합격자 발표',startDate:null,endDate:null}]};
+  const b={universityName:'나대학교',schedules:[{title:'원서접수',startDate:'2026-12-29',endDate:'2026-12-31'}]};
+  // when: 같은 대학 후보가 둘(가대학교 두 번)
+  const rows=model.mergeSchedules([a,b,a],'2026-11-07');
+  // then
+  assert.deepEqual(rows.map(r=>r.universityName+':'+r.title),['가대학교:면접','가대학교:원서접수 (일반)','나대학교:원서접수','가대학교:합격자 발표']);
+  assert.deepEqual(rows.map(r=>r.past),[true,false,false,false]);
+});

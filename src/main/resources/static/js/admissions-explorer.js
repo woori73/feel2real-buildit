@@ -14,12 +14,45 @@
   }
   /** 수능최저 판정 결과를 쉬운 말로. 합격 여부가 아니라 등급 기준 충족 여부만 말한다. */
   function minimumLabel(outcome){return ({MET:'충족',NOT_MET:'미충족',NO_MINIMUM:'수능최저 없음',NEEDS_INPUT:'등급 입력 필요',WITHHELD_NEEDS_REVIEW:'원문 확인 필요',ERROR:'확인할 수 없음'})[outcome]||'확인할 수 없음';}
-  var model={text:text,norm:norm,metric:metric,cleanCandidates:cleanCandidates,minimumLabel:minimumLabel};
+  /**
+   * 모집인원표(quotaInfo = 모집요강 전형별 인원 JSON)에서 정시 전형을 군별로 나눈다.
+   * 전형명에 적힌 '(나군)' 표기만 쓰고 추측하지 않는다. '(가·다군)'처럼 군이 둘 이상 적힌 전형과
+   * 군 표기가 없는 정시 전형(재직자 전형 등)은 unclear로 둔다. 인원 0·합계 행은 뺀다.
+   */
+  function jeongsiGroups(quotaInfo){
+    var out={'가':[],'나':[],'다':[],unclear:[],readable:true};
+    var counts;try{counts=JSON.parse(quotaInfo||'');}catch(e){counts=null;}
+    if(!counts||typeof counts!=='object'||Array.isArray(counts)){out.readable=false;return out;}
+    Object.keys(counts).forEach(function(name){
+      var n=counts[name];
+      if(typeof n!=='number'||!(n>0)||name.indexOf('정시')<0||/합계|소계/.test(name))return;
+      var row={type:name,count:n},marks=name.match(/[가나다](?:\s*[·,]\s*[가나다])*\s*군/g)||[];
+      if(marks.length!==1||/[·,]/.test(marks[0])){out.unclear.push(row);return;}
+      out[marks[0].charAt(0)].push(row);
+    });
+    return out;
+  }
+  /** 오늘 날짜(한국 시간) YYYY-MM-DD. */
+  function todayKst(now){return new Date((now==null?Date.now():now)+9*3600*1000).toISOString().slice(0,10);}
+  /**
+   * 후보 대학들의 전형 일정을 날짜순으로 합친다. 같은 대학 후보가 둘이면 일정은 한 번만 넣는다.
+   * past: 끝난 날(없으면 시작일)이 오늘보다 앞이면 true. 날짜가 없는 일정은 맨 뒤.
+   */
+  function mergeSchedules(entries,today){
+    var seen={},rows=[];
+    (entries||[]).forEach(function(e){(e.schedules||[]).forEach(function(s){
+      var key=e.universityName+'|'+s.title+'|'+s.startDate+'|'+s.endDate;if(seen[key])return;seen[key]=true;
+      var last=s.endDate||s.startDate;
+      rows.push({universityName:e.universityName,title:s.title,startDate:s.startDate||null,endDate:s.endDate||null,note:s.note||null,sourceUrl:s.sourceUrl,sourceTitle:s.sourceTitle,past:!!(last&&today&&last<today)});
+    });});
+    return rows.sort(function(a,b){if(!a.startDate!==!b.startDate)return a.startDate?-1:1;return (a.startDate||'').localeCompare(b.startDate||'')||a.universityName.localeCompare(b.universityName);});
+  }
+  var model={text:text,norm:norm,metric:metric,cleanCandidates:cleanCandidates,minimumLabel:minimumLabel,jeongsiGroups:jeongsiGroups,todayKst:todayKst,mergeSchedules:mergeSchedules};
   if(typeof module!=='undefined'&&module.exports) module.exports=model;
   if(!root.document || !root.document.getElementById('ae-workspace'))return;
   var doc=root.document, byId=function(id){return doc.getElementById(id);};
   var member=doc.body.dataset.member==='true', base=member?'/api/dashboard/admissions/explore':'/api/admissions/explore';
-  var universities=[], candidates=[], generation=0, detailGeneration=0, compareGeneration=0;
+  var universities=[], candidates=[], generation=0, detailGeneration=0, compareGeneration=0, showPastSchedules=false;
   try { candidates=cleanCandidates(JSON.parse(sessionStorage.getItem('f2r-admissions-candidates-v1')||'[]')); }catch(e){}
   function el(tag,value,cls){var n=doc.createElement(tag);if(value!=null)n.textContent=value;if(cls)n.className=cls;return n;}
   function button(label,run,cls){var b=el('button',label,cls);b.type='button';b.addEventListener('click',run);return b;}
@@ -139,14 +172,56 @@
     try{var data=await api('/departments/'+row.id+'?academicYear='+selectedYear);if(token!==detailGeneration)return;renderDetail(panel,data,false);panel.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){if(token===detailGeneration)panel.textContent=e.message;}
   }
   async function compare(){
-    var token=++compareGeneration,area=byId('ae-comparison');area.replaceChildren();byId('ae-compare-status').textContent='';
+    var token=++compareGeneration,area=byId('ae-comparison'),round=byId('ae-compare-round').value;area.replaceChildren();byId('ae-compare-status').textContent='';
+    byId('ae-compare-groups').replaceChildren();byId('ae-compare-schedule').replaceChildren();
     if(!candidates.length){paragraph(area,'아직 비교 후보가 없습니다. 대학 찾기에서 관심 있는 모집단위를 담아보세요.');return;}
     byId('ae-compare-status').textContent='최신 승인 자료를 조회하고 있습니다…';
-    var snapshot=candidates.slice();await Promise.all(snapshot.map(async function(c){
+    var snapshot=candidates.slice(),loaded=snapshot.map(function(){return null;});await Promise.all(snapshot.map(async function(c,i){
       var card=el('article',null,'ae-compare-card');area.appendChild(card);var content=el('div');card.appendChild(content);var remove=button('후보 삭제',function(){candidates=candidates.filter(function(r){return !(r.id===c.id&&r.year===c.year);});save();compare();});card.appendChild(remove);
-      try{var data=await api('/departments/'+c.id+'?academicYear='+c.year);if(token!==compareGeneration)return;renderDetail(content,data,true);}
+      try{var data=await api('/departments/'+c.id+'?academicYear='+c.year+'&round='+round);if(token!==compareGeneration)return;loaded[i]=data;renderDetail(content,data,true);}
       catch(e){if(token===compareGeneration){paragraph(content,c.universityName+' '+c.name);paragraph(content,e.message);}}
-    }));if(token===compareGeneration)byId('ae-compare-status').textContent='모집요강·지난해 입결을 원문 지표명 그대로 표시했습니다.';
+    }));if(token!==compareGeneration)return;
+    var ok=loaded.filter(Boolean);
+    if(round!=='SUSI')renderGroups(byId('ae-compare-groups'),ok);
+    renderSchedules(byId('ae-compare-schedule'),ok);
+    byId('ae-compare-status').textContent='모집요강·지난해 입결을 원문 지표명 그대로 표시했습니다.';
+  }
+  /** 후보를 정시 군별로 정리한다. 모집요강 모집인원표의 전형명 표기만 쓴다. */
+  function renderGroups(parent,list){
+    parent.appendChild(el('h2','정시 군별 정리'));
+    paragraph(parent,'모집요강 모집인원표에 적힌 정시 전형의 군 표기로 나눴습니다. 인원은 원문 값입니다.','ae-muted');
+    var grid=el('div',null,'ae-group-grid'),byGroup={'가':[],'나':[],'다':[]},unclear=[],none=[];
+    list.forEach(function(data){
+      var d=data.department,label=d.universityName+' '+d.name,g=jeongsiGroups(d.quotaInfo);
+      if(!g.readable){unclear.push({label:label,text:'모집인원표를 읽을 수 없음 — 공식 원문 확인'});return;}
+      var any=false;['가','나','다'].forEach(function(k){if(g[k].length){any=true;byGroup[k].push({label:label,rows:g[k],universityName:d.universityName});}});
+      g.unclear.forEach(function(r){any=true;unclear.push({label:label,text:r.type+' '+r.count+'명 — 군을 하나로 정할 수 없음, 원문 확인'});});
+      if(!any)none.push(label);
+    });
+    ['가','나','다'].forEach(function(k){
+      var col=el('section',null,'ae-group');col.appendChild(el('h3',k+'군'));
+      if(!byGroup[k].length)paragraph(col,'후보 없음','ae-muted');
+      byGroup[k].forEach(function(item){var p=el('p');p.appendChild(el('strong',item.label));item.rows.forEach(function(r){p.appendChild(el('small',r.type+' '+r.count+'명'));});col.appendChild(p);});
+      grid.appendChild(col);
+    });
+    parent.appendChild(grid);
+    unclear.forEach(function(u){paragraph(parent,u.label+': '+u.text,'ae-muted');});
+    if(none.length)paragraph(parent,'정시 모집인원이 없는 후보: '+none.join(', '),'ae-muted');
+    var crowded=['가','나','다'].filter(function(k){return byGroup[k].length>1;});
+    if(crowded.length)paragraph(parent,crowded.map(function(k){return k+'군에 후보가 '+byGroup[k].length+'개('+byGroup[k].map(function(i){return i.label;}).join(', ')+')';}).join(' / ')+'입니다. 정시모집은 모집 군이 같은 대학에 복수지원할 수 없습니다(교육대학 포함, 산업대학·전문대학 제외). 같은 대학 안에서 같은 군의 여러 모집단위에 지원할 수 있는지는 각 대학 정시 모집요강의 복수지원 항목을 확인해 주세요.','ae-note');
+  }
+  /** 후보 대학들의 전형 일정을 한 줄로 모은다. 대학 전체 일정이라 모집단위·전형 해당 여부는 원문으로 확인. */
+  function renderSchedules(parent,list){
+    var rows=mergeSchedules(list.map(function(data){return {universityName:data.department.universityName,schedules:data.universitySchedules};}),todayKst());
+    parent.appendChild(el('h2','후보 대학 전형 일정'));
+    paragraph(parent,'후보 대학의 전체 일정을 날짜순으로 모았습니다. 일정 이름에 적힌 전형이 내가 지원할 전형인지 원문에서 확인해 주세요.','ae-muted');
+    var past=rows.filter(function(r){return r.past;}).length,showPast=showPastSchedules;
+    var toggle=el('label',null,'ae-check'),box=el('input');box.type='checkbox';box.checked=showPast;box.addEventListener('change',function(){showPastSchedules=box.checked;parent.replaceChildren();renderSchedules(parent,list);});toggle.append(box,doc.createTextNode(' 지난 일정도 보기 ('+past+'건)'));parent.appendChild(toggle);
+    var shown=rows.filter(function(r){return showPast||!r.past;});
+    if(!shown.length){paragraph(parent,rows.length?'남은 일정이 없습니다.':'승인된 일정이 없습니다.','ae-muted');return;}
+    var table=el('table'),head=el('thead'),hr=el('tr');['날짜','대학','일정'].forEach(function(t){var th=el('th',t);th.scope='col';hr.appendChild(th);});head.appendChild(hr);table.appendChild(head);var body=el('tbody');
+    shown.forEach(function(r){var tr=el('tr');if(r.past)tr.className='ae-past';var date=r.startDate?(r.endDate&&r.endDate!==r.startDate?r.startDate+' ~ '+r.endDate:r.startDate):'날짜 미공개';var c3=el('td',r.title);if(r.note)c3.appendChild(el('small',r.note));source(c3,r.sourceUrl,r.sourceTitle);tr.append(el('td',date),el('td',r.universityName),c3);body.appendChild(tr);});
+    table.appendChild(body);var wrap=el('div',null,'ae-table-scroll');wrap.appendChild(table);parent.appendChild(wrap);
   }
   // 선택 표시는 학생이 고른 묶음만 보낸다. 고르지 않은 묶음을 0으로 보내면 서버가 '해당 없음'으로 판정해
   // 수능최저를 충족한 학생도 미충족으로 나올 수 있다(서버는 묶음이 없으면 입력을 요청한다).
@@ -244,6 +319,7 @@
   byId('ae-university').addEventListener('change',function(){++generation;++detailGeneration;byId('ae-results').replaceChildren();byId('ae-detail').hidden=true;});
   byId('ae-search-form').addEventListener('submit',function(e){e.preventDefault();search();});
   byId('ae-compare-refresh').addEventListener('click',compare);
+  byId('ae-compare-round').addEventListener('change',compare);
   byId('ae-compare-ask').addEventListener('click',askCandidates);
   byId('ae-clear').addEventListener('click',function(){candidates=[];save();compare();});
   byId('ae-score-form').addEventListener('submit',function(e){e.preventDefault();try{var value=scores();byId('ag-academic-summary').value=value;byId('ae-score-next').hidden=false;byId('ae-score-status').textContent='상담 성적 요약에 적용했습니다. AI 상담에서 질문을 전송하면 함께 전달됩니다.';}catch(error){byId('ae-score-next').hidden=true;byId('ae-score-status').textContent=error.message;}});

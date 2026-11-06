@@ -7,7 +7,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <meta name="description" content="검수·승인된 공식 입시자료를 학년도별로 안내합니다">
   <link rel="stylesheet" href="/css/admissions-guide.css?v=20261022-1">
-  <link rel="stylesheet" href="/css/admissions-explorer.css?v=20261104-3">
+  <link rel="stylesheet" href="/css/admissions-explorer.css?v=20261107-1">
 </head>
 <body th:attr="data-member=${memberMode == true}">
   <div class="admissions-page">
@@ -96,8 +96,10 @@
       </section>
       <section id="ae-compare-panel" hidden aria-labelledby="ae-compare-title">
         <div class="ae-heading"><p class="ae-eyebrow">지원 후보 보관함</p><h1 id="ae-compare-title">지난해 입결을<br>나란히 살펴보세요.</h1><p>최대 3개 모집단위를 비교합니다. 후보는 이 브라우저 탭에 임시 보관됩니다.</p></div>
-        <div class="ae-actions"><button id="ae-compare-ask" type="button" class="ae-primary">이 대학들 AI 비교 상담</button><button id="ae-compare-refresh" type="button">공식자료 새로 조회</button><button id="ae-clear" type="button">후보 전체 비우기</button></div>
+        <div class="ae-actions"><label class="ae-inline">입결 보기<select id="ae-compare-round"><option value="ALL">수시·정시 모두</option><option value="SUSI">수시만</option><option value="JEONGSI">정시만</option></select></label><button id="ae-compare-ask" type="button" class="ae-primary">이 대학들 AI 비교 상담</button><button id="ae-compare-refresh" type="button">공식자료 새로 조회</button><button id="ae-clear" type="button">후보 전체 비우기</button></div>
         <p id="ae-compare-status" class="ae-status" role="status"></p><div id="ae-comparison" class="ae-comparison"></div>
+        <section id="ae-compare-groups" class="ae-compare-block" aria-live="polite"></section>
+        <section id="ae-compare-schedule" class="ae-compare-block" aria-live="polite"></section>
         <p class="ae-note">지표명·대상 학년도·전형이 다른 점수는 직접 비교할 수 없습니다. 지난해 입결은 올해의 합격선이 아닙니다.</p>
       </section>
       <section id="ae-scores-panel" hidden aria-labelledby="ae-scores-title">
@@ -178,7 +180,7 @@
   </div>
   <script src="/js/api.js"></script>
   <script src="/js/admissions-guide.js?v=20261104-3" defer></script>
-  <script src="/js/admissions-explorer.js?v=20261104-6" defer></script>
+  <script src="/js/admissions-explorer.js?v=20261107-1" defer></script>
   <script src="/js/admissions-member.js?v=20261019-2" defer></script>
   <script src="/js/admissions-admin-load.js?v=20261104-3" defer></script>
 </body>
