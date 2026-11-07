@@ -5,7 +5,7 @@ import type { ExamContext } from './wikiContext'
 
 export const MCP_ENDPOINT_PATH = '/problem-generator/wiki/api/mcp'
 
-export type McpJobKind = 'expected' | 'final' | 'jikbo'
+export type McpJobKind = 'expected' | 'jikbo'
 export type McpKindMix = 'school' | 'mcOnly' | 'custom'
 
 export type McpJob = {
@@ -18,7 +18,6 @@ export type McpJob = {
 
 export const JOB_LABELS: Record<McpJobKind, string> = {
   expected: '예상문제 시험지',
-  final: 'FINAL 자료',
   jikbo: '직보(시험 직전 정리)',
 }
 
@@ -37,7 +36,8 @@ export function mcpEndpointUrl(origin: string): string {
   return origin.replace(/\/+$/, '') + MCP_ENDPOINT_PATH
 }
 
-const examLine = (c: ExamContext) => `${c.school} ${c.grade} · ${c.year}년 ${c.semester} · ${c.exam === '전체' ? '시험 전체' : c.exam}`
+// 인자에는 위키에 저장된 형식(2학년, 2학기, 기말고사) 그대로 넣는다 — 다른 형식이면 MCP 조회가 비어 온다.
+const examLine = (c: ExamContext) => `${c.school} ${c.grade} · ${c.year} ${c.semester} ${c.exam}`
 const toolArgs = (c: ExamContext) => `school="${c.school}", grade="${c.grade}", year=${c.year}, semester="${c.semester}", exam="${c.exam}"`
 
 function mixLine(job: McpJob): string {
@@ -49,39 +49,40 @@ function mixLine(job: McpJob): string {
   return '학교 기출의 객관식·서답형 비율을 따름'
 }
 
-/** 화면에서 고른 시험·작업 조건으로 MCP 작업 지시문을 만든다. */
+const EXPECTED_PRINCIPLES = [
+  '1. 해당 학교 기출을 철저히 분석하고 저장한다.',
+  '2. 발문, 유형, 선택지 형식, 난이도는 기출을 그대로 따른다. 별도 지시가 있으면 지시를 따른다.',
+  '3. 기출에 없는 유형, 편집 양식, 기호는 쓰지 않는다.',
+  '4. 지정한 범위 안에서만 출제하고, 기출에 나온 지문이나 내용은 다시 쓰지 않는다.',
+  '5. 시험지는 해당 학교 시험지와 똑같이 편집한다(폰트, 글씨 크기, 줄간격). 학원 로고를 넣고, 하단의 학교 저작권 문구는 뺀다.',
+]
+const JIKBO_PRINCIPLES = [
+  '1. 학습지 원본만 근거로 만든다.',
+  '2. 원본에 없는 내용, 문구, 번호는 추가하거나 바꾸지 않는다.',
+]
+
+/** 화면에서 고른 시험·작업 조건으로 MCP 작업 지시문을 만든다. 원칙과 기본 순서만 담고 세부 작업은 사용자 지시에 맡긴다. */
 export function buildMcpPrompt(context: ExamContext, job: McpJob): string {
+  const expected = job.kind === 'expected'
   const lines: string[] = []
-  const note = job.note.trim()
-  lines.push(`[BuildIt Wiki MCP 작업] ${examLine(context)} ${JOB_LABELS[job.kind]}`)
+  lines.push(expected
+    ? `[BuildIt Wiki] ${examLine(context)} · 예상문제 시험지 ${job.count}문항`
+    : `[BuildIt Wiki] ${examLine(context)} · 직보`)
   lines.push('')
-  if (job.kind === 'jikbo') {
-    lines.push(`1. get_jikbo_context(${toolArgs(context)})로 FINAL 완성본과 그 뒤 수업 인사이트·학생 오답을 읽는다.`)
-    lines.push('   ready가 false이면 FINAL이 아직 없으니 멈추고 알려 준다.')
-    lines.push('2. 시험 직전에 볼 핵심만 정리한 직보를 HTML로 만든다.')
-    lines.push(`3. save_jikbo(${toolArgs(context)}, ...)로 저장한다.`)
-  } else {
-    lines.push(`1. get_final_context(${toolArgs(context)})로 기출·학교 프린트·Digital Twin·수업 인사이트·학생 오답·기존 문제를 읽는다.`)
-    lines.push('   결과가 비어 있어도 자료가 없다고 단정하지 말고, 로그인된 브라우저에서 내신위키를 열어 확인한다.')
-    lines.push('2. 읽은 자료로 시험범위·핵심 본문·어휘·문법·기출 유형을 한 번 정리한다(Context Pack). 단계마다 다시 분석하지 않는다.')
-    if (job.kind === 'expected') {
-      const batches = splitBatches(job.count)
-      lines.push(`3. 전체 ${job.count}문항 Blueprint를 먼저 정한다. 구성: ${mixLine(job)}.`)
-      lines.push(`4. ${batches.join(' → ')} 순서로 나눠 만들고, 각 묶음마다 정답을 따로 검증한 뒤 다음으로 넘어간다.`)
-      lines.push('5. 다 만든 뒤 중복 문항·본문 편중·정답 번호 분포를 한 번 확인한다.')
-      lines.push(`6. 검수한 문항을 Wiki에 저장해 달라: save_generated_questions(school="${context.school}", grade="${context.grade}", exam="${context.exam}", questions=[...])로 문항을, save_final(${toolArgs(context)}, ...)로 시험지 HTML을 저장한다.`)
-      lines.push('   저장이 실패하면 "생성: 성공 / 저장: 실패"로 나눠 알려 준다.')
-    } else {
-      lines.push('3. 시험 전 최종 정리용 FINAL 자료를 HTML로 만든다.')
-      lines.push(`4. save_final(${toolArgs(context)}, ...)로 저장한다.`)
-    }
-  }
-  if (note) {
-    lines.push('')
-    lines.push(`추가 요청: ${note}`)
-  }
+  lines.push(expected
+    ? `get_final_context(${toolArgs(context)})로 자료를 읽는다.`
+    : `get_final_context(${toolArgs(context)})로 학교 프린트(학습지 원본)를 읽는다.`)
   lines.push('')
-  lines.push('끝나면 만든 것, 근거로 쓴 자료, 저장 결과, 애매한 문항을 짧게 알려 준다.')
+  lines.push(expected ? '■ 출제 원칙' : '■ 제작 원칙')
+  lines.push(...(expected ? EXPECTED_PRINCIPLES : JIKBO_PRINCIPLES))
+  lines.push('')
+  lines.push('세부 작업은 사용자 지시에 따른다.')
+  // 화면에서 직접 고른 조건만 사용자 지시로 덧붙인다. 기본값(학교 기출 비율)은 원칙 2가 이미 다룬다.
+  const requests = [
+    ...(expected && job.mix !== 'school' ? [`문항 구성: ${mixLine(job)}`] : []),
+    ...(job.note.trim() ? [`추가 요청: ${job.note.trim()}`] : []),
+  ]
+  if (requests.length) lines.push('', '■ 사용자 지시', ...requests)
   return lines.join('\n')
 }
 
