@@ -84,7 +84,7 @@ public class AdmissionsExplorerService {
               AND m.status='ACTIVE' AND m.university_id=p.university_id AND m.academic_year=p.academic_year
               AND (p.linked_department_name=? OR
                    ((p.linked_department_name IS NULL OR p.linked_department_name='') AND p.department_name=?))
-              AND (?='ALL' OR p.round_type=?)
+              AND (?='ALL' OR p.round_type=? OR p.round_type='OTHER')
             ORDER BY p.round_type, p.group_name, p.type_name, p.metric_label, p.prior_result_id LIMIT 201
             """, universityId, year, year - 1, departmentName, departmentName, round, round);
         // 대학 전체 전형·일정이다. 이 모집단위에 적용되는 전형으로 단정하지 않는다.

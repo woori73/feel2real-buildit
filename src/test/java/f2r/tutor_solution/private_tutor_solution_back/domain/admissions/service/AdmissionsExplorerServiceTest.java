@@ -52,6 +52,19 @@ class AdmissionsExplorerServiceTest {
         assertThat((java.util.List<?>)service.detail(2027,10,"JEONGSI").get("priorResults")).hasSize(1);
         assertThat(data.get("calculationStatus")).isEqualTo("API_AVAILABLE");
     }
+    @Test void givenRowWithoutSusiJeongsiSplit_whenFilteringByRound_thenOtherRowStaysInEveryFilter() {
+        // given: 원문에 수시·정시 구분이 없는 행(OTHER)과 수시 행
+        prior(1,1,2026,"ACTIVE",1,"컴퓨터공학과",null,"OTHER");
+        prior(2,1,2026,"ACTIVE",1,"컴퓨터공학과",null,"SUSI");
+        // when
+        int all=((java.util.List<?>)service.detail(2027,10,"ALL").get("priorResults")).size();
+        int susi=((java.util.List<?>)service.detail(2027,10,"SUSI").get("priorResults")).size();
+        int jeongsi=((java.util.List<?>)service.detail(2027,10,"JEONGSI").get("priorResults")).size();
+        // then
+        assertThat(all).isEqualTo(2);
+        assertThat(susi).isEqualTo(2);
+        assertThat(jeongsi).isEqualTo(1);
+    }
     @Test void givenWildcardAndWrongYear_whenSearching_thenLiteralSearchAndValidation() {
         assertThat((java.util.List<?>)service.departments(2027,1,"%").get("items")).isEmpty();
         assertThatThrownBy(()->service.departments(2026,1,"")).isInstanceOf(ResponseStatusException.class);

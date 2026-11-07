@@ -1809,7 +1809,7 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 대학 입학처가 공식 게시한 **2026학년도(지난해) 입시결과**(경쟁률·충원·등록자 성적)를 대학·전형·모집단위별로 보관한다. 상담에서 경쟁률·입결·충원·등급컷을 물을 때 근거로 쓴다.
 
 - **출처 규칙**: 각 대학 입학처의 공식 "입시결과" 파일(PDF/HWP/XLSX/HTML)만. 대학어디가(adiga.kr)·수능 사이트는 자동 수집하지 않고 링크·메타만 남긴다. 사설 배치표·학원·커뮤니티 수치는 넣지 않는다. 수집은 buildit-admissions(`scripts/ipsi_fetch.py` RobotsGate 통과)에서 하고, 결과는 시드 최상위 `prior_results`로 들어온다.
-- **행 모양**: 한 행 = (대학, 결과학년도, 트랙 `SUSI|JEONGSI`, 군, 전형명, 모집단위명, 지표명).
+- **행 모양**: 한 행 = (대학, 결과학년도, 트랙 `SUSI|JEONGSI|OTHER`, 군, 전형명, 모집단위명, 지표명). `OTHER`는 원문에 수시·정시 구분이 없는 학교(예: 한국예술종합학교 — 대교협 수시·정시 체계 밖 자체 입시)다. 상담·탐색에서 "수시·정시 구분 없음"으로 표시하고 수시·정시 어느 질문·필터에서도 빼지 않는다. 컬럼은 VARCHAR(10) 그대로(마이그레이션 없음).
   - 기본 행(`metric_label=''`): `recruit_count`·`applicant_count`·`competition_rate`·`extra_admitted_count`만 담는다(원문에 없으면 NULL, 추정·역산 금지).
   - 지표 행: `metric_label`(대학 원문 지표명 그대로, 예 "최종등록자 교과등급 70%컷")·`metric_unit`(GRADE/PERCENTILE/SCORE/OTHER)·`metric_value`·`raw_value_text`(원문 셀 문자열). 서로 다른 지표를 합치거나 환산하지 않는다.
   - `extra_admitted_count`는 **충원 인원**일 때만 채운다. 원문이 "마지막 예비번호(충원합격순위·추합 번호)"만 주면 인원 칸은 NULL로 두고 그 값을 원문 이름의 지표 행(OTHER)으로 남긴다.

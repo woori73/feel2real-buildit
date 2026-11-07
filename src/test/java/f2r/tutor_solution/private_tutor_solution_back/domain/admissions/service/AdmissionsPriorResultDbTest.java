@@ -185,6 +185,38 @@ class AdmissionsPriorResultDbTest {
         assertThat(prior.get(0).getRefId()).startsWith("prior:");
     }
 
+    /** 원문에 수시·정시 구분이 없는 학교(예: 한국예술종합학교) — round_type OTHER. */
+    private static final String SEED_OTHER = """
+        {"ipsi_universities":[{"name":"예술학교","university_code":"ART"}],
+         "ipsi_documents":[
+           {"document_key":"doc_art_2026_result","document_name":"예술학교 2026학년도 수시·정시 구분 없음(학교 자체 입시) 입시결과","applicable_academic_year":2027,"institution_name":"예술학교 입학관리과","source_url":"https://example.test/art-result.pdf"}],
+         "prior_results":[
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"일반","department_name":"연기과 / 연기(여)",
+            "metric_label":null,"recruit_count":12,"applicant_count":900,"competition_rate":null,"extra_admitted_count":3,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]}]}
+        """;
+
+    @Test
+    @DisplayName("given 수시·정시 구분이 없는 학교 결과(OTHER) when 정시·수시로 물어도 then 빠지지 않고 '구분 없음'으로 표시된다")
+    void otherRound_isShownForBothRoundQuestions() throws Exception {
+        // given
+        loader.loadSeed(SEED_OTHER);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // when
+        var jeongsi = search.search("예술학교 연기과 정시 입결 알려줘", null);
+        var susi = search.search("예술학교 연기과 수시 경쟁률 알려줘", null);
+
+        // then
+        for (var result : List.of(jeongsi, susi)) {
+            var prior = result.evidence().stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_PRIOR_RESULT).toList();
+            assertThat(prior).hasSize(1);
+            assertThat(prior.get(0).getTitle()).contains("예술학교", "2026학년도(지난해)", "수시·정시 구분 없음(학교 자체 입시)", "연기과 / 연기(여)")
+                    .doesNotContain(" 정시 입시결과", " 수시 입시결과");
+            assertThat(prior.get(0).getExcerpt()).contains("모집인원 12명", "지원자 900명");
+        }
+    }
+
     @Test
     @DisplayName("given 승인된 입시결과 when 다른 대학 경쟁률을 물으면 then 그 대학 결과만 나오고 다른 대학 지표를 섞지 않는다")
     void otherUniversity_isNotMixed() throws Exception {
