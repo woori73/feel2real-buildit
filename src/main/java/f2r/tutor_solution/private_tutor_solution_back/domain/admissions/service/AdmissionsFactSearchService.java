@@ -128,8 +128,9 @@ public class AdmissionsFactSearchService {
         for (AdmissionsPriorResult r : priorResultRepository.findByUniversityUniversityIdInAndStatus(univIds, KnowledgeStatus.ACTIVE)) {
             if (r.getSource() == null || r.getSource().getStatus() != KnowledgeStatus.ACTIVE) continue;
             if (!univSelected(p, r.getUniversity())) continue;
-            if (asksSusi && !asksJeongsi && !"SUSI".equals(r.getRoundType())) continue;
-            if (asksJeongsi && !asksSusi && !"JEONGSI".equals(r.getRoundType())) continue;
+            // OTHER(원문에 수시·정시 구분 없음, 예: 한국예술종합학교)는 수시·정시 어느 질문에서도 빼지 않고 그대로 표시한다.
+            if (asksSusi && !asksJeongsi && "JEONGSI".equals(r.getRoundType())) continue;
+            if (asksJeongsi && !asksSusi && "SUSI".equals(r.getRoundType())) continue;
             if (!campusAllowed(question, r.getSource(), r.getTypeName() + " " + r.getDepartmentName())) continue;
             units.computeIfAbsent(r.getUniversity().getUniversityId() + "|" + r.unitKey(), k -> new ArrayList<>()).add(r);
         }
@@ -200,7 +201,10 @@ public class AdmissionsFactSearchService {
     }
 
     static String roundLabel(String roundType) {
-        return "JEONGSI".equals(roundType) ? "정시" : "SUSI".equals(roundType) ? "수시" : roundType;
+        if ("JEONGSI".equals(roundType)) return "정시";
+        if ("SUSI".equals(roundType)) return "수시";
+        if ("OTHER".equals(roundType)) return "수시·정시 구분 없음(학교 자체 입시)";
+        return roundType;
     }
 
     /**

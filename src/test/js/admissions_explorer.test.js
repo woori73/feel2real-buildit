@@ -67,3 +67,10 @@ test('given 두 대학 일정 when 합치면 then 날짜순·중복 제거·지�
   assert.deepEqual(rows.map(r=>r.universityName+':'+r.title),['가대학교:면접','가대학교:원서접수 (일반)','나대학교:원서접수','가대학교:합격자 발표']);
   assert.deepEqual(rows.map(r=>r.past),[true,false,false,false]);
 });
+test('given 입시결과 구분 when 표시 then OTHER는 구분 없음, 모르는 값은 미상',()=>{
+  // given / when / then
+  assert.equal(model.roundLabel('SUSI'),'수시');
+  assert.equal(model.roundLabel('JEONGSI'),'정시');
+  assert.equal(model.roundLabel('OTHER'),'수시·정시 구분 없음');
+  assert.equal(model.roundLabel(undefined),'구분 미상');
+});
