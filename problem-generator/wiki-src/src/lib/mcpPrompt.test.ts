@@ -34,7 +34,7 @@ describe('mcpEndpointUrl', () => {
 })
 
 describe('buildMcpPrompt', () => {
-  it('예상문제는 위키 저장 형식 그대로 시험 값을 넣고 출제 원칙 5개를 담는다', () => {
+  it('예상문제는 위키 저장 형식 그대로 시험 값을 넣고 출제 원칙 6개(동태밀도 배분 포함)를 담는다', () => {
     // given
     const input = job({ count: 40 })
     // when
@@ -45,7 +45,8 @@ describe('buildMcpPrompt', () => {
     expect(prompt).toContain('■ 출제 원칙')
     expect(prompt).toContain('1. 해당 학교 기출을 철저히 분석하고 저장한다.')
     expect(prompt).toContain('5. 시험지는 해당 학교 시험지와 똑같이 편집한다(폰트, 글씨 크기, 줄간격). 학원 로고를 넣고, 하단의 학교 저작권 문구는 뺀다.')
-    expect(prompt).not.toContain('6.')
+    expect(prompt).toContain('6. 범위 안 항목(본문·문법)마다 동태밀도 D = 기출 출제 비중 × 최근 증가량 ÷ (범위 분량 + ε)를 계산해, D가 높은 항목에 문항을 더 배정하고 계산표를 함께 보고한다.')
+    expect(prompt).not.toContain('7.')
     expect(prompt.trimEnd().endsWith('세부 작업은 사용자 지시에 따른다.')).toBe(true)
     expect(prompt).not.toContain('Q1~20')
     expect(prompt).not.toContain('문항 구성')
@@ -73,6 +74,7 @@ describe('buildMcpPrompt', () => {
     expect(prompt).toContain('2. 원본에 없는 내용, 문구, 번호는 추가하거나 바꾸지 않는다.')
     expect(prompt).not.toContain('FINAL')
     expect(prompt).not.toContain('출제 원칙')
+    expect(prompt).not.toContain('동태밀도')
   })
 
   it('추가 요청이 있으면 마지막 줄 앞에 붙이고 공백뿐이면 넣지 않는다', () => {
