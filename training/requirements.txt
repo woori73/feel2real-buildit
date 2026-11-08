@@ -1,0 +1,8 @@
+# GPU/merge environment only. Capture pip freeze in each run manifest.
+torch>=2.6,<3
+transformers>=4.51.3,<5
+peft>=0.15,<1
+accelerate>=1,<2
+bitsandbytes>=0.45,<1
+safetensors>=0.5,<1
+pydantic>=2.6,<3

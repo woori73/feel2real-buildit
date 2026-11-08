@@ -8,3 +8,8 @@ checkpoints/
 outputs/
 data/
 *.jsonl
+__pycache__/
+*.pyc
+merged/
+adapter/
+*.log

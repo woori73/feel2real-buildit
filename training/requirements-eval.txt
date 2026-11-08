@@ -1,0 +1,2 @@
+# Offline evaluation uses the existing question_contract validator.
+pydantic>=2.6,<3
