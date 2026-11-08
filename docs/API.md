@@ -3913,6 +3913,9 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `GET /problem-generator/wiki/api/source-materials/{id}/generated-tests`: 해당 학습자료의 생성 시험 목록.
 - `GET /problem-generator/wiki/api/generated-tests/{id}`: `{ test: {...메타, target_vocabulary/grammar 파싱}, questions: [list_questions 형태, test_id로 필터·id 오름차순] }`.
 - `GET /problem-generator/wiki/api/workspaces/final/context` 응답에 `generated_tests` 키가 추가된다(추적성). 기존 키는 그대로 유지.
+- (2026-11) 문항 근거·검증 기록: `questions[]` 각 항목에 선택 필드 `evidence{past_exam, school_print, changed}`, `verify{independent_answer, status('일치'|'불일치'|'복수정답 의심'|'해설 근거 부족'), note}`, `teacher{action}`를 함께 보낼 수 있다(모두 문자열, 다른 키·status 값은 422). 저장 원문(`raw_json`)에 그대로 남고, `GET /api/questions`·`GET /api/questions/{id}`·`GET /api/generated-tests/{id}`·`workspaces/final/context`의 `generated_questions` 각 문항에 `evidence`/`verify`/`teacher`(없으면 `null`)로 실린다. 스키마 변경 없음.
+- (2026-11) `workspaces/final/context`의 `final_deliverables[]`: `html_text`가 비어 있고 원본이 HTML이면 원본에서 `_sanitize_exam_html`로 본문(이미지 data URI·script·style 제외, 최대 200,000자)을 뽑아 `html_text`로 돌려주고 `html_source='original'`로 표시한다. 저장값은 바꾸지 않는다. 저장된 HTML이면 `html_source='saved'`, 둘 다 없으면 `null`.
+- (2026-11) `GET /problem-generator/wiki/api/workspaces/jikbo/context`(MCP `get_jikbo_context`): 직보는 학교 프린트(학습지 원본) 기반이다. 응답에 `school_prints`(final context와 같은 항목, 본문 포함)가 추가되고, `ready`는 학교 프린트나 FINAL 중 하나라도 있으면 `true`다. `latest_final`·`post_final_insights`·`student_weaknesses`·`jikbo_deliverables`는 그대로다.
 - 사용처: React Wiki `생성 문제` 페이지(`GeneratedTestBrowser`) — 학교/학년 → 학습자료 → 생성 시험 → 학생용 문제 / 정답·해설 / 출제 정보.
 
 ### ✅ POST /problem-generator/wiki/api/assistant/chat
@@ -4453,6 +4456,7 @@ publication Site tool은 등록하지 않는다. publication은 AI/WebMCP 직접
 - `POST /problem-generator/wiki/api/exam-materials`: 기존 multipart 저장 계약을 재사용한다. `core_type=school_print`, `material_type=PAST_EXAM`, school/grade/year/semester/exam/title/original을 전송한다. 실제 기출은 PDF/HWP/HWPX/HTML/HTM/MD/MARKDOWN/JPG/JPEG/PNG 원본을 허용하며 파일당 30MB 제한을 유지한다. HTML은 같은 origin에서 실행되지 않도록 attachment로만 제공한다.
 - HTML 업로드는 `_sanitize_exam_html`로 `<script>`/`<style>`/편집기 toolbar·화면전용 UI를 제거하고 제목·문항·지문·선택지·표·보기·밑줄/강조·서답형 작성요령만 남긴 정제본을 `body_text`(`body_format=html`)로 저장한다. MD/TXT는 원문을 그대로 `body_text`에 저장한다(`markdown`|`text`). PDF·이미지·HWP(X)는 본문 추출 대상이 아니라 원본 BLOB만 보관하고 `body_text`는 비운다. **원본 파일(BLOB)은 정제 여부와 무관하게 `/original`로 그대로 보존한다.**
 - `material_type=AI_WORK_LOG`: Claude/ChatGPT 등이 시험 준비 과정에서 남긴 작업 로그. `core_type=school_print`로 등록하고 MD/MARKDOWN/TXT/HTML(파일당 10MB) 원본만 허용한다. 본문을 `body_text`로 저장해 다음 세션에서 MCP가 이어서 읽는다.
+- 학교 프린트(`core_type=school_print`, material_type 없음/`SCHOOL_PRINT`) 원본은 HTML/PDF/HWPX/DOCX/JPG/JPEG/PNG(파일당 30MB)를 허용한다(2026-11 사진 추가). 사진·PDF는 원본만 보관하고 본문은 추출하지 않는다.
 - `material_type=EXAM_ANALYSIS`(기출 분석): 중간·기말 기출을 분석한 자료. `core_type=school_print`로 등록하고 HTML/HTM/PDF/HWPX/DOCX(파일당 150MB) 원본만 허용한다. HTML은 PAST_EXAM과 같은 정제 본문을 `body_text`로 저장하고, PDF/HWPX/DOCX는 원본만 보관한다. 학교 프린트 목록에는 섞이지 않는다.
 - `GET /problem-generator/wiki/api/exam-materials?...&material_type=PAST_EXAM&all_years=true`(또는 `AI_WORK_LOG`·`EXAM_ANALYSIS`): 같은 학교·학년·학기·시험의 연도별 목록을 최신 연도순으로 반환하며 `has_body`/`body_format`을 포함한다. 기존 기본 조회는 선택 연도만 반환한다.
 - `GET /problem-generator/wiki/api/exam-materials/{id}/original`(원본 BLOB), `GET .../{id}/body`(정제 본문; HTML은 attachment), `DELETE .../{id}`: 기존 원본 접근·삭제 및 workspace/로그인 권한 계약을 그대로 사용한다.

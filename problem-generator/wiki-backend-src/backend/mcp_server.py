@@ -83,11 +83,10 @@ def get_final_context(school: str, grade: str, year: int, semester: str, exam: s
 
 @mcp.tool()
 def get_jikbo_context(school: str, grade: str, year: int, semester: str, exam: str) -> dict:
-    """직보 Workspace Context를 반환한다. FINAL 완성본이 아직 없으면 ready=false와 함께
-    빈 자료만 반환한다. FINAL이 있으면 latest_final, FINAL 완성 이후에 기록된 수업
-    인사이트(post_final_insights), 학생 반복 오답만 담는다 — 학교 프린트 전체/제작 문제
-    전체/Digital Twin 전체는 FINAL 제작 과정에서 이미 반영된 자료라 다시 담지 않는다.
-    운영 GET /api/workspaces/jikbo/context와 완전히 같은 데이터다."""
+    """직보 Workspace Context를 반환한다. 직보는 학교 프린트(학습지 원본)를 근거로 만든다.
+    school_prints(본문 포함), latest_final(있으면), FINAL 이후 수업 인사이트, 학생 반복 오답을
+    담는다. FINAL이 없어도 학교 프린트가 있으면 ready=true다. 제작 문제/Digital Twin 전체는
+    담지 않는다. 운영 GET /api/workspaces/jikbo/context와 완전히 같은 데이터다."""
     from main import get_jikbo_workspace_context
     return get_jikbo_workspace_context(school=school, grade=grade, year=year, semester=semester, exam=exam)
 
@@ -268,6 +267,11 @@ def save_generated_test(school: str, grade: str, source_material: str, questions
     questions의 각 항목은 새 스키마를 만들지 말고 save_generated_questions와 동일한 canonical 계약을
     그대로 갖춘다 — type('mc'|'sa'), questionType, sourceText, stem, options, answer, multi, score,
     conditions, answerFormat, acceptedAnswers, sampleAnswer, gradingRule (해당 없는 필드는 [] 또는 '').
+    문항마다 근거·검증 기록을 선택적으로 함께 저장할 수 있다(없으면 생략):
+    evidence={past_exam: 근거 기출(학교·연도·학기·시험·문항번호, 자료 id), school_print: 근거 학교 프린트(자료 id·쪽),
+    changed: 기출·프린트에서 바꾼 부분}, verify={independent_answer: 정답을 가리고 다시 푼 답,
+    status: '일치'|'불일치'|'복수정답 의심'|'해설 근거 부족', note: 쟁점}, teacher={action: 교사 조치·수정 전후}.
+    저장된 값은 get_final_context의 generated_questions에 그대로 실린다.
     저장 전 전체 문항을 검증하고, 하나라도 실패하면 아무 것도 저장하지 않는다(all-or-nothing).
 
     idempotency: external_id가 비면 요청 내용으로 안정적인 키를 파생한다. 같은 external_id로 다시

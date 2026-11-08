@@ -268,12 +268,12 @@ MCP와 TUTOR 브라우저가 서로 다른 결과를 보이면 실제 운영 TUT
 
 ## 16. Wiki 화면의 [MCP 문제 만들기] 탭
 
-내신위키 첫 화면의 [MCP 문제 만들기] 탭(`?section=mcp`)은 이 문서의 절차를 강사가 쉽게 시작하도록 묶은 화면이다. 화면은 읽기(GET)만 하고 문제 생성·저장은 MCP client가 한다.
+내신위키 첫 화면의 [MCP 문제 만들기] 탭(`?section=mcp`)은 (내신제작소 탭은 2026-11에 숨김 — 제작소 데이터·API는 보존) 이 문서의 절차를 강사가 쉽게 시작하도록 묶은 화면이다. 화면은 읽기(GET)만 하고 문제 생성·저장은 MCP client가 한다.
 
 1. 시험(학교·학년·연도·학기·시험)을 고른다 — [문제·자료 업로드] 탭과 같은 저장 Context를 공유한다.
 2. `GET /api/workspaces/final/context` 결과를 자료 종류별 건수로 보여 준다. 기출시험지·학교 프린트가 없으면 업로드 탭으로 안내한다.
-3. 만들 것(예상문제 시험지 / FINAL / 직보), 문항 수(20·40·70·100), 문항 구성, 추가 요청을 고른다.
-4. 위 조건으로 `get_final_context`/`get_jikbo_context` 인자, §6 batch 순서, 저장 tool(`save_generated_questions`·`save_final`·`save_jikbo`) 요청을 담은 지시문을 만들어 복사한다. 지시문 생성 규칙은 `problem-generator/wiki-src/src/lib/mcpPrompt.ts`.
+3. 만들 것(예상문제 시험지 / 직보), 문항 수(20·40·70·100), 문항 구성, 추가 요청을 고른다. (2026-11: FINAL 자료 항목 삭제)
+4. 원칙만 담은 지시문을 만들어 복사한다. 예상문제는 `get_final_context` 인자 + 출제 원칙 6개(6번: 동태밀도 D로 항목별 문항 배정), 직보는 `get_final_context`로 학교 프린트(학습지 원본)를 읽는 제작 원칙 2개이고, 둘 다 "세부 작업은 사용자 지시에 따른다."로 끝난다. 시험 값은 위키 저장 형식(`기말고사`/`중간고사`) 그대로 넣는다. 지시문 생성 규칙은 `problem-generator/wiki-src/src/lib/mcpPrompt.ts`.
 5. 저장 뒤 [다시 확인]으로 건수 변화를 보고, 강사 문제 DB·생성 문제·시험지 묶기 화면으로 이동한다.
 
 MCP 연결 주소는 `{사이트}/problem-generator/wiki/api/mcp`이며 화면의 "처음 한 번" 안내에 표시된다.

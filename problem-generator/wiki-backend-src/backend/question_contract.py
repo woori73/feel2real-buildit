@@ -36,6 +36,28 @@ class NewQuestionResponse(_StrictModel):
     sa_questions: list[ShortAnswerQuestion] = Field(alias='saQuestions')
 
 
+class QuestionEvidence(_StrictModel):
+    """문항 근거: 기출(학교·연도·학기·시험·문항번호, 자료 id), 학교 프린트(자료 id·쪽), 바꾼 부분."""
+    past_exam: str = ''
+    school_print: str = ''
+    changed: str = ''
+
+
+VERIFY_STATUSES = ('일치', '불일치', '복수정답 의심', '해설 근거 부족')
+
+
+class QuestionVerify(_StrictModel):
+    """독립 검증: 정답을 가리고 다시 푼 답, 상태, 쟁점."""
+    independent_answer: str = ''
+    status: Literal['', '일치', '불일치', '복수정답 의심', '해설 근거 부족'] = ''
+    note: str = ''
+
+
+class QuestionTeacher(_StrictModel):
+    """교사 조치와 수정 전·후."""
+    action: str = ''
+
+
 class TransformQuestion(_StrictModel):
     type: Literal['mc', 'sa']
     question_type: str = Field(alias='questionType')
@@ -52,6 +74,10 @@ class TransformQuestion(_StrictModel):
     grading_rule: str = Field(alias='gradingRule')
     canonical: dict | None = None
     source_question_number: str = Field(default='', alias='sourceQuestionNumber')
+    # 문항 단위 근거·검증 기록(선택). 없으면 None으로 저장되고 기존 문항과 호환된다.
+    evidence: QuestionEvidence | None = None
+    verify: QuestionVerify | None = None
+    teacher: QuestionTeacher | None = None
 
 
 class TransformResponse(_StrictModel):

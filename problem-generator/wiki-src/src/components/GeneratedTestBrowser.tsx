@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  GeneratedTest, GeneratedTestDetail, SchoolNode, SourceMaterial,
+  GeneratedTest, GeneratedTestDetail, SchoolNode, SourceMaterial, defaultGrade,
   fetchGeneratedTest, fetchSchoolTree, fetchSourceMaterials, fetchSourceMaterialTests,
 } from '../lib/types'
+import { reviewLine } from '../lib/questionReview'
 import QuestionCard from './QuestionCard'
 
 // 생성 문제 — MCP가 Generated Question Store(source_materials → generated_tests → generated_questions)에
@@ -21,7 +22,7 @@ export default function GeneratedTestBrowser() {
 
   useEffect(() => { fetchSchoolTree().then(nodes => {
     setTree(nodes)
-    if (nodes[0]) { setSchool(nodes[0].school); setGrade(nodes[0].grades[0]?.grade || '') }
+    if (nodes[0]) { setSchool(nodes[0].school); setGrade(defaultGrade(nodes[0])) }
   }).catch(() => setNotice('학교 목록을 불러오지 못했습니다.')) }, [])
 
   const grades = useMemo(() => tree.find(n => n.school === school)?.grades || [], [tree, school])
@@ -55,7 +56,7 @@ export default function GeneratedTestBrowser() {
     {notice && <div className="tool-notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="안내 닫기">×</button></div>}
 
     <div className="exam-settings">
-      <label>학교<select value={school} onChange={e => { setSchool(e.target.value); setGrade(tree.find(n => n.school === e.target.value)?.grades[0]?.grade || '') }}>{tree.map(n => <option key={n.school}>{n.school}</option>)}</select></label>
+      <label>학교<select value={school} onChange={e => { setSchool(e.target.value); setGrade(defaultGrade(tree.find(n => n.school === e.target.value))) }}>{tree.map(n => <option key={n.school}>{n.school}</option>)}</select></label>
       <label>학년<select value={grade} onChange={e => setGrade(e.target.value)}>{grades.map(g => <option key={g.grade}>{g.grade}</option>)}</select></label>
     </div>
 
@@ -92,7 +93,7 @@ export default function GeneratedTestBrowser() {
       </div>
       <div className="f2r-gen embedded-question-view">
         <div className={`exam-sheet${showAnswers ? ' show-answers' : ''}`}>
-          <div className="question-list">{detail.questions.map((q, i) => <QuestionCard key={q.id} q={q} index={i + 1} />)}</div>
+          <div className="question-list">{detail.questions.map((q, i) => { const review = reviewLine(q); return <div key={q.id}><QuestionCard q={q} index={i + 1} />{review && <p className={`question-review${q.verify?.status && q.verify.status !== '일치' ? ' needs-review' : ''}`}>{i + 1}번 — {review}</p>}</div> })}</div>
         </div>
       </div>
     </section>}

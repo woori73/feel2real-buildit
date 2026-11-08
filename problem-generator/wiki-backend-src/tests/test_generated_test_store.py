@@ -113,6 +113,38 @@ class GeneratedTestStoreTest(unittest.TestCase):
         self.assertEqual(
             {'source_materials': 0, 'generated_tests': 0, 'generated_questions': 0}, self._counts())
 
+    def test_question_evidence_and_verify_round_trip_to_context(self):
+        # given: 근거·검증·교사 조치를 담은 문항 3개
+        review = dict(
+            evidence={'past_exam': '신사중 2025 2학기 기말고사 18번 (exam-materials #120)',
+                      'school_print': '학교 프린트 #340 3쪽', 'changed': '선택지 ④를 새로 씀'},
+            verify={'independent_answer': '④', 'status': '복수정답 의심', 'note': '④도 정답 가능'},
+            teacher={'action': '선택지 ④ 수정 후 재검증'},
+        )
+        questions = [_mc('gradually', **review), _mc('adapt'), _mc('perceive')]
+
+        # when
+        result = self._save(questions=questions, external_id='review-1')
+
+        # then: 문항 조회와 get_final_context 양쪽에 그대로 실린다
+        detail = sorted(main.get_generated_test(result['test_id'])['questions'], key=lambda q: q['id'])
+        self.assertEqual(review['verify'], detail[0]['verify'])
+        self.assertEqual(review['evidence'], detail[0]['evidence'])
+        self.assertEqual(review['teacher'], detail[0]['teacher'])
+        self.assertIsNone(detail[1]['verify'])
+        context = main.get_final_workspace_context(**self.CTX)
+        reviewed = [q for q in context['generated_questions'] if q.get('verify')]
+        self.assertEqual(['복수정답 의심'], [q['verify']['status'] for q in reviewed])
+
+    def test_unknown_verify_status_saves_nothing(self):
+        # given
+        broken = _mc('adapt', verify={'independent_answer': '②', 'status': '대충 맞음', 'note': ''})
+
+        # when / then
+        with self.assertRaises(ValueError):
+            self._save(questions=[_mc('gradually'), broken], external_id='review-bad')
+        self.assertEqual(0, self._counts()['generated_questions'])
+
     def test_second_test_reuses_same_source_material(self):
         self._save(title='Vocabulary Test #1', external_id='v1')
         self._save(title='Vocabulary Test #2', external_id='v2', questions=[_mc(w) for w in VOCAB25[:10]])

@@ -188,3 +188,7 @@ body, button, input, select, textarea { font-family: var(--wiki-font-sans); }
 .insight-card-student{color:var(--work-muted);overflow-wrap:anywhere}
 .insight-card-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;padding-top:8px;border-top:1px dashed var(--work-line)}
 @media(max-width:480px){.insight-card-head time{white-space:normal}}
+
+/* 저장된 문항 — 문항별 근거·검증 기록 */
+.question-review { margin: 4px 0 14px; padding: 6px 10px; border-left: 3px solid #2f7d4f; background: rgba(47, 125, 79, .06); font-size: 13px; line-height: 1.5; color: inherit; }
+.question-review.needs-review { border-left-color: #b4561f; background: rgba(180, 86, 31, .08); }

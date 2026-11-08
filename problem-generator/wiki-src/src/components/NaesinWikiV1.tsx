@@ -1,6 +1,6 @@
 import { ChangeEvent, FormEvent, ReactNode, useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
-import { DigitalTwinProfile, exportExamMaterialWrongNotesOffice, fetchQuestions, fetchSchoolTree, fetchStudents, SchoolNode, StoredQuestion, Student } from '../lib/types'
+import { defaultGrade, DigitalTwinProfile, exportExamMaterialWrongNotesOffice, fetchQuestions, fetchSchoolTree, fetchStudents, SchoolNode, StoredQuestion, Student } from '../lib/types'
 import { loadExamContext, resolveSavedContext, saveExamContext } from '../lib/wikiContext'
 import type { Page } from '../App'
 import WeeklyExamHub from './WeeklyExamHub'
@@ -139,7 +139,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   }
   const chooseSchoolMaterial=(e:ChangeEvent<HTMLInputElement>)=>{
     const file=e.target.files?.[0];if(!file)return
-    if(!/\.(html|pdf|hwpx|docx)$/i.test(file.name)){e.target.value='';setNotice('HTML·PDF·HWPX·DOCX 파일을 선택해 주세요.');return}
+    if(!/\.(html|pdf|hwpx|docx|jpe?g|png)$/i.test(file.name)){e.target.value='';setNotice('HTML·PDF·HWPX·DOCX·JPG·PNG 파일을 선택해 주세요.');return}
     if(file.size>30*1024*1024){e.target.value='';setNotice('파일당 30MB 이하로 선택해 주세요.');return}
     setOriginals([file]);setHtmlText('')
     if(/\.html$/i.test(file.name))chooseHtmlFile(e)
@@ -148,7 +148,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   const saveSchoolPrint=async(e:FormEvent)=>{
     e.preventDefault()
     if(savingSchoolPrint)return
-    if(!htmlText.trim()&&!originals.length){setNotice('HTML·PDF·HWPX·DOCX 자료를 선택하거나 HTML을 붙여넣어 주세요.');return}
+    if(!htmlText.trim()&&!originals.length){setNotice('HTML·PDF·HWPX·DOCX·JPG·PNG 자료를 선택하거나 HTML을 붙여넣어 주세요.');return}
     if(!context.school||!context.grade||!context.exam){setNotice('학교·학년·시험 Context를 먼저 선택해 주세요.');return}
     const savedContext={...context}
     const form=new FormData()
@@ -328,7 +328,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     </header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="exam-context" aria-label="시험 Context">
-      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=node?.grades[0];touchedRef.current.school=true;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,school,grade:grade?.grade||'',exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
+      <label>학교<select value={context.school} onChange={e=>{const school=e.target.value,node=tree.find(n=>n.school===school),grade=defaultGrade(node);touchedRef.current.school=true;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,school,grade,exam:'전체'}))}}>{tree.map(n=><option key={n.school}>{n.school}</option>)}</select></label>
       <label>학년<select value={context.grade} onChange={e=>{const grade=e.target.value;touchedRef.current.grade=true;touchedRef.current.exam=true;setContext(c=>({...c,grade,exam:'전체'}))}}>{grades.map(g=><option key={g.grade}>{g.grade}</option>)}</select></label>
       <label>연도<select value={context.year} onChange={e=>setContext(c=>({...c,year:Number(e.target.value)}))}>{years.map(y=><option key={y}>{y}</option>)}</select></label>
       <label>학기<select value={context.semester} onChange={e=>setContext(c=>({...c,semester:e.target.value}))}><option>1학기</option><option>2학기</option></select></label>
@@ -372,7 +372,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     {core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}
     {(core==='school_print'||core==='past_exam'||core==='ai_work_log'||core==='exam_analysis')&&<label>{core==='past_exam'?'관리 메모 / 자료 제목':core==='ai_work_log'?'작업기록 제목 / 메모':core==='exam_analysis'?'분석 자료 제목':'자료 제목'}<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}
     {core==='school_print'?<>
-      <label>학습자료 파일 선택<input type="file" accept=".html,.pdf,.hwpx,.docx" onChange={chooseSchoolMaterial}/></label><small className="field-hint">HTML·PDF·HWPX·DOCX, 파일당 30MB 이하. 원본 파일을 보관합니다.</small>{originals[0]&&<p className="field-hint">선택: {originals[0].name}</p>}
+      <label>학습자료 파일 선택<input type="file" accept=".html,.pdf,.hwpx,.docx,.jpg,.jpeg,.png" onChange={chooseSchoolMaterial}/></label><small className="field-hint">HTML·PDF·HWPX·DOCX·JPG·PNG(사진), 파일당 30MB 이하. 원본 파일을 보관합니다.</small>{originals[0]&&<p className="field-hint">선택: {originals[0].name}</p>}
       <label>HTML 붙여넣기<textarea value={htmlText} onChange={e=>setHtmlText(e.target.value)} placeholder="<p>학교 프린트 HTML을 붙여넣거나 파일을 선택해 불러오세요.</p>"/></label>
     </>:<>
       <label>{core==='past_exam'?'기출시험지 원본 파일':core==='ai_work_log'?'AI 작업기록 파일':core==='exam_analysis'?'기출 분석 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'||core==='exam_analysis'?'.html,.pdf,.hwpx,.docx':core==='ai_work_log'?'.md,.markdown,.txt,.html,.htm':undefined} onChange={chooseOriginals}/></label>

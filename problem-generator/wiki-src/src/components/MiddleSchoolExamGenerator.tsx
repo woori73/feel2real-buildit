@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Page } from '../App'
 import { ApiSettings } from './ApiSettingsModal'
 import { api, normalizedApiError } from '../lib/api'
-import { DigitalTwinProfile, SchoolNode, StoredQuestion, TypeDef, fetchQuestions, fetchSchoolTree, fetchTypeDefs } from '../lib/types'
+import { defaultGrade, DigitalTwinProfile, SchoolNode, StoredQuestion, TypeDef, fetchQuestions, fetchSchoolTree, fetchTypeDefs } from '../lib/types'
 import { loadExamContext } from '../lib/wikiContext'
 import QuestionCard from './QuestionCard'
 import '../styles/generator.css'
@@ -68,7 +68,7 @@ export default function MiddleSchoolExamGenerator({ onNavigate, apiSettings }: P
 
   useEffect(()=>{
     if (!school || !tree.some(item => item.school === school)) { setGrade(''); setExam(''); return }
-    if (!grade || !grades.some(item => item.grade === grade)) { setGrade(grades[0]?.grade || ''); setExam('') }
+    if (!grade || !grades.some(item => item.grade === grade)) { setGrade(defaultGrade(schoolNode)); setExam('') }
   },[school,tree,grade,grades])
 
   useEffect(()=>{

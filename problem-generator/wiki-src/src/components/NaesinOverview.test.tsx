@@ -38,11 +38,30 @@ it('given PDF 자료 when 파일을 골라 저장하면 then HTML 입력 없이 
   await screen.findByRole('option',{name:'신구중'})
   fireEvent.click(screen.getByRole('button',{name:/학교 프린트 추가/}))
   const chooser=screen.getByLabelText('학습자료 파일 선택')
-  expect(chooser).toHaveAttribute('accept','.html,.pdf,.hwpx,.docx')
+  expect(chooser).toHaveAttribute('accept','.html,.pdf,.hwpx,.docx,.jpg,.jpeg,.png')
   fireEvent.change(chooser,{target:{files:[new File(['%PDF-1.7\nmaterial'],'school.pdf',{type:'application/pdf'})]}})
   fireEvent.click(screen.getByRole('button',{name:'저장',exact:true}))
   expect(await screen.findByRole('status')).toHaveTextContent('자료와 추가 정보를 저장했습니다.')
   expect((uploaded?.get('original') as File).name).toBe('school.pdf')
+})
+it('given 학교 프린트 사진 when 파일을 골라 저장하면 then JPG 원본을 전송한다', async () => {
+  // given
+  let uploaded: FormData | null = null
+  vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input)
+    if(url.endsWith('/schools')) return new Response(JSON.stringify([{school:'신구중',grades:[{grade:'3학년',exams:[{exam:'전체',hasDigitalTwin:false}]}]}]),{status:200})
+    if(init?.method === 'POST' && url.endsWith('/exam-materials')) { uploaded=init.body as FormData;return new Response('{"id":1}',{status:201}) }
+    return new Response('[]',{status:200})
+  }))
+  render(<NaesinWikiV1 onNavigate={vi.fn()}/>)
+  await screen.findByRole('option',{name:'신구중'})
+  fireEvent.click(screen.getByRole('button',{name:/학교 프린트 추가/}))
+  // when
+  fireEvent.change(screen.getByLabelText('학습자료 파일 선택'),{target:{files:[new File(['jpeg'],'print.jpg',{type:'image/jpeg'})]}})
+  fireEvent.click(screen.getByRole('button',{name:'저장',exact:true}))
+  // then
+  expect(await screen.findByRole('status')).toHaveTextContent('자료와 추가 정보를 저장했습니다.')
+  expect((uploaded?.get('original') as File).name).toBe('print.jpg')
 })
 it('given 기출 분석 칸 when HTML·PDF·HWPX·DOCX 파일을 올리면 then EXAM_ANALYSIS로 원본을 전송한다', async () => {
   // given

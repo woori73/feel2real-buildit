@@ -39,7 +39,26 @@ describe('MCP 문제 만들기', () => {
     // then
     const prompt = screen.getByLabelText('MCP 작업 지시문')
     expect(prompt).toHaveTextContent('school="신사중", grade="3학년"')
-    expect(prompt).toHaveTextContent('Q61~70')
+    expect(prompt).toHaveTextContent('예상문제 시험지 70문항')
+    expect(prompt).toHaveTextContent('세부 작업은 사용자 지시에 따른다.')
+  })
+
+  it('given 3단계 when 만들 것을 보면 then FINAL 자료 없이 예상문제와 직보만 있다', async () => {
+    // given / when
+    render(<McpProblemMaker onNavigate={vi.fn()} />)
+    await screen.findByRole('list', { name: '자료 현황' })
+    // then
+    const choices = within(screen.getByRole('radiogroup', { name: '만들 것' })).getAllByRole('radio').map(el => el.textContent)
+    expect(choices).toEqual(['예상문제 시험지', '직보(시험 직전 정리)'])
+  })
+
+  it('given 자료가 3학년만 있는 학교 when 학년 칸을 보면 then 1·2·3학년이 모두 나온다', async () => {
+    // given / when
+    render(<McpProblemMaker onNavigate={vi.fn()} />)
+    await screen.findByRole('list', { name: '자료 현황' })
+    // then
+    const grade = screen.getByRole('combobox', { name: '학년' })
+    expect(within(grade).getAllByRole('option').map(el => el.textContent)).toEqual(['1학년', '2학년', '3학년'])
   })
 
   it('given 지시문 when 복사 버튼을 누르면 then 클립보드에 같은 지시문을 넣는다', async () => {
