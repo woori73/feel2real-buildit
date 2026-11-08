@@ -18,6 +18,7 @@
 2. **`docs/INDEX.md`를 읽고** 해당 작업 문서를 로드한다.
 3. 현재 git 상태 / 브랜치 확인. **ChatGPT Work / Codex 세션은 [docs/WORK_GIT_WORKSPACE_WORKFLOW.md](docs/WORK_GIT_WORKSPACE_WORKFLOW.md)를 먼저 읽는다** (세션별 stale checkout·`origin/main` 오판 방지, GitHub 최신 main이 authoritative).
 4. DB/마이그레이션을 건드리면 **`docs/WORKFLOW.md` §4 번호정책**을 반드시 확인한다.
+5. **자체 LLM(sLLM)·학습·평가·다이내믹 덴서티 작업이면 [docs/f2r-llm/](docs/f2r-llm/)(PLAN·TASKS·DYNAMIC_DENSITY·EVAL_RESULTS)를 먼저 읽고, 시작 전 TASKS.md에 담당을 적는다.**
 
 > 규칙·스펙의 단일 출처는 `docs/`다. 이 파일은 얇은 진입점 + Claude 전용 규칙(아래)만 둔다.
 > AGENTS.md(OMX용)와 핵심 규칙은 동일하게 유지한다.

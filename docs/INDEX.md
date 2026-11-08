@@ -41,6 +41,7 @@
 | **PR923 홈페이지 배포와 신청 활성화 조건 구분 / 읽기 전용 증거** | [조건별 검증](operations/homepage-gates-20261029/README.md) |
 | **선택적 worktree / 과거 dev·stg 정책 확인** | [WORKFLOW.md](WORKFLOW.md) §6 |
 | **GitHub 이슈 / PR 작성** | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| **자체 LLM(sLLM) 파이프라인 / 학습·평가 / 다이내믹 덴서티 / 클로드·GPT 협업 분담** | [f2r-llm/PLAN.md](f2r-llm/PLAN.md) + [f2r-llm/TASKS.md](f2r-llm/TASKS.md) + [f2r-llm/DYNAMIC_DENSITY.md](f2r-llm/DYNAMIC_DENSITY.md) + [f2r-llm/EVAL_RESULTS.md](f2r-llm/EVAL_RESULTS.md) |
 
 ## 문서 동기화 규칙 (어느 하나만 수정 금지)
 - 스키마 변경 → `db/migration` V_파일 + Entity + [DOMAIN.md](DOMAIN.md) **셋 동시**
