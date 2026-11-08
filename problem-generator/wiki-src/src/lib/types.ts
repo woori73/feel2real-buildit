@@ -4,10 +4,13 @@ import type { WikiQuestionV1 } from './wikiQuestion'
 export type TwinType = { name: string; description: string; ratio: string; difficulty: string }
 export type DigitalTwinProfile = { id:number; version:number; school:string; grade:string; exam:string; dna:string; description:string; types:TwinType[]; rules:string[]; difficulty:string; questionRatio:Record<string,string|number>; trapPatterns:string[]; choiceStyle:string; writingStyle:string; updatedAt:string }
 export type SchoolExamNode = { exam:string; twinId:number|null; version:number|null; updatedAt:string; hasDigitalTwin:boolean }
-export type SchoolGradeNode = { grade:string; exams:SchoolExamNode[] }
+export type SchoolGradeNode = { grade:string; exams:SchoolExamNode[]; /** 자료 없이 화면에서 채운 학년 */ placeholder?:boolean }
 export type SchoolNode = { school:string; grades:SchoolGradeNode[] }
 export type TypeDef = { id:string; cat:string; label:string; prompt:string }
-export type StoredQuestion = { id:number; twin_id:number|null; school:string; grade:string; exam:string; mode:'new'|'transform'|'mcp'|'manual'|'textbook'; q_kind:'mc'|'sa'; question_type:string; stem:string; source_text:string; options:string[]; answer:number[]; multi:number; score:number; conditions:string[]; answer_format:string; accepted_answers:string[]; sample_answer:string; grading_rule:string; exam_title:string; exam_group_id:string; favorite:number; created_at:string; test_id?:number|null;schema_version?:string;canonical?:WikiQuestionV1;passage_status?:string;source_question_number?:string; source_kind?:'teacher'|'textbook'; page?:number; question_number?:string; extraction_status?:'ok'|'review'|'failed'; textbook_material_id?:number; publisher?:string; lesson?:string }
+export type StoredQuestion = { id:number; twin_id:number|null; school:string; grade:string; exam:string; mode:'new'|'transform'|'mcp'|'manual'|'textbook'; q_kind:'mc'|'sa'; question_type:string; stem:string; source_text:string; options:string[]; answer:number[]; multi:number; score:number; conditions:string[]; answer_format:string; accepted_answers:string[]; sample_answer:string; grading_rule:string; exam_title:string; exam_group_id:string; favorite:number; created_at:string; test_id?:number|null;schema_version?:string;canonical?:WikiQuestionV1;passage_status?:string;source_question_number?:string; source_kind?:'teacher'|'textbook'; page?:number; question_number?:string; extraction_status?:'ok'|'review'|'failed'; textbook_material_id?:number; publisher?:string; lesson?:string; evidence?:QuestionEvidence|null; verify?:QuestionVerify|null; teacher?:QuestionTeacher|null }
+export type QuestionEvidence = { past_exam?:string; school_print?:string; changed?:string }
+export type QuestionVerify = { independent_answer?:string; status?:''|'일치'|'불일치'|'복수정답 의심'|'해설 근거 부족'; note?:string }
+export type QuestionTeacher = { action?:string }
 export type ExamPaper = { id:number; title:string; academy_name:string; teacher_name:string; question_ids:number[]; created_at:string }
 export type ExamDraft = { title:string; academy_name:string; teacher_name:string; question_ids:number[] }
 export type Student = { id:number; name:string; school:string; grade:string; semester:string; exam_type:string; created_at:string }
@@ -28,7 +31,17 @@ export type SourceMaterial={id:number;school:string;grade:string;title:string;pu
 export type GeneratedTest={id:number;external_id:string;source_material_id:number;source_page:string;school:string;grade:string;year:number|null;semester:string;exam:string;test_type:string;title:string;twin_id:number|null;twin_label:string;twin_pattern:string;difficulty:string;target_vocabulary:string[];target_grammar:string[];target_passage:string;generation_source:string;question_count:number;created_at:string;source_material_title?:string;source_material_publisher?:string;source_material_lesson?:string;school_print_material_id?:number|null}
 export type GeneratedTestDetail={test:GeneratedTest;questions:StoredQuestion[]}
 
-export const fetchSchoolTree=async():Promise<SchoolNode[]>=>{const r=await api('schools');if(!r.ok)throw new Error('학교 목록을 불러오지 못했습니다.');return r.json()}
+export const STANDARD_GRADES=['1학년','2학년','3학년'] as const
+/** 자료가 없는 학년도 고를 수 있게 모든 학교에 1·2·3학년을 채운다(자료 있는 학년의 시험 정보는 그대로 둔다). */
+export const withStandardGrades=(nodes:SchoolNode[]):SchoolNode[]=>nodes.map(node=>{
+  const known=node.grades||[]
+  const standard=STANDARD_GRADES.map(grade=>known.find(g=>g.grade===grade)||{grade,exams:[],placeholder:true})
+  const others=known.filter(g=>!(STANDARD_GRADES as readonly string[]).includes(g.grade))
+  return {...node,grades:[...standard,...others]}
+})
+/** 학교를 바꿨을 때 처음 고를 학년: 자료가 있는 첫 학년, 없으면 1학년. */
+export const defaultGrade=(node:SchoolNode|undefined):string=>node?.grades.find(g=>!g.placeholder)?.grade||node?.grades[0]?.grade||''
+export const fetchSchoolTree=async():Promise<SchoolNode[]>=>{const r=await api('schools');if(!r.ok)throw new Error('학교 목록을 불러오지 못했습니다.');const nodes=await r.json();return withStandardGrades(Array.isArray(nodes)?nodes:[])}
 export const fetchSourceMaterials=async(params:Record<string,string>={}):Promise<SourceMaterial[]>=>{const q=new URLSearchParams(params).toString();const r=await api(`source-materials${q?`?${q}`:''}`);if(!r.ok)throw new Error('학습자료 목록을 불러오지 못했습니다.');return r.json()}
 export const fetchSourceMaterialTests=async(materialId:number):Promise<GeneratedTest[]>=>{const r=await api(`source-materials/${materialId}/generated-tests`);if(!r.ok)throw new Error('생성 시험 목록을 불러오지 못했습니다.');return r.json()}
 export const fetchGeneratedTest=async(testId:number):Promise<GeneratedTestDetail>=>{const r=await api(`generated-tests/${testId}`);if(!r.ok)throw new Error('생성 시험을 불러오지 못했습니다.');return r.json()}

@@ -1,4 +1,4 @@
-import type { SchoolNode } from './types'
+import { defaultGrade, type SchoolNode } from './types'
 import { storageKey } from './workspaceStorage'
 
 // 마지막으로 선택한 시험 Context(학교/학년/연도/학기/시험)를 기억한다. UI 편의 전용이며
@@ -34,7 +34,7 @@ export function resolveSavedContext(
   saved: Partial<ExamContext>, nodes: SchoolNode[], fallbackYear: number,
 ): ExamContext {
   const node = nodes.find(n => n.school === saved.school) || nodes[0]
-  const grade = node?.grades.find(g => g.grade === saved.grade)?.grade || node?.grades[0]?.grade || ''
+  const grade = node?.grades.find(g => g.grade === saved.grade)?.grade || defaultGrade(node)
   return {
     school: node?.school || '',
     grade,

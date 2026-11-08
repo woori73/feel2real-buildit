@@ -1381,8 +1381,8 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
     elif normalized_material_type == 'EXAM_ANALYSIS':
         original_name, original_type, original_bytes, body_text, body_format = _validate_exam_analysis_upload(original)
     elif has_original and normalized_material_type == 'SCHOOL_PRINT':
-        if Path(original.filename).suffix.lower() not in {'.html', '.pdf', '.hwpx', '.docx'}:
-            raise HTTPException(status_code=400, detail='학습자료는 HTML·PDF·HWPX·DOCX 파일만 지원합니다.')
+        if Path(original.filename).suffix.lower() not in {'.html', '.pdf', '.hwpx', '.docx', '.jpg', '.jpeg', '.png'}:
+            raise HTTPException(status_code=400, detail='학습자료는 HTML·PDF·HWPX·DOCX·JPG·PNG 파일만 지원합니다.')
         original_name, original_type, original_bytes, body_text, body_format = _validate_past_exam_upload(original)
     elif has_original:
         original_bytes = original.file.read()
@@ -2764,6 +2764,20 @@ def transform_questions(payload: TransformQuestionRequest):
 # 강사 문제 DB — SQLite 영구 저장 (React 상태/로컬스토리지 저장 금지)
 # ==================================================================================
 
+QUESTION_REVIEW_KEYS = ('evidence', 'verify', 'teacher')
+
+
+def _attach_question_review(item: dict, raw_json: Optional[str]) -> None:
+    """저장 원문(raw_json)에 있는 문항 근거·검증·교사 조치를 응답에 싣는다. 없으면 None."""
+    try:
+        raw = json.loads(raw_json or '{}')
+    except (TypeError, json.JSONDecodeError):
+        raw = {}
+    for key in QUESTION_REVIEW_KEYS:
+        value = raw.get(key) if isinstance(raw, dict) else None
+        item[key] = value if isinstance(value, dict) else None
+
+
 @app.get('/api/questions')
 def list_questions(school: Optional[str] = None, grade: Optional[str] = None, exam: Optional[str] = None,
                     mode: Optional[str] = None, search: Optional[str] = None, limit: int = 200,
@@ -2790,7 +2804,7 @@ def list_questions(school: Optional[str] = None, grade: Optional[str] = None, ex
                 item[jkey.replace('_json', '')] = json.loads(item.pop(jkey))
             except (TypeError, json.JSONDecodeError):
                 item[jkey.replace('_json', '')] = []
-        item.pop('raw_json', None)
+        _attach_question_review(item, item.pop('raw_json', None))
         try: item['canonical']=json.loads(item.pop('canonical_json') or '{}')
         except (TypeError,json.JSONDecodeError): item['canonical']={}
         result.append(item)
@@ -2806,7 +2820,7 @@ def get_question(question_id: int):
     for jkey in ('options_json', 'answer_json', 'conditions_json', 'accepted_answers_json'):
         try: item[jkey.replace('_json', '')]=json.loads(item.pop(jkey))
         except (TypeError,json.JSONDecodeError): item[jkey.replace('_json', '')]=[]
-    item.pop('raw_json',None)
+    _attach_question_review(item, item.pop('raw_json',None))
     try: item['canonical']=json.loads(item.pop('canonical_json') or '{}')
     except (TypeError,json.JSONDecodeError): item['canonical']={}
     return item
@@ -3311,14 +3325,33 @@ def _final_deliverable_context_items(conn, kind: str, school: str, grade: str, y
             parsed_json = json.loads(row['json_text']) if row['json_text'] else {}
         except (TypeError, json.JSONDecodeError):
             parsed_json = {}
+        html_text, html_source = row['html_text'] or None, 'saved' if row['html_text'] else None
+        if not html_text:
+            html_text = _final_original_html_body(conn, row['id'], row['original_name'])
+            html_source = 'original' if html_text else None
         items.append({
             'id': row['id'], 'type': 'final_deliverable', 'title': row['title'] or 'FINAL 완성본',
             'created_at': row['created_at'], 'source': 'final_deliverables', 'kind': row['kind'],
             'has_original': bool(row['original_name']), 'original_name': row['original_name'],
-            'has_html': bool(row['html_text']), 'html_text': row['html_text'] or None,
+            'has_html': bool(html_text), 'html_text': html_text, 'html_source': html_source,
             'json_text': parsed_json,
         })
     return items
+
+
+def _final_original_html_body(conn, deliverable_id: int, original_name: str) -> Optional[str]:
+    """html_text 없이 원본 HTML만 저장된 완성본(이미지가 base64로 들어 있어 큰 파일)은 읽을 때
+    원본에서 본문을 뽑아 준다. 이미지(data URI)·script·style은 빠지고, DB 값은 바꾸지 않는다."""
+    if Path(original_name or '').suffix.lower() not in ('.html', '.htm'):
+        return None
+    blob = conn.execute('SELECT original_blob FROM final_deliverables WHERE id=?', (deliverable_id,)).fetchone()
+    data = bytes(blob['original_blob']) if blob and blob['original_blob'] else b''
+    try:
+        raw = data.decode('utf-8-sig')
+    except UnicodeDecodeError:
+        return None
+    body = _sanitize_exam_html(raw).strip()
+    return body[:_CONTEXT_BODY_MAX_CHARS] or None
 
 
 def _question_context_items(school: str, grade: str, exam: str) -> list:
@@ -3398,19 +3431,22 @@ def get_final_workspace_context(school: str, grade: str, year: int, semester: st
 
 @app.get('/api/workspaces/jikbo/context')
 def get_jikbo_workspace_context(school: str, grade: str, year: int, semester: str, exam: str):
-    """직보는 FINAL과 별도 원천 저장소가 아니다 — FINAL 완성본 → FINAL 이후 최신 수업 인사이트 →
-    학생 반복 오답 순으로만 압축한다. 학교 프린트/제작 문제/Digital Twin 전체는 FINAL 제작 과정에서
-    이미 반영된 자료라 다시 담지 않는다."""
+    """직보는 학교 프린트(학습지 원본)를 근거로 만든다(2026-11 변경 — FINAL이 없어도 동작).
+    학교 프린트 원본 → FINAL 완성본(있으면) → FINAL 이후 수업 인사이트 → 학생 반복 오답을 담는다.
+    제작 문제/Digital Twin 전체는 담지 않는다. ready는 학교 프린트나 FINAL 중 하나라도 있으면 True."""
     with get_db() as conn:
+        school_prints = _material_context_items(conn, 'school_print', school, grade, year, semester, exam)
+        school_prints = [item for item in school_prints if item['material_type'] not in ('PAST_EXAM', 'AI_WORK_LOG', 'EXAM_ANALYSIS')]
         final_items = _final_deliverable_context_items(conn, 'final', school, grade, year, semester, exam)
         latest_final = final_items[0] if final_items else None
         student_weaknesses = _material_context_items(conn, 'student_wrong_note', school, grade, year, semester, exam)
         jikbo_deliverables = _final_deliverable_context_items(conn, 'jikbo', school, grade, year, semester, exam)
-    ready = latest_final is not None
-    post_final_insights = _insight_context_items(school, grade, year, semester, exam, after=latest_final['created_at']) if ready else []
+    ready = bool(school_prints) or latest_final is not None
+    post_final_insights = _insight_context_items(school, grade, year, semester, exam, after=latest_final['created_at']) if latest_final else []
     return {
         'exam_context': {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam},
         'ready': ready,
+        'school_prints': school_prints,
         'latest_final': latest_final,
         'post_final_insights': post_final_insights,
         'student_weaknesses': student_weaknesses,

@@ -34,16 +34,21 @@ describe('mcpEndpointUrl', () => {
 })
 
 describe('buildMcpPrompt', () => {
-  it('예상문제는 시험 Context 인자와 batch 순서, 저장 요청을 담는다', () => {
+  it('예상문제는 위키 저장 형식 그대로 시험 값을 넣고 출제 원칙 5개를 담는다', () => {
     // given
     const input = job({ count: 40 })
     // when
     const prompt = buildMcpPrompt(context, input)
     // then
-    expect(prompt).toContain('get_final_context(school="신사중", grade="3학년", year=2026, semester="2학기", exam="기말고사")')
-    expect(prompt).toContain('Q1~20 → Q21~40')
-    expect(prompt).toContain('save_generated_questions(school="신사중", grade="3학년", exam="기말고사"')
-    expect(prompt).toContain('학교 기출의 객관식·서답형 비율')
+    expect(prompt.split('\n')[0]).toBe('[BuildIt Wiki] 신사중 3학년 · 2026 2학기 기말고사 · 예상문제 시험지 40문항')
+    expect(prompt).toContain('get_final_context(school="신사중", grade="3학년", year=2026, semester="2학기", exam="기말고사")로 자료를 읽는다.')
+    expect(prompt).toContain('■ 출제 원칙')
+    expect(prompt).toContain('1. 해당 학교 기출을 철저히 분석하고 저장한다.')
+    expect(prompt).toContain('5. 시험지는 해당 학교 시험지와 똑같이 편집한다(폰트, 글씨 크기, 줄간격). 학원 로고를 넣고, 하단의 학교 저작권 문구는 뺀다.')
+    expect(prompt).not.toContain('6.')
+    expect(prompt.trimEnd().endsWith('세부 작업은 사용자 지시에 따른다.')).toBe(true)
+    expect(prompt).not.toContain('Q1~20')
+    expect(prompt).not.toContain('문항 구성')
   })
 
   it('직접 지정한 서답형 수는 전체 문항 수를 넘지 않는다', () => {
@@ -52,21 +57,25 @@ describe('buildMcpPrompt', () => {
     // when
     const prompt = buildMcpPrompt(context, input)
     // then
-    expect(prompt).toContain('객관식 0문항 · 서답형 20문항')
+    expect(prompt).toContain('문항 구성: 객관식 0문항 · 서답형 20문항')
   })
 
-  it('직보는 get_jikbo_context와 save_jikbo를 쓰고 batch를 만들지 않는다', () => {
+  it('직보는 학교 프린트(학습지 원본)만 근거로 하고 FINAL을 요구하지 않는다', () => {
     // given
     const input = job({ kind: 'jikbo' })
     // when
     const prompt = buildMcpPrompt(context, input)
     // then
-    expect(prompt).toContain('get_jikbo_context(')
-    expect(prompt).toContain('save_jikbo(')
-    expect(prompt).not.toContain('Q1~20')
+    expect(prompt.split('\n')[0]).toBe('[BuildIt Wiki] 신사중 3학년 · 2026 2학기 기말고사 · 직보')
+    expect(prompt).toContain('get_final_context(school="신사중", grade="3학년", year=2026, semester="2학기", exam="기말고사")로 학교 프린트(학습지 원본)를 읽는다.')
+    expect(prompt).toContain('■ 제작 원칙')
+    expect(prompt).toContain('1. 학습지 원본만 근거로 만든다.')
+    expect(prompt).toContain('2. 원본에 없는 내용, 문구, 번호는 추가하거나 바꾸지 않는다.')
+    expect(prompt).not.toContain('FINAL')
+    expect(prompt).not.toContain('출제 원칙')
   })
 
-  it('추가 요청이 있으면 지시문 끝에 붙이고 공백뿐이면 넣지 않는다', () => {
+  it('추가 요청이 있으면 마지막 줄 앞에 붙이고 공백뿐이면 넣지 않는다', () => {
     // given
     const withNote = job({ note: '  Lesson 5 본문 위주  ' })
     const blankNote = job({ note: '   ' })
@@ -74,7 +83,7 @@ describe('buildMcpPrompt', () => {
     const a = buildMcpPrompt(context, withNote)
     const b = buildMcpPrompt(context, blankNote)
     // then
-    expect(a).toContain('추가 요청: Lesson 5 본문 위주')
+    expect(a).toContain('추가 요청: Lesson 5 본문 위주\n\n세부 작업은 사용자 지시에 따른다.')
     expect(b).not.toContain('추가 요청')
   })
 })

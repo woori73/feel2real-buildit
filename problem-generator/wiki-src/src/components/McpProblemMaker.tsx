@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Page } from '../App'
 import { api } from '../lib/api'
-import { fetchSchoolTree, SchoolNode } from '../lib/types'
+import { defaultGrade, fetchSchoolTree, SchoolNode } from '../lib/types'
 import { ExamContext, loadExamContext, resolveSavedContext, saveExamContext } from '../lib/wikiContext'
 import { buildMcpPrompt, ContextSummaryRow, JOB_LABELS, McpJob, McpJobKind, mcpEndpointUrl, summarizeFinalContext } from '../lib/mcpPrompt'
 import '../styles/mcp-maker.css'
@@ -9,7 +9,7 @@ import '../styles/mcp-maker.css'
 const years = [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2]
 const EXAMS = [{ label: '전체', value: '전체' }, { label: '중간', value: '중간고사' }, { label: '기말', value: '기말고사' }]
 const COUNTS = [20, 40, 70, 100]
-const KINDS: McpJobKind[] = ['expected', 'final', 'jikbo']
+const KINDS: McpJobKind[] = ['expected', 'jikbo']
 
 // MCP 문제제작 — 시험 고르기 → 자료 확인 → 만들 것 고르기 → 지시문 복사 → 결과 확인.
 // 이 화면은 자료를 읽기만 한다(GET). 문제 생성·저장은 Claude가 MCP tool로 한다.
@@ -69,7 +69,7 @@ export default function McpProblemMaker({ onNavigate }: { onNavigate: (page: Pag
       <li className="mcp-step">
         <h2><span>1</span>시험 고르기</h2>
         <div className="mcp-fields">
-          <label>학교<select value={context.school} onChange={e => { const node = tree.find(n => n.school === e.target.value); update({ school: e.target.value, grade: node?.grades[0]?.grade || '' }) }}>{!tree.length && <option value="">학교 없음</option>}{tree.map(n => <option key={n.school}>{n.school}</option>)}</select></label>
+          <label>학교<select value={context.school} onChange={e => { const node = tree.find(n => n.school === e.target.value); update({ school: e.target.value, grade: defaultGrade(node) }) }}>{!tree.length && <option value="">학교 없음</option>}{tree.map(n => <option key={n.school}>{n.school}</option>)}</select></label>
           <label>학년<select value={context.grade} onChange={e => update({ grade: e.target.value })}>{grades.map(g => <option key={g.grade}>{g.grade}</option>)}</select></label>
           <label>연도<select value={context.year} onChange={e => update({ year: Number(e.target.value) })}>{years.map(y => <option key={y}>{y}</option>)}</select></label>
           <label>학기<select value={context.semester} onChange={e => update({ semester: e.target.value })}><option>1학기</option><option>2학기</option></select></label>

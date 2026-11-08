@@ -325,8 +325,21 @@ class WorkspaceContextTest(unittest.TestCase):
         self.assertEqual('<p>html-part</p>', item['html_text'])
         self.assertEqual({'a': 1}, item['json_text'])
 
+    def test_jikbo_context_is_ready_with_school_print_only_and_returns_print_body(self):
+        """직보는 학습지 원본으로 만든다 — FINAL이 없어도 학교 프린트 본문을 돌려준다."""
+        main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '7과 학습지', None,
+            None, None, '', html_text='<p>학습지 원본 본문</p>')
+
+        result = main.get_jikbo_workspace_context(**self.CTX)
+
+        self.assertTrue(result['ready'])
+        self.assertIsNone(result['latest_final'])
+        self.assertEqual(['7과 학습지'], [item['title'] for item in result['school_prints']])
+        self.assertIn('학습지 원본 본문', result['school_prints'][0]['html_text'])
+
     def test_jikbo_context_ready_with_final_shows_correct_order_and_excludes_bulk_materials(self):
-        """직보는 학교 프린트/제작 문제/Digital Twin 전체를 다시 담지 않는다."""
+        """직보는 학교 프린트 원본은 담고, 제작 문제/Digital Twin 전체는 담지 않는다."""
         main.import_digital_twin(main.ImportedTwinProfile(school='신구중', grade='중2', exam='중간고사', dna='x'))
         main.create_exam_material(
             'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '프린트', None,
@@ -338,9 +351,60 @@ class WorkspaceContextTest(unittest.TestCase):
 
         self.assertTrue(result['ready'])
         self.assertEqual('기말 FINAL', result['latest_final']['title'])
-        self.assertNotIn('school_prints', result)
+        self.assertEqual(1, len(result['school_prints']))
         self.assertNotIn('digital_twin', result)
         self.assertNotIn('generated_questions', result)
+
+    def test_final_context_reads_body_from_large_original_html_without_saved_html(self):
+        # given: html_text 없이 원본 HTML(이미지 base64 포함)만 저장된 FINAL
+        image = 'data:image/png;base64,' + 'A' * 50_000
+        original = f'<html><head><style>p{{}}</style></head><body><h1>3회 문제지</h1><img src="{image}" alt="표"><p>1. 다음 글의 주제는?</p></body></html>'
+        main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', '3회 문제지',
+            UploadFile(filename='round3.html', file=io.BytesIO(original.encode('utf-8')), headers={'content-type': 'text/html'}),
+            None, '', html_text='')
+
+        # when
+        item = main.get_final_workspace_context(**self.CTX)['final_deliverables'][0]
+
+        # then: 본문은 오고, 이미지 데이터·style은 빠지며, 저장값은 그대로다
+        self.assertTrue(item['has_html'])
+        self.assertEqual('original', item['html_source'])
+        self.assertIn('1. 다음 글의 주제는?', item['html_text'])
+        self.assertNotIn('base64', item['html_text'])
+        with main.get_db() as conn:
+            self.assertEqual('', conn.execute('SELECT html_text FROM final_deliverables').fetchone()[0])
+
+    def test_final_context_keeps_saved_html_and_skips_non_html_original(self):
+        # given
+        main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', 'PDF FINAL',
+            UploadFile(filename='final.pdf', file=io.BytesIO(b'%PDF-1.4 x'), headers={'content-type': 'application/pdf'}),
+            None, '', html_text='')
+        main.create_final_deliverable(
+            'final', '신구중', '중2', 2026, '2학기', '중간고사', 'HTML FINAL', None, None, '', html_text='<h1>저장본</h1>')
+
+        # when
+        items = {item['title']: item for item in main.get_final_workspace_context(**self.CTX)['final_deliverables']}
+
+        # then
+        self.assertEqual('saved', items['HTML FINAL']['html_source'])
+        self.assertEqual('<h1>저장본</h1>', items['HTML FINAL']['html_text'])
+        self.assertFalse(items['PDF FINAL']['has_html'])
+        self.assertIsNone(items['PDF FINAL']['html_text'])
+
+    def test_school_print_accepts_photo_original(self):
+        # given
+        photo = UploadFile(filename='print.jpg', file=io.BytesIO(b'\xff\xd8\xff\xe0 jpeg'), headers={'content-type': 'image/jpeg'})
+
+        # when
+        main.create_exam_material(
+            'school_print', '신구중', '중2', 2026, '2학기', '중간고사', '7과 학습지 사진', None, photo, None, '', html_text='')
+
+        # then
+        prints = main.get_final_workspace_context(**self.CTX)['school_prints']
+        self.assertEqual(['7과 학습지 사진'], [item['title'] for item in prints])
+        self.assertTrue(prints[0]['has_original'])
 
     def test_post_final_insights_only_includes_insights_recorded_after_final(self):
         created_insight = main.create_educator_insight(main.EducatorInsightCreate(
