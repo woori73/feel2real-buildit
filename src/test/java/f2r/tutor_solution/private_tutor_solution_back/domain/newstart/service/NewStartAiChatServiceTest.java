@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiResearchTrace.RefType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.JipijigiResearchTrace.SourceClass;
+import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiQuestionIntent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.Evidence;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service.JipijigiResearchService.ResearchPack;
@@ -460,5 +461,135 @@ class NewStartAiChatServiceTest {
     }
     assertThat(NewStartAiChatService.CASE_STEP_PROMPT)
         .contains("전자책은 '전자책에서는'").contains("공식 자료가 아니다").contains("현재 규정은 다음 단계에서 따로 확인한다");
+  }
+
+  // ─────────────── 질문이 특정 기사를 가리킬 때 STEP 1 언론 보도 (2026-11-08 지피지기 1583 라이브 확인) ───────────────
+
+  private static final String NEWS_QUESTION = "새출발기금 재산은닉 16명 적발 기사에 대해 알려줘. 연합뉴스 2026년 10월 15일 기사야.";
+
+  private static Evidence officialWithNote(String id, String title, String excerpt, String note) {
+    return Evidence.builder().stepNo(1).sourceClass(SourceClass.OFFICIAL_RULE).refType(RefType.KNOWLEDGE_ITEM).refId(id)
+        .refUrl("https://n.news.naver.com/" + id).title(title).excerpt(excerpt).note(note).build();
+  }
+
+  private static Evidence yonhapArticle() {
+    return officialWithNote("4750", "[연합뉴스 2026-10-15] 재산 숨기고 10억 빚 감면…새출발기금 재산은닉 16명 적발",
+        "약정취소된 차주 16명, 채무원금 총 16억5,200만원, 원금감면액 10억5,500만원",
+        "sourceType=OFFICIAL_CURRENT, authority=연합뉴스 보도(2026-10-15, 배영경 기자), 자료시점=2026-10-15");
+  }
+
+  private static ResearchPack newsPack(Evidence... official) {
+    List<Evidence> internal = new java.util.ArrayList<>(List.of(official));
+    internal.add(evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "e1", "[전자책] 재산 신고 기준", null, "재산 신고"));
+    return ResearchPack.builder().question(NEWS_QUESTION).internalHits(internal)
+        .borrowerHits(List.of(evidence(SourceClass.BORROWER_CAFE_CASE, RefType.EMPIRICAL_CASE, "7001",
+            "재산 조사 받은 후기", "https://cafe/7001", "재산 조사")))
+        .officialHits(List.of()).ccrsHits(List.of()).extraAgencyHits(List.of()).gapNotes(List.of())
+        .externalSearched(false).build();
+  }
+
+  @Test
+  @DisplayName("N1. given 기사를 묻는 질문과 질문에 맞는 보도 자료 when STEP 1 then 보도가 [언론 보도]로 앞에 실리고 전자책·사례도 그대로 남는다")
+  void step1_includesRequestedNewsReport_labeledAsPress() {
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = newsPack(yonhapArticle(),
+        officialWithNote("d1", "[공식] 새출발기금 재산 심사 기준", "재산 심사", "sourceType=OFFICIAL_CURRENT, authority=캠코"));
+
+    NewStartAiChatService.NewStartAiAnswer a = new NewStartAiChatService(llmClient(client), research).ask(NEWS_QUESTION);
+
+    String sys = client.capturedSystem;
+    assertThat(sys).contains("[언론 보도] [연합뉴스 2026-10-15]").contains("원금감면액 10억5,500만원");
+    assertThat(sys).contains("[운영자·전자책 자료]").contains("[부실차주 카페 사례]");
+    assertThat(sys).doesNotContain("[공식 자료]").doesNotContain("[공식] 새출발기금 재산 심사 기준");
+    assertThat(sys.indexOf("[언론 보도]")).isLessThan(sys.indexOf("[운영자·전자책 자료]"));
+    assertThat(a.sources()).extracting(NewStartAiChatService.AnswerSource::kind)
+        .contains("언론 보도", "운영자·전자책 자료", "부실차주 카페 사례").doesNotContain("공식 자료");
+  }
+
+  @Test
+  @DisplayName("N2. given 기사 단서가 없는 질문 when STEP 1 then 보도 자료도 싣지 않는다(기존 2단계 구조 유지)")
+  void step1_withoutNewsCue_keepsOfficialOut() {
+    // given
+    ResearchPack pack = newsPack(yonhapArticle());
+    JipijigiQuestionIntent intent = JipijigiQuestionIntent.analyze("재산을 숨기면 약정취소되나요?");
+
+    // when
+    List<Evidence> ordered = NewStartAiChatService.step1Evidence(pack, "재산을 숨기면 약정취소되나요?", intent);
+
+    // then
+    assertThat(ordered).extracting(Evidence::getRefId).doesNotContain("4750").contains("e1", "7001");
+  }
+
+  @Test
+  @DisplayName("N3. given 기사 단서는 있지만 질문과 겹치지 않는 보도 when STEP 1 then 싣지 않는다")
+  void step1_unrelatedNewsReport_isNotIncluded() {
+    // given
+    Evidence other = officialWithNote("4800", "[한국경제 2026-09-01] 소상공인 정책자금 확대",
+        "정책자금 한도 확대", "sourceType=OFFICIAL_CURRENT, authority=한국경제 보도");
+    ResearchPack pack = newsPack(other);
+
+    // when
+    List<Evidence> ordered = NewStartAiChatService.step1Evidence(pack, NEWS_QUESTION,
+        JipijigiQuestionIntent.analyze(NEWS_QUESTION));
+
+    // then
+    assertThat(ordered).extracting(Evidence::getRefId).doesNotContain("4800");
+  }
+
+  @Test
+  @DisplayName("N4. given 기관 보도자료·공식 규정 when 언론 보도 판별 then 언론 보도가 아니다")
+  void isNewsReport_excludesAgencyPressReleaseAndRules() {
+    // given
+    Evidence release = officialWithNote("r1", "[금융위원회] 새출발기금 심사체계 개선", "개선안",
+        "sourceType=OFFICIAL_CURRENT, authority=금융위원회 보도자료");
+    Evidence rule = officialWithNote("r2", "[공식] 새출발기금 운영 기준", "기준", "sourceType=RULE, authority=캠코");
+    Evidence ebook = evidence(SourceClass.OPERATOR_MATERIAL, RefType.KNOWLEDGE_ITEM, "e9", "[전자책] 뉴스 정리", null, "x");
+
+    // when / then
+    assertThat(NewStartAiChatService.isNewsReport(yonhapArticle())).isTrue();
+    assertThat(NewStartAiChatService.isNewsReport(release)).isFalse();
+    assertThat(NewStartAiChatService.isNewsReport(rule)).isFalse();
+    assertThat(NewStartAiChatService.isNewsReport(ebook)).isFalse();
+  }
+
+  @Test
+  @DisplayName("N5. given 관련 보도가 3건 when STEP 1 then 질문 일치가 높은 순으로 최대 2건만 싣는다")
+  void step1_newsEvidence_isCapped() {
+    // given
+    Evidence a1 = yonhapArticle();
+    Evidence a2 = officialWithNote("4751", "[연합뉴스 2026-10-15] 재산은닉 16명 약정취소", "16명", "authority=연합뉴스 보도");
+    Evidence a3 = officialWithNote("4752", "[뉴시스 2026-10-16] 재산은닉 적발", "적발", "authority=뉴시스 보도");
+    ResearchPack pack = newsPack(a3, a2, a1);
+
+    // when
+    List<Evidence> news = NewStartAiChatService.newsEvidence(pack, NEWS_QUESTION, JipijigiQuestionIntent.analyze(NEWS_QUESTION));
+
+    // then
+    assertThat(news).hasSize(NewStartAiChatService.MAX_NEWS_EVIDENCE);
+    assertThat(news.get(0).getRefId()).isEqualTo("4750");
+  }
+
+  @Test
+  @DisplayName("N6. given 기사 질문 when STEP 2 then 같은 보도도 공식 규정이 아닌 [언론 보도]로 표시된다")
+  void step2_labelsNewsReportAsPress() {
+    // given
+    FakeLlmTransport client = new FakeLlmTransport();
+    FakeResearchService research = new FakeResearchService();
+    research.pack = newsPack(yonhapArticle());
+
+    // when
+    new NewStartAiChatService(llmClient(client), research).askOfficial(NEWS_QUESTION, "1차 답변");
+
+    // then
+    assertThat(client.capturedSystem).contains("[언론 보도] [연합뉴스 2026-10-15]").doesNotContain("[공식 자료] [연합뉴스");
+  }
+
+  @Test
+  @DisplayName("N7. given STEP 1 프롬프트 when 확인 then 보도를 공식으로 바꿔 쓰지 않고, 근거에 없는 기사를 '없다'고 단정하지 않게 지시한다")
+  void caseStepPrompt_guardsPressAndMissingArticle() {
+    assertThat(NewStartAiChatService.CASE_STEP_PROMPT)
+        .contains("[언론 보도] 라벨").contains("공식 규정·공식 안내로 바꿔 쓰지 않으며")
+        .contains("'해당 자료가 없다'고 단정하지 않는다").contains("이어지는 확인 단계에서 다시 확인한다");
   }
 }

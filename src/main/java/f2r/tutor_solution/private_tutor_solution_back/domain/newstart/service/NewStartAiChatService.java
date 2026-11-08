@@ -62,6 +62,15 @@ public class NewStartAiChatService {
   static final int MAX_STEP1_CHARS = 2500;
   /** 근거 1건 요약 상한. */
   static final int MAX_EVIDENCE_CHARS = 400;
+  /** 질문이 특정 기사·보도를 가리키는 단서. 이 단서가 있을 때만 STEP 1에 질문이 지목한 보도 자료를 싣는다. */
+  static final java.util.regex.Pattern NEWS_REQUEST = java.util.regex.Pattern.compile("기사|보도|뉴스|언론");
+  /** 언론 보도 자료 판별(제목·authority 표기). 기관 보도자료는 공식 자료이므로 제외한다. */
+  private static final java.util.regex.Pattern NEWS_MARKER =
+      java.util.regex.Pattern.compile("보도(?!자료)|기자|뉴스|일보|신문");
+  /** STEP 1에 싣는 질문 지목 보도 상한. 전자책·사례 칸({@value #MAX_CONTEXT_EVIDENCE})과 별도라 사례를 밀어내지 않는다. */
+  static final int MAX_NEWS_EVIDENCE = 2;
+  /** 보도가 질문이 가리킨 그 기사라고 볼 최소 질문 용어 일치 수. */
+  static final int MIN_NEWS_RELEVANCE = 2;
   /** 한국어 혼합 텍스트의 대략적인 token 크기(정밀 값은 provider의 usage 응답). */
   private static final int APPROX_CHARS_PER_TOKEN = 3;
 
@@ -98,6 +107,10 @@ public class NewStartAiChatService {
       + " 지금 확인하거나 할 수 있는 다음 행동을 알려준다."
       + " 사례 근거가 있는데 이를 무시하지 않는다. 직접 관련이 없으면 억지로 끼우지 말고 비슷한 사례를 찾지 못했다고 밝힌다."
       + " 단일 사례는 '이 사례에서는', '당시에는', '일부 사례에서 관찰'처럼 수준을 밝히고 모든 경우의 규칙으로 단정하지 않는다."
+      + " 질문이 특정 기사·보도를 가리키면 그 보도가 [언론 보도] 라벨로 함께 실릴 수 있다. 언론 보도는 '○○ 보도에 따르면'처럼"
+      + " 보도로 밝히고 공식 규정·공식 안내로 바꿔 쓰지 않으며, 질문이 그 기사 내용을 물으면 근거 요지의 수치·날짜를 그대로 전한다."
+      + " 질문이 가리킨 기사·문서가 이 단계 근거에 없으면 '해당 자료가 없다'고 단정하지 않는다. 이 단계(전자책·사례) 근거에서는"
+      + " 찾지 못했고 공식·보도 자료는 이어지는 확인 단계에서 다시 확인한다고 밝힌다."
       + " 카페 글 속 추정·주장은 확정 사실로 쓰지 않는다. 근거에 작성 시점이 있으면 시점을 함께 말한다."
       + " [답변 순서] ① 질문자의 현재 상황을 한두 문장으로 정확히 짚는다."
       + " ② 질문자가 가장 걱정하는 것에 바로 답한다. 동일하거나 매우 유사한 운영자 직접 경험이 근거에 있으면 가장 먼저 그것으로 답하고,"
@@ -174,7 +187,7 @@ public class NewStartAiChatService {
     long tRag = System.nanoTime();
 
     JipijigiQuestionIntent intent = JipijigiQuestionIntent.analyze(question);
-    List<Evidence> ordered = officialStep ? officialEvidence(pack, intent) : caseEvidence(pack, intent);
+    List<Evidence> ordered = officialStep ? officialEvidence(pack, intent) : step1Evidence(pack, question, intent);
     long tEvidence = System.nanoTime();
 
     if (officialStep && ordered.isEmpty()) {
@@ -333,6 +346,37 @@ public class NewStartAiChatService {
     return List.copyOf(ordered);
   }
 
+  /**
+   * STEP 1 근거 전체: 질문이 특정 기사를 가리킬 때만 그 보도({@link #newsEvidence})를 앞에 두고, 이어서 기존 전자책·사례
+   * ({@link #caseEvidence})를 그대로 싣는다. 보도는 별도 칸이라 전자책·사례 수는 줄지 않는다.
+   */
+  static List<Evidence> step1Evidence(ResearchPack pack, String question, JipijigiQuestionIntent intent) {
+    List<Evidence> out = new ArrayList<>(newsEvidence(pack, question, intent));
+    out.addAll(caseEvidence(pack, intent));
+    return List.copyOf(out);
+  }
+
+  /**
+   * 질문이 지목한 언론 보도. 질문에 기사·보도 단서가 있고, 보도 자료가 질문 용어와 {@value #MIN_NEWS_RELEVANCE}개 이상 겹칠 때만
+   * 최대 {@value #MAX_NEWS_EVIDENCE}건. 단서가 없는 질문은 기존처럼 STEP 1에 공식 계열 자료를 싣지 않는다.
+   */
+  static List<Evidence> newsEvidence(ResearchPack pack, String question, JipijigiQuestionIntent intent) {
+    if (question == null || intent == null || !NEWS_REQUEST.matcher(question).find()) return List.of();
+    return filterClass(pack.getInternalHits(), SourceClass.OFFICIAL_RULE).stream()
+        .filter(NewStartAiChatService::isNewsReport)
+        .filter(e -> intent.relevance(e.getTitle(), e.getExcerpt()) >= MIN_NEWS_RELEVANCE)
+        .sorted(Comparator.comparingInt((Evidence e) -> -intent.relevance(e.getTitle(), e.getExcerpt())))
+        .limit(MAX_NEWS_EVIDENCE)
+        .toList();
+  }
+
+  /** 공식 계열(sourceType)로 저장됐지만 실제로는 언론 보도인 자료인가 — 제목·authority 표기로 판별한다. */
+  static boolean isNewsReport(Evidence e) {
+    if (e == null || e.getSourceClass() != SourceClass.OFFICIAL_RULE) return false;
+    String text = (e.getTitle() == null ? "" : e.getTitle()) + " " + (e.getNote() == null ? "" : e.getNote());
+    return NEWS_MARKER.matcher(text).find();
+  }
+
   /** STEP 2 근거: 현재 공식 자료만(게시된 공식 업데이트 + ACTIVE 공식 지식). 사례·전자책은 넣지 않는다. */
   static List<Evidence> officialEvidence(ResearchPack pack) {
     return officialEvidence(pack, JipijigiQuestionIntent.none());
@@ -393,7 +437,7 @@ public class NewStartAiChatService {
         : "(전자책·운영자 경험·카페/실증 사례. 공식 자료가 아니므로 공식 안내처럼 쓰지 않는다. 각 자료의 성격 라벨을 답변에서도 구분한다.)\n");
     int i = 1;
     for (Evidence e : ordered) {
-      sb.append(i++).append(". [").append(labelOf(e.getSourceClass())).append("] ")
+      sb.append(i++).append(". [").append(labelOf(e)).append("] ")
           .append(e.getTitle().replace("\n", " ")).append("\n");
       if (e.getSourceClass() == SourceClass.OPERATOR_MATERIAL) {
         // 운영자 직접 경험과 전자책은 같은 라벨 묶음이지만 provenance 가 다르다 — 답변에서도 구분해 쓰게 한다.
@@ -417,6 +461,11 @@ public class NewStartAiChatService {
     if (note == null) return null;
     java.util.regex.Matcher m = TIME_NOTE.matcher(note);
     return m.find() ? m.group(1) : null;
+  }
+
+  /** 근거 라벨. 언론 보도는 공식 규정으로 인용되지 않게 '언론 보도'로 따로 표시한다. */
+  static String labelOf(Evidence e) {
+    return isNewsReport(e) ? "언론 보도" : labelOf(e.getSourceClass());
   }
 
   static String labelOf(SourceClass cls) {
@@ -443,7 +492,7 @@ public class NewStartAiChatService {
     int otherTake = Math.min(others.size(), MAX_SOURCES - ebookTake);
     List<AnswerSource> out = new ArrayList<>();
     for (Evidence e : ebooks.subList(0, ebookTake)) out.add(new AnswerSource(labelOf(e.getSourceClass()), e.getTitle(), e.getRefUrl()));
-    for (Evidence e : others.subList(0, otherTake)) out.add(new AnswerSource(labelOf(e.getSourceClass()), e.getTitle(), e.getRefUrl()));
+    for (Evidence e : others.subList(0, otherTake)) out.add(new AnswerSource(labelOf(e), e.getTitle(), e.getRefUrl()));
     return List.copyOf(out);
   }
 
