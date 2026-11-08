@@ -1,0 +1,10 @@
+# 모델 산출물과 학습 데이터 원본은 저장소에 넣지 않는다 (README "지킬 것")
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+checkpoints/
+outputs/
+data/
+*.jsonl
