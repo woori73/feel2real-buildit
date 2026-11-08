@@ -23,11 +23,11 @@
 | T05 | 검증 파이프라인(형식·근거 대조·재풀이·배포 게이트·샘플 오딧) — PLAN 4-5 | 클로드 | GPT | 예정 | `backend/verify_pipeline.py` |
 | T06 | 클로드 vs v0 학교·시험별 비교 화면 | 클로드 | GPT | 예정 | `problem-generator/wiki-src` |
 | T07 | 학습 데이터 내보내기(JSONL)·평가 세트 날짜 분리 — PLAN 4-6 | 클로드 | GPT | 예정 | `backend/dataset_export.py`, `training/export/` |
-| T08 | 평가 하니스(지표 계산, 결과 JSON) — PLAN 4-6 | GPT | 클로드 | 예정 | `backend/eval_harness.py`, `training/eval/` |
-| T09 | v0 생성 스크립트(베이스 모델 + 근거·출제 원칙, 학습 없음) | GPT | 클로드 | 예정 | `training/v0/` |
-| T10 | QLoRA 학습 스크립트·설정 — PLAN 4-7 | GPT | 클로드 | 예정 | `training/qlora/` |
-| T11 | LoRA 병합 → GGUF 4비트 변환 스크립트 — PLAN 4-7 | GPT | 클로드 | 예정 | `training/gguf/` |
-| T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 예정 | `training/README.md` |
+| T08 | 평가 하니스(지표 계산, 결과 JSON) — PLAN 4-6 | GPT | 클로드 | 진행 | `backend/eval_harness.py`, `training/eval/` |
+| T09 | v0 생성 스크립트(베이스 모델 + 근거·출제 원칙, 학습 없음) | GPT | 클로드 | 진행 | `training/v0/` |
+| T10 | QLoRA 학습 스크립트·설정 — PLAN 4-7 | GPT | 클로드 | 진행 | `training/qlora/` |
+| T11 | LoRA 병합 → GGUF 4비트 변환 스크립트 — PLAN 4-7 | GPT | 클로드 | 진행 | `training/gguf/` |
+| T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 진행 | `training/README.md` |
 
 ## 진행 순서 (협업환경 문서 5장)
 1. T00 병합.
@@ -43,3 +43,6 @@
 | 신구중2 | 디지털 트윈, 기출 사진 8장(본문 텍스트 없음) | 사진 전사, 기말 학교 프린트 필요 |
 | 압구정중1 | 없음 | 자료 업로드 필요 |
 | 신구중1 | 없음 | 자료 업로드 필요 |
+
+## GPT 작업 기록
+- 2026-11-08: T08~T12 구현 시작. T00(PR #1007) 미병합 상태이므로 해당 문서 브랜치를 기반으로 후속 Draft PR을 준비합니다. 병합·운영 배포·GPU 실행은 하지 않습니다.
