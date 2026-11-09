@@ -8,7 +8,6 @@ import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.Fil
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.TransactionalFileDeletion;
 import java.io.IOException;
 import java.util.List;
-import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,8 +26,6 @@ public class WikiAnalysisMaterialService {
   private static final long STORAGE_OWNER_ID = 0L;
   private static final String DEFAULT_SUBJECT = "영어";
   // /wiki 실전예상문제 섹션 대상: 제목에 '실전' 또는 '예상'이 있고 복습·자습 과제가 아닌 자료.
-  private static final Pattern PRACTICE_TITLE = Pattern.compile("실전|예상");
-  private static final Pattern REVIEW_TITLE = Pattern.compile("복습|자습");
 
   private final WikiAnalysisMaterialRepository repository;
   private final FileStorage fileStorage;
@@ -54,17 +51,6 @@ public class WikiAnalysisMaterialService {
   @Transactional(readOnly = true)
   public List<WikiAnalysisMaterialResponse> searchPublic(Integer grade) {
     return repository.findPublicByGrade(grade).stream().map(WikiAnalysisMaterialResponse::of).toList();
-  }
-
-  /**
-   * 실전예상문제 여부. 실전예상문제는 내려받기 없이 화면 열람만 허용한다(2026-11-09 운영 정책).
-   * 복습·자습 과제(HTML)는 기존대로 열람 화면이 내려받기 응답을 읽으므로 제외한다.
-   */
-  public static boolean isPracticeExam(String title) {
-    if (title == null) {
-      return false;
-    }
-    return PRACTICE_TITLE.matcher(title).find() && !REVIEW_TITLE.matcher(title).find();
   }
 
   @Transactional(readOnly = true)
