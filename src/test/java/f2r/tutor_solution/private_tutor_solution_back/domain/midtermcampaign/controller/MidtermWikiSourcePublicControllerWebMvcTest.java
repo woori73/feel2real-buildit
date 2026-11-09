@@ -81,6 +81,7 @@ class MidtermWikiSourcePublicControllerWebMvcTest {
         .andExpect(header().string("Content-Security-Policy",
             MidtermWikiSourcePublicController.HTML_PREVIEW_CSP))
         .andExpect(header().string("Cache-Control", "private, max-age=60"))
+        .andExpect(header().string("X-Robots-Tag", "noindex, nofollow"))
         .andExpect(content().bytes(html));
   }
 
