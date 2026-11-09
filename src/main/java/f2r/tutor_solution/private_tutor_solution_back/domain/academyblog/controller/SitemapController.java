@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,15 +36,21 @@ public class SitemapController {
     append(xml, "/privacy", null);
     append(xml, "/academies", null);
     append(xml, "/academy-posts", null);
+    List<AcademyBlogPostResponse> posts = academyBlogService.listPublishedForSitemap();
+    // 공개 글이 하나도 없는 학원의 글 목록은 "글을 불러오는 중..."만 있는 빈 화면이라 Google이 Soft 404로 본다 — 글이 있는 학원만 넣는다.
+    Set<String> slugsWithPosts = new HashSet<>();
+    for (AcademyBlogPostResponse post : posts) slugsWithPosts.add(post.academySlug());
     for (Academy academy : academyRepository.findPublicList(AcademyStatus.PUBLISHED, null, null, null, null)) {
       // Match AcademyPathRedirectInterceptor: migrated home URLs are 301 aliases.
       // Subdomain URLs need their own verified property/sitemap; keep this sitemap on the apex.
       if (!publicSite.hasBaseDomain() || academy.getHandle() == null || academy.getHandle().isBlank()) {
         append(xml, "/academies/" + academy.getSlug(), null);
       }
-      append(xml, "/academies/" + academy.getSlug() + "/posts", null);
+      if (slugsWithPosts.contains(academy.getSlug())) {
+        append(xml, "/academies/" + academy.getSlug() + "/posts", null);
+      }
     }
-    for (AcademyBlogPostResponse post : academyBlogService.listPublishedForSitemap()) {
+    for (AcademyBlogPostResponse post : posts) {
       append(xml, post.publicUrl(), post.updatedAt());
     }
     xml.append("</urlset>\n");

@@ -3306,6 +3306,7 @@ rg -n 'fetch\(|axios|\.href|form|action=|/api/' src/main/resources/templates src
 ### ✅ GET /sitemap.xml / GET /robots.txt
 - 목적: 공개 Academy/블로그 글의 검색엔진 접근성 제공
 - 인증/권한: public
+- 검색 제외(`X-Robots-Tag: noindex, nofollow`, `PrivatePageRobotsHeaderWriter`): 관리자·대시보드·내 정보 등과 `/old-home`, `/wemade/login`(2026-11-09). `GET /api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` 응답도 같은 헤더를 붙인다(캠페인 화면용 미리보기의 단독 색인 방지).
 
 ## 15. Lesson Community / Q&A API
 
@@ -5112,7 +5113,7 @@ MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시�
 
 ## 검색엔진 응답 정책 (2026-10-26)
 
-- `GET /sitemap.xml`: 기존 PUBLISHED·visible 조건 유지. base-domain 설정과 handle이 있는 `/academies/{slug}` 301 alias는 apex sitemap에서 제외하고 미이전 경로·블로그는 유지한다.
+- `GET /sitemap.xml`: 기존 PUBLISHED·visible 조건 유지. base-domain 설정과 handle이 있는 `/academies/{slug}` 301 alias는 apex sitemap에서 제외하고 미이전 경로·블로그는 유지한다. 2026-11-09: 학원 글 목록 `/academies/{slug}/posts`는 공개 글이 1개 이상인 학원만 넣는다(글 없는 목록은 빈 화면이라 Google Soft 404).
 - 운영 base-domain이 설정된 `GET /academies/{slug}`: 없거나 미공개·미게시인 학원은 HTML도 404. 공개 학원의 기존 서브도메인 301과 handle 없는 legacy 200은 유지한다.
 - 공개 학원 목록·블로그·privacy 및 `/register`, `/testprep`는 쿼리를 제외한 HTTPS canonical을 서버 head에 제공한다. 복귀 파라미터 기능과 인증 정책은 바꾸지 않는다.
 - 관리자·강사·회원·Studio 한정 경로는 X-Robots-Tag noindex,nofollow를 추가하며 인증·인가·401/403·로그인 이동은 유지한다. 구체적 경로·GSC 실제 51개 URL·전후 비교는 [2026-10-26 색인 조사](seo/indexing-audit-20261026.md)를 참조한다.

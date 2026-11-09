@@ -58,6 +58,8 @@ public class MidtermWikiSourcePublicController {
         .header("X-Content-Type-Options", "nosniff")
         .header("Content-Security-Policy", HTML_PREVIEW_CSP)
         .header(HttpHeaders.CACHE_CONTROL, "private, max-age=60")
+        // 캠페인 화면용 미리보기다 — 검색 결과에 학습지 본문이 단독으로 노출되지 않게 한다.
+        .header("X-Robots-Tag", "noindex, nofollow")
         .body(html);
   }
 }
