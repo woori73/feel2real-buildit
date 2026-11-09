@@ -106,9 +106,18 @@
   var hasIO = 'IntersectionObserver' in window;
   var analyzeCache = {};              // schoolName → Promise<analyze[]>
 
-  fetch(SOURCES_API, {
-    headers: { Accept: 'application/json' },
-    credentials: 'same-origin'
+  // 2026-11-09: 학습지 미리보기는 로그인 회원만 볼 수 있다(서버도 비로그인 401).
+  // 렌더 전에 로그인 여부를 한 번 확인하고, 비로그인이면 iframe 대신 로그인 안내 카드를 그린다.
+  var loggedIn = false;
+  var authReady = fetch('/api/auth/me', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+    .then(function (response) { loggedIn = !!(response && response.ok); })
+    .catch(function () { loggedIn = false; });
+
+  authReady.then(function () {
+    return fetch(SOURCES_API, {
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin'
+    });
   })
     .then(function (response) {
       if (response.status === 404) return [];
@@ -574,7 +583,7 @@
     // 지식상품 패키지: page bg → product surface → clipped media window → 실제 Wiki HTML.
     var surface = el('div', 'midterm-feature__surface');
     var visual = el('div', 'midterm-feature__visual');
-    visual.appendChild(safeFrame(source.previewUrl, 'midterm-feature__document', '중간고사 준비 자료'));
+    visual.appendChild(previewFrame(source.previewUrl, 'midterm-feature__document', '중간고사 준비 자료'));
     surface.appendChild(visual);
     section.appendChild(surface);
 
@@ -995,7 +1004,7 @@
         var scene = el('div', 'midterm-live__scene');
         scene.setAttribute('data-kind', 'material');
         scene.classList.add('is-role-' + ROLES[i % ROLES.length]);
-        scene.appendChild(safeFrame(source.previewUrl, 'midterm-live__doc', '중간고사 준비 자료'));
+        scene.appendChild(previewFrame(source.previewUrl, 'midterm-live__doc', '중간고사 준비 자료'));
         stage.appendChild(scene);
         scenes.push({ el: scene, kind: 'material', ms: MATERIAL_MS, sub: SEASON });
       });
@@ -1229,6 +1238,20 @@
   }
 
   /** preview 보안 계약: server-controlled URL 만, sandbox / no interaction / no scroll. */
+  /** 학습지 미리보기: 로그인 회원에게만 실제 iframe, 비로그인은 같은 자리에 로그인 안내 카드. */
+  function previewFrame(src, className, title) {
+    if (loggedIn) return safeFrame(src, className, title);
+    var card = el('div', className + ' midterm-login-card');
+    card.setAttribute('data-kind', 'login-required');
+    card.appendChild(el('p', 'midterm-login-card__text', '로그인하면 실제 학습지를 볼 수 있어요.'));
+    var link = el('a', 'midterm-login-card__btn', '로그인하고 보기');
+    var loc = window.location;
+    var here = loc ? (loc.pathname || '/') + (loc.search || '') : '/eduholic-midterm-2026.html';
+    link.setAttribute('href', '/?login=required&returnUrl=' + encodeURIComponent(here));
+    card.appendChild(link);
+    return card;
+  }
+
   function safeFrame(src, className, title) {
     var frame = document.createElement('iframe');
     frame.className = className;

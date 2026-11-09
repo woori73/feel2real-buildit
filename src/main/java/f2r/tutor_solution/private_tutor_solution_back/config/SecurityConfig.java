@@ -478,6 +478,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/users/check-login-id").permitAll()  // 아이디 중복 확인
             .requestMatchers(HttpMethod.GET, "/api/subjects").permitAll()  // 과목 마스터 lookup
             .requestMatchers(HttpMethod.GET, "/api/academies").permitAll()  // 공개 Academy 목록
+            // 2026-11-09: 중간고사 캠페인 학습지 미리보기(학교 프린트 본문)는 로그인 회원만 — 아래 GET permitAll보다 먼저 둔다.
+            .requestMatchers(HttpMethod.GET, "/api/academies/*/midterm-campaign/wiki-sources/*/preview").authenticated()
             .requestMatchers(HttpMethod.GET, "/api/academies/**").permitAll()  // 공개 Academy 조회/이미지
             .requestMatchers(HttpMethod.HEAD, "/api/academies/**").permitAll()  // 공개 영상 메타데이터
             .requestMatchers(HttpMethod.POST, "/api/analytics/events").permitAll()  // 공개 이벤트 수집(허용 목록·속도 제한·쿠키 필요)

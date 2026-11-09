@@ -32,7 +32,8 @@ import org.springframework.test.web.servlet.MockMvc;
 /**
  * TUTOR Wiki 연결 API 의 공개 계약:
  * <ul>
- *   <li>{@code /wiki-sources} · {@code /preview} 는 비로그인으로 접근 가능(경로 permitAll, 판정은 서비스)
+ *   <li>{@code /wiki-sources} 는 비로그인으로 접근 가능(경로 permitAll, 판정은 서비스)
+ *   <li>{@code /preview}(학습지 본문)는 2026-11-09부터 로그인 회원만 — 비로그인 401
  *   <li>{@code /preview} HTML 응답 헤더 = learning-material preview 와 동일(script 금지 CSP · inline · nosniff)
  *   <li>목록 payload 에 storageKey / 원본 URL / download endpoint 가 없다
  * </ul>
@@ -50,6 +51,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class MidtermWikiSourcePublicControllerWebMvcTest {
 
   @Autowired MockMvc mockMvc;
+  @Autowired JwtTokenProvider tokenProvider;
   @MockitoBean MidtermWikiSourceService service;
 
   @Test
@@ -73,7 +75,8 @@ class MidtermWikiSourcePublicControllerWebMvcTest {
     byte[] html = "<html><body><h1>신구중 5과</h1></body></html>".getBytes();
     when(service.previewHtml(anyString(), anyString())).thenReturn(html);
 
-    mockMvc.perform(get("/api/academies/eduholic/midterm-campaign/wiki-sources/school-print-11/preview"))
+    mockMvc.perform(get("/api/academies/eduholic/midterm-campaign/wiki-sources/school-print-11/preview")
+            .cookie(memberCookie()))
         .andExpect(status().isOk())
         .andExpect(content().contentTypeCompatibleWith("text/html"))
         .andExpect(header().string("Content-Disposition", "inline; filename=\"preview.html\""))
@@ -96,5 +99,18 @@ class MidtermWikiSourcePublicControllerWebMvcTest {
             + "frame-ancestors 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; "
             + "script-src 'none'; connect-src 'none'");
     assertThat(learning).contains(MidtermWikiSourcePublicController.HTML_PREVIEW_CSP);
+  }
+
+  @Test
+  void preview_withoutLogin_isUnauthorized_andServiceIsNotCalled() throws Exception {
+    // given: 학습지 미리보기는 로그인 회원 전용
+    // when & then: 쿠키 없이 요청하면 401, 학습지 본문을 읽지 않는다
+    mockMvc.perform(get("/api/academies/eduholic/midterm-campaign/wiki-sources/school-print-12/preview"))
+        .andExpect(status().isUnauthorized());
+    org.mockito.Mockito.verify(service, org.mockito.Mockito.never()).previewHtml(anyString(), anyString());
+  }
+
+  private jakarta.servlet.http.Cookie memberCookie() {
+    return new jakarta.servlet.http.Cookie("ACCESS_TOKEN", tokenProvider.issue(7L, "member-student", "STUDENT"));
   }
 }
