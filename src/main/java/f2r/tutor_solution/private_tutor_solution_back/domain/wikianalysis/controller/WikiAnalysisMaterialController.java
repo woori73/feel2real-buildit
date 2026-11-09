@@ -42,9 +42,6 @@ public class WikiAnalysisMaterialController {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
     }
     DownloadFile file = service.getPublicDownload(id);
-    if (WikiAnalysisMaterialService.isPracticeExam(file.title())) {
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "실전예상문제는 내려받기 없이 화면에서만 볼 수 있습니다.");
-    }
     downloadRecordingService.record(WikiMaterialCategory.ANALYSIS, id, file.title(),
         principal.userId(), principal.role());
     return FileDownloadResponses.attachment(file.bytes(), file.contentType(), file.fileName());
@@ -52,7 +49,7 @@ public class WikiAnalysisMaterialController {
 
   /**
    * 실전예상문제 PDF 화면 열람(회원 전용). /wiki 열람기(pdf.js)가 읽어 페이지 그림으로 보여 준다.
-   * 내려받기 링크는 두지 않고, 응답은 inline + 캐시 저장 금지로 내려준다.
+   * 응답은 inline + 캐시 저장 금지. 내려받기는 열람기의 "내려받기" 버튼이 /download를 쓴다(2026-11-09 대표 지시로 다시 허용).
    */
   @GetMapping("/api/wiki/analysis-materials/{id}/view")
   public ResponseEntity<byte[]> view(

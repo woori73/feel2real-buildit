@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.entity.QuestionThreadPost;
 
 import java.time.LocalDateTime;
@@ -54,8 +55,8 @@ public record QuestionThreadPostResponse(
         ParticipantType.label(p.getAuthorRole()),
         currentUserId != null && authorUserId.equals(currentUserId),
         canManage,
-        p.getCreatedAt(),
-        p.getUpdatedAt(),
+        KstTime.toKst(p.getCreatedAt()),
+        KstTime.toKst(p.getUpdatedAt()),
         attachments,
         variantDetail,
         examEvidence,

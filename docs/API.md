@@ -1,3 +1,10 @@
+## 응답 시각 기준 — 위키·관리자 통계는 한국 시간 (2026-11-09)
+
+- 저장값은 바꾸지 않는다. 서버(운영 EC2, UTC)가 기록한 `createdAt`·`updatedAt`을 응답에서 `KstTime.toKst`로 한국 시간 벽시계로 바꿔 내보낸다.
+- 대상 응답: `WikiAnalysisMaterialResponse`, `WikiExamOriginalResponse`, `WikiExamRoundResponse`, `WikiLearningMaterialResponse`, `WikiLiveMessageResponse`, `QuestionThreadPostResponse`, `QuestionAiSummaryResponse`, `CommunityPostListResponse`, `CommunityPostDetailResponse`, `AnswerResponse`, `GET /api/wiki/home-feed`(`updatedAt`·NEW 판단), 관리자 대시보드 Wiki 운영 현황(최근 가입 시각·오늘 가입 수).
+- 관리자 통계의 상담신청 접수 수(오늘·7일·30일)는 한국 날짜 0시를 서버 시각으로 바꿔 센다(`KstTime.fromKst`).
+- 방문·다운로드·이벤트 기록(`visitedAt`·`downloadedAt`·`occurredAt`)은 처음부터 한국 시간으로 기록하므로 바꾸지 않는다.
+
 ## 내신 문제 제작소 (2026-10-26)
 
 ## 홈페이지 승인 트레일러 (2026-10-29)
@@ -3466,8 +3473,8 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 공개
 - `GET /api/wiki/analysis-materials?grade=` — deleted=false·visible=true, grade(1~3, null=전체), 최신순. → `WikiAnalysisMaterialResponse[]`(wikiAnalysisMaterialId, title, description, schoolName, grade, year, semester, examType, subject, contentType, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
-- `GET /api/wiki/analysis-materials/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 저장된 `content_type` + `Content-Disposition: attachment; filename*=UTF-8''…` + `nosniff`. 미존재/비공개 404. **실전예상문제(제목에 '실전'·'예상'이 있고 '복습'·'자습'이 아닌 자료, `WikiAnalysisMaterialService.isPracticeExam`)는 403 — 내려받기 금지(2026-11-09), 다운로드 로그도 남기지 않는다.**
-- `GET /api/wiki/analysis-materials/{id}/view` — 로그인 회원만(비회원 401, 파일 조회 없음). PDF 자료만 `Content-Type: application/pdf` + `Content-Disposition: inline` + `Cache-Control: private, no-store` + `nosniff`로 내려준다. PDF가 아니면 415. `/wiki` 실전예상문제 열람기(`wiki.js`, pdf.js로 페이지를 canvas 그림으로 표시, 내려받기 링크 없음)가 사용한다. '정답 및 해설'이 처음 나오는 쪽부터는 '정답 및 해설 보기' 버튼을 눌러야 보인다. 다운로드 통계에는 기록하지 않는다.
+- `GET /api/wiki/analysis-materials/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 저장된 `content_type` + `Content-Disposition: attachment; filename*=UTF-8''…` + `nosniff`. 미존재/비공개 404. 실전예상문제도 다른 자료와 같이 내려받을 수 있고 다운로드 로그를 남긴다(2026-11-09 저녁 대표 지시로 내려받기 금지 해제).
+- `GET /api/wiki/analysis-materials/{id}/view` — 로그인 회원만(비회원 401, 파일 조회 없음). PDF 자료만 `Content-Type: application/pdf` + `Content-Disposition: inline` + `Cache-Control: private, no-store` + `nosniff`로 내려준다. PDF가 아니면 415. `/wiki` 실전예상문제 열람기(`wiki.js`, pdf.js로 페이지를 canvas 그림으로 표시, 머리글에 `/download`로 가는 '내려받기' 버튼)가 사용한다. '정답 및 해설'이 처음 나오는 쪽부터는 '정답 및 해설 보기' 버튼을 눌러야 보인다. 다운로드 통계에는 기록하지 않는다.
 
 ### 관리 (ADMIN)
 - `GET /api/admin/wiki/analysis-materials` — deleted=false 전체.

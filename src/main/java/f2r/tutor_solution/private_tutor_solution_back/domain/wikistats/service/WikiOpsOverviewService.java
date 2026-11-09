@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikistats.dto.WikiOpsOverviewResponse;
@@ -50,7 +51,8 @@ public class WikiOpsOverviewService {
 
     LocalDate today = LocalDate.now(clock);
     long total = userRepository.count();
-    long todayNew = userRepository.countByCreatedAtGreaterThanEqual(today.atStartOfDay());
+    // 가입 시각은 서버 기본 시간대(운영 UTC)로 저장돼 있다 → 한국 날짜 0시를 서버 시간으로 바꿔 센다.
+    long todayNew = userRepository.countByCreatedAtGreaterThanEqual(KstTime.fromKst(today.atStartOfDay()));
     var recent = userRepository.findByOrderByCreatedAtDesc(PageRequest.of(0, RECENT_MEMBER_COUNT)).stream()
         .map(this::toRecentMember)
         .toList();
@@ -59,6 +61,6 @@ public class WikiOpsOverviewService {
   }
 
   private RecentMember toRecentMember(User u) {
-    return new RecentMember(u.getDisplayName(), u.getLoginId(), u.getRole().name(), u.getCreatedAt());
+    return new RecentMember(u.getDisplayName(), u.getLoginId(), u.getRole().name(), KstTime.toKst(u.getCreatedAt()));
   }
 }

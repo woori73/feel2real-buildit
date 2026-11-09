@@ -95,15 +95,17 @@ class WikiAnalysisMaterialControllerWebMvcTest {
   }
 
   @Test
-  @DisplayName("given 실전예상문제 when 회원 다운로드 then 403 + 다운로드 기록 없음")
-  void download_practiceExam_forbiddenWithoutLog() throws Exception {
+  @DisplayName("given 실전예상문제 when 회원 다운로드 then 200 attachment + 다운로드 기록")
+  void download_practiceExam_allowedAndRecorded() throws Exception {
     // given
     when(service.getPublicDownload(2L)).thenReturn(
         new DownloadFile("%PDF".getBytes(), "실전.pdf", "application/pdf", "2026 고1 2학기말 대비 실전예상문제 1회"));
     // when / then
     mockMvc.perform(get("/api/wiki/analysis-materials/2/download").cookie(token("STUDENT")))
-        .andExpect(status().isForbidden());
-    verifyNoInteractions(downloadRecordingService);
+        .andExpect(status().isOk())
+        .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")));
+    verify(downloadRecordingService).record(
+        eq(WikiMaterialCategory.ANALYSIS), eq(2L), eq("2026 고1 2학기말 대비 실전예상문제 1회"), eq(1L), eq("STUDENT"));
   }
 
   @Test

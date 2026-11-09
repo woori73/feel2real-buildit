@@ -557,6 +557,8 @@
     var toggle = document.getElementById('practiceAnswerToggle');
     var status = document.getElementById('practiceStatus');
     document.getElementById('practiceReaderTitle').textContent = it.title;
+    document.getElementById('practiceDownload').href = '/api/wiki/analysis-materials/'
+      + encodeURIComponent(it.wikiAnalysisMaterialId) + '/download';
     pages.innerHTML = '';
     answers.innerHTML = '';
     answers.hidden = true;

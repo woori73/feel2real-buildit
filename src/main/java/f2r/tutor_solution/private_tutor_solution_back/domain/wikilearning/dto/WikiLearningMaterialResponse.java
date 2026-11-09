@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilearning.entity.WikiLearningMaterial;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -32,7 +33,7 @@ public record WikiLearningMaterialResponse(
     boolean previewable = isPreviewableContentType(m.getContentType());
     return new WikiLearningMaterialResponse(
         id, m.getDataType().name(), m.getDataType().label(), m.getGrade(), m.getTitle(),
-        m.getOriginalFileName(), m.getFileSize(), m.getUploaderName(), m.getCreatedAt(),
+        m.getOriginalFileName(), m.getFileSize(), m.getUploaderName(), KstTime.toKst(m.getCreatedAt()),
         previewable,
         previewable ? "/api/wiki/learning-materials/" + id + "/preview" : null,
         "/api/wiki/learning-materials/" + id + "/download");

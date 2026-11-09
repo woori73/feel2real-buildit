@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsBreakdownResponse.Period;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsEventsResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsEventsResponse.ClickRow;
@@ -143,7 +144,8 @@ public class AdminAnalyticsEventsService {
     try {
       Long n = from == null
           ? jdbc.queryForObject("SELECT COUNT(*) FROM academy_inquiries", Long.class)
-          : jdbc.queryForObject("SELECT COUNT(*) FROM academy_inquiries WHERE created_at >= ?", Long.class, from.atStartOfDay());
+          : jdbc.queryForObject("SELECT COUNT(*) FROM academy_inquiries WHERE created_at >= ?", Long.class,
+              KstTime.fromKst(from.atStartOfDay())); // created_at은 서버 기본 시간대(운영 UTC) 저장
       return n == null ? 0 : n;
     } catch (org.springframework.dao.DataAccessException e) {
       return 0;

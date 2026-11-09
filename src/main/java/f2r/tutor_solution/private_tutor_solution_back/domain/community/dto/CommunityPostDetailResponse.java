@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.community.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.entity.CommunityPost;
 import f2r.tutor_solution.private_tutor_solution_back.domain.subject.entity.Subject;
 
@@ -38,8 +39,8 @@ public record CommunityPostDetailResponse(
         p.getContentHtml(),
         p.getAuthor().getDisplayName(),
         p.getAuthor().getUserId(),
-        p.getCreatedAt(),
-        p.getUpdatedAt(),
+        KstTime.toKst(p.getCreatedAt()),
+        KstTime.toKst(p.getUpdatedAt()),
         likeCount,
         likedByMe,
         likeAllowed,

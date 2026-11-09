@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.community.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.entity.BoardType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.community.entity.CommunityPost;
 import f2r.tutor_solution.private_tutor_solution_back.domain.subject.entity.Subject;
@@ -34,7 +35,7 @@ public record CommunityPostListResponse(
         p.getTitle(),
         p.getAuthor().getDisplayName(),
         p.getAuthor().getUserId(),
-        p.getCreatedAt(),
+        KstTime.toKst(p.getCreatedAt()),
         answerCount,
         likeCount,
         recentLikeCount,

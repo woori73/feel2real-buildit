@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsBreakdownResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsBreakdownResponse.Conversion;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.dto.AdminAnalyticsBreakdownResponse.DayPoint;
@@ -111,7 +112,8 @@ public class AdminAnalyticsBreakdownService {
     try {
       Long n = from == null
           ? jdbc.queryForObject("SELECT COUNT(*) FROM academy_inquiries", Long.class)
-          : jdbc.queryForObject("SELECT COUNT(*) FROM academy_inquiries WHERE created_at >= ?", Long.class, from.atStartOfDay());
+          : jdbc.queryForObject("SELECT COUNT(*) FROM academy_inquiries WHERE created_at >= ?", Long.class,
+              KstTime.fromKst(from.atStartOfDay())); // created_at은 서버 기본 시간대(운영 UTC) 저장
       return n == null ? 0 : n;
     } catch (org.springframework.dao.DataAccessException e) {
       return 0; // 테이블이 아직 없는 환경(마이그레이션 전)에서도 화면은 뜬다.
