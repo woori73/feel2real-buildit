@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.entity.QuestionAiSummary;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,6 @@ public record QuestionAiSummaryResponse(
         s.getStatus().name(),
         s.getSummaryText(),
         s.getThreadPostCount(),
-        s.getCreatedAt());
+        KstTime.toKst(s.getCreatedAt()));
   }
 }
