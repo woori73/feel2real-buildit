@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamRound;
 import java.time.LocalDateTime;
 
@@ -25,8 +26,8 @@ public record WikiExamRoundResponse(
         round.getBannerPath(),
         round.isCurrent(),
         round.isPublished(),
-        round.getCreatedAt(),
-        round.getUpdatedAt()
+        KstTime.toKst(round.getCreatedAt()),
+        KstTime.toKst(round.getUpdatedAt())
     );
   }
 }

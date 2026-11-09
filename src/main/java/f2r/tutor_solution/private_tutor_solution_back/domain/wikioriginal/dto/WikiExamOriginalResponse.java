@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikioriginal.entity.WikiExamOriginal;
 import java.time.LocalDateTime;
 
@@ -37,8 +38,8 @@ public record WikiExamOriginalResponse(
         ext,
         original.getFileSize(),
         original.isVisible(),
-        original.getCreatedAt(),
-        original.getUpdatedAt(),
+        KstTime.toKst(original.getCreatedAt()),
+        KstTime.toKst(original.getUpdatedAt()),
         "/api/wiki/originals/" + id + "/download",
         "/api/wiki/originals/" + id + "/view"
     );
