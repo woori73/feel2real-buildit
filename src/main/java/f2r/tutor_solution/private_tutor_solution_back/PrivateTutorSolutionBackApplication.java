@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.ServerTimeZone;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -17,6 +18,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class PrivateTutorSolutionBackApplication {
 
 	public static void main(String[] args) {
+		// 서버 기본 시간대를 한국 시간으로 고정한다(운영 OS는 UTC). 상세: ServerTimeZone.
+		ServerTimeZone.applyDefault();
 		SpringApplication.run(PrivateTutorSolutionBackApplication.class, args);
 	}
 
