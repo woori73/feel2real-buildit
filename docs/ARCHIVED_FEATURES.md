@@ -37,7 +37,7 @@ path별 chain을 추가하면 chain 선택 전에 alias를 정규화하거나 ar
 정확히 `/archived` 또는 `/archived/**`만 alias다. `/archived-preview` 같은 near-prefix는 원래
 요청으로 남고, 중첩 `/archived/archived/**`, ambiguous encoded 첫 segment, slash/backslash,
 dot-segment, semicolon/matrix 첫 segment는 400으로 거부한다. `/archived`와 `/archived/`는
-`/home`으로 해석된다.
+`/old-home`(옛 `/home` 화면 보존 주소)으로 해석된다. 2026-11-09부터 `/home`은 메인(`/`)으로 301 이동한다.
 
 ## 접근 정책
 

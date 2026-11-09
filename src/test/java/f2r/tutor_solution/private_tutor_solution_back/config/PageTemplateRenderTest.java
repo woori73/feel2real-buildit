@@ -23,7 +23,7 @@ class PageTemplateRenderTest {
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {
       "/",
-      "/home",
+      "/old-home",
       "/register",
       "/stdt_dashboard",
       "/tutor_dashboard",

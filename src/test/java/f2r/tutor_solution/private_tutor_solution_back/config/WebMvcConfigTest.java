@@ -28,7 +28,7 @@ class WebMvcConfigTest {
 
   @ParameterizedTest(name = "{0} -> {1}")
   @CsvSource({
-      "/home, public/home",
+      "/old-home, public/home",
       "/register, auth/register",
       "/tutor/academy, tutor/tutor_academy",
       "/tutor/academy/setup, tutor/tutor_academy_setup",
@@ -158,6 +158,29 @@ class WebMvcConfigTest {
           .andExpect(status().isMovedPermanently())
           .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
               .redirectedUrl("/"));
+    } finally {
+      context.close();
+    }
+  }
+
+  @org.junit.jupiter.api.Test
+  @DisplayName("/home은 쿼리를 유지한 채 메인(/)으로 301 영구 리다이렉트한다")
+  void home_redirects_permanently_to_root() throws Exception {
+    // given
+    AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
+    context.setServletContext(new MockServletContext());
+    context.register(TestMvcConfig.class);
+    context.refresh();
+    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+
+    try {
+      // when & then
+      mockMvc.perform(get("/home"))
+          .andExpect(status().isMovedPermanently())
+          .andExpect(redirectedUrl("/"));
+      mockMvc.perform(get("/home").queryParam("login", "required"))
+          .andExpect(status().isMovedPermanently())
+          .andExpect(redirectedUrl("/?login=required"));
     } finally {
       context.close();
     }

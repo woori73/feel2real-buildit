@@ -53,7 +53,7 @@ public class ArchivedRouteAliasFilter extends OncePerRequestFilter {
     String originalUri = request.getRequestURI();
     String contextPath = normalizeContextPath(request.getContextPath());
     String archivedPath = originalUri.substring((contextPath + ARCHIVED_PREFIX).length());
-    String targetPath = archivedPath.isEmpty() || "/".equals(archivedPath) ? "/home" : archivedPath;
+    String targetPath = archivedPath.isEmpty() || "/".equals(archivedPath) ? "/old-home" : archivedPath;
 
     if (!isSafeTarget(targetPath)) {
       response.sendError(HttpStatus.BAD_REQUEST.value(), "잘못된 보존 경로입니다.");
