@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikilive.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikilive.entity.WikiLiveMessage;
 import java.time.LocalDateTime;
 
@@ -15,6 +16,6 @@ public record WikiLiveMessageResponse(
 ) {
   public static WikiLiveMessageResponse of(WikiLiveMessage m) {
     return new WikiLiveMessageResponse(
-        m.getWikiLiveMessageId(), m.getDisplayNameSnapshot(), m.getMessage(), m.getCreatedAt());
+        m.getWikiLiveMessageId(), m.getDisplayNameSnapshot(), m.getMessage(), KstTime.toKst(m.getCreatedAt()));
   }
 }
