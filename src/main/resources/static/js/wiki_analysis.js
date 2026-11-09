@@ -44,8 +44,12 @@
         var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
         var review = /복습|자습/.test(it.title || '') && /\.html?$/i.test(it.originalFileName || '');
         var q = String(it.title || '').match(/(\d+)(?:[~～-]\d+)?번/);
-        var href = review ? '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + (q ? '&question=' + q[1] : '') + '#review' : it.downloadUrl;
-        var card = '<a class="analysis-card" ' + (review ? '' : 'data-member-download ') + 'href="' + escapeAttr(href) + '">'
+        // 실전예상문제는 내려받기 없이 /wiki 실전예상문제 열람기로 연다.
+        var practice = !review && /실전|예상/.test(it.title || '');
+        var href = review ? '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + (q ? '&question=' + q[1] : '') + '#review'
+          : practice ? '/wiki?grade=' + encodeURIComponent(it.grade) + '&practice=' + encodeURIComponent(it.wikiAnalysisMaterialId) + '#analysis'
+          : it.downloadUrl;
+        var card = '<a class="analysis-card" ' + (review || practice ? '' : 'data-member-download ') + 'href="' + escapeAttr(href) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + (it.description ? '<span class="analysis-meta">' + escapeHtml(it.description) + '</span>' : '')
           + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'

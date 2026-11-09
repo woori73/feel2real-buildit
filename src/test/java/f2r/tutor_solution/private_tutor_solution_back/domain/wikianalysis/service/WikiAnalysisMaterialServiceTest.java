@@ -46,6 +46,18 @@ class WikiAnalysisMaterialServiceTest {
   }
 
   @Test
+  @DisplayName("given 실전·예상 제목 when isPracticeExam then true, 복습·자습·기타 제목은 false")
+  void isPracticeExam_classifiesTitles() {
+    // given / when / then
+    assertThat(WikiAnalysisMaterialService.isPracticeExam("2026 고1 2학기말 대비 실전예상문제 1회")).isTrue();
+    assertThat(WikiAnalysisMaterialService.isPracticeExam("신사중 3학년 기말 예상문제")).isTrue();
+    assertThat(WikiAnalysisMaterialService.isPracticeExam("2026 고1 10월 41~42번 복습 과제")).isFalse();
+    assertThat(WikiAnalysisMaterialService.isPracticeExam("실전 자습 해설")).isFalse();
+    assertThat(WikiAnalysisMaterialService.isPracticeExam("고1 모의고사 어휘 정리")).isFalse();
+    assertThat(WikiAnalysisMaterialService.isPracticeExam(null)).isFalse();
+  }
+
+  @Test
   @DisplayName("given HWP when 등록 then storage 저장 + content-type·다운로드 URL 반환")
   void create_storesHwp() throws Exception {
     MockMultipartFile file = new MockMultipartFile("file", "분석.hwp", "application/x-hwp", OLE2);

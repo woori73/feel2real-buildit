@@ -15,7 +15,7 @@
     ogImage=null)}"></th:block>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <link rel="stylesheet" href="/css/account_menu.css">
-  <link rel="stylesheet" href="/css/wiki.css?v=20261101-review-numbers-1">
+  <link rel="stylesheet" href="/css/wiki.css?v=20261109-practice-viewer-1">
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body class="wiki-body">
@@ -190,6 +190,13 @@
         </div>
       </div>
       <div id="analysisList" class="analysis-list"><p class="muted">불러오는 중...</p></div>
+      <section id="practiceReader" class="review-reader practice-reader" hidden aria-label="실전예상문제 열람">
+        <div class="reader-head"><h3 id="practiceReaderTitle"></h3><button type="button" id="practiceReaderClose">열람 닫기</button></div>
+        <p id="practiceStatus" class="practice-status" role="status"></p>
+        <div id="practicePages" class="practice-pages"></div>
+        <div id="practiceAnswerBar" class="practice-answer-bar" hidden><button type="button" id="practiceAnswerToggle">정답 및 해설 보기</button></div>
+        <div id="practiceAnswerPages" class="practice-pages" hidden></div>
+      </section>
     </section></div>
 
     <!-- 10. 모의고사 학습 자료 -->
@@ -221,7 +228,8 @@
   <script src="/js/api.js"></script>
   <script src="/js/account_menu.js"></script>
   <script src="/js/wiki_admin_manage.js?v=20261031-1"></script>
-  <script src="/js/wiki.js?v=20261101-material-links-1"></script>
+  <script src="/vendor/pdfjs/pdf.min.js?v=3.11.174"></script>
+  <script src="/js/wiki.js?v=20261109-practice-viewer-1"></script>
   <script src="/js/wiki_workspace.js?v=20261101-5"></script>
 </th:block>
 </body>

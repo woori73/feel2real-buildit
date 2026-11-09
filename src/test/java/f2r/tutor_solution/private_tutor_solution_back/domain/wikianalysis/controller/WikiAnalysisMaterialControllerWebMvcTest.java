@@ -95,6 +95,47 @@ class WikiAnalysisMaterialControllerWebMvcTest {
   }
 
   @Test
+  @DisplayName("given 실전예상문제 when 회원 다운로드 then 403 + 다운로드 기록 없음")
+  void download_practiceExam_forbiddenWithoutLog() throws Exception {
+    // given
+    when(service.getPublicDownload(2L)).thenReturn(
+        new DownloadFile("%PDF".getBytes(), "실전.pdf", "application/pdf", "2026 고1 2학기말 대비 실전예상문제 1회"));
+    // when / then
+    mockMvc.perform(get("/api/wiki/analysis-materials/2/download").cookie(token("STUDENT")))
+        .andExpect(status().isForbidden());
+    verifyNoInteractions(downloadRecordingService);
+  }
+
+  @Test
+  @DisplayName("given 익명 when 열람 URL 호출 then 401 + 파일 조회 없음")
+  void view_anonymous_unauthorized() throws Exception {
+    mockMvc.perform(get("/api/wiki/analysis-materials/2/view")).andExpect(status().isUnauthorized());
+    verify(service, never()).getPublicDownload(anyLong());
+  }
+
+  @Test
+  @DisplayName("given 회원 + PDF 실전예상문제 when 열람 then 200 inline·no-store·PDF")
+  void view_memberPdf_inline() throws Exception {
+    // given
+    when(service.getPublicDownload(2L)).thenReturn(
+        new DownloadFile("%PDF".getBytes(), "실전.pdf", "application/pdf", "2026 고1 2학기말 대비 실전예상문제 1회"));
+    // when / then
+    mockMvc.perform(get("/api/wiki/analysis-materials/2/view").cookie(token("STUDENT")))
+        .andExpect(status().isOk())
+        .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/pdf"))
+        .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, org.hamcrest.Matchers.startsWith("inline")))
+        .andExpect(header().string(HttpHeaders.CACHE_CONTROL, org.hamcrest.Matchers.containsString("no-store")));
+    verifyNoInteractions(downloadRecordingService);
+  }
+
+  @Test
+  @DisplayName("given 회원 + PDF 아닌 자료 when 열람 then 415")
+  void view_memberNonPdf_unsupported() throws Exception {
+    mockMvc.perform(get("/api/wiki/analysis-materials/1/view").cookie(token("STUDENT")))
+        .andExpect(status().isUnsupportedMediaType());
+  }
+
+  @Test
   @DisplayName("given 익명/STUDENT when 관리 등록 then 401/403")
   void adminCreate_deniedForNonAdmin() throws Exception {
     mockMvc.perform(multipart("/api/admin/wiki/analysis-materials").file("file", "%PDF".getBytes())

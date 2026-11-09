@@ -8,8 +8,11 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.dto.Wi
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.service.WikiAnalysisMaterialService.DownloadFile;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.web.FileDownloadResponses;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-/** BuildIt Wiki 분석 자료 API. 공개 목록 + 회원 다운로드 + ADMIN CRUD. */
+/** BuildIt Wiki 분석 자료 API. 공개 목록 + 회원 다운로드·열람(실전예상문제는 열람만) + ADMIN CRUD. */
 @RestController
 @RequiredArgsConstructor
 public class WikiAnalysisMaterialController {
@@ -39,9 +42,41 @@ public class WikiAnalysisMaterialController {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
     }
     DownloadFile file = service.getPublicDownload(id);
+    if (WikiAnalysisMaterialService.isPracticeExam(file.title())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "실전예상문제는 내려받기 없이 화면에서만 볼 수 있습니다.");
+    }
     downloadRecordingService.record(WikiMaterialCategory.ANALYSIS, id, file.title(),
         principal.userId(), principal.role());
     return FileDownloadResponses.attachment(file.bytes(), file.contentType(), file.fileName());
+  }
+
+  /**
+   * 실전예상문제 PDF 화면 열람(회원 전용). /wiki 열람기(pdf.js)가 읽어 페이지 그림으로 보여 준다.
+   * 내려받기 링크는 두지 않고, 응답은 inline + 캐시 저장 금지로 내려준다.
+   */
+  @GetMapping("/api/wiki/analysis-materials/{id}/view")
+  public ResponseEntity<byte[]> view(
+      @PathVariable Long id, @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    if (principal == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+    }
+    DownloadFile file = service.getPublicDownload(id);
+    if (!isPdf(file)) {
+      throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "화면 열람은 PDF 자료만 지원합니다.");
+    }
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_PDF);
+    headers.setContentDisposition(ContentDisposition.inline()
+        .filename(file.fileName(), StandardCharsets.UTF_8).build());
+    headers.setCacheControl("private, no-store");
+    headers.set("X-Content-Type-Options", "nosniff");
+    return ResponseEntity.ok().headers(headers).body(file.bytes());
+  }
+
+  private static boolean isPdf(DownloadFile file) {
+    String type = file.contentType() == null ? "" : file.contentType().toLowerCase();
+    String name = file.fileName() == null ? "" : file.fileName().toLowerCase();
+    return type.contains("pdf") || name.endsWith(".pdf");
   }
 
   @GetMapping("/api/admin/wiki/analysis-materials")

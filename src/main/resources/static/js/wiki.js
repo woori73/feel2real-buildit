@@ -451,6 +451,8 @@
 
   var hubOriginalsById = {};
   var hubAnalysesById = {};
+  var practiceToken = 0;          // 실전예상문제 열람 요청 번호(닫기·다른 자료 열기 시 이전 렌더 중단)
+  var practiceAutoOpened = false;  // ?practice=ID 자동 열기는 한 번만
 
   async function loadOriginals() {
     var box = document.getElementById('originalList');
@@ -483,6 +485,7 @@
 
   async function loadAnalyses() {
     var box = document.getElementById('analysisList');
+    closePractice();
     box.innerHTML = '<p class="muted">불러오는 중...</p>';
     try {
       var res = await fetch('/api/wiki/analysis-materials?grade=' + grade);
@@ -499,18 +502,137 @@
         var where = (it.schoolName || '전국') + ' · ' + it.grade + '학년 · ' + it.year + ' ' + it.semester + ' ' + it.examType;
         var review = /복습|자습/.test(it.title || '') && /\.html?$/i.test(it.originalFileName || '');
         var q = String(it.title || '').match(/(\d+)(?:[~～-]\d+)?번/);
-        var href = review ? '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + (q ? '&question=' + q[1] : '') + '#review' : it.downloadUrl;
-        var card = '<a class="analysis-card" ' + (review ? '' : 'data-member-download ') + 'href="' + escapeAttr(href) + '">'
+        // 실전예상문제는 내려받기 없이 이 화면의 열람기로만 본다(문제 → 정답·해설 순서).
+        var href = review ? '/wiki?grade=' + encodeURIComponent(it.grade) + '&month=' + (/9월|9모/.test(it.title || '') ? 9 : 10) + (q ? '&question=' + q[1] : '') + '#review' : '#analysis';
+        var card = '<a class="analysis-card" ' + (review ? '' : 'data-practice-id="' + escapeAttr(it.wikiAnalysisMaterialId) + '" ') + 'href="' + escapeAttr(href) + '">'
           + '<b>' + escapeHtml(it.title) + '</b>'
           + '<span class="analysis-meta">' + escapeHtml(where) + '</span>'
-          + '<span class="analysis-badge">' + escapeHtml(it.subject || '영어') + ' · ' + fileMeta(it) + '</span>'
+          + '<span class="analysis-badge">' + escapeHtml(it.subject || '영어') + (review ? ' · ' + fileMeta(it) : ' · 눌러서 풀기') + '</span>'
           + '</a>';
         if (!adminA) return card;
         return '<div class="analysis-card-wrap">' + card + window.WikiAdminManage.buttonsHtml('analysis', it.wikiAnalysisMaterialId) + '</div>';
       }).join('');
+      var wanted = new URLSearchParams(location.search).get('practice');
+      if (wanted && !practiceAutoOpened && hubAnalysesById[wanted]) {
+        practiceAutoOpened = true;
+        openPractice(hubAnalysesById[wanted]);
+      }
     } catch (_) {
       box.innerHTML = '<p class="error">분석 자료를 불러오지 못했습니다.</p>';
     }
+  }
+
+  // ── 실전예상문제 열람기 ─────────────────────────────────
+  // PDF를 pdf.js로 페이지 그림(canvas)으로만 보여 준다. 내려받기 링크·PDF 도구막대는 두지 않는다.
+  // '정답 및 해설'이 처음 나오는 쪽부터는 버튼을 눌러야 보인다(문제를 먼저 풀게 하기 위해).
+  var PDF_WORKER = '/vendor/pdfjs/pdf.worker.min.js?v=3.11.174';
+
+  document.getElementById('analysisList').addEventListener('click', function (e) {
+    var card = e.target.closest('[data-practice-id]');
+    if (!card) return;
+    e.preventDefault();
+    openPractice(hubAnalysesById[card.dataset.practiceId]);
+  });
+  document.getElementById('practiceReaderClose').addEventListener('click', closePractice);
+  document.getElementById('practiceReader').addEventListener('contextmenu', function (e) {
+    if (e.target.tagName === 'CANVAS') e.preventDefault();
+  });
+
+  function closePractice() {
+    practiceToken++;
+    var reader = document.getElementById('practiceReader');
+    if (!reader) return;
+    reader.hidden = true;
+    document.getElementById('practicePages').innerHTML = '';
+    document.getElementById('practiceAnswerPages').innerHTML = '';
+  }
+
+  async function openPractice(it) {
+    if (!it) return;
+    var token = ++practiceToken;
+    var reader = document.getElementById('practiceReader');
+    var pages = document.getElementById('practicePages');
+    var answers = document.getElementById('practiceAnswerPages');
+    var bar = document.getElementById('practiceAnswerBar');
+    var toggle = document.getElementById('practiceAnswerToggle');
+    var status = document.getElementById('practiceStatus');
+    document.getElementById('practiceReaderTitle').textContent = it.title;
+    pages.innerHTML = '';
+    answers.innerHTML = '';
+    answers.hidden = true;
+    bar.hidden = true;
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.textContent = '정답 및 해설 보기';
+    status.textContent = '문제를 불러오는 중...';
+    reader.hidden = false;
+    reader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try {
+      if (!window.pdfjsLib) throw new Error('viewer');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER;
+      var res = await fetch('/api/wiki/analysis-materials/' + encodeURIComponent(it.wikiAnalysisMaterialId) + '/view',
+        { credentials: 'same-origin', cache: 'no-store' });
+      if (res.status === 401) {
+        closePractice();
+        alert('실전예상문제는 로그인 회원만 볼 수 있습니다.');
+        if (typeof window.openLoginModal === 'function') window.openLoginModal();
+        return;
+      }
+      if (!res.ok) throw new Error('load');
+      var pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(await res.arrayBuffer()) }).promise;
+      if (token !== practiceToken) return;
+      var answerStart = await findAnswerStart(pdf);
+      var lastQuestionPage = answerStart ? answerStart - 1 : pdf.numPages;
+      for (var p = 1; p <= lastQuestionPage; p++) {
+        var canvas = await renderPdfPage(pdf, p, pages);
+        if (token !== practiceToken) return;
+        pages.appendChild(canvas);
+      }
+      status.textContent = answerStart ? '문제를 다 푼 뒤 맨 아래 버튼으로 정답과 해설을 확인하세요.' : '';
+      if (!answerStart) return;
+      bar.hidden = false;
+      var rendered = false;
+      toggle.onclick = async function () {
+        var open = answers.hidden;
+        answers.hidden = !open;
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.textContent = open ? '정답 및 해설 접기' : '정답 및 해설 보기';
+        if (!open || rendered) return;
+        rendered = true;
+        for (var a = answerStart; a <= pdf.numPages; a++) {
+          var page = await renderPdfPage(pdf, a, pages);
+          if (token !== practiceToken) return;
+          answers.appendChild(page);
+        }
+      };
+    } catch (_) {
+      if (token === practiceToken) status.textContent = '문제를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.';
+    }
+  }
+
+  // '정답 및 해설'이 처음 나오는 쪽 번호(2쪽 이후). 없으면 0 — 이때는 전체를 문제로 보여 준다.
+  async function findAnswerStart(pdf) {
+    for (var n = 2; n <= pdf.numPages; n++) {
+      var content = await (await pdf.getPage(n)).getTextContent();
+      var text = content.items.map(function (x) { return x.str; }).join('').replace(/\s+/g, '');
+      if (text.indexOf('정답및해설') >= 0) return n;
+    }
+    return 0;
+  }
+
+  async function renderPdfPage(pdf, n, widthBox) {
+    var page = await pdf.getPage(n);
+    var base = page.getViewport({ scale: 1 });
+    var width = Math.min((widthBox && widthBox.clientWidth) || 800, 860);
+    var ratio = Math.min(window.devicePixelRatio || 1, 2);
+    var viewport = page.getViewport({ scale: (width / base.width) * ratio });
+    var canvas = document.createElement('canvas');
+    canvas.className = 'practice-page';
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    canvas.setAttribute('role', 'img');
+    canvas.setAttribute('aria-label', n + '쪽');
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+    return canvas;
   }
 
   function loadBoards() {
