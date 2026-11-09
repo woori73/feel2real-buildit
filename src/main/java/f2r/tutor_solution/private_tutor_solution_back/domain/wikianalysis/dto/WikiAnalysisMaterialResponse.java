@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.entity.WikiAnalysisMaterial;
 import java.time.LocalDateTime;
 
@@ -37,8 +38,8 @@ public record WikiAnalysisMaterialResponse(
         material.getOriginalFileName(),
         material.getFileSize(),
         material.isVisible(),
-        material.getCreatedAt(),
-        material.getUpdatedAt(),
+        KstTime.toKst(material.getCreatedAt()),
+        KstTime.toKst(material.getUpdatedAt()),
         "/api/wiki/analysis-materials/" + id + "/download"
     );
   }
