@@ -23,7 +23,7 @@
 
   (async function () {
     var me = await root.ensureCurrentUser();
-    if (!me || me.role !== 'ADMIN') { root.location.href = '/home'; return; }
+    if (!me || me.role !== 'ADMIN') { root.location.href = '/'; return; }
     $('acForm').addEventListener('submit', async function (e) {
       e.preventDefault();
       var f = { currentPassword: $('acCurrent').value, newLoginId: $('acLoginId').value, confirmLoginId: $('acLoginId2').value,

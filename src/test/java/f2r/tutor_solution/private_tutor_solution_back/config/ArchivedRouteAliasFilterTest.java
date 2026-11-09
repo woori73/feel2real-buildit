@@ -22,7 +22,7 @@ class ArchivedRouteAliasFilterTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"/archived", "/archived/"})
-  @DisplayName("Given archived root, When alias filter runs, Then downstream sees /home")
+  @DisplayName("Given archived root, When alias filter runs, Then downstream sees /old-home")
   void archivedRootMapsToHome(String uri) throws Exception {
     // given
     MockHttpServletRequest request = request("GET", uri);
@@ -32,8 +32,8 @@ class ArchivedRouteAliasFilterTest {
     filter.doFilter(request, response, (wrapped, ignored) -> {
       // then
       assertThat(((MockHttpServletRequest) request).getDispatcherType().name()).isEqualTo("REQUEST");
-      assertThat(((jakarta.servlet.http.HttpServletRequest) wrapped).getRequestURI()).isEqualTo("/home");
-      assertThat(((jakarta.servlet.http.HttpServletRequest) wrapped).getServletPath()).isEqualTo("/home");
+      assertThat(((jakarta.servlet.http.HttpServletRequest) wrapped).getRequestURI()).isEqualTo("/old-home");
+      assertThat(((jakarta.servlet.http.HttpServletRequest) wrapped).getServletPath()).isEqualTo("/old-home");
       assertThat(wrapped.getAttribute(ArchivedRouteAliasFilter.ARCHIVED_ATTRIBUTE)).isEqualTo(true);
     });
 

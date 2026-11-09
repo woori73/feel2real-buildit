@@ -30,7 +30,7 @@
     const user = await ensureCurrentUser();
     currentUser = user;
     if (!user) {
-      location.href = '/home';
+      location.href = '/';
       return;
     }
     if (user.role !== 'TUTOR') {

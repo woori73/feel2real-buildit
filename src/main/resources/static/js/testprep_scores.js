@@ -2,7 +2,7 @@
   'use strict';
   const box = document.getElementById('score-list');
   await TP.loadMe();
-  if (!TP.user) { box.innerHTML = '<p class="lead">Please <a href="/home">log in</a> to see your scores.<span class="ko">점수를 확인하려면 <a href="/home">로그인</a>하세요.</span></p>'; return; }
+  if (!TP.user) { box.innerHTML = '<p class="lead">Please <a href="/">log in</a> to see your scores.<span class="ko">점수를 확인하려면 <a href="/">로그인</a>하세요.</span></p>'; return; }
   try {
     const rows = await TP.api('/api/testprep/attempts');
     if (!rows.length) { box.innerHTML = '<p class="lead">No attempts yet — start from <a href="/testprep/practice">iBT Practice</a> or <a href="/testprep/vocab">Vocabulary Quiz</a>.<span class="ko">아직 응시 기록이 없습니다 — <a href="/testprep/practice">iBT 모의고사</a> 또는 <a href="/testprep/vocab">어휘 퀴즈</a>에서 시작하세요.</span></p>'; return; }

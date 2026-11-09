@@ -2,7 +2,7 @@
   'use strict';
   const wrongsBox = document.getElementById('wrongs');
   await TP.loadMe();
-  if (!TP.user) { wrongsBox.innerHTML = '<p class="lead">Please <a href="/home">log in</a> to see your learning data.<span class="ko">학습 데이터를 확인하려면 <a href="/home">로그인</a>하세요.</span></p>'; return; }
+  if (!TP.user) { wrongsBox.innerHTML = '<p class="lead">Please <a href="/">log in</a> to see your learning data.<span class="ko">학습 데이터를 확인하려면 <a href="/">로그인</a>하세요.</span></p>'; return; }
 
   try {
     const lv = await TP.api('/api/testprep/learning');

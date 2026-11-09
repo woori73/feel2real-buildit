@@ -97,14 +97,14 @@
       // sessionStorage 비어도 JWT 쿠키로 복원 (탭/브라우저 재시작 대응)
       currentUser = await ensureCurrentUser();
       if (!currentUser) {
-        location.href = '/home';
+        location.href = '/';
         return;
       }
 
       // 강사가 아니면 접근 불가 (추후 역할별 대시보드로 분기 가능)
       if (currentUser.role !== 'TUTOR') {
         alert('강사 계정으로 로그인해 주세요.');
-        location.href = '/home';
+        location.href = '/';
         return;
       }
 

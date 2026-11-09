@@ -396,7 +396,7 @@ public class SecurityConfig {
 
             // 정적 리소스 + SSR 뷰 모두 public
             .requestMatchers(
-                "/", "/home",
+                "/", "/home", "/old-home",
                 "/eduholic",
                 "/login",
                 "/login.html",

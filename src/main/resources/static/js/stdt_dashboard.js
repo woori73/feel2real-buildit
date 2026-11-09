@@ -9,7 +9,7 @@ let editingConversationId = null;
 async function init() {
   // sessionStorage 비어도 JWT 쿠키로 복원 (탭/브라우저 재시작 대응)
   currentUser = await ensureCurrentUser();
-  if (!currentUser) { location.href = '/home'; return; }
+  if (!currentUser) { location.href = '/'; return; }
 
   // Phase 10 — URL ?asAdmin=1 이면 임퍼소네이트 모드
   asAdmin = new URLSearchParams(location.search).get('asAdmin') === '1';
@@ -18,7 +18,7 @@ async function init() {
     // 어드민이 학생 보기 모드. impersonatedStudent를 currentStudent로 사용.
     if (currentUser.role !== 'ADMIN') {
       alert('관리자 권한이 필요합니다.');
-      location.href = '/home';
+      location.href = '/';
       return;
     }
     const impersonated = sessionStorage.getItem('impersonatedStudent');
@@ -36,7 +36,7 @@ async function init() {
         }
       } catch (_) {}
     }
-    if (!storedStudent) { location.href = '/home'; return; }
+    if (!storedStudent) { location.href = '/'; return; }
     currentStudent = JSON.parse(storedStudent);
   }
 

@@ -9,7 +9,7 @@ import org.springframework.security.web.header.HeaderWriter;
 public class PrivatePageRobotsHeaderWriter implements HeaderWriter {
   private static final Set<String> PREFIXES = Set.of("/admin", "/api/admin", "/ai-agent-studio", "/api/studio", "/tutor", "/my",
       "/naesin-production-studio", "/api/naesin-production", "/naesin-wiki", "/api/naesin-wiki");
-  private static final Set<String> PAGES = Set.of("/dashboard", "/my/profile", "/studio-projects", "/stdt_dashboard", "/tutor_dashboard");
+  private static final Set<String> PAGES = Set.of("/old-home", "/dashboard", "/my/profile", "/studio-projects", "/stdt_dashboard", "/tutor_dashboard");
 
   @Override public void writeHeaders(HttpServletRequest request, HttpServletResponse response) {
     String path = request.getRequestURI().substring(request.getContextPath().length());

@@ -18,7 +18,7 @@
   async function init() {
     const currentUser = await ensureCurrentUser();
     if (!currentUser || currentUser.role !== 'ADMIN') {
-      location.href = '/home';
+      location.href = '/';
       return;
     }
     document.getElementById('userName').textContent = window.userDisplayName(currentUser);

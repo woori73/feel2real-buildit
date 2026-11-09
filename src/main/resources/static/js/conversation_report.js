@@ -15,7 +15,7 @@ async function init() {
     return;
   }
   if (!sessionStorage.getItem('currentUser')) {
-    location.href = '/home';
+    location.href = '/';
     return;
   }
 

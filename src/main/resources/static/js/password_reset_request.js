@@ -139,7 +139,7 @@
     }
     if (event.target.closest('[data-reset-go-back]')) {
       event.preventDefault();
-      history.length > 1 ? history.back() : location.assign('/home');
+      history.length > 1 ? history.back() : location.assign('/');
     }
   });
 

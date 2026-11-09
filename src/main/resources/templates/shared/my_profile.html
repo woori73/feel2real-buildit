@@ -14,7 +14,7 @@
       <h1>내 정보</h1>
       <div class="role" id="profileRole">-</div>
     </div>
-    <a class="back" id="dashboardLink" href="/home">대시보드로 이동</a>
+    <a class="back" id="dashboardLink" href="/">대시보드로 이동</a>
   </header>
 
   <form id="profileForm">
@@ -257,7 +257,7 @@
       });
       if (!res.ok) throw new Error(await res.text());
       sessionStorage.clear();
-      location.replace('/home');
+      location.replace('/');
     } catch (err) {
       setMessage(err.message, 'error');
       withdrawModal.hidden = true;

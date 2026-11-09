@@ -563,7 +563,7 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
   - 예: `GET /archived/conversation/dashboard` → `GET /conversation/dashboard`, `POST /archived/api/conversations` → `POST /api/conversations`.
   - archive gate와 target 인가/소유권/validation은 AND로 합성된다. archive ADMIN이라도 target이
     TUTOR 전용이면 403이며, mutating `/archived/api/**`도 canonical `/api/**` Origin/Referer 검사를 받는다.
-  - `/archived`와 `/archived/`는 `/home` target이며, 중첩 alias·ambiguous encoded 첫 segment·
+  - `/archived`와 `/archived/`는 `/old-home` target이며, 중첩 alias·ambiguous encoded 첫 segment·
     semicolon/matrix 첫 segment는 400이다. `enabled=false`는 downstream 검사 전에 404다.
   - 보안 보장은 현재 하나의 catch-all `SecurityFilterChain`을 전제로 한다.
   - 상세 정책은 [ARCHIVED_FEATURES.md](ARCHIVED_FEATURES.md)를 따른다.
@@ -627,7 +627,8 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 | Route | View template | 현재 사용처 |
 |-------|---------------|-------------|
 | `/` | `public/landing` | ✅ **Build It** 브랜드 랜딩(2026-08 개편, 시안 `docs/archive/archived_html/홈피개선.html`). Hero → Build It Web / Shorts / Report / Wiki → 문의 순의 스크롤 연출 페이지. `LandingPageController`가 주입하는 SSR 모델은 `academyShortsVideo`(=`ACADEMY_SHORTS_DEMO` 슬롯, Build It Web 섹션 영상) 하나뿐이다 — 공개+managed asset이면 공개 proxy stream, 번들이면 정적 mp4, 숨김이면 media element 대신 준비 중 프레임을 렌더한다. Wiki 섹션 3단계 중 `기출 분석`/`변형문제 생성`은 번들 정적 mp4(`digital_twin_ex.mp4` / `how2use_digitaltwin.mp4`)를 직접 참조하고, `학교별 Wiki`는 영상 없이 mock 대시보드다. 개편으로 구 랜딩의 실시간 빌더 미리보기·베타 의견 폼·후기 캐러셀은 제거됐다(`betaCarousel` 미주입). 브랜드 표기는 nav·footer 모두 Build It 워드마크이며 F2R 로고는 쓰지 않는다 — footer는 공용 fragment의 `publicFooterBuildIt` 변형을 쓴다(본문·사업자 정보는 `publicFooterBranded(buildIt)` 하나를 `/home`과 공유). 사용설명서(`/manual/index.html`)는 같은 탭으로 이동하며 매뉴얼 좌상단 `.manual-back`으로 돌아온다. |
-| `/home`, `/home.html` | `public/home` | F2R 메인 랜딩 — AI 기반 내신 영어 학습 플랫폼 (학생 대상). 로그인 여부와 무관한 최종 student landing이며 미로그인 서비스 진입은 로그인 모달을 연다. |
+| `/old-home` | `public/home` | 옛 F2R 메인 랜딩(학생 대상) 보존 주소(2026-11-09). sitemap 제외·`X-Robots-Tag: noindex`. 사이트 안 링크·이동은 모두 `/`로 간다. |
+| `/home` | 301 → `/` | 2026-11-09부터 메인으로 영구 이동(쿼리 유지). Search Console 표준 URL 중복 해소. |
 | `/academy` | `home` | 디지털 학원 창업 플랫폼 랜딩 (강사/창업 대상, 구 `/home`). 우측 상단 [로그인] 버튼은 공통 로그인 모달을 연다. |
 | `/eduholic` | — (301) | 구 학생 랜딩 URL. `/home`으로 **301 영구 리다이렉트** (북마크/외부 링크 보존) |
 | `/login`, `/login.html` | redirect | 일반 로그인 페이지는 제거됨. 직접 접근 시 `/home`으로 302 redirect. 로그인은 공통 모달에서 `/api/auth/login` 호출. |
