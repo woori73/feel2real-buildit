@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.analytics.entity.WikiMaterialCategory;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikianalysis.repository.WikiAnalysisMaterialRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.dto.WikiHomeFeedResponse.LatestUpdateItem;
@@ -78,9 +79,11 @@ public class LatestUpdatesService {
 
   private LatestUpdateItem item(WikiMaterialCategory category, Long id, Integer grade, String title,
       LocalDateTime createdAt, LocalDateTime newThreshold) {
-    boolean isNew = createdAt != null && createdAt.isAfter(newThreshold);
+    // createdAt은 서버 기본 시간대(운영 UTC)로 저장돼 있어 한국 시간으로 바꾼 뒤 비교·표시한다.
+    LocalDateTime createdAtKst = KstTime.toKst(createdAt);
+    boolean isNew = createdAtKst != null && createdAtKst.isAfter(newThreshold);
     return new LatestUpdateItem(
-        category.name(), WikiMaterialRef.label(category), grade, title, createdAt, isNew,
+        category.name(), WikiMaterialRef.label(category), grade, title, createdAtKst, isNew,
         WikiMaterialRef.href(category, id));
   }
 }
