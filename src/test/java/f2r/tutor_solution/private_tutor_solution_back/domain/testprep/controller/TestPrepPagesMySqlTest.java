@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
  *   <li>{@code /testprep} 첫 페이지는 비회원 공개(200). 하위 화면 익명 요청은 raw 401이 아닌 302 → {@code /testprep?login=required&returnUrl=…}.</li>
  *   <li>익명 JSON API는 401.</li>
  *   <li>로그인 회원(STUDENT)에게는 Thymeleaf 화면이 정상 렌더(200)된다.</li>
- *   <li>feel2real 메인 {@code /}(BuildIt 랜딩)은 그대로 익명 접근 가능 — TESTPREP 화면 통제가 홈페이지에 영향 없음.</li>
+ *   <li>feel2real {@code /home}(BuildIt 랜딩)은 그대로 익명 접근 가능 — TESTPREP 화면 통제가 홈페이지에 영향 없음.</li>
  * </ul>
  */
 @SpringBootTest
@@ -94,9 +94,9 @@ class TestPrepPagesMySqlTest {
   }
 
   @Test
-  @DisplayName("TESTPREP 화면 통제는 BuildIt 메인(/) 익명 접근을 막지 않는다")
+  @DisplayName("TESTPREP 화면 통제는 BuildIt /home 익명 접근을 막지 않는다")
   void homeRemainsPublic() throws Exception {
-    MvcResult r = mockMvc.perform(get("/").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult r = mockMvc.perform(get("/home").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
   }
 

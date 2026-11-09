@@ -37,11 +37,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        // 2026-11-09: /home은 더 이상 쓰지 않는다 — 메인("/")으로 영구 이동(쿼리 유지).
-        // 사용자가 /home으로 자동 이동되는 현상 + Search Console 표준 URL 중복 해소.
-        registry.addRedirectViewController("/home", "/")
-                .setKeepQueryParams(true)
-                .setStatusCode(HttpStatus.MOVED_PERMANENTLY);
+        // 2026-11-09: /home 화면은 직접 열면 그대로 보이게 둔다. 사이트 안의 이동·링크는 모두 메인("/")으로 바꿨고,
+        // 검색 중복(Search Console 표준 URL)은 sitemap 제외 + noindex(PrivatePageRobotsHeaderWriter)로 막는다.
+        view(registry, "/home", "public/home");
         // 구 /eduholic → 메인 영구 이동 (북마크/외부 링크 보존)
         registry.addRedirectViewController("/eduholic", "/")
                 .setStatusCode(HttpStatus.MOVED_PERMANENTLY);
