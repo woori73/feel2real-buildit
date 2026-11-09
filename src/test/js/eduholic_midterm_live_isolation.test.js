@@ -32,7 +32,7 @@ function makeDoc() {
   return document;
 }
 
-function run(sources, liveVideos, showcase, liveUpdates) {
+function run(sources, liveVideos, showcase, liveUpdates, opts) {
   const document = makeDoc();
   const mtRoot = new MiniElement('div');
   mtRoot.setAttribute('id', 'mtRoot');
@@ -50,6 +50,9 @@ function run(sources, liveVideos, showcase, liveUpdates) {
     '/api/analyzes': []                // 출제 경향 없음 → twin scene 없음(가짜 금지)
   };
   function fetchStub(url) {
+    if (url.indexOf('/api/auth/me') !== -1 && opts && opts.signedOut) {
+      return Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({}) });
+    }
     const key = Object.keys(routes).find((k) => url.indexOf(k) !== -1);
     const body = key ? routes[key] : [];
     return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
@@ -191,4 +194,33 @@ test('LIVE feed renders only public-safe metadata and attaches updates to exact 
   assert.equal(serialized.includes('studentPaperHtml'), false);
   assert.equal(serialized.includes('contextSnapshot'), false);
   assert.equal(serialized.includes('sourceMaterialIds'), false);
+});
+
+test('학습지 미리보기: 로그인 회원은 iframe, 비로그인은 iframe 없이 로그인 안내 카드', async () => {
+  // given: 압구정중2 학교 프린트 자료 1건
+  const sources = [
+    { sourceId: 'school-print-1', kind: 'school-print', school: '압구정중', grade: '2학년',
+      previewUrl: '/api/academies/eduholic/midterm-campaign/wiki-sources/school-print-1/preview',
+      createdAt: '2026-09-01T00:00:00Z' }
+  ];
+  const settle = async () => { for (let i = 0; i < 4; i++) await new Promise((r) => setImmediate(r)); };
+
+  // when: 로그인 상태(/api/auth/me 200)
+  const signedIn = run(sources, []).mtRoot;
+  await settle();
+  // then: 실제 미리보기 iframe 이 있고 로그인 안내는 없다
+  assert.ok(signedIn.querySelectorAll('iframe').some((f) => (f.src || f.getAttribute('src') || '').indexOf('/preview') !== -1),
+    '로그인 회원에게는 미리보기 iframe');
+  assert.equal(signedIn.querySelectorAll('.midterm-login-card').length, 0);
+
+  // when: 비로그인 상태(/api/auth/me 401)
+  const signedOut = run(sources, [], null, null, { signedOut: true }).mtRoot;
+  await settle();
+  // then: 미리보기 iframe 은 하나도 없고 로그인 안내 카드가 그 자리를 대신한다
+  assert.equal(signedOut.querySelectorAll('iframe').filter((f) => (f.src || f.getAttribute('src') || '').indexOf('/preview') !== -1).length, 0,
+    '비로그인에게 미리보기 iframe 없음');
+  const cards = signedOut.querySelectorAll('.midterm-login-card');
+  assert.ok(cards.length >= 1, '로그인 안내 카드');
+  const link = cards[0].querySelector('a');
+  assert.ok((link.getAttribute('href') || '').indexOf('/?login=required&returnUrl=') === 0, '로그인 후 이 화면으로 복귀');
 });
