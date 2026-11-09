@@ -224,7 +224,7 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   expect(errors).toEqual([]);
 });
 test('login surfaces welcome link without moving the current service',async({browser})=>{
-  const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await admin.storageState()});const p=await c.newPage();await p.goto('/home');
-  await expect(p.locator('#assistantWelcome')).toBeVisible();expect(new URL(p.url()).pathname).toBe('/home');
+  const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await admin.storageState()});const p=await c.newPage();await p.goto('/');
+  await expect(p.locator('#assistantWelcome')).toBeVisible();expect(new URL(p.url()).pathname).toBe('/');
   await expect(p.locator('#assistantWelcome a')).toHaveAttribute('href','/dashboard');await p.locator('#assistantWelcome button').click();await expect(p.locator('#assistantWelcome')).toHaveCount(0);await c.close();
 });

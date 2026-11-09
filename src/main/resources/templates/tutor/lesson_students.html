@@ -93,7 +93,7 @@
 
     (async () => {
       currentUser = await ensureCurrentUser();
-      if (!currentUser || currentUser.role !== 'TUTOR') { location.href = '/home'; return; }
+      if (!currentUser || currentUser.role !== 'TUTOR') { location.href = '/'; return; }
       document.getElementById('userName').textContent = window.userDisplayName(currentUser);
       loadApplications();
     })();

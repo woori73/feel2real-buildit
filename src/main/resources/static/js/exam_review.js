@@ -9,7 +9,7 @@ const pointState = new Map();
 async function init() {
   // sessionStorage 비어도 JWT 쿠키로 복원 (탭/브라우저 재시작 대응)
   currentUser = await ensureCurrentUser();
-  if (!currentUser) { location.href = '/home'; return; }
+  if (!currentUser) { location.href = '/'; return; }
   document.getElementById('userNameDisplay').textContent = `${window.userDisplayName(currentUser)}님`;
 
   const params = new URLSearchParams(location.search);

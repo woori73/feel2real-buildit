@@ -42,7 +42,7 @@ async function init() {
 
   const currentUser = readCurrentUser();
   if (!currentUser) {
-    location.href = '/home';
+    location.href = '/';
     return;
   }
 

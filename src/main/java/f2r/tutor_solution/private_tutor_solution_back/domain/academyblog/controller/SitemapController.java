@@ -26,7 +26,6 @@ public class SitemapController {
     StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     xml.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
     append(xml, "/", null);
-    append(xml, "/home", null);
     append(xml, "/faq", null);
     append(xml, "/newstart", null);
     append(xml, "/exam", null);

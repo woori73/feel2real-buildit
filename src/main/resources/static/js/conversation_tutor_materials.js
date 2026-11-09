@@ -20,7 +20,7 @@ document.addEventListener('keydown', lightboxKeyHandler);
 
 async function init() {
   if (!conversationId) { location.href = '/stdt_dashboard'; return; }
-  if (!await ensureCurrentUser()) { location.href = '/home'; return; }
+  if (!await ensureCurrentUser()) { location.href = '/'; return; }
 
   wireSidebarLinks();
   resolveAccess();

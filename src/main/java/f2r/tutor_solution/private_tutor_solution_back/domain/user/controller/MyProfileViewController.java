@@ -11,7 +11,7 @@ public class MyProfileViewController {
   @GetMapping("/my/profile")
   public String myProfile(@AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
     if (principal != null && "ADMIN".equals(principal.role())) {
-      return "redirect:/home";
+      return "redirect:/";
     }
     return "shared/my_profile";
   }

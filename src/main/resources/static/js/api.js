@@ -103,13 +103,13 @@
         sessionStorage.removeItem('currentUser');
         // 현재 페이지 URL 저장 (로그인 후 복귀용)
         const currentUrl = location.pathname + location.search + location.hash;
-        if (currentUrl !== '/home' && currentUrl !== '/' && !currentUrl.startsWith('/?login=')) {
+        if (currentUrl !== '/' && !currentUrl.startsWith('/?login=')) {
           sessionStorage.setItem('postLoginReturnUrl', currentUrl);
         }
       } catch (_) {}
       // 로그인 모달을 띄우기 위해 /?login=required&returnUrl=... 로 이동
       // (landing_buildit.js가 처리. 이미 로그인 페이지에 있으면 중복 이동 방지)
-      if (location.pathname !== '/home' && location.pathname !== '/') {
+      if (location.pathname !== '/') {
         const returnUrl = encodeURIComponent(location.pathname + location.search);
         location.href = '/?login=required&returnUrl=' + returnUrl;
       }
@@ -161,7 +161,7 @@
       if (!returnUrl) {
         const current = location.pathname + location.search;
         // 홈·로그인 페이지 자체에서는 복귀 URL 불필요
-        if (current !== '/' && current !== '/home' && !current.startsWith('/?login=')) {
+        if (current !== '/' && !current.startsWith('/?login=')) {
           returnUrl = current;
         }
       }
