@@ -3313,7 +3313,7 @@ rg -n 'fetch\(|axios|\.href|form|action=|/api/' src/main/resources/templates src
 ### ✅ GET /sitemap.xml / GET /robots.txt
 - 목적: 공개 Academy/블로그 글의 검색엔진 접근성 제공
 - 인증/권한: public
-- 검색 제외(`X-Robots-Tag: noindex, nofollow`, `PrivatePageRobotsHeaderWriter`): 관리자·대시보드·내 정보 등과 `/old-home`, `/wemade/login`(2026-11-09). `GET /api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` 응답도 같은 헤더를 붙인다(캠페인 화면용 미리보기의 단독 색인 방지). 2026-11-09부터 이 미리보기(학교 프린트 본문)는 **로그인 회원만** 볼 수 있다 — 비로그인 401(`SecurityConfig`), 캠페인 화면은 iframe 대신 로그인 안내 카드를 그린다. 목록 `GET …/wiki-sources`는 그대로 공개.
+- 검색 제외(`X-Robots-Tag: noindex, nofollow`, `PrivatePageRobotsHeaderWriter`): 관리자·대시보드·내 정보 등과 `/old-home`, `/wemade/login`(2026-11-09). 같은 날 `/api/**` 전체(JSON·내부 미리보기가 공개 페이지와 중복 색인되던 문제)와 `/signin/**`(비밀번호 재설정)도 추가. `GET /api/academies/{handle}/midterm-campaign/wiki-sources/{sourceId}/preview` 응답도 같은 헤더를 붙인다(캠페인 화면용 미리보기의 단독 색인 방지). 2026-11-09부터 이 미리보기(학교 프린트 본문)는 **로그인 회원만** 볼 수 있다 — 비로그인 401(`SecurityConfig`), 캠페인 화면은 iframe 대신 로그인 안내 카드를 그린다. 목록 `GET …/wiki-sources`는 그대로 공개.
 
 ## 15. Lesson Community / Q&A API
 
