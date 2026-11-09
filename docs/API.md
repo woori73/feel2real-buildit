@@ -3464,7 +3464,8 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 
 ### 공개
 - `GET /api/wiki/analysis-materials?grade=` — deleted=false·visible=true, grade(1~3, null=전체), 최신순. → `WikiAnalysisMaterialResponse[]`(wikiAnalysisMaterialId, title, description, schoolName, grade, year, semester, examType, subject, contentType, originalFileName, fileSize, isVisible, createdAt, updatedAt, downloadUrl).
-- `GET /api/wiki/analysis-materials/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 저장된 `content_type` + `Content-Disposition: attachment; filename*=UTF-8''…` + `nosniff`. 미존재/비공개 404.
+- `GET /api/wiki/analysis-materials/{id}/download` — 로그인 회원만. 비회원은 401이며 파일 조회·다운로드 로그를 수행하지 않는다. 공개 자료에 한해 저장된 `content_type` + `Content-Disposition: attachment; filename*=UTF-8''…` + `nosniff`. 미존재/비공개 404. **실전예상문제(제목에 '실전'·'예상'이 있고 '복습'·'자습'이 아닌 자료, `WikiAnalysisMaterialService.isPracticeExam`)는 403 — 내려받기 금지(2026-11-09), 다운로드 로그도 남기지 않는다.**
+- `GET /api/wiki/analysis-materials/{id}/view` — 로그인 회원만(비회원 401, 파일 조회 없음). PDF 자료만 `Content-Type: application/pdf` + `Content-Disposition: inline` + `Cache-Control: private, no-store` + `nosniff`로 내려준다. PDF가 아니면 415. `/wiki` 실전예상문제 열람기(`wiki.js`, pdf.js로 페이지를 canvas 그림으로 표시, 내려받기 링크 없음)가 사용한다. '정답 및 해설'이 처음 나오는 쪽부터는 '정답 및 해설 보기' 버튼을 눌러야 보인다. 다운로드 통계에는 기록하지 않는다.
 
 ### 관리 (ADMIN)
 - `GET /api/admin/wiki/analysis-materials` — deleted=false 전체.
