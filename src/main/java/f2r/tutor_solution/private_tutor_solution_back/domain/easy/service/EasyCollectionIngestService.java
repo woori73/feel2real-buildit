@@ -626,6 +626,40 @@ public class EasyCollectionIngestService {
     return ingestParsedRows(run, connection, business, scopeCode, "FINANCIAL_FILE", filename, parsed);
   }
 
+  /**
+   * 사용자가 기관 사이트에서 직접 내려받은 자료(MCP로 정리된 행)를 저장한다. 같은 멱등 키(idempotencyPrefix)의 이전
+   * 실행이 있으면 다시 저장하지 않고 그 결과를 돌려주며, 같은 키에 내용이 다르면 거절한다.
+   */
+  @Transactional
+  public EasyCollectionIngestResponse ingestSiteRows(Long businessId, String connectionLabel,
+      String idempotencyPrefix, String sourceFilename, List<CollectionParsedRow> parsed) {
+    var prior = runRepository.findAllByBusiness_BusinessIdOrderByRunIdDesc(businessId).stream()
+        .filter(run -> SITE_ADAPTER_CODE.equals(run.getAdapterCode())
+            && run.getSourceFilename().startsWith(idempotencyPrefix)).findFirst();
+    if (prior.isPresent()) {
+      if (!sourceFilename.equals(prior.get().getSourceFilename())) {
+        throw new IllegalStateException("같은 idempotencyKey로 다른 내용을 보냈습니다. 새 키를 쓰세요.");
+      }
+      return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(prior.get()), List.of());
+    }
+    if (parsed.isEmpty() || parsed.size() > MAX_ACCEPTED_ROWS) {
+      throw new IllegalArgumentException("한 번에 1~" + MAX_ACCEPTED_ROWS + "행까지 저장할 수 있습니다.");
+    }
+    EasyBusiness business = requireActiveBusiness(businessId);
+    EasyCollectionSource source = sourceRepository.findByCode(SOURCE_CODE)
+        .orElseThrow(() -> new IllegalArgumentException("파일 수집원이 없습니다."));
+    EasyCollectionConnection connection = findOrCreateConnection(business, source, connectionLabel);
+    EasyCollectionRun run = runRepository.save(EasyCollectionRun.builder()
+        .business(business).connection(connection).triggerType("MANUAL")
+        .sourceFilename(sourceFilename).adapterCode(SITE_ADAPTER_CODE).adapterVersion("v1").build());
+    // 연결 라벨(사이트+자료+계좌 참조)을 원본 키 범위로 써서 다른 계좌의 같은 내용 거래를 중복으로 보지 않는다.
+    return ingestParsedRows(run, connection, business, connectionLabel, SITE_ADAPTER_CODE,
+        sourceFilename, parsed);
+  }
+
+  /** 사용자가 기관 사이트에서 내려받아 MCP로 보낸 자료의 어댑터 코드. */
+  public static final String SITE_ADAPTER_CODE = "MCP_SITE";
+
   public EasyCollectionRunResponse getRun(Long runId) {
     return EasyCollectionRunResponse.from(runRepository.findById(runId)
         .orElseThrow(() -> new IllegalArgumentException("수집 실행을 찾을 수 없습니다: " + runId)));

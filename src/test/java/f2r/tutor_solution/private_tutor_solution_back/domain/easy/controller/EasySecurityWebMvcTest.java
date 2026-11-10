@@ -97,6 +97,7 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyBusinessScopeGuard businessScopeGuard;
   @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService tutorAccessService;
   @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionAccountRecommendationService collectionRecommendationService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService siteCollectionService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -118,6 +119,7 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/income-tax",
       "/api/admin/easy/corrections/logs",
       "/api/admin/easy/collections/connections?businessId=1",
+      "/api/admin/easy/collections/sites",
       "/api/admin/easy/card-events?businessId=1",
       "/api/admin/easy/workspace/monthly?businessId=1&month=2026-10",
       "/api/admin/easy/collector?businessId=1",

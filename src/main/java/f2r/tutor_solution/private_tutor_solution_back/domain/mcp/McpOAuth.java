@@ -72,6 +72,8 @@ public class McpOAuth {
   public static final String ACADEMY_MOVE_WRITE = "academy-move:write";
   /** 학생명단(시간표) 이름 없는 집계 읽기. 관리자 전용·별도 동의. 원본 파일·실명은 어떤 scope로도 제공하지 않는다. */
   public static final String STUDENT_ROSTER_READ = "student-roster:read";
+  /** 관리자가 직접 로그인한 기관 사이트에서 받은 거래를 F2R 장부에 저장. 이체·삭제·승인은 불가. */
+  public static final String EASY_COLLECT_WRITE = "easy-collect:write";
 
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
 
@@ -143,6 +145,7 @@ public class McpOAuth {
     all.add(STUDIO_PROPOSE);
     all.add(ACADEMY_MOVE_WRITE);
     all.add(STUDENT_ROSTER_READ);
+    all.add(EASY_COLLECT_WRITE);
     return all;
   }
 
@@ -260,6 +263,7 @@ public class McpOAuth {
             || selected.contains(STUDIO_PROPOSE)
             || selected.contains(ACADEMY_MOVE_WRITE)
             || selected.contains(STUDENT_ROSTER_READ)
+            || selected.contains(EASY_COLLECT_WRITE)
             || "ADMIN".equals(p.role())
                 && selected.stream()
                     .anyMatch(

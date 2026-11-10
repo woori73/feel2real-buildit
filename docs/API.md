@@ -4648,6 +4648,21 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - 화면: `/easy/connections` — 기관·계좌 등록/수정, 인증 상태, 지금 수집, 자동수집 켜기/끄기, 연결 해제, 수집 이력·장부 저장 결과, 미분류 AI 추천.
 - 오류 코드 `LEDGER_SAVE_FAILED`: 기관 응답은 받았지만 장부 저장이 롤백됨 — 커서를 넘기지 않고 다음 실행이 같은 구간을 다시 처리한다.
 
+### EASY 자동수집 — 기관 사이트 직접 받기(MCP, 유료 수집 API 대체) (2026-11-10, 마이그레이션 없음)
+
+CODEF 정식 사용은 B2B 계약·견적이 필요하므로(무료는 데모 일 100회), 관리자가 기관 사이트에 **직접 로그인**해 내려받은 거래를 MCP로 연결한 AI가 행으로 정리해 저장하는 경로를 둔다. 저장은 위 절과 같은 수집 경로(원본 보존 → 원본 키 중복 방지 → 장부 fingerprint 중복 제외 → 중앙 장부 저장 → 자동분류 → 예외 검토)를 그대로 쓴다. 상세 설계·기관 목록: [docs/easy/auto-collection/11_MCP_SITE_COLLECTION.md](easy/auto-collection/11_MCP_SITE_COLLECTION.md).
+
+- `GET /api/admin/easy/collections/sites` (ADMIN) — 은행 18·카드사 9·홈택스·여신금융협회 카드매출 공식 주소(`url`, 기업용 `businessUrl`), 저장 가능한 자료(`datasets`: `BANK_ACCOUNT`|`CARD_PURCHASE`|`CARD_SALES`), 사이트 주의(`note`), 범주별 내려받기 순서(`steps`), 안전 규칙(`safetyRules`), 활성 사업체(`businesses[{businessId,name}]`)를 준다. `/easy/connections` 화면의 "기관 사이트에서 직접 받기 (MCP)" 표가 이 응답을 쓴다.
+- MCP `easy_collection_sites` — 위와 같은 내용. 인자 없음.
+- MCP `save_easy_site_rows` — 인자 `{businessId, siteCode, dataset, accountRef, from, to, expectedCount, expectedTotal, idempotencyKey, rows[{date, direction:IN|OUT, amount, counterparty?, description?, approvalNo?, balance?, cancelOfDate?}]}`.
+  - 행 수와 금액 합계(입출금을 상계하지 않은 합)가 `expectedCount`·`expectedTotal`(사이트 표시값)과 다르면, 날짜가 `from~to`(최대 1년) 밖이면, 사이트가 다루지 않는 dataset이면 **아무것도 저장하지 않고** `{saved:false, reason}`을 돌려준다. rows는 1~2,000행, 알 수 없는 행 칸(예: password)은 400.
+  - `accountRef`는 불투명 참조(40자, 6자리 이상 연속 숫자 금지). 적요·거래처의 6자리 이상 숫자는 끝 4자리만 남긴다.
+  - 연결 라벨 `MS_`+해시(사이트·자료·accountRef)로 원본 키 범위를 나눈다. `balance` 또는 `approvalNo`가 있으면 외부 ID로 같은 날 같은 금액 거래를 구분하고, 없으면 기존 tuple+순번 규칙을 쓴다.
+  - 통장 행은 CODEF 경로와 같은 은행 판정(`primary_disposition`: 카드대금·카드정산·대출·지원금 등)을 붙인다. 카드 정산입금은 매출로, 카드대금 출금은 비용으로 다시 잡지 않는다.
+  - 카드 취소(사용 IN·매출 OUT)는 `approvalNo`+`cancelOfDate`(원승인일)가 있으면 원거래와 연결된 역분개 행, 없으면 검토 메모를 단 일반 행으로 저장한다.
+  - 같은 `idempotencyKey` 재전송은 이전 run을 그대로 돌려주고, 같은 키에 내용이 다르면 거절한다. 같은 자료를 새 키로 다시 보내면 원본 키 중복으로 장부에 다시 들어가지 않는다. 응답 run의 `adapterCode`는 `MCP_SITE`.
+- 두 도구는 새 동의 항목 `easy-collect:write`와 ADMIN을 모두 요구한다(민감 동의 경고 대상, 운영 기본 허용 목록에 추가, 연결 grant당 분당 30회). 기존 `easy:read` 토큰에 자동 추가하지 않으며 이체·삭제·승인 도구는 없다. 서버는 기관 사이트에 접속하지 않고 비밀번호·인증서·OTP를 받는 칸도 없다.
+
 ### EASY 자동수집 Phase 4 실행 안전 계약
 
 - MANUAL과 SCHEDULED provider 수집은 동일한 DB-backed execution gate를 통과한다.

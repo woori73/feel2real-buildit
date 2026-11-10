@@ -78,7 +78,7 @@ public class McpController {
                       + " AI AGENT 제작소는 list_studio_assets → read_studio_asset/get_asset_versions로 확인하고,"
                       + " studio:propose 동의가 있을 때만 submit_studio_review·create_studio_task·upload_studio_asset로"
                       + " 검수 의견·수정 작업·새 버전을 등록합니다. 승인·공개는 사람이 결정합니다. 학원이사는 academy-move:write 별도 동의 후 read_academy_move·post_academy_move로 이슈별 글과 AI 정리·대화를 함께 저장합니다."
-                      + " 학생명단(시간표)은 student-roster:read 별도 동의 후 read_student_roster의 이름 없는 집계(가명)만으로 학원 발전 방안을 논의합니다.");
+                      + " 학생명단(시간표)은 student-roster:read 별도 동의 후 read_student_roster의 이름 없는 집계(가명)만으로 학원 발전 방안을 논의합니다. F2R 장부는 easy-collect:write 별도 동의 후 easy_collection_sites로 기관 공식 주소를 받고, 사용자가 직접 로그인해 내려받은 거래를 save_easy_site_rows로 저장합니다.");
           break;
         case "ping":
           result = Map.of();
