@@ -52,8 +52,8 @@ public class AdmissionsFactSearchService {
     static final int MAX_SCHEDULES = 8;
     /** 지난해 입시결과: 근거로 쓰는 전형·모집단위 수 상한. */
     static final int MAX_PRIOR_UNITS = 8;
-    /** 학과를 말한 지난해 입시결과 질문: 그 학과의 세부모집·전형이 잘리지 않도록 쓰는 상한. */
-    static final int MAX_PRIOR_DEPARTMENT_UNITS = 16;
+    /** 학과를 말한 지난해 입시결과 질문: 그 학과의 세부모집·전형이 잘리지 않도록 쓰는 상한(답변 근거 전체 상한 16 중 4건은 올해 학과·전형 자료 몫으로 남긴다). */
+    static final int MAX_PRIOR_DEPARTMENT_UNITS = 12;
     /** 수시 수능최저: 근거로 쓰는 규칙 수 상한. */
     static final int MAX_MINIMUM_RULES = 8;
     /** 대학을 지정하지 않은 전체 일정 질문: 대학당 근거 수와 전체 상한. */
