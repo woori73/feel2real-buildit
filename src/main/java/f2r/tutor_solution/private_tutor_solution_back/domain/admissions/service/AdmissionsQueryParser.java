@@ -419,6 +419,16 @@ public final class AdmissionsQueryParser {
     }
 
     /**
+     * '학과 / 세부모집'으로 적힌 모집단위의 학과 부분(예: 한국예술종합학교 "연기과 / 연기(여)" → "연기과").
+     * 구분자 " / "가 없으면 이름 그대로.
+     */
+    static String departmentHead(String departmentName) {
+        if (departmentName == null) return null;
+        int i = departmentName.indexOf(" / ");
+        return i > 0 ? departmentName.substring(0, i).trim() : departmentName;
+    }
+
+    /**
      * 학과명의 핵심어로 언급됐는지(2차 폴백). "반도체 전공 가고 싶어요" → "시스템반도체공학과", "반도체공학과".
      * 1차 이름 매칭이 하나도 없을 때만 써야 한다. 질문이 "의예과"처럼 정확한 학과명을 말했는데 부분 일치까지 더하면
      * "치의예과"·"한의예과" 같은 다른 학과가 섞이기 때문이다.

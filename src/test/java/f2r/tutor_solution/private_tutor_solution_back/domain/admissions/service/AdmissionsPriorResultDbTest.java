@@ -193,11 +193,14 @@ class AdmissionsPriorResultDbTest {
          "prior_results":[
            {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"일반","department_name":"연기과 / 연기(여)",
             "metric_label":null,"recruit_count":12,"applicant_count":900,"competition_rate":null,"extra_admitted_count":3,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"일반","department_name":"무용과 / 발레",
+            "metric_label":null,"recruit_count":8,"applicant_count":200,"competition_rate":null,"extra_admitted_count":null,
             "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]}]}
         """;
 
     @Test
-    @DisplayName("given 수시·정시 구분이 없는 학교 결과(OTHER) when 정시·수시로 물어도 then 빠지지 않고 '구분 없음'으로 표시된다")
+    @DisplayName("given 수시·정시 구분이 없는 학교의 '학과 / 세부모집' 결과(OTHER) when 학과명으로 정시·수시를 물으면 then 그 학과만, '구분 없음'으로 표시된다")
     void otherRound_isShownForBothRoundQuestions() throws Exception {
         // given
         loader.loadSeed(SEED_OTHER);
@@ -213,7 +216,7 @@ class AdmissionsPriorResultDbTest {
             assertThat(prior).hasSize(1);
             assertThat(prior.get(0).getTitle()).contains("예술학교", "2026학년도(지난해)", "수시·정시 구분 없음(학교 자체 입시)", "연기과 / 연기(여)")
                     .doesNotContain(" 정시 입시결과", " 수시 입시결과");
-            assertThat(prior.get(0).getExcerpt()).contains("모집인원 12명", "지원자 900명");
+            assertThat(prior.get(0).getExcerpt()).contains("모집인원 12명", "지원자 900명").doesNotContain("지원자 200명");
         }
     }
 

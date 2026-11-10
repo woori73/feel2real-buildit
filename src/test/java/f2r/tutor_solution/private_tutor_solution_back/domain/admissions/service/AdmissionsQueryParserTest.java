@@ -162,6 +162,16 @@ class AdmissionsQueryParserTest {
         assertThat(AdmissionsQueryParser.mentionsDepartment("수학 공부법", "수학과")).isFalse();
     }
 
+    @Test
+    @DisplayName("given '학과 / 세부모집' 이름 when 학과 부분을 꺼내면 then 구분자 앞만, 없으면 그대로")
+    void departmentHead_splitsOnlyOnSlashSeparator() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.departmentHead("연기과 / 연기(여)")).isEqualTo("연기과");
+        assertThat(AdmissionsQueryParser.departmentHead("통합모집(신학과/상담심리학과)")).isEqualTo("통합모집(신학과/상담심리학과)");
+        assertThat(AdmissionsQueryParser.departmentHead("컴퓨터공학과")).isEqualTo("컴퓨터공학과");
+        assertThat(AdmissionsQueryParser.departmentHead(null)).isNull();
+    }
+
     /** 시드(학과 480행)에서 "반도체"가 들어간 실제 모집단위 8개. */
     private static final List<String> SEMICONDUCTOR_DEPTS = List.of(
             "시스템반도체공학과", "지능형반도체전공", "반도체시스템공학과", "반도체융합공학과",

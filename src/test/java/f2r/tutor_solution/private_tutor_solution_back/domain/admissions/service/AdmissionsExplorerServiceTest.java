@@ -65,6 +65,22 @@ class AdmissionsExplorerServiceTest {
         assertThat(susi).isEqualTo(2);
         assertThat(jeongsi).isEqualTo(1);
     }
+    @Test void givenSubTrackPriorNames_whenComparing_thenRowsUnderSameDepartmentAreShown() {
+        // given: 한예종처럼 지난해 모집단위가 '학과 / 세부모집'으로 적힌 행
+        prior(1,1,2026,"ACTIVE",1,"컴퓨터공학과 / 인공지능",null,"OTHER");
+        prior(2,1,2026,"ACTIVE",1,"컴퓨터공학과 / 보안",null,"OTHER");
+        prior(3,1,2026,"ACTIVE",1,"컴퓨터공학과정 / 야간",null,"OTHER");
+        // when
+        var rows=(java.util.List<?>)service.detail(2027,10,"ALL").get("priorResults");
+        // then: 앞부분이 정확히 같은 학과만(다른 학과명 '컴퓨터공학과정'은 제외)
+        assertThat(rows).hasSize(2);
+        assertThat(rows.toString()).contains("컴퓨터공학과 / 인공지능","컴퓨터공학과 / 보안").doesNotContain("컴퓨터공학과정");
+    }
+    @Test void givenLikeWildcardInName_whenBuildingPattern_thenWildcardsAreEscaped() {
+        // given / when / then
+        assertThat(AdmissionsExplorerService.headPattern("A_B%과")).isEqualTo("A!_B!%과 / %");
+        assertThat(AdmissionsExplorerService.headPattern("느낌!학과")).isEqualTo("느낌!!학과 / %");
+    }
     @Test void givenWildcardAndWrongYear_whenSearching_thenLiteralSearchAndValidation() {
         assertThat((java.util.List<?>)service.departments(2027,1,"%").get("items")).isEmpty();
         assertThatThrownBy(()->service.departments(2026,1,"")).isInstanceOf(ResponseStatusException.class);
