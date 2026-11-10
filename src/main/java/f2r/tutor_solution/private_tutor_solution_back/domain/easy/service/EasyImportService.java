@@ -605,10 +605,6 @@ public class EasyImportService {
       if ("CARD_SETTLEMENT".equals(normalized)) {
         return EasyTaxClassification.NOT_INCOME;
       }
-      // 결제선생 등 수납 서비스 정산입금 = 이미 수납 시점에 잡힌 수강료의 정산 → 수입 재계상 금지.
-      if ("PG_SETTLEMENT".equals(normalized)) {
-        return EasyTaxClassification.NOT_INCOME;
-      }
       // 고용지원금·장려금은 수입금액 산입 여부를 단정하지 않는다.
       if ("GOV_SUBSIDY".equals(normalized)) {
         return EasyTaxClassification.REVIEW_REQUIRED;
@@ -646,9 +642,6 @@ public class EasyImportService {
     String disposition = extractJsonField(row.getRawData(), "primary_disposition");
     if ("CARD_SETTLEMENT".equalsIgnoreCase(disposition)) {
       return "카드매출 정산(검토)";
-    }
-    if ("PG_SETTLEMENT".equalsIgnoreCase(disposition)) {
-      return "결제선생 정산(검토)";
     }
     if ("CARD_PAYMENT".equalsIgnoreCase(disposition)) {
       return "카드대금 결제(검토)";

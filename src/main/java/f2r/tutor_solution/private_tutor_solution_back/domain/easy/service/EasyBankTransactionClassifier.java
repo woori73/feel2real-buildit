@@ -23,9 +23,6 @@ public final class EasyBankTransactionClassifier {
   public static final String LOAN_INTEREST = "LOAN_INTEREST";
   public static final String LOAN_REPAYMENT = "LOAN_REPAYMENT";
   public static final String GOV_SUBSIDY = "GOV_SUBSIDY";
-  /** 결제선생(페이민트) 등 수납 서비스의 정산 입금 — 이미 수납 시점에 수입으로 잡힌 돈. */
-  public static final String PG_SETTLEMENT = "PG_SETTLEMENT";
-  private static final List<String> TUITION_PAY_SERVICES = List.of("페이민트", "결제선생", "paymint", "payssam");
 
   private static final List<String> CARD_COMPANIES = List.of("신한카드", "국민카드", "kb카드",
       "kb국민카드", "비씨카드", "bc카드", "삼성카드", "현대카드", "롯데카드", "하나카드", "우리카드",
@@ -52,10 +49,6 @@ public final class EasyBankTransactionClassifier {
     if (!income && cardCompany && CARD_PAYMENT_HINT.matcher(text).find()) {
       return new Result(CARD_PAYMENT,
           "[검토] 카드대금 출금 — 카드 사용 시점에 비용 처리되므로 비용으로 다시 넣지 않았습니다.");
-    }
-    if (income && TUITION_PAY_SERVICES.stream().anyMatch(text::contains)) {
-      return new Result(PG_SETTLEMENT,
-          "[검토] 결제선생(페이민트) 정산입금 — 결제선생 수납 자료와 대사하세요. 수강료 수입으로 다시 넣지 않았습니다.");
     }
     if (income && cardCompany) {
       return new Result(CARD_SETTLEMENT,

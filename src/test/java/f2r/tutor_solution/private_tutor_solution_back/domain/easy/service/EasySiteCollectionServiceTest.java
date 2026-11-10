@@ -227,41 +227,6 @@ class EasySiteCollectionServiceTest {
   }
 
   @Test
-  @DisplayName("given 결제선생 수납 완료·취소 when 행 변환 then 수입 행과 원거래에 연결된 역분개 행이 된다")
-  void tuitionPaymentRowsBecomeIncomeAndLinkedCancellation() {
-    // given
-    var site = EasySiteCollectionCatalog.find("PAYSSAM").orElseThrow();
-    Map<String, Integer> occurrence = new HashMap<>();
-    var paid = new SiteRow("2026-10-05", "IN", 300_000L, "합성학생", "10월 수강료", "P0001", null, null);
-    var cancel = new SiteRow("2026-10-09", "OUT", 300_000L, "합성학생", "10월 수강료 취소", "P0001", null, "2026-10-05");
-
-    // when
-    var income = EasySiteCollectionService.toParsedRow(1, paid, site, Dataset.TUITION_PAYMENT, "결제선생",
-        LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), occurrence);
-    var reversal = EasySiteCollectionService.toParsedRow(2, cancel, site, Dataset.TUITION_PAYMENT, "결제선생",
-        LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31), occurrence);
-
-    // then
-    assertThat(income.direction()).isEqualTo("INCOME");
-    assertThat(income.payMethod()).isEqualTo("결제선생");
-    assertThat(income.evidenceType()).isNull();
-    assertThat(reversal.direction()).isEqualTo("INCOME");
-    assertThat(reversal.rawJson()).contains("\"original_external_id\":\"" + income.externalId() + "\"");
-  }
-
-  @Test
-  @DisplayName("given 결제선생에서 통장 자료 when 저장 then 다루지 않는 자료라 거절한다")
-  void payssamRejectsBankDataset() {
-    // given
-    var request = new SiteRowsRequest(7L, "PAYSSAM", "BANK_ACCOUNT", "결제선생", "2026-10-01",
-        "2026-10-31", 1, 1000L, "key-00001", List.of(row("2026-10-02", "IN", 1000, "합성학생")));
-
-    // when / then
-    assertThatThrownBy(() -> service.save(ADMIN, request)).hasMessageContaining("자료만");
-    verifyNoInteractions(ingest);
-  }
-
-  @Test
   @DisplayName("given 건수·합계 누락·0원 when verifyTotals then 거절한다")
   void verifyTotalsRequiresBothAndPositiveAmounts() {
     // given

@@ -20,18 +20,14 @@ public final class EasySiteCollectionCatalog {
     /** 사업용 카드 사용(매입)내역 — 비용. */
     CARD_PURCHASE,
     /** 카드 매출(가맹점) 내역 — 수입. */
-    CARD_SALES,
-    /** 결제선생 등 청구·수납 서비스의 수강료 결제 완료 내역 — 수입. */
-    TUITION_PAYMENT
+    CARD_SALES
   }
 
   public enum Category {
     BANK,
     CARD,
     HOMETAX,
-    CREFIA,
-    /** 수강료 청구·수납 서비스(결제선생). */
-    TUITION
+    CREFIA
   }
 
   /**
@@ -78,11 +74,7 @@ public final class EasySiteCollectionCatalog {
               + " 두 번 잡히므로 장부에 올리지 말고 대조용으로만 봅니다."),
       new Site("CREFIA_CARDSALES", Category.CREFIA, "여신금융협회 카드매출 조회", "https://www.cardsales.or.kr/",
           null, List.of(Dataset.CARD_SALES),
-          "카드 매출(승인·매입)만 올립니다. 카드사가 통장에 넣어 준 입금(정산)은 은행 거래로 들어오며 매출로 두 번 잡지 않습니다."),
-      new Site("PAYSSAM", Category.TUITION, "결제선생 (수강료 청구·수납)", "https://manager.payssam.kr/", null,
-          List.of(Dataset.TUITION_PAYMENT),
-          "결제 완료 건만 올립니다(미결제·파기 제외). 결제선생 운영사 페이민트가 통장에 넣어 준 정산 입금은 은행 거래로 들어오며"
-              + " 수강료 수입으로 두 번 잡지 않습니다. 결제선생으로 받은 카드 결제는 여신협회 카드매출에도 보일 수 있으니 한 곳에서만 올리세요."));
+          "카드 매출(승인·매입)만 올립니다. 카드사가 통장에 넣어 준 입금(정산)은 은행 거래로 들어오며 매출로 두 번 잡지 않습니다."));
 
   /** 범주별 내려받기 순서(메뉴 이름은 사이트마다 조금씩 다르다). */
   private static final Map<Category, List<String>> STEPS = steps();
@@ -142,11 +134,6 @@ public final class EasySiteCollectionCatalog {
         "조회/발급 메뉴에서 사업용 신용카드 사용내역을 엽니다(카드사에서 이미 올린 카드는 건너뜁니다).",
         "기간을 고르고 내려받기를 누른 뒤 dataset=CARD_PURCHASE로 저장합니다.",
         "전자세금계산서·현금영수증 목록은 대조용으로만 보고 장부에는 올리지 않습니다."));
-    steps.put(Category.TUITION, List.of(
-        "결제선생 매니저(공식 주소)로 들어가 사용자가 직접 로그인합니다.",
-        "발송·수납 내역에서 기간을 고르고 결제 상태가 결제완료인 건만 봅니다(미결제·파기는 제외).",
-        "조회 건수·금액 합계를 확인하고 엑셀로 내려받습니다.",
-        "행 단위(결제일·학생/청구 이름·금액·승인번호, 결제 취소는 OUT)로 정리해 dataset=TUITION_PAYMENT로 저장합니다."));
     steps.put(Category.CREFIA, List.of(
         "여신금융협회 카드매출 조회 공식 주소로 들어가 가맹점 회원으로 사용자가 직접 로그인합니다.",
         "매출조회에서 승인(또는 매입) 내역과 기간을 고릅니다.",

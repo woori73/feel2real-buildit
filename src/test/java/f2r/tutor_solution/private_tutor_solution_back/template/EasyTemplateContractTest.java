@@ -69,7 +69,7 @@ class EasyTemplateContractTest {
     // then
     assertThat(html)
         .contains("id=\"statusLine\"", "data-cat=\"HOMETAX\"", "data-cat=\"CARD\"", "data-cat=\"BANK\"",
-            "data-cat=\"CREFIA\"", "data-cat=\"TUITION\"", "id=\"connTable\"", "id=\"fileCard\"", "id=\"runs\"",
+            "data-cat=\"CREFIA\"", "id=\"connTable\"", "id=\"fileCard\"", "id=\"runs\"",
             "id=\"organization\"", "id=\"account\"", "/js/easy_connections_view.js",
             "/js/easy_connections.js", "F2R 장부", "사용안내")
         .doesNotContain("id=\"otp\"", "certPassword");
