@@ -93,6 +93,26 @@ public class EasyCollectionRun extends BaseEntity {
   @Column(name = "heartbeat_at")
   private LocalDateTime heartbeatAt;
 
+  /** 마지막 기관 API 응답 수신 시각 — 장부 저장 완료와 구분한다. */
+  @Column(name = "fetched_at")
+  private LocalDateTime fetchedAt;
+
+  /** 중앙 장부 저장까지 끝난 마지막 조회일. 저장 실패 구간은 포함하지 않는다. */
+  @Column(name = "ledger_saved_through")
+  private java.time.LocalDate ledgerSavedThrough;
+
+  @Column(name = "ledger_saved_at")
+  private LocalDateTime ledgerSavedAt;
+
+  @Column(name = "ledger_saved_count", nullable = false)
+  private int ledgerSavedCount;
+
+  @Column(name = "ledger_review_count", nullable = false)
+  private int ledgerReviewCount;
+
+  @Column(name = "ledger_classified_count", nullable = false)
+  private int ledgerClassifiedCount;
+
   @Builder
   public EasyCollectionRun(EasyCollectionConnection connection, EasyBusiness business,
       String triggerType, String sourceFilename, String adapterCode, String adapterVersion) {
@@ -141,6 +161,59 @@ public class EasyCollectionRun extends BaseEntity {
         ? (accepted + duplicate > 0 ? EasyCollectionRunStatus.PARTIAL : EasyCollectionRunStatus.FAILED)
         : EasyCollectionRunStatus.SUCCESS;
     this.completedAt = LocalDateTime.now();
+  }
+
+  public void recordFetched(LocalDateTime when) {
+    this.fetchedAt = when;
+  }
+
+  /** 한 저장 단위(기간 구간)의 장부 저장이 커밋될 때마다 누적한다. */
+  public void addLedgerResult(int saved, int review, int classified,
+      java.time.LocalDate savedThrough, LocalDateTime when) {
+    this.ledgerSavedCount += saved;
+    this.ledgerReviewCount += review;
+    this.ledgerClassifiedCount += classified;
+    if (savedThrough != null) {
+      this.ledgerSavedThrough = savedThrough;
+    }
+    this.ledgerSavedAt = when;
+  }
+
+  /** 구간별 저장 결과를 누적한 뒤 최종 상태를 정한다. */
+  public void accumulate(int fetched, int accepted, int duplicate, int error, Long importBatchId) {
+    this.fetchedCount += fetched;
+    this.acceptedCount += accepted;
+    this.duplicateCount += duplicate;
+    this.errorCount += error;
+    if (importBatchId != null) {
+      this.importBatchId = importBatchId;
+    }
+  }
+
+  /** 누적 카운터로 종료한다. 실패 구간이 있었으면 failureSummary를 남기고 PARTIAL/FAILED로 둔다. */
+  public void complete(String failureSummary) {
+    boolean failed = failureSummary != null && !failureSummary.isBlank();
+    this.errorSummary = failed ? truncate(failureSummary)
+        : (errorSummary == null || errorSummary.isBlank() ? null : errorSummary);
+    boolean anyProgress = acceptedCount + duplicateCount > 0;
+    if (failed) {
+      this.status = anyProgress ? EasyCollectionRunStatus.PARTIAL : EasyCollectionRunStatus.FAILED;
+      if (errorCount == 0) {
+        this.errorCount = 1;
+      }
+    } else {
+      this.status = errorCount > 0
+          ? (anyProgress ? EasyCollectionRunStatus.PARTIAL : EasyCollectionRunStatus.FAILED)
+          : EasyCollectionRunStatus.SUCCESS;
+    }
+    this.completedAt = LocalDateTime.now();
+  }
+
+  public void appendRowErrors(String summary) {
+    if (summary == null || summary.isBlank()) {
+      return;
+    }
+    this.errorSummary = truncate(errorSummary == null ? summary : errorSummary + " / " + summary);
   }
 
   public void fail(String reason) {

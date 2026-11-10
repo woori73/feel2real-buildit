@@ -113,4 +113,9 @@ public class EasyCollectionRawRecord extends BaseEntity {
     this.importRowId = rowId;
     this.status = EasyCollectionRawStatus.IMPORT_LINKED;
   }
+
+  /** import 행이 중앙 장부 거래로 저장됐음을 표시한다(원문은 그대로). */
+  public void markLedgerSaved() {
+    this.status = EasyCollectionRawStatus.LEDGER_SAVED;
+  }
 }

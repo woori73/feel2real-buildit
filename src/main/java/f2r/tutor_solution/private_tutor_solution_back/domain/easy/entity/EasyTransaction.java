@@ -123,6 +123,10 @@ public class EasyTransaction extends BaseEntity {
   @Column(name = "tax_class", length = 30)
   private EasyTaxClassification taxClassification;
 
+  /** 취소·부분취소의 원거래. 원거래는 수정·삭제하지 않고 이 행만 연결한다. */
+  @Column(name = "original_txn_id")
+  private Long originalTxnId;
+
   @Builder
   public EasyTransaction(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,
       long amount, String category, String counterparty, String description,
@@ -130,7 +134,7 @@ public class EasyTransaction extends BaseEntity {
       EasyAccount account, Long supplyAmount, Long vatAmount, EasyEvidenceType evidenceType,
       String sourceKind, String sourceRef, String fingerprint,
       EasyEvidenceReview evidenceReview, EasyWithholdingReview withholdingReview,
-      Boolean expenseReversal, EasyTaxClassification taxClassification) {
+      Boolean expenseReversal, EasyTaxClassification taxClassification, Long originalTxnId) {
     this.business = business;
     this.occurredOn = occurredOn;
     this.direction = direction;
@@ -152,6 +156,7 @@ public class EasyTransaction extends BaseEntity {
     this.withholdingReview = withholdingReview;
     this.expenseReversal = expenseReversal;
     this.taxClassification = taxClassification;
+    this.originalTxnId = originalTxnId;
   }
 
   public void update(EasyBusiness business, LocalDate occurredOn, EasyTxnDirection direction,

@@ -10,5 +10,7 @@ public enum EasyCollectionDatasetType {
   DEPOSIT,
   CANCELLATION,
   CORRECTION,
+  /** 은행 입출금 — 커서 값은 중앙 장부 저장이 끝난 마지막 조회일(yyyy-MM-dd). */
+  BANK_TRANSACTION,
   UNKNOWN
 }

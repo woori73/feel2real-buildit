@@ -95,6 +95,8 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyCollectorTaskService collectorTaskService;
   @MockitoBean EasyWorkspaceService workspaceService;
   @MockitoBean EasyBusinessScopeGuard businessScopeGuard;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService tutorAccessService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionAccountRecommendationService collectionRecommendationService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
