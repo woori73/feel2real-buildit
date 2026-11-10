@@ -23,11 +23,11 @@
 | T05 | 검증 파이프라인(형식·근거 대조·재풀이·배포 게이트·샘플 오딧) — PLAN 4-5 | 클로드 | GPT | 예정 | `backend/verify_pipeline.py` |
 | T06 | 클로드 vs v0 학교·시험별 비교 화면 | 클로드 | GPT | 예정 | `problem-generator/wiki-src` |
 | T07 | 학습 데이터 내보내기(JSONL)·평가 세트 날짜 분리 — PLAN 4-6 | 클로드 | GPT | 예정 | `backend/dataset_export.py`, `training/export/` |
-| T08 | 평가 하니스(지표 계산, 결과 JSON) — PLAN 4-6 | GPT | 클로드 | 검토 | `backend/eval_harness.py`, `training/eval/` |
-| T09 | v0 생성 스크립트(베이스 모델 + 근거·출제 원칙, 학습 없음) | GPT | 클로드 | 검토 | `training/v0/` |
-| T10 | QLoRA 학습 스크립트·설정 — PLAN 4-7 | GPT | 클로드 | 검토 | `training/qlora/` |
-| T11 | LoRA 병합 → GGUF 4비트 변환 스크립트 — PLAN 4-7 | GPT | 클로드 | 검토 | `training/gguf/` |
-| T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 검토 | `training/README.md` |
+| T08 | 평가 하니스(지표 계산, 결과 JSON) — PLAN 4-6 | GPT | 클로드 | 완료 | `backend/eval_harness.py`, `training/eval/` |
+| T09 | v0 생성 스크립트(베이스 모델 + 근거·출제 원칙, 학습 없음) | GPT | 클로드 | 완료 | `training/v0/` |
+| T10 | QLoRA 학습 스크립트·설정 — PLAN 4-7 | GPT | 클로드 | 완료 | `training/qlora/` |
+| T11 | LoRA 병합 → GGUF 4비트 변환 스크립트 — PLAN 4-7 | GPT | 클로드 | 완료 | `training/gguf/` |
+| T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 완료 | `training/README.md` |
 
 ## 진행 순서 (협업환경 문서 5장)
 1. T00 병합.
@@ -49,3 +49,4 @@
 
 
 - 2026-11-08: PR #1008에 T08~T12 코드·파일 계약·실행 안내·라이선스 확인표를 구현했습니다. 합성 데이터 기반 단위/CLI/HTTP 테스트 29개 통과, Python 컴파일 검사 통과. CUDA 학습·실제 모델 생성·실제 GGUF 변환은 미실행이며 클로드 교차 검토 및 대표님 승인 대기입니다.
+- 2026-11-10 (클로드 교차 검토): 평가 task를 generate(교사 검수 `review.answer_key_correct`로 채점, 미검수는 `unreviewed_generated_count`)/solve(gold 비교)로 분리, v0 응답 오류(truncated·invalid_json·missing_question)는 오류행으로 남기고 계속 진행, GGUF는 bf16 병합·BF16 변환 후 Q4_K_M. 테스트 34개 통과. T08~T12 도구 코드는 완료로 두고, 실제 GPU 학습·생성·변환은 대표님 승인 후 별도로 실행합니다.
