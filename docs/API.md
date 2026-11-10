@@ -4630,6 +4630,24 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 - 실제 CREFIA/Card API는 비활성이고 provider event는 accounting transaction이 아니다. 자동 confirm은 계속 금지한다.
 
 
+### EASY 자동수집 — 수집 즉시 장부 저장·은행 연결 관리 (2026-11-10, V1105)
+
+이 절은 위 Phase 3A~3C·4의 "collection은 import staging까지만 / 자동 confirm 금지" 문구를 대체한다(운영 원칙: 수집 → 원본 보존 → 최소 중복 방지 → 중앙 장부 저장 → 자동분류 → 예외 검토). 수집 응답의 `run`에는 `ledgerSavedCount`·`ledgerReviewCount`·`ledgerClassifiedCount`·`ledgerSavedThrough`·`ledgerSavedAt`·`fetchedAt`가 추가됐다.
+
+모든 endpoint는 `ROLE_ADMIN` + `EasyTutorAccessService.requireAllowedBusiness(principal, businessId)` 검증을 먼저 통과한다(사업체 불일치 403/400). 응답에 `connectionRef`·전체 계좌번호·비밀값을 넣지 않는다.
+
+- `POST /api/admin/easy/collections/connections/bank?businessId=` body `{"label","organization":"0004","clientType":"B|P","account":"숫자","connectedId":"선택"}` — 은행 계좌 연결 등록. 자동수집은 꺼진 상태로 생성된다. 비밀번호·인증서·OTP 필드는 없다.
+- `PUT /api/admin/easy/collections/connections/{id}/bank?businessId=` 같은 body — 설정 수정.
+- `PUT /api/admin/easy/collections/connections/{id}/auth?businessId=` body `{"connectionRef":"connectedId"}` — 인증 등록·재인증(NEEDS_REAUTH → ACTIVE, DISCONNECTED → DISABLED).
+- `POST /api/admin/easy/collections/connections/{id}/disconnect?businessId=` — 연결 해제(조회 중단 + 인증 참조 제거). 수집 중이면 409/400. 장부·증빙·원본·이력은 남는다.
+- `GET /api/admin/easy/collections/connections/{id}/runs?businessId=` — 연결별 수집 이력(최근 50) + 장부 저장 결과.
+- `GET /api/admin/easy/collections/runs/{runId}/recommendations?businessId=` — 수집 후 미분류로 저장된 거래(최대 20건)의 GPT 루나 계정 추천. 활성 계정 이름만 허용, 개인 이름 거래처는 `(개인)`으로 가려 보낸다. 저장·확정하지 않는다. `OPENAI_API_KEY`가 없으면 `available=false`.
+- `GET /api/admin/easy/collections/runs/{runId}?businessId=` — `businessId`가 필수가 됐다(다른 사업체 run은 403).
+- 기존 `GET /connections`, `PUT /connections/{id}/enabled`, `GET /connections/{id}/checkpoints`, `POST /connections/{id}/run`, `POST /connections`, `PUT /connections/{id}/ref`, `POST /ingest/csv`, `GET /runs`도 같은 사업체 접근 검증을 거친다. 관리 응답에 `organization`·`clientType`·`accountMasked`·`lastErrorCode`·`disconnectedAt`·`authStatus`(NOT_REGISTERED/REGISTERED/NEEDS_REAUTH/DISCONNECTED)·최근 run 장부 저장/검토 건수가 추가됐다.
+- 수집 승인 API(`/api/admin/easy/collections/approvals/...`)는 남아 있지만 의미가 바뀌었다: 장부 저장은 수집 시점에 끝나 있으므로 승인·반영은 검토 확인 기록이며 남은 READY/PENDING 행(구버전 수집분)이 있을 때만 저장한다(멱등).
+- 화면: `/easy/connections` — 기관·계좌 등록/수정, 인증 상태, 지금 수집, 자동수집 켜기/끄기, 연결 해제, 수집 이력·장부 저장 결과, 미분류 AI 추천.
+- 오류 코드 `LEDGER_SAVE_FAILED`: 기관 응답은 받았지만 장부 저장이 롤백됨 — 커서를 넘기지 않고 다음 실행이 같은 구간을 다시 처리한다.
+
 ### EASY 자동수집 Phase 4 실행 안전 계약
 
 - MANUAL과 SCHEDULED provider 수집은 동일한 DB-backed execution gate를 통과한다.

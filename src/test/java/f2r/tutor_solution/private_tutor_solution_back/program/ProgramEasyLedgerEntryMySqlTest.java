@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * 이지장부(/ledger)·Easy 장부(/easy) 공개 소개 + 권한 안내. MockMvc는 내부 forward를 따라가지 않으므로
+ * F2R 장부(/ledger)·Easy 장부(/easy) 공개 소개 + 권한 안내. MockMvc는 내부 forward를 따라가지 않으므로
  * (1) 보안 계층이 forward 대상과 속성을 정확히 넘기는지, (2) 소개 컨트롤러가 그 속성으로 올바른 화면을 렌더하는지를 각각 검증한다.
  */
 @SpringBootTest
@@ -27,7 +27,7 @@ import org.springframework.test.web.servlet.MvcResult;
     "app.jwt.cookie-name=ACCESS_TOKEN",
     "app.jwt.secure-cookie=false"
 })
-@DisplayName("프로그램 공개 첫 화면 — 이지장부 /ledger · Easy 장부 /easy")
+@DisplayName("프로그램 공개 첫 화면 — F2R 장부 /ledger · Easy 장부 /easy")
 class ProgramEasyLedgerEntryMySqlTest {
 
   @Autowired private MockMvc mockMvc;
@@ -62,7 +62,7 @@ class ProgramEasyLedgerEntryMySqlTest {
 
     String ledgerBody = intro(Program.LEDGER, null).getResponse().getContentAsString();
     assertThat(intro(Program.LEDGER, null).getResponse().getStatus()).isEqualTo(200);
-    assertThat(ledgerBody).contains("이지장부", "/auth/naver/start?returnUrl=/ledger", "program-id-login");
+    assertThat(ledgerBody).contains("F2R 장부", "/auth/naver/start?returnUrl=/ledger", "program-id-login");
     assertThat(intro(Program.EASY, null).getResponse().getContentAsString())
         .contains("Easy 회계·학생원장", "/auth/naver/start?returnUrl=/easy");
   }
@@ -79,12 +79,12 @@ class ProgramEasyLedgerEntryMySqlTest {
   }
 
   @Test
-  @DisplayName("given TUTOR when /easy를 열면 then 관리자 전용 안내(이지장부로 안내)이고 /ledger는 접근된다")
+  @DisplayName("given TUTOR when /easy를 열면 then 관리자 전용 안내(F2R 장부로 안내)이고 /ledger는 접근된다")
   void tutor_sees_easy_notice_but_reaches_ledger() throws Exception {
     assertThat(page("/easy", "TUTOR").getResponse().getForwardedUrl()).isEqualTo("/program/intro");
     MvcResult notice = intro(Program.EASY, "TUTOR");
     assertThat(notice.getResponse().getStatus()).isEqualTo(403);
-    assertThat(notice.getResponse().getContentAsString()).contains("관리자(ADMIN) 계정 전용", "이지장부(/ledger)");
+    assertThat(notice.getResponse().getContentAsString()).contains("관리자(ADMIN) 계정 전용", "F2R 장부(/ledger)");
 
     MvcResult ledger = page("/ledger", "TUTOR");
     assertThat(ledger.getResponse().getStatus()).isEqualTo(200);
@@ -123,7 +123,7 @@ class ProgramEasyLedgerEntryMySqlTest {
   }
 
   @Test
-  @DisplayName("given 이지장부·Easy 복귀 URL when 네이버 시작점에 접근하면 then 복귀 쿠키를 심는다")
+  @DisplayName("given F2R 장부·Easy 복귀 URL when 네이버 시작점에 접근하면 then 복귀 쿠키를 심는다")
   void naver_start_accepts_ledger_and_easy() throws Exception {
     for (String url : new String[] {"/ledger", "/easy"}) {
       MvcResult r = mockMvc.perform(get("/auth/naver/start").param("returnUrl", url)).andReturn();

@@ -60,7 +60,7 @@ public final class AnalyticsEventCatalog {
     // ── 서비스 이동(대상=서비스 키) ──
     for (String[] s : new String[][] {
         {"builder", "홈페이지 빌더", "svcTiles"}, {"exam_analysis", "기출분석", "svcTiles"}, {"wiki", "모의고사위키", "svcTiles"},
-        {"chart", "CHART", "svcTiles"}, {"testprep", "TESTPREP", "svcTiles"}, {"ledger", "이지장부", "svcTiles"},
+        {"chart", "CHART", "svcTiles"}, {"testprep", "TESTPREP", "svcTiles"}, {"ledger", "F2R 장부", "svcTiles"},
         {"designcraft", "DesignCraft", "svcTiles"}, {"admissions", "입시상담", "svcTiles"}}) {
       add(Type.SERVICE_MOVE, s[0], "home", s[2], s[1] + " 이동");
     }

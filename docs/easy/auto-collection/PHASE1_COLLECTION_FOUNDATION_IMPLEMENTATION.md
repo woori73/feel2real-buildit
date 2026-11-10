@@ -1,5 +1,8 @@
 # EASY 자동수집 PHASE 1 — Collection Foundation + 파일 어댑터 구현
 
+> ⚠️ 2026-11-10 정정: 이 문서의 "자동 collect ≠ 자동 confirm(사람이 confirm해야 장부 저장)" 방침은 현재 운영 원칙(EASY_LEDGER_OPERATING_PRINCIPLES — 수집 → 원본 보존 → 최소 중복 방지 → 중앙 장부 저장 → 자동분류 → 예외 검토)과 충돌하여 폐기됐다. 현행 동작은 `docs/DOMAIN.md` §4.60b, `docs/API.md` "수집 즉시 장부 저장", `10_CODEF_BANK_FIRST_INTEGRATION.md`를 따른다.
+
+
 > 상태: **구현 완료(빌드/단위·멱등 테스트 통과), PR 대기** · 작성 2026-09-20 · 브랜치 `feat/easy-collection-foundation-20260920`
 > 선행 문서: `01_ARCHITECTURE.md`(설계) — 이 문서는 "현재 main 코드와 대조한 실제 seam + 구현된 것 + 검증된 것"을 기록한다.
 

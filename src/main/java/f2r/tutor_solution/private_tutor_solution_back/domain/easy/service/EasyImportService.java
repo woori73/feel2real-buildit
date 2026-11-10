@@ -637,6 +637,16 @@ public class EasyImportService {
 
   /** 미분류 표시명 — 장부에서 거래 존재는 보이되 분류 상태가 드러나도록 한다. */
   private String reviewCategory(EasyImportRow row, EasyTaxClassification tax) {
+    String disposition = extractJsonField(row.getRawData(), "primary_disposition");
+    if ("CARD_SETTLEMENT".equalsIgnoreCase(disposition)) {
+      return "카드매출 정산(검토)";
+    }
+    if ("CARD_PAYMENT".equalsIgnoreCase(disposition)) {
+      return "카드대금 결제(검토)";
+    }
+    if ("GOV_SUBSIDY".equalsIgnoreCase(disposition)) {
+      return "지원금(검토)";
+    }
     if (tax == EasyTaxClassification.NOT_INCOME) {
       return "차입금(검토)";
     }

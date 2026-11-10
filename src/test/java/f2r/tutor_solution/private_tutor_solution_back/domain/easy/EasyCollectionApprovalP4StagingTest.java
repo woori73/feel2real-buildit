@@ -135,8 +135,24 @@ class EasyCollectionApprovalP4StagingTest {
   }
 
   @Test
-  @DisplayName("given CSV 3행 when 업로드·승인 요청 then 승인 전 장부는 0건이고 staging에는 행이 있다")
-  void ledgerUntouchedBeforeApproval() {
+  @DisplayName("given V1105 적용 DB when 스키마 조회 then 장부 저장 결과·연결 설정·원거래 컬럼과 CODEF_BANK 수집원이 있다")
+  void ledgerSaveSchemaIsApplied() {
+    assertThat(jdbc.queryForList("select column_name from information_schema.columns where table_schema = database() "
+        + "and table_name = 'easy_collection_runs'", String.class))
+        .contains("fetched_at", "ledger_saved_count", "ledger_review_count", "ledger_classified_count",
+            "ledger_saved_through", "ledger_saved_at");
+    assertThat(jdbc.queryForList("select column_name from information_schema.columns where table_schema = database() "
+        + "and table_name = 'easy_collection_connections'", String.class))
+        .contains("provider_config", "last_error_code", "disconnected_at");
+    assertThat(jdbc.queryForList("select column_name from information_schema.columns where table_schema = database() "
+        + "and table_name = 'easy_transactions'", String.class)).contains("original_txn_id");
+    assertThat(jdbc.queryForObject("select count(*) from easy_collection_sources where code = 'CODEF_BANK'",
+        Long.class)).isEqualTo(1L);
+  }
+
+  @Test
+  @DisplayName("given CSV 3행 when 업로드 then 승인 없이 수집 즉시 장부에 3건 저장되고 승인 요청은 검토 확인용으로 남는다")
+  void collectedRowsAreSavedBeforeApproval() {
     EasyCollectionIngestResponse res = ingest(bizA, "a.csv", csv(
         "2026-10-01,지출,11000,문구점,펜,카드,A1", "2026-10-02,지출,22000,서점,교재,카드,A2",
         "2026-10-03,수입,300000,학부모,수강료,계좌,A3"));
@@ -145,9 +161,12 @@ class EasyCollectionApprovalP4StagingTest {
 
     assertThat(batchId).isNotNull();
     assertThat(approval.getStatus()).isEqualTo(ApprovalStatus.PENDING);
-    assertThat(txns(bizA)).isZero();
-    assertThat(jdbc.queryForObject("select count(*) from easy_import_rows where batch_id = ?", Long.class, batchId))
-        .isEqualTo(3L);
+    assertThat(txns(bizA)).isEqualTo(3L);
+    assertThat(res.run().ledgerSavedCount()).isEqualTo(3);
+    assertThat(approvedRowsStatus(batchId, "IMPORTED")).isEqualTo(3L);
+    assertThat(jdbc.queryForObject(
+        "select count(*) from easy_collection_raw_records where import_batch_id = ? and status = 'LEDGER_SAVED'",
+        Long.class, batchId)).isEqualTo(3L);
   }
 
   @Test
@@ -163,7 +182,7 @@ class EasyCollectionApprovalP4StagingTest {
   }
 
   @Test
-  @DisplayName("given 승인 요청 when 승인·반영 then 장부에 정확히 한 번 반영되고 상태가 COMMITTED로 저장된다")
+  @DisplayName("given 이미 장부 저장된 수집분 when 승인·반영 then 장부는 그대로(중복 없음)이고 상태가 COMMITTED로 저장된다")
   void approveAndCommitWritesOnceAndPersistsStatus() {
     EasyCollectionIngestResponse res = ingest(bizA, "c.csv", csv(
         "2026-10-01,지출,11000,문구점,펜,카드,C1", "2026-10-02,지출,22000,서점,교재,카드,C2"));
@@ -195,7 +214,7 @@ class EasyCollectionApprovalP4StagingTest {
   }
 
   @Test
-  @DisplayName("given commit 실패 주입 when 승인·반영 then COMMIT_FAILED로 남고 장부는 0건, 재시도하면 한 번만 반영된다")
+  @DisplayName("given commit 실패 주입 when 승인·반영 then COMMIT_FAILED로 남아도 수집분 장부는 유지되고, 재시도해도 중복이 없다")
   void failedCommitIsRetryable() {
     EasyCollectionIngestResponse res = ingest(bizA, "f.csv", csv(
         "2026-10-01,지출,11000,문구점,펜,카드,F1", "2026-10-02,지출,22000,서점,교재,카드,F2"));
@@ -207,7 +226,7 @@ class EasyCollectionApprovalP4StagingTest {
         bizA.getBusinessId(), approval.getApprovalId(), "owner-a", "ok", ownerA());
 
     assertThat(failed.getStatus()).isEqualTo(ApprovalStatus.COMMIT_FAILED);
-    assertThat(txns(bizA)).isZero();
+    assertThat(txns(bizA)).isEqualTo(2L);
     assertThat(jdbc.queryForObject("select status from easy_collection_approvals where approval_id = ?",
         String.class, approval.getApprovalId())).isEqualTo("COMMIT_FAILED");
 
@@ -241,7 +260,7 @@ class EasyCollectionApprovalP4StagingTest {
         bizA.getBusinessId(), approval.getApprovalId(), ownerA());
 
     assertThat(afterFailure.getStatus()).isEqualTo(ApprovalStatus.COMMIT_FAILED);
-    assertThat(txnsAfterFailure).as("실패 시 장부 INSERT도 롤백").isZero();
+    assertThat(txnsAfterFailure).as("승인 단계 실패가 수집 시 저장된 장부를 지우지 않는다").isEqualTo(2L);
     assertThat(retried.getStatus()).isEqualTo(ApprovalStatus.COMMITTED);
     assertThat(txns(bizA)).as("재시도 후 정확히 한 번만 반영").isEqualTo(2L);
   }
@@ -301,7 +320,7 @@ class EasyCollectionApprovalP4StagingTest {
         bizB.getBusinessId(), approval.getApprovalId(), "owner-b", "x", ownerB()))
         .isInstanceOf(SecurityException.class);
 
-    assertThat(txns(bizA)).isZero();
+    assertThat(txns(bizA)).as("수집 시 저장된 A 장부는 그대로").isEqualTo(1L);
     assertThat(txns(bizB)).isZero();
     assertThat(Optional.ofNullable(jdbc.queryForObject(
         "select status from easy_collection_approvals where approval_id = ?", String.class,

@@ -304,6 +304,7 @@ public class EasyCollectionIngestService {
         EasyCollectionPeriods.split(start, today, adapter.maxPeriodDays()));
     List<String> messages = new ArrayList<>();
     EasyCollectionException failure = null;
+    LocalDateTime lastReceivedAt = null;
     while (!windows.isEmpty()) {
       LocalDate[] window = windows.pollFirst();
       List<CollectionParsedRow> fetched;
@@ -330,6 +331,7 @@ public class EasyCollectionIngestService {
         break;
       }
       LocalDateTime receivedAt = LocalDateTime.now();
+      lastReceivedAt = receivedAt;
       try {
         List<String> windowErrors = inTransaction(
             () -> saveWindow(context, fetched, window[1], receivedAt));
@@ -344,7 +346,8 @@ public class EasyCollectionIngestService {
       }
     }
     EasyCollectionException finalFailure = failure;
-    return inTransaction(() -> completePeriodRun(context, finalFailure, messages));
+    LocalDateTime finalReceivedAt = lastReceivedAt;
+    return inTransaction(() -> completePeriodRun(context, finalFailure, messages, finalReceivedAt));
   }
 
   private List<CollectionParsedRow> fetchWindow(AdapterFetchContext context,
@@ -373,7 +376,6 @@ public class EasyCollectionIngestService {
     EasyCollectionConnection connection = connectionRepository.findById(context.connectionId())
         .orElseThrow(() -> new IllegalStateException("연결을 찾을 수 없습니다."));
     EasyBusiness business = requireActiveBusiness(context.businessId());
-    run.recordFetched(receivedAt);
     SaveOutcome outcome = saveParsedRows(run, connection, business, context.sourceCode(),
         context.adapterCode(), context.adapterCode(), rows);
     run.accumulate(rows.size(), outcome.accepted(), outcome.duplicate(), outcome.error(),
@@ -386,8 +388,12 @@ public class EasyCollectionIngestService {
     return outcome.rowErrors();
   }
 
+  /**
+   * 실행 종료 기록. 기관 응답 수신 시각은 저장 트랜잭션과 별개로 여기서 남긴다 — 저장이 롤백돼도
+   * "응답은 받았지만 장부 저장은 실패"가 이력에 보이게 하기 위해서다.
+   */
   private EasyCollectionIngestResponse completePeriodRun(AdapterFetchContext context,
-      EasyCollectionException failure, List<String> messages) {
+      EasyCollectionException failure, List<String> messages, LocalDateTime receivedAt) {
     EasyCollectionRun run = runRepository.findById(context.runId())
         .orElseThrow(() -> new IllegalStateException("수집 실행을 찾을 수 없습니다."));
     EasyCollectionConnection connection = connectionRepository.findById(context.connectionId())
@@ -400,6 +406,9 @@ public class EasyCollectionIngestService {
         return new EasyCollectionIngestResponse(EasyCollectionRunResponse.from(run),
             List.of("Collection execution ownership was lost."));
       }
+    }
+    if (receivedAt != null) {
+      run.recordFetched(receivedAt);
     }
     run.complete(failure == null ? null : failure.safeSummary());
     List<String> out = new ArrayList<>(messages);
@@ -556,8 +565,8 @@ public class EasyCollectionIngestService {
       ledger = ledger.plus(saved);
       markLedgerOutcome(handoff);
     }
-    return new SaveOutcome(accepted.size(), duplicate + ledger.duplicate(), error, lastBatchId,
-        ledger, rowErrors);
+    return new SaveOutcome(accepted.size(), duplicate + ledger.duplicate(),
+        error + ledger.error(), lastBatchId, ledger, rowErrors);
   }
 
   /** 수집 원본 키 → import 행 → 장부 거래 id (취소 원거래 연결용). */
@@ -706,7 +715,8 @@ public class EasyCollectionIngestService {
           row.payMethod(),
           row.supplyAmount(),
           row.vatAmount(),
-          row.evidenceType(),
+          // 증빙 유형을 모르면 거래를 버리지 않고 증빙 미지정으로 저장한다(원문 값은 raw에 그대로 남는다).
+          knownEvidenceType(row.evidenceType()),
           raw.getRawPayload() + " [ext:" + raw.getDedupeKey() + "]",
           row.externalAccount(),
           originalExternalId != null ? Boolean.TRUE : null));
@@ -732,6 +742,18 @@ public class EasyCollectionIngestService {
       }
     }
     return new Handoff(batch.batchId(), rawByRowId, identityByRowId, originalKeyByRowId);
+  }
+
+  private static String knownEvidenceType(String evidenceType) {
+    if (evidenceType == null || evidenceType.isBlank()) {
+      return null;
+    }
+    try {
+      f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceType.parse(evidenceType);
+      return evidenceType;
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   private EasyCollectionConnection findOrCreateConnection(EasyBusiness business,

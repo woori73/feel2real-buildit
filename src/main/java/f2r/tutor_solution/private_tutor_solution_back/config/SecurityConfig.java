@@ -237,7 +237,7 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin"),
                         PathPatternRequestMatcher.withDefaults().matcher("/choonggi/admin/**")),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
-            // 이지장부(/ledger)·Easy 장부(/easy)의 대표 URL은 비회원에게 공개 소개 화면(200)을 보이고,
+            // F2R 장부(/ledger)·Easy 장부(/easy)의 대표 URL은 비회원에게 공개 소개 화면(200)을 보이고,
             // 하위 화면은 원래 경로를 싣고 공통 로그인 안내로 보낸다. API(/api/tutor/easy/**, /api/admin/easy/**)는
             // 이 규칙의 대상이 아니므로 기존 401/403과 사업체 권한 검증을 그대로 유지한다.
             .defaultAuthenticationEntryPointFor(

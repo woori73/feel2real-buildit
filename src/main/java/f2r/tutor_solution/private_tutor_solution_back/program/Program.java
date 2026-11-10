@@ -69,7 +69,7 @@ public enum Program {
       "기출분석은 로그인한 학생·강사·관리자 계정이 이용할 수 있습니다. 현재 계정의 권한으로는 이용할 수 없습니다."),
 
   LEDGER(
-      "이지장부",
+      "F2R 장부",
       "학원 전용 AI 회계",
       "학원 수입·지출 내역을 CSV로 입력하면 AI가 회계 계정을 추천하고, 확인·승인한 내용을 복식분개, 총계정원장, 시산표로 정리합니다.",
       List.of(
@@ -80,7 +80,7 @@ public enum Program {
       "/ledger",
       "/ledger",
       Set.of("TUTOR", "ADMIN"),
-      "이지장부는 원장(강사, TUTOR) 또는 관리자(ADMIN) 계정 전용입니다."),
+      "F2R 장부는 원장(강사, TUTOR) 또는 관리자(ADMIN) 계정 전용입니다."),
 
   EASY(
       "Easy 회계·학생원장",
@@ -94,7 +94,7 @@ public enum Program {
       "/easy",
       "/easy",
       Set.of("ADMIN"),
-      "Easy 회계·학생원장은 관리자(ADMIN) 계정 전용입니다. 원장(강사) 계정은 이지장부(/ledger)를 이용해 주세요.");
+      "Easy 회계·학생원장은 관리자(ADMIN) 계정 전용입니다. 원장(강사) 계정은 F2R 장부(/ledger)를 이용해 주세요.");
 
   private final String title;
   private final String subtitle;
