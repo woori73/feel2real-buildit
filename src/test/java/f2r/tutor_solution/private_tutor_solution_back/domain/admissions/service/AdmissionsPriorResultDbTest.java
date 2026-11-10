@@ -220,6 +220,75 @@ class AdmissionsPriorResultDbTest {
         }
     }
 
+    /** 한 학과가 세부모집(여·남)×전형으로 9개 단위가 되는 경우(한국예술종합학교 연기과 구조). */
+    private static final String SEED_DEPT_UNITS = """
+        {"ipsi_universities":[{"name":"예술학교","university_code":"ART"}],
+         "ipsi_documents":[
+           {"document_key":"doc_art_2026_result","document_name":"예술학교 2026학년도 수시·정시 구분 없음(학교 자체 입시) 입시결과","applicable_academic_year":2027,"institution_name":"예술학교 입학관리과","source_url":"https://example.test/art-result.pdf"}],
+         "prior_results":[
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"일반","department_name":"연기과 / 연기(여)",
+            "metric_label":null,"recruit_count":null,"applicant_count":3558,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"교육기회균등","department_name":"연기과 / 연기(여)",
+            "metric_label":null,"recruit_count":1,"applicant_count":40,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"재외국민/외국인","department_name":"연기과 / 연기(여)",
+            "metric_label":null,"recruit_count":1,"applicant_count":30,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"특수교육대상자","department_name":"연기과 / 연기(여)",
+            "metric_label":null,"recruit_count":1,"applicant_count":5,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"교육기회균등","department_name":"연기과 / 연기(남)",
+            "metric_label":null,"recruit_count":1,"applicant_count":35,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"재외국민/외국인","department_name":"연기과 / 연기(남)",
+            "metric_label":null,"recruit_count":1,"applicant_count":20,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"특수교육대상자","department_name":"연기과 / 연기(남)",
+            "metric_label":null,"recruit_count":1,"applicant_count":4,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"일반","department_name":"연기과 / 연기(남)",
+            "metric_label":null,"recruit_count":null,"applicant_count":2338,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]},
+           {"university_code":"ART","academic_year":2027,"result_year":2026,"round_type":"OTHER","type_name":"일반","department_name":"연기과 / 모집단위 통합(연기(여)·연기(남))",
+            "metric_label":null,"recruit_count":37,"applicant_count":null,"competition_rate":null,"extra_admitted_count":null,
+            "source_document_key":"doc_art_2026_result","source_url":"https://example.test/art-result.pdf","institution_name":"예술학교 입학관리과","published_at":"2026-04-08","evidence_pages":[1]}]}
+        """;
+
+    @Test
+    @DisplayName("given 한 학과가 세부모집·전형으로 기본 상한보다 많은 단위 when 학과명으로 입결을 물으면 then 모든 단위가 근거가 되고 일반 단위끼리 붙어 나온다")
+    void namedDepartment_includesEverySubUnit() throws Exception {
+        // given
+        loader.loadSeed(SEED_DEPT_UNITS);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // when
+        var result = search.search("예술학교 연기과 입결 알려줘", null);
+
+        // then
+        var prior = result.evidence().stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_PRIOR_RESULT).toList();
+        assertThat(prior).hasSize(9);
+        assertThat(prior).anySatisfy(e -> assertThat(e.getTitle()).contains("입시결과: 일반 연기과 / 연기(남)"));
+        var general = prior.stream().map(e -> e.getTitle()).filter(title -> title.contains("입시결과: 일반 ")).toList();
+        assertThat(general).hasSize(3);
+        assertThat(prior.subList(0, 3)).allSatisfy(e -> assertThat(e.getTitle()).contains("입시결과: 일반 "));
+    }
+
+    @Test
+    @DisplayName("given 학과를 말하지 않은 입결 질문 when 단위가 기본 상한보다 많으면 then 기본 상한까지만 근거가 된다")
+    void unnamedDepartment_keepsDefaultCap() throws Exception {
+        // given
+        loader.loadSeed(SEED_DEPT_UNITS);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // when
+        var result = search.search("예술학교 입결 알려줘", null);
+
+        // then
+        var prior = result.evidence().stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_PRIOR_RESULT).toList();
+        assertThat(prior).hasSize(AdmissionsFactSearchService.MAX_PRIOR_UNITS);
+    }
+
     @Test
     @DisplayName("given 승인된 입시결과 when 다른 대학 경쟁률을 물으면 then 그 대학 결과만 나오고 다른 대학 지표를 섞지 않는다")
     void otherUniversity_isNotMixed() throws Exception {
