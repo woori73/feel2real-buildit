@@ -187,6 +187,30 @@ class AdmissionsChatServicePolicyTest {
     }
 
     @Test
+    @DisplayName("given 근거 '지원자 3558명' when 답변이 천 단위 쉼표로 쓰면 then 같은 수로 보고, 없는 수만 잡는다")
+    void ungroundedNumbers_ignoresThousandsSeparators() {
+        // given
+        var e = fact("prior:1", "t", "지원자 3558명, 최종 37명 / 정원외 지원자 14,541명", 2026, null);
+
+        // when
+        var ok = AdmissionsChatService.ungroundedNumbers("지원자 3,558명, 최종 37명, 전체 14541명", "질문", List.of(e));
+        var bad = AdmissionsChatService.ungroundedNumbers("지원자 3,559명", "질문", List.of(e));
+
+        // then
+        assertThat(ok).isEmpty();
+        assertThat(bad).containsExactly("3559");
+    }
+
+    @Test
+    @DisplayName("given 쉼표 나열 when 천 단위 쉼표를 떼면 then 세 자리가 아닌 나열은 그대로 둔다")
+    void withoutThousandsSeparators_onlyThreeDigitGroups() {
+        // given / when / then
+        assertThat(AdmissionsChatService.withoutThousandsSeparators("14,541명 1,000,000원")).isEqualTo("14541명 1000000원");
+        assertThat(AdmissionsChatService.withoutThousandsSeparators("2, 3등급과 1,23")).isEqualTo("2, 3등급과 1,23");
+        assertThat(AdmissionsChatService.withoutThousandsSeparators("1,2345")).isEqualTo("1,2345");
+    }
+
+    @Test
     @DisplayName("given 2028 일정 질문 when 2028 공식자료 제목만 검색되면 then 제목만으로는 일정을 답하지 않고 미발표로 답한다")
     void title_only_2028_material_is_not_enough_for_schedule() {
         // given

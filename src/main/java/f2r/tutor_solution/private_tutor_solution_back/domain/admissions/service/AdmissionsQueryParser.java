@@ -51,7 +51,7 @@ public final class AdmissionsQueryParser {
      * 없으면 "수집되지 않음"으로 안내한다. 권장 이수 과목은 여기에 들지 않는다(여전히 미수집).
      */
     private static final Pattern PRIOR_RESULT = Pattern.compile(
-            "경쟁률|입시\\s*결과|입결|충원|추가\\s*합격\\s*(인원|몇)|등급\\s*컷|평균\\s*등급|[0-9]{2}\\s*%\\s*컷|커트\\s*라인|지난해\\s*결과|작년\\s*결과");
+            "경쟁률|입시\\s*결과|입결|충원|지원자\\s*(수|몇)|지원\\s*인원|추가\\s*합격\\s*(인원|몇)|등급\\s*컷|평균\\s*등급|[0-9]{2}\\s*%\\s*컷|커트\\s*라인|지난해\\s*결과|작년\\s*결과");
 
     /** 질문 속 2026학년도 표기(입시결과 질문에서는 지원하지 않는 학년도로 보지 않는다). */
     private static final Pattern PRIOR_YEAR_MENTION = Pattern.compile("(?<![\\d.])(?:20)?26(?!\\d)\\s*(?:학년도|년도|년)?");

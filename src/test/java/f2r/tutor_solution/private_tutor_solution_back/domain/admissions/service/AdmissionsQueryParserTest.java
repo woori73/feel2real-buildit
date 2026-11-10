@@ -75,6 +75,16 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given 지원자 수 질문 when 분석하면 then 지난해 입시결과 질문으로 보고, 지원자격 질문은 아니다")
+    void flags_applicant_count_but_not_eligibility() {
+        // given / when / then
+        assertThat(AdmissionsQueryParser.parse("연세대 연기과 지난해 지원자 수 알려줘", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("작년 지원자 몇 명이었어요?", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("지원 인원이 얼마나 됐나요", UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse("연세대 추천형 지원자격이 뭐예요?", UNIVS).asksPriorResult()).isFalse();
+    }
+
+    @Test
     @DisplayName("given 2026학년도 입시결과 질문 when 분석하면 then 2026을 지원하지 않는 학년도로 보지 않는다")
     void prior_question_with_2026_is_not_unsupported_year() {
         // given / when
