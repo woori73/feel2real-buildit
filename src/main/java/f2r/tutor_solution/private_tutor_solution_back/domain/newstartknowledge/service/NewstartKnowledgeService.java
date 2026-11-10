@@ -523,7 +523,7 @@ public class NewstartKnowledgeService {
 
     /** 내보내기 전 확인용 manifest 미리보기 (DB 카운트 기준, 파일 미생성). */
     public NewstartRagExportManifest buildRagExportPreview() {
-        String now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        String now = KstTime.toKst(LocalDateTime.now()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         List<NewstartRagExportManifest.FileStats> files = new ArrayList<>();
         for (NewstartKnowledgeItem.SourceType type : RAG_EXPORT_TYPES) {
             long count = knowledgeRepository.countByStatusAndSourceType(
@@ -604,7 +604,7 @@ public class NewstartKnowledgeService {
                 zip.closeEntry();
             }
             NewstartRagExportManifest manifest = NewstartRagExportManifest.of(
-                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), files);
+                    KstTime.toKst(LocalDateTime.now()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), files);
             zip.putNextEntry(new ZipEntry("manifest.json"));
             zip.write(objectMapper.writeValueAsBytes(manifest));
             zip.closeEntry();

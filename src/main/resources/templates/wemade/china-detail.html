@@ -53,7 +53,7 @@
       <div class="detail-meta">
         <span th:text="${kind == 'disclosure' ? item.secName + '(' + item.secCode + ')' : item.sourceName}"></span>
         <span> · 발표일 </span><span th:text="${kind == 'disclosure' ? item.announcedAt : item.publishedAt}"></span>
-        <span> · 수집일 </span><span th:text="${#temporals.format(item.collectedAt, 'yyyy-MM-dd')}"></span>
+        <span> · 수집일 </span><span th:text="${#temporals.format(collectedAtKst, 'yyyy-MM-dd')}"></span>
       </div>
       <div class="detail-meta" th:if="${kind == 'news' and item.matchesDisclosure != null}">
         <span th:if="${item.matchesDisclosure}">공시와 일치</span>
@@ -114,7 +114,7 @@
         <span th:if="${item.linkStatus == 'BROKEN'}" class="link-broken">접속 불가 — 아래 분석자료는 수집·검증 시점의 내용으로 보존됩니다</span>
         <span th:if="${item.linkStatus == 'BLOCKED'}" class="link-broken">접속 차단 — 아래 분석자료는 수집·검증 시점의 내용으로 보존됩니다</span>
         <span th:if="${item.linkStatus == null or item.linkStatus == 'UNKNOWN'}" class="link-unknown">미확인</span>
-        <span th:if="${item.linkCheckedAt}" th:text="' (확인: ' + ${#temporals.format(item.linkCheckedAt, 'yyyy-MM-dd')} + ')'"></span>
+        <span th:if="${linkCheckedAtKst}" th:text="' (확인: ' + ${#temporals.format(linkCheckedAtKst, 'yyyy-MM-dd')} + ')'"></span>
       </div>
     </div>
   </section>
