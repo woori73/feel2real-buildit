@@ -83,10 +83,11 @@ public class AdmissionsExplorerService {
             WHERE p.university_id=? AND p.academic_year=? AND p.result_year=? AND p.status='ACTIVE'
               AND m.status='ACTIVE' AND m.university_id=p.university_id AND m.academic_year=p.academic_year
               AND (p.linked_department_name=? OR
-                   ((p.linked_department_name IS NULL OR p.linked_department_name='') AND p.department_name=?))
+                   ((p.linked_department_name IS NULL OR p.linked_department_name='') AND
+                    (p.department_name=? OR p.department_name LIKE ? ESCAPE '!')))
               AND (?='ALL' OR p.round_type=? OR p.round_type='OTHER')
             ORDER BY p.round_type, p.group_name, p.type_name, p.metric_label, p.prior_result_id LIMIT 201
-            """, universityId, year, year - 1, departmentName, departmentName, round, round);
+            """, universityId, year, year - 1, departmentName, departmentName, headPattern(departmentName), round, round);
         // 대학 전체 전형·일정이다. 이 모집단위에 적용되는 전형으로 단정하지 않는다.
         var types = jdbc.queryForList("""
             SELECT t.name AS name, t.category AS category, t.details AS details,
@@ -116,5 +117,10 @@ public class AdmissionsExplorerService {
     }
     private static ResponseStatusException bad(String message) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
+
+    /** '학과 / 세부모집' 형태의 지난해 모집단위(예: "연기과 / 연기(여)")를 같은 학과로 찾는 LIKE 패턴. 와일드카드 문자는 그대로 비교. */
+    static String headPattern(String departmentName) {
+        return departmentName.replace("!", "!!").replace("%", "!%").replace("_", "!_") + " / %";
     }
 }

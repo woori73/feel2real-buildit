@@ -137,6 +137,7 @@ public class AdmissionsFactSearchService {
         List<List<AdmissionsPriorResult>> all = new ArrayList<>(units.values());
         List<List<AdmissionsPriorResult>> matched = all.stream()
                 .filter(rows -> AdmissionsQueryParser.mentionsDepartment(question, rows.get(0).getDepartmentName())
+                        || AdmissionsQueryParser.mentionsDepartment(question, AdmissionsQueryParser.departmentHead(rows.get(0).getDepartmentName()))
                         || priorTypeMentioned(question, rows.get(0).getTypeName()))
                 .toList();
         if (matched.isEmpty()) {
@@ -148,7 +149,8 @@ public class AdmissionsFactSearchService {
         List<List<AdmissionsPriorResult>> chosen = new ArrayList<>(matched.isEmpty() ? all : matched);
         chosen.sort(java.util.Comparator.comparingInt((List<AdmissionsPriorResult> rows) -> {
             AdmissionsPriorResult r = rows.get(0);
-            boolean dept = AdmissionsQueryParser.mentionsDepartment(question, r.getDepartmentName());
+            boolean dept = AdmissionsQueryParser.mentionsDepartment(question, r.getDepartmentName())
+                    || AdmissionsQueryParser.mentionsDepartment(question, AdmissionsQueryParser.departmentHead(r.getDepartmentName()));
             boolean type = priorTypeMentioned(question, r.getTypeName());
             return dept && type ? 0 : dept || type ? 1 : 2;
         }));
