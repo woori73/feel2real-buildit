@@ -26,7 +26,9 @@ class EasySiteCollectionCatalogTest {
       if (site.businessUrl() != null) {
         assertThat(site.businessUrl()).startsWith("https://");
       }
-      assertThat(site.datasets()).isNotEmpty();
+      if (site.category() != Category.TUITION) {
+        assertThat(site.datasets()).isNotEmpty();
+      }
     });
   }
 
@@ -55,6 +57,18 @@ class EasySiteCollectionCatalogTest {
 
     // then
     assertThat(rules).contains("사용자 본인이 직접").contains("비밀번호").contains("이체");
+  }
+
+  @Test
+  @DisplayName("given 결제선생 when 조회 then 공식 매니저 주소만 연결하고 장부 저장 자료는 없다")
+  void payssamIsLinkOnly() {
+    // when
+    var site = EasySiteCollectionCatalog.find("PAYSSAM").orElseThrow();
+
+    // then
+    assertThat(site.url()).isEqualTo("https://manager.payssam.kr/");
+    assertThat(site.datasets()).isEmpty();
+    assertThat(site.note()).contains("링크만");
   }
 
   @Test
