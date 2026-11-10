@@ -29,13 +29,18 @@
 
 ## 평가 정답
 
-평가 행은 `teacher_verified=true`와 `gold`를 요구합니다. 객관식은 `{"answer": [1]}`, 서답형은 `{"acceptedAnswers": ["Hello world", "허용한 다른 답"]}`입니다. 서답형은 유니코드 NFKC와 공백만 정규화하며 대소문자·구두점을 임의로 제거하지 않습니다. 허용 변형은 교사가 acceptedAnswers에 명시합니다.
+평가 행에는 `task`가 있습니다(기본값 `generate`).
+
+- `task: "generate"`(새 문항 생성): 새로 만든 문항이라 기준 정답이 없습니다. 정답률은 교사가 생성 문항의 정답 키를 검수한 결과 `review.answer_key_correct`(true/false)로만 셉니다. 검수 전 문항은 분모에서 빼고 `unreviewed_generated_count`로 따로 남깁니다. 형식 실패·누락은 오답으로 셉니다.
+- `task: "solve"`(교사 확인 문항 풀이): 모델이 이미 있는 문항을 풀고, 그 답을 `gold`와 비교합니다. 재풀이 모델(T05)의 실력을 재는 데 씁니다.
+
+`solve` 행은 `teacher_verified=true`와 `gold`를 요구합니다. 객관식은 `{"answer": [1]}`, 서답형은 `{"acceptedAnswers": ["Hello world", "허용한 다른 답"]}`입니다. 서답형은 유니코드 NFKC와 공백만 정규화하며 대소문자·구두점을 임의로 제거하지 않습니다. 허용 변형은 교사가 acceptedAnswers에 명시합니다.
 
 500문항 holdout은 Trainer에 전달하지 않습니다. train.py는 날짜·그룹 누출 검사에만 사용합니다. 하이퍼파라미터 조정에는 별도의 개발 세트를 두고, 최종 테스트 세트는 튜닝에 반복 사용하지 않습니다.
 
 ## 생성과 외부 검증 결과
 
-v0 결과 행은 id, question, evidence_refs, generator_model(정규 모델 ID), model_revision, usage(prompt_tokens·completion_tokens), latency_seconds를 기록합니다. source_chunks가 없으면 API를 호출하지 않고 abstained=true를 남깁니다. 모델 중단·비정상 JSON은 성공으로 위장하지 않고 명령이 실패합니다. 부분 파일은 별도 경로로 다시 생성하고, 평가에서는 누락 ID도 실패 분모에 포함합니다.
+v0 결과 행은 id, question, evidence_refs, generator_model(정규 모델 ID), model_revision, usage(prompt_tokens·completion_tokens), latency_seconds를 기록합니다. source_chunks가 없으면 API를 호출하지 않고 abstained=true를 남깁니다. 응답이 잘렸거나(`truncated`) JSON이 깨졌거나(`invalid_json`) 문항 객체가 없으면(`missing_question`) 성공으로 위장하지 않고 `error` 행을 남긴 뒤 다음 문항으로 넘어갑니다. 평가에서는 이 행을 형식 실패로 셉니다. HTTP 오류·시간 초과 같은 전송 실패는 명령이 멈춥니다. 부분 파일은 별도 경로로 다시 생성하고, 평가에서는 누락 ID도 실패 분모에 포함합니다.
 
 T05 검증 뒤 아래 필드를 추가할 수 있습니다.
 
@@ -52,4 +57,4 @@ T05 검증 뒤 아래 필드를 추가할 수 있습니다.
 
 ## 비교 조건
 
-모델과 검색 모드를 비교할 때 평가 파일 SHA256, 모델/가중치 버전, 프롬프트, 출력 한도, 컨텍스트 토큰 예산, 장비·동시성 조건을 함께 기록합니다. D·bm25·embedding·hybrid는 같은 조건에서 비교하며, 다른 gold 해시의 점수를 직접 비교하지 않습니다. 집계 JSON은 수동 검토 자료이며 자동 운영 전환·배포 게이트가 아닙니다.
+클로드와 v0를 비교할 때는 같은 프롬프트를 써야 합니다. 프롬프트의 단일 출처는 `training.common.messages_for`이며, 결과에 그 함수가 있는 저장소 git SHA를 함께 남깁니다. 모델과 검색 모드를 비교할 때 평가 파일 SHA256, 모델/가중치 버전, 프롬프트, 출력 한도, 컨텍스트 토큰 예산, 장비·동시성 조건을 함께 기록합니다. D·bm25·embedding·hybrid는 같은 조건에서 비교하며, 다른 gold 해시의 점수를 직접 비교하지 않습니다. 집계 JSON은 수동 검토 자료이며 자동 운영 전환·배포 게이트가 아닙니다.

@@ -71,7 +71,7 @@ GGUF 변환은 [공식 llama.cpp](https://github.com/ggml-org/llama.cpp) checkou
 
 ```bash
 python3 -m training.gguf.export --model Qwen/Qwen2.5-7B-Instruct --revision "$F2R_BASE_REV" --adapter training/outputs/v1/adapter --llama-cpp-dir /opt/llama.cpp --llama-cpp-revision "$F2R_LLAMA_REV" --output training/outputs/v1-gguf --dry-run
-# 같은 명령에서 --dry-run을 제거하면 병합·F16 변환·Q4_K_M 퀀타이제이션을 실행합니다.
+# 같은 명령에서 --dry-run을 제거하면 병합(bf16)·BF16 GGUF 변환·Q4_K_M 퀀타이제이션을 실행합니다.
 ```
 
 dry-run은 데이터를 검사하거나 명령을 출력할 뿐 GPU·병합·변환 성공을 뜻하지 않습니다. 변환 결과는 model-Q4_K_M.gguf와 해시·크기·llama.cpp commit이 담긴 export_manifest.json입니다. evaluation_passed는 false로 두며, 변환된 GGUF를 별도로 실행·재평가한 뒤에만 서비스 전환을 검토합니다. 가중치가 약 5GB라는 것만으로 8GB 장비에서 임의의 긴 컨텍스트·동시 요청이 보장되지는 않습니다. 생성과 독립 검증 모델의 순차 실행/적재 조건을 실측해야 합니다.

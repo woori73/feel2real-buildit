@@ -56,9 +56,13 @@ def validate_record(row, training=False, evaluation=False):
     if training:
         if meta.get("training_allowed") is not True or not row.get("output"):
             raise ValueError("training permission and output required")
-    if evaluation and not isinstance(row.get("gold"), dict):
+    task = row.get("task", "generate")
+    if evaluation and task not in ("generate", "solve"):
+        raise ValueError("task must be generate or solve")
+    # solve(교사 확인 문항을 모델이 푼다)만 기준 정답이 있다. generate(새 문항 생성)는 교사 검수 결과로 채점한다.
+    if evaluation and task == "solve" and not isinstance(row.get("gold"), dict):
         raise ValueError("teacher gold required")
-    if evaluation:
+    if evaluation and task == "solve":
         gold = row["gold"]
         mc = gold.get("answer")
         sa = gold.get("acceptedAnswers")

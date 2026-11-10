@@ -62,6 +62,10 @@ def _number(v, integer=False):
 def evaluate(gold_rows, prediction_rows):
     """Missing predictions count as failures. Missing observations stay null.
 
+    Accuracy depends on the row's task: ``solve`` compares the model's answer with the teacher gold;
+    ``generate`` (default) has no reference answer for a new question, so only a teacher review
+    (``review.answer_key_correct``) counts — unreviewed valid items are reported, not guessed.
+
     Evidence is lexical provenance, not semantic proof. Audit rate's denominator
     is reviewed auto-pass samples, never all auto-pass items. Do not claim zero
     errors or service readiness from a small/unaudited sample.
@@ -73,13 +77,25 @@ def evaluate(gold_rows, prediction_rows):
     if set(predictions) - set(expected):
         raise ValueError("unexpected prediction id")
     accuracy, evidence, forms, independent, audit, tokens, latency = ([] for _ in range(7))
-    auto_pass, ignored_verifiers = 0, 0
+    auto_pass, ignored_verifiers, unreviewed_generated = 0, 0, 0
     for rid, row in expected.items():
         pred = predictions.get(rid, {})
         question = pred.get("question")
         valid = isinstance(question, dict) and _format_valid(question) and not pred.get("error")
         forms.append(valid)
-        accuracy.append(valid and _gold_matches(question, row["gold"]))
+        if row.get("task", "generate") == "solve":
+            # 풀이 과제: 교사 확인 문항의 기준 정답과 모델 답을 비교한다.
+            accuracy.append(valid and _gold_matches(question, row["gold"]))
+        else:
+            # 생성 과제: 새 문항이라 기준 정답이 없다. 교사가 정답 키를 검수한 결과만 센다.
+            review = pred.get("review")
+            verdict = review.get("answer_key_correct") if isinstance(review, dict) else None
+            if not valid:
+                accuracy.append(False)
+            elif type(verdict) is bool:
+                accuracy.append(verdict)
+            else:
+                unreviewed_generated += 1
         evidence.append(valid and _evidence_matches(pred, row.get("source_chunks", [])))
         verify = pred.get("verification", {})
         answer = _answer(verify.get("answer"))
@@ -104,7 +120,8 @@ def evaluate(gold_rows, prediction_rows):
     return {
         "schema_version": "f2r-eval-v1", "questions": len(expected),
         "missing_predictions": len(set(expected) - set(predictions)),
-        "accuracy": _metric(accuracy), "evidence_match_rate": _metric(evidence),
+        "accuracy": _metric(accuracy), "unreviewed_generated_count": unreviewed_generated,
+        "evidence_match_rate": _metric(evidence),
         "format_compliance_rate": _metric(forms),
         "independent_disagreement_rate": _metric(independent),
         "auto_pass_audited_error_rate": _metric(audit),

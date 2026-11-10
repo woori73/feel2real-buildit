@@ -26,8 +26,9 @@ def question():
             "acceptedAnswers": [], "sampleAnswer": "", "gradingRule": ""}
 
 
-def record(rid="r1", day="2026-12-01", group="g1"):
-    return {"id": rid, "instruction": "Create one question using the question contract.",
+def record(rid="r1", day="2026-12-01", group="g1", task="solve"):
+    # 기존 정답률 테스트는 기준 정답(gold)과 비교하는 풀이 과제(solve)다. 생성 과제는 아래 GenerateTaskTests.
+    return {"id": rid, "task": task, "instruction": "Create one question using the question contract.",
             "input": {"profile": "synthetic example"}, "gold": {"answer": [1]},
             "output": {"question": question(), "evidence_refs": [{"id": "s1", "quote": "larger"}]},
             "source_chunks": [{"id": "s1", "text": "A is larger than B."}],
@@ -107,6 +108,49 @@ class MetricsTests(unittest.TestCase):
         self.assertEqual(evaluate([gold], [pred])["accuracy"]["value"], 0)
 
 
+class GenerateTaskTests(unittest.TestCase):
+    """생성 과제: 새 문항에는 기준 정답이 없으므로 교사 검수 결과로만 정답률을 센다."""
+
+    def test_given_generated_question_without_review_when_evaluated_then_accuracy_unknown(self):
+        # given: 형식은 맞지만 교사 검수 전인 생성 문항
+        gold = record(task="generate"); del gold["gold"]
+        # when
+        result = evaluate([gold], [prediction()])
+        # then: 기준 정답 번호와 비교하지 않고, 분모에서 빼서 따로 센다
+        self.assertEqual(result["accuracy"], {"numerator": 0, "denominator": 0, "value": None})
+        self.assertEqual(result["unreviewed_generated_count"], 1)
+        self.assertEqual(result["format_compliance_rate"]["value"], 1)
+
+    def test_given_teacher_review_when_evaluated_then_review_decides_accuracy(self):
+        # given: 교사가 정답 키를 맞다/틀리다고 검수한 생성 문항 두 개
+        right, wrong = prediction(), prediction(); wrong["id"] = "r2"
+        right["review"] = {"answer_key_correct": True}
+        wrong["review"] = {"answer_key_correct": False}
+        # when
+        result = evaluate([record(task="generate"), record("r2", task="generate")], [right, wrong])
+        # then
+        self.assertEqual(result["accuracy"], {"numerator": 1, "denominator": 2, "value": 0.5})
+        self.assertEqual(result["unreviewed_generated_count"], 0)
+
+    def test_given_error_row_when_evaluated_then_counted_as_format_and_accuracy_failure(self):
+        # given: v0가 JSON이 깨져 error 행을 남긴 경우
+        failed = {"id": "r1", "question": None, "error": "invalid_json", "generator_model": "model-a"}
+        # when
+        result = evaluate([record(task="generate")], [failed])
+        # then
+        self.assertEqual(result["format_compliance_rate"]["value"], 0)
+        self.assertEqual(result["accuracy"], {"numerator": 0, "denominator": 1, "value": 0})
+
+    def test_given_generate_row_without_gold_when_validated_then_ok_but_unknown_task_fails(self):
+        # given / when / then
+        row = record(task="generate"); del row["gold"]
+        validate_record(row, evaluation=True)
+        row["task"] = "translate"
+        with self.assertRaises(ValueError): validate_record(row, evaluation=True)
+        solve = record(); del solve["gold"]
+        with self.assertRaises(ValueError): validate_record(solve, evaluation=True)
+
+
 class DataTests(unittest.TestCase):
     def test_given_padded_batch_when_collated_then_only_padding_labels_are_ignored(self):
         fake_torch = SimpleNamespace(tensor=lambda values, dtype: values, long="long")
@@ -180,6 +224,9 @@ class DataTests(unittest.TestCase):
         commands = conversion_commands("/tmp/llama checkout", "/tmp/merged model", "/tmp/output model")
         self.assertEqual(commands[0][2], "/tmp/merged model")
         self.assertEqual(commands[1][-1], "Q4_K_M")
+        # 원본 가중치(bf16) 정밀도를 그대로 유지해 변환한다
+        self.assertEqual(commands[0][commands[0].index("--outtype") + 1], "bf16")
+        self.assertTrue(commands[1][1].endswith("model-bf16.gguf"))
 
     def test_given_adapter_manifest_when_export_dry_run_then_no_merge_is_executed(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -267,10 +314,37 @@ class HttpTests(unittest.TestCase):
                 self.assertEqual(result["question"]["answer"], [1])
                 self.assertEqual(observed[0]["temperature"], 0)
                 self.assertNotIn("gold", observed[0])
-                with self.assertRaises(ValueError):
-                    generate(record(), f"http://127.0.0.1:{server.server_port}/v1", "truncated", "a" * 64)
+                truncated = generate(record(), f"http://127.0.0.1:{server.server_port}/v1", "truncated", "a" * 64)
+                self.assertEqual(truncated["error"], "truncated")
+                self.assertIsNone(truncated["question"])
             finally:
                 server.shutdown(); worker.join()
+
+    def test_given_broken_json_then_good_response_when_generated_then_error_row_and_next_succeeds(self):
+        # given: 첫 응답은 JSON이 깨지고, 두 번째 응답은 정상인 로컬 서버
+        replies = ["인과관계 검증 완료", json.dumps({"question": question(), "evidence_refs": []})]
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers["Content-Length"]))
+                body = json.dumps({"model": "fixture", "usage": {"prompt_tokens": 5, "completion_tokens": 3},
+                                   "choices": [{"finish_reason": "stop", "message": {"content": replies.pop(0)}}]}).encode()
+                self.send_response(200); self.send_header("Content-Length", str(len(body)))
+                self.end_headers(); self.wfile.write(body)
+            def log_message(self, *args): pass
+        with HTTPServer(("127.0.0.1", 0), Handler) as server:
+            worker = threading.Thread(target=server.serve_forever, daemon=True); worker.start()
+            try:
+                url = f"http://127.0.0.1:{server.server_port}/v1"
+                # when
+                first = generate(record(), url, "fixture", "a" * 64)
+                second = generate(record("r2"), url, "fixture", "a" * 64)
+            finally:
+                server.shutdown(); worker.join()
+        # then: 깨진 응답은 멈추지 않고 형식 실패 행으로 남고, 다음 문항은 정상 생성된다
+        self.assertEqual(first["error"], "invalid_json")
+        self.assertEqual(first["usage"]["completion_tokens"], 3)
+        self.assertEqual(second["question"]["answer"], [1])
+        self.assertNotIn("error", second)
 
     def test_given_non_json_response_when_parsed_then_not_returned_as_success(self):
         with self.assertRaises(ValueError): parse_object("인과관계 검증 완료")

@@ -30,15 +30,24 @@ def generate(row, endpoint, model, revision, max_tokens=2048, timeout=180, api_k
         result = json.load(response)
     elapsed = time.perf_counter() - start
     choice = result["choices"][0]
+    # 응답은 받았지만 잘렸거나 JSON이 깨진 경우는 형식 실패로 기록하고 다음 문항으로 넘어간다
+    # (평가 하니스가 error 행을 형식 실패로 센다). 전송 실패(HTTP·시간 초과)는 그대로 예외로 멈춘다.
+    def failed(reason):
+        return {"id": row["id"], "question": None, "evidence_refs": [], "error": reason,
+                "generator_model": model, "model_revision": revision,
+                "usage": result.get("usage", {}), "latency_seconds": elapsed}
     if choice.get("finish_reason") != "stop":
-        raise ValueError("generation incomplete: finish_reason is not stop")
-    parsed = parse_object(choice["message"]["content"])
+        return failed("truncated")
+    try:
+        parsed = parse_object(choice["message"]["content"])
+    except (ValueError, TypeError):
+        return failed("invalid_json")
     if "question" in parsed and parsed["question"] is None:
         return {"id": row["id"], "question": None, "evidence_refs": [], "abstained": True,
                 "reason": "model_abstained", "generator_model": model, "model_revision": revision,
                 "usage": result.get("usage", {}), "latency_seconds": elapsed}
     if not isinstance(parsed.get("question"), dict):
-        raise ValueError("response question object missing")
+        return failed("missing_question")
     return {"id": row["id"], "question": parsed["question"],
             "evidence_refs": parsed.get("evidence_refs", []), "generator_model": model,
             "model_revision": revision, "served_model": result.get("model"),

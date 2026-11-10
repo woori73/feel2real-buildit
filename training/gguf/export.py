@@ -1,4 +1,4 @@
-"""T11: unquantized base + LoRA merge -> F16 GGUF -> Q4_K_M.
+"""T11: unquantized base + LoRA merge (bf16, the base weights' dtype) -> BF16 GGUF -> Q4_K_M.
 
 No cloning, package install, serving, or deployment is performed here.
 """
@@ -17,8 +17,8 @@ def conversion_commands(llama_dir, merged_dir, output):
     llama_dir, merged_dir, output = map(Path, (llama_dir, merged_dir, output))
     return [
         [sys.executable, str(llama_dir / "convert_hf_to_gguf.py"), str(merged_dir),
-         "--outfile", str(output / "model-f16.gguf"), "--outtype", "f16"],
-        [str(llama_dir / "build/bin/llama-quantize"), str(output / "model-f16.gguf"),
+         "--outfile", str(output / "model-bf16.gguf"), "--outtype", "bf16"],
+        [str(llama_dir / "build/bin/llama-quantize"), str(output / "model-bf16.gguf"),
          str(output / "model-Q4_K_M.gguf"), "Q4_K_M"],
     ]
 
@@ -64,7 +64,7 @@ def main():
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
     base = AutoModelForCausalLM.from_pretrained(args.model, revision=args.revision,
-            local_files_only=not args.allow_download, trust_remote_code=False, torch_dtype=torch.float16,
+            local_files_only=not args.allow_download, trust_remote_code=False, torch_dtype=torch.bfloat16,
             device_map={"": "cpu"})
     merged = PeftModel.from_pretrained(base, str(adapter)).merge_and_unload(safe_merge=True)
     merged.save_pretrained(output / "merged", safe_serialization=True)
