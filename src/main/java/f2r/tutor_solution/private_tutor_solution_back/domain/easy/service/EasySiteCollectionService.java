@@ -165,8 +165,11 @@ public class EasySiteCollectionService {
     String payMethod = switch (dataset) {
       case BANK_ACCOUNT -> "계좌";
       case CARD_PURCHASE, CARD_SALES -> "카드";
+      case TUITION_PAYMENT -> "결제선생";
     };
-    String evidenceType = dataset == Dataset.BANK_ACCOUNT ? null : "CREDIT_CARD";
+    // 결제선생 수납은 카드·계좌이체가 섞여 있어 증빙 유형을 단정하지 않는다.
+    String evidenceType = dataset == Dataset.CARD_PURCHASE || dataset == Dataset.CARD_SALES
+        ? "CREDIT_CARD" : null;
 
     ObjectNode raw = MAPPER.createObjectNode();
     raw.put("provider", "MCP_SITE");
@@ -193,11 +196,13 @@ public class EasySiteCollectionService {
       raw.put("review_note", "카드 사용 취소(환불)입니다. 원거래와 연결되지 않았으니 원래 사용 건과 맞춰 확인하세요.");
     } else if (dataset == Dataset.CARD_SALES && !income) {
       raw.put("review_note", "카드 매출 취소입니다. 원거래와 연결되지 않았으니 원래 매출 건과 맞춰 확인하세요.");
+    } else if (dataset == Dataset.TUITION_PAYMENT && !income) {
+      raw.put("review_note", "수강료 결제 취소입니다. 원거래와 연결되지 않았으니 원래 수납 건과 맞춰 확인하세요.");
     }
 
     // 카드 취소 행: 승인번호와 원거래 일자(cancelOfDate)가 있으면 원거래와 연결해 역분개로 저장한다(손익에서 원거래를 줄인다).
     boolean cardCancel = (dataset == Dataset.CARD_PURCHASE && income)
-        || (dataset == Dataset.CARD_SALES && !income);
+        || ((dataset == Dataset.CARD_SALES || dataset == Dataset.TUITION_PAYMENT) && !income);
     String originalExternalId = null;
     if (cardCancel && approvalNo != null && row.cancelOfDate() != null) {
       LocalDate originalDate = parseDate(row.cancelOfDate(), "rows[" + rowNo + "].cancelOfDate");
@@ -253,7 +258,7 @@ public class EasySiteCollectionService {
     try {
       return Dataset.valueOf(value == null ? "" : value.trim().toUpperCase());
     } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("dataset은 BANK_ACCOUNT, CARD_PURCHASE, CARD_SALES 중 하나입니다.");
+      throw new IllegalArgumentException("dataset은 BANK_ACCOUNT, CARD_PURCHASE, CARD_SALES, TUITION_PAYMENT 중 하나입니다.");
     }
   }
 

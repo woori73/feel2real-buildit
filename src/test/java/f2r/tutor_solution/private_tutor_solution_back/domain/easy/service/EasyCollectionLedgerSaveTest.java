@@ -642,6 +642,28 @@ class EasyCollectionLedgerSaveTest {
     assertThat(txnByAmount(50_000).isReversal()).isFalse();
   }
 
+  @Test
+  @DisplayName("given 결제선생 수납 완료와 페이민트 정산입금 when 둘 다 저장 then 수강료는 수입, 정산입금은 수입에서 빠진다")
+  void payssamTuitionAndSettlementAreNotDoubleCounted() {
+    // given
+    var sites = siteService();
+    sites.save(SITE_ADMIN, siteRequest("PAYSSAM", "TUITION_PAYMENT", "site-key-7", List.of(
+        new EasySiteCollectionService.SiteRow("2026-10-05", "IN", 300_000L, "합성학생", "10월 수강료", "P0001", null, null))));
+
+    // when
+    sites.save(SITE_ADMIN, siteRequest("KB_BANK", "BANK_ACCOUNT", "site-key-8", List.of(
+        new EasySiteCollectionService.SiteRow("2026-10-08", "IN", 297_000L, "(주)페이민트", "결제선생 정산", null, 1_297_000L, null))));
+
+    // then
+    EasyTransaction tuition = txnByAmount(300_000);
+    EasyTransaction settlement = txnByAmount(297_000);
+    assertThat(tuition.getDirection()).isEqualTo(EasyTxnDirection.INCOME);
+    assertThat(tuition.getTaxClassification() == null
+        || !tuition.getTaxClassification().excludesProfit(tuition.getDirection())).isTrue();
+    assertThat(settlement.getTaxClassification()).isEqualTo(EasyTaxClassification.NOT_INCOME);
+    assertThat(settlement.getCategory()).isEqualTo("결제선생 정산(검토)");
+  }
+
   // ================================================================ helpers
 
   private void addSource(Long id, String code) {

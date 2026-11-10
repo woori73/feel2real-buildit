@@ -1,6 +1,6 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');
 const view=require('../../main/resources/static/js/easy_connections_view.js');
-const SITES={KB_CARD:'KB국민카드',KB_BANK:'KB국민은행',SHINHAN_CARD:'신한카드',CREFIA_CARDSALES:'여신금융협회 카드매출 조회'};
+const SITES={PAYSSAM:'결제선생 (수강료 청구·수납)',KB_CARD:'KB국민카드',KB_BANK:'KB국민은행',SHINHAN_CARD:'신한카드',CREFIA_CARDSALES:'여신금융협회 카드매출 조회'};
 
 test('given 작업용 파일 이름 when 표시 이름으로 바꾸면 then 기관·연월 파일로 읽힌다',()=>{
   // given / when / then
@@ -65,4 +65,9 @@ test('given 카탈로그 안내 문장 when 화면용으로 바꾸면 then 개�
   // then
   assert.doesNotMatch(out,/businessUrl|save_easy_site_rows|dataset=|expectedCount/);
   assert.match(out,/기업·사업자용 주소/);assert.match(out,/Claude가 장부에 저장합니다/);
+});
+test('given 결제선생 파일 이름 when 바꾸면 then 결제선생 연월 파일',()=>{
+  assert.equal(view.labelName('PAYSSAM_202610',SITES),'결제선생 (수강료 청구·수납) · 2026년 10월 파일');
+  assert.equal(view.labelName('payssam_202610_export',{}),'결제선생 · 2026년 10월 파일');
+  assert.equal(view.plainStep('행 단위로 정리해 dataset=TUITION_PAYMENT로 저장합니다.'),'행 단위로 정리해 Claude가 장부에 저장합니다.');
 });

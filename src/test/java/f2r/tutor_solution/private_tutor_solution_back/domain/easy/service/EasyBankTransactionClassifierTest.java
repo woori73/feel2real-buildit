@@ -24,6 +24,19 @@ class EasyBankTransactionClassifierTest {
   }
 
   @Test
+  @DisplayName("given 결제선생(페이민트) 정산입금 when 판정 then PG_SETTLEMENT(수강료 수입 재계상 금지)")
+  void tuitionPaymentServiceSettlement() {
+    // given / when
+    var paymint = EasyBankTransactionClassifier.classify(true, 1_450_000, "(주)페이민트", "정산");
+    var named = EasyBankTransactionClassifier.classify(true, 300_000, "결제선생", "11월 정산");
+    var outgoing = EasyBankTransactionClassifier.classify(false, 30_000, "페이민트", "쌤포인트 충전");
+    // then
+    assertThat(paymint.disposition()).isEqualTo("PG_SETTLEMENT");
+    assertThat(named.disposition()).isEqualTo("PG_SETTLEMENT");
+    assertThat(outgoing.disposition()).isNotEqualTo("PG_SETTLEMENT");
+  }
+
+  @Test
   @DisplayName("given 소상공인 정책자금 입금 when 판정 then LOAN_INFLOW(부채, 매출 아님)")
   void policyLoan() {
     var result = EasyBankTransactionClassifier.classify(true, 30_000_000, "소상공인시장진흥공단", "경영안정자금");

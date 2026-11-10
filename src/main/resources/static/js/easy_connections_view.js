@@ -12,7 +12,8 @@
     ['sales_slip', '카드매출 전표'],
     ['cardsales', '카드매출(여신협회)'],
     ['crefia', '카드매출(여신협회)'],
-    ['hometax', '홈택스']
+    ['hometax', '홈택스'],
+    ['payssam', '결제선생']
   ];
   const BANK_ORGS = { '0004': 'KB국민은행', '0088': '신한은행' };
 
@@ -163,7 +164,7 @@
       .replace(/\(개인사업자·법인은 businessUrl\)/g, '(개인사업자·법인은 기업·사업자용 주소)')
       .replace(/businessUrl/g, '기업·사업자용 주소')
       .replace(/\s*save_easy_site_rows로 저장합니다\.?/g, ' Claude가 장부에 저장합니다.')
-      .replace(/(dataset=[A-Z_]+로 저장합니다\.?)/g, 'Claude가 장부에 저장합니다.')
+      .replace(/dataset=[A-Z_]+로 저장합니다\.?/g, 'Claude가 장부에 저장합니다.')
       .replace(/expectedCount·expectedTotal로/g, '함께')
       .replace(/MCP 도구 인자/g, '도구 입력');
   }

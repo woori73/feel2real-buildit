@@ -8,7 +8,7 @@
   const V = window.EasyConnView;
   const RUN_STATUS = { RUNNING: '진행 중', SUCCESS: '완료', PARTIAL: '일부 실패', FAILED: '실패' };
   const BADGE = { '연결됨': 'ok', '다시 인증 필요': 'warn', '파일 수집': 'file', '직접 로그인 수집': 'mcp' };
-  const MCP_HINT = { HOMETAX: '홈택스', CARD: '카드 사용내역', BANK: '통장 거래내역', CREFIA: '카드매출' };
+  const MCP_HINT = { HOMETAX: '홈택스', CARD: '카드 사용내역', BANK: '통장 거래내역', CREFIA: '카드매출', TUITION: '수강료 수납 내역' };
   let connections = [];
   let catalog = { sites: [], steps: {}, safetyRules: [] };
   let siteNames = {};
