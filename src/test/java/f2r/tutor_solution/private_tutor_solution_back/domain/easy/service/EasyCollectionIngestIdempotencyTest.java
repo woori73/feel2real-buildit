@@ -39,7 +39,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  * PHASE 1 수집 파이프라인 멱등성 증명 — TEST A~F + 3단계 dedupe.
  * DB 없는 Map 하네스(EasyShopPipelineHarness 재사용)로 raw UNIQUE 키 충돌 시
  * 즉석에서 실패하도록 걸어 기존 import 경계가 중복 없이 유지됨을 보인다.
- * 자동 collect ≠ 자동 confirm: 이 테스트는 절대 confirm하지 않는다.
+ * 운영 원칙: 수집 → 원본 보존 → 최소 중복 방지 → 중앙 장부 저장(사람 승인 없이) → 자동분류 → 예외 검토.
  */
 class EasyCollectionIngestIdempotencyTest {
 
@@ -140,7 +140,7 @@ class EasyCollectionIngestIdempotencyTest {
   private static final String ROW_C = "2026-09-03,지출,300000,kt,통신비,계좌이체,EXT-003";
 
   @Test
-  @DisplayName("TEST A — 최초 수집 3행: 전량 import staging 인계 + raw IMPORT_LINKED")
+  @DisplayName("TEST A — 최초 수집 3행: import 인계 후 즉시 중앙 장부 저장 + raw LEDGER_SAVED")
   void testA_firstIngest_handsOffAllRows() {
     var response = service.ingestCsv(BIZ, "default", "sept.csv", csv(ROW_A, ROW_B, ROW_C));
 
@@ -153,12 +153,13 @@ class EasyCollectionIngestIdempotencyTest {
     assertThat(pipeline.rows.values())
         .filteredOn(r -> r.getBatch().getBatchId().equals(batchId)).hasSize(3);
     assertThat(raws.values()).allSatisfy(raw -> {
-      assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.IMPORT_LINKED);
+      assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.LEDGER_SAVED);
       assertThat(raw.getImportBatchId()).isEqualTo(batchId);
       assertThat(raw.getImportRowId()).isNotNull();
     });
-    // 수취만 있고 확정은 없다 — 자동 confirm 금지 원칙.
-    assertThat(pipeline.txnCount()).isZero();
+    // 수집 즉시 장부 저장 — 사람 승인을 기다리지 않는다(분류 불명확 거래는 REVIEW로 저장).
+    assertThat(pipeline.txnCount()).isEqualTo(3);
+    assertThat(response.run().ledgerSavedCount()).isEqualTo(3);
   }
 
   @Test
@@ -248,7 +249,8 @@ class EasyCollectionIngestIdempotencyTest {
       assertThat(raw.getDedupeKey()).endsWith("ext-999"); // EXT 키는 normalize(소문자)로 저장
       assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.LEDGER_DUPLICATE_EXCLUDED);
     });
-    assertThat(pipeline.txnCount()).isEqualTo(1); // 직접 INSERT 없음 — 기존 장부 건수 그대로
+    // 기존 장부와 같은 1건만 제외되고, 새 거래(ROW_B)는 장부에 저장된다.
+    assertThat(pipeline.txnCount()).isEqualTo(2);
   }
 
   @Test
@@ -306,11 +308,12 @@ class EasyCollectionIngestIdempotencyTest {
     assertThat(first.run().acceptedCount()).isEqualTo(2);
     assertThat(retry.run().runId()).isEqualTo(first.run().runId());
     assertThat(runs).hasSize(1);
-    assertThat(pipeline.txnCount()).isZero();
+    // 수집 즉시 장부 저장, 재시도는 같은 run을 돌려줘 중복 저장이 없다.
+    assertThat(pipeline.txnCount()).isEqualTo(2);
     org.assertj.core.api.Assertions.assertThatThrownBy(() ->
         pipeline.importService.confirm(first.run().importBatchId(), null))
         .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
-    assertThat(pipeline.txnCount()).isZero();
+    assertThat(pipeline.txnCount()).isEqualTo(2);
   }
 
   @Test
@@ -320,7 +323,8 @@ class EasyCollectionIngestIdempotencyTest {
     service.ingestFinancialDraft(BIZ, java.util.UUID.randomUUID().toString(), "FIN_abcdef0123456789abcdef01", rows);
     assertThat(raws).hasSize(2);
     assertThat(pipeline.rows).hasSize(2);
-    assertThat(pipeline.txnCount()).isZero();
+    // 날짜·금액·내용이 같아도 서로 다른 계좌의 실제 거래이므로 둘 다 장부에 저장된다.
+    assertThat(pipeline.txnCount()).isEqualTo(2);
   }
 
   @Test
@@ -332,6 +336,6 @@ class EasyCollectionIngestIdempotencyTest {
     assertThat(financial.run().runId()).isNotEqualTo(legacy.run().runId());
     assertThat(financial.run().adapterCode()).isEqualTo("FINANCIAL_FILE");
     assertThat(financial.run().acceptedCount()).isEqualTo(1);
-    assertThat(pipeline.txnCount()).isZero();
+    assertThat(pipeline.txnCount()).isEqualTo(2);
   }
 }

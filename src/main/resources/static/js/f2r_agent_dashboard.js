@@ -22,7 +22,7 @@
   // 서비스 목록: 실제 경로가 있는 서비스만. keywords는 대화 내용으로 서비스를 활성화할 때 쓴다.
   var SERVICES = [
     { id: 'academycraft', name: 'AcademyCraft', desc: '학생·반·출결·상담 관리', href: '/academycraft', keywords: ['학생', '반 ', '반편성', '수업', '출결', '출석', '결석', '지각', '등원', '하원', '상담', '학부모', '강사', '공지'] },
-    { id: 'ledger', name: '이지장부', desc: '거래·분류·증빙 확인', href: '/ledger', keywords: ['장부', '거래', '증빙', '영수증', '세금계산서', '카드', '지출', '수입', '매출', '미수금', '재무', '정산'] },
+    { id: 'ledger', name: 'F2R 장부', desc: '거래·분류·증빙 확인', href: '/ledger', keywords: ['장부', '거래', '증빙', '영수증', '세금계산서', '카드', '지출', '수입', '매출', '미수금', '재무', '정산'] },
     { id: 'easy', name: '에듀홀릭 장부', desc: '운영자용 복식부기·수납', href: '/easy', keywords: ['복식부기', '수납', '에듀홀릭 장부', '분개'] },
     { id: 'wiki', name: '내신위키', desc: '내신 문제 제작·관리', href: '/problem-generator', keywords: ['내신', '문제', '시험지', '예상문제', '문항', '기출', '위키'] },
     { id: 'testprep', name: 'TESTPREP', desc: '모의고사 응시·성적', href: '/testprep', keywords: ['모의고사', 'testprep', '모의 시험', '성적'] },

@@ -92,7 +92,8 @@ class EasyCollectionConfirmBypassMySqlTest {
                         "ACCESS_TOKEN", jwt.issue(5L, "admin", "ADMIN"))))
         .andExpect(status().isForbidden());
     assertThat(imports.getBatch(batch)).isEqualTo(before);
-    assertThat(ledger()).isZero();
+    // 수집 1행은 수집 시점에 이미 장부에 저장된다(운영 원칙). 우회 경로는 그 이상을 쓰지 못한다.
+    assertThat(ledger()).isEqualTo(1);
   }
 
   @Test
@@ -107,7 +108,8 @@ class EasyCollectionConfirmBypassMySqlTest {
     approvals.approve(own.getBusinessId(), a.getApprovalId(), "admin", "reviewed", admin);
     assertThatThrownBy(() -> imports.confirm(batch, null))
         .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
-    assertThat(ledger()).isZero();
+    // 수집 1행은 수집 시점에 이미 장부에 저장된다(운영 원칙). 우회 경로는 그 이상을 쓰지 못한다.
+    assertThat(ledger()).isEqualTo(1);
     assertThat(
             approvals.commitApproved(own.getBusinessId(), a.getApprovalId(), admin).isCommitted())
         .isTrue();
@@ -119,7 +121,8 @@ class EasyCollectionConfirmBypassMySqlTest {
     assertThatThrownBy(
             () -> approvals.commitApproved(own.getBusinessId(), rejected.getApprovalId(), admin))
         .isInstanceOf(IllegalStateException.class);
-    assertThat(ledger()).isEqualTo(1);
+    // 두 번째 수집은 승인번호가 다른 별개의 실거래라 수집 시점에 저장된다. 반려는 장부를 지우거나 더 쓰지 않는다.
+    assertThat(ledger()).isEqualTo(2);
   }
 
   @Test
@@ -165,7 +168,8 @@ class EasyCollectionConfirmBypassMySqlTest {
         approvals.approveAndCommit(
             own.getBusinessId(), a.getApprovalId(), "admin", "reviewed", admin);
     assertThat(failed.getStatus()).isEqualTo(EasyCollectionApproval.ApprovalStatus.COMMIT_FAILED);
-    assertThat(ledger()).isZero();
+    // 수집 1행은 수집 시점에 이미 장부에 저장된다(운영 원칙). 우회 경로는 그 이상을 쓰지 못한다.
+    assertThat(ledger()).isEqualTo(1);
     assertThat(imports.getBatch(foreign.batchId()).confirmedRows()).isZero();
   }
 
@@ -204,7 +208,8 @@ class EasyCollectionConfirmBypassMySqlTest {
                     own.getBusinessId(), a.getApprovalId(), "admin", "reviewed", admin)
                 .getStatus())
         .isEqualTo(EasyCollectionApproval.ApprovalStatus.COMMIT_FAILED);
-    assertThat(ledger()).isZero();
+    // 수집 1행은 수집 시점에 이미 장부에 저장된다(운영 원칙). 우회 경로는 그 이상을 쓰지 못한다.
+    assertThat(ledger()).isEqualTo(1);
   }
 
   @Test

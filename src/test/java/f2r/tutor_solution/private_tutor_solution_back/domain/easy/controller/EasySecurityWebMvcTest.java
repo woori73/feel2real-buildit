@@ -95,6 +95,8 @@ class EasySecurityWebMvcTest {
   @MockitoBean EasyCollectorTaskService collectorTaskService;
   @MockitoBean EasyWorkspaceService workspaceService;
   @MockitoBean EasyBusinessScopeGuard businessScopeGuard;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService tutorAccessService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionAccountRecommendationService collectionRecommendationService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -140,7 +142,7 @@ class EasySecurityWebMvcTest {
   }
 
   @Test
-  @DisplayName("이지장부 하위 화면 → 익명은 원래 경로를 싣고 로그인 안내, 권한 없는 로그인은 /ledger 안내로")
+  @DisplayName("F2R 장부 하위 화면 → 익명은 원래 경로를 싣고 로그인 안내, 권한 없는 로그인은 /ledger 안내로")
   void ledgerSubPages_anonymousLoginGuidance_and_nonTutorNotice() throws Exception {
     mockMvc.perform(get("/ledger/accounts").accept(MediaType.TEXT_HTML))
         .andExpect(status().is3xxRedirection())

@@ -113,7 +113,7 @@ class EasyCollectionSchedulerServiceTest {
         999L, 200L, BIZ, "CARDSales", "SCHEDULED", "SUCCESS",
         "CARDSales-2026-09-20", "CARDSales", "v1-skeleton",
         6, 6, 0, 0, null, null,
-        LocalDateTime.now(), LocalDateTime.now());
+        LocalDateTime.now(), LocalDateTime.now(), null, null, null, 0, 0, 0);
     when(ingestService.ingestByAdapter(anyLong(), anyString(), anyString(), any(), any(), anyInt()))
         .thenReturn(new EasyCollectionIngestResponse(mockRunResponse, List.of()));
 

@@ -1,5 +1,8 @@
 # 07 — 자동수집 아키텍처 설계 (목표안, 미구현)
 
+> ⚠️ 2026-11-10 정정: 이 문서의 "자동 collect ≠ 자동 confirm(사람이 confirm해야 장부 저장)" 방침은 현재 운영 원칙(EASY_LEDGER_OPERATING_PRINCIPLES — 수집 → 원본 보존 → 최소 중복 방지 → 중앙 장부 저장 → 자동분류 → 예외 검토)과 충돌하여 폐기됐다. 현행 동작은 `docs/DOMAIN.md` §4.60b, `docs/API.md` "수집 즉시 장부 저장", `10_CODEF_BANK_FIRST_INTEGRATION.md`를 따른다.
+
+
 > 근거: 01(현재 코드) + 02~06(조사). 원칙: **기존 Import→mapping→READY/REVIEW→confirm→journal 파이프라인 불변**, 자동수집은 그 앞단에 별도 collection 레이어로 부착. PRODUCTION WRITE/MIGRATION 없음 — 본 문서는 설계만.
 
 ## 1. 전체 구조

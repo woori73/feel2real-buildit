@@ -170,6 +170,17 @@ class EasyCardsalesAdapterIntegrationTest {
             .filter(t -> t.getBusiness().getBusinessId().equals(inv.getArgument(0))
                 && t.getFingerprint() != null).toList());
 
+    when(txnRepository.save(any(EasyTransaction.class))).thenAnswer(inv -> {
+      EasyTransaction txn = inv.getArgument(0);
+      if (txn.getTxnId() == null) {
+        ReflectionTestUtils.setField(txn, "txnId", ids.incrementAndGet());
+      }
+      txns.put(txn.getTxnId(), txn);
+      return txn;
+    });
+    when(rowRepository.findById(anyLong()))
+        .thenAnswer(inv -> Optional.ofNullable(rows.get(inv.getArgument(0))));
+
     when(batchRepository.save(any(EasyImportBatch.class))).thenAnswer(inv -> {
       EasyImportBatch batch = inv.getArgument(0);
       ReflectionTestUtils.setField(batch, "batchId", ids.incrementAndGet());
@@ -243,7 +254,7 @@ class EasyCardsalesAdapterIntegrationTest {
     Long batchId = response.run().importBatchId();
     assertThat(raws.values()).hasSize(6);
     assertThat(raws.values()).allSatisfy(raw -> {
-      assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.IMPORT_LINKED);
+      assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.LEDGER_SAVED);
       assertThat(raw.getImportBatchId()).isEqualTo(batchId);
       assertThat(raw.getImportRowId()).isNotNull();
       assertThat(raw.getConnection()).isNotNull();
@@ -294,13 +305,19 @@ class EasyCardsalesAdapterIntegrationTest {
   }
 
   @Test
-  @DisplayName("통합: auto-confirm 없음 — 트랜잭션 직접 INSERT 금지 검증")
-  void noAutoConfirm_noDirectTransactionInsert() {
+  @DisplayName("통합: 수집 즉시 중앙 장부 저장 — import 경계를 거쳐 6건 저장, 재수집 시 추가 저장 없음")
+  void collectedRowsAreSavedToLedgerOnceThroughImportBoundary() {
+    // given
     setupConnection("default", CONN_REF_A, 200L);
 
+    // when
+    EasyCollectionIngestResponse first = ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
     ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
 
-    assertThat(txns).isEmpty();
+    // then
+    assertThat(txns).hasSize(6);
+    assertThat(first.run().ledgerSavedCount()).isEqualTo(6);
+    assertThat(txns.values()).allSatisfy(txn -> assertThat(txn.getSourceRef()).contains("#run:"));
   }
 
   @Test
@@ -331,7 +348,7 @@ class EasyCardsalesAdapterIntegrationTest {
     ingestService.ingestByAdapter(BIZ, "default", "CARDSales", EasyCollectionTriggerType.MANUAL, null, 5000);
 
     assertThat(raws.size()).isEqualTo(rawCountAfterFirst);
-    assertThat(raws.values()).allSatisfy(raw -> 
-        assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.IMPORT_LINKED));
+    assertThat(raws.values()).allSatisfy(raw ->
+        assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.LEDGER_SAVED));
   }
 }

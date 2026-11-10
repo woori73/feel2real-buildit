@@ -18,6 +18,13 @@ public class EasyCollectionManagementService {
   private final EasyCollectionProviderReadinessPolicy readinessPolicy;
   private final EasyCollectionSchedulerService schedulerService;
 
+  /** 은행 연결 등록용 수집원 카탈로그. */
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private EasyCollectionSourceRepository sourceRepository;
+
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private EasyBusinessRepository businessRepository;
+
   @Transactional(readOnly = true)
   public List<EasyCollectionManagementResponse> listConnections(Long businessId) {
     requireBusinessId(businessId);
@@ -72,6 +79,90 @@ public class EasyCollectionManagementService {
     return schedulerService.triggerManualCollection(businessId, connectionId);
   }
 
+  /**
+   * 은행 계좌 연결 등록 또는 설정 수정. 값은 기관코드·고객구분·계좌번호(비민감 조회 조건)와, 사용자가
+   * CODEF 계정 등록으로 받은 connectedId(인증 참조)뿐이다. 계좌 비밀번호·인증서·OTP는 받지 않는다.
+   * 새 연결은 자동수집이 꺼진 상태로 만든다 — 기관 검증이 끝나 READY가 된 뒤에만 켤 수 있다.
+   */
+  @Transactional
+  public EasyCollectionManagementResponse saveBankConnection(Long businessId, Long connectionId,
+      String label, String organization, String clientType, String account,
+      String connectedId) {
+    requireBusinessId(businessId);
+    CodefBankTransactionAdapter.BankConfig config = CodefBankTransactionAdapter.parseConfig(
+        "{\"organization\":\"" + safe(organization) + "\",\"clientType\":\""
+            + safe(clientType) + "\",\"account\":\"" + safe(account) + "\"}");
+    EasyCollectionConnection connection;
+    if (connectionId != null) {
+      connection = requireOwnedConnection(businessId, connectionId);
+      if (!CodefBankTransactionAdapter.ADAPTER_CODE.equals(connection.getSource().getCode())) {
+        throw new IllegalArgumentException("은행 연결만 이 화면에서 수정할 수 있습니다.");
+      }
+    } else {
+      EasyCollectionSource source = sourceRepository
+          .findByCode(CodefBankTransactionAdapter.ADAPTER_CODE)
+          .orElseThrow(() -> new IllegalArgumentException("은행 수집원이 없습니다."));
+      EasyBusiness business = businessRepository.findById(businessId)
+          .filter(EasyBusiness::isActive)
+          .orElseThrow(() -> new IllegalArgumentException("사업체를 찾을 수 없습니다."));
+      String normalizedLabel = label == null || label.isBlank()
+          ? "계좌 " + config.maskedAccount() : label.trim();
+      if (connectionRepository.findByBusiness_BusinessIdAndSource_SourceIdAndLabel(
+          businessId, source.getSourceId(), normalizedLabel).isPresent()) {
+        throw new IllegalArgumentException("같은 이름의 연결이 이미 있습니다.");
+      }
+      connection = EasyCollectionConnection.builder()
+          .business(business).source(source).label(normalizedLabel).build();
+      connection.disable();
+    }
+    connection.updateProviderConfig(config.toJson());
+    if (connectedId != null && !connectedId.isBlank()) {
+      connection.updateConnectionRef(connectedId.trim());
+    }
+    return toResponse(connectionRepository.save(connection));
+  }
+
+  /** 재인증 — 새 connectedId로 인증 참조만 바꾼다. NEEDS_REAUTH면 ACTIVE로 돌아간다. */
+  @Transactional
+  public EasyCollectionManagementResponse updateAuthReference(Long businessId, Long connectionId,
+      String connectedId) {
+    EasyCollectionConnection connection = requireOwnedConnection(businessId, connectionId);
+    if (connectedId == null || connectedId.isBlank()) {
+      throw new IllegalArgumentException("인증 참조(connectedId)를 입력하세요.");
+    }
+    connection.updateConnectionRef(connectedId.trim());
+    return toResponse(connection);
+  }
+
+  /**
+   * 연결 해제 — 조회 중단 + 인증 참조 비활성화. 장부·증빙·원본·수집 이력은 삭제하지 않는다.
+   */
+  @Transactional
+  public EasyCollectionManagementResponse disconnect(Long businessId, Long connectionId) {
+    EasyCollectionConnection connection = requireOwnedConnection(businessId, connectionId);
+    if (runRepository.existsByConnection_ConnectionIdAndStatus(
+        connectionId, EasyCollectionRunStatus.RUNNING)) {
+      throw new IllegalStateException("수집이 진행 중입니다. 끝난 뒤 해제하세요.");
+    }
+    connection.disconnect(java.time.LocalDateTime.now());
+    return toResponse(connection);
+  }
+
+  /** 연결별 수집 이력 + 장부 저장 결과. */
+  @Transactional(readOnly = true)
+  public List<EasyCollectionRunResponse> listRuns(Long businessId, Long connectionId) {
+    requireOwnedConnection(businessId, connectionId);
+    return runRepository.findAllByBusiness_BusinessIdOrderByRunIdDesc(businessId).stream()
+        .filter(run -> connectionId.equals(run.getConnection().getConnectionId()))
+        .limit(50)
+        .map(EasyCollectionRunResponse::from)
+        .toList();
+  }
+
+  private static String safe(String value) {
+    return value == null ? "" : value.replace("\\", "").replace("\"", "").trim();
+  }
+
   public EasyCollectionProviderReadiness readiness(EasyCollectionConnection connection) {
     if (connection.getStatus() == EasyCollectionConnectionStatus.NEEDS_REAUTH) {
       return EasyCollectionProviderReadiness.NEEDS_REAUTH;
@@ -88,7 +179,8 @@ public class EasyCollectionManagementService {
     if (connection.getStatus() == EasyCollectionConnectionStatus.NEEDS_REAUTH) {
       return EasyCollectionProviderReadiness.NEEDS_REAUTH;
     }
-    if (!connection.getSource().isActive()) {
+    if (connection.getStatus() == EasyCollectionConnectionStatus.DISCONNECTED
+        || !connection.getSource().isActive()) {
       return EasyCollectionProviderReadiness.DISABLED;
     }
     return configuredAndVerified(connection);

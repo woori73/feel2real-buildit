@@ -44,7 +44,7 @@ public class AssistantConversationService {
     var a=materials.analyze(p.userId(),filename,bytes);
     if(a.kind().equals("LEDGER_IMPORT")) {
       var d=service.upload(p,businessId,filename,bytes);
-      return new Turn("거래·증빙 자료를 분석해 장부 초안을 만들었습니다. 오류 행과 증빙을 확인한 뒤 승인하세요.","기존 이지장부 CSV 분석·분류",null,List.of(d),a.issues(),null);
+      return new Turn("거래·증빙 자료를 분석해 장부 초안을 만들었습니다. 오류 행과 증빙을 확인한 뒤 승인하세요.","기존 F2R 장부 CSV 분석·분류",null,List.of(d),a.issues(),null);
     }
     var drafts=new ArrayList<AssistantDraft>();var issues=new ArrayList<>(a.issues());
     // Check every requested scope before creating any of a mixed material's drafts.

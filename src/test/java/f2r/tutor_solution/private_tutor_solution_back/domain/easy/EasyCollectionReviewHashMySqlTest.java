@@ -99,7 +99,8 @@ class EasyCollectionReviewHashMySqlTest {
           .hasMessageContaining("REVIEW_CHANGED_OR_NO_BATCH");
       assertThat(approvalRows.findById(a.getApprovalId()).orElseThrow().getStatus())
           .isEqualTo(EasyCollectionApproval.ApprovalStatus.PENDING);
-      assertThat(ledger()).isZero();
+      // 수집 초안은 수집 시점에 이미 장부에 저장된다(운영 원칙). 잘못된 검토 해시는 장부를 더 쓰지 못한다.
+      assertThat(ledger()).isEqualTo(1);
     }
     String note =
         EasyImportReviewHash.NOTE_PREFIX + EasyImportReviewHash.of(imports.getBatch(batch));
@@ -129,6 +130,7 @@ class EasyCollectionReviewHashMySqlTest {
                 .commitApproved(business.getBusinessId(), a.getApprovalId(), owner)
                 .getStatus())
         .isEqualTo(EasyCollectionApproval.ApprovalStatus.COMMIT_FAILED);
-    assertThat(ledger()).isZero();
+    // 수집 시점 저장분 1건만 있고, 바뀐 검토 내용으로는 장부를 더 쓰지 않는다.
+    assertThat(ledger()).isEqualTo(1);
   }
 }

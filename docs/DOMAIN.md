@@ -1531,6 +1531,21 @@ FINAL Context는 `past_exams`+`ai_work_logs` 본문을 항목당 200,000자·합
 - CREFIA verification allow-list는 비어 있고 UNVERIFIED 상태를 유지한다.
 
 
+### 4.60b EASY 자동수집 — 수집 즉시 중앙 장부 저장 + 은행 연결 (V1105)
+
+운영 원칙(`docs/operating-principles/EASY_LEDGER_OPERATING_PRINCIPLES.md`) 순서: **수집 → 원본 보존 → 최소 중복 방지 → 중앙 장부 저장 → 자동분류 → 예외 검토**. 이 절은 4.55·4.57~4.59의 "자동 collect ≠ 자동 confirm / 승인 전 장부 0건" 방침을 **대체**한다. 수집한 정상 실거래는 사람 승인 없이 `EasyImportService.saveCollectedBatch`(HTTP 매핑 없음, MANDATORY 트랜잭션)로 `easy_transactions`에 저장되며, 계정이 불명확하면 `account=NULL`·category `미분류`·`tax_class=REVIEW_REQUIRED`·`evidence_review=NEEDS_REVIEW`로 저장되고 분개는 생략된다. 분류된 거래만 기존 분개 엔진(`repost`)을 탄다(거래 저장 ≠ 확정 분개·손익).
+
+- `easy_collection_connections` 추가: `provider_config` VARCHAR(500)(비민감 조회 조건 JSON — 기관코드·고객구분·계좌번호. 비밀번호·인증서·OTP 금지, 화면 응답에는 계좌 뒤 4자리만), `last_error_code` VARCHAR(40)(AUTH_REQUIRED 등 분류 코드만), `disconnected_at`. `status`에 `DISCONNECTED` 추가 — 연결 해제 = 조회 중단 + `connection_ref=NULL`. 장부·증빙·원본·수집 이력은 삭제하지 않는다. 새 인증 참조 등록 시 `DISABLED`로 돌아오고 켜기는 readiness `READY`일 때만.
+- `easy_collection_runs` 추가: `fetched_at`(기관 API 응답 수신 — 저장 롤백과 무관하게 기록), `ledger_saved_through` DATE(중앙 장부 저장까지 끝난 마지막 조회일), `ledger_saved_at`, `ledger_saved_count`/`ledger_review_count`/`ledger_classified_count`. 보고 형식: 수집 N(`fetched_count`) / 장부 저장 N / 기존 중복 N(`duplicate_count`) / 미분류·검토 N / 분류 완료 N / 실패 N(`error_count`).
+- `easy_collection_raw_records.status`에 `LEDGER_SAVED` 추가(import 행이 장부 거래가 됨). 날짜·금액 해석 실패 행은 `ERROR`로 원문·사유만 남고 장부에 넣지 않는다.
+- `easy_collection_checkpoints.dataset_type`에 `BANK_TRANSACTION` 추가. `checkpoint_value`는 장부 저장이 커밋된 마지막 조회일(yyyy-MM-dd). 기간 어댑터는 [커서일, 오늘]을 기관 1회 최대 기간(31일)으로 나눠 구간마다 조회(트랜잭션 밖) → 저장·커서 전진(한 트랜잭션). 저장 실패 구간은 롤백되고 커서는 그대로다. 커서일 당일은 다시 조회하며 원본 키로 중복 제거된다. 한 구간이 요청 한도(5,000건)를 넘으면 반으로 나눠 다시 조회한다.
+- `easy_transactions.original_txn_id` BIGINT NULL + INDEX: 취소·부분취소 거래의 원거래. 취소 행은 `is_expense_reversal=TRUE`로 저장하고 원거래는 수정하지 않는다. 원거래를 아직 못 받았으면 저장하되 검토 메모를 남긴다.
+- `easy_collection_sources`에 `CODEF_BANK`(은행 입출금, CODEF 수시입출 거래내역) 추가. readiness는 `easy.collection.verified-sources`(기본 빈 값)에 코드가 있어야 `READY` — 계약·키·검증 전에는 `UNVERIFIED`로 보이고 자동 실행되지 않는다.
+- **중복 방지(최소)**: ① 원본 키 `dedupe_key` UNIQUE — 은행은 고유번호가 없어 `TR:{sha256(기관|계좌|일자|시각|출금|입금|거래후잔액|비고1~3)[0:32]}#{응답 내 등장순번}`. ② 수집 외 경로로 들어온 기존 장부 거래와 내용 fingerprint가 같으면 **그 건수만큼만** 제외(`LEDGER_DUPLICATE_EXCLUDED`), 초과분은 저장 — 날짜·금액이 같은 서로 다른 실제 거래를 합치지 않는다. ③ 수집 거래의 `fingerprint`는 원본 키를 포함해 원본 단위로 한 번만 저장된다.
+- **중복 회계 방지(원천 판정 `primary_disposition`)**: 카드대금 은행 출금 `CARD_PAYMENT` → `NOT_EXPENSE`, 카드사 정산입금 `CARD_SETTLEMENT` → `NOT_INCOME`(카드매출과 대사는 검토), 정책자금·대출 입금 `LOAN_INFLOW` → `NOT_INCOME`, 고용지원금 `GOV_SUBSIDY` → `REVIEW_REQUIRED`. 판정 근거: 운영 원칙 §8, `docs/easy/ACADEMY_TAX_CHECKLIST.md`.
+- **분류 우선순위**: 원본 계정 매핑(이지샵 계정명, confidence 1.0) → 과거 장부(같은 사업체·방향·거래처가 한 계정으로만 쓰였으면 그 계정, 0.95) → 명시 규칙 → 미분류(REVIEW). GPT 루나 추천은 저장 후 미분류 거래에만 참고용으로 조회하며 저장·확정하지 않는다.
+- 학원(`ACADEMY`)·출판사(`PUBLISHING`) 분리: 수집 거래는 연결이 속한 사업체 장부에만 저장한다(원문 마커로 다른 사업체로 옮기지 않음).
+
 ### 4.61 EASY 사업용 카드 회계 foundation (Phase 5A)
 
 - `easy_card_events`는 provider-neutral 관찰이며 `APPROVAL/PURCHASE/CANCELLATION/CORRECTION/BILLING/PAYMENT_SETTLEMENT`을 구분한다. raw/provider event는 `easy_transactions`가 아니다.

@@ -351,7 +351,7 @@
     var links = [
       { icon: '🎓', name: '입시상담 AI', desc: '공식자료 검수·승인 및 상담', href: '/admissions/workspace' },
       { icon: '💰', name: '에듀홀릭 장부<운영자용>', desc: '수납·지출·미수금 관리', href: '/easy' },
-      { icon: '📒', name: '이지장부', desc: '원장용 범용 장부', href: '/ledger' },
+      { icon: '📒', name: 'F2R 장부', desc: '원장용 범용 장부', href: '/ledger' },
       { icon: '🏠', name: '홈페이지 빌더', desc: '학원 홈페이지 관리', href: '/builder' },
       { icon: '📝', name: '내신위키', desc: '문제 생성기', href: '/problem-generator' },
       { icon: '📊', name: 'TESTPREP', desc: '시험 관리', href: '/testprep' },

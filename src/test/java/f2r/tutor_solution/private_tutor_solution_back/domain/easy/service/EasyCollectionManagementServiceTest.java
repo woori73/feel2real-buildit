@@ -97,7 +97,7 @@ class EasyCollectionManagementServiceTest {
     when(readinessPolicy.isVerified(source)).thenReturn(true);
     EasyCollectionRunResponse manual = new EasyCollectionRunResponse(
         9L, 7L, 1L, "TEST", "MANUAL", "SUCCESS", "", "TEST", "v1",
-        1, 1, 0, 0, null, null, null, null);
+        1, 1, 0, 0, null, null, null, null, null, null, null, 0, 0, 0);
     when(schedulerService.triggerManualCollection(1L, 7L)).thenReturn(manual);
 
     EasyCollectionRunResponse result = service.triggerManual(1L, 7L);

@@ -49,7 +49,7 @@ class EasyTemplateContractTest {
     TemplateEngine engine = engine();
     for (String view : new String[] {
         "easy/dashboard", "easy/transactions", "easy/students", "easy/payments",
-        "easy/reviews", "easy/accounting"}) {
+        "easy/reviews", "easy/accounting", "easy/connections"}) {
       String html = engine.process(view, new Context());
       assertThat(html)
           .as(view)
@@ -59,6 +59,21 @@ class EasyTemplateContractTest {
           .contains("ADMIN")
           .doesNotContain("th:block", "th:replace", "layout:fragment");
     }
+  }
+
+  @Test
+  @DisplayName("자동수집 연결 화면은 등록·지금 수집·해제·이력 영역을 갖고 비밀번호·인증서·OTP 입력칸이 없다")
+  void connections_structure() {
+    // when
+    String html = engine().process("easy/connections", new Context());
+    // then
+    assertThat(html)
+        .contains("id=\"organization\"", "id=\"account\"", "id=\"connectedId\"",
+            "id=\"connections\"", "id=\"runs\"", "/js/easy_connections.js", "F2R 장부")
+        .doesNotContain("id=\"otp\"", "certPassword");
+    // 공통 상단 메뉴(관리자 계정 변경 창)를 뺀 본문에는 비밀번호 입력칸이 없어야 한다.
+    String body = html.substring(html.indexOf("<div class=\"easy-container\">"));
+    assertThat(body).doesNotContain("type=\"password\"");
   }
 
   @Test

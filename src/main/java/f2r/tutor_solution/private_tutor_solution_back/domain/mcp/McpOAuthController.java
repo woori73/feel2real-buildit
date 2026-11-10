@@ -91,7 +91,7 @@ public class McpOAuthController {
             Map.entry("catalog:read", "전체 서비스·페이지 목록"),
             Map.entry("studio:read", "AI AGENT 제작 자료"),
             Map.entry("academy:read", "AcademyCraft 학생·반·출결·상담·공지"),
-            Map.entry("easy:read", "이지장부 금융·거래 자료"),
+            Map.entry("easy:read", "F2R 장부 금융·거래 자료"),
             Map.entry("admissions:read", "입시상담 자료와 상담 이력"),
             Map.entry("wiki:read", "내신·모의고사 위키 자료"),
             Map.entry("grammar:read", "문법 문제은행"),

@@ -8,6 +8,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto.EasyImport
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionApproval.ApprovalStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRunStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceReview;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyEvidenceType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyImportBatch;
@@ -219,7 +220,162 @@ public class EasyImportService {
       throw new AccessDeniedException("수집 배치 소유 사업체가 일치하지 않습니다.");
     }
     requireCollectionReview(run.getImportBatchId(), approval.getDecisionNote());
+    // 운영 원칙상 수집 행은 수집 시점에 이미 중앙 장부에 저장된다. 승인은 검토 확인 기록이며,
+    // 남은 READY/PENDING 행(구버전 수집분)이 있을 때만 저장하고 없으면 그대로 반환한다(멱등).
+    boolean remaining =
+        !rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(
+                batch.getBatchId(), EasyImportRowStatus.READY).isEmpty()
+            || !rowRepository.findByBatch_BatchIdAndStatusOrderByRowNoAsc(
+                batch.getBatchId(), EasyImportRowStatus.PENDING).isEmpty();
+    if (!remaining) {
+      return EasyImportBatchResponse.of(batch, rows(batch.getBatchId()));
+    }
     return confirmBatch(batch, null);
+  }
+
+  /** 수집 실행 1회분 장부 저장 결과 — 저장/검토/분류/중복 건수. */
+  public record CollectedLedgerResult(int saved, int review, int classified, int duplicate,
+      int error) {
+    public static CollectedLedgerResult empty() {
+      return new CollectedLedgerResult(0, 0, 0, 0, 0);
+    }
+
+    public CollectedLedgerResult plus(CollectedLedgerResult other) {
+      return new CollectedLedgerResult(saved + other.saved, review + other.review,
+          classified + other.classified, duplicate + other.duplicate, error + other.error);
+    }
+  }
+
+  /**
+   * 수집 실행 전용 중앙 장부 저장 — 운영 원칙 "수집 → 원본 보존 → 최소 중복 방지 → 장부 저장 → 자동분류 →
+   * 예외 검토". 사람 승인을 기다리지 않는다. 계정이 불명확해도 미분류·REVIEW_REQUIRED로 저장하고(분개 생략),
+   * 분류된 거래만 기존 분개 엔진(repost)을 탄다.
+   *
+   * <p>HTTP 매핑이 없고 호출자의 쓰기 트랜잭션 안에서만 실행된다(MANDATORY). 권한은 진입점(관리자 API의
+   * 사업체 접근 검증·스케줄러의 연결 소유 사업체)에서 끝나 있어야 하며, 여기서는 출처를 다시 확인한다:
+   * run이 RUNNING이고, 배치·run·연결이 같은 사업체이며, 배치가 이 run이 만든 것이어야 한다.
+   *
+   * @param identityByRowId import 행 id → 수집 원본 dedupe_key (원본 단위 1회 저장 보장)
+   * @param originalKeyByRowId import 행 id → 취소 대상 원거래의 dedupe_key
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public CollectedLedgerResult saveCollectedBatch(
+      f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRun run,
+      Long batchId,
+      java.util.Map<Long, String> identityByRowId,
+      java.util.Map<Long, String> originalKeyByRowId,
+      java.util.function.Function<String, Long> txnIdByCollectionKey) {
+    if (run == null || run.getRunId() == null) {
+      throw new AccessDeniedException("수집 실행이 없습니다.");
+    }
+    Long runId = run.getRunId();
+    EasyImportBatch batch = requireBatch(batchId);
+    Long businessId = run.getBusiness().getBusinessId();
+    if (run.getStatus() != EasyCollectionRunStatus.RUNNING
+        || !businessId.equals(batch.getBusiness().getBusinessId())
+        || !businessId.equals(run.getConnection().getBusiness().getBusinessId())
+        || !batch.getSourceName().endsWith("#run:" + runId)
+        || !batch.getSourceKind().equalsIgnoreCase(run.getAdapterCode())) {
+      throw new AccessDeniedException("수집 출처·사업체가 일치하지 않습니다.");
+    }
+    if (batch.getStatus() != EasyImportStatus.STAGED
+        && batch.getStatus() != EasyImportStatus.CONFIRMED) {
+      throw new IllegalArgumentException("STAGED 또는 CONFIRMED 상태의 배치만 처리할 수 있습니다.");
+    }
+    preparePendingRows(batch, null);
+    int saved = 0;
+    int review = 0;
+    int classified = 0;
+    int duplicate = 0;
+    int error = 0;
+    for (EasyImportRow row : rowRepository.findByBatch_BatchIdOrderByRowNoAsc(batchId)) {
+      if (row.getStatus() == EasyImportRowStatus.ERROR) {
+        error++;
+        continue;
+      }
+      if (row.getStatus() != EasyImportRowStatus.READY || row.getCreatedTxn() != null) {
+        continue;
+      }
+      if (!isPostable(row)) {
+        row.markError("확정에 필요한 거래일·수입/지출·금액이 없습니다.");
+        error++;
+        continue;
+      }
+      applyHistoricalClassification(businessId, row);
+      String identity = identityByRowId == null ? null : identityByRowId.get(row.getRowId());
+      String originalKey =
+          originalKeyByRowId == null ? null : originalKeyByRowId.get(row.getRowId());
+      Long originalTxnId = originalKey == null || txnIdByCollectionKey == null
+          ? null : txnIdByCollectionKey.apply(originalKey);
+      // 원천 검토 메모(카드대금·정산입금·정책자금·현금영수증 확인 등)는 저장을 막지 않고 검토 표시로 남긴다.
+      String note = extractJsonField(row.getRawData(), "review_note");
+      if (row.isReversal() && originalTxnId == null) {
+        note = appendNote(note, "[검토] 취소 원거래를 아직 찾지 못했습니다. 원거래 수집 후 연결하세요.");
+      }
+      postRow(batch, row, identity, originalTxnId, note);
+      if (row.getStatus() == EasyImportRowStatus.DUPLICATE) {
+        duplicate++;
+        continue;
+      }
+      saved++;
+      EasyTransaction txn = row.getCreatedTxn();
+      if (txn.getAccount() != null && txn.getEvidenceReview() == null) {
+        classified++;
+      } else {
+        review++;
+      }
+    }
+    long imported =
+        rowRepository.countByBatch_BatchIdAndStatus(batchId, EasyImportRowStatus.IMPORTED);
+    batch.markConfirmed((int) imported);
+    return new CollectedLedgerResult(saved, review, classified, duplicate, error);
+  }
+
+  /**
+   * 과거 장부(이지샵 이관분 포함)에서 같은 사업체·같은 방향·같은 거래처가 한 계정으로만 쓰였다면 그 계정을
+   * 우선 적용한다. 원본 계정 매핑(confidence 1.0)은 덮어쓰지 않으며, 과거 계정이 둘 이상으로 갈리면
+   * 판단하지 않고 기존 분류(규칙 또는 미분류)를 둔다.
+   */
+  void applyHistoricalClassification(Long businessId, EasyImportRow row) {
+    if (row.getConfidence() != null && row.getConfidence() >= 1.0) {
+      return;
+    }
+    String counterparty = row.getCounterparty() == null ? "" : row.getCounterparty().trim();
+    if (counterparty.isEmpty() || row.getDirection() == null) {
+      return;
+    }
+    List<EasyAccount> accounts =
+        txnRepository
+            .findByBusiness_BusinessIdAndDirectionAndCounterparty(
+                businessId, row.getDirection(), counterparty)
+            .stream()
+            .map(EasyTransaction::getAccount)
+            .filter(java.util.Objects::nonNull)
+            .filter(EasyAccount::isActive)
+            .toList();
+    java.util.Set<Long> distinct =
+        accounts.stream().map(EasyAccount::getAccountId).collect(java.util.stream.Collectors.toSet());
+    if (distinct.size() == 1) {
+      row.markReady(accounts.get(0), 0.95);
+    }
+  }
+
+  /** 수집 원본 → import 행 → 장부 거래 역추적(취소 원거래 연결용). */
+  public Optional<Long> createdTxnIdOfRow(Long rowId) {
+    if (rowId == null) {
+      return Optional.empty();
+    }
+    return rowRepository.findById(rowId)
+        .map(EasyImportRow::getCreatedTxn)
+        .map(EasyTransaction::getTxnId);
+  }
+
+  private static String appendNote(String memo, String note) {
+    if (note == null) {
+      return memo;
+    }
+    String joined = memo == null || memo.isBlank() ? note : memo + " " + note;
+    return joined.length() <= 500 ? joined : joined.substring(0, 500);
   }
 
   /** The financial collector's reviewed hash is persisted in its existing server approval note. */
@@ -333,7 +489,23 @@ public class EasyImportService {
 
   /** 단일 행 장부 적재 — 분류 확정 여부와 무관하게 실제 거래를 장부에 남긴다. 중복 의심은 DUPLICATE로 확정 제외한다 (자동합치기 없음). */
   private void postRow(EasyImportBatch batch, EasyImportRow row) {
-    EasyBusiness business = resolvePostingBusiness(batch, row);
+    postRow(batch, row, null, null, null);
+  }
+
+  /**
+   * @param collectionIdentity 수집 원본의 dedupe_key. 있으면 거래 fingerprint를 원본 단위로 만든다 —
+   *     같은 원본은 한 번만 저장되고, 날짜·금액이 같은 서로 다른 실제 거래는 합쳐지지 않는다.
+   * @param originalTxnId 취소·부분취소의 원거래(있으면 연결만 하고 원거래는 수정하지 않는다)
+   * @param extraReviewNote 저장은 하되 검토가 필요한 사유(원거래 미확인 등)
+   */
+  private void postRow(EasyImportBatch batch, EasyImportRow row, String collectionIdentity,
+      Long originalTxnId, String extraReviewNote) {
+    // 수집 거래는 연결이 속한 사업체 장부에만 저장한다 — 원문 마커로 다른 사업체(출판사 등)로 옮기지 않는다.
+    EasyBusiness business = collectionIdentity != null
+        ? batch.getBusiness() : resolvePostingBusiness(batch, row);
+    String fingerprintPay = collectionIdentity == null
+        ? fingerprintPayMethod(row)
+        : fingerprintPayMethod(row) + "|COLLECTED:" + collectionIdentity;
     String fingerprint =
         EasyFingerprint.of(
             business.getBusinessId(),
@@ -342,7 +514,7 @@ public class EasyImportService {
             row.getAmount(),
             row.getCounterparty(),
             row.getDescription(),
-            fingerprintPayMethod(row));
+            fingerprintPay);
     boolean duplicate =
         txnRepository
             .findByBusiness_BusinessIdAndFingerprintIsNotNull(business.getBusinessId())
@@ -354,7 +526,7 @@ public class EasyImportService {
     }
     EasyAccount matched = row.getMatchedAccount();
     EasyTaxClassification tax = deriveTaxClassification(row);
-    boolean needsReview = matched == null || tax != null;
+    boolean needsReview = matched == null || tax != null || extraReviewNote != null;
     String category = matched != null ? matched.getName() : reviewCategory(row, tax);
     EasyTransaction txn =
         EasyTransaction.builder()
@@ -376,7 +548,8 @@ public class EasyImportService {
             .fingerprint(fingerprint)
             .evidenceReview(needsReview ? EasyEvidenceReview.NEEDS_REVIEW : null)
             .taxClassification(tax)
-            .memo(reviewMemo(batch, row, business, tax, needsReview))
+            .memo(appendNote(reviewMemo(batch, row, business, tax, needsReview), extraReviewNote))
+            .originalTxnId(originalTxnId)
             .build();
     EasyTransaction saved = txnRepository.save(txn);
     row.markImported(saved);
@@ -424,6 +597,18 @@ public class EasyImportService {
       if ("LOAN_INTEREST".equals(normalized)) {
         return EasyTaxClassification.EXPENSE_DEDUCTIBLE_CANDIDATE;
       }
+      // 카드대금 은행 출금 = 카드미지급금 상환 → 비용 재계상 금지 (카드 사용 시점에 이미 비용).
+      if ("CARD_PAYMENT".equals(normalized)) {
+        return EasyTaxClassification.NOT_EXPENSE;
+      }
+      // 카드사 정산입금 = 기존 카드매출의 정산 → 매출 재계상 금지 (카드매출과 대사는 검토에서).
+      if ("CARD_SETTLEMENT".equals(normalized)) {
+        return EasyTaxClassification.NOT_INCOME;
+      }
+      // 고용지원금·장려금은 수입금액 산입 여부를 단정하지 않는다.
+      if ("GOV_SUBSIDY".equals(normalized)) {
+        return EasyTaxClassification.REVIEW_REQUIRED;
+      }
       if ("INTER_ACCOUNT_TRANSFER".equals(normalized)) {
         return row.getDirection() == EasyTxnDirection.INCOME
             ? EasyTaxClassification.NOT_INCOME
@@ -454,6 +639,16 @@ public class EasyImportService {
 
   /** 미분류 표시명 — 장부에서 거래 존재는 보이되 분류 상태가 드러나도록 한다. */
   private String reviewCategory(EasyImportRow row, EasyTaxClassification tax) {
+    String disposition = extractJsonField(row.getRawData(), "primary_disposition");
+    if ("CARD_SETTLEMENT".equalsIgnoreCase(disposition)) {
+      return "카드매출 정산(검토)";
+    }
+    if ("CARD_PAYMENT".equalsIgnoreCase(disposition)) {
+      return "카드대금 결제(검토)";
+    }
+    if ("GOV_SUBSIDY".equalsIgnoreCase(disposition)) {
+      return "지원금(검토)";
+    }
     if (tax == EasyTaxClassification.NOT_INCOME) {
       return "차입금(검토)";
     }
