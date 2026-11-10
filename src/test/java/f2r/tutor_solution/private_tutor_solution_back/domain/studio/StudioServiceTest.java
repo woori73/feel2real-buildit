@@ -147,4 +147,42 @@ class StudioServiceTest {
       assertDoesNotThrow(() -> StudioService.validate(r), label);
     }
   }
+
+  @Test
+  void givenWordSignatures_whenValidated_thenOnlyRealDocAndDocxAccepted() throws Exception {
+    // given
+    Path docx = dir.resolve("ok.docx");
+    Files.write(docx, new byte[] {80, 75, 3, 4, 20, 0, 6, 0});
+    Path doc = dir.resolve("ok.doc");
+    Files.write(
+        doc,
+        new byte[] {
+          (byte) 0xd0, (byte) 0xcf, 0x11, (byte) 0xe0, (byte) 0xa1, (byte) 0xb1, 0x1a, (byte) 0xe1, 0
+        });
+    Path renamedPdf = dir.resolve("fake.docx");
+    Files.writeString(renamedPdf, "%PDF-1.7 renamed");
+    Path renamedText = dir.resolve("fake.doc");
+    Files.writeString(renamedText, "plain text renamed to doc");
+    // when / then
+    assertDoesNotThrow(() -> StudioService.validateType(docx, "docx"));
+    assertDoesNotThrow(() -> StudioService.validateType(doc, "doc"));
+    assertThrows(ResponseStatusException.class, () -> StudioService.validateType(renamedPdf, "docx"));
+    assertThrows(ResponseStatusException.class, () -> StudioService.validateType(renamedText, "doc"));
+    // OLE2(doc) 바이트를 docx라고 속이거나 그 반대도 거부한다.
+    assertThrows(ResponseStatusException.class, () -> StudioService.validateType(doc, "docx"));
+    assertThrows(ResponseStatusException.class, () -> StudioService.validateType(docx, "doc"));
+  }
+
+  @Test
+  void givenOtherStudioProjects_whenWordExtension_thenStillRejected() {
+    // given / when / then
+    for (String project : java.util.List.of("ai-agent-part1", "academy-relocation", "Student-Roster")) {
+      assertFalse(StudioService.allowedExtension("docx", project), project);
+      assertFalse(StudioService.allowedExtension("doc", project), project);
+      assertTrue(StudioService.allowedExtension("pdf", project), project);
+    }
+    assertTrue(StudioService.allowedExtension("docx", StudentRosterController.PROJECT));
+    assertTrue(StudioService.allowedExtension("doc", StudentRosterController.PROJECT));
+    assertFalse(StudioService.allowedExtension("exe", StudentRosterController.PROJECT));
+  }
 }

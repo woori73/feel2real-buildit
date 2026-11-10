@@ -31,7 +31,7 @@
       display: flex; align-items: center; justify-content: space-between;
       gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
     }
-    .hub-brand { display: flex; align-items: center; gap: 12px; }
+    .hub-brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     /* BuildIt 워드마크 (landing_buildit.css의 .nav-logo.bi 패턴 재사용) */
     .hub-logo {
       display: inline-flex; align-items: center; text-decoration: none;
@@ -58,6 +58,8 @@
     }
     .hub-refresh:hover { background: var(--accent-soft); }
     .hub-refresh:disabled { opacity: .5; cursor: default; }
+    /* 학생명단(시간표) 자료실 이동 — 새로고침 버튼과 같은 모양 */
+    a.hub-refresh.hub-roster-link { display: inline-block; text-decoration: none; line-height: normal; white-space: nowrap; }
     .hub-asof { font-size: 12px; color: var(--text-3); }
 
     /* ---- 서비스 탭 ---- */
@@ -245,6 +247,7 @@
         <a class="hub-logo" href="/" aria-label="BuildIt 홈"><b>Build</b><i>It</i></a>
         <span class="hub-title-sep">|</span>
         <h1 class="hub-title">통합 운영 대시보드</h1>
+        <a class="hub-refresh hub-roster-link" href="/admin/student-roster">학생명단(시간표)</a>
       </div>
       <div class="hub-controls">
         <select class="hub-biz-select" id="bizSelect" aria-label="사업체 선택">

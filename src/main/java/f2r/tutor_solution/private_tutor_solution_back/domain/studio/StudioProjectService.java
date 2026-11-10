@@ -39,7 +39,7 @@ public class StudioProjectService {
             + " ('PROJECT_ARCHIVE','PROJECT_REOPEN') ORDER BY e.id DESC LIMIT 1),false) AS archived"
             + " FROM studio_projects p WHERE (?='ADMIN' OR ? OR EXISTS(SELECT 1 FROM studio_members m"
             + " WHERE m.project_id=p.id AND m.user_id=? AND m.permission IN"
-            + " ('VIEWER','EDITOR','APPROVER'))) AND (p.id<>'academy-relocation' OR ?='ADMIN') ORDER BY archived,p.created_at,p.id",
+            + " ('VIEWER','EDITOR','APPROVER'))) AND (p.id NOT IN ('academy-relocation','student-roster') OR ?='ADMIN') ORDER BY archived,p.created_at,p.id",
         p.role(),
         studio.operator(p),
         p.userId(),

@@ -314,7 +314,7 @@ public class SecurityConfig {
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
             // 인스타 자동 피드 관리자 화면 — ADMIN 전용(API는 /api/admin/sns/** → 아래 /api/admin/** ADMIN 규칙).
-            .requestMatchers("/admin/sns", "/admin/sns/**", "/admin/academy-move").hasRole("ADMIN")
+            .requestMatchers("/admin/sns", "/admin/sns/**", "/admin/academy-move", "/admin/student-roster").hasRole("ADMIN")
             // GPU 작업자 API는 로그인 대신 Bearer 작업자 토큰(SNS_WORKER_TOKEN)을 컨트롤러에서 검사한다.
             .requestMatchers("/api/sns/worker/**").permitAll()
             // 인스타그램 서버가 image_url로 가져가는 게시물 이미지 — 추측 불가 토큰 주소만, GET만.
