@@ -92,6 +92,7 @@ jobs:
         run: >-
           node --test
           src/test/js/studio_catalog.test.js
+          src/test/js/easy_attendance_view.test.js
           src/test/js/assistant_wait.test.js
           src/test/js/admissions_admin_load.test.js
           src/test/js/admissions_explorer.test.js
@@ -558,6 +559,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AcademyAssistantResetRestartMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteEventMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAttendanceMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.AdminCredentialRotationMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchOffMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchAllowListMySqlTest"

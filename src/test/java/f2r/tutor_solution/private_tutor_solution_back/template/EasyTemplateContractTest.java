@@ -49,7 +49,7 @@ class EasyTemplateContractTest {
     TemplateEngine engine = engine();
     for (String view : new String[] {
         "easy/dashboard", "easy/transactions", "easy/students", "easy/payments",
-        "easy/reviews", "easy/accounting", "easy/connections"}) {
+        "easy/reviews", "easy/accounting", "easy/connections", "easy/attendance"}) {
       String html = engine.process(view, new Context());
       assertThat(html)
           .as(view)
@@ -72,6 +72,21 @@ class EasyTemplateContractTest {
             "id=\"connections\"", "id=\"runs\"", "/js/easy_connections.js", "F2R 장부")
         .doesNotContain("id=\"otp\"", "certPassword");
     // 공통 상단 메뉴(관리자 계정 변경 창)를 뺀 본문에는 비밀번호 입력칸이 없어야 한다.
+    String body = html.substring(html.indexOf("<div class=\"easy-container\">"));
+    assertThat(body).doesNotContain("type=\"password\"");
+  }
+
+  @Test
+  @DisplayName("출결부 화면은 출결부·월별 현황·반 관리·진행표 가져오기 탭을 갖고 삭제 버튼과 비밀번호 칸이 없다")
+  void attendance_structure() {
+    // when
+    String html = engine().process("easy/attendance", new Context());
+    // then
+    assertThat(html)
+        .contains("data-tab=\"sheet\"", "data-tab=\"month\"", "data-tab=\"classes\"", "data-tab=\"import\"",
+            "id=\"sheetTable\"", "id=\"monthTable\"", "id=\"classList\"", "id=\"impTable\"",
+            "/js/easy_attendance_view.js", "/js/easy_attendance.js", "정정")
+        .doesNotContain(">삭제<");
     String body = html.substring(html.indexOf("<div class=\"easy-container\">"));
     assertThat(body).doesNotContain("type=\"password\"");
   }

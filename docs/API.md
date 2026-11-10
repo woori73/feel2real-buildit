@@ -4663,6 +4663,22 @@ CODEF 정식 사용은 B2B 계약·견적이 필요하므로(무료는 데모 �
   - 같은 `idempotencyKey` 재전송은 이전 run을 그대로 돌려주고, 같은 키에 내용이 다르면 거절한다. 같은 자료를 새 키로 다시 보내면 원본 키 중복으로 장부에 다시 들어가지 않는다. 응답 run의 `adapterCode`는 `MCP_SITE`.
 - 두 도구는 새 동의 항목 `easy-collect:write`와 ADMIN을 모두 요구한다(민감 동의 경고 대상, 운영 기본 허용 목록에 추가, 연결 grant당 분당 30회). 기존 `easy:read` 토큰에 자동 추가하지 않으며 이체·삭제·승인 도구는 없다. 서버는 기관 사이트에 접속하지 않고 비밀번호·인증서·OTP를 받는 칸도 없다.
 
+### F2R 출결부 — /api/admin/easy/attendance (V1106)
+
+ADMIN 전용 + `EasyTutorAccessService.requireAllowedBusiness`. 모든 요청에 `businessId`(쿼리, 가져오기 적용은 본문). 화면 `/easy/attendance`(탭: 출결부·월별 현황·반 관리·진행표 가져오기). **삭제 API 없음**(CRUD 정책: 출결은 이력이라 정정만, 반은 종료, 배정은 해제 — 기록 보존). 검증 오류 400(본문 = 안내 문장), 상태 충돌(이미 정정됨·종료된 반·명단 변경) 409 `{message}`.
+
+- `GET /classes?includeEnded=false` — 반 목록 `[{classId,name,teacherName,description,weekdays[],startTime,endTime,room,capacity,status,memberCount}]`.
+- `POST /classes` · `PUT /classes/{id}` body `{name(1~60),teacherName?,description?,weekdays?[MON..SUN],startTime?"15:00",endTime?,room?,capacity?(1~500)}`. 정원은 현재 배정 수보다 작게 바꿀 수 없다.
+- `POST /classes/{id}/end` — 반 종료(되돌리기 없음). 배정 전부 해제, 출결 보존.
+- `GET /classes/{id}/members` · `POST /classes/{id}/members` `{studentId}`(정원·중복·퇴원 학생 거절) · `POST /classes/{id}/members/{studentId}/release` · `POST /classes/{id}/members/{studentId}/move` `{targetClassId}`.
+- `GET /sheet?classId=&date=YYYY-MM-DD` — 그날 배정 학생별 현재 기록 `[{studentId,name,school,grade,events[{eventId,eventType,label,occurredAt,note,source,correctsEventId,correctionReason}]}]`.
+- `POST /events` `{classId?,studentId,eventType,occurredAt?"YYYY-MM-DDTHH:mm",note?}` — 시각을 비우면 지금(KST). 반을 주면 그날 그 반 배정 학생만.
+- `POST /events/{id}/correct` `{eventType,reason(필수 1~200),note?}` — 새 행 + 이전 행 superseded.
+- `GET /students/{studentId}/events` — 학생 출결 이력(정정 이력 포함).
+- `GET /monthly?classId=&month=YYYY-MM` — `{classId,className,month,daysInMonth,students[{studentId,name,days{일:[구분]},counts{구분:횟수}}]}`.
+- `GET /roster-import/preview?year=` — 학생명단 자료실의 그 연도 진행표 분석: `{year,previewHash,lessonDays,futureLessonDays,names[{name,lessonDays,sessions,firstDate,lastDate,candidates[],suggestedAction:MATCH|CREATE|CHOOSE,suggestedStudentId}],rule}`. 저장하지 않는다.
+- `POST /roster-import/apply` `{businessId,year,previewHash,classId?,mappings[{name,action:MATCH|CREATE|SKIP,studentId?}]}` — 모든 이름에 처리 방법이 있어야 하며, 해시가 다르면 409. 결과 `{createdStudents,matchedStudents,skippedNames,eventsCreated,eventsAlreadyThere}`. 반을 주면 미배정 학생을 첫 수업일로 배정(정원 초과면 전체 롤백). 한 트랜잭션.
+
 ### EASY 자동수집 Phase 4 실행 안전 계약
 
 - MANUAL과 SCHEDULED provider 수집은 동일한 DB-backed execution gate를 통과한다.

@@ -1786,6 +1786,17 @@ HOME practical grid는 5개 진입점으로 고정: 금감원 민원·추심 대
 Academy와 Easy 사업체의 권한 연결표다. `link_id` PK, `academy_id` FK → `academies`, `business_id` FK → `easy_businesses`, `(academy_id, business_id)` UNIQUE, 감사시각을 저장한다. 양쪽 FK는 삭제 시 연결 row만 CASCADE한다. 기존 Easy 사업체는 연결 row가 없어도 ADMIN API에서 그대로 동작한다. TUTOR 접근은 활성·공개 Academy의 소유자이고 활성 EasyBusiness 연결 row가 있을 때만 허용한다.
 
 
+## F2R 출결부 — easy_classes / easy_class_members / easy_attendance_events (V1106)
+
+AcademyCraft 반별 출결부 기능을 F2R 장부 안으로 옮긴 모델이다. ADMIN 전용, 학생은 기존 `easy_students`(장부 학생 원장)를 그대로 쓴다.
+
+- `easy_classes`: `class_id` PK, `business_id` FK → `easy_businesses`, `name`(60), `teacher_name`, `description`, `weekdays`(`MON,WED`), `start_time`/`end_time`(TIME), `room`, `capacity`(NULL=제한 없음), `status` ACTIVE/ENDED, `ended_at`. **삭제 없음** — 종료하면 배정이 모두 해제(CLASS_ENDED)되고 출결은 남는다.
+- `easy_class_members`: `member_id` PK, `class_id` FK, `student_id` FK, `assigned_on`, `released_on`(NULL=배정 중), `release_reason` REMOVED/MOVED/CLASS_ENDED. 해제해도 행을 지우지 않는다. 같은 반 중복 배정·정원 초과·퇴원(WITHDRAWN) 학생 배정은 서비스가 거절한다.
+- `easy_attendance_events`: `event_id` PK, `business_id` FK, `class_id` FK NULL(진행표처럼 반 없이 들어온 기록), `student_id` FK, `occurred_on`(DATE), `occurred_at`(DATETIME, KST 그대로), `event_type` CHECK_IN/CHECK_OUT/ABSENT/LATE/EARLY_LEAVE, `note`, `source` MANUAL/ROSTER_IMPORT, `source_key` UNIQUE(가져오기 중복 방지, `ROSTER:{business}:{year}:{student}:{date}`), `corrects_event_id` FK self, `correction_reason`, `superseded`. **삭제 없음** — 정정은 사유 필수, 새 행을 만들고 이전 행은 `superseded=TRUE`로 남긴다. 현재 상태 조회는 `superseded=FALSE`만 쓴다.
+- 출결부(반+날짜)는 그날 배정돼 있던 학생과, 그 반 기록 + 반 없는 기록을 보여 준다. 월별(반+연월)은 날짜별 구분과 구분별 횟수다.
+- 학생명단(시간표) 진행표 가져오기: 진행표에 이름이 있는 날 = CHECK_IN, 그날 수업 수는 메모, **오늘 이후(예정) 날짜는 넣지 않는다.** 미리보기 해시가 달라지면 적용을 거절한다. 이름→학생 연결은 관리자가 고르고(기존 연결/새로 등록/건너뛰기), 새 학생은 `memo="{연도} 진행표에서 등록"`으로 만들어 다시 적용해도 중복 생성하지 않는다. 실명은 서버 안에서만 쓴다.
+- AcademyCraft 게이트웨이(`/academycraft/**`)는 그대로 두며, 두 출결 데이터는 서로 연결·동기화하지 않는다.
+
 ## easy_agent_sessions / easy_agent_messages / easy_agent_actions (V1073)
 
 Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이다.
