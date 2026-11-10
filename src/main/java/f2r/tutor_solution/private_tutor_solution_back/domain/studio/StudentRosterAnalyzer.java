@@ -52,7 +52,7 @@ public final class StudentRosterAnalyzer {
     return new int[] {month, m.group(2) == null ? 0 : Integer.parseInt(m.group(2))};
   }
 
-  /** 칸 한 줄("민수3", "가나/다라5", "철수2-3", "영희1(20회)", "○○상담", "휴무")을 수업 목록으로 바꾼다. */
+  /** 칸 한 줄("가나3", "다라/마바5", "사아2-3", "자차1(20회)", "○○상담", "휴무")을 수업 목록으로 바꾼다. */
   static List<Entry> line(String raw) {
     String text = raw.replaceAll("\\([^)]*\\)|\\[[^]]*]", "").strip();
     List<Entry> out = new ArrayList<>();
