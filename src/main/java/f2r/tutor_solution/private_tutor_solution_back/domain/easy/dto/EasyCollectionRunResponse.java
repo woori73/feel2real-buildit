@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRun;
 import java.time.LocalDateTime;
 
@@ -40,7 +41,7 @@ public record EasyCollectionRunResponse(
         run.getErrorCount(),
         run.getImportBatchId(),
         run.getErrorSummary(),
-        run.getStartedAt(),
-        run.getCompletedAt());
+        KstTime.toKst(run.getStartedAt()),
+        KstTime.toKst(run.getCompletedAt()));
   }
 }

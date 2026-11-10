@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.entity.PublishingArtifact;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public record ArtifactResponse(
         fileName,
         a.getFileSize(),
         a.getPageCount(),
-        a.getCreatedAt()
+        KstTime.toKst(a.getCreatedAt())
     );
   }
 }

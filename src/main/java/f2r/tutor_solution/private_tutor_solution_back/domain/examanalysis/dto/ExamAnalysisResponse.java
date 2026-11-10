@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.examanalysis.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.examanalysis.entity.ExamAnalysis;
 import java.time.LocalDateTime;
 
@@ -32,8 +33,8 @@ public record ExamAnalysisResponse(
         analysis.getOriginalFileName(),
         analysis.getFileSize(),
         analysis.isVisible(),
-        analysis.getCreatedAt(),
-        analysis.getUpdatedAt(),
+        KstTime.toKst(analysis.getCreatedAt()),
+        KstTime.toKst(analysis.getUpdatedAt()),
         "/analyzes/" + id,
         "/api/analyzes/" + id + "/content"
     );

@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectorTask;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,8 +36,8 @@ public record EasyCollectorTaskResponse(
         task.getDownloadedFilename(),
         task.getDownloadedSize(),
         task.getDownloadedSha256(),
-        task.getDownloadedAt(),
-        task.getStartedAt(),
-        task.getCompletedAt());
+        KstTime.toKst(task.getDownloadedAt()),
+        KstTime.toKst(task.getStartedAt()),
+        KstTime.toKst(task.getCompletedAt()));
   }
 }

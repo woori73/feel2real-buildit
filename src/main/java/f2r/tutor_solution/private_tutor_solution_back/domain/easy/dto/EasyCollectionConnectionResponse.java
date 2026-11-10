@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionConnection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionConnectionStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionSource;
@@ -25,7 +26,7 @@ public record EasyCollectionConnectionResponse(
         source != null ? source.getName() : null,
         conn.getStatus(),
         conn.getConnectionRef() != null && !conn.getConnectionRef().isBlank(),
-        conn.getLastSuccessAt(),
-        conn.getCreatedAt());
+        KstTime.toKst(conn.getLastSuccessAt()),
+        KstTime.toKst(conn.getCreatedAt()));
   }
 }

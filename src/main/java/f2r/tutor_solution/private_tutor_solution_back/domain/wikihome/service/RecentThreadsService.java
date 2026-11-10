@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.entity.QuestionThreadPost;
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.entity.QuestionWiki;
 import f2r.tutor_solution.private_tutor_solution_back.domain.questionwiki.repository.QuestionThreadPostRepository;
@@ -42,7 +43,7 @@ public class RecentThreadsService {
           q.getQuestionNumber(),
           q.getExamLabel(),
           q.displayContext(),
-          post.getCreatedAt(),
+          KstTime.toKst(post.getCreatedAt()),
           "/wiki/questions/" + q.getQuestionWikiId()));
       if (items.size() >= FEED_SIZE) {
         break;

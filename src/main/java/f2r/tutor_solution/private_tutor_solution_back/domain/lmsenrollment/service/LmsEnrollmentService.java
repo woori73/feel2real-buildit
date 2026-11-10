@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.lmsenrollment.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.LessonProduct;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.LessonProductRepository;
@@ -138,7 +139,7 @@ public class LmsEnrollmentService {
         enrollment.getStudent().getUser().getName(),
         enrollment.getStatus().name(),
         enrollment.getGrantSource().name(),
-        enrollment.getGrantedAt(),
+        KstTime.toKst(enrollment.getGrantedAt()),
         enrollment.getExpiresAt());
   }
 }

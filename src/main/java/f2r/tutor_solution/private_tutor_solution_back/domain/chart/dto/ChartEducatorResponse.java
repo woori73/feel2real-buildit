@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.entity.ChartEducator;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +18,6 @@ public record ChartEducatorResponse(
 ) {
   public static ChartEducatorResponse of(int rank, ChartEducator educator, List<ChartActivityResponse> activities) {
     return new ChartEducatorResponse(rank, educator.getEducatorId(), educator.getName(), educator.getRole(),
-        educator.getAcademyName(), educator.getActivityRegion(), educator.getZoneId(), educator.getApprovedAt(), activities);
+        educator.getAcademyName(), educator.getActivityRegion(), educator.getZoneId(), KstTime.toKst(educator.getApprovedAt()), activities);
   }
 }

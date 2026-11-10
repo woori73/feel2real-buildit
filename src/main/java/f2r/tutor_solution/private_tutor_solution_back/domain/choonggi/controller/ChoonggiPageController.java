@@ -2,9 +2,12 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.controlle
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.entity.ChoonggiPost;
 import f2r.tutor_solution.private_tutor_solution_back.domain.choonggi.service.ChoonggiCreatorService;
 import org.springframework.beans.factory.ObjectProvider;
@@ -75,6 +78,11 @@ public class ChoonggiPageController {
         .filter(ep -> !coveredNumbers.contains(ep.number())).toList();
     model.addAttribute("episodes", remainingEpisodes);
     model.addAttribute("publishedPosts", publishedPosts);
+    // publishedAt은 서버 기본 시간대(운영 UTC) 벽시계 → 화면에는 한국 날짜로 표시한다.
+    Map<Long, LocalDateTime> publishedAtKst = publishedPosts.stream()
+        .filter(p -> p.getPublishedAt() != null)
+        .collect(Collectors.toMap(ChoonggiPost::getId, p -> KstTime.toKst(p.getPublishedAt()), (x, y) -> x));
+    model.addAttribute("publishedAtKst", publishedAtKst);
   }
 
   /** "EP01" -> "EP.01", matching the {@link Episode#number()} display format. */

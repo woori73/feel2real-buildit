@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.lessonapplication.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.lessonapplication.entity.LessonApplication;
 import f2r.tutor_solution.private_tutor_solution_back.domain.lessonapplication.entity.LessonApplicationStatus;
 
@@ -32,8 +33,8 @@ public record LessonApplicationResponse(
         application.getStudent().getStudentId(),
         application.getStudent().getUser().getName(),
         application.getStatus(),
-        application.getAppliedAt(),
-        application.getCanceledAt(),
+        KstTime.toKst(application.getAppliedAt()),
+        KstTime.toKst(application.getCanceledAt()),
         conv != null ? conv.getConversationId() : null,
         conv != null ? conv.getTitle() : null);
   }

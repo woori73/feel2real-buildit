@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.learningmaterial.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.dto.ConversationMetadata;
@@ -586,14 +587,14 @@ public class LearningMaterialService {
         m.getTitle(),
         m.getDescription(),
         m.getStatus(),
-        m.getAssignedAt(),
-        m.getCompletedAt(),
+        KstTime.toKst(m.getAssignedAt()),
+        KstTime.toKst(m.getCompletedAt()),
         m.getAssignedBy().getUserId(),
         m.getAssignedBy().getName(),
         m.getStudent().getStudentId(),
         m.getStudent().getUser().getName(),
         m.isReviewed(),
-        m.getReviewedAt(),
+        KstTime.toKst(m.getReviewedAt()),
         m.getReviewedBy() != null ? m.getReviewedBy().getName() : null,
         answers,
         feedbacks

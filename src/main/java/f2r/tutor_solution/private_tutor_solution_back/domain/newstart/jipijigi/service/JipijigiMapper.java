@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.jipijigi.entity.*;
 
@@ -25,7 +26,7 @@ public final class JipijigiMapper {
                 .body(q.getBody())
                 .bodyStatus(q.getBodyStatus() == null ? null : q.getBodyStatus().name())
                 .commentCount(q.getCommentCount())
-                .collectedAt(q.getCollectedAt())
+                .collectedAt(KstTime.toKst(q.getCollectedAt()))
                 .build();
     }
 
@@ -38,7 +39,7 @@ public final class JipijigiMapper {
                 .resultSummary(c.getResultSummary())
                 .errorMessage(c.getErrorMessage())
                 .createdBy(c.getCreatedBy())
-                .createdAt(c.getCreatedAt())
+                .createdAt(KstTime.toKst(c.getCreatedAt()))
                 .build();
     }
 
@@ -60,8 +61,8 @@ public final class JipijigiMapper {
                 .publishedUrl(d.getPublishedUrl())
                 .rejectReason(d.getRejectReason())
                 .createdBy(d.getCreatedBy())
-                .createdAt(d.getCreatedAt())
-                .updatedAt(d.getUpdatedAt())
+                .createdAt(KstTime.toKst(d.getCreatedAt()))
+                .updatedAt(KstTime.toKst(d.getUpdatedAt()))
                 .build();
     }
 
@@ -75,7 +76,7 @@ public final class JipijigiMapper {
                 .refUrl(t.getRefUrl())
                 .excerpt(t.getExcerpt())
                 .note(t.getNote())
-                .searchedAt(t.getSearchedAt())
+                .searchedAt(KstTime.toKst(t.getSearchedAt()))
                 .build();
     }
 
@@ -90,7 +91,7 @@ public final class JipijigiMapper {
                 .toStatus(l.getToStatus())
                 .actor(l.getActor())
                 .reason(l.getReason())
-                .createdAt(l.getCreatedAt())
+                .createdAt(KstTime.toKst(l.getCreatedAt()))
                 .build();
     }
 
@@ -122,7 +123,7 @@ public final class JipijigiMapper {
                 .questionText(s.getQuestionText())
                 .answerTitle(s.getAnswerTitle())
                 .answerBody(s.getAnswerBody())
-                .answeredAt(s.getAnsweredAt())
+                .answeredAt(KstTime.toKst(s.getAnsweredAt()))
                 .evidenceInternal(s.getEvidenceInternal())
                 .evidenceCcrs(s.getEvidenceCcrs())
                 .evidenceBorrower(s.getEvidenceBorrower())

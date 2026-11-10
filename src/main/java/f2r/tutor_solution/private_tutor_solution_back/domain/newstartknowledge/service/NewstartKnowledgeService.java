@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeStatusLog;
@@ -350,7 +351,7 @@ public class NewstartKnowledgeService {
                         .toStatus(l.getToStatus())
                         .changedBy(l.getChangedBy())
                         .changeReason(l.getChangeReason())
-                        .createdAt(l.getCreatedAt())
+                        .createdAt(KstTime.toKst(l.getCreatedAt()))
                         .build())
                 .toList();
     }
@@ -675,8 +676,8 @@ public class NewstartKnowledgeService {
                 .relatedRuleIds(item.getRelatedRuleIds())
                 .createdBy(item.getCreatedBy())
                 .updatedBy(item.getUpdatedBy())
-                .createdAt(item.getCreatedAt())
-                .updatedAt(item.getUpdatedAt())
+                .createdAt(KstTime.toKst(item.getCreatedAt()))
+                .updatedAt(KstTime.toKst(item.getUpdatedAt()))
                 .build();
     }
 }

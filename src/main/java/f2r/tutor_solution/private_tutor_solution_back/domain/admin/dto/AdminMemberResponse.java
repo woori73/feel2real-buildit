@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.admin.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import java.time.LocalDateTime;
 
@@ -16,6 +17,6 @@ public record AdminMemberResponse(
 ) {
   public static AdminMemberResponse of(User u) {
     return new AdminMemberResponse(
-        u.getUserId(), u.getDisplayName(), u.getLoginId(), u.getRole().name(), u.getCreatedAt());
+        u.getUserId(), u.getDisplayName(), u.getLoginId(), u.getRole().name(), KstTime.toKst(u.getCreatedAt()));
   }
 }

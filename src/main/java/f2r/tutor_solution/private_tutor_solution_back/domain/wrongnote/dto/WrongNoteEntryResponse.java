@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wrongnote.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.source.entity.Source;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wrongnote.entity.WrongNoteEntry;
 
@@ -60,7 +61,7 @@ public record WrongNoteEntryResponse(
         files,
         entry.getUploadedBy().getName(),
         entry.getUploadedBy().getRole().name(),
-        entry.getCreatedAt(),
+        KstTime.toKst(entry.getCreatedAt()),
         first.pageCount());
   }
 

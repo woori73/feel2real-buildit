@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.entity.GrammarCollection;
@@ -182,7 +183,7 @@ public class GrammarCollectionService {
     }
     return new GrammarCollectionResponse(collection.getCollectionId(), collection.getKind().name(),
         collection.getTitle(), collection.getDescription(), collection.getDesigncraftJobId(),
-        itemCount, collection.getCreatedAt(), items);
+        itemCount, KstTime.toKst(collection.getCreatedAt()), items);
   }
 
   private Map<Long, List<String>> loadTagNames(List<Long> questionIds) {

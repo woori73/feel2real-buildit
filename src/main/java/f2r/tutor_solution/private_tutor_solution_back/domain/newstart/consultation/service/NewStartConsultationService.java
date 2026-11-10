@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.dto.AdminConsultationSummaryView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.consultation.dto.AdminConsultationThreadView;
@@ -155,7 +156,7 @@ public class NewStartConsultationService {
             c.getStatus().name(),
             statusLabel(c.getStatus()),
             openingPreview(c.getConsultationId()),
-            c.getLastMessageAt(),
+            KstTime.toKst(c.getLastMessageAt()),
             unreadOperator(c),
             c.isLinkDebt()))
         .toList();
@@ -223,7 +224,7 @@ public class NewStartConsultationService {
         c.getStatus().name(),
         statusLabel(c.getStatus()),
         openingPreview(c.getConsultationId()),
-        c.getLastMessageAt(),
+        KstTime.toKst(c.getLastMessageAt()),
         unreadMemberQuestion(c),
         c.isLinkDebt())).toList();
   }
@@ -445,7 +446,7 @@ public class NewStartConsultationService {
 
   private static ConsultationMessageView toMessageView(NewStartConsultationMessage m) {
     return new ConsultationMessageView(
-        m.getMessageId(), m.getAuthorRole().name(), m.getContent(), m.getCreatedAt());
+        m.getMessageId(), m.getAuthorRole().name(), m.getContent(), KstTime.toKst(m.getCreatedAt()));
   }
 
   private static String nullSafe(String s) {

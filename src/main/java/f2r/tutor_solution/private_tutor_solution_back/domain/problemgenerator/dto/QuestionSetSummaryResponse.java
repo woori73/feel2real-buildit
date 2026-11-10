@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.entity.MaterialVisibility;
 import f2r.tutor_solution.private_tutor_solution_back.domain.problemgenerator.entity.ProblemGeneratorQuestionSet;
 import java.time.LocalDateTime;
@@ -20,6 +21,6 @@ public record QuestionSetSummaryResponse(
         set.getVisibility(),
         set.getOwner().getUserId(),
         set.getMaterial() != null ? set.getMaterial().getMaterialId() : null,
-        set.getCreatedAt());
+        KstTime.toKst(set.getCreatedAt()));
   }
 }
