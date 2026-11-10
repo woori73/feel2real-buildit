@@ -79,9 +79,11 @@ public class ChoonggiPageController {
     model.addAttribute("episodes", remainingEpisodes);
     model.addAttribute("publishedPosts", publishedPosts);
     // publishedAt은 서버 기본 시간대(운영 UTC) 벽시계 → 화면에는 한국 날짜로 표시한다.
-    Map<Long, LocalDateTime> publishedAtKst = publishedPosts.stream()
+    // 저장 전(id 없는) 글도 있을 수 있어 글 객체 자체를 키로 쓴다.
+    Map<ChoonggiPost, LocalDateTime> publishedAtKst = new java.util.IdentityHashMap<>();
+    publishedPosts.stream()
         .filter(p -> p.getPublishedAt() != null)
-        .collect(Collectors.toMap(ChoonggiPost::getId, p -> KstTime.toKst(p.getPublishedAt()), (x, y) -> x));
+        .forEach(p -> publishedAtKst.put(p, KstTime.toKst(p.getPublishedAt())));
     model.addAttribute("publishedAtKst", publishedAtKst);
   }
 

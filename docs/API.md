@@ -4,6 +4,8 @@
 - 대상 응답: `WikiAnalysisMaterialResponse`, `WikiExamOriginalResponse`, `WikiExamRoundResponse`, `WikiLearningMaterialResponse`, `WikiLiveMessageResponse`, `QuestionThreadPostResponse`, `QuestionAiSummaryResponse`, `CommunityPostListResponse`, `CommunityPostDetailResponse`, `AnswerResponse`, `GET /api/wiki/home-feed`(`updatedAt`·NEW 판단), 관리자 대시보드 Wiki 운영 현황(최근 가입 시각·오늘 가입 수).
 - 관리자 통계의 상담신청 접수 수(오늘·7일·30일)는 한국 날짜 0시를 서버 시각으로 바꿔 센다(`KstTime.fromKst`).
 - 방문·다운로드·이벤트 기록(`visitedAt`·`downloadedAt`·`occurredAt`)은 처음부터 한국 시간으로 기록하므로 바꾸지 않는다.
+- **2026-11-10 전 화면 확대**: 서버 시계로 기록되는 응답 시각을 같은 방식(`KstTime.toKst`)으로 한국 시간으로 내보낸다. 대상: 대화·Easy(수집·에이전트)·시험 분석·문법 모음·HWPX·학습자료·수업 신청·수업 커뮤니티·LMS(콘텐츠 게시·수강 부여 시각)·지피지기(질문 수집·명령·초안·검색 기록·상태 기록·답변)·공식 업데이트(발견·검토 시각)·지피지기 지식(생성·수정·상태 이력, RAG 내보내기 manifest 포함)·상담·DM·접속자(`lastSeenAt`, UTC 기록 → 한국 시간)·학원 영상·학원 블로그(게시·수정·좋아요 마감)·관리자 회원/학생/베타 댓글·원장님 차트(발견·승인·최근 조사·주간 게시 시각)·문제 생성기·출판·출처 검수·오답 노트·위키 홈(최근 질문·최근 가입)·충기 블로그 게시일·위메이드 중국 상세(수집일·링크 확인일).
+- 바꾸지 않는 값: 사용자가 입력한 시각(수강 만료 `expiresAt`, SNS 예약 `scheduledAt` 등), 외부 자료의 시각(카페 작성 시각, 공식 발표일, 카드 이벤트 시각, 공시·기사 날짜), 처음부터 한국 시간으로 기록하는 값(SNS 전체, 방문·다운로드 통계), 화면에 쓰지 않는 값(학원 영상 업로드 세션의 `serverNow`·`deadlineAt`).
 
 ## 내신 문제 제작소 (2026-10-26)
 
