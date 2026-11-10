@@ -230,6 +230,12 @@ class AdmissionsSusiMinimumDbTest {
                 .filter(e -> e.getRefId() != null && e.getRefId().startsWith("susimin:")).toList();
     }
 
+    private static String text(List<AdmissionsResearchService.Evidence> ev) {
+        StringBuilder sb = new StringBuilder();
+        for (var e : ev) sb.append(e.getTitle()).append('\n').append(e.getExcerpt()).append('\n');
+        return sb.toString();
+    }
+
     @Test
     @DisplayName("given 승인된 수능최저 when 전형을 말해 최저 기준을 물으면 then 그 전형 규칙만 원문 문장·응시 조건·근거 쪽으로 나온다")
     void minimumQuestion_returnsRawTextForMentionedType() throws Exception {
@@ -240,7 +246,7 @@ class AdmissionsSusiMinimumDbTest {
         var ev = minimumEvidence("테스트한양대학교 학생부종합(추천형) 수능최저 기준 알려줘");
         // then: 추천형 두 규칙(전체·의예과)만, 서류형·논술은 제외
         assertThat(ev).hasSize(2);
-        String all = ev.toString();
+        String all = text(ev);
         assertThat(ev.get(0).getTitle()).contains("테스트한양대학교 2027학년도 수시 수능최저학력기준");
         assertThat(all).contains("3개 영역 등급합 7 이내", "등급합 4 이내", "응시 조건 원문: 국어, 수학, 영어, 탐구(2과목)", "요강 근거: 31쪽")
                 .doesNotContain("미적용", "계열별 기준");
@@ -260,7 +266,7 @@ class AdmissionsSusiMinimumDbTest {
         assertThat(docs).hasSize(1);
         assertThat(docs.get(0).getExcerpt()).contains("수능최저학력기준 없음. 원문: 수능최저학력기준 : 미적용 (32쪽)");
         assertThat(all).hasSize(4);
-        assertThat(all.toString()).contains("원문 확인 필요: 계열별 모집단위 연결 필요 — 이 규칙으로는 충족 여부를 판정하지 않는다.");
+        assertThat(text(all)).contains("원문 확인 필요: 계열별 모집단위 연결 필요 — 이 규칙으로는 충족 여부를 판정하지 않는다.");
     }
 
     @Test
