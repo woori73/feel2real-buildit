@@ -1,5 +1,7 @@
 # 10 — 첫 실제 연동: 은행 입출금 (CODEF 수시입출 거래내역)
 
+> **2026-11-10 설계 변경:** CODEF 정식 사용은 유료 B2B 계약(견적 필요)이라, 계약 전에는 [11 — 기관 사이트 직접 받기 (MCP)](11_MCP_SITE_COLLECTION.md)를 기본 경로로 쓴다. 아래 CODEF 어댑터는 그대로 두되 `UNVERIFIED`로 꺼져 있다.
+
 > 작성 2026-11-10. 공식 개발가이드(developer.codef.io)의 상품 메타데이터와 공식 샘플(github.com/codef-io/codef-python)에서 **직접 확인한 항목만** 구현했다. 계약·키·실호출 검증 전이므로 readiness는 `UNVERIFIED`이고 자동수집은 실행되지 않는다.
 
 ## 1. 확인한 계약 (근거: developer.codef.io 상품 상세 API, 2026-11-10 조회)

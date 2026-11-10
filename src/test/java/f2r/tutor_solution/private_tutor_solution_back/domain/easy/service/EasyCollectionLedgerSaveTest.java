@@ -543,6 +543,105 @@ class EasyCollectionLedgerSaveTest {
         .satisfies(t -> assertThat(t.getBusiness().getBusinessId()).isEqualTo(BIZ));
   }
 
+  // ---------------------------------------------------------------- MCP 사이트 직접 받기
+
+  private EasySiteCollectionService siteService() {
+    return new EasySiteCollectionService(service, mock(EasyTutorAccessService.class),
+        pipeline.businessRepository);
+  }
+
+  private static final f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal
+      SITE_ADMIN = new f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider
+          .AuthenticatedPrincipal(1L, "admin", "ADMIN");
+
+  private static EasySiteCollectionService.SiteRowsRequest siteRequest(String site, String dataset,
+      String key, List<EasySiteCollectionService.SiteRow> rows) {
+    long total = rows.stream().mapToLong(EasySiteCollectionService.SiteRow::amount).sum();
+    return new EasySiteCollectionService.SiteRowsRequest(BIZ, site, dataset, "합성-계좌", "2026-10-01",
+        "2026-10-31", rows.size(), total, key, rows);
+  }
+
+  @Test
+  @DisplayName("given 사용자가 은행 사이트에서 받은 입출금 when MCP로 저장 then 중앙 장부에 저장되고 카드 정산입금은 매출로 다시 잡지 않는다")
+  void siteBankRowsAreSavedToLedger() {
+    // given
+    var rows = List.of(
+        new EasySiteCollectionService.SiteRow("2026-10-02", "IN", 300_000L, "김학부", "10월 수강료", null, 1_300_000L, null),
+        new EasySiteCollectionService.SiteRow("2026-10-05", "IN", 980_000L, "KB국민카드", "가맹점정산", null, 2_280_000L, null),
+        new EasySiteCollectionService.SiteRow("2026-10-06", "OUT", 88_000L, "문구상", "복사용지", null, 2_192_000L, null));
+
+    // when
+    var response = siteService().save(SITE_ADMIN, siteRequest("KB_BANK", "BANK_ACCOUNT", "site-key-1", rows));
+
+    // then
+    assertThat(response.run().status()).isEqualTo("SUCCESS");
+    assertThat(response.run().adapterCode()).isEqualTo(EasyCollectionIngestService.SITE_ADAPTER_CODE);
+    assertThat(response.run().ledgerSavedCount()).isEqualTo(3);
+    assertThat(pipeline.txnCount()).isEqualTo(3);
+    assertThat(txnByCounterparty("KB국민카드").getTaxClassification())
+        .isEqualTo(EasyTaxClassification.NOT_INCOME);
+    assertThat(raws.values()).allSatisfy(raw -> {
+      assertThat(raw.getStatus()).isEqualTo(EasyCollectionRawStatus.LEDGER_SAVED);
+      assertThat(raw.getRawPayload()).contains("\"provider\":\"MCP_SITE\"");
+    });
+  }
+
+  @Test
+  @DisplayName("given 같은 idempotencyKey 재전송 when 저장 then 다시 저장하지 않고, 같은 키에 다른 내용이면 거절한다")
+  void siteRowsAreIdempotentPerKey() {
+    // given
+    var rows = List.of(new EasySiteCollectionService.SiteRow("2026-10-02", "IN", 300_000L, "김학부", "수강료", null, null, null));
+    var changed = List.of(new EasySiteCollectionService.SiteRow("2026-10-02", "IN", 310_000L, "김학부", "수강료", null, null, null));
+    var sites = siteService();
+    var first = sites.save(SITE_ADMIN, siteRequest("KB_BANK", "BANK_ACCOUNT", "site-key-2", rows));
+
+    // when
+    var again = sites.save(SITE_ADMIN, siteRequest("KB_BANK", "BANK_ACCOUNT", "site-key-2", rows));
+
+    // then
+    assertThat(again.run().runId()).isEqualTo(first.run().runId());
+    assertThat(pipeline.txnCount()).isEqualTo(1);
+    assertThatThrownBy(() -> sites.save(SITE_ADMIN, siteRequest("KB_BANK", "BANK_ACCOUNT", "site-key-2", changed)))
+        .isInstanceOf(IllegalStateException.class).hasMessageContaining("다른 내용");
+    assertThat(pipeline.txnCount()).isEqualTo(1);
+  }
+
+  @Test
+  @DisplayName("given 같은 기간 파일을 새 키로 다시 보냄 when 저장 then 원본 키로 중복을 막아 장부는 그대로다")
+  void sameSiteRowsWithNewKeyAreDeduplicated() {
+    // given
+    var rows = List.of(new EasySiteCollectionService.SiteRow("2026-10-02", "IN", 300_000L, "김학부", "수강료", null, 1_300_000L, null));
+    var sites = siteService();
+    sites.save(SITE_ADMIN, siteRequest("KB_BANK", "BANK_ACCOUNT", "site-key-3", rows));
+
+    // when
+    var second = sites.save(SITE_ADMIN, siteRequest("KB_BANK", "BANK_ACCOUNT", "site-key-4", rows));
+
+    // then
+    assertThat(second.run().duplicateCount()).isEqualTo(1);
+    assertThat(pipeline.txnCount()).isEqualTo(1);
+  }
+
+  @Test
+  @DisplayName("given 카드사 사이트의 사용·부분취소 when 저장 then 취소는 원거래와 연결된 역분개로 남는다")
+  void siteCardCancellationIsLinkedReversal() {
+    // given
+    var sites = siteService();
+    sites.save(SITE_ADMIN, siteRequest("SHINHAN_CARD", "CARD_PURCHASE", "site-key-5", List.of(
+        new EasySiteCollectionService.SiteRow("2026-10-02", "OUT", 50_000L, "교보문고", null, "12345678", null, null))));
+    Long originalId = txnByAmount(50_000).getTxnId();
+
+    // when
+    sites.save(SITE_ADMIN, siteRequest("SHINHAN_CARD", "CARD_PURCHASE", "site-key-6", List.of(
+        new EasySiteCollectionService.SiteRow("2026-10-04", "IN", 20_000L, "교보문고", null, "12345678", null, "2026-10-02"))));
+
+    // then
+    EasyTransaction partial = txnByAmount(20_000);
+    assertThat(partial.isReversal()).isTrue();
+    assertThat(partial.getOriginalTxnId()).isEqualTo(originalId);
+    assertThat(txnByAmount(50_000).isReversal()).isFalse();
+  }
+
   // ================================================================ helpers
 
   private void addSource(Long id, String code) {

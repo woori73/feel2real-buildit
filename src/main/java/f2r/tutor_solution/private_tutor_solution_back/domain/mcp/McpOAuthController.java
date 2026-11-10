@@ -109,6 +109,7 @@ public class McpOAuthController {
                 "studio:propose",
                 "AI AGENT 제작소에 검수 의견·수정 작업·새 버전 파일 등록 (승인·삭제·공개 불가, 별도 경고 확인 필요)"),
             Map.entry("academy-move:write", "학원이사 글 등록·AI 정리·대화 읽기 (관리자 전용, 원문 파일 제외)"),
+            Map.entry("easy-collect:write", "F2R 장부: 직접 로그인한 은행·카드·홈택스·여신협회 사이트에서 받은 거래 저장 (관리자 전용, 이체·삭제 불가)"),
             Map.entry("offline_access", "30일 동안 연결 자동 갱신")));
     model.addAttribute(
         "scopes",

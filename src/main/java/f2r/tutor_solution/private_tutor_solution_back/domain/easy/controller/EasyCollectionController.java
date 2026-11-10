@@ -45,6 +45,8 @@ public class EasyCollectionController {
   private final EasyTutorAccessService accessService;
   private final f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionAccountRecommendationService
       recommendationService;
+  private final f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService
+      siteCollectionService;
 
   private void requireBusiness(JwtTokenProvider.AuthenticatedPrincipal principal,
       Long businessId) {
@@ -97,6 +99,13 @@ public class EasyCollectionController {
       @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
     requireBusiness(principal, businessId);
     return ResponseEntity.ok(recommendationService.recommendForRun(businessId, runId));
+  }
+
+  /** 직접 로그인해 거래 파일을 내려받을 기관 공식 주소·순서·안전 규칙(MCP easy_collection_sites와 같은 내용). */
+  @GetMapping("/sites")
+  public ResponseEntity<java.util.Map<String, Object>> listSites(
+      @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal) {
+    return ResponseEntity.ok(siteCollectionService.catalog(principal));
   }
 
   @GetMapping("/sources")

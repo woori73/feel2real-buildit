@@ -260,6 +260,47 @@
     } catch (e) { box.appendChild(el('p', 'desc', e.message)); }
   }
 
+  const CATEGORY = { BANK: '은행', CARD: '카드사', HOMETAX: '홈택스', CREFIA: '카드매출' };
+  const DATASET = { BANK_ACCOUNT: '통장 입출금', CARD_PURCHASE: '카드 사용(비용)', CARD_SALES: '카드 매출(수입)' };
+
+  function siteLink(url) {
+    const a = el('a', null, url.replace(/^https:\/\//, '').replace(/\/$/, ''));
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    return a;
+  }
+
+  async function loadSites() {
+    try {
+      const data = await call('GET', '/sites');
+      const rules = document.getElementById('siteRules');
+      data.safetyRules.forEach(r => rules.appendChild(el('li', null, r)));
+      const table = document.getElementById('sites');
+      const head = el('tr');
+      ['구분', '기관', '공식 주소', '기업·사업자용', '저장 자료'].forEach(h => head.appendChild(el('th', null, h)));
+      table.appendChild(head);
+      data.sites.forEach(site => {
+        const tr = el('tr');
+        tr.appendChild(el('td', null, CATEGORY[site.category] || site.category));
+        tr.appendChild(el('td', null, site.name));
+        const url = el('td'); url.appendChild(siteLink(site.url)); tr.appendChild(url);
+        const biz = el('td'); if (site.businessUrl) biz.appendChild(siteLink(site.businessUrl)); else biz.textContent = '-';
+        tr.appendChild(biz);
+        tr.appendChild(el('td', null, site.datasets.map(d => DATASET[d] || d).join(', ')));
+        table.appendChild(tr);
+        if (site.note) {
+          const noteRow = el('tr', 'site-note');
+          noteRow.appendChild(el('td'));
+          const note = el('td', null, '※ ' + site.note); note.colSpan = 4;
+          noteRow.appendChild(note);
+          table.appendChild(noteRow);
+        }
+      });
+      document.getElementById('siteCount').textContent = data.sites.length + '곳';
+    } catch (e) {
+      message('siteMsg', e.message, true);
+    }
+  }
+
   async function init() {
     await Easy.guardAdmin();
     const businesses = await Easy.loadBusinesses();
@@ -268,6 +309,7 @@
     select.addEventListener('change', () => { document.getElementById('historyCard').style.display = 'none'; loadConnections(); });
     document.getElementById('saveBtn').addEventListener('click', save);
     document.getElementById('cancelEdit').addEventListener('click', resetForm);
+    loadSites();
     if (businesses.length) await loadConnections();
   }
 
