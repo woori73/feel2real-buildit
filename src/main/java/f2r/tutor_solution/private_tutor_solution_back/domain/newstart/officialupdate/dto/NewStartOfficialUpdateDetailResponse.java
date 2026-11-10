@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate;
 import java.time.LocalDateTime;
 
@@ -64,7 +65,7 @@ public record NewStartOfficialUpdateDetailResponse(
         bodyIsHtml,
         state,
         update.getPublishedAt(),
-        update.getDiscoveredAt(),
+        KstTime.toKst(update.getDiscoveredAt()),
         verifiedSourceUrl);
   }
 

@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.lmscontent.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.Academy;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.LessonProduct;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.repository.LessonProductRepository;
@@ -281,8 +282,8 @@ public class LmsContentAdminService {
         content.getStorageKey() != null,
         content.getDurationSec(),
         content.getSizeBytes(),
-        content.getPublishedAt(),
-        content.getCreatedAt());
+        KstTime.toKst(content.getPublishedAt()),
+        KstTime.toKst(content.getCreatedAt()));
   }
 
   private static ResponseStatusException badRequest(String message) {

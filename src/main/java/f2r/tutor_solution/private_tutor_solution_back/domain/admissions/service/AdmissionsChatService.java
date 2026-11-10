@@ -469,10 +469,11 @@ public class AdmissionsChatService {
             allowed.append(e.getTitle()).append(' ').append(e.getExcerpt()).append(' ').append(e.getNote()).append(' ');
         }
         java.util.Set<String> allowedNums = new java.util.HashSet<>();
-        java.util.regex.Matcher am = java.util.regex.Pattern.compile("\\d+").matcher(allowed);
+        // 천 단위 쉼표(3,558)는 떼고 비교한다 — 근거 "3558명"과 답변 "3,558명"을 같은 수로 본다.
+        java.util.regex.Matcher am = java.util.regex.Pattern.compile("\\d+").matcher(withoutThousandsSeparators(allowed.toString()));
         while (am.find()) allowedNums.add(am.group());
         List<String> bad = new ArrayList<>();
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(answer == null ? "" : answer);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(withoutThousandsSeparators(answer == null ? "" : answer));
         while (m.find()) {
             String n = m.group();
             if (n.length() < 2 || allowedNums.contains(n)) continue;
@@ -480,6 +481,11 @@ public class AdmissionsChatService {
             bad.add(n);
         }
         return bad;
+    }
+
+    /** "14,541" → "14541". 쉼표 뒤가 정확히 세 자리 숫자일 때만 뗀다("2, 3등급" 같은 나열은 그대로). */
+    static String withoutThousandsSeparators(String text) {
+        return text.replaceAll("(?<=\\d),(?=\\d{3}(?!\\d))", "");
     }
 
     private String buildEvidenceContext(List<Evidence> evidence) {

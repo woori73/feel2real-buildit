@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wemade.controller;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeChinaDisclosureRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wemade.repository.WemadeChinaNewsRepository;
@@ -76,6 +77,9 @@ public class WemadePageController {
         model.addAttribute("kind", "disclosure");
         model.addAttribute("kindKr", "중국 공식 공시");
         model.addAttribute("item", d);
+        // 수집일·링크 확인일은 서버/DB 기본 시간대(운영 UTC) 벽시계 → 한국 날짜로 표시한다.
+        model.addAttribute("collectedAtKst", KstTime.toKst(d.getCollectedAt()));
+        model.addAttribute("linkCheckedAtKst", KstTime.toKst(d.getLinkCheckedAt()));
         return "wemade/china-detail";
     }
 
@@ -96,6 +100,9 @@ public class WemadePageController {
         model.addAttribute("kind", "news");
         model.addAttribute("kindKr", "중국 뉴스");
         model.addAttribute("item", n);
+        // 수집일·링크 확인일은 서버/DB 기본 시간대(운영 UTC) 벽시계 → 한국 날짜로 표시한다.
+        model.addAttribute("collectedAtKst", KstTime.toKst(n.getCollectedAt()));
+        model.addAttribute("linkCheckedAtKst", KstTime.toKst(n.getLinkCheckedAt()));
         return "wemade/china-detail";
     }
 }

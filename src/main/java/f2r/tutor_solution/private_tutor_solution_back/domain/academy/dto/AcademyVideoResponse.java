@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyExternalVideoProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideo;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyVideoPurpose;
@@ -82,6 +83,6 @@ public record AcademyVideoResponse(
         video.getExternalProvider(),
         !labels.isEmpty(),
         labels,
-        video.getCreatedAt());
+        KstTime.toKst(video.getCreatedAt()));
   }
 }

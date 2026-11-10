@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.entity.PublishingJob;
 import java.time.LocalDateTime;
 
@@ -25,8 +26,8 @@ public record JobResponse(
         job.getProgress(),
         job.getCurrentStep(),
         job.getError(),
-        job.getCreatedAt(),
-        job.getUpdatedAt()
+        KstTime.toKst(job.getCreatedAt()),
+        KstTime.toKst(job.getUpdatedAt())
     );
   }
 }

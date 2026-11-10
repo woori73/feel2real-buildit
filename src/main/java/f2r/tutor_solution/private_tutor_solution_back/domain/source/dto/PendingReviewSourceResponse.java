@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.source.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.exam.entity.Exam;
 import f2r.tutor_solution.private_tutor_solution_back.domain.source.entity.Source;
 
@@ -26,6 +27,6 @@ public record PendingReviewSourceResponse(
         source.getOriginalFileName(),
         exam != null ? exam.getExamId() : null,
         exam != null ? exam.getDisplayName() : null,
-        source.getCreatedAt());
+        KstTime.toKst(source.getCreatedAt()));
   }
 }

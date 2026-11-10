@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.entity.ChartCandidate;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.entity.ChartCandidateStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.entity.ChartVerificationStatus;
@@ -29,6 +30,6 @@ public record ChartCandidateResponse(
     return new ChartCandidateResponse(candidate.getCandidateId(), candidate.getZoneId(), candidate.getName(), candidate.getRole(),
         candidate.getAcademyName(), candidate.getActivityRegion(), candidate.getContentType(), candidate.getContentSummary(),
         candidate.getSourceUrl(), candidate.getSourceTitle(), candidate.getDiscoveryReason(), candidate.getDeepSearchResult(),
-        candidate.getExclusionCheck(), candidate.getVerificationStatus(), candidate.getStatus(), candidate.getDiscoveredAt(), activities);
+        candidate.getExclusionCheck(), candidate.getVerificationStatus(), candidate.getStatus(), KstTime.toKst(candidate.getDiscoveredAt()), activities);
   }
 }

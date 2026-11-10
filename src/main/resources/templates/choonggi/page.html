@@ -27,7 +27,7 @@
         <div class="log-photos" th:if="${!#lists.isEmpty(post.media)}"><img th:each="m:${post.media}" th:if="${m.type.name()=='PHOTO' and m.deletedAt==null}" th:src="@{/api/choonggi/media/{id}(id=${m.id})}" loading="lazy" alt="CHOONGGI 기록 사진"></div>
         <h3 th:text="${post.title}"></h3>
         <p class="log-body" th:if="${!#strings.isEmpty(post.body)}" th:text="${post.body}"></p>
-        <time th:if="${post.publishedAt!=null}" th:text="${#temporals.format(post.publishedAt,'yyyy.MM.dd')}"></time>
+        <time th:if="${publishedAtKst.get(post)!=null}" th:text="${#temporals.format(publishedAtKst.get(post),'yyyy.MM.dd')}"></time>
       </article>
       <p class="log-empty" th:if="${#lists.isEmpty(publishedPosts)}">곧 첫 기록이 올라올 예정입니다.</p>
     </div></section>

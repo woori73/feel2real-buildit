@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.conversation.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.entity.Conversation;
 
 import java.time.LocalDateTime;
@@ -29,8 +30,8 @@ public record ConversationSummaryResponse(
     return new ConversationSummaryResponse(
         conv.getConversationId(),
         conv.getTitle(),
-        conv.getCreatedAt(),
-        conv.getLastMessageAt(),
+        KstTime.toKst(conv.getCreatedAt()),
+        KstTime.toKst(conv.getLastMessageAt()),
         sources,
         messages,
         lessonId,

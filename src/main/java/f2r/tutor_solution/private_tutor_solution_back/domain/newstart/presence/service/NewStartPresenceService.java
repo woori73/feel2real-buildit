@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.presence.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.presence.dto.PresenceMemberView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.presence.dto.PresenceSettingsView;
@@ -11,6 +12,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.Use
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +100,9 @@ public class NewStartPresenceService {
         .map(u -> new PresenceMemberView(
             u.getUserId(),
             nicknames.getOrDefault(u.getUserId(), u.getDisplayName()),
-            seenByUser.get(u.getUserId())))
+            // last_seen_at은 Clock.systemUTC()로 기록 → 서버 시간대와 무관하게 UTC에서 한국 시간으로 바꿔 내보낸다.
+            seenByUser.get(u.getUserId()).atZone(ZoneOffset.UTC)
+                .withZoneSameInstant(KstTime.ZONE).toLocalDateTime()))
         .sorted((a, b) -> b.lastSeenAt().compareTo(a.lastSeenAt()))
         .toList();
   }

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorDetail;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorPage;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorSummary;
@@ -182,7 +183,8 @@ class ChartEducatorSearchServiceTest {
     assertThat(d.officialChannels().homepage()).isEqualTo("https://example.com/home");
     assertThat(d.evidence()).hasSize(2);
     assertThat(d.evidence().get(0).sourceUrl()).isEqualTo("https://example.com/class");
-    assertThat(d.lastResearchedAt()).isEqualTo(LocalDateTime.of(2026, 3, 2, 9, 0)); // 최신 activity researched_at
+    // 서버 시각으로 저장된 값을 화면용 한국 시간으로 바꿔 내보낸다(서버가 한국 시간이면 그대로).
+    assertThat(d.lastResearchedAt()).isEqualTo(KstTime.toKst(LocalDateTime.of(2026, 3, 2, 9, 0))); // 최신 activity researched_at
     assertThat(d.researchPending()).isFalse();
   }
 
@@ -249,7 +251,7 @@ class ChartEducatorSearchServiceTest {
     ChartPublicEducatorDetail d = service.toDetail(row, acts);
 
     assertThat(d.evidence()).isEmpty();
-    assertThat(d.lastResearchedAt()).isEqualTo(LocalDateTime.of(2026, 5, 1, 0, 0));
+    assertThat(d.lastResearchedAt()).isEqualTo(KstTime.toKst(LocalDateTime.of(2026, 5, 1, 0, 0)));
   }
 
   @Test

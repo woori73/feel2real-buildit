@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.officialupdate.entity.NewStartOfficialUpdate;
 import java.time.LocalDateTime;
 
@@ -38,8 +39,8 @@ public record NewStartOfficialUpdateResponse(
         update.getRelevancePriority().name(),
         update.getReviewStatus().name(),
         update.isFeatured(),
-        update.getDiscoveredAt(),
+        KstTime.toKst(update.getDiscoveredAt()),
         update.getReviewedBy(),
-        update.getReviewedAt());
+        KstTime.toKst(update.getReviewedAt()));
   }
 }
