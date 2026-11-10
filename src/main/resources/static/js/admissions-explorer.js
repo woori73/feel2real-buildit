@@ -32,6 +32,8 @@
     });
     return out;
   }
+  /** 입시결과 구분 표시. OTHER = 원문에 수시·정시 구분이 없는 학교(예: 한국예술종합학교). */
+  function roundLabel(roundType){return ({SUSI:'수시',JEONGSI:'정시',OTHER:'수시·정시 구분 없음'})[roundType]||'구분 미상';}
   /** 오늘 날짜(한국 시간) YYYY-MM-DD. */
   function todayKst(now){return new Date((now==null?Date.now():now)+9*3600*1000).toISOString().slice(0,10);}
   /**
@@ -47,7 +49,7 @@
     });});
     return rows.sort(function(a,b){if(!a.startDate!==!b.startDate)return a.startDate?-1:1;return (a.startDate||'').localeCompare(b.startDate||'')||a.universityName.localeCompare(b.universityName);});
   }
-  var model={text:text,norm:norm,metric:metric,cleanCandidates:cleanCandidates,minimumLabel:minimumLabel,jeongsiGroups:jeongsiGroups,todayKst:todayKst,mergeSchedules:mergeSchedules};
+  var model={text:text,norm:norm,metric:metric,cleanCandidates:cleanCandidates,minimumLabel:minimumLabel,jeongsiGroups:jeongsiGroups,roundLabel:roundLabel,todayKst:todayKst,mergeSchedules:mergeSchedules};
   if(typeof module!=='undefined'&&module.exports) module.exports=model;
   if(!root.document || !root.document.getElementById('ae-workspace'))return;
   var doc=root.document, byId=function(id){return doc.getElementById(id);};
@@ -145,7 +147,7 @@
   function renderPrior(parent,rows){
     if(!rows.length){paragraph(parent,'해당 모집단위의 지난해 공식 입시결과가 아직 연결되지 않았습니다.');return;}
     var table=el('table'),head=el('thead'),hr=el('tr');['결과 학년도 / 전형','원문 지표','공개 값'].forEach(function(t){var th=el('th',t);th.scope='col';hr.appendChild(th);});head.appendChild(hr);table.appendChild(head);var body=el('tbody');
-    rows.forEach(function(row){var tr=el('tr');var c1=el('td',row.resultYear+'학년도(지난해) · '+(row.roundType==='JEONGSI'?'정시':'수시')+' '+(row.groupName||'')+' '+row.typeName);var c2=el('td',row.metricLabel||'모집·경쟁·충원');var c3=el('td');
+    rows.forEach(function(row){var tr=el('tr');var c1=el('td',row.resultYear+'학년도(지난해) · '+roundLabel(row.roundType)+' '+(row.groupName||'')+' '+row.typeName);var c2=el('td',row.metricLabel||'모집·경쟁·충원');var c3=el('td');
       if(row.metricLabel)c3.textContent=metric(row)+(row.metricUnit?' ['+row.metricUnit+']':'');
       else c3.textContent='모집 '+text(row.recruitCount)+' / 지원 '+text(row.applicantCount)+' / 경쟁률 '+text(row.competitionRate)+' / 충원 '+text(row.extraAdmittedCount);
       source(c2,row.sourceUrl||row.documentUrl,row.sourceTitle||'공식 입시결과');if(row.evidencePages)c2.appendChild(el('small','근거 쪽: '+row.evidencePages));
