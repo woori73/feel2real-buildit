@@ -12,7 +12,9 @@
     .conn-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
     .conn-meta { font-size: 13px; color: #4a5568; margin-top: 6px; line-height: 1.6; }
     .conn-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .conn-actions button { font-size: 13px; padding: 6px 10px; }
+    .conn-actions button { font-size: 13px; padding: 6px 10px; width: auto; margin: 0; }
+    .conn-actions button:disabled { opacity: .45; cursor: not-allowed; }
+    .run-table th { white-space: nowrap; }
     .badge.ok { background: #f0fff4; color: #276749; }
     .badge.warn { background: #fffaf0; color: #c05621; }
     .badge.off { background: #edf2f7; color: #4a5568; }

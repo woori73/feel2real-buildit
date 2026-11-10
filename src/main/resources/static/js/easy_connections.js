@@ -90,7 +90,7 @@
     const parts = [];
     if (c.organization) parts.push('기관코드 ' + c.organization + (c.clientType === 'P' ? ' · 개인' : ' · 기업'));
     if (c.accountMasked) parts.push('계좌 ' + c.accountMasked);
-    parts.push('인증 ' + (AUTH[c.authStatus] || c.authStatus || '-'));
+    parts.push(AUTH[c.authStatus] || c.authStatus || '-');
     parts.push('자동수집 ' + (c.enabled ? '켜짐' : '꺼짐'));
     parts.push('마지막 성공 ' + fmtTime(c.lastSuccessAt));
     if (c.latestRunStatus) {
