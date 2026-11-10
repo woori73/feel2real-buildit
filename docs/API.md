@@ -4652,7 +4652,7 @@ ANSWERABLE/PARTIAL/UNKNOWN/CONFLICT)로 ADMIN preview 수준.
 
 CODEF 정식 사용은 B2B 계약·견적이 필요하므로(무료는 데모 일 100회), 관리자가 기관 사이트에 **직접 로그인**해 내려받은 거래를 MCP로 연결한 AI가 행으로 정리해 저장하는 경로를 둔다. 저장은 위 절과 같은 수집 경로(원본 보존 → 원본 키 중복 방지 → 장부 fingerprint 중복 제외 → 중앙 장부 저장 → 자동분류 → 예외 검토)를 그대로 쓴다. 상세 설계·기관 목록: [docs/easy/auto-collection/11_MCP_SITE_COLLECTION.md](easy/auto-collection/11_MCP_SITE_COLLECTION.md).
 
-- `GET /api/admin/easy/collections/sites` (ADMIN) — 은행 18·카드사 9·홈택스·여신금융협회 카드매출 공식 주소(`url`, 기업용 `businessUrl`), 저장 가능한 자료(`datasets`: `BANK_ACCOUNT`|`CARD_PURCHASE`|`CARD_SALES`), 사이트 주의(`note`), 범주별 내려받기 순서(`steps`), 안전 규칙(`safetyRules`), 활성 사업체(`businesses[{businessId,name}]`)를 준다. `/easy/connections` 화면의 "기관 사이트에서 직접 받기 (MCP)" 표가 이 응답을 쓴다.
+- `GET /api/admin/easy/collections/sites` (ADMIN) — 은행 18·카드사 9·홈택스·여신금융협회 카드매출 공식 주소, 결제선생 매니저(링크만 — `datasets` 빈 배열, 저장 불가, 2026-11-10 추가)(`url`, 기업용 `businessUrl`), 저장 가능한 자료(`datasets`: `BANK_ACCOUNT`|`CARD_PURCHASE`|`CARD_SALES`), 사이트 주의(`note`), 범주별 내려받기 순서(`steps`), 안전 규칙(`safetyRules`), 활성 사업체(`businesses[{businessId,name}]`)를 준다. `/easy/connections` 화면의 "기관 사이트에서 직접 받기 (MCP)" 표가 이 응답을 쓴다.
 - MCP `easy_collection_sites` — 위와 같은 내용. 인자 없음.
 - MCP `save_easy_site_rows` — 인자 `{businessId, siteCode, dataset, accountRef, from, to, expectedCount, expectedTotal, idempotencyKey, rows[{date, direction:IN|OUT, amount, counterparty?, description?, approvalNo?, balance?, cancelOfDate?}]}`.
   - 행 수와 금액 합계(입출금을 상계하지 않은 합)가 `expectedCount`·`expectedTotal`(사이트 표시값)과 다르면, 날짜가 `from~to`(최대 1년) 밖이면, 사이트가 다루지 않는 dataset이면 **아무것도 저장하지 않고** `{saved:false, reason}`을 돌려준다. rows는 1~2,000행, 알 수 없는 행 칸(예: password)은 400.

@@ -227,6 +227,18 @@ class EasySiteCollectionServiceTest {
   }
 
   @Test
+  @DisplayName("given 링크만 연결된 결제선생 when 저장 then 어떤 자료도 저장하지 않는다")
+  void payssamLinkOnlyRejectsSave() {
+    // given
+    var request = new SiteRowsRequest(7L, "PAYSSAM", "BANK_ACCOUNT", "결제선생", "2026-10-01",
+        "2026-10-31", 1, 1000L, "key-00001", List.of(row("2026-10-02", "IN", 1000, "합성학생")));
+
+    // when / then
+    assertThatThrownBy(() -> service.save(ADMIN, request)).hasMessageContaining("자료만");
+    verifyNoInteractions(ingest);
+  }
+
+  @Test
   @DisplayName("given 건수·합계 누락·0원 when verifyTotals then 거절한다")
   void verifyTotalsRequiresBothAndPositiveAmounts() {
     // given
