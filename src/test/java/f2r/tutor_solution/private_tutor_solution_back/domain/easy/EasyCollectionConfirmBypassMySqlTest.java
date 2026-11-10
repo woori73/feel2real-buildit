@@ -121,7 +121,8 @@ class EasyCollectionConfirmBypassMySqlTest {
     assertThatThrownBy(
             () -> approvals.commitApproved(own.getBusinessId(), rejected.getApprovalId(), admin))
         .isInstanceOf(IllegalStateException.class);
-    assertThat(ledger()).isEqualTo(1);
+    // 두 번째 수집은 승인번호가 다른 별개의 실거래라 수집 시점에 저장된다. 반려는 장부를 지우거나 더 쓰지 않는다.
+    assertThat(ledger()).isEqualTo(2);
   }
 
   @Test

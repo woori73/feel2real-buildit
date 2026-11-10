@@ -526,6 +526,23 @@ class EasyCollectionLedgerSaveTest {
     assertThat(pipeline.txnCount()).isEqualTo(before);
   }
 
+  @Test
+  @DisplayName("given 원문에 출판사 확정 표시가 있는 학원 수집 거래 when 저장 then 학원 장부에만 남는다(사업체 혼합 금지)")
+  void collectedRowIsNeverReroutedByRawMarker() {
+    // given
+    var row = new CollectionParsedRow(1, Map.of(), "{\"business\":\"PUBLISHING_CONFIRMED\"}",
+        LocalDate.of(2026, 10, 1), "EXPENSE", 12_345L, "synthetic", "marker", "TRANSFER",
+        null, null, null, null, "mk-1", null);
+
+    // when
+    service.ingestFinancialDraft(BIZ, java.util.UUID.randomUUID().toString(),
+        "FIN_" + "a".repeat(24), List.of(row));
+
+    // then
+    assertThat(pipeline.txns.values()).singleElement()
+        .satisfies(t -> assertThat(t.getBusiness().getBusinessId()).isEqualTo(BIZ));
+  }
+
   // ================================================================ helpers
 
   private void addSource(Long id, String code) {

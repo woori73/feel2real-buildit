@@ -57,6 +57,7 @@ public class CodefBankTransactionAdapter implements EasyPeriodCollectionAdapter 
   private final ObjectMapper mapper = new ObjectMapper();
   private final int initialLookbackDays;
 
+  @org.springframework.beans.factory.annotation.Autowired
   public CodefBankTransactionAdapter(
       @Value("${easy.collection.codef.base-url:" + CodefApiClient.PRODUCTION_BASE + "}")
       String baseUrl,

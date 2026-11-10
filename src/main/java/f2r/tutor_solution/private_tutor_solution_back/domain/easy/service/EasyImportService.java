@@ -500,7 +500,9 @@ public class EasyImportService {
    */
   private void postRow(EasyImportBatch batch, EasyImportRow row, String collectionIdentity,
       Long originalTxnId, String extraReviewNote) {
-    EasyBusiness business = resolvePostingBusiness(batch, row);
+    // 수집 거래는 연결이 속한 사업체 장부에만 저장한다 — 원문 마커로 다른 사업체(출판사 등)로 옮기지 않는다.
+    EasyBusiness business = collectionIdentity != null
+        ? batch.getBusiness() : resolvePostingBusiness(batch, row);
     String fingerprintPay = collectionIdentity == null
         ? fingerprintPayMethod(row)
         : fingerprintPayMethod(row) + "|COLLECTED:" + collectionIdentity;
