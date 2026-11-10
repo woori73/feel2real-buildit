@@ -59,6 +59,7 @@ import org.springframework.test.web.servlet.MockMvc;
     EasyAuditController.class,
     EasyReportController.class,
     EasyCollectionController.class,
+    EasyAttendanceController.class,
     EasyCardReviewController.class,
     EasyCollectorAdminController.class,
     EasyWorkspaceController.class,
@@ -98,6 +99,8 @@ class EasySecurityWebMvcTest {
   @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyTutorAccessService tutorAccessService;
   @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionAccountRecommendationService collectionRecommendationService;
   @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService siteCollectionService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceService attendanceService;
+  @MockitoBean f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceRosterImportService attendanceRosterImportService;
   @MockitoBean AcademyRepository academyRepository;
 
   private static final List<String> ENDPOINTS = List.of(
@@ -119,6 +122,8 @@ class EasySecurityWebMvcTest {
       "/api/admin/easy/income-tax",
       "/api/admin/easy/corrections/logs",
       "/api/admin/easy/collections/connections?businessId=1",
+      "/api/admin/easy/attendance/classes?businessId=1",
+      "/api/admin/easy/attendance/monthly?businessId=1&classId=1&month=2026-10",
       "/api/admin/easy/collections/sites",
       "/api/admin/easy/card-events?businessId=1",
       "/api/admin/easy/workspace/monthly?businessId=1&month=2026-10",

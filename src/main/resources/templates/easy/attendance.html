@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R 장부 - 출결부</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+  <style>
+    .easy-title.center, .easy-sub.center { text-align: center; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+    .tabs button { width: auto; margin: 0; padding: 8px 14px; border-radius: 999px; border: 1px solid #cbd5e0; background: #fff; color: #2d3748; font-size: 14px; }
+    .tabs button.active { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .att-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .att-table th, .att-table td { border-bottom: 1px solid #edf2f7; padding: 8px 4px; text-align: left; vertical-align: top; }
+    .att-table th { white-space: nowrap; color: #4a5568; }
+    .att-btns { display: flex; flex-wrap: wrap; gap: 4px; }
+    .att-btns button, .small-btn { width: auto; margin: 0; padding: 5px 9px; font-size: 12px; white-space: nowrap; }
+    .ev { display: inline-block; margin: 0 6px 4px 0; padding: 2px 8px; border-radius: 6px; background: #edf2f7; font-size: 12px; }
+    .ev.CHECK_IN { background: #f0fff4; color: #276749; }
+    .ev.ABSENT { background: #fff5f5; color: #c53030; }
+    .ev.LATE, .ev.EARLY_LEAVE { background: #fffaf0; color: #c05621; }
+    .grid-wrap { overflow-x: auto; }
+    .month td, .month th { text-align: center; padding: 4px 2px; min-width: 22px; font-size: 12px; }
+    .month td:first-child, .month th:first-child { text-align: left; min-width: 70px; position: sticky; left: 0; background: #fff; }
+    .msg { display: none; margin-top: 8px; font-size: 13px; }
+    .msg.err { color: #c53030; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; }
+    .weekday-pick label { display: inline-flex; align-items: center; gap: 3px; margin-right: 8px; font-size: 13px; }
+    .weekday-pick input { width: auto; }
+    .class-item { border-top: 1px solid #edf2f7; padding: 10px 0; }
+    .class-item:first-child { border-top: 0; }
+    .muted { color: #718096; font-size: 12px; }
+    .correct-box { margin-top: 6px; padding: 8px; background: #f7fafc; border-radius: 8px; }
+  </style>
+</head>
+<body>
+<th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
+<div class="easy-container">
+  <div class="easy-title center">출결부</div>
+  <p class="easy-sub center">반을 고르고 날짜별로 등원·결석·지각을 기록합니다. 출결은 지우지 않고, 잘못 넣은 기록은 사유를 적어 정정합니다.</p>
+
+  <div class="easy-card">
+    <div class="form-row">
+      <div class="form-group"><label for="business">사업체</label><select id="business"></select></div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button type="button" data-tab="sheet" class="active">출결부</button>
+      <button type="button" data-tab="month">월별 현황</button>
+      <button type="button" data-tab="classes">반 관리</button>
+      <button type="button" data-tab="import">진행표 가져오기</button>
+    </div>
+    <p class="msg" id="msg"></p>
+  </div>
+
+  <section class="tab active" id="tab-sheet">
+    <div class="easy-card">
+      <div class="form-row">
+        <div class="form-group"><label for="sheetClass">반</label><select id="sheetClass"></select></div>
+        <div class="form-group"><label for="sheetDate">날짜</label><input type="date" id="sheetDate"></div>
+        <div class="form-group" style="align-self:end"><button class="btn-primary" id="sheetLoad" type="button">조회</button></div>
+      </div>
+      <p class="muted" id="sheetInfo"></p>
+      <div class="grid-wrap"><table class="att-table" id="sheetTable"></table></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-month">
+    <div class="easy-card">
+      <div class="form-row">
+        <div class="form-group"><label for="monthClass">반</label><select id="monthClass"></select></div>
+        <div class="form-group"><label for="monthValue">연월</label><input type="month" id="monthValue"></div>
+        <div class="form-group" style="align-self:end"><button class="btn-primary" id="monthLoad" type="button">조회</button></div>
+      </div>
+      <p class="muted">등=등원 · 지=지각 · 결=결석 · 조=조퇴 · 하=하원</p>
+      <div class="grid-wrap"><table class="att-table month" id="monthTable"></table></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-classes">
+    <div class="easy-card">
+      <div class="section-head"><h2 id="classFormTitle">반 만들기</h2></div>
+      <input type="hidden" id="cId">
+      <div class="form-row">
+        <div class="form-group"><label for="cName" class="required">반 이름</label><input id="cName" maxlength="60" placeholder="예: 고1 수학 A"></div>
+        <div class="form-group"><label for="cTeacher">담당 강사</label><input id="cTeacher" maxlength="30"></div>
+        <div class="form-group"><label for="cRoom">강의실</label><input id="cRoom" maxlength="30"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>요일</label><div class="weekday-pick" id="cDays"></div></div>
+        <div class="form-group"><label for="cStart">시작</label><input type="time" id="cStart"></div>
+        <div class="form-group"><label for="cEnd">끝</label><input type="time" id="cEnd"></div>
+        <div class="form-group"><label for="cCap">정원</label><input type="number" id="cCap" min="1" max="500"></div>
+      </div>
+      <div class="form-group"><label for="cDesc">설명</label><input id="cDesc" maxlength="300"></div>
+      <div class="btn-row">
+        <button class="btn-primary" id="classSave" type="button">저장</button>
+        <button class="btn-secondary" id="classCancel" type="button" style="display:none">수정 취소</button>
+      </div>
+    </div>
+    <div class="easy-card">
+      <div class="section-head"><h2>반 목록</h2>
+        <label class="muted"><input type="checkbox" id="showEnded" style="width:auto"> 종료된 반 포함</label></div>
+      <div id="classList"></div>
+    </div>
+    <div class="easy-card" id="memberCard" style="display:none">
+      <div class="section-head"><h2 id="memberTitle">반 학생</h2></div>
+      <div class="form-row">
+        <div class="form-group"><label for="addStudent">학생 배정</label><select id="addStudent"></select></div>
+        <div class="form-group" style="align-self:end"><button class="btn-primary" id="addStudentBtn" type="button">배정하기</button></div>
+      </div>
+      <p class="muted">학생은 <a href="/easy/students">학생 원장</a>에 먼저 등록합니다. 「빼기」는 반 배정만 해제하며 학생 등록과 출결 기록은 남습니다.</p>
+      <table class="att-table" id="memberTable"></table>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-import">
+    <div class="easy-card">
+      <div class="section-head"><h2>학생명단(시간표) 진행표 → 출결부</h2></div>
+      <p class="desc">학생명단 자료실에 올린 연도의 진행표를 읽습니다. 진행표에 이름이 있는 날은 <b>등원</b>으로, 그날 수업 수는 메모로 남깁니다. 이름마다 기존 학생 연결·새로 등록·건너뛰기를 고른 뒤 적용합니다. 같은 학생·날짜는 한 번만 들어갑니다.</p>
+      <div class="form-row">
+        <div class="form-group"><label for="impYear">연도</label><input id="impYear" inputmode="numeric" maxlength="4" value="2026"></div>
+        <div class="form-group"><label for="impClass">넣을 반 (선택)</label><select id="impClass"></select></div>
+        <div class="form-group" style="align-self:end"><button class="btn-primary" id="impPreview" type="button">미리보기</button></div>
+      </div>
+      <p class="muted" id="impInfo"></p>
+      <div class="grid-wrap"><table class="att-table" id="impTable"></table></div>
+      <div class="btn-row" id="impApplyRow" style="display:none"><button class="btn-primary" id="impApply" type="button">출결부에 넣기</button></div>
+      <p class="msg" id="impMsg"></p>
+    </div>
+  </section>
+</div>
+<script src="/js/api.js"></script><script src="/js/easy_api.js"></script>
+<script src="/js/easy_attendance_view.js"></script>
+<script src="/js/easy_attendance.js"></script>
+</body>
+</html>

@@ -154,6 +154,36 @@ public class StudentRosterController {
           + " 원장과 함께 논의하세요. 같은 이름은 같은 가명이므로 동명이인은 한 명으로, 표기가 바뀐 같은 학생은 다른 사람으로 셀 수 있습니다."
           + " 수업 수는 칸에 적힌 이름+회차 기록의 개수이며 매출·출결 확정 자료가 아닙니다.";
 
+  /** F2R 출결부 가져오기용 수업 기록 한 줄. 실명이 들어 있으므로 서버 안에서만 쓰고 AI·로그로 내보내지 않는다. */
+  public record RosterLesson(java.time.LocalDate date, String name, int sessions) {}
+
+  /**
+   * 한 연도 최신 Word(실패하면 PDF 글자)에서 날짜·이름·그날 수업 수를 읽는다. 같은 날 같은 이름은 수업 수가 큰 한 줄로 합친다.
+   * 관리자만 부를 수 있다(출결부 명단 가져오기 미리보기·적용).
+   */
+  public List<RosterLesson> lessonsOf(AuthenticatedPrincipal p, int year) throws IOException {
+    requireAdmin(p);
+    var request = ((org.springframework.web.context.request.ServletRequestAttributes)
+        org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getRequest();
+    request.setAttribute(StudioService.MCP_PROJECT_ATTRIBUTE, PROJECT);
+    var entry = entries().stream().filter(e -> Integer.valueOf(year).equals(e.get("year"))).findFirst()
+        .orElseThrow(() -> StudioService.error(404, year + "년 학생명단이 자료실에 없습니다. 먼저 올려 주세요."));
+    String wordId = (String) entry.get("wordFileId"), pdfId = (String) entry.get("pdfFileId");
+    String ext = Objects.toString(studio.file(p, wordId).get("extension"));
+    var parsed = StudentRosterAnalyzer.read(ext, studio.bytes(p, wordId), pdfId == null ? null : studio.bytes(p, pdfId), year);
+    Map<String, RosterLesson> merged = new LinkedHashMap<>();
+    for (var sheet : parsed.sheets())
+      for (var lesson : sheet.lessons()) {
+        if (lesson.date().getYear() != year) continue;
+        String key = lesson.date() + "|" + lesson.name();
+        var prior = merged.get(key);
+        if (prior == null || prior.sessions() < lesson.sessions())
+          merged.put(key, new RosterLesson(lesson.date(), lesson.name(), lesson.sessions()));
+      }
+    return merged.values().stream()
+        .sorted(java.util.Comparator.comparing(RosterLesson::date).thenComparing(RosterLesson::name)).toList();
+  }
+
   /** MCP read_student_roster: 연도별 최신 Word를 읽어 이름 없는 집계만 돌려준다. 원문·파일 ID·실명은 내보내지 않는다. */
   public Map<String, Object> mcpRead(AuthenticatedPrincipal p) {
     requireAdmin(p);

@@ -118,6 +118,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/easy/evidence", "easy/reviews");
         view(registry, "/easy/accounting", "easy/accounting");
         view(registry, "/easy/connections", "easy/connections");
+        view(registry, "/easy/attendance", "easy/attendance");
 
         // 원장용 Easy 대화 장부의 운영 주소. 데이터/변경은 /api/tutor/easy/** 권한 검증을 거친다.
         view(registry, "/ledger", "easy/tutor_agent");
