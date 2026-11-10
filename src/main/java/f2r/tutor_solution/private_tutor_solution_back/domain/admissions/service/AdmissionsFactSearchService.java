@@ -7,11 +7,13 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.A
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsOfficialMaterial;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsSchedule;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsSusiMinimum;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsType;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsUniversity;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsDepartmentRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsPriorResultRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsScheduleRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsSusiMinimumRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsTypeRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsUniversityRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsResearchService.Evidence;
@@ -50,6 +52,8 @@ public class AdmissionsFactSearchService {
     static final int MAX_SCHEDULES = 8;
     /** 지난해 입시결과: 근거로 쓰는 전형·모집단위 수 상한. */
     static final int MAX_PRIOR_UNITS = 8;
+    /** 수시 수능최저: 근거로 쓰는 규칙 수 상한. */
+    static final int MAX_MINIMUM_RULES = 8;
     /** 대학을 지정하지 않은 전체 일정 질문: 대학당 근거 수와 전체 상한. */
     static final int MAX_SCHEDULES_PER_UNIVERSITY = 2;
     static final int MAX_ALL_UNIVERSITY_SCHEDULES = 14;
@@ -60,6 +64,7 @@ public class AdmissionsFactSearchService {
     private final AdmissionsTypeRepository typeRepository;
     private final AdmissionsScheduleRepository scheduleRepository;
     private final AdmissionsPriorResultRepository priorResultRepository;
+    private final AdmissionsSusiMinimumRepository susiMinimumRepository;
 
     /**
      * @param evidence 근거(없으면 빈 목록)
@@ -93,6 +98,7 @@ public class AdmissionsFactSearchService {
         List<Evidence> out = new ArrayList<>();
         // 지난해 입시결과는 질문 학년도와 상관없이(올해 자료와 다른 학년도임을 표시해) 맨 앞에 둔다.
         out.addAll(searchPriorResults(question, parsed));
+        out.addAll(searchSusiMinimums(question, parsed, years));
         out.addAll(searchDepartments(question, parsed, years));
         out.addAll(searchTypes(question, parsed, years));
         ScheduleCoverage coverage = null;
@@ -106,6 +112,100 @@ public class AdmissionsFactSearchService {
 
         boolean askedUnpublished = years.contains(2028) && !years.contains(2027);
         return new FactResult(out, parsed, years, askedUnpublished && out.isEmpty(), coverage);
+    }
+
+    // ── 수시 수능최저학력기준 ─────────────────────────────────────────
+
+    /**
+     * 질문에 '최저'와 대학이 있으면 그 대학의 승인된(ACTIVE) 수능최저 규칙을 원문 문장 그대로 근거로 만든다.
+     * 전형·모집단위를 말했으면 그 규칙만, 아니면 앞에서부터 {@value #MAX_MINIMUM_RULES}개까지.
+     * 확인 필요(needs_review) 규칙은 원문과 사유를 함께 넣고 '판정하지 않음'을 밝힌다.
+     */
+    List<Evidence> searchSusiMinimums(String question, AdmissionsQueryParser.Parsed p, Set<Integer> years) {
+        if (p.universities().isEmpty() || question == null || !question.contains("최저")) return List.of();
+        List<AdmissionsSusiMinimum> rules = new ArrayList<>();
+        for (AdmissionsUniversity u : universityRepository.findAll()) {
+            if (!p.universities().contains(u.getName())) continue;
+            for (Integer y : years) {
+                rules.addAll(susiMinimumRepository.findByUniversityUniversityIdAndAcademicYearAndStatus(
+                        u.getUniversityId(), y, KnowledgeStatus.ACTIVE));
+            }
+        }
+        List<AdmissionsSusiMinimum> usable = rules.stream()
+                .filter(r -> approvedSource(r.getSource(), r.getAcademicYear()))
+                .filter(r -> campusAllowed(question, r.getSource(), r.getLabel()))
+                .toList();
+        List<AdmissionsSusiMinimum> mentioned = usable.stream().filter(r -> minimumMentioned(question, r)).toList();
+        return (mentioned.isEmpty() ? usable : mentioned).stream()
+                .sorted(java.util.Comparator.comparing(AdmissionsSusiMinimum::getMinimumId))
+                .limit(MAX_MINIMUM_RULES)
+                .map(AdmissionsFactSearchService::minimumEvidence)
+                .toList();
+    }
+
+    /** 질문이 규칙의 전형명 또는 모집단위를 가리키는지. */
+    static boolean minimumMentioned(String question, AdmissionsSusiMinimum r) {
+        for (String t : jsonStrings(r.getTypeNames())) {
+            if (minimumTypeMentioned(question, t)) return true;
+        }
+        for (String d : jsonStrings(r.getDepartmentNames())) {
+            if (AdmissionsQueryParser.mentionsDepartment(question, d)) return true;
+        }
+        return false;
+    }
+
+    private static final Set<String> BROAD_TYPE_WORDS = Set.of("학생부교과", "학생부종합", "학생부", "수시", "정시", "교과", "종합");
+
+    /**
+     * 전형명이 질문에 언급됐는지(수능최저용). 세부 이름(예: "학생부종합(추천형)"의 "추천형")이 있으면 그것이 맞아야 한다.
+     * "학생부종합"만 맞는 것으로는 서류형·추천형을 가르지 못하기 때문이다. 세부 이름이 없는 전형명은 입시결과와 같은 규칙.
+     */
+    static boolean minimumTypeMentioned(String question, String typeName) {
+        if (question == null || typeName == null) return false;
+        String q = question.replaceAll("\\s+", "");
+        if (q.contains(typeName.replaceAll("\\s+", ""))) return true;
+        List<String> detail = new ArrayList<>();
+        for (String piece : typeName.split("[\\[\\]()/\\s·,_]+")) {
+            String p = piece.replaceAll("전형$", "").trim();
+            if (p.length() >= 2 && !BROAD_TYPE_WORDS.contains(p)) detail.add(p);
+        }
+        if (detail.isEmpty()) return priorTypeMentioned(question, typeName);
+        return detail.stream().anyMatch(q::contains);
+    }
+
+    static Evidence minimumEvidence(AdmissionsSusiMinimum r) {
+        String types = String.join(", ", jsonStrings(r.getTypeNames()));
+        String scope = r.getUnitScopeText() == null || r.getUnitScopeText().isBlank() ? "" : " / 적용 모집단위: " + r.getUnitScopeText();
+        StringBuilder ex = new StringBuilder();
+        ex.append("전형: ").append(types.isEmpty() ? r.getLabel() : types).append(scope).append("\n");
+        if (r.getRuleKind() == AdmissionsSusiMinimum.RuleKind.NO_MINIMUM) {
+            ex.append("수능최저학력기준 없음. 원문: ").append(r.getRawText());
+        } else {
+            ex.append("수능최저학력기준 원문: ").append(r.getRawText());
+            if (r.getRequiredAreasText() != null && !r.getRequiredAreasText().isBlank()) {
+                ex.append("\n응시 조건 원문: ").append(r.getRequiredAreasText());
+            }
+        }
+        if (r.getEvidencePages() != null && !r.getEvidencePages().isBlank()) {
+            ex.append("\n요강 근거: ").append(r.getEvidencePages().replaceAll("[\\[\\]\\s]", "")).append("쪽");
+        }
+        if (r.getNeedsReviewReason() != null && !r.getNeedsReviewReason().isBlank()) {
+            ex.append("\n원문 확인 필요: ").append(r.getNeedsReviewReason())
+                    .append(" — 이 규칙으로는 충족 여부를 판정하지 않는다.");
+        }
+        String title = r.getUniversity().getName() + " " + r.getAcademicYear() + "학년도 수시 수능최저학력기준: " + r.getLabel();
+        return evidence("susimin", r.getMinimumId(), r.getAcademicYear(), title, ex.toString(), r.getSource());
+    }
+
+    private static List<String> jsonStrings(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            List<String> out = new ArrayList<>();
+            for (JsonNode n : MAPPER.readTree(json)) if (n.isTextual() && !n.asText().isBlank()) out.add(n.asText());
+            return out;
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     // ── 지난해 입시결과 ─────────────────────────────────────────────

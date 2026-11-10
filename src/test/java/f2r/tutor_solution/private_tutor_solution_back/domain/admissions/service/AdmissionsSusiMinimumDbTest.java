@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 @Import({JpaConfig.class, AdmissionsDataLoader.class, AdmissionsActivationService.class, AdmissionsJeongsiScoreService.class,
-        AdmissionsSusiMinimumService.class, AdmissionsSusiMinimumDbTest.JacksonTestConfig.class})
+        AdmissionsSusiMinimumService.class, AdmissionsFactSearchService.class, AdmissionsSusiMinimumDbTest.JacksonTestConfig.class})
 @TestPropertySource(properties = {
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
@@ -82,6 +83,7 @@ class AdmissionsSusiMinimumDbTest {
     @Autowired AdmissionsDataLoader loader;
     @Autowired AdmissionsActivationService activation;
     @Autowired AdmissionsSusiMinimumService service;
+    @Autowired AdmissionsFactSearchService facts;
     @Autowired AdmissionsSusiMinimumRepository minimums;
     @Autowired AdmissionsJeongsiFormulaRepository formulas;
     @Autowired AdmissionsUniversityRepository universities;
@@ -219,5 +221,72 @@ class AdmissionsSusiMinimumDbTest {
                 .isInstanceOf(AdmissionsJeongsiScoreService.InvalidScoreRequestException.class).hasMessageContaining("KOR_STD");
         assertThatThrownBy(() -> service.check("테스트한양대학교", 2027, null, null, Map.of("ENG_GRD", 10.0)))
                 .isInstanceOf(AdmissionsJeongsiScoreService.InvalidScoreRequestException.class).hasMessageContaining("ENG_GRD");
+    }
+
+    // ── 상담 근거: 수능최저 원문 ─────────────────────────────────────
+
+    private List<AdmissionsResearchService.Evidence> minimumEvidence(String question) {
+        return facts.search(question, null).evidence().stream()
+                .filter(e -> e.getRefId() != null && e.getRefId().startsWith("susimin:")).toList();
+    }
+
+    private static String text(List<AdmissionsResearchService.Evidence> ev) {
+        StringBuilder sb = new StringBuilder();
+        for (var e : ev) sb.append(e.getTitle()).append('\n').append(e.getExcerpt()).append('\n');
+        return sb.toString();
+    }
+
+    @Test
+    @DisplayName("given 승인된 수능최저 when 전형을 말해 최저 기준을 물으면 then 그 전형 규칙만 원문 문장·응시 조건·근거 쪽으로 나온다")
+    void minimumQuestion_returnsRawTextForMentionedType() throws Exception {
+        // given
+        loader.loadSeed(SEED);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        // when
+        var ev = minimumEvidence("테스트한양대학교 학생부종합(추천형) 수능최저 기준 알려줘");
+        // then: 추천형 두 규칙(전체·의예과)만, 서류형·논술은 제외
+        assertThat(ev).hasSize(2);
+        String all = text(ev);
+        assertThat(ev.get(0).getTitle()).contains("테스트한양대학교 2027학년도 수시 수능최저학력기준");
+        assertThat(all).contains("3개 영역 등급합 7 이내", "등급합 4 이내", "응시 조건 원문: 국어, 수학, 영어, 탐구(2과목)", "요강 근거: 31쪽")
+                .doesNotContain("미적용", "계열별 기준");
+        assertThat(ev.get(0).getRefUrl()).isEqualTo("https://example.test/susi.pdf");
+    }
+
+    @Test
+    @DisplayName("given 최저 없는 전형·확인 필요 규칙 when 최저를 물으면 then '없음'과 '판정하지 않음'을 원문과 함께 밝힌다")
+    void noMinimumAndNeedsReview_areStatedWithRawText() throws Exception {
+        // given
+        loader.loadSeed(SEED);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        // when
+        var docs = minimumEvidence("테스트한양대학교 서류형 수능최저 있어?");
+        var all = minimumEvidence("테스트한양대학교 수능최저 알려줘");
+        // then
+        assertThat(docs).hasSize(1);
+        assertThat(docs.get(0).getExcerpt()).contains("수능최저학력기준 없음. 원문: 수능최저학력기준 : 미적용 (32쪽)");
+        assertThat(all).hasSize(4);
+        assertThat(text(all)).contains("원문 확인 필요: 계열별 모집단위 연결 필요 — 이 규칙으로는 충족 여부를 판정하지 않는다.");
+    }
+
+    @Test
+    @DisplayName("given 수능최저 규칙 when 최저를 묻지 않거나 아직 승인 전이면 then 최저 근거를 붙이지 않는다")
+    void minimumEvidence_onlyWhenAskedAndActive() throws Exception {
+        // given: 적재만(DRAFT)
+        loader.loadSeed(SEED);
+        // when / then
+        assertThat(minimumEvidence("테스트한양대학교 학생부종합(추천형) 수능최저 기준 알려줘")).isEmpty();
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+        assertThat(minimumEvidence("테스트한양대학교 학생부종합(추천형) 모집인원 알려줘")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("given 세부 전형명 when 최저용 전형 매칭을 하면 then '학생부종합'만 맞는 것으로는 다른 세부 전형을 고르지 않는다")
+    void minimumTypeMentioned_requiresDetailName() {
+        // given / when / then
+        assertThat(AdmissionsFactSearchService.minimumTypeMentioned("고려대 학교추천 최저", "학생부교과(학교추천전형)")).isTrue();
+        assertThat(AdmissionsFactSearchService.minimumTypeMentioned("학생부종합(추천형) 최저", "학생부종합(서류형)")).isFalse();
+        assertThat(AdmissionsFactSearchService.minimumTypeMentioned("학종 최저", "학생부종합")).isTrue();
+        assertThat(AdmissionsFactSearchService.minimumTypeMentioned("교과 최저", "학생부교과(고교추천전형)")).isFalse();
     }
 }
