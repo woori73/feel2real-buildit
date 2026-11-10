@@ -62,15 +62,21 @@ class EasyTemplateContractTest {
   }
 
   @Test
-  @DisplayName("자동수집 연결 화면은 등록·지금 수집·해제·이력 영역을 갖고 비밀번호·인증서·OTP 입력칸이 없다")
+  @DisplayName("자동수집 연결 화면은 한 줄 상태·기관 버튼 4개·연결된 기관·파일 넣기·고급 설정·사용안내를 갖고 비밀번호·인증서·OTP 입력칸이 없다")
   void connections_structure() {
     // when
     String html = engine().process("easy/connections", new Context());
     // then
     assertThat(html)
-        .contains("id=\"organization\"", "id=\"account\"", "id=\"connectedId\"",
-            "id=\"connections\"", "id=\"runs\"", "/js/easy_connections.js", "F2R 장부")
+        .contains("id=\"statusLine\"", "data-cat=\"HOMETAX\"", "data-cat=\"CARD\"", "data-cat=\"BANK\"",
+            "data-cat=\"CREFIA\"", "id=\"connTable\"", "id=\"fileCard\"", "id=\"runs\"",
+            "id=\"organization\"", "id=\"account\"", "/js/easy_connections_view.js",
+            "/js/easy_connections.js", "F2R 장부", "사용안내")
         .doesNotContain("id=\"otp\"", "certPassword");
+    // 개발용 연결 ID 입력칸은 기본 접힘 「고급 설정」 안에만 있다.
+    String advanced = html.substring(html.indexOf("id=\"advanced\""));
+    assertThat(advanced).contains("id=\"connectedId\"");
+    assertThat(html.substring(0, html.indexOf("id=\"advanced\""))).doesNotContain("id=\"connectedId\"", "CODEF");
     // 공통 상단 메뉴(관리자 계정 변경 창)를 뺀 본문에는 비밀번호 입력칸이 없어야 한다.
     String body = html.substring(html.indexOf("<div class=\"easy-container\">"));
     assertThat(body).doesNotContain("type=\"password\"");

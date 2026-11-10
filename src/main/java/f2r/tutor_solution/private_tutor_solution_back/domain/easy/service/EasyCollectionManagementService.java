@@ -18,6 +18,11 @@ public class EasyCollectionManagementService {
   private final EasyCollectionProviderReadinessPolicy readinessPolicy;
   private final EasyCollectionSchedulerService schedulerService;
 
+  /** 화면 표시용: 직접 로그인 수집 연결의 기관 코드를 원본에서 읽는다. */
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyCollectionRawRecordRepository
+      rawRepository;
+
   /** 은행 연결 등록용 수집원 카탈로그. */
   @org.springframework.beans.factory.annotation.Autowired(required = false)
   private EasyCollectionSourceRepository sourceRepository;
@@ -203,8 +208,16 @@ public class EasyCollectionManagementService {
         .orElse(null);
     boolean hasCheckpoint = checkpointRepository
         .existsByConnection_ConnectionId(connection.getConnectionId());
+    String siteRaw = null;
+    if (rawRepository != null && latest != null
+        && EasyCollectionIngestService.SITE_ADAPTER_CODE.equals(latest.getAdapterCode())) {
+      siteRaw = rawRepository.findFirstByRun_RunIdOrderByRawIdAsc(latest.getRunId())
+          .map(f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCollectionRawRecord::getRawPayload)
+          .orElse(null);
+    }
+    long savedTotal = runRepository.sumLedgerSavedByConnection(connection.getConnectionId());
     return EasyCollectionManagementResponse.from(
-        connection, latest, readiness(connection), hasCheckpoint);
+        connection, latest, readiness(connection), hasCheckpoint, siteRaw, savedTotal);
   }
 
   private EasyCollectionConnection requireOwnedConnection(Long businessId, Long connectionId) {

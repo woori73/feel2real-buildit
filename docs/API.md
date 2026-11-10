@@ -4663,6 +4663,10 @@ CODEF 정식 사용은 B2B 계약·견적이 필요하므로(무료는 데모 �
   - 같은 `idempotencyKey` 재전송은 이전 run을 그대로 돌려주고, 같은 키에 내용이 다르면 거절한다. 같은 자료를 새 키로 다시 보내면 원본 키 중복으로 장부에 다시 들어가지 않는다. 응답 run의 `adapterCode`는 `MCP_SITE`.
 - 두 도구는 새 동의 항목 `easy-collect:write`와 ADMIN을 모두 요구한다(민감 동의 경고 대상, 운영 기본 허용 목록에 추가, 연결 grant당 분당 30회). 기존 `easy:read` 토큰에 자동 추가하지 않으며 이체·삭제·승인 도구는 없다. 서버는 기관 사이트에 접속하지 않고 비밀번호·인증서·OTP를 받는 칸도 없다.
 
+### EASY 자동수집 연결 화면 단순화 — 표시용 응답 필드 (2026-11-10)
+
+`GET /api/admin/easy/collections/connections` 응답에 화면 표시용 필드 4개를 더했다(저장·수집·분류 동작 변경 없음): `latestRunAdapterCode`(최근 실행 방식: `MCP_SITE`=직접 로그인 수집, `FILE_CSV` 등), `siteCode`·`siteAccountRef`(직접 로그인 수집일 때만, 최근 실행의 첫 원본에서 읽은 기관 코드와 불투명 계좌 참조), `ledgerSavedTotal`(이 연결로 장부에 저장된 건수 합계). `/easy/connections` 화면은 이 값으로 작업용 이름(`KB_CARD_202609`, `MS_…`)을 "KB국민카드 · 2026년 9월 파일", "KB국민은행"처럼 바꿔 보여 주며 저장된 값은 바꾸지 않는다.
+
 ### EASY 자동수집 Phase 4 실행 안전 계약
 
 - MANUAL과 SCHEDULED provider 수집은 동일한 DB-backed execution gate를 통과한다.

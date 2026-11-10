@@ -37,11 +37,26 @@ public record EasyCollectionManagementResponse(
     /** 화면 표시용 인증 상태: NOT_REGISTERED / REGISTERED / NEEDS_REAUTH / DISCONNECTED. */
     String authStatus,
     Integer latestRunLedgerSavedCount,
-    Integer latestRunLedgerReviewCount
+    Integer latestRunLedgerReviewCount,
+    /** 화면 표시용: 최근 실행의 수집 방식(예: MCP_SITE = 직접 로그인 수집, CSV_FILE). */
+    String latestRunAdapterCode,
+    /** 화면 표시용: 직접 로그인 수집이면 기관 코드(예: KB_BANK). 아니면 null. */
+    String siteCode,
+    /** 화면 표시용: 직접 로그인 수집이면 사용자가 정한 계좌 참조(불투명 이름). 아니면 null. */
+    String siteAccountRef,
+    /** 화면 표시용: 이 연결로 장부에 저장된 건수 합계. */
+    long ledgerSavedTotal
 ) {
   public static EasyCollectionManagementResponse from(EasyCollectionConnection connection,
       EasyCollectionRun latestRun, EasyCollectionProviderReadiness readiness,
       boolean checkpointExists) {
+    return from(connection, latestRun, readiness, checkpointExists, null, 0L);
+  }
+
+  /** @param siteRawPayload 직접 로그인 수집 실행의 첫 원본 JSON(기관 코드·계좌 참조 표시용), 없으면 null */
+  public static EasyCollectionManagementResponse from(EasyCollectionConnection connection,
+      EasyCollectionRun latestRun, EasyCollectionProviderReadiness readiness,
+      boolean checkpointExists, String siteRawPayload, long ledgerSavedTotal) {
     return new EasyCollectionManagementResponse(
         connection.getConnectionId(),
         connection.getBusiness().getBusinessId(),
@@ -66,7 +81,11 @@ public record EasyCollectionManagementResponse(
         KstTime.toKst(connection.getDisconnectedAt()),
         authStatus(connection),
         latestRun == null ? null : latestRun.getLedgerSavedCount(),
-        latestRun == null ? null : latestRun.getLedgerReviewCount());
+        latestRun == null ? null : latestRun.getLedgerReviewCount(),
+        latestRun == null ? null : latestRun.getAdapterCode(),
+        configField(siteRawPayload, "site"),
+        configField(siteRawPayload, "account_ref"),
+        ledgerSavedTotal);
   }
 
   static String authStatus(EasyCollectionConnection connection) {
