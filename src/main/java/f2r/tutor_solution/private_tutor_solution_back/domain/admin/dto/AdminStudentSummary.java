@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.admin.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Student;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,6 @@ public record AdminStudentSummary(
         student.getGrade(),
         sourceCount,
         conversationCount,
-        student.getCreatedAt());
+        KstTime.toKst(student.getCreatedAt()));
   }
 }

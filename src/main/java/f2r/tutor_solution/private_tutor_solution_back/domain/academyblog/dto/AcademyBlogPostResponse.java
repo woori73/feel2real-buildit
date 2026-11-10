@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.entity.AcademyBlogPost;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.entity.AcademyBlogPostStatus;
 
@@ -47,14 +48,14 @@ public record AcademyBlogPostResponse(
         post.getMetaDescription(),
         post.getStatus(),
         post.isVisible(),
-        post.getPublishedAt(),
-        post.getUpdatedAt(),
+        KstTime.toKst(post.getPublishedAt()),
+        KstTime.toKst(post.getUpdatedAt()),
         "/academies/" + academySlug + "/posts/" + post.getSlug(),
         likeCount,
         recentLikeCount,
         likedByMe,
         likeAllowed,
-        likeAllowedUntil,
+        KstTime.toKst(likeAllowedUntil),
         sources
     );
   }

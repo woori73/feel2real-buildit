@@ -1,6 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.chart.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorDetail;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorPage;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartPublicEducatorSummary;
@@ -162,7 +163,7 @@ public class ChartEducatorSearchService {
         status,
         "RESEARCH_PENDING".equals(status),
         blankToNull(str(row.get("profile_image_url"))),
-        lastResearchedAt(dateTime(row.get("updated_at")), dateTime(row.get("discovered_at")), List.of()));
+        KstTime.toKst(lastResearchedAt(dateTime(row.get("updated_at")), dateTime(row.get("discovered_at")), List.of())));
   }
 
   ChartPublicEducatorDetail toDetail(Map<String, Object> row, List<Map<String, Object>> activityRows) {
@@ -217,7 +218,7 @@ public class ChartEducatorSearchService {
         blankToNull(str(row.get("profile_image_url"))),
         evidence,
         blankToNull(str(row.get("discovery_reason"))),
-        lastResearchedAt(dateTime(row.get("updated_at")), dateTime(row.get("discovered_at")), researchedAts),
+        KstTime.toKst(lastResearchedAt(dateTime(row.get("updated_at")), dateTime(row.get("discovered_at")), researchedAts)),
         status,
         pending,
         disclaimer(pending));

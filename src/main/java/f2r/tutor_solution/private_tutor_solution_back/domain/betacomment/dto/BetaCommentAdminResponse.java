@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.betacomment.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.betacomment.entity.BetaComment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.betacomment.entity.BetaCommentHighlight;
 import f2r.tutor_solution.private_tutor_solution_back.domain.betacomment.entity.BetaCommentStatus;
@@ -28,6 +29,6 @@ public record BetaCommentAdminResponse(
         comment.getStatus(),
         highlight,
         highlight == null ? null : highlight.getLabel(),
-        comment.getCreatedAt());
+        KstTime.toKst(comment.getCreatedAt()));
   }
 }

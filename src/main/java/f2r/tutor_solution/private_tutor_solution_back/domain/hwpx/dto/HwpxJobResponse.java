@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.hwpx.entity.HwpxJob;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -25,7 +26,7 @@ public class HwpxJobResponse {
     this.progress = job.getProgress();
     this.currentStep = job.getCurrentStep();
     this.error = job.getError();
-    this.createdAt = job.getCreatedAt();
-    this.updatedAt = job.getUpdatedAt();
+    this.createdAt = KstTime.toKst(job.getCreatedAt());
+    this.updatedAt = KstTime.toKst(job.getUpdatedAt());
   }
 }

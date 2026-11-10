@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.dto.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeItem;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstartknowledge.entity.NewstartKnowledgeStatusLog;
@@ -350,7 +351,7 @@ public class NewstartKnowledgeService {
                         .toStatus(l.getToStatus())
                         .changedBy(l.getChangedBy())
                         .changeReason(l.getChangeReason())
-                        .createdAt(l.getCreatedAt())
+                        .createdAt(KstTime.toKst(l.getCreatedAt()))
                         .build())
                 .toList();
     }
@@ -522,7 +523,7 @@ public class NewstartKnowledgeService {
 
     /** 내보내기 전 확인용 manifest 미리보기 (DB 카운트 기준, 파일 미생성). */
     public NewstartRagExportManifest buildRagExportPreview() {
-        String now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        String now = KstTime.toKst(LocalDateTime.now()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         List<NewstartRagExportManifest.FileStats> files = new ArrayList<>();
         for (NewstartKnowledgeItem.SourceType type : RAG_EXPORT_TYPES) {
             long count = knowledgeRepository.countByStatusAndSourceType(
@@ -603,7 +604,7 @@ public class NewstartKnowledgeService {
                 zip.closeEntry();
             }
             NewstartRagExportManifest manifest = NewstartRagExportManifest.of(
-                    LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), files);
+                    KstTime.toKst(LocalDateTime.now()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), files);
             zip.putNextEntry(new ZipEntry("manifest.json"));
             zip.write(objectMapper.writeValueAsBytes(manifest));
             zip.closeEntry();
@@ -675,8 +676,8 @@ public class NewstartKnowledgeService {
                 .relatedRuleIds(item.getRelatedRuleIds())
                 .createdBy(item.getCreatedBy())
                 .updatedBy(item.getUpdatedBy())
-                .createdAt(item.getCreatedAt())
-                .updatedAt(item.getUpdatedAt())
+                .createdAt(KstTime.toKst(item.getCreatedAt()))
+                .updatedAt(KstTime.toKst(item.getUpdatedAt()))
                 .build();
     }
 }

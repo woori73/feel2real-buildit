@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.lessoncommunity.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.lessoncommunity.entity.LessonCommunityComment;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 
@@ -29,8 +30,8 @@ public record LessonCommunityCommentResponse(
         c.getContent(),
         c.getAuthor().getRole() == Role.ADMIN,
         authorUserId.equals(currentUserId),
-        c.getCreatedAt(),
-        c.getUpdatedAt(),
+        KstTime.toKst(c.getCreatedAt()),
+        KstTime.toKst(c.getUpdatedAt()),
         attachments);
   }
 }

@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.chart.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartActivityResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.dto.ChartEducatorResponse;
 import f2r.tutor_solution.private_tutor_solution_back.domain.chart.entity.ChartCandidate;
@@ -103,7 +104,8 @@ public class ChartPublicService {
     List<Map<String, Object>> discovered = rows.stream()
         .filter(r -> "DISCOVERED".equals(r.get("entryType")) || "PROMISING".equals(r.get("entryType"))).toList();
 
-    Object publishedAt = publication.get("published_at");
+    // published_at은 서버 시계(운영 UTC)로 기록돼 있어 화면용 한국 시간으로 바꾼다.
+    Object publishedAt = toKst(publication.get("published_at"));
     Map<String, Object> response = new LinkedHashMap<>();
     response.put("publicationId", publicationId);
     response.put("weeklyUpdateDate", publication.get("week_start"));
@@ -128,6 +130,12 @@ public class ChartPublicService {
     } catch (Exception e) {
       return List.of();
     }
+  }
+
+  static Object toKst(Object value) {
+    if (value instanceof java.time.LocalDateTime ldt) return KstTime.toKst(ldt);
+    if (value instanceof java.sql.Timestamp ts) return KstTime.toKst(ts.toLocalDateTime());
+    return value;
   }
 
   private String updatedLabel(Object publishedAt) {

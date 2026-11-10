@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.publishing.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.publishing.entity.PublishingVersion;
 import java.time.LocalDateTime;
 
@@ -11,6 +12,6 @@ public record VersionResponse(
 ) {
 
   public static VersionResponse from(PublishingVersion v) {
-    return new VersionResponse(v.getId(), v.getLabel(), v.getCreatedAt());
+    return new VersionResponse(v.getId(), v.getLabel(), KstTime.toKst(v.getCreatedAt()));
   }
 }

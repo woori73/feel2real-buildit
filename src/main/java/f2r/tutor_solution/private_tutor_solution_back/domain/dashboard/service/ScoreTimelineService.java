@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.dashboard.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.AuthenticatedUserResolver;
 import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.entity.Conversation;
 import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.repository.ConversationRepository;
@@ -110,6 +111,6 @@ public class ScoreTimelineService {
         totalPoints,
         earnedPoints,
         percent,
-        s.getConfirmedAt());
+        KstTime.toKst(s.getConfirmedAt()));
   }
 }

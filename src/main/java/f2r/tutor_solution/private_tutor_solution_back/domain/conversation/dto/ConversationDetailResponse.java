@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.conversation.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.entity.Conversation;
 import f2r.tutor_solution.private_tutor_solution_back.domain.conversation.entity.ConversationMessage;
 import f2r.tutor_solution.private_tutor_solution_back.domain.source.entity.Source;
@@ -71,7 +72,7 @@ public record ConversationDetailResponse(
 
   public record MessageInfo(Long messageId, String role, String content, LocalDateTime createdAt) {
     static MessageInfo from(ConversationMessage m) {
-      return new MessageInfo(m.getMessageId(), m.getRole().name(), m.getContent(), m.getCreatedAt());
+      return new MessageInfo(m.getMessageId(), m.getRole().name(), m.getContent(), KstTime.toKst(m.getCreatedAt()));
     }
   }
 
@@ -94,7 +95,7 @@ public record ConversationDetailResponse(
     return new ConversationDetailResponse(
         conv.getConversationId(),
         conv.getTitle(),
-        conv.getCreatedAt(),
+        KstTime.toKst(conv.getCreatedAt()),
         StudentInfo.from(conv),
         sources.stream()
             .map(s -> SourceInfo.from(s, pageCounts.getOrDefault(s.getSourceId(), 1)))

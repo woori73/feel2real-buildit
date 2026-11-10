@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.wikihome.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.wiki.support.PublicDisplayName;
@@ -43,7 +44,7 @@ public class WikiHomeFeedService {
     return userRepository
         .findByRoleNotOrderByCreatedAtDesc(Role.ADMIN, PageRequest.of(0, RECENT_MEMBER_COUNT))
         .stream()
-        .map(u -> new RecentMemberItem(PublicDisplayName.mask(u.getName()), u.getCreatedAt()))
+        .map(u -> new RecentMemberItem(PublicDisplayName.mask(u.getName()), KstTime.toKst(u.getCreatedAt())))
         .toList();
   }
 

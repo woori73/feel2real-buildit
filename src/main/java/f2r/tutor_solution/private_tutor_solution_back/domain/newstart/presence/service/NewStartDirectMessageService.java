@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.newstart.presence.service;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.presence.dto.DmMessageView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.newstart.presence.entity.NewStartDirectMessage;
@@ -171,6 +172,6 @@ public class NewStartDirectMessageService {
         receiverNickname,
         row.getMessage(),
         Boolean.TRUE.equals(row.getIsRead()),
-        row.getCreatedAt());
+        KstTime.toKst(row.getCreatedAt()));
   }
 }

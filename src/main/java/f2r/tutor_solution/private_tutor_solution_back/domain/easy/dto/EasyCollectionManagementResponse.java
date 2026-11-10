@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.easy.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.*;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyCollectionProviderReadiness;
 import java.time.LocalDateTime;
@@ -40,11 +41,11 @@ public record EasyCollectionManagementResponse(
         connection.getStatus() == EasyCollectionConnectionStatus.NEEDS_REAUTH,
         connection.getConnectionRef() != null && !connection.getConnectionRef().isBlank(),
         readiness,
-        connection.getLastSuccessAt(),
+        KstTime.toKst(connection.getLastSuccessAt()),
         latestRun == null ? null : latestRun.getRunId(),
         latestRun == null ? null : latestRun.getStatus().name(),
-        latestRun == null ? null : latestRun.getStartedAt(),
-        latestRun == null ? null : latestRun.getCompletedAt(),
+        latestRun == null ? null : KstTime.toKst(latestRun.getStartedAt()),
+        latestRun == null ? null : KstTime.toKst(latestRun.getCompletedAt()),
         checkpointExists);
   }
 }

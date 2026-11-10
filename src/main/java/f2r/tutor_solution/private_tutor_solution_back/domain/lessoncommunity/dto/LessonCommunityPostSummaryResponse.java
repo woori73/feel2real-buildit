@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.lessoncommunity.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.lessoncommunity.entity.LessonCommunityPost;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 
@@ -38,7 +39,7 @@ public record LessonCommunityPostSummaryResponse(
         p.getAuthor().getUserId().equals(currentUserId),
         commentCount,
         attachmentCount,
-        p.getCreatedAt(),
-        p.getUpdatedAt());
+        KstTime.toKst(p.getCreatedAt()),
+        KstTime.toKst(p.getUpdatedAt()));
   }
 }

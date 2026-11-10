@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.lessoncommunity.dto;
 
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.LessonProduct;
 import f2r.tutor_solution.private_tutor_solution_back.domain.lessoncommunity.entity.LessonCommunityPost;
 
@@ -48,6 +49,6 @@ public record AdminLessonCommunitySummaryResponse(
         latestPost == null ? null : latestPost.getTitle(),
         latestPost == null ? null : latestPost.getPostType().name(),
         latestPost == null ? null : latestPost.getAuthor().getDisplayName(),
-        latestPost == null ? null : latestPost.getCreatedAt());
+        latestPost == null ? null : KstTime.toKst(latestPost.getCreatedAt()));
   }
 }
