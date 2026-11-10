@@ -24,6 +24,10 @@
     .msg { display: none; margin-top: 8px; font-size: 13px; }
     #formMsg.err, #listMsg.err { color: #c53030; }
     .form-group input, .form-group select { width: 100%; }
+    #sites td:first-child, #sites td:nth-child(5), #sites th { white-space: nowrap; }
+    #sites td:nth-child(2) { min-width: 8em; }
+    #sites tr.site-note td { white-space: normal; font-size: 12px; color: #744210; padding-top: 0; }
+    #sites tr:has(+ tr.site-note) td { border-bottom: none; }
   </style>
 </head>
 <body>
@@ -68,6 +72,14 @@
     <div class="section-head"><h2>연결 목록</h2><span class="s" id="connCount"></span></div>
     <div id="connections"></div>
     <p class="msg" id="listMsg"></p>
+  </div>
+
+  <div class="easy-card" id="sitesCard">
+    <div class="section-head"><h2>기관 사이트에서 직접 받기 (MCP)</h2><span class="s" id="siteCount"></span></div>
+    <p class="desc">유료 수집 계약 없이 쓰는 방법입니다. 아래 공식 주소에 <b>직접 로그인</b>해 거래내역 파일을 내려받으면, MCP로 연결한 AI가 행을 정리해 F2R 장부에 저장합니다(도구: easy_collection_sites → save_easy_site_rows, 동의 항목 easy-collect:write). 사이트 화면의 조회 건수·금액 합계와 맞지 않으면 저장하지 않습니다.</p>
+    <ul class="desc" id="siteRules"></ul>
+    <div style="overflow-x:auto"><table class="run-table" id="sites"></table></div>
+    <p class="msg" id="siteMsg"></p>
   </div>
 
   <div class="easy-card" id="historyCard" style="display:none">

@@ -28,6 +28,9 @@ public class McpGateway {
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.studio.AcademyMoveController> academyMove;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService> easySiteCollection;
+
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
       Set.of("submit_studio_review", "upload_studio_asset", "create_studio_task", "update_studio_task");
@@ -66,6 +69,7 @@ public class McpGateway {
           tool -> {
             String name = (String) tool.get("name");
             if (name.equals("read_academy_move") || name.equals("post_academy_move")) return !oauth.scopeAllowed(McpOAuth.ACADEMY_MOVE_WRITE);
+            if (EASY_SITE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.EASY_COLLECT_WRITE);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
               return !oauth.scopeAllowed("studio:read");
@@ -145,6 +149,17 @@ public class McpGateway {
     out.add(tool("read_academy_move","학원이사 이슈별 글·AI 정리·대화를 읽습니다. 관리자와 academy-move:write 별도 동의가 필요합니다. 원문 파일은 제외합니다.",Map.of(),List.of()));
     out.add(writeTool("post_academy_move","학원이사 글을 해당 이슈에 올리고 AI가 핵심·미확정 사항·다음 행동을 정리해 함께 답합니다. 같은 idempotencyKey 재시도는 중복 저장하지 않습니다. 관리자와 academy-move:write 별도 동의가 필요합니다.",
         Map.of("title",string(),"content",string(),"issue",Map.of("type","string","enum",List.of("원상복구","교습소 전환","명칭·로고")),"idempotencyKey",string()),List.of("content","issue","idempotencyKey")));
+
+    out.add(tool("easy_collection_sites","F2R 장부 자료 수집용 은행·카드사·홈택스·여신금융협회 공식 주소, 내려받기 순서, 안전 규칙, 저장할 사업체 목록을 읽습니다."
+        + " 로그인·인증은 사용자 본인이 직접 하며 비밀번호·인증서 암호·OTP를 묻거나 입력하지 않습니다. 관리자와 easy-collect:write 별도 동의가 필요합니다.",Map.of(),List.of()));
+    out.add(writeTool("save_easy_site_rows","사용자가 직접 로그인한 기관 사이트에서 내려받은 거래를 행 단위로 F2R 장부에 저장합니다(원본 보존·중복 제외·자동분류·예외 검토)."
+        + " 사이트에 표시된 조회 건수(expectedCount)와 금액 합계(expectedTotal, 입출금을 빼지 않고 모두 더한 값)가 rows와 다르면 아무것도 저장하지 않습니다."
+        + " rows 항목: {date:YYYY-MM-DD, direction:IN|OUT, amount:원 단위 양의 정수, counterparty, description, approvalNo, balance, cancelOfDate(카드 취소의 원승인일)}. 카드 취소는 사용 IN·매출 OUT으로 보내며 approvalNo+cancelOfDate가 있으면 원거래와 연결됩니다. 계좌·카드 전체 번호는 넣지 않습니다."
+        + " 같은 idempotencyKey 재시도는 다시 저장하지 않습니다. 관리자와 easy-collect:write 별도 동의가 필요합니다.",
+        Map.of("businessId",integer(1,Integer.MAX_VALUE),"siteCode",string(),"dataset",Map.of("type","string","enum",List.of("BANK_ACCOUNT","CARD_PURCHASE","CARD_SALES")),
+            "accountRef",string(),"from",string(),"to",string(),"expectedCount",integer(1,2000),"expectedTotal",Map.of("type","integer","minimum",1),
+            "idempotencyKey",string(),"rows",Map.of("type","array","maxItems",2000,"items",Map.of("type","object"))),
+        List.of("businessId","siteCode","dataset","accountRef","from","to","expectedCount","expectedTotal","idempotencyKey","rows")));
 
     out.add(
         tool(
@@ -382,6 +397,20 @@ public class McpGateway {
       return moves.mcpPost(identity.principal(),new f2r.tutor_solution.private_tutor_solution_back.domain.studio.AcademyMoveController.Post(
           text(args,"title"),text(args,"content"),text(args,"issue"),text(args,"idempotencyKey")),identity.grantId());
     }
+    if (EASY_SITE_TOOLS.contains(name)) {
+      if (!identity.scopes().contains(McpOAuth.EASY_COLLECT_WRITE) || !"ADMIN".equals(identity.principal().role()))
+        throw McpOAuth.error(403,"easy_collect_admin_consent_required");
+      rate.check("easy-collect:"+identity.grantId(),30);
+      var sites=easySiteCollection==null?null:easySiteCollection.getIfAvailable();
+      if(sites==null) throw McpOAuth.error(503,"easy_collect_unavailable");
+      if(name.equals("easy_collection_sites")) return sites.catalog(identity.principal());
+      try {
+        return sites.save(identity.principal(),siteRowsRequest(args));
+      } catch (IllegalArgumentException | IllegalStateException e) {
+        // 검증 실패 사유(건수·합계 불일치 등)는 AI가 고쳐 다시 보낼 수 있게 그대로 돌려준다. 아무것도 저장되지 않았다.
+        return Map.of("saved",false,"reason",e.getMessage());
+      }
+    }
     if (name.equals("list_catalog")) {
       requireScope(identity, "catalog");
       int offset = number(args, "offset", 0, 0, 10000), limit = number(args, "limit", 50, 1, 100);
@@ -590,6 +619,33 @@ public class McpGateway {
       default:
         throw McpOAuth.error(400, "unknown_tool");
     }
+  }
+
+  static final Set<String> EASY_SITE_TOOLS = Set.of("easy_collection_sites", "save_easy_site_rows");
+
+  static f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService.SiteRowsRequest
+      siteRowsRequest(JsonNode args) {
+    var rows = new ArrayList<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService.SiteRow>();
+    for (JsonNode row : args.path("rows")) {
+      if (!row.isObject()) throw McpOAuth.error(400, "invalid_argument_type:rows");
+      for (var field : row.propertyNames())
+        if (!Set.of("date","direction","amount","counterparty","description","approvalNo","balance","cancelOfDate").contains(field))
+          throw McpOAuth.error(400, "unknown_argument:rows." + field);
+      rows.add(new f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService.SiteRow(
+          text(row, "date"), text(row, "direction"), longValue(row, "amount"), text(row, "counterparty"),
+          text(row, "description"), text(row, "approvalNo"), longValue(row, "balance"), text(row, "cancelOfDate")));
+    }
+    return new f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService.SiteRowsRequest(
+        longValue(args, "businessId"), text(args, "siteCode"), text(args, "dataset"), text(args, "accountRef"),
+        text(args, "from"), text(args, "to"), args.path("expectedCount").isIntegralNumber() ? args.get("expectedCount").asInt() : null,
+        longValue(args, "expectedTotal"), text(args, "idempotencyKey"), rows);
+  }
+
+  private static Long longValue(JsonNode args, String key) {
+    var value = args.path(key);
+    if (value.isMissingNode() || value.isNull()) return null;
+    if (!value.isIntegralNumber()) throw McpOAuth.error(400, "invalid_argument_type:" + key);
+    return value.asLong();
   }
 
   private static String text(JsonNode args, String key) {
