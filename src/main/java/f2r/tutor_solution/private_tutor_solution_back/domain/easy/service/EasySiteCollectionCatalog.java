@@ -27,12 +27,14 @@ public final class EasySiteCollectionCatalog {
     BANK,
     CARD,
     HOMETAX,
-    CREFIA
+    CREFIA,
+    /** 수강료 청구·수납 서비스(결제선생) — 링크만 연결, 장부 저장 자료 없음. */
+    TUITION
   }
 
   /**
    * @param businessUrl 기업·개인사업자 전용 인터넷뱅킹 주소(없으면 null)
-   * @param datasets 이 사이트에서 받아 장부에 저장할 수 있는 자료
+   * @param datasets 이 사이트에서 받아 장부에 저장할 수 있는 자료(비어 있으면 링크만 연결)
    * @param note 사이트별 주의 사항(없으면 null)
    */
   public record Site(String code, Category category, String name, String url, String businessUrl,
@@ -74,7 +76,10 @@ public final class EasySiteCollectionCatalog {
               + " 두 번 잡히므로 장부에 올리지 말고 대조용으로만 봅니다."),
       new Site("CREFIA_CARDSALES", Category.CREFIA, "여신금융협회 카드매출 조회", "https://www.cardsales.or.kr/",
           null, List.of(Dataset.CARD_SALES),
-          "카드 매출(승인·매입)만 올립니다. 카드사가 통장에 넣어 준 입금(정산)은 은행 거래로 들어오며 매출로 두 번 잡지 않습니다."));
+          "카드 매출(승인·매입)만 올립니다. 카드사가 통장에 넣어 준 입금(정산)은 은행 거래로 들어오며 매출로 두 번 잡지 않습니다."),
+      new Site("PAYSSAM", Category.TUITION, "결제선생 (수강료 청구·수납)", "https://manager.payssam.kr/", null,
+          List.of(),
+          "링크만 연결해 둡니다. 결제선생 자료는 장부에 따로 올리지 않으며, 수강료는 통장에 들어온 정산 입금으로 장부에 잡힙니다."));
 
   /** 범주별 내려받기 순서(메뉴 이름은 사이트마다 조금씩 다르다). */
   private static final Map<Category, List<String>> STEPS = steps();
@@ -134,6 +139,10 @@ public final class EasySiteCollectionCatalog {
         "조회/발급 메뉴에서 사업용 신용카드 사용내역을 엽니다(카드사에서 이미 올린 카드는 건너뜁니다).",
         "기간을 고르고 내려받기를 누른 뒤 dataset=CARD_PURCHASE로 저장합니다.",
         "전자세금계산서·현금영수증 목록은 대조용으로만 보고 장부에는 올리지 않습니다."));
+    steps.put(Category.TUITION, List.of(
+        "결제선생 매니저(공식 주소)로 들어가 사용자가 직접 로그인합니다.",
+        "청구서 발송·수납 확인은 결제선생에서 합니다(F2R 장부에는 따로 올리지 않습니다).",
+        "수강료는 통장에 들어온 정산 입금으로 장부에 잡힙니다."));
     steps.put(Category.CREFIA, List.of(
         "여신금융협회 카드매출 조회 공식 주소로 들어가 가맹점 회원으로 사용자가 직접 로그인합니다.",
         "매출조회에서 승인(또는 매입) 내역과 기간을 고릅니다.",

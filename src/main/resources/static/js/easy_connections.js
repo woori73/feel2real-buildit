@@ -1,26 +1,22 @@
 /**
- * F2R 장부 — 자동수집 연결 관리(/easy/connections).
+ * F2R 장부 — 자동수집 연결(/easy/connections).
  * 권한은 서버(/api/admin/** + 사업체 접근 검증)가 최종 결정한다. 이 화면은 비밀번호·인증서·OTP를 받지 않는다.
+ * 표시 이름·상태 변환은 easy_connections_view.js(EasyConnView)에 있다.
  */
 (function () {
   const BASE = '/api/admin/easy/collections';
-  const READINESS = {
-    READY: ['연결됨', 'ok'],
-    NOT_CONFIGURED: ['인증 등록 필요', 'warn'],
-    UNVERIFIED: ['연동 준비 중(계약·검증 전)', 'warn'],
-    NEEDS_REAUTH: ['재인증 필요', 'warn'],
-    DISABLED: ['꺼짐', 'off']
-  };
-  const AUTH = {
-    NOT_REGISTERED: '인증 미등록',
-    REGISTERED: '인증 참조 등록됨',
-    NEEDS_REAUTH: '재인증 필요',
-    DISCONNECTED: '연결 해제됨'
-  };
+  const V = window.EasyConnView;
   const RUN_STATUS = { RUNNING: '진행 중', SUCCESS: '완료', PARTIAL: '일부 실패', FAILED: '실패' };
+  const BADGE = { '연결됨': 'ok', '다시 인증 필요': 'warn', '파일 수집': 'file', '직접 로그인 수집': 'mcp' };
+  const MCP_HINT = { HOMETAX: '홈택스', CARD: '카드 사용내역', BANK: '통장 거래내역', CREFIA: '카드매출' };
   let connections = [];
+  let catalog = { sites: [], steps: {}, safetyRules: [] };
+  let siteNames = {};
+  let currentCat = null;
+  let filePreview = null;
 
   function businessId() { return document.getElementById('business').value; }
+  function $(id) { return document.getElementById(id); }
 
   function el(tag, cls, text) {
     const node = document.createElement(tag);
@@ -32,7 +28,7 @@
   function fmtTime(v) { return v ? String(v).replace('T', ' ').slice(0, 16) : '-'; }
 
   function message(id, text, isError) {
-    const node = document.getElementById(id);
+    const node = $(id);
     node.textContent = text;
     node.className = 'msg' + (isError ? ' err' : '');
     node.style.display = text ? 'block' : 'none';
@@ -40,7 +36,9 @@
 
   async function call(method, path, body) {
     const opts = { method, headers: {} };
-    if (body !== undefined) {
+    if (body instanceof FormData) {
+      opts.body = body;
+    } else if (body !== undefined) {
       opts.headers['Content-Type'] = 'application/json';
       opts.body = JSON.stringify(body);
     }
@@ -56,6 +54,24 @@
     return data;
   }
 
+  function button(label, onClick, cls) {
+    const b = el('button', cls || 'btn-secondary', label);
+    b.type = 'button';
+    b.addEventListener('click', async () => {
+      b.disabled = true;
+      try { await onClick(); } finally { b.disabled = false; }
+    });
+    return b;
+  }
+
+  function linkButton(text, url, sub) {
+    const a = el('a', 'link-btn' + (sub ? ' sub' : ''), text);
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    return a;
+  }
+
+  // ------------------------------------------------------------ ① 한 줄 상태 · ③ 연결된 기관
+
   async function loadConnections() {
     message('listMsg', '');
     try {
@@ -67,97 +83,196 @@
   }
 
   function render() {
-    const box = document.getElementById('connections');
-    box.innerHTML = '';
-    document.getElementById('connCount').textContent = connections.length + '개';
-    if (!connections.length) {
-      box.appendChild(el('p', 'desc', '등록된 연결이 없습니다. 위에서 은행 계좌를 등록하세요.'));
-      return;
+    $('statusLine').textContent = V.summary(connections, siteNames);
+    const rows = V.rows(connections, siteNames);
+    $('connCount').textContent = rows.length + '곳';
+    const body = $('connTable').querySelector('tbody');
+    body.innerHTML = '';
+    if (!rows.length) {
+      const tr = el('tr'); const td = el('td', null, '아직 연결된 기관이 없습니다. 위에서 기관을 고르거나 아래에서 파일을 넣어 주세요.');
+      td.colSpan = 6; tr.appendChild(td); body.appendChild(tr);
     }
-    connections.forEach(c => box.appendChild(row(c)));
+    rows.forEach(r => body.appendChild(rowView(r)));
+    renderAdvanced();
   }
 
-  function row(c) {
-    const wrap = el('div', 'conn-row');
-    const head = el('div', 'conn-head');
-    head.appendChild(el('strong', null, c.label + ' · ' + c.sourceName));
-    const readiness = c.connectionStatus === 'DISCONNECTED'
-      ? ['연결 해제됨', 'off'] : (READINESS[c.readiness] || [c.readiness, 'off']);
-    head.appendChild(el('span', 'badge ' + readiness[1], readiness[0]));
-    wrap.appendChild(head);
+  function cell(tr, header, content, cls) {
+    const td = el('td', cls || null);
+    td.setAttribute('data-h', header);
+    if (content instanceof Node) td.appendChild(content); else td.textContent = content;
+    tr.appendChild(td);
+    return td;
+  }
 
-    const meta = el('div', 'conn-meta');
-    const parts = [];
-    if (c.organization) parts.push('기관코드 ' + c.organization + (c.clientType === 'P' ? ' · 개인' : ' · 기업'));
-    if (c.accountMasked) parts.push('계좌 ' + c.accountMasked);
-    parts.push(AUTH[c.authStatus] || c.authStatus || '-');
-    parts.push('자동수집 ' + (c.enabled ? '켜짐' : '꺼짐'));
-    parts.push('마지막 성공 ' + fmtTime(c.lastSuccessAt));
-    if (c.latestRunStatus) {
-      parts.push('최근 실행 ' + (RUN_STATUS[c.latestRunStatus] || c.latestRunStatus)
-        + ' · 장부 저장 ' + (c.latestRunLedgerSavedCount || 0) + '건 · 검토 ' + (c.latestRunLedgerReviewCount || 0) + '건');
-    }
-    if (c.lastErrorCode) parts.push('마지막 오류 ' + c.lastErrorCode);
-    meta.textContent = parts.join(' | ');
-    wrap.appendChild(meta);
+  function rowView(r) {
+    const tr = el('tr');
+    cell(tr, '기관', r.name);
+    cell(tr, '수집 방식', r.method);
+    cell(tr, '상태', el('span', 'badge ' + (BADGE[r.status] || 'file'), r.status));
+    cell(tr, '마지막 수집', fmtTime(r.last));
+    cell(tr, '장부에 들어간 건수', r.saved.toLocaleString('ko-KR') + '건', 'num');
+    const actions = el('td');
+    actions.appendChild(button('수집 이력', () => history(r)));
+    if (r.kind === 'AUTO') actions.appendChild(moreMenu(r.connections[0]));
+    tr.appendChild(actions);
+    return tr;
+  }
 
-    const actions = el('div', 'conn-actions');
+  /** 자동 연동 줄의 드문 조작은 「더보기」 안에 둔다. */
+  function moreMenu(c) {
+    const more = el('details', 'more');
+    more.appendChild(el('summary', null, '더보기'));
     const disconnected = c.connectionStatus === 'DISCONNECTED';
-    const isBank = c.sourceCode === 'CODEF_BANK';
-    if (isBank) actions.appendChild(button('설정 수정', () => edit(c)));
-    actions.appendChild(button(c.authStatus === 'NEEDS_REAUTH' || disconnected ? '재인증 등록' : '인증 참조 변경', () => reauth(c)));
     if (!disconnected) {
       const run = button('지금 수집', () => runNow(c));
       run.disabled = c.readiness !== 'READY';
       if (run.disabled) run.title = '연결됨 상태에서만 실행됩니다.';
-      actions.appendChild(run);
-      actions.appendChild(button(c.enabled ? '자동수집 끄기' : '자동수집 켜기', () => toggle(c)));
-      actions.appendChild(button('연결 해제', () => disconnect(c)));
+      more.appendChild(run);
+      more.appendChild(button(c.enabled ? '자동수집 끄기' : '자동수집 켜기', () => toggle(c)));
+      more.appendChild(button('연결 해제', () => disconnect(c)));
     }
-    actions.appendChild(button('수집 이력', () => history(c)));
-    wrap.appendChild(actions);
-    return wrap;
+    more.appendChild(button(disconnected || c.authStatus === 'NEEDS_REAUTH' ? '재인증 등록' : '인증 참조 변경', () => reauth(c)));
+    if (c.sourceCode === 'CODEF_BANK') more.appendChild(button('설정 수정', () => edit(c)));
+    return more;
   }
 
-  function button(label, onClick) {
-    const b = el('button', 'btn-secondary', label);
-    b.type = 'button';
-    b.addEventListener('click', async () => {
-      b.disabled = true;
-      try { await onClick(); } finally { b.disabled = false; }
-    });
-    return b;
+  // ------------------------------------------------------------ ② 기관 연결하기
+
+  function sitesOf(cat) { return catalog.sites.filter(s => s.category === cat); }
+
+  function openCategory(cat) {
+    currentCat = cat;
+    document.querySelectorAll('#orgButtons .org-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+    $('connectPanel').style.display = '';
+    const list = sitesOf(cat);
+    const pick = $('sitePick');
+    pick.innerHTML = '';
+    list.forEach(s => pick.add(new Option(s.name, s.code)));
+    $('sitePickWrap').style.display = list.length > 1 ? '' : 'none';
+    $('siteSteps').innerHTML = '';
+    (catalog.steps[cat] || []).forEach(step => $('siteSteps').appendChild(el('li', null, V.plainStep(step))));
+    $('siteRules').innerHTML = '';
+    (catalog.safetyRules || []).forEach(rule => $('siteRules').appendChild(el('li', null, V.plainStep(rule))));
+    $('bankFormWrap').style.display = cat === 'BANK' ? '' : 'none';
+    showSite();
   }
+
+  function showSite() {
+    const site = catalog.sites.find(s => s.code === $('sitePick').value) || sitesOf(currentCat)[0];
+    const links = $('siteLinks');
+    links.innerHTML = '';
+    if (!site) return;
+    links.appendChild(linkButton('공식 사이트 열기', site.url));
+    if (site.businessUrl) links.appendChild(linkButton('기업·사업자용 열기', site.businessUrl, true));
+    $('siteNote').textContent = site.note ? '※ ' + site.note : '';
+    const linkOnly = !(site.datasets || []).length;
+    $('siteGuide').textContent = linkOnly
+      ? '링크만 연결되어 있습니다. 로그인은 직접 해 주세요. 이 기관 자료는 장부에 따로 올리지 않습니다.'
+      : '로그인은 직접 해 주세요. 로그인 후 Claude에게 "F2R 장부 ' + site.name + ' '
+        + (MCP_HINT[currentCat] || '거래') + ' 수집해 줘"라고 하면 거래를 읽어 장부에 저장합니다.';
+    $('toFile').parentNode.style.display = linkOnly ? 'none' : '';
+  }
+
+  async function loadSites() {
+    try {
+      catalog = await call('GET', '/sites');
+      siteNames = {};
+      catalog.sites.forEach(s => { siteNames[s.code] = s.name; });
+      const fileSite = $('fileSite');
+      fileSite.innerHTML = '';
+      catalog.sites.filter(s => (s.datasets || []).length).forEach(s => fileSite.add(new Option(s.name, s.code)));
+      fileSite.add(new Option('기타 (직접 정리한 파일)', 'FILE'));
+      showFileSite();
+    } catch (e) {
+      message('listMsg', e.message, true);
+    }
+  }
+
+  // ------------------------------------------------------------ 수집 이력
+
+  async function history(r) {
+    const card = $('historyCard');
+    card.style.display = '';
+    $('historyTitle').textContent = '수집 이력 — ' + r.name;
+    const table = $('runs');
+    table.innerHTML = '';
+    $('recommend').innerHTML = '';
+    let runs = [];
+    try {
+      for (const c of r.connections) runs = runs.concat(await call('GET', '/connections/' + c.connectionId + '/runs'));
+    } catch (e) { table.appendChild(el('caption', null, e.message)); return; }
+    runs.sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));
+    const head = el('tr');
+    ['수집 시각', '상태', '받은 건수', '장부 저장', '중복 제외', '검토 필요', '자동 분류', '실패', ''].forEach(h => head.appendChild(el('th', null, h)));
+    table.appendChild(head);
+    if (!runs.length) {
+      const tr = el('tr'); const td = el('td', null, '수집 이력이 없습니다.'); td.colSpan = 9; tr.appendChild(td); table.appendChild(tr);
+    }
+    runs.forEach(run => {
+      const tr = el('tr');
+      [fmtTime(run.startedAt), RUN_STATUS[run.status] || run.status, run.fetchedCount, run.ledgerSavedCount,
+        run.duplicateCount, run.ledgerReviewCount, run.ledgerClassifiedCount, run.errorCount]
+        .forEach(v => tr.appendChild(el('td', null, String(v))));
+      const td = el('td');
+      if (run.ledgerReviewCount > 0) td.appendChild(button('AI 추천', () => recommend(run)));
+      tr.appendChild(td);
+      table.appendChild(tr);
+      if (run.errorSummary) {
+        const er = el('tr'); const ed = el('td', null, '오류: ' + run.errorSummary); ed.colSpan = 9; er.appendChild(ed); table.appendChild(er);
+      }
+    });
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function recommend(run) {
+    const box = $('recommend');
+    box.innerHTML = '';
+    try {
+      const result = await call('GET', '/runs/' + run.runId + '/recommendations');
+      box.appendChild(el('p', 'desc', result.message));
+      const ul = el('ul', 'item-list');
+      result.items.forEach(item => {
+        ul.appendChild(el('li', 'item', item.direction + ' ' + Easy.fmtWon(item.amount) + ' · '
+          + (item.counterparty || '-') + ' · ' + (item.description || '-') + ' → '
+          + (item.accountName ? item.accountName + (item.reason ? ' (' + item.reason + ')' : '') : '추천 없음')));
+      });
+      box.appendChild(ul);
+      const link = el('a', null, '검토함에서 반영하기 ›'); link.href = '/easy/reviews';
+      box.appendChild(link);
+    } catch (e) { box.appendChild(el('p', 'desc', e.message)); }
+  }
+
+  // ------------------------------------------------------------ 자동 연동(은행) 조작 — 기존 기능 유지
 
   function edit(c) {
-    document.getElementById('editId').value = c.connectionId;
-    document.getElementById('label').value = c.label || '';
-    document.getElementById('organization').value = c.organization || '0004';
-    document.getElementById('clientType').value = c.clientType || 'B';
-    document.getElementById('account').value = '';
-    document.getElementById('account').placeholder = '변경할 때만 다시 입력 (현재 ' + (c.accountMasked || '-') + ')';
-    document.getElementById('connectedId').value = '';
-    document.getElementById('formTitle').textContent = '은행 연결 설정 수정';
-    document.getElementById('cancelEdit').style.display = '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    openCategory('BANK');
+    $('bankForm').open = true;
+    $('editId').value = c.connectionId;
+    $('label').value = c.label || '';
+    $('organization').value = c.organization || '0004';
+    $('clientType').value = c.clientType || 'B';
+    $('account').value = '';
+    $('account').placeholder = '변경할 때만 다시 입력 (현재 ' + (c.accountMasked || '-') + ')';
+    $('connectedId').value = '';
+    $('cancelEdit').style.display = '';
+    $('bankForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function resetForm() {
-    ['editId', 'label', 'account', 'connectedId'].forEach(id => { document.getElementById(id).value = ''; });
-    document.getElementById('account').placeholder = '';
-    document.getElementById('formTitle').textContent = '은행 계좌 연결 등록';
-    document.getElementById('cancelEdit').style.display = 'none';
+    ['editId', 'label', 'account', 'connectedId'].forEach(id => { $(id).value = ''; });
+    $('account').placeholder = '';
+    $('cancelEdit').style.display = 'none';
   }
 
   async function save() {
     message('formMsg', '');
-    const id = document.getElementById('editId').value;
+    const id = $('editId').value;
     const body = {
-      label: document.getElementById('label').value.trim(),
-      organization: document.getElementById('organization').value,
-      clientType: document.getElementById('clientType').value,
-      account: document.getElementById('account').value.replace(/[^0-9]/g, ''),
-      connectedId: document.getElementById('connectedId').value.trim() || null
+      label: $('label').value.trim(),
+      organization: $('organization').value,
+      clientType: $('clientType').value,
+      account: $('account').value.replace(/[^0-9]/g, ''),
+      connectedId: $('connectedId').value.trim() || null
     };
     if (!body.account) {
       message('formMsg', '계좌번호를 입력하세요(수정할 때도 확인을 위해 다시 입력합니다).', true);
@@ -175,7 +290,7 @@
   }
 
   async function reauth(c) {
-    const ref = prompt('CODEF 계정 등록으로 받은 연결 ID(connectedId)를 입력하세요.\n비밀번호·인증서·OTP는 입력하지 마세요.');
+    const ref = prompt('기관 연동 계정 등록으로 받은 연결 ID를 입력하세요.\n비밀번호·인증서·OTP는 입력하지 마세요.');
     if (!ref) return;
     try {
       await call('PUT', '/connections/' + c.connectionId + '/auth', { connectionRef: ref.trim() });
@@ -187,11 +302,9 @@
     message('listMsg', '수집 중입니다…', false);
     try {
       const run = await call('POST', '/connections/' + c.connectionId + '/run');
-      message('listMsg', '수집 ' + run.fetchedCount + '건 · 장부 저장 ' + run.ledgerSavedCount + '건 · 중복 '
-        + run.duplicateCount + '건 · 검토 ' + run.ledgerReviewCount + '건 · 분류 ' + run.ledgerClassifiedCount
-        + '건 · 실패 ' + run.errorCount + '건', run.status === 'FAILED');
+      message('listMsg', '받은 ' + run.fetchedCount + '건 · 장부 저장 ' + run.ledgerSavedCount + '건 · 중복 '
+        + run.duplicateCount + '건 · 검토 ' + run.ledgerReviewCount + '건 · 실패 ' + run.errorCount + '건', run.status === 'FAILED');
       await loadConnections();
-      await history(c);
     } catch (e) { message('listMsg', e.message, true); }
   }
 
@@ -203,114 +316,111 @@
   }
 
   async function disconnect(c) {
-    if (!confirm('연결을 해제할까요?\n조회가 멈추고 인증 참조가 비활성화됩니다. 이미 저장된 장부·증빙은 그대로 남습니다.')) return;
+    if (!confirm('연결을 해제할까요?\n조회가 멈춥니다. 이미 저장된 장부·증빙은 그대로 남습니다.')) return;
     try {
       await call('POST', '/connections/' + c.connectionId + '/disconnect');
       await loadConnections();
     } catch (e) { message('listMsg', e.message, true); }
   }
 
-  async function history(c) {
-    const card = document.getElementById('historyCard');
-    card.style.display = '';
-    document.getElementById('historyTitle').textContent = '수집 이력 — ' + c.label;
-    const table = document.getElementById('runs');
-    table.innerHTML = '';
-    document.getElementById('recommend').innerHTML = '';
-    let runs = [];
-    try { runs = await call('GET', '/connections/' + c.connectionId + '/runs'); }
-    catch (e) { table.appendChild(el('caption', null, e.message)); return; }
+  // ------------------------------------------------------------ ④ 파일로 넣기
+
+  function showFileSite() {
+    const box = $('fileSiteLink');
+    box.innerHTML = '';
+    const site = catalog.sites.find(s => s.code === $('fileSite').value);
+    if (site) box.appendChild(linkButton('파일 받는 곳: ' + site.name, site.businessUrl || site.url, true));
+  }
+
+  function decode(buffer) {
+    const utf8 = new TextDecoder('utf-8').decode(buffer);
+    if (!utf8.includes('�')) return utf8;
+    try { return new TextDecoder('euc-kr').decode(buffer); } catch (_) { return utf8; }
+  }
+
+  async function previewFile() {
+    const file = $('fileInput').files[0];
+    const box = $('filePreview');
+    box.innerHTML = '';
+    filePreview = null;
+    $('fileSave').disabled = true;
+    message('fileMsg', '');
+    if (!file) return;
+    const p = V.previewCsv(decode(await file.arrayBuffer()));
+    if (!p.ok) { box.appendChild(el('p', 'desc', p.error)); return; }
+    filePreview = p;
+    box.appendChild(el('p', 'desc', '거래 ' + p.rows + '줄을 찾았습니다. 앞 5줄을 확인하세요.'));
+    const table = el('table', 'run-table');
     const head = el('tr');
-    ['시작', '상태', '응답 수신', '장부 저장 완료일', '수집', '장부 저장', '기존 중복', '미분류·검토', '분류 완료', '실패', ''].forEach(h => head.appendChild(el('th', null, h)));
+    p.header.forEach(h => head.appendChild(el('th', null, h)));
     table.appendChild(head);
-    if (!runs.length) {
-      const tr = el('tr'); const td = el('td', null, '수집 이력이 없습니다.'); td.colSpan = 11; tr.appendChild(td); table.appendChild(tr);
-      return;
-    }
-    runs.forEach(r => {
+    p.sample.forEach(r => { const tr = el('tr'); r.forEach(v => tr.appendChild(el('td', null, v))); table.appendChild(tr); });
+    box.appendChild(table);
+    $('fileSave').disabled = false;
+  }
+
+  async function saveFile() {
+    const file = $('fileInput').files[0];
+    if (!file || !filePreview) return;
+    const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+    const form = new FormData();
+    form.append('file', file);
+    form.append('label', V.fileLabel($('fileSite').value, filePreview.firstDate, today));
+    message('fileMsg', '장부에 저장하는 중입니다…', false);
+    try {
+      const result = await call('POST', '/ingest/csv', form);
+      const run = result.run;
+      message('fileMsg', '장부 저장 ' + run.ledgerSavedCount + '건 · 중복 제외 ' + run.duplicateCount + '건 · 검토 필요 '
+        + run.ledgerReviewCount + '건 · 실패 ' + run.errorCount + '건', run.status === 'FAILED');
+      $('fileInput').value = '';
+      $('fileSave').disabled = true;
+      filePreview = null;
+      await loadConnections();
+    } catch (e) { message('fileMsg', e.message, true); }
+  }
+
+  // ------------------------------------------------------------ ⑤ 고급 설정
+
+  function renderAdvanced() {
+    const table = $('advTable');
+    table.innerHTML = '';
+    const head = el('tr');
+    ['저장 이름', '수집원', '준비 상태', '인증', '기관코드·계좌', '수집 위치 기록', '마지막 오류', ''].forEach(h => head.appendChild(el('th', null, h)));
+    table.appendChild(head);
+    connections.forEach(c => {
       const tr = el('tr');
-      [fmtTime(r.startedAt), RUN_STATUS[r.status] || r.status, fmtTime(r.fetchedAt), r.ledgerSavedThrough || '-',
-        r.fetchedCount, r.ledgerSavedCount, r.duplicateCount, r.ledgerReviewCount, r.ledgerClassifiedCount, r.errorCount]
+      [c.label, c.sourceCode, c.readiness, c.authStatus,
+        [c.organization, c.clientType, c.accountMasked].filter(Boolean).join(' · ') || '-',
+        c.checkpointExists ? '있음' : '없음', c.lastErrorCode || '-']
         .forEach(v => tr.appendChild(el('td', null, String(v))));
       const td = el('td');
-      if (r.ledgerReviewCount > 0) td.appendChild(button('AI 추천', () => recommend(r)));
+      if (V.method(c) === 'AUTO') td.appendChild(button('인증 참조 변경', () => reauth(c)));
       tr.appendChild(td);
       table.appendChild(tr);
-      if (r.errorSummary) {
-        const er = el('tr'); const ed = el('td', null, '오류: ' + r.errorSummary); ed.colSpan = 11; er.appendChild(ed); table.appendChild(er);
-      }
     });
-  }
-
-  async function recommend(run) {
-    const box = document.getElementById('recommend');
-    box.innerHTML = '';
-    try {
-      const result = await call('GET', '/runs/' + run.runId + '/recommendations');
-      box.appendChild(el('p', 'desc', result.message));
-      const ul = el('ul', 'item-list');
-      result.items.forEach(item => {
-        ul.appendChild(el('li', 'item', item.direction + ' ' + Easy.fmtWon(item.amount) + ' · '
-          + (item.counterparty || '-') + ' · ' + (item.description || '-') + ' → '
-          + (item.accountName ? item.accountName + (item.reason ? ' (' + item.reason + ')' : '') : '추천 없음')));
-      });
-      box.appendChild(ul);
-      const link = el('a', null, '검토함에서 반영하기 ›'); link.href = '/easy/reviews';
-      box.appendChild(link);
-    } catch (e) { box.appendChild(el('p', 'desc', e.message)); }
-  }
-
-  const CATEGORY = { BANK: '은행', CARD: '카드사', HOMETAX: '홈택스', CREFIA: '카드매출' };
-  const DATASET = { BANK_ACCOUNT: '통장 입출금', CARD_PURCHASE: '카드 사용(비용)', CARD_SALES: '카드 매출(수입)' };
-
-  function siteLink(url) {
-    const a = el('a', null, url.replace(/^https:\/\//, '').replace(/\/$/, ''));
-    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-    return a;
-  }
-
-  async function loadSites() {
-    try {
-      const data = await call('GET', '/sites');
-      const rules = document.getElementById('siteRules');
-      data.safetyRules.forEach(r => rules.appendChild(el('li', null, r)));
-      const table = document.getElementById('sites');
-      const head = el('tr');
-      ['구분', '기관', '공식 주소', '기업·사업자용', '저장 자료'].forEach(h => head.appendChild(el('th', null, h)));
-      table.appendChild(head);
-      data.sites.forEach(site => {
-        const tr = el('tr');
-        tr.appendChild(el('td', null, CATEGORY[site.category] || site.category));
-        tr.appendChild(el('td', null, site.name));
-        const url = el('td'); url.appendChild(siteLink(site.url)); tr.appendChild(url);
-        const biz = el('td'); if (site.businessUrl) biz.appendChild(siteLink(site.businessUrl)); else biz.textContent = '-';
-        tr.appendChild(biz);
-        tr.appendChild(el('td', null, site.datasets.map(d => DATASET[d] || d).join(', ')));
-        table.appendChild(tr);
-        if (site.note) {
-          const noteRow = el('tr', 'site-note');
-          noteRow.appendChild(el('td'));
-          const note = el('td', null, '※ ' + site.note); note.colSpan = 4;
-          noteRow.appendChild(note);
-          table.appendChild(noteRow);
-        }
-      });
-      document.getElementById('siteCount').textContent = data.sites.length + '곳';
-    } catch (e) {
-      message('siteMsg', e.message, true);
-    }
   }
 
   async function init() {
     await Easy.guardAdmin();
     const businesses = await Easy.loadBusinesses();
-    const select = document.getElementById('business');
+    const select = $('business');
     businesses.forEach(b => select.add(new Option(b.name, String(b.businessId))));
-    select.addEventListener('change', () => { document.getElementById('historyCard').style.display = 'none'; loadConnections(); });
-    document.getElementById('saveBtn').addEventListener('click', save);
-    document.getElementById('cancelEdit').addEventListener('click', resetForm);
-    loadSites();
-    if (businesses.length) await loadConnections();
+    select.addEventListener('change', () => { $('historyCard').style.display = 'none'; loadConnections(); });
+    document.querySelectorAll('#orgButtons .org-btn').forEach(b => b.addEventListener('click', () => openCategory(b.dataset.cat)));
+    $('sitePick').addEventListener('change', showSite);
+    $('toFile').addEventListener('click', () => {
+      const site = $('sitePick').value || (sitesOf(currentCat)[0] || {}).code;
+      if (site) { $('fileSite').value = site; showFileSite(); }
+    });
+    $('saveBtn').addEventListener('click', save);
+    $('cancelEdit').addEventListener('click', resetForm);
+    $('fileSite').addEventListener('change', showFileSite);
+    $('fileInput').addEventListener('change', previewFile);
+    $('fileSave').addEventListener('click', saveFile);
+    if (businesses.length) {
+      await loadSites();
+      await loadConnections();
+    }
   }
 
   init().catch(e => message('listMsg', e.message, true));

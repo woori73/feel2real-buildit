@@ -28,4 +28,8 @@ public interface EasyCollectionRunRepository extends JpaRepository<EasyCollectio
   Optional<EasyCollectionRun> findByIdWithLock(@Param("runId") Long runId);
 
   Optional<EasyCollectionRun> findFirstByConnection_ConnectionIdOrderByRunIdDesc(Long connectionId);
+
+  /** 화면 표시용: 연결의 모든 수집 실행에서 장부에 저장된 건수 합계. */
+  @Query("SELECT COALESCE(SUM(r.ledgerSavedCount), 0) FROM EasyCollectionRun r WHERE r.connection.connectionId = :connectionId")
+  long sumLedgerSavedByConnection(@Param("connectionId") Long connectionId);
 }
