@@ -5287,3 +5287,32 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 
 ### 학원이사 / 모두의창업2기 문서 작업 (2026-11-04)
 기존 ADMIN 노트 경로·프로젝트·권한을 유지한다. entries의 category에 `사업계획서`, `활동보고서`를 추가한다. `/admin/academy-move?workspace=startup`은 모두의창업2기 메뉴로 진입한다. 해당 업무에서는 entries 수정·이력·보관 기능을 이용해 문서를 작성하며 법률 상담용 posts/chat을 호출하지 않는다. 기존 자료 중 `[모두의창업2기 사업계획서]`, `[모두의창업2기 활동보고서]` 제목 접두사는 각 문서 섹션으로 분류한다. 공개 소스에는 개인 제출 자료나 집행내역을 넣지 않고 보호된 노트에 저장한다. 파일 원본 연결은 현재 계정의 접근 권한을 따르며 HWP 자동 편집이나 공식 플랫폼 제출을 뜻하지 않는다.
+
+## 학생명단(시간표) 자료실 (2026-11-10)
+
+`/admin/student-roster` 및 `/api/admin/student-roster/**`는 ADMIN 전용이다(비관리자는 화면·API 모두 403). 응답은 `Cache-Control: private, no-store`, GET/HEAD가 아닌 요청은 같은 사이트 `Origin`만 허용한다. 통합 운영 대시보드(`/admin/hub`) 제목 오른쪽 「학생명단(시간표)」 버튼으로 같은 탭에서 이동한다.
+
+| 메서드 | 경로 | 내용 |
+|---|---|---|
+| GET | `/admin/student-roster` | 화면 (왼쪽 연도 목록 최신순·쪽수, 오른쪽 PDF 미리보기 + 「원본 Word 내려받기」, 아래 접힌 「자료 올리기」) |
+| GET | `/api/admin/student-roster/entries` | 연도별 최신 자료 `[{year,revisionId,pdfFileId,pdfFilename,wordFileId,wordFilename,pages,uploadedAt,versions}]` (연도 내림차순, 최대 200) |
+| POST(multipart `file`) | `/api/admin/student-roster/files` | pdf·doc·docx만. 기존 Studio 업로드(SHA·100MiB·내용 검사·중복 재사용) 그대로. docx는 앞 4바이트 `PK\x03\x04`, doc은 `D0 CF 11 E0 A1 B1 1A E1`이어야 한다 |
+| POST | `/api/admin/student-roster/entries` | `{year:"2026",pdfFileId,wordFileId}`. 연도는 4자리(1990~2100, 아니면 400 「연도를 4자리로 적어 주세요.」). PDF 쪽수를 서버가 세어 저장. 같은 연도면 현재 버전을 부모로 새 리비전 → `{message:"저장했습니다",year,pages,revisionId}` |
+| GET | `/api/admin/student-roster/history?year=` | 해당 연도 버전 이력 최대 100건(최신순, `current`=지금 버전) |
+
+- 저장: 기존 Studio 테이블(`studio_projects`/`studio_files`/`studio_items`/`studio_revisions`)을 프로젝트 `student-roster`로 분리해 재사용한다. 새 테이블·마이그레이션 없음. 연도마다 item_key `roster-YYYY`, 리비전 `title`=연도, `file_id`=PDF, `dialogue`=Word 파일 ID, `direction`=쪽수.
+- 보기: PDF 미리보기는 기존 `GET /api/studio/files/{id}/preview?projectId=student-roster&page=N`(쪽 PNG), 내려받기는 `GET /api/studio/files/{id}/content?projectId=student-roster`(항상 `Content-Disposition: attachment`). doc·docx는 미리보기 형식이 아니므로 415이고 내려받기만 된다.
+- Word 허용 범위: doc·docx는 `student-roster` 프로젝트 업로드에서만 허용한다. 다른 Studio 프로젝트의 허용 목록은 그대로다(doc·docx 400).
+- 접근: 일반 Studio API에서도 `student-roster`(대소문자 무관)는 ADMIN 외(운영 계정 modu 포함) 403, 프로젝트 목록에서도 숨긴다.
+- 삭제 정책: 삭제 API는 없다. 잘못 올리면 같은 연도로 다시 올려 새 버전으로 바꾸고 이전 버전은 이력으로 남는다.
+- 실제 학생 이름이 든 자료는 저장소에 커밋하지 않는다. 테스트는 가짜 이름(가나·다라…) 샘플만 쓴다. 운영 자료는 배포 후 관리자가 화면에서 직접 올린다.
+
+### MCP `read_student_roster` (학원 발전 방안 논의)
+
+새 동의 범위 `student-roster:read` + ADMIN을 모두 요구한다(기존 studio·academy-move 동의에 자동 추가하지 않음, 민감 동의 확인 필요). 운영 기본 허용 scope 목록에 추가했으며 `APP_MCP_ALLOWED_SCOPES` override는 그대로 존중한다. 인자 없음, grant당 분당 12회.
+
+- 연도마다 최신 버전의 Word를 서버에서 읽어(docx=POI XWPF, doc=POI HWPF, 읽지 못하면 PDF 글자로 월별 수만 대체) 이름 없는 집계만 돌려준다: `instruction`(집계만으로 발전 방안을 논의하라는 안내), `sources[{archiveYear,readAs,monthTables}]`, `totalStudents`, `totalLessons`, `years[{year,students,lessons,newStudents,returningStudents,previousYearStudents,continuingFromPreviousYear,retentionRate,activeMonths,busiestMonth,consultations,lessonsByWeekday}]`, `months[{month,students,lessons,newStudents,consultations,closedDays}]`, `lessonsByWeekday`, `tenureByActiveMonths`, `students[{code,firstMonth,lastMonth,activeMonths,lessons}]`(최대 1000, 가명만).
+- 읽는 규칙: 월 표 머리글 「N월 진행표 (YYYY년)」(연도 없으면 파일 연도·월 순서로 추정), 칸 첫 줄=날짜, 이어지는 줄=「이름+회차」. `A/B3`(함께 수업)·`A5/B4`·`A2-3`·`A11&12`·괄호 메모를 처리하고, `…상담`은 상담 수, `휴무·휴원` 등은 쉬는 날로 센다. 첫 주의 앞달 날짜·마지막 주의 다음달 날짜는 해당 달로 옮기고, 같은 날짜·같은 이름은 한 번만 센다(여러 파일에 같은 달이 있어도 중복 없음).
+- 개인정보: 실명·원문·파일 ID·원본 파일은 내보내지 않는다. 같은 이름=같은 가명(S001…, 처음 나온 순서)이라 동명이인은 한 명으로, 표기가 바뀐 같은 학생은 다른 사람으로 셀 수 있다. 일반 Studio MCP 도구(`list_studio_assets`, `studio_document` 등)로 `student-roster` 프로젝트를 지정하면 어떤 동의로도 403(`student_roster_aggregate_only`)이다.
+
+화면 확인(가짜 이름 샘플 2024~2026): [허브 PC](admin/student-roster/01-hub-pc.png) · [자료실 PC](admin/student-roster/02-roster-pc-2026.png) · [2쪽 보기](admin/student-roster/03-roster-pc-2025-page2.png) · [허브 휴대폰](admin/student-roster/04-hub-mobile.png) · [자료실 휴대폰](admin/student-roster/05-roster-mobile.png)

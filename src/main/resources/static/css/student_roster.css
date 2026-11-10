@@ -1,0 +1,30 @@
+*{box-sizing:border-box}body{margin:0;background:#f6f8fb;color:#25354b;font-family:system-ui,-apple-system,'Noto Sans KR',sans-serif}
+button,input{font:inherit}a{color:#315f9d}
+button,.button{display:inline-block;cursor:pointer;min-height:40px;padding:9px 15px;border:1px solid #ced9e7;border-radius:9px;background:#fff;color:#345678;font-size:14px;font-weight:600;text-decoration:none}
+button:disabled{opacity:.55;cursor:wait}.primary{background:#245db3;border-color:#245db3;color:#fff}
+.appbar{height:58px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;border-bottom:1px solid #e2e8f0;background:#fff;position:relative}
+.appbar>a{text-decoration:none;font-weight:700}.appbar details>summary{cursor:pointer;font-size:13px}
+.global-menu{position:absolute;top:58px;left:0;right:0;background:#fff;z-index:20;box-shadow:0 8px 24px #23374e22}
+.roster-page{max-width:1180px;margin:auto;padding:24px}
+.roster-title{text-align:center;font-size:26px;margin:0 0 10px}
+.roster-message{text-align:center;min-height:22px;margin:0 0 12px;font-size:14px}.roster-message.error{color:#b42318}
+.roster-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;align-items:start}
+.roster-years,.roster-viewer,.upload{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px}
+.roster-years h2,.viewer-head h2{font-size:16px;margin:0 0 10px}
+#year-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
+#year-list button{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left}
+#year-list button[aria-pressed=true]{background:#245db3;border-color:#245db3;color:#fff}
+#year-list .pages{font-size:12px;font-weight:500;opacity:.8}
+.empty{color:#6b7a90;font-size:14px}
+.viewer-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;font-size:14px}
+.sheet{min-height:300px;display:flex;justify-content:center;align-items:flex-start;background:#eef2f7;border-radius:8px;padding:10px;overflow:auto}
+.sheet img{max-width:100%;height:auto;background:#fff;box-shadow:0 2px 10px #23374e22}
+.history{margin-top:12px;font-size:14px}.history summary{cursor:pointer}.history li{margin:6px 0}
+.upload{margin-top:20px}.upload summary{cursor:pointer;font-weight:700}
+#upload-form{display:grid;gap:12px;margin-top:14px;max-width:520px}
+#upload-form label{display:grid;gap:6px;font-size:14px;font-weight:600}
+#upload-form input{padding:8px;border:1px solid #ced9e7;border-radius:8px;background:#fff}
+.hint{font-size:13px;color:#6b7a90;margin:0}
+@media (max-width:760px){.appbar{padding:0 16px}.roster-page{padding:16px 12px}.roster-layout{grid-template-columns:1fr}
+#year-list{flex-direction:row;flex-wrap:wrap;max-height:none}#year-list li{flex:1 0 30%}.roster-title{font-size:22px}}

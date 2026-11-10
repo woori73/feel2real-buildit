@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>학생명단(시간표) | F2R</title>
+<th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block><link rel="stylesheet" href="/css/student_roster.css?v=20261110-1"><script defer src="/js/student_roster.js?v=20261110-1"></script></head>
+<body><header class="appbar"><a href="/admin/hub">← 통합 운영 대시보드</a><details><summary>전체 메뉴</summary><div class="global-menu"><th:block th:replace="~{fragments/_admin_topnav :: topnav('studentRoster')}"></th:block></div></details></header>
+<main class="roster-page">
+  <h1 class="roster-title">학생명단(시간표)</h1>
+  <p id="roster-message" class="roster-message" role="status" aria-live="polite"></p>
+  <div class="roster-layout">
+    <nav class="roster-years" aria-label="연도 목록"><h2>연도</h2><ul id="year-list"><li class="empty">불러오는 중…</li></ul></nav>
+    <section class="roster-viewer" aria-label="미리보기">
+      <header class="viewer-head"><h2 id="viewer-title">연도를 고르세요</h2><a id="word-download" class="button primary" href="#" hidden download>원본 Word 내려받기</a></header>
+      <div class="pager" id="pager" hidden><button type="button" id="prev-page">‹ 이전 쪽</button><span id="page-label">1 / 1</span><button type="button" id="next-page">다음 쪽 ›</button></div>
+      <div class="sheet" id="sheet"><p class="empty">왼쪽에서 연도를 고르면 PDF로 볼 수 있습니다.</p></div>
+      <details class="history" id="history-box" hidden><summary>이전 버전 보기</summary><ol id="history-list"></ol></details>
+    </section>
+  </div>
+  <details class="upload">
+    <summary>자료 올리기</summary>
+    <form id="upload-form">
+      <label>연도(4자리)<input name="year" inputmode="numeric" maxlength="4" placeholder="예: 2026" required></label>
+      <label>미리보기 PDF<input name="pdf" type="file" accept=".pdf,application/pdf" required></label>
+      <label>원본 Word<input name="word" type="file" accept=".doc,.docx" required></label>
+      <p class="hint">같은 연도를 다시 올리면 새 버전으로 바뀌고, 이전 버전은 이력에 남습니다. 지우는 기능은 없습니다.</p>
+      <button type="submit" class="primary">올리기</button>
+    </form>
+  </details>
+</main></body></html>

@@ -27,6 +27,10 @@ public class StudioService {
       Set.of(
           "pdf", "html", "json", "md", "md5", "zip", "png", "jpg", "jpeg", "webp", "mp4", "mov",
           "wav", "mp3", "flac");
+
+  /** 학생명단(시간표) 자료실(`student-roster`) 업로드에서만 추가로 받는 원본 Word 형식. 다른 프로젝트는 그대로 거부한다. */
+  public static final Set<String> ROSTER_WORD_EXTENSIONS = Set.of("doc", "docx");
+
   private final JdbcTemplate db;
   private final FileStorage storage;
 
@@ -102,6 +106,9 @@ public class StudioService {
     if (p == null) throw error(401, "로그인이 필요합니다.");
     if ("ADMIN".equals(p.role())) return "APPROVER";
     if ("academy-relocation".equals(projectId())) throw error(403, "학원이사 자료는 관리자 전용입니다.");
+    // MySQL 기본 비교는 대소문자를 구분하지 않으므로 표기만 바꾼 projectId도 막는다.
+    if (StudentRosterController.PROJECT.equalsIgnoreCase(projectId()))
+      throw error(403, "학생명단 자료는 관리자 전용입니다.");
     var member =
         db
             .query(
@@ -223,7 +230,7 @@ public class StudioService {
         name.contains(".")
             ? name.substring(name.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT)
             : "";
-    if (!EXTENSIONS.contains(ext))
+    if (!allowedExtension(ext, projectId()))
       throw error(400, "지원하지 않는 파일 형식입니다.");
     Path tmp = Files.createTempFile("f2r-studio-", ".upload");
     String createdKey = null;
@@ -311,6 +318,12 @@ public class StudioService {
     }
   }
 
+  /** 공통 허용 목록 + 학생명단 프로젝트 전용 doc·docx. 프로젝트 판단은 요청에서 고른 projectId만 쓴다. */
+  static boolean allowedExtension(String ext, String project) {
+    return EXTENSIONS.contains(ext)
+        || (StudentRosterController.PROJECT.equals(project) && ROSTER_WORD_EXTENSIONS.contains(ext));
+  }
+
   static void validateType(Path path, String ext) throws IOException {
     byte[] b;
     try (var in = Files.newInputStream(path)) {
@@ -325,6 +338,17 @@ public class StudioService {
                       Arrays.copyOf(b, 8), new byte[] {(byte) 137, 80, 78, 71, 13, 10, 26, 10});
           case "zip" ->
               b.length >= 4 && b[0] == 80 && b[1] == 75 && (b[2] == 3 || b[2] == 5 || b[2] == 7);
+          // Word 2007+ (OOXML ZIP 로컬 헤더 PK\x03\x04)
+          case "docx" -> b.length >= 4 && b[0] == 80 && b[1] == 75 && b[2] == 3 && b[3] == 4;
+          // Word 97-2003 (OLE2 복합 문서 D0 CF 11 E0 A1 B1 1A E1)
+          case "doc" ->
+              b.length >= 8
+                  && Arrays.equals(
+                      Arrays.copyOf(b, 8),
+                      new byte[] {
+                        (byte) 0xd0, (byte) 0xcf, 0x11, (byte) 0xe0, (byte) 0xa1, (byte) 0xb1, 0x1a,
+                        (byte) 0xe1
+                      });
           case "mp4" ->
               b.length >= 12 && new String(b, 4, 4, StandardCharsets.ISO_8859_1).equals("ftyp");
           case "mov" ->
