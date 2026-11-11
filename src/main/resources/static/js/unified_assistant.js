@@ -186,11 +186,13 @@
     const change=()=>{const business=$('bizSelect').value||null;if(state.business===business)return;state.business=business;state.generation++;$('uaDrafts').replaceChildren();$('uaCatalog').replaceChildren();$('uaFile').value='';$('uaCommand').value='';$('uaEdit').open=false;fields();$('uaScope').textContent=scopeText();refreshContext().catch(error);};
     $('bizSelect').addEventListener('change',change);new MutationObserver(change).observe($('bizSelect'),{childList:true});change();
   }
+  // 통합 대시보드에서 넘어온 부탁(?ask=)은 입력칸에만 채운다. 사람이 확인하고 보내도록 자동 전송하지 않는다.
+  function prefillAsk(){const ask=window.HubView?window.HubView.askFromSearch(location.search):null;if(!ask)return;$('uaCommand').value=ask;$('unifiedAssistant').scrollIntoView({block:'start'});$('uaCommand').focus({preventScroll:true});}
   async function init() {if(!$('unifiedAssistant'))return;try{state.user=await ensureCurrentUser();if(!state.user||!['ADMIN','TUTOR'].includes(state.user.role))return;
     try { const res=await fetch('/api/dashboard/businesses',{credentials:'same-origin',cache:'no-store'});if(res.ok){const list=await res.json(),saved=localStorage.getItem('dashboard.businessId');state.business=String(list.find(x=>String(x.businessId)===saved)?.businessId||list[0]?.businessId||'')||null;} } catch(_) {}
     fields();setBusy(true);bind();state.progress=await json('/progress');
     // 첫 방문 안내는 화면을 밀지 않도록 자동으로 펼치지 않고 '사용법 안내' 버튼에 처음 표시만 한다.
-    if(!state.progress.completed)$('uaResume').classList.add('ua-new');await refreshContext();document.dispatchEvent(new CustomEvent('ua:ready'));}catch(e){error(e);document.dispatchEvent(new CustomEvent('ua:failed',{detail:e.message}));}}
+    if(!state.progress.completed)$('uaResume').classList.add('ua-new');await refreshContext();prefillAsk();document.dispatchEvent(new CustomEvent('ua:ready'));}catch(e){error(e);document.dispatchEvent(new CustomEvent('ua:failed',{detail:e.message}));}}
   window.unifiedAssistant={bubble,send,createDraft,json,saveProgress,ready:()=>state.ready,busy:()=>state.busy,academy:()=>state.academy,role:()=>state.user&&state.user.role,ownerContext:()=>state.context?.role==='ACADEMY_OWNER',progress:()=>state.progress};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
