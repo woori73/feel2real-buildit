@@ -291,6 +291,8 @@ public class AdmissionsChatService {
         }
         // 8-2. 지난해 결과를 썼으면 "지난해 결과이며 올해와 다를 수 있음"을 반드시 밝힌다.
         if (usesPrior && !answer.contains("올해와 다를 수 있")) answer = PRIOR_DISCLAIMER + "\n" + answer;
+        // 8-3. 다음 학년도 반영방법으로 다시 산출한 표 같은 원문 산출 단서가 있으면 답변에 반드시 남긴다.
+        if (usesPrior) answer = withPriorCaveats(answer, usable);
 
         // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
         List<AnswerSource> sources = new ArrayList<>(buildSources(usable, question));
@@ -326,6 +328,23 @@ public class AdmissionsChatService {
     static boolean isFactRow(String refId) {
         return refId != null && (refId.startsWith("dept:") || refId.startsWith("type:")
                 || refId.startsWith("sched:") || refId.startsWith("prior:") || refId.startsWith("knowledge:"));
+    }
+
+    /**
+     * 지난해 입시결과 근거의 '산출 기준(원문)' 단서(예: 2027학년도 반영방법에 따라 산출)를 대학별로 모아,
+     * 답변에 그 문장이 없으면 끝에 덧붙인다. 같은 대학·같은 문장은 한 번만.
+     */
+    static String withPriorCaveats(String answer, List<Evidence> evidence) {
+        java.util.LinkedHashMap<String, String> lines = new java.util.LinkedHashMap<>();
+        for (Evidence e : evidence) {
+            if (!isPrior(e) || e.getExcerpt() == null || !e.getExcerpt().startsWith(AdmissionsFactSearchService.CAVEAT_PREFIX)) continue;
+            String caveat = e.getExcerpt().substring(AdmissionsFactSearchService.CAVEAT_PREFIX.length()).split("\n", 2)[0].trim();
+            if (caveat.isEmpty() || answer.contains(caveat)) continue;
+            String univ = e.getTitle() == null ? "" : e.getTitle().split(" ", 2)[0];
+            lines.putIfAbsent(univ + "|" + caveat, "※ " + univ + " 지난해 결과의 산출 기준(원문): " + caveat);
+        }
+        if (lines.isEmpty()) return answer;
+        return answer + "\n\n" + String.join("\n", lines.values());
     }
 
     static boolean isPrior(Evidence e) {
@@ -555,6 +574,7 @@ public class AdmissionsChatService {
                     + "지표 이름은 근거에 적힌 원문 그대로 쓰고(예: '최종등록자 교과등급 70%컷'을 '평균'이나 '합격선'으로 바꾸지 않음), "
                     + "서로 다른 지표나 서로 다른 대학의 지표를 하나로 합치거나 평균내거나 환산하지 마라. 대학마다 지표가 다르면 대학별로 따로 적어라. "
                     + "근거에 없는 지표·수치는 쓰지 말고 '공개되지 않음'이라고 하라. 출처는 '대학 입학처 공식 입시결과(지난해)'라고 밝혀라. "
+                    + "근거 내용에 '산출 기준(원문)'이 있으면 그 대학 수치를 쓸 때 그 문장을 그대로 함께 적어라. "
                     + "합격·불합격 판정, 합격 확률, '가능성이 높다/낮다', '안정권/상향' 같은 표현은 절대 쓰지 마라.\n");
             if (!comparisons.isEmpty()) {
                 sb.append("[성적 나란히 보기 — 서버가 만든 줄, 판정 없이 그대로 옮겨라]\n");

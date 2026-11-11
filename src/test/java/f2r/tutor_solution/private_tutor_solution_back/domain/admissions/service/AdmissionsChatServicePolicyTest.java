@@ -631,4 +631,59 @@ class AdmissionsChatServicePolicyTest {
         });
         verify(llm, never()).complete(anyString(), anyString(), anyInt());
     }
+
+    private static Evidence priorWithExcerpt(String title, String excerpt) {
+        return Evidence.builder().stepNo(1).sourceClass(SourceClass.OFFICIAL_PRIOR_RESULT).refId("prior:" + title.hashCode())
+                .title(title).excerpt(excerpt).academicYear(2026).yearConfirmed(true).build();
+    }
+
+    @Test
+    @DisplayName("given 출처 제목 괄호에 '반영방법'·'모집단위 기준'이 있는 문서 when 산출 단서를 뽑으면 then 그 괄호 문장을 원문 그대로, 다른 괄호는 무시한다")
+    void priorCaveat_extractsOnlyMethodClause() {
+        // given
+        String hannam = "한남대학교 2026학년도 수시 입시결과: 2026학년도 한남대학교 수시 입시결과(2027학년도 모집단위 기준, 학생부교과는 2027학년도 교과성적 반영방법을 반영한 전년도 입시결과)";
+        String other = "국립경국대학교 2026학년도 수시 입시결과: 자료(최종)(첨부: 2027학년도 수시모집 교과성적 산출프로그램 및 전년도 입시 성적 결과 자료.xlsm)";
+
+        // when
+        String a = AdmissionsFactSearchService.priorCaveat(hannam);
+        String b = AdmissionsFactSearchService.priorCaveat(other);
+
+        // then
+        assertThat(a).isEqualTo("2027학년도 모집단위 기준, 학생부교과는 2027학년도 교과성적 반영방법을 반영한 전년도 입시결과");
+        assertThat(b).isNull();
+        assertThat(AdmissionsFactSearchService.priorCaveat(null)).isNull();
+    }
+
+    @Test
+    @DisplayName("given 산출 단서가 있는 지난해 결과 근거 when 답변에 그 문장이 없으면 then 대학 이름과 함께 끝에 한 번만 덧붙인다")
+    void withPriorCaveats_appendsMissingCaveatOnce() {
+        // given
+        String caveat = "2026학년도 수시모집 최종 등록자의 성적을 2027학년도 수시모집 학생부 반영방법에 따라 산출";
+        String excerpt = AdmissionsFactSearchService.withCaveat(caveat, "모집인원 41명, 경쟁률 6.8:1");
+        List<Evidence> ev = List.of(priorWithExcerpt("대구가톨릭대학교 2026학년도(지난해) 수시 입시결과: 학생부교과(교과전형) 자율전공학부", excerpt),
+                priorWithExcerpt("대구가톨릭대학교 2026학년도(지난해) 수시 입시결과: 학생부교과(교과전형) 영어학과", excerpt),
+                priorWithExcerpt("예시대학교 2026학년도(지난해) 수시 입시결과: 일반 국어과", "모집인원 3명"));
+
+        // when
+        String out = AdmissionsChatService.withPriorCaveats("자율전공학부 경쟁률은 6.8:1입니다.", ev);
+        String kept = AdmissionsChatService.withPriorCaveats("이 결과는 " + caveat + "한 값입니다.", ev);
+
+        // then
+        assertThat(out).endsWith("※ 대구가톨릭대학교 지난해 결과의 산출 기준(원문): " + caveat);
+        assertThat(out.split("※", -1)).hasSize(2);
+        assertThat(kept).isEqualTo("이 결과는 " + caveat + "한 값입니다.");
+    }
+
+    @Test
+    @DisplayName("given 산출 단서가 없는 지난해 결과 근거 when 단서를 붙이면 then 답변을 바꾸지 않는다")
+    void withPriorCaveats_noCaveat_unchanged() {
+        // given
+        List<Evidence> ev = List.of(priorWithExcerpt("예시대학교 2026학년도(지난해) 수시 입시결과: 일반 국어과", "모집인원 3명"));
+
+        // when
+        String out = AdmissionsChatService.withPriorCaveats("국어과 모집인원은 3명입니다.", ev);
+
+        // then
+        assertThat(out).isEqualTo("국어과 모집인원은 3명입니다.");
+    }
 }
