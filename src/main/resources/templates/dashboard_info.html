@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#FBFAF5">
+  <title>정보 · 올린 자료</title>
+  <link rel="stylesheet" href="/css/academy_home.css?v=20261111-1">
+  <link rel="stylesheet" href="/css/academy_info.css?v=20261111-1">
+  <script defer src="/js/academy_info_view.js?v=20261111-1"></script>
+  <script defer src="/js/academy_info.js?v=20261111-1"></script>
+</head>
+<body>
+  <header class="ah-top">
+    <div class="ah-top-in">
+      <div class="ah-academy"><span class="ah-academy-name" id="aiAcademyName">학원 확인 중</span></div>
+      <nav class="ah-nav" aria-label="학원 업무">
+        <a href="/dashboard">학원 홈</a>
+        <a href="/academycraft/screens/MBR-01-student-list.html">학생</a>
+        <a href="/academycraft/screens/CLS-01-class-list.html">반/수업</a>
+        <a href="/academycraft/screens/ATT-03-attendance-roster.html">출결</a>
+        <a href="/academycraft/screens/CNS-03-inquiry-inbox.html">상담</a>
+        <a href="/dashboard/info" aria-current="page">정보</a>
+      </nav>
+    </div>
+  </header>
+  <main class="ah-main" id="aiMain" aria-busy="true">
+    <div class="ah-title-row"><h1>정보 · 올린 자료</h1></div>
+    <p class="ah-note ai-lead">이미 올린 자료를 다시 올리지 않고 여기서 글로 읽습니다. 본문은 원본 파일에서 그대로 읽은 글이며, 요약이나 추측을 붙이지 않습니다.</p>
+    <p class="ah-alert" id="aiAlert" role="alert" hidden></p>
+    <div id="aiList" class="ai-list"><div class="ah-skel" aria-hidden="true"></div><div class="ah-skel" aria-hidden="true"></div></div>
+  </main>
+  <script src="/js/api.js"></script>
+</body>
+</html>

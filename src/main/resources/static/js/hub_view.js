@@ -23,10 +23,10 @@
     '원생 수': { help: '지금 다니는 학생', href: '/easy' }
   };
 
-  /** AI 업무 비서로 가는 주소. 빈 글이면 비서 화면만 연다. */
+  /** AI 업무 비서(/dashboard/assistant)로 가는 주소. 빈 글이면 비서 화면만 연다. /dashboard는 학원 홈이다. */
   function askUrl(text) {
     const t = String(text == null ? '' : text).trim().slice(0, 500);
-    return t ? '/dashboard?ask=' + encodeURIComponent(t) : '/dashboard';
+    return t ? '/dashboard/assistant?ask=' + encodeURIComponent(t) : '/dashboard/assistant';
   }
 
   /** 주소의 ?ask= 값(없거나 비면 null). AI 업무 비서가 입력칸을 채울 때 쓴다. */

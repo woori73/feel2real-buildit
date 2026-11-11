@@ -153,7 +153,7 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   const errors=[];
   const context=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await admin.storageState(),viewport:{width:1440,height:1050}});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/dashboard');await expect(page.locator('#uaRole')).toContainText('원장 연결');
+  await page.goto('/dashboard/assistant#all');await expect(page.locator('#uaRole')).toContainText('원장 연결');
   await page.waitForFunction(()=>window.unifiedAssistant?.ready());
   // Approved dashboard contract: first-visit conversation, then an explicit menu command opens the guide.
   await expect(page.locator('#uaTour')).toBeHidden();
@@ -203,7 +203,7 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
   await context.close();
   for(const [role,ctx,width,height] of [['admin',admin,360,800],['admin',admin,390,844],['admin',admin,430,932],['tutor',teacher,390,844],['tutor',teacher,1440,1050]]) {
     const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await ctx.storageState(),viewport:{width,height},isMobile:width<500,hasTouch:width<500});
-    const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto('/dashboard');
+    const p=await c.newPage();p.on('pageerror',e=>errors.push(e.message));await p.goto('/dashboard/assistant#all');
     await expect(p.locator('#uaRole')).toContainText(role==='admin'?'원장 연결':'강사 연결');
     await p.waitForFunction(()=>window.unifiedAssistant?.ready());
     await expect(p.locator('#uaSummary')).not.toContainText('불러오는 중');
@@ -226,5 +226,5 @@ test('natural command and desktop/mobile workbench render, highlight, persist an
 test('login surfaces welcome link without moving the current service',async({browser})=>{
   const c=await browser.newContext({timezoneId:'Asia/Seoul',storageState:await admin.storageState()});const p=await c.newPage();await p.goto('/old-home');
   await expect(p.locator('#assistantWelcome')).toBeVisible();expect(new URL(p.url()).pathname).toBe('/old-home');
-  await expect(p.locator('#assistantWelcome a')).toHaveAttribute('href','/dashboard');await p.locator('#assistantWelcome button').click();await expect(p.locator('#assistantWelcome')).toHaveCount(0);await c.close();
+  await expect(p.locator('#assistantWelcome a')).toHaveAttribute('href','/dashboard/assistant');await p.locator('#assistantWelcome button').click();await expect(p.locator('#assistantWelcome')).toHaveCount(0);await c.close();
 });

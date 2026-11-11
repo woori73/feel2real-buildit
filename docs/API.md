@@ -5352,3 +5352,32 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - 개인정보: 실명·원문·파일 ID·원본 파일은 내보내지 않는다. 같은 이름=같은 가명(S001…, 처음 나온 순서)이라 동명이인은 한 명으로, 표기가 바뀐 같은 학생은 다른 사람으로 셀 수 있다. 일반 Studio MCP 도구(`list_studio_assets`, `studio_document` 등)로 `student-roster` 프로젝트를 지정하면 어떤 동의로도 403(`student_roster_aggregate_only`)이다.
 
 화면 확인(가짜 이름 샘플 2024~2026): [허브 PC](admin/student-roster/01-hub-pc.png) · [자료실 PC](admin/student-roster/02-roster-pc-2026.png) · [2쪽 보기](admin/student-roster/03-roster-pc-2025-page2.png) · [허브 휴대폰](admin/student-roster/04-hub-mobile.png) · [자료실 휴대폰](admin/student-roster/05-roster-mobile.png)
+
+## 학원 홈 · 정보 화면 (2026-11-11)
+
+### 화면 경로
+
+| 경로 | 화면 | 비고 |
+|---|---|---|
+| `/dashboard` | `dashboard` 학원 홈 | ADMIN·TUTOR. 오늘 날짜·학원명·재원생 n명 링크·다음 수업 배너(출결부 열기)·오늘 수업(시간순)·학생 챙기기·이번 주 중점 업무. 재무 KPI·AI 대화·캐릭터·지휘창·오른쪽 고정 메뉴 없음 |
+| `/dashboard/assistant` | `dashboard_assistant` AI 업무 비서 | 예전 `/dashboard` 전체(대화·초안·승인·CSV/TXT 첨부·장부 위젯)를 그대로 옮김. 기본 보기 AI 대화, `#all`=업무 도구 |
+| `/dashboard/info` | `dashboard_info` 정보(올린 자료 읽기) | 제목 → 원문 → 원본 파일 순 |
+
+- 호환: `/dashboard#ai`, `/dashboard?ask=...`는 홈의 첫 스크립트가 `location.replace('/dashboard/assistant'+search+'#ai')`로 옮긴다(`?ask=`는 입력칸만 채우고 자동 전송하지 않는 기존 규칙 그대로). `/dashboard`, `/dashboard#all`은 학원 홈을 연다. `/admin/hub`의 「AI에게 부탁하기」, 상단 메뉴·강사 홈·빌더의 「AI 업무 비서」 링크는 `/dashboard/assistant`로 바꿨다.
+- 홈 데이터(모두 기존 게이트웨이 허용 경로, 읽기 전용): `GET /academycraft/api/rea/integration/context[?academyId=]`, `.../{academyId}/dashboard/stats`(재원생 수 = `studentCount` = 활성 학생 전체 = `GET .../students` 배열 길이), `.../classes`(오늘 요일·`startTime` 순 수업), `.../attendance/roster?classId=&date=`(시작한 수업의 `NONE` = 출결 미기록), `.../consultations?type=INQUIRY&status=OPEN`(학원 답변 대기 문의. NEWS는 구조상 OPEN에 머물러 제외), ADMIN만 `GET /api/admin/academy-move/entries`(제목이 `중요`로 시작하고 보관되지 않은 최근 한 건 = 이번 주 중점 업무).
+- 재원생 수 표시: 정상 응답 정수만 `재원생 n명`(0명 포함). 403=「재원생 조회 권한 없음」, 학원 미연결=「학원 연결 필요」, 그 외=「재원생 조회 실패」. 장부 사업체(EASY `원생 수`) 값은 쓰지 않는다.
+- 학원 전환(ADMIN 다중 학원): 선택값을 AcademyCraft 화면과 같은 `sessionStorage['academycraft.academy']`에 저장하고, 전환 즉시 숫자·목록을 비운 뒤 세대 번호가 같은 응답만 그린다.
+- AcademyCraft 화면 딥링크(AcademyCraft 저장소 변경, 같은 게이트웨이 허용 목록): `ATT-03-attendance-roster.html?classId=&date=`(자동 조회·주소 유지), `MBR-01-student-list.html?classId=&studentId=`, `CNS-03-inquiry-inbox.html?targetStudentId=`, `CNS-04-news-send.html?studentId=`.
+
+### 정보 API (`/api/academy-home/**`, ADMIN·TUTOR 로그인, `Cache-Control: private, no-store`, GET 외 같은 사이트 `Origin`만)
+
+| 메서드 | 경로 | 내용 |
+|---|---|---|
+| GET | `/api/academy-home/materials` | 읽을 수 있는 올린 자료 목록 `{items:[{projectId,kind,title,context,createdAt,files:[{fileId,filename,extension,sizeBytes,role}],typedNote?,year?}],notice}`. kind=`ROSTER`(학생명단 자료실 연도별 최신), `MOVE`(학원이사 업무 노트, 보관 제외), `UNLINKED`(올렸지만 어떤 기록에도 붙지 않은 파일). 두 묶음 모두 기존 규칙상 ADMIN 전용이라 TUTOR는 빈 목록 + 안내 |
+| GET | `/api/academy-home/materials/text?projectId=&fileId=` | 원본에서 본문을 읽어 돌려준다(저장 안 함, 다시 읽기=재처리). projectId는 `student-roster`·`academy-relocation`만. 권한은 `StudioService.file()` 그대로. 응답 `{fileId,projectId,filename,extension,sizeBytes,original,preview,result:{status,route,reason,blocks:[{type:PARAGRAPH\|TABLE\|PAGE,text,page,header,rows}],truncated,pageCount}}` |
+| GET | `/api/academy-home/roster/reconcile?year=&academyId=` | 학생명단 이름 ↔ 선택 학원 학생 대조 `{academyId,year,role,activeStudentCount,balanced,report:{sourceEntries,sourceNames,existing,added,hold,excluded,rows:[{name,status,reason,occurrences,linkedStudentId,candidates}]}}`. 학원 권한은 AcademyCraft 연결 문맥으로 확인 |
+| POST | `/api/academy-home/roster/links` | `{academyId,year,name,status:LINKED\|EXCLUDED,studentId}` 원장이 보류 행을 해결. 원장 연결(`ACADEMY_OWNER`) 필수, 이름이 그 연도 명단에 있어야 하고(404), LINKED는 그 학원 재원 학생이어야 한다(400). 같은 학원·연도·이름은 덮어쓴다. 응답 = 갱신된 대조 결과 |
+
+- 형식별 읽기 경로: docx(본문 순서 문단·표, 표 첫 줄=열 제목), doc(문단 + 표), pdf(글자 층을 페이지 순서대로, 최대 100쪽·20만 자), csv(첫 줄 열 제목 표, UTF-8/CP949), txt·md·json(문단), html(태그 제거). 이미지(png·jpg·jpeg·webp)와 글자 층 없는 PDF는 `NEEDS_OCR` — 서비스에 OCR이 없어 확인용 원본(이미지·PDF 쪽 PNG `preview?page=N`)만 보여 준다. 그 밖 형식 `UNSUPPORTED`, 손상 `FAILED`, 글자 없음 `EMPTY`. 20 MiB 초과는 기존 `/api/studio/files/{id}/text`와 같은 한도로 원본 확인 안내. 파일명·요약을 본문처럼 만들지 않는다.
+- 대조 분류: 행=자료 안 서로 다른 이름(같은 이름이 여러 날짜에 나와도 1행). EXISTING=원장이 연결 확인한 재원 학생, NEW=그 학원에 같은 이름 학생 없음(재원·비활성 모두), HOLD=이름이 같은 학생이 있거나 연결 학생이 비활성/없음, EXCLUDED=원장 제외 또는 이름 형식 아님. `existing+added+hold+excluded = sourceNames`(`balanced`). 이름만 같은 학생은 자동 병합하지 않는다.
+- 추가: NEW 행은 화면에서 골라 기존 `POST /api/dashboard/assistant/v1/drafts {operation:"STUDENT_CREATE",academyId,input:{name}}` 초안을 만들고 원장이 `.../drafts/{id}/approve`로 승인해야 저장된다(10분 만료). 등록 후 다시 대조하면 그 이름은 HOLD가 되어 다시 추가 후보로 세지 않는다(재처리 중복 방지). 정보 화면 자체는 학생을 만들지 않는다.

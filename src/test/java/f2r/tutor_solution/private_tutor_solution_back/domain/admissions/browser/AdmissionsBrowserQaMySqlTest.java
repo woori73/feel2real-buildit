@@ -364,7 +364,7 @@ class AdmissionsBrowserQaMySqlTest {
             WebDriverWait wait=new WebDriverWait(driver,Duration.ofSeconds(20));
             driver.get("http://127.0.0.1:"+port+"/actuator/health");
             driver.manage().addCookie(new org.openqa.selenium.Cookie("ACCESS_TOKEN",cookie.getValue()));
-            driver.get("http://127.0.0.1:"+port+"/dashboard");
+            driver.get("http://127.0.0.1:"+port+"/dashboard/assistant");
             // AI 비서 화면에서는 F2R 서비스 목록이 메뉴 안에 있다(1280px 이상은 늘 펼침). 좁은 화면은 사용자처럼 메뉴를 먼저 연다.
             org.openqa.selenium.WebElement menuButton=wait.until(d->d.findElement(By.id("siMenuBtn")));
             if(menuButton.isDisplayed()&&!driver.findElement(By.cssSelector("#shortcutRow a[href='/admissions/workspace']")).isDisplayed())menuButton.click();

@@ -1,0 +1,61 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const test = require('node:test');
+
+// 학원 홈(/dashboard) 화면 계약: 운영 동선만 남기고 AI 콘솔·재무 KPI·지휘창은 홈에서 걷어낸다.
+const ROOT = path.resolve(__dirname, '../../main/resources');
+const HTML = fs.readFileSync(path.join(ROOT, 'templates/dashboard.html'), 'utf8');
+const JS = fs.readFileSync(path.join(ROOT, 'static/js/academy_home.js'), 'utf8');
+const ASSISTANT = fs.readFileSync(path.join(ROOT, 'templates/dashboard_assistant.html'), 'utf8');
+
+test('given academy_home.js when $(id) 참조를 모으면 then 모두 홈 템플릿에 있고 중복 id가 없다', () => {
+  // given
+  const ids = new Set([...JS.matchAll(/\$\('([A-Za-z0-9_-]+)'\)/g)].map((m) => m[1]));
+  const all = [...HTML.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+  // then
+  assert.ok(ids.size >= 15);
+  for (const id of ids) assert.match(HTML, new RegExp('id="' + id + '"'), `템플릿에 id="${id}" 없음`);
+  assert.equal(new Set(all).size, all.length);
+});
+
+test('given 홈 템플릿 when 읽으면 then 고정 메뉴·승인 카운터·AI 캐릭터·플로팅 버튼·ZIP·지휘창·재무 KPI가 없다', () => {
+  // given / when / then
+  for (const gone of ['id="siMenu"', 'id="statusPending"', 'id="statusDone"', 'id="statusReview"', 'id="agentStage"', 'id="aiFab"',
+    'id="siMediaForm"', 'id="uaUploadForm"', 'id="uaCommandForm"', 'id="kpiRow"', 'id="widgetContainer"', 'id="bizSelect"',
+    'f2r_agent_dashboard.js', 'unified_assistant.js', 'easy-finance-summary']) {
+    assert.ok(!HTML.includes(gone), gone + ' 가 홈에 남아 있음');
+  }
+  assert.ok(!JS.includes('/api/dashboard/widgets'), '홈은 장부 위젯(재무 KPI)을 부르지 않는다');
+});
+
+test('given 홈 템플릿 when 읽으면 then 학원명·홈·학생·반/수업·출결·상담 메뉴와 오늘의 학원·재원생 링크·다음 수업 배너가 있다', () => {
+  for (const needle of ['id="ahAcademyName"', '>학원 홈<', '>학생<', '>반/수업<', '>출결<', '>상담<', '<h1>오늘의 학원</h1>',
+    'id="ahStudentCount" href="/academycraft/screens/MBR-01-student-list.html"', 'id="ahBanner"', 'id="ahBannerAction"', '학생 챙기기', '이번 주 중점 업무']) {
+    assert.ok(HTML.includes(needle), needle);
+  }
+  // 상담은 원장·강사용 문의함으로 연다(CNS-01은 학부모 인증키 화면).
+  assert.ok(HTML.includes('href="/academycraft/screens/CNS-03-inquiry-inbox.html">상담<'));
+  // 장부·정보·AI 비서는 보조 진입점으로만 남긴다.
+  for (const href of ['/ledger', '/dashboard/info', '/dashboard/assistant']) assert.ok(HTML.includes('href="' + href + '"'), href);
+});
+
+test('given 예전 #ai·?ask= 주소 when 홈을 열면 then AI 업무 비서 화면으로 옮기고 #all·빈 주소는 홈을 연다', () => {
+  // given
+  const script = HTML.slice(HTML.indexOf('<script>'), HTML.indexOf('</script>')).replace(/\/\/.*$/gm, '');
+  // then
+  assert.match(script, /location\.hash === '#ai' \|\| \/\[\?&\]ask=\/\.test\(q\)/);
+  assert.match(script, /location\.replace\('\/dashboard\/assistant' \+ q \+ '#ai'\)/);
+  assert.doesNotMatch(script, /#all/);
+  // AI 업무 비서 화면은 기존 기능을 그대로 두고 기본 보기를 AI 대화로 연다.
+  assert.match(ASSISTANT, /data-default-view="ai"/);
+  assert.match(ASSISTANT, /id="uaCommandForm"/);
+});
+
+test('given academy_home.js when 읽으면 then 서버 문자열은 textContent로만 넣고 화면에서 쓰기 요청을 보내지 않는다', () => {
+  assert.doesNotMatch(JS, /\.innerHTML\s*=|insertAdjacentHTML|document\.write|eval\(/);
+  assert.doesNotMatch(JS, /method:\s*'(POST|PUT|DELETE)'/);
+  // 학원 전환 시 이전 학원 값을 먼저 지우고, 늦게 온 응답은 세대 번호로 버린다.
+  assert.match(JS, /var g = \+\+generation;\s*resetView\(\);/);
+  assert.match(JS, /if \(g !== generation\) return;/);
+});

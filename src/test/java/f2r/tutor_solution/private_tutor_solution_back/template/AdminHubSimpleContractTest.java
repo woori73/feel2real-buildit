@@ -52,7 +52,7 @@ class AdminHubSimpleContractTest {
   void assistantPrefillsAskWithoutSending() throws Exception {
     // given
     String js = read("static/js/unified_assistant.js");
-    String dash = read("templates/dashboard.html");
+    String dash = read("templates/dashboard_assistant.html");
     // when
     int fn = js.indexOf("function prefillAsk(){");
     String body = js.substring(fn, js.indexOf('\n', fn));

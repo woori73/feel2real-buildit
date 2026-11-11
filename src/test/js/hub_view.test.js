@@ -10,17 +10,17 @@ const WIDGETS=[
   {id:'easy-recent-transactions',title:'최근 거래',type:'list',data:{items:[],emptyText:'최근 거래가 없습니다.'}}
 ];
 
-test('given 부탁 글 when 주소를 만들면 then /dashboard?ask= 로 인코딩해 넘긴다',()=>{
+test('given 부탁 글 when 주소를 만들면 then /dashboard/assistant?ask= 로 인코딩해 넘긴다',()=>{
   // given
   const text='  미수금 정리해줘 & 문자 초안  ';
   // when
   const url=view.askUrl(text);
   // then
-  assert.equal(url,'/dashboard?ask='+encodeURIComponent('미수금 정리해줘 & 문자 초안'));
+  assert.equal(url,'/dashboard/assistant?ask='+encodeURIComponent('미수금 정리해줘 & 문자 초안'));
 });
 test('given 빈 글 when 주소를 만들면 then AI 업무 비서 화면만 연다',()=>{
-  assert.equal(view.askUrl('   '),'/dashboard');
-  assert.equal(view.askUrl(null),'/dashboard');
+  assert.equal(view.askUrl('   '),'/dashboard/assistant');
+  assert.equal(view.askUrl(null),'/dashboard/assistant');
 });
 test('given 아주 긴 글 when 주소를 만들면 then 500자까지만 넘긴다',()=>{
   // given

@@ -48,6 +48,7 @@ button, input, select, textarea { font: inherit; }
 .ops-logo b { font-size: 22px; font-weight: 900; letter-spacing: .04em; color: var(--si-cyan); text-shadow: 0 0 14px rgba(93,225,255,.45); }
 .ops-logo span { font-size: 12px; color: var(--si-muted); }
 .ops-title { margin: 0; font-size: 16px; font-weight: 800; padding-left: 12px; border-left: 1px solid var(--si-line); white-space: nowrap; }
+.ops-home-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; color: var(--si-cyan); font-size: 14px; white-space: nowrap; }
 .ops-views { display: none; padding: 3px; border: 1px solid var(--si-line); border-radius: 999px; background: var(--si-panel-2); }
 .ops-views button, .si-menu-views button { border: 0; background: transparent; color: var(--si-muted); padding: 8px 16px; border-radius: 999px; font-size: 15px; font-weight: 800; cursor: pointer; min-height: 40px; }
 .ops-views button[aria-pressed="true"], .si-menu-views button[aria-pressed="true"] { background: var(--si-cyan); color: #032130; }
