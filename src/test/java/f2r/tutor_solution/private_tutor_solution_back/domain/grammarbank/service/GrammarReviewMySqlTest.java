@@ -30,6 +30,7 @@ import org.springframework.data.domain.PageRequest;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({JpaConfig.class, GrammarBankService.class, GrammarBankImportService.class, GrammarBankAccessGuard.class})
 @EnabledIfEnvironmentVariable(named = "GRAMMAR_MYSQL_TEST", matches = "true")
+@org.junit.jupiter.api.TestMethodOrder(org.junit.jupiter.api.MethodOrderer.OrderAnnotation.class)
 class GrammarReviewMySqlTest {
   @Autowired GrammarBankImportService importer;
   @Autowired GrammarBankService bank;
@@ -38,6 +39,25 @@ class GrammarReviewMySqlTest {
   @Autowired SubjectRepository subjects;
   @Autowired jakarta.persistence.EntityManager em;
 
+  @org.junit.jupiter.api.Order(2)
+  @Test void keywordSearchSupportsLobQuestionAndKeywords() {
+    var subject = subjects.saveAndFlush(Subject.builder().nameEn("SEARCH_TEST").nameKo("검색 테스트").build());
+    var question = f2r.tutor_solution.private_tutor_solution_back.domain.question.entity.Question.builder()
+        .subject(subject).questionText("A searchable grammar sentence.").correctAnswer("answer").build();
+    em.persist(question);
+    profiles.saveAndFlush(GrammarQuestionProfile.builder().question(question)
+        .schoolLevel(SchoolLevel.H1).keywords("SEARCH-LOB-123").externalRef("SEARCH-LOB-123")
+        .reviewStatus(GrammarReviewStatus.NEEDS_REVIEW).build());
+    em.flush();
+    em.clear();
+    for (String term : List.of("searchable grammar", "SEARCH-LOB-123")) {
+      var filter = new GrammarBankService.SearchFilters(
+          null, null, null, null, null, null, null, term, null, null);
+      assertThat(bank.search(filter, PageRequest.of(0, 10)).getTotalElements()).isEqualTo(1);
+    }
+  }
+
+  @org.junit.jupiter.api.Order(1)
   @Test void completeReviewedPayloadSurvivesStorageFilteringEditingAndReplay() throws Exception {
     var json = new ObjectMapper();
     Map<String, Object> payload = json.readValue(Files.readString(Path.of(System.getenv("GRAMMAR_REVIEW_IMPORT_JSON"))), new TypeReference<>() {});

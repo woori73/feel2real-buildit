@@ -379,8 +379,8 @@ public class GrammarBankService {
       if (f.search() != null && !f.search().isBlank()) {
         String like = "%" + f.search().strip().toLowerCase() + "%";
         ps.add(cb.or(
-            cb.like(cb.lower(questionJoin.get("questionText")), like),
-            cb.like(cb.lower(root.get("keywords")), like)));
+            cb.like(cb.lower(questionJoin.get("questionText").as(String.class)), like),
+            cb.like(cb.lower(root.get("keywords").as(String.class)), like)));
       }
       if (f.tagIds() != null && !f.tagIds().isEmpty()) {
         Subquery<Long> sub = cq.subquery(Long.class);
