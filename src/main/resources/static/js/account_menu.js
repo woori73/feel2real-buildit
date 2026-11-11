@@ -82,7 +82,8 @@
     var previous=document.getElementById('assistantWelcome');
     if (!user || !['ADMIN','TUTOR'].includes(user.role)) { if(previous)previous.remove(); assistantWelcomeUser=null; return; }
     // 홈 첫 화면의 AI 비서가 같은 안내(AI 비서와 업무 시작)를 대화로 하므로 따로 띄우지 않는다(입력창과 겹침 방지).
-    if (location.pathname==='/dashboard' || location.pathname==='/dashboard/assistant' || document.getElementById('aiHome') || assistantWelcomeUser===user.userId) return;
+    // 학원 홈·정보·AI 업무 비서(/dashboard, /dashboard/*)에는 떠 있는 안내를 띄우지 않는다(본문과 겹침 방지).
+    if (location.pathname==='/dashboard' || location.pathname.indexOf('/dashboard/')===0 || document.getElementById('aiHome') || assistantWelcomeUser===user.userId) return;
     assistantWelcomeUser=user.userId;
     try {
       var response=await fetch('/api/dashboard/assistant/v1/progress',{credentials:'same-origin',cache:'no-store'});
