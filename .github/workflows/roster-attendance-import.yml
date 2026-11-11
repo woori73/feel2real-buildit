@@ -1,0 +1,82 @@
+name: Roster → attendance import (manual)
+
+# 운영 출결부에 학생명단(시간표) 진행표 한 연도를 넣는다. 기본은 미리보기(저장 없음).
+# - 인증: 기존 승인 ADMIN secret(NEWSTART_SEED_ADMIN_*)으로 로그인한 쿠키를 러너 임시 파일(0600)에만 둔다.
+# - 출력: 연도·건수·반 번호만. 학생 이름·연락처·응답 본문은 출력하지 않는다.
+# - 적용(apply)은 확인 문자열 IMPORT-ROSTER-<연도>가 있을 때만. 같은 학생·날짜는 서버가 한 번만 넣는다(재실행 안전).
+# - 같은 이름 학생이 여러 명이면 자동 적용하지 않고 멈춘다(화면에서 사람이 고른다).
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: '진행표 연도(4자리)'
+        required: true
+        default: '2026'
+      class_name:
+        description: '넣을 반 이름(없으면 만든다)'
+        required: true
+        default: '2026 진행표 전체'
+      apply:
+        description: '실제 저장(미리보기 확인 후에만)'
+        required: false
+        default: false
+        type: boolean
+      apply_confirm:
+        description: '저장 확인 문자열(IMPORT-ROSTER-<연도>)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: roster-attendance-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_URL: https://feel2real.co.kr
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Script unit tests
+        run: python3 -I scripts/operations/roster-attendance/test_import.py
+
+      - name: ADMIN login (existing approved secret; cookie only on the runner)
+        env:
+          LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          LOGIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [ -n "$LOGIN_ID" ] && [ -n "$LOGIN_PASSWORD" ] || { echo "::error::ADMIN secret missing"; exit 1; }
+          JAR="$RUNNER_TEMP/jar.txt"
+          STATUS=$(jq -n --arg loginId "$LOGIN_ID" --arg password "$LOGIN_PASSWORD" '{loginId:$loginId,password:$password}' \
+            | curl -sS -o /dev/null -w '%{http_code}' -c "$JAR" -H 'Content-Type: application/json' -H "Origin: $BASE_URL" \
+              --data-binary @- "$BASE_URL/api/auth/login")
+          TOKEN=$(awk '$6=="ACCESS_TOKEN"{print $7}' "$JAR" | tail -1)
+          rm -f "$JAR"
+          [ -n "$TOKEN" ] || { echo "::error::login failed (http=$STATUS, body suppressed)"; exit 1; }
+          echo "::add-mask::$TOKEN"
+          jq -n --arg c "ACCESS_TOKEN=$TOKEN" '{adminCookie:$c}' > "$RUNNER_TEMP/f2r-auth.json"
+          chmod 600 "$RUNNER_TEMP/f2r-auth.json"
+          echo "login http=$STATUS cookie=stored(0600, not printed)"
+
+      - name: Preview / apply (counts only)
+        env:
+          COOKIE_FILE: ${{ runner.temp }}/f2r-auth.json
+          YEAR: ${{ inputs.year }}
+          CLASS_NAME: ${{ inputs.class_name }}
+          APPLY: ${{ inputs.apply }}
+          CONFIRM: ${{ inputs.apply_confirm }}
+        run: |
+          set -euo pipefail
+          [[ "$YEAR" =~ ^[0-9]{4}$ ]] || { echo "::error::year must be 4 digits"; exit 1; }
+          python3 -I scripts/operations/roster-attendance/import.py
+
+      - name: Remove cookie
+        if: always()
+        run: rm -f "$RUNNER_TEMP/f2r-auth.json"
