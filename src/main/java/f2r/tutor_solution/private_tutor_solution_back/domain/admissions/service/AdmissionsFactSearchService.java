@@ -52,6 +52,8 @@ public class AdmissionsFactSearchService {
     static final int MAX_SCHEDULES = 8;
     /** 지난해 입시결과: 근거로 쓰는 전형·모집단위 수 상한. */
     static final int MAX_PRIOR_UNITS = 8;
+    /** 학과를 말한 지난해 입시결과 질문: 그 학과의 세부모집·전형이 잘리지 않도록 쓰는 상한(답변 근거 전체 상한 16 중 4건은 올해 학과·전형 자료 몫으로 남긴다). */
+    static final int MAX_PRIOR_DEPARTMENT_UNITS = 12;
     /** 수시 수능최저: 근거로 쓰는 규칙 수 상한. */
     static final int MAX_MINIMUM_RULES = 8;
     /** 대학을 지정하지 않은 전체 일정 질문: 대학당 근거 수와 전체 상한. */
@@ -214,6 +216,7 @@ public class AdmissionsFactSearchService {
      * 경쟁률·입결·충원·등급컷 또는 합격 가능성 질문이고 대학을 말했을 때, 그 대학의 승인된(ACTIVE) 지난해 입시결과를
      * 전형·모집단위 단위로 묶어 근거로 만든다. 출처 공식자료도 승인돼 있어야 한다.
      * 학과·전형을 말했으면 그 단위만, 말하지 않았으면 앞에서부터 {@value #MAX_PRIOR_UNITS}개까지.
+     * 학과를 말했으면 그 학과의 세부모집·전형이 빠지지 않도록 {@value #MAX_PRIOR_DEPARTMENT_UNITS}개까지 쓰고, 같은 전형끼리 붙여 둔다.
      */
     List<Evidence> searchPriorResults(String question, AdmissionsQueryParser.Parsed p) {
         if (p.universities().isEmpty() || !(p.asksPriorResult() || p.asksAdmissionChance())) return List.of();
@@ -236,8 +239,7 @@ public class AdmissionsFactSearchService {
         }
         List<List<AdmissionsPriorResult>> all = new ArrayList<>(units.values());
         List<List<AdmissionsPriorResult>> matched = all.stream()
-                .filter(rows -> AdmissionsQueryParser.mentionsDepartment(question, rows.get(0).getDepartmentName())
-                        || AdmissionsQueryParser.mentionsDepartment(question, AdmissionsQueryParser.departmentHead(rows.get(0).getDepartmentName()))
+                .filter(rows -> priorDepartmentMentioned(question, rows.get(0).getDepartmentName())
                         || priorTypeMentioned(question, rows.get(0).getTypeName()))
                 .toList();
         if (matched.isEmpty()) {
@@ -246,18 +248,23 @@ public class AdmissionsFactSearchService {
                     .toList();
         }
         // 학과와 전형을 둘 다 말했으면 둘 다 맞는 단위를 앞에 둔다.
+        // 같은 순위 안에서는 같은 전형끼리 붙여 둔다(예: 일반 연기(여)·연기(남)·통합 정원이 흩어지지 않게).
         List<List<AdmissionsPriorResult>> chosen = new ArrayList<>(matched.isEmpty() ? all : matched);
+        java.util.Map<String, Integer> typeOrder = new java.util.HashMap<>();
+        for (List<AdmissionsPriorResult> rows : chosen) typeOrder.putIfAbsent(String.valueOf(rows.get(0).getTypeName()), typeOrder.size());
         chosen.sort(java.util.Comparator.comparingInt((List<AdmissionsPriorResult> rows) -> {
             AdmissionsPriorResult r = rows.get(0);
-            boolean dept = AdmissionsQueryParser.mentionsDepartment(question, r.getDepartmentName())
-                    || AdmissionsQueryParser.mentionsDepartment(question, AdmissionsQueryParser.departmentHead(r.getDepartmentName()));
+            boolean dept = priorDepartmentMentioned(question, r.getDepartmentName());
             boolean type = priorTypeMentioned(question, r.getTypeName());
             return dept && type ? 0 : dept || type ? 1 : 2;
-        }));
+        }).thenComparingInt(rows -> typeOrder.get(String.valueOf(rows.get(0).getTypeName()))));
+        // 학과를 말했으면 그 학과의 세부모집(예: 연기(여)·연기(남))이 상한에 잘려 한쪽 값이 전체처럼 보이지 않게 상한을 넓힌다.
+        boolean deptNamed = chosen.stream().anyMatch(rows -> priorDepartmentMentioned(question, rows.get(0).getDepartmentName()));
+        int cap = deptNamed ? MAX_PRIOR_DEPARTMENT_UNITS : MAX_PRIOR_UNITS;
         List<Evidence> out = new ArrayList<>();
         for (List<AdmissionsPriorResult> rows : chosen) {
             out.add(priorEvidence(rows));
-            if (out.size() >= MAX_PRIOR_UNITS) break;
+            if (out.size() >= cap) break;
         }
         return out;
     }
@@ -266,6 +273,12 @@ public class AdmissionsFactSearchService {
      * 질문이 입시결과의 전형을 가리키는지. 원문 전형명은 대학마다 "학생부종합[활동우수형]", "학생부교과 (추천형)"처럼 괄호가 섞여
      * 있어 괄호([]·()) 안팎 조각을 따로 본다. "학생부교과"·"학생부종합"처럼 대분류만 맞는 조각보다 세부 이름이 맞는 쪽을 쓴다.
      */
+    /** 질문이 이 모집단위의 학과를 말했는가 — 전체 이름 또는 '학과 / 세부모집'의 학과 부분. */
+    static boolean priorDepartmentMentioned(String question, String departmentName) {
+        return AdmissionsQueryParser.mentionsDepartment(question, departmentName)
+                || AdmissionsQueryParser.mentionsDepartment(question, AdmissionsQueryParser.departmentHead(departmentName));
+    }
+
     static boolean priorTypeMentioned(String question, String typeName) {
         if (typeName == null) return false;
         String q = question.replaceAll("\\s+", "");
