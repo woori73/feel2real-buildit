@@ -178,6 +178,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.AcademyPathRedirectInterceptorTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.KstTimeTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.PrivatePageRobotsHeaderWriterTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academyhome.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.AcademyBlogCanonicalInterceptorTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academyblog.controller.SitemapControllerTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.unifiedassistant.*"
