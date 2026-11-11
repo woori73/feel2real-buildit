@@ -655,6 +655,10 @@ public class SecurityConfig {
             })
             .requestMatchers("/naesin-wiki/published", "/api/naesin-wiki/**").hasAnyRole("ADMIN", "TUTOR", "STUDENT")
 
+            // 제작소 AI 작업 세션 경로: 쿠키 로그인이 없으므로 여기서 열고, StudioAgentController가
+            // STUDIO_AGENT_TOKEN Bearer를 상수 시간 비교로 직접 검사한다(미설정 404, 불일치 401).
+            .requestMatchers("/api/studio-agent/**").permitAll()
+
             // 그 외 모든 /api/**는 인증 필요
             .requestMatchers("/api/**").authenticated()
 
