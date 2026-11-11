@@ -2,7 +2,20 @@
 
 운영에서 읽은 JAR과 배포 보관 증거를 기준으로 기록한다. main 최신 커밋은 배포 완료를 의미하지 않는다. 새 배포가 성공하면 관측 시각·전체 해시·실행 기록을 함께 갱신한다.
 
-## 최신 배포 확인 — 2026-11-11 12:03:50 UTC
+## 최신 배포 확인 — 2026-11-11 12:58:37 UTC
+
+| 항목 | 확인된 값과 근거 |
+|---|---|
+| 배포 커밋 | `daea3ee46096909eb303bab0217a4db6ac797e08` — PR #1048, 접수 이메일·문자 알림과 관리자 상세 연결 |
+| 운영 배포 | [Deploy to EC2 #1143](https://github.com/woori73/feel2real-buildit/actions/runs/43023273524), success, 완료 2026-11-11 12:54:10 UTC |
+| 검증 | [PR Build Check #2584](https://github.com/woori73/feel2real-buildit/actions/runs/43021763318), [접수 회귀 #74](https://github.com/woori73/feel2real-buildit/actions/runs/43021763328) 27개 브라우저 검사, [모바일/비서 회귀 #78](https://github.com/woori73/feel2real-buildit/actions/runs/43021763422), [main Build Check #2585](https://github.com/woori73/feel2real-buildit/actions/runs/43023090386) 모두 success |
+| 배포 산출물 JAR SHA-256 | `9a09d2649d27cc76cb2d016f03abb86c7fc5730f596137b63e23ce8bbcf2ffec` — 배포 job의 빌드 산출물 해시이며 운영 파일을 별도로 다운로드해 대조한 값은 아님 |
+| 서버 확인 | SSM Success, f2r-app.service healthy, Spring health OK, buildit-wiki still healthy, 배포 SUCCESS |
+| 운영 화면 | `/admin/hub/exam-requests#notifications`에서 요청된 수신처·채널 사용을 비공개 저장. 새로고침 후 수신처 유지와 채널 체크 확인. 원문 수신처는 공개 저장소에 기록하지 않음 |
+| 실제 발송 상태 | 이메일·문자 모두 `발송 서비스 연결 필요`. 네이버 앱 비밀번호, SOLAPI 등록 발신번호·API 인증정보가 아직 없어 외부 테스트 발송 및 실제 수신은 미확인. 활성화 완료로 간주하지 않음 |
+| 관리자 링크 | 알림의 `?request={id}`로 해당 접수 상세 표시, 비로그인은 로그인 후 복귀, 일반 회원은 403. 합성 환경에서 검증했으며 운영에 테스트 신청은 만들지 않음 |
+
+## 이전 배포 확인 — 2026-11-11 12:03:50 UTC
 
 | 항목 | 확인된 값과 근거 |
 |---|---|
