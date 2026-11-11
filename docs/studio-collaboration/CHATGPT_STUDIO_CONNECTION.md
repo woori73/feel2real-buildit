@@ -80,5 +80,9 @@ callback이 위 허용 목록과 다르면 동의 화면 전에 `invalid_redirec
 ## 6. 알려진 한계
 
 - 영상·음악은 MCP 대화에 재생 형태로 전달되지 않는다. ChatGPT는 메타데이터·SHA·변경 내용·검수 이력으로 검토하고, 원본 bytes는 `originals:read` 동의 후 청크로만 받는다. 프레임 추출(콘택트 시트)은 후속 과제.
-- ChatGPT가 대화 안에서 만든 큰 파일을 base64로 보내는 것은 모델 출력 길이에 막힐 수 있다. 실무상 검수 문서(MD/JSON)·작은 이미지가 대상이다.
+- ChatGPT가 대화 안에서 만든 큰 파일을 base64로 보내는 것은 모델 출력 길이에 막힌다. 2026-11-11 확인: 3 MB PNG(약 400만 글자)를 보내다 실패하고 작은 문서만 성공해 "되다가 안 되다가"로 보였다.
+  - 해결(2026-11-11): `upload_studio_asset`에 `file` 인자를 추가했다. 도구 `_meta["openai/fileParams"]=["file"]`. ChatGPT가 대화 속 파일의 `download_url`을 넘기면 서버가 직접 받는다(100 MiB까지). 큰 이미지는 `file`로 보내라고 ChatGPT에 지시한다.
+  - 커넥터를 다시 연결하거나 새 채팅을 열어야 ChatGPT가 바뀐 도구 설명(`_meta`)을 읽는다.
+  - 알려진 OpenAI 쪽 문제: 파일 인자가 가끔(보고상 약 10%) 빠져서 오거나, 모바일 앱에서 불완전한 참조로 온다(openai-apps-sdk-examples #237·#185). 실패하면 PC 웹에서 다시 시도한다.
+- 서버 앞단에서 크기 초과로 거절된 요청(413 `body_too_large`)은 예전에는 기록이 없었다. 이제 `mcp_audit`에 `transport_body_too_large`·DENY로 남아 ChatGPT의 `activity_history`에서 보인다.
 - Claude Code CLI의 로컬 callback(`http://localhost:*`)은 허용 목록에 없다. Claude는 claude.ai 커넥터로 연결한다. CLI 직접 연결은 별도 보안 검토 후 추가한다.

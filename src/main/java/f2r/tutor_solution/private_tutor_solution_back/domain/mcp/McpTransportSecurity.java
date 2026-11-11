@@ -80,9 +80,11 @@ public class McpTransportSecurity {
                   String clientAddress = McpClientAddress.resolve(req, addresses);
                   // 기본 64 KiB. studio:propose 동의 토큰만 개선 파일(base64 8 MiB) 등록용으로 상한을 올린다.
                   final int limit;
+                  McpOAuth.Identity caller = null;
                   if ("/mcp".equals(req.getRequestURI()) && auth != null) {
                     try {
                       var identity = oauth.authenticate(auth);
+                      caller = identity;
                       rate.check("transport-user:" + identity.principal().userId(), 300);
                       limit =
                           identity.scopes().contains(McpOAuth.STUDIO_PROPOSE)
@@ -96,8 +98,11 @@ public class McpTransportSecurity {
                     rate.check("transport:" + clientAddress, 300);
                     limit = BODY_LIMIT;
                   }
-                  if (req.getContentLengthLong() > limit)
+                  if (req.getContentLengthLong() > limit) {
+                    // 도구 실행 전에 막히면 감사 기록이 없어 원인을 못 찾았다(ChatGPT 대용량 업로드). 크기 초과도 남긴다.
+                    if (caller != null) oauth.audit(caller, "transport_body_too_large", null, "DENY", 0);
                     throw McpOAuth.error(413, "body_too_large");
+                  }
                   rate.check(
                       req.getRequestURI()
                           + ":"
