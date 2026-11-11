@@ -7,6 +7,8 @@ REVIEW records. Human-only transitions are checked server-side.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import html
 import json
@@ -40,6 +42,8 @@ LEGACY_SET_TYPES = ('40', '70', '40A', '40B')
 ALL_SET_TYPES = ('STD',) + LEGACY_SET_TYPES
 ARTIFACTS = ('student-paper', 'answer-explanation', 'production-verification')
 HTML_ARTIFACTS = ('student-paper', 'answer-explanation')
+PDF_PREFIX = 'data:application/pdf;base64,'
+MAX_PAPER_BYTES = 30 * 1024 * 1024
 
 _SCRIPT_SUBTREE_RE = re.compile(r'<script\b[^>]*>.*?</script\s*>|<script\b[^>]*/>', re.IGNORECASE | re.DOTALL)
 
@@ -200,6 +204,35 @@ def _clean_html(value: str) -> str:
     return _preserve_paper_html(value)
 
 
+def _pdf_bytes(value: str) -> bytes:
+    """Decode the binary envelope without ever passing PDF bytes through HTML cleanup."""
+    if not value.startswith(PDF_PREFIX):
+        raise HTTPException(status_code=400, detail='PDF 원본 데이터를 올려 주세요.')
+    encoded = value[len(PDF_PREFIX):]
+    if len(encoded) > 4 * ((MAX_PAPER_BYTES + 2) // 3):
+        raise HTTPException(status_code=400, detail='PDF는 파일당 30MB 이하로 올려 주세요.')
+    try:
+        data = base64.b64decode(encoded, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(status_code=400, detail='PDF 원본 데이터를 읽지 못했습니다.')
+    if len(data) > MAX_PAPER_BYTES or not data.startswith(b'%PDF-'):
+        raise HTTPException(status_code=400, detail='올바른 30MB 이하 PDF 파일인지 확인해 주세요.')
+    return data
+
+
+def _clean_paper(value: str, filename: str = '') -> str:
+    if value.startswith('data:') or filename.lower().endswith('.pdf'):
+        data = _pdf_bytes(value)
+        return PDF_PREFIX + base64.b64encode(data).decode('ascii')
+    return _clean_html(value)
+
+
+def _paper_content(value: str) -> tuple[bytes | str, str, str]:
+    if value.startswith(PDF_PREFIX):
+        return _pdf_bytes(value), '.pdf', 'application/pdf'
+    return value, '.html', 'text/html; charset=utf-8'
+
+
 def _source_refs(context: dict, requested_ids: list[int]) -> dict:
     groups = ('past_exams', 'school_prints', 'ai_work_logs', 'student_errors')
     allowed = {int(item['id']): {'id': int(item['id']), 'type': item.get('material_type') or item.get('type', '')}
@@ -262,8 +295,8 @@ def _public_row(row) -> dict:
 
 def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = None) -> dict:
     """The only agent-write contract. Physical REVIEW preserves legacy schema; effective state is DRAFT."""
-    student_html = _clean_html(payload.studentPaper)
-    answer_html = _clean_html(payload.answerExplanation)
+    student_html = _clean_paper(payload.studentPaper, payload.studentPaperName)
+    answer_html = _clean_paper(payload.answerExplanation, payload.answerExplanationName)
     snapshot, snapshot_hash = _snapshot(payload)
     now, creator = datetime.now().isoformat(), actor or _actor()
     with _db() as conn:
@@ -378,12 +411,14 @@ def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanati
     # HTML artifact는 저장된 canonical 원본을 그대로 렌더링한다. 별도 shell로 감싸거나
     # JSON으로 노출하지 않는다(final_deliverables /html 조회와 같은 contract).
     # 교체 직후 보기에서 과거 파일이 보이지 않도록 캐시를 저장하지 않는다.
-    if kind == 'student-paper':
-        return Response(row['student_paper_html'], media_type='text/html; charset=utf-8',
-                        headers={'Cache-Control': 'no-store'})
-    if kind == 'answer-explanation':
-        return Response(row['answer_explanation_html'], media_type='text/html; charset=utf-8',
-                        headers={'Cache-Control': 'no-store'})
+    if kind in HTML_ARTIFACTS:
+        value = row['student_paper_html' if kind == 'student-paper' else 'answer_explanation_html']
+        body, ext, media_type = _paper_content(value)
+        ascii_name, original = _download_filename(row, kind, ext)
+        return Response(body, media_type=media_type, headers={
+            'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
+            'Content-Disposition': f'inline; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(original, safe="")}',
+        })
     escaped = html.escape(row['verification_md'])
     escaped = re.sub(r'^### (.+)$', r'<h3>\1</h3>', escaped, flags=re.M)
     escaped = re.sub(r'^## (.+)$', r'<h2>\1</h2>', escaped, flags=re.M)
@@ -417,8 +452,8 @@ def _download_filename(row, kind: str, ext: str = '.html') -> tuple[str, str]:
 
 @router.get('/{exam_id}/artifacts/{kind}/download')
 def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanation', 'production-verification']):
-    """HTML artifact 원본 다운로드. 보기와 동일한 저장 canonical 바이트를 attachment로
-    내려준다. MD artifact는 기존 보기 방식을 유지하므로 다운로드 대상이 아니다(404).
+    """HTML/PDF artifact 원본 다운로드. 보기와 동일한 저장 canonical 바이트를 attachment로
+    내려준다. MD artifact도 원문 그대로 다운로드한다.
     운영자 전용(_require_operator)이며 Public endpoint로 노출하지 않는다."""
     _require_operator()
     with _db() as conn:
@@ -426,9 +461,9 @@ def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-expla
         if not row:
             raise HTTPException(status_code=404, detail='주간 실전 모의고사를 찾지 못했습니다.')
     if kind == 'student-paper':
-        body, ext, media_type = row['student_paper_html'], '.html', 'text/html; charset=utf-8'
+        body, ext, media_type = _paper_content(row['student_paper_html'])
     elif kind == 'answer-explanation':
-        body, ext, media_type = row['answer_explanation_html'], '.html', 'text/html; charset=utf-8'
+        body, ext, media_type = _paper_content(row['answer_explanation_html'])
     elif kind == 'production-verification':
         body, ext, media_type = row['verification_md'], '.md', 'text/markdown; charset=utf-8'
     else:
@@ -569,7 +604,8 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
                 raise HTTPException(status_code=400, detail='교체 본문이 비어 있습니다.')
             cleaned[name] = value
         else:
-            cleaned[name] = _clean_html(value)
+            filename = payload.studentPaperName if name == 'studentPaper' else payload.answerExplanationName
+            cleaned[name] = _clean_paper(value, filename)
     with _db() as conn:
         row = conn.execute('SELECT * FROM weekly_exam_sets WHERE id=?', (exam_id,)).fetchone()
         if not row:
@@ -617,14 +653,14 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
            answer_explanation_name,answer_explanation_html,answer_explanation_hash,
            verification_name,verification_md,verification_hash,source_material_ids,
            context_snapshot,context_hash,version,status,created_by,created_at,updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
           (row['school'], row['grade'], row['year'], row['semester'], row['exam'],
            row['round'], row['set_type'], row['question_count'],
            student_name, student_html, _sha(student_html),
            answer_name, answer_html, _sha(answer_html),
            verification_name, verification_md, _sha(verification_md),
            json.dumps(refs), row['context_snapshot'], row['context_hash'],
-           new_version, 'DRAFT', who, now, now))
+           new_version, 'REVIEW', who, now, now))
         new_id = cursor.lastrowid
         conn.execute("""INSERT INTO weekly_exam_audit
           (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'VERSIONED','FINAL','DRAFT',?,?)""",
@@ -642,3 +678,4 @@ def delete_weekly_exam(exam_id: int):
 def replace_weekly_exam_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate):
     _require_operator()
     return replace_artifacts(exam_id, payload)
+

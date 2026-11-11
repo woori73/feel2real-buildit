@@ -395,6 +395,13 @@ ADMIN이 **대상 학원을 명시**해 다른 회원의 홈페이지를 조회�
 
 ## BuildIt Wiki 학교 프린트·문제 모델
 
+### PDF 원본 업로드 (2026-11-11)
+
+- 학교 프린트 `POST /problem-generator/wiki/api/exam-materials`: `core_type=school_print`, `material_type=SCHOOL_PRINT`와 PDF `original`만으로 저장한다. `html_text`·JSON은 선택이다. 30MB 제한과 `%PDF-` signature를 검사하고, MIME이 생략된 PDF도 `application/pdf`로 원본 바이트를 반환한다. HTML/HTM 원본 업로드도 유지한다.
+- 주간 실전 모의고사의 `POST …/weekly-exams/draft` 및 `PUT …/weekly-exams/{id}/artifacts`: `studentPaper`·`answerExplanation`은 기존 HTML 문자열 또는 `data:application/pdf;base64,` 원본 envelope를 받는다. PDF는 바이너리로 검증하며 파일당 30MB 이하만 허용한다. 파일명은 기존 `studentPaperName`·`answerExplanationName`으로 전달한다. `productionVerification`은 기존 MD/TXT를 유지한다.
+- 문제지·해설지의 보기 및 `/download`는 PDF envelope를 디코딩해 원본 바이트·`application/pdf`·`.pdf` 파일명으로 반환한다. HTML은 기존 정제 원본·`text/html` 계약을 유지한다. 두 형식을 같은 세트에서 섞거나 교체할 수 있다. 운영자 인증, Context snapshot, DRAFT/FINAL 정책은 유지한다.
+- 저장 스키마는 바꾸지 않는다. 기존 TEXT artifact 컬럼에 검증된 PDF envelope를 저장하며 목록/공개 metadata에 본문을 포함하지 않는다. FINAL 교체는 이전 버전을 보존하고 기존 물리 상태 `REVIEW`(표시 DRAFT)로 새 버전을 생성한다.
+
 - `POST /problem-generator/wiki/api/questions/generate`, `.../questions/transform`: 문제 화면이 선택한 OpenRouter provider/model을 명시한다. 기본은 `google/gemini-3.7-flash`이며 명시적 선택은 실패 시 무료 모델로 fallback하지 않는다. 응답의 실제 `provider`/`model`을 UI에 표시한다.
 - `POST /problem-generator/wiki/api/school-prints/reconstruct`: 브라우저 Tesseract/PDF 텍스트 레이어로 1차 추출한 페이지별 `ocr_text`와 각 원본 `image_data_url`을 함께 받아 Qwen `qwen/qwen3.7-flash`로 실제 편집 가능한 `html`과 `canonicalJson`을 반환한다. `canonicalJson`은 source/page linkage, 페이지별 `extractedText`, `editedHtml`, `restorationStatus`, `restorationVersion`을 보존한다. 2차 실패 시 프론트는 API 오류를 받아 이미 확보한 1차 텍스트를 편집 HTML로 유지한다.
 - `POST /problem-generator/wiki/api/school-prints/patch-html`: 현재 HTML/canonical JSON과 수정 지시를 받아 지적된 부분만 수정한다.
@@ -5357,3 +5364,4 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - 개인정보: 실명·원문·파일 ID·원본 파일은 내보내지 않는다. 같은 이름=같은 가명(S001…, 처음 나온 순서)이라 동명이인은 한 명으로, 표기가 바뀐 같은 학생은 다른 사람으로 셀 수 있다. 일반 Studio MCP 도구(`list_studio_assets`, `studio_document` 등)로 `student-roster` 프로젝트를 지정하면 어떤 동의로도 403(`student_roster_aggregate_only`)이다.
 
 화면 확인(가짜 이름 샘플 2024~2026): [허브 PC](admin/student-roster/01-hub-pc.png) · [자료실 PC](admin/student-roster/02-roster-pc-2026.png) · [2쪽 보기](admin/student-roster/03-roster-pc-2025-page2.png) · [허브 휴대폰](admin/student-roster/04-hub-mobile.png) · [자료실 휴대폰](admin/student-roster/05-roster-mobile.png)
+

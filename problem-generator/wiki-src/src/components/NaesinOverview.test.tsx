@@ -38,7 +38,7 @@ it('given PDF 자료 when 파일을 골라 저장하면 then HTML 입력 없이 
   await screen.findByRole('option',{name:'신구중'})
   fireEvent.click(screen.getByRole('button',{name:/학교 프린트 추가/}))
   const chooser=screen.getByLabelText('학습자료 파일 선택')
-  expect(chooser).toHaveAttribute('accept','.html,.pdf,.hwpx,.docx,.jpg,.jpeg,.png')
+  expect(chooser).toHaveAttribute('accept','.html,.htm,.pdf,.hwpx,.docx,.jpg,.jpeg,.png,application/pdf')
   fireEvent.change(chooser,{target:{files:[new File(['%PDF-1.7\nmaterial'],'school.pdf',{type:'application/pdf'})]}})
   fireEvent.click(screen.getByRole('button',{name:'저장',exact:true}))
   expect(await screen.findByRole('status')).toHaveTextContent('자료와 추가 정보를 저장했습니다.')
@@ -85,3 +85,4 @@ it('given 기출 분석 칸 when HTML·PDF·HWPX·DOCX 파일을 올리면 then 
   expect(uploaded?.get('material_type')).toBe('EXAM_ANALYSIS')
   expect((uploaded?.get('original') as File).name).toBe('analysis.html')
 })
+
