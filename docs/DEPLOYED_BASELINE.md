@@ -2,7 +2,21 @@
 
 운영에서 읽은 JAR과 배포 보관 증거를 기준으로 기록한다. main 최신 커밋은 배포 완료를 의미하지 않는다. 새 배포가 성공하면 관측 시각·전체 해시·실행 기록을 함께 갱신한다.
 
-## 현재 관측 기준 — 2026-10-29 02:21:39 UTC
+## 최신 배포 확인 — 2026-11-11 06:24:24 UTC
+
+| 항목 | 확인된 값과 근거 |
+|---|---|
+| 배포 커밋 | `e35e2a78e8441d0ee162403da848df02e600ea11` — PR #1035, 학교별 적중률 블로그 명칭·링크 변경 |
+| 운영 배포 | [Deploy to EC2 #1133](https://github.com/woori73/feel2real-buildit/actions/runs/42971069955), attempt 1, success, 완료 2026-11-11 06:21:03 UTC |
+| 빌드 검증 | [main Build Check #2557](https://github.com/woori73/feel2real-buildit/actions/runs/42970869217) success. PR Build Check #2555·신청 회귀 #68·모바일/비서 회귀 #72 모두 success |
+| 배포 산출물 JAR SHA-256 | `18dc4718e5c497b443966fd7cf2492eb76374eb77954e117ff4f4a5b1f4c9f31` — 배포 job 로그의 빌드 산출물 해시. 운영 파일을 별도 다운로드해 대조한 값은 아님 |
+| 서버 확인 | 배포 SSM Success, f2r-app.service healthy, Spring health OK, buildit-wiki still healthy, 배포 SUCCESS |
+| 운영 화면 확인 | 홈페이지 ‘학교별 시험 적중률 블로그’에서 ‘언북중3 2학기말 적중률 95% 블로그’와 ‘신구중3 적중률 96% 블로그’ 표시·href 확인 |
+| 링크 | 언북중3 `224463820746`, 신구중3 `224472061838`, 기존 압구정중2 `224435388122` — 모두 `blog.naver.com/apgujungeduholic/` 원문 |
+
+아래 2026-10-29 관측은 과거 증거를 보존한 기록이다. 이하의 ‘현재 JAR’·인프라 값·미배포/보류 표현은 당시 관측을 뜻하며, 이번 배포의 DB·백업·미디어 전체 상태를 재검증했다는 의미가 아니다.
+
+## 과거 관측 기준 — 2026-10-29 02:21:39 UTC
 
 | 항목 | 확인된 값과 근거 |
 |---|---|
@@ -36,7 +50,7 @@
 
 이는 **과거 확인**이다. 현재 실제 경로·원본 해시·백업 해시, AI AGENT Studio 전체 자료의 백업 범위는 이번 연결에서 재조회하지 못했다. 기존 미디어 파일을 수정·삭제·복원하지 않았다.
 
-## 다음 홈페이지 후보 — 아직 운영 미배포
+## 2026-10-29 당시 다음 홈페이지 후보 (과거 기록)
 
 - main 확인값: `71e33cdfc2f054dcf290c0731a24ecb923af4440` (PR923 병합, PR922 정책 연결 포함).
 - [main Build Check 40805496826](https://github.com/woori73/feel2real-buildit/actions/runs/40805496826): build·MySQL PASS. 같은 소스 트리의 PR 모바일/비서 CI 48/48 PASS 재사용.
