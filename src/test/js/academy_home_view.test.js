@@ -128,3 +128,54 @@ test('given 필터 when 학생 명단 주소를 만들면 then 반·학생 조�
   assert.equal(v.studentsUrl(), '/academycraft/screens/MBR-01-student-list.html');
   assert.equal(v.studentsUrl({ classId: 3 }), '/academycraft/screens/MBR-01-student-list.html?classId=3');
 });
+
+// ---- ADMIN: F2R 장부 기준 (사용자 결정 2026-11-11) ----
+test('given F2R 모드 when 주소를 만들면 then F2R 출결부·학생 원장으로 가고, 끄면 AcademyCraft로 돌아간다', () => {
+  // given
+  v.useF2r(1);
+  // when / then
+  assert.equal(v.isF2r(), true);
+  assert.equal(v.rosterUrl(3, '2026-11-11'), '/easy/attendance?businessId=1&classId=3&date=2026-11-11');
+  assert.equal(v.rosterUrl(null, null), '/easy/attendance?businessId=1');
+  assert.equal(v.studentsUrl({ classId: 3 }), '/easy/students');
+  v.useF2r(null);
+  assert.equal(v.isF2r(), false);
+  assert.equal(v.rosterUrl(3, '2026-11-11'), '/academycraft/screens/ATT-03-attendance-roster.html?classId=3&date=2026-11-11');
+});
+
+test('given F2R 반 목록 when 홈 반 모양으로 바꾸면 then 운영 중인 반만, 같은 필드 이름으로 바꾼다', () => {
+  // given
+  const list = [
+    { classId: 1, name: '2026 진행표 전체', weekdays: [], startTime: null, status: 'ACTIVE', memberCount: 41 },
+    { classId: 2, name: '중3 영어', weekdays: ['WED'], startTime: '16:00', endTime: '17:20', room: '1강의실', status: 'ACTIVE', memberCount: 6 },
+    { classId: 3, name: '끝난 반', weekdays: ['WED'], startTime: '18:00', status: 'ENDED', memberCount: 2 }
+  ];
+  // when
+  const out = v.f2rClasses(list);
+  // then
+  assert.deepEqual(out.map(c => c.id), [1, 2]);
+  assert.equal(out[1].studentCount, 6);
+  assert.equal(v.lessonsOn(out, 'WED').length, 1);
+  assert.equal(v.unscheduledCount(out), 1);
+});
+
+test('given F2R 그날 명단 when 출결부 모양으로 바꾸면 then 기록 없는 학생은 NONE(미기록), 응답이 이상하면 오류', () => {
+  // given
+  const rows = [{ studentId: 1, events: [{ eventType: 'CHECK_IN' }] }, { studentId: 2, events: [] }, { studentId: 3 }];
+  // when
+  const r = v.f2rRoster(rows);
+  // then
+  assert.deepEqual(r.entries.map(e => e.status), ['RECORDED', 'NONE', 'NONE']);
+  assert.deepEqual(v.f2rRoster(null), { error: true });
+});
+
+test('given F2R 학생 요약 when 재원생 수·오늘 오는 학생 then 행 수와 요일 포함 학생 수를 준다', () => {
+  // given
+  const rows = [{ weekdays: ['MON', 'WED'] }, { weekdays: ['WED'] }, { weekdays: [] }];
+  // when / then
+  assert.deepEqual(v.f2rStats(rows), { studentCount: 3 });
+  assert.equal(v.studentCountText('ok', v.f2rStats(rows)), '재원생 3명');
+  assert.equal(v.f2rStats(null), null);
+  assert.equal(v.todayStudentCount(rows, 'WED'), 2);
+  assert.equal(v.todayStudentCount(rows, 'SUN'), 0);
+});

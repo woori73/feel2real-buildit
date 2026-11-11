@@ -9,6 +9,10 @@
  * - 출결 미기록: GET .../attendance/roster?classId=&date= 의 entries[].status === 'NONE'
  * - 후속 상담: GET .../consultations?type=INQUIRY&status=OPEN (학부모 문의 중 학원 답변 대기).
  *   아이소식(NEWS)은 구조상 OPEN에 머물러 제외한다. 상담에 '연락 예정일' 필드는 아직 없다.
+ *
+ * ADMIN(압구정에듀홀릭 관리자)은 학생 기준을 F2R 장부로 쓴다(사용자 결정 2026-11-11): useF2r(businessId) 후에는
+ * 재원생·반·출결을 F2R 장부 학생 원장·F2R 출결부(/api/admin/easy/attendance/**)에서 읽고 링크도 F2R 화면으로 간다.
+ * 상담은 F2R에 없으므로 AcademyCraft 그대로다.
  */
 (function (root, factory) {
   const api = factory();
@@ -18,6 +22,37 @@
   const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const DAY_LABEL = { MON: '월', TUE: '화', WED: '수', THU: '목', FRI: '금', SAT: '토', SUN: '일' };
   const SCREENS = '/academycraft/screens/';
+  /** F2R 모드: { businessId } 또는 null(AcademyCraft). */
+  let f2r = null;
+
+  function useF2r(businessId) { f2r = businessId == null ? null : { businessId: String(businessId) }; }
+  function isF2r() { return f2r != null; }
+
+  /** F2R 출결부 반 → 홈 수업 계산에 쓰는 반 모양(AcademyCraft 반 목록과 같은 필드 이름). 종료된 반은 뺀다. */
+  function f2rClasses(list) {
+    return (list || []).filter(c => c && c.status === 'ACTIVE').map(c => ({
+      id: c.classId, name: c.name || '', weekdays: Array.isArray(c.weekdays) ? c.weekdays : [],
+      startTime: c.startTime || null, endTime: c.endTime || null, room: c.room || '',
+      teacherName: c.teacherName || '', description: c.description || '',
+      studentCount: Number.isFinite(Number(c.memberCount)) ? Number(c.memberCount) : null, active: true
+    }));
+  }
+
+  /** F2R 출결부 그날 명단 → { entries:[{studentId,status}] }. 그날 기록이 하나도 없으면 'NONE'(미기록). */
+  function f2rRoster(rows) {
+    if (!Array.isArray(rows)) return { error: true };
+    return { entries: rows.map(r => ({ studentId: r.studentId, status: Array.isArray(r.events) && r.events.length ? 'RECORDED' : 'NONE' })) };
+  }
+
+  /** F2R 학생 요약(재원생) → 재원생 수 응답 모양 { studentCount }. */
+  function f2rStats(rows) {
+    return Array.isArray(rows) ? { studentCount: rows.length } : null;
+  }
+
+  /** 최근 4주 등원 요일(없으면 반 요일)에 오늘 요일이 들어 있는 재원생 수. */
+  function todayStudentCount(rows, day) {
+    return (rows || []).filter(r => r && Array.isArray(r.weekdays) && r.weekdays.includes(day)).length;
+  }
 
   /** 'HH:mm' 또는 'HH:mm:ss' → 자정 이후 분. 형식이 아니면 null. */
   function minutes(hhmm) {
@@ -113,10 +148,17 @@
   }
 
   function rosterUrl(classId, date) {
+    if (f2r) {
+      const q = new URLSearchParams({ businessId: f2r.businessId });
+      if (classId != null) q.set('classId', classId);
+      if (date) q.set('date', date);
+      return '/easy/attendance?' + q.toString();
+    }
     return SCREENS + 'ATT-03-attendance-roster.html?classId=' + encodeURIComponent(classId) + '&date=' + encodeURIComponent(date);
   }
 
   function studentsUrl(filter) {
+    if (f2r) return '/easy/students';
     const q = new URLSearchParams();
     if (filter && filter.classId != null) q.set('classId', filter.classId);
     if (filter && filter.studentId != null) q.set('studentId', filter.studentId);
@@ -193,6 +235,7 @@
 
   return {
     DAY_LABEL, minutes, hhmm, seoulClock, dateLabel, addDays, lessonsOn, unscheduledCount, lessonState, headline,
-    rosterUrl, studentsUrl, careItems, studentCountText, statusFromHttp, focusTask
+    rosterUrl, studentsUrl, careItems, studentCountText, statusFromHttp, focusTask,
+    useF2r, isF2r, f2rClasses, f2rRoster, f2rStats, todayStudentCount
   };
 });

@@ -67,5 +67,17 @@
       + '명 · 등원 기록 ' + r.eventsCreated + '건 저장 · 이미 있던 기록 ' + r.eventsAlreadyThere + '건';
   }
 
-  return { TYPES, WEEKDAYS, label, mark, classLine, timeText, monthGrid, defaultMappings, mappingProblems, applySummary };
+  /**
+   * 주소의 바로가기(학원 홈 → 출결부): ?businessId=&classId=&date=YYYY-MM-DD. 형식이 틀린 값은 버린다.
+   * 반환 { businessId, classId, date } (없는 값은 null).
+   */
+  function deepLink(search) {
+    let q;
+    try { q = new URLSearchParams(String(search || '')); } catch (e) { return { businessId: null, classId: null, date: null }; }
+    const id = v => (/^[1-9][0-9]{0,18}$/.test(v || '') ? v : null);
+    const d = q.get('date');
+    return { businessId: id(q.get('businessId')), classId: id(q.get('classId')), date: /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : null };
+  }
+
+  return { deepLink, TYPES, WEEKDAYS, label, mark, classLine, timeText, monthGrid, defaultMappings, mappingProblems, applySummary };
 });

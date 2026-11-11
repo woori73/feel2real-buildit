@@ -1142,5 +1142,6 @@ Wiki 공통 하단의 BuildIt Assistant 입력창·첨부·대화 패널을 제�
   └ 학생명단: 명단 반영 확인 → 보류 연결/제외(원장) · 추가 후보 → 학생 등록 초안 → 원장 승인 → 그 레코드로 연결
 ```
 
+- **ADMIN(압구정에듀홀릭)은 학생 기준이 F2R 장부다**(사용자 결정 2026-11-11, 2026 진행표 학생·등원이 F2R에 있음): 재원생 수 = F2R 학생 원장 재원생(`/easy/students`), 오늘 수업·출결 미기록 = F2R 출결부 반·그날 명단, 「출결부 열기」 = `/easy/attendance?businessId=&classId=&date=`(출결부가 이 주소로 반·날짜를 바로 연다). 반에 시간이 없어도 최근 4주 등원 요일 기준 「오늘 오는 학생 n명」을 보여 준다. 상담은 F2R에 없어 AcademyCraft 그대로이며, AcademyCraft 학원 연결이 없어도 홈은 F2R 기준으로 열린다. TUTOR는 위 AcademyCraft 동선 그대로.
 - 예전 `/dashboard#ai`·`?ask=`는 `/dashboard/assistant`로 옮긴다. AI 업무 비서의 초안·승인 절차는 바뀌지 않았다.
 - 계약 상세: [API.md](API.md) 「학원 홈 · 정보 화면」, 스키마: [DOMAIN.md](DOMAIN.md) `academy_roster_student_links`.

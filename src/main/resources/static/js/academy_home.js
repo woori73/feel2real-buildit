@@ -7,6 +7,8 @@
   'use strict';
   var V = window.AcademyHomeView;
   var BASE = '/academycraft/api/rea';
+  var F2R = '/api/admin/easy/attendance';
+  var f2rBusiness = null; // ADMIN: F2R 장부 사업체 { businessId, name }
   var ACADEMY_KEY = 'academycraft.academy'; // AcademyCraft 화면(auth.js)과 같은 키를 써서 학원 선택이 이어지게 한다.
   var generation = 0;
   var $ = function (id) { return document.getElementById(id); };
@@ -74,7 +76,9 @@
   function renderCount(result) {
     var link = $('ahStudentCount');
     link.textContent = V.studentCountText(result.status, result.data);
-    link.title = result.status === 'ok' ? '재원(활성) 학생 전체. 학생 목록 기본 조회와 같은 기준입니다.' : '';
+    link.title = result.status !== 'ok' ? '' : (V.isF2r()
+      ? 'F2R 장부 학생 원장의 재원생 전체(학생 원장 화면과 같은 기준).'
+      : '재원(활성) 학생 전체. 학생 목록 기본 조회와 같은 기준입니다.');
   }
 
   function lessonLine(l) {
@@ -144,6 +148,19 @@
     note.textContent = unscheduled ? '요일·시간이 등록되지 않은 반 ' + unscheduled + '개는 목록에 없습니다. 반/수업에서 시간을 등록하세요.' : '';
   }
 
+  /** F2R: 반 시간표가 없어도 최근 4주 등원 요일로 오늘 오는 학생 수를 알려 준다. */
+  function renderTodayStudents(overview, clock, date) {
+    var n = V.todayStudentCount(overview, clock.day);
+    if (!n) return;
+    var note = $('ahLessonsNote');
+    var line = '최근 4주 등원 기준 오늘(' + V.DAY_LABEL[clock.day] + ') 오는 학생 ' + n + '명.';
+    note.textContent = (note.hidden ? '' : note.textContent + ' ') + line;
+    var a = el('a', '출결부 열기', 'ah-text-link');
+    a.href = V.rosterUrl(null, date);
+    note.append(' ', a);
+    note.hidden = false;
+  }
+
   function renderCare(care, consultStatus) {
     var list = $('ahCare');
     list.replaceChildren();
@@ -158,7 +175,7 @@
     });
     var notes = [];
     if (care.hidden) notes.push('이 밖에 ' + care.hidden + '건이 더 있습니다.');
-    if (consultStatus !== 'ok') notes.push(consultStatus === 'forbidden' ? '상담 목록 조회 권한이 없습니다.' : '상담 목록을 불러오지 못했습니다.');
+    if (consultStatus !== 'ok' && consultStatus !== 'skip') notes.push(consultStatus === 'forbidden' ? '상담 목록 조회 권한이 없습니다.' : '상담 목록을 불러오지 못했습니다.');
     $('ahCareNote').hidden = !notes.length;
     $('ahCareNote').textContent = notes.join(' ');
   }
@@ -189,18 +206,27 @@
 
   async function loadAcademy(ctx, user, g) {
     var id = encodeURIComponent(ctx.academyId);
+    var biz = f2rBusiness ? encodeURIComponent(f2rBusiness.businessId) : null;
     var clock = V.seoulClock(new Date());
     $('ahDate').textContent = V.dateLabel(clock.date);
     var isAdmin = user.role === 'ADMIN';
+    // ADMIN은 재원생·반·출결을 F2R 장부·출결부에서 읽는다(진행표 학생). 상담은 F2R에 없어 AcademyCraft 그대로.
     var results = await Promise.all([
-      get(BASE + '/' + id + '/dashboard/stats'),
-      get(BASE + '/' + id + '/classes'),
-      get(BASE + '/' + id + '/consultations?type=INQUIRY&status=OPEN'),
+      biz ? get(F2R + '/student-overview?businessId=' + biz) : get(BASE + '/' + id + '/dashboard/stats'),
+      biz ? get(F2R + '/classes?businessId=' + biz) : get(BASE + '/' + id + '/classes'),
+      ctx.academyId ? get(BASE + '/' + id + '/consultations?type=INQUIRY&status=OPEN') : Promise.resolve({ status: 'skip', data: [] }),
       isAdmin ? get('/api/admin/academy-move/entries') : Promise.resolve({ status: 'skip' })
     ]);
     if (g !== generation) return;
     if (results.some(function (r) { return r.status === 'login'; })) { toLogin(); return; }
     var stats = results[0], classes = results[1], consults = results[2];
+    var overview = null;
+    if (biz) {
+      overview = stats.status === 'ok' ? stats.data : null;
+      stats = { status: stats.status, data: V.f2rStats(overview) };
+      if (stats.status === 'ok' && !stats.data) stats.status = 'error';
+      if (classes.status === 'ok') classes = { status: 'ok', data: V.f2rClasses(classes.data) };
+    }
     renderCount(stats);
     var date = clock.date;
     if (classes.status !== 'ok') {
@@ -214,6 +240,10 @@
       renderBanner(h, date);
       var rosters = {};
       await Promise.all(h.today.map(function (l) {
+        if (biz) {
+          return get(F2R + '/sheet?businessId=' + biz + '&classId=' + encodeURIComponent(l.classId) + '&date=' + encodeURIComponent(date))
+            .then(function (r) { rosters[l.classId] = r.status === 'ok' ? V.f2rRoster(r.data) : { error: true }; });
+        }
         return get(BASE + '/' + id + '/attendance/roster?classId=' + encodeURIComponent(l.classId) + '&date=' + encodeURIComponent(date))
           .then(function (r) { rosters[l.classId] = r.status === 'ok' && r.data && Array.isArray(r.data.entries) ? r.data : { error: true }; });
       }));
@@ -223,6 +253,7 @@
       if (h.lesson) { var same = h.today.find(function (l) { return l.classId === h.lesson.classId; }); if (same && h.date === date) h.lesson.studentCount = same.studentCount; }
       renderBanner(h, date);
       renderLessons(h, rosters, date, V.unscheduledCount(classes.data));
+      if (overview) renderTodayStudents(overview, clock, date);
       renderCare(V.careItems(h.today, rosters, consults.status === 'ok' ? consults.data : [], date, 5), consults.status);
     }
     renderFocus(results[3], isAdmin);
@@ -241,6 +272,14 @@
     if (c.status === 'forbidden' && academyId) { store(null); c = await context(null); }
     if (g !== generation) return;
     if (c.status === 'login') { toLogin(); return; }
+    if (f2rBusiness && (c.status !== 'ok' || !c.data || !c.data.academyId)) {
+      // ADMIN: AcademyCraft 학원 연결이 없어도 F2R 장부 기준 홈은 보여 준다(상담만 빠진다).
+      $('ahAcademyName').textContent = f2rBusiness.name || '학원';
+      $('ahAcademyPickWrap').hidden = true;
+      $('ahAcademyName').hidden = false;
+      await loadAcademy({ academyId: null }, user, g);
+      return;
+    }
     if (c.status !== 'ok' || !c.data || !c.data.academyId) {
       $('ahAcademyName').textContent = '학원 연결 필요';
       $('ahStudentCount').textContent = V.studentCountText(c.status === 'forbidden' ? 'unlinked' : 'error');
@@ -260,10 +299,25 @@
     await loadAcademy(c.data, user, g);
   }
 
+  /** ADMIN: F2R 장부 첫 사업체를 학생 기준으로 쓰고 학생·출결·반 메뉴를 F2R 화면으로 바꾼다. 사업체가 없으면 AcademyCraft 그대로. */
+  async function useF2rBusiness() {
+    var r = await get('/api/admin/easy/businesses');
+    var list = r.status === 'ok' && Array.isArray(r.data) ? r.data : [];
+    if (!list.length) return;
+    f2rBusiness = { businessId: list[0].businessId, name: list[0].name };
+    V.useF2r(f2rBusiness.businessId);
+    var att = V.rosterUrl(null, null);
+    $('ahNavStudents').href = V.studentsUrl();
+    $('ahNavClasses').href = att;
+    $('ahNavAttendance').href = att;
+    $('ahStudentCount').href = V.studentsUrl();
+  }
+
   async function init() {
     var user;
     try { user = await ensureCurrentUser(); } catch (_) { user = null; }
     if (!user || (user.role !== 'ADMIN' && user.role !== 'TUTOR')) { toLogin(); return; }
+    if (user.role === 'ADMIN') await useF2rBusiness();
     $('ahAcademyPick').addEventListener('change', function () {
       var id = $('ahAcademyPick').value;
       store(id);
