@@ -59,15 +59,14 @@
       </section>
     </div>
 <details class="panel operations" id="notifications"><summary>이메일 알림 설정</summary>
-      <p class="muted">접수 알림을 네이버 메일로 받고, 휴대폰의 네이버 메일 앱에서 메일 수신 알림을 켜 주세요. 메일의 관리자 링크를 누르면 해당 접수를 열 수 있습니다.</p>
+      <p class="muted">접수 알림을 네이버 메일로 받습니다. 휴대폰 알림은 네이버 메일 앱에서 설정하며, 메일의 관리자 링크를 누르면 해당 접수를 열 수 있습니다.</p>
       <form id="notificationForm" autocomplete="off">
         <label>접수 알림 받을 이메일<input name="email" type="email" maxlength="254" autocomplete="off" /></label>
         <label class="check"><input name="emailEnabled" type="checkbox" />이메일 알림 사용</label>
         <details class="fold"><summary>이메일 발송 연결</summary><p class="muted">네이버 메일의 IMAP/SMTP를 켜고 앱 비밀번호를 입력해 주세요. 저장 후 빈칸으로 보이는 비밀번호는 기존 연결을 유지합니다.</p><div class="field-grid"><label>발신 네이버 메일<input name="naverAccount" type="email" maxlength="254" autocomplete="off" /></label><label>네이버 앱 비밀번호<input name="naverPassword" type="password" maxlength="256" autocomplete="new-password" /></label></div></details>
-        <details class="fold" id="smsSettings"><summary>추가 문자 알림 (선택·유료)</summary><p class="muted">네이버 메일 앱으로 휴대폰 알림을 받는 경우 별도 문자 서비스 연결은 필요하지 않습니다.</p><div class="field-grid"><label>알림 받을 휴대폰<input name="phone" type="tel" maxlength="20" autocomplete="off" /></label><label>등록된 문자 발신번호<input name="sender" type="tel" maxlength="20" autocomplete="off" /></label></div><label class="check"><input name="smsEnabled" type="checkbox" />추가 문자 알림 사용</label><div class="field-grid"><label>SOLAPI API Key<input name="solapiKey" type="password" maxlength="256" autocomplete="new-password" /></label><label>SOLAPI API Secret<input name="solapiSecret" type="password" maxlength="256" autocomplete="new-password" /></label></div></details>
         <button type="submit">알림 설정 저장</button>
       </form>
-      <p id="notificationSettingsStatus" role="status" aria-live="polite">알림 설정을 불러오고 있습니다.</p><button id="testNotifications" type="button" disabled>저장된 수신처로 테스트 알림 보내기</button><p id="notificationTestStatus" role="status" aria-live="polite"></p>
+      <p id="notificationSettingsStatus" role="status" aria-live="polite">알림 설정을 불러오고 있습니다.</p><button id="testNotifications" type="button" disabled>저장된 이메일로 테스트 알림 보내기</button><p id="notificationTestStatus" role="status" aria-live="polite"></p>
     </details>
     <details class="panel operations" id="notificationPanel"><summary>접수 알림 확인 <span id="eventCount" class="count"></span></summary><p class="muted">알림 전송과 접수 저장은 별개입니다. 전송 실패 건도 접수 목록에서 처리할 수 있습니다.</p><div id="events"></div></details>
     <details class="panel operations"><summary>개인정보 보존·정리</summary><p class="muted">종료·취소 또는 미계약·미입금으로 30일이 지난 접수를 검토합니다. 학습자료 정리와 법정 거래기록 보존은 구분합니다.</p><button id="retentionRefresh" class="secondary" type="button">정리 대상 조회</button><div id="retentionPlan"></div><button id="unusedGuardians" class="secondary" type="button">미사용 보호자 연락처 정리</button></details>

@@ -5,7 +5,7 @@
 ## 검증
 
 - `node --check src/main/resources/static/js/exam_admin.js`, `git diff --check`.
-- `admin-workspace.dom.test.mjs`: 실제 프런트 코드와 전용 HTML을 linkedom DOM에 로드하고 API를 합성 데이터로 대체한다. 검색·페이지·무료/유료 구분·입금 확인·다음 회차·최종 회차·조회 실패·선택 경쟁·검사 완료 자료만 열기·XSS·409·알림 직접 연결·변경 반영·삭제 취소·이메일 설정/자동 테스트 발송 금지를 검증한다.
+- `admin-workspace.dom.test.mjs`: 실제 프런트 코드와 전용 HTML을 linkedom DOM에 로드하고 API를 합성 데이터로 대체한다. 검색·페이지·무료/유료 구분·입금 확인·다음 회차·최종 회차·조회 실패·선택 경쟁·검사 완료 자료만 열기·XSS·409·알림 직접 연결·변경 반영·삭제 취소·이메일 전용 설정/기존 SMS 테스트 방지/자동 테스트 발송 금지를 검증한다.
 - 실행: `F2R_DOM_MODULE=/absolute/path/to/linkedom/esm/index.js node --test e2e/exam-intake/admin-workspace.dom.test.mjs`. 기본은 설치된 `linkedom` 패키지를 사용한다. 이 검증은 DOM 동작 검증이며 네이티브 브라우저 레이아웃/HTML 폼 검증/PDF 플러그인 렌더링 검증은 아니다.
 - 실행 환경의 Chromium은 Unix domain socket 생성 제한으로 시작하지 못했다. 데스크톱/모바일 실브라우저 시각 검증, 실제 메일 수신·휴대폰 푸시·운영 DB 쓰기는 수행하지 않았다.
 - ADMIN 전용 뷰와 기존 401/403·공개 샘플 로그인 복귀를 확인하는 `ExamAdminPageTest`를 추가했다. 부분 소스 스냅샷 환경에 Gradle 전체 프로젝트가 없어 Java 실행은 CI에서 확인한다.

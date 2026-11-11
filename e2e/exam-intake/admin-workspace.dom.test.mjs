@@ -128,10 +128,19 @@ test('privacy erasure remains explicit and cancelled confirmation does not mutat
 test('email notifications remain primary; saved secrets are never refilled and test sends require a click', async () => {
   const settings = { version: 7, email: 'fixture@example.invalid', phone: '', naverAccount: 'fixture@example.invalid', sender: '', emailEnabled: true, smsEnabled: false, emailStatus: 'READY', smsStatus: 'DISABLED' };
   const h = await setup({ location: 'http://fixture.invalid/admin/hub/exam-requests#notifications', override: (url) => url.endsWith('/notifications') ? new Response(JSON.stringify(settings)) : null });
-  assert.equal(h.$('notifications').open, true); assert.equal(h.$('notificationForm').elements.email.value, settings.email); assert.equal(h.$('notificationForm').elements.smsEnabled.checked, false); assert.equal(h.$('notificationForm').elements.naverPassword.value, ''); assert.equal(h.calls.filter(c => c.url.endsWith('/notifications/test')).length, 0);
+  assert.equal(h.$('notifications').open, true); assert.equal(h.$('notificationForm').elements.email.value, settings.email); assert.equal(h.$('notificationForm').elements.smsEnabled, null); assert.equal(h.$('notificationForm').elements.phone, null); assert.doesNotMatch(h.$('notificationForm').textContent, /SOLAPI/); assert.equal(h.$('notificationForm').elements.naverPassword.value, ''); assert.equal(h.calls.filter(c => c.url.endsWith('/notifications/test')).length, 0);
   await h.submit(h.$('notificationForm')); const call = h.calls.find(c => c.url.endsWith('/notifications') && c.method === 'PUT'); assert.equal(call.data.version, 7); assert.equal(call.data.smsEnabled, false); assert.equal(call.data.solapiSecret, '');
 });
 test('notification settings load failure cannot silently overwrite saved settings', async () => {
   const h = await setup({ override: (url) => url.endsWith('/notifications') ? new Response(JSON.stringify({ message: '연결 오류' }), { status: 500 }) : null });
   await h.submit(h.$('notificationForm')); assert.equal(h.calls.filter(c => c.url.endsWith('/notifications') && c.method === 'PUT').length, 0); assert.match(h.$('notificationSettingsStatus').textContent, /조회 실패/);
+});
+
+test('legacy enabled SMS cannot be test-sent before saving email-only settings', async () => {
+  const settings = { version: 8, email: 'fixture@example.invalid', naverAccount: 'fixture@example.invalid', emailEnabled: true, smsEnabled: true, emailStatus: 'READY' };
+  const h = await setup({ override: (url, init) => url.endsWith('/notifications') ? new Response(JSON.stringify(init.method === 'PUT' ? { ...settings, smsEnabled: false, version: 9 } : settings)) : null });
+  assert.equal(h.$('testNotifications').disabled, true);
+  await h.submit(h.$('notificationForm'));
+  const call = h.calls.find(c => c.url.endsWith('/notifications') && c.method === 'PUT');
+  assert.equal(call.data.smsEnabled, false); assert.equal(call.data.phone, ''); assert.equal(h.$('testNotifications').disabled, false);
 });

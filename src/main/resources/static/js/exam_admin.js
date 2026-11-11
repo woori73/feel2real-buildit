@@ -252,44 +252,44 @@
   function showNotificationSettings(value) {
     const form = $("notificationForm");
     notificationVersion = value.version;
-    for (const key of ["email", "phone", "naverAccount", "sender"])
+    for (const key of ["email", "naverAccount"])
       form.elements[key].value = value[key] || "";
-    for (const key of ["emailEnabled", "smsEnabled"])
-      form.elements[key].checked = value[key];
-    for (const key of ["naverPassword", "solapiKey", "solapiSecret"])
-      form.elements[key].value = "";
+    form.elements.emailEnabled.checked = Boolean(value.emailEnabled);
+    form.elements.naverPassword.value = "";
     const labels = { DISABLED: "사용 안 함", CONNECTION_REQUIRED: "발송 서비스 연결 필요", READY: "발송 준비됨 · 테스트로 수신 확인" };
-    $("notificationSettingsStatus").textContent = "이메일: " + labels[value.emailStatus] + " / 문자: " + labels[value.smsStatus];
-    $("testNotifications").disabled = ![value.emailStatus, value.smsStatus].includes("READY");
+    $("notificationSettingsStatus").textContent = "이메일: " + (labels[value.emailStatus] || "상태 확인 필요") + (value.smsEnabled ? " · 이메일 전용 사용을 위해 알림 설정을 저장해 주세요." : "");
+    $("testNotifications").disabled = value.emailStatus !== "READY" || Boolean(value.smsEnabled);
   }
   async function notificationSettings() {
     showNotificationSettings(await api("/api/admin/exam-intake/notifications"));
   }
   submit($("notificationForm"), async (data) => {
     if (!Number.isInteger(notificationVersion)) throw new Error("알림 설정을 먼저 불러온 뒤 저장해 주세요.");
-    const input = { version: notificationVersion };
-    for (const key of ["email", "phone", "naverAccount", "sender", "naverPassword", "solapiKey", "solapiSecret"])
-      input[key] = String(data.get(key) || "");
-    for (const key of ["emailEnabled", "smsEnabled"])
-      input[key] = data.get(key) === "on";
+    const input = {
+      version: notificationVersion,
+      email: String(data.get("email") || ""),
+      emailEnabled: data.get("emailEnabled") === "on",
+      naverAccount: String(data.get("naverAccount") || ""),
+      naverPassword: String(data.get("naverPassword") || ""),
+      // The existing server DTO also carries SMS fields. This screen is email-only.
+      phone: "", smsEnabled: false, sender: "", solapiKey: "", solapiSecret: ""
+    };
     showNotificationSettings(await api("/api/admin/exam-intake/notifications", "PUT", input));
     $("notificationTestStatus").textContent = "";
-    note("알림 설정을 저장했습니다. 연결 상태를 확인해 주세요.");
+    note("이메일 전용 알림 설정을 저장했습니다.");
   });
-  if ($("testNotifications"))
-    $("testNotifications").addEventListener("click", async () => {
-      const button = $("testNotifications");
-      button.disabled = true;
-      $("notificationTestStatus").textContent = "테스트 알림을 전송하고 있습니다.";
-      try {
-        const result = await api("/api/admin/exam-intake/notifications/test", "POST", {});
-        const labels = { ACCEPTED: "발송 서비스가 접수했습니다. 휴대폰·메일 수신함을 확인해 주세요.", DISABLED: "사용 안 함", CONNECTION_REQUIRED: "발송 서비스 연결 필요", SMTP_FAILURE: "메일 전송 실패 · 네이버 설정과 앱 비밀번호를 확인해 주세요.", SMS_REJECTED: "문자 접수 실패 · 인증정보·발신번호·잔액을 확인해 주세요.", SMS_RESULT_UNKNOWN: "전송 결과 미확인 · 문자 서비스 발송 내역을 확인해 주세요." };
-        $("notificationTestStatus").textContent = "이메일: " + labels[result.email] + " / 문자: " + labels[result.sms];
-      } catch (e) {
-        $("notificationTestStatus").textContent = e.message;
-      } finally { button.disabled = false; }
-    });
-
+  $("testNotifications").addEventListener("click", async () => {
+    const button = $("testNotifications");
+    button.disabled = true;
+    $("notificationTestStatus").textContent = "테스트 이메일을 전송하고 있습니다.";
+    try {
+      const result = await api("/api/admin/exam-intake/notifications/test", "POST", {});
+      const labels = { ACCEPTED: "발송 서비스가 접수했습니다. 네이버 메일 수신함을 확인해 주세요.", DISABLED: "사용 안 함", CONNECTION_REQUIRED: "발송 서비스 연결 필요", SMTP_FAILURE: "메일 전송 실패 · 네이버 설정과 앱 비밀번호를 확인해 주세요." };
+      $("notificationTestStatus").textContent = "이메일: " + (labels[result.email] || "발송 상태를 확인해 주세요.");
+    } catch (e) {
+      $("notificationTestStatus").textContent = e.message;
+    } finally { button.disabled = false; }
+  });
   notificationSettings().catch((e) => { $("notificationSettingsStatus").textContent = "알림 설정 조회 실패 · " + e.message; });
   if (new URL(location.href).hash === "#notifications") $("notifications").open = true;
   loadList(); loadEvents(); const requestedId = new URL(location.href).searchParams.get("request"); if (requestedId) loadDetail(requestedId, false);

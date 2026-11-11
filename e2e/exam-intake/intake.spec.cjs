@@ -79,15 +79,15 @@ test("admin saves notification recipients privately and sees missing provider co
     const form = page.locator("#notificationForm");
     await expect(page.locator("#notificationSettingsStatus")).toContainText("이메일:");
     await form.locator('[name="email"]').fill("fixture@example.invalid");
-    await form.locator('[name="phone"]').fill("01000000000");
     await form.locator('[name="emailEnabled"]').check();
-    await form.locator('[name="smsEnabled"]').check();
     await form.getByRole("button", { name: "알림 설정 저장", exact: true }).click();
     await expect(page.locator("#notificationSettingsStatus")).toContainText("발송 서비스 연결 필요");
     await page.reload();
     await expect(form.locator('[name="email"]')).toHaveValue("fixture@example.invalid");
-    await expect(form.locator('[name="phone"]')).toHaveValue("01000000000");
-    for (const name of ["naverPassword", "solapiKey", "solapiSecret"])
+    await expect(form.locator('[name="phone"]')).toHaveCount(0);
+    await expect(form.locator('[name="smsEnabled"]')).toHaveCount(0);
+    expect((await ok(admin.get("/api/admin/exam-intake/notifications"))).smsEnabled).toBe(false);
+    for (const name of ["naverPassword"])
       await expect(form.locator('[name="' + name + '"]')).toHaveValue("");
     await expect(page.locator("#testNotifications")).toBeDisabled();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
