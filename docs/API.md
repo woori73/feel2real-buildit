@@ -5196,6 +5196,14 @@ MCP 기억 인계의 commitSha: 숫자가 길게 이어진 Git SHA-1도 명시�
 
 ## 영어 기말고사 신청 (P1, 기본 비활성 / 운영 미설치)
 
+### 관리자 접수 알림
+
+- ADMIN 전용 GET/PUT `/api/admin/exam-intake/notifications`: 수신 이메일·휴대폰, 채널 사용 여부, 네이버 SMTP 및 SOLAPI 연결 설정. PUT은 같은 origin과 `X-F2R-Exam: 1`, 최신 `version` 필수. 응답은 `Cache-Control: no-store`이며 비밀번호·API Key·API Secret 원문을 반환하지 않는다. 빈 인증정보는 기존 값을 유지하고, 발신 네이버 계정 변경 시 새 앱 비밀번호가 필요하다.
+- POST `/api/admin/exam-intake/notifications/test`: 저장된 수신처로 최소 내용과 관리자 링크만 전송. ADMIN·같은 origin 필수, 인스턴스당 60초 간격 제한. 채널별 `DISABLED`, `CONNECTION_REQUIRED`, `ACCEPTED`, `SMTP_FAILURE`, `SMS_REJECTED`, `SMS_RESULT_UNKNOWN` 반환. `ACCEPTED`는 발송 서비스 접수이며 실제 수신 증명이 아니다.
+- 알림 링크는 `/admin/hub/exam-requests?request={id}`. 비로그인은 홈페이지 로그인 모달로 이동하며 `returnUrl`에 접수 경로를 보존한다. ADMIN 로그인 후 서버 권한 검사를 거쳐 해당 접수를 바로 표시한다. 일반 회원은 403.
+- 인증정보가 연결된 시점 이후의 새 접수부터 발송한다. 이메일은 기존 이벤트별 재시도 정책을 유지하고, 문자는 `sms.application.created`/`sms.inquiry.created` 별도 이벤트로 관리한다. 문자 결과 불확실·실패는 자동 유료 재전송하지 않고 관리자 재시도를 사용한다. 공급자 응답·예외 원문은 이벤트 오류에 저장하지 않는다.
+- 운영 수신처·인증정보는 공개 저장소·배포 입력에 넣지 않는다. 관리자 화면에서 입력하며 비공개 파일 저장소에 암호화해 보관한다. 연결 전에는 화면에 `발송 서비스 연결 필요`를 표시한다.
+
 `app.exam-intake.enabled=false`. [설계 및 활성화 경계](home-exam/P1-DESIGN.md).
 GET `/api/exam-intake/config`, 로그인 후 GET/POST `/api/exam-intake/requests`, GET `/{id}`, POST `/{id}/documents`, `/{id}/actions`, `/{id}/payment-confirmation`.
 기존 인증 principal 재사용. 모든 변경은 같은 origin + `X-F2R-Exam: 1` 필수. owner 또는 ADMIN만 해당 접수 메타데이터 조회 가능.

@@ -50,6 +50,53 @@ async function create(api) {
   );
 }
 test.describe.configure({ mode: "serial" });
+test("notification link preserves the requested record through login and remains admin-only", async ({ browser }) => {
+  const guest = await request.newContext({ baseURL: base });
+  const student = await logged("student");
+  const target = "/admin/hub/exam-requests?request=00000000-0000-0000-0000-000000000000";
+  try {
+    const redirect = await guest.get(target, { maxRedirects: 0, headers: { Accept: "text/html" } });
+    expect(redirect.status()).toBe(302);
+    const destination = new URL(redirect.headers().location, base);
+    expect(destination.pathname).toBe("/");
+    expect(destination.searchParams.get("returnUrl")).toBe(target);
+    expect((await student.get(target)).status()).toBe(403);
+    expect((await student.get("/api/admin/exam-intake/notifications")).status()).toBe(403);
+    expect((await guest.get("/api/admin/exam-intake/notifications")).status()).toBe(401);
+  } finally {
+    await guest.dispose();
+    await student.dispose();
+  }
+});
+test("admin saves notification recipients privately and sees missing provider connection at mobile width", async ({ browser }) => {
+  const admin = await logged("admin");
+  const context = await browser.newContext({ storageState: await admin.storageState(), viewport: { width: 390, height: 844 } });
+  try {
+    const page = await context.newPage();
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto("/admin/hub/exam-requests#notifications");
+    const form = page.locator("#notificationForm");
+    await expect(page.locator("#notificationSettingsStatus")).toContainText("이메일:");
+    await form.locator('[name="email"]').fill("fixture@example.invalid");
+    await form.locator('[name="phone"]').fill("01000000000");
+    await form.locator('[name="emailEnabled"]').check();
+    await form.locator('[name="smsEnabled"]').check();
+    await form.getByRole("button", { name: "알림 설정 저장", exact: true }).click();
+    await expect(page.locator("#notificationSettingsStatus")).toContainText("발송 서비스 연결 필요");
+    await page.reload();
+    await expect(form.locator('[name="email"]')).toHaveValue("fixture@example.invalid");
+    await expect(form.locator('[name="phone"]')).toHaveValue("01000000000");
+    for (const name of ["naverPassword", "solapiKey", "solapiSecret"])
+      await expect(form.locator('[name="' + name + '"]')).toHaveValue("");
+    await expect(page.locator("#testNotifications")).toBeDisabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+    expect(errors).toEqual([]);
+  } finally {
+    await context.close();
+    await admin.dispose();
+  }
+});
 test.beforeAll(async () => {
   fs.mkdirSync(output, { recursive: true });
   const a = await logged("admin");
@@ -357,13 +404,9 @@ test("admin bank save/approve, manual confirmation, four deliveries and refund g
     });
     try {
       const page = await context.newPage();
-      await page.goto("/admin/hub/exam-requests");
+      await page.goto("/admin/hub/exam-requests?request=" + r.id);
       await expect(page.locator("#requests")).toContainText(r.id);
-      await page
-        .locator("#requests article")
-        .filter({ hasText: r.id })
-        .getByRole("button")
-        .click();
+      await expect(page.locator("#detailTitle")).toHaveText("접수 번호 " + r.id);
       await expect(page.locator("#progress")).toContainText("4/4회");
       await page.screenshot({
         path: path.join(output, "admin-review.png"),

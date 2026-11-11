@@ -171,6 +171,12 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/lms/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // 접수 알림 링크는 관리자 로그인 후 해당 접수 화면으로 복귀한다.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> redirectToLogin(request, response),
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/admin/hub/exam-requests"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 대화형 학습의 강사 전용 화면도 raw 401 대신 같은 로그인 안내(원래 경로 복귀)로 보낸다. API(/api/**)는 영향 없음.
             .defaultAuthenticationEntryPointFor(
                 (request, response, ex) -> redirectToLogin(request, response),
@@ -317,6 +323,7 @@ public class SecurityConfig {
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
             // 인스타 자동 피드 관리자 화면 — ADMIN 전용(API는 /api/admin/sns/** → 아래 /api/admin/** ADMIN 규칙).
             .requestMatchers("/admin/sns", "/admin/sns/**", "/admin/academy-move", "/admin/student-roster").hasRole("ADMIN")
+            .requestMatchers("/admin/hub/exam-requests").hasRole("ADMIN")
             // GPU 작업자 API는 로그인 대신 Bearer 작업자 토큰(SNS_WORKER_TOKEN)을 컨트롤러에서 검사한다.
             .requestMatchers("/api/sns/worker/**").permitAll()
             // 인스타그램 서버가 image_url로 가져가는 게시물 이미지 — 추측 불가 토큰 주소만, GET만.

@@ -1956,6 +1956,13 @@ JPA Entity 자동 스캔으로 기존 운영 시작을 깨뜨리지 않도록 `E
 
 기존 8개 제안 테이블·JDBC 레코드를 재사용한다. 운영 읽기 전용 조사에서 Flyway 1096·실패 이력 0·신청 테이블 0개를 확인했고, 동일 스키마를 신규 V1097로 준비했다. 운영 적용은 배포 후 별도 검증한다. `exam_intake_action.kind=NOTIFICATION_RECEIVED`는 관리자·기록 시각·이벤트 ID만 저장하고, SMTP 수락(`exam_intake_event.state=SENT`)과 구별한다. 브라우저 복구 키는 기존 `(owner_id,intake_key)` 유일성을 재사용하며 새 중복 저장소를 만들지 않는다. 신규 동의 버전만 2026-10-30 시행 문서에 맞추고 기존 계약/동의 행을 소급 수정하지 않는다. [읽기 전용 조사 및 신규 마이그레이션 준비](operations/exam-intake-20261031/README.md).
 
+## 접수 알림의 비공개 운영 설정 (2026-11-11)
+
+`ExamIntakeNotificationSettings.Config`는 JPA 엔티티나 새 테이블이 아닌 운영 설정 레코드다. 수신처·채널 활성화·네이버 SMTP/SOLAPI 인증정보·활성화 시작시각·낙관적 버전을 기존 비공개 접수 저장소의 `.notification-settings.v1.enc`에 AES-256-GCM(12바이트 무작위 nonce)으로 보관한다. 디렉터리 0700·파일 0600, 원자적 교체와 symlink 거부를 적용한다. 키는 `app.jwt.secret`에서 용도별로 분리해 도출하며, 이 비밀키 교체 시 기존 설정 파일도 함께 재암호화하거나 관리자 연결정보를 다시 등록해야 한다. 설정 파일은 공개 미디어 경로와 자료 다운로드 API에서 접근할 수 없다. 외부 응답에는 인증정보 보관 여부만 반환한다.
+
+기존 `exam_intake_event` 스키마·마이그레이션은 그대로 재사용한다. 이메일 이벤트와 별개로 `event_type=sms.application.created|sms.inquiry.created`, `event_key=sms:{기존 이벤트 UUID}`의 유일 이벤트를 생성한다. 문자 `SENT`는 SOLAPI 접수 성공 응답 확인, 메일 `SENT`는 SMTP 수락이며 둘 다 실제 수신 증명이 아니다. 문자 실패/결과 불명은 `FAILED`와 정해진 오류 코드만 저장하고 자동 재발송하지 않는다. 원래 접수는 발송 실패와 무관하게 보존된다. 발송된 알림 본문에는 학생 개인정보·첨부 대신 접수 관리 링크만 포함한다. 신규 DB 마이그레이션은 없다.
+
+
 ## 인스타 자동 피드 (V1098, 새 테이블 6개)
 
 HANDOFF(docs/handoff/instagram-auto-feed/HANDOFF.md) §7의 6개 표를 다른 기능과 겹치지 않게 `sns_` 접두어로 만든다. 기존 테이블은 바꾸지 않는다. 되돌리기 SQL: `src/main/resources/db/rollback/V1098__sns_auto_feed_down.sql`(Flyway 경로 밖, 수동). 모든 시각은 서울 시간(`SnsTime`).
