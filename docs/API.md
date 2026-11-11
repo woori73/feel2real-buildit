@@ -397,6 +397,8 @@ ADMIN이 **대상 학원을 명시**해 다른 회원의 홈페이지를 조회�
 
 ### PDF 원본 업로드 (2026-11-11)
 
+- 제작·검수 MD는 선택이다. Weekly 등록 시 `productionVerification`을 생략하거나 null/빈 문자열/공백만 보내면 문제지·해설지만 저장한다. 이 경우 검수 파일명·본문·hash는 빈 값이며 검수 보기/다운로드는 404로 처리한다. 내용이 있는 MD는 원래 파일명과 본문을 보존한다. MCP `register_weekly_exam_draft`의 `production_verification_md`도 생략할 수 있다.
+
 - 학교 프린트 `POST /problem-generator/wiki/api/exam-materials`: `core_type=school_print`, `material_type=SCHOOL_PRINT`와 PDF `original`만으로 저장한다. `html_text`·JSON은 선택이다. 30MB 제한과 `%PDF-` signature를 검사하고, MIME이 생략된 PDF도 `application/pdf`로 원본 바이트를 반환한다. HTML/HTM 원본 업로드도 유지한다.
 - 주간 실전 모의고사의 `POST …/weekly-exams/draft` 및 `PUT …/weekly-exams/{id}/artifacts`: `studentPaper`·`answerExplanation`은 기존 HTML 문자열 또는 `data:application/pdf;base64,` 원본 envelope를 받는다. PDF는 바이너리로 검증하며 파일당 30MB 이하만 허용한다. 파일명은 기존 `studentPaperName`·`answerExplanationName`으로 전달한다. `productionVerification`은 기존 MD/TXT를 유지한다.
 - 문제지·해설지의 보기 및 `/download`는 PDF envelope를 디코딩해 원본 바이트·`application/pdf`·`.pdf` 파일명으로 반환한다. HTML은 기존 정제 원본·`text/html` 계약을 유지한다. 두 형식을 같은 세트에서 섞거나 교체할 수 있다. 운영자 인증, Context snapshot, DRAFT/FINAL 정책은 유지한다.

@@ -125,6 +125,38 @@ class WeeklyExamPdfTest(unittest.TestCase):
         finally:
             workspace.reset_current_identity(token)
 
+    def test_given_no_verification_when_registering_then_save_papers_without_a_fake_md(self):
+        for round_, value in enumerate(('omitted', None, '', '   \n'), start=1):
+            with self.subTest(value=value):
+                payload = self.payload(round=round_)
+                if value == 'omitted':
+                    payload.pop('productionVerification')
+                else:
+                    payload['productionVerification'] = value
+                response = self.client.post('/api/weekly-exams/draft', json=payload)
+                self.assertEqual(201, response.status_code, response.text)
+                row = response.json()
+                self.assertEqual('', row['verification_name'])
+                self.assertEqual('', row['verification_hash'])
+                self.assertEqual(PDF, weekly_exam.view_artifact(row['id'], 'student-paper').body)
+                updated = weekly_exam.replace_artifacts(row['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                    studentPaper=PDF_DATA, studentPaperName='revision.pdf'))
+                self.assertEqual('', updated['verification_name'])
+                self.assertEqual('', updated['verification_hash'])
+                for suffix in ('', '/download'):
+                    absent = self.client.get(f"/api/weekly-exams/{row['id']}/artifacts/production-verification{suffix}")
+                    self.assertEqual(404, absent.status_code)
+
+    def test_given_optional_md_when_supplied_then_preserve_the_original_name_and_body(self):
+        verification = '  # 제작·검수\n\n- 원문을 그대로 보관합니다.\n'
+        created = self.client.post('/api/weekly-exams/draft', json=self.payload(
+            productionVerification=verification, productionVerificationName='출제검수.md'))
+        self.assertEqual(201, created.status_code, created.text)
+        row = created.json()
+        self.assertEqual('출제검수.md', row['verification_name'])
+        response = self.client.get(f"/api/weekly-exams/{row['id']}/artifacts/production-verification/download")
+        self.assertEqual(verification.encode('utf-8'), response.content)
+
 
 if __name__ == '__main__':
     unittest.main()

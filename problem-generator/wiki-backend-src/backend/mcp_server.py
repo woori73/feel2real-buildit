@@ -51,7 +51,7 @@ mcp = MCPServer(
     name='buildit-wiki',
     # tool 수정 시 bump — 일부 MCP client가 serverInfo.version 변화로
     # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
-    version='7',
+    version='8',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -336,13 +336,14 @@ def save_class_insights(content: str, source: str, school: str = '', grade: str 
 def register_weekly_exam_draft(
     school: str, grade: str, year: int, semester: str, exam_type: str,
     round: int, set_type: str, question_count: int,
-    student_paper_html: str, answer_explanation_html: str, production_verification_md: str,
+    student_paper_html: str, answer_explanation_html: str, production_verification_md: str = '',
     context_status: str = 'LIVING', student_paper_name: str = 'student-paper.html',
     answer_explanation_name: str = 'answer-explanation.html',
     production_verification_name: str = 'production-verification.md',
     source_material_ids: list[int] | None = None,
 ) -> dict:
-    """[쓰기 도구] Work/Claude가 완성한 3종 산출물을 하나의 Weekly Exam으로 등록한다.
+    """[쓰기 도구] 문제지·해설지를 하나의 Weekly Exam으로 등록한다. 제작·검수 MD는
+    있으면 production_verification_md로 함께 전달하고, 없으면 생략한다.
     서버가 현재 Living Context를 Snapshot으로 고정하며 상태는 언제나 REVIEW다.
     이 도구로 APPROVED/FINAL/PUBLISHED 전이는 할 수 없다.
     student_paper_html/answer_explanation_html은 완성 A4 시험지 canonical HTML이어야
@@ -457,3 +458,4 @@ def build_mcp_asgi_app() -> Starlette:
     inner_app = mcp.streamable_http_app(streamable_http_path='/', stateless_http=True)
     api_key = os.getenv(MCP_API_KEY_ENV, '').strip()
     return _BearerAuthMiddleware(inner_app, api_key)
+

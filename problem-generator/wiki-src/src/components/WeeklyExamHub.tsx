@@ -85,13 +85,13 @@ export default function WeeklyExamHub(props:Props){
     const response=await api('weekly-exams/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       school:context.school,grade:context.grade,year:context.year,semester:context.semester,examType:context.exam,
       round,setType,questionCount:Number(questionCount)||0,studentPaper,answerExplanation,
-      productionVerification:verification,studentPaperName:fileNames.paper,answerExplanationName:fileNames.expl,
-      productionVerificationName:fileNames.verify,contextStatus,
+      studentPaperName:fileNames.paper,answerExplanationName:fileNames.expl,contextStatus,
+      ...(verification?{productionVerification:verification,productionVerificationName:fileNames.verify}:{}),
     })})
     const body=await response.json().catch(()=>({}))
     if(!response.ok){setNotice(body.detail||'DRAFT 등록에 실패했습니다.');return}
     setStudentPaper('');setAnswerExplanation('');setVerification('');setFileNames({paper:'',expl:'',verify:''});setShowRegister(false)
-    setNotice('세 산출물을 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.');await load()
+    setNotice('시험 자료를 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.');await load()
     }catch(error){setNotice(error instanceof Error?`등록하지 못했습니다: ${error.message}`:'등록하지 못했습니다.')}
     finally{setRegistering(false)}
   }
@@ -146,7 +146,7 @@ export default function WeeklyExamHub(props:Props){
         <div className="next-round-summary"><b>다음 회차 준비 · {nextRound}회</b>
           <span>현재 Context 전체를 다시 계산해 Blueprint를 준비합니다.</span>
           <small>최근 FINAL {latestFinal?latestFinal.round+'회':'없음'}</small>
-          {latestFinal&&<button onClick={()=>open(`weekly-exams/${latestFinal.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>}
+          {latestFinal?.verification_name&&<button onClick={()=>open(`weekly-exams/${latestFinal.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>}
         </div>
         <div className="weekly-set-list" aria-label="주간 실전 모의고사 상태">
           {(()=>{const item=latestFor();return <span className={item?`weekly-status ${item.status.toLowerCase()}`:''}>
@@ -175,7 +175,7 @@ export default function WeeklyExamHub(props:Props){
             })}
           </div>
         </article>)}</div>}
-        <button type="button" className="primary-action" onClick={()=>setShowRegister(value=>!value)}>제작물 3종 DRAFT 등록</button>
+        <button type="button" className="primary-action" onClick={()=>setShowRegister(value=>!value)}>시험 자료 등록</button>
       </article>
 
 
@@ -183,15 +183,16 @@ export default function WeeklyExamHub(props:Props){
     </div>
 
     {showRegister&&<section className="work-panel weekly-register" aria-label="Weekly Exam DRAFT 등록">
-      <div className="panel-heading"><div><p className="kicker">ONE SET · THREE ARTIFACTS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
+      <div className="panel-heading"><div><p className="kicker">EXAM MATERIALS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
       <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label><label>Context 상태<select value={contextStatus} onChange={e=>setContextStatus(e.target.value as 'PARTIAL'|'LIVING'|'COMPLETE')}><option>PARTIAL</option><option>LIVING</option><option>COMPLETE</option></select></label></div>
       <label>학생용 문제지 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'paper')}/></label>
       {fileNames.paper&&<p className="field-hint">선택한 문제지: {fileNames.paper}</p>}
       <label>정답·해설 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'expl')}/></label>
       {fileNames.expl&&<p className="field-hint">선택한 해설지: {fileNames.expl}</p>}
-      <label>제작·검수 MD<input type="file" accept={VERIFICATION_ACCEPT} onChange={e=>void chooseFile(e,'verify')}/></label>
-      <p className="field-hint">문제지·해설지는 HTML 또는 PDF로 올릴 수 있습니다(파일당 30MB 이하). 세 파일은 하나의 세트로 저장됩니다.</p>
-      <button className="primary-action" disabled={registering||Object.values(reading).some(Boolean)||!studentPaper||!answerExplanation||!verification} onClick={()=>void register()}>{registering?'등록 중…':'DRAFT 등록'}</button>
+      <label>제작·검수 MD (선택)<input type="file" accept={VERIFICATION_ACCEPT} onChange={e=>void chooseFile(e,'verify')}/></label>
+      {fileNames.verify&&<p className="field-hint">선택한 제작·검수: {fileNames.verify} <button type="button" onClick={()=>{readVersions.current.verify+=1;setVerification('');setFileNames(names=>({...names,verify:''}));setReading(values=>({...values,verify:false}))}}>선택 취소</button></p>}
+      <p className="field-hint">문제지·해설지는 HTML 또는 PDF로 올릴 수 있습니다(파일당 30MB 이하). 제작·검수 MD는 있으면 함께 올리고, 없으면 생략하세요.</p>
+      <button className="primary-action" disabled={registering||Object.values(reading).some(Boolean)||!studentPaper||!answerExplanation} onClick={()=>void register()}>{registering?'등록 중…':'DRAFT 등록'}</button>
     </section>}
     <p className="approval-gate-note">원문은 운영자 전용입니다.</p>
   </section>
