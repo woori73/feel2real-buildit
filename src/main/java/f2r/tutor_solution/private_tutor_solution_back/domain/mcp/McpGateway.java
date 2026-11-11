@@ -160,7 +160,7 @@ public class McpGateway {
     out.add(writeTool("post_academy_move","학원이사 글을 해당 이슈에 올리고 AI가 핵심·미확정 사항·다음 행동을 정리해 함께 답합니다. 같은 idempotencyKey 재시도는 중복 저장하지 않습니다. 관리자와 academy-move:write 별도 동의가 필요합니다.",
         Map.of("title",string(),"content",string(),"issue",Map.of("type","string","enum",List.of("원상복구","교습소 전환","명칭·로고")),"idempotencyKey",string()),List.of("content","issue","idempotencyKey")));
     out.add(tool("read_student_roster","학생명단(시간표) 연도별 Word에서 만든 이름 없는 집계(연도·월별 학생 수·수업 수·신규/재원·유지율·요일·재원 기간, 가명 S001…)를 읽고 교습소·학원 발전 방안을 논의합니다. 관리자와 student-roster:read 별도 동의가 필요합니다. 실명·원본 파일은 제공하지 않습니다.",Map.of(),List.of()));
-    out.add(tool("read_admin_dashboard","압구정에듀홀릭 관리자 대시보드와 같은 현황(이번 달 수납·지출·미수금·원생 수, 요일별 수업 학생 수, 학생별 반·수업 요일·이번 달 등원 수)을 읽고 운영자와 할 일을 의논합니다."
+    out.add(tool("read_admin_dashboard","F2R 장부·출결부의 학원 현황(이번 달 수납·지출·미수금·원생 수, 요일별 수업 학생 수, 학생별 반·수업 요일·이번 달 등원 수)을 읽고 운영자와 할 일을 의논합니다."
         + " 학생은 가명(S01…)이며 실명·학교·연락처는 주지 않습니다. 읽기 전용. 관리자와 student-roster:read 별도 동의가 필요합니다.",
         Map.of("businessId",integer(1,Integer.MAX_VALUE)),List.of()));
 

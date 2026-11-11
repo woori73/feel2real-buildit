@@ -15,14 +15,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 /**
- * 관리자 대시보드 현황(재무 + 재원 학생 수업 요일)을 Claude(MCP)가 읽어 함께 의논할 수 있게 묶는다. 읽기 전용.
+ * 학원 현황(재무 + 재원 학생 수업 요일)을 Claude(MCP)가 읽어 함께 의논할 수 있게 묶는다. 읽기 전용.
  *
  * <p>개인정보: 학생 실명·학교·연락처는 보내지 않는다. 학생은 이름순 가명(S01…)과 학년·반·요일·등원 횟수만 준다.
  */
 @Service
 public class EasyAdminOverviewService {
 
-  static final String INSTRUCTION = "압구정에듀홀릭 관리자 대시보드와 같은 자료입니다. 이번 달 재무와 학생별 수업 요일을 보고"
+  static final String INSTRUCTION = "F2R 장부·출결부의 학원 현황입니다. 이번 달 재무와 학생별 수업 요일을 보고"
       + " 운영자와 할 일(미수 안내·요일별 반 편성·시간표 조정·지출 점검 등)을 의논하세요. 이 도구는 읽기만 하며 아무것도 저장하지 않습니다."
       + " 학생은 가명(S01…)이며 실명을 추측하거나 요구하지 마세요.";
   static final List<String> WEEK = List.of("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN");
@@ -77,7 +77,7 @@ public class EasyAdminOverviewService {
     out.put("weekdayStudentCounts", weekdayCounts(rows));
     out.put("students", pseudonymize(rows));
     out.put("weekdayRule", "최근 4주 실제 등원 요일(ATTENDANCE), 없으면 배정된 반 요일(CLASS), 둘 다 없으면 빈 값");
-    out.put("url", "/dashboard");
+    out.put("url", "/easy/attendance");
     return out;
   }
 

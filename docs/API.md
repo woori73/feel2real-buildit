@@ -4677,7 +4677,7 @@ ADMIN 전용 + `EasyTutorAccessService.requireAllowedBusiness`. 모든 요청에
 - `POST /events/{id}/correct` `{eventType,reason(필수 1~200),note?}` — 새 행 + 이전 행 superseded.
 - `GET /students/{studentId}/events` — 학생 출결 이력(정정 이력 포함).
 - `GET /monthly?classId=&month=YYYY-MM` — `{classId,className,month,daysInMonth,students[{studentId,name,days{일:[구분]},counts{구분:횟수}}]}`.
-- `GET /student-overview` — 관리자 대시보드(`/dashboard` 「관리자 현황」)용 재원(ENROLLED) 학생 요약, 읽기 전용: `[{studentId,name,school,grade,classes[],weekdays[MON..SUN],weekdaySource:ATTENDANCE|CLASS|null,monthCheckIns,lastCheckIn}]`(이름순). 수업 요일 = 오늘(KST) 포함 최근 28일의 실제 등원(CHECK_IN) 요일, 없으면 배정된 활성 반의 요일. 정정된(superseded) 기록·다른 사업체 기록은 세지 않는다.
+- `GET /student-overview` — 학원 홈·MCP 의논용 재원(ENROLLED) 학생 요약(F2R 장부 학생 원장 + F2R 출결부 기준), 읽기 전용: `[{studentId,name,school,grade,classes[],weekdays[MON..SUN],weekdaySource:ATTENDANCE|CLASS|null,monthCheckIns,lastCheckIn}]`(이름순). 수업 요일 = 오늘(KST) 포함 최근 28일의 실제 등원(CHECK_IN) 요일, 없으면 배정된 활성 반의 요일. 정정된(superseded) 기록·다른 사업체 기록은 세지 않는다.
 - `GET /roster-import/preview?year=` — 학생명단 자료실의 그 연도 진행표 분석: `{year,previewHash,lessonDays,futureLessonDays,names[{name,lessonDays,sessions,firstDate,lastDate,candidates[],suggestedAction:MATCH|CREATE|CHOOSE,suggestedStudentId}],rule}`. 저장하지 않는다.
 - `POST /roster-import/apply` `{businessId,year,previewHash,classId?,mappings[{name,action:MATCH|CREATE|SKIP,studentId?}]}` — 모든 이름에 처리 방법이 있어야 하며, 해시가 다르면 409. 결과 `{createdStudents,matchedStudents,skippedNames,eventsCreated,eventsAlreadyThere}`. 반을 주면 미배정 학생을 첫 수업일로 배정(정원 초과면 전체 롤백). 한 트랜잭션.
 
@@ -5344,9 +5344,9 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - 삭제 정책: 삭제 API는 없다. 잘못 올리면 같은 연도로 다시 올려 새 버전으로 바꾸고 이전 버전은 이력으로 남는다.
 - 실제 학생 이름이 든 자료는 저장소에 커밋하지 않는다. 테스트는 가짜 이름(가나·다라…) 샘플만 쓴다. 운영 자료는 배포 후 관리자가 화면에서 직접 올린다.
 
-### MCP `read_admin_dashboard` (관리자 현황을 보며 할 일 의논, 2026-11-11)
+### MCP `read_admin_dashboard` (학원 현황을 보며 할 일 의논, 2026-11-11)
 
-`student-roster:read` 동의 + ADMIN(기존 학생명단 도구와 같은 동의, 새 scope 없음). 인자 `businessId?`(없으면 첫 사업체), grant당 분당 12회, 읽기 전용. 응답: `instruction`, `privacy`, `business{businessId,name}`, `businesses[]`, `month`, `finance{income,expense,profit,receivable,studentCount,overdueStudentCount,openReviewCount}`, `weekdayStudentCounts{MON..SUN}`, `students[{alias:S01…,grade,classes,weekdays,weekdaySource,monthCheckIns,lastCheckIn}]`, `weekdayRule`, `url:/dashboard`. **실명·학교·연락처는 보내지 않는다**(이름순 가명). 같은 자료를 사이트 화면에서는 실명으로 본다(ADMIN 화면).
+`student-roster:read` 동의 + ADMIN(기존 학생명단 도구와 같은 동의, 새 scope 없음). 인자 `businessId?`(없으면 첫 사업체), grant당 분당 12회, 읽기 전용. 응답: `instruction`, `privacy`, `business{businessId,name}`, `businesses[]`, `month`, `finance{income,expense,profit,receivable,studentCount,overdueStudentCount,openReviewCount}`, `weekdayStudentCounts{MON..SUN}`, `students[{alias:S01…,grade,classes,weekdays,weekdaySource,monthCheckIns,lastCheckIn}]`, `weekdayRule`, `url:/easy/attendance`. **실명·학교·연락처는 보내지 않는다**(이름순 가명). 사이트 화면 변경은 없다(학원 홈 개편은 별도 작업).
 
 ### MCP `read_student_roster` (학원 발전 방안 논의)
 

@@ -49,12 +49,9 @@
 - **통합 대시보드**(`admin/hub.html`, `hub_dashboard.js`, 순수 함수 `hub_view.js`): 위에서부터 ① AI에게 부탁하기(입력칸 + 예시 4개) ② 이번 달 한눈에 보기(수납·지출·미수금·원생 수 큰 숫자 + 한 줄 설명, 미수 원생·최근 거래 5건, 읽기 전용) ③ 자주 가는 곳 6개 ④ 더 보기(접힘: 시험 접수·입금 계좌, 빌더·내신위키 등, 예상문제 의뢰). 데이터는 기존 `GET /api/admin/easy/dashboard/widgets`만 읽는다(새 API 없음).
 - **AI에게 부탁하기 흐름**: 부탁하기 → `/dashboard?ask=<글>`(500자까지) → AI 업무 비서가 준비된 뒤 입력칸에만 채운다. **자동 전송하지 않으며**, 사람이 확인하고 보낸다. 저장·발송은 기존처럼 미리보기·승인 후에만 된다.
 
-## 2026-11-11 /dashboard 「관리자 현황」 (압구정에듀홀릭 ADMIN 전용)
+## 2026-11-11 학원 현황 데이터 + Claude(MCP) 의논 도구 (화면 변경 없음)
 
-사용자 요청: "첫 화면에 재무 상황 + 현재 학생 목록과 수업 요일이 펼쳐지고, 옆에서 AI와 무엇을 할지 의논". 이 화면만 고치고 일반(TUTOR) 화면은 나중에.
+`/dashboard` 화면은 별도 「압구정에듀홀릭 학원 운영 화면 개편」(학원 홈) 작업이 맡는다. 이 변경은 그 화면과 겹치지 않게 데이터·MCP만 둔다.
 
-- ADMIN으로 `/dashboard`에 들어오면 첫 화면이 「관리자 현황」(`data-view="admin"`)이다. `#ai`·`#all` 주소로 들어오면 그 화면을 존중한다. ADMIN이 아니면 관련 칸·버튼은 숨김(`hidden`) 그대로이고 기존 화면만 보인다.
-- 왼쪽: 이번 달 재무(수납·지출·미수금·원생 수, `/api/dashboard/widgets`) + 재원 학생·수업 요일 표(`GET /api/admin/easy/attendance/student-overview`), 요일 버튼(누르면 그 요일 학생만)·이름 찾기. 보기만 한다.
-- 오른쪽: 「AI와 의논하기」 — 기존 AI 대화 칸을 캐릭터 화면 없이 옆에 붙였다. 예시 3개는 입력칸만 채우고 자동 전송하지 않는다. 「Claude(MCP)에서 의논하기」는 MCP `read_admin_dashboard`(가명) 안내와 복사할 첫 질문.
-- 휴대폰은 한 줄로: 현황 → AI와 의논(상단 「AI와 의논 ↓」 바로가기).
-- 파일: `templates/dashboard.html`, `static/css/admin_overview.css`(모든 배치 규칙이 `body[data-view="admin"]` 안), `static/js/admin_overview.js`, 순수 함수 `static/js/admin_overview_view.js`.
+- `GET /api/admin/easy/attendance/student-overview`: F2R 장부 학생 원장의 재원생별 반·수업 요일(최근 4주 실제 등원, 없으면 반 요일)·이번 달 등원·마지막 등원. 2026 진행표로 넣은 학생·등원 기록이 여기서 읽힌다.
+- MCP `read_admin_dashboard`: 이번 달 재무 + 요일별 학생 수 + 가명 학생 목록을 Claude가 읽고 운영자와 할 일을 의논(읽기 전용, `student-roster:read` + ADMIN).

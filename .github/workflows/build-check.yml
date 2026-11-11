@@ -96,7 +96,6 @@ jobs:
           src/test/js/easy_attendance_view.test.js
           src/test/js/easy_connections_view.test.js
           src/test/js/hub_view.test.js
-          src/test/js/admin_overview_view.test.js
           src/test/js/assistant_wait.test.js
           src/test/js/admissions_admin_load.test.js
           src/test/js/admissions_explorer.test.js
@@ -205,7 +204,6 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AnalyticsCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.AdminTopnavMenuContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.AdminHubSimpleContractTest"
-          --tests "f2r.tutor_solution.private_tutor_solution_back.template.AdminDashboardOverviewContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAdminOverviewServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpAdminDashboardTest"

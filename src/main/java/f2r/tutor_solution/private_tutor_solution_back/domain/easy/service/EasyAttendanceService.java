@@ -269,7 +269,7 @@ public class EasyAttendanceService {
         .map(EasyAttendanceService::eventView).toList();
   }
 
-  /** 관리자 대시보드용 학생 한 줄: 반·수업 요일(최근 4주 등원, 없으면 반 요일)·이번 달 등원·마지막 등원. */
+  /** 학원 현황용 학생 한 줄: 반·수업 요일(최근 4주 등원, 없으면 반 요일)·이번 달 등원·마지막 등원. */
   public record StudentOverviewRow(Long studentId, String name, String school, Integer grade,
       List<String> classes, List<String> weekdays, String weekdaySource, int monthCheckIns,
       LocalDate lastCheckIn) {}
