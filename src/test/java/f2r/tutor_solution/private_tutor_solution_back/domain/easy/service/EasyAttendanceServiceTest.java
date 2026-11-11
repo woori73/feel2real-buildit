@@ -348,4 +348,53 @@ class EasyAttendanceServiceTest {
     assertThatThrownBy(() -> service.sheet(OTHER_BIZ, classId, LocalDate.of(2026, 11, 10)))
         .hasMessageContaining("다른 사업체");
   }
+
+  // ------------------------------------------------------------ 관리자 대시보드 학생 요약
+
+  @Test
+  @DisplayName("given 최근 4주 등원·정정·반 요일·퇴원 학생 when 학생 요약 then 실제 등원 요일 우선, 없으면 반 요일, 정정·퇴원은 빼고 이번 달 횟수를 센다")
+  void studentOverview() {
+    // given — 오늘 2026-11-10(화), 최근 4주 = 10-14 ~ 11-10
+    Long classId = newClass("A반", null); // 월·수
+    EasyStudent ganada = student("가나");
+    EasyStudent dara = student("다라");
+    EasyStudent saa = student("사아");
+    student("마바", EasyStudentStatus.WITHDRAWN);
+    service.assign(BIZ, classId, ganada.getStudentId());
+    service.assign(BIZ, classId, dara.getStudentId());
+    members.forEach(m -> ReflectionTestUtils.setField(m, "assignedOn", LocalDate.of(2026, 10, 1)));
+    service.record(BIZ, new RecordForm(classId, ganada.getStudentId(), "CHECK_IN", "2026-10-09T15:00", null)); // 목, 4주 밖
+    service.record(BIZ, new RecordForm(classId, ganada.getStudentId(), "CHECK_IN", "2026-11-02T15:00", null)); // 월
+    var wed = service.record(BIZ, new RecordForm(classId, ganada.getStudentId(), "CHECK_IN", "2026-11-04T15:00", null)); // 수
+    service.record(BIZ, new RecordForm(classId, ganada.getStudentId(), "CHECK_IN", "2026-11-06T15:00", null)); // 금
+    service.correct(BIZ, wed.eventId(), new CorrectForm("ABSENT", "실제로는 결석", null));
+
+    // when
+    var rows = service.studentOverview(BIZ);
+
+    // then
+    assertThat(rows).extracting(r -> r.name()).containsExactly("가나", "다라", "사아");
+    var g = rows.get(0);
+    assertThat(g.weekdays()).containsExactly("MON", "FRI");
+    assertThat(g.weekdaySource()).isEqualTo("ATTENDANCE");
+    assertThat(g.monthCheckIns()).isEqualTo(2);
+    assertThat(g.lastCheckIn()).isEqualTo(LocalDate.of(2026, 11, 6));
+    assertThat(g.classes()).containsExactly("A반");
+    var d = rows.get(1);
+    assertThat(d.weekdays()).containsExactly("MON", "WED");
+    assertThat(d.weekdaySource()).isEqualTo("CLASS");
+    assertThat(d.monthCheckIns()).isZero();
+    assertThat(d.lastCheckIn()).isNull();
+    var none = rows.get(2);
+    assertThat(none.weekdays()).isEmpty();
+    assertThat(none.weekdaySource()).isNull();
+    assertThat(none.classes()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("given 없는 사업체 when 학생 요약 then 거절한다")
+  void studentOverviewNeedsBusiness() {
+    // when / then
+    assertThatThrownBy(() -> service.studentOverview(99L)).hasMessageContaining("사업체");
+  }
 }
