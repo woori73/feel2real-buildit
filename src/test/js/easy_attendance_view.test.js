@@ -41,3 +41,13 @@ test('given 적용 결과 when 요약 then 한 문장',()=>{
   assert.equal(view.applySummary({createdStudents:2,matchedStudents:1,skippedNames:0,eventsCreated:30,eventsAlreadyThere:4}),
     '새 학생 2명 · 기존 학생 연결 1명 · 건너뜀 0명 · 등원 기록 30건 저장 · 이미 있던 기록 4건');
 });
+
+test('given 학원 홈 바로가기 주소 when 읽으면 then 사업체·반·날짜를 꺼내고 형식이 틀린 값은 버린다', () => {
+  // given / when
+  const ok = view.deepLink('?businessId=1&classId=3&date=2026-11-11');
+  const bad = view.deepLink('?businessId=0&classId=abc&date=2026/11/11');
+  // then
+  assert.deepEqual(ok, { businessId: '1', classId: '3', date: '2026-11-11' });
+  assert.deepEqual(bad, { businessId: null, classId: null, date: null });
+  assert.deepEqual(view.deepLink(''), { businessId: null, classId: null, date: null });
+});

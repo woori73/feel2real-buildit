@@ -170,7 +170,7 @@
   var lastAsk = '';
   function handoff() {
     try { if (lastAsk) sessionStorage.setItem('f2r.pendingAsk', lastAsk); } catch (_) { /* 저장 불가 */ }
-    location.href = '/dashboard';
+    location.href = '/dashboard/assistant';
   }
 
   function respond(intent) {

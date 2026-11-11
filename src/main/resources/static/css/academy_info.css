@@ -1,0 +1,37 @@
+/* 정보 화면: 제목 → 원문 → 원본 파일. 학원 홈과 같은 색 토큰(academy_home.css)을 쓴다. */
+.ai-lead { margin: 0 0 16px; }
+.ai-list { display: grid; gap: 16px; }
+.ai-card { display: grid; gap: 6px; justify-items: start; }
+.ai-card > * { max-width: 100%; }
+.ai-title { margin: 4px 0 0; font-size: 20px; line-height: 1.35; overflow-wrap: anywhere; }
+.ai-h3 { font-size: 14px; margin: 12px 0 0; color: var(--ah-muted); }
+.ai-body, .ai-reconcile, .ai-note { width: 100%; border-top: 1px solid var(--ah-line); padding-top: 4px; }
+.ai-body > summary, .ai-reconcile > summary, .ai-note > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--ah-green); }
+.ai-body-in { display: grid; gap: 10px; padding: 4px 0 8px; }
+.ai-route { font-size: 13px; color: var(--ah-muted); margin: 0; }
+.ai-para { white-space: pre-wrap; margin: 0; line-height: 1.75; overflow-wrap: anywhere; }
+.ai-page { border-left: 3px solid var(--ah-line); padding-left: 12px; }
+.ai-page h4 { margin: 0 0 4px; font-size: 13px; color: var(--ah-muted); }
+.ai-table-wrap { overflow-x: auto; max-width: 100%; border: 1px solid var(--ah-line); border-radius: 8px; }
+.ai-table-wrap table { border-collapse: collapse; min-width: 100%; font-size: 14px; }
+.ai-table-wrap th, .ai-table-wrap td { border-bottom: 1px solid var(--ah-line); padding: 8px 10px; text-align: left; vertical-align: top; white-space: pre; overflow-wrap: normal; word-break: keep-all; }
+.ai-table-wrap th { background: #f4f2ea; position: sticky; top: 0; }
+.ai-reason { color: var(--ah-warn); background: var(--ah-warn-soft); padding: 10px 12px; border-radius: 8px; margin: 0; }
+.ai-sum { color: var(--ah-green); background: var(--ah-green-soft); padding: 10px 12px; border-radius: 8px; margin: 0; font-weight: 700; }
+.ai-image { max-width: 100%; height: auto; border: 1px solid var(--ah-line); border-radius: 8px; }
+.ai-actions { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.ai-files { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; width: 100%; }
+.ai-files li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 14px; }
+.ai-filename { overflow-wrap: anywhere; color: var(--ah-muted); min-width: 0; }
+.ai-btn, .ai-btn-sub { min-height: 44px; padding: 0 14px; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
+.ai-btn { background: var(--ah-green); color: #fff; border: 1px solid var(--ah-green); }
+.ai-btn-sub { background: #fff; color: var(--ah-ink); border: 1px solid var(--ah-line); }
+.ai-btn:disabled, .ai-btn-sub:disabled { opacity: .5; cursor: default; }
+.ai-group h4 { margin: 10px 0 4px; }
+.ai-rows { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.ai-rows li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; border: 1px solid var(--ah-line); border-radius: 8px; overflow-wrap: anywhere; }
+.ai-rows input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--ah-green); }
+.ai-row-form { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.ai-row-form select { min-height: 44px; max-width: 100%; border: 1px solid var(--ah-line); border-radius: 8px; padding: 0 8px; font: inherit; }
+.ai-drafts { display: grid; gap: 6px; margin-top: 8px; }
+.ai-draft { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

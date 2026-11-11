@@ -264,6 +264,8 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     new OrRequestMatcher(
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/dashboard/assistant"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/dashboard/info"),
                         PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft/**"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft"),
@@ -294,7 +296,7 @@ public class SecurityConfig {
             // API도 /api/tutor/easy/**에서 별도 TUTOR·사업체 권한을 검증한다.
             .requestMatchers("/ledger", "/ledger/**", "/tutor/easy", "/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             // BuildIt 통합 대시보드 — ADMIN·TUTOR 공용. 데이터는 /api/dashboard/** 에서 역할별 권한 검증.
-            .requestMatchers("/dashboard", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
+            .requestMatchers("/dashboard", "/dashboard/assistant", "/dashboard/info", "/api/academy-home/**", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
             // 대시보드 캐릭터 영상·이미지(비공개 폴더) — 로그인한 ADMIN·TUTOR만. 공개 정적 경로로 두지 않는다.
             // 자료 묶음 설치는 ADMIN만(같은 출처 확인은 컨트롤러). 읽기 규칙보다 위에 둔다(first-match-wins).
             .requestMatchers(HttpMethod.POST, "/api/dashboard/agent-media/package").hasRole("ADMIN")

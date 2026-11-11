@@ -21,7 +21,7 @@
       <!-- 자주 쓰는 곳 5개만 바로 보이고, 나머지는 「전체 메뉴」 안에 묶음별로 둔다(모든 경로·권한은 그대로). -->
       <nav class="admin-nav" aria-label="관리자 메뉴">
         <a class="admin-nav-link admin-nav-main" th:classappend="${activeMenu == 'hub'} ? ' active' : ''" href="/admin/hub">통합 대시보드</a>
-        <a class="admin-nav-link admin-nav-main admin-nav-service" href="/dashboard">AI 업무 비서</a>
+        <a class="admin-nav-link admin-nav-main admin-nav-service" href="/dashboard/assistant">AI 업무 비서</a>
         <a class="admin-nav-link admin-nav-main" th:classappend="${activeMenu == 'easy'} ? ' active' : ''" href="/easy">에듀홀릭 장부</a>
         <a class="admin-nav-link admin-nav-main" href="/easy/attendance">출결부</a>
         <a class="admin-nav-link admin-nav-main" href="/admin/student-roster">학생명단(시간표)</a>

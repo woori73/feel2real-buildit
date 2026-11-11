@@ -11,7 +11,7 @@ public class PrivatePageRobotsHeaderWriter implements HeaderWriter {
   // 2026-11-09: 원장님 개별 페이지(/chart/educators)와 사용설명서(/manual)는 검색에 노출하지 않는다(대표님 결정).
   private static final Set<String> PREFIXES = Set.of("/api", "/signin", "/chart/educators", "/manual", "/admin", "/api/admin", "/ai-agent-studio", "/api/studio", "/tutor", "/my",
       "/naesin-production-studio", "/api/naesin-production", "/naesin-wiki", "/api/naesin-wiki");
-  private static final Set<String> PAGES = Set.of("/old-home", "/wemade/login", "/dashboard", "/my/profile", "/studio-projects", "/stdt_dashboard", "/tutor_dashboard");
+  private static final Set<String> PAGES = Set.of("/old-home", "/wemade/login", "/dashboard", "/dashboard/assistant", "/dashboard/info", "/my/profile", "/studio-projects", "/stdt_dashboard", "/tutor_dashboard");
 
   @Override public void writeHeaders(HttpServletRequest request, HttpServletResponse response) {
     String path = request.getRequestURI().substring(request.getContextPath().length());

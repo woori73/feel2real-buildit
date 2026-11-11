@@ -52,7 +52,7 @@ class AdminHubSimpleContractTest {
   void assistantPrefillsAskWithoutSending() throws Exception {
     // given
     String js = read("static/js/unified_assistant.js");
-    String dash = read("templates/dashboard.html");
+    String dash = read("templates/dashboard_assistant.html");
     // when
     int fn = js.indexOf("function prefillAsk(){");
     String body = js.substring(fn, js.indexOf('\n', fn));
@@ -73,7 +73,7 @@ class AdminHubSimpleContractTest {
     // then
     assertThat(more).isPositive();
     assertThat(visible.split("admin-nav-main", -1).length - 1).isEqualTo(5);
-    assertThat(visible).contains("href=\"/admin/hub\"", "href=\"/dashboard\"", "href=\"/easy\"",
+    assertThat(visible).contains("href=\"/admin/hub\"", "href=\"/dashboard/assistant\"", "href=\"/easy\"",
         "href=\"/easy/attendance\"", "href=\"/admin/student-roster\"");
     assertThat(nav.substring(more)).contains("학원 운영", "장부·출결", "콘텐츠·제작", "새출발", "관리");
   }

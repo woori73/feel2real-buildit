@@ -117,7 +117,7 @@ class AgentDashboardBrowserQaMySqlTest {
       WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
       driver.get(BASE + "/actuator/health");
       driver.manage().addCookie(new org.openqa.selenium.Cookie("ACCESS_TOKEN", token));
-      driver.get(BASE + "/dashboard");
+      driver.get(BASE + "/dashboard/assistant#all");
       JavascriptExecutor js = driver;
 
       // 업무 비서 준비 완료(실제 /api/auth/me·/progress·/overview·/drafts 호출 후 버튼 활성화)

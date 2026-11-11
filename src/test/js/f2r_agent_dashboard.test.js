@@ -7,7 +7,7 @@ const vm = require('node:vm');
 // F2R AI 운영 대시보드: 비서 선택·화면 선택·대화 기반 서비스 활성화·상태 전환 규칙과 화면 계약.
 const JS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/f2r_agent_dashboard.js'), 'utf8');
 const UA = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/unified_assistant.js'), 'utf8');
-const HTML = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard.html'), 'utf8');
+const HTML = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard_assistant.html'), 'utf8');
 
 function load() {
   const window = {};
@@ -122,12 +122,14 @@ test('given 정본 승인 상태 when 배지를 정하면 then 승인 전 자료
   assert.equal(d.badgeFor('FINAL'), '외형 승인 전 후보');
 });
 
-test('given 대시보드 템플릿 when 읽으면 then F2R 홈 로고·전체 대시보드 전환·사용법 안내·두 화면이 있다', () => {
+test('given AI 업무 비서 템플릿 when 읽으면 then F2R 홈 로고·학원 홈 링크·업무 도구 전환·사용법 안내·두 화면이 있다', () => {
   // given / when / then
   assert.match(HTML, /class="ops-logo" data-f2r-home href="\/"/);
   assert.doesNotMatch(HTML, /<b>Build<\/b><i>It<\/i>/);
   assert.doesNotMatch(HTML, />홈으로</);
-  assert.match(HTML, /data-view-btn="all"[^>]*>전체 대시보드</);
+  assert.match(HTML, /data-view-btn="all"[^>]*>업무 도구</);
+  assert.match(HTML, /class="ops-home-link" href="\/dashboard"/);
+  assert.match(HTML, /data-default-view="ai"/);
   assert.match(HTML, /id="uaResume"/);
   assert.match(HTML, /data-pane="ai"/);
   assert.match(HTML, /data-pane="all"/);
@@ -193,7 +195,7 @@ test('given 대시보드 when 캐릭터를 고르면 then 인사 버튼 없이 �
 
 test('given AI 비서 화면 when 영상을 바꾸면 then 홈과 같은 전환 모듈을 먼저 불러 말하기 뒤 대기 영상을 처음부터 보여 준다', () => {
   // given
-  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard.html'), 'utf8');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard_assistant.html'), 'utf8');
   // when
   const sw = html.indexOf('f2r_agent_clip_switch.js'), dash = html.indexOf('f2r_agent_dashboard.js?');
   // then

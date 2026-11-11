@@ -1884,6 +1884,24 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 
 설계·실측·실제 연결 미검증 범위: [통합 보고서](ai-agent-studio/REPORT.md). 운영 DB에 이 마이그레이션을 적용하지 않았다. 병합 직전 최신 main과 V번호 충돌을 재확인한다.
 
+## 학생명단 이름 ↔ AcademyCraft 학생 연결 (academy_roster_student_links, V1107)
+
+엔티티 `domain/academyhome/AcademyRosterStudentLink`. 학생명단(시간표) 자료실(Studio 프로젝트 `student-roster`)의 연도별 이름을 선택 학원의 AcademyCraft 학생(`rea_students.id`, 다른 DB)에 원장이 확인해 연결한 기록이다.
+
+| 컬럼 | 의미 |
+|---|---|
+| `id` | 자동증가 PK |
+| `academy_id` | AcademyCraft 학원 ID(게이트웨이 연결 문맥의 `academyId`) |
+| `roster_year` | 학생명단 연도 |
+| `roster_name` | 명단 이름(NFC·공백 정리, 최대 40자) |
+| `link_status` | `LINKED`(학생 연결) / `EXCLUDED`(명단에서 제외) |
+| `rea_student_id` | LINKED일 때 AcademyCraft 학생 ID, EXCLUDED면 NULL |
+| `confirmed_by`, `confirmed_at` | 확인한 BuildIt 사용자·시각 |
+
+- 유니크 `(academy_id, roster_year, roster_name)` — 같은 이름을 다시 확인하면 덮어쓴다(재처리 중복 없음). 이름만 같은 학생을 자동으로 넣지 않으며, 원장 연결(`ACADEMY_OWNER`) 계정의 명시적 확인만 저장한다.
+- 삭제 API 없음(확인 변경은 덮어쓰기). 학생 생성·삭제는 하지 않는다. 학생 등록은 기존 통합 AI 업무 비서 초안 승인 경로만 쓴다.
+- 신규 테이블이라 1단계 마이그레이션. 원본 파일·원문·연락처는 저장하지 않는다.
+
 ## 통합 AI 업무 비서 (작업 A, 로컬 프로토타입)
 
 `V1094__unified_assistant.sql`과 `domain/unifiedassistant/`의 엔티티를 함께 추가했다.

@@ -542,7 +542,8 @@
   function init() {
     if (!$('agentStage') || typeof MutationObserver === 'undefined') return;
     ui.agent = pickAgent(store.get(AGENT_KEY));
-    setView(pickView(location.hash, store.get(VIEW_KEY)));
+    // 해시가 없으면 화면의 기본 보기(AI 업무 비서 화면은 data-default-view="ai")를 연다.
+    setView(pickView(location.hash || (document.body.dataset.defaultView ? '#' + document.body.dataset.defaultView : ''), store.get(VIEW_KEY)));
     renderServices();
     renderMode();
     renderAgent();

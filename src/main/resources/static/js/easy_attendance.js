@@ -374,7 +374,9 @@
     await Easy.guardAdmin();
     const businesses = await Easy.loadBusinesses();
     businesses.forEach(b => $('business').add(new Option(b.name, String(b.businessId))));
-    $('sheetDate').value = todayKst();
+    const link = V.deepLink(location.search);
+    if (link.businessId && businesses.some(b => String(b.businessId) === link.businessId)) $('business').value = link.businessId;
+    $('sheetDate').value = link.date || todayKst();
     $('monthValue').value = todayKst().slice(0, 7);
     renderDayPicker();
     document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
@@ -391,6 +393,7 @@
     if (businesses.length) {
       await loadStudents();
       await loadClasses();
+      if (link.classId && [...$('sheetClass').options].some(o => o.value === link.classId)) $('sheetClass').value = link.classId;
       if ($('sheetClass').value) await loadSheet();
     }
   }

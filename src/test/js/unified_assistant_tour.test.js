@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 // 통합 AI 업무 비서 첫 방문 안내: 메뉴 클릭·목적 선택 규칙과 화면 id 계약.
 const JS = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/js/unified_assistant.js'), 'utf8');
-const HTML = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard.html'), 'utf8');
+const HTML = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/dashboard_assistant.html'), 'utf8');
 
 function loadTour() {
   const window = {};
