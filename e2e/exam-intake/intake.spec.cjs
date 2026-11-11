@@ -551,7 +551,7 @@ test('free sample creates an unpaid inquiry with materials and separate paid app
   try {
     const page = await context.newPage();
     await page.goto(base + '/exam-service?sample=1');
-    await expect(page.locator('.intake header h1')).toHaveText('맞춤문제 1장 무료 신청');
+    await expect(page.locator('.intake header h1')).toHaveText('클라우드리뷰 무료신청');
     await expect(page.locator('#refundTerms')).toBeHidden();
     await expect(page.locator('#termsConsent')).toBeHidden();
     await page.locator('[name=name]').fill('합성 무료 샘플');
@@ -561,7 +561,7 @@ test('free sample creates an unpaid inquiry with materials and separate paid app
     await page.locator('#intakeForm [name=consent]').check();
     await page.locator('#intakeForm [name=optionalConsent]').check();
     const response = page.waitForResponse(r => r.url().endsWith('/api/exam-intake/requests') && r.request().method()==='POST');
-    await page.getByRole('button',{name:'무료 샘플 신청하기',exact:true}).click();
+    await page.getByRole('button',{name:'클라우드리뷰 무료신청',exact:true}).click();
     const saved = await (await response).json();
     expect(saved.kind).toBe('INQUIRY');
     expect(saved.details.inquiryType).toBe('FREE_SAMPLE');

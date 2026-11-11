@@ -161,7 +161,7 @@ class LandingEdunovaTemplateContractTest {
     String offer = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"edu\""));
     String promo = html.substring(html.indexOf("id=\"examPromo\""), html.indexOf("id=\"edu\""));
     // then
-    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회", "맞춤문제 1장 무료 신청").containsOnlyOnce("2만원");
+    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회", "클라우드리뷰 무료신청").containsOnlyOnce("2만원");
     assertThat(promo).doesNotContain("맞춤 문제 문의·신청", "exam-caption\">학교별")
         .contains("id=\"examPromoSummary\" class=\"sr\"");
   }
@@ -191,7 +191,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     String top = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("</header>", html.indexOf("id=\"enNav\"")));
     String nav = html.substring(html.indexOf("id=\"homeMenu\""), html.indexOf("</nav>", html.indexOf("id=\"homeMenu\"")));
-    assertThat(top).contains("data-home-nav=\"home\"", "Feel to Real", "2주 4회 · 2만원", "1장 무료 신청", "전체 메뉴",
+    assertThat(top).contains("data-home-nav=\"home\"", "Feel to Real", "2주 4회 · 2만원", "클라우드리뷰 무료신청", "전체 메뉴",
         "href=\"#chart-showcase\">빌드잇 차트<", "href=\"#dashboard\">대시보드<", "href=\"#request\" class=\"hl-link-offer\"",
         "aria-controls=\"homeMenuPanel\"", "aria-expanded=\"false\"");
     String[] keys = {"request", "wiki", "game", "agent", "dashboard", "chart", "guide"};
@@ -228,7 +228,7 @@ class LandingEdunovaTemplateContractTest {
         "href=\"https://cafe.naver.com/newhopero\"", "rel=\"noopener\"");
     assertThat(hero).contains("data-active=\"0\"", "id=\"heroPause\"", "id=\"heroStatus\"", "aria-pressed=\"true\"",
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
-    assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "서수니 · 세븐", "1장 무료 신청", "맞춤문제 신청");
+    assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "서수니 · 세븐", "클라우드리뷰 무료신청", "맞춤문제 신청");
     for (String path : new String[] {"/img/landing/home-card-exam-seven.webp", "/img/landing/home-card-game.webp",
         "/img/landing/home-card-ibt.webp", "/img/landing/home-agent-suni.webp", "/img/landing/home-agent-seven.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
@@ -286,7 +286,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("맞춤문제 1장 무료 신청", "직접 제작한 첫 페이지 또는 1장")
+        .contains("클라우드리뷰 무료신청", "직접 제작한 첫 페이지 또는 1장")
         .contains("우리 학교 맞춤문제")
         .contains("id=\"pass-offer\"")
         .contains("href=\"/wiki\"")

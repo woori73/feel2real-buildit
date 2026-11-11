@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/home_light.css?v=20261102-2">
+  <link rel="stylesheet" href="/css/home_light.css?v=20261111-cloud-review-1">
   <script src="/js/f2r_agent_clip_switch.js?v=20261025-2" defer></script>
   <script src="/js/f2r_home_agent.js?v=20261029-2" defer></script>
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
@@ -33,7 +33,7 @@
 <div class="home-light" id="homeTop">
   <a class="home-skip" href="#homePaneTitle">본문으로 건너뛰기</a>
 
-  <!-- 상단 메뉴(2026-11-01 밝은 개편): 로고 · 주요 서비스 · 1장 무료 신청 · 로그인 · 전체 메뉴. 측면 메뉴는 없다. -->
+  <!-- 상단 메뉴(2026-11-01 밝은 개편): 로고 · 주요 서비스 · 클라우드리뷰 무료신청 · 로그인 · 전체 메뉴. 측면 메뉴는 없다. -->
   <header class="hl-top" id="enNav">
     <div class="hl-top-inner">
       <a href="/" class="hl-logo" data-home-nav="home" aria-label="Feel to Real (F2R) 홈">
@@ -49,7 +49,7 @@
         <a href="#dashboard">대시보드</a>
       </nav>
       <div class="hl-actions">
-        <a class="hl-btn hl-btn-dark hl-free" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">1장 무료 신청</a>
+        <a class="hl-btn hl-btn-dark hl-free" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a>
         <div class="hl-account">
           <th:block th:replace="~{fragments/_account_menu :: accountMenuControls('/stdt_dashboard', '학생 홈')}"></th:block>
         </div>
@@ -88,7 +88,7 @@
         <h3 id="menuOfferTitle">2주 4회 · 2만원</h3>
         <p>주 2회 · 총 4회 · 160문항</p>
         <div class="hl-menu-offer-actions">
-          <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">1장 무료 신청</a>
+          <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a>
           <a class="hl-btn hl-btn-white" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">신청·자료 제출</a>
         </div>
         <div class="hl-menu-offer-links"><a href="#hitCase">적중 사례</a><a href="#exam-payment">이용료·입금 안내</a></div>
@@ -154,7 +154,7 @@
               </div>
             </div>
             <div class="hero-cta">
-              <a id="homeIntakeCta" class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">맞춤문제 1장 무료 신청 <span aria-hidden="true">→</span></a>
+              <a id="homeIntakeCta" class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청 <span aria-hidden="true">→</span></a>
               <a class="hl-btn hl-btn-white" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
             </div>
             <div class="hero-note">
@@ -217,7 +217,7 @@
           <h2 id="promoTitle">2주 4회 · 160문항</h2>
           <p class="hl-promo-lead">기출문제지와 수업자료를 보내 주세요. 직접 제작한 첫 페이지 또는 1장을 무료로 드립니다.</p>
           <div class="hl-promo-actions">
-            <a class="hl-btn hl-btn-mint" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">1장 무료 신청</a>
+            <a class="hl-btn hl-btn-mint" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a>
             <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
           </div>
         </div>
@@ -260,7 +260,7 @@
       <p class="hl-eyebrow">맞춤문제 2만원 서비스 · 학교별 맞춤 제작</p>
       <h2 id="requestPaneTitle">맞춤문제 신청</h2>
       <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
-      <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/exam-service?sample=1">1장 무료 신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
+      <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/exam-service?sample=1">클라우드리뷰 무료신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
       <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
     </section>
 

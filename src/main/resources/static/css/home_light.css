@@ -74,7 +74,7 @@ body { margin: 0; background: var(--hl-bg); color: var(--hl-ink); }
   .hl-logo { font-size: 16px; gap: 8px; }
   .hl-logo img { width: 30px; height: 30px; }
   .hl-top-inner > .hl-actions > .hl-account { display: none; }
-  .hl-free { min-height: 44px; padding: 0 14px; font-size: 13px; }
+  .hl-free { min-height: 44px; max-width: 116px; padding: 0 10px; font-size: 13px; white-space: normal; word-break: keep-all; text-align: center; line-height: 1.2; }
   .hl-menu-btn { width: 44px; padding: 0; justify-content: center; border: 0; }
   .hl-menu-label { display: none; }
 }
@@ -82,7 +82,8 @@ body { margin: 0; background: var(--hl-bg); color: var(--hl-ink); }
   /* 360px 화면: "(F2R)"을 둘째 줄로 내려 버튼이 화면 밖으로 밀리지 않게 한다. */
   .hl-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
   .hl-logo-abbr { font-size: .78em; color: var(--hl-sub); }
-  .hl-top-inner { gap: 8px; }
+  .hl-top-inner { gap: 6px; padding: 0 12px; }
+  .hl-free { max-width: 104px; font-size: 12px; }
 }
 
 /* ---- 전체 메뉴 ---- */

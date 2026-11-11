@@ -920,12 +920,12 @@
       ? "기출자료 접수 후 직접 제작한 첫 페이지 또는 1장을 무료로 제공합니다. 정식 서비스는 2주·주 2회·총 4회·160문항·2만원입니다."
       : config.summary;
     if (sample && $("intakeForm")) {
-      document.querySelector(".intake header h1").textContent = "맞춤문제 1장 무료 신청";
+      document.querySelector(".intake header h1").textContent = "클라우드리뷰 무료신청";
       $("createTitle").textContent = "자료 제출";
       $("refundTerms").hidden = true;
       $("termsConsent").hidden = true;
       $("intakeForm").elements.termsAccepted.required = false;
-      $("intakeForm").querySelector('button[type="submit"]').textContent = "무료 샘플 신청하기";
+      $("intakeForm").querySelector('button[type="submit"]').textContent = "클라우드리뷰 무료신청";
     }
     if ($("refundRows"))
       for (let n = 0; n <= config.offer.totalDeliveries; n++) {
