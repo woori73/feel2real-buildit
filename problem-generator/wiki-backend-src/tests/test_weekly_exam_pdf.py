@@ -139,6 +139,10 @@ class WeeklyExamPdfTest(unittest.TestCase):
                 self.assertEqual('', row['verification_name'])
                 self.assertEqual('', row['verification_hash'])
                 self.assertEqual(PDF, weekly_exam.view_artifact(row['id'], 'student-paper').body)
+                updated = weekly_exam.replace_artifacts(row['id'], weekly_exam.WeeklyExamArtifactsUpdate(
+                    studentPaper=PDF_DATA, studentPaperName='revision.pdf'))
+                self.assertEqual('', updated['verification_name'])
+                self.assertEqual('', updated['verification_hash'])
                 for suffix in ('', '/download'):
                     absent = self.client.get(f"/api/weekly-exams/{row['id']}/artifacts/production-verification{suffix}")
                     self.assertEqual(404, absent.status_code)

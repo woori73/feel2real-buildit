@@ -647,7 +647,7 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
               source_material_ids=?,updated_at=? WHERE id=?""",
               (student_name, student_html, _sha(student_html),
                answer_name, answer_html, _sha(answer_html),
-               verification_name, verification_md, _sha(verification_md),
+               verification_name, verification_md, _sha(verification_md) if verification_md else '',
                json.dumps(refs), now, exam_id))
             conn.execute("""INSERT INTO weekly_exam_audit
               (weekly_exam_id,action,from_status,to_status,actor,created_at) VALUES (?,'UPDATED','DRAFT','DRAFT',?,?)""",
@@ -669,7 +669,7 @@ def replace_artifacts(exam_id: int, payload: WeeklyExamArtifactsUpdate,
            row['round'], row['set_type'], row['question_count'],
            student_name, student_html, _sha(student_html),
            answer_name, answer_html, _sha(answer_html),
-           verification_name, verification_md, _sha(verification_md),
+           verification_name, verification_md, _sha(verification_md) if verification_md else '',
            json.dumps(refs), row['context_snapshot'], row['context_hash'],
            new_version, 'REVIEW', who, now, now))
         new_id = cursor.lastrowid
