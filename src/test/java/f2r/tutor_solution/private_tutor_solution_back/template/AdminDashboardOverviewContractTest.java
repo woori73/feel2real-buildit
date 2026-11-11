@@ -24,7 +24,7 @@ class AdminDashboardOverviewContractTest {
     // when / then
     assertThat(html).contains("id=\"adminOverview\" data-pane=\"admin\" data-admin-only hidden");
     assertThat(html).contains("data-view-btn=\"admin\" aria-pressed=\"false\" data-admin-only hidden");
-    assertThat(html).contains("<div class=\"adm-discuss\" data-admin-only hidden>");
+    assertThat(html).contains("<div class=\"adm-discuss\" id=\"admDiscuss\" data-admin-only hidden>");
     assertThat(html).contains("/js/admin_overview_view.js", "/js/admin_overview.js", "/css/admin_overview.css");
   }
 
