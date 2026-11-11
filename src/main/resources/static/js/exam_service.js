@@ -61,6 +61,7 @@
     config,
     current,
     bankVersion = 0,
+    notificationVersion = 0,
     page = 0,
     intakeKey = submissionKey(),
     pendingFiles = [],
@@ -553,15 +554,24 @@
       a.append(
         el(
           "p",
-          item.event_type +
+          (item.event_type.startsWith("sms.") ? "문자" : "이메일") +
             " · " +
-            item.state +
+            ({ PENDING: "전송 대기", SENDING: "전송 중", SENT: "발송 서비스 접수 · 수신 확인 전", FAILED: "전송 실패" }[item.state] || item.state) +
             " · 시도 " +
             item.attempts +
             "회",
         ),
         el("small", item.id),
       );
+      const link = el("a", "이 접수 열기");
+      link.href = "/admin/hub/exam-requests?request=" + encodeURIComponent(item.request_id);
+      a.append(link);
+      if (item.last_error)
+        a.append(el("p", item.last_error === "SMS_RESULT_UNKNOWN"
+          ? "문자 전송 결과를 확인하지 못했습니다. 문자 서비스 발송 내역을 먼저 확인해 주세요."
+          : item.last_error === "SMS_REJECTED"
+            ? "문자 서비스가 요청을 접수하지 못했습니다. 연결정보·발신번호·잔액을 확인해 주세요."
+            : "발송 연결정보와 서비스 상태를 확인해 주세요."));
       if (!item.acknowledged_at)
         a.append(
           button("관리자 확인", async () => {
@@ -576,6 +586,7 @@
       if (item.state === "FAILED")
         a.append(
           button("실패 알림 다시 전송", async () => {
+            if (item.last_error === "SMS_RESULT_UNKNOWN" && !window.confirm("문자 서비스에서 발송 내역을 확인하셨나요? 이미 발송됐다면 중복 문자와 요금이 발생할 수 있습니다. 다시 전송할까요?")) return;
             await api(
               "/api/admin/exam-intake/events/" + item.id + "/retry",
               "POST",
@@ -584,7 +595,7 @@
             await events();
           }),
         );
-      if (item.state === "SENT")
+      if (item.state === "SENT" && !item.event_type.startsWith("sms."))
         a.append(
           button("수신함에서 이 이벤트 ID의 메일 확인 완료", async () => {
             await api(
@@ -598,6 +609,45 @@
       $("events").append(a);
     });
   }
+  function showNotificationSettings(value) {
+    const form = $("notificationForm");
+    notificationVersion = value.version;
+    for (const key of ["email", "phone", "naverAccount", "sender"])
+      form.elements[key].value = value[key] || "";
+    for (const key of ["emailEnabled", "smsEnabled"])
+      form.elements[key].checked = value[key];
+    for (const key of ["naverPassword", "solapiKey", "solapiSecret"])
+      form.elements[key].value = "";
+    const labels = { DISABLED: "사용 안 함", CONNECTION_REQUIRED: "발송 서비스 연결 필요", READY: "발송 준비됨 · 테스트로 수신 확인" };
+    $("notificationSettingsStatus").textContent = "이메일: " + labels[value.emailStatus] + " / 문자: " + labels[value.smsStatus];
+    $("testNotifications").disabled = ![value.emailStatus, value.smsStatus].includes("READY");
+  }
+  async function notificationSettings() {
+    showNotificationSettings(await api("/api/admin/exam-intake/notifications"));
+  }
+  control($("notificationForm"), async (data) => {
+    const input = { version: notificationVersion };
+    for (const key of ["email", "phone", "naverAccount", "sender", "naverPassword", "solapiKey", "solapiSecret"])
+      input[key] = String(data.get(key) || "");
+    for (const key of ["emailEnabled", "smsEnabled"])
+      input[key] = data.get(key) === "on";
+    showNotificationSettings(await api("/api/admin/exam-intake/notifications", "PUT", input));
+    $("notificationTestStatus").textContent = "";
+    note("알림 설정을 저장했습니다. 연결 상태를 확인해 주세요.");
+  });
+  if ($("testNotifications"))
+    $("testNotifications").addEventListener("click", async () => {
+      const button = $("testNotifications");
+      button.disabled = true;
+      $("notificationTestStatus").textContent = "테스트 알림을 전송하고 있습니다.";
+      try {
+        const result = await api("/api/admin/exam-intake/notifications/test", "POST", {});
+        const labels = { ACCEPTED: "발송 서비스가 접수했습니다. 휴대폰·메일 수신함을 확인해 주세요.", DISABLED: "사용 안 함", CONNECTION_REQUIRED: "발송 서비스 연결 필요", SMTP_FAILURE: "메일 전송 실패 · 네이버 설정과 앱 비밀번호를 확인해 주세요.", SMS_REJECTED: "문자 접수 실패 · 인증정보·발신번호·잔액을 확인해 주세요.", SMS_RESULT_UNKNOWN: "전송 결과 미확인 · 문자 서비스 발송 내역을 확인해 주세요." };
+        $("notificationTestStatus").textContent = "이메일: " + labels[result.email] + " / 문자: " + labels[result.sms];
+      } catch (e) {
+        $("notificationTestStatus").textContent = e.message;
+      } finally { button.disabled = false; }
+    });
   function receipt(id) {
     receiptId = id;
     history.replaceState(
@@ -959,6 +1009,15 @@
     }
     await list();
     if (admin && $("bankForm")) await bank();
+    if (admin && $("notificationForm"))
+      await notificationSettings().catch((e) => { $("notificationSettingsStatus").textContent = e.message; });
+    if (admin) {
+      const id = new URL(location.href).searchParams.get("request");
+      if (id) {
+        await detail(id);
+        $("detailTitle").focus();
+      }
+    }
     note(
       "접수 내역은 로그인한 계정과 담당 관리자에게 표시됩니다. 파일 본문은 관리자만 열람합니다.",
     );

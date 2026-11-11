@@ -13,13 +13,14 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
-    <link rel="stylesheet" href="/css/exam_service.css?v=20261101-1" />
+    <link rel="stylesheet" href="/css/exam_service.css?v=20261111-notifications-1" />
   </head>
   <body th:attr="data-admin=${adminView}">
     <main class="intake">
       <header>
         <a href="/">← Feel2Real</a
         ><a th:if="${adminView}" href="/admin/hub">관리자 허브</a>
+        <a th:if="${adminView}" href="#notifications">접수 알림 설정</a>
         <h1
           th:text="${adminView} ? '기말고사 접수 관리' : '문의·신청·자료 제출'"
         ></h1>
@@ -369,6 +370,39 @@
         <h3>요청·처리 이력</h3>
         <div id="history"></div>
       </section>
+      <section th:if="${adminView}" id="notifications" aria-labelledby="notificationSettingsTitle">
+        <h2 id="notificationSettingsTitle">접수 알림 설정</h2>
+        <p>새 접수 알림의 링크를 누르면 해당 접수가 열립니다. 관리자 로그인이 필요합니다. 연결을 마친 뒤 등록되는 새 접수부터 발송합니다.</p>
+        <form id="notificationForm" autocomplete="off">
+          <div class="grid">
+            <label>알림 받을 이메일<input name="email" type="email" maxlength="254" autocomplete="off" /></label>
+            <label>알림 받을 휴대폰<input name="phone" type="tel" maxlength="20" autocomplete="off" /></label>
+          </div>
+          <label class="check"><input name="emailEnabled" type="checkbox" />이메일 알림 사용</label>
+          <label class="check"><input name="smsEnabled" type="checkbox" />문자 알림 사용</label>
+          <details>
+            <summary>발송 서비스 연결</summary>
+            <p>인증정보는 저장 후 화면에 다시 표시하지 않습니다. 빈칸으로 저장하면 기존 인증정보를 유지합니다.</p>
+            <h3>네이버 메일</h3>
+            <p>네이버 메일에서 IMAP/SMTP를 켜고 2단계 인증용 앱 비밀번호를 입력해 주세요.</p>
+            <div class="grid">
+              <label>발신 네이버 메일<input name="naverAccount" type="email" maxlength="254" autocomplete="off" /></label>
+              <label>네이버 앱 비밀번호<input name="naverPassword" type="password" maxlength="256" autocomplete="new-password" /></label>
+            </div>
+            <h3>문자 서비스 (SOLAPI)</h3>
+            <p>서비스에 등록한 발신번호와 API 인증정보를 입력해 주세요. 링크가 포함된 장문 문자로 발송되며 서비스 이용요금이 발생합니다.</p>
+            <div class="grid">
+              <label>등록된 문자 발신번호<input name="sender" type="tel" maxlength="20" autocomplete="off" /></label>
+              <label>SOLAPI API Key<input name="solapiKey" type="password" maxlength="256" autocomplete="new-password" /></label>
+              <label>SOLAPI API Secret<input name="solapiSecret" type="password" maxlength="256" autocomplete="new-password" /></label>
+            </div>
+          </details>
+          <button type="submit">알림 설정 저장</button>
+        </form>
+        <p id="notificationSettingsStatus" role="status" aria-live="polite">알림 설정을 불러오고 있습니다.</p>
+        <button id="testNotifications" type="button" disabled>저장된 수신처로 테스트 알림 보내기</button>
+        <p id="notificationTestStatus" role="status" aria-live="polite"></p>
+      </section>
       <section th:if="${adminView}">
         <h2>알림 상태와 관리자 확인</h2>
         <p>
@@ -379,6 +413,6 @@
       </section>
       <footer th:insert="~{fragments/_public_footer :: examSellerDetails}"></footer>
     </main>
-    <script src="/js/exam_service.js?v=20261111-cloud-review-1" defer></script>
+    <script src="/js/exam_service.js?v=20261111-notifications-1" defer></script>
   </body>
 </html>

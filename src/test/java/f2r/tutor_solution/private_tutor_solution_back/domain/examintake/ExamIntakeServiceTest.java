@@ -574,7 +574,8 @@ class ExamIntakeServiceTest {
     doThrow(new org.springframework.mail.MailSendException("synthetic"))
         .when(sender)
         .send(any(org.springframework.mail.SimpleMailMessage.class));
-    new ExamIntakeNotifications(repo, tx, provider, true, "synthetic@example.invalid").tick();
+    new ExamIntakeNotifications(repo, tx, notificationSettings(),
+        new ExamIntakeNotificationDelivery(provider, true, "synthetic@example.invalid", "")).tick();
     var event = repo.jdbc().queryForMap("SELECT * FROM exam_intake_event");
     assertThat(event.get("state")).isEqualTo("PENDING");
     assertThat(event.get("attempts")).isEqualTo(1);
@@ -583,8 +584,140 @@ class ExamIntakeServiceTest {
         org.mockito.ArgumentCaptor.forClass(org.springframework.mail.SimpleMailMessage.class);
     verify(sender).send(capture.capture());
     assertThat(capture.getValue().getText())
-        .contains(r.id())
+        .contains(ExamIntakeNotificationDelivery.ADMIN_URL + "?request=" + r.id())
         .doesNotContain("합성 신청자", "테스트중", "synthetic@example.invalid", "시험 범위");
+  }
+
+  ExamIntakeNotificationSettings notificationSettings() {
+    return new ExamIntakeNotificationSettings(files, "synthetic-notification-key-at-least-32-bytes");
+  }
+
+  ExamIntakeNotificationSettings.Update notificationInput(long version, boolean email, boolean sms) {
+    return new ExamIntakeNotificationSettings.Update(version, "fixture@example.invalid", "010-0000-0000",
+        email, sms, "fixture@naver.com", "synthetic-app-password", "synthetic-api-key",
+        "synthetic-api-secret", "02-000-0000");
+  }
+
+  @Test
+  void givenPrivateNotificationSettings_whenSaved_thenEncryptedAndAdminOnlyAndSecretsNeverReturned()
+      throws Exception {
+    var settings = notificationSettings();
+    status(401, () -> settings.view(null));
+    status(403, () -> settings.view(owner));
+    status(403, () -> settings.save(owner, notificationInput(0, true, true)));
+    var view = settings.save(admin, notificationInput(0, true, true));
+    assertThat(view).containsEntry("emailStatus", "READY").containsEntry("smsStatus", "READY");
+    assertThat(view.toString()).doesNotContain("synthetic-app-password", "synthetic-api-key", "synthetic-api-secret");
+    Path file = directory.resolve(".notification-settings.v1.enc");
+    assertThat(new String(Files.readAllBytes(file), java.nio.charset.StandardCharsets.ISO_8859_1))
+        .doesNotContain("fixture", "synthetic-app-password", "01000000000", "synthetic-api-secret");
+    assertThat(Files.getPosixFilePermissions(file))
+        .isEqualTo(java.nio.file.attribute.PosixFilePermissions.fromString("rw-------"));
+    assertThat(notificationSettings().view(admin)).isEqualTo(view);
+    var update = new ExamIntakeNotificationSettings.Update(1, "fixture@example.invalid", "01000000000",
+        true, true, "fixture@naver.com", "", "", "", "020000000");
+    assertThat(settings.save(admin, update)).containsEntry("emailStatus", "READY").containsEntry("smsStatus", "READY");
+    status(409, () -> settings.save(admin, update));
+    status(503, () -> new ExamIntakeNotificationSettings(files, "different-key-also-at-least-32-bytes").view(admin));
+    assertThat(settings.current().toString()).doesNotContain("fixture", "synthetic-app-password");
+  }
+
+  @Test
+  void givenRecipientsWithoutProviderCredentials_whenTicked_thenReceiptSavedButNoFalseDelivery() {
+    var settings = notificationSettings();
+    var input = new ExamIntakeNotificationSettings.Update(0, "fixture@example.invalid", "01000000000",
+        true, true, "fixture@naver.com", "", "", "", "");
+    assertThat(settings.save(admin, input)).containsEntry("emailStatus", "CONNECTION_REQUIRED")
+        .containsEntry("smsStatus", "CONNECTION_REQUIRED");
+    var r = create();
+    var delivery = mock(ExamIntakeNotificationDelivery.class);
+    new ExamIntakeNotifications(repo, tx, settings, delivery).tick();
+    assertThat(repo.jdbc().queryForMap("SELECT state,attempts FROM exam_intake_event"))
+        .containsEntry("state", "PENDING").containsEntry("attempts", 0);
+    assertThat(repo.get(r.id(), false).state()).isEqualTo(State.RECEIVED);
+    verify(delivery, never()).sendEmail(any(), any(), any(), any());
+    verify(delivery, never()).sendSms(any(), any(), any());
+  }
+
+  @Test
+  void givenSmsProviderAcceptance_whenWorkerRepeated_thenOneIndependentSmsEventAndNoHistoricalReplay()
+      throws Exception {
+    var historical = create();
+    repo.jdbc().update("UPDATE exam_intake_event SET created_at=? WHERE request_id=?",
+        java.sql.Timestamp.from(java.time.Instant.now().minusSeconds(60)), historical.id());
+    var settings = notificationSettings();
+    settings.save(admin, notificationInput(0, false, true));
+    var recent = service.create(owner, input("new-notification-request-key"));
+    var http = mock(java.net.http.HttpClient.class);
+    var response = mock(java.net.http.HttpResponse.class);
+    when(response.statusCode()).thenReturn(200);
+    when(response.body()).thenReturn("{\"failedMessageList\":[],\"groupInfo\":{\"groupId\":\"synthetic-group\",\"status\":\"SENDING\",\"count\":{\"registeredSuccess\":1}}}");
+    doReturn(response).when(http).send(any(java.net.http.HttpRequest.class), any(java.net.http.HttpResponse.BodyHandler.class));
+    ObjectProvider<JavaMailSender> mail = mock(ObjectProvider.class);
+    var delivery = new ExamIntakeNotificationDelivery(mail, false, "", "", http);
+    var worker = new ExamIntakeNotifications(repo, tx, settings, delivery);
+    worker.tick();
+    worker.tick();
+    var sms = repo.jdbc().queryForMap("SELECT * FROM exam_intake_event WHERE event_type LIKE 'sms.%'");
+    assertThat(sms).containsEntry("request_id", recent.id()).containsEntry("state", "SENT")
+        .containsEntry("attempts", 1);
+    assertThat(service.notificationStatus(owner, recent.id())).containsEntry("state", "PENDING");
+    var capture = org.mockito.ArgumentCaptor.forClass(java.net.http.HttpRequest.class);
+    verify(http, times(1)).send(capture.capture(), any(java.net.http.HttpResponse.BodyHandler.class));
+    assertThat(capture.getValue().uri().toString()).isEqualTo("https://api.solapi.com/messages/v4/send-many/detail");
+    String authorization = capture.getValue().headers().firstValue("Authorization").orElseThrow();
+    assertThat(authorization).startsWith("HMAC-SHA256 apiKey=synthetic-api-key, date=")
+        .contains(", salt=", ", signature=").doesNotContain("synthetic-api-secret");
+    verifyNoInteractions(mail);
+  }
+
+  @Test
+  void givenSmsRejectedOrAmbiguous_whenNotifying_thenFailedAndNoAutomaticPaidRetry() throws Exception {
+    var settings = notificationSettings();
+    settings.save(admin, notificationInput(0, false, true));
+    var r = create();
+    var http = mock(java.net.http.HttpClient.class);
+    var response = mock(java.net.http.HttpResponse.class);
+    when(response.statusCode()).thenReturn(200);
+    when(response.body()).thenReturn("{\"failedMessageList\":[{\"statusCode\":\"SenderNotRegistered\"}],\"groupInfo\":{\"count\":{\"registeredSuccess\":0}}}");
+    doReturn(response).when(http).send(any(java.net.http.HttpRequest.class), any(java.net.http.HttpResponse.BodyHandler.class));
+    var delivery = new ExamIntakeNotificationDelivery(mock(ObjectProvider.class), false, "", "", http);
+    var worker = new ExamIntakeNotifications(repo, tx, settings, delivery);
+    worker.tick();
+    worker.tick();
+    var event = repo.jdbc().queryForMap("SELECT * FROM exam_intake_event WHERE event_type LIKE 'sms.%'");
+    assertThat(event).containsEntry("state", "FAILED").containsEntry("last_error", "SMS_REJECTED");
+    verify(http, times(1)).send(any(java.net.http.HttpRequest.class), any(java.net.http.HttpResponse.BodyHandler.class));
+    service.retryNotification(admin, event.get("id").toString());
+    doThrow(new java.io.IOException("synthetic-secret-must-not-be-recorded"))
+        .when(http).send(any(java.net.http.HttpRequest.class), any(java.net.http.HttpResponse.BodyHandler.class));
+    worker.tick();
+    worker.tick();
+    assertThat(repo.jdbc().queryForMap("SELECT state,last_error FROM exam_intake_event WHERE event_type LIKE 'sms.%'"))
+        .containsEntry("state", "FAILED").containsEntry("last_error", "SMS_RESULT_UNKNOWN");
+    verify(http, times(2)).send(any(java.net.http.HttpRequest.class), any(java.net.http.HttpResponse.BodyHandler.class));
+    assertThat(repo.get(r.id(), false).state()).isEqualTo(State.RECEIVED);
+  }
+
+  @Test
+  void givenPrivateNotificationApi_whenAccessedOrTested_thenAdminOriginAndCooldownRequired() {
+    var settings = notificationSettings();
+    settings.save(admin, new ExamIntakeNotificationSettings.Update(0, "fixture@example.invalid", "01000000000",
+        true, true, "fixture@naver.com", "", "", "", ""));
+    var delivery = mock(ExamIntakeNotificationDelivery.class);
+    var controller = new ExamIntakeNotificationController(settings, delivery);
+    var request = new MockHttpServletRequest();
+    request.addHeader("X-F2R-Exam", "1");
+    status(401, () -> controller.read(null));
+    status(403, () -> controller.read(owner));
+    assertThat(controller.read(admin).getHeaders().getCacheControl()).contains("no-store");
+    request.addHeader("Origin", "https://attacker.invalid");
+    status(403, () -> controller.test(admin, request));
+    request.removeHeader("Origin");
+    assertThat(controller.test(admin, request).getBody())
+        .containsEntry("email", "CONNECTION_REQUIRED").containsEntry("sms", "CONNECTION_REQUIRED");
+    status(429, () -> controller.test(admin, request));
+    verify(delivery, never()).sendSms(any(), any(), any());
   }
 
   @Test
