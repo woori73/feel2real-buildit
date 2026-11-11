@@ -72,7 +72,8 @@ public class ExamIntakeNotificationDelivery {
     String from = c.version() == 0 ? legacyFrom : c.naverAccount();
     if (!from.isBlank()) message.setFrom(from);
     message.setTo(c.version() == 0 ? legacyRecipient : c.email());
-    message.setSubject(eventType.equals("TEST") ? "Feel2Real 접수 알림 연결 테스트" : "Feel2Real 접수 알림");
+    message.setSubject(eventType.equals("TEST") ? "Feel2Real 접수 알림 연결 테스트"
+        : "Feel2Real 접수 알림 [" + eventId + "]");
     message.setText(body(request, eventType) + (eventId == null ? "" : "\n알림 번호: " + eventId));
     JavaMailSender sender = c.version() == 0 ? mail.getObject() : naverMailer(c);
     sender.send(message);
