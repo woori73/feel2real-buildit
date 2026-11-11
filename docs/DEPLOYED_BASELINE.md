@@ -2,7 +2,22 @@
 
 운영에서 읽은 JAR과 배포 보관 증거를 기준으로 기록한다. main 최신 커밋은 배포 완료를 의미하지 않는다. 새 배포가 성공하면 관측 시각·전체 해시·실행 기록을 함께 갱신한다.
 
-## 최신 배포 확인 — 2026-11-11 12:58:37 UTC
+## 최신 배포 확인 — 2026-11-12 00:18:28 KST
+
+| 항목 | 확인된 값과 근거 |
+|---|---|
+| 배포 커밋 | `f88afe41266072b26cd78e09ae6810b97f48a2ed` — PR #1050, 맞춤문제 접수 관리자 작업 화면 |
+| 운영 배포 | [Deploy to EC2 #1144](https://github.com/woori73/feel2real-buildit/actions/runs/43045834262), attempt 1, success, 완료 관측 2026-11-11 15:18:28 UTC |
+| 검증 | PR의 build·mysql-integration-test·local-intake 성공(브라우저 27건), [main Build Check](https://github.com/woori73/feel2real-buildit/actions/runs/43040726772) 성공, 배포 전 unit/contract gate 성공 |
+| 서버 확인 | SSM 최종 Success, f2r-app.service healthy, Spring health OK, buildit-wiki still healthy, 배포 SUCCESS. 외부 HTTPS /actuator/health HTTP 200 및 status UP 확인 |
+| 배포 산출물 JAR SHA-256 | `43e79ed42b1e208802862a53c9b27da68957c8954c30e3329a560f650b719467` — 배포 산출물 해시, 운영 파일 별도 다운로드 대조는 미실행 |
+| 새 정적 화면 코드 | /js/exam_admin.js?v=20261111-1 HTTP 200, 이메일 전용 저장 문구 확인. SHA-256 `8084b9053388073b91876b2500810f9a675bbc524339a30811c3cda8b100742f` |
+| 목록 스크롤 | /css/exam_admin.css?v=20261111-1 HTTP 200, max-height:620px 확인. SHA-256 `44e612d432008c0ad92ac460de28d82bbdfdfad77cb9118fd0e2febecb15d7ba` |
+| /wemade 확인 | 배포 내 내부 curl은 CURL_FAILED non-blocking 경고. 별도 외부 HTTPS 조회는 /wemade/login으로 복귀해 HTTP 200 확인. 내부 curl 검사가 성공한 것으로 기록하지 않음 |
+| 설정 적용 로그 | MCP studio-chatgpt, admissions public on, agent media seven,suni 적용 로그 관측. 직전 설정과의 차이는 대조하지 않음 |
+| 미검증 범위 | 로그인한 실제 접수 화면의 시각 검수, 운영 고객 접수/입금/전달 쓰기, 실제 메일 수신·휴대폰 푸시는 미실행. 운영 테스트 신청 및 테스트 메일을 생성하지 않음 |
+
+## 이전 배포 확인 — 2026-11-11 12:58:37 UTC
 
 | 항목 | 확인된 값과 근거 |
 |---|---|
