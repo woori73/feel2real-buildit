@@ -50,7 +50,6 @@ export default function WeeklyExamHub(props:Props){
   const [replaceTarget,setReplaceTarget]=useState<{id:number;kind:MaterialKind}|null>(null)
   const [replacing,setReplacing]=useState(false)
   const replaceInputRef=useRef<HTMLInputElement>(null)
-  const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
   const [fileNames,setFileNames]=useState({paper:'',expl:'',verify:''})
   const [reading,setReading]=useState<Partial<Record<MaterialKind,boolean>>>({})
@@ -85,7 +84,7 @@ export default function WeeklyExamHub(props:Props){
     const response=await api('weekly-exams/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       school:context.school,grade:context.grade,year:context.year,semester:context.semester,examType:context.exam,
       round,setType,questionCount:Number(questionCount)||0,studentPaper,answerExplanation,
-      studentPaperName:fileNames.paper,answerExplanationName:fileNames.expl,contextStatus,
+      studentPaperName:fileNames.paper,answerExplanationName:fileNames.expl,
       ...(verification?{productionVerification:verification,productionVerificationName:fileNames.verify}:{}),
     })})
     const body=await response.json().catch(()=>({}))
@@ -184,7 +183,7 @@ export default function WeeklyExamHub(props:Props){
 
     {showRegister&&<section className="work-panel weekly-register" aria-label="Weekly Exam DRAFT 등록">
       <div className="panel-heading"><div><p className="kicker">EXAM MATERIALS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
-      <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label><label>Context 상태<select value={contextStatus} onChange={e=>setContextStatus(e.target.value as 'PARTIAL'|'LIVING'|'COMPLETE')}><option>PARTIAL</option><option>LIVING</option><option>COMPLETE</option></select></label></div>
+      <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label></div>
       <label>학생용 문제지 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'paper')}/></label>
       {fileNames.paper&&<p className="field-hint">선택한 문제지: {fileNames.paper}</p>}
       <label>정답·해설 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'expl')}/></label>
