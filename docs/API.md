@@ -5050,6 +5050,8 @@ ADMIN은 승인된 소속 목록에서 관리 학원을 선택한다. 선택값�
 | `/api/studio/tasks` | GET / POST | 수정 작업 조회 / 생성 `{workId,revisionId?,reviewId?,title,instructions,assignee(CLAUDE·CHATGPT·HUMAN),idempotencyKey?}` |
 | `/api/studio/tasks/{id}/status` | POST | `{status(IN_PROGRESS·DONE·CANCELLED),resultRevisionId?,note?}`. 종료 작업 재변경 409, `TASK_STATUS` 이력 |
 | `/mcp/studio/files` | POST | MCP OAuth Bearer(`studio:read`+`studio:propose`) multipart 업로드(≤100 MiB). 쿠키 인증 불가. 필드 workId·versionLabel·changeNote·file, 선택 projectId·expectedHeadRevisionId·title·kind·episode·cutNumber·taskId. 서버 SHA·형식 검증 후 AI_PROPOSAL 새 버전 |
+| `/api/studio-agent/files/{id}/content` | GET | 브라우저 없는 AI 작업 세션용 원본 내려받기. `Authorization: Bearer <STUDIO_AGENT_TOKEN>`만 받음(쿠키 불가). `projectId` 선택. 토큰 미설정 404, 불일치 401, 동시 2건(초과 429). 운영 계정(`app.studio.agent.login-id`, 기본 modu) 권한으로 처리 |
+| `/api/studio-agent/files` | POST | 같은 토큰으로 multipart 업로드(≤100 MiB). 필드·검증은 `/mcp/studio/files`와 같고 항상 AI_PROPOSAL·REVIEW 새 버전(client `studio-agent-token`). 승인·삭제·공개 없음. 설정: [STUDIO_AGENT_TOKEN](studio-collaboration/STUDIO_AGENT_TOKEN.md) |
 
 AI 협업 MCP 도구(기존 `/mcp`): `list_studio_assets`·`read_studio_asset`·`get_asset_versions`·`list_studio_tasks`(studio:read), `submit_studio_review`·`create_studio_task`·`upload_studio_asset`(base64 ≤ 8 MiB)·`update_studio_task`(별도 동의 `studio:propose`). 승인·삭제·복원·공개 도구는 없다. 업로드 허용 형식은 PDF·HTML·JSON·MD·MD5·ZIP·PNG·JPG·WEBP·MP4·MOV·WAV·MP3·FLAC(서명 검사). 절차·운영 활성화: [CHATGPT_STUDIO_CONNECTION](studio-collaboration/CHATGPT_STUDIO_CONNECTION.md).
 | `/mcp` | POST | stateless Streamable HTTP JSON-RPC, bearer 전용, 읽기 도구만 제공 |

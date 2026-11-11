@@ -655,6 +655,23 @@ jobs:
             echo '::warning::KIS staging files unavailable in S3; skipping KIS sync (deploy continues)'
           fi
 
+          # 제작소 AI 작업 세션 토큰: 스테이징 파일이 있을 때만 동기화한다(soft-fail). 값은 출력하지 않는다.
+          if aws s3 cp s3://feel2real-buildit-deploy/studio-agent-token /tmp/studio-agent-token 2>/dev/null; then
+            STUDIO_AGENT_VALUE=$(cat /tmp/studio-agent-token)
+            shred -u /tmp/studio-agent-token 2>/dev/null || rm -f /tmp/studio-agent-token
+            if [ -n "$STUDIO_AGENT_VALUE" ]; then
+              install -d -m 755 /etc/f2r
+              touch /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              grep -vE '^STUDIO_AGENT_TOKEN=' /etc/f2r/env > /etc/f2r/env.tmp || true
+              printf 'STUDIO_AGENT_TOKEN=%s\n' "$STUDIO_AGENT_VALUE" >> /etc/f2r/env.tmp
+              mv /etc/f2r/env.tmp /etc/f2r/env
+              chmod 600 /etc/f2r/env
+              echo '[DEPLOY] synced STUDIO_AGENT_TOKEN into f2r-app env (value hidden)'
+            fi
+            unset STUDIO_AGENT_VALUE
+          fi
+
           # 인스타 자동 피드 비밀값(docs/sns/OPERATIONS.md): 없을 때만 EC2 안에서 한 번 만들어 둔다.
           # 이미 있으면 절대 바꾸지 않는다(암호화 키를 바꾸면 연결된 계정 토큰을 못 푼다). 값은 출력하지 않는다.
           # GPU 작업자에는 운영자가 EC2에서 SNS_WORKER_TOKEN 값을 직접 옮긴다.
@@ -1028,6 +1045,24 @@ jobs:
           unset KIS_APP_KEY KIS_APP_SECRET
           echo "KIS keys staged in S3 (transient, values hidden)"
 
+      - name: Stage studio agent token in S3 (transient)
+        shell: bash
+        env:
+          STUDIO_AGENT_TOKEN: ${{ secrets.STUDIO_AGENT_TOKEN }}
+        run: |
+          set -euo pipefail
+          # 제작소 AI 작업 세션 토큰(docs/studio-collaboration/STUDIO_AGENT_TOKEN.md). soft-fail:
+          # 시크릿이 없으면 EC2 env를 건드리지 않는다(앱은 토큰 없이 이 경로만 404로 닫힌다).
+          if [ -z "${STUDIO_AGENT_TOKEN:-}" ]; then
+            echo "::warning::STUDIO_AGENT_TOKEN secret not set; skipping studio agent token staging"
+            exit 0
+          fi
+          printf '%s' "$STUDIO_AGENT_TOKEN" > /tmp/studio-agent-token.staging
+          aws s3 cp /tmp/studio-agent-token.staging s3://${DEPLOY_BUCKET}/studio-agent-token --sse AES256 >/dev/null
+          shred -u /tmp/studio-agent-token.staging 2>/dev/null || rm -f /tmp/studio-agent-token.staging
+          unset STUDIO_AGENT_TOKEN
+          echo "STUDIO_AGENT_TOKEN staged in S3 (transient, value hidden)"
+
       - name: Stage assistant switch mode in S3 (transient)
         shell: bash
         env:
@@ -1328,6 +1363,13 @@ jobs:
           aws s3 rm s3://${DEPLOY_BUCKET}/kis-app-key 2>/dev/null || true
           aws s3 rm s3://${DEPLOY_BUCKET}/kis-app-secret 2>/dev/null || true
           echo "Staging files cleaned up"
+
+      - name: Cleanup studio agent token staging file
+        if: always()
+        shell: bash
+        run: |
+          aws s3 rm s3://${DEPLOY_BUCKET}/studio-agent-token 2>/dev/null || true
+          echo "Staging file cleaned up"
 
       - name: Cleanup assistant switch staging file
         if: always()
