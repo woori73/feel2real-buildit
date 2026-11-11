@@ -31,6 +31,10 @@ public class McpGateway {
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudentRosterController> studentRoster;
 
+  /** upload_studio_asset의 file 인자(호스트가 넣어 주는 내려받기 주소)를 서버가 직접 받는다. */
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<McpFileFetcher> fileFetcher;
+
   /** 학생명단 원본(실명)이 있는 Studio 프로젝트. 일반 Studio 도구로는 어떤 scope로도 열지 않고 집계 도구만 허용한다. */
   static final String STUDENT_ROSTER_PROJECT = "student-roster";
 
@@ -281,13 +285,30 @@ public class McpGateway {
     upload.put("cutNumber", integer(1, 999));
     upload.put("taskId", string());
     upload.put("modelReported", string());
-    out.add(
+    // ChatGPT는 _meta["openai/fileParams"]에 적힌 인자에 대화 속 파일(생성 이미지 포함)의 내려받기 주소를 채운다.
+    upload.put(
+        "file",
+        Map.of(
+            "type", "object",
+            "properties",
+                Map.of(
+                    "download_url", string(),
+                    "file_id", string(),
+                    "mime_type", string(),
+                    "file_name", string()),
+            "required", List.of("download_url", "file_id"),
+            "additionalProperties", false));
+    var uploadTool =
         writeTool(
             "upload_studio_asset",
-            "개선 파일(이미지·문서 등, base64 8 MiB 이하)을 작업 ID의 새 버전으로 등록합니다. 기존 파일·버전·승인을 덮어쓰지 않습니다."
-                + " 기존 작업 ID는 expectedHeadRevisionId(현재 최신 버전)가 필요합니다. studio:propose 동의 필요.",
+            "개선 파일(이미지·문서·영상)을 작업 ID의 새 버전으로 등록합니다. 파일은 file(호스트가 넣어 주는 대화 속 파일, 100 MiB"
+                + " 이하) 또는 contentBase64(8 MiB 이하) 중 하나로 보냅니다. 큰 이미지는 file을 쓰세요. 기존 파일·버전·승인을"
+                + " 덮어쓰지 않습니다. 기존 작업 ID는 expectedHeadRevisionId(현재 최신 버전)가 필요합니다. studio:propose 동의"
+                + " 필요.",
             upload,
-            List.of("workId", "versionLabel", "filename", "contentBase64", "changeNote")));
+            List.of("workId", "versionLabel", "changeNote"));
+    uploadTool.put("_meta", Map.of("openai/fileParams", List.of("file")));
+    out.add(uploadTool);
     out.add(
         writeTool(
             "create_studio_task",
@@ -606,28 +627,47 @@ public class McpGateway {
         }
       case "upload_studio_asset":
         {
-          byte[] bytes;
-          try {
-            bytes = Base64.getMimeDecoder().decode(args.path("contentBase64").asText(""));
-          } catch (IllegalArgumentException e) {
-            throw McpOAuth.error(400, "invalid_base64");
+          boolean hasFile = args.has("file");
+          boolean hasBase64 = args.has("contentBase64");
+          if (hasFile == hasBase64) throw McpOAuth.error(400, "send_exactly_one_of_file_or_contentBase64");
+          String filename = text(args, "filename");
+          InputStream content;
+          if (hasFile) {
+            var file = args.get("file");
+            if (!file.path("download_url").isTextual() || !file.path("file_id").isTextual())
+              throw McpOAuth.error(400, "file_requires_download_url_and_file_id");
+            if (filename == null || filename.isBlank()) filename = text(file, "file_name");
+            var fetcher = fileFetcher == null ? null : fileFetcher.getIfAvailable();
+            if (fetcher == null) throw McpOAuth.error(503, "file_fetch_unavailable");
+            content = fetcher.fetch(file.get("download_url").asText()).body();
+          } else {
+            byte[] bytes;
+            try {
+              bytes = Base64.getMimeDecoder().decode(args.path("contentBase64").asText(""));
+            } catch (IllegalArgumentException e) {
+              throw McpOAuth.error(400, "invalid_base64");
+            }
+            if (bytes.length < 1 || bytes.length > MAX_MCP_UPLOAD)
+              throw McpOAuth.error(413, "mcp_upload_limit_8MiB_use_file_argument");
+            content = new ByteArrayInputStream(bytes);
           }
-          if (bytes.length < 1 || bytes.length > MAX_MCP_UPLOAD)
-            throw McpOAuth.error(413, "mcp_upload_limit_8MiB_use_token_upload_api");
-          return studioAi.uploadAsset(
-              p,
-              connector,
-              text(args, "workId"),
-              text(args, "expectedHeadRevisionId"),
-              text(args, "versionLabel"),
-              text(args, "filename"),
-              new ByteArrayInputStream(bytes),
-              text(args, "title"),
-              text(args, "kind"),
-              args.has("episode") ? number(args, "episode", 1, 1, 14) : null,
-              args.has("cutNumber") ? number(args, "cutNumber", 1, 1, 999) : null,
-              text(args, "changeNote"),
-              text(args, "taskId"));
+          if (filename == null || filename.isBlank()) throw McpOAuth.error(400, "missing_argument:filename");
+          try (content) {
+            return studioAi.uploadAsset(
+                p,
+                connector,
+                text(args, "workId"),
+                text(args, "expectedHeadRevisionId"),
+                text(args, "versionLabel"),
+                filename,
+                content,
+                text(args, "title"),
+                text(args, "kind"),
+                args.has("episode") ? number(args, "episode", 1, 1, 14) : null,
+                args.has("cutNumber") ? number(args, "cutNumber", 1, 1, 999) : null,
+                text(args, "changeNote"),
+                text(args, "taskId"));
+          }
         }
       case "create_studio_task":
         return studioAi.createTask(
