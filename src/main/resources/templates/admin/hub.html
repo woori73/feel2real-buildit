@@ -6,235 +6,88 @@
   <title>F2R - 통합 대시보드 (Hub)</title>
   <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
   <style>
-    /* ===== FEEL2REAL Hub — 미니멀 SaaS형 통합 운영 대시보드 ===== */
+    /* ===== 통합 대시보드 — 일은 AI에게 부탁하고, 사람은 숫자만 한눈에 본다 ===== */
     :root {
-      --bg: #f4f6f9;
-      --card: #ffffff;
-      --border: #e5e9f0;
-      --text: #1a202c;
-      --text-2: #4a5568;
-      --text-3: #8a94a6;
-      --accent: #2b6cb0;
-      --accent-soft: #ebf4ff;
-      --danger: #e53e3e;
-      --danger-soft: #fff5f5;
-      --ok: #38a169;
-      --radius: 14px;
-      --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 1px 2px rgba(16, 24, 40, .04);
+      --bg: #f4f6f9; --card: #ffffff; --border: #e5e9f0;
+      --text: #1a202c; --text-2: #4a5568; --text-3: #8a94a6;
+      --accent: #2b6cb0; --accent-soft: #ebf4ff; --danger: #c53030;
+      --radius: 14px; --shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 1px 2px rgba(16, 24, 40, .04);
     }
     * { box-sizing: border-box; }
     body { background: var(--bg); }
-    .hub-wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px 48px; }
+    .hub-wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 48px; }
+    .hub-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .hub-title { font-size: 22px; font-weight: 800; color: var(--text); margin: 0; }
+    .hub-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .hub-biz-select { padding: 9px 12px; font-size: 14px; font-weight: 600; border: 1px solid var(--border); border-radius: 10px; background: var(--card); max-width: 240px; }
+    .hub-btn { padding: 9px 14px; font-size: 14px; font-weight: 600; color: var(--accent); border: 1px solid var(--border); border-radius: 10px; background: var(--card); cursor: pointer; text-decoration: none; white-space: nowrap; display: inline-block; }
+    .hub-btn:hover { background: var(--accent-soft); }
+    .hub-btn:disabled { opacity: .5; cursor: default; }
+    .hub-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 18px; }
+    .hub-h2 { font-size: 17px; font-weight: 800; color: var(--text); margin: 0 0 4px; }
+    .hub-desc { font-size: 14px; color: var(--text-2); margin: 0 0 14px; line-height: 1.5; }
 
-    /* ---- 헤더 ---- */
-    .hub-topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
-    }
-    .hub-brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    /* BuildIt 워드마크 (landing_buildit.css의 .nav-logo.bi 패턴 재사용) */
-    .hub-logo {
-      display: inline-flex; align-items: center; text-decoration: none;
-      font-size: 20px; letter-spacing: -.02em; line-height: 1;
-    }
-    .hub-logo b { font-weight: 800; color: var(--text); font-style: normal; }
-    .hub-logo i { font-weight: 400; color: var(--accent); font-style: normal; margin-left: 1px; }
-    .hub-logo:hover { opacity: .85; }
-    .hub-title { font-size: 22px; font-weight: 800; color: var(--text); margin: 0; letter-spacing: -.01em; }
-    .hub-title-sep { color: var(--border); font-weight: 300; }
-    .hub-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .hub-biz-select {
-      appearance: none; -webkit-appearance: none;
-      padding: 9px 34px 9px 14px; font-size: 14px; font-weight: 600; color: var(--text);
-      border: 1px solid var(--border); border-radius: 10px; background: var(--card) var(--shadow);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a5568' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 12px center;
-      cursor: pointer; max-width: 260px;
-    }
-    .hub-refresh {
-      padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--accent);
-      border: 1px solid var(--border); border-radius: 10px; background: var(--card);
-      cursor: pointer; box-shadow: var(--shadow);
-    }
-    .hub-refresh:hover { background: var(--accent-soft); }
-    .hub-refresh:disabled { opacity: .5; cursor: default; }
-    /* 학생명단(시간표) 자료실 이동 — 새로고침 버튼과 같은 모양 */
-    a.hub-refresh.hub-roster-link { display: inline-block; text-decoration: none; line-height: normal; white-space: nowrap; }
-    .hub-asof { font-size: 12px; color: var(--text-3); }
+    /* ① AI에게 부탁하기 */
+    .hub-ask { border: 2px solid #c3dafe; background: linear-gradient(135deg, #ebf4ff 0%, #fff 70%); }
+    .hub-ask form { display: flex; gap: 10px; }
+    .hub-ask textarea { flex: 1; min-height: 56px; padding: 12px 14px; font-size: 16px; border: 1px solid #a3bffa; border-radius: 12px; resize: vertical; font-family: inherit; }
+    .hub-ask button[type=submit] { padding: 0 22px; font-size: 16px; font-weight: 800; color: #fff; background: var(--accent); border: 0; border-radius: 12px; cursor: pointer; white-space: nowrap; }
+    .hub-ask button[type=submit]:hover { background: #2c5282; }
+    .hub-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .hub-chip { padding: 8px 12px; font-size: 13px; color: var(--text-2); background: #fff; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; }
+    .hub-chip:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* ---- 서비스 탭 ---- */
-    .hub-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
-    .hub-tab {
-      padding: 8px 18px; font-size: 14px; font-weight: 600; color: var(--text-2);
-      border: 1px solid var(--border); border-radius: 999px; background: var(--card);
-      cursor: pointer; box-shadow: var(--shadow);
-    }
-    .hub-tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+    /* ② 한눈에 보기 — 큰 숫자 + 한 줄 설명 */
+    .hub-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .hub-num { display: block; text-decoration: none; color: inherit; border: 1px solid var(--border); border-radius: 12px; padding: 16px; background: #fff; }
+    .hub-num:hover { border-color: var(--accent); }
+    .hub-num .l { font-size: 14px; font-weight: 700; color: var(--text-2); }
+    .hub-num .v { font-size: 26px; font-weight: 800; color: var(--text); margin: 6px 0 4px; letter-spacing: -.02em; overflow-wrap: anywhere; }
+    .hub-num .h { font-size: 13px; color: var(--text-3); }
+    .hub-num.warn .v { color: var(--danger); }
+    .hub-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .hub-list-box { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .hub-list-box .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+    .hub-list-box .head b { font-size: 15px; }
+    .hub-list-box .head a { font-size: 13px; color: var(--accent); text-decoration: none; white-space: nowrap; }
+    .hub-list-box ul { list-style: none; margin: 0; padding: 0; }
+    .hub-list-box li { padding: 8px 0; border-bottom: 1px solid #eef1f6; font-size: 14px; }
+    .hub-list-box li:last-child { border-bottom: 0; }
+    .hub-list-box li .s { font-size: 12.5px; color: var(--text-3); margin-top: 2px; }
+    .hub-empty { font-size: 14px; color: var(--text-3); padding: 8px 0; }
+    .hub-error { font-size: 14px; color: var(--danger); padding: 8px 0; }
+    .hub-asof { font-size: 12px; color: var(--text-3); margin-top: 10px; }
 
-    /* ---- KPI 히어로 (핵심 지표 상단) ---- */
-    .hub-kpis {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-      margin-bottom: 18px;
-    }
-    .hub-kpi {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px; box-shadow: var(--shadow); position: relative; overflow: hidden;
-    }
-    .hub-kpi::before {
-      content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-      background: var(--kpi-accent, var(--accent)); border-radius: 4px 0 0 4px;
-    }
-    .hub-kpi .k-label { font-size: 13px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
-    .hub-kpi .k-value { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -.02em; line-height: 1.2; }
-    .hub-kpi .k-value .unit { font-size: 14px; font-weight: 600; color: var(--text-3); margin-left: 2px; }
-    .hub-kpi .k-sub { font-size: 12px; color: var(--text-3); margin-top: 6px; }
-    .hub-kpi.kpi-income { --kpi-accent: #38a169; }
-    .hub-kpi.kpi-expense { --kpi-accent: #dd6b20; }
-    .hub-kpi.kpi-receivable { --kpi-accent: #e53e3e; }
-    .hub-kpi.kpi-students { --kpi-accent: #2b6cb0; }
+    /* ③ 자주 가는 곳 */
+    .hub-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .hub-tile { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: var(--text); background: #fff; }
+    .hub-tile:hover { border-color: var(--accent); }
+    .hub-tile .ic { width: 42px; height: 42px; border-radius: 10px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 21px; flex-shrink: 0; }
+    .hub-tile .n { font-size: 15px; font-weight: 700; }
+    .hub-tile .d { font-size: 12.5px; color: var(--text-3); margin-top: 2px; }
 
-    /* ---- 섹션 타이틀 ---- */
-    .hub-section-title {
-      font-size: 15px; font-weight: 700; color: var(--text);
-      margin: 6px 0 12px; display: flex; align-items: center; gap: 8px;
-    }
-    .hub-section-title .count {
-      font-size: 12px; font-weight: 600; color: var(--text-3);
-      background: #edf2f7; border-radius: 999px; padding: 2px 10px;
-    }
+    /* ④ 더 보기 (접힘) */
+    details.hub-more > summary { cursor: pointer; font-size: 15px; font-weight: 700; color: var(--text-2); }
+    .hub-more-body { margin-top: 14px; }
+    .hub-more-links { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .hub-promo { display: flex; gap: 14px; align-items: center; background: #f7fafc; border: 1px solid #bee3f8; border-radius: 12px; padding: 16px; }
+    .hub-promo .p-body { flex: 1; min-width: 0; font-size: 13px; color: var(--text-2); line-height: 1.5; }
+    .hub-promo .p-body b { display: block; font-size: 15px; color: var(--text); margin-bottom: 2px; }
 
-    /* ---- 위젯 그리드 ---- */
-    .hub-widgets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .hub-widget {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px; box-shadow: var(--shadow); min-width: 0;
-    }
-    .hub-widget.full { grid-column: 1 / -1; }
-    .hub-widget-head {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 12px; gap: 8px;
-    }
-    .hub-widget-head h3 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
-    .hub-widget-head a {
-      font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap;
-    }
-    .hub-widget-head a:hover { text-decoration: underline; }
-    .hub-widget-asof { font-size: 11px; color: var(--text-3); margin-top: 10px; text-align: right; }
-
-    /* ---- 리스트 위젯 ---- */
-    .hub-list { list-style: none; padding: 0; margin: 0; }
-    .hub-list li {
-      padding: 11px 0; border-bottom: 1px solid #eef1f6;
-      display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
-    }
-    .hub-list li:last-child { border-bottom: none; }
-    .hub-list .t { font-weight: 600; color: var(--text); font-size: 13.5px; overflow-wrap: anywhere; }
-    .hub-list .s { color: var(--text-2); font-size: 12.5px; margin-top: 3px; overflow-wrap: anywhere; }
-    .hub-list .m { color: var(--text-3); font-size: 12px; margin-top: 3px; }
-    .hub-list .amt { font-weight: 700; color: var(--text); font-size: 13.5px; white-space: nowrap; }
-
-    /* ---- 상태: 로딩(스켈레톤) / 빈 데이터 / 오류 ---- */
-    .hub-skeleton { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .hub-skel {
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 18px; min-height: 150px;
-    }
-    .hub-skel .bar {
-      height: 14px; border-radius: 7px; margin-bottom: 10px;
-      background: linear-gradient(90deg, #edf2f7 25%, #e2e8f0 50%, #edf2f7 75%);
-      background-size: 200% 100%; animation: hub-shimmer 1.2s infinite;
-    }
-    .hub-skel .bar.w60 { width: 60%; } .hub-skel .bar.w40 { width: 40%; } .hub-skel .bar.w80 { width: 80%; }
-    @keyframes hub-shimmer { to { background-position: -200% 0; } }
-
-    .hub-state {
-      text-align: center; padding: 36px 20px; font-size: 14px; color: var(--text-3);
-      background: var(--card); border: 1px dashed var(--border); border-radius: var(--radius);
-    }
-    .hub-state .icon { font-size: 28px; margin-bottom: 8px; display: block; }
-    .hub-state .msg { font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
-    .hub-state .hint { font-size: 12.5px; }
-    .hub-state.error { border-color: #feb2b2; background: var(--danger-soft); }
-    .hub-state.error .msg { color: var(--danger); }
-    .hub-retry {
-      margin-top: 12px; padding: 8px 18px; font-size: 13px; font-weight: 600;
-      border: 1px solid var(--danger); border-radius: 8px; background: #fff;
-      color: var(--danger); cursor: pointer;
-    }
-    .hub-retry:hover { background: var(--danger-soft); }
-
-    /* ---- 바로가기 카드 (P1: 구현된 서비스만) ---- */
-    .hub-shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }
-    .hub-shortcut {
-      display: flex; align-items: center; gap: 12px; padding: 16px;
-      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-      box-shadow: var(--shadow); text-decoration: none; color: var(--text);
-      transition: transform .12s ease, box-shadow .12s ease;
-    }
-    .hub-shortcut:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,24,40,.1); }
-    .hub-shortcut .ic {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 20px;
-      background: var(--accent-soft);
-    }
-    .hub-shortcut .tx .n { font-size: 14px; font-weight: 700; }
-    .hub-shortcut .tx .d { font-size: 12px; color: var(--text-3); margin-top: 2px; }
-
-    /* ---- 홍보 카드 (내신 예상문제) ---- */
-    .hub-promo {
-      display: flex; gap: 16px; align-items: center;
-      background: linear-gradient(135deg, #ebf4ff 0%, #f7fafc 100%);
-      border: 1px solid #bee3f8; border-radius: var(--radius);
-      padding: 20px 22px; margin-bottom: 18px; box-shadow: var(--shadow);
-    }
-    .hub-promo .p-icon {
-      width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
-      background: var(--card); border: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: center; font-size: 26px;
-      box-shadow: var(--shadow);
-    }
-    .hub-promo .p-body { flex: 1; min-width: 0; }
-    .hub-promo .p-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
-    .hub-promo .p-price {
-      font-size: 22px; font-weight: 800; color: var(--accent); letter-spacing: -.02em;
-      margin-bottom: 6px;
-    }
-    .hub-promo .p-desc { font-size: 13px; color: var(--text-2); line-height: 1.5; }
-    .hub-promo .p-cta { display: flex; gap: 8px; flex-shrink: 0; }
-    .hub-promo .p-btn {
-      padding: 10px 18px; font-size: 13.5px; font-weight: 700; border-radius: 10px;
-      text-decoration: none; white-space: nowrap; cursor: pointer;
-    }
-    .hub-promo .p-btn.primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
-    .hub-promo .p-btn.primary:hover { background: #2c5282; }
-    .hub-promo .p-btn.ghost { background: var(--card); color: var(--accent); border: 1px solid var(--border); }
-    .hub-promo .p-btn.ghost:hover { background: var(--accent-soft); }
-    @media (max-width: 640px) {
-      .hub-promo { flex-direction: column; align-items: stretch; text-align: left; }
-      .hub-promo .p-icon { width: 44px; height: 44px; font-size: 22px; }
-      .hub-promo .p-cta { flex-direction: column; }
-      .hub-promo .p-btn { text-align: center; }
-      .hub-brand { width: 100%; }
-    }
-    /* ---- 반응형 ---- */
-    @media (max-width: 1024px) {
-      .hub-kpis { grid-template-columns: repeat(2, 1fr); }
-      .hub-widgets { grid-template-columns: repeat(2, 1fr); }
-      .hub-shortcuts { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 900px) {
+      .hub-nums { grid-template-columns: repeat(2, 1fr); }
+      .hub-tiles { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 640px) {
       .hub-wrap { padding: 16px 12px 40px; }
       .hub-topbar { flex-direction: column; align-items: stretch; }
-      .hub-title { font-size: 19px; }
-      .hub-controls { justify-content: space-between; }
       .hub-biz-select { flex: 1; max-width: none; }
-      .hub-kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .hub-kpi { padding: 14px; }
-      .hub-kpi .k-value { font-size: 20px; }
-      .hub-widgets { grid-template-columns: 1fr; }
-      .hub-skeleton { grid-template-columns: 1fr; }
-      .hub-shortcuts { grid-template-columns: 1fr 1fr; gap: 10px; }
-      .hub-shortcut { padding: 12px; }
+      .hub-ask form { flex-direction: column; }
+      .hub-ask button[type=submit] { padding: 14px; }
+      .hub-num .v { font-size: 21px; }
+      .hub-lists { grid-template-columns: 1fr; }
+      .hub-tiles { grid-template-columns: 1fr; }
+      .hub-promo { flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
@@ -243,58 +96,75 @@
 
   <div class="hub-wrap">
     <div class="hub-topbar">
-      <div class="hub-brand">
-        <a class="hub-logo" href="/" aria-label="BuildIt 홈"><b>Build</b><i>It</i></a>
-        <span class="hub-title-sep">|</span>
-        <h1 class="hub-title">통합 운영 대시보드</h1>
-        <a class="hub-refresh hub-roster-link" href="/admin/student-roster">학생명단(시간표)</a>
-      </div>
+      <h1 class="hub-title">통합 대시보드</h1>
       <div class="hub-controls">
         <select class="hub-biz-select" id="bizSelect" aria-label="사업체 선택">
           <option value="">사업체 불러오는 중...</option>
         </select>
-        <button class="hub-refresh" id="refreshBtn" type="button">↻ 새로고침</button>
-      </div>
-    </div>
-    <div class="hub-asof" id="dataAsof" style="margin-bottom:14px;"></div>
-
-    <!-- 내신 예상문제 홍보 카드 (1개로 제한, 실제 서비스 경로만 연결) -->
-    <div class="hub-promo" data-service="all">
-      <div class="p-icon">📝</div>
-      <div class="p-body">
-        <div class="p-title">내신 예상문제 제작</div>
-        <div class="p-price">1회 2만원 · 40문항</div>
-        <div class="p-desc">학교별 시험범위와 출제 특성을 반영한 내신 영어 예상문제 40문항을 제작하고, 정답·해설을 함께 제공합니다.</div>
-      </div>
-      <div class="p-cta">
-        <a class="p-btn primary" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">예상문제 의뢰하기</a>
-        <a class="p-btn ghost" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카톡 상담</a>
+        <button class="hub-btn" id="refreshBtn" type="button">↻ 새로고침</button>
+        <a class="hub-btn hub-roster-link" href="/admin/student-roster">학생명단(시간표)</a>
       </div>
     </div>
 
-    <div class="hub-tabs" id="serviceTabs" role="tablist">
-      <a th:if="${examBankAdminEnabled}" class="hub-tab" href="/admin/hub/exam-bank">입금 계좌 사전 등록</a>
-      <a th:if="${examIntakeEnabled}" class="hub-tab" href="/admin/hub/exam-requests">기말고사 접수·자료·입금</a>
-      <button class="hub-tab active" data-service="all" role="tab">전체</button>
-      <button class="hub-tab" data-service="easy" role="tab">이지재무</button>
-      <button class="hub-tab" data-service="links" role="tab">바로가기</button>
-    </div>
+    <!-- ① 일은 AI에게: 적고 누르면 AI 업무 비서 화면 입력칸에 그대로 채워진다(사람이 확인 후 보냄). -->
+    <section class="hub-card hub-ask" aria-labelledby="askTitle">
+      <h2 class="hub-h2" id="askTitle">AI에게 부탁하기</h2>
+      <p class="hub-desc">할 일을 말로 적으세요. AI 업무 비서가 정리·초안을 만들고, 저장은 확인 후에만 합니다.</p>
+      <form id="askForm" action="/dashboard" method="get">
+        <textarea id="askInput" name="ask" maxlength="500" placeholder="예: 이번 달 미수금 있는 학생 정리하고 안내 문자 초안 만들어줘" aria-label="AI에게 부탁할 내용"></textarea>
+        <button type="submit">부탁하기</button>
+      </form>
+      <div class="hub-chips" id="askChips" aria-label="자주 하는 부탁"></div>
+    </section>
 
-    <!-- P0-1: 핵심 지표 상단 배치 -->
-    <div class="hub-section-title" data-service="easy">이번달 핵심 지표</div>
-    <div class="hub-kpis" id="kpiRow" data-service="easy">
-      <!-- JS가 채움: 수납 / 지출 / 미수금 / 원생수 -->
-    </div>
+    <!-- ② 사람은 숫자만: 읽기 전용 요약 -->
+    <section class="hub-card" aria-labelledby="sumTitle">
+      <h2 class="hub-h2" id="sumTitle">이번 달 한눈에 보기</h2>
+      <p class="hub-desc">숫자를 누르면 장부에서 자세히 볼 수 있습니다.</p>
+      <div class="hub-nums" id="numRow"></div>
+      <div class="hub-lists" id="listRow"></div>
+      <div class="hub-asof" id="dataAsof"></div>
+    </section>
 
-    <div class="hub-section-title" data-service="easy">상세 위젯 <span class="count" id="widgetCount"></span></div>
-    <div class="hub-widgets" id="widgetContainer" data-service="easy"></div>
+    <!-- ③ 자주 가는 곳 -->
+    <section class="hub-card" aria-labelledby="goTitle">
+      <h2 class="hub-h2" id="goTitle">자주 가는 곳</h2>
+      <div class="hub-tiles" id="tileRow">
+        <a class="hub-tile" href="/easy/attendance"><span class="ic">✅</span><span><span class="n">출결부</span><span class="d" style="display:block">반별 등원·결석 기록</span></span></a>
+        <a class="hub-tile" href="/admin/student-roster"><span class="ic">🗓️</span><span><span class="n">학생명단(시간표)</span><span class="d" style="display:block">연도별 진행표 자료</span></span></a>
+        <a class="hub-tile" href="/easy"><span class="ic">💰</span><span><span class="n">에듀홀릭 장부</span><span class="d" style="display:block">수납·지출·미수금</span></span></a>
+        <a class="hub-tile" href="/easy/connections"><span class="ic">🔗</span><span><span class="n">자동수집 연결</span><span class="d" style="display:block">은행·카드·홈택스 자료 넣기</span></span></a>
+        <a class="hub-tile" href="/ledger"><span class="ic">📒</span><span><span class="n">F2R 장부</span><span class="d" style="display:block">원장용 범용 장부</span></span></a>
+        <a class="hub-tile" href="/admissions/workspace"><span class="ic">🎓</span><span><span class="n">입시상담 AI</span><span class="d" style="display:block">공식자료 검수·상담</span></span></a>
+      </div>
+    </section>
 
-    <!-- P1: 구현된 서비스 바로가기 (가짜 통계 없음, 링크만) -->
-    <div class="hub-section-title" data-service="links">서비스 바로가기</div>
-    <div class="hub-shortcuts" id="shortcutRow" data-service="links"></div>
+    <!-- ④ 가끔 쓰는 것은 접어 둔다 -->
+    <section class="hub-card">
+      <details class="hub-more" id="hubMore">
+        <summary>더 보기 (가끔 쓰는 메뉴)</summary>
+        <div class="hub-more-body">
+          <div class="hub-more-links">
+            <a th:if="${examBankAdminEnabled}" class="hub-btn" href="/admin/hub/exam-bank">입금 계좌 사전 등록</a>
+            <a th:if="${examIntakeEnabled}" class="hub-btn" href="/admin/hub/exam-requests">기말고사 접수·자료·입금</a>
+            <a class="hub-btn" href="/builder">홈페이지 빌더</a>
+            <a class="hub-btn" href="/problem-generator">내신위키</a>
+            <a class="hub-btn" href="/testprep">TESTPREP</a>
+            <a class="hub-btn" href="/designcraft">DesignCraft</a>
+            <a class="hub-btn" href="/admin/dashboard">기존 EASY 대시보드</a>
+            <a class="hub-btn" href="/admin/newstart_consultations">NewStart 상담</a>
+          </div>
+          <div class="hub-promo">
+            <div class="p-body"><b>내신 예상문제 제작 · 1회 2만원 · 40문항</b>학교별 시험범위와 출제 특성을 반영한 내신 영어 예상문제 40문항과 정답·해설을 제공합니다.</div>
+            <a class="hub-btn" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카톡으로 의뢰하기</a>
+          </div>
+        </div>
+      </details>
+    </section>
   </div>
 
   <script src="/js/api.js"></script>
-  <script src="/js/hub_dashboard.js?v=20261019-admissions"></script>
+  <script src="/js/hub_view.js?v=20261111-simple"></script>
+  <script src="/js/hub_dashboard.js?v=20261111-simple"></script>
 </body>
 </html>

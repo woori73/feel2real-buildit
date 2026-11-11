@@ -103,3 +103,27 @@
       }
       .admin-nav { padding: 8px 14px; }
     }
+
+    /* 간단 메뉴: 자주 쓰는 5개 + 전체 메뉴(묶음). PC는 아래로 펼쳐지는 판, 모바일은 그 자리에서 펼친다. */
+    .admin-nav { position: relative; }
+    .admin-nav-link.admin-nav-main { font-size: 15px; font-weight: 600; }
+    .admin-nav-more { flex: 0 0 auto; }
+    .admin-nav-more > summary { list-style: none; cursor: pointer; }
+    .admin-nav-more > summary::-webkit-details-marker { display: none; }
+    .admin-nav-more[open] > summary { background: #ebf2ff; border-color: #c3cdf3; color: #2b4acb; }
+    .admin-nav-groups { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .admin-nav-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .admin-nav-group-title { font-size: 12px; font-weight: 700; color: #718096; padding-left: 2px; }
+    .admin-nav-group .admin-nav-link { justify-content: flex-start; min-height: 36px; padding: 7px 12px; }
+    @media (min-width: 769px) {
+      .admin-nav-groups {
+        position: absolute; left: 16px; right: 16px; top: 100%; z-index: 60;
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(16, 24, 40, .14); padding: 16px;
+      }
+    }
+    @media (max-width: 768px) {
+      .admin-nav { flex-wrap: wrap; overflow-x: visible; }
+      .admin-nav-more[open] { flex: 1 0 100%; }
+      .admin-nav-groups { grid-template-columns: repeat(2, 1fr); padding-top: 10px; }
+    }

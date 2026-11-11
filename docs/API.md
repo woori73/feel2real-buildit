@@ -5326,7 +5326,7 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 
 ## 학생명단(시간표) 자료실 (2026-11-10)
 
-`/admin/student-roster` 및 `/api/admin/student-roster/**`는 ADMIN 전용이다(비관리자는 화면·API 모두 403). 응답은 `Cache-Control: private, no-store`, GET/HEAD가 아닌 요청은 같은 사이트 `Origin`만 허용한다. 통합 운영 대시보드(`/admin/hub`) 제목 오른쪽 「학생명단(시간표)」 버튼으로 같은 탭에서 이동한다.
+`/admin/student-roster` 및 `/api/admin/student-roster/**`는 ADMIN 전용이다(비관리자는 화면·API 모두 403). 응답은 `Cache-Control: private, no-store`, GET/HEAD가 아닌 요청은 같은 사이트 `Origin`만 허용한다. 통합 대시보드(`/admin/hub`) 상단 오른쪽 「학생명단(시간표)」 버튼(및 「자주 가는 곳」 타일)으로 같은 탭에서 이동한다.
 
 | 메서드 | 경로 | 내용 |
 |---|---|---|
