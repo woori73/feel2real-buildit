@@ -28,7 +28,7 @@ afterEach(()=>{cleanup();vi.unstubAllGlobals();vi.restoreAllMocks()})
 
 it('given PDF papers when registered then send binary bytes and original filenames',async()=>{
   render(<WeeklyExamHub {...props}/> )
-  fireEvent.click(screen.getByRole('button',{name:'제작물 3종 DRAFT 등록'}))
+  fireEvent.click(screen.getByRole('button',{name:'시험 자료 등록'}))
   const paper=screen.getByLabelText('학생용 문제지 (HTML·PDF)')
   const answer=screen.getByLabelText('정답·해설 (HTML·PDF)')
   expect(paper).toHaveAttribute('accept',PAPER_ACCEPT)
@@ -36,11 +36,11 @@ it('given PDF papers when registered then send binary bytes and original filenam
   // PDF MIME can be absent on the user's device.
   fireEvent.change(paper,{target:{files:[new File([pdf],'문제지.PDF')]}})
   fireEvent.change(answer,{target:{files:[new File([pdf],'정답해설.pdf',{type:'application/pdf'})]}})
-  fireEvent.change(screen.getByLabelText('제작·검수 MD'),{target:{files:[new File(['# 검수'],'검수.md')]}})
+  fireEvent.change(screen.getByLabelText('제작·검수 MD (선택)'),{target:{files:[new File(['# 검수'],'검수.md')]}})
   const save=screen.getByRole('button',{name:'DRAFT 등록',exact:true})
   await waitFor(()=>expect(save).toBeEnabled())
   fireEvent.click(save)
-  await screen.findByText('세 산출물을 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.')
+  await screen.findByText('시험 자료를 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.')
   expect(writes).toHaveLength(1)
   expect(writes[0].body).toMatchObject({studentPaper:expected,answerExplanation:expected,
     studentPaperName:'문제지.PDF',answerExplanationName:'정답해설.pdf',productionVerification:'# 검수'})
@@ -62,7 +62,7 @@ it('given an existing paper when replaced with PDF then keep the binary envelope
 
 it('given unsupported paper when chosen then clear the old selection and block registration',async()=>{
   render(<WeeklyExamHub {...props}/> )
-  fireEvent.click(screen.getByRole('button',{name:'제작물 3종 DRAFT 등록'}))
+  fireEvent.click(screen.getByRole('button',{name:'시험 자료 등록'}))
   const chooser=screen.getByLabelText('학생용 문제지 (HTML·PDF)')
   fireEvent.change(chooser,{target:{files:[new File(['<h1>문제</h1>'],'old.html')]}})
   await screen.findByText('선택한 문제지: old.html')
@@ -70,4 +70,24 @@ it('given unsupported paper when chosen then clear the old selection and block r
   await screen.findByText('문제지·해설지는 HTML 또는 PDF 파일을 선택해 주세요.')
   expect(screen.queryByText('선택한 문제지: old.html')).not.toBeInTheDocument()
   expect(screen.getByRole('button',{name:'DRAFT 등록',exact:true})).toBeDisabled()
+})
+
+it.each([false,true])('given optional MD (cancel selection: %s) when absent then register only papers',async(cancelMd)=>{
+  render(<WeeklyExamHub {...props}/> )
+  fireEvent.click(screen.getByRole('button',{name:'시험 자료 등록'}))
+  fireEvent.change(screen.getByLabelText('학생용 문제지 (HTML·PDF)'),{target:{files:[new File([pdf],'paper.pdf')]}})
+  fireEvent.change(screen.getByLabelText('정답·해설 (HTML·PDF)'),{target:{files:[new File([pdf],'answer.pdf')]}})
+  if(cancelMd){
+    fireEvent.change(screen.getByLabelText('제작·검수 MD (선택)'),{target:{files:[new File(['# 검수'],'검수.md')]}})
+    await screen.findByText(/선택한 제작·검수: 검수.md/)
+    fireEvent.click(screen.getByRole('button',{name:'선택 취소'}))
+  }
+  const save=screen.getByRole('button',{name:'DRAFT 등록',exact:true})
+  await waitFor(()=>expect(save).toBeEnabled())
+  fireEvent.click(save)
+  await screen.findByText('시험 자료를 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.')
+  expect(writes).toHaveLength(1)
+  expect(writes[0].body).toMatchObject({studentPaper:expected,answerExplanation:expected})
+  expect(writes[0].body).not.toHaveProperty('productionVerification')
+  expect(writes[0].body).not.toHaveProperty('productionVerificationName')
 })

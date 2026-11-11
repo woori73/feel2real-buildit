@@ -1,7 +1,7 @@
 """Weekly Exam review workflow.
 
 The live exam context stays in exam_material_sets/Digital Twin tables. A weekly set stores
-only its three deliverables, immutable source references/hashes, and an immutable context
+its paper, explanation, optional verification, immutable source references/hashes, and an immutable context
 snapshot. Both HTTP and MCP registration call register_review(); agents can only create
 REVIEW records. Human-only transitions are checked server-side.
 """
@@ -140,7 +140,7 @@ class WeeklyExamReviewRequest(BaseModel):
     questionCount: int = Field(ge=1, le=200)
     studentPaper: str = Field(min_length=1)
     answerExplanation: str = Field(min_length=1)
-    productionVerification: str = Field(min_length=1)
+    productionVerification: Optional[str] = None
     studentPaperName: str = 'student-paper.html'
     answerExplanationName: str = 'answer-explanation.html'
     productionVerificationName: str = 'production-verification.md'
@@ -272,6 +272,8 @@ def _row(row) -> dict:
     item['context_snapshot'] = json.loads(item['context_snapshot'])
     item['legacy_status'] = item['status']
     item['status'] = EFFECTIVE_STATUS.get(item['status'], 'DRAFT')
+    if not item['verification_md'].strip():
+        item['verification_name'] = ''
     for key in ('student_paper_html', 'answer_explanation_html', 'verification_md'):
         item.pop(key, None)
     return item
@@ -297,6 +299,11 @@ def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = N
     """The only agent-write contract. Physical REVIEW preserves legacy schema; effective state is DRAFT."""
     student_html = _clean_paper(payload.studentPaper, payload.studentPaperName)
     answer_html = _clean_paper(payload.answerExplanation, payload.answerExplanationName)
+    verification = payload.productionVerification or ''
+    if not verification.strip():
+        verification = ''
+    verification_name = ((payload.productionVerificationName.strip() or 'production-verification.md')[:255]
+                         if verification else '')
     snapshot, snapshot_hash = _snapshot(payload)
     now, creator = datetime.now().isoformat(), actor or _actor()
     with _db() as conn:
@@ -322,7 +329,7 @@ def register_draft(payload: WeeklyExamReviewRequest, *, actor: Optional[str] = N
            payload.examType.strip(), payload.round, payload.setType, payload.questionCount,
            payload.studentPaperName[:255], student_html, _sha(student_html),
            payload.answerExplanationName[:255], answer_html, _sha(answer_html),
-           payload.productionVerificationName[:255], payload.productionVerification, _sha(payload.productionVerification),
+           verification_name, verification, _sha(verification) if verification else '',
            json.dumps(payload.sourceMaterialIds), snapshot, snapshot_hash, version, creator, now, now))
         exam_id = cursor.lastrowid
         conn.execute("""INSERT INTO weekly_exam_audit
@@ -419,6 +426,8 @@ def view_artifact(exam_id: int, kind: Literal['student-paper', 'answer-explanati
             'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
             'Content-Disposition': f'inline; filename="{ascii_name}"; filename*=UTF-8\'\'{quote(original, safe="")}',
         })
+    if not row['verification_md'].strip():
+        raise HTTPException(status_code=404, detail='등록된 제작·검수 자료가 없습니다.')
     escaped = html.escape(row['verification_md'])
     escaped = re.sub(r'^### (.+)$', r'<h3>\1</h3>', escaped, flags=re.M)
     escaped = re.sub(r'^## (.+)$', r'<h2>\1</h2>', escaped, flags=re.M)
@@ -465,6 +474,8 @@ def download_artifact(exam_id: int, kind: Literal['student-paper', 'answer-expla
     elif kind == 'answer-explanation':
         body, ext, media_type = _paper_content(row['answer_explanation_html'])
     elif kind == 'production-verification':
+        if not row['verification_md'].strip():
+            raise HTTPException(status_code=404, detail='등록된 제작·검수 자료가 없습니다.')
         body, ext, media_type = row['verification_md'], '.md', 'text/markdown; charset=utf-8'
     else:
         raise HTTPException(status_code=404, detail='다운로드 대상이 아닙니다.')
