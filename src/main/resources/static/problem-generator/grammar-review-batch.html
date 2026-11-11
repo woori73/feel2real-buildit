@@ -29,6 +29,16 @@ button,input{font:inherit}button{padding:8px 15px;border:1px solid #b1c5ba;borde
 <div id="progress" role="status" aria-live="polite">검수 결과를 불러오세요.</div>
 <p class="muted">문항 저장과 분류 저장이 성공한 뒤 검수 판정을 적용합니다. 중간에 실패한 문항은 적용 내역을 확인하고 같은 결과로 다시 대조할 수 있습니다.</p>
 </section>
+<section aria-label="대기 문항 검수용 내보내기">
+<h2>대기 문항 검수용 내보내기</h2>
+<p>현재 대기 중인 문항을 원문·정답·분류와 함께 불러옵니다. 문항 내용은 변경하지 않습니다.</p>
+<label for="maxId">문항 ID 이하 (비워 두면 전체)</label>
+<input id="maxId" type="number" min="1" step="1">
+<button id="exportPending">대기 문항 불러오기</button>
+<label for="pendingData">불러온 문항 JSON</label>
+<textarea id="pendingData" rows="5" readonly></textarea>
+<div id="exportProgress" role="status" aria-live="polite"></div>
+</section>
 <section aria-label="문항별 적용 내역"><div id="log"></div></section>
 <script src="/problem-generator/grammar-review-batch.js"></script>
 <script>
@@ -113,6 +123,47 @@ element('apply').onclick = async () => {
   }
 };
 element('stop').onclick = () => { stopped = true; };
+element('exportPending').onclick = async () => {
+  const button = element('exportPending');
+  const limitText = element('maxId').value.trim();
+  const maxId = limitText ? Number(limitText) : Infinity;
+  if (!(maxId > 0) || (limitText && !Number.isSafeInteger(maxId))) {
+    element('exportProgress').textContent = '문항 ID는 양의 정수여야 합니다.';
+    return;
+  }
+  button.disabled = true;
+  element('pendingData').value = '';
+  try {
+    const ids = new Set();
+    let page = 0, totalPages = 1;
+    while (page < totalPages) {
+      const response = await request('/questions?size=200&reviewStatus=NEEDS_REVIEW&page=' + page);
+      if (!Array.isArray(response.content) || !Number.isFinite(response.totalPages)) throw new Error('문항 목록 응답을 확인해 주세요.');
+      response.content.forEach(item => { if (item.questionId <= maxId) ids.add(item.questionId); });
+      totalPages = response.totalPages;
+      page++;
+      element('exportProgress').textContent = '대기 문항 목록 ' + page + '/' + totalPages + '쪽';
+    }
+    const targets = Array.from(ids).sort((a,b) => a-b);
+    const questions = [];
+    let next = 0;
+    async function worker() {
+      while (next < targets.length) {
+        const question = await request('/questions/' + targets[next++]);
+        questions.push(question);
+        element('exportProgress').textContent = '불러오기 ' + questions.length + '/' + targets.length + '건';
+      }
+    }
+    await Promise.all([worker(), worker(), worker()]);
+    questions.sort((a,b) => a.questionId-b.questionId);
+    element('pendingData').value = JSON.stringify(questions);
+    element('exportProgress').textContent = '불러오기 완료 · ' + questions.length + '건';
+  } catch (error) {
+    element('exportProgress').textContent = '불러오기 실패 · ' + error.message;
+  } finally {
+    button.disabled = false;
+  }
+};
 element('download').onclick = () => {
   const content = JSON.stringify({time: new Date().toISOString(), receipts}, null, 2);
   const url = URL.createObjectURL(new Blob([content], {type:'application/json'}));
