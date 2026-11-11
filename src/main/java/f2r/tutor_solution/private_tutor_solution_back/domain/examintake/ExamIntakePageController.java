@@ -26,6 +26,7 @@ public class ExamIntakePageController {
   public String adminPage(@AuthenticationPrincipal AuthenticatedPrincipal p, Model model) {
     admin(p);
     model.addAttribute("adminView", true);
-    return "public/exam_service";
+    return "admin/exam_requests";
   }
 }
+

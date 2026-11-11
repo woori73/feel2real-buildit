@@ -26,7 +26,7 @@
         <a class="admin-nav-link admin-nav-main" href="/easy/attendance">출결부</a>
         <a class="admin-nav-link admin-nav-main" href="/admin/student-roster">학생명단(시간표)</a>
         <details class="admin-nav-more" data-admin-nav-more>
-          <summary class="admin-nav-link" th:classappend="${#lists.contains({'academyMove', 'students', 'members', 'academies', 'lessonCommunities', 'naesinWiki', 'testprep', 'builder', 'wemade', 'choonggi', 'chart', 'sns', 'landing', 'newstart', 'newstartUpdates', 'newstartWiki', 'jipijigiAgent', 'analytics', 'account'}, activeMenu)} ? ' active' : ''">전체 메뉴 ▾</summary>
+          <summary class="admin-nav-link" th:classappend="${#lists.contains({'examRequests', 'academyMove', 'students', 'members', 'academies', 'lessonCommunities', 'naesinWiki', 'testprep', 'builder', 'wemade', 'choonggi', 'chart', 'sns', 'landing', 'newstart', 'newstartUpdates', 'newstartWiki', 'jipijigiAgent', 'analytics', 'account'}, activeMenu)} ? ' active' : ''">전체 메뉴 ▾</summary>
           <div class="admin-nav-groups">
             <div class="admin-nav-group"><div class="admin-nav-group-title">학원 운영</div>
             <a class="admin-nav-link" th:classappend="${activeMenu == 'academyMove'} ? ' active' : ''" href="/admin/academy-move">학원이사 / 모두의창업2기</a>
@@ -42,6 +42,7 @@
             <a class="admin-nav-link" href="/admin/student-roster">학생명단(시간표)</a>
             </div>
             <div class="admin-nav-group"><div class="admin-nav-group-title">콘텐츠·제작</div>
+            <a class="admin-nav-link" th:classappend="${activeMenu == 'examRequests'} ? ' active' : ''" href="/admin/hub/exam-requests">맞춤문제 접수 관리</a>
             <a class="admin-nav-link" th:classappend="${activeMenu == 'naesinWiki'} ? ' active' : ''" href="/problem-generator">내신위키</a>
             <a class="admin-nav-link" th:classappend="${activeMenu == 'testprep'} ? ' active' : ''" href="/testprep">TESTPREP</a>
             <a class="admin-nav-link" th:classappend="${activeMenu == 'builder'} ? ' active' : ''" href="/builder">홈페이지 빌더</a>
@@ -77,3 +78,4 @@
   </th:block>
 </body>
 </html>
+

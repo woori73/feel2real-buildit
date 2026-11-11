@@ -405,8 +405,9 @@ test("admin bank save/approve, manual confirmation, four deliveries and refund g
     try {
       const page = await context.newPage();
       await page.goto("/admin/hub/exam-requests?request=" + r.id);
-      await expect(page.locator("#requests")).toContainText(r.id);
-      await expect(page.locator("#detailTitle")).toHaveText("접수 번호 " + r.id);
+      await expect(page.locator('#requests [data-request-id="' + r.id + '"]')).toBeVisible();
+      await expect(page.locator("#details")).toContainText(r.id);
+      await page.getByRole("button", { name: "제작·전달", exact: true }).click();
       await expect(page.locator("#progress")).toContainText("4/4회");
       await page.screenshot({
         path: path.join(output, "admin-review.png"),
@@ -439,7 +440,7 @@ test("bank import stays unapproved; approved account, clipboard and Kakao acknow
   });
   try {
     const page = await context.newPage();
-    await page.goto("/admin/hub/exam-requests");
+    await page.goto("/admin/hub/exam-bank");
     await expect(page.locator("#bankStatus")).toContainText("승인됨");
     await page.locator("#bankImport").setInputFiles({
       name: "registration.json",
@@ -615,3 +616,4 @@ test('free sample creates an unpaid inquiry with materials and separate paid app
     await expect(page.locator('#termsConsent')).toBeVisible();
   } finally { await context.close(); await api.dispose(); }
 });
+

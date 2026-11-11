@@ -5406,3 +5406,12 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - 형식별 읽기 경로: docx(본문 순서 문단·표, 표 첫 줄=열 제목), doc(문단 + 표), pdf(글자 층을 페이지 순서대로, 최대 100쪽·20만 자), csv(첫 줄 열 제목 표, UTF-8/CP949), txt·md·json(문단), html(태그 제거). 이미지(png·jpg·jpeg·webp)와 글자 층 없는 PDF는 `NEEDS_OCR` — 서비스에 OCR이 없어 확인용 원본(이미지·PDF 쪽 PNG `preview?page=N`)만 보여 준다. 그 밖 형식 `UNSUPPORTED`, 손상 `FAILED`, 글자 없음 `EMPTY`. 20 MiB 초과는 기존 `/api/studio/files/{id}/text`와 같은 한도로 원본 확인 안내. 파일명·요약을 본문처럼 만들지 않는다.
 - 대조 분류: 행=자료 안 서로 다른 이름(같은 이름이 여러 날짜에 나와도 1행). EXISTING=원장이 연결 확인한 재원 학생, NEW=그 학원에 같은 이름 학생 없음(재원·비활성 모두), HOLD=이름이 같은 학생이 있거나 연결 학생이 비활성/없음, EXCLUDED=원장 제외 또는 이름 형식 아님. `existing+added+hold+excluded = sourceNames`(`balanced`). 이름만 같은 학생은 자동 병합하지 않는다.
 - 추가: NEW 행은 화면에서 골라 기존 `POST /api/dashboard/assistant/v1/drafts {operation:"STUDENT_CREATE",academyId,input:{name}}` 초안을 만들고 원장이 `.../drafts/{id}/approve`로 승인해야 저장된다(10분 만료). 등록 후 다시 대조하면 그 이름은 HOLD가 되어 다시 추가 후보로 세지 않는다(재처리 중복 방지). 정보 화면 자체는 학생을 만들지 않는다.
+
+### 맞춤문제 관리자 작업 화면 (2026-11-11)
+
+- ADMIN `GET /admin/hub/exam-requests`는 전용 `admin/exam_requests` 템플릿과 `exam_admin.js/css`를 사용한다. 고객 `/exam-service`와 기존 API·권한·계약 스냅샷은 유지한다.
+- 접수 목록에 이름·학교·학년·상태·연락처·접수일을 표시하고 이름/학교/연락처/접수번호 검색, 상태 필터와 페이지 이동을 제공한다. 업무 건수와 검색 범위는 **현재 페이지 최대 50건**이며 전체 누계나 오늘의 마감 건수로 표시하지 않는다.
+- 상세는 신청·자료 / 제작·전달 / 요청·이력으로 구분한다. 검사 완료된 비공개 자료만 기존 관리자 다운로드 API로 받아 Blob 미리보기를 만들며, 닫기·접수 변경 시 URL을 해제한다. PDF는 sandbox iframe, 이미지는 img로 표시한다.
+- 실제 입금 확인 체크, 허용된 상태 전환, 다음 회차의 검수·문제지/해설지 전달 확인, 기존 낙관적 버전 검사를 유지한다. 전달 기록은 실제 파일 발송 기능이 아니다. 무료신청·문의는 유료 4회 전달과 구분한다.
+- 계좌 등록·승인은 기존 `/admin/hub/exam-bank`로 이동한다. 이메일 알림 설정을 기본으로 표시하고 추가 유료 SMS 연결은 접힌 선택 메뉴로 둔다. 기존 저장값과 수신처를 자동 변경하거나 테스트 알림을 자동 전송하지 않는다. `?request=ID` 직접 열기와 `#notifications` 설정 진입을 유지한다.
+- 개인정보 정리·승인된 변경 반영·환불 요청 처리는 기존 검토 절차를 유지한다. 접수 조회 실패·빈 목록·알림 조회 실패를 별도로 표시한다.
