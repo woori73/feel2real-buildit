@@ -48,3 +48,13 @@
 - **상단 메뉴**(`fragments/_admin_topnav.html`): 바로 보이는 링크는 5개(통합 대시보드 `/admin/hub`, AI 업무 비서 `/dashboard`, 에듀홀릭 장부 `/easy`, 출결부 `/easy/attendance`, 학생명단 `/admin/student-roster`). 나머지는 「전체 메뉴 ▾」(`<details>`) 안에 학원 운영 / 장부·출결 / 콘텐츠·제작 / 새출발 / 관리 묶음으로 둔다. 기존 경로·권한은 하나도 지우지 않았다. 숨은 메뉴 화면에 있으면 「전체 메뉴」 버튼이 활성 색으로 보인다. PC는 아래로 펼쳐지는 판, 모바일은 그 자리에서 펼친다. 바깥 클릭·Esc로 닫힌다.
 - **통합 대시보드**(`admin/hub.html`, `hub_dashboard.js`, 순수 함수 `hub_view.js`): 위에서부터 ① AI에게 부탁하기(입력칸 + 예시 4개) ② 이번 달 한눈에 보기(수납·지출·미수금·원생 수 큰 숫자 + 한 줄 설명, 미수 원생·최근 거래 5건, 읽기 전용) ③ 자주 가는 곳 6개 ④ 더 보기(접힘: 시험 접수·입금 계좌, 빌더·내신위키 등, 예상문제 의뢰). 데이터는 기존 `GET /api/admin/easy/dashboard/widgets`만 읽는다(새 API 없음).
 - **AI에게 부탁하기 흐름**: 부탁하기 → `/dashboard?ask=<글>`(500자까지) → AI 업무 비서가 준비된 뒤 입력칸에만 채운다. **자동 전송하지 않으며**, 사람이 확인하고 보낸다. 저장·발송은 기존처럼 미리보기·승인 후에만 된다.
+
+## 2026-11-11 /dashboard 「관리자 현황」 (압구정에듀홀릭 ADMIN 전용)
+
+사용자 요청: "첫 화면에 재무 상황 + 현재 학생 목록과 수업 요일이 펼쳐지고, 옆에서 AI와 무엇을 할지 의논". 이 화면만 고치고 일반(TUTOR) 화면은 나중에.
+
+- ADMIN으로 `/dashboard`에 들어오면 첫 화면이 「관리자 현황」(`data-view="admin"`)이다. `#ai`·`#all` 주소로 들어오면 그 화면을 존중한다. ADMIN이 아니면 관련 칸·버튼은 숨김(`hidden`) 그대로이고 기존 화면만 보인다.
+- 왼쪽: 이번 달 재무(수납·지출·미수금·원생 수, `/api/dashboard/widgets`) + 재원 학생·수업 요일 표(`GET /api/admin/easy/attendance/student-overview`), 요일 버튼(누르면 그 요일 학생만)·이름 찾기. 보기만 한다.
+- 오른쪽: 「AI와 의논하기」 — 기존 AI 대화 칸을 캐릭터 화면 없이 옆에 붙였다. 예시 3개는 입력칸만 채우고 자동 전송하지 않는다. 「Claude(MCP)에서 의논하기」는 MCP `read_admin_dashboard`(가명) 안내와 복사할 첫 질문.
+- 휴대폰은 한 줄로: 현황 → AI와 의논(상단 「AI와 의논 ↓」 바로가기).
+- 파일: `templates/dashboard.html`, `static/css/admin_overview.css`(모든 배치 규칙이 `body[data-view="admin"]` 안), `static/js/admin_overview.js`, 순수 함수 `static/js/admin_overview_view.js`.

@@ -269,6 +269,76 @@ public class EasyAttendanceService {
         .map(EasyAttendanceService::eventView).toList();
   }
 
+  /** 관리자 대시보드용 학생 한 줄: 반·수업 요일(최근 4주 등원, 없으면 반 요일)·이번 달 등원·마지막 등원. */
+  public record StudentOverviewRow(Long studentId, String name, String school, Integer grade,
+      List<String> classes, List<String> weekdays, String weekdaySource, int monthCheckIns,
+      LocalDate lastCheckIn) {}
+
+  /** 최근 등원 요일을 볼 기간(오늘 포함 28일 = 4주). */
+  static final int RECENT_DAYS = 28;
+  private static final List<String> WEEK_ORDER = List.of("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN");
+
+  /**
+   * 재원(ENROLLED) 학생 전체의 반·수업 요일·등원 요약(읽기 전용). 수업 요일은 최근 4주 실제 등원 요일을 먼저 쓰고,
+   * 등원 기록이 없으면 배정된 반의 요일을 쓴다. 정정된(superseded) 기록과 다른 사업체 기록은 세지 않는다.
+   */
+  @Transactional(readOnly = true)
+  public List<StudentOverviewRow> studentOverview(Long businessId) {
+    requireBusiness(businessId);
+    LocalDate today = LocalDate.now(clock);
+    LocalDate recentFrom = today.minusDays(RECENT_DAYS - 1L);
+    LocalDate monthFrom = today.withDayOfMonth(1);
+    LocalDate from = recentFrom.isBefore(monthFrom) ? recentFrom : monthFrom;
+    List<EasyStudent> students = studentRepository.findAllByOrderByNameAsc().stream()
+        .filter(st -> st.getStatus() == EasyStudentStatus.ENROLLED).toList();
+    if (students.isEmpty()) return List.of();
+
+    Map<Long, List<String>> classNames = new LinkedHashMap<>();
+    Map<Long, Set<String>> classDays = new LinkedHashMap<>();
+    for (EasyClass c : classRepository.findAllByBusiness_BusinessIdOrderByStatusAscNameAsc(businessId)) {
+      if (!c.isActive()) continue;
+      for (EasyClassMember m : memberRepository.findAllByEasyClass_ClassIdAndReleasedOnIsNull(c.getClassId())) {
+        Long id = m.getStudent().getStudentId();
+        classNames.computeIfAbsent(id, k -> new ArrayList<>()).add(c.getName());
+        if (c.getWeekdays() != null && !c.getWeekdays().isBlank()) {
+          classDays.computeIfAbsent(id, k -> new java.util.HashSet<>()).addAll(List.of(c.getWeekdays().split(",")));
+        }
+      }
+    }
+
+    Map<Long, List<EasyAttendanceEvent>> checkIns = eventRepository
+        .findAllByStudent_StudentIdInAndOccurredOnBetweenOrderByOccurredAtAsc(
+            students.stream().map(EasyStudent::getStudentId).toList(), from, today).stream()
+        .filter(e -> !e.isSuperseded())
+        .filter(e -> e.getBusiness().getBusinessId().equals(businessId))
+        .filter(e -> e.getEventType() == EasyAttendanceEvent.Type.CHECK_IN)
+        .collect(Collectors.groupingBy(e -> e.getStudent().getStudentId()));
+
+    List<StudentOverviewRow> rows = new ArrayList<>();
+    for (EasyStudent st : students) {
+      List<EasyAttendanceEvent> mine = checkIns.getOrDefault(st.getStudentId(), List.of());
+      Set<String> recent = mine.stream().filter(e -> !e.getOccurredOn().isBefore(recentFrom))
+          .map(e -> e.getOccurredOn().getDayOfWeek().name().substring(0, 3))
+          .collect(Collectors.toSet());
+      String source = null;
+      Set<String> days = recent;
+      if (!recent.isEmpty()) {
+        source = "ATTENDANCE";
+      } else if (classDays.containsKey(st.getStudentId())) {
+        days = classDays.get(st.getStudentId());
+        source = "CLASS";
+      }
+      final Set<String> chosen = days;
+      List<String> ordered = WEEK_ORDER.stream().filter(chosen::contains).toList();
+      int month = (int) mine.stream().filter(e -> !e.getOccurredOn().isBefore(monthFrom)).count();
+      LocalDate last = mine.stream().map(EasyAttendanceEvent::getOccurredOn).max(LocalDate::compareTo).orElse(null);
+      rows.add(new StudentOverviewRow(st.getStudentId(), st.getName(), st.getSchool(),
+          st.getGrade() == null ? null : st.getGrade().intValue(),
+          classNames.getOrDefault(st.getStudentId(), List.of()), ordered, source, month, last));
+    }
+    return rows;
+  }
+
   /** 반 + 연월 월별 현황: 학생별 날짜별 현재 출결과 구분별 횟수. */
   @Transactional(readOnly = true)
   public Map<String, Object> monthly(Long businessId, Long classId, String month) {

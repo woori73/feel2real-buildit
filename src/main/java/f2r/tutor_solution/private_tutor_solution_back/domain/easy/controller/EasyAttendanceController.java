@@ -41,6 +41,14 @@ public class EasyAttendanceController {
     accessService.requireAllowedBusiness(p, businessId);
   }
 
+  /** 관리자 대시보드: 재원 학생의 반·수업 요일·등원 요약(읽기 전용). */
+  @GetMapping("/student-overview")
+  public List<EasyAttendanceService.StudentOverviewRow> studentOverview(@RequestParam Long businessId,
+      @AuthenticationPrincipal AuthenticatedPrincipal p) {
+    requireBusiness(p, businessId);
+    return service.studentOverview(businessId);
+  }
+
   @GetMapping("/classes")
   public List<ClassView> classes(@RequestParam Long businessId,
       @RequestParam(defaultValue = "false") boolean includeEnded,

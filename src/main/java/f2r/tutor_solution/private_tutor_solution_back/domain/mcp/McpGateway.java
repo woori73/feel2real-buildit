@@ -37,6 +37,9 @@ public class McpGateway {
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasySiteCollectionService> easySiteCollection;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAdminOverviewService> adminOverview;
+
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
       Set.of("submit_studio_review", "upload_studio_asset", "create_studio_task", "update_studio_task");
@@ -75,7 +78,7 @@ public class McpGateway {
           tool -> {
             String name = (String) tool.get("name");
             if (name.equals("read_academy_move") || name.equals("post_academy_move")) return !oauth.scopeAllowed(McpOAuth.ACADEMY_MOVE_WRITE);
-            if (name.equals("read_student_roster")) return !oauth.scopeAllowed(McpOAuth.STUDENT_ROSTER_READ);
+            if (name.equals("read_student_roster") || name.equals("read_admin_dashboard")) return !oauth.scopeAllowed(McpOAuth.STUDENT_ROSTER_READ);
             if (EASY_SITE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.EASY_COLLECT_WRITE);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
@@ -157,6 +160,9 @@ public class McpGateway {
     out.add(writeTool("post_academy_move","학원이사 글을 해당 이슈에 올리고 AI가 핵심·미확정 사항·다음 행동을 정리해 함께 답합니다. 같은 idempotencyKey 재시도는 중복 저장하지 않습니다. 관리자와 academy-move:write 별도 동의가 필요합니다.",
         Map.of("title",string(),"content",string(),"issue",Map.of("type","string","enum",List.of("원상복구","교습소 전환","명칭·로고")),"idempotencyKey",string()),List.of("content","issue","idempotencyKey")));
     out.add(tool("read_student_roster","학생명단(시간표) 연도별 Word에서 만든 이름 없는 집계(연도·월별 학생 수·수업 수·신규/재원·유지율·요일·재원 기간, 가명 S001…)를 읽고 교습소·학원 발전 방안을 논의합니다. 관리자와 student-roster:read 별도 동의가 필요합니다. 실명·원본 파일은 제공하지 않습니다.",Map.of(),List.of()));
+    out.add(tool("read_admin_dashboard","압구정에듀홀릭 관리자 대시보드와 같은 현황(이번 달 수납·지출·미수금·원생 수, 요일별 수업 학생 수, 학생별 반·수업 요일·이번 달 등원 수)을 읽고 운영자와 할 일을 의논합니다."
+        + " 학생은 가명(S01…)이며 실명·학교·연락처는 주지 않습니다. 읽기 전용. 관리자와 student-roster:read 별도 동의가 필요합니다.",
+        Map.of("businessId",integer(1,Integer.MAX_VALUE)),List.of()));
 
     out.add(tool("easy_collection_sites","F2R 장부 자료 수집용 은행·카드사·홈택스·여신금융협회 공식 주소, 내려받기 순서, 안전 규칙, 저장할 사업체 목록을 읽습니다."
         + " 로그인·인증은 사용자 본인이 직접 하며 비밀번호·인증서 암호·OTP를 묻거나 입력하지 않습니다. 관리자와 easy-collect:write 별도 동의가 필요합니다.",Map.of(),List.of()));
@@ -404,6 +410,15 @@ public class McpGateway {
       if(name.equals("read_academy_move")) return moves.mcpRead(identity.principal());
       return moves.mcpPost(identity.principal(),new f2r.tutor_solution.private_tutor_solution_back.domain.studio.AcademyMoveController.Post(
           text(args,"title"),text(args,"content"),text(args,"issue"),text(args,"idempotencyKey")),identity.grantId());
+    }
+    if (name.equals("read_admin_dashboard")) {
+      if (!identity.scopes().contains(McpOAuth.STUDENT_ROSTER_READ) || !"ADMIN".equals(identity.principal().role()))
+        throw McpOAuth.error(403,"admin_dashboard_consent_required");
+      rate.check("admin-dashboard:"+identity.grantId(),12);
+      var overview=adminOverview==null?null:adminOverview.getIfAvailable();
+      if(overview==null) throw McpOAuth.error(503,"admin_dashboard_unavailable");
+      Long bid=args.hasNonNull("businessId")?args.get("businessId").asLong():null;
+      return overview.mcpOverview(identity.principal(),bid);
     }
     if (name.equals("read_student_roster")) {
       if (!identity.scopes().contains(McpOAuth.STUDENT_ROSTER_READ) || !"ADMIN".equals(identity.principal().role()))
