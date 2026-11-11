@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import { api } from '../lib/api'
+import { PAPER_ACCEPT, VERIFICATION_ACCEPT, readExamArtifact } from '../lib/examArtifactFile'
 
 type ExamContext = { school:string; grade:string; year:number; semester:string; exam:string }
 // 1단계 구조조정: 40/70/40A/40B 구분 제거. 신규는 'STD' 단일 유형.
@@ -28,18 +29,12 @@ const _SET_POLICY_REMOVED:Record<string,SetType[]>={
   '신사중학교|3학년':['40A','40B'],'신사중|3학년':['40A','40B'],
 }
 const query=(context:ExamContext)=>new URLSearchParams({...context,year:String(context.year)}).toString()
-const readFile=(event:ChangeEvent<HTMLInputElement>,setter:(value:string)=>void,setterName?:(value:string)=>void)=>{
-  const file=event.target.files?.[0];if(!file)return
-  if(setterName)setterName(file.name)
-  const reader=new FileReader();reader.onload=()=>setter(String(reader.result||''));reader.readAsText(file)
-}
-
 // 회차별 자료 간소화: 3종 자료 × 보기/다운로드/교체
 type MaterialKind='paper'|'expl'|'verify'
 const MATERIALS:{kind:MaterialKind;label:string;apiKind:string;accept:string}[]=[
-  {kind:'paper',label:'문제지',apiKind:'student-paper',accept:'.html,.htm,text/html'},
-  {kind:'expl',label:'해설지',apiKind:'answer-explanation',accept:'.html,.htm,text/html'},
-  {kind:'verify',label:'출제검수',apiKind:'production-verification',accept:'.md,.markdown,.txt,text/markdown,text/plain'},
+  {kind:'paper',label:'문제지',apiKind:'student-paper',accept:PAPER_ACCEPT},
+  {kind:'expl',label:'해설지',apiKind:'answer-explanation',accept:PAPER_ACCEPT},
+  {kind:'verify',label:'출제검수',apiKind:'production-verification',accept:VERIFICATION_ACCEPT},
 ]
 const hasMaterial=(item:WeeklyExam,kind:MaterialKind):boolean=>{
   if(kind==='paper')return Boolean(item.student_paper_name)
@@ -57,6 +52,22 @@ export default function WeeklyExamHub(props:Props){
   const replaceInputRef=useRef<HTMLInputElement>(null)
   const [contextStatus,setContextStatus]=useState<'PARTIAL'|'LIVING'|'COMPLETE'>('PARTIAL')
   const [studentPaper,setStudentPaper]=useState(''),[answerExplanation,setAnswerExplanation]=useState(''),[verification,setVerification]=useState('')
+  const [fileNames,setFileNames]=useState({paper:'',expl:'',verify:''})
+  const [reading,setReading]=useState<Partial<Record<MaterialKind,boolean>>>({})
+  const [registering,setRegistering]=useState(false)
+  const readVersions=useRef<Record<MaterialKind,number>>({paper:0,expl:0,verify:0})
+  const chooseFile=async(event:ChangeEvent<HTMLInputElement>,kind:MaterialKind)=>{
+    const file=event.target.files?.[0];event.target.value='';if(!file)return
+    const version=++readVersions.current[kind]
+    const setter=kind==='paper'?setStudentPaper:kind==='expl'?setAnswerExplanation:setVerification
+    setter('');setFileNames(names=>({...names,[kind]:''}));setReading(values=>({...values,[kind]:true}))
+    try{
+      const content=await readExamArtifact(file,kind==='verify')
+      if(version!==readVersions.current[kind])return
+      setter(content);setFileNames(names=>({...names,[kind]:file.name}));setNotice('')
+    }catch(error){if(version===readVersions.current[kind])setNotice(error instanceof Error?error.message:'파일을 읽지 못했습니다.')}
+    finally{if(version===readVersions.current[kind])setReading(values=>({...values,[kind]:false}))}
+  }
   const load=async()=>{
     if(!context.school||!context.grade)return
     const [rows,me]=await Promise.all([
@@ -68,15 +79,21 @@ export default function WeeklyExamHub(props:Props){
   useEffect(()=>{setSetType('STD');void load()},[context.school,context.grade,context.year,context.semester,context.exam])
   const open=(path:string)=>window.open(`/problem-generator/wiki/api/${path}`,'_blank','noopener')
   const register=async()=>{
+    if(registering)return
+    setRegistering(true)
+    try{
     const response=await api('weekly-exams/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
       school:context.school,grade:context.grade,year:context.year,semester:context.semester,examType:context.exam,
       round,setType,questionCount:Number(questionCount)||0,studentPaper,answerExplanation,
-      productionVerification:verification,contextStatus,
+      productionVerification:verification,studentPaperName:fileNames.paper,answerExplanationName:fileNames.expl,
+      productionVerificationName:fileNames.verify,contextStatus,
     })})
     const body=await response.json().catch(()=>({}))
     if(!response.ok){setNotice(body.detail||'DRAFT 등록에 실패했습니다.');return}
-    setStudentPaper('');setAnswerExplanation('');setVerification('');setShowRegister(false)
+    setStudentPaper('');setAnswerExplanation('');setVerification('');setFileNames({paper:'',expl:'',verify:''});setShowRegister(false)
     setNotice('세 산출물을 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.');await load()
+    }catch(error){setNotice(error instanceof Error?`등록하지 못했습니다: ${error.message}`:'등록하지 못했습니다.')}
+    finally{setRegistering(false)}
   }
   const startReplace=(id:number,kind:MaterialKind)=>{
     if(replacing)return
@@ -85,32 +102,24 @@ export default function WeeklyExamHub(props:Props){
     const input=replaceInputRef.current
     if(input){input.accept=mat.accept;input.value='';input.click()}
   }
-  const handleReplaceFile=(event:ChangeEvent<HTMLInputElement>)=>{
+  const handleReplaceFile=async(event:ChangeEvent<HTMLInputElement>)=>{
     const file=event.target.files?.[0]
     const target=replaceTarget
     if(!file||!target){setReplaceTarget(null);return}
     setReplacing(true)
-    const reader=new FileReader()
-    reader.onload=()=>{
-      const content=String(reader.result||'')
+    try{
+      const content=await readExamArtifact(file,target.kind==='verify')
       const body:Record<string,string>={}
       if(target.kind==='paper'){body.studentPaper=content;body.studentPaperName=file.name}
       else if(target.kind==='expl'){body.answerExplanation=content;body.answerExplanationName=file.name}
       else{body.productionVerification=content;body.productionVerificationName=file.name}
-      void (async()=>{
-        try{
-          const response=await api(`weekly-exams/${target.id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-          const data=await response.json().catch(()=>({}))
-          if(!response.ok){setNotice(`교체에 실패했습니다: ${data.detail||'자료 교체에 실패했습니다.'}`);return}
-          const label=MATERIALS.find(m=>m.kind===target.kind)?.label||'자료'
-          setNotice(`${label}를 교체했습니다.`);await load()
-        }finally{
-          setReplacing(false);setReplaceTarget(null)
-        }
-      })()
-    }
-    reader.onerror=()=>{setNotice('파일을 읽지 못했습니다.');setReplacing(false);setReplaceTarget(null)}
-    reader.readAsText(file)
+      const response=await api(`weekly-exams/${target.id}/artifacts`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      const data=await response.json().catch(()=>({}))
+      if(!response.ok){setNotice(`교체에 실패했습니다: ${data.detail||'자료 교체에 실패했습니다.'}`);return}
+      const label=MATERIALS.find(m=>m.kind===target.kind)?.label||'자료'
+      setNotice(`${label}를 교체했습니다.`);await load()
+    }catch(error){setNotice(error instanceof Error?error.message:'파일을 교체하지 못했습니다.')}
+    finally{setReplacing(false);setReplaceTarget(null)}
   }
   const latestFor=()=>items.slice().sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   // 회차·세트별 최신 버전만 표시 (FINAL 교체 시 구버전 보존됨)
@@ -176,12 +185,15 @@ export default function WeeklyExamHub(props:Props){
     {showRegister&&<section className="work-panel weekly-register" aria-label="Weekly Exam DRAFT 등록">
       <div className="panel-heading"><div><p className="kicker">ONE SET · THREE ARTIFACTS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
       <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label><label>Context 상태<select value={contextStatus} onChange={e=>setContextStatus(e.target.value as 'PARTIAL'|'LIVING'|'COMPLETE')}><option>PARTIAL</option><option>LIVING</option><option>COMPLETE</option></select></label></div>
-      <label>학생용 문제지 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setStudentPaper)}/></label>
-      <label>정답·해설 HTML<input type="file" accept=".html,.htm,text/html" onChange={e=>readFile(e,setAnswerExplanation)}/></label>
-      <label>제작·검수 MD<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" onChange={e=>readFile(e,setVerification)}/></label>
-      <p className="field-hint">세 파일은 하나의 세트로 저장됩니다. 서버가 현재 Living Context Snapshot을 보존하고 상태를 DRAFT로 고정합니다.</p>
-      <button className="primary-action" disabled={!studentPaper||!answerExplanation||!verification} onClick={()=>void register()}>DRAFT 등록</button>
+      <label>학생용 문제지 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'paper')}/></label>
+      {fileNames.paper&&<p className="field-hint">선택한 문제지: {fileNames.paper}</p>}
+      <label>정답·해설 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'expl')}/></label>
+      {fileNames.expl&&<p className="field-hint">선택한 해설지: {fileNames.expl}</p>}
+      <label>제작·검수 MD<input type="file" accept={VERIFICATION_ACCEPT} onChange={e=>void chooseFile(e,'verify')}/></label>
+      <p className="field-hint">문제지·해설지는 HTML 또는 PDF로 올릴 수 있습니다(파일당 30MB 이하). 세 파일은 하나의 세트로 저장됩니다.</p>
+      <button className="primary-action" disabled={registering||Object.values(reading).some(Boolean)||!studentPaper||!answerExplanation||!verification} onClick={()=>void register()}>{registering?'등록 중…':'DRAFT 등록'}</button>
     </section>}
     <p className="approval-gate-note">원문은 운영자 전용입니다.</p>
   </section>
 }
+

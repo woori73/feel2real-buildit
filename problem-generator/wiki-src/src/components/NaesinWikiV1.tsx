@@ -139,10 +139,10 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   }
   const chooseSchoolMaterial=(e:ChangeEvent<HTMLInputElement>)=>{
     const file=e.target.files?.[0];if(!file)return
-    if(!/\.(html|pdf|hwpx|docx|jpe?g|png)$/i.test(file.name)){e.target.value='';setNotice('HTML·PDF·HWPX·DOCX·JPG·PNG 파일을 선택해 주세요.');return}
+    if(!/\.(html?|pdf|hwpx|docx|jpe?g|png)$/i.test(file.name)){e.target.value='';setNotice('HTML·PDF·HWPX·DOCX·JPG·PNG 파일을 선택해 주세요.');return}
     if(file.size>30*1024*1024){e.target.value='';setNotice('파일당 30MB 이하로 선택해 주세요.');return}
     setOriginals([file]);setHtmlText('')
-    if(/\.html$/i.test(file.name))chooseHtmlFile(e)
+    if(/\.html?$/i.test(file.name))chooseHtmlFile(e)
     else {e.target.value='';setNotice(`${file.name} 파일을 선택했습니다.`)}
   }
   const saveSchoolPrint=async(e:FormEvent)=>{
@@ -372,7 +372,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
     {core==='student_wrong_note'&&<label>학생<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">학생 선택</option>{filteredStudents.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></label>}
     {(core==='school_print'||core==='past_exam'||core==='ai_work_log'||core==='exam_analysis')&&<label>{core==='past_exam'?'관리 메모 / 자료 제목':core==='ai_work_log'?'작업기록 제목 / 메모':core==='exam_analysis'?'분석 자료 제목':'자료 제목'}<input value={title} onChange={e=>setTitle(e.target.value)}/></label>}
     {core==='school_print'?<>
-      <label>학습자료 파일 선택<input type="file" accept=".html,.pdf,.hwpx,.docx,.jpg,.jpeg,.png" onChange={chooseSchoolMaterial}/></label><small className="field-hint">HTML·PDF·HWPX·DOCX·JPG·PNG(사진), 파일당 30MB 이하. 원본 파일을 보관합니다.</small>{originals[0]&&<p className="field-hint">선택: {originals[0].name}</p>}
+      <label>학습자료 파일 선택<input type="file" accept=".html,.htm,.pdf,.hwpx,.docx,.jpg,.jpeg,.png,application/pdf" onChange={chooseSchoolMaterial}/></label><small className="field-hint">PDF 원본만 선택해도 저장할 수 있습니다. HTML·HWPX·DOCX·JPG·PNG(사진)도 지원하며, 파일당 30MB 이하입니다. HTML 붙여넣기와 JSON은 선택 입력입니다.</small>{originals[0]&&<p className="field-hint">선택: {originals[0].name}</p>}
       <label>HTML 붙여넣기<textarea value={htmlText} onChange={e=>setHtmlText(e.target.value)} placeholder="<p>학교 프린트 HTML을 붙여넣거나 파일을 선택해 불러오세요.</p>"/></label>
     </>:<>
       <label>{core==='past_exam'?'기출시험지 원본 파일':core==='ai_work_log'?'AI 작업기록 파일':core==='exam_analysis'?'기출 분석 파일':'오답 원본 파일'}<input type="file" multiple accept={core==='past_exam'||core==='exam_analysis'?'.html,.pdf,.hwpx,.docx':core==='ai_work_log'?'.md,.markdown,.txt,.html,.htm':undefined} onChange={chooseOriginals}/></label>
@@ -440,3 +440,4 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
 
 function Core({title,count,children}:{title:string;count:number;children:ReactNode}){return <div className="admin-core"><h3>{title} <span>{count}</span></h3>{count?children:<p className="field-hint">현재 시험에 저장된 자료가 없습니다.</p>}</div>}
 function Row({checked,onToggle,label,actions}:{checked:boolean;onToggle:()=>void;label:string;actions:ReactNode}){return <div className="admin-source-row"><input type="checkbox" checked={checked} onChange={onToggle}/><span>{label}</span><div>{actions}</div></div>}
+

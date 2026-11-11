@@ -144,6 +144,7 @@ jobs:
           cp -R "$GITHUB_WORKSPACE/problem-generator/wiki-backend-src/." /tmp/buildit-wiki-backend-src/
           cd "$GITHUB_WORKSPACE/problem-generator/wiki-src"
           npm ci
+          npm test -- src/components/WeeklyExamPdf.test.tsx src/components/SchoolPrintPdf.test.tsx --maxWorkers=2 --minWorkers=1
           npm run build -- --base=/problem-generator/wiki/
           cd "$GITHUB_WORKSPACE"
           rm -rf src/main/resources/static/problem-generator/wiki
@@ -662,3 +663,4 @@ jobs:
           path: build/reports/tests/test
           if-no-files-found: ignore
           retention-days: 7
+
