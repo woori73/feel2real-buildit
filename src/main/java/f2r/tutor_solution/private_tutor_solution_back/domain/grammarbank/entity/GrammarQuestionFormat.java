@@ -18,15 +18,24 @@ public enum GrammarQuestionFormat {
     if (raw == null || raw.isBlank()) {
       return null;
     }
-    String v = raw.strip().toLowerCase();
+    String value = raw.strip();
+    try {
+      return valueOf(value.toUpperCase(java.util.Locale.ROOT));
+    } catch (IllegalArgumentException ignored) {
+      // Older imports may use a Korean label or an English phrase.
+    }
+    String v = value.toLowerCase(java.util.Locale.ROOT);
     if (v.contains("객관") || v.contains("multiple") || v.contains("choice") || v.equals("mc")) {
       return MULTIPLE_CHOICE;
     }
-    if (v.contains("옳은") || v.contains("바른") || v.contains("correct")) {
-      return CORRECT_SENTENCE;
-    }
     if (v.contains("틀린") || v.contains("incorrect") || v.contains("not")) {
       return INCORRECT_SENTENCE;
+    }
+    if (v.contains("error") || v.contains("오류") || v.contains("수정")) {
+      return ERROR_CORRECTION;
+    }
+    if (v.contains("옳은") || v.contains("바른") || v.contains("correct")) {
+      return CORRECT_SENTENCE;
     }
     if (v.contains("밑줄") || v.contains("underline")) {
       return UNDERLINE;
@@ -42,9 +51,6 @@ public enum GrammarQuestionFormat {
     }
     if (v.contains("전환") || v.contains("변환") || v.contains("transform") || v.contains("rewrite")) {
       return SENTENCE_TRANSFORM;
-    }
-    if (v.contains("오류") || v.contains("수정") || v.contains("error")) {
-      return ERROR_CORRECTION;
     }
     return OTHER;
   }

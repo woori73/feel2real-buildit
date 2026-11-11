@@ -196,6 +196,7 @@ export default function GrammarBank() {
     </div>}
 
     {(tab === 'search' || tab === 'review') && <div>
+      {tab === 'review' && <p><a href="/problem-generator/grammar-review-batch.html" target="_blank" rel="noreferrer">검수 결과 묶음 적용</a></p>}
       <div className="exam-settings" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <label>권장 학습 학년<select value={recommendedGrade} onChange={e => setRecommendedGrade(e.target.value)}>{LEVELS.filter(v => v !== 'COMMON').map(v => <option key={v} value={v}>{LEVEL_LABELS[v]}</option>)}</select></label>
         <label>기존 학년<select value={level} onChange={e => setLevel(e.target.value)}>{LEVELS.map(v => <option key={v} value={v}>{LEVEL_LABELS[v]}</option>)}</select></label>

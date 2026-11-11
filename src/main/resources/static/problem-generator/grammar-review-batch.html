@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>문법 문항 검수 결과 적용</title>
+<style>
+*{box-sizing:border-box}body{max-width:1080px;margin:32px auto;padding:0 20px;color:#1c3330;background:#f6f8f7;font:15px/1.6 system-ui,"Malgun Gothic",sans-serif}
+h1{font-size:26px;margin-bottom:10px}a{color:#205b48}textarea{width:100%;font:13px/1.45 monospace;padding:12px;border:1px solid #b5c6bf;border-radius:8px}
+button,input{font:inherit}button{padding:8px 15px;border:1px solid #b1c5ba;border-radius:7px;background:white;cursor:pointer}button.primary{background:#245b44;color:white}button:disabled{opacity:.4;cursor:default}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}section{background:white;border:1px solid #dae4dd;border-radius:12px;padding:18px;margin-top:16px}
+#progress{font-weight:600;white-space:pre-wrap}#log{max-height:280px;overflow:auto;white-space:pre-wrap;font:13px/1.6 monospace}.muted{color:#567268}
+</style>
+</head>
+<body>
+<a href="/problem-generator/wiki/index.html?section=production">내신위키 문법문제은행</a>
+<h1>문법 문항 검수 결과 적용</h1>
+<p>외부 문항 ID와 원문 대조 해시가 있는 검수 결과 JSON을 불러옵니다. 적용 전에 현재 문항을 대조하며, 다른 작업에서 바뀐 문항은 충돌로 기록합니다.</p>
+<section>
+<label for="plan">검수 결과 JSON</label>
+<textarea id="plan" rows="10" spellcheck="false" placeholder="검수 결과 배열을 붙여넣거나 JSON 파일을 선택하세요."></textarea>
+<div class="toolbar">
+<input id="file" type="file" accept=".json,application/json">
+<button id="preview">적용 내용 확인</button>
+<button id="apply" class="primary" disabled>확인한 결과 적용</button>
+<button id="stop" disabled>현재 작업 후 중지</button>
+<button id="download" disabled>적용 내역 저장</button>
+</div>
+<div id="progress" role="status" aria-live="polite">검수 결과를 불러오세요.</div>
+<p class="muted">문항 저장과 분류 저장이 성공한 뒤 검수 판정을 적용합니다. 중간에 실패한 문항은 적용 내역을 확인하고 같은 결과로 다시 대조할 수 있습니다.</p>
+</section>
+<section aria-label="문항별 적용 내역"><div id="log"></div></section>
+<script src="/problem-generator/grammar-review-batch.js"></script>
+<script>
+'use strict';
+const element = id => document.getElementById(id);
+let plan = null;
+let receipts = [];
+let stopped = false;
+let running = false;
+function setRunning(value) {
+  running = value;
+  for (const id of ['plan','file','preview']) element(id).disabled = value;
+  element('apply').disabled = value || !plan;
+  element('stop').disabled = !value;
+}
+function invalidate() {
+  plan = null;
+  element('apply').disabled = true;
+}
+element('plan').addEventListener('input', invalidate);
+element('file').addEventListener('change', async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    element('plan').value = await file.text();
+    invalidate();
+    element('progress').textContent = file.name + ' 불러옴. 적용 내용을 확인하세요.';
+  } catch (error) {
+    element('progress').textContent = '파일 읽기 실패 · ' + error.message;
+  }
+});
+element('preview').onclick = () => {
+  try {
+    plan = GrammarBatchReview.validatePlan(JSON.parse(element('plan').value));
+    const approvals = plan.filter(record => record.patch.status === 'APPROVED').length;
+    const rejections = plan.filter(record => record.patch.status === 'REJECTED').length;
+    element('progress').textContent = '대상 ' + plan.length + '건 · 승인 ' + approvals + '건 · 반려 ' + rejections + '건 · 판정 유지 ' + (plan.length-approvals-rejections) + '건';
+    element('apply').disabled = false;
+  } catch (error) {
+    invalidate();
+    element('progress').textContent = '확인 실패 · ' + error.message;
+  }
+};
+async function request(path, options = {}) {
+  const response = await fetch('/api/problem-generator/grammar-bank' + path, {
+    credentials: 'same-origin',
+    ...options,
+    headers: {'Content-Type': 'application/json'}
+  });
+  if (!response.ok) {
+    let message = '요청 실패 (' + response.status + ')';
+    try { message = (await response.json()).message || message; } catch {}
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return response.status === 204 ? undefined : response.json();
+}
+element('apply').onclick = async () => {
+  if (running || !plan) return;
+  stopped = false;
+  receipts = [];
+  element('log').textContent = '';
+  element('progress').textContent = '문항 목록 대조 중';
+  setRunning(true);
+  try {
+    receipts = await GrammarBatchReview.applyPlan(plan, request, (receipt, completed) => {
+      receipts.push(receipt);
+      const failed = receipts.filter(value => value.outcome === 'FAILED').length;
+      element('progress').textContent = '처리 ' + completed + '/' + plan.length + '건 · 실패·충돌 ' + failed + '건';
+      const line = document.createElement('div');
+      line.textContent = receipt.externalRef + ' · ' + receipt.outcome + (receipt.error ? ' · ' + receipt.error : '');
+      element('log').appendChild(line);
+      element('download').disabled = false;
+    }, () => stopped);
+    const failed = receipts.filter(value => value.outcome === 'FAILED').length;
+    element('progress').textContent = (receipts.length === plan.length ? '처리 완료' : '처리 중지') + ' · 대상 ' + plan.length + '건 · 적용 ' + receipts.filter(value => value.outcome === 'APPLIED').length + '건 · 동일 ' + receipts.filter(value => value.outcome === 'UNCHANGED').length + '건 · 실패·충돌 ' + failed + '건';
+  } catch (error) {
+    element('progress').textContent = '처리 중단 · ' + error.message;
+  } finally {
+    setRunning(false);
+  }
+};
+element('stop').onclick = () => { stopped = true; };
+element('download').onclick = () => {
+  const content = JSON.stringify({time: new Date().toISOString(), receipts}, null, 2);
+  const url = URL.createObjectURL(new Blob([content], {type:'application/json'}));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'grammar-review-receipts.json';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+</script>
+</body>
+</html>

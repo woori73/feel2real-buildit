@@ -91,6 +91,7 @@ jobs:
         # 나머지 35건 실패(하네스 결함 13 + 낡은 계약 22)는 docs/BUILDIT_JS_TEST_BASELINE_20261013.md에 기록했다.
         run: >-
           node --test
+          src/test/js/grammar_review_batch.test.js
           src/test/js/studio_catalog.test.js
           src/test/js/easy_attendance_view.test.js
           src/test/js/easy_connections_view.test.js
@@ -419,6 +420,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.service.SnsGenerationServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.instagram.HttpInstagramApiTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.sns.controller.SnsControllersSecurityTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.entity.GrammarQuestionFormatTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarBankImportServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.grammarbank.service.GrammarDesignCraftServiceTest"
 

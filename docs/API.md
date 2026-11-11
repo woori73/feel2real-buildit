@@ -3834,6 +3834,7 @@ StackOverflow식 2계층 Q&A(`/community`): **질문(posts) → 답변(answers)*
 - `GET /tags` — 문법 유형 사전(시드 14종).
 - `GET /stats` — 대시보드: 전체/검수 필요/승인/반려, 학년별·유형별 집계.
 - `GET /questions` — 검색. Query: `recommendedGrade(M1..H3|UNKNOWN)`(권장 학습 학년), `schoolLevel(M1..H3|COMMON|UNKNOWN)`(기존 학년), `tagIds(반복, OR)`, `questionFormat`, `difficulty`, `reviewStatus`, `rightsStatus`, `minConfidence`, `maxConfidence`, `search`(발문·키워드 LIKE), page/size. REJECTED는 기본 제외.
+- 운영자 검수 묶음 화면 `/problem-generator/grammar-review-batch.html`은 기존 조회·PATCH·검수 API를 순서대로 사용한다. JSON 배열의 `externalRef`, 원문·선택지·정답·해설 지문 해시(`expectedHash`, `resultHash`), 기존 상태(`expectedStatus`), 수정할 필드(`patch`)를 대조한다. 외부 ID 중복·원문 변경은 실패로 기록하고, 내용·분류 저장 후 최종 판정을 적용한다. 중간 실패 뒤 같은 결과로 재시도할 수 있으며, 판정은 입력한 검수 결과에 있는 문항에만 적용된다. API 권한은 ADMIN·modu로 유지한다.
 - `GET /questions/{questionId}` — 목록·상세는 `recommendedGrade`를 기존 `schoolLevel`과 별도로 반환하고 상세는 `reviewMetadata`(수입본 전체 스냅샷)를 추가한다. 상세: 발문·선택지·정답·해설·지문·원본 파일(material)·위치·자동 분류 근거·변형본 이력.
 - `PATCH /questions/{questionId}` — 본문/정답/해설/배점 수정(ADMIN·modu), 수정 시 NEEDS_REVIEW.
 - `PATCH /questions/{questionId}/profile` — 기존 학년/형식/난이도/키워드/권한/태그 수정. `recommendedGrade`(M1..H3, UNKNOWN=분류 해제)를 별도 수정할 수 있다. 권장 학년·태그 수정은 NEEDS_REVIEW로 전환한다. 권장 학년 변경 이력(이전/이후/사용자/시각)은 JSON에 추가되며 수입 스냅샷과 기존 학년은 유지한다.
