@@ -1284,7 +1284,8 @@ def _validate_past_exam_upload(original: Optional[UploadFile]) -> tuple[str, str
         raise HTTPException(status_code=400, detail='기출시험지 원본은 30MB 이하의 파일이어야 합니다.')
     _check_upload_signature(suffix, data)
     body_text, body_format = _extract_uploaded_body(suffix, data, label='기출시험지')
-    return original.filename[:255], original.content_type or 'application/octet-stream', data, body_text, body_format
+    media_type = 'application/pdf' if suffix == '.pdf' else original.content_type or 'application/octet-stream'
+    return original.filename[:255], media_type, data, body_text, body_format
 
 
 def _check_upload_signature(suffix: str, data: bytes) -> None:
@@ -1371,7 +1372,7 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
     # PAST_EXAM/AI_WORK_LOG/EXAM_ANALYSIS는 붙여넣은 html_text 폼값을 쓰지 않는다 — 본문은 업로드 원본에서 추출한다.
     canonical_html = html_text.strip() if normalized_material_type == 'SCHOOL_PRINT' and isinstance(html_text, str) else ''
     if normalized_material_type == 'SCHOOL_PRINT' and not has_original and not canonical_html:
-        raise HTTPException(status_code=400, detail='HTML 자료를 올리거나 붙여넣어 주세요.')
+        raise HTTPException(status_code=400, detail='PDF·HTML 등 자료 파일을 선택하거나 HTML을 붙여넣어 주세요.')
     original_name, original_type, original_bytes = '', 'application/octet-stream', b''
     body_text, body_format = '', ''
     if normalized_material_type == 'PAST_EXAM':
@@ -1381,7 +1382,7 @@ def create_exam_material(core_type: Literal['school_print', 'student_wrong_note'
     elif normalized_material_type == 'EXAM_ANALYSIS':
         original_name, original_type, original_bytes, body_text, body_format = _validate_exam_analysis_upload(original)
     elif has_original and normalized_material_type == 'SCHOOL_PRINT':
-        if Path(original.filename).suffix.lower() not in {'.html', '.pdf', '.hwpx', '.docx', '.jpg', '.jpeg', '.png'}:
+        if Path(original.filename).suffix.lower() not in {'.html', '.htm', '.pdf', '.hwpx', '.docx', '.jpg', '.jpeg', '.png'}:
             raise HTTPException(status_code=400, detail='학습자료는 HTML·PDF·HWPX·DOCX·JPG·PNG 파일만 지원합니다.')
         original_name, original_type, original_bytes, body_text, body_format = _validate_past_exam_upload(original)
     elif has_original:
@@ -6625,3 +6626,4 @@ app.add_middleware(
     mcp_app=build_mcp_asgi_app(),
     workspace=wiki_workspace.legacy_workspace(DB_PATH),
 )
+
