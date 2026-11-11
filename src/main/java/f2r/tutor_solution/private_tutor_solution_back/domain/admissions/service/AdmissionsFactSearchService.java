@@ -307,12 +307,29 @@ public class AdmissionsFactSearchService {
                 .refId("prior:" + first.getPriorResultId())
                 .refUrl(url)
                 .title(title)
-                .excerpt(formatPriorUnit(rows))
+                .excerpt(withCaveat(priorCaveat(source == null ? null : source.getTitle()), formatPriorUnit(rows)))
                 .note("대학 입학처 공식 입시결과(" + first.getResultYear() + "학년도, 지난해 — 올해 결과 아님) / 출처: "
                         + (source == null ? first.getInstitutionName() : source.getTitle()))
                 .academicYear(first.getResultYear())
                 .yearConfirmed(true)
                 .build();
+    }
+
+    /** 근거 내용 맨 앞에 붙이는 원문 산출 단서 머리말. 상담 답변이 이 단서를 빠뜨리면 서버가 덧붙인다. */
+    static final String CAVEAT_PREFIX = "산출 기준(원문): ";
+
+    /**
+     * 출처 문서 제목의 괄호 안에 '반영방법'·'모집단위 기준'이 있으면 그 문장을 원문 그대로 돌려준다.
+     * 예: 2026 결과를 2027학년도 반영방법으로 다시 산출한 표(한남대·대구가톨릭대). 없으면 null.
+     */
+    static String priorCaveat(String sourceTitle) {
+        if (sourceTitle == null) return null;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\(([^()]*(?:반영방법|모집단위 기준)[^()]*)\\)").matcher(sourceTitle);
+        return m.find() ? m.group(1).trim() : null;
+    }
+
+    static String withCaveat(String caveat, String excerpt) {
+        return caveat == null ? excerpt : CAVEAT_PREFIX + caveat + "\n" + excerpt;
     }
 
     static String roundLabel(String roundType) {

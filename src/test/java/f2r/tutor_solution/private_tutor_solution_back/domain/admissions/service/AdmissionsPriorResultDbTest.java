@@ -290,6 +290,24 @@ class AdmissionsPriorResultDbTest {
     }
 
     @Test
+    @DisplayName("given 출처 문서 제목에 '…반영방법에 따라 산출' 단서가 있는 입시결과 when 입결을 물으면 then 근거 내용 맨 앞에 산출 기준(원문)이 붙는다")
+    void sourceCaveat_isPrefixedToExcerpt() throws Exception {
+        // given
+        String seed = SEED_OTHER.replace("예술학교 2026학년도 수시·정시 구분 없음(학교 자체 입시) 입시결과",
+                "예술학교 2026학년도 입시결과(2026학년도 최종 등록자의 성적을 2027학년도 반영방법에 따라 산출, 2027학년도 모집단위 기준)");
+        loader.loadSeed(seed);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // when
+        var result = search.search("예술학교 연기과 입결 알려줘", null);
+
+        // then
+        var prior = result.evidence().stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_PRIOR_RESULT).toList();
+        assertThat(prior).isNotEmpty();
+        assertThat(prior.get(0).getExcerpt()).startsWith("산출 기준(원문): 2026학년도 최종 등록자의 성적을 2027학년도 반영방법에 따라 산출, 2027학년도 모집단위 기준\n");
+    }
+
+    @Test
     @DisplayName("given 승인된 입시결과 when 다른 대학 경쟁률을 물으면 then 그 대학 결과만 나오고 다른 대학 지표를 섞지 않는다")
     void otherUniversity_isNotMixed() throws Exception {
         // given
