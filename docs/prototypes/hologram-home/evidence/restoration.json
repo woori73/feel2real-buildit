@@ -1,0 +1,1203 @@
+[
+  {
+    "scope": "source fidelity",
+    "checks": [
+      {
+        "name": "f2r_home_agent.js byte-identical to main",
+        "status": "PASS"
+      },
+      {
+        "name": "f2r_agent_clip_switch.js byte-identical to main",
+        "status": "PASS"
+      },
+      {
+        "name": "removed copy does not return",
+        "status": "PASS"
+      },
+      {
+        "name": "all displayed won prices exist in main",
+        "status": "PASS"
+      },
+      {
+        "name": "six main tile labels preserved",
+        "status": "PASS"
+      }
+    ]
+  },
+  {
+    "width": 360,
+    "height": 800,
+    "scope": "local intercepted test media; NOT production media",
+    "checks": [
+      {
+        "name": "initial welcome and four actions",
+        "status": "PASS"
+      },
+      {
+        "name": "actual fixture MP4 time advances",
+        "status": "PASS"
+      },
+      {
+        "name": "main front.webp priority and unfiltered portrait opacity",
+        "status": "PASS"
+      },
+      {
+        "name": "all six menu titles and subtitles match main",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 기말고사 이용권",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 맞춤 문제 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 시험 범위 제출",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 개별 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 학부모·학생 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 접수 방법",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question exposes main choices",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown choice performs intake guidance",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni selection starts unmuted nonloop greeting clip",
+        "status": "PASS"
+      },
+      {
+        "name": "greeting end returns to idle",
+        "status": "PASS"
+      },
+      {
+        "name": "Seven greeting and conversation retention",
+        "status": "PASS"
+      },
+      {
+        "name": "later persists and replay restores initial choices",
+        "status": "PASS"
+      },
+      {
+        "name": "anonymous work handoff preserves login returnUrl",
+        "status": "PASS"
+      },
+      {
+        "name": "Studio main guidance and URL retained",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in playable fixture flow",
+        "status": "PASS"
+      },
+      {
+        "name": "failed MP4 displays Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "failed Suni clip never retains Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in failure flow",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 404,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "scope": "local intercepted test media; NOT production media",
+    "checks": [
+      {
+        "name": "initial welcome and four actions",
+        "status": "PASS"
+      },
+      {
+        "name": "actual fixture MP4 time advances",
+        "status": "PASS"
+      },
+      {
+        "name": "main front.webp priority and unfiltered portrait opacity",
+        "status": "PASS"
+      },
+      {
+        "name": "all six menu titles and subtitles match main",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 기말고사 이용권",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 맞춤 문제 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 시험 범위 제출",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 개별 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 학부모·학생 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 접수 방법",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question exposes main choices",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown choice performs intake guidance",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni selection starts unmuted nonloop greeting clip",
+        "status": "PASS"
+      },
+      {
+        "name": "greeting end returns to idle",
+        "status": "PASS"
+      },
+      {
+        "name": "Seven greeting and conversation retention",
+        "status": "PASS"
+      },
+      {
+        "name": "later persists and replay restores initial choices",
+        "status": "PASS"
+      },
+      {
+        "name": "anonymous work handoff preserves login returnUrl",
+        "status": "PASS"
+      },
+      {
+        "name": "Studio main guidance and URL retained",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in playable fixture flow",
+        "status": "PASS"
+      },
+      {
+        "name": "failed MP4 displays Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "failed Suni clip never retains Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in failure flow",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 404,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "scope": "local intercepted test media; NOT production media",
+    "checks": [
+      {
+        "name": "initial welcome and four actions",
+        "status": "PASS"
+      },
+      {
+        "name": "actual fixture MP4 time advances",
+        "status": "PASS"
+      },
+      {
+        "name": "main front.webp priority and unfiltered portrait opacity",
+        "status": "PASS"
+      },
+      {
+        "name": "all six menu titles and subtitles match main",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 기말고사 이용권",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 맞춤 문제 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 시험 범위 제출",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 개별 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 학부모·학생 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 접수 방법",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question exposes main choices",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown choice performs intake guidance",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni selection starts unmuted nonloop greeting clip",
+        "status": "PASS"
+      },
+      {
+        "name": "greeting end returns to idle",
+        "status": "PASS"
+      },
+      {
+        "name": "Seven greeting and conversation retention",
+        "status": "PASS"
+      },
+      {
+        "name": "later persists and replay restores initial choices",
+        "status": "PASS"
+      },
+      {
+        "name": "anonymous work handoff preserves login returnUrl",
+        "status": "PASS"
+      },
+      {
+        "name": "Studio main guidance and URL retained",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in playable fixture flow",
+        "status": "PASS"
+      },
+      {
+        "name": "failed MP4 displays Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "failed Suni clip never retains Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in failure flow",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 404,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "scope": "local intercepted test media; NOT production media",
+    "checks": [
+      {
+        "name": "initial welcome and four actions",
+        "status": "PASS"
+      },
+      {
+        "name": "actual fixture MP4 time advances",
+        "status": "PASS"
+      },
+      {
+        "name": "main front.webp priority and unfiltered portrait opacity",
+        "status": "PASS"
+      },
+      {
+        "name": "all six menu titles and subtitles match main",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 기말고사 이용권",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 맞춤 문제 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 시험 범위 제출",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 개별 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 학부모·학생 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 접수 방법",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question exposes main choices",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown choice performs intake guidance",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni selection starts unmuted nonloop greeting clip",
+        "status": "PASS"
+      },
+      {
+        "name": "greeting end returns to idle",
+        "status": "PASS"
+      },
+      {
+        "name": "Seven greeting and conversation retention",
+        "status": "PASS"
+      },
+      {
+        "name": "later persists and replay restores initial choices",
+        "status": "PASS"
+      },
+      {
+        "name": "anonymous work handoff preserves login returnUrl",
+        "status": "PASS"
+      },
+      {
+        "name": "Studio main guidance and URL retained",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in playable fixture flow",
+        "status": "PASS"
+      },
+      {
+        "name": "failed MP4 displays Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "failed Suni clip never retains Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in failure flow",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 404,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "width": 1440,
+    "height": 1050,
+    "scope": "local intercepted test media; NOT production media",
+    "checks": [
+      {
+        "name": "initial welcome and four actions",
+        "status": "PASS"
+      },
+      {
+        "name": "actual fixture MP4 time advances",
+        "status": "PASS"
+      },
+      {
+        "name": "main front.webp priority and unfiltered portrait opacity",
+        "status": "PASS"
+      },
+      {
+        "name": "all six menu titles and subtitles match main",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 기말고사 이용권",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 맞춤 문제 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 시험 범위 제출",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 개별 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 학부모·학생 신청",
+        "status": "PASS"
+      },
+      {
+        "name": "six-menu action: 접수 방법",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown question exposes main choices",
+        "status": "PASS"
+      },
+      {
+        "name": "unknown choice performs intake guidance",
+        "status": "PASS"
+      },
+      {
+        "name": "Suni selection starts unmuted nonloop greeting clip",
+        "status": "PASS"
+      },
+      {
+        "name": "greeting end returns to idle",
+        "status": "PASS"
+      },
+      {
+        "name": "Seven greeting and conversation retention",
+        "status": "PASS"
+      },
+      {
+        "name": "later persists and replay restores initial choices",
+        "status": "PASS"
+      },
+      {
+        "name": "anonymous work handoff preserves login returnUrl",
+        "status": "PASS"
+      },
+      {
+        "name": "Studio main guidance and URL retained",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in playable fixture flow",
+        "status": "PASS"
+      },
+      {
+        "name": "failed MP4 displays Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "failed Suni clip never retains Seven poster",
+        "status": "PASS"
+      },
+      {
+        "name": "no script errors in failure flow",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/speak.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/idle.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/speak.mp4",
+        "status": 404,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/idle.mp4",
+        "status": 404,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "scope": "edge poster-only",
+    "checks": [
+      {
+        "name": "poster-only manifest and text-only greeting",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/agent-media/public",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/agent-media/public/suni/poster.jpg",
+        "status": 200,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "scope": "edge manifest-error",
+    "checks": [
+      {
+        "name": "manifest failure leaves honest missing-media state",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/agent-media/public",
+        "status": 503,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  },
+  {
+    "scope": "edge valid simulated ADMIN",
+    "checks": [
+      {
+        "name": "private media branch and pendingAsk handoff without DB",
+        "status": "PASS"
+      }
+    ],
+    "requests": [
+      {
+        "path": "/api/dashboard/agent-media",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/dashboard/agent-media/seven/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/dashboard/agent-media/suni/front.webp",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/dashboard/agent-media/seven/poster.jpg",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/dashboard/agent-media/seven/idle.mp4",
+        "status": 200,
+        "fixture": true
+      },
+      {
+        "path": "/dashboard/agent-media/seven/think.mp4",
+        "status": 200,
+        "fixture": true
+      }
+    ],
+    "status": "PASS"
+  }
+]

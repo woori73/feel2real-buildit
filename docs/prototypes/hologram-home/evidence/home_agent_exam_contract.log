@@ -1,0 +1,10 @@
+✔ landing: 예상문제 의뢰는 기존 카톡·이메일로 연결된다(자체 접수 폼 없음) (1.04673ms)
+✔ landing: /wiki 는 모의고사위키로만 표기하고 폐기 서비스는 노출하지 않는다 (0.443436ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7.14416
