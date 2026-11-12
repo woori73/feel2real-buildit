@@ -41,8 +41,8 @@ class LocalFileStorageTest {
     // when
     String key = storage.saveImage(42L, "test.png", payload);
 
-    // then
-    Path saved = Path.of(key);
+    // then — save*는 basePath 기준 상대 키를 반환하므로 테스트에서 base로 resolve한다
+    Path saved = tempDir.resolve(key);
     assertThat(saved.getParent()).isEqualTo(tempDir.resolve("42"));
     assertThat(saved.getFileName().toString()).endsWith("_test.jpg");
     assertThat(Files.readAllBytes(saved)).containsExactly(payload);
@@ -60,7 +60,7 @@ class LocalFileStorageTest {
     String pageDir = storage.savePdfPages(7L, List.of(p1, p2, p3));
 
     // then
-    Path dir = Path.of(pageDir);
+    Path dir = tempDir.resolve(pageDir);
     assertThat(Files.exists(dir.resolve("page_01.jpg"))).isTrue();
     assertThat(Files.exists(dir.resolve("page_02.jpg"))).isTrue();
     assertThat(Files.exists(dir.resolve("page_03.jpg"))).isTrue();
@@ -141,7 +141,7 @@ class LocalFileStorageTest {
     String key = storage.saveRaw(1L, "doc.unknown", new ByteArrayInputStream(payload), payload.length);
 
     // then
-    assertThat(Files.readAllBytes(Path.of(key))).containsExactly(payload);
+    assertThat(Files.readAllBytes(tempDir.resolve(key))).containsExactly(payload);
   }
 
   @Test
