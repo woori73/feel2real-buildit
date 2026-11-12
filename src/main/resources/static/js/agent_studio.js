@@ -556,7 +556,7 @@
       if(button.dataset.tab===section)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current");
     });
     document.querySelectorAll("[data-owner]").forEach(tool=>{
-      tool.hidden=tool.dataset.owner!==section||tool.id==="chat"||(tool.id==="members"&&!state.canManage);
+      tool.hidden=tool.dataset.owner!==section||tool.id==="chat"||((tool.id==="members"||tool.id==="cleanup")&&!state.canManage);
       if(tool.hidden)tool.open=false;
     });
     await load();
@@ -586,7 +586,42 @@
     if(tool.id==="members"){
       $("member-list").replaceChildren();for(const member of await api("members"))$("member-list").append(el("p",member.user_id+" · "+member.permission));
     }
+    if(tool.id==="cleanup")await cleanupLoad();
   }
+  const mb=n=>(Number(n||0)/1048576).toFixed(1)+"MB";
+  function cleanupRow(row,extra,selectable){
+    const line=el("label",undefined,"card");
+    if(selectable){const box=el("input");box.type="checkbox";box.value=row.revisionId;line.append(box);}
+    line.append(el("strong"," "+row.workId+" · "+row.version),el("span"," · "+(row.kind||"")+" · "+mb(row.sizeBytes)+" · "+extra));
+    return line;
+  }
+  function cleanupChecked(id){return [...$(id).querySelectorAll("input[type=checkbox]:checked")].map(b=>b.value);}
+  async function cleanupLoad(){
+    const data=await api("cleanup/candidates");
+    $("cleanup-candidates").replaceChildren(...data.candidates.map(r=>cleanupRow(r,r.reason+(r.fileShared?" · 파일은 다른 버전이 써서 남김":""),true)));
+    $("cleanup-candidate-count").textContent=data.candidates.length+"건 · 지울 수 있는 용량 "+mb(data.freeableBytes);
+    $("cleanup-blocked").replaceChildren(...data.blocked.map(r=>cleanupRow(r,r.reason+" → 막힘: "+r.blockedBy,false)));
+    $("cleanup-blocked-count").textContent=data.blocked.length+"건";
+    const archived=await api("cleanup/archived");
+    $("cleanup-archived").replaceChildren(...archived.map(r=>cleanupRow(r,"보관 "+r.archivedAt+" · "+(r.purgeable?"영구 삭제 가능":r.purgeableAt+" 이후 삭제 가능")+" · "+(r.archiveReason||""),true)));
+    $("cleanup-archived-count").textContent=archived.length+"건";
+    const log=await api("cleanup/log");
+    $("cleanup-log").replaceChildren(...log.slice(0,100).map(r=>el("p",r.created_at+" · "+({ARCHIVE:"보관",RESTORE:"되살림",PURGE:"영구 삭제"}[r.action]||r.action)+" · "+r.item_key+" "+r.label+(r.bytes_freed?" · "+mb(r.bytes_freed)+" 삭제":"")+" · 사용자 "+r.actor_id+" · "+r.note)));
+    if(!log.length)$("cleanup-log").append(el("p","아직 정리 기록이 없습니다."));
+  }
+  async function cleanupAct(action,listId,confirmText){
+    const ids=cleanupChecked(listId),note=$("cleanup-note").value.trim();
+    if(!ids.length)throw Error("목록에서 버전을 고르세요.");
+    if(!note)throw Error("감독 확인 메모를 적으세요.");
+    if(!confirm(confirmText.replace("{n}",ids.length)))return;
+    const result=await api("cleanup/"+action,json({revisionIds:ids,note}));
+    await cleanupLoad();
+    const done=(result.archived||result.restored||result.purged||[]).length;
+    message(done+"건 처리, "+result.skipped.length+"건 제외"+(result.bytesFreed?" · "+mb(result.bytesFreed)+" 삭제":"")+(result.skipped.length?" (제외 사유: "+result.skipped.map(s=>s.reason).join(", ")+")":""));
+  }
+  $("cleanup-archive").onclick=run(()=>cleanupAct("archive","cleanup-candidates","{n}건을 보관합니다. 목록·검색에서 빠지고, 보관함에서 되살릴 수 있습니다."));
+  $("cleanup-restore").onclick=run(()=>cleanupAct("restore","cleanup-archived","{n}건을 되살립니다."));
+  $("cleanup-purge").onclick=run(()=>cleanupAct("purge","cleanup-archived","{n}건을 영구 삭제합니다. 되돌릴 수 없습니다. 보관 14일이 지나지 않은 버전은 자동으로 제외됩니다."));
   document.querySelectorAll("details.tool-panel").forEach(tool=>tool.addEventListener("toggle",run(async()=>{if(tool.open)await loadTool(tool);})));
   $("open-upload").onclick=run(()=>openTool("files"));
   for(const id of ["media","versions","review-status"])$(id).onchange=run(()=>load());
@@ -778,7 +813,7 @@
     const project = await api("project");
     state.permission = project.archived?"VIEWER":project.permission;
     $("project-title").textContent=project.title;
-    state.canManage=project.canManage;$("members").hidden=!project.canManage;
+    state.canManage=project.canManage;$("members").hidden=!project.canManage;$("cleanup").hidden=!project.canManage;
     if(project.archived)message("보관된 프로젝트 · 모든 자료와 이력을 열람할 수 있습니다. 수정은 프로젝트 목록에서 재개 후 가능합니다.");
     try {
       const imported=await api("source-import");

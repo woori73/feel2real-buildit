@@ -266,7 +266,8 @@ public class StudioAiService {
             "SELECT r.id,r.parent_id,r.label,r.origin,r.title,r.work_status,r.created_at,"
                 + "r.created_by,f.id AS file_id,f.filename,f.extension,f.size_bytes,f.sha256 FROM"
                 + " studio_revisions r LEFT JOIN studio_files f ON f.id=r.file_id WHERE"
-                + " r.project_id=? AND r.item_key=? ORDER BY r.created_at,r.id LIMIT 200",
+                + " r.project_id=? AND r.item_key=? AND r.archived_at IS NULL ORDER BY"
+                + " r.created_at,r.id LIMIT 200",
             studio.projectId(),
             workId)) {
       var v = new LinkedHashMap<String, Object>();

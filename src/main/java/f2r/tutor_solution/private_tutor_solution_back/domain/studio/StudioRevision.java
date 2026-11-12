@@ -63,5 +63,12 @@ public class StudioRevision {
   @Column(name = "created_by", nullable = false)
   private Long createdBy;
 
+  /** 보관(숨김)한 감독. 보관 시각 archived_at은 created_at처럼 JDBC로만 다룬다. */
+  @Column(name = "archived_by")
+  private Long archivedBy;
+
+  @Column(name = "archive_reason", length = 300)
+  private String archiveReason;
+
   protected StudioRevision() {}
 }
