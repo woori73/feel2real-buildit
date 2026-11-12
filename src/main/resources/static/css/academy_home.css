@@ -39,6 +39,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .ah-date { margin: 4px 0 0; color: var(--ah-muted); font-size: 15px; }
 .ah-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .ah-title-row h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+.ah-subtitle { margin: 2px 0 0; font-size: 14px; color: var(--ah-muted); }
 .ah-count { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--ah-line); border-radius: 999px; background: var(--ah-panel); font-weight: 700; text-decoration: none; }
 .ah-count:hover { border-color: var(--ah-green); }
 .ah-alert { background: var(--ah-warn-soft); color: var(--ah-warn); padding: 10px 14px; border-radius: 10px; }
@@ -47,6 +48,10 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .ah-banner { background: var(--ah-green); color: var(--ah-green-ink); border-radius: var(--ah-radius); padding: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
 .ah-banner[data-kind="error"] { background: #5b3b2c; }
 .ah-banner[data-kind="finished"], .ah-banner[data-kind="none"] { background: #244f47; }
+.ah-banner[data-kind="none"] { padding: 12px 16px; }
+.ah-banner[data-kind="none"] h2 { font-size: 18px; margin: 2px 0; }
+.ah-banner[data-kind="none"] .ah-banner-kind { display: none; }
+.ah-banner[data-kind="none"] p { font-size: 14px; }
 .ah-banner-text { min-width: 0; flex: 1 1 320px; }
 .ah-banner-kind { display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .02em; background: rgba(255,255,255,.16); padding: 2px 10px; border-radius: 999px; }
 .ah-banner h2 { margin: 8px 0 4px; font-size: 24px; line-height: 1.3; }
@@ -95,6 +100,87 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 
 .ah-more { display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--ah-line); }
 .ah-more a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; color: var(--ah-muted); }
+
+/* 기존 업무는 별도 AI 화면을 거치지 않고 바로 연다. */
+.ah-workspace { margin: 16px 0; }
+.ah-workspace > h2 { margin: 0 0 10px; font-size: 18px; }
+.ah-work-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ah-work-group { background: var(--ah-panel); border: 1px solid var(--ah-line); border-radius: var(--ah-radius); padding: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 4px 12px; min-width: 0; }
+.ah-work-group h3 { grid-column: 1 / -1; margin: 0 0 6px; font-size: 14px; color: var(--ah-muted); }
+.ah-work-group a { display: flex; flex-direction: column; justify-content: center; min-height: 64px; padding: 7px 0; color: var(--ah-ink); text-decoration: none; border-top: 1px solid var(--ah-line); }
+.ah-work-group a:hover strong { color: var(--ah-green); text-decoration: underline; }
+.ah-work-group strong { font-size: 15px; }
+.ah-work-group span { font-size: 12px; color: var(--ah-muted); }
+.ah-work-more { display: flex; flex-wrap: wrap; gap: 2px 20px; margin-top: 6px; }
+.ah-work-more a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+.ah-section-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
+.ah-section-head h2, .ah-section-head h3 { margin: 0; }
+.ah-section-head button, .ah-section-head select { font: inherit; color: var(--ah-ink); border: 1px solid var(--ah-line); border-radius: 8px; background: #fff; min-height: 44px; padding: 6px 10px; max-width: 100%; }
+.ah-section-head button { cursor: pointer; }
+.ah-section-head button:disabled { opacity: .6; cursor: wait; }
+.ah-finance { margin: 16px 0; }
+.ah-finance-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.ah-finance-card { border: 1px solid var(--ah-line); border-radius: 10px; padding: 12px 14px; display: grid; text-decoration: none; }
+.ah-finance-card span { color: var(--ah-muted); font-size: 14px; }
+.ah-finance-card strong { font-size: clamp(18px, 2.6vw, 27px); font-variant-numeric: tabular-nums; }
+.ah-finance-lists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 16px; }
+.ah-finance-list { min-width: 0; }
+.ah-finance-list h3 { font-size: 15px; }
+.ah-finance-list a { font-size: 14px; min-height: 44px; display: inline-flex; align-items: center; }
+.ah-finance-list ul { list-style: none; padding: 0; margin: 0; }
+.ah-finance-list li { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--ah-line); font-size: 14px; }
+.ah-students { margin: 16px 0; }
+.ah-days { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.ah-days button, .ah-row-actions button, .ah-class-card button, #ahClearClass, .ah-dialog-actions button, .ah-student-dialog button { font: inherit; min-height: 40px; border: 1px solid var(--ah-line); border-radius: 8px; padding: 7px 10px; background: #fff; color: var(--ah-green); cursor: pointer; }
+.ah-days button[aria-pressed="true"], .ah-class-card button[aria-pressed="true"], #ahWeekdaySave { background: var(--ah-green); color: #fff; }
+.ah-roster-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-bottom: 10px; }
+.ah-roster-tools input { font: inherit; min-height: 44px; border: 1px solid var(--ah-line); border-radius: 8px; padding: 6px 10px; max-width: 100%; }
+.ah-roster-tools p { margin: 0; font-size: 14px; color: var(--ah-muted); }
+.ah-roster-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; }
+.ah-roster-wrap { min-width: 0; max-height: 430px; overflow: auto; border: 1px solid var(--ah-line); border-radius: 10px; }
+.ah-roster { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+.ah-roster th { position: sticky; top: 0; z-index: 1; background: #f3f5f4; font-size: 13px; }
+.ah-roster th, .ah-roster td { padding: 10px; border-bottom: 1px solid var(--ah-line); vertical-align: top; }
+.ah-roster td small { display: block; }
+.ah-roster td:first-child a { font-weight: 700; }
+.ah-row-actions { white-space: nowrap; }
+.ah-row-actions button { font-size: 13px; padding: 4px 7px; margin: 0 4px 4px 0; }
+.ah-class-overview h3 { margin: 0 0 8px; font-size: 16px; }
+.ah-class-card { border: 1px solid var(--ah-line); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+.ah-class-card button { text-align: left; font-weight: 700; }
+.ah-class-card p { margin: 6px 0; }
+.ah-class-names { font-size: 13px; max-height: 110px; overflow: auto; }
+.ah-class-card a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+.ah-student-dialog { width: min(620px, calc(100% - 24px)); max-height: 85dvh; overflow: auto; padding: 20px; color: var(--ah-ink); border: 1px solid var(--ah-line); border-radius: 14px; }
+.ah-student-dialog::backdrop { background: #172e5066; }
+.ah-student-dialog h2 { margin: 0; font-size: 20px; }
+.ah-student-dialog fieldset { border: 1px solid var(--ah-line); border-radius: 10px; }
+.ah-student-dialog label { display: inline-flex; align-items: center; min-height: 44px; padding: 6px; }
+.ah-student-dialog input { width: 18px; height: 18px; }
+.ah-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+#ahStudentHistory p { padding: 8px 0; border-top: 1px solid var(--ah-line); }
+#ahStudentHistory small { display: block; }
+@media (max-width: 1050px) { .ah-roster-layout { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .ah-roster thead { display: none; }
+  .ah-roster, .ah-roster tbody, .ah-roster tr, .ah-roster td { display: block; }
+  .ah-roster tr { border-bottom: 2px solid var(--ah-line); padding: 8px; }
+  .ah-roster td { display: grid; grid-template-columns: 76px minmax(0, 1fr); border: 0; padding: 4px; }
+  .ah-roster td::before { content: attr(data-label); color: var(--ah-muted); font-size: 12px; grid-column: 1; grid-row: 1 / span 3; }
+  .ah-roster td > * { grid-column: 2; }
+  .ah-roster td.ah-row-actions { display: flex; flex-wrap: wrap; }
+  .ah-row-actions::before { min-width: 68px; align-self: center; }
+  .ah-roster-tools label { width: 100%; }
+  .ah-roster-tools input { width: 100%; }
+}
+@media (max-width: 1000px) { .ah-work-group { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .ah-work-groups, .ah-finance-lists { grid-template-columns: 1fr; }
+  .ah-work-group { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ah-finance-cards { gap: 6px; }
+  .ah-finance-card { padding: 10px 8px; }
+  .ah-finance-card strong { font-size: 14px; }
+}
 
 @media (max-width: 600px) {
   .ah-nav { margin-left: 0; width: 100%; overflow-x: auto; flex-wrap: nowrap; }

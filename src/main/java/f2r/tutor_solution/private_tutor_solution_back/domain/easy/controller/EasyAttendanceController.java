@@ -49,6 +49,20 @@ public class EasyAttendanceController {
     return service.studentOverview(businessId);
   }
 
+  @GetMapping("/students/{studentId}/weekdays")
+  public EasyAttendanceService.WeekdayView studentWeekdays(@RequestParam Long businessId, @PathVariable Long studentId,
+      @AuthenticationPrincipal AuthenticatedPrincipal p) {
+    requireBusiness(p, businessId);
+    return service.studentWeekdays(businessId, studentId);
+  }
+
+  @PutMapping("/students/{studentId}/weekdays")
+  public EasyAttendanceService.WeekdayView updateStudentWeekdays(@RequestParam Long businessId, @PathVariable Long studentId,
+      @RequestBody EasyAttendanceService.WeekdayForm form, @AuthenticationPrincipal AuthenticatedPrincipal p) {
+    requireBusiness(p, businessId);
+    return service.updateStudentWeekdays(businessId, studentId, form);
+  }
+
   @GetMapping("/classes")
   public List<ClassView> classes(@RequestParam Long businessId,
       @RequestParam(defaultValue = "false") boolean includeEnded,

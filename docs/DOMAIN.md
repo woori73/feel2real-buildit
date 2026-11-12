@@ -1808,6 +1808,10 @@ AcademyCraft 반별 출결부 기능을 F2R 장부 안으로 옮긴 모델이다
 - 학생명단(시간표) 진행표 가져오기: 진행표에 이름이 있는 날 = CHECK_IN, 그날 수업 수는 메모, **오늘 이후(예정) 날짜는 넣지 않는다.** 미리보기 해시가 달라지면 적용을 거절한다. 이름→학생 연결은 관리자가 고르고(기존 연결/새로 등록/건너뛰기), 새 학생은 `memo="{연도} 진행표에서 등록"`으로 만들어 다시 적용해도 중복 생성하지 않는다. 실명은 서버 안에서만 쓴다.
 - AcademyCraft 게이트웨이(`/academycraft/**`)는 그대로 두며, 두 출결 데이터는 서로 연결·동기화하지 않는다.
 
+## 학생별 등원 요일 수정 — easy_student_weekday_schedules (V1110)
+
+`business_id` + `student_id` UNIQUE, 각각 기존 사업체·학생 FK. `schedule_id` PK, `weekdays`(nullable VARCHAR40), `version`(@Version), 공통 생성·수정 시각/사용자. `weekdays=NULL`은 기존 자료 기준, 빈 문자열은 정기 등원 요일 미정, 그 외 월~일 순서 코드(`MON,WED`). 직접 수정(MANUAL) → 최근 4주 등원(ATTENDANCE) → 반 요일(CLASS) 순으로 학생 요약·요일별 명단·MCP 집계에 반영한다. 원본 진행표·기존 출결·반 배정은 변경하지 않는다. 되돌리기는 행 삭제 없이 `weekdays=NULL`로 저장한다. revision 불일치·동시 생성은 409이며 다른 창의 수정값을 덮지 않는다.
+
 ## easy_agent_sessions / easy_agent_messages / easy_agent_actions (V1073)
 
 Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이다.

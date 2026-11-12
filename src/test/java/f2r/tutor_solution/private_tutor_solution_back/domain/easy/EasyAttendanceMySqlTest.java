@@ -44,6 +44,37 @@ class EasyAttendanceMySqlTest {
   @Autowired JdbcTemplate jdbc;
   @Autowired jakarta.persistence.EntityManager entityManager;
 
+  @Test
+  @DisplayName("given 반 요일 when 개인 등원 요일 수정·재조회·미정·되돌리기 then 수정값이 유지되고 원본 반은 그대로다")
+  void studentWeekdaySchedulePersistsAndResets() {
+    // given
+    Long biz = academyId();
+    Long sid = student("요일 수정 합성학생");
+    Long cid = service.createClass(biz, new ClassForm("요일 수정 합성반", null, null, List.of("MON"), "15:00", "16:00", null, 5)).classId();
+    service.assign(biz, cid, sid);
+    assertThat(service.studentWeekdays(biz, sid).revision()).isNull();
+    // when
+    var saved = service.updateStudentWeekdays(biz, sid, new EasyAttendanceService.WeekdayForm(List.of("FRI", "TUE"), null));
+    entityManager.clear();
+    // then
+    assertThat(saved.revision()).isNotNull();
+    assertThat(service.studentWeekdays(biz, sid).weekdays()).containsExactly("TUE", "FRI");
+    var row = service.studentOverview(biz).stream().filter(r -> r.studentId().equals(sid)).findFirst().orElseThrow();
+    assertThat(row.weekdaySource()).isEqualTo("MANUAL");
+    assertThat(row.weekdays()).containsExactly("TUE", "FRI");
+    assertThat(service.listClasses(biz, false).stream().filter(c -> c.classId().equals(cid)).findFirst().orElseThrow().weekdays()).containsExactly("MON");
+    assertThatThrownBy(() -> service.updateStudentWeekdays(biz, sid, new EasyAttendanceService.WeekdayForm(List.of("WED"), null)))
+        .isInstanceOf(org.springframework.web.server.ResponseStatusException.class).hasMessageContaining("409");
+    assertThatThrownBy(() -> service.updateStudentWeekdays(biz, sid, new EasyAttendanceService.WeekdayForm(List.of("INVALID"), saved.revision())))
+        .isInstanceOf(org.springframework.web.server.ResponseStatusException.class).hasMessageContaining("400");
+    var empty = service.updateStudentWeekdays(biz, sid, new EasyAttendanceService.WeekdayForm(List.of(), saved.revision()));
+    assertThat(service.studentOverview(biz).stream().filter(r -> r.studentId().equals(sid)).findFirst().orElseThrow().weekdays()).isEmpty();
+    service.updateStudentWeekdays(biz, sid, new EasyAttendanceService.WeekdayForm(null, empty.revision()));
+    entityManager.clear();
+    assertThat(service.studentWeekdays(biz, sid).weekdays()).isNull();
+    assertThat(service.studentOverview(biz).stream().filter(r -> r.studentId().equals(sid)).findFirst().orElseThrow().weekdays()).containsExactly("MON");
+  }
+
   private Long academyId() {
     return businesses.findAllByActiveTrueOrderBySortOrderAsc().get(0).getBusinessId();
   }

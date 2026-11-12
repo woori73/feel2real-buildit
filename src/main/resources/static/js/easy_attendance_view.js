@@ -68,15 +68,15 @@
   }
 
   /**
-   * 주소의 바로가기(학원 홈 → 출결부): ?businessId=&classId=&date=YYYY-MM-DD. 형식이 틀린 값은 버린다.
-   * 반환 { businessId, classId, date } (없는 값은 null).
+   * 주소의 바로가기: 사업체·반·날짜와 화면 탭. 허용되지 않은 탭은 출결부로 연다.
    */
   function deepLink(search) {
     let q;
-    try { q = new URLSearchParams(String(search || '')); } catch (e) { return { businessId: null, classId: null, date: null }; }
+    try { q = new URLSearchParams(String(search || '')); } catch (e) { q = new URLSearchParams(); }
     const id = v => (/^[1-9][0-9]{0,18}$/.test(v || '') ? v : null);
     const d = q.get('date');
-    return { businessId: id(q.get('businessId')), classId: id(q.get('classId')), date: /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : null };
+    const tab = ['sheet', 'month', 'classes', 'import'].includes(q.get('tab')) ? q.get('tab') : 'sheet';
+    return { businessId: id(q.get('businessId')), classId: id(q.get('classId')), date: /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? d : null, tab };
   }
 
   return { deepLink, TYPES, WEEKDAYS, label, mark, classLine, timeText, monthGrid, defaultMappings, mappingProblems, applySummary };

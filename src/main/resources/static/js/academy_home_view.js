@@ -154,7 +154,10 @@
       if (date) q.set('date', date);
       return '/easy/attendance?' + q.toString();
     }
-    return SCREENS + 'ATT-03-attendance-roster.html?classId=' + encodeURIComponent(classId) + '&date=' + encodeURIComponent(date);
+    const q = new URLSearchParams();
+    if (classId != null) q.set('classId', classId);
+    if (date) q.set('date', date);
+    return SCREENS + 'ATT-03-attendance-roster.html' + (q.toString() ? '?' + q.toString() : '');
   }
 
   function studentsUrl(filter) {
@@ -164,6 +167,36 @@
     if (filter && filter.studentId != null) q.set('studentId', filter.studentId);
     const s = q.toString();
     return SCREENS + 'MBR-01-student-list.html' + (s ? '?' + s : '');
+  }
+
+  /** 반/수업은 출결부의 기본 탭 대신 실제 반 관리 탭으로 바로 연다. */
+  function classesUrl() {
+    return f2r ? rosterUrl(null, null) + '&tab=classes' : SCREENS + 'CLS-01-class-list.html';
+  }
+
+  /** 기존 장부 위젯 중 실제 금액·목록만 복구한다. 재원생 수는 학생 원장 기준을 유지한다. */
+  function financeView(widgets) {
+    const list = Array.isArray(widgets) ? widgets : [];
+    const finance = list.find(w => w && w.id === 'easy-finance-summary');
+    const source = finance && !finance.error && finance.data && Array.isArray(finance.data.cards) ? finance.data.cards : [];
+    const cards = ['수납', '지출', '미수금'].map(label => {
+      const card = source.find(c => c && c.label === label);
+      return { label, value: card && typeof card.value === 'number' && Number.isFinite(card.value)
+        ? card.value.toLocaleString('ko-KR') + '원' : '조회 불가' };
+    });
+    const lists = ['easy-overdue-students', 'easy-recent-transactions'].map(id => {
+      const widget = list.find(w => w && w.id === id);
+      const data = widget && !widget.error && widget.data;
+      return {
+        title: id === 'easy-overdue-students' ? '미수 원생' : '최근 거래',
+        error: !data || !Array.isArray(data.items),
+        items: data && Array.isArray(data.items) ? data.items.slice(0, 5).map(i => ({
+          title: String(i.title || ''), sub: [i.subtitle, i.meta].filter(Boolean).join(' · ')
+        })) : [],
+        empty: id === 'easy-overdue-students' ? '미수 원생이 없습니다.' : '최근 거래가 없습니다.'
+      };
+    });
+    return { cards, lists };
   }
 
   /**
@@ -235,7 +268,7 @@
 
   return {
     DAY_LABEL, minutes, hhmm, seoulClock, dateLabel, addDays, lessonsOn, unscheduledCount, lessonState, headline,
-    rosterUrl, studentsUrl, careItems, studentCountText, statusFromHttp, focusTask,
+    rosterUrl, studentsUrl, classesUrl, financeView, careItems, studentCountText, statusFromHttp, focusTask,
     useF2r, isF2r, f2rClasses, f2rRoster, f2rStats, todayStudentCount
   };
 });

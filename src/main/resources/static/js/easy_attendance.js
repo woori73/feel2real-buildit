@@ -380,6 +380,7 @@
     $('monthValue').value = todayKst().slice(0, 7);
     renderDayPicker();
     document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    showTab(link.tab);
     const guarded = fn => async () => { try { await fn(); } catch (e) { message('msg', e.message, true); } };
     $('business').addEventListener('change', guarded(async () => { await loadClasses(); $('sheetTable').innerHTML = ''; }));
     $('sheetLoad').addEventListener('click', guarded(loadSheet));
@@ -394,7 +395,11 @@
       await loadStudents();
       await loadClasses();
       if (link.classId && [...$('sheetClass').options].some(o => o.value === link.classId)) $('sheetClass').value = link.classId;
-      if ($('sheetClass').value) await loadSheet();
+      if (link.tab === 'classes' && link.classId) {
+        const selected = classes.find(c => String(c.classId) === link.classId);
+        if (selected) await openMembers(selected);
+      }
+      if (link.tab === 'sheet' && $('sheetClass').value) await loadSheet();
     }
   }
 

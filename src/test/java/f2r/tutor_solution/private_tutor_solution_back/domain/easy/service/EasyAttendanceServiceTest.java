@@ -18,6 +18,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.Eas
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyClassMemberRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyClassRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyStudentRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyStudentWeekdayScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceService.ClassForm;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceService.CorrectForm;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceService.RecordForm;
@@ -57,6 +58,7 @@ class EasyAttendanceServiceTest {
   EasyAttendanceEventRepository eventRepository = lenient(EasyAttendanceEventRepository.class);
   EasyStudentRepository studentRepository = lenient(EasyStudentRepository.class);
   EasyBusinessRepository businessRepository = lenient(EasyBusinessRepository.class);
+  EasyStudentWeekdayScheduleRepository scheduleRepository = lenient(EasyStudentWeekdayScheduleRepository.class);
   EasyAttendanceService service;
 
   static <T> T lenient(Class<T> type) {
@@ -123,7 +125,7 @@ class EasyAttendanceServiceTest {
     when(eventRepository.findAllByStudent_StudentIdOrderByOccurredAtDesc(any())).thenAnswer(i ->
         events.stream().filter(e -> e.getStudent().getStudentId().equals(i.getArgument(0))).toList());
     service = new EasyAttendanceService(classRepository, memberRepository, eventRepository,
-        studentRepository, businessRepository, CLOCK);
+        studentRepository, businessRepository, scheduleRepository, CLOCK);
   }
 
   void business(Long id) {

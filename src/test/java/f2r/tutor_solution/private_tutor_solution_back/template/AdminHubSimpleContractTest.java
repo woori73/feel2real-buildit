@@ -63,8 +63,8 @@ class AdminHubSimpleContractTest {
   }
 
   @Test
-  @DisplayName("given 상단 메뉴 when 읽으면 then 자주 쓰는 5개만 바로 보이고 나머지는 「전체 메뉴」 안에 묶인다")
-  void topnavShowsFiveMainLinksAndGroupsTheRest() throws Exception {
+  @DisplayName("given 상단 메뉴 when 읽으면 then 업무 대시보드 복귀와 기존 주요 링크를 유지하고 나머지는 전체 메뉴에 둔다")
+  void topnavPreservesDashboardAndExistingMainLinks() throws Exception {
     // given
     String nav = read("templates/fragments/_admin_topnav.html");
     // when
@@ -72,8 +72,8 @@ class AdminHubSimpleContractTest {
     String visible = nav.substring(0, more);
     // then
     assertThat(more).isPositive();
-    assertThat(visible.split("admin-nav-main", -1).length - 1).isEqualTo(5);
-    assertThat(visible).contains("href=\"/admin/hub\"", "href=\"/dashboard/assistant\"", "href=\"/easy\"",
+    assertThat(visible.split("admin-nav-main", -1).length - 1).isEqualTo(6);
+    assertThat(visible).contains("href=\"/dashboard\"", "href=\"/admin/hub\"", "href=\"/dashboard/assistant\"", "href=\"/easy\"",
         "href=\"/easy/attendance\"", "href=\"/admin/student-roster\"");
     assertThat(nav.substring(more)).contains("학원 운영", "장부·출결", "콘텐츠·제작", "새출발", "관리");
   }
