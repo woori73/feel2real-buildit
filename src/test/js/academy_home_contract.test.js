@@ -54,10 +54,17 @@ test('given 예전 #ai·?ask= 주소 when 홈을 열면 then AI 업무 비서 �
   assert.match(ASSISTANT, /id="uaCommandForm"/);
 });
 
-test('given academy_home.js when 읽으면 then 서버 문자열은 textContent로만 넣고 화면에서 쓰기 요청을 보내지 않는다', () => {
+test('given 현황 조회 스크립트 when 읽으면 then 서버 문자열은 textContent로 넣고 조회 과정에 쓰기 요청이 없다', () => {
   assert.doesNotMatch(JS, /\.innerHTML\s*=|insertAdjacentHTML|document\.write|eval\(/);
   assert.doesNotMatch(JS, /method:\s*'(POST|PUT|DELETE)'/);
   // 학원 전환 시 이전 학원 값을 먼저 지우고, 늦게 온 응답은 세대 번호로 버린다.
   assert.match(JS, /var g = \+\+generation;\s*resetView\(\);/);
   assert.match(JS, /if \(g !== generation\) return;/);
+});
+
+test('given 요일별 학생·반과 수정 화면 when 템플릿을 읽으면 then 관련 id가 모두 있고 수정·기록 모듈이 로드된다', () => {
+  const script = fs.readFileSync(path.join(ROOT, 'static/js/academy_students.js'), 'utf8');
+  for (const match of script.matchAll(/\$\('([A-Za-z0-9_-]+)'\)/g)) assert.ok(HTML.includes('id="' + match[1] + '"'), match[1]);
+  assert.ok(HTML.includes('/js/academy_students.js'));
+  assert.doesNotMatch(script, /\.innerHTML\s*=|insertAdjacentHTML|eval\(/);
 });

@@ -6,6 +6,8 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCla
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyClassMember;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudent;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudentStatus;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudentWeekdaySchedule;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyStudentWeekdayScheduleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyAttendanceEventRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyClassMemberRepository;
@@ -49,24 +51,28 @@ public class EasyAttendanceService {
   private final EasyAttendanceEventRepository eventRepository;
   private final EasyStudentRepository studentRepository;
   private final EasyBusinessRepository businessRepository;
+  private final EasyStudentWeekdayScheduleRepository scheduleRepository;
   private final Clock clock;
 
   @Autowired
   public EasyAttendanceService(EasyClassRepository classRepository,
       EasyClassMemberRepository memberRepository, EasyAttendanceEventRepository eventRepository,
-      EasyStudentRepository studentRepository, EasyBusinessRepository businessRepository) {
+      EasyStudentRepository studentRepository, EasyBusinessRepository businessRepository,
+      EasyStudentWeekdayScheduleRepository scheduleRepository) {
     this(classRepository, memberRepository, eventRepository, studentRepository, businessRepository,
-        Clock.system(KST));
+        scheduleRepository, Clock.system(KST));
   }
 
   EasyAttendanceService(EasyClassRepository classRepository,
       EasyClassMemberRepository memberRepository, EasyAttendanceEventRepository eventRepository,
-      EasyStudentRepository studentRepository, EasyBusinessRepository businessRepository, Clock clock) {
+      EasyStudentRepository studentRepository, EasyBusinessRepository businessRepository,
+      EasyStudentWeekdayScheduleRepository scheduleRepository, Clock clock) {
     this.classRepository = classRepository;
     this.memberRepository = memberRepository;
     this.eventRepository = eventRepository;
     this.studentRepository = studentRepository;
     this.businessRepository = businessRepository;
+    this.scheduleRepository = scheduleRepository;
     this.clock = clock;
   }
 
@@ -92,6 +98,42 @@ public class EasyAttendanceService {
       String note) {}
 
   public record CorrectForm(String eventType, String reason, String note) {}
+
+  public record WeekdayForm(List<String> weekdays, Long revision) {}
+  public record WeekdayView(List<String> weekdays, Long revision) {}
+
+  @Transactional(readOnly = true)
+  public WeekdayView studentWeekdays(Long businessId, Long studentId) {
+    requireBusiness(businessId);
+    requireStudent(studentId);
+    return scheduleRepository.findByBusiness_BusinessIdAndStudent_StudentId(businessId, studentId)
+        .map(s -> new WeekdayView(s.getWeekdays() == null ? null : WEEK_ORDER.stream()
+            .filter(d -> List.of(s.getWeekdays().split(",")).contains(d)).toList(), s.getVersion()))
+        .orElseGet(() -> new WeekdayView(null, null));
+  }
+
+  /** null=기존 자료 기준으로 복귀, 빈 배열=요일 미정. 원본 출결 기록은 보존한다. */
+  public WeekdayView updateStudentWeekdays(Long businessId, Long studentId, WeekdayForm form) {
+    EasyBusiness business = requireBusiness(businessId);
+    EasyStudent student = requireStudent(studentId);
+    if (form == null || (form.weekdays() != null && (form.weekdays().size() > 7
+        || form.weekdays().stream().anyMatch(d -> d == null || !WEEKDAYS.contains(d))))) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST, "올바른 요일을 선택하세요.");
+    }
+    var current = scheduleRepository.findByBusiness_BusinessIdAndStudent_StudentId(businessId, studentId);
+    Long revision = current.map(EasyStudentWeekdaySchedule::getVersion).orElse(null);
+    if (!Objects.equals(revision, form.revision())) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "다른 창에서 요일을 수정했습니다. 다시 열어 확인하세요.");
+    }
+    var schedule = current.orElseGet(() -> new EasyStudentWeekdaySchedule(business, student));
+    schedule.setWeekdays(form.weekdays() == null ? null : String.join(",", WEEK_ORDER.stream().filter(form.weekdays()::contains).toList()));
+    try {
+      scheduleRepository.saveAndFlush(schedule);
+    } catch (org.springframework.dao.DataIntegrityViolationException | org.springframework.orm.ObjectOptimisticLockingFailureException e) {
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "다른 창에서 요일을 수정했습니다. 다시 열어 확인하세요.");
+    }
+    return studentWeekdays(businessId, studentId);
+  }
 
   // ------------------------------------------------------------------ 반
 
@@ -269,7 +311,7 @@ public class EasyAttendanceService {
         .map(EasyAttendanceService::eventView).toList();
   }
 
-  /** 학원 현황용 학생 한 줄: 반·수업 요일(최근 4주 등원, 없으면 반 요일)·이번 달 등원·마지막 등원. */
+  /** 학원 현황용 학생 한 줄: 반·수업 요일(직접 수정 → 최근 4주 등원 → 반 요일)·이번 달 등원·마지막 등원. */
   public record StudentOverviewRow(Long studentId, String name, String school, Integer grade,
       List<String> classes, List<String> weekdays, String weekdaySource, int monthCheckIns,
       LocalDate lastCheckIn) {}
@@ -279,7 +321,7 @@ public class EasyAttendanceService {
   private static final List<String> WEEK_ORDER = List.of("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN");
 
   /**
-   * 재원(ENROLLED) 학생 전체의 반·수업 요일·등원 요약(읽기 전용). 수업 요일은 최근 4주 실제 등원 요일을 먼저 쓰고,
+   * 재원(ENROLLED) 학생 전체의 반·수업 요일·등원 요약(읽기 전용). 직접 수정한 요일이 없으면 최근 4주 실제 등원 요일을 쓰고,
    * 등원 기록이 없으면 배정된 반의 요일을 쓴다. 정정된(superseded) 기록과 다른 사업체 기록은 세지 않는다.
    */
   @Transactional(readOnly = true)
@@ -293,6 +335,8 @@ public class EasyAttendanceService {
         .filter(st -> st.getStatus() == EasyStudentStatus.ENROLLED).toList();
     if (students.isEmpty()) return List.of();
 
+    Map<Long, EasyStudentWeekdaySchedule> schedules = scheduleRepository.findAllByBusiness_BusinessId(businessId).stream()
+        .collect(Collectors.toMap(s -> s.getStudent().getStudentId(), s -> s));
     Map<Long, List<String>> classNames = new LinkedHashMap<>();
     Map<Long, Set<String>> classDays = new LinkedHashMap<>();
     for (EasyClass c : classRepository.findAllByBusiness_BusinessIdOrderByStatusAscNameAsc(businessId)) {
@@ -327,6 +371,11 @@ public class EasyAttendanceService {
       } else if (classDays.containsKey(st.getStudentId())) {
         days = classDays.get(st.getStudentId());
         source = "CLASS";
+      }
+      var manual = schedules.get(st.getStudentId());
+      if (manual != null && manual.getWeekdays() != null) {
+        days = new java.util.HashSet<>(List.of(manual.getWeekdays().split(",")));
+        source = "MANUAL";
       }
       final Set<String> chosen = days;
       List<String> ordered = WEEK_ORDER.stream().filter(chosen::contains).toList();

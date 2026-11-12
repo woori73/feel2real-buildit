@@ -4699,7 +4699,7 @@ ADMIN 전용 + `EasyTutorAccessService.requireAllowedBusiness`. 모든 요청에
 - `POST /events/{id}/correct` `{eventType,reason(필수 1~200),note?}` — 새 행 + 이전 행 superseded.
 - `GET /students/{studentId}/events` — 학생 출결 이력(정정 이력 포함).
 - `GET /monthly?classId=&month=YYYY-MM` — `{classId,className,month,daysInMonth,students[{studentId,name,days{일:[구분]},counts{구분:횟수}}]}`.
-- `GET /student-overview` — 학원 홈·MCP 의논용 재원(ENROLLED) 학생 요약(F2R 장부 학생 원장 + F2R 출결부 기준), 읽기 전용: `[{studentId,name,school,grade,classes[],weekdays[MON..SUN],weekdaySource:ATTENDANCE|CLASS|null,monthCheckIns,lastCheckIn}]`(이름순). 수업 요일 = 오늘(KST) 포함 최근 28일의 실제 등원(CHECK_IN) 요일, 없으면 배정된 활성 반의 요일. 정정된(superseded) 기록·다른 사업체 기록은 세지 않는다.
+- `GET /student-overview` — 학원 홈·MCP 의논용 재원(ENROLLED) 학생 요약(F2R 장부 학생 원장 + F2R 출결부 기준), 읽기 전용: `[{studentId,name,school,grade,classes[],weekdays[MON..SUN],weekdaySource:MANUAL|ATTENDANCE|CLASS|null,monthCheckIns,lastCheckIn}]`(이름순). 수업 요일 = 직접 수정한 요일(MANUAL) 우선, 없으면 오늘(KST) 포함 최근 28일의 실제 등원(CHECK_IN) 요일, 없으면 배정된 활성 반의 요일. 정정된(superseded) 기록·다른 사업체 기록은 세지 않는다.
 - `GET /roster-import/preview?year=` — 학생명단 자료실의 그 연도 진행표 분석: `{year,previewHash,lessonDays,futureLessonDays,names[{name,lessonDays,sessions,firstDate,lastDate,candidates[],suggestedAction:MATCH|CREATE|CHOOSE,suggestedStudentId}],rule}`. 저장하지 않는다.
 - `POST /roster-import/apply` `{businessId,year,previewHash,classId?,mappings[{name,action:MATCH|CREATE|SKIP,studentId?}]}` — 모든 이름에 처리 방법이 있어야 하며, 해시가 다르면 409. 결과 `{createdStudents,matchedStudents,skippedNames,eventsCreated,eventsAlreadyThere}`. 반을 주면 미배정 학생을 첫 수업일로 배정(정원 초과면 전체 롤백). 한 트랜잭션.
 
@@ -5420,7 +5420,14 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - `/dashboard`에서 학생·반/수업·출결·상담·자료·장부·접수관리로 직접 진입한다. ADMIN은 공통 `_admin_topnav`의 전체 메뉴와 계정 메뉴도 유지한다. 내신위키·TESTPREP·홈페이지·입시상담·학원이사·학생명단·제작협업실 등 기존 상세 화면을 업무 바로가기에 연결한다. 역할별 표시와 기존 서버 권한은 유지한다.
 - `GET /api/dashboard/businesses`, `GET /api/dashboard/widgets?businessId=[&refresh=true]`를 재사용해 선택한 **장부 사업체**의 수납·지출·미수금, 미수 원생·최근 거래를 표시한다. 실패·누락 금액은 `조회 불가`이고 정상 0원과 구분한다. 장부 위젯의 `원생 수`는 쓰지 않으며 재원생 수는 위 학생 원장 기준을 유지한다.
 - ADMIN의 반·수업 바로가기 = `/easy/attendance?businessId=&tab=classes`. 기존 `businessId`, `classId`, `date`에 선택적 `tab=sheet|month|classes|import`를 더한다. 미지정·미지원 탭은 기존 출결부(`sheet`)로 열린다. 반 관리는 별도 클릭 없이 바로 열고 출결 저장을 실행하지 않는다.
-- `/dashboard/assistant#all`로 기존 전체 업무 도구(직접 입력·자료 분석 등)를 계속 열 수 있다. `/dashboard#ai`, `?ask=` 호환 동작은 유지한다. 대시보드 자체는 GET만 수행한다.
+- `/dashboard/assistant#all`로 기존 전체 업무 도구(직접 입력·자료 분석 등)를 계속 열 수 있다. `/dashboard#ai`, `?ask=` 호환 동작은 유지한다. 현황 조회는 GET만 수행하며, 학생 요일 수정은 아래 전용 PUT을 사용자가 저장할 때만 실행한다.
+
+### 요일별 학생·반·출결 기록과 수정 (2026-11-12)
+
+- ADMIN `/dashboard`는 기존 `student-overview`와 `classes`로 월~일·전체·요일 미정 학생 명단, 학교·학년·소속 반·요일 기준·이번 달 등원 횟수·최근 등원 날짜를 실제 값으로 표시한다. 검색·반 필터, 시간 미등록 반도 표시한다. 반 수정 링크는 `tab=classes&classId=`로 학생 배정 명단까지 바로 연다.
+- `GET /api/admin/easy/attendance/students/{studentId}/weekdays?businessId=` → `{weekdays:[MON..SUN]|null,revision:Long|null}`. 연결된 ADMIN 사업체 권한 + 기존 학생 존재 검사.
+- `PUT` 같은 경로, JSON `{weekdays:[MON..SUN]|null,revision:Long|null}` → 저장 후 같은 응답. 신규 수정값은 `revision:null`, 이후 현재 revision 필수. 미지원 요일/7개 초과는 400, 동시 수정은 409. `[]`=요일 미정, `null`=기존 자료 기준으로 되돌리기. 기존 출결을 삭제하거나 반 요일을 바꾸지 않는다.
+- 학생 옆 **수정**으로 위 요일을 저장하고 재조회한다. **기록 보기**는 기존 `GET .../students/{id}/events?businessId=`의 최근 30건(정정 이력 포함)을 표시한다. 학생 정보·수납 원장으로도 직접 연결한다. 학생 실명은 기존 로그인 화면 안에서만 표시한다.
 
 ### 정보 API (`/api/academy-home/**`, ADMIN·TUTOR 로그인, `Cache-Control: private, no-store`, GET 외 같은 사이트 `Origin`만)
 

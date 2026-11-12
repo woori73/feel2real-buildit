@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="/css/academy_home.css?v=20261112-restore">
   <script defer src="/js/academy_home_view.js?v=20261112-restore"></script>
   <script defer src="/js/academy_home.js?v=20261112-restore"></script>
+  <script defer src="/js/academy_students.js?v=20261112-1"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
 <body>
@@ -56,6 +57,16 @@
       <a class="ah-count" id="ahStudentCount" href="/academycraft/screens/MBR-01-student-list.html" aria-live="polite">재원생 확인 중</a>
     </div>
     <p class="ah-alert" id="ahAlert" role="alert" hidden></p>
+
+    <section class="ah-panel ah-students" id="ahStudentsPanel" aria-labelledby="ahStudentsTitle" hidden>
+      <div class="ah-section-head"><h2 id="ahStudentsTitle">요일별 학생·반 현황</h2><a href="/easy/students">학생 정보·수납 원장</a></div>
+      <div class="ah-days" id="ahWeekdays" role="group" aria-label="등원 요일"></div>
+      <div class="ah-roster-tools"><label>학생 찾기 <input type="search" id="ahStudentSearch" placeholder="이름·학교·반 검색"></label><p id="ahRosterCount" role="status"></p></div>
+      <div class="ah-roster-layout">
+        <div class="ah-roster-wrap"><table class="ah-roster"><thead><tr><th scope="col">학생</th><th scope="col">소속 반</th><th scope="col">등원 요일</th><th scope="col">등원 기록</th><th scope="col">관리</th></tr></thead><tbody id="ahRosterRows"></tbody></table></div>
+        <div class="ah-class-overview"><h3>반 현황</h3><div id="ahClassRows"></div><button type="button" id="ahClearClass" hidden>전체 반 학생 보기</button></div>
+      </div>
+    </section>
 
     <section class="ah-finance ah-panel" id="ahFinance" aria-labelledby="ahFinanceTitle" hidden>
       <div class="ah-section-head"><div><h2 id="ahFinanceTitle">이번 달 장부</h2><label class="ah-note">장부 사업체 <select id="ahFinancePick" aria-label="장부 사업체"></select></label></div><button id="ahRefresh" type="button">현황 새로고침</button></div>
@@ -134,6 +145,14 @@
 
     <nav class="ah-more" aria-label="페이지 이동"><a href="/">홈페이지로</a><a href="#ahWorkTitle">업무 바로가기</a></nav>
   </main>
+
+  <dialog id="ahStudentDialog" class="ah-student-dialog" aria-labelledby="ahStudentDialogTitle">
+    <div class="ah-section-head"><h2 id="ahStudentDialogTitle"></h2><button type="button" id="ahStudentDialogClose">닫기</button></div>
+    <p id="ahStudentDialogMessage" role="status"></p>
+    <form id="ahWeekdayForm" hidden><fieldset><legend>정기 등원 요일</legend><div class="ah-days" id="ahWeekdayChecks"></div></fieldset><p class="ah-note">직접 수정한 요일을 우선 표시합니다. 출결 기록은 그대로 보존됩니다.</p><div class="ah-dialog-actions"><button type="submit" id="ahWeekdaySave">저장</button><button type="button" id="ahWeekdayReset">기존 자료 기준으로 되돌리기</button></div></form>
+    <div id="ahStudentHistory" hidden></div>
+    <a id="ahStudentOriginal" href="/easy/students">학생 정보·수납 원장 열기</a>
+  </dialog>
 
   <script src="/js/api.js"></script>
 </body>

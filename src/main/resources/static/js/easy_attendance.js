@@ -395,6 +395,10 @@
       await loadStudents();
       await loadClasses();
       if (link.classId && [...$('sheetClass').options].some(o => o.value === link.classId)) $('sheetClass').value = link.classId;
+      if (link.tab === 'classes' && link.classId) {
+        const selected = classes.find(c => String(c.classId) === link.classId);
+        if (selected) await openMembers(selected);
+      }
       if (link.tab === 'sheet' && $('sheetClass').value) await loadSheet();
     }
   }

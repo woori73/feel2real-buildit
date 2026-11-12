@@ -129,6 +129,50 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .ah-finance-list a { font-size: 14px; min-height: 44px; display: inline-flex; align-items: center; }
 .ah-finance-list ul { list-style: none; padding: 0; margin: 0; }
 .ah-finance-list li { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--ah-line); font-size: 14px; }
+.ah-students { margin: 16px 0; }
+.ah-days { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.ah-days button, .ah-row-actions button, .ah-class-card button, #ahClearClass, .ah-dialog-actions button, .ah-student-dialog button { font: inherit; min-height: 40px; border: 1px solid var(--ah-line); border-radius: 8px; padding: 7px 10px; background: #fff; color: var(--ah-green); cursor: pointer; }
+.ah-days button[aria-pressed="true"], .ah-class-card button[aria-pressed="true"], #ahWeekdaySave { background: var(--ah-green); color: #fff; }
+.ah-roster-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; margin-bottom: 10px; }
+.ah-roster-tools input { font: inherit; min-height: 44px; border: 1px solid var(--ah-line); border-radius: 8px; padding: 6px 10px; max-width: 100%; }
+.ah-roster-tools p { margin: 0; font-size: 14px; color: var(--ah-muted); }
+.ah-roster-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; }
+.ah-roster-wrap { min-width: 0; max-height: 430px; overflow: auto; border: 1px solid var(--ah-line); border-radius: 10px; }
+.ah-roster { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; }
+.ah-roster th { position: sticky; top: 0; z-index: 1; background: #f3f5f4; font-size: 13px; }
+.ah-roster th, .ah-roster td { padding: 10px; border-bottom: 1px solid var(--ah-line); vertical-align: top; }
+.ah-roster td small { display: block; }
+.ah-roster td:first-child a { font-weight: 700; }
+.ah-row-actions { white-space: nowrap; }
+.ah-row-actions button { font-size: 13px; padding: 4px 7px; margin: 0 4px 4px 0; }
+.ah-class-overview h3 { margin: 0 0 8px; font-size: 16px; }
+.ah-class-card { border: 1px solid var(--ah-line); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+.ah-class-card button { text-align: left; font-weight: 700; }
+.ah-class-card p { margin: 6px 0; }
+.ah-class-names { font-size: 13px; max-height: 110px; overflow: auto; }
+.ah-class-card a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+.ah-student-dialog { width: min(620px, calc(100% - 24px)); max-height: 85dvh; overflow: auto; padding: 20px; color: var(--ah-ink); border: 1px solid var(--ah-line); border-radius: 14px; }
+.ah-student-dialog::backdrop { background: #172e5066; }
+.ah-student-dialog h2 { margin: 0; font-size: 20px; }
+.ah-student-dialog fieldset { border: 1px solid var(--ah-line); border-radius: 10px; }
+.ah-student-dialog label { display: inline-flex; align-items: center; min-height: 44px; padding: 6px; }
+.ah-student-dialog input { width: 18px; height: 18px; }
+.ah-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+#ahStudentHistory p { padding: 8px 0; border-top: 1px solid var(--ah-line); }
+#ahStudentHistory small { display: block; }
+@media (max-width: 1050px) { .ah-roster-layout { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .ah-roster thead { display: none; }
+  .ah-roster, .ah-roster tbody, .ah-roster tr, .ah-roster td { display: block; }
+  .ah-roster tr { border-bottom: 2px solid var(--ah-line); padding: 8px; }
+  .ah-roster td { display: grid; grid-template-columns: 76px minmax(0, 1fr); border: 0; padding: 4px; }
+  .ah-roster td::before { content: attr(data-label); color: var(--ah-muted); font-size: 12px; grid-column: 1; grid-row: 1 / span 3; }
+  .ah-roster td > * { grid-column: 2; }
+  .ah-roster td.ah-row-actions { display: flex; flex-wrap: wrap; }
+  .ah-row-actions::before { min-width: 68px; align-self: center; }
+  .ah-roster-tools label { width: 100%; }
+  .ah-roster-tools input { width: 100%; }
+}
 @media (max-width: 1000px) { .ah-work-group { grid-template-columns: 1fr; } }
 @media (max-width: 600px) {
   .ah-work-groups, .ah-finance-lists { grid-template-columns: 1fr; }

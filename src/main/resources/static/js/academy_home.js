@@ -41,6 +41,7 @@
   /** 학원 전환·첫 로딩: 이전 학원의 숫자·목록이 남지 않도록 먼저 모두 비운다. */
   function resetView() {
     showAlert('');
+    $('ahStudentsPanel').hidden = true;
     $('ahStudentCount').textContent = V.studentCountText('loading');
     $('ahStudentCount').href = V.studentsUrl();
     $('ahBannerKind').textContent = '수업 확인 중';
@@ -154,7 +155,7 @@
     var n = V.todayStudentCount(overview, clock.day);
     if (!n) return;
     var note = $('ahLessonsNote');
-    var line = '최근 4주 등원 기준 오늘(' + V.DAY_LABEL[clock.day] + ') 오는 학생 ' + n + '명.';
+    var line = '등원 요일 기준 오늘(' + V.DAY_LABEL[clock.day] + ') 오는 학생 ' + n + '명.';
     note.textContent = (note.hidden ? '' : note.textContent + ' ') + line;
     var a = el('a', '출결부 열기', 'ah-text-link');
     a.href = V.rosterUrl(null, date);
@@ -224,6 +225,7 @@
     var overview = null;
     if (biz) {
       overview = stats.status === 'ok' ? stats.data : null;
+      if (overview && window.AcademyStudents) window.AcademyStudents.show(f2rBusiness.businessId, overview, classes.status === 'ok' ? classes.data : []);
       stats = { status: stats.status, data: V.f2rStats(overview) };
       if (stats.status === 'ok' && !stats.data) stats.status = 'error';
       if (classes.status === 'ok') classes = { status: 'ok', data: V.f2rClasses(classes.data) };
@@ -387,6 +389,7 @@
     if (!user || (user.role !== 'ADMIN' && user.role !== 'TUTOR')) { toLogin(); return; }
     if (user.role === 'ADMIN') await useF2rBusiness();
     workLinks(user);
+    window.addEventListener('academy-schedule-saved', function () { start(user, stored()).catch(function () { showAlert('저장 후 명단을 불러오지 못했습니다. 새로고침해 주세요.'); }); });
     $('ahRefresh').addEventListener('click', async function () {
       $('ahRefresh').disabled = true;
       try { await Promise.all([start(user, stored()), loadFinance(true)]); }

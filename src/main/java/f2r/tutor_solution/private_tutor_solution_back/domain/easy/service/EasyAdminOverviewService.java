@@ -76,7 +76,7 @@ public class EasyAdminOverviewService {
     out.put("finance", finance);
     out.put("weekdayStudentCounts", weekdayCounts(rows));
     out.put("students", pseudonymize(rows));
-    out.put("weekdayRule", "최근 4주 실제 등원 요일(ATTENDANCE), 없으면 배정된 반 요일(CLASS), 둘 다 없으면 빈 값");
+    out.put("weekdayRule", "직접 수정한 요일(MANUAL) 우선, 없으면 최근 4주 실제 등원 요일(ATTENDANCE), 없으면 배정된 반 요일(CLASS), 모두 없으면 빈 값");
     out.put("url", "/easy/attendance");
     return out;
   }
