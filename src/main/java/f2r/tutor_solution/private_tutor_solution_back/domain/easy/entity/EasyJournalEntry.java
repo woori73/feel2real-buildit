@@ -77,4 +77,13 @@ public class EasyJournalEntry extends BaseEntity {
   public void voidEntry() {
     this.status = EasyJournalStatus.VOIDED;
   }
+
+  /**
+   * 거래 삭제 시 — void하고 삭제될 거래 참조를 끊는다(DB FK ON DELETE SET NULL과 같은 결과).
+   * 참조가 남으면 삭제 flush에서 FK 위반/TransientPropertyValueException(운영 DELETE 500)이 난다.
+   */
+  public void voidForDeletedTxn() {
+    voidEntry();
+    this.txn = null;
+  }
 }

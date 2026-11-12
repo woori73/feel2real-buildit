@@ -3,7 +3,11 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.easy.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.JpaConfig;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccount;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyAccountDirection;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyBusiness;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalEntry;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyJournalStatus;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyCorrectionLog;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTransaction;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyTxnDirection;
@@ -107,5 +111,42 @@ class EasyLedgerDeleteTxnRegressionTest {
     // 사업체 스코프 조회에서 삭제 로그가 보인다.
     assertThat(correctionLogRepository
         .findByBusiness_BusinessIdOrderByLogIdDesc(academy.getBusinessId())).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("분개까지 반영된 거래 삭제 — 500 없이 삭제되고 분개는 VOIDED 이력으로 남는다")
+  void deleteTxn_withPostedJournal_voidsJournalAndDeletes() {
+    // given: 수강료 계정으로 분개(POSTED)까지 반영된 카드매출 거래 (운영 txnId=2299 조건)
+    EasyBusiness academy = businessRepository.saveAndFlush(EasyBusiness.builder()
+        .code("ACADEMY").name("학원").active(true).sortOrder(1).build());
+    accountRepository.saveAndFlush(EasyAccount.builder()
+        .code("SETTLEMENT").name("자금정산").direction(EasyAccountDirection.ASSET)
+        .sortOrder(0).active(true).build());
+    EasyAccount tuition = accountRepository.saveAndFlush(EasyAccount.builder()
+        .code("TUITION").name("수강료").direction(EasyAccountDirection.INCOME)
+        .sortOrder(1).active(true).build());
+    EasyTransaction txn = txnRepository.saveAndFlush(EasyTransaction.builder()
+        .business(academy).occurredOn(LocalDate.of(2026, 1, 3))
+        .direction(EasyTxnDirection.INCOME).amount(540000L)
+        .category("수강료").account(tuition).build());
+    Long txnId = txn.getTxnId();
+    new EasyJournalService(entryRepository, lineRepository, accountRepository, closingRepository)
+        .repost(txn);
+    entityManager.flush();
+    entityManager.clear();
+    Long entryId = entryRepository
+        .findByTxn_TxnIdAndStatusOrderByEntryIdDesc(txnId, EasyJournalStatus.POSTED)
+        .get(0).getEntryId();
+
+    // when: 같은 persistence context에서 분개 void + 거래 삭제 후 flush
+    ledgerService.deleteTxn(txnId);
+    entityManager.flush();
+    entityManager.clear();
+
+    // then: 거래는 지워지고, 분개는 지워진 거래를 참조하지 않는 VOIDED 이력으로 남는다
+    assertThat(txnRepository.findById(txnId)).isEmpty();
+    EasyJournalEntry entry = entryRepository.findById(entryId).orElseThrow();
+    assertThat(entry.getStatus()).isEqualTo(EasyJournalStatus.VOIDED);
+    assertThat(entry.getTxn()).isNull();
   }
 }

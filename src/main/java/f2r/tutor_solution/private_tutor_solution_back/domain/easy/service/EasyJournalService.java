@@ -162,13 +162,13 @@ public class EasyJournalService {
     }
   }
 
-  /** 거래 삭제 시 활성 분개를 void한다 (이력은 남긴다). */
+  /** 거래 삭제 시 분개를 void하고 거래 참조를 끊는다 (분개 이력은 남긴다). */
   @Transactional
   public void voidFor(EasyTransaction txn) {
-    for (EasyJournalEntry active : entryRepository
-        .findByTxn_TxnIdAndStatusOrderByEntryIdDesc(txn.getTxnId(), EasyJournalStatus.POSTED)) {
-      active.voidEntry();
+    for (EasyJournalEntry entry : entryRepository.findByTxn_TxnIdOrderByEntryIdDesc(txn.getTxnId())) {
+      entry.voidForDeletedTxn();
     }
+    entryRepository.flush();
   }
 
   /** 시산표 — 범위 내 활성 분개의 차변/대변 합계. */
