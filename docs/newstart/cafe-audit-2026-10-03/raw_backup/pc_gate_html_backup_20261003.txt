@@ -1,0 +1,15 @@
+<PC 대문(Gate) HTML 원문 백업 — 2026-10-03 18:5x 학원PC 실측>
+출처: https://cafe.naver.com/Gate.nhn?gate.clubid=31312978&m=viewEditorIframe → textarea[name="content"]
+관리 진입: https://cafe.naver.com/ManageGateEditor.nhn (iframe 위 URL) / 저장 POST: /GatePost.nhn (gateid 9561054, elHtmlMode)
+실측: 원문 899자(인코딩) / 디코딩 HTML 732자 / <img> 2개 / <a> 0개 / 모바일 대문과 무관(PC 전용)
+복원 방법: 아래 내용을 HTML 직접 편집 모드에 그대로 붙여넣고 저장. 이미지 두 장은 cafefiles.pstatic.net에 잔존하므로 재업로드 불필요.
+────────────────────────────────────────────────
+<div class="img_tit_area"> 
+ <div class="cafe_default_gate" style="text-align:justify"><img src="https://cafefiles.pstatic.net/MjAyNTEyMjNfMzQg/MDAxNzY2NDk0MzkzOTgy.L16HDp_TkrRmjd9ehkyHldK3FuzuldIOUiyJ7nAp6vsg.Ckg0EONdkFbn5CSOt-EkjN19QuaLdjTnaoKYH_vTTiAg.PNG/%ED%91%9C%EC%A7%802.png" id="userImg4047537" style="width:960px;height:1431px;height:1431px" alt="대문이미지" /> 
+  <br /> 
+  <br /><img src="https://cafefiles.pstatic.net/MjAyNTEyMjNfOTMg/MDAxNzY2NDk0Mzk0NTQy.cP1iBlt-DjIfYo8q7RYe_x1lSyT2h_4IOKW1q4ovmeog.PftTgy2WtbmM9ARRMBE8_miJ0NyEyH20V4frwSsL08sg.PNG/%ED%91%9C%EC%A7%80_%EB%B0%94%EB%A1%9C_%EB%92%B7%EB%A9%B4.png" id="userImg6579785" style="width:656px;height:1632px;height:1632px" alt="대문이미지" /> 
+  <br /> 
+ </div> 
+</div>
+────────────────────────────────────────────────
+이미지 1 = 표지2.png 960×1431 / 이미지 2 = 표지_바로_뒷면.png 656×1632 (실측 스타일 값)
