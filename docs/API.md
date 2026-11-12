@@ -5422,6 +5422,12 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - ADMIN의 반·수업 바로가기 = `/easy/attendance?businessId=&tab=classes`. 기존 `businessId`, `classId`, `date`에 선택적 `tab=sheet|month|classes|import`를 더한다. 미지정·미지원 탭은 기존 출결부(`sheet`)로 열린다. 반 관리는 별도 클릭 없이 바로 열고 출결 저장을 실행하지 않는다.
 - `/dashboard/assistant#all`로 기존 전체 업무 도구(직접 입력·자료 분석 등)를 계속 열 수 있다. `/dashboard#ai`, `?ask=` 호환 동작은 유지한다. 현황 조회는 GET만 수행하며, 학생 요일 수정은 아래 전용 PUT을 사용자가 저장할 때만 실행한다.
 
+### 제공 진행표의 이번 주 예정 일정 (2026-11-12)
+
+- `GET /api/admin/easy/attendance/weekly-plan?businessId=`(ADMIN·사업체 접근 검사): 기존 학생명단 자료실의 현재 연도 최신 Word/PDF를 기존 `lessonsOf` 파서로 읽는다. 한국 날짜의 월~일 범위이며 아직 오지 않은 예정일도 포함한다. 응답 `{weekStart,weekEnd,available,students:[{studentId,weekdays:[MON..SUN]}],unmatchedNames}`. 재원생 이름이 유일하게 일치할 때만 연결하고 동명이인·미등록 이름은 추측해 병합하지 않는다. **학생·출결·수정값을 저장하지 않는 GET**이다.
+- 대시보드 표시 우선순위: 직접 수정(MANUAL) → 제공 진행표의 이번 주 일정(ROSTER, 예정 포함) → 이번 주 자료가 없거나 조회 실패한 경우 기존 최근 등원/반 요일. 이번 주 표가 있으면 표에 없는 요일을 과거 기록으로 채우지 않는다. 적용 주간·출처·조회 실패/연결 확인 필요 수를 화면에 명시한다. 원본 예정일은 실제 출결 기록으로 넣지 않는다.
+- 기존 `student-overview`와 MCP의 과거 등원 요약 계약은 유지한다. 이 계획은 대시보드가 추가로 읽어 합친다. 직접 수정값은 계획 조회·새로고침에도 최우선이며 ‘기존 자료 기준’ 복귀는 제공 진행표 우선순위로 돌아간다.
+
 ### 요일별 학생·반·출결 기록과 수정 (2026-11-12)
 
 - ADMIN `/dashboard`는 기존 `student-overview`와 `classes`로 월~일·전체·요일 미정 학생 명단, 학교·학년·소속 반·요일 기준·이번 달 등원 횟수·최근 등원 날짜를 실제 값으로 표시한다. 검색·반 필터, 시간 미등록 반도 표시한다. 반 수정 링크는 `tab=classes&classId=`로 학생 배정 명단까지 바로 연다.

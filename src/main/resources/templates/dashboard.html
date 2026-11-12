@@ -20,9 +20,9 @@
     })();
   </script>
   <link rel="stylesheet" href="/css/academy_home.css?v=20261112-restore">
-  <script defer src="/js/academy_home_view.js?v=20261112-restore"></script>
-  <script defer src="/js/academy_home.js?v=20261112-restore"></script>
-  <script defer src="/js/academy_students.js?v=20261112-1"></script>
+  <script defer src="/js/academy_home_view.js?v=20261112-plan"></script>
+  <script defer src="/js/academy_home.js?v=20261112-plan"></script>
+  <script defer src="/js/academy_students.js?v=20261112-plan"></script>
   <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
 <body>
@@ -60,6 +60,7 @@
 
     <section class="ah-panel ah-students" id="ahStudentsPanel" aria-labelledby="ahStudentsTitle" hidden>
       <div class="ah-section-head"><h2 id="ahStudentsTitle">요일별 학생·반 현황</h2><a href="/easy/students">학생 정보·수납 원장</a></div>
+      <p class="ah-note" id="ahRosterSource"></p>
       <div class="ah-days" id="ahWeekdays" role="group" aria-label="등원 요일"></div>
       <div class="ah-roster-tools"><label>학생 찾기 <input type="search" id="ahStudentSearch" placeholder="이름·학교·반 검색"></label><p id="ahRosterCount" role="status"></p></div>
       <div class="ah-roster-layout">
