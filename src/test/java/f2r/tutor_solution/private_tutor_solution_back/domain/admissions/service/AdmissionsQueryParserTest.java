@@ -75,6 +75,21 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
+    @DisplayName("given 영문 cut·'지난해 ○○ 결과' 질문 when 분석하면 then 지난해 입시결과 질문으로 표시한다")
+    void flags_prior_result_english_cut_and_spaced_result() {
+        // given
+        String englishCut = "이화여대 경영학부 고교추천전형 지난해 70% cut 등급은?";
+        String cutGrade = "서강대 경영학부 등급 cut 알려줘";
+        String spacedResult = "성공회대 경영학부 지난해 교과성적 전형 결과";
+        String notPrior = "작년에 바뀐 전형이 뭐예요?";
+        // when / then
+        assertThat(AdmissionsQueryParser.parse(englishCut, UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse(cutGrade, UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse(spacedResult, UNIVS).asksPriorResult()).isTrue();
+        assertThat(AdmissionsQueryParser.parse(notPrior, UNIVS).asksPriorResult()).isFalse();
+    }
+
+    @Test
     @DisplayName("given 지원자 수 질문 when 분석하면 then 지난해 입시결과 질문으로 보고, 지원자격 질문은 아니다")
     void flags_applicant_count_but_not_eligibility() {
         // given / when / then
