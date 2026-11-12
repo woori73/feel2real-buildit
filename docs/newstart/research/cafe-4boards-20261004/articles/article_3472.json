@@ -1,0 +1,72 @@
+{
+ "articleId": 3472,
+ "boardId": 3,
+ "boardName": "부실차주 신청",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실차주 신청 하면 되는데",
+ "author": {
+  "nickname": "hahaha",
+  "memberGrade": "감사멤버",
+  "memberLevel": 150
+ },
+ "createdAt": "2026-01-06T22:05:00+09:00",
+ "createdAtMs": 1767704700000,
+ "writtenAtRaw": "26.01.06. 22:05",
+ "viewCount": 212,
+ "commentCount": 2,
+ "commentsCaptured": 2,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=3472&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "추심도 미리 조치 해서 비교적 순탄하게 3개월을 보냈어요",
+  "지금 바로 부실차주 신청 하면 될까요 아니면 폐업 후에 하는 게 나을까요?",
+  "폐업 전에 신청 하면 임대차계약서 첨부 해야되는 걸로 아는데 그렇게 신청 후에 폐업 하게 되면 보증금은 어떻게 해야 하나요?",
+  "손가락으로 클릭만 까딱 하면 생애 한 번 뿐인 신청이 돼버리니 너무 긴장 되고 심란하고 그렇네요",
+  "어떻게 하는 게 가장 똑똑한 방법일까요?"
+ ],
+ "bodyNormalized": "추심도 미리 조치 해서 비교적 순탄하게 3개월을 보냈어요\n지금 바로 부실차주 신청 하면 될까요 아니면 폐업 후에 하는 게 나을까요?\n폐업 전에 신청 하면 임대차계약서 첨부 해야되는 걸로 아는데 그렇게 신청 후에 폐업 하게 되면 보증금은 어떻게 해야 하나요?\n손가락으로 클릭만 까딱 하면 생애 한 번 뿐인 신청이 돼버리니 너무 긴장 되고 심란하고 그렇네요\n어떻게 하는 게 가장 똑똑한 방법일까요?",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54911612,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-01-06T22:08:33+09:00",
+   "createdAtMs": 1767704913000,
+   "text": "일단 신청하시고요. 신청때 임대차계약서 제출하지 마시고요. 임시안 나오면 서류 제출하라고 할때 폐업증명서를 내세요.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54911705,
+   "parentCommentId": 54911612,
+   "author": "hahaha",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-01-06T22:25:21+09:00",
+   "createdAtMs": 1767705921000,
+   "text": "아 그 때 내면 되는군요",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": null
+}

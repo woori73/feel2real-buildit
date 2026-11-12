@@ -1,0 +1,635 @@
+{
+ "endpoint": "GET /api/muse/newstart/knowledge/search?q=&limit=8 (ACTIVE-only retrieval, 지피지기 에이전트 실제 경로)",
+ "questions": [
+  {
+   "q": "부실차주 신청 후 임시안까지 얼마나 걸리나요",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4484,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3469·커뮤니티 의견] 가시면 신복위에서 알아서 다뽑",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4483,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3469·커뮤니티 의견] 우려신청하러가는데요 가면 알아",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4468,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#2597·커뮤니티 의견] 감사합니다!! 신청햿어요!",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4467,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#2597·커뮤니티 의견] 아그럼 일단 국취는 신청해뒀고",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4455,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#954·커뮤니티 의견] 장기연체란말은  90일을 채워야",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4454,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#954·커뮤니티 의견] 그럼 부실차주 90일을 채울필요",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4451,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#796·커뮤니티 의견] 취업이 아니고 창업인데도 재취업",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4440,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#648·커뮤니티 의견] 올해도하는거같은데 들으면 얼마나",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    }
+   ]
+  },
+  {
+   "q": "임시안 받고 확정안 체결까지 기간",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4494,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3513·커뮤니티 의견] 저는 폐업후 희리패 기초교육을",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4430,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#561·커뮤니티 의견] 신청일이 10월18일이고 취업지",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4425,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5928·커뮤니티 의견] 걸리는건 사업기간 내에 대출이",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    },
+    {
+     "kid": 4424,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 답변 감사합니다 현재는 확정안",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    },
+    {
+     "kid": 4423,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 2월접수.\r\n폐업확인서만 냈습",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    },
+    {
+     "kid": 4420,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 임시안에서 확정안까지 4개",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    },
+    {
+     "kid": 4419,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 혹시  임시안 기준으로 확",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    },
+    {
+     "kid": 4418,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 폐업자이고 사업장임대차계약",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    }
+   ]
+  },
+  {
+   "q": "희망리턴패키지 기초 심화 교육 추가감면",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4496,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3513·커뮤니티 의견] 희리패 기초는 지금도 들을수있",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4495,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3513·커뮤니티 의견] 저도 그건 잘 모르긴하겠는데\n",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4494,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3513·커뮤니티 의견] 저는 폐업후 희리패 기초교육을",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4461,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#969·커뮤니티 의견] 답변감사합니다! 재창업수업은 2",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4459,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#969·커뮤니티 의견] 혹시 성실상환자 재기교육은 감면",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4451,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#796·커뮤니티 의견] 취업이 아니고 창업인데도 재취업",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4446,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#686·커뮤니티 의견] 취업교육 기초 심화만 받으면 몇",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4438,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#648·커뮤니티 의견] 추가감면 받을라면 일년거치하면 ",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    }
+   ]
+  },
+  {
+   "q": "국민취업지원제도 1유형 신청 요건",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4484,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3469·커뮤니티 의견] 가시면 신복위에서 알아서 다뽑",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4483,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3469·커뮤니티 의견] 우려신청하러가는데요 가면 알아",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4468,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#2597·커뮤니티 의견] 감사합니다!! 신청햿어요!",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4467,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#2597·커뮤니티 의견] 아그럼 일단 국취는 신청해뒀고",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4451,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#796·커뮤니티 의견] 취업이 아니고 창업인데도 재취업",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4430,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#561·커뮤니티 의견] 신청일이 10월18일이고 취업지",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4426,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#213·커뮤니티 의견] 국취는 신청후에 한달후라도 취업",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4407,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5569·커뮤니티 의견] 일단 신청할 때 상환기간을 최",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    }
+   ]
+  },
+  {
+   "q": "원장초기화 신청 방법",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4484,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3469·커뮤니티 의견] 가시면 신복위에서 알아서 다뽑",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4483,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3469·커뮤니티 의견] 우려신청하러가는데요 가면 알아",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4468,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#2597·커뮤니티 의견] 감사합니다!! 신청햿어요!",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4467,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#2597·커뮤니티 의견] 아그럼 일단 국취는 신청해뒀고",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4451,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#796·커뮤니티 의견] 취업이 아니고 창업인데도 재취업",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4430,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#561·커뮤니티 의견] 신청일이 10월18일이고 취업지",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4426,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#213·커뮤니티 의견] 국취는 신청후에 한달후라도 취업",
+     "official": "재취업 재창업 감면수익+정부 지원 카페 4boards REVIEW 적재"
+    },
+    {
+     "kid": 4407,
+     "st": "ACTIVE",
+     "src": "CAFE_COMMENT",
+     "board": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5569·커뮤니티 의견] 일단 신청할 때 상환기간을 최",
+     "official": "부실차주 임시안부터 확정안 카페 4boards REVIEW 적재(2026-10-04)"
+    }
+   ]
+  },
+  {
+   "q": "채권 누락 부채증명서 제출 방법",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4484,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3469·커뮤니티 의견] 가시면 신복위에서 알아서 다뽑",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4431,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#561·커뮤니티 의견] 그럼 참여 확인서 제출시70%이",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4418,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 폐업자이고 사업장임대차계약",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4417,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 확정안 직전에 지금 현재 살고",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4368,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#4548·커뮤니티 의견] 축하드립니다~\n혹시 확정전 추",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4353,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#4480·커뮤니티 의견] 등기 새출발에서 보내는건가요?",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4341,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#3760·커뮤니티 의견] 보증금은 제 통장 거치지 않고",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4337,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#3742·커뮤니티 의견] 카페장님 답변 감사합니다. 그",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    }
+   ]
+  },
+  {
+   "q": "도덕적해이 심사 기간",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4430,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#561·커뮤니티 의견] 신청일이 10월18일이고 취업지",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4425,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5928·커뮤니티 의견] 걸리는건 사업기간 내에 대출이",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4407,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5569·커뮤니티 의견] 일단 신청할 때 상환기간을 최",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4406,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5569·커뮤니티 의견] 상환기간을 짧게 잡으면 월 상",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4292,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#1875·커뮤니티 의견] 저도 도덕적해이 기간이 궁금했",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4239,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#923·커뮤니티 의견] 담당자만 배정 되시면 그때 담당",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4193,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m3#4385·커뮤니티 의견] 요즘은 신청자가 밀려서인지 추",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4163,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m3#3604·커뮤니티 의견] 신청하면 수정 심사합니다.\n며",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    }
+   ]
+  },
+  {
+   "q": "부실차주 90일 연체 요건",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4455,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#954·커뮤니티 의견] 장기연체란말은  90일을 채워야",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4454,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#954·커뮤니티 의견] 그럼 부실차주 90일을 채울필요",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4425,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5928·커뮤니티 의견] 걸리는건 사업기간 내에 대출이",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4424,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 답변 감사합니다 현재는 확정안",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4423,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 2월접수.\r\n폐업확인서만 냈습",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4420,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 임시안에서 확정안까지 4개",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4419,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 혹시  임시안 기준으로 확",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4418,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 폐업자이고 사업장임대차계약",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    }
+   ]
+  },
+  {
+   "q": "감면율 재산 산정 기준 자동차 코인",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4459,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#969·커뮤니티 의견] 혹시 성실상환자 재기교육은 감면",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4457,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#954·커뮤니티 의견] 저는 우려에서 차주 가려던 중인",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4419,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5834·커뮤니티 의견] 네 혹시  임시안 기준으로 확",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4407,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5569·커뮤니티 의견] 일단 신청할 때 상환기간을 최",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4405,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#5569·커뮤니티 의견] 분모에 들어가는 월 상환액의 ",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4398,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#4825·커뮤니티 의견] 예 저희도 소진공무담보와 신보",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4397,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#4825·커뮤니티 의견] 그리고 한가지 더말씀드리면 개",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4391,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#4825·커뮤니티 의견] 지급보증건도 담보에서 무담보로",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    }
+   ]
+  },
+  {
+   "q": "추가감면 10퍼센트 받으려면 순서",
+   "http": 200,
+   "n": 8,
+   "hits": [
+    {
+     "kid": 4494,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#3513·커뮤니티 의견] 저는 폐업후 희리패 기초교육을",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4438,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#648·커뮤니티 의견] 추가감면 받을라면 일년거치하면 ",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4431,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m5#561·커뮤니티 의견] 그럼 참여 확인서 제출시70%이",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4284,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#1282·커뮤니티 의견] 차주 접수하실 때 홈페이지에서",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4268,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#1129·커뮤니티 의견] 축하드려요 저와 비슷하시네요 ",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4265,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#1100·커뮤니티 의견] 너무 축하드립니다 ㅠㅠ\n저도 ",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4257,
+     "src": "CAFE_COMMENT",
+     "title": "[카페 4boards m4#1088·커뮤니티 의견] 정말 축하드립니다♡ 혹시 추가",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    },
+    {
+     "kid": 4114,
+     "src": "CAFE_ARTICLE",
+     "title": "[카페 4boards m5#4076·실제로 많이 묻는 질문] 국세체납 희망리턴 신",
+     "url": "https://cafe.naver.com/ArticleRead.nhn?c"
+    }
+   ]
+  }
+ ]
+}

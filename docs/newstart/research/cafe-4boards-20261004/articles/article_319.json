@@ -1,0 +1,64 @@
+{
+ "articleId": 319,
+ "boardId": 9,
+ "boardName": "하랑랑 스페셜",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "신용회복위원회 협약기관 확인 방법",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저",
+  "memberLevel": 999
+ },
+ "createdAt": "2024-11-05T20:56:00+09:00",
+ "createdAtMs": 1730807760000,
+ "writtenAtRaw": "24.11.05. 20:56",
+ "viewCount": 50,
+ "commentCount": 1,
+ "commentsCaptured": 1,
+ "sourceUrl": "https://cafe.naver.com/newhopero/319",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [],
+ "bodyNormalized": "",
+ "bodyHtml": null,
+ "attachments": [
+  "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800"
+ ],
+ "comments": [
+  {
+   "commentId": 55690109,
+   "parentCommentId": null,
+   "author": null,
+   "memberGrade": "감사멤버",
+   "createdAt": null,
+   "createdAtMs": null,
+   "text": "감사합니다",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": true,
+ "collectedAt": "2026-10-04",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "EMPTY_BODY",
+ "parseWarnings": [
+  "EMPTY_BODY"
+ ],
+ "historicalCandidate": false,
+ "operatorAuthored": true,
+ "scopeExcluded": null,
+ "boardNote": "하랑랑 스페셜 운영자 정보글: 2026-10-04 사용자 지시로 보존. 2024-11-05 작성 자료이므로 current 규정으로 오인 금지.",
+ "scopeIncludedByUserRuling": "2026-10-04 지시: 가입인사·등업 17건은 기존대로 제외, 운영자 작성 정보글 15건은 중요자료이므로 모두 살린다 (기존 운영자글 수집 제외 규칙의 menuId 9 한정 예외)",
+ "authorType": "OPERATOR",
+ "historicalNote": "작성일 2024-11-05 자료 — 과거 시점 안내. 작성일·출처URL 보존.",
+ "images": [
+  "https://cafeptthumb-phinf.pstatic.net/MjAyNDExMDVfMzAg/MDAxNzMwODA3Nzc4Njk1.59LFcFBFJ3uClgsx7KmkAtwFdvy2vVPgy-hMcajU41gg.qK7eB97uwdPZGUtZ42o2Ciwx6f18x7nJnMmjrb_4Iu8g.JPEG/1.jpg?type=w800"
+ ],
+ "contentForm": "IMAGE_ONLY",
+ "bodyHtmlLength": 2207
+}

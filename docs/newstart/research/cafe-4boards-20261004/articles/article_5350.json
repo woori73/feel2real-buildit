@@ -1,0 +1,82 @@
+{
+ "articleId": 5350,
+ "boardId": 4,
+ "boardName": "부실차주 임시안부터 확정안",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실차주 임시안",
+ "author": {
+  "nickname": "내일을 위해",
+  "memberGrade": "일반멤버",
+  "memberLevel": 110
+ },
+ "createdAt": "2026-06-04T13:00:00+09:00",
+ "createdAtMs": 1780545600000,
+ "writtenAtRaw": "26.06.04. 13:00",
+ "viewCount": 174,
+ "commentCount": 3,
+ "commentsCaptured": 3,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=5350&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "안녕하세요~ 부실차주로 임시안받았는데 보증담보대출은 포함되지않았던데  가만히 있으면 알아서포함되나요? 아님 새출발에 따로 신청해야되는건가요? 그리고 서류제출더할건없나요?"
+ ],
+ "bodyNormalized": "안녕하세요~ 부실차주로 임시안받았는데 보증담보대출은 포함되지않았던데  가만히 있으면 알아서포함되나요? 아님 새출발에 따로 신청해야되는건가요? 그리고 서류제출더할건없나요?",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 56266990,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-06-04T13:58:14+09:00",
+   "createdAtMs": 1780549094000,
+   "text": "보증 대출은 대위변제후에 자동으로 포함됩니다",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 56269398,
+   "parentCommentId": null,
+   "author": "청주 스타",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-06-04T19:16:36+09:00",
+   "createdAtMs": 1780568196000,
+   "text": "임시안에는 어떤내용이 있을까요?",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 56727845,
+   "parentCommentId": null,
+   "author": "LUKAS77",
+   "memberGrade": "일반멤버",
+   "createdAt": "2026-08-05T02:17:10+09:00",
+   "createdAtMs": 1785863830000,
+   "text": "저는 법인 부실차주 임시안 받았는데, 신용보증기금 신용보증 대출로 국민에서 총 2.6억 받았는데, 신용보증기금 2.1억 과 국민 0.5억으로 각각 나왔어요, 70% 임시안 인데, 이렇게 나온거면 앞서 얘기하신 보증 대출이 대위변제후 자동 포함 된건가요?",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": true,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": "과거 임시안~확정안 게시판: 역사 자료. 현재 시행 규정으로 사용하지 말 것"
+}

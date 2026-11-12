@@ -1,0 +1,98 @@
+name: NewStart cafe 4-boards load (insert-only)
+
+# docs/newstart/research/cafe-4boards-20261004 (menuId 3/4/5/9, 2026-10-04 tranch) 수동 로더.
+# cafe-qa-load.yml과 동일 계약: DRY_RUN이 기본, WRITE_REVIEW는 미존재 행만 DRAFT 생성 후 REVIEW로 이동.
+# APPROVE_ELIGIBLE은 이번 패키지에서 만든 REVIEW 행만 기존 review API로 처리하되,
+# 근거가 불완전한 자료(이미지/링크 본문·댓글 부분수집)는 승인하지 않고 REVIEW에 남긴다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "DRY_RUN=read-only 중복 실측, WRITE_REVIEW=미존재 행만 REVIEW 적재, APPROVE_ELIGIBLE=근거 완전 행만 승인"
+        required: true
+        type: choice
+        options:
+          - DRY_RUN
+          - WRITE_REVIEW
+          - APPROVE_ELIGIBLE
+        default: DRY_RUN
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newstart-cafe-4boards-load
+  cancel-in-progress: false
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout approved batch and insert-only loader
+        uses: actions/checkout@v4
+
+      - name: Verify fixed batch package (offline)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib
+          root = pathlib.Path("docs/newstart/research/cafe-4boards-20261004")
+          manifest = json.loads((root / "load_batches/manifest.json").read_text(encoding="utf-8"))
+          rows, keys = [], set()
+          for batch in manifest["batches"]:
+              payload = json.loads((root / "load_batches" / batch["file"]).read_text(encoding="utf-8"))
+              assert len(payload) == batch["count"], batch["file"]
+              rows.extend(payload)
+          assert len(rows) == manifest["totalToLoad"], (len(rows), manifest["totalToLoad"])
+          for r in rows:
+              ck = r["tags"].split("ck=")[-1]
+              assert ck and ck not in keys, "duplicate dedup_key " + ck
+              keys.add(ck)
+              assert r["sourceType"] in {"CASE", "CAFE_ARTICLE", "CAFE_COMMENT", "OPERATOR_KNOWLEDGE"}, r["sourceType"]
+              assert r["sourceUrl"].startswith("https://cafe.naver.com/"), r["sourceUrl"]
+          print("Fixed batch verified: %d rows / %d files / %d unique keys"
+                % (len(rows), manifest["batchCount"], len(keys)))
+          PY
+
+      - name: Require configured ADMIN credentials
+        env:
+          ADMIN_LOGIN: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$ADMIN_LOGIN" && test -n "$ADMIN_PASSWORD" || {
+            echo "::error::Existing NewStart ADMIN secrets are required"; exit 1;
+          }
+          echo "Mode=${{ inputs.mode }}; credential values are not printed."
+
+      - name: Read-only production exact-match dry run
+        if: ${{ inputs.mode == 'DRY_RUN' }}
+        env:
+          NEWSTART_SEED_ADMIN_LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          NEWSTART_SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 docs/newstart/research/tools/load_cafe_4boards_prod.py \
+            --root docs/newstart/research/cafe-4boards-20261004
+
+      - name: Insert missing rows as REVIEW only
+        if: ${{ inputs.mode == 'WRITE_REVIEW' }}
+        env:
+          NEWSTART_SEED_ADMIN_LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          NEWSTART_SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 docs/newstart/research/tools/load_cafe_4boards_prod.py \
+            --root docs/newstart/research/cafe-4boards-20261004 --write
+
+      - name: Review this package rows only (approve complete evidence, hold weak evidence)
+        if: ${{ inputs.mode == 'APPROVE_ELIGIBLE' }}
+        env:
+          NEWSTART_SEED_ADMIN_LOGIN_ID: ${{ secrets.NEWSTART_SEED_ADMIN_LOGIN_ID }}
+          NEWSTART_SEED_ADMIN_PASSWORD: ${{ secrets.NEWSTART_SEED_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 docs/newstart/research/tools/review_cafe_4boards_prod.py \
+            --root docs/newstart/research/cafe-4boards-20261004 --apply

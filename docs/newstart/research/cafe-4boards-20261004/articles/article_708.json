@@ -1,0 +1,73 @@
+{
+ "articleId": 708,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "재창업 사업화 1월 20일 신청 시작과 FAQ",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저",
+  "memberLevel": 999
+ },
+ "createdAt": "2025-01-20T15:40:00+09:00",
+ "createdAtMs": 1737355200000,
+ "writtenAtRaw": "25.01.20. 15:40",
+ "viewCount": 205,
+ "commentCount": 2,
+ "commentsCaptured": 2,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=708&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "희망리턴패키지 재창업 사업화가 오늘 (1월 20일)부터 신청을 시작합니다.",
+  "희망리턴패키지",
+  "희망리턴패키지",
+  "소상공인 폐업부터 취업까지 희망리턴패키지로 준비하세요!",
+  "www.sbiz.or.kr",
+  "위 링크로 가면 신청하기 페이지로 갑니다."
+ ],
+ "bodyNormalized": "희망리턴패키지 재창업 사업화가 오늘 (1월 20일)부터 신청을 시작합니다.\n\n희망리턴패키지\n희망리턴패키지\n소상공인 폐업부터 취업까지 희망리턴패키지로 준비하세요!\nwww.sbiz.or.kr\n\n위 링크로 가면 신청하기 페이지로 갑니다.",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 52073031,
+   "parentCommentId": null,
+   "author": "광철이",
+   "memberGrade": "",
+   "createdAt": "2025-01-21T14:13:21+09:00",
+   "createdAtMs": 1737436401000,
+   "text": "방장님 사업화  꼭 선정돼시길 화이팅입니다",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 52073055,
+   "parentCommentId": 52073031,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2025-01-21T14:16:15+09:00",
+   "createdAtMs": 1737436575000,
+   "text": "감사합니다. 광철님도 꼭 좋은 결과 얻으십시오.",
+   "isAuthor": true,
+   "isOperator": true,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": true,
+ "scopeExcluded": "OPERATOR_AGENT_POST",
+ "boardNote": null
+}

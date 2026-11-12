@@ -1,0 +1,43 @@
+{
+ "articleId": 5940,
+ "boardId": 4,
+ "boardName": "부실차주 임시안부터 확정안",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "확정안 받고 체결완료 , 이후 집상속",
+ "author": {
+  "nickname": "둥글동굴",
+  "memberGrade": "감사멤버",
+  "memberLevel": 150
+ },
+ "createdAt": "2026-09-04T16:47:00+09:00",
+ "createdAtMs": 1788508020000,
+ "writtenAtRaw": "26.09.04. 16:47",
+ "viewCount": 101,
+ "commentCount": 0,
+ "commentsCaptured": 0,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=5940&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "덕분에 90프로 감면율 받고 체결 완료 하였습니다",
+  "그 이후 할아버지께서 돌아가셔서",
+  "집(5000-7000만원) 사이의 집을 받게 될 것 같은데요",
+  "체결이후로 1달 납부 상태입니다.",
+  "집 상속 상관없을까요?"
+ ],
+ "bodyNormalized": "덕분에 90프로 감면율 받고 체결 완료 하였습니다\n\n그 이후 할아버지께서 돌아가셔서\n집(5000-7000만원) 사이의 집을 받게 될 것 같은데요\n\n체결이후로 1달 납부 상태입니다.\n집 상속 상관없을까요?",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": true,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": "과거 임시안~확정안 게시판: 역사 자료. 현재 시행 규정으로 사용하지 말 것"
+}

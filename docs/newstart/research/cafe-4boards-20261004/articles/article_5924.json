@@ -1,0 +1,58 @@
+{
+ "articleId": 5924,
+ "boardId": 3,
+ "boardName": "부실차주 신청",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "부실차주 소득관련 문의드립니다 !",
+ "author": {
+  "nickname": "월령",
+  "memberGrade": "일반멤버",
+  "memberLevel": 110
+ },
+ "createdAt": "2026-09-01T18:26:00+09:00",
+ "createdAtMs": 1788254760000,
+ "writtenAtRaw": "26.09.01. 18:26",
+ "viewCount": 132,
+ "commentCount": 1,
+ "commentsCaptured": 1,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=5924&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "안녕하세요 30대 초반 남자입니다.",
+  "채무액은 3300정도되구요 !!",
+  "7월말에 신청을했는데 감면율과 관련있는 소득을 언제꺼를 기준으로해서 보는지 궁금해요 !!",
+  "제가 작년까지는 따로 직장이없어서 소득이 1200정도로 잡혔는데, 올해부터는 일용직을 나가면서 돈을벌다보니 소득이 확 높아질거같아서 문의드립니다.",
+  "답변주시면 정말 감사하겠습니다 !"
+ ],
+ "bodyNormalized": "안녕하세요 30대 초반 남자입니다.\n채무액은 3300정도되구요 !!\n7월말에 신청을했는데 감면율과 관련있는 소득을 언제꺼를 기준으로해서 보는지 궁금해요 !!\n제가 작년까지는 따로 직장이없어서 소득이 1200정도로 잡혔는데, 올해부터는 일용직을 나가면서 돈을벌다보니 소득이 확 높아질거같아서 문의드립니다.\n답변주시면 정말 감사하겠습니다 !",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 56962677,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-09-01T22:57:11+09:00",
+   "createdAtMs": 1788271031000,
+   "text": "매년 7월 이후로 확정안 나오면 직전년 신고된 소득을 봅니다.예를 들어 내일 확정안 나오면 소득금액증명원에 나온 작년 소득을 기준으로 봅니다.",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": null
+}

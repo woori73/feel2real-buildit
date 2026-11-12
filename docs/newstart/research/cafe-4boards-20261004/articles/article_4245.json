@@ -1,0 +1,39 @@
+{
+ "articleId": 4245,
+ "boardId": 4,
+ "boardName": "부실차주 임시안부터 확정안",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "혹시 임시안 받고 중고차 할부 가능할까요",
+ "author": {
+  "nickname": "담비",
+  "memberGrade": "일반멤버",
+  "memberLevel": 110
+ },
+ "createdAt": "2026-02-21T16:13:00+09:00",
+ "createdAtMs": 1771657980000,
+ "writtenAtRaw": "26.02.21. 16:13",
+ "viewCount": 83,
+ "commentCount": 0,
+ "commentsCaptured": 0,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=4245&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "회사 출퇴근 땜에 차량이 필요한데 ㅠㅜ 가능할지 참 ㅠㅠ도움 좀 부탁드려요"
+ ],
+ "bodyNormalized": "회사 출퇴근 땜에 차량이 필요한데 ㅠㅜ 가능할지 참 ㅠㅠ도움 좀 부탁드려요",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": true,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": "과거 임시안~확정안 게시판: 역사 자료. 현재 시행 규정으로 사용하지 말 것"
+}

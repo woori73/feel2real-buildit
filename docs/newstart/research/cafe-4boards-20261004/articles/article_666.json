@@ -1,0 +1,54 @@
+{
+ "articleId": 666,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "2025년 실행 예정 재취업 재창업시 공공정보삭제 공문 (9월 12일 발표)",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저",
+  "memberLevel": 999
+ },
+ "createdAt": "2024-12-19T18:25:00+09:00",
+ "createdAtMs": 1734600300000,
+ "writtenAtRaw": "24.12.19. 18:25",
+ "viewCount": 235,
+ "commentCount": 1,
+ "commentsCaptured": 1,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=666&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [],
+ "bodyNormalized": "",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 51932925,
+   "parentCommentId": null,
+   "author": "부실차주15",
+   "memberGrade": "일반멤버",
+   "createdAt": "2025-01-02T21:39:34+09:00",
+   "createdAtMs": 1735821574000,
+   "text": "이미 재취업을했는데 이 프로그램이수를 안하면 공공정보삭제는 안되는거죠? 지금이라도 이수를 해야되는건가요?",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "EMPTY_BODY",
+ "parseWarnings": [
+  "EMPTY_BODY"
+ ],
+ "historicalCandidate": false,
+ "operatorAuthored": true,
+ "scopeExcluded": "OPERATOR_AGENT_POST",
+ "boardNote": null
+}

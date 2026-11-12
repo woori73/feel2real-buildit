@@ -1,0 +1,58 @@
+{
+ "articleId": 646,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "중기부 새출발기금 관련 예산 통과 (부실차주 재창업 명확해짐)",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저",
+  "memberLevel": 999
+ },
+ "createdAt": "2024-12-10T20:24:00+09:00",
+ "createdAtMs": 1733829840000,
+ "writtenAtRaw": "24.12.10. 20:24",
+ "viewCount": 518,
+ "commentCount": 1,
+ "commentsCaptured": 1,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=646&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "재창업 부분이 좀 더 명확하게 정리가 되었는데,",
+  "올해 재창업사업화 (사업계획서와 면접 통과자를 대상으로 했음) 와는 달리,",
+  "폐업 부실차주들을 전담 pm 매칭이나 멘토링 지원 교육을 통해서 사업화 창업을 지원하는 정책으로 바뀌어",
+  "좀 더 많은 부실차주들이 체계적으로 재창업을 하도록 수정된 것이 특징입니다.",
+  "재창업 준비과정에서 회당 30만원 지원비도 신규로 생겼습니다."
+ ],
+ "bodyNormalized": "재창업 부분이 좀 더 명확하게 정리가 되었는데,\n\n올해 재창업사업화 (사업계획서와 면접 통과자를 대상으로 했음) 와는 달리,\n\n폐업 부실차주들을 전담 pm 매칭이나 멘토링 지원 교육을 통해서 사업화 창업을 지원하는 정책으로 바뀌어\n\n좀 더 많은 부실차주들이 체계적으로 재창업을 하도록 수정된 것이 특징입니다.\n\n재창업 준비과정에서 회당 30만원 지원비도 신규로 생겼습니다.",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 51754431,
+   "parentCommentId": null,
+   "author": "하남후니",
+   "memberGrade": "감사멤버",
+   "createdAt": "2024-12-11T08:19:39+09:00",
+   "createdAtMs": 1733872779000,
+   "text": "좋은정보 감사합니다",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": true,
+ "scopeExcluded": "OPERATOR_AGENT_POST",
+ "boardNote": null
+}

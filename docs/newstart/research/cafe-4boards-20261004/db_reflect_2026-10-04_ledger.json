@@ -1,0 +1,6077 @@
+[
+{
+"idx": 0,
+"knowledgeId": 3827,
+"reviewMoved": false,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 1,
+"knowledgeId": 3828,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 2,
+"knowledgeId": 3829,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2717
+},
+{
+"idx": 3,
+"knowledgeId": 3830,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 4,
+"knowledgeId": 3831,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 5,
+"knowledgeId": 3832,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3472
+},
+{
+"idx": 6,
+"knowledgeId": 3833,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3475
+},
+{
+"idx": 7,
+"knowledgeId": 3834,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3518
+},
+{
+"idx": 8,
+"knowledgeId": 3835,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 9,
+"knowledgeId": 3836,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 10,
+"knowledgeId": 3837,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3923
+},
+{
+"idx": 11,
+"knowledgeId": 3838,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4222
+},
+{
+"idx": 12,
+"knowledgeId": 3839,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 13,
+"knowledgeId": 3840,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 14,
+"knowledgeId": 3841,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 15,
+"knowledgeId": 3842,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 16,
+"knowledgeId": 3843,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4511
+},
+{
+"idx": 17,
+"knowledgeId": 3844,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 18,
+"knowledgeId": 3845,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4653
+},
+{
+"idx": 19,
+"knowledgeId": 3846,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 20,
+"knowledgeId": 3847,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5790
+},
+{
+"idx": 21,
+"knowledgeId": 3848,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5916
+},
+{
+"idx": 22,
+"knowledgeId": 3849,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5924
+},
+{
+"idx": 23,
+"knowledgeId": 3850,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 6055
+},
+{
+"idx": 24,
+"knowledgeId": 3851,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 25,
+"knowledgeId": 3852,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 26,
+"knowledgeId": 3853,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 27,
+"knowledgeId": 3854,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 28,
+"knowledgeId": 3855,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 29,
+"knowledgeId": 3856,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 30,
+"knowledgeId": 3857,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 31,
+"knowledgeId": 3858,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 32,
+"knowledgeId": 3859,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 33,
+"knowledgeId": 3860,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 34,
+"knowledgeId": 3861,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4016
+},
+{
+"idx": 35,
+"knowledgeId": 3862,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4129
+},
+{
+"idx": 36,
+"knowledgeId": 3863,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 37,
+"knowledgeId": 3864,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 38,
+"knowledgeId": 3865,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 39,
+"knowledgeId": 3866,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 40,
+"knowledgeId": 3867,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 41,
+"knowledgeId": 3868,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5095
+},
+{
+"idx": 42,
+"knowledgeId": 3869,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5099
+},
+{
+"idx": 43,
+"knowledgeId": 3870,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5301
+},
+{
+"idx": 44,
+"knowledgeId": 3871,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5350
+},
+{
+"idx": 45,
+"knowledgeId": 3872,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 46,
+"knowledgeId": 3873,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5641
+},
+{
+"idx": 47,
+"knowledgeId": 3874,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 48,
+"knowledgeId": 3875,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5927
+},
+{
+"idx": 49,
+"knowledgeId": 3876,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5928
+},
+{
+"idx": 50,
+"knowledgeId": 3877,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5940
+},
+{
+"idx": 59,
+"knowledgeId": 3878,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 317
+},
+{
+"idx": 60,
+"knowledgeId": 3879,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 319
+},
+{
+"idx": 61,
+"knowledgeId": 3880,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 320
+},
+{
+"idx": 62,
+"knowledgeId": 3881,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 321
+},
+{
+"idx": 63,
+"knowledgeId": 3882,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 322
+},
+{
+"idx": 64,
+"knowledgeId": 3883,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 323
+},
+{
+"idx": 65,
+"knowledgeId": 3884,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 324
+},
+{
+"idx": 66,
+"knowledgeId": 3885,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 325
+},
+{
+"idx": 67,
+"knowledgeId": 3886,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 327
+},
+{
+"idx": 68,
+"knowledgeId": 3887,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 328
+},
+{
+"idx": 69,
+"knowledgeId": 3888,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 329
+},
+{
+"idx": 70,
+"knowledgeId": 3889,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 330
+},
+{
+"idx": 71,
+"knowledgeId": 3890,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 331
+},
+{
+"idx": 72,
+"knowledgeId": 3891,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 332
+},
+{
+"idx": 73,
+"knowledgeId": 3892,
+"reviewMoved": true,
+"sourceType": "OPERATOR_KNOWLEDGE",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 333
+},
+{
+"idx": 74,
+"knowledgeId": 3893,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 75,
+"knowledgeId": 3894,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 76,
+"knowledgeId": 3895,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 77,
+"knowledgeId": 3896,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 78,
+"knowledgeId": 3897,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 79,
+"knowledgeId": 3898,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 80,
+"knowledgeId": 3899,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 81,
+"knowledgeId": 3900,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3472
+},
+{
+"idx": 82,
+"knowledgeId": 3901,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3475
+},
+{
+"idx": 83,
+"knowledgeId": 3902,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3518
+},
+{
+"idx": 84,
+"knowledgeId": 3903,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 85,
+"knowledgeId": 3904,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3801
+},
+{
+"idx": 86,
+"knowledgeId": 3905,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3923
+},
+{
+"idx": 87,
+"knowledgeId": 3906,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4222
+},
+{
+"idx": 88,
+"knowledgeId": 3907,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4222
+},
+{
+"idx": 89,
+"knowledgeId": 3908,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 90,
+"knowledgeId": 3909,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 91,
+"knowledgeId": 3910,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 92,
+"knowledgeId": 3911,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4511
+},
+{
+"idx": 93,
+"knowledgeId": 3912,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 94,
+"knowledgeId": 3913,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 95,
+"knowledgeId": 3914,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 96,
+"knowledgeId": 3915,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4653
+},
+{
+"idx": 97,
+"knowledgeId": 3916,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5121
+},
+{
+"idx": 98,
+"knowledgeId": 3917,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 99,
+"knowledgeId": 3918,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5790
+},
+{
+"idx": 100,
+"knowledgeId": 3919,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5790
+},
+{
+"idx": 51,
+"knowledgeId": 3920,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 796
+},
+{
+"idx": 52,
+"knowledgeId": 3921,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 817
+},
+{
+"idx": 53,
+"knowledgeId": 3922,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 54,
+"knowledgeId": 3923,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 55,
+"knowledgeId": 3924,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 56,
+"knowledgeId": 3925,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 57,
+"knowledgeId": 3926,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 58,
+"knowledgeId": 3927,
+"reviewMoved": true,
+"sourceType": "CASE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 4076
+},
+{
+"idx": 101,
+"knowledgeId": 3928,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5924
+},
+{
+"idx": 102,
+"knowledgeId": 3929,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 103,
+"knowledgeId": 3930,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 104,
+"knowledgeId": 3931,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 105,
+"knowledgeId": 3932,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 106,
+"knowledgeId": 3933,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 107,
+"knowledgeId": 3934,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 108,
+"knowledgeId": 3935,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1866
+},
+{
+"idx": 109,
+"knowledgeId": 3936,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1866
+},
+{
+"idx": 110,
+"knowledgeId": 3937,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1875
+},
+{
+"idx": 111,
+"knowledgeId": 3938,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 112,
+"knowledgeId": 3939,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 113,
+"knowledgeId": 3940,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 114,
+"knowledgeId": 3941,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3452
+},
+{
+"idx": 115,
+"knowledgeId": 3942,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3452
+},
+{
+"idx": 116,
+"knowledgeId": 3943,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 117,
+"knowledgeId": 3944,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 118,
+"knowledgeId": 3945,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 119,
+"knowledgeId": 3946,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3760
+},
+{
+"idx": 120,
+"knowledgeId": 3947,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4129
+},
+{
+"idx": 121,
+"knowledgeId": 3948,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 122,
+"knowledgeId": 3949,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 123,
+"knowledgeId": 3950,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 124,
+"knowledgeId": 3951,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 125,
+"knowledgeId": 3952,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 126,
+"knowledgeId": 3953,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 127,
+"knowledgeId": 3954,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 128,
+"knowledgeId": 3955,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 129,
+"knowledgeId": 3956,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 130,
+"knowledgeId": 3957,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 131,
+"knowledgeId": 3958,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5095
+},
+{
+"idx": 132,
+"knowledgeId": 3959,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5095
+},
+{
+"idx": 133,
+"knowledgeId": 3960,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5095
+},
+{
+"idx": 134,
+"knowledgeId": 3961,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5099
+},
+{
+"idx": 135,
+"knowledgeId": 3962,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5099
+},
+{
+"idx": 136,
+"knowledgeId": 3963,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5301
+},
+{
+"idx": 137,
+"knowledgeId": 3964,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5350
+},
+{
+"idx": 138,
+"knowledgeId": 3965,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5641
+},
+{
+"idx": 139,
+"knowledgeId": 3966,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 796
+},
+{
+"idx": 140,
+"knowledgeId": 3967,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 817
+},
+{
+"idx": 141,
+"knowledgeId": 3968,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 844
+},
+{
+"idx": 142,
+"knowledgeId": 3969,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 143,
+"knowledgeId": 3970,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 144,
+"knowledgeId": 3971,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 145,
+"knowledgeId": 3972,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 146,
+"knowledgeId": 3973,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 147,
+"knowledgeId": 3974,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 148,
+"knowledgeId": 3975,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 149,
+"knowledgeId": 3976,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 150,
+"knowledgeId": 3977,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 151,
+"knowledgeId": 3978,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 152,
+"knowledgeId": 3979,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 153,
+"knowledgeId": 3980,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 154,
+"knowledgeId": 3981,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 155,
+"knowledgeId": 3982,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 156,
+"knowledgeId": 3983,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 4076
+},
+{
+"idx": 157,
+"knowledgeId": 3984,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 158,
+"knowledgeId": 3985,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 159,
+"knowledgeId": 3986,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2717
+},
+{
+"idx": 160,
+"knowledgeId": 3987,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 161,
+"knowledgeId": 3988,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 162,
+"knowledgeId": 3989,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 163,
+"knowledgeId": 3990,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3604
+},
+{
+"idx": 164,
+"knowledgeId": 3991,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3604
+},
+{
+"idx": 165,
+"knowledgeId": 3992,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3944
+},
+{
+"idx": 166,
+"knowledgeId": 3993,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 167,
+"knowledgeId": 3994,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 168,
+"knowledgeId": 3995,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5121
+},
+{
+"idx": 169,
+"knowledgeId": 3996,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5916
+},
+{
+"idx": 170,
+"knowledgeId": 3997,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 735
+},
+{
+"idx": 171,
+"knowledgeId": 3998,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 172,
+"knowledgeId": 3999,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 173,
+"knowledgeId": 4000,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 174,
+"knowledgeId": 4001,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1866
+},
+{
+"idx": 175,
+"knowledgeId": 4002,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1875
+},
+{
+"idx": 176,
+"knowledgeId": 4003,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1875
+},
+{
+"idx": 177,
+"knowledgeId": 4004,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 178,
+"knowledgeId": 4005,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3760
+},
+{
+"idx": 179,
+"knowledgeId": 4006,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4129
+},
+{
+"idx": 180,
+"knowledgeId": 4007,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 181,
+"knowledgeId": 4008,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 182,
+"knowledgeId": 4009,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 648
+},
+{
+"idx": 183,
+"knowledgeId": 4010,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 733
+},
+{
+"idx": 184,
+"knowledgeId": 4011,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 185,
+"knowledgeId": 4012,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 186,
+"knowledgeId": 4013,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 187,
+"knowledgeId": 4014,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 188,
+"knowledgeId": 4015,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2717
+},
+{
+"idx": 189,
+"knowledgeId": 4016,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 190,
+"knowledgeId": 4017,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3518
+},
+{
+"idx": 191,
+"knowledgeId": 4018,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 192,
+"knowledgeId": 4019,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 193,
+"knowledgeId": 4020,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4222
+},
+{
+"idx": 194,
+"knowledgeId": 4021,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 195,
+"knowledgeId": 4022,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 196,
+"knowledgeId": 4023,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 197,
+"knowledgeId": 4024,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 198,
+"knowledgeId": 4025,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 199,
+"knowledgeId": 4026,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 200,
+"knowledgeId": 4027,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5916
+},
+{
+"idx": 201,
+"knowledgeId": 4028,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 885
+},
+{
+"idx": 202,
+"knowledgeId": 4029,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 203,
+"knowledgeId": 4030,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 204,
+"knowledgeId": 4031,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 205,
+"knowledgeId": 4032,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 206,
+"knowledgeId": 4033,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 207,
+"knowledgeId": 4034,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1866
+},
+{
+"idx": 208,
+"knowledgeId": 4035,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 209,
+"knowledgeId": 4036,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 210,
+"knowledgeId": 4037,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 211,
+"knowledgeId": 4038,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 212,
+"knowledgeId": 4039,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3452
+},
+{
+"idx": 213,
+"knowledgeId": 4040,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3452
+},
+{
+"idx": 214,
+"knowledgeId": 4041,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 215,
+"knowledgeId": 4042,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 216,
+"knowledgeId": 4043,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 217,
+"knowledgeId": 4044,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3760
+},
+{
+"idx": 218,
+"knowledgeId": 4045,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 219,
+"knowledgeId": 4046,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 220,
+"knowledgeId": 4047,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 221,
+"knowledgeId": 4048,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5350
+},
+{
+"idx": 222,
+"knowledgeId": 4049,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 223,
+"knowledgeId": 4050,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 224,
+"knowledgeId": 4051,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 225,
+"knowledgeId": 4052,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5928
+},
+{
+"idx": 226,
+"knowledgeId": 4053,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 733
+},
+{
+"idx": 227,
+"knowledgeId": 4054,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 228,
+"knowledgeId": 4055,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_MEDIA",
+"aid": 3468
+},
+{
+"idx": 229,
+"knowledgeId": 4056,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 230,
+"knowledgeId": 4057,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 231,
+"knowledgeId": 4058,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 232,
+"knowledgeId": 4059,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3472
+},
+{
+"idx": 233,
+"knowledgeId": 4060,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3475
+},
+{
+"idx": 234,
+"knowledgeId": 4061,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3518
+},
+{
+"idx": 235,
+"knowledgeId": 4062,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 236,
+"knowledgeId": 4063,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3801
+},
+{
+"idx": 237,
+"knowledgeId": 4064,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3923
+},
+{
+"idx": 238,
+"knowledgeId": 4065,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4222
+},
+{
+"idx": 239,
+"knowledgeId": 4066,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 240,
+"knowledgeId": 4067,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 241,
+"knowledgeId": 4068,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 242,
+"knowledgeId": 4069,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 243,
+"knowledgeId": 4070,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4511
+},
+{
+"idx": 244,
+"knowledgeId": 4071,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 245,
+"knowledgeId": 4072,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4653
+},
+{
+"idx": 246,
+"knowledgeId": 4073,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5121
+},
+{
+"idx": 247,
+"knowledgeId": 4074,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 248,
+"knowledgeId": 4075,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5790
+},
+{
+"idx": 249,
+"knowledgeId": 4076,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5916
+},
+{
+"idx": 250,
+"knowledgeId": 4077,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5924
+},
+{
+"idx": 251,
+"knowledgeId": 4078,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 252,
+"knowledgeId": 4079,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 253,
+"knowledgeId": 4080,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 254,
+"knowledgeId": 4081,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 255,
+"knowledgeId": 4082,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1866
+},
+{
+"idx": 256,
+"knowledgeId": 4083,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1875
+},
+{
+"idx": 257,
+"knowledgeId": 4084,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 258,
+"knowledgeId": 4085,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 259,
+"knowledgeId": 4086,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3452
+},
+{
+"idx": 260,
+"knowledgeId": 4087,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 261,
+"knowledgeId": 4088,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 262,
+"knowledgeId": 4089,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3760
+},
+{
+"idx": 263,
+"knowledgeId": 4090,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4129
+},
+{
+"idx": 264,
+"knowledgeId": 4091,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4245
+},
+{
+"idx": 265,
+"knowledgeId": 4092,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 266,
+"knowledgeId": 4093,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 267,
+"knowledgeId": 4094,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 268,
+"knowledgeId": 4095,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 269,
+"knowledgeId": 4096,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5095
+},
+{
+"idx": 270,
+"knowledgeId": 4097,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5099
+},
+{
+"idx": 271,
+"knowledgeId": 4098,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5301
+},
+{
+"idx": 272,
+"knowledgeId": 4099,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5350
+},
+{
+"idx": 273,
+"knowledgeId": 4100,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5636
+},
+{
+"idx": 274,
+"knowledgeId": 4101,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5641
+},
+{
+"idx": 275,
+"knowledgeId": 4102,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 276,
+"knowledgeId": 4103,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5928
+},
+{
+"idx": 277,
+"knowledgeId": 4104,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5940
+},
+{
+"idx": 278,
+"knowledgeId": 4105,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 796
+},
+{
+"idx": 279,
+"knowledgeId": 4106,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 817
+},
+{
+"idx": 280,
+"knowledgeId": 4107,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 844
+},
+{
+"idx": 281,
+"knowledgeId": 4108,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 282,
+"knowledgeId": 4109,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 283,
+"knowledgeId": 4110,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 284,
+"knowledgeId": 4111,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 285,
+"knowledgeId": 4112,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 286,
+"knowledgeId": 4113,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 287,
+"knowledgeId": 4114,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 4076
+},
+{
+"idx": 288,
+"knowledgeId": 4115,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3518
+},
+{
+"idx": 289,
+"knowledgeId": 4116,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3923
+},
+{
+"idx": 290,
+"knowledgeId": 4117,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 291,
+"knowledgeId": 4118,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 292,
+"knowledgeId": 4119,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4653
+},
+{
+"idx": 293,
+"knowledgeId": 4120,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5121
+},
+{
+"idx": 294,
+"knowledgeId": 4121,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 295,
+"knowledgeId": 4122,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 296,
+"knowledgeId": 4123,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 297,
+"knowledgeId": 4124,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 298,
+"knowledgeId": 4125,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 299,
+"knowledgeId": 4126,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 300,
+"knowledgeId": 4127,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 301,
+"knowledgeId": 4128,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5099
+},
+{
+"idx": 302,
+"knowledgeId": 4129,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 648
+},
+{
+"idx": 303,
+"knowledgeId": 4130,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 304,
+"knowledgeId": 4131,
+"reviewMoved": true,
+"sourceType": "CAFE_ARTICLE",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 305,
+"knowledgeId": 4132,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 306,
+"knowledgeId": 4133,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 307,
+"knowledgeId": 4134,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 308,
+"knowledgeId": 4135,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 1518
+},
+{
+"idx": 309,
+"knowledgeId": 4136,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 310,
+"knowledgeId": 4137,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 311,
+"knowledgeId": 4138,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 312,
+"knowledgeId": 4139,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 313,
+"knowledgeId": 4140,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 314,
+"knowledgeId": 4141,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 315,
+"knowledgeId": 4142,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 316,
+"knowledgeId": 4143,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2591
+},
+{
+"idx": 317,
+"knowledgeId": 4144,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2717
+},
+{
+"idx": 318,
+"knowledgeId": 4145,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2717
+},
+{
+"idx": 319,
+"knowledgeId": 4146,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2717
+},
+{
+"idx": 320,
+"knowledgeId": 4147,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 321,
+"knowledgeId": 4148,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 322,
+"knowledgeId": 4149,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 323,
+"knowledgeId": 4150,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 324,
+"knowledgeId": 4151,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 325,
+"knowledgeId": 4152,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 2870
+},
+{
+"idx": 326,
+"knowledgeId": 4153,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 327,
+"knowledgeId": 4154,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 328,
+"knowledgeId": 4155,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 329,
+"knowledgeId": 4156,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 330,
+"knowledgeId": 4157,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 331,
+"knowledgeId": 4158,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 332,
+"knowledgeId": 4159,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3226
+},
+{
+"idx": 333,
+"knowledgeId": 4160,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3472
+},
+{
+"idx": 334,
+"knowledgeId": 4161,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3475
+},
+{
+"idx": 335,
+"knowledgeId": 4162,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3475
+},
+{
+"idx": 336,
+"knowledgeId": 4163,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3604
+},
+{
+"idx": 337,
+"knowledgeId": 4164,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3604
+},
+{
+"idx": 338,
+"knowledgeId": 4165,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3604
+},
+{
+"idx": 339,
+"knowledgeId": 4166,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 340,
+"knowledgeId": 4167,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 341,
+"knowledgeId": 4168,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 342,
+"knowledgeId": 4169,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 343,
+"knowledgeId": 4170,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 344,
+"knowledgeId": 4171,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 345,
+"knowledgeId": 4172,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 346,
+"knowledgeId": 4173,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 347,
+"knowledgeId": 4174,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3658
+},
+{
+"idx": 348,
+"knowledgeId": 4175,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 349,
+"knowledgeId": 4176,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 350,
+"knowledgeId": 4177,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 351,
+"knowledgeId": 4178,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "HOLD_PARTIAL",
+"aid": 3782
+},
+{
+"idx": 352,
+"knowledgeId": 4179,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3801
+},
+{
+"idx": 353,
+"knowledgeId": 4180,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3801
+},
+{
+"idx": 354,
+"knowledgeId": 4181,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3923
+},
+{
+"idx": 355,
+"knowledgeId": 4182,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3923
+},
+{
+"idx": 356,
+"knowledgeId": 4183,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3944
+},
+{
+"idx": 357,
+"knowledgeId": 4184,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3944
+},
+{
+"idx": 358,
+"knowledgeId": 4185,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 3944
+},
+{
+"idx": 359,
+"knowledgeId": 4186,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4222
+},
+{
+"idx": 360,
+"knowledgeId": 4187,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 361,
+"knowledgeId": 4188,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 362,
+"knowledgeId": 4189,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 363,
+"knowledgeId": 4190,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 364,
+"knowledgeId": 4191,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 365,
+"knowledgeId": 4192,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4274
+},
+{
+"idx": 366,
+"knowledgeId": 4193,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 367,
+"knowledgeId": 4194,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4385
+},
+{
+"idx": 368,
+"knowledgeId": 4195,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 369,
+"knowledgeId": 4196,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 370,
+"knowledgeId": 4197,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 371,
+"knowledgeId": 4198,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4404
+},
+{
+"idx": 372,
+"knowledgeId": 4199,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 373,
+"knowledgeId": 4200,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 374,
+"knowledgeId": 4201,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 375,
+"knowledgeId": 4202,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 376,
+"knowledgeId": 4203,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 377,
+"knowledgeId": 4204,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4501
+},
+{
+"idx": 378,
+"knowledgeId": 4205,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4511
+},
+{
+"idx": 379,
+"knowledgeId": 4206,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4511
+},
+{
+"idx": 380,
+"knowledgeId": 4207,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 381,
+"knowledgeId": 4208,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4546
+},
+{
+"idx": 382,
+"knowledgeId": 4209,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 4653
+},
+{
+"idx": 383,
+"knowledgeId": 4210,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5121
+},
+{
+"idx": 384,
+"knowledgeId": 4211,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5121
+},
+{
+"idx": 385,
+"knowledgeId": 4212,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5121
+},
+{
+"idx": 386,
+"knowledgeId": 4213,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 387,
+"knowledgeId": 4214,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 388,
+"knowledgeId": 4215,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 389,
+"knowledgeId": 4216,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 390,
+"knowledgeId": 4217,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5325
+},
+{
+"idx": 391,
+"knowledgeId": 4218,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 5790
+},
+{
+"idx": 392,
+"knowledgeId": 4219,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m3",
+"decision": "APPROVE",
+"aid": 6055
+},
+{
+"idx": 393,
+"knowledgeId": 4220,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 735
+},
+{
+"idx": 394,
+"knowledgeId": 4221,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 735
+},
+{
+"idx": 395,
+"knowledgeId": 4222,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 735
+},
+{
+"idx": 396,
+"knowledgeId": 4223,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 735
+},
+{
+"idx": 397,
+"knowledgeId": 4224,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 735
+},
+{
+"idx": 398,
+"knowledgeId": 4225,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 885
+},
+{
+"idx": 399,
+"knowledgeId": 4226,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 885
+},
+{
+"idx": 400,
+"knowledgeId": 4227,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 885
+},
+{
+"idx": 401,
+"knowledgeId": 4228,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 885
+},
+{
+"idx": 402,
+"knowledgeId": 4229,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 885
+},
+{
+"idx": 403,
+"knowledgeId": 4230,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 885
+},
+{
+"idx": 404,
+"knowledgeId": 4231,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 886
+},
+{
+"idx": 405,
+"knowledgeId": 4232,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 886
+},
+{
+"idx": 406,
+"knowledgeId": 4233,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 886
+},
+{
+"idx": 407,
+"knowledgeId": 4234,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 886
+},
+{
+"idx": 408,
+"knowledgeId": 4235,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 409,
+"knowledgeId": 4236,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 410,
+"knowledgeId": 4237,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 411,
+"knowledgeId": 4238,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 412,
+"knowledgeId": 4239,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 923
+},
+{
+"idx": 413,
+"knowledgeId": 4240,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 933
+},
+{
+"idx": 414,
+"knowledgeId": 4241,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 933
+},
+{
+"idx": 415,
+"knowledgeId": 4242,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 933
+},
+{
+"idx": 416,
+"knowledgeId": 4243,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 933
+},
+{
+"idx": 417,
+"knowledgeId": 4244,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 933
+},
+{
+"idx": 418,
+"knowledgeId": 4245,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 933
+},
+{
+"idx": 419,
+"knowledgeId": 4246,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 420,
+"knowledgeId": 4247,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 421,
+"knowledgeId": 4248,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 422,
+"knowledgeId": 4249,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 423,
+"knowledgeId": 4250,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 424,
+"knowledgeId": 4251,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 425,
+"knowledgeId": 4252,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 975
+},
+{
+"idx": 426,
+"knowledgeId": 4253,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 427,
+"knowledgeId": 4254,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 428,
+"knowledgeId": 4255,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 429,
+"knowledgeId": 4256,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 430,
+"knowledgeId": 4257,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1088
+},
+{
+"idx": 431,
+"knowledgeId": 4258,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 432,
+"knowledgeId": 4259,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 433,
+"knowledgeId": 4260,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 434,
+"knowledgeId": 4261,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 435,
+"knowledgeId": 4262,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 436,
+"knowledgeId": 4263,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 437,
+"knowledgeId": 4264,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 438,
+"knowledgeId": 4265,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 439,
+"knowledgeId": 4266,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1100
+},
+{
+"idx": 440,
+"knowledgeId": 4267,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 441,
+"knowledgeId": 4268,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 442,
+"knowledgeId": 4269,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 443,
+"knowledgeId": 4270,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 444,
+"knowledgeId": 4271,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 445,
+"knowledgeId": 4272,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 446,
+"knowledgeId": 4273,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 447,
+"knowledgeId": 4274,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 448,
+"knowledgeId": 4275,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1129
+},
+{
+"idx": 449,
+"knowledgeId": 4276,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 450,
+"knowledgeId": 4277,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 451,
+"knowledgeId": 4278,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 452,
+"knowledgeId": 4279,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 453,
+"knowledgeId": 4280,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 454,
+"knowledgeId": 4281,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 455,
+"knowledgeId": 4282,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 456,
+"knowledgeId": 4283,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 457,
+"knowledgeId": 4284,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1282
+},
+{
+"idx": 458,
+"knowledgeId": 4285,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 459,
+"knowledgeId": 4286,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 460,
+"knowledgeId": 4287,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 461,
+"knowledgeId": 4288,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 462,
+"knowledgeId": 4289,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 463,
+"knowledgeId": 4290,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 1852
+},
+{
+"idx": 464,
+"knowledgeId": 4291,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1866
+},
+{
+"idx": 465,
+"knowledgeId": 4292,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 1875
+},
+{
+"idx": 466,
+"knowledgeId": 4293,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 467,
+"knowledgeId": 4294,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 468,
+"knowledgeId": 4295,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 469,
+"knowledgeId": 4296,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 470,
+"knowledgeId": 4297,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 471,
+"knowledgeId": 4298,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 472,
+"knowledgeId": 4299,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2070
+},
+{
+"idx": 473,
+"knowledgeId": 4300,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 474,
+"knowledgeId": 4301,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 475,
+"knowledgeId": 4302,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 476,
+"knowledgeId": 4303,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 477,
+"knowledgeId": 4304,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 478,
+"knowledgeId": 4305,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 479,
+"knowledgeId": 4306,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 2079
+},
+{
+"idx": 480,
+"knowledgeId": 4307,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_MEDIA",
+"aid": 2699
+},
+{
+"idx": 481,
+"knowledgeId": 4308,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_MEDIA",
+"aid": 2699
+},
+{
+"idx": 482,
+"knowledgeId": 4309,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_MEDIA",
+"aid": 2699
+},
+{
+"idx": 483,
+"knowledgeId": 4310,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_MEDIA",
+"aid": 2699
+},
+{
+"idx": 484,
+"knowledgeId": 4311,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_MEDIA",
+"aid": 2699
+},
+{
+"idx": 485,
+"knowledgeId": 4312,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_MEDIA",
+"aid": 2699
+},
+{
+"idx": 486,
+"knowledgeId": 4313,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 487,
+"knowledgeId": 4314,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 488,
+"knowledgeId": 4315,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 489,
+"knowledgeId": 4316,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 490,
+"knowledgeId": 4317,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 491,
+"knowledgeId": 4318,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3304
+},
+{
+"idx": 492,
+"knowledgeId": 4319,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 493,
+"knowledgeId": 4320,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 494,
+"knowledgeId": 4321,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 495,
+"knowledgeId": 4322,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 496,
+"knowledgeId": 4323,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 497,
+"knowledgeId": 4324,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 498,
+"knowledgeId": 4325,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 499,
+"knowledgeId": 4326,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3346
+},
+{
+"idx": 500,
+"knowledgeId": 4327,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3354
+},
+{
+"idx": 501,
+"knowledgeId": 4328,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3452
+},
+{
+"idx": 502,
+"knowledgeId": 4329,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3452
+},
+{
+"idx": 503,
+"knowledgeId": 4330,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 504,
+"knowledgeId": 4331,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 505,
+"knowledgeId": 4332,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 506,
+"knowledgeId": 4333,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 507,
+"knowledgeId": 4334,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 508,
+"knowledgeId": 4335,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 3457
+},
+{
+"idx": 509,
+"knowledgeId": 4336,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 510,
+"knowledgeId": 4337,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 511,
+"knowledgeId": 4338,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 512,
+"knowledgeId": 4339,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3742
+},
+{
+"idx": 513,
+"knowledgeId": 4340,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3760
+},
+{
+"idx": 514,
+"knowledgeId": 4341,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3760
+},
+{
+"idx": 515,
+"knowledgeId": 4342,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 3760
+},
+{
+"idx": 516,
+"knowledgeId": 4343,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4016
+},
+{
+"idx": 517,
+"knowledgeId": 4344,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4016
+},
+{
+"idx": 518,
+"knowledgeId": 4345,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4016
+},
+{
+"idx": 519,
+"knowledgeId": 4346,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4016
+},
+{
+"idx": 520,
+"knowledgeId": 4347,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4129
+},
+{
+"idx": 521,
+"knowledgeId": 4348,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4129
+},
+{
+"idx": 522,
+"knowledgeId": 4349,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4129
+},
+{
+"idx": 523,
+"knowledgeId": 4350,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 524,
+"knowledgeId": 4351,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 525,
+"knowledgeId": 4352,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 526,
+"knowledgeId": 4353,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 527,
+"knowledgeId": 4354,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 528,
+"knowledgeId": 4355,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 529,
+"knowledgeId": 4356,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4480
+},
+{
+"idx": 530,
+"knowledgeId": 4357,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 531,
+"knowledgeId": 4358,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 532,
+"knowledgeId": 4359,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 533,
+"knowledgeId": 4360,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 534,
+"knowledgeId": 4361,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 535,
+"knowledgeId": 4362,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 536,
+"knowledgeId": 4363,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 537,
+"knowledgeId": 4364,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 538,
+"knowledgeId": 4365,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4541
+},
+{
+"idx": 539,
+"knowledgeId": 4366,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 540,
+"knowledgeId": 4367,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 541,
+"knowledgeId": 4368,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 542,
+"knowledgeId": 4369,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 543,
+"knowledgeId": 4370,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 544,
+"knowledgeId": 4371,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 545,
+"knowledgeId": 4372,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 546,
+"knowledgeId": 4373,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4548
+},
+{
+"idx": 547,
+"knowledgeId": 4374,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 548,
+"knowledgeId": 4375,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 549,
+"knowledgeId": 4376,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 550,
+"knowledgeId": 4377,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 551,
+"knowledgeId": 4378,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 552,
+"knowledgeId": 4379,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 553,
+"knowledgeId": 4380,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4559
+},
+{
+"idx": 554,
+"knowledgeId": 4381,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 555,
+"knowledgeId": 4382,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 556,
+"knowledgeId": 4383,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 557,
+"knowledgeId": 4384,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 558,
+"knowledgeId": 4385,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 559,
+"knowledgeId": 4386,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4671
+},
+{
+"idx": 560,
+"knowledgeId": 4387,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 561,
+"knowledgeId": 4388,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 562,
+"knowledgeId": 4389,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 563,
+"knowledgeId": 4390,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 4784
+},
+{
+"idx": 564,
+"knowledgeId": 4391,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 565,
+"knowledgeId": 4392,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 566,
+"knowledgeId": 4393,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 567,
+"knowledgeId": 4394,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 568,
+"knowledgeId": 4395,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 569,
+"knowledgeId": 4396,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 570,
+"knowledgeId": 4397,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 571,
+"knowledgeId": 4398,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 4825
+},
+{
+"idx": 572,
+"knowledgeId": 4399,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5095
+},
+{
+"idx": 573,
+"knowledgeId": 4400,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5099
+},
+{
+"idx": 574,
+"knowledgeId": 4401,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5099
+},
+{
+"idx": 575,
+"knowledgeId": 4402,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5350
+},
+{
+"idx": 576,
+"knowledgeId": 4403,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5569
+},
+{
+"idx": 577,
+"knowledgeId": 4404,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5569
+},
+{
+"idx": 578,
+"knowledgeId": 4405,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5569
+},
+{
+"idx": 579,
+"knowledgeId": 4406,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5569
+},
+{
+"idx": 580,
+"knowledgeId": 4407,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5569
+},
+{
+"idx": 581,
+"knowledgeId": 4408,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 582,
+"knowledgeId": 4409,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 583,
+"knowledgeId": 4410,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 584,
+"knowledgeId": 4411,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 585,
+"knowledgeId": 4412,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 586,
+"knowledgeId": 4413,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5625
+},
+{
+"idx": 587,
+"knowledgeId": 4414,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5641
+},
+{
+"idx": 588,
+"knowledgeId": 4415,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5641
+},
+{
+"idx": 589,
+"knowledgeId": 4416,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5641
+},
+{
+"idx": 590,
+"knowledgeId": 4417,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 591,
+"knowledgeId": 4418,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 592,
+"knowledgeId": 4419,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 593,
+"knowledgeId": 4420,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 594,
+"knowledgeId": 4421,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 595,
+"knowledgeId": 4422,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 596,
+"knowledgeId": 4423,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 597,
+"knowledgeId": 4424,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "HOLD_PARTIAL",
+"aid": 5834
+},
+{
+"idx": 598,
+"knowledgeId": 4425,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m4",
+"decision": "APPROVE",
+"aid": 5928
+},
+{
+"idx": 599,
+"knowledgeId": 4426,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 213
+},
+{
+"idx": 600,
+"knowledgeId": 4427,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 213
+},
+{
+"idx": 601,
+"knowledgeId": 4428,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 213
+},
+{
+"idx": 602,
+"knowledgeId": 4429,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 213
+},
+{
+"idx": 603,
+"knowledgeId": 4430,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 561
+},
+{
+"idx": 604,
+"knowledgeId": 4431,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 561
+},
+{
+"idx": 605,
+"knowledgeId": 4432,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 588
+},
+{
+"idx": 606,
+"knowledgeId": 4433,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 588
+},
+{
+"idx": 607,
+"knowledgeId": 4434,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 588
+},
+{
+"idx": 608,
+"knowledgeId": 4435,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 592
+},
+{
+"idx": 609,
+"knowledgeId": 4436,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 646
+},
+{
+"idx": 610,
+"knowledgeId": 4437,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 648
+},
+{
+"idx": 611,
+"knowledgeId": 4438,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 648
+},
+{
+"idx": 612,
+"knowledgeId": 4439,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 648
+},
+{
+"idx": 613,
+"knowledgeId": 4440,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 648
+},
+{
+"idx": 614,
+"knowledgeId": 4441,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_MEDIA",
+"aid": 666
+},
+{
+"idx": 615,
+"knowledgeId": 4442,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 686
+},
+{
+"idx": 616,
+"knowledgeId": 4443,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 686
+},
+{
+"idx": 617,
+"knowledgeId": 4444,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 686
+},
+{
+"idx": 618,
+"knowledgeId": 4445,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 686
+},
+{
+"idx": 619,
+"knowledgeId": 4446,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 686
+},
+{
+"idx": 620,
+"knowledgeId": 4447,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 686
+},
+{
+"idx": 621,
+"knowledgeId": 4448,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_MEDIA",
+"aid": 701
+},
+{
+"idx": 622,
+"knowledgeId": 4449,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 708
+},
+{
+"idx": 623,
+"knowledgeId": 4450,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 796
+},
+{
+"idx": 624,
+"knowledgeId": 4451,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 796
+},
+{
+"idx": 625,
+"knowledgeId": 4452,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 817
+},
+{
+"idx": 626,
+"knowledgeId": 4453,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 844
+},
+{
+"idx": 627,
+"knowledgeId": 4454,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 954
+},
+{
+"idx": 628,
+"knowledgeId": 4455,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 954
+},
+{
+"idx": 629,
+"knowledgeId": 4456,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 954
+},
+{
+"idx": 630,
+"knowledgeId": 4457,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 954
+},
+{
+"idx": 631,
+"knowledgeId": 4458,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 954
+},
+{
+"idx": 632,
+"knowledgeId": 4459,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 633,
+"knowledgeId": 4460,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 634,
+"knowledgeId": 4461,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 969
+},
+{
+"idx": 635,
+"knowledgeId": 4462,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 636,
+"knowledgeId": 4463,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 637,
+"knowledgeId": 4464,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 638,
+"knowledgeId": 4465,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 639,
+"knowledgeId": 4466,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2144
+},
+{
+"idx": 640,
+"knowledgeId": 4467,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 641,
+"knowledgeId": 4468,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 642,
+"knowledgeId": 4469,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 2597
+},
+{
+"idx": 643,
+"knowledgeId": 4470,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 644,
+"knowledgeId": 4471,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 645,
+"knowledgeId": 4472,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 646,
+"knowledgeId": 4473,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 647,
+"knowledgeId": 4474,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2619
+},
+{
+"idx": 648,
+"knowledgeId": 4475,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 649,
+"knowledgeId": 4476,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 650,
+"knowledgeId": 4477,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 2661
+},
+{
+"idx": 651,
+"knowledgeId": 4478,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 3464
+},
+{
+"idx": 652,
+"knowledgeId": 4479,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 3464
+},
+{
+"idx": 653,
+"knowledgeId": 4480,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_MEDIA",
+"aid": 3466
+},
+{
+"idx": 654,
+"knowledgeId": 4481,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_MEDIA",
+"aid": 3468
+},
+{
+"idx": 655,
+"knowledgeId": 4482,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_MEDIA",
+"aid": 3468
+},
+{
+"idx": 656,
+"knowledgeId": 4483,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 657,
+"knowledgeId": 4484,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 658,
+"knowledgeId": 4485,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 659,
+"knowledgeId": 4486,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 660,
+"knowledgeId": 4487,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 661,
+"knowledgeId": 4488,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 662,
+"knowledgeId": 4489,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 663,
+"knowledgeId": 4490,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 664,
+"knowledgeId": 4491,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3469
+},
+{
+"idx": 665,
+"knowledgeId": 4492,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 666,
+"knowledgeId": 4493,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 667,
+"knowledgeId": 4494,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 668,
+"knowledgeId": 4495,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 669,
+"knowledgeId": 4496,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 670,
+"knowledgeId": 4497,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "HOLD_PARTIAL",
+"aid": 3513
+},
+{
+"idx": 671,
+"knowledgeId": 4498,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 3578
+},
+{
+"idx": 672,
+"knowledgeId": 4499,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 3578
+},
+{
+"idx": 673,
+"knowledgeId": 4500,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m5",
+"decision": "APPROVE",
+"aid": 4076
+},
+{
+"idx": 674,
+"knowledgeId": 4501,
+"reviewMoved": true,
+"sourceType": "CAFE_COMMENT",
+"board": "m9",
+"decision": "HOLD_MEDIA",
+"aid": 330
+}
+]

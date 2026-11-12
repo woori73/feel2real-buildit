@@ -1,0 +1,72 @@
+{
+ "articleId": 4076,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "국세체납 희망리턴 신청불가",
+ "author": {
+  "nickname": "쩌니",
+  "memberGrade": "일반멤버",
+  "memberLevel": 110
+ },
+ "createdAt": "2026-02-07T10:40:00+09:00",
+ "createdAtMs": 1770428400000,
+ "writtenAtRaw": "26.02.07. 10:40",
+ "viewCount": 169,
+ "commentCount": 2,
+ "commentsCaptured": 2,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=4076&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "카페에서 검색후 정보많이얻고있습니다",
+  "감사합니다",
+  "희망리턴패키지 신청서누르고들어가니",
+  "국세체납 있어서 신청자격이안되네요",
+  "추가감면다른정보있으실까요"
+ ],
+ "bodyNormalized": "카페에서 검색후 정보많이얻고있습니다\n감사합니다\n희망리턴패키지 신청서누르고들어가니\n국세체납 있어서 신청자격이안되네요\n추가감면다른정보있으실까요",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 55185820,
+   "parentCommentId": null,
+   "author": "지피지기자산",
+   "memberGrade": "카페매니저",
+   "createdAt": "2026-02-07T10:51:15+09:00",
+   "createdAtMs": 1770429075000,
+   "text": "국민취업제도 신청해 보세요",
+   "isAuthor": false,
+   "isOperator": true,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 55186371,
+   "parentCommentId": null,
+   "author": "쩌니",
+   "memberGrade": "일반멤버",
+   "createdAt": "2026-02-07T12:11:48+09:00",
+   "createdAtMs": 1770433908000,
+   "text": "네 감사합니다",
+   "isAuthor": true,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 1,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": null
+}

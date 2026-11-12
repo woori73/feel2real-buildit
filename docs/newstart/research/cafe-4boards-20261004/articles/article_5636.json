@@ -1,0 +1,39 @@
+{
+ "articleId": 5636,
+ "boardId": 4,
+ "boardName": "부실차주 임시안부터 확정안",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "어제 새출발기금 담당자와 통화를 했어요.",
+ "author": {
+  "nickname": "살며사랑하며배우며",
+  "memberGrade": "일반멤버",
+  "memberLevel": 110
+ },
+ "createdAt": "2026-07-09T13:41:00+09:00",
+ "createdAtMs": 1783572060000,
+ "writtenAtRaw": "26.07.09. 13:41",
+ "viewCount": 301,
+ "commentCount": 0,
+ "commentsCaptured": 0,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=5636&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "어제 새출발기금 담당자분 직접연락이 왔어요. 제출한 서류대로 진행한다고 하던데 앞으로 확정까지 얼마나 더 걸리나요?"
+ ],
+ "bodyNormalized": "어제 새출발기금 담당자분 직접연락이 왔어요. 제출한 서류대로 진행한다고 하던데 앞으로 확정까지 얼마나 더 걸리나요?",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": true,
+ "operatorAuthored": false,
+ "scopeExcluded": null,
+ "boardNote": "과거 임시안~확정안 게시판: 역사 자료. 현재 시행 규정으로 사용하지 말 것"
+}

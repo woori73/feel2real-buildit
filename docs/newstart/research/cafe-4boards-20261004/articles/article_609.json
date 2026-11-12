@@ -1,0 +1,40 @@
+{
+ "articleId": 609,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "확정안 나오고 교육받아서 10% 추가 감면 받을수 있을까요?",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저",
+  "memberLevel": 999
+ },
+ "createdAt": "2024-12-02T15:35:00+09:00",
+ "createdAtMs": 1733121300000,
+ "writtenAtRaw": "24.12.02. 15:35",
+ "viewCount": 234,
+ "commentCount": 0,
+ "commentsCaptured": 0,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=609&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "네 가능합니다.",
+  "참고로 추가감면은 확정안 이후에도 제출해서 받을 수 있고, 신청시 원금에서 추가로 감면을 받습니다."
+ ],
+ "bodyNormalized": "네 가능합니다.\n\n참고로 추가감면은 확정안 이후에도 제출해서 받을 수 있고, 신청시 원금에서 추가로 감면을 받습니다.",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": true,
+ "scopeExcluded": "OPERATOR_AGENT_POST",
+ "boardNote": null
+}

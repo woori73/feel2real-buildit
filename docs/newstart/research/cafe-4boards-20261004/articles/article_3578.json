@@ -1,0 +1,70 @@
+{
+ "articleId": 3578,
+ "boardId": 5,
+ "boardName": "재취업 재창업 감면수익+정부 지원",
+ "cafeClubId": 31312978,
+ "cafeKey": "newhopero",
+ "title": "소진공 직접대출 첫날 마감",
+ "author": {
+  "nickname": "지피지기자산",
+  "memberGrade": "카페매니저",
+  "memberLevel": 999
+ },
+ "createdAt": "2026-01-12T19:37:00+09:00",
+ "createdAtMs": 1768214220000,
+ "writtenAtRaw": "26.01.12. 19:37",
+ "viewCount": 205,
+ "commentCount": 2,
+ "commentsCaptured": 2,
+ "sourceUrl": "https://cafe.naver.com/ArticleRead.nhn?clubid=31312978&articleid=3578&referrerAllArticles=true",
+ "sourceType": "CAFE_CASE",
+ "topicTags": [],
+ "bodyRaw": [
+  "오늘 소진공 직대 첫날인데, 중요한 직대 대출이 첫날 오전에 다 마감이 되었네요.",
+  "신용취약 대출은 아직 진행중입니다.",
+  "오늘 신청 못하신 분들은 2월 2일 오전을 노리시길 바랍니다."
+ ],
+ "bodyNormalized": "오늘 소진공 직대 첫날인데, 중요한 직대 대출이 첫날 오전에 다 마감이 되었네요.\n\n신용취약 대출은 아직 진행중입니다.\n\n오늘 신청 못하신 분들은 2월 2일 오전을 노리시길 바랍니다.",
+ "bodyHtml": null,
+ "attachments": [],
+ "comments": [
+  {
+   "commentId": 54957469,
+   "parentCommentId": null,
+   "author": "부산사나이",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-01-12T22:36:32+09:00",
+   "createdAtMs": 1768224992000,
+   "text": "까페장님 \r\n항상 좋은정보 좋은글\r\n감사합니다.\r\n열심히 달려보입시더,\r\n언제나 화이팅입니다.",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  },
+  {
+   "commentId": 54984612,
+   "parentCommentId": null,
+   "author": "셋을위해",
+   "memberGrade": "감사멤버",
+   "createdAt": "2026-01-16T09:08:01+09:00",
+   "createdAtMs": 1768522081000,
+   "text": "신용취약계층대출은 19일 월요안아닌가요?계속하고있는건가요?",
+   "isAuthor": false,
+   "isOperator": false,
+   "isDeleted": false,
+   "bestComment": false,
+   "sourceType": "CAFE_COMMENT"
+  }
+ ],
+ "operatorCommentCount": 0,
+ "imageRequired": false,
+ "collectedAt": "2026-10-04T00:00:00+09:00",
+ "extractionMethod": "Qoder browser (logged-in SPA route /ca-fe/web/cafes/31312978/articles)",
+ "collectionStatus": "COMPLETE",
+ "parseWarnings": [],
+ "historicalCandidate": false,
+ "operatorAuthored": true,
+ "scopeExcluded": "OPERATOR_AGENT_POST",
+ "boardNote": null
+}
