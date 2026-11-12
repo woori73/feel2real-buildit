@@ -35,6 +35,17 @@ class McpCafeTest {
   }
 
   @Test
+  void givenExistingStudioGrant_whenListingTools_thenCafePublishingIsNotAdvertised() {
+    var gateway = gateway("studio:read cafe:write", null);
+    var old = new McpOAuth.Identity("old", ADMIN, Set.of("studio:read"));
+    assertTrue(gateway.tools(old).stream().noneMatch(t -> McpGateway.CAFE_TOOLS.contains(t.get("name"))));
+    var current = new McpOAuth.Identity("current", ADMIN, Set.of("cafe:write"));
+    assertTrue(gateway.tools(current).stream().anyMatch(t -> t.get("name").equals("publish_cafe_article")));
+    var nonAdmin = new McpOAuth.Identity("tutor", new AuthenticatedPrincipal(2L, "tutor", "TUTOR"), Set.of("cafe:write"));
+    assertTrue(gateway.tools(nonAdmin).stream().noneMatch(t -> McpGateway.CAFE_TOOLS.contains(t.get("name"))));
+  }
+
+  @Test
   void givenMissingConsentOrNonAdmin_whenCalling_thenServiceNotInvoked() {
     var cafe = mock(CafeService.class); var gateway = gateway("cafe:write", cafe);
     assertThrows(ResponseStatusException.class, () -> gateway.execute(new McpOAuth.Identity("grant", ADMIN, Set.of("studio:read")), "cafe_status", JSON.createObjectNode()));

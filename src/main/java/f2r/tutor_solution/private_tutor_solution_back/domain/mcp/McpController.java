@@ -85,7 +85,7 @@ public class McpController {
           result = Map.of();
           break;
         case "tools/list":
-          result = Map.of("tools", gateway.tools());
+          result = Map.of("tools", gateway.tools(identity));
           break;
         case "tools/call":
           String name = request.path("params").path("name").asText("");

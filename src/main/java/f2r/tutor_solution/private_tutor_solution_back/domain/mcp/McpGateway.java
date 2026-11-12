@@ -100,6 +100,13 @@ public class McpGateway {
     return out;
   }
 
+  /** 새 외부 게시 권한은 기존 제작소 전용 연결의 도구 목록에도 자동 추가하지 않는다. */
+  public List<Map<String, Object>> tools(McpOAuth.Identity identity) {
+    boolean cafeConsent = identity.scopes().contains(McpOAuth.CAFE_WRITE)
+        && "ADMIN".equals(identity.principal().role());
+    return tools().stream().filter(t -> cafeConsent || !CAFE_TOOLS.contains(t.get("name"))).toList();
+  }
+
   private void collectTools(List<Map<String, Object>> out) {
     out.add(
         tool(
