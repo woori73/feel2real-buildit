@@ -18,7 +18,7 @@
     </div>
 
     <div class="admin-nav-wrap">
-      <!-- 자주 쓰는 곳 5개만 바로 보이고, 나머지는 「전체 메뉴」 안에 묶음별로 둔다(모든 경로·권한은 그대로). -->
+      <!-- 업무 대시보드 복귀와 기존 주요 링크를 유지하며 나머지는 전체 메뉴에서 연다. -->
       <nav class="admin-nav" aria-label="관리자 메뉴">
         <a class="admin-nav-link admin-nav-main" th:classappend="${activeMenu == 'academyHome'} ? ' active' : ''" href="/dashboard">업무 대시보드</a>
         <a class="admin-nav-link admin-nav-main" th:classappend="${activeMenu == 'hub'} ? ' active' : ''" href="/admin/hub">통합 대시보드</a>

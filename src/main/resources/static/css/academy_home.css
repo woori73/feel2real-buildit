@@ -179,7 +179,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
   .ah-work-group { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ah-finance-cards { gap: 6px; }
   .ah-finance-card { padding: 10px 8px; }
-  .ah-finance-card strong { font-size: 17px; }
+  .ah-finance-card strong { font-size: 14px; }
 }
 
 @media (max-width: 600px) {

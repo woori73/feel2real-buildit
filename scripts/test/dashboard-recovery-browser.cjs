@@ -135,7 +135,7 @@ function widgets(id) {
         await page.screenshot({path: path.join(evidence, 'admin-classes-mobile.png'), fullPage: true});
       }
       assert.deepEqual(errors, []); assert.deepEqual(writes, []); assert.deepEqual(unexpected, []);
-      results.push({role, result: 'passed', checks: ['direct links', 'canonical student count', 'business switch', 'finance failure/recovery', '390px overflow', 'no writes', ...(role === 'ADMIN' ? ['class tab deep link'] : ['admin links hidden'])]});
+      results.push({role, result: 'passed', checks: ['direct links', 'canonical student count', 'business switch', 'finance failure/recovery', '390px overflow', 'no unexpected writes', ...(role === 'ADMIN' ? ['weekday save/reload/reset/conflict', 'student search/history', 'class tab deep link'] : ['admin links hidden'])]});
       await context.close();
     }
     fs.writeFileSync(path.join(evidence, 'results.json'), JSON.stringify(results, null, 2));
