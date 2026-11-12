@@ -168,6 +168,7 @@ test('given F2R 모드 when 주소를 만들면 then F2R 출결부·학생 원�
   v.useF2r(null);
   assert.equal(v.isF2r(), false);
   assert.equal(v.classesUrl(), '/academycraft/screens/CLS-01-class-list.html');
+  assert.equal(v.rosterUrl(null, null), '/academycraft/screens/ATT-03-attendance-roster.html');
   assert.equal(v.rosterUrl(3, '2026-11-11'), '/academycraft/screens/ATT-03-attendance-roster.html?classId=3&date=2026-11-11');
 });
 

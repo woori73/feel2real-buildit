@@ -154,7 +154,10 @@
       if (date) q.set('date', date);
       return '/easy/attendance?' + q.toString();
     }
-    return SCREENS + 'ATT-03-attendance-roster.html?classId=' + encodeURIComponent(classId) + '&date=' + encodeURIComponent(date);
+    const q = new URLSearchParams();
+    if (classId != null) q.set('classId', classId);
+    if (date) q.set('date', date);
+    return SCREENS + 'ATT-03-attendance-roster.html' + (q.toString() ? '?' + q.toString() : '');
   }
 
   function studentsUrl(filter) {

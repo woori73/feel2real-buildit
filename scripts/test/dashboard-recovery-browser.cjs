@@ -67,6 +67,7 @@ function widgets(id) {
       await page.locator('#ahStudentCount').filter({hasText: '재원생 2명'}).waitFor();
       await page.locator('#ahFinanceCards').filter({hasText: '1,200,000원'}).waitFor();
       assert.equal(await page.locator('#ahWorkClasses').getAttribute('href'), role === 'ADMIN' ? '/easy/attendance?businessId=1&tab=classes' : '/academycraft/screens/CLS-01-class-list.html');
+      assert.equal(await page.locator('#ahWorkAttendance').getAttribute('href'), role === 'ADMIN' ? '/easy/attendance?businessId=1' : '/academycraft/screens/ATT-03-attendance-roster.html');
       assert.equal(await page.locator('#ahAdminNav').isVisible(), role === 'ADMIN');
       assert.equal(await page.locator('.ah-work-group a[href="/admin/hub/exam-requests"]').isVisible(), role === 'ADMIN');
       for (const href of ['/dashboard/info', '/problem-generator', '/testprep', '/ledger', '/builder', '/admissions/workspace', '/dashboard/assistant#all']) {
