@@ -44,6 +44,11 @@ public class McpGateway {
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAdminOverviewService> adminOverview;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService> cafePublishing;
+
+  static final Set<String> CAFE_TOOLS = Set.of("cafe_status", "cafe_publication_history", "publish_cafe_article");
+
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
       Set.of("submit_studio_review", "upload_studio_asset", "create_studio_task", "update_studio_task");
@@ -84,6 +89,7 @@ public class McpGateway {
             if (name.equals("read_academy_move") || name.equals("post_academy_move")) return !oauth.scopeAllowed(McpOAuth.ACADEMY_MOVE_WRITE);
             if (name.equals("read_student_roster") || name.equals("read_admin_dashboard")) return !oauth.scopeAllowed(McpOAuth.STUDENT_ROSTER_READ);
             if (EASY_SITE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.EASY_COLLECT_WRITE);
+            if (CAFE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.CAFE_WRITE);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
               return !oauth.scopeAllowed("studio:read");
@@ -160,6 +166,7 @@ public class McpGateway {
                 integer(1, 20000)),
             List.of("fileId")));
     studioTools(out);
+    cafeTools(out);
     out.add(tool("read_academy_move","학원이사 이슈별 글·AI 정리·대화를 읽습니다. 관리자와 academy-move:write 별도 동의가 필요합니다. 원문 파일은 제외합니다.",Map.of(),List.of()));
     out.add(writeTool("post_academy_move","학원이사 글을 해당 이슈에 올리고 AI가 핵심·미확정 사항·다음 행동을 정리해 함께 답합니다. 같은 idempotencyKey 재시도는 중복 저장하지 않습니다. 관리자와 academy-move:write 별도 동의가 필요합니다.",
         Map.of("title",string(),"content",string(),"issue",Map.of("type","string","enum",List.of("원상복구","교습소 전환","명칭·로고")),"idempotencyKey",string()),List.of("content","issue","idempotencyKey")));
@@ -340,6 +347,20 @@ public class McpGateway {
             List.of("taskId", "status")));
   }
 
+  private void cafeTools(List<Map<String, Object>> out) {
+    out.add(tool("cafe_status", "개인워크아웃 카페 글쓰기 연결·7개 게시판 번호·설정 화면 주소. cafe:write 별도 동의와 ADMIN 필요. 네이버 비밀번호·토큰은 받거나 반환하지 않습니다.", Map.of(), List.of()));
+    out.add(tool("cafe_publication_history", "본인 카페 글 등록 이력 최근 100건. POSTED=성공, PENDING/UNKNOWN=카페에서 실제 결과 확인 필요. 목록만으로 실패를 단정하거나 재게시하지 마세요. cafe:write와 ADMIN 필요.", Map.of(), List.of()));
+    var publish = new LinkedHashMap<>(writeTool("publish_cafe_article",
+        "사용자가 요청한 익명화 자료를 새출발기금 부실차주 라이브러리(31312978)의 설정된 개인워크아웃 게시판에 새 글로 등록합니다. 먼저 cafe_status로 연결과 게시판을 확인하세요."
+        + " 출처·기준일과 공식자료/회원경험/운영자해설을 본문에 구분하세요. 네이버 멤버공개·검색 비허용입니다. 본문은 8000자 이하 텍스트 또는 기본 HTML이며 이미지 첨부·기존 글 수정·삭제는 지원하지 않습니다."
+        + " 같은 idempotencyKey 또는 같은 게시판·제목·본문은 재전송하지 않습니다. PENDING/UNKNOWN은 실제 카페에서 확인하고 자동 재시도하지 마세요. cafe:write 별도 동의와 ADMIN 필요.",
+        Map.of("boardKey", Map.of("type", "string", "enum", new ArrayList<>(f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService.BOARDS.keySet())),
+            "title", string(), "content", string(), "idempotencyKey", string()),
+        List.of("boardKey", "title", "content", "idempotencyKey")));
+    publish.put("annotations", Map.of("readOnlyHint", false, "destructiveHint", false, "idempotentHint", true, "openWorldHint", true));
+    out.add(publish);
+  }
+
   private Map<String, Object> writeTool(
       String name, String description, Map<String, Object> props, List<String> required) {
     var tool = new LinkedHashMap<>(tool(name, description, props, required));
@@ -422,6 +443,18 @@ public class McpGateway {
               if (value.isTextual() && value.asText().length() > maximum)
                 throw McpOAuth.error(400, "argument_too_long");
             });
+    if (CAFE_TOOLS.contains(name)) {
+      if (!identity.scopes().contains(McpOAuth.CAFE_WRITE) || !"ADMIN".equals(identity.principal().role()))
+        throw McpOAuth.error(403, "cafe_admin_consent_required");
+      rate.check("cafe:" + identity.grantId(), 12);
+      var cafe = cafePublishing == null ? null : cafePublishing.getIfAvailable();
+      if (cafe == null) throw McpOAuth.error(503, "cafe_unavailable");
+      if (name.equals("cafe_status")) return cafe.status(identity.principal());
+      if (name.equals("cafe_publication_history")) return cafe.history(identity.principal());
+      return cafe.publish(identity.principal(), identity.grantId(),
+          new f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService.Post(
+              text(args, "boardKey"), text(args, "title"), text(args, "content"), text(args, "idempotencyKey")));
+    }
     if (name.equals("read_academy_move") || name.equals("post_academy_move")) {
       if (!identity.scopes().contains(McpOAuth.ACADEMY_MOVE_WRITE) || !"ADMIN".equals(identity.principal().role()))
         throw McpOAuth.error(403,"academy_move_admin_consent_required");

@@ -1,3 +1,15 @@
+## 개인워크아웃 카페 글쓰기 (2026-11-12)
+
+- `GET /admin/newstart/cafe`: ADMIN 전용 네이버 연결·7개 게시판 번호·등록 이력 화면. `/admin/newstart`에서 진입한다.
+- `POST /admin/newstart/cafe/boards`: 고정 boardKey 7개와 양의 정수 menuId 저장. 중복 번호·임의 키 거부.
+- `POST /admin/newstart/cafe/connect`: ADMIN·동일 Origin, 10분 단일 사용 state 발급 후 네이버 공식 OAuth로 303.
+- `GET /admin/newstart/cafe/callback`: 로그인한 동일 ADMIN/state를 확인하고 별도 앱의 암호화 토큰 저장. 인증 code·토큰은 응답/로그로 내보내지 않는다. 완료 후 연결 화면으로 이동.
+- `POST /admin/newstart/cafe/disconnect`: ADMIN·동일 Origin, 로컬 토큰/state 제거. 과거 글·이력 보존, 네이버 자체 앱 권한 철회는 별도.
+- 기존 `/mcp`에 별도 `cafe:write` + ADMIN 도구 3개: `cafe_status`, `cafe_publication_history`(읽기), `publish_cafe_article`(외부 쓰기). 기존 grant 자동 확장 없음.
+- 게시 도구 입력: boardKey,title,content,idempotencyKey. 카페 31312978·설정 게시판만 가능, 제목 150자/본문 8000자. 일반 텍스트/기본 HTML, 멤버공개·검색 비허용. 이미지·수정·삭제 미지원.
+- 중복 결과 `{id,state,articleUrl,duplicate}`. PENDING/UNKNOWN은 실제 카페 확인이 필요하며 재전송하지 않는다. 내용 변경의 같은 키는 409. 사용자별 180회/서울 날짜와 MCP grant별 분당 12회 제한.
+- 신규 DB V1109·Entity·DOMAIN 동기화. 기본 NEWSTART_CAFE_ENABLED=false. [운영 연결·범위](newstart/CAFE_MCP.md).
+
 ## 응답 시각 기준 — 위키·관리자 통계는 한국 시간 (2026-11-09)
 
 - 저장값은 바꾸지 않는다. 서버(운영 EC2, UTC)가 기록한 `createdAt`·`updatedAt`을 응답에서 `KstTime.toKst`로 한국 시간 벽시계로 바꿔 내보낸다.

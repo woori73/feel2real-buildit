@@ -26,6 +26,7 @@
           승인본은 바뀌지 않고, 승인·공개는 사람이 결정합니다. 별도 학원이사 권한을 선택하면 관리자 전용 글·대화를 읽고 새 글과 AI 요약을 등록할 수 있습니다. 원문 파일·삭제·승인 권한은 포함하지 않습니다.
         </p>
         <form action="/mcp/oauth/authorize" method="post">
+          <p>카페 글 등록 범위를 따로 선택하면 연결한 AI가 운영자 네이버 계정으로 개인워크아웃 게시판에 새 글을 올릴 수 있습니다. 카페에 게시하는 외부 쓰기 권한이며, 기존 글 수정·삭제는 포함하지 않습니다.</p>
           <input type="hidden" name="nonce" th:value="${nonce}" /><label
             th:each="permissionScope : ${scopes}"
             ><input

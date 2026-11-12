@@ -44,6 +44,8 @@
 | **자체 LLM(sLLM) 파이프라인 / 학습·평가 / 다이내믹 덴서티 / 클로드·GPT 협업 분담** | [f2r-llm/PLAN.md](f2r-llm/PLAN.md) + [f2r-llm/TASKS.md](f2r-llm/TASKS.md) + [f2r-llm/DYNAMIC_DENSITY.md](f2r-llm/DYNAMIC_DENSITY.md) + [f2r-llm/EVAL_RESULTS.md](f2r-llm/EVAL_RESULTS.md) |
 
 ## 문서 동기화 규칙 (어느 하나만 수정 금지)
+
+- 개인워크아웃 카페 글쓰기 MCP·네이버 인증·게시판 번호·운영 연결: [newstart/CAFE_MCP.md](newstart/CAFE_MCP.md)
 - 스키마 변경 → `db/migration` V_파일 + Entity + [DOMAIN.md](DOMAIN.md) **셋 동시**
 - 플로우/엔드포인트 변경 → 코드 + [FLOWS.md](FLOWS.md) / [API.md](API.md)
 - 워크플로/마이그레이션 정책 변경 → [WORKFLOW.md](WORKFLOW.md) (CLAUDE.md·AGENTS.md는 포인터만)
