@@ -3,7 +3,7 @@
   'use strict';
   var DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   var LABEL = { MON: '월', TUE: '화', WED: '수', THU: '목', FRI: '금', SAT: '토', SUN: '일' };
-  var SOURCE = { MANUAL: '직접 수정', ATTENDANCE: '최근 4주 등원 기록', CLASS: '반 시간표' };
+  var SOURCE = { MANUAL: '직접 수정', ROSTER: '이번 주 제공 진행표', ATTENDANCE: '최근 4주 등원 기록', CLASS: '반 시간표' };
   var businessId, students = [], classes = [], selectedClass = '', selectedDay = null;
   var editor = null, dialogGeneration = 0, bound = false;
   var $ = function (id) { return document.getElementById(id); };
@@ -108,8 +108,11 @@
   }
 
   window.AcademyStudents = {
-    show: function (biz, rows, groups) {
+    show: function (biz, rows, groups, plan) {
       businessId = biz; students = rows; classes = (groups || []).filter(function (c) { return c.status === 'ACTIVE'; });
+      $('ahRosterSource').textContent = plan && plan.available
+        ? '이번 주 ' + plan.weekStart + ' ~ ' + plan.weekEnd + ' · 제공된 진행표의 예정 일정 포함 · 직접 수정한 요일 우선' + (plan.unmatchedNames ? ' · 학생 연결 확인 필요 ' + plan.unmatchedNames + '명' : '')
+        : (plan && plan.unavailable ? '제공된 진행표를 읽지 못해 최근 등원 기록 기준으로 표시합니다.' : '이번 주 제공 일정이 없어 최근 등원 기록 기준으로 표시합니다.');
       if (!selectedDay) selectedDay = window.AcademyHomeView.seoulClock(new Date()).day;
       if (!bound) {
         $('ahStudentSearch').addEventListener('input', render);

@@ -217,7 +217,8 @@
       biz ? get(F2R + '/student-overview?businessId=' + biz) : get(BASE + '/' + id + '/dashboard/stats'),
       biz ? get(F2R + '/classes?businessId=' + biz) : get(BASE + '/' + id + '/classes'),
       ctx.academyId ? get(BASE + '/' + id + '/consultations?type=INQUIRY&status=OPEN') : Promise.resolve({ status: 'skip', data: [] }),
-      isAdmin ? get('/api/admin/academy-move/entries') : Promise.resolve({ status: 'skip' })
+      isAdmin ? get('/api/admin/academy-move/entries') : Promise.resolve({ status: 'skip' }),
+      biz ? get(F2R + '/weekly-plan?businessId=' + biz) : Promise.resolve({ status: 'skip' })
     ]);
     if (g !== generation) return;
     if (results.some(function (r) { return r.status === 'login'; })) { toLogin(); return; }
@@ -225,7 +226,9 @@
     var overview = null;
     if (biz) {
       overview = stats.status === 'ok' ? stats.data : null;
-      if (overview && window.AcademyStudents) window.AcademyStudents.show(f2rBusiness.businessId, overview, classes.status === 'ok' ? classes.data : []);
+      var plan = results[4].status === 'ok' ? results[4].data : { unavailable: true };
+      if (overview) overview = V.withWeeklyPlan(overview, plan);
+      if (overview && window.AcademyStudents) window.AcademyStudents.show(f2rBusiness.businessId, overview, classes.status === 'ok' ? classes.data : [], plan);
       stats = { status: stats.status, data: V.f2rStats(overview) };
       if (stats.status === 'ok' && !stats.data) stats.status = 'error';
       if (classes.status === 'ok') classes = { status: 'ok', data: V.f2rClasses(classes.data) };

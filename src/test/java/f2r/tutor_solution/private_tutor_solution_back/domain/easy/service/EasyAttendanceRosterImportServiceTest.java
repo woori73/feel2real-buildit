@@ -36,6 +36,37 @@ class EasyAttendanceRosterImportServiceTest extends EasyAttendanceServiceTest {
         eventRepository, classRepository, memberRepository, businessRepository, service, () -> LocalDate.of(2026, 11, 10));
   }
 
+  @Test
+  @DisplayName("given 이번 주 원본의 과거·예정 수업과 동명이인 when 주간 계획 then 예정도 표시하되 출결 저장·이름 자동 병합을 하지 않는다")
+  void weeklyPlanIncludesFutureWithoutRecordingAttendance() {
+    // given — 오늘 화요일 11/10, 이번 주 11/9~11/15
+    Long id = student("가나").getStudentId();
+    student("동명"); student("동명");
+    lessons.add(new RosterLesson(LocalDate.of(2026, 11, 9), "가나", 1));
+    lessons.add(new RosterLesson(LocalDate.of(2026, 11, 12), "가나", 1));
+    lessons.add(new RosterLesson(LocalDate.of(2026, 11, 12), "동명", 1));
+    lessons.add(new RosterLesson(LocalDate.of(2026, 11, 16), "가나", 1));
+    // when
+    var plan = importer.weeklyPlan(ADMIN, BIZ);
+    // then
+    assertThat(plan.weekStart()).isEqualTo(LocalDate.of(2026, 11, 9));
+    assertThat(plan.weekEnd()).isEqualTo(LocalDate.of(2026, 11, 15));
+    assertThat(plan.available()).isTrue();
+    assertThat(plan.students()).singleElement().satisfies(s -> {
+      assertThat(s.studentId()).isEqualTo(id);
+      assertThat(s.weekdays()).containsExactly("MON", "THU");
+    });
+    assertThat(plan.unmatchedNames()).isEqualTo(1);
+    assertThat(events).isEmpty();
+  }
+
+  @Test
+  @DisplayName("given 이번 주가 비어 있는 진행표 when 주간 계획 then 이번 주 일정 없음으로 명시한다")
+  void emptyWeeklyPlan() {
+    // given / when / then
+    assertThat(importer.weeklyPlan(ADMIN, BIZ).available()).isFalse();
+  }
+
   @SuppressWarnings("unchecked")
   List<NameRow> names(Map<String, Object> preview) {
     return (List<NameRow>) preview.get("names");

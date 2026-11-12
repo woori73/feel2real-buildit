@@ -68,6 +68,7 @@ function widgets(id) {
         if (/\/students\/\d+\/weekdays$/.test(url.pathname)) return json(schedules.get(Number(url.pathname.split('/')[6])) || {weekdays: null, revision: null});
         if (/\/students\/\d+\/events$/.test(url.pathname)) return json([{label: '등원', occurredAt: '2026-11-10T15:00:00', note: '합성 진행표 기록'}]);
         if (/\/student-overview$/.test(url.pathname)) return json(students.map(s => { const manual = schedules.get(s.studentId); return manual && manual.weekdays !== null ? {...s, weekdays: manual.weekdays, weekdaySource: 'MANUAL'} : s; }));
+        if (/\/weekly-plan$/.test(url.pathname)) return json({available:true,weekStart:'2026-11-09',weekEnd:'2026-11-15',unmatchedNames:0,students:[{studentId:1,weekdays:['THU']},{studentId:2,weekdays:['THU']}]});
         if (/\/students$/.test(url.pathname)) return json(students);
         if (/\/classes$/.test(url.pathname)) return json(classes);
         if (/\/consultations$/.test(url.pathname) || url.pathname === '/api/admin/academy-move/entries') return json([]);

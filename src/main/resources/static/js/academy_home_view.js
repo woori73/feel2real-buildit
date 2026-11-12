@@ -54,6 +54,15 @@
     return (rows || []).filter(r => r && Array.isArray(r.weekdays) && r.weekdays.includes(day)).length;
   }
 
+  /** 이번 주 원본 진행표(예정 포함)를 우선 쓰고, 직접 수정한 요일은 덮지 않는다. */
+  function withWeeklyPlan(rows, plan) {
+    if (!plan || plan.available !== true || !Array.isArray(plan.students)) return rows;
+    const byId = new Map(plan.students.map(s => [String(s.studentId), s.weekdays]));
+    return (rows || []).map(s => s.weekdaySource === 'MANUAL' ? s : ({
+      ...s, weekdays: byId.get(String(s.studentId)) || [], weekdaySource: 'ROSTER'
+    }));
+  }
+
   /** 'HH:mm' 또는 'HH:mm:ss' → 자정 이후 분. 형식이 아니면 null. */
   function minutes(hhmm) {
     const m = /^(\d{1,2}):(\d{2})/.exec(String(hhmm == null ? '' : hhmm));
@@ -269,6 +278,6 @@
   return {
     DAY_LABEL, minutes, hhmm, seoulClock, dateLabel, addDays, lessonsOn, unscheduledCount, lessonState, headline,
     rosterUrl, studentsUrl, classesUrl, financeView, careItems, studentCountText, statusFromHttp, focusTask,
-    useF2r, isF2r, f2rClasses, f2rRoster, f2rStats, todayStudentCount
+    useF2r, isF2r, f2rClasses, f2rRoster, f2rStats, todayStudentCount, withWeeklyPlan
   };
 });

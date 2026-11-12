@@ -94,6 +94,35 @@ public class EasyAttendanceRosterImportService {
   public record ApplyRequest(Long businessId, Integer year, String previewHash, Long classId,
       List<Mapping> mappings) {}
 
+  public record WeeklyStudent(Long studentId, List<String> weekdays) {}
+  public record WeeklyPlan(LocalDate weekStart, LocalDate weekEnd, boolean available,
+      List<WeeklyStudent> students, int unmatchedNames) {}
+
+  /** 이번 주 제공 진행표의 날짜별 일정. 미래 예정일도 읽되 출결로 저장하지 않는다. */
+  @Transactional(readOnly = true)
+  public WeeklyPlan weeklyPlan(AuthenticatedPrincipal p, Long businessId) {
+    requireBusiness(businessId);
+    LocalDate now = today.get();
+    LocalDate start = now.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+    LocalDate end = start.plusDays(6);
+    List<RosterLesson> week = roster.apply(p, now.getYear()).stream()
+        .filter(l -> !l.date().isBefore(start) && !l.date().isAfter(end)).toList();
+    Map<String, List<EasyStudent>> byName = studentRepository.findAllByOrderByNameAsc().stream()
+        .filter(s -> s.getStatus() == EasyStudentStatus.ENROLLED)
+        .collect(Collectors.groupingBy(s -> s.getName().trim()));
+    Map<Long, Set<String>> days = new LinkedHashMap<>();
+    Set<String> unmatched = new java.util.HashSet<>();
+    for (RosterLesson lesson : week) {
+      var matches = byName.getOrDefault(lesson.name().trim(), List.of());
+      if (matches.size() != 1) { unmatched.add(lesson.name()); continue; }
+      days.computeIfAbsent(matches.get(0).getStudentId(), id -> new java.util.HashSet<>())
+          .add(lesson.date().getDayOfWeek().name().substring(0, 3));
+    }
+    List<String> order = List.of("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN");
+    return new WeeklyPlan(start, end, !week.isEmpty(), days.entrySet().stream()
+        .map(e -> new WeeklyStudent(e.getKey(), order.stream().filter(e.getValue()::contains).toList())).toList(), unmatched.size());
+  }
+
   /** 미리보기: 저장하지 않는다. */
   @Transactional(readOnly = true)
   public Map<String, Object> preview(AuthenticatedPrincipal p, Long businessId, int year) {

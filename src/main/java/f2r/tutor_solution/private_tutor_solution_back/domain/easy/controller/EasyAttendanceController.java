@@ -49,6 +49,13 @@ public class EasyAttendanceController {
     return service.studentOverview(businessId);
   }
 
+  @GetMapping("/weekly-plan")
+  public EasyAttendanceRosterImportService.WeeklyPlan weeklyPlan(@RequestParam Long businessId,
+      @AuthenticationPrincipal AuthenticatedPrincipal p) {
+    requireBusiness(p, businessId);
+    return rosterImport.weeklyPlan(p, businessId);
+  }
+
   @GetMapping("/students/{studentId}/weekdays")
   public EasyAttendanceService.WeekdayView studentWeekdays(@RequestParam Long businessId, @PathVariable Long studentId,
       @AuthenticationPrincipal AuthenticatedPrincipal p) {

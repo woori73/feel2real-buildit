@@ -2,6 +2,20 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const v = require('../../main/resources/static/js/academy_home_view.js');
 
+test('given 원본의 이번 주 예정과 직접 수정값 when 요일을 합치면 then 원본 예정 우선·직접 수정 최우선이다', () => {
+  // given
+  const rows = [{studentId:1,weekdays:['THU'],weekdaySource:'ATTENDANCE'}, {studentId:2,weekdays:['SAT'],weekdaySource:'MANUAL'}, {studentId:3,weekdays:['FRI'],weekdaySource:'ATTENDANCE'}];
+  const plan = {available:true,students:[{studentId:1,weekdays:['TUE']},{studentId:2,weekdays:['THU']}]};
+  // when
+  const merged = v.withWeeklyPlan(rows, plan);
+  // then
+  assert.deepEqual(merged.map(s => s.weekdays), [['TUE'],['SAT'],[]]);
+  assert.equal(merged[0].weekdaySource, 'ROSTER');
+  assert.equal(merged[1].weekdaySource, 'MANUAL');
+  assert.deepEqual(rows[0].weekdays, ['THU']);
+  assert.equal(v.withWeeklyPlan(rows, {available:false}), rows);
+});
+
 test('given 장부 위젯 when 현황을 표시하면 then 실제 금액·최근 목록을 복구하고 장부의 원생 수를 섞지 않는다', () => {
   // given
   const widgets = [{ id: 'easy-finance-summary', data: { cards: [
