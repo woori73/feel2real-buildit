@@ -32,6 +32,7 @@ class McpCafeTest {
     var tool = gateway("cafe:write", null).tools().stream().filter(t -> t.get("name").equals("publish_cafe_article")).findFirst().orElseThrow();
     var annotations = (Map<?, ?>) tool.get("annotations");
     assertEquals(false, annotations.get("readOnlyHint")); assertEquals(true, annotations.get("openWorldHint"));
+    assertEquals(List.of("image1", "image2", "image3", "image4", "image5"), ((Map<?, ?>) tool.get("_meta")).get("openai/fileParams"));
   }
 
   @Test
@@ -58,5 +59,42 @@ class McpCafeTest {
     var cafe = mock(CafeService.class);
     gateway("cafe:write", cafe).execute(new McpOAuth.Identity("grant", ADMIN, Set.of("cafe:write")), "publish_cafe_article", JSON.readTree("{\"boardKey\":\"cases\",\"title\":\"제목\",\"content\":\"내용\",\"idempotencyKey\":\"post-00001\"}"));
     verify(cafe).publish(eq(ADMIN), eq("grant"), argThat(p -> p.boardKey().equals("cases") && p.content().equals("내용")));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void givenHostFile_whenPublishing_thenFetchesValidImageAndDelegatesBytesWithoutFilename() throws Exception {
+    var cafe = mock(CafeService.class); var gateway = gateway("cafe:write", cafe);
+    var fetcher = mock(McpFileFetcher.class);
+    ObjectProvider<McpFileFetcher> provider = mock(ObjectProvider.class);
+    when(provider.getIfAvailable()).thenReturn(fetcher);
+    ReflectionTestUtils.setField(gateway, "fileFetcher", provider);
+    var output = new java.io.ByteArrayOutputStream();
+    javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(2, 2, java.awt.image.BufferedImage.TYPE_INT_RGB), "png", output);
+    when(fetcher.fetch("https://files.oaiusercontent.com/synthetic.png")).thenReturn(
+        new McpFileFetcher.Fetched(new java.io.ByteArrayInputStream(output.toByteArray()), "image/png"));
+    var args = JSON.readTree("{\"boardKey\":\"cases\",\"title\":\"제목\",\"content\":\"내용\",\"idempotencyKey\":\"post-image-001\",\"image1\":{\"download_url\":\"https://files.oaiusercontent.com/synthetic.png\",\"file_id\":\"synthetic-file\",\"file_name\":\"개인 이름.png\",\"mime_type\":\"image/png\"}}");
+    gateway.execute(new McpOAuth.Identity("grant", ADMIN, Set.of("cafe:write")), "publish_cafe_article", args);
+    verify(cafe).publish(eq(ADMIN), eq("grant"), argThat(p -> p.images().size() == 1
+        && Arrays.equals(output.toByteArray(), p.images().getFirst().bytes())));
+    clearInvocations(cafe, fetcher);
+    assertThrows(ResponseStatusException.class, () -> gateway.execute(
+        new McpOAuth.Identity("old", ADMIN, Set.of("studio:read")), "publish_cafe_article", args));
+    verifyNoInteractions(cafe, fetcher);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void givenSpoofedImage_whenPublishing_thenNeverCallsCafe() throws Exception {
+    var cafe = mock(CafeService.class); var gateway = gateway("cafe:write", cafe);
+    var fetcher = mock(McpFileFetcher.class);
+    ObjectProvider<McpFileFetcher> provider = mock(ObjectProvider.class);
+    when(provider.getIfAvailable()).thenReturn(fetcher);
+    ReflectionTestUtils.setField(gateway, "fileFetcher", provider);
+    when(fetcher.fetch(anyString())).thenReturn(new McpFileFetcher.Fetched(
+        new java.io.ByteArrayInputStream("<script>fake png</script>".getBytes()), "image/png"));
+    var args = JSON.readTree("{\"boardKey\":\"cases\",\"title\":\"제목\",\"content\":\"내용\",\"idempotencyKey\":\"post-image-002\",\"image1\":{\"download_url\":\"https://files.oaiusercontent.com/fake.png\",\"file_id\":\"synthetic-file\",\"mime_type\":\"image/png\"}}");
+    assertThrows(ResponseStatusException.class, () -> gateway.execute(new McpOAuth.Identity("grant", ADMIN, Set.of("cafe:write")), "publish_cafe_article", args));
+    verifyNoInteractions(cafe);
   }
 }

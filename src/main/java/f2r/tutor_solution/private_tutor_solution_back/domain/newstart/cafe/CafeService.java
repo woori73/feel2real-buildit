@@ -46,8 +46,12 @@ public class CafeService {
     this.tx = new TransactionTemplate(transactions);
   }
 
-  public record Post(String boardKey, String title, String content, String idempotencyKey) {}
-  record Prepared(String boardKey, String title, String content, String keyHash, String payloadHash) {}
+  public record Post(String boardKey, String title, String content, String idempotencyKey, List<CafeImage> images) {
+    public Post(String boardKey, String title, String content, String idempotencyKey) {
+      this(boardKey, title, content, idempotencyKey, List.of());
+    }
+  }
+  record Prepared(String boardKey, String title, String content, String keyHash, String payloadHash, List<CafeImage> images) {}
 
   static ResponseStatusException error(int status, String reason) {
     return new ResponseStatusException(HttpStatus.valueOf(status), reason);
@@ -163,7 +167,9 @@ public class CafeService {
       return prior(existing(p.userId(), menuId, prepared), prepared);
     }
     try {
-      var result = naver.publish(token, menuId, prepared.title(), prepared.content());
+      var result = prepared.images().isEmpty()
+          ? naver.publish(token, menuId, prepared.title(), prepared.content())
+          : naver.publish(token, menuId, prepared.title(), prepared.content(), prepared.images());
       db.update("UPDATE newstart_cafe_publications SET state='POSTED',article_id=?,article_url=?,updated_at=? WHERE id=?",
           result.articleId(), result.articleUrl(), now(), id);
       return Map.of("id", id, "state", "POSTED", "articleUrl", result.articleUrl(), "duplicate", false);
@@ -223,7 +229,12 @@ public class CafeService {
         .removeProtocols("a", "href", "ftp", "mailto");
     String content = Jsoup.clean(input, safe);
     if (Jsoup.parse(content).text().isBlank()) throw error(400, "empty_cafe_content");
-    return new Prepared(p.boardKey(), title, content, hash(p.idempotencyKey()), hash(p.boardKey() + "\n" + title + "\n" + content));
+    var images = CafeImage.validate(p.images());
+    String payload = p.boardKey() + "\n" + title + "\n" + content;
+    // 텍스트만 있는 기존 요청의 해시는 유지한다. 이미지의 내용과 순서도 중복 판정에 포함한다.
+    if (!images.isEmpty()) payload += "\u0000cafe-images-v1\u0000";
+    for (var image : images) payload += image.mimeType() + ":" + hash(image.bytes()) + "\u0000";
+    return new Prepared(p.boardKey(), title, content, hash(p.idempotencyKey()), hash(payload), images);
   }
 
   private void ensureConnection(long owner) {
@@ -246,7 +257,10 @@ public class CafeService {
   }
 
   static String hash(String value) {
-    try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8))); }
+    return hash(value.getBytes(StandardCharsets.UTF_8));
+  }
+  static String hash(byte[] value) {
+    try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value)); }
     catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
   }
   private static Timestamp now() { return Timestamp.from(Instant.now()); }

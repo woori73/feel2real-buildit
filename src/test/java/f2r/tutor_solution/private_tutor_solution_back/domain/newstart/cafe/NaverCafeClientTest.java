@@ -40,6 +40,25 @@ class NaverCafeClientTest {
   }
 
   @Test
+  void givenTwoImages_whenPublishing_thenSendsMultipartBinaryInOrderAndKoreanEncodedOnce() throws Exception {
+    var http = responding(200, "{\"articleId\":456}");
+    var client = new NaverCafeClient(JsonMapper.builder().build(), new CafeProperties(), http);
+    assertEquals(456, client.publish("synthetic", 31, "한글 제목", "<p>본문</p>",
+        java.util.List.of(CafeImageTest.image(0), CafeImageTest.image(1))).articleId());
+    var captor = org.mockito.ArgumentCaptor.forClass(HttpRequest.class); verify(http).send(captor.capture(), any());
+    var request = captor.getValue(); var body = body(request);
+    assertTrue(request.headers().firstValue("Content-Type").orElseThrow().startsWith("multipart/form-data; boundary="));
+    assertTrue(body.contains(java.net.URLEncoder.encode("한글 제목", StandardCharsets.UTF_8)));
+    assertFalse(body.contains(NaverCafeClient.cafeEncode("한글 제목")));
+    assertTrue(body.contains("name=\"image\"; filename=\"image-1.png\""));
+    assertTrue(body.indexOf("image-1.png") < body.indexOf("image-2.png"));
+    assertTrue(body.contains("name=\"openyn\"\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nfalse"));
+    assertTrue(body.contains("name=\"searchopen\"\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nfalse"));
+    assertTrue(new String(bodyBytes(request), StandardCharsets.ISO_8859_1).contains(
+        new String(CafeImageTest.image(0).bytes(), StandardCharsets.ISO_8859_1)));
+  }
+
+  @Test
   void givenErrorOrMissingArticleId_whenPublishing_thenNeverReportsSuccess() throws Exception {
     for (var http : new HttpClient[]{responding(403, "{\"error\":\"denied\"}"), responding(200, "{}")}) {
       var client = new NaverCafeClient(JsonMapper.builder().build(), new CafeProperties(), http);
@@ -61,6 +80,10 @@ class NaverCafeClientTest {
   }
 
   static String body(HttpRequest request) {
+    return new String(bodyBytes(request), StandardCharsets.UTF_8);
+  }
+
+  static byte[] bodyBytes(HttpRequest request) {
     var bytes = new ByteArrayOutputStream(); var done = new CompletableFuture<Void>();
     request.bodyPublisher().orElseThrow().subscribe(new Flow.Subscriber<ByteBuffer>() {
       public void onSubscribe(Flow.Subscription subscription) { subscription.request(Long.MAX_VALUE); }
@@ -68,6 +91,6 @@ class NaverCafeClientTest {
       public void onError(Throwable error) { done.completeExceptionally(error); }
       public void onComplete() { done.complete(null); }
     });
-    done.join(); return bytes.toString(StandardCharsets.UTF_8);
+    done.join(); return bytes.toByteArray();
   }
 }

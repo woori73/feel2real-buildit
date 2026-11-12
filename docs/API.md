@@ -6,6 +6,7 @@
 - `GET /admin/newstart/cafe/callback`: 로그인한 동일 ADMIN/state를 확인하고 별도 앱의 암호화 토큰 저장. 인증 code·토큰은 응답/로그로 내보내지 않는다. 완료 후 연결 화면으로 이동.
 - `POST /admin/newstart/cafe/disconnect`: ADMIN·동일 Origin, 로컬 토큰/state 제거. 과거 글·이력 보존, 네이버 자체 앱 권한 철회는 별도.
 - 기존 `/mcp`에 별도 `cafe:write` + ADMIN 도구 3개: `cafe_status`, `cafe_publication_history`(읽기), `publish_cafe_article`(외부 쓰기). 기존 grant 자동 확장 없음.
+- `publish_cafe_article`의 선택 파일 인자 `image1`~`image5`: 호스트 파일 객체 `{download_url,file_id,mime_type,file_name?}`. PNG/JPEG 각 4 MiB·총 12 MiB·5장, 최대 한 변 12,000px·1,600만 화소. 허용 파일 호스트/공인 IP 검사 후 이미지 실제 해독·MIME 검증. 공식 multipart `image` 파트로 인자 번호순 첨부, 멤버공개·검색 비허용 유지. 본문 `<img src>`는 받지 않는다. 첨부 내용·순서까지 중복 해시에 포함하고 텍스트만 있는 기존 해시는 유지한다. 이미지 바이트·원본 파일명·파일 URL은 저장하지 않는다. 기존 글 수정·삭제·본문 중간 삽입 위치 보장은 제공하지 않는다.
 - 게시 도구 입력: boardKey,title,content,idempotencyKey. 카페 31312978·설정 게시판만 가능, 제목 150자/본문 8000자. 일반 텍스트/기본 HTML, 멤버공개·검색 비허용. 이미지·수정·삭제 미지원.
 - 중복 결과 `{id,state,articleUrl,duplicate}`. PENDING/UNKNOWN은 실제 카페 확인이 필요하며 재전송하지 않는다. 내용 변경의 같은 키는 409. 사용자별 180회/서울 날짜와 MCP grant별 분당 12회 제한.
 - 신규 DB V1109·Entity·DOMAIN 동기화. 기본 NEWSTART_CAFE_ENABLED=false. [운영 연결·범위](newstart/CAFE_MCP.md).

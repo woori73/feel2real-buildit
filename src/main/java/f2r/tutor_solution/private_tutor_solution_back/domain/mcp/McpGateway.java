@@ -359,12 +359,22 @@ public class McpGateway {
     out.add(tool("cafe_publication_history", "본인 카페 글 등록 이력 최근 100건. POSTED=성공, PENDING/UNKNOWN=카페에서 실제 결과 확인 필요. 목록만으로 실패를 단정하거나 재게시하지 마세요. cafe:write와 ADMIN 필요.", Map.of(), List.of()));
     var publish = new LinkedHashMap<>(writeTool("publish_cafe_article",
         "사용자가 요청한 익명화 자료를 새출발기금 부실차주 라이브러리(31312978)의 설정된 개인워크아웃 게시판에 새 글로 등록합니다. 먼저 cafe_status로 연결과 게시판을 확인하세요."
-        + " 출처·기준일과 공식자료/회원경험/운영자해설을 본문에 구분하세요. 네이버 멤버공개·검색 비허용입니다. 본문은 8000자 이하 텍스트 또는 기본 HTML이며 이미지 첨부·기존 글 수정·삭제는 지원하지 않습니다."
+        + " 확인된 규정과 사례의 차이는 자연스럽게 설명하고 원글 번호·운영자 인용·수집 과정은 본문에 나열하지 마세요. 네이버 멤버공개·검색 비허용입니다. 본문은 8000자 이하 텍스트 또는 기본 HTML입니다."
+        + " image1~image5에 호스트가 넣어 주는 PNG/JPEG 파일을 첨부할 수 있습니다(각 4 MiB, 합계 12 MiB). 첨부 순서대로 전송하며 본문 안의 임의 URL 이미지는 허용하지 않습니다. 기존 글 수정·삭제는 공식 API에서 지원하지 않습니다."
         + " 같은 idempotencyKey 또는 같은 게시판·제목·본문은 재전송하지 않습니다. PENDING/UNKNOWN은 실제 카페에서 확인하고 자동 재시도하지 마세요. cafe:write 별도 동의와 ADMIN 필요.",
         Map.of("boardKey", Map.of("type", "string", "enum", new ArrayList<>(f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService.BOARDS.keySet())),
             "title", string(), "content", string(), "idempotencyKey", string()),
         List.of("boardKey", "title", "content", "idempotencyKey")));
     publish.put("annotations", Map.of("readOnlyHint", false, "destructiveHint", false, "idempotentHint", true, "openWorldHint", true));
+    var inputSchema = new LinkedHashMap<>((Map<String, Object>) publish.get("inputSchema"));
+    var props = new LinkedHashMap<>((Map<String, Object>) inputSchema.get("properties"));
+    var fileSchema = Map.of("type", "object", "properties", Map.of("download_url", string(),
+        "file_id", string(), "mime_type", string(), "file_name", string()),
+        "required", List.of("download_url", "file_id", "mime_type"), "additionalProperties", false);
+    var fileParams = new ArrayList<String>();
+    for (int i = 1; i <= 5; i++) { props.put("image" + i, fileSchema); fileParams.add("image" + i); }
+    inputSchema.put("properties", props); publish.put("inputSchema", inputSchema);
+    publish.put("_meta", Map.of("openai/fileParams", fileParams));
     out.add(publish);
   }
 
@@ -460,7 +470,7 @@ public class McpGateway {
       if (name.equals("cafe_publication_history")) return cafe.history(identity.principal());
       return cafe.publish(identity.principal(), identity.grantId(),
           new f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService.Post(
-              text(args, "boardKey"), text(args, "title"), text(args, "content"), text(args, "idempotencyKey")));
+              text(args, "boardKey"), text(args, "title"), text(args, "content"), text(args, "idempotencyKey"), cafeImages(args)));
     }
     if (name.equals("read_academy_move") || name.equals("post_academy_move")) {
       if (!identity.scopes().contains(McpOAuth.ACADEMY_MOVE_WRITE) || !"ADMIN".equals(identity.principal().role()))
@@ -1048,5 +1058,34 @@ public class McpGateway {
     if (!n.isIntegralNumber() || n.asLong() < min || n.asLong() > max)
       throw McpOAuth.error(400, "invalid_" + key);
     return n.asInt();
+  }
+
+  private List<f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeImage> cafeImages(JsonNode args) throws Exception {
+    var images = new ArrayList<f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeImage>();
+    for (int i = 1; i <= 5; i++) {
+      var file = args.get("image" + i);
+      if (file == null) continue;
+      var allowed = Set.of("download_url", "file_id", "mime_type", "file_name");
+      for (var field : file.properties()) {
+        if (!allowed.contains(field.getKey()) || !field.getValue().isTextual()
+            || field.getValue().asText().length() > 4096)
+          throw McpOAuth.error(400, "invalid_cafe_image_file");
+      }
+      for (String key : List.of("download_url", "file_id", "mime_type")) {
+        if (!file.path(key).isTextual() || file.path(key).asText().isBlank())
+          throw McpOAuth.error(400, "cafe_image_requires_file_id_url_and_mime_type");
+      }
+      String mime = file.path("mime_type").asText();
+      if (!Set.of("image/png", "image/jpeg").contains(mime))
+        throw McpOAuth.error(400, "cafe_image_png_or_jpeg_required");
+      var fetcher = fileFetcher == null ? null : fileFetcher.getIfAvailable();
+      if (fetcher == null) throw McpOAuth.error(503, "file_fetch_unavailable");
+      try (var in = fetcher.fetch(file.path("download_url").asText()).body()) {
+        images.add(new f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeImage(mime,
+            in.readNBytes(f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeImage.MAX_BYTES + 1)));
+      }
+      f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeImage.validate(images);
+    }
+    return List.copyOf(images);
   }
 }
