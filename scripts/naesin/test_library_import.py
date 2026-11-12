@@ -17,6 +17,11 @@ class LibraryImportTest(unittest.TestCase):
         self.assertEqual("고등공통",inventory.classify(self.item("수능하프_88회.hwp"))["grade"])
         self.assertEqual("UNCLASSIFIED",inventory.classify(self.item("영어문법_공통자료.json"))["division"])
         self.assertEqual("UNCLASSIFIED",inventory.label("중1 고1 공통문법")[0])
+    def test_multiple_grades_or_folder_filename_conflict_are_never_auto_imported(self):
+        for name in ["고1고2_학습지.html","고1고2_고3_뮤즈인계.zip","신구중3_신구중2_학습지.html"]:
+            r=inventory.classify(self.item(name))
+            self.assertEqual("CLASSIFICATION_REVIEW",r["status"])
+            self.assertEqual("CONFLICTING_METADATA_REVIEW",r["classification_status"])
     def test_hash_duplicates_keep_aliases_and_do_not_cross_school_divisions(self):
         with tempfile.TemporaryDirectory() as tmp:
             for n in ["신구중3_4회_문제지.txt","신구중3_4회_정답.txt","고1_4회_문제지.txt"]:Path(tmp,n).write_bytes(b"source")
