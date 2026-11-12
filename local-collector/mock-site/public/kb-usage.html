@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Mock KB형 페이지 — 개인사업자용 이용내역</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 520px; margin: 60px auto; padding: 0 20px; }
+  .badge { background: #dcfce7; color: #166534; padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 24px; }
+  label { display: block; margin-top: 12px; font-size: 13px; color: #555; }
+  input { font-size: 15px; padding: 8px; width: 100%; box-sizing: border-box; }
+  button { font-size: 16px; padding: 12px 24px; margin-top: 20px; background: #7c2d12; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  #kb-results { margin-top: 24px; display: none; }
+</style>
+</head>
+<body id="kb-usage-marker" data-authenticated="true">
+  <div class="badge">✓ 로그인됨 (mock) — My KB → 개인사업자용 이용내역 도달 자체가 "인증 완료" 신호입니다.</div>
+  <h2>개인사업자용 이용내역 (mock)</h2>
+  <label for="kb-start-date">조회 시작일 (yyyy-MM-dd)</label>
+  <input id="kb-start-date" value="">
+  <label for="kb-end-date">조회 종료일 (yyyy-MM-dd)</label>
+  <input id="kb-end-date" value="">
+  <button id="kb-search-btn">조회</button>
+  <div id="kb-results">
+    <p>조회 결과 50건 (mock)</p>
+    <a id="kb-excel-download" href="/kb-download.xls" download>인쇄·저장하기 → 엑셀 (mock)</a>
+  </div>
+  <script>
+    document.getElementById('kb-search-btn').addEventListener('click', () => {
+      document.getElementById('kb-results').style.display = 'block';
+    });
+  </script>
+</body>
+</html>

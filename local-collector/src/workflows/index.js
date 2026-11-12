@@ -1,9 +1,11 @@
 import { cardCompanyTestWorkflow } from './cardCompanyTestWorkflow.js';
+import { kbCardWorkflow } from './kbCardWorkflow.js';
 
 // Registry — the "workflow adapter" layer on top of the generic collector engine
 // (Section 6: Local Collector core stays generic, workflows plug in by source_code).
 const REGISTRY = {
   [cardCompanyTestWorkflow.code]: cardCompanyTestWorkflow,
+  [kbCardWorkflow.code]: kbCardWorkflow,
 };
 
 export function resolveWorkflow(sourceCode) {
