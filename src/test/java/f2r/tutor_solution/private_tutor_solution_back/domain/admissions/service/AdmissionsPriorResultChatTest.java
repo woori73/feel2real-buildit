@@ -70,6 +70,24 @@ class AdmissionsPriorResultChatTest {
     }
 
     @Test
+    @DisplayName("given 지난해 결과 근거 when 질문하면 then 근거에 없는 값을 '공개되지 않음'으로 단정하지 말라는 규칙을 LLM에 넘긴다")
+    void priorQuestion_promptForbidsCallingMissingValuesUndisclosed() {
+        // given
+        String q = "테스트대 컴퓨터공학과 충원 몇 명 돌았어요?";
+        givenFacts(q, List.of(TST));
+        givenLlmAnswers("테스트대학교 컴퓨터공학과 지난해 자료에 충원 인원 값이 없습니다.");
+
+        // when
+        service.ask(q, null, null);
+
+        // then
+        ArgumentCaptor<String> user = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(anyString(), user.capture(), anyInt());
+        assertThat(user.getValue()).contains(AdmissionsChatService.PRIOR_MISSING_RULE)
+                .doesNotContain("'공개되지 않음'이라고 하라");
+    }
+
+    @Test
     @DisplayName("given 승인된 지난해 결과 when 경쟁률을 물으면 then LLM이 답하고 지난해 안내·출처 종류 '공식 입시결과 (지난해)'가 붙는다")
     void priorQuestion_withData_isAnsweredWithLastYearLabel() {
         // given
