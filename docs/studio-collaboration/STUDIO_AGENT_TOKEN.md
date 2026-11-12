@@ -2,7 +2,7 @@
 
 ## 왜 필요한가
 MCP 도구(`read_studio_asset`·`upload_studio_asset`)는 파일을 base64 인자로만 주고받는다. 그래서 AI가 파일 내용을 직접 글자로 써야 하고, 3 MB짜리 PNG 한 장도 사실상 옮길 수 없다.
-`/mcp/studio/files`는 큰 파일을 받을 수 있지만 MCP OAuth access token이 필요하다. 클라우드 Claude 세션의 명령창에는 이 토큰이 없다.
+`/mcp/studio/files`는 큰 파일을 받을 수 있지만 MCP OAuth access token이 필요하다. 클라우드 Claude 세션의 명령창에는 이 토큰이 없다. (MCP 연결은 있지만 토큰을 직접 쓸 수 없는 셸 클라이언트는 이 비밀 토큰 대신 `begin_studio_upload` 1회용 티켓 업로드를 쓸 수 있다 — [API.md](../API.md) `/mcp/studio/uploads`.)
 그래서 클라우드 세션은 Studio 원본을 내려받지도, 결과물을 올리지도 못했다(2026-11-11 S11 r10 작업에서 확인).
 
 ## 무엇을 열었나

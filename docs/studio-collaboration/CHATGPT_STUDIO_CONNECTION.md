@@ -30,6 +30,7 @@ ChatGPT가 연결되지 않은 직접 원인은 **운영 MCP 비활성**이다. 
 | `update_studio_task` | `studio:propose` | 작업 IN_PROGRESS·DONE·CANCELLED, 결과 버전 연결 |
 
 대용량(러프 영상 MP4 등 ≤ 100 MiB)은 같은 OAuth 토큰으로 `POST /mcp/studio/files`(multipart)에 등록한다.
+OAuth 토큰을 직접 쓸 수 없지만 셸이 있는 클라이언트(Claude Code 등, MCP 연결 토큰은 호스트가 관리)는 `begin_studio_upload` 도구로 1회용 티켓을 받아 `POST /mcp/studio/uploads`에 원본 bytes를 보낸다(≤ 100 MiB, 10분, 한 번만). 비밀 토큰을 PC에 둘 필요가 없다.
 
 ### 최소 권한
 - `studio:propose`는 **별도 체크박스·기본 해제·위험 확인 필수**. 읽기 연결(`studio:read`)만 준 ChatGPT는 쓰기 도구가 `studio_propose_scope_required`로 거부된다.

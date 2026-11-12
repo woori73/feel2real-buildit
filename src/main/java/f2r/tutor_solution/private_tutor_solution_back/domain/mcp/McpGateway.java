@@ -35,6 +35,10 @@ public class McpGateway {
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<McpFileFetcher> fileFetcher;
 
+  /** begin_studio_upload가 발급하는 1회용 업로드 티켓(큰 파일을 base64 없이 원본 그대로 받는다). */
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<McpStudioUploadTickets> uploadTickets;
+
   /** 학생명단 원본(실명)이 있는 Studio 프로젝트. 일반 Studio 도구로는 어떤 scope로도 열지 않고 집계 도구만 허용한다. */
   static final String STUDENT_ROSTER_PROJECT = "student-roster";
 
@@ -51,7 +55,12 @@ public class McpGateway {
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
-      Set.of("submit_studio_review", "upload_studio_asset", "create_studio_task", "update_studio_task");
+      Set.of(
+          "submit_studio_review",
+          "upload_studio_asset",
+          "begin_studio_upload",
+          "create_studio_task",
+          "update_studio_task");
 
   static final Set<String> STUDIO_TOOLS =
       Set.of(
@@ -61,6 +70,7 @@ public class McpGateway {
           "list_studio_tasks",
           "submit_studio_review",
           "upload_studio_asset",
+          "begin_studio_upload",
           "create_studio_task",
           "update_studio_task");
 
@@ -323,6 +333,18 @@ public class McpGateway {
             List.of("workId", "versionLabel", "changeNote"));
     uploadTool.put("_meta", Map.of("openai/fileParams", List.of("file")));
     out.add(uploadTool);
+    var begin = new LinkedHashMap<String, Object>(upload);
+    begin.remove("contentBase64");
+    begin.remove("file");
+    out.add(
+        writeTool(
+            "begin_studio_upload",
+            "셸이 있는 클라이언트(Claude Code 등)가 큰 파일(100 MiB 이하 영상·이미지·문서)을 base64 없이 새 버전으로 올리는 1단계입니다."
+                + " upload_studio_asset과 같은 인자(내용 제외)로 부르면 10분 동안 한 번 쓸 수 있는 티켓과 curl 명령을 돌려줍니다."
+                + " 클라이언트가 그 명령으로 원본 bytes를 POST하면(--data-binary, multipart 아님) 서버가 같은 규칙으로 새 버전을"
+                + " 등록하고 결과(revisionId·SHA)를 응답합니다. 승인·덮어쓰기는 없습니다. studio:propose 동의 필요.",
+            begin,
+            List.of("workId", "versionLabel", "changeNote", "filename")));
     out.add(
         writeTool(
             "create_studio_task",
@@ -718,6 +740,45 @@ public class McpGateway {
                 text(args, "changeNote"),
                 text(args, "taskId"));
           }
+        }
+      case "begin_studio_upload":
+        {
+          var tickets = uploadTickets == null ? null : uploadTickets.getIfAvailable();
+          if (tickets == null) throw McpOAuth.error(503, "upload_ticket_unavailable");
+          String filename = text(args, "filename");
+          if (filename == null || filename.isBlank()) throw McpOAuth.error(400, "missing_argument:filename");
+          var ticketArgs =
+              new McpStudioUploadTickets.Args(
+                  project.isBlank() ? null : project,
+                  text(args, "workId"),
+                  text(args, "expectedHeadRevisionId"),
+                  text(args, "versionLabel"),
+                  filename,
+                  text(args, "title"),
+                  text(args, "kind"),
+                  args.has("episode") ? number(args, "episode", 1, 1, 14) : null,
+                  args.has("cutNumber") ? number(args, "cutNumber", 1, 1, 999) : null,
+                  text(args, "changeNote"),
+                  text(args, "taskId"),
+                  text(args, "modelReported"));
+          String ticket = tickets.issue(identity, connector.client(), ticketArgs);
+          String url = (oauth == null ? "" : oauth.base()) + "/mcp/studio/uploads";
+          var out = new LinkedHashMap<String, Object>();
+          out.put("status", "upload_ready");
+          out.put("upload_url", url);
+          out.put("method", "POST");
+          out.put("ticket_header", McpStudioUploadController.TICKET_HEADER);
+          out.put("ticket", ticket);
+          out.put("content_type", "application/octet-stream");
+          out.put("body", "raw_file_bytes");
+          out.put("max_bytes", f2r.tutor_solution.private_tutor_solution_back.domain.studio.StudioService.MAX_FILE);
+          out.put("expires_in_seconds", McpStudioUploadTickets.TTL.toSeconds());
+          out.put(
+              "curl",
+              "curl -sS -X POST \"" + url + "\" -H \"" + McpStudioUploadController.TICKET_HEADER + ": " + ticket
+                  + "\" -H \"Content-Type: application/octet-stream\" --data-binary @<local file path>");
+          out.put("note", "티켓은 한 번만 쓸 수 있습니다. 응답 JSON이 upload_studio_asset 결과(revisionId·SHA)입니다.");
+          return out;
         }
       case "create_studio_task":
         return studioAi.createTask(
