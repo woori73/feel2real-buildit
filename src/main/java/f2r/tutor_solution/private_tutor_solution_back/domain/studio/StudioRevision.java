@@ -70,5 +70,9 @@ public class StudioRevision {
   @Column(name = "archive_reason", length = 300)
   private String archiveReason;
 
+  /** VERSION(앞선 버전) 또는 ITEM(감독이 지정한 작업 ID 전체 보관 — 최신본 보호 예외). */
+  @Column(name = "archive_scope", length = 8)
+  private String archiveScope;
+
   protected StudioRevision() {}
 }

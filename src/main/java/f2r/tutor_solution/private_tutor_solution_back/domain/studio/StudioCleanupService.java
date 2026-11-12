@@ -47,14 +47,23 @@ public class StudioCleanupService {
    * @param r id, item_key, origin, kind, work_status, head_id, approved_id
    */
   static String protection(Map<String, Object> r) {
+    return protection(r, false);
+  }
+
+  /**
+   * @param wholeItem 감독이 지정한 작업 ID 전체 보관(ITEM)이면 최신본 보호만 예외로 푼다. 승인본·원본·진행 중 JOB·기준
+   *     자료는 그대로 막는다.
+   */
+  static String protection(Map<String, Object> r, boolean wholeItem) {
     String id = str(r.get("id"));
     String key = str(r.get("item_key"));
-    if (id.equals(str(r.get("head_id")))) return "최신본(head)";
+    if (!wholeItem && id.equals(str(r.get("head_id")))) return "최신본(head)";
     if (id.equals(str(r.get("approved_id")))) return "승인본";
     if (key.toLowerCase(Locale.ROOT).startsWith("source-") || "ORIGINAL".equals(r.get("origin")))
       return "원본";
     if ("JOB".equals(r.get("kind")) && ACTIVE_JOB_STATES.contains(str(r.get("work_status"))))
       return "진행 중인 JOB 요청서";
+    if (key.equals("project-memory")) return "현재 쓰는 기준 자료";
     String upper = key.toUpperCase(Locale.ROOT);
     for (String token : REFERENCE_TOKENS)
       if (upper.contains(token)) return "현재 쓰는 기준 자료";
@@ -79,6 +88,7 @@ public class StudioCleanupService {
     guardProject();
     var candidates = new ArrayList<Map<String, Object>>();
     var blocked = new ArrayList<Map<String, Object>>();
+    var items = new LinkedHashMap<String, Map<String, Object>>();
     long freeable = 0;
     for (var row : rows("r.archived_at IS NULL")) {
       String reason = candidateReason(row);
@@ -89,6 +99,15 @@ public class StudioCleanupService {
       if (block != null) {
         out.put("blockedBy", block);
         blocked.add(out);
+        // 최신본 보호에만 걸렸으면 '작업 ID 전체 보관' 후보로 감독께 따로 보여 준다.
+        String key = (String) row.get("item_key");
+        if (block.equals("최신본(head)") && !items.containsKey(key)) {
+          var item = itemCheck(key);
+          if (item.get("blockedBy") == null) {
+            item.put("reason", reason);
+            items.put(key, item);
+          }
+        }
         continue;
       }
       boolean shared = fileShared(row);
@@ -101,8 +120,9 @@ public class StudioCleanupService {
         "holdDays", HOLD_DAYS,
         "candidates", candidates,
         "blocked", blocked,
+        "itemCandidates", new ArrayList<>(items.values()),
         "freeableBytes", freeable,
-        "note", "보관·삭제는 감독이 이 목록을 확인한 뒤 고른 버전만 실행합니다.");
+        "note", "보관·삭제는 감독이 이 목록을 확인한 뒤 고른 버전·작업 ID만 실행합니다.");
   }
 
   /** 보관함: 보관한 버전과 영구 삭제 가능 시각. */
@@ -115,6 +135,7 @@ public class StudioCleanupService {
       s.put("archivedAt", String.valueOf(row.get("archived_at")));
       s.put("archivedBy", row.get("archived_by"));
       s.put("archiveReason", row.get("archive_reason"));
+      s.put("archiveScope", row.get("archive_scope"));
       s.put("purgeableAt", String.valueOf(row.get("purgeable_at")));
       s.put("purgeable", truthy(row.get("purgeable")));
       out.add(s);
@@ -145,12 +166,42 @@ public class StudioCleanupService {
         continue;
       }
       String reason = Optional.ofNullable(candidateReason(row)).orElse("감독 지정");
-      db.update(
-          "UPDATE studio_revisions SET archived_at=CURRENT_TIMESTAMP,archived_by=?,archive_reason=?"
-              + " WHERE project_id=? AND id=? AND archived_at IS NULL",
-          p.userId(), cut(reason, 300), studio.projectId(), id);
+      markArchived(p, id, reason, "VERSION");
       writeLog(p, "ARCHIVE", row, 0, reason, note);
       done.add(id);
+    }
+    return Map.of("archived", done, "skipped", skipped);
+  }
+
+  /**
+   * 감독이 지정한 작업 ID 전체 보관(최신본 포함). 최신본 보호만 예외이고, 버전 하나라도 다른 이유(승인본·원본·진행 중 JOB·기준 자료·
+   * 참조)로 막히면 그 작업 ID는 통째로 건너뛴다.
+   */
+  @Transactional
+  public Map<String, Object> archiveItems(AuthenticatedPrincipal p, List<String> workIds, String note) {
+    begin(p, workIds, note);
+    var done = new ArrayList<Map<String, Object>>();
+    var skipped = new ArrayList<Map<String, Object>>();
+    for (String key : workIds) {
+      var check = key == null || !key.matches("[a-zA-Z0-9_-]{1,100}") ? null : itemCheck(key);
+      if (check == null || ((Number) check.get("versions")).intValue() == 0) {
+        skipped.add(Map.of("workId", String.valueOf(key), "reason", "보관할 버전이 없습니다"));
+        continue;
+      }
+      if (check.get("blockedBy") != null) {
+        skipped.add(Map.of("workId", key, "reason", (String) check.get("blockedBy")));
+        continue;
+      }
+      var ids = new ArrayList<String>();
+      for (var row : itemRows(key)) {
+        String reason =
+            "감독 지정 작업 ID 전체 보관"
+                + Optional.ofNullable(candidateReason(row)).map(r -> " · " + r).orElse("");
+        markArchived(p, (String) row.get("id"), reason, "ITEM");
+        writeLog(p, "ARCHIVE", row, 0, reason, note);
+        ids.add((String) row.get("id"));
+      }
+      done.add(Map.of("workId", key, "revisionIds", ids));
     }
     return Map.of("archived", done, "skipped", skipped);
   }
@@ -167,7 +218,8 @@ public class StudioCleanupService {
         continue;
       }
       db.update(
-          "UPDATE studio_revisions SET archived_at=NULL,archived_by=NULL,archive_reason=NULL"
+          "UPDATE studio_revisions SET archived_at=NULL,archived_by=NULL,archive_reason=NULL,"
+              + "archive_scope=NULL"
               + " WHERE project_id=? AND id=?",
           studio.projectId(), id);
       writeLog(p, "RESTORE", row, 0, "되살림", note);
@@ -192,7 +244,7 @@ public class StudioCleanupService {
                   ? "보관하지 않은 버전입니다(먼저 보관)"
                   : !truthy(row.get("purgeable"))
                       ? "보관 " + HOLD_DAYS + "일이 지나지 않았습니다(" + row.get("purgeable_at") + " 이후)"
-                      : blockReason(row);
+                      : blockReason(row, "ITEM".equals(row.get("archive_scope")));
       if (why != null) {
         skipped.add(Map.of("revisionId", id, "reason", why));
         continue;
@@ -204,7 +256,19 @@ public class StudioCleanupService {
       db.update(
           "UPDATE studio_revisions SET parent_id=? WHERE project_id=? AND parent_id=?",
           row.get("parent_id"), studio.projectId(), id);
+      // 작업 ID 전체 보관(ITEM)에서 최신본을 지우면 head는 그 부모(역시 보관됨)로 옮긴다.
+      db.update(
+          "UPDATE studio_items SET head_id=? WHERE project_id=? AND item_key=? AND head_id=?",
+          row.get("parent_id"), studio.projectId(), row.get("item_key"), id);
       db.update("DELETE FROM studio_revisions WHERE project_id=? AND id=?", studio.projectId(), id);
+      Long left =
+          db.queryForObject(
+              "SELECT COUNT(*) FROM studio_revisions WHERE project_id=? AND item_key=?",
+              Long.class, studio.projectId(), row.get("item_key"));
+      if (left != null && left == 0)
+        db.update(
+            "DELETE FROM studio_items WHERE project_id=? AND item_key=? AND approved_id IS NULL",
+            studio.projectId(), row.get("item_key"));
       long bytes = 0;
       if (deleteFile) {
         var file =
@@ -230,7 +294,11 @@ public class StudioCleanupService {
 
   /** 자동 삭제 금지 판정(보관·삭제 공통). 없으면 null. */
   String blockReason(Map<String, Object> row) {
-    String fixed = protection(row);
+    return blockReason(row, false);
+  }
+
+  String blockReason(Map<String, Object> row, boolean wholeItem) {
+    String fixed = protection(row, wholeItem);
     if (fixed != null) return fixed;
     String id = (String) row.get("id");
     Long tasks =
@@ -240,8 +308,41 @@ public class StudioCleanupService {
                 + " WHERE v.project_id=t.project_id AND v.revision_id=?))",
             Long.class, studio.projectId(), id, id, id);
     if (tasks != null && tasks > 0) return "수정 작업이 참조함";
-    if (mentioned(id, id)) return "다른 자료가 이 버전을 참조함";
+    if (mentioned(id, id, wholeItem ? (String) row.get("item_key") : null))
+      return "다른 자료가 이 버전을 참조함";
     return null;
+  }
+
+  /** 작업 ID 전체 보관이 가능한지: 보관 안 된 모든 버전이 최신본 예외만으로 통과해야 한다. */
+  private Map<String, Object> itemCheck(String key) {
+    var rows = itemRows(key);
+    var out = new LinkedHashMap<String, Object>();
+    long bytes = 0;
+    String blocked = null;
+    for (var row : rows) {
+      String why = blockReason(row, true);
+      if (why != null && blocked == null) blocked = row.get("label") + ": " + why;
+      bytes += size(row);
+    }
+    out.put("workId", key);
+    out.put("versions", rows.size());
+    out.put("sizeBytes", bytes);
+    out.put("kind", rows.isEmpty() ? null : rows.getFirst().get("kind"));
+    out.put("blockedBy", blocked);
+    return out;
+  }
+
+  private List<Map<String, Object>> itemRows(String key) {
+    return db.queryForList(
+        SELECT + " AND r.item_key=? AND r.archived_at IS NULL ORDER BY r.created_at,r.id",
+        studio.projectId(), key);
+  }
+
+  private void markArchived(AuthenticatedPrincipal p, String id, String reason, String scope) {
+    db.update(
+        "UPDATE studio_revisions SET archived_at=CURRENT_TIMESTAMP,archived_by=?,archive_reason=?,"
+            + "archive_scope=? WHERE project_id=? AND id=? AND archived_at IS NULL",
+        p.userId(), cut(reason, 300), scope, studio.projectId(), id);
   }
 
   /** 파일을 다른 버전이 쓰거나 다른 자료 본문이 fileId를 언급하면 파일은 남긴다. */
@@ -252,15 +353,17 @@ public class StudioCleanupService {
         db.queryForObject(
             "SELECT COUNT(*) FROM studio_revisions WHERE project_id=? AND file_id=? AND id<>?",
             Long.class, studio.projectId(), fileId, row.get("id"));
-    return (others != null && others > 0) || mentioned(fileId, (String) row.get("id"));
+    return (others != null && others > 0) || mentioned(fileId, (String) row.get("id"), null);
   }
 
-  private boolean mentioned(String needle, String self) {
+  /** 다른 자료 본문이 needle을 언급하는지. sameItem이 있으면 같은 작업 ID 안의 언급은 셈하지 않는다(전체 보관). */
+  private boolean mentioned(String needle, String self, String sameItem) {
     Long n =
         db.queryForObject(
-            "SELECT COUNT(*) FROM studio_revisions WHERE project_id=? AND id<>? AND"
+            "SELECT COUNT(*) FROM studio_revisions WHERE project_id=? AND id<>? AND item_key<>? AND"
                 + " (LOCATE(?,content)>0 OR LOCATE(?,dialogue)>0 OR LOCATE(?,direction)>0)",
-            Long.class, studio.projectId(), self, needle, needle, needle);
+            Long.class, studio.projectId(), self, sameItem == null ? "" : sameItem, needle, needle,
+            needle);
     return n != null && n > 0;
   }
 
@@ -270,8 +373,8 @@ public class StudioCleanupService {
     studio.require(p, true, true);
     guardProject();
     if (ids == null || ids.isEmpty() || ids.size() > MAX_BATCH)
-      throw StudioService.error(400, "버전 ID를 1~" + MAX_BATCH + "개 보내세요.");
-    if (new HashSet<>(ids).size() != ids.size()) throw StudioService.error(400, "같은 버전 ID가 중복되었습니다.");
+      throw StudioService.error(400, "버전·작업 ID를 1~" + MAX_BATCH + "개 보내세요.");
+    if (new HashSet<>(ids).size() != ids.size()) throw StudioService.error(400, "같은 ID가 중복되었습니다.");
     if (note == null || note.isBlank() || note.length() > 500)
       throw StudioService.error(400, "감독 확인 메모(1~500자)를 적으세요.");
   }
@@ -287,7 +390,7 @@ public class StudioCleanupService {
 
   private static final String SELECT =
       "SELECT r.id,r.item_key,r.label,r.parent_id,r.kind,r.origin,r.work_status,r.file_id,r.created_at,"
-          + "r.archived_at,r.archived_by,r.archive_reason,i.head_id,i.approved_id,f.size_bytes,f.filename,"
+          + "r.archived_at,r.archived_by,r.archive_reason,r.archive_scope,i.head_id,i.approved_id,f.size_bytes,f.filename,"
           + "(r.archived_at + INTERVAL "
           + HOLD_DAYS
           + " DAY) AS purgeable_at,"

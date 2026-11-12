@@ -49,6 +49,15 @@ public class StudioCleanupController {
     return cleanup.archive(p, s.revisionIds(), s.note());
   }
 
+  public record ItemSelection(List<String> workIds, String note) {}
+
+  /** 감독이 지정한 작업 ID 전체(최신본 포함) 보관. */
+  @PostMapping("/api/studio/cleanup/archive-items")
+  public Map<String, Object> archiveItems(
+      @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody ItemSelection s) {
+    return cleanup.archiveItems(p, s.workIds(), s.note());
+  }
+
   @PostMapping("/api/studio/cleanup/restore")
   public Map<String, Object> restore(
       @AuthenticationPrincipal AuthenticatedPrincipal p, @RequestBody Selection s) {

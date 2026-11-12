@@ -126,4 +126,26 @@ class StudioCleanupServiceTest {
     for (String key : trials) assertNotNull(StudioCleanupService.candidateReason(row("head", key)), key);
     for (String key : current) assertNull(StudioCleanupService.candidateReason(row("head", key)), key);
   }
+
+  @Test
+  void givenDesignatedWorkId_whenHeadProtectionChecked_thenOnlyHeadRuleIsLifted() {
+    // given — 감독이 지정한 작업 ID 전체 보관(ITEM)
+    var head = row("head", "EP01_V6_S11R10_LTX_X1");
+    var approvedHead = row("head", "EP01_V6_S11R10_LTX_X2");
+    approvedHead.put("approved_id", "head");
+    var referenceHead = row("head", "EP01_V6_S11R2_REF_BIKE_SIDE");
+    // when / then
+    assertEquals("최신본(head)", StudioCleanupService.protection(head));
+    assertNull(StudioCleanupService.protection(head, true));
+    assertEquals("승인본", StudioCleanupService.protection(approvedHead, true));
+    assertEquals("현재 쓰는 기준 자료", StudioCleanupService.protection(referenceHead, true));
+  }
+
+  @Test
+  void givenProjectMemory_whenProtectionChecked_thenBlockedAsReference() {
+    // given
+    var memory = row("head", "project-memory");
+    // when / then
+    assertEquals("현재 쓰는 기준 자료", StudioCleanupService.protection(memory, true));
+  }
 }

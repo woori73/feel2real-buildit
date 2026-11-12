@@ -530,7 +530,8 @@ public class StudioService {
         db.queryForList(
             "SELECT r.*,i.head_id,i.approved_id FROM studio_items i JOIN studio_revisions r ON"
                 + " r.id=i.head_id AND r.project_id=i.project_id WHERE i.project_id=? AND"
-                + " r.kind='STORYBOARD' AND r.episode=? AND r.cut_number IS NOT NULL ORDER BY"
+                + " r.kind='STORYBOARD' AND r.episode=? AND r.cut_number IS NOT NULL AND"
+                + " r.archived_at IS NULL ORDER BY"
                 + " r.cut_number,r.created_at DESC,r.id DESC",
             projectId(),
             episode);

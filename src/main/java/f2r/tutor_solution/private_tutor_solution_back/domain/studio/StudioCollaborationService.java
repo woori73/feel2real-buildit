@@ -181,7 +181,8 @@ public class StudioCollaborationService {
             + " WHERE e.project_id=i.project_id AND e.revision_id=r.id AND e.action IN"
             + " ('APPROVE','REJECT','REQUEST_CHANGES','WITHDRAW_APPROVAL') ORDER BY e.id DESC LIMIT"
             + " 1) AS last_review FROM studio_items i JOIN studio_revisions r ON r.id=i.head_id AND"
-            + " r.project_id=i.project_id WHERE i.project_id=? AND (i.approved_id IS NULL OR"
+            + " r.project_id=i.project_id WHERE i.project_id=? AND r.archived_at IS NULL AND"
+            + " (i.approved_id IS NULL OR"
             + " i.head_id<>i.approved_id) AND r.kind<>'JOB' AND i.item_key NOT LIKE"
             + " 'source-09d62dee-%') pending WHERE COALESCE(last_review,'')<>'REJECT' ORDER BY"
             + " created_at DESC,id LIMIT ? OFFSET ?",

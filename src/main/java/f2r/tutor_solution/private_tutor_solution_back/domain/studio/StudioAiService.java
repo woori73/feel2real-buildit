@@ -84,7 +84,8 @@ public class StudioAiService {
             + "r.work_status,r.created_at,r.created_by,i.approved_id,f.id AS file_id,f.filename,"
             + "f.extension,f.size_bytes,f.sha256 FROM studio_items i JOIN studio_revisions r ON"
             + " r.id=i.head_id AND r.project_id=i.project_id LEFT JOIN studio_files f ON"
-            + " f.id=r.file_id WHERE i.project_id=? AND i.item_key<>'project-memory'";
+            + " f.id=r.file_id WHERE i.project_id=? AND i.item_key<>'project-memory' AND"
+            + " r.archived_at IS NULL";
     List<Object> args = new ArrayList<>(List.of(studio.projectId()));
     if (episode != null) {
       sql += " AND r.episode=?";

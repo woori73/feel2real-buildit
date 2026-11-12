@@ -600,6 +600,8 @@
     const data=await api("cleanup/candidates");
     $("cleanup-candidates").replaceChildren(...data.candidates.map(r=>cleanupRow(r,r.reason+(r.fileShared?" · 파일은 다른 버전이 써서 남김":""),true)));
     $("cleanup-candidate-count").textContent=data.candidates.length+"건 · 지울 수 있는 용량 "+mb(data.freeableBytes);
+    $("cleanup-items").replaceChildren(...data.itemCandidates.map(r=>{const line=el("label",undefined,"card"),box=el("input");box.type="checkbox";box.value=r.workId;line.append(box,el("strong"," "+r.workId),el("span"," · 버전 "+r.versions+"개 · "+mb(r.sizeBytes)+" · "+r.reason));return line;}));
+    $("cleanup-item-count").textContent=data.itemCandidates.length+"건";
     $("cleanup-blocked").replaceChildren(...data.blocked.map(r=>cleanupRow(r,r.reason+" → 막힘: "+r.blockedBy,false)));
     $("cleanup-blocked-count").textContent=data.blocked.length+"건";
     const archived=await api("cleanup/archived");
@@ -614,12 +616,13 @@
     if(!ids.length)throw Error("목록에서 버전을 고르세요.");
     if(!note)throw Error("감독 확인 메모를 적으세요.");
     if(!confirm(confirmText.replace("{n}",ids.length)))return;
-    const result=await api("cleanup/"+action,json({revisionIds:ids,note}));
+    const result=await api("cleanup/"+action,json(action==="archive-items"?{workIds:ids,note}:{revisionIds:ids,note}));
     await cleanupLoad();
     const done=(result.archived||result.restored||result.purged||[]).length;
     message(done+"건 처리, "+result.skipped.length+"건 제외"+(result.bytesFreed?" · "+mb(result.bytesFreed)+" 삭제":"")+(result.skipped.length?" (제외 사유: "+result.skipped.map(s=>s.reason).join(", ")+")":""));
   }
   $("cleanup-archive").onclick=run(()=>cleanupAct("archive","cleanup-candidates","{n}건을 보관합니다. 목록·검색에서 빠지고, 보관함에서 되살릴 수 있습니다."));
+  $("cleanup-archive-items").onclick=run(()=>cleanupAct("archive-items","cleanup-items","작업 ID {n}개를 최신본까지 모두 보관합니다. 보관함에서 되살릴 수 있습니다."));
   $("cleanup-restore").onclick=run(()=>cleanupAct("restore","cleanup-archived","{n}건을 되살립니다."));
   $("cleanup-purge").onclick=run(()=>cleanupAct("purge","cleanup-archived","{n}건을 영구 삭제합니다. 되돌릴 수 없습니다. 보관 14일이 지나지 않은 버전은 자동으로 제외됩니다."));
   document.querySelectorAll("details.tool-panel").forEach(tool=>tool.addEventListener("toggle",run(async()=>{if(tool.open)await loadTool(tool);})));

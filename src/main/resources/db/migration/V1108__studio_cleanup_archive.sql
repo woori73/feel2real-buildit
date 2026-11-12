@@ -5,7 +5,9 @@
 ALTER TABLE studio_revisions
   ADD COLUMN archived_at TIMESTAMP NULL,
   ADD COLUMN archived_by BIGINT NULL,
-  ADD COLUMN archive_reason VARCHAR(300) NULL;
+  ADD COLUMN archive_reason VARCHAR(300) NULL,
+  ADD COLUMN archive_scope VARCHAR(8) NULL;
+-- archive_scope: VERSION(앞선 버전 하나) / ITEM(감독이 지정한 작업 ID 전체, 최신본 포함).
 CREATE INDEX ix_studio_revision_archived ON studio_revisions(project_id, archived_at);
 
 -- Permanent record of every archive / restore / purge. Kept even after the version row is purged.

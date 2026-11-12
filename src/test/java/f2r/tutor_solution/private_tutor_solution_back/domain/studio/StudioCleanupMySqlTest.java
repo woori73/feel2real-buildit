@@ -39,6 +39,7 @@ class StudioCleanupMySqlTest {
   @Autowired StudioService studio;
   @Autowired StudioCleanupService cleanup;
   @Autowired StudioCatalog catalog;
+  @Autowired StudioAiService ai;
   @Autowired StudioProjectService projects;
   @Autowired JdbcTemplate db;
   @Autowired UserRepository users;
@@ -307,5 +308,84 @@ class StudioCleanupMySqlTest {
     // then
     assertEquals(List.of(r1), ids(result, "purged"));
     assertEquals(1, count("SELECT COUNT(*) FROM studio_files WHERE id=?", fileA));
+  }
+
+  @SuppressWarnings("unchecked")
+  String itemSkipReason(Map<String, Object> result) {
+    return (String) ((List<Map<String, Object>>) result.get("skipped")).getFirst().get("reason");
+  }
+
+  @Test
+  void givenTrialWorkIdBlockedOnlyByHead_whenCandidatesListed_thenOfferedAsItemCandidate() {
+    // given — S11 r1~r10 시험 자료는 버전이 하나뿐이라 그 버전이 최신본이다.
+    String trial = "EP01_V6_S11R10_LTX_X9_" + UUID.randomUUID().toString().substring(0, 8);
+    save(trial, null, "r1", "시험 테이크", null);
+    // when
+    var result = cleanup.candidates(admin);
+    // then
+    @SuppressWarnings("unchecked")
+    var items = (List<Map<String, Object>>) result.get("itemCandidates");
+    assertTrue(items.stream().anyMatch(i -> trial.equals(i.get("workId"))));
+  }
+
+  @Test
+  void givenDesignatedWorkId_whenItemArchived_thenHeadAndOlderHiddenEverywhere() {
+    // when
+    var result = cleanup.archiveItems(admin, List.of(key), "감독 지정 작업 ID 전체 보관");
+    // then — 최신본(r2)과 앞선 버전(r1)이 모두 보관되고 최신본 목록에서도 빠진다.
+    assertTrue(((List<?>) result.get("skipped")).isEmpty());
+    assertEquals(2, count("SELECT COUNT(*) FROM studio_revisions WHERE item_key=? AND archive_scope='ITEM'", key));
+    assertTrue(
+        catalog.list(admin, "materials", "", "", "", "", "latest", "", 100, 0).stream()
+            .noneMatch(r -> key.equals(r.get("item_key"))));
+    assertTrue(studio.cuts(admin, 1).stream().noneMatch(r -> key.equals(r.get("item_key"))));
+    @SuppressWarnings("unchecked")
+    var assets = (List<Map<String, Object>>) ai.listAssets(admin, 1, null, null, key, 100, 0).get("items");
+    assertTrue(assets == null || assets.isEmpty());
+  }
+
+  @Test
+  void givenDesignatedWorkIdWithApprovedVersion_whenItemArchived_thenWholeItemSkipped() {
+    // given — 승인본은 지정 작업 ID여도 막는다.
+    studio.review(admin, r1, "APPROVE", "승인본 보호");
+    // when
+    var result = cleanup.archiveItems(admin, List.of(key), "감독 지정 작업 ID 전체 보관");
+    // then
+    assertTrue(itemSkipReason(result).contains("승인본"));
+    assertEquals(0, count("SELECT COUNT(*) FROM studio_revisions WHERE item_key=? AND archived_at IS NOT NULL", key));
+  }
+
+  @Test
+  void givenDesignatedWorkIdReferencedElsewhere_whenItemArchived_thenWholeItemSkipped() {
+    // given — 다른 작업 ID의 문서가 최신본 ID를 적어 두었다.
+    save("EP01_V6_NOTE_" + UUID.randomUUID().toString().substring(0, 8), null, "r1", "참조: " + r2, null);
+    // when
+    var result = cleanup.archiveItems(admin, List.of(key), "감독 지정 작업 ID 전체 보관");
+    // then
+    assertTrue(itemSkipReason(result).contains("참조"));
+  }
+
+  @Test
+  void givenWholeItemArchived15DaysAgo_whenAllVersionsPurged_thenItemRowAndFilesRemoved() {
+    // given
+    cleanup.archiveItems(admin, List.of(key), "감독 지정 작업 ID 전체 보관");
+    ageArchive(r1, 15);
+    ageArchive(r2, 15);
+    // when — 최신본부터 지워도 head가 부모로 옮겨지고, 마지막 버전을 지우면 작업 ID 행도 지운다.
+    var result = cleanup.purge(admin, List.of(r2, r1), "11/26 감독 확인 목록");
+    // then
+    assertEquals(List.of(r2, r1), ids(result, "purged"));
+    assertEquals(0, count("SELECT COUNT(*) FROM studio_revisions WHERE item_key=?", key));
+    assertEquals(0, count("SELECT COUNT(*) FROM studio_items WHERE item_key=?", key));
+    assertEquals(0, count("SELECT COUNT(*) FROM studio_files WHERE id IN (?,?)", fileA, fileB));
+  }
+
+  @Test
+  void givenVersionScopeArchiveOfHead_whenPurgedAfterDesignation_thenHeadStillBlockedWithoutItemScope() {
+    // given — 앞선 버전만 VERSION 범위로 보관하면 최신본(r2)은 여전히 보관할 수 없다.
+    var result = cleanup.archive(admin, List.of(r1, r2), "감독 확인 테스트");
+    // then
+    assertEquals(List.of(r1), ids(result, "archived"));
+    assertEquals("최신본(head)", skipReason(result));
   }
 }
