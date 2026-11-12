@@ -23,7 +23,9 @@ public class CafeAdminController {
   public String page(@AuthenticationPrincipal AuthenticatedPrincipal p, Model model, HttpServletResponse response) {
     CafeService.admin(p);
     response.setHeader("Cache-Control", "no-store");
-    response.setHeader("Referrer-Policy", "no-referrer");
+    // Keep the browser's same-origin form POST Origin header. The OAuth callback
+    // separately uses no-referrer so its authorization code cannot leak.
+    response.setHeader("Referrer-Policy", "same-origin");
     model.addAttribute("status", cafe.status(p));
     model.addAttribute("history", cafe.history(p));
     return "admin/newstart_cafe";

@@ -32,6 +32,7 @@
 ## 인증·오류·중복
 
 - 토큰은 별도 키의 AES-256-GCM·계정 ID AAD로 암호화한다. OAuth state는 계정에 결합하고 10분 내 한 번만 소비한다. 연결 해제/재연결 도중 오래된 callback은 토큰을 복원하지 못한다.
+- 관리자 폼 화면은 `Referrer-Policy: same-origin`으로 같은 출처 POST의 Origin 검증을 유지한다. 외부 사이트에는 referrer를 보내지 않으며, 인증 callback은 `no-referrer`로 code 유출을 막는다.
 - 전송 전에 PENDING 이력을 커밋한다. `(owner_id,key_hash)`와 `(cafe_id,menu_id,payload_hash)` 유일 키로 동시 요청과 다른 키의 같은 글을 차단한다. 다른 내용의 같은 키는 409다.
 - 성공 articleId 확인 시만 POSTED. 타임아웃·응답 오류·성공 결과의 DB 저장 실패는 UNKNOWN이며 자동 재전송하지 않는다. 서버 중단으로 남은 PENDING도 실제 카페 확인이 필요하다. 자동 복구·재게시 도구는 없다.
 - 운영자별 서울 날짜 하루 180회 상한으로 공식 계정당 200건에 여유를 둔다. 다른 앱의 동일 네이버 계정 사용량까지 합산한 보장은 아니다.
