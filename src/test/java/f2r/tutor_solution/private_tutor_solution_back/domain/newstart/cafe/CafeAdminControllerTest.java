@@ -9,6 +9,21 @@ import org.springframework.web.server.ResponseStatusException;
 
 class CafeAdminControllerTest {
   @Test
+  void givenAdminPage_whenRendering_thenFormsKeepOriginAndCallbackKeepsCodePrivate() {
+    var service = mock(CafeService.class);
+    var controller = new CafeAdminController(service, new CafeProperties());
+    var p = new AuthenticatedPrincipal(1L, "operator", "ADMIN");
+    var pageResponse = mock(jakarta.servlet.http.HttpServletResponse.class);
+    assertEquals("admin/newstart_cafe", controller.page(p, new org.springframework.ui.ExtendedModelMap(), pageResponse));
+    verify(pageResponse).setHeader("Referrer-Policy", "same-origin");
+    verify(pageResponse).setHeader("Cache-Control", "no-store");
+
+    var callbackResponse = mock(jakarta.servlet.http.HttpServletResponse.class);
+    assertEquals("redirect:/admin/newstart/cafe?connected=1", controller.callback(p, "state", "code", null, callbackResponse));
+    verify(callbackResponse).setHeader("Referrer-Policy", "no-referrer");
+  }
+
+  @Test
   void givenCrossOrigin_whenConnectingOrSaving_thenNoStateChanges() {
     var service = mock(CafeService.class);
     var controller = new CafeAdminController(service, new CafeProperties());
