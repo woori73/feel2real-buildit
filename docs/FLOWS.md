@@ -1,3 +1,7 @@
+## 개인워크아웃 카페 이미지 첨부 (2026-11-12)
+
+카페 글쓰기 동의와 연결 확인 → 작성할 본문과 PNG/JPEG 파일 1~5장 선택 → 파일 호스트·형식·크기·화소 검증 → 본문과 이미지의 내용·순서를 함께 중복 확인 → PENDING 이력 저장 → 공식 multipart 새 글 등록 → articleId 확인 후 POSTED. 결과 불명은 UNKNOWN으로 보존하고 자동 재전송하지 않는다. 기존 글의 이미지 수정·잡지식 중간 배치는 카페 편집 화면에서 한다. [연결·인자·운영 방법](newstart/CAFE_MCP.md).
+
 ## 홈페이지 정책 안내 (2026-10-29)
 
 공통 푸터 개인정보/이용약관/환불·청약철회/사업자 정보 → 각각 `/policies/privacy`, `/policies/terms`, `/policies/refunds`, `/policies/business` 독립 문서 → 적용 범위·검토 상태 확인 → 필요한 경우 신청 서비스 검토안(`/exam-service/privacy`, `/exam-service/terms`) 또는 기존 확장 전용 `/privacy`. 전체 안내는 `/policies`. 신청·계좌 공개·판매자 확인 여부에 따라 링크가 사라지지 않는다. 홈페이지 공통 정책 승인 원문과 최신 사업자 증빙은 확인 중이며 미승인 정책을 시행 중인 것으로 표시하지 않는다. 신규 신청 활성화·계좌 공개·운영 변경 없음. [조사 및 후속 승인](home-exam/PUBLIC-POLICY-REVIEW-20261029.md).

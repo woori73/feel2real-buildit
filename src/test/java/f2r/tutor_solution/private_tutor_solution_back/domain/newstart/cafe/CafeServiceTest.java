@@ -57,6 +57,31 @@ class CafeServiceTest {
   }
 
   @Test
+  void givenImagePost_whenRepeatedOrImageChanged_thenDeduplicatesAndRejectsClaimedKey() throws Exception {
+    when(naver.publish(anyString(), anyInt(), anyString(), anyString(), anyList()))
+        .thenReturn(new NaverCafeClient.Published(321L, "https://cafe.naver.com/ca-fe/cafes/31312978/articles/321"));
+    var first = new CafeService.Post("cases", "이미지 안내", "본문", "image-request-001", List.of(CafeImageTest.image(0)));
+    assertEquals("POSTED", cafe.publish(ADMIN, "grant", first).get("state"));
+    assertEquals(true, cafe.publish(ADMIN, "grant", new CafeService.Post("cases", "이미지 안내", "본문", "image-request-002", first.images())).get("duplicate"));
+    assertThrows(ResponseStatusException.class, () -> cafe.publish(ADMIN, "grant", new CafeService.Post(
+        "cases", "이미지 안내", "본문", "image-request-001", List.of(CafeImageTest.image(1)))));
+    verify(naver, times(1)).publish(anyString(), anyInt(), anyString(), anyString(), anyList());
+    verify(naver, never()).publish(anyString(), anyInt(), anyString(), anyString());
+  }
+
+  @Test
+  void givenImagePublishTimeout_whenRepeatedWithNewKey_thenPreservesUnknownWithoutResending() throws Exception {
+    when(naver.publish(anyString(), anyInt(), anyString(), anyString(), anyList()))
+        .thenThrow(new RuntimeException("synthetic timeout"));
+    var images = List.of(CafeImageTest.image(0));
+    assertThrows(ResponseStatusException.class, () -> cafe.publish(ADMIN, "grant", new CafeService.Post(
+        "cases", "그림 안내", "본문", "image-timeout-001", images)));
+    assertEquals("UNKNOWN", cafe.publish(ADMIN, "grant", new CafeService.Post(
+        "cases", "그림 안내", "본문", "image-timeout-002", images)).get("state"));
+    verify(naver, times(1)).publish(anyString(), anyInt(), anyString(), anyString(), anyList());
+  }
+
+  @Test
   void givenClaimedKey_whenPayloadChanges_thenConflictWithoutAnotherPost() {
     cafe.publish(ADMIN, "grant", post("request-0001"));
     var changed = new CafeService.Post("cases", "다른 제목", "다른 내용", "request-0001");

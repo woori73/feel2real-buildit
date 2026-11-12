@@ -73,7 +73,40 @@ public class NaverCafeClient {
         .timeout(Duration.ofSeconds(20)).header("Authorization", "Bearer " + access)
         .header("Content-Type", "application/x-www-form-urlencoded")
         .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.US_ASCII)).build();
-    JsonNode result = send(request);
+    return published(send(request));
+  }
+
+  public Published publish(String access, int menuId, String title, String content, List<CafeImage> images) {
+    var checked = CafeImage.validate(images);
+    if (checked.isEmpty()) return publish(access, menuId, title, content);
+    String boundary = "f2r-cafe-" + UUID.randomUUID();
+    var parts = new ArrayList<byte[]>();
+    // multipart는 form-urlencoded의 바깥 URL decode가 없으므로 UTF-8 URL encode 한 번만 한다.
+    var fields = new LinkedHashMap<String, String>();
+    fields.put("subject", URLEncoder.encode(title, StandardCharsets.UTF_8));
+    fields.put("content", URLEncoder.encode(content, StandardCharsets.UTF_8));
+    for (String field : List.of("openyn", "searchopen", "scrapyn", "metoo", "ccl")) fields.put(field, "false");
+    fields.forEach((name, value) -> parts.add(("--" + boundary + "\r\nContent-Disposition: form-data; name=\""
+        + name + "\"\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" + value + "\r\n").getBytes(StandardCharsets.US_ASCII)));
+    int index = 1;
+    for (var image : checked) {
+      String extension = image.mimeType().equals("image/png") ? "png" : "jpg";
+      parts.add(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"image\"; filename=\"image-"
+          + index++ + "." + extension + "\"\r\nContent-Type: " + image.mimeType()
+          + "\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+      parts.add(image.bytes());
+      parts.add("\r\n".getBytes(StandardCharsets.US_ASCII));
+    }
+    parts.add(("--" + boundary + "--\r\n").getBytes(StandardCharsets.US_ASCII));
+    var request = HttpRequest.newBuilder(URI.create("https://openapi.naver.com/v1/cafe/"
+        + CafeService.CAFE_ID + "/menu/" + menuId + "/articles"))
+        .timeout(Duration.ofSeconds(40)).header("Authorization", "Bearer " + access)
+        .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+        .POST(HttpRequest.BodyPublishers.ofByteArrays(parts)).build();
+    return published(send(request));
+  }
+
+  private Published published(JsonNode result) {
     // 성공 응답이 불완전해도 재전송하지 않는다. 이미 게시됐을 수 있기 때문이다.
     long id = result.path("message").path("result").path("articleId").asLong(0);
     if (id == 0) id = result.path("articleId").asLong(0);
