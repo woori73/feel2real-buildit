@@ -2,7 +2,29 @@
 
 운영에서 읽은 JAR과 배포 보관 증거를 기준으로 기록한다. main 최신 커밋은 배포 완료를 의미하지 않는다. 새 배포가 성공하면 관측 시각·전체 해시·실행 기록을 함께 갱신한다.
 
-## 최신 배포 확인 — 2026-11-12 00:18:28 KST
+## 최신 배포 확인 — 2026-11-12 16:29:30 KST
+
+| 항목 | 확인된 값과 근거 |
+|---|---|
+| 배포 커밋 | `f7c39a1f6a9600efb31e87e3c362becd813eb50e` — PR #1057, 제공된 이번 주 진행표의 예정 학생 우선 표시. PR #1056 기능 복구·요일 수정 포함 |
+| 운영 배포 | [Deploy to EC2 #1149](https://github.com/woori73/feel2real-buildit/actions/runs/43174815662), attempt 1, success, 완료 2026-11-12 07:29:30 UTC |
+| 검증 | PR [Build Check](https://github.com/woori73/feel2real-buildit/actions/runs/43173593054) 빌드·단위/계약·MySQL 성공, [브라우저 회귀](https://github.com/woori73/feel2real-buildit/actions/runs/43173593049) 성공, main [Build Check](https://github.com/woori73/feel2real-buildit/actions/runs/43174667794) 성공. PR과 병합 트리 `705b7a3205f776a39fdfc797a45f1172896c88e7` 일치 |
+| JAR 산출물 SHA-256 | `f4406b8b5a9e99050895c1b9ccab882dfc1f464cd8747be615617b5606c2b042` — 배포 로그의 산출물 해시. 운영 파일을 별도로 다운로드한 해시 대조는 미실행 |
+| 서버 확인 | 배포 SUCCESS·buildit-wiki still healthy 로그, 외부 HTTPS /actuator/health HTTP 200·status UP |
+| 새 화면 코드 | /js/academy_home.js?v=20261112-plan HTTP 200, weekly-plan 연결 확인. SHA-256 `035531c7a1a8ce6606871f48ade4296767edfcef485b7ffb2377dd7e2082b6db`가 해당 소스 파일과 일치 |
+| 운영 UI 확인 | 로그인한 /dashboard에서 전체 41명·검색 1명 확인. 제공 진행표 2026-11-09~15 기준 월1·화2·수4·목4·금2·토4·일0, 이번 주 일정 미등록 28명 표시. 원문 진행표와 목요일 4명 대조. 수정 창에서 원본의 화·목 선택 확인 후 닫음. 학생 실명·화면 캡처는 공개 저장소에 기록하지 않음 |
+| 기능 | 기존 메뉴·자료·장부·접수 관리 직접 링크, 반 학생 배정 명단 자동 열기, 학생별 출결 이력 보기. 수정 요일은 V1110 별도 값으로 보존하고 원본 진행표·출결은 유지 |
+| 입력값 | 수동 배포 target=new, 나머지 설정은 모두 unchanged로 실행 |
+| /wemade 확인 | 내부 smoke는 CURL_FAILED non-blocking 경고. 별도 외부 HTTPS /wemade → /wemade/login HTTP 200 확인. 내부 smoke가 성공한 것으로 기록하지 않음 |
+| 미검증 범위 | 운영 학생 요일 PUT 저장·원본 출결 쓰기는 미실행. 저장·재조회·충돌·미정·되돌리기는 합성 MySQL/브라우저 환경에서 검증 |
+
+## 이전 배포 확인 — 2026-11-12 16:05:04 KST
+
+- PR #1056 `2dcac70d3578c2488a45e0098a75b019e811601d`, [Deploy #1148](https://github.com/woori73/feel2real-buildit/actions/runs/43171837471) success. 기존 업무 링크와 학생·반·기록·요일 수정 복구, V1110 학생별 요일 수정값 추가.
+- 해당 배포 후 실제 학생 41명, 기록 보기, 반 배정 명단 자동 열기, 수정 창을 확인했다. 처음에는 최근 4주 등원 기준으로 요일을 표시했으며, 이어서 원본 진행표에 예정 일정이 있음을 대조해 위 #1149에서 원본의 이번 주 계획을 우선 적용했다.
+- 당시 PR [Build Check](https://github.com/woori73/feel2real-buildit/actions/runs/43170827500), [화면 회귀](https://github.com/woori73/feel2real-buildit/actions/runs/43170827400), [접수 회귀](https://github.com/woori73/feel2real-buildit/actions/runs/43170827409), main [Build Check](https://github.com/woori73/feel2real-buildit/actions/runs/43171783217) 모두 success.
+
+## 이전 배포 확인 — 2026-11-12 00:18:28 KST
 
 | 항목 | 확인된 값과 근거 |
 |---|---|
