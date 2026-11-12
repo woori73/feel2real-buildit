@@ -530,7 +530,8 @@ public class StudioService {
         db.queryForList(
             "SELECT r.*,i.head_id,i.approved_id FROM studio_items i JOIN studio_revisions r ON"
                 + " r.id=i.head_id AND r.project_id=i.project_id WHERE i.project_id=? AND"
-                + " r.kind='STORYBOARD' AND r.episode=? AND r.cut_number IS NOT NULL ORDER BY"
+                + " r.kind='STORYBOARD' AND r.episode=? AND r.cut_number IS NOT NULL AND"
+                + " r.archived_at IS NULL ORDER BY"
                 + " r.cut_number,r.created_at DESC,r.id DESC",
             projectId(),
             episode);
@@ -552,7 +553,7 @@ public class StudioService {
     String sql =
         "SELECT r.*,i.head_id,i.approved_id,f.filename,f.sha256 FROM studio_revisions r JOIN"
             + " studio_items i ON i.project_id=r.project_id AND i.item_key=r.item_key LEFT JOIN"
-            + " studio_files f ON f.id=r.file_id WHERE r.project_id=?";
+            + " studio_files f ON f.id=r.file_id WHERE r.project_id=? AND r.archived_at IS NULL";
     List<Object> args = new ArrayList<>(List.of(projectId()));
     if (episode != null) {
       sql += " AND r.episode=?";
@@ -595,6 +596,9 @@ public class StudioService {
     if (!Set.of("APPROVE", "REJECT", "REQUEST_CHANGES").contains(text(action))
         || text(note).length() > 2000) throw error(400, "검수 값 오류");
     var revision = revision(p, id);
+    // 보관(폐지 정리)한 버전은 승인 대상이 아니다. 승인본이 되면 삭제 보호와 어긋난다.
+    if (action.equals("APPROVE") && revision.get("archived_at") != null)
+      throw error(409, "보관된 버전입니다. 보관함에서 되살린 뒤 승인하세요.");
     var item =
         db.queryForList(
                 "SELECT approved_id FROM studio_items WHERE project_id=? AND item_key=? FOR UPDATE",

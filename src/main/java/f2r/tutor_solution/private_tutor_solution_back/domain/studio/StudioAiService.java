@@ -84,7 +84,8 @@ public class StudioAiService {
             + "r.work_status,r.created_at,r.created_by,i.approved_id,f.id AS file_id,f.filename,"
             + "f.extension,f.size_bytes,f.sha256 FROM studio_items i JOIN studio_revisions r ON"
             + " r.id=i.head_id AND r.project_id=i.project_id LEFT JOIN studio_files f ON"
-            + " f.id=r.file_id WHERE i.project_id=? AND i.item_key<>'project-memory'";
+            + " f.id=r.file_id WHERE i.project_id=? AND i.item_key<>'project-memory' AND"
+            + " r.archived_at IS NULL";
     List<Object> args = new ArrayList<>(List.of(studio.projectId()));
     if (episode != null) {
       sql += " AND r.episode=?";
@@ -266,7 +267,8 @@ public class StudioAiService {
             "SELECT r.id,r.parent_id,r.label,r.origin,r.title,r.work_status,r.created_at,"
                 + "r.created_by,f.id AS file_id,f.filename,f.extension,f.size_bytes,f.sha256 FROM"
                 + " studio_revisions r LEFT JOIN studio_files f ON f.id=r.file_id WHERE"
-                + " r.project_id=? AND r.item_key=? ORDER BY r.created_at,r.id LIMIT 200",
+                + " r.project_id=? AND r.item_key=? AND r.archived_at IS NULL ORDER BY"
+                + " r.created_at,r.id LIMIT 200",
             studio.projectId(),
             workId)) {
       var v = new LinkedHashMap<String, Object>();

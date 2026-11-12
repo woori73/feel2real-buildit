@@ -28,7 +28,7 @@ public class StudioCatalog {
        FROM studio_revisions r JOIN studio_items i
          ON i.project_id=r.project_id AND i.item_key=r.item_key
        LEFT JOIN studio_files f ON f.project_id=r.project_id AND f.id=r.file_id
-       WHERE r.project_id=?
+       WHERE r.project_id=? AND r.archived_at IS NULL
        UNION ALL
        SELECT f.id,'FILE',NULL,NULL,'FILE',NULL,NULL,'ORIGINAL',f.filename,'','','',
          'UPLOADED',f.id,NULL,NULL,f.filename,f.sha256,f.extension,f.size_bytes,f.created_at,''

@@ -31,7 +31,7 @@ class StudioCatalogTest {
     String create="CREATE "+temporary()+"TABLE ";
     db.execute(create+"studio_files(id VARCHAR(36),project_id VARCHAR(64),filename VARCHAR(255),sha256 VARCHAR(64),extension VARCHAR(8),size_bytes BIGINT,storage_key VARCHAR(100),created_at TIMESTAMP)");
     db.execute(create+"studio_items(project_id VARCHAR(64),item_key VARCHAR(100),head_id VARCHAR(36),approved_id VARCHAR(36))");
-    db.execute(create+"studio_revisions(id VARCHAR(36),project_id VARCHAR(64),item_key VARCHAR(100),label VARCHAR(40),kind VARCHAR(16),episode INT,cut_number INT,origin VARCHAR(16),title VARCHAR(150),content TEXT,dialogue TEXT,direction TEXT,work_status VARCHAR(20),file_id VARCHAR(36),created_at TIMESTAMP)");
+    db.execute(create+"studio_revisions(id VARCHAR(36),project_id VARCHAR(64),item_key VARCHAR(100),label VARCHAR(40),kind VARCHAR(16),episode INT,cut_number INT,origin VARCHAR(16),title VARCHAR(150),content TEXT,dialogue TEXT,direction TEXT,work_status VARCHAR(20),file_id VARCHAR(36),created_at TIMESTAMP,archived_at TIMESTAMP)");
     db.execute(create+"studio_events(id BIGINT AUTO_INCREMENT PRIMARY KEY,project_id VARCHAR(64),revision_id VARCHAR(36),action VARCHAR(20))");
     file("f0","v9.mp4","mp4","p");file("f1","v10.mp4","mp4","p");file("f2","AI_AGENT_EP01_S01-S05_v11.mp4","mp4","p");
     file("raw","recent-unlinked.mp4","mp4","p");file("doc","QA_recent.md","md","p");file("image","face.png","png","p");
@@ -52,7 +52,7 @@ class StudioCatalogTest {
     db.update("INSERT INTO studio_files VALUES (?,?,?,?,?,100,'private-storage-key','2026-10-25 10:00:00')",id,project,name,"a".repeat(64),ext);
   }
   private void revision(String id,String key,String label,Integer episode,String work,String file,String project) {
-    db.update("INSERT INTO studio_revisions VALUES (?,?,?,?, 'VIDEO',?,NULL,'AI_PROPOSAL',?,'body','line','direction',?,?,'2026-10-25 11:00:00')",id,project,key,label,episode,"제작 영상 "+label,work,file);
+    db.update("INSERT INTO studio_revisions VALUES (?,?,?,?, 'VIDEO',?,NULL,'AI_PROPOSAL',?,'body','line','direction',?,?,'2026-10-25 11:00:00',NULL)",id,project,key,label,episode,"제작 영상 "+label,work,file);
   }
   protected List<Map<String,Object>> list(String section,String episode,String media,String status,String versions,String query,int limit,int offset) {
     return catalog.list(director,section,episode,"",media,status,versions,query,limit,offset);

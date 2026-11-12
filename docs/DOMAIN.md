@@ -1876,9 +1876,18 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - `studio_projects` / `studio_members`: 1부 프로젝트와 명시적인 VIEWER·EDITOR·APPROVER 권한. ADMIN만 개설·멤버 변경. 회차 1~14, EP01 컷 1~68은 서버 검증 범위이며 실제 각본·컷 파일을 시드하지 않는다.
 - `studio_files`: 원본 불변 메타데이터. project+SHA-256 유일성, 기존 FileStorage local/S3 재사용. 공개 storage key·공유 다운로드 URL 없음. `StudioFile` immutable Entity가 스키마를 검증한다.
 - `studio_items` / `studio_revisions`: 자료별 head·approved 포인터와 append-only 버전. `StudioRevision` immutable Entity 및 `StudioService.Revision` 명령 DTO. 프로젝트 행 잠금과 parentId 비교로 경합 차단. SCRIPT/STORYBOARD/CHARACTER/VIDEO/JOB/REVIEW, ORIGINAL/AI_PROPOSAL/USER_EDIT를 구분한다.
-- `studio_events`: 업로드·새 버전·승인·반려·권한 변경 감사 이력. 원본/버전 삭제·덮어쓰기 API를 제공하지 않는다. AI 협업 이벤트 `AI_REVIEW`·`AI_UPLOAD`·`TASK_CREATE`·`TASK_STATUS`를 JSON note로 남긴다.
+- `studio_events`: 업로드·새 버전·승인·반려·권한 변경 감사 이력. 덮어쓰기 API는 없다. 삭제는 V1108의 폐지 자료 2단계 정리(보관 → 14일 뒤 감독 확인 영구 삭제)로만 한다. AI 협업 이벤트 `AI_REVIEW`·`AI_UPLOAD`·`TASK_CREATE`·`TASK_STATUS`를 JSON note로 남긴다.
 - `studio_reviews`(V1096): 버전별 검수 보고서. verdict PASS/NEEDS_CHANGES/COMMENT, issues_json, author_type HUMAN/AI_CONNECTOR, ai_client·model_reported(자기 신고값)·mcp_grant_id·실제 user_id, 프로젝트별 idempotency_key+request_sha256(같은 키 다른 내용 409). 승인이 아니며 `approved_id`를 바꾸지 않는다.
 - `studio_tasks`(V1096): 작업 ID(item_key)별 수정 작업. assignee CLAUDE/CHATGPT/HUMAN, status OPEN→IN_PROGRESS→DONE/CANCELLED(종료 후 불변), review_id·revision_id·result_revision_id 연결. 상태 변경은 `TASK_STATUS` 이벤트로 이력 보존.
+- `studio_revisions.archived_at`·`archived_by`·`archive_reason`·`archive_scope`(V1108): 폐지 자료 1단계 보관(숨김). NULL이면 일반 버전이다. 값이 있으면 목록(`/api/studio/revisions`, catalog `versions=all`)과 `get_asset_versions`에서 빠지고, 승인할 수 없다(409). 보관함에서 되살리면 NULL로 돌아간다. archive_scope는 VERSION(앞선 버전 하나) 또는 ITEM(감독이 지정한 작업 ID 전체, 최신본 포함)이다. ITEM으로 최신본까지 보관하면 head 기준 조회(catalog latest, `list_studio_assets`, 컷 보드, 승인 대기함)에서도 빠진다. `StudioRevision`은 archived_by·archive_reason을 매핑하고, archived_at은 created_at처럼 JDBC로만 다룬다.
+- `studio_cleanup_log`(V1108): ARCHIVE·RESTORE·PURGE 실행 기록(append-only). 버전 ID·작업 ID·버전 라벨·fileId·지운 용량(bytes_freed)·후보 사유·감독 확인 메모·실행자(actor_id, ADMIN). 버전 행을 영구 삭제한 뒤에도 남는다. `StudioCleanupLog` immutable Entity. 같은 실행은 `studio_events`에도 `CLEANUP_ARCHIVE`·`CLEANUP_RESTORE`·`CLEANUP_PURGE`로 남는다.
+- **폐지 자료 삭제 정책(2026-11-12 감독 지시)**: 보관한 뒤에만 물리 삭제하고, 참조가 있으면 막는다.
+  - ① 보관: 감독이 확인한 버전만 숨긴다. 되살릴 수 있다.
+  - ② 영구 삭제: 보관한 지 14일이 지난 버전 가운데 감독이 확인한 목록만 지운다. 버전 행과 그 버전의 studio_reviews를 지우고, 다음 버전의 parent_id는 지운 버전의 부모로 다시 잇는다.
+  - 파일(studio_files 행과 저장소 객체)은 다른 버전의 file_id가 쓰지 않고, 다른 자료의 content·dialogue·direction에도 fileId가 없을 때만 지운다. 저장소 객체는 DB 커밋 뒤에 지운다.
+  - 최신본 보호 예외(감독 결정 2026-11-12): 감독이 지정한 작업 ID는 최신본까지 전체 보관(ITEM)할 수 있다. 다른 차단 사유는 그대로이고, 버전 하나라도 막히면 그 작업 ID는 통째로 제외한다. 같은 작업 ID 안에서의 상호 언급은 참조로 세지 않는다. ITEM 범위의 최신본을 영구 삭제하면 head를 부모로 옮기고, 마지막 버전까지 지우면 `studio_items` 행도 지운다.
+  - 자동 차단(보관·삭제 공통): 최신본(head, ITEM 예외 제외), 승인본, 원본(`source-*` 또는 origin ORIGINAL), 진행 중인 JOB(WAITING·WORKING·REVIEW), 현재 기준 자료(`project-memory`, 작업 ID에 PRINCIPLES·CONTI·BLOCKING_MAP·FACE_SHEET·_REF·HANDOFF·PRODUCTION_LOG가 들어간 것), studio_tasks가 참조하는 버전과 그 검수 보고서, 다른 자료 본문이 버전 ID를 적어 둔 버전.
+  - 정리 대상에서 빠지는 프로젝트: `naesin-*`, `student-roster`, `academy-relocation`(다른 서비스가 같은 표를 쓰기 때문).
 - `mcp_clients`, `mcp_pending`, `mcp_grants`, `mcp_codes`, `mcp_tokens`: 사용자 OAuth 동의, S256 PKCE, 일회용 코드, hash-only opaque token, 15분 access·최대 30일 갱신·refresh 재사용 시 연결 폐기. 사용자 role·자격 증명 stamp를 매 호출 재검사한다. OAuth 행은 제한된 JDBC 명령으로 관리하며 외부 DTO에 비밀값을 넣지 않는다.
 - `mcp_audit`, `mcp_rate_limits`: 원문/토큰/검색문을 제외한 감사 이력과 DB 기반 호출 상한. 새 RDS·서버·유료 AI/임베딩 API 없음.
 
@@ -1928,7 +1937,7 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 
 새 테이블/마이그레이션 없이 기존 `studio_revisions`의 `project-memory` JOB에 구조화한 작업 기억을 append-only로 저장한다. 입력 expectedRevisionId는 기존 parent/head CAS와 동일하며 이전 버전과 승인본을 수정하지 않는다. 댓글은 `studio_events(action=COMMENT)`의 JSON note에 body/authorType/sharedAi/sourceFileId, actor_id에는 실제 로그인 사용자를 기록한다. 사람이 올린 AI 자료는 HUMAN_SHARED_AI_MATERIAL이고 AI 직접 인증과 구분한다. 댓글 스레드는 동일 project/item_key의 전체 revision을 묶고 각 label을 보존한다. REQUEST_CHANGES 이벤트는 기존 승인 포인터에 영향을 주지 않는다. 물리 삭제·댓글 덮어쓰기는 제공하지 않고 후속 댓글/기억 버전으로 정정한다(승인·감사 이력 보존 목적).
 
-제작 프로젝트 확장: 기존 `studio_projects.id/title`과 `studio_members`를 재사용한다. 추가 schema/migration 없음. 보관 상태는 해당 프로젝트의 최신 `PROJECT_ARCHIVE/PROJECT_REOPEN` 감사 이벤트로 결정한다. `PROJECT_CREATE/PROJECT_TITLE`도 실제 actor와 함께 기록한다. 보관/재개는 files/items/revisions/approved_id/작업 기억을 수정·삭제하지 않는다. 영구 삭제 경로 없음. 관리자는 기존 ADMIN이며 일반 팀원은 명시적으로 수락한 VIEWER/EDITOR/APPROVER만 접근한다. 초대는 기존 permission 길이 내 `PENDING_VIEWER/PENDING_EDITOR/PENDING_APPROVER`; 수락 전 권한 검사에서 제외한다. 거절은 본인 pending membership만 제거하고 `MEMBER_DECLINE` 이력을 보존한다. 알림은 기존 검수/댓글 이벤트를 투영하고 본인 `NOTIFY_READ` 이벤트에 확인한 event ID를 저장한다. 이벤트 범위와 프로젝트 행 잠금으로 정보 격리·수정/보관 경합을 보호한다. V1094/V1095 파일은 불변이다.
+제작 프로젝트 확장: 기존 `studio_projects.id/title`과 `studio_members`를 재사용한다. 추가 schema/migration 없음. 보관 상태는 해당 프로젝트의 최신 `PROJECT_ARCHIVE/PROJECT_REOPEN` 감사 이벤트로 결정한다. `PROJECT_CREATE/PROJECT_TITLE`도 실제 actor와 함께 기록한다. 보관/재개는 files/items/revisions/approved_id/작업 기억을 수정·삭제하지 않는다. 프로젝트 영구 삭제 경로 없음(버전 단위 폐지 정리는 V1108 참고). 관리자는 기존 ADMIN이며 일반 팀원은 명시적으로 수락한 VIEWER/EDITOR/APPROVER만 접근한다. 초대는 기존 permission 길이 내 `PENDING_VIEWER/PENDING_EDITOR/PENDING_APPROVER`; 수락 전 권한 검사에서 제외한다. 거절은 본인 pending membership만 제거하고 `MEMBER_DECLINE` 이력을 보존한다. 알림은 기존 검수/댓글 이벤트를 투영하고 본인 `NOTIFY_READ` 이벤트에 확인한 event ID를 저장한다. 이벤트 범위와 프로젝트 행 잠금으로 정보 격리·수정/보관 경합을 보호한다. V1094/V1095 파일은 불변이다.
 
 승인 해제는 신규 schema 없이 `studio_items.approved_id` 포인터와 `studio_events.action=WITHDRAW_APPROVAL`만 사용한다. 일반 REJECT는 승인 포인터를 수정하지 않으며 현재 승인본에 대해서는409다. 별도 confirmed/expectedApprovedId/사유를 확인한 해제만 행 잠금 아래 승인 포인터를 NULL로 바꾼다. studio_files/revisions 및 이전 APPROVE 이벤트는 변경/삭제하지 않는다. #862의 ai_collaboration_*/mcp_collaboration_* 테이블과 V1096~V1098은 병합 제외한다.
 
