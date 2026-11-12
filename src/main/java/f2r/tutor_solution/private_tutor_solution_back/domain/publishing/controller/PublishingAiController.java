@@ -44,8 +44,12 @@ public class PublishingAiController {
   public ResponseEntity<Map<String, Object>> applyRevision(
       @AuthenticationPrincipal AuthenticatedPrincipal principal,
       @PathVariable Long jobId,
-      @RequestBody Map<String, List<PlannedCommand>> body) {
-    Long snapshotId = aiService.applyPlan(principal, jobId, body.get("plan"));
+      @RequestBody Map<String, Object> body) {
+    @SuppressWarnings("unchecked")
+    List<PlannedCommand> plan = (List<PlannedCommand>) body.get("plan");
+    // 원문 보호: 사용자가 명시적으로 확인한 경우에만 잠금 영역 수정을 허용
+    boolean userConfirmed = Boolean.TRUE.equals(body.get("userConfirmed"));
+    Long snapshotId = aiService.applyPlan(principal, jobId, plan, userConfirmed);
     return ResponseEntity.ok(Map.of(
         "jobId", jobId,
         "applied", true,

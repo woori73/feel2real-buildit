@@ -464,17 +464,20 @@
         aiAppend('agent', '⛔ ' + res.reason + ' — 계획이 생성되지 않았습니다.');
         return;
       }
-      renderPlanCard(res.plan);
+      renderPlanCard(res.plan, res.warning);
     }).catch(function (e) {
       $('ai-send').disabled = false;
       aiAppend('agent', aiErrorMessage(e && e.status));
     });
   }
 
-  function renderPlanCard(plan) {
+  function renderPlanCard(plan, warning) {
     var log = $('ai-log');
     var card = el('div', 'plan-card');
     card.appendChild(el('h4', null, '수정 계획 미리보기 (' + plan.length + '개 명령) — 아직 실행되지 않았습니다'));
+    if (warning) {
+      card.appendChild(el('p', 'plan-lockwarn', '🔒 ' + warning));
+    }
     var ol = document.createElement('ol');
     plan.forEach(function (p) {
       var li = el('li');
@@ -490,11 +493,26 @@
     card.appendChild(ol);
     card.appendChild(el('p', 'plan-warn', '승인 시 적용 전에 자동 스냅샷이 생성되고, allowlist 명령만 실행됩니다.'));
     var acts = el('div', 'plan-actions');
+    var confirmWrap = null;
+    var confirmBox = null;
+    if (warning) {
+      confirmWrap = el('label', 'plan-confirm');
+      confirmBox = document.createElement('input');
+      confirmBox.type = 'checkbox';
+      confirmWrap.appendChild(confirmBox);
+      confirmWrap.appendChild(document.createTextNode(' 원문 보호 영역(영어 지문) 수정을 확인합니다'));
+      card.appendChild(confirmWrap);
+    }
     var ok = el('button', 'btn btn-primary btn-sm', '승인 후 적용');
     var no = el('button', 'btn btn-sm', '거절');
     ok.addEventListener('click', function () {
+      var userConfirmed = !!(confirmBox && confirmBox.checked);
+      if (warning && !userConfirmed) {
+        toast('원문 보호 영역 수정 확인에 체크하세요', true);
+        return;
+      }
       ok.disabled = no.disabled = true;
-      api.applyRevision(S.jobId, plan).then(function (r) {
+      api.applyRevision(S.jobId, plan, userConfirmed).then(function (r) {
         card.classList.add('resolved');
         if (r.applied) {
           aiAppend('system', '✓ 적용 완료 · 스냅샷 ' + r.snapshotId);
