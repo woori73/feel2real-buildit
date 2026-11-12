@@ -1,0 +1,276 @@
+{
+ "ipsi_universities": [
+  {
+   "name": "서울대학교",
+   "university_code": "SNU",
+   "region": "서울",
+   "establishment_type": "국립",
+   "admission_office_url": "https://admission.snu.ac.kr"
+  },
+  {
+   "name": "연세대학교",
+   "university_code": "YON",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://admission.yonsei.ac.kr"
+  },
+  {
+   "name": "고려대학교",
+   "university_code": "KOREA",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://oku.korea.ac.kr"
+  },
+  {
+   "name": "성균관대학교",
+   "university_code": "SKKU",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://admission.skku.edu"
+  },
+  {
+   "name": "한양대학교",
+   "university_code": "HANYANG",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://go.hanyang.ac.kr"
+  },
+  {
+   "name": "서강대학교",
+   "university_code": "SOGANG",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://admission.sogang.ac.kr"
+  },
+  {
+   "name": "중앙대학교",
+   "university_code": "CAU",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://admission.cau.ac.kr"
+  },
+  {
+   "name": "경희대학교",
+   "university_code": "KHU",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://www.khu.ac.kr"
+  },
+  {
+   "name": "이화여자대학교",
+   "university_code": "EWHA",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://admission.ewha.ac.kr"
+  },
+  {
+   "name": "한국외국어대학교",
+   "university_code": "HUFS",
+   "region": "서울",
+   "establishment_type": "사립",
+   "admission_office_url": "https://adms.hufs.ac.kr"
+  }
+ ],
+ "ipsi_documents": [
+  {
+   "document_key": "doc_snu_2027_susi",
+   "document_name": "서울대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "서울대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.snu.ac.kr/webdata/admission/files/2027susi.pdf",
+   "verification_note": "[2026-10-21 갱신] 공식 입학처 원본 확보·대조 완료: 공식 PDF 76쪽, 표지(2027학년도 대학 신입학생 수시모집 안내, 2026. 5.)와 기존 미러본이 동일 문서임을 확인해 출처를 공식으로 교체함. 총 3,562명 중 수시 2,201명. 지역균형: 1단계 서류 3배수, 2단계 1단계 70+면접 30, 수능최저(4개 영역 중 3개 등급 합 7 이내). 일반: 서류 2배수 후 면접·구술고사.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_snu_2027_jungsi",
+   "document_name": "서울대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "서울대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.snu.ac.kr/webdata/admission/files/2027jungsi.pdf",
+   "verification_note": "[2026-10-21 신규 추출] 공식 PDF(2027학년도 정시모집 안내, 102쪽)에서 추출 완료. 정원내 1,374명(지역균형 153·일반 1,221), 지역균형 수능 60+교과평가 40, 일반 1단계 수능 100%(2배수)→2단계 80+교과평가 20, 수능최저 별도 없음(응시영역 기준 충족 필요). 원서접수 2027.1.4~1.6, 합격자 발표 2.5.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_yon_2027_susi",
+   "document_name": "연세대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "연세대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.yonsei.ac.kr/seoul/admission/html/rolling/guide.asp",
+   "verification_note": "[2026-10-21 확보·추출 완료] 공식 배포 페이지의 PDF 다운로드로 원본 확보 (2027학년도 서울캠퍼스 학부 신입학 수시모집요강, 101쪽, ZIP 배포본의 PDF가 정본). 정원내 2,075명(추천형 487·활동우수 714·국제형 254·국제인재 120·기회균형 190·논술 272·체육인재 38). 수능최저: 추천형·활동우수형·국제형(국내고) 적용, 그 외 미적용. 원서접수 2026.9.7~9.9 (종료).",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_yon_2027_jungsi",
+   "document_name": "연세대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "연세대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.yonsei.ac.kr/seoul/upload/guide/20260901184445WSGU8N.PDF",
+   "verification_note": "[2026-10-21 확보·추출 완료] 공식 PDF(70쪽). 가군 수능위주 정원내 1,363명(일반계열 1,264·체능 51·국제 48)+정원외 195, 나군 실기 예능 120. 의예과·국제계열은 2단계 면접. 원서접수 2027.1.4~1.6, 발표 2.5 14:00.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_korea_2027_susi",
+   "document_name": "고려대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "고려대학교 입학처",
+   "published_at": null,
+   "source_url": "https://www.adiga.kr/cmm/com/file/fileDown.do?fileId=00000000000000257700&fileSn=1&menuId=PCUVTINF2000&downLogYn=Y&unvCd=0000070&searchSyr=2027",
+   "verification_note": "대입정보포털(어디가) 공식 등록 요강. 미러: sanedu.com 고려대서울 2027 수시 PDF. 수시 1,867명(서울캠퍼스 기준).",
+   "source_type": "official_portal"
+  },
+  {
+   "document_key": "doc_korea_2027_jungsi",
+   "document_name": "고려대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "고려대학교 입학처",
+   "published_at": null,
+   "source_url": "https://oku.korea.ac.kr/attach/202609/1790733929908_0.pdf",
+   "verification_note": "[2026-10-21 신규 추출] 공식 PDF(서울캠퍼스 정시모집요강, 38쪽)에서 추출 완료. 합계 1,875명(일반 1,030·교과우수 595·농어촌 120·사회배려 69·특수교육 36·특성화고 25). 일반전형 수능 100, 교과우수 수능 80+학생부 20, 수능최저는 사이버국방학과만 별도 조건. 원서접수 2027.1.4~1.6, 최초 발표 2.5. 세종캠퍼스 요강은 별도 문서.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_skku_2027_susi",
+   "document_name": "성균관대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "성균관대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.skku.edu/common/download.php?fpath=guide/202606260919067KYXZW.pdf&fname=%5B%EC%84%B1%EA%B7%A0%EA%B4%80%EB%8C%80%ED%95%99%EA%B5%90%5D+2027%ED%95%99%EB%85%84%EB%8F%84+%EC%88%98%EC%8B%9C+%EB%AA%A8%EC%A7%91%EC%9A%94%EA%B0%95.pdf",
+   "verification_note": "공식 입학처 PDF. 수시 총 2,378명 (학생부종합 1,487/교과 419/논술 376/실기·실적 96). 융합인재전형 신설(수능최저 3개 영역 합 6 이내).",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_skku_2027_jungsi",
+   "document_name": "성균관대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "성균관대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.skku.edu/common/download.php?fpath=board/20260904132104TLJSQ4.pdf&fname=%5B%EC%84%B1%EA%B7%A0%EA%B4%80%EB%8C%80%ED%95%99%EA%B5%90%5D+2027%ED%95%99%EB%85%84%EB%8F%84+%EC%A0%95%EC%8B%9C+%EB%AA%A8%EC%A7%91%EC%9A%94%EA%B0%95.pdf",
+   "verification_note": "공식 입학처 PDF. 원서접수 2027-01-04~07, 합격자 발표 2-05 이전.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_hanyang_2027_susi",
+   "document_name": "한양대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "한양대학교 입학처",
+   "published_at": null,
+   "source_url": "https://www.adiga.kr/cmm/com/file/fileDown.do?fileId=00000000000000257097&fileSn=1&menuId=PCUVTINF2000&downLogYn=Y&unvCd=0000203&searchSyr=2027",
+   "verification_note": "대입정보포털(어디가) 공식 등록 요강. 미러: cdn013.negagea.net 한양대 2027 수시 PDF.",
+   "source_type": "official_portal"
+  },
+  {
+   "document_key": "doc_hanyang_2027_jungsi",
+   "document_name": "한양대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "한양대학교 입학처",
+   "published_at": null,
+   "source_url": "https://go.hanyang.ac.kr/file/pdfDown.do?menu=mojib&file_no=521&type=pdf",
+   "verification_note": "공식 입학처 PDF. 가군 일반 541명+실기/실적 87명. 수능 90%+학생부종합평가 10%. 원서접수 2027-01-04~07.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_sogang_2027_susi",
+   "document_name": "서강대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "서강대학교 입학처",
+   "published_at": null,
+   "source_url": "http://admission3.sogang.ac.kr/upload/BBS0014/202607031541342K5UMZ.PDF",
+   "verification_note": "공식 입학처 PDF. 수시 1,044명 (지역균형 180/일반I 494/일반II 74/기회균형 85/서강가치 34/특성화고 6/논술 171). 미러: sanedu.com 서강대 2027 수시 PDF.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_sogang_2027_jungsi",
+   "document_name": "서강대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "서강대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.sogang.ac.kr/upload/GUIDES/20260901173417S24UKF.pdf",
+   "verification_note": "[2026-10-21 완전 추출] 공식 PDF(49쪽, 2026.9.1 표기). 수능(일반) 나/다군 623명, 수능 100%, 최저 적용하지 않음. 정원외 전형은 4개 영역 중 3개 등급합 9 이내+한국사 4등급 이내. 원서접수 마감 2027.1.7, 최초 발표 2.5.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_cau_2027_susi",
+   "document_name": "중앙대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "중앙대학교 입학처",
+   "published_at": null,
+   "source_url": "https://school.jbedu.kr/_cmm/fileDownload/yuil/M011703/d439b4fa5896c96fb70ee410270feb60.do",
+   "verification_note": "[2026-10-21 재확인] 공식 입학처 원본 직접 URL 미확인 유지 — 미러 출처 그대로 둠. 사설 미러 출처 — 공식 입학처 원본 확인 필요. 수시 2,862명 (학생부종합 1,478/교과 508/논술 489/실기 387). 성장형인재·논술창의형 신설. (pdf_url은 교육청 미러 HWP, 공식 입학처 원본 확인 필요)",
+   "source_type": "mirror_unverified"
+  },
+  {
+   "document_key": "doc_cau_2027_jungsi",
+   "document_name": "중앙대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "중앙대학교 입학처",
+   "published_at": null,
+   "source_url": "https://www.adiga.kr/cmm/com/file/fileDown.do?fileId=00000000000000257349&fileSn=1&menuId=PCUVTINF2000&downLogYn=Y&unvCd=0000174&searchSyr=2027",
+   "verification_note": "대입정보포털(어디가) 공식 등록 요강. 수능 90%+비교과(출결) 10% (2027 변경). 원서접수 2027-01-04~07 18시.",
+   "source_type": "official_portal"
+  },
+  {
+   "document_key": "doc_khu_2027_susi",
+   "document_name": "경희대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "경희대학교 입학처",
+   "published_at": null,
+   "source_url": "https://iphak.khu.ac.kr/file/download.do?sfn=20260826010106889_2027학년도+경희대학교+수시+모집요강-최종_20260826.pdf",
+   "verification_note": "[2026-10-21 공식 원본 확보·대조 완료] 입학처 공식 PDF(136쪽, 2027 경희대학교 수시 신입생 모집요강) 확보. 기존 미러 추출본(112쪽)과 판본 구성이 달라 핵심 수치를 공식본과 직접 대조 — 전형별 모집인원 총계 행이 완전 일치(지역균형 604·재직자 263·네오르네상스 1,076·기회균형Ⅰ 150·장애인 15·기회균형Ⅱ 90·논술 471·실기 337). 원서접수는 공식본 전형일정표 기준 2026.9.8 10:00~9.11 18:00.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_khu_2027_jungsi",
+   "document_name": "경희대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "경희대학교 입학처",
+   "published_at": null,
+   "source_url": "https://iphak.khu.ac.kr (정시 공지 첨부파일, 등록일 2026.09.01)",
+   "verification_note": "[2026-10-21 확보·추출 완료] 공식 PDF(72쪽). 정시 총계 2,427명(서울·국제 합산, 총괄표 합계 행). 수능위주(일반) 수능 100%, 실기위주 수능 40+실기 60. 과탐 과목당 4점 가산. 수능최저 값은 원문 전형요약표 대조로 확정 필요 (추출 텍스트로 확정 못 함).",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_ewha_2027_susi",
+   "document_name": "이화여자대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "이화여자대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.ewha.ac.kr/upload/GUIDES/20260907134642BHLTER.pdf",
+   "verification_note": "공식 입학처 PDF. 예체능실기전형 81명 등.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_ewha_2027_jungsi",
+   "document_name": "이화여자대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "이화여자대학교 입학처",
+   "published_at": null,
+   "source_url": "https://admission.ewha.ac.kr/admission/html/regular/guide.asp",
+   "verification_note": "[2026-10-21 확보·추출 완료] 공식 PDF(42쪽, 공지 게시일 2026.09.01). 정원내 1,183명(수능전형 815·수능 예체능실기 226·실기/실적 142)+정원외 189. 수능전형 수능 100%. 과탐 1과목당 6% 가산(약학 제외). 원서접수 2027.1.4~1.6.",
+   "source_type": "official_pdf"
+  },
+  {
+   "document_key": "doc_hufs_2027_susi",
+   "document_name": "한국외국어대학교 2027학년도 수시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "한국외국어대학교 입학처",
+   "published_at": null,
+   "source_url": "https://www.adiga.kr/cmm/com/file/fileDown.do?fileId=00000000000000257112&fileSn=1&menuId=PCUVTINF2000&downLogYn=Y&unvCd=0000192&searchSyr=2027",
+   "verification_note": "대입정보포털(어디가) 공식 등록 요강. 수시 2,102명 (학교장추천 370/면접형 478/SW인재 34/서류형 585/기회균형 183/논술 452). 송도캠퍼스 개교.",
+   "source_type": "official_portal"
+  },
+  {
+   "document_key": "doc_hufs_2027_jungsi",
+   "document_name": "한국외국어대학교 2027학년도 정시모집요강",
+   "applicable_academic_year": 2027,
+   "institution_name": "한국외국어대학교 입학처",
+   "published_at": null,
+   "source_url": "https://www.adiga.kr/cmm/com/file/fileDown.do?fileId=00000000000000257113&fileSn=1&menuId=PCUVTINF2000&downLogYn=Y&unvCd=0000192&searchSyr=2027",
+   "verification_note": "대입정보포털(어디가) 공식 등록 요강.",
+   "source_type": "official_portal"
+  }
+ ]
+}
