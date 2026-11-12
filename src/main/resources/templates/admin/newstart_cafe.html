@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>개인워크아웃 카페 연결</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/admin_students.css">
+  <style>
+    .cafe-panel{background:white;border:1px solid #dce5ed;border-radius:12px;padding:24px;margin:20px 0}
+    .cafe-panel p{line-height:1.7}.cafe-boards{display:grid;grid-template-columns:minmax(170px,1fr) minmax(80px,160px);gap:12px;max-width:650px}
+    .cafe-boards input{padding:9px;width:100%;box-sizing:border-box}.cafe-panel button{padding:10px 18px;margin:15px 0;cursor:pointer}
+    .cafe-panel button:disabled{cursor:not-allowed;opacity:.5}.cafe-history{width:100%;border-collapse:collapse}
+    .cafe-history td,.cafe-history th{padding:10px;text-align:left;border-bottom:1px solid #e2e8f0;overflow-wrap:anywhere}
+    .cafe-notice{padding:12px;background:#eef7f3;border-radius:8px}.cafe-scroll{overflow-x:auto}
+  </style>
+</head>
+<body>
+<th:block th:replace="~{fragments/_admin_topnav :: topnav('newstart')}"></th:block>
+<main class="container">
+  <h1>개인워크아웃 카페 연결</h1>
+  <p>새출발기금 부실차주 라이브러리 카페에 정리한 자료를 올립니다.</p>
+  <section class="cafe-panel">
+    <h2>1. 네이버 계정 연결</h2>
+    <p class="cafe-notice" th:if="${status.connected}">네이버 계정이 연결되어 있습니다.</p>
+    <p th:unless="${status.connected}">글을 올릴 운영자 네이버 계정을 연결해 주세요.</p>
+    <div th:unless="${status.serverReady}"><p>서버 설정이 먼저 필요합니다.</p><ul><li th:each="item : ${status.missing}" th:text="${item}"></li></ul></div>
+    <form method="post" action="/admin/newstart/cafe/connect"><button th:disabled="${!status.serverReady}" th:text="${status.connected ? '네이버 계정 다시 연결' : '네이버 계정 연결'}"></button></form>
+    <form th:if="${status.connected}" method="post" action="/admin/newstart/cafe/disconnect"><button>이 사이트의 글쓰기 연결 해제</button></form>
+    <p>연결 해제 후 새 글은 등록되지 않습니다. 이전 발행 이력은 보존됩니다. 네이버 앱 권한 자체는 네이버의 연결된 서비스 관리에서 해제할 수 있습니다.</p>
+    <details><summary>네이버 앱 설정에 필요한 주소</summary><p>카페 글쓰기 API 권한을 선택하고 다음 주소를 Callback URL로 등록합니다.</p><code th:text="${status.callbackUrl}"></code></details>
+  </section>
+  <section class="cafe-panel">
+    <h2>2. 게시판 연결</h2>
+    <p>카페에서 각 게시판을 열고 주소의 <strong>menus/ 뒤 숫자</strong>를 입력합니다. 게시판 이름과 번호를 함께 확인해 주세요.</p>
+    <form method="post" action="/admin/newstart/cafe/boards">
+      <div class="cafe-boards"><th:block th:each="board : ${status.boards}"><label th:for="${board.key}" th:text="${board.name}"></label><input type="number" min="1" max="1000000" required th:id="${board.key}" th:name="${board.key}" th:value="${board.menuId == 0 ? '' : board.menuId}"></th:block></div>
+      <button>게시판 번호 저장</button>
+    </form>
+    <p>글은 멤버공개·검색 비허용으로 등록됩니다. 카페 게시판의 읽기 권한도 함께 적용됩니다.</p>
+  </section>
+  <section class="cafe-panel">
+    <h2>3. AI에서 사용하기</h2>
+    <p>기존 Feel2Real MCP 연결을 다시 인증하며 <strong>카페 글 등록</strong> 범위를 선택하세요. 새 권한은 기존 연결에 자동으로 추가되지 않습니다.</p>
+    <p>자료의 출처·기준일을 표시하고, 개인 사례는 개인정보를 제거한 요약으로 올리세요. 이 기능은 새 글 등록용입니다.</p>
+  </section>
+  <section class="cafe-panel">
+    <h2>최근 등록 이력</h2>
+    <p>POSTED는 등록 성공입니다. PENDING·UNKNOWN은 카페에서 실제 등록 여부를 확인하세요. 같은 글은 자동으로 다시 전송하지 않습니다.</p>
+    <div class="cafe-scroll"><table class="cafe-history"><thead><tr><th>제목</th><th>상태</th><th>결과</th></tr></thead><tbody><tr th:each="entry : ${history}"><td th:text="${entry.title}"></td><td th:text="${entry.state}"></td><td><a th:if="${entry.article_url != null}" th:href="${entry.article_url}" target="_blank" rel="noopener noreferrer">카페 글 보기</a></td></tr></tbody></table></div>
+    <p th:if="${#lists.isEmpty(history)}">아직 등록한 글이 없습니다.</p>
+  </section>
+</main>
+</body></html>

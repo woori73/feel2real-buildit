@@ -1,5 +1,16 @@
 # 도메인 모델
 
+## 개인워크아웃 카페 글쓰기 (V1109)
+
+기존 회원 로그인·지피지기 원문·승인 상태는 변경하지 않는다. 신규 빈 테이블 두 개를 추가하며 JPA 스키마 검증 매핑 `CafeConnection`, `CafePublication`과 JDBC 쓰기 레코드 `CafeService.Post`/`Prepared`를 함께 둔다.
+
+| 테이블 | 핵심 칸 | 정책 |
+|---|---|---|
+| newstart_cafe_connections | owner_id(PK/FK users), board_ids(TEXT), access_token_enc/refresh_token_enc(TEXT nullable), token_expires_at, state_hash/state_expires_at, connection_epoch, updated_at | 관리자별 별도 글쓰기 앱 토큰. 별도 AES-256-GCM 키·계정별 AAD, 응답/로그 미노출. state 한 번 사용·재연결 경합 차단. 연결 해제 시 토큰 제거·게시판 번호 보존 |
+| newstart_cafe_publications | id(UUID), owner_id, grant_id, cafe_id, menu_id, board_key, key_hash, payload_hash, title, content(TEXT), state, article_id/article_url, created_at/updated_at | PENDING→POSTED 또는 UNKNOWN. (owner,key_hash)·(cafe,menu,payload_hash) unique, owner+created index. 외부 전송 전에 이력 커밋. 같은 내용 자동 재전송 금지·이력 보존 |
+
+네이버 카페 ID는 31312978로 고정한다. 원문 자료를 자동 공개하지 않고 운영자 요청으로 정리한 본문만 저장·게시한다. 기존 글 수정·삭제 기능은 없다. [계약과 운영](newstart/CAFE_MCP.md).
+
 ## 내신 제작소 — 기존 Studio 엔진 재사용 (2026-10-26)
 
 새 테이블/마이그레이션/Entity 없음. `studio_projects.id=naesin-<uuid>`로 교육 프로젝트를 구분하고 `project-profile/original` JOB 리비전에 학교·중등/고등 학년·시험 범위·division(MIDDLE/HIGH)·선택 importKey를 고정한다. 이전 profile에 division이 없으면 기존 학년에서 판독하며 저장된 원문은 변경하지 않는다. `studio_files`의 원본/SHA/프로젝트별 중복 제약, `StudioRevision`의 불변 부모 연결, `studio_items` head/approved 포인터와 프로젝트 잠금, 기존 권한·보관 상태를 그대로 사용한다. 기존 AI AGENT 데이터와 코드는 수정하지 않는다.

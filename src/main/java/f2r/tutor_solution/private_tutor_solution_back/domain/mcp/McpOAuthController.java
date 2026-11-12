@@ -111,6 +111,7 @@ public class McpOAuthController {
             Map.entry("academy-move:write", "학원이사 글 등록·AI 정리·대화 읽기 (관리자 전용, 원문 파일 제외)"),
             Map.entry("student-roster:read", "학생명단(시간표) 집계로 학원 발전 방안 논의 (관리자 전용, 실명·원본 파일 제외, 가명 S001…)"),
             Map.entry("easy-collect:write", "F2R 장부: 직접 로그인한 은행·카드·홈택스·여신협회 사이트에서 받은 거래 저장 (관리자 전용, 이체·삭제 불가)"),
+            Map.entry("cafe:write", "카페 글 등록: 개인워크아웃 게시판에 새 글 등록·등록 이력 조회 (관리자 전용, 외부 카페에 게시, 수정·삭제 불가)"),
             Map.entry("offline_access", "30일 동안 연결 자동 갱신")));
     model.addAttribute(
         "scopes",
