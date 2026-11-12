@@ -9,6 +9,7 @@
   var BASE = '/academycraft/api/rea';
   var F2R = '/api/admin/easy/attendance';
   var f2rBusiness = null; // ADMIN: F2R 장부 사업체 { businessId, name }
+  var financeGeneration = 0;
   var ACADEMY_KEY = 'academycraft.academy'; // AcademyCraft 화면(auth.js)과 같은 키를 써서 학원 선택이 이어지게 한다.
   var generation = 0;
   var $ = function (id) { return document.getElementById(id); };
@@ -60,7 +61,7 @@
     var options = (ctx.academyOptions || []);
     var current = options.find(function (o) { return Number(o.id) === Number(ctx.academyId); });
     $('ahAcademyName').textContent = current ? current.name : ('학원 #' + ctx.academyId);
-    document.title = (current ? current.name + ' · ' : '') + '학원 홈';
+    document.title = (current ? current.name + ' · ' : '') + '업무 대시보드';
     var pick = $('ahAcademyPick');
     if (ctx.builditRole === 'ADMIN' && options.length > 1) {
       pick.replaceChildren();
@@ -308,9 +309,76 @@
     V.useF2r(f2rBusiness.businessId);
     var att = V.rosterUrl(null, null);
     $('ahNavStudents').href = V.studentsUrl();
-    $('ahNavClasses').href = att;
+    $('ahNavClasses').href = V.classesUrl();
     $('ahNavAttendance').href = att;
     $('ahStudentCount').href = V.studentsUrl();
+  }
+
+  function workLinks(user) {
+    $('ahAdminNav').hidden = user.role !== 'ADMIN';
+    document.querySelectorAll('[data-ah-admin]').forEach(function (link) { link.hidden = user.role !== 'ADMIN'; });
+    $('ahWorkStudents').href = V.studentsUrl();
+    $('ahWorkClasses').href = V.classesUrl();
+    $('ahWorkAttendance').href = V.rosterUrl(null, null);
+    $('ahWorkLedger').href = user.role === 'ADMIN' ? '/easy' : '/ledger';
+    $('ahNavLedger').href = $('ahWorkLedger').href;
+  }
+
+  /** 장부 연결은 학원 연결과 별도로 표시한다. 한쪽 조회 실패가 다른 업무 메뉴를 가리지 않는다. */
+  async function initFinance() {
+    var result = await get('/api/dashboard/businesses');
+    var list = result.status === 'ok' && Array.isArray(result.data) ? result.data : [];
+    var pick = $('ahFinancePick');
+    pick.replaceChildren();
+    $('ahFinance').hidden = false;
+    if (!list.length) {
+      pick.append(el('option', result.status === 'ok' ? '연결된 장부 없음' : '연결 조회 실패'));
+      pick.disabled = true;
+      $('ahFinanceCards').replaceChildren(el('p', result.status === 'ok' ? '연결된 사업체가 없습니다. 장부에서 확인하세요.' : '장부 연결을 불러오지 못했습니다.', 'ah-empty'));
+      $('ahRefresh').hidden = true;
+      return;
+    }
+    list.forEach(function (b) { var option = el('option', b.name); option.value = b.businessId; pick.append(option); });
+    pick.addEventListener('change', function () { loadFinance(false); });
+    await loadFinance(false);
+  }
+
+  async function loadFinance(refresh) {
+    var id = $('ahFinancePick').value;
+    if (!id || $('ahFinancePick').disabled) return;
+    var g = ++financeGeneration;
+    $('ahFinanceCards').replaceChildren(el('p', '장부를 불러오는 중입니다.', 'ah-empty'));
+    $('ahFinanceLists').replaceChildren();
+    $('ahFinanceAsOf').textContent = '';
+    var result = await get('/api/dashboard/widgets?businessId=' + encodeURIComponent(id) + (refresh ? '&refresh=true' : ''));
+    if (g !== financeGeneration) return;
+    if (result.status !== 'ok' || !result.data || !Array.isArray(result.data.widgets)) {
+      $('ahFinanceCards').replaceChildren(el('p', result.status === 'forbidden' ? '이 장부를 조회할 권한이 없습니다.' : '장부 조회에 실패했습니다. 현황 새로고침을 눌러 주세요.', 'ah-flag'));
+      return;
+    }
+    var view = V.financeView(result.data.widgets);
+    $('ahFinanceCards').replaceChildren();
+    view.cards.forEach(function (c) {
+      var a = el('a', null, 'ah-finance-card'); a.href = $('ahWorkLedger').href;
+      a.append(el('span', c.label), el('strong', c.value));
+      $('ahFinanceCards').append(a);
+    });
+    view.lists.forEach(function (list) {
+      var box = el('div', null, 'ah-finance-list');
+      var head = el('div', null, 'ah-section-head');
+      var more = el('a', '장부 열기'); more.href = $('ahWorkLedger').href;
+      head.append(el('h3', list.title), more); box.append(head);
+      if (list.error) box.append(el('p', '목록을 불러오지 못했습니다.', 'ah-flag'));
+      else if (!list.items.length) box.append(el('p', list.empty, 'ah-empty'));
+      else {
+        var ul = el('ul');
+        list.items.forEach(function (item) { var li = el('li'); li.append(el('strong', item.title), el('span', item.sub, 'ah-sub')); ul.append(li); });
+        box.append(ul);
+      }
+      $('ahFinanceLists').append(box);
+    });
+    var asOf = result.data.dataAsOf || result.data.generatedAt;
+    if (asOf && !Number.isNaN(new Date(asOf).getTime())) $('ahFinanceAsOf').textContent = '장부 기준 ' + new Date(asOf).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
   }
 
   async function init() {
@@ -318,12 +386,20 @@
     try { user = await ensureCurrentUser(); } catch (_) { user = null; }
     if (!user || (user.role !== 'ADMIN' && user.role !== 'TUTOR')) { toLogin(); return; }
     if (user.role === 'ADMIN') await useF2rBusiness();
+    workLinks(user);
+    $('ahRefresh').addEventListener('click', async function () {
+      $('ahRefresh').disabled = true;
+      try { await Promise.all([start(user, stored()), loadFinance(true)]); }
+      catch (_) { showAlert('일부 현황을 불러오지 못했습니다. 업무 메뉴는 계속 사용할 수 있습니다.'); }
+      finally { $('ahRefresh').disabled = false; }
+    });
     $('ahAcademyPick').addEventListener('change', function () {
       var id = $('ahAcademyPick').value;
       store(id);
       start(user, id).catch(function () { showAlert('학원 정보를 불러오지 못했습니다.'); });
     });
-    start(user, stored()).catch(function () { showAlert('학원 정보를 불러오지 못했습니다.'); });
+    initFinance().catch(function () { $('ahFinanceCards').replaceChildren(el('p', '장부를 불러오지 못했습니다.', 'ah-flag')); });
+    start(user, stored()).catch(function () { showAlert('학원 정보를 불러오지 못했습니다. 업무 메뉴는 계속 사용할 수 있습니다.'); });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

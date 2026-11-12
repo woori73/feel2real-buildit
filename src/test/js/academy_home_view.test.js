@@ -2,6 +2,32 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const v = require('../../main/resources/static/js/academy_home_view.js');
 
+test('given 장부 위젯 when 현황을 표시하면 then 실제 금액·최근 목록을 복구하고 장부의 원생 수를 섞지 않는다', () => {
+  // given
+  const widgets = [{ id: 'easy-finance-summary', data: { cards: [
+    { label: '수납', value: 1200000 }, { label: '지출', value: 400000 }, { label: '미수금', value: 0 }, { label: '원생 수', value: 0 }
+  ] } }, { id: 'easy-overdue-students', data: { items: [] } },
+  { id: 'easy-recent-transactions', data: { items: Array.from({length: 7}, (_, i) => ({title: '합성 거래 ' + i, subtitle: '10,000원', meta: '2026-11-01'})) } }];
+  // when
+  const view = v.financeView(widgets);
+  // then
+  assert.deepEqual(view.cards, [{label: '수납', value: '1,200,000원'}, {label: '지출', value: '400,000원'}, {label: '미수금', value: '0원'}]);
+  assert.equal(view.lists[0].error, false);
+  assert.equal(view.lists[0].items.length, 0);
+  assert.equal(view.lists[1].items.length, 5);
+});
+
+test('given 누락·실패·비정상 금액 when 장부를 표시하면 then 0원이나 미수 없음으로 꾸미지 않는다', () => {
+  // given / when
+  const missing = v.financeView([]);
+  const failed = v.financeView([{id: 'easy-finance-summary', error: '실패', data: {cards: [{label: '수납', value: 999}]}}, {id: 'easy-overdue-students', error: '실패', data: {items: []}}]);
+  const invalid = v.financeView([{id: 'easy-finance-summary', data: {cards: [{label: '수납', value: null}, {label: '지출', value: '0'}, {label: '미수금', value: NaN}]}}]);
+  // then
+  for (const view of [missing, failed, invalid]) assert.ok(view.cards.every(c => c.value === '조회 불가'));
+  assert.equal(missing.lists[0].error, true);
+  assert.equal(failed.lists[0].error, true);
+});
+
 // 학원 홈(/dashboard) 표시 규칙. 예시 값은 테스트용 가상 데이터다.
 const CLASSES = [
   { id: 3, name: '중2 B반', weekdays: ['WED'], startTime: '19:00', endTime: '21:00', studentCount: 4, active: true },
@@ -138,8 +164,10 @@ test('given F2R 모드 when 주소를 만들면 then F2R 출결부·학생 원�
   assert.equal(v.rosterUrl(3, '2026-11-11'), '/easy/attendance?businessId=1&classId=3&date=2026-11-11');
   assert.equal(v.rosterUrl(null, null), '/easy/attendance?businessId=1');
   assert.equal(v.studentsUrl({ classId: 3 }), '/easy/students');
+  assert.equal(v.classesUrl(), '/easy/attendance?businessId=1&tab=classes');
   v.useF2r(null);
   assert.equal(v.isF2r(), false);
+  assert.equal(v.classesUrl(), '/academycraft/screens/CLS-01-class-list.html');
   assert.equal(v.rosterUrl(3, '2026-11-11'), '/academycraft/screens/ATT-03-attendance-roster.html?classId=3&date=2026-11-11');
 });
 

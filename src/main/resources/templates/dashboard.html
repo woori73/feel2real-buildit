@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#FBFAF5">
-  <title>학원 홈</title>
-  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <title>업무 대시보드</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
   <script>
     // 호환: 예전 /dashboard#ai(AI 대화)와 /dashboard?ask=(통합 대시보드에서 넘긴 부탁)는 AI 업무 비서 화면으로 옮긴다.
     // #all과 주소만 있는 /dashboard는 이 학원 홈을 그대로 연다.
@@ -19,11 +19,15 @@
       window.addEventListener('hashchange', move);
     })();
   </script>
-  <link rel="stylesheet" href="/css/academy_home.css?v=20261111-1">
-  <script defer src="/js/academy_home_view.js?v=20261111-1"></script>
-  <script defer src="/js/academy_home.js?v=20261111-1"></script>
+  <link rel="stylesheet" href="/css/academy_home.css?v=20261112-restore">
+  <script defer src="/js/academy_home_view.js?v=20261112-restore"></script>
+  <script defer src="/js/academy_home.js?v=20261112-restore"></script>
+  <script defer src="/js/studio_entry_link.js?v=20261023-1"></script>
 </head>
 <body>
+  <div id="ahAdminNav" hidden>
+    <th:block th:replace="~{fragments/_admin_topnav :: topnav('academyHome')}"></th:block>
+  </div>
   <header class="ah-top">
     <div class="ah-top-in">
       <div class="ah-academy">
@@ -33,11 +37,14 @@
         </label>
       </div>
       <nav class="ah-nav" aria-label="학원 업무">
-        <a href="/dashboard" aria-current="page">학원 홈</a>
+        <a href="/dashboard" aria-current="page">대시보드</a>
         <a id="ahNavStudents" href="/academycraft/screens/MBR-01-student-list.html">학생</a>
         <a id="ahNavClasses" href="/academycraft/screens/CLS-01-class-list.html">반/수업</a>
         <a id="ahNavAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html">출결</a>
         <a href="/academycraft/screens/CNS-03-inquiry-inbox.html">상담</a>
+        <a href="/dashboard/info">자료</a>
+        <a id="ahNavLedger" href="/ledger">장부</a>
+        <a href="/admin/hub/exam-requests" data-ah-admin hidden>접수관리</a>
       </nav>
     </div>
   </header>
@@ -45,12 +52,19 @@
   <main class="ah-main" id="ahMain" aria-busy="true">
     <p class="ah-date" id="ahDate"></p>
     <div class="ah-title-row">
-      <h1>오늘의 학원</h1>
+      <div><h1>업무 대시보드</h1><p class="ah-subtitle">학생·수업·자료·장부를 한곳에서 관리합니다.</p></div>
       <a class="ah-count" id="ahStudentCount" href="/academycraft/screens/MBR-01-student-list.html" aria-live="polite">재원생 확인 중</a>
     </div>
     <p class="ah-alert" id="ahAlert" role="alert" hidden></p>
 
-    <section class="ah-banner" id="ahBanner" aria-labelledby="ahBannerTitle">
+    <section class="ah-finance ah-panel" id="ahFinance" aria-labelledby="ahFinanceTitle" hidden>
+      <div class="ah-section-head"><div><h2 id="ahFinanceTitle">이번 달 장부</h2><label class="ah-note">장부 사업체 <select id="ahFinancePick" aria-label="장부 사업체"></select></label></div><button id="ahRefresh" type="button">현황 새로고침</button></div>
+      <div class="ah-finance-cards" id="ahFinanceCards" aria-live="polite"></div>
+      <div class="ah-finance-lists" id="ahFinanceLists"></div>
+      <p class="ah-note" id="ahFinanceAsOf"></p>
+    </section>
+
+    <section class="ah-banner" id="ahBanner" aria-labelledby="ahBannerTitle" data-kind="loading">
       <div class="ah-banner-text">
         <span class="ah-banner-kind" id="ahBannerKind">수업 확인 중</span>
         <h2 id="ahBannerTitle">오늘 수업을 불러오고 있습니다</h2>
@@ -81,11 +95,44 @@
       </div>
     </div>
 
-    <nav class="ah-more" aria-label="다른 업무">
-      <a href="/dashboard/info">정보 · 올린 자료 읽기</a>
-      <a href="/ledger">재무 · 장부 열기</a>
-      <a href="/dashboard/assistant">AI 업무 비서</a>
-    </nav>
+    <section class="ah-workspace" aria-labelledby="ahWorkTitle">
+      <h2 id="ahWorkTitle">업무 바로가기</h2>
+      <div class="ah-work-groups">
+        <nav class="ah-work-group" aria-label="학생·수업 관리">
+          <h3>학생·수업</h3>
+          <a id="ahWorkStudents" href="/academycraft/screens/MBR-01-student-list.html"><strong>학생 관리</strong><span>학생 등록·정보 수정·명단</span></a>
+          <a id="ahWorkClasses" href="/academycraft/screens/CLS-01-class-list.html"><strong>반·수업 관리</strong><span>반 편성·학생 배정·수업 시간</span></a>
+          <a id="ahWorkAttendance" href="/academycraft/screens/ATT-03-attendance-roster.html"><strong>출결 기록</strong><span>등원·결석·지각·월별 현황</span></a>
+          <a href="/academycraft/screens/CNS-03-inquiry-inbox.html"><strong>상담</strong><span>학부모 문의·답변</span></a>
+        </nav>
+        <nav class="ah-work-group" aria-label="자료·문제 제작">
+          <h3>자료·문제 제작</h3>
+          <a href="/dashboard/info"><strong>올린 자료 읽기</strong><span>학생명단·업무 자료의 본문 확인</span></a>
+          <a href="/problem-generator"><strong>내신위키 · 문제 제작</strong><span>학교별 자료·문법은행·내신 제작소</span></a>
+          <a href="/testprep"><strong>TESTPREP</strong><span>모의고사·응시·성적</span></a>
+          <a href="/admin/hub/exam-requests" data-ah-admin hidden><strong>맞춤문제 접수 관리</strong><span>신청·입금·자료·회차별 전달</span></a>
+        </nav>
+        <nav class="ah-work-group" aria-label="장부·운영 관리">
+          <h3>장부·운영</h3>
+          <a id="ahWorkLedger" href="/ledger"><strong>장부 · 수납 관리</strong><span>수입·지출·미수금·증빙</span></a>
+          <a href="/admin/student-roster" data-ah-admin hidden><strong>학생명단(시간표)</strong><span>연도별 진행표·출결 자료</span></a>
+          <a href="/admin/academy-move" data-ah-admin hidden><strong>학원이사 · 사업 준비</strong><span>문서·사진·일정·업무 노트</span></a>
+          <a href="/builder"><strong>홈페이지 관리</strong><span>학원 홈페이지 편집·발행</span></a>
+          <a href="/admissions/workspace"><strong>입시상담</strong><span>대학·전형·공식 자료 조회</span></a>
+        </nav>
+      </div>
+      <nav class="ah-work-more" aria-label="추가 업무 도구">
+        <a href="/admin/hub" data-ah-admin hidden>통합 운영 현황</a>
+        <a href="/easy/connections" data-ah-admin hidden>은행·카드·홈택스 자료 연결</a>
+        <a href="/ledger" data-ah-admin hidden>F2R 범용 장부</a>
+        <a href="/ai-agent-studio" data-studio-entry hidden>AI AGENT 제작협업실</a>
+        <a href="/dashboard/assistant#all">기존 전체 업무 도구 · 직접 입력·자료 분석</a>
+        <a href="/dashboard/assistant">AI 업무 비서</a>
+      </nav>
+    </section>
+
+
+    <nav class="ah-more" aria-label="페이지 이동"><a href="/">홈페이지로</a><a href="#ahWorkTitle">업무 바로가기</a></nav>
   </main>
 
   <script src="/js/api.js"></script>

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 
-// 학원 홈(/dashboard) 화면 계약: 운영 동선만 남기고 AI 콘솔·재무 KPI·지휘창은 홈에서 걷어낸다.
+// 업무 대시보드: 기존 기능의 직접 접근과 현황을 유지하며 AI 콘솔·승인 카운터는 별도 화면에 둔다.
 const ROOT = path.resolve(__dirname, '../../main/resources');
 const HTML = fs.readFileSync(path.join(ROOT, 'templates/dashboard.html'), 'utf8');
 const JS = fs.readFileSync(path.join(ROOT, 'static/js/academy_home.js'), 'utf8');
@@ -19,25 +19,27 @@ test('given academy_home.js when $(id) 참조를 모으면 then 모두 홈 템�
   assert.equal(new Set(all).size, all.length);
 });
 
-test('given 홈 템플릿 when 읽으면 then 고정 메뉴·승인 카운터·AI 캐릭터·플로팅 버튼·ZIP·지휘창·재무 KPI가 없다', () => {
+test('given 홈 템플릿 when 읽으면 then AI 캐릭터·승인 카운터·플로팅 버튼·지휘창을 강제하지 않는다', () => {
   // given / when / then
   for (const gone of ['id="siMenu"', 'id="statusPending"', 'id="statusDone"', 'id="statusReview"', 'id="agentStage"', 'id="aiFab"',
     'id="siMediaForm"', 'id="uaUploadForm"', 'id="uaCommandForm"', 'id="kpiRow"', 'id="widgetContainer"', 'id="bizSelect"',
     'f2r_agent_dashboard.js', 'unified_assistant.js', 'easy-finance-summary']) {
     assert.ok(!HTML.includes(gone), gone + ' 가 홈에 남아 있음');
   }
-  assert.ok(!JS.includes('/api/dashboard/widgets'), '홈은 장부 위젯(재무 KPI)을 부르지 않는다');
+  assert.ok(JS.includes('/api/dashboard/widgets'), '기존 장부 현황을 홈에서 직접 조회한다');
 });
 
 test('given 홈 템플릿 when 읽으면 then 학원명·홈·학생·반/수업·출결·상담 메뉴와 오늘의 학원·재원생 링크·다음 수업 배너가 있다', () => {
-  for (const needle of ['id="ahAcademyName"', '>학원 홈<', '>학생<', '>반/수업<', '>출결<', '>상담<', '<h1>오늘의 학원</h1>',
+  for (const needle of ['id="ahAcademyName"', '>대시보드<', '>학생<', '>반/수업<', '>출결<', '>상담<', '<h1>업무 대시보드</h1>',
     'id="ahStudentCount" href="/academycraft/screens/MBR-01-student-list.html"', 'id="ahBanner"', 'id="ahBannerAction"', '학생 챙기기', '이번 주 중점 업무']) {
     assert.ok(HTML.includes(needle), needle);
   }
   // 상담은 원장·강사용 문의함으로 연다(CNS-01은 학부모 인증키 화면).
   assert.ok(HTML.includes('href="/academycraft/screens/CNS-03-inquiry-inbox.html">상담<'));
-  // 장부·정보·AI 비서는 보조 진입점으로만 남긴다.
+  // AI 화면을 거치지 않고 기존 상세 화면을 직접 연다.
   for (const href of ['/ledger', '/dashboard/info', '/dashboard/assistant']) assert.ok(HTML.includes('href="' + href + '"'), href);
+  for (const href of ['/admin/hub/exam-requests', '/admin/student-roster', '/problem-generator', '/testprep', '/builder', '/admissions/workspace', '/dashboard/assistant#all']) assert.ok(HTML.includes('href="' + href + '"'), href);
+  assert.ok(HTML.includes('fragments/_admin_topnav :: topnav('), '관리자 전체 메뉴를 유지한다');
 });
 
 test('given 예전 #ai·?ask= 주소 when 홈을 열면 then AI 업무 비서 화면으로 옮기고 #all·빈 주소는 홈을 연다', () => {

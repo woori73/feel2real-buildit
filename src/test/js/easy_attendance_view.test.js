@@ -47,7 +47,15 @@ test('given 학원 홈 바로가기 주소 when 읽으면 then 사업체·반·�
   const ok = view.deepLink('?businessId=1&classId=3&date=2026-11-11');
   const bad = view.deepLink('?businessId=0&classId=abc&date=2026/11/11');
   // then
-  assert.deepEqual(ok, { businessId: '1', classId: '3', date: '2026-11-11' });
-  assert.deepEqual(bad, { businessId: null, classId: null, date: null });
-  assert.deepEqual(view.deepLink(''), { businessId: null, classId: null, date: null });
+  assert.deepEqual(ok, { businessId: '1', classId: '3', date: '2026-11-11', tab: 'sheet' });
+  assert.deepEqual(bad, { businessId: null, classId: null, date: null, tab: 'sheet' });
+  assert.deepEqual(view.deepLink(''), { businessId: null, classId: null, date: null, tab: 'sheet' });
+});
+
+test('given 대시보드 반 관리 바로가기 when 주소를 읽으면 then 반 관리 탭이며 알 수 없는 탭은 출결부다', () => {
+  // given / when / then
+  assert.equal(view.deepLink('?businessId=1&tab=classes').tab, 'classes');
+  assert.equal(view.deepLink('?tab=month').tab, 'month');
+  assert.equal(view.deepLink('?tab=import').tab, 'import');
+  assert.equal(view.deepLink('?tab=unknown').tab, 'sheet');
 });
