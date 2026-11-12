@@ -39,6 +39,8 @@ class NaesinProductionTest {
     db.execute("INSERT INTO users VALUES (1),(2),(3)");
     String ddl = Files.readString(Path.of("src/main/resources/db/migration/V1095__studio_and_mcp.sql"));
     for (String sql : ddl.substring(0,ddl.indexOf("CREATE TABLE mcp_grants")).split(";")) if(!sql.isBlank())db.execute(sql);
+    // V1108 폐지 자료 보관 칸. 버전 목록 조회가 보관 버전을 거른다.
+    db.execute("ALTER TABLE studio_revisions ADD COLUMN archived_at TIMESTAMP NULL");
     var userRepo = mock(UserRepository.class); var modu=User.builder().loginId("modu").role(Role.TUTOR).build();
     ReflectionTestUtils.setField(modu,"userId",2L);when(userRepo.findByLoginId("modu")).thenReturn(Optional.of(modu));
     var guard=new StudioAccessGuard(userRepo);ReflectionTestUtils.setField(guard,"operatorLoginId","modu");
