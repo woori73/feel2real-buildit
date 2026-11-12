@@ -6,6 +6,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.Academy
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiContext.Composition.SectionState;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.AcademyAiProposal.Type;
+import f2r.tutor_solution.private_tutor_solution_back.domain.academy.dto.EducatorReference;
 import f2r.tutor_solution.private_tutor_solution_back.domain.academy.entity.AcademyAiTaskType;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +48,11 @@ class AcademyAiProposalServiceTest {
     contextService = mock(AcademyAiContextService.class);
     promptBuilder = mock(AcademyAiPromptBuilder.class);
     provider = new FakeAiProvider();
-    service = new AcademyAiProposalService(contextService, promptBuilder, provider);
+    service = new AcademyAiProposalService(
+        contextService, promptBuilder, provider, new EducatorKnowledgeService(List.of()));
     principal = mock(JwtTokenProvider.AuthenticatedPrincipal.class);
     when(contextService.buildContext(principal)).thenReturn(context());
-    when(promptBuilder.build(any(), any(), any(), any(), any())).thenReturn("PROMPT");
+    when(promptBuilder.build(any(), any(), any(), any(), any(), any())).thenReturn("PROMPT");
   }
 
   private static AcademyAiContext context() {
@@ -109,8 +111,28 @@ class AcademyAiProposalServiceTest {
 
     org.mockito.ArgumentCaptor<String> captor = org.mockito.ArgumentCaptor.forClass(String.class);
     org.mockito.Mockito.verify(promptBuilder)
-        .build(org.mockito.ArgumentMatchers.eq(AcademyAiTaskType.ACADEMY_COMPOSE), any(), any(), any(), captor.capture());
+        .build(org.mockito.ArgumentMatchers.eq(AcademyAiTaskType.ACADEMY_COMPOSE), any(), any(), any(),
+            captor.capture(), any());
     assertThat(captor.getValue()).isEqualTo("수업 영상을 중심으로 보여줘");
+  }
+
+  @Test
+  @DisplayName("given 배포된 Chart 지식(59건) when 생성 then 검색된 참고 사례가 promptBuilder에 전달된다")
+  @SuppressWarnings("unchecked")
+  void generate_passes_searched_educator_references() {
+    service = new AcademyAiProposalService(
+        contextService, promptBuilder, provider, new EducatorKnowledgeService());
+    provider.respondWith("{\"diagnosis\":\"진단\",\"proposals\":[]}");
+
+    service.generate(principal, "말하기 중심 수업, 암기 반대");
+
+    org.mockito.ArgumentCaptor<List<EducatorReference>> refs =
+        org.mockito.ArgumentCaptor.forClass(List.class);
+    org.mockito.Mockito.verify(promptBuilder).build(
+        org.mockito.ArgumentMatchers.eq(AcademyAiTaskType.ACADEMY_COMPOSE),
+        any(), any(), any(), any(), refs.capture());
+    assertThat(refs.getValue()).isNotEmpty().hasSizeLessThanOrEqualTo(3);
+    assertThat(refs.getValue()).extracting(EducatorReference::id).doesNotContain(81L);
   }
 
   @Test
