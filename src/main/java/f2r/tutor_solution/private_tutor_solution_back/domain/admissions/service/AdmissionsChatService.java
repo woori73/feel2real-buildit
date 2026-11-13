@@ -327,7 +327,7 @@ public class AdmissionsChatService {
                 : List.of();
         boolean hasLastYear = facts.evidence().stream().anyMatch(AdmissionsChatService::isLastYearPrior);
         boolean hasCurrentRatio = facts.evidence().stream().anyMatch(AdmissionsChatService::isCurrentRatio);
-        String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile, facts.scheduleCoverage(),
+        String userPrompt = buildUserPrompt(searchQuestion, academicYearFilter, pack, parsed, studentProfile, facts.scheduleCoverage(),
                 hasLastYear, hasCurrentRatio, comparisons)
                 + reformNotes(question + (studentProfile == null ? "" : "\n" + studentProfile),
                         facts.searchedYears().contains(2028));
@@ -670,7 +670,13 @@ public class AdmissionsChatService {
         return sb.toString();
     }
 
-    private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed, String studentProfile,
+    /** 질문에 학년도가 없을 때 답변 첫머리에 밝힐 학년도. 화면에서 고른(또는 '올해' 표현으로 정한) 학년도를 쓰고, 없으면 2027. */
+    static String yearLabelNote(Integer answerYear) {
+        int year = answerYear == null ? 2027 : answerYear;
+        return "질문에 학년도가 없으므로 답변 첫머리에 '" + year + "학년도 기준'이라고 밝혀라.\n";
+    }
+
+    private String buildUserPrompt(String question, Integer answerYear, ResearchPack pack, AdmissionsQueryParser.Parsed parsed, String studentProfile,
                                    AdmissionsFactSearchService.ScheduleCoverage coverage, boolean hasPrior,
                                    boolean hasCurrentRatio, List<String> comparisons) {
         StringBuilder sb = new StringBuilder();
@@ -682,7 +688,7 @@ public class AdmissionsChatService {
         sb.append("위 [입시 공식자료 근거]만을 사용해 답변하라. 근거에 '확인되지 않음'이라고 적힌 항목은 추정하지 말고 "
                 + "확인되지 않는다고 답하라. 근거에 없는 날짜·인원·비율·등급은 절대 쓰지 마라.\n");
         if (parsed.yearUnspecified()) {
-            sb.append("질문에 학년도가 없으므로 답변 첫머리에 '2027학년도 기준'이라고 밝혀라.\n");
+            sb.append(yearLabelNote(answerYear));
         }
         if (!parsed.unknownUniversities().isEmpty()) {
             sb.append("[주의] 질문에 언급된 ").append(String.join(", ", parsed.unknownUniversities()))

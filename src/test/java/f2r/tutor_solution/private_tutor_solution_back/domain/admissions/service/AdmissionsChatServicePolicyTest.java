@@ -764,4 +764,18 @@ class AdmissionsChatServicePolicyTest {
         assertThat(both).as("두 학년도면 전체").isNull();
         assertThat(plain).isEqualTo(2028);
     }
+
+    @Test
+    @DisplayName("given 질문에 학년도가 없을 때 when 말머리 지시를 만들면 then 적용 학년도(기본 2028 화면이면 2028)를 쓴다")
+    void year_label_follows_answer_year() {
+        // given / when
+        String reform = AdmissionsChatService.yearLabelNote(2028);
+        String current = AdmissionsChatService.yearLabelNote(2027);
+        String unset = AdmissionsChatService.yearLabelNote(null);
+
+        // then
+        assertThat(reform).contains("'2028학년도 기준'").doesNotContain("2027");
+        assertThat(current).contains("'2027학년도 기준'");
+        assertThat(unset).as("학년도 선택이 없으면 확정 자료인 2027").contains("'2027학년도 기준'");
+    }
 }
