@@ -18,8 +18,8 @@
   var admissionTrackInput = document.getElementById('ag-admission-track');
   var academicSummaryInput = document.getElementById('ag-academic-summary');
 
-  // 학년도: null=전체, 2027, 2028
-  var academicYear = 2027;
+  // 학년도: 2028(바뀌는 입시, 기본) 또는 2027(올해 고3)
+  var academicYear = 2028;
   var memberMode = document.body.dataset.member === 'true';
   var sessionToken = null;
   var sending = false;
@@ -87,7 +87,7 @@
     if (data.academicYear === 2028) {
       var warn = document.createElement('div');
       warn.className = 'ag-warning';
-      warn.textContent = '⚠️ 2028학년도는 계획 단계로 변경될 수 있습니다.';
+      warn.textContent = '대학별 2028학년도 자료는 계획 단계라 바뀔 수 있습니다.';
       container.appendChild(warn);
     }
 
@@ -215,15 +215,15 @@
   yearToggle.addEventListener('click', function () {
     if (academicYear === 2027) {
       academicYear = 2028;
-      yearLabel.textContent = '2028 계획';
+      yearLabel.textContent = '2028 바뀌는 입시';
     } else {
       academicYear = 2027;
-      yearLabel.textContent = '2027 확정';
+      yearLabel.textContent = '2027 올해 고3';
     }
   });
 
   document.getElementById('ag-year-select').addEventListener('change',function(e){
-    academicYear=Number(e.target.value);yearLabel.textContent=academicYear===2028?'2028 계획':'2027 확정';
+    academicYear=Number(e.target.value);yearLabel.textContent=academicYear===2028?'2028 바뀌는 입시':'2027 올해 고3';
   });
   yearToggle.addEventListener('click',function(){var select=document.getElementById('ag-year-select');select.value=String(academicYear);select.dispatchEvent(new Event('change'));});
   if (!welcomeSection.hidden) welcomeInput.focus();

@@ -21,6 +21,19 @@ public final class AdmissionsQueryParser {
     /** 상담이 다루는 학년도. */
     public static final Set<Integer> SUPPORTED_YEARS = Set.of(2027, 2028);
 
+    /**
+     * 2028학년도와 같은 제도(내신 5등급제·통합형 수능)를 적용받는 뒤 학년도(현 고1=2029, 예비 고1=2030).
+     * 대학별 자료는 아직 없어 2028학년도 자료로 찾고, 답변에서 같은 제도라는 점을 밝힌다.
+     */
+    public static final Set<Integer> REFORM_LATER_YEARS = Set.of(2029, 2030);
+
+    /** 학년도 값을 상담 학년도로 바꾼다. 2029·2030은 같은 제도인 2028로, 그 밖의 미지원 학년도는 null. */
+    static Integer counselingYear(int y) {
+        if (SUPPORTED_YEARS.contains(y)) return y;
+        if (REFORM_LATER_YEARS.contains(y)) return 2028;
+        return null;
+    }
+
     private static final Pattern YEAR = Pattern.compile("(20[2-3]\\d)");
 
     /**
@@ -110,16 +123,18 @@ public final class AdmissionsQueryParser {
         boolean unsupported = false;
         Matcher m = YEAR.matcher(yearText);
         while (m.find()) {
-            int y = Integer.parseInt(m.group(1));
-            if (SUPPORTED_YEARS.contains(y)) years.add(y);
-            else if (y >= 2026 && y <= 2035) unsupported = true;
+            Integer y = counselingYear(Integer.parseInt(m.group(1)));
+            if (y != null) years.add(y);
+            else if (Integer.parseInt(m.group(1)) >= 2026 && Integer.parseInt(m.group(1)) <= 2035) unsupported = true;
         }
         Matcher past = YEAR_WITH_SUFFIX.matcher(yearText);
-        while (past.find()) unsupported = true;
+        while (past.find()) {
+            if (counselingYear(Integer.parseInt(past.group(1))) == null) unsupported = true;
+        }
         Matcher two = YEAR_TWO_DIGIT.matcher(yearText);
         while (two.find()) {
-            int y = 2000 + Integer.parseInt(two.group(1));
-            if (SUPPORTED_YEARS.contains(y)) years.add(y);
+            Integer y = counselingYear(2000 + Integer.parseInt(two.group(1)));
+            if (y != null) years.add(y);
             else unsupported = true;
         }
         List<String> univs = new ArrayList<>();

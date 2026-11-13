@@ -62,7 +62,8 @@ public class AdmissionsChatService {
                     + " 합격선·합격 확률·전년도 입시결과를 만들어내지 않는다."
                     + " 유튜브 의견이나 분석가 전망을 공식 모집요강처럼 말하지 않는다."
                     + " 답변에는 반드시 적용 학년도를 명시한다 (예: '2027학년도 기준')."
-                    + " 2028학년도 자료는 '계획 단계로 변경될 수 있다'는 점을 함께 밝힌다."
+                    + " 대학별 2028학년도 전형 자료(시행계획)는 '계획 단계로 변경될 수 있다'는 점을 함께 밝힌다."
+                    + " 교육부·평가원·대교협이 발표한 2028 제도(내신 5등급제·통합형 수능 등)는 발표 기관과 발표 시기를 밝혀 안내한다."
                     + " 근거에 없는 대학명·전형명·날짜·인원·비율을 만들어내지 않는다."
                     + " 근거의 출처가 '사설 미러본'이면 공식 모집요강이라고 말하지 말고, 공식 원본이 아니라 확인이 필요한 자료라고 밝히며,"
                     + " 그 자료만으로 모집인원·일정·자격·전형방법을 확정적으로 말하지 않는다."
@@ -126,11 +127,46 @@ public class AdmissionsChatService {
     static final String MSG_NOT_COLLECTED =
             "경쟁률·전년도 입시결과·충원 현황·권장 이수 과목은 아직 수집된 공식 자료가 없어 안내할 수 없습니다. "
                     + "해당 정보는 각 대학 입학처 발표를 확인해 주세요.";
+    /** 2028 이후 입시 중 아직 이 상담에 수집하지 않은 자료. 2028 질문의 프롬프트와 미발표 안내에 함께 쓴다. */
+    static final String RESEARCH_STATUS_2028 =
+            "대학별 2028학년도 시행계획 세부(전형별 모집인원·평가요소·수능최저), 대학별 5등급 교과 반영 방법"
+                    + "(등급 점수표·성취도 반영), 정시 영역 반영비율, 대학별 권장과목 전체 목록, 2029·2030학년도 대학별 계획";
+
     /** 미발표: 대학별 2028학년도 모집요강이 아직 나오지 않았다(수집 여부와 무관). */
     static final String MSG_UNPUBLISHED_2028 =
-            "대학별 2028학년도 모집요강(전형·일정·모집인원)은 대부분의 대학에서 아직 발표 전입니다. 현재 확보한 2028학년도 "
-                    + "자료는 일부 대학의 시행계획 방향뿐이라 질문에 해당하는 확정된 일정이나 수치를 안내할 수 없습니다. "
-                    + "각 대학 입학처 발표를 확인해 주세요.";
+            "대학별 2028학년도 모집요강(전형·일정·모집인원)은 대부분의 대학에서 아직 발표 전입니다. 지금 안내할 수 있는 2028학년도 "
+                    + "자료는 교육부·평가원·대교협이 발표한 제도(내신 5등급제, 통합형 수능, 시험 일정, 전국 모집 규모 등)라서 "
+                    + "질문에 해당하는 대학별 일정이나 수치는 안내할 수 없습니다. 이 상담에서 지금 수집 중인 자료: "
+                    + RESEARCH_STATUS_2028 + ". 각 대학 입학처의 2028학년도 대학입학전형 시행계획을 확인해 주세요.";
+
+    /** 현 고1(2029학년도)·예비 고1(2030학년도) 질문에 붙이는 안내. */
+    static final String LATER_COHORT_NOTE =
+            "현재 발표된 제도 기준으로 2029학년도(현 고1)와 2030학년도(예비 고1, 현 중3)도 2028학년도와 같은 "
+                    + "내신 5등급제·통합형 수능을 적용받는다. 대학별 계획은 2029학년도가 2027년 4월, 2030학년도가 2028년 4월에 발표된다.";
+
+    private static final java.util.regex.Pattern LATER_COHORT = java.util.regex.Pattern.compile(
+            "2029|2030|(?<!\\d)(?:29|30)\\s*학년도|예비\\s*고\\s*1|예비\\s*고등|중학생|중학교|(?<![가-힣])중[23](?!\\d)|(?<![가-힣])고1(?!\\d)");
+
+    /** 올해 입시(2027학년도)를 가리키는 표현. '예비 고3'(현 고2)은 2028학년도라 제외한다. */
+    private static final java.util.regex.Pattern CURRENT_CYCLE = java.util.regex.Pattern.compile(
+            "올해|금년|이번\\s*(?:입시|수시|정시|원서)|작년|지난해|전년도|(?<!예비\\s?)(?<!예비)고3");
+
+    /**
+     * 상담에 쓸 학년도. 질문에 학년도가 적혀 있으면 그 학년도(둘 이상이면 null=전체)를,
+     * 적혀 있지 않고 '올해·작년·고3' 같은 올해 입시 표현이 있으면 2027을, 둘 다 없으면 화면에서 고른 학년도를 쓴다.
+     */
+    public static Integer effectiveYear(String question, Integer requestedYear) {
+        java.util.Set<Integer> years = AdmissionsQueryParser.parse(question, List.of()).years();
+        if (!years.isEmpty()) return years.size() == 1 ? years.iterator().next() : null;
+        if (question != null && CURRENT_CYCLE.matcher(question).find()) return 2027;
+        return requestedYear;
+    }
+
+    /** 질문이 2028학년도 뒤 학년(현 고1·예비 고1·중학생)을 가리키는가. */
+    static boolean mentionsLaterCohort(String question) {
+        return question != null && LATER_COHORT.matcher(question).find();
+    }
+
     /** 미수집: 자료가 발표되었을 수 있으나 이 가이드가 수집하지 않았다(발표 여부와 무관). */
     static final String MSG_AGGREGATE_NOT_COLLECTED =
             "전국 단위 모집인원·수시/정시 비중 같은 총량 통계(예: 대교협 발표 자료)는 이 가이드에 수집된 공식 자료가 없어 "
@@ -192,9 +228,11 @@ public class AdmissionsChatService {
         return ask(rawQuestion,academicYearFilter,sessionToken,studentProfile,null);
     }
 
-    public AdmissionsAnswer ask(String rawQuestion, Integer academicYearFilter, String sessionToken,
+    public AdmissionsAnswer ask(String rawQuestion, Integer requestedYear, String sessionToken,
                                 String studentProfile, String retrievalContext) {
         String question = rawQuestion == null ? "" : rawQuestion.strip();
+        // 화면의 학년도 선택보다 질문에 적은 학년도·'올해' 같은 표현을 앞세운다(기본 화면이 2028이어도 2027 질문에 답하도록).
+        Integer academicYearFilter = effectiveYear(question, requestedYear);
         if (question.isEmpty()) {
             return failure("질문을 입력해 주세요.");
         }
@@ -228,7 +266,9 @@ public class AdmissionsChatService {
                     ? msgPriorNotCollected(parsed.universities()) : MSG_NOT_COLLECTED;
             return refuse(msg, sessionToken, question, academicYearFilter, studentProfile);
         }
-        if (parsed.asksAggregateStats() && parsed.universities().isEmpty()) {
+        // 2028 전국 모집 규모는 대교협 발표 자료를 지식 항목으로 넣었다. 2028 질문은 근거를 찾아본 뒤 없을 때만 미수집으로 답한다.
+        boolean asks2028 = facts.searchedYears().equals(java.util.Set.of(2028));
+        if (parsed.asksAggregateStats() && parsed.universities().isEmpty() && !asks2028) {
             return refuse(MSG_AGGREGATE_NOT_COLLECTED, sessionToken, question, academicYearFilter, studentProfile);
         }
         if (parsed.mentionsUnsupportedYear() && parsed.years().isEmpty()) {
@@ -252,11 +292,13 @@ public class AdmissionsChatService {
         List<Evidence> usable = mergeUsable(facts.evidence(), usableEvidence(pack));
 
         // 4. 2028 질문은 2028 근거만 인정한다. 없으면 "미발표"로 답하고 2027 자료로 대신 답하지 않는다.
-        boolean asks2028Only = facts.searchedYears().equals(java.util.Set.of(2028));
-        if (asks2028Only) {
+        if (asks2028) {
             usable = usable.stream().filter(e -> Integer.valueOf(2028).equals(e.getAcademicYear())).toList();
             // 문서 제목만 있는 자료(material:)로는 2028 일정·수치를 답할 수 없다. 학과·전형·일정 행 또는 사실 지식이 있어야 한다.
             if (usable.stream().noneMatch(e -> isFactRow(e.getRefId()))) {
+                if (parsed.asksAggregateStats() && parsed.universities().isEmpty()) {
+                    return refuse(MSG_AGGREGATE_NOT_COLLECTED, sessionToken, question, academicYearFilter, studentProfile);
+                }
                 return refuseWithYoutube(MSG_UNPUBLISHED_2028, pack, sessionToken, question, academicYearFilter, studentProfile);
             }
         }
@@ -286,7 +328,9 @@ public class AdmissionsChatService {
         boolean hasLastYear = facts.evidence().stream().anyMatch(AdmissionsChatService::isLastYearPrior);
         boolean hasCurrentRatio = facts.evidence().stream().anyMatch(AdmissionsChatService::isCurrentRatio);
         String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile, facts.scheduleCoverage(),
-                hasLastYear, hasCurrentRatio, comparisons);
+                hasLastYear, hasCurrentRatio, comparisons)
+                + reformNotes(question + (studentProfile == null ? "" : "\n" + studentProfile),
+                        facts.searchedYears().contains(2028));
 
         // 7. LLM 호출
         NewStartLlmCompletion completion = admissionsLlmClient.complete(systemPrompt, userPrompt, MAX_ANSWER_CHARS);
@@ -605,6 +649,23 @@ public class AdmissionsChatService {
                 sb.append("원문: ").append(e.getRefUrl()).append("\n");
             }
             sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 2028 질문에는 아직 수집하지 않은 자료 목록을, 현 고1·예비 고1·중학생 질문에는 같은 제도라는 안내를 덧붙인다.
+     * 근거에 없는 대학별 수치를 만들지 않게 하고, 뒤 학년도 질문을 2028 자료로 답하는 이유를 밝히게 한다.
+     */
+    static String reformNotes(String question, boolean asks2028) {
+        StringBuilder sb = new StringBuilder();
+        if (asks2028) {
+            sb.append("[2028 수집 현황] 이 상담에 아직 수집하지 않은 자료: ").append(RESEARCH_STATUS_2028)
+                    .append(". 질문이 이 내용을 물으면 근거를 지어내지 말고 '아직 수집 중'이라고 밝혀라.\n");
+        }
+        if (mentionsLaterCohort(question)) {
+            sb.append("[뒤 학년도 안내] ").append(LATER_COHORT_NOTE)
+                    .append(" 이 점을 답변 첫머리에 한 문장으로 밝히고, 근거의 학년도(2028)를 함께 적어라.\n");
         }
         return sb.toString();
     }

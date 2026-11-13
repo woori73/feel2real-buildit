@@ -388,6 +388,35 @@ class AdmissionsDataLoaderDbTest {
     }
 
     @Test
+    @DisplayName("given official_knowledge가 있는 시드 when 적재·재적재하면 then OFFICIAL 사실 항목(DRAFT)이 생기고 바뀐 것만 갱신된다")
+    void official_knowledge_is_loaded_as_official_fact_items() throws Exception {
+        // given
+        String seed = """
+            {"ipsi_universities":[{"name":"사대학교","university_code":"SA"}],
+             "official_knowledge":[
+               {"id":"R2028-NAESIN","academic_year":2028,"title":"2028 내신 5등급제","content":"교육부 확정안: 1등급 10%","tags":"내신 5등급","source_url":"https://www.moe.go.kr/x"},
+               {"id":"R2028-CSAT","academic_year":2028,"title":"2028 통합형 수능","content":"선택과목 폐지"},
+               {"id":"R2031","academic_year":2031,"title":"지원 안 하는 학년도","content":"x"}]}
+            """;
+
+        // when
+        var first = loader.loadSeed(seed);
+        var second = loader.loadSeed(seed.replace("선택과목 폐지", "선택과목 폐지(수정)"));
+
+        // then
+        assertThat(first.knowledgeItems()).as("2031 항목은 넣지 않는다").isEqualTo(2);
+        assertThat(second.knowledgeItems()).as("바뀐 1건만 갱신").isEqualTo(1);
+        assertThat(knowledge.findAll()).hasSize(2).allSatisfy(k -> {
+            assertThat(k.getSourceClass()).isEqualTo(AdmissionsKnowledgeItem.SourceClass.OFFICIAL);
+            assertThat(k.getRole()).isEqualTo(AdmissionsKnowledgeItem.Role.FACT);
+            assertThat(k.getYearConfirmed()).as("2028은 계획 단계").isFalse();
+            assertThat(k.getStatus()).isEqualTo(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+        });
+        assertThat(knowledge.findByDedupKey("official:R2028-NAESIN")).get()
+                .satisfies(k -> assertThat(k.getSourceUrl()).isEqualTo("https://www.moe.go.kr/x"));
+    }
+
+    @Test
     @DisplayName("given authoritative 표시가 없는 시드 when 적재하면 then 예전 행을 보관하지 않는다")
     void without_authoritative_flag_nothing_is_superseded() throws Exception {
         // given

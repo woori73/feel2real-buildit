@@ -73,15 +73,35 @@
     byId('ae-compare-ask').disabled=!candidates.length;
   }
   function tab(name){
-    if(['home','prepare','my','search','compare','scores','chat'].indexOf(name)<0)return;
+    if(['home','reform','prepare','my','search','compare','scores','chat'].indexOf(name)<0)return;
     byId('ae-workspace').hidden=name==='chat';
-    ['home','prepare','my','search','compare','scores'].forEach(function(p){byId('ae-'+p+'-panel').hidden=p!==name;});
+    ['home','reform','prepare','my','search','compare','scores'].forEach(function(p){byId('ae-'+p+'-panel').hidden=p!==name;});
+    if(name==='reform')cohort();
     if(name!=='chat'){byId('ag-welcome').hidden=true;byId('ag-chat').hidden=true;}
     else {var hasConversation=byId('ag-messages').children.length>0;byId('ag-chat').hidden=!hasConversation;byId('ag-welcome').hidden=hasConversation;doc.dispatchEvent(new CustomEvent('admissions:show-chat'));}
     doc.querySelectorAll('[data-ae-tab]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.aeTab===name));});
     if(name==='scores'){byId('ae-score-form').hidden=year()===2028;byId('ae-score-year-note').hidden=year()!==2028;}
     if(name==='compare')compare();
     doc.body.dataset.admissionsView=name;
+  }
+  // 학년별 대입 학년도와 대학별 계획 발표 시기(입학 연도 기준 1년 10개월 전, 4월 말). 2028학년도부터 같은 제도다.
+  var COHORTS={
+    m2:{year:2031,entry:'2028년 3월 고교 입학',plan:'2029년 4월',system:'2028학년도와 같은 내신 5등급제·통합형 수능(현재 발표 기준)'},
+    m3:{year:2030,entry:'2027년 3월 고교 입학',plan:'2028년 4월',system:'2028학년도와 같은 내신 5등급제·통합형 수능(현재 발표 기준)'},
+    h1:{year:2029,entry:'지금 고1',plan:'2027년 4월',system:'2028학년도와 같은 내신 5등급제·통합형 수능(현재 발표 기준)'},
+    h2:{year:2028,entry:'지금 고2',plan:'2026년 4월 발표됨',system:'바뀐 제도를 처음 적용받는 입시'},
+    h3:{year:2027,entry:'지금 고3',plan:'모집요강까지 발표됨',system:'지금 제도(9등급제·선택형 수능)의 마지막 입시'}
+  };
+  function cohort(){
+    var c=COHORTS[byId('ae-cohort-grade').value]||COHORTS.m3,box=byId('ae-cohort-result');box.replaceChildren();
+    var h=el('p',c.year+'학년도 대입','ae-cohort-year');box.appendChild(h);
+    var ul=el('ul');[c.entry,c.system,'대학별 계획 발표: '+c.plan].forEach(function(t){ul.appendChild(el('li',t));});box.appendChild(ul);
+    if(c.year===2027)box.appendChild(button('2027학년도 대학 자료 보기',function(){byId('ae-year').value='2027';byId('ae-year').dispatchEvent(new Event('change'));tab('search');}));
+  }
+  function askReform(q){
+    byId('ag-year-select').value='2028';byId('ag-year-select').dispatchEvent(new Event('change'));
+    var grade=byId('ae-cohort-grade').selectedOptions[0];if(grade&&!byId('ag-grade').value)byId('ag-grade').value=grade.textContent;
+    tab('chat');doc.dispatchEvent(new CustomEvent('admissions:question',{detail:{question:q}}));
   }
   function scoreMode(){
     var onlyGrades=byId('ae-score-kind').value==='내신';
@@ -311,6 +331,8 @@
     return kind+': '+parts.join(' / ');
   }
   doc.querySelectorAll('[data-ae-tab]').forEach(function(b){b.addEventListener('click',function(){tab(b.dataset.aeTab);});});
+  byId('ae-cohort-grade').addEventListener('change',cohort);
+  doc.querySelectorAll('.ae-reform-ask').forEach(function(b){b.addEventListener('click',function(){askReform(b.dataset.q);});});
   doc.addEventListener('admissions:navigate',function(e){if(e.detail)tab(e.detail.tab);});
   byId('ae-prepare-form').addEventListener('submit',function(e){e.preventDefault();prepare();});
   byId('ae-score-kind').addEventListener('change',function(){scoreMode();byId('ae-score-next').hidden=true;byId('ag-academic-summary').value='';byId('ae-score-status').textContent='성적 종류가 바뀌었습니다. 입력값을 확인하고 다시 적용해 주세요.';});

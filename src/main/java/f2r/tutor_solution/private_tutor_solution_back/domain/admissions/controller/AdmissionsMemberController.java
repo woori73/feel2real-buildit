@@ -31,14 +31,16 @@ public class AdmissionsMemberController {
         if (req==null || req.message()==null || req.message().isBlank() || req.message().length()>2000
                 || req.academicYear()==null || (req.academicYear()!=2027 && req.academicYear()!=2028))
             return response(400,ChatResponse.failure("질문과 학년도(2027 또는 2028)를 확인해 주세요.",List.of()));
-        String otherYear=req.academicYear()==2027?"2028":"2027";
-        if (req.message().contains(otherYear))
-            return response(400,ChatResponse.failure("질문의 학년도와 선택한 학년도를 일치시켜 주세요. 학년도별로 나누어 질문할 수 있습니다.",List.of()));
+        // 질문에 적은 학년도(또는 '올해·작년·고3')를 선택한 학년도보다 먼저 쓴다. 두 학년도를 함께 물으면 나누어 묻게 한다.
+        Integer year=f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsChatService
+                .effectiveYear(req.message(),req.academicYear());
+        if (year==null)
+            return response(400,ChatResponse.failure("2027학년도와 2028학년도를 함께 물으셨습니다. 학년도별로 나누어 질문해 주세요.",List.of()));
         if (!limiter.tryAcquire("member-user-"+p.userId()) || !limiter.tryAcquireDaily())
             return response(429,ChatResponse.failure("상담 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.",List.of()));
         // 직전 질문은 같은 회원·학원·학년도 안에서만 검색 문맥으로 사용. 과거 답변을 사실 근거로 쓰지 않는다.
         String context=sessions.findTop20BySessionTokenOrderByCreatedAtDesc(token).stream()
-                .filter(s -> req.academicYear().equals(s.getAcademicYear()))
+                .filter(s -> year.equals(s.getAcademicYear()))
                 .map(s -> s.getQuestion()).findFirst().orElse("");
         String profile=req.student()==null ? null : req.student().summary();
         if (req.student()!=null) {
@@ -46,7 +48,7 @@ public class AdmissionsMemberController {
             context=String.join(" ",clean(s.targetUniversities()),clean(s.targetMajors()),clean(s.admissionTrack()))
                     +" "+context;
         }
-        var a=chat.ask(req.message(),req.academicYear(),token,profile,context);
+        var a=chat.ask(req.message(),year,token,profile,context);
         var sources=a.sources().stream().map(s -> new SourceDto(s.kind(),s.title(),s.url(),s.id())).toList();
         return response(a.ok()?200:400,a.ok()?ChatResponse.success(a.answer(),a.model(),sources,a.academicYear(),a.yearConfirmed())
                 :ChatResponse.failure(a.errorMessage(),sources));
