@@ -320,6 +320,7 @@ class AdmissionsChatServicePolicyTest {
         // given
         String q = "2028이면 수시 비중이 80% 좀 넘죠? 몇 퍼센트예요?";
         givenFacts(q, List.of(), Set.of(2028), true);
+        when(research.research(eq(q), any())).thenReturn(pack(List.of()));
 
         // when
         var answer = service.ask(q, null, null);
@@ -685,5 +686,82 @@ class AdmissionsChatServicePolicyTest {
 
         // then
         assertThat(out).isEqualTo("국어과 모집인원은 3명입니다.");
+    }
+
+    @Test
+    @DisplayName("given 2028 전국 수시 비중 질문 when 대교협 발표 지식이 근거로 있으면 then 거절하지 않고 그 근거로 답한다")
+    void aggregate_2028_question_uses_official_knowledge() {
+        // given
+        String q = "2028학년도 수시 비중은 몇 퍼센트예요?";
+        givenFacts(q, List.of(), Set.of(2028), true);
+        Evidence kcue = fact("knowledge:7", "2028학년도 전국 모집인원과 수시·정시 비율",
+                "대교협 발표(2026-04-30): 전체 348,789명, 수시 281,895명(80.8%), 정시 66,894명(19.2%)", 2028,
+                "https://www.kcue.or.kr/x.pdf");
+        when(research.research(eq(q), any())).thenReturn(ResearchPack.builder().question(q)
+                .confirmedHits(List.of()).plannedHits(List.of(kcue)).officialDocHits(List.of())
+                .youtubeHits(List.of()).conflictHits(List.of()).guideHits(List.of()).gapNotes(List.of()).build());
+        when(llm.complete(anyString(), anyString(), anyInt()))
+                .thenReturn(NewStartLlmCompletion.success("2028학년도 기준 대교협 발표에 따르면 수시는 80.8%입니다.", "t", "m"));
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).contains("80.8%");
+        verify(llm).complete(anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("given 2028 질문 when 프롬프트를 만들면 then 아직 수집하지 않은 자료 목록을 붙인다")
+    void reform_notes_list_research_status_for_2028() {
+        // given / when
+        String notes = AdmissionsChatService.reformNotes("2028 정시 반영비율 알려줘", true);
+
+        // then
+        assertThat(notes).contains("[2028 수집 현황]").contains("5등급 교과 반영 방법").doesNotContain("[뒤 학년도 안내]");
+    }
+
+    @Test
+    @DisplayName("given 예비 고1·중3 질문 when 프롬프트를 만들면 then 2028과 같은 제도라는 안내를 붙인다")
+    void reform_notes_explain_later_cohorts() {
+        // given / when
+        String preHigh = AdmissionsChatService.reformNotes("예비 고1은 내신이 어떻게 되나요?", true);
+        String middle = AdmissionsChatService.reformNotes("중3인데 과목 선택은 언제 하나요?", true);
+        String unrelated = AdmissionsChatService.reformNotes("그 중 3개 대학만 비교해 줘", false);
+
+        // then
+        assertThat(preHigh).contains("[뒤 학년도 안내]").contains("2030학년도");
+        assertThat(middle).contains("[뒤 학년도 안내]");
+        assertThat(unrelated).isEmpty();
+    }
+
+    @Test
+    @DisplayName("given 2028 미발표 안내 when 보여 주면 then 지금 수집 중인 자료를 함께 알린다")
+    void unpublished_message_lists_collecting_items() {
+        // given / when
+        String msg = AdmissionsChatService.MSG_UNPUBLISHED_2028;
+
+        // then
+        assertThat(msg).contains("아직 발표 전").contains("수집 중인 자료").contains(AdmissionsChatService.RESEARCH_STATUS_2028);
+    }
+
+    @Test
+    @DisplayName("given 화면 학년도 2028 when 질문에 학년도나 '올해' 표현이 있으면 then 질문 쪽 학년도를 쓴다")
+    void question_year_wins_over_selected_year() {
+        // given / when
+        Integer explicit2027 = AdmissionsChatService.effectiveYear("서울대 2027학년도 경영학과 모집 정보", 2028);
+        Integer thisYear = AdmissionsChatService.effectiveYear("감신대 올해 수시 경쟁률 알려줘", 2028);
+        Integer preSenior = AdmissionsChatService.effectiveYear("예비 고3 내신은 몇 등급제인가요?", 2028);
+        Integer preHigh = AdmissionsChatService.effectiveYear("2030학년도 예비 고1 수능은?", 2027);
+        Integer both = AdmissionsChatService.effectiveYear("2027과 2028 수능 차이", 2028);
+        Integer plain = AdmissionsChatService.effectiveYear("내신 5등급제는 어떻게 바뀌나요?", 2028);
+
+        // then
+        assertThat(explicit2027).isEqualTo(2027);
+        assertThat(thisYear).isEqualTo(2027);
+        assertThat(preSenior).as("예비 고3은 2028학년도").isEqualTo(2028);
+        assertThat(preHigh).as("2030은 같은 제도인 2028로").isEqualTo(2028);
+        assertThat(both).as("두 학년도면 전체").isNull();
+        assertThat(plain).isEqualTo(2028);
     }
 }

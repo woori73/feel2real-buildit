@@ -27,17 +27,24 @@ class AdmissionsQueryParserTest {
     }
 
     @Test
-    @DisplayName("given 학년도 표기 when 분석하면 then 2027·2028만 인정하고 2029는 미지원으로 표시한다")
+    @DisplayName("given 학년도 표기 when 분석하면 then 2027·2028을 인정하고 2029·2030은 같은 제도인 2028로, 2031은 미지원으로 본다")
     void parses_supported_and_unsupported_years() {
         // given / when
         var both = AdmissionsQueryParser.parse("2028 수능은 통합과학? 저는 2027 수능인데", UNIVS);
         var y2029 = AdmissionsQueryParser.parse("2029학년도 기본사항 알려줘", UNIVS);
+        var y2030 = AdmissionsQueryParser.parse("30학년도 예비 고1 내신은?", UNIVS);
+        var y2031 = AdmissionsQueryParser.parse("2031학년도 대입은?", UNIVS);
+        var y2028Suffix = AdmissionsQueryParser.parse("2028학년도 내신 5등급제 알려줘", UNIVS);
         var none = AdmissionsQueryParser.parse("서울대 지역균형", UNIVS);
 
         // then
         assertThat(both.years()).containsExactly(2028, 2027);
-        assertThat(y2029.years()).isEmpty();
-        assertThat(y2029.mentionsUnsupportedYear()).isTrue();
+        assertThat(y2029.years()).containsExactly(2028);
+        assertThat(y2029.mentionsUnsupportedYear()).isFalse();
+        assertThat(y2030.years()).containsExactly(2028);
+        assertThat(y2031.years()).isEmpty();
+        assertThat(y2031.mentionsUnsupportedYear()).isTrue();
+        assertThat(y2028Suffix.mentionsUnsupportedYear()).as("2028학년도 표기는 지원 학년도다").isFalse();
         assertThat(none.yearUnspecified()).isTrue();
     }
 

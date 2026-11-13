@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>입시상담 AI · 대학 비교 | Feel2Real</title>
+  <title>입시상담 AI · 2028 바뀌는 입시 | Feel2Real</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <meta name="description" content="검수·승인된 공식 입시자료를 학년도별로 안내합니다">
+  <meta name="description" content="2028학년도부터 바뀌는 입시(내신 5등급제·통합형 수능·고교학점제)를 공식 발표 기준으로 안내합니다">
   <link rel="stylesheet" href="/css/admissions-guide.css?v=20261022-1">
-  <link rel="stylesheet" href="/css/admissions-explorer.css?v=20261107-1">
+  <link rel="stylesheet" href="/css/admissions-explorer.css?v=20261113-1">
 </head>
 <body th:attr="data-member=${memberMode == true}">
   <div class="admissions-page">
@@ -46,21 +46,66 @@
         <pre id="ag-load-result" aria-live="polite"></pre>
       </div>
     </section>
-    <header class="ae-brand"><a href="/">Feel<span>2</span>Real</a><span>입시상담 AI</span><small>공식 자료로 준비하는 나의 입시</small></header>
+    <header class="ae-brand"><a href="/">Feel<span>2</span>Real</a><span>입시상담 AI</span><small>2028학년도부터 바뀌는 입시, 공식 자료로 준비합니다</small></header>
     <nav class="ae-tools-nav" aria-label="성적과 비교 도구">
       <button type="button" data-ae-tab="compare" aria-pressed="false">입결 비교 <span id="ae-count">0</span></button>
       <button type="button" data-ae-tab="scores" aria-pressed="false">내 성적</button>
     </nav>
     <main id="ae-workspace" class="ae-workspace">
       <section id="ae-home-panel" class="ae-home" aria-labelledby="ae-home-title">
-        <div class="ae-home-copy"><p class="ae-eyebrow">나의 다음 선택, 차근차근</p><h1 id="ae-home-title">내 성적으로<br>어떤 대학을 볼 수 있을까?</h1><p>성적과 관심 분야를 알려주시면<br>대학별 점수와 공식 입결을 함께 살펴봅니다.</p></div>
+        <div class="ae-home-copy"><p class="ae-eyebrow">2028학년도부터 바뀌는 입시</p><h1 id="ae-home-title">바뀌는 입시,<br>지금 학년부터 확인하세요.</h1><p>내신 5등급제와 통합형 수능을 처음 치르는 학생을 위해<br>발표된 제도와 대학 자료를 차근차근 정리합니다.</p></div>
         <div class="ae-start-options">
-          <button type="button" class="ae-start-primary" data-ae-tab="prepare"><span class="ae-start-symbol" aria-hidden="true">↗</span><span>내 성적으로 대학 찾기</span><span aria-hidden="true">→</span></button>
-          <p class="ae-start-hint">성적 없이도 대학 정보를 먼저 볼 수 있어요.</p>
-          <button type="button" class="ae-start-choice" data-ae-tab="search"><span class="ae-start-symbol" aria-hidden="true">⌕</span><span>궁금한 대학 알아보기<small>모집요강 · 지난해 입결 · 전형 일정</small></span><span aria-hidden="true">›</span></button>
-          <button type="button" class="ae-start-choice" data-ae-tab="chat"><span class="ae-start-symbol" aria-hidden="true">…</span><span>AI에게 바로 물어보기<small>무엇부터 해야 할지 몰라도 괜찮아요</small></span><span aria-hidden="true">›</span></button>
-          <p class="ae-trust"><span aria-hidden="true">✓</span> 공식 자료의 출처와 확인이 필요한 내용을 함께 안내합니다.</p>
+          <button type="button" class="ae-start-primary" data-ae-tab="reform"><span class="ae-start-symbol" aria-hidden="true">↗</span><span>바뀌는 입시 한눈에 보기</span><span aria-hidden="true">→</span></button>
+          <p class="ae-start-hint">중학생·예비 고1·고1·고2 모두 볼 수 있어요.</p>
+          <button type="button" class="ae-start-choice" data-ae-tab="chat"><span class="ae-start-symbol" aria-hidden="true">…</span><span>AI에게 바뀌는 입시 물어보기<small>내신 5등급 · 통합형 수능 · 과목 선택 · 일정</small></span><span aria-hidden="true">›</span></button>
+          <button type="button" class="ae-start-choice" data-ae-tab="search"><span class="ae-start-symbol" aria-hidden="true">⌕</span><span>대학 자료 찾아보기<small>2027학년도 모집요강 · 지난해 입결 · 전형 일정(참고)</small></span><span aria-hidden="true">›</span></button>
+          <button type="button" class="ae-start-choice" data-ae-tab="prepare"><span class="ae-start-symbol" aria-hidden="true">✎</span><span>올해 고3: 내 성적으로 대학 찾기<small>2027학년도 자료</small></span><span aria-hidden="true">›</span></button>
+          <p class="ae-trust"><span aria-hidden="true">✓</span> 교육부·평가원·대교협 발표와 대학 원문을 출처와 함께 안내하고, 아직 수집 중인 내용은 그렇다고 알려 드립니다.</p>
         </div>
+      </section>
+      <section id="ae-reform-panel" hidden aria-labelledby="ae-reform-title">
+        <button type="button" class="ae-back-link" data-ae-tab="home">← 처음으로</button>
+        <div class="ae-heading"><p class="ae-eyebrow">2028학년도부터 바뀌는 입시</p><h1 id="ae-reform-title">무엇이 바뀌는지<br>한눈에 보세요.</h1><p>교육부·한국교육과정평가원·대교협 발표를 기준으로 정리했습니다. 카드의 질문을 누르면 AI 상담으로 이어집니다.</p></div>
+        <div class="ae-cohort ae-card">
+          <label>지금 학년<select id="ae-cohort-grade">
+            <option value="m2">중2</option>
+            <option value="m3" selected>중3(예비 고1)</option>
+            <option value="h1">고1</option>
+            <option value="h2">고2</option>
+            <option value="h3">고3</option>
+          </select></label>
+          <div id="ae-cohort-result" class="ae-cohort-result" aria-live="polite"></div>
+        </div>
+        <div class="ae-reform-grid">
+          <article class="ae-card"><p class="ae-eyebrow">내신</p><h2>내신 5등급제</h2><p>1등급이 상위 4%에서 10%로 넓어지고, 성취도(A~E)를 함께 적습니다. 2025년 고1 입학생부터 적용됩니다.</p><button type="button" class="ae-reform-ask" data-q="2028학년도 내신 5등급제는 어떻게 바뀌나요?">AI에게 묻기</button></article>
+          <article class="ae-card"><p class="ae-eyebrow">수능</p><h2>통합형 수능</h2><p>선택과목 없이 모두 같은 범위를 봅니다. 탐구는 통합사회·통합과학이고, 수학은 미적분Ⅱ·기하가 빠집니다.</p><button type="button" class="ae-reform-ask" data-q="2028학년도 통합형 수능은 무엇이 바뀌나요?">AI에게 묻기</button></article>
+          <article class="ae-card"><p class="ae-eyebrow">과목 선택</p><h2>고교학점제 과목 선택</h2><p>2·3학년 과목을 직접 고릅니다. 대학은 어떤 과목을 어떤 순서로 들었는지 학생부로 봅니다.</p><button type="button" class="ae-reform-ask" data-q="고교학점제에서 과목 선택은 어떻게 준비하나요?">AI에게 묻기</button></article>
+          <article class="ae-card"><p class="ae-eyebrow">정시</p><h2>정시에도 학생부</h2><p>2028학년도 정시에서 학생부나 내신을 수능과 함께 보는 대학이 늘었습니다.</p><button type="button" class="ae-reform-ask" data-q="2028학년도 정시에서 학생부나 내신을 반영하는 대학은 어디인가요?">AI에게 묻기</button></article>
+          <article class="ae-card"><p class="ae-eyebrow">일정</p><h2>모의평가·원서 일정</h2><p>고3 2학기 모의평가가 8월로 앞당겨지고, 수시 원서접수는 그 성적이 나온 뒤로 미뤄집니다.</p><button type="button" class="ae-reform-ask" data-q="2028학년도 모의평가와 수시 원서접수 일정은 어떻게 바뀌나요?">AI에게 묻기</button></article>
+          <article class="ae-card"><p class="ae-eyebrow">수능 영어</p><h2>수능 영어 AI 지문</h2><p>평가원이 영어 지문을 AI로 만드는 시스템을 개발 중입니다. 2027년 6월 모의평가에서 시범 운영할 계획입니다.</p><button type="button" class="ae-reform-ask" data-q="수능 영어 지문을 AI로 만든다는 게 무슨 뜻인가요?">AI에게 묻기</button></article>
+          <article class="ae-card"><p class="ae-eyebrow">모집 규모</p><h2>수시 80.8%, 정시 19.2%</h2><p>2028학년도 전체 모집인원은 348,789명입니다(대교협 2026-04-30 발표).</p><button type="button" class="ae-reform-ask" data-q="2028학년도 수시와 정시 모집 비율은 어떻게 되나요?">AI에게 묻기</button></article>
+        </div>
+        <section class="ae-card ae-reform-status" aria-labelledby="ae-reform-status-title">
+          <h2 id="ae-reform-status-title">상담 AI가 지금 아는 것 · 수집 중인 것</h2>
+          <div class="ae-reform-status-grid">
+            <div><h3>지금 안내할 수 있는 것</h3><ul>
+              <li>교육부 2028 대입제도 개편 확정안: 내신 5등급제, 통합형 수능</li>
+              <li>평가원 2028 수능 체계: 영역별 범위·문항 수·시간·배점, 모의평가 일정</li>
+              <li>대교협 2028학년도 대학입학전형 시행계획: 전국 모집 규모</li>
+              <li>수능 영어 AI 지문 계획과 일정</li>
+              <li>권장과목·정시 학생부 반영 대학에 관한 보도와 입시 영상 분석(해석 참고)</li>
+              <li>2027학년도 187개교 모집요강과 2026학년도 입결(참고)</li>
+            </ul></div>
+            <div><h3>지금 수집 중인 것</h3><ul>
+              <li>대학별 2028학년도 시행계획 세부: 전형별 모집인원·평가요소·수능최저</li>
+              <li>대학별 5등급 교과 반영 방법: 등급 점수표·성취도 반영</li>
+              <li>2028학년도 정시 영역 반영비율</li>
+              <li>대학별 권장과목 전체 목록</li>
+              <li>2029·2030학년도 대학별 계획(각각 2027년·2028년 4월 발표)</li>
+            </ul></div>
+          </div>
+        </section>
+        <p class="ae-note">대학별 2028학년도 자료는 계획 단계라 바뀔 수 있습니다. 예비 고1(2030학년도)도 현재 발표된 제도 기준으로 같은 내신 5등급제·통합형 수능을 적용받습니다.</p>
       </section>
       <section id="ae-prepare-panel" hidden aria-labelledby="ae-prepare-title">
         <button type="button" class="ae-back-link" data-ae-tab="home">← 처음으로</button>
@@ -82,9 +127,9 @@
         <p class="ae-note" th:if="${memberMode == true}">계정에 기록된 상담은 상단 「내 상담 이력」에서 확인할 수 있습니다.</p>
       </section>
       <section id="ae-search-panel" hidden aria-labelledby="ae-search-title">
-        <div class="ae-heading"><p class="ae-eyebrow">나에게 맞는 대학 탐색</p><h1 id="ae-search-title">궁금한 대학부터<br>차근차근 비교해 보세요.</h1><p>모집요강과 지난해 입시결과를 한곳에서 확인합니다.</p></div>
+        <div class="ae-heading"><p class="ae-eyebrow">대학 자료 찾아보기</p><h1 id="ae-search-title">궁금한 대학부터<br>차근차근 비교해 보세요.</h1><p>지금은 2027학년도 모집요강과 지난해 입시결과를 확인할 수 있습니다. 2028학년도 대학별 자료는 수집 중입니다.</p></div>
         <form id="ae-search-form" class="ae-search-form">
-          <label>학년도<select id="ae-year"><option value="2027">2027 확정 자료</option><option value="2028">2028 계획 자료</option></select></label>
+          <label>학년도<select id="ae-year"><option value="2027">2027 확정 자료(참고)</option><option value="2028">2028 계획 자료</option></select></label>
           <label>대학 검색<input id="ae-univ-filter" type="search" maxlength="100" placeholder="예: 연세대, 강원대" autocomplete="off"></label>
           <label>대학 선택<select id="ae-university"><option value="">대학 목록을 불러오는 중…</option></select></label>
           <label>모집단위<input id="ae-major" type="search" maxlength="100" placeholder="예: 경영, 컴퓨터"></label>
@@ -126,11 +171,11 @@
     <section id="ag-welcome" hidden class="ag-welcome" aria-label="입시상담 AI 시작">
       <div class="ag-welcome-inner">
         <p class="ae-eyebrow">AI 상담</p><h1 class="ag-title">어떤 점이 궁금하세요?</h1>
-        <p class="ag-subtitle">선택한 대학과 입력한 성적으로 이어서 상담합니다.</p>
-        <label class="ag-year-badge">상담 학년도 <select id="ag-year-select" aria-label="상담 학년도"><option value="2027">2027 확정 자료</option><option value="2028">2028 계획 자료</option></select></label>
+        <p class="ag-subtitle">2028학년도부터 바뀌는 입시를 공식 발표 기준으로 설명합니다. 올해 고3이라면 학년도를 2027로 바꿔 주세요.</p>
+        <label class="ag-year-badge">상담 학년도 <select id="ag-year-select" aria-label="상담 학년도"><option value="2028" selected>2028학년도부터(바뀌는 입시)</option><option value="2027">2027학년도(올해 고3)</option></select></label>
         <details class="ag-profile-details"><summary>학생 정보·성적 확인 및 수정</summary>
         <div class="ag-profile" aria-label="학생 정보">
-          <label>학년<select id="ag-grade"><option value="">선택</option><option>고1</option><option>고2</option><option>고3</option><option>재수 이상</option></select></label>
+          <label>학년<select id="ag-grade"><option value="">선택</option><option>중2</option><option>중3(예비 고1)</option><option>고1</option><option>고2</option><option>고3</option><option>재수 이상</option></select></label>
           <label>희망 대학<input id="ag-target-universities" type="text" maxlength="200" placeholder="예: 서울대, 연세대"></label>
           <label>희망 전공<input id="ag-target-majors" type="text" maxlength="200" placeholder="예: 경영학과"></label>
           <label>관심 전형<select id="ag-admission-track"><option value="">선택</option><option>학생부교과</option><option>학생부종합</option><option>논술</option><option>정시</option><option>미정</option></select></label>
@@ -145,9 +190,10 @@
         </form>
         <div class="ag-examples" aria-label="예시 질문">
           <p class="ag-examples-label">예시 질문</p>
-          <button class="ag-example" type="button" data-q="2027학년도 수시 원서접수 일정 알려줘">2027 수시 일정 알려줘</button>
-          <button class="ag-example" type="button" data-q="서울대 2027학년도 정시 전형은?">서울대 정시 전형은?</button>
-          <button class="ag-example" type="button" data-q="2027학년도 경영학과 모집인원은?">경영학과 모집인원은?</button>
+          <button class="ag-example" type="button" data-q="2028학년도 내신 5등급제는 어떻게 바뀌나요?">내신 5등급제는?</button>
+          <button class="ag-example" type="button" data-q="예비 고1은 고교학점제 과목 선택을 어떻게 준비하나요?">예비 고1 과목 선택은?</button>
+          <button class="ag-example" type="button" data-q="2028학년도 통합형 수능은 무엇이 바뀌나요?">통합형 수능은?</button>
+          <button class="ag-example" type="button" data-q="수능 영어 지문을 AI로 만든다는 게 무슨 뜻인가요?">수능 영어 AI 지문은?</button>
         </div>
         <p class="ag-privacy">입력한 내용은 상담 품질 개선에만 사용됩니다. 개인정보를 입력하지 마세요.</p>
       </div>
@@ -160,7 +206,7 @@
         <button id="ag-back" class="ag-back" type="button" aria-label="뒤로">←</button>
         <span class="ag-header-title">입시상담 AI</span>
         <button id="ag-year-toggle" class="ag-year-toggle" type="button" aria-label="학년도 선택">
-          <span id="ag-year-label">2027 확정</span>
+          <span id="ag-year-label">2028 바뀌는 입시</span>
         </button>
       </header>
       <div id="ag-messages" class="ag-messages" aria-live="polite" aria-label="대화 메시지"></div>
@@ -173,14 +219,15 @@
     </section>
     <nav class="ae-tabs" aria-label="입시상담 기능">
       <button type="button" data-ae-tab="home" aria-pressed="true">홈</button>
-      <button type="button" data-ae-tab="search" aria-pressed="false">대학 찾기</button>
+      <button type="button" data-ae-tab="reform" aria-pressed="false">바뀌는 입시</button>
       <button type="button" data-ae-tab="chat" aria-pressed="false">AI 상담</button>
+      <button type="button" data-ae-tab="search" aria-pressed="false">대학 찾기</button>
       <button type="button" data-ae-tab="my" aria-pressed="false">내 상담</button>
     </nav>
   </div>
   <script src="/js/api.js"></script>
-  <script src="/js/admissions-guide.js?v=20261104-3" defer></script>
-  <script src="/js/admissions-explorer.js?v=20261107-2" defer></script>
+  <script src="/js/admissions-guide.js?v=20261113-1" defer></script>
+  <script src="/js/admissions-explorer.js?v=20261113-1" defer></script>
   <script src="/js/admissions-member.js?v=20261019-2" defer></script>
   <script src="/js/admissions-admin-load.js?v=20261104-3" defer></script>
 </body>

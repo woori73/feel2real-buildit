@@ -1843,6 +1843,8 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
 - **임베딩 쓰기** (`AdmissionsEmbeddingService`): 제목+본문을 임베딩 서비스(`app.admissions.embedding.service-url`, 모델 `embeddinggemma-2`, 768차원)로 보내고, L2 정규화한 벡터를 float32 little-endian 바이트로 `admissions_knowledge_embeddings`에 저장한다. `(knowledge_id, model_version)` 기준 upsert — 재색인해도 행이 중복되지 않고 모델 버전이 바뀌면 새 세대가 쌓인다. 모드는 MISSING(ACTIVE 중 임베딩 없는 항목만)·ALL·ITEM(단건). 실패(비활성·무응답·차원 불일치·항목 없음)는 항목별 사유로 반환하며 성공으로 위장하지 않는다.
 - **인덱스 반영**: 저장이 끝나면 `AdmissionsVectorIndex.reload()`로 인메모리 인덱스를 다시 읽는다. reload는 트랜잭션 커밋 이후에 실행한다 — 커밋 전에 읽으면 방금 저장한 행의 `knowledge_id`(insertable=false 컬럼)가 비어 인덱스에서 누락되기 때문이다. 인덱스가 비어 있으면 검색은 기존처럼 LIKE로 폴백한다.
 
+- **시드로 넣는 지식 항목**(2026-11): 원본 행이 없는 항목은 시드에서 바로 넣는다. `youtube:{id}`(sourceClass=YOUTUBE, 유튜브 해석)와 `official:{id}`(sourceClass=OFFICIAL, role=FACT, 교육부·평가원·대교협 등 공식 기관의 제도 발표 정리 — 예: 2028 내신 5등급제·통합형 수능·전국 모집 규모). official 항목은 `source`(공식자료 행)가 없고 `source_url`로 원문을 가리킨다. 2027은 `year_confirmed=true`, 2028은 false. 두 종류 모두 DRAFT로 들어가고 같은 학년도 전체 승격(activate-all) 때 함께 ACTIVE가 된다. 스키마 변경은 없다(컬럼 그대로, dedup_key 값만 추가).
+
 > 정정(v3.3 수정 PR): 공식자료(material)는 지식 항목으로 변환하지 않는다. 항목은 근거 전형·일정 행이 ACTIVE일 때만 검색 대상이며, 검색은 대학·캠퍼스·수시/정시·학년도 필터 후 키워드/벡터 관련성 하한을 통과한 항목만 근거로 반환한다.
 
 ## 지난해 입시결과 (admissions_prior_results, V1099)

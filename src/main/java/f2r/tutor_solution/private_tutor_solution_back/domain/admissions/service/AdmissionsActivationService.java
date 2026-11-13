@@ -138,7 +138,10 @@ public class AdmissionsActivationService {
             // 시드로 넣은 유튜브 해석 항목(원본 행 없음)도 함께 승격한다. 답변에서는 공식 근거와 분리해 참고로만 쓴다.
             boolean youtube = key.startsWith("youtube:")
                     && item.getSourceClass() == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.SourceClass.YOUTUBE;
-            if (!youtube) {
+            // 시드로 넣은 공식 기관 제도 발표 항목(official:)도 원본 행이 없으니 같은 학년도 승격 때 함께 승격한다.
+            boolean officialPolicy = key.startsWith(AdmissionsDataLoader.OFFICIAL_KNOWLEDGE_PREFIX)
+                    && item.getSourceClass() == f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsKnowledgeItem.SourceClass.OFFICIAL;
+            if (!youtube && !officialPolicy) {
                 if (!AdmissionsKnowledgeBuildService.CREATED_BY.equals(item.getCreatedBy())) continue;
                 boolean backed = (key.startsWith("type:") && activeTypes.contains(idOf(key)))
                         || (key.startsWith("schedule:") && activeSchedules.contains(idOf(key)));

@@ -323,7 +323,8 @@ public class AdmissionsDataLoader {
             schedArchived++;
         }
 
-        int youtube = loadYoutubeKnowledge(root.path("youtube_knowledge"));
+        int youtube = loadYoutubeKnowledge(root.path("youtube_knowledge"))
+                + loadOfficialKnowledge(root.path("official_knowledge"));
         int[] prior = loadPriorResults(root.path("prior_results"), univByCode, matByKey);
         int[] jeongsi = loadJeongsiFormulas(root.path("jeongsi_formulas"), univByCode, matByKey);
         int[] susiMin = loadSusiMinimums(root.path("susi_minimums"), univByCode, matByKey);
@@ -667,6 +668,63 @@ public class AdmissionsDataLoader {
                     .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
                     .dedupKey(dedupKey)
                     .verificationNote("유튜브 영상 분석(buildit-admissions data/youtube). 공식 사실이 아닌 전문가 해석 — 답변에서는 별도 참고 단락으로만 쓴다.")
+                    .createdBy("admissions-loader")
+                    .build());
+            n++;
+        }
+        return n;
+    }
+
+    /** 시드 official_knowledge 항목의 중복 키 접두어. 전체 승격이 이 항목도 함께 승격한다. */
+    static final String OFFICIAL_KNOWLEDGE_PREFIX = "official:";
+
+    /**
+     * 시드의 official_knowledge(교육부·평가원·대교협 등 공식 기관의 제도 발표 정리)를 지식 항목으로 넣는다.
+     * 대학 원문 행에 묶이지 않은 제도 사실이라 sourceClass=OFFICIAL, role=FACT로 두고 출처는 source_url로만 단다.
+     * 2027은 확정(yearConfirmed=true), 2028은 계획 단계(false)로 둔다.
+     * 같은 id(dedupKey official:{id})가 있으면 제목·본문·출처가 바뀐 경우에만 갱신하고 DRAFT로 되돌린다.
+     * 지원하지 않는 학년도 항목은 넣지 않는다. 넣거나 갱신한 건수를 돌려준다.
+     */
+    int loadOfficialKnowledge(JsonNode items) {
+        if (items == null || !items.isArray()) return 0;
+        int n = 0;
+        for (JsonNode it : items) {
+            String id = it.path("id").asText("");
+            Integer year = readSupportedYear(it.path("academic_year"));
+            String title = it.path("title").asText("");
+            String content = it.path("content").asText("");
+            String url = it.path("source_url").asText(null);
+            if (id.isBlank() || year == null || title.isBlank() || content.isBlank()) continue;
+            String dedupKey = OFFICIAL_KNOWLEDGE_PREFIX + id;
+            java.util.Optional<AdmissionsKnowledgeItem> existing = knowledgeRepository.findByDedupKey(dedupKey);
+            if (existing.isPresent()) {
+                AdmissionsKnowledgeItem k = existing.get();
+                if (title.equals(k.getTitle()) && content.equals(k.getContent())
+                        && java.util.Objects.equals(url, k.getSourceUrl())) continue;
+                k.setTitle(title);
+                k.setContent(content);
+                k.setTags(it.path("tags").asText(null));
+                k.setSourceUrl(url);
+                k.setAcademicYear(year);
+                k.setYearConfirmed(year == 2027);
+                k.setStatus(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT);
+                knowledgeRepository.save(k);
+                n++;
+                continue;
+            }
+            knowledgeRepository.save(AdmissionsKnowledgeItem.builder()
+                    .academicYear(year)
+                    .yearConfirmed(year == 2027)
+                    .title(title)
+                    .content(content)
+                    .category(it.path("category").asText("제도 발표"))
+                    .tags(it.path("tags").asText(null))
+                    .sourceClass(AdmissionsKnowledgeItem.SourceClass.OFFICIAL)
+                    .sourceUrl(url)
+                    .role(AdmissionsKnowledgeItem.Role.FACT)
+                    .status(AdmissionsKnowledgeItem.KnowledgeStatus.DRAFT)
+                    .dedupKey(dedupKey)
+                    .verificationNote("공식 기관 제도 발표 정리(buildit-admissions data/seed/reform_2028). 원문은 source_url로 확인한다.")
                     .createdBy("admissions-loader")
                     .build());
             n++;

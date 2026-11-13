@@ -216,10 +216,18 @@ class AdmissionsBrowserQaMySqlTest {
 
     private void exerciseGuidedHome(ChromeDriver driver, WebDriverWait wait, int width) throws Exception {
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("ae-home-panel")));
-        assertThat(driver.findElement(By.id("ae-home-title")).getText()).contains("내 성적으로");
+        assertThat(driver.findElement(By.id("ae-home-title")).getText()).contains("바뀌는 입시");
         if(width==390)assertNoHorizontalOverflow(driver,"guided-home");
         Path folder=Path.of("build/reports/admissions-qa");Files.createDirectories(folder);
         Files.write(folder.resolve("home-"+width+".png"),driver.getScreenshotAs(OutputType.BYTES));
+        // 2028 바뀌는 입시 화면: 기본 학년(중3·예비 고1)의 대입 학년도와 수집 현황이 보인다.
+        driver.findElement(By.cssSelector("#ae-home-panel [data-ae-tab='reform']")).click();
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("ae-reform-panel")));
+        assertThat(driver.findElement(By.id("ae-cohort-result")).getText()).contains("2030학년도");
+        assertThat(driver.findElement(By.cssSelector(".ae-reform-status")).getText()).contains("수집 중");
+        if(width==390)assertNoHorizontalOverflow(driver,"reform");
+        Files.write(folder.resolve("reform-"+width+".png"),driver.getScreenshotAs(OutputType.BYTES));
+        clickInView(driver, driver.findElement(By.cssSelector("#ae-reform-panel .ae-back-link")));
         driver.findElement(By.cssSelector("#ae-home-panel [data-ae-tab='prepare']")).click();
         new Select(driver.findElement(By.id("ae-prepare-grade"))).selectByVisibleText("고3");
         new Select(driver.findElement(By.id("ae-prepare-track"))).selectByVisibleText("학생부종합");

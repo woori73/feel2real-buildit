@@ -92,3 +92,20 @@ body[data-admissions-view] #assistantWelcome{display:none!important}
 }
 .ae-compare-block{background:#fff;border:1px solid #d9e3f1;border-radius:16px;padding:22px;margin-top:20px}.ae-compare-block:empty{display:none}.ae-compare-block h2{font-size:20px;margin:0 0 6px}.ae-group-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.ae-group{background:#f7f9fc;border-radius:12px;padding:14px;min-width:0}.ae-group h3{font-size:16px;margin:0 0 10px;color:#1e53b9}.ae-group p{margin:0 0 12px;overflow-wrap:anywhere}.ae-group small{display:block;color:#5d6c83;font-size:12px;line-height:1.6}.ae-muted{color:#6a7b92;font-size:13px}.ae-check{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:8px;font-size:13px;margin:8px 0}.ae-check input{width:auto!important;min-height:0!important}.ae-inline{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}.ae-inline select{width:auto}.ae-past td{color:#8a97aa}.ae-compare-block a{display:block;font-size:12px;color:#2359bd;margin-top:4px;overflow-wrap:anywhere}.ae-compare-block td small{display:block;color:#6a7b92}
 @media(max-width:1000px){.ae-group-grid{grid-template-columns:1fr}}
+/* 2028 바뀌는 입시 화면 */
+.ae-cohort{display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:24px;align-items:start;margin-bottom:20px}
+.ae-cohort label{display:grid;gap:8px;font-size:14px;font-weight:600}
+.ae-cohort-year{font-size:20px;font-weight:700;color:#1d51b5;margin:0 0 8px}
+.ae-cohort-result ul,.ae-reform-status ul{margin:0;padding-left:18px;line-height:1.85;font-size:14px;color:#3f5470}
+.ae-cohort-result button{margin-top:12px}
+.ae-reform-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.ae-reform-grid .ae-card{display:flex;flex-direction:column}
+.ae-reform-grid .ae-card h2{margin:4px 0 10px}
+.ae-reform-grid .ae-card>p:not(.ae-eyebrow){font-size:14px;line-height:1.75;color:#4a5f7c;flex:1}
+.ae-workspace .ae-reform-ask{align-self:flex-start;margin-top:14px;color:#245dc9;border-color:#c5d6f3}
+.ae-reform-status{margin-top:20px}
+.ae-reform-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.ae-reform-status h3{font-size:15px;margin:6px 0 10px}
+@media(max-width:1000px){.ae-reform-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.ae-cohort,.ae-reform-grid,.ae-reform-status-grid{grid-template-columns:1fr}.ae-cohort{gap:14px}}
+@media(max-width:600px){.ae-tabs button{white-space:nowrap;font-size:12.5px;letter-spacing:-.3px;padding:11px 2px}}
