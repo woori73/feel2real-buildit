@@ -241,16 +241,30 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 @media (max-width: 400px) { .hl-hero h2 { font-size: 22px; } .hit-stats b { font-size: 21px; } }
 
 /* ---- 배너 아래: 입시상담 AI(서수니 상담사) ---- */
-.hl-admissions { display: flex; align-items: center; gap: 16px; margin-top: 16px; padding: 10px 24px 10px 10px; border-radius: 20px; background: linear-gradient(90deg, #EAF0FA, #fff 70%); }
+.hl-admissions { display: block; margin-top: 16px; padding: 10px 24px 10px 10px; border-radius: 20px; background: linear-gradient(90deg, #EAF0FA, #fff 70%); }
+.hl-admissions-main { display: flex; align-items: center; gap: 16px; color: inherit; text-decoration: none; }
 .hl-admissions img { flex: none; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; object-position: 50% 20%; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(15,27,45,.18); }
 .hl-admissions-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
 .hl-admissions-text small { font-size: 12px; font-weight: 700; color: #2A4A86; }
 .hl-admissions-text strong { font-size: 19px; font-weight: 800; }
 .hl-admissions-text > span { font-size: 14px; color: var(--hl-sub); }
 .hl-admissions-go { flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 22px; background: var(--hl-ink); color: #fff; font-size: 14px; font-weight: 700; }
-.hl-admissions:hover .hl-admissions-go { background: #22324b; }
+.hl-admissions-main:hover .hl-admissions-go { background: #22324b; }
+/* 「바뀌는 입시」 제목 목록(카드 아래쪽으로 넓힘) */
+.hl-admissions-articles { margin: 10px 0 4px 88px; padding-top: 10px; border-top: 1px solid #dfe6f2; }
+.hl-admissions-articles-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.hl-admissions-articles-head b { font-size: 15px; font-weight: 800; color: #2A4A86; }
+.hl-admissions-articles-head a { font-size: 13px; font-weight: 700; color: #2A4A86; text-decoration: none; white-space: nowrap; }
+.hl-admissions-articles ul { list-style: none; margin: 0; padding: 0; }
+.hl-admissions-articles li a { display: flex; align-items: baseline; gap: 8px; min-height: 44px; padding: 10px 0; border-bottom: 1px dashed #e1e6ef; color: var(--hl-ink); text-decoration: none; font-size: 15px; font-weight: 700; line-height: 1.45; }
+.hl-admissions-articles li:last-child a { border-bottom: 0; }
+.hl-admissions-articles li a:hover strong { text-decoration: underline; }
+.hl-admissions-articles .ep { flex: none; font-size: 12px; font-weight: 700; color: #2A4A86; background: #e7eefb; border-radius: 999px; padding: 1px 8px; }
 @media (max-width: 600px) {
-  .hl-admissions { gap: 12px; padding: 8px 12px 8px 8px; border-radius: 16px; }
+  .hl-admissions { padding: 8px 12px 8px 8px; border-radius: 16px; }
+  .hl-admissions-main { gap: 12px; }
+  .hl-admissions-articles { margin-left: 4px; }
+  .hl-admissions-articles li a { font-size: 14px; }
   .hl-admissions img { width: 56px; height: 56px; }
   .hl-admissions-text strong { font-size: 16px; }
   .hl-admissions-text > span { font-size: 12px; }
