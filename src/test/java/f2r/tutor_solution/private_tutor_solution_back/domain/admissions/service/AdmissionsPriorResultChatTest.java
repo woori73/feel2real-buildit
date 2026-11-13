@@ -106,6 +106,52 @@ class AdmissionsPriorResultChatTest {
         });
     }
 
+    private static final Evidence CUR = Evidence.builder().stepNo(0).sourceClass(SourceClass.OFFICIAL_PRIOR_RESULT).refId("prior:9")
+            .refUrl("https://example.test/9")
+            .title("테스트대학교 2027학년도" + AdmissionsFactSearchService.CURRENT_YEAR_TAG + " 수시 경쟁률: 학생부교과(지역균형) 컴퓨터공학과")
+            .excerpt("모집인원 10명, 지원자 83명, 경쟁률 8.3:1")
+            .note("대학 입학처 공식 원서접수 최종 경쟁률(2027학년도, 올해 — 합격·등록 결과 아님)")
+            .academicYear(2027).yearConfirmed(true).build();
+
+    @Test
+    @DisplayName("given 올해 원서접수 경쟁률 근거만 있음 when 경쟁률을 물으면 then 지난해 안내 대신 올해 원서접수 안내·출처 종류가 붙는다")
+    void currentRatioOnly_isNotCalledLastYear() {
+        // given
+        String q = "테스트대 컴퓨터공학과 경쟁률 알려줘";
+        givenFacts(q, List.of(CUR));
+        givenLlmAnswers("테스트대학교 학생부교과(지역균형) 컴퓨터공학과 경쟁률은 8.3:1입니다.");
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).startsWith(AdmissionsChatService.CURRENT_RATIO_NOTICE).contains("8.3:1")
+                .doesNotContain(AdmissionsChatService.PRIOR_DISCLAIMER);
+        assertThat(answer.sources()).anySatisfy(s -> assertThat(s.kind()).isEqualTo("공식 경쟁률 (올해 원서접수)"));
+        ArgumentCaptor<String> system = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> user = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(system.capture(), user.capture(), anyInt());
+        assertThat(system.getValue()).contains("올해 원서접수 최종 경쟁률 — 지난해 결과가 아니며").doesNotContain("지난해 입시결과 — 올해 모집요강이 아니며");
+        assertThat(user.getValue()).contains("[올해 원서접수 경쟁률]").doesNotContain("[지난해 입시결과]");
+    }
+
+    @Test
+    @DisplayName("given 올해 경쟁률과 지난해 결과가 함께 있음 when 질문하면 then 두 안내가 모두 붙고 출처 종류가 구분된다")
+    void currentRatioAndLastYear_bothNoticesAndKinds() {
+        // given
+        String q = "테스트대 컴퓨터공학과 경쟁률 알려줘";
+        givenFacts(q, List.of(CUR, TST));
+        givenLlmAnswers("테스트대학교 컴퓨터공학과 2027학년도 경쟁률 8.3:1, 2026학년도 경쟁률 12.5:1입니다.");
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.answer()).contains(AdmissionsChatService.CURRENT_RATIO_NOTICE, AdmissionsChatService.PRIOR_DISCLAIMER);
+        assertThat(answer.sources()).extracting(s -> s.kind())
+                .contains("공식 경쟁률 (올해 원서접수)", "공식 입시결과 (지난해)");
+    }
+
     @Test
     @DisplayName("given 그 대학 지난해 결과가 없음 when 입결을 물으면 then LLM 없이 그 대학은 아직 수집되지 않았다고 답한다")
     void priorQuestion_withoutData_isRefusedPerUniversity() {
