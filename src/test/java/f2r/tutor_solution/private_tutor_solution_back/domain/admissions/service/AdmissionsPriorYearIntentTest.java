@@ -1,0 +1,60 @@
+package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service;
+
+import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsPriorResult;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DisplayName("입시결과 근거 — 질문이 가리킨 학년도(작년/올해)만 남기기")
+class AdmissionsPriorYearIntentTest {
+
+    private static List<AdmissionsPriorResult> unit(int resultYear) {
+        return List.of(AdmissionsPriorResult.builder().academicYear(2027).resultYear(resultYear)
+                .roundType("SUSI").typeName("일반전형").departmentName("신학부").metricLabel("").build());
+    }
+
+    private static final List<List<AdmissionsPriorResult>> BOTH = List.of(unit(2026), unit(2027));
+
+    @Test
+    @DisplayName("given 2026·2027 단위 when '작년 경쟁률'을 물으면 then 2026 단위만 남는다")
+    void lastYearQuestion_keepsLastYearOnly() {
+        // given / when
+        var kept = AdmissionsFactSearchService.byYearIntent("감신대 작년 일반전형 경쟁률은?", BOTH);
+
+        // then
+        assertThat(kept).extracting(rows -> rows.get(0).getResultYear()).containsExactly(2026);
+    }
+
+    @Test
+    @DisplayName("given 2026·2027 단위 when '올해 경쟁률'을 물으면 then 2027 단위만 남는다")
+    void thisYearQuestion_keepsCurrentOnly() {
+        // given / when
+        var kept = AdmissionsFactSearchService.byYearIntent("감신대 올해 수시 경쟁률 알려줘", BOTH);
+
+        // then
+        assertThat(kept).extracting(rows -> rows.get(0).getResultYear()).containsExactly(2027);
+    }
+
+    @Test
+    @DisplayName("given 2026·2027 단위 when 학년도를 말하지 않으면 then 둘 다 남는다")
+    void noYearQuestion_keepsBoth() {
+        // given / when
+        var kept = AdmissionsFactSearchService.byYearIntent("감신대 신학부 수시 경쟁률 알려주세요", BOTH);
+
+        // then
+        assertThat(kept).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("given 2026 단위만 있음 when '올해 경쟁률'을 물으면 then 빈 근거 대신 2026 단위를 그대로 둔다")
+    void thisYearQuestion_withoutCurrentRows_keepsLastYear() {
+        // given / when
+        var kept = AdmissionsFactSearchService.byYearIntent("서울기독대 올해 경쟁률", List.of(unit(2026)));
+
+        // then
+        assertThat(kept).hasSize(1);
+    }
+}

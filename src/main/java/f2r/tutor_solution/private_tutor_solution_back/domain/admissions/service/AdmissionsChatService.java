@@ -100,6 +100,9 @@ public class AdmissionsChatService {
     /** 올해 원서접수 최종 경쟁률 근거에 반드시 붙이는 안내(합격·등록 결과가 아님). 답변에 없으면 서버가 앞에 붙인다. */
     static final String CURRENT_RATIO_NOTICE = "아래 경쟁률은 2027학년도(올해) 원서접수 최종 경쟁률이며, 합격·등록 결과가 아닙니다.";
 
+    /** 올해 원서접수 경쟁률과 지난해 결과를 함께 근거로 쓴 답변의 안내(두 안내를 따로 붙이면 서로 어긋나 보인다). */
+    static final String BOTH_YEARS_NOTICE = "아래에는 2027학년도(올해) 원서접수 최종 경쟁률(합격·등록 결과 아님)과 2026학년도(지난해) 결과가 함께 있습니다. 수치마다 학년도를 확인해 주세요.";
+
     /**
      * 근거에 없는 지난해 값을 다루는 규칙. 충원 표처럼 원문이 일부 전형·모집단위만 적은 표에서 빠진 값을
      * '공개되지 않음'(비공개)으로 단정하지 않게 한다. 비공개는 원문이 그렇게 적은 경우에만 쓴다.
@@ -306,8 +309,13 @@ public class AdmissionsChatService {
         //      올해 원서접수 경쟁률을 썼으면 "올해 원서접수 최종 경쟁률이며 합격·등록 결과가 아님"을 밝힌다.
         boolean usesLastYear = usable.stream().anyMatch(AdmissionsChatService::isLastYearPrior);
         boolean usesCurrentRatio = usable.stream().anyMatch(AdmissionsChatService::isCurrentRatio);
-        if (usesCurrentRatio && !answer.contains("원서접수 최종 경쟁률")) answer = CURRENT_RATIO_NOTICE + "\n" + answer;
-        if (usesLastYear && !answer.contains("올해와 다를 수 있")) answer = PRIOR_DISCLAIMER + "\n" + answer;
+        if (usesCurrentRatio && usesLastYear) {
+            if (!answer.contains(BOTH_YEARS_NOTICE)) answer = BOTH_YEARS_NOTICE + "\n" + answer;
+        } else if (usesCurrentRatio && !answer.contains("원서접수 최종 경쟁률")) {
+            answer = CURRENT_RATIO_NOTICE + "\n" + answer;
+        } else if (usesLastYear && !answer.contains("올해와 다를 수 있")) {
+            answer = PRIOR_DISCLAIMER + "\n" + answer;
+        }
         // 8-3. 다음 학년도 반영방법으로 다시 산출한 표 같은 원문 산출 단서가 있으면 답변에 반드시 남긴다.
         if (usesPrior) answer = withPriorCaveats(answer, usable);
 
@@ -620,7 +628,9 @@ public class AdmissionsChatService {
         if (hasCurrentRatio) {
             sb.append("[올해 원서접수 경쟁률] 근거 중 '올해 원서접수 최종 경쟁률'이라고 적힌 항목은 올해(2027학년도) 원서접수 마감 경쟁률이다. "
                     + "이 수치를 쓸 때는 답변 첫머리에 '").append(CURRENT_RATIO_NOTICE).append("'라고 밝히고, 지난해 결과라고 부르지 마라. "
-                    + "지난해 입시결과 근거가 함께 있으면 올해 경쟁률과 지난해 결과를 섞지 말고 학년도를 붙여 따로 적어라. "
+                    + "지난해 입시결과 근거가 함께 있으면 답변 첫머리에 '" + BOTH_YEARS_NOTICE + "'라고 밝히고, 올해 경쟁률과 지난해 결과를 "
+                    + "학년도별 단락으로 나눠 적어라. 같은 전형이 두 학년도 근거에 모두 있어도 각 수치는 그 수치가 적힌 근거의 학년도로만 적고, "
+                    + "한 줄에 두 학년도 수치를 섞지 마라. "
                     + "근거에 없는 수치는 쓰지 마라. 출처는 '대학 입학처 공식 경쟁률(올해 원서접수)'라고 밝혀라. "
                     + "합격·불합격 판정, 합격 확률, '가능성이 높다/낮다' 같은 표현은 절대 쓰지 마라.\n");
         }
