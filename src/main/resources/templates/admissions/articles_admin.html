@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>바뀌는 입시 글 관리 | 관리자</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <link rel="stylesheet" href="/css/admissions-articles.css?v=20261113-1">
+</head>
+<body>
+<div class="ar-wrap">
+  <div class="ar-top"><a href="/admissions/articles">공개 목록 보기 ›</a><a href="/admin/hub">통합 대시보드</a></div>
+  <h1 class="ar-h1">바뀌는 입시 · 글 관리</h1>
+  <p class="ar-lead">관리자만 글을 추가·수정·숨김합니다. 삭제는 없고, 내릴 글은 「숨기기」를 누릅니다. 본문 HTML은 저장할 때 허용 태그(p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a)만 남깁니다. 이 글은 상담 AI의 답변 근거로 쓰지 않습니다.</p>
+  <div id="arAdminList" aria-live="polite"><p class="ar-empty">불러오는 중…</p></div>
+  <form class="ar-form" id="arForm">
+    <strong id="arFormTitle">새 글 추가</strong>
+    <input type="hidden" id="fId">
+    <label>시리즈명<input id="fSeries" maxlength="60" value="바뀌는 입시" required></label>
+    <label>회차 (예: 1-①)<input id="fEpisode" maxlength="20" required></label>
+    <label>제목<input id="fTitle" maxlength="200" required></label>
+    <label>한 줄 요약<input id="fSummary" maxlength="500" required></label>
+    <label>게시일<input id="fDate" type="date" required></label>
+    <label>정렬 순서 (같은 날 작은 수가 먼저)<input id="fOrder" type="number" min="0" max="9999" value="0"></label>
+    <label><span><input id="fVisible" type="checkbox" checked> 공개</span></label>
+    <label>본문 HTML<textarea id="fBody" required></textarea></label>
+    <div><button class="ar-btn primary" type="submit">저장</button> <button class="ar-btn" type="button" id="fReset">새 글로 비우기</button></div>
+    <p class="ar-msg" id="arMsg" role="status"></p>
+  </form>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/admissions_articles_view.js?v=20261113-1"></script>
+<script src="/js/admissions_articles_admin.js?v=20261113-1"></script>
+</body>
+</html>
