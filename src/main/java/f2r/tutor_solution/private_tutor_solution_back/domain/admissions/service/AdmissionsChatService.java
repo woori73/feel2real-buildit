@@ -372,7 +372,10 @@ public class AdmissionsChatService {
         if (usesPrior) answer = withPriorCaveats(answer, usable);
 
         // 9. 출처 조립 (URL이 없어도 문서 ID와 제목으로 표시, GUIDE는 제외)
-        List<AnswerSource> sources = new ArrayList<>(buildSources(usable, question));
+        // 대학을 말했거나 전체 대학 일정 질문이면 대학별 근거가 답의 중심이다. 그 밖의 일반 제도 질문은 제도 항목을 출처로 보인다.
+        boolean universityScoped = !parsed.universities().isEmpty()
+                || (facts.scheduleCoverage() != null && !facts.scheduleCoverage().covered().isEmpty());
+        List<AnswerSource> sources = new ArrayList<>(buildSources(usable, question, universityScoped));
         // 답변이 유튜브 해석 단락을 썼으면 그 영상들을 공식 출처와 구분된 "참고" 출처로 붙인다.
         if (answer.contains("유튜브")) sources.addAll(youtubeSources(pack));
 
@@ -776,9 +779,9 @@ public class AdmissionsChatService {
     }
 
     /** 출처 패널용: 질문과 관련된 근거만 중복 없이 상위 {@link #MAX_SOURCES}개. LLM에 준 근거 자체는 바꾸지 않는다. */
-    List<AnswerSource> buildSources(List<Evidence> evidence, String question) {
+    List<AnswerSource> buildSources(List<Evidence> evidence, String question, boolean universityScoped) {
         List<AnswerSource> out = new ArrayList<>();
-        for (Evidence e : AdmissionsSourceSelector.select(evidence, question, MAX_SOURCES)) {
+        for (Evidence e : AdmissionsSourceSelector.select(evidence, question, MAX_SOURCES, universityScoped)) {
             String kind = switch (e.getSourceClass()) {
                 case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
                 case OFFICIAL_PLANNED -> "공식 자료 (계획)";

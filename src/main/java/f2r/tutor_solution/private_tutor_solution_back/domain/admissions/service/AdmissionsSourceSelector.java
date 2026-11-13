@@ -20,6 +20,8 @@ import java.util.Set;
  *       링크는 최대 {@value #MAX_BARE_MATERIALS}건까지 예외로 남긴다.</li>
  *   <li>질문이 수시/정시 한쪽만 말하면 반대 트랙 제목은 뺀다.</li>
  *   <li>질문이 캠퍼스를 말했고(예: "동국대 와이즈") 그 캠퍼스 표시가 붙은 근거가 있으면, 표시가 없는 근거(본교 등)는 뺀다.</li>
+ *   <li>질문이 대학을 말하지 않았고 대학 이름이 없는 제도 지식 항목(예: 2028 내신 5등급제)이 관련 근거로 있으면,
+ *       특정 대학 근거(제목에 대학 이름)는 뺀다 — 일반 제도 질문에 무관한 대학 시행계획이 출처로 붙지 않게.</li>
  *   <li>일정을 묻는 질문이면 일정 근거에 가산점을 준다(같은 대학 전형 행이 일정 행을 밀어내지 않게).</li>
  *   <li>관련도(주제어 일치 수)가 높은 순, 같으면 공식 자료 등급 순, 그래도 같으면 원래 순서로 상위 N개만 남긴다.
  *       주제어는 띄어쓰기를 무시하고 비교한다("원서접수" ↔ "입학원서 접수").</li>
@@ -41,8 +43,16 @@ final class AdmissionsSourceSelector {
     private AdmissionsSourceSelector() {}
 
     static List<Evidence> select(List<Evidence> evidence, String question, int limit) {
+        return select(evidence, question, limit, true);
+    }
+
+    /** @param universityScoped 질문이 대학을 말했거나 전체 대학 목록을 묻는지. false면 일반 제도 질문 규칙을 적용한다. */
+    static List<Evidence> select(List<Evidence> evidence, String question, int limit, boolean universityScoped) {
         List<Evidence> unique = dedupe(evidence);
         Set<String> terms = topicTerms(question);
+        if (!universityScoped && unique.stream().anyMatch(e -> isGeneralPolicy(e) && relevance(e, terms) > 0)) {
+            unique = unique.stream().filter(e -> !namesSpecificUniversity(e.getTitle())).toList();
+        }
         String track = askedTrack(question);
         String campus = presentCampus(question, unique);
         boolean scheduleQuestion = question != null && SCHEDULE_INTENT.matcher(question).find();
@@ -166,6 +176,19 @@ final class AdmissionsSourceSelector {
         if (title == null) return false;
         String other = asked.equals("수시") ? "정시" : "수시";
         return title.contains(other) && !title.contains(asked);
+    }
+
+    private static final java.util.regex.Pattern UNIVERSITY_NAME =
+            java.util.regex.Pattern.compile("[가-힣]+대학교|(?<![가-힣])[가-힣]{1,5}대(?=\\s*\\d{4})");
+
+    /** 제목에 특정 대학 이름이 있는지(예: "연세대학교 …", "인하대 2027 …"). "대학별"·"대학입학"은 해당하지 않는다. */
+    static boolean namesSpecificUniversity(String title) {
+        return title != null && UNIVERSITY_NAME.matcher(title).find();
+    }
+
+    /** 대학 이름이 없는 지식 항목 — 교육부·평가원·대교협 제도 발표 같은 일반 제도 근거. */
+    private static boolean isGeneralPolicy(Evidence e) {
+        return e.getRefId() != null && e.getRefId().startsWith("knowledge:") && !namesSpecificUniversity(e.getTitle());
     }
 
     /** 공식 문서 자체(material:) — 제목에 주제어가 없어도 학과·전형 행의 출처 문서일 수 있다. 사설 미러본은 제외. */
