@@ -315,10 +315,13 @@ public class AdmissionsFactSearchService {
         String url = first.getSourceUrl() != null && !first.getSourceUrl().isBlank() ? first.getSourceUrl()
                 : source == null ? null : source.getDocumentUrl();
         boolean current = isCurrentYear(first);
+        String kind = priorSourceLabel(first);
+        String issuer = kind == null ? "대학 입학처 공식 " : kind + " ";
         String title = first.getUniversity().getName() + " " + first.getResultYear()
                 + (current ? "학년도" + CURRENT_YEAR_TAG + " " : "학년도(지난해) ")
                 + roundLabel(first.getRoundType()) + (first.getGroupName() == null ? "" : " " + first.getGroupName() + "군")
-                + (current ? " 경쟁률: " : " 입시결과: ") + first.getTypeName() + " " + first.getDepartmentName();
+                + (current ? " 경쟁률: " : " 입시결과: ") + first.getTypeName() + " " + first.getDepartmentName()
+                + (kind == null ? "" : " " + SOURCE_TAG + kind + "〕");
         return Evidence.builder()
                 .stepNo(STEP_FACT)
                 .sourceClass(SourceClass.OFFICIAL_PRIOR_RESULT)
@@ -327,8 +330,8 @@ public class AdmissionsFactSearchService {
                 .title(title)
                 .excerpt(withCaveat(priorCaveat(source == null ? null : source.getTitle()),
                         (current ? "[" + first.getResultYear() + "학년도 올해 원서접수 최종 경쟁률]\n" : "") + formatPriorUnit(rows)))
-                .note((current ? "대학 입학처 공식 원서접수 최종 경쟁률(" + first.getResultYear() + "학년도, 올해 — 합격·등록 결과 아님) / 출처: "
-                        : "대학 입학처 공식 입시결과(" + first.getResultYear() + "학년도, 지난해 — 올해 결과 아님) / 출처: ")
+                .note((current ? issuer + "원서접수 최종 경쟁률(" + first.getResultYear() + "학년도, 올해 — 합격·등록 결과 아님) / 출처: "
+                        : issuer + "입시결과(" + first.getResultYear() + "학년도, 지난해 — 올해 결과 아님) / 출처: ")
                         + (source == null ? first.getInstitutionName() : source.getTitle()))
                 .academicYear(first.getResultYear())
                 .yearConfirmed(true)
@@ -348,6 +351,30 @@ public class AdmissionsFactSearchService {
         if (last == current) return units;
         List<List<AdmissionsPriorResult>> kept = units.stream().filter(rows -> isCurrentYear(rows.get(0)) == current).toList();
         return kept.isEmpty() ? units : new ArrayList<>(kept);
+    }
+
+    /** 입학처 원문이 아닌 입시결과 근거의 제목 끝 표시. 채팅 서비스가 이 표시로 출처 이름을 읽는다. */
+    static final String SOURCE_TAG = "〔출처: ";
+    static final String SOURCE_UWAY = "유웨이 경쟁률 서비스";
+    static final String SOURCE_JINHAK = "진학어플라이 경쟁률 서비스";
+    static final String SOURCE_ADIGA = "대학어디가";
+    static final String SOURCE_PRIVATE = "사설 추정치";
+    static final String SOURCE_PRESS = "언론 보도";
+
+    /**
+     * 입시결과 행의 출처 종류. 대학 입학처 원문이면 null. 원문 주소(행 source_url, 없으면 자료 주소)의 도메인을 먼저 보고,
+     * 다음으로 기관명(행 institution_name, 자료 issuer)의 괄호 표기(buildit-admissions 수집 규칙)를 본다.
+     */
+    static String priorSourceLabel(AdmissionsPriorResult r) {
+        AdmissionsOfficialMaterial m = r.getSource();
+        String url = ((r.getSourceUrl() == null ? "" : r.getSourceUrl()) + " " + (m == null || m.getDocumentUrl() == null ? "" : m.getDocumentUrl())).toLowerCase();
+        String inst = (r.getInstitutionName() == null ? "" : r.getInstitutionName()) + " " + (m == null || m.getIssuer() == null ? "" : m.getIssuer());
+        if (url.contains("uwayapply.com") || inst.contains("유웨이")) return SOURCE_UWAY;
+        if (url.contains("jinhakapply.com") || inst.contains("진학어플라이")) return SOURCE_JINHAK;
+        if (url.contains("adiga.kr") || inst.contains("대학어디가")) return SOURCE_ADIGA;
+        if (inst.matches(".*(사설|학원|배치표).*")) return SOURCE_PRIVATE;
+        if (inst.matches(".*(언론|신문|일보|뉴스|방송).*")) return SOURCE_PRESS;
+        return null;
     }
 
     /** 결과 학년도가 상담 학년도와 같은 행(올해 원서접수 최종 경쟁률)의 근거 제목 표시. 채팅 서비스가 이 표시로 지난해 결과와 구분한다. */

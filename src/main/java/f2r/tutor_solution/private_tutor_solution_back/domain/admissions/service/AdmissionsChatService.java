@@ -112,6 +112,11 @@ public class AdmissionsChatService {
             + "근거에 없다는 이유로 '공개되지 않음'·'비공개'라고 단정하지 마라(근거 내용이 비공개라고 적은 경우에만 그렇게 말한다). "
             + "충원 인원처럼 일부 전형·모집단위만 값이 있으면 값이 있는 것만 적고, 나머지는 '지난해 자료에 해당 값이 없다'고 하라. ";
 
+    /** 입시결과 근거의 출처를 밝히는 규칙. 대행사·대학어디가·사설 자료를 대학 입학처 공식 자료라고 부르지 않게 한다. */
+    static final String PRIOR_SOURCE_RULE = "출처는 근거마다 밝혀라: '출처 종류'가 없는 근거는 '대학 입학처 공식 입시결과(지난해)' 또는 "
+            + "'대학 입학처 공식 경쟁률(올해 원서접수)', '출처 종류'가 있는 근거는 그 이름(예: '유웨이 경쟁률 서비스', '대학어디가')으로 밝히고 "
+            + "대학 입학처 공식 자료라고 하지 마라. 출처 종류가 '사설 추정치'면 대학이 공개한 결과가 아니라 추정치라고 함께 밝혀라. ";
+
     /** 입시결과를 물었지만 그 대학의 승인된 지난해 입시결과가 없을 때. */
     static String msgPriorNotCollected(List<String> names) {
         return String.join(", ", names) + "의 2026학년도(지난해) 공식 입시결과(경쟁률·입결·충원)는 아직 수집되지 않아 "
@@ -317,6 +322,8 @@ public class AdmissionsChatService {
         } else if (usesLastYear && !answer.contains("올해와 다를 수 있")) {
             answer = PRIOR_DISCLAIMER + "\n" + answer;
         }
+        if (usable.stream().anyMatch(e -> AdmissionsFactSearchService.SOURCE_PRIVATE.equals(priorSourceLabel(e)))
+                && !answer.contains(PRIVATE_ESTIMATE_NOTICE)) answer = PRIVATE_ESTIMATE_NOTICE + "\n" + answer;
         // 8-3. 다음 학년도 반영방법으로 다시 산출한 표 같은 원문 산출 단서가 있으면 답변에 반드시 남긴다.
         if (usesPrior) answer = withPriorCaveats(answer, usable);
 
@@ -376,6 +383,25 @@ public class AdmissionsChatService {
     static boolean isPrior(Evidence e) {
         return e.getSourceClass() == AdmissionsResearchService.SourceClass.OFFICIAL_PRIOR_RESULT;
     }
+
+    /** 입시결과 근거의 출처 이름(대학 입학처 원문이 아니면 '유웨이 경쟁률 서비스' 등). 입학처 원문이면 null. */
+    static String priorSourceLabel(Evidence e) {
+        if (!isPrior(e) || e.getTitle() == null) return null;
+        int i = e.getTitle().lastIndexOf(AdmissionsFactSearchService.SOURCE_TAG);
+        if (i < 0) return null;
+        int j = e.getTitle().indexOf('〕', i);
+        return j < 0 ? null : e.getTitle().substring(i + AdmissionsFactSearchService.SOURCE_TAG.length(), j);
+    }
+
+    /** 출처 패널 종류 이름. 입학처 원문은 '공식 …', 그 밖은 출처 이름을 괄호에 붙인다. */
+    static String priorSourceKind(Evidence e) {
+        String label = priorSourceLabel(e);
+        if (isCurrentRatio(e)) return label == null ? "공식 경쟁률 (올해 원서접수)" : "경쟁률 (올해 원서접수, " + label + ")";
+        return label == null ? "공식 입시결과 (지난해)" : "입시결과 (지난해, " + label + ")";
+    }
+
+    /** 사설 추정치 근거를 썼을 때 답변 앞에 붙이는 안내. */
+    static final String PRIVATE_ESTIMATE_NOTICE = "아래 일부 수치는 대학이 공개한 결과가 아니라 사설 기관의 추정치입니다.";
 
     /** 입시결과 행 중 결과 학년도가 상담 학년도와 같은 것(올해 원서접수 최종 경쟁률). */
     static boolean isCurrentRatio(Evidence e) {
@@ -454,7 +480,8 @@ public class AdmissionsChatService {
         StringBuilder sb = new StringBuilder();
         if (current) sb.append(CURRENT_RATIO_NOTICE);
         if (lastYear) sb.append(sb.isEmpty() ? "" : "\n").append(PRIOR_DISCLAIMER);
-        sb.append(" 합격 가능성은 판단해 드릴 수 없어, 대학 입학처가 공개한 ")
+        boolean other = evidence.stream().anyMatch(e -> priorSourceLabel(e) != null);
+        sb.append(" 합격 가능성은 판단해 드릴 수 없어, ").append(other ? "공개된 " : "대학 입학처가 공개한 ")
                 .append(lastYear ? "지난해 결과" : "경쟁률").append("를 그대로 옮겨 드립니다.");
         for (Evidence e : evidence) {
             if (!isPrior(e)) continue;
@@ -554,6 +581,9 @@ public class AdmissionsChatService {
         for (Evidence e : evidence) {
             sb.append("── 근거 ").append(i++).append(" ──\n");
             sb.append("제목: ").append(e.getTitle()).append("\n");
+            if (priorSourceLabel(e) != null) {
+                sb.append("출처 종류: ").append(priorSourceLabel(e)).append(" (대학 입학처 원문 아님)\n");
+            }
             if (isCurrentRatio(e)) {
                 sb.append("결과 학년도: ").append(e.getAcademicYear())
                         .append("학년도 (올해 원서접수 최종 경쟁률 — 지난해 결과가 아니며 합격·등록 결과도 아님)\n");
@@ -617,7 +647,7 @@ public class AdmissionsChatService {
                     .append(PRIOR_DISCLAIMER).append("'라고 밝히고, 올해(2027학년도) 모집요강 수치와 섞지 마라. "
                     + "지표 이름은 근거에 적힌 원문 그대로 쓰고(예: '최종등록자 교과등급 70%컷'을 '평균'이나 '합격선'으로 바꾸지 않음), "
                     + "서로 다른 지표나 서로 다른 대학의 지표를 하나로 합치거나 평균내거나 환산하지 마라. 대학마다 지표가 다르면 대학별로 따로 적어라. "
-                    + PRIOR_MISSING_RULE + "출처는 '대학 입학처 공식 입시결과(지난해)'라고 밝혀라. "
+                    + PRIOR_MISSING_RULE + PRIOR_SOURCE_RULE
                     + "근거 내용에 '산출 기준(원문)'이 있으면 그 대학 수치를 쓸 때 그 문장을 그대로 함께 적어라. "
                     + "합격·불합격 판정, 합격 확률, '가능성이 높다/낮다', '안정권/상향' 같은 표현은 절대 쓰지 마라.\n");
             if (!comparisons.isEmpty()) {
@@ -632,7 +662,7 @@ public class AdmissionsChatService {
                     + "지난해 입시결과 근거가 함께 있으면 답변 첫머리에 '" + BOTH_YEARS_NOTICE + "'라고 밝히고, 올해 경쟁률과 지난해 결과를 "
                     + "학년도별 단락으로 나눠 적어라. 같은 전형이 두 학년도 근거에 모두 있어도 각 수치는 그 수치가 적힌 근거의 학년도로만 적고, "
                     + "한 줄에 두 학년도 수치를 섞지 마라. "
-                    + "근거에 없는 수치는 쓰지 마라. 출처는 '대학 입학처 공식 경쟁률(올해 원서접수)'라고 밝혀라. "
+                    + "근거에 없는 수치는 쓰지 마라. " + PRIOR_SOURCE_RULE
                     + "합격·불합격 판정, 합격 확률, '가능성이 높다/낮다' 같은 표현은 절대 쓰지 마라.\n");
         }
         if (parsed.asksAdmissionChance()) {
@@ -686,7 +716,7 @@ public class AdmissionsChatService {
                 case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
                 case OFFICIAL_PLANNED -> "공식 자료 (계획)";
                 case OFFICIAL_DOCUMENT -> "공식자료 원문";
-                case OFFICIAL_PRIOR_RESULT -> isCurrentRatio(e) ? "공식 경쟁률 (올해 원서접수)" : "공식 입시결과 (지난해)";
+                case OFFICIAL_PRIOR_RESULT -> priorSourceKind(e);
                 case UNVERIFIED_MIRROR -> "사설 미러본 (공식 원본 아님)";
                 default -> "참고 자료";
             };
@@ -696,7 +726,7 @@ public class AdmissionsChatService {
         // 지난해 결과를 근거로 줬으면 출처에도 반드시 하나 이상 보인다.
         if (out.stream().noneMatch(s -> s.id() != null && s.id().startsWith("prior:"))) {
             evidence.stream().filter(AdmissionsChatService::isPrior).findFirst().ifPresent(e -> out.add(0,
-                    new AnswerSource(isCurrentRatio(e) ? "공식 경쟁률 (올해 원서접수)" : "공식 입시결과 (지난해)", e.getTitle(),
+                    new AnswerSource(priorSourceKind(e), e.getTitle(),
                             e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl(), e.getRefId())));
         }
         return out;
