@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${article.title + ' | 바뀌는 입시 · Feel2Real'}">바뀌는 입시</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <meta name="description" th:content="${article.summary}">
+  <meta property="og:title" th:content="${article.title}">
+  <meta property="og:description" th:content="${article.summary}">
+  <link rel="stylesheet" href="/css/admissions-articles.css?v=20261113-1">
+</head>
+<body>
+<div class="ar-wrap">
+  <div class="ar-top"><a href="/admissions/articles">← 바뀌는 입시 목록</a><a href="/admissions/guide">입시상담 AI</a></div>
+  <article class="ar-article">
+    <p class="ar-meta"><span class="ar-chip" th:text="${article.series + ' ' + article.episode}">바뀌는 입시 1-①</span>
+      <time th:datetime="${article.publishedOn}" th:text="${#temporals.format(article.publishedOn, 'yyyy년 M월 d일')}">2026년 11월 13일</time></p>
+    <h1 class="ar-h1" th:text="${'[시리즈 ' + article.episode + '] ' + article.title}">제목</h1>
+    <!-- 본문은 저장·출력 때 허용 태그만 남긴 HTML(AdmissionsArticleService.forDisplay) -->
+    <div class="ar-body" id="arBody" th:utext="${article.bodyHtml}"></div>
+  </article>
+  <p class="ar-foot">이 글은 제도 변화를 정리한 해설이며, 입시상담 AI의 답변 근거로 쓰지 않습니다. 대학별 세부 사항은 각 대학 모집요강을 확인하세요.</p>
+</div>
+</body>
+</html>

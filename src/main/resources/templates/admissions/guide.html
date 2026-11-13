@@ -7,7 +7,7 @@
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <meta name="description" content="검수·승인된 공식 입시자료를 학년도별로 안내합니다">
   <link rel="stylesheet" href="/css/admissions-guide.css?v=20261022-1">
-  <link rel="stylesheet" href="/css/admissions-explorer.css?v=20261107-1">
+  <link rel="stylesheet" href="/css/admissions-explorer.css?v=20261113-1">
 </head>
 <body th:attr="data-member=${memberMode == true}">
   <div class="admissions-page">
@@ -61,6 +61,11 @@
           <button type="button" class="ae-start-choice" data-ae-tab="chat"><span class="ae-start-symbol" aria-hidden="true">…</span><span>AI에게 바로 물어보기<small>무엇부터 해야 할지 몰라도 괜찮아요</small></span><span aria-hidden="true">›</span></button>
           <p class="ae-trust"><span aria-hidden="true">✓</span> 공식 자료의 출처와 확인이 필요한 내용을 함께 안내합니다.</p>
         </div>
+        <!-- 「바뀌는 입시」 글: 첫 화면 아래에만 두어 상담 이용을 가리지 않는다. 글이 없거나 조회 실패면 숨긴 채 둔다. 상담 AI 근거가 아니다. -->
+        <section id="ae-articles" class="ae-articles" hidden aria-labelledby="ae-articles-title">
+          <div class="ae-articles-head"><h2 id="ae-articles-title">바뀌는 입시</h2><a href="/admissions/articles">전체 글 보기 ›</a></div>
+          <ul id="ae-articles-list" class="ae-articles-list"></ul>
+        </section>
       </section>
       <section id="ae-prepare-panel" hidden aria-labelledby="ae-prepare-title">
         <button type="button" class="ae-back-link" data-ae-tab="home">← 처음으로</button>
@@ -183,5 +188,7 @@
   <script src="/js/admissions-explorer.js?v=20261107-2" defer></script>
   <script src="/js/admissions-member.js?v=20261019-2" defer></script>
   <script src="/js/admissions-admin-load.js?v=20261104-3" defer></script>
+  <script src="/js/admissions_articles_view.js?v=20261113-1" defer></script>
+  <script src="/js/admissions_articles.js?v=20261113-1" defer></script>
 </body>
 </html>
