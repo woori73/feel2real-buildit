@@ -136,7 +136,7 @@ class AdmissionsPriorResultChatTest {
     }
 
     @Test
-    @DisplayName("given 올해 경쟁률과 지난해 결과가 함께 있음 when 질문하면 then 두 안내가 모두 붙고 출처 종류가 구분된다")
+    @DisplayName("given 올해 경쟁률과 지난해 결과가 함께 있음 when 질문하면 then 두 학년도 함께 안내가 한 번 붙고 출처 종류가 구분된다")
     void currentRatioAndLastYear_bothNoticesAndKinds() {
         // given
         String q = "테스트대 컴퓨터공학과 경쟁률 알려줘";
@@ -147,7 +147,8 @@ class AdmissionsPriorResultChatTest {
         var answer = service.ask(q, null, null);
 
         // then
-        assertThat(answer.answer()).contains(AdmissionsChatService.CURRENT_RATIO_NOTICE, AdmissionsChatService.PRIOR_DISCLAIMER);
+        assertThat(answer.answer()).startsWith(AdmissionsChatService.BOTH_YEARS_NOTICE)
+                .doesNotContain(AdmissionsChatService.CURRENT_RATIO_NOTICE).doesNotContain(AdmissionsChatService.PRIOR_DISCLAIMER);
         assertThat(answer.sources()).extracting(s -> s.kind())
                 .contains("공식 경쟁률 (올해 원서접수)", "공식 입시결과 (지난해)");
     }

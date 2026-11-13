@@ -238,7 +238,7 @@ public class AdmissionsFactSearchService {
             // 결과 학년도가 다른 행(지난해 입시결과·올해 원서접수 경쟁률)은 같은 전형·모집단위여도 한 단위로 합치지 않는다.
             units.computeIfAbsent(r.getUniversity().getUniversityId() + "|" + r.getResultYear() + "|" + r.unitKey(), k -> new ArrayList<>()).add(r);
         }
-        List<List<AdmissionsPriorResult>> all = new ArrayList<>(units.values());
+        List<List<AdmissionsPriorResult>> all = byYearIntent(question, new ArrayList<>(units.values()));
         List<List<AdmissionsPriorResult>> matched = all.stream()
                 .filter(rows -> priorDepartmentMentioned(question, rows.get(0).getDepartmentName())
                         || priorTypeMentioned(question, rows.get(0).getTypeName()))
@@ -312,13 +312,29 @@ public class AdmissionsFactSearchService {
                 .refId("prior:" + first.getPriorResultId())
                 .refUrl(url)
                 .title(title)
-                .excerpt(withCaveat(priorCaveat(source == null ? null : source.getTitle()), formatPriorUnit(rows)))
+                .excerpt(withCaveat(priorCaveat(source == null ? null : source.getTitle()),
+                        (current ? "[" + first.getResultYear() + "학년도 올해 원서접수 최종 경쟁률]\n" : "") + formatPriorUnit(rows)))
                 .note((current ? "대학 입학처 공식 원서접수 최종 경쟁률(" + first.getResultYear() + "학년도, 올해 — 합격·등록 결과 아님) / 출처: "
                         : "대학 입학처 공식 입시결과(" + first.getResultYear() + "학년도, 지난해 — 올해 결과 아님) / 출처: ")
                         + (source == null ? first.getInstitutionName() : source.getTitle()))
                 .academicYear(first.getResultYear())
                 .yearConfirmed(true)
                 .build();
+    }
+
+    private static final java.util.regex.Pattern ASKS_LAST_YEAR = java.util.regex.Pattern.compile("작년|지난해|전년도|2026");
+    private static final java.util.regex.Pattern ASKS_THIS_YEAR = java.util.regex.Pattern.compile("올해|금년|이번\\s*(해|년도|입시|수시|정시)|2027");
+
+    /**
+     * 질문이 한 학년도만 가리키면(예: "작년 경쟁률", "올해 경쟁률") 다른 학년도 단위를 뺀다. 남는 단위가 없으면 그대로 둔다
+     * (예: 올해 자료가 없는 대학에 "올해 경쟁률"을 물으면 지난해 결과를 지난해 표시와 함께 보여 준다).
+     */
+    static List<List<AdmissionsPriorResult>> byYearIntent(String question, List<List<AdmissionsPriorResult>> units) {
+        boolean last = ASKS_LAST_YEAR.matcher(question).find();
+        boolean current = ASKS_THIS_YEAR.matcher(question).find();
+        if (last == current) return units;
+        List<List<AdmissionsPriorResult>> kept = units.stream().filter(rows -> isCurrentYear(rows.get(0)) == current).toList();
+        return kept.isEmpty() ? units : new ArrayList<>(kept);
     }
 
     /** 결과 학년도가 상담 학년도와 같은 행(올해 원서접수 최종 경쟁률)의 근거 제목 표시. 채팅 서비스가 이 표시로 지난해 결과와 구분한다. */
