@@ -109,3 +109,17 @@ body[data-admissions-view] #assistantWelcome{display:none!important}
 @media(max-width:1000px){.ae-reform-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.ae-cohort,.ae-reform-grid,.ae-reform-status-grid{grid-template-columns:1fr}.ae-cohort{gap:14px}}
 @media(max-width:600px){.ae-tabs button{white-space:nowrap;font-size:12.5px;letter-spacing:-.3px;padding:11px 2px}}
+
+/* 「바뀌는 입시」 글 카드(첫 화면 아래, 두 칸 전체 폭) */
+.ae-articles{grid-column:1/-1;border-top:1px solid #e4ebf4;padding-top:22px}
+.ae-articles-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.ae-articles-head h2{font-size:18px;margin:0}
+.ae-articles-head a{font-size:13px;color:#245dc9;text-decoration:none;font-weight:600}
+.ae-articles-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ae-article a{display:block;height:100%;padding:14px 16px;border:1px solid #e4ebf4;border-radius:12px;background:#fff;color:inherit;text-decoration:none}
+.ae-article a:hover,.ae-article a:focus-visible{border-color:#245dc9}
+.ae-article-meta{display:block;font-size:12px;color:#61758f}
+.ae-article strong{display:block;margin:4px 0 6px;font-size:15px;line-height:1.45}
+.ae-article-summary{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;color:#526b89;line-height:1.6}
+@media(max-width:800px){.ae-articles-list{grid-template-columns:1fr}}
+.ae-reform-more{margin:18px 0 0}.ae-reform-more a{font-size:14px;font-weight:600;color:#245dc9;text-decoration:none}

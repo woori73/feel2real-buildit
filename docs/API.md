@@ -5462,3 +5462,20 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - 실제 입금 확인 체크, 허용된 상태 전환, 다음 회차의 검수·문제지/해설지 전달 확인, 기존 낙관적 버전 검사를 유지한다. 전달 기록은 실제 파일 발송 기능이 아니다. 무료신청·문의는 유료 4회 전달과 구분한다.
 - 계좌 등록·승인은 기존 `/admin/hub/exam-bank`로 이동한다. 이메일 전용 알림 화면으로 제공하며 휴대폰·문자·솔라피 입력을 제거한다. 명시적인 알림 설정 저장 시 기존 DTO의 smsEnabled=false와 빈 phone/sender를 전송한다. 기존 저장값과 수신처를 자동 변경하거나 테스트 알림을 자동 전송하지 않는다. `?request=ID` 직접 열기와 `#notifications` 설정 진입을 유지한다.
 - 개인정보 정리·승인된 변경 반영·환불 요청 처리는 기존 검토 절차를 유지한다. 접수 조회 실패·빈 목록·알림 조회 실패를 별도로 표시한다.
+
+## 바뀌는 입시 글 (2026-11-13, V1111)
+
+입시상담 AI 화면의 해설 글. 상담 AI 근거(공식자료·지식 항목·검색 인덱스)에 넣지 않으며, 상담·「공식자료 검수」·시드 적재 흐름은 바뀌지 않았다.
+
+| 메서드 | 경로 | 권한 | 설명 |
+|---|---|---|---|
+| GET | `/admissions/articles` | 공개 | 목록 화면(SSR): 회차·게시일·제목·한 줄 요약 |
+| GET | `/admissions/articles/{id}` | 공개 | 본문 화면(SSR, 글마다 공유 주소). 숨김·없음은 404. 본문은 허용 태그만, 외부 링크는 새 창(`rel=noopener noreferrer`), 표는 가로 스크롤 |
+| GET | `/api/admissions/articles` | 공개 | `[{id,series,episode,title,summary,publishedOn}]`(공개 글만, 최신 게시일 → 정렬 순서). 입시상담 첫 화면(`/admissions/guide`·`/admissions/workspace`) 「바뀌는 입시」 카드가 앞 3편을 쓴다 |
+| GET | `/admin/admissions/articles` | ADMIN | 글 관리 화면 |
+| GET | `/api/admin/admissions/articles` | ADMIN | 숨김 포함 `[{id,series,episode,title,summary,publishedOn,visible,sortOrder,bodyHtml}]` |
+| POST | `/api/admin/admissions/articles` | ADMIN | 추가 `{series,episode,title,summary,bodyHtml,publishedOn:YYYY-MM-DD,visible?,sortOrder?(0~9999)}`. 같은 시리즈·회차 중복 400 |
+| PUT | `/api/admin/admissions/articles/{id}` | ADMIN | 수정(같은 본문 형식) |
+| POST | `/api/admin/admissions/articles/{id}/visibility` | ADMIN | `{visible:true|false}` 숨김/다시 공개 |
+
+- 검증 오류는 400 `{message}`. 본문 HTML은 저장할 때 허용 태그(p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a[href http·https])만 남기고(스크립트·이벤트 속성·style 제거), 출력할 때 한 번 더 정리한다. 삭제 API는 없다.

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>바뀌는 입시 | 입시상담 AI · Feel2Real</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <meta name="description" content="내신 5등급제, 통합형 수능 등 바뀌는 입시를 예비 고1 눈높이로 정리한 글">
+  <meta property="og:title" content="바뀌는 입시 | Feel2Real 입시상담">
+  <link rel="stylesheet" href="/css/admissions-articles.css?v=20261113-1">
+</head>
+<body>
+<div class="ar-wrap">
+  <div class="ar-top"><a href="/admissions/guide">← 입시상담 AI</a></div>
+  <p class="ar-eyebrow">입시상담 AI</p>
+  <h1 class="ar-h1">바뀌는 입시</h1>
+  <p class="ar-lead">달라지는 내신·수능 제도를 차례로 정리합니다. 상담 AI의 답변 근거가 아닌 해설 글입니다.</p>
+  <ul class="ar-list" id="arList">
+    <li class="ar-item" th:each="a : ${articles}">
+      <a th:href="@{/admissions/articles/{id}(id=${a.id})}">
+        <span class="ar-meta"><span class="ar-chip" th:text="${a.series + ' ' + a.episode}">바뀌는 입시 1-①</span><time th:datetime="${a.publishedOn}" th:text="${#temporals.format(a.publishedOn, 'yyyy년 M월 d일')}">2026년 11월 13일</time></span>
+        <strong th:text="${a.title}">제목</strong>
+        <p th:text="${a.summary}">한 줄 요약</p>
+      </a>
+    </li>
+  </ul>
+  <p class="ar-empty" th:if="${#lists.isEmpty(articles)}">아직 올라온 글이 없습니다.</p>
+</div>
+</body>
+</html>

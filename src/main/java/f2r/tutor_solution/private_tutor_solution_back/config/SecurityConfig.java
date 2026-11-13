@@ -322,7 +322,7 @@ public class SecurityConfig {
             // 반드시 아래 catch-all permitAll의 /admin/** 나열보다 위에 둔다(first-match-wins).
             .requestMatchers("/admin/newstart", "/admin/newstart/**").hasRole("ADMIN")
             // 인스타 자동 피드 관리자 화면 — ADMIN 전용(API는 /api/admin/sns/** → 아래 /api/admin/** ADMIN 규칙).
-            .requestMatchers("/admin/sns", "/admin/sns/**", "/admin/academy-move", "/admin/student-roster").hasRole("ADMIN")
+            .requestMatchers("/admin/sns", "/admin/sns/**", "/admin/academy-move", "/admin/student-roster", "/admin/admissions/articles").hasRole("ADMIN")
             .requestMatchers("/admin/hub/exam-requests").hasRole("ADMIN")
             // GPU 작업자 API는 로그인 대신 Bearer 작업자 토큰(SNS_WORKER_TOKEN)을 컨트롤러에서 검사한다.
             .requestMatchers("/api/sns/worker/**").permitAll()
@@ -607,6 +607,8 @@ public class SecurityConfig {
 
             // 입시상담 공개 채팅 API. 관리자 API는 아래 /api/admin/** 규칙을 유지한다.
             .requestMatchers(HttpMethod.POST, "/api/admissions/chat").permitAll()
+            // 「바뀌는 입시」 공개 글 목록. 추가·수정·숨김은 /api/admin/admissions/articles(ADMIN).
+            .requestMatchers(HttpMethod.GET, "/api/admissions/articles").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/admissions/explore/universities",
                 "/api/admissions/explore/departments", "/api/admissions/explore/departments/{id}").permitAll()
             // 정시 수능 환산점수 계산(AI 호출 없음). 공개 API 스위치·IP rate limit은 컨트롤러가 적용한다.

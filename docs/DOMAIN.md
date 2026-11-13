@@ -2005,3 +2005,23 @@ HANDOFF(docs/handoff/instagram-auto-feed/HANDOFF.md) §7의 6개 표를 다른 �
 | `sns_generation_logs` | rule_id, post_id, kind(IMAGE/TEXT/PUBLISH), model, prompt, cost_krw, duration_ms, success, error_message | 월 상한 = 이번 달 cost_krw 합 |
 
 초기 데이터: 로보MD에서 옮긴 3개 규칙(F2R 영어학습·새출발기금 전자책·카페·AI AGENT × F2R)과 브랜드 3개, 참고 이미지 3장. 규칙은 꺼진 채(enabled=false)·계정 미지정으로 들어간다.
+
+## 바뀌는 입시 해설 글 (admissions_articles, V1111)
+
+입시상담 AI 화면의 「바뀌는 입시」 같은 해설 글. **상담 AI 근거(공식자료·지식 항목·검색 인덱스)와 연결하지 않는다**(해설이며 기사·영상 출처가 섞임). 다른 입시 테이블과 외래키 없음.
+
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| article_id | BIGINT PK | |
+| series | VARCHAR(60) | 시리즈명(예: 바뀌는 입시) |
+| episode | VARCHAR(20) | 회차(예: 1-①). (series, episode) UNIQUE |
+| title | VARCHAR(200) | 제목(회차 표기 제외) |
+| summary | VARCHAR(500) | 한 줄 요약(목록 표시) |
+| body_html | MEDIUMTEXT | 본문. 허용 태그 p·h2·h3·ul·ol·li·table·thead·tbody·tr·th·td·strong·em·a(href http·https)만 남겨 저장·출력 |
+| published_on | DATE | 게시일 |
+| visible | TINYINT(1) | 공개 여부. 삭제 대신 숨김 |
+| sort_order | INT | 같은 게시일 안 순서(작은 수 먼저) |
+| created_at / updated_at | DATETIME(6) | |
+
+- 처음 3편(1-①·1-②·1-③, 2026-11-13)은 V1111에 함께 들어 있다. 이후 글은 관리자 화면 `/admin/admissions/articles`에서 배포 없이 추가한다.
+- CRUD: 공개 읽기(비로그인) / 관리자 추가·수정·숨김. 물리 삭제 없음.
