@@ -217,6 +217,19 @@ class AdmissionsPriorResultChatTest {
     }
 
     @Test
+    @DisplayName("given '농생명계열 제외'가 붙은 전형명 when 질문이 농생명계열만 말하면 then 제외 전형으로 맞추지 않는다")
+    void priorTypeMentioned_ignoresExcludedPiece() {
+        // given
+        String excluded = "기회균형특별전형(사회통합) 전체(농생명계열 제외)";
+        String included = "기회균형특별전형(사회통합) 농생명계열";
+
+        // when / then
+        assertThat(AdmissionsFactSearchService.priorTypeMentioned("서울대 기회균형 농생명계열 작년 충원 인원", excluded)).isFalse();
+        assertThat(AdmissionsFactSearchService.priorTypeMentioned("서울대 기회균형 농생명계열 작년 충원 인원", included)).isTrue();
+        assertThat(AdmissionsFactSearchService.priorTypeMentioned("서울대 농생명계열 제외 기회균형 충원", excluded)).isTrue();
+    }
+
+    @Test
     @DisplayName("given 대학 없이 가능성만 물음 when 성적을 적어도 then 대학·전형을 알려 달라고 안내한다")
     void chanceWithoutUniversity_stillAsksForTarget() {
         // given

@@ -282,7 +282,9 @@ public class AdmissionsFactSearchService {
     static boolean priorTypeMentioned(String question, String typeName) {
         if (typeName == null) return false;
         String q = question.replaceAll("\\s+", "");
-        for (String piece : typeName.split("[\\[\\]()/\\s·,_]+")) {
+        // "전체(농생명계열 제외)"의 '농생명계열'은 빠진 대상이라, 질문이 '제외'를 말하지 않으면 그 조각으로 맞추지 않는다.
+        String name = q.contains("제외") ? typeName : typeName.replaceAll("[^\\[\\]()/\\s·,_]+\\s*제외", "");
+        for (String piece : name.split("[\\[\\]()/\\s·,_]+")) {
             String p = piece.replaceAll("전형$", "").trim();
             if (p.length() < 2 || p.equals("학생부") || p.equals("수시") || p.equals("정시")) continue;
             if (q.contains(p)) return true;
