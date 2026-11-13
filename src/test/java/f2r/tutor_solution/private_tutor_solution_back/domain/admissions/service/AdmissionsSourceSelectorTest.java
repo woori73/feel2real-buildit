@@ -213,4 +213,50 @@ class AdmissionsSourceSelectorTest {
         // then
         assertThat(ids(picked)).containsExactly("sched:1");
     }
+
+    @Test
+    @DisplayName("given 대학을 말하지 않은 제도 질문과 제도 지식 항목 when 출처를 고르면 then 특정 대학 시행계획은 빠진다")
+    void generalPolicyQuestionDropsUniversitySpecificSources() {
+        // given
+        List<Evidence> evidence = List.of(
+                ev("knowledge:R2028-NAESIN", "2028학년도 대입 개편 — 고교 내신 5등급제(1등급 상위 10%)와 성취도 병기",
+                        "등급 비율은 1등급 10%, 2등급 24%", SourceClass.OFFICIAL_PLANNED),
+                ev("material:30", "2028학년도 연세대학교 서울캠퍼스 입학전형 시행계획", "내신 등급 비율 반영", SourceClass.OFFICIAL_PLANNED),
+                ev("type:41", "연세대학교 2028학년도 정시 일반전형 일반계열(가군)", "내신 등급 반영", SourceClass.OFFICIAL_PLANNED));
+        String q = "내신 5등급제 등급 비율이 어떻게 되나요?";
+
+        // when
+        List<Evidence> general = AdmissionsSourceSelector.select(evidence, q, 6, false);
+        List<Evidence> scoped = AdmissionsSourceSelector.select(evidence, q, 6, true);
+
+        // then
+        assertThat(ids(general)).containsExactly("knowledge:R2028-NAESIN");
+        assertThat(ids(scoped)).as("대학을 말했거나 전체 대학 질문이면 기존 규칙 그대로").contains("material:30", "type:41");
+    }
+
+    @Test
+    @DisplayName("given 관련된 제도 지식 항목이 없을 때 when 대학을 말하지 않은 질문의 출처를 고르면 then 대학 근거를 지우지 않는다")
+    void keepsUniversitySourcesWithoutRelevantGeneralItem() {
+        // given
+        List<Evidence> evidence = List.of(
+                ev("sched:1", "서울대학교 2027학년도 원서접수 (수시)", "일정 원문: 2026.9.8.~9.11."),
+                ev("knowledge:R2028-CREDIT", "고교학점제 과목 구조 — 공통과목·일반선택", "고교학점제", SourceClass.OFFICIAL_PLANNED));
+
+        // when
+        List<Evidence> picked = AdmissionsSourceSelector.select(evidence, "수시 원서접수 언제야", 6, false);
+
+        // then
+        assertThat(ids(picked)).contains("sched:1");
+    }
+
+    @Test
+    @DisplayName("given 여러 제목 when 특정 대학 이름을 찾으면 then '대학교'와 '○○대 연도'만 대학으로 본다")
+    void detectsSpecificUniversityInTitle() {
+        // given / when / then
+        assertThat(AdmissionsSourceSelector.namesSpecificUniversity("2028학년도 연세대학교 서울캠퍼스 입학전형 시행계획")).isTrue();
+        assertThat(AdmissionsSourceSelector.namesSpecificUniversity("인하대 2027 수시 모집요강")).isTrue();
+        assertThat(AdmissionsSourceSelector.namesSpecificUniversity("학년별 대입 학년도와 대학별 계획 발표 시기")).isFalse();
+        assertThat(AdmissionsSourceSelector.namesSpecificUniversity("2028학년도 대학입학전형 시행계획 — 전체 348,789명")).isFalse();
+        assertThat(AdmissionsSourceSelector.namesSpecificUniversity("2028학년도 대입 개편 — 고교 내신 5등급제")).isFalse();
+    }
 }
