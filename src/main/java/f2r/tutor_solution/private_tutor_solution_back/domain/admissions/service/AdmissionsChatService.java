@@ -45,7 +45,8 @@ public class AdmissionsChatService {
     /** 답변 출력 상한. */
     static final int MAX_ANSWER_CHARS = 4000;
     /** 컨텍스트에 실리는 근거 총량 상한. */
-    static final int MAX_CONTEXT_EVIDENCE = 16;
+    /** 답변 근거 전체 상한. 두 학년도 입시결과(최대 16) + 올해 학과·전형 자료 4건(2026-11, 16→20). */
+    static final int MAX_CONTEXT_EVIDENCE = 20;
     /** 답변에 붙이는 출처 상한. */
     static final int MAX_SOURCES = 6;
     /** 근거 1건 요약 상한. */

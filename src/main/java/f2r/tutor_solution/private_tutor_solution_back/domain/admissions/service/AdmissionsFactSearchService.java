@@ -52,8 +52,10 @@ public class AdmissionsFactSearchService {
     static final int MAX_SCHEDULES = 8;
     /** 지난해 입시결과: 근거로 쓰는 전형·모집단위 수 상한. */
     static final int MAX_PRIOR_UNITS = 8;
-    /** 학과를 말한 지난해 입시결과 질문: 그 학과의 세부모집·전형이 잘리지 않도록 쓰는 상한(답변 근거 전체 상한 16 중 4건은 올해 학과·전형 자료 몫으로 남긴다). */
+    /** 학과를 말한 지난해 입시결과 질문: 그 학과의 세부모집·전형이 잘리지 않도록 쓰는 상한(답변 근거 전체 상한 20 중 나머지는 올해 학과·전형 자료 몫으로 남긴다). */
     static final int MAX_PRIOR_DEPARTMENT_UNITS = 12;
+    /** 올해 원서접수 경쟁률과 지난해 결과가 함께 있을 때 학년도마다 쓰는 단위 상한(합계 16, 답변 근거 전체 상한 20 중 4건은 올해 학과·전형 자료 몫). */
+    static final int MAX_PRIOR_UNITS_PER_YEAR = 8;
     /** 수시 수능최저: 근거로 쓰는 규칙 수 상한. */
     static final int MAX_MINIMUM_RULES = 8;
     /** 대학을 지정하지 않은 전체 일정 질문: 대학당 근거 수와 전체 상한. */
@@ -262,10 +264,21 @@ public class AdmissionsFactSearchService {
         // 학과를 말했으면 그 학과의 세부모집(예: 연기(여)·연기(남))이 상한에 잘려 한쪽 값이 전체처럼 보이지 않게 상한을 넓힌다.
         boolean deptNamed = chosen.stream().anyMatch(rows -> priorDepartmentMentioned(question, rows.get(0).getDepartmentName()));
         int cap = deptNamed ? MAX_PRIOR_DEPARTMENT_UNITS : MAX_PRIOR_UNITS;
-        List<Evidence> out = new ArrayList<>();
+        return capUnits(chosen, cap).stream().map(AdmissionsFactSearchService::priorEvidence).toList();
+    }
+
+    /**
+     * 근거 단위 상한. 올해 원서접수 경쟁률과 지난해 결과가 함께 있으면 한쪽이 다른 쪽을 밀어내지 않게 학년도마다
+     * {@value #MAX_PRIOR_UNITS_PER_YEAR}개씩 쓴다(순서는 그대로). 한 학년도뿐이면 cap까지.
+     */
+    static List<List<AdmissionsPriorResult>> capUnits(List<List<AdmissionsPriorResult>> chosen, int cap) {
+        boolean hasCurrent = chosen.stream().anyMatch(rows -> isCurrentYear(rows.get(0)));
+        boolean hasLast = chosen.stream().anyMatch(rows -> !isCurrentYear(rows.get(0)));
+        if (!(hasCurrent && hasLast)) return chosen.stream().limit(cap).toList();
+        int current = 0, last = 0;
+        List<List<AdmissionsPriorResult>> out = new ArrayList<>();
         for (List<AdmissionsPriorResult> rows : chosen) {
-            out.add(priorEvidence(rows));
-            if (out.size() >= cap) break;
+            if (isCurrentYear(rows.get(0)) ? current++ < MAX_PRIOR_UNITS_PER_YEAR : last++ < MAX_PRIOR_UNITS_PER_YEAR) out.add(rows);
         }
         return out;
     }

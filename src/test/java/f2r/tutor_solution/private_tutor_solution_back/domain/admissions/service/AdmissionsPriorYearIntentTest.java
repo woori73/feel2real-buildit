@@ -57,4 +57,50 @@ class AdmissionsPriorYearIntentTest {
         // then
         assertThat(kept).hasSize(1);
     }
+
+    private static List<List<AdmissionsPriorResult>> units(int resultYear, int n) {
+        List<List<AdmissionsPriorResult>> out = new java.util.ArrayList<>();
+        for (int i = 0; i < n; i++) out.add(List.of(AdmissionsPriorResult.builder().academicYear(2027).resultYear(resultYear)
+                .roundType("SUSI").typeName("전형" + i).departmentName("신학부").metricLabel("").build()));
+        return out;
+    }
+
+    @Test
+    @DisplayName("given 2027 7개·2026 7개 단위 when 상한 12로 자르면 then 학년도마다 8개까지라 14개가 모두 남는다")
+    void twoYears_capPerYear_keepsAll() {
+        // given
+        List<List<AdmissionsPriorResult>> chosen = new java.util.ArrayList<>(units(2027, 7));
+        chosen.addAll(units(2026, 7));
+
+        // when
+        var kept = AdmissionsFactSearchService.capUnits(chosen, AdmissionsFactSearchService.MAX_PRIOR_DEPARTMENT_UNITS);
+
+        // then
+        assertThat(kept).hasSize(14);
+    }
+
+    @Test
+    @DisplayName("given 2027 10개·2026 10개 단위 when 자르면 then 학년도마다 8개씩 16개")
+    void twoYears_capPerYear_limitsEachYear() {
+        // given
+        List<List<AdmissionsPriorResult>> chosen = new java.util.ArrayList<>(units(2027, 10));
+        chosen.addAll(units(2026, 10));
+
+        // when
+        var kept = AdmissionsFactSearchService.capUnits(chosen, AdmissionsFactSearchService.MAX_PRIOR_DEPARTMENT_UNITS);
+
+        // then
+        assertThat(kept).hasSize(16);
+        assertThat(kept).filteredOn(rows -> rows.get(0).getResultYear() == 2027).hasSize(8);
+    }
+
+    @Test
+    @DisplayName("given 한 학년도 20개 단위 when 자르면 then 기존 상한 그대로")
+    void oneYear_keepsOldCap() {
+        // given / when
+        var kept = AdmissionsFactSearchService.capUnits(units(2026, 20), AdmissionsFactSearchService.MAX_PRIOR_DEPARTMENT_UNITS);
+
+        // then
+        assertThat(kept).hasSize(AdmissionsFactSearchService.MAX_PRIOR_DEPARTMENT_UNITS);
+    }
 }
