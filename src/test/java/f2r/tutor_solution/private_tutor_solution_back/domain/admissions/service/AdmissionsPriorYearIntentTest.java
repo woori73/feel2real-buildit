@@ -103,4 +103,22 @@ class AdmissionsPriorYearIntentTest {
         // then
         assertThat(kept).hasSize(AdmissionsFactSearchService.MAX_PRIOR_DEPARTMENT_UNITS);
     }
+
+    @Test
+    @DisplayName("given 원문 주소·기관명 when 출처 종류를 정하면 then 대행사·대학어디가·사설은 이름, 입학처 원문은 null")
+    void priorSourceLabel_byUrlAndInstitution() {
+        // given
+        AdmissionsPriorResult uway = AdmissionsPriorResult.builder().sourceUrl("https://ratio.uwayapply.com/abc").institutionName("장로회신학대학교 입학처").build();
+        AdmissionsPriorResult jinhak = AdmissionsPriorResult.builder().institutionName("○○대학교 입학처(진학어플라이 경쟁률 서비스)").build();
+        AdmissionsPriorResult adiga = AdmissionsPriorResult.builder().sourceUrl("https://www.adiga.kr/x").build();
+        AdmissionsPriorResult academy = AdmissionsPriorResult.builder().institutionName("○○학원 배치표").build();
+        AdmissionsPriorResult official = AdmissionsPriorResult.builder().sourceUrl("https://ipsi.example.ac.kr/a.pdf").institutionName("예시대학교 입학처").build();
+
+        // when / then
+        assertThat(AdmissionsFactSearchService.priorSourceLabel(uway)).isEqualTo(AdmissionsFactSearchService.SOURCE_UWAY);
+        assertThat(AdmissionsFactSearchService.priorSourceLabel(jinhak)).isEqualTo(AdmissionsFactSearchService.SOURCE_JINHAK);
+        assertThat(AdmissionsFactSearchService.priorSourceLabel(adiga)).isEqualTo(AdmissionsFactSearchService.SOURCE_ADIGA);
+        assertThat(AdmissionsFactSearchService.priorSourceLabel(academy)).isEqualTo(AdmissionsFactSearchService.SOURCE_PRIVATE);
+        assertThat(AdmissionsFactSearchService.priorSourceLabel(official)).isNull();
+    }
 }

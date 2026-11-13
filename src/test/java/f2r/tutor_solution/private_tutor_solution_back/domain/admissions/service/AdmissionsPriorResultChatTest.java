@@ -153,6 +153,34 @@ class AdmissionsPriorResultChatTest {
                 .contains("공식 경쟁률 (올해 원서접수)", "공식 입시결과 (지난해)");
     }
 
+    private static final Evidence UWAY = Evidence.builder().stepNo(0).sourceClass(SourceClass.OFFICIAL_PRIOR_RESULT).refId("prior:11")
+            .refUrl("https://ratio.uwayapply.com/abc")
+            .title("예시대학교 2027학년도" + AdmissionsFactSearchService.CURRENT_YEAR_TAG + " 수시 경쟁률: 일반전형 신학부 "
+                    + AdmissionsFactSearchService.SOURCE_TAG + AdmissionsFactSearchService.SOURCE_UWAY + "〕")
+            .excerpt("모집인원 87명, 지원자 109명, 경쟁률 1.25:1")
+            .note("유웨이 경쟁률 서비스 원서접수 최종 경쟁률(2027학년도, 올해 — 합격·등록 결과 아님)")
+            .academicYear(2027).yearConfirmed(true).build();
+
+    @Test
+    @DisplayName("given 대행사 경쟁률 근거 when 질문하면 then 출처 종류에 대행사 이름이 붙고 LLM에 입학처 자료라 부르지 말라고 넘긴다")
+    void agencyRatio_isLabeledWithAgencyName() {
+        // given
+        String q = "예시대 신학부 경쟁률 알려줘";
+        givenFacts(q, List.of(UWAY));
+        givenLlmAnswers("예시대학교 일반전형 신학부 경쟁률은 1.25:1입니다. 출처는 유웨이 경쟁률 서비스입니다.");
+
+        // when
+        var answer = service.ask(q, null, null);
+
+        // then
+        assertThat(answer.sources()).anySatisfy(s -> assertThat(s.kind()).isEqualTo("경쟁률 (올해 원서접수, 유웨이 경쟁률 서비스)"));
+        ArgumentCaptor<String> system = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> user = ArgumentCaptor.forClass(String.class);
+        verify(llm).complete(system.capture(), user.capture(), anyInt());
+        assertThat(system.getValue()).contains("출처 종류: 유웨이 경쟁률 서비스 (대학 입학처 원문 아님)");
+        assertThat(user.getValue()).contains(AdmissionsChatService.PRIOR_SOURCE_RULE);
+    }
+
     @Test
     @DisplayName("given 그 대학 지난해 결과가 없음 when 입결을 물으면 then LLM 없이 그 대학은 아직 수집되지 않았다고 답한다")
     void priorQuestion_withoutData_isRefusedPerUniversity() {
