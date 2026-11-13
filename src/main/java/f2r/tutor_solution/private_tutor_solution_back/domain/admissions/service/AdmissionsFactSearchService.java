@@ -235,7 +235,8 @@ public class AdmissionsFactSearchService {
             if (asksSusi && !asksJeongsi && "JEONGSI".equals(r.getRoundType())) continue;
             if (asksJeongsi && !asksSusi && "SUSI".equals(r.getRoundType())) continue;
             if (!campusAllowed(question, r.getSource(), r.getTypeName() + " " + r.getDepartmentName())) continue;
-            units.computeIfAbsent(r.getUniversity().getUniversityId() + "|" + r.unitKey(), k -> new ArrayList<>()).add(r);
+            // 결과 학년도가 다른 행(지난해 입시결과·올해 원서접수 경쟁률)은 같은 전형·모집단위여도 한 단위로 합치지 않는다.
+            units.computeIfAbsent(r.getUniversity().getUniversityId() + "|" + r.getResultYear() + "|" + r.unitKey(), k -> new ArrayList<>()).add(r);
         }
         List<List<AdmissionsPriorResult>> all = new ArrayList<>(units.values());
         List<List<AdmissionsPriorResult>> matched = all.stream()
@@ -300,9 +301,11 @@ public class AdmissionsFactSearchService {
         AdmissionsOfficialMaterial source = first.getSource();
         String url = first.getSourceUrl() != null && !first.getSourceUrl().isBlank() ? first.getSourceUrl()
                 : source == null ? null : source.getDocumentUrl();
-        String title = first.getUniversity().getName() + " " + first.getResultYear() + "학년도(지난해) "
+        boolean current = isCurrentYear(first);
+        String title = first.getUniversity().getName() + " " + first.getResultYear()
+                + (current ? "학년도" + CURRENT_YEAR_TAG + " " : "학년도(지난해) ")
                 + roundLabel(first.getRoundType()) + (first.getGroupName() == null ? "" : " " + first.getGroupName() + "군")
-                + " 입시결과: " + first.getTypeName() + " " + first.getDepartmentName();
+                + (current ? " 경쟁률: " : " 입시결과: ") + first.getTypeName() + " " + first.getDepartmentName();
         return Evidence.builder()
                 .stepNo(STEP_FACT)
                 .sourceClass(SourceClass.OFFICIAL_PRIOR_RESULT)
@@ -310,11 +313,20 @@ public class AdmissionsFactSearchService {
                 .refUrl(url)
                 .title(title)
                 .excerpt(withCaveat(priorCaveat(source == null ? null : source.getTitle()), formatPriorUnit(rows)))
-                .note("대학 입학처 공식 입시결과(" + first.getResultYear() + "학년도, 지난해 — 올해 결과 아님) / 출처: "
+                .note((current ? "대학 입학처 공식 원서접수 최종 경쟁률(" + first.getResultYear() + "학년도, 올해 — 합격·등록 결과 아님) / 출처: "
+                        : "대학 입학처 공식 입시결과(" + first.getResultYear() + "학년도, 지난해 — 올해 결과 아님) / 출처: ")
                         + (source == null ? first.getInstitutionName() : source.getTitle()))
                 .academicYear(first.getResultYear())
                 .yearConfirmed(true)
                 .build();
+    }
+
+    /** 결과 학년도가 상담 학년도와 같은 행(올해 원서접수 최종 경쟁률)의 근거 제목 표시. 채팅 서비스가 이 표시로 지난해 결과와 구분한다. */
+    static final String CURRENT_YEAR_TAG = "(올해 원서접수)";
+
+    /** 결과 학년도가 상담 학년도와 같은가 — 예: 2027 상담 자료로 들어온 2027학년도 수시 최종 경쟁률. */
+    static boolean isCurrentYear(AdmissionsPriorResult r) {
+        return r.getResultYear() != null && r.getResultYear().equals(r.getAcademicYear());
     }
 
     /** 근거 내용 맨 앞에 붙이는 원문 산출 단서 머리말. 상담 답변이 이 단서를 빠뜨리면 서버가 덧붙인다. */

@@ -97,6 +97,9 @@ public class AdmissionsChatService {
     /** 지난해 입시결과 근거에 반드시 붙이는 안내. 답변에 없으면 서버가 앞에 붙인다. */
     static final String PRIOR_DISCLAIMER = "아래 수치는 2026학년도(지난해) 결과이며 올해와 다를 수 있습니다.";
 
+    /** 올해 원서접수 최종 경쟁률 근거에 반드시 붙이는 안내(합격·등록 결과가 아님). 답변에 없으면 서버가 앞에 붙인다. */
+    static final String CURRENT_RATIO_NOTICE = "아래 경쟁률은 2027학년도(올해) 원서접수 최종 경쟁률이며, 합격·등록 결과가 아닙니다.";
+
     /**
      * 근거에 없는 지난해 값을 다루는 규칙. 충원 표처럼 원문이 일부 전형·모집단위만 적은 표에서 빠진 값을
      * '공개되지 않음'(비공개)으로 단정하지 않게 한다. 비공개는 원문이 그렇게 적은 경우에만 쓴다.
@@ -271,8 +274,10 @@ public class AdmissionsChatService {
                 ? priorComparisonLines(usable, AdmissionsQueryParser.studentScores(
                         question + (studentProfile == null ? "" : "\n" + studentProfile)))
                 : List.of();
+        boolean hasLastYear = facts.evidence().stream().anyMatch(AdmissionsChatService::isLastYearPrior);
+        boolean hasCurrentRatio = facts.evidence().stream().anyMatch(AdmissionsChatService::isCurrentRatio);
         String userPrompt = buildUserPrompt(searchQuestion, pack, parsed, studentProfile, facts.scheduleCoverage(),
-                hasPrior, comparisons);
+                hasLastYear, hasCurrentRatio, comparisons);
 
         // 7. LLM 호출
         NewStartLlmCompletion completion = admissionsLlmClient.complete(systemPrompt, userPrompt, MAX_ANSWER_CHARS);
@@ -298,7 +303,11 @@ public class AdmissionsChatService {
             }
         }
         // 8-2. 지난해 결과를 썼으면 "지난해 결과이며 올해와 다를 수 있음"을 반드시 밝힌다.
-        if (usesPrior && !answer.contains("올해와 다를 수 있")) answer = PRIOR_DISCLAIMER + "\n" + answer;
+        //      올해 원서접수 경쟁률을 썼으면 "올해 원서접수 최종 경쟁률이며 합격·등록 결과가 아님"을 밝힌다.
+        boolean usesLastYear = usable.stream().anyMatch(AdmissionsChatService::isLastYearPrior);
+        boolean usesCurrentRatio = usable.stream().anyMatch(AdmissionsChatService::isCurrentRatio);
+        if (usesCurrentRatio && !answer.contains("원서접수 최종 경쟁률")) answer = CURRENT_RATIO_NOTICE + "\n" + answer;
+        if (usesLastYear && !answer.contains("올해와 다를 수 있")) answer = PRIOR_DISCLAIMER + "\n" + answer;
         // 8-3. 다음 학년도 반영방법으로 다시 산출한 표 같은 원문 산출 단서가 있으면 답변에 반드시 남긴다.
         if (usesPrior) answer = withPriorCaveats(answer, usable);
 
@@ -357,6 +366,16 @@ public class AdmissionsChatService {
 
     static boolean isPrior(Evidence e) {
         return e.getSourceClass() == AdmissionsResearchService.SourceClass.OFFICIAL_PRIOR_RESULT;
+    }
+
+    /** 입시결과 행 중 결과 학년도가 상담 학년도와 같은 것(올해 원서접수 최종 경쟁률). */
+    static boolean isCurrentRatio(Evidence e) {
+        return isPrior(e) && e.getTitle() != null && e.getTitle().contains(AdmissionsFactSearchService.CURRENT_YEAR_TAG);
+    }
+
+    /** 지난해 입시결과 근거(올해 원서접수 경쟁률이 아닌 입시결과 행). */
+    static boolean isLastYearPrior(Evidence e) {
+        return isPrior(e) && !isCurrentRatio(e);
     }
 
     /** 권장 이수 과목은 여전히 수집하지 않은 자료다. */
@@ -421,8 +440,13 @@ public class AdmissionsChatService {
 
     /** 판정 문장이 섞인 답변 대신 보여 줄, 근거를 그대로 옮긴 답변(LLM 문장 없음). */
     static String priorFallbackAnswer(List<Evidence> evidence, List<String> comparisons) {
-        StringBuilder sb = new StringBuilder(PRIOR_DISCLAIMER)
-                .append(" 합격 가능성은 판단해 드릴 수 없어, 대학 입학처가 공개한 지난해 결과를 그대로 옮겨 드립니다.");
+        boolean lastYear = evidence.stream().anyMatch(AdmissionsChatService::isLastYearPrior);
+        boolean current = evidence.stream().anyMatch(AdmissionsChatService::isCurrentRatio);
+        StringBuilder sb = new StringBuilder();
+        if (current) sb.append(CURRENT_RATIO_NOTICE);
+        if (lastYear) sb.append(sb.isEmpty() ? "" : "\n").append(PRIOR_DISCLAIMER);
+        sb.append(" 합격 가능성은 판단해 드릴 수 없어, 대학 입학처가 공개한 ")
+                .append(lastYear ? "지난해 결과" : "경쟁률").append("를 그대로 옮겨 드립니다.");
         for (Evidence e : evidence) {
             if (!isPrior(e)) continue;
             sb.append("\n\n").append(e.getTitle()).append("\n").append(e.getExcerpt());
@@ -521,7 +545,10 @@ public class AdmissionsChatService {
         for (Evidence e : evidence) {
             sb.append("── 근거 ").append(i++).append(" ──\n");
             sb.append("제목: ").append(e.getTitle()).append("\n");
-            if (isPrior(e)) {
+            if (isCurrentRatio(e)) {
+                sb.append("결과 학년도: ").append(e.getAcademicYear())
+                        .append("학년도 (올해 원서접수 최종 경쟁률 — 지난해 결과가 아니며 합격·등록 결과도 아님)\n");
+            } else if (isPrior(e)) {
                 sb.append("결과 학년도: ").append(e.getAcademicYear())
                         .append("학년도 (지난해 입시결과 — 올해 모집요강이 아니며 올해와 다를 수 있음)\n");
             } else if (e.getAcademicYear() != null) {
@@ -545,7 +572,7 @@ public class AdmissionsChatService {
 
     private String buildUserPrompt(String question, ResearchPack pack, AdmissionsQueryParser.Parsed parsed, String studentProfile,
                                    AdmissionsFactSearchService.ScheduleCoverage coverage, boolean hasPrior,
-                                   List<String> comparisons) {
+                                   boolean hasCurrentRatio, List<String> comparisons) {
         StringBuilder sb = new StringBuilder();
         if (studentProfile != null && !studentProfile.isBlank()) {
             sb.append("[학생 정보 — 맞춤 설명에만 사용하며 합격 가능성을 추정하지 않는다]\n")
@@ -589,6 +616,13 @@ public class AdmissionsChatService {
                 for (String c : comparisons) sb.append("- ").append(c).append("\n");
                 sb.append("위 줄 외에 학생 성적과 지표를 새로 비교하거나 차이를 해석하지 마라.\n");
             }
+        }
+        if (hasCurrentRatio) {
+            sb.append("[올해 원서접수 경쟁률] 근거 중 '올해 원서접수 최종 경쟁률'이라고 적힌 항목은 올해(2027학년도) 원서접수 마감 경쟁률이다. "
+                    + "이 수치를 쓸 때는 답변 첫머리에 '").append(CURRENT_RATIO_NOTICE).append("'라고 밝히고, 지난해 결과라고 부르지 마라. "
+                    + "지난해 입시결과 근거가 함께 있으면 올해 경쟁률과 지난해 결과를 섞지 말고 학년도를 붙여 따로 적어라. "
+                    + "근거에 없는 수치는 쓰지 마라. 출처는 '대학 입학처 공식 경쟁률(올해 원서접수)'라고 밝혀라. "
+                    + "합격·불합격 판정, 합격 확률, '가능성이 높다/낮다' 같은 표현은 절대 쓰지 마라.\n");
         }
         if (parsed.asksAdmissionChance()) {
             sb.append("[합격 가능성 질문] 합격 가능성·합격 확률·합격선은 판단하거나 추정하지 마라. 답변 첫 문장에서 "
@@ -641,7 +675,7 @@ public class AdmissionsChatService {
                 case OFFICIAL_CONFIRMED -> "공식 자료 (확정)";
                 case OFFICIAL_PLANNED -> "공식 자료 (계획)";
                 case OFFICIAL_DOCUMENT -> "공식자료 원문";
-                case OFFICIAL_PRIOR_RESULT -> "공식 입시결과 (지난해)";
+                case OFFICIAL_PRIOR_RESULT -> isCurrentRatio(e) ? "공식 경쟁률 (올해 원서접수)" : "공식 입시결과 (지난해)";
                 case UNVERIFIED_MIRROR -> "사설 미러본 (공식 원본 아님)";
                 default -> "참고 자료";
             };
@@ -651,7 +685,7 @@ public class AdmissionsChatService {
         // 지난해 결과를 근거로 줬으면 출처에도 반드시 하나 이상 보인다.
         if (out.stream().noneMatch(s -> s.id() != null && s.id().startsWith("prior:"))) {
             evidence.stream().filter(AdmissionsChatService::isPrior).findFirst().ifPresent(e -> out.add(0,
-                    new AnswerSource("공식 입시결과 (지난해)", e.getTitle(),
+                    new AnswerSource(isCurrentRatio(e) ? "공식 경쟁률 (올해 원서접수)" : "공식 입시결과 (지난해)", e.getTitle(),
                             e.getRefUrl() == null || e.getRefUrl().isBlank() ? null : e.getRefUrl(), e.getRefId())));
         }
         return out;

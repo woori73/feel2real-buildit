@@ -1855,6 +1855,7 @@ Easy 대화형 Agent의 홈페이지 채팅과 분리된 전용 감사 모델이
   - 지표 행: `metric_label`(대학 원문 지표명 그대로, 예 "최종등록자 교과등급 70%컷")·`metric_unit`(GRADE/PERCENTILE/SCORE/OTHER)·`metric_value`·`raw_value_text`(원문 셀 문자열). 서로 다른 지표를 합치거나 환산하지 않는다.
   - `extra_admitted_count`는 **충원 인원**일 때만 채운다. 원문이 "마지막 예비번호(충원합격순위·추합 번호)"만 주면 인원 칸은 NULL로 두고 그 값을 원문 이름의 지표 행(OTHER)으로 남긴다.
 - **학년도 두 개**: `academic_year`=상담 학년도(2027, 승격 단위), `result_year`=결과 학년도(2026). 전형·모집단위명은 원문 그대로 저장하고, 2027 이름과 정확히 같을 때만 `linked_type_name`·`linked_department_name`에 적는다.
+- **올해 원서접수 경쟁률**: `result_year`가 `academic_year`와 같은 행(예: 2027 상담 자료로 들어온 2027학년도 수시 최종 경쟁률)은 지난해 결과가 아니라 **올해 원서접수 최종 경쟁률**로 다룬다(2026-11). 상담 근거 제목은 `○○대학교 2027학년도(올해 원서접수) 수시 경쟁률: 전형 모집단위`, 답변 첫머리 안내는 "아래 경쟁률은 2027학년도(올해) 원서접수 최종 경쟁률이며, 합격·등록 결과가 아닙니다.", 출처 종류는 "공식 경쟁률 (올해 원서접수)". 같은 전형·모집단위라도 결과 학년도가 다르면 근거를 따로 만든다.
 - **자연키·멱등**: `natural_key`=SHA-256(결과학년도|트랙|군|전형|모집단위|지표명), `UNIQUE(university_id, natural_key)`. 재적재 시 같은 키는 새 행을 만들지 않고, 값·출처가 바뀐 행만 갱신해 DRAFT로 되돌린다(같으면 승인 상태 유지).
 - **출처 연결**: `source_id`→`admissions_official_materials`(시드 `ipsi_documents`의 "…2026학년도 수시/정시 입시결과" 문서, document_key `doc_{대학키}_2026_{susi|jeongsi}_result`, applicable_academic_year 2027). `source_url`(원문 파일 주소)·`institution_name`·`published_at`·`evidence_pages`도 행에 남긴다.
 - **상태**: DRAFT로 들어오고 activate-all(2027)이 공식자료와 함께 ACTIVE로 올린다(자료 제외 키 규칙 동일 적용). 상담 검색은 행과 출처 자료가 모두 ACTIVE일 때만 쓴다.

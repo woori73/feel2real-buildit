@@ -185,6 +185,45 @@ class AdmissionsPriorResultDbTest {
         assertThat(prior.get(0).getRefId()).startsWith("prior:");
     }
 
+    /** 같은 전형·모집단위의 지난해(2026) 입시결과와 올해(2027) 원서접수 최종 경쟁률. */
+    private static final String SEED_TWO_YEARS = """
+        {"ipsi_universities":[{"name":"두해대학교","university_code":"TWO"}],
+         "ipsi_documents":[
+           {"document_key":"doc_two_2026_result","document_name":"두해대학교 2026학년도 수시 입시결과","applicable_academic_year":2027,"institution_name":"두해대학교 입학처","source_url":"https://example.test/two-2026.pdf"},
+           {"document_key":"doc_two_2027_ratio","document_name":"두해대학교 2027학년도 수시 최종 경쟁률","applicable_academic_year":2027,"institution_name":"두해대학교 입학처","source_url":"https://example.test/two-2027"}],
+         "prior_results":[
+           {"university_code":"TWO","academic_year":2027,"result_year":2026,"round_type":"SUSI","type_name":"일반전형","department_name":"사회복지학과",
+            "metric_label":null,"recruit_count":20,"applicant_count":113,"competition_rate":5.65,"extra_admitted_count":4,
+            "source_document_key":"doc_two_2026_result","source_url":"https://example.test/two-2026.pdf","institution_name":"두해대학교 입학처","published_at":"2026-02-20","evidence_pages":[1]},
+           {"university_code":"TWO","academic_year":2027,"result_year":2027,"round_type":"SUSI","type_name":"일반전형","department_name":"사회복지학과",
+            "metric_label":null,"recruit_count":18,"applicant_count":90,"competition_rate":5.0,"extra_admitted_count":null,
+            "source_document_key":"doc_two_2027_ratio","source_url":"https://example.test/two-2027","institution_name":"두해대학교 입학처","published_at":"2026-09-15","evidence_pages":[1]}]}
+        """;
+
+    @Test
+    @DisplayName("given 같은 모집단위의 2026 결과와 2027 원서접수 경쟁률 when 경쟁률을 물으면 then 두 근거로 나뉘고 2027은 올해 원서접수로 표시된다")
+    void currentYearRatio_isSeparateEvidenceLabeledThisYear() throws Exception {
+        // given
+        loader.loadSeed(SEED_TWO_YEARS);
+        activation.activateAll(2027, "ACTIVATE-ALL-2027");
+
+        // when
+        var result = search.search("두해대 사회복지학과 경쟁률 알려줘", null);
+
+        // then
+        var prior = result.evidence().stream().filter(e -> e.getSourceClass() == SourceClass.OFFICIAL_PRIOR_RESULT).toList();
+        assertThat(prior).hasSize(2);
+        assertThat(prior).anySatisfy(e -> {
+            assertThat(e.getTitle()).contains("2027학년도" + AdmissionsFactSearchService.CURRENT_YEAR_TAG, "경쟁률", "사회복지학과")
+                    .doesNotContain("지난해");
+            assertThat(e.getExcerpt()).contains("모집인원 18명", "지원자 90명");
+        });
+        assertThat(prior).anySatisfy(e -> {
+            assertThat(e.getTitle()).contains("2026학년도(지난해)", "입시결과", "사회복지학과");
+            assertThat(e.getExcerpt()).contains("모집인원 20명", "지원자 113명");
+        });
+    }
+
     /** 원문에 수시·정시 구분이 없는 학교(예: 한국예술종합학교) — round_type OTHER. */
     private static final String SEED_OTHER = """
         {"ipsi_universities":[{"name":"예술학교","university_code":"ART"}],
