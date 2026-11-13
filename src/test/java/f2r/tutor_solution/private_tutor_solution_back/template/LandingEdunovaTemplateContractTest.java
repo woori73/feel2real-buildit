@@ -256,6 +256,20 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 입시상담 AI 칸 when 렌더하면 then 「바뀌는 입시」 제목 목록 자리가 칸 안에 있고(처음엔 숨김), 공개 글 목록을 읽어 제목을 글 주소로 잇는다")
+  void admissionsCard_listsChangingAdmissionsArticles() throws Exception {
+    // given
+    String html = render();
+    String card = html.substring(html.indexOf("class=\"hl-admissions"), html.indexOf("id=\"edu\""));
+    String js = new String(getClass().getResourceAsStream("/static/js/home_admissions_articles.js").readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+    // when / then
+    assertThat(card).contains("id=\"hlAdmissionsArticles\" hidden", "id=\"hlAdmissionsArticleList\"", "href=\"/admissions/articles\"", "바뀌는 입시");
+    assertThat(html).doesNotContain("<a class=\"hl-admissions hl-lift\""); // 칸 전체가 링크면 제목 링크를 안에 둘 수 없다
+    assertThat(html).contains("/js/admissions_articles_view.js", "/js/home_admissions_articles.js");
+    assertThat(js).contains("/api/admissions/articles", "V.homeItems(list, 5)", "a.href = it.href");
+  }
+
+  @Test
   @DisplayName("given 화면을 따라 움직이는 바로가기 when 렌더하면 then 'AI 비서'와 서수니·세븐 동그란 사진, 맞춤문제 신청 버튼이다")
   void floatingShortcut_isAssistantAndApply() {
     String html = render();
