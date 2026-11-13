@@ -155,7 +155,7 @@ public class AdmissionsChatService {
      * 상담에 쓸 학년도. 질문에 학년도가 적혀 있으면 그 학년도(둘 이상이면 null=전체)를,
      * 적혀 있지 않고 '올해·작년·고3' 같은 올해 입시 표현이 있으면 2027을, 둘 다 없으면 화면에서 고른 학년도를 쓴다.
      */
-    static Integer effectiveYear(String question, Integer requestedYear) {
+    public static Integer effectiveYear(String question, Integer requestedYear) {
         java.util.Set<Integer> years = AdmissionsQueryParser.parse(question, List.of()).years();
         if (!years.isEmpty()) return years.size() == 1 ? years.iterator().next() : null;
         if (question != null && CURRENT_CYCLE.matcher(question).find()) return 2027;
