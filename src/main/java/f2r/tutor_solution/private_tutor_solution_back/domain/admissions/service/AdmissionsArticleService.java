@@ -4,6 +4,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.A
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsArticleRepository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
@@ -116,17 +117,19 @@ public class AdmissionsArticleService {
      * src가 {@link #IMAGE_SRC}에 맞지 않는 img는 통째로 지운다. 그림이 없는 본문은 전과 같은 결과다.
      */
     static String sanitize(String html) {
-        String cleaned = Jsoup.clean(html == null ? "" : html, SAFELIST).trim();
-        if (!cleaned.contains("<img")) {
-            return cleaned;
+        String source = html == null ? "" : html;
+        if (!source.toLowerCase(Locale.ROOT).contains("<img")) {
+            return Jsoup.clean(source, SAFELIST).trim();
         }
-        Document doc = Jsoup.parseBodyFragment(cleaned);
+        // 그림이 있는 본문은 줄바꿈 없이 정리한다(보기 좋게 정리하면 figcaption 글자 앞뒤에 줄바꿈이 끼어든다).
+        Document.OutputSettings compact = new Document.OutputSettings().prettyPrint(false);
+        Document doc = Jsoup.parseBodyFragment(Jsoup.clean(source, "", SAFELIST, compact));
+        doc.outputSettings(compact);
         for (Element img : doc.select("img")) {
             if (!IMAGE_SRC.matcher(img.attr("src")).matches()) {
                 img.remove();
             }
         }
-        doc.outputSettings().prettyPrint(false);
         return doc.body().html().trim();
     }
 
