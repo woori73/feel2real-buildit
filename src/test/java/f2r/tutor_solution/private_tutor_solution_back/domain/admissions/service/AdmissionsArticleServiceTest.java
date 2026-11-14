@@ -54,6 +54,54 @@ class AdmissionsArticleServiceTest {
     }
 
     @Test
+    @DisplayName("given 사이트 안 /images/admissions/ 그림 when 저장용 정리 then figure·img(src·alt)·figcaption이 남고 다른 속성은 사라진다")
+    void sanitizeKeepsSiteImageFigure() {
+        // given
+        String body = "<p>문단</p><figure class=\"f\"><img src=\"/images/admissions/articles/1-4_a_course_order.png\""
+                + " alt=\"고교학점제 과목 구조\" width=\"900\" onerror=\"x()\"><figcaption>고교학점제 과목 구조</figcaption></figure>";
+        // when
+        String clean = AdmissionsArticleService.sanitize(body);
+        // then
+        assertThat(clean).contains("<figure>", "<figcaption>고교학점제 과목 구조</figcaption>",
+                "<img src=\"/images/admissions/articles/1-4_a_course_order.png\" alt=\"고교학점제 과목 구조\">", "<p>문단</p>");
+        assertThat(clean).doesNotContain("class=", "width=", "onerror");
+    }
+
+    @Test
+    @DisplayName("given 외부 주소·//·data:·javascript:·..·다른 폴더 그림 when 저장용 정리 then 그 img는 통째로 지워진다")
+    void sanitizeRemovesImagesOutsideSite() {
+        // given
+        String[] srcs = {"https://evil.example/a.png", "//evil.example/a.png", "data:image/png;base64,AAAA",
+                "javascript:alert(1)", "/images/admissions/../../etc/passwd.png", "/images/other/a.png",
+                "/images/admissions/articles/a.svg", ""};
+        for (String src : srcs) {
+            String body = "<figure><img src=\"" + src + "\" alt=\"설명\"><figcaption>설명</figcaption></figure>";
+            // when
+            String clean = AdmissionsArticleService.sanitize(body);
+            // then
+            assertThat(clean).as(src).doesNotContain("<img").contains("<figcaption>설명</figcaption>");
+        }
+    }
+
+    @Test
+    @DisplayName("given 그림이 들어간 글 when 관리자가 그대로 다시 저장하고 화면에 출력 then 그림이 지워지지 않는다")
+    void updateKeepsImagesOnResave() {
+        // given
+        AdmissionsArticle saved = AdmissionsArticle.builder().articleId(4L).series("바뀌는 입시").episode("1-④").title("제목")
+                .summary("한 줄 요약").bodyHtml("<p>본문</p>").publishedOn(LocalDate.of(2026, 11, 14)).visible(true).sortOrder(1).build();
+        when(repository.findById(4L)).thenReturn(Optional.of(saved));
+        String body = "<p>본문</p><figure><img src=\"/images/admissions/articles/1-4_c_todo.png\" alt=\"예비 고1이 지금 할 일 네 가지\">"
+                + "<figcaption>예비 고1이 지금 할 일 네 가지</figcaption></figure>";
+        // when
+        service.update(4L, form("1-④", body));
+        String resaved = service.update(4L, form("1-④", saved.getBodyHtml())).bodyHtml();
+        String shown = AdmissionsArticleService.forDisplay(resaved);
+        // then
+        assertThat(resaved).contains("<img src=\"/images/admissions/articles/1-4_c_todo.png\" alt=\"예비 고1이 지금 할 일 네 가지\">");
+        assertThat(shown).contains("<img src=\"/images/admissions/articles/1-4_c_todo.png\"", "<figcaption>예비 고1이 지금 할 일 네 가지</figcaption>");
+    }
+
+    @Test
     @DisplayName("given 저장된 본문 when 화면 출력용 then 외부 링크를 새 창(noopener noreferrer)으로 연다")
     void displayOpensLinksInNewWindow() {
         // given

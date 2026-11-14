@@ -4,6 +4,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.A
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsArticleRepository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -22,11 +23,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class AdmissionsArticleService {
 
-    /** 허용 태그: p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a(href: http·https). */
+    /**
+     * 허용 태그: p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a(href: http·https),
+     * figure, img(src·alt), figcaption. img의 src는 {@link #IMAGE_SRC}(사이트 안 /images/admissions/ 아래 그림)만 남긴다.
+     */
     static final Safelist SAFELIST = Safelist.none()
-            .addTags("p", "h2", "h3", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td", "strong", "em", "a")
+            .addTags("p", "h2", "h3", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td", "strong", "em", "a",
+                    "figure", "img", "figcaption")
             .addAttributes("a", "href")
-            .addProtocols("a", "href", "http", "https");
+            .addProtocols("a", "href", "http", "https")
+            .addAttributes("img", "src", "alt");
+
+    /** 본문 그림 주소: 사이트 안 /images/admissions/ 아래 그림 파일만. 외부 주소·//·data:·javascript:·..은 막는다. */
+    static final Pattern IMAGE_SRC = Pattern.compile("^/images/admissions/(?!.*\\.\\.)[A-Za-z0-9_\\-./]+\\.(?:png|jpe?g|webp|gif)$");
 
     private final AdmissionsArticleRepository repository;
 
@@ -102,9 +111,23 @@ public class AdmissionsArticleService {
 
     // ------------------------------------------------------------ 규칙
 
-    /** 저장용: 허용 태그·a[href](http·https)만 남긴다. 스크립트·이벤트 속성·style·class는 모두 사라진다. */
+    /**
+     * 저장용: 허용 태그·a[href](http·https)·img[src·alt]만 남긴다. 스크립트·이벤트 속성·style·class는 모두 사라진다.
+     * src가 {@link #IMAGE_SRC}에 맞지 않는 img는 통째로 지운다. 그림이 없는 본문은 전과 같은 결과다.
+     */
     static String sanitize(String html) {
-        return Jsoup.clean(html == null ? "" : html, SAFELIST).trim();
+        String cleaned = Jsoup.clean(html == null ? "" : html, SAFELIST).trim();
+        if (!cleaned.contains("<img")) {
+            return cleaned;
+        }
+        Document doc = Jsoup.parseBodyFragment(cleaned);
+        for (Element img : doc.select("img")) {
+            if (!IMAGE_SRC.matcher(img.attr("src")).matches()) {
+                img.remove();
+            }
+        }
+        doc.outputSettings().prettyPrint(false);
+        return doc.body().html().trim();
     }
 
     /** 출력용: 한 번 더 정리하고 외부 링크는 새 창(rel=noopener noreferrer)으로 연다. */

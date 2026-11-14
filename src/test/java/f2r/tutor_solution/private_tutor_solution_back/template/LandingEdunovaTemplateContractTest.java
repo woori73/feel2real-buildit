@@ -256,7 +256,7 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 입시상담 AI 칸 when 렌더하면 then 「바뀌는 입시」 제목 목록 자리가 칸 안에 있고(처음엔 숨김), 공개 글 목록을 읽어 제목을 글 주소로 잇는다")
+  @DisplayName("given 입시상담 AI 칸 when 렌더하면 then 「바뀌는 입시」 제목 목록 자리가 칸 안에 있고(처음엔 숨김), 공개 글 목록을 회차 순으로 읽어 제목을 글 주소로 잇고, 카드 문구는 2028학년도 안내다")
   void admissionsCard_listsChangingAdmissionsArticles() throws Exception {
     // given
     String html = render();
@@ -266,7 +266,8 @@ class LandingEdunovaTemplateContractTest {
     assertThat(card).contains("id=\"hlAdmissionsArticles\" hidden", "id=\"hlAdmissionsArticleList\"", "href=\"/admissions/articles\"", "바뀌는 입시");
     assertThat(html).doesNotContain("<a class=\"hl-admissions hl-lift\""); // 칸 전체가 링크면 제목 링크를 안에 둘 수 없다
     assertThat(html).contains("/js/admissions_articles_view.js", "/js/home_admissions_articles.js");
-    assertThat(js).contains("/api/admissions/articles", "V.homeItems(list, 5)", "a.href = it.href");
+    assertThat(js).contains("/api/admissions/articles", "V.seriesItems(list, 10)", "a.href = it.href", "V.episodeParts(it.episode)");
+    assertThat(card).contains("2028학년도 변경된 입시안을 소개하고 상담합니다.").doesNotContain("학년도별로 안내합니다");
   }
 
   @Test

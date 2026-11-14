@@ -28,6 +28,43 @@
     }));
   }
 
+  /** 회차 '1-④' → [1, 4]. 원문자(①~⑳)와 일반 숫자를 읽고, 읽을 수 없는 자리는 뒤로 보낸다. */
+  function episodeKey(ep) {
+    return String(ep || '').split('-').map(p => {
+      const s = p.trim();
+      const c = s.codePointAt(0);
+      if (s.length === 1 && c >= 0x2460 && c <= 0x2473) return c - 0x2460 + 1;
+      return /^\d+$/.test(s) ? Number(s) : Number.MAX_SAFE_INTEGER;
+    });
+  }
+
+  /** 회차 표시 나누기: '1-④' → {head:'1-', num:'④'}. '-'가 없으면 전체를 num으로. */
+  function episodeParts(ep) {
+    const s = String(ep || '');
+    const i = s.lastIndexOf('-');
+    return i < 0 ? { head: '', num: s } : { head: s.slice(0, i + 1), num: s.slice(i + 1) };
+  }
+
+  /** 첫 화면 「바뀌는 입시」 목록: 시리즈·회차 순(1-① → 1-⑦)으로 앞에서 limit개. 서버 순서와 무관하다. */
+  function seriesItems(list, limit) {
+    const rows = (Array.isArray(list) ? list : []).slice();
+    rows.sort((a, b) => {
+      const sa = String(a.series || ''), sb = String(b.series || '');
+      if (sa !== sb) return sa < sb ? -1 : 1;
+      const ka = episodeKey(a.episode), kb = episodeKey(b.episode);
+      for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+        const x = ka[i] ?? -1, y = kb[i] ?? -1;
+        if (x !== y) return x - y;
+      }
+      return (Number(a.id) || 0) - (Number(b.id) || 0);
+    });
+    return rows.slice(0, limit || 10).map(a => ({
+      href: articleUrl(a.id),
+      episode: String(a.episode || ''),
+      title: String(a.title || '')
+    }));
+  }
+
   /** 관리자 폼 값 → 저장 요청 본문. 정렬 순서는 숫자, 빈 값은 0. */
   function formBody(v) {
     const order = Number(v.sortOrder);
@@ -38,5 +75,5 @@
     };
   }
 
-  return { articleUrl, dateText, homeItems, formBody };
+  return { articleUrl, dateText, homeItems, episodeKey, episodeParts, seriesItems, formBody };
 });
