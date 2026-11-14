@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>바뀌는 입시 글 관리 | 관리자</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <link rel="stylesheet" href="/css/admissions-articles.css?v=20261113-1">
+  <link rel="stylesheet" href="/css/admissions-articles.css?v=20261114-1">
 </head>
 <body>
 <div class="ar-wrap">
   <div class="ar-top"><a href="/admissions/articles">공개 목록 보기 ›</a><a href="/admin/hub">통합 대시보드</a></div>
   <h1 class="ar-h1">바뀌는 입시 · 글 관리</h1>
-  <p class="ar-lead">관리자만 글을 추가·수정·숨김합니다. 삭제는 없고, 내릴 글은 「숨기기」를 누릅니다. 본문 HTML은 저장할 때 허용 태그(p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a)만 남깁니다. 이 글은 상담 AI의 답변 근거로 쓰지 않습니다.</p>
+  <p class="ar-lead">관리자만 글을 추가·수정·숨김합니다. 삭제는 없고, 내릴 글은 「숨기기」를 누릅니다. 본문 HTML은 저장할 때 허용 태그(p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a, figure, img, figcaption)만 남깁니다. 그림(img)은 src·alt만 남기고, 사이트 안 /images/admissions/ 아래 그림 파일만 허용합니다(외부 주소는 지워집니다). 이 글은 상담 AI의 답변 근거로 쓰지 않습니다.</p>
   <div id="arAdminList" aria-live="polite"><p class="ar-empty">불러오는 중…</p></div>
   <form class="ar-form" id="arForm">
     <strong id="arFormTitle">새 글 추가</strong>

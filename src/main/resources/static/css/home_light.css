@@ -260,6 +260,14 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hl-admissions-articles li:last-child a { border-bottom: 0; }
 .hl-admissions-articles li a:hover strong { text-decoration: underline; }
 .hl-admissions-articles .ep { flex: none; font-size: 12px; font-weight: 700; color: #2A4A86; background: #e7eefb; border-radius: 999px; padding: 1px 8px; }
+/* 첫 화면 「바뀌는 입시」 목록: 두 칸(휴대폰 한 칸), 회차 배지는 크게, 긴 제목은 한 줄로 자른다 */
+#hlAdmissionsArticleList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; list-style: none; padding: 0; }
+#hlAdmissionsArticleList li { min-width: 0; }
+#hlAdmissionsArticleList a { align-items: center; }
+#hlAdmissionsArticleList .ep { display: inline-flex; align-items: center; justify-content: center; gap: 1px; flex: none; min-width: 56px; text-align: center; font-size: 16px; font-weight: 800; line-height: 1; padding: 7px 10px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+#hlAdmissionsArticleList .ep-n { font-size: 20px; font-weight: 700; line-height: 1; }
+#hlAdmissionsArticleList strong { min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 640px) { #hlAdmissionsArticleList { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 600px) {
   .hl-admissions { padding: 8px 12px 8px 8px; border-radius: 16px; }
   .hl-admissions-main { gap: 12px; }

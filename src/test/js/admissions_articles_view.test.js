@@ -28,3 +28,26 @@ test('given 관리자 폼 값 when 저장 요청 then 앞뒤 공백 정리·순�
   assert.deepEqual(b,{series:'바뀌는 입시',episode:'1-④',title:'t',summary:'s',bodyHtml:'<p>x</p>',publishedOn:'2026-11-14',visible:true,sortOrder:4});
   assert.equal(v.formBody({sortOrder:'abc'}).sortOrder,0);
 });
+test('given 서버 순서(최신 게시일 먼저)의 공개 글 7편 when 첫 화면 「바뀌는 입시」 목록 then 1-①부터 1-⑦까지 회차 순',()=>{
+  // given: 운영 공개 목록과 같은 순서(④⑤⑥⑦①②③)
+  const eps=['1-④','1-⑤','1-⑥','1-⑦','1-①','1-②','1-③'];
+  const list=eps.map((e,i)=>({id:[4,5,6,7,1,2,3][i],series:'바뀌는 입시',episode:e,title:'제목'+e,summary:'s',publishedOn:'2026-11-14'}));
+  // when
+  const items=v.seriesItems(list,10);
+  // then
+  assert.deepEqual(items.map(x=>x.episode),['1-①','1-②','1-③','1-④','1-⑤','1-⑥','1-⑦']);
+  assert.deepEqual(items[0],{href:'/admissions/articles/1',episode:'1-①',title:'제목1-①'});
+  assert.equal(v.seriesItems(list,3).length,3);
+  assert.deepEqual(v.seriesItems(null,10),[]);
+});
+test('given 원문자·일반 숫자 회차 when 정렬 기준·표시 나누기 then ⑩도 10으로 읽고, 표시는 「1-」와 원문자로 나눈다',()=>{
+  // given / when / then
+  assert.deepEqual(v.episodeKey('1-④'),[1,4]);
+  assert.deepEqual(v.episodeKey('1-⑩'),[1,10]);
+  assert.deepEqual(v.episodeKey('2-3'),[2,3]);
+  assert.deepEqual(v.episodeParts('1-④'),{head:'1-',num:'④'});
+  assert.deepEqual(v.episodeParts('특별편'),{head:'',num:'특별편'});
+  // 1-⑩은 1-⑨ 다음, 2-①보다 앞
+  const order=v.seriesItems([{id:1,series:'s',episode:'2-①'},{id:2,series:'s',episode:'1-⑩'},{id:3,series:'s',episode:'1-⑨'}],10).map(x=>x.episode);
+  assert.deepEqual(order,['1-⑨','1-⑩','2-①']);
+});
