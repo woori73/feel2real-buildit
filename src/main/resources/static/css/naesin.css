@@ -101,8 +101,8 @@ body.nt-body {
 
 /* ---------- 시험 화면 ---------- */
 .nt-run .nt-sheet-wrap { margin-bottom: 24px; }
-/* 시험지 한 단(실제 크기 358px) 폭에 맞춰 시험지와 답안지를 가운데로 모은다. */
-.nt-run .nt-sheet-wrap { max-width: 840px; }
+/* 문항 그림(480px) 폭에 맞춰 시험지와 답안지를 가운데로 모은다. */
+.nt-run .nt-sheet-wrap { max-width: 900px; }
 .nt-run-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; margin-top: 16px; }
 .nt-run .nt-page { padding: 18px 24px 26px; }
 .nt-time { font: 700 22px/1 var(--nt-sans); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
@@ -121,12 +121,12 @@ body.nt-body {
 .nt-mark input { width: 17px; height: 17px; accent-color: var(--nt-ink); }
 
 .nt-sheet { padding: 18px 0 6px; display: grid; gap: 14px; }
-/* 문항 그림은 시험지 실제 크기로 보여 준다: 160dpi로 자른 597px 단 → 화면 96dpi 기준 358px(약 9.5cm). */
-.nt-img { display: block; width: 358px; max-width: 100%; height: auto; margin: 0 auto; }
+/* 문항 그림 폭 480px: 글자 크기가 오른쪽 OMR 답안지 글자와 비슷해지도록 실제 시험지(358px)보다 키운다. 원본 그림은 597px. */
+.nt-img { display: block; width: 480px; max-width: 100%; height: auto; margin: 0 auto; }
 .nt-passage { padding-bottom: 14px; border-bottom: 1px dashed var(--nt-rule); }
 
 .nt-pick {
-  width: 358px; max-width: 100%; margin: 6px auto 0; border: 1.5px solid var(--nt-omr); background: var(--nt-omr-tint); color: var(--nt-omr);
+  width: 480px; max-width: 100%; margin: 6px auto 0; border: 1.5px solid var(--nt-omr); background: var(--nt-omr-tint); color: var(--nt-omr);
 }
 .nt-pick-head, .nt-pick-row { display: grid; grid-template-columns: 64px repeat(5, 1fr); align-items: center; }
 .nt-pick-head { border-bottom: 1px solid var(--nt-omr); font: 500 12px/1 var(--nt-sans); text-align: center; padding: 5px 0; letter-spacing: .2em; }
