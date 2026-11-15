@@ -51,15 +51,15 @@ test('given 제작협업실 요청 when 답하면 then 누구에게나 제작협
   assert.equal(h.replyFor('exam', {}).links[0].href, 'https://open.kakao.com/o/sMf4ifRi');
 });
 
-test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위, AI 비서는 콘텐츠 아래에 있고 20,000원·2주·4회·160문항 안내와 입력창이 있다', () => {
+test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위에 있고 AI 비서는 홈에서 내렸으며 20,000원·2주·4회·160문항 안내가 있다', () => {
   // given / when
   const offer = HTML.indexOf('id="pass-offer"');
   const chart = HTML.indexOf('id="chart-showcase"');
-  const ai = HTML.indexOf('id="aiHome"');
   const process = HTML.indexOf('id="svc-exam"');
   // then
-  // 2026-11-01 정리: 맞춤문제 서비스(제작 과정 포함)를 한곳에 모은 뒤 AI 비서, 차트·대시보드는 맨 아래.
-  assert.ok(offer > 0 && offer < process && process < ai && ai < chart);
+  // 2026-11-15 겨울 톤 개편: AI 비서(서수니·세븐)는 홈에서 내렸다. 맞춤문제 서비스(제작 과정 포함) 뒤에 차트·대시보드.
+  assert.ok(offer > 0 && offer < process && process < chart);
+  assert.doesNotMatch(HTML, /id="aiHome"|id="homeChat"|f2r_home_agent\.js/);
   // 최종 적용 기준: 기말고사 시험기간 이용권 20,000원·2주·주 2회·총 4회·160문항(회당 40문항)
   assert.match(HTML, /20,000원/);
   assert.match(HTML, /2주 · 주 2회 · 총 4회 · 160문항/);
@@ -67,9 +67,7 @@ test('given 홈 템플릿 when 읽으면 then 상품 안내가 맨 위, AI 비�
   assert.doesNotMatch(HTML, /Human Intelligence/);
   // 같은 안내를 되풀이하던 버튼 6개·처음 안내 다시 보기·중복 바로가기는 없다
   assert.doesNotMatch(HTML, /si-holo-tile|homeWelcomeAgain|prompt-row|id="naesin-panel"|homeConsole/);
-  for (const id of ['homeStage', 'homeChat', 'homeForm', 'homeInput', 'homeMode']) assert.match(HTML, new RegExp('id="' + id + '"'));
   for (const href of ['/testprep', '/wiki', '/ai-agent-studio', '/builder']) assert.ok(HTML.includes('href="' + href + '"'));
-  assert.match(HTML, /안내 모드/);
   // 결제는 무통장입금, 입금 확인은 관리자 수동 확인(자동 결제 기능처럼 표시하지 않음)
   assert.match(HTML, /이용료와 무통장입금 안내/);
   assert.match(HTML, /관리자가 입금을 직접 확인한 뒤 제작을 시작합니다/);
@@ -87,7 +85,6 @@ test('given 홈 비서 when 처음 열면 then 한 문장으로 인사하고 사
   assert.doesNotMatch(welcome, /mainChoices|links/);
   assert.match(portraitFn, /showPoster\(files\);/);
   assert.match(portraitFn, /var clip = ui\.state === 'greeting' \? clipFor\(ui\.state, files\) : null;/);
-  assert.match(HTML, /<img id="stagePoster" alt="선택한 AI 비서 얼굴" hidden>/);
 });
 
 test('given 캐릭터 영상 목록 when 대화 상태가 바뀌면 then 생각 중에만 think.mp4, 없으면 idle로 대신한다', () => {
@@ -132,19 +129,12 @@ test('given 홈 화면 when 캐릭터를 고르면 then 인사 버튼 없이 인
   // given / when
   const pick = JS.slice(JS.indexOf("querySelectorAll('button[data-home-agent]').forEach(function (b) {\n      b.addEventListener"), JS.indexOf("video.addEventListener('ended'"));
   // then
-  assert.doesNotMatch(HTML, /homeGreet/);
-  assert.match(HTML, /<video class="is-on" id="homeVideo" muted loop playsinline/);
   assert.match(pick, /if \(greetingFor\(ui\.agent, mediaFiles\(\)\)\) playGreeting\(\);/);
 });
 
 test('given 홈 화면 when 영상을 바꾸면 then 대시보드와 같은 전환 모듈로 두 영상 요소를 겹쳐 바꾼다', () => {
   // given / when
-  const alt = HTML.match(/<video[^>]*id="homeVideoAlt"[^>]*>/);
-  const order = HTML.indexOf('f2r_agent_clip_switch.js') >= 0 && HTML.indexOf('f2r_agent_clip_switch.js') < HTML.indexOf('f2r_home_agent.js');
-  // then
-  assert.ok(alt, '두 번째 영상 요소가 있어야 한다');
-  assert.match(alt[0], /muted loop playsinline/);
-  assert.ok(order, '전환 모듈을 홈 스크립트보다 먼저 불러야 한다');
+  // then (홈 비서 화면은 2026-11-15 홈에서 내렸다. 스크립트의 전환 방식만 확인한다)
   assert.match(JS, /sw\.show\(pair, ui\.sw, src,/);
   assert.match(JS, /restart: talking \|\| prev === 'speak'/);
 });
@@ -204,14 +194,7 @@ test('given 서수니 미디어 when 사진·포스터를 고르면 then 기존 
 
 test('given 홈 비서 선택 when 읽으면 then 서수니가 기본이고 세븐도 사진+이름 버튼으로 남는다', () => {
   // given / when
-  const seven = HTML.match(/<button[^>]*data-home-agent="seven"[^>]*>(.*?)<\/button>/);
-  const suni = HTML.match(/<button[^>]*data-home-agent="suni"[^>]*>/);
-  // then
-  assert.match(seven[0], /class="[^"]*\bno-portrait\b[^"]*"/);
-  assert.match(seven[1], /<img alt="세븐">/);
-  assert.match(seven[1], /<strong>세븐<\/strong>/);
-  assert.match(suni[0], /aria-pressed="true"/);
-  assert.match(HTML, /class="stage" id="homeStage" data-state="idle" data-media="missing"/);
+  // then (홈 비서 화면은 2026-11-15 홈에서 내렸다. 스크립트 규칙만 확인한다)
   assert.match(JS, /\|\| !stageHasFrame\(\)\) \$\('homeStage'\)\.dataset\.media = 'missing'/);
 });
 

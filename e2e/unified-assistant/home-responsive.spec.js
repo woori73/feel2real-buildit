@@ -12,7 +12,7 @@ const sizes = [[360, 800], [390, 844], [430, 932], [768, 1024], [1440, 1050]];
 
 for (const font of ['fallback', 'pretendard']) {
   for (const [width, height] of sizes) {
-    test(`home ${width}x${height}, ${font}: geometry, compact menu, content order, intake links and assistant`, async ({ browser }) => {
+    test(`home ${width}x${height}, ${font}: geometry, compact menu, content order and intake links`, async ({ browser }) => {
       const mobile = width < 500;
       const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile,
         deviceScaleFactor: 1, locale: 'ko-KR', timezoneId: 'Asia/Seoul',
@@ -38,7 +38,7 @@ for (const font of ['fallback', 'pretendard']) {
         page.on('pageerror', error => errors.push(error.message));
         const act = locator => mobile ? locator.tap() : locator.click();
         await page.goto('/');
-        await expect(page.locator('#homeChat .is-agent')).toHaveCount(1);
+        await expect(page.locator('#aiHome')).toHaveCount(0); // 홈 AI 비서는 2026-11-15에 내렸다
         await page.evaluate(() => document.fonts.ready);
         if (font === 'pretendard') expect(await page.evaluate(() => [...document.fonts]
           .some(face => face.family.replaceAll('"', '').replaceAll("'", '') === 'Pretendard Variable' && face.status === 'loaded'))).toBe(true);
@@ -47,7 +47,7 @@ for (const font of ['fallback', 'pretendard']) {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
             logo:rect(document.querySelector('.hl-logo')), actions:rect(document.querySelector('.hl-actions')),
-            offer:rect(document.querySelector('#homeIntakeCta')), promo:rect(document.querySelector('#examPromo')),
+            offer:rect(document.querySelector('#homeHero .hero-dexam .hero-cta .hl-btn-dark')), promo:rect(document.querySelector('#examPromo')),
             keys:[...document.querySelectorAll('[data-home-nav]')].map(n=>n.dataset.homeNav) };
         });
         fs.mkdirSync(output, { recursive:true });
@@ -58,8 +58,8 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.logo.right).toBeLessThanOrEqual(metrics.actions.x);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
         expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
-        // 홍보 영상(서수니·세븐)은 첫 화면 배너 옆(휴대폰은 바로 아래)에 있다.
-        expect(metrics.promo.y).toBeLessThan(height);
+        // 첫 화면: 디지털 영어 기말고사 배너의 「시험 보러 가기」. 홍보 영상(서수니·세븐)은 배너 옆(휴대폰은 바로 아래)에 이어진다.
+        expect(metrics.promo.y).toBeGreaterThan(0);
         expect(metrics.keys).toEqual(['home','request','wiki','game','agent','dashboard','chart','guide']);
         await expect(page.locator('#homePaneTitle')).toHaveText('Feel to Real (F2R) 홈');
         await expect(page.locator('#homeMenuPanel')).toBeHidden();
@@ -90,24 +90,6 @@ for (const font of ['fallback', 'pretendard']) {
         }
         await selectHomePane(page,'dashboard');
         const replies = [];
-        for (const question of questions) {
-          const before = await page.locator('#homeChat .is-agent').count();
-          await page.locator('#homeInput').fill(question);
-          await act(page.locator('#homeForm button'));
-          await expect(page.locator('#homeChat .is-agent')).toHaveCount(before+1);
-          const reply = page.locator('#homeChat .is-agent').last();
-          replies.push({question,text:await reply.locator('p').innerText(),links:await reply.locator('a').evaluateAll(a=>a.map(x=>x.getAttribute('href')))});
-        }
-        for (const reply of replies) {
-          expect(reply.text).toContain('20,000원');
-          expect(reply.text).toContain('카톡·이메일');
-          expect(reply.links).toEqual(expect.arrayContaining([kakao,email]));
-        }
-        await page.locator('#aiHome').screenshot({path:path.join(output,`${id}-assistant.png`)});
-        await act(page.locator('[data-home-agent="seven"]'));
-        await expect(page.locator('#homeName')).toHaveText('세븐');
-        await act(page.locator('[data-home-agent="suni"]'));
-        await expect(page.locator('#homeName')).toHaveText('서수니');
         await selectHomePane(page,'request');
         const submit = page.locator('#enExamCta');
         await expect(submit).toHaveAttribute('href',kakao);
@@ -151,7 +133,7 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   await fallback.route('**/*',localOnly);
   const plain=await fallback.newPage();
   await plain.goto('/');
-  for(const id of ['pass-offer','edu','ai-content','hitCase','exam-payment','chart-showcase','review-game','aiHome','request','exam-contact','dashboard','guide']) await expect(plain.locator('#'+id)).toBeVisible();
+  for(const id of ['pass-offer','digital-exam','counsel','edu','ai-content','hitCase','exam-payment','chart-showcase','review-game','ebook','request','exam-contact','dashboard','guide']) await expect(plain.locator('#'+id)).toBeVisible();
   await expect(plain.locator('.hl-chips')).toBeVisible();
   await expect(plain.locator('#homeMenuPanel')).toBeHidden();
   await fallback.close();
@@ -169,8 +151,12 @@ test('rotating hero supports tile selection, pause, service links, equal heights
   await page.locator('[data-hero-go="1"]').click();
   await expect(hero).toHaveAttribute('data-active', '1');
   await expect(page.locator('[data-hero-go="1"]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#heroStatus')).toHaveText('2 / 6 디지털 영어 기말고사');
+  await expect(page.locator('#heroStatus')).toHaveText('2 / 6 맞춤문제');
+  await expect(page.locator('#hwAdopt')).toBeHidden();
+  await page.locator('[data-hero-go="0"]').click();
+  await expect(page.locator('#heroStatus')).toHaveText('1 / 6 디지털 영어 기말고사');
   await expect(hero.getByRole('link', { name: '시험 보러 가기' })).toHaveAttribute('href', '/naesintest');
+  await expect(page.locator('#hwAdopt')).toBeVisible();
   await page.locator('[data-hero-go="2"]').click();
   await expect(page.locator('#heroStatus')).toHaveText('3 / 6 모의고사 위키');
   await expect(hero.getByRole('link', { name: '위키 열기' })).toHaveAttribute('href', '/wiki');

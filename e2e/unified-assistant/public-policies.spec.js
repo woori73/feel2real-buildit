@@ -32,7 +32,7 @@ for (const [width, height] of [[1440, 1050], [360, 800], [390, 844], [430, 932]]
         await page.screenshot({ path: path.join(output, `${width}-${label}.png`), fullPage: true });
       };
       await page.goto('/');
-      await expect(page.locator('#homeChat .is-agent')).toHaveCount(1);
+      await expect(page.locator('#aiHome')).toHaveCount(0);
       await expect(page.locator('#edu .hl-card')).toHaveCount(4);
       const footer = page.locator('.footer-links');
       for (const [document, label, heading] of [

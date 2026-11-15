@@ -77,19 +77,16 @@ class StudioEntryLinkBrowserQaMySqlTest {
       assertThat(URI.create(driver.getCurrentUrl()).getPath()).isEqualTo("/");
       assertThat(driver.getTitle()).doesNotContain("제작 스튜디오");
 
-      // ADMIN 로그인 후: 메뉴 링크·비서 안내 링크를 실제 클릭하면 제작협업실이 열린다(홈의 AI AGENT 배너는 2026-10-30에 내렸다)
+      // ADMIN 로그인 후: 메뉴 링크·AI 드라마 구역 링크를 실제 클릭하면 제작협업실이 열린다(홈의 AI AGENT 배너는 2026-10-30에 내렸다)
       driver.manage().addCookie(new Cookie("ACCESS_TOKEN", admin));
       driver.get(BASE + "/");
       clickMenuLink(driver, wait);
       waitStudio(driver, wait);
       shot(driver, (mobile ? "mobile-390" : "pc-1440") + "-studio.png");
 
-      // 신청 타일은 신청 안내를 연다. 제작협업실은 기존 비서 입력으로 요청해 안내 링크를 실제 클릭한다.
-      driver.get(BASE + "/#dashboard");
-      wait.until(d -> d.findElement(By.id("homeInput")).isDisplayed());
-      driver.findElement(By.id("homeInput")).sendKeys("AI AGENT 제작협업실");
-      clickVisible(driver, wait, By.cssSelector("#homeForm button[type='submit']"));
-      clickVisible(driver, wait, By.cssSelector("#homeChat a[href='/ai-agent-studio']"));
+      // 홈 AI 비서(서수니·세븐)는 2026-11-15 겨울 톤 개편에서 내렸다. 제작협업실은 AI 드라마 구역의 링크로 들어간다.
+      driver.get(BASE + "/#ai-content");
+      clickVisible(driver, wait, By.cssSelector("#ai-content a[data-studio-link]"));
       waitStudio(driver, wait);
       driver.get(BASE + "/");
       assertThat(js.executeScript("return document.documentElement.scrollWidth<=window.innerWidth;")).isEqualTo(true);

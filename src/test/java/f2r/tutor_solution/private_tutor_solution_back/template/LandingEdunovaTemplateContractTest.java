@@ -56,11 +56,11 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 밝은 개편 순서 when 렌더하면 then 배너·영상→입시상담 AI→영어 교육→맞춤문제 2만원 서비스(한곳)→AI 드라마→게임→비서→차트→대시보드(맨 아래)이고 빈 칸은 솔직하게 표시한다")
+  @DisplayName("given 겨울 톤 개편 순서 when 렌더하면 then 배너·영상→디지털 영어 기말고사→2028 입시상담 AI→영어 교육→맞춤문제 2만원 서비스(한곳)→AI 드라마→게임→전자책→차트→대시보드(맨 아래)이고 빈 칸은 솔직하게 표시한다")
   void givenContentPriority_whenRendered_thenApprovedSinglePageOrderAndEmptySlotsAreHonest() {
     String html = render();
-    String[] ids = {"pass-offer", "homeHero", "examPromo", "/admissions/guide", "edu", "service", "request", "hitCase", "svc-exam",
-        "exam-blog", "exam-payment", "exam-contact", "guide", "ai-content", "review-game", "aiHome", "chart-showcase", "dashboard"};
+    String[] ids = {"pass-offer", "homeHero", "examPromo", "digital-exam", "/admissions/guide", "edu", "service", "request", "hitCase", "svc-exam",
+        "exam-blog", "exam-payment", "exam-contact", "guide", "ai-content", "review-game", "ebook", "chart-showcase", "dashboard"};
     int previous = -1;
     for (String id : ids) {
       int position = id.startsWith("/") ? html.indexOf("href=\"" + id + "\"") : html.indexOf("id=\"" + id + "\"");
@@ -86,7 +86,7 @@ class LandingEdunovaTemplateContractTest {
         .doesNotContain("id=\"homeReviewGame\"", "id=\"homeGame\"");
     assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
     assertThat(render("public/landing", "")).doesNotContain("id=\"examPromo\"", "id=\"examPromoVideo\"")
-        .contains("id=\"aiHome\"", "id=\"homeChat\"");
+        .doesNotContain("id=\"aiHome\"", "id=\"homeChat\""); // 홈 AI 비서(서수니·세븐)는 2026-11-15에 내렸다
   }
 
   @Test
@@ -191,7 +191,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     String top = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("</header>", html.indexOf("id=\"enNav\"")));
     String nav = html.substring(html.indexOf("id=\"homeMenu\""), html.indexOf("</nav>", html.indexOf("id=\"homeMenu\"")));
-    assertThat(top).contains("data-home-nav=\"home\"", "Feel to Real", "2주 4회 · 2만원", "클라우드리뷰 무료신청", "전체 메뉴",
+    assertThat(top).contains("data-home-nav=\"home\"", "Feel to Real", "2주 4회 · 2만원", ">맞춤문제 신청<", "전체 메뉴",
         "href=\"#chart-showcase\">빌드잇 차트<", "href=\"#dashboard\">대시보드<", "href=\"#request\" class=\"hl-link-offer\"",
         "aria-controls=\"homeMenuPanel\"", "aria-expanded=\"false\"");
     String[] keys = {"request", "wiki", "game", "agent", "dashboard", "chart", "guide"};
@@ -223,10 +223,10 @@ class LandingEdunovaTemplateContractTest {
     String promo = first.substring(first.indexOf("class=\"hl-promo"));
     assertThat(hero.split("data-hero-slide", -1)).hasSize(7);
     assertThat(hero.split("data-hero-go=", -1)).hasSize(7);
-    // 두 번째 배너: 디지털 영어 기말고사(/naesintest)
+    // 첫 번째 배너: 디지털 영어 기말고사(/naesintest)
     assertThat(hero.indexOf("디지털 영어 기말고사")).isLessThan(hero.indexOf("aria-label=\"3 / 6 모의고사 위키\""));
-    assertThat(hero).contains("aria-label=\"2 / 6 디지털 영어 기말고사\"", "href=\"/naesintest\"",
-        "data-hero-go=\"1\" aria-pressed=\"false\"><span class=\"hl-tile-img\"><img src=\"/img/landing/home-tile-naesintest.webp\"");
+    assertThat(hero).contains("aria-label=\"1 / 6 디지털 영어 기말고사\"", "href=\"/naesintest\"",
+        "data-hero-go=\"0\" aria-pressed=\"true\"><span class=\"hl-tile-img\"><img src=\"/img/landing/home-tile-naesintest.webp\"");
     // 전자책 배너: 스마트스토어 판매처와 카페로 새 창 이동
     assertThat(hero).contains("새출발 2억2천 탕감", "href=\"https://smartstore.naver.com/newlibrary/products/12879870964\"",
         "href=\"https://cafe.naver.com/newhopero\"", "rel=\"noopener\"");
@@ -234,12 +234,12 @@ class LandingEdunovaTemplateContractTest {
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
     assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "서수니 · 세븐", "클라우드리뷰 무료신청", "맞춤문제 신청");
     for (String path : new String[] {"/img/landing/home-card-exam-seven.webp", "/img/landing/home-card-game.webp",
-        "/img/landing/home-card-ibt.webp", "/img/landing/home-agent-suni.webp", "/img/landing/home-agent-seven.webp",
+        "/img/landing/home-card-ibt.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
         "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
         "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp", "/img/landing/ai-agent-hero.webp",
         "/img/landing/home-ebook-hero.webp", "/img/landing/home-tile-ebook.webp",
-        "/img/landing/home-card-naesintest.webp", "/img/landing/home-tile-naesintest.webp"}) {
+        "/img/landing/home-tile-naesintest.webp"}) {
       // 그림을 고화질로 바꾸면 캐시를 피하려고 ?v= 를 붙이므로 경로 앞부분까지만 확인한다.
       assertThat(html).as(path).contains("src=\"" + path);
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
@@ -276,12 +276,11 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 화면을 따라 움직이는 바로가기 when 렌더하면 then 'AI 비서'와 서수니·세븐 동그란 사진, 맞춤문제 신청 버튼이다")
+  @DisplayName("given 화면을 따라 움직이는 바로가기 when 렌더하면 then 맞춤문제 신청 버튼만 있고 내린 AI 비서 링크는 없다")
   void floatingShortcut_isAssistantAndApply() {
     String html = render();
     String fab = html.substring(html.indexOf("class=\"hl-fab\""), html.indexOf("</div>", html.indexOf("class=\"hl-fab\"")));
-    assertThat(fab).contains("href=\"#aiHome\"", "AI 비서", "home-agent-suni.webp", "home-agent-seven.webp", ">맞춤문제 신청<")
-        .doesNotContain(">\n    서수니\n  </a>");
+    assertThat(fab).contains(">맞춤문제 신청<").doesNotContain("href=\"#aiHome\"", "AI 비서");
   }
 
   @Test
@@ -344,7 +343,7 @@ class LandingEdunovaTemplateContractTest {
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
     String[] sections = {"pass-offer", "examPromo", "edu", "request", "hitCase", "svc-exam", "exam-blog", "exam-payment",
-        "exam-contact", "ai-content", "review-game", "aiHome", "chart-showcase", "dashboard"};
+        "exam-contact", "ai-content", "review-game", "ebook", "chart-showcase", "dashboard"};
     int previous = -1;
     for (String id : sections) {
       int next = html.indexOf("id=\"" + id + "\"");
@@ -409,10 +408,10 @@ class LandingEdunovaTemplateContractTest {
   @DisplayName("given current offer when rendered then all sales/SEO use 14 days, four deliveries, 160 questions without stale copy")
   void currentOffer_and_renderedEvidence() throws Exception {
     String html = render();
-    assertThat(html).contains("2주 동안 160문항", "20,000원", "총 4회", "회당 40문항")
+    assertThat(html).contains("2주 동안 160문항", "20,000원", "총 4회", "회당 <span>40</span>문항")
         .doesNotContain("3주", "240문항", "총 6회", "30,000원", "1회 20,000원");
-    assertThat(html).contains("data-offer-version=\"final-exam-20261028-v2\"")
-        .contains("id=\"examPromo\"").doesNotContain("src=\"\"");
+    // 이용권 판(data-offer-version)은 내린 홈 AI 비서 칸에만 있었다. 공개 문구는 위 숫자로 확인한다.
+    assertThat(html).contains("id=\"examPromo\"").doesNotContain("src=\"\"");
     java.nio.file.Path output = java.nio.file.Path.of("build/verification/home-after.html");
     java.nio.file.Files.createDirectories(output.getParent());
     java.nio.file.Files.writeString(output, html);
@@ -518,14 +517,14 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 첫 화면 when 렌더하면 then 영어 교육 다음에 디지털 영어 기말고사 섹션이 있고 /naesintest로 이어진다")
+  @DisplayName("given 첫 화면 when 렌더하면 then 디지털 영어 기말고사 섹션이 영어 교육보다 앞에 있고 /naesintest로 이어진다")
   void digitalExamSectionLinksToNaesintest() {
     // given
     String html = render();
     // when
     String sec = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"request\""));
     // then
-    assertThat(html.indexOf("id=\"edu\"")).isLessThan(html.indexOf("id=\"digital-exam\""));
+    assertThat(html.indexOf("id=\"digital-exam\"")).isLessThan(html.indexOf("id=\"edu\""));
     assertThat(sec).contains("디지털 영어 기말고사", "직보 쇼츠 인강", "40문항 20분", "70문항 35분", "자동 채점", "href=\"/naesintest\"",
         "적중률 근거", "압구정중3 93.5%", "언북중3 95%", "신구중3 96.8%");
   }
