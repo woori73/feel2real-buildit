@@ -33,7 +33,7 @@ for (const [width, height] of [[1440, 1050], [360, 800], [390, 844], [430, 932]]
       };
       await page.goto('/');
       await expect(page.locator('#aiHome')).toHaveCount(0);
-      await expect(page.locator('#edu .hl-card')).toHaveCount(4);
+      await expect(page.locator('#edu')).toHaveCount(0); // 영어 교육 바로가기 카드는 2026-11-16 본문에서 뺐다(왼쪽 메뉴에 있음)
       const footer = page.locator('.footer-links');
       for (const [document, label, heading] of [
         ['privacy', '개인정보처리방침', 'Feel2Real 홈페이지 개인정보 처리방침'],
