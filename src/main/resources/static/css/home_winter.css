@@ -394,3 +394,23 @@
 #chart-showcase .bb-meta { margin: 16px 0 10px; }
 #chart-showcase .bb-row { min-height: 60px; border: 1px solid var(--hl-line); background: var(--hl-bg); }
 @media (prefers-reduced-motion: reduce) { .hw-bars.in .hw-bar i b { animation: none; } #edu .hl-card:hover, #ai-content .hl-studio:hover, #dashboard > .exam-contact-actions .en-btn:hover { transform: none; } }
+
+/* ---- 첫 화면 오른쪽: 홍보 영상 아래 빈 곳에 F2R 서비스 지도(2026-11-16) ---- */
+.hw-right { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.hw-right .hl-promo { flex: none; }
+.hw-right .hl-promo-body { margin-top: 0; }
+.hl-promo-actions { grid-template-columns: minmax(0, 1fr); }
+.hw-right .hw-map { flex: 1 1 auto; display: flex; flex-direction: column; margin: 0; padding: 16px; border-radius: 24px; background: #fff; box-shadow: var(--hl-lift); }
+.hw-right .hw-map .hl-head { gap: 2px 10px; margin-bottom: 10px; }
+.hw-right .hw-map .hl-head h2 { font-size: 17px; font-weight: 700; padding-bottom: 4px; }
+.hw-right .hw-map .hl-head h2::after { width: 20px; }
+.hw-right .hw-map .hl-head p { font-size: 12px; }
+.hw-right .hw-net { flex: 1 1 auto; min-height: 340px; aspect-ratio: auto; border-radius: 14px; }
+.hw-right .hw-nd { font-size: 11px; }
+@media (max-width: 960px) {
+  .hw-right .hw-net { flex: none; min-height: 0; aspect-ratio: 16 / 9; }
+}
+@media (max-width: 760px) {
+  .hw-right .hw-net { aspect-ratio: 4 / 5; }
+  .hw-right .hw-map { padding: 12px; border-radius: 20px; }
+}
