@@ -19,8 +19,9 @@
 .home-game-cover { background: var(--hw-frost); }
 .hl-hero[data-active] { --hero-bg: #E6EEF5; --hero-ink: var(--hw-accent); }
 .hl-eyebrow.is-mint, .hl-pay-status { color: #A9CBE6; }
-/* 배너는 지금 보이는 장의 높이만 쓴다(장마다 내용 양이 달라 빈 칸이 생기지 않게) */
-.home-light #homeHero .hero-slide[hidden] { display: none !important; }
+/* 학원·강사 도입 신청은 디지털 영어 기말고사 장에서만 보인다. 휴대폰은 시험 보러 가기 버튼을 시험지 예시보다 먼저 둔다. */
+#homeHero:not([data-active="0"]) .hw-adopt { display: none; }
+@media (max-width: 600px) { .hero-dexam { grid-template-areas: "text" "cta" "art" "note"; } }
 
 /* ---- 상단: 로고 조립 · 맞춤문제 빛 지나감 ---- */
 .hl-logo img { transform-origin: center; animation: hwLogo .8s .05s cubic-bezier(.3,1.4,.5,1) both; }
@@ -89,7 +90,7 @@
 .hw-or.cur em { background: var(--hw-red); color: #fff; border-radius: 2px; }
 
 /* 학원·강사 도입 신청 */
-.hw-adopt { margin-top: 12px; background: rgba(255,255,255,.78); border: 1px solid var(--hl-line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; }
+.hw-adopt { margin: 4px 0 12px; background: rgba(255,255,255,.78); border: 1px solid var(--hl-line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; }
 .hw-adopt b { font-size: 14px; }
 .hw-adopt > p { margin: 0; font-size: 13px; color: var(--hl-sub); }
 .hw-plans { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
