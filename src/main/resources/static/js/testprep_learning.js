@@ -39,7 +39,7 @@
       try {
         const attempt = await TP.api('/api/testprep/attempts', { method: 'POST', body: JSON.stringify({
           examCode: btn.dataset.retry, questionIds: btn.dataset.ids.split(',').map(Number) }) });
-        location.href = '/testprep/run?attempt=' + attempt.attemptId;
+        location.href = TP.runUrl(attempt.kind, attempt.attemptId);
       } catch (e) { btn.disabled = false; alert('Retry failed: ' + e.message + '\n다시 풀기 실패: ' + e.message); }
     }));
   } catch (err) {

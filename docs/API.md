@@ -4886,6 +4886,18 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `/api/testprep/**`(시험 목록·응시·답안·제출·성적·오답·학습 이력): 인증 필수, 비회원은 `401`. 화면 숨김과 무관하게 서버가 검증한다.
 - 로그인: 기존 네이버 로그인(`/oauth2/authorization/naver`) 재사용. 클릭 시 `oauth_return_url` 쿠키(내부 `/testprep` 경로만)를 저장해 로그인 후 이용하려던 화면으로 복귀한다. 네이버 자기가입 회원의 role은 STUDENT라 TESTPREP을 이용할 수 있다.
 
+### Digital SAT 연습 (`/testprep/sat`) — 설계 [docs/design/testprep-digital-sat.md](design/testprep-digital-sat.md)
+
+- `GET /testprep/sat`(세트 목록), `GET /testprep/sat/run?attempt={id}`(시험 화면): 위 하위 화면과 같은 권한(STUDENT/TUTOR/ADMIN, 비회원은 `302 /testprep?login=required&returnUrl=…`). 새 API는 없고 기존 `/api/testprep/**`를 `kind=SAT`로 쓴다.
+- `GET /api/testprep/exams?kind=SAT`: SAT 세트 목록. 응시 화면 주소는 `kind`로 정한다(`SAT` → `/testprep/sat/run`, 그 밖 → `/testprep/run`).
+- SAT 문항: `section` = `RW`/`MATH`, `taskType` = `SAT_RW_MC`/`SAT_MATH_MC`/`SAT_MATH_SPR`. 주관식(`SAT_MATH_SPR`)은 허용 답(`answer_key`, `|` 구분)과 문자열이 같거나 분수·소수 값이 같으면 정답(입력 6자 초과는 오답).
+- 제출·복습·이력 응답 추가 필드(기존 필드 유지):
+  - `sections[].scaled`: SAT 영역 추정 점수 200~800(`200 + round(정답비율×60)×10`). SAT이 아니면 `null`. SAT은 `band`/`overallBand`가 `null`.
+  - `Scorecard.kind`, `Scorecard.totalScaled`, `ReviewView.totalScaled`, `AttemptSummary.totalScaled`: SAT 합계 400~1600(영역 점수가 없으면 `null`).
+  - `bandDisclaimer`: SAT은 `F2R internal score estimate — not an official College Board SAT score.`, 그 밖은 기존 ETS 문구.
+  - `questions[].koHelpJson`(응시), `items[].koHelpJson`(복습): 해설란 JSON 문자열 `{translation, vocab, solution, strategy}` 또는 `null`.
+  - `tp_exams.time_limit_sec`은 서버 마감일 뿐이고, SAT 모듈 시간·쉬는 시간·해설 정지는 화면이 관리한다(서버 마감 뒤 제출은 기존처럼 `overtime`).
+
 ## 프로그램 공개 첫 화면 + 네이버 로그인 공통 진입 (`program` 패키지)
 
 신규 프로그램은 대표 URL을 비회원에게 공개(200)하고, 기능을 시작할 때 네이버 로그인을 요청한다. 등록은 `program/Program.java` enum 한 곳이다(현재: DesignCraft).

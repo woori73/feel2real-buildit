@@ -32,8 +32,13 @@ public class TestPrepService {
 
   public static final String BAND_DISCLAIMER =
       "TestPrep internal band estimate — not an official ETS TOEFL iBT score.";
+  public static final String SAT_DISCLAIMER =
+      "F2R internal score estimate — not an official College Board SAT score.";
+  public static final String KIND_SAT = "SAT";
+  public static final String TASK_SAT_SPR = "SAT_MATH_SPR";
 
-  private static final List<String> PRACTICE_SECTION_ORDER = List.of("READING", "LISTENING", "WRITING", "SPEAKING");
+  private static final List<String> PRACTICE_SECTION_ORDER =
+      List.of("READING", "LISTENING", "WRITING", "SPEAKING", "RW", "MATH");
   private static final int MAX_TEXT_ANSWER_LEN = 20_000;
   private static final int MAX_RECORDED_ANSWER_LEN = 4_000_000; // base64 data-URL 상한
   private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -93,7 +98,7 @@ public class TestPrepService {
     return new AttemptView(attempt.getAttemptId(), exam.getExamCode(), exam.getKind(), exam.getTitle(),
         attempt.getStatus(), ISO.format(attempt.getDeadlineAt()),
         Duration.between(now, attempt.getDeadlineAt()).getSeconds(),
-        questions.stream().map(this::toRunQuestion).toList(), Map.of(), BAND_DISCLAIMER);
+        questions.stream().map(this::toRunQuestion).toList(), Map.of(), disclaimerFor(exam.getKind()));
   }
 
   @Transactional(readOnly = true)
@@ -108,7 +113,7 @@ public class TestPrepService {
     long remaining = Math.max(0, Duration.between(LocalDateTime.now(), attempt.getDeadlineAt()).getSeconds());
     return new AttemptView(attempt.getAttemptId(), exam.getExamCode(), exam.getKind(), exam.getTitle(),
         attempt.getStatus(), ISO.format(attempt.getDeadlineAt()), remaining,
-        questions.stream().map(this::toRunQuestion).toList(), saved, BAND_DISCLAIMER);
+        questions.stream().map(this::toRunQuestion).toList(), saved, disclaimerFor(exam.getKind()));
   }
 
   @Transactional
@@ -165,13 +170,16 @@ public class TestPrepService {
       }
     }
 
+    boolean sat = KIND_SAT.equals(examOf(attempt).getKind());
     List<SectionScore> sections = new ArrayList<>();
     for (TpQuestion q : questions) {
       if (!sections.stream().anyMatch(s -> s.section().equals(q.getSection()))) {
         int[] agg = bySection.get(q.getSection());
         Double accuracy = agg[0] > 0 ? round1(100.0 * agg[1] / agg[0]) : null;
-        Double band = agg[0] > 0 ? bandFor(accuracy) : null;
-        sections.add(new SectionScore(q.getSection(), agg[2], agg[0], agg[0], agg[1], accuracy, band));
+        // SAT은 TOEFL 밴드(1~6)를 쓰지 않고 영역 추정 점수(200~800)만 기록한다.
+        Double band = agg[0] > 0 && !sat ? bandFor(accuracy) : null;
+        Integer scaled = agg[0] > 0 && sat ? satScaledFor(agg[1], agg[0]) : null;
+        sections.add(new SectionScore(q.getSection(), agg[2], agg[0], agg[0], agg[1], accuracy, band, scaled));
       }
     }
     sections.sort(Comparator.comparingInt(s -> sectionRank(s.section())));
@@ -208,14 +216,14 @@ public class TestPrepService {
           q.getAudioMode(), parseChoices(q.getChoicesJson()), your,
           Boolean.TRUE.equals(q.getAutoScore()) ? q.getAnswerKey() : null,
           ans == null ? null : ans.getIsCorrect(), Boolean.TRUE.equals(q.getAutoScore()),
-          q.getExplanation(), q.getOrderNo());
+          q.getExplanation(), q.getOrderNo(), q.getKoHelpJson());
     }).toList();
     return new ReviewView(attempt.getAttemptId(), exam.getTitle(), exam.getKind(),
         attempt.getSubmittedAt() == null ? null : ISO.format(attempt.getSubmittedAt()),
         Boolean.TRUE.equals(attempt.getOvertime()),
         attempt.getOverallBand() == null ? null : attempt.getOverallBand().doubleValue(),
         attempt.getAutoAccuracy() == null ? null : attempt.getAutoAccuracy().doubleValue(),
-        readSectionScores(attempt), items, BAND_DISCLAIMER);
+        readSectionScores(attempt), items, disclaimerFor(exam.getKind()), totalScaled(readSectionScores(attempt)));
   }
 
   @Transactional(readOnly = true)
@@ -233,7 +241,7 @@ public class TestPrepService {
           a.getSubmittedAt() == null ? null : ISO.format(a.getSubmittedAt()),
           a.getOverallBand() == null ? null : a.getOverallBand().doubleValue(),
           a.getAutoAccuracy() == null ? null : a.getAutoAccuracy().doubleValue(),
-          count);
+          count, totalScaled(readSectionScores(a)));
     }).toList();
   }
 
@@ -373,6 +381,9 @@ public class TestPrepService {
     if ("BUILD_SENTENCE".equals(q.getTaskType())) {
       return normalizeWords(answer).equals(normalizeWords(q.getAnswerKey()));
     }
+    if (TASK_SAT_SPR.equals(q.getTaskType())) {
+      return isSatSprCorrect(answer, q.getAnswerKey());
+    }
     return answer.trim().equalsIgnoreCase(q.getAnswerKey().trim());
   }
 
@@ -388,7 +399,8 @@ public class TestPrepService {
 
   private RunQuestion toRunQuestion(TpQuestion q) {
     return new RunQuestion(q.getQuestionId(), q.getSection(), q.getTaskType(), q.getPrompt(), q.getBodyText(),
-        q.getAudioMode(), parseChoices(q.getChoicesJson()), q.getOrderNo(), Boolean.TRUE.equals(q.getAutoScore()));
+        q.getAudioMode(), parseChoices(q.getChoicesJson()), q.getOrderNo(), Boolean.TRUE.equals(q.getAutoScore()),
+        q.getKoHelpJson());
   }
 
   private List<String> parseChoices(String json) {
@@ -415,12 +427,85 @@ public class TestPrepService {
         Boolean.TRUE.equals(attempt.getOvertime()),
         attempt.getOverallBand() == null ? null : attempt.getOverallBand().doubleValue(),
         attempt.getAutoAccuracy() == null ? null : attempt.getAutoAccuracy().doubleValue(),
-        readSectionScores(attempt), BAND_DISCLAIMER);
+        readSectionScores(attempt), disclaimerFor(exam.getKind()), exam.getKind(),
+        totalScaled(readSectionScores(attempt)));
   }
 
   private Set<Long> wrongQuestionIds(Long userId) {
     return answerRepository.findWrongAnswers(userId).stream()
         .map(TpAttemptAnswer::getQuestionId).collect(Collectors.toSet());
+  }
+
+  static String disclaimerFor(String kind) {
+    return KIND_SAT.equals(kind) ? SAT_DISCLAIMER : BAND_DISCLAIMER;
+  }
+
+  /** SAT 영역 추정 점수: 200 + round(정답 비율 × 60) × 10 → 200~800 (10점 단위). 공식 환산표가 아니다. */
+  static Integer satScaledFor(int correct, int total) {
+    if (total <= 0) return null;
+    double ratio = Math.max(0, Math.min(1, (double) correct / total));
+    return 200 + (int) Math.round(ratio * 60) * 10;
+  }
+
+  /** SAT 합계(400~1600). 영역 점수가 하나도 없으면 null. */
+  static Integer totalScaled(List<SectionScore> sections) {
+    List<Integer> scaled = sections.stream().map(SectionScore::scaled).filter(Objects::nonNull).toList();
+    if (scaled.isEmpty()) return null;
+    return scaled.stream().mapToInt(Integer::intValue).sum();
+  }
+
+  /**
+   * SAT 주관식 채점. answerKey는 허용 답을 '|'로 나열한다(예: "21/2|10.5").
+   * 공백을 뺀 문자열이 같거나, 분수·소수를 수로 바꿔 같은 값이면 정답이다.
+   */
+  static boolean isSatSprCorrect(String answer, String answerKey) {
+    if (answer == null || answerKey == null) return false;
+    String given = answer.replaceAll("\\s+", "");
+    if (given.isEmpty() || given.length() > 6) return false;
+    Double givenValue = parseSatNumber(given);
+    for (String raw : answerKey.split("\\|")) {
+      String accepted = raw.replaceAll("\\s+", "");
+      if (accepted.isEmpty()) continue;
+      if (accepted.equals(given)) return true;
+      Double acceptedValue = parseSatNumber(accepted);
+      if (givenValue != null && acceptedValue != null && Math.abs(givenValue - acceptedValue) < 1e-9) return true;
+      if (givenValue != null && acceptedValue != null && fillsSprWithCutOrRoundedDecimal(given, givenValue, acceptedValue)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 디지털 SAT 입력 규칙: 너무 긴 소수는 입력칸(양수 5자, 음수 6자)을 다 채워 자르거나 반올림해 넣는다.
+   * 예) 2/3 → .6666, .6667, 0.666, 0.667 정답 / 0.66, .67 오답(칸을 다 채우지 않음).
+   */
+  static boolean fillsSprWithCutOrRoundedDecimal(String given, double givenValue, double acceptedValue) {
+    int dot = given.indexOf('.');
+    if (dot < 0 || given.indexOf('/') >= 0) return false;
+    int maxLen = given.startsWith("-") ? 6 : 5;
+    if (given.length() < maxLen) return false;
+    int decimals = given.length() - dot - 1;
+    if (decimals <= 0) return false;
+    double scale = Math.pow(10, decimals);
+    double cut = (acceptedValue < 0 ? Math.ceil(acceptedValue * scale) : Math.floor(acceptedValue * scale)) / scale;
+    double rounded = Math.round(acceptedValue * scale) / scale;
+    return Math.abs(givenValue - cut) < 1e-9 || Math.abs(givenValue - rounded) < 1e-9;
+  }
+
+  /** "-3", ".75", "7/2", "-1/4" 형태만 수로 바꾼다. 그 밖의 문자열은 null. */
+  static Double parseSatNumber(String s) {
+    if (s == null || !s.matches("-?(\\d+(\\.\\d*)?|\\.\\d+)(/\\d+(\\.\\d*)?)?")) return null;
+    int slash = s.indexOf('/');
+    try {
+      if (slash < 0) return Double.parseDouble(s);
+      double num = Double.parseDouble(s.substring(0, slash));
+      double den = Double.parseDouble(s.substring(slash + 1));
+      if (den == 0) return null;
+      return num / den;
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   static Double bandFor(double accuracyPercent) {

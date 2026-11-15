@@ -62,6 +62,11 @@
     };
   };
 
+  // 응시 화면 주소: SAT은 전용 시험 화면(/testprep/sat/run), 그 밖은 기존 화면(/testprep/run).
+  TP.runUrl = function (kind, attemptId) {
+    return (kind === 'SAT' ? '/testprep/sat/run?attempt=' : '/testprep/run?attempt=') + encodeURIComponent(attemptId);
+  };
+
   TP.requireLogin = function (then) {
     if (TP.user) { then(); return; }
     TP.openLoginModal();

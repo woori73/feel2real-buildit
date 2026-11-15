@@ -59,7 +59,7 @@ class TestPrepPagesMySqlTest {
   void anonymousSubPagesRedirectToPublicHomeWithReturnUrl() throws Exception {
     for (String path : new String[] {
         "/testprep/practice", "/testprep/vocab", "/testprep/guide", "/testprep/run", "/testprep/scores",
-        "/testprep/review", "/testprep/learning"}) {
+        "/testprep/review", "/testprep/learning", "/testprep/sat", "/testprep/sat/run"}) {
       MvcResult r = mockMvc.perform(get(path).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("status " + path).isEqualTo(302);
       assertThat(r.getResponse().getRedirectedUrl()).as("redirect " + path)
@@ -83,7 +83,7 @@ class TestPrepPagesMySqlTest {
   void authenticatedPagesRender() throws Exception {
     for (String path : new String[] {
         "/testprep", "/testprep/practice", "/testprep/vocab", "/testprep/guide",
-        "/testprep/run", "/testprep/scores", "/testprep/review", "/testprep/learning"}) {
+        "/testprep/run", "/testprep/scores", "/testprep/review", "/testprep/learning", "/testprep/sat"}) {
       MvcResult r = mockMvc.perform(get(path).cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
       assertThat(r.getResponse().getStatus()).as("render " + path).isEqualTo(200);
       String html = r.getResponse().getContentAsString();
@@ -91,6 +91,17 @@ class TestPrepPagesMySqlTest {
       // 한영 병기 셸이 함께 렌더되는지 확인.
       assertThat(html).as("bilingual ko span on " + path).contains("class=\"ko\"");
     }
+  }
+
+  @Test
+  @DisplayName("로그인 회원의 SAT 시험 화면은 TESTPREP 메뉴 없이 시험 도구 셸만 렌더된다")
+  void satRunRendersExamShell() throws Exception {
+    MvcResult r = mockMvc.perform(get("/testprep/sat/run").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    String html = r.getResponse().getContentAsString();
+    assertThat(html).doesNotContain("tp-nav");
+    assertThat(html).contains("id=\"sat-main\"", "id=\"calc-panel\"", "id=\"ref-panel\"", "id=\"line-reader\"",
+        "/js/sat_run.js", "/js/sat_calc.js", "/js/sat_rich.js");
   }
 
   @Test

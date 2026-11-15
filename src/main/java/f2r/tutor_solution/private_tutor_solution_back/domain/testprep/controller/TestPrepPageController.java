@@ -51,6 +51,23 @@ public class TestPrepPageController {
     return "testprep/run";
   }
 
+  /** Digital SAT 연습 — 소개·세트 목록. 시험 데이터는 기존 /api/testprep (kind=SAT)를 그대로 쓴다. */
+  @GetMapping("/testprep/sat")
+  public String sat(Model model) {
+    model.addAttribute("kind", "SAT");
+    model.addAttribute("pageActive", "sat");
+    model.addAttribute("ssoLoginUrl", SSO_LOGIN);
+    return "testprep/sat";
+  }
+
+  /** Digital SAT 시험 화면(전체 화면형). TESTPREP 상단 메뉴 없이 시험 도구만 보인다. */
+  @GetMapping("/testprep/sat/run")
+  public String satRun(Model model) {
+    model.addAttribute("pageActive", "sat");
+    model.addAttribute("ssoLoginUrl", SSO_LOGIN);
+    return "testprep/sat_run";
+  }
+
   @GetMapping("/testprep/review")
   public String review(Model model) {
     model.addAttribute("pageActive", "scores");

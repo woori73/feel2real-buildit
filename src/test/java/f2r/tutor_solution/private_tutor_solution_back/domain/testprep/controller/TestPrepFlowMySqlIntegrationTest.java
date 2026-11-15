@@ -55,6 +55,9 @@ class TestPrepFlowMySqlIntegrationTest {
   private static final long OTHER_ID = 900202L;
   private static final String BAND_DISCLAIMER =
       "TestPrep internal band estimate — not an official ETS TOEFL iBT score.";
+  private static final String SAT_EXAM = "TP-SAT-MINI-01";
+  private static final String SAT_DISCLAIMER =
+      "F2R internal score estimate — not an official College Board SAT score.";
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
@@ -230,5 +233,87 @@ class TestPrepFlowMySqlIntegrationTest {
         .andReturn().getResponse().getStatus()).isEqualTo(401);
     assertThat(mockMvc.perform(get(API + "/learning"))
         .andReturn().getResponse().getStatus()).isEqualTo(401);
+  }
+  @Test
+  @DisplayName("SAT 미니 세트: 전원 정답(주관식은 다른 꼴의 같은 값)이면 영역 800·합계 1600, SAT 안내 문구")
+  void satFlow_allCorrectWithEquivalentSpr() throws Exception {
+    // given — kind=SAT 목록에 미니 세트가 있다
+    MvcResult list = mockMvc.perform(get(API + "/exams").param("kind", "SAT").cookie(auth(OWNER_ID))).andReturn();
+    List<String> codes = new ArrayList<>();
+    json(list).forEach(e -> codes.add(e.get("examCode").asText()));
+    assertThat(codes).contains(SAT_EXAM);
+
+    MvcResult start = mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("examCode", SAT_EXAM))))
+        .andReturn();
+    JsonNode view = json(start);
+    long attemptId = view.get("attemptId").asLong();
+    assertThat(view.get("kind").asText()).isEqualTo("SAT");
+    assertThat(view.get("questions")).hasSize(18);
+    assertThat(view.get("bandDisclaimer").asText()).isEqualTo(SAT_DISCLAIMER);
+    view.get("questions").forEach(q -> {
+      JsonNode help;
+      try { help = objectMapper.readTree(q.get("koHelpJson").asText()); } catch (Exception e) { throw new AssertionError(e); }
+      assertThat(help.get("translation").asText()).as("해설 한글 해석").isNotBlank();
+      assertThat(help.get("vocab").size()).as("해설 어휘").isPositive();
+      assertThat(help.get("solution").asText()).as("해설 풀이").isNotBlank();
+      assertThat(help.get("strategy").asText()).as("해설 전략").isNotBlank();
+    });
+
+    // when — 정답 키로 답한다. 주관식 '21/2|10.5'는 42/4로 입력해 동치 채점을 확인한다.
+    List<Map<String, Object>> answers = new ArrayList<>();
+    jdbc.query("SELECT q.question_id, q.answer_key FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+            + " WHERE e.exam_code = ? ORDER BY q.order_no",
+        (java.sql.ResultSet rs) -> {
+          String key = rs.getString("answer_key");
+          answers.add(Map.of("questionId", rs.getLong("question_id"),
+              "answerText", "21/2|10.5".equals(key) ? "42/4" : key.split("\\|")[0]));
+        }, SAT_EXAM);
+    MvcResult submit = mockMvc.perform(post(API + "/attempts/" + attemptId + "/submit").cookie(auth(OWNER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("answers", answers))))
+        .andReturn();
+
+    // then
+    assertThat(submit.getResponse().getStatus()).isEqualTo(200);
+    JsonNode card = json(submit);
+    assertThat(card.get("kind").asText()).isEqualTo("SAT");
+    assertThat(card.get("totalScaled").asInt()).isEqualTo(1600);
+    assertThat(card.get("overallBand").isNull()).isTrue();
+    assertThat(card.get("bandDisclaimer").asText()).isEqualTo(SAT_DISCLAIMER);
+    List<String> sections = new ArrayList<>();
+    card.get("sections").forEach(s -> {
+      sections.add(s.get("section").asText());
+      assertThat(s.get("scaled").asInt()).isEqualTo(800);
+      assertThat(s.get("band").isNull()).isTrue();
+    });
+    assertThat(sections).containsExactly("RW", "MATH");
+
+    MvcResult review = mockMvc.perform(get(API + "/attempts/" + attemptId + "/review").cookie(auth(OWNER_ID))).andReturn();
+    JsonNode rv = json(review);
+    assertThat(rv.get("totalScaled").asInt()).isEqualTo(1600);
+    rv.get("items").forEach(it -> assertThat(it.get("isCorrect").asBoolean()).as(it.get("prompt").asText()).isTrue());
+
+    JsonNode h = json(mockMvc.perform(get(API + "/attempts").cookie(auth(OWNER_ID))).andReturn()).get(0);
+    assertThat(h.get("kind").asText()).isEqualTo("SAT");
+    assertThat(h.get("totalScaled").asInt()).isEqualTo(1600);
+  }
+
+  @Test
+  @DisplayName("SAT 미니 세트: 답 없이 제출하면 영역 200·합계 400, 오답 18건이 오답 목록에 쌓인다")
+  void satFlow_blankSubmit() throws Exception {
+    MvcResult start = mockMvc.perform(post(API + "/attempts").cookie(auth(OTHER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("examCode", SAT_EXAM))))
+        .andReturn();
+    long attemptId = json(start).get("attemptId").asLong();
+
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + attemptId + "/submit").cookie(auth(OTHER_ID))
+        .contentType(MediaType.APPLICATION_JSON).content("{}")).andReturn());
+
+    assertThat(card.get("totalScaled").asInt()).isEqualTo(400);
+    assertThat(json(mockMvc.perform(get(API + "/learning").cookie(auth(OTHER_ID))).andReturn())
+        .get("wrongCount").asLong()).isEqualTo(18);
   }
 }

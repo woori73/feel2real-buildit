@@ -27,6 +27,7 @@
       return;
     }
     if (attempt.status === 'SUBMITTED') { location.href = '/testprep/review?attempt=' + attempt.attemptId; return; }
+    if (attempt.kind === 'SAT') { location.href = TP.runUrl('SAT', attempt.attemptId); return; }
     questions = attempt.questions;
     answers = {};
     questions.forEach(q => { answers[q.questionId] = attempt.savedAnswers[q.questionId] || null; });
