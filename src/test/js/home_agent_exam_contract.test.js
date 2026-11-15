@@ -18,6 +18,7 @@ test('landing: /wiki 는 모의고사위키로만 표기하고 폐기 서비스�
   // given
   const html = read('public/landing.html');
   // when / then
-  assert.ok(html.includes('>모의고사위키<'));
+  // 대시보드 바로가기 칸(2026-11-16 삭제)에만 붙여 쓴 「모의고사위키」가 있었다. 메뉴의 「모의고사 위키」로 확인한다.
+  assert.ok(html.includes('>모의고사위키<') || html.includes('>모의고사 위키<'));
   ['DesignCraft', 'PhotoCraft', '기출분석', '출제방향', '학습자료실', '고객센터'].forEach((w) => assert.ok(!html.includes(w), w));
 });
