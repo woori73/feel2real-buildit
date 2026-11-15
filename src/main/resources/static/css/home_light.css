@@ -632,3 +632,4 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hl-dexam-steps li strong { display: block; font-size: 17px; }
 .hl-dexam-steps li span { color: var(--hl-sub); font-size: 15px; line-height: 1.6; }
 .hl-dexam-now { margin: 16px 0 12px; font-size: 14px; color: var(--hl-sub); }
+@media (max-width: 640px) { .hero-dexam .hero-lead-more { display: none; } }
