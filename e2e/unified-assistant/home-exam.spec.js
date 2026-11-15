@@ -25,7 +25,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     const page=await context.newPage(); const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await isolate(page);
     await page.addInitScript(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new DOMException('Denied','NotAllowedError');}}}));
-    await page.goto('/#dashboard');
+    await page.goto('/#exam-payment');
     await expect(page.locator('#siHomeTitle')).toHaveText('우리 학교 맞춤문제 1장 먼저 받아보세요.');
     // 홈 AI 비서(서수니·세븐)는 2026-11-15 겨울 톤 개편에서 내렸다.
     await expect(page.locator('#aiHome')).toHaveCount(0);
@@ -36,7 +36,7 @@ for(const width of sizes) test(`exam ${width}: canonical terms, separate mail co
     expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
     await selectHomePane(page, 'home');
     await expect(page.locator('#examPromo')).toBeVisible();
-    await selectHomePane(page, 'dashboard');
+    await selectHomePane(page, 'guide');
     await expect(page.locator('.si-holo-tile')).toHaveCount(0);
     await expect(page.locator('#enExamMail')).toHaveAttribute('href','mailto:woorinaesin@naver.com');
     // Observe the actual native click without launching an external email app in a CI runner.
