@@ -160,24 +160,30 @@ body.nt-body {
 .nt-mark input { width: 17px; height: 17px; accent-color: var(--nt-ink); }
 
 .nt-sheet { padding: 18px 0 6px; display: grid; gap: 14px; }
-/* 문항 그림 폭 480px: 글자 크기가 오른쪽 OMR 답안지 글자와 비슷해지도록 실제 시험지(358px)보다 키운다. 원본 그림은 597px. */
+/* 문항 그림 폭 480px(휴대폰은 화면 폭). 원본 그림은 320dpi로 자른 1174px 단이라 고해상도 화면에서도 선명하다. */
 .nt-img { display: block; width: 480px; max-width: 100%; height: auto; margin: 0 auto; }
 .nt-passage { padding-bottom: 14px; border-bottom: 1px dashed var(--nt-rule); }
 
 .nt-pick {
   width: 480px; max-width: 100%; margin: 6px auto 0; border: 1.5px solid var(--nt-omr); background: var(--nt-omr-tint); color: var(--nt-omr);
 }
-.nt-pick-head, .nt-pick-row { display: grid; grid-template-columns: 64px repeat(5, 1fr); align-items: center; }
-.nt-pick-head { border-bottom: 1px solid var(--nt-omr); font: 500 12px/1 var(--nt-sans); text-align: center; padding: 5px 0; letter-spacing: .2em; }
+/* 문항 아래 답란: 시험지 글자 크기에 맞춘 작은 OMR 한 줄. 누르는 범위(단추)는 넉넉히, 그려지는 타원은 작게. */
+.nt-pick-head, .nt-pick-row { display: grid; grid-template-columns: 52px repeat(5, 1fr); align-items: center; }
+.nt-pick-head { border-bottom: 1px solid var(--nt-omr); font: 500 11px/1 var(--nt-sans); text-align: center; padding: 4px 0; letter-spacing: .2em; }
 .nt-pick-head span + span { grid-column: 2 / -1; }
-.nt-pick-row { padding: 8px 0; }
-.nt-pick-no { align-self: stretch; display: grid; place-items: center; border-right: 1px solid var(--nt-omr); font: 700 18px/1 var(--nt-sans); font-variant-numeric: tabular-nums; }
+.nt-pick-row { padding: 3px 0; }
+.nt-pick-no { align-self: stretch; display: grid; place-items: center; border-right: 1px solid var(--nt-omr); font: 700 15px/1 var(--nt-sans); font-variant-numeric: tabular-nums; }
 .nt-ob {
-  justify-self: center; width: 22px; height: 40px; padding: 0; border: 1.3px solid var(--nt-omr); border-radius: 11px;
-  background: #fff; color: var(--nt-omr); font: 500 12px/1 var(--nt-sans); cursor: pointer;
+  justify-self: center; position: relative; isolation: isolate; width: 36px; height: 36px; padding: 0; border: 0; background: transparent;
+  color: var(--nt-omr); font: 500 10px/1 var(--nt-sans); cursor: pointer;
 }
-.nt-ob:hover { background: #fbe1e6; }
-.nt-ob.is-on { background: var(--nt-mark); border-color: var(--nt-mark); color: transparent; }
+.nt-ob::before {
+  content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: 16px; height: 28px; transform: translate(-50%, -50%);
+  border: 1.2px solid var(--nt-omr); border-radius: 8px; background: #fff;
+}
+.nt-ob:hover::before { background: #fbe1e6; }
+.nt-ob.is-on { color: transparent; }
+.nt-ob.is-on::before { background: var(--nt-mark); border-color: var(--nt-mark); }
 
 /* OMR 답안지 */
 .nt-omr {
@@ -300,7 +306,9 @@ body.nt-body {
   .nt-top-l { gap: 10px; }
   .nt-sheet-wrap { padding: 0 8px; }
   .nt-page { padding: 20px 14px 28px; }
-  .nt-run .nt-page { padding: 12px 10px 18px; }
+  .nt-run .nt-page { padding: 10px 4px 16px; }
+  .nt-run .nt-sheet-wrap { padding: 0 4px; }
+  .nt-run .nt-paperhead-title { font-size: 17px; padding: 10px 8px; }
   .nt-paperhead-title { font-size: 19px; }
   .nt-paperhead th, .nt-paperhead td { padding: 5px 3px; font-size: 12px; }
   .nt-paperhead td { font-size: 14px; }
