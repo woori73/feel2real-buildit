@@ -8,6 +8,12 @@
   const NT = root.NT = { user: null };
   const CIRC = ['①', '②', '③', '④', '⑤'];
   const LETTERS = ['A', 'B', 'C', 'D', 'E'];
+  // 학교별 페이지 주소: 시험 코드 앞부분 → 학교 페이지(NaesinTestPageController.SCHOOLS와 같게 유지).
+  const SCHOOLS = { 'TP-NAESIN-APM2-': 'apgujeong-m2', 'TP-NAESIN-SGM2-': 'singu-m2', 'TP-NAESIN-APM1-': 'apgujeong-m1' };
+  NT.schoolUrl = function (examCode) {
+    const key = Object.keys(SCHOOLS).find(p => String(examCode || '').startsWith(p));
+    return key ? '/naesintest/school/' + SCHOOLS[key] : '/naesintest';
+  };
   NT.circ = letter => CIRC[LETTERS.indexOf(letter)] || '';
   NT.letter = i => LETTERS[i];
 
@@ -19,7 +25,7 @@
     if (!res.ok) {
       let msg = res.statusText;
       try { const j = await res.json(); msg = j.message || msg; } catch (e) { /* 본문 없음 */ }
-      throw new Error(msg);
+      const err = new Error(msg); err.status = res.status; throw err;
     }
     if (res.status === 204) return null;
     const text = await res.text();

@@ -431,4 +431,33 @@ class TestPrepFlowMySqlIntegrationTest {
     assertThat(r1.get("answer_key")).isEqualTo("B");
     assertThat(r1.get("explanation").toString()).contains("바른 발음부호는 [prɪˈzɜːrv]", "②는 [s]로 적어 틀리다");
   }
+
+  private int startStatus(Cookie cookie, String code) throws Exception {
+    return mockMvc.perform(post(API + "/attempts").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn().getResponse().getStatus();
+  }
+
+  @Test
+  @DisplayName("given 내신 회차, when 일반 회원·재원생·관리자가 시작하면 일반 회원은 1회만, 재원생·관리자는 전 회차를 풀 수 있다")
+  void naesinAccess_generalOnlyRound1_studentsAndAdminAll() throws Exception {
+    // given — 일반 회원(학생부에 없음), 학생부 재원생과 이름이 같은 회원, 관리자
+    Cookie general = auth(OWNER_ID);
+    String login = "naesin-roster-" + System.nanoTime();
+    jdbc.update("INSERT INTO users (login_id, password, name, nickname, role) VALUES (?, 'pw', '재원생내신테스트', '재원생', 'STUDENT')", login);
+    long rosterUserId = jdbc.queryForObject("SELECT user_id FROM users WHERE login_id = ?", Long.class, login);
+    jdbc.update("INSERT INTO easy_students (name, school, grade, status) VALUES ('재원생내신테스트', '압구정중', 2, 'ENROLLED')");
+    Cookie roster = new Cookie("ACCESS_TOKEN", tokenProvider.issue(rosterUserId, login, "STUDENT"));
+    Cookie admin = new Cookie("ACCESS_TOKEN", tokenProvider.issue(900909L, "tp_admin", "ADMIN"));
+
+    // when / then
+    assertThat(startStatus(general, "TP-NAESIN-APM2-2602-R01")).isEqualTo(200);
+    assertThat(startStatus(general, "TP-NAESIN-APM2-2602-R02")).isEqualTo(403);
+    assertThat(startStatus(roster, "TP-NAESIN-APM2-2602-R02")).isEqualTo(200);
+    assertThat(startStatus(admin, "TP-NAESIN-APM2-2602-R16")).isEqualTo(200);
+    assertThat(json(mockMvc.perform(get("/api/naesintest/access").cookie(general)).andReturn()).get("full").asBoolean()).isFalse();
+    assertThat(json(mockMvc.perform(get("/api/naesintest/access").cookie(roster)).andReturn()).get("full").asBoolean()).isTrue();
+    assertThat(mockMvc.perform(get("/naesin/apgujeong-m2-2026-2/r02/q01.webp").cookie(general)).andReturn().getResponse().getStatus()).isEqualTo(403);
+    assertThat(mockMvc.perform(get("/naesin/apgujeong-m2-2026-2/r01/q01.webp").cookie(general)).andReturn().getResponse().getStatus()).isEqualTo(200);
+    assertThat(mockMvc.perform(get("/naesin/apgujeong-m2-2026-2/r02/q01.webp").cookie(roster)).andReturn().getResponse().getStatus()).isEqualTo(200);
+  }
 }

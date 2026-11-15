@@ -5,6 +5,7 @@
 - `tp_questions.points` INT NULL(V1115): 문항 배점. 내신 실전 연습(`kind='NAESIN'`)만 채우고 SAT·TOEFL 문항은 `NULL`. Entity `TpQuestion.points`.
 - V1116: 압구정중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 16회분. `tp_exams` 16행(`TP-NAESIN-APM2-2602-R01`~`R16`, `kind='NAESIN'`, `time_limit_sec=7200`) + `tp_questions` 730행(1~10회·14~16회 40문항, 종합 11~13회 70문항, `section='EN'`, `task_type='NAESIN_MC5'`, ①~⑤ → `answer_key` A~E). 문항은 원본 문제지 PDF를 문항 단위로 자른 그림(`static/naesin/apgujeong-m2-2026-2/rNN/qNN.webp`, 공통 지문은 `pAA-BB.webp`)을 `prompt`/`body_text`에 `[[img:경로]]`로 담는다. 회차별 배점 합계 = 문제지 표지 총점.
 - V1117: 발음부호 문항 24개 해설 수정(정답 보기를 강세가 아닌 발음부호 오류로 바꿈, 정답·배점 그대로). 스키마 변경 없음.
+- 내신 이용 범위: 일반 회원은 학교마다 1회만, 관리자·재원생(출결 학생부 `easy_students` ENROLLED와 이름 또는 휴대전화가 같은 회원)은 전 회차. 스키마 변경 없음(`NaesinAccessService`).
 - 내신 채점: 섹션 `scaled` = 맞힌 문항 배점 합, `scaleMax` = 배점 합계. 화면 `/naesintest`는 [design/naesintest.md](design/naesintest.md).
 
 ## TESTPREP 문항 해설란 · Digital SAT 세트 (V1112·V1113)

@@ -51,6 +51,7 @@ public class TestPrepService {
   private final TpAttemptRepository attemptRepository;
   private final TpAttemptAnswerRepository answerRepository;
   private final ObjectMapper objectMapper;
+  private final NaesinAccessService naesinAccessService;
 
   @Transactional(readOnly = true)
   public List<ExamListItem> listExams(String kind) {
@@ -68,6 +69,7 @@ public class TestPrepService {
   public AttemptView start(AuthenticatedPrincipal principal, StartAttemptRequest req) {
     TpExam exam = examRepository.findByExamCodeAndStatus(req.examCode(), "PUBLISHED")
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "exam not found"));
+    if (KIND_NAESIN.equals(exam.getKind())) naesinAccessService.requireCanTake(principal, exam.getExamCode());
     List<TpQuestion> questions;
     String questionIdsJson = null;
     if (req.questionIds() != null && !req.questionIds().isEmpty()) {

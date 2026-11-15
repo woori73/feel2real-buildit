@@ -30,7 +30,7 @@
     if (!id) { location.href = '/naesintest'; return; }
     await NT.loadMe();
     try { attempt = await NT.api('/api/testprep/attempts/' + encodeURIComponent(id)); }
-    catch (e) { $('paper').innerHTML = '<p class="nt-msg">시험을 열 수 없습니다. ' + NT.esc(e.message) + '</p><p class="nt-msg"><a class="nt-btn" href="/naesintest">목록으로</a></p>'; return; }
+    catch (e) { $('paper').innerHTML = '<p class="nt-msg">시험을 열 수 없습니다. ' + NT.esc(e.message) + '</p><p class="nt-msg"><a class="nt-btn" href="/naesintest">학교 고르기</a></p>'; return; }
     if (attempt.status === 'SUBMITTED') { location.replace('/naesintest/review?attempt=' + attempt.attemptId); return; }
     if (attempt.kind !== 'NAESIN') { location.replace('/naesintest'); return; }
     qs = attempt.questions;
@@ -153,7 +153,7 @@
     $('nt-confirm-ok').addEventListener('click', () => submit(false));
     $('nt-omr-toggle').addEventListener('click', () => document.body.classList.add('omr-open'));
     $('nt-omr-close').addEventListener('click', closeOmrSheet);
-    $('nt-leave').addEventListener('click', async () => { await flush(); location.href = '/naesintest'; });
+    $('nt-leave').addEventListener('click', async () => { await flush(); location.href = NT.schoolUrl(attempt.examCode); });
     document.addEventListener('keydown', e => {
       if (submitting || !$('nt-confirm').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
       if (/^[1-5]$/.test(e.key)) { pick(qs[idx], NT.letter(Number(e.key) - 1)); e.preventDefault(); }

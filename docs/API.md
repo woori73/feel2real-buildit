@@ -4900,7 +4900,10 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ### 내신 실전 연습 (`/naesintest`) — 설계 [docs/design/naesintest.md](design/naesintest.md)
 
-- `GET /naesintest`: 공개. 내신 회차 목록(서버 렌더, `kind=NAESIN` 시험을 범위별로 묶은 표). `?login=required&returnUrl=/naesintest…`이면 로그인 안내를 띄운다.
+- `GET /naesintest`: 공개. 학교 고르기(압구정중2·신구중2·압구정중1, 학교별 올라온 회차 수)와 서비스 안내(특징·이용 방법·화면 미리보기·이용 대상·자주 묻는 질문). `?login=required&returnUrl=/naesintest…`이면 로그인 안내를 띄운다.
+- `GET /naesintest/school/{slug}`: 공개. 학교별 회차 목록(서버 렌더, 시험 코드 앞부분으로 고름: `apgujeong-m2`=`TP-NAESIN-APM2-`, `singu-m2`=`TP-NAESIN-SGM2-`, `apgujeong-m1`=`TP-NAESIN-APM1-`). 회차가 없으면 준비 중 안내, 없는 학교는 404.
+- 이용 범위: 로그인 일반 회원은 학교마다 1회(시험 코드 끝 `-R01`)만, 관리자(ADMIN)와 압구정에듀홀릭 재원생은 전 회차. 재원생 = 출결 학생부(`easy_students`) 재원(ENROLLED) 학생과 회원 이름이 같거나 회원 휴대전화가 학생·학부모 번호와 같은 회원. `POST /api/testprep/attempts`로 그 밖의 내신 회차를 시작하면 `403`, 2회부터의 문항 그림(`/naesin/{세트}/rNN/…`, NN≠01)도 `403`.
+- `GET /api/naesintest/access`: 로그인 필요. `{full: boolean, message}` — full=false면 1회만.
 - `GET /naesintest/run?attempt={id}`(시험 화면), `GET /naesintest/review?attempt={id}`(채점·복습 화면): STUDENT/TUTOR/ADMIN. 비회원 브라우저 요청은 `302 /naesintest?login=required&returnUrl=…`.
 - `GET /naesin/**`(문항 그림): STUDENT/TUTOR/ADMIN, 비회원은 `401`.
 - 새 API는 없고 `/api/testprep/**`를 `kind=NAESIN`으로 쓴다. 시험 화면은 풀이 중 해설(`koHelpJson`)이 없고, 시간은 화면이 문항당 30초로 정한다(서버 마감 7200초).

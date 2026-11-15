@@ -9,4 +9,6 @@ public interface EasyStudentRepository extends JpaRepository<EasyStudent, Long> 
   List<EasyStudent> findAllByOrderByNameAsc();
 
   long countByStatus(EasyStudentStatus status);
+
+  List<EasyStudent> findAllByStatus(EasyStudentStatus status);
 }

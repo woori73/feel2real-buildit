@@ -9,14 +9,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * 내신 실전 연습(/naesintest) — TestPrep(New iBT / Digital SAT)과 분리된 화면.
  * 문제·응시·채점 데이터는 TESTPREP 테이블과 /api/testprep API(kind=NAESIN)를 그대로 쓴다.
- * 첫 화면(회차 목록)은 비회원도 볼 수 있고, 응시·결과 화면은 로그인 회원 전용(SecurityConfig).
+ * 첫 화면(학교 고르기)과 학교별 회차 목록은 비회원도 볼 수 있고, 응시·결과 화면은 로그인 회원 전용(SecurityConfig).
  */
 @Controller
 @RequiredArgsConstructor
@@ -24,6 +27,19 @@ public class NaesinTestPageController {
 
   /** 화면 시험 시간: 문항당 30초(40문항 20분). naesin_run.js의 SEC_PER_QUESTION과 같아야 한다. */
   static final int SEC_PER_QUESTION = 30;
+
+  /**
+   * 학교별 페이지. 시험 코드 앞부분(codePrefix)으로 그 학교 회차를 고른다(예: TP-NAESIN-APM2-2602-R01).
+   * 새 학교는 여기와 naesin_common.js의 SCHOOLS에 함께 추가한다. 문제가 아직 없는 학교는 '준비 중'으로 보인다.
+   */
+  public record School(String slug, String name, String grade, String codePrefix, String scope) {
+    public String title() { return name + " " + grade; }
+  }
+
+  static final List<School> SCHOOLS = List.of(
+      new School("apgujeong-m2", "압구정중학교", "2학년", "TP-NAESIN-APM2-", "Lesson 7·8"),
+      new School("singu-m2", "신구중학교", "2학년", "TP-NAESIN-SGM2-", null),
+      new School("apgujeong-m1", "압구정중학교", "1학년", "TP-NAESIN-APM1-", null));
 
   private static final Pattern ROUND = Pattern.compile("기말 (\\d+회) · (.+)$");
   private static final Pattern SET_SUFFIX = Pattern.compile("\\s*예상문제\\s*\\d+회$");
@@ -37,10 +53,27 @@ public class NaesinTestPageController {
 
   public record Group(String name, List<Row> rows) {}
 
+  /** 학교 고르기 표의 한 줄: 학교와 올라와 있는 회차 수. */
+  public record SchoolRow(School school, int rounds) {}
+
   @GetMapping("/naesintest")
   public String home(Model model) {
+    List<ExamListItem> exams = testPrepService.listExams(TestPrepService.KIND_NAESIN);
     model.addAttribute("canonical", "https://feel2real.co.kr/naesintest");
-    model.addAttribute("groups", group(testPrepService.listExams(TestPrepService.KIND_NAESIN)));
+    model.addAttribute("schools", schoolRows(exams));
+    return "naesintest/schools";
+  }
+
+  @GetMapping("/naesintest/school/{slug}")
+  public String school(@PathVariable String slug, Model model) {
+    School school = SCHOOLS.stream().filter(s -> s.slug().equals(slug)).findFirst()
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    List<ExamListItem> mine = testPrepService.listExams(TestPrepService.KIND_NAESIN).stream()
+        .filter(e -> e.examCode() != null && e.examCode().startsWith(school.codePrefix())).toList();
+    model.addAttribute("canonical", "https://feel2real.co.kr/naesintest/school/" + slug);
+    model.addAttribute("school", school);
+    model.addAttribute("roundCount", mine.size());
+    model.addAttribute("groups", group(mine));
     return "naesintest/home";
   }
 
@@ -52,6 +85,11 @@ public class NaesinTestPageController {
   @GetMapping("/naesintest/review")
   public String review() {
     return "naesintest/review";
+  }
+
+  static List<SchoolRow> schoolRows(List<ExamListItem> exams) {
+    return SCHOOLS.stream().map(s -> new SchoolRow(s, (int) exams.stream()
+        .filter(e -> e.examCode() != null && e.examCode().startsWith(s.codePrefix())).count())).toList();
   }
 
   static Row toRow(ExamListItem e) {

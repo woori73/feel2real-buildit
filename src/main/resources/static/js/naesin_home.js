@@ -11,7 +11,7 @@
       const a = await NT.api('/api/testprep/attempts', { method: 'POST', body: JSON.stringify({ examCode }) });
       location.href = '/naesintest/run?attempt=' + a.attemptId;
     } catch (e) {
-      if (NT.user) alertBox('시험을 시작하지 못했습니다: ' + e.message);
+      if (NT.user) alertBox(e.status === 403 ? '1회는 누구나, 2회부터는 압구정에듀홀릭 재원생만 풀 수 있습니다.' : '시험을 시작하지 못했습니다: ' + e.message);
     }
   }
 
@@ -52,6 +52,17 @@
           if (resume[tr.dataset.exam]) tr.querySelector('[data-start]').textContent = '이어 풀기';
         });
       } catch (e) { /* 기록을 못 불러와도 목록은 쓸 수 있다 */ }
+      // 일반 회원은 1회만: 2회부터 시작 단추를 '재원생 전용'으로 바꾼다(서버도 403으로 막는다).
+      try {
+        const access = await NT.api('/api/naesintest/access');
+        if (!access.full) {
+          document.querySelectorAll('tr[data-exam]').forEach(tr => {
+            if (/-R01$/.test(tr.dataset.exam)) return;
+            const b = tr.querySelector('[data-start]');
+            if (b) b.outerHTML = '<span class="nt-locked" title="' + NT.esc(access.message) + '">재원생 전용</span>';
+          });
+        }
+      } catch (e) { /* 범위를 못 불러오면 서버가 시작할 때 막는다 */ }
     }
 
     document.querySelectorAll('[data-start]').forEach(b => b.addEventListener('click', () => {

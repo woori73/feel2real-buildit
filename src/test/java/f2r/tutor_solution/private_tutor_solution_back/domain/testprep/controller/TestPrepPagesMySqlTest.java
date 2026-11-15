@@ -124,14 +124,29 @@ class TestPrepPagesMySqlTest {
   }
 
   @Test
-  @DisplayName("익명 /naesintest 첫 화면은 공개되고 16회차가 범위별 표로 나온다")
+  @DisplayName("익명 /naesintest 첫 화면은 공개되고 학교 3곳(압구정중2·신구중2·압구정중1)을 고르는 표가 나온다")
   void anonymousNaesinHomeIsPublic() throws Exception {
     MvcResult r = mockMvc.perform(get("/naesintest").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
     String html = r.getResponse().getContentAsString();
+    assertThat(html).contains("href=\"/naesintest/school/apgujeong-m2\"", "href=\"/naesintest/school/singu-m2\"",
+        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "준비 중");
+    assertThat(html).doesNotContain("data-exam=", "tp-nav");
+  }
+
+  @Test
+  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차가 범위별 표로, 문제가 없는 학교는 준비 중으로, 없는 학교는 404")
+  void anonymousSchoolPages() throws Exception {
+    MvcResult a = mockMvc.perform(get("/naesintest/school/apgujeong-m2").accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(a.getResponse().getStatus()).isEqualTo(200);
+    String html = a.getResponse().getContentAsString();
     assertThat(html.split("data-exam=\"TP-NAESIN-APM2-2602-R", -1)).hasSize(17);
-    assertThat(html).contains("Lesson 7", "Lesson 8", "Lesson 7·8 종합", "Final", "/js/naesin_home.js");
-    assertThat(html).doesNotContain("tp-nav");
+    assertThat(html).contains("Lesson 7", "Lesson 8", "Lesson 7·8 종합", "Final", "/js/naesin_home.js", "href=\"/naesintest\"");
+    MvcResult s = mockMvc.perform(get("/naesintest/school/singu-m2").accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(s.getResponse().getStatus()).isEqualTo(200);
+    assertThat(s.getResponse().getContentAsString()).contains("신구중학교", "준비하고 있습니다").doesNotContain("data-exam=");
+    MvcResult none = mockMvc.perform(get("/naesintest/school/nowhere").accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(none.getResponse().getStatus()).isEqualTo(404);
   }
 
   @Test
