@@ -101,7 +101,9 @@ class TestPrepPagesMySqlTest {
     String html = r.getResponse().getContentAsString();
     assertThat(html).doesNotContain("tp-nav");
     assertThat(html).contains("id=\"sat-main\"", "id=\"calc-panel\"", "id=\"ref-panel\"", "id=\"line-reader\"",
-        "/js/sat_run.js", "/js/sat_calc.js", "/js/sat_rich.js");
+        "/js/sat_run.js", "/js/sat_calc.js", "/js/sat_rich.js", "id=\"btn-home\"", "id=\"help-panel\"");
+    // 동작하지 않던 Highlights & Notes 안내 팝업과 응시자 이름 칸은 지웠다(2026-11-15).
+    assertThat(html).doesNotContain("id=\"hl-tip\"", "id=\"sat-name\"");
   }
 
   @Test

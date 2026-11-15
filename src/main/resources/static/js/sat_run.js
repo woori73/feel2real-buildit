@@ -45,7 +45,7 @@
     ['Select option A–D', 'Ctrl + Shift + 1–4'],
     ['Turn cross-out mode on or off', 'Ctrl + Alt + O'],
     ['Cross out option A–D', 'Ctrl + Alt + 1–4'],
-    ['Highlight selected text', 'Ctrl + H'],
+    ['Highlight selected text (or drag to choose a color)', 'Ctrl + H'],
     ['Line reader', 'Ctrl + L (move with ↑ ↓)'],
     ['Calculator / Reference (Math)', 'Ctrl + Alt + C / Ctrl + Alt + R'],
     ['Show or hide the timer', 'Ctrl + Alt + T'],
@@ -57,7 +57,6 @@
   const ICON = {
     mark: '<svg viewBox="0 0 16 20" width="13" height="16" aria-hidden="true"><path d="M2 1h12v18l-6-4.5L2 19z" fill="currentColor"/></svg>',
     markOff: '<svg viewBox="0 0 16 20" width="13" height="16" aria-hidden="true"><path d="M2 1h12v18l-6-4.5L2 19z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
-    pen: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20h6M14.5 4.5l5 5L9 20H4v-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
     calc: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h2M16 15v3" stroke="currentColor" stroke-width="1.8"/></svg>',
     ref: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><text x="3" y="17" font-size="14" font-style="italic" font-family="serif" fill="currentColor">x²</text></svg>',
     more: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="19" r="1.8" fill="currentColor"/></svg>',
@@ -181,8 +180,6 @@
     }
     setView(view);
 
-    const u = TP.user || {};
-    $('sat-name').textContent = u.displayName || u.name || u.nickname || u.loginId || '';
     document.title = attempt.title + ' · Digital SAT Practice';
     wireStatic();
     renderAll();
@@ -259,18 +256,14 @@
     const m = mod();
     const tools = [];
     const working = view === 'question' || view === 'review';
-    if (working && m.section === 'RW') tools.push('<button type="button" class="sat-tool" id="tool-hl" title="Highlights & Notes (Ctrl+H)">' + ICON.pen + '<span>Highlights &amp; Notes</span></button>');
     if (working && m.section === 'MATH') {
       tools.push('<button type="button" class="sat-tool" id="tool-calc" title="Calculator (Ctrl+Alt+C)">' + ICON.calc + '<span>Calculator</span></button>');
       tools.push('<button type="button" class="sat-tool" id="tool-ref" title="Reference (Ctrl+Alt+R)">' + ICON.ref + '<span>Reference</span></button>');
     }
-    if (view === 'question') tools.push('<button type="button" class="sat-tool sat-tool-help' + (!$('help-panel').hidden ? ' on' : '') + '" id="tool-help" title="해설 — 여는 동안 시간이 멈춥니다 (Ctrl+Alt+E)">' + ICON.help + '<span>해설</span></button>');
     tools.push('<button type="button" class="sat-tool" id="tool-more" aria-haspopup="menu">' + ICON.more + '<span>More</span></button>');
     $('sat-tools').innerHTML = tools.join('');
-    if ($('tool-hl')) $('tool-hl').addEventListener('click', highlightButton);
     if ($('tool-calc')) $('tool-calc').addEventListener('click', () => togglePanel('calc'));
     if ($('tool-ref')) $('tool-ref').addEventListener('click', () => togglePanel('ref'));
-    if ($('tool-help')) $('tool-help').addEventListener('click', () => toggleHelp());
     $('tool-more').addEventListener('click', e => { e.stopPropagation(); toggleMore(); });
     if (m.section !== 'MATH') { $('calc-panel').hidden = true; $('ref-panel').hidden = true; }
     $('tool-calc') && $('tool-calc').classList.toggle('on', !$('calc-panel').hidden);
@@ -284,7 +277,16 @@
       + '<button type="button" class="sat-mark' + (marked ? ' on' : '') + '" id="btn-mark" aria-pressed="' + marked + '">'
       + (marked ? ICON.mark : ICON.markOff) + '<span>Mark for Review</span></button>'
       + (isMC ? '<button type="button" class="sat-abc' + (st.elimOn ? ' on' : '') + '" id="btn-abc" aria-pressed="' + st.elimOn + '" title="Cross out answer choices (Ctrl+Alt+O)"><s>ABC</s></button>' : '')
-      + '</div>';
+      + '</div>'
+      + helpButtonHtml();
+  }
+
+  // 문항마다 보이는 해설 버튼. 누르면 오른쪽 해설란이 열리고 모듈 시간이 멈춘다.
+  function helpButtonHtml() {
+    const open = !$('help-panel').hidden;
+    return '<button type="button" class="sat-help-btn' + (open ? ' on' : '') + '" id="btn-help" aria-expanded="' + open + '" title="Ctrl+Alt+E">'
+      + ICON.help + '<b>' + (open ? '해설 닫고 계속 풀기' : '한글 해설 · 풀이 전략 보기') + '</b>'
+      + '<span>' + (open ? '닫으면 시간이 다시 흐릅니다' : '누르면 시간이 멈춥니다') + '</span></button>';
   }
 
   function choicesHtml(q) {
@@ -347,6 +349,7 @@
   function wireQuestion(q) {
     const main = $('sat-main');
     $('btn-mark').addEventListener('click', toggleMark);
+    $('btn-help').addEventListener('click', () => toggleHelp());
     if ($('btn-abc')) $('btn-abc').addEventListener('click', toggleElimMode);
     main.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => pick(b.dataset.pick)));
     main.querySelectorAll('[data-strike]').forEach(b => b.addEventListener('click', () => strike(b.dataset.strike)));
@@ -479,7 +482,7 @@
       + '<p class="sat-intro-sub">Section ' + (m.index + 1) + ' of ' + modules.length + ' · Module 1 · ' + m.questions.length + ' questions · ' + Math.round(m.seconds / 60) + ' minutes'
       + '<span class="ko">' + modules.length + '개 영역 중 ' + (m.index + 1) + '번째 · 문항 ' + m.questions.length + '개 · ' + Math.round(m.seconds / 60) + '분</span></p>'
       + '<div class="sat-intro-box">' + (DIRECTIONS[m.section] || '') + '</div>'
-      + '<div class="sat-intro-tips"><b>해설 버튼</b> — 문제를 풀다 막히면 위쪽 오른쪽 <b>해설</b>을 누르세요. 여는 동안 시간이 멈추고 한글 해석·영어 어휘·풀이·전략을 볼 수 있습니다. 해설을 본 문항은 결과에 따로 표시됩니다.</div>'
+      + '<div class="sat-intro-tips"><b>한글 해설 · 풀이 전략</b> — 문항마다 문제 바로 위에 있는 주황색 버튼을 누르면 시간이 멈추고 한글 해석·영어 어휘·풀이 설명·풀이 전략이 나옵니다. 해설을 본 문항은 결과에 따로 표시됩니다.' + (m.section === 'RW' ? '<br><b>형광펜·메모</b> — 지문이나 질문의 글자를 드래그하면 색·밑줄·메모 도구가 나옵니다.' : '') + '</div>'
       + '<button type="button" class="sat-btn sat-begin" id="btn-begin">Begin · 시작</button></div>';
     $('btn-begin').addEventListener('click', beginModule);
   }
@@ -687,16 +690,9 @@
     pop.querySelector('[data-save]').addEventListener('click', () => { updateMark(key, id, { n: pop.querySelector('textarea').value.trim() }); pop.hidden = true; });
     pop.querySelector('[data-del]').addEventListener('click', () => { updateMark(key, id, { n: '' }); pop.hidden = true; });
   }
-  function highlightButton() {
+  function highlightSelection() {
     const info = currentSelection();
-    if (info) { addHighlight(info, 'yellow'); return; }
-    const tip = $('hl-tip');
-    if (!tip.hidden) { tip.hidden = true; return; }
-    closePopovers();
-    const r = $('tool-hl').getBoundingClientRect();
-    tip.style.top = (r.bottom + 8) + 'px';
-    tip.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
-    tip.hidden = false;
+    if (info) addHighlight(info, 'yellow');
   }
   function placeAt(el, rect) {
     el.style.left = Math.max(8, Math.min(window.innerWidth - 300, rect.left)) + 'px';
@@ -738,7 +734,10 @@
       if (st.pauseAt) { st.paused[st.mi] = (st.paused[st.mi] || 0) + (Date.now() - st.pauseAt); st.pauseAt = null; }
     }
     saveState();
-    renderHelp(); renderTools(); tick();
+    const btn = $('btn-help');
+    if (btn) btn.outerHTML = helpButtonHtml();
+    if ($('btn-help')) $('btn-help').addEventListener('click', () => toggleHelp());
+    renderHelp(); tick();
   }
   function closeHelp() { if (!$('help-panel').hidden) toggleHelp(false); }
   function renderHelp() {
@@ -790,7 +789,7 @@
 
   // ===== 팝업 공통 =====
   function closePopovers() {
-    ['nav-pop', 'more-menu', 'hl-bar', 'note-pop', 'hl-tip', 'dir-pop'].forEach(id => { if ($(id)) $(id).hidden = true; });
+    ['nav-pop', 'more-menu', 'hl-bar', 'note-pop', 'dir-pop'].forEach(id => { if ($(id)) $(id).hidden = true; });
     $('btn-dir') && $('btn-dir').setAttribute('aria-expanded', 'false');
   }
   function toggleMore() {
@@ -856,6 +855,8 @@
       if (target) target.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }));
     $('btn-back').addEventListener('click', back);
+    // Home: 답안을 저장하고 TestPrep 홈으로 간다. 같은 응시는 목록·내 점수에서 이어 풀 수 있다.
+    $('btn-home').addEventListener('click', async () => { await flushDirty(); location.href = '/testprep'; });
     $('btn-next').addEventListener('click', next);
     $('menu-shortcuts').addEventListener('click', () => { closePopovers(); showShortcuts(); });
     $('menu-reader').addEventListener('click', () => { closePopovers(); toggleLineReader(); });
@@ -888,7 +889,7 @@
 
     document.addEventListener('click', e => {
       if (e.target.closest('.sat-pop, #nav-pop, #more-menu, #hl-bar, #note-pop, #dir-pop, #btn-nav, #tool-more, #btn-dir, mark[data-hl]')) return;
-      ['nav-pop', 'more-menu', 'hl-bar', 'hl-tip'].forEach(id => { $(id).hidden = true; });
+      ['nav-pop', 'more-menu', 'hl-bar'].forEach(id => { $(id).hidden = true; });
     });
 
     document.addEventListener('keydown', onKey);
@@ -922,7 +923,7 @@
     }
     if (ctrl && e.shiftKey && !e.altKey && digit && view === 'question') { e.preventDefault(); pick(LETTERS[Number(digit[1]) - 1]); return; }
     if (ctrl && !e.altKey && !e.shiftKey && e.code === 'KeyL') { e.preventDefault(); toggleLineReader(); return; }
-    if (ctrl && !e.altKey && !e.shiftKey && e.code === 'KeyH' && mod().section === 'RW') { e.preventDefault(); highlightButton(); return; }
+    if (ctrl && !e.altKey && !e.shiftKey && e.code === 'KeyH' && mod().section === 'RW') { e.preventDefault(); highlightSelection(); return; }
     if (!typing && !$('line-reader').hidden && (k === 'ArrowDown' || k === 'ArrowUp')) {
       e.preventDefault();
       moveLineReader(k === 'ArrowDown' ? 26 : -26);
