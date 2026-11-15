@@ -49,7 +49,10 @@ body.nt-body {
 }
 .nt-top a { text-decoration: none; }
 .nt-top a:hover { text-decoration: underline; }
-.nt-brand { font-weight: 700; color: var(--nt-ink); }
+.nt-brand { display: inline-flex; align-items: center; gap: 8px; font: 700 17px/1 var(--nt-sans); color: var(--nt-ink); text-decoration: none; }
+.nt-top a.nt-brand:hover { text-decoration: none; }
+.nt-brand img { display: block; width: 30px; height: 30px; }
+.nt-top-l { display: flex; align-items: center; gap: 16px; }
 
 /* ---------- 시험지(종이) ---------- */
 .nt-sheet-wrap {
@@ -112,7 +115,15 @@ body.nt-body {
 .nt-feat p { margin: 0; font-size: 14.5px; line-height: 1.7; color: #33363c; }
 .nt-basis { margin: 10px 0 0; text-align: center; font-size: 13px; color: var(--nt-muted); }
 .nt-steps { list-style: none; margin: 0; padding: 0; counter-reset: step; border-top: 2px solid var(--nt-ink); }
-.nt-steps li { counter-increment: step; display: grid; grid-template-columns: 44px 150px minmax(0, 1fr); align-items: baseline; gap: 4px 10px; padding: 11px 4px; border-bottom: 1px solid #d6d8dd; }
+.nt-steps li { counter-increment: step; display: grid; grid-template-columns: 44px 150px minmax(0, 1fr); align-items: baseline; gap: 4px 10px; padding: 14px 4px 18px; border-bottom: 1px solid #d6d8dd; }
+.nt-steps li figure { grid-column: 2 / -1; margin: 10px 0 0; display: grid; gap: 10px; }
+.nt-steps li figure.nt-two { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: start; }
+.nt-steps li img { display: block; width: 100%; height: auto; border: 1px solid #cfd2d8; background: #fff; }
+.nt-steps li figcaption { grid-column: 1 / -1; font-size: 13px; color: var(--nt-muted); }
+.nt-phones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; max-width: 720px; margin: 0 auto; }
+.nt-phones figure { margin: 0; }
+.nt-phones img { display: block; width: 100%; height: auto; border: 1px solid #cfd2d8; border-radius: 14px; }
+.nt-phones figcaption { margin-top: 6px; font-size: 13px; text-align: center; color: var(--nt-muted); }
 .nt-steps li::before { content: counter(step); display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1.5px solid var(--nt-omr); border-radius: 50%; color: var(--nt-omr); font: 700 14px/1 var(--nt-sans); }
 .nt-steps b { font-size: 15.5px; }
 .nt-steps span { font-size: 14.5px; line-height: 1.7; color: #33363c; }
@@ -266,7 +277,7 @@ body.nt-body {
 
 /* ---------- 좁은 화면 ---------- */
 @media (max-width: 900px) {
-  .nt-run-grid { grid-template-columns: 1fr; }
+  .nt-run-grid { grid-template-columns: minmax(0, 1fr); }
   .nt-omr {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 20; max-height: 70vh;
     transform: translateY(100%); transition: transform .2s ease;
@@ -282,10 +293,11 @@ body.nt-body {
     display: inline-flex; position: absolute; right: 8px; top: 8px; min-height: 32px; padding: 0 12px;
     border: 1px solid var(--nt-omr); background: #fff; color: var(--nt-omr); font: 500 14px/1 var(--nt-sans); cursor: pointer; align-items: center;
   }
-  .nt-run .nt-top span { display: none; }
+  .nt-run .nt-top > span { display: none; }
   .nt-run .nt-sheet-wrap { padding-bottom: 64px; }
 }
 @media (max-width: 640px) {
+  .nt-top-l { gap: 10px; }
   .nt-sheet-wrap { padding: 0 8px; }
   .nt-page { padding: 20px 14px 28px; }
   .nt-run .nt-page { padding: 12px 10px 18px; }
@@ -305,8 +317,13 @@ body.nt-body {
   .nt-feats, .nt-shots { grid-template-columns: 1fr; }
   .nt-steps li { grid-template-columns: 36px minmax(0, 1fr); }
   .nt-steps li span { grid-column: 2; }
+  .nt-steps li figure { grid-column: 1 / -1; }
+  .nt-steps li figure.nt-two { grid-template-columns: 1fr; }
+  .nt-phones { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .nt-lead { font-size: 15px; }
   .nt-score { grid-template-columns: 1fr; text-align: center; }
+  .nt-score-pen { justify-self: center; }
+  .nt-top > span:not(#nt-who) { display: none; }
 }
 @media (min-width: 641px) { .nt-table td.nt-meta-m { display: none; } }
 /* 학교 고르기 표는 칸이 적어 휴대폰에서도 표 모양 그대로 둔다. */

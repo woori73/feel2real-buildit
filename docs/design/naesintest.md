@@ -27,6 +27,6 @@
 - 원본 PDF(문제지·정답 해설)도 같은 내용으로 고쳐 사용자에게 전달했다.
 
 ## 학교별 페이지·이용 범위·안내(2026-11-15)
-- `/naesintest`는 학교 고르기 + 서비스 안내(광고·사업계획서에도 쓰는 설명). 학교는 `NaesinTestPageController.SCHOOLS`와 `naesin_common.js`의 SCHOOLS에 함께 등록한다. 문제가 없는 학교는 준비 중.
+- `/naesintest`는 학교 고르기 + 서비스 안내(광고·사업계획서에도 쓰는 설명). 이용 방법 5단계마다 실제 화면 그림(`static/img/naesintest/step-*.webp`), 휴대폰 화면 3장(`mobile-*.webp`). 모든 화면 위쪽에 F2R영어 로고. 학교는 `NaesinTestPageController.SCHOOLS`와 `naesin_common.js`의 SCHOOLS에 함께 등록한다. 문제가 없는 학교는 준비 중.
 - 학교별 회차 목록은 `/naesintest/school/{slug}`. 시험·채점 화면의 목록 단추는 그 학교 페이지로 돌아간다.
 - 일반 회원은 1회만(서버 403, 2회부터 시작 단추는 '재원생 전용'), 관리자·압구정에듀홀릭 재원생은 전 회차.
