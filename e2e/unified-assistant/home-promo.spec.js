@@ -31,7 +31,7 @@ for (const width of [360, 390, 430, 1440]) {
       const video = page.locator('#examPromoVideo');
       await expect(page.locator('main > section').first()).toHaveAttribute('id', 'pass-offer');
       expect(await page.locator('main > section').evaluateAll(sections => sections.slice(0, 4).map(s => s.id)))
-        .toEqual(['pass-offer', 'edu', 'digital-exam', 'ai-content']);
+        .toEqual(['pass-offer', 'service-map', 'digital-exam', 'dexam-guide']);
       await expect(page.locator('#service > section').first()).toHaveAttribute('id', 'request');
       // The promo sits on the first screen next to the banners (below them on phones) and starts muted once half visible.
       await expect(page.locator('#homeHero')).toBeVisible();
@@ -85,7 +85,7 @@ for (const width of [360, 390, 430, 1440]) {
       await expect(page.locator('#examContactTitle')).toBeInViewport();
       await expect.poll(() => video.evaluate(v => v.paused)).toBe(true);
       await expect(page.locator('#enExamMail')).toHaveAttribute('href', 'mailto:woorinaesin@naver.com');
-      await expect(page.locator('#aiHome')).toHaveAttribute('data-intake-enabled', 'false');
+      await expect(page.locator('#homeIntakeCta')).toHaveAttribute('href', '#exam-contact'); // 사이트 접수 꺼짐
       expect(errors).toEqual([]);
     } finally { await context.close(); }
   });
@@ -150,7 +150,7 @@ test('autoplay rejection retains native controls and a user gesture recovers pla
   await expect(page.locator('#examPromoStatus')).toBeHidden();
 });
 
-test('failed video keeps the original-frame poster, contact and assistant available', async ({ page }) => {
+test('failed video keeps the original-frame poster and contact available', async ({ page }) => {
   await isolate(page, true);
   await page.goto('/');
   await expect(page.locator('#examPromoFallback')).toBeVisible();
@@ -160,13 +160,9 @@ test('failed video keeps the original-frame poster, contact and assistant availa
   await page.locator('[data-hero-go="0"]').click();
       await page.locator('#homeIntakeCta').click(); // 영상 아래 중복 버튼은 2026-10-30에 정리
   await expect(page.locator('#examContactTitle')).toBeInViewport();
-  await selectHomePane(page, 'dashboard');
-  await page.locator('[data-home-agent="seven"]').click();
-  await expect(page.locator('#stagePoster')).toBeVisible();
-  await page.locator('#homeInput').fill('기말고사 이용권 신청');await page.locator('#homeForm button').click();await expect(page.locator('#homeChat .is-agent').last()).toContainText('160문항');
 });
 
-test('ended video remains visible for replay and character selection pauses its audio', async ({ page }) => {
+test('ended video remains visible for replay', async ({ page }) => {
   await isolate(page);
   await page.goto('/');
   const video = page.locator('#examPromoVideo');
@@ -177,7 +173,4 @@ test('ended video remains visible for replay and character selection pauses its 
   await expect(page.locator('#examPromo')).toBeVisible();
   await page.locator('#examPromoSound').click();
   await expect.poll(() => video.evaluate(v => !v.paused)).toBe(true);
-  await selectHomePane(page, 'dashboard');
-  await page.locator('[data-home-agent="seven"]').click();
-  await expect.poll(() => video.evaluate(v => v.paused)).toBe(true);
 });
