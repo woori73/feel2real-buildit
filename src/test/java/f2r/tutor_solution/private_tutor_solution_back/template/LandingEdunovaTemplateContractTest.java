@@ -215,14 +215,18 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 첫 화면 when 렌더하면 then 배너 5장(전자책 포함)·타일·일시정지와 오른쪽 홍보 영상·신청 버튼 2개가 있고 실제 화면·적중 대조 이미지가 저장소에 있다")
+  @DisplayName("given 첫 화면 when 렌더하면 then 배너 6장(디지털 영어 기말고사·전자책 포함)·타일·일시정지와 오른쪽 홍보 영상·신청 버튼 2개가 있고 실제 화면·적중 대조 이미지가 저장소에 있다")
   void hero_tilesPromoAndRealImages() {
     String html = render();
     String first = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"edu\""));
     String hero = first.substring(first.indexOf("id=\"homeHero\""), first.indexOf("class=\"hl-promo"));
     String promo = first.substring(first.indexOf("class=\"hl-promo"));
-    assertThat(hero.split("data-hero-slide", -1)).hasSize(6);
-    assertThat(hero.split("data-hero-go=", -1)).hasSize(6);
+    assertThat(hero.split("data-hero-slide", -1)).hasSize(7);
+    assertThat(hero.split("data-hero-go=", -1)).hasSize(7);
+    // 두 번째 배너: 디지털 영어 기말고사(/naesintest)
+    assertThat(hero.indexOf("디지털 영어 기말고사")).isLessThan(hero.indexOf("aria-label=\"3 / 6 모의고사 위키\""));
+    assertThat(hero).contains("aria-label=\"2 / 6 디지털 영어 기말고사\"", "href=\"/naesintest\"",
+        "data-hero-go=\"1\" aria-pressed=\"false\"><span class=\"hl-tile-img\"><img src=\"/img/landing/home-tile-naesintest.webp\"");
     // 전자책 배너: 스마트스토어 판매처와 카페로 새 창 이동
     assertThat(hero).contains("새출발 2억2천 탕감", "href=\"https://smartstore.naver.com/newlibrary/products/12879870964\"",
         "href=\"https://cafe.naver.com/newhopero\"", "rel=\"noopener\"");
@@ -234,7 +238,8 @@ class LandingEdunovaTemplateContractTest {
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
         "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
         "/img/landing/home-card-wiki.webp", "/img/landing/home-tile-wiki.webp", "/img/landing/ai-agent-hero.webp",
-        "/img/landing/home-ebook-hero.webp", "/img/landing/home-tile-ebook.webp"}) {
+        "/img/landing/home-ebook-hero.webp", "/img/landing/home-tile-ebook.webp",
+        "/img/landing/home-card-naesintest.webp", "/img/landing/home-tile-naesintest.webp"}) {
       // 그림을 고화질로 바꾸면 캐시를 피하려고 ?v= 를 붙이므로 경로 앞부분까지만 확인한다.
       assertThat(html).as(path).contains("src=\"" + path);
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
@@ -510,5 +515,17 @@ class LandingEdunovaTemplateContractTest {
     for (String path : images) {
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
     }
+  }
+
+  @Test
+  @DisplayName("given 첫 화면 when 렌더하면 then 영어 교육 다음에 디지털 영어 기말고사 섹션이 있고 /naesintest로 이어진다")
+  void digitalExamSectionLinksToNaesintest() {
+    // given
+    String html = render();
+    // when
+    String sec = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"request\""));
+    // then
+    assertThat(html.indexOf("id=\"edu\"")).isLessThan(html.indexOf("id=\"digital-exam\""));
+    assertThat(sec).contains("디지털 영어 기말고사", "직보 쇼츠 인강", "40문항 20분", "70문항 35분", "자동 채점", "href=\"/naesintest\"");
   }
 }
