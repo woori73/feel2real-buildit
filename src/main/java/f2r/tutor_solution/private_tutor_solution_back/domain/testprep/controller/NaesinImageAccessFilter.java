@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -25,7 +26,8 @@ public class NaesinImageAccessFilter extends OncePerRequestFilter {
 
   private static final Pattern ROUND_IMAGE = Pattern.compile("^/naesin/[^/]+/r(\\d+)/[^/]+$");
 
-  private final NaesinAccessService naesinAccessService;
+  // 필터는 WebMvc 슬라이스 테스트에도 올라오므로 서비스는 요청 때 꺼낸다(슬라이스에 없으면 그림 검사를 건너뛴다).
+  private final ObjectProvider<NaesinAccessService> naesinAccessService;
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -36,7 +38,8 @@ public class NaesinImageAccessFilter extends OncePerRequestFilter {
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
     Matcher m = ROUND_IMAGE.matcher(request.getRequestURI());
-    if (m.matches() && Integer.parseInt(m.group(1)) != 1 && !naesinAccessService.hasFullAccess(principal())) {
+    NaesinAccessService access = naesinAccessService.getIfAvailable();
+    if (access != null && m.matches() && Integer.parseInt(m.group(1)) != 1 && !access.hasFullAccess(principal())) {
       response.sendError(HttpServletResponse.SC_FORBIDDEN);
       return;
     }
