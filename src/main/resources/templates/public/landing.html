@@ -137,12 +137,12 @@
       <button id="homeNoticePause" type="button" aria-label="공지 흐름 일시정지" aria-pressed="false">Ⅱ</button>
     </aside>
 
-    <!-- 1. 대표 배너 5장(아래 타일로 선택) → 2. 영어 교육 → 3. AI 드라마 제작 → 4. 적중 사례 → 5. 이용료와 무통장입금 → 6. 빌드잇 차트 → 자세한 안내 -->
-    <!-- 첫 화면: 왼쪽 배너 5장(3초 순환, 타일로 선택) · 오른쪽 서수니·세븐 20초 홍보 영상과 신청 버튼 -->
+    <!-- 1. 대표 배너 6장(아래 타일로 선택) → 2. 영어 교육 → 3. AI 드라마 제작 → 4. 적중 사례 → 5. 이용료와 무통장입금 → 6. 빌드잇 차트 → 자세한 안내 -->
+    <!-- 첫 화면: 왼쪽 배너 6장(3초 순환, 타일로 선택) · 오른쪽 서수니·세븐 20초 홍보 영상과 신청 버튼 -->
     <section class="home-offer hl-hero-row" id="pass-offer" aria-label="주요 서비스">
       <div id="homeHero" class="hl-hero hl-lift" data-active="0" role="region" aria-roledescription="캐러셀" aria-label="Feel to Real 주요 서비스">
         <div class="hl-slides">
-          <div class="hero-slide hero-exam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="1 / 5 맞춤문제">
+          <div class="hero-slide hero-exam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="1 / 6 맞춤문제">
             <div class="hero-text">
               <p class="hl-eyebrow">학교별 맞춤 예상문제</p>
               <h2 class="home-offer-title" id="siHomeTitle"><span class="home-offer-title-line">우리 학교 맞춤문제</span> <span class="home-offer-title-line">1장 먼저 받아보세요.</span></h2>
@@ -164,22 +164,27 @@
               <p class="exam-caption">기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.</p>
             </div>
           </div>
-          <div class="hero-slide hero-wiki" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="2 / 5 모의고사 위키" hidden>
+          <div class="hero-slide hero-dexam" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="2 / 6 디지털 영어 기말고사" hidden>
+            <div class="hero-text"><p class="hl-eyebrow">디지털 영어 기말고사</p><h2>학교별 직보 쇼츠 인강 +<br>기출 기반 40문항 디지털 모의고사</h2><p class="hero-lead">기말 영어의 핵심 어휘·문법·시험 요점은 직보 쇼츠 인강으로 정리하고, 기출 기반 적중률 90% 이상의 실전 문항을 40문항 20분·70문항 35분 실제 시험처럼 풉니다.<span class="hero-lead-more"> 제출하면 바로 자동 채점되고, 틀린 문제는 해설로 복습합니다.</span></p></div>
+            <div class="hero-art hero-shot" aria-hidden="true"><img src="/img/landing/home-card-naesintest.webp" alt="" width="1600" height="800" decoding="async"></div>
+            <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="/naesintest">시험 보러 가기 <span aria-hidden="true">→</span></a><a class="hl-btn hl-btn-white" href="#digital-exam">자세히 보기</a></div>
+          </div>
+          <div class="hero-slide hero-wiki" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="3 / 6 모의고사 위키" hidden>
             <div class="hero-text"><h2>모의고사 위키</h2><p class="hero-lead">문제 원본부터 지문해설, 복습 문제까지 한곳에서.</p></div>
             <div class="hero-art hero-shot" aria-hidden="true"><img src="/img/landing/home-card-wiki.webp?v=20261102" alt="" width="2100" height="1312" decoding="async"></div>
             <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="/wiki">위키 열기 <span aria-hidden="true">↗</span></a></div>
           </div>
-          <div class="hero-slide hero-game" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="3 / 5 영어 복습 게임" hidden>
+          <div class="hero-slide hero-game" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="4 / 6 영어 복습 게임" hidden>
             <div class="hero-text"><h2>고1 10월<br>영어 복습 게임</h2><p class="hero-lead">고1 10월 영어, 서수니 튜터와 함께 도전하세요.</p></div>
             <div class="hero-art hero-shot" aria-hidden="true"><img src="/img/landing/home-card-game.webp?v=20261102" alt="" width="2804" height="1430" decoding="async"></div>
             <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="#review-game">게임 시작 <span aria-hidden="true">→</span></a></div>
           </div>
-          <div class="hero-slide hero-agent" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="4 / 5 AI AGENT" hidden>
+          <div class="hero-slide hero-agent" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="5 / 6 AI AGENT" hidden>
             <div class="hero-text"><h2>AI AGENT</h2><p class="hero-lead">트레일러와 콘텐츠 제작협업실</p></div>
             <div class="hero-art hero-shot" aria-hidden="true"><img src="/img/landing/ai-agent-hero.webp" alt="" width="1280" height="536" decoding="async"></div>
             <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="#ai-content">트레일러 보기 <span aria-hidden="true">→</span></a></div>
           </div>
-          <div class="hero-slide hero-ebook" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="5 / 5 전자책 새출발 2억2천 탕감" hidden>
+          <div class="hero-slide hero-ebook" data-hero-slide role="group" aria-roledescription="슬라이드" aria-label="6 / 6 전자책 새출발 2억2천 탕감" hidden>
             <div class="hero-text"><p class="hl-eyebrow">전자책 · 개정판 Ver.2</p><h2>새출발 2억2천 탕감</h2><p class="hero-lead">새출발기금 부실차주, 신청부터 약정 이후까지.</p></div>
             <div class="hero-art hero-shot" aria-hidden="true"><img src="/img/landing/home-ebook-hero.webp" alt="" width="2508" height="1254" decoding="async"></div>
             <div class="hero-cta">
@@ -190,10 +195,11 @@
         </div>
         <div class="hl-tiles" role="group" aria-label="배너 선택">
           <button type="button" data-hero-go="0" aria-pressed="true"><span class="hl-tile-img"><img src="/img/exam-cases/apgujeong-g3-2026-final/mock_q13.jpg" alt="" width="40" height="40"></span><span>맞춤문제</span></button>
-          <button type="button" data-hero-go="1" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-tile-wiki.webp" alt="" width="40" height="40"></span><span>모의고사 위키</span></button>
-          <button type="button" data-hero-go="2" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-card-game.webp" alt="" width="40" height="40"></span><span>영어 복습 게임</span></button>
-          <button type="button" data-hero-go="3" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/ai-agent-hero.webp" alt="" width="40" height="40"></span><span>AI AGENT</span></button>
-          <button type="button" data-hero-go="4" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-tile-ebook.webp" alt="" width="40" height="40"></span><span>전자책</span></button>
+          <button type="button" data-hero-go="1" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-tile-naesintest.webp" alt="" width="40" height="40"></span><span>디지털 기말고사</span></button>
+          <button type="button" data-hero-go="2" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-tile-wiki.webp" alt="" width="40" height="40"></span><span>모의고사 위키</span></button>
+          <button type="button" data-hero-go="3" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-card-game.webp" alt="" width="40" height="40"></span><span>영어 복습 게임</span></button>
+          <button type="button" data-hero-go="4" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/ai-agent-hero.webp" alt="" width="40" height="40"></span><span>AI AGENT</span></button>
+          <button type="button" data-hero-go="5" aria-pressed="false"><span class="hl-tile-img"><img src="/img/landing/home-tile-ebook.webp" alt="" width="40" height="40"></span><span>전자책</span></button>
         </div>
         <div class="hero-controls" hidden><button type="button" id="heroPause" aria-label="배너 자동 전환 일시정지" aria-pressed="false">Ⅱ</button></div>
         <span id="heroStatus" class="sr" role="status" aria-live="polite"></span>
@@ -259,6 +265,22 @@
           <span class="hl-card-media hl-lift"><img src="/img/landing/home-card-ibt.webp" alt="" width="1362" height="731" loading="lazy"></span>
           <strong>New iBT / Digital SAT</strong><span>TOEFL iBT · Digital SAT 모의고사 · 어휘 퀴즈 · 점수 분석</span>
         </a>
+      </div>
+    </section>
+
+    <section class="hl-section" id="digital-exam" aria-labelledby="dexamTitle">
+      <div class="hl-head"><h2 id="dexamTitle">디지털 영어 기말고사</h2><p>학교별 직보 쇼츠 인강 + 기출 기반 디지털 모의고사</p></div>
+      <div class="hl-split hl-dexam">
+        <a class="hl-card-media hl-lift" href="/naesintest" aria-label="디지털 영어 기말고사 화면 열기"><img src="/img/landing/home-card-naesintest.webp" alt="디지털 영어 기말고사 시험 화면: 시험지와 OMR 답안지" width="1600" height="800" loading="lazy"></a>
+        <div class="hl-dexam-body">
+          <ol class="hl-dexam-steps">
+            <li><strong>직보 쇼츠 인강</strong><span>기말 영어에 나오는 주요 어휘·문법·시험 요점을 짧은 강의로 정리합니다.</span></li>
+            <li><strong>실전 디지털 모의고사</strong><span>기출을 바탕으로 만든 적중률 90% 이상의 문항을 40문항 20분, 70문항 35분으로 OMR 답안지에 표시하며 실제 시험처럼 풉니다.</span></li>
+            <li><strong>자동 채점·해설</strong><span>제출하면 바로 점수와 문항별 채점 결과가 나오고, 틀린 문제는 근거와 어법 포인트를 담은 해설로 복습합니다.</span></li>
+          </ol>
+          <p class="hl-dexam-now">지금 볼 수 있는 시험: 압구정중 2학년 2학기 기말 대비 16회</p>
+          <div class="hl-dexam-cta"><a class="hl-btn hl-btn-dark" href="/naesintest">시험 보러 가기 <span aria-hidden="true">→</span></a></div>
+        </div>
       </div>
     </section>
 

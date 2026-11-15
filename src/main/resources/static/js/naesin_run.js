@@ -13,10 +13,11 @@
   let attempt = null, qs = [], answers = {}, marked = {}, idx = 0, limitSec = 0, startEpoch = 0, submitting = false;
   const dirty = new Set();
 
-  const put = NT.serialize(async (qid, v) => {
-    await NT.api('/api/testprep/attempts/' + attempt.attemptId + '/answers', { method: 'PUT', body: JSON.stringify({ questionId: qid, answerText: v }) });
-  });
-  async function flush() {
+  // 답 저장(PUT)과 제출(POST)은 한 줄로 세워 하나씩 보낸다. 같은 문항을 동시에 저장하면 서버에서 중복 오류가 난다.
+  const send = NT.serialize(fn => fn());
+  const put = (qid, v) => send(() => NT.api('/api/testprep/attempts/' + attempt.attemptId + '/answers', { method: 'PUT', body: JSON.stringify({ questionId: qid, answerText: v }) }));
+  async function flush(force) {
+    if (submitting && !force) return; // 제출을 시작한 뒤에는 자동 저장을 멈춘다(제출 요청이 모든 답을 함께 보낸다).
     const ids = [...dirty]; dirty.clear();
     try { await Promise.all(ids.map(id => put(Number(id), answers[id] || null))); }
     catch (e) { ids.forEach(id => dirty.add(id)); notice('답안을 저장하지 못했습니다. 인터넷 연결을 확인하세요.'); }
@@ -45,7 +46,7 @@
     wire();
     tick(); setInterval(tick, 1000);
     setInterval(flush, 10000);
-    window.addEventListener('beforeunload', () => { if (dirty.size) flush(); });
+    window.addEventListener('beforeunload', () => { if (dirty.size && !submitting) flush(); });
   }
 
   function left() { return limitSec - Math.floor((Date.now() - startEpoch) / 1000); }
@@ -71,9 +72,12 @@
       + (passage ? '<img class="nt-img nt-passage" src="' + passage + '" alt="' + (idx + 1) + '번 문항 지문">' : '')
       + (img ? '<img class="nt-img" src="' + img + '" alt="' + (idx + 1) + '번 문항">' : '<p class="nt-msg">문항 그림을 불러오지 못했습니다.</p>')
       + '</div>'
-      + '<div class="nt-pick" role="radiogroup" aria-label="' + (idx + 1) + '번 답 고르기"><span class="nt-pick-label">답</span>'
-      + q.choices.map((c, i) => '<button type="button" class="nt-bubble' + (sel === NT.letter(i) ? ' is-on' : '') + '" role="radio" aria-checked="' + (sel === NT.letter(i)) + '" data-pick="' + NT.letter(i) + '">' + NT.esc(c) + '</button>').join('')
-      + '</div>';
+      // 문항 아래 답란: 실제 OMR 카드의 한 줄(번호 칸 + 세로로 긴 타원 ①~⑤)처럼 그린다.
+      + '<div class="nt-pick" role="radiogroup" aria-label="' + (idx + 1) + '번 답 고르기">'
+      + '<div class="nt-pick-head"><span>번호</span><span>답 란</span></div>'
+      + '<div class="nt-pick-row"><span class="nt-pick-no">' + (idx + 1) + '</span>'
+      + q.choices.map((c, i) => '<button type="button" class="nt-ob' + (sel === NT.letter(i) ? ' is-on' : '') + '" role="radio" aria-checked="' + (sel === NT.letter(i)) + '" aria-label="' + NT.esc(c) + '" data-pick="' + NT.letter(i) + '">' + (i + 1) + '</button>').join('')
+      + '</div></div>';
     $('paper').scrollTop = 0; window.scrollTo({ top: 0 });
     $('nt-prev').addEventListener('click', () => go(idx - 1));
     $('nt-next').addEventListener('click', () => go(idx + 1));
@@ -84,8 +88,10 @@
     if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
   }
 
+  // 실제 OMR처럼 이미 칠한 칸을 다시 눌러도 지워지지 않는다(두 번 눌러 답이 사라지는 일 방지). 바꾸려면 다른 칸을 누른다.
   function pick(q, letter) {
-    answers[q.questionId] = answers[q.questionId] === letter ? null : letter;
+    if (submitting || answers[q.questionId] === letter) return;
+    answers[q.questionId] = letter;
     dirty.add(String(q.questionId));
     clearTimeout(pick.t); pick.t = setTimeout(flush, 600);
     renderOmr();
@@ -123,9 +129,9 @@
     $('nt-confirm').hidden = true;
     $('paper').innerHTML = '<p class="nt-msg">' + (auto ? '시험 시간이 끝났습니다. ' : '') + '답안을 제출하고 채점하는 중입니다…</p>';
     try {
-      await flush();
+      await flush(true);
       const all = qs.map(q => ({ questionId: q.questionId, answerText: answers[q.questionId] }));
-      await NT.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({ answers: all }) });
+      await send(() => NT.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({ answers: all }) }));
       try { localStorage.removeItem(stateKey()); } catch (e) { /* 없음 */ }
       location.replace('/naesintest/review?attempt=' + attempt.attemptId);
     } catch (e) {

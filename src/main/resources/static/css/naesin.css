@@ -101,6 +101,8 @@ body.nt-body {
 
 /* ---------- 시험 화면 ---------- */
 .nt-run .nt-sheet-wrap { margin-bottom: 24px; }
+/* 시험지 한 단(실제 크기 358px) 폭에 맞춰 시험지와 답안지를 가운데로 모은다. */
+.nt-run .nt-sheet-wrap { max-width: 840px; }
 .nt-run-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; margin-top: 16px; }
 .nt-run .nt-page { padding: 18px 24px 26px; }
 .nt-time { font: 700 22px/1 var(--nt-sans); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
@@ -119,17 +121,24 @@ body.nt-body {
 .nt-mark input { width: 17px; height: 17px; accent-color: var(--nt-ink); }
 
 .nt-sheet { padding: 18px 0 6px; display: grid; gap: 14px; }
-.nt-img { display: block; width: 100%; max-width: 720px; height: auto; margin: 0 auto; }
+/* 문항 그림은 시험지 실제 크기로 보여 준다: 160dpi로 자른 597px 단 → 화면 96dpi 기준 358px(약 9.5cm). */
+.nt-img { display: block; width: 358px; max-width: 100%; height: auto; margin: 0 auto; }
 .nt-passage { padding-bottom: 14px; border-bottom: 1px dashed var(--nt-rule); }
 
-.nt-pick { display: flex; align-items: center; justify-content: center; gap: 10px; padding-top: 16px; border-top: 1px solid var(--nt-rule); }
-.nt-pick-label { font-size: 14px; color: var(--nt-muted); margin-right: 4px; }
-.nt-bubble {
-  width: 48px; height: 48px; border: 1.5px solid var(--nt-omr); border-radius: 50%; background: #fff;
-  color: var(--nt-omr); font: 500 22px/1 var(--nt-serif); cursor: pointer;
+.nt-pick {
+  width: 358px; max-width: 100%; margin: 6px auto 0; border: 1.5px solid var(--nt-omr); background: var(--nt-omr-tint); color: var(--nt-omr);
 }
-.nt-bubble:hover { background: var(--nt-omr-tint); }
-.nt-bubble.is-on { background: var(--nt-mark); border-color: var(--nt-mark); color: #fff; }
+.nt-pick-head, .nt-pick-row { display: grid; grid-template-columns: 64px repeat(5, 1fr); align-items: center; }
+.nt-pick-head { border-bottom: 1px solid var(--nt-omr); font: 500 12px/1 var(--nt-sans); text-align: center; padding: 5px 0; letter-spacing: .2em; }
+.nt-pick-head span + span { grid-column: 2 / -1; }
+.nt-pick-row { padding: 8px 0; }
+.nt-pick-no { align-self: stretch; display: grid; place-items: center; border-right: 1px solid var(--nt-omr); font: 700 18px/1 var(--nt-sans); font-variant-numeric: tabular-nums; }
+.nt-ob {
+  justify-self: center; width: 22px; height: 40px; padding: 0; border: 1.3px solid var(--nt-omr); border-radius: 11px;
+  background: #fff; color: var(--nt-omr); font: 500 12px/1 var(--nt-sans); cursor: pointer;
+}
+.nt-ob:hover { background: #fbe1e6; }
+.nt-ob.is-on { background: var(--nt-mark); border-color: var(--nt-mark); color: transparent; }
 
 /* OMR 답안지 */
 .nt-omr {
@@ -151,7 +160,7 @@ body.nt-body {
 }
 .nt-omr-row.is-marked .nt-omr-no::after { content: "✓"; margin-left: 2px; color: var(--nt-ink); font-weight: 400; }
 .nt-omr-b {
-  justify-self: center; width: 24px; height: 30px; border: 1.2px solid var(--nt-omr); border-radius: 12px; background: #fff;
+  justify-self: center; width: 16px; height: 28px; border: 1.2px solid var(--nt-omr); border-radius: 8px; background: #fff;
   color: var(--nt-omr); font: 500 11px/1 var(--nt-sans); cursor: pointer; padding: 0;
 }
 .nt-omr-b.is-on { background: var(--nt-mark); border-color: var(--nt-mark); color: transparent; }
@@ -263,7 +272,6 @@ body.nt-body {
   .nt-table td.nt-meta-m { grid-area: m; text-align: left; font-size: 13px; color: var(--nt-muted); }
   .nt-table td.nt-go { grid-area: go; align-self: center; }
   .nt-table td.nt-meta { display: none; }
-  .nt-bubble { width: 44px; height: 44px; }
   .nt-mark span { display: none; }
   .nt-ox-grid { grid-template-columns: repeat(5, 1fr); }
   .nt-score { grid-template-columns: 1fr; text-align: center; }
