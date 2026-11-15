@@ -11,7 +11,9 @@
         <div>
           <h3>${TP.esc(e.title)}</h3>
           <p>${TP.esc(e.subtitle || '')}</p>
-          <div class="meta">${e.questionCount} questions · ${Math.round(e.timeLimitSec / 60)} min${e.difficulty ? ' · ' + TP.esc(e.difficulty) : ''}<span class="ko">문항 ${e.questionCount}개 · 시간 ${Math.round(e.timeLimitSec / 60)}분</span></div>
+          ${e.kind === 'SAT'
+            ? '<div class="meta">' + e.questionCount + ' questions · timed by module<span class="ko">문항 ' + e.questionCount + '개 · 모듈별 시간 제한</span></div>'
+            : `<div class="meta">${e.questionCount} questions · ${Math.round(e.timeLimitSec / 60)} min${e.difficulty ? ' · ' + TP.esc(e.difficulty) : ''}<span class="ko">문항 ${e.questionCount}개 · 시간 ${Math.round(e.timeLimitSec / 60)}분</span></div>`}
         </div>
         <button class="btn btn-primary" data-start="${TP.esc(e.examCode)}">Start</button>
       </div>`).join('');
@@ -20,7 +22,7 @@
         btn.disabled = true;
         try {
           const attempt = await TP.api('/api/testprep/attempts', { method: 'POST', body: JSON.stringify({ examCode: btn.dataset.start }) });
-          location.href = '/testprep/run?attempt=' + attempt.attemptId;
+          location.href = TP.runUrl(attempt.kind, attempt.attemptId);
         } catch (err) {
           btn.disabled = false;
           alert('Could not start: ' + err.message + '\n시작할 수 없습니다: ' + err.message);

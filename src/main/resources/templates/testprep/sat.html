@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/tp_base :: head('Digital SAT Practice')}"></head>
+<body>
+<nav th:replace="~{fragments/tp_base :: nav('sat')}"></nav>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="badge">Digital SAT format practice<span class="ko" style="color:#cfe0f5">디지털 SAT 형식 연습</span></span>
+    <h1>Digital SAT Practice<span class="ko" style="color:#bcd3ec">디지털 SAT 연습 시험</span></h1>
+    <p class="sub">Timed modules · Mark for review · Cross-out · Highlights &amp; notes · Calculator · Reference sheet<span class="ko" style="color:#bcd3ec">모듈별 시간 제한 · 검토 표시 · 선택지 지우기 · 형광펜과 메모 · 계산기 · 공식표</span></p>
+  </div>
+</section>
+
+<div class="wrap section">
+  <h2>Practice sets<span class="ko">연습 세트</span></h2>
+  <p class="lead">Each set runs Reading and Writing first, then Math. When a module's time runs out you move on automatically, and you can't go back to a finished module.<span class="ko">읽기·쓰기 모듈을 먼저 보고 이어서 수학 모듈을 봅니다. 모듈 시간이 끝나면 자동으로 다음 모듈로 넘어가며, 끝난 모듈로는 돌아갈 수 없습니다.</span></p>
+  <div id="catalog"><p class="lead">Loading…<span class="ko">불러오는 중…</span></p></div>
+
+  <div class="fact-grid" style="margin-top:22px">
+    <div class="fact"><b>Reading and Writing<span class="ko">읽기·쓰기</span></b><span>Short passages, one question each: vocabulary in context, structure, evidence, inference, grammar, transitions, note synthesis.<span class="ko">짧은 지문에 한 문항씩: 문맥 어휘, 글의 구조, 근거, 추론, 문법, 연결어, 메모 종합.</span></span></div>
+    <div class="fact"><b>Math<span class="ko">수학</span></b><span>Algebra, advanced math, data analysis, geometry and trigonometry. Multiple choice and student-produced responses.<span class="ko">대수, 고급 수학, 자료 분석, 기하·삼각함수. 객관식과 직접 입력형.</span></span></div>
+    <div class="fact"><b>Tools<span class="ko">도구</span></b><span>Calculator and reference sheet in Math; highlights and notes in Reading and Writing; line reader and shortcuts everywhere (F1).<span class="ko">수학은 계산기·공식표, 읽기·쓰기는 형광펜·메모, 한 줄 읽기와 단축키(F1)는 공통.</span></span></div>
+    <div class="fact"><b>Score<span class="ko">점수</span></b><span>Section estimates on a 200–800 scale and a 400–1600 total, with explanations for every question.<span class="ko">영역별 200~800, 합계 400~1600 추정 점수와 문항별 해설.</span></span></div>
+  </div>
+
+  <div class="disclaimer" style="margin-top:22px">
+    Scores shown here are F2R internal estimates, not official College Board SAT scores. SAT is a trademark of the College Board, which is not affiliated with and does not endorse this service. All questions are written by F2R.
+    <span class="ko" style="color:#7a5300">여기에 표시되는 점수는 F2R 내부 추정치이며 College Board 공식 SAT 점수가 아닙니다. SAT는 College Board의 상표이며, College Board는 이 서비스와 관련이 없고 이를 보증하지 않습니다. 모든 문항은 F2R이 직접 작성했습니다.</span>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  window.TP_KIND = /*[[${kind}]]*/ 'SAT';
+</script>
+<script defer src="/js/testprep_catalog.js"></script>
+<div th:replace="~{fragments/tp_base :: footer}"></div>
+</body>
+</html>

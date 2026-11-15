@@ -1,5 +1,11 @@
 # 도메인 모델
 
+## TESTPREP 문항 해설란 · Digital SAT 세트 (V1112·V1113)
+
+- `tp_questions.ko_help_json` MEDIUMTEXT NULL(V1112): 해설란 한글 도움 자료 JSON `{translation, vocab: [[영어, 뜻]], solution, strategy}`. Entity `TpQuestion.koHelpJson`. 응시·복습 응답의 `koHelpJson`으로 내려가며, SAT 시험 화면은 "해설"을 누를 때만 보여 준다(여는 동안 모듈 시간 정지).
+- V1113: `tp_exams` 1행(`TP-SAT-MINI-01`, `kind='SAT'`, `time_limit_sec=7200`) + `tp_questions` 18행(`section` RW 10·MATH 8, `task_type` `SAT_RW_MC`/`SAT_MATH_MC`/`SAT_MATH_SPR`). 스키마 변경 없음.
+- 기존 `tp_*` 스키마·TOEFL 세트(kind PRACTICE/VOCAB)는 바꾸지 않는다. 설계: [design/testprep-digital-sat.md](design/testprep-digital-sat.md)
+
 ## 개인워크아웃 카페 글쓰기 (V1109)
 
 기존 회원 로그인·지피지기 원문·승인 상태는 변경하지 않는다. 신규 빈 테이블 두 개를 추가하며 JPA 스키마 검증 매핑 `CafeConnection`, `CafePublication`과 JDBC 쓰기 레코드 `CafeService.Post`/`Prepared`를 함께 둔다.

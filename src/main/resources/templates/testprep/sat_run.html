@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.ico?v=20260613" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20260613">
+  <title>Digital SAT Practice · TestPrep</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&amp;family=Roboto:wght@400;500;700&amp;display=swap">
+  <link rel="stylesheet" href="/css/testprep.css">
+  <link rel="stylesheet" href="/css/sat_run.css">
+  <script defer src="/js/testprep.js"></script>
+  <script defer src="/js/sat_rich.js"></script>
+  <script defer src="/js/sat_calc.js"></script>
+  <script defer src="/js/sat_run.js"></script>
+</head>
+<body class="sat-body">
+<div class="sat-app">
+  <header class="sat-head">
+    <div class="sat-head-l">
+      <div class="sat-title" id="sat-title">Digital SAT Practice</div>
+      <button type="button" class="sat-dir-btn" id="btn-dir" aria-expanded="false" aria-controls="dir-pop">Directions <span class="caret">▾</span></button>
+    </div>
+    <div class="sat-head-c">
+      <div class="sat-timer" id="sat-timer" aria-live="off">--:--</div>
+      <span class="sat-timer-hidden" id="sat-timer-hidden" hidden aria-hidden="true">⏱</span>
+      <span class="sat-paused" id="sat-paused" hidden>❚❚ 해설 보는 중 · 시간 멈춤</span>
+      <button type="button" class="sat-pill" id="btn-timer">Hide</button>
+    </div>
+    <div class="sat-head-r" id="sat-tools"></div>
+  </header>
+
+  <div class="sat-pop sat-dir-pop" id="dir-pop" hidden>
+    <div id="dir-body"></div>
+    <div class="sat-pop-btns"><button type="button" class="sat-btn" id="dir-close">Close</button></div>
+  </div>
+
+  <div class="sat-pop sat-more" id="more-menu" role="menu" hidden>
+    <button type="button" role="menuitem" id="menu-shortcuts">⌨ Shortcuts<span class="ko">단축키</span></button>
+    <button type="button" role="menuitem" id="menu-reader">☰ Line Reader<span class="ko">한 줄 읽기</span></button>
+    <button type="button" role="menuitem" id="menu-exit">⎋ Save and Exit<span class="ko">저장하고 나가기</span></button>
+  </div>
+
+  <div class="sat-banner">F2R PRACTICE TEST · 연습 시험</div>
+
+  <div class="sat-body-row">
+    <aside class="sat-panel sat-calc" id="calc-panel" hidden aria-label="Calculator">
+      <div class="sat-panel-head"><b>Calculator</b>
+        <span><button type="button" id="calc-wide" aria-label="Widen calculator">⤢</button><button type="button" id="calc-close" aria-label="Close calculator">✕</button></span></div>
+      <div class="sat-panel-body" id="calc-body"></div>
+    </aside>
+
+    <main class="sat-main" id="sat-main" tabindex="-1">
+      <div class="sat-msg">Loading your test…<span class="ko">시험을 불러오는 중…</span></div>
+    </main>
+
+    <aside class="sat-panel sat-ref" id="ref-panel" hidden aria-label="Reference sheet">
+      <div class="sat-panel-head"><b>Reference</b><span><button type="button" id="ref-close" aria-label="Close reference">✕</button></span></div>
+      <div class="sat-panel-body sat-ref-body">
+        <div class="ref-grid">
+          <figure><svg viewBox="0 0 100 80"><circle cx="50" cy="40" r="30" fill="none" stroke="#222" stroke-width="1.5"/><circle cx="50" cy="40" r="1.8"/><line x1="50" y1="40" x2="80" y2="40" stroke="#222"/><text x="62" y="36" font-size="9" font-style="italic">r</text></svg>
+            <figcaption><i>A</i> = π<i>r</i><sup>2</sup><br><i>C</i> = 2π<i>r</i></figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><rect x="18" y="22" width="64" height="36" fill="none" stroke="#222" stroke-width="1.5"/><text x="46" y="18" font-size="9" font-style="italic">ℓ</text><text x="86" y="44" font-size="9" font-style="italic">w</text></svg>
+            <figcaption><i>A</i> = ℓ<i>w</i></figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><polygon points="15,65 85,65 45,15" fill="none" stroke="#222" stroke-width="1.5"/><line x1="45" y1="15" x2="45" y2="65" stroke="#222" stroke-dasharray="3 2"/><text x="48" y="44" font-size="9" font-style="italic">h</text><text x="47" y="76" font-size="9" font-style="italic">b</text></svg>
+            <figcaption><i>A</i> = ½<i>bh</i></figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><polygon points="20,65 80,65 20,18" fill="none" stroke="#222" stroke-width="1.5"/><rect x="20" y="57" width="8" height="8" fill="none" stroke="#222"/><text x="10" y="44" font-size="9" font-style="italic">b</text><text x="48" y="76" font-size="9" font-style="italic">a</text><text x="54" y="38" font-size="9" font-style="italic">c</text></svg>
+            <figcaption><i>c</i><sup>2</sup> = <i>a</i><sup>2</sup> + <i>b</i><sup>2</sup></figcaption></figure>
+          <figure class="wide"><svg viewBox="0 0 200 80"><polygon points="10,65 80,65 10,20" fill="none" stroke="#222" stroke-width="1.5"/><text x="2" y="46" font-size="8" font-style="italic">x</text><text x="34" y="76" font-size="8">x√3</text><text x="46" y="38" font-size="8">2x</text><text x="14" y="30" font-size="7">60°</text><text x="58" y="62" font-size="7">30°</text>
+              <polygon points="120,65 180,65 120,15" fill="none" stroke="#222" stroke-width="1.5"/><text x="110" y="44" font-size="8" font-style="italic">s</text><text x="146" y="76" font-size="8" font-style="italic">s</text><text x="152" y="36" font-size="8">s√2</text><text x="124" y="26" font-size="7">45°</text><text x="160" y="62" font-size="7">45°</text></svg>
+            <figcaption>Special right triangles</figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><polygon points="20,35 60,35 60,70 20,70" fill="none" stroke="#222" stroke-width="1.5"/><polyline points="20,35 38,20 78,20 60,35" fill="none" stroke="#222" stroke-width="1.5"/><polyline points="78,20 78,55 60,70" fill="none" stroke="#222" stroke-width="1.5"/></svg>
+            <figcaption><i>V</i> = ℓ<i>wh</i></figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><ellipse cx="50" cy="20" rx="24" ry="7" fill="none" stroke="#222" stroke-width="1.5"/><ellipse cx="50" cy="64" rx="24" ry="7" fill="none" stroke="#222" stroke-width="1.5"/><line x1="26" y1="20" x2="26" y2="64" stroke="#222" stroke-width="1.5"/><line x1="74" y1="20" x2="74" y2="64" stroke="#222" stroke-width="1.5"/></svg>
+            <figcaption><i>V</i> = π<i>r</i><sup>2</sup><i>h</i></figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><circle cx="50" cy="40" r="28" fill="none" stroke="#222" stroke-width="1.5"/><ellipse cx="50" cy="40" rx="28" ry="8" fill="none" stroke="#222" stroke-dasharray="3 2"/></svg>
+            <figcaption><i>V</i> = <span class="sat-frac"><span class="sat-num">4</span><span class="sat-den">3</span></span>π<i>r</i><sup>3</sup></figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><ellipse cx="50" cy="64" rx="26" ry="7" fill="none" stroke="#222" stroke-width="1.5"/><polyline points="24,64 50,12 76,64" fill="none" stroke="#222" stroke-width="1.5"/></svg>
+            <figcaption><i>V</i> = <span class="sat-frac"><span class="sat-num">1</span><span class="sat-den">3</span></span>π<i>r</i><sup>2</sup><i>h</i></figcaption></figure>
+          <figure><svg viewBox="0 0 100 80"><polygon points="20,64 64,64 80,52 36,52" fill="none" stroke="#222" stroke-width="1.5"/><polyline points="20,64 50,12 64,64" fill="none" stroke="#222" stroke-width="1.5"/><line x1="50" y1="12" x2="80" y2="52" stroke="#222" stroke-width="1.5"/></svg>
+            <figcaption><i>V</i> = <span class="sat-frac"><span class="sat-num">1</span><span class="sat-den">3</span></span>ℓ<i>wh</i></figcaption></figure>
+        </div>
+        <ul class="ref-notes">
+          <li>The number of degrees of arc in a circle is 360.</li>
+          <li>The number of radians of arc in a circle is 2π.</li>
+          <li>The sum of the measures in degrees of the angles of a triangle is 180.</li>
+        </ul>
+      </div>
+    </aside>
+    <aside class="sat-panel sat-help" id="help-panel" hidden aria-label="해설">
+      <div class="sat-panel-head"><b>해설 <small>· 시간 멈춤</small></b><span><button type="button" id="help-close" aria-label="해설 닫고 시간 다시 흐르기">✕</button></span></div>
+      <div class="help-tabs" role="tablist">
+        <button type="button" class="active" data-help-tab="ko">해석</button>
+        <button type="button" data-help-tab="vocab">어휘</button>
+        <button type="button" data-help-tab="sol">풀이</button>
+        <button type="button" data-help-tab="strategy">전략</button>
+      </div>
+      <div class="sat-panel-body sat-help-body" id="help-body"></div>
+      <div class="help-foot"><button type="button" class="sat-btn" id="help-done">닫고 계속 풀기</button></div>
+    </aside>
+  </div>
+
+  <footer class="sat-foot">
+    <div class="sat-name" id="sat-name"></div>
+    <button type="button" class="sat-navbtn" id="btn-nav" aria-controls="nav-pop">Question</button>
+    <div class="sat-foot-r">
+      <button type="button" class="sat-btn" id="btn-back">Back</button>
+      <button type="button" class="sat-btn" id="btn-next">Next</button>
+    </div>
+  </footer>
+
+  <div class="sat-pop sat-nav-pop" id="nav-pop" hidden role="dialog" aria-labelledby="nav-title">
+    <div class="sat-nav-head"><b id="nav-title">Questions</b><button type="button" id="nav-close" aria-label="Close">✕</button></div>
+    <div id="nav-legend"></div>
+    <div class="sat-grid" id="nav-grid"></div>
+    <div class="sat-pop-btns center"><button type="button" class="sat-btn ghost" id="nav-review">Go to Review Page</button></div>
+  </div>
+
+  <div class="sat-hlbar" id="hl-bar" hidden></div>
+  <div class="sat-note" id="note-pop" hidden></div>
+  <div class="sat-pop sat-hl-tip" id="hl-tip" hidden>
+    <b>Highlights &amp; Notes</b>
+    <p>Select text in the passage or question, then choose a color, underline, or add a note. Select a highlight again to change or delete it.</p>
+    <p class="ko">지문이나 질문의 글자를 드래그한 뒤 색·밑줄·메모를 고르세요. 이미 칠한 부분을 누르면 바꾸거나 지울 수 있습니다.</p>
+  </div>
+
+  <div class="sat-line-reader" id="line-reader" hidden>
+    <div class="lr-bar"><span class="lr-grip" id="lr-grip" title="Drag, or use ↑ ↓">⠿ Line Reader</span><button type="button" id="lr-close" aria-label="Close line reader">✕</button></div>
+  </div>
+
+  <div class="sat-modal" id="sat-modal" hidden></div>
+  <div class="sat-toast" id="sat-toast" role="status" hidden></div>
+</div>
+</body>
+</html>
