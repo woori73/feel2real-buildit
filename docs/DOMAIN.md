@@ -4,6 +4,7 @@
 
 - `tp_questions.ko_help_json` MEDIUMTEXT NULL(V1112): 해설란 한글 도움 자료 JSON `{translation, vocab: [[영어, 뜻]], solution, strategy}`. Entity `TpQuestion.koHelpJson`. 응시·복습 응답의 `koHelpJson`으로 내려가며, SAT 시험 화면은 "해설"을 누를 때만 보여 준다(여는 동안 모듈 시간 정지).
 - V1113: `tp_exams` 1행(`TP-SAT-MINI-01`, `kind='SAT'`, `time_limit_sec=7200`) + `tp_questions` 18행(`section` RW 10·MATH 8, `task_type` `SAT_RW_MC`/`SAT_MATH_MC`/`SAT_MATH_SPR`). 스키마 변경 없음.
+- V1114: Practice Test Player에서 옮긴 SAT 세트 2개 — `TP-SAT-MINI-02`(영어 21문항), `TP-SAT-KO-01`(한국어 21문항, 해설란 첫 칸 `translationTitle: "영어 원문"`). 스키마 변경 없음.
 - 기존 `tp_*` 스키마·TOEFL 세트(kind PRACTICE/VOCAB)는 바꾸지 않는다. 설계: [design/testprep-digital-sat.md](design/testprep-digital-sat.md)
 
 ## 개인워크아웃 카페 글쓰기 (V1109)

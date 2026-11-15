@@ -750,13 +750,15 @@
     if (!h) { body.innerHTML = '<p class="help-empty">이 문항에는 아직 해설이 없습니다.</p>'; return; }
     const para = t => R.render(String(t || ''));
     body.innerHTML = '<p class="help-q">Q' + (st.qi + 1) + ' · ' + TP.esc(SECTION_NAME[q.section] || q.section) + '</p>'
-      + '<section id="help-ko"><h3>한글 해석</h3><div class="help-text">' + para(h.translation) + '</div></section>'
+      + (h.translation ? '<section id="help-ko"><h3>' + TP.esc(h.translationTitle || '한글 해석') + '</h3><div class="help-text">' + para(h.translation) + '</div></section>' : '')
       + '<section id="help-vocab"><h3>영어 어휘</h3>' + ((h.vocab || []).length
         ? '<table class="help-vocab"><tbody>' + h.vocab.map(v => '<tr><th>' + TP.esc(v[0]) + '</th><td>' + TP.esc(v[1]) + '</td></tr>').join('') + '</tbody></table>'
         : '<p class="help-empty">—</p>') + '</section>'
       + '<section id="help-sol"><h3>풀이 설명</h3><div class="help-text">' + para(h.solution) + '</div></section>'
       + '<section id="help-strategy"><h3>풀이 전략</h3><div class="help-text">' + para(h.strategy) + '</div></section>';
     body.scrollTop = 0;
+    const koTab = document.querySelector('[data-help-tab="ko"]');
+    if (koTab) koTab.textContent = h.translationTitle ? '원문' : '해석';
     document.querySelectorAll('[data-help-tab]').forEach((x, i) => x.classList.toggle('active', i === 0));
   }
 

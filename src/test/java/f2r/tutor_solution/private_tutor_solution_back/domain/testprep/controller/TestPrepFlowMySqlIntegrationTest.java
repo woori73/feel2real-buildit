@@ -316,4 +316,34 @@ class TestPrepFlowMySqlIntegrationTest {
     assertThat(json(mockMvc.perform(get(API + "/learning").cookie(auth(OTHER_ID))).andReturn())
         .get("wrongCount").asLong()).isEqualTo(18);
   }
+  @Test
+  @DisplayName("Practice Test Player에서 옮긴 SAT 세트 2개: 각 21문항, 전원 정답이면 1600, 모든 문항에 해설란 자료")
+  void ptpSatSets_allCorrect() throws Exception {
+    for (String code : new String[] {"TP-SAT-MINI-02", "TP-SAT-KO-01"}) {
+      // given
+      JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+          .contentType(MediaType.APPLICATION_JSON)
+          .content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
+      assertThat(view.get("questions")).as(code).hasSize(21);
+      view.get("questions").forEach(qn -> {
+        JsonNode help;
+        try { help = objectMapper.readTree(qn.get("koHelpJson").asText()); } catch (Exception e) { throw new AssertionError(e); }
+        assertThat(help.get("solution").asText()).as(code + " 풀이").isNotBlank();
+        assertThat(help.get("strategy").asText()).as(code + " 전략").isNotBlank();
+        assertThat(help.get("vocab").size()).as(code + " 어휘").isPositive();
+      });
+      // when — 정답 키(주관식은 첫 허용 답)로 제출
+      List<Map<String, Object>> answers = new ArrayList<>();
+      jdbc.query("SELECT q.question_id, q.answer_key FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+              + " WHERE e.exam_code = ? ORDER BY q.order_no",
+          (java.sql.ResultSet rs) -> {
+            answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", rs.getString("answer_key").split("\\|")[0]));
+          }, code);
+      JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + view.get("attemptId").asLong() + "/submit")
+          .cookie(auth(OWNER_ID)).contentType(MediaType.APPLICATION_JSON)
+          .content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+      // then
+      assertThat(card.get("totalScaled").asInt()).as(code).isEqualTo(1600);
+    }
+  }
 }
