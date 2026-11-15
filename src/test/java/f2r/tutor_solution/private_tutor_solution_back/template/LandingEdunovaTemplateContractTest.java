@@ -526,6 +526,7 @@ class LandingEdunovaTemplateContractTest {
     String sec = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"request\""));
     // then
     assertThat(html.indexOf("id=\"edu\"")).isLessThan(html.indexOf("id=\"digital-exam\""));
-    assertThat(sec).contains("디지털 영어 기말고사", "직보 쇼츠 인강", "40문항 20분", "70문항 35분", "자동 채점", "href=\"/naesintest\"");
+    assertThat(sec).contains("디지털 영어 기말고사", "직보 쇼츠 인강", "40문항 20분", "70문항 35분", "자동 채점", "href=\"/naesintest\"",
+        "적중률 근거", "압구정중3 93.5%", "언북중3 95%", "신구중3 96.8%");
   }
 }
