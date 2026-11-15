@@ -18,30 +18,34 @@ public class TestPrepDtos {
       String deadlineAt, long remainingSec, List<RunQuestion> questions,
       java.util.Map<Long, String> savedAnswers, String bandDisclaimer) {}
 
-  /** scaled: SAT 영역 추정 점수(200~800). TOEFL 등 다른 종류는 null. */
+  /**
+   * scaled: SAT 영역 추정 점수(200~800) 또는 내신 실전 연습의 맞힌 배점 합. TOEFL은 null.
+   * scaleMax: scaled의 만점(SAT 800, 내신은 배점 합계). TOEFL·이전 기록은 null.
+   */
   public record SectionScore(
       String section, int totalCount, int autoCount, int answered, int correct,
-      Double accuracy, Double band, Integer scaled) {}
+      Double accuracy, Double band, Integer scaled, Integer scaleMax) {}
 
   public record Scorecard(
       Long attemptId, String examTitle, String submittedAt, boolean overtime,
       Double overallBand, Double accuracy, List<SectionScore> sections,
-      String bandDisclaimer, String kind, Integer totalScaled) {}
+      String bandDisclaimer, String kind, Integer totalScaled, Integer totalMax) {}
 
   public record ReviewItem(
       Long questionId, String section, String taskType, String prompt, String bodyText,
       String audioMode, List<String> choices, String yourAnswer, String correctAnswer,
-      Boolean isCorrect, boolean autoScore, String explanation, Integer orderNo, String koHelpJson) {}
+      Boolean isCorrect, boolean autoScore, String explanation, Integer orderNo, String koHelpJson,
+      Integer points) {}
 
   public record ReviewView(
       Long attemptId, String examTitle, String kind, String submittedAt, boolean overtime,
       Double overallBand, Double accuracy, List<SectionScore> sections,
-      List<ReviewItem> items, String bandDisclaimer, Integer totalScaled) {}
+      List<ReviewItem> items, String bandDisclaimer, Integer totalScaled, Integer totalMax) {}
 
   public record AttemptSummary(
       Long attemptId, String examCode, String kind, String examTitle, String status,
       String startedAt, String submittedAt, Double overallBand, Double accuracy,
-      int questionCount, Integer totalScaled) {}
+      int questionCount, Integer totalScaled, Integer totalMax) {}
 
   public record WrongItem(
       Long questionId, Long examId, String examCode, String examTitle, String kind,

@@ -122,4 +122,40 @@ class TestPrepPagesMySqlTest {
     assertThat(html).doesNotContain("Dev login");
     assertThat(html).doesNotContain("dev-login");
   }
+
+  @Test
+  @DisplayName("익명 /naesintest 첫 화면은 공개되고 16회차가 범위별 표로 나온다")
+  void anonymousNaesinHomeIsPublic() throws Exception {
+    MvcResult r = mockMvc.perform(get("/naesintest").accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(r.getResponse().getStatus()).isEqualTo(200);
+    String html = r.getResponse().getContentAsString();
+    assertThat(html.split("data-exam=\"TP-NAESIN-APM2-2602-R", -1)).hasSize(17);
+    assertThat(html).contains("Lesson 7", "Lesson 8", "Lesson 7·8 종합", "Final", "/js/naesin_home.js");
+    assertThat(html).doesNotContain("tp-nav");
+  }
+
+  @Test
+  @DisplayName("익명 /naesintest 하위 화면은 /naesintest로 보내 로그인 안내를 띄우고, 문항 그림은 막힌다")
+  void anonymousNaesinSubPagesRedirect() throws Exception {
+    for (String path : new String[] {"/naesintest/run", "/naesintest/review"}) {
+      MvcResult r = mockMvc.perform(get(path).accept(MediaType.TEXT_HTML)).andReturn();
+      assertThat(r.getResponse().getStatus()).as("status " + path).isEqualTo(302);
+      assertThat(r.getResponse().getRedirectedUrl()).as("redirect " + path)
+          .isEqualTo("/naesintest?login=required&returnUrl=" + java.net.URLEncoder.encode(path, java.nio.charset.StandardCharsets.UTF_8));
+    }
+    MvcResult img = mockMvc.perform(get("/naesin/apgujeong-m2-2026-2/r01/q01.webp").accept(MediaType.IMAGE_PNG)).andReturn();
+    assertThat(img.getResponse().getStatus()).isEqualTo(401);
+  }
+
+  @Test
+  @DisplayName("로그인 회원에게 /naesintest 시험·채점 화면과 문항 그림이 열린다")
+  void memberSeesNaesinPages() throws Exception {
+    MvcResult run = mockMvc.perform(get("/naesintest/run").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(run.getResponse().getStatus()).isEqualTo(200);
+    assertThat(run.getResponse().getContentAsString()).contains("nt-omr", "/js/naesin_run.js").doesNotContain("해설 보기");
+    MvcResult review = mockMvc.perform(get("/naesintest/review").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(review.getResponse().getStatus()).isEqualTo(200);
+    MvcResult img = mockMvc.perform(get("/naesin/apgujeong-m2-2026-2/r01/q01.webp").cookie(auth())).andReturn();
+    assertThat(img.getResponse().getStatus()).isEqualTo(200);
+  }
 }

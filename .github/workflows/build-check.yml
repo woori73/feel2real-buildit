@@ -128,6 +128,7 @@ jobs:
           src/test/js/testprep_gate.test.js
           src/test/js/testprep_flush.test.js
           src/test/js/sat_tools.test.js
+          src/test/js/naesin_common.test.js
           src/test/js/designcraft_editor_ai_panel_contract.test.js
           src/test/js/academy_home_view.test.js
           src/test/js/academy_home_contract.test.js

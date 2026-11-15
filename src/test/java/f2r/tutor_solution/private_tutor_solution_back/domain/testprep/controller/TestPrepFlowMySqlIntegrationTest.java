@@ -346,4 +346,74 @@ class TestPrepFlowMySqlIntegrationTest {
       assertThat(card.get("totalScaled").asInt()).as(code).isEqualTo(1600);
     }
   }
+
+  @Test
+  @DisplayName("given 내신 1회(40문항·134점), when 정답 37개·오답 3개로 제출하면 맞힌 배점 합과 만점·문항별 배점·해설을 돌려준다")
+  void naesinRound_pointsScoring() throws Exception {
+    // given
+    String code = "TP-NAESIN-APM2-2602-R01";
+    MvcResult list = mockMvc.perform(get(API + "/exams").param("kind", "NAESIN").cookie(auth(OWNER_ID))).andReturn();
+    assertThat(json(list)).hasSize(16);
+    MvcResult start = mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("examCode", code))))
+        .andReturn();
+    JsonNode view = json(start);
+    long attemptId = view.get("attemptId").asLong();
+    assertThat(view.get("kind").asText()).isEqualTo("NAESIN");
+    assertThat(view.get("questions")).hasSize(40);
+    view.get("questions").forEach(q -> {
+      assertThat(q.get("prompt").asText()).startsWith("[[img:/naesin/apgujeong-m2-2026-2/r01/q");
+      assertThat(q.get("koHelpJson").isNull()).as("풀이 중 해설 없음").isTrue();
+    });
+
+    // when — 앞의 3문항은 일부러 틀리게 답한다.
+    List<Map<String, Object>> answers = new ArrayList<>();
+    int[] lost = {0};
+    jdbc.query("SELECT q.question_id, q.answer_key, q.points FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+            + " WHERE e.exam_code = ? ORDER BY q.order_no",
+        (java.sql.ResultSet rs) -> {
+          String key = rs.getString("answer_key");
+          boolean miss = answers.size() < 3;
+          if (miss) lost[0] += rs.getInt("points");
+          answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", miss ? ("A".equals(key) ? "B" : "A") : key));
+        }, code);
+    MvcResult submit = mockMvc.perform(post(API + "/attempts/" + attemptId + "/submit").cookie(auth(OWNER_ID))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of("answers", answers))))
+        .andReturn();
+
+    // then
+    JsonNode card = json(submit);
+    assertThat(card.get("totalMax").asInt()).isEqualTo(134);
+    assertThat(card.get("totalScaled").asInt()).isEqualTo(134 - lost[0]);
+    assertThat(card.get("bandDisclaimer").asText()).isEqualTo("F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.");
+    assertThat(card.get("sections").get(0).get("correct").asInt()).isEqualTo(37);
+    assertThat(card.get("sections").get(0).get("band").isNull()).isTrue();
+    JsonNode review = json(mockMvc.perform(get(API + "/attempts/" + attemptId + "/review").cookie(auth(OWNER_ID))).andReturn());
+    assertThat(review.get("totalScaled").asInt()).isEqualTo(134 - lost[0]);
+    assertThat(review.get("items")).hasSize(40);
+    review.get("items").forEach(it -> {
+      assertThat(it.get("points").asInt()).isPositive();
+      assertThat(it.get("explanation").asText()).startsWith("정답 ");
+    });
+    JsonNode hist = json(mockMvc.perform(get(API + "/attempts").cookie(auth(OWNER_ID))).andReturn());
+    assertThat(hist.get(0).get("totalMax").asInt()).isEqualTo(134);
+  }
+
+  @Test
+  @DisplayName("given 내신 16회분, when 회차별 배점을 더하면 문제지 표지 총점과 같고 종합 11~13회만 70문항이다")
+  void naesinRounds_pointTotals() {
+    // given / when
+    List<Map<String, Object>> rows = jdbc.queryForList(
+        "SELECT e.exam_code, COUNT(*) n, SUM(q.points) pts FROM tp_exams e JOIN tp_questions q ON q.exam_id = e.exam_id"
+            + " WHERE e.kind = 'NAESIN' GROUP BY e.exam_code ORDER BY e.exam_code");
+    // then
+    int[] expected = {134, 134, 135, 136, 135, 134, 136, 134, 135, 134, 237, 236, 237, 137, 138, 135};
+    assertThat(rows).hasSize(16);
+    for (int i = 0; i < 16; i++) {
+      assertThat(((Number) rows.get(i).get("pts")).intValue()).as("R%02d 배점 합", i + 1).isEqualTo(expected[i]);
+      assertThat(((Number) rows.get(i).get("n")).intValue()).as("R%02d 문항 수", i + 1).isEqualTo(i >= 10 && i <= 12 ? 70 : 40);
+    }
+  }
 }

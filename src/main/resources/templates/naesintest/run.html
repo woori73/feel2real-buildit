@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <title>시험 보는 중 · 내신 실전 연습</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&amp;family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Serif+KR:wght@400;600;700&amp;display=swap">
+  <link rel="stylesheet" href="/css/naesin.css">
+  <script defer src="/js/naesin_common.js"></script>
+  <script defer src="/js/naesin_run.js"></script>
+</head>
+<body class="nt-body nt-run">
+<div class="nt-top">
+  <button type="button" class="nt-btn nt-btn-line" id="nt-leave">목록으로</button>
+  <span>답은 자동으로 저장됩니다 · 숫자 1~5로도 고를 수 있습니다</span>
+</div>
+<main class="nt-sheet-wrap">
+  <div class="nt-paperhead">
+    <h1 class="nt-paperhead-title" id="nt-title">내신 실전 연습</h1>
+    <table>
+      <tr><th scope="col">과목</th><th scope="col">학년</th><th scope="col">문항 수</th><th scope="col">시험 시간</th><th scope="col">남은 시간</th></tr>
+      <tr><td>영어</td><td>2학년</td><td id="nt-count">-</td><td id="nt-limit">-</td>
+        <td id="nt-timer-box"><span class="nt-time" id="nt-timer" role="timer" aria-live="off">--:--</span></td></tr>
+    </table>
+  </div>
+  <div class="nt-run-grid">
+    <section class="nt-page" id="paper" aria-live="polite"><p class="nt-msg">시험지를 불러오는 중입니다…</p></section>
+    <aside class="nt-omr" aria-label="OMR 답안지">
+      <div class="nt-omr-head"><button type="button" class="nt-omr-close" id="nt-omr-close">닫기</button><h2>답안지</h2><p>번호를 누르면 그 문항으로 갑니다</p></div>
+      <div class="nt-omr-cols"><span>번호</span><span>①</span><span>②</span><span>③</span><span>④</span><span>⑤</span></div>
+      <div class="nt-omr-rows" id="nt-omr-rows"></div>
+      <div class="nt-omr-foot">
+        <p><span>답한 문항</span><b id="nt-omr-done">0 / 0</b></p>
+        <p><span>남은 문항</span><b id="nt-omr-left">0</b></p>
+        <button type="button" class="nt-btn" id="nt-submit">답안 제출</button>
+      </div>
+    </aside>
+  </div>
+</main>
+<button type="button" class="nt-btn nt-omr-toggle" id="nt-omr-toggle" aria-controls="nt-omr-rows">답안지</button>
+<div class="nt-toast" id="nt-notice" role="status" hidden></div>
+<div class="nt-modal" id="nt-confirm" hidden>
+  <div class="nt-modal-card" role="dialog" aria-modal="true" aria-labelledby="nt-confirm-title">
+    <h2 id="nt-confirm-title">답안을 제출할까요?</h2>
+    <p id="nt-confirm-text"></p>
+    <div class="nt-modal-btns">
+      <button type="button" class="nt-btn nt-btn-line" id="nt-confirm-cancel">계속 풀기</button>
+      <button type="button" class="nt-btn" id="nt-confirm-ok">제출하고 채점</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
