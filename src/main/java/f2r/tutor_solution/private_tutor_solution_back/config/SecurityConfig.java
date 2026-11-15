@@ -406,8 +406,8 @@ public class SecurityConfig {
             // /home·BuildIt 페이지는 이 규칙과 무관하게 그대로 공개 유지.
             .requestMatchers("/testprep/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
-            // 내신 실전 연습: 첫 화면만 공개, 응시·결과 화면과 문항 그림(/naesin/**)은 로그인 회원 전용.
-            .requestMatchers("/naesintest")
+            // 내신 실전 연습: 학교 고르기·학교별 회차 목록은 공개, 응시·결과 화면과 문항 그림(/naesin/**)은 로그인 회원 전용.
+            .requestMatchers("/naesintest", "/naesintest/school/**")
             .permitAll()
             .requestMatchers("/naesintest/**", "/naesin/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")

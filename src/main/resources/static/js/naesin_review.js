@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
-  let data = null, filter = 'wrong';
+  let data = null, filter = 'wrong', examCode = null;
 
 
   function itemHtml(it, n) {
@@ -48,7 +48,7 @@
       + '<section class="nt-review-list">'
       + (shown.length ? shown.map(([it, n]) => itemHtml(it, n)).join('') : '<p class="nt-msg">틀린 문제가 없습니다. 전체 문항 해설은 위 “전체”에서 볼 수 있습니다.</p>')
       + '</section>'
-      + '<div class="nt-review-actions"><button type="button" class="nt-btn" id="nt-again">이 회차 다시 풀기</button><a class="nt-btn nt-btn-line" href="/naesintest">다른 회차 고르기</a></div>';
+      + '<div class="nt-review-actions"><button type="button" class="nt-btn" id="nt-again">이 회차 다시 풀기</button><a class="nt-btn nt-btn-line" id="nt-list" href="/naesintest">다른 회차 고르기</a></div>';
 
     $('review').querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; render(); }));
     $('review').querySelectorAll('[data-jump]').forEach(b => b.addEventListener('click', () => {
@@ -57,14 +57,13 @@
       const el = $('q' + n); if (el) el.scrollIntoView({ block: 'start' });
     }));
     $('nt-again').addEventListener('click', again);
+    if (examCode) { $('nt-list').href = NT.schoolUrl(examCode); const top = document.querySelector('.nt-top a'); if (top) top.href = NT.schoolUrl(examCode); }
   }
 
   async function again() {
     $('nt-again').disabled = true;
     try {
-      const hist = await NT.api('/api/testprep/attempts');
-      const me = hist.find(h => h.attemptId === data.attemptId);
-      const a = await NT.api('/api/testprep/attempts', { method: 'POST', body: JSON.stringify({ examCode: me.examCode }) });
+      const a = await NT.api('/api/testprep/attempts', { method: 'POST', body: JSON.stringify({ examCode }) });
       location.href = '/naesintest/run?attempt=' + a.attemptId;
     } catch (e) { $('nt-again').disabled = false; }
   }
@@ -78,6 +77,8 @@
       return;
     }
     if (data.kind !== 'NAESIN') { location.replace('/naesintest'); return; }
+    // 채점 결과에는 시험 코드가 없어 응시 기록에서 찾는다(학교 페이지로 돌아가기·다시 풀기에 쓴다).
+    try { const me = (await NT.api('/api/testprep/attempts')).find(h => h.attemptId === data.attemptId); examCode = me && me.examCode; } catch (e) { /* 목록 주소는 기본값 */ }
     data.items.sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0));
     if (!data.items.some(i => !i.isCorrect)) filter = 'all';
     document.title = '채점 결과 · ' + data.examTitle;

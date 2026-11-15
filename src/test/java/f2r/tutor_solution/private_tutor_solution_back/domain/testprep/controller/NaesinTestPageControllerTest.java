@@ -45,4 +45,19 @@ class NaesinTestPageControllerTest {
     assertThat(groups.get(0).rows()).hasSize(2);
     assertThat(groups.get(0).rows().get(0).minutes()).isEqualTo(20);
   }
+
+  @Test
+  @DisplayName("given 여러 학교 시험, when schoolRows면 학교 3곳 순서대로 시험 코드 앞부분이 맞는 회차 수를 센다")
+  void schoolRowsCountByPrefix() {
+    // given
+    List<ExamListItem> exams = List.of(
+        exam("TP-NAESIN-APM2-2602-R01", "압구정중 2학년 2학기 기말 1회 · Lesson 7 예상문제 1회", "s · 40문항 · 20분 · 134점", 40),
+        exam("TP-NAESIN-APM2-2602-R02", "압구정중 2학년 2학기 기말 2회 · Lesson 7 예상문제 2회", "s · 40문항 · 20분 · 134점", 40),
+        exam("TP-NAESIN-APM1-2602-R01", "압구정중 1학년 2학기 기말 1회 · Lesson 5 예상문제 1회", "s · 40문항 · 20분 · 130점", 40));
+    // when
+    List<NaesinTestPageController.SchoolRow> rows = NaesinTestPageController.schoolRows(exams);
+    // then
+    assertThat(rows).extracting(r -> r.school().slug()).containsExactly("apgujeong-m2", "singu-m2", "apgujeong-m1");
+    assertThat(rows).extracting(NaesinTestPageController.SchoolRow::rounds).containsExactly(2, 0, 1);
+  }
 }

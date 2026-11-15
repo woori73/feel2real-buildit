@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <title>내신 실전 연습 · 압구정중 2학년 2학기 기말 · F2R</title>
-  <meta name="description" content="압구정중 2학년 2학기 기말고사 대비 F2R 예상문제 16회분. 시간을 재어 풀고 제출하면 문항별로 채점하고 틀린 문제 해설을 보여 줍니다.">
+  <title th:text="${school.title()} + ' 2학기 기말 · 디지털 영어 기말고사 · F2R'">압구정중학교 2학년 2학기 기말 · 디지털 영어 기말고사 · F2R</title>
+  <meta name="description" th:content="${school.title()} + ' 2학기 기말고사 대비 F2R 예상문제. 시간을 재어 풀고 제출하면 문항별로 채점하고 틀린 문제 해설을 보여 줍니다.'" content="압구정중학교 2학년 2학기 기말고사 대비 F2R 예상문제.">
   <link rel="canonical" th:href="${canonical}" href="https://feel2real.co.kr/naesintest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,31 +16,33 @@
 </head>
 <body class="nt-body nt-home">
 <div class="nt-top">
-  <a class="nt-brand" href="/">F2R영어</a>
+  <a class="nt-btn nt-btn-line" href="/naesintest">학교 고르기</a>
   <span id="nt-who"></span>
 </div>
 <main class="nt-sheet-wrap">
   <div class="nt-page">
     <div class="nt-paperhead">
       <h1 class="nt-paperhead-title">2026학년도 2학기 기말고사 대비 실전 연습
-        <span class="nt-paperhead-sub">압구정중학교 2학년 영어 · F2R 예상문제</span></h1>
+        <span class="nt-paperhead-sub" th:text="${school.title()} + ' 영어 · F2R 예상문제'">압구정중학교 2학년 영어 · F2R 예상문제</span></h1>
       <table>
-        <tr><th scope="col">과목</th><th scope="col">학년</th><th scope="col">범위</th><th scope="col">회차</th></tr>
-        <tr><td>영어</td><td>2학년</td><td>Lesson 7·8</td><td>16회</td></tr>
+        <tr><th scope="col">학교</th><th scope="col">학년</th><th scope="col">범위</th><th scope="col">회차</th></tr>
+        <tr><td th:text="${school.name}">압구정중학교</td><td th:text="${school.grade}">2학년</td>
+          <td th:text="${school.scope} ?: '-'">Lesson 7·8</td><td th:text="${roundCount} > 0 ? ${roundCount} + '회' : '준비 중'">16회</td></tr>
       </table>
     </div>
 
     <section class="nt-notice-box" aria-labelledby="nt-rules">
       <h2 id="nt-rules">응시 안내</h2>
       <ol>
-        <li>시험 시간은 문항당 30초입니다. 40문항은 20분, 70문항(종합 11~13회)은 35분입니다.</li>
+        <li>시험 시간은 문항당 30초입니다. 40문항은 20분, 70문항은 35분입니다.</li>
         <li>실제 시험처럼 풀이 중에는 해설을 볼 수 없습니다.</li>
+        <li>1회는 로그인한 회원 누구나 풀 수 있습니다. 2회부터는 압구정에듀홀릭 재원생에게 열립니다.</li>
         <li>답은 문제 아래 번호나 OMR 답안지에 표시합니다. 표시한 답은 자동으로 저장됩니다.</li>
         <li>시간이 끝나면 자동으로 제출됩니다. 제출하면 문항별 채점 결과와 틀린 문제 해설을 볼 수 있습니다.</li>
       </ol>
     </section>
 
-    <p class="nt-msg" th:if="${#lists.isEmpty(groups)}">등록된 시험이 없습니다.</p>
+    <p class="nt-msg" th:if="${#lists.isEmpty(groups)}">이 학교 예상문제는 준비하고 있습니다. 문제가 올라오면 여기에서 바로 볼 수 있습니다.</p>
     <section class="nt-group" th:each="g : ${groups}">
       <h2 th:text="${g.name}">Lesson 7</h2>
       <table class="nt-table">

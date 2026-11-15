@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <title>디지털 영어 기말고사 · 학교 고르기 · F2R</title>
+  <meta name="description" content="학교별 2학기 기말고사 대비 F2R 예상문제를 실제 시험처럼 시간을 재어 풀고, 제출하면 문항별로 채점하고 틀린 문제 해설을 보여 줍니다.">
+  <link rel="canonical" th:href="${canonical}" href="https://feel2real.co.kr/naesintest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&amp;family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Serif+KR:wght@400;600;700&amp;display=swap">
+  <link rel="stylesheet" href="/css/naesin.css">
+  <script defer src="/js/naesin_common.js"></script>
+  <script defer src="/js/naesin_home.js"></script>
+</head>
+<body class="nt-body nt-home">
+<div class="nt-top">
+  <a class="nt-brand" href="/">F2R영어</a>
+  <span id="nt-who"></span>
+</div>
+<main class="nt-sheet-wrap">
+  <div class="nt-page">
+    <div class="nt-paperhead">
+      <h1 class="nt-paperhead-title">디지털 영어 기말고사
+        <span class="nt-paperhead-sub">2026학년도 2학기 기말고사 대비 · 학교별 F2R 예상문제</span></h1>
+    </div>
+
+    <p class="nt-lead">학교별 기말 영어 예상문제를 실제 시험처럼 풀어 보는 온라인 모의고사입니다.
+      정해진 시간 안에 OMR 답안지에 답을 표시하고, 제출하면 바로 점수와 문항별 채점 결과, 틀린 문제 해설을 볼 수 있습니다.</p>
+
+    <section class="nt-group" aria-labelledby="nt-schools-title">
+      <h2 id="nt-schools-title">학교 고르기</h2>
+      <table class="nt-table nt-schools">
+        <thead><tr><th scope="col">학교</th><th scope="col">학년</th><th scope="col">범위</th><th scope="col">회차</th><th scope="col">열기</th></tr></thead>
+        <tbody>
+        <tr th:each="s : ${schools}" th:attr="data-school=${s.school.slug}">
+          <td class="nt-round" th:text="${s.school.name}">압구정중학교</td>
+          <td th:text="${s.school.grade}">2학년</td>
+          <td th:text="${s.school.scope} ?: '-'">Lesson 7·8</td>
+          <td th:text="${s.rounds} > 0 ? ${s.rounds} + '회' : '준비 중'" th:classappend="${s.rounds} == 0 ? 'nt-soon'">16회</td>
+          <td class="nt-go"><a class="nt-btn" th:classappend="${s.rounds} == 0 ? 'nt-btn-line'" th:href="@{/naesintest/school/{slug}(slug=${s.school.slug})}" href="/naesintest/school/apgujeong-m2">열기</a></td>
+        </tr>
+        </tbody>
+      </table>
+      <p class="nt-home-foot">학교를 누르면 그 학교 예상문제 회차가 나옵니다. 다른 학교 문제는 만드는 대로 올립니다.</p>
+    </section>
+
+    <section class="nt-guide" aria-labelledby="nt-feat-title">
+      <h2 id="nt-feat-title">무엇이 다른가요</h2>
+      <div class="nt-feats">
+        <div class="nt-feat"><h3>우리 학교 시험 범위</h3><p>학교 교과서 본문과 수업 학습지 필기본을 바탕으로 학교마다 따로 만든 예상문제입니다. 어휘·문법·본문 이해를 실제 학교 시험 유형으로 냅니다.</p></div>
+        <div class="nt-feat"><h3>실제 시험과 같은 환경</h3><p>문항당 30초(40문항 20분, 70문항 35분) 안에 풉니다. 풀이 중에는 해설이 없고, 답은 OMR 답안지에 표시합니다. 시간이 끝나면 자동으로 제출됩니다.</p></div>
+        <div class="nt-feat"><h3>제출하면 바로 자동 채점</h3><p>문항 배점대로 점수를 매겨 맞힌 점수와 만점을 보여 줍니다. 문항별 채점표에서 맞은 문제와 틀린 문제를 한눈에 봅니다.</p></div>
+        <div class="nt-feat"><h3>틀린 문제는 해설로 복습</h3><p>틀린 문제만 골라 내 답과 정답, 풀이, 근거(학습지 쪽수), 어법 포인트를 봅니다. 같은 회차를 다시 풀어 점수 변화를 확인할 수 있습니다.</p></div>
+      </div>
+      <p class="nt-basis">예상문제 적중률 근거: <a href="/#hitCase">학교별 적중률 리포트</a>(압구정중3 93.5% · 언북중3 95% · 신구중3 96.8%)</p>
+    </section>
+
+    <section class="nt-guide" aria-labelledby="nt-how-title">
+      <h2 id="nt-how-title">이용 방법</h2>
+      <ol class="nt-steps">
+        <li><b>학교 고르기</b><span>위 표에서 우리 학교를 누르면 그 학교 예상문제 회차가 범위별로 나옵니다.</span></li>
+        <li><b>회차 시작</b><span>풀 회차의 시작을 누릅니다. 처음에는 네이버로 로그인합니다.</span></li>
+        <li><b>시험 보기</b><span>문제 아래 답란이나 오른쪽 OMR 답안지에서 번호를 누릅니다. 키보드 숫자 1~5와 좌우 화살표도 됩니다. 다시 볼 문제는 표시해 두고, 답안지 번호를 누르면 그 문항으로 갑니다.</span></li>
+        <li><b>제출과 채점</b><span>답안 제출을 누르면 바로 채점됩니다. 점수, 맞은 문항 수, 문항별 채점표가 나옵니다.</span></li>
+        <li><b>해설로 복습</b><span>틀린 문제 해설을 읽고, 이 회차 다시 풀기로 한 번 더 풉니다. 목록에서 회차마다 최근 점수를 볼 수 있습니다.</span></li>
+      </ol>
+    </section>
+
+    <section class="nt-guide" aria-labelledby="nt-shot-title">
+      <h2 id="nt-shot-title">화면 미리보기</h2>
+      <div class="nt-shots">
+        <figure><img src="/img/naesintest/guide-run.webp" alt="시험 화면: 위에 남은 시간, 왼쪽에 시험지와 답란, 오른쪽에 OMR 답안지" width="1600" height="1000" loading="lazy">
+          <figcaption>시험 화면 — 남은 시간, 시험지, 문항 답란, OMR 답안지</figcaption></figure>
+        <figure><img src="/img/naesintest/guide-review.webp" alt="채점 화면: 빨간 펜 점수, 문항별 채점표, 틀린 문제와 전체 보기 단추" width="1600" height="1000" loading="lazy">
+          <figcaption>채점 화면 — 점수, 문항별 채점표, 틀린 문제 보기</figcaption></figure>
+        <figure><img src="/img/naesintest/guide-explain.webp" alt="해설 화면: 내 답과 정답, 문항, 해설과 근거" width="1600" height="1000" loading="lazy">
+          <figcaption>해설 화면 — 내 답과 정답, 풀이, 근거</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="nt-guide" aria-labelledby="nt-who-title">
+      <h2 id="nt-who-title">이용 대상</h2>
+      <table class="nt-table nt-schools">
+        <thead><tr><th scope="col">구분</th><th scope="col">이용 범위</th></tr></thead>
+        <tbody>
+          <tr><td class="nt-round">로그인 전</td><td class="nt-left">학교별 회차 목록과 안내 보기</td></tr>
+          <tr><td class="nt-round">로그인 회원</td><td class="nt-left">학교마다 1회를 풀고 채점 결과와 해설 보기</td></tr>
+          <tr><td class="nt-round">압구정에듀홀릭 재원생</td><td class="nt-left">전 회차 풀기·채점·해설 복습</td></tr>
+        </tbody>
+      </table>
+      <p class="nt-home-foot">재원생은 학원 학생부에 등록된 이름 또는 휴대전화 번호가 네이버 로그인 정보와 같으면 전 회차가 열립니다. 열리지 않으면 학원에 알려 주세요.</p>
+    </section>
+
+    <section class="nt-guide" aria-labelledby="nt-faq-title">
+      <h2 id="nt-faq-title">자주 묻는 질문</h2>
+      <details class="nt-faq"><summary>시간이 끝나면 어떻게 되나요?</summary><p>표시한 답으로 자동 제출되고 채점 화면으로 넘어갑니다. 답하지 않은 문항은 틀린 것으로 채점합니다.</p></details>
+      <details class="nt-faq"><summary>풀다가 창을 닫으면 답이 없어지나요?</summary><p>표시한 답은 바로 저장됩니다. 같은 회차의 이어 풀기를 누르면 이어서 풀 수 있습니다. 시험 시간은 창을 닫아도 계속 흐릅니다.</p></details>
+      <details class="nt-faq"><summary>휴대폰에서도 볼 수 있나요?</summary><p>됩니다. 휴대폰에서는 화면 아래 답안지 단추를 누르면 OMR 답안지가 올라옵니다.</p></details>
+      <details class="nt-faq"><summary>점수는 실제 학교 점수와 같나요?</summary><p>아닙니다. F2R 예상문제로 연습한 점수이며, 학교 시험 배점 방식에 맞춰 매긴 참고 점수입니다.</p></details>
+      <details class="nt-faq"><summary>다른 학교 문제도 나오나요?</summary><p>학교별 예상문제는 만드는 대로 올립니다. 준비 중인 학교는 위 표에 준비 중으로 보입니다.</p></details>
+    </section>
+
+    <p class="nt-home-foot">F2R 예상문제 연습 점수이며 실제 학교 시험 점수가 아닙니다.</p>
+  </div>
+</main>
+</body>
+</html>

@@ -35,6 +35,8 @@ body.nt-body {
   text-decoration: none; cursor: pointer;
 }
 .nt-btn:hover { background: #3a3d44; }
+.nt-body a.nt-btn { color: #fff; }
+.nt-body a.nt-btn-line { color: var(--nt-ink); }
 .nt-btn-line { background: #fff; color: var(--nt-ink); }
 .nt-btn-line:hover { background: #f1f2f4; }
 .nt-btn:disabled { opacity: .45; cursor: default; }
@@ -98,6 +100,32 @@ body.nt-body {
 .nt-table .nt-last small { font: 400 13px/1 var(--nt-sans); color: var(--nt-muted); }
 .nt-table .nt-btn { min-height: 34px; padding: 0 14px; font-size: 14px; }
 .nt-home-foot { margin-top: 24px; text-align: center; font-size: 13px; color: var(--nt-muted); }
+.nt-table .nt-soon { color: var(--nt-muted); }
+
+/* 학교 고르기 화면 안내 */
+.nt-lead { margin: 18px auto 0; max-width: 680px; text-align: center; font-size: 16px; line-height: 1.75; }
+.nt-guide { margin-top: 40px; }
+.nt-guide h2 { margin: 0 0 12px; text-align: center; font: 700 19px/1.4 var(--nt-serif); }
+.nt-feats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 2px solid var(--nt-ink); border-left: 1px solid #d6d8dd; }
+.nt-feat { padding: 14px 16px; border-right: 1px solid #d6d8dd; border-bottom: 1px solid #d6d8dd; }
+.nt-feat h3 { margin: 0 0 4px; font: 700 16px/1.4 var(--nt-sans); }
+.nt-feat p { margin: 0; font-size: 14.5px; line-height: 1.7; color: #33363c; }
+.nt-basis { margin: 10px 0 0; text-align: center; font-size: 13px; color: var(--nt-muted); }
+.nt-steps { list-style: none; margin: 0; padding: 0; counter-reset: step; border-top: 2px solid var(--nt-ink); }
+.nt-steps li { counter-increment: step; display: grid; grid-template-columns: 44px 150px minmax(0, 1fr); align-items: baseline; gap: 4px 10px; padding: 11px 4px; border-bottom: 1px solid #d6d8dd; }
+.nt-steps li::before { content: counter(step); display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1.5px solid var(--nt-omr); border-radius: 50%; color: var(--nt-omr); font: 700 14px/1 var(--nt-sans); }
+.nt-steps b { font-size: 15.5px; }
+.nt-steps span { font-size: 14.5px; line-height: 1.7; color: #33363c; }
+.nt-shots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.nt-shots figure { margin: 0; }
+.nt-shots img { display: block; width: 100%; height: auto; border: 1px solid #cfd2d8; }
+.nt-shots figcaption { margin-top: 6px; font-size: 13px; text-align: center; color: var(--nt-muted); }
+.nt-table td.nt-left { text-align: left; }
+.nt-faq { border-bottom: 1px solid #d6d8dd; padding: 10px 4px; }
+.nt-faq:first-of-type { border-top: 2px solid var(--nt-ink); }
+.nt-faq summary { cursor: pointer; font-weight: 500; }
+.nt-faq p { margin: 6px 0 2px; font-size: 14.5px; line-height: 1.7; color: #33363c; }
+.nt-locked { font-size: 13px; color: var(--nt-muted); white-space: nowrap; }
 
 /* ---------- 시험 화면 ---------- */
 .nt-run .nt-sheet-wrap { margin-bottom: 24px; }
@@ -274,9 +302,20 @@ body.nt-body {
   .nt-table td.nt-meta { display: none; }
   .nt-mark span { display: none; }
   .nt-ox-grid { grid-template-columns: repeat(5, 1fr); }
+  .nt-feats, .nt-shots { grid-template-columns: 1fr; }
+  .nt-steps li { grid-template-columns: 36px minmax(0, 1fr); }
+  .nt-steps li span { grid-column: 2; }
+  .nt-lead { font-size: 15px; }
   .nt-score { grid-template-columns: 1fr; text-align: center; }
 }
 @media (min-width: 641px) { .nt-table td.nt-meta-m { display: none; } }
+/* 학교 고르기 표는 칸이 적어 휴대폰에서도 표 모양 그대로 둔다. */
+@media (max-width: 640px) {
+  .nt-table.nt-schools thead { display: table-header-group; }
+  .nt-table.nt-schools tr { display: table-row; }
+  .nt-table.nt-schools td { display: table-cell; padding: 8px 4px; border-bottom: 1px solid #d6d8dd; font-size: 14px; }
+  .nt-table.nt-schools td.nt-round { font-size: 15px; }
+}
 @media (prefers-reduced-motion: reduce) { .nt-omr { transition: none; } }
 @media print {
   body.nt-body { background: #fff; }
