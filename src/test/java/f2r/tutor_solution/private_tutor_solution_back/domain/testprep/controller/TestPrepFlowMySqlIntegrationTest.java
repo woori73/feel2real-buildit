@@ -416,4 +416,19 @@ class TestPrepFlowMySqlIntegrationTest {
       assertThat(((Number) rows.get(i).get("n")).intValue()).as("R%02d 문항 수", i + 1).isEqualTo(i >= 10 && i <= 12 ? 70 : 40);
     }
   }
+
+  @Test
+  @DisplayName("given 발음부호 문항(V1117), when 해설을 읽으면 강세가 아니라 발음부호 오류를 설명하고 정답 번호는 그대로다")
+  void naesinIpaQuestions_explainSymbolErrors() {
+    // given / when
+    List<Map<String, Object>> rows = jdbc.queryForList(
+        "SELECT e.exam_code, q.order_no, q.answer_key, q.explanation FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+            + " WHERE e.kind = 'NAESIN' AND q.explanation LIKE '정답 _ · 발음부호%' ORDER BY e.exam_code, q.order_no");
+    // then
+    assertThat(rows).hasSize(32);
+    assertThat(rows).noneMatch(r -> r.get("explanation").toString().contains("주강세"));
+    Map<String, Object> r1 = rows.get(0);
+    assertThat(r1.get("answer_key")).isEqualTo("B");
+    assertThat(r1.get("explanation").toString()).contains("바른 발음부호는 [prɪˈzɜːrv]", "②는 [s]로 적어 틀리다");
+  }
 }
