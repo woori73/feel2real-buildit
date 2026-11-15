@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="/css/home_light.css?v=20261114-articles-2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
-  <link rel="stylesheet" href="/css/home_winter.css?v=20261115-1">
+  <link rel="stylesheet" href="/css/home_winter.css?v=20261116-1">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
   <script src="/js/home_agent_trailer.js?v=20261030-1" defer></script>
@@ -442,13 +442,19 @@
     <!-- 맞춤문제 2만원 서비스: 신청·적중 사례·제작 과정·이용료·문의·활용 사례·이용 방법을 한곳에 -->
     <div class="hl-service" id="service">
 
+    <div class="hl-head hw-svc-head hw-h-a is-first"><h2>맞춤문제</h2><p>2만원 서비스 · 학교별 맞춤 제작</p></div>
+
     <section class="exam-section" id="request" aria-labelledby="requestPaneTitle">
       <p class="hl-eyebrow">맞춤문제 2만원 서비스 · 학교별 맞춤 제작</p>
       <h2 id="requestPaneTitle">맞춤문제 신청</h2>
       <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
+      <div class="hw-plan" aria-label="회차별 문항 수"><div><span>1주 1회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>1주 2회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 3회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 4회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div></div>
+      <div class="hw-price"><span th:text="'총 ' + ${examOffer.totalQuestions} + '문항'">총 160문항</span><b th:text="${examOffer.priceLabel}">20,000원</b></div>
       <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/exam-service?sample=1">클라우드리뷰 무료신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
       <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
     </section>
+
+    <div class="hl-head hw-svc-head hw-h-b"><h2>적중 사례</h2><p>압구정중3 · 언북중3 · 신구중3</p></div>
 
     <!-- 적중 사례: 요약은 항상 보이고, 항목을 누르면 내용이 이어서 펼쳐진다(이미지 30장). -->
     <section class="hl-section home-hit" id="hitCase" aria-labelledby="hitCaseTitle">
@@ -627,10 +633,17 @@
 
     <section class="exam-section" id="exam-blog" aria-labelledby="examBlogTitle">
       <h2 id="examBlogTitle">학교별 시험 적중률 블로그</h2>
+      <div class="hw-bars hw-reveal" aria-label="학교별 적중률">
+        <div class="hw-bar"><span>압구정중3</span><i><b style="--w:93.5%"></b></i><em>93.5%</em></div>
+        <div class="hw-bar"><span>언북중3</span><i><b style="--w:95%"></b></i><em>95%</em></div>
+        <div class="hw-bar"><span>신구중3</span><i><b style="--w:96.8%"></b></i><em>96.8%</em></div>
+      </div>
       <a class="exam-blog-link" id="eonbukHitBlog" href="https://blog.naver.com/apgujungeduholic/224463820746" target="_blank" rel="noopener"><span><small>적중사례2 · 언북중3</small><strong>언북중3 2학기말 적중률 95% 블로그</strong></span><span aria-hidden="true">↗</span></a>
       <a class="exam-blog-link" id="singuHitBlog" href="https://blog.naver.com/apgujungeduholic/224472061838" target="_blank" rel="noopener"><span><small>적중사례3 · 신구중3</small><strong>신구중3 적중률 96% 블로그</strong></span><span aria-hidden="true">↗</span></a>
       <a class="exam-blog-link" id="enHitBlog" href="https://blog.naver.com/apgujungeduholic/224435388122" target="_blank" rel="noopener"><span><small>압구정에듀홀릭</small><strong>압구정중2 2학기 중간 적중률 블로그</strong></span><span aria-hidden="true">↗</span></a>
     </section>
+
+    <div class="hl-head hw-svc-head hw-h-c"><h2>이용료와 신청</h2><p>무통장입금 · 문의·신청·자료 제출</p></div>
 
     <section class="hl-section" id="exam-payment" aria-labelledby="examPaymentTitle">
       <div class="hl-split hl-pay">
@@ -760,6 +773,7 @@
 
     <!-- BUILD IT CHART: 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->
     <section class="hl-section en-chart bb-chart" id="chart-showcase" data-track-section="chart-showcase" aria-labelledby="enChartTitle">
+      <div class="hl-head"><h2>빌드잇 차트</h2><p>지역별 영어 선생님 찾기</p></div>
       <div class="hl-chart hl-lift">
         <div class="hl-chart-top">
           <div class="hl-chart-art" aria-hidden="true"><span class="hl-floor"></span><img class="hl-obj" src="/img/landing/home-3d-chart.webp" alt="" width="800" height="800" loading="lazy"></div>
