@@ -634,4 +634,5 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 .hl-dexam-basis { margin: 14px 0 0; font-size: 14px; color: var(--hl-sub); }
 .hl-dexam-basis a, .hero-dexam .hero-note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .hl-dexam-now { margin: 8px 0 12px; font-size: 14px; color: var(--hl-sub); }
-@media (max-width: 640px) { .hero-dexam .hero-lead-more, .hero-dexam .hero-note-more { display: none; } }
+/* 태블릿·휴대폰: 배너 높이가 홍보 영상을 첫 화면 밖으로 밀지 않게 덧붙임 문장과 근거 수치를 숨긴다(섹션에는 그대로 있음). */
+@media (max-width: 1023px) { .hero-dexam .hero-lead-more, .hero-dexam .hero-note-more { display: none; } }
