@@ -88,7 +88,6 @@ for (const font of ['fallback', 'pretendard']) {
           await expect(page.locator(target)).toBeInViewport();
           expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBe(0);
         }
-        await selectHomePane(page,'dashboard');
         const replies = [];
         await selectHomePane(page,'request');
         const submit = page.locator('#enExamCta');
@@ -98,7 +97,7 @@ for (const font of ['fallback', 'pretendard']) {
         const popup = await popupPromise; await popup.close();
         await expect(page.locator('#enExamMail')).toHaveAttribute('href',email);
         await selectHomePane(page,'home');
-        for (const [link,target] of [['#edu a[href="#request"]','#requestPaneTitle'],['#edu a[href="#review-game"]','#reviewGameTitle'],['.hl-promo-actions .hl-btn-dark','#examContactTitle']]) {
+        for (const [link,target] of [['a[href="#request"]:visible >> nth=0','#requestPaneTitle'],['.hl-promo-actions .hl-btn-dark','#examContactTitle']]) {
           await act(page.locator(link));
           await expect(page.locator(target)).toBeInViewport();
           await selectHomePane(page,'home');
@@ -133,7 +132,7 @@ test('legacy anchors, browser history, reduced motion and no-JS fallback remain 
   await fallback.route('**/*',localOnly);
   const plain=await fallback.newPage();
   await plain.goto('/');
-  for(const id of ['pass-offer','digital-exam','counsel','edu','ai-content','hitCase','exam-payment','chart-showcase','review-game','ebook','request','exam-contact','dashboard','guide']) await expect(plain.locator('#'+id)).toBeVisible();
+  for(const id of ['pass-offer','digital-exam','counsel','ai-content','hitCase','exam-payment','chart-showcase','review-game','ebook','request','exam-contact','guide']) await expect(plain.locator('#'+id)).toBeVisible();
   await expect(plain.locator('.hl-chips')).toBeVisible();
   await expect(plain.locator('#homeMenuPanel')).toBeHidden();
   await fallback.close();
