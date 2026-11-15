@@ -26,8 +26,8 @@
       let h = null;
       try { h = raw ? JSON.parse(raw) : null; } catch (e) { h = null; }
       if (!h) return '';
-      return '<details class="rv-kohelp"><summary>한글 해설 보기 (해석 · 어휘 · 풀이 · 전략)</summary>'
-        + '<h4>한글 해석</h4>' + SATRich.render(h.translation || '')
+      return '<details class="rv-kohelp"><summary>한글 해설 보기 (' + TP.esc(h.translationTitle || '해석') + ' · 어휘 · 풀이 · 전략)</summary>'
+        + (h.translation ? '<h4>' + TP.esc(h.translationTitle || '한글 해석') + '</h4>' + SATRich.render(h.translation) : '')
         + '<h4>영어 어휘</h4><table class="help-vocab"><tbody>' + (h.vocab || []).map(v => '<tr><th>' + TP.esc(v[0]) + '</th><td>' + TP.esc(v[1]) + '</td></tr>').join('') + '</tbody></table>'
         + '<h4>풀이 설명</h4>' + SATRich.render(h.solution || '')
         + '<h4>풀이 전략</h4>' + SATRich.render(h.strategy || '') + '</details>';
