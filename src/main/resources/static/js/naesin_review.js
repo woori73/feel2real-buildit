@@ -57,7 +57,7 @@
       const el = $('q' + n); if (el) el.scrollIntoView({ block: 'start' });
     }));
     $('nt-again').addEventListener('click', again);
-    if (examCode) { $('nt-list').href = NT.schoolUrl(examCode); const top = document.querySelector('.nt-top a'); if (top) top.href = NT.schoolUrl(examCode); }
+    if (examCode) { $('nt-list').href = NT.schoolUrl(examCode); const back = $('nt-back'); if (back) back.href = NT.schoolUrl(examCode); }
   }
 
   async function again() {
