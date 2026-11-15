@@ -52,6 +52,10 @@ public class TpQuestion extends BaseEntity {
   @Column(name = "order_no", nullable = false)
   private Integer orderNo;
 
+  /** 문항 배점(내신 실전 연습). SAT·TOEFL 문항은 null. */
+  @Column(name = "points")
+  private Integer points;
+
   /** 해설란 한글 도움 자료 JSON {translation, vocab[[영어, 뜻]], solution, strategy}. 없으면 null. */
   @Column(name = "ko_help_json", columnDefinition = "MEDIUMTEXT")
   private String koHelpJson;

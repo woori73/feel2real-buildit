@@ -29,15 +29,15 @@ class TestPrepScoringTest {
   @DisplayName("given 섹션 밴드 5.0과 4.0일 때 when overallBand면 0.5 단위로 평균 반올림(ETS 방식)")
   void overallRoundsToHalfBand() {
     List<SectionScore> sections = List.of(
-        new SectionScore("READING", 8, 6, 6, 5, 83.3, 5.0, null),
-        new SectionScore("LISTENING", 6, 4, 4, 3, 75.0, 4.0, null));
+        new SectionScore("READING", 8, 6, 6, 5, 83.3, 5.0, null, null),
+        new SectionScore("LISTENING", 6, 4, 4, 3, 75.0, 4.0, null, null));
     assertThat(TestPrepService.overallBand(sections)).isEqualTo(4.5);
   }
 
   @Test
   @DisplayName("given 자동채점 섹션이 없으면 when overallBand면 null — ETS 공식처럼 표시하지 않는다")
   void noAutoScoreMeansNoBand() {
-    List<SectionScore> sections = List.of(new SectionScore("SPEAKING", 2, 0, 0, 0, null, null, null));
+    List<SectionScore> sections = List.of(new SectionScore("SPEAKING", 2, 0, 0, 0, null, null, null, null));
     assertThat(TestPrepService.overallBand(sections)).isNull();
   }
   @Test
@@ -54,10 +54,10 @@ class TestPrepScoringTest {
   @DisplayName("given SAT 영역 점수들, when totalScaled면 합계, 영역 점수가 없으면 null")
   void satTotal() {
     List<SectionScore> sections = List.of(
-        new SectionScore("RW", 10, 10, 10, 8, 80.0, null, 680),
-        new SectionScore("MATH", 8, 8, 8, 6, 75.0, null, 650));
+        new SectionScore("RW", 10, 10, 10, 8, 80.0, null, 680, null),
+        new SectionScore("MATH", 8, 8, 8, 6, 75.0, null, 650, null));
     assertThat(TestPrepService.totalScaled(sections)).isEqualTo(1330);
-    assertThat(TestPrepService.totalScaled(List.of(new SectionScore("READING", 8, 6, 6, 5, 83.3, 5.0, null)))).isNull();
+    assertThat(TestPrepService.totalScaled(List.of(new SectionScore("READING", 8, 6, 6, 5, 83.3, 5.0, null, null)))).isNull();
   }
 
   @Test
@@ -100,5 +100,16 @@ class TestPrepScoringTest {
   void disclaimerByKind() {
     assertThat(TestPrepService.disclaimerFor("SAT")).isEqualTo(TestPrepService.SAT_DISCLAIMER);
     assertThat(TestPrepService.disclaimerFor("PRACTICE")).isEqualTo(TestPrepService.BAND_DISCLAIMER);
+  }
+
+  @Test
+  @DisplayName("given 섹션 만점, when totalMax면 합계, 만점이 없는 섹션이 있으면 null")
+  void totalMaxSumsScaleMax() {
+    assertThat(TestPrepService.totalMax(List.of(
+        new SectionScore("EN", 40, 40, 40, 31, 77.5, null, 103, 134)))).isEqualTo(134);
+    assertThat(TestPrepService.totalMax(List.of(
+        new SectionScore("RW", 10, 10, 10, 8, 80.0, null, 680, 800),
+        new SectionScore("MATH", 8, 8, 8, 6, 75.0, null, 650, null)))).isNull();
+    assertThat(TestPrepService.disclaimerFor("NAESIN")).isEqualTo(TestPrepService.NAESIN_DISCLAIMER);
   }
 }

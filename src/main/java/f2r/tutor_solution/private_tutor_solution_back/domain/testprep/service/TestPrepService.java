@@ -35,10 +35,13 @@ public class TestPrepService {
   public static final String SAT_DISCLAIMER =
       "F2R internal score estimate — not an official College Board SAT score.";
   public static final String KIND_SAT = "SAT";
+  public static final String KIND_NAESIN = "NAESIN";
+  public static final String NAESIN_DISCLAIMER =
+      "F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.";
   public static final String TASK_SAT_SPR = "SAT_MATH_SPR";
 
   private static final List<String> PRACTICE_SECTION_ORDER =
-      List.of("READING", "LISTENING", "WRITING", "SPEAKING", "RW", "MATH");
+      List.of("READING", "LISTENING", "WRITING", "SPEAKING", "RW", "MATH", "EN");
   private static final int MAX_TEXT_ANSWER_LEN = 20_000;
   private static final int MAX_RECORDED_ANSWER_LEN = 4_000_000; // base64 data-URL 상한
   private static final DateTimeFormatter ISO = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -148,10 +151,12 @@ public class TestPrepService {
         .collect(Collectors.toMap(TpAttemptAnswer::getQuestionId, x -> x, (a, b) -> b));
 
     int autoTotal = 0, autoCorrect = 0;
-    Map<String, int[]> bySection = new LinkedHashMap<>(); // [autoTotal, autoCorrect, totalCount]
+    Map<String, int[]> bySection = new LinkedHashMap<>(); // [autoTotal, autoCorrect, totalCount, earnedPoints, maxPoints]
     for (TpQuestion q : questions) {
-      int[] agg = bySection.computeIfAbsent(q.getSection(), k -> new int[3]);
+      int[] agg = bySection.computeIfAbsent(q.getSection(), k -> new int[5]);
       agg[2]++;
+      int pts = q.getPoints() == null ? 0 : q.getPoints();
+      agg[4] += pts;
       TpAttemptAnswer ans = answers.get(q.getQuestionId());
       if (Boolean.TRUE.equals(q.getAutoScore())) {
         boolean correct = ans != null && isCorrect(q, ans.getAnswerText());
@@ -163,23 +168,35 @@ public class TestPrepService {
           answerRepository.save(ans);
         }
         if (correct) {
-          autoTotal++; agg[0]++; agg[1]++; autoCorrect++;
+          autoTotal++; agg[0]++; agg[1]++; autoCorrect++; agg[3] += pts;
         } else {
           autoTotal++; agg[0]++;
         }
       }
     }
 
-    boolean sat = KIND_SAT.equals(examOf(attempt).getKind());
+    String kind = examOf(attempt).getKind();
+    boolean sat = KIND_SAT.equals(kind);
+    boolean naesin = KIND_NAESIN.equals(kind);
     List<SectionScore> sections = new ArrayList<>();
     for (TpQuestion q : questions) {
       if (!sections.stream().anyMatch(s -> s.section().equals(q.getSection()))) {
         int[] agg = bySection.get(q.getSection());
         Double accuracy = agg[0] > 0 ? round1(100.0 * agg[1] / agg[0]) : null;
         // SAT은 TOEFL 밴드(1~6)를 쓰지 않고 영역 추정 점수(200~800)만 기록한다.
-        Double band = agg[0] > 0 && !sat ? bandFor(accuracy) : null;
-        Integer scaled = agg[0] > 0 && sat ? satScaledFor(agg[1], agg[0]) : null;
-        sections.add(new SectionScore(q.getSection(), agg[2], agg[0], agg[0], agg[1], accuracy, band, scaled));
+        // 내신 실전 연습은 맞힌 문항의 배점 합(만점 = 배점 합계)으로 채점한다.
+        Double band = agg[0] > 0 && !sat && !naesin ? bandFor(accuracy) : null;
+        // 삼항식에 int와 null을 섞으면 언박싱 NPE가 나므로 Integer로 나눠 정한다.
+        Integer scaled = null;
+        Integer scaleMax = null;
+        if (sat) {
+          scaled = agg[0] > 0 ? Integer.valueOf(satScaledFor(agg[1], agg[0])) : null;
+          scaleMax = 800;
+        } else if (naesin) {
+          scaled = agg[3];
+          scaleMax = agg[4];
+        }
+        sections.add(new SectionScore(q.getSection(), agg[2], agg[0], agg[0], agg[1], accuracy, band, scaled, scaleMax));
       }
     }
     sections.sort(Comparator.comparingInt(s -> sectionRank(s.section())));
@@ -216,14 +233,15 @@ public class TestPrepService {
           q.getAudioMode(), parseChoices(q.getChoicesJson()), your,
           Boolean.TRUE.equals(q.getAutoScore()) ? q.getAnswerKey() : null,
           ans == null ? null : ans.getIsCorrect(), Boolean.TRUE.equals(q.getAutoScore()),
-          q.getExplanation(), q.getOrderNo(), q.getKoHelpJson());
+          q.getExplanation(), q.getOrderNo(), q.getKoHelpJson(), q.getPoints());
     }).toList();
     return new ReviewView(attempt.getAttemptId(), exam.getTitle(), exam.getKind(),
         attempt.getSubmittedAt() == null ? null : ISO.format(attempt.getSubmittedAt()),
         Boolean.TRUE.equals(attempt.getOvertime()),
         attempt.getOverallBand() == null ? null : attempt.getOverallBand().doubleValue(),
         attempt.getAutoAccuracy() == null ? null : attempt.getAutoAccuracy().doubleValue(),
-        readSectionScores(attempt), items, disclaimerFor(exam.getKind()), totalScaled(readSectionScores(attempt)));
+        readSectionScores(attempt), items, disclaimerFor(exam.getKind()), totalScaled(readSectionScores(attempt)),
+        totalMax(readSectionScores(attempt)));
   }
 
   @Transactional(readOnly = true)
@@ -241,7 +259,7 @@ public class TestPrepService {
           a.getSubmittedAt() == null ? null : ISO.format(a.getSubmittedAt()),
           a.getOverallBand() == null ? null : a.getOverallBand().doubleValue(),
           a.getAutoAccuracy() == null ? null : a.getAutoAccuracy().doubleValue(),
-          count, totalScaled(readSectionScores(a)));
+          count, totalScaled(readSectionScores(a)), totalMax(readSectionScores(a)));
     }).toList();
   }
 
@@ -428,7 +446,7 @@ public class TestPrepService {
         attempt.getOverallBand() == null ? null : attempt.getOverallBand().doubleValue(),
         attempt.getAutoAccuracy() == null ? null : attempt.getAutoAccuracy().doubleValue(),
         readSectionScores(attempt), disclaimerFor(exam.getKind()), exam.getKind(),
-        totalScaled(readSectionScores(attempt)));
+        totalScaled(readSectionScores(attempt)), totalMax(readSectionScores(attempt)));
   }
 
   private Set<Long> wrongQuestionIds(Long userId) {
@@ -437,7 +455,14 @@ public class TestPrepService {
   }
 
   static String disclaimerFor(String kind) {
+    if (KIND_NAESIN.equals(kind)) return NAESIN_DISCLAIMER;
     return KIND_SAT.equals(kind) ? SAT_DISCLAIMER : BAND_DISCLAIMER;
+  }
+
+  /** 점수 만점 합계(SAT 1600, 내신은 배점 합계). 만점이 기록되지 않은 섹션이 있으면 null. */
+  static Integer totalMax(List<SectionScore> sections) {
+    if (sections.isEmpty() || sections.stream().anyMatch(s -> s.scaleMax() == null)) return null;
+    return sections.stream().mapToInt(SectionScore::scaleMax).sum();
   }
 
   /** SAT 영역 추정 점수: 200 + round(정답 비율 × 60) × 10 → 200~800 (10점 단위). 공식 환산표가 아니다. */

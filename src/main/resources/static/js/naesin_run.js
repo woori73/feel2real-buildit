@@ -1,0 +1,160 @@
+/*
+ * 내신 실전 연습 시험 화면(/naesintest/run?attempt=ID)
+ * - 실제 시험처럼 풀이 중에는 해설이 없다. 시간은 문항당 30초(40문항 20분, 70문항 35분).
+ * - 답은 시험지 아래 ①~⑤ 또는 오른쪽 OMR 답안지에서 고르고, 기존 /api/testprep 응시 API로 저장·제출한다.
+ * - 시간이 끝나면 자동 제출하고 채점 화면(/naesintest/review)으로 간다.
+ */
+(function () {
+  'use strict';
+  const SEC_PER_QUESTION = 30;
+  const SERVER_LIMIT_SEC = 7200; // V1116 tp_exams.time_limit_sec — 서버 남은 시간으로 경과 시간을 계산한다
+  const $ = id => document.getElementById(id);
+
+  let attempt = null, qs = [], answers = {}, marked = {}, idx = 0, limitSec = 0, startEpoch = 0, submitting = false;
+  const dirty = new Set();
+
+  const put = NT.serialize(async (qid, v) => {
+    await NT.api('/api/testprep/attempts/' + attempt.attemptId + '/answers', { method: 'PUT', body: JSON.stringify({ questionId: qid, answerText: v }) });
+  });
+  async function flush() {
+    const ids = [...dirty]; dirty.clear();
+    try { await Promise.all(ids.map(id => put(Number(id), answers[id] || null))); }
+    catch (e) { ids.forEach(id => dirty.add(id)); notice('답안을 저장하지 못했습니다. 인터넷 연결을 확인하세요.'); }
+  }
+  function stateKey() { return 'f2r-naesin-' + attempt.attemptId; }
+  function saveLocal() { try { localStorage.setItem(stateKey(), JSON.stringify({ idx, marked })); } catch (e) { /* 저장 안 됨 */ } }
+
+  async function boot() {
+    const id = new URLSearchParams(location.search).get('attempt');
+    if (!id) { location.href = '/naesintest'; return; }
+    await NT.loadMe();
+    try { attempt = await NT.api('/api/testprep/attempts/' + encodeURIComponent(id)); }
+    catch (e) { $('paper').innerHTML = '<p class="nt-msg">시험을 열 수 없습니다. ' + NT.esc(e.message) + '</p><p class="nt-msg"><a class="nt-btn" href="/naesintest">목록으로</a></p>'; return; }
+    if (attempt.status === 'SUBMITTED') { location.replace('/naesintest/review?attempt=' + attempt.attemptId); return; }
+    if (attempt.kind !== 'NAESIN') { location.replace('/naesintest'); return; }
+    qs = attempt.questions;
+    qs.forEach(q => { answers[q.questionId] = attempt.savedAnswers[q.questionId] || null; });
+    try { const s = JSON.parse(localStorage.getItem(stateKey()) || '{}'); idx = Math.min(s.idx || 0, qs.length - 1); marked = s.marked || {}; } catch (e) { /* 새로 시작 */ }
+    limitSec = qs.length * SEC_PER_QUESTION;
+    startEpoch = Date.now() - Math.max(0, SERVER_LIMIT_SEC - attempt.remainingSec) * 1000;
+    $('nt-title').textContent = attempt.title;
+    $('nt-count').textContent = qs.length + '문항';
+    $('nt-limit').textContent = (limitSec / 60) + '분';
+    document.title = attempt.title + ' · 내신 실전 연습';
+    renderOmr(); render();
+    wire();
+    tick(); setInterval(tick, 1000);
+    setInterval(flush, 10000);
+    window.addEventListener('beforeunload', () => { if (dirty.size) flush(); });
+  }
+
+  function left() { return limitSec - Math.floor((Date.now() - startEpoch) / 1000); }
+  function tick() {
+    if (submitting) return;
+    const l = left();
+    $('nt-timer').textContent = NT.fmtTime(l);
+    $('nt-timer-box').classList.toggle('is-low', l <= 120);
+    if (l <= 0) submit(true);
+  }
+
+  function render() {
+    const q = qs[idx];
+    const passage = NT.imgPath(q.bodyText);
+    const img = NT.imgPath(q.prompt);
+    const sel = answers[q.questionId];
+    $('paper').innerHTML =
+      '<div class="nt-qbar"><button type="button" class="nt-nav" id="nt-prev"' + (idx === 0 ? ' disabled' : '') + ' aria-label="이전 문항">이전</button>'
+      + '<span class="nt-qpos"><b>' + (idx + 1) + '</b> / ' + qs.length + '</span>'
+      + '<button type="button" class="nt-nav" id="nt-next"' + (idx === qs.length - 1 ? ' disabled' : '') + ' aria-label="다음 문항">다음</button>'
+      + '<label class="nt-mark"><input type="checkbox" id="nt-mark"' + (marked[q.questionId] ? ' checked' : '') + '> 다시 볼 문제</label></div>'
+      + '<div class="nt-sheet">'
+      + (passage ? '<img class="nt-img nt-passage" src="' + passage + '" alt="' + (idx + 1) + '번 문항 지문">' : '')
+      + (img ? '<img class="nt-img" src="' + img + '" alt="' + (idx + 1) + '번 문항">' : '<p class="nt-msg">문항 그림을 불러오지 못했습니다.</p>')
+      + '</div>'
+      + '<div class="nt-pick" role="radiogroup" aria-label="' + (idx + 1) + '번 답 고르기"><span class="nt-pick-label">답</span>'
+      + q.choices.map((c, i) => '<button type="button" class="nt-bubble' + (sel === NT.letter(i) ? ' is-on' : '') + '" role="radio" aria-checked="' + (sel === NT.letter(i)) + '" data-pick="' + NT.letter(i) + '">' + NT.esc(c) + '</button>').join('')
+      + '</div>';
+    $('paper').scrollTop = 0; window.scrollTo({ top: 0 });
+    $('nt-prev').addEventListener('click', () => go(idx - 1));
+    $('nt-next').addEventListener('click', () => go(idx + 1));
+    $('nt-mark').addEventListener('change', e => { if (e.target.checked) marked[q.questionId] = true; else delete marked[q.questionId]; saveLocal(); renderOmr(); });
+    $('paper').querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => pick(q, b.dataset.pick)));
+    document.querySelectorAll('.nt-omr-row').forEach(r => r.classList.toggle('is-current', Number(r.dataset.i) === idx));
+    const cur = document.querySelector('.nt-omr-row.is-current');
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+  }
+
+  function pick(q, letter) {
+    answers[q.questionId] = answers[q.questionId] === letter ? null : letter;
+    dirty.add(String(q.questionId));
+    clearTimeout(pick.t); pick.t = setTimeout(flush, 600);
+    renderOmr();
+    if (qs[idx] === q) render();
+  }
+
+  function go(i) { if (i < 0 || i >= qs.length) return; idx = i; saveLocal(); render(); }
+
+  function renderOmr() {
+    const done = qs.filter(q => answers[q.questionId]).length;
+    $('nt-omr-rows').innerHTML = qs.map((q, i) => '<div class="nt-omr-row' + (i === idx ? ' is-current' : '') + (marked[q.questionId] ? ' is-marked' : '') + '" data-i="' + i + '">'
+      + '<button type="button" class="nt-omr-no" data-go="' + i + '" aria-label="' + (i + 1) + '번으로">' + (i + 1) + '</button>'
+      + q.choices.map((c, k) => '<button type="button" class="nt-omr-b' + (answers[q.questionId] === NT.letter(k) ? ' is-on' : '') + '" data-q="' + i + '" data-k="' + NT.letter(k) + '" aria-label="' + (i + 1) + '번 ' + c + '">' + (k + 1) + '</button>').join('')
+      + '</div>').join('');
+    $('nt-omr-done').textContent = done + ' / ' + qs.length;
+    $('nt-omr-left').textContent = qs.length - done;
+    $('nt-omr-toggle').textContent = '답안지 ' + done + '/' + qs.length;
+    $('nt-omr-rows').querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { go(Number(b.dataset.go)); closeOmrSheet(); }));
+    $('nt-omr-rows').querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => { const q = qs[Number(b.dataset.q)]; pick(q, b.dataset.k); }));
+  }
+
+  function confirmSubmit() {
+    const blank = qs.filter(q => !answers[q.questionId]).length;
+    const m = $('nt-confirm');
+    $('nt-confirm-text').innerHTML = blank
+      ? '아직 답하지 않은 문항이 <b>' + blank + '개</b> 있습니다. 그래도 제출할까요?'
+      : '모든 문항에 답했습니다. 제출하면 답을 바꿀 수 없습니다.';
+    m.hidden = false;
+    $('nt-confirm-ok').focus();
+  }
+
+  async function submit(auto) {
+    if (submitting) return;
+    submitting = true;
+    $('nt-confirm').hidden = true;
+    $('paper').innerHTML = '<p class="nt-msg">' + (auto ? '시험 시간이 끝났습니다. ' : '') + '답안을 제출하고 채점하는 중입니다…</p>';
+    try {
+      await flush();
+      const all = qs.map(q => ({ questionId: q.questionId, answerText: answers[q.questionId] }));
+      await NT.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({ answers: all }) });
+      try { localStorage.removeItem(stateKey()); } catch (e) { /* 없음 */ }
+      location.replace('/naesintest/review?attempt=' + attempt.attemptId);
+    } catch (e) {
+      submitting = false;
+      $('paper').innerHTML = '<p class="nt-msg">제출하지 못했습니다: ' + NT.esc(e.message) + '</p><p class="nt-msg"><button type="button" class="nt-btn" id="nt-retry">다시 제출</button></p>';
+      $('nt-retry').addEventListener('click', () => submit(false));
+    }
+  }
+
+  function notice(text) {
+    const n = $('nt-notice'); n.textContent = text; n.hidden = false;
+    clearTimeout(notice.t); notice.t = setTimeout(() => { n.hidden = true; }, 4000);
+  }
+  function closeOmrSheet() { document.body.classList.remove('omr-open'); }
+
+  function wire() {
+    $('nt-submit').addEventListener('click', confirmSubmit);
+    $('nt-confirm-cancel').addEventListener('click', () => { $('nt-confirm').hidden = true; });
+    $('nt-confirm-ok').addEventListener('click', () => submit(false));
+    $('nt-omr-toggle').addEventListener('click', () => document.body.classList.add('omr-open'));
+    $('nt-omr-close').addEventListener('click', closeOmrSheet);
+    $('nt-leave').addEventListener('click', async () => { await flush(); location.href = '/naesintest'; });
+    document.addEventListener('keydown', e => {
+      if (submitting || !$('nt-confirm').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (/^[1-5]$/.test(e.key)) { pick(qs[idx], NT.letter(Number(e.key) - 1)); e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { go(idx + 1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { go(idx - 1); e.preventDefault(); }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', boot);
+})();

@@ -228,6 +228,17 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/testprep/**"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // 내신 실전 연습(/naesintest/**)도 같은 방식: 익명 브라우저 요청은 공개 첫 화면으로 보내 로그인 안내를 띄운다.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> {
+                  String target = request.getRequestURI();
+                  if (request.getQueryString() != null) target += "?" + request.getQueryString();
+                  response.sendRedirect("/naesintest?login=required&returnUrl="
+                      + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
+                },
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/naesintest/**"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // CHOONGGI Creator SSR(/choonggi/admin/**)도 익명 브라우저 요청에 raw 401을 주지 않는다 —
             // Wiki와 동일한 returnUrl 패턴(landing_buildit.js가 처리, /api/admin/choonggi/** JSON API는
             // TEXT_HTML이 아니므로 영향 없음 — 그대로 401).
@@ -394,6 +405,11 @@ public class SecurityConfig {
             // JSON API는 이미 아래 /api/** 인증 규칙으로 막혀 있고, 페이지 정적 자산(/css,/js)은 별도 permitAll.
             // /home·BuildIt 페이지는 이 규칙과 무관하게 그대로 공개 유지.
             .requestMatchers("/testprep/**")
+            .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
+            // 내신 실전 연습: 첫 화면만 공개, 응시·결과 화면과 문항 그림(/naesin/**)은 로그인 회원 전용.
+            .requestMatchers("/naesintest")
+            .permitAll()
+            .requestMatchers("/naesintest/**", "/naesin/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
             // 위 패턴에 걸리지 않는 LMS 하위 신규 경로는 fail-closed(최소 인증).
             // 이 줄이 없으면 catch-all permitAll로 떨어진다.

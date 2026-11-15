@@ -1,5 +1,11 @@
 # 도메인 모델
 
+## TESTPREP 문항 배점 · 내신 실전 연습 (V1115·V1116)
+
+- `tp_questions.points` INT NULL(V1115): 문항 배점. 내신 실전 연습(`kind='NAESIN'`)만 채우고 SAT·TOEFL 문항은 `NULL`. Entity `TpQuestion.points`.
+- V1116: 압구정중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 16회분. `tp_exams` 16행(`TP-NAESIN-APM2-2602-R01`~`R16`, `kind='NAESIN'`, `time_limit_sec=7200`) + `tp_questions` 730행(1~10회·14~16회 40문항, 종합 11~13회 70문항, `section='EN'`, `task_type='NAESIN_MC5'`, ①~⑤ → `answer_key` A~E). 문항은 원본 문제지 PDF를 문항 단위로 자른 그림(`static/naesin/apgujeong-m2-2026-2/rNN/qNN.webp`, 공통 지문은 `pAA-BB.webp`)을 `prompt`/`body_text`에 `[[img:경로]]`로 담는다. 회차별 배점 합계 = 문제지 표지 총점.
+- 내신 채점: 섹션 `scaled` = 맞힌 문항 배점 합, `scaleMax` = 배점 합계. 화면 `/naesintest`는 [design/naesintest.md](design/naesintest.md).
+
 ## TESTPREP 문항 해설란 · Digital SAT 세트 (V1112·V1113)
 
 - `tp_questions.ko_help_json` MEDIUMTEXT NULL(V1112): 해설란 한글 도움 자료 JSON `{translation, vocab: [[영어, 뜻]], solution, strategy}`. Entity `TpQuestion.koHelpJson`. 응시·복습 응답의 `koHelpJson`으로 내려가며, SAT 시험 화면은 "해설"을 누를 때만 보여 준다(여는 동안 모듈 시간 정지).

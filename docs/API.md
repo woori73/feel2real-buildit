@@ -4898,6 +4898,18 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
   - `questions[].koHelpJson`(응시), `items[].koHelpJson`(복습): 해설란 JSON 문자열 `{translation, vocab, solution, strategy}` 또는 `null`.
   - `tp_exams.time_limit_sec`은 서버 마감일 뿐이고, SAT 모듈 시간·쉬는 시간·해설 정지는 화면이 관리한다(서버 마감 뒤 제출은 기존처럼 `overtime`).
 
+### 내신 실전 연습 (`/naesintest`) — 설계 [docs/design/naesintest.md](design/naesintest.md)
+
+- `GET /naesintest`: 공개. 내신 회차 목록(서버 렌더, `kind=NAESIN` 시험을 범위별로 묶은 표). `?login=required&returnUrl=/naesintest…`이면 로그인 안내를 띄운다.
+- `GET /naesintest/run?attempt={id}`(시험 화면), `GET /naesintest/review?attempt={id}`(채점·복습 화면): STUDENT/TUTOR/ADMIN. 비회원 브라우저 요청은 `302 /naesintest?login=required&returnUrl=…`.
+- `GET /naesin/**`(문항 그림): STUDENT/TUTOR/ADMIN, 비회원은 `401`.
+- 새 API는 없고 `/api/testprep/**`를 `kind=NAESIN`으로 쓴다. 시험 화면은 풀이 중 해설(`koHelpJson`)이 없고, 시간은 화면이 문항당 30초로 정한다(서버 마감 7200초).
+- 제출·복습·이력 응답 추가 필드(기존 필드 유지):
+  - `sections[].scaleMax`: `scaled`의 만점(SAT 800, 내신은 배점 합계). TOEFL·이전 기록은 `null`. 내신의 `scaled`는 맞힌 배점 합.
+  - `Scorecard.totalMax`, `ReviewView.totalMax`, `AttemptSummary.totalMax`: 만점 합계(SAT 1600, 내신 배점 합계). 만점이 없는 섹션이 있으면 `null`.
+  - `items[].points`(복습): 문항 배점 또는 `null`.
+  - `bandDisclaimer`: 내신은 `F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.`
+
 ## 프로그램 공개 첫 화면 + 네이버 로그인 공통 진입 (`program` 패키지)
 
 신규 프로그램은 대표 URL을 비회원에게 공개(200)하고, 기능을 시작할 때 네이버 로그인을 요청한다. 등록은 `program/Program.java` enum 한 곳이다(현재: DesignCraft).
