@@ -51,6 +51,8 @@
     el.innerHTML = t.split('').map(function (c, i) { return c === ' ' ? ' ' : '<span class="hw-ch" style="--c:' + i + '">' + c + '</span>'; }).join('');
     el.setAttribute('aria-label', t);
   });
+  /* 구역 제목이 hl-head 밖에 있는 곳(복습 게임)도 같은 제목 움직임을 쓴다 */
+  all('#review-game > h2').forEach(function (h) { h.setAttribute('data-hw-motion', ''); });
   var titles = all('[data-hw-motion], .hl-head h2');
   titles.forEach(split);
   if (!reduce) {
@@ -160,6 +162,20 @@
     }
   }
 
+  /* 아래쪽 카드도 화면에 들어올 때 차례로 떠오르게 한다(2026-11-16) */
+  /* #service 안 카드는 home_motion.js가 이미 차례로 띄우므로 그 밖의 카드만 */
+  all('#ai-content .hl-trailer, #ai-content .hl-studio, #review-game .home-game-cover, #chart-showcase .hl-chart, #counsel .hl-admissions, .hw-plan > div').forEach(function (el) {
+    el.classList.add('hw-reveal');
+    var sib = el.parentNode ? Array.prototype.indexOf.call(el.parentNode.children, el) : 0;
+    el.style.animationDelay = (sib % 4) * 90 + 'ms';
+  });
+  /* 회차 상자 숫자(40)는 보일 때 0부터 센다 */
+  if (!reduce && hasIO) all('.hw-plan b').forEach(function (b) {
+    var to = parseInt(b.textContent, 10); if (!to) return;
+    var po = new IntersectionObserver(function (es) { if (!es[0].isIntersecting) return; po.disconnect(); countUp(b, to); }, { threshold: .6 });
+    po.observe(b);
+  });
+
   /* 화면에 들어올 때 살짝 떠오르기(처음 화면 아래쪽만) */
   if (!reduce && hasIO) {
     var ro = new IntersectionObserver(function (es) { es.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); ro.unobserve(en.target); } }); }, { threshold: .15 });
@@ -218,7 +234,7 @@
     var nx = ncv.getContext('2d');
     var N = [
       { t: '디지털 기말고사', x: .36, y: .46, hub: 1, h: '#digital-exam' },
-      { t: '영어 교육', x: .66, y: .52, hub: 1, h: '#edu' },
+      { t: '영어 교육', x: .66, y: .52, hub: 1, h: '#request' },
       { t: '압구정중2', s: '16회', x: .12, y: .22, h: '/naesintest', p: 0 },
       { t: '신구중2', s: '준비 중', x: .1, y: .52, h: '/naesintest', p: 0 },
       { t: '압구정중1', s: '준비 중', x: .16, y: .82, h: '/naesintest', p: 0 },
@@ -236,7 +252,7 @@
       { t: 'AI AGENT', x: .93, y: .1, h: '#ai-content' },
       { t: '전자책', x: .94, y: .92, h: '#ebook' },
       { t: '빌드잇 차트', x: .78, y: .64, h: '#chart-showcase' },
-      { t: '대시보드', x: .08, y: .94, h: '#dashboard' }
+      { t: '대시보드', x: .08, y: .94, h: '/dashboard' }
     ];
     var E = [[0, 1]];
     N.forEach(function (n, i) { if (n.p === 0) E.push([0, i]); if (n.p === 1) E.push([1, i]); });
@@ -276,6 +292,8 @@
       if (reduce || !visible) frame(0);
     };
     nsize(); win.addEventListener('resize', nsize);
+    /* 첫 화면 오른쪽 칸에 들어가면 높이가 늦게 정해지므로 칸 크기가 바뀔 때도 다시 그린다 */
+    if (win.ResizeObserver) new win.ResizeObserver(function () { if (net.clientWidth !== NW || net.clientHeight !== NH) nsize(); }).observe(net);
     if (hasIO) new IntersectionObserver(function (es) { var was = visible; visible = es[0].isIntersecting; if (visible && !was && !reduce) win.requestAnimationFrame(frame); }).observe(net);
     frame(0);
   }
