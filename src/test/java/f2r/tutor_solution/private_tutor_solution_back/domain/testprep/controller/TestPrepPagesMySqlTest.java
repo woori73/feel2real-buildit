@@ -144,12 +144,12 @@ class TestPrepPagesMySqlTest {
     assertThat(html).contains("Lesson 7", "Lesson 8", "Lesson 7·8 종합", "Final", "/js/naesin_home.js", "href=\"/naesintest\"");
     // 직보 AI 인강 4편(2026-11-16): 압구정중2에만 있다.
     assertThat(html).contains("id=\"shorts\"", "/video/naesin-apm2-l7-it-subject-r1.mp4", "/video/%EC%84%9C%EC%88%98%EB%8B%88_7%EA%B3%BC_%EC%82%AC%EC%97%AD%EB%8F%99%EC%82%AC_%EC%B9%A0%ED%8C%90_r4.mp4",
-        "/video/naesin-apm2-l8-thing-adj-r1.mp4", "/video/naesin-apm2-l8-object-relative.mp4");
-    for (String file : new String[] {"l7-it-subject-r1", "l8-thing-adj-r1", "l8-object-relative"}) {
+        "/video/naesin-apm2-l8-thing-adj-r1.mp4", "/video/naesin-apm2-l8-object-relative-r1.mp4");
+    for (String file : new String[] {"l7-it-subject-r1", "l8-thing-adj-r1", "l8-object-relative-r1"}) {
       assertThat(getClass().getResource("/static/video/naesin-apm2-" + file + ".mp4")).as(file).isNotNull();
       assertThat(getClass().getResource("/static/video/naesin-apm2-" + file + ".jpg")).as(file).isNotNull();
     }
-    // 7과 가주어 It·8과 -thing + 형용사는 2026-11-17 칠판판(r1)으로 바꿨다.
+    // 7과 가주어 It·8과 -thing + 형용사·8과 목적격 관계대명사는 2026-11-17 칠판판(r1)으로 바꿨다.
     // 7과 사역동사는 2026-11-16 칠판판(r4)으로 바꿨다. 영상은 원본 이름 그대로 올라와 있다.
     assertThat(getClass().getResource("/static/video/서수니_7과_사역동사_칠판_r4.mp4")).isNotNull();
     assertThat(getClass().getResource("/static/video/naesin-apm2-l7-causative-r4.jpg")).isNotNull();
