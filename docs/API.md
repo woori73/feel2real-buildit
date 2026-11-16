@@ -1264,7 +1264,7 @@ LMS 주소가 성립하지 않는다(404).
       "parentPhone": "010-1111-2222"
     }
     ```
-  - `TUTOR`는 `studentId`, `schoolName`, `grade`, `parentName`, `parentPhone`이 `null`.
+  - `TUTOR` 및 학원 학생 상세가 없는 네이버 자기가입 `STUDENT`는 `studentId`, `schoolName`, `grade`, `parentName`, `parentPhone`이 `null`. 학생 상세 부재만으로 기본 프로필 조회를 거부하지 않는다.
   - 실패: 401, 403, 400.
 - 관련 코드:
   - `MeController.getMyProfile`
@@ -1272,7 +1272,7 @@ LMS 주소가 성립하지 않는다(404).
 
 ### ✅ PATCH /api/me
 
-- 목적: 현재 로그인 사용자의 개인정보 수정. `STUDENT`는 학생 상세 정보도 함께 수정 가능.
+- 목적: 현재 로그인 사용자의 개인정보 수정. 학생 상세가 있는 `STUDENT`는 학생 정보도 함께 수정 가능. 학생 상세가 없는 네이버 회원은 이름·닉네임·이메일·연락처 등 기본 정보를 수정하며, 학교·학부모 정보 요청은 400으로 거부한다. 조회·수정 과정에서 학생 row를 자동 생성하지 않는다.
 - 현재 사용처:
   - `templates/my_profile.html`
 - 향후 사용 가능성:

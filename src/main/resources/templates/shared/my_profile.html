@@ -139,7 +139,7 @@
     });
     document.getElementById('profileRole').textContent = profileData.role;
     document.getElementById('dashboardLink').href = window.dashboardPathForRole(profileData.role);
-    studentSection.hidden = profileData.role !== 'STUDENT';
+    studentSection.hidden = profileData.role !== 'STUDENT' || profileData.studentId == null;
   }
 
   async function loadProfile() {
@@ -212,7 +212,7 @@
       email: value('email') || null,
       phone: value('phone') || null
     };
-    if (profile?.role === 'STUDENT') {
+    if (profile?.role === 'STUDENT' && profile.studentId != null) {
       payload.schoolName = value('schoolName');
       payload.grade = value('grade') ? Number(value('grade')) : null;
       payload.parentName = value('parentName') || null;
