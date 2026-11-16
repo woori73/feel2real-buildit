@@ -143,10 +143,10 @@ public class UserService {
     User user = findSelfUser(userId);
     requireSelfServiceRole(user);
     if (user.getRole() == Role.STUDENT) {
-      Student student = studentRepository.findByUser_UserId(userId)
-          .orElseThrow(() -> new IllegalArgumentException(
-              "해당 user_id 의 학생 정보를 찾을 수 없습니다: userId=" + userId));
-      return MyProfileResponse.from(user, student);
+      // 네이버 자기가입 회원은 최소권한 STUDENT이지만 학원 학생 상세는 없을 수 있다.
+      return studentRepository.findByUser_UserId(userId)
+          .map(student -> MyProfileResponse.from(user, student))
+          .orElseGet(() -> MyProfileResponse.from(user));
     }
     return MyProfileResponse.from(user);
   }
@@ -155,6 +155,17 @@ public class UserService {
   public MyProfileResponse updateMyProfile(Long userId, UpdateMyProfileRequest request) {
     User user = findSelfUser(userId);
     requireSelfServiceRole(user);
+
+    Student student = user.getRole() == Role.STUDENT
+        ? studentRepository.findByUser_UserId(userId).orElse(null)
+        : null;
+    // 일반 네이버 회원의 기본 정보 수정에 학원 학생 생성을 강제하지 않는다.
+    // 학생 상세가 없는 회원에게 학생 필드가 전송되면 무시하거나 새 학생을 만들지 않고 거부한다.
+    if (user.getRole() == Role.STUDENT && student == null
+        && (hasText(request.schoolName()) || request.grade() != null
+            || hasText(request.parentName()) || hasText(request.parentPhone()))) {
+      throw new IllegalArgumentException("학생 상세 정보가 없는 회원은 학교·학부모 정보를 수정할 수 없습니다.");
+    }
 
     if (request.name() != null) {
       user.updateName(request.name());
@@ -173,10 +184,7 @@ public class UserService {
       user.updatePassword(passwordEncoder.encode(request.newPassword()));
     }
 
-    if (user.getRole() == Role.STUDENT) {
-      Student student = studentRepository.findByUser_UserId(userId)
-          .orElseThrow(() -> new IllegalArgumentException(
-              "해당 user_id 의 학생 정보를 찾을 수 없습니다: userId=" + userId));
+    if (student != null) {
       if (request.schoolName() != null || request.grade() != null) {
         student.updateSchoolInfo(
             request.schoolName() != null ? request.schoolName() : student.getSchoolName(),

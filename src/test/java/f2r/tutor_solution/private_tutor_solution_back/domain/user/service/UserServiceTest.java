@@ -448,6 +448,85 @@ class UserServiceTest {
     verify(userRepository, never()).delete(user);
   }
 
+
+  @Test
+  @DisplayName("getMyProfile — 학생 상세가 없는 네이버 회원도 기본 정보를 조회한다")
+  void getMyProfile_returns_basic_profile_without_student_row() {
+    // given
+    User user = naverUser(77L);
+    when(userRepository.findById(77L)).thenReturn(Optional.of(user));
+    when(studentRepository.findByUser_UserId(77L)).thenReturn(Optional.empty());
+
+    // when
+    MyProfileResponse result = service.getMyProfile(77L);
+
+    // then
+    assertThat(result.userId()).isEqualTo(77L);
+    assertThat(result.name()).isEqualTo("네이버 회원");
+    assertThat(result.email()).isEqualTo("naver@example.com");
+    assertThat(result.role()).isEqualTo(Role.STUDENT.name());
+    assertThat(result.studentId()).isNull();
+    assertThat(result.schoolName()).isNull();
+    verify(studentRepository, never()).save(org.mockito.ArgumentMatchers.any(Student.class));
+  }
+
+  @Test
+  @DisplayName("updateMyProfile — 학생 상세 없는 네이버 회원의 이름·이메일·닉네임 수정에는 비밀번호가 필요 없다")
+  void updateMyProfile_updates_naver_common_fields_without_student_row() {
+    // given
+    User user = naverUser(77L);
+    when(userRepository.findById(77L)).thenReturn(Optional.of(user));
+    when(studentRepository.findByUser_UserId(77L)).thenReturn(Optional.empty());
+    UpdateMyProfileRequest request = new UpdateMyProfileRequest(
+        "새이름", "새닉네임", "new@example.com", null, null,
+        null, null, null, null, null);
+
+    // when
+    MyProfileResponse result = service.updateMyProfile(77L, request);
+
+    // then
+    assertThat(result.name()).isEqualTo("새이름");
+    assertThat(result.nickname()).isEqualTo("새닉네임");
+    assertThat(result.email()).isEqualTo("new@example.com");
+    assertThat(result.studentId()).isNull();
+    assertThat(user.getRole()).isEqualTo(Role.STUDENT);
+    verify(studentRepository, never()).save(org.mockito.ArgumentMatchers.any(Student.class));
+    verify(passwordEncoder, never()).matches(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  @DisplayName("updateMyProfile — 학생 상세 없는 회원의 학교 정보 요청은 기본 정보를 바꾸기 전에 거부한다")
+  void updateMyProfile_rejects_student_fields_without_student_row() {
+    // given
+    User user = naverUser(77L);
+    when(userRepository.findById(77L)).thenReturn(Optional.of(user));
+    when(studentRepository.findByUser_UserId(77L)).thenReturn(Optional.empty());
+    UpdateMyProfileRequest request = new UpdateMyProfileRequest(
+        "변경안됨", "new@example.com", null, null, null,
+        "새학교", (byte) 2, null, null);
+
+    // when & then
+    assertThatThrownBy(() -> service.updateMyProfile(77L, request))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("학생 상세 정보");
+    assertThat(user.getName()).isEqualTo("네이버 회원");
+    assertThat(user.getEmail()).isEqualTo("naver@example.com");
+    verify(studentRepository, never()).save(org.mockito.ArgumentMatchers.any(Student.class));
+  }
+
+  private User naverUser(Long userId) {
+    User user = User.builder()
+        .loginId("naver_test_identity")
+        .password("encoded-random-password")
+        .name("네이버 회원")
+        .nickname("네이버회원")
+        .email("naver@example.com")
+        .role(Role.STUDENT)
+        .build();
+    ReflectionTestUtils.setField(user, "userId", userId);
+    return user;
+  }
+
   private User studentUser(Long userId) {
     User user = User.builder()
         .loginId("std1")
