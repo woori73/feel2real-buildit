@@ -485,4 +485,23 @@ class UserServiceTest {
     ReflectionTestUtils.setField(student, "studentId", studentId);
     return student;
   }
+
+  @Test
+  @DisplayName("login — 임시 비밀번호 유효기간이 지났으면 맞는 비밀번호여도 재발급 안내로 거부, 기간 안이면 변경 강제 표시")
+  void login_temporaryPassword_expiryAndFlag() {
+    // given
+    User expired = User.builder().loginId("old-temp").password("h").name("n").nickname("도도").role(Role.STUDENT).build();
+    expired.issueTemporaryPassword("h", java.time.LocalDateTime.now().minusMinutes(1));
+    User valid = User.builder().loginId("new-temp").password("h").name("n").nickname("도도").role(Role.STUDENT).build();
+    valid.issueTemporaryPassword("h", java.time.LocalDateTime.now().plusHours(72));
+    when(userRepository.findByLoginId("old-temp")).thenReturn(java.util.Optional.of(expired));
+    when(userRepository.findByLoginId("new-temp")).thenReturn(java.util.Optional.of(valid));
+    when(passwordEncoder.matches("pw", "h")).thenReturn(true);
+
+    // when & then
+    assertThatThrownBy(() -> service.login(new f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.request.LoginRequest("old-temp", "pw")))
+        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("유효기간");
+    assertThat(service.login(new f2r.tutor_solution.private_tutor_solution_back.domain.user.dto.request.LoginRequest("new-temp", "pw"))
+        .passwordChangeRequired()).isTrue();
+  }
 }

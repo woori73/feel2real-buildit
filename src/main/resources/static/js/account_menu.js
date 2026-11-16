@@ -166,6 +166,11 @@
       }
       var user = await res.json();
       storeCurrentUser(user);
+      if (user.passwordChangeRequired) {
+        // 임시 비밀번호로 로그인 — 새 비밀번호 설정 화면으로 바로 보낸다.
+        location.href = '/account/password-change';
+        return;
+      }
       setAuthState(user);
       closeLoginModal();
       window.dispatchEvent(new CustomEvent('f2r:login', { detail: user }));

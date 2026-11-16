@@ -96,6 +96,7 @@ jobs:
           src/test/js/easy_attendance_view.test.js
           src/test/js/easy_connections_view.test.js
           src/test/js/hub_view.test.js
+          src/test/js/admin_members_view.test.js
           src/test/js/admissions_articles_view.test.js
           src/test/js/assistant_wait.test.js
           src/test/js/admissions_admin_load.test.js
@@ -222,6 +223,13 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminCredentialServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidatorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.TemporaryPasswordGeneratorTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.TemporaryPasswordServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.PasswordResetServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.UserServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.UserTemporaryPasswordTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.PasswordChangeGateTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProviderTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.controller.AdminAnalyticsControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.controller.SiteEventControllerWebMvcTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AnalyticsEventCatalogTest"
@@ -582,6 +590,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteEventMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAttendanceMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.AdminCredentialRotationMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.TemporaryPasswordMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchOffMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchAllowListMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantAcademyModeMySqlTest"

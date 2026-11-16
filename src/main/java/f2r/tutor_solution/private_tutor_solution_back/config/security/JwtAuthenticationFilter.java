@@ -75,6 +75,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
             return;
           }
+          if (tokenProvider.passwordChangeRequired(token.get())
+              && !PasswordChangeGate.isAllowed(request.getMethod(), request.getRequestURI())) {
+            // 임시 비밀번호로 로그인한 상태 — 새 비밀번호를 정하기 전에는 설정 화면만 쓸 수 있다.
+            PasswordChangeGate.block(request, response);
+            return;
+          }
           var authority = new SimpleGrantedAuthority("ROLE_" + principal.role());
           var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of(authority));
           SecurityContextHolder.getContext().setAuthentication(auth);

@@ -150,6 +150,19 @@ Wiki FastAPI의 기존 SQLite 데이터에 additive 방식으로 `csat_question_
 | email | VARCHAR(100) | 이메일 (알림 발송용) |
 | phone | VARCHAR(20) | 전화번호 |
 | role | ENUM | STUDENT / ADMIN / **TUTOR** |
+| password_change_required | TINYINT(1) | 임시 비밀번호 상태(V1118). 1이면 로그인 직후 새 비밀번호 설정 화면만 쓸 수 있다. 회원이 비밀번호를 바꾸면 0 |
+| temp_password_expires_at | DATETIME(6) NULL | 임시 비밀번호 유효기간(서버 시간대, 발급 후 72시간). 지나면 임시 비밀번호로 로그인 불가 |
+
+### 4.1-a temporary_password_issues (V1118)
+
+관리자 임시 비밀번호 발급 기록(누가·언제·어느 회원에게). **비밀번호는 담지 않는다.** 회원이 탈퇴해도 기록이 남도록 FK 없이 아이디를 함께 적는다. Create-only(감사 기록이라 수정·삭제 API 없음).
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| issue_id | BIGINT PK | |
+| target_user_id / target_login_id | BIGINT / VARCHAR(50) | 발급 대상 회원 |
+| issued_by_user_id / issued_by_login_id | BIGINT / VARCHAR(50) | 발급한 관리자 |
+| issued_at / expires_at | DATETIME(6) | 발급 시각 / 유효기간(서버 시간대) |
 
 ### 4.2 password_reset_tokens
 

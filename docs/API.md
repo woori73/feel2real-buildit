@@ -665,6 +665,7 @@ WebP 인코더가 없다. JDK ImageIO에도, 이 환경의 ffmpeg에도 없다(`
 | `/login`, `/login.html` | redirect | 일반 로그인 페이지는 제거됨. 직접 접근 시 `/home`으로 302 redirect. 로그인은 공통 모달에서 `/api/auth/login` 호출. |
 | `/register`, `/register.html` | `register` | 학생/강사 통합 회원가입. `?role=tutor`면 강사 탭 기본 선택 |
 | `/signin/reset/password` | `auth/password_reset_request` | 계정 찾기/비밀번호 재설정 페이지. 이메일로 아이디 목록 조회, 아이디+이메일로 임시 비밀번호 재설정 |
+| `/account/password-change` | `auth/password_change_required` | 임시 비밀번호로 로그인한 회원의 새 비밀번호 설정(변경 전에는 다른 화면·API 차단) |
 | `/signin/reset/password/confirm` | `auth/password_reset_confirm` | reset token 기반 새 비밀번호 설정 페이지 |
 | `/dashboard`, `/dashboard.html`, `/stdt_dashboard`, `/stdt_dashboard.html` | `stdt_dashboard` | 학생 대시보드 / Admin 임퍼소네이트 진입 |
 | `/tutor/academy` | `tutor_academy` | ✅ 강사 Academy 관리. **수업 상품 섹션은 LMS로 이관됨** — 강좌 등록·수정·삭제 진입이 여기에 없다. 대신 ①`온라인 LMS` 카드의 `LMS로 이동`(→ `/lms/{handle}`, **handle 없으면 카드 자체가 렌더되지 않는다**) ②`수업 운영` 목록(수업명 링크 → `/tutor/lesson/{id}` 신청·수강생 관리)만 남는다. 기존 Academy의 `Academy 수정`은 `/builder`로 이동 |
@@ -840,7 +841,7 @@ LMS 주소가 성립하지 않는다(404).
 
 ### ✅ POST /api/auth/password-reset/request
 
-- 목적: 아이디와 가입 이메일을 함께 확인한 뒤 해당 계정 비밀번호를 임시 비밀번호로 재설정한다. SMTP 발송은 현재 우선순위에서 제외되어 있으며, 운영 포함 모든 환경 기본 임시 모드에서는 비밀번호를 `reset1234`로 직접 변경한다.
+- 목적: 아이디와 가입 이메일을 함께 확인한 뒤 해당 계정 비밀번호를 임시 비밀번호로 재설정한다. SMTP 발송은 현재 우선순위에서 제외되어 있으며, 운영 포함 모든 환경 기본 임시 모드에서는 **회원마다 다른 무작위 임시 비밀번호(10자, 0·O·o·1·l·I 제외)**로 직접 변경한다(V1118, 2026-11-16 — 이전 고정값 `reset1234`는 폐지). 임시 비밀번호는 72시간 유효하고, 로그인하면 `/account/password-change`에서 새 비밀번호를 정해야 한다.
 - 현재 사용처:
   - `templates/auth/password_reset_request.html`
 - 향후 사용 가능성:
@@ -859,7 +860,7 @@ LMS 주소가 성립하지 않는다(404).
     ```json
     {
       "email": "student@example.com",
-      "temporaryPassword": "reset1234"
+      "temporaryPassword": "Hk7mPq2xRt"
     }
     ```
   - 실패: `400 text/plain`
@@ -870,7 +871,39 @@ LMS 주소가 성립하지 않는다(404).
 - 관련 코드:
   - `AuthController.requestPasswordReset`
   - `PasswordResetService.requestReset`
-  - 운영 기본값도 `temporary-direct-reset=true`로 두어 SMTP 연동 전까지 `reset1234` 직접 리셋을 사용한다.
+  - `TemporaryPasswordService.issueForSelfReset`
+  - 운영 기본값도 `temporary-direct-reset=true`로 두어 SMTP 연동 전까지 무작위 임시 비밀번호 직접 리셋을 사용한다. 비밀번호 원문은 응답에만 한 번 나가고 로그에 남기지 않는다.
+
+### ✅ POST /api/auth/password-change/temporary
+
+- 목적: 임시 비밀번호(관리자 발급·계정 찾기 재설정)로 로그인한 회원이 새 비밀번호를 정한다. 성공하면 임시 상태가 끝나고 일반 로그인 쿠키로 바뀐다.
+- 현재 사용처: `templates/auth/password_change_required.html` (`/account/password-change`)
+- 인증/권한: 로그인 필요(`/api/**` authenticated). 임시 비밀번호 로그인 토큰(`pwc` claim)도 이 API는 쓸 수 있다.
+- 변경 강제: 로그인 응답의 `passwordChangeRequired=true`이면 토큰에 `pwc`가 붙고, `JwtAuthenticationFilter`+`PasswordChangeGate`가 다음만 허용한다 — `GET /account/password-change`, `POST /api/auth/password-change/temporary`, `POST /api/auth/logout`, `GET /api/auth/me`, 정적 파일(`/css/`, `/js/`, `/img/`, `/images/`, `/vendor/`, `/favicon*`). 그 밖의 화면(GET)은 `302 → /account/password-change`, API·쓰기 요청은 `403` + 헤더 `X-Password-Change-Required: true` + `{"code":"PASSWORD_CHANGE_REQUIRED",...}`. `api.js`의 `fetchAuth`는 이 헤더를 보면 설정 화면으로 보낸다.
+- Request: `{"newPassword": "...", "confirmPassword": "..."}`
+- Response:
+  - 성공: `200 OK` + `LoginResponse`(`passwordChangeRequired: false`) + 새 `ACCESS_TOKEN` 쿠키
+  - 실패: `400 text/plain`
+    - `이미 새 비밀번호로 바꾼 계정입니다. 다시 로그인해 주세요.`
+    - `임시 비밀번호 유효기간(72시간)이 지났습니다. 관리자에게 다시 발급을 요청해 주세요.`
+    - `새 비밀번호는 8자 이상이어야 합니다.` / `새 비밀번호 확인이 일치하지 않습니다.` / `임시 비밀번호와 다른 비밀번호를 정해 주세요.`
+- 로그인(`POST /api/auth/login`) 변화: 응답에 `passwordChangeRequired`(boolean)가 추가됐다. 임시 비밀번호 유효기간이 지난 계정은 비밀번호가 맞아도 `400` + `임시 비밀번호 유효기간(72시간)이 지났습니다. …`.
+- 관련 코드: `AuthController.changeTemporaryPassword`, `TemporaryPasswordService.changeTemporaryPassword`, `PasswordChangeGate`
+
+### ✅ POST /api/admin/members/{userId}/temporary-password
+
+- 목적: 이메일 없이 가입해 「계정 찾기」를 쓸 수 없는 회원에게 관리자가 임시 비밀번호를 발급한다(카페 쪽지로 전달 → 회원이 로그인 후 변경).
+- 현재 사용처: `templates/admin/members.html` 각 회원 줄의 「임시 비밀번호 발급」(확인 창: 닉네임·아이디·가입일·구분 → 발급 → 한 번만 보기 + 복사).
+- 인증/권한: `ROLE_ADMIN`(`/api/admin/**`). 대상이 ADMIN 계정이면 `400`(관리자 비밀번호는 `/admin/login`의 변경 폼을 쓴다).
+- Response: `200 OK`, `Cache-Control: no-store`
+    ```json
+    { "userId": 12, "loginId": "jky2013", "displayName": "도도", "temporaryPassword": "Hk7mPq2xRt", "expiresAt": "2026-11-19T14:05:00" }
+    ```
+  - `temporaryPassword`: 회원마다 다른 무작위 10자(0·O·o·1·l·I 제외, 대·소문자·숫자 포함). 해시로만 저장하며 **이 응답에서 한 번만** 나간다. 다시 보기 API는 없다(필요하면 재발급 — 이전 임시 비밀번호는 무효).
+  - `expiresAt`: 한국 시간, 발급 후 72시간.
+- 기록: `temporary_password_issues`에 대상·발급자·발급 시각·만료 시각만 남긴다(비밀번호 없음).
+- 실패: `400 text/plain` — `회원을 찾을 수 없습니다.` / 관리자 계정 대상. 비ADMIN은 `403`.
+- 관련 코드: `AdminMemberController.issueTemporaryPassword`, `TemporaryPasswordService.issueByAdmin`
 
 ### ✅ POST /api/auth/password-reset/confirm
 

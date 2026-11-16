@@ -29,6 +29,7 @@ public class AuthController {
     private final UserService userService;
     private final PasswordResetService passwordResetService;
     private final AdminPasswordChangeService adminPasswordChangeService;
+    private final f2r.tutor_solution.private_tutor_solution_back.domain.user.service.TemporaryPasswordService temporaryPasswordService;
     private final JwtTokenProvider tokenProvider;
     private final CookieUtil cookieUtil;
     private final org.springframework.beans.factory.ObjectProvider<
@@ -43,13 +44,35 @@ public class AuthController {
             @RequestBody LoginRequest request,
             HttpServletResponse response) {
         LoginResponse user = userService.login(request);
-        // ADMIN 토큰에만 자격 증명 stamp를 넣는다(ID·비밀번호 교체 시 기존 ADMIN 세션 무효화). 다른 역할은 기존과 동일.
-        var validator = "ADMIN".equals(user.role()) ? adminSessionValidator.getIfAvailable() : null;
-        String stamp = validator == null ? null : validator.stampFor(user.userId());
-        String token = tokenProvider.issue(user.userId(), user.loginId(), user.role(), stamp);
-        cookieUtil.writeAccessToken(response, token);
+        writeLoginCookie(response, user);
         return ResponseEntity.ok(user);
     }
+
+    /**
+     * 임시 비밀번호로 로그인한 회원의 새 비밀번호 설정. 성공하면 일반 로그인 쿠키로 바꿔 준다.
+     * 임시 비밀번호 로그인 토큰은 이 API·설정 화면·로그아웃만 쓸 수 있다(PasswordChangeGate).
+     */
+    @PostMapping("/password-change/temporary")
+    public ResponseEntity<LoginResponse> changeTemporaryPassword(
+            @AuthenticationPrincipal JwtTokenProvider.AuthenticatedPrincipal principal,
+            @RequestBody TemporaryPasswordChangeRequest request,
+            HttpServletResponse response) {
+        var user = temporaryPasswordService.changeTemporaryPassword(
+                principal.userId(), request.newPassword(), request.confirmPassword());
+        LoginResponse body = LoginResponse.from(user);
+        writeLoginCookie(response, body);
+        return ResponseEntity.ok(body);
+    }
+
+    /** ADMIN 토큰에만 자격 증명 stamp를 넣는다(ID·비밀번호 교체 시 기존 ADMIN 세션 무효화). 임시 비밀번호 상태면 설정 전용 토큰. */
+    private void writeLoginCookie(HttpServletResponse response, LoginResponse user) {
+        var validator = "ADMIN".equals(user.role()) ? adminSessionValidator.getIfAvailable() : null;
+        String stamp = validator == null ? null : validator.stampFor(user.userId());
+        String token = tokenProvider.issue(user.userId(), user.loginId(), user.role(), stamp, user.passwordChangeRequired());
+        cookieUtil.writeAccessToken(response, token);
+    }
+
+    public record TemporaryPasswordChangeRequest(String newPassword, String confirmPassword) {}
 
     @PostMapping("/login-id/find")
     public ResponseEntity<LoginIdFindResponse> findLoginIds(

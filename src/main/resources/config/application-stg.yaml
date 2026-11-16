@@ -55,7 +55,6 @@ app:
     # SMTP 실제 발송 전까지 dev/stg/local은 서버 로그에 reset link를 출력한다. 운영 기본값은 false.
     log-reset-link: true
     temporary-direct-reset: true
-    temporary-default-password: reset1234
   jwt:
     # 로컬 default secret — HS256 최소 32 byte. 운영(prd)은 JWT_SECRET 환경변수로 override.
     secret: local-dev-jwt-secret-please-change-in-production-environment

@@ -8,7 +8,8 @@ public record LoginResponse(
         String name,
         String nickname,
         String displayName,
-        String role
+        String role,
+        boolean passwordChangeRequired
 ) {
     public static LoginResponse from(User user) {
         return new LoginResponse(
@@ -17,7 +18,8 @@ public record LoginResponse(
                 user.getName(),
                 user.getNickname(),
                 user.getDisplayName(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.isPasswordChangeRequired()
         );
     }
 }

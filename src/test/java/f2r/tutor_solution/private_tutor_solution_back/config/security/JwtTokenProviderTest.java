@@ -99,4 +99,20 @@ class JwtTokenProviderTest {
     assertThatThrownBy(() -> provider.parse("not-a-jwt"))
         .isInstanceOfAny(JwtException.class, IllegalArgumentException.class);
   }
+
+  @Test
+  @DisplayName("issue(pwc=true) — 임시 비밀번호 로그인 토큰이면 passwordChangeRequired가 true, 기본 토큰은 false")
+  void passwordChangeRequiredClaim() {
+    // given
+    JwtTokenProvider provider = providerWith(EXP_SECONDS);
+
+    // when
+    String temp = provider.issue(7L, "stu", "STUDENT", null, true);
+    String normal = provider.issue(7L, "stu", "STUDENT");
+
+    // then
+    assertThat(provider.passwordChangeRequired(temp)).isTrue();
+    assertThat(provider.passwordChangeRequired(normal)).isFalse();
+    assertThat(provider.parse(temp).userId()).isEqualTo(7L);
+  }
 }

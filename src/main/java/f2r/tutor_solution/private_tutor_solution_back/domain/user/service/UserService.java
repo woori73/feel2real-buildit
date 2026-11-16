@@ -46,6 +46,9 @@ public class UserService {
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
     }
+    if (user.isTemporaryPasswordExpired(java.time.LocalDateTime.now())) {
+      throw new IllegalArgumentException("임시 비밀번호 유효기간(72시간)이 지났습니다. 관리자에게 다시 발급을 요청해 주세요.");
+    }
     return LoginResponse.from(user);
   }
 

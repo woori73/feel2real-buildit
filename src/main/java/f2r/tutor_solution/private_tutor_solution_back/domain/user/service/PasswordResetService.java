@@ -40,6 +40,7 @@ public class PasswordResetService {
   private final UserRepository userRepository;
   private final PasswordResetTokenRepository tokenRepository;
   private final PasswordEncoder passwordEncoder;
+  private final TemporaryPasswordService temporaryPasswordService;
   private final SecureRandom secureRandom = new SecureRandom();
   private final Clock clock = Clock.systemDefaultZone();
 
@@ -48,9 +49,6 @@ public class PasswordResetService {
 
   @Value("${app.password-reset.temporary-direct-reset:false}")
   private boolean temporaryDirectReset;
-
-  @Value("${app.password-reset.temporary-default-password:reset1234}")
-  private String temporaryDefaultPassword;
 
   public LoginIdFindResponse findLoginIds(String email) {
     String normalizedEmail = normalizeEmail(email);
@@ -81,10 +79,11 @@ public class PasswordResetService {
     tokenRepository.markUnusedTokensUsed(user, now);
 
     if (temporaryDirectReset) {
-      user.updatePassword(passwordEncoder.encode(temporaryDefaultPassword));
+      // 회원마다 다른 무작위 임시 비밀번호(72시간, 로그인 후 변경 강제). 고정값은 쓰지 않는다. 비밀번호는 로그에 남기지 않는다.
+      String temporaryPassword = temporaryPasswordService.issueForSelfReset(user);
       userRepository.save(user);
-      log.info("Temporary password reset applied for loginId={} email={}", normalizedLoginId, normalizedEmail);
-      return new PasswordResetTokenResult(normalizedEmail, null, temporaryDefaultPassword);
+      log.info("Temporary password reset applied for loginId={}", normalizedLoginId);
+      return new PasswordResetTokenResult(normalizedEmail, null, temporaryPassword);
     }
 
     String rawToken = generateToken();

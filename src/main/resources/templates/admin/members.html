@@ -15,6 +15,22 @@
     .member-role { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; background: #edf2f7; color: #4a5568; }
     .member-empty { padding: 40px; text-align: center; color: #a0aec0; }
     .table-scroll { overflow-x: auto; }
+    .member-btn { padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 8px; background: #fff; font-size: 13px; cursor: pointer; white-space: nowrap; }
+    .member-btn:hover { background: #f7fafc; }
+    .tp-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1000; }
+    .tp-modal[hidden] { display: none; }
+    .tp-card { background: #fff; border-radius: 12px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .tp-card h2 { font-size: 18px; margin: 0 0 12px; }
+    .tp-card p { font-size: 14px; color: #4a5568; margin: 8px 0; line-height: 1.5; }
+    .tp-rows { width: 100%; border-collapse: collapse; margin: 8px 0; }
+    .tp-rows th, .tp-rows td { text-align: left; padding: 8px; font-size: 14px; border-bottom: 1px solid #edf2f7; }
+    .tp-rows th { width: 72px; color: #718096; font-weight: 600; }
+    .tp-warn { color: #c05621 !important; font-weight: 600; }
+    .tp-error { color: #c53030 !important; }
+    .tp-password { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 22px; letter-spacing: 2px; background: #f7fafc; border: 1px dashed #a0aec0; border-radius: 8px; padding: 12px; text-align: center; user-select: all; margin: 8px 0; }
+    .tp-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+    .tp-actions button { padding: 8px 14px; border-radius: 8px; font-size: 14px; cursor: pointer; border: 1px solid #cbd5e0; background: #fff; }
+    .tp-actions .primary { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
   </style>
 </head>
 <body>
@@ -23,23 +39,55 @@
   <div class="container">
     <div class="section-header">
       <div class="section-title">회원 전체 보기</div>
-      <div class="section-subtitle" id="sectionSubtitle">기존 회원 DB 기준. 회원 · 가입일 · 구분만 표시합니다.</div>
+      <div class="section-subtitle" id="sectionSubtitle">기존 회원 DB 기준. 회원 · 가입일 · 구분만 표시합니다. 이메일 없이 가입한 회원은 「임시 비밀번호 발급」으로 도와줍니다.</div>
     </div>
 
 
     <div class="table-scroll">
       <table class="member-table">
         <thead>
-          <tr><th>회원</th><th>구분</th><th>가입일</th></tr>
+          <tr><th>회원</th><th>구분</th><th>가입일</th><th>비밀번호</th></tr>
         </thead>
         <tbody id="memberBody">
-          <tr><td colspan="3" class="member-empty">불러오는 중...</td></tr>
+          <tr><td colspan="4" class="member-empty">불러오는 중...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- 임시 비밀번호 발급: ① 회원 확인 -->
+  <div class="tp-modal" id="tpConfirm" hidden role="dialog" aria-modal="true" aria-labelledby="tpConfirmTitle">
+    <div class="tp-card">
+      <h2 id="tpConfirmTitle">이 회원에게 임시 비밀번호를 발급할까요?</h2>
+      <table class="tp-rows"><tbody id="tpConfirmRows"></tbody></table>
+      <p class="tp-warn" id="tpSameNick" hidden></p>
+      <p>발급하면 지금 비밀번호는 더 이상 쓸 수 없습니다. 임시 비밀번호는 72시간 동안만 쓸 수 있고, 회원이 로그인하면 바로 새 비밀번호를 정해야 합니다.</p>
+      <p class="tp-error" id="tpConfirmError" hidden></p>
+      <div class="tp-actions">
+        <button type="button" data-tp-close>취소</button>
+        <button type="button" class="primary" id="tpIssueBtn">발급</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 임시 비밀번호 발급: ② 한 번만 보기 -->
+  <div class="tp-modal" id="tpResult" hidden role="dialog" aria-modal="true" aria-labelledby="tpResultTitle">
+    <div class="tp-card">
+      <h2 id="tpResultTitle">임시 비밀번호를 발급했습니다</h2>
+      <p id="tpResultWho"></p>
+      <div class="tp-password" id="tpPassword"></div>
+      <p>유효기간: <strong id="tpExpires"></strong>까지</p>
+      <p class="tp-warn">이 창을 닫으면 다시 볼 수 없습니다. 카페 쪽지로 알려 준 뒤 닫아 주세요. 다시 필요하면 재발급합니다.</p>
+      <p id="tpCopied" aria-live="polite"></p>
+      <div class="tp-actions">
+        <button type="button" id="tpCopyBtn">복사</button>
+        <button type="button" class="primary" data-tp-close>닫기</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/api.js"></script>
+  <script src="/js/admin_members_view.js"></script>
   <script src="/js/admin_members.js"></script>
 </body>
 </html>

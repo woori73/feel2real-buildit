@@ -99,7 +99,7 @@
 > - `POST /api/auth/login` → 비번 검증 후 JWT를 발급하여 `Set-Cookie: ACCESS_TOKEN=...; HttpOnly; SameSite=Lax; Secure(prd)` 로 응답. 클라이언트는 sessionStorage에 사용자 정보(UI용)만 저장하며 토큰은 JS에서 읽을 수 없다 (XSS 방어).
 > - `POST /api/auth/logout` → 동일 쿠키를 `Max-Age=0`으로 덮어 즉시 무효화.
 > - `GET /api/auth/me` → 쿠키 기반 세션 복원용. 새 탭/새로고침에서 sessionStorage가 비어있어도 본인 정보 재조회 가능.
-> - `POST /api/auth/login-id/find` → 이메일로 아이디 목록 조회. `POST /api/auth/password-reset/request` / `confirm` → 비밀번호 재설정. SMTP 실제 발송은 현재 제품 우선순위에서 제외하고, 운영 포함 임시 모드에서는 아이디+이메일 확인 후 비밀번호를 `reset1234`로 직접 변경한다.
+> - `POST /api/auth/login-id/find` → 이메일로 아이디 목록 조회. `POST /api/auth/password-reset/request` / `confirm` → 비밀번호 재설정. SMTP 실제 발송은 현재 제품 우선순위에서 제외하고, 운영 포함 임시 모드에서는 아이디+이메일 확인 후 비밀번호를 회원마다 다른 무작위 임시 비밀번호(72시간, 로그인 후 변경 강제)로 직접 변경한다(V1118, 이전 고정값 `reset1234` 폐지).
 > - 토큰 claim: `sub=userId`, `loginId`, `role`. 만료 24h (`app.jwt.expiration-seconds`).
 > - secret은 로컬은 yaml의 default, 운영은 `JWT_SECRET` 환경변수 (EC2의 `/etc/f2r/env`).
 >
@@ -114,7 +114,8 @@
 >
 > **4. 프론트 인증 UX / redirect 정책 (`/static/js/api.js`, `/static/js/account_menu.js`)**
 > - 일반 로그인은 standalone `/login` 페이지가 아니라 공통 로그인 모달에서 처리한다. `/login`과 `/login.html` 직접 접근은 `/home`으로 302 redirect한다.
-> - 로그인 모달의 `계정 찾기` 링크는 `/signin/reset/password`로 이동한다. 이 페이지는 이메일로 아이디를 찾고(`아이디 (학생/강사)` 목록), 아이디+이메일로 비밀번호를 `reset1234` 임시 비밀번호로 재설정한다.
+> - 로그인 모달의 `계정 찾기` 링크는 `/signin/reset/password`로 이동한다. 이 페이지는 이메일로 아이디를 찾고(`아이디 (학생/강사)` 목록), 아이디+이메일로 비밀번호를 무작위 임시 비밀번호로 재설정한다.
+> - **이메일 없이 가입한 회원(관리자 임시 비밀번호, 2026-11-16)**: 관리자 `/admin/members` → 회원 줄 「임시 비밀번호 발급」 → 확인 창(닉네임·아이디·가입일·구분, 같은 닉네임이 여러 명이면 주의 문장) → 발급 → 비밀번호를 한 번만 보여 주고 「복사」(닫으면 다시 볼 수 없음, 필요하면 재발급) → 카페 쪽지로 전달 → 회원이 임시 비밀번호로 로그인하면 `/account/password-change`로 이동, 새 비밀번호를 정하기 전에는 다른 화면·API를 쓸 수 없음 → 새 비밀번호로 다시 로그인. 임시 비밀번호는 72시간 유효. 발급 기록(누가·언제·누구에게)만 `temporary_password_issues`에 남는다.
 > - `/home`은 로그인 여부와 무관하게 접근 가능한 최종 landing이다. 로그인 사용자가 `/home`에 진입해도 role dashboard로 자동 이동하지 않는다. role dashboard 이동은 account menu의 `홈` 항목으로만 제공한다.
 > - 로그인 성공 시 `sessionStorage.currentUser`를 UI 캐시로 갱신하고 현재 URL에 머문다. 토큰은 계속 HTTP-only Cookie로만 보관한다.
 > - 회원가입 버튼은 기존 `/register` 페이지로 이동하되 내부 path만 허용하는 `returnUrl`을 전달한다. 가입/자동 로그인 후 안전한 `returnUrl`로 복귀하고, 외부 URL·scheme-relative·backslash·인코딩 우회 값은 `/home`으로 fallback한다.

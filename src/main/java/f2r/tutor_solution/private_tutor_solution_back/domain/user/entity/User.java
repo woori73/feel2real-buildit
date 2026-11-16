@@ -39,6 +39,14 @@ public class User extends BaseEntity {
   @Column(name = "role", nullable = false, length = 10)
   private Role role;
 
+  /** 임시 비밀번호 상태. true면 로그인 직후 새 비밀번호를 정하기 전까지 다른 화면을 쓸 수 없다. */
+  @Column(name = "password_change_required", nullable = false)
+  private boolean passwordChangeRequired;
+
+  /** 임시 비밀번호 유효기간(서버 기본 시간대). 임시 비밀번호 상태가 아니면 null. */
+  @Column(name = "temp_password_expires_at")
+  private java.time.LocalDateTime tempPasswordExpiresAt;
+
   @Builder
   public User(String loginId, String password, String name, String nickname, String email, String phone, Role role) {
     this.loginId = loginId;
@@ -50,8 +58,23 @@ public class User extends BaseEntity {
     this.role = role;
   }
 
+  /** 회원이 직접 정한 비밀번호로 바꾼다. 임시 비밀번호 상태도 함께 끝난다. */
   public void updatePassword(String encodedPassword) {
     this.password = encodedPassword;
+    this.passwordChangeRequired = false;
+    this.tempPasswordExpiresAt = null;
+  }
+
+  /** 임시 비밀번호(해시)를 넣고, 로그인 후 변경을 강제한다. */
+  public void issueTemporaryPassword(String encodedPassword, java.time.LocalDateTime expiresAt) {
+    this.password = encodedPassword;
+    this.passwordChangeRequired = true;
+    this.tempPasswordExpiresAt = expiresAt;
+  }
+
+  /** 임시 비밀번호 상태인데 유효기간이 지났으면 true. */
+  public boolean isTemporaryPasswordExpired(java.time.LocalDateTime now) {
+    return passwordChangeRequired && tempPasswordExpiresAt != null && !now.isBefore(tempPasswordExpiresAt);
   }
 
   public void updateLoginId(String loginId) {

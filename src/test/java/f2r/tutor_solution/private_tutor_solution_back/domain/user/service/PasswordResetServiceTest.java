@@ -37,10 +37,12 @@ class PasswordResetServiceTest {
     userRepository = mock(UserRepository.class);
     tokenRepository = mock(PasswordResetTokenRepository.class);
     passwordEncoder = mock(PasswordEncoder.class);
-    service = new PasswordResetService(userRepository, tokenRepository, passwordEncoder);
+    TemporaryPasswordService temporaryPasswordService = new TemporaryPasswordService(
+        userRepository, mock(f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.TemporaryPasswordIssueRepository.class),
+        passwordEncoder);
+    service = new PasswordResetService(userRepository, tokenRepository, passwordEncoder, temporaryPasswordService);
     ReflectionTestUtils.setField(service, "logResetLink", false);
     ReflectionTestUtils.setField(service, "temporaryDirectReset", false);
-    ReflectionTestUtils.setField(service, "temporaryDefaultPassword", "reset1234");
   }
 
   @Test
@@ -72,13 +74,13 @@ class PasswordResetServiceTest {
   }
 
   @Test
-  @DisplayName("requestReset — 임시 리셋 모드이면 기본 비밀번호로 즉시 변경하고 토큰을 만들지 않는다")
-  void requestResetAppliesTemporaryDefaultPassword() {
+  @DisplayName("requestReset — 임시 리셋 모드이면 고정값이 아닌 무작위 임시 비밀번호로 바꾸고(72시간·변경 강제) 토큰을 만들지 않는다")
+  void requestResetAppliesRandomTemporaryPassword() {
     // given
     ReflectionTestUtils.setField(service, "temporaryDirectReset", true);
     User user = user("student", "student@example.com", Role.STUDENT);
     when(userRepository.findByLoginIdAndEmail("student", "student@example.com")).thenReturn(Optional.of(user));
-    when(passwordEncoder.encode("reset1234")).thenReturn("encoded-reset1234");
+    when(passwordEncoder.encode(anyString())).thenAnswer(inv -> "encoded-" + inv.getArgument(0));
 
     // when
     PasswordResetTokenResult result = service.requestReset("student", "student@example.com", "http://localhost:8389");
@@ -86,8 +88,10 @@ class PasswordResetServiceTest {
     // then
     assertThat(result.email()).isEqualTo("student@example.com");
     assertThat(result.resetUrl()).isNull();
-    assertThat(result.temporaryPassword()).isEqualTo("reset1234");
-    assertThat(user.getPassword()).isEqualTo("encoded-reset1234");
+    assertThat(result.temporaryPassword()).hasSize(10).isNotEqualTo("reset1234");
+    assertThat(user.getPassword()).isEqualTo("encoded-" + result.temporaryPassword());
+    assertThat(user.isPasswordChangeRequired()).isTrue();
+    assertThat(user.getTempPasswordExpiresAt()).isAfter(LocalDateTime.now().plusHours(71));
     verify(tokenRepository).markUnusedTokensUsed(eq(user), any(LocalDateTime.class));
     verify(userRepository).save(user);
     verify(tokenRepository, never()).save(any());

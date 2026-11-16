@@ -28,6 +28,8 @@ public class JwtTokenProvider {
   private static final String CLAIM_LOGIN_ID = "loginId";
   private static final String CLAIM_ROLE = "role";
   private static final String CLAIM_CREDENTIAL_STAMP = "cv";
+  /** 임시 비밀번호로 로그인한 토큰 표시. 이 토큰은 새 비밀번호 설정 화면만 쓸 수 있다(JwtAuthenticationFilter). */
+  private static final String CLAIM_PASSWORD_CHANGE_REQUIRED = "pwc";
 
   private final SecretKey signingKey;
   private final long expirationSeconds;
@@ -52,9 +54,15 @@ public class JwtTokenProvider {
    * 매 요청 확인한다({@code AdminSessionValidator}). 일반 회원·TUTOR 토큰은 stamp 없이 기존과 동일하다.
    */
   public String issue(Long userId, String loginId, String role, String credentialStamp) {
+    return issue(userId, loginId, role, credentialStamp, false);
+  }
+
+  /** passwordChangeRequired=true면 "새 비밀번호 설정 전용" 토큰이 된다. */
+  public String issue(Long userId, String loginId, String role, String credentialStamp, boolean passwordChangeRequired) {
     Instant now = Instant.now();
     var builder = Jwts.builder();
     if (credentialStamp != null) builder.claim(CLAIM_CREDENTIAL_STAMP, credentialStamp);
+    if (passwordChangeRequired) builder.claim(CLAIM_PASSWORD_CHANGE_REQUIRED, true);
     return builder
         .subject(String.valueOf(userId))
         .claim(CLAIM_LOGIN_ID, loginId)
@@ -94,6 +102,13 @@ public class JwtTokenProvider {
 
   public String readOnlyTarget(String token) {
     return Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload().get("mcp_get", String.class);
+  }
+
+  /** 임시 비밀번호 로그인 토큰이면 true. */
+  public boolean passwordChangeRequired(String token) {
+    Boolean v = Jwts.parser().verifyWith(signingKey).build().parseSignedClaims(token).getPayload()
+        .get(CLAIM_PASSWORD_CHANGE_REQUIRED, Boolean.class);
+    return Boolean.TRUE.equals(v);
   }
 
   /** 만료 시각 — 쿠키 Max-Age 동기화용. */

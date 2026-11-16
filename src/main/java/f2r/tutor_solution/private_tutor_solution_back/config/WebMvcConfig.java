@@ -52,6 +52,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .setStatusCode(HttpStatus.FOUND);
         view(registry, "/register", "auth/register");
         view(registry, "/signin/reset/password", "auth/password_reset_request");
+        view(registry, "/account/password-change", "auth/password_change_required");
         view(registry, "/signin/reset/password/confirm", "auth/password_reset_confirm");
         view(registry, "/tutor/academy", "tutor/tutor_academy");
         view(registry, "/tutor/academy/setup", "tutor/tutor_academy_setup");
