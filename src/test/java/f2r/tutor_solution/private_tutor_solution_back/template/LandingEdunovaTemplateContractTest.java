@@ -159,8 +159,7 @@ class LandingEdunovaTemplateContractTest {
     String offer = html.substring(html.indexOf("id=\"pass-offer\""), html.indexOf("id=\"digital-exam\""));
     String promo = html.substring(html.indexOf("id=\"examPromo\""), html.indexOf("id=\"digital-exam\""));
     // then
-    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회").containsOnlyOnce("2만원");
-    assertThat(html).doesNotContain("클라우드리뷰 무료신청", "/exam-service?sample=1"); // 2026-11-16 홈에서 내림
+    assertThat(offer).contains("2주 동안 160문항", "주 2회 · 총 4회", "클라우드리뷰 무료신청").containsOnlyOnce("2만원");
     assertThat(promo).doesNotContain("맞춤 문제 문의·신청", "exam-caption\">학교별")
         .contains("id=\"examPromoSummary\" class=\"sr\"");
   }
@@ -231,7 +230,7 @@ class LandingEdunovaTemplateContractTest {
         "href=\"https://cafe.naver.com/newhopero\"", "rel=\"noopener\"");
     assertThat(hero).contains("data-active=\"0\"", "id=\"heroPause\"", "id=\"heroStatus\"", "aria-pressed=\"true\"",
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
-    assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "서수니 · 세븐", "맞춤문제 신청");
+    assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "서수니 · 세븐", "클라우드리뷰 무료신청", "맞춤문제 신청");
     for (String path : new String[] {"/img/landing/home-card-game.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
         "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
@@ -302,7 +301,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("직접 제작한 첫 페이지 또는 1장")
+        .contains("클라우드리뷰 무료신청", "직접 제작한 첫 페이지 또는 1장")
         .contains("우리 학교 맞춤문제")
         .contains("id=\"pass-offer\"")
         .contains("href=\"/wiki\"")
