@@ -193,7 +193,8 @@ class AuthFlowIntegrationTest {
             .content(body))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.email").value("jwt-reset@example.com"))
-        .andExpect(jsonPath("$.temporaryPassword").value("reset1234"));
+        .andExpect(jsonPath("$.temporaryPassword").value(org.hamcrest.Matchers.matchesPattern("[A-HJ-NP-Za-kmnp-z2-9]{10}")))
+        .andExpect(jsonPath("$.temporaryPassword").value(org.hamcrest.Matchers.not("reset1234")));
     assertThat(passwordResetTokenRepository.count()).isEqualTo(before);
   }
 

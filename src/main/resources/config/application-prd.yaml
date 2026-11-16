@@ -122,7 +122,6 @@ app:
     # SMTP 발송 전까지 운영도 dev/stg와 동일하게 임시 비밀번호 직접 리셋을 사용한다.
     log-reset-link: ${PASSWORD_RESET_LOG_LINK:false}
     temporary-direct-reset: ${PASSWORD_RESET_TEMPORARY_DIRECT_RESET:true}
-    temporary-default-password: ${PASSWORD_RESET_TEMPORARY_DEFAULT_PASSWORD:reset1234}
   jwt:
     # secret은 EC2 EnvironmentFile(/etc/f2r/env)의 JWT_SECRET으로 주입. 평문 박지 말 것.
     secret: ${JWT_SECRET}

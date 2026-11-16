@@ -115,6 +115,11 @@
       }
       throw new Error('Unauthorized — login required, return URL preserved');
     }
+    if (res.status === 403 && res.headers && res.headers.get('X-Password-Change-Required') === 'true') {
+      // 임시 비밀번호로 로그인한 상태 — 새 비밀번호를 먼저 정해야 한다.
+      if (location.pathname !== '/account/password-change') location.href = '/account/password-change';
+      throw new Error('Password change required');
+    }
     if (res.status === 403) {
       if (!redirectOnAuthError) return res;
       // 인증은 됐지만 다른 학생의 자료 접근 시도 — 본인 대시보드로 강제 이동.

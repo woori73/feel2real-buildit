@@ -26,7 +26,7 @@
 
   function openResult(email, password) {
     if (modalEmail) modalEmail.textContent = email;
-    if (temporaryPassword) temporaryPassword.textContent = password || 'reset1234';
+    if (temporaryPassword) temporaryPassword.textContent = password || '';
     if (modal) {
       modal.hidden = false;
       modal.setAttribute('aria-hidden', 'false');
