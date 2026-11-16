@@ -238,7 +238,7 @@
       { t: '압구정중2', s: '16회', x: .12, y: .22, h: '/naesintest', p: 0 },
       { t: '신구중2', s: '준비 중', x: .1, y: .52, h: '/naesintest', p: 0 },
       { t: '압구정중1', s: '준비 중', x: .16, y: .82, h: '/naesintest', p: 0 },
-      { t: '직보 쇼츠', s: '제작 중', x: .3, y: .13, h: '#digital-exam', p: 0 },
+      { t: '직보 쇼츠', s: '압구정중2', x: .3, y: .13, h: '/naesintest/school/apgujeong-m2#shorts', p: 0 },
       { t: '40문항', s: '20분', x: .24, y: .66, h: '#dexam-guide', p: 0 },
       { t: '70문항', s: '35분', x: .38, y: .86, h: '#dexam-guide', p: 0 },
       { t: '자동 채점', x: .47, y: .2, h: '#digital-exam', p: 0 },

@@ -142,9 +142,16 @@ class TestPrepPagesMySqlTest {
     String html = a.getResponse().getContentAsString();
     assertThat(html.split("data-exam=\"TP-NAESIN-APM2-2602-R", -1)).hasSize(17);
     assertThat(html).contains("Lesson 7", "Lesson 8", "Lesson 7·8 종합", "Final", "/js/naesin_home.js", "href=\"/naesintest\"");
+    // 직보 AI 인강 4편(2026-11-16): 압구정중2에만 있다.
+    assertThat(html).contains("id=\"shorts\"", "/video/naesin-apm2-l7-it-subject.mp4", "/video/naesin-apm2-l7-causative.mp4",
+        "/video/naesin-apm2-l8-thing-adj.mp4", "/video/naesin-apm2-l8-object-relative.mp4");
+    for (String file : new String[] {"l7-it-subject", "l7-causative", "l8-thing-adj", "l8-object-relative"}) {
+      assertThat(getClass().getResource("/static/video/naesin-apm2-" + file + ".mp4")).as(file).isNotNull();
+      assertThat(getClass().getResource("/static/video/naesin-apm2-" + file + ".jpg")).as(file).isNotNull();
+    }
     MvcResult s = mockMvc.perform(get("/naesintest/school/singu-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(s.getResponse().getStatus()).isEqualTo(200);
-    assertThat(s.getResponse().getContentAsString()).contains("신구중학교", "준비하고 있습니다").doesNotContain("data-exam=");
+    assertThat(s.getResponse().getContentAsString()).contains("신구중학교", "준비하고 있습니다").doesNotContain("data-exam=", "id=\"shorts\"");
     MvcResult none = mockMvc.perform(get("/naesintest/school/nowhere").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(none.getResponse().getStatus()).isEqualTo(404);
   }
