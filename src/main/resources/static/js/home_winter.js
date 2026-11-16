@@ -65,6 +65,17 @@
       new MutationObserver(playActive).observe(hero, { attributes: true, attributeFilter: ['data-active'] });
     }
     playActive();
+    /* 「40문항」: 배너가 보이는 동안 몇 초마다 숫자를 다시 세고 밑줄을 다시 긋는다(2026-11-16) */
+    var hl = hero && hero.querySelector('.hero-dexam .hw-hl');
+    if (hl) {
+      var heroSeen = true;
+      if (hasIO) new IntersectionObserver(function (es) { heroSeen = es[0].isIntersecting; }).observe(hero);
+      win.setInterval(function () {
+        if (doc.hidden || !heroSeen || hero.getAttribute('data-active') !== '0') return;
+        hl.classList.remove('hw-pulse'); void hl.offsetWidth; hl.classList.add('hw-pulse');
+        var n40 = hl.querySelector('.hw-num'); if (n40) countUp(n40, 40);
+      }, 7000);
+    }
     if (hasIO) {
       var to = new IntersectionObserver(function (es) {
         es.forEach(function (en) { if (en.isIntersecting) { play(en.target); to.unobserve(en.target); } });

@@ -399,7 +399,6 @@
 .hw-right { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .hw-right .hl-promo { flex: none; }
 .hw-right .hl-promo-body { margin-top: 0; }
-.hl-promo-actions { grid-template-columns: minmax(0, 1fr); }
 .hw-right .hw-map { flex: 1 1 auto; display: flex; flex-direction: column; margin: 0; padding: 16px; border-radius: 24px; background: #fff; box-shadow: var(--hl-lift); }
 .hw-right .hw-map .hl-head { gap: 2px 10px; margin-bottom: 10px; }
 .hw-right .hw-map .hl-head h2 { font-size: 17px; font-weight: 700; padding-bottom: 4px; }
@@ -427,3 +426,16 @@
 .hw-score .hw-pen { display: flex; align-items: baseline; gap: 6px; padding: 2px 0 10px; border-bottom: 1px solid var(--hw-paper-rule); font-size: 32px; transform: none; }
 .hw-score .hw-pen::before { content: "총점"; align-self: center; margin-right: 4px; font-family: "Pretendard Variable", Pretendard, sans-serif; font-size: 13px; font-weight: 500; color: var(--hw-paper-mute); }
 .hw-score .hw-pen small { font-size: 20px; font-weight: 600; }
+
+/* ---- 「40문항」·로고 「Feel to Real (F2R)」 되풀이 움직임(2026-11-16) ---- */
+.hw-hl.hw-pulse path { animation: hwDraw .9s .45s cubic-bezier(.6,0,.3,1) both; }
+.hw-hl.hw-pulse .hw-num { animation: hwNumPop .9s .3s ease-out both; }
+@keyframes hwNumPop { 0%, 100% { transform: none; } 35% { transform: translateY(-3px) scale(1.12); } }
+.hl-logo img { animation: hwLogo .8s .05s cubic-bezier(.3,1.4,.5,1) both, hwLogoBeat 7s 2.5s ease-in-out infinite; }
+.hl-logo-text { background: linear-gradient(100deg, var(--hl-ink) 0 42%, var(--hw-sweep) 50%, var(--hl-ink) 58% 100%) 100% 0 / 260% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: hwWipe .8s .4s cubic-bezier(.6,0,.2,1) both, hwSweep 7s 3s ease-in-out infinite; }
+.hl-logo-text .hl-logo-abbr { -webkit-text-fill-color: var(--hl-sub); }
+@keyframes hwLogoBeat { 0%, 8%, 100% { transform: none; } 3% { transform: rotate(-8deg) scale(1.08); } 5.5% { transform: rotate(4deg) scale(1.02); } }
+@media (prefers-reduced-motion: reduce) {
+  .hw-hl.hw-pulse path, .hw-hl.hw-pulse .hw-num, .hl-logo img, .hl-logo-text { animation: none !important; }
+  .hl-logo-text { -webkit-text-fill-color: currentColor; background: none; }
+}

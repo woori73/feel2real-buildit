@@ -79,10 +79,9 @@ for (const width of [390, 1440])
     const marker = "첨부 합성 " + width + " " + Date.now();
     try {
       await page.goto("/");
-      // 홈 대표 신청 버튼(2026-11-16부터 무료 샘플 대신 맞춤문제 신청)
       await expect(page.locator("#homeIntakeCta")).toHaveAttribute(
         "href",
-        "/exam-service",
+        "/exam-service?sample=1",
       );
       await page.locator("#homeIntakeCta").click();
       await expect(page).toHaveURL(/exam-service/);
@@ -259,7 +258,7 @@ test("anonymous homepage application returns to form after existing login", asyn
     await modal.locator("[name=loginId]").fill("student");
     await modal.locator("[name=password]").fill("admin1234");
     await modal.locator("[type=submit]").click();
-    await expect(page).toHaveURL(/\/exam-service$/);
+    await expect(page).toHaveURL(/\/exam-service\?sample=1$/);
     await expect(page.locator("#offerSummary")).toContainText("160문항");
   } finally {
     await ctx.close();
