@@ -25,4 +25,15 @@ class NaverLoginModalContractTest {
     assertThat(html).doesNotContain("login-modal-social-placeholder", "간편 로그인 준비 중");
     assertThat(css).contains(".login-modal-naver", "#03c75a");
   }
+
+  @Test
+  @DisplayName("given 회원가입 화면 when 읽으면 then 네이버 간편 가입 버튼·복귀 주소 전달·스크립트가 있다")
+  void registerPageHasNaverSignup() throws Exception {
+    // given
+    String html = Files.readString(ROOT.resolve("templates/auth/register.html"));
+
+    // when & then
+    assertThat(html).contains("data-naver-login", "네이버로 간편 가입", "/js/naver_login.js",
+        "window.__f2rLoginReturnUrl = registerReturnUrl", "강사는 아래에서 아이디로 가입");
+  }
 }
