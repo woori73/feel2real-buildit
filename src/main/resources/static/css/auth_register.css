@@ -181,3 +181,16 @@
       color: #667eea;
       background: #ebf4ff;
     }
+
+/* 네이버 간편 가입(네이버 브랜드 색 #03C75A, 흰색 N 로고) */
+.naver-signup { margin: 4px 0 20px; }
+.naver-signup-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 48px;
+  border-radius: 12px; background: #03c75a; color: #fff; font-weight: 800; font-size: 15px; text-decoration: none;
+  box-sizing: border-box;
+}
+.naver-signup-btn:hover { background: #02b351; }
+.naver-signup-btn:focus-visible { outline: 3px solid #0a7f3f; outline-offset: 2px; }
+.naver-signup-note { margin: 8px 0 0; color: #718096; font-size: 12px; line-height: 1.5; text-align: center; }
+.naver-signup-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0 0; color: #a0aec0; font-size: 12px; font-weight: 700; }
+.naver-signup-divider::before, .naver-signup-divider::after { content: ""; flex: 1; height: 1px; background: #e2e8f0; }

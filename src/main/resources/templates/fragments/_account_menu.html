@@ -45,15 +45,15 @@
         <button class="login-modal-submit" type="submit">로그인</button>
       </form>
       <a class="login-modal-signup" href="/register" data-auth-signup>회원가입</a>
-      <div class="login-modal-social" aria-label="간편 로그인 준비 중">
-        <div class="login-modal-divider"><span>간편 로그인</span></div>
-        <div class="login-modal-social-list" aria-hidden="true">
-          <span class="login-modal-social-placeholder"></span>
-          <span class="login-modal-social-placeholder"></span>
-          <span class="login-modal-social-placeholder"></span>
-          <span class="login-modal-social-placeholder"></span>
-        </div>
+      <div class="login-modal-social">
+        <div class="login-modal-divider"><span>간편 로그인 · 가입</span></div>
+        <a class="login-modal-naver" href="/auth/naver/start" data-naver-login>
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false"><path fill="#fff" d="M13.56 10.7 6.18 0H0v20h6.44V9.3L13.82 20H20V0h-6.44z"/></svg>
+          <span>네이버 로그인</span>
+        </a>
+        <p class="login-modal-social-note">네이버로 처음 로그인하면 새 회원으로 가입됩니다. 이미 아이디로 가입하셨다면 위에서 아이디로 로그인해 주세요.</p>
       </div>
+      <script defer src="/js/naver_login.js?v=20261117"></script>
     </div>
   </div>
 </th:block>

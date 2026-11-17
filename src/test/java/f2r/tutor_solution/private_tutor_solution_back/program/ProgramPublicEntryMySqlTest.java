@@ -115,6 +115,19 @@ class ProgramPublicEntryMySqlTest {
   }
 
   @Test
+  @DisplayName("given 메인 사이트 화면 복귀 URL when 공용 로그인 창의 네이버 버튼으로 시작하면 then 복귀 쿠키를 심는다")
+  void naver_start_accepts_main_site_return_urls() throws Exception {
+    // given & when
+    MvcResult home = mockMvc.perform(get("/auth/naver/start").param("returnUrl", "/")).andReturn();
+    MvcResult wiki = mockMvc.perform(get("/auth/naver/start").param("returnUrl", "/wiki?grade=1")).andReturn();
+
+    // then
+    assertThat(home.getResponse().getRedirectedUrl()).isEqualTo("/oauth2/authorization/naver");
+    assertThat(returnCookie(home)).contains("oauth_return_url=%2F;");
+    assertThat(returnCookie(wiki)).contains("oauth_return_url=%2Fwiki%3Fgrade%3D1");
+  }
+
+  @Test
   @DisplayName("given 외부 URL·미등록 경로·경로탐색 when 네이버 시작점에 접근하면 then 복귀 쿠키를 만들지 않는다")
   void naver_start_ignores_unsafe_or_unregistered_return_urls() throws Exception {
     for (String bad : new String[] {

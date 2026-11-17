@@ -115,6 +115,7 @@
 > **4. 프론트 인증 UX / redirect 정책 (`/static/js/api.js`, `/static/js/account_menu.js`)**
 > - 일반 로그인은 standalone `/login` 페이지가 아니라 공통 로그인 모달에서 처리한다. `/login`과 `/login.html` 직접 접근은 `/home`으로 302 redirect한다.
 > - 로그인 모달의 `계정 찾기` 링크는 `/signin/reset/password`로 이동한다. 이 페이지는 이메일로 아이디를 찾고(`아이디 (학생/강사)` 목록), 아이디+이메일로 비밀번호를 무작위 임시 비밀번호로 재설정한다.
+> - **네이버 로그인(메인 사이트, 2026-11-17 — 네이버 애플리케이션 검수 승인 후)**: 공용 로그인 창(`fragments/_account_menu :: loginModal`, 첫 화면·시험 화면)의 「간편 로그인」 빈 자리를 「네이버 로그인」 버튼으로 바꿨다. 누르면 `naver_login.js`가 보던 화면(첫 화면에 `?returnUrl=`이 있으면 그 주소, 관리자·가입·계정 화면이면 `/`)을 복귀 주소로 붙여 `/auth/naver/start`로 보내고, 기존 NewStart 네이버 로그인(`/oauth2/authorization/naver` → `NaverOAuth2LoginSuccessHandler`)이 로그인 쿠키를 심고 그 화면으로 돌려보낸다. 네이버로 처음 로그인하면 새 회원(STUDENT, 이메일 자동 병합 없음)이 생기므로, 창에 "이미 아이디로 가입하셨다면 아이디로 로그인" 안내를 둔다. 기존 아이디 회원 계정에 네이버를 연결하는 기능은 아직 없다.
 > - **이메일 없이 가입한 회원(관리자 임시 비밀번호, 2026-11-16)**: 관리자 `/admin/members` → 회원 줄 「임시 비밀번호 발급」 → 확인 창(닉네임·아이디·가입일·구분, 같은 닉네임이 여러 명이면 주의 문장) → 발급 → 비밀번호를 한 번만 보여 주고 「복사」(닫으면 다시 볼 수 없음, 필요하면 재발급) → 카페 쪽지로 전달 → 회원이 임시 비밀번호로 로그인하면 `/account/password-change`로 이동, 새 비밀번호를 정하기 전에는 다른 화면·API를 쓸 수 없음 → 새 비밀번호로 다시 로그인. 임시 비밀번호는 72시간 유효. 발급 기록(누가·언제·누구에게)만 `temporary_password_issues`에 남는다.
 > - `/home`은 로그인 여부와 무관하게 접근 가능한 최종 landing이다. 로그인 사용자가 `/home`에 진입해도 role dashboard로 자동 이동하지 않는다. role dashboard 이동은 account menu의 `홈` 항목으로만 제공한다.
 > - 로그인 성공 시 `sessionStorage.currentUser`를 UI 캐시로 갱신하고 현재 URL에 머문다. 토큰은 계속 HTTP-only Cookie로만 보관한다.

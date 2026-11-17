@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
  * <p>복귀 URL을 {@code oauth_return_url} 쿠키(5분, 내부 경로만)에 저장하고 기존 네이버 로그인
  * ({@code /oauth2/authorization/naver})으로 보낸다. 로그인 성공 시 {@code NaverOAuth2LoginSuccessHandler}가
  * 이 쿠키를 다시 검증해 원래 기능 화면으로 복귀시킨다. 새 로그인 체계를 만들지 않는다.
- * 등록된 프로그램 영역이 아닌 URL은 쿠키를 만들지 않는다(기존 기본 이동 경로 유지).
+ * 등록된 프로그램 영역이나 메인 사이트 일반 화면이 아닌 URL(관리자·API·로그인 화면 등)은 쿠키를 만들지 않는다
+ * (기존 기본 이동 경로 유지).
  */
 @Controller
 public class NaverLoginStartController {
@@ -25,13 +26,29 @@ public class NaverLoginStartController {
   static final String RETURN_URL_COOKIE = "oauth_return_url";
   static final String NAVER_AUTHORIZATION_PATH = "/oauth2/authorization/naver";
 
+  /** 로그인 뒤 돌아가면 어색하거나 막힌 화면(관리자·API·로그인·가입·계정 화면). 메인 사이트 복귀에서 뺀다. */
+  static final java.util.List<String> BLOCKED_PREFIXES = java.util.List.of(
+      "/admin", "/api", "/auth", "/login", "/oauth2", "/account", "/signin", "/logout", "/register", "/error");
+
+  /**
+   * 복귀 쿠키를 만들 URL인지. 등록 프로그램 영역 또는 메인 사이트(feel2real.co.kr) 일반 화면
+   * (2026-11-17: 공용 로그인 창의 네이버 로그인 버튼). 둘 다 내부 경로만 허용한다(open redirect 방지).
+   */
+  static boolean isAllowedReturnUrl(String url) {
+    if (!ReturnUrlPolicy.isSafeInternal(url)) return false;
+    if (Program.isRegisteredReturnUrl(url)) return true;
+    int q = url.indexOf('?');
+    String path = q < 0 ? url : url.substring(0, q);
+    return BLOCKED_PREFIXES.stream().noneMatch(p -> path.equals(p) || path.startsWith(p + "/"));
+  }
+
   @GetMapping("/auth/naver/start")
   public void start(
       @RequestParam(name = "returnUrl", required = false) String returnUrl,
       HttpServletRequest request,
       HttpServletResponse response)
       throws IOException {
-    if (ReturnUrlPolicy.isSafeInternal(returnUrl) && Program.isRegisteredReturnUrl(returnUrl)) {
+    if (isAllowedReturnUrl(returnUrl)) {
       boolean secure = request.isSecure()
           || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
       ResponseCookie cookie = ResponseCookie.from(
