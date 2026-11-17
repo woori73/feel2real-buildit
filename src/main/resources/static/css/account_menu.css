@@ -63,14 +63,15 @@
 .login-modal-divider::before, .login-modal-divider::after {
   content: ""; flex: 1; height: 1px; background: #e2e8f0;
 }
-.login-modal-social-list { display: flex; justify-content: center; gap: 12px; }
-.login-modal-social-placeholder {
-  width: 46px; height: 46px; border: 1px dashed #cbd5e1; border-radius: 14px; background: #f8fafc;
-  display: inline-flex; align-items: center; justify-content: center;
+/* 네이버 로그인 버튼(네이버 브랜드 색 #03C75A, 흰색 N 로고) */
+.login-modal-naver {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 46px;
+  border-radius: 14px; background: #03c75a; color: #fff; font-weight: 900; font-size: 15px; text-decoration: none;
+  box-sizing: border-box;
 }
-.login-modal-social-placeholder::before {
-  content: ""; width: 16px; height: 16px; border-radius: 999px; background: #cbd5e1;
-}
+.login-modal-naver:hover { background: #02b351; }
+.login-modal-naver:focus-visible { outline: 3px solid #0a7f3f; outline-offset: 2px; }
+.login-modal-social-note { margin: 10px 0 0; color: #64748b; font-size: 12px; line-height: 1.5; text-align: center; }
 @media (max-height: 640px) {
   .login-modal { align-items: flex-start; }
   .login-modal-card { max-height: none; }
