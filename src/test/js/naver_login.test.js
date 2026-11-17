@@ -41,3 +41,10 @@ test('targetUrl: 첫 화면이 넘겨 둔 복귀 주소(pending)를 먼저 쓴�
   assert.equal(N.targetUrl('/', '', '/admin/students'), '/');
   assert.equal(N.targetUrl('/', '', null), '/');
 });
+
+test('startHref: 강사 탭이면 role=tutor를 붙이고, 그 밖에는 붙이지 않는다', () => {
+  // given & when & then
+  assert.equal(N.startHref('/', 'tutor'), '/auth/naver/start?returnUrl=%2F&role=tutor');
+  assert.equal(N.startHref('/', 'student'), '/auth/naver/start?returnUrl=%2F');
+  assert.equal(N.startHref('/', null), '/auth/naver/start?returnUrl=%2F');
+});

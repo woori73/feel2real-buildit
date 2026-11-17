@@ -1,5 +1,6 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.user.social.oauth;
 
+import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.User;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.repository.UserRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.user.social.SocialAccount;
@@ -46,6 +47,13 @@ public class NaverAccountResolutionService {
    * 롤백되고, 여기서 다시 조회해 이긴 쪽 User로 합류한다.
    */
   public User resolveUser(NaverProfileIdentity identity) {
+    return resolveUser(identity, Role.STUDENT);
+  }
+
+  /**
+   * {@code signupRole}은 새 회원을 만들 때만 쓴다(강사 간편 가입이면 TUTOR). 이미 연결된 회원의 역할은 바꾸지 않는다.
+   */
+  public User resolveUser(NaverProfileIdentity identity, Role signupRole) {
     Optional<User> existingUser = findLinkedUser(identity.providerUserId());
     if (existingUser.isPresent()) {
       refreshProviderEmail(identity);
@@ -54,7 +62,7 @@ public class NaverAccountResolutionService {
     }
 
     try {
-      User created = provisioningService.provision(identity);
+      User created = provisioningService.provision(identity, signupRole);
       log.info("NAVER_ACCOUNT_RESOLVED existing=false");
       return created;
     } catch (DataIntegrityViolationException raceLoserException) {

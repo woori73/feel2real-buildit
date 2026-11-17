@@ -167,4 +167,38 @@ class NaverAccountResolutionServiceTest {
       executor.shutdown();
     }
   }
+
+  @Test
+  @DisplayName("given 강사 간편 가입 when 최초 로그인 then ROLE_TUTOR로 만들고, 이미 연결된 회원은 역할을 바꾸지 않는다")
+  void tutorSignupCreatesTutorOnlyForNewAccount() {
+    // given
+    String tutorId = "tutor-signup-" + UUID.randomUUID();
+    String studentId = "student-then-tutor-" + UUID.randomUUID();
+    User existing = resolutionService.resolveUser(identity(studentId, null, "학생", "학생"));
+    createdUserIds.add(existing.getUserId());
+
+    // when
+    User tutor = resolutionService.resolveUser(identity(tutorId, null, "강사", "강사"), Role.TUTOR);
+    createdUserIds.add(tutor.getUserId());
+    User again = resolutionService.resolveUser(identity(studentId, null, "학생", "학생"), Role.TUTOR);
+
+    // then
+    assertThat(tutor.getRole()).isEqualTo(Role.TUTOR);
+    assertThat(again.getUserId()).isEqualTo(existing.getUserId());
+    assertThat(again.getRole()).isEqualTo(Role.STUDENT);
+  }
+
+  @Test
+  @DisplayName("given ADMIN 등 STUDENT·TUTOR 외 역할 요청 when 최초 로그인 then STUDENT로 만든다")
+  void unsupportedSignupRoleFallsBackToStudent() {
+    // given
+    String id = "admin-request-" + UUID.randomUUID();
+
+    // when
+    User user = resolutionService.resolveUser(identity(id, null, "누구", "누구"), Role.ADMIN);
+    createdUserIds.add(user.getUserId());
+
+    // then
+    assertThat(user.getRole()).isEqualTo(Role.STUDENT);
+  }
 }

@@ -128,6 +128,23 @@ class ProgramPublicEntryMySqlTest {
   }
 
   @Test
+  @DisplayName("given role=tutor when 네이버 시작점 then 강사 가입 표시 쿠키(5분)를 심고, role이 없으면 남은 표시를 지운다")
+  void naver_start_sets_tutor_signup_cookie() throws Exception {
+    // given & when
+    MvcResult tutor = mockMvc.perform(get("/auth/naver/start").param("returnUrl", "/").param("role", "tutor")).andReturn();
+    MvcResult plain = mockMvc.perform(get("/auth/naver/start").param("returnUrl", "/")).andReturn();
+
+    // then
+    String tutorCookie = tutor.getResponse().getHeaders("Set-Cookie").stream()
+        .filter(c -> c.startsWith("oauth_signup_role=")).findFirst().orElseThrow();
+    assertThat(tutorCookie).contains("oauth_signup_role=TUTOR", "Max-Age=300", "HttpOnly", "SameSite=Lax");
+    String plainCookie = plain.getResponse().getHeaders("Set-Cookie").stream()
+        .filter(c -> c.startsWith("oauth_signup_role=")).findFirst().orElseThrow();
+    assertThat(plainCookie).contains("Max-Age=0");
+    assertThat(tutor.getResponse().getRedirectedUrl()).isEqualTo("/oauth2/authorization/naver");
+  }
+
+  @Test
   @DisplayName("given 외부 URL·미등록 경로·경로탐색 when 네이버 시작점에 접근하면 then 복귀 쿠키를 만들지 않는다")
   void naver_start_ignores_unsafe_or_unregistered_return_urls() throws Exception {
     for (String bad : new String[] {

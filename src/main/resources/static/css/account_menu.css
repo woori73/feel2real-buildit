@@ -76,3 +76,4 @@
   .login-modal { align-items: flex-start; }
   .login-modal-card { max-height: none; }
 }
+.login-modal-social-note a { color: #2643c4; font-weight: 800; }

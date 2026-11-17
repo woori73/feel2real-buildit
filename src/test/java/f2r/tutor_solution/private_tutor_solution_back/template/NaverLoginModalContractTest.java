@@ -33,7 +33,7 @@ class NaverLoginModalContractTest {
     String html = Files.readString(ROOT.resolve("templates/auth/register.html"));
 
     // when & then
-    assertThat(html).contains("data-naver-login", "네이버로 간편 가입", "/js/naver_login.js",
-        "window.__f2rLoginReturnUrl = registerReturnUrl", "강사는 아래에서 아이디로 가입");
+    assertThat(html).contains("data-naver-login", "data-naver-role=\"tutor\"", "네이버로 강사 간편 가입",
+        "네이버로 학생 간편 가입", "/js/naver_login.js", "window.__f2rLoginReturnUrl = registerReturnUrl");
   }
 }
