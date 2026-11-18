@@ -353,7 +353,7 @@ class TestPrepFlowMySqlIntegrationTest {
     // given
     String code = "TP-NAESIN-APM2-2602-R01";
     MvcResult list = mockMvc.perform(get(API + "/exams").param("kind", "NAESIN").cookie(auth(OWNER_ID))).andReturn();
-    assertThat(json(list)).hasSize(21); // 압구정중2 16회 + 신구중2 Lesson 7 5회(V1120)
+    assertThat(json(list)).hasSize(26); // 압구정중2 16회 + 신구중2 Lesson 7·8 10회(V1120)
     MvcResult start = mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Map.of("examCode", code))))
@@ -418,7 +418,7 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
-  @DisplayName("given 신구중2 Lesson 7 5회분(V1120), when 회차별로 세면 모두 40문항·100점이고 모두 고르기 문항은 정답이 둘 이상이다")
+  @DisplayName("given 신구중2 Lesson 7·8 10회분(V1120), when 회차별로 세면 모두 40문항·100점이고 모두 고르기 문항은 정답이 둘 이상이다")
   void singuRounds_countsPointsAndMultiKeys() {
     // given / when
     List<Map<String, Object>> rows = jdbc.queryForList(
@@ -427,7 +427,7 @@ class TestPrepFlowMySqlIntegrationTest {
             + " FROM tp_exams e JOIN tp_questions q ON q.exam_id = e.exam_id"
             + " WHERE e.exam_code LIKE 'TP-NAESIN-SGM2-2602-R%' GROUP BY e.exam_code ORDER BY e.exam_code");
     // then
-    assertThat(rows).hasSize(5);
+    assertThat(rows).hasSize(10);
     for (Map<String, Object> r : rows) {
       assertThat(((Number) r.get("n")).intValue()).as(r.get("exam_code") + " 문항 수").isEqualTo(40);
       assertThat(((Number) r.get("pts")).intValue()).as(r.get("exam_code") + " 배점 합").isEqualTo(100);
