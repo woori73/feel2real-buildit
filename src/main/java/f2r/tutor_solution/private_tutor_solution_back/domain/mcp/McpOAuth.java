@@ -76,6 +76,7 @@ public class McpOAuth {
   public static final String EASY_COLLECT_WRITE = "easy-collect:write";
   /** 카페 31312978의 설정된 게시판에 새 글 등록. 관리자 별도 동의, 기존 글 수정·삭제 불가. */
   public static final String CAFE_WRITE = "cafe:write";
+  public static final String PARENT_NOTICE_DRAFT = "parent-notice:draft";
 
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
 
@@ -149,6 +150,7 @@ public class McpOAuth {
     all.add(STUDENT_ROSTER_READ);
     all.add(EASY_COLLECT_WRITE);
     all.add(CAFE_WRITE);
+    all.add(PARENT_NOTICE_DRAFT);
     return all;
   }
 
@@ -268,6 +270,7 @@ public class McpOAuth {
             || selected.contains(STUDENT_ROSTER_READ)
             || selected.contains(EASY_COLLECT_WRITE)
             || selected.contains(CAFE_WRITE)
+            || selected.contains(PARENT_NOTICE_DRAFT)
             || "ADMIN".equals(p.role())
                 && selected.stream()
                     .anyMatch(
