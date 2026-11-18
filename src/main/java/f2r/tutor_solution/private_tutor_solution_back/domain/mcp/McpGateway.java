@@ -2,6 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.mcp;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtProperties;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider;
+import f2r.tutor_solution.private_tutor_solution_back.domain.parentnotice.ParentNoticeService;
 import java.io.*;
 import java.net.*;
 import java.net.http.*;
@@ -51,7 +52,11 @@ public class McpGateway {
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService> cafePublishing;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<ParentNoticeService> parentNotices;
+
   static final Set<String> CAFE_TOOLS = Set.of("cafe_status", "cafe_publication_history", "publish_cafe_article");
+  static final String SAVE_PARENT_NOTICE_DRAFT = "save_parent_notice_draft";
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -100,6 +105,7 @@ public class McpGateway {
             if (name.equals("read_student_roster") || name.equals("read_admin_dashboard")) return !oauth.scopeAllowed(McpOAuth.STUDENT_ROSTER_READ);
             if (EASY_SITE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.EASY_COLLECT_WRITE);
             if (CAFE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.CAFE_WRITE);
+            if (SAVE_PARENT_NOTICE_DRAFT.equals(name)) return !oauth.scopeAllowed(McpOAuth.PARENT_NOTICE_DRAFT);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
               return !oauth.scopeAllowed("studio:read");
@@ -114,7 +120,12 @@ public class McpGateway {
   public List<Map<String, Object>> tools(McpOAuth.Identity identity) {
     boolean cafeConsent = identity.scopes().contains(McpOAuth.CAFE_WRITE)
         && "ADMIN".equals(identity.principal().role());
-    return tools().stream().filter(t -> cafeConsent || !CAFE_TOOLS.contains(t.get("name"))).toList();
+    boolean noticeConsent = identity.scopes().contains(McpOAuth.PARENT_NOTICE_DRAFT)
+        && Set.of("ADMIN", "TUTOR").contains(identity.principal().role());
+    return tools().stream()
+        .filter(t -> cafeConsent || !CAFE_TOOLS.contains(t.get("name")))
+        .filter(t -> noticeConsent || !SAVE_PARENT_NOTICE_DRAFT.equals(t.get("name")))
+        .toList();
   }
 
   private void collectTools(List<Map<String, Object>> out) {
@@ -184,6 +195,13 @@ public class McpGateway {
             List.of("fileId")));
     studioTools(out);
     cafeTools(out);
+    out.add(writeTool(SAVE_PARENT_NOTICE_DRAFT,
+        "학부모용 카카오톡 문구를 현재 사용자의 대시보드에 초안으로 저장합니다."
+            + " parent-notice:draft 별도 동의가 필요합니다. 연락처·학생 실명은 입력하지 마세요."
+            + " 원장이 직접 카카오톡을 열어 수신자를 골라 보냅니다. 재시도에는 동일한 요청 UUID를 사용하세요.",
+        Map.of("requestId", string(), "kind", Map.of("type", "string", "enum", List.of("NOTICE", "PROMOTION")),
+            "title", string(), "body", Map.of("type", "string", "maxLength", 200)),
+        List.of("requestId", "kind", "title", "body")));
     out.add(tool("read_academy_move","학원이사 이슈별 글·AI 정리·대화를 읽습니다. 관리자와 academy-move:write 별도 동의가 필요합니다. 원문 파일은 제외합니다.",Map.of(),List.of()));
     out.add(writeTool("post_academy_move","학원이사 글을 해당 이슈에 올리고 AI가 핵심·미확정 사항·다음 행동을 정리해 함께 답합니다. 같은 idempotencyKey 재시도는 중복 저장하지 않습니다. 관리자와 academy-move:write 별도 동의가 필요합니다.",
         Map.of("title",string(),"content",string(),"issue",Map.of("type","string","enum",List.of("원상복구","교습소 전환","명칭·로고")),"idempotencyKey",string()),List.of("content","issue","idempotencyKey")));
@@ -493,6 +511,19 @@ public class McpGateway {
       return cafe.publish(identity.principal(), identity.grantId(),
           new f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService.Post(
               text(args, "boardKey"), text(args, "title"), text(args, "content"), text(args, "idempotencyKey"), cafeImages(args)));
+    }
+    if (SAVE_PARENT_NOTICE_DRAFT.equals(name)) {
+      if (!identity.scopes().contains(McpOAuth.PARENT_NOTICE_DRAFT)
+          || !Set.of("ADMIN", "TUTOR").contains(identity.principal().role())) {
+        throw McpOAuth.error(403, "parent_notice_consent_required");
+      }
+      rate.check("parent-notice:" + identity.grantId(), 12);
+      var notices = parentNotices == null ? null : parentNotices.getIfAvailable();
+      if (notices == null) throw McpOAuth.error(503, "parent_notice_unavailable");
+      var draft = notices.save(identity.principal(), new ParentNoticeService.Request(
+          text(args, "requestId"), ParentNoticeService.kind(text(args, "kind")), text(args, "title"),
+          text(args, "body")), ParentNoticeService.Source.MCP);
+      return Map.of("draftId", draft.id(), "status", "DRAFT", "dashboardUrl", oauth.base() + "/dashboard/parent-notices");
     }
     if (name.equals("read_academy_move") || name.equals("post_academy_move")) {
       if (!identity.scopes().contains(McpOAuth.ACADEMY_MOVE_WRITE) || !"ADMIN".equals(identity.principal().role()))

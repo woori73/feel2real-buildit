@@ -5539,3 +5539,10 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 | POST | `/api/admin/admissions/articles/{id}/visibility` | ADMIN | `{visible:true|false}` 숨김/다시 공개 |
 
 - 검증 오류는 400 `{message}`. 본문 HTML은 저장할 때 허용 태그(p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a[href http·https])만 남기고(스크립트·이벤트 속성·style 제거), 출력할 때 한 번 더 정리한다. 삭제 API는 없다.
+
+## 학부모 카카오톡 초안
+
+- `GET /api/dashboard/parent-notices`는 본인 계정의 최근 초안 30건과 카카오 JavaScript 공개 키 설정을 반환한다. `Cache-Control: no-store`를 사용한다.
+- `POST /api/dashboard/parent-notices`의 본문은 `{requestId, kind, title, body}`다. 동일 출처에서 호출하며 `requestId`는 UUID다. 제목은 80자, 본문은 200자까지 저장한다. `kind`는 `NOTICE` 또는 `PROMOTION`이며 홍보 본문은 `(광고)`로 시작한다. 같은 요청 ID와 본문은 기존 초안을 반환하고, 내용이 다르면 409를 반환한다.
+- 두 경로는 ADMIN 또는 연결된 AcademyCraft 학원 원장 권한을 요구한다. MCP의 `save_parent_notice_draft`도 동일한 계정 검증을 적용하며 별도 `parent-notice:draft` 동의와 운영 허용 목록을 거쳐 초안 ID만 돌려준다. MCP로 조회·공유·발송하는 경로는 없다.
+- 카카오 Developers 앱의 JavaScript 키는 `APP_KAKAO_SHARE_JAVASCRIPT_KEY`로 지정한다. SDK 도메인과 제품 링크 관리에 운영 HTTPS 주소를 등록한다. 수신자 선택과 전송은 카카오톡 공유 화면에서 처리한다. 키가 비어 있으면 모바일 시스템 공유와 복사를 제공한다.

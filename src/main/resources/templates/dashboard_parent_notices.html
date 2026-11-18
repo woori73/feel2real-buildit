@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>학부모 카카오톡 | F2R</title>
+  <link rel="stylesheet" href="/css/academy_home.css">
+  <link rel="stylesheet" href="/css/parent_notices.css?v=1">
+  <script defer src="/js/api.js"></script>
+  <script defer src="/js/parent_notices.js?v=1"></script>
+</head>
+<body>
+  <main class="pn-shell">
+    <header class="pn-header">
+      <a href="/dashboard">‹ 업무 대시보드</a>
+      <h1>학부모 카카오톡</h1>
+    </header>
+
+    <p id="pnStatus" class="pn-status" role="status">초안을 불러오는 중입니다.</p>
+
+    <div id="pnWorkspace" class="pn-grid" hidden>
+      <div>
+        <section class="pn-panel" aria-labelledby="pnComposeTitle">
+          <h2 id="pnComposeTitle">안내문 작성</h2>
+          <form id="pnForm">
+            <label for="pnKind">구분</label>
+            <select id="pnKind">
+              <option value="NOTICE">학원 공지</option>
+              <option value="PROMOTION">홍보</option>
+            </select>
+            <label for="pnTitle">초안 제목</label>
+            <input id="pnTitle" maxlength="80" required placeholder="예: 12월 휴강 안내">
+            <div class="pn-label-row">
+              <label for="pnBody">카카오톡에 보낼 문구</label>
+              <output id="pnLength" for="pnBody">0 / 200</output>
+            </div>
+            <textarea id="pnBody" rows="6" maxlength="200" required></textarea>
+            <button class="pn-button" id="pnSave" type="submit">초안 저장</button>
+          </form>
+
+          <details class="pn-ai">
+            <summary>ChatGPT · Claude로 초안 작성</summary>
+            <label for="pnBrief">AI에 줄 안내 사항</label>
+            <textarea id="pnBrief" rows="3" maxlength="1800" placeholder="날짜, 대상 반, 안내할 내용을 적으세요."></textarea>
+            <p class="pn-help">이름과 연락처를 제외하고, <a href="/mcp/connections">F2R MCP 연결</a>에서 학부모 안내문 초안 저장에 동의하세요.</p>
+            <div class="pn-actions">
+              <button id="pnCopyPrompt" class="pn-button" type="button">AI 요청문 복사</button>
+              <a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT 열기 ↗</a>
+              <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">Claude 열기 ↗</a>
+            </div>
+          </details>
+        </section>
+
+        <section class="pn-panel" aria-labelledby="pnDraftsTitle">
+          <div class="pn-heading">
+            <h2 id="pnDraftsTitle">최근 초안</h2>
+            <button id="pnReload" class="pn-button" type="button">새로고침</button>
+          </div>
+          <ul class="pn-drafts" id="pnDrafts"></ul>
+        </section>
+      </div>
+
+      <section class="pn-panel pn-preview" aria-labelledby="pnPreviewTitle">
+        <h2 id="pnPreviewTitle">보내기 전 미리보기</h2>
+        <div id="pnPreview" class="pn-bubble">작성한 안내문이 여기에 나타납니다.</div>
+        <p class="pn-help">원장 계정의 카카오톡에서 학부모 친구나 대화방을 선택하세요. 수신자와 발송 결과는 카카오톡에서 확인합니다.</p>
+        <label id="pnPromoConfirm" class="pn-confirm" hidden>
+          <input type="checkbox" id="pnConsent">
+          광고 수신에 동의한 학부모에게만 보내며, 문구에 보내는 학원과 수신거부 방법을 적었습니다.
+        </label>
+        <p id="pnShareStatus" class="pn-help" role="status"></p>
+        <div class="pn-actions">
+          <button id="pnKakao" class="pn-kakao pn-button" type="button" hidden>카카오톡에서 수신자 선택</button>
+          <button id="pnNative" class="pn-button" type="button" hidden>휴대전화 공유</button>
+          <button id="pnCopyBody" class="pn-button" type="button" disabled>문구 복사</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
