@@ -39,6 +39,8 @@ public class TestPrepService {
   public static final String NAESIN_DISCLAIMER =
       "F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.";
   public static final String TASK_SAT_SPR = "SAT_MATH_SPR";
+  /** 내신 "~을 모두 고르면?" 문항. answerKey는 정답 기호를 쉼표로 잇는다(예: "B,D"). */
+  public static final String TASK_NAESIN_MULTI = "NAESIN_MC5_MULTI";
 
   private static final List<String> PRACTICE_SECTION_ORDER =
       List.of("READING", "LISTENING", "WRITING", "SPEAKING", "RW", "MATH", "EN");
@@ -404,6 +406,9 @@ public class TestPrepService {
     if (TASK_SAT_SPR.equals(q.getTaskType())) {
       return isSatSprCorrect(answer, q.getAnswerKey());
     }
+    if (TASK_NAESIN_MULTI.equals(q.getTaskType())) {
+      return isMultiChoiceCorrect(answer, q.getAnswerKey());
+    }
     return answer.trim().equalsIgnoreCase(q.getAnswerKey().trim());
   }
 
@@ -479,6 +484,21 @@ public class TestPrepService {
     List<Integer> scaled = sections.stream().map(SectionScore::scaled).filter(Objects::nonNull).toList();
     if (scaled.isEmpty()) return null;
     return scaled.stream().mapToInt(Integer::intValue).sum();
+  }
+
+  /**
+   * 내신 "모두 고르면" 채점. 고른 기호 묶음과 정답 기호 묶음이 순서와 상관없이 똑같아야 정답이다
+   * (하나라도 빠지거나 더 고르면 오답, 실제 학교 시험과 같다).
+   */
+  static boolean isMultiChoiceCorrect(String answer, String answerKey) {
+    if (answer == null || answerKey == null) return false;
+    Set<String> given = letterSet(answer);
+    return !given.isEmpty() && given.equals(letterSet(answerKey));
+  }
+
+  private static Set<String> letterSet(String s) {
+    return Arrays.stream(s.split(",")).map(x -> x.trim().toUpperCase()).filter(x -> !x.isEmpty())
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 
   /**

@@ -14,7 +14,10 @@
     const key = Object.keys(SCHOOLS).find(p => String(examCode || '').startsWith(p));
     return key ? '/naesintest/school/' + SCHOOLS[key] : '/naesintest';
   };
-  NT.circ = letter => CIRC[LETTERS.indexOf(letter)] || '';
+  // 'B' → '②', 'B,D'(모두 고르기 답) → '②, ④'
+  NT.circ = letter => String(letter || '').split(',').map(x => CIRC[LETTERS.indexOf(x.trim())] || '').filter(Boolean).join(', ');
+  // "~을 모두 고르면?" 문항(tp_questions.task_type) — 답을 여러 개 칠할 수 있다.
+  NT.isMulti = q => q && q.taskType === 'NAESIN_MC5_MULTI';
   NT.letter = i => LETTERS[i];
 
   NT.esc = v => String(v == null ? '' : v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));

@@ -135,7 +135,7 @@ class TestPrepPagesMySqlTest {
   }
 
   @Test
-  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차가 범위별 표로, 문제가 없는 학교는 준비 중으로, 없는 학교는 404")
+  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차·신구중2는 10회차가 범위별 표로, 문제가 없는 학교는 준비 중으로, 없는 학교는 404")
   void anonymousSchoolPages() throws Exception {
     MvcResult a = mockMvc.perform(get("/naesintest/school/apgujeong-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(a.getResponse().getStatus()).isEqualTo(200);
@@ -155,7 +155,11 @@ class TestPrepPagesMySqlTest {
     assertThat(getClass().getResource("/static/video/naesin-apm2-l7-causative-r4.jpg")).isNotNull();
     MvcResult s = mockMvc.perform(get("/naesintest/school/singu-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(s.getResponse().getStatus()).isEqualTo(200);
-    assertThat(s.getResponse().getContentAsString()).contains("신구중학교", "준비하고 있습니다").doesNotContain("data-exam=", "id=\"shorts\"");
+    String singu = s.getResponse().getContentAsString();
+    assertThat(singu.split("data-exam=\"TP-NAESIN-SGM2-2602-R", -1)).hasSize(11); // 신구중2 Lesson 7 1~5회 · Lesson 8 6~10회(V1120)
+    assertThat(singu).contains("신구중학교", "Lesson 7", "Lesson 8").doesNotContain("준비하고 있습니다", "id=\"shorts\"");
+    MvcResult m1 = mockMvc.perform(get("/naesintest/school/apgujeong-m1").accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(m1.getResponse().getContentAsString()).contains("준비하고 있습니다").doesNotContain("data-exam=");
     MvcResult none = mockMvc.perform(get("/naesintest/school/nowhere").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(none.getResponse().getStatus()).isEqualTo(404);
   }
