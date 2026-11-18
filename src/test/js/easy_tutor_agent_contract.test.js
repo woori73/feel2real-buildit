@@ -9,18 +9,19 @@ const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static
 
 test('ledger starts with monthly dashboard and exposes practical book surfaces', () => {
   [
-    'summaryIncome', 'summaryPurchase', 'summaryExpense', 'summaryProfit',
+    'summaryIncome', 'summaryExpense', 'summaryProfit', 'summaryReceivable',
+    'dashboardPrevMonth', 'dashboardNextMonth', 'receivableList',
     'incomeBreakdown', 'expenseBreakdown', 'attentionList', 'recentTransactions',
     'transactionTableBody', 'transactionCards', 'journalList',
     'trialBalanceButton', 'bookResult'
   ].forEach(id => assert.match(html, new RegExp(`id="${id}"`)));
 
-  assert.match(html, /이달 현황/);
+  assert.match(html, /월별 현황/);
   assert.match(html, /수입·지출 장부/);
   assert.match(html, /복식부기 장부/);
   assert.match(html, /고급 회계/);
-  assert.match(html, /수강료·교재비/);
-  assert.match(html, /강사료·임차료·운영비/);
+  assert.match(html, /미수 수강료/);
+  assert.match(html, /현재 수납 잔액/);
 });
 
 test('AI helper stays contextual and all writes use explicit approval', () => {
@@ -47,7 +48,7 @@ test('dashboard, transaction and journal reads remain tenant-scoped', () => {
 });
 
 test('responsive layout switches from desktop table to mobile transaction cards', () => {
-  assert.match(css, /grid-template-columns:minmax\(0,1fr\) 370px/);
+  assert.match(css, /\.ledger-layout:has\(\.agent-panel\.open\)/);
   assert.match(css, /@media\(max-width:760px\)/);
   assert.match(css, /\.ledger-table-wrap\{display:none\}/);
   assert.match(css, /\.transaction-cards\{display:grid/);
