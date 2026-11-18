@@ -44,6 +44,17 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .ah-count:hover { border-color: var(--ah-green); }
 .ah-alert { background: var(--ah-warn-soft); color: var(--ah-warn); padding: 10px 14px; border-radius: 10px; }
 
+.ah-parent-notice {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 16px; padding: 14px 16px; border-radius: var(--ah-radius);
+  background: var(--ah-ink); color: #fff; text-decoration: none;
+}
+.ah-parent-notice:hover { background: #244872; }
+.ah-parent-notice-copy { display: grid; gap: 2px; min-width: 0; }
+.ah-parent-notice-copy strong { font-size: 18px; }
+.ah-parent-notice-copy span { font-size: 14px; color: #e4edf9; }
+.ah-parent-notice-action { flex: none; background: #fff; color: var(--ah-ink); padding: 6px 10px; border-radius: 8px; font-size: 14px; font-weight: 700; }
+
 /* 다음 수업 배너 (전폭 녹색) */
 .ah-banner { background: var(--ah-green); color: var(--ah-green-ink); border-radius: var(--ah-radius); padding: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
 .ah-banner[data-kind="error"] { background: #5b3b2c; }
