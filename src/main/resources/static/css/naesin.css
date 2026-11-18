@@ -184,6 +184,8 @@ body.nt-body {
 .nt-ob:hover::before { background: #fbe1e6; }
 .nt-ob.is-on { color: transparent; }
 .nt-ob.is-on::before { background: var(--nt-mark); border-color: var(--nt-mark); }
+/* 모두 고르기 문항 안내(답란 아래 한 줄) */
+.nt-pick-note { margin: 0; padding: 4px 8px; border-top: 1px solid var(--nt-omr); font: 500 11px/1.4 var(--nt-sans); text-align: center; }
 
 /* OMR 답안지 */
 .nt-omr {

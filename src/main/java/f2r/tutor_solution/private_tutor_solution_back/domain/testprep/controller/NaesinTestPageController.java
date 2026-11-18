@@ -38,7 +38,7 @@ public class NaesinTestPageController {
 
   static final List<School> SCHOOLS = List.of(
       new School("apgujeong-m2", "압구정중학교", "2학년", "TP-NAESIN-APM2-", "Lesson 7·8"),
-      new School("singu-m2", "신구중학교", "2학년", "TP-NAESIN-SGM2-", null),
+      new School("singu-m2", "신구중학교", "2학년", "TP-NAESIN-SGM2-", "Lesson 7"),
       new School("apgujeong-m1", "압구정중학교", "1학년", "TP-NAESIN-APM1-", null));
 
   private static final Pattern ROUND = Pattern.compile("기말 (\\d+회) · (.+)$");

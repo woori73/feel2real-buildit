@@ -4939,6 +4939,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/naesintest/access`: 로그인 필요. `{full: boolean, message}` — full=false면 1회만.
 - `GET /naesintest/run?attempt={id}`(시험 화면), `GET /naesintest/review?attempt={id}`(채점·복습 화면): STUDENT/TUTOR/ADMIN. 비회원 브라우저 요청은 `302 /naesintest?login=required&returnUrl=…`.
 - `GET /naesin/**`(문항 그림): STUDENT/TUTOR/ADMIN, 비회원은 `401`.
+- 문항 종류: `taskType='NAESIN_MC5'`(답 하나, `answerText`=`A`~`E`), `taskType='NAESIN_MC5_MULTI'`("모두 고르면", `answerText`=`B,D`처럼 쉼표로 이음, 고른 묶음이 정답 묶음과 순서 무관하게 같아야 정답). 응시 화면(`questions[].taskType`)으로 구분한다.
 - 새 API는 없고 `/api/testprep/**`를 `kind=NAESIN`으로 쓴다. 시험 화면은 풀이 중 해설(`koHelpJson`)이 없고, 시간은 화면이 문항당 30초로 정한다(서버 마감 7200초).
 - 제출·복습·이력 응답 추가 필드(기존 필드 유지):
   - `sections[].scaleMax`: `scaled`의 만점(SAT 800, 내신은 배점 합계). TOEFL·이전 기록은 `null`. 내신의 `scaled`는 맞힌 배점 합.

@@ -112,4 +112,27 @@ class TestPrepScoringTest {
         new SectionScore("MATH", 8, 8, 8, 6, 75.0, null, 650, null)))).isNull();
     assertThat(TestPrepService.disclaimerFor("NAESIN")).isEqualTo(TestPrepService.NAESIN_DISCLAIMER);
   }
+
+  @Test
+  @DisplayName("given 내신 모두 고르기 정답 'B,D', when 같은 기호를 순서만 바꿔 고르면 then 정답")
+  void naesinMultiSameSetInAnyOrder() {
+    // given
+    String key = "B,D";
+    // when · then
+    assertThat(TestPrepService.isMultiChoiceCorrect("B,D", key)).isTrue();
+    assertThat(TestPrepService.isMultiChoiceCorrect("D,B", key)).isTrue();
+    assertThat(TestPrepService.isMultiChoiceCorrect(" d , b ", key)).isTrue();
+  }
+
+  @Test
+  @DisplayName("given 내신 모두 고르기 정답 'B,D', when 하나만 고르거나 더 고르거나 비우면 then 오답")
+  void naesinMultiPartialOrExtraIsWrong() {
+    // given
+    String key = "B,D";
+    // when · then
+    assertThat(TestPrepService.isMultiChoiceCorrect("B", key)).isFalse();
+    assertThat(TestPrepService.isMultiChoiceCorrect("B,C,D", key)).isFalse();
+    assertThat(TestPrepService.isMultiChoiceCorrect("", key)).isFalse();
+    assertThat(TestPrepService.isMultiChoiceCorrect(null, key)).isFalse();
+  }
 }
