@@ -1,0 +1,512 @@
+[
+  {
+    "width": 360,
+    "height": 800,
+    "checks": [
+      {
+        "name": "no horizontal overflow",
+        "status": "pass"
+      },
+      {
+        "name": "three real white logos load",
+        "status": "pass"
+      },
+      {
+        "name": "names remain within independent labels",
+        "status": "pass"
+      },
+      {
+        "name": "main public character paths preserved",
+        "status": "pass"
+      },
+      {
+        "name": "registration path matches main",
+        "status": "pass"
+      },
+      {
+        "name": "no WebGL dependency",
+        "status": "pass"
+      },
+      {
+        "name": "Suni selected and assistant switched",
+        "status": "pass"
+      },
+      {
+        "name": "input submits locally with current main guidance and Kakao path",
+        "status": "pass"
+      },
+      {
+        "name": "middle/high studio chooser retains division",
+        "status": "pass"
+      },
+      {
+        "name": "modal menu opens within viewport",
+        "status": "pass"
+      },
+      {
+        "name": "Escape closes menu and restores focus",
+        "status": "pass"
+      },
+      {
+        "name": "menu AI action focuses input",
+        "status": "pass"
+      },
+      {
+        "name": "switching character preserves conversation",
+        "status": "pass"
+      },
+      {
+        "name": "reduced motion has no running animation",
+        "status": "pass"
+      },
+      {
+        "name": "no JavaScript page errors",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "mediaRequests": [],
+    "scope": "local static design prototype; production image bytes and Network NOT verified",
+    "initial": {
+      "overflow": 0,
+      "logos": [
+        true,
+        true,
+        true
+      ],
+      "portraits": [
+        {
+          "agent": "seven",
+          "src": "http://127.0.0.1:8765/agent-media/public/seven/poster.jpg",
+          "pressed": "true"
+        },
+        {
+          "agent": "suni",
+          "src": "http://127.0.0.1:8765/agent-media/public/suni/poster.jpg",
+          "pressed": "false"
+        }
+      ],
+      "names": [
+        {
+          "text": "세븐",
+          "inside": true
+        },
+        {
+          "text": "서수니",
+          "inside": true
+        }
+      ],
+      "register": "http://127.0.0.1:8765/register",
+      "canvas": 0
+    },
+    "status": "pass"
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "checks": [
+      {
+        "name": "no horizontal overflow",
+        "status": "pass"
+      },
+      {
+        "name": "three real white logos load",
+        "status": "pass"
+      },
+      {
+        "name": "names remain within independent labels",
+        "status": "pass"
+      },
+      {
+        "name": "main public character paths preserved",
+        "status": "pass"
+      },
+      {
+        "name": "registration path matches main",
+        "status": "pass"
+      },
+      {
+        "name": "no WebGL dependency",
+        "status": "pass"
+      },
+      {
+        "name": "Suni selected and assistant switched",
+        "status": "pass"
+      },
+      {
+        "name": "input submits locally with current main guidance and Kakao path",
+        "status": "pass"
+      },
+      {
+        "name": "middle/high studio chooser retains division",
+        "status": "pass"
+      },
+      {
+        "name": "modal menu opens within viewport",
+        "status": "pass"
+      },
+      {
+        "name": "Escape closes menu and restores focus",
+        "status": "pass"
+      },
+      {
+        "name": "menu AI action focuses input",
+        "status": "pass"
+      },
+      {
+        "name": "switching character preserves conversation",
+        "status": "pass"
+      },
+      {
+        "name": "reduced motion has no running animation",
+        "status": "pass"
+      },
+      {
+        "name": "no JavaScript page errors",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "mediaRequests": [],
+    "scope": "local static design prototype; production image bytes and Network NOT verified",
+    "initial": {
+      "overflow": 0,
+      "logos": [
+        true,
+        true,
+        true
+      ],
+      "portraits": [
+        {
+          "agent": "seven",
+          "src": "http://127.0.0.1:8765/agent-media/public/seven/poster.jpg",
+          "pressed": "true"
+        },
+        {
+          "agent": "suni",
+          "src": "http://127.0.0.1:8765/agent-media/public/suni/poster.jpg",
+          "pressed": "false"
+        }
+      ],
+      "names": [
+        {
+          "text": "세븐",
+          "inside": true
+        },
+        {
+          "text": "서수니",
+          "inside": true
+        }
+      ],
+      "register": "http://127.0.0.1:8765/register",
+      "canvas": 0
+    },
+    "status": "pass"
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "checks": [
+      {
+        "name": "no horizontal overflow",
+        "status": "pass"
+      },
+      {
+        "name": "three real white logos load",
+        "status": "pass"
+      },
+      {
+        "name": "names remain within independent labels",
+        "status": "pass"
+      },
+      {
+        "name": "main public character paths preserved",
+        "status": "pass"
+      },
+      {
+        "name": "registration path matches main",
+        "status": "pass"
+      },
+      {
+        "name": "no WebGL dependency",
+        "status": "pass"
+      },
+      {
+        "name": "Suni selected and assistant switched",
+        "status": "pass"
+      },
+      {
+        "name": "input submits locally with current main guidance and Kakao path",
+        "status": "pass"
+      },
+      {
+        "name": "middle/high studio chooser retains division",
+        "status": "pass"
+      },
+      {
+        "name": "modal menu opens within viewport",
+        "status": "pass"
+      },
+      {
+        "name": "Escape closes menu and restores focus",
+        "status": "pass"
+      },
+      {
+        "name": "menu AI action focuses input",
+        "status": "pass"
+      },
+      {
+        "name": "switching character preserves conversation",
+        "status": "pass"
+      },
+      {
+        "name": "reduced motion has no running animation",
+        "status": "pass"
+      },
+      {
+        "name": "no JavaScript page errors",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "mediaRequests": [],
+    "scope": "local static design prototype; production image bytes and Network NOT verified",
+    "initial": {
+      "overflow": 0,
+      "logos": [
+        true,
+        true,
+        true
+      ],
+      "portraits": [
+        {
+          "agent": "seven",
+          "src": "http://127.0.0.1:8765/agent-media/public/seven/poster.jpg",
+          "pressed": "true"
+        },
+        {
+          "agent": "suni",
+          "src": "http://127.0.0.1:8765/agent-media/public/suni/poster.jpg",
+          "pressed": "false"
+        }
+      ],
+      "names": [
+        {
+          "text": "세븐",
+          "inside": true
+        },
+        {
+          "text": "서수니",
+          "inside": true
+        }
+      ],
+      "register": "http://127.0.0.1:8765/register",
+      "canvas": 0
+    },
+    "status": "pass"
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "checks": [
+      {
+        "name": "no horizontal overflow",
+        "status": "pass"
+      },
+      {
+        "name": "three real white logos load",
+        "status": "pass"
+      },
+      {
+        "name": "names remain within independent labels",
+        "status": "pass"
+      },
+      {
+        "name": "main public character paths preserved",
+        "status": "pass"
+      },
+      {
+        "name": "registration path matches main",
+        "status": "pass"
+      },
+      {
+        "name": "no WebGL dependency",
+        "status": "pass"
+      },
+      {
+        "name": "Suni selected and assistant switched",
+        "status": "pass"
+      },
+      {
+        "name": "input submits locally with current main guidance and Kakao path",
+        "status": "pass"
+      },
+      {
+        "name": "middle/high studio chooser retains division",
+        "status": "pass"
+      },
+      {
+        "name": "modal menu opens within viewport",
+        "status": "pass"
+      },
+      {
+        "name": "Escape closes menu and restores focus",
+        "status": "pass"
+      },
+      {
+        "name": "menu AI action focuses input",
+        "status": "pass"
+      },
+      {
+        "name": "switching character preserves conversation",
+        "status": "pass"
+      },
+      {
+        "name": "reduced motion has no running animation",
+        "status": "pass"
+      },
+      {
+        "name": "no JavaScript page errors",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "mediaRequests": [],
+    "scope": "local static design prototype; production image bytes and Network NOT verified",
+    "initial": {
+      "overflow": 0,
+      "logos": [
+        true,
+        true,
+        true
+      ],
+      "portraits": [
+        {
+          "agent": "seven",
+          "src": "http://127.0.0.1:8765/agent-media/public/seven/poster.jpg",
+          "pressed": "true"
+        },
+        {
+          "agent": "suni",
+          "src": "http://127.0.0.1:8765/agent-media/public/suni/poster.jpg",
+          "pressed": "false"
+        }
+      ],
+      "names": [
+        {
+          "text": "세븐",
+          "inside": true
+        },
+        {
+          "text": "서수니",
+          "inside": true
+        }
+      ],
+      "register": "http://127.0.0.1:8765/register",
+      "canvas": 0
+    },
+    "status": "pass"
+  },
+  {
+    "width": 1440,
+    "height": 1050,
+    "checks": [
+      {
+        "name": "no horizontal overflow",
+        "status": "pass"
+      },
+      {
+        "name": "three real white logos load",
+        "status": "pass"
+      },
+      {
+        "name": "names remain within independent labels",
+        "status": "pass"
+      },
+      {
+        "name": "main public character paths preserved",
+        "status": "pass"
+      },
+      {
+        "name": "registration path matches main",
+        "status": "pass"
+      },
+      {
+        "name": "no WebGL dependency",
+        "status": "pass"
+      },
+      {
+        "name": "Suni selected and assistant switched",
+        "status": "pass"
+      },
+      {
+        "name": "input submits locally with current main guidance and Kakao path",
+        "status": "pass"
+      },
+      {
+        "name": "middle/high studio chooser retains division",
+        "status": "pass"
+      },
+      {
+        "name": "modal menu opens within viewport",
+        "status": "pass"
+      },
+      {
+        "name": "Escape closes menu and restores focus",
+        "status": "pass"
+      },
+      {
+        "name": "menu AI action focuses input",
+        "status": "pass"
+      },
+      {
+        "name": "switching character preserves conversation",
+        "status": "pass"
+      },
+      {
+        "name": "reduced motion has no running animation",
+        "status": "pass"
+      },
+      {
+        "name": "no JavaScript page errors",
+        "status": "pass"
+      }
+    ],
+    "errors": [],
+    "mediaRequests": [],
+    "scope": "local static design prototype; production image bytes and Network NOT verified",
+    "initial": {
+      "overflow": 0,
+      "logos": [
+        true,
+        true,
+        true
+      ],
+      "portraits": [
+        {
+          "agent": "seven",
+          "src": "http://127.0.0.1:8765/agent-media/public/seven/poster.jpg",
+          "pressed": "true"
+        },
+        {
+          "agent": "suni",
+          "src": "http://127.0.0.1:8765/agent-media/public/suni/poster.jpg",
+          "pressed": "false"
+        }
+      ],
+      "names": [
+        {
+          "text": "세븐",
+          "inside": true
+        },
+        {
+          "text": "서수니",
+          "inside": true
+        }
+      ],
+      "register": "http://127.0.0.1:8765/register",
+      "canvas": 0
+    },
+    "status": "pass"
+  }
+]
