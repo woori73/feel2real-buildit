@@ -6,14 +6,13 @@
   <title>F2R 장부 — BuildIt</title>
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <link rel="stylesheet" href="/css/easy.css">
-  <link rel="stylesheet" href="/css/easy_tutor_agent.css?v=20261018-3">
+  <link rel="stylesheet" href="/css/easy_tutor_agent.css?v=20261118-1">
   <script defer src="/js/service_home_navigation.js?v=20261019-1"></script>
 </head>
 <body>
 <header class="ledger-head">
   <div>
     <a class="ledger-brand" href="/ledger">F2R 장부</a>
-    <span class="ledger-subtitle">학원 장부</span>
   </div>
   <div class="ledger-head-actions">
     <label for="businessSelect">사업체</label>
@@ -25,7 +24,7 @@
 
 <main class="ledger-shell">
   <nav class="ledger-tabs" aria-label="장부 메뉴">
-    <button class="ledger-tab active" data-view="dashboard" type="button">이달 현황</button>
+    <button class="ledger-tab active" data-view="dashboard" aria-current="page" type="button">월별 현황</button>
     <button class="ledger-tab" data-view="transactions" type="button">수입·지출 장부</button>
     <button class="ledger-tab" data-view="journal" type="button">복식부기 장부</button>
     <button class="ledger-tab" data-view="advanced" type="button">고급 회계</button>
@@ -34,35 +33,48 @@
   <div class="ledger-layout">
     <div class="ledger-content">
       <section id="view-dashboard" class="ledger-view active" aria-labelledby="dashboardTitle">
-        <div class="view-heading">
-          <div><p class="eyebrow">이번 달 한눈에</p><h1 id="dashboardTitle">우리 학원 장부 현황</h1><p id="dashboardPeriod">불러오는 중입니다.</p></div>
-          <button class="secondary-button" data-open-view="transactions" type="button">전체 거래 보기</button>
+        <div class="view-heading dashboard-heading">
+          <div><h1 id="dashboardTitle">월간 재무 현황</h1><p id="dashboardPeriod" role="status">장부를 불러오는 중입니다.</p></div>
+          <div class="dashboard-month" role="group" aria-label="조회 월">
+            <button id="dashboardPrevMonth" type="button" aria-label="이전 달">‹</button>
+            <time id="dashboardMonth"></time>
+            <button id="dashboardNextMonth" type="button" aria-label="다음 달">›</button>
+          </div>
+        </div>
+        <div id="dashboardError" class="dashboard-error" hidden>
+          <span role="alert">재무 현황을 불러오지 못했습니다.</span>
+          <button id="dashboardRetry" class="secondary-button" type="button">다시 불러오기</button>
         </div>
 
-        <div class="summary-grid">
-          <button class="summary-card income" data-summary-filter="INCOME" type="button"><span>이번 달 매출</span><strong id="summaryIncome">0원</strong><small>수강료·교재비 등 들어온 돈</small></button>
-          <button class="summary-card purchase" data-summary-filter="PURCHASE" type="button"><span>이번 달 매입</span><strong id="summaryPurchase">0원</strong><small>교재·상품 구입</small></button>
-          <button class="summary-card expense" data-summary-filter="EXPENSE" type="button"><span>이번 달 경비</span><strong id="summaryExpense">0원</strong><small>강사료·임차료·운영비</small></button>
-          <button class="summary-card balance" data-summary-filter="ALL" type="button"><span>수지 차액</span><strong id="summaryProfit">0원</strong><small>매출에서 지출을 뺀 금액</small></button>
-        </div>
+        <div id="dashboardData" hidden>
+          <div class="summary-grid">
+            <button class="summary-card income" data-ledger-filter="INCOME" type="button"><span>월 수입</span><strong id="summaryIncome"></strong><small>수입 거래 보기 ›</small></button>
+            <button class="summary-card expense" data-ledger-filter="EXPENSE" type="button"><span>월 지출</span><strong id="summaryExpense"></strong><small>지출 거래 보기 ›</small></button>
+            <div class="summary-card balance"><span>월 장부 손익</span><strong id="summaryProfit"></strong><small>장부상 수입 − 지출</small></div>
+            <a class="summary-card receivable" href="#receivables"><span>미수 수강료</span><strong id="summaryReceivable"></strong><small>현재 미수 내역 보기 ↓</small></a>
+          </div>
 
-        <div class="dashboard-grid">
-          <section class="panel">
-            <div class="panel-head"><div><h2>수입 내역</h2><p>어디에서 돈이 들어왔는지 보여드려요.</p></div><button data-ledger-filter="INCOME" type="button">상세 보기</button></div>
-            <div id="incomeBreakdown" class="breakdown-list"></div>
-          </section>
-          <section class="panel">
-            <div class="panel-head"><div><h2>지출 내역</h2><p>이번 달 학원 운영비를 모았습니다.</p></div><button data-ledger-filter="EXPENSE" type="button">상세 보기</button></div>
-            <div id="expenseBreakdown" class="breakdown-list"></div>
-          </section>
-          <section class="panel attention-panel">
-            <div class="panel-head"><div><h2>지금 확인할 항목</h2><p>장부 반영 전 확인이 필요한 거래입니다.</p></div><span id="reviewCount" class="count-badge">0건</span></div>
-            <div id="attentionList" class="attention-list"><p class="empty-state">확인 항목을 불러오는 중입니다.</p></div>
-          </section>
-          <section class="panel">
-            <div class="panel-head"><div><h2>최근 거래</h2><p>금액을 누르면 거래 상세를 볼 수 있습니다.</p></div></div>
-            <div id="recentTransactions" class="recent-list"></div>
-          </section>
+          <div class="dashboard-grid">
+            <section class="panel composition-panel">
+              <div class="panel-head"><div><h2>거래 구성</h2><p>저장된 거래의 방향과 항목별 금액입니다. 환불·손익 제외 거래가 포함될 수 있습니다.</p></div></div>
+              <div class="composition-grid">
+                <div><h3>수입 방향</h3><div id="incomeBreakdown" class="breakdown-list"></div></div>
+                <div><h3>지출 방향</h3><div id="expenseBreakdown" class="breakdown-list"></div></div>
+              </div>
+            </section>
+            <section class="panel" id="receivables" aria-labelledby="receivablesTitle">
+              <div class="panel-head"><div><h2 id="receivablesTitle">미수 수강료</h2><p>선택한 사업체의 현재 수납 잔액 · 금액이 큰 학생 최대 10명</p></div></div>
+              <ul id="receivableList" class="receivable-list"></ul>
+            </section>
+            <section class="panel attention-panel">
+              <div class="panel-head"><div><h2>검토 대기</h2><p>선택한 사업체에서 현재 확인이 필요한 항목입니다.</p></div><span id="reviewCount" class="count-badge"></span></div>
+              <div id="attentionList" class="attention-list"></div>
+            </section>
+            <section class="panel dashboard-recent">
+              <div class="panel-head"><div><h2>최근 거래</h2><p>거래를 선택하면 계정과목과 원본 정보를 볼 수 있습니다.</p></div><button data-ledger-filter="" type="button">전체 거래 보기</button></div>
+              <div id="recentTransactions" class="recent-list"></div>
+            </section>
+          </div>
         </div>
       </section>
 
@@ -77,6 +89,7 @@
           <label class="search-label">검색<input id="filterSearch" type="search" placeholder="거래처·내용·계정과목"></label>
           <button type="submit">조회</button>
         </form>
+        <p id="transactionBreakdown" class="transaction-breakdown" hidden></p>
         <section class="panel ledger-panel">
           <div class="ledger-table-wrap">
             <table class="ledger-table">
@@ -140,7 +153,7 @@
   </div>
 </main>
 
-<button id="agentToggle" class="agent-toggle" type="button"><span>AI</span> 장부 도우미</button>
+<button id="agentToggle" class="agent-toggle" aria-controls="agentPanel" aria-expanded="false" type="button"><span>AI</span> 장부 도우미</button>
 <div id="detailBackdrop" class="detail-backdrop" hidden></div>
 <aside id="transactionDetail" class="transaction-detail" aria-labelledby="detailTitle" aria-hidden="true">
   <div class="detail-head"><h2 id="detailTitle">거래 상세</h2><button id="detailClose" type="button" aria-label="거래 상세 닫기">×</button></div>
@@ -148,6 +161,6 @@
 </aside>
 
 <script src="/js/api.js"></script>
-<script src="/js/easy_tutor_agent.js?v=20261018-2"></script>
+<script src="/js/easy_tutor_agent.js?v=20261118-1"></script>
 </body>
 </html>
