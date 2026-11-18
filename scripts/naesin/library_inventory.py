@@ -102,6 +102,12 @@ def classify(item, originals=None, local_index=None):
     status = "CLASSIFICATION_REVIEW" if division == "UNCLASSIFIED" else "HASH_PENDING" if not verified else "READY_FOR_ISOLATED_STAGE"
     classification_status = "UNRESOLVED" if division == "UNCLASSIFIED" else "CONFIRMED_METADATA" if evidence == "파일명·폴더" else "PROPOSED_REVIEW_REQUIRED"
     if classification_status == "PROPOSED_REVIEW_REQUIRED": status = "CLASSIFICATION_REVIEW"
+    mid_grades = {m.group(1) for m in MID.finditer(text) if m.group(1)}
+    high_grades = {m.group(1) for m in HIGH.finditer(text) if m.group(1)}
+    if len(mid_grades) > 1 or len(high_grades) > 1:
+        classification_status = "CONFLICTING_METADATA_REVIEW"
+        status = "CLASSIFICATION_REVIEW"
+        evidence = "파일명·폴더의 복수 학년 표기(공통 자료 여부 검수 필요)"
     if ext not in FORMATS: status = "UNSUPPORTED_FORMAT_REVIEW"
     if item["size_bytes"] > MAX_SOURCE_BYTES: status = "OVERSIZE_REVIEW"
     if ext in {"json", "jsonl", "txt", "md", "csv", "tsv"} and item["size_bytes"] > 20*1024*1024: status = "OVERSIZE_TEXT_REVIEW"
