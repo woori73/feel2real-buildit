@@ -240,7 +240,10 @@ class LandingEdunovaTemplateContractTest {
         "href=\"https://cafe.naver.com/newhopero\"", "rel=\"noopener\"");
     assertThat(hero).contains("data-active=\"0\"", "id=\"heroPause\"", "id=\"heroStatus\"", "aria-pressed=\"true\"",
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
-    assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "서수니 · 세븐", "클라우드리뷰 무료신청", "맞춤문제 신청");
+    // 2026-11-19 사용자 지시: 영상 아래 카드는 2027 수능 영어 해설 모션만 둔다(맞춤문제 2주 4회 160문항 안내·신청 버튼 삭제).
+    assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "id=\"csatHome\"", "2027 수능 영어 해설");
+    String csatCard = promo.substring(promo.indexOf("id=\"csatHome\""), promo.indexOf("id=\"service-map\""));
+    assertThat(csatCard).doesNotContain("서수니 · 세븐", "id=\"homeIntakeCta\"", "2주 4회 160문항", "클라우드리뷰 무료신청");
     for (String path : new String[] {"/img/landing/home-card-game.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",
         "/img/landing/home-3d-chart.webp", "/img/exam-cases/apgujeong-g3-2026-final/exam_q13.jpg",
@@ -311,7 +314,7 @@ class LandingEdunovaTemplateContractTest {
     String html = render();
     // then
     assertThat(html)
-        .contains("클라우드리뷰 무료신청", "직접 제작한 첫 페이지 또는 1장")
+        .contains("클라우드리뷰 무료신청")
         .contains("우리 학교 맞춤문제")
         .contains("id=\"pass-offer\"")
         .contains("href=\"/wiki\"")
