@@ -1,5 +1,5 @@
 import { StoredQuestion } from '../lib/types'
-import { isInlineUnderline, renderMarkupHtml } from '../lib/markup'
+import { isInlineUnderline, renderFigureMarkers, renderMarkupHtml } from '../lib/markup'
 import { isCanonicalInlineUnderline, sanitizeQuestionHtml } from '../lib/wikiQuestion'
 
 // 문제5(5차): 문제 생성 결과 화면 / 강사 문제 DB(전체보기) / 내신 실전 제작이 모두 이 컴포넌트
@@ -10,7 +10,7 @@ import { isCanonicalInlineUnderline, sanitizeQuestionHtml } from '../lib/wikiQue
 
 export const Markup = ({ text, as: Tag = 'span' }: { text: string; as?: 'span' | 'div' | 'p' }) =>
   <Tag dangerouslySetInnerHTML={{ __html: renderMarkupHtml(text || '') }} />
-const Rich=({html,text,as:Tag='div'}:{html?:string;text:string;as?:'div'|'span'|'p'})=><Tag dangerouslySetInnerHTML={{__html:html?sanitizeQuestionHtml(html):renderMarkupHtml(text||'')}}/>
+const Rich=({html,text,as:Tag='div'}:{html?:string;text:string;as?:'div'|'span'|'p'})=><Tag dangerouslySetInnerHTML={{__html:html?renderFigureMarkers(sanitizeQuestionHtml(html)):renderMarkupHtml(text||'')}}/>
 
 export default function QuestionCard({ q, index }: { q: StoredQuestion; index: number }) {
   const c=q.canonical

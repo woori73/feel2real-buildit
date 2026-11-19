@@ -106,6 +106,28 @@ class GeneratedTestStoreTest(unittest.TestCase):
         self._save(external_id='sinsa-boilingfrog-vocab-1', questions=[_mc('gradually')])
         self.assertEqual(1, self._counts()['generated_tests'])
 
+    def test_delete_generated_test_removes_test_and_questions_then_resave_creates_new(self):
+        # given: 같은 external_id로 저장된 시험이 있다
+        first = self._save(external_id='singu-r01')
+        # when: 그 시험을 지우고 고친 문항으로 다시 저장한다
+        result = main.delete_generated_test(first['test_id'])
+        again = self._save(external_id='singu-r01', questions=[_mc('gradually', stem='그림을 보고 답하시오.\n[[img:/naesin/x/fig-q01-1.webp]]')])
+        # then: 이전 시험과 문항 25개는 지워지고, 새 시험 1건(1문항)만 남는다
+        self.assertEqual(25, result['deleted_questions'])
+        self.assertFalse(again['duplicate'])
+        self.assertNotEqual(first['test_id'], again['test_id'])
+        counts = self._counts()
+        self.assertEqual(1, counts['generated_tests'])
+        self.assertEqual(1, counts['generated_questions'])
+        self.assertIn('[[img:/naesin/x/fig-q01-1.webp]]', main.get_generated_test(again['test_id'])['questions'][0]['stem'])
+
+    def test_delete_missing_generated_test_returns_404(self):
+        # given: 없는 시험 번호
+        # when / then
+        with self.assertRaises(main.HTTPException) as ctx:
+            main.delete_generated_test(999)
+        self.assertEqual(404, ctx.exception.status_code)
+
     def test_invalid_question_saves_nothing(self):
         broken = _mc('adapt'); del broken['answer']
         with self.assertRaises(ValueError):
