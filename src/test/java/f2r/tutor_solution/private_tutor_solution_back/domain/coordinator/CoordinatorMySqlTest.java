@@ -225,4 +225,30 @@ class CoordinatorMySqlTest {
     assertThat(paidAfterUndo).isZero();
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_tuition_payments WHERE student_id=?", Integer.class, sid)).isZero();
   }
+  @Test
+  @DisplayName("given 말 명령 when 수업 기록·채점 기록 확인 then 학생부에 남고 채점은 사진 올리기 링크, 되돌리면 삭제")
+  void lessonAndGradingByVoice() {
+    // given
+    var json = tools.jackson.databind.json.JsonMapper.builder().build();
+    Long bid = businesses.findAllByActiveTrueOrderBySortOrderAsc().get(0).getBusinessId();
+    Long sid = student("코디학생부학생");
+    var gradingArgs = json.createObjectNode().put("studentId", sid).put("gradedOn", "2026-11-20").put("totalCount", 10);
+    gradingArgs.putArray("wrongItems").add(json.createObjectNode().put("no", "2").put("topic", "시제"));
+
+    // when
+    Map<String, Object> lesson = confirm(change("RECORD", bid, "LESSON", json.createObjectNode().put("studentId", sid)
+        .put("lessonDate", "2026-11-20").put("lessonRange", "능률 3과")));
+    Map<String, Object> grading = confirm(change("RECORD", bid, "GRADING", gradingArgs));
+    Map<String, Object> book = service.studentBook(ADMIN, bid, sid);
+    service.undoFromChat(ADMIN, (String) grading.get("jobId"), null, "");
+    entityManager.flush();
+
+    // then
+    assertThat(lesson.get("status")).isEqualTo("completed");
+    assertThat(grading.get("status")).isEqualTo("completed");
+    assertThat(((Map<?, ?>) grading.get("result")).get("linkUrl").toString()).contains("/easy/records?businessId=" + bid);
+    assertThat(book.toString()).contains("코○○○○○생", "시제").doesNotContain("코디학생부학생");
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_lesson_records WHERE student_id=?", Integer.class, sid)).isEqualTo(1);
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_grading_records WHERE student_id=?", Integer.class, sid)).isZero();
+  }
 }

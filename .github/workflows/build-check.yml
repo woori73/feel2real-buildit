@@ -97,6 +97,7 @@ jobs:
           src/test/js/easy_connections_view.test.js
           src/test/js/hub_view.test.js
           src/test/js/coord_approvals_view.test.js
+          src/test/js/easy_records_view.test.js
           src/test/js/parent_notices.test.js
           src/test/js/admin_members_view.test.js
           src/test/js/naver_login.test.js
@@ -219,6 +220,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsArticleServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsArticleContentContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLessonRecordServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAdminOverviewServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpAdminDashboardTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpCafeTest"
@@ -238,6 +240,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordStudentActionsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordTuitionActionsTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordRecordActionsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpCoordinatorToolsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.NaverLoginModalContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProviderTest"
@@ -600,6 +603,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteEventMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAttendanceMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyLessonRecordMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.AdminCredentialRotationMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.TemporaryPasswordMySqlTest"

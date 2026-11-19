@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R 장부 - 학생부</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+  <style>
+    .easy-title.center, .easy-sub.center { text-align: center; }
+    .msg { display: none; margin-top: 8px; font-size: 13px; }
+    .msg.err { color: #c53030; }
+    .muted { color: #718096; font-size: 12px; }
+    .rec { border-top: 1px solid #edf2f7; padding: 10px 0; }
+    .rec:first-child { border-top: 0; }
+    .rec h4 { margin: 0 0 4px; font-size: 14px; }
+    .rec ul { margin: 4px 0; padding-left: 18px; font-size: 13px; }
+    .rec .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .rec .btns button, .rec .btns label { width: auto; margin: 0; padding: 5px 10px; font-size: 12px; }
+    .rec.focus { background: #fffbea; border-radius: 8px; padding: 10px; }
+    .photos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .photos figure { margin: 0; text-align: center; }
+    .photos img { width: 110px; height: 110px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; }
+    .ev { display: inline-block; margin: 0 6px 4px 0; padding: 2px 8px; border-radius: 6px; background: #edf2f7; font-size: 12px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; }
+    details summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+<th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
+<div class="easy-container">
+  <div class="easy-title center">학생부</div>
+  <p class="easy-sub center">학생별 출결·수업 기록·채점 기록·오답 기록을 한곳에서 봅니다. 휴대폰 Claude에게 말로 기록하거나 여기서 직접 적습니다.</p>
+
+  <div class="easy-card">
+    <div class="form-row">
+      <div class="form-group"><label for="business">사업체</label><select id="business"></select></div>
+      <div class="form-group"><label for="student">학생</label><select id="student"></select></div>
+    </div>
+    <p class="msg" id="msg"></p>
+  </div>
+
+  <div class="easy-card" id="summaryCard" hidden>
+    <h3 id="studentTitle" style="margin:0 0 6px"></h3>
+    <p><strong>오답 기록</strong> <span id="topics" class="muted"></span></p>
+    <p><strong>최근 출결</strong></p>
+    <div id="attendance"></div>
+  </div>
+
+  <div class="easy-card" id="addCard" hidden>
+    <details>
+      <summary>수업 기록 직접 적기</summary>
+      <div class="form-row">
+        <div class="form-group"><label for="lDate">날짜</label><input type="date" id="lDate"></div>
+        <div class="form-group"><label for="lCheck">지난 숙제</label>
+          <select id="lCheck"><option value="">확인 안 함</option><option value="DONE">다 해 옴</option><option value="PARTIAL">일부 해 옴</option><option value="NOT_DONE">안 해 옴</option></select></div>
+      </div>
+      <div class="form-group"><label for="lRange">수업 범위</label><input id="lRange" maxlength="300"></div>
+      <div class="form-group"><label for="lDone">해 온 숙제·과제</label><input id="lDone" maxlength="500"></div>
+      <div class="form-group"><label for="lNext">낸 숙제</label><input id="lNext" maxlength="500"></div>
+      <div class="form-group"><label for="lNote">메모</label><textarea id="lNote" rows="2" maxlength="1000"></textarea></div>
+      <button class="btn-primary" id="lSave" type="button">수업 기록 저장</button>
+    </details>
+    <details>
+      <summary>채점 기록 직접 적기</summary>
+      <div class="form-row">
+        <div class="form-group"><label for="gDate">날짜</label><input type="date" id="gDate"></div>
+        <div class="form-group"><label for="gArea">분야</label><input id="gArea" maxlength="100" placeholder="문법·독해·어휘"></div>
+      </div>
+      <div class="form-group"><label for="gMaterial">교재·범위</label><input id="gMaterial" maxlength="200"></div>
+      <div class="form-row">
+        <div class="form-group"><label for="gTotal">전체 문항</label><input type="number" id="gTotal" min="0" max="1000"></div>
+        <div class="form-group"><label for="gCorrect">맞은 수</label><input type="number" id="gCorrect" min="0" max="1000"></div>
+      </div>
+      <div class="form-group"><label for="gWrong">틀린 문항 (한 줄에 하나: 번호, 유형, 이유)</label><textarea id="gWrong" rows="3" placeholder="3, 관계대명사, what/that 혼동"></textarea></div>
+      <div class="form-group"><label for="gFeedback">피드백</label><textarea id="gFeedback" rows="2" maxlength="2000"></textarea></div>
+      <button class="btn-primary" id="gSave" type="button">채점 기록 저장</button>
+    </details>
+  </div>
+
+  <div class="easy-card" id="gradingCard" hidden><h3 style="margin-top:0">채점 기록</h3><div id="gradings"></div></div>
+  <div class="easy-card" id="lessonCard" hidden><h3 style="margin-top:0">수업 기록</h3><div id="lessons"></div></div>
+</div>
+<script src="/js/api.js"></script><script src="/js/easy_api.js"></script>
+<script src="/js/easy_records_view.js?v=20261119"></script>
+<script src="/js/easy_records.js?v=20261119"></script>
+</body>
+</html>

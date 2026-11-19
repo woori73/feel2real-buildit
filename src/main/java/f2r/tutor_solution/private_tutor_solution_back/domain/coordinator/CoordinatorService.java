@@ -210,6 +210,13 @@ public class CoordinatorService {
     return ((CoordTuitionActions) forArea("TUITION")).status(business(p, businessId), month, status);
   }
 
+  /** 학생부(최근 출결·수업 기록·채점 기록·오답 기록). AI용으로 이름을 가린다. */
+  @Transactional(readOnly = true)
+  public Map<String, Object> studentBook(AuthenticatedPrincipal p, Long businessId, Long studentId) {
+    if (studentId == null) throw new IllegalArgumentException("studentId가 필요합니다. 먼저 f2r_student_search로 찾으세요.");
+    return ((CoordRecordActions) forArea("RECORD")).book(business(p, businessId), studentId);
+  }
+
   /** 장부 손익 요약. */
   @Transactional(readOnly = true)
   public Map<String, Object> ledgerSummary(AuthenticatedPrincipal p, Long businessId, String from, String to) {
@@ -408,7 +415,14 @@ public class CoordinatorService {
       out.put("summary", summary);
       if (forHuman || CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) out.put("planHash", j.getPlanHash());
       if (forHuman) { out.put("source", j.getSource()); out.put("clientName", j.getClientName()); }
-      if (j.getResultJson() != null && !forHuman) out.put("result", Map.of("label", JSON.readTree(j.getResultJson()).path("label").asText("")));
+      if (j.getResultJson() != null && !forHuman) {
+        JsonNode r = JSON.readTree(j.getResultJson());
+        Map<String, Object> brief = new LinkedHashMap<>();
+        brief.put("label", r.path("label").asText(""));
+        // 실행 뒤 사람이 이어서 할 일(답지 사진 올리기 등)이 있는 화면 링크.
+        if (r.hasNonNull("linkPath")) brief.put("linkUrl", (baseUrl == null ? "" : baseUrl) + r.get("linkPath").asText());
+        out.put("result", brief);
+      }
       if (j.getResultJson() != null && forHuman) out.put("result", JSON.readTree(j.getResultJson()));
       if (j.getError() != null) out.put("error", j.getError());
       if (!forHuman && CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) {

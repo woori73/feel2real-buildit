@@ -1214,3 +1214,9 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 ### 학부모 안내 말 명령 (2026-11-19)
 
 "이번 주 결석한 학생 학부모님께 보충 안내 써줘" → AI가 출결·수납 사실을 조회(`f2r_attendance_check`·`f2r_tuition_status`, 가린 이름) → 문구 작성(학생 실명·연락처 없음) → `save_parent_notice_draft`(초안만) → AI가 `shareUrl`을 줌 → 사용자가 누르면 `/dashboard/parent-notices?draft=…`에서 그 초안이 바로 편집·공유 칸에 뜸 → 문구 확인 → **사용자가 카카오톡 공유 버튼을 눌러 받는 학부모를 직접 고름**. 자동 발송 없음. 지난 초안은 `list_parent_notice_drafts`.
+
+### 학생부 말 명령 — 수업 기록·채점·오답 (2026-11-19)
+
+1. "오늘 김민수 능률 3과 40~45쪽 했고 숙제는 반만 해 왔어, 다음 숙제 46~47쪽" → `f2r_student_search` → `f2r_record_change {action:LESSON}` → "김○수 · 2026-11-20 수업 기록 · 수업 범위: … / 숙제: 일부 해 옴 / 낸 숙제: …, 이대로 할까요?" → "응" → `f2r_confirm` → `easy_lesson_records`.
+2. 채점된 답지 사진을 대화에 올림 → Claude가 틀린 번호(빨간 표시)를 읽고 유형·이유·피드백 정리(읽기 어려운 번호는 묻는다) → `f2r_record_change {action:GRADING}` → 확인 → `f2r_confirm` → `easy_grading_records` → `result.linkUrl`을 누르면 `/easy/records`에서 그 채점 기록이 열리고 「채점된 답지 사진 올리기」로 사진 저장.
+3. 학생부 화면·`f2r_student_book`: 최근 출결 + 수업 기록 + 채점 기록 + 오답 유형별 횟수. 출결부 학생 이름을 누르면 학생부로 간다. 수정·삭제는 관리자 화면에서(말 명령은 10분 안 되돌리기).

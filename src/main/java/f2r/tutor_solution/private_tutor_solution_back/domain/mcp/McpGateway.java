@@ -69,7 +69,7 @@ public class McpGateway {
    */
   static final Set<String> COORD_TOOLS = Set.of("f2r_student_search", "f2r_attendance_check", "f2r_attendance_mark",
       "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
-      "f2r_tuition_change", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -495,15 +495,36 @@ public class McpGateway {
             "billedAmount", integer(0, 100000000), "paidAmount", integer(0, 100000000), "amount", integer(1, 100000000),
             "paidOn", string(), "payMethod", string()),
         List.of("requestId", "action")));
+    out.add(tool("f2r_student_book",
+        "학생부를 봅니다: 최근 출결 30건, 수업 기록(날짜·수업 범위·숙제 확인·해 온 것·낸 숙제·메모), 채점 기록(분야·교재·맞은 수/전체·"
+            + "틀린 문항 번호·유형·이유·피드백·사진 수), 오답 기록(유형별 틀린 횟수, 많이 틀린 순). 이름은 가려서 줍니다.",
+        Map.of("studentId", id, "businessId", id), List.of("studentId")));
+    out.add(writeTool("f2r_record_change",
+        "학생부 기록 초안을 만듭니다(아직 저장하지 않음). action: LESSON(수업 기록: studentId, lessonDate(YYYY-MM-DD, 없으면 오늘),"
+            + " lessonRange, homeworkCheck(DONE·PARTIAL·NOT_DONE), homeworkDoneNote, nextHomework, teacherNote, classId)"
+            + " · GRADING(채점 기록: studentId, gradedOn, subjectArea, material, totalCount, correctCount,"
+            + " wrongItems=[{no, topic, reason}], feedback, lessonRecordId). 이미 채점된 답지 사진을 사용자가 보내면 사진에서 틀린"
+            + " 번호(빨간 표시 등)를 읽고 유형·이유·피드백을 정리해 GRADING으로 만드세요 — 읽기 어려운 번호는 추측하지 말고"
+            + " 사용자에게 물으세요. summary.title을 보여 주고 동의하면 f2r_confirm. 채점 기록은 실행 뒤 result.linkUrl에서"
+            + " 사용자가 답지 사진을 올립니다(사진은 이 도구로 받지 않음).",
+        Map.ofEntries(Map.entry("requestId", string()), Map.entry("action", string()), Map.entry("studentId", id),
+            Map.entry("lessonDate", string()), Map.entry("lessonRange", string()), Map.entry("homeworkCheck", string()),
+            Map.entry("homeworkDoneNote", string()), Map.entry("nextHomework", string()), Map.entry("teacherNote", string()),
+            Map.entry("classId", id), Map.entry("gradedOn", string()), Map.entry("subjectArea", string()),
+            Map.entry("material", string()), Map.entry("totalCount", integer(0, 1000)), Map.entry("correctCount", integer(0, 1000)),
+            Map.entry("wrongItems", Map.of("type", "array", "items", Map.of("type", "object", "properties",
+                Map.of("no", string(), "topic", string(), "reason", string())))),
+            Map.entry("feedback", string()), Map.entry("lessonRecordId", id), Map.entry("businessId", id)),
+        List.of("requestId", "action", "studentId")));
     out.add(writeTool("f2r_confirm",
-        "f2r_attendance_mark·f2r_student_change·f2r_class_change·f2r_tuition_change로 만든 초안을 실행합니다. 사용자가 이 대화에서 그 내용(summary)에"
+        "f2r_attendance_mark·f2r_student_change·f2r_class_change·f2r_tuition_change·f2r_record_change로 만든 초안을 실행합니다. 사용자가 이 대화에서 그 내용(summary)에"
             + " 분명히 동의('네', '해줘')했을 때만 부르세요. 사용자 답 없이, 또는 다른 건으로 부르지 마세요."
             + " jobId와 planHash는 초안 결과의 값을 그대로 넣습니다. 초안은 30분 뒤 만료됩니다.",
         Map.of("jobId", string(), "planHash", string()), List.of("jobId", "planHash")));
     out.add(writeTool("f2r_undo",
         "f2r_confirm으로 실행한 작업(출결·학생·반)을 되돌립니다. 실행 뒤 10분 안에만, 그사이 다른 곳에서 바뀌지 않았을 때만 됩니다."
             + " 출결은 취소(정정됨으로 남음), 학생 등록은 퇴원 처리, 반 만들기는 반 종료, 수강료 청구는 그 청구 삭제,"
-            + " 납부 기록은 이전 납부액으로 되돌립니다."
+            + " 납부 기록은 이전 납부액으로, 학생부 수업·채점 기록은 삭제(사진 포함)로 되돌립니다."
             + " 사용자가 취소를 요청했을 때만 부르세요. reason에 사용자가 말한 이유를 짧게 적습니다.",
         Map.of("jobId", string(), "reason", string()), List.of("jobId")));
     out.add(tool("f2r_job_status",
@@ -641,6 +662,10 @@ public class McpGateway {
           case "f2r_ledger_summary" -> coord.ledgerSummary(identity.principal(), bid,
               args.hasNonNull("from") ? text(args, "from") : null, args.hasNonNull("to") ? text(args, "to") : null);
           case "f2r_tuition_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "TUITION",
+              text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
+          case "f2r_student_book" -> coord.studentBook(identity.principal(), bid,
+              args.hasNonNull("studentId") ? args.get("studentId").asLong() : null);
+          case "f2r_record_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "RECORD",
               text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
           case "f2r_confirm" -> coord.confirmFromChat(identity.principal(), text(args, "jobId"),
               text(args, "planHash"), oauth.base());
