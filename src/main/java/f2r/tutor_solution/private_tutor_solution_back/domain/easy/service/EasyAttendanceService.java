@@ -302,6 +302,22 @@ public class EasyAttendanceService {
   }
 
   /**
+   * 취소: 새 행 없이 이전 기록을 superseded로만 남긴다(지우지 않음). AI 코디네이터가 대화창으로 방금 기록한 출결을 사용자가
+   * 되돌릴 때만 쓴다. 사유는 호출한 쪽 기록(coord_job_events)에 남긴다.
+   */
+  public void cancel(Long businessId, Long eventId) {
+    EasyAttendanceEvent prior = eventRepository.findById(eventId)
+        .orElseThrow(() -> new IllegalArgumentException("출결 기록을 찾을 수 없습니다."));
+    if (!prior.getBusiness().getBusinessId().equals(businessId)) {
+      throw new IllegalArgumentException("다른 사업체의 출결 기록입니다.");
+    }
+    if (prior.isSuperseded()) {
+      throw new IllegalStateException("이미 정정·취소된 기록입니다.");
+    }
+    prior.supersede();
+  }
+
+  /**
    * 그날 같은 구분의 유효한(정정되지 않은) 출결이 이미 있으면 그 기록을 돌려준다. AI 코디네이터의 중복 기록 방지용(읽기 전용).
    */
   @Transactional(readOnly = true)

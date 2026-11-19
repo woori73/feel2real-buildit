@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +13,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.json.JsonMapper;
 
-@DisplayName("MCP 코디네이터 도구 — coord:draft 동의·관리자만, 실행·승인 도구 없음")
+@DisplayName("MCP 코디네이터 도구 — coord:draft 동의·관리자만, 임의 실행·삭제·발송 도구 없음")
 class McpCoordinatorToolsTest {
 
   McpOAuth oauth(String allowed) {
@@ -65,6 +67,37 @@ class McpCoordinatorToolsTest {
 
     // when & then
     assertThatThrownBy(() -> gateway.execute(identity, "f2r_attendance_mark", args))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("coord_admin_consent_required");
+  }
+
+  @Test
+  @DisplayName("given 동의한 관리자 when 도구 목록 then 대화창 확인·취소 도구는 쓰기 도구(readOnlyHint=false)로 표시된다")
+  void confirmAndUndoAreWriteTools() {
+    // given
+    var gateway = new McpGateway(null, oauth("coord:draft"), null, null, null, null, null);
+    var admin = new AuthenticatedPrincipal(1L, "owner", "ADMIN");
+
+    // when
+    var tools = gateway.tools(new McpOAuth.Identity("g1", admin, Set.of(McpOAuth.COORD_DRAFT)));
+
+    // then
+    for (String name : List.of("f2r_attendance_confirm", "f2r_attendance_undo")) {
+      var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
+      assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(false);
+      assertThat((String) tool.get("description")).contains("사용자");
+    }
+  }
+
+  @Test
+  @DisplayName("given 동의 없는 연결 when f2r_attendance_confirm 실행 then 403 coord_admin_consent_required")
+  void confirmRequiresConsent() {
+    // given
+    var gateway = new McpGateway(null, oauth("coord:draft"), null, null, null, null, null);
+    var identity = new McpOAuth.Identity("g", new AuthenticatedPrincipal(1L, "owner", "ADMIN"), Set.of("studio:read"));
+    var args = JsonMapper.builder().build().createObjectNode().put("jobId", "j").put("planHash", "h");
+
+    // when & then
+    assertThatThrownBy(() -> gateway.execute(identity, "f2r_attendance_confirm", args))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("coord_admin_consent_required");
   }
 

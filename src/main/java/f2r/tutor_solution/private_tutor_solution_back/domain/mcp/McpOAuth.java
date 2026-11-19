@@ -77,7 +77,7 @@ public class McpOAuth {
   /** 카페 31312978의 설정된 게시판에 새 글 등록. 관리자 별도 동의, 기존 글 수정·삭제 불가. */
   public static final String CAFE_WRITE = "cafe:write";
   public static final String PARENT_NOTICE_DRAFT = "parent-notice:draft";
-  /** F2R AI Coordinator: 학생 검색·출결 조회·출결 기록 초안(기록은 F2R 승인 화면에서 사람이 승인해야 실행). 관리자 전용. */
+  /** F2R AI Coordinator: 학생 검색·출결 조회·출결 기록(대화에서 사용자가 확인하거나 승인 화면에서 승인해야 실행, 10분 안 취소). 관리자 전용. */
   public static final String COORD_DRAFT = "coord:draft";
 
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
