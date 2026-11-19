@@ -45,10 +45,12 @@
     return i < 0 ? { head: '', num: s } : { head: s.slice(0, i + 1), num: s.slice(i + 1) };
   }
 
-  /** 첫 화면 「바뀌는 입시」 목록: 시리즈·회차 순(1-① → 1-⑦)으로 앞에서 limit개. 서버 순서와 무관하다. */
+  /** 첫 화면 「바뀌는 입시」 목록: 최신 게시일 먼저, 같은 날은 시리즈·회차 순(1-① → 1-⑦)으로 앞에서 limit개(2026-11-19 하루 3편 게시). */
   function seriesItems(list, limit) {
     const rows = (Array.isArray(list) ? list : []).slice();
     rows.sort((a, b) => {
+      const da = String(a.publishedOn || ''), db = String(b.publishedOn || '');
+      if (da !== db) return da > db ? -1 : 1;
       const sa = String(a.series || ''), sb = String(b.series || '');
       if (sa !== sb) return sa < sb ? -1 : 1;
       const ka = episodeKey(a.episode), kb = episodeKey(b.episode);

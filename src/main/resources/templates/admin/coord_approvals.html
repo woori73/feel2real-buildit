@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>AI 요청 승인 | F2R</title>
+  <!-- 공통 계정 메뉴(account_menu.js)의 떠 있는 안내가 승인 버튼을 가리지 않도록 favicon만 직접 넣는다. -->
+  <link rel="icon" href="/favicon.ico?v=20260613" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20260613">
+  <style>
+    :root { --ink:#1a202c; --muted:#718096; --line:#e2e8f0; --blue:#2643c4; --green:#0f7a4a; --red:#c53030; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; background: #f5f7fb; color: var(--ink); }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; }
+    header h1 { font-size: 18px; margin: 0; }
+    header button { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 14px; }
+    main { max-width: 640px; margin: 0 auto; padding: 16px; }
+    .coord-intro { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
+    .coord-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .coord-card.big { border: 2px solid var(--blue); box-shadow: 0 6px 24px rgba(38,67,196,.12); }
+    .coord-card h2 { font-size: 18px; margin: 6px 0; line-height: 1.4; }
+    .coord-card.big h2 { font-size: 21px; }
+    .coord-status { display: inline-block; font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 99px; background: #edf2f7; color: #4a5568; }
+    .coord-status.s-review_required { background: #ebf0ff; color: var(--blue); }
+    .coord-status.s-completed { background: #e6f6ee; color: var(--green); }
+    .coord-status.s-failed, .coord-status.s-expired { background: #fdecec; color: var(--red); }
+    .coord-detail { margin: 0 0 6px; font-size: 15px; }
+    .coord-meta { margin: 2px 0; color: var(--muted); font-size: 13px; }
+    .coord-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .coord-actions button { flex: 1; min-height: 52px; border-radius: 12px; font-size: 16px; font-weight: 800; border: 0; }
+    .coord-approve { background: var(--blue); color: #fff; }
+    .coord-reject { background: #edf2f7; color: var(--ink); flex: 0 0 34% !important; }
+    .coord-actions button:disabled { opacity: .5; }
+    .coord-result { margin: 12px 0 0; font-size: 15px; font-weight: 700; }
+    .coord-error { margin: 10px 0 0; color: var(--red); font-size: 14px; }
+    .coord-empty { color: var(--muted); text-align: center; padding: 24px 0; }
+    h3 { font-size: 15px; color: var(--muted); margin: 22px 0 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI 요청 승인</h1>
+    <button type="button" id="coordRefresh">새로고침</button>
+  </header>
+  <main>
+    <p class="coord-intro">AI(Claude·ChatGPT)가 만든 출결 기록 초안입니다. 학생과 내용을 확인하고 <b>승인하고 기록</b>을 누르면 F2R 출결부에 기록됩니다. 승인하지 않으면 기록되지 않습니다.</p>
+    <section id="coordFocus"></section>
+    <h3>최근 요청</h3>
+    <section id="coordList"><p class="coord-empty">불러오는 중…</p></section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/coord_approvals_view.js"></script>
+  <script src="/js/coord_approvals.js"></script>
+</body>
+</html>

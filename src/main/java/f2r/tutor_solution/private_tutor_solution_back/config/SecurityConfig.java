@@ -177,6 +177,12 @@ public class SecurityConfig {
                 new AndRequestMatcher(
                     PathPatternRequestMatcher.withDefaults().matcher("/admin/hub/exam-requests"),
                     new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
+            // AI가 알려 준 승인 링크도 로그인 후 같은 승인 화면으로 복귀한다.
+            .defaultAuthenticationEntryPointFor(
+                (request, response, ex) -> redirectToLogin(request, response),
+                new AndRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher("/admin/coord/approvals"),
+                    new MediaTypeRequestMatcher(MediaType.TEXT_HTML)))
             // 대화형 학습의 강사 전용 화면도 raw 401 대신 같은 로그인 안내(원래 경로 복귀)로 보낸다. API(/api/**)는 영향 없음.
             .defaultAuthenticationEntryPointFor(
                 (request, response, ex) -> redirectToLogin(request, response),
@@ -283,6 +289,7 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/assistant"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/info"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/dashboard/parent-notices"),
                         PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft/**"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft"),
@@ -314,6 +321,7 @@ public class SecurityConfig {
             .requestMatchers("/ledger", "/ledger/**", "/tutor/easy", "/tutor/easy/**").hasAnyRole("ADMIN", "TUTOR")
             // BuildIt 통합 대시보드 — ADMIN·TUTOR 공용. 데이터는 /api/dashboard/** 에서 역할별 권한 검증.
             .requestMatchers("/dashboard", "/dashboard/assistant", "/dashboard/info", "/api/academy-home/**", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
+            .requestMatchers("/dashboard/parent-notices", "/api/dashboard/parent-notices").hasAnyRole("ADMIN", "TUTOR")
             // 대시보드 캐릭터 영상·이미지(비공개 폴더) — 로그인한 ADMIN·TUTOR만. 공개 정적 경로로 두지 않는다.
             // 자료 묶음 설치는 ADMIN만(같은 출처 확인은 컨트롤러). 읽기 규칙보다 위에 둔다(first-match-wins).
             .requestMatchers(HttpMethod.POST, "/api/dashboard/agent-media/package").hasRole("ADMIN")
@@ -335,6 +343,8 @@ public class SecurityConfig {
             // 인스타 자동 피드 관리자 화면 — ADMIN 전용(API는 /api/admin/sns/** → 아래 /api/admin/** ADMIN 규칙).
             .requestMatchers("/admin/sns", "/admin/sns/**", "/admin/academy-move", "/admin/student-roster", "/admin/admissions/articles").hasRole("ADMIN")
             .requestMatchers("/admin/hub/exam-requests").hasRole("ADMIN")
+            // AI 코디네이터 승인 화면(출결 초안 등) — ADMIN. 비로그인은 로그인 후 원래 화면으로 복귀(아래 entry point).
+            .requestMatchers("/admin/coord/approvals").hasRole("ADMIN")
             // GPU 작업자 API는 로그인 대신 Bearer 작업자 토큰(SNS_WORKER_TOKEN)을 컨트롤러에서 검사한다.
             .requestMatchers("/api/sns/worker/**").permitAll()
             // 인스타그램 서버가 image_url로 가져가는 게시물 이미지 — 추측 불가 토큰 주소만, GET만.

@@ -4939,6 +4939,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/naesintest/access`: 로그인 필요. `{full: boolean, message}` — full=false면 1회만.
 - `GET /naesintest/run?attempt={id}`(시험 화면), `GET /naesintest/review?attempt={id}`(채점·복습 화면): STUDENT/TUTOR/ADMIN. 비회원 브라우저 요청은 `302 /naesintest?login=required&returnUrl=…`.
 - `GET /naesin/**`(문항 그림): STUDENT/TUTOR/ADMIN, 비회원은 `401`.
+- 문항 종류: `taskType='NAESIN_MC5'`(답 하나, `answerText`=`A`~`E`), `taskType='NAESIN_MC5_MULTI'`("모두 고르면", `answerText`=`B,D`처럼 쉼표로 이음, 고른 묶음이 정답 묶음과 순서 무관하게 같아야 정답). 응시 화면(`questions[].taskType`)으로 구분한다.
 - 새 API는 없고 `/api/testprep/**`를 `kind=NAESIN`으로 쓴다. 시험 화면은 풀이 중 해설(`koHelpJson`)이 없고, 시간은 화면이 문항당 30초로 정한다(서버 마감 7200초).
 - 제출·복습·이력 응답 추가 필드(기존 필드 유지):
   - `sections[].scaleMax`: `scaled`의 만점(SAT 800, 내신은 배점 합계). TOEFL·이전 기록은 `null`. 내신의 `scaled`는 맞힌 배점 합.
@@ -5539,3 +5540,31 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 | POST | `/api/admin/admissions/articles/{id}/visibility` | ADMIN | `{visible:true|false}` 숨김/다시 공개 |
 
 - 검증 오류는 400 `{message}`. 본문 HTML은 저장할 때 허용 태그(p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a[href http·https])만 남기고(스크립트·이벤트 속성·style 제거), 출력할 때 한 번 더 정리한다. 삭제 API는 없다.
+- 예약 게시(2026-11-19): `publishedOn`이 한국 날짜로 오늘보다 뒤인 글은 공개 목록·본문 화면·`/api/admissions/articles`에 나오지 않고(본문 주소는 404), 그날 0시(KST)부터 저절로 나온다. 관리자 목록에는 그대로 보인다. 미리 여러 날치 글을 `visible:true`로 넣어 두면 하루씩 공개된다. 메인 첫 화면 「입시상담 AI」 칸의 제목 목록은 최신 게시일 먼저(같은 날은 시리즈·회차 순) 10편이다. 글 보기 제목은 회차가 숫자로 시작하면 `[시리즈 1-④] 제목`, 아니면(예: `수능특집-④`) `[수능특집-④] 제목`으로 쓴다.
+
+## 학부모 카카오톡 초안
+
+- `GET /api/dashboard/parent-notices`는 본인 계정의 최근 초안 30건과 카카오 JavaScript 공개 키 설정을 반환한다. `Cache-Control: no-store`를 사용한다.
+- `POST /api/dashboard/parent-notices`의 본문은 `{requestId, kind, title, body}`다. 동일 출처에서 호출하며 `requestId`는 UUID다. 제목은 80자, 본문은 200자까지 저장한다. `kind`는 `NOTICE` 또는 `PROMOTION`이며 홍보 본문은 `(광고)`로 시작한다. 같은 요청 ID와 본문은 기존 초안을 반환하고, 내용이 다르면 409를 반환한다.
+- 두 경로는 ADMIN 또는 연결된 AcademyCraft 학원 원장 권한을 요구한다. MCP의 `save_parent_notice_draft`도 동일한 계정 검증을 적용하며 별도 `parent-notice:draft` 동의와 운영 허용 목록을 거쳐 초안 ID만 돌려준다. MCP로 조회·공유·발송하는 경로는 없다.
+- 카카오 Developers 앱의 JavaScript 키는 `APP_KAKAO_SHARE_JAVASCRIPT_KEY`로 지정한다. SDK 도메인과 제품 링크 관리에 운영 HTTPS 주소를 등록한다. 수신자 선택과 전송은 카카오톡 공유 화면에서 처리한다. 키가 비어 있으면 모바일 시스템 공유와 복사를 제공한다.
+
+## AI 코디네이터 1단계 — 출결 초안·승인 (2026-11-19, V1123)
+
+설계: [f2r-coordinator/](f2r-coordinator/README.md). AI(Claude·ChatGPT 공식 앱의 F2R 커넥터 등)가 MCP로 **초안만** 만들고, 사람이 F2R 승인 화면에서 승인해야 기존 `EasyAttendanceService.record`로 기록된다. 관리자(ADMIN) 전용.
+
+### MCP 도구 (scope `coord:draft`, 별도 동의·위험 확인, ADMIN)
+- 노출 조건: 운영 허용 목록 `app.mcp.allowed-scopes`(`APP_MCP_ALLOWED_SCOPES`)에 `coord:draft`가 있어야 하고, 연결 동의에 `coord:draft`가 있으며 계정이 ADMIN이어야 한다. 실행 시 같은 조건을 다시 검사한다(없으면 403 `coord_admin_consent_required`). 요청 제한: 동의당 분당 30회.
+- `f2r_student_search {query, businessId?}` → `{businessId, matches:[{studentId, displayName(김○수), grade, classes, weekdays, lastCheckIn}], duplicateName}`. 재원생만, 부분 일치, 최대 10명. **실명·학교는 주지 않는다.**
+- `f2r_attendance_check {studentId, date?, businessId?}` → 그날 유효한 출결 목록(`eventType, label, at, source`).
+- `f2r_attendance_mark {requestId, studentId, eventType?, classId?, occurredAt?, businessId?}` → `{jobId, status:"review_required", approvalUrl, expiresAt, summary(가린 이름)}`. **기록하지 않는다.** 같은 계정·같은 `requestId`(8~64자)는 같은 작업. 그날 같은 구분의 유효한 기록이 있으면 `{status:"ALREADY_RECORDED", eventId, message}`로 초안을 만들지 않는다. `eventType` 기본 `CHECK_IN`(CHECK_IN·CHECK_OUT·ABSENT·LATE·EARLY_LEAVE). 시각은 한국 시간, 없으면 요청 시각(분 단위). 승인 유효시간 30분.
+- `f2r_job_status {jobId}` → 상태(`review_required`·`approved`·`completed`·`rejected`·`expired`·`failed`)와 가린 요약·결과.
+- 입력 오류(학생 없음·구분 오류 등)는 MCP 결과 `{error: "<안내 문장>"}`로 돌려준다.
+
+### 승인 화면·API (ADMIN, 본인 요청만)
+- 화면 `GET /admin/coord/approvals[?id=<jobId>]` — 휴대폰용. 비로그인은 `/?login=required&returnUrl=…`로 보내고 로그인 후 같은 화면으로 돌아온다. `id`의 요청을 위에 크게 보여 주고 실명·학교·학년·반·사업체·마감 시각과 [승인하고 기록]/[거절]을 둔다.
+- `GET /api/admin/coord/jobs` — 최근 50건(본인). 만료된 대기 건은 조회 시 `expired`로 바뀐다.
+- `GET /api/admin/coord/jobs/{jobId}` — 상세(실명·`planHash`·상태 이력 포함). 다른 계정의 요청은 403.
+- `POST /api/admin/coord/jobs/{jobId}/approve {planHash}` — 저장된 계획과 `planHash`가 같고 대기 중일 때만. 실행 직전 같은 날·같은 구분 중복을 다시 확인(있으면 `failed`, 기록 안 함) → `record` → 다시 읽어 확인 → `completed`(`result.eventId`). 이미 처리됨·시간 초과·화면이 최신이 아님 = **409** `{message}`.
+- `POST /api/admin/coord/jobs/{jobId}/reject` — `rejected`. 기록하지 않는다.
+- 출결 기록의 메모: `AI 코디네이터 요청 · 승인 <loginId>`, 출처 `MANUAL`.

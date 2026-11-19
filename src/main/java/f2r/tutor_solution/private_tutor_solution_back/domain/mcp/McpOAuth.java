@@ -76,6 +76,9 @@ public class McpOAuth {
   public static final String EASY_COLLECT_WRITE = "easy-collect:write";
   /** 카페 31312978의 설정된 게시판에 새 글 등록. 관리자 별도 동의, 기존 글 수정·삭제 불가. */
   public static final String CAFE_WRITE = "cafe:write";
+  public static final String PARENT_NOTICE_DRAFT = "parent-notice:draft";
+  /** F2R AI Coordinator: 학생 검색·출결 조회·출결 기록 초안(기록은 F2R 승인 화면에서 사람이 승인해야 실행). 관리자 전용. */
+  public static final String COORD_DRAFT = "coord:draft";
 
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
 
@@ -149,6 +152,8 @@ public class McpOAuth {
     all.add(STUDENT_ROSTER_READ);
     all.add(EASY_COLLECT_WRITE);
     all.add(CAFE_WRITE);
+    all.add(PARENT_NOTICE_DRAFT);
+    all.add(COORD_DRAFT);
     return all;
   }
 
@@ -268,6 +273,8 @@ public class McpOAuth {
             || selected.contains(STUDENT_ROSTER_READ)
             || selected.contains(EASY_COLLECT_WRITE)
             || selected.contains(CAFE_WRITE)
+            || selected.contains(PARENT_NOTICE_DRAFT)
+            || selected.contains(COORD_DRAFT)
             || "ADMIN".equals(p.role())
                 && selected.stream()
                     .anyMatch(

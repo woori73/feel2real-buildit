@@ -112,6 +112,8 @@ public class McpOAuthController {
             Map.entry("student-roster:read", "학생명단(시간표) 집계로 학원 발전 방안 논의 (관리자 전용, 실명·원본 파일 제외, 가명 S001…)"),
             Map.entry("easy-collect:write", "F2R 장부: 직접 로그인한 은행·카드·홈택스·여신협회 사이트에서 받은 거래 저장 (관리자 전용, 이체·삭제 불가)"),
             Map.entry("cafe:write", "카페 글 등록: 개인워크아웃 게시판에 새 글 등록·등록 이력 조회 (관리자 전용, 외부 카페에 게시, 수정·삭제 불가)"),
+            Map.entry("coord:draft", "F2R 코디네이터: 학생 검색·출결 조회·출결 기록 초안 (관리자 전용, 이름은 가려서 제공, 기록은 F2R 승인 화면에서 사람이 승인해야 실행)"),
+            Map.entry("parent-notice:draft", "내 학부모 카카오톡 안내문 초안 저장 (관리자·학원 원장, 연락처 조회 및 발송 권한 없음)"),
             Map.entry("offline_access", "30일 동안 연결 자동 갱신")));
     model.addAttribute(
         "scopes",

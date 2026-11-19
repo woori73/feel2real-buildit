@@ -79,7 +79,9 @@ public class McpController {
                       + " studio:propose 동의가 있을 때만 submit_studio_review·create_studio_task·upload_studio_asset로"
                       + " 검수 의견·수정 작업·새 버전을 등록합니다. 승인·공개는 사람이 결정합니다. 학원이사는 academy-move:write 별도 동의 후 read_academy_move·post_academy_move로 이슈별 글과 AI 정리·대화를 함께 저장합니다."
                       + " 학생명단(시간표)은 student-roster:read 별도 동의 후 read_student_roster의 이름 없는 집계(가명)만으로 학원 발전 방안을 논의합니다. F2R 장부는 easy-collect:write 별도 동의 후 easy_collection_sites로 기관 공식 주소를 받고, 사용자가 직접 로그인해 내려받은 거래를 save_easy_site_rows로 저장합니다."
-                      + " 카페는 cafe:write 별도 동의 후 cafe_status로 게시판 연결을 확인하고 publish_cafe_article로 사용자가 요청한 익명화 자료만 게시합니다. PENDING/UNKNOWN은 자동 재게시하지 마세요.");
+                      + " 카페는 cafe:write 별도 동의 후 cafe_status로 게시판 연결을 확인하고 publish_cafe_article로 사용자가 요청한 익명화 자료만 게시합니다. PENDING/UNKNOWN은 자동 재게시하지 마세요."
+                      + " 학부모 안내는 parent-notice:draft 동의 후 save_parent_notice_draft로 문구 초안만 저장합니다. 학부모 연락처를 요구하지 마세요."
+                      + " 출결은 coord:draft 동의 후 f2r_student_search로 학생을 찾고(같은 이름이 여럿이면 학년·반을 보여 주고 사용자가 고르게 함) f2r_attendance_mark로 초안만 만듭니다. 기록은 사용자가 approvalUrl에서 승인해야 실행되므로 '기록했다'고 말하지 말고 승인 링크를 안내하세요.");
           break;
         case "ping":
           result = Map.of();

@@ -353,7 +353,7 @@ class TestPrepFlowMySqlIntegrationTest {
     // given
     String code = "TP-NAESIN-APM2-2602-R01";
     MvcResult list = mockMvc.perform(get(API + "/exams").param("kind", "NAESIN").cookie(auth(OWNER_ID))).andReturn();
-    assertThat(json(list)).hasSize(16);
+    assertThat(json(list)).hasSize(27); // 압구정중2 16회 + 신구중2 Lesson 7·8 10회(V1120) + 종합 Final 1회(V1121)
     MvcResult start = mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Map.of("examCode", code))))
@@ -402,12 +402,12 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
-  @DisplayName("given 내신 16회분, when 회차별 배점을 더하면 문제지 표지 총점과 같고 종합 11~13회만 70문항이다")
+  @DisplayName("given 압구정중2 내신 16회분, when 회차별 배점을 더하면 문제지 표지 총점과 같고 종합 11~13회만 70문항이다")
   void naesinRounds_pointTotals() {
     // given / when
     List<Map<String, Object>> rows = jdbc.queryForList(
         "SELECT e.exam_code, COUNT(*) n, SUM(q.points) pts FROM tp_exams e JOIN tp_questions q ON q.exam_id = e.exam_id"
-            + " WHERE e.kind = 'NAESIN' GROUP BY e.exam_code ORDER BY e.exam_code");
+            + " WHERE e.kind = 'NAESIN' AND e.exam_code LIKE 'TP-NAESIN-APM2-%' GROUP BY e.exam_code ORDER BY e.exam_code");
     // then
     int[] expected = {134, 134, 135, 136, 135, 134, 136, 134, 135, 134, 237, 236, 237, 137, 138, 135};
     assertThat(rows).hasSize(16);
@@ -415,6 +415,62 @@ class TestPrepFlowMySqlIntegrationTest {
       assertThat(((Number) rows.get(i).get("pts")).intValue()).as("R%02d 배점 합", i + 1).isEqualTo(expected[i]);
       assertThat(((Number) rows.get(i).get("n")).intValue()).as("R%02d 문항 수", i + 1).isEqualTo(i >= 10 && i <= 12 ? 70 : 40);
     }
+  }
+
+  @Test
+  @DisplayName("given 신구중2 11회분(V1120 10회 + V1121 종합 Final), when 회차별로 세면 모두 40문항·100점이고 모두 고르기 문항은 정답이 둘 이상이다")
+  void singuRounds_countsPointsAndMultiKeys() {
+    // given / when
+    List<Map<String, Object>> rows = jdbc.queryForList(
+        "SELECT e.exam_code, COUNT(*) n, SUM(q.points) pts, SUM(q.task_type = 'NAESIN_MC5_MULTI') multi,"
+            + " SUM(q.task_type = 'NAESIN_MC5_MULTI' AND q.answer_key NOT LIKE '%,%') bad"
+            + " FROM tp_exams e JOIN tp_questions q ON q.exam_id = e.exam_id"
+            + " WHERE e.exam_code LIKE 'TP-NAESIN-SGM2-2602-R%' GROUP BY e.exam_code ORDER BY e.exam_code");
+    // then
+    assertThat(rows).hasSize(11);
+    for (Map<String, Object> r : rows) {
+      assertThat(((Number) r.get("n")).intValue()).as(r.get("exam_code") + " 문항 수").isEqualTo(40);
+      assertThat(((Number) r.get("pts")).intValue()).as(r.get("exam_code") + " 배점 합").isEqualTo(100);
+      assertThat(((Number) r.get("multi")).intValue()).as(r.get("exam_code") + " 모두 고르기").isPositive();
+      assertThat(((Number) r.get("bad")).intValue()).as(r.get("exam_code") + " 모두 고르기 정답 형식").isZero();
+    }
+  }
+
+  @Test
+  @DisplayName("given 신구중2 1회, when 모두 고르기 문항을 순서를 바꿔 다 맞히고 한 문항은 일부만 고르면 그 문항만 틀리고 배점이 빠진다")
+  void singuRound1_multiChoiceScoring() throws Exception {
+    // given
+    String code = "TP-NAESIN-SGM2-2602-R01";
+    JsonNode view = json(mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(Map.of("examCode", code)))).andReturn());
+    long attemptId = view.get("attemptId").asLong();
+    assertThat(view.get("questions")).hasSize(40);
+    assertThat(view.get("questions").get(0).get("prompt").asText()).startsWith("[[img:/naesin/singu-m2-2026-2/r01/q");
+
+    // when — 모두 고르기 문항은 정답 기호를 거꾸로 적고, 첫 모두 고르기 문항만 하나를 빼고 낸다.
+    List<Map<String, Object>> answers = new ArrayList<>();
+    int[] lost = {0};
+    jdbc.query("SELECT q.question_id, q.task_type, q.answer_key, q.points FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+            + " WHERE e.exam_code = ? ORDER BY q.order_no",
+        (java.sql.ResultSet rs) -> {
+          String key = rs.getString("answer_key");
+          String given = key;
+          if ("NAESIN_MC5_MULTI".equals(rs.getString("task_type"))) {
+            List<String> parts = new ArrayList<>(List.of(key.split(",")));
+            java.util.Collections.reverse(parts);
+            if (lost[0] == 0) { parts.remove(0); lost[0] = rs.getInt("points"); }
+            given = String.join(",", parts);
+          }
+          answers.add(Map.of("questionId", rs.getLong("question_id"), "answerText", given));
+        }, code);
+    JsonNode card = json(mockMvc.perform(post(API + "/attempts/" + attemptId + "/submit").cookie(auth(OWNER_ID))
+        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(Map.of("answers", answers)))).andReturn());
+
+    // then
+    assertThat(lost[0]).isPositive();
+    assertThat(card.get("totalMax").asInt()).isEqualTo(100);
+    assertThat(card.get("totalScaled").asInt()).isEqualTo(100 - lost[0]);
+    assertThat(card.get("sections").get(0).get("correct").asInt()).isEqualTo(39);
   }
 
   @Test

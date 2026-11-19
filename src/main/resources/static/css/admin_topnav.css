@@ -45,6 +45,9 @@
       gap: 12px;
       font-size: 13px;
     }
+    .topbar .user-info > a[data-f2r-home] {
+      color: #fff;
+    }
     .admin-nav-wrap { background: #fff; border-bottom: 1px solid #e2e8f0; }
     .admin-nav {
       max-width: 1180px;

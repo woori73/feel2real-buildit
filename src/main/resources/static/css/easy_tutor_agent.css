@@ -32,3 +32,70 @@ button,input,select,textarea{font:inherit}.ledger-head{height:68px;padding:0 24p
   .chat-composer textarea{font-size:16px;min-height:44px}
   .chat-composer button{min-width:64px;min-height:44px}
 }
+
+/* 월간 재무 현황 */
+.ledger-tabs[hidden] { display: none; }
+.dashboard-heading { align-items: center; }
+.dashboard-month { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.dashboard-month time { min-width: 106px; text-align: center; font-size: 14px; font-weight: 750; }
+.dashboard-month button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 24px;
+  cursor: pointer;
+}
+.dashboard-month button:disabled { color: #98a2b3; background: var(--soft); cursor: default; }
+.dashboard-error { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: var(--red); }
+.dashboard-error[hidden] { display: none; }
+.summary-card { display: block; color: var(--ink); text-decoration: none; }
+.summary-card strong { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.summary-card.balance { cursor: default; }
+.summary-card.receivable { background: #fff8ec; border-color: #f4dbb2; }
+.summary-card.receivable strong, .receivable-row > strong { color: var(--orange); }
+button.summary-card:hover, a.summary-card:hover { border-color: var(--blue); }
+.summary-card:focus-visible, .dashboard-month button:focus-visible,
+.dashboard-grid button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.composition-panel, .dashboard-recent { grid-column: 1 / -1; }
+.composition-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.composition-grid h3 { padding: 0 2px; color: #475467; }
+.breakdown-row { row-gap: 5px; }
+.breakdown-track { grid-column: 1 / -1; display: block; height: 5px; background: var(--soft); border-radius: 5px; }
+.breakdown-track span { display: block; height: 100%; border-radius: inherit; background: #4b68d5; }
+.breakdown-track.expense span { background: #be6736; }
+.receivable-list { list-style: none; }
+.receivable-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px;
+  border-bottom: 1px solid #f0f2f5;
+  font-size: 13px;
+}
+.receivable-row:last-child { border-bottom: 0; }
+.receivable-row > strong { white-space: nowrap; }
+.receivable-row small { display: block; margin-top: 3px; color: var(--muted); }
+#receivables { scroll-margin-top: 86px; }
+.attention-list { max-height: 320px; overflow-y: auto; }
+div.attention-row { cursor: default; }
+.transaction-breakdown { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+
+.ledger-layout { grid-template-columns: minmax(0, 1fr); }
+.agent-panel { visibility: hidden; }
+.agent-panel.open { visibility: visible; }
+.agent-close, .agent-toggle { display: block; cursor: pointer; }
+@media (min-width: 1101px) {
+  .agent-panel:not(.open) { display: none; }
+  .ledger-layout:has(.agent-panel.open) { grid-template-columns: minmax(0, 1fr) 350px; }
+  .ledger-layout:has(.agent-panel.open) .agent-panel { height: calc(100vh - 150px); }
+}
+@media (max-width: 760px) {
+  .dashboard-heading { flex-wrap: wrap; gap: 10px; }
+  .composition-grid { grid-template-columns: 1fr; gap: 16px; }
+  .dashboard-month { gap: 4px; }
+  .dashboard-month time { min-width: 94px; }
+}

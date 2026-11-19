@@ -4,6 +4,8 @@
 
 - `tp_questions.points` INT NULL(V1115): 문항 배점. 내신 실전 연습(`kind='NAESIN'`)만 채우고 SAT·TOEFL 문항은 `NULL`. Entity `TpQuestion.points`.
 - V1116: 압구정중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 16회분. `tp_exams` 16행(`TP-NAESIN-APM2-2602-R01`~`R16`, `kind='NAESIN'`, `time_limit_sec=7200`) + `tp_questions` 730행(1~10회·14~16회 40문항, 종합 11~13회 70문항, `section='EN'`, `task_type='NAESIN_MC5'`, ①~⑤ → `answer_key` A~E). 문항은 원본 문제지 PDF를 문항 단위로 자른 그림(`static/naesin/apgujeong-m2-2026-2/rNN/qNN.webp`, 공통 지문은 `pAA-BB.webp`)을 `prompt`/`body_text`에 `[[img:경로]]`로 담는다. 회차별 배점 합계 = 문제지 표지 총점.
+- V1120: 신구중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 Lesson 7 1~5회·Lesson 8 6~10회. `tp_exams` 10행(`TP-NAESIN-SGM2-2602-R01`~`R10`) + `tp_questions` 400행(회당 40문항·100점). "모두 고르면" 문항은 `task_type='NAESIN_MC5_MULTI'`, `answer_key`는 `B,D`처럼 쉼표로 잇는다. 그림은 `static/naesin/singu-m2-2026-2/rNN/`.
+- V1121: 신구중 2학년 2학기 기말 대비 F2R 예상문제 11회(Lesson 7·8 종합 Final). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R11`) + `tp_questions` 40행(100점, 모두 고르기 5문항). 그림은 `static/naesin/singu-m2-2026-2/r11/`.
 - V1117: 발음부호 문항 24개 해설 수정(정답 보기를 강세가 아닌 발음부호 오류로 바꿈, 정답·배점 그대로). 스키마 변경 없음.
 - 내신 이용 범위: 일반 회원은 학교마다 1회만, 관리자·재원생(출결 학생부 `easy_students` ENROLLED와 이름 또는 휴대전화가 같은 회원)은 전 회차. 스키마 변경 없음(`NaesinAccessService`).
 - 내신 채점: 섹션 `scaled` = 맞힌 문항 배점 합, `scaleMax` = 배점 합계. 화면 `/naesintest`는 [design/naesintest.md](design/naesintest.md).
@@ -2034,6 +2036,17 @@ HANDOFF(docs/handoff/instagram-auto-feed/HANDOFF.md) §7의 6개 표를 다른 �
 
 초기 데이터: 로보MD에서 옮긴 3개 규칙(F2R 영어학습·새출발기금 전자책·카페·AI AGENT × F2R)과 브랜드 3개, 참고 이미지 3장. 규칙은 꺼진 채(enabled=false)·계정 미지정으로 들어간다.
 
+## AI 코디네이터 작업 (coord_jobs·coord_job_events, V1123)
+
+AI가 MCP로 만든 업무 초안과 사람 승인 기록. 1단계는 출결(`kind=ATTENDANCE`)만. 기존 테이블은 바꾸지 않는다. 시각은 한국 시간 벽시계.
+
+| 테이블 | 핵심 칸 | 비고 |
+|---|---|---|
+| `coord_jobs` | job_id(UUID), user_id, business_id, request_id(UNIQUE user_id+request_id), kind, status(`review_required`/`approved`/`completed`/`rejected`/`expired`/`failed`), source(`MCP`), client_name(MCP grant id), plan_json(실명 포함 계획 — 승인 화면에만 표시), plan_hash(SHA-256), result_json, error, version(낙관적 잠금), created_at·updated_at·expires_at(생성 + 30분) | 승인은 plan_hash 일치 + 대기 상태에서만. 삭제·수정 API 없음 |
+| `coord_job_events` | event_id, job_id(FK), at, actor(`MCP`/`USER`/`SERVER`), actor_login_id, from_status, to_status, message | 감사 기록. 삭제·수정 API 없음 |
+
+CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권한: ADMIN 본인 요청만.
+
 ## 바뀌는 입시 해설 글 (admissions_articles, V1111)
 
 입시상담 AI 화면의 「바뀌는 입시」 같은 해설 글. **상담 AI 근거(공식자료·지식 항목·검색 인덱스)와 연결하지 않는다**(해설이며 기사·영상 출처가 섞임). 다른 입시 테이블과 외래키 없음.
@@ -2052,4 +2065,9 @@ HANDOFF(docs/handoff/instagram-auto-feed/HANDOFF.md) §7의 6개 표를 다른 �
 | created_at / updated_at | DATETIME(6) | |
 
 - 처음 3편(1-①·1-②·1-③, 2026-11-13)은 V1111에 함께 들어 있다. 이후 글은 관리자 화면 `/admin/admissions/articles`에서 배포 없이 추가한다.
+- 후속 3편(4-후속①·1-후속①·1-후속②, 2026-11-19)은 V1122에 `INSERT IGNORE`로 들어 있다(관리자 화면에서 같은 회차를 먼저 올렸으면 건너뜀).
 - CRUD: 공개 읽기(비로그인) / 관리자 추가·수정·숨김. 물리 삭제 없음.
+
+## 학부모 카카오톡 초안
+
+`parent_notice_drafts`는 원장 계정과 당시 역할, 분류(공지/홍보), 제목, 본문, 작성 경로(대시보드/MCP), UTC 작성시각을 보존한다. 주키는 작성자 계정·역할·요청 UUID에서 결정되며, 같은 요청의 중복 저장을 막는다. 수신인 정보, 카카오 계정 식별자와 발송 결과를 이 테이블에 저장하지 않는다.

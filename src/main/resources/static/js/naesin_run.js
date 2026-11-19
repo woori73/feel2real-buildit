@@ -58,11 +58,14 @@
     if (l <= 0) submit(true);
   }
 
+  // 칠한 칸인지: 모두 고르기 문항은 답이 'B,D'처럼 쉼표로 이어진다.
+  function isOn(q, letter) { const v = answers[q.questionId]; return !!v && v.split(',').indexOf(letter) >= 0; }
+
   function render() {
     const q = qs[idx];
     const passage = NT.imgPath(q.bodyText);
     const img = NT.imgPath(q.prompt);
-    const sel = answers[q.questionId];
+    const multi = NT.isMulti(q);
     $('paper').innerHTML =
       '<div class="nt-qbar"><button type="button" class="nt-nav" id="nt-prev"' + (idx === 0 ? ' disabled' : '') + ' aria-label="이전 문항">이전</button>'
       + '<span class="nt-qpos"><b>' + (idx + 1) + '</b> / ' + qs.length + '</span>'
@@ -73,11 +76,11 @@
       + (img ? '<img class="nt-img" src="' + img + '" alt="' + (idx + 1) + '번 문항">' : '<p class="nt-msg">문항 그림을 불러오지 못했습니다.</p>')
       + '</div>'
       // 문항 아래 답란: 실제 OMR 카드의 한 줄(번호 칸 + 세로로 긴 타원 ①~⑤)처럼 그린다.
-      + '<div class="nt-pick" role="radiogroup" aria-label="' + (idx + 1) + '번 답 고르기">'
+      + '<div class="nt-pick" role="' + (multi ? 'group' : 'radiogroup') + '" aria-label="' + (idx + 1) + '번 답 고르기' + (multi ? '(모두 고르기)' : '') + '">'
       + '<div class="nt-pick-head"><span>번호</span><span>답 란</span></div>'
       + '<div class="nt-pick-row"><span class="nt-pick-no">' + (idx + 1) + '</span>'
-      + q.choices.map((c, i) => '<button type="button" class="nt-ob' + (sel === NT.letter(i) ? ' is-on' : '') + '" role="radio" aria-checked="' + (sel === NT.letter(i)) + '" aria-label="' + NT.esc(c) + '" data-pick="' + NT.letter(i) + '">' + (i + 1) + '</button>').join('')
-      + '</div></div>';
+      + q.choices.map((c, i) => '<button type="button" class="nt-ob' + (isOn(q, NT.letter(i)) ? ' is-on' : '') + '" role="' + (multi ? 'checkbox' : 'radio') + '" aria-checked="' + isOn(q, NT.letter(i)) + '" aria-label="' + NT.esc(c) + '" data-pick="' + NT.letter(i) + '">' + (i + 1) + '</button>').join('')
+      + '</div>' + (multi ? '<p class="nt-pick-note">답을 모두 칠하세요. 칠한 칸을 다시 누르면 지워집니다.</p>' : '') + '</div>';
     $('paper').scrollTop = 0; window.scrollTo({ top: 0 });
     $('nt-prev').addEventListener('click', () => go(idx - 1));
     $('nt-next').addEventListener('click', () => go(idx + 1));
@@ -89,9 +92,17 @@
   }
 
   // 실제 OMR처럼 이미 칠한 칸을 다시 눌러도 지워지지 않는다(두 번 눌러 답이 사라지는 일 방지). 바꾸려면 다른 칸을 누른다.
+  // 모두 고르기 문항은 칸마다 칠하고 지울 수 있고, 답은 'B,D'처럼 기호 순서대로 저장한다.
   function pick(q, letter) {
-    if (submitting || answers[q.questionId] === letter) return;
-    answers[q.questionId] = letter;
+    if (submitting) return;
+    if (NT.isMulti(q)) {
+      const set = new Set((answers[q.questionId] || '').split(',').filter(Boolean));
+      if (set.has(letter)) set.delete(letter); else set.add(letter);
+      answers[q.questionId] = set.size ? [...set].sort().join(',') : null;
+    } else {
+      if (answers[q.questionId] === letter) return;
+      answers[q.questionId] = letter;
+    }
     dirty.add(String(q.questionId));
     clearTimeout(pick.t); pick.t = setTimeout(flush, 600);
     renderOmr();
@@ -104,7 +115,7 @@
     const done = qs.filter(q => answers[q.questionId]).length;
     $('nt-omr-rows').innerHTML = qs.map((q, i) => '<div class="nt-omr-row' + (i === idx ? ' is-current' : '') + (marked[q.questionId] ? ' is-marked' : '') + '" data-i="' + i + '">'
       + '<button type="button" class="nt-omr-no" data-go="' + i + '" aria-label="' + (i + 1) + '번으로">' + (i + 1) + '</button>'
-      + q.choices.map((c, k) => '<button type="button" class="nt-omr-b' + (answers[q.questionId] === NT.letter(k) ? ' is-on' : '') + '" data-q="' + i + '" data-k="' + NT.letter(k) + '" aria-label="' + (i + 1) + '번 ' + c + '">' + (k + 1) + '</button>').join('')
+      + q.choices.map((c, k) => '<button type="button" class="nt-omr-b' + (isOn(q, NT.letter(k)) ? ' is-on' : '') + '" data-q="' + i + '" data-k="' + NT.letter(k) + '" aria-label="' + (i + 1) + '번 ' + c + '">' + (k + 1) + '</button>').join('')
       + '</div>').join('');
     $('nt-omr-done').textContent = done + ' / ' + qs.length;
     $('nt-omr-left').textContent = qs.length - done;

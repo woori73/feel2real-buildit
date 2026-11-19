@@ -301,6 +301,20 @@ public class EasyAttendanceService {
     return eventView(saved);
   }
 
+  /**
+   * 그날 같은 구분의 유효한(정정되지 않은) 출결이 이미 있으면 그 기록을 돌려준다. AI 코디네이터의 중복 기록 방지용(읽기 전용).
+   */
+  @Transactional(readOnly = true)
+  public java.util.Optional<EventView> activeEventOn(Long businessId, Long studentId, String eventType, LocalDate day) {
+    requireBusiness(businessId);
+    requireStudent(studentId);
+    EasyAttendanceEvent.Type t = type(eventType);
+    return eventRepository.findAllByStudent_StudentIdOrderByOccurredAtDesc(studentId).stream()
+        .filter(e -> e.getBusiness().getBusinessId().equals(businessId))
+        .filter(e -> !e.isSuperseded() && e.getEventType() == t && e.getOccurredAt().toLocalDate().equals(day))
+        .findFirst().map(EasyAttendanceService::eventView);
+  }
+
   /** 학생 한 명의 모든 출결(정정 이력 포함, 최신순). */
   @Transactional(readOnly = true)
   public List<EventView> studentHistory(Long businessId, Long studentId) {
