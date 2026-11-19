@@ -542,7 +542,8 @@ class LandingEdunovaTemplateContractTest {
     String sec = html.substring(html.indexOf("id=\"exam-blog\""), html.indexOf("</section>", html.indexOf("id=\"exam-blog\"")));
     // then
     assertThat(sec).contains("<span>압구정중2</span>", "--w:93.3%", "<em>93.3%</em>")
-        .contains("적중률 = 예상문제와 같거나 비슷하게 나온 문항 ÷ 예상문제 범위 문항", "압구정중2 28/30", "압구정중3 29/31(36문항 전체 80.6%)", "언북중3 20/21", "신구중3 30/31(실제 시험 전체 31문항)")
+        .contains("적중률 = 예상문제와 같거나 비슷하게 나온 문항 ÷ 기준 문항", "기준 문항은 학교마다 다릅니다", "압구정중2 28/30(시험 전체)",
+            "압구정중3 29/31(대화문 5문항 뺀 예상문제 범위, 36문항 전체 80.6%)", "언북중3 20/21(대화문 5문항 뺀 예상문제 범위)", "신구중3 30/31(시험 전체)")
         .contains("신구중3 적중률 96.8% 블로그", "압구정중2 2학기 중간 적중률 93.3% 블로그", "언북중3 2학기말 적중률 95.2% 블로그", "--w:95.2%")
         .doesNotContain("신구중3 적중률 96% 블로그");
   }
