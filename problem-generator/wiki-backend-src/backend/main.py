@@ -3125,6 +3125,18 @@ def get_generated_test(test_id: int):
     return {'test': _generated_test_row(row), 'questions': questions}
 
 
+@app.delete('/api/generated-tests/{test_id}')
+def delete_generated_test(test_id: int):
+    """생성 시험 1건과 그 문항(test_id로 연결된 generated_questions)을 함께 지운다.
+    같은 external_id로 고친 시험을 다시 저장하려면 먼저 이전 시험을 지워야 한다(저장은 idempotent)."""
+    with get_db() as conn:
+        if not conn.execute('SELECT 1 FROM generated_tests WHERE id=?', (test_id,)).fetchone():
+            raise HTTPException(status_code=404, detail='생성 시험을 찾지 못했습니다.')
+        deleted = conn.execute('DELETE FROM generated_questions WHERE test_id=?', (test_id,)).rowcount
+        conn.execute('DELETE FROM generated_tests WHERE id=?', (test_id,))
+    return {'ok': True, 'test_id': test_id, 'deleted_questions': deleted}
+
+
 @app.get('/api/source-materials')
 def list_source_materials(school: Optional[str] = None, grade: Optional[str] = None):
     query = ('SELECT sm.*, (SELECT COUNT(*) FROM generated_tests t WHERE t.source_material_id = sm.id) '

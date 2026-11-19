@@ -30,8 +30,16 @@ export const renderMarkupHtml = (s: string) => {
   // 안전장치: 위 복구 로직으로도 짝을 못 찾은 손상된 토큰은 사용자 화면에 그대로 노출하지 않고 제거한다.
   x = x.replace(/\[\[\/?u\]\]/g, '')
   x = x.replace(/(^|\s)([①②③④⑤])(?=\s|$)/g, '$1<span class="position-mark">$2</span>')
-  return x
+  return renderFigureMarkers(x)
 }
+
+// 문항 그림: [[img:/naesin/…/파일.webp]] 표시를 같은 사이트의 그림으로 보여 준다(F2R 예상문제 그림).
+// 주소는 /naesin/ 아래 그림 파일만 허용한다 — 다른 사이트 주소·상위 폴더(..)는 그리지 않고 지운다.
+const FIGURE_MARKER = /\[\[img:([^\]\s]+)\]\]/g
+const SAFE_FIGURE = /^\/naesin\/[A-Za-z0-9_\-/.]+\.(?:webp|png|jpe?g)$/
+export const renderFigureMarkers = (html: string) =>
+  String(html || '').replace(FIGURE_MARKER, (_m, src: string) =>
+    SAFE_FIGURE.test(src) && !src.includes('..') ? `<img class="q-figure" src="${src}" alt="문항 그림" loading="lazy">` : '')
 
 export const plainMarkup = (s: string) => stripChoicePrefix(normalizeUnderlineMarkup(s)).replace(/\[\[u\]\]([\s\S]*?)\[\[\/u\]\]/g, '$1').replace(/\[\[\/?u\]\]/g, '')
 
