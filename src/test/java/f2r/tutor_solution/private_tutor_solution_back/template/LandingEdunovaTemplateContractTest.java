@@ -92,7 +92,7 @@ class LandingEdunovaTemplateContractTest {
     assertThat(html).doesNotContain("data-home-panel", "id=\"homeJump\"", "id=\"homeSidebar\"");
     assertThat(render("public/landing", "", "", "", "")).contains("게임 공개 준비 중")
         .doesNotContain("id=\"homeReviewGame\"", "id=\"homeGame\"");
-    assertThat(html).contains("/video/landing/f2r-exam-remotion-v3-20261029.mp4", "id=\"examPromoSound\"");
+    assertThat(html).contains("/video/landing/f2r-class-ad-20261120.mp4", "id=\"examPromoSound\"");
     assertThat(render("public/landing", "")).doesNotContain("id=\"examPromo\"", "id=\"examPromoVideo\"")
         .doesNotContain("id=\"aiHome\"", "id=\"homeChat\""); // 홈 AI 비서(서수니·세븐)는 2026-11-15에 내렸다
   }
