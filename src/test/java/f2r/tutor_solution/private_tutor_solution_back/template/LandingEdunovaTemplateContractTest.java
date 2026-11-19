@@ -530,6 +530,20 @@ class LandingEdunovaTemplateContractTest {
     // then
     assertThat(html.indexOf("id=\"digital-exam\"")).isLessThan(html.indexOf("id=\"service\""));
     assertThat(sec).contains("디지털 영어 기말고사", "직보 쇼츠 인강", "40문항 20분", "70문항 35분", "자동 채점", "href=\"/naesintest\"",
-        "적중률 근거", "압구정중3 93.5%", "언북중3 95%", "신구중3 96.8%");
+        "적중률 근거", "압구정중2 93.3%", "압구정중3 93.5%", "언북중3 95%", "신구중3 96.8%");
+  }
+
+  @Test
+  @DisplayName("given 첫 화면 when 학교별 적중률 블로그를 보면 then 압구정중2 93.3% 막대와 산출 기준, 정확한 블로그 수치가 보인다")
+  void examBlogShowsHitRateBasis() {
+    // given
+    String html = render();
+    // when
+    String sec = html.substring(html.indexOf("id=\"exam-blog\""), html.indexOf("</section>", html.indexOf("id=\"exam-blog\"")));
+    // then
+    assertThat(sec).contains("<span>압구정중2</span>", "--w:93.3%", "<em>93.3%</em>")
+        .contains("적중률 = 예상문제와 같거나 비슷하게 나온 문항 ÷ 예상문제 범위 문항", "압구정중2 28/30", "압구정중3 29/31(36문항 전체 80.6%)")
+        .contains("신구중3 적중률 96.8% 블로그", "압구정중2 2학기 중간 적중률 93.3% 블로그")
+        .doesNotContain("신구중3 적중률 96% 블로그");
   }
 }
