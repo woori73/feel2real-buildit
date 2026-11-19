@@ -793,9 +793,11 @@ LMS 주소가 성립하지 않는다(404).
     ```json
     {
       "loginId": "student01",
-      "password": "plain-password"
+      "password": "plain-password",
+      "rememberMe": true
     }
     ```
+  - `rememberMe`(선택, 기본 false): "로그인 상태 유지" 체크. `true`면 토큰 만료와 쿠키 `Max-Age`를 30일로 발급한다. 없거나 `false`면 기존 기본값(`app.jwt.expiration-seconds`, 24시간). 임시 비밀번호 로그인(`passwordChangeRequired=true`)은 체크해도 기본값으로 발급한다.
 - Response:
   - 성공: `200 OK`, `Set-Cookie`로 access token 저장, body:
     ```json

@@ -159,7 +159,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ loginId: loginId, password: password })
+        body: JSON.stringify({ loginId: loginId, password: password, rememberMe: !!(form.rememberMe && form.rememberMe.checked) })
       });
       if (!res.ok) {
         setLoginMessage(await res.text() || '로그인에 실패했습니다.', true);

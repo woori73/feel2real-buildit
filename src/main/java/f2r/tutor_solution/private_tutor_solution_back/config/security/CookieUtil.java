@@ -27,8 +27,13 @@ public class CookieUtil {
 
   /** 발급된 access token을 HTTP-only Cookie로 응답에 부착. */
   public void writeAccessToken(HttpServletResponse response, String token) {
+    writeAccessToken(response, token, props.expirationSeconds());
+  }
+
+  /** maxAgeSeconds 동안 브라우저에 남는 로그인 쿠키를 부착한다("로그인 상태 유지"). 토큰 만료와 같은 값을 넘긴다. */
+  public void writeAccessToken(HttpServletResponse response, String token, long maxAgeSeconds) {
     ResponseCookie cookie = applyDomain(baseCookie(token)
-        .maxAge(props.expirationSeconds()))
+        .maxAge(maxAgeSeconds))
         .build();
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
   }

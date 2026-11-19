@@ -44,6 +44,8 @@
     }
 
     .form-group { margin-bottom: 20px; }
+    .remember-me { display: flex; align-items: center; gap: 8px; margin: -6px 0 18px; font-size: 14px; color: #475569; cursor: pointer; }
+    .remember-me input { width: 16px; height: 16px; margin: 0; padding: 0; cursor: pointer; }
 
     label {
       display: block;
