@@ -115,4 +115,22 @@ class JwtTokenProviderTest {
     assertThat(provider.passwordChangeRequired(normal)).isFalse();
     assertThat(provider.parse(temp).userId()).isEqualTo(7L);
   }
+
+  @Test
+  @DisplayName("ttlSeconds를 넘기면 그 기간만큼 유효한 토큰을 발급한다")
+  void issueWithTtl_usesGivenTtl() {
+    // given
+    JwtTokenProvider provider = providerWith(EXP_SECONDS);
+    long ttl = 2_592_000L;
+
+    // when
+    String token = provider.issue(42L, "alice", "ADMIN", null, false, ttl);
+
+    // then
+    SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    var claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+    long seconds = (claims.getExpiration().getTime() - claims.getIssuedAt().getTime()) / 1000;
+    assertThat(seconds).isEqualTo(ttl);
+    assertThat(provider.parse(token).loginId()).isEqualTo("alice");
+  }
 }

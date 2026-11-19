@@ -80,4 +80,30 @@ class CookieUtilTest {
     // then
     assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).doesNotContain("Domain");
   }
+
+  @Test
+  void write_withMaxAge_setsGivenMaxAge() {
+    // given: "로그인 상태 유지" 30일
+    CookieUtil cookieUtil = cookieUtil(null);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    // when
+    cookieUtil.writeAccessToken(response, "token-value", 2_592_000L);
+
+    // then
+    assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).contains("Max-Age=2592000");
+  }
+
+  @Test
+  void write_withoutMaxAge_usesConfiguredExpiration() {
+    // given: 기본 만료 3600초
+    CookieUtil cookieUtil = cookieUtil(null);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    // when
+    cookieUtil.writeAccessToken(response, "token-value");
+
+    // then
+    assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).contains("Max-Age=3600");
+  }
 }

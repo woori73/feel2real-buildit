@@ -59,6 +59,12 @@ public class JwtTokenProvider {
 
   /** passwordChangeRequired=true면 "새 비밀번호 설정 전용" 토큰이 된다. */
   public String issue(Long userId, String loginId, String role, String credentialStamp, boolean passwordChangeRequired) {
+    return issue(userId, loginId, role, credentialStamp, passwordChangeRequired, expirationSeconds);
+  }
+
+  /** ttlSeconds 동안 유효한 토큰을 발급한다. "로그인 상태 유지" 로그인이 기본 만료보다 긴 값을 넘긴다. */
+  public String issue(Long userId, String loginId, String role, String credentialStamp, boolean passwordChangeRequired,
+      long ttlSeconds) {
     Instant now = Instant.now();
     var builder = Jwts.builder();
     if (credentialStamp != null) builder.claim(CLAIM_CREDENTIAL_STAMP, credentialStamp);
@@ -68,7 +74,7 @@ public class JwtTokenProvider {
         .claim(CLAIM_LOGIN_ID, loginId)
         .claim(CLAIM_ROLE, role)
         .issuedAt(Date.from(now))
-        .expiration(Date.from(now.plusSeconds(expirationSeconds)))
+        .expiration(Date.from(now.plusSeconds(ttlSeconds)))
         .signWith(signingKey, Jwts.SIG.HS256)
         .compact();
   }

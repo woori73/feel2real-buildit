@@ -44,7 +44,7 @@ public class AuthController {
             @RequestBody LoginRequest request,
             HttpServletResponse response) {
         LoginResponse user = userService.login(request);
-        writeLoginCookie(response, user);
+        writeLoginCookie(response, user, request.rememberMeChecked());
         return ResponseEntity.ok(user);
     }
 
@@ -66,11 +66,23 @@ public class AuthController {
 
     /** ADMIN 토큰에만 자격 증명 stamp를 넣는다(ID·비밀번호 교체 시 기존 ADMIN 세션 무효화). 임시 비밀번호 상태면 설정 전용 토큰. */
     private void writeLoginCookie(HttpServletResponse response, LoginResponse user) {
+        writeLoginCookie(response, user, false);
+    }
+
+    /**
+     * rememberMe=true면 토큰과 쿠키를 {@link #REMEMBER_ME_SECONDS}(30일) 동안 유지한다. 임시 비밀번호 로그인은
+     * 설정 전용 토큰이므로 길게 주지 않는다.
+     */
+    private void writeLoginCookie(HttpServletResponse response, LoginResponse user, boolean rememberMe) {
         var validator = "ADMIN".equals(user.role()) ? adminSessionValidator.getIfAvailable() : null;
         String stamp = validator == null ? null : validator.stampFor(user.userId());
-        String token = tokenProvider.issue(user.userId(), user.loginId(), user.role(), stamp, user.passwordChangeRequired());
-        cookieUtil.writeAccessToken(response, token);
+        long ttl = rememberMe && !user.passwordChangeRequired() ? REMEMBER_ME_SECONDS : tokenProvider.expirationSeconds();
+        String token = tokenProvider.issue(user.userId(), user.loginId(), user.role(), stamp, user.passwordChangeRequired(), ttl);
+        cookieUtil.writeAccessToken(response, token, ttl);
     }
+
+    /** "로그인 상태 유지" 유지 기간: 30일. */
+    static final long REMEMBER_ME_SECONDS = 30L * 24 * 60 * 60;
 
     public record TemporaryPasswordChangeRequest(String newPassword, String confirmPassword) {}
 
