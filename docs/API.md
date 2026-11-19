@@ -5540,6 +5540,7 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 | POST | `/api/admin/admissions/articles/{id}/visibility` | ADMIN | `{visible:true|false}` 숨김/다시 공개 |
 
 - 검증 오류는 400 `{message}`. 본문 HTML은 저장할 때 허용 태그(p, h2, h3, ul, ol, li, table, thead, tbody, tr, th, td, strong, em, a[href http·https])만 남기고(스크립트·이벤트 속성·style 제거), 출력할 때 한 번 더 정리한다. 삭제 API는 없다.
+- 예약 게시(2026-11-19): `publishedOn`이 한국 날짜로 오늘보다 뒤인 글은 공개 목록·본문 화면·`/api/admissions/articles`에 나오지 않고(본문 주소는 404), 그날 0시(KST)부터 저절로 나온다. 관리자 목록에는 그대로 보인다. 미리 여러 날치 글을 `visible:true`로 넣어 두면 하루씩 공개된다.
 
 ## 학부모 카카오톡 초안
 

@@ -9,7 +9,10 @@ import static org.mockito.Mockito.when;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsArticle;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsArticleRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsArticleService.Form;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -178,5 +181,44 @@ class AdmissionsArticleServiceTest {
         // then
         assertThat(v.visible()).isFalse();
         assertThat(a.getTitle()).isEqualTo("t");
+    }
+
+    @Test
+    @DisplayName("given 게시일이 오늘·내일인 공개 글 when 공개 목록·글 보기(한국 날짜 기준) then 오늘 글만 나오고 내일 글은 그날이 되어야 나온다")
+    void scheduledArticleAppearsOnItsDate() {
+        // given 2026-11-19 23:30 KST (UTC 14:30)
+        Clock lateNight = Clock.fixed(Instant.parse("2026-11-19T14:30:00Z"), ZoneId.of("UTC"));
+        AdmissionsArticleService scheduled = new AdmissionsArticleService(repository, lateNight);
+        AdmissionsArticle today = AdmissionsArticle.builder().articleId(8L).series("바뀌는 입시").episode("2-①").title("오늘 글")
+                .summary("s").bodyHtml("<p>b</p>").publishedOn(LocalDate.of(2026, 11, 19)).visible(true).sortOrder(1).build();
+        AdmissionsArticle tomorrow = AdmissionsArticle.builder().articleId(9L).series("바뀌는 입시").episode("2-④").title("내일 글")
+                .summary("s").bodyHtml("<p>b</p>").publishedOn(LocalDate.of(2026, 11, 20)).visible(true).sortOrder(1).build();
+        when(repository.findAllByVisibleTrueOrderByPublishedOnDescSortOrderAscArticleIdAsc()).thenReturn(List.of(tomorrow, today));
+        when(repository.findByArticleIdAndVisibleTrue(9L)).thenReturn(Optional.of(tomorrow));
+        // when
+        var list = scheduled.listPublic();
+        // then
+        assertThat(list).extracting(AdmissionsArticleService.Summary::episode).containsExactly("2-①");
+        assertThatThrownBy(() -> scheduled.getPublic(9L)).isInstanceOf(IllegalArgumentException.class);
+
+        // given 다음 날 00:10 KST (UTC 15:10)
+        AdmissionsArticleService nextDay = new AdmissionsArticleService(repository,
+                Clock.fixed(Instant.parse("2026-11-19T15:10:00Z"), ZoneId.of("UTC")));
+        // when / then
+        assertThat(nextDay.listPublic()).extracting(AdmissionsArticleService.Summary::episode).containsExactly("2-④", "2-①");
+        assertThat(nextDay.getPublic(9L).title()).isEqualTo("내일 글");
+    }
+
+    @Test
+    @DisplayName("given 게시일이 내일인 글 when 관리자 목록 then 예약 글도 그대로 보인다")
+    void adminListShowsScheduledArticles() {
+        // given
+        AdmissionsArticleService scheduled = new AdmissionsArticleService(repository,
+                Clock.fixed(Instant.parse("2026-11-19T01:00:00Z"), ZoneId.of("UTC")));
+        AdmissionsArticle tomorrow = AdmissionsArticle.builder().articleId(9L).series("바뀌는 입시").episode("2-④").title("내일 글")
+                .summary("s").bodyHtml("<p>b</p>").publishedOn(LocalDate.of(2026, 11, 20)).visible(true).sortOrder(1).build();
+        when(repository.findAllByOrderByPublishedOnDescSortOrderAscArticleIdAsc()).thenReturn(List.of(tomorrow));
+        // when / then
+        assertThat(scheduled.listAll()).extracting(AdmissionsArticleService.AdminView::episode).containsExactly("2-④");
     }
 }
