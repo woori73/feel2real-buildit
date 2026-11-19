@@ -447,7 +447,7 @@
       <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
       <div class="hw-plan" aria-label="회차별 문항 수"><div><span>1주 1회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>1주 2회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 3회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 4회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div></div>
       <div class="hw-price"><span th:text="'총 ' + ${examOffer.totalQuestions} + '문항'">총 160문항</span><b th:text="${examOffer.priceLabel}">20,000원</b></div>
-      <div class="exam-contact-actions"><a class="en-btn en-btn-primary" href="/exam-service?sample=1">클라우드리뷰 무료신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
+      <div class="exam-contact-actions"><!-- 홈 대표 무료신청 버튼(2026-11-19 영상 아래 카드에서 이곳으로 옮김, e2e가 #homeIntakeCta로 찾는다) --><a id="homeIntakeCta" class="en-btn en-btn-primary" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
       <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
     </section>
 
