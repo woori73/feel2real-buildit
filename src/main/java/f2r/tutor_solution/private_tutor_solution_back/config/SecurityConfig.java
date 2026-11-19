@@ -492,7 +492,9 @@ public class SecurityConfig {
                 "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
                 // Actuator health (배포 헬스체크용)
                 "/actuator/health",
-                "/robots.txt", "/sitemap.xml"
+                "/robots.txt", "/sitemap.xml",
+                // F2R 웹앱(PWA) 껍데기: 개인 자료 없음(manifest·service worker·연결 끊김 안내)
+                "/manifest.json", "/sw.js", "/offline.html"
             ).permitAll()
 
             // 인증 관련 public API

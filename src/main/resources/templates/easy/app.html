@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>F2R 학원 관리</title>
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <th:block th:replace="~{fragments/_pwa :: head}"></th:block>
+  <style>
+    :root { --ink: #1a202c; --muted: #718096; --line: #e2e8f0; --bg: #f7fafc; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--ink); }
+    header { background: var(--ink); color: #fff; padding: 18px 16px 14px; }
+    header h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 8px; }
+    header p { margin: 6px 0 0; font-size: 13px; color: #cbd5e0; }
+    main { padding: 16px; max-width: 520px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tile { display: flex; flex-direction: column; gap: 6px; min-height: 104px; padding: 14px; border-radius: 14px; background: #fff;
+      border: 1px solid var(--line); color: var(--ink); text-decoration: none; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+    .tile .ico { font-size: 26px; line-height: 1; }
+    .tile strong { font-size: 16px; }
+    .tile small { color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .tile.claude { grid-column: 1 / -1; background: #fdf6ee; border-color: #f2d7b8; min-height: 0; }
+    .install { margin-top: 16px; padding: 14px; border-radius: 14px; background: #fff; border: 1px dashed #cbd5e0; font-size: 13px; color: #4a5568; }
+    .install button { margin-top: 8px; width: 100%; padding: 12px; border: 0; border-radius: 10px; background: var(--ink); color: #fff; font-size: 15px; }
+  </style>
+</head>
+<body data-no-assistant-welcome>
+<header>
+  <h1><img src="/img/pwa/icon-192.png" alt="" width="28" height="28" style="border-radius:6px;background:#fff"> F2R 학원 관리</h1>
+  <p>화면으로 보고 고치는 곳입니다. 말로 시키는 일은 Claude 앱에서 하세요.</p>
+</header>
+<main>
+  <div class="grid">
+    <a class="tile" href="/easy/records"><span class="ico">📒</span><strong>학생부</strong><small>수업·채점·오답·약점 정리</small></a>
+    <a class="tile" href="/easy/records#prep"><span class="ico">📷</span><strong>채점 준비</strong><small>문제지·정답지·학생 답안 찍어 올리기</small></a>
+    <a class="tile" href="/easy/attendance"><span class="ico">✅</span><strong>출결부</strong><small>반별 등원·결석 기록</small></a>
+    <a class="tile" href="/admin/coord/approvals"><span class="ico">📮</span><strong>AI 요청 확인</strong><small>AI가 만든 기록 내역·승인</small></a>
+    <a class="tile" href="/easy/payments"><span class="ico">💳</span><strong>수강료</strong><small>청구·납부 현황</small></a>
+    <a class="tile" href="/dashboard/parent-notices"><span class="ico">💬</span><strong>학부모 안내</strong><small>초안 확인 후 카톡 공유</small></a>
+    <a class="tile claude" href="https://claude.ai/new" rel="noopener"><span class="ico">🎙️</span><strong>Claude로 말하기</strong>
+      <small>「김민수 등원」, 「김민수 채점해줘」, 「김민수 그동안 기록 보여줘」처럼 말하면 F2R에 기록합니다.</small></a>
+  </div>
+  <div class="install" id="installBox">
+    <strong>휴대폰 홈 화면에 F2R 아이콘 만들기</strong>
+    <p id="installHelp" style="margin:6px 0 0">안드로이드 크롬: 오른쪽 위 ⋮ → 「홈 화면에 추가」. 아이폰 사파리: 공유 버튼 → 「홈 화면에 추가」.</p>
+    <button type="button" id="installBtn" hidden>지금 홈 화면에 추가</button>
+  </div>
+</main>
+<script>
+  (function () {
+    // 이미 앱(홈 화면 아이콘)으로 열렸으면 안내를 숨긴다.
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+      document.getElementById('installBox').hidden = true;
+    }
+    let deferred = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferred = e;
+      document.getElementById('installBtn').hidden = false;
+    });
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (!deferred) return;
+      deferred.prompt();
+      await deferred.userChoice;
+      deferred = null;
+      document.getElementById('installBtn').hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

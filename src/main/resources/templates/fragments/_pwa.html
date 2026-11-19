@@ -1,0 +1,10 @@
+<!-- F2R 웹앱(PWA): 홈 화면에 추가하면 앱처럼 열린다. 관리자 화면 head에 넣는다. -->
+<th:block th:fragment="head">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a202c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="F2R">
+  <link rel="apple-touch-icon" href="/img/pwa/icon-192.png">
+  <script defer src="/js/pwa.js?v=20261119"></script>
+</th:block>
