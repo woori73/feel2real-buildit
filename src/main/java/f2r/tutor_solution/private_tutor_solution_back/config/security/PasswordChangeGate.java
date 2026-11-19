@@ -22,7 +22,8 @@ public final class PasswordChangeGate {
       "POST /api/auth/logout",
       "GET /api/auth/me");
   private static final List<String> STATIC_PREFIXES = List.of(
-      "/css/", "/js/", "/images/", "/img/", "/vendor/", "/favicon", "/error");
+      "/css/", "/js/", "/images/", "/img/", "/vendor/", "/favicon", "/error",
+      "/manifest.json", "/sw.js", "/offline.html");
 
   private PasswordChangeGate() {}
 

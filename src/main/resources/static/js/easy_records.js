@@ -94,24 +94,33 @@
       .forEach(([v, t]) => kind.add(new Option(t, v)));
     kind.value = g.status === 'PENDING' ? (g.photos.some(p => p.kind === 'QUESTION') ? 'ANSWER_KEY' : 'QUESTION') : 'GRADED';
     kind.style.width = 'auto';
-    input.addEventListener('change', async () => {
-      try {
-        for (const file of input.files) {
-          const form = new FormData(); form.append('file', file);
-          await call('POST', '/gradings/' + g.gradingId + '/photos?kind=' + kind.value, form, true);
-        }
-        message('사진을 올렸습니다.');
-        await loadBook();
-      } catch (e) { message(e.message, true); }
-    });
-    const label = el('label', 'btn-primary', '사진 올리기');
+    input.addEventListener('change', () => uploadFiles(g.gradingId, kind.value, input.files));
+    const label = el('label', 'btn-primary', '사진 고르기');
     label.htmlFor = input.id;
-    btns.append(kind, input, label, button('고치기', async () => startEditGrading(g)), button('기록 지우기', async () => {
+    // 휴대폰에서 카메라를 바로 연다(capture). 한 번에 한 장씩 찍어 올린다.
+    const camera = el('input'); camera.type = 'file'; camera.accept = 'image/*'; camera.setAttribute('capture', 'environment');
+    camera.id = 'camera-' + g.gradingId; camera.hidden = true;
+    camera.addEventListener('change', () => uploadFiles(g.gradingId, kind.value, camera.files));
+    const cameraLabel = el('label', 'btn-primary', '📷 찍어 올리기');
+    cameraLabel.htmlFor = camera.id;
+    btns.append(kind, camera, cameraLabel, input, label, button('고치기', async () => startEditGrading(g)), button('기록 지우기', async () => {
       if (!confirm('이 채점 기록과 사진을 모두 지울까요? 되돌릴 수 없습니다.')) return;
       await call('DELETE', '/gradings/' + g.gradingId); await loadBook();
     }));
     box.appendChild(btns);
     return box;
+  }
+
+  async function uploadFiles(gradingId, kind, files) {
+    try {
+      focusGrading = String(gradingId);
+      for (const file of files) {
+        const form = new FormData(); form.append('file', file);
+        await call('POST', '/gradings/' + gradingId + '/photos?kind=' + kind, form, true);
+      }
+      await loadBook();
+      message('사진을 올렸습니다.');
+    } catch (e) { message(e.message, true); }
   }
 
   function renderLesson(l) {
@@ -253,6 +262,10 @@
     $('student').addEventListener('change', guarded(loadBook));
     $('lSave').addEventListener('click', guarded(saveLesson));
     $('gSave').addEventListener('click', guarded(saveGrading));
+    if (location.hash === '#prep') {
+      $('prepBox').open = true;
+      message('학생을 고른 뒤 「채점 준비 만들기」를 누르고, 채점 기록에서 「📷 찍어 올리기」로 사진을 올리세요.');
+    }
     if (!businesses.length) return;
     await loadStudents();
     if (link.studentId && [...$('student').options].some(o => o.value === link.studentId)) $('student').value = link.studentId;

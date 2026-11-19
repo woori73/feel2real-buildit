@@ -1226,3 +1226,14 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 
 - "중2 문법 3과 강의 공개해줘" → `academy_lms_overview`로 콘텐츠 확인 → `academy_lms_change {action:PUBLISH, contentId}`(1차: 실행 안 함, summary·confirm_token) → "「3과 관계대명사」(중2 문법) 공개, 할까요?" → "응" → 같은 값 + `confirm_token` → 공개. 수강 허용·회수도 같은 흐름(`academy_lms_enrollments`로 학생 확인, 이름은 가림).
 - "홈페이지 상담 안내 문구를 겨울특강으로 바꿔줘" → `academy_homepage_read`(작업본·revision) → `academy_homepage_draft {revision, texts:{ctaTitle:…}}` → **작업본에만 저장** → AI가 미리보기·편집기 링크를 줌 → 원장이 편집기에서 직접 「게시」해야 공개.
+
+
+## F2R 웹앱(PWA) — 휴대폰 홈 화면 아이콘 (2026-11-19)
+
+안드로이드 앱 대신 웹앱으로 시작한다(사용자 결정). 관리자 휴대폰에서 `https://feel2real.co.kr/easy/app` → 「홈 화면에 추가」(안드로이드 크롬은 「지금 홈 화면에 추가」 버튼, 아이폰 사파리는 공유 → 홈 화면에 추가) → 홈 화면의 F2R 아이콘으로 바로가기 화면이 앱처럼 열린다.
+
+- 바로가기(`/easy/app`, ADMIN, 비로그인은 로그인 후 복귀): 학생부 · 채점 준비(`/easy/records#prep`) · 출결부 · AI 요청 확인 · 수강료 · 학부모 안내 · Claude로 말하기(claude.ai).
+- 학생부 채점 기록의 「📷 찍어 올리기」는 카메라를 바로 연다(`capture=environment`), 「사진 고르기」는 앨범에서 여러 장.
+- `manifest.json`(이름 F2R 학원 관리, 시작 `/easy/app`, 아이콘 192·512) · `sw.js`(범위 `/`) · `offline.html`은 로그인 없이 받는다(개인 자료 없음).
+- service worker는 **학생 기록·장부를 휴대폰에 저장하지 않는다**: 모든 요청을 네트워크로 보내고, 화면 이동이 인터넷 끊김으로 실패할 때만 `offline.html`을 보여 준다.
+- 알림(푸시)은 없다 — 필요해지면 안드로이드 앱(2단계)에서 검토.

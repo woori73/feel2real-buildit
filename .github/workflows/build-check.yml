@@ -104,6 +104,7 @@ jobs:
           src/test/js/hub_view.test.js
           src/test/js/coord_approvals_view.test.js
           src/test/js/easy_records_view.test.js
+          src/test/js/pwa.test.js
           src/test/js/parent_notices.test.js
           src/test/js/admin_members_view.test.js
           src/test/js/naver_login.test.js

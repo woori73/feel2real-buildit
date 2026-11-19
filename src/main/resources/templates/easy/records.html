@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>F2R 장부 - 학생부</title>
   <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <th:block th:replace="~{fragments/_pwa :: head}"></th:block>
   <link rel="stylesheet" href="/css/easy.css">
   <style>
     .easy-title.center, .easy-sub.center { text-align: center; }
@@ -29,7 +30,7 @@
     details summary { cursor: pointer; font-weight: 600; margin-bottom: 8px; }
   </style>
 </head>
-<body>
+<body data-no-assistant-welcome>
 <th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
 <div class="easy-container">
   <div class="easy-title center">학생부</div>
