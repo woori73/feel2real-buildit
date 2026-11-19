@@ -8,7 +8,7 @@ const source = fs.readFileSync(
   path.resolve(__dirname, '../../main/resources/static/js/parent_notices.js'), 'utf8');
 const wait = () => new Promise(resolve => setImmediate(resolve));
 
-async function setup(key) {
+async function setup(key, search) {
   const ids = new Map();
   const posted = [];
   const shared = [];
@@ -36,13 +36,15 @@ async function setup(key) {
     window: { Kakao: { init(key) { assert.equal(key, 'public-js-key'); },
       Share: { sendDefault(message) { shared.push(message); } } } },
     document,
+    location: { search: search || '' },
+    URLSearchParams,
     navigator: { clipboard: { async writeText(value) { clipboard.push(value); } },
       async share(value) { shared.push(value); } },
     crypto: { randomUUID: () => 'd1c86876-1c4b-4cec-96ac-2a3f4a23fbd4' },
     fetchAuth: async (_, opts) => {
       if (opts.method === 'POST') posted.push(JSON.parse(opts.body));
       return { ok: true, json: async () => ({ javascriptKey: key, drafts: [{
-        kind: 'NOTICE', source: 'MCP', title: '예시 공지', body: '12월은 정상 수업입니다.',
+        id: '6f1c2b3a-0000-4000-8000-000000000001', kind: 'NOTICE', source: 'MCP', title: '예시 공지', body: '12월은 정상 수업입니다.',
         createdAt: '2026-11-18T00:00:00Z'
       }] }) };
     }
@@ -92,4 +94,24 @@ test('unconfigured SDK still permits system sharing and a draft-only MCP prompt'
   get('pnBody').events.input();
   await get('pnNative').events.click();
   assert.equal(shared[0].text, '월요일 휴강입니다.');
+});
+
+test('AI가 준 ?draft= 링크로 열면 그 초안이 바로 편집 칸에 뜨고 공유 안내가 나온다(보내기는 사람이)', async () => {
+  // given & when
+  const { get, shared } = await setup('', '?draft=6f1c2b3a-0000-4000-8000-000000000001');
+
+  // then
+  assert.equal(get('pnBody').value, '12월은 정상 수업입니다.');
+  assert.match(get('pnStatus').textContent, /공유 버튼/);
+  assert.equal(shared.length, 0);
+});
+
+test('?draft= 값이 이상하거나 없는 초안이면 아무것도 띄우지 않는다', async () => {
+  // given & when
+  const bad = await setup('', '?draft=../../x');
+  const missing = await setup('', '?draft=00000000-0000-4000-8000-000000000000');
+
+  // then
+  assert.equal(bad.get('pnBody').value, '');
+  assert.equal(missing.get('pnBody').value, '');
 });

@@ -97,6 +97,7 @@ jobs:
           src/test/js/easy_connections_view.test.js
           src/test/js/hub_view.test.js
           src/test/js/coord_approvals_view.test.js
+          src/test/js/parent_notices.test.js
           src/test/js/admin_members_view.test.js
           src/test/js/naver_login.test.js
           src/test/js/admissions_articles_view.test.js
@@ -222,6 +223,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpAdminDashboardTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpCafeTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpScopeAllowlistTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpParentNoticeShareTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.*"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminCredentialServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.service.AdminSessionValidatorTest"

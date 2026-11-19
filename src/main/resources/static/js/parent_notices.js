@@ -13,6 +13,8 @@
   let sdkLoaded = false;
   let savedRequest = null;
   let saving = false;
+  let focusDraftId = null;
+  let pendingFocus = null;
 
   function report(text) { $('pnStatus').textContent = text; }
 
@@ -80,6 +82,14 @@
     }
     $('pnWorkspace').hidden = false;
     report('');
+    // AI(MCP)가 알려 준 링크(?draft=…)로 들어오면 그 초안을 바로 편집·공유 칸에 띄운다. 보내기는 사람이 공유 버튼을 눌러야 한다.
+    if (pendingFocus) {
+      const load = pendingFocus;
+      pendingFocus = null;
+      focusDraftId = null;
+      load();
+      report('AI가 만든 초안을 불러왔습니다. 문구를 확인하고 공유 버튼을 눌러 보낼 학부모를 고르세요.');
+    }
   }
 
   function renderDrafts(drafts) {
@@ -102,7 +112,7 @@
         + ' · ' + (draft.source === 'MCP' ? '외부 AI' : '대시보드')
         + ' · ' + dateFormat.format(new Date(draft.createdAt));
       button.append(title, meta);
-      button.addEventListener('click', () => {
+      const load = () => {
         $('pnKind').value = draft.kind;
         $('pnTitle').value = draft.title;
         $('pnBody').value = draft.body;
@@ -110,9 +120,11 @@
         savedRequest = null;
         renderPreview();
         $('pnBody').focus();
-      });
+      };
+      button.addEventListener('click', load);
       row.append(button);
       rows.append(row);
+      if (focusDraftId && draft.id === focusDraftId) pendingFocus = load;
     }
   }
 
@@ -209,6 +221,10 @@
   }
 
   function init() {
+    if (typeof location !== 'undefined') {
+      const id = new URLSearchParams(location.search || '').get('draft');
+      if (id && /^[0-9a-f-]{36}$/.test(id)) focusDraftId = id;
+    }
     $('pnForm').addEventListener('submit', saveDraft);
     $('pnReload').addEventListener('click', () => getDrafts().catch(error => report(error.message)));
     $('pnKind').addEventListener('change', () => { $('pnConsent').checked = false; renderPreview(); });
