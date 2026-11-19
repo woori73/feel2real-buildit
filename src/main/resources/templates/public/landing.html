@@ -22,6 +22,9 @@
   <link rel="stylesheet" href="/css/home_winter.css?v=20261116-4">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
+  <link rel="stylesheet" href="/css/csat_motion.css?v=20261119-1">
+  <script src="/js/csat_motion.js?v=20261119-1" defer></script>
+  <script src="/js/csat_home.js?v=20261119-1" defer></script>
   <script src="/js/home_agent_trailer.js?v=20261030-1" defer></script>
   <script src="/js/home_review_game.js?v=20261029-1" defer></script>
   <script src="/js/site_events.js?v=20261027-1" defer></script>
@@ -145,6 +148,7 @@
     <p>디지털 기말고사</p>
     <a href="#digital-exam">학교 고르기<small>압구정중2 · 신구중2 · 압구정중1</small></a>
     <a href="#dexam-guide">시험 보는 방법</a>
+    <a href="/csat/2027-english">2027 수능 영어 해설<small>모션 해설 · PDF</small></a>
     <a href="#hitCase">적중 사례</a>
     <a href="#counsel">2028 입시상담 AI</a>
     <p>영어 교육</p>
@@ -288,14 +292,31 @@
           <p id="examPromoSummary" class="sr" th:text="'학교별 맞춤 제작 · ' + ${examOffer.summary} + ' · ' + ${examOffer.priceLabel}">학교별 맞춤 제작 · 2주 · 주 2회 · 총 4회 · 160문항 · 20,000원</p>
           <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
         </div>
-        <div class="hl-promo-body">
-          <p class="hl-eyebrow is-green">서수니 · 세븐이 소개하는 맞춤문제</p>
-          <h2 id="promoTitle">2주 4회 · 160문항</h2>
-          <p class="hl-promo-lead">기출문제지와 수업자료를 보내 주세요. 직접 제작한 첫 페이지 또는 1장을 무료로 드립니다.</p>
-          <div class="hl-promo-actions">
-            <!-- 첫 화면에서 늘 보이는 무료신청 버튼(배너 첫 장이 디지털 영어 기말고사로 바뀌어 이 버튼이 대표 신청 버튼이다). 2026-11-16 하루 내렸다가 되살림. -->
-            <a id="homeIntakeCta" class="hl-btn hl-btn-mint" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a>
-            <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
+        <!-- 2026-11-19 사용자 지시: 영상 아래 칸에 2027 수능 영어 해설 모션(문제 → 노란 근거 → 정답·해설). 맞춤문제 안내·신청 버튼 2개는 카드 아래에 그대로 둔다(첫 화면 대표 신청 버튼). -->
+        <div class="hl-promo-body cm-home" id="csatHome" aria-labelledby="promoTitle">
+          <div class="cm-home-head">
+            <div><p>오늘 치른 수능 · 홀수형 가답안 기준</p><h2 id="promoTitle">2027 수능 영어 해설</h2></div>
+            <p class="cm-home-q" data-cm-q aria-live="polite"></p>
+          </div>
+          <div data-cm-stage><div class="cm-loading">문제를 준비하는 중…</div></div>
+          <div class="cm-home-ctrl">
+            <button type="button" data-cm-prev aria-label="이전 문항">‹</button>
+            <ol class="cm-steps" aria-label="해설 단계"><li>문제</li><li>노란 근거</li><li>정답·해설</li></ol>
+            <button type="button" data-cm-pause aria-label="멈춤" aria-pressed="false">Ⅱ</button>
+            <button type="button" data-cm-next aria-label="다음 문항">›</button>
+          </div>
+          <div class="cm-home-links">
+            <a href="/csat/2027-english">45문항 모션 해설 →</a>
+            <a href="/csat/2027-english/pdf">PDF 무료 다운로드<small>로그인</small></a>
+          </div>
+          <div class="cm-home-offer">
+            <p class="hl-eyebrow is-green">서수니 · 세븐이 소개하는 맞춤문제 · 2주 4회 160문항</p>
+            <p class="hl-promo-lead">기출문제지와 수업자료를 보내 주세요. 직접 제작한 첫 페이지 또는 1장을 무료로 드립니다.</p>
+            <div class="hl-promo-actions">
+              <!-- 첫 화면에서 늘 보이는 무료신청 버튼(대표 신청 버튼). 2026-11-16 하루 내렸다가 되살림. -->
+              <a id="homeIntakeCta" class="hl-btn hl-btn-mint" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a>
+              <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
+            </div>
           </div>
         </div>
       </div>
