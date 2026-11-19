@@ -1201,4 +1201,4 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 
 ## AI 코디네이터 출결 (2026-11-19, 1단계)
 
-휴대폰 Claude·ChatGPT 앱(F2R 커넥터, `coord:draft` 동의) → "김민수 학생 등원했어" → AI가 `f2r_student_search`(가린 이름·학년·반, 동명이인이면 사용자에게 고르게 함) → `f2r_attendance_mark`(초안, 그날 같은 기록이 있으면 ALREADY_RECORDED) → AI가 승인 링크를 알려 줌 → `/admin/coord/approvals?id=…`(로그인 안 돼 있으면 로그인 후 복귀) → 실명·반·시각 확인 → [승인하고 기록] → 서버가 중복 재확인 후 출결부 기록·다시 읽어 확인 → 완료 표시(AI는 `f2r_job_status`로 확인). 30분 안에 승인하지 않으면 시간 초과로 기록하지 않는다. 거절하면 기록하지 않는다.
+휴대폰 Claude·ChatGPT 앱(F2R 커넥터, `coord:draft` 동의) → "김민수 학생 등원했어" → AI가 `f2r_student_search`(가린 이름·학년·반, 동명이인이면 사용자에게 고르게 함) → `f2r_attendance_mark`(초안, 그날 같은 기록이 있으면 ALREADY_RECORDED) → **AI가 대화에서 "김○수(중2) 등원 16:05, 기록할까요?"라고 묻고 사용자가 "응"이라고 하면 `f2r_attendance_confirm`으로 바로 기록**(화면 이동 없음, 2026-11-19 추가). 기록 뒤 10분 안에 "취소해줘"라고 하면 `f2r_attendance_undo`(출결 행은 superseded로 남음). 아래는 승인 화면을 쓰는 경우: AI가 승인 링크를 알려 줌 → `/admin/coord/approvals?id=…`(로그인 안 돼 있으면 로그인 후 복귀) → 실명·반·시각 확인 → [승인하고 기록] → 서버가 중복 재확인 후 출결부 기록·다시 읽어 확인 → 완료 표시(AI는 `f2r_job_status`로 확인). 30분 안에 승인하지 않으면 시간 초과로 기록하지 않는다. 거절하면 기록하지 않는다.

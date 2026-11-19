@@ -297,6 +297,26 @@ class EasyAttendanceServiceTest {
   }
 
   @Test
+  @DisplayName("given 등원 기록 when 취소 then 새 행 없이 이전 행만 정정됨으로 남고 출결부에서 사라진다, 다시·다른 사업체 취소는 거절")
+  void cancelSupersedesWithoutNewRow() {
+    // given
+    Long classId = newClass("A반", null);
+    Long sid = student("가나").getStudentId();
+    service.assign(BIZ, classId, sid);
+    var first = service.record(BIZ, new RecordForm(classId, sid, "CHECK_IN", "2026-11-10T15:00", null));
+
+    // when
+    assertThatThrownBy(() -> service.cancel(OTHER_BIZ, first.eventId())).hasMessageContaining("다른 사업체");
+    service.cancel(BIZ, first.eventId());
+
+    // then
+    assertThat(events).hasSize(1);
+    assertThat(events.get(0).isSuperseded()).isTrue();
+    assertThat(service.sheet(BIZ, classId, LocalDate.of(2026, 11, 10)).get(0).events()).isEmpty();
+    assertThatThrownBy(() -> service.cancel(BIZ, first.eventId())).hasMessageContaining("이미 정정·취소");
+  }
+
+  @Test
   @DisplayName("given 반 없는 진행표 기록과 다른 반 기록 when 출결부 then 반 없는 기록은 보이고 다른 반 기록은 숨긴다")
   void sheetIncludesClasslessButNotOtherClass() {
     // given

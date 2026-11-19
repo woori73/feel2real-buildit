@@ -23,6 +23,8 @@ public class CoordJob {
   public static final String REJECTED = "rejected";
   public static final String EXPIRED = "expired";
   public static final String FAILED = "failed";
+  /** 대화창으로 기록한 뒤 10분 안에 사용자가 취소함(출결 행은 superseded로 남음). */
+  public static final String CANCELLED = "cancelled";
 
   @Id
   @Column(name = "job_id", length = 36)

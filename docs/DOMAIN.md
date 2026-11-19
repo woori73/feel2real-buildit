@@ -1833,7 +1833,7 @@ AcademyCraft 반별 출결부 기능을 F2R 장부 안으로 옮긴 모델이다
 
 - `easy_classes`: `class_id` PK, `business_id` FK → `easy_businesses`, `name`(60), `teacher_name`, `description`, `weekdays`(`MON,WED`), `start_time`/`end_time`(TIME), `room`, `capacity`(NULL=제한 없음), `status` ACTIVE/ENDED, `ended_at`. **삭제 없음** — 종료하면 배정이 모두 해제(CLASS_ENDED)되고 출결은 남는다.
 - `easy_class_members`: `member_id` PK, `class_id` FK, `student_id` FK, `assigned_on`, `released_on`(NULL=배정 중), `release_reason` REMOVED/MOVED/CLASS_ENDED. 해제해도 행을 지우지 않는다. 같은 반 중복 배정·정원 초과·퇴원(WITHDRAWN) 학생 배정은 서비스가 거절한다.
-- `easy_attendance_events`: `event_id` PK, `business_id` FK, `class_id` FK NULL(진행표처럼 반 없이 들어온 기록), `student_id` FK, `occurred_on`(DATE), `occurred_at`(DATETIME, KST 그대로), `event_type` CHECK_IN/CHECK_OUT/ABSENT/LATE/EARLY_LEAVE, `note`, `source` MANUAL/ROSTER_IMPORT, `source_key` UNIQUE(가져오기 중복 방지, `ROSTER:{business}:{year}:{student}:{date}`), `corrects_event_id` FK self, `correction_reason`, `superseded`. **삭제 없음** — 정정은 사유 필수, 새 행을 만들고 이전 행은 `superseded=TRUE`로 남긴다. 현재 상태 조회는 `superseded=FALSE`만 쓴다.
+- `easy_attendance_events`: `event_id` PK, `business_id` FK, `class_id` FK NULL(진행표처럼 반 없이 들어온 기록), `student_id` FK, `occurred_on`(DATE), `occurred_at`(DATETIME, KST 그대로), `event_type` CHECK_IN/CHECK_OUT/ABSENT/LATE/EARLY_LEAVE, `note`, `source` MANUAL/ROSTER_IMPORT, `source_key` UNIQUE(가져오기 중복 방지, `ROSTER:{business}:{year}:{student}:{date}`), `corrects_event_id` FK self, `correction_reason`, `superseded`. **삭제 없음** — 정정은 사유 필수, 새 행을 만들고 이전 행은 `superseded=TRUE`로 남긴다. 현재 상태 조회는 `superseded=FALSE`만 쓴다. 예외: AI 코디네이터 대화창 취소(기록 뒤 10분 안)는 새 행 없이 `superseded=TRUE`만 남기고, 사유는 `coord_job_events`에 둔다.
 - 출결부(반+날짜)는 그날 배정돼 있던 학생과, 그 반 기록 + 반 없는 기록을 보여 준다. 월별(반+연월)은 날짜별 구분과 구분별 횟수다.
 - 학생명단(시간표) 진행표 가져오기: 진행표에 이름이 있는 날 = CHECK_IN, 그날 수업 수는 메모, **오늘 이후(예정) 날짜는 넣지 않는다.** 미리보기 해시가 달라지면 적용을 거절한다. 이름→학생 연결은 관리자가 고르고(기존 연결/새로 등록/건너뛰기), 새 학생은 `memo="{연도} 진행표에서 등록"`으로 만들어 다시 적용해도 중복 생성하지 않는다. 실명은 서버 안에서만 쓴다.
 - AcademyCraft 게이트웨이(`/academycraft/**`)는 그대로 두며, 두 출결 데이터는 서로 연결·동기화하지 않는다.
@@ -2042,8 +2042,8 @@ AI가 MCP로 만든 업무 초안과 사람 승인 기록. 1단계는 출결(`ki
 
 | 테이블 | 핵심 칸 | 비고 |
 |---|---|---|
-| `coord_jobs` | job_id(UUID), user_id, business_id, request_id(UNIQUE user_id+request_id), kind, status(`review_required`/`approved`/`completed`/`rejected`/`expired`/`failed`), source(`MCP`), client_name(MCP grant id), plan_json(실명 포함 계획 — 승인 화면에만 표시), plan_hash(SHA-256), result_json, error, version(낙관적 잠금), created_at·updated_at·expires_at(생성 + 30분) | 승인은 plan_hash 일치 + 대기 상태에서만. 삭제·수정 API 없음 |
-| `coord_job_events` | event_id, job_id(FK), at, actor(`MCP`/`USER`/`SERVER`), actor_login_id, from_status, to_status, message | 감사 기록. 삭제·수정 API 없음 |
+| `coord_jobs` | job_id(UUID), user_id, business_id, request_id(UNIQUE user_id+request_id), kind, status(`review_required`/`approved`/`completed`/`cancelled`/`rejected`/`expired`/`failed`; `cancelled` = 대화창 기록 후 10분 안 취소), source(`MCP`), client_name(MCP grant id), plan_json(실명 포함 계획 — 승인 화면에만 표시), plan_hash(SHA-256), result_json, error, version(낙관적 잠금), created_at·updated_at·expires_at(생성 + 30분) | 승인은 plan_hash 일치 + 대기 상태에서만. 삭제·수정 API 없음 |
+| `coord_job_events` | event_id, job_id(FK), at, actor(`MCP`/`USER`(승인 화면)/`CHAT`(대화창 확인·취소)/`SERVER`), actor_login_id, from_status, to_status, message | 감사 기록. 삭제·수정 API 없음 |
 
 CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권한: ADMIN 본인 요청만.
 

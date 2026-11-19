@@ -9,7 +9,7 @@
   const EVENT_LABEL = { CHECK_IN: '등원', CHECK_OUT: '하원', ABSENT: '결석', LATE: '지각', EARLY_LEAVE: '조퇴' };
   const STATUS_LABEL = {
     review_required: '승인 대기', approved: '처리 중', completed: '완료', rejected: '거절함',
-    expired: '시간 초과', failed: '실패'
+    expired: '시간 초과', failed: '실패', cancelled: '취소함'
   };
 
   function eventLabel(type) { return EVENT_LABEL[type] || String(type || ''); }
@@ -46,6 +46,7 @@
     if (job.status === 'completed' && job.result) return job.result.label + ' 기록 완료 (' + when(job.result.at) + ')';
     if (job.status === 'failed') return '기록하지 못했습니다: ' + (job.error || '알 수 없는 오류');
     if (job.status === 'rejected') return '거절했습니다. 기록하지 않았습니다.';
+    if (job.status === 'cancelled') return '기록했다가 대화창에서 취소했습니다.';
     if (job.status === 'expired') return '승인 시간(30분)이 지나 기록하지 않았습니다. AI에게 다시 요청해 주세요.';
     return '';
   }

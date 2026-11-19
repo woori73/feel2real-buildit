@@ -100,4 +100,28 @@ class CoordinatorMySqlTest {
     assertThatThrownBy(() -> service.get(new AuthenticatedPrincipal(99L, "x", "ADMIN"), (String) a, "", true))
         .isInstanceOf(AccessDeniedException.class);
   }
+  @Test
+  @DisplayName("given 초안 when 대화창 확인 후 취소 then 출결 행은 남되 superseded, 같은 날 다시 초안을 만들 수 있다")
+  void chatConfirmThenUndo() {
+    // given
+    Long bid = businesses.findAllByActiveTrueOrderBySortOrderAsc().get(0).getBusinessId();
+    Long sid = student("코디대화학생");
+    Map<String, Object> draft = mark(bid, sid, UUID.randomUUID().toString());
+    String jobId = (String) draft.get("jobId");
+
+    // when
+    Map<String, Object> done = service.confirmFromChat(ADMIN, jobId, (String) draft.get("planHash"), "");
+    entityManager.flush();
+    Map<String, Object> undone = service.undoFromChat(ADMIN, jobId, "다른 학생", "");
+    entityManager.flush();
+
+    // then
+    assertThat(done.get("status")).isEqualTo("completed");
+    assertThat(undone.get("status")).isEqualTo("cancelled");
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_attendance_events WHERE student_id=?", Integer.class, sid)).isEqualTo(1);
+    assertThat(jdbc.queryForObject("SELECT superseded FROM easy_attendance_events WHERE student_id=?", Boolean.class, sid)).isTrue();
+    assertThat(jdbc.queryForList("SELECT to_status FROM coord_job_events WHERE job_id=? ORDER BY event_id", String.class, jobId))
+        .containsExactly("review_required", "approved", "completed", "cancelled");
+    assertThat(mark(bid, sid, UUID.randomUUID().toString()).get("status")).isEqualTo("review_required");
+  }
 }

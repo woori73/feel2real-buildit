@@ -263,7 +263,7 @@ class CoordinatorServiceTest {
   }
 
   @Test
-  @DisplayName("given 초안 when 사람용 조회 then 실명·학교·planHash가 있고 AI용 조회에는 없다")
+  @DisplayName("given 초안 when 사람용·AI용 조회 then 실명·학교는 사람용에만, planHash는 확인 대기 중이면 둘 다(대화창 확인용)")
   void view_humanVsAi() {
     // given
     when(attendance.activeEventOn(anyLong(), anyLong(), anyString(), any())).thenReturn(Optional.empty());
@@ -275,6 +275,99 @@ class CoordinatorServiceTest {
 
     // then
     assertThat(human.toString()).contains("김민수", "가짜중", "planHash");
-    assertThat(ai.toString()).doesNotContain("김민수", "가짜중", "planHash");
+    assertThat(ai.toString()).doesNotContain("김민수", "가짜중").contains("f2r_attendance_confirm");
+    assertThat(ai.get("planHash")).isEqualTo(store.get(jobId).getPlanHash());
+  }
+
+  /** 초안을 만들고 대화창 확인으로 기록까지 끝낸 jobId. */
+  String confirmedJob(CoordinatorService svc) {
+    when(attendance.activeEventOn(anyLong(), anyLong(), anyString(), any())).thenReturn(Optional.empty());
+    Map<String, Object> draft = mark(null);
+    var saved = new EventView(90L, "CHECK_IN", "등원", NOW, "AI", "MANUAL", null, null);
+    when(attendance.record(eq(3L), any())).thenReturn(saved);
+    when(attendance.studentHistory(3L, 11L)).thenReturn(List.of(saved));
+    svc.confirmFromChat(ADMIN, (String) draft.get("jobId"), (String) draft.get("planHash"), "");
+    return (String) draft.get("jobId");
+  }
+
+  @Test
+  @DisplayName("given 초안 when 대화창 확인(mark가 준 planHash) then 기록·completed, AI 응답엔 가린 이름과 취소 안내")
+  void confirmFromChat_records() {
+    // given
+    when(attendance.activeEventOn(anyLong(), anyLong(), anyString(), any())).thenReturn(Optional.empty());
+    Map<String, Object> draft = mark(null);
+    var saved = new EventView(90L, "CHECK_IN", "등원", NOW, "AI", "MANUAL", null, null);
+    when(attendance.record(eq(3L), any())).thenReturn(saved);
+    when(attendance.studentHistory(3L, 11L)).thenReturn(List.of(saved));
+
+    // when
+    Map<String, Object> out = service.confirmFromChat(ADMIN, (String) draft.get("jobId"), (String) draft.get("planHash"), "");
+
+    // then
+    assertThat(out.get("status")).isEqualTo("completed");
+    assertThat(out.toString()).doesNotContain("김민수", "가짜중").contains("김○수", "f2r_attendance_undo");
+    assertThat(out).doesNotContainKey("planHash");
+    verify(attendance).record(eq(3L), eq(new EasyAttendanceService.RecordForm(null, 11L, "CHECK_IN", "2026-11-19T16:05",
+        "AI 코디네이터 요청 · 대화 확인 owner")));
+  }
+
+  @Test
+  @DisplayName("given 초안 when 틀린 planHash 또는 두 번째 확인 then 거절하고 다시 기록하지 않는다")
+  void confirmFromChat_rejectsWrongHashOrRepeat() {
+    // given
+    String jobId = confirmedJob(service);
+    when(attendance.activeEventOn(anyLong(), anyLong(), anyString(), any())).thenReturn(Optional.empty());
+    Map<String, Object> other = service.requestAttendance(ADMIN, "MCP", "grant-1",
+        new CoordinatorService.AttendanceRequest("aaaaaaaa-0000-0000-0000-000000000002", null, 11L, "CHECK_OUT", null, null), "");
+
+    // when & then
+    assertThatThrownBy(() -> service.confirmFromChat(ADMIN, jobId, store.get(jobId).getPlanHash(), ""))
+        .isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> service.confirmFromChat(ADMIN, (String) other.get("jobId"), "0".repeat(64), ""))
+        .isInstanceOf(IllegalStateException.class);
+    verify(attendance).record(anyLong(), any());
+  }
+
+  @Test
+  @DisplayName("given 대화창으로 기록 when 10분 안에 취소 then 출결을 취소(superseded)하고 cancelled")
+  void undoFromChat_withinWindow() {
+    // given
+    String jobId = confirmedJob(service);
+    var later = new CoordinatorService(jobs, events, attendance, access, clock(NOW.plusMinutes(10)));
+
+    // when
+    Map<String, Object> out = later.undoFromChat(ADMIN, jobId, "다른 학생이었음", "");
+
+    // then
+    assertThat(out.get("status")).isEqualTo("cancelled");
+    verify(attendance).cancel(3L, 90L);
+    assertThat(store.get(jobId).getStatus()).isEqualTo(CoordJob.CANCELLED);
+  }
+
+  @Test
+  @DisplayName("given 대화창으로 기록 when 10분이 지나 취소 또는 이미 취소한 건 then 거절하고 출결을 건드리지 않는다")
+  void undoFromChat_rejectsLateOrRepeat() {
+    // given
+    String jobId = confirmedJob(service);
+    var late = new CoordinatorService(jobs, events, attendance, access, clock(NOW.plusMinutes(11)));
+
+    // when & then
+    assertThatThrownBy(() -> late.undoFromChat(ADMIN, jobId, null, "")).isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("10분");
+    verify(attendance, never()).cancel(anyLong(), anyLong());
+    service.undoFromChat(ADMIN, jobId, null, "");
+    assertThatThrownBy(() -> service.undoFromChat(ADMIN, jobId, null, "")).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  @DisplayName("given 확인 대기 중인 초안 when 취소 then 기록 전이라 거절")
+  void undoFromChat_rejectsUnrecorded() {
+    // given
+    when(attendance.activeEventOn(anyLong(), anyLong(), anyString(), any())).thenReturn(Optional.empty());
+    String jobId = (String) mark(null).get("jobId");
+
+    // when & then
+    assertThatThrownBy(() -> service.undoFromChat(ADMIN, jobId, null, "")).isInstanceOf(IllegalStateException.class);
+    verify(attendance, never()).cancel(anyLong(), anyLong());
   }
 }

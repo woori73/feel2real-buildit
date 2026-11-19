@@ -27,8 +27,16 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * F2R AI Coordinator 1단계: AI(MCP)가 학생을 찾고 출결 기록 <b>초안</b>을 만든다. 사람이 F2R 승인 화면에서 승인해야
- * 기존 {@link EasyAttendanceService#record}로 기록한다.
+ * F2R AI Coordinator 1단계: AI(MCP)가 학생을 찾고 출결 기록 <b>초안</b>을 만든다. 사용자가 확인해야 기존
+ * {@link EasyAttendanceService#record}로 기록한다. 확인은 두 가지 중 하나다.
+ *
+ * <ul>
+ *   <li>대화창 확인: AI가 대화에서 "기록할까요?"라고 묻고 사용자가 동의하면 {@link #confirmFromChat}(MCP 도구).
+ *   <li>승인 화면: /admin/coord/approvals에서 [승인] — {@link #approve}.
+ * </ul>
+ *
+ * <p>대화창으로 기록한 출결은 {@value #UNDO_MINUTES}분 안에 {@link #undoFromChat}으로 취소할 수 있다(기록은 지우지 않고
+ * superseded로 남긴다).
  *
  * <ul>
  *   <li>AI 응답에는 실명 대신 가린 이름(김○수)·학년·반만 준다. 실명·학교는 승인 화면에서만 보인다.
@@ -43,6 +51,7 @@ public class CoordinatorService {
   static final String KIND_ATTENDANCE = "ATTENDANCE";
   static final Set<String> EVENT_TYPES = Set.of("CHECK_IN", "CHECK_OUT", "ABSENT", "LATE", "EARLY_LEAVE");
   static final int APPROVAL_MINUTES = 30;
+  static final int UNDO_MINUTES = 10;
   static final int MAX_MATCHES = 10;
   private static final JsonMapper JSON = JsonMapper.builder().build();
   private static final DateTimeFormatter MINUTE = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
@@ -196,10 +205,53 @@ public class CoordinatorService {
     return out;
   }
 
-  /** 승인: planHash가 같고 대기 중일 때만. 실행 직전에 중복을 다시 확인하고, 기록 뒤 다시 읽어 확인한다. */
+  /** 승인 화면의 [승인]. planHash가 같고 대기 중일 때만 실행한다. 응답에는 실명이 들어간다(사람용). */
   @Transactional
   public Map<String, Object> approve(AuthenticatedPrincipal p, String jobId, String planHash, String baseUrl) {
     CoordJob j = own(p, jobId);
+    execute(p, j, planHash, "USER", "승인", "AI 코디네이터 요청 · 승인 " + p.loginId());
+    return view(j, baseUrl, true);
+  }
+
+  /**
+   * 대화창 확인: 사용자가 대화에서 동의한 뒤 AI가 부른다. 승인 화면과 같은 검사(planHash·대기 중·30분·중복 재확인)를 거친다.
+   * AI에게는 가린 이름만 돌려준다.
+   */
+  @Transactional
+  public Map<String, Object> confirmFromChat(AuthenticatedPrincipal p, String jobId, String planHash, String baseUrl) {
+    CoordJob j = own(p, jobId);
+    execute(p, j, planHash, "CHAT", "대화창 확인", "AI 코디네이터 요청 · 대화 확인 " + p.loginId());
+    Map<String, Object> out = view(j, baseUrl, false);
+    if (CoordJob.COMPLETED.equals(j.getStatus())) {
+      out.put("message", "기록했습니다. " + UNDO_MINUTES + "분 안에는 f2r_attendance_undo로 취소할 수 있습니다.");
+    }
+    return out;
+  }
+
+  /**
+   * 대화창 취소: 이 작업으로 기록한 출결을 기록 뒤 {@value #UNDO_MINUTES}분 안에만 취소한다. 출결 행은 지우지 않고
+   * superseded로 남기며, 취소 사유는 작업 기록(coord_job_events)에 남긴다.
+   */
+  @Transactional
+  public Map<String, Object> undoFromChat(AuthenticatedPrincipal p, String jobId, String reason, String baseUrl) {
+    CoordJob j = own(p, jobId);
+    LocalDateTime now = LocalDateTime.now(clock);
+    if (!CoordJob.COMPLETED.equals(j.getStatus())) throw new IllegalStateException("기록이 끝난 요청만 취소할 수 있습니다.");
+    if (now.isAfter(j.getUpdatedAt().plusMinutes(UNDO_MINUTES))) {
+      throw new IllegalStateException("기록한 지 " + UNDO_MINUTES + "분이 지나 대화창에서 취소할 수 없습니다. 출결부에서 정정해 주세요.");
+    }
+    long eventId = JSON.readTree(j.getResultJson()).get("eventId").asLong();
+    attendance.cancel(j.getBusinessId(), eventId);
+    String why = reason == null || reason.isBlank() ? "사용자 요청" : clip(reason.strip(), 200);
+    j.moveTo(CoordJob.CANCELLED, now);
+    log(j, "CHAT", p.loginId(), CoordJob.COMPLETED, CoordJob.CANCELLED, "대화창 취소 #" + eventId + " · " + why);
+    Map<String, Object> out = view(j, baseUrl, false);
+    out.put("message", "출결 기록을 취소했습니다.");
+    return out;
+  }
+
+  /** 승인 공통: planHash가 같고 대기 중일 때만. 실행 직전에 중복을 다시 확인하고, 기록 뒤 다시 읽어 확인한다. */
+  private void execute(AuthenticatedPrincipal p, CoordJob j, String planHash, String actor, String label, String note) {
     LocalDateTime now = LocalDateTime.now(clock);
     if (expireIfNeeded(j, now)) throw new IllegalStateException("승인 시간(30분)이 지났습니다. 다시 요청해 주세요.");
     if (!CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) throw new IllegalStateException("이미 처리된 요청입니다.");
@@ -208,7 +260,7 @@ public class CoordinatorService {
       throw new IllegalStateException("화면의 내용이 최신이 아닙니다. 새로고침 후 다시 확인해 주세요.");
     }
     j.moveTo(CoordJob.APPROVED, now);
-    log(j, "USER", p.loginId(), CoordJob.REVIEW_REQUIRED, CoordJob.APPROVED, "승인");
+    log(j, actor, p.loginId(), CoordJob.REVIEW_REQUIRED, CoordJob.APPROVED, label);
     JsonNode plan = JSON.readTree(j.getPlanJson());
     Long studentId = plan.get("studentId").asLong();
     String type = plan.get("eventType").asText();
@@ -219,10 +271,10 @@ public class CoordinatorService {
       if (dup.isPresent()) {
         j.fail("그사이 같은 출결이 이미 기록되어 새로 기록하지 않았습니다.", now);
         log(j, "SERVER", null, CoordJob.APPROVED, CoordJob.FAILED, j.getError());
-        return view(j, baseUrl, true);
+        return;
       }
       EventView saved = attendance.record(j.getBusinessId(), new EasyAttendanceService.RecordForm(classId, studentId, type,
-          occurredAt, "AI 코디네이터 요청 · 승인 " + p.loginId()));
+          occurredAt, note));
       boolean verified = attendance.studentHistory(j.getBusinessId(), studentId).stream()
           .anyMatch(e -> e.eventId().equals(saved.eventId()));
       if (!verified) throw new IllegalStateException("기록 후 확인에 실패했습니다.");
@@ -237,7 +289,6 @@ public class CoordinatorService {
       j.fail(e.getMessage(), now);
       log(j, "SERVER", null, CoordJob.APPROVED, CoordJob.FAILED, e.getMessage());
     }
-    return view(j, baseUrl, true);
   }
 
   @Transactional
@@ -273,15 +324,17 @@ public class CoordinatorService {
     summary.put("occurredAt", plan.path("occurredAt").asText());
     if (forHuman) summary.put("businessName", plan.path("businessName").asText(""));
     out.put("summary", summary);
+    if (forHuman || CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) out.put("planHash", j.getPlanHash());
     if (forHuman) {
-      out.put("planHash", j.getPlanHash());
       out.put("source", j.getSource());
       out.put("clientName", j.getClientName());
     }
     if (j.getResultJson() != null) out.put("result", JSON.readTree(j.getResultJson()));
     if (j.getError() != null) out.put("error", j.getError());
     if (!forHuman && CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) {
-      out.put("message", "아직 기록하지 않았습니다. 사용자에게 승인 링크(approvalUrl)를 열어 승인하도록 안내하세요.");
+      out.put("message", "아직 기록하지 않았습니다. 대화에서 사용자에게 summary(가린 이름·학년·구분·시각)를 보여 주고"
+          + " '기록할까요?'라고 물으세요. 사용자가 분명히 동의하면 f2r_attendance_confirm(jobId, planHash)을 부르세요."
+          + " 사용자 답 없이 부르지 마세요. 승인 화면(approvalUrl)에서 승인해도 됩니다.");
     }
     return out;
   }

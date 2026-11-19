@@ -36,3 +36,12 @@ test('eventLabel·statusLabel·when: 모르는 값은 그대로', () => {
   assert.equal(V.statusLabel('expired'), '시간 초과');
   assert.equal(V.when('bad'), 'bad');
 });
+
+test('cancelled: 대화창에서 취소한 작업은 취소함으로 보인다', () => {
+  // given
+  const cancelled = job('cancelled', { result: { label: '등원', at: '2026-11-19T16:06' } });
+  // when & then
+  assert.equal(V.statusLabel('cancelled'), '취소함');
+  assert.match(V.resultText(cancelled), /취소/);
+  assert.equal(V.canDecide(cancelled), false);
+});
