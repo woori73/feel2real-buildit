@@ -96,6 +96,7 @@ jobs:
           src/test/js/easy_attendance_view.test.js
           src/test/js/easy_connections_view.test.js
           src/test/js/hub_view.test.js
+          src/test/js/coord_approvals_view.test.js
           src/test/js/admin_members_view.test.js
           src/test/js/naver_login.test.js
           src/test/js/admissions_articles_view.test.js
@@ -231,6 +232,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.UserTemporaryPasswordTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.PasswordChangeGateTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.program.NaverLoginStartControllerTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpCoordinatorToolsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.NaverLoginModalContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProviderTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.controller.AdminAnalyticsControllerWebMvcTest"
@@ -592,6 +595,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AdminAnalyticsBreakdownMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.SiteEventMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.EasyAttendanceMySqlTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.AdminCredentialRotationMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.user.controller.TemporaryPasswordMySqlTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.academy.controller.AssistantSwitchOffMySqlTest"

@@ -58,6 +58,13 @@ public class McpGateway {
   static final Set<String> CAFE_TOOLS = Set.of("cafe_status", "cafe_publication_history", "publish_cafe_article");
   static final String SAVE_PARENT_NOTICE_DRAFT = "save_parent_notice_draft";
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorService> coordinator;
+
+  /** F2R AI Coordinator(coord:draft, 관리자). 조회와 출결 "초안"만 — 기록은 F2R 승인 화면에서 사람이 승인해야 실행된다. */
+  static final Set<String> COORD_TOOLS =
+      Set.of("f2r_student_search", "f2r_attendance_check", "f2r_attendance_mark", "f2r_job_status");
+
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
       Set.of(
@@ -106,6 +113,7 @@ public class McpGateway {
             if (EASY_SITE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.EASY_COLLECT_WRITE);
             if (CAFE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.CAFE_WRITE);
             if (SAVE_PARENT_NOTICE_DRAFT.equals(name)) return !oauth.scopeAllowed(McpOAuth.PARENT_NOTICE_DRAFT);
+            if (COORD_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.COORD_DRAFT);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
               return !oauth.scopeAllowed("studio:read");
@@ -122,7 +130,10 @@ public class McpGateway {
         && "ADMIN".equals(identity.principal().role());
     boolean noticeConsent = identity.scopes().contains(McpOAuth.PARENT_NOTICE_DRAFT)
         && Set.of("ADMIN", "TUTOR").contains(identity.principal().role());
+    boolean coordConsent = identity.scopes().contains(McpOAuth.COORD_DRAFT)
+        && "ADMIN".equals(identity.principal().role());
     return tools().stream()
+        .filter(t -> coordConsent || !COORD_TOOLS.contains(t.get("name")))
         .filter(t -> cafeConsent || !CAFE_TOOLS.contains(t.get("name")))
         .filter(t -> noticeConsent || !SAVE_PARENT_NOTICE_DRAFT.equals(t.get("name")))
         .toList();
@@ -195,6 +206,7 @@ public class McpGateway {
             List.of("fileId")));
     studioTools(out);
     cafeTools(out);
+    coordTools(out);
     out.add(writeTool(SAVE_PARENT_NOTICE_DRAFT,
         "학부모용 카카오톡 문구를 현재 사용자의 대시보드에 초안으로 저장합니다."
             + " parent-notice:draft 별도 동의가 필요합니다. 연락처·학생 실명은 입력하지 마세요."
@@ -418,6 +430,27 @@ public class McpGateway {
     out.add(publish);
   }
 
+  private void coordTools(List<Map<String, Object>> out) {
+    var id = integer(1, Integer.MAX_VALUE);
+    out.add(tool("f2r_student_search",
+        "F2R 출결부 재원생을 이름으로 찾습니다(부분 일치). 이름은 가려서(김○수) 주고 학년·반·수업 요일을 함께 줍니다."
+            + " duplicateName=true면 사용자에게 학년·반을 보여 주고 고르게 하세요. coord:draft 동의·관리자 필요.",
+        Map.of("query", string(), "businessId", id), List.of("query")));
+    out.add(tool("f2r_attendance_check",
+        "학생 한 명의 그날 출결 기록(유효한 것만)을 봅니다. date는 YYYY-MM-DD, 없으면 오늘(한국 시간).",
+        Map.of("studentId", id, "date", string(), "businessId", id), List.of("studentId")));
+    out.add(writeTool("f2r_attendance_mark",
+        "출결 기록 초안을 만듭니다. 기록하지 않습니다 — 사용자가 돌려준 approvalUrl에서 승인해야 F2R 출결부에 기록됩니다."
+            + " eventType: CHECK_IN(등원)·CHECK_OUT(하원)·ABSENT(결석)·LATE(지각)·EARLY_LEAVE(조퇴), 없으면 CHECK_IN."
+            + " 그날 같은 구분 기록이 있으면 ALREADY_RECORDED. 재시도에는 같은 requestId(UUID)를 쓰세요.",
+        Map.of("requestId", string(), "studentId", id, "eventType", string(), "classId", id,
+            "occurredAt", string(), "businessId", id),
+        List.of("requestId", "studentId")));
+    out.add(tool("f2r_job_status",
+        "코디네이터 작업(출결 초안 등)의 상태를 봅니다: review_required(승인 대기)·completed·rejected·expired·failed.",
+        Map.of("jobId", string()), List.of("jobId")));
+  }
+
   private Map<String, Object> writeTool(
       String name, String description, Map<String, Object> props, List<String> required) {
     var tool = new LinkedHashMap<>(tool(name, description, props, required));
@@ -511,6 +544,31 @@ public class McpGateway {
       return cafe.publish(identity.principal(), identity.grantId(),
           new f2r.tutor_solution.private_tutor_solution_back.domain.newstart.cafe.CafeService.Post(
               text(args, "boardKey"), text(args, "title"), text(args, "content"), text(args, "idempotencyKey"), cafeImages(args)));
+    }
+    if (COORD_TOOLS.contains(name)) {
+      if (!identity.scopes().contains(McpOAuth.COORD_DRAFT) || !"ADMIN".equals(identity.principal().role()))
+        throw McpOAuth.error(403, "coord_admin_consent_required");
+      rate.check("coord:" + identity.grantId(), 30);
+      var coord = coordinator == null ? null : coordinator.getIfAvailable();
+      if (coord == null) throw McpOAuth.error(503, "coord_unavailable");
+      Long bid = args.hasNonNull("businessId") ? args.get("businessId").asLong() : null;
+      try {
+        return switch (name) {
+          case "f2r_student_search" -> coord.searchStudents(identity.principal(), bid, text(args, "query"));
+          case "f2r_attendance_check" -> coord.checkAttendance(identity.principal(), bid,
+              args.get("studentId").asLong(), args.hasNonNull("date") ? text(args, "date") : null);
+          case "f2r_attendance_mark" -> coord.requestAttendance(identity.principal(), "MCP", identity.grantId(),
+              new f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorService.AttendanceRequest(
+                  text(args, "requestId"), bid, args.get("studentId").asLong(),
+                  args.hasNonNull("eventType") ? text(args, "eventType") : null,
+                  args.hasNonNull("classId") ? args.get("classId").asLong() : null,
+                  args.hasNonNull("occurredAt") ? text(args, "occurredAt") : null),
+              oauth.base());
+          default -> coord.get(identity.principal(), text(args, "jobId"), oauth.base(), false);
+        };
+      } catch (IllegalArgumentException | IllegalStateException | java.time.format.DateTimeParseException e) {
+        return Map.of("error", e.getMessage() == null ? "invalid_request" : e.getMessage());
+      }
     }
     if (SAVE_PARENT_NOTICE_DRAFT.equals(name)) {
       if (!identity.scopes().contains(McpOAuth.PARENT_NOTICE_DRAFT)
