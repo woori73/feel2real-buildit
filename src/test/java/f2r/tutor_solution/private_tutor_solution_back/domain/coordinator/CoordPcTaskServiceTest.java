@@ -73,14 +73,14 @@ class CoordPcTaskServiceTest {
   }
 
   @Test
-  @DisplayName("given 예상문제 요청 when request then 대기 중, 학원 PC 우선·30분, 같은 requestId는 같은 작업")
+  @DisplayName("given 맡길 기기 없이 예상문제 요청 when request then 대기 중, 기본 클라우드, 같은 requestId는 같은 작업")
   void requestQueuesIdempotently() {
     // given & when
     Map<String, Object> first = service.request(ADMIN, "Claude", expected("req-pc-0001"));
     Map<String, Object> again = service.request(ADMIN, "Claude", expected("req-pc-0001"));
 
     // then
-    assertThat(first).containsEntry("status", CoordJob.QUEUED).containsEntry("preferredWorker", "ACADEMY_PC");
+    assertThat(first).containsEntry("status", CoordJob.QUEUED).containsEntry("preferredWorker", "CLOUD");
     assertThat((String) first.get("title")).contains("신구중 중2 2026년 2학기 기말").contains("40문항");
     assertThat(again.get("jobId")).isEqualTo(first.get("jobId"));
     assertThat(store).hasSize(1);
@@ -101,10 +101,10 @@ class CoordPcTaskServiceTest {
   }
 
   @Test
-  @DisplayName("given 방금 맡긴 작업 when 집 노트북이 가져가려 함 then 학원 PC 우선이라 거절, 30분 뒤에는 가능")
+  @DisplayName("given 학원 PC에 맡긴 작업 when 집 노트북이 가져가려 함 then 학원 PC 우선이라 거절, 30분 뒤에는 가능")
   void fallbackAfterWait() {
     // given
-    String id = queued();
+    String id = (String) service.request(ADMIN, "c", expected("req-pc-0007").put("preferredWorker", "ACADEMY_PC")).get("jobId");
 
     // when & then
     assertThat(service.list(ADMIN, false, "HOME_LAPTOP").get("open")).asList().first()
@@ -116,17 +116,17 @@ class CoordPcTaskServiceTest {
   }
 
   @Test
-  @DisplayName("given 학원 PC when claim then 바로 처리 중, 지시문에 기출 형식·F2R 로고·검수·Wiki 저장 순서")
+  @DisplayName("given 기본(클라우드) 작업 when 클라우드가 claim then 바로 처리 중, 지시문에 기출 형식·F2R 로고·검수·Wiki 저장 순서")
   void claimGivesInstructions() {
     // given
     String id = queued();
 
     // when
-    Map<String, Object> out = service.claim(ADMIN, id, "ACADEMY_PC", "ACADEMY_PC-MAKER");
+    Map<String, Object> out = service.claim(ADMIN, id, "CLOUD", "CLOUD-MAKER");
 
     // then
     String w = (String) out.get("workInstructions");
-    assertThat(out).containsEntry("status", CoordJob.RUNNING).containsEntry("makerSession", "ACADEMY_PC-MAKER");
+    assertThat(out).containsEntry("status", CoordJob.RUNNING).containsEntry("makerSession", "CLOUD-MAKER");
     assertThat(w).contains("past_exams").contains("발문").contains("부호").contains(CoordPcTaskService.LOGO_URL)
         .contains("claude -p").contains("f2r_pc_task_review").contains("save_final").contains("디지털 모의고사 탑재는 원장님이 따로 지시할 때만");
     assertThat(w.indexOf("f2r_pc_task_review")).isLessThan(w.indexOf("save_final"));
@@ -139,7 +139,7 @@ class CoordPcTaskServiceTest {
     String id = (String) service.request(ADMIN, "c", expected("req-pc-0005").put("publishDigital", true)).get("jobId");
 
     // when
-    String w = (String) service.claim(ADMIN, id, "ACADEMY_PC", null).get("workInstructions");
+    String w = (String) service.claim(ADMIN, id, "CLOUD", null).get("workInstructions");
 
     // then
     assertThat(w).contains("디지털 모의고사").contains("/digital/").contains("배포 승인");
@@ -150,7 +150,7 @@ class CoordPcTaskServiceTest {
   void finishNeedsTwoReviews() {
     // given
     String id = queued();
-    service.claim(ADMIN, id, "ACADEMY_PC", "MAKER-1");
+    service.claim(ADMIN, id, "CLOUD", "MAKER-1");
 
     // when & then
     assertThatThrownBy(() -> service.finish(ADMIN, id, done())).hasMessageContaining("0곳");
@@ -168,7 +168,7 @@ class CoordPcTaskServiceTest {
   void fixResetsReviews() {
     // given
     String id = queued();
-    service.claim(ADMIN, id, "ACADEMY_PC", "MAKER-1");
+    service.claim(ADMIN, id, "CLOUD", "MAKER-1");
     service.review(ADMIN, id, review("REVIEW-1", "PASS", true));
     service.review(ADMIN, id, review("REVIEW-2", "PASS", true));
 
@@ -186,7 +186,7 @@ class CoordPcTaskServiceTest {
   void reviewRules() {
     // given
     String id = queued();
-    service.claim(ADMIN, id, "ACADEMY_PC", "MAKER-1");
+    service.claim(ADMIN, id, "CLOUD", "MAKER-1");
 
     // when & then
     assertThatThrownBy(() -> service.review(ADMIN, id, review("MAKER-1", "PASS", true))).hasMessageContaining("스스로");
@@ -199,7 +199,7 @@ class CoordPcTaskServiceTest {
   void failWithoutReview() {
     // given
     String id = queued();
-    service.claim(ADMIN, id, "ACADEMY_PC", null);
+    service.claim(ADMIN, id, "CLOUD", null);
 
     // when
     Map<String, Object> out = service.finish(ADMIN, id,
@@ -215,7 +215,7 @@ class CoordPcTaskServiceTest {
     // given
     String a = queued();
     String b = (String) service.request(ADMIN, "c", expected("req-pc-0006")).get("jobId");
-    service.claim(ADMIN, b, "ACADEMY_PC", null);
+    service.claim(ADMIN, b, "CLOUD", null);
 
     // when & then
     assertThat(service.cancel(ADMIN, a)).containsEntry("status", CoordJob.CANCELLED);

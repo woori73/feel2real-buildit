@@ -26,8 +26,9 @@ import tools.jackson.databind.json.JsonMapper;
  * ({@code f2r_pc_task_list}) 하나를 가져가({@code f2r_pc_task_claim} → running) 내신 Wiki MCP로 만들고 저장한 뒤
  * {@code f2r_pc_task_finish}로 결과를 남긴다. F2R 서버는 Claude를 실행하지 않는다(구독 계정을 자동 실행에 쓰지 않음).
  *
- * <p>처리 기기 순서(사용자 지시): 학원 PC(ACADEMY_PC)가 먼저 가져간다. 맡긴 뒤 waitMinutes(기본 30분) 안에 학원 PC가 가져가지 않으면
- * (= 학원 PC가 꺼져 있음) 집 노트북(HOME_LAPTOP)이나 클라우드(CLOUD) Claude Code가 가져갈 수 있다. preferredWorker=ANY면 바로 아무 기기나.
+ * <p>처리 기기(사용자 지시 2026-11-19 변경): 기본은 클라우드(CLOUD) — 휴대폰 Claude 앱 → Code → 새 클라우드 세션이 바로 가져간다.
+ * 「학원 PC에 맡겨줘」처럼 preferredWorker를 정하면 그 기기가 먼저 가져가고, 맡긴 뒤 waitMinutes(기본 30분) 안에 가져가지 않으면 다른
+ * 기기가 가져갈 수 있다. preferredWorker=ANY면 바로 아무 기기나.
  *
  * <p>검수(사용자 지시 2026-11-19): 학습지·예상문제·직보·주간 시험지는 만든 세션이 아닌 <b>다른 세션 2곳 이상</b>이 기출 대조·모델 HTML
  * 반영·원장 요구 반영·F2R 로고를 확인하고 {@code f2r_pc_task_review}로 PASS를 남겨야 DONE으로 끝낼 수 있다. FIX가 나오면 고친 뒤 다시
@@ -48,6 +49,8 @@ public class CoordPcTaskService {
   static final Map<String, String> WORKER_LABEL = Map.of("ACADEMY_PC", "학원 PC", "HOME_LAPTOP", "집 노트북", "CLOUD", "클라우드",
       "ANY", "아무 기기");
   static final int DEFAULT_WAIT_MINUTES = 30;
+  /** 맡길 기기를 말하지 않으면 클라우드가 바로 처리(사용자 지시 2026-11-19). */
+  static final String DEFAULT_WORKER = "CLOUD";
   /** 검수가 필요한 작업 종류(OTHER는 내용이 제각각이라 제외). */
   static final Set<String> REVIEWED_TYPES = Set.of("WORKSHEET", "EXPECTED", "JIKBO", "WEEKLY");
   static final int REQUIRED_REVIEWS = 2;
@@ -100,7 +103,7 @@ public class CoordPcTaskService {
     String note = clip(text(a, "instructions"), 3000);
     if (note.isEmpty() && "OTHER".equals(type)) throw new IllegalArgumentException("OTHER는 instructions(무엇을 만들지)가 필요합니다.");
     plan.put("instructions", note);
-    String preferred = text(a, "preferredWorker").isEmpty() ? "ACADEMY_PC" : text(a, "preferredWorker").toUpperCase();
+    String preferred = text(a, "preferredWorker").isEmpty() ? DEFAULT_WORKER : text(a, "preferredWorker").toUpperCase();
     if (!WORKERS.contains(preferred) && !"ANY".equals(preferred)) {
       throw new IllegalArgumentException("preferredWorker는 ACADEMY_PC·HOME_LAPTOP·CLOUD·ANY 중 하나입니다.");
     }
@@ -109,7 +112,7 @@ public class CoordPcTaskService {
     plan.put("preferredWorker", preferred);
     plan.put("waitMinutes", wait);
     plan.put("publishDigital", a != null && a.hasNonNull("publishDigital") && a.get("publishDigital").asBoolean());
-    String title = "학원 PC 작업 · " + examLabel(exam) + " · " + TYPE_LABEL.get(type)
+    String title = "제작 작업 · " + examLabel(exam) + " · " + TYPE_LABEL.get(type)
         + (plan.containsKey("count") ? " " + plan.get("count") + "문항" : "");
     plan.put("title", title);
     plan.put("aiTitle", title);
@@ -122,9 +125,12 @@ public class CoordPcTaskService {
     jobs.save(job);
     log(job, "MCP", p.loginId(), null, CoordJob.QUEUED, "PC 작업 맡김 · " + TYPE_LABEL.get(type));
     Map<String, Object> out = view(job, false);
-    out.put("message", "PC 작업 대기열에 올렸습니다. " + WORKER_LABEL.get(preferred) + "가 먼저 처리하고"
-        + ("ANY".equals(preferred) ? "" : ", " + wait + "분 안에 가져가지 않으면(꺼져 있으면) 집 노트북·클라우드가 대신 처리할 수 있습니다")
-        + ". 학원 PC는 휴대폰 Claude 앱 → Code → 학원 PC 세션에서 「대기 작업 처리해줘」라고 하면 됩니다. 진행은 f2r_pc_task_list로 봅니다.");
+    out.put("message", "제작 작업 대기열에 올렸습니다. " + WORKER_LABEL.get(preferred) + "가 먼저 처리하고"
+        + ("ANY".equals(preferred) ? "" : ", " + wait + "분 안에 가져가지 않으면 다른 기기가 대신 처리할 수 있습니다") + ". "
+        + ("ACADEMY_PC".equals(preferred) || "HOME_LAPTOP".equals(preferred)
+            ? "휴대폰 Claude 앱 → Code → " + WORKER_LABEL.get(preferred) + " 세션에서 「대기 작업 처리해줘」라고 하면 됩니다."
+            : "휴대폰 Claude 앱 → Code → 새 세션에서 「F2R 대기 작업 처리해줘(worker=CLOUD)」라고 하면 바로 처리합니다.")
+        + " 진행은 f2r_pc_task_list로 봅니다.");
     return out;
   }
 
@@ -268,7 +274,7 @@ public class CoordPcTaskService {
     String ctx = ctxArgs(exam);
     boolean reviewed = REVIEWED_TYPES.contains(type);
     StringBuilder s = new StringBuilder();
-    s.append("[학원 PC 작업] ").append(plan.path("title").asText()).append(" (jobId ").append(jobId).append(")\n");
+    s.append("[제작 작업] ").append(plan.path("title").asText()).append(" (jobId ").append(jobId).append(")\n");
     s.append("1. BuildIt Wiki의 get_final_context(").append(ctx).append(")로 자료를 읽는다. 받은 자료를 다시 조립하지 말고 그대로 쓴다.\n");
     s.append("2. 기출 형식: past_exams(실제 기출 원본)·exam_analyses에서 이 학교의 가장 최근 기출부터 읽고, 발문 문구·선택지 형식(①~⑤ 등)·")
         .append("문항 배치와 편집·괄호·밑줄·기호(ⓐ, [A], ㉠ 등) 부호를 기출에 있는 그대로 쓴다. 기출에 없는 형식은 새로 만들지 않는다.\n");
@@ -285,12 +291,13 @@ public class CoordPcTaskService {
     s.append(". 학교 프린트·기출·Digital Twin 근거를 따르고, 정답을 가리고 다시 풀어 검증한다.\n");
     String note = plan.path("instructions").asText("");
     if (!note.isBlank()) s.append("   원장님 지시: ").append(note).append("\n");
-    s.append("6. 만든 HTML을 이 기기의 outputs/").append(jobId).append("/ 폴더에 파일로 저장한다.\n");
+    s.append("6. 만든 HTML을 이 기기의 outputs/").append(jobId).append("/ 폴더에 파일로 저장한다(클라우드 세션 파일은 세션이 끝나면 사라지므로")
+        .append(" 결과는 반드시 내신 Wiki 저장으로 남긴다).\n");
     int step = 7;
     if (reviewed) {
       s.append(step++).append(". 검수(필수, 최소 ").append(REQUIRED_REVIEWS).append("회): 이 대화가 아닌 새 세션에서 검수한다 — 터미널에서 ")
           .append("claude -p \"F2R 검수 jobId=").append(jobId).append(" reviewer=REVIEW-1\" 처럼 세션마다 다른 reviewer 이름으로 실행")
-          .append("(CLAUDE.md의 「검수」 절차). 검수 세션은 outputs 파일과 get_final_context의 기출을 문항마다 대조해 ① 기출 발문·선택지·편집·부호")
+          .append("(클라우드에서는 제작 설명 없이 jobId·파일 경로·시험 정보만 준 새 하위 에이전트를 검수마다 따로 띄워도 된다). 검수 세션은 outputs 파일과 get_final_context의 기출을 문항마다 대조해 ① 기출 발문·선택지·편집·부호")
           .append(" ② 기존 학습지 HTML 모델 반영 ③ 원장님 요구(문항 수·범위·지시) 반영 ④ 첫 페이지 F2R 로고를 확인하고 f2r_pc_task_review")
           .append("(jobId, reviewer, verdict PASS·FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo}, notes)로 남긴다.")
           .append(" FIX가 나오면 고친 뒤 다시 새 세션 ").append(REQUIRED_REVIEWS).append("곳의 PASS를 받는다.\n");

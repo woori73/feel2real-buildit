@@ -567,10 +567,11 @@ public class McpGateway {
             + " 거르기), examCode를 주면 문항별 정답(①~⑤)·배점·해설. 정답지 사진이 없을 때 내신 Wiki 자료와 함께 대조에 씁니다.",
         Map.of("examCode", string(), "query", string()), List.of()));
     out.add(writeTool("f2r_pc_task_request",
-        "학원 PC 작업 맡기기(대기열에 올림, 바로 실행 안 함). type: WORKSHEET(학습지)·EXPECTED(예상문제 FINAL)·JIKBO(직보)·WEEKLY·OTHER."
+        "학습지·예상문제 등 제작 작업 맡기기(대기열에 올림, 바로 실행 안 함). type: WORKSHEET(학습지)·EXPECTED(예상문제 FINAL)·JIKBO(직보)·WEEKLY·OTHER."
             + " school·grade·year·semester·exam(내신 Wiki 시험), count(문항 수), instructions(원장님 지시), modelFrom(모델로 삼을 다른 시험"
-            + " {school,grade,year,semester,exam}). 학원 PC가 먼저 처리하고 waitMinutes(기본 30) 안에 안 가져가면 집 노트북·클라우드가 처리"
-            + "(preferredWorker=ANY면 바로 아무 기기). 다른 세션 2회 검수 후 원장님께 알리고 내신 Wiki에 저장됩니다."
+            + " {school,grade,year,semester,exam}). preferredWorker 기본은 CLOUD(클라우드가 바로 처리)."
+            + " 「학원 PC에 맡겨줘」면 ACADEMY_PC(집 노트북은 HOME_LAPTOP) — 그 기기가 먼저, waitMinutes(기본 30) 안에 안 가져가면 다른 기기"
+            + "(ANY면 바로 아무 기기). 다른 세션 2회 검수 후 원장님께 알리고 내신 Wiki에 저장됩니다."
             + " publishDigital=true는 원장님이 디지털 모의고사 탑재까지 지시했을 때만.",
         Map.ofEntries(Map.entry("requestId", string()), Map.entry("type", string()), Map.entry("school", string()),
             Map.entry("grade", string()), Map.entry("year", integer(2000, 2100)), Map.entry("semester", string()),

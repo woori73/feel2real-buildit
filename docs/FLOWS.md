@@ -1224,9 +1224,9 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 
 ### 학원 PC 작업 — 휴대폰으로 맡기고 PC의 Claude Code가 처리 (2026-11-19)
 
-1. 휴대폰 Claude: "학원 PC에 신구중2 2학기 기말 예상문제 40문항 맡겨줘" → `f2r_pc_task_request {type:EXPECTED, …}` → 대기(`queued`). PC가 꺼져 있어도 남는다.
-2. 원장이 휴대폰 Claude 앱 → Code → 학원 PC 세션(`tools/f2r-pc/start-f2r-pc.bat`로 켠 `claude remote-control`)에서 "대기 작업 처리해줘" → `f2r_pc_task_list(worker=ACADEMY_PC)` → `f2r_pc_task_claim`(`running`).
-3. 학원 PC가 맡긴 뒤 30분 안에 가져가지 않으면 집 노트북(HOME_LAPTOP)·클라우드(CLOUD)가 가져갈 수 있다.
+1. 휴대폰 Claude: "신구중2 2학기 기말 예상문제 40문항 맡겨줘" → `f2r_pc_task_request {type:EXPECTED, …}` → 대기(`queued`, 기본 preferredWorker=CLOUD).
+2. **기본(클라우드)**: 원장이 휴대폰 Claude 앱 → Code → 새 세션에서 "F2R 대기 작업 처리해줘(worker=CLOUD)" → `f2r_pc_task_list(worker=CLOUD)` → `f2r_pc_task_claim`(`running`). 설치 없음.
+3. **학원 PC 선택**: "학원 PC에 맡겨줘" → preferredWorker=ACADEMY_PC. 학원 PC 세션(`tools/f2r-pc/start-f2r-pc.bat`로 켠 `claude remote-control`)에서 처리. 30분 안에 가져가지 않으면 다른 기기가 가져갈 수 있다.
 4. 제작: 내신 Wiki `get_final_context` → 그 학교 최근 기출의 발문·선택지·편집·부호를 그대로, 기존 학습지 HTML을 모델로, 첫 페이지 F2R 로고 → `outputs/<jobId>/`.
 5. 검수: 만든 세션이 아닌 새 세션 2곳(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 2곳.
 6. 검수 통과 → 원장님께 알림 → 동의 → 내신 Wiki 저장(confirm_token) → 원장 지시(publishDigital)가 있으면 디지털 모의고사 탑재 자료 준비(실제 탑재는 개발 PR + 배포 승인) → `f2r_pc_task_finish`(DONE은 검수 PASS 2곳이 없으면 거절).
