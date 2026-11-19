@@ -539,7 +539,7 @@ public class CoordinatorService {
   }
 
   /** 김민수 → 김○수, 이수 → 이○, 남궁민수 → 남○○수. 한 글자는 ○. */
-  static String maskName(String name) {
+  public static String maskName(String name) {
     if (name == null || name.isBlank()) return "";
     String n = name.strip();
     int len = n.codePointCount(0, n.length());
