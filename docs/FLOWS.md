@@ -1222,6 +1222,15 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 2-1. **채점 전 업로드 → Claude 채점 (권장)**: 원장이 학생부 화면 「채점 준비」에서 날짜·분야·교재를 적고 만든 뒤 문제지·정답지·학생 답안 사진을 종류별로 올림(PENDING) → 휴대폰 Claude에게 "김민수 채점해줘" → `f2r_grading_pending` → `f2r_grading_photos`(사진을 이미지로 받음) → Claude가 정답지와 대조(없으면 직접 풀고 불확실한 문항은 '확인 필요')해 **틀린 문항·이유·피드백을 대화에 바로 알려 줌** → `f2r_grading_save`로 학생부에 바로 저장(GRADED) → `f2r_student_book`을 근거로 `f2r_weakness_save`(약점 정리 갱신).
 3. 학생부 화면·`f2r_student_book`: 최근 출결 + 약점 정리 + 수업 기록 + 채점 기록 + 오답 유형별 횟수. 원장이 "김민수 그동안 기록 보여줘"라고 하면 Claude가 요약하고 `bookUrl`(학생부 화면 링크)을 준다. 출결부 학생 이름을 누르면 학생부로 간다. 수정·삭제는 관리자 화면에서(말 명령은 10분 안 되돌리기).
 
+### 학원 PC 작업 — 휴대폰으로 맡기고 PC의 Claude Code가 처리 (2026-11-19)
+
+1. 휴대폰 Claude: "학원 PC에 신구중2 2학기 기말 예상문제 40문항 맡겨줘" → `f2r_pc_task_request {type:EXPECTED, …}` → 대기(`queued`). PC가 꺼져 있어도 남는다.
+2. 원장이 휴대폰 Claude 앱 → Code → 학원 PC 세션(`tools/f2r-pc/start-f2r-pc.bat`로 켠 `claude remote-control`)에서 "대기 작업 처리해줘" → `f2r_pc_task_list(worker=ACADEMY_PC)` → `f2r_pc_task_claim`(`running`).
+3. 학원 PC가 맡긴 뒤 30분 안에 가져가지 않으면 집 노트북(HOME_LAPTOP)·클라우드(CLOUD)가 가져갈 수 있다.
+4. 제작: 내신 Wiki `get_final_context` → 그 학교 최근 기출의 발문·선택지·편집·부호를 그대로, 기존 학습지 HTML을 모델로, 첫 페이지 F2R 로고 → `outputs/<jobId>/`.
+5. 검수: 만든 세션이 아닌 새 세션 2곳(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 2곳.
+6. 검수 통과 → 원장님께 알림 → 동의 → 내신 Wiki 저장(confirm_token) → 원장 지시(publishDigital)가 있으면 디지털 모의고사 탑재 자료 준비(실제 탑재는 개발 PR + 배포 승인) → `f2r_pc_task_finish`(DONE은 검수 PASS 2곳이 없으면 거절).
+
 ### 원장 계정 말 명령 — LMS·홈페이지 (academy:manage, 2026-11-19)
 
 - "중2 문법 3과 강의 공개해줘" → `academy_lms_overview`로 콘텐츠 확인 → `academy_lms_change {action:PUBLISH, contentId}`(1차: 실행 안 함, summary·confirm_token) → "「3과 관계대명사」(중2 문법) 공개, 할까요?" → "응" → 같은 값 + `confirm_token` → 공개. 수강 허용·회수도 같은 흐름(`academy_lms_enrollments`로 학생 확인, 이름은 가림).

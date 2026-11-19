@@ -29,6 +29,22 @@ public class CoordRecordActions implements CoordActions {
   public static final String LESSON_RECORD = "LESSON_RECORD";
   public static final String GRADING_RECORD = "GRADING_RECORD";
   static final Set<String> KINDS = Set.of(LESSON_RECORD, GRADING_RECORD);
+  /**
+   * 채점 순서(2026-11-19 사용자 지시). 정답 근거를 이 순서로 찾는다: ① 정답지 사진 → ② 내신 문제면 홈페이지 「디지털 내신문제」 정답·해설
+   * (f2r_naesin_answer_key)과 내신 Wiki(get_final_context의 generated_tests·final_deliverables·weekly_exam_finals) →
+   * ③ 내신이 아닌 문제는 사용자에게 정답지 사진을 함께 달라고 요청 → ④ 사용자가 문제지만으로 하라고 하면 직접 풀어 채점하고 불확실한 문항은
+   * '확인 필요', 피드백에 "정답지 없이 직접 풀어 채점"을 적는다.
+   */
+  static final String GRADING_GUIDE = "이미지 순서는 images 목록과 같습니다. 정답 근거는 이 순서로 찾으세요."
+      + " ① 정답지 사진이 있으면 그것과 학생 답안을 대조합니다."
+      + " ② 정답지가 없고 내신 문제(학교 시험 대비)면 f2r_naesin_answer_key(홈페이지 디지털 내신문제의 정답·해설)와 BuildIt Wiki"
+      + " get_final_context의 generated_tests·final_deliverables·weekly_exam_finals에서 같은 회차·같은 문항을 찾아 정답과 해설을 대조합니다"
+      + "(문항 번호와 문제가 같은지 먼저 확인)."
+      + " ③ 내신이 아닌 문제(교재·모의고사 등)는 채점 전에 사용자에게 정답지 사진을 문제지와 함께 올려 달라고 요청합니다."
+      + " ④ 사용자가 정답지 없이 문제지만으로 하라고 하면 직접 풀어 채점하되, 확실하지 않은 문항은 '확인 필요'로 표시하고"
+      + " feedback에 '정답지 없이 Claude가 직접 풀어 채점함'을 적습니다."
+      + " 읽을 수 없는 답은 추측하지 마세요. 틀린 문항을 바로 알려 준 뒤 f2r_grading_save로 저장하고, f2r_weakness_save로 약점 정리를 갱신하세요.";
+
   static final Map<String, String> CHECK_LABEL = Map.of("DONE", "다 해 옴", "PARTIAL", "일부 해 옴", "NOT_DONE", "안 해 옴");
 
   private final EasyLessonRecordService records;
@@ -112,9 +128,7 @@ public class CoordRecordActions implements CoordActions {
     meta.put("material", g.material());
     meta.put("status", g.status());
     meta.put("images", labels);
-    meta.put("instruction", "이미지 순서는 images 목록과 같습니다. 정답지가 있으면 정답지와 학생 답안을 대조하고, 없으면 문제를 직접"
-        + " 풀어 채점하되 확실하지 않은 문항은 '확인 필요'로 표시하세요. 읽을 수 없는 답은 추측하지 마세요. 틀린 문항을 바로"
-        + " 알려 준 뒤 f2r_grading_save로 저장하고, f2r_weakness_save로 약점 정리를 갱신하세요.");
+    meta.put("instruction", GRADING_GUIDE);
     return new PhotoBundle(meta, labels, images);
   }
 

@@ -248,6 +248,8 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordStudentActionsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordTuitionActionsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordRecordActionsTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordPcTaskServiceTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordAnswerKeyServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpCoordinatorToolsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.mcp.McpAcademyToolsTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.NaverLoginModalContractTest"

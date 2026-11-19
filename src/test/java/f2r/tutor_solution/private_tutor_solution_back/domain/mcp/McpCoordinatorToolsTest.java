@@ -89,6 +89,29 @@ class McpCoordinatorToolsTest {
   }
 
   @Test
+  @DisplayName("given 동의한 관리자 when 도구 목록 then PC 작업 맡기기·가져가기·검수·끝내기·취소는 쓰기 도구, 목록·정답 조회는 읽기 도구")
+  void pcTaskTools() {
+    // given
+    var gateway = new McpGateway(null, oauth("coord:draft"), null, null, null, null, null);
+    var admin = new AuthenticatedPrincipal(1L, "owner", "ADMIN");
+
+    // when
+    var tools = gateway.tools(new McpOAuth.Identity("g1", admin, Set.of(McpOAuth.COORD_DRAFT)));
+
+    // then
+    for (String name : List.of("f2r_pc_task_request", "f2r_pc_task_claim", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel")) {
+      var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
+      assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(false);
+    }
+    for (String name : List.of("f2r_pc_task_list", "f2r_naesin_answer_key")) {
+      var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
+      assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(true);
+    }
+    var review = tools.stream().filter(t -> "f2r_pc_task_review".equals(t.get("name"))).findFirst().orElseThrow();
+    assertThat((String) review.get("description")).contains("새 세션").contains("2곳");
+  }
+
+  @Test
   @DisplayName("given 동의 없는 연결 when f2r_confirm 실행 then 403 coord_admin_consent_required")
   void confirmRequiresConsent() {
     // given
