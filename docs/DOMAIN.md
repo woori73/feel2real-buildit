@@ -2054,6 +2054,7 @@ HANDOFF(docs/handoff/instagram-auto-feed/HANDOFF.md) §7의 6개 표를 다른 �
 | created_at / updated_at | DATETIME(6) | |
 
 - 처음 3편(1-①·1-②·1-③, 2026-11-13)은 V1111에 함께 들어 있다. 이후 글은 관리자 화면 `/admin/admissions/articles`에서 배포 없이 추가한다.
+- 후속 3편(4-후속①·1-후속①·1-후속②, 2026-11-19)은 V1122에 `INSERT IGNORE`로 들어 있다(관리자 화면에서 같은 회차를 먼저 올렸으면 건너뜀).
 - CRUD: 공개 읽기(비로그인) / 관리자 추가·수정·숨김. 물리 삭제 없음.
 
 ## 학부모 카카오톡 초안
