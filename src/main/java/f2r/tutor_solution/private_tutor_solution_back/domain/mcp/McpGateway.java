@@ -57,6 +57,8 @@ public class McpGateway {
 
   static final Set<String> CAFE_TOOLS = Set.of("cafe_status", "cafe_publication_history", "publish_cafe_article");
   static final String SAVE_PARENT_NOTICE_DRAFT = "save_parent_notice_draft";
+  static final String LIST_PARENT_NOTICE_DRAFTS = "list_parent_notice_drafts";
+  static final Set<String> PARENT_NOTICE_TOOLS = Set.of(SAVE_PARENT_NOTICE_DRAFT, LIST_PARENT_NOTICE_DRAFTS);
 
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorService> coordinator;
@@ -116,7 +118,7 @@ public class McpGateway {
             if (name.equals("read_student_roster") || name.equals("read_admin_dashboard")) return !oauth.scopeAllowed(McpOAuth.STUDENT_ROSTER_READ);
             if (EASY_SITE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.EASY_COLLECT_WRITE);
             if (CAFE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.CAFE_WRITE);
-            if (SAVE_PARENT_NOTICE_DRAFT.equals(name)) return !oauth.scopeAllowed(McpOAuth.PARENT_NOTICE_DRAFT);
+            if (PARENT_NOTICE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.PARENT_NOTICE_DRAFT);
             if (COORD_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.COORD_DRAFT);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
@@ -139,7 +141,7 @@ public class McpGateway {
     return tools().stream()
         .filter(t -> coordConsent || !COORD_TOOLS.contains(t.get("name")))
         .filter(t -> cafeConsent || !CAFE_TOOLS.contains(t.get("name")))
-        .filter(t -> noticeConsent || !SAVE_PARENT_NOTICE_DRAFT.equals(t.get("name")))
+        .filter(t -> noticeConsent || !PARENT_NOTICE_TOOLS.contains(t.get("name")))
         .toList();
   }
 
@@ -214,10 +216,15 @@ public class McpGateway {
     out.add(writeTool(SAVE_PARENT_NOTICE_DRAFT,
         "학부모용 카카오톡 문구를 현재 사용자의 대시보드에 초안으로 저장합니다."
             + " parent-notice:draft 별도 동의가 필요합니다. 연락처·학생 실명은 입력하지 마세요."
-            + " 원장이 직접 카카오톡을 열어 수신자를 골라 보냅니다. 재시도에는 동일한 요청 UUID를 사용하세요.",
+            + " 원장이 직접 카카오톡을 열어 수신자를 골라 보냅니다. 재시도에는 동일한 요청 UUID를 사용하세요."
+            + " 저장 뒤 결과의 shareUrl을 사용자에게 주면, 누르는 즉시 그 초안이 열리고 공유 버튼만 누르면 됩니다.",
         Map.of("requestId", string(), "kind", Map.of("type", "string", "enum", List.of("NOTICE", "PROMOTION")),
             "title", string(), "body", Map.of("type", "string", "maxLength", 200)),
         List.of("requestId", "kind", "title", "body")));
+    out.add(tool(LIST_PARENT_NOTICE_DRAFTS,
+        "학부모 안내 초안 최근 10건(제목·공지/홍보·만든 곳·시각·shareUrl)을 봅니다. 보내기는 하지 않습니다 — shareUrl을 열어 사람이"
+            + " 카카오톡 공유 버튼으로 보냅니다. parent-notice:draft 별도 동의가 필요합니다.",
+        Map.of(), List.of()));
     out.add(tool("read_academy_move","학원이사 이슈별 글·AI 정리·대화를 읽습니다. 관리자와 academy-move:write 별도 동의가 필요합니다. 원문 파일은 제외합니다.",Map.of(),List.of()));
     out.add(writeTool("post_academy_move","학원이사 글을 해당 이슈에 올리고 AI가 핵심·미확정 사항·다음 행동을 정리해 함께 답합니다. 같은 idempotencyKey 재시도는 중복 저장하지 않습니다. 관리자와 academy-move:write 별도 동의가 필요합니다.",
         Map.of("title",string(),"content",string(),"issue",Map.of("type","string","enum",List.of("원상복구","교습소 전환","명칭·로고")),"idempotencyKey",string()),List.of("content","issue","idempotencyKey")));
@@ -550,6 +557,11 @@ public class McpGateway {
             false));
   }
 
+  /** 학부모 안내 화면에서 그 초안을 바로 띄우는 링크. */
+  String parentNoticeShareUrl(String draftId) {
+    return oauth.base() + "/dashboard/parent-notices?draft=" + draftId;
+  }
+
   private Map<String, Object> string() {
     return Map.of("type", "string");
   }
@@ -640,7 +652,7 @@ public class McpGateway {
         return Map.of("error", e.getMessage() == null ? "invalid_request" : e.getMessage());
       }
     }
-    if (SAVE_PARENT_NOTICE_DRAFT.equals(name)) {
+    if (PARENT_NOTICE_TOOLS.contains(name)) {
       if (!identity.scopes().contains(McpOAuth.PARENT_NOTICE_DRAFT)
           || !Set.of("ADMIN", "TUTOR").contains(identity.principal().role())) {
         throw McpOAuth.error(403, "parent_notice_consent_required");
@@ -648,10 +660,18 @@ public class McpGateway {
       rate.check("parent-notice:" + identity.grantId(), 12);
       var notices = parentNotices == null ? null : parentNotices.getIfAvailable();
       if (notices == null) throw McpOAuth.error(503, "parent_notice_unavailable");
+      if (LIST_PARENT_NOTICE_DRAFTS.equals(name)) {
+        return Map.of("drafts", notices.list(identity.principal()).stream().limit(10).map(d -> Map.of(
+            "draftId", d.id(), "title", d.title(), "kind", d.kind(), "source", d.source(),
+            "createdAt", d.createdAt().toString(), "shareUrl", parentNoticeShareUrl(d.id()))).toList(),
+            "note", "보내기는 사람이 shareUrl을 열어 공유 버튼으로 합니다.");
+      }
       var draft = notices.save(identity.principal(), new ParentNoticeService.Request(
           text(args, "requestId"), ParentNoticeService.kind(text(args, "kind")), text(args, "title"),
           text(args, "body")), ParentNoticeService.Source.MCP);
-      return Map.of("draftId", draft.id(), "status", "DRAFT", "dashboardUrl", oauth.base() + "/dashboard/parent-notices");
+      return Map.of("draftId", draft.id(), "status", "DRAFT", "dashboardUrl", oauth.base() + "/dashboard/parent-notices",
+          "shareUrl", parentNoticeShareUrl(draft.id()),
+          "message", "초안만 저장했습니다. 사용자에게 shareUrl을 주고, 열어서 문구를 확인한 뒤 카카오톡 공유 버튼으로 보내라고 안내하세요.");
     }
     if (name.equals("read_academy_move") || name.equals("post_academy_move")) {
       if (!identity.scopes().contains(McpOAuth.ACADEMY_MOVE_WRITE) || !"ADMIN".equals(identity.principal().role()))

@@ -1210,3 +1210,7 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 ### 수강료 말 명령 (2026-11-19)
 
 "이번 달 미납자 누구야" → `f2r_tuition_status {status:UNPAID}`(가린 이름·잔액) → "김민수 30만원 냈어" → `f2r_tuition_change {action:PAY, studentId, amount:300000}` → 대화에서 "김○수 · 2026-11 수강료 납부 300,000원 (누적 300,000원 / 청구 300,000원 → 완납), 기록할까요?" → "응" → `f2r_confirm` → 수납 원장 갱신 → 10분 안 "되돌려줘" → `f2r_undo`(이전 납부액). 청구 등록은 `action:BILL`. 실제 결제·송금·수납 삭제는 하지 않는다. 손익은 `f2r_ledger_summary`.
+
+### 학부모 안내 말 명령 (2026-11-19)
+
+"이번 주 결석한 학생 학부모님께 보충 안내 써줘" → AI가 출결·수납 사실을 조회(`f2r_attendance_check`·`f2r_tuition_status`, 가린 이름) → 문구 작성(학생 실명·연락처 없음) → `save_parent_notice_draft`(초안만) → AI가 `shareUrl`을 줌 → 사용자가 누르면 `/dashboard/parent-notices?draft=…`에서 그 초안이 바로 편집·공유 칸에 뜸 → 문구 확인 → **사용자가 카카오톡 공유 버튼을 눌러 받는 학부모를 직접 고름**. 자동 발송 없음. 지난 초안은 `list_parent_notice_drafts`.
