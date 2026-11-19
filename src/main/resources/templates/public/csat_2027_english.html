@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public(bodyClass='cm-page')}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2027 수능 영어 해설 · 홀수형 모션 해설 | Feel2Real</title>
+  <meta name="description" content="2027학년도 수능 영어 홀수형 45문항을 문제 → 노란 근거 → 정답 → 해설 순서로 움직이며 보는 모션 해설. 11월 19일 공개 가답안 기준.">
+  <th:block th:replace="~{fragments/_seo :: seo (
+    keywords='2027 수능 영어, 수능 영어 해설, 수능 영어 정답, 홀수형, 가답안',
+    canonical='https://feel2real.co.kr/csat/2027-english',
+    ogTitle='2027 수능 영어 해설 · 홀수형 모션 해설',
+    ogDescription='문제 → 노란 근거 → 정답 → 해설 순서로 보는 2027 수능 영어 45문항 해설',
+    ogImage=null)}"></th:block>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/css/csat_motion.css?v=20261119-1">
+  <script src="/js/csat_motion.js?v=20261119-1" defer></script>
+  <script src="/js/csat_page.js?v=20261119-1" defer></script>
+</head>
+<body class="cm-page">
+<th:block layout:fragment="content">
+  <header class="cm-top">
+    <a href="/"><img src="/img/F2R_logo_pure.svg" alt="F2R 홈" width="80" height="26"></a>
+    <span class="cm-sp"></span>
+    <a href="/">홈</a>
+    <a href="/wiki">모의고사 위키</a>
+  </header>
+
+  <main id="csatApp">
+    <section class="cm-hero" aria-labelledby="csatTitle">
+      <div class="cm-orbit" aria-hidden="true">
+        <i style="--k:0;left:30px;top:60px">01</i><i style="--k:1;left:120px;top:20px">18</i><i style="--k:2;left:200px;top:90px">33</i>
+        <i style="--k:3;left:80px;top:150px">⑤</i><i style="--k:4;left:180px;top:190px">45</i><i style="--k:5;left:250px;top:30px">③</i>
+      </div>
+      <p>오늘 치른 2027학년도 대학수학능력시험 · 영어 영역 홀수형</p>
+      <h1 id="csatTitle">2027 수능 영어 해설</h1>
+      <p>한 문항씩 <b>문제</b>를 먼저 보고, <b>노란 근거</b>가 그어진 뒤 <b>정답</b>이 뒤집히고 <b>해설</b>이 올라옵니다.
+        스스로 풀어 본 다음 「근거 보기」를 눌러 확인하세요.</p>
+      <div class="cm-badges"><span>11월 19일 공개 가답안 기준</span><span>듣기 1~17 · 독해 18~45</span><span>문장별 해석·어휘 포함</span></div>
+      <div class="cm-hero-cta">
+        <a class="cm-btn cm-btn-main" href="/csat/2027-english/pdf" th:href="@{/csat/2027-english/pdf}">PDF 무료 다운로드 (로그인)</a>
+        <a class="cm-btn cm-btn-ghost" href="#csatQuickBlock">빠른 정답</a>
+      </div>
+    </section>
+
+    <div class="cm-wrap">
+      <nav id="csatMap" class="cm-map" aria-label="문항 번호"></nav>
+      <div id="csatView" class="cm-view" aria-live="polite"><p class="cm-loading">해설을 불러오는 중…</p></div>
+      <div class="cm-nav">
+        <button type="button" class="cm-btn cm-btn-line" id="csatPrev" aria-label="이전 문항">← 이전</button>
+        <button type="button" class="cm-btn cm-btn-dark cm-step-btn" id="csatStep">근거 보기</button>
+        <button type="button" class="cm-btn cm-btn-line" id="csatNext" aria-label="다음 문항">다음 →</button>
+      </div>
+      <label class="cm-auto"><input type="checkbox" id="csatAuto"> 자동 넘김(단계마다 몇 초 뒤 저절로 넘어갑니다)</label>
+
+      <section class="cm-quick" id="csatQuickBlock" aria-labelledby="csatQuickTitle">
+        <h2 id="csatQuickTitle">빠른 정답 <small>(번호를 누르면 보입니다)</small></h2>
+        <div class="cm-quick-grid" id="csatQuick"></div>
+        <p><button type="button" class="cm-btn cm-btn-line" id="csatQuickAll">전체 정답 보기</button></p>
+      </section>
+
+      <p class="cm-foot">
+        문제 원문의 저작권은 한국교육과정평가원에 있습니다. 해설·근거 표시·문장별 해석은 Feel2Real(F2R)이 만들었습니다.
+        정답은 2026년 11월 19일 공개 가답안 기준이며, 확정 정답 발표 뒤 바뀐 문항이 있으면 고칩니다.
+      </p>
+    </div>
+  </main>
+</th:block>
+</body>
+</html>

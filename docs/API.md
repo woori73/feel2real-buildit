@@ -22,6 +22,13 @@
 
 ## 내신 문제 제작소 (2026-10-26)
 
+## 2027 수능 영어 모션 해설 (2026-11-19)
+
+- `GET /csat/2027-english` (공개, SSR) → 45문항 모션 해설 화면. 문항마다 문제 → 노란 근거 → 정답(3D 카드) → 해설·선택지별 이유·핵심 단어·문장별 해석 순서. `#q33`으로 바로 연다. 로그인 뒤 `?download=1`로 돌아오면 PDF를 한 번 내려받는다.
+- `GET /csat/2027-english/pdf` → **로그인 사용자만** 필기본 PDF(`classpath:private/csat/2027-english-odd-f2r.pdf`, 정적 경로 아님)를 `attachment`(한글 파일명, `Cache-Control: private, no-store`)로 준다. 로그인 안 했으면 `302 /auth/naver/start?returnUrl=/csat/2027-english?download=1`. 파일이 없으면 404.
+- 자료: 정적 `GET /img/csat/2027-en/data.json`(+ 문항 그림 webp). `scripts/csat/build_csat_2027_english.py <필기본.pdf>`가 만든다 — 문제 그림의 노란 형광을 지우고 비율 좌표(`highlights[{x,y,w,h}]`)로 따로 저장, 해설 칸을 소제목·선택지 이유로 나눔, 1쪽 빠른 정답과 문항 쪽 「가답안 N번」이 하나라도 다르면 멈춤. 띄어쓰기 검토본은 `scripts/csat/spacing_fixes_2027_english.json`(공백만 다른 경우에만 적용).
+- 홈(`/`) 오른쪽 홍보 영상 아래 카드(`#csatHome`)가 독해 문항을 자동 재생한다(화면에 보일 때만 자료를 읽음, 멈춤 버튼, 움직임 줄이기 설정이면 결과만 표시).
+
 ## 홈페이지 승인 트레일러 (2026-10-29)
 
 - `GET /api/landing/videos/home-agent-trailer/stream`: 사용자가 홈페이지 공개 대상으로 지정한 `ai-agent-part1`의 파일 `8c2ef989-b739-4bf4-bcd7-b9582851e8e1` **하나**만 읽는다. 임의 파일/프로젝트 선택 인수는 받지 않으며 query가 있으면400. 기존 공개 landing-video GET 권한 범위를 재사용하고 `/api/studio/**`의 인증·프로젝트 권한은 유지한다.
