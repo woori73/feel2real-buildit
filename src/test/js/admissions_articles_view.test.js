@@ -51,3 +51,17 @@ test('given 원문자·일반 숫자 회차 when 정렬 기준·표시 나누기
   const order=v.seriesItems([{id:1,series:'s',episode:'2-①'},{id:2,series:'s',episode:'1-⑩'},{id:3,series:'s',episode:'1-⑨'}],10).map(x=>x.episode);
   assert.deepEqual(order,['1-⑨','1-⑩','2-①']);
 });
+test('given 날짜가 다른 글들 when 첫 화면 목록 then 최신 게시일이 먼저 오고 같은 날은 회차 순이며, 앞에서 limit개만 남는다',()=>{
+  // given
+  const list=[
+    {id:1,series:'바뀌는 입시',episode:'1-①',title:'a',publishedOn:'2026-11-13'},
+    {id:2,series:'바뀌는 입시',episode:'1-②',title:'b',publishedOn:'2026-11-13'},
+    {id:8,series:'바뀌는 입시',episode:'수능특집-②',title:'c',publishedOn:'2026-11-19'},
+    {id:9,series:'바뀌는 입시',episode:'수능특집-①',title:'d',publishedOn:'2026-11-19'},
+    {id:12,series:'바뀌는 입시',episode:'2-②',title:'e',publishedOn:'2026-11-20'},
+    {id:13,series:'바뀌는 입시',episode:'2-①',title:'f',publishedOn:'2026-11-20'}];
+  // when
+  const items=v.seriesItems(list,5).map(x=>x.episode);
+  // then
+  assert.deepEqual(items,['2-①','2-②','수능특집-①','수능특집-②','1-①']);
+});

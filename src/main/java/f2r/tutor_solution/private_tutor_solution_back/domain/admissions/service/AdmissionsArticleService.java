@@ -2,25 +2,29 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service
 
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.entity.AdmissionsArticle;
 import f2r.tutor_solution.private_tutor_solution_back.domain.admissions.repository.AdmissionsArticleRepository;
+import f2r.tutor_solution.private_tutor_solution_back.config.KstTime;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
-import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 「바뀌는 입시」 해설 글 — 공개 읽기 + 관리자 추가·수정·숨김. 삭제는 없다(숨김으로 내린다).
  *
+ * <p>예약 게시: 게시일(publishedOn)이 한국 날짜로 오늘보다 뒤인 글은 공개 목록·글 보기에 나오지 않고, 그날이 되면 저절로 나온다.
+ * 관리자 목록에는 그대로 보인다.
+ *
  * <p>상담 AI 근거(공식자료·지식 항목·검색 인덱스)와 연결하지 않는다. 이 서비스는 다른 입시 서비스에서 참조하지 않는다.
  */
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class AdmissionsArticleService {
 
@@ -39,6 +43,23 @@ public class AdmissionsArticleService {
     static final Pattern IMAGE_SRC = Pattern.compile("^/images/admissions/(?!.*\\.\\.)[A-Za-z0-9_\\-./]+\\.(?:png|jpe?g|webp|gif)$");
 
     private final AdmissionsArticleRepository repository;
+    private final Clock clock;
+
+    @Autowired
+    public AdmissionsArticleService(AdmissionsArticleRepository repository) {
+        this(repository, Clock.system(KstTime.ZONE));
+    }
+
+    /** 테스트용: 오늘 날짜를 정할 수 있다. */
+    AdmissionsArticleService(AdmissionsArticleRepository repository, Clock clock) {
+        this.repository = repository;
+        this.clock = clock;
+    }
+
+    /** 게시일이 한국 날짜로 오늘이거나 그 전이면 공개한다(예약 게시). */
+    boolean isPublished(AdmissionsArticle a) {
+        return a.getPublishedOn() != null && !a.getPublishedOn().isAfter(LocalDate.now(clock.withZone(KstTime.ZONE)));
+    }
 
     public record Summary(Long id, String series, String episode, String title, String summary, LocalDate publishedOn) {}
 
@@ -56,6 +77,7 @@ public class AdmissionsArticleService {
     @Transactional(readOnly = true)
     public List<Summary> listPublic() {
         return repository.findAllByVisibleTrueOrderByPublishedOnDescSortOrderAscArticleIdAsc().stream()
+                .filter(this::isPublished)
                 .map(a -> new Summary(a.getArticleId(), a.getSeries(), a.getEpisode(), a.getTitle(), a.getSummary(), a.getPublishedOn()))
                 .toList();
     }
@@ -64,6 +86,7 @@ public class AdmissionsArticleService {
     @Transactional(readOnly = true)
     public Detail getPublic(Long id) {
         AdmissionsArticle a = repository.findByArticleIdAndVisibleTrue(id)
+                .filter(this::isPublished)
                 .orElseThrow(() -> new IllegalArgumentException("글을 찾을 수 없습니다."));
         return new Detail(a.getArticleId(), a.getSeries(), a.getEpisode(), a.getTitle(), a.getSummary(), a.getPublishedOn(),
                 forDisplay(a.getBodyHtml()));

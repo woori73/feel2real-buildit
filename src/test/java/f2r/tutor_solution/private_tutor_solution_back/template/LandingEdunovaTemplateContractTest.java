@@ -267,7 +267,7 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 입시상담 AI 칸 when 렌더하면 then 「바뀌는 입시」 제목 목록 자리가 칸 안에 있고(처음엔 숨김), 공개 글 목록을 회차 순으로 읽어 제목을 글 주소로 잇고, 카드 문구는 2028학년도 안내다")
+  @DisplayName("given 입시상담 AI 칸 when 렌더하면 then 「바뀌는 입시」 제목 목록 자리가 칸 안에 있고(처음엔 숨김), 공개 글 목록을 최신 게시일 먼저(같은 날은 회차 순) 읽어 제목을 글 주소로 잇고, 카드 문구는 2028학년도 안내다")
   void admissionsCard_listsChangingAdmissionsArticles() throws Exception {
     // given
     String html = render();
