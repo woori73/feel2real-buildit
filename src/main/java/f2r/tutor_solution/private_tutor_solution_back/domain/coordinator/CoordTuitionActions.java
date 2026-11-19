@@ -249,7 +249,12 @@ public class CoordTuitionActions implements CoordActions {
 
   private static List<Map<String, Object>> top(List<EasyFinancialStatementService.ProfitLine> lines) {
     return lines.stream().sorted(Comparator.comparingLong(EasyFinancialStatementService.ProfitLine::amount).reversed())
-        .limit(5).map(l -> Map.<String, Object>of("account", l.accountName(), "amount", l.amount())).toList();
+        .limit(5).map(l -> {
+          Map<String, Object> m = new LinkedHashMap<>();
+          m.put("account", l.accountName());
+          m.put("amount", l.amount());
+          return m;
+        }).toList();
   }
 
   private EasyStudent requireStudent(JsonNode a) {
