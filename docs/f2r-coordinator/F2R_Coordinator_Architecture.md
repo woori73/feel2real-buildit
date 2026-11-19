@@ -1,7 +1,20 @@
 # F2R AI Coordinator V1 — 최종 설계
 
 > 상태: **설계안. 구현·DB 변경·배포는 하지 않았다.** 실제 운영 배포는 별도 승인 후 진행한다.
-> 근거 조사: [F2R_COORD_Audit.md](F2R_COORD_Audit.md)
+> 근거 조사: [F2R_COORD_Audit.md](F2R_COORD_Audit.md) · 구독 검증: [F2R_Subscription_Verification.md](F2R_Subscription_Verification.md)
+
+## 0. 단계 순서 갱신 (2026-11-19, MCP 우선 + 구독 검증 반영)
+
+구독 검증 결과([F2R_Subscription_Verification.md](F2R_Subscription_Verification.md)) **이 문서의 PC Agent·직접 만든 Android 앱·작업 큐(§3~§6)는 3차로 미룬다.**
+
+| 단계 | 구성 | 과금 | 새로 만드는 것 |
+|---|---|---|---|
+| **1차** | 공식 Claude 앱(또는 ChatGPT 앱) + **운영 중인 F2R MCP 커넥터** + `f2r_*` 도구(초안) + F2R 모바일 웹 승인 화면 | 기존 구독 안(추가 0원) | MCP 도구, 승인 화면, 학생 명부 연결, 출결 이름 검색·중복 확인 |
+| **2차** | 휴대폰 → PC 공식 원격 기능: Claude Code Remote Control / Dispatch, Codex Remote connections | 기존 구독 안 | CLI용 OAuth callback 허용(보안 검토 후) |
+| **3차(선택)** | §3~§6의 서버 작업 큐 + PC Agent + 헤드리스 실행 + 직접 만든 Android 앱 | **API 키**(월 $25~75 추정). 구독은 서면 확인 후에만 | 기존 설계 전체 |
+
+- 승인 원칙(§8)과 보안 대응(§10)은 단계와 관계없이 그대로 적용한다.
+- 1차에서는 AI가 공식 앱 안에서 돌아간다. 그래서 학생 실명이 외부 AI로 가지 않도록 `f2r_*` 도구 응답을 가명으로 준다(§10).
 
 ## 1. 원칙
 

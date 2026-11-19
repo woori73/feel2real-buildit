@@ -83,6 +83,11 @@
   - `McpReadOnlyTransactionFilter`: MCP를 통한 읽기 요청은 읽기 전용 트랜잭션으로만 실행된다.
   - 요청 제한: `McpRateLimit`, `McpUserLimiter`
   - 민감 정보 가림: `McpRedaction` (확인)
+- **운영 상태(실측, 2026-11-19)**
+  - 운영 MCP는 켜져 있고 scope 9개를 공개한다.
+  - 이 계정의 Claude 커넥터로 11/18~11/19 사이 약 100건이 호출됐다(감사 로그 `activity_history`).
+  - ChatGPT 개발자 모드 커넥터로 쓰기 도구를 쓴 기록이 있다(`docs/studio-collaboration/CHATGPT_STUDIO_CONNECTION.md`).
+  - PC Claude Code CLI의 OAuth 연결(localhost callback)은 아직 허용 목록에 없다.
 - **학부모 안내문**: `save_parent_notice_draft` → `/dashboard/parent-notices`에 초안을 저장한다. 원장이 카카오톡을 직접 열어 받는 사람을 고른다. **기능 5의 서버 쪽이 이미 있다.** (확인)
 
 ## 5. PC의 Claude Code·Codex 실행 환경
