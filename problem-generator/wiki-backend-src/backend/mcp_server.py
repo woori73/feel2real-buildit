@@ -27,9 +27,12 @@ Connector)가 Authorization 헤더를 예약어처럼 취급해 커스텀 값을
 한다. 키를 소스에 하드코딩하지 않고, 값이 비어 있으면(설정 안 됨) 모든 요청을
 503으로 막는다(우연히 인증 없이 열리는 것을 fail-closed로 방지).
 """
+import hashlib
 import hmac
+import json
 import logging
 import os
+import time
 import uuid
 
 if __package__:
@@ -51,7 +54,7 @@ mcp = MCPServer(
     name='buildit-wiki',
     # tool 수정 시 bump — 일부 MCP client가 serverInfo.version 변화로
     # tool 목록 캐시를 무효화한다(재접속 없이도 새 tool을 다시 discover하도록).
-    version='8',
+    version='9',
     instructions=(
         '내신 Wiki 시험 Context(학교/학년/연도/학기/시험)를 읽고 FINAL/직보 완성본을 '
         '저장한다. get_final_context/get_jikbo_context가 반환한 자료를 다시 스스로 '
@@ -60,9 +63,57 @@ mcp = MCPServer(
         'Wiki 학습자료(교과서 지문·프린트 등)를 대상으로 시험문항을 생성했다면, 마지막 단계로 '
         'save_generated_test를 호출해 Generated Question Store에 자동 저장한다 — 사용자가 따로 '
         '"저장해줘"라고 말하지 않아도 이것이 기본 동작이다. 저장이 실패하면 문제 생성 성공과 '
-        '구분해서 generation: success / storage: failed 로 보고한다.'
+        '구분해서 generation: success / storage: failed 로 보고한다. '
+        '중요한 저장(save_final·save_jikbo·register_weekly_exam_draft)은 먼저 confirm_token 없이 부르면 '
+        '저장하지 않고 needs_confirmation과 summary·confirm_token을 돌려준다 — summary를 사용자에게 보여 주고 '
+        '분명히 동의하면 같은 값에 confirm_token만 더해 다시 부른다. 사용자 답 없이 다시 부르지 마라.'
     ),
 )
+
+# 중요한 저장(FINAL·직보 완성본, Weekly Exam 등록)은 사용자 확인 뒤에만 한다(2026-11-19 사용자 지시
+# "위키도 말로 지시하면 작동시키고 중요한 사항은 승인을 묻기"). 서버에 상태를 두지 않는 2단계 확인:
+# 1차 호출 = 저장 없이 요약 + 토큰(HMAC(도구·입력값·만료), 30분), 2차 호출 = 같은 입력 + 토큰일 때만 저장.
+# 입력이 하나라도 바뀌면 토큰이 맞지 않는다. 키는 MCP 인증 키를 쓴다(소스에 두지 않음).
+CONFIRM_TTL_SECONDS = 1800
+
+
+def _confirm_secret() -> bytes:
+    key = os.environ.get(MCP_API_KEY_ENV, '')
+    if not key:
+        raise ValueError('MCP 인증 키가 설정되지 않아 확인 토큰을 만들 수 없습니다.')
+    return ('confirm:' + key).encode('utf-8')
+
+
+def _confirm_digest(tool: str, payload: dict, expires: int) -> str:
+    body = json.dumps({'tool': tool, 'payload': payload, 'expires': expires},
+                      ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+    return hmac.new(_confirm_secret(), body.encode('utf-8'), hashlib.sha256).hexdigest()
+
+
+def _needs_confirmation(tool: str, payload: dict, confirm_token: str, summary: str) -> dict | None:
+    """confirm_token이 없으면 저장하지 않고 확인 요청을 돌려준다. 있으면 검증만 하고 None(=저장 진행)."""
+    if not (confirm_token or '').strip():
+        expires = int(time.time()) + CONFIRM_TTL_SECONDS
+        return {
+            'saved': False, 'status': 'needs_confirmation', 'summary': summary,
+            'confirm_token': f'{expires}.{_confirm_digest(tool, payload, expires)}',
+            'message': '아직 저장하지 않았습니다. 사용자에게 summary를 보여 주고 분명히 동의하면 '
+                       '같은 값에 confirm_token만 더해 다시 호출하세요. 사용자 답 없이 다시 호출하지 마세요.',
+        }
+    try:
+        expires_text, digest = confirm_token.strip().split('.', 1)
+        expires = int(expires_text)
+    except ValueError as exc:
+        raise ValueError('confirm_token 형식이 맞지 않습니다. confirm_token 없이 다시 불러 사용자 확인을 받으세요.') from exc
+    if expires < int(time.time()):
+        raise ValueError('확인 시간(30분)이 지났습니다. confirm_token 없이 다시 불러 사용자 확인을 받으세요.')
+    if not hmac.compare_digest(digest, _confirm_digest(tool, payload, expires)):
+        raise ValueError('확인한 내용과 저장하려는 내용이 다릅니다. confirm_token 없이 다시 불러 사용자 확인을 받으세요.')
+    return None
+
+
+def _exam_label(school: str, grade: str, year, semester: str, exam: str) -> str:
+    return ' '.join(str(x).strip() for x in (school, grade, f'{year}년' if year else '', semester, exam) if str(x).strip())
 
 
 @mcp.tool()
@@ -187,23 +238,42 @@ def _save_deliverable(kind: str, school: str, grade: str, year: int, semester: s
         raise ValueError(str(exc.detail)) from exc
 
 
+def _deliverable_with_confirmation(tool: str, kind_label: str, kind: str, school: str, grade: str, year: int,
+                                   semester: str, exam: str, title: str, html_text: str, json_text: str,
+                                   confirm_token: str) -> dict:
+    payload = {'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam': exam,
+               'title': title, 'html_text': html_text, 'json_text': json_text}
+    summary = (f'{_exam_label(school, grade, year, semester, exam)} {kind_label} 완성본 저장'
+               + (f' · 제목 「{title.strip()}」' if title.strip() else '')
+               + f' · HTML {len(html_text)}자 / JSON {len(json_text)}자')
+    pending = _needs_confirmation(tool, payload, confirm_token, summary)
+    if pending:
+        return pending
+    return _save_deliverable(kind, school, grade, year, semester, exam, title, html_text, json_text)
+
+
 @mcp.tool()
 def save_final(school: str, grade: str, year: int, semester: str, exam: str,
-               title: str = '', html_text: str = '', json_text: str = '') -> dict:
+               title: str = '', html_text: str = '', json_text: str = '', confirm_token: str = '') -> dict:
     """LLM이 완성한 FINAL 결과물을 kind='final'로 저장한다. html_text(완성된 HTML) 또는
     json_text(구조화된 JSON 결과물) 중 최소 하나는 반드시 있어야 한다. 기존
     POST /api/final-deliverables와 완전히 같은 저장 경로를 그대로 사용하며, 새 저장
-    로직을 만들지 않는다. 저장 직후 get_final_context를 다시 호출하면 결과가 보인다."""
-    return _save_deliverable('final', school, grade, year, semester, exam, title, html_text, json_text)
+    로직을 만들지 않는다. 저장 직후 get_final_context를 다시 호출하면 결과가 보인다.
+    [확인 필요] confirm_token 없이 부르면 저장하지 않고 needs_confirmation·summary·confirm_token을
+    돌려준다. 사용자에게 summary를 보여 주고 동의하면 같은 값 + confirm_token으로 다시 부른다."""
+    return _deliverable_with_confirmation('save_final', 'FINAL', 'final', school, grade, year, semester, exam,
+                                          title, html_text, json_text, confirm_token)
 
 
 @mcp.tool()
 def save_jikbo(school: str, grade: str, year: int, semester: str, exam: str,
-               title: str = '', html_text: str = '', json_text: str = '') -> dict:
+               title: str = '', html_text: str = '', json_text: str = '', confirm_token: str = '') -> dict:
     """LLM이 완성한 직보 결과물을 kind='jikbo'로 저장한다. save_final과 같은 저장
     경로를 kind만 바꿔 그대로 사용한다. 저장 직후 get_jikbo_context를 다시 호출하면
-    jikbo_deliverables에서 결과가 보인다."""
-    return _save_deliverable('jikbo', school, grade, year, semester, exam, title, html_text, json_text)
+    jikbo_deliverables에서 결과가 보인다.
+    [확인 필요] save_final과 같이 confirm_token 없이 부르면 확인 요청만 돌려준다."""
+    return _deliverable_with_confirmation('save_jikbo', '직보', 'jikbo', school, grade, year, semester, exam,
+                                          title, html_text, json_text, confirm_token)
 
 
 @mcp.tool()
@@ -341,6 +411,7 @@ def register_weekly_exam_draft(
     answer_explanation_name: str = 'answer-explanation.html',
     production_verification_name: str = 'production-verification.md',
     source_material_ids: list[int] | None = None,
+    confirm_token: str = '',
 ) -> dict:
     """[쓰기 도구] 문제지·해설지를 하나의 Weekly Exam으로 등록한다. 제작·검수 MD는
     있으면 production_verification_md로 함께 전달하고, 없으면 생략한다.
@@ -348,7 +419,9 @@ def register_weekly_exam_draft(
     이 도구로 APPROVED/FINAL/PUBLISHED 전이는 할 수 없다.
     student_paper_html/answer_explanation_html은 완성 A4 시험지 canonical HTML이어야
     한다(기존 FINAL과 동일한 A4 2단 CSS·헤더·문항 구조 — backend/weekly_paper.py
-    renderer 산출물을 그대로 전달할 것). 단순 본문 나열 HTML은 FINAL 품질이 아니다."""
+    renderer 산출물을 그대로 전달할 것). 단순 본문 나열 HTML은 FINAL 품질이 아니다.
+    [확인 필요] confirm_token 없이 부르면 등록하지 않고 needs_confirmation·summary·confirm_token을
+    돌려준다. 사용자에게 summary를 보여 주고 동의하면 같은 값 + confirm_token으로 다시 부른다."""
     from fastapi import HTTPException
     from weekly_exam import WeeklyExamReviewRequest, register_draft
     try:
@@ -361,6 +434,21 @@ def register_weekly_exam_draft(
             productionVerificationName=production_verification_name,
             sourceMaterialIds=source_material_ids or [],
         )
+    except ValidationError as exc:
+        raise ValueError('Weekly Exam DRAFT 검증 실패: ' + str(exc)) from exc
+    confirm_payload = {
+        'school': school, 'grade': grade, 'year': year, 'semester': semester, 'exam_type': exam_type,
+        'round': round, 'set_type': set_type, 'question_count': question_count,
+        'student_paper_html': student_paper_html, 'answer_explanation_html': answer_explanation_html,
+        'production_verification_md': production_verification_md, 'context_status': context_status,
+        'source_material_ids': list(source_material_ids or []),
+    }
+    summary = (f'{_exam_label(school, grade, year, semester, exam_type)} {round}회차 {set_type} '
+               f'Weekly Exam 등록(검토 대기 REVIEW) · {question_count}문항')
+    pending = _needs_confirmation('register_weekly_exam_draft', confirm_payload, confirm_token, summary)
+    if pending:
+        return pending
+    try:
         return register_draft(payload, actor='mcp-agent')
     except ValidationError as exc:
         raise ValueError('Weekly Exam DRAFT 검증 실패: ' + str(exc)) from exc
