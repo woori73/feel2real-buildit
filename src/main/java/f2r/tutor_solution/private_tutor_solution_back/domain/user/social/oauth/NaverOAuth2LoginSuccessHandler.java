@@ -44,6 +44,9 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
   /** 로그인 전 페이지 복귀용 쿠키명 (프론트에서 로그인 시작 전 설정). */
   static final String RETURN_URL_COOKIE = "oauth_return_url";
 
+  /** 회원가입 화면 「강사」 탭의 네이버 간편 가입 표시 쿠키(/auth/naver/start?role=tutor가 심는다). 새 회원 생성에만 쓴다. */
+  static final String SIGNUP_ROLE_COOKIE = "oauth_signup_role";
+
   private final NaverAccountResolutionService accountResolutionService;
   private final JwtTokenProvider tokenProvider;
   private final CookieUtil cookieUtil;
@@ -79,7 +82,9 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
     User user;
     try {
       NaverProfileIdentity identity = NaverProfileIdentity.from(oauth2User);
-      user = accountResolutionService.resolveUser(identity);
+      user = "TUTOR".equals(readCookie(request, SIGNUP_ROLE_COOKIE))
+          ? accountResolutionService.resolveUser(identity, f2r.tutor_solution.private_tutor_solution_back.domain.user.entity.Role.TUTOR)
+          : accountResolutionService.resolveUser(identity);
       // NewStart 표시 별명 최초 1회 seed. 실명(identity.name())은 절대 넘기지 않는다 — NAVER
       // 프로필 nickname만 후보로 쓰고, 이미 row가 있으면(재로그인/이미 커스텀함) no-op이다.
       // 별명 seed 실패가 로그인 자체를 막으면 안 된다(§8) — 별도로 감싸 실패해도 계속 진행한다.
@@ -105,6 +110,7 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
     String redirectPath = resolveReturnUrl(request);
     // 사용한 복귀 쿠키는 정리
     clearReturnUrlCookie(request, response);
+    clearCookie(response, SIGNUP_ROLE_COOKIE);
 
     log.info("NAVER_OAUTH_LOGIN_COMPLETE redirectPath={}", redirectPath);
     response.sendRedirect(redirectPath);
@@ -182,6 +188,22 @@ public class NaverOAuth2LoginSuccessHandler implements AuthenticationSuccessHand
       }
     }
     return true;
+  }
+
+  private static String readCookie(HttpServletRequest request, String name) {
+    jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+    if (cookies == null) return null;
+    for (jakarta.servlet.http.Cookie c : cookies) {
+      if (name.equals(c.getName())) return c.getValue();
+    }
+    return null;
+  }
+
+  private static void clearCookie(HttpServletResponse response, String name) {
+    jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie(name, "");
+    cookie.setPath("/");
+    cookie.setMaxAge(0);
+    response.addCookie(cookie);
   }
 
   private void clearReturnUrlCookie(HttpServletRequest request, HttpServletResponse response) {

@@ -45,8 +45,9 @@
     return isBlocked(candidatePath) ? '/' : candidate;
   }
 
-  function startHref(target) {
-    return '/auth/naver/start?returnUrl=' + encodeURIComponent(target || '/');
+  /** role이 'tutor'면 처음 가입할 때 강사 계정으로 만든다(회원가입 화면 「강사」 탭). 이미 가입한 회원은 그대로. */
+  function startHref(target, role) {
+    return '/auth/naver/start?returnUrl=' + encodeURIComponent(target || '/') + (role === 'tutor' ? '&role=tutor' : '');
   }
 
   if (typeof document !== 'undefined') {
@@ -54,7 +55,7 @@
       var btn = event.target.closest && event.target.closest('[data-naver-login]');
       if (!btn) return;
       event.preventDefault();
-      location.href = startHref(targetUrl(location.pathname, location.search, window.__f2rLoginReturnUrl));
+      location.href = startHref(targetUrl(location.pathname, location.search, window.__f2rLoginReturnUrl), btn.getAttribute('data-naver-role'));
     });
   }
 

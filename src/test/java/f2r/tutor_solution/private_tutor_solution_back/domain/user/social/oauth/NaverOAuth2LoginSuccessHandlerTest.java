@@ -151,4 +151,29 @@ class NaverOAuth2LoginSuccessHandlerTest {
     assertThat(response.getRedirectedUrl()).isNull();
     assertThat(response.getHeader("Set-Cookie")).isNull();
   }
+
+  @Test
+  @DisplayName("given 강사 간편 가입 쿠키 when 성공 처리 then TUTOR로 resolve하고 쿠키를 지운다, 쿠키가 없으면 기본 resolve")
+  void tutorSignupCookieResolvesAsTutorAndIsCleared() throws Exception {
+    // given
+    NaverAccountResolutionService resolutionService = mock(NaverAccountResolutionService.class);
+    when(resolutionService.resolveUser(any(), eq(Role.TUTOR))).thenReturn(user(50L, Role.TUTOR));
+    when(resolutionService.resolveUser(any())).thenReturn(user(51L, Role.STUDENT));
+    NaverOAuth2LoginSuccessHandler handler =
+        new NaverOAuth2LoginSuccessHandler(resolutionService, tokenProvider, cookieUtil, mock(NewStartMemberProfileService.class));
+    MockHttpServletRequest tutorReq = new MockHttpServletRequest();
+    tutorReq.setCookies(new jakarta.servlet.http.Cookie(NaverOAuth2LoginSuccessHandler.SIGNUP_ROLE_COOKIE, "TUTOR"));
+    MockHttpServletResponse tutorRes = new MockHttpServletResponse();
+    MockHttpServletResponse plainRes = new MockHttpServletResponse();
+
+    // when
+    handler.onAuthenticationSuccess(tutorReq, tutorRes, naverAuthentication("tutor-id"));
+    handler.onAuthenticationSuccess(new MockHttpServletRequest(), plainRes, naverAuthentication("plain-id"));
+
+    // then
+    verify(resolutionService).resolveUser(any(), eq(Role.TUTOR));
+    verify(resolutionService).resolveUser(any());
+    assertThat(tutorRes.getCookie(NaverOAuth2LoginSuccessHandler.SIGNUP_ROLE_COOKIE).getMaxAge()).isZero();
+    assertThat(tutorRes.getStatus()).isEqualTo(302);
+  }
 }

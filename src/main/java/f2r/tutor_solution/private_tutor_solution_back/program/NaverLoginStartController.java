@@ -25,6 +25,8 @@ public class NaverLoginStartController {
 
   static final String RETURN_URL_COOKIE = "oauth_return_url";
   static final String NAVER_AUTHORIZATION_PATH = "/oauth2/authorization/naver";
+  /** 강사 간편 가입 표시 쿠키. 성공 처리(NaverOAuth2LoginSuccessHandler)가 새 회원을 TUTOR로 만들 때만 읽는다. */
+  static final String SIGNUP_ROLE_COOKIE = "oauth_signup_role";
 
   /** 로그인 뒤 돌아가면 어색하거나 막힌 화면(관리자·API·로그인·가입·계정 화면). 메인 사이트 복귀에서 뺀다. */
   static final java.util.List<String> BLOCKED_PREFIXES = java.util.List.of(
@@ -45,9 +47,16 @@ public class NaverLoginStartController {
   @GetMapping("/auth/naver/start")
   public void start(
       @RequestParam(name = "returnUrl", required = false) String returnUrl,
+      @RequestParam(name = "role", required = false) String role,
       HttpServletRequest request,
       HttpServletResponse response)
       throws IOException {
+    boolean secureRequest = request.isSecure()
+        || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
+    // 회원가입 화면 「강사」 탭이면 강사로 가입시키는 표시를 남기고, 아니면 이전에 남은 표시를 지운다.
+    boolean tutor = "tutor".equalsIgnoreCase(role);
+    response.addHeader(HttpHeaders.SET_COOKIE, ResponseCookie.from(SIGNUP_ROLE_COOKIE, tutor ? "TUTOR" : "")
+        .path("/").maxAge(tutor ? 300 : 0).sameSite("Lax").httpOnly(true).secure(secureRequest).build().toString());
     if (isAllowedReturnUrl(returnUrl)) {
       boolean secure = request.isSecure()
           || "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));

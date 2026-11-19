@@ -48,11 +48,15 @@ class NaverAccountProvisioningService {
   }
 
   /**
+   * 최초 가입 역할을 지정해 만든다. 회원가입 화면 「강사」 탭의 네이버 간편 가입(2026-11-17)만 TUTOR를 넘긴다.
+   * 아이디 강사 가입(/api/users/tutors)도 공개라 권한이 넓어지지 않는다. STUDENT·TUTOR 외 값은 STUDENT로 만든다.
+   *
    * @throws org.springframework.dao.DataIntegrityViolationException 동시 최초 로그인 race에서
    *     진 쪽 — 호출자가 {@code (NAVER, providerUserId)}를 다시 조회해 이긴 쪽 User로 합류해야 한다.
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  User provision(NaverProfileIdentity identity) {
+  User provision(NaverProfileIdentity identity, Role requestedRole) {
+    Role role = requestedRole == Role.TUTOR ? Role.TUTOR : Role.STUDENT;
     String syntheticLoginId = deriveSyntheticLoginId(identity.providerUserId());
     try {
       AuditorContextHolder.set(syntheticLoginId);
@@ -67,7 +71,7 @@ class NaverAccountProvisioningService {
           .nickname(truncate(identity.nickname(), NICKNAME_MAX_LENGTH))
           .email(identity.email())   // consent 미제공 시 null 허용(schema nullable) — 가짜 이메일 생성 안 함
           .phone(identity.mobile())  // consent 미제공 시 null 허용(schema nullable)
-          .role(Role.STUDENT)        // Role enum에 별도 "일반 회원"이 없다 — 기존 자기가입 학생과 동일한 최소권한 role
+          .role(role)                // 기본 STUDENT(별도 "일반 회원" 없음 — 자기가입 학생과 동일한 최소권한), 강사 간편 가입만 TUTOR
           .build();
       userRepository.saveAndFlush(user);
 
