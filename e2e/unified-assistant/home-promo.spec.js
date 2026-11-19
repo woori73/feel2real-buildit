@@ -3,8 +3,8 @@ const { test, expect } = require('@playwright/test');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const source = '/video/landing/f2r-exam-remotion-v3-20261029.mp4';
-const hash = '09a62f5696459dc8df79b5468a4ec2f0c6a5a276340fd35a9427042327d8e0af';
+const source = '/video/landing/f2r-class-ad-20261120.mp4';
+const hash = 'd69aa40f194512b70fd7e68215d8029ff2ad3083e075e79c96dcc3afa0b6fce6';
 const output = process.env.PROMO_EVIDENCE_DIR || path.join(__dirname, '../../build/verification/home-promo');
 
 async function isolate(page, failed = false) {
@@ -98,7 +98,7 @@ test('supplied MP4 is byte-identical and supports browser range requests', async
   expect(crypto.createHash('sha256').update(await full.body()).digest('hex')).toBe(hash);
   const partial = await request.get(source, { headers: { Range: 'bytes=0-31' } });
   expect(partial.status()).toBe(206);
-  expect(partial.headers()['content-range']).toBe('bytes 0-31/14649213');
+  expect(partial.headers()['content-range']).toBe('bytes 0-31/11773177');
   expect((await partial.body()).length).toBe(32);
 });
 

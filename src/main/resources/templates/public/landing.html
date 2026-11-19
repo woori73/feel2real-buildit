@@ -277,19 +277,19 @@
       </div>
       <div class="hw-right">
       <div class="hl-promo hl-lift" aria-labelledby="promoTitle">
-        <div class="exam-promo" id="examPromo" role="group" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="영어 기말 맞춤 문제 서비스 소개 영상">
+        <div class="exam-promo" id="examPromo" role="group" th:if="${!#strings.isEmpty(examPromoPath)}" aria-label="F2R 영어 기말대비·예비고1 반 모집 영상">
           <div class="exam-promo-frame">
             <video id="examPromoVideo" th:src="${examPromoPath}" controls muted playsinline preload="metadata"
-                   th:poster="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4' ? '/img/landing/f2r-exam-remotion-v3-20261029.jpg' : null}"
-                   aria-label="20초 영어 기말 맞춤 문제 서비스 홍보 영상" aria-describedby="examPromoSummary"></video>
-            <img id="examPromoFallback" th:if="${examPromoPath == '/video/landing/f2r-exam-remotion-v3-20261029.mp4'}"
-                 src="/img/landing/f2r-exam-remotion-v3-20261029.jpg" alt="학교별 영어 기말 맞춤 문제, 2주 160문항 20,000원" hidden>
+                   th:poster="${examPromoPath == '/video/landing/f2r-class-ad-20261120.mp4' ? '/img/landing/f2r-class-ad-20261120.jpg' : null}"
+                   aria-label="20초 F2R 영어 기말대비·예비고1 반 모집 영상" aria-describedby="examPromoSummary"></video>
+            <img id="examPromoFallback" th:if="${examPromoPath == '/video/landing/f2r-class-ad-20261120.mp4'}"
+                 src="/img/landing/f2r-class-ad-20261120.jpg" alt="F2R 영어 기말대비·예비고1 반 모집, 전화 02-6324-1453" hidden>
           </div>
           <div class="exam-promo-actions">
             <button type="button" class="en-btn en-btn-outline" id="examPromoSound" aria-pressed="false" hidden>소리 켜기</button>
           </div>
-          <!-- 상품 내용은 위 안내에 이미 있으므로 화면에는 다시 쓰지 않고 영상 설명(스크린리더)으로만 둔다. -->
-          <p id="examPromoSummary" class="sr" th:text="'학교별 맞춤 제작 · ' + ${examOffer.summary} + ' · ' + ${examOffer.priceLabel}">학교별 맞춤 제작 · 2주 · 주 2회 · 총 4회 · 160문항 · 20,000원</p>
+          <!-- 영상 내용은 화면에 다시 쓰지 않고 영상 설명(스크린리더)으로만 둔다. -->
+          <p id="examPromoSummary" class="sr">F2R 영어 기말대비반·예비고1 반 수강생 모집 · 2028학년도 새로운 수능과 내신 영어 준비 · 전화 02-6324-1453 · 강남구 신사동 616-4 4층</p>
           <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
         </div>
         <!-- 2026-11-19 사용자 지시: 영상 아래 칸에 2027 수능 영어 해설 모션(문제 → 노란 근거 → 정답·해설). 맞춤문제 안내·신청 버튼 2개는 카드 아래에 그대로 둔다(첫 화면 대표 신청 버튼). -->

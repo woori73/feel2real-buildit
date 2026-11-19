@@ -28,8 +28,8 @@ public class LandingPageController {
   private final LandingVideoService landingVideoService;
   private final HomeAgentTrailerService homeAgentTrailerService;
 
-  // User-supplied approved video (2026-10-29). An explicit empty setting still disables it.
-  public static final String DEFAULT_PROMO_PATH = "/video/landing/f2r-exam-remotion-v3-20261029.mp4";
+  // User-approved class ad (2026-11-20, replaces the 2026-10-29 exam ad). An explicit empty setting still disables it.
+  public static final String DEFAULT_PROMO_PATH = "/video/landing/f2r-class-ad-20261120.mp4";
   @Value("${app.home.exam-promo-path:" + DEFAULT_PROMO_PATH + "}")
   private String examPromoPath = DEFAULT_PROMO_PATH;
 
