@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CoordJobRepository extends JpaRepository<CoordJob, String> {
   Optional<CoordJob> findByUserIdAndRequestId(Long userId, String requestId);
   List<CoordJob> findTop50ByUserIdOrderByCreatedAtDesc(Long userId);
+
+  List<CoordJob> findTop50ByUserIdAndKindOrderByCreatedAtAsc(Long userId, String kind);
 }

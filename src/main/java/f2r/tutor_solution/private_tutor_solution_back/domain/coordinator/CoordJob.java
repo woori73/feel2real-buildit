@@ -25,6 +25,9 @@ public class CoordJob {
   public static final String FAILED = "failed";
   /** 대화창으로 기록한 뒤 10분 안에 사용자가 취소함(출결 행은 superseded로 남음). */
   public static final String CANCELLED = "cancelled";
+  /** 학원 PC 작업: 휴대폰에서 맡겨 두고(queued) PC의 Claude Code가 가져가 처리(running) → completed/failed. */
+  public static final String QUEUED = "queued";
+  public static final String RUNNING = "running";
 
   @Id
   @Column(name = "job_id", length = 36)

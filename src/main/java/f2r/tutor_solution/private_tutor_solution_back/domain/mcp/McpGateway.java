@@ -77,7 +77,14 @@ public class McpGateway {
   static final Set<String> COORD_TOOLS = Set.of("f2r_student_search", "f2r_attendance_check", "f2r_attendance_mark",
       "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
       "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_grading_pending", "f2r_grading_photos",
-      "f2r_grading_save", "f2r_weakness_save", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_grading_save", "f2r_weakness_save", "f2r_naesin_answer_key", "f2r_pc_task_request", "f2r_pc_task_list",
+      "f2r_pc_task_claim", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
+
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordPcTaskService> pcTasks;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordAnswerKeyService> answerKeys;
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -538,7 +545,8 @@ public class McpGateway {
             + " 바로 알려 주고 f2r_grading_save로 저장하세요. 읽을 수 없는 답은 추측하지 마세요.",
         Map.of("gradingId", id, "businessId", id), List.of("gradingId")));
     out.add(writeTool("f2r_grading_save",
-        "f2r_grading_photos로 받은 사진을 채점한 결과를 학생부에 바로 저장합니다(채점 전 → 채점 완료). totalCount, correctCount(없으면"
+        "f2r_grading_photos로 받은 사진을 채점한 결과를 학생부에 바로 저장합니다(채점 전 → 채점 완료). 정답 근거는 정답지 사진 →"
+            + " (내신 문제면) f2r_naesin_answer_key·내신 Wiki → (내신 아니면) 사용자에게 정답지 요청 순서. totalCount, correctCount(없으면"
             + " 전체−틀린 수), wrongItems=[{no, topic(유형), reason(틀린 이유)}], feedback(학생에게 줄 피드백), subjectArea."
             + " 정답지 없이 직접 풀어 채점했다면 feedback에 그 사실을 적으세요. 저장 뒤 bookUrl로 고칠 수 있습니다.",
         Map.of("gradingId", id, "totalCount", integer(0, 1000), "correctCount", integer(0, 1000),
@@ -554,6 +562,49 @@ public class McpGateway {
                 Map.of("topic", string(), "level", string(), "evidence", string()))),
             "businessId", id),
         List.of("studentId", "summary")));
+    out.add(tool("f2r_naesin_answer_key",
+        "채점 참고용: 홈페이지 「디지털 내신문제」(학교별 내신 예상문제)의 문항별 정답·해설. examCode 없이 부르면 시험 목록(query로 학교·범위"
+            + " 거르기), examCode를 주면 문항별 정답(①~⑤)·배점·해설. 정답지 사진이 없을 때 내신 Wiki 자료와 함께 대조에 씁니다.",
+        Map.of("examCode", string(), "query", string()), List.of()));
+    out.add(writeTool("f2r_pc_task_request",
+        "학원 PC 작업 맡기기(대기열에 올림, 바로 실행 안 함). type: WORKSHEET(학습지)·EXPECTED(예상문제 FINAL)·JIKBO(직보)·WEEKLY·OTHER."
+            + " school·grade·year·semester·exam(내신 Wiki 시험), count(문항 수), instructions(원장님 지시), modelFrom(모델로 삼을 다른 시험"
+            + " {school,grade,year,semester,exam}). 학원 PC가 먼저 처리하고 waitMinutes(기본 30) 안에 안 가져가면 집 노트북·클라우드가 처리"
+            + "(preferredWorker=ANY면 바로 아무 기기). 다른 세션 2회 검수 후 원장님께 알리고 내신 Wiki에 저장됩니다."
+            + " publishDigital=true는 원장님이 디지털 모의고사 탑재까지 지시했을 때만.",
+        Map.ofEntries(Map.entry("requestId", string()), Map.entry("type", string()), Map.entry("school", string()),
+            Map.entry("grade", string()), Map.entry("year", integer(2000, 2100)), Map.entry("semester", string()),
+            Map.entry("exam", string()), Map.entry("count", integer(1, 200)), Map.entry("instructions", string()),
+            Map.entry("modelFrom", Map.of("type", "object", "properties", Map.of("school", string(), "grade", string(),
+                "year", integer(2000, 2100), "semester", string(), "exam", string()))),
+            Map.entry("preferredWorker", string()), Map.entry("waitMinutes", integer(0, 1440)),
+            Map.entry("publishDigital", Map.of("type", "boolean"))),
+        List.of("requestId", "type", "school", "grade")));
+    out.add(tool("f2r_pc_task_list",
+        "PC 작업 대기열: open(대기·처리 중, 오래된 순). worker(ACADEMY_PC·HOME_LAPTOP·CLOUD)를 주면 그 기기가 지금 가져갈 수 있는지(claimable)."
+            + " includeDone=true면 최근 끝난 작업도.",
+        Map.of("worker", string(), "includeDone", Map.of("type", "boolean")), List.of()));
+    out.add(writeTool("f2r_pc_task_claim",
+        "(PC·노트북·클라우드의 Claude Code용) 대기 작업 하나를 가져갑니다(처리 중으로). worker는 이 기기 이름(CLAUDE.md에 적힌 값)."
+            + " session은 이 제작 세션 이름(검수 세션과 달라야 함). 결과의 workInstructions를 그대로 따르세요(기출 형식·F2R 로고·"
+            + "다른 세션 2회 검수 → 원장님 알림 → Wiki 저장 → f2r_pc_task_finish).",
+        Map.of("jobId", string(), "worker", string(), "session", string()), List.of("jobId", "worker")));
+    out.add(writeTool("f2r_pc_task_review",
+        "(검수 세션용) 만든 세션이 아닌 새 세션이 결과물을 기출과 대조해 검수 결과를 남깁니다. reviewer는 검수 세션 이름(세션마다 다르게),"
+            + " verdict PASS·FIX, checks{pastExamStyle(기출 발문·선택지·편집·부호), modelHtml(기존 학습지 HTML 반영),"
+            + " operatorRequest(원장님 요구 반영), logo(첫 페이지 F2R 로고)} — PASS면 넷 다 true, notes(고칠 점·확인 내용)."
+            + " 학습지·예상문제·직보·주간 시험지는 서로 다른 세션 2곳의 PASS가 있어야 끝낼 수 있고, FIX 뒤에는 다시 2곳이 필요합니다.",
+        Map.of("jobId", string(), "reviewer", string(), "verdict", string(), "notes", string(),
+            "checks", Map.of("type", "object", "properties", Map.of("pastExamStyle", Map.of("type", "boolean"),
+                "modelHtml", Map.of("type", "boolean"), "operatorRequest", Map.of("type", "boolean"),
+                "logo", Map.of("type", "boolean")))),
+        List.of("jobId", "reviewer", "verdict")));
+    out.add(writeTool("f2r_pc_task_finish",
+        "처리 중 작업을 끝냅니다(학습지·예상문제·직보·주간 시험지의 DONE은 다른 세션 검수 PASS 2곳 필요). outcome DONE(기본)·FAILED, summary(무엇을 만들어 어디에 저장했는지 또는 실패 이유), wikiRef(Wiki 자료 id·제목).",
+        Map.of("jobId", string(), "outcome", string(), "summary", string(), "wikiRef", string()), List.of("jobId", "summary")));
+    out.add(writeTool("f2r_pc_task_cancel",
+        "아직 아무 기기도 가져가지 않은 대기 작업을 취소합니다.",
+        Map.of("jobId", string()), List.of("jobId")));
     out.add(writeTool("f2r_confirm",
         "f2r_attendance_mark·f2r_student_change·f2r_class_change·f2r_tuition_change·f2r_record_change로 만든 초안을 실행합니다. 사용자가 이 대화에서 그 내용(summary)에"
             + " 분명히 동의('네', '해줘')했을 때만 부르세요. 사용자 답 없이, 또는 다른 건으로 부르지 마세요."
@@ -740,6 +791,17 @@ public class McpGateway {
           case "f2r_weakness_save" -> coord.weaknessSave(identity.principal(), bid, args, oauth.base());
           case "f2r_record_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "RECORD",
               text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
+          case "f2r_naesin_answer_key" -> answerKeys.getObject().lookup(identity.principal(),
+              args.hasNonNull("examCode") ? text(args, "examCode") : null, args.hasNonNull("query") ? text(args, "query") : null);
+          case "f2r_pc_task_request" -> pcTasks.getObject().request(identity.principal(), identity.grantId(), args);
+          case "f2r_pc_task_list" -> pcTasks.getObject().list(identity.principal(),
+              args.hasNonNull("includeDone") && args.get("includeDone").asBoolean(),
+              args.hasNonNull("worker") ? text(args, "worker") : null);
+          case "f2r_pc_task_claim" -> pcTasks.getObject().claim(identity.principal(), text(args, "jobId"), text(args, "worker"),
+              text(args, "session"));
+          case "f2r_pc_task_review" -> pcTasks.getObject().review(identity.principal(), text(args, "jobId"), args);
+          case "f2r_pc_task_finish" -> pcTasks.getObject().finish(identity.principal(), text(args, "jobId"), args);
+          case "f2r_pc_task_cancel" -> pcTasks.getObject().cancel(identity.principal(), text(args, "jobId"));
           case "f2r_confirm" -> coord.confirmFromChat(identity.principal(), text(args, "jobId"),
               text(args, "planHash"), oauth.base());
           case "f2r_undo" -> coord.undoFromChat(identity.principal(), text(args, "jobId"),

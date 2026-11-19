@@ -9,7 +9,7 @@
   const EVENT_LABEL = { CHECK_IN: '등원', CHECK_OUT: '하원', ABSENT: '결석', LATE: '지각', EARLY_LEAVE: '조퇴' };
   const STATUS_LABEL = {
     review_required: '승인 대기', approved: '처리 중', completed: '완료', rejected: '거절함',
-    expired: '시간 초과', failed: '실패', cancelled: '취소함'
+    expired: '시간 초과', failed: '실패', cancelled: '취소함', queued: 'PC 대기 중', running: 'PC 처리 중'
   };
 
   function eventLabel(type) { return EVENT_LABEL[type] || String(type || ''); }
