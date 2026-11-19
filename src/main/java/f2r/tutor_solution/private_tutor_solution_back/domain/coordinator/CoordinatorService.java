@@ -212,9 +212,47 @@ public class CoordinatorService {
 
   /** 학생부(최근 출결·수업 기록·채점 기록·오답 기록). AI용으로 이름을 가린다. */
   @Transactional(readOnly = true)
-  public Map<String, Object> studentBook(AuthenticatedPrincipal p, Long businessId, Long studentId) {
+  public Map<String, Object> studentBook(AuthenticatedPrincipal p, Long businessId, Long studentId, String baseUrl) {
     if (studentId == null) throw new IllegalArgumentException("studentId가 필요합니다. 먼저 f2r_student_search로 찾으세요.");
-    return ((CoordRecordActions) forArea("RECORD")).book(business(p, businessId), studentId);
+    return withUrl(records().book(business(p, businessId), studentId), baseUrl);
+  }
+
+  /** 채점 전(사진만 올린) 기록 목록. */
+  @Transactional(readOnly = true)
+  public Map<String, Object> gradingPending(AuthenticatedPrincipal p, Long businessId, Long studentId) {
+    return records().pending(business(p, businessId), studentId);
+  }
+
+  /** 채점 사진(문제지·정답지·학생 답안)을 AI에게 이미지로 준다. */
+  @Transactional(readOnly = true)
+  public CoordRecordActions.PhotoBundle gradingPhotos(AuthenticatedPrincipal p, Long businessId, Long gradingId)
+      throws java.io.IOException {
+    return records().photos(business(p, businessId), gradingId);
+  }
+
+  /** Claude 채점 결과 바로 저장. */
+  @Transactional
+  public Map<String, Object> gradingSave(AuthenticatedPrincipal p, Long businessId, Long gradingId, JsonNode args,
+      String baseUrl) {
+    return withUrl(records().saveResult(business(p, businessId), gradingId, args), baseUrl);
+  }
+
+  /** 약점 정리 바로 저장. */
+  @Transactional
+  public Map<String, Object> weaknessSave(AuthenticatedPrincipal p, Long businessId, JsonNode args, String baseUrl) {
+    return withUrl(records().saveWeakness(business(p, businessId), args), baseUrl);
+  }
+
+  private CoordRecordActions records() {
+    return (CoordRecordActions) forArea("RECORD");
+  }
+
+  /** bookPath → bookUrl(사이트 주소 포함). */
+  private static Map<String, Object> withUrl(Map<String, Object> m, String baseUrl) {
+    Map<String, Object> out = new LinkedHashMap<>(m);
+    Object path = out.remove("bookPath");
+    if (path != null) out.put("bookUrl", (baseUrl == null ? "" : baseUrl) + path);
+    return out;
   }
 
   /** 장부 손익 요약. */

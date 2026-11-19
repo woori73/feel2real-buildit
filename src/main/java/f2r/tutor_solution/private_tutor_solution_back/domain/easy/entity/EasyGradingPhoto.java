@@ -24,6 +24,10 @@ public class EasyGradingPhoto extends BaseEntity {
   @JoinColumn(name = "grading_id", nullable = false)
   private EasyGradingRecord grading;
 
+  /** QUESTION(문제지)·ANSWER_KEY(정답지)·STUDENT(학생 답안)·GRADED(채점된 답지). */
+  @Column(name = "kind", nullable = false, length = 20)
+  private String kind;
+
   @Column(name = "storage_key", nullable = false, length = 500)
   private String storageKey;
 
@@ -33,8 +37,9 @@ public class EasyGradingPhoto extends BaseEntity {
   @Column(name = "size_bytes", nullable = false)
   private long sizeBytes;
 
-  public EasyGradingPhoto(EasyGradingRecord grading, String storageKey, String contentType, long sizeBytes) {
+  public EasyGradingPhoto(EasyGradingRecord grading, String kind, String storageKey, String contentType, long sizeBytes) {
     this.grading = grading;
+    this.kind = kind;
     this.storageKey = storageKey;
     this.contentType = contentType;
     this.sizeBytes = sizeBytes;

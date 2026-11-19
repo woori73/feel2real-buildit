@@ -56,13 +56,95 @@ public class CoordRecordActions implements CoordActions {
     return KINDS;
   }
 
-  /** 학생부 조회(AI용): 이름은 가리고 학교는 뺀다. 사진은 개수만. */
+  /** 학생부 화면 주소(상대). 원장이 "그동안 기록 보여줘"라고 하면 AI가 이 링크를 준다. */
+  static String bookPath(Long bid, Long studentId) {
+    return "/easy/records?businessId=" + bid + "&studentId=" + studentId;
+  }
+
+  /** 학생부 조회(AI용): 이름은 가리고 학교는 뺀다. 사진은 개수만. bookPath = 학생부 화면. */
   public Map<String, Object> book(Long bid, Long studentId) {
     Map<String, Object> b = new LinkedHashMap<>(records.studentBook(bid, studentId));
     b.put("displayName", CoordinatorService.maskName((String) b.remove("name")));
     b.remove("school");
-    b.put("note", "이름은 가려서 보여 줍니다. 답지 사진은 학생부 화면에서만 볼 수 있습니다.");
+    b.put("bookPath", bookPath(bid, studentId));
+    b.put("note", "이름은 가려서 보여 줍니다. 사진은 학생부 화면에서 봅니다. 원장에게 bookUrl을 주어 화면으로 보게 하세요.");
     return b;
+  }
+
+  /** 채점 전(PENDING) 목록(AI용, 가린 이름). studentId를 주면 그 학생 것만. */
+  public Map<String, Object> pending(Long bid, Long studentId) {
+    List<Map<String, Object>> rows = new ArrayList<>();
+    for (var g : records.pending(bid)) {
+      if (studentId != null && !studentId.equals(g.studentId())) continue;
+      Map<String, Object> m = new LinkedHashMap<>();
+      m.put("gradingId", g.gradingId());
+      m.put("studentId", g.studentId());
+      m.put("displayName", students.findById(g.studentId()).map(s -> CoordinatorService.maskName(s.getName())).orElse(""));
+      m.put("gradedOn", g.gradedOn());
+      m.put("subjectArea", g.subjectArea());
+      m.put("material", g.material());
+      Map<String, Long> kinds = new LinkedHashMap<>();
+      g.photos().forEach(ph -> kinds.merge(ph.kindLabel(), 1L, Long::sum));
+      m.put("photos", kinds);
+      rows.add(m);
+    }
+    return Map.of("pending", rows, "note", "f2r_grading_photos(gradingId)로 문제지·정답지·학생 답안 사진을 받아 채점하세요.");
+  }
+
+  /** 채점 사진 묶음(AI용): 사진마다 종류 라벨. */
+  public record PhotoBundle(Map<String, Object> meta, List<String> labels, List<byte[]> images) {}
+
+  public PhotoBundle photos(Long bid, Long gradingId) throws java.io.IOException {
+    var g = records.grading(bid, gradingId);
+    var list = records.photosForAi(bid, gradingId);
+    if (list.isEmpty()) throw new IllegalArgumentException("올린 사진이 없습니다. 학생부 화면에서 문제지·정답지·학생 답안을 먼저 올려 주세요.");
+    List<String> labels = new ArrayList<>();
+    List<byte[]> images = new ArrayList<>();
+    for (var ph : list) {
+      labels.add(EasyLessonRecordService.PHOTO_KIND_LABEL.getOrDefault(ph.kind(), ph.kind()) + " #" + ph.photoId());
+      images.add(ph.bytes());
+    }
+    Map<String, Object> meta = new LinkedHashMap<>();
+    meta.put("gradingId", gradingId);
+    meta.put("studentId", g.studentId());
+    meta.put("gradedOn", g.gradedOn());
+    meta.put("subjectArea", g.subjectArea());
+    meta.put("material", g.material());
+    meta.put("status", g.status());
+    meta.put("images", labels);
+    meta.put("instruction", "이미지 순서는 images 목록과 같습니다. 정답지가 있으면 정답지와 학생 답안을 대조하고, 없으면 문제를 직접"
+        + " 풀어 채점하되 확실하지 않은 문항은 '확인 필요'로 표시하세요. 읽을 수 없는 답은 추측하지 마세요. 틀린 문항을 바로"
+        + " 알려 준 뒤 f2r_grading_save로 저장하고, f2r_weakness_save로 약점 정리를 갱신하세요.");
+    return new PhotoBundle(meta, labels, images);
+  }
+
+  /** Claude 채점 결과 저장(바로 저장 — 사용자 지시 "틀린 부분 바로 알려주고 학생기록에 남김"). */
+  public Map<String, Object> saveResult(Long bid, Long gradingId, JsonNode a) {
+    List<WrongItem> wrong = new ArrayList<>();
+    a.path("wrongItems").forEach(w -> wrong.add(new WrongItem(text(w, "no"), text(w, "topic"), text(w, "reason"))));
+    var v = records.saveResult(bid, gradingId, new EasyLessonRecordService.ResultForm(
+        has(a, "totalCount") ? a.get("totalCount").asInt() : null, has(a, "correctCount") ? a.get("correctCount").asInt() : null,
+        wrong, text(a, "feedback"), text(a, "subjectArea")));
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("saved", true);
+    out.put("gradingId", v.gradingId());
+    out.put("status", v.status());
+    out.put("score", v.totalCount() == null ? null : v.correctCount() + "/" + v.totalCount());
+    out.put("wrongCount", v.wrongItems().size());
+    out.put("bookPath", bookPath(bid, v.studentId()) + "&grading=" + v.gradingId());
+    out.put("message", "학생부에 저장했습니다. 학생부 화면에서 고치거나 지울 수 있습니다.");
+    return out;
+  }
+
+  /** 약점 정리 저장(바로 저장, 쌓임). */
+  public Map<String, Object> saveWeakness(Long bid, JsonNode a) {
+    EasyStudent s = requireStudent(a);
+    List<EasyLessonRecordService.WeaknessTopic> topics = new ArrayList<>();
+    a.path("topics").forEach(t -> topics.add(new EasyLessonRecordService.WeaknessTopic(text(t, "topic"), text(t, "level"),
+        text(t, "evidence"))));
+    var v = records.saveWeakness(bid, s.getStudentId(), text(a, "summary"), topics, "MCP");
+    return Map.of("saved", true, "noteId", v.noteId(), "topicCount", v.topics().size(),
+        "bookPath", bookPath(bid, s.getStudentId()), "message", "약점 정리를 학생부에 저장했습니다.");
   }
 
   /* ---------------- 초안 ---------------- */
@@ -139,7 +221,7 @@ public class CoordRecordActions implements CoordActions {
     Long bid = p.get("businessId").asLong();
     Long sid = p.get("studentId").asLong();
     Map<String, Object> r = new LinkedHashMap<>();
-    String book = "/easy/records?businessId=" + bid + "&studentId=" + sid;
+    String book = bookPath(bid, sid);
     if (LESSON_RECORD.equals(kind)) {
       var v = records.createLesson(bid, sid, new LessonForm(p.hasNonNull("classId") ? p.get("classId").asLong() : null,
           str(p, "lessonDate"), str(p, "lessonRange"), str(p, "homeworkCheck"), str(p, "homeworkDoneNote"),
@@ -155,7 +237,7 @@ public class CoordRecordActions implements CoordActions {
       var v = records.createGrading(bid, sid, new GradingForm(
           p.hasNonNull("lessonRecordId") ? p.get("lessonRecordId").asLong() : null, str(p, "gradedOn"),
           str(p, "subjectArea"), str(p, "material"), p.hasNonNull("totalCount") ? p.get("totalCount").asInt() : null,
-          p.hasNonNull("correctCount") ? p.get("correctCount").asInt() : null, wrong, str(p, "feedback")), "MCP");
+          p.hasNonNull("correctCount") ? p.get("correctCount").asInt() : null, wrong, str(p, "feedback"), "GRADED"), "MCP");
       r.put("gradingId", v.gradingId());
       r.put("label", "채점 기록");
       r.put("linkPath", book + "&grading=" + v.gradingId());

@@ -19,7 +19,10 @@
     .rec .btns button, .rec .btns label { width: auto; margin: 0; padding: 5px 10px; font-size: 12px; }
     .rec.focus { background: #fffbea; border-radius: 8px; padding: 10px; }
     .photos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-    .photos figure { margin: 0; text-align: center; }
+    .photos figure { margin: 0; text-align: center; font-size: 11px; color: #4a5568; }
+    .badge { display: block; padding: 4px 8px; border-radius: 6px; background: #fffaf0; color: #c05621; font-size: 12px; white-space: normal; }
+    .photos button { width: auto; margin: 2px 0 0; padding: 3px 6px; font-size: 11px; }
+    .weak li { margin-bottom: 2px; }
     .photos img { width: 110px; height: 110px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; }
     .ev { display: inline-block; margin: 0 6px 4px 0; padding: 2px 8px; border-radius: 6px; background: #edf2f7; font-size: 12px; }
     .form-group input, .form-group select, .form-group textarea { width: 100%; }
@@ -47,7 +50,22 @@
     <div id="attendance"></div>
   </div>
 
+  <div class="easy-card" id="weakCard" hidden>
+    <h3 style="margin-top:0">약점 정리</h3>
+    <div id="weakness"></div>
+  </div>
+
   <div class="easy-card" id="addCard" hidden>
+    <details id="prepBox" open>
+      <summary>채점 준비 — 문제지·정답지·학생 답안 올리기</summary>
+      <p class="muted">채점할 범위를 적고 만들면, 아래 채점 기록에서 사진을 종류별로 올릴 수 있습니다. 그다음 휴대폰 Claude에게 「채점해줘」라고 말하면 Claude가 사진을 보고 채점해 바로 알려 주고 학생부에 남깁니다.</p>
+      <div class="form-row">
+        <div class="form-group"><label for="pDate">날짜</label><input type="date" id="pDate"></div>
+        <div class="form-group"><label for="pArea">분야</label><input id="pArea" maxlength="100" placeholder="문법·독해·어휘"></div>
+      </div>
+      <div class="form-group"><label for="pMaterial">교재·범위</label><input id="pMaterial" maxlength="200" placeholder="능률 3과 확인문제 1~20"></div>
+      <button class="btn-primary" id="pSave" type="button">채점 준비 만들기</button>
+    </details>
     <details>
       <summary>수업 기록 직접 적기</summary>
       <div class="form-row">
@@ -62,7 +80,7 @@
       <button class="btn-primary" id="lSave" type="button">수업 기록 저장</button>
     </details>
     <details>
-      <summary>채점 기록 직접 적기</summary>
+      <summary>채점 결과 직접 적기</summary>
       <div class="form-row">
         <div class="form-group"><label for="gDate">날짜</label><input type="date" id="gDate"></div>
         <div class="form-group"><label for="gArea">분야</label><input id="gArea" maxlength="100" placeholder="문법·독해·어휘"></div>

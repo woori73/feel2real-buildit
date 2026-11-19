@@ -7,12 +7,15 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyGra
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyLessonRecord;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyLessonRecord.HomeworkCheck;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyStudent;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.entity.EasyWeaknessNote;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyBusinessRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyClassRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyGradingPhotoRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyGradingRecordRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyLessonRecordRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyStudentRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyWeaknessNoteRepository;
+import f2r.tutor_solution.private_tutor_solution_back.infrastructure.image.ImageSanitizer;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.FileStorage;
 import f2r.tutor_solution.private_tutor_solution_back.infrastructure.storage.TransactionalFileDeletion;
 import java.io.IOException;
@@ -32,14 +35,19 @@ import tools.jackson.databind.json.JsonMapper;
  * 학생부: 학생별 수업 기록(수업 범위·숙제 확인·낸 숙제·메모)과 채점 기록(이미 채점된 답지 사진 + 맞은 수·틀린 문항·피드백).
  * 관리자 전용(/api/admin/**, MCP coord:draft + ADMIN). 사용자 결정(2026-11-19): 수정·삭제 가능, 답지 사진도 저장.
  *
- * <p>채점은 F2R 서버가 하지 않는다 — 휴대폰 Claude(사용자 앱)가 사진을 보고 틀린 문항·피드백을 만들고, 여기에는 결과만 기록한다.
- * 오답 기록은 채점 기록의 틀린 문항(분야·유형별)을 모아 보여 준다.
+ * <p>채점은 F2R 서버가 하지 않는다. 채점 전에 문제지·정답지·학생 답안 사진을 올려 두면(PENDING) 휴대폰 Claude(사용자 앱)가
+ * MCP로 사진을 읽어 채점하고 결과(틀린 문항·피드백)를 저장한다(GRADED). 사진은 JPEG로 다시 저장해 위치 등 메타데이터를 없앤다.
+ * 오답 기록은 채점 기록의 틀린 문항(분야·유형별)을 모아 보여 주고, 약점 정리는 Claude(또는 원장)가 쓴 요약을 쌓아 둔다.
  */
 @Service
 @Transactional
 public class EasyLessonRecordService {
 
-  public static final int MAX_PHOTOS = 5;
+  public static final int MAX_PHOTOS = 10;
+  public static final java.util.List<String> PHOTO_KINDS = java.util.List.of("QUESTION", "ANSWER_KEY", "STUDENT", "GRADED");
+  public static final java.util.Map<String, String> PHOTO_KIND_LABEL = java.util.Map.of(
+      "QUESTION", "문제지", "ANSWER_KEY", "정답지", "STUDENT", "학생 답안", "GRADED", "채점된 답지");
+  static final java.util.Set<String> LEVELS = java.util.Set.of("HIGH", "MEDIUM", "LOW");
   public static final long MAX_PHOTO_BYTES = 10L * 1024 * 1024;
   static final int MAX_WRONG_ITEMS = 200;
   private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -54,10 +62,13 @@ public class EasyLessonRecordService {
   private final EasyClassRepository classes;
   private final EasyAttendanceService attendance;
   private final FileStorage storage;
+  private final EasyWeaknessNoteRepository weaknesses;
+  private final ImageSanitizer sanitizer;
 
   public EasyLessonRecordService(EasyLessonRecordRepository lessons, EasyGradingRecordRepository gradings,
       EasyGradingPhotoRepository photos, EasyStudentRepository students, EasyBusinessRepository businesses,
-      EasyClassRepository classes, EasyAttendanceService attendance, FileStorage storage) {
+      EasyClassRepository classes, EasyAttendanceService attendance, FileStorage storage,
+      EasyWeaknessNoteRepository weaknesses, ImageSanitizer sanitizer) {
     this.lessons = lessons;
     this.gradings = gradings;
     this.photos = photos;
@@ -66,6 +77,8 @@ public class EasyLessonRecordService {
     this.classes = classes;
     this.attendance = attendance;
     this.storage = storage;
+    this.weaknesses = weaknesses;
+    this.sanitizer = sanitizer;
   }
 
   /* ---------------- 요청·응답 ---------------- */
@@ -75,18 +88,29 @@ public class EasyLessonRecordService {
 
   public record WrongItem(String no, String topic, String reason) {}
 
+  /** status: PENDING(사진만 올리고 채점 전)·GRADED(기본). */
   public record GradingForm(Long lessonRecordId, String gradedOn, String subjectArea, String material,
-      Integer totalCount, Integer correctCount, List<WrongItem> wrongItems, String feedback) {}
+      Integer totalCount, Integer correctCount, List<WrongItem> wrongItems, String feedback, String status) {}
+
+  /** Claude가 사진을 보고 낸 채점 결과. */
+  public record ResultForm(Integer totalCount, Integer correctCount, List<WrongItem> wrongItems, String feedback,
+      String subjectArea) {}
+
+  public record WeaknessTopic(String topic, String level, String evidence) {}
+
+  public record WeaknessView(Long noteId, String summary, List<WeaknessTopic> topics, String source, String createdAt) {}
+
+  public record AiPhoto(Long photoId, String kind, byte[] bytes) {}
 
   public record LessonView(Long lessonRecordId, Long studentId, Long classId, String className, String lessonDate,
       String lessonRange, String homeworkCheck, String homeworkCheckLabel, String homeworkDoneNote,
       String nextHomework, String teacherNote, String source) {}
 
-  public record PhotoView(Long photoId, String contentType, long sizeBytes) {}
+  public record PhotoView(Long photoId, String kind, String kindLabel, String contentType, long sizeBytes) {}
 
   public record GradingView(Long gradingId, Long studentId, Long lessonRecordId, String gradedOn, String subjectArea,
       String material, Integer totalCount, Integer correctCount, List<WrongItem> wrongItems, String feedback,
-      String source, List<PhotoView> photos) {}
+      String status, String source, List<PhotoView> photos) {}
 
   public record TopicCount(String topic, int count, String lastDate) {}
 
@@ -132,22 +156,85 @@ public class EasyLessonRecordService {
   public GradingView createGrading(Long businessId, Long studentId, GradingForm f, String source) {
     EasyBusiness b = requireBusiness(businessId);
     EasyStudent s = requireStudent(studentId);
-    counts(f);
+    String status = status(f.status());
+    if ("GRADED".equals(status)) counts(f);
     EasyGradingRecord g = gradings.save(EasyGradingRecord.builder().business(b).student(s)
         .lessonRecord(linkedLesson(businessId, studentId, f.lessonRecordId())).gradedOn(date(f.gradedOn()))
         .subjectArea(clip(f.subjectArea(), 100)).material(clip(f.material(), 200)).totalCount(f.totalCount())
         .correctCount(f.correctCount()).wrongItems(wrongJson(f.wrongItems())).feedback(clip(f.feedback(), 2000))
-        .source(source).build());
+        .status(status).source(source).build());
     return view(g);
   }
 
   public GradingView updateGrading(Long businessId, Long gradingId, GradingForm f) {
     EasyGradingRecord g = ownGrading(businessId, gradingId);
-    counts(f);
+    String status = status(f.status() == null ? g.getStatus() : f.status());
+    if ("GRADED".equals(status)) counts(f);
     g.update(linkedLesson(businessId, g.getStudent().getStudentId(), f.lessonRecordId()), date(f.gradedOn()),
         clip(f.subjectArea(), 100), clip(f.material(), 200), f.totalCount(), f.correctCount(),
-        wrongJson(f.wrongItems()), clip(f.feedback(), 2000));
+        wrongJson(f.wrongItems()), clip(f.feedback(), 2000), status);
     return view(g);
+  }
+
+  /** Claude 채점 결과 저장: 채점 기록을 GRADED로 바꾸고 맞은 수·틀린 문항·피드백을 넣는다. 날짜·교재는 그대로. */
+  public GradingView saveResult(Long businessId, Long gradingId, ResultForm r) {
+    EasyGradingRecord g = ownGrading(businessId, gradingId);
+    Integer correct = r.correctCount() == null && r.totalCount() != null
+        ? Math.max(0, r.totalCount() - (r.wrongItems() == null ? 0 : r.wrongItems().size())) : r.correctCount();
+    GradingForm f = new GradingForm(null, g.getGradedOn().toString(), null, null, r.totalCount(), correct,
+        r.wrongItems(), r.feedback(), "GRADED");
+    counts(f);
+    g.update(g.getLessonRecord(), g.getGradedOn(), r.subjectArea() == null ? g.getSubjectArea() : clip(r.subjectArea(), 100),
+        g.getMaterial(), r.totalCount(), correct, wrongJson(r.wrongItems()), clip(r.feedback(), 2000), "GRADED");
+    return view(g);
+  }
+
+  /** 채점 전(PENDING) 기록 목록 — Claude가 "채점할 것"을 찾을 때. */
+  @Transactional(readOnly = true)
+  public List<GradingView> pending(Long businessId) {
+    return gradings.findByBusiness_BusinessIdAndStatusOrderByGradedOnDescGradingIdDesc(businessId, "PENDING").stream()
+        .map(this::view).toList();
+  }
+
+  /** Claude에게 보낼 사진: 문제지 → 정답지 → 학생 답안 → 채점된 답지 순. */
+  @Transactional(readOnly = true)
+  public List<AiPhoto> photosForAi(Long businessId, Long gradingId) throws IOException {
+    ownGrading(businessId, gradingId);
+    List<EasyGradingPhoto> list = new ArrayList<>(photos.findByGrading_GradingIdOrderByPhotoIdAsc(gradingId));
+    list.sort(Comparator.comparingInt(p -> PHOTO_KINDS.indexOf(p.getKind())));
+    List<AiPhoto> out = new ArrayList<>();
+    for (EasyGradingPhoto p : list) {
+      out.add(new AiPhoto(p.getPhotoId(), p.getKind(), storage.readSingleLimited(p.getStorageKey(), "IMAGE", MAX_PHOTO_BYTES)));
+    }
+    return out;
+  }
+
+  /* ---------------- 약점 정리 ---------------- */
+
+  /** 약점 정리 저장(쌓기). 최신 것이 현재 정리다. */
+  public WeaknessView saveWeakness(Long businessId, Long studentId, String summary, List<WeaknessTopic> topics,
+      String source) {
+    EasyBusiness b = requireBusiness(businessId);
+    EasyStudent s = requireStudent(studentId);
+    String text = clip(summary, 3000);
+    if (text == null) throw new IllegalArgumentException("약점 정리 내용을 적어 주세요.");
+    List<WeaknessTopic> clean = new ArrayList<>();
+    for (WeaknessTopic t : topics == null ? List.<WeaknessTopic>of() : topics) {
+      if (t == null || clip(t.topic(), 100) == null) continue;
+      String level = t.level() == null ? "MEDIUM" : t.level().strip().toUpperCase();
+      if (!LEVELS.contains(level)) throw new IllegalArgumentException("약점 정도는 HIGH·MEDIUM·LOW 중 하나입니다.");
+      clean.add(new WeaknessTopic(clip(t.topic(), 100), level, clip(t.evidence(), 300)));
+    }
+    if (clean.size() > 30) throw new IllegalArgumentException("약점 항목은 30개까지입니다.");
+    EasyWeaknessNote n = weaknesses.save(new EasyWeaknessNote(b, s, text, JSON.writeValueAsString(clean), source));
+    return view(n);
+  }
+
+  public void deleteWeakness(Long businessId, Long noteId) {
+    EasyWeaknessNote n = weaknesses.findById(noteId == null ? -1L : noteId)
+        .orElseThrow(() -> new IllegalArgumentException("약점 정리를 찾을 수 없습니다."));
+    if (!n.getBusiness().getBusinessId().equals(businessId)) throw new IllegalArgumentException("다른 사업체의 기록입니다.");
+    weaknesses.delete(n);
   }
 
   /** 채점 기록 삭제. 사진 행을 지우고, 파일은 커밋 뒤에 지운다. */
@@ -168,20 +255,30 @@ public class EasyLessonRecordService {
 
   /* ---------------- 답지 사진 ---------------- */
 
-  /** 이미 채점된 답지 사진 1장(JPEG·PNG·WebP, 10MB 이하, 채점 1건당 5장까지). */
-  public PhotoView addPhoto(Long businessId, Long gradingId, byte[] bytes, Long userId) throws IOException {
+  /**
+   * 채점 사진 1장. kind: QUESTION(문제지)·ANSWER_KEY(정답지)·STUDENT(학생 답안)·GRADED(채점된 답지). JPEG·PNG·WebP만 받고
+   * (앞 바이트 판별) 긴 변 1600px JPEG로 다시 저장해 위치 등 메타데이터를 없앤다. 10MB 이하, 채점 1건당 10장.
+   */
+  public PhotoView addPhoto(Long businessId, Long gradingId, byte[] bytes, String kind, Long userId) throws IOException {
     EasyGradingRecord g = ownGrading(businessId, gradingId);
+    String k = kind == null || kind.isBlank() ? "STUDENT" : kind.strip().toUpperCase();
+    if (!PHOTO_KINDS.contains(k)) throw new IllegalArgumentException("사진 종류는 문제지·정답지·학생 답안·채점된 답지 중 하나입니다.");
     if (bytes == null || bytes.length == 0) throw new IllegalArgumentException("사진 파일이 비어 있습니다.");
     if (bytes.length > MAX_PHOTO_BYTES) throw new IllegalArgumentException("사진은 10MB 이하만 올릴 수 있습니다.");
-    String ext = imageExtension(bytes);
-    if (ext == null) throw new IllegalArgumentException("JPEG·PNG·WebP 사진만 올릴 수 있습니다.");
+    if (imageExtension(bytes) == null) throw new IllegalArgumentException("JPEG·PNG·WebP 사진만 올릴 수 있습니다.");
     if (photos.findByGrading_GradingIdOrderByPhotoIdAsc(gradingId).size() >= MAX_PHOTOS) {
       throw new IllegalArgumentException("채점 1건에 사진은 " + MAX_PHOTOS + "장까지입니다.");
     }
-    String key = storage.saveImage(userId, "grading-" + gradingId, bytes, ext);
+    byte[] jpeg;
+    try {
+      jpeg = sanitizer.reencodeToJpeg(bytes, "grading-" + gradingId);
+    } catch (IOException | RuntimeException e) {
+      throw new IllegalArgumentException("사진을 읽을 수 없습니다. 다른 사진으로 다시 올려 주세요.");
+    }
+    String key = storage.saveImage(userId, "grading-" + gradingId, jpeg, "jpg");
     TransactionalFileDeletion.onRollback(() -> storage.delete(key, "IMAGE"));
-    EasyGradingPhoto p = photos.save(new EasyGradingPhoto(g, key, contentType(ext), bytes.length));
-    return new PhotoView(p.getPhotoId(), p.getContentType(), p.getSizeBytes());
+    EasyGradingPhoto p = photos.save(new EasyGradingPhoto(g, k, key, "image/jpeg", jpeg.length));
+    return photoView(p);
   }
 
   @Transactional(readOnly = true)
@@ -219,6 +316,11 @@ public class EasyLessonRecordService {
     out.put("lessons", lessonViews);
     out.put("gradings", gradingViews);
     out.put("wrongTopics", wrongTopics(gradingViews));
+    List<WeaknessView> notes = weaknesses
+        .findTop10ByBusiness_BusinessIdAndStudent_StudentIdOrderByNoteIdDesc(businessId, studentId).stream()
+        .map(this::view).toList();
+    out.put("weakness", notes.isEmpty() ? null : notes.get(0));
+    out.put("weaknessHistory", notes.size() > 1 ? notes.subList(1, notes.size()) : List.of());
     return out;
   }
 
@@ -249,11 +351,29 @@ public class EasyLessonRecordService {
 
   private GradingView view(EasyGradingRecord g) {
     List<PhotoView> ps = g.getGradingId() == null ? List.of() : photos.findByGrading_GradingIdOrderByPhotoIdAsc(g.getGradingId())
-        .stream().map(p -> new PhotoView(p.getPhotoId(), p.getContentType(), p.getSizeBytes())).toList();
+        .stream().map(EasyLessonRecordService::photoView).toList();
     return new GradingView(g.getGradingId(), g.getStudent().getStudentId(),
         g.getLessonRecord() == null ? null : g.getLessonRecord().getLessonRecordId(), g.getGradedOn().toString(),
         g.getSubjectArea(), g.getMaterial(), g.getTotalCount(), g.getCorrectCount(), parseWrong(g.getWrongItems()),
-        g.getFeedback(), g.getSource(), ps);
+        g.getFeedback(), g.getStatus(), g.getSource(), ps);
+  }
+
+  private static PhotoView photoView(EasyGradingPhoto p) {
+    return new PhotoView(p.getPhotoId(), p.getKind(), PHOTO_KIND_LABEL.getOrDefault(p.getKind(), p.getKind()),
+        p.getContentType(), p.getSizeBytes());
+  }
+
+  private WeaknessView view(EasyWeaknessNote n) {
+    List<WeaknessTopic> topics = n.getTopics() == null || n.getTopics().isBlank() ? List.of()
+        : JSON.readValue(n.getTopics(), new TypeReference<List<WeaknessTopic>>() {});
+    return new WeaknessView(n.getNoteId(), n.getSummary(), topics, n.getSource(),
+        n.getCreatedAt() == null ? null : n.getCreatedAt().toLocalDate().toString());
+  }
+
+  private static String status(String v) {
+    String s = v == null || v.isBlank() ? "GRADED" : v.strip().toUpperCase();
+    if (!s.equals("PENDING") && !s.equals("GRADED")) throw new IllegalArgumentException("채점 상태는 PENDING·GRADED 중 하나입니다.");
+    return s;
   }
 
   private void requireSomething(EasyLessonRecord r) {
@@ -364,14 +484,6 @@ public class EasyLessonRecordService {
 
   private static boolean startsWith(byte[] b, byte[] magic) {
     return b.length >= magic.length && Arrays.equals(Arrays.copyOf(b, magic.length), magic);
-  }
-
-  private static String contentType(String ext) {
-    return switch (ext) {
-      case "png" -> "image/png";
-      case "webp" -> "image/webp";
-      default -> "image/jpeg";
-    };
   }
 
   private static boolean notBlank(String s) {

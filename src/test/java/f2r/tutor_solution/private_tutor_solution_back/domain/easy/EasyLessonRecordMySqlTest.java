@@ -38,7 +38,13 @@ class EasyLessonRecordMySqlTest {
   @Autowired JdbcTemplate jdbc;
   @Autowired jakarta.persistence.EntityManager entityManager;
 
-  static final byte[] JPEG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0x10, 'J', 'F', 'I', 'F', 0, 1};
+  /** 진짜 JPEG(200x100). 저장 때 다시 인코딩하므로 실제로 읽을 수 있는 그림이어야 한다. */
+  static byte[] jpeg() throws java.io.IOException {
+    var img = new java.awt.image.BufferedImage(200, 100, java.awt.image.BufferedImage.TYPE_INT_RGB);
+    var out = new java.io.ByteArrayOutputStream();
+    javax.imageio.ImageIO.write(img, "jpg", out);
+    return out.toByteArray();
+  }
 
   @Test
   @DisplayName("given 수업·채점·사진 when 학생부 조회 후 수업 삭제·채점 삭제 then 채점은 연결만 끊기고, 채점 삭제는 사진 행도 지운다")
@@ -51,8 +57,10 @@ class EasyLessonRecordMySqlTest {
     // when
     var lesson = service.createLesson(bid, sid, new LessonForm(null, "2026-11-20", "능률 3과", "PARTIAL", "p.30", "p.36", null), "MCP");
     var grading = service.createGrading(bid, sid, new GradingForm(lesson.lessonRecordId(), "2026-11-20", "문법", "능률 3과",
-        20, 18, List.of(new WrongItem("3", "관계대명사", "what/that"), new WrongItem("7", "관계대명사", "생략")), "복습"), "MCP");
-    var photo = service.addPhoto(bid, grading.gradingId(), JPEG, 1L);
+        20, 18, List.of(new WrongItem("3", "관계대명사", "what/that"), new WrongItem("7", "관계대명사", "생략")), "복습", null), "MCP");
+    var photo = service.addPhoto(bid, grading.gradingId(), jpeg(), "STUDENT", 1L);
+    service.saveWeakness(bid, sid, "관계대명사 what/that 구분이 약함", List.of(
+        new EasyLessonRecordService.WeaknessTopic("관계대명사", "HIGH", "11/20 3·7번")), "MCP");
     entityManager.flush();
     Map<String, Object> book = service.studentBook(bid, sid);
     byte[] read = service.readPhoto(bid, photo.photoId()).bytes();
@@ -66,7 +74,9 @@ class EasyLessonRecordMySqlTest {
     // then
     assertThat((List<?>) book.get("lessons")).hasSize(1);
     assertThat(book.get("wrongTopics").toString()).contains("관계대명사").contains("count=2");
-    assertThat(read).isEqualTo(JPEG);
+    assertThat(read).startsWith((byte) 0xFF, (byte) 0xD8);
+    assertThat(photo.kindLabel()).isEqualTo("학생 답안");
+    assertThat(book.get("weakness").toString()).contains("관계대명사 what/that", "HIGH");
     assertThat(linkAfterLessonDelete).isNull();
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_grading_records WHERE student_id=?", Integer.class, sid)).isZero();
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_grading_photos WHERE photo_id=?", Integer.class, photo.photoId())).isZero();

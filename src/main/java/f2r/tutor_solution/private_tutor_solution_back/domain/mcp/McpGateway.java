@@ -69,7 +69,8 @@ public class McpGateway {
    */
   static final Set<String> COORD_TOOLS = Set.of("f2r_student_search", "f2r_attendance_check", "f2r_attendance_mark",
       "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
-      "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_grading_pending", "f2r_grading_photos",
+      "f2r_grading_save", "f2r_weakness_save", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -497,7 +498,8 @@ public class McpGateway {
         List.of("requestId", "action")));
     out.add(tool("f2r_student_book",
         "학생부를 봅니다: 최근 출결 30건, 수업 기록(날짜·수업 범위·숙제 확인·해 온 것·낸 숙제·메모), 채점 기록(분야·교재·맞은 수/전체·"
-            + "틀린 문항 번호·유형·이유·피드백·사진 수), 오답 기록(유형별 틀린 횟수, 많이 틀린 순). 이름은 가려서 줍니다.",
+            + "틀린 문항 번호·유형·이유·피드백·사진), 오답 기록(유형별 틀린 횟수), 약점 정리(최신+이전). 이름은 가려서 줍니다."
+            + " 원장이 학생의 그동안 기록을 보자고 하면 요약과 함께 bookUrl(학생부 화면)을 꼭 주세요.",
         Map.of("studentId", id, "businessId", id), List.of("studentId")));
     out.add(writeTool("f2r_record_change",
         "학생부 기록 초안을 만듭니다(아직 저장하지 않음). action: LESSON(수업 기록: studentId, lessonDate(YYYY-MM-DD, 없으면 오늘),"
@@ -516,6 +518,30 @@ public class McpGateway {
                 Map.of("no", string(), "topic", string(), "reason", string())))),
             Map.entry("feedback", string()), Map.entry("lessonRecordId", id), Map.entry("businessId", id)),
         List.of("requestId", "action", "studentId")));
+    out.add(tool("f2r_grading_pending",
+        "채점 전 기록(원장이 학생부 화면에서 문제지·정답지·학생 답안 사진을 먼저 올려 둔 것) 목록을 봅니다. studentId를 주면 그 학생 것만.",
+        Map.of("studentId", id, "businessId", id), List.of()));
+    out.add(tool("f2r_grading_photos",
+        "채점 기록 하나의 사진(문제지 → 정답지 → 학생 답안 → 채점된 답지 순)을 이미지로 받습니다. 받은 뒤 채점해 틀린 문항을 사용자에게"
+            + " 바로 알려 주고 f2r_grading_save로 저장하세요. 읽을 수 없는 답은 추측하지 마세요.",
+        Map.of("gradingId", id, "businessId", id), List.of("gradingId")));
+    out.add(writeTool("f2r_grading_save",
+        "f2r_grading_photos로 받은 사진을 채점한 결과를 학생부에 바로 저장합니다(채점 전 → 채점 완료). totalCount, correctCount(없으면"
+            + " 전체−틀린 수), wrongItems=[{no, topic(유형), reason(틀린 이유)}], feedback(학생에게 줄 피드백), subjectArea."
+            + " 정답지 없이 직접 풀어 채점했다면 feedback에 그 사실을 적으세요. 저장 뒤 bookUrl로 고칠 수 있습니다.",
+        Map.of("gradingId", id, "totalCount", integer(0, 1000), "correctCount", integer(0, 1000),
+            "wrongItems", Map.of("type", "array", "items", Map.of("type", "object", "properties",
+                Map.of("no", string(), "topic", string(), "reason", string()))),
+            "feedback", string(), "subjectArea", string(), "businessId", id),
+        List.of("gradingId")));
+    out.add(writeTool("f2r_weakness_save",
+        "학생 약점 정리를 학생부에 저장합니다(쌓이고 최신 것이 현재 정리). 채점·수업 기록(f2r_student_book)을 근거로 summary(3000자 이내)와"
+            + " topics=[{topic, level(HIGH·MEDIUM·LOW), evidence(근거: 날짜·문항)}]를 정리하세요. 채점을 저장한 뒤 갱신하는 것이 기본입니다.",
+        Map.of("studentId", id, "summary", string(),
+            "topics", Map.of("type", "array", "items", Map.of("type", "object", "properties",
+                Map.of("topic", string(), "level", string(), "evidence", string()))),
+            "businessId", id),
+        List.of("studentId", "summary")));
     out.add(writeTool("f2r_confirm",
         "f2r_attendance_mark·f2r_student_change·f2r_class_change·f2r_tuition_change·f2r_record_change로 만든 초안을 실행합니다. 사용자가 이 대화에서 그 내용(summary)에"
             + " 분명히 동의('네', '해줘')했을 때만 부르세요. 사용자 답 없이, 또는 다른 건으로 부르지 마세요."
@@ -664,7 +690,16 @@ public class McpGateway {
           case "f2r_tuition_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "TUITION",
               text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
           case "f2r_student_book" -> coord.studentBook(identity.principal(), bid,
+              args.hasNonNull("studentId") ? args.get("studentId").asLong() : null, oauth.base());
+          case "f2r_grading_pending" -> coord.gradingPending(identity.principal(), bid,
               args.hasNonNull("studentId") ? args.get("studentId").asLong() : null);
+          case "f2r_grading_photos" -> {
+            var bundle = coord.gradingPhotos(identity.principal(), bid, args.path("gradingId").asLong());
+            yield new MultiImageBlocks(bundle.meta(), bundle.images());
+          }
+          case "f2r_grading_save" -> coord.gradingSave(identity.principal(), bid, args.path("gradingId").asLong(), args,
+              oauth.base());
+          case "f2r_weakness_save" -> coord.weaknessSave(identity.principal(), bid, args, oauth.base());
           case "f2r_record_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "RECORD",
               text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
           case "f2r_confirm" -> coord.confirmFromChat(identity.principal(), text(args, "jobId"),
@@ -1187,6 +1222,20 @@ public class McpGateway {
       }
     } finally {
       permit.close();
+    }
+  }
+
+  /** 여러 장의 JPEG 이미지 결과(채점 사진). 내부 태그라 임의 JSON이 이미지 블록이 될 수 없다. */
+  public static final class MultiImageBlocks extends LinkedHashMap<String, Object> {
+    private final List<byte[]> images;
+
+    MultiImageBlocks(Map<String, Object> metadata, List<byte[]> images) {
+      super(metadata);
+      this.images = images.stream().map(byte[]::clone).toList();
+    }
+
+    public List<byte[]> images() {
+      return images.stream().map(byte[]::clone).toList();
     }
   }
 

@@ -9,4 +9,6 @@ public interface EasyGradingRecordRepository extends JpaRepository<EasyGradingRe
       Long businessId, Long studentId);
 
   List<EasyGradingRecord> findByLessonRecord_LessonRecordId(Long lessonRecordId);
+
+  List<EasyGradingRecord> findByBusiness_BusinessIdAndStatusOrderByGradedOnDescGradingIdDesc(Long businessId, String status);
 }

@@ -102,7 +102,7 @@ class CoordRecordActionsTest {
     a.putArray("wrongItems").add(JSON.createObjectNode().put("no", "4"));
     var d = actions.prepare("RECORD", 3L, "GRADING", a);
     when(records.createGrading(eq(3L), eq(11L), any(), eq("MCP"))).thenReturn(
-        new GradingView(55L, 11L, null, "2026-11-20", null, null, 10, 9, List.of(new WrongItem("4", null, null)), null, "MCP", List.of()));
+        new GradingView(55L, 11L, null, "2026-11-20", null, null, 10, 9, List.of(new WrongItem("4", null, null)), null, "GRADED", "MCP", List.of()));
 
     // when
     Map<String, Object> r = actions.execute(d.kind(), JSON.valueToTree(d.plan()));
@@ -110,7 +110,7 @@ class CoordRecordActionsTest {
 
     // then
     verify(records).createGrading(3L, 11L, new GradingForm(null, "2026-11-20", null, null, 10, 9,
-        List.of(new WrongItem("4", null, null)), null), "MCP");
+        List.of(new WrongItem("4", null, null)), null, "GRADED"), "MCP");
     assertThat(r).containsEntry("linkPath", "/easy/records?businessId=3&studentId=11&grading=55");
     verify(records).deleteGrading(3L, 55L);
   }
@@ -144,5 +144,53 @@ class CoordRecordActionsTest {
 
     // then
     assertThat(out).containsEntry("displayName", "김○수").doesNotContainKeys("name", "school");
+  }
+
+  @Test
+  @DisplayName("given 채점 전 기록 사진 when AI용 사진 묶음 then 종류 라벨·이미지 순서가 같고 채점 안내가 있다, 사진 없으면 거절")
+  void photosBundle() throws Exception {
+    // given
+    when(records.grading(3L, 9L)).thenReturn(new GradingView(9L, 11L, null, "2026-11-20", "문법", "3과", null, null,
+        List.of(), null, "PENDING", "WEB", List.of()));
+    when(records.photosForAi(3L, 9L)).thenReturn(List.of(
+        new EasyLessonRecordService.AiPhoto(1L, "QUESTION", new byte[] {1}),
+        new EasyLessonRecordService.AiPhoto(2L, "STUDENT", new byte[] {2})));
+    when(records.grading(3L, 10L)).thenReturn(new GradingView(10L, 11L, null, "2026-11-20", null, null, null, null,
+        List.of(), null, "PENDING", "WEB", List.of()));
+    when(records.photosForAi(3L, 10L)).thenReturn(List.of());
+
+    // when
+    var bundle = actions.photos(3L, 9L);
+
+    // then
+    assertThat(bundle.labels()).containsExactly("문제지 #1", "학생 답안 #2");
+    assertThat(bundle.images()).hasSize(2);
+    assertThat(bundle.meta().get("instruction").toString()).contains("추측하지", "f2r_grading_save");
+    assertThatThrownBy(() -> actions.photos(3L, 10L)).hasMessageContaining("사진이 없습니다");
+  }
+
+  @Test
+  @DisplayName("given Claude 채점 결과·약점 정리 when 저장 then 바로 저장되고 학생부 화면 주소를 돌려준다")
+  void saveResultAndWeakness() {
+    // given
+    var a = JSON.createObjectNode().put("totalCount", 10).put("feedback", "what 복습");
+    a.putArray("wrongItems").add(JSON.createObjectNode().put("no", "3").put("topic", "관계대명사"));
+    when(records.saveResult(eq(3L), eq(9L), any())).thenReturn(new GradingView(9L, 11L, null, "2026-11-20", null, null, 10, 9,
+        List.of(new WrongItem("3", "관계대명사", null)), "what 복습", "GRADED", "MCP", List.of()));
+    var w = args().put("summary", "관계대명사 약함");
+    w.putArray("topics").add(JSON.createObjectNode().put("topic", "관계대명사").put("level", "HIGH"));
+    when(records.saveWeakness(eq(3L), eq(11L), eq("관계대명사 약함"), any(), eq("MCP"))).thenReturn(
+        new EasyLessonRecordService.WeaknessView(4L, "관계대명사 약함",
+            List.of(new EasyLessonRecordService.WeaknessTopic("관계대명사", "HIGH", null)), "MCP", "2026-11-20"));
+
+    // when
+    Map<String, Object> r = actions.saveResult(3L, 9L, a);
+    Map<String, Object> n = actions.saveWeakness(3L, w);
+
+    // then
+    assertThat(r).containsEntry("score", "9/10").containsEntry("bookPath", "/easy/records?businessId=3&studentId=11&grading=9");
+    assertThat(n).containsEntry("noteId", 4L).containsEntry("bookPath", "/easy/records?businessId=3&studentId=11");
+    verify(records).saveResult(3L, 9L, new EasyLessonRecordService.ResultForm(10, null,
+        List.of(new WrongItem("3", "관계대명사", null)), "what 복습", null));
   }
 }

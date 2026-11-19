@@ -18,6 +18,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.Eas
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyGradingRecordRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyLessonRecordRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyStudentRepository;
+import f2r.tutor_solution.private_tutor_solution_back.domain.easy.repository.EasyWeaknessNoteRepository;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLessonRecordService.GradingForm;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLessonRecordService.GradingView;
 import f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLessonRecordService.LessonForm;
@@ -36,6 +37,7 @@ class EasyLessonRecordServiceTest {
   EasyGradingRecordRepository gradings;
   EasyGradingPhotoRepository photos;
   FileStorage storage;
+  EasyWeaknessNoteRepository weaknesses;
   EasyLessonRecordService service;
   EasyBusiness biz;
 
@@ -47,8 +49,10 @@ class EasyLessonRecordServiceTest {
     EasyStudentRepository students = mock(EasyStudentRepository.class);
     EasyBusinessRepository businesses = mock(EasyBusinessRepository.class);
     storage = mock(FileStorage.class);
+    weaknesses = mock(EasyWeaknessNoteRepository.class);
     service = new EasyLessonRecordService(lessons, gradings, photos, students, businesses,
-        mock(EasyClassRepository.class), mock(EasyAttendanceService.class), storage);
+        mock(EasyClassRepository.class), mock(EasyAttendanceService.class), storage, weaknesses,
+        mock(f2r.tutor_solution.private_tutor_solution_back.infrastructure.image.ImageSanitizer.class));
     biz = EasyBusiness.builder().code("A").name("학원").active(true).build();
     ReflectionTestUtils.setField(biz, "businessId", 3L);
     EasyStudent s = EasyStudent.builder().name("김민수").status(EasyStudentStatus.ENROLLED).build();
@@ -89,9 +93,9 @@ class EasyLessonRecordServiceTest {
   void grading_validatesCounts() {
     // given & when & then
     assertThatThrownBy(() -> service.createGrading(3L, 11L,
-        new GradingForm(null, "2026-11-20", "문법", null, 10, 11, List.of(), null), "WEB")).hasMessageContaining("많습니다");
+        new GradingForm(null, "2026-11-20", "문법", null, 10, 11, List.of(), null, null), "WEB")).hasMessageContaining("많습니다");
     assertThatThrownBy(() -> service.createGrading(3L, 11L,
-        new GradingForm(null, "2026-11-20", "문법", null, null, null, List.of(), " "), "WEB")).hasMessageContaining("하나는");
+        new GradingForm(null, "2026-11-20", "문법", null, null, null, List.of(), " ", "GRADED"), "WEB")).hasMessageContaining("하나는");
   }
 
   @Test
@@ -102,7 +106,7 @@ class EasyLessonRecordServiceTest {
 
     // when
     GradingView v = service.createGrading(3L, 11L, new GradingForm(null, "2026-11-20", "문법", "능률 3과", 20, 18,
-        List.of(new WrongItem("3", "관계대명사", "what/that 혼동"), new WrongItem("7", null, longReason)), "관계대명사 복습"), "MCP");
+        List.of(new WrongItem("3", "관계대명사", "what/that 혼동"), new WrongItem("7", null, longReason)), "관계대명사 복습", null), "MCP");
 
     // then
     assertThat(v.wrongItems()).hasSize(2);
@@ -115,9 +119,9 @@ class EasyLessonRecordServiceTest {
   void wrongTopics() {
     // given
     var a = new GradingView(1L, 11L, null, "2026-11-18", "문법", null, 10, 8,
-        List.of(new WrongItem("1", "관계대명사", ""), new WrongItem("2", "시제", "")), null, "WEB", List.of());
+        List.of(new WrongItem("1", "관계대명사", ""), new WrongItem("2", "시제", "")), null, "GRADED", "WEB", List.of());
     var b = new GradingView(2L, 11L, null, "2026-11-20", "문법", null, 10, 8,
-        List.of(new WrongItem("4", "관계대명사", ""), new WrongItem("5", null, "")), null, "WEB", List.of());
+        List.of(new WrongItem("4", "관계대명사", ""), new WrongItem("5", null, "")), null, "GRADED", "WEB", List.of());
 
     // when
     var topics = EasyLessonRecordService.wrongTopics(List.of(b, a));
@@ -152,9 +156,51 @@ class EasyLessonRecordServiceTest {
     when(gradings.findById(6L)).thenReturn(Optional.of(mine));
 
     // when & then
-    assertThatThrownBy(() -> service.addPhoto(3L, 5L, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}, 1L))
+    assertThatThrownBy(() -> service.addPhoto(3L, 5L, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}, "STUDENT", 1L))
         .hasMessageContaining("다른 사업체");
-    assertThatThrownBy(() -> service.addPhoto(3L, 6L, "%PDF-1.7".getBytes(), 1L)).hasMessageContaining("JPEG");
+    assertThatThrownBy(() -> service.addPhoto(3L, 6L, "%PDF-1.7".getBytes(), "STUDENT", 1L)).hasMessageContaining("JPEG");
     verify(storage, never()).saveImage(any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("given 채점 준비(PENDING) when 결과 없이 저장 then 통과, 나중에 결과 저장하면 GRADED·맞은 수 자동 계산")
+  void pendingThenResult() {
+    // given
+    GradingView pending = service.createGrading(3L, 11L,
+        new GradingForm(null, "2026-11-20", "문법", "능률 3과", null, null, List.of(), null, "pending"), "WEB");
+    EasyGradingRecord saved = EasyGradingRecord.builder().business(biz)
+        .student(EasyStudent.builder().name("김민수").status(EasyStudentStatus.ENROLLED).build())
+        .gradedOn(java.time.LocalDate.of(2026, 11, 20)).subjectArea("문법").status("PENDING").build();
+    ReflectionTestUtils.setField(saved.getStudent(), "studentId", 11L);
+    ReflectionTestUtils.setField(saved, "gradingId", 8L);
+    when(gradings.findById(8L)).thenReturn(Optional.of(saved));
+
+    // when
+    GradingView done = service.saveResult(3L, 8L, new EasyLessonRecordService.ResultForm(10, null,
+        List.of(new WrongItem("3", "관계대명사", "what")), "복습", null));
+
+    // then
+    assertThat(pending.status()).isEqualTo("PENDING");
+    assertThat(done.status()).isEqualTo("GRADED");
+    assertThat(done.correctCount()).isEqualTo(9);
+    assertThat(done.subjectArea()).isEqualTo("문법");
+  }
+
+  @Test
+  @DisplayName("given 잘못된 사진 종류·채점 상태·약점 정도 when 저장 then 거절")
+  void rejectsBadKindStatusLevel() {
+    // given
+    EasyGradingRecord mine = EasyGradingRecord.builder().business(biz).student(null).gradedOn(java.time.LocalDate.now()).build();
+    ReflectionTestUtils.setField(mine, "gradingId", 6L);
+    when(gradings.findById(6L)).thenReturn(Optional.of(mine));
+
+    // when & then
+    assertThatThrownBy(() -> service.addPhoto(3L, 6L, new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}, "SELFIE", 1L))
+        .hasMessageContaining("사진 종류");
+    assertThatThrownBy(() -> service.createGrading(3L, 11L,
+        new GradingForm(null, "2026-11-20", null, null, 1, 1, List.of(), null, "DONE"), "WEB")).hasMessageContaining("채점 상태");
+    assertThatThrownBy(() -> service.saveWeakness(3L, 11L, "관계대명사 약함",
+        List.of(new EasyLessonRecordService.WeaknessTopic("관계대명사", "VERY", null)), "MCP")).hasMessageContaining("HIGH");
+    assertThatThrownBy(() -> service.saveWeakness(3L, 11L, " ", List.of(), "MCP")).hasMessageContaining("약점 정리");
   }
 }

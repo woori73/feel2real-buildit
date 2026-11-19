@@ -32,3 +32,12 @@ test('parseWrongText: "번호, 유형, 이유" 줄을 오답 목록으로', () =
   // then
   assert.deepEqual(out, [{ no: '3', topic: '관계대명사', reason: 'what/that 혼동, 주의' }, { no: '7', topic: '시제', reason: '' }]);
 });
+
+test('statusText·weaknessLine·levelLabel: 채점 전 안내와 약점 한 줄', () => {
+  // given & when & then
+  assert.match(V.statusText({ status: 'PENDING', photos: [] }), /사진을 올려/);
+  assert.match(V.statusText({ status: 'PENDING', photos: [{}] }), /채점해줘/);
+  assert.equal(V.statusText({ status: 'GRADED', photos: [] }), '');
+  assert.equal(V.weaknessLine({ topic: '관계대명사', level: 'HIGH', evidence: '11/20 3·7번' }), '관계대명사 (많이 약함) — 11/20 3·7번');
+  assert.equal(V.levelLabel('X'), 'X');
+});

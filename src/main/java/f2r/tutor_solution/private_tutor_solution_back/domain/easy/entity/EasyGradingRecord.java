@@ -59,13 +59,17 @@ public class EasyGradingRecord extends BaseEntity {
   @Column(name = "feedback", length = 2000)
   private String feedback;
 
+  /** PENDING = 사진(문제지·정답지·학생 답안)만 올리고 채점 전, GRADED = 채점 결과가 있음. */
+  @Column(name = "status", nullable = false, length = 10)
+  private String status;
+
   @Column(name = "source", nullable = false, length = 10)
   private String source;
 
   @Builder
   public EasyGradingRecord(EasyBusiness business, EasyStudent student, EasyLessonRecord lessonRecord,
       LocalDate gradedOn, String subjectArea, String material, Integer totalCount, Integer correctCount,
-      String wrongItems, String feedback, String source) {
+      String wrongItems, String feedback, String status, String source) {
     this.business = business;
     this.student = student;
     this.lessonRecord = lessonRecord;
@@ -76,11 +80,13 @@ public class EasyGradingRecord extends BaseEntity {
     this.correctCount = correctCount;
     this.wrongItems = wrongItems;
     this.feedback = feedback;
+    this.status = status == null ? "GRADED" : status;
     this.source = source == null ? "WEB" : source;
   }
 
   public void update(EasyLessonRecord lessonRecord, LocalDate gradedOn, String subjectArea, String material,
-      Integer totalCount, Integer correctCount, String wrongItems, String feedback) {
+      Integer totalCount, Integer correctCount, String wrongItems, String feedback, String status) {
+    this.status = status;
     this.lessonRecord = lessonRecord;
     this.gradedOn = gradedOn;
     this.subjectArea = subjectArea;

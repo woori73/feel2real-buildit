@@ -239,7 +239,7 @@ class CoordinatorMySqlTest {
     Map<String, Object> lesson = confirm(change("RECORD", bid, "LESSON", json.createObjectNode().put("studentId", sid)
         .put("lessonDate", "2026-11-20").put("lessonRange", "능률 3과")));
     Map<String, Object> grading = confirm(change("RECORD", bid, "GRADING", gradingArgs));
-    Map<String, Object> book = service.studentBook(ADMIN, bid, sid);
+    Map<String, Object> book = service.studentBook(ADMIN, bid, sid, "https://f2r.test");
     service.undoFromChat(ADMIN, (String) grading.get("jobId"), null, "");
     entityManager.flush();
 
@@ -248,7 +248,51 @@ class CoordinatorMySqlTest {
     assertThat(grading.get("status")).isEqualTo("completed");
     assertThat(((Map<?, ?>) grading.get("result")).get("linkUrl").toString()).contains("/easy/records?businessId=" + bid);
     assertThat(book.toString()).contains("코○○○○○생", "시제").doesNotContain("코디학생부학생");
+    assertThat(book.get("bookUrl")).isEqualTo("https://f2r.test/easy/records?businessId=" + bid + "&studentId=" + sid);
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_lesson_records WHERE student_id=?", Integer.class, sid)).isEqualTo(1);
     assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_grading_records WHERE student_id=?", Integer.class, sid)).isZero();
+  }
+
+  @Autowired f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyLessonRecordService records;
+
+  @Test
+  @DisplayName("given 채점 준비 + 문제지·학생 답안 사진 when Claude가 사진 받고 결과·약점 저장 then 채점 완료·약점 정리가 학생부에")
+  void pendingGradingByClaude() throws Exception {
+    // given
+    var json = tools.jackson.databind.json.JsonMapper.builder().build();
+    Long bid = businesses.findAllByActiveTrueOrderBySortOrderAsc().get(0).getBusinessId();
+    Long sid = student("코디채점학생");
+    var g = records.createGrading(bid, sid, new f2r.tutor_solution.private_tutor_solution_back.domain.easy.service
+        .EasyLessonRecordService.GradingForm(null, "2026-11-20", "문법", "3과", null, null, java.util.List.of(), null, "PENDING"), "WEB");
+    var img = new java.awt.image.BufferedImage(100, 60, java.awt.image.BufferedImage.TYPE_INT_RGB);
+    var buf = new java.io.ByteArrayOutputStream();
+    javax.imageio.ImageIO.write(img, "png", buf);
+    records.addPhoto(bid, g.gradingId(), buf.toByteArray(), "STUDENT", 1L);
+    records.addPhoto(bid, g.gradingId(), buf.toByteArray(), "QUESTION", 1L);
+    entityManager.flush();
+
+    // when
+    Map<String, Object> pending = service.gradingPending(ADMIN, bid, sid);
+    var bundle = service.gradingPhotos(ADMIN, bid, g.gradingId());
+    var result = json.createObjectNode().put("totalCount", 10).put("feedback", "관계대명사 복습");
+    result.putArray("wrongItems").add(json.createObjectNode().put("no", "3").put("topic", "관계대명사").put("reason", "what/that"));
+    Map<String, Object> saved = service.gradingSave(ADMIN, bid, g.gradingId(), result, "https://f2r.test");
+    var weak = json.createObjectNode().put("studentId", sid).put("summary", "관계대명사 what/that 구분이 약함");
+    weak.putArray("topics").add(json.createObjectNode().put("topic", "관계대명사").put("level", "HIGH").put("evidence", "11/20 3번"));
+    service.weaknessSave(ADMIN, bid, weak, "https://f2r.test");
+    entityManager.flush();
+
+    // then
+    assertThat(pending.toString()).contains("코○○○○생", "학생 답안=1", "문제지=1").doesNotContain("코디채점학생");
+    assertThat(bundle.labels()).hasSize(2);
+    assertThat(bundle.labels().get(0)).startsWith("문제지");
+    assertThat(saved).containsEntry("score", "9/10");
+    assertThat(saved.get("bookUrl").toString()).startsWith("https://f2r.test/easy/records?");
+    assertThat(jdbc.queryForObject("SELECT status FROM easy_grading_records WHERE grading_id=?", String.class, g.gradingId()))
+        .isEqualTo("GRADED");
+    assertThat(jdbc.queryForObject("SELECT summary FROM easy_student_weakness_notes WHERE student_id=?", String.class, sid))
+        .contains("what/that");
+    assertThat(jdbc.queryForObject("SELECT content_type FROM easy_grading_photos WHERE grading_id=? LIMIT 1", String.class,
+        g.gradingId())).isEqualTo("image/jpeg");
   }
 }

@@ -64,6 +64,7 @@
     const box = el('div', 'rec' + (String(g.gradingId) === focusGrading ? ' focus' : ''));
     box.id = 'grading-' + g.gradingId;
     box.appendChild(el('h4', null, V.gradingHeadline(g) + (g.source === 'MCP' ? ' · AI 기록' : '')));
+    if (V.statusText(g)) box.appendChild(el('p', 'badge', V.statusText(g)));
     if (g.wrongItems.length) {
       const ul = el('ul');
       g.wrongItems.forEach(w => ul.appendChild(el('li', null, V.wrongLine(w))));
@@ -77,6 +78,7 @@
       const a = el('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
       const img = el('img'); img.src = url; img.alt = '채점 답지 사진'; a.appendChild(img);
       fig.appendChild(a);
+      fig.appendChild(el('div', null, p.kindLabel));
       fig.appendChild(button('사진 지우기', async () => {
         if (!confirm('이 사진을 지울까요?')) return;
         await call('DELETE', '/photos/' + p.photoId); await loadBook();
@@ -87,19 +89,24 @@
     const btns = el('div', 'btns');
     const input = el('input'); input.type = 'file'; input.accept = 'image/jpeg,image/png,image/webp'; input.multiple = true;
     input.id = 'upload-' + g.gradingId; input.hidden = true;
+    const kind = el('select');
+    [['QUESTION', '문제지'], ['ANSWER_KEY', '정답지'], ['STUDENT', '학생 답안'], ['GRADED', '채점된 답지']]
+      .forEach(([v, t]) => kind.add(new Option(t, v)));
+    kind.value = g.status === 'PENDING' ? (g.photos.some(p => p.kind === 'QUESTION') ? 'ANSWER_KEY' : 'QUESTION') : 'GRADED';
+    kind.style.width = 'auto';
     input.addEventListener('change', async () => {
       try {
         for (const file of input.files) {
           const form = new FormData(); form.append('file', file);
-          await call('POST', '/gradings/' + g.gradingId + '/photos', form, true);
+          await call('POST', '/gradings/' + g.gradingId + '/photos?kind=' + kind.value, form, true);
         }
         message('사진을 올렸습니다.');
         await loadBook();
       } catch (e) { message(e.message, true); }
     });
-    const label = el('label', 'btn-primary', g.photos.length ? '사진 더 올리기' : '채점된 답지 사진 올리기');
+    const label = el('label', 'btn-primary', '사진 올리기');
     label.htmlFor = input.id;
-    btns.append(input, label, button('고치기', async () => startEditGrading(g)), button('기록 지우기', async () => {
+    btns.append(kind, input, label, button('고치기', async () => startEditGrading(g)), button('기록 지우기', async () => {
       if (!confirm('이 채점 기록과 사진을 모두 지울까요? 되돌릴 수 없습니다.')) return;
       await call('DELETE', '/gradings/' + g.gradingId); await loadBook();
     }));
@@ -124,7 +131,7 @@
   }
 
   async function loadBook() {
-    if (!sid()) { ['summaryCard', 'addCard', 'gradingCard', 'lessonCard'].forEach(id => { $(id).hidden = true; }); return; }
+    if (!sid()) { ['summaryCard', 'weakCard', 'addCard', 'gradingCard', 'lessonCard'].forEach(id => { $(id).hidden = true; }); return; }
     const book = await call('GET', '/students/' + sid());
     $('studentTitle').textContent = book.name + (book.school ? ' · ' + book.school : '') + (book.grade ? ' · ' + book.grade + '학년' : '');
     $('topics').textContent = V.topicsText(book.wrongTopics);
@@ -134,16 +141,30 @@
     const gs = $('gradings'); gs.replaceChildren();
     if (!book.gradings.length) gs.appendChild(el('p', 'muted', '채점 기록이 없습니다.'));
     book.gradings.forEach(g => gs.appendChild(renderGrading(g)));
+    const wk = $('weakness'); wk.replaceChildren();
+    if (!book.weakness) wk.appendChild(el('p', 'muted', '아직 약점 정리가 없습니다. 채점 뒤 Claude가 정리해 남깁니다.'));
+    else {
+      wk.appendChild(el('p', 'muted', (book.weakness.createdAt ? V.day(book.weakness.createdAt) + ' · ' : '') + (book.weakness.source === 'MCP' ? 'Claude 정리' : '직접 작성')));
+      wk.appendChild(el('p', null, book.weakness.summary));
+      const ul = el('ul', 'weak');
+      book.weakness.topics.forEach(t => ul.appendChild(el('li', null, V.weaknessLine(t))));
+      wk.appendChild(ul);
+      if (book.weaknessHistory.length) {
+        const d = el('details'); d.appendChild(el('summary', null, '이전 정리 ' + book.weaknessHistory.length + '건'));
+        book.weaknessHistory.forEach(h => d.appendChild(el('p', 'muted', (h.createdAt ? V.day(h.createdAt) + ' · ' : '') + h.summary)));
+        wk.appendChild(d);
+      }
+    }
     const ls = $('lessons'); ls.replaceChildren();
     if (!book.lessons.length) ls.appendChild(el('p', 'muted', '수업 기록이 없습니다.'));
     book.lessons.forEach(l => ls.appendChild(renderLesson(l)));
-    ['summaryCard', 'addCard', 'gradingCard', 'lessonCard'].forEach(id => { $(id).hidden = false; });
+    ['summaryCard', 'weakCard', 'addCard', 'gradingCard', 'lessonCard'].forEach(id => { $(id).hidden = false; });
     if (focusGrading) {
       const target = $('grading-' + focusGrading);
       focusGrading = '';
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        message('AI가 남긴 채점 기록입니다. 「채점된 답지 사진 올리기」로 사진을 붙여 주세요.');
+        message('요청한 채점 기록입니다.');
       }
     }
   }
@@ -191,7 +212,7 @@
     const body = {
       gradedOn: $('gDate').value, subjectArea: $('gArea').value, material: $('gMaterial').value,
       totalCount: num('gTotal'), correctCount: num('gCorrect'), wrongItems: V.parseWrongText($('gWrong').value),
-      feedback: $('gFeedback').value
+      feedback: $('gFeedback').value, status: 'GRADED'
     };
     if (editingGrading) {
       body.lessonRecordId = editingGrading.lessonRecordId;
@@ -206,6 +227,16 @@
     await loadBook();
   }
 
+  async function prepareGrading() {
+    const g = await call('POST', '/students/' + sid() + '/gradings', {
+      gradedOn: $('pDate').value, subjectArea: $('pArea').value, material: $('pMaterial').value, status: 'PENDING', wrongItems: []
+    });
+    ['pArea', 'pMaterial'].forEach(id => { $(id).value = ''; });
+    focusGrading = String(g.gradingId);
+    await loadBook();
+    message('채점 준비를 만들었습니다. 사진 종류를 고르고 「사진 올리기」로 문제지·정답지·학생 답안을 올려 주세요.');
+  }
+
   async function init() {
     await Easy.guardAdmin();
     const link = V.deepLink(location.search);
@@ -215,6 +246,8 @@
     if (link.businessId && businesses.some(b => String(b.businessId) === link.businessId)) $('business').value = link.businessId;
     $('lDate').value = todayKst();
     $('gDate').value = todayKst();
+    $('pDate').value = todayKst();
+    $('pSave').addEventListener('click', async () => { try { await prepareGrading(); } catch (e) { message(e.message, true); } });
     const guarded = fn => async () => { try { await fn(); } catch (e) { message(e.message, true); } };
     $('business').addEventListener('change', guarded(async () => { await loadStudents(); await loadBook(); }));
     $('student').addEventListener('change', guarded(loadBook));

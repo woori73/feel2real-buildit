@@ -62,5 +62,23 @@
     });
   }
 
-  return { deepLink, day, lessonLines, gradingHeadline, wrongLine, topicsText, parseWrongText, CHECK };
+  const LEVEL = { HIGH: '많이 약함', MEDIUM: '보통', LOW: '조금' };
+  function levelLabel(level) { return LEVEL[level] || String(level || ''); }
+
+  /** 채점 상태 안내. 채점 전이면 Claude에게 할 말을 알려 준다. */
+  function statusText(g) {
+    if (g.status === 'PENDING') {
+      return g.photos.length ? '채점 전 — 휴대폰 Claude에게 「이 학생 채점해줘」라고 말하세요.' : '채점 전 — 문제지·정답지·학생 답안 사진을 올려 주세요.';
+    }
+    return '';
+  }
+
+  /** 약점 항목 한 줄: "관계대명사 (많이 약함) — 11/20 3·7번". */
+  function weaknessLine(t) {
+    const head = t.topic + (t.level ? ' (' + levelLabel(t.level) + ')' : '');
+    return t.evidence ? head + ' — ' + t.evidence : head;
+  }
+
+  return { deepLink, day, lessonLines, gradingHeadline, wrongLine, topicsText, parseWrongText, CHECK, levelLabel,
+    statusText, weaknessLine };
 });
