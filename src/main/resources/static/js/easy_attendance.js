@@ -101,7 +101,12 @@
     }
     rows.forEach(r => {
       const tr = el('tr');
-      tr.appendChild(el('td', null, r.name + (r.school ? ' · ' + r.school : '')));
+      const nameTd = el('td');
+      const book = el('a', null, r.name + (r.school ? ' · ' + r.school : ''));
+      book.href = '/easy/records?businessId=' + encodeURIComponent(businessId()) + '&studentId=' + encodeURIComponent(r.studentId);
+      book.title = '학생부(수업·채점 기록) 열기';
+      nameTd.appendChild(book);
+      tr.appendChild(nameTd);
       const evTd = el('td');
       if (!r.events.length) evTd.appendChild(el('span', 'muted', '기록 없음'));
       r.events.forEach(ev => {

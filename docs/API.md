@@ -5570,6 +5570,11 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
   - `f2r_ledger_summary {from?, to?, businessId?}` → 기존 손익계산서(`EasyFinancialStatementService.incomeStatement`) 요약: 수입·지출·순이익·시산표 균형·큰 항목 5개씩. 기본 이번 달 1일~오늘.
   - `f2r_tuition_change {requestId, action, …}` (쓰기 도구, 초안만) — `BILL`(청구 등록: studentId·month·billedAmount, paidAmount·paidOn·payMethod·memo; 같은 달 청구가 있으면 거절) / `PAY`(납부 기록: paymentId 또는 studentId+month, `amount`=이번에 받은 금액을 누적 납부액에 더함, paidOn 기본 오늘·payMethod). 금액 0~1억 원. 제목에 금액·누적·완납/잔액을 적는다. 실행은 기존 `EasyTuitionService.create/update`만. **실제 결제·송금·수납 삭제·분개 작성은 없다.**
   - 되돌리기(10분 안, 그사이 납부액이 바뀌지 않았을 때만): 청구 → 그 청구 삭제 / 납부 → 이전 납부액·납부일·방법. 납부 실행 직전에도 초안 때 납부액과 같은지 다시 확인한다.
+- **학생부 말 명령 (2026-11-19 추가, V1124)**
+  - `f2r_student_book {studentId, businessId?}` → 최근 출결 30건·수업 기록·채점 기록(사진 수)·오답 기록(유형별 횟수). `displayName`(가린 이름), 학교 없음.
+  - **채점 전 업로드 → Claude 채점**: `f2r_grading_pending {studentId?}` → 채점 전(PENDING) 목록(가린 이름·사진 종류별 수) / `f2r_grading_photos {gradingId}` → 결과 `content`에 텍스트(메타·이미지 라벨·채점 안내) 1개 + **JPEG 이미지 블록 여러 개**(문제지 → 정답지 → 학생 답안 → 채점된 답지 순, `McpGateway.MultiImageBlocks`) / `f2r_grading_save {gradingId, totalCount, correctCount?, wrongItems, feedback, subjectArea?}` (쓰기, **바로 저장** — 사용자 지시 "틀린 부분 바로 알려주고 학생기록에 남김") → GRADED, `bookUrl` / `f2r_weakness_save {studentId, summary, topics[{topic, level, evidence}]}` (쓰기, 바로 저장, 쌓임).
+  - `f2r_student_book` 결과에 `bookUrl`(학생부 화면)과 `weakness`(최신)·`weaknessHistory`. 원장이 "그동안 기록 보여줘"라고 하면 AI가 요약과 함께 이 링크를 준다.
+  - `f2r_record_change {requestId, action, studentId, …}` (쓰기 도구, 초안만) — `LESSON`(lessonDate 기본 오늘, lessonRange·homeworkCheck DONE/PARTIAL/NOT_DONE·homeworkDoneNote·nextHomework·teacherNote·classId) / `GRADING`(gradedOn·subjectArea·material·totalCount·correctCount(없으면 전체−틀린 수)·`wrongItems[{no, topic, reason}]`·feedback·lessonRecordId). 이미 채점된 답지 사진은 AI가 대화에서 읽고(사진은 이 도구로 받지 않음), 실행 뒤 `result.linkUrl`(`/easy/records?businessId=&studentId=&grading=`)에서 사용자가 사진을 올린다. 되돌리기(10분 안) = 그 기록 삭제(사진 포함).
 - `f2r_undo {jobId, reason?}` (쓰기 도구) → 대화창으로 기록한(`completed`) 작업을 **기록 뒤 10분 안에만** 취소. 출결 행은 지우지 않고 `superseded`로 남기며(새 행 없음) 작업은 `cancelled`, 사유는 `coord_job_events.message`에 남는다. 10분이 지나면 `{error}` — 출결부 정정을 쓴다.
 - `f2r_job_status {jobId}` → 상태(`review_required`·`approved`·`completed`·`rejected`·`expired`·`failed`)와 가린 요약·결과.
 - 입력 오류(학생 없음·구분 오류 등)는 MCP 결과 `{error: "<안내 문장>"}`로 돌려준다.
@@ -5581,3 +5586,15 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 - `POST /api/admin/coord/jobs/{jobId}/approve {planHash}` — 저장된 계획과 `planHash`가 같고 대기 중일 때만. 실행 직전 같은 날·같은 구분 중복을 다시 확인(있으면 `failed`, 기록 안 함) → `record` → 다시 읽어 확인 → `completed`(`result.eventId`). 이미 처리됨·시간 초과·화면이 최신이 아님 = **409** `{message}`.
 - `POST /api/admin/coord/jobs/{jobId}/reject` — `rejected`. 기록하지 않는다.
 - 출결 기록의 메모: `AI 코디네이터 요청 · 승인 <loginId>`, 출처 `MANUAL`.
+
+
+## 학생부 — 수업 기록·채점 기록·답지 사진 (2026-11-19, V1124)
+
+ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`. 모든 요청에 `?businessId=`. 화면 `/easy/records[?businessId=&studentId=&grading=]`(ADMIN, 출결부의 학생 이름에서 연결).
+
+- `GET /api/admin/easy/records/students/{studentId}` → `{studentId, name, school, grade, attendance[최근 30], lessons[], gradings[{…, wrongItems[], photos[{photoId, contentType, sizeBytes}]}], wrongTopics[{topic, count, lastDate}]}`
+- `POST /api/admin/easy/records/students/{studentId}/lessons` `{classId?, lessonDate, lessonRange?, homeworkCheck?, homeworkDoneNote?, nextHomework?, teacherNote?}` — 날짜 필수, 내용 중 하나 이상. `PUT·DELETE /api/admin/easy/records/lessons/{id}`(삭제 시 연결된 채점 기록은 남김).
+- `POST /api/admin/easy/records/students/{studentId}/gradings` `{lessonRecordId?, gradedOn, subjectArea?, material?, totalCount?, correctCount?, wrongItems?[{no, topic, reason}], feedback?, status?}` — `status: "PENDING"`이면 채점 준비(결과 없이 만들고 사진을 먼저 올림). 기본 GRADED: 맞은 수 ≤ 전체, 전체·틀린 문항·피드백 중 하나 이상. `PUT·DELETE /api/admin/easy/records/gradings/{id}`(삭제 시 사진도).
+- `POST /api/admin/easy/records/gradings/{id}/photos?kind=QUESTION|ANSWER_KEY|STUDENT|GRADED` multipart `file` — JPEG·PNG·WebP(앞 바이트 판별), 10MB, 1건당 10장. 긴 변 1600px JPEG로 다시 저장(메타데이터 제거). 응답 `{photoId, kind, kindLabel, contentType, sizeBytes}`.
+- `POST /api/admin/easy/records/students/{studentId}/weakness` `{summary, topics?[{topic, level HIGH|MEDIUM|LOW, evidence}]}` · `DELETE /api/admin/easy/records/weakness/{noteId}`. `GET /api/admin/easy/records/photos/{photoId}`(Cache-Control: no-store, nosniff) · `DELETE`.
+- 오류: 잘못된 값·다른 사업체 = 400 문장.

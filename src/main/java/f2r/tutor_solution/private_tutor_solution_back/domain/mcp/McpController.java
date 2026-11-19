@@ -81,7 +81,7 @@ public class McpController {
                       + " 학생명단(시간표)은 student-roster:read 별도 동의 후 read_student_roster의 이름 없는 집계(가명)만으로 학원 발전 방안을 논의합니다. F2R 장부는 easy-collect:write 별도 동의 후 easy_collection_sites로 기관 공식 주소를 받고, 사용자가 직접 로그인해 내려받은 거래를 save_easy_site_rows로 저장합니다."
                       + " 카페는 cafe:write 별도 동의 후 cafe_status로 게시판 연결을 확인하고 publish_cafe_article로 사용자가 요청한 익명화 자료만 게시합니다. PENDING/UNKNOWN은 자동 재게시하지 마세요."
                       + " 학부모 안내는 parent-notice:draft 동의 후 save_parent_notice_draft로 문구 초안만 저장합니다(출결·수납 사실은 f2r_attendance_check·f2r_tuition_status로 확인하되 문구에 학생 실명·연락처는 넣지 않음). 저장 결과의 shareUrl을 사용자에게 주면 열어서 카카오톡 공유 버튼으로 직접 보냅니다. 지난 초안은 list_parent_notice_drafts. 학부모 연락처를 요구하지 마세요."
-                      + " 출결은 coord:draft 동의 후 f2r_student_search로 학생을 찾고(같은 이름이 여럿이면 학년·반을 보여 주고 사용자가 고르게 함) f2r_attendance_mark로 초안을 만든 뒤, 대화에서 summary(가린 이름·학년·구분·시각)를 보여 주고 '기록할까요?'라고 묻습니다. 사용자가 분명히 동의하면 f2r_confirm으로 기록하고, 동의 전에는 '기록했다'고 말하지 않습니다. 10분 안에 취소를 요청하면 f2r_undo를 씁니다. 학생 등록·수정·퇴원은 f2r_student_change, 반 만들기·배정·이동·빼기·수업 요일은 f2r_class_change(f2r_class_list로 반 확인)로 초안을 만들고 같은 방식으로 f2r_confirm합니다. 수강료는 f2r_tuition_status(월별 수납 현황)·f2r_ledger_summary(손익 요약)로 보고, 청구 등록·납부 기록은 f2r_tuition_change 초안 → 금액을 그대로 보여 주고 동의하면 f2r_confirm. 실제 결제·송금·수납 삭제는 하지 않습니다.");
+                      + " 출결은 coord:draft 동의 후 f2r_student_search로 학생을 찾고(같은 이름이 여럿이면 학년·반을 보여 주고 사용자가 고르게 함) f2r_attendance_mark로 초안을 만든 뒤, 대화에서 summary(가린 이름·학년·구분·시각)를 보여 주고 '기록할까요?'라고 묻습니다. 사용자가 분명히 동의하면 f2r_confirm으로 기록하고, 동의 전에는 '기록했다'고 말하지 않습니다. 10분 안에 취소를 요청하면 f2r_undo를 씁니다. 학생 등록·수정·퇴원은 f2r_student_change, 반 만들기·배정·이동·빼기·수업 요일은 f2r_class_change(f2r_class_list로 반 확인)로 초안을 만들고 같은 방식으로 f2r_confirm합니다. 수강료는 f2r_tuition_status(월별 수납 현황)·f2r_ledger_summary(손익 요약)로 보고, 청구 등록·납부 기록은 f2r_tuition_change 초안 → 금액을 그대로 보여 주고 동의하면 f2r_confirm. 실제 결제·송금·수납 삭제는 하지 않습니다. 학생부: 「11월 20일 김민수 수업 범위·숙제」는 f2r_record_change {action:LESSON}, 채점된 답지 사진을 받으면 사진에서 틀린 번호를 읽어 유형·이유·피드백을 정리한 f2r_record_change {action:GRADING} 초안 → 동의하면 f2r_confirm → result.linkUrl에서 사용자가 사진을 올리게 안내. 읽기 어려운 번호는 추측하지 말고 묻습니다. 채점 전에 원장이 학생부 화면에서 문제지·정답지·학생 답안 사진을 올려 두면 f2r_grading_pending → f2r_grading_photos(사진을 이미지로 받음) → 채점해 틀린 문항을 바로 알려 주고 f2r_grading_save로 학생부에 저장 → f2r_student_book을 근거로 f2r_weakness_save로 약점 정리를 갱신합니다. 원장이 학생의 그동안 기록을 보자고 하면 f2r_student_book으로 요약하고 bookUrl(학생부 화면)을 줍니다.");
           break;
         case "ping":
           result = Map.of();
@@ -105,7 +105,9 @@ public class McpController {
             result =
                 Map.of(
                     "content",
-                    value instanceof McpGateway.ImageBlocks image
+                    value instanceof McpGateway.MultiImageBlocks multi
+                        ? multiImageContent(multi)
+                        : value instanceof McpGateway.ImageBlocks image
                         ? List.of(
                             Map.of("type", "text", "text", json.writeValueAsString(value)),
                             Map.of(
@@ -154,5 +156,15 @@ public class McpController {
   public ResponseEntity<?> unsupported() {
     // 본문 없이 돌려준다. SSE Accept(text/event-stream) 요청에 JSON 본문을 쓰면 406이 되어 클라이언트가 오판한다.
     return ResponseEntity.status(405).header("Allow", "POST, OPTIONS").build();
+  }
+
+  /** 텍스트(메타데이터) 1개 + JPEG 이미지 여러 개. */
+  private List<Map<String, Object>> multiImageContent(McpGateway.MultiImageBlocks multi) throws Exception {
+    List<Map<String, Object>> out = new java.util.ArrayList<>();
+    out.add(Map.of("type", "text", "text", json.writeValueAsString(multi)));
+    for (byte[] img : multi.images()) {
+      out.add(Map.of("type", "image", "mimeType", "image/jpeg", "data", java.util.Base64.getEncoder().encodeToString(img)));
+    }
+    return out;
   }
 }
