@@ -66,7 +66,8 @@ public class McpGateway {
    * 기록 뒤 10분 안에는 취소(undo)할 수 있다. 승인 화면에서 승인해도 된다.
    */
   static final Set<String> COORD_TOOLS = Set.of("f2r_student_search", "f2r_attendance_check", "f2r_attendance_mark",
-      "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
+      "f2r_tuition_change", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -471,14 +472,31 @@ public class McpGateway {
             Map.entry("startTime", string()), Map.entry("endTime", string()), Map.entry("room", string()),
             Map.entry("capacity", integer(1, 500)), Map.entry("businessId", id)),
         List.of("requestId", "action")));
+    out.add(tool("f2r_tuition_status",
+        "월별 수강료 수납 현황(가린 이름·청구·납부·잔액·상태)과 합계·미완납 수를 봅니다. month는 YYYY-MM(없으면 이번 달),"
+            + " status는 UNPAID(미납)·PARTIAL(일부)·PAID(완납) 중 하나(없으면 전체). 금액 단위는 원.",
+        Map.of("month", string(), "status", string(), "businessId", id), List.of()));
+    out.add(tool("f2r_ledger_summary",
+        "장부(분개) 기준 손익 요약: 수입·지출·순이익과 큰 항목 5개씩. from·to는 YYYY-MM-DD(없으면 이번 달 1일~오늘).",
+        Map.of("from", string(), "to", string(), "businessId", id), List.of()));
+    out.add(writeTool("f2r_tuition_change",
+        "수강료 수납 원장 변경 초안을 만듭니다(아직 바꾸지 않음). action: BILL(청구 등록: studentId·month·billedAmount 필수,"
+            + " paidAmount·paidOn·payMethod·memo) · PAY(납부 기록: paymentId 또는 studentId+month, amount=이번에 받은 금액(누적에 더함),"
+            + " paidOn·payMethod). 실제 결제·송금은 하지 않고 수납 삭제도 하지 않습니다. summary.title(금액 포함)을 사용자에게"
+            + " 그대로 보여 주고 동의하면 f2r_confirm.",
+        Map.of("requestId", string(), "action", string(), "studentId", id, "paymentId", id, "month", string(),
+            "billedAmount", integer(0, 100000000), "paidAmount", integer(0, 100000000), "amount", integer(1, 100000000),
+            "paidOn", string(), "payMethod", string()),
+        List.of("requestId", "action")));
     out.add(writeTool("f2r_confirm",
-        "f2r_attendance_mark·f2r_student_change·f2r_class_change로 만든 초안을 실행합니다. 사용자가 이 대화에서 그 내용(summary)에"
+        "f2r_attendance_mark·f2r_student_change·f2r_class_change·f2r_tuition_change로 만든 초안을 실행합니다. 사용자가 이 대화에서 그 내용(summary)에"
             + " 분명히 동의('네', '해줘')했을 때만 부르세요. 사용자 답 없이, 또는 다른 건으로 부르지 마세요."
             + " jobId와 planHash는 초안 결과의 값을 그대로 넣습니다. 초안은 30분 뒤 만료됩니다.",
         Map.of("jobId", string(), "planHash", string()), List.of("jobId", "planHash")));
     out.add(writeTool("f2r_undo",
         "f2r_confirm으로 실행한 작업(출결·학생·반)을 되돌립니다. 실행 뒤 10분 안에만, 그사이 다른 곳에서 바뀌지 않았을 때만 됩니다."
-            + " 출결은 취소(정정됨으로 남음), 학생 등록은 퇴원 처리, 반 만들기는 반 종료로 되돌립니다."
+            + " 출결은 취소(정정됨으로 남음), 학생 등록은 퇴원 처리, 반 만들기는 반 종료, 수강료 청구는 그 청구 삭제,"
+            + " 납부 기록은 이전 납부액으로 되돌립니다."
             + " 사용자가 취소를 요청했을 때만 부르세요. reason에 사용자가 말한 이유를 짧게 적습니다.",
         Map.of("jobId", string(), "reason", string()), List.of("jobId")));
     out.add(tool("f2r_job_status",
@@ -605,6 +623,12 @@ public class McpGateway {
           case "f2r_student_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "STUDENT",
               text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
           case "f2r_class_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "CLASS",
+              text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
+          case "f2r_tuition_status" -> coord.tuitionStatus(identity.principal(), bid,
+              args.hasNonNull("month") ? text(args, "month") : null, args.hasNonNull("status") ? text(args, "status") : null);
+          case "f2r_ledger_summary" -> coord.ledgerSummary(identity.principal(), bid,
+              args.hasNonNull("from") ? text(args, "from") : null, args.hasNonNull("to") ? text(args, "to") : null);
+          case "f2r_tuition_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "TUITION",
               text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
           case "f2r_confirm" -> coord.confirmFromChat(identity.principal(), text(args, "jobId"),
               text(args, "planHash"), oauth.base());

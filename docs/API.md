@@ -5565,6 +5565,11 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
   - `f2r_class_change {requestId, action, …}` (쓰기 도구, 초안만) — `CREATE`(name 필수, teacherName·weekdays·startTime·endTime·room·capacity) / `ASSIGN`(classId·studentId) / `MOVE`(classId→targetClassId, studentId) / `RELEASE`(classId·studentId) / `WEEKDAYS`(studentId·weekdays, 빈 목록=미정). 반 수정·종료는 말 명령에 없다(출결부 화면).
   - 초안 응답: `{jobId, kind, status:"review_required", planHash, summary:{title(가린 이름)}, message}`. 실행은 기존 `EasyStudentService`·`EasyAttendanceService`만 부른다.
   - 되돌리기(10분 안): 학생 등록 → 퇴원 처리+메모 `(AI 등록 취소)` / 학생 수정 → 이전 값(그사이 다른 곳에서 바뀌었으면 거절) / 반 만들기 → 반 종료(그사이 학생이 배정됐으면 거절) / 배정 ↔ 빼기 / 이동 → 원래 반으로 이동 / 수업 요일 → 이전 요일(그사이 바뀌었으면 거절).
+- **수강료·장부 말 명령 (2026-11-19 추가)**
+  - `f2r_tuition_status {month?, status?, businessId?}` → 그 사업체의 월별 수납(가린 이름·청구·납부·잔액·상태·paymentId)과 합계·미완납 수. `month` 기본 이번 달, `status` UNPAID·PARTIAL·PAID.
+  - `f2r_ledger_summary {from?, to?, businessId?}` → 기존 손익계산서(`EasyFinancialStatementService.incomeStatement`) 요약: 수입·지출·순이익·시산표 균형·큰 항목 5개씩. 기본 이번 달 1일~오늘.
+  - `f2r_tuition_change {requestId, action, …}` (쓰기 도구, 초안만) — `BILL`(청구 등록: studentId·month·billedAmount, paidAmount·paidOn·payMethod·memo; 같은 달 청구가 있으면 거절) / `PAY`(납부 기록: paymentId 또는 studentId+month, `amount`=이번에 받은 금액을 누적 납부액에 더함, paidOn 기본 오늘·payMethod). 금액 0~1억 원. 제목에 금액·누적·완납/잔액을 적는다. 실행은 기존 `EasyTuitionService.create/update`만. **실제 결제·송금·수납 삭제·분개 작성은 없다.**
+  - 되돌리기(10분 안, 그사이 납부액이 바뀌지 않았을 때만): 청구 → 그 청구 삭제 / 납부 → 이전 납부액·납부일·방법. 납부 실행 직전에도 초안 때 납부액과 같은지 다시 확인한다.
 - `f2r_undo {jobId, reason?}` (쓰기 도구) → 대화창으로 기록한(`completed`) 작업을 **기록 뒤 10분 안에만** 취소. 출결 행은 지우지 않고 `superseded`로 남기며(새 행 없음) 작업은 `cancelled`, 사유는 `coord_job_events.message`에 남는다. 10분이 지나면 `{error}` — 출결부 정정을 쓴다.
 - `f2r_job_status {jobId}` → 상태(`review_required`·`approved`·`completed`·`rejected`·`expired`·`failed`)와 가린 요약·결과.
 - 입력 오류(학생 없음·구분 오류 등)는 MCP 결과 `{error: "<안내 문장>"}`로 돌려준다.
