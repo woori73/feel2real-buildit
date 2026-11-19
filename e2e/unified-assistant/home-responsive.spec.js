@@ -97,7 +97,8 @@ for (const font of ['fallback', 'pretendard']) {
         const popup = await popupPromise; await popup.close();
         await expect(page.locator('#enExamMail')).toHaveAttribute('href',email);
         await selectHomePane(page,'home');
-        for (const [link,target] of [['a[href="#request"]:visible >> nth=0','#requestPaneTitle'],['.hl-promo-actions .hl-btn-dark','#examContactTitle']]) {
+        // 2026-11-19: 영상 아래 카드의 맞춤문제 버튼을 지워 대표 무료신청은 맞춤문제 신청 구역의 #homeIntakeCta로 확인한다.
+        for (const [link,target] of [['a[href="#request"]:visible >> nth=0','#requestPaneTitle'],['#homeIntakeCta','#examContactTitle']]) {
           await act(page.locator(link));
           await expect(page.locator(target)).toBeInViewport();
           await selectHomePane(page,'home');
