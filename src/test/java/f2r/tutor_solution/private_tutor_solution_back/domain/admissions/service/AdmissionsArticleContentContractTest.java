@@ -54,4 +54,15 @@ class AdmissionsArticleContentContractTest {
                 "AdmissionsArticle.java", "AdmissionsArticleRepository.java", "AdmissionsArticleService.java",
                 "AdmissionsArticleController.java", "AdmissionsArticlePageController.java");
     }
+
+    @Test
+    @DisplayName("given 글 보기 화면 when 제목 앞 회차 표시를 보면 then 숫자 시리즈(1-④)만 '[시리즈 …]', 특집(수능특집-④)은 '[수능특집-④]'로 쓴다")
+    void headingPrefixesSeriesOnlyForNumberedEpisodes() throws Exception {
+        // given
+        String html = Files.readString(Path.of("src/main/resources/templates/admissions/article.html"));
+        // when / then
+        assertThat(html).contains("(article.episode matches '[0-9].*' ? '[시리즈 ' : '[') + article.episode + '] ' + article.title");
+        assertThat("1-④".matches("[0-9].*")).isTrue();
+        assertThat("수능특집-④".matches("[0-9].*")).isFalse();
+    }
 }
