@@ -411,6 +411,7 @@ ADMIN이 **대상 학원을 명시**해 다른 회원의 홈페이지를 조회�
 ### PDF 원본 업로드 (2026-11-11)
 
 - 제작·검수 MD는 선택이다. Weekly 등록 시 `productionVerification`을 생략하거나 null/빈 문자열/공백만 보내면 문제지·해설지만 저장한다. 이 경우 검수 파일명·본문·hash는 빈 값이며 검수 보기/다운로드는 404로 처리한다. 내용이 있는 MD는 원래 파일명과 본문을 보존한다. MCP `register_weekly_exam_draft`의 `production_verification_md`도 생략할 수 있다.
+- **중요한 Wiki 저장은 사용자 확인 뒤에만 (2026-11-19, MCP server version 9)**: `save_final`·`save_jikbo`·`register_weekly_exam_draft`는 `confirm_token` 없이 부르면 **저장하지 않고** `{saved:false, status:"needs_confirmation", summary, confirm_token, message}`를 돌려준다. AI는 summary(학교·학년·연도·학기·시험·종류·제목·분량)를 사용자에게 보여 주고, 동의하면 **같은 입력값 + `confirm_token`**으로 다시 부른다. 토큰은 서버에 저장하지 않는 HMAC(도구 이름·입력 전체·만료, 키 = `BUILDIT_MCP_API_KEY`)이며 30분 유효, 입력이 하나라도 바뀌거나 다른 도구에 쓰면 거절한다. `save_generated_test`(생성 문항 자동 저장)·`save_generated_questions`·`save_class_insights`(사용자가 저장을 명시적으로 요청할 때만 호출)는 그대로다.
 
 - 학교 프린트 `POST /problem-generator/wiki/api/exam-materials`: `core_type=school_print`, `material_type=SCHOOL_PRINT`와 PDF `original`만으로 저장한다. `html_text`·JSON은 선택이다. 30MB 제한과 `%PDF-` signature를 검사하고, MIME이 생략된 PDF도 `application/pdf`로 원본 바이트를 반환한다. HTML/HTM 원본 업로드도 유지한다.
 - 주간 실전 모의고사의 `POST …/weekly-exams/draft` 및 `PUT …/weekly-exams/{id}/artifacts`: `studentPaper`·`answerExplanation`은 기존 HTML 문자열 또는 `data:application/pdf;base64,` 원본 envelope를 받는다. PDF는 바이너리로 검증하며 파일당 30MB 이하만 허용한다. 파일명은 기존 `studentPaperName`·`answerExplanationName`으로 전달한다. `productionVerification`은 기존 MD/TXT를 유지한다.
