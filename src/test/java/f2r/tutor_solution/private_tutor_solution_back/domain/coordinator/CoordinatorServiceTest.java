@@ -275,7 +275,7 @@ class CoordinatorServiceTest {
 
     // then
     assertThat(human.toString()).contains("김민수", "가짜중", "planHash");
-    assertThat(ai.toString()).doesNotContain("김민수", "가짜중").contains("f2r_attendance_confirm");
+    assertThat(ai.toString()).doesNotContain("김민수", "가짜중").contains("f2r_confirm");
     assertThat(ai.get("planHash")).isEqualTo(store.get(jobId).getPlanHash());
   }
 
@@ -305,7 +305,7 @@ class CoordinatorServiceTest {
 
     // then
     assertThat(out.get("status")).isEqualTo("completed");
-    assertThat(out.toString()).doesNotContain("김민수", "가짜중").contains("김○수", "f2r_attendance_undo");
+    assertThat(out.toString()).doesNotContain("김민수", "가짜중").contains("김○수", "f2r_undo");
     assertThat(out).doesNotContainKey("planHash");
     verify(attendance).record(eq(3L), eq(new EasyAttendanceService.RecordForm(null, 11L, "CHECK_IN", "2026-11-19T16:05",
         "AI 코디네이터 요청 · 대화 확인 owner")));
@@ -369,5 +369,29 @@ class CoordinatorServiceTest {
     // when & then
     assertThatThrownBy(() -> service.undoFromChat(ADMIN, jobId, null, "")).isInstanceOf(IllegalStateException.class);
     verify(attendance, never()).cancel(anyLong(), anyLong());
+  }
+  @Test
+  @DisplayName("given 반 배정 말 명령 when 초안·대화창 확인·되돌리기 then AI에는 가린 제목만, 실행·되돌리기는 학생·반 작업으로 위임")
+  void requestChange_delegatesToStudentActions() {
+    // given
+    var actions = mock(CoordStudentActions.class);
+    var svc = new CoordinatorService(jobs, events, attendance, access, actions, clock(NOW));
+    var args = tools.jackson.databind.json.JsonMapper.builder().build().createObjectNode().put("classId", 5).put("studentId", 11);
+    when(actions.prepareClass(eq(3L), eq("ASSIGN"), any())).thenReturn(new CoordStudentActions.Draft(
+        CoordStudentActions.CLASS_ASSIGN, Map.of("classId", 5, "studentId", 11), "김민수 → 화목 중2 반 배정", "김○수 → 화목 중2 반 배정"));
+    when(actions.execute(eq(CoordStudentActions.CLASS_ASSIGN), any())).thenReturn(Map.of("label", "반 배정"));
+
+    // when
+    Map<String, Object> draft = svc.requestChange(ADMIN, "MCP", "g", "CLASS", REQ, null, "ASSIGN", args, "");
+    Map<String, Object> done = svc.confirmFromChat(ADMIN, (String) draft.get("jobId"), (String) draft.get("planHash"), "");
+    Map<String, Object> undone = svc.undoFromChat(ADMIN, (String) draft.get("jobId"), null, "");
+
+    // then
+    assertThat(draft.get("status")).isEqualTo("review_required");
+    assertThat(draft.toString()).contains("김○수 → 화목 중2 반 배정", "f2r_confirm").doesNotContain("김민수");
+    assertThat(done.get("status")).isEqualTo("completed");
+    assertThat(undone.get("status")).isEqualTo("cancelled");
+    verify(actions).undo(eq(CoordStudentActions.CLASS_ASSIGN), any(), any());
+    assertThat(store.get(draft.get("jobId")).getKind()).isEqualTo(CoordStudentActions.CLASS_ASSIGN);
   }
 }

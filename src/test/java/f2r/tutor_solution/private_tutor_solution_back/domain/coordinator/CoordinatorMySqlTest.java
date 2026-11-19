@@ -124,4 +124,76 @@ class CoordinatorMySqlTest {
         .containsExactly("review_required", "approved", "completed", "cancelled");
     assertThat(mark(bid, sid, UUID.randomUUID().toString()).get("status")).isEqualTo("review_required");
   }
+  private Map<String, Object> change(String area, Long bid, String action, tools.jackson.databind.JsonNode args) {
+    return service.requestChange(ADMIN, "MCP", "grant", area, UUID.randomUUID().toString(), bid, action, args, "");
+  }
+
+  private Map<String, Object> confirm(Map<String, Object> draft) {
+    Map<String, Object> done = service.confirmFromChat(ADMIN, (String) draft.get("jobId"), (String) draft.get("planHash"), "");
+    entityManager.flush();
+    return done;
+  }
+
+  @Test
+  @DisplayName("given 말 명령 when 반 만들기·배정·이동 확인 후 이동 되돌리기 then 반은 남고 학생은 원래 반으로 돌아온다")
+  void classCreateAssignMoveUndo() {
+    // given
+    var json = tools.jackson.databind.json.JsonMapper.builder().build();
+    Long bid = businesses.findAllByActiveTrueOrderBySortOrderAsc().get(0).getBusinessId();
+    Long sid = student("코디반학생");
+
+    // when
+    Map<String, Object> a = confirm(change("CLASS", bid, "CREATE", json.createObjectNode().put("name", "코디시험A반")
+        .set("weekdays", json.createArrayNode().add("TUE").add("THU"))));
+    Map<String, Object> b = confirm(change("CLASS", bid, "CREATE", json.createObjectNode().put("name", "코디시험B반")));
+    Long classA = jdbc.queryForObject("SELECT class_id FROM easy_classes WHERE name='코디시험A반'", Long.class);
+    Long classB = jdbc.queryForObject("SELECT class_id FROM easy_classes WHERE name='코디시험B반'", Long.class);
+    Map<String, Object> assign = confirm(change("CLASS", bid, "ASSIGN", json.createObjectNode().put("classId", classA).put("studentId", sid)));
+    Map<String, Object> move = confirm(change("CLASS", bid, "MOVE", json.createObjectNode().put("classId", classA)
+        .put("targetClassId", classB).put("studentId", sid)));
+    Integer inBBeforeUndo = jdbc.queryForObject("SELECT COUNT(*) FROM easy_class_members WHERE class_id=? AND student_id=? AND released_on IS NULL",
+        Integer.class, classB, sid);
+    service.undoFromChat(ADMIN, (String) move.get("jobId"), null, "");
+    entityManager.flush();
+
+    // then
+    assertThat(a.get("status")).isEqualTo("completed");
+    assertThat(b.get("status")).isEqualTo("completed");
+    assertThat(assign.get("status")).isEqualTo("completed");
+    assertThat(move.get("status")).isEqualTo("completed");
+    assertThat(((Map<?, ?>) assign.get("summary")).get("title").toString()).contains("코○○○생").doesNotContain("코디반학생");
+    assertThat(inBBeforeUndo).isEqualTo(1);
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_class_members WHERE class_id=? AND student_id=? AND released_on IS NULL",
+        Integer.class, classA, sid)).isEqualTo(1);
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_class_members WHERE class_id=? AND student_id=? AND released_on IS NULL",
+        Integer.class, classB, sid)).isZero();
+    assertThat(jdbc.queryForObject("SELECT weekdays FROM easy_classes WHERE class_id=?", String.class, classA)).contains("TUE");
+  }
+
+  @Test
+  @DisplayName("given 말 명령 when 학생 등록·수정 확인 후 각각 되돌리기 then 등록은 퇴원 처리, 수정은 이전 값으로 돌아온다")
+  void studentCreateUpdateUndo() {
+    // given
+    var json = tools.jackson.databind.json.JsonMapper.builder().build();
+    Long bid = businesses.findAllByActiveTrueOrderBySortOrderAsc().get(0).getBusinessId();
+    Long sid = students.save(EasyStudent.builder().name("코디수정학생").school("가짜중").grade((byte) 2)
+        .parentPhone("010-0000-0000").status(EasyStudentStatus.ENROLLED).build()).getStudentId();
+
+    // when
+    Map<String, Object> created = confirm(change("STUDENT", bid, "CREATE", json.createObjectNode().put("name", "코디새학생").put("grade", 1)));
+    Map<String, Object> updated = confirm(change("STUDENT", bid, "UPDATE", json.createObjectNode().put("studentId", sid).put("grade", 3)
+        .put("status", "WITHDRAWN")));
+    String statusAfterUpdate = jdbc.queryForObject("SELECT status FROM easy_students WHERE student_id=?", String.class, sid);
+    service.undoFromChat(ADMIN, (String) created.get("jobId"), null, "");
+    service.undoFromChat(ADMIN, (String) updated.get("jobId"), null, "");
+    entityManager.flush();
+
+    // then
+    assertThat(statusAfterUpdate).isEqualTo("WITHDRAWN");
+    assertThat(jdbc.queryForObject("SELECT status FROM easy_students WHERE name='코디새학생'", String.class)).isEqualTo("WITHDRAWN");
+    assertThat(jdbc.queryForObject("SELECT memo FROM easy_students WHERE name='코디새학생'", String.class)).contains("AI 등록 취소");
+    assertThat(jdbc.queryForMap("SELECT status, grade, parent_phone FROM easy_students WHERE student_id=?", sid))
+        .containsEntry("status", "ENROLLED").containsEntry("parent_phone", "010-0000-0000");
+    assertThat(((Number) jdbc.queryForObject("SELECT grade FROM easy_students WHERE student_id=?", Integer.class, sid)).intValue()).isEqualTo(2);
+  }
 }

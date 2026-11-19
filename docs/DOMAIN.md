@@ -2042,7 +2042,7 @@ AI가 MCP로 만든 업무 초안과 사람 승인 기록. 1단계는 출결(`ki
 
 | 테이블 | 핵심 칸 | 비고 |
 |---|---|---|
-| `coord_jobs` | job_id(UUID), user_id, business_id, request_id(UNIQUE user_id+request_id), kind, status(`review_required`/`approved`/`completed`/`cancelled`/`rejected`/`expired`/`failed`; `cancelled` = 대화창 기록 후 10분 안 취소), source(`MCP`), client_name(MCP grant id), plan_json(실명 포함 계획 — 승인 화면에만 표시), plan_hash(SHA-256), result_json, error, version(낙관적 잠금), created_at·updated_at·expires_at(생성 + 30분) | 승인은 plan_hash 일치 + 대기 상태에서만. 삭제·수정 API 없음 |
+| `coord_jobs` | job_id(UUID), user_id, business_id, request_id(UNIQUE user_id+request_id), kind(`ATTENDANCE`/`STUDENT_CREATE`/`STUDENT_UPDATE`/`CLASS_CREATE`/`CLASS_ASSIGN`/`CLASS_MOVE`/`CLASS_RELEASE`/`WEEKDAYS`), status(`review_required`/`approved`/`completed`/`cancelled`/`rejected`/`expired`/`failed`; `cancelled` = 대화창 기록 후 10분 안 취소), source(`MCP`), client_name(MCP grant id), plan_json(실명 포함 계획 — 승인 화면에만 표시), plan_hash(SHA-256), result_json, error, version(낙관적 잠금), created_at·updated_at·expires_at(생성 + 30분) | 승인은 plan_hash 일치 + 대기 상태에서만. 삭제·수정 API 없음 |
 | `coord_job_events` | event_id, job_id(FK), at, actor(`MCP`/`USER`(승인 화면)/`CHAT`(대화창 확인·취소)/`SERVER`), actor_login_id, from_status, to_status, message | 감사 기록. 삭제·수정 API 없음 |
 
 CRUD: 생성(MCP 초안)·승인·거절만. 삭제 없음(감사 보존). 권한: ADMIN 본인 요청만.

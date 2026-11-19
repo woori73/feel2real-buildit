@@ -42,6 +42,15 @@ test('cancelled: 대화창에서 취소한 작업은 취소함으로 보인다',
   const cancelled = job('cancelled', { result: { label: '등원', at: '2026-11-19T16:06' } });
   // when & then
   assert.equal(V.statusLabel('cancelled'), '취소함');
-  assert.match(V.resultText(cancelled), /취소/);
+  assert.match(V.resultText(cancelled), /되돌렸/);
   assert.equal(V.canDecide(cancelled), false);
+});
+
+test('학생·반 작업: title을 제목으로, 완료 문구는 label 기준', () => {
+  // given
+  const j = { jobId: 'j2', status: 'completed', summary: { title: '김민수 → 화목 중2 반 배정' }, result: { label: '반 배정' } };
+  // when & then
+  assert.equal(V.headline(j), '김민수 → 화목 중2 반 배정');
+  assert.equal(V.resultText(j), '반 배정 완료');
+  assert.equal(V.detailLine(j), '');
 });

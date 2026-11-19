@@ -66,7 +66,7 @@ public class McpGateway {
    * 기록 뒤 10분 안에는 취소(undo)할 수 있다. 승인 화면에서 승인해도 된다.
    */
   static final Set<String> COORD_TOOLS = Set.of("f2r_student_search", "f2r_attendance_check", "f2r_attendance_mark",
-      "f2r_attendance_confirm", "f2r_attendance_undo", "f2r_job_status");
+      "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   /** studio:propose 동의가 있어야 실행되는 제작 협업 쓰기 도구. 승인·삭제·복원·배포 도구는 없다. */
   public static final Set<String> PROPOSE_TOOLS =
@@ -444,19 +444,41 @@ public class McpGateway {
         Map.of("studentId", id, "date", string(), "businessId", id), List.of("studentId")));
     out.add(writeTool("f2r_attendance_mark",
         "출결 기록 초안을 만듭니다. 아직 기록하지 않습니다 — 돌려받은 summary를 사용자에게 보여 주고 '기록할까요?'라고"
-            + " 물은 뒤, 동의하면 f2r_attendance_confirm으로 기록하세요."
+            + " 물은 뒤, 동의하면 f2r_confirm으로 기록하세요."
             + " eventType: CHECK_IN(등원)·CHECK_OUT(하원)·ABSENT(결석)·LATE(지각)·EARLY_LEAVE(조퇴), 없으면 CHECK_IN."
             + " 그날 같은 구분 기록이 있으면 ALREADY_RECORDED. 재시도에는 같은 requestId(UUID)를 쓰세요.",
         Map.of("requestId", string(), "studentId", id, "eventType", string(), "classId", id,
             "occurredAt", string(), "businessId", id),
         List.of("requestId", "studentId")));
-    out.add(writeTool("f2r_attendance_confirm",
-        "f2r_attendance_mark로 만든 초안을 F2R 출결부에 기록합니다. 사용자가 이 대화에서 그 학생·구분·시각에 대해"
-            + " 분명히 동의('네', '기록해')했을 때만 부르세요. 사용자 답 없이, 또는 다른 학생 건으로 부르지 마세요."
-            + " jobId와 planHash는 mark 결과의 값을 그대로 넣습니다. 초안은 30분 뒤 만료됩니다.",
+    out.add(tool("f2r_class_list",
+        "F2R 출결부의 반 목록(반 이름·선생님·요일·시간·정원·인원)을 봅니다. classId를 주면 그 반 학생(가린 이름·학년)도 줍니다.",
+        Map.of("classId", id, "includeEnded", Map.of("type", "boolean"), "businessId", id), List.of()));
+    out.add(writeTool("f2r_student_change",
+        "학생 원장 변경 초안을 만듭니다(아직 바꾸지 않음). action: CREATE(등록: name 필수, school·grade·enrolledOn·memo)"
+            + " · UPDATE(수정: studentId 필수, 바꿀 것만 name·school·grade·status·memo; 퇴원은 status=WITHDRAWN, 졸업 GRADUATED)."
+            + " 학생·학부모 연락처는 받지 않습니다. 결과 summary.title을 사용자에게 보여 주고 동의하면 f2r_confirm.",
+        Map.of("requestId", string(), "action", string(), "studentId", id, "name", string(), "school", string(),
+            "grade", integer(0, 12), "status", string(), "memo", string(), "enrolledOn", string()),
+        List.of("requestId", "action")));
+    out.add(writeTool("f2r_class_change",
+        "반 변경 초안을 만듭니다(아직 바꾸지 않음). action: CREATE(반 만들기: name 필수, teacherName·weekdays·startTime·endTime·room·capacity)"
+            + " · ASSIGN(배정: classId·studentId) · MOVE(이동: classId→targetClassId, studentId) · RELEASE(반에서 빼기: classId·studentId)"
+            + " · WEEKDAYS(학생 수업 요일: studentId·weekdays, 빈 목록=미정). weekdays는 MON~SUN 목록."
+            + " 반 종료·삭제는 하지 않습니다(출결부 화면에서). 결과 summary.title을 사용자에게 보여 주고 동의하면 f2r_confirm.",
+        Map.ofEntries(Map.entry("requestId", string()), Map.entry("action", string()), Map.entry("classId", id),
+            Map.entry("targetClassId", id), Map.entry("studentId", id), Map.entry("name", string()),
+            Map.entry("teacherName", string()), Map.entry("weekdays", Map.of("type", "array", "items", string())),
+            Map.entry("startTime", string()), Map.entry("endTime", string()), Map.entry("room", string()),
+            Map.entry("capacity", integer(1, 500)), Map.entry("businessId", id)),
+        List.of("requestId", "action")));
+    out.add(writeTool("f2r_confirm",
+        "f2r_attendance_mark·f2r_student_change·f2r_class_change로 만든 초안을 실행합니다. 사용자가 이 대화에서 그 내용(summary)에"
+            + " 분명히 동의('네', '해줘')했을 때만 부르세요. 사용자 답 없이, 또는 다른 건으로 부르지 마세요."
+            + " jobId와 planHash는 초안 결과의 값을 그대로 넣습니다. 초안은 30분 뒤 만료됩니다.",
         Map.of("jobId", string(), "planHash", string()), List.of("jobId", "planHash")));
-    out.add(writeTool("f2r_attendance_undo",
-        "f2r_attendance_confirm으로 기록한 출결을 취소합니다. 기록 뒤 10분 안에만 됩니다(지나면 출결부에서 정정)."
+    out.add(writeTool("f2r_undo",
+        "f2r_confirm으로 실행한 작업(출결·학생·반)을 되돌립니다. 실행 뒤 10분 안에만, 그사이 다른 곳에서 바뀌지 않았을 때만 됩니다."
+            + " 출결은 취소(정정됨으로 남음), 학생 등록은 퇴원 처리, 반 만들기는 반 종료로 되돌립니다."
             + " 사용자가 취소를 요청했을 때만 부르세요. reason에 사용자가 말한 이유를 짧게 적습니다.",
         Map.of("jobId", string(), "reason", string()), List.of("jobId")));
     out.add(tool("f2r_job_status",
@@ -577,9 +599,16 @@ public class McpGateway {
                   args.hasNonNull("classId") ? args.get("classId").asLong() : null,
                   args.hasNonNull("occurredAt") ? text(args, "occurredAt") : null),
               oauth.base());
-          case "f2r_attendance_confirm" -> coord.confirmFromChat(identity.principal(), text(args, "jobId"),
+          case "f2r_class_list" -> coord.classes(identity.principal(), bid,
+              args.hasNonNull("classId") ? args.get("classId").asLong() : null,
+              args.hasNonNull("includeEnded") && args.get("includeEnded").asBoolean());
+          case "f2r_student_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "STUDENT",
+              text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
+          case "f2r_class_change" -> coord.requestChange(identity.principal(), "MCP", identity.grantId(), "CLASS",
+              text(args, "requestId"), bid, text(args, "action"), args, oauth.base());
+          case "f2r_confirm" -> coord.confirmFromChat(identity.principal(), text(args, "jobId"),
               text(args, "planHash"), oauth.base());
-          case "f2r_attendance_undo" -> coord.undoFromChat(identity.principal(), text(args, "jobId"),
+          case "f2r_undo" -> coord.undoFromChat(identity.principal(), text(args, "jobId"),
               args.hasNonNull("reason") ? text(args, "reason") : null, oauth.base());
           default -> coord.get(identity.principal(), text(args, "jobId"), oauth.base(), false);
         };
