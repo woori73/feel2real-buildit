@@ -1206,3 +1206,7 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 ### 학생·반 말 명령 (2026-11-19)
 
 "김민수 화목반으로 옮겨줘" → AI가 `f2r_student_search`·`f2r_class_list`로 학생·반 확인 → `f2r_class_change {action:MOVE}` 초안 → 대화에서 "김○수 · 월수 중2 → 화목 중2 반 이동, 이대로 할까요?" → "응" → `f2r_confirm` → 출결부 반 배정 변경 → 10분 안 "되돌려줘" → `f2r_undo`. 학생 등록·수정·퇴원(`f2r_student_change`), 반 만들기·배정·빼기·수업 요일(`f2r_class_change`)도 같은 흐름. 연락처·반 종료·삭제는 말 명령에 없다.
+
+### 수강료 말 명령 (2026-11-19)
+
+"이번 달 미납자 누구야" → `f2r_tuition_status {status:UNPAID}`(가린 이름·잔액) → "김민수 30만원 냈어" → `f2r_tuition_change {action:PAY, studentId, amount:300000}` → 대화에서 "김○수 · 2026-11 수강료 납부 300,000원 (누적 300,000원 / 청구 300,000원 → 완납), 기록할까요?" → "응" → `f2r_confirm` → 수납 원장 갱신 → 10분 안 "되돌려줘" → `f2r_undo`(이전 납부액). 청구 등록은 `action:BILL`. 실제 결제·송금·수납 삭제는 하지 않는다. 손익은 `f2r_ledger_summary`.

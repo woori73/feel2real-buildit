@@ -60,29 +60,39 @@ public class CoordinatorService {
   private final CoordJobEventRepository events;
   private final EasyAttendanceService attendance;
   private final EasyTutorAccessService access;
-  private final CoordStudentActions studentActions;
+  private final List<CoordActions> actions;
   private final Clock clock;
 
   @Autowired
   public CoordinatorService(CoordJobRepository jobs, CoordJobEventRepository events, EasyAttendanceService attendance,
-      EasyTutorAccessService access, CoordStudentActions studentActions) {
-    this(jobs, events, attendance, access, studentActions,
+      EasyTutorAccessService access, List<CoordActions> actions) {
+    this(jobs, events, attendance, access, actions,
         Clock.system(f2r.tutor_solution.private_tutor_solution_back.config.KstTime.ZONE));
   }
 
   CoordinatorService(CoordJobRepository jobs, CoordJobEventRepository events, EasyAttendanceService attendance,
       EasyTutorAccessService access, Clock clock) {
-    this(jobs, events, attendance, access, null, clock);
+    this(jobs, events, attendance, access, List.of(), clock);
   }
 
   CoordinatorService(CoordJobRepository jobs, CoordJobEventRepository events, EasyAttendanceService attendance,
-      EasyTutorAccessService access, CoordStudentActions studentActions, Clock clock) {
+      EasyTutorAccessService access, List<CoordActions> actions, Clock clock) {
     this.jobs = jobs;
     this.events = events;
     this.attendance = attendance;
     this.access = access;
-    this.studentActions = studentActions;
+    this.actions = actions;
     this.clock = clock;
+  }
+
+  private CoordActions forArea(String area) {
+    return actions.stream().filter(a -> a.areas().contains(area)).findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 작업 묶음입니다: " + area));
+  }
+
+  private CoordActions forKind(String kind) {
+    return actions.stream().filter(a -> a.kinds().contains(kind)).findFirst()
+        .orElseThrow(() -> new IllegalStateException("지원하지 않는 작업입니다: " + kind));
   }
 
   /* ---------------- 조회 ---------------- */
@@ -190,11 +200,24 @@ public class CoordinatorService {
   /** 반 목록(가린 이름). classId를 주면 그 반 학생도. */
   @Transactional(readOnly = true)
   public Map<String, Object> classes(AuthenticatedPrincipal p, Long businessId, Long classId, boolean includeEnded) {
-    return studentActions.classes(business(p, businessId), classId, includeEnded);
+    CoordActions a = forArea("CLASS");
+    return ((CoordStudentActions) a).classes(business(p, businessId), classId, includeEnded);
+  }
+
+  /** 월별 수강료 수납 현황(가린 이름). */
+  @Transactional(readOnly = true)
+  public Map<String, Object> tuitionStatus(AuthenticatedPrincipal p, Long businessId, String month, String status) {
+    return ((CoordTuitionActions) forArea("TUITION")).status(business(p, businessId), month, status);
+  }
+
+  /** 장부 손익 요약. */
+  @Transactional(readOnly = true)
+  public Map<String, Object> ledgerSummary(AuthenticatedPrincipal p, Long businessId, String from, String to) {
+    return ((CoordTuitionActions) forArea("TUITION")).ledgerSummary(business(p, businessId), from, to);
   }
 
   /**
-   * 학생(area=STUDENT)·반(area=CLASS) 변경 초안. 기록하지 않는다 — 출결과 같이 대화창 확인(f2r_confirm) 또는 승인 화면에서 실행.
+   * 학생(area=STUDENT)·반(area=CLASS)·수강료(area=TUITION) 변경 초안. 기록하지 않는다 — 출결과 같이 대화창 확인(f2r_confirm) 또는 승인 화면에서 실행.
    * 같은 계정·같은 requestId는 같은 작업.
    */
   @Transactional
@@ -205,8 +228,7 @@ public class CoordinatorService {
     var existing = jobs.findByUserIdAndRequestId(p.userId(), req);
     if (existing.isPresent()) return view(existing.get(), baseUrl, false);
     Long bid = business(p, businessId);
-    CoordStudentActions.Draft d = "STUDENT".equals(area) ? studentActions.prepareStudent(action, args)
-        : studentActions.prepareClass(bid, action, args);
+    CoordActions.Draft d = forArea(area).prepare(area, bid, action, args);
     Map<String, Object> plan = new LinkedHashMap<>();
     plan.put("action", d.kind());
     plan.put("businessId", bid);
@@ -293,7 +315,7 @@ public class CoordinatorService {
       attendance.cancel(j.getBusinessId(), eventId);
       what = "출결 #" + eventId;
     } else {
-      studentActions.undo(j.getKind(), JSON.readTree(j.getPlanJson()), result);
+      forKind(j.getKind()).undo(j.getKind(), JSON.readTree(j.getPlanJson()), result);
       what = j.getKind();
     }
     String why = reason == null || reason.isBlank() ? "사용자 요청" : clip(reason.strip(), 200);
@@ -318,7 +340,7 @@ public class CoordinatorService {
     JsonNode plan = JSON.readTree(j.getPlanJson());
     if (!KIND_ATTENDANCE.equals(j.getKind())) {
       try {
-        Map<String, Object> result = studentActions.execute(j.getKind(), plan);
+        Map<String, Object> result = forKind(j.getKind()).execute(j.getKind(), plan);
         j.complete(JSON.writeValueAsString(result), now);
         log(j, "SERVER", null, CoordJob.APPROVED, CoordJob.COMPLETED, result.get("label") + " 완료");
       } catch (RuntimeException e) {

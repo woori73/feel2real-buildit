@@ -196,4 +196,33 @@ class CoordinatorMySqlTest {
         .containsEntry("status", "ENROLLED").containsEntry("parent_phone", "010-0000-0000");
     assertThat(((Number) jdbc.queryForObject("SELECT grade FROM easy_students WHERE student_id=?", Integer.class, sid)).intValue()).isEqualTo(2);
   }
+  @Test
+  @DisplayName("given 말 명령 when 수강료 청구·납부 확인 후 납부 되돌리기 then 납부액이 이전으로, 청구 되돌리기는 그 청구 삭제")
+  void tuitionBillPayUndo() {
+    // given
+    var json = tools.jackson.databind.json.JsonMapper.builder().build();
+    Long bid = businesses.findAllByActiveTrueOrderBySortOrderAsc().get(0).getBusinessId();
+    Long sid = student("코디수납학생");
+
+    // when
+    Map<String, Object> bill = confirm(change("TUITION", bid, "BILL", json.createObjectNode().put("studentId", sid)
+        .put("month", "2031-01").put("billedAmount", 300000)));
+    Map<String, Object> pay = confirm(change("TUITION", bid, "PAY", json.createObjectNode().put("studentId", sid)
+        .put("month", "2031-01").put("amount", 300000).put("payMethod", "계좌")));
+    Long paidAfterPay = jdbc.queryForObject("SELECT paid_amount FROM easy_tuition_payments WHERE student_id=?", Long.class, sid);
+    Map<String, Object> status = service.tuitionStatus(ADMIN, bid, "2031-01", null);
+    service.undoFromChat(ADMIN, (String) pay.get("jobId"), null, "");
+    entityManager.flush();
+    Long paidAfterUndo = jdbc.queryForObject("SELECT paid_amount FROM easy_tuition_payments WHERE student_id=?", Long.class, sid);
+    service.undoFromChat(ADMIN, (String) bill.get("jobId"), null, "");
+    entityManager.flush();
+
+    // then
+    assertThat(bill.get("status")).isEqualTo("completed");
+    assertThat(pay.get("status")).isEqualTo("completed");
+    assertThat(paidAfterPay).isEqualTo(300000L);
+    assertThat(status.toString()).contains("코○○○○생").doesNotContain("코디수납학생");
+    assertThat(paidAfterUndo).isZero();
+    assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM easy_tuition_payments WHERE student_id=?", Integer.class, sid)).isZero();
+  }
 }

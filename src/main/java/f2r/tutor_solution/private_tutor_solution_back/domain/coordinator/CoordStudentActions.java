@@ -24,7 +24,7 @@ import tools.jackson.databind.JsonNode;
  * 다루지 않는다 — 수정할 때도 기존 값을 그대로 둔다. 되돌리기는 실행 뒤 상태가 그대로일 때만 한다(그사이 바뀌었으면 거절).
  */
 @Component
-public class CoordStudentActions {
+public class CoordStudentActions implements CoordActions {
 
   public static final String STUDENT_CREATE = "STUDENT_CREATE";
   public static final String STUDENT_UPDATE = "STUDENT_UPDATE";
@@ -52,8 +52,20 @@ public class CoordStudentActions {
     this.attendance = attendance;
   }
 
-  /** 초안 계획. plan에는 실명이 들어가고(승인 화면용), aiTitle은 가린 이름만 쓴다. */
-  public record Draft(String kind, Map<String, Object> plan, String title, String aiTitle) {}
+  @Override
+  public Set<String> areas() {
+    return Set.of("STUDENT", "CLASS");
+  }
+
+  @Override
+  public Set<String> kinds() {
+    return KINDS;
+  }
+
+  @Override
+  public Draft prepare(String area, Long businessId, String action, JsonNode args) {
+    return "STUDENT".equals(area) ? prepareStudent(action, args) : prepareClass(businessId, action, args);
+  }
 
   /* ---------------- 초안 ---------------- */
 
@@ -154,6 +166,7 @@ public class CoordStudentActions {
   /* ---------------- 실행 ---------------- */
 
   /** 실행하고 되돌리기에 필요한 값(이전 상태)을 돌려준다. 결과에는 실명을 넣지 않는다. */
+  @Override
   public Map<String, Object> execute(String kind, JsonNode plan) {
     Map<String, Object> r = new LinkedHashMap<>();
     switch (kind) {
@@ -212,6 +225,7 @@ public class CoordStudentActions {
 
   /* ---------------- 되돌리기 ---------------- */
 
+  @Override
   public void undo(String kind, JsonNode plan, JsonNode result) {
     switch (kind) {
       case STUDENT_CREATE -> {

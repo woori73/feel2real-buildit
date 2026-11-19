@@ -375,9 +375,11 @@ class CoordinatorServiceTest {
   void requestChange_delegatesToStudentActions() {
     // given
     var actions = mock(CoordStudentActions.class);
-    var svc = new CoordinatorService(jobs, events, attendance, access, actions, clock(NOW));
+    when(actions.areas()).thenReturn(java.util.Set.of("STUDENT", "CLASS"));
+    when(actions.kinds()).thenReturn(CoordStudentActions.KINDS);
+    var svc = new CoordinatorService(jobs, events, attendance, access, List.of(actions), clock(NOW));
     var args = tools.jackson.databind.json.JsonMapper.builder().build().createObjectNode().put("classId", 5).put("studentId", 11);
-    when(actions.prepareClass(eq(3L), eq("ASSIGN"), any())).thenReturn(new CoordStudentActions.Draft(
+    when(actions.prepare(eq("CLASS"), eq(3L), eq("ASSIGN"), any())).thenReturn(new CoordActions.Draft(
         CoordStudentActions.CLASS_ASSIGN, Map.of("classId", 5, "studentId", 11), "김민수 → 화목 중2 반 배정", "김○수 → 화목 중2 반 배정"));
     when(actions.execute(eq(CoordStudentActions.CLASS_ASSIGN), any())).thenReturn(Map.of("label", "반 배정"));
 
