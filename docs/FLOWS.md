@@ -1228,7 +1228,7 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 2. **기본(클라우드)**: 원장이 휴대폰 Claude 앱 → Code → 새 세션에서 "F2R 대기 작업 처리해줘(worker=CLOUD)" → `f2r_pc_task_list(worker=CLOUD)` → `f2r_pc_task_claim`(`running`). 설치 없음.
 3. **학원 PC 선택**: "학원 PC에 맡겨줘" → preferredWorker=ACADEMY_PC. 학원 PC 세션(`tools/f2r-pc/start-f2r-pc.bat`로 켠 `claude remote-control`)에서 처리. 30분 안에 가져가지 않으면 다른 기기가 가져갈 수 있다.
 4. 제작: 내신 Wiki `get_final_context` → 그 학교 최근 기출의 발문·선택지·편집·부호를 그대로, 기존 학습지 HTML을 모델로, 첫 페이지 F2R 로고 → `outputs/<jobId>/`.
-5. 검수: 만든 세션이 아닌 새 세션 2곳(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 2곳.
+5. 검수: 만든 세션이 아닌 새 세션 2곳이 먼저 `f2r_pc_task_brief`로 **제작 지시서(md)**를 끝까지 읽고(briefHash 필수),(`claude -p "F2R 검수 jobId=… reviewer=REVIEW-1"`, `REVIEW-2`)이 기출 대조·모델 반영·원장 요구·로고를 확인하고 `f2r_pc_task_review`. FIX면 고친 뒤 다시 2곳.
 6. 검수 통과 → 원장님께 알림 → 동의 → 내신 Wiki 저장(confirm_token) → 원장 지시(publishDigital)가 있으면 디지털 모의고사 탑재 자료 준비(실제 탑재는 개발 PR + 배포 승인) → `f2r_pc_task_finish`(DONE은 검수 PASS 2곳이 없으면 거절).
 
 ### 원장 계정 말 명령 — LMS·홈페이지 (academy:manage, 2026-11-19)

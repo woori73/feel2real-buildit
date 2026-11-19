@@ -78,7 +78,7 @@ public class McpGateway {
       "f2r_class_list", "f2r_student_change", "f2r_class_change", "f2r_tuition_status", "f2r_ledger_summary",
       "f2r_tuition_change", "f2r_student_book", "f2r_record_change", "f2r_grading_pending", "f2r_grading_photos",
       "f2r_grading_save", "f2r_weakness_save", "f2r_naesin_answer_key", "f2r_pc_task_request", "f2r_pc_task_list",
-      "f2r_pc_task_claim", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
+      "f2r_pc_task_claim", "f2r_pc_task_brief", "f2r_pc_task_review", "f2r_pc_task_finish", "f2r_pc_task_cancel", "f2r_confirm", "f2r_undo", "f2r_job_status");
 
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordPcTaskService> pcTasks;
@@ -590,16 +590,20 @@ public class McpGateway {
             + " session은 이 제작 세션 이름(검수 세션과 달라야 함). 결과의 workInstructions를 그대로 따르세요(기출 형식·F2R 로고·"
             + "다른 세션 2회 검수 → 원장님 알림 → Wiki 저장 → f2r_pc_task_finish).",
         Map.of("jobId", string(), "worker", string(), "session", string()), List.of("jobId", "worker")));
+    out.add(tool("f2r_pc_task_brief",
+        "제작 지시서(md)와 briefHash. 원장님 요청으로 서버가 만든 문서(요청·원장님 지시 원문·제작 기준·검수 체크리스트)입니다."
+            + " 검수 세션은 검수 전에 반드시 이것을 끝까지 읽고 f2r_pc_task_review에 briefHash를 넣어야 합니다.",
+        Map.of("jobId", string()), List.of("jobId")));
     out.add(writeTool("f2r_pc_task_review",
-        "(검수 세션용) 만든 세션이 아닌 새 세션이 결과물을 기출과 대조해 검수 결과를 남깁니다. reviewer는 검수 세션 이름(세션마다 다르게),"
+        "(검수 세션용) 만든 세션이 아닌 새 세션이 f2r_pc_task_brief로 제작 지시서를 읽은 뒤(briefHash 필수) 결과물을 기출과 대조해 검수 결과를 남깁니다. reviewer는 검수 세션 이름(세션마다 다르게),"
             + " verdict PASS·FIX, checks{pastExamStyle(기출 발문·선택지·편집·부호), modelHtml(기존 학습지 HTML 반영),"
             + " operatorRequest(원장님 요구 반영), logo(첫 페이지 F2R 로고)} — PASS면 넷 다 true, notes(고칠 점·확인 내용)."
             + " 학습지·예상문제·직보·주간 시험지는 서로 다른 세션 2곳의 PASS가 있어야 끝낼 수 있고, FIX 뒤에는 다시 2곳이 필요합니다.",
-        Map.of("jobId", string(), "reviewer", string(), "verdict", string(), "notes", string(),
+        Map.of("jobId", string(), "reviewer", string(), "briefHash", string(), "verdict", string(), "notes", string(),
             "checks", Map.of("type", "object", "properties", Map.of("pastExamStyle", Map.of("type", "boolean"),
                 "modelHtml", Map.of("type", "boolean"), "operatorRequest", Map.of("type", "boolean"),
                 "logo", Map.of("type", "boolean")))),
-        List.of("jobId", "reviewer", "verdict")));
+        List.of("jobId", "reviewer", "briefHash", "verdict")));
     out.add(writeTool("f2r_pc_task_finish",
         "처리 중 작업을 끝냅니다(학습지·예상문제·직보·주간 시험지의 DONE은 다른 세션 검수 PASS 2곳 필요). outcome DONE(기본)·FAILED, summary(무엇을 만들어 어디에 저장했는지 또는 실패 이유), wikiRef(Wiki 자료 id·제목).",
         Map.of("jobId", string(), "outcome", string(), "summary", string(), "wikiRef", string()), List.of("jobId", "summary")));
@@ -800,6 +804,7 @@ public class McpGateway {
               args.hasNonNull("worker") ? text(args, "worker") : null);
           case "f2r_pc_task_claim" -> pcTasks.getObject().claim(identity.principal(), text(args, "jobId"), text(args, "worker"),
               text(args, "session"));
+          case "f2r_pc_task_brief" -> pcTasks.getObject().brief(identity.principal(), text(args, "jobId"));
           case "f2r_pc_task_review" -> pcTasks.getObject().review(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_finish" -> pcTasks.getObject().finish(identity.principal(), text(args, "jobId"), args);
           case "f2r_pc_task_cancel" -> pcTasks.getObject().cancel(identity.principal(), text(args, "jobId"));

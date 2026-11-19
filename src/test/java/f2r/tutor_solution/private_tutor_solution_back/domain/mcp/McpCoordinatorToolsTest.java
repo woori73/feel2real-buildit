@@ -103,7 +103,7 @@ class McpCoordinatorToolsTest {
       var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
       assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(false);
     }
-    for (String name : List.of("f2r_pc_task_list", "f2r_naesin_answer_key")) {
+    for (String name : List.of("f2r_pc_task_list", "f2r_pc_task_brief", "f2r_naesin_answer_key")) {
       var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
       assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(true);
     }
