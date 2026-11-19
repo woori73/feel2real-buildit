@@ -79,6 +79,8 @@ public class McpOAuth {
   public static final String PARENT_NOTICE_DRAFT = "parent-notice:draft";
   /** F2R AI Coordinator: 학생 검색·출결 조회·출결 기록(대화에서 사용자가 확인하거나 승인 화면에서 승인해야 실행, 10분 안 취소). 관리자 전용. */
   public static final String COORD_DRAFT = "coord:draft";
+  /** 내 학원 관리(학원 원장 계정): LMS 강의 공개·수강 허용(대화 확인 후), 홈페이지 문구는 작업본에만. 자기 학원만. */
+  public static final String ACADEMY_MANAGE = "academy:manage";
 
   public record Identity(String grantId, AuthenticatedPrincipal principal, Set<String> scopes) {}
 
@@ -154,6 +156,7 @@ public class McpOAuth {
     all.add(CAFE_WRITE);
     all.add(PARENT_NOTICE_DRAFT);
     all.add(COORD_DRAFT);
+    all.add(ACADEMY_MANAGE);
     return all;
   }
 
@@ -275,6 +278,7 @@ public class McpOAuth {
             || selected.contains(CAFE_WRITE)
             || selected.contains(PARENT_NOTICE_DRAFT)
             || selected.contains(COORD_DRAFT)
+            || selected.contains(ACADEMY_MANAGE)
             || "ADMIN".equals(p.role())
                 && selected.stream()
                     .anyMatch(

@@ -105,6 +105,29 @@ class McpCoordinatorToolsTest {
   @DisplayName("given 새 scope when 알려진 scope 목록 then coord:draft 포함")
   void scopeKnown() {
     // given & when & then
-    assertThat(oauth("").scopes()).contains(McpOAuth.COORD_DRAFT);
+    assertThat(oauth("").scopes()).contains(McpOAuth.COORD_DRAFT, McpOAuth.ACADEMY_MANAGE);
+  }
+
+  @Test
+  @DisplayName("given academy:manage when 동의한 원장·동의 안 한 연결·학생 then 원장만 학원 도구를 보고, 동의 없이 실행하면 403")
+  void academyToolsConsent() {
+    // given
+    var gateway = new McpGateway(null, oauth("academy:manage"), null, null, null, null, null);
+    var tutor = new AuthenticatedPrincipal(7L, "owner", "TUTOR");
+    var student = new AuthenticatedPrincipal(8L, "kid", "STUDENT");
+
+    // when
+    var consenting = gateway.tools(new McpOAuth.Identity("g1", tutor, Set.of(McpOAuth.ACADEMY_MANAGE)));
+    var noConsent = gateway.tools(new McpOAuth.Identity("g2", tutor, Set.of("studio:read")));
+    var studentGrant = gateway.tools(new McpOAuth.Identity("g3", student, Set.of(McpOAuth.ACADEMY_MANAGE)));
+
+    // then
+    assertThat(consenting).extracting(t -> t.get("name")).containsAll(McpGateway.ACADEMY_TOOLS);
+    assertThat(noConsent).extracting(t -> t.get("name")).doesNotContainAnyElementsOf(McpGateway.ACADEMY_TOOLS);
+    assertThat(studentGrant).extracting(t -> t.get("name")).doesNotContainAnyElementsOf(McpGateway.ACADEMY_TOOLS);
+    assertThat(consenting).extracting(t -> (String) t.get("name")).noneMatch(n -> n.contains("publish_homepage"));
+    assertThatThrownBy(() -> gateway.execute(new McpOAuth.Identity("g2", tutor, Set.of("studio:read")), "academy_lms_change",
+        JsonMapper.builder().build().createObjectNode().put("action", "PUBLISH").put("contentId", 1)))
+        .isInstanceOf(ResponseStatusException.class).hasMessageContaining("academy_manage_consent_required");
   }
 }

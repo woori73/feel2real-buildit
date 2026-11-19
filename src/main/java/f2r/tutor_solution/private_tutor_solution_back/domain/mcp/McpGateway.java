@@ -63,6 +63,13 @@ public class McpGateway {
   @org.springframework.beans.factory.annotation.Autowired
   private org.springframework.beans.factory.ObjectProvider<f2r.tutor_solution.private_tutor_solution_back.domain.coordinator.CoordinatorService> coordinator;
 
+  @org.springframework.beans.factory.annotation.Autowired
+  private org.springframework.beans.factory.ObjectProvider<McpAcademyTools> academyTools;
+
+  /** 내 학원 관리(academy:manage, 학원 원장 계정). LMS 공개·수강은 대화 확인 후, 홈페이지는 작업본만. */
+  static final Set<String> ACADEMY_TOOLS = Set.of("academy_lms_overview", "academy_lms_enrollments", "academy_lms_change",
+      "academy_homepage_read", "academy_homepage_draft");
+
   /**
    * F2R AI Coordinator(coord:draft, 관리자). 출결은 초안(mark) → 사용자가 대화에서 동의하면 확인(confirm)으로 기록한다.
    * 기록 뒤 10분 안에는 취소(undo)할 수 있다. 승인 화면에서 승인해도 된다.
@@ -121,6 +128,7 @@ public class McpGateway {
             if (CAFE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.CAFE_WRITE);
             if (PARENT_NOTICE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.PARENT_NOTICE_DRAFT);
             if (COORD_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.COORD_DRAFT);
+            if (ACADEMY_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.ACADEMY_MANAGE);
             if (PROPOSE_TOOLS.contains(name)) return !oauth.scopeAllowed(McpOAuth.STUDIO_PROPOSE);
             if (STUDIO_TOOLS.contains(name) || name.startsWith("studio_"))
               return !oauth.scopeAllowed("studio:read");
@@ -139,8 +147,11 @@ public class McpGateway {
         && Set.of("ADMIN", "TUTOR").contains(identity.principal().role());
     boolean coordConsent = identity.scopes().contains(McpOAuth.COORD_DRAFT)
         && "ADMIN".equals(identity.principal().role());
+    boolean academyConsent = identity.scopes().contains(McpOAuth.ACADEMY_MANAGE)
+        && Set.of("TUTOR", "ADMIN").contains(identity.principal().role());
     return tools().stream()
         .filter(t -> coordConsent || !COORD_TOOLS.contains(t.get("name")))
+        .filter(t -> academyConsent || !ACADEMY_TOOLS.contains(t.get("name")))
         .filter(t -> cafeConsent || !CAFE_TOOLS.contains(t.get("name")))
         .filter(t -> noticeConsent || !PARENT_NOTICE_TOOLS.contains(t.get("name")))
         .toList();
@@ -214,6 +225,7 @@ public class McpGateway {
     studioTools(out);
     cafeTools(out);
     coordTools(out);
+    academyTools(out);
     out.add(writeTool(SAVE_PARENT_NOTICE_DRAFT,
         "학부모용 카카오톡 문구를 현재 사용자의 대시보드에 초안으로 저장합니다."
             + " parent-notice:draft 별도 동의가 필요합니다. 연락처·학생 실명은 입력하지 마세요."
@@ -558,6 +570,32 @@ public class McpGateway {
         Map.of("jobId", string()), List.of("jobId")));
   }
 
+  private void academyTools(List<Map<String, Object>> out) {
+    var id = integer(1, Integer.MAX_VALUE);
+    out.add(tool("academy_lms_overview",
+        "내 학원 LMS의 강좌와 콘텐츠(제목·공개 상태) 목록을 봅니다. academy:manage 동의·학원 원장 계정, 자기 학원만.",
+        Map.of(), List.of()));
+    out.add(tool("academy_lms_enrollments",
+        "강좌 하나의 수강 중인 학생과 수강을 줄 수 있는 학생을 봅니다(이름은 가림).",
+        Map.of("lessonId", id), List.of("lessonId")));
+    out.add(writeTool("academy_lms_change",
+        "LMS 변경: action PUBLISH·UNPUBLISH(contentId) / GRANT(lessonId, studentId) / REVOKE(lessonId, enrollmentId)."
+            + " confirm_token 없이 부르면 실행하지 않고 summary·confirm_token을 줍니다 — summary를 사용자에게 보여 주고 분명히"
+            + " 동의하면 같은 값 + confirm_token으로 다시 부르세요. 콘텐츠 올리기·삭제는 하지 않습니다(LMS 화면에서).",
+        Map.of("action", string(), "contentId", id, "lessonId", id, "studentId", id, "enrollmentId", id,
+            "confirm_token", string()),
+        List.of("action")));
+    out.add(tool("academy_homepage_read",
+        "내 학원 홈페이지 작업본(공개 전 초안)의 소개(intro)와 말로 바꿀 수 있는 문구(texts: key·이름·값), revision, 미리보기·편집기 링크를 봅니다.",
+        Map.of(), List.of()));
+    out.add(writeTool("academy_homepage_draft",
+        "홈페이지 작업본에만 소개·문구를 저장합니다(공개 홈페이지는 그대로). revision은 academy_homepage_read 값, intro(1000자),"
+            + " texts={key: 새 문구}(read가 준 key만). 저장 뒤 previewUrl로 확인하고, 공개는 원장이 editorUrl에서 직접 「게시」하라고 안내하세요.",
+        Map.of("revision", integer(0, Integer.MAX_VALUE), "intro", string(),
+            "texts", Map.of("type", "object", "additionalProperties", string())),
+        List.of("revision")));
+  }
+
   private Map<String, Object> writeTool(
       String name, String description, Map<String, Object> props, List<String> required) {
     var tool = new LinkedHashMap<>(tool(name, description, props, required));
@@ -710,6 +748,30 @@ public class McpGateway {
         };
       } catch (IllegalArgumentException | IllegalStateException | java.time.format.DateTimeParseException e) {
         return Map.of("error", e.getMessage() == null ? "invalid_request" : e.getMessage());
+      }
+    }
+    if (ACADEMY_TOOLS.contains(name)) {
+      if (!identity.scopes().contains(McpOAuth.ACADEMY_MANAGE)
+          || !Set.of("TUTOR", "ADMIN").contains(identity.principal().role())) {
+        throw McpOAuth.error(403, "academy_manage_consent_required");
+      }
+      rate.check("academy:" + identity.grantId(), 30);
+      var tools = academyTools == null ? null : academyTools.getIfAvailable();
+      if (tools == null) throw McpOAuth.error(503, "academy_tools_unavailable");
+      var p = identity.principal();
+      try {
+        return switch (name) {
+          case "academy_lms_overview" -> tools.lmsOverview(p, oauth.base());
+          case "academy_lms_enrollments" -> tools.lmsEnrollments(p, args.hasNonNull("lessonId") ? args.get("lessonId").asLong() : null);
+          case "academy_lms_change" -> tools.lmsChange(p, identity.grantId(), args);
+          case "academy_homepage_read" -> tools.homepageRead(p, oauth.base());
+          default -> tools.homepageDraft(p, args, oauth.base());
+        };
+      } catch (IllegalArgumentException | IllegalStateException
+          | org.springframework.security.access.AccessDeniedException e) {
+        return Map.of("error", e.getMessage() == null ? "invalid_request" : e.getMessage());
+      } catch (org.springframework.web.server.ResponseStatusException e) {
+        return Map.of("error", e.getReason() == null ? "invalid_request" : e.getReason());
       }
     }
     if (PARENT_NOTICE_TOOLS.contains(name)) {

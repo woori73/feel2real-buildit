@@ -5598,3 +5598,14 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 - `POST /api/admin/easy/records/gradings/{id}/photos?kind=QUESTION|ANSWER_KEY|STUDENT|GRADED` multipart `file` — JPEG·PNG·WebP(앞 바이트 판별), 10MB, 1건당 10장. 긴 변 1600px JPEG로 다시 저장(메타데이터 제거). 응답 `{photoId, kind, kindLabel, contentType, sizeBytes}`.
 - `POST /api/admin/easy/records/students/{studentId}/weakness` `{summary, topics?[{topic, level HIGH|MEDIUM|LOW, evidence}]}` · `DELETE /api/admin/easy/records/weakness/{noteId}`. `GET /api/admin/easy/records/photos/{photoId}`(Cache-Control: no-store, nosniff) · `DELETE`.
 - 오류: 잘못된 값·다른 사업체 = 400 문장.
+
+
+## MCP `academy:manage` — 내 학원 관리(학원 원장 계정) (2026-11-19)
+
+별도 동의(민감 표시) + 운영 허용 목록(`app.mcp.allowed-scopes`, prd 기본값에 포함) + 계정 역할 TUTOR·ADMIN. 모든 호출은 그 계정이 소유한 학원(`academies.tutor_user_id`)에만 미치고, 기존 서비스의 소유자 검사를 그대로 쓴다(MCP 호출 동안에만 SecurityContext를 연결 사용자로 채움, `McpAcademyTools.asUser`). 동의 없이 실행하면 403 `academy_manage_consent_required`. 요청 제한 동의당 분당 30회. 학생 이름은 가린다(김○수).
+
+- `academy_lms_overview` → `{academyHandle, lessons[{lessonId, name, schoolName, gradeLabel}], contents[{contentId, lessonId, lessonName, title, status, publishedAt}], manageUrl}`
+- `academy_lms_enrollments {lessonId}` → 수강 중(`enrollmentId, studentId, displayName, status`)·수강 가능 학생(`studentId, displayName, gradeLabel`)
+- `academy_lms_change {action, contentId?|lessonId?, studentId?, enrollmentId?, confirm_token?}` (쓰기) — `PUBLISH`·`UNPUBLISH`(contentId) / `GRANT`(lessonId, studentId) / `REVOKE`(lessonId, enrollmentId). **`confirm_token` 없이 부르면 실행하지 않고** `{status:"needs_confirmation", summary, confirm_token}`. 같은 값 + 토큰으로 다시 불러야 실행. 토큰 = HMAC(연결 id·사용자·action·대상, 만료, 서버 시작 때 만든 임의 키), 30분. 대상·연결이 다르거나 만료되면 거절. 되돌리기는 반대 action(UNPUBLISH↔PUBLISH, REVOKE↔GRANT)을 같은 방식으로. 콘텐츠 올리기·수정·삭제는 없음(LMS 화면).
+- `academy_homepage_read` → 작업본 `{revision, intro, texts[{key, label, value}], dirty, previewUrl:/tutor/academy/preview, editorUrl:/tutor/academy}`. texts는 말로 바꿀 수 있는 문구 24개(상단 학원 이름·첫 화면 강조 문구·소개·교육 철학·커리큘럼·원장 소개·추천 수업·상담 안내 문구). 색·레이아웃·영상·JSON 설정은 제외.
+- `academy_homepage_draft {revision, intro?, texts?{key: 값}}` (쓰기) → 기존 `AcademyWorkingCopyService.save`로 **작업본에만** 저장(builderDraft 부분 변경, 공개본 불변, revision 충돌 시 오류). 공개 게시(`/publish`)는 MCP에 없다 — 원장이 편집기에서 직접 게시.
