@@ -108,9 +108,6 @@
 }
 .cm-home-links a:first-child { background: var(--cm-navy); color: #fff; border-color: var(--cm-navy); }
 .cm-home-links small { font-size: 11px; font-weight: 700; color: #8a6d00; }
-.cm-home-offer { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px dashed var(--cm-line); }
-.cm-home-offer .hl-eyebrow { font-size: 12.5px; margin: 0; }
-.cm-home-offer .hl-promo-lead { font-size: 13px; }
 .cm-loading { display: grid; place-items: center; min-height: 200px; color: var(--cm-sub); font-size: 13px; }
 
 /* ---------- 전체 화면 ---------- */

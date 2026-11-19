@@ -292,7 +292,7 @@
           <p id="examPromoSummary" class="sr" th:text="'학교별 맞춤 제작 · ' + ${examOffer.summary} + ' · ' + ${examOffer.priceLabel}">학교별 맞춤 제작 · 2주 · 주 2회 · 총 4회 · 160문항 · 20,000원</p>
           <p id="examPromoStatus" class="exam-caption" role="status" hidden></p>
         </div>
-        <!-- 2026-11-19 사용자 지시: 영상 아래 칸에 2027 수능 영어 해설 모션(문제 → 노란 근거 → 정답·해설). 맞춤문제 안내·신청 버튼 2개는 카드 아래에 그대로 둔다(첫 화면 대표 신청 버튼). -->
+        <!-- 2026-11-19 사용자 지시: 영상 아래 칸에 2027 수능 영어 해설 모션(문제 → 노란 근거 → 정답·해설). 2026-11-19 사용자 지시로 이 카드의 맞춤문제(2주 4회 160문항) 안내·신청 버튼은 삭제. -->
         <div class="hl-promo-body cm-home" id="csatHome" aria-labelledby="promoTitle">
           <div class="cm-home-head">
             <div><p>오늘 치른 수능 · 홀수형 가답안 기준</p><h2 id="promoTitle">2027 수능 영어 해설</h2></div>
@@ -308,15 +308,6 @@
           <div class="cm-home-links">
             <a href="/csat/2027-english">45문항 모션 해설 →</a>
             <a href="/csat/2027-english/pdf">PDF 무료 다운로드<small>로그인</small></a>
-          </div>
-          <div class="cm-home-offer">
-            <p class="hl-eyebrow is-green">서수니 · 세븐이 소개하는 맞춤문제 · 2주 4회 160문항</p>
-            <p class="hl-promo-lead">기출문제지와 수업자료를 보내 주세요. 직접 제작한 첫 페이지 또는 1장을 무료로 드립니다.</p>
-            <div class="hl-promo-actions">
-              <!-- 첫 화면에서 늘 보이는 무료신청 버튼(대표 신청 버튼). 2026-11-16 하루 내렸다가 되살림. -->
-              <a id="homeIntakeCta" class="hl-btn hl-btn-mint" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a>
-              <a class="hl-btn hl-btn-dark" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
-            </div>
           </div>
         </div>
       </div>
