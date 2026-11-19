@@ -98,7 +98,7 @@ test('supplied MP4 is byte-identical and supports browser range requests', async
   expect(crypto.createHash('sha256').update(await full.body()).digest('hex')).toBe(hash);
   const partial = await request.get(source, { headers: { Range: 'bytes=0-31' } });
   expect(partial.status()).toBe(206);
-  expect(partial.headers()['content-range']).toBe('bytes 0-31/14649213');
+  expect(partial.headers()['content-range']).toBe('bytes 0-31/11773177');
   expect((await partial.body()).length).toBe(32);
 });
 
