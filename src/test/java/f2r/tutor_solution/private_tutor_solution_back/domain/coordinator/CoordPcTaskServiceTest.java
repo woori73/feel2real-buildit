@@ -82,9 +82,21 @@ class CoordPcTaskServiceTest {
 
     // then
     assertThat(first).containsEntry("status", CoordJob.QUEUED).containsEntry("preferredWorker", "CLOUD");
-    assertThat((String) first.get("title")).contains("신구중 중2 2026년 2학기 기말").contains("40문항");
+    assertThat((String) first.get("title")).contains("신구중 2학년 2026년 2학기 기말").contains("40문항");
     assertThat(again.get("jobId")).isEqualTo(first.get("jobId"));
     assertThat(store).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("given 중2·고1·2·중학교 2학년 when wikiGrade then 내신 Wiki 키 형식 「N학년」, 모르는 형식은 그대로")
+  void wikiGradeKey() {
+    // given & when & then
+    assertThat(CoordPcTaskService.wikiGrade("중2")).isEqualTo("2학년");
+    assertThat(CoordPcTaskService.wikiGrade("고1")).isEqualTo("1학년");
+    assertThat(CoordPcTaskService.wikiGrade("2")).isEqualTo("2학년");
+    assertThat(CoordPcTaskService.wikiGrade("중학교 2학년")).isEqualTo("2학년");
+    assertThat(CoordPcTaskService.wikiGrade("2학년")).isEqualTo("2학년");
+    assertThat(CoordPcTaskService.wikiGrade("예비고1반")).isEqualTo("예비고1반");
   }
 
   @Test

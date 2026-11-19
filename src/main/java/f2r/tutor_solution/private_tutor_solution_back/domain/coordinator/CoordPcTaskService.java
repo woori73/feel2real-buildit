@@ -468,9 +468,9 @@ public class CoordPcTaskService {
     Map<String, Object> m = new LinkedHashMap<>();
     String school = text(a, "school");
     String grade = text(a, "grade");
-    if (school.isEmpty() || grade.isEmpty()) throw new IllegalArgumentException("school·grade(예: 신구중·중2)가 필요합니다.");
+    if (school.isEmpty() || grade.isEmpty()) throw new IllegalArgumentException("school·grade(예: 신구중·2학년)가 필요합니다.");
     m.put("school", clip(school, 50));
-    m.put("grade", clip(grade, 20));
+    m.put("grade", clip(wikiGrade(grade), 20));
     if (a.hasNonNull("year")) {
       int y = a.get("year").asInt();
       if (y < 2000 || y > 2100) throw new IllegalArgumentException("year는 4자리 연도입니다.");
@@ -481,6 +481,16 @@ public class CoordPcTaskService {
     m.put("semester", clip(text(a, "semester"), 10));
     m.put("exam", clip(text(a, "exam"), 20));
     return m;
+  }
+
+  /**
+   * 내신 Wiki 시험 키의 학년은 「2학년」 형식이다(2026-11-19 확인: 「중2」로 부르면 자료가 비어 나옴). 「중2」·「고1」·「2」·「중학교 2학년」을
+   * 「2학년」으로 맞춘다. 학교 이름이 중·고를 구분하므로 학년 숫자만 남겨도 섞이지 않는다.
+   */
+  static String wikiGrade(String raw) {
+    String g = raw == null ? "" : raw.replace(" ", "");
+    var m = java.util.regex.Pattern.compile("^(?:초|중|고|초등학교|중학교|고등학교)?([1-6])(?:학년)?$").matcher(g);
+    return m.matches() ? m.group(1) + "학년" : raw.strip();
   }
 
   private static String examLabel(Map<String, Object> e) {
