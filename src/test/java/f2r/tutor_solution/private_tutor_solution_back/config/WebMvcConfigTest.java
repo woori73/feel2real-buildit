@@ -62,6 +62,7 @@ class WebMvcConfigTest {
       "/dashboard/info, dashboard_info",
       "/admin/students, admin/students",
       "/admin/members, admin/members",
+      "/admin/coord/approvals, admin/coord_approvals",
       "/account/password-change, auth/password_change_required",
       "/admin/analytics, admin/analytics",
       "/admin/analyzes, admin/analyzes",
