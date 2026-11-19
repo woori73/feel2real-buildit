@@ -7,7 +7,8 @@
 
 1. F2R 커넥터의 `f2r_pc_task_list(worker=<작업자 이름>)`로 대기열을 본다. `claimable=true`인 작업만, 오래된 것부터 한 번에 하나씩 처리한다.
    `claimable=false`면 학원 PC 우선 시간이 남은 것이므로 건드리지 않고 남은 시간을 원장님께 알려 준다.
-2. `f2r_pc_task_claim(jobId, worker=<작업자 이름>, session=<작업자 이름>-MAKER)`으로 가져간다. 결과의 `workInstructions`를 **그대로** 따른다.
+2. `f2r_pc_task_claim(jobId, worker=<작업자 이름>, session=<작업자 이름>-MAKER)`으로 가져간다. 결과의 `briefMarkdown`(제작 지시서)을
+   `outputs/<jobId>/BRIEF.md`로 저장하고 끝까지 읽은 뒤, `workInstructions`를 **그대로** 따른다.
    - BuildIt Wiki `get_final_context`로 자료를 읽는다.
    - **기출 형식**: `past_exams`(실제 기출)에서 그 학교 가장 최근 기출부터 보고 발문 문구·선택지(①~⑤)·편집·부호(ⓐ·[A]·㉠·밑줄·괄호)를 기출과 똑같이 쓴다.
    - **모델 HTML**: 기존 학습지·완성본(`final_deliverables[].html_text`)의 A4 레이아웃·머리글·번호·교사용 답안 구성을 따른다.
@@ -31,13 +32,14 @@
 
 새로 띄운 세션이다. 만든 세션의 설명을 믿지 말고 파일과 기출만 보고 판단한다.
 
-1. `f2r_pc_task_list(includeDone=false)`에서 jobId의 시험 정보를 확인하고, `get_final_context`로 같은 시험의 `past_exams`·`final_deliverables`를 읽는다.
+0. **먼저 `f2r_pc_task_brief(jobId)`로 제작 지시서를 받아 끝까지 읽는다.** 판단 기준은 이 지시서뿐이다(받은 `briefHash`는 3번에 그대로 넣는다).
+1. 지시서의 시험 정보로 `get_final_context`를 불러 같은 시험의 `past_exams`·`final_deliverables`를 읽는다.
 2. `outputs/<jobId>/`의 HTML을 문항마다 대조한다.
    - pastExamStyle: 발문 문구·선택지 형식·편집·부호가 그 학교 최근 기출과 같은가.
    - modelHtml: 기존 학습지 HTML의 레이아웃·머리글·번호·교사용 답안 구성을 따랐는가.
    - operatorRequest: 원장님 지시(문항 수·범위·instructions)를 다 지켰는가. 정답을 가리고 직접 풀어 정답이 맞는가.
    - logo: 첫 페이지에 F2R 로고가 있는가.
-3. `f2r_pc_task_review(jobId, reviewer=<받은 이름>, verdict=PASS|FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo}, notes)`.
+3. `f2r_pc_task_review(jobId, reviewer=<받은 이름>, briefHash=<지시서 해시>, verdict=PASS|FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo}, notes)`.
    하나라도 어긋나면 FIX와 고칠 점(문항 번호 포함)을 남긴다. 파일은 고치지 않는다.
 
 ## 지킬 것
