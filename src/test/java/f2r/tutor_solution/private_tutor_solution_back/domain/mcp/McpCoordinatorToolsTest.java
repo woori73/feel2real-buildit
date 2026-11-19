@@ -81,7 +81,7 @@ class McpCoordinatorToolsTest {
     var tools = gateway.tools(new McpOAuth.Identity("g1", admin, Set.of(McpOAuth.COORD_DRAFT)));
 
     // then
-    for (String name : List.of("f2r_attendance_confirm", "f2r_attendance_undo")) {
+    for (String name : List.of("f2r_confirm", "f2r_undo", "f2r_student_change", "f2r_class_change")) {
       var tool = tools.stream().filter(t -> name.equals(t.get("name"))).findFirst().orElseThrow();
       assertThat(((Map<?, ?>) tool.get("annotations")).get("readOnlyHint")).isEqualTo(false);
       assertThat((String) tool.get("description")).contains("사용자");
@@ -89,7 +89,7 @@ class McpCoordinatorToolsTest {
   }
 
   @Test
-  @DisplayName("given 동의 없는 연결 when f2r_attendance_confirm 실행 then 403 coord_admin_consent_required")
+  @DisplayName("given 동의 없는 연결 when f2r_confirm 실행 then 403 coord_admin_consent_required")
   void confirmRequiresConsent() {
     // given
     var gateway = new McpGateway(null, oauth("coord:draft"), null, null, null, null, null);
@@ -97,7 +97,7 @@ class McpCoordinatorToolsTest {
     var args = JsonMapper.builder().build().createObjectNode().put("jobId", "j").put("planHash", "h");
 
     // when & then
-    assertThatThrownBy(() -> gateway.execute(identity, "f2r_attendance_confirm", args))
+    assertThatThrownBy(() -> gateway.execute(identity, "f2r_confirm", args))
         .isInstanceOf(ResponseStatusException.class).hasMessageContaining("coord_admin_consent_required");
   }
 

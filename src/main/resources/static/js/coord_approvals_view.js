@@ -25,6 +25,7 @@
   /** 승인 화면 한 줄 요약: "김민수 학생 · 등원 · 11월 19일 16:05". */
   function headline(job) {
     const s = (job && job.summary) || {};
+    if (s.title) return s.title;
     return (s.student || '') + ' 학생 · ' + eventLabel(s.eventType) + ' · ' + when(s.occurredAt);
   }
 
@@ -43,10 +44,11 @@
   /** 결과 문장(완료·실패·거절·시간 초과). */
   function resultText(job) {
     if (!job) return '';
+    if (job.status === 'completed' && job.result && !job.result.at) return job.result.label + ' 완료';
     if (job.status === 'completed' && job.result) return job.result.label + ' 기록 완료 (' + when(job.result.at) + ')';
     if (job.status === 'failed') return '기록하지 못했습니다: ' + (job.error || '알 수 없는 오류');
     if (job.status === 'rejected') return '거절했습니다. 기록하지 않았습니다.';
-    if (job.status === 'cancelled') return '기록했다가 대화창에서 취소했습니다.';
+    if (job.status === 'cancelled') return '처리했다가 대화창에서 되돌렸습니다.';
     if (job.status === 'expired') return '승인 시간(30분)이 지나 기록하지 않았습니다. AI에게 다시 요청해 주세요.';
     return '';
   }

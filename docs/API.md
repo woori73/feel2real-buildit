@@ -5551,15 +5551,21 @@ MCP `read_academy_move`, `post_academy_move`는 새 `academy-move:write` 동의�
 
 ## AI 코디네이터 1단계 — 출결 초안·승인 (2026-11-19, V1123)
 
-설계: [f2r-coordinator/](f2r-coordinator/README.md). AI(Claude·ChatGPT 공식 앱의 F2R 커넥터 등)가 MCP로 **초안**을 만들고, 사용자가 **대화창에서 동의**(`f2r_attendance_confirm`, 2026-11-19 추가)하거나 F2R 승인 화면에서 승인해야 기존 `EasyAttendanceService.record`로 기록된다. 관리자(ADMIN) 전용.
+설계: [f2r-coordinator/](f2r-coordinator/README.md). AI(Claude·ChatGPT 공식 앱의 F2R 커넥터 등)가 MCP로 **초안**을 만들고, 사용자가 **대화창에서 동의**(`f2r_confirm`, 2026-11-19 추가)하거나 F2R 승인 화면에서 승인해야 기존 `EasyAttendanceService.record`로 기록된다. 관리자(ADMIN) 전용.
 
 ### MCP 도구 (scope `coord:draft`, 별도 동의·위험 확인, ADMIN)
 - 노출 조건: 운영 허용 목록 `app.mcp.allowed-scopes`(`APP_MCP_ALLOWED_SCOPES`)에 `coord:draft`가 있어야 하고, 연결 동의에 `coord:draft`가 있으며 계정이 ADMIN이어야 한다. 실행 시 같은 조건을 다시 검사한다(없으면 403 `coord_admin_consent_required`). 요청 제한: 동의당 분당 30회.
 - `f2r_student_search {query, businessId?}` → `{businessId, matches:[{studentId, displayName(김○수), grade, classes, weekdays, lastCheckIn}], duplicateName}`. 재원생만, 부분 일치, 최대 10명. **실명·학교는 주지 않는다.**
 - `f2r_attendance_check {studentId, date?, businessId?}` → 그날 유효한 출결 목록(`eventType, label, at, source`).
 - `f2r_attendance_mark {requestId, studentId, eventType?, classId?, occurredAt?, businessId?}` → `{jobId, status:"review_required", approvalUrl, expiresAt, summary(가린 이름)}`. **기록하지 않는다.** 같은 계정·같은 `requestId`(8~64자)는 같은 작업. 그날 같은 구분의 유효한 기록이 있으면 `{status:"ALREADY_RECORDED", eventId, message}`로 초안을 만들지 않는다. `eventType` 기본 `CHECK_IN`(CHECK_IN·CHECK_OUT·ABSENT·LATE·EARLY_LEAVE). 시각은 한국 시간, 없으면 요청 시각(분 단위). 승인 유효시간 30분. 확인 대기 중이면 응답에 `planHash`가 들어 있다(대화창 확인용, 실명·학교는 여전히 없음).
-- `f2r_attendance_confirm {jobId, planHash}` (쓰기 도구) → 사용자가 대화에서 분명히 동의한 뒤에만 부른다. 승인 화면 `approve`와 같은 검사(대기 중·30분·`planHash` 일치·실행 직전 중복 재확인·기록 후 재확인)를 거쳐 `completed`. 응답은 가린 이름만. 출결 메모 `AI 코디네이터 요청 · 대화 확인 <loginId>`. 이미 처리됨·시간 초과·`planHash` 불일치 = `{error}`.
-- `f2r_attendance_undo {jobId, reason?}` (쓰기 도구) → 대화창으로 기록한(`completed`) 작업을 **기록 뒤 10분 안에만** 취소. 출결 행은 지우지 않고 `superseded`로 남기며(새 행 없음) 작업은 `cancelled`, 사유는 `coord_job_events.message`에 남는다. 10분이 지나면 `{error}` — 출결부 정정을 쓴다.
+- `f2r_confirm {jobId, planHash}` (쓰기 도구) → 사용자가 대화에서 분명히 동의한 뒤에만 부른다. 승인 화면 `approve`와 같은 검사(대기 중·30분·`planHash` 일치·실행 직전 중복 재확인·기록 후 재확인)를 거쳐 `completed`. 응답은 가린 이름만. 출결 메모 `AI 코디네이터 요청 · 대화 확인 <loginId>`. 이미 처리됨·시간 초과·`planHash` 불일치 = `{error}`.
+- **학생·반 말 명령 (2026-11-19 추가, 같은 초안 → `f2r_confirm` → `f2r_undo` 흐름)**
+  - `f2r_class_list {classId?, includeEnded?, businessId?}` → 반 목록(이름·선생님·요일·시간·정원·인원). `classId`를 주면 그 반 학생(가린 이름·학년·배정일).
+  - `f2r_student_change {requestId, action, …}` (쓰기 도구, 초안만) — `CREATE`(name 필수, school·grade·enrolledOn·memo) / `UPDATE`(studentId 필수, 바꿀 것만 name·school·grade·status·memo; 퇴원 `status=WITHDRAWN`, 졸업 `GRADUATED`). **학생·학부모 연락처는 받지 않고 수정 때도 기존 값 유지.** 같은 이름의 재원생이 있으면 제목에 경고.
+  - `f2r_class_change {requestId, action, …}` (쓰기 도구, 초안만) — `CREATE`(name 필수, teacherName·weekdays·startTime·endTime·room·capacity) / `ASSIGN`(classId·studentId) / `MOVE`(classId→targetClassId, studentId) / `RELEASE`(classId·studentId) / `WEEKDAYS`(studentId·weekdays, 빈 목록=미정). 반 수정·종료는 말 명령에 없다(출결부 화면).
+  - 초안 응답: `{jobId, kind, status:"review_required", planHash, summary:{title(가린 이름)}, message}`. 실행은 기존 `EasyStudentService`·`EasyAttendanceService`만 부른다.
+  - 되돌리기(10분 안): 학생 등록 → 퇴원 처리+메모 `(AI 등록 취소)` / 학생 수정 → 이전 값(그사이 다른 곳에서 바뀌었으면 거절) / 반 만들기 → 반 종료(그사이 학생이 배정됐으면 거절) / 배정 ↔ 빼기 / 이동 → 원래 반으로 이동 / 수업 요일 → 이전 요일(그사이 바뀌었으면 거절).
+- `f2r_undo {jobId, reason?}` (쓰기 도구) → 대화창으로 기록한(`completed`) 작업을 **기록 뒤 10분 안에만** 취소. 출결 행은 지우지 않고 `superseded`로 남기며(새 행 없음) 작업은 `cancelled`, 사유는 `coord_job_events.message`에 남는다. 10분이 지나면 `{error}` — 출결부 정정을 쓴다.
 - `f2r_job_status {jobId}` → 상태(`review_required`·`approved`·`completed`·`rejected`·`expired`·`failed`)와 가린 요약·결과.
 - 입력 오류(학생 없음·구분 오류 등)는 MCP 결과 `{error: "<안내 문장>"}`로 돌려준다.
 

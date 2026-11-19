@@ -60,20 +60,28 @@ public class CoordinatorService {
   private final CoordJobEventRepository events;
   private final EasyAttendanceService attendance;
   private final EasyTutorAccessService access;
+  private final CoordStudentActions studentActions;
   private final Clock clock;
 
   @Autowired
   public CoordinatorService(CoordJobRepository jobs, CoordJobEventRepository events, EasyAttendanceService attendance,
-      EasyTutorAccessService access) {
-    this(jobs, events, attendance, access, Clock.system(f2r.tutor_solution.private_tutor_solution_back.config.KstTime.ZONE));
+      EasyTutorAccessService access, CoordStudentActions studentActions) {
+    this(jobs, events, attendance, access, studentActions,
+        Clock.system(f2r.tutor_solution.private_tutor_solution_back.config.KstTime.ZONE));
   }
 
   CoordinatorService(CoordJobRepository jobs, CoordJobEventRepository events, EasyAttendanceService attendance,
       EasyTutorAccessService access, Clock clock) {
+    this(jobs, events, attendance, access, null, clock);
+  }
+
+  CoordinatorService(CoordJobRepository jobs, CoordJobEventRepository events, EasyAttendanceService attendance,
+      EasyTutorAccessService access, CoordStudentActions studentActions, Clock clock) {
     this.jobs = jobs;
     this.events = events;
     this.attendance = attendance;
     this.access = access;
+    this.studentActions = studentActions;
     this.clock = clock;
   }
 
@@ -177,6 +185,44 @@ public class CoordinatorService {
     return view(job, baseUrl, false);
   }
 
+  /* ---------------- 학생·반 관리 초안 ---------------- */
+
+  /** 반 목록(가린 이름). classId를 주면 그 반 학생도. */
+  @Transactional(readOnly = true)
+  public Map<String, Object> classes(AuthenticatedPrincipal p, Long businessId, Long classId, boolean includeEnded) {
+    return studentActions.classes(business(p, businessId), classId, includeEnded);
+  }
+
+  /**
+   * 학생(area=STUDENT)·반(area=CLASS) 변경 초안. 기록하지 않는다 — 출결과 같이 대화창 확인(f2r_confirm) 또는 승인 화면에서 실행.
+   * 같은 계정·같은 requestId는 같은 작업.
+   */
+  @Transactional
+  public Map<String, Object> requestChange(AuthenticatedPrincipal p, String source, String clientName, String area,
+      String requestId, Long businessId, String action, JsonNode args, String baseUrl) {
+    requireAdmin(p);
+    String req = requireRequestId(requestId);
+    var existing = jobs.findByUserIdAndRequestId(p.userId(), req);
+    if (existing.isPresent()) return view(existing.get(), baseUrl, false);
+    Long bid = business(p, businessId);
+    CoordStudentActions.Draft d = "STUDENT".equals(area) ? studentActions.prepareStudent(action, args)
+        : studentActions.prepareClass(bid, action, args);
+    Map<String, Object> plan = new LinkedHashMap<>();
+    plan.put("action", d.kind());
+    plan.put("businessId", bid);
+    plan.put("businessName", businessName(p, bid));
+    plan.put("title", d.title());
+    plan.put("aiTitle", d.aiTitle());
+    plan.putAll(d.plan());
+    String planJson = JSON.writeValueAsString(plan);
+    LocalDateTime now = LocalDateTime.now(clock).withSecond(0).withNano(0);
+    CoordJob job = new CoordJob(UUID.randomUUID().toString(), p.userId(), bid, req, d.kind(), source,
+        clientName == null ? null : clip(clientName, 100), planJson, sha256(planJson), now, now.plusMinutes(APPROVAL_MINUTES));
+    jobs.save(job);
+    log(job, source, p.loginId(), null, CoordJob.REVIEW_REQUIRED, "초안 생성 · " + d.kind());
+    return view(job, baseUrl, false);
+  }
+
   /* ---------------- 승인 화면 ---------------- */
 
   @Transactional
@@ -223,7 +269,7 @@ public class CoordinatorService {
     execute(p, j, planHash, "CHAT", "대화창 확인", "AI 코디네이터 요청 · 대화 확인 " + p.loginId());
     Map<String, Object> out = view(j, baseUrl, false);
     if (CoordJob.COMPLETED.equals(j.getStatus())) {
-      out.put("message", "기록했습니다. " + UNDO_MINUTES + "분 안에는 f2r_attendance_undo로 취소할 수 있습니다.");
+      out.put("message", (KIND_ATTENDANCE.equals(j.getKind()) ? "기록했습니다. " : "처리했습니다. ") + UNDO_MINUTES + "분 안에는 f2r_undo로 취소할 수 있습니다.");
     }
     return out;
   }
@@ -240,13 +286,21 @@ public class CoordinatorService {
     if (now.isAfter(j.getUpdatedAt().plusMinutes(UNDO_MINUTES))) {
       throw new IllegalStateException("기록한 지 " + UNDO_MINUTES + "분이 지나 대화창에서 취소할 수 없습니다. 출결부에서 정정해 주세요.");
     }
-    long eventId = JSON.readTree(j.getResultJson()).get("eventId").asLong();
-    attendance.cancel(j.getBusinessId(), eventId);
+    JsonNode result = JSON.readTree(j.getResultJson());
+    String what;
+    if (KIND_ATTENDANCE.equals(j.getKind())) {
+      long eventId = result.get("eventId").asLong();
+      attendance.cancel(j.getBusinessId(), eventId);
+      what = "출결 #" + eventId;
+    } else {
+      studentActions.undo(j.getKind(), JSON.readTree(j.getPlanJson()), result);
+      what = j.getKind();
+    }
     String why = reason == null || reason.isBlank() ? "사용자 요청" : clip(reason.strip(), 200);
     j.moveTo(CoordJob.CANCELLED, now);
-    log(j, "CHAT", p.loginId(), CoordJob.COMPLETED, CoordJob.CANCELLED, "대화창 취소 #" + eventId + " · " + why);
+    log(j, "CHAT", p.loginId(), CoordJob.COMPLETED, CoordJob.CANCELLED, "대화창 취소 " + what + " · " + why);
     Map<String, Object> out = view(j, baseUrl, false);
-    out.put("message", "출결 기록을 취소했습니다.");
+    out.put("message", KIND_ATTENDANCE.equals(j.getKind()) ? "출결 기록을 취소했습니다." : "되돌렸습니다.");
     return out;
   }
 
@@ -262,6 +316,17 @@ public class CoordinatorService {
     j.moveTo(CoordJob.APPROVED, now);
     log(j, actor, p.loginId(), CoordJob.REVIEW_REQUIRED, CoordJob.APPROVED, label);
     JsonNode plan = JSON.readTree(j.getPlanJson());
+    if (!KIND_ATTENDANCE.equals(j.getKind())) {
+      try {
+        Map<String, Object> result = studentActions.execute(j.getKind(), plan);
+        j.complete(JSON.writeValueAsString(result), now);
+        log(j, "SERVER", null, CoordJob.APPROVED, CoordJob.COMPLETED, result.get("label") + " 완료");
+      } catch (RuntimeException e) {
+        j.fail(e.getMessage(), now);
+        log(j, "SERVER", null, CoordJob.APPROVED, CoordJob.FAILED, e.getMessage());
+      }
+      return;
+    }
     Long studentId = plan.get("studentId").asLong();
     String type = plan.get("eventType").asText();
     String occurredAt = plan.get("occurredAt").asText();
@@ -315,6 +380,21 @@ public class CoordinatorService {
     out.put("expiresAt", j.getExpiresAt().format(MINUTE));
     out.put("approvalUrl", (baseUrl == null ? "" : baseUrl) + "/admin/coord/approvals?id=" + j.getJobId());
     Map<String, Object> summary = new LinkedHashMap<>();
+    if (!KIND_ATTENDANCE.equals(j.getKind())) {
+      summary.put("title", forHuman ? plan.path("title").asText("") : plan.path("aiTitle").asText(""));
+      if (forHuman) summary.put("businessName", plan.path("businessName").asText(""));
+      out.put("summary", summary);
+      if (forHuman || CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) out.put("planHash", j.getPlanHash());
+      if (forHuman) { out.put("source", j.getSource()); out.put("clientName", j.getClientName()); }
+      if (j.getResultJson() != null && !forHuman) out.put("result", Map.of("label", JSON.readTree(j.getResultJson()).path("label").asText("")));
+      if (j.getResultJson() != null && forHuman) out.put("result", JSON.readTree(j.getResultJson()));
+      if (j.getError() != null) out.put("error", j.getError());
+      if (!forHuman && CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) {
+        out.put("message", "아직 바꾸지 않았습니다. 대화에서 사용자에게 summary.title을 보여 주고 '이대로 할까요?'라고 물으세요."
+            + " 사용자가 분명히 동의하면 f2r_confirm(jobId, planHash)을 부르세요. 사용자 답 없이 부르지 마세요.");
+      }
+      return out;
+    }
     String name = plan.path("studentName").asText("");
     summary.put("student", forHuman ? name : maskName(name));
     if (forHuman) summary.put("school", plan.path("school").asText(""));
@@ -333,7 +413,7 @@ public class CoordinatorService {
     if (j.getError() != null) out.put("error", j.getError());
     if (!forHuman && CoordJob.REVIEW_REQUIRED.equals(j.getStatus())) {
       out.put("message", "아직 기록하지 않았습니다. 대화에서 사용자에게 summary(가린 이름·학년·구분·시각)를 보여 주고"
-          + " '기록할까요?'라고 물으세요. 사용자가 분명히 동의하면 f2r_attendance_confirm(jobId, planHash)을 부르세요."
+          + " '기록할까요?'라고 물으세요. 사용자가 분명히 동의하면 f2r_confirm(jobId, planHash)을 부르세요."
           + " 사용자 답 없이 부르지 마세요. 승인 화면(approvalUrl)에서 승인해도 됩니다.");
     }
     return out;
