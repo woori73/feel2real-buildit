@@ -298,7 +298,7 @@ public class CoordPcTaskService {
       s.append(step++).append(". 검수(필수, 최소 ").append(REQUIRED_REVIEWS).append("회): 이 대화가 아닌 새 세션에서 검수한다 — 터미널에서 ")
           .append("claude -p \"F2R 검수 jobId=").append(jobId).append(" reviewer=REVIEW-1\" 처럼 세션마다 다른 reviewer 이름으로 실행")
           .append("(클라우드에서는 제작 설명 없이 jobId·파일 경로·시험 정보만 준 새 하위 에이전트를 검수마다 따로 띄워도 된다). 검수 세션은 outputs 파일과 get_final_context의 기출을 문항마다 대조해 ① 기출 발문·선택지·편집·부호")
-          .append(" ② 기존 학습지 HTML 모델 반영 ③ 원장님 요구(문항 수·범위·지시) 반영 ④ 첫 페이지 F2R 로고를 확인하고 f2r_pc_task_review")
+          .append(" ② 기존 학습지 HTML 모델 반영 ③ 원장님 요구(f2r_pc_task_list의 이 작업 count·instructions — 원장님께 다시 묻지 않음) 반영 ④ 첫 페이지 F2R 로고를 확인하고 f2r_pc_task_review")
           .append("(jobId, reviewer, verdict PASS·FIX, checks{pastExamStyle, modelHtml, operatorRequest, logo}, notes)로 남긴다.")
           .append(" FIX가 나오면 고친 뒤 다시 새 세션 ").append(REQUIRED_REVIEWS).append("곳의 PASS를 받는다.\n");
     }
@@ -383,7 +383,8 @@ public class CoordPcTaskService {
       out.put("reviewsRequired", REQUIRED_REVIEWS);
     }
     out.put("exam", JSON.convertValue(plan.path("exam"), Map.class));
-    if (withPlan) {
+    // 처리 중이면 목록에서도 원장님 원래 요청을 보여 준다 — 검수 세션이 제작 세션 설명 없이 서버 기록만으로 대조하도록.
+    if (withPlan || CoordJob.RUNNING.equals(j.getStatus())) {
       out.put("publishDigital", plan.path("publishDigital").asBoolean(false));
       if (plan.has("modelFrom")) out.put("modelFrom", JSON.convertValue(plan.path("modelFrom"), Map.class));
       if (plan.hasNonNull("count")) out.put("count", plan.get("count").asInt());

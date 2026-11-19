@@ -195,6 +195,21 @@ class CoordPcTaskServiceTest {
   }
 
   @Test
+  @DisplayName("given 원장님 지시가 있는 처리 중 작업 when 검수 세션이 목록을 봄 then 문항 수·지시가 그대로 보여 다시 묻지 않아도 됨")
+  void runningJobShowsOriginalRequest() {
+    // given
+    String id = (String) service.request(ADMIN, "c", expected("req-pc-0008").put("instructions", "Lesson 7·8만, 서술형 5문항 포함"))
+        .get("jobId");
+    service.claim(ADMIN, id, "CLOUD", "CLOUD-MAKER");
+
+    // when
+    Map<String, Object> row = (Map<String, Object>) ((List<?>) service.list(ADMIN, false, null).get("open")).get(0);
+
+    // then
+    assertThat(row).containsEntry("count", 40).containsEntry("instructions", "Lesson 7·8만, 서술형 5문항 포함");
+  }
+
+  @Test
   @DisplayName("given 실패 보고 when finish FAILED then 검수 없이 실패로 끝남")
   void failWithoutReview() {
     // given
