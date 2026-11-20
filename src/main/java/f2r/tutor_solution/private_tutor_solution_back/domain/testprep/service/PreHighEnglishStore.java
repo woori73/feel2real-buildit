@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 public class PreHighEnglishStore {
   public static final int ROUND_COUNT = 35;
   private static final int LEGACY_ROUND_COUNT = 25;
+  private static final int GRADE2_ROUND_COUNT = 36;
+  private static final int LEGACY_GRADE2_ROUND_COUNT = 48;
   public static final int READING_COUNT = 6;
   public static final int READING_SECONDS = 90 * READING_COUNT;
   public static final int WORD_SECONDS = 5;
@@ -43,9 +45,10 @@ public class PreHighEnglishStore {
     this.json = json;
     this.directory = Path.of(directory);
     Path current = this.directory.resolve("rounds.json");
-    if (Files.isRegularFile(current)) rounds = readPackage(Files.readAllBytes(current), false);
+    if (Files.isRegularFile(current)) rounds = readPackage(Files.readAllBytes(current), false, false);
     Path grade2 = this.directory.resolve("part5.json");
-    if (Files.isRegularFile(grade2)) grade2Rounds = readPackage(Files.readAllBytes(grade2), true);
+    // The deployed file may still contain the 48-round edition until the administrator uploads the revision.
+    if (Files.isRegularFile(grade2)) grade2Rounds = readPackage(Files.readAllBytes(grade2), true, true);
   }
 
   public Round get(int number) {
@@ -81,7 +84,7 @@ public class PreHighEnglishStore {
   }
 
   private List<Round> save(byte[] contents, String filename, boolean grade2) throws IOException {
-    List<Round> replacement = readPackage(contents, grade2);
+    List<Round> replacement = readPackage(contents, grade2, false);
     Files.createDirectories(directory);
     Path incoming = Files.createTempFile(directory, "rounds-", ".json");
     try {
@@ -94,11 +97,15 @@ public class PreHighEnglishStore {
     return replacement;
   }
 
-  private List<Round> readPackage(byte[] contents, boolean grade2) throws IOException {
+  private List<Round> readPackage(byte[] contents, boolean grade2, boolean allowLegacyGrade2) throws IOException {
     if (contents.length > MAX_PACKAGE_BYTES) throw new IllegalArgumentException("자료 용량이 너무 큽니다.");
     List<Round> data = json.readerForListOf(Round.class).readValue(contents);
-    if (data == null || (grade2 ? data.size() != 48 : data.size() != LEGACY_ROUND_COUNT && data.size() != ROUND_COUNT)) {
-      throw new IllegalArgumentException(grade2 ? "5부는 48회입니다." : "회차 25개 또는 35개가 필요합니다.");
+    int count = data == null ? 0 : data.size();
+    boolean validCount = grade2
+        ? count == GRADE2_ROUND_COUNT || allowLegacyGrade2 && count == LEGACY_GRADE2_ROUND_COUNT
+        : count == ROUND_COUNT || count == LEGACY_ROUND_COUNT;
+    if (!validCount) {
+      throw new IllegalArgumentException(grade2 ? "5부는 36회입니다." : "회차 25개 또는 35개가 필요합니다.");
     }
     int number = 0;
     for (Round round : data) {

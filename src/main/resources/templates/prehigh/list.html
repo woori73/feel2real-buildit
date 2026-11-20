@@ -51,8 +51,8 @@
               <td class="nt-go"><a class="nt-btn" href="/naesintest/pre-high?part=4" aria-label="4부 열기">열기</a></td>
             </tr>
             <tr id="part5">
-              <td class="nt-round">5부</td><td>고2 기출 6문항 + 어휘 모의고사</td><td>고2 전국연합학력평가</td>
-              <td th:text="${#lists.isEmpty(grade2Rounds) ? '준비 중' : #lists.size(grade2Rounds) + '회'}">48회</td>
+              <td class="nt-round">5부</td><td>고2 기출 6문항 + 어휘 모의고사</td><td>21~24번 · 29~42번</td>
+              <td th:text="${#lists.isEmpty(grade2Rounds) ? '준비 중' : #lists.size(grade2Rounds) + '회'}">36회</td>
               <td class="nt-go"><a class="nt-btn" href="/naesintest/pre-high?part=5" aria-label="5부 열기">열기</a></td>
             </tr>
             <tr id="part7">
@@ -67,6 +67,7 @@
     <section class="nt-group" th:if="${part == '1' or part == '5'}" th:with="readingRounds=${part == '5' ? grade2Rounds : rounds}" aria-labelledby="ph-reading-title">
       <h2 id="ph-reading-title" th:text="${part == '5' ? '5부. 고2 기출 6문항 + 어휘 모의고사' : '1부. 고1 기출 6문항 + 어휘 모의고사'}">1부. 고1 기출 6문항 + 어휘 모의고사</h2>
       <p class="nt-lead">독해 6문항은 9분 동안 OMR에 답을 표시합니다. 이어서 어휘 문항마다 5초 안에 답을 고릅니다.</p>
+      <p th:if="${part == '5'}" class="nt-lead">2024~2026년 고2 전국연합학력평가 21~24번 · 29~42번</p>
       <p class="nt-msg" th:if="${#lists.isEmpty(readingRounds)}">회차를 준비 중입니다.</p>
       <table class="nt-table nt-schools" th:unless="${#lists.isEmpty(readingRounds)}">
         <thead><tr><th scope="col">회차</th><th scope="col">문항</th><th scope="col">열기</th></tr></thead>
