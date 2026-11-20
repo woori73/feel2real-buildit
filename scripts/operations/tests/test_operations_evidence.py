@@ -143,10 +143,25 @@ class RetentionTest(unittest.TestCase):
         deleted = [u.rsplit("/", 1)[-1] for m, u in requests if m == "DELETE"]
         self.assertEqual(deleted, ["3", "5"])
 
-    def test_diagnostics_and_deploy_remain_manual_with_no_static_credentials(self):
+    def test_diagnostics_are_manual_and_deploy_uses_verified_main_with_no_static_credentials(self):
+        deploy = workflow("deploy-ec2")
+        self.assertEqual(
+            deploy["on"]["workflow_run"],
+            {"workflows": ["Build Check"], "branches": ["main"], "types": ["completed"]},
+        )
+        deploy_condition = deploy["jobs"]["build-and-deploy"]["if"]
+        for condition in (
+            "github.event.workflow_run.conclusion == 'success'",
+            "github.event.workflow_run.event == 'push'",
+            "github.event.workflow_run.head_branch == 'main'",
+            "github.event.workflow_run.head_repository.full_name == github.repository",
+        ):
+            self.assertIn(condition, deploy_condition)
+
         for name in ("prod-readonly-status", "prod-diagnostic", "deploy-ec2"):
             conf = workflow(name)
-            self.assertEqual(list(conf["on"]), ["workflow_dispatch"])
+            expected_triggers = ["workflow_run", "workflow_dispatch"] if name == "deploy-ec2" else ["workflow_dispatch"]
+            self.assertCountEqual(conf["on"], expected_triggers)
             self.assertEqual(conf["permissions"]["id-token"], "write")
             for job in conf["jobs"].values():
                 for step in job.get("steps", []):
