@@ -36,9 +36,19 @@
     <p>18~45번 · 10회</p>
     <p>회차를 준비 중입니다.</p>
   </section>
-  <section class="nt-page ph-part">
+  <section class="nt-page ph-part" id="grammar">
     <h2>3부. 고1 내신 대비 어법 모의고사</h2>
-    <p>회차를 준비 중입니다.</p>
+    <p>단원별 40문항 · 5지선다 · 문항당 20초 · 채점 후 정답과 해설 제공</p>
+    <table class="nt-table">
+      <thead><tr><th scope="col">단원</th><th scope="col">출제 범위</th><th scope="col">응시</th></tr></thead>
+      <tbody>
+        <tr th:each="chapter : ${grammarChapters}">
+          <td class="nt-round" th:text="'CH ' + ${chapter.number}">CH 3</td>
+          <td class="nt-scope" th:text="${chapter.title}">수동태</td>
+          <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{number}(number=${chapter.number})}" th:aria-label="${chapter.title} + ' 모의고사 열기'">열기</a></td>
+        </tr>
+      </tbody>
+    </table>
   </section>
   <details th:if="${canInstall}" class="nt-page">
     <summary>관리자용 회차 자료 등록</summary>

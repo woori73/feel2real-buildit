@@ -4,12 +4,15 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishAttempt;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishAttempt.State;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarAttempt;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -33,21 +36,74 @@ public class PreHighEnglishController {
   private static final MediaType WEBP = MediaType.parseMediaType("image/webp");
 
   public record Action(String action, UUID attempt, int number, int choice) {}
+  public record GrammarAction(String action, UUID attempt, Integer number, Integer choice) {}
 
   private final PreHighEnglishStore store;
+  private final PreHighGrammarBank grammar;
   private final List<String> origins;
 
-  public PreHighEnglishController(PreHighEnglishStore store,
+  public PreHighEnglishController(PreHighEnglishStore store, PreHighGrammarBank grammar,
       @Value("${buildit.unified-assistant.allowed-origins:http://localhost:8080,https://feel2real.co.kr}") List<String> origins) {
     this.store = store;
+    this.grammar = grammar;
     this.origins = origins;
   }
 
   @GetMapping(PAGE)
   public String list(Model model, @AuthenticationPrincipal AuthenticatedPrincipal principal) {
     model.addAttribute("rounds", store.list());
+    model.addAttribute("grammarChapters", grammar.list());
     model.addAttribute("canInstall", principal != null && "ADMIN".equals(principal.role()));
     return "prehigh/list";
+  }
+
+  @GetMapping(PAGE + "/grammar/{chapter}")
+  public String grammarTest(@PathVariable int chapter, Model model) {
+    var content = grammar.get(chapter);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    model.addAttribute("chapter", new PreHighGrammarBank.ChapterInfo(chapter, content.title()));
+    model.addAttribute("count", PreHighGrammarBank.QUESTION_COUNT);
+    model.addAttribute("seconds", PreHighGrammarBank.QUESTION_SECONDS);
+    return "prehigh/grammar";
+  }
+
+  @PostMapping(API + "/grammar/{chapter}")
+  public ResponseEntity<PreHighGrammarAttempt.State> grammarAct(@PathVariable int chapter, @RequestBody GrammarAction command,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
+      @RequestHeader(value = "Origin", required = false) String origin) {
+    checkOrigin(origin);
+    var content = grammar.get(chapter);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    if (command.action() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+    HttpSession session = request.getSession();
+    String key = "pre-high-grammar:" + principal.userId() + ":" + chapter;
+    synchronized (session) {
+      var attempt = (PreHighGrammarAttempt) session.getAttribute(key);
+      Instant now = Instant.now();
+      if ("start".equals(command.action())) {
+        if (attempt == null) {
+          attempt = new PreHighGrammarAttempt(content, now);
+          session.setAttribute(key, attempt);
+        }
+        return noStore(attempt.act("state", 0, 0, now));
+      }
+      if (attempt == null || !attempt.id().equals(command.attempt())) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT);
+      }
+      if ("restart".equals(command.action())) {
+        if (attempt.finished()) {
+          attempt = new PreHighGrammarAttempt(content, now);
+          session.setAttribute(key, attempt);
+        }
+        return noStore(attempt.act("state", 0, 0, now));
+      }
+      try {
+        return noStore(attempt.act(command.action(), Objects.requireNonNullElse(command.number(), 0),
+            Objects.requireNonNullElse(command.choice(), 0), now));
+      } catch (IllegalArgumentException error) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage());
+      }
+    }
   }
 
   @GetMapping(PAGE + "/{round}")
