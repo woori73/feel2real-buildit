@@ -31,15 +31,16 @@ public class PreHighQuestionPdfController {
     this.part2 = part2;
   }
 
-  @GetMapping("/{series:rounds|part2}/{round}/{kind}/{number}.pdf")
+  @GetMapping("/{series:rounds|part2|part5}/{round}/{kind}/{number}.pdf")
   public ResponseEntity<byte[]> roundQuestion(@PathVariable String series, @PathVariable int round, @PathVariable String kind,
       @PathVariable int number, @AuthenticationPrincipal AuthenticatedPrincipal principal) throws IOException {
     requireAdmin(principal);
     boolean practice = "part2".equals(series);
-    var content = practice ? part2.get(round) : store.get(round);
+    boolean grade2 = "part5".equals(series);
+    var content = grade2 ? store.getGrade2(round) : practice ? part2.get(round) : store.get(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
-    String part = practice ? "2부 " : "1부 ";
+    String part = grade2 ? "5부 " : practice ? "2부 " : "1부 ";
     String location = round + "회 " + number + "번";
     byte[] pdf;
     if ("reading".equals(kind)) {
@@ -54,7 +55,7 @@ public class PreHighQuestionPdfController {
     } else {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
-    return download("prehigh-" + (practice ? "part2-" : "") + "r" + round + "-" + kind + "-" + number + ".pdf", pdf);
+    return download("prehigh-" + ("rounds".equals(series) ? "" : series + "-") + "r" + round + "-" + kind + "-" + number + ".pdf", pdf);
   }
 
   private static void requireAdmin(AuthenticatedPrincipal principal) {

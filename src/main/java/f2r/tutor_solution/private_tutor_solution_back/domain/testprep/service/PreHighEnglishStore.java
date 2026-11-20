@@ -36,49 +36,75 @@ public class PreHighEnglishStore {
   private final ObjectMapper json;
   private final Path directory;
   private volatile List<Round> rounds = List.of();
+  private volatile List<Round> grade2Rounds = List.of();
 
   public PreHighEnglishStore(ObjectMapper json,
       @Value("${app.pre-high-english.dir:${user.home}/pre-high-english}") String directory) throws IOException {
     this.json = json;
     this.directory = Path.of(directory);
     Path current = this.directory.resolve("rounds.json");
-    if (Files.isRegularFile(current)) rounds = readPackage(Files.readAllBytes(current));
+    if (Files.isRegularFile(current)) rounds = readPackage(Files.readAllBytes(current), false);
+    Path grade2 = this.directory.resolve("part5.json");
+    if (Files.isRegularFile(grade2)) grade2Rounds = readPackage(Files.readAllBytes(grade2), true);
   }
 
   public Round get(int number) {
-    var current = rounds;
+    return get(rounds, number);
+  }
+
+  public Round getGrade2(int number) {
+    return get(grade2Rounds, number);
+  }
+
+  private static Round get(List<Round> current, int number) {
     return number >= 1 && number <= current.size() ? current.get(number - 1) : null;
   }
 
   public List<RoundInfo> list() {
+    return describe(rounds);
+  }
+
+  public List<RoundInfo> listGrade2() {
+    return describe(grade2Rounds);
+  }
+
+  private static List<RoundInfo> describe(List<Round> rounds) {
     return rounds.stream().map(round -> new RoundInfo(round.number(), round.words().size())).toList();
   }
 
   public synchronized void install(byte[] contents) throws IOException {
-    List<Round> replacement = readPackage(contents);
+    rounds = save(contents, "rounds.json", false);
+  }
+
+  public synchronized void installGrade2(byte[] contents) throws IOException {
+    grade2Rounds = save(contents, "part5.json", true);
+  }
+
+  private List<Round> save(byte[] contents, String filename, boolean grade2) throws IOException {
+    List<Round> replacement = readPackage(contents, grade2);
     Files.createDirectories(directory);
     Path incoming = Files.createTempFile(directory, "rounds-", ".json");
     try {
       Files.write(incoming, contents);
-      Files.move(incoming, directory.resolve("rounds.json"), StandardCopyOption.REPLACE_EXISTING,
+      Files.move(incoming, directory.resolve(filename), StandardCopyOption.REPLACE_EXISTING,
           StandardCopyOption.ATOMIC_MOVE);
     } finally {
       Files.deleteIfExists(incoming);
     }
-    rounds = replacement;
+    return replacement;
   }
 
-  private List<Round> readPackage(byte[] contents) throws IOException {
+  private List<Round> readPackage(byte[] contents, boolean grade2) throws IOException {
     if (contents.length > MAX_PACKAGE_BYTES) throw new IllegalArgumentException("자료 용량이 너무 큽니다.");
     List<Round> data = json.readerForListOf(Round.class).readValue(contents);
-    if (data == null || (data.size() != LEGACY_ROUND_COUNT && data.size() != ROUND_COUNT)) {
-      throw new IllegalArgumentException("회차 25개 또는 35개가 필요합니다.");
+    if (data == null || (grade2 ? data.size() != 48 : data.size() != LEGACY_ROUND_COUNT && data.size() != ROUND_COUNT)) {
+      throw new IllegalArgumentException(grade2 ? "5부는 48회입니다." : "회차 25개 또는 35개가 필요합니다.");
     }
     int number = 0;
     for (Round round : data) {
       if (round == null || round.number() != ++number || round.reading() == null
           || round.reading().size() != READING_COUNT || round.words() == null
-          || round.words().size() < 5 || round.words().size() > 100) {
+          || grade2 && round.words().size() != 15 || round.words().size() < 5 || round.words().size() > 100) {
         throw new IllegalArgumentException("회차, 독해 문항 수 또는 어휘 문항 수를 확인해 주세요.");
       }
       for (Reading item : round.reading()) {

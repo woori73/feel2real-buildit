@@ -12,7 +12,7 @@
     button.disabled = true;
     status.textContent = '회차 자료를 등록하는 중입니다…';
     try {
-      await NT.api('/api/admin/pre-high-english/rounds', {
+      await NT.api(fileForm.dataset.installUrl || '/api/admin/pre-high-english/rounds', {
         method: 'POST', body: $('ph-file').files[0]
       });
       location.reload();

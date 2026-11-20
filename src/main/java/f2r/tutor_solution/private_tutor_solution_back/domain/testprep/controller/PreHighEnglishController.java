@@ -66,6 +66,7 @@ public class PreHighEnglishController {
   @GetMapping(PAGE)
   public String list(Model model, @AuthenticationPrincipal AuthenticatedPrincipal principal) {
     model.addAttribute("rounds", store.list());
+    model.addAttribute("grade2Rounds", store.listGrade2());
     model.addAttribute("part2Rounds", part2.list());
     model.addAttribute("loggedIn", principal != null);
     model.addAttribute("grammarChapters", grammar.list());
@@ -152,26 +153,33 @@ public class PreHighEnglishController {
   @GetMapping(PAGE + "/{round}")
   public String test(@PathVariable int round, Model model,
       @AuthenticationPrincipal AuthenticatedPrincipal principal) {
-    return testPage(store.get(round), false, model, principal);
+    return testPage(store.get(round), 1, model, principal);
   }
 
   /** 2부 응시 화면: 18~45번 28문항 45분, 이어서 어휘 50문항(문항당 5초). */
   @GetMapping(PAGE2 + "/{round}")
   public String testPart2(@PathVariable int round, Model model,
       @AuthenticationPrincipal AuthenticatedPrincipal principal) {
-    return testPage(part2.get(round), true, model, principal);
+    return testPage(part2.get(round), 2, model, principal);
   }
 
-  private String testPage(Round content, boolean practice, Model model, AuthenticatedPrincipal principal) {
+  @GetMapping(PAGE + "/part5/{round}")
+  public String testPart5(@PathVariable int round, Model model,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    return testPage(store.getGrade2(round), 5, model, principal);
+  }
+
+  private String testPage(Round content, int part, Model model, AuthenticatedPrincipal principal) {
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     int round = content.number();
     model.addAttribute("round", round);
-    model.addAttribute("part", practice ? 2 : 1);
-    model.addAttribute("api", (practice ? API2 : API) + "/" + round);
+    boolean practice = part == 2;
+    model.addAttribute("part", part);
+    model.addAttribute("api", (part == 1 ? API : API + "/part" + part) + "/" + round);
     model.addAttribute("numbers", practice ? PreHighPart2Store.numbers() : List.of());
     model.addAttribute("shared", content.reading().stream().map(item -> item.passage() != null).toList());
     if (principal != null && "ADMIN".equals(principal.role())) {
-      String base = ADMIN + (practice ? "/part2/" : "/rounds/") + round;
+      String base = ADMIN + (part == 1 ? "/rounds/" : "/part" + part + "/") + round;
       int first = practice ? PreHighPart2Store.FIRST_NUMBER : 1;
       model.addAttribute("pdfGroups", List.of(
           new PdfGroup("독해", base + "/reading", first, first + content.reading().size() - 1),
@@ -215,6 +223,16 @@ public class PreHighEnglishController {
     return run(content, part2Key(principal, round), PreHighPart2Store.READING_SECONDS, command, request);
   }
 
+  @PostMapping(API + "/part5/{round}")
+  public ResponseEntity<State> actPart5(@PathVariable int round, @RequestBody Action command,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
+      @RequestHeader(value = "Origin", required = false) String origin) {
+    checkOrigin(origin);
+    var content = store.getGrade2(round);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    return run(content, grade2Key(principal, round), PreHighEnglishStore.READING_SECONDS, command, request);
+  }
+
   private ResponseEntity<State> run(Round content, String key, int readingSeconds, Action command,
       HttpServletRequest request) {
     HttpSession session = request.getSession();
@@ -252,6 +270,16 @@ public class PreHighEnglishController {
     return picture(part2Key(principal, round), number, part, request);
   }
 
+  @GetMapping(API + "/part5/{round}/image/{number}/{part}")
+  public ResponseEntity<byte[]> imagePart5(@PathVariable int round, @PathVariable int number, @PathVariable String part,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
+    return picture(grade2Key(principal, round), number, part, request);
+  }
+
+  private static String grade2Key(AuthenticatedPrincipal principal, int round) {
+    return "pre-high-5:" + principal.userId() + ":" + round;
+  }
+
   private ResponseEntity<byte[]> picture(String key, int number, String part, HttpServletRequest request) {
     HttpSession session = request.getSession(false);
     var attempt = session == null ? null : (PreHighEnglishAttempt) session.getAttribute(key);
@@ -269,8 +297,8 @@ public class PreHighEnglishController {
         .body(Base64.getDecoder().decode(encoded));
   }
 
-  @PostMapping(value = ADMIN + "/rounds", consumes = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity<List<PreHighEnglishStore.RoundInfo>> install(HttpServletRequest request,
+  @PostMapping(value = ADMIN + "/{series:rounds|part5}", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<PreHighEnglishStore.RoundInfo>> install(@PathVariable String series, HttpServletRequest request,
       @RequestHeader(value = "Origin", required = false) String origin) throws IOException {
     checkOrigin(origin);
     byte[] contents = request.getInputStream().readNBytes(PreHighEnglishStore.MAX_PACKAGE_BYTES + 1);
@@ -278,6 +306,10 @@ public class PreHighEnglishController {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "32MB 이하의 회차 자료를 올려 주세요.");
     }
     try {
+      if ("part5".equals(series)) {
+        store.installGrade2(contents);
+        return noStore(store.listGrade2());
+      }
       store.install(contents);
     } catch (IllegalArgumentException | com.fasterxml.jackson.core.JsonProcessingException error) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "회차 자료의 형식을 확인해 주세요.");
