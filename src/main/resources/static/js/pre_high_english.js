@@ -29,15 +29,20 @@
     return;
   }
 
-  const api = '/api/naesintest/pre-high/' + Number(exam.dataset.round);
+  const api = exam.dataset.api || '/api/naesintest/pre-high/' + Number(exam.dataset.round);
   const shared = JSON.parse(exam.dataset.shared);
+  // 화면 문항 번호: 2부는 시험지 번호(18~45), 1부는 1번부터.
+  const numbers = JSON.parse(exam.dataset.numbers || '[]');
+  const no = i => numbers[i] || i + 1;
   const body = $('ph-body');
   const status = $('ph-status');
-  let current, deadline = 0, active = 0, pending = false, wrongOnly = true;
+  let current, deadline = 0, active = 0, pending = false;
+  // 2부는 채점 뒤 문제지 전체(28문항)의 근거 표시와 해설을 먼저 보여 준다.
+  let wrongOnly = exam.dataset.part !== '2';
 
   function image(number, part, defer = false) {
     return '<img class="nt-img' + (part === 'passage' ? ' nt-passage' : '') + '" src="' + api
-      + '/image/' + (number + 1) + '/' + part + '" alt="' + (number + 1)
+      + '/image/' + (number + 1) + '/' + part + '" alt="' + no(number)
       + '번 ' + (part === 'passage' ? '공통 지문' : '독해 문항') + '"' + (defer ? ' loading="lazy"' : '') + '>';
   }
 
@@ -51,7 +56,7 @@
           + '%;height:' + height / 100 + '%';
         const answer = kind === 'answer';
         return '<span class="ph-mark ' + (answer ? 'ph-mark-answer' : 'ph-mark-evidence')
-          + '" aria-hidden="true" style="' + style + '">' + (answer ? '<b>정답</b>' : '') + '</span>';
+          + '" aria-hidden="true" style="' + style + '">' + (answer && part === 'question' ? '<b>정답</b>' : '') + '</span>';
       }).join('') + '</div>';
   }
 
@@ -61,7 +66,7 @@
       const selected = current.readingAnswers[number] === choice;
       return '<button type="button" class="' + style + (selected ? ' is-on' : '') + '" data-choice="' + choice
         + '" data-number="' + (number + 1) + '" aria-pressed="' + selected
-        + '" aria-label="' + (number + 1) + '번 ' + label + '">'
+        + '" aria-label="' + no(number) + '번 ' + label + '">'
         + (style === 'nt-ob' ? choice : label) + '</button>';
     }).join('');
   }
@@ -69,14 +74,15 @@
   function renderReading() {
     const rows = current.readingAnswers.map((answer, i) => '<div class="nt-omr-row'
       + (i === active ? ' is-current' : '') + '"><button class="nt-omr-no" type="button" data-go="' + i
-      + '" aria-label="' + (i + 1) + '번으로">' + (i + 1) + '</button>' + omrButtons(i, 'nt-omr-b') + '</div>').join('');
+      + '" aria-label="' + no(i) + '번으로">' + no(i) + '</button>' + omrButtons(i, 'nt-omr-b') + '</div>').join('');
     const answered = current.readingAnswers.filter(Boolean).length;
     return '<div class="nt-run-grid"><section class="nt-page"><div class="nt-qbar">'
       + '<button type="button" class="nt-nav" data-go="' + (active - 1) + '"' + (active === 0 ? ' disabled' : '') + '>이전</button>'
-      + '<span class="nt-qpos"><b>' + (active + 1) + '</b> / ' + shared.length + '</span>'
+      + '<span class="nt-qpos">' + (numbers.length ? '<b>' + no(active) + '</b>번 · ' + (active + 1) + ' / ' + shared.length
+        : '<b>' + (active + 1) + '</b> / ' + shared.length) + '</span>'
       + '<button type="button" class="nt-nav" data-go="' + (active + 1) + '"' + (active + 1 === shared.length ? ' disabled' : '') + '>다음</button></div>'
       + '<div class="nt-sheet">' + (shared[active] ? image(active, 'passage') : '') + image(active, 'question') + '</div>'
-      + '<div class="nt-pick"><div class="nt-pick-row"><span class="nt-pick-no">' + (active + 1) + '</span>'
+      + '<div class="nt-pick"><div class="nt-pick-row"><span class="nt-pick-no">' + no(active) + '</span>'
       + omrButtons(active, 'nt-ob') + '</div></div></section>'
       + '<aside class="nt-omr" aria-label="OMR 답안지"><div class="nt-omr-head"><button class="nt-omr-close" type="button" data-toggle="close">닫기</button><h2>OMR 답안지</h2></div>'
       + '<div class="nt-omr-rows">' + rows + '</div><div class="nt-omr-foot"><p id="ph-omr-count">답한 문항 ' + answered + ' / ' + shared.length + '</p>'
@@ -108,10 +114,14 @@
 
   function explanation(text) {
     const sections = text.split('\n').map(line => line.trim()).filter(Boolean);
-    return '<div class="ph-explanation">' + sections.map(line => {
-      const section = /^(내용 요약|주제|해설|풀이 전략):\s*(.+)$/.exec(line);
-      return section ? '<p><strong>' + NT.esc(section[1]) + '</strong> ' + NT.esc(section[2]) + '</p>'
-        : '<p>' + NT.esc(line) + '</p>';
+    return '<div class="ph-explanation">' + sections.map((line, i) => {
+      const section = /^(내용 요약|주제|해설|풀이 전략|어법 포인트):\s*(.+)$/.exec(line);
+      if (section) return '<p><strong>' + NT.esc(section[1]) + '</strong> ' + NT.esc(section[2]) + '</p>';
+      // 2부 해설: 첫 줄 '정답 ③ · 유형 (2점)', 이어서 [유형 전략]·[풀이 과정]·[정답 근거]·[오답 분석]·[어휘]
+      const tag = /^\[(.+?)\]\s*(.*)$/.exec(line);
+      if (tag) return '<p><strong>' + NT.esc(tag[1]) + '</strong>' + (tag[2] ? ' ' + NT.esc(tag[2]) : '') + '</p>';
+      if (i === 0 && /^정답 /.test(line)) return '<p class="ph-exp-head">' + NT.esc(line) + '</p>';
+      return '<p>' + NT.esc(line) + '</p>';
     }).join('') + '</div>';
   }
 
@@ -124,8 +134,8 @@
     const details = (label, results) => {
       const shown = wrongOnly ? results.filter(result => !correct(result)) : results;
       return '<section class="nt-page"><h2>' + label + ' ' + score(results) + ' / ' + results.length + '</h2>'
-        + (shown.length ? shown.map((result, index) => '<details class="nt-exp"' + (index === 0 ? ' open' : '') + '><summary>' + result.number
-          + '번' + (result.word ? ' · ' + NT.esc(result.word) : '') + ' · ' + (correct(result) ? '정답' : result.chosen ? '오답' : '미응답')
+        + (shown.length ? shown.map((result, index) => '<details class="nt-exp"' + (index === 0 ? ' open' : '') + '><summary>'
+          + (result.word ? result.number : no(result.number - 1)) + '번' + (result.word ? ' · ' + NT.esc(result.word) : '') + ' · ' + (correct(result) ? '정답' : result.chosen ? '오답' : '미응답')
           + '</summary><p>내 답 ' + (circle[result.chosen - 1] || '미응답') + ' · 정답 ' + circle[result.answer - 1] + '</p>'
           + (result.explanation ? (shared[result.number - 1] ? reviewImage(result, 'passage') : '')
             + reviewImage(result, 'question') + explanation(result.explanation) : '')

@@ -21,16 +21,23 @@ public final class PreHighEnglishAttempt {
   private final Round round;
   private final int[] readingAnswers;
   private final int[] wordAnswers;
+  private final int readingSeconds;
   private Phase phase = Phase.READING;
   private Instant deadline;
   private int wordIndex;
   private long elapsedMillis;
 
   public PreHighEnglishAttempt(Round round, Instant now) {
+    this(round, now, READING_SECONDS);
+  }
+
+  /** 독해 제한 시간이 다른 회차(2부: 28문항 45분)용. */
+  public PreHighEnglishAttempt(Round round, Instant now, int readingSeconds) {
     this.round = round;
+    this.readingSeconds = readingSeconds;
     this.readingAnswers = new int[round.reading().size()];
     this.wordAnswers = new int[round.words().size()];
-    deadline = now.plusSeconds(READING_SECONDS);
+    deadline = now.plusSeconds(readingSeconds);
   }
 
   public UUID id() { return id; }
@@ -72,7 +79,7 @@ public final class PreHighEnglishAttempt {
   }
 
   private void finishReading(Instant now) {
-    elapsedMillis += elapsedInPeriod(now, READING_SECONDS);
+    elapsedMillis += elapsedInPeriod(now, readingSeconds);
     phase = Phase.WORD_READY;
   }
 

@@ -374,6 +374,7 @@ body.nt-body {
 }
 .ph-explanation p + p { margin-top: 8px; }
 .ph-explanation strong { display: block; color: #1d4ed8; }
+.ph-exp-head { font-weight: 700; color: #0f2f5c; }
 
 .ph-review-image { position: relative; width: 480px; max-width: 100%; margin: 0 auto; isolation: isolate; }
 .ph-review-image .nt-img { width: 100%; padding: 0; border: 0; }
@@ -382,7 +383,7 @@ body.nt-body {
 .ph-mark-evidence { background: #ffe55c; mix-blend-mode: multiply; }
 .ph-mark-answer { border: 2px solid #1d4ed8; border-radius: 4px; }
 .ph-mark-answer b {
-  position: absolute; left: 0; bottom: 100%; width: max-content; margin-bottom: 2px;
+  position: absolute; left: calc(100% + 4px); top: 50%; transform: translateY(-50%); width: max-content;
   padding: 1px 5px; color: #fff; background: #1d4ed8; border-radius: 3px;
   font: 700 11px/1.35 var(--nt-sans);
 }

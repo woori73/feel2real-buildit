@@ -71,4 +71,20 @@ class PreHighEnglishAttemptTest {
     assertEquals(19_000, attempt.act("state", 0, 0, START.plusSeconds(99)).elapsedMillis());
   }
 
+
+  @Test
+  @org.junit.jupiter.api.DisplayName("given 2부 회차(독해 45분), when 시작하면, then 남은 시간은 2700초이고 시간이 지나면 어휘 단계로 넘어간다")
+  void part2ReadingHasFortyFiveMinutes() {
+    // given
+    var attempt = new PreHighEnglishAttempt(ROUND, START, PreHighPart2Store.READING_SECONDS);
+    // when
+    var started = attempt.act("state", 0, 0, START);
+    var before = attempt.act("read-answer", 1, 3, START.plusSeconds(2699));
+    var after = attempt.act("state", 0, 0, START.plusSeconds(2700));
+    // then
+    assertEquals(2_700_000, started.remainingMillis());
+    assertEquals(Phase.READING, before.phase());
+    assertEquals(Phase.WORD_READY, after.phase());
+    assertEquals(2_700_000, after.elapsedMillis());
+  }
 }
