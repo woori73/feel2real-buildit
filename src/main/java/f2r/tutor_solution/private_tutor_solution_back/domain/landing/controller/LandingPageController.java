@@ -43,6 +43,11 @@ public class LandingPageController {
   @Value("${app.home.agent-trailer-path:" + DEFAULT_AGENT_TRAILER_PATH + "}")
   private String agentTrailerPath = DEFAULT_AGENT_TRAILER_PATH;
 
+  // AI AGENT 1화 YouTube video supplied by the user on 2026-11-20. It replaces the trailer slot; an empty override shows the trailer again.
+  public static final String DEFAULT_AGENT_YOUTUBE_ID = "8CHtg0nkmPA";
+  @Value("${app.home.agent-youtube-id:" + DEFAULT_AGENT_YOUTUBE_ID + "}")
+  private String agentYoutubeId = DEFAULT_AGENT_YOUTUBE_ID;
+
   // 무통장입금 계좌 공개는 이 설정 하나로만 켠다(신청 기능 설정과 독립). 기본은 비공개, 운영(prd)은 승인된 설정으로 켠다.
   @Value("${app.home.bank-transfer-public:false}")
   private boolean bankTransferPublic;
@@ -55,6 +60,7 @@ public class LandingPageController {
     // The game build runs inside Feel2Real; the Nimble URL stays as the fallback link.
     model.addAttribute("homeReviewGamePath", HomeReviewGameController.PAGE_PATH);
     model.addAttribute("homeAgentTrailerPath", trailerPath());
+    model.addAttribute("homeAgentYoutubeId", safeYoutubeId(agentYoutubeId));
     model.addAttribute("homeBankTransfer", bankTransferPublic ? HomeBankTransfer.CURRENT : null);
     Map<LandingVideoSlotKey, LandingVideoRenderItem> videos =
         new EnumMap<>(LandingVideoSlotKey.class);
@@ -76,6 +82,11 @@ public class LandingPageController {
   static String safePromoPath(String path) {
     return path != null && path.matches("/video/landing/[A-Za-z0-9][A-Za-z0-9_-]*\\.mp4")
         ? path : "";
+  }
+
+  /** YouTube 영상 ID(11자)만 통과시킨다. 그 밖의 값은 링크가 만들어지지 않도록 빈 문자열로 바꾼다. */
+  static String safeYoutubeId(String id) {
+    return id != null && id.matches("[A-Za-z0-9_-]{11}") ? id : "";
   }
 
   static String safeReviewGameUrl(String value) {

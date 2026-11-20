@@ -328,6 +328,10 @@ html:has(.home-light.menu-open) { overflow: hidden; }
 /* ---- AI 드라마 제작 ---- */
 .hl-trailer { border-radius: 22px; overflow: hidden; background: #0B0F1A; color: #fff; display: flex; flex-direction: column; }
 .hl-trailer video, .hl-trailer-poster { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #05080f; }
+.hl-trailer-link { position: relative; display: block; }
+.hl-trailer-playmark { position: absolute; left: 50%; top: 50%; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; background: rgba(11, 15, 26, .72); }
+.hl-trailer-playmark::after { content: ""; position: absolute; left: 30px; top: 22px; border-style: solid; border-width: 16px 0 16px 26px; border-color: transparent transparent transparent #fff; }
+.hl-trailer-link:hover .hl-trailer-playmark, .hl-trailer-link:focus-visible .hl-trailer-playmark { background: #E5202E; }
 .hl-trailer-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 18px; padding: 20px 28px; }
 .hl-trailer-title { display: flex; flex-direction: column; gap: 2px; }
 .hl-trailer-title strong { font-size: 22px; font-weight: 800; color: #fff; }
