@@ -211,3 +211,52 @@ test('openTorchCamera: 어느 카메라도 플래시를 지원하지 않으면 �
   assert.equal(r.stream.track.stopped, false);
   assert.equal(r.stream.track.getSettings().deviceId, 'main');
 });
+
+test('mergeNearby: 렌즈 하나의 반사가 가까운 점 여러 개로 쪼개져도 한 곳으로 센다', () => {
+  // given — 같은 렌즈 주변 점 3개(서로 10픽셀 안)와 멀리 떨어진 점 1개
+  const cands = [
+    { cx: 100, cy: 50, w: 2, h: 2, score: 5, hits: 2 },
+    { cx: 108, cy: 54, w: 2, h: 2, score: 9, hits: 3 },
+    { cx: 103, cy: 60, w: 2, h: 2, score: 4, hits: 2 },
+    { cx: 250, cy: 120, w: 2, h: 2, score: 7, hits: 2 },
+  ];
+  // when
+  const merged = L.mergeNearby(cands, 16);
+  // then
+  assert.equal(merged.length, 2);
+  assert.equal(merged[0].cx, 108, '가장 많이 잡힌 점을 대표로 남긴다');
+  assert.equal(merged[0].members, 3);
+  assert.equal(merged[1].cx, 250);
+});
+
+test('mergeNearby: 반경보다 멀리 떨어진 렌즈 두 개는 따로 센다', () => {
+  // given
+  const cands = [{ cx: 10, cy: 10, w: 1, h: 1, score: 1, hits: 2 }, { cx: 40, cy: 10, w: 1, h: 1, score: 1, hits: 2 }];
+  // when
+  const merged = L.mergeNearby(cands, 16);
+  // then
+  assert.equal(merged.length, 2);
+});
+
+test('fitRect: 세로로 긴 프레임을 가로로 넓은 칸에 넣으면 좌우에 여백을 두고 잘리지 않게 줄인다', () => {
+  // given — 180×320 세로 프레임, 640×360 화면 칸
+  // when
+  const f = L.fitRect(180, 320, 640, 360);
+  // then
+  assert.equal(f.scale, 360 / 320);
+  assert.equal(f.oy, 0);
+  assert.equal(f.ox, (640 - 180 * (360 / 320)) / 2);
+  // 프레임 오른쪽 아래 끝이 화면 칸 안에 들어온다
+  assert.ok(f.ox + 180 * f.scale <= 640);
+  assert.ok(f.oy + 320 * f.scale <= 360);
+});
+
+test('화면: 영상과 원 그림은 잘리지 않게(contain) 같은 방식으로 맞춘다', () => {
+  // given
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/easy/exam_security_lens.html'), 'utf8');
+  // when & then
+  assert.match(html, /\.stage video, \.stage canvas \{[^}]*object-fit: contain/);
+  assert.doesNotMatch(html, /object-fit: cover/);
+});

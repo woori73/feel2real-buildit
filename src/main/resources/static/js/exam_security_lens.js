@@ -128,6 +128,32 @@
       .sort((a, b) => b.hits - a.hits || b.score - a.score);
   }
 
+  /**
+   * 가까이 붙은 후보를 하나로 합친다. 렌즈 하나의 반사가 작은 점 여러 개로 쪼개지거나
+   * 손이 떨려 자리가 조금씩 달라지면 같은 렌즈를 여러 곳으로 세게 된다.
+   * 반경 radius(프레임 픽셀) 안의 후보는 한 자리로 보고, 가장 많이·밝게 잡힌 것을 대표로 남긴다.
+   */
+  function mergeNearby(candidates, radius) {
+    const r = radius == null ? 16 : radius;
+    const sorted = (candidates || []).slice().sort((a, b) => (b.hits || 0) - (a.hits || 0) || b.score - a.score);
+    const merged = [];
+    sorted.forEach((c) => {
+      const near = merged.find((m) => Math.hypot(m.cx - c.cx, m.cy - c.cy) <= r);
+      if (near) near.members++;
+      else merged.push(Object.assign({}, c, { members: 1 }));
+    });
+    return merged;
+  }
+
+  /**
+   * 프레임(srcW×srcH)을 화면 칸(boxW×boxH)에 잘림 없이 넣을 때의 배율과 여백(object-fit: contain).
+   * 프레임 좌표 (x, y) → 화면 좌표 (ox + x·scale, oy + y·scale).
+   */
+  function fitRect(srcW, srcH, boxW, boxH) {
+    const scale = Math.min(boxW / srcW, boxH / srcH);
+    return { scale, ox: (boxW - srcW * scale) / 2, oy: (boxH - srcH * scale) / 2 };
+  }
+
   /** 감독관 화면에 띄울 문장. 기계는 판정하지 않는다. */
   function verdict(candidates) {
     const n = (candidates || []).length;
@@ -226,6 +252,9 @@
         const stream = opened.stream;
         video.srcObject = stream;
         await video.play();
+        if (video.videoWidth && video.videoHeight) {
+          video.parentElement.style.aspectRatio = video.videoWidth + ' / ' + video.videoHeight; // 영상 전체가 보이게
+        }
         track = stream.getVideoTracks()[0];
         if (!opened.torch && !hasTorch(stream)) {
           say('카메라는 켜졌지만 이 휴대폰에서는 웹 화면이 플래시를 켤 수 없습니다. 아이폰 사파리는 지원하지 않고, 일부 안드로이드 기종도 막혀 있습니다. 휴대폰 기종과 크롬 버전을 알려 주세요.');
@@ -253,25 +282,46 @@
       await sleep(220); // 노출이 따라오는 시간
     }
 
-    function draw(cands, fw, fh) {
-      overlay.width = video.clientWidth;
-      overlay.height = video.clientHeight;
+    function clearOverlay() {
       const ctx = overlay.getContext('2d');
       ctx.clearRect(0, 0, overlay.width, overlay.height);
-      const sx = overlay.width / fw;
-      const sy = overlay.height / fh;
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#f6ad55';
-      cands.forEach((c) => {
-        const r = Math.max(10, Math.max(c.w * sx, c.h * sy));
+    }
+
+    /** 후보 자리에 번호 붙은 큰 원과 십자선을 그린다(영상은 object-fit: contain이라 잘린 곳이 없다). */
+    function draw(cands, fw, fh) {
+      overlay.width = overlay.clientWidth;
+      overlay.height = overlay.clientHeight;
+      const ctx = overlay.getContext('2d');
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const f = fitRect(fw, fh, overlay.width, overlay.height);
+      cands.forEach((c, i) => {
+        const x = f.ox + c.cx * f.scale;
+        const y = f.oy + c.cy * f.scale;
+        const r = Math.max(22, Math.max(c.w, c.h) * f.scale * 2);
+        ctx.lineWidth = 7; ctx.strokeStyle = '#fff';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#e53e3e';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
         ctx.beginPath();
-        ctx.arc(c.cx * sx, c.cy * sy, r, 0, Math.PI * 2);
+        ctx.moveTo(x - r - 10, y); ctx.lineTo(x - r + 8, y);
+        ctx.moveTo(x + r - 8, y); ctx.lineTo(x + r + 10, y);
+        ctx.moveTo(x, y - r - 10); ctx.lineTo(x, y - r + 8);
+        ctx.moveTo(x, y + r - 8); ctx.lineTo(x, y + r + 10);
         ctx.stroke();
+        const label = String(i + 1);
+        ctx.font = 'bold 18px system-ui, sans-serif';
+        ctx.fillStyle = '#e53e3e';
+        ctx.beginPath(); ctx.arc(x + r * 0.75, y - r * 0.75, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, x + r * 0.75, y - r * 0.75 + 1);
       });
     }
 
     async function scan() {
       scanBtn.disabled = true;
+      clearOverlay();
+      if (video.paused) await video.play(); // 지난 결과로 멈춰 둔 화면을 다시 움직인다
       const t0 = performance.now();
       try {
         const rounds = [];
@@ -285,8 +335,12 @@
           rounds.push(findCandidates(on, off));
         }
         await torch(false);
-        const cands = consistentCandidates(rounds, 6, 2);
+        const cands = mergeNearby(consistentCandidates(rounds, 10, 2), 16);
         draw(cands, size.w, size.h);
+        if (cands.length) {
+          video.pause(); // 휴대폰을 움직여도 원 자리를 볼 수 있게 화면을 멈춘다
+          say('화면을 멈췄습니다. 빨간 원(번호) 자리를 직접 확인하세요. 다시 찾으려면 [렌즈 찾기]를 누르세요.');
+        }
         const v = verdict(cands);
         result.dataset.level = v.level;
         result.querySelector('strong').textContent = v.title;
@@ -302,5 +356,5 @@
     scanBtn.addEventListener('click', scan);
   }
 
-  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
+  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
 });
