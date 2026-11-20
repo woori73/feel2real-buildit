@@ -19,6 +19,7 @@ class PreHighEnglishListTemplateTest {
   private Document render(String part) {
     return render("prehigh/list", part, Map.of(
         "rounds", List.of(Map.of("number", 1, "words", 15)),
+        "grade2Rounds", List.of(Map.of("number", 1, "words", 15)),
         "part2Rounds", List.of(Map.of("number", 1, "source", "고1 모의고사")),
         "loggedIn", true,
         "grammarChapters", List.of(Map.of("number", 3, "title", "수동태")),
@@ -52,7 +53,7 @@ class PreHighEnglishListTemplateTest {
     // then
     assertThat(chooser.select(".nt-table.nt-schools tbody a").eachAttr("href")).containsExactly(
         "/naesintest/pre-high?part=1", "/naesintest/pre-high?part=2", "/naesintest/pre-high?part=3",
-        "/naesintest/pre-high?part=4");
+        "/naesintest/pre-high?part=4", "/naesintest/pre-high?part=5");
     assertThat(chooser.select(".nt-table.nt-schools tbody tr").eachText()).anyMatch(row -> row.contains("18~45번 1회"));
     assertThat(chooser.select("#ph-install")).hasSize(1);
     assertThat(render("unknown").select("#ph-parts-title")).hasSize(1);
@@ -62,11 +63,14 @@ class PreHighEnglishListTemplateTest {
   void selectedPartShowsOnlyItsOwnContent() {
     // given / when
     Document reading = render("1");
+    Document grade2 = render("5");
     Document practice = render("2");
     Document grammar = render("3");
     Document vocabulary = render("4");
 
     // then
+    assertThat(grade2.select("table tbody a").eachAttr("href")).containsExactly("/naesintest/pre-high/part5/1");
+    assertThat(grade2.select("#ph-install").attr("data-install-url")).isEqualTo("/api/admin/pre-high-english/part5");
     assertThat(reading.select("table tbody a").eachAttr("href")).containsExactly("/naesintest/pre-high/1");
     assertThat(practice.select(".nt-group").text()).contains("2부", "18~45번", "45분");
     assertThat(practice.select("table tbody a").eachAttr("href")).containsExactly(
@@ -89,6 +93,7 @@ class PreHighEnglishListTemplateTest {
     // given
     Map<String, Object> student = Map.of(
         "rounds", List.of(Map.of("number", 1, "words", 15)),
+        "grade2Rounds", List.of(Map.of("number", 1, "words", 15)),
         "part2Rounds", List.of(Map.of("number", 1, "source", "고1 모의고사")),
         "loggedIn", true,
         "grammarChapters", List.of(Map.of("number", 3, "title", "수동태")),
