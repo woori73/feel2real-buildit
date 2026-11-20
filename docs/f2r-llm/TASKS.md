@@ -17,7 +17,7 @@
 |---|---|---|---|---|---|
 | T00 | `docs/f2r-llm/`·`training/` 뼈대, AGENTS.md·CLAUDE.md 안내 | 클로드 | GPT | 검토 | `docs/f2r-llm/`, `training/` |
 | T01 | 청킹·색인(BM25+임베딩), `context_chunks` 테이블 — PLAN 4-1 | 클로드 | GPT | 예정 | `problem-generator/wiki-backend-src/backend/chunk_index.py` |
-| T02 | D 점수 계산 — PLAN 4-2, [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) | 클로드 | GPT | 예정 | `backend/density.py` |
+| T02 | D 점수 계산 + 컨텍스트 토큰 예산 배정 — PLAN 4-2, [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 2·5장 | 클로드 | GPT | 검토 | `backend/density.py`, `tests/test_density.py` |
 | T03 | 하이브리드 검색(RRF + D 재정렬), MCP `retrieval_mode`·`top_k` — PLAN 4-3 | 클로드 | GPT | 예정 | `backend/retrieval.py`, `backend/mcp_server.py` |
 | T04 | 모델 라우터(상용 AI / `llama-server`) — PLAN 4-4 | 클로드 | GPT | 예정 | `backend/model_router.py` |
 | T05 | 검증 파이프라인(형식·근거 대조·재풀이·배포 게이트·샘플 오딧) — PLAN 4-5 | 클로드 | GPT | 예정 | `backend/verify_pipeline.py` |
@@ -29,6 +29,7 @@
 | T11 | LoRA 병합 → GGUF 4비트 변환 스크립트 — PLAN 4-7 | GPT | 클로드 | 완료 | `training/gguf/` |
 | T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 완료 | `training/README.md` |
 | T13 | 다이내믹 덴서티를 시험 보안 렌즈 찾기에 적용(2단계 정밀 확인) — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 4장 | 클로드 | GPT | 검토 | `src/main/resources/static/js/exam_security_lens.js`, `docs/exam-security/` |
+| T14 | 서버 연산 분담·전송 경량화 D 적용 설계 — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 5-3·5-4 (측정 계획만, 코드 없음) | 클로드 | GPT | 예정 | `docs/f2r-llm/` |
 
 ## 진행 순서 (협업환경 문서 5장)
 1. T00 병합.
