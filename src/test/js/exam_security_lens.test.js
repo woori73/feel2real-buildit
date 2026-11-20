@@ -132,3 +132,82 @@ test('메뉴: 원장 휴대폰 앱 첫 화면(/easy/app)에 렌즈 찾기 타일
   assert.ok(tile, '렌즈 찾기 타일이 없다');
   assert.match(tile[0], /렌즈 찾기/);
 });
+
+/** 가짜 카메라 스트림. torch가 true면 플래시를 조절할 수 있다. */
+function fakeStream(deviceId, torch) {
+  const track = {
+    stopped: false,
+    getCapabilities: () => (torch ? { torch: true } : {}),
+    getSettings: () => ({ deviceId }),
+    stop() { this.stopped = true; },
+  };
+  return { track, getVideoTracks: () => [track], getTracks: () => [track] };
+}
+
+/** 가짜 navigator.mediaDevices. cameras: [{deviceId, label, torch}] , 기본(facingMode) 카메라는 첫 번째. */
+function fakeMedia(cameras) {
+  const opened = [];
+  return {
+    opened,
+    async getUserMedia(c) {
+      const id = c.video.deviceId ? c.video.deviceId.exact : cameras[0].deviceId;
+      const cam = cameras.find((x) => x.deviceId === id);
+      const s = fakeStream(cam.deviceId, cam.torch);
+      opened.push(s);
+      return s;
+    },
+    async enumerateDevices() {
+      return cameras.map((x) => ({ kind: 'videoinput', deviceId: x.deviceId, label: x.label }));
+    },
+  };
+}
+
+test('orderCameras: 지금 카메라는 빼고 이름에 뒷면(back·후면)이 있는 카메라를 앞에 둔다', () => {
+  // given
+  const devices = [
+    { kind: 'videoinput', deviceId: 'a', label: 'camera2 0, facing back' },
+    { kind: 'videoinput', deviceId: 'b', label: 'camera2 1, facing front' },
+    { kind: 'audioinput', deviceId: 'm', label: 'mic' },
+    { kind: 'videoinput', deviceId: 'c', label: '후면 카메라 2' },
+  ];
+  // when
+  const order = L.orderCameras(devices, 'a').map((d) => d.deviceId);
+  // then
+  assert.deepEqual(order, ['c', 'b']);
+});
+
+test('openTorchCamera: 기본 뒷면 카메라에 플래시가 없으면(초광각 등) 플래시가 있는 다른 뒷면 카메라를 찾아 연다', async () => {
+  // given
+  const media = fakeMedia([
+    { deviceId: 'wide', label: 'camera2 2, facing back', torch: false },
+    { deviceId: 'front', label: 'camera2 1, facing front', torch: false },
+    { deviceId: 'main', label: 'camera2 0, facing back', torch: true },
+  ]);
+  // when
+  const r = await L.openTorchCamera(media, { wait: async () => {} });
+  // then
+  assert.equal(r.torch, true);
+  assert.equal(r.stream.track.getSettings().deviceId, 'main');
+  assert.equal(media.opened[0].track.stopped, true, '처음 연 카메라는 닫는다');
+});
+
+test('openTorchCamera: 기본 카메라가 플래시를 지원하면 다른 카메라를 열지 않는다', async () => {
+  // given
+  const media = fakeMedia([{ deviceId: 'main', label: 'back', torch: true }, { deviceId: 'other', label: 'back 2', torch: true }]);
+  // when
+  const r = await L.openTorchCamera(media, { wait: async () => {} });
+  // then
+  assert.equal(r.torch, true);
+  assert.equal(media.opened.length, 1);
+});
+
+test('openTorchCamera: 어느 카메라도 플래시를 지원하지 않으면 미리보기용 뒷면 카메라와 torch=false를 돌려준다', async () => {
+  // given
+  const media = fakeMedia([{ deviceId: 'main', label: 'back', torch: false }, { deviceId: 'front', label: 'front', torch: false }]);
+  // when
+  const r = await L.openTorchCamera(media, { wait: async () => {} });
+  // then
+  assert.equal(r.torch, false);
+  assert.equal(r.stream.track.stopped, false);
+  assert.equal(r.stream.track.getSettings().deviceId, 'main');
+});

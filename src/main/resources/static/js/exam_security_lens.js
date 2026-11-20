@@ -139,6 +139,63 @@
     };
   }
 
+  // ---------- 카메라 고르기 ----------
+
+  /** 스트림의 영상 트랙이 플래시(torch)를 조절할 수 있는가. */
+  function hasTorch(stream) {
+    const track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+    if (!track || !track.getCapabilities) return false;
+    const caps = track.getCapabilities() || {};
+    return !!caps.torch;
+  }
+
+  /**
+   * 플래시를 시도할 카메라 순서. 지금 열린 카메라는 빼고, 이름에 뒷면(back·rear·후면)이 있는 것을 앞에 둔다.
+   * 뒷면 카메라가 여러 개인 휴대폰(광각·초광각·망원)은 플래시를 조절할 수 있는 카메라가 하나뿐인 경우가 많다.
+   */
+  function orderCameras(devices, currentId) {
+    const back = /back|rear|environment|후면|뒷면/i;
+    const videos = (devices || []).filter((d) => d.kind === 'videoinput' && d.deviceId && d.deviceId !== currentId);
+    return videos.filter((d) => back.test(d.label || '')).concat(videos.filter((d) => !back.test(d.label || '')));
+  }
+
+  function stopStream(stream) {
+    if (stream && stream.getTracks) stream.getTracks().forEach((t) => t.stop());
+  }
+
+  /**
+   * 플래시를 조절할 수 있는 카메라를 찾아 연다.
+   * 1) 기본 뒷면 카메라 → 2) 잠시 뒤 다시 확인(능력값이 늦게 채워지는 기종) → 3) 다른 카메라를 하나씩 열어 본다.
+   * 못 찾으면 { stream: 기본 카메라(미리보기용), torch: false }.
+   */
+  async function openTorchCamera(mediaDevices, opts) {
+    const o = opts || {};
+    const wait = o.wait || sleep;
+    const size = { width: { ideal: 1280 }, height: { ideal: 720 } };
+    const first = await mediaDevices.getUserMedia({ video: Object.assign({ facingMode: { ideal: 'environment' } }, size), audio: false });
+    if (hasTorch(first)) return { stream: first, torch: true };
+    await wait(500);
+    if (hasTorch(first)) return { stream: first, torch: true };
+    if (!mediaDevices.enumerateDevices) return { stream: first, torch: false };
+    const track = first.getVideoTracks()[0];
+    const currentId = track && track.getSettings ? (track.getSettings() || {}).deviceId : undefined;
+    const others = orderCameras(await mediaDevices.enumerateDevices(), currentId);
+    if (others.length === 0) return { stream: first, torch: false };
+    stopStream(first); // 카메라 두 개를 동시에 못 여는 휴대폰이 많다
+    for (const d of others) {
+      let s = null;
+      try {
+        s = await mediaDevices.getUserMedia({ video: Object.assign({ deviceId: { exact: d.deviceId } }, size), audio: false });
+      } catch (e) {
+        continue;
+      }
+      if (hasTorch(s)) return { stream: s, torch: true };
+      stopStream(s);
+    }
+    const back = await mediaDevices.getUserMedia({ video: Object.assign({ facingMode: { ideal: 'environment' } }, size), audio: false });
+    return { stream: back, torch: false };
+  }
+
   // ---------- 브라우저 화면 연결 ----------
 
   function sleep(ms) {
@@ -164,15 +221,14 @@
         return;
       }
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
-        });
+        say('플래시를 쓸 수 있는 카메라를 찾는 중입니다…');
+        const opened = await openTorchCamera(navigator.mediaDevices);
+        const stream = opened.stream;
         video.srcObject = stream;
         await video.play();
         track = stream.getVideoTracks()[0];
-        const caps = track.getCapabilities ? track.getCapabilities() : {};
-        if (!caps.torch) {
-          say('카메라는 켜졌지만 이 휴대폰 브라우저는 플래시를 조절할 수 없습니다(아이폰 사파리 등). 안드로이드 크롬으로 열어 주세요.');
+        if (!opened.torch && !hasTorch(stream)) {
+          say('카메라는 켜졌지만 이 휴대폰에서는 웹 화면이 플래시를 켤 수 없습니다. 아이폰 사파리는 지원하지 않고, 일부 안드로이드 기종도 막혀 있습니다. 휴대폰 기종과 크롬 버전을 알려 주세요.');
           scanBtn.disabled = true;
           return;
         }
@@ -246,5 +302,5 @@
     scanBtn.addEventListener('click', scan);
   }
 
-  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, verdict, mountPage };
+  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
 });
