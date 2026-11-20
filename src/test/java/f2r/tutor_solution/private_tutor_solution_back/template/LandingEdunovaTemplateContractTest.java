@@ -534,13 +534,14 @@ class LandingEdunovaTemplateContractTest {
     assertThat(html.indexOf("id=\"digital-exam\"")).isLessThan(html.indexOf("id=\"service\""));
     assertThat(sec).contains("디지털 영어 기말고사", "직보 쇼츠 인강", "40문항 20분", "70문항 35분", "자동 채점", "href=\"/naesintest\"",
         "적중률 근거", "압구정중2 93.3%", "압구정중3 93.5%", "언북중3 95.2%", "신구중3 96.8%");
-    assertThat(sec).contains("예비고1 디지털 수능 영어 모의고사", "독해 6문항에 9분", "5초 안에",
+    assertThat(sec).contains("예비고1 디지털 수능 영어 모의고사", "고1 수능 대비 어휘 모의고사",
         "href=\"/naesintest/pre-high\"").doesNotContain("hwChoices", "hwExamTime");
     int preHighStart = sec.indexOf("id=\"pre-high-english\"");
     String preHigh = sec.substring(preHighStart, sec.indexOf("</section>", preHighStart));
     assertThat(preHigh).contains("<div class=\"hl-head\"><h2 id=\"preHighTitle\">", "hw-paper hw-tbl",
         "href=\"/naesintest/pre-high?part=1\"", "href=\"/naesintest/pre-high?part=2\"",
-        "href=\"/naesintest/pre-high?part=3\"");
+        "href=\"/naesintest/pre-high?part=3\"", "href=\"/naesintest/pre-high?part=4\"")
+        .doesNotContain("독해 6문항에 9분");
   }
 
   @Test
