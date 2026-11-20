@@ -65,7 +65,7 @@ public final class PreHighVocabularyController {
       Instant now = Instant.now();
       if ("start".equals(command.action())) {
         if (attempt == null) {
-          attempt = new PreHighVocabularyAttempt(questions, now, part == 7);
+          attempt = new PreHighVocabularyAttempt(questions, now);
           session.setAttribute(key, attempt);
         }
         return noStore(attempt.state(now));
@@ -75,12 +75,11 @@ public final class PreHighVocabularyController {
       }
       try {
         return switch (command.action()) {
-          case "state" -> noStore(attempt.state(now));
+          case "state", "next" -> noStore(attempt.state(now));
           case "answer" -> noStore(attempt.answer(command.number(), command.choice(), now));
-          case "next" -> noStore(attempt.next(command.number(), now));
           case "restart" -> {
             if (attempt.finished()) {
-              attempt = new PreHighVocabularyAttempt(questions, now, part == 7);
+              attempt = new PreHighVocabularyAttempt(questions, now);
               session.setAttribute(key, attempt);
             }
             yield noStore(attempt.state(now));

@@ -17,16 +17,10 @@ public final class PreHighVocabularyAttempt {
   private final UUID id = UUID.randomUUID();
   private final List<Question> questions;
   private final int[] answers;
-  private final boolean confirmChoice;
   private int index;
   private Instant deadline;
 
   public PreHighVocabularyAttempt(List<Question> questions, Instant now) {
-    this(questions, now, false);
-  }
-
-  public PreHighVocabularyAttempt(List<Question> questions, Instant now, boolean confirmChoice) {
-    this.confirmChoice = confirmChoice;
     this.questions = List.copyOf(questions);
     this.answers = new int[questions.size()];
     deadline = now.plusSeconds(questions.getFirst().seconds());
@@ -55,13 +49,8 @@ public final class PreHighVocabularyAttempt {
     if (choice < 1 || choice > 5) throw new IllegalArgumentException("답안 번호는 1~5입니다.");
     if (!finished() && number == index + 1 && now.isBefore(deadline)) {
       answers[index] = choice;
-      if (!confirmChoice) advance(now);
+      advance(now);
     }
-    return state(now);
-  }
-
-  public State next(int number, Instant now) {
-    if (confirmChoice && !finished() && number == index + 1 && answers[index] != 0) advance(now);
     return state(now);
   }
 

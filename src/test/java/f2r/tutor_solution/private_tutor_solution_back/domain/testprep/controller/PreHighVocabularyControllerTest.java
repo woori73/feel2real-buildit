@@ -59,10 +59,6 @@ class PreHighVocabularyControllerTest {
       assertThat(state.at("/item/answer").isMissingNode()).isTrue();
       state = postAction(mvc, session, 7, Map.of("action", "answer", "attempt", attempt,
           "number", i + 1, "choice", questions.get(i).answer()));
-      assertThat(state.at("/item/number").asInt()).isEqualTo(i + 1);
-      assertThat(state.at("/item/selected").asInt()).isEqualTo(questions.get(i).answer());
-      state = postAction(mvc, session, 7, Map.of("action", "next", "attempt", attempt,
-          "number", i + 1, "choice", 0));
     }
 
     // then
