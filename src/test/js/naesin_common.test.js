@@ -75,3 +75,57 @@ test('given 시험 코드, when schoolUrl하면, then 그 학교 페이지 주�
   assert.strictEqual(NT.schoolUrl('TP-SAT-MINI-01'), '/naesintest');
   assert.strictEqual(NT.schoolUrl(null), '/naesintest');
 });
+
+test('given 예비고1 채점 결과, when 해설을 열면, then 정답과 핵심 풀이 단서를 강조한다', async () => {
+  // given
+  const classList = { toggle() {}, remove() {} };
+  const elements = Object.fromEntries([
+    'ph-test', 'ph-body', 'ph-status', 'ph-time-label', 'ph-section', 'ph-time', 'nt-timer-box',
+  ].map(id => [id, { classList }]));
+  elements['ph-test'].dataset = { round: '1', shared: '[false,false]' };
+  let click;
+  elements['ph-body'].addEventListener = (_, listener) => { click = listener; };
+  const state = {
+    phase: 'REVIEW', remainingMillis: 0, elapsedMillis: 1200, wordResults: [],
+    readingResults: [
+      { number: 1, chosen: 2, answer: 1, explanation: [
+        '주제: 생각과 행동',
+        '해설: 두 대상의 관계가 중요하다. 이어지는 문장은 예시다.',
+        '① 생각과 행동 · 정답 근거: “영향”을 보여 준다.',
+        '② 다른 내용 · 오답 근거: 글의 소재와 다르다.',
+        '풀이 전략: to achieve this가 가리키는 내용을 찾는다.',
+        '이 문항에 적용 · <근거>를 확인한다.',
+      ].join('\n') },
+      { number: 2, chosen: 1, answer: 2, explanation:
+        '해설: ②가 정답입니다. 원인에 이어 결과가 나온다.\n풀이해설: 전환 표현을 찾는다.' },
+    ],
+  };
+  const context = {
+    document: {
+      getElementById: id => elements[id],
+      addEventListener() {},
+      body: { classList },
+    },
+    NT: { ...NT, api: async () => state },
+    performance: { now: () => 0 },
+    window: { setInterval() {} },
+  };
+  vm.runInNewContext(fs.readFileSync(JS + 'pre_high_english.js', 'utf8'), context);
+
+  // when
+  click({ target: { closest: () => ({ dataset: { action: 'start' } }) } });
+  await new Promise(setImmediate);
+
+  // then
+  const html = elements['ph-body'].innerHTML;
+  const key = text => '<span class="ph-review-key">' + text + '</span>';
+  assert.ok(html.includes('내 답 ② · ' + key('정답 ①')));
+  assert.ok(html.includes(key('① 생각과 행동 · 정답 근거') + ': ' + key('“영향”')));
+  assert.ok(html.includes('<p>② 다른 내용 · 오답 근거: 글의 소재와 다르다.</p>'));
+  assert.ok(html.includes('<strong>주제</strong> 생각과 행동'));
+  assert.ok(html.includes('<strong>풀이 전략</strong> ' + key('to achieve this')));
+  assert.ok(html.includes('<strong>이 문항에 적용</strong> ' + key('&lt;근거&gt;를 확인한다.')));
+  assert.ok(html.includes(key('②가 정답입니다.') + ' ' + key('원인에 이어 결과가 나온다.')));
+  assert.ok(html.includes('<strong>풀이해설</strong> ' + key('전환 표현을 찾는다.')));
+  assert.ok(html.includes(key('두 대상의 관계가 중요하다.') + ' 이어지는 문장은 예시다.'));
+});

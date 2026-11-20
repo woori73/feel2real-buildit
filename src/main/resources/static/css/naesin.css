@@ -365,6 +365,7 @@ body.nt-body {
 }
 
 /* 예비고1 모의고사 */
+#ph-test { --ph-review-red: #b91c1c; }
 #ph-test.ph-timed .nt-paperhead { position: sticky; top: 0; z-index: 2; }
 #ph-test .nt-time { color: #1d4ed8; white-space: nowrap; }
 #ph-test #nt-timer-box.is-low .nt-time { color: var(--nt-pen); }
@@ -374,16 +375,17 @@ body.nt-body {
 }
 .ph-explanation p + p { margin-top: 8px; }
 .ph-explanation strong { display: block; color: #1d4ed8; }
+.ph-review-key { color: var(--ph-review-red); font-weight: 700; }
 
 .ph-review-image { position: relative; width: 480px; max-width: 100%; margin: 0 auto; isolation: isolate; }
 .ph-review-image .nt-img { width: 100%; padding: 0; border: 0; }
 .ph-review-passage { margin-bottom: 14px; }
 .ph-mark { position: absolute; pointer-events: none; }
-.ph-mark-evidence { background: #ffe55c; mix-blend-mode: multiply; }
-.ph-mark-answer { border: 2px solid #1d4ed8; border-radius: 4px; }
+.ph-mark-evidence { background: #fecaca; box-shadow: inset 0 -1px #ef4444; mix-blend-mode: multiply; }
+.ph-mark-answer { border: 2px solid var(--ph-review-red); border-radius: 4px; }
 .ph-mark-answer b {
   position: absolute; left: 0; bottom: 100%; width: max-content; margin-bottom: 2px;
-  padding: 1px 5px; color: #fff; background: #1d4ed8; border-radius: 3px;
+  padding: 1px 5px; color: #fff; background: var(--ph-review-red); border-radius: 3px;
   font: 700 11px/1.35 var(--nt-sans);
 }
 .ph-part + .ph-part, .ph-part + details { margin-top: 20px; }
