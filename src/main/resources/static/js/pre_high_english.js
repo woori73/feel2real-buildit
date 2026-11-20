@@ -35,10 +35,10 @@
   const status = $('ph-status');
   let current, deadline = 0, active = 0, pending = false, wrongOnly = true;
 
-  function image(number, part) {
+  function image(number, part, defer = false) {
     return '<img class="nt-img' + (part === 'passage' ? ' nt-passage' : '') + '" src="' + api
       + '/image/' + (number + 1) + '/' + part + '" alt="' + (number + 1)
-      + '번 ' + (part === 'passage' ? '공통 지문' : '독해 문항') + '">';
+      + '번 ' + (part === 'passage' ? '공통 지문' : '독해 문항') + '"' + (defer ? ' loading="lazy"' : '') + '>';
   }
 
   function omrButtons(number, style) {
@@ -104,7 +104,9 @@
         + (shown.length ? shown.map((result, index) => '<details class="nt-exp"' + (index === 0 ? ' open' : '') + '><summary>' + result.number
           + '번' + (result.word ? ' · ' + NT.esc(result.word) : '') + ' · ' + (correct(result) ? '정답' : result.chosen ? '오답' : '미응답')
           + '</summary><p>내 답 ' + (circle[result.chosen - 1] || '미응답') + ' · 정답 ' + circle[result.answer - 1] + '</p>'
-          + (result.explanation ? NT.expHtml(result.explanation) : '') + (result.meaning ? '<p>' + NT.esc(result.meaning) + '</p>' : '')
+          + (result.explanation ? (shared[result.number - 1] ? image(result.number - 1, 'passage', true) : '')
+            + image(result.number - 1, 'question', true) + NT.expHtml(result.explanation) : '')
+          + (result.meaning ? '<p>' + NT.esc(result.meaning) + '</p>' : '')
           + '</details>').join('') : '<p>틀린 문항이 없습니다.</p>') + '</section>';
     };
     return '<section class="nt-page nt-score"><div class="nt-score-pen"><b>' + (score(reading) + score(words))
