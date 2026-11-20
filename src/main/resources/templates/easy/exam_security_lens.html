@@ -16,6 +16,9 @@
     main { padding: 16px; max-width: 560px; margin: 0 auto; }
     .stage { position: relative; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 16 / 9; max-height: 70vh; margin: 0 auto; }
     .stage video, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .range { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 14px; }
+    .range label { display: block; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .range small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
     .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
     .actions button { padding: 14px; border: 0; border-radius: 10px; font-size: 16px; background: var(--ink); color: #fff; }
     .actions button:disabled { background: #a0aec0; }
@@ -39,6 +42,10 @@
   <div class="stage">
     <video id="lensVideo" playsinline muted></video>
     <canvas id="lensOverlay"></canvas>
+  </div>
+  <div class="range" role="radiogroup" aria-label="검사 거리">
+    <label><input type="radio" name="lensRange" value="near" checked> 가까이 <small>입구·순회 1~2m</small></label>
+    <label><input type="radio" name="lensRange" value="far"> 멀리 <small>교실 앞 3~5m · 확대</small></label>
   </div>
   <div class="actions">
     <button type="button" id="lensStart">카메라 켜기</button>

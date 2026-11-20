@@ -154,6 +154,32 @@
     return { scale, ox: (boxW - srcW * scale) / 2, oy: (boxH - srcH * scale) / 2 };
   }
 
+  /** 분석할 프레임 폭(픽셀). 320이면 2m 밖의 렌즈가 1픽셀보다 작아져 놓치기 쉬워 640으로 올렸다. */
+  const ANALYSIS_WIDTH = 640;
+
+  /**
+   * 검사 거리별 설정. 거리 값은 시작값이고 1주차 측정으로 다시 정한다.
+   * - near(입구·순회 1~2m): 확대 없음, 기본 기준값
+   * - far(교실 앞 3~5m): 카메라가 지원하면 3배까지 확대하고, 멀리서 약해지는 반사를 잡도록 기준값을 낮춘다
+   *   (기준을 낮추면 잘못 알리는 경우도 늘 수 있다)
+   * @param {'near'|'far'} mode
+   * @param {object} caps track.getCapabilities() 결과(zoom: {min,max})
+   * @returns {{zoom: number|null, options: object, radius: number, mergeRadius: number}}
+   */
+  function rangeSettings(mode, caps) {
+    const k = ANALYSIS_WIDTH / 320; // 반경 기준값은 320폭에서 정했으므로 폭에 맞춰 늘린다
+    const zoomCaps = caps && caps.zoom && typeof caps.zoom.max === 'number' ? caps.zoom : null;
+    if (mode === 'far') {
+      return {
+        zoom: zoomCaps ? Math.min(zoomCaps.max, Math.max(zoomCaps.min || 1, 3)) : null,
+        options: { onMin: 170, diffMin: 40 },
+        radius: 10 * k,
+        mergeRadius: 16 * k,
+      };
+    }
+    return { zoom: zoomCaps ? (zoomCaps.min || 1) : null, options: {}, radius: 10 * k, mergeRadius: 16 * k };
+  }
+
   /** 감독관 화면에 띄울 문장. 기계는 판정하지 않는다. */
   function verdict(candidates) {
     const n = (candidates || []).length;
@@ -197,7 +223,7 @@
   async function openTorchCamera(mediaDevices, opts) {
     const o = opts || {};
     const wait = o.wait || sleep;
-    const size = { width: { ideal: 1280 }, height: { ideal: 720 } };
+    const size = { width: { ideal: 1920 }, height: { ideal: 1080 } }; // 멀리 있는 작은 렌즈도 픽셀로 남게 높은 해상도를 요청
     const first = await mediaDevices.getUserMedia({ video: Object.assign({ facingMode: { ideal: 'environment' } }, size), audio: false });
     if (hasTorch(first)) return { stream: first, torch: true };
     await wait(500);
@@ -262,14 +288,14 @@
           return;
         }
         scanBtn.disabled = false;
-        say('준비됐습니다. 30~100㎝ 거리에서 물건을 비추고 [렌즈 찾기]를 누르세요.');
+        say('준비됐습니다. 거리를 고르고 [렌즈 찾기]를 누르세요. 입구·순회는 1~2m, 교실 앞은 [멀리]를 고르세요(거리별 성능은 아직 재는 중).');
       } catch (e) {
         say('카메라를 열지 못했습니다: ' + (e && e.message ? e.message : e));
       }
     }
 
     function grab() {
-      const w = 320;
+      const w = ANALYSIS_WIDTH;
       const h = Math.round((video.videoHeight / video.videoWidth) * w) || 180;
       work.width = w; work.height = h;
       const ctx = work.getContext('2d', { willReadFrequently: true });
@@ -324,6 +350,11 @@
       if (video.paused) await video.play(); // 지난 결과로 멈춰 둔 화면을 다시 움직인다
       const t0 = performance.now();
       try {
+        const modeInput = doc.querySelector('input[name="lensRange"]:checked');
+        const set = rangeSettings(modeInput ? modeInput.value : 'near', track.getCapabilities ? track.getCapabilities() : {});
+        if (set.zoom != null) {
+          try { await track.applyConstraints({ advanced: [{ zoom: set.zoom }] }); await sleep(300); } catch (e) { /* 확대를 못 하는 기종 */ }
+        }
         const rounds = [];
         let size = null;
         for (let i = 0; i < 3; i++) {
@@ -332,10 +363,10 @@
           await torch(true);
           const on = grab();
           size = { w: on.width, h: on.height };
-          rounds.push(findCandidates(on, off));
+          rounds.push(findCandidates(on, off, set.options));
         }
         await torch(false);
-        const cands = mergeNearby(consistentCandidates(rounds, 10, 2), 16);
+        const cands = mergeNearby(consistentCandidates(rounds, set.radius, 2), set.mergeRadius);
         draw(cands, size.w, size.h);
         if (cands.length) {
           video.pause(); // 휴대폰을 움직여도 원 자리를 볼 수 있게 화면을 멈춘다
@@ -356,5 +387,5 @@
     scanBtn.addEventListener('click', scan);
   }
 
-  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
+  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, rangeSettings, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
 });

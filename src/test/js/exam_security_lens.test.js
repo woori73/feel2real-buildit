@@ -260,3 +260,39 @@ test('화면: 영상과 원 그림은 잘리지 않게(contain) 같은 방식으
   assert.match(html, /\.stage video, \.stage canvas \{[^}]*object-fit: contain/);
   assert.doesNotMatch(html, /object-fit: cover/);
 });
+
+test('rangeSettings: 가까이(입구·순회)는 확대하지 않고 기본 기준값을 쓴다', () => {
+  // given
+  const caps = { zoom: { min: 1, max: 10 } };
+  // when
+  const set = L.rangeSettings('near', caps);
+  // then
+  assert.equal(set.zoom, 1);
+  assert.deepEqual(set.options, {});
+  assert.equal(set.radius, 20, '640폭 분석이라 320폭 기준 반경 10의 2배');
+  assert.equal(set.mergeRadius, 32);
+});
+
+test('rangeSettings: 멀리(교실 앞)는 카메라가 되는 만큼 3배까지 확대하고 기준값을 낮춘다', () => {
+  // given
+  // when
+  const big = L.rangeSettings('far', { zoom: { min: 1, max: 10 } });
+  const small = L.rangeSettings('far', { zoom: { min: 1, max: 2 } });
+  const none = L.rangeSettings('far', {});
+  // then
+  assert.equal(big.zoom, 3);
+  assert.equal(small.zoom, 2, '최대 확대가 3배보다 작으면 최대까지만');
+  assert.equal(none.zoom, null, '확대를 지원하지 않으면 확대하지 않는다');
+  assert.ok(big.options.diffMin < L.DEFAULTS.diffMin);
+  assert.ok(big.options.onMin < L.DEFAULTS.onMin);
+});
+
+test('화면: 검사 거리(가까이 1~2m / 멀리 3~5m)를 고를 수 있다', () => {
+  // given
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/easy/exam_security_lens.html'), 'utf8');
+  // when & then
+  assert.match(html, /name="lensRange" value="near" checked/);
+  assert.match(html, /name="lensRange" value="far"/);
+});
