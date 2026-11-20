@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/home_light.css?v=20261114-articles-2">
+  <link rel="stylesheet" href="/css/home_light.css?v=20261120-youtube-1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
   <link rel="stylesheet" href="/css/home_winter.css?v=20261120-prehigh">
@@ -708,7 +708,17 @@
     <section class="hl-section" id="ai-content" aria-labelledby="dramaTitle" data-track-section="brand">
       <div class="hl-head"><h2 id="dramaTitle">AI 드라마 제작</h2><p>Feel to Real 오리지널</p></div>
       <div class="hl-split">
-        <div class="hl-trailer hl-lift">
+        <div class="hl-trailer hl-lift" th:if="${!#strings.isEmpty(homeAgentYoutubeId)}">
+          <a class="hl-trailer-link" id="homeAgentYoutube" th:href="'https://www.youtube.com/watch?v=' + ${homeAgentYoutubeId}" target="_blank" rel="noopener noreferrer" aria-label="AI AGENT 1화 유튜브에서 보기 (새 창)">
+            <img class="hl-trailer-poster" src="/img/landing/ai-agent-trailer-v16i-poster.jpg" alt="" width="1280" height="720" loading="lazy">
+            <span class="hl-trailer-playmark" aria-hidden="true"></span>
+          </a>
+          <div class="hl-trailer-bar">
+            <span class="hl-trailer-title"><strong id="brandTitle">AI AGENT 1화</strong><small>10분 36초 · 유튜브</small></span>
+            <a class="hl-btn hl-btn-white" th:href="'https://www.youtube.com/watch?v=' + ${homeAgentYoutubeId}" target="_blank" rel="noopener noreferrer">유튜브에서 보기</a>
+          </div>
+        </div>
+        <div class="hl-trailer hl-lift" th:if="${#strings.isEmpty(homeAgentYoutubeId)}">
           <div class="home-trailer-frame" th:if="${!#strings.isEmpty(homeAgentTrailerPath)}">
             <video id="homeAgentTrailer" th:src="${homeAgentTrailerPath}" controls playsinline preload="none"
                    th:poster="${homeAgentTrailerPath == '/video/landing/ai-agent-trailer-v16i-20261029.mp4' ? '/img/landing/ai-agent-trailer-v16i-poster.jpg' : '/images/ai-agent-banner.webp'}" aria-label="AI AGENT 트레일러"></video>

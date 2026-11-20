@@ -98,6 +98,30 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
+  void givenYoutubeId_whenRendered_thenTrailerSlotLinksToYoutubeInsteadOfTheTrailerVideo() {
+    // given
+    ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+    resolver.setPrefix("templates/");
+    resolver.setSuffix(".html");
+    resolver.setTemplateMode(TemplateMode.HTML);
+    resolver.setCharacterEncoding("UTF-8");
+    TemplateEngine engine = new TemplateEngine();
+    engine.setTemplateResolver(resolver);
+    engine.addDialect(new LayoutDialect());
+    Context context = new Context();
+    context.setVariable("examOffer", HomeExamOffer.CURRENT);
+    context.setVariable("homeAgentTrailerPath", "/video/landing/ai-agent-trailer-v16i-20261029.mp4");
+    context.setVariable("homeAgentYoutubeId", "8CHtg0nkmPA");
+    // when
+    String html = engine.process("public/landing", context);
+    // then
+    assertThat(html).contains("id=\"homeAgentYoutube\"", "href=\"https://www.youtube.com/watch?v=8CHtg0nkmPA\"",
+            "target=\"_blank\"", "유튜브에서 보기", "AI AGENT 1화")
+        .doesNotContain("id=\"homeAgentTrailer\"", "id=\"homeAgentTrailerPlay\"", "id=\"homeAgentTrailerPending\"");
+    assertThat(html.split("id=\"brandTitle\"", -1)).hasSize(2); // 제목 id는 한 번만
+  }
+
+  @Test
   void givenVerifiedContentSettings_whenRendered_thenPublicLinkAndManualTrailerUseSeparateSlots() {
     String html = render("public/landing", "", "https://app.nimblefox.ai/g/public-fixture",
         "/api/landing/videos/home-agent-trailer/stream");

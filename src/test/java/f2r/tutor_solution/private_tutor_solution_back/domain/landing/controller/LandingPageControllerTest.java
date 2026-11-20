@@ -50,7 +50,8 @@ class LandingPageControllerTest {
         .containsEntry("homeReviewGamePath", HomeReviewGameController.PAGE_PATH)
         .containsEntry("homeAgentTrailerPath", LandingPageController.DEFAULT_AGENT_TRAILER_PATH)
         .doesNotContainKey("homeBankTransfer")  // 기본은 비공개(모델에 null은 담기지 않는다)
-        .hasSize(7);
+        .containsEntry("homeAgentYoutubeId", LandingPageController.DEFAULT_AGENT_YOUTUBE_ID)
+        .hasSize(8);
   }
 
   @Test
@@ -113,6 +114,25 @@ class LandingPageControllerTest {
     // Syntax fixture only; it is not evidence of a published game.
     assertThat(LandingPageController.safeReviewGameUrl("https://app.nimblefox.ai/g/public-fixture"))
         .isEqualTo("https://app.nimblefox.ai/g/public-fixture");
+  }
+
+  @Test
+  @DisplayName("given 유튜브 영상 ID 설정 when 홈을 그리면 then 11자 ID만 통과하고 잘못된 값·빈 값은 빈 문자열이 된다")
+  void givenYoutubeIdSetting_whenRendered_thenOnlyValidIdIsExposed() {
+    // given
+    when(service.resolveRenderItems()).thenReturn(List.of(
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
+        LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
+    for (String bad : new String[] {"", "short", "8CHtg0nkmPA&x=1", "https://youtu.be/8CHtg0nkmPA", "\"><script>"}) {
+      org.springframework.test.util.ReflectionTestUtils.setField(controller, "agentYoutubeId", bad);
+      Model model = new ConcurrentModel();
+      // when
+      controller.landing(model);
+      // then
+      assertThat(model.asMap()).containsEntry("homeAgentYoutubeId", "");
+    }
+    assertThat(LandingPageController.safeYoutubeId(null)).isEmpty();
+    assertThat(LandingPageController.safeYoutubeId("8CHtg0nkmPA")).isEqualTo("8CHtg0nkmPA");
   }
 
   @Test
