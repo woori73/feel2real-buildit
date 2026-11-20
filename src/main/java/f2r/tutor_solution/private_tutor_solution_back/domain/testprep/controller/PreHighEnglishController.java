@@ -178,9 +178,13 @@ public class PreHighEnglishController {
     return "prehigh/test";
   }
 
-  /** 2부 문제지 PDF 내려받기(로그인 회원). */
-  @GetMapping(PAGE2 + "/{round}/paper.pdf")
-  public ResponseEntity<byte[]> paperPart2(@PathVariable int round) {
+  /** 2부 전체 문제지 PDF 내려받기. 관리자 전용(/api/admin/**은 보안 설정에서도 ADMIN만 연다). */
+  @GetMapping(ADMIN + "/part2/{round}/paper.pdf")
+  public ResponseEntity<byte[]> paperPart2(@PathVariable int round,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    }
     byte[] pdf = part2.paper(round);
     if (pdf == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     String name = "F2R_고1_실전독해_모의고사_" + round + "회_문제지.pdf";
