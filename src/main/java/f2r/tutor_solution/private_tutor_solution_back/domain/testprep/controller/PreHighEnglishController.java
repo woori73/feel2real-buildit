@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
@@ -35,6 +36,7 @@ public class PreHighEnglishController {
   private static final MediaType WEBP = MediaType.parseMediaType("image/webp");
 
   public record Action(String action, UUID attempt, int number, int choice) {}
+  public record GrammarAction(String action, UUID attempt, Integer number, Integer choice) {}
 
   private final PreHighEnglishStore store;
   private final PreHighGrammarBank grammar;
@@ -66,7 +68,7 @@ public class PreHighEnglishController {
   }
 
   @PostMapping(API + "/grammar/{chapter}")
-  public ResponseEntity<PreHighGrammarAttempt.State> grammarAct(@PathVariable int chapter, @RequestBody Action command,
+  public ResponseEntity<PreHighGrammarAttempt.State> grammarAct(@PathVariable int chapter, @RequestBody GrammarAction command,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
       @RequestHeader(value = "Origin", required = false) String origin) {
     checkOrigin(origin);
@@ -96,7 +98,8 @@ public class PreHighEnglishController {
         return noStore(attempt.act("state", 0, 0, now));
       }
       try {
-        return noStore(attempt.act(command.action(), command.number(), command.choice(), now));
+        return noStore(attempt.act(command.action(), Objects.requireNonNullElse(command.number(), 0),
+            Objects.requireNonNullElse(command.choice(), 0), now));
       } catch (IllegalArgumentException error) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage());
       }
