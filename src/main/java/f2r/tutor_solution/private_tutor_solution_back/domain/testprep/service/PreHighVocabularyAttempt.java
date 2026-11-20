@@ -8,7 +8,7 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 public final class PreHighVocabularyAttempt {
-  public record Item(int number, boolean cloze, String prompt, List<String> choices, int seconds) {}
+  public record Item(int number, boolean cloze, String prompt, List<String> choices, int seconds, int selected) {}
   public record Result(int number, int chosen, Question question, String completed) {
     boolean correct() { return chosen == question.answer(); }
   }
@@ -17,13 +17,19 @@ public final class PreHighVocabularyAttempt {
   private final UUID id = UUID.randomUUID();
   private final List<Question> questions;
   private final int[] answers;
+  private final boolean confirmChoice;
   private int index;
   private Instant deadline;
 
   public PreHighVocabularyAttempt(List<Question> questions, Instant now) {
+    this(questions, now, false);
+  }
+
+  public PreHighVocabularyAttempt(List<Question> questions, Instant now, boolean confirmChoice) {
+    this.confirmChoice = confirmChoice;
     this.questions = List.copyOf(questions);
     this.answers = new int[questions.size()];
-    deadline = now.plusSeconds(questions.getFirst().seconds());
+    deadline = now.plusSeconds(seconds(questions.getFirst()));
   }
 
   public UUID id() { return id; }
@@ -41,7 +47,7 @@ public final class PreHighVocabularyAttempt {
     Question question = questions.get(index);
     boolean cloze = question.sentence() != null;
     var item = new Item(index + 1, cloze, cloze ? question.sentence() : question.term(),
-        question.choices(), question.seconds());
+        question.choices(), seconds(question), answers[index]);
     return new State(id, Duration.between(now, deadline).toMillis(), answers.length, item, null, null);
   }
 
@@ -49,13 +55,23 @@ public final class PreHighVocabularyAttempt {
     if (choice < 1 || choice > 5) throw new IllegalArgumentException("답안 번호는 1~5입니다.");
     if (!finished() && number == index + 1 && now.isBefore(deadline)) {
       answers[index] = choice;
-      advance(now);
+      if (!confirmChoice) advance(now);
     }
     return state(now);
   }
 
+  public State next(int number, Instant now) {
+    if (confirmChoice && !finished() && number == index + 1 && answers[index] != 0) advance(now);
+    return state(now);
+  }
+
+  private int seconds(Question question) {
+    if (confirmChoice) return question.sentence() == null ? 5 : 10;
+    return question.seconds();
+  }
+
   private void advance(Instant now) {
     index++;
-    if (!finished()) deadline = now.plusSeconds(questions.get(index).seconds());
+    if (!finished()) deadline = now.plusSeconds(seconds(questions.get(index)));
   }
 }

@@ -4972,6 +4972,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `POST /api/naesintest/pre-high/grammar/{exam}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. 동작은 `start`, `state`, `answer`, `restart`다. `start` 외에는 응시 ID가 필요하며 `answer`에는 현재 문항 번호와 1~5의 선택지를 보낸다. 문항당 제한 시간은 20초다. 응시 중에는 현재 문항만 반환한다. 채점 후 정답·해설·최종 답안을 반환하며 `restart`로 다시 응시할 수 있다. 예전 단원 숫자 API는 40문항 응시 세션과의 호환을 위해 유지한다.
 - `GET /api/admin/pre-high-english/grammar/{exam}/questions/{number}/pdf`는 ADMIN 전용이다. 해당 시험의 문항 번호와 발문, 본문, 5개 선택지를 A4 PDF로 내려 준다.
 - **4부 고1 수능 대비 어휘 모의고사(50회)**. `GET /naesintest/pre-high/part4/{round}`는 로그인 후 1~50회 응시 화면을 표시한다. `POST /api/naesintest/pre-high/part4/{round}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. `start`로 시작하거나 이어 풀고, 이후에는 응시 ID와 함께 `answer`, `state`, `restart`를 보낸다. 현재 문항 번호와 1~5의 선택지를 보낸 답만 기한 내에 채점한다. 1~30번은 뜻 고르기 각 3초, 31~50번은 문장 빈칸 각 5초다. 시간 초과 시 미응답으로 기록된다. 응시 중에는 현재 문항만 내려 주며 완료 후에 100점 만점 점수와 정답, 뜻, 완성 문장, 번역을 반환한다.
+- **7부 고2 어휘 모의고사(40회)**. 화면 경로는 `/naesintest/pre-high/part7/{round}`, 응시 API는 `POST /api/naesintest/pre-high/part7/{round}`이다. 1~30번은 각 5초, 31~50번은 각 10초다. `answer`는 현재 선택을 저장하고 `next`는 선택을 확정하여 다음 문항으로 이동한다. 기한이 지나면 마지막 선택(없으면 미응답)이 확정된다. 완료 후 점수·뜻·완성 문장과 번역이 제공된다. 4부 응시 기록과 별개로 관리한다.
 
 ## 프로그램 공개 첫 화면 + 네이버 로그인 공통 진입 (`program` 패키지)
 
