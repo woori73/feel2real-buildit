@@ -1,5 +1,7 @@
 package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishAttempt;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishAttempt.State;
@@ -47,6 +49,9 @@ public class PreHighEnglishController {
   private static final MediaType WEBP = MediaType.parseMediaType("image/webp");
 
   public record Action(String action, UUID attempt, int number, int choice) {}
+  public record ReadingImages(String question, String passage) {}
+  public record Grade2State(@JsonUnwrapped State state,
+      @JsonInclude(JsonInclude.Include.NON_NULL) List<ReadingImages> images) {}
   public record GrammarAction(String action, UUID attempt, Integer number, Integer choice) {}
   public record PdfGroup(String label, String path, int first, int last) {}
 
@@ -211,7 +216,7 @@ public class PreHighEnglishController {
     checkOrigin(origin);
     var content = store.get(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    return run(content, attemptKey(principal, round), PreHighEnglishStore.READING_SECONDS, command, request);
+    return noStore(run(content, attemptKey(principal, round), PreHighEnglishStore.READING_SECONDS, command, request));
   }
 
   @PostMapping(API2 + "/{round}")
@@ -221,38 +226,46 @@ public class PreHighEnglishController {
     checkOrigin(origin);
     var content = part2.get(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    return run(content, part2Key(principal, round), PreHighPart2Store.READING_SECONDS, command, request);
+    return noStore(run(content, part2Key(principal, round), PreHighPart2Store.READING_SECONDS, command, request));
   }
 
   @PostMapping(API + "/part5/{round}")
-  public ResponseEntity<State> actPart5(@PathVariable int round, @RequestBody Action command,
+  public ResponseEntity<Grade2State> actPart5(@PathVariable int round, @RequestBody Action command,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
       @RequestHeader(value = "Origin", required = false) String origin) {
     checkOrigin(origin);
     var content = store.getGrade2(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    return run(content, grade2Key(principal, round), PreHighEnglishStore.READING_SECONDS, command, request);
+    State state = run(content, grade2Key(principal, round), PreHighEnglishStore.READING_SECONDS, command, request);
+    // Send the reading images with start/resume, so navigating questions needs no session-backed image requests.
+    List<ReadingImages> images = "start".equals(command.action()) || "restart".equals(command.action())
+        ? content.reading().stream().map(item -> new ReadingImages(item.image(), item.passage())).toList()
+        : null;
+    return noStore(new Grade2State(state, images));
   }
 
-  private ResponseEntity<State> run(Round content, String key, int readingSeconds, Action command,
+  private State run(Round content, String key, int readingSeconds, Action command,
       HttpServletRequest request) {
     HttpSession session = request.getSession();
     if (command.action() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
     synchronized (session) {
       PreHighEnglishAttempt attempt = (PreHighEnglishAttempt) session.getAttribute(key);
       Instant now = Instant.now();
+      if (attempt != null && attempt.round() != content && !"start".equals(command.action())) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT);
+      }
       if ("start".equals(command.action()) || "restart".equals(command.action())) {
-        if (attempt == null || ("start".equals(command.action()) && attempt.round() != content)
+        if (attempt == null || attempt.round() != content
             || "restart".equals(command.action()) && attempt.id().equals(command.attempt())
             && attempt.act("state", 0, 0, now).phase() == PreHighEnglishAttempt.Phase.REVIEW) {
           attempt = new PreHighEnglishAttempt(content, now, readingSeconds);
           session.setAttribute(key, attempt);
         }
-        return noStore(attempt.act("state", 0, 0, now));
+        return attempt.act("state", 0, 0, now);
       }
       if (attempt == null || !attempt.id().equals(command.attempt())) throw new ResponseStatusException(HttpStatus.CONFLICT);
       try {
-        return noStore(attempt.act(command.action(), command.number(), command.choice(), now));
+        return attempt.act(command.action(), command.number(), command.choice(), now);
       } catch (IllegalArgumentException error) {
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage());
       }
@@ -262,29 +275,32 @@ public class PreHighEnglishController {
   @GetMapping(API + "/{round}/image/{number}/{part}")
   public ResponseEntity<byte[]> image(@PathVariable int round, @PathVariable int number, @PathVariable String part,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
-    return picture(attemptKey(principal, round), number, part, request);
+    return picture(attemptKey(principal, round), number, part, null, request);
   }
 
   @GetMapping(API2 + "/{round}/image/{number}/{part}")
   public ResponseEntity<byte[]> imagePart2(@PathVariable int round, @PathVariable int number, @PathVariable String part,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
-    return picture(part2Key(principal, round), number, part, request);
+    return picture(part2Key(principal, round), number, part, null, request);
   }
 
   @GetMapping(API + "/part5/{round}/image/{number}/{part}")
   public ResponseEntity<byte[]> imagePart5(@PathVariable int round, @PathVariable int number, @PathVariable String part,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
-    return picture(grade2Key(principal, round), number, part, request);
+    Round content = store.getGrade2(round);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    return picture(grade2Key(principal, round), number, part, content, request);
   }
 
   private static String grade2Key(AuthenticatedPrincipal principal, int round) {
     return "pre-high-5:" + principal.userId() + ":" + round;
   }
 
-  private ResponseEntity<byte[]> picture(String key, int number, String part, HttpServletRequest request) {
+  private ResponseEntity<byte[]> picture(String key, int number, String part, Round currentContent, HttpServletRequest request) {
     HttpSession session = request.getSession(false);
     var attempt = session == null ? null : (PreHighEnglishAttempt) session.getAttribute(key);
-    if (attempt == null || number < 1 || number > attempt.round().reading().size()) {
+    if (attempt == null || currentContent != null && attempt.round() != currentContent
+        || number < 1 || number > attempt.round().reading().size()) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
     var reading = attempt.round().reading().get(number - 1);

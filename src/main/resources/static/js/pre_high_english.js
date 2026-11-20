@@ -38,11 +38,19 @@
   const status = $('ph-status');
   let current, deadline = 0, active = 0, pending = false;
   // 2부는 채점 뒤 문제지 전체(28문항)의 근거 표시와 해설을 먼저 보여 준다.
+  const isGrade2 = exam.dataset.part === '5';
   let wrongOnly = exam.dataset.part !== '2';
+  let readingImages, zoomed = false;
+
+  function hasPassage(number) {
+    return readingImages ? Boolean(readingImages[number]?.passage) : shared[number];
+  }
 
   function image(number, part, defer = false) {
-    return '<img class="nt-img' + (part === 'passage' ? ' nt-passage' : '') + '" src="' + api
-      + '/image/' + (number + 1) + '/' + part + '" alt="' + no(number)
+    const encoded = readingImages?.[number]?.[part];
+    const src = encoded ? 'data:image/webp;base64,' + encoded : api + '/image/' + (number + 1) + '/' + part;
+    return '<img class="nt-img' + (part === 'passage' ? ' nt-passage' : '') + '" src="' + NT.esc(src)
+      + '" alt="' + no(number)
       + '번 ' + (part === 'passage' ? '공통 지문' : '독해 문항') + '"' + (defer ? ' loading="lazy"' : '') + '>';
   }
 
@@ -80,8 +88,11 @@
       + '<button type="button" class="nt-nav" data-go="' + (active - 1) + '"' + (active === 0 ? ' disabled' : '') + '>이전</button>'
       + '<span class="nt-qpos">' + (numbers.length ? '<b>' + no(active) + '</b>번 · ' + (active + 1) + ' / ' + shared.length
         : '<b>' + (active + 1) + '</b> / ' + shared.length) + '</span>'
-      + '<button type="button" class="nt-nav" data-go="' + (active + 1) + '"' + (active + 1 === shared.length ? ' disabled' : '') + '>다음</button></div>'
-      + '<div class="nt-sheet">' + (shared[active] ? image(active, 'passage') : '') + image(active, 'question') + '</div>'
+      + '<button type="button" class="nt-nav" data-go="' + (active + 1) + '"' + (active + 1 === shared.length ? ' disabled' : '') + '>다음</button>'
+      + (isGrade2 ? '<button type="button" class="nt-nav ph-reading-zoom" data-toggle="zoom" aria-pressed="'
+        + zoomed + '">지문 확대</button>' : '') + '</div>'
+      + '<div class="nt-sheet' + (zoomed ? ' ph-sheet-zoomed' : '') + '">'
+      + (hasPassage(active) ? image(active, 'passage') : '') + image(active, 'question') + '</div>'
       + '<div class="nt-pick"><div class="nt-pick-row"><span class="nt-pick-no">' + no(active) + '</span>'
       + omrButtons(active, 'nt-ob') + '</div></div></section>'
       + '<aside class="nt-omr" aria-label="OMR 답안지"><div class="nt-omr-head"><button class="nt-omr-close" type="button" data-toggle="close">닫기</button><h2>OMR 답안지</h2></div>'
@@ -170,7 +181,7 @@
           + (result.word ? result.number : no(result.number - 1)) + '번' + (result.word ? ' · ' + NT.esc(result.word) : '') + ' · ' + (correct(result) ? '정답' : result.chosen ? '오답' : '미응답')
           + '</summary><p>내 답 ' + (circle[result.chosen - 1] || '미응답') + ' · '
           + reviewKey('정답 ' + circle[result.answer - 1]) + '</p>'
-          + (result.explanation ? (shared[result.number - 1] ? reviewImage(result, 'passage') : '')
+          + (result.explanation ? (hasPassage(result.number - 1) ? reviewImage(result, 'passage') : '')
             + reviewImage(result, 'question') + explanation(result.explanation, result.answer) : '')
           + (result.meaning ? '<p>' + NT.esc(result.meaning) + '</p>' : '')
           + '</details>').join('') : '<p>틀린 문항이 없습니다.</p>') + '</section>';
@@ -210,7 +221,8 @@
       current = await NT.api(api, {
         method: 'POST', body: JSON.stringify({ action, attempt: current?.id, number, choice })
       });
-      if (action === 'restart') { active = 0; wrongOnly = true; }
+      if (current.images) readingImages = current.images;
+      if (action === 'restart') { active = 0; wrongOnly = true; zoomed = false; }
       deadline = performance.now() + current.remainingMillis;
       if (action === 'read-answer' && current.phase === 'READING') updateReadingChoices();
       else render();
@@ -244,6 +256,11 @@
     }
     if (data.toggle === 'open' || data.toggle === 'close') document.body.classList.toggle('omr-open', data.toggle === 'open');
     if (data.toggle === 'filter') { wrongOnly = !wrongOnly; render(); }
+    if (data.toggle === 'zoom') {
+      zoomed = !zoomed;
+      button.setAttribute('aria-pressed', zoomed);
+      body.querySelector('.nt-sheet').classList.toggle('ph-sheet-zoomed', zoomed);
+    }
     if (data.choice) send(current.phase === 'READING' ? 'read-answer' : 'word-answer', Number(data.number), Number(data.choice));
     if (data.action === 'reading-done' && !window.confirm('독해를 제출하고 어휘 퀴즈로 넘어갈까요?')) return;
     if (data.action) send(data.action);
