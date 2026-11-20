@@ -58,7 +58,7 @@ public class NaverAccountResolutionService {
     if (existingUser.isPresent()) {
       refreshProviderEmail(identity);
       log.info("NAVER_ACCOUNT_RESOLVED existing=true");
-      return existingUser.get();
+      return refreshPlaceholderName(existingUser.get(), identity);
     }
 
     try {
@@ -70,7 +70,7 @@ public class NaverAccountResolutionService {
       User winner = findLinkedUser(identity.providerUserId())
           .orElseThrow(() -> raceLoserException); // 정말 unique 위반이 아니었으면 원래 예외를 던진다
       log.info("NAVER_ACCOUNT_RESOLVED existing=true");
-      return winner;
+      return refreshPlaceholderName(winner, identity);
     }
   }
 
@@ -88,6 +88,23 @@ public class NaverAccountResolutionService {
           });
     } catch (RuntimeException e) {
       log.warn("NAVER_PROVIDER_EMAIL_REFRESH_FAILED type={}", e.getClass().getSimpleName());
+    }
+  }
+
+  private User refreshPlaceholderName(User user, NaverProfileIdentity identity) {
+    String name = identity.name();
+    if (!"네이버 회원".equals(user.getName()) || name == null || name.isBlank()) {
+      return user;
+    }
+    String trimmedName = name.strip();
+    int end = trimmedName.offsetByCodePoints(
+        0, Math.min(30, trimmedName.codePointCount(0, trimmedName.length())));
+    try {
+      userRepository.replaceNaverPlaceholderName(user.getUserId(), trimmedName.substring(0, end));
+      return userRepository.findById(user.getUserId()).orElse(user);
+    } catch (RuntimeException e) {
+      log.warn("NAVER_NAME_REFRESH_FAILED type={}", e.getClass().getSimpleName());
+      return user;
     }
   }
 
