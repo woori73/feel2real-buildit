@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarAttempt;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarQuestionPdf;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighVocabularyBank;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
@@ -69,6 +70,7 @@ public class PreHighEnglishController {
     model.addAttribute("loggedIn", principal != null);
     model.addAttribute("grammarChapters", grammar.list());
     model.addAttribute("grammarFinalRounds", grammar.finalRounds());
+    model.addAttribute("vocabularyRoundCount", PreHighVocabularyBank.ROUND_COUNT);
     model.addAttribute("canInstall", principal != null && "ADMIN".equals(principal.role()));
     return "prehigh/list";
   }
