@@ -2,7 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service;
 
 import static f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank.QUESTION_SECONDS;
 
-import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank.Chapter;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank.Exam;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank.Question;
 import java.time.Instant;
 import java.util.List;
@@ -15,15 +15,15 @@ public final class PreHighGrammarAttempt {
   public record State(UUID id, long remainingMillis, long elapsedMillis, int count, Item item, List<Result> results) {}
 
   private final UUID id = UUID.randomUUID();
-  private final Chapter chapter;
+  private final Exam exam;
   private final int[] answers;
   private Instant deadline;
   private int index;
   private long elapsedMillis;
 
-  public PreHighGrammarAttempt(Chapter chapter, Instant now) {
-    this.chapter = chapter;
-    answers = new int[chapter.questions().size()];
+  public PreHighGrammarAttempt(Exam exam, Instant now) {
+    this.exam = exam;
+    answers = new int[exam.questions().size()];
     deadline = now.plusSeconds(QUESTION_SECONDS);
   }
 
@@ -46,10 +46,10 @@ public final class PreHighGrammarAttempt {
     }
     if (finished()) {
       List<Result> results = IntStream.range(0, answers.length)
-          .mapToObj(i -> new Result(i + 1, answers[i], chapter.questions().get(i))).toList();
+          .mapToObj(i -> new Result(i + 1, answers[i], exam.questions().get(i))).toList();
       return new State(id, 0, elapsedMillis, answers.length, null, results);
     }
-    Question question = chapter.questions().get(index);
+    Question question = exam.questions().get(index);
     return new State(id, deadline.toEpochMilli() - now.toEpochMilli(), elapsedMillis, answers.length,
         new Item(index + 1, question.instruction(), question.text(), question.choices()), null);
   }

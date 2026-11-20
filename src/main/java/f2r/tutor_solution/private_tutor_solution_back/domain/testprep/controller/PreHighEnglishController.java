@@ -53,30 +53,34 @@ public class PreHighEnglishController {
   public String list(Model model, @AuthenticationPrincipal AuthenticatedPrincipal principal) {
     model.addAttribute("rounds", store.list());
     model.addAttribute("grammarChapters", grammar.list());
+    model.addAttribute("grammarFinalRounds", grammar.finalRounds());
     model.addAttribute("canInstall", principal != null && "ADMIN".equals(principal.role()));
     return "prehigh/list";
   }
 
-  @GetMapping(PAGE + "/grammar/{chapter}")
-  public String grammarTest(@PathVariable int chapter, Model model) {
-    var content = grammar.get(chapter);
+  @GetMapping(PAGE + "/grammar/{exam}")
+  public String grammarTest(@PathVariable String exam, Model model) {
+    var content = grammar.get(exam);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    model.addAttribute("chapter", new PreHighGrammarBank.ChapterInfo(chapter, content.title()));
-    model.addAttribute("count", PreHighGrammarBank.QUESTION_COUNT);
+    String firstPart = grammar.firstPartForPreviousChapter(exam);
+    if (firstPart != null) return "redirect:" + PAGE + "/grammar/" + firstPart;
+    model.addAttribute("examTitle", content.title());
+    model.addAttribute("examApi", API + "/grammar/" + exam);
+    model.addAttribute("count", content.questions().size());
     model.addAttribute("seconds", PreHighGrammarBank.QUESTION_SECONDS);
     return "prehigh/grammar";
   }
 
-  @PostMapping(API + "/grammar/{chapter}")
-  public ResponseEntity<PreHighGrammarAttempt.State> grammarAct(@PathVariable int chapter, @RequestBody GrammarAction command,
+  @PostMapping(API + "/grammar/{exam}")
+  public ResponseEntity<PreHighGrammarAttempt.State> grammarAct(@PathVariable String exam, @RequestBody GrammarAction command,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
       @RequestHeader(value = "Origin", required = false) String origin) {
     checkOrigin(origin);
-    var content = grammar.get(chapter);
+    var content = grammar.get(exam);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     if (command.action() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
     HttpSession session = request.getSession();
-    String key = "pre-high-grammar:" + principal.userId() + ":" + chapter;
+    String key = "pre-high-grammar:" + principal.userId() + ":" + exam;
     synchronized (session) {
       var attempt = (PreHighGrammarAttempt) session.getAttribute(key);
       Instant now = Instant.now();
