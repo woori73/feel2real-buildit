@@ -417,11 +417,3 @@ body.nt-body {
 .ph-timed .ph-grammar-pdf { display: none; }
 .ph-grammar-pdf-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .ph-grammar-pdf-links .nt-btn { min-width: 48px; }
-
-#ph-vocabulary [data-choice][aria-pressed="true"] {
-  background: #193e69;
-  border-color: #193e69;
-  color: #fff;
-}
-.ph-vocab-next { margin-top: 1rem; }
-.ph-vocab-next:disabled { opacity: .5; cursor: default; }

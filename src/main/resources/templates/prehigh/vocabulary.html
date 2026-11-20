@@ -8,14 +8,14 @@
   <title th:text="|${round}회 · ${examTitle}|">고1 수능 대비 어휘 모의고사</title>
   <link rel="stylesheet" href="/css/naesin.css?v=pre-high-vocabulary-2">
   <script defer src="/js/naesin_common.js"></script>
-  <script defer src="/js/pre_high_vocabulary.js?v=2"></script>
+  <script defer src="/js/pre_high_vocabulary.js?v=3"></script>
 </head>
 <body class="nt-body nt-run">
 <div class="nt-top"><div class="nt-top-l">
   <a class="nt-brand" href="/#pre-high-english"><img src="/img/F2R_logo_pure.svg" width="30" height="30" alt="">F2R영어</a>
   <a class="nt-btn nt-btn-line" th:href="@{/naesintest/pre-high(part=${part})}">어휘 모의고사 목록</a>
 </div></div>
-<main class="nt-sheet-wrap" id="ph-vocabulary" th:data-api="${examApi}" th:data-confirm-choice="${part == 7}">
+<main class="nt-sheet-wrap" id="ph-vocabulary" th:data-api="${examApi}">
   <header class="nt-paperhead">
     <h1 class="nt-paperhead-title" th:text="${examTitle}">고1 수능 대비 어휘 모의고사</h1>
     <p class="nt-paperhead-title nt-paperhead-sub" th:text="|${part}부 · ${round}회|">4부 · 1회</p>
@@ -29,8 +29,7 @@
   <div id="ph-vocab-body">
     <section class="nt-page">
       <p>1~30번 뜻 고르기는 문항당 5초, 31~50번 문장 빈칸은 문항당 10초입니다.</p>
-      <p th:if="${part == 7}">①~⑤ 또는 숫자 키로 답을 고른 뒤 ‘다음’을 누르세요. 시간이 끝나면 마지막으로 고른 답이 제출됩니다. 답을 고르지 않으면 미응답으로 넘어갑니다.</p>
-      <p th:if="${part == 4}">①~⑤를 누르거나 키보드 숫자 1~5로 답을 고르면 바로 다음 문항으로 넘어갑니다. 제한 시간이 지나면 미응답으로 처리되고 다음 문항이 열립니다.</p>
+      <p>①~⑤를 누르거나 키보드 숫자 1~5로 답을 고르면 바로 다음 문항으로 넘어갑니다. 제한 시간이 지나면 미응답으로 처리되고 다음 문항이 열립니다.</p>
       <button class="nt-btn" type="button" data-action="start">시험 시작 / 이어 풀기</button>
     </section>
   </div>
