@@ -29,7 +29,7 @@ public final class PreHighVocabularyAttempt {
     this.confirmChoice = confirmChoice;
     this.questions = List.copyOf(questions);
     this.answers = new int[questions.size()];
-    deadline = now.plusSeconds(seconds(questions.getFirst()));
+    deadline = now.plusSeconds(questions.getFirst().seconds());
   }
 
   public UUID id() { return id; }
@@ -47,7 +47,7 @@ public final class PreHighVocabularyAttempt {
     Question question = questions.get(index);
     boolean cloze = question.sentence() != null;
     var item = new Item(index + 1, cloze, cloze ? question.sentence() : question.term(),
-        question.choices(), seconds(question), answers[index]);
+        question.choices(), question.seconds(), answers[index]);
     return new State(id, Duration.between(now, deadline).toMillis(), answers.length, item, null, null);
   }
 
@@ -65,13 +65,8 @@ public final class PreHighVocabularyAttempt {
     return state(now);
   }
 
-  private int seconds(Question question) {
-    if (confirmChoice) return question.sentence() == null ? 5 : 10;
-    return question.seconds();
-  }
-
   private void advance(Instant now) {
     index++;
-    if (!finished()) deadline = now.plusSeconds(seconds(questions.get(index)));
+    if (!finished()) deadline = now.plusSeconds(questions.get(index).seconds());
   }
 }

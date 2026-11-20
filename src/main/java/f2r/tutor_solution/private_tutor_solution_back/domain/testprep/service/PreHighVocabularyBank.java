@@ -17,7 +17,7 @@ public final class PreHighVocabularyBank {
 
   public record Question(String term, String meaning, String sentence, String translation,
                          boolean idiom, List<String> choices, int answer) {
-    public int seconds() { return sentence == null ? 3 : 5; }
+    public int seconds() { return sentence == null ? 5 : 10; }
 
     public String completed() {
       return sentence == null ? null : sentence.replace("____", choices.get(answer - 1));
