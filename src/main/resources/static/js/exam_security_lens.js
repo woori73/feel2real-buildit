@@ -128,6 +128,58 @@
       .sort((a, b) => b.hits - a.hits || b.score - a.score);
   }
 
+  /**
+   * 가까이 붙은 후보를 하나로 합친다. 렌즈 하나의 반사가 작은 점 여러 개로 쪼개지거나
+   * 손이 떨려 자리가 조금씩 달라지면 같은 렌즈를 여러 곳으로 세게 된다.
+   * 반경 radius(프레임 픽셀) 안의 후보는 한 자리로 보고, 가장 많이·밝게 잡힌 것을 대표로 남긴다.
+   */
+  function mergeNearby(candidates, radius) {
+    const r = radius == null ? 16 : radius;
+    const sorted = (candidates || []).slice().sort((a, b) => (b.hits || 0) - (a.hits || 0) || b.score - a.score);
+    const merged = [];
+    sorted.forEach((c) => {
+      const near = merged.find((m) => Math.hypot(m.cx - c.cx, m.cy - c.cy) <= r);
+      if (near) near.members++;
+      else merged.push(Object.assign({}, c, { members: 1 }));
+    });
+    return merged;
+  }
+
+  /**
+   * 프레임(srcW×srcH)을 화면 칸(boxW×boxH)에 잘림 없이 넣을 때의 배율과 여백(object-fit: contain).
+   * 프레임 좌표 (x, y) → 화면 좌표 (ox + x·scale, oy + y·scale).
+   */
+  function fitRect(srcW, srcH, boxW, boxH) {
+    const scale = Math.min(boxW / srcW, boxH / srcH);
+    return { scale, ox: (boxW - srcW * scale) / 2, oy: (boxH - srcH * scale) / 2 };
+  }
+
+  /** 분석할 프레임 폭(픽셀). 320이면 2m 밖의 렌즈가 1픽셀보다 작아져 놓치기 쉬워 640으로 올렸다. */
+  const ANALYSIS_WIDTH = 640;
+
+  /**
+   * 검사 거리별 설정. 거리 값은 시작값이고 1주차 측정으로 다시 정한다.
+   * - near(입구·순회 1~2m): 확대 없음, 기본 기준값
+   * - far(교실 앞 3~5m): 카메라가 지원하면 3배까지 확대하고, 멀리서 약해지는 반사를 잡도록 기준값을 낮춘다
+   *   (기준을 낮추면 잘못 알리는 경우도 늘 수 있다)
+   * @param {'near'|'far'} mode
+   * @param {object} caps track.getCapabilities() 결과(zoom: {min,max})
+   * @returns {{zoom: number|null, options: object, radius: number, mergeRadius: number}}
+   */
+  function rangeSettings(mode, caps) {
+    const k = ANALYSIS_WIDTH / 320; // 반경 기준값은 320폭에서 정했으므로 폭에 맞춰 늘린다
+    const zoomCaps = caps && caps.zoom && typeof caps.zoom.max === 'number' ? caps.zoom : null;
+    if (mode === 'far') {
+      return {
+        zoom: zoomCaps ? Math.min(zoomCaps.max, Math.max(zoomCaps.min || 1, 3)) : null,
+        options: { onMin: 170, diffMin: 40 },
+        radius: 10 * k,
+        mergeRadius: 16 * k,
+      };
+    }
+    return { zoom: zoomCaps ? (zoomCaps.min || 1) : null, options: {}, radius: 10 * k, mergeRadius: 16 * k };
+  }
+
   /** 감독관 화면에 띄울 문장. 기계는 판정하지 않는다. */
   function verdict(candidates) {
     const n = (candidates || []).length;
@@ -171,7 +223,7 @@
   async function openTorchCamera(mediaDevices, opts) {
     const o = opts || {};
     const wait = o.wait || sleep;
-    const size = { width: { ideal: 1280 }, height: { ideal: 720 } };
+    const size = { width: { ideal: 1920 }, height: { ideal: 1080 } }; // 멀리 있는 작은 렌즈도 픽셀로 남게 높은 해상도를 요청
     const first = await mediaDevices.getUserMedia({ video: Object.assign({ facingMode: { ideal: 'environment' } }, size), audio: false });
     if (hasTorch(first)) return { stream: first, torch: true };
     await wait(500);
@@ -226,6 +278,9 @@
         const stream = opened.stream;
         video.srcObject = stream;
         await video.play();
+        if (video.videoWidth && video.videoHeight) {
+          video.parentElement.style.aspectRatio = video.videoWidth + ' / ' + video.videoHeight; // 영상 전체가 보이게
+        }
         track = stream.getVideoTracks()[0];
         if (!opened.torch && !hasTorch(stream)) {
           say('카메라는 켜졌지만 이 휴대폰에서는 웹 화면이 플래시를 켤 수 없습니다. 아이폰 사파리는 지원하지 않고, 일부 안드로이드 기종도 막혀 있습니다. 휴대폰 기종과 크롬 버전을 알려 주세요.');
@@ -233,14 +288,14 @@
           return;
         }
         scanBtn.disabled = false;
-        say('준비됐습니다. 30~100㎝ 거리에서 물건을 비추고 [렌즈 찾기]를 누르세요.');
+        say('준비됐습니다. 거리를 고르고 [렌즈 찾기]를 누르세요. 입구·순회는 1~2m, 교실 앞은 [멀리]를 고르세요(거리별 성능은 아직 재는 중).');
       } catch (e) {
         say('카메라를 열지 못했습니다: ' + (e && e.message ? e.message : e));
       }
     }
 
     function grab() {
-      const w = 320;
+      const w = ANALYSIS_WIDTH;
       const h = Math.round((video.videoHeight / video.videoWidth) * w) || 180;
       work.width = w; work.height = h;
       const ctx = work.getContext('2d', { willReadFrequently: true });
@@ -253,27 +308,53 @@
       await sleep(220); // 노출이 따라오는 시간
     }
 
-    function draw(cands, fw, fh) {
-      overlay.width = video.clientWidth;
-      overlay.height = video.clientHeight;
+    function clearOverlay() {
       const ctx = overlay.getContext('2d');
       ctx.clearRect(0, 0, overlay.width, overlay.height);
-      const sx = overlay.width / fw;
-      const sy = overlay.height / fh;
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#f6ad55';
-      cands.forEach((c) => {
-        const r = Math.max(10, Math.max(c.w * sx, c.h * sy));
+    }
+
+    /** 후보 자리에 번호 붙은 큰 원과 십자선을 그린다(영상은 object-fit: contain이라 잘린 곳이 없다). */
+    function draw(cands, fw, fh) {
+      overlay.width = overlay.clientWidth;
+      overlay.height = overlay.clientHeight;
+      const ctx = overlay.getContext('2d');
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      const f = fitRect(fw, fh, overlay.width, overlay.height);
+      cands.forEach((c, i) => {
+        const x = f.ox + c.cx * f.scale;
+        const y = f.oy + c.cy * f.scale;
+        const r = Math.max(22, Math.max(c.w, c.h) * f.scale * 2);
+        ctx.lineWidth = 7; ctx.strokeStyle = '#fff';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#e53e3e';
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
         ctx.beginPath();
-        ctx.arc(c.cx * sx, c.cy * sy, r, 0, Math.PI * 2);
+        ctx.moveTo(x - r - 10, y); ctx.lineTo(x - r + 8, y);
+        ctx.moveTo(x + r - 8, y); ctx.lineTo(x + r + 10, y);
+        ctx.moveTo(x, y - r - 10); ctx.lineTo(x, y - r + 8);
+        ctx.moveTo(x, y + r - 8); ctx.lineTo(x, y + r + 10);
         ctx.stroke();
+        const label = String(i + 1);
+        ctx.font = 'bold 18px system-ui, sans-serif';
+        ctx.fillStyle = '#e53e3e';
+        ctx.beginPath(); ctx.arc(x + r * 0.75, y - r * 0.75, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, x + r * 0.75, y - r * 0.75 + 1);
       });
     }
 
     async function scan() {
       scanBtn.disabled = true;
+      clearOverlay();
+      if (video.paused) await video.play(); // 지난 결과로 멈춰 둔 화면을 다시 움직인다
       const t0 = performance.now();
       try {
+        const modeInput = doc.querySelector('input[name="lensRange"]:checked');
+        const set = rangeSettings(modeInput ? modeInput.value : 'near', track.getCapabilities ? track.getCapabilities() : {});
+        if (set.zoom != null) {
+          try { await track.applyConstraints({ advanced: [{ zoom: set.zoom }] }); await sleep(300); } catch (e) { /* 확대를 못 하는 기종 */ }
+        }
         const rounds = [];
         let size = null;
         for (let i = 0; i < 3; i++) {
@@ -282,11 +363,15 @@
           await torch(true);
           const on = grab();
           size = { w: on.width, h: on.height };
-          rounds.push(findCandidates(on, off));
+          rounds.push(findCandidates(on, off, set.options));
         }
         await torch(false);
-        const cands = consistentCandidates(rounds, 6, 2);
+        const cands = mergeNearby(consistentCandidates(rounds, set.radius, 2), set.mergeRadius);
         draw(cands, size.w, size.h);
+        if (cands.length) {
+          video.pause(); // 휴대폰을 움직여도 원 자리를 볼 수 있게 화면을 멈춘다
+          say('화면을 멈췄습니다. 빨간 원(번호) 자리를 직접 확인하세요. 다시 찾으려면 [렌즈 찾기]를 누르세요.');
+        }
         const v = verdict(cands);
         result.dataset.level = v.level;
         result.querySelector('strong').textContent = v.title;
@@ -302,5 +387,5 @@
     scanBtn.addEventListener('click', scan);
   }
 
-  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
+  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, rangeSettings, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
 });

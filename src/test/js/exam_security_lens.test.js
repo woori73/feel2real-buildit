@@ -211,3 +211,88 @@ test('openTorchCamera: 어느 카메라도 플래시를 지원하지 않으면 �
   assert.equal(r.stream.track.stopped, false);
   assert.equal(r.stream.track.getSettings().deviceId, 'main');
 });
+
+test('mergeNearby: 렌즈 하나의 반사가 가까운 점 여러 개로 쪼개져도 한 곳으로 센다', () => {
+  // given — 같은 렌즈 주변 점 3개(서로 10픽셀 안)와 멀리 떨어진 점 1개
+  const cands = [
+    { cx: 100, cy: 50, w: 2, h: 2, score: 5, hits: 2 },
+    { cx: 108, cy: 54, w: 2, h: 2, score: 9, hits: 3 },
+    { cx: 103, cy: 60, w: 2, h: 2, score: 4, hits: 2 },
+    { cx: 250, cy: 120, w: 2, h: 2, score: 7, hits: 2 },
+  ];
+  // when
+  const merged = L.mergeNearby(cands, 16);
+  // then
+  assert.equal(merged.length, 2);
+  assert.equal(merged[0].cx, 108, '가장 많이 잡힌 점을 대표로 남긴다');
+  assert.equal(merged[0].members, 3);
+  assert.equal(merged[1].cx, 250);
+});
+
+test('mergeNearby: 반경보다 멀리 떨어진 렌즈 두 개는 따로 센다', () => {
+  // given
+  const cands = [{ cx: 10, cy: 10, w: 1, h: 1, score: 1, hits: 2 }, { cx: 40, cy: 10, w: 1, h: 1, score: 1, hits: 2 }];
+  // when
+  const merged = L.mergeNearby(cands, 16);
+  // then
+  assert.equal(merged.length, 2);
+});
+
+test('fitRect: 세로로 긴 프레임을 가로로 넓은 칸에 넣으면 좌우에 여백을 두고 잘리지 않게 줄인다', () => {
+  // given — 180×320 세로 프레임, 640×360 화면 칸
+  // when
+  const f = L.fitRect(180, 320, 640, 360);
+  // then
+  assert.equal(f.scale, 360 / 320);
+  assert.equal(f.oy, 0);
+  assert.equal(f.ox, (640 - 180 * (360 / 320)) / 2);
+  // 프레임 오른쪽 아래 끝이 화면 칸 안에 들어온다
+  assert.ok(f.ox + 180 * f.scale <= 640);
+  assert.ok(f.oy + 320 * f.scale <= 360);
+});
+
+test('화면: 영상과 원 그림은 잘리지 않게(contain) 같은 방식으로 맞춘다', () => {
+  // given
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/easy/exam_security_lens.html'), 'utf8');
+  // when & then
+  assert.match(html, /\.stage video, \.stage canvas \{[^}]*object-fit: contain/);
+  assert.doesNotMatch(html, /object-fit: cover/);
+});
+
+test('rangeSettings: 가까이(입구·순회)는 확대하지 않고 기본 기준값을 쓴다', () => {
+  // given
+  const caps = { zoom: { min: 1, max: 10 } };
+  // when
+  const set = L.rangeSettings('near', caps);
+  // then
+  assert.equal(set.zoom, 1);
+  assert.deepEqual(set.options, {});
+  assert.equal(set.radius, 20, '640폭 분석이라 320폭 기준 반경 10의 2배');
+  assert.equal(set.mergeRadius, 32);
+});
+
+test('rangeSettings: 멀리(교실 앞)는 카메라가 되는 만큼 3배까지 확대하고 기준값을 낮춘다', () => {
+  // given
+  // when
+  const big = L.rangeSettings('far', { zoom: { min: 1, max: 10 } });
+  const small = L.rangeSettings('far', { zoom: { min: 1, max: 2 } });
+  const none = L.rangeSettings('far', {});
+  // then
+  assert.equal(big.zoom, 3);
+  assert.equal(small.zoom, 2, '최대 확대가 3배보다 작으면 최대까지만');
+  assert.equal(none.zoom, null, '확대를 지원하지 않으면 확대하지 않는다');
+  assert.ok(big.options.diffMin < L.DEFAULTS.diffMin);
+  assert.ok(big.options.onMin < L.DEFAULTS.onMin);
+});
+
+test('화면: 검사 거리(가까이 1~2m / 멀리 3~5m)를 고를 수 있다', () => {
+  // given
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/easy/exam_security_lens.html'), 'utf8');
+  // when & then
+  assert.match(html, /name="lensRange" value="near" checked/);
+  assert.match(html, /name="lensRange" value="far"/);
+});
