@@ -31,7 +31,9 @@ class PreHighGrade2ReadingTest {
 
   @Test
   void existingEditionCanBootAndTheAdministratorCanReplaceItWithTheRevisedEdition() throws Exception {
-    Files.write(directory.resolve("part5.json"), edition(48));
+    byte[] legacy = edition(48);
+    Path previousPackage = directory.resolve("part5.json");
+    Files.write(previousPackage, legacy);
     var store = new PreHighEnglishStore(json, directory.toString());
     assertThat(store.listGrade2()).hasSize(48);
 
@@ -39,6 +41,7 @@ class PreHighGrade2ReadingTest {
 
     assertThat(store.listGrade2()).hasSize(36);
     assertThat(store.getGrade2(37)).isNull();
+    assertThat(Files.readAllBytes(previousPackage)).isEqualTo(legacy);
     assertThat(new PreHighEnglishStore(json, directory.toString()).listGrade2()).hasSize(36);
     assertThatThrownBy(() -> store.installGrade2(edition(48))).isInstanceOf(IllegalArgumentException.class);
     assertThat(store.listGrade2()).hasSize(36);

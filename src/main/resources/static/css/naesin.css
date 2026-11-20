@@ -365,6 +365,51 @@ body.nt-body {
 }
 
 /* 예비고1 모의고사 */
+/* 5부는 독해 지면을 넓게 쓰고, OMR의 터치 영역 안에서 타원만 작게 그린다. */
+#ph-test[data-part="5"] .nt-run-grid {
+  grid-template-columns: minmax(0, 1fr) 234px;
+  gap: 14px;
+}
+#ph-test[data-part="5"] .nt-run-grid > .nt-page {
+  min-width: 0;
+  padding-inline: 12px;
+}
+#ph-test[data-part="5"] .nt-img,
+#ph-test[data-part="5"] .ph-review-image {
+  width: 600px;
+  max-width: 100%;
+}
+#ph-test[data-part="5"] .ph-review-image .nt-img { width: 100%; }
+#ph-test[data-part="5"] .nt-pick { width: min(300px, 100%); }
+#ph-test[data-part="5"] .nt-pick-row,
+#ph-test[data-part="5"] .nt-omr-row {
+  grid-template-columns: 30px repeat(5, minmax(0, 1fr));
+}
+#ph-test[data-part="5"] .nt-pick-no { font-size: 12px; }
+#ph-test[data-part="5"] .nt-ob::before { width: 13px; height: 19px; }
+#ph-test[data-part="5"] .nt-omr-head h2 { font-size: 14px; letter-spacing: .12em; }
+#ph-test[data-part="5"] .nt-omr-b { width: 24px; height: 26px; }
+#ph-test[data-part="5"] .nt-qbar { gap: 6px; flex-wrap: wrap; }
+#ph-test[data-part="5"] .ph-reading-zoom { margin-left: auto; }
+#ph-test[data-part="5"] .ph-reading-zoom[aria-pressed="true"] { background: #eaf1fb; }
+#ph-test[data-part="5"] .nt-sheet { grid-template-columns: minmax(0, 1fr); }
+#ph-test[data-part="5"] .ph-sheet-zoomed { overflow-x: auto; }
+#ph-test[data-part="5"] .ph-sheet-zoomed .nt-img { width: max(600px, 120%); max-width: none; margin: 0; }
+
+@media (max-width: 900px) {
+  #ph-test[data-part="5"] .nt-run-grid { grid-template-columns: minmax(0, 1fr); }
+  #ph-test[data-part="5"] .nt-omr {
+    width: min(300px, 100%);
+    margin-left: auto;
+  }
+}
+@media (max-width: 640px) {
+  #ph-test[data-part="5"] .nt-run-grid > .nt-page { padding-inline: 4px; }
+  #ph-test[data-part="5"] .nt-ob { width: 42px; max-width: 100%; height: 36px; }
+  #ph-test[data-part="5"] .nt-exp { padding-inline: 6px; }
+  #ph-test[data-part="5"] .ph-sheet-zoomed .nt-img { width: 120%; }
+}
+
 #ph-test { --ph-review-red: #b91c1c; }
 #ph-test.ph-timed .nt-paperhead, #ph-grammar.ph-timed .nt-paperhead { position: sticky; top: 0; z-index: 2; }
 #ph-test .nt-time { color: #1d4ed8; white-space: nowrap; }
@@ -417,56 +462,3 @@ body.nt-body {
 .ph-timed .ph-grammar-pdf { display: none; }
 .ph-grammar-pdf-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .ph-grammar-pdf-links .nt-btn { min-width: 48px; }
-
-#ph-vocabulary [data-choice][aria-pressed="true"] {
-  background: #193e69;
-  border-color: #193e69;
-  color: #fff;
-}
-.ph-vocab-next { margin-top: 1rem; }
-.ph-vocab-next:disabled { opacity: .5; cursor: default; }
-
-/* 5부는 독해 지면을 넓게 쓰고, OMR의 터치 영역 안에서 타원만 작게 그린다. */
-#ph-test[data-part="5"] .nt-run-grid {
-  grid-template-columns: minmax(0, 1fr) 234px;
-  gap: 14px;
-}
-#ph-test[data-part="5"] .nt-run-grid > .nt-page {
-  min-width: 0;
-  padding-inline: 12px;
-}
-#ph-test[data-part="5"] .nt-img,
-#ph-test[data-part="5"] .ph-review-image {
-  width: 600px;
-  max-width: 100%;
-}
-#ph-test[data-part="5"] .ph-review-image .nt-img { width: 100%; }
-#ph-test[data-part="5"] .nt-pick { width: min(300px, 100%); }
-#ph-test[data-part="5"] .nt-pick-row,
-#ph-test[data-part="5"] .nt-omr-row {
-  grid-template-columns: 30px repeat(5, minmax(0, 1fr));
-}
-#ph-test[data-part="5"] .nt-pick-no { font-size: 12px; }
-#ph-test[data-part="5"] .nt-ob::before { width: 13px; height: 19px; }
-#ph-test[data-part="5"] .nt-omr-head h2 { font-size: 14px; letter-spacing: .12em; }
-#ph-test[data-part="5"] .nt-omr-b { width: 24px; height: 26px; }
-#ph-test[data-part="5"] .nt-qbar { gap: 6px; flex-wrap: wrap; }
-#ph-test[data-part="5"] .ph-reading-zoom { margin-left: auto; }
-#ph-test[data-part="5"] .ph-reading-zoom[aria-pressed="true"] { background: #eaf1fb; }
-#ph-test[data-part="5"] .nt-sheet { grid-template-columns: minmax(0, 1fr); }
-#ph-test[data-part="5"] .ph-sheet-zoomed { overflow-x: auto; }
-#ph-test[data-part="5"] .ph-sheet-zoomed .nt-img { width: max(600px, 120%); max-width: none; margin: 0; }
-
-@media (max-width: 900px) {
-  #ph-test[data-part="5"] .nt-run-grid { grid-template-columns: minmax(0, 1fr); }
-  #ph-test[data-part="5"] .nt-omr {
-    width: min(300px, 100%);
-    margin-left: auto;
-  }
-}
-@media (max-width: 640px) {
-  #ph-test[data-part="5"] .nt-run-grid > .nt-page { padding-inline: 4px; }
-  #ph-test[data-part="5"] .nt-ob { width: 42px; max-width: 100%; height: 36px; }
-  #ph-test[data-part="5"] .nt-exp { padding-inline: 6px; }
-  #ph-test[data-part="5"] .ph-sheet-zoomed .nt-img { width: 120%; }
-}

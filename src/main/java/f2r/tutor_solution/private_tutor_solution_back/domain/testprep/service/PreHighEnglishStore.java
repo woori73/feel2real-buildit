@@ -17,6 +17,7 @@ public class PreHighEnglishStore {
   private static final int LEGACY_ROUND_COUNT = 25;
   private static final int GRADE2_ROUND_COUNT = 36;
   private static final int LEGACY_GRADE2_ROUND_COUNT = 48;
+  private static final String GRADE2_PACKAGE = "part5-revised.json";
   public static final int READING_COUNT = 6;
   public static final int READING_SECONDS = 90 * READING_COUNT;
   public static final int WORD_SECONDS = 5;
@@ -46,9 +47,14 @@ public class PreHighEnglishStore {
     this.directory = Path.of(directory);
     Path current = this.directory.resolve("rounds.json");
     if (Files.isRegularFile(current)) rounds = readPackage(Files.readAllBytes(current), false, false);
-    Path grade2 = this.directory.resolve("part5.json");
-    // The deployed file may still contain the 48-round edition until the administrator uploads the revision.
-    if (Files.isRegularFile(grade2)) grade2Rounds = readPackage(Files.readAllBytes(grade2), true, true);
+    Path revisedGrade2 = this.directory.resolve(GRADE2_PACKAGE);
+    Path legacyGrade2 = this.directory.resolve("part5.json");
+    // Keep the previous package readable for an application rollback during deployment.
+    if (Files.isRegularFile(revisedGrade2)) {
+      grade2Rounds = readPackage(Files.readAllBytes(revisedGrade2), true, false);
+    } else if (Files.isRegularFile(legacyGrade2)) {
+      grade2Rounds = readPackage(Files.readAllBytes(legacyGrade2), true, true);
+    }
   }
 
   public Round get(int number) {
@@ -80,7 +86,7 @@ public class PreHighEnglishStore {
   }
 
   public synchronized void installGrade2(byte[] contents) throws IOException {
-    grade2Rounds = save(contents, "part5.json", true);
+    grade2Rounds = save(contents, GRADE2_PACKAGE, true);
   }
 
   private List<Round> save(byte[] contents, String filename, boolean grade2) throws IOException {

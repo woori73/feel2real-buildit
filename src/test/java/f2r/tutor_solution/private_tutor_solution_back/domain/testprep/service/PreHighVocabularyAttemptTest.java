@@ -31,12 +31,11 @@ class PreHighVocabularyAttemptTest {
     for (int round = 1; round <= 40; round++) {
       var questions = bank.get(7, round);
       assertThat(questions).isNotEqualTo(bank.get(round));
-      var attempt = new PreHighVocabularyAttempt(questions, start, true);
+      var attempt = new PreHighVocabularyAttempt(questions, start);
       for (int i = 0; i < 50; i++) {
         var now = start.plusMillis(i * 100L);
         assertThat(attempt.state(now).item().seconds()).isEqualTo(i < 30 ? 5 : 10);
         attempt.answer(i + 1, questions.get(i).answer(), now);
-        attempt.next(i + 1, now);
       }
       var result = attempt.state(start.plusSeconds(5));
       assertThat(result.score()).isEqualTo(100);
