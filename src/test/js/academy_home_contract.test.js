@@ -68,3 +68,14 @@ test('given 요일별 학생·반과 수정 화면 when 템플릿을 읽으면 t
   assert.ok(HTML.includes('/js/academy_students.js'));
   assert.doesNotMatch(script, /\.innerHTML\s*=|insertAdjacentHTML|eval\(/);
 });
+
+test('given 홈 템플릿 when 장부·운영 묶음을 읽으면 then 관리자에게만 보이는 원장 휴대폰 앱(/easy/app) 링크가 있다', () => {
+  // given
+  const link = HTML.match(/<a href="\/easy\/app"[^>]*>[\s\S]*?<\/a>/);
+  // when
+  const tag = link && link[0];
+  // then
+  assert.ok(tag, '/easy/app 링크가 없다');
+  assert.match(tag, /data-ah-admin hidden/);
+  assert.match(tag, /원장 휴대폰 앱/);
+});
