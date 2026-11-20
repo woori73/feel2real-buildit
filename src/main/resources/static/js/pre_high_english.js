@@ -112,16 +112,48 @@
       + '</div></section>';
   }
 
-  function explanation(text) {
+  function reviewKey(text) {
+    return '<span class="ph-review-key">' + NT.esc(text) + '</span>';
+  }
+
+  function emphasizeKeyPhrases(text) {
+    if (!text) return '';
+    const parts = text.split(/(“[^”]{1,80}”|‘[^’]{1,80}’|\b[A-Z](?:\s*[–→-]\s*[A-Z])+\b|\b[A-Za-z]{2,}(?:[’'-][A-Za-z]+)*(?: +[A-Za-z]+(?:[’'-][A-Za-z]+)*)*)/g);
+    if (parts.length > 1) {
+      return parts.map((part, index) => index % 2 ? reviewKey(part) : NT.esc(part)).join('');
+    }
+    const firstSentence = /^.*?[.!?](?=\s|$)/.exec(text)?.[0] ?? text;
+    return reviewKey(firstSentence) + NT.esc(text.slice(firstSentence.length));
+  }
+
+  function explanation(text, answer) {
+    const answerLabel = circle[answer - 1];
     const sections = text.split('\n').map(line => line.trim()).filter(Boolean);
     return '<div class="ph-explanation">' + sections.map((line, i) => {
-      const section = /^(내용 요약|주제|해설|풀이 전략|어법 포인트):\s*(.+)$/.exec(line);
-      if (section) return '<p><strong>' + NT.esc(section[1]) + '</strong> ' + NT.esc(section[2]) + '</p>';
+      const option = /^([①②③④⑤])\s+(.+?)\s+·\s+정답 근거:\s*(.+)$/.exec(line);
+      if (option && option[1] === answerLabel) {
+        return '<p>' + reviewKey(option[1] + ' ' + option[2] + ' · 정답 근거')
+          + ': ' + emphasizeKeyPhrases(option[3]) + '</p>';
+      }
       // 2부 해설: 첫 줄 '정답 ③ · 유형 (2점)', 이어서 [유형 전략]·[풀이 과정]·[정답 근거]·[오답 분석]·[어휘]
       const tag = /^\[(.+?)\]\s*(.*)$/.exec(line);
-      if (tag) return '<p><strong>' + NT.esc(tag[1]) + '</strong>' + (tag[2] ? ' ' + NT.esc(tag[2]) : '') + '</p>';
-      if (i === 0 && /^정답 /.test(line)) return '<p class="ph-exp-head">' + NT.esc(line) + '</p>';
-      return '<p>' + NT.esc(line) + '</p>';
+      if (tag) {
+        const rest = tag[1] === '정답 근거' ? emphasizeKeyPhrases(tag[2]) : NT.esc(tag[2]);
+        return '<p><strong>' + NT.esc(tag[1]) + '</strong>' + (tag[2] ? ' ' + rest : '') + '</p>';
+      }
+      if (i === 0 && /^정답 [①②③④⑤] /.test(line)) return '<p class="ph-exp-head">' + reviewKey(line) + '</p>';
+      const section = /^(내용 요약|주제|해설|풀이 전략|풀이 ?해설|이 문항에 적용|어법 포인트)\s*[:·]\s*(.+)$/.exec(line);
+      if (!section) return '<p>' + NT.esc(line) + '</p>';
+
+      const [, label, content] = section;
+      let rendered = NT.esc(content);
+      if (label !== '내용 요약' && label !== '주제') {
+        const lead = /^([①②③④⑤](?:이|가) 정답입니다[.!]?)(\s*)/.exec(content);
+        rendered = lead && lead[1][0] === answerLabel
+          ? reviewKey(lead[1]) + lead[2] + emphasizeKeyPhrases(content.slice(lead[0].length))
+          : emphasizeKeyPhrases(content);
+      }
+      return '<p><strong>' + NT.esc(label) + '</strong> ' + rendered + '</p>';
     }).join('') + '</div>';
   }
 
@@ -136,9 +168,10 @@
       return '<section class="nt-page"><h2>' + label + ' ' + score(results) + ' / ' + results.length + '</h2>'
         + (shown.length ? shown.map((result, index) => '<details class="nt-exp"' + (index === 0 ? ' open' : '') + '><summary>'
           + (result.word ? result.number : no(result.number - 1)) + '번' + (result.word ? ' · ' + NT.esc(result.word) : '') + ' · ' + (correct(result) ? '정답' : result.chosen ? '오답' : '미응답')
-          + '</summary><p>내 답 ' + (circle[result.chosen - 1] || '미응답') + ' · 정답 ' + circle[result.answer - 1] + '</p>'
+          + '</summary><p>내 답 ' + (circle[result.chosen - 1] || '미응답') + ' · '
+          + reviewKey('정답 ' + circle[result.answer - 1]) + '</p>'
           + (result.explanation ? (shared[result.number - 1] ? reviewImage(result, 'passage') : '')
-            + reviewImage(result, 'question') + explanation(result.explanation) : '')
+            + reviewImage(result, 'question') + explanation(result.explanation, result.answer) : '')
           + (result.meaning ? '<p>' + NT.esc(result.meaning) + '</p>' : '')
           + '</details>').join('') : '<p>틀린 문항이 없습니다.</p>') + '</section>';
     };
