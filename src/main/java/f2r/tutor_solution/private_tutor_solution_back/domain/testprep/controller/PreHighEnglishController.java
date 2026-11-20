@@ -37,6 +37,7 @@ public class PreHighEnglishController {
 
   public record Action(String action, UUID attempt, int number, int choice) {}
   public record GrammarAction(String action, UUID attempt, Integer number, Integer choice) {}
+  public record PdfGroup(String label, String path, int count) {}
 
   private final PreHighEnglishStore store;
   private final PreHighGrammarBank grammar;
@@ -58,12 +59,17 @@ public class PreHighEnglishController {
   }
 
   @GetMapping(PAGE + "/grammar/{chapter}")
-  public String grammarTest(@PathVariable int chapter, Model model) {
+  public String grammarTest(@PathVariable int chapter, Model model,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
     var content = grammar.get(chapter);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     model.addAttribute("chapter", new PreHighGrammarBank.ChapterInfo(chapter, content.title()));
     model.addAttribute("count", PreHighGrammarBank.QUESTION_COUNT);
     model.addAttribute("seconds", PreHighGrammarBank.QUESTION_SECONDS);
+    if (principal != null && "ADMIN".equals(principal.role())) {
+      model.addAttribute("pdfGroups", List.of(new PdfGroup("어법",
+          PreHighQuestionPdfController.API + "/grammar/" + chapter, content.questions().size())));
+    }
     return "prehigh/grammar";
   }
 
@@ -107,10 +113,17 @@ public class PreHighEnglishController {
   }
 
   @GetMapping(PAGE + "/{round}")
-  public String test(@PathVariable int round, Model model) {
-    if (store.get(round) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+  public String test(@PathVariable int round, Model model,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    var content = store.get(round);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     model.addAttribute("round", round);
-    model.addAttribute("shared", store.get(round).reading().stream().map(item -> item.passage() != null).toList());
+    model.addAttribute("shared", content.reading().stream().map(item -> item.passage() != null).toList());
+    if (principal != null && "ADMIN".equals(principal.role())) {
+      String base = PreHighQuestionPdfController.API + "/rounds/" + round;
+      model.addAttribute("pdfGroups", List.of(new PdfGroup("독해", base + "/reading", content.reading().size()),
+          new PdfGroup("어휘", base + "/vocabulary", content.words().size())));
+    }
     return "prehigh/test";
   }
 

@@ -14,6 +14,13 @@ tasks.named('bootJar') {
 	manifest.attributes('Build-Commit': artifactCommit, 'Build-Working-Tree': artifactDirty ? 'dirty' : 'clean')
 }
 
+tasks.named('processResources') {
+	from('ops/designcraft/qa/test/fonts') {
+		include 'NotoSansKR-Regular.ttf', 'OFL-1.1.txt'
+		into 'pre-high-english/fonts'
+	}
+}
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)

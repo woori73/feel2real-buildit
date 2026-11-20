@@ -4961,10 +4961,12 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ### 예비고1 디지털 수능 영어 모의고사 (`/naesintest/pre-high`)
 
-- `GET /naesintest/pre-high`는 공개 안내·회차 목록을 반환한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
+- `GET /naesintest/pre-high`는 공개 1·2·3부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 준비 안내, `part=3`은 어법 단원 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
 - `POST /api/naesintest/pre-high/{round}`에는 같은 출처의 `{action, attempt?, number?, choice?}`를 보낸다. `start`는 해당 브라우저 세션에서 회차를 시작하거나 기존 진행 상태를 되돌려 준다. `read-answer`, `reading-done`, `words-start`, `word-answer`, `state`, `restart`는 서버가 반환한 응시 ID가 필요하다.
 - 독해 제한은 총 540초이며 어휘는 각 문항마다 새로 5초를 부여한다. 진행 중 `remainingMillis`는 현재 영역 또는 어휘 문항에서 남은 시간이다. `elapsedMillis`는 끝난 독해와 어휘 문항의 실제 풀이 시간을 합산하며, 어휘 시작 전 대기 시간은 제외한다. `REVIEW` 상태에서만 정답과 해설을 반환한다. 응시나 결과는 브라우저 세션에 귀속된다. 독해 결과의 선택 필드 `marks`는 `part`(`question` 또는 `passage`), `kind`(`evidence` 또는 `answer`), 이미지의 가로·세로를 10,000으로 나눈 좌표 `x, y, width, height`를 담는다.
 - `GET /api/naesintest/pre-high/{round}/image/{number}/{part}`는 응시 중인 사용자에게 독해 문항(`question`) 또는 공통 지문(`passage`) WebP를 반환한다.
+- `GET /api/admin/pre-high-english/rounds/{round}/{kind}/{number}.pdf`는 관리자용 단일 문항 문제지를 반환한다. `kind`는 `reading` 또는 `vocabulary`이며 독해에 공통 지문이 있으면 PDF 첫 페이지에 포함된다.
+- `GET /api/admin/pre-high-english/grammar/{chapter}/{number}.pdf`는 관리자용 어법 단일 문항 문제지를 반환한다. 두 PDF 경로 모두 정답·해설 없이 `application/pdf` 첨부 응답을 반환한다.
 - `POST /api/admin/pre-high-english/rounds`는 ADMIN 전용이며 같은 출처의 JSON(최대 32 MiB)을 받아 35회 자료 전체를 검증한 후 한 번에 등록한다. 기존 25회 묶음도 읽을 수 있다. 웹 루트 밖의 `app.pre-high-english.dir`에 저장한다. 기본 저장 경로는 실행 계정 홈의 `pre-high-english`다.
 - `GET /naesintest/pre-high/grammar/{chapter}`는 로그인한 학생·강사·관리자가 3부 어법 단원을 여는 경로다. 단원 번호는 3~12다.
 - `POST /api/naesintest/pre-high/grammar/{chapter}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. 동작은 `start`, `state`, `answer`, `restart`다. `start` 외에는 서버가 반환한 응시 ID가 필요하며 `answer`에는 현재 문항 번호와 1~5의 선택지를 보낸다. 문항당 제한 시간은 20초다. 응시 중에는 현재 문항만 응답에 포함되고, 40문항이 끝나면 정답·해설·최종 답안이 반환된다. `restart`는 채점 후 새 응시를 시작한다.
