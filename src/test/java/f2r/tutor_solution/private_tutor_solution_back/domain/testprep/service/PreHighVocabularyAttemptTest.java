@@ -18,8 +18,8 @@ class PreHighVocabularyAttemptTest {
     for (int round = 1; round <= 50; round++) {
       var questions = bank.get(round);
       assertThat(questions).hasSize(50);
-      assertThat(questions.subList(0, 30)).allMatch(question -> question.seconds() == 3);
-      assertThat(questions.subList(30, 50)).allMatch(question -> question.seconds() == 5);
+      assertThat(questions.subList(0, 30)).allMatch(question -> question.seconds() == 5);
+      assertThat(questions.subList(30, 50)).allMatch(question -> question.seconds() == 10);
       assertThat(questions.stream().filter(PreHighVocabularyBank.Question::idiom)).hasSize(3);
     }
     assertThat(bank.get(0)).isNull();
@@ -48,27 +48,29 @@ class PreHighVocabularyAttemptTest {
   }
 
   @Test
-  void boundaryChangesToFiveSecondsAndRejectsExpiredAnswer() {
+  void earlyAnswersAdvanceImmediatelyAndExpiredAnswerIsOmittedAtSectionBoundary() {
     var questions = bank.get(1);
     var attempt = new PreHighVocabularyAttempt(questions, start);
-    assertThat(attempt.state(start).remainingMillis()).isEqualTo(3000);
+    assertThat(attempt.state(start).remainingMillis()).isEqualTo(5000);
     assertThat(attempt.state(start).results()).isNull();
 
     for (int i = 1; i <= 29; i++) {
-      attempt.answer(i, questions.get(i - 1).answer(), start.plusMillis(i));
+      var early = attempt.answer(i, questions.get(i - 1).answer(), start.plusMillis(i));
+      assertThat(early.item().number()).isEqualTo(i + 1);
+      assertThat(early.remainingMillis()).isEqualTo(5000);
     }
-    var next = attempt.answer(30, 1, start.plusMillis(3029));
+    var next = attempt.answer(30, 1, start.plusMillis(5029));
     assertThat(next.item().number()).isEqualTo(31);
     assertThat(next.item().cloze()).isTrue();
-    assertThat(next.remainingMillis()).isEqualTo(5000);
+    assertThat(next.remainingMillis()).isEqualTo(10000);
     assertThat(next.score()).isNull();
-    var duplicate = attempt.answer(30, 1, start.plusMillis(3030));
+    var duplicate = attempt.answer(30, 1, start.plusMillis(5030));
     assertThat(duplicate.item().number()).isEqualTo(31);
 
     for (int i = 31; i <= 50; i++) {
-      attempt.answer(i, questions.get(i - 1).answer(), start.plusMillis(3000 + i));
+      attempt.answer(i, questions.get(i - 1).answer(), start.plusMillis(5000 + i));
     }
-    var result = attempt.state(start.plusMillis(4000));
+    var result = attempt.state(start.plusMillis(6000));
     assertThat(result.item()).isNull();
     assertThat(result.score()).isEqualTo(98);
     assertThat(result.results().get(29).chosen()).isZero();
