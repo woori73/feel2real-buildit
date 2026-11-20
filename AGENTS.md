@@ -16,7 +16,7 @@
 5. **자체 LLM(sLLM)·학습·평가·다이내믹 덴서티 작업이면 [docs/f2r-llm/](docs/f2r-llm/)(PLAN·TASKS·DYNAMIC_DENSITY·EVAL_RESULTS)를 먼저 읽고, 시작 전 TASKS.md에 담당을 적는다.**
 
 ## 핵심 규칙 (요약 — 상세는 docs/)
-- **main 단일 로컬 개발**: 기본 작업은 `main`에서 수행하고 `./scripts/run-local.sh`가 로컬 MySQL(`localhost:3308/f2r_db`)을 자동 생성·재사용한다. 검증 후 PR로만 병합하고, 운영 배포는 수동 GitHub Actions로만 수행한다. → [docs/WORKFLOW.md](docs/WORKFLOW.md)
+- **main 단일 로컬 개발**: 기본 작업은 `main`에서 수행하고 `./scripts/run-local.sh`가 로컬 MySQL(`localhost:3308/f2r_db`)을 자동 생성·재사용한다. 검증 후 PR로만 병합하고, 운영 배포는 최신 `main`의 Build Check 통과 후 GitHub Actions에서 자동 실행한다. → [docs/WORKFLOW.md](docs/WORKFLOW.md)
 - **마이그레이션 번호**: `db/migration`=운영 순차(다음 V909+), `db/dev-seed`=`R__` repeatable(버전번호 미사용), 운영 위치 버전 중복·번호 역행 금지(= prd 502 원인). 적용된 V_파일 불변. → [docs/WORKFLOW.md](docs/WORKFLOW.md) §4
 - **스키마 동기화**: `db/migration` V_파일 + Entity + [docs/DOMAIN.md](docs/DOMAIN.md) 셋 동시 수정.
 - **API 계약**: endpoint 변경 시 [docs/API.md](docs/API.md) 동시 수정.
