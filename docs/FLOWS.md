@@ -1248,7 +1248,8 @@ ADMIN 대시보드 → 기존 학생 요약 + `/weekly-plan` 병렬 조회 → �
 
 안드로이드 앱 대신 웹앱으로 시작한다(사용자 결정). 관리자 휴대폰에서 `https://feel2real.co.kr/easy/app` → 「홈 화면에 추가」(안드로이드 크롬은 「지금 홈 화면에 추가」 버튼, 아이폰 사파리는 공유 → 홈 화면에 추가) → 홈 화면의 F2R 아이콘으로 바로가기 화면이 앱처럼 열린다.
 
-- 바로가기(`/easy/app`, ADMIN, 비로그인은 로그인 후 복귀): 학생부 · 채점 준비(`/easy/records#prep`) · 출결부 · AI 요청 확인 · 수강료 · 학부모 안내 · Claude로 말하기(claude.ai).
+- 바로가기(`/easy/app`, ADMIN, 비로그인은 로그인 후 복귀): 학생부 · 채점 준비(`/easy/records#prep`) · 출결부 · AI 요청 확인 · 수강료 · 학부모 안내 · 렌즈 찾기(`/easy/exam-security/lens`) · Claude로 말하기(claude.ai).
+- PC에서는 업무 대시보드(`/dashboard`) 「장부·운영」 묶음의 「원장 휴대폰 앱(이지 앱)」 링크로 들어간다(ADMIN에게만 보임).
 - 학생부 채점 기록의 「📷 찍어 올리기」는 카메라를 바로 연다(`capture=environment`), 「사진 고르기」는 앨범에서 여러 장.
 - `manifest.json`(이름 F2R 학원 관리, 시작 `/easy/app`, 아이콘 192·512) · `sw.js`(범위 `/`) · `offline.html`은 로그인 없이 받는다(개인 자료 없음).
 - service worker는 **학생 기록·장부를 휴대폰에 저장하지 않는다**: 모든 요청을 네트워크로 보내고, 화면 이동이 인터넷 끊김으로 실패할 때만 `offline.html`을 보여 준다.
