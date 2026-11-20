@@ -4961,7 +4961,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ### 예비고1 디지털 수능 영어 모의고사 (`/naesintest/pre-high`)
 
-- `GET /naesintest/pre-high`는 공개 1·2·3부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 회차, `part=3`은 어법 단원·마무리 종합 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
+- `GET /naesintest/pre-high`는 공개 1~4부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 회차, `part=3`은 어법 단원·마무리 종합 목록, `part=4`는 수능 대비 어휘 50회 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
 - `POST /api/naesintest/pre-high/{round}`에는 같은 출처의 `{action, attempt?, number?, choice?}`를 보낸다. `start`는 해당 브라우저 세션에서 회차를 시작하거나 기존 진행 상태를 되돌려 준다. `read-answer`, `reading-done`, `words-start`, `word-answer`, `state`, `restart`는 서버가 반환한 응시 ID가 필요하다.
 - 독해 제한은 총 540초이며 어휘는 각 문항마다 새로 5초를 부여한다. 진행 중 `remainingMillis`는 현재 영역 또는 어휘 문항에서 남은 시간이다. `elapsedMillis`는 끝난 독해와 어휘 문항의 실제 풀이 시간을 합산하며, 어휘 시작 전 대기 시간은 제외한다. `REVIEW` 상태에서만 정답과 해설을 반환한다. 응시나 결과는 브라우저 세션에 귀속된다. 독해 결과의 선택 필드 `marks`는 `part`(`question` 또는 `passage`), `kind`(`evidence` 또는 `answer`), 이미지의 가로·세로를 10,000으로 나눈 좌표 `x, y, width, height`를 담는다.
 - `GET /api/naesintest/pre-high/{round}/image/{number}/{part}`는 응시 중인 사용자에게 독해 문항(`question`) 또는 공통 지문(`passage`) WebP를 반환한다.
@@ -4971,6 +4971,7 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /naesintest/pre-high/grammar/{exam}`는 로그인한 학생·강사·관리자가 여는 20문항 시험이다. `{exam}`은 단원과 부를 잇는 `1-1`~`10-2` 또는 마무리 종합 `final-1`~`final-10`이다. 기존 단원 숫자 경로는 해당 단원의 1부로 이동한다.
 - `POST /api/naesintest/pre-high/grammar/{exam}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. 동작은 `start`, `state`, `answer`, `restart`다. `start` 외에는 응시 ID가 필요하며 `answer`에는 현재 문항 번호와 1~5의 선택지를 보낸다. 문항당 제한 시간은 20초다. 응시 중에는 현재 문항만 반환한다. 채점 후 정답·해설·최종 답안을 반환하며 `restart`로 다시 응시할 수 있다. 예전 단원 숫자 API는 40문항 응시 세션과의 호환을 위해 유지한다.
 - `GET /api/admin/pre-high-english/grammar/{exam}/questions/{number}/pdf`는 ADMIN 전용이다. 해당 시험의 문항 번호와 발문, 본문, 5개 선택지를 A4 PDF로 내려 준다.
+- **4부 고1 수능 대비 어휘 모의고사(50회)**. `GET /naesintest/pre-high/part4/{round}`는 로그인 후 1~50회 응시 화면을 표시한다. `POST /api/naesintest/pre-high/part4/{round}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. `start`로 시작하거나 이어 풀고, 이후에는 응시 ID와 함께 `answer`, `state`, `restart`를 보낸다. 현재 문항 번호와 1~5의 선택지를 보낸 답만 기한 내에 채점한다. 1~30번은 뜻 고르기 각 3초, 31~50번은 문장 빈칸 각 5초다. 시간 초과 시 미응답으로 기록된다. 응시 중에는 현재 문항만 내려 주며 완료 후에 100점 만점 점수와 정답, 뜻, 완성 문장, 번역을 반환한다.
 
 ## 프로그램 공개 첫 화면 + 네이버 로그인 공통 진입 (`program` 패키지)
 

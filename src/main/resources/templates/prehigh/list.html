@@ -13,7 +13,7 @@
   <script defer src="/js/pre_high_english.js?v=4"></script>
 </head>
 <body class="nt-body nt-home"
-      th:with="part=${param != null and param.part != null ? param.part[0] : ''}, partSelected=${part == '1' or part == '2' or part == '3'}">
+      th:with="part=${param != null and param.part != null ? param.part[0] : ''}, partSelected=${part == '1' or part == '2' or part == '3' or part == '4'}">
 <div class="nt-top"><div class="nt-top-l">
   <a class="nt-brand" href="/#pre-high-english" aria-label="F2R영어 홈으로"><img src="/img/F2R_logo_pure.svg" width="30" height="30" alt=""><span>F2R영어</span></a>
   <a class="nt-btn nt-btn-line" th:if="${partSelected}" href="/naesintest/pre-high">구성 목록</a>
@@ -22,7 +22,7 @@
   <div class="nt-page">
     <div class="nt-paperhead">
       <h1 class="nt-paperhead-title">예비고1 디지털 영어 모의고사
-        <span class="nt-paperhead-sub">고1 기출 · 실전 독해 · 내신 대비 어법</span></h1>
+        <span class="nt-paperhead-sub">고1 기출 · 실전 독해 · 내신 대비 어법 · 수능 어휘</span></h1>
     </div>
     <th:block th:unless="${partSelected}">
       <p class="nt-lead">예비고1 영어를 위한 온라인 모의고사입니다. 원하는 모의고사를 열어 회차나 단원을 고르세요. 채점 후 정답과 문항별 해설을 확인할 수 있습니다.</p>
@@ -44,6 +44,11 @@
             <tr id="grammar">
               <td class="nt-round">3부</td><td>고1 내신 대비 어법 모의고사</td><td>CH 1~10</td><td>단원별 · 종합 10회</td>
               <td class="nt-go"><a class="nt-btn" href="/naesintest/pre-high?part=3" aria-label="3부 열기">열기</a></td>
+            </tr>
+            <tr id="part4">
+              <td class="nt-round">4부</td><td>고1 수능 대비 어휘 모의고사</td><td>어휘 · 숙어</td>
+              <td th:text="|${vocabularyRoundCount}회|">50회</td>
+              <td class="nt-go"><a class="nt-btn" href="/naesintest/pre-high?part=4" aria-label="4부 열기">열기</a></td>
             </tr>
           </tbody>
         </table>
@@ -109,6 +114,20 @@
           <tr th:each="round : ${grammarFinalRounds}">
             <td class="nt-round" th:text="|${round}회|">1회</td>
             <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{exam}(exam=|final-${round}|)}" th:aria-label="|마무리 종합 ${round}회 열기|">열기</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="nt-group" th:if="${part == '4'}" aria-labelledby="ph-vocab-title">
+      <h2 id="ph-vocab-title">4부. 고1 수능 대비 어휘 모의고사</h2>
+      <p class="nt-lead">총 50회 · 회당 5지선다 50문항 · 뜻 고르기 30문항(각 3초) · 문장 빈칸 20문항(각 5초)</p>
+      <table class="nt-table nt-schools">
+        <thead><tr><th scope="col">회차</th><th scope="col">열기</th></tr></thead>
+        <tbody>
+          <tr th:each="round : ${#numbers.sequence(1, vocabularyRoundCount)}">
+            <td class="nt-round" th:text="|${round}회|">1회</td>
+            <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/part4/{round}(round=${round})}"
+                th:aria-label="|${round}회 열기|">열기</a></td>
           </tr>
         </tbody>
       </table>
