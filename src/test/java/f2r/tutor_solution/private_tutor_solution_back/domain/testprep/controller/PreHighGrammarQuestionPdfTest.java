@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart2Store;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
 import java.nio.file.Path;
 import java.util.List;
@@ -35,7 +36,8 @@ class PreHighGrammarQuestionPdfTest {
     var mapper = new ObjectMapper();
     bank = new PreHighGrammarBank(mapper);
     var controller = new PreHighEnglishController(
-        new PreHighEnglishStore(mapper, temporary.toString()), bank, List.of("https://feel2real.co.kr"));
+        new PreHighEnglishStore(mapper, temporary.toString()), new PreHighPart2Store(mapper), bank,
+        List.of("https://feel2real.co.kr"));
     mvc = MockMvcBuilders.standaloneSetup(controller)
         .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
         .build();

@@ -4,6 +4,9 @@ import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenPr
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishAttempt;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishAttempt.State;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore.Round;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart2Store;
+import java.nio.charset.StandardCharsets;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarAttempt;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarQuestionPdf;
@@ -36,6 +39,9 @@ import org.springframework.web.server.ResponseStatusException;
 public class PreHighEnglishController {
   private static final String PAGE = "/naesintest/pre-high";
   private static final String API = "/api/naesintest/pre-high";
+  /** 2부(고1 실전 독해 모의고사 18~45번) 화면·API 주소. */
+  private static final String PAGE2 = PAGE + "/part2";
+  private static final String API2 = API + "/part2";
   private static final String ADMIN = "/api/admin/pre-high-english";
   private static final MediaType WEBP = MediaType.parseMediaType("image/webp");
 
@@ -43,12 +49,14 @@ public class PreHighEnglishController {
   public record GrammarAction(String action, UUID attempt, Integer number, Integer choice) {}
 
   private final PreHighEnglishStore store;
+  private final PreHighPart2Store part2;
   private final PreHighGrammarBank grammar;
   private final List<String> origins;
 
-  public PreHighEnglishController(PreHighEnglishStore store, PreHighGrammarBank grammar,
+  public PreHighEnglishController(PreHighEnglishStore store, PreHighPart2Store part2, PreHighGrammarBank grammar,
       @Value("${buildit.unified-assistant.allowed-origins:http://localhost:8080,https://feel2real.co.kr}") List<String> origins) {
     this.store = store;
+    this.part2 = part2;
     this.grammar = grammar;
     this.origins = origins;
   }
@@ -56,6 +64,8 @@ public class PreHighEnglishController {
   @GetMapping(PAGE)
   public String list(Model model, @AuthenticationPrincipal AuthenticatedPrincipal principal) {
     model.addAttribute("rounds", store.list());
+    model.addAttribute("part2Rounds", part2.list());
+    model.addAttribute("loggedIn", principal != null);
     model.addAttribute("grammarChapters", grammar.list());
     model.addAttribute("grammarFinalRounds", grammar.finalRounds());
     model.addAttribute("canInstall", principal != null && "ADMIN".equals(principal.role()));
@@ -140,8 +150,35 @@ public class PreHighEnglishController {
   public String test(@PathVariable int round, Model model) {
     if (store.get(round) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     model.addAttribute("round", round);
+    model.addAttribute("part", 1);
+    model.addAttribute("api", API + "/" + round);
+    model.addAttribute("numbers", List.of());
     model.addAttribute("shared", store.get(round).reading().stream().map(item -> item.passage() != null).toList());
     return "prehigh/test";
+  }
+
+  /** 2부 응시 화면: 18~45번 28문항 45분, 이어서 어휘 50문항(문항당 5초). */
+  @GetMapping(PAGE2 + "/{round}")
+  public String testPart2(@PathVariable int round, Model model) {
+    Round content = part2.get(round);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    model.addAttribute("round", round);
+    model.addAttribute("part", 2);
+    model.addAttribute("api", API2 + "/" + round);
+    model.addAttribute("numbers", PreHighPart2Store.numbers());
+    model.addAttribute("shared", content.reading().stream().map(item -> item.passage() != null).toList());
+    return "prehigh/test";
+  }
+
+  /** 2부 문제지 PDF 내려받기(로그인 회원). */
+  @GetMapping(PAGE2 + "/{round}/paper.pdf")
+  public ResponseEntity<byte[]> paperPart2(@PathVariable int round) {
+    byte[] pdf = part2.paper(round);
+    if (pdf == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    String name = "F2R_고1_실전독해_모의고사_" + round + "회_문제지.pdf";
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.APPLICATION_PDF)
+        .header("Content-Disposition", ContentDisposition.attachment().filename(name, StandardCharsets.UTF_8).build().toString())
+        .body(pdf);
   }
 
   @PostMapping(API + "/{round}")
@@ -151,8 +188,22 @@ public class PreHighEnglishController {
     checkOrigin(origin);
     var content = store.get(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    return run(content, attemptKey(principal, round), PreHighEnglishStore.READING_SECONDS, command, request);
+  }
+
+  @PostMapping(API2 + "/{round}")
+  public ResponseEntity<State> actPart2(@PathVariable int round, @RequestBody Action command,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
+      @RequestHeader(value = "Origin", required = false) String origin) {
+    checkOrigin(origin);
+    var content = part2.get(round);
+    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    return run(content, part2Key(principal, round), PreHighPart2Store.READING_SECONDS, command, request);
+  }
+
+  private ResponseEntity<State> run(Round content, String key, int readingSeconds, Action command,
+      HttpServletRequest request) {
     HttpSession session = request.getSession();
-    String key = attemptKey(principal, round);
     if (command.action() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
     synchronized (session) {
       PreHighEnglishAttempt attempt = (PreHighEnglishAttempt) session.getAttribute(key);
@@ -161,7 +212,7 @@ public class PreHighEnglishController {
         if (attempt == null || ("start".equals(command.action()) && attempt.round() != content)
             || "restart".equals(command.action()) && attempt.id().equals(command.attempt())
             && attempt.act("state", 0, 0, now).phase() == PreHighEnglishAttempt.Phase.REVIEW) {
-          attempt = new PreHighEnglishAttempt(content, now);
+          attempt = new PreHighEnglishAttempt(content, now, readingSeconds);
           session.setAttribute(key, attempt);
         }
         return noStore(attempt.act("state", 0, 0, now));
@@ -178,8 +229,18 @@ public class PreHighEnglishController {
   @GetMapping(API + "/{round}/image/{number}/{part}")
   public ResponseEntity<byte[]> image(@PathVariable int round, @PathVariable int number, @PathVariable String part,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
+    return picture(attemptKey(principal, round), number, part, request);
+  }
+
+  @GetMapping(API2 + "/{round}/image/{number}/{part}")
+  public ResponseEntity<byte[]> imagePart2(@PathVariable int round, @PathVariable int number, @PathVariable String part,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request) {
+    return picture(part2Key(principal, round), number, part, request);
+  }
+
+  private ResponseEntity<byte[]> picture(String key, int number, String part, HttpServletRequest request) {
     HttpSession session = request.getSession(false);
-    var attempt = session == null ? null : (PreHighEnglishAttempt) session.getAttribute(attemptKey(principal, round));
+    var attempt = session == null ? null : (PreHighEnglishAttempt) session.getAttribute(key);
     if (attempt == null || number < 1 || number > attempt.round().reading().size()) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
@@ -216,6 +277,10 @@ public class PreHighEnglishController {
 
   private static String attemptKey(AuthenticatedPrincipal principal, int round) {
     return "pre-high:" + principal.userId() + ":" + round;
+  }
+
+  private static String part2Key(AuthenticatedPrincipal principal, int round) {
+    return "pre-high-2:" + principal.userId() + ":" + round;
   }
 
   private static <T> ResponseEntity<T> noStore(T body) {

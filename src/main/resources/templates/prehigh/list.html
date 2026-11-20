@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <title>예비고1 디지털 영어 모의고사 · F2R영어</title>
-  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-grammar-finals-1">
+  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-part2-3">
   <script defer src="/js/naesin_common.js"></script>
-  <script defer src="/js/pre_high_english.js?v=2"></script>
+  <script defer src="/js/pre_high_english.js?v=4"></script>
 </head>
 <body class="nt-body nt-home">
 <div class="nt-top"><div class="nt-top-l"><a class="nt-brand" href="/#pre-high-english"><img src="/img/F2R_logo_pure.svg" width="30" height="30" alt="">F2R영어 홈</a></div></div>
 <main class="nt-sheet-wrap">
   <header class="nt-paperhead">
     <h1 class="nt-paperhead-title">예비고1 디지털 영어 모의고사</h1>
-    <p class="nt-paperhead-title nt-paperhead-sub">고1 전국연합학력평가 기출 · 독해 6문항 9분 · 어휘 5지선다 1문항 5초</p>
+    <p class="nt-paperhead-title nt-paperhead-sub">1부 고1 기출 독해 6문항 9분 · 2부 고1 실전 독해 18~45번 45분 · 3부 고1 내신 어법</p>
   </header>
   <section class="nt-page ph-part">
     <h2>1부. 고1 기출 6문항 + 어휘 모의고사</h2>
@@ -31,10 +31,21 @@
       </tbody>
     </table>
   </section>
-  <section class="nt-page ph-part">
+  <section class="nt-page ph-part" id="part2">
     <h2>2부. 고1 실전 독해 모의고사</h2>
-    <p>18~45번 · 10회</p>
-    <p>회차를 준비 중입니다.</p>
+    <p>고1 모의고사 18~45번 28문항을 45분 안에 풉니다. 제출하면 어휘 50문항(문항당 5초)이 이어지고, 채점 뒤에는 문제지에 정답 근거를 노란색으로 표시하고 그 아래에 해설을 보여 줍니다. 문제지는 PDF로 내려받아 종이로 풀 수도 있습니다.</p>
+    <p th:if="${#lists.isEmpty(part2Rounds)}">회차를 준비 중입니다.</p>
+    <table class="nt-table" th:unless="${#lists.isEmpty(part2Rounds)}">
+      <thead><tr><th scope="col">회차</th><th scope="col">문항</th><th scope="col">문제지</th><th scope="col">응시</th></tr></thead>
+      <tbody>
+        <tr th:each="round : ${part2Rounds}" th:attr="data-part2=${round.number}">
+          <td class="nt-round" th:text="${round.number} + '회'">1회</td>
+          <td class="nt-scope"><span>18~45번 28문항 · 45분 · 어휘 50문항</span><small th:text="${round.source} + ' 변형'">2022년 고1 윈터스쿨 이투스 변형</small></td>
+          <td class="nt-go"><a class="nt-btn nt-btn-line" th:href="${loggedIn} ? @{/naesintest/pre-high/part2/{n}/paper.pdf(n=${round.number})} : @{/naesintest/pre-high(login='required',returnUrl='/naesintest/pre-high')}" th:aria-label="${round.number} + '회 문제지 PDF 내려받기'">PDF</a></td>
+          <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/part2/{n}(n=${round.number})}" th:aria-label="${round.number} + '회 열기'">열기</a></td>
+        </tr>
+      </tbody>
+    </table>
   </section>
   <section class="nt-page ph-part" id="grammar">
     <h2>3부. 고1 내신 대비 어법 모의고사</h2>
