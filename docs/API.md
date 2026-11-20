@@ -4959,6 +4959,14 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
   - `items[].points`(복습): 문항 배점 또는 `null`.
   - `bandDisclaimer`: 내신은 `F2R 예상문제 연습 점수입니다. 실제 학교 시험 점수가 아닙니다.`
 
+### 예비고1 디지털 수능 영어 모의고사 (`/naesintest/pre-high`)
+
+- `GET /naesintest/pre-high`는 공개 안내·회차 목록을 반환한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
+- `POST /api/naesintest/pre-high/{round}`에는 같은 출처의 `{action, attempt?, number?, choice?}`를 보낸다. `start`는 해당 브라우저 세션에서 회차를 시작하거나 기존 진행 상태를 되돌려 준다. `read-answer`, `reading-done`, `words-start`, `word-answer`, `state`, `restart`는 서버가 반환한 응시 ID가 필요하다.
+- 독해 제한은 총 540초이며 어휘는 각 문항마다 새로 5초를 부여한다. `REVIEW` 상태에서만 정답과 해설을 반환한다. 응시나 결과는 브라우저 세션에 귀속된다.
+- `GET /api/naesintest/pre-high/{round}/image/{number}/{part}`는 응시 중인 사용자에게 독해 문항(`question`) 또는 공통 지문(`passage`) WebP를 반환한다.
+- `POST /api/admin/pre-high-english/rounds`는 ADMIN 전용이며 같은 출처의 JSON(최대 32 MiB)을 받아 25회 자료 전체를 검증한 후 한 번에 등록한다. 웹 루트 밖의 `app.pre-high-english.dir`에 저장한다. 기본 저장 경로는 실행 계정 홈의 `pre-high-english`다.
+
 ## 프로그램 공개 첫 화면 + 네이버 로그인 공통 진입 (`program` 패키지)
 
 신규 프로그램은 대표 URL을 비회원에게 공개(200)하고, 기능을 시작할 때 네이버 로그인을 요청한다. 등록은 `program/Program.java` enum 한 곳이다(현재: DesignCraft).
