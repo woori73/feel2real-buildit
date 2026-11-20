@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 class PreHighPart2StoreTest {
 
   @Test
-  @DisplayName("given 2부 10회 문제지 PDF, when 글자를 뽑으면, then 원본(출처) 표기가 없다")
+  @DisplayName("given 2부 22회 문제지 PDF, when 글자를 뽑으면, then 원본(출처) 표기가 없다")
   void paperHasNoSourceLine() throws Exception {
-    for (int n = 1; n <= 10; n++) {
+    for (int n = 1; n <= PreHighPart2Store.ROUND_COUNT; n++) {
       // given
       byte[] pdf = store.paper(n);
       // when
@@ -27,7 +27,7 @@ class PreHighPart2StoreTest {
         text = new PDFTextStripper().getText(doc);
       }
       // then
-      assertThat(text).as("%d회", n).contains("28문항").doesNotContain("원본").doesNotContain("출처");
+      assertThat(text).as("%d회", n).contains("28문항").doesNotContain("원본").doesNotContain("출처").doesNotContain("학평").doesNotContain("학력평가");
       assertThat(text).as("%d회", n).doesNotContain(store.list().get(n - 1).source());
     }
   }
@@ -35,14 +35,14 @@ class PreHighPart2StoreTest {
   private final PreHighPart2Store store = new PreHighPart2Store(new ObjectMapper());
 
   @Test
-  @DisplayName("given 2부 자료 10회, when list·get하면, then 회차마다 독해 28문항·어휘 50문항과 원본 이름이 있다")
+  @DisplayName("given 2부 자료 22회, when list·get하면, then 회차마다 독해 28문항·어휘 50문항과 원본 이름이 있다")
   void loadsAllRounds() {
     // given / when
     var infos = store.list();
     // then
-    assertThat(infos).hasSize(10);
+    assertThat(infos).hasSize(22);
     assertThat(infos.get(0).source()).isNotBlank();
-    for (int n = 1; n <= 10; n++) {
+    for (int n = 1; n <= PreHighPart2Store.ROUND_COUNT; n++) {
       var round = store.get(n);
       assertThat(round.number()).isEqualTo(n);
       assertThat(round.reading()).hasSize(28);
@@ -69,9 +69,9 @@ class PreHighPart2StoreTest {
   }
 
   @Test
-  @DisplayName("given 2부 10회 전체, when 근거 표시를 보면, then 모든 문항에 노란 근거와 정답 표시가 있고 좌표는 그림 안에 있다")
+  @DisplayName("given 2부 22회 전체, when 근거 표시를 보면, then 모든 문항에 노란 근거와 정답 표시가 있고 좌표는 그림 안에 있다")
   void everyItemHasEvidenceAndAnswerMarks() {
-    for (int n = 1; n <= 10; n++) {
+    for (int n = 1; n <= PreHighPart2Store.ROUND_COUNT; n++) {
       // given
       var round = store.get(n);
       for (var item : round.reading()) {
@@ -99,10 +99,10 @@ class PreHighPart2StoreTest {
   @DisplayName("given 회차 번호, when paper·numbers를 부르면, then PDF와 시험지 번호 18~45를 돌려주고 없는 회차는 null")
   void paperAndNumbers() {
     // given / when
-    byte[] pdf = store.paper(10);
+    byte[] pdf = store.paper(22);
     // then
     assertThat(new String(pdf, 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
-    assertThat(store.paper(11)).isNull();
+    assertThat(store.paper(23)).isNull();
     assertThat(store.get(0)).isNull();
     assertThat(PreHighPart2Store.numbers()).hasSize(28).startsWith(18).endsWith(45);
   }

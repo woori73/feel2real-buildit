@@ -20,13 +20,13 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 /**
- * 예비고1 디지털 수능 영어 모의고사 2부 — 고1 실전 독해 모의고사(18~45번 28문항, 45분) 10회.
+ * 예비고1 디지털 수능 영어 모의고사 2부 — 고1 실전 독해 모의고사(18~45번 28문항, 45분) 22회.
  * 자료는 웹에서 바로 열리지 않는 classpath:prehigh-part2/rNN/에 둔다(round.json, 문항 그림 webp, 문제지 paper.pdf).
  * 그림은 응시 중일 때만 API로 내려 주고, 정답·해설·근거 표시는 채점(REVIEW) 뒤에만 보인다.
  */
 @Service
 public class PreHighPart2Store {
-  public static final int ROUND_COUNT = 10;
+  public static final int ROUND_COUNT = 22;
   public static final int FIRST_NUMBER = 18;
   public static final int READING_COUNT = 28;
   public static final int READING_SECONDS = 45 * 60;
