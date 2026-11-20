@@ -33,6 +33,7 @@
 | **BuildIt 디자인 자산(buildit2) 연동 설계 + P0(강사진 1종 PoC) 범위(구현 전)** | [BUILDIT_DESIGN_ASSET_INTEGRATION_DESIGN.md](BUILDIT_DESIGN_ASSET_INTEGRATION_DESIGN.md) |
 | **시각 편집기 현재 사양(저장 구조·projectData·게시 흐름) / AI Agent(뮤즈) GrapesJS 연동 지점** | [BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md](BUILDIT_VISUAL_EDITOR_INTEGRATION_GUIDE.md) |
 | **학원 온라인 LMS(`{handle}.../lms`) / 서브도메인 경로·권한** | [academy-lms-design.md](academy-lms-design.md) |
+| **F2R 시험 보안 검사대(숨은 카메라·스마트안경·무선 기기 → 감독관 '확인 필요') 설계·시제품 / 시연 화면 `/easy/exam-security/lens`** | [exam-security/README.md](exam-security/README.md) |
 | **제품 범위·사용자모델·기술스택** | [MVP.md](MVP.md) |
 | **프로젝트 전체 인수인계 / 현재 상태 빠른 파악** | [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) |
 | **Thymeleaf head / nav / blog 등 UI 컨벤션** | [CONVENTIONS.md](CONVENTIONS.md) |

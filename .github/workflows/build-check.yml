@@ -105,6 +105,7 @@ jobs:
           src/test/js/coord_approvals_view.test.js
           src/test/js/easy_records_view.test.js
           src/test/js/pwa.test.js
+          src/test/js/exam_security_lens.test.js
           src/test/js/parent_notices.test.js
           src/test/js/admin_members_view.test.js
           src/test/js/naver_login.test.js
@@ -224,6 +225,7 @@ jobs:
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.analytics.service.AnalyticsCatalogTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.AdminTopnavMenuContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.template.AdminHubSimpleContractTest"
+          --tests "f2r.tutor_solution.private_tutor_solution_back.template.ExamSecurityLensTemplateContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsArticleServiceTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.admissions.service.AdmissionsArticleContentContractTest"
           --tests "f2r.tutor_solution.private_tutor_solution_back.domain.easy.service.EasyAttendanceServiceTest"
