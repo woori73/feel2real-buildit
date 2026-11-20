@@ -67,7 +67,7 @@ class PreHighEnglishListTemplateTest {
     assertThat(reading.select("table tbody a").eachAttr("href")).containsExactly("/naesintest/pre-high/1");
     assertThat(practice.select(".nt-group").text()).contains("2부", "18~45번", "45분");
     assertThat(practice.select("table tbody a").eachAttr("href")).containsExactly(
-        "/naesintest/pre-high/part2/1/paper.pdf", "/naesintest/pre-high/part2/1");
+        "/api/admin/pre-high-english/part2/1/paper.pdf", "/naesintest/pre-high/part2/1");
     assertThat(grammar.select("table tbody a").eachAttr("href")).containsExactly(
         "/naesintest/pre-high/grammar/3-1", "/naesintest/pre-high/grammar/3-2",
         "/naesintest/pre-high/grammar/final-1");
@@ -75,6 +75,23 @@ class PreHighEnglishListTemplateTest {
       assertThat(part.select("#ph-parts-title")).isEmpty();
       assertThat(part.select(".nt-top a[href=/naesintest/pre-high]").text()).isEqualTo("구성 목록");
     }
+  }
+
+  @Test
+  void part2PaperPdfIsOnlyListedForAnAdmin() {
+    // given
+    Map<String, Object> student = Map.of(
+        "rounds", List.of(Map.of("number", 1, "words", 15)),
+        "part2Rounds", List.of(Map.of("number", 1, "source", "고1 모의고사")),
+        "loggedIn", true,
+        "grammarChapters", List.of(Map.of("number", 3, "title", "수동태")),
+        "grammarFinalRounds", List.of(1),
+        "canInstall", false);
+    // when
+    Document practice = render("prehigh/list", "2", student);
+    // then
+    assertThat(practice.select("table tbody a").eachAttr("href")).containsExactly("/naesintest/pre-high/part2/1");
+    assertThat(practice.select("thead th").eachText()).doesNotContain("문제지");
   }
 
   @Test

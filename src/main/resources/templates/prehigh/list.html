@@ -69,7 +69,7 @@
       <p class="nt-lead">독해 18~45번 28문항은 45분입니다. 이어서 어휘 50문항을 문항당 5초 안에 풉니다.</p>
       <p class="nt-msg" th:if="${#lists.isEmpty(part2Rounds)}">회차를 준비 중입니다.</p>
       <table class="nt-table nt-schools" th:unless="${#lists.isEmpty(part2Rounds)}">
-        <thead><tr><th scope="col">회차</th><th scope="col">문항</th><th scope="col">문제지</th><th scope="col">열기</th></tr></thead>
+        <thead><tr><th scope="col">회차</th><th scope="col">문항</th><th scope="col" th:if="${canInstall}">문제지</th><th scope="col">열기</th></tr></thead>
         <tbody>
           <tr th:each="round : ${part2Rounds}" th:attr="data-part2=${round.number}">
             <td class="nt-round" th:text="${round.number} + '회'">1회</td>
@@ -77,9 +77,9 @@
               <span>18~45번 28문항 · 45분 · 어휘 50문항</span>
               <small th:text="${round.source} + ' 변형'">고1 모의고사 변형</small>
             </td>
-            <td class="nt-go"><a class="nt-btn nt-btn-line"
-                th:href="${loggedIn} ? @{/naesintest/pre-high/part2/{n}/paper.pdf(n=${round.number})} : @{/naesintest/pre-high(part=2,login='required',returnUrl='/naesintest/pre-high?part=2')}"
-                th:aria-label="${round.number} + '회 전체 문제지 PDF 내려받기'">PDF</a></td>
+            <td class="nt-go" th:if="${canInstall}"><a class="nt-btn nt-btn-line"
+                th:href="@{/api/admin/pre-high-english/part2/{n}/paper.pdf(n=${round.number})}"
+                th:aria-label="${round.number} + '회 전체 문제지 PDF 내려받기(관리자)'">PDF</a></td>
             <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/part2/{n}(n=${round.number})}"
                 th:aria-label="${round.number} + '회 열기'">열기</a></td>
           </tr>
