@@ -12,14 +12,14 @@
 
 ## 이번에 만든 시연 화면
 
-- 주소: `/easy/exam-security/lens` (ADMIN 로그인 전용, 원장 휴대폰 크롬)
+- 주소: `/easy/exam-security/lens` (ADMIN 로그인 전용, 원장 휴대폰 크롬). 원장 휴대폰 앱 첫 화면(`/easy/app`)의 「렌즈 찾기」 타일로 들어간다.
 - 하는 일: 휴대폰 플래시를 끔·켬 3번 바꿔 찍고, 켰을 때만 작게 빛나는 점에 원을 그린다. 결과는 '의심 없음 / 확인 필요'만 표시한다.
 - 저장·전송 없음: 사진·영상을 서버로 보내지 않고 휴대폰에도 저장하지 않는다(테스트로 확인).
 - 파일:
   - `src/main/resources/templates/easy/exam_security_lens.html`
   - `src/main/resources/static/js/exam_security_lens.js`
   - `src/test/js/exam_security_lens.test.js`
-- **운영 배포 전 승인이 필요하다**(결정 D3). PR에는 올리지만 배포하지 않는다.
+- 운영 배포는 승인(결정 D3)을 받아 2026-11-20에 했다(PR #1127).
 
 ## 결정 필요
 
