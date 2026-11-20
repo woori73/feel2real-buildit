@@ -5,27 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <title th:text="${round} + '회 · 예비고1 디지털 영어 모의고사'">예비고1 디지털 영어 모의고사</title>
-  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-review-3">
+  <title th:text="(${part} == 2 ? '2부 ' : '') + ${round} + '회 · 예비고1 디지털 영어 모의고사'">예비고1 디지털 영어 모의고사</title>
+  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-part2-3">
   <script defer src="/js/naesin_common.js"></script>
-  <script defer src="/js/pre_high_english.js?v=3"></script>
+  <script defer src="/js/pre_high_english.js?v=4"></script>
 </head>
 <body class="nt-body nt-run">
 <div class="nt-top"><div class="nt-top-l">
   <a class="nt-brand" href="/"><img src="/img/F2R_logo_pure.svg" width="30" height="30" alt="">F2R영어</a>
-  <a class="nt-btn nt-btn-line" href="/naesintest/pre-high?part=1">회차 목록</a>
+  <a class="nt-btn nt-btn-line" th:href="@{/naesintest/pre-high(part=${part})}">회차 목록</a>
 </div><span>숫자 1~5로도 답을 고를 수 있습니다</span></div>
-<main class="nt-sheet-wrap" id="ph-test" th:data-round="${round}" th:data-shared="${shared}">
+<main class="nt-sheet-wrap" id="ph-test" th:data-round="${round}" th:data-shared="${shared}" th:data-api="${api}" th:data-numbers="${numbers}" th:data-part="${part}">
   <header class="nt-paperhead">
-    <h1 class="nt-paperhead-title" th:text="'예비고1 디지털 영어 모의고사 · ' + ${round} + '회'">예비고1 디지털 영어 모의고사</h1>
+    <h1 class="nt-paperhead-title" th:text="${part} == 2 ? '예비고1 디지털 영어 모의고사 2부 · 고1 실전 독해 ' + ${round} + '회' : '예비고1 디지털 영어 모의고사 · ' + ${round} + '회'">예비고1 디지털 영어 모의고사</h1>
     <table>
       <tr><th scope="col">과목</th><th scope="col">영역</th><th scope="col" id="ph-time-label">독해 제한 시간</th></tr>
-      <tr><td>영어</td><td id="ph-section">독해</td><td id="nt-timer-box"><span class="nt-time" id="ph-time" role="timer">09:00</span></td></tr>
+      <tr><td>영어</td><td id="ph-section">독해</td><td id="nt-timer-box"><span class="nt-time" id="ph-time" role="timer" th:text="${part} == 2 ? '45:00' : '09:00'">09:00</span></td></tr>
     </table>
   </header>
   <p id="ph-status" role="status" hidden></p>
   <div id="ph-body">
-    <section class="nt-page"><p>독해 6문항을 9분 안에 풉니다. 이어서 어휘 퀴즈를 시작합니다.</p>
+    <section class="nt-page"><p th:text="${part} == 2 ? '독해 18~45번 28문항을 45분 안에 풉니다. 독해를 제출하면 어휘 50문항(문항당 5초)이 이어집니다.' : '독해 6문항을 9분 안에 풉니다. 이어서 어휘 퀴즈를 시작합니다.'">독해 6문항을 9분 안에 풉니다. 이어서 어휘 퀴즈를 시작합니다.</p>
       <button class="nt-btn" data-action="start" type="button">시험 시작 / 이어 풀기</button>
     </section>
   </div>

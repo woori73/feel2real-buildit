@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&amp;family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Serif+KR:wght@400;600;700&amp;display=swap">
-  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-review-2">
+  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-parts-2">
   <script defer src="/js/naesin_common.js"></script>
-  <script defer src="/js/pre_high_english.js?v=2"></script>
+  <script defer src="/js/pre_high_english.js?v=4"></script>
 </head>
 <body class="nt-body nt-home"
       th:with="part=${param != null and param.part != null ? param.part[0] : ''}, partSelected=${part == '1' or part == '2' or part == '3'}">
@@ -36,12 +36,13 @@
               <td th:text="${#lists.isEmpty(rounds) ? '준비 중' : #lists.size(rounds) + '회'}">35회</td>
               <td class="nt-go"><a class="nt-btn" th:classappend="${#lists.isEmpty(rounds)} ? 'nt-btn-line'" href="/naesintest/pre-high?part=1" aria-label="1부 열기">열기</a></td>
             </tr>
-            <tr>
-              <td class="nt-round">2부</td><td>고1 실전 독해 모의고사</td><td>18~45번</td><td class="nt-soon">10회 준비 중</td>
-              <td class="nt-go"><a class="nt-btn nt-btn-line" href="/naesintest/pre-high?part=2" aria-label="2부 준비 현황 열기">열기</a></td>
+            <tr id="part2">
+              <td class="nt-round">2부</td><td>고1 실전 독해 모의고사</td><td>18~45번</td>
+              <td th:text="${#lists.isEmpty(part2Rounds) ? '준비 중' : #lists.size(part2Rounds) + '회'}">10회</td>
+              <td class="nt-go"><a class="nt-btn" th:classappend="${#lists.isEmpty(part2Rounds)} ? 'nt-btn-line'" href="/naesintest/pre-high?part=2" aria-label="2부 열기">열기</a></td>
             </tr>
             <tr id="grammar">
-              <td class="nt-round">3부</td><td>고1 내신 대비 어법 모의고사</td><td>CH 3~12</td><td>단원별</td>
+              <td class="nt-round">3부</td><td>고1 내신 대비 어법 모의고사</td><td>CH 1~10</td><td>단원별 · 종합 10회</td>
               <td class="nt-go"><a class="nt-btn" href="/naesintest/pre-high?part=3" aria-label="3부 열기">열기</a></td>
             </tr>
           </tbody>
@@ -65,18 +66,50 @@
     </section>
     <section class="nt-group" th:if="${part == '2'}" aria-labelledby="ph-practice-title">
       <h2 id="ph-practice-title">2부. 고1 실전 독해 모의고사</h2>
-      <p class="nt-msg">18~45번 실전 독해 10회를 준비 중입니다.</p>
+      <p class="nt-lead">독해 18~45번 28문항은 45분입니다. 이어서 어휘 50문항을 문항당 5초 안에 풉니다.</p>
+      <p class="nt-msg" th:if="${#lists.isEmpty(part2Rounds)}">회차를 준비 중입니다.</p>
+      <table class="nt-table nt-schools" th:unless="${#lists.isEmpty(part2Rounds)}">
+        <thead><tr><th scope="col">회차</th><th scope="col">문항</th><th scope="col">문제지</th><th scope="col">열기</th></tr></thead>
+        <tbody>
+          <tr th:each="round : ${part2Rounds}" th:attr="data-part2=${round.number}">
+            <td class="nt-round" th:text="${round.number} + '회'">1회</td>
+            <td class="nt-scope">
+              <span>18~45번 28문항 · 45분 · 어휘 50문항</span>
+              <small th:text="${round.source} + ' 변형'">고1 모의고사 변형</small>
+            </td>
+            <td class="nt-go"><a class="nt-btn nt-btn-line"
+                th:href="${loggedIn} ? @{/naesintest/pre-high/part2/{n}/paper.pdf(n=${round.number})} : @{/naesintest/pre-high(part=2,login='required',returnUrl='/naesintest/pre-high?part=2')}"
+                th:aria-label="${round.number} + '회 전체 문제지 PDF 내려받기'">PDF</a></td>
+            <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/part2/{n}(n=${round.number})}"
+                th:aria-label="${round.number} + '회 열기'">열기</a></td>
+          </tr>
+        </tbody>
+      </table>
     </section>
     <section class="nt-group" id="grammar" th:if="${part == '3'}" aria-labelledby="ph-grammar-title">
       <h2 id="ph-grammar-title">3부. 고1 내신 대비 어법 모의고사</h2>
-      <p class="nt-lead">단원을 선택해 5지선다 어법 문제를 풉니다. 문항당 20초이며 채점 후 정답과 해설을 볼 수 있습니다.</p>
+      <p class="nt-lead">회당 20문항 · 5지선다 · 문항당 20초 · 채점 후 정답과 해설 제공</p>
       <table class="nt-table nt-schools">
         <thead><tr><th scope="col">단원</th><th scope="col">출제 범위</th><th scope="col">열기</th></tr></thead>
         <tbody>
           <tr th:each="chapter : ${grammarChapters}">
-            <td class="nt-round" th:text="'CH ' + ${chapter.number}">CH 3</td>
-            <td class="nt-scope" th:text="${chapter.title}">수동태</td>
-            <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{number}(number=${chapter.number})}" th:aria-label="${chapter.title} + ' 모의고사 열기'">열기</a></td>
+            <td class="nt-round" th:text="'CH ' + ${chapter.number}">CH 1</td>
+            <td class="nt-scope" th:text="${chapter.title}">수일치</td>
+            <td class="nt-go"><div class="ph-grammar-part-links">
+              <a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{exam}(exam=|${chapter.number}-1|)}" th:aria-label="|${chapter.title} 1부 20문항 열기|">1부</a>
+              <a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{exam}(exam=|${chapter.number}-2|)}" th:aria-label="|${chapter.title} 2부 20문항 열기|">2부</a>
+            </div></td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>마무리 종합 모의고사</h3>
+      <p>CH 1~10 전 범위 · 회당 20문항</p>
+      <table class="nt-table nt-schools ph-grammar-finals">
+        <thead><tr><th scope="col">회차</th><th scope="col">열기</th></tr></thead>
+        <tbody>
+          <tr th:each="round : ${grammarFinalRounds}">
+            <td class="nt-round" th:text="|${round}회|">1회</td>
+            <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{exam}(exam=|final-${round}|)}" th:aria-label="|마무리 종합 ${round}회 열기|">열기</a></td>
           </tr>
         </tbody>
       </table>

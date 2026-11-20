@@ -19,7 +19,10 @@ class PreHighEnglishListTemplateTest {
   private Document render(String part) {
     return render("prehigh/list", part, Map.of(
         "rounds", List.of(Map.of("number", 1, "words", 15)),
+        "part2Rounds", List.of(Map.of("number", 1, "source", "고1 모의고사")),
+        "loggedIn", true,
         "grammarChapters", List.of(Map.of("number", 3, "title", "수동태")),
+        "grammarFinalRounds", List.of(1),
         "canInstall", true));
   }
 
@@ -48,7 +51,7 @@ class PreHighEnglishListTemplateTest {
     // then
     assertThat(chooser.select(".nt-table.nt-schools tbody a").eachAttr("href")).containsExactly(
         "/naesintest/pre-high?part=1", "/naesintest/pre-high?part=2", "/naesintest/pre-high?part=3");
-    assertThat(chooser.select(".nt-table.nt-schools tbody tr").eachText()).anyMatch(row -> row.contains("10회 준비 중"));
+    assertThat(chooser.select(".nt-table.nt-schools tbody tr").eachText()).anyMatch(row -> row.contains("18~45번 1회"));
     assertThat(chooser.select("#ph-install")).hasSize(1);
     assertThat(render("unknown").select("#ph-parts-title")).hasSize(1);
   }
@@ -62,9 +65,12 @@ class PreHighEnglishListTemplateTest {
 
     // then
     assertThat(reading.select("table tbody a").eachAttr("href")).containsExactly("/naesintest/pre-high/1");
-    assertThat(practice.select(".nt-group").text()).contains("2부", "18~45번", "준비 중");
-    assertThat(practice.select("table tbody a")).isEmpty();
-    assertThat(grammar.select("table tbody a").eachAttr("href")).containsExactly("/naesintest/pre-high/grammar/3");
+    assertThat(practice.select(".nt-group").text()).contains("2부", "18~45번", "45분");
+    assertThat(practice.select("table tbody a").eachAttr("href")).containsExactly(
+        "/naesintest/pre-high/part2/1/paper.pdf", "/naesintest/pre-high/part2/1");
+    assertThat(grammar.select("table tbody a").eachAttr("href")).containsExactly(
+        "/naesintest/pre-high/grammar/3-1", "/naesintest/pre-high/grammar/3-2",
+        "/naesintest/pre-high/grammar/final-1");
     for (Document part : List.of(reading, practice, grammar)) {
       assertThat(part.select("#ph-parts-title")).isEmpty();
       assertThat(part.select(".nt-top a[href=/naesintest/pre-high]").text()).isEqualTo("구성 목록");
@@ -76,12 +82,15 @@ class PreHighEnglishListTemplateTest {
     // given / when
     Document student = render("prehigh/question-pdf", null, Map.of());
     Document admin = render("prehigh/question-pdf", null, Map.of("pdfGroups", List.of(
-        new PdfGroup("독해", "/api/admin/pre-high-english/rounds/1/reading", 2))));
+        new PdfGroup("독해", "/api/admin/pre-high-english/rounds/1/reading", 1, 2),
+        new PdfGroup("독해", "/api/admin/pre-high-english/part2/1/reading", 18, 19))));
 
     // then
     assertThat(student.select("details")).isEmpty();
     assertThat(admin.select("a[download]").eachAttr("href")).containsExactly(
         "/api/admin/pre-high-english/rounds/1/reading/1.pdf",
-        "/api/admin/pre-high-english/rounds/1/reading/2.pdf");
+        "/api/admin/pre-high-english/rounds/1/reading/2.pdf",
+        "/api/admin/pre-high-english/part2/1/reading/18.pdf",
+        "/api/admin/pre-high-english/part2/1/reading/19.pdf");
   }
 }

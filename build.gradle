@@ -14,13 +14,6 @@ tasks.named('bootJar') {
 	manifest.attributes('Build-Commit': artifactCommit, 'Build-Working-Tree': artifactDirty ? 'dirty' : 'clean')
 }
 
-tasks.named('processResources') {
-	from('ops/designcraft/qa/test/fonts') {
-		include 'NotoSansKR-Regular.ttf', 'OFL-1.1.txt'
-		into 'pre-high-english/fonts'
-	}
-}
-
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)
@@ -119,4 +112,13 @@ tasks.named('test') {
 	// 기존 테스트가 임의 사용자 ID로 ADMIN 토큰을 발급해도 되도록 ADMIN 세션 stamp 검사를 끈다(운영 기본값은 켜짐).
 	// 이 검사 자체는 @TestPropertySource로 켠 전용 테스트(AdminSessionBinding*)가 검증한다.
 	systemProperty 'app.security.admin-session-binding.enabled', 'false'
+}
+
+
+// Reuse the Korean font shipped with the A4 workbook template for question PDFs.
+tasks.named('processResources') {
+    from('ops/designcraft/templates/ko-textbook-a4/Document Fonts') {
+        include 'NotoSansKR-Regular.ttf', 'OFL-1.1.txt'
+        into 'pre-high-english/fonts'
+    }
 }

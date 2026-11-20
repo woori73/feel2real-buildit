@@ -188,4 +188,28 @@ class TestPrepPagesMySqlTest {
     MvcResult img = mockMvc.perform(get("/naesin/apgujeong-m2-2026-2/r01/q01.webp").cookie(auth())).andReturn();
     assertThat(img.getResponse().getStatus()).isEqualTo(200);
   }
+
+  @Test
+  @DisplayName("given 예비고1 2부 10회, when 목록·응시 화면·문제지 PDF를 열면, then 익명은 목록만 보고 회원은 응시 화면과 PDF를 받는다")
+  void preHighPart2PagesAndPaper() throws Exception {
+    // given / when
+    MvcResult list = mockMvc.perform(get("/naesintest/pre-high").param("part", "2").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult anonymousTest = mockMvc.perform(get("/naesintest/pre-high/part2/1").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult test = mockMvc.perform(get("/naesintest/pre-high/part2/1").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult pdf = mockMvc.perform(get("/naesintest/pre-high/part2/3/paper.pdf").cookie(auth())).andReturn();
+    MvcResult missing = mockMvc.perform(get("/naesintest/pre-high/part2/11").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
+    // then
+    String html = list.getResponse().getContentAsString();
+    assertThat(list.getResponse().getStatus()).isEqualTo(200);
+    assertThat(html).contains("2부. 고1 실전 독해 모의고사", "data-part2=\"1\"", "data-part2=\"10\"", "href=\"/naesintest/pre-high/part2/10\"")
+        .contains("18~45번 28문항 · 45분 · 어휘 50문항").doesNotContain("/naesintest/pre-high/part2/1/paper.pdf");
+    assertThat(anonymousTest.getResponse().getStatus()).isEqualTo(302);
+    assertThat(test.getResponse().getStatus()).isEqualTo(200);
+    assertThat(test.getResponse().getContentAsString()).contains("data-api=\"/api/naesintest/pre-high/part2/1\"", "data-part=\"2\"", "45:00");
+    assertThat(pdf.getResponse().getStatus()).isEqualTo(200);
+    assertThat(pdf.getResponse().getContentType()).isEqualTo("application/pdf");
+    assertThat(pdf.getResponse().getHeader("Content-Disposition")).startsWith("attachment");
+    assertThat(pdf.getResponse().getContentAsByteArray()).startsWith((byte) '%', (byte) 'P', (byte) 'D', (byte) 'F');
+    assertThat(missing.getResponse().getStatus()).isEqualTo(404);
+  }
 }

@@ -2,7 +2,7 @@ package f2r.tutor_solution.private_tutor_solution_back.domain.testprep.controlle
 
 import f2r.tutor_solution.private_tutor_solution_back.config.security.JwtTokenProvider.AuthenticatedPrincipal;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
-import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighPart2Store;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighQuestionPdf;
 import java.io.IOException;
 import java.util.List;
@@ -24,45 +24,37 @@ import org.springframework.web.server.ResponseStatusException;
 public class PreHighQuestionPdfController {
   static final String API = "/api/admin/pre-high-english";
   private final PreHighEnglishStore store;
-  private final PreHighGrammarBank grammar;
+  private final PreHighPart2Store part2;
 
-  public PreHighQuestionPdfController(PreHighEnglishStore store, PreHighGrammarBank grammar) {
+  public PreHighQuestionPdfController(PreHighEnglishStore store, PreHighPart2Store part2) {
     this.store = store;
-    this.grammar = grammar;
+    this.part2 = part2;
   }
 
-  @GetMapping("/rounds/{round}/{kind}/{number}.pdf")
-  public ResponseEntity<byte[]> roundQuestion(@PathVariable int round, @PathVariable String kind,
+  @GetMapping("/{series:rounds|part2}/{round}/{kind}/{number}.pdf")
+  public ResponseEntity<byte[]> roundQuestion(@PathVariable String series, @PathVariable int round, @PathVariable String kind,
       @PathVariable int number, @AuthenticationPrincipal AuthenticatedPrincipal principal) throws IOException {
     requireAdmin(principal);
-    var content = store.get(round);
+    boolean practice = "part2".equals(series);
+    var content = practice ? part2.get(round) : store.get(round);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
+    String part = practice ? "2부 " : "1부 ";
     String location = round + "회 " + number + "번";
     byte[] pdf;
     if ("reading".equals(kind)) {
-      var reading = question(content.reading(), number);
-      pdf = PreHighQuestionPdf.reading("1부 독해 · " + location, reading.passage(), reading.image());
+      int first = practice ? PreHighPart2Store.FIRST_NUMBER : 1;
+      if (number < first) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+      var reading = question(content.reading(), number - first + 1);
+      pdf = PreHighQuestionPdf.reading(part + "독해 · " + location, reading.passage(), reading.image());
     } else if ("vocabulary".equals(kind)) {
       var word = question(content.words(), number);
-      pdf = PreHighQuestionPdf.choices("1부 어휘 · " + location,
+      pdf = PreHighQuestionPdf.choices(part + "어휘 · " + location,
           "다음 단어의 뜻으로 알맞은 것을 고르시오.", word.text(), word.choices());
     } else {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     }
-    return download("prehigh-r" + round + "-" + kind + "-" + number + ".pdf", pdf);
-  }
-
-  @GetMapping("/grammar/{chapter}/{number}.pdf")
-  public ResponseEntity<byte[]> grammarQuestion(@PathVariable int chapter, @PathVariable int number,
-      @AuthenticationPrincipal AuthenticatedPrincipal principal) throws IOException {
-    requireAdmin(principal);
-    var content = grammar.get(chapter);
-    if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    var question = question(content.questions(), number);
-    byte[] pdf = PreHighQuestionPdf.choices("3부 어법 · CH " + chapter + " · " + number + "번",
-        question.instruction(), question.text(), question.choices());
-    return download("prehigh-ch" + chapter + "-" + number + ".pdf", pdf);
+    return download("prehigh-" + (practice ? "part2-" : "") + "r" + round + "-" + kind + "-" + number + ".pdf", pdf);
   }
 
   private static void requireAdmin(AuthenticatedPrincipal principal) {

@@ -6,7 +6,7 @@
   <div th:each="group : ${pdfGroups}">
     <h2 th:text="${group.label}">독해</h2>
     <div class="nt-review-actions">
-      <a class="nt-btn nt-btn-line" th:each="number : ${#numbers.sequence(1, group.count)}" download
+      <a class="nt-btn nt-btn-line" th:each="number : ${#numbers.sequence(group.first, group.last)}" download
          th:href="@{${group.path + '/' + number + '.pdf'}}"
          th:aria-label="${group.label + ' ' + number + '번 PDF 다운로드'}"
          th:text="${number + '번 PDF'}">1번 PDF</a>

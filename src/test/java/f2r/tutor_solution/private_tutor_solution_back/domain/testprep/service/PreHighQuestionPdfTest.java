@@ -60,25 +60,27 @@ class PreHighQuestionPdfTest {
   @Test
   void onlyAnAdministratorCanDownloadAndTheResponseIsAnAttachment() throws Exception {
     // given
-    var controller = new PreHighQuestionPdfController(null, new PreHighGrammarBank(new ObjectMapper()));
+    var controller = new PreHighQuestionPdfController(null, new PreHighPart2Store(new ObjectMapper()));
     var student = new AuthenticatedPrincipal(1L, "student", "STUDENT");
     var admin = new AuthenticatedPrincipal(2L, "admin", "ADMIN");
 
     // when / then
     assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class,
-        () -> controller.roundQuestion(1, "reading", 1, student)).getStatusCode());
+        () -> controller.roundQuestion("rounds", 1, "reading", 1, student)).getStatusCode());
     assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class,
-        () -> controller.grammarQuestion(3, 1, null)).getStatusCode());
+        () -> controller.roundQuestion("part2", 1, "reading", 18, null)).getStatusCode());
     assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class,
-        () -> controller.grammarQuestion(3, 0, admin)).getStatusCode());
+        () -> controller.roundQuestion("part2", 1, "reading", 17, admin)).getStatusCode());
 
-    var response = controller.grammarQuestion(3, 1, admin);
+    var response = controller.roundQuestion("part2", 1, "reading", 41, admin);
     assertEquals(MediaType.APPLICATION_PDF, response.getHeaders().getContentType());
-    assertEquals("attachment; filename=\"prehigh-ch3-1.pdf\"",
+    assertEquals("attachment; filename=\"prehigh-part2-r1-reading-41.pdf\"",
         response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION));
     try (var pdf = Loader.loadPDF(response.getBody())) {
       String text = new PDFTextStripper().getText(pdf);
-      assertTrue(text.contains("The invitations ___ by the student council yesterday."));
+      assertEquals(2, pdf.getNumberOfPages());
+      assertTrue(text.contains("2부 독해 · 1회 41번"));
+      assertTrue(text.contains("공통 지문"));
       assertFalse(text.contains("정답"));
     }
   }
