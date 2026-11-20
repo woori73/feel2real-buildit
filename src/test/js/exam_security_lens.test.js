@@ -120,3 +120,15 @@ test('화면: 시연 화면은 판정하지 않는다는 안내와 저장하지 
   assert.match(html, /<script src="\/js\/exam_security_lens\.js"><\/script>/);
   assert.doesNotMatch(html, /<form|type="file"|100% 적발|100%적발|완벽/);
 });
+
+test('메뉴: 원장 휴대폰 앱 첫 화면(/easy/app)에 렌즈 찾기 타일이 있다', () => {
+  // given
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/easy/app.html'), 'utf8');
+  // when
+  const tile = html.match(/<a class="tile" href="\/easy\/exam-security\/lens">[\s\S]*?<\/a>/);
+  // then
+  assert.ok(tile, '렌즈 찾기 타일이 없다');
+  assert.match(tile[0], /렌즈 찾기/);
+});
