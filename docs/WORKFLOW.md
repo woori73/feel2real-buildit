@@ -6,12 +6,12 @@
 
 ## 1. 환경 2티어
 
-기본 개발 흐름은 기존 `worktree → dev → stg → PR → main`이 아니라 **main 단일 로컬 개발 → PR → main 병합 → 수동 prd 배포**다.
+기본 개발 흐름은 기존 `worktree → dev → stg → PR → main`이 아니라 **main 단일 로컬 개발 → PR → main 병합 → Build Check 통과 후 prd 자동 배포**다.
 
 | 티어 | git | 프로필 | DB | 실행 | flyway | 역할 |
 |---|---|---|---|---|---|---|
 | **local** | `main` | `local` | Docker MySQL `localhost:3308` / `f2r_db` | `./scripts/run-local.sh` | `db/migration` + `db/dev-seed` | 개발·테스트 기본 환경 |
-| **prd** | remote `main` | `prd` | EC2/RDS 환경변수 | GitHub Actions 수동 배포 | `db/migration`만 | 운영 |
+| **prd** | remote `main` | `prd` | EC2/RDS 환경변수 | GitHub Actions 자동 배포·수동 재실행 | `db/migration`만 | 운영 |
 
 ### 로컬 DB 자동 생성/재사용
 
@@ -125,7 +125,7 @@ Flyway 단일 history 테이블이지만 두 위치의 역할이 다르다. `db/
 
 ## 7. EC2 배포
 
-- 워크플로: `.github/workflows/deploy-ec2.yml` — **수동** 트리거 (Actions → Run workflow)
+- 워크플로: `.github/workflows/deploy-ec2.yml` — 최신 `main`의 Build Check 성공 시 자동 배포. 필요 시 Actions → Run workflow에서 수동 실행
 - Secrets: `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`
 - 과정: bootJar 빌드 → SCP → `systemctl restart f2r-app.service`
 - prd 설정은 EC2 systemd `EnvironmentFile=/etc/f2r/env`에서 주입한다. 로컬 `.envrc`, `docker-compose.main.yaml`, `./scripts/run-local.sh`는 운영에 사용되지 않는다.
