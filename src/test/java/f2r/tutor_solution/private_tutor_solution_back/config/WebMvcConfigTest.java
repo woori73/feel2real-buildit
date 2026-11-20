@@ -64,6 +64,7 @@ class WebMvcConfigTest {
       "/admin/members, admin/members",
       "/admin/coord/approvals, admin/coord_approvals",
       "/easy/app, easy/app",
+      "/easy/exam-security/lens, easy/exam_security_lens",
       "/easy/records, easy/records",
       "/account/password-change, auth/password_change_required",
       "/admin/analytics, admin/analytics",

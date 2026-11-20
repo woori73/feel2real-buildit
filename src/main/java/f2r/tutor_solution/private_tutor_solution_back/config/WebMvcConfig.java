@@ -126,6 +126,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
         view(registry, "/easy/attendance", "easy/attendance");
         view(registry, "/easy/records", "easy/records");
         view(registry, "/easy/app", "easy/app");
+        // F2R 시험 보안 검사대 시연(렌즈 반사 찾기) — ADMIN 전용(/easy/**). 촬영 화면을 저장·전송하지 않는다.
+        view(registry, "/easy/exam-security/lens", "easy/exam_security_lens");
 
         // 원장용 Easy 대화 장부의 운영 주소. 데이터/변경은 /api/tutor/easy/** 권한 검증을 거친다.
         view(registry, "/ledger", "easy/tutor_agent");
