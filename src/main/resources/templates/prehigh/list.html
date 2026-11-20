@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <title>예비고1 디지털 영어 모의고사 · F2R영어</title>
-  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-review-2">
+  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-grammar-finals-1">
   <script defer src="/js/naesin_common.js"></script>
   <script defer src="/js/pre_high_english.js?v=2"></script>
 </head>
@@ -38,14 +38,28 @@
   </section>
   <section class="nt-page ph-part" id="grammar">
     <h2>3부. 고1 내신 대비 어법 모의고사</h2>
-    <p>단원별 40문항 · 5지선다 · 문항당 20초 · 채점 후 정답과 해설 제공</p>
+    <p>회당 20문항 · 5지선다 · 문항당 20초 · 채점 후 정답과 해설 제공</p>
     <table class="nt-table">
       <thead><tr><th scope="col">단원</th><th scope="col">출제 범위</th><th scope="col">응시</th></tr></thead>
       <tbody>
         <tr th:each="chapter : ${grammarChapters}">
           <td class="nt-round" th:text="'CH ' + ${chapter.number}">CH 3</td>
           <td class="nt-scope" th:text="${chapter.title}">수동태</td>
-          <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{number}(number=${chapter.number})}" th:aria-label="${chapter.title} + ' 모의고사 열기'">열기</a></td>
+          <td class="nt-go"><div class="ph-grammar-part-links">
+            <a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{exam}(exam=|${chapter.number}-1|)}" th:aria-label="|${chapter.title} 1부 20문항 열기|">1부</a>
+            <a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{exam}(exam=|${chapter.number}-2|)}" th:aria-label="|${chapter.title} 2부 20문항 열기|">2부</a>
+          </div></td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>마무리 종합 모의고사</h3>
+    <p>CH 1~10 전 범위 · 회당 20문항</p>
+    <table class="nt-table ph-grammar-finals">
+      <thead><tr><th scope="col">회차</th><th scope="col">응시</th></tr></thead>
+      <tbody>
+        <tr th:each="round : ${grammarFinalRounds}">
+          <td class="nt-round" th:text="|${round}회|">1회</td>
+          <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/grammar/{exam}(exam=|final-${round}|)}" th:aria-label="|마무리 종합 ${round}회 열기|">열기</a></td>
         </tr>
       </tbody>
     </table>

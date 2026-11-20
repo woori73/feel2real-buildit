@@ -6,6 +6,7 @@ import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.Pr
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarAttempt;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarBank;
+import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighGrammarQuestionPdf;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
@@ -16,6 +17,8 @@ import java.util.Objects;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +36,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class PreHighEnglishController {
   private static final String PAGE = "/naesintest/pre-high";
   private static final String API = "/api/naesintest/pre-high";
+  private static final String ADMIN = "/api/admin/pre-high-english";
   private static final MediaType WEBP = MediaType.parseMediaType("image/webp");
 
   public record Action(String action, UUID attempt, int number, int choice) {}
@@ -53,30 +57,56 @@ public class PreHighEnglishController {
   public String list(Model model, @AuthenticationPrincipal AuthenticatedPrincipal principal) {
     model.addAttribute("rounds", store.list());
     model.addAttribute("grammarChapters", grammar.list());
+    model.addAttribute("grammarFinalRounds", grammar.finalRounds());
     model.addAttribute("canInstall", principal != null && "ADMIN".equals(principal.role()));
     return "prehigh/list";
   }
 
-  @GetMapping(PAGE + "/grammar/{chapter}")
-  public String grammarTest(@PathVariable int chapter, Model model) {
-    var content = grammar.get(chapter);
+  @GetMapping(PAGE + "/grammar/{exam}")
+  public String grammarTest(@PathVariable String exam, Model model,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    var content = grammar.get(exam);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    model.addAttribute("chapter", new PreHighGrammarBank.ChapterInfo(chapter, content.title()));
-    model.addAttribute("count", PreHighGrammarBank.QUESTION_COUNT);
+    String firstPart = grammar.firstPartForPreviousChapter(exam);
+    if (firstPart != null) return "redirect:" + PAGE + "/grammar/" + firstPart;
+    model.addAttribute("examTitle", content.title());
+    model.addAttribute("examApi", API + "/grammar/" + exam);
+    model.addAttribute("count", content.questions().size());
     model.addAttribute("seconds", PreHighGrammarBank.QUESTION_SECONDS);
+    if (principal != null && "ADMIN".equals(principal.role())) {
+      model.addAttribute("pdfPath", ADMIN + "/grammar/" + exam + "/questions");
+    }
     return "prehigh/grammar";
   }
 
-  @PostMapping(API + "/grammar/{chapter}")
-  public ResponseEntity<PreHighGrammarAttempt.State> grammarAct(@PathVariable int chapter, @RequestBody GrammarAction command,
+  @GetMapping(ADMIN + "/grammar/{exam}/questions/{number}/pdf")
+  public ResponseEntity<byte[]> grammarQuestionPdf(@PathVariable String exam, @PathVariable int number,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) throws IOException {
+    if (principal == null || !"ADMIN".equals(principal.role())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    }
+    var content = grammar.get(exam);
+    if (content == null || number < 1 || number > content.questions().size()) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+
+    byte[] pdf = PreHighGrammarQuestionPdf.render(content.title(), number, content.questions().get(number - 1));
+    String filename = "F2R-grammar-" + exam + "-Q" + number + ".pdf";
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.APPLICATION_PDF)
+        .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(filename).build().toString())
+        .body(pdf);
+  }
+
+  @PostMapping(API + "/grammar/{exam}")
+  public ResponseEntity<PreHighGrammarAttempt.State> grammarAct(@PathVariable String exam, @RequestBody GrammarAction command,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
       @RequestHeader(value = "Origin", required = false) String origin) {
     checkOrigin(origin);
-    var content = grammar.get(chapter);
+    var content = grammar.get(exam);
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     if (command.action() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
     HttpSession session = request.getSession();
-    String key = "pre-high-grammar:" + principal.userId() + ":" + chapter;
+    String key = "pre-high-grammar:" + principal.userId() + ":" + exam;
     synchronized (session) {
       var attempt = (PreHighGrammarAttempt) session.getAttribute(key);
       Instant now = Instant.now();
@@ -164,7 +194,7 @@ public class PreHighEnglishController {
         .body(Base64.getDecoder().decode(encoded));
   }
 
-  @PostMapping(value = "/api/admin/pre-high-english/rounds", consumes = MediaType.APPLICATION_JSON_VALUE)
+  @PostMapping(value = ADMIN + "/rounds", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<List<PreHighEnglishStore.RoundInfo>> install(HttpServletRequest request,
       @RequestHeader(value = "Origin", required = false) String origin) throws IOException {
     checkOrigin(origin);
