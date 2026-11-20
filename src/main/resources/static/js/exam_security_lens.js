@@ -93,6 +93,7 @@
       found.push({
         x: minX, y: minY, w: bw, h: bh, area,
         cx: sx / area, cy: sy / area,
+        diff: sumDiff / area, // 켰을 때 - 껐을 때 평균 밝기 차이
         score: Math.round((sumDiff / area) * peak) / 255,
       });
     }
@@ -169,25 +170,89 @@
   function rangeSettings(mode, caps) {
     const k = ANALYSIS_WIDTH / 320; // 반경 기준값은 320폭에서 정했으므로 폭에 맞춰 늘린다
     const zoomCaps = caps && caps.zoom && typeof caps.zoom.max === 'number' ? caps.zoom : null;
+    // coarse: 1단계(전체를 거칠게) — 놓치지 않게 기준을 낮춘다. options: 2단계(후보만 정밀하게) — 최종 기준.
     if (mode === 'far') {
       return {
         zoom: zoomCaps ? Math.min(zoomCaps.max, Math.max(zoomCaps.min || 1, 3)) : null,
+        coarse: { onMin: 80, diffMin: 25, maxCandidates: 30 },
         options: { onMin: 170, diffMin: 40 },
         radius: 10 * k,
         mergeRadius: 16 * k,
       };
     }
-    return { zoom: zoomCaps ? (zoomCaps.min || 1) : null, options: {}, radius: 10 * k, mergeRadius: 16 * k };
+    return {
+      zoom: zoomCaps ? (zoomCaps.min || 1) : null,
+      coarse: { onMin: 100, diffMin: 40, maxCandidates: 30 },
+      options: {},
+      radius: 10 * k,
+      mergeRadius: 16 * k,
+    };
   }
 
-  /** 감독관 화면에 띄울 문장. 기계는 판정하지 않는다. */
-  function verdict(candidates) {
+  // ---------- 다이내믹 덴서티(2단계 정밀 확인) ----------
+  // F2R 다이내믹 덴서티 D = I · dΨ/dt ÷ (V + ε) 를 렌즈 후보에 그대로 옮긴다(docs/f2r-llm/DYNAMIC_DENSITY.md 4장).
+  // 화면 전체는 거칠게 보고, D가 높은 후보 자리에만 카메라 원본 해상도(정밀 분석)를 몰아준다.
+
+  /** 2단계에서 정밀 확인할 후보 수(계산량 상한). */
+  const FINE_BUDGET = 5;
+
+  /**
+   * 렌즈 후보의 동태밀도 D.
+   * - I(정보량): 켰을 때 - 껐을 때 평균 밝기 차이(0~1)
+   * - dΨ/dt(변화율): 끔·켬 반복 중 같은 자리에서 다시 나타난 비율(0~1)
+   * - V(점유 공간): 후보 넓이 ÷ 화면 넓이 — 넓게 번쩍이는 면(노이즈)일수록 크다
+   */
+  function lensDensity(c, roundsTotal, frameArea, eps) {
+    const e = eps == null ? 1e-3 : eps;
+    const I = Math.min(1, Math.max(0, (c.diff || 0) / 255));
+    const dPsi = Math.min(1, (c.hits || 1) / Math.max(1, roundsTotal));
+    const V = (c.area || 1) / Math.max(1, frameArea);
+    return (I * dPsi) / (V + e);
+  }
+
+  /** D가 높은 순으로 정밀 확인할 후보(picked)와 나머지(rest)를 나눈다. */
+  function allocateFine(candidates, roundsTotal, frameArea, budget) {
+    const scored = (candidates || []).map((c) => Object.assign({}, c, { d: lensDensity(c, roundsTotal, frameArea) }));
+    scored.sort((a, b) => b.d - a.d);
+    const n = budget == null ? FINE_BUDGET : budget;
+    return { picked: scored.slice(0, n), rest: scored.slice(n) };
+  }
+
+  /**
+   * 1단계 프레임(coarseW×coarseH)의 후보 자리를 카메라 원본(videoW×videoH)에서 잘라 볼 사각형.
+   * half: 원본 픽셀 기준 반폭. 화면 밖으로 나가지 않게 맞춘다. s = 원본 ÷ 1단계 배율.
+   */
+  function roiRect(c, coarseW, coarseH, videoW, videoH, half) {
+    const s = videoW / coarseW;
+    const w = Math.min(videoW, half * 2);
+    const h = Math.min(videoH, half * 2);
+    const x = Math.round(Math.min(Math.max(c.cx * s - half, 0), videoW - w));
+    const y = Math.round(Math.min(Math.max(c.cy * (videoH / coarseH) - half, 0), videoH - h));
+    return { x, y, w, h, s };
+  }
+
+  /**
+   * 2단계 기준값. "반사면으로 볼 넓이" 상한은 1단계 화면에서 정한 픽셀 수를 원본 배율(s²)로 키워
+   * 잘라 본 사각형 넓이에 대한 비율로 바꾼다(잘라 본 칸이 작아도 같은 크기의 점을 같은 기준으로 본다).
+   */
+  function fineOptions(base, roi, coarseArea) {
+    const ratio = (base && base.maxAreaRatio) || DEFAULTS.maxAreaRatio;
+    const maxPixels = coarseArea * ratio * roi.s * roi.s;
+    return Object.assign({}, base, { maxAreaRatio: Math.min(1, maxPixels / (roi.w * roi.h)) });
+  }
+
+  /**
+   * 감독관 화면에 띄울 문장. 기계는 판정하지 않는다.
+   * weakCount: 1단계에서만 보이고 2단계 정밀 확인에서 다시 안 보인 약한 후보 수(판정에는 넣지 않고 알려만 준다).
+   */
+  function verdict(candidates, weakCount) {
     const n = (candidates || []).length;
-    if (n === 0) return { level: 'NONE', title: '의심 없음', detail: '플래시에 반응하는 렌즈 반사 점을 찾지 못했습니다.' };
+    const weak = weakCount ? ' 정밀 확인에서 다시 안 보인 약한 후보 ' + weakCount + '곳은 노란 점선으로 표시했습니다.' : '';
+    if (n === 0) return { level: 'NONE', title: '의심 없음', detail: '플래시에 반응하는 렌즈 반사 점을 찾지 못했습니다.' + weak };
     return {
       level: 'REVIEW',
       title: '확인 필요',
-      detail: '렌즈 반사 후보 ' + n + '곳. 표시된 자리를 감독관이 직접 확인해 주세요. 부정행위 판정이 아닙니다.',
+      detail: '렌즈 반사 후보 ' + n + '곳. 표시된 자리를 감독관이 직접 확인해 주세요. 부정행위 판정이 아닙니다.' + weak,
     };
   }
 
@@ -303,6 +368,15 @@
       return ctx.getImageData(0, 0, w, h);
     }
 
+    const fineCanvas = doc.createElement('canvas');
+    /** 카메라 원본 해상도에서 사각형 하나만 잘라 온다(2단계 정밀 확인). 메모리에서만 비교하고 버린다. */
+    function grabRoi(r) {
+      fineCanvas.width = r.w; fineCanvas.height = r.h;
+      const ctx = fineCanvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(video, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      return ctx.getImageData(0, 0, r.w, r.h);
+    }
+
     async function torch(on) {
       await track.applyConstraints({ advanced: [{ torch: on }] });
       await sleep(220); // 노출이 따라오는 시간
@@ -314,12 +388,17 @@
     }
 
     /** 후보 자리에 번호 붙은 큰 원과 십자선을 그린다(영상은 object-fit: contain이라 잘린 곳이 없다). */
-    function draw(cands, fw, fh) {
+    function draw(cands, fw, fh, weak) {
       overlay.width = overlay.clientWidth;
       overlay.height = overlay.clientHeight;
       const ctx = overlay.getContext('2d');
       ctx.clearRect(0, 0, overlay.width, overlay.height);
       const f = fitRect(fw, fh, overlay.width, overlay.height);
+      (weak || []).forEach((c) => { // 약한 후보: 노란 점선, 번호 없음
+        ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = '#ecc94b';
+        ctx.beginPath(); ctx.arc(f.ox + c.cx * f.scale, f.oy + c.cy * f.scale, 16, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+      });
       cands.forEach((c, i) => {
         const x = f.ox + c.cx * f.scale;
         const y = f.oy + c.cy * f.scale;
@@ -352,6 +431,8 @@
       try {
         const modeInput = doc.querySelector('input[name="lensRange"]:checked');
         const set = rangeSettings(modeInput ? modeInput.value : 'near', track.getCapabilities ? track.getCapabilities() : {});
+        // 효과 비교 측정용(TEST_PLAN 4-1): 주소 끝에 ?dd=off를 붙이면 2단계 없이 예전 방식(한 번에 최종 기준)으로 찾는다
+        const ddOff = /[?&]dd=off\b/.test((doc.defaultView && doc.defaultView.location.search) || '');
         if (set.zoom != null) {
           try { await track.applyConstraints({ advanced: [{ zoom: set.zoom }] }); await sleep(300); } catch (e) { /* 확대를 못 하는 기종 */ }
         }
@@ -363,16 +444,48 @@
           await torch(true);
           const on = grab();
           size = { w: on.width, h: on.height };
-          rounds.push(findCandidates(on, off, set.options));
+          rounds.push(findCandidates(on, off, ddOff ? set.options : set.coarse));
         }
         await torch(false);
-        const cands = mergeNearby(consistentCandidates(rounds, set.radius, 2), set.mergeRadius);
-        draw(cands, size.w, size.h);
+        // 1단계: 화면 전체를 거칠게(기준을 낮춰 놓치지 않게) 본 후보
+        const coarse = mergeNearby(consistentCandidates(rounds, set.radius, 2), set.mergeRadius);
+        // 2단계: D가 높은 후보 자리만 카메라 원본 해상도로 다시 끔·켬 2번 비교(최종 기준)
+        const frameArea = size.w * size.h;
+        const alloc = ddOff ? { picked: [], rest: [] } : allocateFine(coarse, rounds.length, frameArea, FINE_BUDGET);
+        const cands = ddOff ? coarse : [];
+        let weak = alloc.rest;
+        if (alloc.picked.length) {
+          say('후보 ' + alloc.picked.length + '곳을 정밀 확인하는 중입니다…');
+          const vw = video.videoWidth || size.w;
+          const vh = video.videoHeight || size.h;
+          const rois = alloc.picked.map((c) => roiRect(c, size.w, size.h, vw, vh, Math.round(32 * vw / size.w)));
+          const per = rois.map(() => []);
+          for (let i = 0; i < 2; i++) {
+            await torch(false);
+            const offs = rois.map(grabRoi);
+            await torch(true);
+            const ons = rois.map(grabRoi);
+            rois.forEach((r, j) => per[j].push(findCandidates(ons[j], offs[j], fineOptions(set.options, r, frameArea))));
+          }
+          await torch(false);
+          const fineRadius = 10 * vw / 320;
+          alloc.picked.forEach((c, j) => {
+            const got = consistentCandidates(per[j], fineRadius, 2);
+            if (!got.length) { weak = weak.concat([c]); return; }
+            const r = rois[j];
+            const g = got[0];
+            cands.push(Object.assign({}, c, {
+              cx: (r.x + g.cx) / r.s, cy: (r.y + g.cy) / r.s,
+              w: Math.max(1, g.w / r.s), h: Math.max(1, g.h / r.s),
+            }));
+          });
+        }
+        draw(cands, size.w, size.h, weak);
         if (cands.length) {
           video.pause(); // 휴대폰을 움직여도 원 자리를 볼 수 있게 화면을 멈춘다
           say('화면을 멈췄습니다. 빨간 원(번호) 자리를 직접 확인하세요. 다시 찾으려면 [렌즈 찾기]를 누르세요.');
         }
-        const v = verdict(cands);
+        const v = verdict(cands, weak.length);
         result.dataset.level = v.level;
         result.querySelector('strong').textContent = v.title;
         result.querySelector('span').textContent = v.detail + ' (' + ((performance.now() - t0) / 1000).toFixed(1) + '초)';
@@ -387,5 +500,5 @@
     scanBtn.addEventListener('click', scan);
   }
 
-  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, rangeSettings, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
+  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, rangeSettings, lensDensity, allocateFine, roiRect, fineOptions, FINE_BUDGET, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
 });

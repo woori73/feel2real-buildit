@@ -296,3 +296,122 @@ test('화면: 검사 거리(가까이 1~2m / 멀리 3~5m)를 고를 수 있다',
   assert.match(html, /name="lensRange" value="near" checked/);
   assert.match(html, /name="lensRange" value="far"/);
 });
+
+test('lensDensity: 밝기 차이가 크고 반복해서 나오고 작은 점일수록 D가 높다', () => {
+  // given — 같은 화면(640×360)에서 세 후보
+  const area = 640 * 360;
+  const lens = { diff: 120, hits: 3, area: 4 };      // 작고 또렷하게 3번 모두 나온 점
+  const flicker = { diff: 120, hits: 2, area: 4 };   // 3번 중 2번만 나온 점
+  const shiny = { diff: 120, hits: 3, area: 300 };   // 넓게 번쩍이는 면(반짝이 장식)
+  // when
+  const dLens = L.lensDensity(lens, 3, area);
+  const dFlicker = L.lensDensity(flicker, 3, area);
+  const dShiny = L.lensDensity(shiny, 3, area);
+  // then
+  assert.ok(dLens > dFlicker, '반복해서 나올수록 높다(dΨ/dt)');
+  assert.ok(dLens > dShiny, '작은 점일수록 높다(V가 작음)');
+});
+
+test('allocateFine: D가 높은 후보부터 정밀 확인 예산만큼만 고르고 나머지는 따로 둔다', () => {
+  // given
+  const area = 640 * 360;
+  const cands = [
+    { id: 'a', diff: 40, hits: 2, area: 50 },
+    { id: 'b', diff: 150, hits: 3, area: 3 },
+    { id: 'c', diff: 90, hits: 3, area: 6 },
+  ];
+  // when
+  const r = L.allocateFine(cands, 3, area, 2);
+  // then
+  assert.deepEqual(r.picked.map((c) => c.id), ['b', 'c']);
+  assert.deepEqual(r.rest.map((c) => c.id), ['a']);
+  assert.ok(r.picked[0].d >= r.picked[1].d);
+});
+
+test('roiRect: 1단계 후보 자리를 원본 해상도 좌표로 옮기고 화면 밖으로 나가지 않게 자른다', () => {
+  // given — 1단계 640×360, 원본 1920×1080(배율 3), 반폭 96
+  // when
+  const mid = L.roiRect({ cx: 320, cy: 180 }, 640, 360, 1920, 1080, 96);
+  const corner = L.roiRect({ cx: 2, cy: 2 }, 640, 360, 1920, 1080, 96);
+  // then
+  assert.deepEqual(mid, { x: 960 - 96, y: 540 - 96, w: 192, h: 192, s: 3 });
+  assert.equal(corner.x, 0);
+  assert.equal(corner.y, 0);
+  assert.equal(corner.w, 192);
+});
+
+test('fineOptions: 잘라 본 칸이 작아도 반사면 크기 상한은 1단계와 같은 실제 크기로 맞춘다', () => {
+  // given — 1단계 화면 넓이 230,400, 상한 0.2% = 460.8픽셀, 배율 3 → 원본 4,147픽셀
+  const roi = { x: 0, y: 0, w: 192, h: 192, s: 3 };
+  // when
+  const o = L.fineOptions({ onMin: 170, diffMin: 40 }, roi, 640 * 360);
+  // then
+  assert.equal(o.onMin, 170, '2단계 기준값은 그대로 둔다');
+  assert.ok(Math.abs(o.maxAreaRatio * 192 * 192 - 640 * 360 * 0.002 * 9) < 1e-6);
+});
+
+test('rangeSettings: 1단계(전체)는 놓치지 않게 2단계(정밀)보다 기준을 낮춘다', () => {
+  // given
+  // when
+  const near = L.rangeSettings('near', {});
+  const far = L.rangeSettings('far', {});
+  // then
+  for (const set of [near, far]) {
+    const fine = Object.assign({}, L.DEFAULTS, set.options);
+    assert.ok(set.coarse.onMin < fine.onMin);
+    assert.ok(set.coarse.diffMin < fine.diffMin);
+  }
+});
+
+test('verdict: 정밀 확인에서 다시 안 보인 약한 후보는 판정에 넣지 않고 알려만 준다', () => {
+  // given
+  // when
+  const none = L.verdict([], 2);
+  const review = L.verdict([{}], 1);
+  // then
+  assert.equal(none.level, 'NONE');
+  assert.match(none.detail, /약한 후보 2곳/);
+  assert.equal(review.level, 'REVIEW');
+  assert.match(review.detail, /약한 후보 1곳/);
+});
+
+/** w×h 프레임을 k배로 줄인다(칸 평균) — 휴대폰 원본을 1단계 분석 폭으로 줄이는 것과 같다. */
+function downscale(f, k) {
+  const w = f.width / k, h = f.height / k, o = frame(w, h, 0);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let s = 0;
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) s += f.data[((y * k + j) * f.width + x * k + i) * 4];
+    const p = (y * w + x) * 4; o.data[p] = o.data[p + 1] = o.data[p + 2] = s / (k * k);
+  }
+  return o;
+}
+
+/** 원본에서 사각형 r만 잘라 온다(2단계 grabRoi와 같다). */
+function cropFrame(f, r) {
+  const o = frame(r.w, r.h, 0);
+  for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
+    const a = ((r.y + y) * f.width + r.x + x) * 4, b = (y * r.w + x) * 4;
+    o.data[b] = f.data[a]; o.data[b + 1] = f.data[a + 1]; o.data[b + 2] = f.data[a + 2];
+  }
+  return o;
+}
+
+test('다이내믹 덴서티 2단계: 멀리 있어 1단계에서 흐려진 작은 렌즈를 놓치지 않고 원본 해상도로 확인한다', () => {
+  // given — 원본 1920×1080에 2×2픽셀 렌즈 반사(멀리 있는 렌즈). 1단계는 3배 줄인 640×360
+  const W = 1920, H = 1080;
+  const off = frame(W, H, 60);
+  const on = paint(frame(W, H, 70), 1000, 500, 2, 255);
+  const set = L.rangeSettings('near', {});
+  const onC = downscale(on, 3), offC = downscale(off, 3);
+  // when
+  const singlePass = L.findCandidates(onC, offC, set.options);          // 예전 방식: 한 번에 최종 기준
+  const coarse = L.findCandidates(onC, offC, set.coarse);               // 1단계: 낮춘 기준
+  const alloc = L.allocateFine(L.consistentCandidates([coarse, coarse, coarse], set.radius, 2), 3, 640 * 360);
+  const r = L.roiRect(alloc.picked[0], 640, 360, W, H, 96);
+  const fine = L.findCandidates(cropFrame(on, r), cropFrame(off, r), L.fineOptions(set.options, r, 640 * 360)); // 2단계: 최종 기준
+  // then
+  assert.equal(singlePass.length, 0, '줄인 화면에서 최종 기준만 쓰면 흐려진 렌즈를 놓친다');
+  assert.equal(alloc.picked.length, 1);
+  assert.equal(fine.length, 1, '원본 해상도에서는 최종 기준으로도 렌즈가 보인다');
+  assert.ok(Math.abs((r.x + fine[0].cx) - 1000.5) < 1 && Math.abs((r.y + fine[0].cy) - 500.5) < 1, '렌즈 자리를 원본 좌표로 정확히 되돌린다');
+});

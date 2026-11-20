@@ -28,6 +28,7 @@
 | T10 | QLoRA 학습 스크립트·설정 — PLAN 4-7 | GPT | 클로드 | 완료 | `training/qlora/` |
 | T11 | LoRA 병합 → GGUF 4비트 변환 스크립트 — PLAN 4-7 | GPT | 클로드 | 완료 | `training/gguf/` |
 | T12 | 베이스 모델 후보·라이선스 확인표 | GPT | 클로드 | 완료 | `training/README.md` |
+| T13 | 다이내믹 덴서티를 시험 보안 렌즈 찾기에 적용(2단계 정밀 확인) — [DYNAMIC_DENSITY.md](DYNAMIC_DENSITY.md) 4장 | 클로드 | GPT | 검토 | `src/main/resources/static/js/exam_security_lens.js`, `docs/exam-security/` |
 
 ## 진행 순서 (협업환경 문서 5장)
 1. T00 병합.
