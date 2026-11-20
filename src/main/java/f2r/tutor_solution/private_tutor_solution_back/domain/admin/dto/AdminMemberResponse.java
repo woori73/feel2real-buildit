@@ -16,6 +16,14 @@ public record AdminMemberResponse(
     LocalDateTime joinedAt
 ) {
   public static AdminMemberResponse of(User u) {
+    if (u.getLoginId().matches("naver_[0-9a-f]{32}")) {
+      String name = u.getName();
+      String displayName = name == null || name.isBlank() || "네이버 회원".equals(name)
+          ? "네이버 회원 (이름 미등록)" : name;
+      return new AdminMemberResponse(
+          u.getUserId(), displayName, "회원번호 " + u.getUserId(), u.getRole().name(),
+          KstTime.toKst(u.getCreatedAt()));
+    }
     return new AdminMemberResponse(
         u.getUserId(), u.getDisplayName(), u.getLoginId(), u.getRole().name(), KstTime.toKst(u.getCreatedAt()));
   }
