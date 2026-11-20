@@ -25,6 +25,7 @@ class PreHighEnglishListTemplateTest {
         "grammarChapters", List.of(Map.of("number", 3, "title", "수동태")),
         "grammarFinalRounds", List.of(1),
         "vocabularyRoundCount", 50,
+        "gradeTwoVocabularyRoundCount", 40,
         "canInstall", true));
   }
 
@@ -46,14 +47,14 @@ class PreHighEnglishListTemplateTest {
   }
 
   @Test
-  void chooserShowsAllFourParts() {
+  void chooserShowsAllPublishedParts() {
     // given / when
     Document chooser = render(null);
 
     // then
     assertThat(chooser.select(".nt-table.nt-schools tbody a").eachAttr("href")).containsExactly(
         "/naesintest/pre-high?part=1", "/naesintest/pre-high?part=2", "/naesintest/pre-high?part=3",
-        "/naesintest/pre-high?part=4", "/naesintest/pre-high?part=5");
+        "/naesintest/pre-high?part=4", "/naesintest/pre-high?part=5", "/naesintest/pre-high?part=7");
     assertThat(chooser.select(".nt-table.nt-schools tbody tr").eachText()).anyMatch(row -> row.contains("18~45번 1회"));
     assertThat(chooser.select("#ph-install")).hasSize(1);
     assertThat(render("unknown").select("#ph-parts-title")).hasSize(1);
@@ -82,7 +83,11 @@ class PreHighEnglishListTemplateTest {
     assertThat(vocabulary.select("table tbody a")).hasSize(50);
     assertThat(vocabulary.select("table tbody a").first().attr("href")).isEqualTo("/naesintest/pre-high/part4/1");
     assertThat(vocabulary.select("table tbody a").last().attr("href")).isEqualTo("/naesintest/pre-high/part4/50");
-    for (Document part : List.of(reading, practice, grammar, vocabulary)) {
+    Document gradeTwo = render("7");
+    assertThat(gradeTwo.select("#ph-vocab-title").text()).contains("7부", "고2 어휘 모의고사");
+    assertThat(gradeTwo.select("table tbody a")).hasSize(40);
+    assertThat(gradeTwo.select("table tbody a").last().attr("href")).isEqualTo("/naesintest/pre-high/part7/40");
+    for (Document part : List.of(reading, practice, grammar, vocabulary, gradeTwo)) {
       assertThat(part.select("#ph-parts-title")).isEmpty();
       assertThat(part.select(".nt-top a[href=/naesintest/pre-high]").text()).isEqualTo("구성 목록");
     }
@@ -99,6 +104,7 @@ class PreHighEnglishListTemplateTest {
         "grammarChapters", List.of(Map.of("number", 3, "title", "수동태")),
         "grammarFinalRounds", List.of(1),
         "vocabularyRoundCount", 50,
+        "gradeTwoVocabularyRoundCount", 40,
         "canInstall", false);
     // when
     Document practice = render("prehigh/list", "2", student);

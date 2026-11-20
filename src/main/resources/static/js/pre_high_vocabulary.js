@@ -4,6 +4,7 @@
   const exam = $('ph-vocabulary');
   if (!exam) return;
 
+  const confirmChoice = exam.dataset.confirmChoice === 'true';
   const circle = ['①', '②', '③', '④', '⑤'];
   const body = $('ph-vocab-body');
   const status = $('ph-vocab-status');
@@ -17,8 +18,11 @@
       + '</p><h2 class="ph-grammar-sentence" lang="en">' + escaped(item.prompt) + '</h2>'
       + '<div class="ph-grammar-options">' + item.choices.map((choice, i) =>
         '<button type="button" class="nt-btn nt-btn-line" data-choice="' + (i + 1) + '"'
+        + (confirmChoice ? ' aria-pressed="' + (item.selected === i + 1) + '"' : '')
         + (item.cloze ? ' lang="en"' : '') + '>' + circle[i] + ' ' + escaped(choice) + '</button>').join('')
-      + '</div></section>';
+      + '</div>' + (confirmChoice ? '<button type="button" class="nt-btn ph-vocab-next" data-action="next"'
+        + (item.selected ? '' : ' disabled') + '>' + (item.number === state.count ? '채점하기' : '다음') + '</button>' : '')
+      + '</section>';
     body.querySelector('[data-choice]')?.focus({ preventScroll: true });
   }
 
@@ -75,6 +79,11 @@
         $('ph-vocab-progress').textContent = item.number + ' / ' + state.count;
         $('ph-vocab-kind').textContent = item.cloze ? '문장 빈칸' : '뜻 고르기';
         if (previous !== item.number || action === 'start' || action === 'restart') renderItem(item);
+        else if (confirmChoice) {
+          body.querySelectorAll('[data-choice]').forEach(button =>
+            button.setAttribute('aria-pressed', String(Number(button.dataset.choice) === item.selected)));
+          body.querySelector('[data-action="next"]').disabled = !item.selected;
+        }
         tick();
       } else {
         wrongOnly = false;

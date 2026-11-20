@@ -71,6 +71,7 @@ public class PreHighEnglishController {
     model.addAttribute("loggedIn", principal != null);
     model.addAttribute("grammarChapters", grammar.list());
     model.addAttribute("grammarFinalRounds", grammar.finalRounds());
+    model.addAttribute("gradeTwoVocabularyRoundCount", PreHighVocabularyBank.GRADE_TWO_ROUND_COUNT);
     model.addAttribute("vocabularyRoundCount", PreHighVocabularyBank.ROUND_COUNT);
     model.addAttribute("canInstall", principal != null && "ADMIN".equals(principal.role()));
     return "prehigh/list";

@@ -13,7 +13,7 @@
   <script defer src="/js/pre_high_english.js?v=5"></script>
 </head>
 <body class="nt-body nt-home"
-      th:with="part=${param != null and param.part != null ? param.part[0] : ''}, partSelected=${part == '1' or part == '2' or part == '3' or part == '4' or part == '5'}">
+      th:with="part=${param != null and param.part != null ? param.part[0] : ''}, partSelected=${part == '1' or part == '2' or part == '3' or part == '4' or part == '5' or part == '7'}">
 <div class="nt-top"><div class="nt-top-l">
   <a class="nt-brand" href="/#pre-high-english" aria-label="F2R영어 홈으로"><img src="/img/F2R_logo_pure.svg" width="30" height="30" alt=""><span>F2R영어</span></a>
   <a class="nt-btn nt-btn-line" th:if="${partSelected}" href="/naesintest/pre-high">구성 목록</a>
@@ -54,6 +54,11 @@
               <td class="nt-round">5부</td><td>고2 기출 6문항 + 어휘 모의고사</td><td>고2 전국연합학력평가</td>
               <td th:text="${#lists.isEmpty(grade2Rounds) ? '준비 중' : #lists.size(grade2Rounds) + '회'}">48회</td>
               <td class="nt-go"><a class="nt-btn" href="/naesintest/pre-high?part=5" aria-label="5부 열기">열기</a></td>
+            </tr>
+            <tr id="part7">
+              <td class="nt-round">7부</td><td>고2 어휘 모의고사</td><td>어휘 · 숙어</td>
+              <td th:text="|${gradeTwoVocabularyRoundCount}회|">40회</td>
+              <td class="nt-go"><a class="nt-btn" href="/naesintest/pre-high?part=7" aria-label="7부 열기">열기</a></td>
             </tr>
           </tbody>
         </table>
@@ -123,15 +128,16 @@
         </tbody>
       </table>
     </section>
-    <section class="nt-group" th:if="${part == '4'}" aria-labelledby="ph-vocab-title">
-      <h2 id="ph-vocab-title">4부. 고1 수능 대비 어휘 모의고사</h2>
-      <p class="nt-lead">총 50회 · 회당 5지선다 50문항 · 뜻 고르기 30문항(각 3초) · 문장 빈칸 20문항(각 5초)</p>
+    <section class="nt-group" th:if="${part == '4' or part == '7'}" aria-labelledby="ph-vocab-title">
+      <h2 id="ph-vocab-title" th:text="${part == '7' ? '7부. 고2 어휘 모의고사' : '4부. 고1 수능 대비 어휘 모의고사'}">4부. 고1 수능 대비 어휘 모의고사</h2>
+      <p class="nt-lead" th:if="${part == '7'}">총 40회 · 회당 5지선다 50문항 · 뜻 고르기 30문항(각 5초) · 문장 빈칸 20문항(각 10초)</p>
+      <p class="nt-lead" th:if="${part == '4'}">총 50회 · 회당 5지선다 50문항 · 뜻 고르기 30문항(각 3초) · 문장 빈칸 20문항(각 5초)</p>
       <table class="nt-table nt-schools">
         <thead><tr><th scope="col">회차</th><th scope="col">열기</th></tr></thead>
         <tbody>
-          <tr th:each="round : ${#numbers.sequence(1, vocabularyRoundCount)}">
+          <tr th:each="round : ${#numbers.sequence(1, part == '7' ? gradeTwoVocabularyRoundCount : vocabularyRoundCount)}">
             <td class="nt-round" th:text="|${round}회|">1회</td>
-            <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/part4/{round}(round=${round})}"
+            <td class="nt-go"><a class="nt-btn" th:href="@{/naesintest/pre-high/part{part}/{round}(part=${part},round=${round})}"
                 th:aria-label="|${round}회 열기|">열기</a></td>
           </tr>
         </tbody>

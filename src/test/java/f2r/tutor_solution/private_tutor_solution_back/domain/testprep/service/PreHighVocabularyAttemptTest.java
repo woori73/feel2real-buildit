@@ -27,6 +27,27 @@ class PreHighVocabularyAttemptTest {
   }
 
   @Test
+  void gradeTwoRoundsProvideIndependentTimedQuestionsAndReview() {
+    for (int round = 1; round <= 40; round++) {
+      var questions = bank.get(7, round);
+      assertThat(questions).isNotEqualTo(bank.get(round));
+      var attempt = new PreHighVocabularyAttempt(questions, start, true);
+      for (int i = 0; i < 50; i++) {
+        var now = start.plusMillis(i * 100L);
+        assertThat(attempt.state(now).item().seconds()).isEqualTo(i < 30 ? 5 : 10);
+        attempt.answer(i + 1, questions.get(i).answer(), now);
+        attempt.next(i + 1, now);
+      }
+      var result = attempt.state(start.plusSeconds(5));
+      assertThat(result.score()).isEqualTo(100);
+      assertThat(result.results().subList(30, 50)).allMatch(r ->
+          !r.completed().contains("____") && !r.question().translation().isBlank());
+    }
+    assertThat(bank.get(7, 0)).isNull();
+    assertThat(bank.get(7, 41)).isNull();
+  }
+
+  @Test
   void boundaryChangesToFiveSecondsAndRejectsExpiredAnswer() {
     var questions = bank.get(1);
     var attempt = new PreHighVocabularyAttempt(questions, start);

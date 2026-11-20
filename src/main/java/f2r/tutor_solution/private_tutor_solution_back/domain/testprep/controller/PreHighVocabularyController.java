@@ -25,8 +25,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Controller
 public final class PreHighVocabularyController {
-  private static final String PAGE = "/naesintest/pre-high/part4/{round}";
-  private static final String API = "/api/naesintest/pre-high/part4/";
+  private static final String PAGE = "/naesintest/pre-high/part{part:[47]}/{round}";
+  private static final String API = "/api/naesintest/pre-high/part";
 
   public record Action(String action, UUID attempt, int number, int choice) {}
 
@@ -40,29 +40,32 @@ public final class PreHighVocabularyController {
   }
 
   @GetMapping(PAGE)
-  public String test(@PathVariable int round, Model model) {
-    questions(round);
+  public String test(@PathVariable int part, @PathVariable int round, Model model) {
+    questions(part, round);
     model.addAttribute("round", round);
-    model.addAttribute("examApi", API + round);
+    model.addAttribute("part", part);
+    model.addAttribute("examTitle", part == 7 ? "고2 어휘 모의고사" : "고1 수능 대비 어휘 모의고사");
+    model.addAttribute("examApi", API + part + "/" + round);
     return "prehigh/vocabulary";
   }
 
-  @PostMapping(API + "{round}")
-  public ResponseEntity<State> act(@PathVariable int round, @RequestBody Action command,
+  @PostMapping(API + "{part:[47]}/{round}")
+  public ResponseEntity<State> act(@PathVariable int part, @PathVariable int round, @RequestBody Action command,
       @AuthenticationPrincipal AuthenticatedPrincipal principal, HttpServletRequest request,
       @RequestHeader(value = "Origin", required = false) String origin) {
     if (origin == null || !origins.contains(origin)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     if (principal == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     if (command.action() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-    var questions = questions(round);
+    var questions = questions(part, round);
     var session = request.getSession();
-    String key = "pre-high-vocabulary:" + principal.userId() + ":" + round;
+    String prefix = part == 4 ? "pre-high-vocabulary:" : "pre-high-vocabulary-part7:";
+    String key = prefix + principal.userId() + ":" + round;
     synchronized (session) {
       var attempt = (PreHighVocabularyAttempt) session.getAttribute(key);
       Instant now = Instant.now();
       if ("start".equals(command.action())) {
         if (attempt == null) {
-          attempt = new PreHighVocabularyAttempt(questions, now);
+          attempt = new PreHighVocabularyAttempt(questions, now, part == 7);
           session.setAttribute(key, attempt);
         }
         return noStore(attempt.state(now));
@@ -74,9 +77,10 @@ public final class PreHighVocabularyController {
         return switch (command.action()) {
           case "state" -> noStore(attempt.state(now));
           case "answer" -> noStore(attempt.answer(command.number(), command.choice(), now));
+          case "next" -> noStore(attempt.next(command.number(), now));
           case "restart" -> {
             if (attempt.finished()) {
-              attempt = new PreHighVocabularyAttempt(questions, now);
+              attempt = new PreHighVocabularyAttempt(questions, now, part == 7);
               session.setAttribute(key, attempt);
             }
             yield noStore(attempt.state(now));
@@ -89,8 +93,8 @@ public final class PreHighVocabularyController {
     }
   }
 
-  private List<Question> questions(int round) {
-    var questions = bank.get(round);
+  private List<Question> questions(int part, int round) {
+    var questions = bank.get(part, round);
     if (questions == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
     return questions;
   }
