@@ -239,7 +239,9 @@ public class SecurityConfig {
                 (request, response, ex) -> {
                   String target = request.getRequestURI();
                   if (request.getQueryString() != null) target += "?" + request.getQueryString();
-                  response.sendRedirect("/naesintest?login=required&returnUrl="
+                  String listPath = request.getRequestURI().startsWith("/naesintest/pre-high/")
+                      ? "/naesintest/pre-high" : "/naesintest";
+                  response.sendRedirect(listPath + "?login=required&returnUrl="
                       + java.net.URLEncoder.encode(target, java.nio.charset.StandardCharsets.UTF_8));
                 },
                 new AndRequestMatcher(
@@ -417,9 +419,9 @@ public class SecurityConfig {
             .requestMatchers("/testprep/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
             // 내신 실전 연습: 학교 고르기·학교별 회차 목록은 공개, 응시·결과 화면과 문항 그림(/naesin/**)은 로그인 회원 전용.
-            .requestMatchers("/naesintest", "/naesintest/school/**")
+            .requestMatchers("/naesintest", "/naesintest/school/**", "/naesintest/pre-high")
             .permitAll()
-            .requestMatchers("/naesintest/**", "/naesin/**")
+            .requestMatchers("/naesintest/**", "/naesin/**", "/api/naesintest/pre-high/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
             // 위 패턴에 걸리지 않는 LMS 하위 신규 경로는 fail-closed(최소 인증).
             // 이 줄이 없으면 catch-all permitAll로 떨어진다.

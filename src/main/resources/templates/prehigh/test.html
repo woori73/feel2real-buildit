@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <title th:text="${round} + '회 · 예비고1 디지털 수능 영어 모의고사'">예비고1 디지털 수능 영어 모의고사</title>
+  <link rel="stylesheet" href="/css/naesin.css">
+  <script defer src="/js/naesin_common.js"></script>
+  <script defer src="/js/pre_high_english.js"></script>
+</head>
+<body class="nt-body nt-run">
+<div class="nt-top"><div class="nt-top-l">
+  <a class="nt-brand" href="/"><img src="/img/F2R_logo_pure.svg" width="30" height="30" alt="">F2R영어</a>
+  <a class="nt-btn nt-btn-line" href="/naesintest/pre-high">회차 목록</a>
+</div><span>숫자 1~5로도 답을 고를 수 있습니다</span></div>
+<main class="nt-sheet-wrap" id="ph-test" th:data-round="${round}" th:data-shared="${shared}">
+  <header class="nt-paperhead">
+    <h1 class="nt-paperhead-title" th:text="'예비고1 디지털 수능 영어 모의고사 · ' + ${round} + '회'">예비고1 디지털 수능 영어 모의고사</h1>
+    <table>
+      <tr><th scope="col">과목</th><th scope="col">영역</th><th scope="col">남은 시간</th></tr>
+      <tr><td>영어</td><td id="ph-section">독해</td><td id="nt-timer-box"><span class="nt-time" id="ph-time" role="timer">--:--</span></td></tr>
+    </table>
+  </header>
+  <p id="ph-status" role="status" hidden></p>
+  <div id="ph-body">
+    <section class="nt-page"><p>독해 6문항을 9분 안에 풉니다. 이어서 어휘 퀴즈를 시작합니다.</p>
+      <button class="nt-btn" data-action="start" type="button">시험 시작 / 이어 풀기</button>
+    </section>
+  </div>
+</main>
+</body>
+</html>

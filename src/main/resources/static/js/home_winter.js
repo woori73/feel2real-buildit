@@ -135,27 +135,13 @@
   }
 
   /* 남은 시간(예시) */
-  var tLeft = 14 * 60 + 32, timers = [$('hwMiniTime'), $('hwExamTime')].filter(Boolean);
+  var tLeft = 14 * 60 + 32, timers = [$('hwMiniTime')].filter(Boolean);
   if (timers.length) {
     win.setInterval(function () {
       if (tLeft > 0) tLeft--;
       var s = String(Math.floor(tLeft / 60)).padStart(2, '0') + ':' + String(tLeft % 60).padStart(2, '0');
       timers.forEach(function (t) { t.textContent = s; });
     }, 1000);
-  }
-
-  /* 큰 시험지: 보기 번호를 누르면 OMR 15번이 칠해진다 */
-  var key = [0, 3, 1, 5, 2, 4, 2, 1, 3, 5, 4, 2, 3, 1, 5];
-  var bigOmr = $('hwOmr'), choices = $('hwChoices');
-  if (bigOmr) {
-    var ans = {}; for (var j = 1; j <= 14; j++) ans[j] = key[j];
-    var drawBig = function () { bigOmr.innerHTML = omrRows(40, ans, 15); };
-    drawBig();
-    if (choices) choices.addEventListener('click', function (e) {
-      var li = e.target.closest('li'); if (!li) return;
-      all('li', choices).forEach(function (x) { x.classList.toggle('on', x === li); });
-      ans[15] = +li.getAttribute('data-n'); drawBig();
-    });
   }
 
   /* 채점표: ○ ╱ 도장, 점수 올리기 */
