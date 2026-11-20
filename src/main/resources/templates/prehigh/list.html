@@ -75,7 +75,6 @@
             <td class="nt-round" th:text="${round.number} + '회'">1회</td>
             <td class="nt-scope">
               <span>18~45번 28문항 · 45분 · 어휘 50문항</span>
-              <small th:text="${round.source} + ' 변형'">고1 모의고사 변형</small>
             </td>
             <td class="nt-go" th:if="${canInstall}"><a class="nt-btn nt-btn-line"
                 th:href="@{/api/admin/pre-high-english/part2/{n}/paper.pdf(n=${round.number})}"
