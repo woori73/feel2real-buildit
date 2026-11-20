@@ -1,9 +1,11 @@
 name: Deploy to EC2
 
-# 운영 자동 배포 일시 차단: main Build Check 완료만으로는 배포하지 않는다.
-# 기존 수동 workflow_dispatch는 유지한다. 운영 배포는 별도 승인 후에만 실행한다.
-# 영구 개선에서는 production environment 승인 게이트를 추가한 뒤 자동화 재개 여부를 결정한다.
+# main에 반영된 변경은 Build Check가 성공한 SHA의 산출물로 배포한다.
 on:
+  workflow_run:
+    workflows: ["Build Check"]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
     inputs:
       counseling_model:
@@ -88,8 +90,12 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    # workflow_dispatch 외에는 워크플로 자체가 시작되지 않는다.
-    if: github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 35
 
@@ -945,7 +951,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.target == 'new' && 'arn:aws:iam::425805163960:role/github-actions-f2r-deploy' || 'arn:aws:iam::067573916809:role/github-actions-f2r-deploy' }}
+          role-to-assume: ${{ inputs.target != 'old' && 'arn:aws:iam::425805163960:role/github-actions-f2r-deploy' || 'arn:aws:iam::067573916809:role/github-actions-f2r-deploy' }}
           aws-region: ap-northeast-2
           role-duration-seconds: 3600
           role-session-name: f2r-deploy-${{ github.run_id }}
@@ -955,7 +961,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ inputs.target }}" = "new" ]; then
+          if [ "${{ inputs.target }}" != "old" ]; then
             B=f2r-deploy-425805163960
             IID=$(aws ec2 describe-instances --filters Name=tag:Name,Values=f2r-app Name=tag:Project,Values=f2r-migration \
               Name=instance-state-name,Values=running --query 'Reservations[0].Instances[0].InstanceId' --output text)
