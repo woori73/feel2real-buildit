@@ -113,3 +113,12 @@ tasks.named('test') {
 	// 이 검사 자체는 @TestPropertySource로 켠 전용 테스트(AdminSessionBinding*)가 검증한다.
 	systemProperty 'app.security.admin-session-binding.enabled', 'false'
 }
+
+
+// Reuse the Korean font shipped with the A4 workbook template for question PDFs.
+tasks.named('processResources') {
+    from('ops/designcraft/templates/ko-textbook-a4/Document Fonts') {
+        include 'NotoSansKR-Regular.ttf', 'OFL-1.1.txt'
+        into 'pre-high-english/fonts'
+    }
+}

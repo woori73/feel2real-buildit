@@ -4967,8 +4967,9 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 - `GET /api/naesintest/pre-high/{round}/image/{number}/{part}`는 응시 중인 사용자에게 독해 문항(`question`) 또는 공통 지문(`passage`) WebP를 반환한다.
 - **2부 고1 실전 독해 모의고사(10회)**: `GET /naesintest/pre-high/part2/{round}`(로그인, 응시 화면), `POST /api/naesintest/pre-high/part2/{round}`(1부와 같은 action), `GET /api/naesintest/pre-high/part2/{round}/image/{number}/{part}`(응시 중 문항·공통 지문 WebP), `GET /naesintest/pre-high/part2/{round}/paper.pdf`(로그인, 문제지 PDF 내려받기, `Content-Disposition: attachment`). 독해 18~45번 28문항 2700초, 이어서 어휘 50문항(문항당 5초). `number`는 1~28(화면은 18~45로 표시). 자료는 웹 루트 밖 classpath `prehigh-part2/rNN/`(round.json·문항 그림·paper.pdf)에서 읽는다. 2부 결과의 `marks`는 공통 지문(`passage`)에도 `answer`(밑줄 낱말 정답 표시)를 둘 수 있다.
 - `POST /api/admin/pre-high-english/rounds`는 ADMIN 전용이며 같은 출처의 JSON(최대 32 MiB)을 받아 35회 자료 전체를 검증한 후 한 번에 등록한다. 기존 25회 묶음도 읽을 수 있다. 웹 루트 밖의 `app.pre-high-english.dir`에 저장한다. 기본 저장 경로는 실행 계정 홈의 `pre-high-english`다.
-- `GET /naesintest/pre-high/grammar/{chapter}`는 로그인한 학생·강사·관리자가 3부 어법 단원을 여는 경로다. 단원 번호는 3~12다.
-- `POST /api/naesintest/pre-high/grammar/{chapter}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. 동작은 `start`, `state`, `answer`, `restart`다. `start` 외에는 서버가 반환한 응시 ID가 필요하며 `answer`에는 현재 문항 번호와 1~5의 선택지를 보낸다. 문항당 제한 시간은 20초다. 응시 중에는 현재 문항만 응답에 포함되고, 40문항이 끝나면 정답·해설·최종 답안이 반환된다. `restart`는 채점 후 새 응시를 시작한다.
+- `GET /naesintest/pre-high/grammar/{exam}`는 로그인한 학생·강사·관리자가 여는 20문항 시험이다. `{exam}`은 단원과 부를 잇는 `1-1`~`10-2` 또는 마무리 종합 `final-1`~`final-10`이다. 기존 단원 숫자 경로는 해당 단원의 1부로 이동한다.
+- `POST /api/naesintest/pre-high/grammar/{exam}`는 같은 출처에서 `{action, attempt?, number?, choice?}`를 받는다. 동작은 `start`, `state`, `answer`, `restart`다. `start` 외에는 응시 ID가 필요하며 `answer`에는 현재 문항 번호와 1~5의 선택지를 보낸다. 문항당 제한 시간은 20초다. 응시 중에는 현재 문항만 반환한다. 채점 후 정답·해설·최종 답안을 반환하며 `restart`로 다시 응시할 수 있다. 예전 단원 숫자 API는 40문항 응시 세션과의 호환을 위해 유지한다.
+- `GET /api/admin/pre-high-english/grammar/{exam}/questions/{number}/pdf`는 ADMIN 전용이다. 해당 시험의 문항 번호와 발문, 본문, 5개 선택지를 A4 PDF로 내려 준다.
 
 ## 프로그램 공개 첫 화면 + 네이버 로그인 공통 진입 (`program` 패키지)
 

@@ -7,7 +7,7 @@
   const circle = ['①', '②', '③', '④', '⑤'];
   const body = $('ph-grammar-body');
   const status = $('ph-grammar-status');
-  const api = '/api/naesintest/pre-high/grammar/' + Number(exam.dataset.chapter);
+  const api = exam.dataset.api;
   const maxSeconds = Number(exam.dataset.seconds);
   let current, deadline, pending = false, wrongOnly = true, retryAfter = 0;
 
@@ -52,7 +52,7 @@
       + current.results.filter(result => !result.chosen).length + '개</p></div></section>'
       + '<div class="nt-page nt-review-actions"><button class="nt-btn nt-btn-line" type="button" data-action="filter">'
       + (wrongOnly ? '전체 문항 보기' : '틀린 문항만 보기') + '</button>'
-      + '<button class="nt-btn" type="button" data-action="restart">이 단원 다시 풀기</button></div>'
+      + '<button class="nt-btn" type="button" data-action="restart">다시 풀기</button></div>'
       + '<section class="nt-page"><h2>문항별 해설</h2>'
       + (details || '<p>틀린 문항이 없습니다.</p>') + '</section>';
   }
