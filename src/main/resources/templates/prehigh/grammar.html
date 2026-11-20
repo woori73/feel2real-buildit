@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
   <title th:text="${examTitle} + ' · 예비고1 어법 모의고사'">예비고1 어법 모의고사</title>
-  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-grammar-1">
+  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-grammar-pdf-1">
   <script defer src="/js/naesin_common.js"></script>
   <script defer src="/js/pre_high_grammar.js?v=2"></script>
 </head>
@@ -24,6 +24,13 @@
       <tr><td>어법</td><td th:text="${count}">20</td><td id="nt-timer-box"><span class="nt-time" id="ph-grammar-time" role="timer" th:text="'00:' + ${seconds}">00:20</span></td></tr>
     </table>
   </header>
+  <details class="nt-page ph-grammar-pdf" th:if="${pdfPath != null}">
+    <summary>문항별 PDF 다운로드</summary>
+    <div class="ph-grammar-pdf-links">
+      <a th:each="number : ${#numbers.sequence(1, count)}" class="nt-btn nt-btn-line"
+         th:href="|${pdfPath}/${number}/pdf|" th:text="|${number}번|" th:aria-label="|${number}번 문제지 PDF 다운로드|">1번</a>
+    </div>
+  </details>
   <p id="ph-grammar-status" role="status" hidden></p>
   <div id="ph-grammar-body">
     <section class="nt-page">
