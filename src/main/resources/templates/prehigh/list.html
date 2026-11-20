@@ -4,20 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <title>예비고1 디지털 수능 영어 모의고사 · F2R영어</title>
-  <link rel="stylesheet" href="/css/naesin.css">
+  <title>예비고1 디지털 영어 모의고사 · F2R영어</title>
+  <link rel="stylesheet" href="/css/naesin.css?v=pre-high-review-2">
   <script defer src="/js/naesin_common.js"></script>
-  <script defer src="/js/pre_high_english.js"></script>
+  <script defer src="/js/pre_high_english.js?v=2"></script>
 </head>
 <body class="nt-body nt-home">
 <div class="nt-top"><div class="nt-top-l"><a class="nt-brand" href="/#pre-high-english"><img src="/img/F2R_logo_pure.svg" width="30" height="30" alt="">F2R영어 홈</a></div></div>
 <main class="nt-sheet-wrap">
   <header class="nt-paperhead">
-    <h1 class="nt-paperhead-title">예비고1 디지털 수능 영어 모의고사</h1>
+    <h1 class="nt-paperhead-title">예비고1 디지털 영어 모의고사</h1>
     <p class="nt-paperhead-title nt-paperhead-sub">고1 전국연합학력평가 기출 · 독해 6문항 9분 · 어휘 5지선다 1문항 5초</p>
   </header>
-  <section class="nt-page">
-    <h2>회차 고르기</h2>
+  <section class="nt-page ph-part">
+    <h2>1부. 고1 기출 6문항 + 어휘 모의고사</h2>
     <p>OMR에 독해 답안을 표시한 뒤 어휘 퀴즈를 풉니다. 채점 후 내 답과 정답, 풀이 근거를 확인할 수 있습니다.</p>
     <p th:if="${#lists.isEmpty(rounds)}">회차를 준비 중입니다.</p>
     <table class="nt-table" th:unless="${#lists.isEmpty(rounds)}">
@@ -30,7 +30,15 @@
         </tr>
       </tbody>
     </table>
-    <p th:unless="${#lists.isEmpty(rounds)}">교재 출처 · EBS 하루 6개 1등급 영어독해 전국연합학력평가 기출 고1</p>
+  </section>
+  <section class="nt-page ph-part">
+    <h2>2부. 고1 실전 독해 모의고사</h2>
+    <p>18~45번 · 10회</p>
+    <p>회차를 준비 중입니다.</p>
+  </section>
+  <section class="nt-page ph-part">
+    <h2>3부. 고1 내신 대비 어법 모의고사</h2>
+    <p>회차를 준비 중입니다.</p>
   </section>
   <details th:if="${canInstall}" class="nt-page">
     <summary>관리자용 회차 자료 등록</summary>

@@ -13,13 +13,22 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PreHighEnglishStore {
-  public static final int ROUND_COUNT = 25;
+  public static final int ROUND_COUNT = 35;
+  private static final int LEGACY_ROUND_COUNT = 25;
   public static final int READING_COUNT = 6;
   public static final int READING_SECONDS = 90 * READING_COUNT;
   public static final int WORD_SECONDS = 5;
   public static final int MAX_PACKAGE_BYTES = 32 * 1024 * 1024;
 
-  public record Reading(String image, String passage, int answer, String explanation) {}
+  public record Reading(String image, String passage, int answer, String explanation, List<Mark> marks) {}
+  public record Mark(String part, String kind, int x, int y, int width, int height) {
+    boolean valid(boolean hasPassage) {
+      return ("question".equals(part) || "passage".equals(part) && hasPassage)
+          && ("evidence".equals(kind) || "answer".equals(kind) && "question".equals(part))
+          && x >= 0 && y >= 0 && width > 0 && height > 0
+          && (long) x + width <= 10_000 && (long) y + height <= 10_000;
+    }
+  }
   public record Word(String text, List<String> choices, int answer) {}
   public record Round(int number, List<Reading> reading, List<Word> words) {}
   public record RoundInfo(int number, int words) {}
@@ -62,7 +71,9 @@ public class PreHighEnglishStore {
   private List<Round> readPackage(byte[] contents) throws IOException {
     if (contents.length > MAX_PACKAGE_BYTES) throw new IllegalArgumentException("자료 용량이 너무 큽니다.");
     List<Round> data = json.readerForListOf(Round.class).readValue(contents);
-    if (data == null || data.size() != ROUND_COUNT) throw new IllegalArgumentException("회차 25개가 필요합니다.");
+    if (data == null || (data.size() != LEGACY_ROUND_COUNT && data.size() != ROUND_COUNT)) {
+      throw new IllegalArgumentException("회차 25개 또는 35개가 필요합니다.");
+    }
     int number = 0;
     for (Round round : data) {
       if (round == null || round.number() != ++number || round.reading() == null
@@ -72,7 +83,9 @@ public class PreHighEnglishStore {
       }
       for (Reading item : round.reading()) {
         if (item == null || !isWebp(item.image()) || (item.passage() != null && !isWebp(item.passage()))
-            || !validAnswer(item.answer()) || item.explanation() == null || item.explanation().isBlank()) {
+            || !validAnswer(item.answer()) || item.explanation() == null || item.explanation().isBlank()
+            || item.marks() != null && (item.marks().size() > 30 || item.marks().stream()
+                .anyMatch(mark -> mark == null || !mark.valid(item.passage() != null)))) {
           throw new IllegalArgumentException("독해 문항 자료를 확인해 주세요.");
         }
       }

@@ -72,7 +72,8 @@ public class PreHighEnglishController {
       PreHighEnglishAttempt attempt = (PreHighEnglishAttempt) session.getAttribute(key);
       Instant now = Instant.now();
       if ("start".equals(command.action()) || "restart".equals(command.action())) {
-        if (attempt == null || "restart".equals(command.action()) && attempt.id().equals(command.attempt())
+        if (attempt == null || ("start".equals(command.action()) && attempt.round() != content)
+            || "restart".equals(command.action()) && attempt.id().equals(command.attempt())
             && attempt.act("state", 0, 0, now).phase() == PreHighEnglishAttempt.Phase.REVIEW) {
           attempt = new PreHighEnglishAttempt(content, now);
           session.setAttribute(key, attempt);

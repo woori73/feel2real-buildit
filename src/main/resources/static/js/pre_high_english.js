@@ -41,6 +41,20 @@
       + '번 ' + (part === 'passage' ? '공통 지문' : '독해 문항') + '"' + (defer ? ' loading="lazy"' : '') + '>';
   }
 
+  function reviewImage(result, part) {
+    const plain = image(result.number - 1, part, true);
+    const marks = result.marks?.filter(mark => mark.part === part);
+    if (!marks?.length) return plain;
+    return '<div class="ph-review-image' + (part === 'passage' ? ' ph-review-passage' : '') + '">'
+      + plain + marks.map(({ kind, x, y, width, height }) => {
+        const style = 'left:' + x / 100 + '%;top:' + y / 100 + '%;width:' + width / 100
+          + '%;height:' + height / 100 + '%';
+        const answer = kind === 'answer';
+        return '<span class="ph-mark ' + (answer ? 'ph-mark-answer' : 'ph-mark-evidence')
+          + '" aria-hidden="true" style="' + style + '">' + (answer ? '<b>정답</b>' : '') + '</span>';
+      }).join('') + '</div>';
+  }
+
   function omrButtons(number, style) {
     return circle.map((label, index) => {
       const choice = index + 1;
@@ -92,6 +106,15 @@
       + '</div></section>';
   }
 
+  function explanation(text) {
+    const sections = text.split('\n').map(line => line.trim()).filter(Boolean);
+    return '<div class="ph-explanation">' + sections.map(line => {
+      const section = /^(내용 요약|주제|해설|풀이 전략):\s*(.+)$/.exec(line);
+      return section ? '<p><strong>' + NT.esc(section[1]) + '</strong> ' + NT.esc(section[2]) + '</p>'
+        : '<p>' + NT.esc(line) + '</p>';
+    }).join('') + '</div>';
+  }
+
   function correct(result) { return result.chosen === result.answer; }
 
   function renderReview() {
@@ -104,8 +127,8 @@
         + (shown.length ? shown.map((result, index) => '<details class="nt-exp"' + (index === 0 ? ' open' : '') + '><summary>' + result.number
           + '번' + (result.word ? ' · ' + NT.esc(result.word) : '') + ' · ' + (correct(result) ? '정답' : result.chosen ? '오답' : '미응답')
           + '</summary><p>내 답 ' + (circle[result.chosen - 1] || '미응답') + ' · 정답 ' + circle[result.answer - 1] + '</p>'
-          + (result.explanation ? (shared[result.number - 1] ? image(result.number - 1, 'passage', true) : '')
-            + image(result.number - 1, 'question', true) + NT.expHtml(result.explanation) : '')
+          + (result.explanation ? (shared[result.number - 1] ? reviewImage(result, 'passage') : '')
+            + reviewImage(result, 'question') + explanation(result.explanation) : '')
           + (result.meaning ? '<p>' + NT.esc(result.meaning) + '</p>' : '')
           + '</details>').join('') : '<p>틀린 문항이 없습니다.</p>') + '</section>';
     };
@@ -121,6 +144,10 @@
 
   function render() {
     const phase = current.phase;
+    exam.classList.toggle('ph-timed', phase === 'READING' || phase === 'WORDS');
+    $('ph-time-label').textContent = {
+      READING: '남은 시간', WORD_READY: '어휘 문항당 제한 시간', WORDS: '현재 문항 남은 시간', REVIEW: '총 풀이 시간'
+    }[phase];
     $('ph-section').textContent = { READING: '독해', WORD_READY: '어휘', WORDS: '어휘', REVIEW: '채점 결과' }[phase];
     if (phase !== 'READING') document.body.classList.remove('omr-open');
     if (phase === 'READING') body.innerHTML = renderReading();
@@ -155,7 +182,10 @@
     if (!current) return;
     const timed = current.phase === 'READING' || current.phase === 'WORDS';
     const remaining = Math.max(0, Math.ceil((deadline - performance.now()) / 1000));
-    $('ph-time').textContent = timed ? NT.fmtTime(remaining) : '--:--';
+    const seconds = timed ? remaining : current.phase === 'WORD_READY' ? 5 : Math.ceil(current.elapsedMillis / 1000);
+    const clock = $('ph-time');
+    const display = NT.fmtTime(seconds);
+    if (clock.textContent !== display) clock.textContent = display;
     $('nt-timer-box').classList.toggle('is-low', timed && remaining <= (current.phase === 'WORDS' ? 2 : 60));
     if (timed && remaining === 0 && !pending) send('state');
   }
