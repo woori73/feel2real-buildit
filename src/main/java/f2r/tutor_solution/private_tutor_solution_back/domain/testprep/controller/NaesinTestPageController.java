@@ -28,6 +28,10 @@ public class NaesinTestPageController {
   /** 화면 시험 시간: 문항당 30초(40문항 20분). naesin_run.js의 SEC_PER_QUESTION과 같아야 한다. */
   static final int SEC_PER_QUESTION = 30;
 
+  /** 고1 수능 영어 독해 변형 모의고사(18~45번 28문항)는 실제 독해 시간처럼 45분. naesin_common.js의 LIMIT_SEC과 같아야 한다. */
+  static final String CSAT_H1_PREFIX = "TP-NAESIN-CSH1-";
+  static final int CSAT_H1_MINUTES = 45;
+
   /**
    * 학교별 페이지. 시험 코드 앞부분(codePrefix)으로 그 학교 회차를 고른다(예: TP-NAESIN-APM2-2602-R01).
    * 새 학교는 여기와 naesin_common.js의 SCHOOLS에 함께 추가한다. 문제가 아직 없는 학교는 '준비 중'으로 보인다.
@@ -39,10 +43,11 @@ public class NaesinTestPageController {
   static final List<School> SCHOOLS = List.of(
       new School("apgujeong-m2", "압구정중학교", "2학년", "TP-NAESIN-APM2-", "Lesson 7·8"),
       new School("singu-m2", "신구중학교", "2학년", "TP-NAESIN-SGM2-", "Lesson 7·8"),
-      new School("apgujeong-m1", "압구정중학교", "1학년", "TP-NAESIN-APM1-", null));
+      new School("apgujeong-m1", "압구정중학교", "1학년", "TP-NAESIN-APM1-", null),
+      new School("csat-h1", "고1 수능 영어 독해", "고1", CSAT_H1_PREFIX, "사설 모의고사 18~45번 변형"));
 
-  private static final Pattern ROUND = Pattern.compile("기말 (\\d+회) · (.+)$");
-  private static final Pattern SET_SUFFIX = Pattern.compile("\\s*예상문제\\s*\\d+회$");
+  private static final Pattern ROUND = Pattern.compile("(?:기말|모의고사) (\\d+회) · (.+)$");
+  private static final Pattern SET_SUFFIX = Pattern.compile("\\s*(?:예상|변형)문제\\s*\\d+회$");
   private static final Pattern POINTS = Pattern.compile("(\\d+)점$");
 
   private final TestPrepService testPrepService;
@@ -104,8 +109,16 @@ public class NaesinTestPageController {
     String scope = e.subtitle() == null ? "" : e.subtitle().split(" · ")[0];
     Matcher p = POINTS.matcher(e.subtitle() == null ? "" : e.subtitle());
     Integer maxPoints = p.find() ? Integer.valueOf(p.group(1)) : null;
-    int minutes = (int) (e.questionCount() * SEC_PER_QUESTION / 60);
+    int minutes = minutes(e.examCode(), e.questionCount());
     return new Row(e.examCode(), round, setName, group, scope, e.questionCount(), minutes, maxPoints);
+  }
+
+  /** 회차 목록에 보이는 시험 시간(분). 고1 수능 독해 모의고사는 45분, 나머지는 문항당 30초. */
+  static int minutes(String examCode, long questionCount) {
+    if (examCode != null && examCode.startsWith(CSAT_H1_PREFIX)) {
+      return CSAT_H1_MINUTES;
+    }
+    return (int) (questionCount * SEC_PER_QUESTION / 60);
   }
 
   static List<Group> group(List<ExamListItem> exams) {

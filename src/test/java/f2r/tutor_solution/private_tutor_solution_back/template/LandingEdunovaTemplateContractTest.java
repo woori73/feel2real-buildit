@@ -63,6 +63,7 @@ class LandingEdunovaTemplateContractTest {
     // then
     assertThat(html).contains("<tr><td>신구중학교</td><td>2학년</td><td>Lesson 7·8</td><td>11회</td><td><a class=\"hw-open\" href=\"/naesintest/school/singu-m2\">열기</a></td></tr>")
         .doesNotContain("<tr><td>신구중학교</td><td>2학년</td><td>-</td><td>준비 중</td>");
+    assertThat(html).contains("<tr><td>고1 수능 영어 독해</td><td>고1</td><td>사설 모의고사 18~45번 변형</td><td>10회</td><td><a class=\"hw-open\" href=\"/naesintest/school/csat-h1\">열기</a></td></tr>");
   }
 
   @Test

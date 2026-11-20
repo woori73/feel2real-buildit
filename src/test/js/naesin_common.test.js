@@ -75,3 +75,35 @@ test('given 시험 코드, when schoolUrl하면, then 그 학교 페이지 주�
   assert.strictEqual(NT.schoolUrl('TP-SAT-MINI-01'), '/naesintest');
   assert.strictEqual(NT.schoolUrl(null), '/naesintest');
 });
+
+test('given 시험 코드와 문항 수, when limitSec하면, then 고1 수능 독해는 45분(2700초), 내신은 문항당 30초다', () => {
+  // given
+  const csat = 'TP-NAESIN-CSH1-MOCK-R01';
+  const naesin = 'TP-NAESIN-SGM2-2602-R01';
+  // when / then
+  assert.strictEqual(NT.limitSec(csat, 28), 2700);
+  assert.strictEqual(NT.limitSec(naesin, 40), 1200);
+  assert.strictEqual(NT.limitSec(null, 10), 300);
+});
+
+test('given 문항과 순서, when qNo하면, then 시험지 번호(orderNo)를 쓰고 없으면 순서+1이다', () => {
+  // given
+  const csatQ = { orderNo: 18 };
+  const noOrder = {};
+  // when / then
+  assert.strictEqual(NT.qNo(csatQ, 0), 18);
+  assert.strictEqual(NT.qNo(noOrder, 4), 5);
+  assert.strictEqual(NT.qNo(null, 2), 3);
+});
+
+test('given 고1 수능 독해 시험 코드, when schoolUrl하면, then 과정 페이지 주소를 돌려준다', () => {
+  assert.strictEqual(NT.schoolUrl('TP-NAESIN-CSH1-MOCK-R02'), '/naesintest/school/csat-h1');
+});
+
+test('given 회차 제목, when gradeLabel하면, then 시험지 머리 학년 칸에 쓸 학년을 돌려준다', () => {
+  // given / when / then
+  assert.strictEqual(NT.gradeLabel('압구정중 2학년 2학기 기말 1회 · Lesson 7 예상문제 1회'), '2학년');
+  assert.strictEqual(NT.gradeLabel('압구정중 1학년 2학기 기말 1회 · Lesson 5 예상문제 1회'), '1학년');
+  assert.strictEqual(NT.gradeLabel('고1 수능 영어 독해 모의고사 1회 · 18~45번 변형문제 1회'), '고1');
+  assert.strictEqual(NT.gradeLabel(null), '-');
+});

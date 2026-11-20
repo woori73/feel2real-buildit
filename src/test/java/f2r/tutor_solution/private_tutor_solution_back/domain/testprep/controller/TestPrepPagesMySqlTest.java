@@ -124,18 +124,18 @@ class TestPrepPagesMySqlTest {
   }
 
   @Test
-  @DisplayName("익명 /naesintest 첫 화면은 공개되고 학교 3곳(압구정중2·신구중2·압구정중1)을 고르는 표가 나온다")
+  @DisplayName("익명 /naesintest 첫 화면은 공개되고 학교·과정 4곳(압구정중2·신구중2·압구정중1·고1 수능 독해)을 고르는 표가 나온다")
   void anonymousNaesinHomeIsPublic() throws Exception {
     MvcResult r = mockMvc.perform(get("/naesintest").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
     String html = r.getResponse().getContentAsString();
     assertThat(html).contains("href=\"/naesintest/school/apgujeong-m2\"", "href=\"/naesintest/school/singu-m2\"",
-        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "준비 중");
+        "href=\"/naesintest/school/apgujeong-m1\"", "href=\"/naesintest/school/csat-h1\"", "신구중학교", "고1 수능 영어 독해", "16회", "준비 중");
     assertThat(html).doesNotContain("data-exam=", "tp-nav");
   }
 
   @Test
-  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차·신구중2는 11회차가 범위별 표로, 문제가 없는 학교는 준비 중으로, 없는 학교는 404")
+  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차·신구중2는 11회차·고1 수능 독해는 10회차가 범위별 표로, 문제가 없는 학교는 준비 중으로, 없는 학교는 404")
   void anonymousSchoolPages() throws Exception {
     MvcResult a = mockMvc.perform(get("/naesintest/school/apgujeong-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(a.getResponse().getStatus()).isEqualTo(200);
@@ -160,6 +160,11 @@ class TestPrepPagesMySqlTest {
     assertThat(singu).contains("신구중학교", "Lesson 7", "Lesson 8", "Lesson 7·8 종합 Final").doesNotContain("준비하고 있습니다", "id=\"shorts\"");
     MvcResult m1 = mockMvc.perform(get("/naesintest/school/apgujeong-m1").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(m1.getResponse().getContentAsString()).contains("준비하고 있습니다").doesNotContain("data-exam=");
+    MvcResult c = mockMvc.perform(get("/naesintest/school/csat-h1").accept(MediaType.TEXT_HTML)).andReturn();
+    assertThat(c.getResponse().getStatus()).isEqualTo(200);
+    String csat = c.getResponse().getContentAsString();
+    assertThat(csat.split("data-exam=\"TP-NAESIN-CSH1-MOCK-R", -1)).hasSize(11); // 고1 수능 독해 변형 모의고사 1~10회(V1126)
+    assertThat(csat).contains("고1 수능 영어 독해 실전 연습", "18~45번 변형문제 1회", "28문항", "45분", "62점").doesNotContain("2학기 기말고사 대비", "id=\"shorts\"");
     MvcResult none = mockMvc.perform(get("/naesintest/school/nowhere").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(none.getResponse().getStatus()).isEqualTo(404);
   }

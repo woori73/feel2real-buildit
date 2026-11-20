@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" th:with="csat=${school.slug == 'csat-h1'}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
-  <title th:text="${school.title()} + ' 2학기 기말 · 디지털 영어 기말고사 · F2R'">압구정중학교 2학년 2학기 기말 · 디지털 영어 기말고사 · F2R</title>
-  <meta name="description" th:content="${school.title()} + ' 2학기 기말고사 대비 F2R 예상문제. 시간을 재어 풀고 제출하면 문항별로 채점하고 틀린 문제 해설을 보여 줍니다.'" content="압구정중학교 2학년 2학기 기말고사 대비 F2R 예상문제.">
+  <title th:text="${csat} ? '고1 수능 영어 독해 변형 모의고사 · 디지털 실전 연습 · F2R' : ${school.title()} + ' 2학기 기말 · 디지털 영어 기말고사 · F2R'">압구정중학교 2학년 2학기 기말 · 디지털 영어 기말고사 · F2R</title>
+  <meta name="description" th:content="${csat} ? '고1 사설 모의고사 18~45번을 변형한 F2R 독해 모의고사. 45분 동안 풀고 제출하면 문항별로 채점하고 풀이 전략 해설을 보여 줍니다.' : ${school.title()} + ' 2학기 기말고사 대비 F2R 예상문제. 시간을 재어 풀고 제출하면 문항별로 채점하고 틀린 문제 해설을 보여 줍니다.'" content="압구정중학교 2학년 2학기 기말고사 대비 F2R 예상문제.">
   <link rel="canonical" th:href="${canonical}" href="https://feel2real.co.kr/naesintest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,10 +22,10 @@
 <main class="nt-sheet-wrap">
   <div class="nt-page">
     <div class="nt-paperhead">
-      <h1 class="nt-paperhead-title">2026학년도 2학기 기말고사 대비 실전 연습
-        <span class="nt-paperhead-sub" th:text="${school.title()} + ' 영어 · F2R 예상문제'">압구정중학교 2학년 영어 · F2R 예상문제</span></h1>
+      <h1 class="nt-paperhead-title"><th:block th:text="${csat} ? '고1 수능 영어 독해 실전 연습' : '2026학년도 2학기 기말고사 대비 실전 연습'">2026학년도 2학기 기말고사 대비 실전 연습</th:block>
+        <span class="nt-paperhead-sub" th:text="${csat} ? '사설 모의고사 18~45번 변형 · F2R 변형문제' : ${school.title()} + ' 영어 · F2R 예상문제'">압구정중학교 2학년 영어 · F2R 예상문제</span></h1>
       <table>
-        <tr><th scope="col">학교</th><th scope="col">학년</th><th scope="col">범위</th><th scope="col">회차</th></tr>
+        <tr><th scope="col" th:text="${csat} ? '과정' : '학교'">학교</th><th scope="col">학년</th><th scope="col">범위</th><th scope="col">회차</th></tr>
         <tr><td th:text="${school.name}">압구정중학교</td><td th:text="${school.grade}">2학년</td>
           <td th:text="${school.scope} ?: '-'">Lesson 7·8</td><td th:text="${roundCount} > 0 ? ${roundCount} + '회' : '준비 중'">16회</td></tr>
       </table>
@@ -34,7 +34,7 @@
     <section class="nt-notice-box" aria-labelledby="nt-rules">
       <h2 id="nt-rules">응시 안내</h2>
       <ol>
-        <li>시험 시간은 문항당 30초입니다. 40문항은 20분, 70문항은 35분입니다.</li>
+        <li th:text="${csat} ? '독해 18~45번 28문항, 시험 시간은 45분입니다.' : '시험 시간은 문항당 30초입니다. 40문항은 20분, 70문항은 35분입니다.'">시험 시간은 문항당 30초입니다. 40문항은 20분, 70문항은 35분입니다.</li>
         <li>실제 시험처럼 풀이 중에는 해설을 볼 수 없습니다.</li>
         <li>1회는 로그인한 회원 누구나 풀 수 있습니다. 2회부터는 압구정에듀홀릭 재원생에게 열립니다.</li>
         <li>답은 문제 아래 번호나 OMR 답안지에 표시합니다. 표시한 답은 자동으로 저장됩니다.</li>
@@ -88,7 +88,7 @@
         </tbody>
       </table>
     </section>
-    <p class="nt-home-foot">F2R 예상문제 연습 점수이며 실제 학교 시험 점수가 아닙니다.</p>
+    <p class="nt-home-foot" th:text="${csat} ? 'F2R 변형 모의고사 연습 점수이며 실제 모의고사 점수가 아닙니다.' : 'F2R 예상문제 연습 점수이며 실제 학교 시험 점수가 아닙니다.'">F2R 예상문제 연습 점수이며 실제 학교 시험 점수가 아닙니다.</p>
   </div>
 </main>
 </body>

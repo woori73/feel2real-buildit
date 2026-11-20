@@ -47,17 +47,49 @@ class NaesinTestPageControllerTest {
   }
 
   @Test
-  @DisplayName("given 여러 학교 시험, when schoolRows면 학교 3곳 순서대로 시험 코드 앞부분이 맞는 회차 수를 센다")
+  @DisplayName("given 여러 학교 시험, when schoolRows면 학교·과정 4곳 순서대로 시험 코드 앞부분이 맞는 회차 수를 센다")
   void schoolRowsCountByPrefix() {
     // given
     List<ExamListItem> exams = List.of(
         exam("TP-NAESIN-APM2-2602-R01", "압구정중 2학년 2학기 기말 1회 · Lesson 7 예상문제 1회", "s · 40문항 · 20분 · 134점", 40),
         exam("TP-NAESIN-APM2-2602-R02", "압구정중 2학년 2학기 기말 2회 · Lesson 7 예상문제 2회", "s · 40문항 · 20분 · 134점", 40),
-        exam("TP-NAESIN-APM1-2602-R01", "압구정중 1학년 2학기 기말 1회 · Lesson 5 예상문제 1회", "s · 40문항 · 20분 · 130점", 40));
+        exam("TP-NAESIN-APM1-2602-R01", "압구정중 1학년 2학기 기말 1회 · Lesson 5 예상문제 1회", "s · 40문항 · 20분 · 130점", 40),
+        exam("TP-NAESIN-CSH1-MOCK-R01", "고1 수능 영어 독해 모의고사 1회 · 18~45번 변형문제 1회", "s · 28문항 · 45분 · 62점", 28));
     // when
     List<NaesinTestPageController.SchoolRow> rows = NaesinTestPageController.schoolRows(exams);
     // then
-    assertThat(rows).extracting(r -> r.school().slug()).containsExactly("apgujeong-m2", "singu-m2", "apgujeong-m1");
-    assertThat(rows).extracting(NaesinTestPageController.SchoolRow::rounds).containsExactly(2, 0, 1);
+    assertThat(rows).extracting(r -> r.school().slug()).containsExactly("apgujeong-m2", "singu-m2", "apgujeong-m1", "csat-h1");
+    assertThat(rows).extracting(NaesinTestPageController.SchoolRow::rounds).containsExactly(2, 0, 1, 1);
+  }
+
+  @Test
+  @DisplayName("given 고1 수능 독해 모의고사 회차, when toRow면 '모의고사 N회'를 회차로 나누고 시간은 45분으로 둔다")
+  void toRowCsatMock() {
+    // given
+    ExamListItem e = exam("TP-NAESIN-CSH1-MOCK-R03", "고1 수능 영어 독해 모의고사 3회 · 18~45번 변형문제 3회",
+        "2022년 5월 고1 이투스 원본 · 28문항 · 45분 · 62점", 28);
+    // when
+    NaesinTestPageController.Row r = NaesinTestPageController.toRow(e);
+    // then
+    assertThat(r.round()).isEqualTo("3회");
+    assertThat(r.setName()).isEqualTo("18~45번 변형문제 3회");
+    assertThat(r.group()).isEqualTo("18~45번");
+    assertThat(r.scope()).isEqualTo("2022년 5월 고1 이투스 원본");
+    assertThat(r.minutes()).isEqualTo(45);
+    assertThat(r.maxPoints()).isEqualTo(62);
+  }
+
+  @Test
+  @DisplayName("given 시험 코드와 문항 수, when minutes면 수능 독해는 45분, 내신은 문항당 30초로 계산한다")
+  void minutesByExam() {
+    // given
+    String csat = "TP-NAESIN-CSH1-MOCK-R01";
+    String naesin = "TP-NAESIN-SGM2-2602-R01";
+    // when
+    int csatMin = NaesinTestPageController.minutes(csat, 28);
+    int naesinMin = NaesinTestPageController.minutes(naesin, 40);
+    // then
+    assertThat(csatMin).isEqualTo(45);
+    assertThat(naesinMin).isEqualTo(20);
   }
 }

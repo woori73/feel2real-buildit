@@ -9,17 +9,18 @@
 
 
   function itemHtml(it, n) {
+    const no = NT.qNo(it, n - 1);
     const img = NT.imgPath(it.prompt), passage = NT.imgPath(it.bodyText);
     const state = it.isCorrect ? 'is-right' : 'is-wrong';
     const mine = it.yourAnswer ? NT.circ(it.yourAnswer) : '안 씀';
     return '<article class="nt-item ' + state + '" id="q' + n + '">'
-      + '<div class="nt-item-head"><span class="nt-qno" aria-label="' + n + '번 ' + (it.isCorrect ? '맞음' : '틀림') + '">' + n + '</span>'
+      + '<div class="nt-item-head"><span class="nt-qno" aria-label="' + no + '번 ' + (it.isCorrect ? '맞음' : '틀림') + '">' + no + '</span>'
       + '<span class="nt-ans">내 답 <b>' + NT.esc(mine) + '</b></span>'
       + '<span class="nt-ans">정답 <b class="nt-right">' + NT.esc(NT.circ(it.correctAnswer)) + '</b></span>'
       + (it.points != null ? '<span class="nt-pts">' + it.points + '점</span>' : '') + '</div>'
       + '<div class="nt-sheet">'
-      + (passage ? '<img class="nt-img nt-passage" loading="lazy" src="' + passage + '" alt="' + n + '번 문항 지문">' : '')
-      + (img ? '<img class="nt-img" loading="lazy" src="' + img + '" alt="' + n + '번 문항">' : '')
+      + (passage ? '<img class="nt-img nt-passage" loading="lazy" src="' + passage + '" alt="' + no + '번 문항 지문">' : '')
+      + (img ? '<img class="nt-img" loading="lazy" src="' + img + '" alt="' + no + '번 문항">' : '')
       + '</div>'
       + '<div class="nt-exp">' + NT.expHtml(it.explanation) + '</div></article>';
   }
@@ -40,7 +41,7 @@
       + (data.overtime ? '<p>시험 시간이 끝난 뒤 제출되었습니다.</p>' : '')
       + '<p><small>' + NT.esc(data.bandDisclaimer || '') + (sec && sec.accuracy != null ? ' 정답률 ' + sec.accuracy + '%' : '') + '</small></p></div></div>'
       + '<section class="nt-ox" aria-labelledby="nt-ox-t"><h2 id="nt-ox-t">문항별 채점</h2><div class="nt-ox-grid">'
-      + items.map((it, k) => '<button type="button" class="nt-ox-cell' + (it.yourAnswer ? '' : ' is-blank') + '" data-jump="' + (k + 1) + '" aria-label="' + (k + 1) + '번 ' + (it.isCorrect ? '맞음' : '틀림') + '">' + (k + 1) + '<span>' + (it.isCorrect ? '○' : '╱') + '</span></button>').join('')
+      + items.map((it, k) => '<button type="button" class="nt-ox-cell' + (it.yourAnswer ? '' : ' is-blank') + '" data-jump="' + (k + 1) + '" aria-label="' + NT.qNo(it, k) + '번 ' + (it.isCorrect ? '맞음' : '틀림') + '">' + NT.qNo(it, k) + '<span>' + (it.isCorrect ? '○' : '╱') + '</span></button>').join('')
       + '</div></section>'
       + '<div class="nt-filter" role="group" aria-label="복습할 문항">'
       + '<button type="button" data-filter="wrong" aria-pressed="' + (filter === 'wrong') + '">틀린 문제 ' + wrong + '</button>'

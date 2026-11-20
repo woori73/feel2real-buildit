@@ -353,7 +353,7 @@ class TestPrepFlowMySqlIntegrationTest {
     // given
     String code = "TP-NAESIN-APM2-2602-R01";
     MvcResult list = mockMvc.perform(get(API + "/exams").param("kind", "NAESIN").cookie(auth(OWNER_ID))).andReturn();
-    assertThat(json(list)).hasSize(27); // 압구정중2 16회 + 신구중2 Lesson 7·8 10회(V1120) + 종합 Final 1회(V1121)
+    assertThat(json(list)).hasSize(37); // 압구정중2 16회 + 신구중2 Lesson 7·8 10회(V1120) + 종합 Final 1회(V1121) + 고1 수능 독해 10회(V1126)
     MvcResult start = mockMvc.perform(post(API + "/attempts").cookie(auth(OWNER_ID))
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Map.of("examCode", code))))

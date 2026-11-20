@@ -9,7 +9,23 @@
   const CIRC = ['①', '②', '③', '④', '⑤'];
   const LETTERS = ['A', 'B', 'C', 'D', 'E'];
   // 학교별 페이지 주소: 시험 코드 앞부분 → 학교 페이지(NaesinTestPageController.SCHOOLS와 같게 유지).
-  const SCHOOLS = { 'TP-NAESIN-APM2-': 'apgujeong-m2', 'TP-NAESIN-SGM2-': 'singu-m2', 'TP-NAESIN-APM1-': 'apgujeong-m1' };
+  const SCHOOLS = { 'TP-NAESIN-APM2-': 'apgujeong-m2', 'TP-NAESIN-SGM2-': 'singu-m2', 'TP-NAESIN-APM1-': 'apgujeong-m1', 'TP-NAESIN-CSH1-': 'csat-h1' };
+  // 시험 시간(초): 고1 수능 독해 변형 모의고사(28문항)는 45분, 나머지는 문항당 30초(NaesinTestPageController.minutes와 같게 유지).
+  const LIMIT_SEC = { 'TP-NAESIN-CSH1-': 2700 };
+  NT.limitSec = function (examCode, count) {
+    const key = Object.keys(LIMIT_SEC).find(p => String(examCode || '').startsWith(p));
+    return key ? LIMIT_SEC[key] : count * 30;
+  };
+  // 화면에 보이는 문항 번호: 시험지 번호(order_no). 수능 독해는 18~45번이고, 내신 회차는 1번부터라 순서와 같다.
+  NT.qNo = (q, i) => (q && q.orderNo) || i + 1;
+  // 시험지 머리의 학년 칸: 제목의 '2학년'·'고1'을 그대로 쓴다(없으면 -).
+  NT.gradeLabel = function (title) {
+    const t = String(title || '');
+    const h = t.match(/고\s*([123])/);
+    if (h) return '고' + h[1];
+    const m = t.match(/([123])학년/);
+    return m ? m[1] + '학년' : '-';
+  };
   NT.schoolUrl = function (examCode) {
     const key = Object.keys(SCHOOLS).find(p => String(examCode || '').startsWith(p));
     return key ? '/naesintest/school/' + SCHOOLS[key] : '/naesintest';
