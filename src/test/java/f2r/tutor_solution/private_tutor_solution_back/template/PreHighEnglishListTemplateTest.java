@@ -92,6 +92,7 @@ class PreHighEnglishListTemplateTest {
     // then
     assertThat(practice.select("table tbody a").eachAttr("href")).containsExactly("/naesintest/pre-high/part2/1");
     assertThat(practice.select("thead th").eachText()).doesNotContain("문제지");
+    assertThat(practice.select("table").text()).doesNotContain("고1 모의고사").doesNotContain("변형");
   }
 
   @Test

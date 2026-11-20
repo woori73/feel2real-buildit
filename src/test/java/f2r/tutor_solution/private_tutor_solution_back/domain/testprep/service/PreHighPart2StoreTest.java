@@ -6,12 +6,31 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import f2r.tutor_solution.private_tutor_solution_back.domain.testprep.service.PreHighEnglishStore.Mark;
 import java.nio.charset.StandardCharsets;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.text.PDFTextStripper;
 import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class PreHighPart2StoreTest {
+
+  @Test
+  @DisplayName("given 2부 10회 문제지 PDF, when 글자를 뽑으면, then 원본(출처) 표기가 없다")
+  void paperHasNoSourceLine() throws Exception {
+    for (int n = 1; n <= 10; n++) {
+      // given
+      byte[] pdf = store.paper(n);
+      // when
+      String text;
+      try (var doc = Loader.loadPDF(pdf)) {
+        text = new PDFTextStripper().getText(doc);
+      }
+      // then
+      assertThat(text).as("%d회", n).contains("28문항").doesNotContain("원본").doesNotContain("출처");
+      assertThat(text).as("%d회", n).doesNotContain(store.list().get(n - 1).source());
+    }
+  }
 
   private final PreHighPart2Store store = new PreHighPart2Store(new ObjectMapper());
 
