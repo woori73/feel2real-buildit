@@ -4961,10 +4961,11 @@ actor는 서버 principal의 `loginId`에서만 결정하고 요청값으로 받
 
 ### 예비고1 디지털 수능 영어 모의고사 (`/naesintest/pre-high`)
 
-- `GET /naesintest/pre-high`는 공개 안내·회차 목록을 반환한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
+- `GET /naesintest/pre-high`는 공개 1·2·3부 선택 화면을 반환한다. `part=1`은 기출·어휘 회차, `part=2`는 실전 독해 회차, `part=3`은 어법 단원·마무리 종합 목록을 표시한다. `GET /naesintest/pre-high/{round}`는 로그인한 STUDENT/TUTOR/ADMIN이 연다.
 - `POST /api/naesintest/pre-high/{round}`에는 같은 출처의 `{action, attempt?, number?, choice?}`를 보낸다. `start`는 해당 브라우저 세션에서 회차를 시작하거나 기존 진행 상태를 되돌려 준다. `read-answer`, `reading-done`, `words-start`, `word-answer`, `state`, `restart`는 서버가 반환한 응시 ID가 필요하다.
 - 독해 제한은 총 540초이며 어휘는 각 문항마다 새로 5초를 부여한다. 진행 중 `remainingMillis`는 현재 영역 또는 어휘 문항에서 남은 시간이다. `elapsedMillis`는 끝난 독해와 어휘 문항의 실제 풀이 시간을 합산하며, 어휘 시작 전 대기 시간은 제외한다. `REVIEW` 상태에서만 정답과 해설을 반환한다. 응시나 결과는 브라우저 세션에 귀속된다. 독해 결과의 선택 필드 `marks`는 `part`(`question` 또는 `passage`), `kind`(`evidence` 또는 `answer`), 이미지의 가로·세로를 10,000으로 나눈 좌표 `x, y, width, height`를 담는다.
 - `GET /api/naesintest/pre-high/{round}/image/{number}/{part}`는 응시 중인 사용자에게 독해 문항(`question`) 또는 공통 지문(`passage`) WebP를 반환한다.
+- `GET /api/admin/pre-high-english/{series}/{round}/{kind}/{number}.pdf`는 관리자용 단일 문항 문제지를 `application/pdf` 첨부로 반환한다. `series`는 1부 `rounds` 또는 2부 `part2`이고, `kind`는 `reading` 또는 `vocabulary`다. 2부 독해 번호는 18~45다. 독해의 공통 지문은 PDF 첫 페이지에 포함된다.
 - **2부 고1 실전 독해 모의고사(10회)**: `GET /naesintest/pre-high/part2/{round}`(로그인, 응시 화면), `POST /api/naesintest/pre-high/part2/{round}`(1부와 같은 action), `GET /api/naesintest/pre-high/part2/{round}/image/{number}/{part}`(응시 중 문항·공통 지문 WebP), `GET /naesintest/pre-high/part2/{round}/paper.pdf`(로그인, 문제지 PDF 내려받기, `Content-Disposition: attachment`). 독해 18~45번 28문항 2700초, 이어서 어휘 50문항(문항당 5초). `number`는 1~28(화면은 18~45로 표시). 자료는 웹 루트 밖 classpath `prehigh-part2/rNN/`(round.json·문항 그림·paper.pdf)에서 읽는다. 2부 결과의 `marks`는 공통 지문(`passage`)에도 `answer`(밑줄 낱말 정답 표시)를 둘 수 있다.
 - `POST /api/admin/pre-high-english/rounds`는 ADMIN 전용이며 같은 출처의 JSON(최대 32 MiB)을 받아 35회 자료 전체를 검증한 후 한 번에 등록한다. 기존 25회 묶음도 읽을 수 있다. 웹 루트 밖의 `app.pre-high-english.dir`에 저장한다. 기본 저장 경로는 실행 계정 홈의 `pre-high-english`다.
 - `GET /naesintest/pre-high/grammar/{exam}`는 로그인한 학생·강사·관리자가 여는 20문항 시험이다. `{exam}`은 단원과 부를 잇는 `1-1`~`10-2` 또는 마무리 종합 `final-1`~`final-10`이다. 기존 단원 숫자 경로는 해당 단원의 1부로 이동한다.

@@ -193,7 +193,7 @@ class TestPrepPagesMySqlTest {
   @DisplayName("given 예비고1 2부 10회, when 목록·응시 화면·문제지 PDF를 열면, then 익명은 목록만 보고 회원은 응시 화면과 PDF를 받는다")
   void preHighPart2PagesAndPaper() throws Exception {
     // given / when
-    MvcResult list = mockMvc.perform(get("/naesintest/pre-high").accept(MediaType.TEXT_HTML)).andReturn();
+    MvcResult list = mockMvc.perform(get("/naesintest/pre-high").param("part", "2").accept(MediaType.TEXT_HTML)).andReturn();
     MvcResult anonymousTest = mockMvc.perform(get("/naesintest/pre-high/part2/1").accept(MediaType.TEXT_HTML)).andReturn();
     MvcResult test = mockMvc.perform(get("/naesintest/pre-high/part2/1").cookie(auth()).accept(MediaType.TEXT_HTML)).andReturn();
     MvcResult pdf = mockMvc.perform(get("/naesintest/pre-high/part2/3/paper.pdf").cookie(auth())).andReturn();

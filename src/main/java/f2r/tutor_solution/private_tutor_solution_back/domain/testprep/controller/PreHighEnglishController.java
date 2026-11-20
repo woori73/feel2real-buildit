@@ -47,6 +47,7 @@ public class PreHighEnglishController {
 
   public record Action(String action, UUID attempt, int number, int choice) {}
   public record GrammarAction(String action, UUID attempt, Integer number, Integer choice) {}
+  public record PdfGroup(String label, String path, int first, int last) {}
 
   private final PreHighEnglishStore store;
   private final PreHighPart2Store part2;
@@ -147,26 +148,33 @@ public class PreHighEnglishController {
   }
 
   @GetMapping(PAGE + "/{round}")
-  public String test(@PathVariable int round, Model model) {
-    if (store.get(round) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-    model.addAttribute("round", round);
-    model.addAttribute("part", 1);
-    model.addAttribute("api", API + "/" + round);
-    model.addAttribute("numbers", List.of());
-    model.addAttribute("shared", store.get(round).reading().stream().map(item -> item.passage() != null).toList());
-    return "prehigh/test";
+  public String test(@PathVariable int round, Model model,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    return testPage(store.get(round), false, model, principal);
   }
 
   /** 2부 응시 화면: 18~45번 28문항 45분, 이어서 어휘 50문항(문항당 5초). */
   @GetMapping(PAGE2 + "/{round}")
-  public String testPart2(@PathVariable int round, Model model) {
-    Round content = part2.get(round);
+  public String testPart2(@PathVariable int round, Model model,
+      @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    return testPage(part2.get(round), true, model, principal);
+  }
+
+  private String testPage(Round content, boolean practice, Model model, AuthenticatedPrincipal principal) {
     if (content == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    int round = content.number();
     model.addAttribute("round", round);
-    model.addAttribute("part", 2);
-    model.addAttribute("api", API2 + "/" + round);
-    model.addAttribute("numbers", PreHighPart2Store.numbers());
+    model.addAttribute("part", practice ? 2 : 1);
+    model.addAttribute("api", (practice ? API2 : API) + "/" + round);
+    model.addAttribute("numbers", practice ? PreHighPart2Store.numbers() : List.of());
     model.addAttribute("shared", content.reading().stream().map(item -> item.passage() != null).toList());
+    if (principal != null && "ADMIN".equals(principal.role())) {
+      String base = ADMIN + (practice ? "/part2/" : "/rounds/") + round;
+      int first = practice ? PreHighPart2Store.FIRST_NUMBER : 1;
+      model.addAttribute("pdfGroups", List.of(
+          new PdfGroup("독해", base + "/reading", first, first + content.reading().size() - 1),
+          new PdfGroup("어휘", base + "/vocabulary", 1, content.words().size())));
+    }
     return "prehigh/test";
   }
 

@@ -536,6 +536,11 @@ class LandingEdunovaTemplateContractTest {
         "적중률 근거", "압구정중2 93.3%", "압구정중3 93.5%", "언북중3 95.2%", "신구중3 96.8%");
     assertThat(sec).contains("예비고1 디지털 수능 영어 모의고사", "독해 6문항에 9분", "5초 안에",
         "href=\"/naesintest/pre-high\"").doesNotContain("hwChoices", "hwExamTime");
+    int preHighStart = sec.indexOf("id=\"pre-high-english\"");
+    String preHigh = sec.substring(preHighStart, sec.indexOf("</section>", preHighStart));
+    assertThat(preHigh).contains("<div class=\"hl-head\"><h2 id=\"preHighTitle\">", "hw-paper hw-tbl",
+        "href=\"/naesintest/pre-high?part=1\"", "href=\"/naesintest/pre-high?part=2\"",
+        "href=\"/naesintest/pre-high?part=3\"");
   }
 
   @Test
