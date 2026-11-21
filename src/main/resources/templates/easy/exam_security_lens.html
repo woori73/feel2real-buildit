@@ -29,6 +29,10 @@
     #lensResult[data-level="REVIEW"] { border-color: #fbd38d; background: #fffaf0; }
     #lensResult[data-level="REVIEW"] strong { color: var(--warn); }
     #lensResult[data-level="NONE"] strong { color: var(--ok); }
+    .record { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--line); font-size: 13px; }
+    .record summary { cursor: pointer; font-weight: 600; }
+    .record-help { color: var(--muted); line-height: 1.5; margin: 8px 0 0; }
+    #lensLog { margin: 10px 0 0; padding-left: 20px; line-height: 1.6; }
     .note { margin-top: 16px; font-size: 12px; color: var(--muted); line-height: 1.6; }
     .note li { margin-bottom: 4px; }
   </style>
@@ -56,6 +60,15 @@
     <strong>아직 검사하지 않았습니다</strong>
     <span>검사하면 '의심 없음' 또는 '확인 필요'만 표시합니다.</span>
   </div>
+  <details class="record">
+    <summary>시험 기록 (실제 렌즈가 몇 순위였나)</summary>
+    <p class="record-help">검사 뒤 [실제 렌즈 위치 누르기]를 누르고 화면에서 실제 렌즈 자리를 누르면 순위가 적힙니다. 빨간 원의 번호와 노란 점선 옆 숫자가 순위(1 = 가장 의심)입니다. 분홍 점선은 눈·안경 반사로 보이는 자리입니다. 기록은 이 화면에만 있고 새로고침하면 사라집니다.</p>
+    <div class="actions">
+      <button type="button" id="lensMark" disabled>실제 렌즈 위치 누르기</button>
+      <button type="button" id="lensCopy" disabled>기록 복사</button>
+    </div>
+    <ol id="lensLog"></ol>
+  </details>
   <ul class="note">
     <li>기계는 부정행위를 판정하지 않습니다. '확인 필요'는 감독관이 직접 확인할 자리를 알려 줄 뿐입니다.</li>
     <li>사진·영상은 저장하거나 서버로 보내지 않습니다. 비교한 화면은 휴대폰 메모리에서 바로 버립니다.</li>
