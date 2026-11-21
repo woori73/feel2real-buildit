@@ -7,6 +7,7 @@
 - V1120: 신구중 2학년 2026학년도 2학기 기말 대비 F2R 예상문제 Lesson 7 1~5회·Lesson 8 6~10회. `tp_exams` 10행(`TP-NAESIN-SGM2-2602-R01`~`R10`) + `tp_questions` 400행(회당 40문항·100점). "모두 고르면" 문항은 `task_type='NAESIN_MC5_MULTI'`, `answer_key`는 `B,D`처럼 쉼표로 잇는다. 그림은 `static/naesin/singu-m2-2026-2/rNN/`.
 - V1121: 신구중 2학년 2학기 기말 대비 F2R 예상문제 11회(Lesson 7·8 종합 Final). `tp_exams` 1행(`TP-NAESIN-SGM2-2602-R11`) + `tp_questions` 40행(100점, 모두 고르기 5문항). 그림은 `static/naesin/singu-m2-2026-2/r11/`.
 - V1127: 압구정중 1학년 2026학년도 2학기 기말 대비 F2R 예상문제 1~7회. `tp_exams` 7행(`TP-NAESIN-APM1-2602-R01`~`R07`) + `tp_questions` 280행(회당 40문항·100점, 2점×25·3점×10·4점×5, 모두 `NAESIN_MC5`). 그림은 `static/naesin/apgujeong-m1-2026-2/rNN/`.
+- V1128: 압구정중1 2학기 기말 예상문제 2회 12번 해설 첫 줄의 발문을 다른 회와 같은 「밑줄 친 곳이 ⓐ와 같은 쓰임으로 사용된 것은?」으로 고침(문항 그림도 다시 만듦, 정답·배점 그대로). 스키마 변경 없음.
 - V1117: 발음부호 문항 24개 해설 수정(정답 보기를 강세가 아닌 발음부호 오류로 바꿈, 정답·배점 그대로). 스키마 변경 없음.
 - 내신 이용 범위: 일반 회원은 학교마다 1회만, 관리자·재원생(출결 학생부 `easy_students` ENROLLED와 이름 또는 휴대전화가 같은 회원)은 전 회차. 스키마 변경 없음(`NaesinAccessService`).
 - 내신 채점: 섹션 `scaled` = 맞힌 문항 배점 합, `scaleMax` = 배점 합계. 화면 `/naesintest`는 [design/naesintest.md](design/naesintest.md).
