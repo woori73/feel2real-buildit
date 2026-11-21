@@ -44,7 +44,7 @@ public class LandingPageController {
   private String agentTrailerPath = DEFAULT_AGENT_TRAILER_PATH;
 
   // AI AGENT 1화 YouTube video supplied by the user on 2026-11-20. It replaces the trailer slot; an empty override shows the trailer again.
-  public static final String DEFAULT_AGENT_YOUTUBE_ID = "8CHtg0nkmPA";
+  public static final String DEFAULT_AGENT_YOUTUBE_ID = "BGpss8L0v3E";
   @Value("${app.home.agent-youtube-id:" + DEFAULT_AGENT_YOUTUBE_ID + "}")
   private String agentYoutubeId = DEFAULT_AGENT_YOUTUBE_ID;
 

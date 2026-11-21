@@ -123,7 +123,7 @@ class LandingPageControllerTest {
     when(service.resolveRenderItems()).thenReturn(List.of(
         LandingVideoRenderItem.bundled(LandingVideoSlotKey.ACADEMY_SHORTS_DEMO),
         LandingVideoRenderItem.bundled(LandingVideoSlotKey.PARENT_REPORT_DEMO)));
-    for (String bad : new String[] {"", "short", "8CHtg0nkmPA&x=1", "https://youtu.be/8CHtg0nkmPA", "\"><script>"}) {
+    for (String bad : new String[] {"", "short", "BGpss8L0v3E&x=1", "https://youtu.be/BGpss8L0v3E", "\"><script>"}) {
       org.springframework.test.util.ReflectionTestUtils.setField(controller, "agentYoutubeId", bad);
       Model model = new ConcurrentModel();
       // when
@@ -132,7 +132,7 @@ class LandingPageControllerTest {
       assertThat(model.asMap()).containsEntry("homeAgentYoutubeId", "");
     }
     assertThat(LandingPageController.safeYoutubeId(null)).isEmpty();
-    assertThat(LandingPageController.safeYoutubeId("8CHtg0nkmPA")).isEqualTo("8CHtg0nkmPA");
+    assertThat(LandingPageController.safeYoutubeId("BGpss8L0v3E")).isEqualTo("BGpss8L0v3E");
   }
 
   @Test
