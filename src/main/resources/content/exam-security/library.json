@@ -1,0 +1,399 @@
+{
+  "updatedAt": "2026-11-21",
+  "nextUpdate": "매주 월요일 새 자료를 찾아 갱신",
+  "f2rStatus": [
+    "렌즈 찾기: 휴대폰 플래시를 끄고 켠 사진을 비교해 렌즈 의심 위치를 표시합니다(11.21 배포, 원장 휴대폰 시연용). 화면 전체를 가볍게 훑은 뒤 의심 자리만 원본 해상도로 다시 확인합니다.",
+    "1차 현장 시험(11.21)에서 실제 렌즈를 후보로 표시했지만 1순위는 아니었습니다. 반짝이는 케이블·철망이 앞서 순위 기준을 고쳤고, 거리별 측정을 이어갑니다.",
+    "종이 시험지 보안 무늬: 사람 눈에는 고른 회색이지만 휴대폰 사진에서는 좌석 번호가 드러나는 무늬를 준비 중입니다. 계산 모형에서만 확인했고 실제 인쇄·촬영 측정 전입니다.",
+    "사진으로 찍은 시험지를 AI가 못 읽게 하는 확실한 방법은 아래 연구에서도 찾지 못했습니다. F2R은 유출 사진의 출처를 되짚는 추적을 먼저 목표로 합니다.",
+    "최종 판단은 감독관이 합니다. 신호 차단기는 쓰지 않고, 사진·영상은 저장하거나 전송하지 않습니다."
+  ],
+  "cautions": [
+    "다른 연구·기사의 수치는 그 연구·기사가 밝힌 결과이며 F2R 렌즈 찾기·보안 무늬의 성능이 아닙니다. F2R 성능 수치는 직접 측정한 뒤에만 적습니다.",
+    "'원문 확인' 표시는 F2R이 원문(논문 초록·영상 정보)을 직접 열어 본 항목입니다. 나머지는 검색 요약으로 확인한 요지이니 자세한 내용은 원문 링크에서 확인해 주세요.",
+    "사진으로 찍은 종이 시험지를 AI가 못 읽게 하는 방법은 연구마다 조건이 다르고, AI 모델이 바뀌면 효과가 사라질 수 있습니다."
+  ],
+  "sections": [
+    {
+      "id": "lens",
+      "title": "① 렌즈 찾기 — 논문·기술 문서·기존 제품",
+      "lead": "휴대폰이나 작은 장치의 빛으로 숨은 카메라 렌즈를 찾는 연구와 제품입니다. 렌즈로 들어온 빛이 같은 길로 되돌아오는 '고양이 눈' 반사가 공통 원리입니다.",
+      "entries": [
+        {
+          "kind": "논문",
+          "title": "Hide-and-Sweep: Detecting Concealed Cameras via LED Illumination Sweeps (SweepLED)",
+          "by": "윤종혁·한준 교수 외 (KAIST·싱가포르국립대·싱가포르경영대)",
+          "date": "2026 · ACM MobiSys",
+          "summary": "휴대폰 카메라는 고정하고 휴대폰에 단 LED의 빛 방향만 바꿔 가며 반사가 어떻게 달라지는지 AI로 봅니다. 렌즈는 일반 광택면과 다른 반사 무늬를 보입니다.",
+          "result": "숙박시설 물건 30개 실험에서 약 94%를 찾았고 물건 하나에 5초 안쪽이 걸렸다고 보도됨(실험실 결과, 상용 제품 아님).",
+          "url": "https://news.kaist.ac.kr/news/html/news/?mode=V&mng_no=66390",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "LAPD: Hidden Spy Camera Detection using Smartphone Time-of-Flight Sensors",
+          "by": "Sriram Sami 외·한준 교수 (싱가포르국립대·연세대)",
+          "date": "2021 · ACM SenSys",
+          "summary": "휴대폰 ToF(레이저 거리) 센서의 빛이 렌즈에서 세게 되돌아오는 자리를 찾고, 다른 반짝이는 물체는 영상 처리로 거릅니다.",
+          "result": "참가자 379명 실험에서 88.9%를 찾았다고 보고(맨눈 46.0%). 반사는 카메라 정면 약 ±10° 안에서만 보임.",
+          "url": "https://dblp.org/rec/conf/sensys/SamiTSH21a",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "No Guide, No Cheat: Detecting Smart Glasses via AR Optical Signatures",
+          "by": "Hanting Ye·Tianyi Hu·Maria Gorlatova (듀크대)",
+          "date": "2026 · ACM HotMobile",
+          "summary": "스마트안경 렌즈 속 도파관이 빛을 눈으로 보내며 생기는 독특한 광학 현상을 영상의 밝기 변화로 찾습니다.",
+          "result": "스마트안경 3개·일반 안경 3개의 예비 실험으로 가능성을 보임(초록에 정확도 수치 없음).",
+          "url": "https://scholars.duke.edu/publication/1817198",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "Analysis of Mini-Camera's Cat-Eye Retro-Reflection for Characterization of Diffraction Rings and Arrayed Spots",
+          "by": "IEEE Photonics Journal 게재 논문",
+          "date": "2019",
+          "summary": "소형 카메라의 '고양이 눈' 되반사(렌즈로 들어온 빛이 같은 길로 되돌아오는 현상)를 분석합니다. 렌즈 찾기의 기본 원리입니다.",
+          "result": null,
+          "url": "https://doaj.org/article/fa656ae776d04e5bad79226f9bb41592",
+          "checked": "검색"
+        },
+        {
+          "kind": "기술 문서",
+          "title": "System and method for detecting a camera (미국 특허 8,184,175)",
+          "by": "미국 특허청(USPTO)",
+          "date": "미국 특허",
+          "summary": "렌즈로 들어온 빛이 초점면에서 같은 길로 되돌아오는 '고양이 눈' 반응으로 카메라를 찾는 방법입니다.",
+          "result": null,
+          "url": "https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/8184175",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "HeatDeCam: Detecting Hidden Spy Cameras via Thermal Emissions (참고: 열화상 방식)",
+          "by": "Zhiyuan Yu 외",
+          "date": "2022 · ACM CCS",
+          "summary": "빛 반사 대신 열화상으로 카메라 칩의 열을 찾습니다. F2R 원칙상 시판 열화상 장비는 쓰지 않지만 비교용으로 둡니다.",
+          "result": null,
+          "url": "https://heatdecam.github.io",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "Lumos: Identifying and Localizing Diverse Hidden IoT Devices (참고: 무선 방식)",
+          "by": "Rahul Anand Sharma 외 (카네기멜런대)",
+          "date": "2022 · USENIX Security",
+          "summary": "휴대폰·노트북으로 와이파이 통신을 엿들어 숨은 기기를 찾고 위치를 표시합니다. 와이파이를 쓰지 않는 기기는 대상 밖입니다.",
+          "result": null,
+          "url": "https://www.usenix.org/conference/usenixsecurity22/presentation/sharma-rahul",
+          "checked": "검색"
+        },
+        {
+          "kind": "제품",
+          "title": "빨간 LED 렌즈 탐지기(예: KJB DD1200 PRO)",
+          "by": "시판 제품",
+          "date": "—",
+          "summary": "보는 구멍 둘레의 밝은 LED 빛이 렌즈에서 되돌아오는 점을 눈으로 찾습니다. 유리·금속도 빛을 되돌려 잘못 짚기 쉽다는 설명이 함께 나옵니다.",
+          "result": null,
+          "url": "https://www.bhphotovideo.com/c/product/919551-REG/kjb_security_products_dd1200_pro_camera_finder.html",
+          "checked": "검색"
+        },
+        {
+          "kind": "제품",
+          "title": "Glint Finder - Camera Detector (안드로이드 앱)",
+          "by": "앱 개발사 workshop512",
+          "date": "2015년 마지막 갱신",
+          "summary": "휴대폰 플래시를 일정 주기로 깜빡여 반짝이는 점을 돋보이게 합니다. F2R 렌즈 찾기와 같은 계열의 오래된 선행 사례입니다.",
+          "result": null,
+          "url": "https://apkcombo.com/glint-finder-camera-detector/com.workshop512.glintfinder/",
+          "checked": "검색"
+        },
+        {
+          "kind": "제품",
+          "title": "Ban-Rays (스마트안경 탐지 오픈소스 실험)",
+          "by": "개인 개발자 NullPxl (GitHub)",
+          "date": "2025~2026",
+          "summary": "적외선 반사와 블루투스 신호로 스마트안경을 찾으려는 실험 단계 프로젝트입니다.",
+          "result": null,
+          "url": "https://github.com/NullPxl/banrays",
+          "checked": "검색"
+        }
+      ]
+    },
+    {
+      "id": "paper",
+      "title": "② 종이 무늬·AI 방해 — 추적과 교란 연구",
+      "lead": "인쇄물에 정보를 숨겨 출처를 되짚는 추적 기술, 그리고 이미지를 바꿔 AI를 헷갈리게 하는 교란 연구입니다. 추적은 실제 운영 사례가 있지만, 사진으로 찍은 시험지를 AI가 못 읽게 하는 확실한 방법은 없습니다.",
+      "entries": [
+        {
+          "kind": "기술 문서",
+          "title": "VOID 판토그래프(복사 방지 숨은 문구)",
+          "by": "보안 인쇄 업계 기술",
+          "date": "오래된 기술",
+          "summary": "크기·간격이 다른 두 점 무늬를 같은 회색으로 보이게 인쇄해, 복사하면 숨은 글자만 드러나게 합니다. F2R 보안 무늬와 같은 계열의 원리입니다.",
+          "result": null,
+          "url": "https://en.wikipedia.org/wiki/Void_pantograph",
+          "checked": "검색"
+        },
+        {
+          "kind": "기술 문서",
+          "title": "프린터 추적 점(Machine Identification Code)",
+          "by": "미국 전자프런티어재단(EFF) 정리",
+          "date": "2004년 공개",
+          "summary": "컬러 레이저 프린터가 페이지마다 눈에 거의 안 보이는 노란 점으로 기종·일련번호·인쇄 시각을 찍는 방식입니다. 인쇄물 출처 추적의 대표 사례입니다.",
+          "result": null,
+          "url": "https://www.eff.org/pages/list-printers-which-do-or-do-not-display-tracking-dots",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "StegaStamp: Invisible Hyperlinks in Physical Photographs",
+          "by": "Matthew Tancik·Ben Mildenhall·Ren Ng (UC버클리)",
+          "date": "2020 · CVPR",
+          "summary": "사진에 정보를 숨기고, 인쇄한 뒤 휴대폰으로 찍어도 정보를 되찾도록 학습시킨 방법입니다.",
+          "result": "실제 인쇄·촬영 조건에서 숨긴 100비트 중 95%를 되찾았다고 보고.",
+          "url": "https://openaccess.thecvf.com/content_CVPR_2020/papers/Tancik_StegaStamp_Invisible_Hyperlinks_in_Physical_Photographs_CVPR_2020_paper.pdf",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "시험지 고유 번호·QR·워터마크로 유출 경로 추적(인도·파키스탄 교육위원회)",
+          "by": "Careers360 외 보도",
+          "date": "2025~2026",
+          "summary": "시험지마다 고유 번호·QR·워터마크를 넣어 유출본이 어느 시험장에서 나왔는지 되짚는 실제 운영 사례입니다.",
+          "result": null,
+          "url": "https://news.careers360.com/bse-odisha-use-watermarks-barcodes-in-class-10-examinations-2025-prevent-paper-leaks",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "Adversarial examples in the physical world",
+          "by": "Alexey Kurakin·Ian Goodfellow·Samy Bengio",
+          "date": "2016 · arXiv 1607.02533",
+          "summary": "분류기를 속이는 미세한 무늬를 인쇄해 휴대폰으로 찍어도 효과가 남는지 본 연구입니다.",
+          "result": "인쇄·촬영을 거쳐도 상당한 비율이 계속 잘못 분류됨. 다만 물체 분류기 대상이며 글을 읽는 AI 대상은 아님.",
+          "url": "https://huggingface.co/papers/1607.02533",
+          "checked": "원문"
+        },
+        {
+          "kind": "논문",
+          "title": "Seeing is Deceiving: 인쇄한 적대적 글자로 장면을 속이는 공격(SceneTAP)",
+          "by": "Cao 외",
+          "date": "2024 · arXiv 2412.00114",
+          "summary": "장면에 둘 글자를 만들어 실제로 인쇄해 놓고 찍어 비전 AI를 속이는 실험입니다. 인쇄·촬영을 거친 드문 실험입니다.",
+          "result": "GPT-4o 공격 성공률 33.79%(공격 없을 때 15.83%)라고 보고 — 세 번에 두 번은 실패.",
+          "url": "https://arxiv.org/abs/2412.00114",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "Legibility vs. Extractability: Crafting Visual Defenses Against Automated OCR",
+          "by": "Minh Nguyen 외 (오클랜드공대)",
+          "date": "2025 · ACIVS",
+          "summary": "학생이 AI로 시험 글자를 뽑아 가는 것을 막으려고 특수 글꼴·방해선·색 왜곡·흐림을 시험했습니다.",
+          "result": "상용 AI 4종은 글꼴·방해선·색 왜곡에 거의 영향을 받지 않았고, 흐림만 인식을 눈에 띄게 낮췄다고 보고.",
+          "url": "https://openrepository.aut.ac.nz/items/88371f0d-0b46-492f-86e9-c297836e1135",
+          "checked": "검색"
+        },
+        {
+          "kind": "논문",
+          "title": "Adversarial Perturbations Cannot Reliably Protect Artists From Generative AI",
+          "by": "Robert Hönig·Javier Rando·Nicholas Carlini·Florian Tramèr",
+          "date": "2024 · arXiv 2406.12027",
+          "summary": "그림에 넣는 보호 무늬(Glaze 등)가 간단한 처리로 무력화되는지 시험했습니다.",
+          "result": "이미지 확대 같은 간단한 처리로 보호가 크게 떨어져 '믿을 만한 보호가 아니다'라고 결론.",
+          "url": "https://huggingface.co/papers/2406.12027",
+          "checked": "원문"
+        },
+        {
+          "kind": "논문",
+          "title": "Glaze: Protecting Artists from Style Mimicry",
+          "by": "Shawn Shan 외 (시카고대)",
+          "date": "2023 · arXiv 2302.04222",
+          "summary": "그림에 거의 안 보이는 교란을 넣어 AI의 화풍 모방을 방해하는 도구입니다. 학습 방해용이며 글 읽기 방해용은 아닙니다.",
+          "result": "저자 실험에서 모방 방해 92% 이상이라고 보고(위 Hönig 외 연구에서 우회됨).",
+          "url": "https://huggingface.co/papers/2302.04222",
+          "checked": "원문"
+        },
+        {
+          "kind": "논문",
+          "title": "Transferable Adversarial Attacks on Black-Box Vision-Language Models",
+          "by": "Kai Hu 외 (카네기멜런대 등)",
+          "date": "2025 · arXiv 2505.01050",
+          "summary": "공개 모델에서 만든 이미지 교란이 상용 비전 AI에도 옮겨 가는지 본 연구입니다.",
+          "result": "목표한 오해석이 상용 모델로 옮겨 간다고 보고. 디지털 이미지를 바로 넣은 조건.",
+          "url": "https://huggingface.co/papers/2505.01050",
+          "checked": "원문"
+        },
+        {
+          "kind": "논문",
+          "title": "Hidden Prompts in Manuscripts Exploit AI-Assisted Peer Review",
+          "by": "Zhicheng Lin",
+          "date": "2025 · arXiv 2507.06185",
+          "summary": "논문 속 흰 글씨·초소형 글씨로 AI 심사에 지시를 숨긴 사례를 분석했습니다. 숨은 지시문은 글자를 복사해 넣을 때만 작동합니다.",
+          "result": null,
+          "url": "https://arxiv.org/abs/2507.06185",
+          "checked": "검색"
+        }
+      ]
+    },
+    {
+      "id": "news",
+      "title": "③ 언론 보도 — 시험 AI 부정행위와 대응",
+      "lead": "스마트기기·스마트안경을 이용한 시험 부정행위와 탐지·대응 소식입니다. F2R 관련 보도는 아직 없습니다.",
+      "entries": [
+        {
+          "kind": "기사",
+          "title": "교육부 \"소형캠·스마트안경까지, 수능 부정행위자 98명 적발\"",
+          "by": "주간경향·YTN",
+          "date": "2026-11-19",
+          "summary": "2027학년도 수능 부정행위 적발 중간 집계. 시험 중 스마트기기 사용 사례가 포함됐습니다.",
+          "result": null,
+          "url": "https://weekly.khan.co.kr/article/202611191906001",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "\"교육부 장관 답변 보고 한숨\"…이준석, 비행기서 '수능 커닝 탐지 앱' 만들었다",
+          "by": "뉴스TV조선 「뉴스트라다무스」(유튜브)",
+          "date": "2026-11",
+          "summary": "보도에 따르면 이준석 의원이 비행기에서 수능 부정행위 탐지 앱을 만들었다고 밝혔습니다.",
+          "result": null,
+          "url": "https://youtu.be/qJV2y4LT_L0",
+          "checked": "원문"
+        },
+        {
+          "kind": "기사",
+          "title": "교육부, 수능 시험장 전파 차단 검토 철회 \"법적, 기술적 한계\"",
+          "by": "지디넷코리아",
+          "date": "2026-11-18",
+          "summary": "전파법상 차단이 어렵고 주변 통신 피해가 있어 휴대폰 수거·와이파이 차단·사후 기록 추적으로 대응한다는 내용입니다.",
+          "result": null,
+          "url": "https://zdnet.co.kr/view/?no=20261118101051",
+          "checked": "원문"
+        },
+        {
+          "kind": "기사",
+          "title": "'AI 커닝' 세무사 수석, 개조 계산기로 명령어 입력 후 초소형 모니터로 답 확인",
+          "by": "주간경향",
+          "date": "2026-11",
+          "summary": "세무사 시험 수석 합격자가 초소형 카메라와 생성형 AI를 쓴 사실을 밝혔다는 보도입니다. 감독관이 현장에서 잡지 못했습니다.",
+          "result": null,
+          "url": "https://weekly.khan.co.kr/article/202611160744001",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "South Korea cheating scandal: Are AI smart glasses a threat to exams?",
+          "by": "Al Jazeera",
+          "date": "2026-11-17",
+          "summary": "한국의 AI 안경 부정행위 사건과 정부 대응을 다룬 해외 보도입니다.",
+          "result": null,
+          "url": "https://www.aljazeera.com/news/2026/11/17/south-korea-cheating-scandal-are-ai-smart-glasses-a-threat-to-exams",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "2027학년도 수능 수험생 유의사항(AI 안경 착용도 부정행위)",
+          "by": "정책브리핑(korea.kr)",
+          "date": "2026-11-09",
+          "summary": "AI 안경은 시험 중 착용만 해도 부정행위로 보고 해당 시험 무효와 다음 해 응시 제한을 적용한다는 안내입니다.",
+          "result": null,
+          "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148975290",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "중·고교 수행평가·지필고사도 스마트안경 적발",
+          "by": "YTN",
+          "date": "2026-11-09",
+          "summary": "대학·자격시험에 이어 중·고교 시험에서도 스마트안경 사용이 적발됐다는 보도입니다.",
+          "result": null,
+          "url": "https://www.ytn.co.kr/_ln/0103_202611091443047005",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "뿔테 안경 아니었어?…연세대 논술 시험장서 '스마트 안경' 적발",
+          "by": "주간경향",
+          "date": "2026-10-13",
+          "summary": "검사 때는 일반 안경을 썼다가 시험 중 스마트안경으로 바꾼 사례입니다. 입구 검사만으로는 막기 어렵다는 점을 보여 줍니다.",
+          "result": null,
+          "url": "https://weekly.khan.co.kr/article/202610131916001",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "\"시선 처리 이상해\"…'AI 안경' 끼고 국가자격시험 본 40대男",
+          "by": "서울신문",
+          "date": "2026-07-13",
+          "summary": "국가기술자격 시험에서 AI 안경을 쓴 응시자가 약식기소됐다는 보도입니다.",
+          "result": null,
+          "url": "https://m.seoul.co.kr/news/2026/07/13/20260713500273",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "TOEIC takers caught using AI smart glasses during exams in Korea",
+          "by": "Korea Times",
+          "date": "2026-06-10",
+          "summary": "토익 시험에서 AI 안경 사용자가 적발돼 점수가 무효 처리됐다는 보도입니다.",
+          "result": null,
+          "url": "https://www.koreatimes.co.kr/southkorea/society/20260610/ai-glasses-used-in-toeic-cheating-case-in-korea-for-1",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "미국 교수의 AI 함정…시험지 숨은 지시문에 학생들 무더기 적발",
+          "by": "뉴시스",
+          "date": "2026-07-26",
+          "summary": "시험 안내문에 흰 글씨 지시를 숨겨 AI에 복사해 넣은 답을 가려냈다는 교수 본인 주장을 전한 보도입니다(독립 검증 없음).",
+          "result": null,
+          "url": "https://www.newsis.com/view/NISX20260726_0003723643",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "시험지에 몰래 숨겨둔 'AI 함정'…문제 풀게 했더니 '뜻밖의 결과'",
+          "by": "KBS 자막뉴스(유튜브)",
+          "date": "2026-11-20",
+          "summary": "시험지 속 AI 함정 문구를 다룬 영상입니다.",
+          "result": null,
+          "url": "https://www.youtube.com/watch?v=eXpbljSLjoE",
+          "checked": "원문"
+        },
+        {
+          "kind": "기사",
+          "title": "\"만원짜리 LED 붙였는데\"…호텔방 '몰카' 5초면 잡는다(KAIST SweepLED)",
+          "by": "헤럴드경제",
+          "date": "2026-08-29",
+          "summary": "KAIST가 휴대폰 LED로 숨은 카메라를 찾는 기술을 발표했다는 보도입니다.",
+          "result": null,
+          "url": "https://www.heraldk.com/article/2026082920003858247",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "Alibaba, Tencent Freeze AI Tools During High-Stakes China Exam",
+          "by": "Bloomberg",
+          "date": "2025-06-09",
+          "summary": "중국 대입시험 기간에 주요 AI 서비스가 사진 인식 기능을 끄거나 시험지 사진에 답하지 않았다는 보도입니다.",
+          "result": null,
+          "url": "https://www.bloomberg.com/news/articles/2025-06-09/alibaba-tencent-freeze-ai-tools-during-high-stakes-china-exam",
+          "checked": "검색"
+        },
+        {
+          "kind": "기사",
+          "title": "와세다대 입시 스마트안경 부정행위 검찰 송치",
+          "by": "Japan Times",
+          "date": "2024-05-16",
+          "summary": "입시 중 스마트안경으로 문제를 찍어 외부로 보낸 혐의 사건입니다.",
+          "result": null,
+          "url": "https://japantimes.co.jp/news/2024/05/16/japan/crime-legal/waseda-exam-cheating",
+          "checked": "검색"
+        }
+      ]
+    }
+  ]
+}

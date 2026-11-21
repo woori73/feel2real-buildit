@@ -20,7 +20,9 @@ public class ExamSecurityLibraryController {
 
   static final String RESOURCE = "content/exam-security/library.json";
 
-  public record Entry(String kind, String title, String by, String date, String summary, String result, String url) {}
+  /** checked: "원문"(F2R이 원문을 직접 열어 확인) 또는 "검색"(검색 요약으로만 확인 — 화면에 표시). */
+  public record Entry(String kind, String title, String by, String date, String summary, String result, String url,
+      String checked) {}
 
   public record Section(String id, String title, String lead, List<Entry> entries) {}
 

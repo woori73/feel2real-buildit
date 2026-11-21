@@ -42,6 +42,7 @@ class ExamSecurityLibraryTest {
       assertThat(KINDS).as(e.title()).contains(e.kind());
       assertThat(e.title()).isNotBlank();
       assertThat(e.by()).as(e.title()).isNotBlank();
+      assertThat(e.checked()).as(e.title()).isIn("원문", "검색");
       if (!"F2R".equals(e.kind())) assertThat(e.url()).as(e.title()).startsWith("https://");
       String text = String.join(" ", e.title(), String.valueOf(e.summary()), String.valueOf(e.result()));
       assertThat(text).doesNotContain("혁신", "최고", "완벽 차단", "100% 적발");
