@@ -63,8 +63,9 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.keys).toEqual(['home','dashboard','wiki','request','guide','agent','game','chart']);
         await expect(page.locator('#homePaneTitle')).toHaveText('Feel to Real (F2R) 홈');
         await expect(page.locator('#homeMenuPanel')).toBeHidden();
-        await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1424 });
-        await expect(page.locator('.hl-chips')).toBeVisible({ visible: width <= 1424 });
+        // 2026-11-21: 상단은 펼침 메뉴 6묶음(1320px 초과에서 보임), 그 이하는 바로가기 줄.
+        await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1320 });
+        await expect(page.locator('.hl-chips')).toBeVisible({ visible: width <= 1320 });
         await expect(page.locator('#homeNotice')).toBeVisible();
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('압구정중3 기출문제 적중률 분석 리포트');
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('모의고사 위키 지문 복습 문제 업로드');

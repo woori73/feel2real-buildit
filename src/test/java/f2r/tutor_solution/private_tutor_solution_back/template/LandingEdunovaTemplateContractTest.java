@@ -117,11 +117,14 @@ class LandingEdunovaTemplateContractTest {
     String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"service\""));
     String main = html.substring(html.indexOf("<main"), html.indexOf("</main>"));
     // then
-    assertThat(hero).contains("F2R AI Coordinator", "휴대폰 하나로<br>학원 업무를 AI에게", "11월 25일 이전하는 F2R 영어교습소",
-        "실증 중", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
-        "href=\"#exam-security\"", "LLM AI");
+    assertThat(hero).contains("F2R AI 코디", "휴대폰 하나로<br>학원 업무를 AI에게", "class=\"hw-coord-logo\" src=\"/img/F2R_logo_pure.svg\"", "<b>F2R 영어</b>", "11월 25일", "새 주소로 이전", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
+        "href=\"#exam-security\"");
+    // 2026-11-21 사용자 지시: 제목 아래 설명 문장(사업계획서 문구)은 홈페이지에 쓰지 않는다.
+    assertThat(hero).doesNotContain("hw-coord-lead", "원장이 승인한 것만");
+    // 2026-11-21 사용자 지시: 이름은 "F2R 영어"로만 쓰고 "교습소"·"영어 학원"은 쓰지 않는다. 제목에 F2R 로고
+    assertThat(html).doesNotContain("교습소", "영어 학원", "새 학원");
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
-    assertThat(hero).contains("서울 강남구 언주로173길 12, 압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
+    assertThat(hero).contains("서울 강남구 언주로173길 12, ", "압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
     assertThat(work).contains("말·사진으로 지시", "출결·채점", "자료 제작·학부모 안내", "원장 승인 후 기록");
     assertThat(dash).contains("원장 로그인 후 사용", "href=\"/dashboard\"", "href=\"/ledger\"", "가명 자료",
@@ -139,6 +142,33 @@ class LandingEdunovaTemplateContractTest {
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
     }
     assertThat(main).doesNotContain("Claude", "혁신", "최고", "완벽 차단");
+    // 2026-11-21 사용자 지시: 홈페이지 글에서 '교습소 실증' 표현은 쓰지 않는다(주석 제외).
+    assertThat(html.replaceAll("<!--[\\s\\S]*?-->", "")).doesNotContain("교습소 실증", "실증 중", "실증 근거", "실증하는");
+    // 2026-11-21 사용자 지시: 화면 글자는 "Coordinator" 대신 "코디"(앵커 #coordinator는 그대로)
+    assertThat(html.replaceAll("<!--[\\s\\S]*?-->", "")).doesNotContain("AI Coordinator", "Coordinator가", "Coordinator·");
+  }
+
+  @Test
+  @DisplayName("given 2026-11-21 상단 펼침 메뉴 when 렌더하면 then 6묶음 버튼이 패널과 이어지고, 옮긴 사이드 메뉴의 링크가 모두 상단 메뉴에 있으며, 서비스 지도는 첫 화면 대표 문구 안에 있다")
+  void givenTopDropdownNav_whenRendered_thenGroupsCarryEverySideMenuLinkAndMapIsOnFirstScreen() {
+    // given
+    String html = render();
+    // when
+    String top = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("</header>", html.indexOf("id=\"enNav\"")));
+    String hero = html.substring(html.indexOf("id=\"coordinator\""), html.indexOf("id=\"coordinator-work\""));
+    // then
+    for (String key : new String[] {"coord", "demo", "learn", "security", "offer", "more"}) {
+      assertThat(top).as(key).contains("data-dd=\"" + key + "\"", "aria-controls=\"dd-" + key + "\"", "id=\"dd-" + key + "\"");
+    }
+    assertThat(top.split("class=\"hl-dd-btn\"", -1)).hasSize(7);
+    assertThat(top).contains(">AI 코디<", ">시험·입시<", ">학습 콘텐츠<", ">부정행위 방지<", ">맞춤문제<", ">다른 서비스<");
+    for (String link : new String[] {"#coordinator", "#academy-dashboard", "/dashboard", "/ledger", "#digital-exam", "#pre-high-english",
+        "#student-app", "#hitCase", "#counsel", "/testprep", "/wiki", "/csat/2027-english", "#exam-security", "/exam-security",
+        "#exam-contact", "#request", "#guide", "/faq", "#ai-content", "/ai-agent-studio", "#ebook", "#review-game", "#chart-showcase", "/builder"}) {
+      assertThat(top).as(link).contains("href=\"" + link + "\"");
+    }
+    assertThat(html).doesNotContain("class=\"hw-side\"").contains("/js/home_topnav.js");
+    assertThat(hero).contains("id=\"service-map\"", "id=\"hwNet\"", "F2R 서비스 지도");
   }
 
   @Test
@@ -254,7 +284,7 @@ class LandingEdunovaTemplateContractTest {
       assertThat(position).as(key).isGreaterThan(previous);
       previous = position;
     }
-    assertThat(nav).contains("Coordinator·대시보드·교습소 실증", "③ 학습 콘텐츠", "④ 부정행위 방지", "맞춤문제·이용 안내", "다른 서비스",
+    assertThat(nav).contains("코디·대시보드·시험·입시", "③ 학습 콘텐츠", "④ 부정행위 방지", "맞춤문제·이용 안내", "다른 서비스",
         "AI AGENT 제작협업실", "자주 묻는 질문", "환불·청약철회 정책", "New iBT", "href=\"#exam-security\"", "href=\"/csat/2027-english\"");
     assertThat(nav).doesNotContain("지문 복습 문제", "문법 문제은행");
     for (String link : new String[] {"/testprep", "/wiki", "/naesin-production-studio?division=MIDDLE",
@@ -287,7 +317,7 @@ class LandingEdunovaTemplateContractTest {
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
     // 2026-11-19 사용자 지시: 영상 아래 카드는 2027 수능 영어 해설 모션만 둔다(맞춤문제 2주 4회 160문항 안내·신청 버튼 삭제).
     assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "id=\"csatHome\"", "2027 수능 영어 해설");
-    String csatCard = promo.substring(promo.indexOf("id=\"csatHome\""), promo.indexOf("id=\"service-map\""));
+    String csatCard = promo.substring(promo.indexOf("id=\"csatHome\""));
     assertThat(csatCard).doesNotContain("서수니 · 세븐", "id=\"homeIntakeCta\"", "2주 4회 160문항", "클라우드리뷰 무료신청");
     for (String path : new String[] {"/img/landing/home-card-game.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",

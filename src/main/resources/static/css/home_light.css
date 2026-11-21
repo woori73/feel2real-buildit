@@ -61,9 +61,9 @@ body { margin: 0; background: var(--hl-bg); color: var(--hl-ink); }
 .hl-account .auth-action-signup { background: var(--hl-soft); border-color: var(--hl-soft); }
 .hl-account .account-menu-trigger { width: 44px; height: 44px; border-radius: 22px; border: 1px solid var(--hl-line-2); background: #fff; }
 .hl-chips { display: none; }
-/* 상단 링크 6개 + 버튼이 대체 글꼴에서도 한 줄에 들어가는 폭(1424px) 이하에서는 바로가기 줄로 바꾼다.
-   (2026-11-21: 1401~1421px에서 로그인 버튼이 21px 넘치던 것을 기준을 올려 고침) */
-@media (max-width: 1424px) {
+/* 상단 펼침 메뉴 6개 + 버튼이 대체 글꼴에서도 한 줄에 들어가는 폭(1320px) 이하에서는 바로가기 줄로 바꾼다.
+   (2026-11-21: 링크 6개 → 펼침 메뉴 6개로 바꾸며 기준을 1424 → 1320으로 다시 잼) */
+@media (max-width: 1320px) {
   .hl-links { display: none; }
   .hl-chips { display: flex; gap: 8px; padding: 10px 16px 12px; overflow-x: auto; border-top: 1px solid var(--hl-line); font-size: 14px; font-weight: 500; white-space: nowrap; scrollbar-width: none; }
   .hl-chips::-webkit-scrollbar { display: none; }
