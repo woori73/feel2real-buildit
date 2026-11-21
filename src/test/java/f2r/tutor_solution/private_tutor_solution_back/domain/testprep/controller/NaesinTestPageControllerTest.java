@@ -60,4 +60,30 @@ class NaesinTestPageControllerTest {
     assertThat(rows).extracting(r -> r.school().slug()).containsExactly("apgujeong-m2", "singu-m2", "apgujeong-m1");
     assertThat(rows).extracting(NaesinTestPageController.SchoolRow::rounds).containsExactly(2, 0, 1);
   }
+
+  @Test
+  @DisplayName("given 압구정중1 회차 제목·부제, when toRow면 묶음은 Lesson 3~5, 범위는 교과서·학습지 필기본, 20분·100점이다")
+  void toRowSplitsApgujeongM1Title() {
+    // given
+    ExamListItem e = exam("TP-NAESIN-APM1-2602-R07", "압구정중 1학년 2학기 기말 7회 · Lesson 3~5 예상문제 7회",
+        "Lesson 3~5 교과서·학습지 필기본 · 40문항 · 20분 · 100점", 40);
+    // when
+    NaesinTestPageController.Row r = NaesinTestPageController.toRow(e);
+    // then
+    assertThat(r.round()).isEqualTo("7회");
+    assertThat(r.group()).isEqualTo("Lesson 3~5");
+    assertThat(r.scope()).isEqualTo("Lesson 3~5 교과서·학습지 필기본");
+    assertThat(r.minutes()).isEqualTo(20);
+    assertThat(r.maxPoints()).isEqualTo(100);
+  }
+
+  @Test
+  @DisplayName("given 학교 목록, when 압구정중1을 찾으면 then 범위 표시는 Lesson 3~5다")
+  void apgujeongM1ScopeIsLessonThreeToFive() {
+    // given / when
+    NaesinTestPageController.School s = NaesinTestPageController.SCHOOLS.stream()
+        .filter(x -> x.slug().equals("apgujeong-m1")).findFirst().orElseThrow();
+    // then
+    assertThat(s.scope()).isEqualTo("Lesson 3~5");
+  }
 }
