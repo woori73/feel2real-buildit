@@ -130,7 +130,7 @@ class TestPrepPagesMySqlTest {
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
     String html = r.getResponse().getContentAsString();
     assertThat(html).contains("href=\"/naesintest/school/apgujeong-m2\"", "href=\"/naesintest/school/singu-m2\"",
-        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "준비 중");
+        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "11회", "7회");
     assertThat(html).doesNotContain("data-exam=", "tp-nav");
   }
 
