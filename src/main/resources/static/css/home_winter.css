@@ -467,8 +467,6 @@
 .hw-coord-list a:hover, .hw-coord-list a:focus-visible { background: rgba(255,255,255,.16); }
 .hw-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .hw-flow-no { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--hw-accent); color: #fff; font-size: 13px; font-weight: 700; }
-.hw-demo-tag { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--hw-accent); }
-.hw-demo-tag span { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 50%; background: var(--hw-accent-soft); }
 .hw-dash { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: center; background: #fff; border: 1px solid var(--hl-line); border-radius: 16px; padding: 20px; }
 .hw-dash figure, .hw-sec figure { margin: 0; min-width: 0; }
 .hw-dash img { display: block; width: 100%; height: auto; max-height: 520px; object-fit: cover; object-position: top; border-radius: 10px; border: 1px solid var(--hl-line); }

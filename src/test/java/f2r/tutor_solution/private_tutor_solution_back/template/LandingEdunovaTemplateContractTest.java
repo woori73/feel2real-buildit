@@ -117,8 +117,7 @@ class LandingEdunovaTemplateContractTest {
     String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"service\""));
     String main = html.substring(html.indexOf("<main"), html.indexOf("</main>"));
     // then
-    assertThat(hero).contains("F2R AI Coordinator", "휴대폰 하나로<br>학원 업무를 AI에게", "11월 25일 이전하는 F2R 영어교습소",
-        "실증 중", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
+    assertThat(hero).contains("F2R AI Coordinator", "휴대폰 하나로<br>학원 업무를 AI에게", "F2R 영어교습소", "11월 25일", "새 주소로 이전", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
         "href=\"#exam-security\"", "LLM AI");
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
     assertThat(hero).contains("서울 강남구 언주로173길 12, 압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
@@ -139,6 +138,8 @@ class LandingEdunovaTemplateContractTest {
       assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
     }
     assertThat(main).doesNotContain("Claude", "혁신", "최고", "완벽 차단");
+    // 2026-11-21 사용자 지시: 홈페이지 글에서 '교습소 실증' 표현은 쓰지 않는다(주석 제외).
+    assertThat(html.replaceAll("<!--[\\s\\S]*?-->", "")).doesNotContain("교습소 실증", "실증 중", "실증 근거", "실증하는");
   }
 
   @Test
@@ -154,7 +155,7 @@ class LandingEdunovaTemplateContractTest {
       assertThat(top).as(key).contains("data-dd=\"" + key + "\"", "aria-controls=\"dd-" + key + "\"", "id=\"dd-" + key + "\"");
     }
     assertThat(top.split("class=\"hl-dd-btn\"", -1)).hasSize(7);
-    assertThat(top).contains(">AI Coordinator<", ">교습소 실증<", ">학습 콘텐츠<", ">부정행위 방지<", ">맞춤문제<", ">다른 서비스<");
+    assertThat(top).contains(">AI Coordinator<", ">시험·입시<", ">학습 콘텐츠<", ">부정행위 방지<", ">맞춤문제<", ">다른 서비스<");
     for (String link : new String[] {"#coordinator", "#academy-dashboard", "/dashboard", "/ledger", "#digital-exam", "#pre-high-english",
         "#student-app", "#hitCase", "#counsel", "/testprep", "/wiki", "/csat/2027-english", "#exam-security", "/exam-security",
         "#exam-contact", "#request", "#guide", "/faq", "#ai-content", "/ai-agent-studio", "#ebook", "#review-game", "#chart-showcase", "/builder"}) {
@@ -277,7 +278,7 @@ class LandingEdunovaTemplateContractTest {
       assertThat(position).as(key).isGreaterThan(previous);
       previous = position;
     }
-    assertThat(nav).contains("Coordinator·대시보드·교습소 실증", "③ 학습 콘텐츠", "④ 부정행위 방지", "맞춤문제·이용 안내", "다른 서비스",
+    assertThat(nav).contains("Coordinator·대시보드·시험·입시", "③ 학습 콘텐츠", "④ 부정행위 방지", "맞춤문제·이용 안내", "다른 서비스",
         "AI AGENT 제작협업실", "자주 묻는 질문", "환불·청약철회 정책", "New iBT", "href=\"#exam-security\"", "href=\"/csat/2027-english\"");
     assertThat(nav).doesNotContain("지문 복습 문제", "문법 문제은행");
     for (String link : new String[] {"/testprep", "/wiki", "/naesin-production-studio?division=MIDDLE",
