@@ -455,6 +455,8 @@
 .hw-coord-hero { margin-top: 0; border-radius: 20px; padding: 32px; background: linear-gradient(160deg, #0F2234, #1D4061); color: #fff; }
 .hw-coord-hero .hl-eyebrow { color: var(--hw-sweep); letter-spacing: .02em; }
 .hw-coord-hero h2 { margin: 0 0 12px; font-size: 34px; line-height: 1.25; letter-spacing: -.02em; color: #fff; }
+.hw-coord-title { display: flex; align-items: center; gap: 14px; }
+.hw-coord-logo { flex: none; width: 64px; height: 64px; padding: 6px; border-radius: 16px; background: #fff; box-sizing: border-box; }
 .hw-coord-site { display: inline-block; margin: 0 0 20px; padding: 6px 14px; border-radius: 999px; background: rgba(143,192,230,.18); font-size: 14px; color: #fff; }
 .hw-coord-addr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: -8px 0 20px; font-style: normal; font-size: 14px; color: #D6E2EE; }
 .hw-coord-addr b { margin-right: 4px; color: var(--hw-sweep); font-weight: 700; }
@@ -496,6 +498,7 @@
 @media (max-width: 600px) {
   .hw-coord-hero { padding: 22px 18px; }
   .hw-coord-hero h2 { font-size: 26px; }
+  .hw-coord-logo { width: 52px; height: 52px; border-radius: 13px; }
   .hw-flow, .hw-sec { grid-template-columns: minmax(0, 1fr); }
   .hw-dash { padding: 14px; }
   .hw-sec img { height: 240px; }
