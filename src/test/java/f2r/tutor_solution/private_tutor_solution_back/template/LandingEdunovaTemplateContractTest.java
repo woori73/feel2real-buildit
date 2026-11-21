@@ -120,6 +120,8 @@ class LandingEdunovaTemplateContractTest {
     assertThat(hero).contains("F2R AI Coordinator", "휴대폰 하나로<br>학원 업무를 AI에게", "11월 25일 이전하는 F2R 영어교습소",
         "실증 중", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
         "href=\"#exam-security\"", "LLM AI");
+    // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
+    assertThat(hero).contains("서울 강남구 언주로173길 12, 압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
     assertThat(work).contains("말·사진으로 지시", "출결·채점", "자료 제작·학부모 안내", "원장 승인 후 기록");
     assertThat(dash).contains("원장 로그인 후 사용", "href=\"/dashboard\"", "href=\"/ledger\"", "가명 자료",

@@ -7,7 +7,7 @@
 
 | # | 영역 | id | 비고 |
 |---|---|---|---|
-| 1 | F2R AI Coordinator(대표 문구) | `#coordinator` | 새로 만듦. "휴대폰 하나로 학원 업무를 AI에게", "11월 25일 이전하는 F2R 영어교습소에서 실증 중", 실증 기능 ⓪~④ 바로가기 |
+| 1 | F2R AI Coordinator(대표 문구) | `#coordinator` | 새로 만듦. "휴대폰 하나로 학원 업무를 AI에게", "11월 25일 이전하는 F2R 영어교습소에서 실증 중", 새 주소(서울 강남구 언주로173길 12, 압구정빌딩 4층)·전화·네이버 지도 링크, 실증 기능 ⓪~④ 바로가기 |
 | — | 공지사항 줄 | `#homeNotice` | 대표 문구 아래로 옮김(휴대폰 첫 화면에 대표 문구가 먼저 보이게) |
 | 2 | Coordinator가 하는 일 | `#coordinator-work` | 새로 만듦. 카드 4개: 말·사진 지시 → 출결·채점 → 자료 제작·학부모 안내 → 원장 승인 후 기록 |
 | 2-1 | ⓪ 학원 운영 대시보드 | `#academy-dashboard` | 새로 만듦. 가명 자료 예시 캡처 + "원장 로그인 후 사용" + `/dashboard`·`/ledger` |
@@ -59,6 +59,8 @@
 ![PC 1440](home-first-pc.webp)
 
 ## 테스트
+
+- e2e(`e2e/unified-assistant` home-responsive·home-promo·home-navigation): 첫 화면 기준을 `#homeHero` 「시험 보러 가기」에서 `#coordinator` 대표 문구로, 메뉴 순서·상단 링크 전환 폭(1424px)을 새 기준으로 갱신. 같은 항목을 로컬 앱에서 별도 스크립트로 확인(360·390·430·768·1440 폭, 실패 0).
 
 - `LandingEdunovaTemplateContractTest` 등 홈 템플릿 계약 59건 통과. 순서·메뉴 단언을 새 순서로 고치고, 새 섹션 사실 문구 계약 1건 추가.
 - CI JS 목록 332건 통과(`home_workspace` 메뉴 순서 단언 갱신, `home_motion` 실증 근거 모션 1건 추가).

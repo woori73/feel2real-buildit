@@ -47,7 +47,7 @@ for (const font of ['fallback', 'pretendard']) {
           const rect = n => { const r = n.getBoundingClientRect(); return { x:r.x, y:r.y + scrollY, right:r.right, bottom:r.bottom + scrollY }; };
           return { overflow:document.documentElement.scrollWidth - innerWidth,
             logo:rect(document.querySelector('.hl-logo')), actions:rect(document.querySelector('.hl-actions')),
-            offer:rect(document.querySelector('#homeHero .hero-dexam .hero-cta .hl-btn-dark')), promo:rect(document.querySelector('#examPromo')),
+            offer:rect(document.querySelector('#coordinator h2')), promo:rect(document.querySelector('#examPromo')),
             keys:[...document.querySelectorAll('[data-home-nav]')].map(n=>n.dataset.homeNav) };
         });
         fs.mkdirSync(output, { recursive:true });
@@ -58,13 +58,13 @@ for (const font of ['fallback', 'pretendard']) {
         expect(metrics.logo.right).toBeLessThanOrEqual(metrics.actions.x);
         expect(metrics.actions.right).toBeLessThanOrEqual(width);
         expect(metrics.offer.bottom).toBeLessThanOrEqual(height);
-        // 첫 화면: 디지털 영어 기말고사 배너의 「시험 보러 가기」. 홍보 영상(서수니·세븐)은 배너 옆(휴대폰은 바로 아래)에 이어진다.
+        // 첫 화면(2026-11-21 개편): F2R AI Coordinator 대표 문구가 첫 화면 안에 보인다. 배너·홍보 영상은 ⓪ 대시보드 아래에 이어진다.
         expect(metrics.promo.y).toBeGreaterThan(0);
-        expect(metrics.keys).toEqual(['home','request','wiki','game','agent','dashboard','chart','guide']);
+        expect(metrics.keys).toEqual(['home','dashboard','wiki','request','guide','agent','game','chart']);
         await expect(page.locator('#homePaneTitle')).toHaveText('Feel to Real (F2R) 홈');
         await expect(page.locator('#homeMenuPanel')).toBeHidden();
-        await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1400 });
-        await expect(page.locator('.hl-chips')).toBeVisible({ visible: width <= 1400 });
+        await expect(page.locator('.hl-links')).toBeVisible({ visible: width > 1424 });
+        await expect(page.locator('.hl-chips')).toBeVisible({ visible: width <= 1424 });
         await expect(page.locator('#homeNotice')).toBeVisible();
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('압구정중3 기출문제 적중률 분석 리포트');
         await expect(page.locator('#homeNotice .home-notice-group').first()).toContainText('모의고사 위키 지문 복습 문제 업로드');
