@@ -437,6 +437,22 @@ class TestPrepFlowMySqlIntegrationTest {
   }
 
   @Test
+  @DisplayName("given 압구정중1 2회 12번(V1128), when 해설을 읽으면 then 발문이 다른 회와 같은 「밑줄 친 곳이 ⓐ와 같은 쓰임으로 사용된 것은?」이고 정답·배점은 그대로다")
+  void apgujeongM1Round2Q12_stemMatchesOtherRounds() {
+    // given
+    String sql = "SELECT q.explanation, q.answer_key, q.points FROM tp_questions q JOIN tp_exams e ON e.exam_id = q.exam_id"
+        + " WHERE e.exam_code = 'TP-NAESIN-APM1-2602-R02' AND q.order_no = 12";
+    // when
+    Map<String, Object> row = jdbc.queryForMap(sql);
+    // then
+    assertThat((String) row.get("explanation"))
+        .startsWith("정답 ⑤ · 밑줄 친 곳이 ⓐ와 같은 쓰임으로 사용된 것은? (3점)")
+        .doesNotContain("밑줄 친 부분의 쓰임이");
+    assertThat(row.get("answer_key")).isEqualTo("E");
+    assertThat(((Number) row.get("points")).intValue()).isEqualTo(3);
+  }
+
+  @Test
   @DisplayName("given 신구중2 1회, when 모두 고르기 문항을 순서를 바꿔 다 맞히고 한 문항은 일부만 고르면 그 문항만 틀리고 배점이 빠진다")
   void singuRound1_multiChoiceScoring() throws Exception {
     // given

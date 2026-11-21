@@ -76,6 +76,21 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 압구정중1 기말 모의고사 7회 업로드 when 홈을 렌더하면 then 공지 맨 앞에 11월 21일 공지가 학교 페이지 링크로 보인다")
+  void givenApgujeongM1Upload_whenRendered_thenNoticeLeadsWithSchoolPageLink() {
+    // given / when
+    String html = render();
+    int track = html.indexOf("id=\"homeNoticeTrack\"");
+    int notice = html.indexOf("<a href=\"/naesintest/school/apgujeong-m1\"><time datetime=\"2026-11-21\">11월 21일(토)</time> 압구정중1 기말 모의고사 7회 업로드</a>");
+    int previous = html.indexOf("<a href=\"/csat/2027-english\"><time datetime=\"2026-11-19\">");
+    // then
+    assertThat(track).isPositive();
+    assertThat(notice).isGreaterThan(track);
+    assertThat(previous).isGreaterThan(notice);
+    assertThat(html).contains("<span><time datetime=\"2026-11-21\">11월 21일(토)</time> 압구정중1 기말 모의고사 7회 업로드</span>");
+  }
+
+  @Test
   @DisplayName("given 2026-11-21 AI Coordinator 개편 순서 when 렌더하면 then Coordinator→하는 일→⓪대시보드→배너·영상→①디지털 기말내신→실증 근거(적중 사례)→②입시상담 AI→③학습 콘텐츠→④부정행위 방지→맞춤문제·이용 안내(한곳)→다른 서비스(AI AGENT→전자책→게임→차트)이고 빈 칸은 솔직하게 표시한다")
   void givenContentPriority_whenRendered_thenApprovedSinglePageOrderAndEmptySlotsAreHonest() {
     String html = render();
