@@ -229,31 +229,34 @@
   if (net) {
     var ncv = doc.createElement('canvas'); ncv.setAttribute('aria-hidden', 'true'); net.appendChild(ncv);
     var nx = ncv.getContext('2d');
+    /* 2026-11-21 개편: 묶음 4개(Coordinator·대시보드·교습소 실증 / 학습 콘텐츠 / 부정행위 방지 / 다른 서비스) */
     var N = [
-      { t: '디지털 기말고사', x: .36, y: .46, hub: 1, h: '#digital-exam' },
-      { t: '영어 교육', x: .66, y: .52, hub: 1, h: '#request' },
-      { t: '압구정중2', s: '16회', x: .12, y: .22, h: '/naesintest', p: 0 },
-      { t: '신구중2', s: '11회', x: .1, y: .52, h: '/naesintest/school/singu-m2', p: 0 },
-      { t: '압구정중1', s: '준비 중', x: .16, y: .82, h: '/naesintest', p: 0 },
-      { t: '직보 쇼츠', s: '압구정중2', x: .3, y: .13, h: '/naesintest/school/apgujeong-m2#shorts', p: 0 },
-      { t: '40문항', s: '20분', x: .24, y: .66, h: '#dexam-guide', p: 0 },
-      { t: '70문항', s: '35분', x: .38, y: .86, h: '#dexam-guide', p: 0 },
-      { t: '자동 채점', x: .47, y: .2, h: '#digital-exam', p: 0 },
-      { t: '해설 복습', x: .5, y: .76, h: '#digital-exam', p: 0 },
-      { t: '적중 사례', s: '96.8%', x: .52, y: .4, h: '#hitCase', p: 0 },
-      { t: '맞춤문제', s: '2주 4회', x: .64, y: .16, h: '#request', p: 1 },
-      { t: '모의고사 위키', x: .82, y: .22, h: '/wiki', p: 1 },
-      { t: '복습 게임', x: .88, y: .48, h: '#review-game', p: 1 },
-      { t: 'New iBT · SAT', x: .84, y: .78, h: '/testprep', p: 1 },
-      { t: '2028 입시상담 AI', x: .66, y: .86, h: '#counsel', p: 0 },
-      { t: 'AI AGENT', x: .93, y: .1, h: '#ai-content' },
-      { t: '전자책', x: .94, y: .92, h: '#ebook' },
-      { t: '빌드잇 차트', x: .78, y: .64, h: '#chart-showcase' },
-      { t: '대시보드', x: .08, y: .94, h: '/dashboard' }
+      { t: 'AI Coordinator', x: .22, y: .46, hub: 1, h: '#coordinator' },
+      { t: '학습 콘텐츠', x: .62, y: .22, hub: 1, h: '#learning-content' },
+      { t: '부정행위 방지', x: .46, y: .78, hub: 1, h: '#exam-security' },
+      { t: '다른 서비스', x: .8, y: .62, hub: 1, h: '#other-services' },
+      { t: '대시보드', s: '원장', x: .1, y: .14, h: '/dashboard', p: 0 },
+      { t: '장부', x: .08, y: .3, h: '/ledger', p: 0 },
+      { t: '디지털 기말고사', s: '학교별', x: .28, y: .06, h: '#digital-exam', p: 0 },
+      { t: '예비고1', s: '모의고사', x: .1, y: .62, h: '#pre-high-english', p: 0 },
+      { t: '적중 사례', s: '96.8%', x: .14, y: .86, h: '#hitCase', p: 0 },
+      { t: '2028 입시상담 AI', x: .44, y: .55, h: '#counsel', p: 0 },
+      { t: '맞춤문제', s: '2주 4회', x: .62, y: .38, h: '#request', p: 1 },
+      { t: '모의고사 위키', x: .7, y: .06, h: '/wiki', p: 1 },
+      { t: 'New iBT · SAT', x: .84, y: .14, h: '/testprep', p: 1 },
+      { t: '2027 수능 해설', x: .84, y: .3, h: '/csat/2027-english', p: 1 },
+      { t: '렌즈 찾기', s: '11.21 배포', x: .26, y: .94, h: '#exam-security', p: 2 },
+      { t: '보안 무늬', s: '준비 중', x: .72, y: .94, h: '#exam-security', p: 2 },
+      { t: '시연 문의', x: .56, y: .7, h: '#exam-contact', p: 2 },
+      { t: 'AI AGENT', x: .9, y: .46, h: '#ai-content', p: 3 },
+      { t: '전자책', x: .92, y: .86, h: '#ebook', p: 3 },
+      { t: '복습 게임', x: .86, y: .78, h: '#review-game', p: 3 },
+      { t: '빌드잇 차트', x: .9, y: .7, h: '#chart-showcase', p: 3 },
+      { t: '새 교습소', s: '11.25 이전', x: .18, y: .38, h: '#coordinator', p: 0 }
     ];
-    var E = [[0, 1]];
-    N.forEach(function (n, i) { if (n.p === 0) E.push([0, i]); if (n.p === 1) E.push([1, i]); });
-    [[2, 3], [3, 4], [6, 7], [8, 10], [9, 10], [10, 1], [11, 0], [12, 13], [13, 14], [16, 1], [17, 1], [18, 1], [19, 0], [15, 14]].forEach(function (e) { E.push(e); });
+    var E = [[0, 1], [0, 2], [1, 3], [2, 3]];
+    N.forEach(function (n, i) { if (n.p !== undefined) E.push([n.p, i]); });
+    [[4, 5], [6, 7], [11, 12], [14, 15], [18, 19]].forEach(function (e) { E.push(e); });
     var hot = -1, els = [], visible = true, SQ = 1, NW = 0, NH = 0;
     var X = function (n) { return .5 + (n.x - .5) * SQ; };
     var linked = function (i, j) { return E.some(function (e) { return (e[0] === i && e[1] === j) || (e[1] === i && e[0] === j); }); };
@@ -265,7 +268,7 @@
       ['mouseleave', 'blur'].forEach(function (ev) { a.addEventListener(ev, function () { hot = -1; mark(); }); });
       net.appendChild(a); els.push(a);
     });
-    var dots = []; for (var q = 0; q < 60; q++) dots.push({ x: Math.random(), y: Math.random(), p: Math.random() * 6.28, h: q % 2 });
+    var dots = []; for (var q = 0; q < 60; q++) dots.push({ x: Math.random(), y: Math.random(), p: Math.random() * 6.28, h: q % 4 });
     var frame = function (ts) {
       var tt = (ts || 0) / 1000; nx.clearRect(0, 0, NW, NH);
       dots.forEach(function (d) {

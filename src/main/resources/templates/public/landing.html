@@ -16,10 +16,10 @@
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/home_light.css?v=20261114-articles-2">
+  <link rel="stylesheet" href="/css/home_light.css?v=20261121-coord">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
-  <link rel="stylesheet" href="/css/home_winter.css?v=20261120-prehigh">
+  <link rel="stylesheet" href="/css/home_winter.css?v=20261121-coord">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
   <link rel="stylesheet" href="/css/csat_motion.css?v=20261119-1">
@@ -30,9 +30,9 @@
   <script src="/js/site_events.js?v=20261027-1" defer></script>
   <script src="/js/home_workspace.js?v=20261101-3" defer></script>
   <script src="/js/home_hero.js?v=20261101-3" defer></script>
-  <script src="/js/home_motion.js?v=20261101-1" defer></script>
+  <script src="/js/home_motion.js?v=20261121-coord" defer></script>
   <script src="/js/admissions_articles_view.js?v=20261119-1" defer></script>
-  <script src="/js/home_winter.js?v=20261116-3" defer></script>
+  <script src="/js/home_winter.js?v=20261121-coord" defer></script>
   <script src="/js/home_admissions_articles.js?v=20261119-1" defer></script>
 </head>
 <body data-track-page="home">
@@ -40,7 +40,7 @@
 <div class="home-light" id="homeTop">
   <a class="home-skip" href="#homePaneTitle">본문으로 건너뛰기</a>
 
-  <!-- 상단 메뉴(2026-11-15 겨울 톤 개편): 로고 · 주요 서비스 · 맞춤문제 신청 · 로그인 · 전체 메뉴. 데스크톱은 왼쪽 사이드 메뉴도 함께 둔다. -->
+  <!-- 상단 메뉴(2026-11-15 겨울 톤 개편, 2026-11-21 AI Coordinator 중심으로 순서 변경): 로고 · 주요 서비스 · 맞춤문제 신청 · 로그인 · 전체 메뉴. 데스크톱은 왼쪽 사이드 메뉴도 함께 둔다. -->
   <header class="hl-top" id="enNav">
     <div class="hl-top-inner">
       <a href="/" class="hl-logo" data-home-nav="home" aria-label="Feel to Real (F2R) 홈">
@@ -48,13 +48,12 @@
         <span class="hl-logo-text">Feel to Real <span class="hl-logo-abbr">(F2R)</span></span>
       </a>
       <nav class="hl-links" aria-label="주요 메뉴">
+        <a href="#coordinator">AI Coordinator</a>
+        <a href="/dashboard">대시보드</a>
         <a href="#request" class="hl-link-offer"><span class="hw-sweep">맞춤문제</span><span class="hl-badge">2주 4회 · 2만원</span></a>
         <a href="/wiki">모의고사 위키</a>
-        <a href="#review-game">복습 게임</a>
-        <a href="#ai-content">AI AGENT</a>
+        <a href="#exam-security">부정행위 방지</a>
         <a href="#chart-showcase">빌드잇 차트</a>
-        <a href="#ebook">전자책</a>
-        <a href="/dashboard">대시보드</a>
       </nav>
       <div class="hl-actions">
         <a class="hl-btn hl-btn-line hl-free" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
@@ -68,14 +67,15 @@
       </div>
     </div>
     <nav class="hl-chips" aria-label="바로가기">
-      <a href="#request" class="is-offer">맞춤문제 2주 4회 · 2만원</a>
-      <a href="#digital-exam">디지털 기말고사</a>
-      <a href="#counsel">2028 입시상담 AI</a>
-      <a href="#ai-content">AI 드라마</a>
-      <a href="#hitCase">적중 사례</a>
-      <a href="#ebook">전자책</a>
-      <a href="#chart-showcase">빌드잇 차트</a>
+      <a href="#coordinator">AI Coordinator</a>
       <a href="/dashboard">대시보드</a>
+      <a href="#digital-exam">디지털 기말고사</a>
+      <a href="#hitCase">적중 사례</a>
+      <a href="#counsel">2028 입시상담 AI</a>
+      <a href="#learning-content">학습 콘텐츠</a>
+      <a href="#exam-security">부정행위 방지</a>
+      <a href="#request" class="is-offer">맞춤문제 2주 4회 · 2만원</a>
+      <a href="#other-services">다른 서비스</a>
     </nav>
   </header>
 
@@ -92,6 +92,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
+      <a class="hl-menu-coord" href="#coordinator"><small>F2R AI Coordinator</small><b>휴대폰 하나로 학원 업무를 AI에게</b><span>11월 25일 이전하는 F2R 영어교습소에서 실증 중</span></a>
       <section class="hl-menu-offer hl-lift" aria-labelledby="menuOfferTitle">
         <img class="hl-obj" src="/img/landing/home-hero-exam-3d.webp" alt="" width="104" height="104" loading="lazy">
         <p class="hl-eyebrow">학교별 맞춤 예상문제</p>
@@ -105,37 +106,43 @@
       </section>
       <nav id="homeMenu" aria-label="전체 메뉴 목록">
         <div class="hl-menu-group">
-          <p>디지털 기말고사</p>
-          <a href="/naesintest"><span>학교 고르기</span></a>
-          <a href="#dexam-guide"><span>시험 보는 방법</span></a>
-          <a href="#counsel"><span>2028 입시상담 AI</span></a>
-        </div>
-        <div class="hl-menu-group">
-          <p>영어 교육</p>
-          <a href="#request" data-home-nav="request"><span>맞춤문제 신청</span><span class="hl-badge">2주 4회 · 2만원</span></a>
-          <a href="/wiki" data-home-nav="wiki"><span>모의고사 위키</span></a>
-          <a href="#review-game" data-home-nav="game"><span>영어 복습 게임</span></a>
-          <a href="/testprep"><span>New iBT / Digital SAT</span></a>
-        </div>
-        <div class="hl-menu-group">
-          <p>AI 드라마 제작</p>
-          <a href="#ai-content" data-home-nav="agent"><span>AI AGENT 트레일러</span></a>
-          <a href="/ai-agent-studio"><span>AI AGENT 제작협업실</span></a>
-        </div>
-        <div class="hl-menu-group">
-          <p>더 보기</p>
-          <a href="/dashboard" data-home-nav="dashboard"><span>대시보드</span></a>
+          <p>Coordinator·대시보드·교습소 실증</p>
+          <a href="#coordinator"><span>F2R AI Coordinator</span></a>
+          <a href="/dashboard" data-home-nav="dashboard"><span>⓪ 학원 운영 대시보드</span></a>
           <a href="/ledger"><span>F2R 장부</span></a>
-          <a href="/builder"><span>학원 홈페이지 제작·관리</span></a>
-          <a href="#chart-showcase" data-home-nav="chart"><span>빌드잇 차트</span></a>
-          <a href="#ebook"><span>전자책</span></a>
+          <a href="/naesintest"><span>① 디지털 기말고사 · 학교 고르기</span></a>
+          <a href="#pre-high-english"><span>① 예비고1 디지털 모의고사</span></a>
+          <a href="#dexam-guide"><span>시험 보는 방법</span></a>
+          <a href="#hitCase"><span>실증 근거: 적중 사례</span></a>
+          <a href="#counsel"><span>② 2028 입시상담 AI</span></a>
         </div>
         <div class="hl-menu-group">
-          <p>이용 안내</p>
+          <p>③ 학습 콘텐츠</p>
+          <a href="/testprep"><span>New iBT / Digital SAT</span></a>
+          <a href="/wiki" data-home-nav="wiki"><span>모의고사 위키</span></a>
+          <a href="/csat/2027-english"><span>2027 수능 영어 해설</span></a>
+        </div>
+        <div class="hl-menu-group">
+          <p>④ 부정행위 방지</p>
+          <a href="#exam-security"><span>부정행위 방지 기술</span></a>
+          <a href="#exam-contact"><span>학교·학원 시연 문의</span></a>
+        </div>
+        <div class="hl-menu-group">
+          <p>맞춤문제·이용 안내</p>
+          <a href="#request" data-home-nav="request"><span>맞춤문제 신청</span><span class="hl-badge">2주 4회 · 2만원</span></a>
           <a href="#guide" data-home-nav="guide"><span>이용 방법</span></a>
           <a href="/faq"><span>자주 묻는 질문</span></a>
           <a href="/policies/terms"><span>이용약관</span></a>
           <a href="/policies/refunds"><span>환불·청약철회 정책</span></a>
+        </div>
+        <div class="hl-menu-group">
+          <p>다른 서비스</p>
+          <a href="#ai-content" data-home-nav="agent"><span>AI AGENT 트레일러</span></a>
+          <a href="/ai-agent-studio"><span>AI AGENT 제작협업실</span></a>
+          <a href="#ebook"><span>전자책</span></a>
+          <a href="#review-game" data-home-nav="game"><span>영어 복습 게임</span></a>
+          <a href="#chart-showcase" data-home-nav="chart"><span>빌드잇 차트</span></a>
+          <a href="/builder"><span>학원 홈페이지 제작·관리</span></a>
         </div>
       </nav>
       <a class="hl-btn hl-btn-kakao hl-menu-kakao" href="https://open.kakao.com/o/sMf4ifRi" target="_blank" rel="noopener">카카오톡 문의·신청</a>
@@ -145,34 +152,64 @@
   <!-- 사이드 메뉴(2026-11-15): 데스크톱에서 화면을 따라오고, 지금 보는 구역을 표시한다. 좁은 화면은 전체 메뉴를 쓴다. -->
   <div class="hw-shell">
   <nav class="hw-side" aria-label="사이드 메뉴">
-    <p>디지털 기말고사</p>
-    <a href="#digital-exam">학교 고르기<small>압구정중2 · 신구중2 · 압구정중1</small></a>
+    <p>Coordinator·교습소 실증</p>
+    <a href="#coordinator">F2R AI Coordinator</a>
+    <a href="#academy-dashboard">⓪ 학원 운영 대시보드<small>원장 로그인 후 사용</small></a>
+    <a href="#digital-exam">① 디지털 기말내신·예비고1<small>압구정중2 · 신구중2 · 예비고1</small></a>
     <a href="#dexam-guide">시험 보는 방법</a>
-    <a href="/csat/2027-english">2027 수능 영어 해설<small>모션 해설 · PDF</small></a>
-    <a href="#hitCase">적중 사례</a>
-    <a href="#counsel">2028 입시상담 AI</a>
-    <p>영어 교육</p>
-    <a href="#request">맞춤문제 신청<small>2주 4회 · 2만원</small></a>
-    <a href="/wiki">모의고사 위키</a>
-    <a href="#review-game">영어 복습 게임</a>
-    <a href="/testprep">New iBT / Digital SAT</a>
-    <p>AI 드라마 제작</p>
-    <a href="#ai-content">AI AGENT 트레일러</a>
-    <a href="/ai-agent-studio">AI AGENT 제작협업실</a>
-    <p>더 보기</p>
-    <a href="#ebook">전자책<small>새출발 2억2천</small></a>
-    <a href="#chart-showcase">빌드잇 차트</a>
+    <a href="#hitCase">실증 근거: 적중 사례</a>
+    <a href="#counsel">② 2028 입시상담 AI</a>
     <a href="/dashboard">대시보드</a>
     <a href="/ledger">F2R 장부</a>
-    <a href="/builder">학원 홈페이지 제작·관리</a>
-    <p>이용 안내</p>
+    <p>③ 학습 콘텐츠</p>
+    <a href="#learning-content">학습 콘텐츠</a>
+    <a href="/testprep">New iBT / Digital SAT</a>
+    <a href="/wiki">모의고사 위키</a>
+    <a href="/csat/2027-english">2027 수능 영어 해설<small>모션 해설 · PDF</small></a>
+    <p>④ 부정행위 방지</p>
+    <a href="#exam-security">부정행위 방지 기술</a>
+    <p>맞춤문제·이용 안내</p>
+    <a href="#request">맞춤문제 신청<small>2주 4회 · 2만원</small></a>
     <a href="#guide">맞춤문제 이용 방법</a>
     <a href="/faq">자주 묻는 질문</a>
     <a href="/policies/terms">이용약관</a>
     <a href="/policies/refunds">환불·청약철회 정책</a>
+    <p>다른 서비스</p>
+    <a href="#ai-content">AI AGENT 트레일러</a>
+    <a href="/ai-agent-studio">AI AGENT 제작협업실</a>
+    <a href="#ebook">전자책<small>새출발 2억2천</small></a>
+    <a href="#review-game">영어 복습 게임</a>
+    <a href="#chart-showcase">빌드잇 차트</a>
+    <a href="/builder">학원 홈페이지 제작·관리</a>
   </nav>
   <main class="hl-main" id="homeContent">
     <h1 id="homePaneTitle" class="sr" tabindex="-1">Feel to Real (F2R) 홈</h1>
+
+    <!-- 2026-11-21 개편 지시서(AI Coordinator 중심, 사업계획서와 같은 순서). 기존 섹션·주소·앵커는 그대로 두고 순서와 묶음만 바꿨다.
+         1. F2R AI Coordinator → 2. Coordinator가 하는 일 → 2-1. ⓪ 학원 운영 대시보드 → 주요 서비스 배너·홍보 영상·서비스 지도
+         → 3. ① 디지털 기말내신·예비고1 → 4. 실증 근거: 적중 사례 → 5. ② 입시상담 AI → 6. ③ 학습 콘텐츠 → 7. ④ 부정행위 방지 기술
+         → 8. 맞춤문제·이용 안내 → 9. 다른 서비스(AI AGENT·전자책·복습 게임·빌드잇 차트) -->
+    <section class="hl-section hw-coord" id="coordinator" aria-labelledby="coordTitle">
+      <div class="hw-coord-hero hl-lift">
+        <p class="hl-eyebrow">F2R AI Coordinator</p>
+        <h2 id="coordTitle">휴대폰 하나로<br>학원 업무를 AI에게</h2>
+        <p class="hw-coord-lead">원장이 휴대폰에서 말이나 사진으로 맡기면 LLM AI가 출결·채점·자료 제작·학부모 안내 초안을 만들고, 원장이 승인한 것만 기록합니다.</p>
+        <p class="hw-coord-site"><b>11월 25일 이전하는 F2R 영어교습소</b>에서 <span class="hw-nowrap">실증 중</span></p>
+        <address class="hw-coord-addr">
+          <span><b>새 주소</b> 서울 강남구 언주로173길 12, 압구정빌딩 4층</span>
+          <span><b>전화</b> <a href="tel:02-6324-1453">02-6324-1453</a></span>
+          <a class="hw-coord-map" href="https://map.naver.com/p/search/%EC%84%9C%EC%9A%B8%20%EA%B0%95%EB%82%A8%EA%B5%AC%20%EC%96%B8%EC%A3%BC%EB%A1%9C173%EA%B8%B8%2012" target="_blank" rel="noopener">지도 보기 <span aria-hidden="true">↗</span></a>
+        </address>
+        <ol class="hw-coord-list" aria-label="교습소에서 실증하는 기능">
+          <li><a href="#academy-dashboard"><span>⓪</span>학원 운영 대시보드</a></li>
+          <li><a href="#digital-exam"><span>①</span>디지털 기말내신·예비고1</a></li>
+          <li><a href="#counsel"><span>②</span>입시상담 AI</a></li>
+          <li><a href="#learning-content"><span>③</span>학습 콘텐츠</a></li>
+          <li><a href="#exam-security"><span>④</span>부정행위 방지 기술</a></li>
+        </ol>
+      </div>
+    </section>
+
     <aside class="home-notice" id="homeNotice" aria-label="공지사항">
       <strong class="home-notice-label">공지사항</strong>
       <div class="home-notice-window">
@@ -184,8 +221,36 @@
       <button id="homeNoticePause" type="button" aria-label="공지 흐름 일시정지" aria-pressed="false">Ⅱ</button>
     </aside>
 
-    <!-- 1. 대표 배너 6장 → 2. F2R 서비스 지도 → 3. 디지털 영어 기말고사·시험 보는 방법·2028 입시상담 AI → 4. 영어 교육 → 5. 맞춤문제(적중 사례·이용료) → 6. AI 드라마 제작 → 7. 복습 게임 → 8. 전자책 → 9. 빌드잇 차트 → 10. 대시보드 -->
-    <!-- 첫 화면: 왼쪽 배너 6장(첫 장 디지털 영어 기말고사, 3초 순환, 타일로 선택) · 오른쪽 서수니·세븐 20초 홍보 영상과 신청 버튼 -->
+    <section class="hl-section" id="coordinator-work" aria-labelledby="coordWorkTitle">
+      <div class="hl-head"><h2 id="coordWorkTitle">Coordinator가 하는 일</h2><p>말·사진 지시 → 출결·채점·자료 제작·학부모 안내 → 원장 승인 후 기록</p></div>
+      <ol class="hw-flow">
+        <li class="hw-card"><span class="hw-flow-no">1</span><h3>말·사진으로 지시</h3><p>「○○ 학생 등원」, 채점한 답지 사진처럼 평소 쓰는 말과 사진으로 맡깁니다.</p></li>
+        <li class="hw-card"><span class="hw-flow-no">2</span><h3>출결·채점</h3><p>출결 기록 초안을 만들고, 답지 사진에서 틀린 문항을 읽어 학생부 채점·오답 기록 초안을 만듭니다. 읽기 어려운 번호는 추측하지 않고 묻습니다.</p></li>
+        <li class="hw-card"><span class="hw-flow-no">3</span><h3>자료 제작·학부모 안내</h3><p>오답 유형에 맞춘 학습지·예상문제 제작을 작업 대기열에 올리고, 학부모 안내 문구 초안을 만듭니다.</p></li>
+        <li class="hw-card"><span class="hw-flow-no">4</span><h3>원장 승인 후 기록</h3><p>AI가 만든 것은 모두 초안입니다. 원장이 확인하고 승인한 것만 학생부·장부에 기록합니다.</p></li>
+      </ol>
+    </section>
+
+    <section class="hl-section" id="academy-dashboard" aria-labelledby="academyDashTitle">
+      <p class="hw-demo-tag"><span>⓪</span>교습소 실증</p>
+      <div class="hl-head"><h2 id="academyDashTitle">학원 운영 대시보드</h2><p>원장용 · 출결·수강료·장부·학부모 안내·학생부를 한 화면에서</p></div>
+      <div class="hw-dash">
+        <figure class="hw-dash-shot">
+          <img src="/img/landing/home-academy-dashboard-sample.webp" alt="원장용 학원 운영 대시보드 예시 화면(가명 자료)" width="1280" height="1400" loading="lazy">
+          <figcaption>예시 화면 · 가명 자료이며 실제 학생 정보가 아닙니다.</figcaption>
+        </figure>
+        <div class="hw-dash-text">
+          <p>출결·수강료·장부·학부모 안내·학생부(채점·오답 기록)를 원장 한 사람이 한 화면에서 봅니다. AI가 만든 기록은 승인함에서 확인한 뒤 남깁니다.</p>
+          <ul class="hw-tags">
+            <li>출결</li><li>수강료</li><li>장부</li><li>학부모 안내</li><li>학생부·채점</li><li>승인함</li><li>작업 대기열</li>
+          </ul>
+          <p class="hw-login-note">원장 로그인 후 사용</p>
+          <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="/dashboard">대시보드 열기 <span aria-hidden="true">→</span></a><a class="hl-btn hl-btn-white" href="/ledger">F2R 장부</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 주요 서비스: 왼쪽 배너 6장(첫 장 디지털 영어 기말고사, 3초 순환, 타일로 선택) · 오른쪽 홍보 영상·수능 해설·서비스 지도 -->
     <section class="home-offer hl-hero-row" id="pass-offer" aria-label="주요 서비스">
       <div id="homeHero" class="hl-hero hl-lift" data-active="0" role="region" aria-roledescription="캐러셀" aria-label="Feel to Real 주요 서비스">
         <div class="hl-slides">
@@ -323,6 +388,7 @@
 
 
     <section class="hl-section" id="digital-exam" aria-labelledby="dexamTitle">
+      <p class="hw-demo-tag"><span>①</span>교습소 실증 · 디지털 기말내신·예비고1</p>
       <div class="hl-head"><h2 id="dexamTitle">디지털 영어 기말고사</h2><p>2026학년도 2학기 기말고사 대비 · 학교별 F2R 예상문제 · 학교별 직보 쇼츠 인강 + 기출 기반 디지털 모의고사</p></div>
       <div class="hw-grid">
         <div class="hw-card is-wide hw-reveal">
@@ -415,42 +481,9 @@
       </ol>
     </section>
 
-    <section class="hl-section" id="counsel" aria-labelledby="counselTitle">
-      <div class="hl-head"><h2 id="counselTitle">2028 입시상담 AI</h2><p>서수니 입시상담사 · 2028학년도 변경된 입시안을 소개하고 상담합니다.</p></div>
-    <div class="hl-admissions hl-lift">
-      <a class="hl-admissions-main" href="/admissions/guide">
-        <img src="/img/landing/home-admissions-suni.webp" alt="" width="240" height="264" loading="lazy">
-        <span class="hl-admissions-text"><small>서수니 입시상담사</small><strong>2028 입시상담 AI</strong><span>2028학년도 변경된 입시안을 소개하고 상담합니다.</span></span>
-        <span class="hl-admissions-go" aria-hidden="true">상담 시작 →</span>
-      </a>
-      <!-- 「바뀌는 입시」 글 제목: 누르면 그 글이 열린다. 글이 없거나 조회 실패면 숨긴 채 둔다(상담 AI 근거 아님). -->
-      <div class="hl-admissions-articles" id="hlAdmissionsArticles" hidden>
-        <div class="hl-admissions-articles-head"><b>바뀌는 입시</b><a href="/admissions/articles">전체 글 보기 ›</a></div>
-        <ul id="hlAdmissionsArticleList"></ul>
-      </div>
-    </div>
-    </section>
-
-
-
-
-    <!-- 맞춤문제 2만원 서비스: 신청·적중 사례·제작 과정·이용료·문의·활용 사례·이용 방법을 한곳에 -->
-    <div class="hl-service" id="service">
-
-    <div class="hl-head hw-svc-head hw-h-a is-first"><h2>맞춤문제</h2><p>2만원 서비스 · 학교별 맞춤 제작</p></div>
-
-    <section class="exam-section" id="request" aria-labelledby="requestPaneTitle">
-      <p class="hl-eyebrow">맞춤문제 2만원 서비스 · 학교별 맞춤 제작</p>
-      <h2 id="requestPaneTitle">맞춤문제 신청</h2>
-      <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
-      <div class="hw-plan" aria-label="회차별 문항 수"><div><span>1주 1회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>1주 2회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 3회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 4회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div></div>
-      <div class="hw-price"><span th:text="'총 ' + ${examOffer.totalQuestions} + '문항'">총 160문항</span><b th:text="${examOffer.priceLabel}">20,000원</b></div>
-      <div class="exam-contact-actions"><!-- 홈 대표 무료신청 버튼(2026-11-19 영상 아래 카드에서 이곳으로 옮김, e2e가 #homeIntakeCta로 찾는다) --><a id="homeIntakeCta" class="en-btn en-btn-primary" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
-      <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
-    </section>
-
-    <div class="hl-head hw-svc-head hw-h-b"><h2>적중 사례</h2><p>압구정중3 · 언북중3 · 신구중3</p></div>
-
+    <!-- 실증 근거: 적중 사례(2026-11-21 개편 — 맞춤문제 영역에서 디지털 기말내신 바로 아래로 옮김. 내용·앵커는 그대로) -->
+    <div class="hl-service" id="hit-proof">
+    <div class="hl-head hw-svc-head hw-h-b is-first"><h2>실증 근거: 적중 사례</h2><p>압구정중3 · 언북중3 · 신구중3</p></div>
     <!-- 적중 사례: 요약은 항상 보이고, 항목을 누르면 내용이 이어서 펼쳐진다(이미지 30장). -->
     <section class="hl-section home-hit" id="hitCase" aria-labelledby="hitCaseTitle">
       <div class="hl-box hl-lift">
@@ -615,16 +648,6 @@
       </div>
     </section>
 
-    <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">
-      
-      <h2 id="passProcessTitle">제작 과정</h2>
-      <div class="exam-grid">
-        <article class="exam-card"><span class="exam-step">01 / 분석</span><h3>학교별 기출과 시험 범위</h3><p>학교별 기출문제와 출제 경향을 분석합니다. 최근 기출과 시험 범위를 보내 주세요.</p></article>
-        <article class="exam-card"><span class="exam-step">02 / 맞춤 제작</span><h3>유형·난이도·시험지 형식</h3><p>원하는 문제 유형과 난이도, 시험지 형식을 반영해 회당 <span th:text="${examOffer.questionsPerDelivery}">40</span>문항을 제작합니다.</p></article>
-        <article class="exam-card"><span class="exam-step">03 / 반영과 수정</span><h3>시험 직전까지 새롭게</h3><p>새로 확인된 시험 범위, 선생님의 출제 힌트, 학생의 취약 유형을 다음 제작에 반영합니다. 요구사항을 전달하면 문제를 수정합니다.</p></article>
-      </div>
-      <p class="exam-callout"><strong th:text="${examOffer.weeks} + '주 동안 함께하는 이유'">2주 동안 함께하는 이유</strong>시험이 가까워질수록 달라지는 정보를 반영하고, 기출 유사 문제와 취약 유형을 반복 학습하기 위해서입니다.</p>
-    </section>
 
     <section class="exam-section" id="exam-blog" aria-labelledby="examBlogTitle">
       <h2 id="examBlogTitle">학교별 시험 적중률 블로그</h2>
@@ -638,6 +661,87 @@
       <a class="exam-blog-link" id="eonbukHitBlog" href="https://blog.naver.com/apgujungeduholic/224463820746" target="_blank" rel="noopener"><span><small>적중사례2 · 언북중3</small><strong>언북중3 2학기말 적중률 95.2% 블로그</strong></span><span aria-hidden="true">↗</span></a>
       <a class="exam-blog-link" id="singuHitBlog" href="https://blog.naver.com/apgujungeduholic/224472061838" target="_blank" rel="noopener"><span><small>적중사례3 · 신구중3</small><strong>신구중3 적중률 96.8% 블로그</strong></span><span aria-hidden="true">↗</span></a>
       <a class="exam-blog-link" id="enHitBlog" href="https://blog.naver.com/apgujungeduholic/224435388122" target="_blank" rel="noopener"><span><small>압구정에듀홀릭</small><strong>압구정중2 2학기 중간 적중률 93.3% 블로그</strong></span><span aria-hidden="true">↗</span></a>
+    </section>
+
+    </div>
+
+    <section class="hl-section" id="counsel" aria-labelledby="counselTitle">
+      <p class="hw-demo-tag"><span>②</span>교습소 실증</p>
+      <div class="hl-head"><h2 id="counselTitle">2028 입시상담 AI</h2><p>서수니 입시상담사 · 2028학년도 변경된 입시안을 소개하고 상담합니다.</p></div>
+    <div class="hl-admissions hl-lift">
+      <a class="hl-admissions-main" href="/admissions/guide">
+        <img src="/img/landing/home-admissions-suni.webp" alt="" width="240" height="264" loading="lazy">
+        <span class="hl-admissions-text"><small>서수니 입시상담사</small><strong>2028 입시상담 AI</strong><span>2028학년도 변경된 입시안을 소개하고 상담합니다.</span></span>
+        <span class="hl-admissions-go" aria-hidden="true">상담 시작 →</span>
+      </a>
+      <!-- 「바뀌는 입시」 글 제목: 누르면 그 글이 열린다. 글이 없거나 조회 실패면 숨긴 채 둔다(상담 AI 근거 아님). -->
+      <div class="hl-admissions-articles" id="hlAdmissionsArticles" hidden>
+        <div class="hl-admissions-articles-head"><b>바뀌는 입시</b><a href="/admissions/articles">전체 글 보기 ›</a></div>
+        <ul id="hlAdmissionsArticleList"></ul>
+      </div>
+    </div>
+    </section>
+
+
+
+
+    <!-- ③ 학습 콘텐츠(2026-11-21 개편 — 기존 주소로 가는 카드만 모음) -->
+    <section class="hl-section" id="learning-content" aria-labelledby="learningTitle">
+      <p class="hw-demo-tag"><span>③</span>교습소 실증</p>
+      <div class="hl-head"><h2 id="learningTitle">학습 콘텐츠</h2><p>New iBT·SAT 연습 · 모의고사 위키 · 2027 수능 영어 해설</p></div>
+      <div class="hw-grid is-three">
+        <a class="hw-card hw-link-card" href="/testprep"><h3>New iBT · Digital SAT 연습</h3><p>TOEFL iBT 영역별 연습과 디지털 SAT 연습 시험을 봅니다.</p><span class="hw-more">연습 시작 →</span></a>
+        <a class="hw-card hw-link-card" href="/wiki"><h3>모의고사 위키</h3><p>문제 원본부터 지문해설, 복습 문제까지 한곳에서.</p><span class="hw-more">위키 열기 →</span></a>
+        <a class="hw-card hw-link-card" href="/csat/2027-english"><h3>2027 수능 영어 해설</h3><p>홀수형 가답안 기준 45문항 모션 해설과 PDF.</p><span class="hw-more">해설 보기 →</span></a>
+      </div>
+    </section>
+
+    <!-- ④ 부정행위 방지 기술(2026-11-21 개편 지시서 3번). 사실만 쓴다: 성능 수치 없음, 사람 얼굴 없는 그림만. 렌즈 찾기 화면은 관리자 전용이라 공개 영역은 시연 문의로 잇는다. -->
+    <section class="hl-section" id="exam-security" aria-labelledby="examSecurityTitle">
+      <p class="hw-demo-tag"><span>④</span>교습소 실증</p>
+      <div class="hl-head"><h2 id="examSecurityTitle">부정행위 방지 기술</h2><p>휴대폰 한 대로 시험장을 살피고, 판단은 감독관이 합니다</p></div>
+      <div class="hw-sec">
+        <figure class="hw-card">
+          <img src="/img/landing/home-exam-security-lens.webp" alt="렌즈 찾기 화면 예시: 카메라 화면, 가까이·멀리 선택, 카메라 켜기·렌즈 찾기 버튼(사람 얼굴 없음)" width="780" height="1300" loading="lazy">
+          <h3>렌즈 찾기</h3>
+          <p>휴대폰 플래시를 끄고 켠 사진 두 장을 비교해 렌즈 의심 위치를 표시합니다(11.21 배포).</p>
+          <figcaption>렌즈 찾기 화면(카메라 켜기 전) · 관리자 로그인 후 사용</figcaption>
+        </figure>
+        <figure class="hw-card">
+          <img src="/img/landing/home-exam-security-paper.webp" alt="종이 시험지 보안 무늬 견본 일부: 같은 회색으로 보이는 비교 칸과 좌석 코드 띠" width="1350" height="1240" loading="lazy">
+          <h3>종이 시험지 보안 무늬</h3>
+          <p>사진으로 찍으면 좌석 번호가 드러나는 종이 시험지 보안 무늬를 준비 중입니다.</p>
+          <figcaption>보안 무늬 견본(시험 인쇄용 견본의 일부)</figcaption>
+        </figure>
+      </div>
+      <p class="hw-sec-note">최종 판단은 감독관이 합니다. 신호 차단기는 쓰지 않습니다.</p>
+      <div class="hero-cta"><a class="hl-btn hl-btn-dark" href="#exam-contact">학교·학원 시연 문의 <span aria-hidden="true">→</span></a></div>
+    </section>
+
+    <!-- 맞춤문제·이용 안내: 신청·제작 과정·이용료·문의·이용 방법을 한곳에(적중 사례는 2026-11-21 실증 근거 영역으로 옮김) -->
+    <div class="hl-service" id="service">
+
+    <div class="hl-head hw-svc-head hw-h-a is-first"><h2>맞춤문제·이용 안내</h2><p>2만원 서비스 · 학교별 맞춤 제작</p></div>
+
+    <section class="exam-section" id="request" aria-labelledby="requestPaneTitle">
+      <p class="hl-eyebrow">맞춤문제 2만원 서비스 · 학교별 맞춤 제작</p>
+      <h2 id="requestPaneTitle">맞춤문제 신청</h2>
+      <p>2주 동안 주 2회, 총 4회·160문항. 기출 시험자료와 출제시 요구사항을 보내 주시면 제작에 반영합니다.</p>
+      <div class="hw-plan" aria-label="회차별 문항 수"><div><span>1주 1회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>1주 2회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 3회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div><div><span>2주 4회</span><b th:text="${examOffer.questionsPerDelivery}">40</b></div></div>
+      <div class="hw-price"><span th:text="'총 ' + ${examOffer.totalQuestions} + '문항'">총 160문항</span><b th:text="${examOffer.priceLabel}">20,000원</b></div>
+      <div class="exam-contact-actions"><!-- 홈 대표 무료신청 버튼(2026-11-19 영상 아래 카드에서 이곳으로 옮김, e2e가 #homeIntakeCta로 찾는다) --><a id="homeIntakeCta" class="en-btn en-btn-primary" th:href="${examIntakeEnabled} ? '/exam-service?sample=1' : '#exam-contact'" href="#exam-contact">클라우드리뷰 무료신청</a><a class="en-btn en-btn-outline" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청·자료 제출</a><a class="en-btn en-btn-outline" href="#hitCase">적중 사례 보기</a></div>
+      <details class="exam-other-services"><summary>내신 제작소</summary><div class="exam-contact-actions"><a href="/naesin-production-studio?division=MIDDLE">중등부 제작소</a><a href="/naesin-production-studio?division=HIGH">고등부 제작소</a></div></details>
+    </section>
+
+    <section class="exam-section" id="svc-exam" aria-labelledby="passProcessTitle">
+      
+      <h2 id="passProcessTitle">제작 과정</h2>
+      <div class="exam-grid">
+        <article class="exam-card"><span class="exam-step">01 / 분석</span><h3>학교별 기출과 시험 범위</h3><p>학교별 기출문제와 출제 경향을 분석합니다. 최근 기출과 시험 범위를 보내 주세요.</p></article>
+        <article class="exam-card"><span class="exam-step">02 / 맞춤 제작</span><h3>유형·난이도·시험지 형식</h3><p>원하는 문제 유형과 난이도, 시험지 형식을 반영해 회당 <span th:text="${examOffer.questionsPerDelivery}">40</span>문항을 제작합니다.</p></article>
+        <article class="exam-card"><span class="exam-step">03 / 반영과 수정</span><h3>시험 직전까지 새롭게</h3><p>새로 확인된 시험 범위, 선생님의 출제 힌트, 학생의 취약 유형을 다음 제작에 반영합니다. 요구사항을 전달하면 문제를 수정합니다.</p></article>
+      </div>
+      <p class="exam-callout"><strong th:text="${examOffer.weeks} + '주 동안 함께하는 이유'">2주 동안 함께하는 이유</strong>시험이 가까워질수록 달라지는 정보를 반영하고, 기출 유사 문제와 취약 유형을 반복 학습하기 위해서입니다.</p>
     </section>
 
     <div class="hl-head hw-svc-head hw-h-c"><h2>이용료와 신청</h2><p>무통장입금 · 문의·신청·자료 제출</p></div>
@@ -705,6 +809,9 @@
     </section>
     </div>
 
+    <!-- 다른 서비스(2026-11-21 개편: 교습소 실증과 맞춤문제 아래로 모음. 삭제 없음) -->
+    <div class="hl-head hw-other-head" id="other-services"><h2>다른 서비스</h2><p>AI AGENT · 전자책 · 복습 게임 · 빌드잇 차트</p></div>
+
     <section class="hl-section" id="ai-content" aria-labelledby="dramaTitle" data-track-section="brand">
       <div class="hl-head"><h2 id="dramaTitle">AI 드라마 제작</h2><p>Feel to Real 오리지널</p></div>
       <div class="hl-split">
@@ -728,6 +835,22 @@
       </div>
     </section>
 
+    <!-- 전자책(2026-11-15): 배너 6번째 장과 같은 내용 -->
+    <section class="hl-section" id="ebook" aria-labelledby="ebookTitle">
+      <div class="hl-head"><h2 id="ebookTitle">전자책</h2><p>개정판 Ver.2</p></div>
+      <div class="hw-ebook hw-reveal">
+        <img src="/img/landing/home-ebook-hero.webp" alt="" width="2508" height="1254" loading="lazy">
+        <div>
+          <h3>새출발 2억2천 탕감</h3>
+          <p>새출발기금 부실차주, 신청부터 약정 이후까지.</p>
+          <div class="hero-cta">
+            <a class="hl-btn hl-btn-dark" href="https://smartstore.naver.com/newlibrary/products/12879870964" target="_blank" rel="noopener">스마트스토어 구매 <span aria-hidden="true">↗</span></a>
+            <a class="hl-btn hl-btn-white" href="https://cafe.naver.com/newhopero" target="_blank" rel="noopener">카페 바로가기 <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 자세한 안내: 위 카드·메뉴에서 이어지는 서비스별 내용(기존 기능 그대로) -->
     <section class="exam-section" id="review-game" aria-labelledby="reviewGameTitle">
       
@@ -748,24 +871,6 @@
       </div>
       <p id="homeReviewGamePending" class="exam-caption" th:if="${#strings.isEmpty(homeReviewGamePath) and #strings.isEmpty(homeReviewGameUrl)}">게임 공개 준비 중입니다. 공개되면 이곳에서 시작할 수 있습니다.</p>
       <p class="exam-caption" th:if="${!#strings.isEmpty(homeReviewGameUrl)}">게임이 열리지 않으면 <a id="homeReviewGame" th:href="${homeReviewGameUrl}" target="_blank" rel="noopener noreferrer">Nimble에서 열기 ↗</a></p>
-    </section>
-
-
-
-    <!-- 전자책(2026-11-15): 배너 6번째 장과 같은 내용 -->
-    <section class="hl-section" id="ebook" aria-labelledby="ebookTitle">
-      <div class="hl-head"><h2 id="ebookTitle">전자책</h2><p>개정판 Ver.2</p></div>
-      <div class="hw-ebook hw-reveal">
-        <img src="/img/landing/home-ebook-hero.webp" alt="" width="2508" height="1254" loading="lazy">
-        <div>
-          <h3>새출발 2억2천 탕감</h3>
-          <p>새출발기금 부실차주, 신청부터 약정 이후까지.</p>
-          <div class="hero-cta">
-            <a class="hl-btn hl-btn-dark" href="https://smartstore.naver.com/newlibrary/products/12879870964" target="_blank" rel="noopener">스마트스토어 구매 <span aria-hidden="true">↗</span></a>
-            <a class="hl-btn hl-btn-white" href="https://cafe.naver.com/newhopero" target="_blank" rel="noopener">카페 바로가기 <span aria-hidden="true">↗</span></a>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- BUILD IT CHART: 공개 TOP5만 /api/chart 공개 API로 표시한다(관리자 정보 없음). -->

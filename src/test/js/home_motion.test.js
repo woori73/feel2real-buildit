@@ -74,3 +74,18 @@ test('given reduced motion or no IntersectionObserver when initialised then noth
     assert.equal(s.section.classList.contains('mo-reveal'), false);
   }
 });
+
+test('given the hit case moved to the proof area when motion is allowed then the proof area is prepared too and its selector is observed', () => {
+  // given
+  const root = element(); const proof = element(); let asked = '';
+  const win = { matchMedia: () => ({ matches: false }), requestAnimationFrame: () => {},
+    IntersectionObserver: function () { this.observe = () => {}; this.unobserve = () => {}; } };
+  const doc = { getElementById: id => (id === 'service' ? root : id === 'hit-proof' ? proof : null),
+    querySelectorAll: sel => { asked = sel; return []; } };
+  // when
+  init(doc, win);
+  // then
+  assert.equal(proof.classList.contains('motion-ready'), true);
+  assert.match(asked, /#hit-proof > section/);
+  assert.match(asked, /#hit-proof \.hit-stats li/);
+});

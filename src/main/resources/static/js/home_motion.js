@@ -2,7 +2,8 @@
  * 제작 과정 단계 선이 채워진다. 움직임 줄이기 설정이거나 IntersectionObserver가 없으면 아무것도 숨기지 않는다. */
 (function () {
   'use strict';
-  var REVEAL = '#service > section, #service .hit-stats li, #service .exam-card, #service .hl-pay > div';
+  // 2026-11-21: 적중 사례는 #service 밖 실증 근거(#hit-proof)로 옮겼다. 같은 모션을 준다.
+  var REVEAL = '#service > section, #service .hit-stats li, #service .exam-card, #service .hl-pay > div, #hit-proof > section, #hit-proof .hit-stats li';
   var DURATION = 1200;
 
   // "93.5%" → {value:93.5, decimals:1, suffix:"%"}, "14/14" → {value:14, decimals:0, suffix:"/14"}
@@ -41,6 +42,8 @@
       el.style.setProperty('--mo-delay', (i % 4) * 90 + 'ms');
     });
     root.classList.add('motion-ready');
+    var proof = doc.getElementById('hit-proof');
+    if (proof) proof.classList.add('motion-ready');
     var observer = new win.IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;

@@ -3,7 +3,8 @@ const { expect } = require('@playwright/test');
 async function selectHomePane(page, key) {
   if (key === 'home') {
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(page.locator('#homeHero')).toBeInViewport();
+    // 2026-11-21 개편: 첫 화면은 F2R AI Coordinator 대표 문구다.
+    await expect(page.locator('#coordinator')).toBeInViewport();
     return;
   }
   await page.locator('#enBurger').click();

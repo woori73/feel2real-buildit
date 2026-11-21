@@ -66,20 +66,27 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 겨울 톤 개편 순서 when 렌더하면 then 배너·영상→디지털 영어 기말고사→2028 입시상담 AI→영어 교육→맞춤문제 2만원 서비스(한곳)→AI 드라마→게임→전자책→차트→대시보드(맨 아래)이고 빈 칸은 솔직하게 표시한다")
+  @DisplayName("given 2026-11-21 AI Coordinator 개편 순서 when 렌더하면 then Coordinator→하는 일→⓪대시보드→배너·영상→①디지털 기말내신→실증 근거(적중 사례)→②입시상담 AI→③학습 콘텐츠→④부정행위 방지→맞춤문제·이용 안내(한곳)→다른 서비스(AI AGENT→전자책→게임→차트)이고 빈 칸은 솔직하게 표시한다")
   void givenContentPriority_whenRendered_thenApprovedSinglePageOrderAndEmptySlotsAreHonest() {
     String html = render();
-    String[] ids = {"pass-offer", "homeHero", "examPromo", "digital-exam", "/admissions/guide", "service", "request", "hitCase", "svc-exam",
-        "exam-blog", "exam-payment", "exam-contact", "guide", "ai-content", "review-game", "ebook", "chart-showcase"};
+    String[] ids = {"coordinator", "coordinator-work", "academy-dashboard", "pass-offer", "homeHero", "examPromo", "digital-exam",
+        "pre-high-english", "dexam-guide", "hit-proof", "hitCase", "exam-blog", "counsel", "/admissions/guide", "learning-content",
+        "exam-security", "service", "request", "svc-exam", "exam-payment", "exam-contact", "guide", "other-services", "ai-content",
+        "ebook", "review-game", "chart-showcase"};
     int previous = -1;
     for (String id : ids) {
       int position = id.startsWith("/") ? html.indexOf("href=\"" + id + "\"") : html.indexOf("id=\"" + id + "\"");
       assertThat(position).as(id).isGreaterThan(previous);
       previous = position;
     }
-    // 맞춤문제 2만원 서비스는 한 영역(#service) 안에 모은다. 대시보드는 페이지 맨 아래 구역이다.
-    String service = html.substring(html.indexOf("id=\"service\""), html.indexOf("id=\"ai-content\""));
-    assertThat(service).contains("id=\"request\"", "id=\"hitCase\"", "id=\"svc-exam\"", "id=\"exam-payment\"", "id=\"exam-contact\"", "id=\"guide\"");
+    // 맞춤문제·이용 안내는 한 영역(#service) 안에 모으고, 적중 사례는 실증 근거(#hit-proof)로 따로 둔다.
+    String service = html.substring(html.indexOf("id=\"service\""), html.indexOf("id=\"other-services\""));
+    assertThat(service).contains("id=\"request\"", "id=\"svc-exam\"", "id=\"exam-payment\"", "id=\"exam-contact\"", "id=\"guide\"")
+        .doesNotContain("id=\"hitCase\"", "id=\"exam-blog\"");
+    String proof = html.substring(html.indexOf("id=\"hit-proof\""), html.indexOf("id=\"counsel\""));
+    // 적중률 문구는 개편 전 홈 내용 그대로 둔다(2026-11-21 사용자 지시). 위치만 옮겼다.
+    assertThat(proof).contains("id=\"hitCase\"", "id=\"exam-blog\"", "<p>압구정중3 · 언북중3 · 신구중3</p>")
+        .doesNotContain("3개교 4개 시험", "hw-proof-basis");
     // 2026-11-16: 왼쪽 기본 메뉴와 겹치는 영어 교육 카드·대시보드 바로가기 칸은 본문에서 뺐다(메뉴의 대시보드는 /dashboard로 바로 간다).
     assertThat(html).doesNotContain("id=\"edu\"", "id=\"dashboard\"", "href=\"#dashboard\"", "href=\"#edu\"");
     assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/g1y7QeOYd8", "트레일러 공개 준비 중")
@@ -95,6 +102,40 @@ class LandingEdunovaTemplateContractTest {
     assertThat(html).contains("/video/landing/f2r-class-ad-20261120.mp4", "id=\"examPromoSound\"");
     assertThat(render("public/landing", "")).doesNotContain("id=\"examPromo\"", "id=\"examPromoVideo\"")
         .doesNotContain("id=\"aiHome\"", "id=\"homeChat\""); // 홈 AI 비서(서수니·세븐)는 2026-11-15에 내렸다
+  }
+
+  @Test
+  @DisplayName("given 2026-11-21 개편 지시서 when 홈을 렌더하면 then Coordinator 대표 문구·실증 기능 5개·하는 일 4단계·대시보드 예시·부정행위 방지 사실 문구와 시연 문의가 있고 과장·Claude 표기·탐지율이 없다")
+  void givenCoordinatorBrief_whenRendered_thenNewSectionsStateFactsOnly() {
+    // given
+    String html = render();
+    // when
+    String hero = html.substring(html.indexOf("id=\"coordinator\""), html.indexOf("id=\"coordinator-work\""));
+    String work = html.substring(html.indexOf("id=\"coordinator-work\""), html.indexOf("id=\"academy-dashboard\""));
+    String dash = html.substring(html.indexOf("id=\"academy-dashboard\""), html.indexOf("id=\"pass-offer\""));
+    String learning = html.substring(html.indexOf("id=\"learning-content\""), html.indexOf("id=\"exam-security\""));
+    String security = html.substring(html.indexOf("id=\"exam-security\""), html.indexOf("id=\"service\""));
+    String main = html.substring(html.indexOf("<main"), html.indexOf("</main>"));
+    // then
+    assertThat(hero).contains("F2R AI Coordinator", "휴대폰 하나로<br>학원 업무를 AI에게", "11월 25일 이전하는 F2R 영어교습소",
+        "실증 중", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
+        "href=\"#exam-security\"", "LLM AI");
+    // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
+    assertThat(hero).contains("서울 강남구 언주로173길 12, 압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
+    assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
+    assertThat(work).contains("말·사진으로 지시", "출결·채점", "자료 제작·학부모 안내", "원장 승인 후 기록");
+    assertThat(dash).contains("원장 로그인 후 사용", "href=\"/dashboard\"", "href=\"/ledger\"", "가명 자료",
+        "/img/landing/home-academy-dashboard-sample.webp");
+    assertThat(learning).contains("href=\"/testprep\"", "href=\"/wiki\"", "href=\"/csat/2027-english\"");
+    assertThat(security).contains("휴대폰 플래시를 끄고 켠 사진 두 장을 비교해 렌즈 의심 위치를 표시합니다(11.21 배포).",
+        "사진으로 찍으면 좌석 번호가 드러나는 종이 시험지 보안 무늬를 준비 중입니다.",
+        "최종 판단은 감독관이 합니다. 신호 차단기는 쓰지 않습니다.", "href=\"#exam-contact\"", "학교·학원 시연 문의")
+        .doesNotContain("href=\"/easy/exam-security/lens\"", "탐지율", "%");
+    for (String path : new String[] {"/img/landing/home-academy-dashboard-sample.webp", "/img/landing/home-exam-security-lens.webp",
+        "/img/landing/home-exam-security-paper.webp"}) {
+      assertThat(getClass().getResource("/static" + path)).as(path).isNotNull();
+    }
+    assertThat(main).doesNotContain("Claude", "혁신", "최고", "완벽 차단");
   }
 
   @Test
@@ -148,7 +189,7 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 제목은 두 줄 단위로 나뉘고 문제지·해설지 샘플 섹션은 없으며 학교별 시험 적중률 블로그가 바로 이어진다")
+  @DisplayName("given 홈 when 렌더하면 then 제목은 두 줄 단위로 나뉘고 문제지·해설지 샘플 섹션은 없으며 적중 사례 다음에 학교별 시험 적중률 블로그가 바로 이어진다")
   void titleLines_andSampleSectionRemoved() {
     // given / when
     String html = render();
@@ -157,7 +198,7 @@ class LandingEdunovaTemplateContractTest {
         + "<span class=\"home-offer-title-line\">1장 먼저 받아보세요.</span></h2>");
     assertThat(html).doesNotContain("id=\"exam-samples\"", "WORKSHEETS &amp; EXPLANATIONS", "문제지와 해설지 살펴보기",
         "공개 샘플은 준비 중", "문제지·해설지 문의");
-    String between = html.substring(html.indexOf("id=\"svc-exam\""), html.indexOf("id=\"exam-blog\""));
+    String between = html.substring(html.indexOf("id=\"hitCase\""), html.indexOf("id=\"exam-blog\""));
     assertThat(between.split("<section", -1)).hasSize(2);
   }
 
@@ -202,15 +243,16 @@ class LandingEdunovaTemplateContractTest {
     assertThat(top).contains("data-home-nav=\"home\"", "Feel to Real", "2주 4회 · 2만원", ">맞춤문제 신청<", "전체 메뉴",
         "href=\"#chart-showcase\">빌드잇 차트<", "href=\"/dashboard\">대시보드<", "href=\"#request\" class=\"hl-link-offer\"",
         "aria-controls=\"homeMenuPanel\"", "aria-expanded=\"false\"");
-    String[] keys = {"request", "wiki", "game", "agent", "dashboard", "chart", "guide"};
+    // 2026-11-21 묶음: Coordinator·대시보드·실증 → 학습 콘텐츠 → 부정행위 방지 → 맞춤문제·이용 안내 → 다른 서비스
+    String[] keys = {"dashboard", "wiki", "request", "guide", "agent", "game", "chart"};
     int previous = -1;
     for (String key : keys) {
       int position = nav.indexOf("data-home-nav=\"" + key + "\"");
       assertThat(position).as(key).isGreaterThan(previous);
       previous = position;
     }
-    assertThat(nav).contains("영어 교육", "AI 드라마 제작", "더 보기", "이용 안내",
-        "AI AGENT 제작협업실", "자주 묻는 질문", "환불·청약철회 정책", "New iBT");
+    assertThat(nav).contains("Coordinator·대시보드·교습소 실증", "③ 학습 콘텐츠", "④ 부정행위 방지", "맞춤문제·이용 안내", "다른 서비스",
+        "AI AGENT 제작협업실", "자주 묻는 질문", "환불·청약철회 정책", "New iBT", "href=\"#exam-security\"", "href=\"/csat/2027-english\"");
     assertThat(nav).doesNotContain("지문 복습 문제", "문법 문제은행");
     for (String link : new String[] {"/testprep", "/wiki", "/naesin-production-studio?division=MIDDLE",
         "/naesin-production-studio?division=HIGH", "/ai-agent-studio", "/dashboard", "/ledger", "/builder", "/chart"})
@@ -349,8 +391,8 @@ class LandingEdunovaTemplateContractTest {
         .contains("기출문항을 그대로 복제하거나 시험 적중을 보장하지 않습니다.")
         .doesNotContain("실제 적중률 100%")
         .contains("href=\"https://blog.naver.com/apgujungeduholic/224435388122\"");
-    String[] sections = {"pass-offer", "examPromo", "request", "hitCase", "svc-exam", "exam-blog", "exam-payment",
-        "exam-contact", "ai-content", "review-game", "ebook", "chart-showcase"};
+    String[] sections = {"pass-offer", "examPromo", "hitCase", "exam-blog", "request", "svc-exam", "exam-payment",
+        "exam-contact", "ai-content", "ebook", "review-game", "chart-showcase"};
     int previous = -1;
     for (String id : sections) {
       int next = html.indexOf("id=\"" + id + "\"");
@@ -497,13 +539,13 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
-  @DisplayName("given 홈 when 렌더하면 then 압구정중3 적중 사례가 맞춤문제 서비스 안(신청 바로 아래)에 있고 항목을 누르면 펼쳐지는 구조이며 이미지가 모두 있다")
-  void hitCase_sitsInsideServiceRightBelowRequest_andExpandsInPlace() {
+  @DisplayName("given 홈 when 렌더하면 then 압구정중3 적중 사례가 실증 근거 영역(디지털 기말내신 아래, 입시상담 AI 위)에 있고 항목을 누르면 펼쳐지는 구조이며 이미지가 모두 있다")
+  void hitCase_sitsInProofAreaBelowDigitalExam_andExpandsInPlace() {
     // given
     String html = render();
-    int drama = html.indexOf("id=\"request\"");
+    int drama = html.indexOf("id=\"dexam-guide\"");
     int hit = html.indexOf("id=\"hitCase\"");
-    int payment = html.indexOf("id=\"svc-exam\"");
+    int payment = html.indexOf("id=\"exam-blog\"");
     // when
     String section = html.substring(hit, payment);
     java.util.regex.Matcher m = java.util.regex.Pattern.compile("src=\"(/img/exam-cases/[^\"]+)\"").matcher(section);
