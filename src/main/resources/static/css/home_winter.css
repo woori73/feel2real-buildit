@@ -327,7 +327,7 @@
 
 @media (max-width: 960px) {
   .hl-service#service { grid-template-columns: minmax(0, 1fr); }
-  #service > section, #service > .hw-svc-head, #hit-proof > section, #hit-proof > .hw-svc-head, #hit-proof > .hw-proof-basis { grid-column: 1 / -1 !important; }
+  #service > section, #service > .hw-svc-head, #hit-proof > section, #hit-proof > .hw-svc-head { grid-column: 1 / -1 !important; }
   .hl-service#hit-proof { grid-template-columns: minmax(0, 1fr); }
   #exam-payment .hl-pay { grid-template-columns: minmax(0, 1fr); }
 }
@@ -445,12 +445,11 @@
 
 /* ===== 2026-11-21 AI Coordinator 중심 개편 ===== */
 .hl-service#hit-proof { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: stretch; margin-top: 56px; padding: 0; border-radius: 0; background: none; }
-#hit-proof > .hw-svc-head, #hit-proof > .hw-proof-basis { grid-column: 1 / -1; }
+#hit-proof > .hw-svc-head { grid-column: 1 / -1; }
 #hit-proof > #hitCase { grid-column: span 4; } #hit-proof > #exam-blog { grid-column: span 2; align-self: start; }
-.hw-proof-basis { font-size: 13px; line-height: 1.6; color: var(--hl-sub); }
 #coordinator-work, #academy-dashboard, #learning-content, #exam-security, #other-services { margin-top: 56px; scroll-margin-top: 140px; }
 #coordinator { margin-top: 0; scroll-margin-top: 140px; }
-.hw-coord-hero, .hw-flow, .hw-dash-text, .hw-sec, .hw-proof-basis, .hl-menu-coord { word-break: keep-all; }
+.hw-coord-hero, .hw-flow, .hw-dash-text, .hw-sec, .hl-menu-coord { word-break: keep-all; }
 .hw-nowrap { white-space: nowrap; }
 #coordinator + .home-notice { margin-top: 16px; }
 .hw-coord-hero { margin-top: 0; border-radius: 20px; padding: 32px; background: linear-gradient(160deg, #0F2234, #1D4061); color: #fff; }

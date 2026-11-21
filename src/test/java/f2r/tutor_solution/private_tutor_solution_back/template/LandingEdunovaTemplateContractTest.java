@@ -84,7 +84,9 @@ class LandingEdunovaTemplateContractTest {
     assertThat(service).contains("id=\"request\"", "id=\"svc-exam\"", "id=\"exam-payment\"", "id=\"exam-contact\"", "id=\"guide\"")
         .doesNotContain("id=\"hitCase\"", "id=\"exam-blog\"");
     String proof = html.substring(html.indexOf("id=\"hit-proof\""), html.indexOf("id=\"counsel\""));
-    assertThat(proof).contains("id=\"hitCase\"", "id=\"exam-blog\"", "3개교 4개 시험", "대화문 5문항을 빼고");
+    // 적중률 문구는 개편 전 홈 내용 그대로 둔다(2026-11-21 사용자 지시). 위치만 옮겼다.
+    assertThat(proof).contains("id=\"hitCase\"", "id=\"exam-blog\"", "<p>압구정중3 · 언북중3 · 신구중3</p>")
+        .doesNotContain("3개교 4개 시험", "hw-proof-basis");
     // 2026-11-16: 왼쪽 기본 메뉴와 겹치는 영어 교육 카드·대시보드 바로가기 칸은 본문에서 뺐다(메뉴의 대시보드는 /dashboard로 바로 간다).
     assertThat(html).doesNotContain("id=\"edu\"", "id=\"dashboard\"", "href=\"#dashboard\"", "href=\"#edu\"");
     assertThat(html).contains("id=\"homeReviewGame\"", "https://app.nimblefox.ai/g/g1y7QeOYd8", "트레일러 공개 준비 중")
