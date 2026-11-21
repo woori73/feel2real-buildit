@@ -268,7 +268,7 @@ test('rangeSettings: 가까이(입구·순회)는 확대하지 않고 기본 기
   const set = L.rangeSettings('near', caps);
   // then
   assert.equal(set.zoom, 1);
-  assert.deepEqual(set.options, {});
+  assert.deepEqual(set.options, { maxOffMean: 150 }, '최종 기준: 기본 밝기값 + 꺼도 밝은 반사면 제외');
   assert.equal(set.radius, 20, '640폭 분석이라 320폭 기준 반경 10의 2배');
   assert.equal(set.mergeRadius, 32);
 });
@@ -414,4 +414,72 @@ test('다이내믹 덴서티 2단계: 멀리 있어 1단계에서 흐려진 작�
   assert.equal(alloc.picked.length, 1);
   assert.equal(fine.length, 1, '원본 해상도에서는 최종 기준으로도 렌즈가 보인다');
   assert.ok(Math.abs((r.x + fine[0].cx) - 1000.5) < 1 && Math.abs((r.y + fine[0].cy) - 500.5) < 1, '렌즈 자리를 원본 좌표로 정확히 되돌린다');
+});
+
+
+test('findCandidates: 플래시를 껐을 때 밝기(offMean)를 재고, 최종 기준에서 꺼도 밝은 점(반사면)은 뺀다', () => {
+  // given — 왼쪽: 꺼지면 어두운 렌즈 점, 오른쪽: 꺼도 밝은 플라스틱 반짝임
+  const off = paint(frame(320, 160, 20), 200, 60, 3, 180);
+  const on = paint(paint(frame(320, 160, 20), 60, 60, 3, 250), 200, 60, 3, 250);
+  // when
+  const all = L.findCandidates(on, off, { diffMin: 40 });
+  const strict = L.findCandidates(on, off, { diffMin: 40, maxOffMean: 150 });
+  // then
+  assert.equal(all.length, 2);
+  const lens = all.find((c) => c.cx < 160);
+  assert.ok(lens.offMean < 30);
+  assert.equal(strict.length, 1, '꺼도 밝은 점은 최종 기준에서 빠진다');
+  assert.ok(strict[0].cx < 160);
+});
+
+test('lensDensity: 현장 시험 재현 — 꺼지면 어두운 휴대폰 렌즈가 케이블·철망 반짝임보다 순위가 높다', () => {
+  // given — 2026-11-21 원장님 시험: 빨간 원 3곳이 케이블·철망 필통·펜, 실제 렌즈는 노란 점선
+  const area = 640 * 360;
+  const lens = { id: 'phone-lens', diff: 90, offMean: 30, area: 6, aspect: 1.2, fill: 0.8, hits: 3, members: 1 };
+  const cable = { id: 'cable', diff: 120, offMean: 170, area: 8, aspect: 2.6, fill: 0.5, hits: 3, members: 1 };
+  const mesh = { id: 'mesh-pen', diff: 130, offMean: 110, area: 5, aspect: 1.3, fill: 0.7, hits: 3, members: 4 };
+  // when
+  const r = L.allocateFine([cable, mesh, lens], 3, area, 1);
+  // then
+  assert.equal(r.picked[0].id, 'phone-lens');
+  assert.ok(L.lensDensity(lens, 3, area) > 2 * L.lensDensity(cable, 3, area));
+});
+
+test('markEyePairs: 가로로 나란한 비슷한 두 점은 눈·안경 짝, 가까이 붙은 휴대폰 렌즈 두 개는 아니다', () => {
+  // given — 화면 폭 640: 눈 두 개(60px 떨어짐), 휴대폰 렌즈 두 개(8px 떨어짐)
+  const cands = [
+    { id: 'eyeL', cx: 300, cy: 120, diff: 80 }, { id: 'eyeR', cx: 360, cy: 124, diff: 95 },
+    { id: 'camA', cx: 100, cy: 300, diff: 90 }, { id: 'camB', cx: 108, cy: 301, diff: 85 },
+  ];
+  // when
+  const r = L.markEyePairs(cands, 640);
+  // then
+  assert.deepEqual(r.eyes.map((c) => c.id).sort(), ['eyeL', 'eyeR']);
+  assert.deepEqual(r.others.map((c) => c.id).sort(), ['camA', 'camB']);
+});
+
+test('rankAll·nearestRanked: 빨간 원과 노란 점선을 D 순으로 세우고, 누른 자리의 순위를 찾는다', () => {
+  // given
+  const confirmed = [{ cx: 50, cy: 50, d: 30 }];
+  const weak = [{ cx: 200, cy: 100, d: 90 }, { cx: 400, cy: 300, d: 10 }];
+  // when
+  const ranked = L.rankAll(confirmed, weak);
+  const hit = L.nearestRanked(ranked, 205, 96, 20);
+  const miss = L.nearestRanked(ranked, 600, 20, 20);
+  // then
+  assert.deepEqual(ranked.map((c) => [c.rank, c.level]), [[1, 'WEAK'], [2, 'REVIEW'], [3, 'WEAK']]);
+  assert.equal(hit.rank, 1);
+  assert.equal(miss, null, '반경 밖이면 후보에 없던 자리');
+});
+
+test('화면: 시험 기록(실제 렌즈 순위) 버튼과 목록이 있고, 기록은 저장하지 않는다고 안내한다', () => {
+  // given
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/easy/exam_security_lens.html'), 'utf8');
+  // when & then
+  assert.match(html, /id="lensMark"/);
+  assert.match(html, /id="lensCopy"/);
+  assert.match(html, /id="lensLog"/);
+  assert.match(html, /새로고침하면 사라집니다/);
 });

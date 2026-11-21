@@ -65,7 +65,7 @@
     for (let start = 0; start < w * h; start++) {
       if (!mask[start] || seen[start]) continue;
       // 4방향으로 이어진 점 하나를 모은다
-      let area = 0, sumDiff = 0, peak = 0, minX = w, minY = h, maxX = 0, maxY = 0, sx = 0, sy = 0;
+      let area = 0, sumDiff = 0, sumOff = 0, peak = 0, minX = w, minY = h, maxX = 0, maxY = 0, sx = 0, sy = 0;
       stack.push(start);
       seen[start] = 1;
       while (stack.length) {
@@ -74,6 +74,7 @@
         const y = (p - x) / w;
         area++;
         sumDiff += on[p] - off[p];
+        sumOff += off[p];
         if (on[p] > peak) peak = on[p];
         sx += x; sy += y;
         if (x < minX) minX = x;
@@ -90,10 +91,14 @@
       const fill = area / (bw * bh);
       const aspect = Math.max(bw, bh) / Math.min(bw, bh);
       if (area < o.minArea || area > maxArea || fill < o.minFill || aspect > o.maxAspect) continue;
+      const offMean = sumOff / area;
+      // 렌즈는 플래시를 끄면 어둡다. 꺼도 밝은 점은 케이블·플라스틱·금속 같은 반사면으로 본다(2단계 최종 기준에서만 씀)
+      if (o.maxOffMean != null && offMean > o.maxOffMean) continue;
       found.push({
-        x: minX, y: minY, w: bw, h: bh, area,
+        x: minX, y: minY, w: bw, h: bh, area, aspect, fill,
         cx: sx / area, cy: sy / area,
         diff: sumDiff / area, // 켰을 때 - 껐을 때 평균 밝기 차이
+        offMean, // 플래시를 껐을 때 평균 밝기
         score: Math.round((sumDiff / area) * peak) / 255,
       });
     }
@@ -175,7 +180,7 @@
       return {
         zoom: zoomCaps ? Math.min(zoomCaps.max, Math.max(zoomCaps.min || 1, 3)) : null,
         coarse: { onMin: 80, diffMin: 25, maxCandidates: 30 },
-        options: { onMin: 170, diffMin: 40 },
+        options: { onMin: 170, diffMin: 40, maxOffMean: 150 },
         radius: 10 * k,
         mergeRadius: 16 * k,
       };
@@ -183,7 +188,7 @@
     return {
       zoom: zoomCaps ? (zoomCaps.min || 1) : null,
       coarse: { onMin: 100, diffMin: 40, maxCandidates: 30 },
-      options: {},
+      options: { maxOffMean: 150 },
       radius: 10 * k,
       mergeRadius: 16 * k,
     };
@@ -195,6 +200,10 @@
 
   /** 2단계에서 정밀 확인할 후보 수(계산량 상한). */
   const FINE_BUDGET = 5;
+  /** 모양 벌점 무게(1단계 화면 넓이 비율과 같은 단위). 시작값 — 1주차 측정으로 다시 정한다. */
+  const SHAPE_PENALTY = 5e-4;
+  /** 눈·안경 짝으로 볼 두 점 사이 가로 거리(화면 폭 비율). 휴대폰 렌즈 두 개(1~1.5㎝)보다 넓게 잡는다. */
+  const EYE_PAIR_MIN = 0.03, EYE_PAIR_MAX = 0.25;
 
   /**
    * 렌즈 후보의 동태밀도 D.
@@ -204,10 +213,49 @@
    */
   function lensDensity(c, roundsTotal, frameArea, eps) {
     const e = eps == null ? 1e-3 : eps;
-    const I = Math.min(1, Math.max(0, (c.diff || 0) / 255));
+    // I: 켜면 강하게 빛나고(밝기 차이) 끄면 어두운(렌즈 구멍) 점일수록 크다. 꺼도 밝은 케이블·금속은 작아진다
+    const darkness = 1 - Math.min(1, Math.max(0, (c.offMean || 0) / 255));
+    const I = Math.min(1, Math.max(0, (c.diff || 0) / 255)) * darkness;
     const dPsi = Math.min(1, (c.hits || 1) / Math.max(1, roundsTotal));
-    const V = (c.area || 1) / Math.max(1, frameArea);
+    // V: 넓이 + 모양 벌점(길쭉함·속 빔·주변에 비슷한 점이 많음 = 철망·촘촘한 무늬). 렌즈는 작고 둥글고 홀로 있다
+    const V = (c.area || 1) / Math.max(1, frameArea)
+      + SHAPE_PENALTY * (Math.max(1, c.aspect || 1) - 1)
+      + SHAPE_PENALTY * (1 - Math.min(1, c.fill == null ? 1 : c.fill))
+      + SHAPE_PENALTY * (Math.max(1, c.members || 1) - 1);
     return (I * dPsi) / (V + e);
+  }
+
+  /**
+   * 사람 눈·안경 반사로 보이는 짝을 찾는다(가로로 나란한, 밝기가 비슷한 두 점).
+   * 얼굴 위치를 알 수 없어 '짝 모양'으로만 추정한다. 표시만 따로 하고(분홍) 렌즈 후보 순위에서는 뺀다.
+   */
+  function markEyePairs(candidates, frameW) {
+    const list = (candidates || []).map((c) => Object.assign({}, c));
+    const lo = EYE_PAIR_MIN * frameW, hi = EYE_PAIR_MAX * frameW;
+    for (let i = 0; i < list.length; i++) {
+      for (let j = i + 1; j < list.length; j++) {
+        const a = list[i], b = list[j];
+        const dx = Math.abs(a.cx - b.cx), dy = Math.abs(a.cy - b.cy);
+        const ratio = (a.diff || 1) / (b.diff || 1);
+        if (dx >= lo && dx <= hi && dy <= 0.2 * dx && ratio >= 0.5 && ratio <= 2) { a.eyePair = true; b.eyePair = true; }
+      }
+    }
+    return { eyes: list.filter((c) => c.eyePair), others: list.filter((c) => !c.eyePair) };
+  }
+
+  /** 빨간 원(확인 필요)과 노란 점선(약한 후보)을 D 높은 순으로 한 줄에 세워 순위를 붙인다(시험 기록용). */
+  function rankAll(confirmed, weak) {
+    const all = (confirmed || []).map((c) => Object.assign({}, c, { level: 'REVIEW' }))
+      .concat((weak || []).map((c) => Object.assign({}, c, { level: 'WEAK' })));
+    all.sort((a, b) => (b.d || 0) - (a.d || 0));
+    return all.map((c, i) => Object.assign(c, { rank: i + 1 }));
+  }
+
+  /** 화면에서 누른 자리(프레임 좌표)와 가장 가까운 후보. radius 밖이면 null(= 그 자리는 후보에 없었음). */
+  function nearestRanked(ranked, x, y, radius) {
+    let best = null, bestD = Infinity;
+    (ranked || []).forEach((c) => { const d = Math.hypot(c.cx - x, c.cy - y); if (d < bestD) { bestD = d; best = c; } });
+    return best && bestD <= radius ? best : null;
   }
 
   /** D가 높은 순으로 정밀 확인할 후보(picked)와 나머지(rest)를 나눈다. */
@@ -329,6 +377,7 @@
     const startBtn = $('lensStart');
     const scanBtn = $('lensScan');
     let track = null;
+    let last = null; // 마지막 검사의 순위표(시험 기록용, 메모리에만)
 
     function say(text) { status.textContent = text; }
 
@@ -388,16 +437,27 @@
     }
 
     /** 후보 자리에 번호 붙은 큰 원과 십자선을 그린다(영상은 object-fit: contain이라 잘린 곳이 없다). */
-    function draw(cands, fw, fh, weak) {
+    function draw(cands, fw, fh, weak, eyes) {
       overlay.width = overlay.clientWidth;
       overlay.height = overlay.clientHeight;
       const ctx = overlay.getContext('2d');
       ctx.clearRect(0, 0, overlay.width, overlay.height);
       const f = fitRect(fw, fh, overlay.width, overlay.height);
-      (weak || []).forEach((c) => { // 약한 후보: 노란 점선, 번호 없음
-        ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = '#ecc94b';
-        ctx.beginPath(); ctx.arc(f.ox + c.cx * f.scale, f.oy + c.cy * f.scale, 16, 0, Math.PI * 2); ctx.stroke();
+      (eyes || []).forEach((c) => { // 눈·안경 반사 추정: 분홍 점선
+        ctx.setLineDash([3, 4]); ctx.lineWidth = 3; ctx.strokeStyle = '#d53f8c';
+        ctx.beginPath(); ctx.arc(f.ox + c.cx * f.scale, f.oy + c.cy * f.scale, 14, 0, Math.PI * 2); ctx.stroke();
         ctx.setLineDash([]);
+      });
+      (weak || []).forEach((c) => { // 약한 후보: 노란 점선 + 작은 순위 숫자
+        const x = f.ox + c.cx * f.scale, y = f.oy + c.cy * f.scale;
+        ctx.setLineDash([6, 5]); ctx.lineWidth = 3; ctx.strokeStyle = '#ecc94b';
+        ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        if (c.rank) {
+          ctx.font = 'bold 12px system-ui, sans-serif'; ctx.fillStyle = '#975a16';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(String(c.rank), x + 18, y - 16);
+        }
       });
       cands.forEach((c, i) => {
         const x = f.ox + c.cx * f.scale;
@@ -413,7 +473,7 @@
         ctx.moveTo(x, y - r - 10); ctx.lineTo(x, y - r + 8);
         ctx.moveTo(x, y + r - 8); ctx.lineTo(x, y + r + 10);
         ctx.stroke();
-        const label = String(i + 1);
+        const label = String(c.rank || i + 1);
         ctx.font = 'bold 18px system-ui, sans-serif';
         ctx.fillStyle = '#e53e3e';
         ctx.beginPath(); ctx.arc(x + r * 0.75, y - r * 0.75, 13, 0, Math.PI * 2); ctx.fill();
@@ -448,7 +508,10 @@
         }
         await torch(false);
         // 1단계: 화면 전체를 거칠게(기준을 낮춰 놓치지 않게) 본 후보
-        const coarse = mergeNearby(consistentCandidates(rounds, set.radius, 2), set.mergeRadius);
+        const merged = mergeNearby(consistentCandidates(rounds, set.radius, 2), set.mergeRadius);
+        // 눈·안경 반사로 보이는 짝은 따로 표시하고 렌즈 후보 순위에서 뺀다
+        const split = ddOff ? { eyes: [], others: merged } : markEyePairs(merged, size.w);
+        const coarse = split.others;
         // 2단계: D가 높은 후보 자리만 카메라 원본 해상도로 다시 끔·켬 2번 비교(최종 기준)
         const frameArea = size.w * size.h;
         const alloc = ddOff ? { picked: [], rest: [] } : allocateFine(coarse, rounds.length, frameArea, FINE_BUDGET);
@@ -480,15 +543,22 @@
             }));
           });
         }
-        draw(cands, size.w, size.h, weak);
+        cands.sort((a, b) => (b.d || 0) - (a.d || 0));
+        last = { ranked: rankAll(cands, weak), fw: size.w, fh: size.h, mode: modeInput ? modeInput.value : 'near', ddOff };
+        const byRank = new Map(last.ranked.map((c) => [c.cx + ',' + c.cy, c.rank]));
+        cands.forEach((c) => { c.rank = byRank.get(c.cx + ',' + c.cy); });
+        weak.forEach((c) => { c.rank = byRank.get(c.cx + ',' + c.cy); });
+        draw(cands, size.w, size.h, weak, split.eyes);
+        if (markBtn) markBtn.disabled = last.ranked.length === 0 && cands.length === 0;
         if (cands.length) {
           video.pause(); // 휴대폰을 움직여도 원 자리를 볼 수 있게 화면을 멈춘다
           say('화면을 멈췄습니다. 빨간 원(번호) 자리를 직접 확인하세요. 다시 찾으려면 [렌즈 찾기]를 누르세요.');
         }
         const v = verdict(cands, weak.length);
+        const eyeNote = split.eyes.length ? ' 눈·안경 반사로 보이는 ' + split.eyes.length + '곳은 분홍 점선(렌즈 후보에서 제외).' : '';
         result.dataset.level = v.level;
         result.querySelector('strong').textContent = v.title;
-        result.querySelector('span').textContent = v.detail + ' (' + ((performance.now() - t0) / 1000).toFixed(1) + '초)';
+        result.querySelector('span').textContent = v.detail + eyeNote + ' (' + ((performance.now() - t0) / 1000).toFixed(1) + '초)';
       } catch (e) {
         say('검사 중 문제가 생겼습니다: ' + (e && e.message ? e.message : e));
       } finally {
@@ -496,9 +566,57 @@
       }
     }
 
+    // ---------- 시험 기록: 실제 렌즈가 몇 순위였나(TEST_PLAN 4-1) ----------
+    // 사진·좌표는 남기지 않고 순위 문장만 이 화면에 적는다. 새로고침하면 사라진다(저장·전송 없음).
+    const markBtn = $('lensMark');
+    const copyBtn = $('lensCopy');
+    const logList = $('lensLog');
+    const lines = [];
+    let marking = false;
+
+    function onMark() {
+      if (!last) return;
+      marking = true;
+      say('화면에서 실제 렌즈가 있는 자리를 한 번 누르세요.');
+    }
+
+    function onOverlayTap(ev) {
+      if (!marking || !last) return;
+      marking = false;
+      const rect = overlay.getBoundingClientRect();
+      const f = fitRect(last.fw, last.fh, rect.width, rect.height);
+      const fx = (ev.clientX - rect.left - f.ox) / f.scale;
+      const fy = (ev.clientY - rect.top - f.oy) / f.scale;
+      const hit = nearestRanked(last.ranked, fx, fy, 40 / f.scale);
+      const when = new Date().toLocaleString('ko-KR', { hour12: false });
+      const mode = (last.mode === 'far' ? '멀리' : '가까이') + (last.ddOff ? '·예전 방식' : '');
+      const what = hit
+        ? '실제 렌즈 = 후보 ' + last.ranked.length + '곳 중 ' + hit.rank + '순위(' + (hit.level === 'REVIEW' ? '빨간 원' : '노란 점선') + ')'
+        : '실제 렌즈 = 후보에 없음(못 찾음)';
+      lines.push(when + ' · ' + mode + ' · ' + what);
+      const li = doc.createElement('li');
+      li.textContent = lines[lines.length - 1];
+      logList.appendChild(li);
+      copyBtn.disabled = false;
+      say('기록했습니다: ' + what);
+    }
+
+    async function onCopy() {
+      const text = lines.join('\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        say('기록 ' + lines.length + '줄을 복사했습니다.');
+      } catch (e) {
+        say('복사하지 못했습니다. 기록 목록을 길게 눌러 직접 복사해 주세요.');
+      }
+    }
+
     startBtn.addEventListener('click', start);
     scanBtn.addEventListener('click', scan);
+    if (markBtn) markBtn.addEventListener('click', onMark);
+    if (copyBtn) copyBtn.addEventListener('click', onCopy);
+    overlay.addEventListener('click', onOverlayTap);
   }
 
-  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, rangeSettings, lensDensity, allocateFine, roiRect, fineOptions, FINE_BUDGET, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
+  return { DEFAULTS, luma, lumaPlane, findCandidates, consistentCandidates, mergeNearby, fitRect, rangeSettings, lensDensity, markEyePairs, rankAll, nearestRanked, allocateFine, roiRect, fineOptions, FINE_BUDGET, verdict, hasTorch, orderCameras, openTorchCamera, mountPage };
 });
