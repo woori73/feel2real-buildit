@@ -10,10 +10,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&amp;family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Serif+KR:wght@400;600;700&amp;display=swap">
   <link rel="stylesheet" href="/css/naesin.css">
+  <!-- 재원생 앱(/naesintest/app/run·review)에서 열면 학생용 앱 설치 정보(따로 만든 manifest)를 쓴다 -->
+  <th:block th:if="${ntApp}"><link rel="manifest" href="/manifest-naesintest.json"><meta name="theme-color" content="#2D6590"><script defer src="/js/pwa.js"></script></th:block>
   <script defer src="/js/naesin_common.js"></script>
   <script defer src="/js/naesin_run.js"></script>
 </head>
-<body class="nt-body nt-run">
+<body class="nt-body nt-run" th:attr="data-nt-app=${ntApp} ? 'true' : null">
 <div class="nt-top">
   <div class="nt-top-l"><a class="nt-brand" href="/" aria-label="F2R영어 홈으로"><img src="/img/F2R_logo_pure.svg" alt="" width="30" height="30"><span>F2R영어</span></a><button type="button" class="nt-btn nt-btn-line" id="nt-leave">목록으로</button></div>
   <span>답은 자동으로 저장됩니다 · 숫자 1~5로도 고를 수 있습니다</span>

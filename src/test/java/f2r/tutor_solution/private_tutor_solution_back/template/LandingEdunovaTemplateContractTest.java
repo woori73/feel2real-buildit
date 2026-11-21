@@ -127,6 +127,9 @@ class LandingEdunovaTemplateContractTest {
     assertThat(dash).contains("원장 로그인 후 사용", "href=\"/dashboard\"", "href=\"/ledger\"", "가명 자료",
         "/img/landing/home-academy-dashboard-sample.webp");
     assertThat(learning).contains("href=\"/testprep\"", "href=\"/wiki\"", "href=\"/csat/2027-english\"");
+    // 지시서 6번: ① 디지털 기말내신 영역에 재원생 앱 설치 버튼과 안드로이드·아이폰 안내
+    String digital = html.substring(html.indexOf("id=\"digital-exam\""), html.indexOf("id=\"pre-high-english\""));
+    assertThat(digital).contains("id=\"student-app\"", "href=\"/naesintest/app\"", "재원생 앱 설치", "안드로이드(크롬)", "아이폰(사파리)");
     assertThat(security).contains("휴대폰 플래시를 끄고 켠 사진 두 장을 비교해 렌즈 의심 위치를 표시합니다(11.21 배포).",
         "사진으로 찍으면 좌석 번호가 드러나는 종이 시험지 보안 무늬를 준비 중입니다.",
         "최종 판단은 감독관이 합니다. 신호 차단기는 쓰지 않습니다.", "href=\"#exam-contact\"", "학교·학원 시연 문의")

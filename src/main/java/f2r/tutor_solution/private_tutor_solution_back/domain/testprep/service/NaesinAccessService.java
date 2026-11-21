@@ -40,6 +40,8 @@ public class NaesinAccessService {
   public boolean hasFullAccess(AuthenticatedPrincipal principal) {
     if (principal == null || principal.userId() == null) return false;
     if ("ADMIN".equals(principal.role())) return true;
+    // 재원생 앱 코드 로그인(원장이 발급한 재원생). 앱은 원장이 배정한 시험만 시작하게 StudentExamAppService가 막는다.
+    if ("STUDENT_APP".equals(principal.role())) return true;
     User user = userRepository.findById(principal.userId()).orElse(null);
     if (user == null) return false;
     String name = trim(user.getName());

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <th:block th:replace="~{fragments/_head :: favicon}"></th:block>
+  <title>F2R 디지털 모의고사</title>
+  <!-- 재원생 앱(2026-11-21). 원장 앱(manifest.json, /easy/app)과 따로 설치되는 학생용 앱이다. -->
+  <link rel="manifest" href="/manifest-naesintest.json">
+  <meta name="theme-color" content="#2D6590">
+  <link rel="apple-touch-icon" href="/img/pwa/exam-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="F2R 모의고사">
+  <link rel="stylesheet" href="/css/naesin_app.css?v=20261121-1">
+  <script defer src="/js/pwa.js"></script>
+  <script defer src="/js/naesin_app.js?v=20261121-1"></script>
+</head>
+<body class="na-body">
+<header class="na-top">
+  <img src="/img/pwa/exam-192.png" alt="" width="36" height="36">
+  <div><h1>F2R 디지털 모의고사</h1><p>F2R 영어교습소 재원생용</p></div>
+</header>
+<main class="na-main">
+  <p class="na-status" id="naStatus" role="status" aria-live="polite"></p>
+
+  <section class="na-card" id="naLogin" hidden aria-labelledby="naLoginTitle">
+    <h2 id="naLoginTitle">접속 코드로 시작하기</h2>
+    <p>원장님께 받은 8글자 코드를 넣어 주세요. 이름과 연락처는 묻지 않습니다. 한 번 들어오면 이 휴대폰에서는 다시 넣지 않아도 됩니다.</p>
+    <form id="naLoginForm" autocomplete="off">
+      <label for="naCode" class="na-sr">접속 코드</label>
+      <input id="naCode" name="code" inputmode="text" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="예: AB12-CD34" required>
+      <button type="submit" class="na-btn">들어가기</button>
+    </form>
+  </section>
+
+  <section id="naHome" hidden>
+    <div class="na-hello"><p><b id="naName"></b> 학생</p><button type="button" class="na-link" id="naLogout">다른 코드로 들어가기</button></div>
+    <section class="na-card" aria-labelledby="naExamsTitle">
+      <h2 id="naExamsTitle">원장님이 배정한 시험</h2>
+      <ul class="na-list" id="naExams"></ul>
+    </section>
+    <section class="na-card" aria-labelledby="naResultsTitle">
+      <h2 id="naResultsTitle">내 응시 기록</h2>
+      <p class="na-note">내 점수와 틀린 문제 해설만 보입니다. 시험을 끝내면 원장님 학생부에도 바로 기록됩니다.</p>
+      <ul class="na-list" id="naResults"></ul>
+    </section>
+  </section>
+
+  <section class="na-card na-install" id="naInstall" aria-labelledby="naInstallTitle">
+    <h2 id="naInstallTitle">휴대폰 홈 화면에 앱 설치</h2>
+    <button type="button" class="na-btn" id="naInstallBtn" hidden>지금 홈 화면에 추가</button>
+    <div class="na-guide">
+      <h3>안드로이드(크롬)</h3>
+      <ol><li>크롬으로 이 화면을 엽니다.</li><li>오른쪽 위 ⋮ 메뉴 → <b>홈 화면에 추가</b>(또는 <b>앱 설치</b>)를 누릅니다.</li><li>홈 화면의 <b>F2R 모의고사</b> 아이콘으로 엽니다.</li></ol>
+      <h3>아이폰(사파리)</h3>
+      <ol><li>사파리로 이 화면을 엽니다(다른 앱 안의 브라우저에서는 안 됩니다).</li><li>아래쪽 공유 버튼(□↑) → <b>홈 화면에 추가</b>를 누릅니다.</li><li>홈 화면의 <b>F2R 모의고사</b> 아이콘으로 엽니다.</li></ol>
+    </div>
+  </section>
+</main>
+</body>
+</html>

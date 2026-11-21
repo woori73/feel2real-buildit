@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>새 응시 기록 | F2R</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+  <style>
+    .er-title { text-align: center; }
+    .msg { display: none; margin-top: 8px; font-size: 13px; color: #c53030; }
+    .muted { color: #718096; font-size: 12px; }
+    .er-list { list-style: none; margin: 0; padding: 0; }
+    .er-list li { border-top: 1px solid #edf2f7; padding: 12px 0; display: grid; gap: 6px; }
+    .er-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+    .er-score { font-weight: 700; color: #C4362E; }
+    .er-wrong { font-size: 13px; color: #4a5568; }
+    .er-list button { width: auto; margin: 0; padding: 5px 12px; font-size: 12px; }
+    .tabs { display: flex; gap: 6px; }
+    .tabs button { width: auto; margin: 0; }
+    .tabs button[aria-pressed="true"] { background: #2D6590; color: #fff; }
+  </style>
+</head>
+<body data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_admin_topnav :: topnav('dashboard')}"></th:block>
+<div class="easy-container">
+  <div class="easy-title er-title">새 응시 기록</div>
+  <p class="easy-sub er-title">재원생 앱에서 학생이 끝낸 디지털 모의고사입니다. 원장과 원장이 지정한 사람만 봅니다. 점검하면 '새 기록'에서 빠지고, 기록은 지우지 않습니다.</p>
+  <div class="easy-card">
+    <div class="form-row">
+      <div class="form-group"><label for="business">사업체</label><select id="business"></select></div>
+      <div class="form-group tabs" role="group" aria-label="보기"><button type="button" id="tabNew" aria-pressed="true">새 기록 <span id="newCount"></span></button><button type="button" id="tabAll" aria-pressed="false">전체(최근 200)</button></div>
+    </div>
+    <p class="msg" id="msg"></p>
+    <ul class="er-list" id="list"></ul>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script src="/js/exam_results.js?v=20261121-1"></script>
+</body>
+</html>

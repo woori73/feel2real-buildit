@@ -111,7 +111,11 @@ public class SecurityConfig {
               f2r.tutor_solution.private_tutor_solution_back.domain.academy.proposal.AgentTokenService>
           veAgentTokenServiceProvider,
       // AI AGENT 제작소 진입 가드(UserRepository 의존 → ObjectProvider 지연 조회, @WebMvcTest 호환).
-      org.springframework.beans.factory.ObjectProvider<StudioAccessGuard> studioAccessGuardProvider) throws Exception {
+      org.springframework.beans.factory.ObjectProvider<StudioAccessGuard> studioAccessGuardProvider,
+      // 재원생 앱(/naesintest/app) 접속 코드 확인(JPA 레포 의존 → ObjectProvider 지연 조회, @WebMvcTest 호환).
+      org.springframework.beans.factory.ObjectProvider<
+              f2r.tutor_solution.private_tutor_solution_back.domain.studentapp.service.StudentAppCodeService>
+          studentAppCodeServiceProvider) throws Exception {
 
     // Filter 빈은 서블릿 컨테이너에 자동 등록돼 이중 실행되므로, 필터체인 안에서만 돌도록 여기서 직접 생성한다.
     // AcademyRepository는 ObjectProvider 지연 주입: @WebMvcTest 슬라이스(JPA 레포 없음)에서도 이 설정이 뜨게.
@@ -137,6 +141,10 @@ public class SecurityConfig {
     // 시각 편집기 AI Agent 전용 Bearer 토큰 필터. 학원 1개에 바인딩된 토큰(SHA-256 해시만 DB 저장), 좁은 allowlist.
     VisualEditorAgentTokenFilter veAgentTokenFilter =
         new VisualEditorAgentTokenFilter(veAgentTokenServiceProvider);
+    // 재원생 앱 로그인 쿠키 필터: 학생 앱 API와 문항 그림에서만 통한다(요청마다 코드가 아직 쓰이는지 DB 확인).
+    f2r.tutor_solution.private_tutor_solution_back.config.security.StudentAppTokenFilter studentAppTokenFilter =
+        new f2r.tutor_solution.private_tutor_solution_back.config.security.StudentAppTokenFilter(
+            tokenProvider, studentAppCodeServiceProvider);
     ArchivedRouteAccessFilter archivedRouteAccessFilter =
         new ArchivedRouteAccessFilter(archivedRoutesProperties);
     OriginWhitelistFilter originWhitelistFilter =
@@ -292,6 +300,7 @@ public class SecurityConfig {
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/assistant"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/info"),
                         PathPatternRequestMatcher.withDefaults().matcher("/dashboard/parent-notices"),
+                        PathPatternRequestMatcher.withDefaults().matcher("/dashboard/exam-results"),
                         PathPatternRequestMatcher.withDefaults().matcher("/admissions/workspace"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft/**"),
                         PathPatternRequestMatcher.withDefaults().matcher("/help/academycraft"),
@@ -324,6 +333,8 @@ public class SecurityConfig {
             // BuildIt 통합 대시보드 — ADMIN·TUTOR 공용. 데이터는 /api/dashboard/** 에서 역할별 권한 검증.
             .requestMatchers("/dashboard", "/dashboard/assistant", "/dashboard/info", "/api/academy-home/**", "/admissions/workspace", "/api/dashboard/admissions/**", "/api/dashboard/assistant/v1/**", "/api/dashboard/widgets", "/api/dashboard/businesses").hasAnyRole("ADMIN", "TUTOR")
             .requestMatchers("/dashboard/parent-notices", "/api/dashboard/parent-notices").hasAnyRole("ADMIN", "TUTOR")
+            // 재원생 앱 '새 응시 기록': 원장과 원장이 지정한 강사만(지정 여부는 컨트롤러가 확인).
+            .requestMatchers("/dashboard/exam-results", "/api/exam-results", "/api/exam-results/**").hasAnyRole("ADMIN", "TUTOR")
             // 대시보드 캐릭터 영상·이미지(비공개 폴더) — 로그인한 ADMIN·TUTOR만. 공개 정적 경로로 두지 않는다.
             // 자료 묶음 설치는 ADMIN만(같은 출처 확인은 컨트롤러). 읽기 규칙보다 위에 둔다(first-match-wins).
             .requestMatchers(HttpMethod.POST, "/api/dashboard/agent-media/package").hasRole("ADMIN")
@@ -421,7 +432,13 @@ public class SecurityConfig {
             // 내신 실전 연습: 학교 고르기·학교별 회차 목록은 공개, 응시·결과 화면과 문항 그림(/naesin/**)은 로그인 회원 전용.
             .requestMatchers("/naesintest", "/naesintest/school/**", "/naesintest/pre-high")
             .permitAll()
-            .requestMatchers("/naesintest/**", "/naesin/**", "/api/naesintest/pre-high/**")
+            // 재원생 앱(2026-11-21): 화면은 빈 틀이라 공개(코드 로그인 칸이 뜬다). 데이터 API는 코드로 로그인한 학생만.
+            .requestMatchers("/naesintest/app", "/naesintest/app/**").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/naesintest/app/login", "/api/naesintest/app/logout").permitAll()
+            .requestMatchers("/api/naesintest/app/**").hasRole("STUDENT_APP")
+            // 문항 그림은 재원생 앱 학생도 연다(회차 잠금은 NaesinImageAccessFilter가 그대로 확인).
+            .requestMatchers("/naesin/**").hasAnyRole("STUDENT", "TUTOR", "ADMIN", "STUDENT_APP")
+            .requestMatchers("/naesintest/**", "/api/naesintest/pre-high/**")
             .hasAnyRole("STUDENT", "TUTOR", "ADMIN")
             // 위 패턴에 걸리지 않는 LMS 하위 신규 경로는 fail-closed(최소 인증).
             // 이 줄이 없으면 catch-all permitAll로 떨어진다.
@@ -496,7 +513,9 @@ public class SecurityConfig {
                 "/actuator/health",
                 "/robots.txt", "/sitemap.xml",
                 // F2R 웹앱(PWA) 껍데기: 개인 자료 없음(manifest·service worker·연결 끊김 안내)
-                "/manifest.json", "/sw.js", "/offline.html"
+                "/manifest.json", "/sw.js", "/offline.html",
+                // 재원생 앱(F2R 디지털 모의고사) 설치 정보 — 원장 앱(manifest.json)과 따로 둔다
+                "/manifest-naesintest.json"
             ).permitAll()
 
             // 인증 관련 public API
@@ -714,6 +733,7 @@ public class SecurityConfig {
         .addFilterAfter(newstartAgentTokenFilter, ChartAgentTokenFilter.class)
         .addFilterAfter(easyCollectorAgentTokenFilter, NewstartAgentTokenFilter.class)
         .addFilterAfter(veAgentTokenFilter, EasyCollectorAgentTokenFilter.class)
+        .addFilterAfter(studentAppTokenFilter, VisualEditorAgentTokenFilter.class)
         .addFilterAfter(archivedRouteAccessFilter, JwtAuthenticationFilter.class)
         .addFilterAfter(originWhitelistFilter, ArchivedRouteAccessFilter.class)
         .addFilterAfter(usernamePasswordAuthenticationFilter, OriginWhitelistFilter.class)

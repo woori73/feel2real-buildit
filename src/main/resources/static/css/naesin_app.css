@@ -1,0 +1,32 @@
+/* 재원생 앱(/naesintest/app) — 휴대폰 우선 */
+:root { --na-accent: #2D6590; --na-ink: #0F1B2D; --na-sub: #5A6576; --na-line: #E3E7EE; --na-bg: #F6F7F9; }
+* { box-sizing: border-box; }
+body.na-body { margin: 0; background: var(--na-bg); color: var(--na-ink); font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; word-break: keep-all; }
+.na-top { display: flex; align-items: center; gap: 12px; padding: 14px 16px; padding-top: max(14px, env(safe-area-inset-top)); background: var(--na-accent); color: #fff; }
+.na-top img { border-radius: 8px; background: #fff; }
+.na-top h1 { margin: 0; font-size: 18px; }
+.na-top p { margin: 2px 0 0; font-size: 12px; opacity: .85; }
+.na-main { max-width: 640px; margin: 0 auto; padding: 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+.na-card { background: #fff; border: 1px solid var(--na-line); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+.na-card h2 { margin: 0 0 8px; font-size: 17px; }
+.na-card > p, .na-note { margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: var(--na-sub); }
+.na-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+#naLoginForm { display: flex; gap: 8px; }
+#naCode { flex: 1; min-width: 0; height: 48px; padding: 0 14px; border: 1px solid #C9D3DF; border-radius: 12px; font-size: 20px; letter-spacing: .12em; text-transform: uppercase; }
+.na-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--na-accent); color: #fff !important; font-size: 16px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.na-btn[disabled] { opacity: .6; }
+.na-btn.is-line { background: #fff; color: var(--na-accent) !important; border: 1px solid var(--na-accent); }
+.na-link { border: 0; background: none; color: var(--na-accent); font-size: 14px; text-decoration: underline; cursor: pointer; padding: 6px 0; }
+.na-hello { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 10px; }
+.na-hello p { margin: 0; font-size: 16px; }
+.na-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.na-list li { border: 1px solid var(--na-line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+.na-list b { font-size: 15px; }
+.na-meta { font-size: 13px; color: var(--na-sub); }
+.na-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.na-score { font-size: 18px; font-weight: 700; color: #C4362E; }
+.na-empty { color: var(--na-sub); font-size: 14px; border-style: dashed !important; }
+.na-status { margin: 0 0 10px; font-size: 14px; color: #B42318; min-height: 1em; }
+.na-status:empty { display: none; }
+.na-guide h3 { margin: 12px 0 4px; font-size: 14px; }
+.na-guide ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.7; color: var(--na-sub); }
