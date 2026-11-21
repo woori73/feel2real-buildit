@@ -237,22 +237,22 @@
 
 /* 맞춤문제 2만원 서비스: 소제목 + 카드 격자 */
 .hl-service#service { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: stretch; padding: 0; border-radius: 0; background: none; }
-#service > * { margin: 0 !important; min-width: 0; }
+#service > *, #hit-proof > * { margin: 0 !important; min-width: 0; }
 #service > .hw-svc-head { grid-column: 1 / -1; margin: 30px 0 2px !important; }
 #service > .hw-svc-head.is-first { margin-top: 0 !important; }
 #service > .hw-h-a { order: 1; } #service > #request { order: 2; grid-column: span 3; } #service > #svc-exam { order: 3; grid-column: span 3; }
 #service > .hw-h-b { order: 4; } #service > #hitCase { order: 5; grid-column: span 4; } #service > #exam-blog { order: 6; grid-column: span 2; align-self: start; }
 #service > .hw-h-c { order: 7; } #service > #exam-payment { order: 8; grid-column: span 4; } #service > #exam-contact { order: 9; grid-column: span 2; }
 #service > #guide { order: 10; grid-column: 1 / -1; margin-top: 14px !important; }
-#service > section, .hl-service #request { background: #fff; border: 1px solid var(--hl-line); border-radius: 16px; padding: 20px; box-shadow: none; }
-#service > section h2 { margin: 0 0 8px; padding: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; line-height: 1.4; }
-#service > section p { margin: 0 0 10px; font-size: 14px; line-height: 1.65; color: var(--hl-sub); }
-#service .hl-eyebrow { margin: 0 0 4px; font-size: 12px; letter-spacing: .02em; color: var(--hw-accent); }
-#service .hl-corner { display: none; }
-#service .hl-lift { box-shadow: none; }
+:is(#service, #hit-proof) > section, .hl-service #request { background: #fff; border: 1px solid var(--hl-line); border-radius: 16px; padding: 20px; box-shadow: none; }
+:is(#service, #hit-proof) > section h2 { margin: 0 0 8px; padding: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; line-height: 1.4; }
+:is(#service, #hit-proof) > section p { margin: 0 0 10px; font-size: 14px; line-height: 1.65; color: var(--hl-sub); }
+:is(#service, #hit-proof) .hl-eyebrow { margin: 0 0 4px; font-size: 12px; letter-spacing: .02em; color: var(--hw-accent); }
+:is(#service, #hit-proof) .hl-corner { display: none; }
+:is(#service, #hit-proof) .hl-lift { box-shadow: none; }
 #service .hl-btn, #service .en-btn { min-height: 38px; padding: 0 16px; font-size: 14px; }
 #service .exam-contact-actions { gap: 8px; margin: 12px 0 0; }
-#service .exam-caption { font-size: 12px; color: var(--hl-note); }
+:is(#service, #hit-proof) .exam-caption { font-size: 12px; color: var(--hl-note); }
 #service .exam-step { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; font-weight: 500; color: var(--hw-accent); }
 
 /* 맞춤문제 신청: 회차 상자와 가격 */
@@ -327,12 +327,14 @@
 
 @media (max-width: 960px) {
   .hl-service#service { grid-template-columns: minmax(0, 1fr); }
-  #service > section, #service > .hw-svc-head { grid-column: 1 / -1 !important; }
+  #service > section, #service > .hw-svc-head, #hit-proof > section, #hit-proof > .hw-svc-head, #hit-proof > .hw-proof-basis { grid-column: 1 / -1 !important; }
+  .hl-service#hit-proof { grid-template-columns: minmax(0, 1fr); }
   #exam-payment .hl-pay { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
   .hl-service#service { margin: 40px 0 0; padding: 0; }
-  #service > section { padding: 16px; }
+  #service > section, #hit-proof > section { padding: 16px; }
+  .hl-service#hit-proof { margin: 40px 0 0; padding: 0; }
   .hw-plan b { font-size: 17px; }
   #hitCase .hit-stats b { font-size: 21px; }
   #hitCase .hit-stats li { padding: 10px; }
@@ -439,4 +441,62 @@
 @media (prefers-reduced-motion: reduce) {
   .hw-hl.hw-pulse path, .hw-hl.hw-pulse .hw-num, .hl-logo img, .hl-logo-text { animation: none !important; }
   .hl-logo-text { -webkit-text-fill-color: currentColor; background: none; }
+}
+
+/* ===== 2026-11-21 AI Coordinator 중심 개편 ===== */
+.hl-service#hit-proof { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: stretch; margin-top: 56px; padding: 0; border-radius: 0; background: none; }
+#hit-proof > .hw-svc-head, #hit-proof > .hw-proof-basis { grid-column: 1 / -1; }
+#hit-proof > #hitCase { grid-column: span 4; } #hit-proof > #exam-blog { grid-column: span 2; align-self: start; }
+.hw-proof-basis { font-size: 13px; line-height: 1.6; color: var(--hl-sub); }
+#coordinator-work, #academy-dashboard, #learning-content, #exam-security, #other-services { margin-top: 56px; scroll-margin-top: 140px; }
+#coordinator { margin-top: 0; scroll-margin-top: 140px; }
+.hw-coord-hero, .hw-flow, .hw-dash-text, .hw-sec, .hw-proof-basis, .hl-menu-coord { word-break: keep-all; }
+.hw-nowrap { white-space: nowrap; }
+#coordinator + .home-notice { margin-top: 16px; }
+.hw-coord-hero { margin-top: 0; border-radius: 20px; padding: 32px; background: linear-gradient(160deg, #0F2234, #1D4061); color: #fff; }
+.hw-coord-hero .hl-eyebrow { color: var(--hw-sweep); letter-spacing: .02em; }
+.hw-coord-hero h2 { margin: 0 0 12px; font-size: 34px; line-height: 1.25; letter-spacing: -.02em; color: #fff; }
+.hw-coord-lead { margin: 0 0 14px; max-width: 640px; font-size: 15px; line-height: 1.7; color: #D6E2EE; }
+.hw-coord-site { display: inline-block; margin: 0 0 20px; padding: 6px 14px; border-radius: 999px; background: rgba(143,192,230,.18); font-size: 14px; color: #fff; }
+.hw-coord-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.hw-coord-list a { display: flex; flex-direction: column; gap: 4px; height: 100%; box-sizing: border-box; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #fff !important; font-size: 14px; font-weight: 600; line-height: 1.4; }
+.hw-coord-list a span { font-size: 13px; color: var(--hw-sweep); }
+.hw-coord-list a:hover, .hw-coord-list a:focus-visible { background: rgba(255,255,255,.16); }
+.hw-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.hw-flow-no { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--hw-accent); color: #fff; font-size: 13px; font-weight: 700; }
+.hw-demo-tag { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--hw-accent); }
+.hw-demo-tag span { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 50%; background: var(--hw-accent-soft); }
+.hw-dash { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: center; background: #fff; border: 1px solid var(--hl-line); border-radius: 16px; padding: 20px; }
+.hw-dash figure, .hw-sec figure { margin: 0; min-width: 0; }
+.hw-dash img { display: block; width: 100%; height: auto; max-height: 520px; object-fit: cover; object-position: top; border-radius: 10px; border: 1px solid var(--hl-line); }
+.hw-dash figcaption, .hw-sec figcaption { font-size: 12px; color: var(--hl-note); }
+.hw-dash figcaption { margin-top: 6px; }
+.hw-dash-text > p { margin: 0 0 12px; font-size: 14px; line-height: 1.65; color: var(--hl-sub); }
+.hw-tags { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.hw-tags li { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--hw-frost); }
+.hw-dash-text .hw-login-note { font-weight: 700; color: var(--hl-ink); }
+.hw-dash .hero-cta, #exam-security .hero-cta { display: flex; flex-wrap: wrap; gap: 8px; }
+.hw-grid.is-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hw-link-card { color: var(--hl-ink); }
+.hw-link-card .hw-more { align-self: flex-start; margin-top: auto; }
+.hw-link-card:hover { border-color: var(--hw-accent); }
+.hw-sec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.hw-sec img { display: block; width: 100%; height: 280px; object-fit: cover; object-position: top; border-radius: 10px; border: 1px solid var(--hl-line); background: #fff; }
+.hw-sec-note { margin: 14px 0 12px; font-size: 14px; font-weight: 600; }
+.hl-menu-coord { display: grid; gap: 2px; margin-top: 14px; padding: 16px 18px; border-radius: 16px; background: #10253A; color: #fff !important; }
+.hl-menu-coord small { font-size: 12px; color: var(--hw-sweep); font-weight: 700; }
+.hl-menu-coord b { font-size: 16px; }
+.hl-menu-coord span { font-size: 13px; color: #C9D7E5; }
+@media (max-width: 960px) {
+  .hw-coord-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hw-flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hw-dash { grid-template-columns: minmax(0, 1fr); }
+  .hw-grid.is-three { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .hw-coord-hero { padding: 22px 18px; }
+  .hw-coord-hero h2 { font-size: 26px; }
+  .hw-flow, .hw-sec { grid-template-columns: minmax(0, 1fr); }
+  .hw-dash { padding: 14px; }
+  .hw-sec img { height: 240px; }
 }
