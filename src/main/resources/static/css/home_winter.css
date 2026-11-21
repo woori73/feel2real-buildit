@@ -503,3 +503,5 @@
   .hw-dash { padding: 14px; }
   .hw-sec img { height: 240px; }
 }
+.hw-install { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7; color: var(--hl-sub); word-break: keep-all; }
+.hw-install b { color: var(--hl-ink); margin-right: 6px; }

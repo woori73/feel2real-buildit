@@ -1843,6 +1843,17 @@ AcademyCraft 반별 출결부 기능을 F2R 장부 안으로 옮긴 모델이다
 - 학생명단(시간표) 진행표 가져오기: 진행표에 이름이 있는 날 = CHECK_IN, 그날 수업 수는 메모, **오늘 이후(예정) 날짜는 넣지 않는다.** 미리보기 해시가 달라지면 적용을 거절한다. 이름→학생 연결은 관리자가 고르고(기존 연결/새로 등록/건너뛰기), 새 학생은 `memo="{연도} 진행표에서 등록"`으로 만들어 다시 적용해도 중복 생성하지 않는다. 실명은 서버 안에서만 쓴다.
 - AcademyCraft 게이트웨이(`/academycraft/**`)는 그대로 두며, 두 출결 데이터는 서로 연결·동기화하지 않는다.
 
+## 재원생 앱(디지털 모의고사) — student_app_codes / student_exam_assignments / student_exam_results / student_exam_viewers (V1126, 2026-11-21)
+
+홈페이지 개편 지시서 6번. 재원생이 휴대폰에 학생용 앱(PWA, `/naesintest/app`, manifest `manifest-naesintest.json` — 원장 앱과 따로)을 설치하고 원장이 발급한 접속 코드로만 들어온다. 이름·연락처는 받지 않는다. 사용자 결정(2026-11-21): 코드 재발급·폐기 가능 / 학생이 그만두어도 응시 기록은 남김 / '새 응시 기록'은 원장과 원장이 지정한 사람만.
+
+- `student_app_codes`: `code_id` PK, `business_id` FK, `student_id` FK(easy_students), `code_hash` CHAR(64) UNIQUE(SHA-256, 원문 저장 안 함), `code_tail`(끝 2글자 표시용), `status` ACTIVE/REVOKED, `issued_by`, `issued_at`, `revoked_at`, `last_used_at`. 학생마다 ACTIVE 하나(재발급하면 이전 코드 REVOKED). 코드 8글자(0·O·1·I 제외). 로그인은 재원 중(ENROLLED) 학생만. 삭제 없음.
+- `student_exam_assignments`: `assignment_id` PK, `business_id`, `student_id`, `exam_code`(tp_exams, kind=NAESIN·PUBLISHED만), `assigned_by`, `assigned_at`, `removed_at`(빼기 = 표시만). UNIQUE(business_id, student_id, exam_code) — 다시 넣으면 removed_at을 비운다.
+- `student_exam_results`: `result_id` PK, `business_id`, `student_id`, `attempt_id` UNIQUE FK(tp_attempts), `grading_id` FK NULL(easy_grading_records, ON DELETE SET NULL), `exam_code`, `exam_title`, `attempt_no`(같은 회차 몇 번째 응시), `started_at`, `submitted_at`, `duration_sec`, `score`/`max_score`(배점 합), `total_count`, `correct_count`, `wrong_items` TEXT JSON `[{no, topic, reason}]`(topic = 해설의 '어법 포인트' 또는 첫 줄 유형, reason = 내 답·정답), `checked_by`/`checked_at`(NULL이면 '새 응시 기록'), `created_at`. 제출하면 바로 만들어지고 지우는 기능은 없다(퇴원 후에도 남음).
+- `student_exam_viewers`: `viewer_id` PK, `business_id`, `user_id` FK(users, TUTOR·ADMIN만 지정), `granted_by`, `granted_at`, `revoked_at`(해제 = 표시만). UNIQUE(business_id, user_id).
+- 응시 자체는 기존 `tp_attempts`/`tp_attempt_answers`를 쓴다. 앱 학생의 `tp_attempts.user_id`는 **-student_id**(회원 번호와 겹치지 않는 음수, FK 없음).
+- 학생부 연동: 제출할 때 `easy_grading_records`에 `source='APP'`, `subject_area='디지털 모의고사'`, `material='{시험 제목} · N번째 응시'`, `graded_on`=제출일, 정답 수·오답·피드백(점수·걸린 시간)으로 한 줄 넣는다. 오답 기록(`wrongTopics`)은 종이 시험 채점과 합쳐 유형별로 모인다.
+
 ## 학생별 등원 요일 수정 — easy_student_weekday_schedules (V1110)
 
 `business_id` + `student_id` UNIQUE, 각각 기존 사업체·학생 FK. `schedule_id` PK, `weekdays`(nullable VARCHAR40), `version`(@Version), 공통 생성·수정 시각/사용자. `weekdays=NULL`은 기존 자료 기준, 빈 문자열은 정기 등원 요일 미정, 그 외 월~일 순서 코드(`MON,WED`). 직접 수정(MANUAL) → 최근 4주 등원(ATTENDANCE) → 반 요일(CLASS) 순으로 학생 요약·요일별 명단·MCP 집계에 반영한다. 원본 진행표·기존 출결·반 배정은 변경하지 않는다. 되돌리기는 행 삭제 없이 `weekdays=NULL`로 저장한다. revision 불일치·동시 생성은 409이며 다른 창의 수정값을 덮지 않는다.

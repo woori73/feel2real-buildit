@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F2R 장부 - 재원생 앱</title>
+  <th:block th:replace="~{fragments/_admin_topnav :: head}"></th:block>
+  <th:block th:replace="~{fragments/_pwa :: head}"></th:block>
+  <link rel="stylesheet" href="/css/easy.css">
+  <style>
+    .easy-title.center, .easy-sub.center { text-align: center; }
+    .msg { display: none; margin-top: 8px; font-size: 13px; }
+    .msg.err { color: #c53030; }
+    .muted { color: #718096; font-size: 12px; }
+    table.sa { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.sa th, table.sa td { border-bottom: 1px solid #edf2f7; padding: 8px 6px; text-align: left; vertical-align: top; }
+    table.sa button { width: auto; margin: 0; padding: 5px 10px; font-size: 12px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #edf2f7; }
+    .tag.on { background: #e6fffa; color: #234e52; }
+    .issued { display: grid; grid-template-columns: 160px 1fr; gap: 14px; align-items: center; padding: 12px; border: 1px dashed #2D6590; border-radius: 10px; margin: 10px 0; }
+    .issued svg { width: 160px; height: 160px; }
+    .issued .code { font-size: 26px; font-weight: 700; letter-spacing: .12em; }
+    .row-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    .row-btns button { width: auto; margin: 0; }
+    .list { list-style: none; margin: 6px 0; padding: 0; }
+    .list li { border-top: 1px solid #edf2f7; padding: 8px 0; display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .list li button { width: auto; margin: 0; padding: 4px 10px; font-size: 12px; }
+    .form-group input, .form-group select { width: 100%; }
+    @media (max-width: 600px) { .issued { grid-template-columns: 1fr; } .table-wrap { overflow-x: auto; } }
+  </style>
+</head>
+<body data-no-assistant-welcome>
+<th:block th:replace="~{fragments/_admin_topnav :: topnav('easy')}"></th:block>
+<div class="easy-container">
+  <div class="easy-title center">재원생 앱(디지털 모의고사)</div>
+  <p class="easy-sub center">학생마다 접속 코드를 발급하고 시험을 배정합니다. 학생이 시험을 끝내면 학생부와 <a href="/dashboard/exam-results">새 응시 기록</a>에 바로 남습니다.</p>
+
+  <div class="easy-card">
+    <div class="form-row">
+      <div class="form-group"><label for="business">사업체</label><select id="business"></select></div>
+    </div>
+    <p class="msg" id="msg"></p>
+    <div class="table-wrap"><table class="sa"><thead><tr><th>학생</th><th>학교·학년</th><th>접속 코드</th><th>배정</th><th></th></tr></thead><tbody id="students"></tbody></table></div>
+    <p class="muted">재원 중(ENROLLED)인 학생만 보입니다. 퇴원한 학생은 로그인되지 않고, 응시 기록은 지우지 않고 남깁니다.</p>
+  </div>
+
+  <div class="easy-card" id="panel" hidden>
+    <h3 id="panelTitle" style="margin:0 0 6px"></h3>
+    <p><strong>접속 코드</strong> <span id="codeState" class="muted"></span></p>
+    <div class="row-btns"><button class="btn-primary" id="issue" type="button">코드 발급</button><button id="revoke" type="button">코드 폐기</button></div>
+    <div class="issued" id="issued" hidden>
+      <div id="qr" aria-hidden="false"></div>
+      <div><div class="code" id="codeText"></div>
+        <p class="muted">이 코드와 QR은 지금 한 번만 보입니다. 학생에게 QR을 찍게 하거나 코드를 알려 주세요. 다시 보려면 재발급합니다(이전 코드는 바로 못 씀).</p>
+        <p class="muted" id="codeUrl" style="word-break:break-all"></p></div>
+    </div>
+    <p style="margin-top:14px"><strong>배정한 시험</strong></p>
+    <div class="form-row"><div class="form-group"><label for="exam">시험 고르기</label><select id="exam"></select></div>
+      <div class="form-group" style="align-self:end"><button class="btn-primary" id="assign" type="button">배정</button></div></div>
+    <ul class="list" id="assigned"></ul>
+    <p style="margin-top:14px"><strong>응시 기록</strong> <span class="muted">(회차·응시 일시·점수·정답 수·걸린 시간 — 학생부 채점 기록에도 같은 내용이 들어갑니다)</span></p>
+    <ul class="list" id="results"></ul>
+  </div>
+
+  <div class="easy-card">
+    <h3 style="margin-top:0">응시 기록을 볼 사람</h3>
+    <p class="muted">원장(관리자)은 항상 봅니다. 그 밖에는 여기서 지정한 강사 계정만 「새 응시 기록」을 볼 수 있습니다.</p>
+    <ul class="list" id="viewers"></ul>
+    <div class="form-row"><div class="form-group"><label for="viewerId">강사 아이디</label><input id="viewerId" autocomplete="off"></div>
+      <div class="form-group" style="align-self:end"><button class="btn-primary" id="addViewer" type="button">지정</button></div></div>
+  </div>
+</div>
+<script src="/js/api.js"></script><script src="/js/easy_api.js"></script>
+<script src="/js/easy_student_app.js?v=20261121-1"></script>
+</body>
+</html>

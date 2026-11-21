@@ -15,7 +15,7 @@
 
   // 답 저장(PUT)과 제출(POST)은 한 줄로 세워 하나씩 보낸다. 같은 문항을 동시에 저장하면 서버에서 중복 오류가 난다.
   const send = NT.serialize(fn => fn());
-  const put = (qid, v) => send(() => NT.api('/api/testprep/attempts/' + attempt.attemptId + '/answers', { method: 'PUT', body: JSON.stringify({ questionId: qid, answerText: v }) }));
+  const put = (qid, v) => send(() => NT.api(NT.attemptsApi() + '/' + attempt.attemptId + '/answers', { method: 'PUT', body: JSON.stringify({ questionId: qid, answerText: v }) }));
   async function flush(force) {
     if (submitting && !force) return; // 제출을 시작한 뒤에는 자동 저장을 멈춘다(제출 요청이 모든 답을 함께 보낸다).
     const ids = [...dirty]; dirty.clear();
@@ -27,12 +27,12 @@
 
   async function boot() {
     const id = new URLSearchParams(location.search).get('attempt');
-    if (!id) { location.href = '/naesintest'; return; }
+    if (!id) { location.href = NT.pageBase(); return; }
     await NT.loadMe();
-    try { attempt = await NT.api('/api/testprep/attempts/' + encodeURIComponent(id)); }
-    catch (e) { $('paper').innerHTML = '<p class="nt-msg">시험을 열 수 없습니다. ' + NT.esc(e.message) + '</p><p class="nt-msg"><a class="nt-btn" href="/naesintest">학교 고르기</a></p>'; return; }
-    if (attempt.status === 'SUBMITTED') { location.replace('/naesintest/review?attempt=' + attempt.attemptId); return; }
-    if (attempt.kind !== 'NAESIN') { location.replace('/naesintest'); return; }
+    try { attempt = await NT.api(NT.attemptsApi() + '/' + encodeURIComponent(id)); }
+    catch (e) { $('paper').innerHTML = '<p class="nt-msg">시험을 열 수 없습니다. ' + NT.esc(e.message) + '</p><p class="nt-msg"><a class="nt-btn" href="' + NT.pageBase() + '">' + (NT.isApp() ? '내 시험 목록' : '학교 고르기') + '</a></p>'; return; }
+    if (attempt.status === 'SUBMITTED') { location.replace(NT.pageBase() + '/review?attempt=' + attempt.attemptId); return; }
+    if (attempt.kind !== 'NAESIN') { location.replace(NT.pageBase()); return; }
     qs = attempt.questions;
     qs.forEach(q => { answers[q.questionId] = attempt.savedAnswers[q.questionId] || null; });
     try { const s = JSON.parse(localStorage.getItem(stateKey()) || '{}'); idx = Math.min(s.idx || 0, qs.length - 1); marked = s.marked || {}; } catch (e) { /* 새로 시작 */ }
@@ -142,9 +142,9 @@
     try {
       await flush(true);
       const all = qs.map(q => ({ questionId: q.questionId, answerText: answers[q.questionId] }));
-      await send(() => NT.api('/api/testprep/attempts/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({ answers: all }) }));
+      await send(() => NT.api(NT.attemptsApi() + '/' + attempt.attemptId + '/submit', { method: 'POST', body: JSON.stringify({ answers: all }) }));
       try { localStorage.removeItem(stateKey()); } catch (e) { /* 없음 */ }
-      location.replace('/naesintest/review?attempt=' + attempt.attemptId);
+      location.replace(NT.pageBase() + '/review?attempt=' + attempt.attemptId);
     } catch (e) {
       submitting = false;
       $('paper').innerHTML = '<p class="nt-msg">제출하지 못했습니다: ' + NT.esc(e.message) + '</p><p class="nt-msg"><button type="button" class="nt-btn" id="nt-retry">다시 제출</button></p>';
@@ -164,7 +164,7 @@
     $('nt-confirm-ok').addEventListener('click', () => submit(false));
     $('nt-omr-toggle').addEventListener('click', () => document.body.classList.add('omr-open'));
     $('nt-omr-close').addEventListener('click', closeOmrSheet);
-    $('nt-leave').addEventListener('click', async () => { await flush(); location.href = NT.schoolUrl(attempt.examCode); });
+    $('nt-leave').addEventListener('click', async () => { await flush(); location.href = NT.listUrl(attempt.examCode); });
     document.addEventListener('keydown', e => {
       if (submitting || !$('nt-confirm').hidden || e.ctrlKey || e.metaKey || e.altKey) return;
       if (/^[1-5]$/.test(e.key)) { pick(qs[idx], NT.letter(Number(e.key) - 1)); e.preventDefault(); }

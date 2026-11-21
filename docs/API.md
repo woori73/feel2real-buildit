@@ -5637,6 +5637,24 @@ ADMIN 전용(`/api/admin/**`) + `EasyTutorAccessService.requireAllowedBusiness`.
 - 오류: 잘못된 값·다른 사업체 = 400 문장.
 
 
+## 재원생 앱(디지털 모의고사) (2026-11-21, V1126)
+
+화면: `/naesintest/app`(학생 앱 첫 화면 — 코드 로그인·배정 시험·내 기록·설치 안내, 공개 빈 틀), `/naesintest/app/run?attempt=`·`/naesintest/app/review?attempt=`(기존 시험·해설 화면을 앱 모드로), `/easy/student-app`(원장, ADMIN), `/dashboard/exam-results`(원장·지정 강사, ADMIN/TUTOR). 설치 정보 `GET /manifest-naesintest.json`(id·start_url `/naesintest/app`, scope `/naesintest/`).
+
+**학생 앱 API** `/api/naesintest/app` — 쿠키 `F2R_STUDENT_APP`(HttpOnly, SameSite=Lax, 180일, JWT role `STUDENT_APP`, subject = -학생번호, loginId = `app:{codeId}`). `StudentAppTokenFilter`가 이 경로와 문항 그림(`/naesin/**`, 다른 로그인이 없을 때)에서만 인증하고, 요청마다 코드가 아직 쓰이는지(폐기·재발급·퇴원) 확인한다. 그 밖의 경로에는 아무 권한도 주지 않는다.
+- `POST /login` `{code}` → 200 `{ok}` + 쿠키 / 401 `{message}`(틀림·폐기·퇴원) / 429(같은 IP 10분 10번 초과). 공개. `POST /logout` → 204(쿠키 지움). 공개.
+- `GET /me` → `{studentName, exams[{examCode, title, questionCount, attempts, lastScore, lastMax, lastSubmittedAt, inProgressAttemptId}], results[{attemptId, examCode, examTitle, attemptNo, submittedAt, durationSec, score, maxScore, totalCount, correctCount}]}` — 배정된 시험과 내 기록만.
+- `POST /attempts` `{examCode}` → `AttemptView`(배정 안 된 시험 403, 풀던 응시가 있으면 이어서). `GET /attempts` → 내 응시 목록. `GET /attempts/{id}` · `PUT /attempts/{id}/answers` · `POST /attempts/{id}/submit` → `/api/testprep/attempts`와 같은 모양. 제출하면 응시 기록·학생부 채점 기록(source=APP)을 남긴다(같은 응시 다시 제출해도 한 번). `GET /attempts/{id}/review` → 내 응시만(남의 응시 404).
+
+**원장 API** `/api/admin/easy/student-app`(ADMIN + `requireAllowedBusiness`, 모든 요청 `?businessId=`)
+- `GET /students` → 재원생 `[{studentId, name, school, grade, code{active, tail, issuedAt, lastUsedAt}, assignedCount}]`. `GET /students/{id}` → `{studentId, name, status, code, assignments[{examCode, title, assignedAt}], results[ResultView]}`.
+- `POST /students/{id}/code` → `{code(4-4 표시), appUrl(…/naesintest/app#code=…), qrSvg, status}` — 발급·재발급(이전 코드 바로 폐기). 코드 원문·QR은 이 응답에서만. 재원생만. `DELETE /students/{id}/code` → 폐기.
+- `GET /exams` → 배정할 수 있는 시험(NAESIN·PUBLISHED) `[{examCode, title, questionCount}]`. `POST /students/{id}/assignments` `{examCode}` · `DELETE /students/{id}/assignments?examCode=` → 패널.
+- `GET /viewers` · `POST /viewers` `{loginId}`(TUTOR·ADMIN 계정만) · `DELETE /viewers/{userId}` → `[{userId, loginId, name, role, grantedAt}]`.
+
+**새 응시 기록 API** `/api/exam-results`(ADMIN·TUTOR, 원장이 아니면 `student_exam_viewers`에 지정된 사람만 — 아니면 403)
+- `GET /businesses` → 볼 수 있는 사업체. `GET ?businessId=&onlyNew=true|false` → `{newCount, results[ResultView{resultId, studentId, studentName, examCode, examTitle, attemptNo, submittedAt, durationSec, score, maxScore, totalCount, correctCount, wrongItems[], checkedAt, gradingId}]}`(전체는 최근 200). `POST /{resultId}/check?businessId=` → 점검 표시(기록은 바꾸지 않음, 다른 사업체 번호는 400).
+
 ## MCP `academy:manage` — 내 학원 관리(학원 원장 계정) (2026-11-19)
 
 별도 동의(민감 표시) + 운영 허용 목록(`app.mcp.allowed-scopes`, prd 기본값에 포함) + 계정 역할 TUTOR·ADMIN. 모든 호출은 그 계정이 소유한 학원(`academies.tutor_user_id`)에만 미치고, 기존 서비스의 소유자 검사를 그대로 쓴다(MCP 호출 동안에만 SecurityContext를 연결 사용자로 채움, `McpAcademyTools.asUser`). 동의 없이 실행하면 403 `academy_manage_consent_required`. 요청 제한 동의당 분당 30회. 학생 이름은 가린다(김○수).

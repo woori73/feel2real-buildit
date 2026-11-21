@@ -22,9 +22,19 @@
 
   NT.esc = v => String(v == null ? '' : v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
 
+  // 재원생 앱(/naesintest/app/*) 화면은 <body data-nt-app>로 표시한다(2026-11-21).
+  // 앱 화면은 응시 API를 /api/naesintest/app/attempts로, 화면 주소를 /naesintest/app으로 쓰고, 로그인은 접속 코드로 한다.
+  NT.isApp = () => typeof document !== 'undefined' && !!document.body && document.body.hasAttribute('data-nt-app');
+  NT.attemptsApi = () => NT.isApp() ? '/api/naesintest/app/attempts' : '/api/testprep/attempts';
+  NT.pageBase = () => NT.isApp() ? '/naesintest/app' : '/naesintest';
+  NT.listUrl = examCode => NT.isApp() ? '/naesintest/app' : NT.schoolUrl(examCode);
+
   NT.api = async function (url, opts) {
     const res = await fetch(url, Object.assign({ credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } }, opts || {}));
-    if (res.status === 401) { NT.openLogin(); throw new Error('로그인이 필요합니다.'); }
+    if (res.status === 401) {
+      if (NT.isApp()) { location.href = '/naesintest/app'; throw new Error('접속 코드로 다시 로그인해 주세요.'); }
+      NT.openLogin(); throw new Error('로그인이 필요합니다.');
+    }
     if (!res.ok) {
       let msg = res.statusText;
       try { const j = await res.json(); msg = j.message || msg; } catch (e) { /* 본문 없음 */ }
@@ -36,6 +46,7 @@
   };
 
   NT.loadMe = async function () {
+    if (NT.isApp()) return NT.user; // 앱은 회원 로그인을 쓰지 않는다
     try {
       const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
       NT.user = res.ok ? await res.json() : null;
