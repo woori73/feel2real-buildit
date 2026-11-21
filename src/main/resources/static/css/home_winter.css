@@ -505,3 +505,48 @@
 }
 .hw-install { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7; color: var(--hl-sub); word-break: keep-all; }
 .hw-install b { color: var(--hl-ink); margin-right: 6px; }
+
+/* ===== 2026-11-21 상단 펼침 메뉴(사이드 메뉴를 대신함) ===== */
+.hw-shell, .hw-shell > .hl-main { display: block; }
+.hw-shell { max-width: none; margin: 0; padding: 0; }
+.hw-shell > .hl-main { max-width: 1280px; margin: 0 auto; padding-left: 32px; }
+@media (max-width: 600px) { .hw-shell > .hl-main { padding-left: 16px; } }
+.hl-links { gap: 2px; }
+.hl-dd { position: relative; }
+.hl-dd-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 10px; background: none; color: var(--hl-ink); font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.hl-dd-btn svg { transition: transform .2s; color: var(--hl-sub); }
+.hl-dd-btn:hover, .hl-dd-btn:focus-visible, .hl-dd.is-open .hl-dd-btn { background: var(--hw-frost); }
+.hl-dd.is-open .hl-dd-btn svg { transform: rotate(180deg); }
+.hl-dd-flag { width: 0; height: 0; border-style: solid; border-width: 0 0 10px 12px; border-color: transparent transparent currentColor transparent; display: inline-block; }
+.hl-dd-flag.t1 { color: var(--hw-accent); } .hl-dd-flag.t2 { color: #2F8F6A; } .hl-dd-flag.t3 { color: #8B6FCB; }
+.hl-dd-flag.t4 { color: #D9822B; } .hl-dd-flag.t5 { color: #C4362E; } .hl-dd-flag.t6 { color: #8FA3B8; }
+.hl-dd-panel { display: none; position: absolute; left: 0; top: calc(100% + 6px); z-index: 70; min-width: 220px; padding: 8px; border: 1px solid var(--hl-line); border-radius: 14px; background: #fff; box-shadow: 0 18px 40px -18px rgba(15,27,45,.35); }
+.hl-dd-panel::before { content: ""; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
+.hl-dd:hover .hl-dd-panel, .hl-dd.is-open .hl-dd-panel { display: grid; gap: 2px; }
+.hl-dd-panel a { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 10px; font-size: 14px; white-space: nowrap; }
+.hl-dd-panel a:hover, .hl-dd-panel a:focus-visible { background: var(--hw-frost); }
+.hl-dd-panel .hl-link-offer::after { display: none; }
+/* 펼침 메뉴가 보이는 넓은 화면: 상단 '맞춤문제 신청'(펼침 메뉴·화면 따라오는 버튼에 같은 링크)은 숨기고 ☰는 아이콘만 */
+@media (min-width: 1321px) {
+  .hl-top-inner { gap: 16px; }
+  .hl-actions > .hl-free { display: none; }
+  .hl-menu-btn { padding: 0 12px; }
+  .hl-menu-btn .hl-menu-label { display: none; }
+}
+@media (min-width: 1321px) and (max-width: 1440px) {
+  .hl-dd-btn { padding: 0 8px; font-size: 14.5px; gap: 5px; }
+}
+/* 첫 화면: 왼쪽 대표 문구, 오른쪽 서비스 지도(2026-11-21). 좁은 화면은 문구 아래에 지도 */
+.hw-coord-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 28px; align-items: stretch; }
+.hw-coord-text { min-width: 0; display: flex; flex-direction: column; }
+.hw-coord-text .hw-coord-list { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: auto; }
+.hw-coord-hero .hw-map { margin: 0; min-width: 0; display: flex; flex-direction: column; }
+.hw-map-head { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.hw-map-head h3 { margin: 0; font-size: 15px; color: #fff; }
+.hw-map-head p { margin: 0; font-size: 12px; color: #A9BED2; }
+.hw-coord-hero .hw-net { flex: 1 1 auto; aspect-ratio: auto; min-height: 420px; border: 1px solid rgba(255,255,255,.12); }
+.hw-nd.is-detail { opacity: .88; }
+@media (max-width: 960px) {
+  .hw-coord-hero { grid-template-columns: minmax(0, 1fr); }
+  .hw-coord-hero .hw-net { min-height: 0; aspect-ratio: 4 / 5; }
+}

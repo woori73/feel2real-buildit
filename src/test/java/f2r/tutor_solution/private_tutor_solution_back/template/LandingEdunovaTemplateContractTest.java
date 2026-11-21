@@ -142,6 +142,29 @@ class LandingEdunovaTemplateContractTest {
   }
 
   @Test
+  @DisplayName("given 2026-11-21 상단 펼침 메뉴 when 렌더하면 then 6묶음 버튼이 패널과 이어지고, 옮긴 사이드 메뉴의 링크가 모두 상단 메뉴에 있으며, 서비스 지도는 첫 화면 대표 문구 안에 있다")
+  void givenTopDropdownNav_whenRendered_thenGroupsCarryEverySideMenuLinkAndMapIsOnFirstScreen() {
+    // given
+    String html = render();
+    // when
+    String top = html.substring(html.indexOf("id=\"enNav\""), html.indexOf("</header>", html.indexOf("id=\"enNav\"")));
+    String hero = html.substring(html.indexOf("id=\"coordinator\""), html.indexOf("id=\"coordinator-work\""));
+    // then
+    for (String key : new String[] {"coord", "demo", "learn", "security", "offer", "more"}) {
+      assertThat(top).as(key).contains("data-dd=\"" + key + "\"", "aria-controls=\"dd-" + key + "\"", "id=\"dd-" + key + "\"");
+    }
+    assertThat(top.split("class=\"hl-dd-btn\"", -1)).hasSize(7);
+    assertThat(top).contains(">AI Coordinator<", ">교습소 실증<", ">학습 콘텐츠<", ">부정행위 방지<", ">맞춤문제<", ">다른 서비스<");
+    for (String link : new String[] {"#coordinator", "#academy-dashboard", "/dashboard", "/ledger", "#digital-exam", "#pre-high-english",
+        "#student-app", "#hitCase", "#counsel", "/testprep", "/wiki", "/csat/2027-english", "#exam-security", "/exam-security",
+        "#exam-contact", "#request", "#guide", "/faq", "#ai-content", "/ai-agent-studio", "#ebook", "#review-game", "#chart-showcase", "/builder"}) {
+      assertThat(top).as(link).contains("href=\"" + link + "\"");
+    }
+    assertThat(html).doesNotContain("class=\"hw-side\"").contains("/js/home_topnav.js");
+    assertThat(hero).contains("id=\"service-map\"", "id=\"hwNet\"", "F2R 서비스 지도");
+  }
+
+  @Test
   void givenVerifiedContentSettings_whenRendered_thenPublicLinkAndManualTrailerUseSeparateSlots() {
     String html = render("public/landing", "", "https://app.nimblefox.ai/g/public-fixture",
         "/api/landing/videos/home-agent-trailer/stream");
@@ -287,7 +310,7 @@ class LandingEdunovaTemplateContractTest {
         "exam_q13.jpg", "mock_q13.jpg", "실제 시험 13번 · 3점", "시험 전 예상문제 7회 15번", "동일 적중", ">맞춤문제 신청<");
     // 2026-11-19 사용자 지시: 영상 아래 카드는 2027 수능 영어 해설 모션만 둔다(맞춤문제 2주 4회 160문항 안내·신청 버튼 삭제).
     assertThat(promo).contains("id=\"examPromo\"", "id=\"examPromoVideo\"", "id=\"csatHome\"", "2027 수능 영어 해설");
-    String csatCard = promo.substring(promo.indexOf("id=\"csatHome\""), promo.indexOf("id=\"service-map\""));
+    String csatCard = promo.substring(promo.indexOf("id=\"csatHome\""));
     assertThat(csatCard).doesNotContain("서수니 · 세븐", "id=\"homeIntakeCta\"", "2주 4회 160문항", "클라우드리뷰 무료신청");
     for (String path : new String[] {"/img/landing/home-card-game.webp",
         "/img/landing/home-hero-exam-3d.webp", "/img/landing/home-3d-target.webp", "/img/landing/home-3d-piggy.webp",

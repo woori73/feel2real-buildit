@@ -229,40 +229,56 @@
   if (net) {
     var ncv = doc.createElement('canvas'); ncv.setAttribute('aria-hidden', 'true'); net.appendChild(ncv);
     var nx = ncv.getContext('2d');
-    /* 2026-11-21 개편: 묶음 4개(Coordinator·대시보드·교습소 실증 / 학습 콘텐츠 / 부정행위 방지 / 다른 서비스) */
+    /* 2026-11-21 개편: 묶음 4개(Coordinator·대시보드·교습소 실증 / 학습 콘텐츠 / 부정행위 방지 / 다른 서비스).
+       첫 화면으로 옮기며 점을 늘렸다. d: 1 = 세부 점(좁은 화면에서는 숨겨 겹치지 않게 한다). */
     var N = [
-      { t: 'AI Coordinator', x: .22, y: .46, hub: 1, h: '#coordinator' },
-      { t: '학습 콘텐츠', x: .62, y: .22, hub: 1, h: '#learning-content' },
-      { t: '부정행위 방지', x: .46, y: .78, hub: 1, h: '#exam-security' },
-      { t: '다른 서비스', x: .8, y: .62, hub: 1, h: '#other-services' },
-      { t: '대시보드', s: '원장', x: .1, y: .14, h: '/dashboard', p: 0 },
-      { t: '장부', x: .08, y: .3, h: '/ledger', p: 0 },
-      { t: '디지털 기말고사', s: '학교별', x: .28, y: .06, h: '#digital-exam', p: 0 },
-      { t: '예비고1', s: '모의고사', x: .1, y: .62, h: '#pre-high-english', p: 0 },
-      { t: '적중 사례', s: '96.8%', x: .14, y: .86, h: '#hitCase', p: 0 },
-      { t: '2028 입시상담 AI', x: .44, y: .55, h: '#counsel', p: 0 },
-      { t: '맞춤문제', s: '2주 4회', x: .62, y: .38, h: '#request', p: 1 },
-      { t: '모의고사 위키', x: .7, y: .06, h: '/wiki', p: 1 },
-      { t: 'New iBT · SAT', x: .84, y: .14, h: '/testprep', p: 1 },
-      { t: '2027 수능 해설', x: .84, y: .3, h: '/csat/2027-english', p: 1 },
-      { t: '렌즈 찾기', s: '11.21 배포', x: .26, y: .94, h: '#exam-security', p: 2 },
-      { t: '보안 무늬', s: '준비 중', x: .72, y: .94, h: '#exam-security', p: 2 },
-      { t: '시연 문의', x: .56, y: .7, h: '#exam-contact', p: 2 },
-      { t: 'AI AGENT', x: .9, y: .46, h: '#ai-content', p: 3 },
-      { t: '전자책', x: .92, y: .86, h: '#ebook', p: 3 },
-      { t: '복습 게임', x: .86, y: .78, h: '#review-game', p: 3 },
-      { t: '빌드잇 차트', x: .9, y: .7, h: '#chart-showcase', p: 3 },
-      { t: '새 교습소', s: '11.25 이전', x: .18, y: .38, h: '#coordinator', p: 0 }
+      { t: 'AI Coordinator', x: .2, y: .45, hub: 1, h: '#coordinator' },
+      { t: '학습 콘텐츠', x: .64, y: .21, hub: 1, h: '#learning-content' },
+      { t: '부정행위 방지', x: .5, y: .77, hub: 1, h: '#exam-security' },
+      { t: '다른 서비스', x: .84, y: .53, hub: 1, h: '#other-services' },
+      { t: '새 교습소', s: '11.25 이전', x: .16, y: .05, h: '#coordinator', p: 0 },
+      { t: '대시보드', s: '원장', x: .42, y: .07, h: '/dashboard', p: 0 },
+      { t: '장부', x: .08, y: .17, h: '/ledger', p: 0 },
+      { t: 'Coordinator가 하는 일', x: .3, y: .25, h: '#coordinator-work', p: 0, d: 1 },
+      { t: '디지털 기말고사', s: '학교별', x: .18, y: .33, h: '#digital-exam', p: 0 },
+      { t: '시험 보는 방법', x: .44, y: .37, h: '#dexam-guide', p: 0, d: 1 },
+      { t: '예비고1', s: '모의고사', x: .12, y: .57, h: '#pre-high-english', p: 0 },
+      { t: '재원생 앱', s: '설치', x: .36, y: .57, h: '#student-app', p: 0 },
+      { t: '적중 사례', s: '96.8%', x: .12, y: .69, h: '#hitCase', p: 0 },
+      { t: '직보 쇼츠', s: '압구정중2', x: .34, y: .67, h: '/naesintest/school/apgujeong-m2#shorts', p: 0, d: 1 },
+      { t: '2028 입시상담 AI', x: .2, y: .85, h: '#counsel', p: 0 },
+      { t: '맞춤문제', s: '2주 4회', x: .62, y: .37, h: '#request', p: 1 },
+      { t: '모의고사 위키', x: .66, y: .06, h: '/wiki', p: 1 },
+      { t: 'New iBT · SAT', x: .88, y: .12, h: '/testprep', p: 1 },
+      { t: '2027 수능 해설', x: .87, y: .29, h: '/csat/2027-english', p: 1 },
+      { t: '렌즈 찾기', s: '11.21 배포', x: .36, y: .94, h: '#exam-security', p: 2 },
+      { t: '보안 무늬', s: '준비 중', x: .66, y: .94, h: '#exam-security', p: 2 },
+      { t: '시연 문의', x: .66, y: .7, h: '#exam-contact', p: 2 },
+      { t: '논문·기사', x: .6, y: .85, h: '/exam-security', p: 2, d: 1 },
+      { t: 'AI AGENT', x: .9, y: .43, h: '#ai-content', p: 3 },
+      { t: '제작협업실', x: .92, y: .63, h: '/ai-agent-studio', p: 3, d: 1 },
+      { t: '빌드잇 차트', x: .9, y: .74, h: '#chart-showcase', p: 3 },
+      { t: '복습 게임', x: .84, y: .84, h: '#review-game', p: 3 },
+      { t: '전자책', x: .92, y: .94, h: '#ebook', p: 3 },
+      { t: '학원 홈페이지', x: .74, y: .6, h: '/builder', p: 3, d: 1 }
     ];
     var E = [[0, 1], [0, 2], [1, 3], [2, 3]];
     N.forEach(function (n, i) { if (n.p !== undefined) E.push([n.p, i]); });
-    [[4, 5], [6, 7], [11, 12], [14, 15], [18, 19]].forEach(function (e) { E.push(e); });
+    [[5, 6], [8, 9], [10, 12], [11, 0], [19, 20], [26, 27]].forEach(function (e) { E.push(e); });
+    var narrow = false, hidden = function (i) { return narrow && N[i].d; };
     var hot = -1, els = [], visible = true, SQ = 1, NW = 0, NH = 0;
-    var X = function (n) { return .5 + (n.x - .5) * SQ; };
+    /* 좁은 화면(지도 폭 480 미만): 세부 점을 숨기고 아래 위치(가로 x, 세로 y)로 다시 놓아 글자가 겹치지 않게 한다 */
+    var M = { 'AI Coordinator': [.25, .42], '학습 콘텐츠': [.62, .18], '부정행위 방지': [.55, .85], '다른 서비스': [.78, .5],
+      '새 교습소': [.2, .04], '대시보드': [.2, .11], '장부': [.12, .18], '디지털 기말고사': [.25, .26], '예비고1': [.15, .5],
+      '재원생 앱': [.38, .58], '적중 사례': [.15, .64], '2028 입시상담 AI': [.24, .78], '맞춤문제': [.62, .34], '모의고사 위키': [.75, .04],
+      'New iBT · SAT': [.78, .11], '2027 수능 해설': [.8, .26], '렌즈 찾기': [.22, .93], '보안 무늬': [.6, .93], '시연 문의': [.6, .71],
+      'AI AGENT': [.85, .42], '빌드잇 차트': [.82, .64], '복습 게임': [.84, .78], '전자책': [.88, .93] };
+    var X = function (n) { return narrow && M[n.t] ? M[n.t][0] : .5 + (n.x - .5) * SQ; };
+    var Y = function (n) { return narrow && M[n.t] ? M[n.t][1] : n.y; };
     var linked = function (i, j) { return E.some(function (e) { return (e[0] === i && e[1] === j) || (e[1] === i && e[0] === j); }); };
     var mark = function () { els.forEach(function (a, j) { a.classList.toggle('hot', hot >= 0 && j !== hot && linked(hot, j)); }); };
     N.forEach(function (n, i) {
-      var a = doc.createElement('a'); a.className = 'hw-nd' + (n.hub ? ' is-hub' : ''); a.href = n.h;
+      var a = doc.createElement('a'); a.className = 'hw-nd' + (n.hub ? ' is-hub' : '') + (n.d ? ' is-detail' : ''); a.href = n.h;
       a.innerHTML = n.t + (n.s ? '<sup>' + n.s + '</sup>' : '');
       ['mouseenter', 'focus'].forEach(function (ev) { a.addEventListener(ev, function () { hot = i; mark(); }); });
       ['mouseleave', 'blur'].forEach(function (ev) { a.addEventListener(ev, function () { hot = -1; mark(); }); });
@@ -273,22 +289,23 @@
       var tt = (ts || 0) / 1000; nx.clearRect(0, 0, NW, NH);
       dots.forEach(function (d) {
         var hb = N[d.h], dx = d.x * NW + Math.sin(tt * .35 + d.p) * 7, dy = d.y * NH + Math.cos(tt * .28 + d.p) * 7;
-        nx.strokeStyle = 'rgba(141,187,224,.10)'; nx.lineWidth = 1; nx.beginPath(); nx.moveTo(X(hb) * NW, hb.y * NH); nx.lineTo(dx, dy); nx.stroke();
+        nx.strokeStyle = 'rgba(141,187,224,.10)'; nx.lineWidth = 1; nx.beginPath(); nx.moveTo(X(hb) * NW, Y(hb) * NH); nx.lineTo(dx, dy); nx.stroke();
         nx.fillStyle = 'rgba(170,205,235,.75)'; nx.beginPath(); nx.arc(dx, dy, 1.8, 0, 6.283); nx.fill();
       });
       E.forEach(function (e, i) {
+        if (hidden(e[0]) || hidden(e[1])) return;
         var a = N[e[0]], b = N[e[1]], on = hot >= 0 && (e[0] === hot || e[1] === hot);
         nx.strokeStyle = on ? 'rgba(220,236,250,.9)' : 'rgba(141,187,224,.38)'; nx.lineWidth = on ? 1.6 : 1;
-        nx.beginPath(); nx.moveTo(X(a) * NW, a.y * NH); nx.lineTo(X(b) * NW, b.y * NH); nx.stroke();
+        nx.beginPath(); nx.moveTo(X(a) * NW, Y(a) * NH); nx.lineTo(X(b) * NW, Y(b) * NH); nx.stroke();
         var k = (tt * .22 + i * .137) % 1; nx.fillStyle = 'rgba(255,255,255,.9)';
-        nx.beginPath(); nx.arc(X(a) * NW + (X(b) - X(a)) * NW * k, a.y * NH + (b.y - a.y) * NH * k, 1.6, 0, 6.283); nx.fill();
+        nx.beginPath(); nx.arc(X(a) * NW + (X(b) - X(a)) * NW * k, Y(a) * NH + (Y(b) - Y(a)) * NH * k, 1.6, 0, 6.283); nx.fill();
       });
       if (!reduce && visible) win.requestAnimationFrame(frame);
     };
     var nsize = function () {
       var d = Math.min(win.devicePixelRatio || 1, 2); NW = net.clientWidth; NH = net.clientHeight;
-      ncv.width = NW * d; ncv.height = NH * d; nx.setTransform(d, 0, 0, d, 0, 0); SQ = NW < 560 ? .74 : 1;
-      N.forEach(function (n, i) { els[i].style.left = X(n) * 100 + '%'; els[i].style.top = n.y * 100 + '%'; });
+      ncv.width = NW * d; ncv.height = NH * d; nx.setTransform(d, 0, 0, d, 0, 0); SQ = NW < 560 ? .74 : 1; narrow = NW < 480;
+      N.forEach(function (n, i) { els[i].style.left = X(n) * 100 + '%'; els[i].style.top = Y(n) * 100 + '%'; els[i].style.display = hidden(i) ? 'none' : ''; });
       if (reduce || !visible) frame(0);
     };
     nsize(); win.addEventListener('resize', nsize);

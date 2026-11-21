@@ -16,10 +16,10 @@
   <link rel="stylesheet" href="/css/account_menu.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="/css/home_light.css?v=20261121-coord">
+  <link rel="stylesheet" href="/css/home_light.css?v=20261121-menu">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&display=swap">
-  <link rel="stylesheet" href="/css/home_winter.css?v=20261121-app">
+  <link rel="stylesheet" href="/css/home_winter.css?v=20261121-menu2">
   <script src="/js/home_exam_contact.js?v=20261030-1" defer></script>
   <script src="/js/home_exam_promo.js?v=20261029-3" defer></script>
   <link rel="stylesheet" href="/css/csat_motion.css?v=20261119-1">
@@ -32,7 +32,8 @@
   <script src="/js/home_hero.js?v=20261101-3" defer></script>
   <script src="/js/home_motion.js?v=20261121-coord" defer></script>
   <script src="/js/admissions_articles_view.js?v=20261119-1" defer></script>
-  <script src="/js/home_winter.js?v=20261121-coord" defer></script>
+  <script src="/js/home_winter.js?v=20261121-map2" defer></script>
+  <script src="/js/home_topnav.js?v=20261121-1" defer></script>
   <script src="/js/home_admissions_articles.js?v=20261119-1" defer></script>
 </head>
 <body data-track-page="home">
@@ -47,13 +48,67 @@
         <img src="/img/F2R_logo_pure.svg" alt="" width="36" height="36">
         <span class="hl-logo-text">Feel to Real <span class="hl-logo-abbr">(F2R)</span></span>
       </a>
+      <!-- 상단 펼침 메뉴(2026-11-21): 사업계획서 순서의 6묶음. 마우스를 올리거나 누르면 열리고 Esc·바깥 누르면 닫힌다(home_topnav.js).
+           좁은 화면은 아래 바로가기 줄과 ☰ 전체 메뉴를 쓴다. 왼쪽 사이드 메뉴의 링크는 모두 이 안으로 옮겼다. -->
       <nav class="hl-links" aria-label="주요 메뉴">
-        <a href="#coordinator">AI Coordinator</a>
-        <a href="/dashboard">대시보드</a>
-        <a href="#request" class="hl-link-offer"><span class="hw-sweep">맞춤문제</span><span class="hl-badge">2주 4회 · 2만원</span></a>
-        <a href="/wiki">모의고사 위키</a>
-        <a href="#exam-security">부정행위 방지</a>
-        <a href="#chart-showcase">빌드잇 차트</a>
+        <div class="hl-dd" data-dd="coord">
+          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-coord"><i class="hl-dd-flag t1" aria-hidden="true"></i>AI Coordinator<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="hl-dd-panel" id="dd-coord">
+            <a href="#coordinator">F2R AI Coordinator 소개</a>
+            <a href="#coordinator-work">Coordinator가 하는 일</a>
+            <a href="#academy-dashboard">학원 운영 대시보드 소개</a>
+            <a href="/dashboard">대시보드</a>
+            <a href="/ledger">F2R 장부</a>
+          </div>
+        </div>
+        <div class="hl-dd" data-dd="demo">
+          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-demo"><i class="hl-dd-flag t2" aria-hidden="true"></i>교습소 실증<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="hl-dd-panel" id="dd-demo">
+            <a href="#digital-exam">디지털 기말내신</a>
+            <a href="#pre-high-english">예비고1 디지털 모의고사</a>
+            <a href="#student-app">재원생 앱 설치</a>
+            <a href="#hitCase">실증 근거: 적중 사례</a>
+            <a href="#counsel">2028 입시상담 AI</a>
+          </div>
+        </div>
+        <div class="hl-dd" data-dd="learn">
+          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-learn"><i class="hl-dd-flag t3" aria-hidden="true"></i>학습 콘텐츠<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="hl-dd-panel" id="dd-learn">
+            <a href="#learning-content">학습 콘텐츠 한눈에</a>
+            <a href="/testprep">New iBT / Digital SAT</a>
+            <a href="/wiki">모의고사 위키</a>
+            <a href="/csat/2027-english">2027 수능 영어 해설</a>
+          </div>
+        </div>
+        <div class="hl-dd" data-dd="security">
+          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-security"><i class="hl-dd-flag t4" aria-hidden="true"></i>부정행위 방지<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="hl-dd-panel" id="dd-security">
+            <a href="#exam-security">부정행위 방지 기술</a>
+            <a href="/exam-security">관련 논문·기사 모음</a>
+            <a href="#exam-contact">학교·학원 시연 문의</a>
+          </div>
+        </div>
+        <div class="hl-dd" data-dd="offer">
+          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-offer"><i class="hl-dd-flag t5" aria-hidden="true"></i>맞춤문제<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="hl-dd-panel" id="dd-offer">
+            <a href="#request" class="hl-link-offer"><span class="hw-sweep">맞춤문제 신청</span><span class="hl-badge">2주 4회 · 2만원</span></a>
+            <a href="#svc-exam">제작 과정</a>
+            <a href="#exam-payment">이용료와 입금</a>
+            <a href="#guide">이용 방법</a>
+            <a href="/faq">자주 묻는 질문</a>
+          </div>
+        </div>
+        <div class="hl-dd" data-dd="more">
+          <button type="button" class="hl-dd-btn" aria-expanded="false" aria-controls="dd-more"><i class="hl-dd-flag t6" aria-hidden="true"></i>다른 서비스<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="hl-dd-panel" id="dd-more">
+            <a href="#ai-content">AI AGENT 트레일러</a>
+            <a href="/ai-agent-studio">AI AGENT 제작협업실</a>
+            <a href="#ebook">전자책</a>
+            <a href="#review-game">영어 복습 게임</a>
+            <a href="#chart-showcase">빌드잇 차트</a>
+            <a href="/builder">학원 홈페이지 제작·관리</a>
+          </div>
+        </div>
       </nav>
       <div class="hl-actions">
         <a class="hl-btn hl-btn-line hl-free" th:href="${examIntakeEnabled} ? '/exam-service' : '#exam-contact'" href="#exam-contact">맞춤문제 신청</a>
@@ -150,40 +205,8 @@
     </div>
   </div>
 
-  <!-- 사이드 메뉴(2026-11-15): 데스크톱에서 화면을 따라오고, 지금 보는 구역을 표시한다. 좁은 화면은 전체 메뉴를 쓴다. -->
+  <!-- 사이드 메뉴는 2026-11-21 상단 펼침 메뉴로 옮겼다(링크 그대로). hw-shell은 본문 틀로만 남긴다. -->
   <div class="hw-shell">
-  <nav class="hw-side" aria-label="사이드 메뉴">
-    <p>Coordinator·교습소 실증</p>
-    <a href="#coordinator">F2R AI Coordinator</a>
-    <a href="#academy-dashboard">⓪ 학원 운영 대시보드<small>원장 로그인 후 사용</small></a>
-    <a href="#digital-exam">① 디지털 기말내신·예비고1<small>압구정중2 · 신구중2 · 예비고1</small></a>
-    <a href="#dexam-guide">시험 보는 방법</a>
-    <a href="#hitCase">실증 근거: 적중 사례</a>
-    <a href="#counsel">② 2028 입시상담 AI</a>
-    <a href="/dashboard">대시보드</a>
-    <a href="/ledger">F2R 장부</a>
-    <p>③ 학습 콘텐츠</p>
-    <a href="#learning-content">학습 콘텐츠</a>
-    <a href="/testprep">New iBT / Digital SAT</a>
-    <a href="/wiki">모의고사 위키</a>
-    <a href="/csat/2027-english">2027 수능 영어 해설<small>모션 해설 · PDF</small></a>
-    <p>④ 부정행위 방지</p>
-    <a href="#exam-security">부정행위 방지 기술</a>
-    <a href="/exam-security">관련 논문·기사 모음</a>
-    <p>맞춤문제·이용 안내</p>
-    <a href="#request">맞춤문제 신청<small>2주 4회 · 2만원</small></a>
-    <a href="#guide">맞춤문제 이용 방법</a>
-    <a href="/faq">자주 묻는 질문</a>
-    <a href="/policies/terms">이용약관</a>
-    <a href="/policies/refunds">환불·청약철회 정책</a>
-    <p>다른 서비스</p>
-    <a href="#ai-content">AI AGENT 트레일러</a>
-    <a href="/ai-agent-studio">AI AGENT 제작협업실</a>
-    <a href="#ebook">전자책<small>새출발 2억2천</small></a>
-    <a href="#review-game">영어 복습 게임</a>
-    <a href="#chart-showcase">빌드잇 차트</a>
-    <a href="/builder">학원 홈페이지 제작·관리</a>
-  </nav>
   <main class="hl-main" id="homeContent">
     <h1 id="homePaneTitle" class="sr" tabindex="-1">Feel to Real (F2R) 홈</h1>
 
@@ -193,6 +216,7 @@
          → 8. 맞춤문제·이용 안내 → 9. 다른 서비스(AI AGENT·전자책·복습 게임·빌드잇 차트) -->
     <section class="hl-section hw-coord" id="coordinator" aria-labelledby="coordTitle">
       <div class="hw-coord-hero hl-lift">
+        <div class="hw-coord-text">
         <p class="hl-eyebrow">F2R AI Coordinator</p>
         <h2 id="coordTitle">휴대폰 하나로<br>학원 업무를 AI에게</h2>
         <p class="hw-coord-lead">원장이 휴대폰에서 말이나 사진으로 맡기면 LLM AI가 출결·채점·자료 제작·학부모 안내 초안을 만들고, 원장이 승인한 것만 기록합니다.</p>
@@ -209,6 +233,13 @@
           <li><a href="#learning-content"><span>③</span>학습 콘텐츠</a></li>
           <li><a href="#exam-security"><span>④</span>부정행위 방지 기술</a></li>
         </ol>
+        </div>
+        <!-- F2R 서비스 지도(2026-11-15, 2026-11-21 첫 화면으로 옮기고 점을 더 자세히): 점을 누르면 해당 안내로 이동한다.
+             점·선은 home_winter.js가 그린다. 좁은 화면에서는 세부 점 몇 개를 숨긴다. -->
+        <div class="hw-map" id="service-map" role="region" aria-labelledby="hwMapTitle">
+          <div class="hw-map-head"><h3 id="hwMapTitle">F2R 서비스 지도</h3><p>점을 누르면 해당 안내로 이동합니다</p></div>
+          <div class="hw-net" id="hwNet"></div>
+        </div>
       </div>
     </section>
 
@@ -377,11 +408,6 @@
             <a href="/csat/2027-english/pdf">PDF 무료 다운로드<small>로그인</small></a>
           </div>
         </div>
-      </div>
-      <!-- F2R 서비스 지도(2026-11-15): 점을 누르면 해당 안내로 이동한다. 점·선은 home_winter.js가 그린다. -->
-      <div class="hw-map" id="service-map" role="region" aria-labelledby="hwMapTitle">
-        <div class="hl-head"><h2 id="hwMapTitle">F2R 서비스 지도</h2><p>점을 누르면 해당 안내로 이동합니다</p></div>
-        <div class="hw-net" id="hwNet"></div>
       </div>
       </div>
     </section>
