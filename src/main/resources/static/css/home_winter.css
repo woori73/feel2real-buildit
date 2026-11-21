@@ -455,7 +455,6 @@
 .hw-coord-hero { margin-top: 0; border-radius: 20px; padding: 32px; background: linear-gradient(160deg, #0F2234, #1D4061); color: #fff; }
 .hw-coord-hero .hl-eyebrow { color: var(--hw-sweep); letter-spacing: .02em; }
 .hw-coord-hero h2 { margin: 0 0 12px; font-size: 34px; line-height: 1.25; letter-spacing: -.02em; color: #fff; }
-.hw-coord-lead { margin: 0 0 14px; max-width: 640px; font-size: 15px; line-height: 1.7; color: #D6E2EE; }
 .hw-coord-site { display: inline-block; margin: 0 0 20px; padding: 6px 14px; border-radius: 999px; background: rgba(143,192,230,.18); font-size: 14px; color: #fff; }
 .hw-coord-addr { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: -8px 0 20px; font-style: normal; font-size: 14px; color: #D6E2EE; }
 .hw-coord-addr b { margin-right: 4px; color: var(--hw-sweep); font-weight: 700; }

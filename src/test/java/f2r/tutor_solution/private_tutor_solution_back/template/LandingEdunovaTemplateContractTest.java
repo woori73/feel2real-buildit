@@ -118,7 +118,9 @@ class LandingEdunovaTemplateContractTest {
     String main = html.substring(html.indexOf("<main"), html.indexOf("</main>"));
     // then
     assertThat(hero).contains("F2R AI Coordinator", "휴대폰 하나로<br>학원 업무를 AI에게", "F2R 영어교습소", "11월 25일", "새 주소로 이전", "href=\"#academy-dashboard\"", "href=\"#digital-exam\"", "href=\"#counsel\"", "href=\"#learning-content\"",
-        "href=\"#exam-security\"", "LLM AI");
+        "href=\"#exam-security\"");
+    // 2026-11-21 사용자 지시: 제목 아래 설명 문장(사업계획서 문구)은 홈페이지에 쓰지 않는다.
+    assertThat(hero).doesNotContain("hw-coord-lead", "원장이 승인한 것만");
     // 이전할 교습소 주소·전화·지도(2026-11-21 사용자 지시)
     assertThat(hero).contains("서울 강남구 언주로173길 12, 압구정빌딩 4층", "href=\"tel:02-6324-1453\"", "https://map.naver.com/p/search/");
     assertThat(work.split("class=\"hw-card\"", -1)).hasSize(5);
