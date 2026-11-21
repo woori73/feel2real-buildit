@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/public}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>부정행위 방지 기술 자료 | Feel2Real</title>
+  <meta name="description" content="F2R 부정행위 방지 기술(휴대폰 렌즈 찾기·종이 시험지 보안 무늬) 개발 현황과 관련 논문·기술 문서·언론 보도 모음.">
+  <th:block th:replace="~{fragments/_seo :: seo (
+    keywords='시험 부정행위 방지, 숨은 카메라 렌즈 찾기, 시험지 보안 무늬, AI 부정행위',
+    canonical='https://feel2real.co.kr/exam-security',
+    ogTitle='부정행위 방지 기술 자료 | Feel2Real',
+    ogDescription='F2R 부정행위 방지 기술 개발 현황과 관련 논문·기술 문서·언론 보도 모음.',
+    ogImage=null)}"></th:block>
+  <th:block th:replace="~{fragments/_public_footer :: publicFooterStyles}"></th:block>
+  <style>
+    .es-page { max-width: 880px; margin: 0 auto; padding: 40px 20px 80px; color: #1B1D24; word-break: keep-all; font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; }
+    .es-page h1 { font-size: 28px; margin: 0 0 8px; }
+    .es-lead { color: #4A5260; line-height: 1.7; margin: 0 0 8px; }
+    .es-meta { color: #6B7280; font-size: 13px; margin: 0 0 24px; }
+    .es-box { background: #EEF3F8; border-radius: 14px; padding: 18px 20px; margin: 0 0 28px; }
+    .es-box h2 { font-size: 17px; margin: 0 0 8px; }
+    .es-box ul { margin: 0; padding-left: 20px; line-height: 1.75; }
+    .es-sec { margin: 36px 0 0; }
+    .es-sec h2 { font-size: 21px; margin: 0 0 6px; }
+    .es-sec > p { color: #4A5260; margin: 0 0 14px; line-height: 1.7; }
+    .es-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+    .es-item { border: 1px solid #E3E7EE; border-radius: 12px; padding: 14px 16px; background: #fff; }
+    .es-kind { display: inline-block; font-size: 12px; font-weight: 700; color: #2D6590; background: #DCE8F2; border-radius: 999px; padding: 2px 9px; margin-right: 6px; }
+    .es-check { display: inline-block; font-size: 12px; color: #2F5F58; border: 1px solid #9CC5BC; border-radius: 999px; padding: 1px 8px; margin-right: 6px; }
+    .es-item h3 { display: inline; font-size: 16px; line-height: 1.5; }
+    .es-item h3 a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+    .es-by { display: block; margin: 6px 0; color: #6B7280; font-size: 13px; }
+    .es-item p { margin: 6px 0 0; line-height: 1.7; font-size: 15px; }
+    .es-result { color: #374151; font-size: 14px !important; background: #F7F7F5; border-radius: 8px; padding: 8px 10px; }
+    .es-caution { margin-top: 36px; font-size: 14px; color: #4A5260; }
+    .es-caution ul { padding-left: 20px; line-height: 1.75; }
+    .es-cta { display: inline-flex; margin-top: 12px; padding: 10px 18px; border-radius: 999px; background: #2D6590; color: #fff !important; font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+<th:block layout:fragment="content">
+<div class="es-page">
+  <h1>부정행위 방지 기술 자료</h1>
+  <p class="es-lead">F2R이 교습소에서 실증하는 부정행위 방지 기술 두 가지(① 휴대폰 렌즈 찾기 ② 종이 시험지 보안 무늬)와 관련된 논문·기술 문서·제품·언론 보도를 모았습니다. 최종 판단은 감독관이 하고, 신호 차단기는 쓰지 않습니다.</p>
+  <p class="es-meta">마지막 갱신 <time th:text="${lib.updatedAt}">2026-11-21</time> · <span th:text="${lib.nextUpdate}">매주 갱신</span></p>
+
+  <section class="es-box" aria-labelledby="esStatusTitle">
+    <h2 id="esStatusTitle">F2R 개발 현황</h2>
+    <ul><li th:each="s : ${lib.f2rStatus}" th:text="${s}"></li></ul>
+    <a class="es-cta" href="/#exam-contact">학교·학원 시연 문의</a>
+  </section>
+
+  <section class="es-sec" th:each="sec : ${lib.sections}" th:id="${sec.id}" th:attr="aria-labelledby=${sec.id} + '-title'">
+    <h2 th:id="${sec.id} + '-title'" th:text="${sec.title}"></h2>
+    <p th:if="${sec.lead}" th:text="${sec.lead}"></p>
+    <ul class="es-list">
+      <li class="es-item" th:each="e : ${sec.entries}">
+        <span class="es-kind" th:text="${e.kind}"></span><span class="es-check" th:if="${e.checked == '원문'}">원문 확인</span>
+        <h3><a th:if="${e.url}" th:href="${e.url}" target="_blank" rel="noopener" th:text="${e.title}"></a><span th:unless="${e.url}" th:text="${e.title}"></span></h3>
+        <span class="es-by" th:text="${e.by} + (${e.date} != null ? ' · ' + ${e.date} : '')"></span>
+        <p th:if="${e.summary}" th:text="${e.summary}"></p>
+        <p class="es-result" th:if="${e.result}" th:text="'그 연구·기사가 밝힌 내용: ' + ${e.result}"></p>
+      </li>
+    </ul>
+  </section>
+
+  <section class="es-caution" aria-labelledby="esCautionTitle">
+    <h2 id="esCautionTitle" style="font-size:17px">읽을 때 주의</h2>
+    <ul><li th:each="c : ${lib.cautions}" th:text="${c}"></li></ul>
+  </section>
+</div>
+</th:block>
+</body>
+</html>
