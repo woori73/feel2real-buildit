@@ -231,31 +231,32 @@
     var nx = ncv.getContext('2d');
     /* 2026-11-21 개편: 묶음 4개(Coordinator·대시보드·교습소 실증 / 학습 콘텐츠 / 부정행위 방지 / 다른 서비스) */
     var N = [
-      { t: 'AI Coordinator', x: .3, y: .44, hub: 1, h: '#coordinator' },
-      { t: '학습 콘텐츠', x: .66, y: .3, hub: 1, h: '#learning-content' },
-      { t: '부정행위 방지', x: .5, y: .78, hub: 1, h: '#exam-security' },
-      { t: '다른 서비스', x: .84, y: .62, hub: 1, h: '#other-services' },
-      { t: '대시보드', s: '원장', x: .1, y: .16, h: '/dashboard', p: 0 },
-      { t: '장부', x: .08, y: .46, h: '/ledger', p: 0 },
-      { t: '디지털 기말고사', s: '학교별', x: .3, y: .12, h: '#digital-exam', p: 0 },
-      { t: '예비고1', s: '모의고사', x: .12, y: .76, h: '#pre-high-english', p: 0 },
-      { t: '적중 사례', s: '96.8%', x: .26, y: .9, h: '#hitCase', p: 0 },
-      { t: '2028 입시상담 AI', x: .46, y: .56, h: '#counsel', p: 0 },
-      { t: '맞춤문제', s: '2주 4회', x: .48, y: .22, h: '#request', p: 1 },
-      { t: '모의고사 위키', x: .7, y: .08, h: '/wiki', p: 1 },
-      { t: 'New iBT · SAT', x: .88, y: .18, h: '/testprep', p: 1 },
-      { t: '2027 수능 해설', x: .7, y: .5, h: '/csat/2027-english', p: 1 },
-      { t: '렌즈 찾기', s: '11.21 배포', x: .36, y: .7, h: '#exam-security', p: 2 },
-      { t: '보안 무늬', s: '준비 중', x: .62, y: .92, h: '#exam-security', p: 2 },
-      { t: '시연 문의', x: .66, y: .74, h: '#exam-contact', p: 2 },
-      { t: 'AI AGENT', x: .93, y: .38, h: '#ai-content', p: 3 },
-      { t: '전자책', x: .94, y: .9, h: '#ebook', p: 3 },
-      { t: '복습 게임', x: .8, y: .84, h: '#review-game', p: 3 },
-      { t: '빌드잇 차트', x: .92, y: .74, h: '#chart-showcase', p: 3 }
+      { t: 'AI Coordinator', x: .22, y: .46, hub: 1, h: '#coordinator' },
+      { t: '학습 콘텐츠', x: .62, y: .22, hub: 1, h: '#learning-content' },
+      { t: '부정행위 방지', x: .46, y: .78, hub: 1, h: '#exam-security' },
+      { t: '다른 서비스', x: .8, y: .62, hub: 1, h: '#other-services' },
+      { t: '대시보드', s: '원장', x: .1, y: .14, h: '/dashboard', p: 0 },
+      { t: '장부', x: .08, y: .3, h: '/ledger', p: 0 },
+      { t: '디지털 기말고사', s: '학교별', x: .28, y: .06, h: '#digital-exam', p: 0 },
+      { t: '예비고1', s: '모의고사', x: .1, y: .62, h: '#pre-high-english', p: 0 },
+      { t: '적중 사례', s: '96.8%', x: .14, y: .86, h: '#hitCase', p: 0 },
+      { t: '2028 입시상담 AI', x: .44, y: .55, h: '#counsel', p: 0 },
+      { t: '맞춤문제', s: '2주 4회', x: .62, y: .38, h: '#request', p: 1 },
+      { t: '모의고사 위키', x: .7, y: .06, h: '/wiki', p: 1 },
+      { t: 'New iBT · SAT', x: .84, y: .14, h: '/testprep', p: 1 },
+      { t: '2027 수능 해설', x: .84, y: .3, h: '/csat/2027-english', p: 1 },
+      { t: '렌즈 찾기', s: '11.21 배포', x: .26, y: .94, h: '#exam-security', p: 2 },
+      { t: '보안 무늬', s: '준비 중', x: .72, y: .94, h: '#exam-security', p: 2 },
+      { t: '시연 문의', x: .56, y: .7, h: '#exam-contact', p: 2 },
+      { t: 'AI AGENT', x: .9, y: .46, h: '#ai-content', p: 3 },
+      { t: '전자책', x: .92, y: .86, h: '#ebook', p: 3 },
+      { t: '복습 게임', x: .86, y: .78, h: '#review-game', p: 3 },
+      { t: '빌드잇 차트', x: .9, y: .7, h: '#chart-showcase', p: 3 },
+      { t: '새 교습소', s: '11.25 이전', x: .18, y: .38, h: '#coordinator', p: 0 }
     ];
     var E = [[0, 1], [0, 2], [1, 3], [2, 3]];
     N.forEach(function (n, i) { if (n.p !== undefined) E.push([n.p, i]); });
-    [[4, 5], [6, 9], [7, 8], [11, 12], [14, 15], [19, 20]].forEach(function (e) { E.push(e); });
+    [[4, 5], [6, 7], [11, 12], [14, 15], [18, 19]].forEach(function (e) { E.push(e); });
     var hot = -1, els = [], visible = true, SQ = 1, NW = 0, NH = 0;
     var X = function (n) { return .5 + (n.x - .5) * SQ; };
     var linked = function (i, j) { return E.some(function (e) { return (e[0] === i && e[1] === j) || (e[1] === i && e[0] === j); }); };
