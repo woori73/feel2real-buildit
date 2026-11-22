@@ -33,6 +33,17 @@ class ConvertTest(unittest.TestCase):
                           'meta': '유형: 주제 · 배점: 4점 · 기출 근거: 2학기 중간 8번 형식 · 범위 근거: 필기본 15쪽 · 독립 검증: 일치'},
                          row)
 
+    def test_given_note_with_book_title_and_view_marker_when_row_built_then_italic_kept_and_marker_is_text(self):
+        # given: 해설에 책 제목 <i>와 밑줄 <u>, 유형 이름에 꺾쇠 글 <보기>가 있다
+        question = mc(2, score=2)
+        question['questionType'] = '그림 <보기> 빈칸'
+        question['verify'] = {'status': '일치', 'note': '해설: <i>Fahrenheit 451</i> (1953)의 <u>firemen</u> & <보 기>'}
+        # when
+        row = build.to_explanation_row(question, 32)
+        # then
+        self.assertEqual('해설: <i>Fahrenheit 451</i> (1953)의 <u>firemen</u> &amp; &lt;보 기&gt;', row['expl'])
+        self.assertTrue(row['meta'].startswith('유형: 그림 &lt;보기&gt; 빈칸 · 배점: 2점'))
+
     def test_given_mixed_questions_when_summarized_then_only_matched_are_verified(self):
         # given
         questions = [mc(1), mc([1, 2], multi=True, no=1), sa(no=2)]

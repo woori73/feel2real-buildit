@@ -215,12 +215,12 @@ public class TestPrepService {
         // 삼항식에 int와 null을 섞으면 언박싱 NPE가 나므로 Integer로 나눠 정한다.
         Integer scaled = null;
         Integer scaleMax = null;
+        // 오답만 다시 풀기(부분 응시)는 몇 문항만 푼 것이라 SAT·TOEIC 추정 점수를 내지 않고 정답 수만 남긴다.
+        boolean partial = attempt.getQuestionIdsJson() != null;
         if (sat) {
-          scaled = agg[0] > 0 ? Integer.valueOf(satScaledFor(agg[1], agg[0])) : null;
-          scaleMax = 800;
+          scaled = satSectionScaled(partial, agg[1], agg[0]);
+          scaleMax = partial ? null : 800;
         } else if (toeic) {
-          // 오답만 다시 풀기(부분 응시)는 몇 문항만 푼 것이라 추정 점수를 내지 않고 정답 수만 남긴다.
-          boolean partial = attempt.getQuestionIdsJson() != null;
           scaled = toeicSectionScaled(partial, agg[1], agg[0]);
           scaleMax = partial ? null : 495;
         } else if (naesin) {
@@ -282,6 +282,7 @@ public class TestPrepService {
       int count = a.getQuestionIdsJson() == null && exam != null
           ? (int) questionRepository.countByExamId(a.getExamId())
           : loadAttemptQuestionIds(a).size();
+      List<SectionScore> sections = readSectionScores(a);
       return new AttemptSummary(a.getAttemptId(),
           exam == null ? null : exam.getExamCode(),
           exam == null ? null : exam.getKind(),
@@ -290,7 +291,7 @@ public class TestPrepService {
           a.getSubmittedAt() == null ? null : ISO.format(a.getSubmittedAt()),
           a.getOverallBand() == null ? null : a.getOverallBand().doubleValue(),
           a.getAutoAccuracy() == null ? null : a.getAutoAccuracy().doubleValue(),
-          count, totalScaled(readSectionScores(a)), totalMax(readSectionScores(a)));
+          count, totalScaled(sections), totalMax(sections), correctCount(sections), autoCount(sections));
     }).toList();
   }
 
@@ -533,6 +534,11 @@ public class TestPrepService {
     return 200 + (int) Math.round(ratio * 60) * 10;
   }
 
+  /** SAT 응시의 영역 추정 점수. 부분 응시(오답만 다시 풀기)는 점수를 내지 않는다(null). */
+  static Integer satSectionScaled(boolean partial, int correct, int total) {
+    return partial ? null : satScaledFor(correct, total);
+  }
+
   /**
    * TOEIC 영역(듣기·읽기) 추정 점수: 5 + round(정답 비율 × 98) × 5 → 5~495 (5점 단위).
    * ETS 환산표가 아니라 정답 비율을 점수 범위에 그대로 편 F2R 내부 추정치다.
@@ -546,6 +552,16 @@ public class TestPrepService {
   /** TOEIC 응시의 영역 추정 점수. 부분 응시(오답만 다시 풀기)는 점수를 내지 않는다(null). */
   static Integer toeicSectionScaled(boolean partial, int correct, int total) {
     return partial ? null : toeicScaledFor(correct, total);
+  }
+
+  /** 영역별 맞힌 문항 수 합계. 채점 기록이 없으면(제출 전) null. 내 점수 화면이 부분 응시의 "정답 수 / 문항 수"에 쓴다. */
+  static Integer correctCount(List<SectionScore> sections) {
+    return sections.isEmpty() ? null : Integer.valueOf(sections.stream().mapToInt(SectionScore::correct).sum());
+  }
+
+  /** 영역별 자동 채점 문항 수 합계. 채점 기록이 없으면(제출 전) null. */
+  static Integer autoCount(List<SectionScore> sections) {
+    return sections.isEmpty() ? null : Integer.valueOf(sections.stream().mapToInt(SectionScore::autoCount).sum());
   }
 
   /** SAT 합계(400~1600). 영역 점수가 하나도 없으면 null. */

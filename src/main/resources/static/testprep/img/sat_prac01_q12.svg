@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 440" width="560" height="440">
+<rect width="560" height="440" fill="#fff"/>
+<line x1="96" y1="310" x2="548" y2="310" stroke="#111" stroke-width="1"/>
+<text x="86" y="316.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >0</text>
+<line x1="96" y1="281" x2="548" y2="281" stroke="#999" stroke-width="1"/>
+<text x="86" y="287.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >10</text>
+<line x1="96" y1="252" x2="548" y2="252" stroke="#999" stroke-width="1"/>
+<text x="86" y="258.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >20</text>
+<line x1="96" y1="223" x2="548" y2="223" stroke="#999" stroke-width="1"/>
+<text x="86" y="229.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >30</text>
+<line x1="96" y1="194" x2="548" y2="194" stroke="#999" stroke-width="1"/>
+<text x="86" y="200.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >40</text>
+<line x1="96" y1="165" x2="548" y2="165" stroke="#999" stroke-width="1"/>
+<text x="86" y="171.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >50</text>
+<line x1="96" y1="136" x2="548" y2="136" stroke="#999" stroke-width="1"/>
+<text x="86" y="142.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >60</text>
+<line x1="96" y1="107" x2="548" y2="107" stroke="#999" stroke-width="1"/>
+<text x="86" y="113.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >70</text>
+<line x1="96" y1="78" x2="548" y2="78" stroke="#999" stroke-width="1"/>
+<text x="86" y="84.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >80</text>
+<line x1="96" y1="49" x2="548" y2="49" stroke="#999" stroke-width="1"/>
+<text x="86" y="55.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >90</text>
+<line x1="96" y1="20" x2="548" y2="20" stroke="#999" stroke-width="1"/>
+<text x="86" y="26.65" font-size="19" text-anchor="end" fill="#111" font-family="Arial, Helvetica, sans-serif" >100</text>
+<line x1="96" y1="310" x2="96" y2="20" stroke="#111" stroke-width="2"/>
+<line x1="96" y1="310" x2="548" y2="310" stroke="#111" stroke-width="2"/>
+<text x="24" y="165" font-size="19" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" transform="rotate(-90 24 165)">Seedlings surviving (%)</text>
+<rect x="147" y="46.1" width="62" height="263.9" fill="#d9d9d9" stroke="#111" stroke-width="1.5"/>
+<rect x="209" y="43.2" width="62" height="266.8" fill="#555" stroke="#111" stroke-width="1.5"/>
+<text x="209" y="338" font-size="20" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" >Regular watering</text>
+<rect x="373" y="170.8" width="62" height="139.2" fill="#d9d9d9" stroke="#111" stroke-width="1.5"/>
+<rect x="435" y="83.8" width="62" height="226.2" fill="#555" stroke="#111" stroke-width="1.5"/>
+<text x="435" y="338" font-size="20" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" >Reduced watering</text>
+<text x="322" y="370" font-size="20" text-anchor="middle" fill="#111" font-family="Arial, Helvetica, sans-serif" >Watering schedule</text>
+<rect x="118" y="398" width="20" height="20" fill="#d9d9d9" stroke="#111" stroke-width="1.5"/>
+<text x="148" y="415" font-size="20" text-anchor="start" fill="#111" font-family="Arial, Helvetica, sans-serif" >No biochar</text>
+<rect x="308" y="398" width="20" height="20" fill="#555" stroke="#111" stroke-width="1.5"/>
+<text x="338" y="415" font-size="20" text-anchor="start" fill="#111" font-family="Arial, Helvetica, sans-serif" >Biochar added</text>
+</svg>

@@ -24,7 +24,10 @@ test('given TOEIC 문항 종류, when toeicPart를 부르면, then Part 번호�
   // when / then
   assert.strictEqual(TP.toeicPart('TOEIC_P2'), 2);
   assert.strictEqual(TP.toeicPart('TOEIC_P7'), 7);
-  assert.strictEqual(TP.toeicPart('TOEIC_P1'), null); // Part 1(사진 묘사)은 만들지 않는다
+  assert.strictEqual(TP.toeicPart('TOEIC_P1'), 1); // Part 1(사진 묘사)
+  assert.strictEqual(TP.toeicPart('TOEIC_P8'), null);
+  assert.strictEqual(TP.groupOf({ section: 'LISTENING', taskType: 'TOEIC_P1' }), 'Part 1');
+  assert.strictEqual(TP.questionLabel({ section: 'LISTENING', taskType: 'TOEIC_P1', orderNo: 3 }, 2, 200), 'Part 1 · Photographs · No. 3');
   assert.strictEqual(TP.toeicPart('READ_PASSAGE'), null);
   assert.strictEqual(TP.toeicPart(undefined), null);
 });
@@ -132,7 +135,7 @@ test('given 오답 목록의 문항, when wrongItemLabel을 부르면, then TOEI
 // 응시 화면(testprep_run.js)을 가짜 화면에서 실제로 실행한다. 음성 호출(cancel·speak)을 기록한다.
 async function bootRun(attempt, opts) {
   const PAGE_IDS = ['stage', 'exam-title', 'sec-tabs', 'timer', 'progress', 'btn-submit', 'prev', 'next', 'save-note']; // 이 화면에 있는 요소
-  const speech = { cancels: 0, spoken: [] };
+  const speech = { cancels: 0, spoken: [], pitches: [] };
   const els = {};
   const el = id => els[id] || (els[id] = {
     id, innerHTML: '', textContent: '', disabled: false, dataset: {}, handlers: {},
@@ -150,7 +153,7 @@ async function bootRun(attempt, opts) {
     SpeechSynthesisUtterance: function (text) { this.text = text; },
     URLSearchParams, encodeURIComponent, console, Promise, JSON, Date, Math, Object, Array, String, Set
   };
-  if (!(opts && opts.noSpeech)) ctx.speechSynthesis = { cancel() { speech.cancels++; }, speak(u) { speech.spoken.push(u.text); } };
+  if (!(opts && opts.noSpeech)) ctx.speechSynthesis = { cancel() { speech.cancels++; }, speak(u) { speech.spoken.push(u.text); speech.pitches.push(u.pitch); } };
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(SRC, ctx);
@@ -168,7 +171,7 @@ const LISTENING_ATTEMPT = { attemptId: 9, kind: 'TOEIC', status: 'IN_PROGRESS', 
     { questionId: 1, section: 'LISTENING', taskType: 'TOEIC_P2', orderNo: 7, prompt: 'Choose the best response.', audioMode: 'TTS', choices: ['', '', ''],
       bodyText: 'Where is it?\nA. A desk.\nB. At noon.\nC. Yes.' },
     { questionId: 2, section: 'LISTENING', taskType: 'TOEIC_P3', orderNo: 32, prompt: 'What does the man want?', audioMode: 'TTS', choices: ['a', 'b', 'c', 'd'],
-      bodyText: 'Man: Hello.' }] };
+      bodyText: 'Questions 32 through 34 refer to the following conversation.\n\nMan: Hello.\nWoman: Hi. Is it 9:30 yet?\nMan: Not yet.' }] };
 
 test('given 듣기 문항의 음성이 나오는 중, when 다음 문항으로 가거나 제출하면, then 앞 음성을 멈춘다', async () => {
   // given — Part 2 문항에서 Play audio를 누른 상태
@@ -195,4 +198,17 @@ test('given 음성을 지원하지 않는 브라우저, when 문항을 옮기면
   await run.click('next');
   // then
   assert.ok(run.el('stage').innerHTML.includes('No. 32'));
+});
+
+test('given 화자 2명의 Part 3 대화, when Play audio를 누르면, then 꼬리표를 읽지 않고 차례마다 발화를 따로 큐에 넣으며 화자별 높이가 다르다', async () => {
+  // given — 둘째 문항(Part 3)으로 이동
+  const run = await bootRun(LISTENING_ATTEMPT);
+  await run.click('next');
+  const before = run.speech.cancels;
+  // when
+  await run.click('tts-button');
+  // then — 앞 음성을 한 번 멈춘 뒤 안내 줄 + 차례 3개를 순서대로 넣는다
+  assert.strictEqual(run.speech.cancels, before + 1);
+  assert.deepStrictEqual(run.speech.spoken, ['Questions 32 through 34 refer to the following conversation.', 'Hello.', 'Hi. Is it 9:30 yet?', 'Not yet.']);
+  assert.deepStrictEqual(run.speech.pitches, [1, 1, 0.8, 1]);
 });

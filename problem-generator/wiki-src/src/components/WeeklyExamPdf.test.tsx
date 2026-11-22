@@ -37,10 +37,10 @@ it('given PDF papers when registered then send binary bytes and original filenam
   fireEvent.change(paper,{target:{files:[new File([pdf],'문제지.PDF')]}})
   fireEvent.change(answer,{target:{files:[new File([pdf],'정답해설.pdf',{type:'application/pdf'})]}})
   fireEvent.change(screen.getByLabelText('제작·검수 MD (선택)'),{target:{files:[new File(['# 검수'],'검수.md')]}})
-  const save=screen.getByRole('button',{name:'DRAFT 등록',exact:true})
+  const save=screen.getByRole('button',{name:'등록하기',exact:true})
   await waitFor(()=>expect(save).toBeEnabled())
   fireEvent.click(save)
-  await screen.findByText('시험 자료를 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.')
+  await screen.findByText('시험 자료를 등록했습니다. 회차별 자료에서 바로 볼 수 있습니다.')
   expect(writes).toHaveLength(1)
   expect(writes[0].body).toMatchObject({studentPaper:expected,answerExplanation:expected,
     studentPaperName:'문제지.PDF',answerExplanationName:'정답해설.pdf',productionVerification:'# 검수'})
@@ -69,7 +69,7 @@ it('given unsupported paper when chosen then clear the old selection and block r
   fireEvent.change(chooser,{target:{files:[new File(['zip'],'bad.zip')]}})
   await screen.findByText('문제지·해설지는 HTML 또는 PDF 파일을 선택해 주세요.')
   expect(screen.queryByText('선택한 문제지: old.html')).not.toBeInTheDocument()
-  expect(screen.getByRole('button',{name:'DRAFT 등록',exact:true})).toBeDisabled()
+  expect(screen.getByRole('button',{name:'등록하기',exact:true})).toBeDisabled()
 })
 
 it.each([false,true])('given optional MD (cancel selection: %s) when absent then register only papers',async(cancelMd)=>{
@@ -82,10 +82,10 @@ it.each([false,true])('given optional MD (cancel selection: %s) when absent then
     await screen.findByText(/선택한 제작·검수: 검수.md/)
     fireEvent.click(screen.getByRole('button',{name:'선택 취소'}))
   }
-  const save=screen.getByRole('button',{name:'DRAFT 등록',exact:true})
+  const save=screen.getByRole('button',{name:'등록하기',exact:true})
   await waitFor(()=>expect(save).toBeEnabled())
   fireEvent.click(save)
-  await screen.findByText('시험 자료를 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.')
+  await screen.findByText('시험 자료를 등록했습니다. 회차별 자료에서 바로 볼 수 있습니다.')
   expect(writes).toHaveLength(1)
   expect(writes[0].body).toMatchObject({studentPaper:expected,answerExplanation:expected})
   expect(writes[0].body).not.toHaveProperty('productionVerification')

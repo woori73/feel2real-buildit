@@ -154,6 +154,9 @@ jobs:
           src/test/js/testprep_gate.test.js
           src/test/js/testprep_flush.test.js
           src/test/js/testprep_toeic.test.js
+          src/test/js/testprep_speech.test.js
+          src/test/js/testprep_partial_score.test.js
+          src/test/js/testprep_groups.test.js
           src/test/js/sat_tools.test.js
           src/test/js/naesin_common.test.js
           src/test/js/learn_hub.test.js

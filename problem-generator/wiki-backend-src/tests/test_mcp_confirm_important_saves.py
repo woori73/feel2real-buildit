@@ -92,6 +92,32 @@ class ConfirmImportantSavesTest(unittest.TestCase):
             self.assertIn('1회차 STD Weekly Exam 등록', out['summary'])
             register.assert_not_called()
 
+    def test_given_weekly_exam_when_asking_confirmation_then_summary_has_no_approval_wait(self):
+        # given
+        with mock.patch('weekly_exam.register_draft'):
+            # when
+            out = mcp_server.register_weekly_exam_draft(
+                school='가짜중', grade='중2', year=2026, semester='2학기', exam_type='기말고사', round=1,
+                set_type='STD', question_count=20, student_paper_html='<html>p</html>',
+                answer_explanation_html='<html>a</html>')
+        # then: 승인·검토 대기 문구 없이 "등록 즉시 보임"으로 안내한다
+        self.assertIn('등록 즉시 완성본으로 보임', out['summary'])
+        for removed in ('검토 대기', 'REVIEW'):
+            self.assertNotIn(removed, out['summary'])
+
+    def test_given_weekly_exam_when_confirmed_then_registered_without_extra_step(self):
+        # given: 확인 토큰을 먼저 받는다(사용자 동의 절차는 그대로)
+        args = dict(school='가짜중', grade='중2', year=2026, semester='2학기', exam_type='기말고사', round=1,
+                    set_type='STD', question_count=20, student_paper_html='<html>p</html>',
+                    answer_explanation_html='<html>a</html>')
+        with mock.patch('weekly_exam.register_draft', return_value={'id': 1, 'status': 'FINAL'}) as register:
+            first = mcp_server.register_weekly_exam_draft(**args)
+            # when
+            out = mcp_server.register_weekly_exam_draft(**args, confirm_token=first['confirm_token'])
+        # then
+        register.assert_called_once()
+        self.assertEqual('FINAL', out['status'])
+
 
 if __name__ == '__main__':
     unittest.main()

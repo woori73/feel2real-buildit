@@ -6,7 +6,10 @@ type ExamContext = { school:string; grade:string; year:number; semester:string; 
 // 1단계 구조조정: 40/70/40A/40B 구분 제거. 신규는 'STD' 단일 유형.
 // 기존 DB 값은 표시용으로 유지.
 type SetType = 'STD'|'40'|'70'|'40A'|'40B'
+// 2026-11-22: 등록하면 중간 관문 없이 바로 완성본으로 보인다. status는 서버 호환용 값이며 화면에 표시하지 않는다.
 type WeeklyStatus = 'DRAFT'|'FINAL'
+// 이미 올려 둔 FINAL 완성본 파일(final_deliverables, kind=final). 회차별 자료 칸에 함께 보여 준다.
+export type FinalFile = { id:number; title:string; original_name:string; created_at:string; has_html?:number }
 type WeeklyExam = {
   id:number; school:string; grade:string; year:number; semester:string; exam:string
   round:number; set_type:SetType; question_count:number; status:WeeklyStatus; version:number
@@ -19,6 +22,7 @@ type Props = {
   aiWorkLogCount:number; hasDigitalTwin:boolean; lastContextUpdate?:string
   onOpenContext:()=>void; onOpenWeeklyWorkspace:()=>void; onOpenWrongReview:()=>void
   studentTotalWrongCount?:number|null; onOpenStudentWrongAnswers?:()=>void
+  finals?:FinalFile[]
 }
 
 // 1단계 구조조정: 학교별 세트 정책 제거 — 문항 수 구분 없이 단일 유형
@@ -41,9 +45,14 @@ const hasMaterial=(item:WeeklyExam,kind:MaterialKind):boolean=>{
   if(kind==='expl')return Boolean(item.answer_explanation_name)
   return Boolean(item.verification_name)
 }
+// 완성본 파일을 여는 API 경로. HTML 본문이 저장돼 있으면 HTML, 없으면 올린 원본(PDF 등). 둘 다 없으면 null.
+export const finalFileOpenPath=(item:FinalFile):string|null=>
+  item.has_html?`final-deliverables/${item.id}/html`:item.original_name?`final-deliverables/${item.id}/original`:null
+// 목록에 보일 완성본 파일 이름. 제목이 비어 있으면 올린 파일 이름을 쓴다.
+export const finalFileLabel=(item:FinalFile):string=>item.title?.trim()||item.original_name||'완성본'
 
 export default function WeeklyExamHub(props:Props){
-  const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview}=props
+  const {context,pastExamCount,schoolPrintCount,wrongCount,aiWorkLogCount,hasDigitalTwin,lastContextUpdate,onOpenContext,onOpenWrongReview,finals=[]}=props
   const [items,setItems]=useState<WeeklyExam[]>([]),[canManage,setCanManage]=useState(false),[notice,setNotice]=useState('')
   const [showRegister,setShowRegister]=useState(false),[round,setRound]=useState(1),[setType,setSetType]=useState<SetType>('STD'),[questionCount,setQuestionCount]=useState(40)
   // 자료별 교체: 교체 대상 회차+자료를 지정하고 숨은 파일 입력으로 단일 파일 교체
@@ -88,9 +97,9 @@ export default function WeeklyExamHub(props:Props){
       ...(verification?{productionVerification:verification,productionVerificationName:fileNames.verify}:{}),
     })})
     const body=await response.json().catch(()=>({}))
-    if(!response.ok){setNotice(body.detail||'DRAFT 등록에 실패했습니다.');return}
+    if(!response.ok){setNotice(body.detail||'등록에 실패했습니다.');return}
     setStudentPaper('');setAnswerExplanation('');setVerification('');setFileNames({paper:'',expl:'',verify:''});setShowRegister(false)
-    setNotice('시험 자료를 DRAFT로 등록했습니다. FINAL 확정 전까지 제작·수정 중입니다.');await load()
+    setNotice('시험 자료를 등록했습니다. 회차별 자료에서 바로 볼 수 있습니다.');await load()
     }catch(error){setNotice(error instanceof Error?`등록하지 못했습니다: ${error.message}`:'등록하지 못했습니다.')}
     finally{setRegistering(false)}
   }
@@ -121,7 +130,7 @@ export default function WeeklyExamHub(props:Props){
     finally{setReplacing(false);setReplaceTarget(null)}
   }
   const latestFor=()=>items.slice().sort((a,b)=>b.round-a.round||b.version-a.version)[0]
-  // 회차·세트별 최신 버전만 표시 (FINAL 교체 시 구버전 보존됨)
+  // 회차·세트별 최신 버전만 표시 (교체 시 구버전이 보존되는 경우가 있음)
   const visibleItems=(()=>{
     const map=new Map<string,WeeklyExam>()
     for(const item of items){
@@ -131,7 +140,6 @@ export default function WeeklyExamHub(props:Props){
     }
     return Array.from(map.values()).sort((a,b)=>b.round-a.round)
   })()
-  const latestFinal=items.filter(item=>item.status==='FINAL').sort((a,b)=>b.round-a.round||b.version-a.version)[0]
   const currentStatus=items.slice().sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at))[0]?.context_snapshot?.contextStatus||'PARTIAL'
   const nextRound=Math.max(0,...items.map(item=>item.round))+1
 
@@ -144,12 +152,11 @@ export default function WeeklyExamHub(props:Props){
         <p>문제지·해설지·출제검수를 회차별로 보관합니다.</p>
         <div className="next-round-summary"><b>다음 회차 준비 · {nextRound}회</b>
           <span>현재 Context 전체를 다시 계산해 Blueprint를 준비합니다.</span>
-          <small>최근 FINAL {latestFinal?latestFinal.round+'회':'없음'}</small>
-          {latestFinal?.verification_name&&<button onClick={()=>open(`weekly-exams/${latestFinal.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>}
+          {(()=>{const latest=latestFor();return latest?.verification_name?<button onClick={()=>open(`weekly-exams/${latest.id}/artifacts/production-verification`)}>최근 검수 MD 참조</button>:null})()}
         </div>
         <div className="weekly-set-list" aria-label="주간 실전 모의고사 상태">
-          {(()=>{const item=latestFor();return <span className={item?`weekly-status ${item.status.toLowerCase()}`:''}>
-            <b>최근</b><small>{item?`${item.round}회 · ${item.question_count}문항 · ${item.status}`:'준비 전'}</small>
+          {(()=>{const item=latestFor();return <span className={item||finals.length?'weekly-status final':''}>
+            <b>최근</b><small>{item?`${item.round}회 · ${item.question_count}문항`:finals.length?`완성본 파일 ${finals.length}건`:'준비 전'}</small>
           </span>})()}
         </div>
         {visibleItems.length>0&&<div className="weekly-rounds">{visibleItems.map(item=><article key={item.id} className="weekly-exam-row simple">
@@ -174,6 +181,18 @@ export default function WeeklyExamHub(props:Props){
             })}
           </div>
         </article>)}</div>}
+        {finals.length>0&&<div className="weekly-rounds" aria-label="완성본 파일"><article className="weekly-exam-row simple">
+          <div className="round-title"><b>완성본 파일</b><small className="version-tag">{finals.length}건</small></div>
+          <div className="material-table" role="table" aria-label="완성본 파일 목록">
+            {finals.map(item=>{const path=finalFileOpenPath(item);return <div key={item.id} className="material-row" role="row">
+              <span className="material-label" role="cell" style={{flexShrink:1,minWidth:0,overflowWrap:'anywhere'}}>{finalFileLabel(item)}</span>
+              <div className="material-actions" role="cell">
+                {path?<button type="button" onClick={()=>open(path)}>{item.has_html?'HTML 보기':'원본 열기'}</button>:<span className="material-missing">파일 없음</span>}
+                {Boolean(item.has_html)&&Boolean(item.original_name)&&<button type="button" onClick={()=>open(`final-deliverables/${item.id}/original`)}>원본 열기</button>}
+              </div>
+            </div>})}
+          </div>
+        </article></div>}
         <button type="button" className="primary-action" onClick={()=>setShowRegister(value=>!value)}>시험 자료 등록</button>
       </article>
 
@@ -181,7 +200,7 @@ export default function WeeklyExamHub(props:Props){
 
     </div>
 
-    {showRegister&&<section className="work-panel weekly-register" aria-label="Weekly Exam DRAFT 등록">
+    {showRegister&&<section className="work-panel weekly-register" aria-label="주간 실전 모의고사 등록">
       <div className="panel-heading"><div><p className="kicker">EXAM MATERIALS</p><h2>주간 실전 모의고사 등록</h2><p>{context.school} · {context.grade} · {context.year}년 {context.semester} {context.exam}</p></div><button onClick={()=>setShowRegister(false)}>닫기</button></div>
       <div className="weekly-register-meta"><label>회차<input type="number" min="1" value={round} onChange={e=>setRound(Number(e.target.value))}/></label><label>문항 수<input type="number" min="1" max="200" value={questionCount} onChange={e=>setQuestionCount(Number(e.target.value))}/></label></div>
       <label>학생용 문제지 (HTML·PDF)<input type="file" accept={PAPER_ACCEPT} onChange={e=>void chooseFile(e,'paper')}/></label>
@@ -190,8 +209,8 @@ export default function WeeklyExamHub(props:Props){
       {fileNames.expl&&<p className="field-hint">선택한 해설지: {fileNames.expl}</p>}
       <label>제작·검수 MD (선택)<input type="file" accept={VERIFICATION_ACCEPT} onChange={e=>void chooseFile(e,'verify')}/></label>
       {fileNames.verify&&<p className="field-hint">선택한 제작·검수: {fileNames.verify} <button type="button" onClick={()=>{readVersions.current.verify+=1;setVerification('');setFileNames(names=>({...names,verify:''}));setReading(values=>({...values,verify:false}))}}>선택 취소</button></p>}
-      <p className="field-hint">문제지·해설지는 HTML 또는 PDF로 올릴 수 있습니다(파일당 30MB 이하). 제작·검수 MD는 있으면 함께 올리고, 없으면 생략하세요.</p>
-      <button className="primary-action" disabled={registering||Object.values(reading).some(Boolean)||!studentPaper||!answerExplanation} onClick={()=>void register()}>{registering?'등록 중…':'DRAFT 등록'}</button>
+      <p className="field-hint">문제지·해설지는 HTML 또는 PDF로 올릴 수 있습니다(파일당 30MB 이하). 제작·검수 MD는 있으면 함께 올리고, 없으면 생략하세요. 등록하면 바로 회차별 자료에 보입니다.</p>
+      <button className="primary-action" disabled={registering||Object.values(reading).some(Boolean)||!studentPaper||!answerExplanation} onClick={()=>void register()}>{registering?'등록 중…':'등록하기'}</button>
     </section>}
     <p className="approval-gate-note">원문은 운영자 전용입니다.</p>
   </section>

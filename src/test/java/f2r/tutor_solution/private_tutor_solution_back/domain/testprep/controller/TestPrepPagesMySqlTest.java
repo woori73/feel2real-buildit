@@ -131,12 +131,12 @@ class TestPrepPagesMySqlTest {
     assertThat(r.getResponse().getStatus()).isEqualTo(200);
     String html = r.getResponse().getContentAsString();
     assertThat(html).contains("href=\"/naesintest/school/apgujeong-m2\"", "href=\"/naesintest/school/singu-m2\"",
-        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "11회", "7회");
+        "href=\"/naesintest/school/apgujeong-m1\"", "신구중학교", "16회", "12회", "7회");
     assertThat(html).doesNotContain("data-exam=", "tp-nav");
   }
 
   @Test
-  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차·신구중2는 11회차·압구정중1은 7회차가 범위별 표로, 없는 학교는 404")
+  @DisplayName("익명 학교별 페이지는 공개되고, 압구정중2는 16회차·신구중2는 12회차·압구정중1은 7회차가 범위별 표로, 없는 학교는 404")
   void anonymousSchoolPages() throws Exception {
     MvcResult a = mockMvc.perform(get("/naesintest/school/apgujeong-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(a.getResponse().getStatus()).isEqualTo(200);
@@ -157,7 +157,7 @@ class TestPrepPagesMySqlTest {
     MvcResult s = mockMvc.perform(get("/naesintest/school/singu-m2").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(s.getResponse().getStatus()).isEqualTo(200);
     String singu = s.getResponse().getContentAsString();
-    assertThat(singu.split("data-exam=\"TP-NAESIN-SGM2-2602-R", -1)).hasSize(12); // 신구중2 Lesson 7 1~5회 · Lesson 8 6~10회(V1120) · 종합 Final 11회(V1121)
+    assertThat(singu.split("data-exam=\"TP-NAESIN-SGM2-2602-R", -1)).hasSize(13); // 신구중2 Lesson 7 1~5회 · Lesson 8 6~10회(V1120) · 종합 Final 11회(V1121)·12회(V1136)
     assertThat(singu).contains("신구중학교", "Lesson 7", "Lesson 8", "Lesson 7·8 종합 Final").doesNotContain("준비하고 있습니다", "id=\"shorts\"");
     MvcResult m1 = mockMvc.perform(get("/naesintest/school/apgujeong-m1").accept(MediaType.TEXT_HTML)).andReturn();
     assertThat(m1.getResponse().getStatus()).isEqualTo(200);

@@ -57,18 +57,19 @@ class WeeklyExamWorkflowTest(unittest.TestCase):
         values.update(overrides)
         return weekly_exam.WeeklyExamReviewRequest(**values)
 
-    def test_agent_registration_is_draft_and_snapshot_is_immutable(self):
+    def test_given_agent_registration_when_saved_then_final_without_approval_and_snapshot_fixed(self):
+        # given / when: 승인 단계 없이 등록만 한다
         saved = weekly_exam.register_draft(self.payload(), actor='mcp-agent')
-        self.assertEqual('DRAFT', saved['status'])
+        # then: 표시 상태는 곧바로 완성본(FINAL), 저장 값은 legacy 호환 REVIEW 그대로
+        self.assertEqual('FINAL', saved['status'])
         self.assertEqual('REVIEW', saved['legacy_status'])
         self.assertEqual([11, 12, 13, 14], saved['source_material_ids'])
         self.assertEqual(3, saved['context_snapshot']['digitalTwin']['version'])
         self.assertNotIn('status', weekly_exam.WeeklyExamReviewRequest.model_fields)
 
     def test_anonymous_can_only_read_safe_final_metadata(self):
+        # given: 등록만 한 자료(승인·확정 없음)
         draft = weekly_exam.register_draft(self.payload())
-        weekly_exam.transition_weekly_exam(
-            draft['id'], weekly_exam.TransitionRequest(action='finalize'), None)
         wiki_workspace.reset_current_identity(self.identity_token)
         self.identity_token = wiki_workspace.set_current_identity(None)
 
@@ -118,7 +119,9 @@ class WeeklyExamWorkflowTest(unittest.TestCase):
             saved['id'], weekly_exam.TransitionRequest(action='finalize'), None)
         reopened = weekly_exam.transition_weekly_exam(
             saved['id'], weekly_exam.TransitionRequest(action='reopen'), None)
-        self.assertEqual(('FINAL', 'DRAFT'), (final['status'], reopened['status']))
+        # 승인 단계가 없으므로 다시 열어도 표시 상태는 완성본이다. 저장 값만 바뀐다.
+        self.assertEqual(('FINAL', 'FINAL'), (final['status'], reopened['status']))
+        self.assertEqual(('FINAL', 'REVIEW'), (final['legacy_status'], reopened['legacy_status']))
         with main.get_db() as conn:
             actions = [row['action'] for row in conn.execute(
                 'SELECT action FROM weekly_exam_audit ORDER BY id').fetchall()]
@@ -126,7 +129,8 @@ class WeeklyExamWorkflowTest(unittest.TestCase):
 
     def test_legacy_statuses_are_preserved_and_compatibly_projected(self):
         ids = []
-        for round_no, legacy in enumerate(('REVIEW', 'APPROVED', 'FINAL', 'PUBLISHED'), 1):
+        for round_no, legacy in enumerate(
+                ('REVIEW', 'CHANGES_REQUESTED', 'REJECTED', 'APPROVED', 'FINAL', 'PUBLISHED'), 1):
             saved = weekly_exam.register_draft(self.payload(round=round_no))
             with main.get_db() as conn:
                 conn.execute('UPDATE weekly_exam_sets SET status=? WHERE id=?', (legacy, saved['id']))
@@ -134,16 +138,53 @@ class WeeklyExamWorkflowTest(unittest.TestCase):
         rows = weekly_exam.list_weekly_exams('신구중', '3학년', 2026, '2학기', '중간고사')
         mapped = {row['legacy_status']: row['status'] for row in rows}
         self.assertEqual(
-            {'REVIEW': 'DRAFT', 'APPROVED': 'FINAL', 'FINAL': 'FINAL', 'PUBLISHED': 'FINAL'},
+            {'REVIEW': 'FINAL', 'CHANGES_REQUESTED': 'FINAL', 'REJECTED': 'DRAFT',
+             'APPROVED': 'FINAL', 'FINAL': 'FINAL', 'PUBLISHED': 'FINAL'},
             mapped)
         public = weekly_exam.list_public_weekly_metadata(
             '신구중', '3학년', 2026, '2학기', '중간고사')
-        self.assertEqual(3, len(public))
+        # 예전에 반려된 REJECTED만 빠지고, REVIEW·CHANGES_REQUESTED로 남은 자료도 보인다
+        self.assertEqual(5, len(public))
+        self.assertEqual({1, 2, 4, 5, 6}, {item['round'] for item in public})
 
-    def test_draft_is_not_public_and_bad_source_is_rejected(self):
+    def test_given_display_status_when_each_stored_value_then_only_rejected_is_draft(self):
+        # given: CHECK 제약이 허용하는 모든 저장 상태
+        for stored in weekly_exam.STATUSES:
+            with self.subTest(stored=stored):
+                # when
+                shown = weekly_exam.display_status(stored)
+                # then
+                self.assertEqual('DRAFT' if stored == 'REJECTED' else 'FINAL', shown)
+        self.assertEqual('DRAFT', weekly_exam.display_status('UNKNOWN'))
+
+    def test_given_legacy_review_rows_when_reading_next_round_context_then_included(self):
+        # given: 승인 없이 남아 있던 자료와 반려된 자료
+        for round_no, legacy in enumerate(('REVIEW', 'CHANGES_REQUESTED', 'REJECTED'), 1):
+            saved = weekly_exam.register_draft(self.payload(round=round_no))
+            with main.get_db() as conn:
+                conn.execute('UPDATE weekly_exam_sets SET status=? WHERE id=?', (legacy, saved['id']))
+        # when
+        items = weekly_exam.final_context_items('신구중', '3학년', 2026, '2학기', '중간고사')
+        # then: REJECTED만 빠지고 전부 완성본으로 Context에 들어간다
+        self.assertEqual([2, 1], [item['round'] for item in items])
+        self.assertEqual({'FINAL'}, {item['status'] for item in items})
+
+    def test_given_registered_exam_when_live_update_metadata_then_listed_without_approval(self):
+        # given: 등록만 한 자료
+        weekly_exam.register_draft(self.payload(round=3))
+        # when
+        updates = main.list_live_update_metadata(2026, '2학기', '중간고사')
+        # then
+        weekly = [item for item in updates if item['kind'] == 'WEEKLY_EXAM']
+        self.assertEqual([3], [item['round'] for item in weekly])
+
+    def test_given_registered_when_public_metadata_then_visible_immediately_and_bad_source_rejected(self):
+        # given / when: 등록만 한다
         weekly_exam.register_draft(self.payload())
-        self.assertEqual([], weekly_exam.list_public_weekly_metadata(
-            '신구중', '3학년', 2026, '2학기', '중간고사'))
+        # then: 승인 없이 공개 metadata에 바로 나온다
+        public = weekly_exam.list_public_weekly_metadata(
+            '신구중', '3학년', 2026, '2학기', '중간고사')
+        self.assertEqual([1], [item['round'] for item in public])
         with self.assertRaises(HTTPException) as raised:
             weekly_exam.register_draft(self.payload(round=2, sourceMaterialIds=[999]))
         self.assertEqual(400, raised.exception.status_code)

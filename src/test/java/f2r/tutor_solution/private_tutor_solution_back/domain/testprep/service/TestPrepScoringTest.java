@@ -108,6 +108,49 @@ class TestPrepScoringTest {
   }
 
   @Test
+  @DisplayName("given SAT 오답만 다시 풀기(부분 응시), when satSectionScaled면 추정 점수를 내지 않고(null) 전체 응시는 그대로 낸다")
+  void satPartialAttemptHasNoEstimate() {
+    // given — 틀린 2문항만 다시 풀어 모두 맞힌 경우
+    int correct = 2;
+    int total = 2;
+    // when
+    Integer partial = TestPrepService.satSectionScaled(true, correct, total);
+    Integer full = TestPrepService.satSectionScaled(false, correct, total);
+    Integer fullEmpty = TestPrepService.satSectionScaled(false, 0, 0);
+    // then — 부분 응시에서 800이 나오면 안 된다
+    assertThat(partial).isNull();
+    assertThat(full).isEqualTo(800);
+    assertThat(fullEmpty).isNull();
+  }
+
+  @Test
+  @DisplayName("given 부분 응시라 점수가 빈 SAT 두 영역, when totalScaled·totalMax면 합계와 만점도 null")
+  void satPartialAttemptHasNoTotal() {
+    // given
+    List<SectionScore> partial = List.of(
+        new SectionScore("RW", 2, 2, 2, 2, 100.0, null, null, null),
+        new SectionScore("MATH", 1, 1, 1, 0, 0.0, null, null, null));
+    // when / then
+    assertThat(TestPrepService.totalScaled(partial)).isNull();
+    assertThat(TestPrepService.totalMax(partial)).isNull();
+  }
+
+  @Test
+  @DisplayName("given 채점된 영역들, when correctCount·autoCount면 영역 합계, 채점 기록이 없으면(제출 전) null")
+  void correctAndAutoCountSumSections() {
+    // given
+    List<SectionScore> submitted = List.of(
+        new SectionScore("RW", 3, 3, 3, 2, 66.7, null, null, null),
+        new SectionScore("MATH", 2, 2, 2, 1, 50.0, null, null, null));
+    List<SectionScore> inProgress = List.of();
+    // when / then
+    assertThat(TestPrepService.correctCount(submitted)).isEqualTo(3);
+    assertThat(TestPrepService.autoCount(submitted)).isEqualTo(5);
+    assertThat(TestPrepService.correctCount(inProgress)).isNull();
+    assertThat(TestPrepService.autoCount(inProgress)).isNull();
+  }
+
+  @Test
   @DisplayName("given 부분 응시라 점수가 빈 TOEIC 영역, when totalScaled·totalMax면 합계와 만점도 null")
   void toeicPartialAttemptHasNoTotal() {
     // given
