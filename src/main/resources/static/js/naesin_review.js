@@ -9,7 +9,6 @@
 
 
   function itemHtml(it, n) {
-    const img = NT.imgPath(it.prompt), passage = NT.imgPath(it.bodyText);
     const state = it.isCorrect ? 'is-right' : 'is-wrong';
     const mine = it.yourAnswer ? NT.circ(it.yourAnswer) : '안 씀';
     return '<article class="nt-item ' + state + '" id="q' + n + '">'
@@ -18,8 +17,9 @@
       + '<span class="nt-ans">정답 <b class="nt-right">' + NT.esc(NT.circ(it.correctAnswer)) + '</b></span>'
       + (it.points != null ? '<span class="nt-pts">' + it.points + '점</span>' : '') + '</div>'
       + '<div class="nt-sheet">'
-      + (passage ? '<img class="nt-img nt-passage" loading="lazy" src="' + passage + '" alt="' + n + '번 문항 지문">' : '')
-      + (img ? '<img class="nt-img" loading="lazy" src="' + img + '" alt="' + n + '번 문항">' : '')
+      + NT.sheetHtml(it.bodyText, n + '번 문항 지문', 'nt-passage')
+      + NT.sheetHtml(it.prompt, n + '번 문항')
+      + NT.choicesHtml(it)
       + '</div>'
       + '<div class="nt-exp">' + NT.expHtml(it.explanation) + '</div></article>';
   }
