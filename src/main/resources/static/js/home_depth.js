@@ -58,11 +58,26 @@
     return wrap;
   }
 
+  // 위치 지도: 자리(.hd-loc-map[data-map-src])에 지도 iframe을 한 번만 넣는다. 그림으로만 쓰므로 초점·스크린리더에서 뺀다.
+  function mountMap(doc, holder) {
+    var src = holder && holder.getAttribute ? holder.getAttribute('data-map-src') : '';
+    if (!src || holder.firstChild) return null;
+    var frame = doc.createElement('iframe');
+    frame.setAttribute('src', src); frame.setAttribute('loading', 'lazy'); frame.setAttribute('tabindex', '-1');
+    frame.setAttribute('aria-hidden', 'true'); frame.setAttribute('title', 'F2R 위치 지도');
+    holder.appendChild(frame);
+    return frame;
+  }
+  function mountMaps(doc, scope) {
+    var list = (scope || doc).querySelectorAll ? (scope || doc).querySelectorAll('.hd-loc-map[data-map-src]') : [];
+    return Array.prototype.slice.call(list).map(function (h) { return mountMap(doc, h); });
+  }
+
   function init(doc, win) {
     var root = doc.getElementById('homeTop');
     if (!root) return null;
     var reduced = win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced || typeof win.IntersectionObserver !== 'function') return { active: false };
+    if (reduced || typeof win.IntersectionObserver !== 'function') { mountMaps(doc); return { active: false }; }
     buildLogo3d(doc);
     var items = Array.prototype.slice.call(doc.querySelectorAll(REVEAL));
     root.classList.add('hd-ready');
@@ -70,6 +85,7 @@
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
         entry.target.classList.add('hd-in');
+        mountMaps(doc, entry.target);
         observer.unobserve(entry.target);
       });
     }, { rootMargin: '0px 0px -8% 0px', threshold: 0.2 });
@@ -108,7 +124,7 @@
     return Math.round((base + (((i * 37) % 7) / 7 - 0.5) * 0.14) * 1000) / 1000;
   }
 
-  var api = { init: init, tiltFromPointer: tiltFromPointer, buildLogo3d: buildLogo3d, projectPoint: projectPoint, swayAngles: swayAngles, nodeDepth: nodeDepth };
+  var api = { init: init, tiltFromPointer: tiltFromPointer, buildLogo3d: buildLogo3d, mountMap: mountMap, projectPoint: projectPoint, swayAngles: swayAngles, nodeDepth: nodeDepth };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.f2rDepth = api;
   if (typeof document !== 'undefined') init(document, window);

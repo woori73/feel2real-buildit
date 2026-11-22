@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { init, tiltFromPointer, buildLogo3d, projectPoint, swayAngles, nodeDepth } = require('../../main/resources/static/js/home_depth.js');
+const { init, tiltFromPointer, buildLogo3d, mountMap, projectPoint, swayAngles, nodeDepth } = require('../../main/resources/static/js/home_depth.js');
 
 const html = fs.readFileSync(path.resolve(__dirname, '../../main/resources/templates/public/landing.html'), 'utf8');
 const css = fs.readFileSync(path.resolve(__dirname, '../../main/resources/static/css/home_depth.css'), 'utf8');
@@ -113,14 +113,14 @@ test('given the home template when read then depth css/js are loaded and the mov
   assert.match(html, /\/css\/home_depth\.css\?v=/);
   assert.match(html, /\/js\/home_depth\.js\?v=[^"]+" defer/);
   assert.equal(cards.length, 1);
-  assert.match(cards[0], new RegExp(`src="https://maps\\.google\\.com/maps\\?q=${newQ}&amp;z=17&amp;output=embed"`));
+  assert.match(cards[0], new RegExp(`data-map-src="https://maps\\.google\\.com/maps\\?q=${newQ}&amp;z=17&amp;output=embed"`));
   assert.match(cards[0], new RegExp(`href="https://map\\.naver\\.com/p/search/${newQ}" target="_blank" rel="noopener"`));
   // 2026-11-22 감독: "신사동 616-4 4층이 이전할 장소" — 도로명·지번을 함께 적는다
   assert.match(cards[0], /11월 25일 이전할 곳/);
   assert.match(cards[0], /언주로173길 12\(신사동 616-4\), 압구정빌딩 4층/);
   assert.doesNotMatch(html, /이전 위치/);
-  // 지도는 그림으로만 쓰고 키보드 초점·스크린리더는 카드 링크가 맡는다
-  assert.match(cards[0], /<iframe class="hd-loc-map"[^>]*loading="lazy" tabindex="-1" aria-hidden="true"/);
+  // 첫 화면 HTML에는 iframe을 두지 않는다(복습 게임 계약과 같음). 지도는 스크립트가 넣는다
+  assert.doesNotMatch(html, /<iframe/);
 });
 
 test('given the depth stylesheet when read then motion only runs after the script marks the page and stops for reduced motion', () => {
@@ -132,7 +132,7 @@ test('given the depth stylesheet when read then motion only runs after the scrip
   // 한 바퀴 회전이 끝난 뒤에는 마우스 기울기가 다시 듣도록 끝 상태를 붙잡지 않는다
   assert.match(css, /hdCoin [^;]*backwards,/);
   // 지도는 누름을 받지 않고 카드 링크가 받는다
-  assert.match(css, /\.hd-loc-map \{[^}]*pointer-events: none/);
+  assert.match(css, /\.hd-loc-map iframe \{[^}]*pointer-events: none/);
 });
 
 function fakeNode(tag) {
@@ -223,4 +223,29 @@ test('given the home template when the main area is read then every div is close
   assert.equal((main.match(/<div\b/g) || []).length, (main.match(/<\/div>/g) || []).length);
   assert.ok(hero.indexOf('id="service-map"') > hero.indexOf('class="hd-locs"'));
   assert.equal((hero.match(/<div\b/g) || []).length, (hero.match(/<\/div>/g) || []).length);
+});
+
+test('given a map holder when it is mounted then one hidden, non-focusable map frame is added and a second call adds nothing', () => {
+  // given
+  const holder = fakeNode('span'); holder.attrs['data-map-src'] = 'https://maps.google.com/maps?q=x&output=embed';
+  holder.getAttribute = k => holder.attrs[k]; Object.defineProperty(holder, 'firstChild', { get() { return holder.children[0] || null; } });
+  const doc = { createElement: fakeNode };
+  // when
+  const frame = mountMap(doc, holder);
+  const again = mountMap(doc, holder);
+  // then
+  assert.equal(holder.children.length, 1);
+  assert.equal(frame.tag, 'iframe');
+  assert.equal(frame.attrs.src, 'https://maps.google.com/maps?q=x&output=embed');
+  assert.equal(frame.attrs.tabindex, '-1');
+  assert.equal(frame.attrs['aria-hidden'], 'true');
+  assert.equal(again, null);
+});
+
+test('given a holder without a map address when mounted then nothing is added', () => {
+  // given
+  const holder = fakeNode('span'); holder.getAttribute = () => null;
+  // when / then
+  assert.equal(mountMap({ createElement: fakeNode }, holder), null);
+  assert.equal(holder.children.length, 0);
 });
