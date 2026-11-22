@@ -324,7 +324,7 @@ export default function NaesinWikiV1({onNavigate}:{onNavigate:(page:Page)=>void}
   }
   return <section className="naesin-v1">
     <header>
-    <div role="group" aria-label="Wiki 섹션"><button className="btn-ghost" disabled style={{fontWeight:700}}>[내신 Wiki]</button><button className="btn-ghost" onClick={()=>onNavigate('csatwiki')}>[수능영어 Wiki]</button><a href="/naesin-wiki/published">중등부 완성본</a></div>
+    <div role="group" aria-label="Wiki 섹션"><button className="btn-ghost" disabled style={{fontWeight:700}}>[내신 Wiki]</button><button className="btn-ghost" onClick={()=>onNavigate('csatwiki')}>[수능영어 Wiki]</button><a href="/naesin-wiki/published">중등부 승인 완성본</a></div>
     </header>
     {notice&&<div className="tool-notice" role="status">{notice}<button onClick={()=>setNotice('')}>×</button></div>}
     <div className="exam-context" aria-label="시험 Context">
