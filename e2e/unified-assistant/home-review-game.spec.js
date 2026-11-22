@@ -81,8 +81,9 @@ for (const [width, height] of [[360, 800], [390, 844], [1440, 1050]]) {
       await expect(page.locator('#homeGameStart')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('');
       expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false);
-      // Only the homepage's own font/analytics tags are external (blocked here); the game itself never leaves Feel2Real.
-      expect(external.filter(u => !/^https:\/\/(cdn\.jsdelivr\.net|fonts\.googleapis\.com|www\.googletagmanager\.com)\//.test(u))).toEqual([]);
+      // Only the homepage's own font/analytics tags and the F2R location map (2026-11-22 대표 지시 "지도가 F2R 위치 지도", home_depth.js mountMap)
+      // are external (blocked here); the game itself never leaves Feel2Real.
+      expect(external.filter(u => !/^https:\/\/(cdn\.jsdelivr\.net|fonts\.googleapis\.com|www\.googletagmanager\.com|maps\.google\.com)\//.test(u))).toEqual([]);
       expect(errors).toEqual([]);
     } finally { await context.close(); }
   });
